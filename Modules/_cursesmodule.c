@@ -105,8 +105,13 @@ None              attroff(attr)
 None              attrset(sttr)
 None              standend()
 None              standout()
+None              border(ls,rs,ts,bs,tl,tr,bl,br)   (accepts 0-8 INT args)
 None              box(vertch,horch)    vertch and horch are INTS
                   box()
+None              hline(y,x,ch,n)
+                  hline(ch,n)
+None              vline(y,x,ch,n)
+                  vline(ch,n)
 None              erase()
 None              deleteln()
 None              insertln()
@@ -173,6 +178,9 @@ static PyObject *PyCursesError;		/* For exception curses.error */
 static char *catchall_ERR  = "curses function returned ERR";
 static char *catchall_NULL = "curses function returned NULL";
 
+/* Tells whether initscr() has been called to initialise curses  */
+static int initialised = FALSE;
+
 #define ARG_COUNT(X) \
 	(((X) == NULL) ? 0 : (PyTuple_Check(X) ? PyTuple_Size(X) : 1))
 
@@ -180,12 +188,13 @@ static char *catchall_NULL = "curses function returned NULL";
 
 Change Log:
 
-Version 1.2: 95/02/17 (Steve Clift)
+Version 1.2: 95/02/23 (Steve Clift)
     Fixed several potential core-dumping bugs.
     Reworked arg parsing where variable arg lists are used.
     Generate exceptions when ERR or NULL is returned by curses functions.
     Changed return types to match SysV Curses manual descriptions.
-    Added keypad() to window method list doco above.
+    Added keypad() to window method list.
+    Added border(), hline() and vline() window methods.
 
 Version 1.1: 94/08/31:
     Minor fixes given by Guido.
@@ -227,6 +236,18 @@ PyCursesCheckERR(code, fname)
       PyErr_SetString(PyCursesError, buf);
     }
     return NULL;
+  }
+}
+
+
+static int
+PyCursesInitialised()
+{
+  if (initialised == TRUE)
+    return 1;
+  else {
+    PyErr_SetString(PyCursesError, "must call initscr() first");
+    return 0;
   }
 }
 
@@ -622,16 +643,84 @@ PyCursesWindow_StandOut(self,arg)
 }
 
 static PyObject *
+PyCursesWindow_Border(self, args)
+     PyCursesWindowObject *self;
+     PyObject *args;
+{
+  int ls, rs, ts, bs, tl, tr, bl, br;
+  ls = rs = ts = bs = tl = tr = bl = br = 0;
+  if (!PyArg_ParseTuple(args,"|iiiiiiii;ls,rs,ts,bs,tl,tr,bl,br",
+                        &ls, &rs, &ts, &bs, &tl, &tr, &bl, &br))
+    return NULL;
+  wborder(self->win, ls, rs, ts, bs, tl, tr, bl, br);
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+static PyObject *
 PyCursesWindow_Box(self,arg)
      PyCursesWindowObject *self;
      PyObject * arg;
 {
   int ch1=0,ch2=0;
-  if (!PyArg_Parse(arg,"(ii);vertch,horch", &ch1, &ch2))
+  if (!PyArg_NoArgs(arg)) {
     PyErr_Clear();
+    if (!PyArg_Parse(arg,"(ii);vertch,horch", &ch1, &ch2))
+      return NULL;
+  }
   box(self->win,ch1,ch2);
   Py_INCREF(Py_None);
   return Py_None;
+}
+
+static PyObject *
+PyCursesWindow_Hline(self, args)
+     PyCursesWindowObject *self;
+     PyObject *args;
+{
+  int ch, n, x, y, code = OK;
+  switch (ARG_COUNT(args)) {
+  case 2:
+    if (!PyArg_Parse(args, "(ii);ch,n", &ch, &n))
+      return NULL;
+    break;
+  case 4:
+    if (!PyArg_Parse(args, "(iiii);y,x,ch,n", &y, &x, &ch, &n))
+      return NULL;
+    code = wmove(self->win, y, x);
+    break;
+  default:
+    PyErr_SetString(PyExc_TypeError, "hline requires 2 or 4 arguments");
+    return NULL;
+  }
+  if (code != ERR)
+    whline(self->win, ch, n);
+  return PyCursesCheckERR(code, "wmove");
+}
+
+static PyObject *
+PyCursesWindow_Vline(self, args)
+     PyCursesWindowObject *self;
+     PyObject *args;
+{
+  int ch, n, x, y, code = OK;
+  switch (ARG_COUNT(args)) {
+  case 2:
+    if (!PyArg_Parse(args, "(ii);ch,n", &ch, &n))
+      return NULL;
+    break;
+  case 4:
+    if (!PyArg_Parse(args, "(iiii);y,x,ch,n", &y, &x, &ch, &n))
+      return NULL;
+    code = wmove(self->win, y, x);
+    break;
+  default:
+    PyErr_SetString(PyExc_TypeError, "vline requires 2 or 4 arguments");
+    return NULL;
+  }
+  if (code != ERR)
+    wvline(self->win, ch, n);
+  return PyCursesCheckERR(code, "wmove");
 }
 
 static PyObject *
@@ -949,46 +1038,49 @@ PyCursesWindow_NoTimeout(self,arg)
 }
 
 static PyMethodDef PyCursesWindow_Methods[] = {
-	{"refresh",             (PyCFunction)PyCursesWindow_Refresh},
-	{"nooutrefresh",        (PyCFunction)PyCursesWindow_NoOutRefresh},
-	{"mvwin",               (PyCFunction)PyCursesWindow_MoveWin},
-	{"move",                (PyCFunction)PyCursesWindow_Move},
-	{"subwin",              (PyCFunction)PyCursesWindow_SubWin},
-	{"addch",               (PyCFunction)PyCursesWindow_AddCh},
-	{"insch",               (PyCFunction)PyCursesWindow_InsCh},
-	{"delch",               (PyCFunction)PyCursesWindow_DelCh},
-	{"echochar",            (PyCFunction)PyCursesWindow_EchoChar},
-	{"addstr",              (PyCFunction)PyCursesWindow_AddStr},
-	{"attron",              (PyCFunction)PyCursesWindow_AttrOn},
-	{"attroff",             (PyCFunction)PyCursesWindow_AttrOff},
-	{"attrset",             (PyCFunction)PyCursesWindow_AttrSet},
-	{"standend",            (PyCFunction)PyCursesWindow_StandEnd},
-	{"standout",            (PyCFunction)PyCursesWindow_StandOut},
-	{"box",                 (PyCFunction)PyCursesWindow_Box},
-	{"erase",               (PyCFunction)PyCursesWindow_Erase},
-	{"deleteln",            (PyCFunction)PyCursesWindow_DeleteLine},
-	{"insertln",            (PyCFunction)PyCursesWindow_InsertLine},
-	{"getyx",               (PyCFunction)PyCursesWindow_GetYX},
-	{"getbegyx",            (PyCFunction)PyCursesWindow_GetBegYX},
-	{"getmaxyx",            (PyCFunction)PyCursesWindow_GetMaxYX},
-	{"clear",               (PyCFunction)PyCursesWindow_Clear},
-	{"clrtobot",            (PyCFunction)PyCursesWindow_ClearToBottom},
-	{"clrtoeol",            (PyCFunction)PyCursesWindow_ClearToEOL},
-	{"scroll",              (PyCFunction)PyCursesWindow_Scroll},
-	{"touchwin",            (PyCFunction)PyCursesWindow_TouchWin},
-	{"touchline",           (PyCFunction)PyCursesWindow_TouchLine},
-	{"getch",               (PyCFunction)PyCursesWindow_GetCh},
-	{"getstr",              (PyCFunction)PyCursesWindow_GetStr},
-	{"inch",                (PyCFunction)PyCursesWindow_InCh},
-	{"clearok",             (PyCFunction)PyCursesWindow_ClearOk},
-	{"idlok",               (PyCFunction)PyCursesWindow_IdlOk},
-	{"leaveok",             (PyCFunction)PyCursesWindow_LeaveOk},
-	{"scrollok",            (PyCFunction)PyCursesWindow_ScrollOk},
-	{"setscrreg",           (PyCFunction)PyCursesWindow_SetScrollRegion},
-	{"keypad",              (PyCFunction)PyCursesWindow_KeyPad},
-	{"nodelay",             (PyCFunction)PyCursesWindow_NoDelay},
-	{"notimeout",           (PyCFunction)PyCursesWindow_NoTimeout},
-	{NULL,		        (PyCFunction)NULL}   /* sentinel */
+	{"refresh",         PyCursesWindow_Refresh},
+	{"nooutrefresh",    PyCursesWindow_NoOutRefresh},
+	{"mvwin",           PyCursesWindow_MoveWin},
+	{"move",            PyCursesWindow_Move},
+	{"subwin",          PyCursesWindow_SubWin},
+	{"addch",           PyCursesWindow_AddCh},
+	{"insch",           PyCursesWindow_InsCh},
+	{"delch",           PyCursesWindow_DelCh},
+	{"echochar",        PyCursesWindow_EchoChar},
+	{"addstr",          PyCursesWindow_AddStr},
+	{"attron",          PyCursesWindow_AttrOn},
+	{"attroff",         PyCursesWindow_AttrOff},
+	{"attrset",         PyCursesWindow_AttrSet},
+	{"standend",        PyCursesWindow_StandEnd},
+	{"standout",        PyCursesWindow_StandOut},
+	{"border",          PyCursesWindow_Border, METH_VARARGS},
+	{"box",             PyCursesWindow_Box},
+	{"hline",           PyCursesWindow_Hline},
+	{"vline",           PyCursesWindow_Vline},
+	{"erase",           PyCursesWindow_Erase},
+	{"deleteln",        PyCursesWindow_DeleteLine},
+	{"insertln",        PyCursesWindow_InsertLine},
+	{"getyx",           PyCursesWindow_GetYX},
+	{"getbegyx",        PyCursesWindow_GetBegYX},
+	{"getmaxyx",        PyCursesWindow_GetMaxYX},
+	{"clear",           PyCursesWindow_Clear},
+	{"clrtobot",        PyCursesWindow_ClearToBottom},
+	{"clrtoeol",        PyCursesWindow_ClearToEOL},
+	{"scroll",          PyCursesWindow_Scroll},
+	{"touchwin",        PyCursesWindow_TouchWin},
+	{"touchline",       PyCursesWindow_TouchLine},
+	{"getch",           PyCursesWindow_GetCh},
+	{"getstr",          PyCursesWindow_GetStr},
+	{"inch",            PyCursesWindow_InCh},
+	{"clearok",         PyCursesWindow_ClearOk},
+	{"idlok",           PyCursesWindow_IdlOk},
+	{"leaveok",         PyCursesWindow_LeaveOk},
+	{"scrollok",        PyCursesWindow_ScrollOk},
+	{"setscrreg",       PyCursesWindow_SetScrollRegion},
+	{"keypad",          PyCursesWindow_KeyPad},
+	{"nodelay",         PyCursesWindow_NoDelay},
+	{"notimeout",       PyCursesWindow_NoTimeout},
+	{NULL,		        NULL}   /* sentinel */
 };
 
 static PyObject *
@@ -1086,11 +1178,10 @@ PyCurses_InitScr(self, args)
      PyObject * self;
      PyObject * args;
 {
-  static int already_inited = FALSE;
   WINDOW *win;
   if (!PyArg_NoArgs(args))
     return NULL;
-  if (already_inited == TRUE) {
+  if (initialised == TRUE) {
     wrefresh(stdscr);
     return (PyObject *)PyCursesWindow_New(stdscr);
   }
@@ -1101,7 +1192,7 @@ PyCurses_InitScr(self, args)
     return NULL;
   }
 
-  already_inited = TRUE;
+  initialised = TRUE;
 
 /* This was moved from initcurses() because core dumped on SGI */
 /* Also, they are probably not defined until you've called initscr() */
@@ -1143,7 +1234,7 @@ PyCurses_EndWin(self, args)
      PyObject * self;
      PyObject * args;
 {
-  if (!PyArg_NoArgs(args))
+  if (!PyArg_NoArgs(args) || !PyCursesInitialised())
     return NULL;
   return PyCursesCheckERR(endwin(), "endwin");
 }
@@ -1168,7 +1259,7 @@ PyCurses_DoUpdate(self,arg)
      PyObject * self;
      PyObject * arg;
 {
-  if (!PyArg_NoArgs(arg))
+  if (!PyArg_NoArgs(arg) || !PyCursesInitialised())
     return NULL;
   return PyCursesCheckERR(doupdate(), "doupdate");
 }
@@ -1181,6 +1272,8 @@ PyCurses_NewWindow(self,arg)
   WINDOW *win;
   int nlines, ncols, begin_y, begin_x;
 
+  if (!PyCursesInitialised())
+    return NULL;
   nlines = ncols = 0;
   switch (ARG_COUNT(arg)) {
   case 2:
@@ -1211,7 +1304,7 @@ PyCurses_Beep(self,arg)
      PyObject * self;
      PyObject * arg;
 {
-  if (!PyArg_NoArgs(arg))
+  if (!PyArg_NoArgs(arg) || !PyCursesInitialised())
     return NULL;
   beep();
   Py_INCREF(Py_None);
@@ -1223,7 +1316,7 @@ PyCurses_Flash(self,arg)
      PyObject * self;
      PyObject * arg;
 {
-  if (!PyArg_NoArgs(arg))
+  if (!PyArg_NoArgs(arg) || !PyCursesInitialised())
     return NULL;
   flash();
   Py_INCREF(Py_None);
@@ -1236,7 +1329,7 @@ PyCurses_UngetCh(self,arg)
      PyObject * arg;
 {
   int ch;
-  if (!PyArg_Parse(arg,"i;integer",&ch))
+  if (!PyArg_Parse(arg,"i;integer",&ch) || !PyCursesInitialised())
     return NULL;
   return PyCursesCheckERR(ungetch(ch), "ungetch");
 }
@@ -1246,7 +1339,7 @@ PyCurses_FlushInp(self,arg)
      PyObject * self;
      PyObject * arg;
 {
-  if (!PyArg_NoArgs(arg))
+  if (!PyArg_NoArgs(arg) || !PyCursesInitialised())
     return NULL;
   flushinp();
   Py_INCREF(Py_None);
@@ -1258,7 +1351,7 @@ PyCurses_CBreak(self,arg)
      PyObject * self;
      PyObject * arg;
 {
-  if (!PyArg_NoArgs(arg))
+  if (!PyArg_NoArgs(arg) || !PyCursesInitialised())
     return NULL;
   return PyCursesCheckERR(cbreak(), "cbreak");
 }
@@ -1268,7 +1361,7 @@ PyCurses_NoCBreak(self,arg)
      PyObject * self;
      PyObject * arg;
 {
-  if (!PyArg_NoArgs(arg))
+  if (!PyArg_NoArgs(arg) || !PyCursesInitialised())
     return NULL;
   return PyCursesCheckERR(nocbreak(), "nocbreak");
 }
@@ -1278,7 +1371,7 @@ PyCurses_Echo(self,arg)
      PyObject * self;
      PyObject * arg;
 {
-  if (!PyArg_NoArgs(arg))
+  if (!PyArg_NoArgs(arg) || !PyCursesInitialised())
     return NULL;
   return PyCursesCheckERR(echo(), "echo");
 }
@@ -1288,7 +1381,7 @@ PyCurses_NoEcho(self,arg)
      PyObject * self;
      PyObject * arg;
 {
-  if (!PyArg_NoArgs(arg))
+  if (!PyArg_NoArgs(arg) || !PyCursesInitialised())
     return NULL;
   return PyCursesCheckERR(noecho(), "noecho");
 }
@@ -1298,7 +1391,7 @@ PyCurses_Nl(self,arg)
      PyObject * self;
      PyObject * arg;
 {
-  if (!PyArg_NoArgs(arg))
+  if (!PyArg_NoArgs(arg) || !PyCursesInitialised())
     return NULL;
   return PyCursesCheckERR(nl(), "nl");
 }
@@ -1308,7 +1401,7 @@ PyCurses_NoNl(self,arg)
      PyObject * self;
      PyObject * arg;
 {
-  if (!PyArg_NoArgs(arg))
+  if (!PyArg_NoArgs(arg) || !PyCursesInitialised())
     return NULL;
   return PyCursesCheckERR(nonl(), "nonl");
 }
@@ -1318,7 +1411,7 @@ PyCurses_Raw(self,arg)
      PyObject * self;
      PyObject * arg;
 {
-  if (!PyArg_NoArgs(arg))
+  if (!PyArg_NoArgs(arg) || !PyCursesInitialised())
     return NULL;
   return PyCursesCheckERR(raw(), "raw");
 }
@@ -1328,7 +1421,7 @@ PyCurses_NoRaw(self,arg)
      PyObject * self;
      PyObject * arg;
 {
-  if (!PyArg_NoArgs(arg))
+  if (!PyArg_NoArgs(arg) || !PyCursesInitialised())
     return NULL;
   return PyCursesCheckERR(noraw(), "noraw");
 }
@@ -1350,7 +1443,7 @@ PyCurses_Meta(self,arg)
      PyObject * arg;
 {
   int ch;
-  if (!PyArg_Parse(arg,"i;True(1), False(0)",&ch))
+  if (!PyArg_Parse(arg,"i;True(1), False(0)",&ch) || !PyCursesInitialised())
     return NULL;
   return PyCursesCheckERR(meta(stdscr, ch), "meta");
 }
