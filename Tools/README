@@ -7,7 +7,7 @@ bgen		Generate complete extension modules from a
 freeze		Create a stand-alone executable from a Python program.
 
 modulator	Interactively generate boiler plate for an extension
-		module.  Requires Tk.
+		module.  Works easiest if you have Tk.
 
 scripts		A number of useful single-file programs, e.g. for
 		converting old Python sources to the current language
