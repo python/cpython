@@ -30,16 +30,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 typedef struct {
 	OB_HEAD
-	char *m_name;
-	method m_meth;
-	object *m_self;
+	char	*m_name;
+	method	m_meth;
+	object	*m_self;
+	int	m_varargs;
 } methodobject;
 
 object *
-newmethodobject(name, meth, self)
+newmethodobject(name, meth, self, varargs)
 	char *name; /* static string */
 	method meth;
 	object *self;
+	int varargs;
 {
 	methodobject *op = NEWOBJ(methodobject, &Methodtype);
 	if (op != NULL) {
@@ -48,6 +50,7 @@ newmethodobject(name, meth, self)
 		if (self != NULL)
 			INCREF(self);
 		op->m_self = self;
+		op->m_varargs = varargs;
 	}
 	return (object *)op;
 }
@@ -72,6 +75,17 @@ getself(op)
 		return NULL;
 	}
 	return ((methodobject *)op) -> m_self;
+}
+
+int
+getvarargs(op)
+	object *op;
+{
+	if (!is_methodobject(op)) {
+		err_badcall();
+		return -1;
+	}
+	return ((methodobject *)op) -> m_varargs;
 }
 
 /* Methods (the standard built-in methods, that is) */
@@ -168,7 +182,8 @@ findmethod(ml, op, name)
 		return listmethods(ml);
 	for (; ml->ml_name != NULL; ml++) {
 		if (strcmp(name, ml->ml_name) == 0)
-			return newmethodobject(ml->ml_name, ml->ml_meth, op);
+			return newmethodobject(ml->ml_name, ml->ml_meth,
+					op, ml->ml_varargs);
 	}
 	err_setstr(AttributeError, name);
 	return NULL;
