@@ -21,7 +21,7 @@ class MultiEditorWindow(EditorWindow):
     
     # Override menu bar specs
     menu_specs = EditorWindow.menu_specs[:]
-    menu_specs.insert(len(menu_specs)-1, ("windows", "Windows"))
+    menu_specs.insert(len(menu_specs)-1, ("windows", "_Windows"))
 
     def __init__(self, flist, filename, key):
         self.flist = flist
