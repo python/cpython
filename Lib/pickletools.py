@@ -1899,7 +1899,7 @@ def dis(pickle, out=None, indentlevel=4):
             markstack.append(pos)
 
 
-_dis_test = """
+_dis_test = r"""
 >>> import pickle
 >>> x = [1, 2, (3, 4), {'abc': u"def"}]
 >>> pkl = pickle.dumps(x, 0)
