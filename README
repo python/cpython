@@ -1,4 +1,4 @@
-This is Python release 1.5 alpha 1
+This is Python release 1.5 alpha 2
 ==================================
 
 ******************************************
@@ -24,7 +24,7 @@ What is Python anyway?
 ----------------------
 
 Python is an interpreted object-oriented programming language, and is
-often compared to Tcl, Perl, Scheme or Java.  For a quick summary of
+often compared to Tcl, Perl, Java or Scheme.  For a quick summary of
 what Python can mean for a UNIX/C programmer, read Misc/BLURB.LUTZ.
 If you have web access, point your browser to http://www.python.org.
 
@@ -37,11 +37,11 @@ directory as tut.tex; and http://www.python.org/doc/tut/tut.html).
 Aaron Watters wrote a second tutorial, that may be more accessible for
 some: http://www.wcmh.com/uworld/archives/95/tutorial/005.html.
 
-There are now also two books on Python.  While these are still based
-on Python 1.3 or 1.4, the language is so stable now that you'd be
-hard pressed to find places where the books are out of date.  The
-books, both first published in October 1996 and both including a
-CD-ROM, form excellent companions to each other:
+There are now also several books on Python.  While these are still
+based on Python 1.3 or 1.4, the language is so stable now that you'd
+be hard pressed to find places where the books are out of date.  The
+first two books, both first published in October 1996 and both
+including a CD-ROM, form excellent companions to each other:
 
 	Internet Programming with Python
 	by Aaron Watters, Guido van Rossum, and James Ahlstrom
@@ -52,6 +52,13 @@ CD-ROM, form excellent companions to each other:
 	by Mark Lutz
 	O'Reilly & Associates
 	ISBN: 1-56592-197-6
+
+If you prefer to read German, try:
+
+	Das Python-Buch
+	by Martin von Loewis and Nils Fischbeck
+	Addison-Wesley-Longman, 1997
+	ISBN: 3-8273-1110-1
 
 
 If you don't read instructions
@@ -375,13 +382,13 @@ clean" before giving up or complaining!).
 --with-thread: On most Unix systems, you can now use multiple threads.
 	To enable this, pass --with-thread.  (--with-threads is an
 	alias.)  If the library required for threads lives in a
-	peculiar place, you can use --with-thread=DIRECTORY.  In the
-	Modules/Setup file, enable the thread module.  (Threads aren't
-	enabled automatically because there are run-time penalties
-	when support for them is compiled in even if you don't use
-	them.)  IMPORTANT: run "make clean" after changing (either
-	enabling or disabling) this option!  Note: for DEC Unix
-	use --with-dec-threads instead.
+	peculiar place, you can use --with-thread=DIRECTORY.  NOTE:
+	you must also enable the thread module by uncommenting it in
+	the Modules/Setup file.  (Threads aren't enabled automatically
+	because there are run-time penalties when support for them is
+	compiled in even if you don't use them.)  IMPORTANT: run "make
+	clean" after changing (either enabling or disabling) this
+	option!  Note: for DEC Unix use --with-dec-threads instead.
 
 --with-sgi-dl: On SGI IRIX 4, dynamic loading of extension modules is
 	supported by the "dl" library by Jack Jansen, which is
