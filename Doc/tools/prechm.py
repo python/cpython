@@ -23,7 +23,7 @@ import getopt
 import cgi
 
 usage_mode = '''
-Usage: pre_chm.py [-c] [-k] [-p] [-v 1.5[.x]] filename
+Usage: prechm.py [-c] [-k] [-p] [-v 1.5[.x]] filename
     -c: does not build filename.hhc (Table of Contents)
     -k: does not build filename.hhk (Index)
     -p: does not build filename.hhp (Project File)
