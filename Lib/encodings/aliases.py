@@ -75,6 +75,9 @@ aliases = {
     'windows_1252': 'cp1252',
     'windows_1254': 'cp1254',
     'windows_1255': 'cp1255',
+    'windows_1256': 'cp1256',
+    'windows_1257': 'cp1257',
+    'windows_1258': 'cp1258',
 
     # MBCS
     'dbcs': 'mbcs',
