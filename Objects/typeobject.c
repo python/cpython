@@ -4,8 +4,6 @@
 #include "Python.h"
 #include "structmember.h"
 
-staticforward int add_members(PyTypeObject *, struct memberlist *);
-
 static struct memberlist type_members[] = {
 	{"__name__", T_STRING, offsetof(PyTypeObject, tp_name), READONLY},
 	{"__basicsize__", T_INT, offsetof(PyTypeObject,tp_basicsize),READONLY},
@@ -647,7 +645,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		slotoffset += sizeof(PyObject *);
 	}
 	type->tp_basicsize = slotoffset;
-	add_members(type, et->members);
+	type->tp_members = et->members;
 
 	/* Special case some slots */
 	if (type->tp_dictoffset != 0 || nslots > 0) {
@@ -882,7 +880,7 @@ PyTypeObject PyBaseObject_Type = {
 	0,					/* tp_call */
 	0,					/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
-	0,					/* tp_setattro */
+	PyObject_GenericSetAttr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
 	"The most base type",			/* tp_doc */
@@ -929,25 +927,6 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
 }
 
 static int
-add_wrappers(PyTypeObject *type, struct wrapperbase *wraps, void *wrapped)
-{
-	PyObject *dict = type->tp_defined;
-
-	for (; wraps->name != NULL; wraps++) {
-		PyObject *descr;
-		if (PyDict_GetItemString(dict, wraps->name))
-			continue;
-		descr = PyDescr_NewWrapper(type, wraps, wrapped);
-		if (descr == NULL)
-			return -1;
-		if (PyDict_SetItemString(dict, wraps->name, descr) < 0)
-			return -1;
-		Py_DECREF(descr);
-	}
-	return 0;
-}
-
-static int
 add_members(PyTypeObject *type, struct memberlist *memb)
 {
 	PyObject *dict = type->tp_defined;
@@ -986,27 +965,90 @@ add_getset(PyTypeObject *type, struct getsetlist *gsp)
 	return 0;
 }
 
-staticforward int add_operators(PyTypeObject *);
-
-static int
-inherit_slots(PyTypeObject *type, PyTypeObject *base)
+static void
+inherit_special(PyTypeObject *type, PyTypeObject *base)
 {
 	int oldsize, newsize;
 
+	/* Special flag magic */
+	if (!type->tp_as_buffer && base->tp_as_buffer) {
+		type->tp_flags &= ~Py_TPFLAGS_HAVE_GETCHARBUFFER;
+		type->tp_flags |=
+			base->tp_flags & Py_TPFLAGS_HAVE_GETCHARBUFFER;
+	}
+	if (!type->tp_as_sequence && base->tp_as_sequence) {
+		type->tp_flags &= ~Py_TPFLAGS_HAVE_SEQUENCE_IN;
+		type->tp_flags |= base->tp_flags & Py_TPFLAGS_HAVE_SEQUENCE_IN;
+	}
+	if ((type->tp_flags & Py_TPFLAGS_HAVE_INPLACEOPS) !=
+	    (base->tp_flags & Py_TPFLAGS_HAVE_INPLACEOPS)) {
+		if ((!type->tp_as_number && base->tp_as_number) ||
+		    (!type->tp_as_sequence && base->tp_as_sequence)) {
+			type->tp_flags &= ~Py_TPFLAGS_HAVE_INPLACEOPS;
+			if (!type->tp_as_number && !type->tp_as_sequence) {
+				type->tp_flags |= base->tp_flags &
+					Py_TPFLAGS_HAVE_INPLACEOPS;
+			}
+		}
+		/* Wow */
+	}
+	if (!type->tp_as_number && base->tp_as_number) {
+		type->tp_flags &= ~Py_TPFLAGS_CHECKTYPES;
+		type->tp_flags |= base->tp_flags & Py_TPFLAGS_CHECKTYPES;
+	}
+
+	/* Copying basicsize is connected to the GC flags */
+	oldsize = PyType_BASICSIZE(base);
+	newsize = type->tp_basicsize ? PyType_BASICSIZE(type) : oldsize;
+	if (!(type->tp_flags & Py_TPFLAGS_GC) &&
+	    (base->tp_flags & Py_TPFLAGS_GC) &&
+	    (type->tp_flags & Py_TPFLAGS_HAVE_RICHCOMPARE/*GC slots exist*/) &&
+	    (!type->tp_traverse && !type->tp_clear)) {
+		type->tp_flags |= Py_TPFLAGS_GC;
+		if (type->tp_traverse == NULL)
+			type->tp_traverse = base->tp_traverse;
+		if (type->tp_clear == NULL)
+			type->tp_clear = base->tp_clear;
+	}
+	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_CLASS) {
+		if (base != &PyBaseObject_Type ||
+		    (type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+			if (type->tp_new == NULL)
+				type->tp_new = base->tp_new;
+		}
+	}
+	PyType_SET_BASICSIZE(type, newsize);
+}
+
+static void
+inherit_slots(PyTypeObject *type, PyTypeObject *base)
+{
+	PyTypeObject *basebase;
+
+#undef SLOTDEFINED
 #undef COPYSLOT
 #undef COPYNUM
 #undef COPYSEQ
 #undef COPYMAP
+
+#define SLOTDEFINED(SLOT) \
+	(base->SLOT != 0 && \
+	 (basebase == NULL || base->SLOT != basebase->SLOT))
+
 #define COPYSLOT(SLOT) \
-	if (!type->SLOT) type->SLOT = base->SLOT
+	if (!type->SLOT && SLOTDEFINED(SLOT)) type->SLOT = base->SLOT
 
 #define COPYNUM(SLOT) COPYSLOT(tp_as_number->SLOT)
 #define COPYSEQ(SLOT) COPYSLOT(tp_as_sequence->SLOT)
 #define COPYMAP(SLOT) COPYSLOT(tp_as_mapping->SLOT)
 
-	if (type->tp_as_number == NULL)
-		type->tp_as_number = base->tp_as_number;
-	else if (base->tp_as_number) {
+	/* This won't inherit indirect slots (from tp_as_number etc.)
+	   if type doesn't provide the space. */
+
+	if (type->tp_as_number != NULL && base->tp_as_number != NULL) {
+		basebase = base->tp_base;
+		if (basebase->tp_as_number == NULL)
+			basebase = NULL;
 		COPYNUM(nb_add);
 		COPYNUM(nb_subtract);
 		COPYNUM(nb_multiply);
@@ -1049,9 +1091,10 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		}
 	}
 
-	if (type->tp_as_sequence == NULL)
-		type->tp_as_sequence = base->tp_as_sequence;
-	else if (base->tp_as_sequence) {
+	if (type->tp_as_sequence != NULL && base->tp_as_sequence != NULL) {
+		basebase = base->tp_base;
+		if (basebase->tp_as_sequence == NULL)
+			basebase = NULL;
 		COPYSEQ(sq_length);
 		COPYSEQ(sq_concat);
 		COPYSEQ(sq_repeat);
@@ -1064,53 +1107,16 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		COPYSEQ(sq_inplace_repeat);
 	}
 
-	if (type->tp_as_mapping == NULL)
-		type->tp_as_mapping = base->tp_as_mapping;
-	else if (base->tp_as_mapping) {
+	if (type->tp_as_mapping != NULL && base->tp_as_mapping != NULL) {
+		basebase = base->tp_base;
+		if (basebase->tp_as_mapping == NULL)
+			basebase = NULL;
 		COPYMAP(mp_length);
 		COPYMAP(mp_subscript);
 		COPYMAP(mp_ass_subscript);
 	}
 
-	/* Special flag magic */
-	if (!type->tp_as_buffer && base->tp_as_buffer) {
-		type->tp_flags &= ~Py_TPFLAGS_HAVE_GETCHARBUFFER;
-		type->tp_flags |=
-			base->tp_flags & Py_TPFLAGS_HAVE_GETCHARBUFFER;
-	}
-	if (!type->tp_as_sequence && base->tp_as_sequence) {
-		type->tp_flags &= ~Py_TPFLAGS_HAVE_SEQUENCE_IN;
-		type->tp_flags |= base->tp_flags & Py_TPFLAGS_HAVE_SEQUENCE_IN;
-	}
-	if ((type->tp_flags & Py_TPFLAGS_HAVE_INPLACEOPS) !=
-	    (base->tp_flags & Py_TPFLAGS_HAVE_INPLACEOPS)) {
-		if ((!type->tp_as_number && base->tp_as_number) ||
-		    (!type->tp_as_sequence && base->tp_as_sequence)) {
-			type->tp_flags &= ~Py_TPFLAGS_HAVE_INPLACEOPS;
-			if (!type->tp_as_number && !type->tp_as_sequence) {
-				type->tp_flags |= base->tp_flags &
-					Py_TPFLAGS_HAVE_INPLACEOPS;
-			}
-		}
-		/* Wow */
-	}
-	if (!type->tp_as_number && base->tp_as_number) {
-		type->tp_flags &= ~Py_TPFLAGS_CHECKTYPES;
-		type->tp_flags |= base->tp_flags & Py_TPFLAGS_CHECKTYPES;
-	}
-
-	/* Copying basicsize is connected to the GC flags */
-	oldsize = PyType_BASICSIZE(base);
-	newsize = type->tp_basicsize ? PyType_BASICSIZE(type) : oldsize;
-	if (!(type->tp_flags & Py_TPFLAGS_GC) &&
-	    (base->tp_flags & Py_TPFLAGS_GC) &&
-	    (type->tp_flags & Py_TPFLAGS_HAVE_RICHCOMPARE/*GC slots exist*/) &&
-	    (!type->tp_traverse && !type->tp_clear)) {
-		type->tp_flags |= Py_TPFLAGS_GC;
-		COPYSLOT(tp_traverse);
-		COPYSLOT(tp_clear);
-	}
-	PyType_SET_BASICSIZE(type, newsize);
+	basebase = base->tp_base;
 
 	COPYSLOT(tp_itemsize);
 	COPYSLOT(tp_dealloc);
@@ -1152,15 +1158,11 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		COPYSLOT(tp_dictoffset);
 		COPYSLOT(tp_init);
 		COPYSLOT(tp_alloc);
-		if (base != &PyBaseObject_Type ||
-		    (type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
-			COPYSLOT(tp_new);
-		}
 		COPYSLOT(tp_free);
 	}
-
-	return 0;
 }
+
+staticforward int add_operators(PyTypeObject *);
 
 int
 PyType_Ready(PyTypeObject *type)
@@ -1237,34 +1239,44 @@ PyType_Ready(PyTypeObject *type)
 		goto error;
 	}
 
+	/* Inherit special flags from dominant base */
+	if (type->tp_base != NULL)
+		inherit_special(type, type->tp_base);
+
 	/* Initialize tp_dict properly */
 	if (!PyType_HasFeature(type, Py_TPFLAGS_DYNAMICTYPE)) {
 		/* For a static type, tp_dict is the consolidation
-		   of the tp_defined of its bases in MRO.  Earlier
-		   bases override later bases; since d.update() works
-		   the other way, we walk the MRO sequence backwards. */
+		   of the tp_defined of its bases in MRO. */
 		Py_DECREF(type->tp_dict);
-		type->tp_dict = PyDict_New();
+		type->tp_dict = PyDict_Copy(type->tp_defined);
 		if (type->tp_dict == NULL)
 			goto error;
 		bases = type->tp_mro;
 		assert(bases != NULL);
 		assert(PyTuple_Check(bases));
 		n = PyTuple_GET_SIZE(bases);
-		for (i = n; --i >= 0; ) {
+		for (i = 1; i < n; i++) {
 			base = (PyTypeObject *)PyTuple_GET_ITEM(bases, i);
 			assert(PyType_Check(base));
 			x = base->tp_defined;
-			if (x != NULL && PyDict_Update(type->tp_dict, x) < 0)
+			if (x != NULL && PyDict_Merge(type->tp_dict, x, 0) < 0)
 				goto error;
+			inherit_slots(type, base);
 		}
 	}
 
-	/* Inherit slots from direct base */
-	if (type->tp_base != NULL)
-		if (inherit_slots(type, type->tp_base) < 0)
-			goto error;
+	/* Some more special stuff */
+	base = type->tp_base;
+	if (base != NULL) {
+		if (type->tp_as_number == NULL)
+			type->tp_as_number = base->tp_as_number;
+		if (type->tp_as_sequence == NULL)
+			type->tp_as_sequence = base->tp_as_sequence;
+		if (type->tp_as_mapping == NULL)
+			type->tp_as_mapping = base->tp_as_mapping;
+	}
 
+	/* All done -- set the ready flag */
 	assert(type->tp_dict != NULL);
 	type->tp_flags =
 		(type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;
@@ -1909,6 +1921,25 @@ add_tp_new_wrapper(PyTypeObject *type)
 	if (func == NULL)
 		return -1;
 	return PyDict_SetItemString(type->tp_defined, "__new__", func);
+}
+
+static int
+add_wrappers(PyTypeObject *type, struct wrapperbase *wraps, void *wrapped)
+{
+	PyObject *dict = type->tp_defined;
+
+	for (; wraps->name != NULL; wraps++) {
+		PyObject *descr;
+		if (PyDict_GetItemString(dict, wraps->name))
+			continue;
+		descr = PyDescr_NewWrapper(type, wraps, wrapped);
+		if (descr == NULL)
+			return -1;
+		if (PyDict_SetItemString(dict, wraps->name, descr) < 0)
+			return -1;
+		Py_DECREF(descr);
+	}
+	return 0;
 }
 
 /* This function is called by PyType_Ready() to populate the type's
