@@ -207,9 +207,10 @@ class PyBuildExt(build_ext):
             self.get_ext_filename(self.get_ext_fullname(ext.name)))
         try:
             imp.load_dynamic(ext.name, ext_filename)
-        except ImportError, why:
+        except:
 
-            if 1:
+            exc_type, why, tb = sys.exc_info()
+            if issubclass(exc_type, ImportError):
                 self.announce('*** WARNING: renaming "%s" since importing it'
                               ' failed: %s' % (ext.name, why), level=3)
                 assert not self.inplace
@@ -231,7 +232,8 @@ class PyBuildExt(build_ext):
                     self.announce('unable to remove files (ignored)')
             else:
                 self.announce('*** WARNING: importing extension "%s" '
-                              'failed: %s' % (ext.name, why), level=3)
+                              'failed with %s: %s' % (ext.name, exc_type, why),
+                              level=3)
 
     def get_platform (self):
         # Get value of sys.platform
