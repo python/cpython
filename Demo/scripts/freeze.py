@@ -308,7 +308,8 @@ def process(filename, addmodules):
 		else:
 			print 'Done.'
 	#
-	if not quiet: print 'Note: consider this:'; print 'strip', ofile
+	if not quiet and not noexec and sts == 0:
+		print 'Note: consider this:'; print '\tstrip', ofile
 	#
 	sys.exit(sts)
 
