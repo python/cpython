@@ -153,6 +153,9 @@ signal_handler(sig_num)
 		return;
 	}
 #endif
+#ifdef HAVE_SIGINTERRUPT
+	siginterrupt(sig_num, 1);
+#endif
 	(void)signal(sig_num, &signal_handler);
 }
 
@@ -240,6 +243,9 @@ signal_signal(self, args)
 	}
 	else
 		func = signal_handler;
+#ifdef HAVE_SIGINTERRUPT
+	siginterrupt(sig_num, 1);
+#endif
 	if (signal(sig_num, func) == SIG_ERR) {
 		PyErr_SetFromErrno(PyExc_RuntimeError);
 		return NULL;
