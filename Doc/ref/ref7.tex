@@ -389,11 +389,11 @@ form.  The ``\keyword{def}'' form is actually more powerful since it
 allows the execution of multiple statements.
 \indexii{lambda}{form}
 
-\strong{Programmer's note:} a ``\code{def}'' form executed inside a
-function definition defines a local function that can be returned or
-passed around.  The semantics of name resolution in the nested
-function will change in Python 2.2.  See the appendix for a
-description of the new semantics.
+\strong{Programmer's note:} Functions are first-class objects.  A
+``\code{def}'' form executed inside a function definition defines a
+local function that can be returned or passed around.  Free variables
+used in the nested function can access the local variables of the
+function containing the def.  See section \ref{naming} for details.
 
 
 \section{Class definitions\label{class}}
