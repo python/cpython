@@ -4,17 +4,17 @@
 # See also the README file.
 #
 # This is a bit of a mess.  The main documents are:
-#   tut -- Tutorial
+#   api -- Python/C API Reference Manual
+#   ext -- Extending and Embedding the Python Interpreter
+#   lib -- Library Reference Manual
 #   ref -- Python Reference Manual
-#   lib -- Library Reference
-#   ext -- Extending and Embedding
-#   api -- Python-C API Reference
+#   tut -- Python Tutorial
 #
 # The latex sources for each of these documents are in subdirectories
 # with the three-letter designations above as the directory names.
 #
-# The main target "make all" creates DVI and PostScript for the main
-# targets.  You can also do "make lib" (etc.) to process individual
+# The main target creates DVI and PostScript for the main each of the
+# documents.  You can also do "make lib" (etc.) to process individual
 # documents.
 #
 # The document classes and styles are in the texinputs/ directory.
@@ -23,23 +23,23 @@
 # number of environments for formatting function and data definitions,
 # also in the style of Texinfo.
 #
-# Everything is processed by LaTeX.  The following tools are used:
-#   latex
-#   makeindex
-#   dvips
+# Everything is processed by LaTeX.  See the file `README' for more
+# information on the tools needed for processing.
 #
 # There's a problem with generating the index which has been solved by
 # a sed command applied to the index file.  The shell script fix_hack
 # does this (the Makefile takes care of calling it).
-#
-# To preview the dvi files produced by LaTeX it would be useful to
-# have xdvi as well.
 #
 # Additional targets attempt to convert selected LaTeX sources to
 # various other formats.  These are generally site specific because
 # the tools used are all but universal.  These targets are:
 #   l2h -- convert tut, ref, lib, ext, api from LaTeX to HTML
 # See the README file for more info on these targets.
+#
+# The formatted output is located in subdirectories.  For PDF and
+# PostScript, look in the paper-$(PAPER)/ directory.  For HTML, look in
+# the html/ directory.  If you fix the GNU info process, look in the
+# info/ directory.
 
 # Customizations -- you *may* have to edit these
 
@@ -104,7 +104,39 @@ all-ps:
 		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
 		-f ../Makefile do-ps)
 
-world:	do-ps do-pdf l2h tarballs
+world:	all-ps all-pdf l2h tarballs
+
+
+# Targets for each document:
+.PHONY: api ext lib ref tut
+
+api:
+	(cd paper-$(PAPER); \
+		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
+		-f ../Makefile api.ps)
+
+ext:
+	(cd paper-$(PAPER); \
+		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
+		-f ../Makefile ext.ps)
+
+lib:
+	(cd paper-$(PAPER); \
+		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
+		-f ../Makefile lib.ps)
+
+ref:
+	(cd paper-$(PAPER); \
+		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
+		-f ../Makefile ref.ps)
+
+tut:
+	(cd paper-$(PAPER); \
+		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
+		-f ../Makefile tut.ps)
+
+
+# Internal targets:
 
 do-dvi: $(DVIFILES)
 do-pdf: $(PDFFILES)
@@ -237,7 +269,7 @@ tut.pdf: tut/tut.tex
 # The remaining part of the Makefile is concerned with various
 # conversions, as described above.  See also the README file.
 
-.PHONY: info
+.PHONY: html info
 
 info:
 	(cd $(INFODIR); $(MAKE))
@@ -254,6 +286,8 @@ info:
 # perl/l2hinit.perl to use a different location for the icons directory.
 
 COMMONPERL=perl/manual.perl perl/python.perl
+
+html:	l2h
 
 l2h:
 	(cd $(HTMLDIR); $(MAKE) TEXINPUTS=../paper-$(PAPER):../texinputs)
@@ -284,17 +318,16 @@ webcheck:
 	$(WEBCHECKER) file:`pwd`/tut/
 
 lib-info-$(RELEASE).tar.gz: info
-	tar cf - -C $(INFODIR) python-???.info* | gzip -9 >$@
+	(cd $(INFODIR); tar cf - python-???.info*) | gzip -9 >$@
 
 latex-$(RELEASE).tar.gz:
 	$(srcdir)/tools/mktarball.sh
 
-# This snags a PDF version if available, but doesn't fail if not.
-pdf-$(RELEASE).tar.gz: $(PDFFILES)
-	tar cf - -C paper-$(PAPER) ???.pdf | gzip -9 >$@
+pdf-$(RELEASE).tar.gz: all-pdf
+	(cd paper-$(PAPER); tar cf - $(PDFFILES)) | gzip -9 >$@
 
-postscript-$(RELEASE).tar.gz: $(PSFILES)
-	tar cf - -C paper-$(PAPER) ???.ps | gzip -9 >$@
+postscript-$(RELEASE).tar.gz: all-ps
+	(cd paper-$(PAPER); tar cf - $(PSFILES)) | gzip -9 >$@
 
 html-$(RELEASE).tar.gz:
 	tar cf - -C $(HTMLDIR) index.html ???/???.css ???/*.html */*.gif \
