@@ -83,6 +83,17 @@ Extension modules
 Library
 -------
 
+- Thanks to Edward Loper, doctest has been massively refactored, and
+  many new features were added.  Full docs will appear later.  For now
+  the doctest module comments and new test cases give good coverage.
+  The refactoring provides many hook points for customizing behavior
+  (such as how to report errors, and how to compare expected to actual
+  output).  New features include a <BLANKLINE> marker for expected
+  output containing blank lines, options to produce unified or context
+  diffs when actual output doesn't match expectations, an option to
+  normalize whitespace before comparing, and an option to use an
+  ellipsis to signify "don't care" regions of output.
+
 - Tkinter now supports the wish -sync and -use options.
 
 - The following methods in time support passing of None: ctime(), gmtime(),
