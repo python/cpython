@@ -71,6 +71,10 @@ pdf:	$(PDFFILES)
 ps:	$(PSFILES)
 
 
+README:	$(PSFILES)
+	$(TOOLSDIR)/getpagecounts >$@
+
+
 # Python Library Reference
 lib.dvi: $(TOOLSDIR)/indfix.py $(LIBFILES)
 	$(TOOLSDIR)/newind.py >$*.ind
