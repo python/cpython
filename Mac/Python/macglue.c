@@ -2,8 +2,9 @@
 ** macglue - A couple of mac-specific routines often needed.
 **
 ** Jack Jansen, CWI, 1994.
+** Some routines by Guido, moved here from macosmodule.c
+** (since they are useable by other modules as well).
 */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -17,6 +18,23 @@
 #include <Events.h>
 #include <Windows.h>
 #include <Desk.h>
+
+/* We should include Errors.h here, but it has a name conflict
+** with the python errors.h. */
+#define fnfErr -43
+
+/* Convert C to Pascal string. Returns pointer to static buffer. */
+unsigned char *
+Pstring(char *str)
+{
+	static Str255 buf;
+	int len;
+
+	len = strlen(str);
+	buf[0] = (unsigned char)len;
+	strncpy((char *)buf+1, str, len);
+	return buf;
+}
 
 /* Replace strerror with something that might work */
 char *macstrerror(int err)
@@ -44,7 +62,6 @@ PyErr_Mac(PyObject *eobj, int err)
 {
 	char *msg;
 	PyObject *v;
-	Handle h;
 	
 	if (err == 0) {
 		Py_INCREF(Py_None);
@@ -70,9 +87,8 @@ PyMac_Idle()
 	EventRecord ev;
 	WindowPtr wp;
 
-#if 0
 	SystemTask();
-	if ( intrcheck() )
+	if ( intrpeek() )
 		return 0;
 	if ( GetNextEvent(0xffff, &ev) ) {
 		if ( ev.what == mouseDown ) {
@@ -80,7 +96,79 @@ PyMac_Idle()
 				SystemClick(&ev, wp);
 		}
 	}
-#endif
 	return 1;
 }
 
+
+/* Convert a ResType argument */
+int
+GetOSType(PyObject *v, ResType *pr)
+{
+	if (!PyString_Check(v) || PyString_Size(v) != 4) {
+		PyErr_SetString(PyExc_TypeError,
+			"OSType arg must be string of 4 chars");
+		return 0;
+	}
+	memcpy((char *)pr, PyString_AsString(v), 4);
+	return 1;
+}
+
+/* Convert a Str255 argument */
+int
+GetStr255(PyObject *v, Str255 pbuf)
+{
+	int len;
+	if (!PyString_Check(v) || (len = PyString_Size(v)) > 255) {
+		PyErr_SetString(PyExc_TypeError,
+			"Str255 arg must be string of at most 255 chars");
+		return 0;
+	}
+	pbuf[0] = len;
+	memcpy((char *)(pbuf+1), PyString_AsString(v), len);
+	return 1;
+}
+
+/*
+** Convert anything resembling an FSSpec argument
+** NOTE: This routine will fail on pre-sys7 machines. 
+** The caller is responsible for not calling this routine
+** in those cases (which is fine, since everyone calling
+** this is probably sys7 dependent anyway).
+*/
+int
+GetFSSpec(PyObject *v, FSSpec *fs)
+{
+	Str255 path;
+	short refnum;
+	long parid;
+	OSErr err;
+
+	if ( PyString_Check(v) ) {
+		/* It's a pathname */
+		if( !PyArg_Parse(v, "O&", GetStr255, &path) )
+			return 0;
+		refnum = 0; /* XXXX Should get CurWD here... */
+		parid = 0;
+	} else {
+		PyErr_Clear();
+		if( !PyArg_Parse(v, "(hlO&); FSSpec should be fullpath or (int,int,string)",
+							&refnum, &parid, GetStr255, &path))
+			return 0;
+	}
+	err = FSMakeFSSpec(refnum, parid, path, fs);
+	if ( err && err != fnfErr ) {
+		PyErr_SetString(PyExc_TypeError,
+			"FSMakeFSSpec error");
+		return 0;
+	}
+	return 1;
+}
+
+/*
+** Return a python object that describes an FSSpec
+*/
+PyObject *
+PyMac_BuildFSSpec(FSSpec *fs)
+{
+	return Py_BuildValue("(iis#)", fs->vRefNum, fs->parID, &fs->name[1], fs->name[0]);
+}
