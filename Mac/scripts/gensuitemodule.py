@@ -19,8 +19,10 @@ import aetools
 import distutils.sysconfig
 import OSATerminology
 from Carbon.Res import *
+import Carbon.Folder
 import MacOS
 import getopt
+import plistlib
 
 _MAC_LIB_FOLDER=os.path.dirname(aetools.__file__)
 DEFAULT_STANDARD_PACKAGEFOLDER=os.path.join(_MAC_LIB_FOLDER, 'lib-scriptpackages')
@@ -79,22 +81,61 @@ def main():
 			process_func(filename, output=output, basepkgname=basepkgname, 
 				edit_modnames=edit_modnames, creatorsignature=creatorsignature)
 	else:
-		# The dialogOptionFlags below allows selection of .app bundles.
-		filename = EasyDialogs.AskFileForOpen(
-			message='Select scriptable application',
-			dialogOptionFlags=0x1056)
-		if not filename:
-			sys.exit(0)
-		try:
-			processfile(filename)
-		except MacOS.Error, arg:
-			print "Error getting terminology:", arg
-			print "Retry, manually parsing resources"
-			processfile_fromresource(filename)
+		main_interactive()
+		
+def main_interactive(interact=0, basepkgname='StdSuites'):
+	if interact:
+		# Ask for save-filename for each module
+		edit_modnames = None
+	else:
+		# Use default filenames for each module
+		edit_modnames = []
+	appsfolder = Carbon.Folder.FSFindFolder(-32765, 'apps', 0)
+	filename = EasyDialogs.AskFileForOpen(
+		message='Select scriptable application',
+		dialogOptionFlags=0x1056, 		# allow selection of .app bundles
+		defaultLocation=appsfolder)
+	if not filename:
+		return
+	if not is_scriptable(filename):
+		if EasyDialogs.AskYesNoCancel(
+				"Warning: application does not seem scriptable",
+				yes="Continue", default=2, no="") <= 0:
+			return
+	try:
+		processfile(filename, edit_modnames=edit_modnames, basepkgname=basepkgname)
+	except MacOS.Error, arg:
+		print "Error getting terminology:", arg
+		print "Retry, manually parsing resources"
+		processfile_fromresource(filename, edit_modnames=edit_modnames,
+			basepkgname=basepkgname)
+			
+def is_scriptable(application):
+	"""Return true if the application is scriptable"""
+	if os.path.isdir(application):
+		plistfile = os.path.join(application, 'Contents', 'Info.plist')
+		if not os.path.exists(plistfile):
+			return False
+		plist = plistlib.Plist.fromFile(plistfile)
+		return plist.get('NSAppleScriptEnabled', False)
+	# If it is a file test for an aete/aeut resource.
+	currf = CurResFile()
+	try:
+		refno = macresource.open_pathname(application)
+	except MacOS.Error:
+		return False
+	UseResFile(refno)
+	n_terminology = Count1Resources('aete') + Count1Resources('aeut') + \
+		Count1Resources('scsz') + Count1Resources('osiz')
+	CloseResFile(refno)
+	UseResFile(currf)
+	return n_terminology > 0
 
 def processfile_fromresource(fullname, output=None, basepkgname=None, 
 		edit_modnames=None, creatorsignature=None):
 	"""Process all resources in a single file"""
+	if not is_scriptable(fullname):
+		print "Warning: app does not seem scriptable: %s" % fullname
 	cur = CurResFile()
 	print "Processing", fullname
 	rf = macresource.open_pathname(fullname)
@@ -127,6 +168,8 @@ def processfile_fromresource(fullname, output=None, basepkgname=None,
 def processfile(fullname, output=None, basepkgname=None, 
 		edit_modnames=None, creatorsignature=None):
 	"""Ask an application for its terminology and process that"""
+	if not is_scriptable(fullname):
+		print "Warning: app does not seem scriptable: %s" % fullname
 	print "\nASKING FOR aete DICTIONARY IN", `fullname`
 	try:
 		aedescobj, launched = OSATerminology.GetAppTerminology(fullname)
