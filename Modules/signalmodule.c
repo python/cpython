@@ -613,3 +613,12 @@ PyOS_InterruptOccurred()
 	}
 	return 0;
 }
+
+void
+PyOS_AfterFork()
+{
+#ifdef WITH_THREAD
+	main_thread = get_thread_ident();
+	main_pid = getpid();
+#endif
+}

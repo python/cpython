@@ -1082,6 +1082,7 @@ posix_fork(self, args)
 	pid = fork();
 	if (pid == -1)
 		return posix_error();
+	PyOS_AfterFork();
 	return PyInt_FromLong((long)pid);
 }
 #endif

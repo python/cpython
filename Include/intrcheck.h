@@ -37,6 +37,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 extern int PyOS_InterruptOccurred Py_PROTO((void));
 extern void PyOS_InitInterrupts Py_PROTO((void));
+void PyOS_AfterFork Py_PROTO((void));
 
 #ifdef __cplusplus
 }

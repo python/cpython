@@ -219,3 +219,8 @@ PyOS_InterruptOccurred()
 }
 
 #endif /* !OK */
+
+void
+PyOS_AfterFork()
+{
+}
