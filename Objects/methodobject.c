@@ -161,7 +161,7 @@ typeobject Methodtype = {
 	meth_hash,	/*tp_hash*/
 };
 
-object *listmethods PROTO((struct methodlist *)); /* Forward */
+static object *listmethods PROTO((struct methodlist *)); /* Forward */
 
 static object *
 listmethods(ml)

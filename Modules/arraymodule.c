@@ -66,10 +66,11 @@ extern typeobject Arraytype;
 
 #define is_arrayobject(op) ((op)->ob_type == &Arraytype)
 
+/* Forward */
 extern object *newarrayobject PROTO((int, struct arraydescr *));
 extern int getarraysize PROTO((object *));
 extern object *getarrayitem PROTO((object *, int));
-extern int setarrayitem PROTO((object *, int, object *));
+static int setarrayitem PROTO((object *, int, object *));
 extern int insarrayitem PROTO((object *, int, object *));
 extern int addarrayitem PROTO((object *, object *));
 

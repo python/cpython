@@ -94,6 +94,7 @@ static void locals_2_fast PROTO((frameobject *, int));
 static void fast_2_locals PROTO((frameobject *));
 static int access_statement PROTO((object *, object *, frameobject *));
 static int exec_statement PROTO((object *, object *, object *));
+static void mergelocals PROTO(());
 
 
 /* Pointer to current frame, used to link new frames to */
