@@ -30,6 +30,9 @@ Extension modules
 Library
 -------
 
+- The email package handles some RFC 2231 parameters with missing
+  CHARSET fields better.
+
 - sets.py now runs under Py2.2.  In addition, the argument restrictions
   for most set methods (but not the operators) have been relaxed to
   allow any iterable.  Also the Set.update() has been deprecated because
