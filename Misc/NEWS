@@ -166,7 +166,10 @@ Build
 C API
 -----
 
-TBD
+- The PyArg_Parse functions now raise a TypeError instead of truncating float
+  arguments if an integer is specified (this affects the 'b', 'B', 'h', 'H',
+  'i', and 'l' codes).
+
 
 New platforms
 -------------
