@@ -144,7 +144,7 @@ test(inspect.getsource(mod.StupidGit) == sourcerange(21, 46),
 test(inspect.getdoc(mod.StupidGit) ==
      'A longer,\n\nindented\n\ndocstring.', 'getdoc(mod.StupidGit)')
 test(inspect.getdoc(git.abuse) ==
-     'Another\n\ndocstring\n\ncontaining\n\ntabs\n\n', 'getdoc(git.abuse)')
+     'Another\n\ndocstring\n\ncontaining\n\ntabs', 'getdoc(git.abuse)')
 test(inspect.getcomments(mod.StupidGit) == '# line 20\n',
      'getcomments(mod.StupidGit)')
 
