@@ -2528,7 +2528,14 @@ calc_binint(char *s, int  x) {
         c = (unsigned char)s[i];
         l |= (long)c << (i * 8);
     }
-
+#if SIZEOF_LONG > 4
+    /* Unlike BININT1 and BININT2, BININT (more accurately BININT4)
+     * is signed, so on a box with longs bigger than 4 bytes we need
+     * to extend a BININT's sign bit to the full width.
+     */
+    if (x == 4 && l & (1L << 31))
+        l |= (~0L) << 32;
+#endif
     return l;
 }
 
