@@ -5,9 +5,9 @@
 # TODO:  Parameterize the versions, builddirs, etc...
 
 # Script configs
-PYVERSION=2.3b2
+PYVERSION=2.3rc1plus
 PYVER=2.3
-BUILDNUM=2
+BUILDNUM=6
 DOCLEANUP=no
 
 PROGDIR="`dirname \"$0\"`"
@@ -126,10 +126,10 @@ python $PYTHONSRC/Mac/scripts/buildpkg.py \
     --Relocatable="NO" \
     --InstallOnly="YES" \
     --UseUserMask="NO" \
+    --RootVolumeOnly="YES" \
     $INSTALLROOT \
     $RESOURCEDIR
 
-##    --RootVolumeOnly="YES" \
 
 # ...and then make a disk image containing the package.
 mv MacPython-OSX.pkg $DMGDIR/root
