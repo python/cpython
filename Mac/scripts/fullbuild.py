@@ -13,6 +13,7 @@ import os
 import sys
 import macfs
 import MacOS
+import EasyDialogs
 
 import addpack
 import aetools
@@ -27,11 +28,14 @@ import mkapplet
 class MwShell(aetools.TalkTo, Metrowerks_Shell_Suite, Required_Suite):
 	pass
 
+RUNNING=[]
 
 def buildmwproject(top, creator, projects):
 	"""Build projects with an MW compiler"""
-	print 'Please start project mgr with signature', creator,'-'
-	sys.stdin.readline()
+	if not creator in RUNNING:
+		print 'Please start project mgr with signature', creator,'-'
+		sys.stdin.readline()
+		RUNNING.append(creator)
 	try:
 		mgr = MwShell(creator)
 	except 'foo':
@@ -49,7 +53,7 @@ def buildmwproject(top, creator, projects):
 		except MacOS.Error, arg:
 			print '** Failed. Possible error:', arg
 		mgr.Close_Project()
-	mgr.quit()
+##	mgr.quit()
 	
 def buildapplet(top, dummy, list):
 	"""Create a PPC python applet"""
@@ -70,21 +74,29 @@ def buildapplet(top, dummy, list):
 #
 # The build instructions. Entries are (routine, arg, list-of-files)
 # XXXX We could also include the builds for stdwin and such here...
-INSTRUCTIONS=[
+PPC_INSTRUCTIONS=[
 	(buildmwproject, "CWIE", [
 		":build.macppc.shared:PythonCore.µ",
 		":build.macppc.shared:PythonPPC.µ",
 		":build.macppc.shared:PythonApplet.µ",
-
+	])
+]
+PLUGIN_INSTRUCTIONS=[
+	(buildmwproject, "CWIE", [
 		":PlugIns:ctbmodule.µ",
 		":PlugIns:imgmodules.µ",
 		":PlugIns:macspeechmodule.µ",
 		":PlugIns:mactcpmodules.µ",
 		":PlugIns:stdwinmodule.µ",
 		":PlugIns:toolboxmodules.µ",
-
+	])
+]
+M68K_INSTRUCTIONS=[
+	(buildmwproject, "CWIE", [
 		":build.mac68k.stand:Python68K.µ",
-	]),
+	])
+]
+APPLET_INSTRUCTIONS=[
 	(buildapplet, None, [
 		":Mac:scripts:EditPythonPrefs.py",
 		":Mac:scripts:mkapplet.py",
@@ -92,12 +104,26 @@ INSTRUCTIONS=[
 		":Mac:scripts:MkPluginAliases.py"
 	])
 ]
+
+ALLINST=[
+	("PPC shared executable", PPC_INSTRUCTIONS),
+	("PPC plugin modules", PLUGIN_INSTRUCTIONS),
+	("68K executable", M68K_INSTRUCTIONS),
+	("PPC applets", APPLET_INSTRUCTIONS)
+]
 				
 def main():
 	dir, ok = macfs.GetDirectory('Python source folder:')
 	if not ok:
 		sys.exit(0)
 	dir = dir.as_pathname()
+	INSTRUCTIONS = []
+	for string, inst in ALLINST:
+		answer = EasyDialogs.AskYesNoCancel("Build %s?"%string, 1)
+		if answer < 0:
+			sys.exit(0)
+		if answer:
+			INSTRUCTIONS = INSTRUCTIONS + inst
 	for routine, arg, list in INSTRUCTIONS:
 		routine(dir, arg, list)
 	print "All done!"
