@@ -216,9 +216,12 @@ XXX write this section
 arraymodule.c: - add Py_UNICODE arrays
 - support +=, *=
 
+distutils: command/bdist_packager, support for Solaris pkgtool 
+and HP-UX swinstall
+
 Return enhanced tuples in grpmodule
 
-posixmodule: killpg, mknod
+posixmodule: killpg, mknod, fchdir, 
 
 Expat is now included with the Python source
 
@@ -232,13 +235,10 @@ New method: string.zfill()
 
 Add dict method pop().
 
+New enumerate() built-in.
+
 %======================================================================
 \section{Interpreter Changes and Fixes}
-
-XXX bug?  Change the version string from "2.2+" to "2.3a0".  disutils peels off
-the first 3 characters of this string in several places, so for as long
-as they remain "2.2" it confuses the heck out of attempts to build 2.3
-stuff using distutils.
 
 file object can now be subtyped (did this not work before?)
 
@@ -306,7 +306,7 @@ routine will raise an exception.  Should finally fix 531398. 2.2.1
 candidate.  Also blacklisted some constants with definitions that
 were not Python-compatible.
 
-Checked in Sean Reifschneider's RPM spec file and patches.  Bugfix candidate.
+Checked in Sean Reifschneider's RPM spec file and patches.
 
 
 %======================================================================
