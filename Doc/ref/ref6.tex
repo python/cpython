@@ -378,7 +378,7 @@ exception is raised.
 print_stmt: "print" ">>" expression [ ("," expression)+ [","] ]
 \end{verbatim}
 
-In this form, the first expression after the \keyword{>>} must
+In this form, the first expression after the \code{>}\code{>} must
 evaluate to a ``file-like'' object, specifically an object that has a
 \method{write()} method as described above.  With this extended form,
 the subsequent expressions are printed to this file object.  If the
