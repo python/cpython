@@ -279,9 +279,10 @@ addaccess(class, inst)
 }
 
 object *
-newinstanceobject(class, arg)
+newinstanceobject(class, arg, kw)
 	object *class;
 	object *arg;
+	object *kw;
 {
 	register instanceobject *inst;
 	object *init;
@@ -303,16 +304,16 @@ newinstanceobject(class, arg)
 	init = instance_getattr1(inst, "__init__");
 	if (init == NULL) {
 		err_clear();
-		if (arg != NULL && !(is_tupleobject(arg) &&
-				     gettuplesize(arg) == 0)) {
+		if (arg != NULL && (!is_tupleobject(arg) ||
+				    gettuplesize(arg) != 0) || kw != NULL) {
 			err_setstr(TypeError,
-				"this classobject() takes no arguments");
+				   "this constructor takes no arguments");
 			DECREF(inst);
 			inst = NULL;
 		}
 	}
 	else {
-		object *res = call_object(init, arg);
+		object *res = PyEval_CallObjectWithKeywords(init, arg, kw);
 		DECREF(init);
 		if (res == NULL) {
 			DECREF(inst);
