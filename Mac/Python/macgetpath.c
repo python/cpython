@@ -210,6 +210,21 @@ char *dir;
     Str255 pathitem;
     int resource_id;
     OSErr err;
+    Handle h;
+    
+    /*
+    ** This is a bit tricky. We check here whether the current resource file
+    ** contains an override. This is to forestall us finding another STR# resource
+    ** with "our" id and using that for path initialization
+    */
+    SetResLoad(0);
+    if ( (h=Get1Resource('STR#', PYTHONPATHOVERRIDE_ID)) ) {
+    	ReleaseResource(h);
+    	resource_id = PYTHONPATHOVERRIDE_ID;
+    } else {
+    	resource_id = PYTHONPATH_ID;
+    }
+    SetResLoad(1);
     
     /*
     ** Remember old resource file and try to open preferences file
@@ -229,14 +244,7 @@ char *dir;
     if( (rv = malloc(2)) == NULL )
     	goto out;
     strcpy(rv, "\n");
-    /*
-    ** See whether there's an override.
-    */
-    GetIndString(pathitem, PYTHONPATHOVERRIDE_ID, 1);
-    if ( pathitem[0] )
-    	resource_id = PYTHONPATHOVERRIDE_ID;
-    else
-    	resource_id = PYTHONPATH_ID;
+
     for(i=1; ; i++) {
     	GetIndString(pathitem, resource_id, i);
     	if( pathitem[0] == 0 )
