@@ -465,8 +465,10 @@ class IOBinding:
         # shell undo is reset after every prompt, looks saved, probably isn't
         if not saved or filename is None:
             # XXX KBK 08Jun03 Wouldn't it be better to ask the user to save?
-            filename = tempfilename = tempfile.mktemp()
-            if not self.writefile(filename):
+            (tfd, tempfilename) = tempfile.mkstemp(prefix='IDLE_tmp_')
+            filename = tempfilename
+            os.close(tfd)
+            if not self.writefile(tempfilename):
                 os.unlink(tempfilename)
                 return "break"
         platform=os.name
@@ -494,6 +496,8 @@ class IOBinding:
         else:  #no printing for this platform
             message="Printing is not enabled for this platform: %s" % platform
             tkMessageBox.showinfo("Print status", message, master=self.text)
+        if tempfilename:
+            os.unlink(tempfilename)
         return "break"
 
     opendialog = None
