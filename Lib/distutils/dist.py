@@ -755,9 +755,10 @@ class Distribution:
                 neg_opt = {}
 
             try:
-                if neg_opt.has_key(option):
+                is_string = type(value) is StringType
+                if neg_opt.has_key(option) and is_string:
                     setattr(command_obj, neg_opt[option], not strtobool(value))
-                elif option in bool_opts:
+                elif option in bool_opts and is_string:
                     setattr(command_obj, option, strtobool(value))
                 elif hasattr(command_obj, option):
                     setattr(command_obj, option, value)
