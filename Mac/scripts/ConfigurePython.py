@@ -10,6 +10,7 @@
 import sys
 import os
 import macfs
+verbose=0
 
 ppc_goals = [
 	("AE.ppc.slb", "toolboxmodules.ppc.slb"),
@@ -78,7 +79,7 @@ def gotopluginfolder():
 	while not os.path.isdir(":Plugins"):
 		os.chdir("::")
 	os.chdir(":Plugins")
-	print "current directory is", os.getcwd()
+	if verbose: print "current directory is", os.getcwd()
 	
 def loadtoolboxmodules():
 	"""Attempt to load the Res module"""
@@ -88,7 +89,7 @@ def loadtoolboxmodules():
 		err1 = arg
 		pass
 	else:
-		print 'imported Res the standard way.'
+		if verbose: print 'imported Res the standard way.'
 		return
 	
 	# We cannot import it. First attempt to load the cfm68k version
@@ -99,7 +100,7 @@ def loadtoolboxmodules():
 		err2 = arg
 		pass
 	else:
-		print 'Loaded Res from toolboxmodules.CFM68K.slb.'
+		if verbose:  print 'Loaded Res from toolboxmodules.CFM68K.slb.'
 		return
 		
 	# Ok, try the ppc version
@@ -109,7 +110,7 @@ def loadtoolboxmodules():
 		err3 = arg
 		pass
 	else:
-		print 'Loaded Res from toolboxmodules.ppc.slb.'
+		if verbose:  print 'Loaded Res from toolboxmodules.ppc.slb.'
 		return
 	
 	# Tough luck....
@@ -134,7 +135,7 @@ def mkcorealias(src, altsrc):
 	dst = getextensiondirfile(src+ ' ' + version)
 	if not os.path.exists(src):
 		if not os.path.exists(altsrc):
-			print '*', src, 'not found'
+			if verbose:  print '*', src, 'not found'
 			return 0
 		src = altsrc
 	try:
@@ -142,7 +143,7 @@ def mkcorealias(src, altsrc):
 	except os.error:
 		pass
 	macostools.mkalias(src, dst)
-	print ' ', dst, '->', src
+	if verbose:  print ' ', dst, '->', src
 	return 1
 	
 
@@ -156,47 +157,49 @@ def main():
 	# Remove old .slb aliases and collect a list of .slb files
 	LibFiles = []
 	allfiles = os.listdir(':')
-	print 'Removing old aliases...'
+	if verbose:  print 'Removing old aliases...'
 	for f in allfiles:
 		if f[-4:] == '.slb':
 			finfo = macfs.FSSpec(f).GetFInfo()
 			if finfo.Flags & 0x8000:
-				print '  Removing', f
+				if verbose:  print '  Removing', f
 				os.unlink(f)
 			else:
 				LibFiles.append(f)
-				print '  Found', f
-	print
+				if verbose:  print '  Found', f
+	if verbose:  print
 	
 	# Create the new PPC aliases.
-	print 'Creating PPC aliases...'
+	if verbose:  print 'Creating PPC aliases...'
 	for dst, src in ppc_goals:
 		if src in LibFiles:
 			macostools.mkalias(src, dst)
-			print ' ', dst, '->', src
+			if verbose:  print ' ', dst, '->', src
 		else:
-			print '*', dst, 'not created:', src, 'not found'
-	print
+			if verbose:  print '*', dst, 'not created:', src, 'not found'
+	if verbose:  print
 	
 	# Create the CFM68K aliases.
-	print 'Creating CFM68K aliases...'
+	if verbose:  print 'Creating CFM68K aliases...'
 	for dst, src in cfm68k_goals:
 		if src in LibFiles:
 			macostools.mkalias(src, dst)
-			print ' ', dst, '->', src
+			if verbose:  print ' ', dst, '->', src
 		else:
-			print '*', dst, 'not created:', src, 'not found'
-	print
+			if verbose:  print '*', dst, 'not created:', src, 'not found'
+	if verbose:  print
 			
 	# Create the PythonCore alias(es)
-	print 'Creating PythonCore aliases in Extensions folder...'
+	if verbose:  print 'Creating PythonCore aliases in Extensions folder...'
 	os.chdir('::')
 	n = 0
 	n = n + mkcorealias('PythonCore', 'PythonCore')
 	n = n + mkcorealias('PythonCorePPC', ':build.macppc.shared:PythonCorePPC')
 	n = n + mkcorealias('PythonCoreCFM68K', ':build.mac68k.shared:PythonCoreCFM68K')
-	if n == 0:
+	if verbose and n == 0:
 		sys.exit(1)
 			
 if __name__ == '__main__':
+	if len(sys.argv) > 1 and sys.argv[1] == '-v':
+		verbose = 1
 	main()
