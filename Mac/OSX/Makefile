@@ -1,5 +1,13 @@
 PYTHONBUILDDIR=../..
+INSTALLDIR=/Library/Frameworks/Python.framework/Versions/Current
+APPINSTALLDIR=/Applications/Python.app
 
+# Items more-or-less copied from the main Makefile
+DIRMODE=755
+INSTALL=/usr/bin/install -c
+INSTALL_PROGRAM=${INSTALL}
+INSTALL_SCRIPT= ${INSTALL_PROGRAM}
+INSTALL_DATA=	${INSTALL} -m 644
 OPT=-g -O3 -Wall -Wstrict-prototypes -no-cpp-precomp -fno-common -dynamic
 INCLUDES=-I$(PYTHONBUILDDIR) -I$(PYTHONBUILDDIR)/Include \
 	-I$(PYTHONBUILDDIR)/Mac/Include
@@ -16,3 +24,107 @@ OBJECTS=$(PYTHONBUILDDIR)/Mac/Python/macmain.o \
 
 pythonforbundle: $(OBJECTS)
 	$(LD) $(LDFLAGS) $(OBJECTS) -o pythonforbundle
+
+APPTEMPLATE=$(PYTHONBUILDDIR)/Mac/OSXResources/app
+APPSUBDIRS=MacOS Resources Resources/English.lproj
+install: pythonforbundle
+	@for i in $(APPINSTALLDIR) $(APPINSTALLDIR)/Contents; do \
+		if test ! -d $$i; then \
+			echo "Creating directory $$i"; \
+			$(INSTALL) -d -m $(DIRMODE) $$i; \
+		fi;\
+	done
+	@for i in $(APPSUBDIRS); do \
+		if test ! -d $(APPINSTALLDIR)/Contents/$$i; then \
+			echo "Creating directory $(APPINSTALLDIR)/Contents/$$i"; \
+			$(INSTALL) -d -m $(DIRMODE) $(APPINSTALLDIR)/Contents/$$i; \
+		else	true; \
+		fi; \
+	done
+	@for d in . $(APPSUBDIRS); \
+	do \
+		a=$(APPTEMPLATE)/$$d; \
+		if test ! -d $$a; then continue; else true; fi; \
+		b=$(APPINSTALLDIR)/Contents/$$d; \
+		for i in $$a/*; \
+		do \
+			echo jaja $$i; \
+			case $$i in \
+			*CVS) ;; \
+			*.py[co]) ;; \
+			*.orig) ;; \
+			*~) ;; \
+			*) \
+				if test -d $$i; then continue; fi; \
+				if test -x $$i; then \
+				    echo $(INSTALL_SCRIPT) $$i $$b; \
+				    $(INSTALL_SCRIPT) $$i $$b; \
+				else \
+				    echo $(INSTALL_DATA) $$i $$b; \
+				    $(INSTALL_DATA) $$i $$b; \
+				fi;; \
+			esac; \
+		done; \
+	done
+	$(INSTALL_PROGRAM) pythonforbundle $(APPINSTALLDIR)/Contents/MacOS/python
+	echo Need to install resources
+		
+LIBDEST=$(INSTALLDIR)/Mac/Lib
+LIBSRC=$(PYTHONBUILDDIR)/Mac/Lib
+LIBSUBDIRS=Carbon lib-scriptpackages lib-scriptpackages/CodeWarrior lib-scriptpackages/Explorer \
+	lib-scriptpackages/Finder lib-scriptpackages/Netscape lib-scriptpackages/StdSuites \
+	mkcwproject mkcwproject/template mkcwproject/template-carbon mkcwproject/template-ppc
+installmacsubtree:
+	@for i in $(LIBDEST); \
+	do \
+		if test ! -d $$i; then \
+			echo "Creating directory $$i"; \
+			$(INSTALL) -d -m $(DIRMODE) $$i; \
+		else	true; \
+		fi; \
+	done
+	@for d in $(LIBSUBDIRS); \
+	do \
+		a=$(LIBSRC)/$$d; \
+		if test ! -d $$a; then continue; else true; fi; \
+		b=$(LIBDEST)/$$d; \
+		if test ! -d $$b; then \
+			echo "Creating directory $$b"; \
+			$(INSTALL) -d -m $(DIRMODE) $$b; \
+		else	true; \
+		fi; \
+	done
+	@for i in $(LIBSRC)/*.py $(LIBSRC)/*.rsrc; \
+	do \
+		if test -x $$i; then \
+			$(INSTALL_SCRIPT) $$i $(LIBDEST); \
+			echo $(INSTALL_SCRIPT) $$i $(LIBDEST); \
+		else \
+			$(INSTALL_DATA) $$i $(LIBDEST); \
+			echo $(INSTALL_DATA) $$i $(LIBDEST); \
+		fi; \
+	done
+	@for d in $(LIBSUBDIRS); \
+	do \
+		a=$(LIBSRC)/$$d; \
+		if test ! -d $$a; then continue; else true; fi; \
+		b=$(LIBDEST)/$$d; \
+		for i in $$a/*; \
+		do \
+			case $$i in \
+			*CVS) ;; \
+			*.py[co]) ;; \
+			*.orig) ;; \
+			*~) ;; \
+			*) \
+				if test -d $$i; then continue; fi; \
+				if test -x $$i; then \
+				    echo $(INSTALL_SCRIPT) $$i $$b; \
+				    $(INSTALL_SCRIPT) $$i $$b; \
+				else \
+				    echo $(INSTALL_DATA) $$i $$b; \
+				    $(INSTALL_DATA) $$i $$b; \
+				fi;; \
+			esac; \
+		done; \
+	done
