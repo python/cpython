@@ -6,6 +6,7 @@
 #	- all operations on all object types
 #	- all builtin functions
 # Ideally also:
+#	- all builtin modules
 #	- all possible exception situations (Thank God we've got 'try')
 #	- all boundary cases
 
@@ -42,6 +43,14 @@ x = 0.314
 x = 3e14
 x = 3E14
 x = 3e-14
+x = 0L
+x = 0l
+x = 0xffffffffffffffffL
+x = 0xffffffffffffffffl
+x = 077777777777777777L
+x = 077777777777777777l
+x = 123456789012345678901234567890L
+x = 123456789012345678901234567890l
 
 print '1.2 Grammar'
 
@@ -67,10 +76,16 @@ def f3(two, arguments): pass
 def f4(two, (compound, (arguments))): pass
 
 ### stmt: simple_stmt | compound_stmt
-### simple_stmt: expr_stmt | print_stmt  | pass_stmt | del_stmt | flow_stmt | import_stmt
 # Tested below
 
-print 'expr_stmt' # (exprlist '=')* exprlist NEWLINE
+### simple_stmt: small_stmt (';' small_stmt)* [';']
+print 'simple_stmt'
+x = 1; pass; del x
+
+### small_stmt: expr_stmt | print_stmt  | pass_stmt | del_stmt | flow_stmt | import_stmt
+# Tested below
+
+print 'expr_stmt' # (exprlist '=')* exprlist
 1
 1, 2, 3
 x = 1
@@ -80,39 +95,43 @@ x, y, z = 1, 2, 3
 abc = a, b, c = x, y, z = xyz = 1, 2, (3, 4)
 # NB these variables are deleted below
 
-print 'print_stmt' # 'print' (test ',')* [test] NEWLINE
+print 'print_stmt' # 'print' (test ',')* [test]
 print 1, 2, 3
 print 1, 2, 3,
 print
 print 0 or 1, 0 or 1,
 print 0 or 1
 
-print 'del_stmt' # 'del' exprlist NEWLINE
+print 'del_stmt' # 'del' exprlist
 del abc
 del x, y, (z, xyz)
 
-print 'pass_stmt' # 'pass' NEWLINE
+print 'pass_stmt' # 'pass'
 pass
 
-print 'flow_stmt' # break_stmt | return_stmt | raise_stmt
+print 'flow_stmt' # break_stmt | continue_stmt | return_stmt | raise_stmt
 # Tested below
 
-print 'break_stmt' # 'break' NEWLINE
+print 'break_stmt' # 'break'
 while 1: break
 
-print 'return_stmt' # 'return' [testlist] NEWLINE
+print 'continue_stmt' # 'continue'
+i = 1
+while i: i = 0; continue
+
+print 'return_stmt' # 'return' [testlist]
 def g1(): return
 def g2(): return 1
 g1()
 x = g2()
 
-print 'raise_stmt' # 'raise' expr [',' expr] NEWLINE
+print 'raise_stmt' # 'raise' test [',' test]
 try: raise RuntimeError, 'just testing'
 except RuntimeError: pass
 try: raise KeyboardInterrupt
 except KeyboardInterrupt: pass
 
-print 'import_stmt' # 'import' NAME (',' NAME)* NEWLINE | 'from' NAME 'import' ('*' | NAME (',' NAME)*) NEWLINE
+print 'import_stmt' # 'import' NAME (',' NAME)* | 'from' NAME 'import' ('*' | NAME (',' NAME)*)
 [1]
 import sys
 [2]
@@ -120,9 +139,9 @@ import time, math
 [3]
 from time import sleep
 [4]
-from math import *
+from sys import *
 [5]
-from sys import modules, path
+from math import sin, cos
 [6]
 
 ### compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
@@ -243,11 +262,7 @@ x = 123
 
 ### exprlist: expr (',' expr)* [',']
 ### testlist: test (',' test)* [',']
-# These have been exercised already above, except for trailing comma:
-x = 1, 2, 3,
-x = 1,
-x = (1 and 2, 1 or 2,)
-x = (not 1,)
+# These have been exercised enough above
 
 print 'classdef' # 'class' NAME parameters ['=' baselist] ':' suite
 ### baselist: atom arguments (',' atom arguments)*
@@ -305,12 +320,24 @@ print 'abs'
 if abs(0) <> 0: raise TestFailed, 'abs(0)'
 if abs(1234) <> 1234: raise TestFailed, 'abs(1234)'
 if abs(-1234) <> 1234: raise TestFailed, 'abs(-1234)'
+#
 if abs(0.0) <> 0.0: raise TestFailed, 'abs(0.0)'
 if abs(3.14) <> 3.14: raise TestFailed, 'abs(3.14)'
 if abs(-3.14) <> 3.14: raise TestFailed, 'abs(-3.14)'
+#
+if abs(0L) <> 0L: raise TestFailed, 'abs(0L)'
+if abs(1234L) <> 1234L: raise TestFailed, 'abs(1234L)'
+if abs(-1234L) <> 1234L: raise TestFailed, 'abs(-1234L)'
+
+print 'chr'
+if chr(32) <> ' ': raise TestFailed, 'chr(32)'
+if chr(65) <> 'A': raise TestFailed, 'chr(65)'
+if chr(97) <> 'a': raise TestFailed, 'chr(97)'
 
 print 'dir'
+x = 1
 if 'x' not in dir(): raise TestFailed, 'dir()'
+import sys
 if 'modules' not in dir(sys): raise TestFailed, 'dir(sys)'
 
 print 'divmod'
@@ -318,24 +345,37 @@ if divmod(12, 7) <> (1, 5): raise TestFailed, 'divmod(12, 7)'
 if divmod(-12, 7) <> (-2, 2): raise TestFailed, 'divmod(-12, 7)'
 if divmod(12, -7) <> (-2, -2): raise TestFailed, 'divmod(12, -7)'
 if divmod(-12, -7) <> (1, -5): raise TestFailed, 'divmod(-12, -7)'
+#
+if divmod(12L, 7L) <> (1L, 5L): raise TestFailed, 'divmod(12L, 7L)'
+if divmod(-12L, 7L) <> (-2L, 2L): raise TestFailed, 'divmod(-12L, 7L)'
+if divmod(12L, -7L) <> (-2L, -2L): raise TestFailed, 'divmod(12L, -7L)'
+if divmod(-12L, -7L) <> (1L, -5L): raise TestFailed, 'divmod(-12L, -7L)'
+#
+if divmod(12, 7L) <> (1, 5L): raise TestFailed, 'divmod(12, 7L)'
+if divmod(-12, 7L) <> (-2, 2L): raise TestFailed, 'divmod(-12, 7L)'
+if divmod(12L, -7) <> (-2L, -2): raise TestFailed, 'divmod(12L, -7)'
+if divmod(-12L, -7) <> (1L, -5): raise TestFailed, 'divmod(-12L, -7)'
 
 print 'eval'
 if eval('1+1') <> 2: raise TestFailed, 'eval(\'1+1\')'
 
 print 'exec'
+z = 0
 exec('z=1+1\n')
 if z <> 2: raise TestFailed, 'exec(\'z=1+1\'\\n)'
 
 print 'float'
 if float(3.14) <> 3.14: raise TestFailed, 'float(3.14)'
 if float(314) <> 314.0: raise TestFailed, 'float(314)'
+if float(314L) <> 314.0: raise TestFailed, 'float(314L)'
 
 print 'input'
 # Can't test in a script
 
 print 'int'
-if int(100) <> 100: raise TestFailed, 'int(100)'
+if int(314) <> 314: raise TestFailed, 'int(314)'
 if int(3.14) <> 3: raise TestFailed, 'int(3.14)'
+if int(314L) <> 314: raise TestFailed, 'int(314L)'
 
 print 'len'
 if len('123') <> 3: raise TestFailed, 'len(\'123\')'
@@ -344,17 +384,30 @@ if len((1, 2, 3, 4)) <> 4: raise TestFailed, 'len((1, 2, 3, 4))'
 if len([1, 2, 3, 4]) <> 4: raise TestFailed, 'len([1, 2, 3, 4])'
 if len({}) <> 0: raise TestFailed, 'len({})'
 
+print 'long'
+if long(314) <> 314L: raise TestFailed, 'long(314)'
+if long(3.14) <> 3L: raise TestFailed, 'long(3.14)'
+if long(314L) <> 314L: raise TestFailed, 'long(314L)'
+
 print 'min'
 if min('123123') <> '1': raise TestFailed, 'min(\'123123\')'
 if min(1, 2, 3) <> 1: raise TestFailed, 'min(1, 2, 3)'
 if min((1, 2, 3, 1, 2, 3)) <> 1: raise TestFailed, 'min((1, 2, 3, 1, 2, 3))'
 if min([1, 2, 3, 1, 2, 3]) <> 1: raise TestFailed, 'min([1, 2, 3, 1, 2, 3])'
+#
+if min(1, 2L, 3.0) <> 1: raise TestFailed, 'min(1, 2L, 3.0)'
+if min(1L, 2.0, 3) <> 1L: raise TestFailed, 'min(1L, 2.0, 3)'
+if min(1.0, 2, 3L) <> 1.0: raise TestFailed, 'min(1.0, 2, 3L)'
 
 print 'max'
 if max('123123') <> '3': raise TestFailed, 'max(\'123123\')'
 if max(1, 2, 3) <> 3: raise TestFailed, 'max(1, 2, 3)'
 if max((1, 2, 3, 1, 2, 3)) <> 3: raise TestFailed, 'max((1, 2, 3, 1, 2, 3))'
 if max([1, 2, 3, 1, 2, 3]) <> 3: raise TestFailed, 'max([1, 2, 3, 1, 2, 3])'
+#
+if max(1, 2L, 3.0) <> 3.0: raise TestFailed, 'max(1, 2L, 3.0)'
+if max(1L, 2.0, 3) <> 3: raise TestFailed, 'max(1L, 2.0, 3)'
+if max(1.0, 2, 3L) <> 3L: raise TestFailed, 'max(1.0, 2, 3L)'
 
 print 'open'
 print 'NB! This test creates a file named "@test" in the current directory.'
@@ -375,6 +428,27 @@ if fp.read(300) <> 'XXX'*100: raise TestFailed, 'read(300)'
 if fp.read(1000) <> 'YYY'*100: raise TestFailed, 'read(1000) # truncate'
 fp.close()
 del fp
+
+print 'ord'
+if ord(' ') <> 32: raise TestFailed, 'ord(\' \')'
+if ord('A') <> 65: raise TestFailed, 'ord(\'A\')'
+if ord('a') <> 97: raise TestFailed, 'ord(\'a\')'
+
+print 'pow'
+if pow(0,0) <> 1: raise TestFailed, 'pow(0,0)'
+if pow(0,1) <> 0: raise TestFailed, 'pow(0,1)'
+if pow(1,0) <> 1: raise TestFailed, 'pow(1,0)'
+if pow(1,1) <> 1: raise TestFailed, 'pow(1,1)'
+#
+if pow(2,0) <> 1: raise TestFailed, 'pow(2,0)'
+if pow(2,10) <> 1024: raise TestFailed, 'pow(2,10)'
+if pow(2,20) <> 1024*1024: raise TestFailed, 'pow(2,20)'
+if pow(2,30) <> 1024*1024*1024: raise TestFailed, 'pow(2,30)'
+#
+if pow(-2,0) <> 1: raise TestFailed, 'pow(-2,0)'
+if pow(-2,1) <> -2: raise TestFailed, 'pow(-2,1)'
+if pow(-2,2) <> 4: raise TestFailed, 'pow(-2,2)'
+if pow(-2,3) <> -8: raise TestFailed, 'pow(-2,3)'
 
 print 'range'
 if range(3) <> [0, 1, 2]: raise TestFailed, 'range(3)'
