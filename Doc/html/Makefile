@@ -15,6 +15,7 @@ TEXINPUTS=$(TOPDIR)/paper-$(PAPER):$(TOPDIR)/texinputs:
 # Where are the various programs?
 PYTHON=	   python
 WEBCHECKER=$(PYTHON) $(TOPDIR)/../Tools/webchecker/webchecker.py
+WCNEW=$(PYTHON) $(TOPDIR)/../Tools/webchecker/wcnew.py
 MKAUX=	   PAPER=$(PAPER) TEXINPUTS=$(TEXINPUTS) $(TOOLSDIR)/mkdvi.sh --aux
 MKHTML=	   PAPER=$(PAPER) $(TOOLSDIR)/mkhtml.sh
 KPSEWHICH= TEXINPUTS=$(TEXINPUTS) kpsewhich tex
@@ -113,6 +114,16 @@ webcheck: all
 	$(WEBCHECKER) $(HTMLBASE)/mac/
 	$(WEBCHECKER) $(HTMLBASE)/ref/
 	$(WEBCHECKER) $(HTMLBASE)/tut/
+
+wcnew: all
+	$(WCNEW) $(HTMLBASE)/api/
+	$(WCNEW) $(HTMLBASE)/doc/
+	$(WCNEW) $(HTMLBASE)/ext/
+	$(WCNEW) -m290000 $(HTMLBASE)/lib/
+	$(WCNEW) $(HTMLBASE)/mac/
+	$(WCNEW) $(HTMLBASE)/ref/
+	$(WCNEW) $(HTMLBASE)/tut/
+
 
 clean:
 	rm -rf @webchecker.pickle
