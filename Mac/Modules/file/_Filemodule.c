@@ -291,7 +291,25 @@ static PyMethodDef Alias_methods[] = {
 	{NULL, NULL, 0}
 };
 
-#define Alias_getsetlist NULL
+static PyObject *Alias_get_data(AliasObject *self, void *closure)
+{
+	int size;
+				PyObject *rv;
+				
+				size = GetHandleSize((Handle)self->ob_itself);
+				HLock((Handle)self->ob_itself);
+				rv = PyString_FromStringAndSize(*(Handle)self->ob_itself, size);
+				HUnlock((Handle)self->ob_itself);
+				return rv;
+			
+}
+
+#define Alias_set_data NULL
+
+static PyGetSetDef Alias_getsetlist[] = {
+	{"data", (getter)Alias_get_data, (setter)Alias_set_data, "Raw data of the alias object"},
+	{NULL, NULL, NULL, NULL},
+};
 
 
 #define Alias_compare NULL
@@ -329,7 +347,7 @@ static PyObject *Alias_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds
 PyTypeObject Alias_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"_File.Alias", /*tp_name*/
+	"Carbon.File.Alias", /*tp_name*/
 	sizeof(AliasObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -691,6 +709,37 @@ static PyObject *FSSpec_UpdateAlias(FSSpecObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *FSSpec_as_pathname(FSSpecObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+
+	char strbuf[1024];
+	OSErr err;
+
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	err = PyMac_GetFullPathname(&_self->ob_itself, strbuf, sizeof(strbuf));
+	if ( err ) {
+		PyMac_Error(err);
+		return NULL;
+	}
+	_res = PyString_FromString(strbuf);
+	return _res;
+
+}
+
+static PyObject *FSSpec_as_tuple(FSSpecObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_res = Py_BuildValue("(iis#)", _self->ob_itself.vRefNum, _self->ob_itself.parID, 
+						&_self->ob_itself.name[1], _self->ob_itself.name[0]);
+	return _res;
+
+}
+
 static PyMethodDef FSSpec_methods[] = {
 	{"FSpOpenDF", (PyCFunction)FSSpec_FSpOpenDF, 1,
 	 PyDoc_STR("(SInt8 permission) -> (short refNum)")},
@@ -726,15 +775,38 @@ static PyMethodDef FSSpec_methods[] = {
 	 PyDoc_STR("() -> (Boolean aliasFileFlag, Boolean folderFlag)")},
 	{"UpdateAlias", (PyCFunction)FSSpec_UpdateAlias, 1,
 	 PyDoc_STR("(FSSpec target, AliasHandle alias) -> (Boolean wasChanged)")},
+	{"as_pathname", (PyCFunction)FSSpec_as_pathname, 1,
+	 PyDoc_STR("() -> string")},
+	{"as_tuple", (PyCFunction)FSSpec_as_tuple, 1,
+	 PyDoc_STR("() -> (vRefNum, dirID, name)")},
 	{NULL, NULL, 0}
 };
 
-#define FSSpec_getsetlist NULL
+static PyObject *FSSpec_get_data(FSSpecObject *self, void *closure)
+{
+	return PyString_FromStringAndSize((char *)&self->ob_itself, sizeof(self->ob_itself));
+}
+
+#define FSSpec_set_data NULL
+
+static PyGetSetDef FSSpec_getsetlist[] = {
+	{"data", (getter)FSSpec_get_data, (setter)FSSpec_set_data, "Raw data of the FSSpec object"},
+	{NULL, NULL, NULL, NULL},
+};
 
 
 #define FSSpec_compare NULL
 
-#define FSSpec_repr NULL
+static PyObject * FSSpec_repr(FSSpecObject *self)
+{
+	char buf[512];
+	PyOS_snprintf(buf, sizeof(buf), "%s((%d, %ld, '%.*s'))",
+			self->ob_type->tp_name,
+			self->ob_itself.vRefNum, 
+			self->ob_itself.parID,
+			self->ob_itself.name[0], self->ob_itself.name+1);
+	return PyString_FromString(buf);
+}
 
 #define FSSpec_hash NULL
 static int FSSpec_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
@@ -765,7 +837,7 @@ static PyObject *FSSpec_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwd
 PyTypeObject FSSpec_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"_File.FSSpec", /*tp_name*/
+	"Carbon.File.FSSpec", /*tp_name*/
 	sizeof(FSSpecObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -1122,11 +1194,22 @@ static PyObject *FSRef_FSRefMakePath(FSRefObject *_self, PyObject *_args)
 	UInt8 path[MAXPATHNAME];
 	UInt32 maxPathSize = MAXPATHNAME;
 
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
 	_err = FSRefMakePath(&_self->ob_itself,
 						 path,
 						 maxPathSize);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("s", path);
+	return _res;
+
+}
+
+static PyObject *FSRef_as_pathname(FSRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+
+	_res = FSRef_FSRefMakePath(_self, _args);
 	return _res;
 
 }
@@ -1165,10 +1248,22 @@ static PyMethodDef FSRef_methods[] = {
 	 PyDoc_STR("(FSRef target, AliasHandle alias) -> (Boolean wasChanged)")},
 	{"FSRefMakePath", (PyCFunction)FSRef_FSRefMakePath, 1,
 	 PyDoc_STR("() -> string")},
+	{"as_pathname", (PyCFunction)FSRef_as_pathname, 1,
+	 PyDoc_STR("() -> string")},
 	{NULL, NULL, 0}
 };
 
-#define FSRef_getsetlist NULL
+static PyObject *FSRef_get_data(FSRefObject *self, void *closure)
+{
+	return PyString_FromStringAndSize((char *)&self->ob_itself, sizeof(self->ob_itself));
+}
+
+#define FSRef_set_data NULL
+
+static PyGetSetDef FSRef_getsetlist[] = {
+	{"data", (getter)FSRef_get_data, (setter)FSRef_set_data, "Raw data of the FSRef object"},
+	{NULL, NULL, NULL, NULL},
+};
 
 
 #define FSRef_compare NULL
@@ -1204,7 +1299,7 @@ static PyObject *FSRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds
 PyTypeObject FSRef_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"_File.FSRef", /*tp_name*/
+	"Carbon.File.FSRef", /*tp_name*/
 	sizeof(FSRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -2318,17 +2413,18 @@ myPyMac_GetFSSpec(PyObject *v, FSSpec *spec)
 static int
 myPyMac_GetFSRef(PyObject *v, FSRef *fsr)
 {
+	OSStatus err;
+	
 	if (FSRef_Check(v)) {
 		*fsr = ((FSRefObject *)v)->ob_itself;
 		return 1;
 	}
 
-#if !TARGET_API_MAC_OSX
+#if TARGET_API_MAC_OSX
 	/* On OSX we now try a pathname */
-	if ( PyString_Check(args) ) {
-		OSStatus err;
+	if ( PyString_Check(v) ) {
 		if ( (err=FSPathMakeRef(PyString_AsString(v), fsr, NULL)) ) {
-			PyErr_Mac(ErrorObject, err);
+			PyMac_Error(err);
 			return 0;
 		}
 		return 1;
@@ -2337,13 +2433,15 @@ myPyMac_GetFSRef(PyObject *v, FSRef *fsr)
 #endif
 	/* Otherwise we try to go via an FSSpec */
 	if (FSSpec_Check(v)) {
-		if (FSpMakeFSRef(&((FSSpecObject *)v)->ob_itself, fsr))
+		if ((err=FSpMakeFSRef(&((FSSpecObject *)v)->ob_itself, fsr)) == 0)
 			return 1;
+		PyMac_Error(err);
 		return 0;
 	}
 	PyErr_SetString(PyExc_TypeError, "FSRef, FSSpec or pathname required");
 	return 0;
 }
+
 
 
 void init_File(void)
