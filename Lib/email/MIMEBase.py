@@ -11,14 +11,14 @@ import Message
 class MIMEBase(Message.Message):
     """Base class for MIME specializations."""
 
-    def __init__(self, _major, _minor, **_params):
+    def __init__(self, _maintype, _subtype, **_params):
         """This constructor adds a Content-Type: and a MIME-Version: header.
 
-        The Content-Type: header is taken from the _major and _minor
+        The Content-Type: header is taken from the _maintype and _subtype
         arguments.  Additional parameters for this header are taken from the
         keyword arguments.
         """
         Message.Message.__init__(self)
-        ctype = '%s/%s' % (_major, _minor)
+        ctype = '%s/%s' % (_maintype, _subtype)
         self.add_header('Content-Type', ctype, **_params)
         self['MIME-Version'] = '1.0'
