@@ -542,6 +542,15 @@ PyRun_InteractiveOne(FILE *fp, char *filename)
 	return PyRun_InteractiveOneFlags(fp, filename, NULL);
 }
 
+/* compute parser flags based on compiler flags */
+#if 0 /* future keyword */
+#define PARSER_FLAGS(flags) \
+	(((flags) && (flags)->cf_flags & CO_GENERATOR_ALLOWED) ? \
+		PyPARSE_YIELD_IS_KEYWORD : 0)
+#else
+#define PARSER_FLAGS(flags) 0
+#endif
+
 int
 PyRun_InteractiveOneFlags(FILE *fp, char *filename, PyCompilerFlags *flags)
 {
@@ -568,9 +577,7 @@ PyRun_InteractiveOneFlags(FILE *fp, char *filename, PyCompilerFlags *flags)
 	}
 	n = PyParser_ParseFileFlags(fp, filename, &_PyParser_Grammar,
 			    	    Py_single_input, ps1, ps2, &err,
-			    	    (flags &&
-			    	     flags->cf_flags & CO_GENERATOR_ALLOWED) ?
-			    	    	PyPARSE_YIELD_IS_KEYWORD : 0);
+			    	    PARSER_FLAGS(flags));
 	Py_XDECREF(v);
 	Py_XDECREF(w);
 	if (n == NULL) {
@@ -1031,9 +1038,7 @@ PyRun_StringFlags(char *str, int start, PyObject *globals, PyObject *locals,
 		  PyCompilerFlags *flags)
 {
 	return run_err_node(PyParser_SimpleParseStringFlags(
-			str, start,
-			(flags && flags->cf_flags & CO_GENERATOR_ALLOWED) ?
-				PyPARSE_YIELD_IS_KEYWORD : 0),
+				    str, start, PARSER_FLAGS(flags)),
 			    "<string>", globals, locals, flags);
 }
 
@@ -1050,8 +1055,7 @@ PyRun_FileExFlags(FILE *fp, char *filename, int start, PyObject *globals,
 		  PyObject *locals, int closeit, PyCompilerFlags *flags)
 {
 	node *n = PyParser_SimpleParseFileFlags(fp, filename, start,
-			(flags && flags->cf_flags & CO_GENERATOR_ALLOWED) ?
-				PyPARSE_YIELD_IS_KEYWORD : 0);
+						PARSER_FLAGS(flags));
 	if (closeit)
 		fclose(fp);
 	return run_err_node(n, filename, globals, locals, flags);
@@ -1125,9 +1129,7 @@ Py_CompileStringFlags(char *str, char *filename, int start,
 {
 	node *n;
 	PyCodeObject *co;
-	n = PyParser_SimpleParseStringFlags(str, start,
-		(flags && flags->cf_flags & CO_GENERATOR_ALLOWED) ?
-			PyPARSE_YIELD_IS_KEYWORD : 0);
+	n = PyParser_SimpleParseStringFlags(str, start, PARSER_FLAGS(flags));
 	if (n == NULL)
 		return NULL;
 	co = PyNode_CompileFlags(n, filename, flags);

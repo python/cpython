@@ -83,8 +83,10 @@ PyParser_ParseFileFlags(FILE *fp, char *filename, grammar *g, int start,
 /* Parse input coming from the given tokenizer structure.
    Return error code. */
 
+#if 0 /* future keyword */
 static char yield_msg[] =
 "%s:%d: Warning: 'yield' will become a reserved keyword in the future\n";
+#endif
 
 static node *
 parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
@@ -99,8 +101,10 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 		err_ret->error = E_NOMEM;
 		return NULL;
 	}
+#if 0 /* future keyword */
 	if (flags & PyPARSE_YIELD_IS_KEYWORD)
 		ps->p_generators = 1;
+#endif
 
 	for (;;) {
 		char *a, *b;
@@ -130,6 +134,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 			strncpy(str, a, len);
 		str[len] = '\0';
 
+#if 0 /* future keyword */
 		/* Warn about yield as NAME */
 		if (type == NAME && !ps->p_generators &&
 		    len == 5 && str[0] == 'y' && strcmp(str, "yield") == 0)
@@ -137,6 +142,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 					  err_ret->filename==NULL ?
 					  "<string>" : err_ret->filename,
 					  tok->lineno);
+#endif
 
 		if ((err_ret->error =
 		     PyParser_AddToken(ps, (int)type, str, tok->lineno,
