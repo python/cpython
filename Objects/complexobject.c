@@ -603,7 +603,7 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
 
 	if (op != Py_EQ && op != Py_NE) {
 		PyErr_SetString(PyExc_TypeError,
-			"cannot compare complex numbers using <, <=, >, >=");
+			"no ordering relation is defined for complex numbers");
 		return NULL;
 	}
 
