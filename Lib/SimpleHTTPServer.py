@@ -6,7 +6,7 @@ and HEAD requests in a fairly straightforward manner.
 """
 
 
-__version__ = "0.2"
+__version__ = "0.3"
 
 
 import os
@@ -143,12 +143,19 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 	base, ext = posixpath.splitext(path)
 	if self.extensions_map.has_key(ext):
 	    return self.extensions_map[ext]
+	ext = string.lower(ext)
+	if self.extensions_map.has_key(ext):
+	    return self.extensions_map[ext]
 	else:
 	    return self.extensions_map['']
 
     extensions_map = {
 	    '': 'text/plain',	# Default, *must* be present
 	    '.html': 'text/html',
+	    '.htm': 'text/html',
+	    '.gif': 'image/gif',
+	    '.jpg': 'image/jpeg',
+	    '.jpeg': 'image/jpeg',
 	    }
 
 
