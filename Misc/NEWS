@@ -188,8 +188,8 @@ Tools/Demos
   using the new version of Python to reconstitute your database.  For
   example:
 
-    % python2.2 -h some.db > some.pickle
-    % python2.3 -h some.db.new < some.pickle
+    % python2.2 db2pickle.py -h some.db > some.pickle
+    % python2.3 pickle2db.py -h some.db.new < some.pickle
 
   Run the scripts without any args to get a usage message.
 
