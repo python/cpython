@@ -65,10 +65,10 @@ class MyDialog(FrameWork.DialogWindow):
     def dolookup(self):
         """Get text entered in the lookup entry area.  Place result of the
            call to dnslookup in the result entry area."""
-        tp, h, rect = self.wid.GetDialogItem(ITEM_LOOKUP_ENTRY)
+        tp, h, rect = self.dlg.GetDialogItem(ITEM_LOOKUP_ENTRY)
         txt = Dlg.GetDialogItemText(h)
 
-        tp, h, rect = self.wid.GetDialogItem(ITEM_RESULT)
+        tp, h, rect = self.dlg.GetDialogItem(ITEM_RESULT)
         Dlg.SetDialogItemText(h, self.dnslookup(txt))
         
     def dnslookup(self, str):

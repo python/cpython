@@ -222,8 +222,9 @@ class Application:
 		return old
 			
 	def do_dialogevent(self, event):
-		gotone, window, item = DialogSelect(event)
+		gotone, dlg, item = DialogSelect(event)
 		if gotone:
+			window = dlg.GetDialogWindow()
 			if self._windows.has_key(window):
 				self._windows[window].do_itemhit(item, event)
 			else:
@@ -995,14 +996,15 @@ class DialogWindow(Window):
 	"""A modeless dialog window"""
 	
 	def open(self, resid):
-		self.wid = GetNewDialog(resid, -1)
+		self.dlg = GetNewDialog(resid, -1)
+		self.wid = self.dlg.GetDialogWindow()
 		self.do_postopen()
 		
 	def close(self):
 		self.do_postclose()
 		
 	def do_itemhit(self, item, event):
-		print 'Dialog %s, item %d hit'%(self.wid, item)
+		print 'Dialog %s, item %d hit'%(self.dlg, item)
 		
 	def do_rawupdate(self, window, event):
 		pass
