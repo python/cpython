@@ -656,21 +656,21 @@ class Transformer:
     t = nodelist[0][0]
     if t == token.LPAR:
       if nodelist[1][0] == token.RPAR:
-        n = Node('const', ())
+        n = Node('tuple', ())
         n.lineno = nodelist[0][2]
         return n
       return self.com_node(nodelist[1])
 
     if t == token.LSQB:
       if nodelist[1][0] == token.RSQB:
-        n = Node('const', [ ])
+        n = Node('list', ())
         n.lineno = nodelist[0][2]
         return n
       return self.com_list_constructor(nodelist[1])
 
     if t == token.LBRACE:
       if nodelist[1][0] == token.RBRACE:
-        return Node('const', { })
+        return Node('dict', ())
       return self.com_dictmaker(nodelist[1])
 
     if t == token.BACKQUOTE:
