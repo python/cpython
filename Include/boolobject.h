@@ -24,8 +24,8 @@ PyAPI_DATA(PyIntObject) _Py_ZeroStruct, _Py_TrueStruct;
 #define Py_True ((PyObject *) &_Py_TrueStruct)
 
 /* Macros for returning Py_True or Py_False, respectively */
-#define Py_RETURN_TRUE Py_INCREF(Py_True); return Py_True;
-#define Py_RETURN_FALSE Py_INCREF(Py_False); return Py_False;
+#define Py_RETURN_TRUE {Py_INCREF(Py_True); return Py_True;}
+#define Py_RETURN_FALSE {Py_INCREF(Py_False); return Py_False;}
 
 /* Function to return a bool from a C long */
 PyAPI_FUNC(PyObject *) PyBool_FromLong(long);
