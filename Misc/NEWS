@@ -175,6 +175,11 @@ Core and builtins
 Extension modules
 -----------------
 
+- cStringIO.writelines() now accepts any iterable argument and writes
+  the lines one at a time rather than joining them and writing once.
+  Made a parallel change to StringIO.writelines().  Saves memory and
+  makes suitable for use with generator expressions.
+
 - time.strftime() now checks that the values in its time tuple argument
   are within the proper boundaries to prevent possible crashes from the
   platform's C library implementation of strftime().  Can possibly
