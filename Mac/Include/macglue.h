@@ -127,6 +127,10 @@ PyObject *PyMac_Buildwide(wide *);			/* Convert wide to PyObject */
 void PyMac_InitApplet(void);			/* Initialize and run an Applet */
 void PyMac_Initialize(void);			/* Initialize function for embedding Python */
 
+#ifdef USE_GUSI2
+short PyMac_OpenPrefFile(void);			/* From macgetpath.c, open and return preference file */
+#endif
+
 /* From macfiletype.c: */
 
 long getfiletype(char *);			/* Get file type */

@@ -5,9 +5,11 @@
 #define GUSI_SOURCE
 #include <GUSIConfig.h>
 #include <sys/cdefs.h>
+#include <Resources.h>
 
 #include "Python.h"
 #include "macglue.h"
+#include "pythonresources.h"
 
 static void
 PyMac_GUSISpin(bool wait)
@@ -79,13 +81,44 @@ void GUSISetupDevices()
 GUSIConfiguration::FileSuffix	sSuffices[] = {
 	"", '????', '????'
 };
-
 extern "C" void GUSISetupConfig()
 {
-	GUSIConfiguration * config =
-		GUSIConfiguration::CreateInstance(GUSIConfiguration::kNoResource);
+	Handle h;
+	short oldrh, prefrh = -1;
+	short resource_id = GUSIConfiguration::kNoResource;
+	
+	oldrh = CurResFile();
+	
+	/* Try override from the application resource fork */
+	UseResFile(PyMac_AppRefNum);
+	h = Get1Resource('GU\267I', GUSIOPTIONSOVERRIDE_ID);
+	if ( h ) {
+		resource_id = GUSIOPTIONSOVERRIDE_ID;
+	} else {
+		/* Next try normal resource from preference file */
+		prefrh = PyMac_OpenPrefFile();
+		h = Get1Resource('GU\267I', GUSIOPTIONS_ID);
+		if ( h ) {
+			resource_id = GUSIOPTIONS_ID;
+		} else {
+			/* Finally try normal resource from application */
+			if ( prefrh != -1 ) {
+				CloseResFile(prefrh);
+				prefrh = -1;
+			}
+			resource_id = GUSIOPTIONS_ID;
+		}
+	}
 
-	config->ConfigureDefaultTypeCreator('TEXT', 'TEXT');
+	/* Now we have the right resource file topmost and the id. Init GUSI. */
+	GUSIConfiguration * config =
+		GUSIConfiguration::CreateInstance(resource_id);
+
+	/* Finally restore the old resource file */
+   	if ( prefrh != -1) CloseResFile(prefrh);
+	UseResFile(oldrh);
+
+	config->ConfigureDefaultTypeCreator('ttxt', 'TEXT');
 	config->ConfigureSuffices(
 		sizeof(sSuffices)/sizeof(GUSIConfiguration::FileSuffix)-1, sSuffices);
 	config->ConfigureAutoInitGraf(false);

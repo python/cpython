@@ -189,7 +189,7 @@ Py_GetPath()
 /*
 ** Open/create the Python Preferences file, return the handle
 */
-static short
+short
 PyMac_OpenPrefFile()
 {
 	AliasHandle handle;
@@ -467,4 +467,4 @@ PyMac_SetGUSIOptions()
    	if ( prefrh != -1) CloseResFile(prefrh);
 	UseResFile(oldrh);
 }
-#endif /* USE_GUSI */	
+#endif /* USE_GUSI1 */	
