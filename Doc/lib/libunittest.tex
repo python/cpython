@@ -609,22 +609,22 @@ returned by the \method{TestRunner.run()} method for this purpose.
 Each instance holds the total number of tests run, and collections of
 failures and errors that occurred among those test runs.  The
 collections contain tuples of \code{(\var{testcase},
-\var{exceptioninfo})}, where \var{exceptioninfo} is a tuple as
-returned by \function{sys.exc_info()}.
+\var{traceback})}, where \var{traceback} is a string containing a
+formatted version of the traceback for the exception.
 
 \class{TestResult} instances have the following attributes that will
 be of interest when inspecting the results of running a set of tests:
 
 \begin{memberdesc}[TestResult]{errors}
   A list containing pairs of \class{TestCase} instances and the
-  \function{sys.exc_info()} results for tests which raised an
-  exception but did not signal a test failure.
+  formatted tracebacks for tests which raised an exception but did not
+  signal a test failure.
 \end{memberdesc}
 
 \begin{memberdesc}[TestResult]{failures}
   A list containing pairs of \class{TestCase} instances and the
-  \function{sys.exc_info()} results for tests which signalled a
-  failure in the code under test.
+  formatted tracebacks for tests which signalled a failure in the code
+  under test.
 \end{memberdesc}
 
 \begin{memberdesc}[TestResult]{testsRun}
@@ -769,3 +769,45 @@ either by subclassing or assignment on an instance:
   No methods on the resulting object are needed.  The default value is
   the \class{TestSuite} class.
 \end{memberdesc}
+
+
+\subsection{Getting Extended Error Information
+            \label{unittest-error-info}}
+
+Some applications can make use of more error information (for example,
+an integrated development environment, or IDE).  Such an application
+can retrieve supplemental information about errors and failures by
+using an alternate \class{TestResult} implementation, and extending
+the \method{defaultTestResult()} method of the \class{TestCase} class
+to provide it.
+
+Here is a brief example of a \class{TestResult} subclass which stores
+the actual exception and traceback objects.  (Be aware that storing
+traceback objects can cause a great deal of memory not to be reclaimed
+when it otherwise would be, which can have effects that affect the
+behavior of the tests.)
+
+\begin{verbatim}
+import unittest
+
+class MyTestCase(unittest.TestCase):
+    def defaultTestResult(self):
+        return MyTestResult()
+
+class MyTestResult(unittest.TestResult):
+    def __init__(self):
+        self.errors_tb = []
+        self.failures_tb = []
+
+    def addError(self, test, err):
+        self.errors_tb.append((test, err))
+        unittest.TestResult.addError(self, test, err)
+
+    def addFailure(self, test, err):
+        self.failures_tb.append((test, err))
+        unittest.TestResult.addFailure(self, test, err)
+\end{verbatim}
+
+Tests written using \class{MyTestCase} as the base class, instead of
+\class{TestCase}, will allow tools to extract additional information
+from the results object.
