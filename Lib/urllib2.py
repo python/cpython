@@ -468,7 +468,7 @@ class HTTPErrorProcessor(BaseHandler):
     def http_response(self, request, response):
         code, msg, hdrs = response.code, response.msg, response.info()
 
-        if code != 200:
+        if code not in (200, 206):
             response = self.parent.error(
                 'http', request, response, code, msg, hdrs)
 
@@ -996,7 +996,7 @@ class AbstractHTTPHandler(BaseHandler):
         except socket.error, err: # XXX what error?
             raise URLError(err)
 
-        if r.status == 200:
+        if r.status in (200, 206):
             # Pick apart the HTTPResponse object to get the addinfourl
             # object initialized properly
             resp = addinfourl(r.fp, r.msg, req.get_full_url())
