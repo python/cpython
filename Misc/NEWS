@@ -6,6 +6,18 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- list.sort() has a new implementation.  While cross-platform results
+  may vary, and in data-dependent ways, this is much faster on many
+  kinds of partially ordered lists than the previous implementation,
+  and reported to be just as fast on randomly ordered lists on
+  several major platforms.  This sort is also stable (if A==B and A
+  precedes B in the list at the start, A precedes B after the sort too),
+  although the language definition does not guarantee stability.  A
+  potential drawback is that list.sort() may require temp space of
+  len(list)*2 bytes (*4 on a 64-bit machine).  It's therefore possible
+  for list.sort() to raise MemoryError now, even if a comparison function
+  does not.  See <http://www.python.org/sf/587076> for full details.
+
 - All standard iterators now ensure that, once StopIteration has been
   raised, all future calls to next() on the same iterator will also
   raise StopIteration.  There used to be various counterexamples to
@@ -16,10 +28,10 @@ Core and builtins
 
 - Ctrl+C handling on Windows has been made more consistent with
   other platforms.  KeyboardInterrupt can now reliably be caught,
-  and Ctrl+C at an interative prompt no longer terminates the 
+  and Ctrl+C at an interative prompt no longer terminates the
   process under NT/2k/XP (it never did under Win9x).  Ctrl+C will
-  interrupt time.sleep() in the main thread, and any child processes 
-  created via the popen family are also interrupted (as generally 
+  interrupt time.sleep() in the main thread, and any child processes
+  created via the popen family are also interrupted (as generally
   happens on for Linux/Unix). [SF bugs 231273, 439992 and 581232]
 
 - Slices and repetitions of buffer objects now consistently return
@@ -317,7 +329,7 @@ Tools/Demos
 
 Build
 
-- The public Python C API will generally be declared using PyAPI_FUNC 
+- The public Python C API will generally be declared using PyAPI_FUNC
    and PyAPI_DATA macros, while Python extension module init functions
    will be declared with PyMODINIT_FUNC.  DL_EXPORT/DL_IMPORT macros
    are deprecated.
