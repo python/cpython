@@ -15,9 +15,7 @@
 #include <string.h>
 #ifdef __MWERKS__
 #include "errno_unix.h"
-#include <Strings.h>
-#define c2pstr C2PStr
-#define p2cstr P2CStr
+#include <TextUtils.h>
 #endif
 
 /* We may be able to use a std routine in think, don't know */
