@@ -1,5 +1,15 @@
-# Generated from 'Moes:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Balloons.h'
+# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Balloons.h'
 
+def FOUR_CHAR_CODE(x): return x
+kTopLeftTipPointsLeftVariant = 0
+kTopLeftTipPointsUpVariant = 1
+kTopRightTipPointsUpVariant = 2
+kTopRightTipPointsRightVariant = 3
+kBottomRightTipPointsRightVariant = 4
+kBottomRightTipPointsDownVariant = 5
+kBottomLeftTipPointsDownVariant = 6
+kBottomLeftTipPointsLeftVariant = 7
+kBalloonVariantCount = 8
 hmBalloonHelpVersion = 0x0002
 kHMHelpMenuID = -16490
 kHMAboutHelpItem = 1
@@ -30,17 +40,17 @@ khmmPictHandle = 5
 khmmTERes = 6
 khmmSTRRes = 7
 kHMEnabledItem = 0
-kHMTETextResType = 'TEXT'
-kHMTEStyleResType = 'styl'
+kHMTETextResType = FOUR_CHAR_CODE('TEXT')
+kHMTEStyleResType = FOUR_CHAR_CODE('styl')
 kHMDisabledItem = 1
 kHMCheckedItem = 2
 kHMOtherItem = 3
 kHMRegularWindow = 0
 kHMSaveBitsNoWindow = 1
 kHMSaveBitsWindow = 2
-kHMMenuResType = 'hmnu'
-kHMDialogResType = 'hdlg'
-kHMWindListResType = 'hwin'
-kHMRectListResType = 'hrct'
-kHMOverrideResType = 'hovr'
-kHMFinderApplResType = 'hfdr'
+kHMMenuResType = FOUR_CHAR_CODE('hmnu')
+kHMDialogResType = FOUR_CHAR_CODE('hdlg')
+kHMWindListResType = FOUR_CHAR_CODE('hwin')
+kHMRectListResType = FOUR_CHAR_CODE('hrct')
+kHMOverrideResType = FOUR_CHAR_CODE('hovr')
+kHMFinderApplResType = FOUR_CHAR_CODE('hfdr')

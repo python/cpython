@@ -1,7 +1,8 @@
 # Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Components.h'
 
-kAppleManufacturer = 'appl'
-kComponentResourceType = 'thng'
+def FOUR_CHAR_CODE(x): return x
+kAppleManufacturer = FOUR_CHAR_CODE('appl')
+kComponentResourceType = FOUR_CHAR_CODE('thng')
 kAnyComponentType = 0
 kAnyComponentSubType = 0
 kAnyComponentManufacturer = 0
