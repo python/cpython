@@ -4029,7 +4029,8 @@ recurse_down_subclasses(PyTypeObject *type, slotdef **pp, PyObject *name)
 		ref = PyList_GET_ITEM(subclasses, i);
 		assert(PyWeakref_CheckRef(ref));
 		subclass = (PyTypeObject *)PyWeakref_GET_OBJECT(ref);
-		if (subclass == NULL)
+		assert(subclass != NULL);
+		if ((PyObject *)subclass == Py_None)
 			continue;
 		assert(PyType_Check(subclass));
 		/* Avoid recursing down into unaffected classes */
