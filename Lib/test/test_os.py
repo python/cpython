@@ -227,7 +227,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         os.environ.update(self.__save)
 
     # Bug 1110478
-    def test_update(self):
+    def test_update2(self):
         if os.path.exists("/bin/sh"):
             os.environ.update(HELLO="World")
             value = os.popen("/bin/sh -c 'echo $HELLO'").read().strip()
