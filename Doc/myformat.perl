@@ -22,9 +22,7 @@ sub do_cmd_C{ join('', 'C', @_[0]); }
 sub do_cmd_Cpp{ join('', 'C++', @_[0]); }
 sub do_cmd_EOF{ join('', 'EOF', @_[0]); }
 
-sub do_cmd_e{ "\\" }
-
-# texinfo-like formatting commands: \code{...} etc.
+sub do_cmd_e{ local($_) = @_; '&#92;' . $_; }
 
 sub do_cmd_optional{
 	local($_) = @_;
@@ -37,6 +35,8 @@ sub do_cmd_varvars{
 	s/$any_next_pair_pr_rx/<VAR>\2<\/VAR>/;
 	$_;
 }
+
+# texinfo-like formatting commands: \code{...} etc.
 
 sub do_cmd_code{
 	local($_) = @_;
