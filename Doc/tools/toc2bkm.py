@@ -23,7 +23,7 @@ cline_re = r"""^
 \\contentsline\ \{([a-z]*)}             # type of section in $1
 \{(?:\\numberline\ \{([0-9.A-Z]+)})?     # section number
 (.*)}                                   # title string
-\{(\d+)}$"""				# page number
+\{(\d+)}$"""                            # page number
 
 cline_rx = re.compile(cline_re, re.VERBOSE)
 
@@ -50,34 +50,34 @@ def parse_toc(fp, bigpart=None):
     level = bigpart or 'chapter'
     lineno = 0
     while 1:
-	line = fp.readline()
-	if not line:
-	    break
-	lineno = lineno + 1
-	m = cline_rx.match(line)
-	if m:
-	    stype, snum, title, pageno = m.group(1, 2, 3, 4)
-	    title = clean_title(title)
-	    entry = (stype, snum, title, string.atoi(pageno), [])
-	    if stype == level:
-		toc.append(entry)
-	    else:
+        line = fp.readline()
+        if not line:
+            break
+        lineno = lineno + 1
+        m = cline_rx.match(line)
+        if m:
+            stype, snum, title, pageno = m.group(1, 2, 3, 4)
+            title = clean_title(title)
+            entry = (stype, snum, title, string.atoi(pageno), [])
+            if stype == level:
+                toc.append(entry)
+            else:
                 if stype not in INCLUDED_LEVELS:
                     # we don't want paragraphs & subparagraphs
                     continue
-		direction = _transition_map[(level, stype)]
-		if direction == OUTER_TO_INNER:
-		    toc = toc[-1][-1]
-		    stack.insert(0, toc)
-		    toc.append(entry)
-		else:
-		    for i in range(direction):
-			del stack[0]
-			toc = stack[0]
-		    toc.append(entry)
-		level = stype
-	else:
-	    sys.stderr.write("l.%s: " + line)
+                direction = _transition_map[(level, stype)]
+                if direction == OUTER_TO_INNER:
+                    toc = toc[-1][-1]
+                    stack.insert(0, toc)
+                    toc.append(entry)
+                else:
+                    for i in range(direction):
+                        del stack[0]
+                        toc = stack[0]
+                    toc.append(entry)
+                level = stype
+        else:
+            sys.stderr.write("l.%s: " + line)
     return top
 
 
@@ -91,33 +91,33 @@ def clean_title(title):
     title = hackscore_rx.sub(r"\\_", title)
     pos = 0
     while 1:
-	m = title_rx.search(title, pos)
-	if m:
-	    start = m.start()
-	    if title[start:start+15] != "\\textunderscore":
-		title = title[:start] + title[m.end():]
-	    pos = start + 1
-	else:
-	    break
+        m = title_rx.search(title, pos)
+        if m:
+            start = m.start()
+            if title[start:start+15] != "\\textunderscore":
+                title = title[:start] + title[m.end():]
+            pos = start + 1
+        else:
+            break
     title = string.translate(title, title_trans, "{}")
     return title
 
 
 def write_toc(toc, fp):
     for entry in toc:
-	write_toc_entry(entry, fp, 0)
+        write_toc_entry(entry, fp, 0)
 
 def write_toc_entry(entry, fp, layer):
     stype, snum, title, pageno, toc = entry
     s = "\\pdfoutline goto name{page%03d}" % pageno
     if toc:
-	s = "%s count -%d" % (s, len(toc))
+        s = "%s count -%d" % (s, len(toc))
     if snum:
-	title = "%s %s" % (snum, title)
+        title = "%s %s" % (snum, title)
     s = "%s {%s}\n" % (s, title)
     fp.write(s)
     for entry in toc:
-	write_toc_entry(entry, fp, layer + 1)
+        write_toc_entry(entry, fp, layer + 1)
 
 
 def process(ifn, ofn, bigpart=None):
@@ -129,13 +129,13 @@ def main():
     bigpart = None
     opts, args = getopt.getopt(sys.argv[1:], "c:")
     if opts:
-	bigpart = opts[0][1]
+        bigpart = opts[0][1]
     if not args:
-	usage()
-	sys.exit(2)
+        usage()
+        sys.exit(2)
     for filename in args:
-	base, ext = os.path.splitext(filename)
-	ext = ext or ".toc"
+        base, ext = os.path.splitext(filename)
+        ext = ext or ".toc"
         process(base + ext, base + ".bkm", bigpart)
 
 
