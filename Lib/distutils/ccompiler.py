@@ -12,7 +12,10 @@ from types import *
 from copy import copy
 from distutils.errors import *
 from distutils.spawn import spawn
-from distutils.util import move_file, mkpath, newer_pairwise, newer_group
+from distutils.file_util import move_file
+from distutils.dir_util import mkpath
+from distutils.dep_util import newer_pairwise, newer_group
+from distutils.util import split_quoted
 
 
 class CCompiler:
@@ -109,7 +112,54 @@ class CCompiler:
         # named library files) to include on any link
         self.objects = []
 
+        for key in self.executables.keys():
+            self.set_executable(key, self.executables[key])
+
     # __init__ ()
+
+
+    def set_executables (self, **args):
+
+        """Define the executables (and options for them) that will be run
+        to perform the various stages of compilation.  The exact set of
+        executables that may be specified here depends on the compiler
+        class (via the 'executables' class attribute), but most will have:
+          compiler      the C/C++ compiler
+          linker_so     linker used to create shared objects and libraries
+          linker_exe    linker used to create binary executables
+          archiver      static library creator
+
+        On platforms with a command-line (Unix, DOS/Windows), each of these
+        is a string that will be split into executable name and (optional)
+        list of arguments.  (Splitting the string is done similarly to how
+        Unix shells operate: words are delimited by spaces, but quotes and
+        backslashes can override this.  See
+        'distutils.util.split_quoted()'.)
+        """
+
+        # Note that some CCompiler implementation classes will define class
+        # attributes 'cpp', 'cc', etc. with hard-coded executable names;
+        # this is appropriate when a compiler class is for exactly one
+        # compiler/OS combination (eg. MSVCCompiler).  Other compiler
+        # classes (UnixCCompiler, in particular) are driven by information
+        # discovered at run-time, since there are many different ways to do
+        # basically the same things with Unix C compilers.
+
+        for key in args.keys():
+            if not self.executables.has_key(key):
+                raise ValueError, \
+                      "unknown executable '%s' for class %s" % \
+                      (key, self.__class__.__name__)
+            self.set_executable(key, args[key])
+
+    # set_executables ()
+
+    def set_executable(self, key, value):
+        if type(value) is StringType:
+            setattr(self, key, split_quoted(value))
+        else:
+            setattr(self, key, value)
+        
 
 
     def _find_macro (self, name):
@@ -429,6 +479,8 @@ class CCompiler:
         definitions as for 'compile()', which will augment the macros set
         with 'define_macro()' and 'undefine_macro()'.  'include_dirs' is a
         list of directory names that will be added to the default list.
+
+        Raises PreprocessError on failure.
         """
         pass
 
@@ -440,8 +492,11 @@ class CCompiler:
                  debug=0,
                  extra_preargs=None,
                  extra_postargs=None):
-        """Compile one or more C/C++ source files.  'sources' must be a
-        list of strings, each one the name of a C/C++ source file.  Return
+
+        """Compile one or more source files.  'sources' must be a list of
+        filenames, most likely C/C++ files, but in reality anything that
+        can be handled by a particular compiler and compiler class
+        (eg. MSVCCompiler can handle resource files in 'sources').  Return
         a list of object filenames, one per source filename in 'sources'.
         Depending on the implementation, not all source files will
         necessarily be compiled, but all corresponding object filenames
