@@ -10,10 +10,12 @@ test_key_name = "SOFTWARE\\Python Registry Test Key - Delete Me"
 
 test_data = [
     ("Int Value",     45,                                      REG_DWORD),
-    ("String Val",    "A string value",                        REG_SZ,),
+    ("String Val",    "A string value",                        REG_SZ),
     ("StringExpand",  "The path is %path%",                    REG_EXPAND_SZ),
     ("Multi-string",  ["Lots", "of", "string", "values"],      REG_MULTI_SZ),
     ("Raw Data",      ("binary"+chr(0)+"data"),                REG_BINARY),
+    ("Big String",    "x"*(512*1024-4),                        REG_SZ),
+    ("Big Binary",    "x"*(1024*1024-4),                       REG_BINARY),
 ]
 if have_unicode:
     test_data+=[
