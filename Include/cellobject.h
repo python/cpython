@@ -7,7 +7,7 @@ extern "C" {
 #endif
 
 typedef struct {
-	PyObject_VAR_HEAD
+	PyObject_HEAD
 	PyObject *ob_ref;
 } PyCellObject;
 
