@@ -76,6 +76,8 @@ static struct memberlist code_memberlist[] = {
 	{"co_varnames",	T_OBJECT,	OFF(co_varnames),	READONLY},
 	{"co_filename",	T_OBJECT,	OFF(co_filename),	READONLY},
 	{"co_name",	T_OBJECT,	OFF(co_name),		READONLY},
+	{"co_firstlineno", T_INT,	OFF(co_firstlineno),	READONLY},
+	{"co_lnotab",	T_OBJECT,	OFF(co_lnotab),		READONLY},
 	{NULL}	/* Sentinel */
 };
 
@@ -180,7 +182,8 @@ typeobject Codetype = {
 
 codeobject *
 newcodeobject(argcount, nlocals, stacksize, flags,
-	      code, consts, names, varnames, filename, name)
+	      code, consts, names, varnames, filename, name,
+	      firstlineno, lnotab)
 	int argcount;
 	int nlocals;
 	int stacksize;
@@ -191,6 +194,8 @@ newcodeobject(argcount, nlocals, stacksize, flags,
 	object *varnames;
 	object *filename;
 	object *name;
+	int firstlineno;
+	object *lnotab;
 {
 	codeobject *co;
 	int i;
@@ -201,7 +206,8 @@ newcodeobject(argcount, nlocals, stacksize, flags,
 	    names == NULL || !is_tupleobject(names) ||
 	    varnames == NULL || !is_tupleobject(varnames) ||
 	    name == NULL || !is_stringobject(name) ||
-	    filename == NULL || !is_stringobject(filename)) {
+	    filename == NULL || !is_stringobject(filename) ||
+		lnotab == NULL || !is_stringobject(lnotab)) {
 		err_badcall();
 		return NULL;
 	}
@@ -252,6 +258,9 @@ newcodeobject(argcount, nlocals, stacksize, flags,
 		co->co_filename = filename;
 		INCREF(name);
 		co->co_name = name;
+		co->co_firstlineno = firstlineno;
+		INCREF(lnotab);
+		co->co_lnotab = lnotab;
 	}
 	return co;
 }
@@ -282,6 +291,9 @@ struct compiling {
 	int c_lineno;		/* Current line number */
 	int c_stacklevel;	/* Current stack level */
 	int c_maxstacklevel;	/* Maximum stack level */
+	int c_firstlineno;
+	object *c_lnotab;	/* Table mapping address to line number */
+	int c_last_addr, c_last_line, c_lnotab_next;
 #ifdef PRIVATE_NAME_MANGLING
 	char *c_private;	/* for private name mangling */
 #endif
@@ -387,6 +399,8 @@ com_init(c, filename)
 		goto fail_00;
 	if ((c->c_varnames = newlistobject(0)) == NULL)
 		goto fail_000;
+	if ((c->c_lnotab = newsizedstringobject((char *)NULL, 1000)) == NULL)
+		goto fail_0000;
 	c->c_nlocals = 0;
 	c->c_argcount = 0;
 	c->c_flags = 0;
@@ -402,8 +416,14 @@ com_init(c, filename)
 	c->c_lineno = 0;
 	c->c_stacklevel = 0;
 	c->c_maxstacklevel = 0;
+	c->c_firstlineno = 0;
+	c->c_last_addr = 0;
+	c->c_last_line = 0;
+	c-> c_lnotab_next = 0;
 	return 1;
 	
+  fail_0000:
+  	DECREF(c->c_lnotab);
   fail_000:
   	DECREF(c->c_locals);
   fail_00:
@@ -428,6 +448,7 @@ com_free(c)
 	XDECREF(c->c_globals);
 	XDECREF(c->c_locals);
 	XDECREF(c->c_varnames);
+	XDECREF(c->c_lnotab);
 }
 
 static void
@@ -462,6 +483,8 @@ com_done(c)
 {
 	if (c->c_code != NULL)
 		resizestring(&c->c_code, c->c_nexti);
+	if (c->c_lnotab != NULL)
+		resizestring(&c->c_lnotab, c->c_lnotab_next);
 }
 
 static void
@@ -500,15 +523,68 @@ com_addint(c, x)
 }
 
 static void
+com_add_lnotab(c, addr, line)
+	struct compiling *c;
+	int addr;
+	int line;
+{
+	int size;
+	char *p;
+	if (c->c_lnotab == NULL)
+		return;
+	size = getstringsize(c->c_lnotab);
+	if (c->c_lnotab_next+2 > size) {
+		if (resizestring(&c->c_lnotab, size + 1000) < 0) {
+			c->c_errors++;
+			return;
+		}
+	}
+	p = getstringvalue(c->c_lnotab) + c->c_lnotab_next;
+	*p++ = addr;
+	*p++ = line;
+	c->c_lnotab_next += 2;
+}
+
+static void
+com_set_lineno(c, lineno)
+	struct compiling *c;
+	int lineno;
+{
+	c->c_lineno = lineno;
+	if (c->c_firstlineno == 0) {
+		c->c_firstlineno = c->c_last_line = lineno;
+	}
+	else {
+		int incr_addr = c->c_nexti - c->c_last_addr;
+		int incr_line = lineno - c->c_last_line;
+		while (incr_addr > 0 || incr_line > 0) {
+			int trunc_addr = incr_addr;
+			int trunc_line = incr_line;
+			if (trunc_addr > 255)
+				trunc_addr = 255;
+			if (trunc_line > 255)
+				trunc_line = 255;
+			com_add_lnotab(c, trunc_addr, trunc_line);
+			incr_addr -= trunc_addr;
+			incr_line -= trunc_line;
+		}
+		c->c_last_addr = c->c_nexti;
+		c->c_last_line = lineno;
+	}
+}
+
+static void
 com_addoparg(c, op, arg)
 	struct compiling *c;
 	int op;
 	int arg;
 {
 	if (op == SET_LINENO)
-		c->c_lineno = arg;
-	com_addbyte(c, op);
-	com_addint(c, arg);
+		com_set_lineno(c, arg);
+	else {
+		com_addbyte(c, op);
+		com_addint(c, arg);
+	}
 }
 
 static void
@@ -3212,7 +3288,9 @@ jcompile(n, filename, base)
 					   names,
 					   varnames,
 					   filename,
-					   name);
+					   name,
+					   sc.c_firstlineno,
+					   sc.c_lnotab);
 		XDECREF(consts);
 		XDECREF(names);
 		XDECREF(varnames);
@@ -3221,4 +3299,22 @@ jcompile(n, filename, base)
 	}
 	com_free(&sc);
 	return co;
+}
+
+int
+PyCode_Addr2Line(co, addrq)
+	PyCodeObject *co;
+	int addrq;
+{
+	int size = PyString_Size(co->co_lnotab) / 2;
+	char *p = PyString_AsString(co->co_lnotab);
+	int line = co->co_firstlineno;
+	int addr = 0;
+	while (--size >= 0) {
+		addr += *p++;
+		if (addr > addrq)
+			break;
+		line += *p++;
+	}
+	return line;
 }
