@@ -65,6 +65,219 @@ indicate the results of executing the tests.
 \subsection{Organizing test code
             \label{organizing-tests}}
 
+The basic building blocks of unit testing are \dfn{test cases} ---
+single scenarios that must be set up and checked for correctness.  In
+PyUnit, test cases are represented by instances of the
+\class{TestCase} class in the \refmodule{unittest} module. To make
+your own test cases you must write subclasses of \class{TestCase}, or
+use \class{FunctionTestCase}.
+
+An instance of a \class{TestCase}-derived class is an object that can
+completely run a single test method, together with optional set-up
+and tidy-up code.
+
+The testing code of a \class{TestCase} instance should be entirely
+self contained, such that it can be run either in isolation or in
+arbitrary combination with any number of other test cases.
+
+The simplest test case subclass will simply override the
+\method{runTest()} method in order to perform specific testing code:
+
+\begin{verbatim}
+import unittest
+
+class DefaultWidgetSizeTestCase(unittest.TestCase):
+    def runTest(self):
+        widget = Widget("The widget")
+        assert widget.size() == (50,50), 'incorrect default size'
+\end{verbatim}
+
+Note that in order to test something, we just use the built-in 'assert'
+statement of Python. If the test fails when the test case runs,
+\class{TestFailed} will be raised, and the testing framework
+will identify the test case as a \dfn{failure}. Other exceptions that
+do not arise from explicit 'assert' checks are identified by the testing
+framework as dfn{errors}.
+
+The way to run a test case will be described later.  For now, note
+that to construct an instance of such a test case, we call its
+constructor without arguments:
+
+\begin{verbatim}
+testCase = DefaultWidgetSizeTestCase()
+\end{verbatim}
+
+Now, such test cases can be numerous, and their set-up can be
+repetitive.  In the above case, constructing a ``Widget'' in each of
+100 Widget test case subclasses would mean unsightly duplication.
+
+Luckily, we can factor out such set-up code by implementing a method
+called \method{setUp()}, which the testing framework will
+automatically call for us when we run the test:
+
+\begin{verbatim}
+import unittest
+
+class SimpleWidgetTestCase(unittest.TestCase):
+    def setUp(self):
+        self.widget = Widget("The widget")
+
+class DefaultWidgetSizeTestCase(SimpleWidgetTestCase):
+    def runTest(self):
+        assert self.widget.size() == (50,50), 'incorrect default size'
+
+class WidgetResizeTestCase(SimpleWidgetTestCase):
+    def runTest(self):
+        self.widget.resize(100,150)
+        assert self.widget.size() == (100,150), \
+               'wrong size after resize'
+\end{verbatim}
+
+If the \method{setUp()} method raises an exception while the test is
+running, the framework will consider the test to have suffered an
+error, and the \method{runTest()} method will not be executed.
+
+Similarly, we can provide a \method{tearDown()} method that tidies up
+after the \method{runTest()} method has been run:
+
+\begin{verbatim}
+import unittest
+
+class SimpleWidgetTestCase(unittest.TestCase):
+    def setUp(self):
+        self.widget = Widget("The widget")
+
+    def tearDown(self):
+        self.widget.dispose()
+        self.widget = None
+\end{verbatim}
+
+If \method{setUp()} succeeded, the \method{tearDown()} method will be
+run regardless of whether or not \method{runTest()} succeeded.
+
+Such a working environment for the testing code is called a
+\dfn{fixture}.
+
+Often, many small test cases will use the same fixture.  In this case,
+we would end up subclassing \class{SimpleWidgetTestCase} into many
+small one-method classes such as
+\class{DefaultWidgetSizeTestCase}.  This is time-consuming and
+discouraging, so in the same vein as JUnit, PyUnit provides a simpler
+mechanism:
+
+\begin{verbatim}
+import unittest
+
+class WidgetTestCase(unittest.TestCase):
+    def setUp(self):
+        self.widget = Widget("The widget")
+
+    def tearDown(self):
+        self.widget.dispose()
+        self.widget = None
+
+    def testDefaultSize(self):
+        assert self.widget.size() == (50,50), \
+               'incorrect default size'
+
+    def testResize(self):
+        self.widget.resize(100,150)
+        assert self.widget.size() == (100,150), \
+               'wrong size after resize'
+\end{verbatim}
+
+Here we have not provided a \method{runTest()} method, but have
+instead provided two different test methods.  Class instances will now
+each run one of the \method{test*()}  methods, with \code{self.widget}
+created and destroyed separately for each instance.  When creating an
+instance we must specify the test method it is to run.  We do this by
+passing the method name in the constructor:
+
+\begin{verbatim}
+defaultSizeTestCase = WidgetTestCase("testDefaultSize")
+resizeTestCase = WidgetTestCase("testResize")
+\end{verbatim}
+
+Test case instances are grouped together according to the features
+they test.  PyUnit provides a mechanism for this: the \class{test
+suite}, represented by the class \class{TestSuite} in the
+\refmodule{unittest} module:
+
+\begin{verbatim}
+widgetTestSuite = unittest.TestSuite()
+widgetTestSuite.addTest(WidgetTestCase("testDefaultSize"))
+widgetTestSuite.addTest(WidgetTestCase("testResize"))
+\end{verbatim}
+
+For the ease of running tests, as we will see later, it is a good
+idea to provide in each test module a callable object that returns a
+pre-built test suite:
+
+\begin{verbatim}
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(WidgetTestCase("testDefaultSize"))
+    suite.addTest(WidgetTestCase("testResize"))
+    return suite
+\end{verbatim}
+
+or even:
+
+\begin{verbatim}
+class WidgetTestSuite(unittest.TestSuite):
+    def __init__(self):
+        unittest.TestSuite.__init__(self,map(WidgetTestCase,
+                                              ("testDefaultSize",
+                                               "testResize")))
+\end{verbatim}
+
+(The latter is admittedly not for the faint-hearted!)
+
+Since it is a common pattern to create a \class{TestCase} subclass
+with many similarly named test functions, there is a convenience
+function called \function{makeSuite()} provided in the
+\refmodule{unittest} module that constructs a test suite that
+comprises all of the test cases in a test case class:
+
+\begin{verbatim}
+suite = unittest.makeSuite(WidgetTestCase,'test')
+\end{verbatim}
+
+Note that when using the \function{makeSuite()} function, the order in
+which the various test cases will be run by the test suite is the
+order determined by sorting the test function names using the
+\function{cmp()} built-in function.
+
+Often it is desirable to group suites of test cases together, so as to
+run tests for the whole system at once.  This is easy, since
+\class{TestSuite} instances can be added to a \class{TestSuite} just
+as \class{TestCase} instances can be added to a \class{TestSuite}:
+
+\begin{verbatim}
+suite1 = module1.TheTestSuite()
+suite2 = module2.TheTestSuite()
+alltests = unittest.TestSuite((suite1, suite2))
+\end{verbatim}
+
+You can place the definitions of test cases and test suites in the
+same modules as the code they are to test (e.g.\ \file{widget.py}),
+but there are several advantages to placing the test code in a
+separate module, such as \file{widgettests.py}:
+
+\begin{itemize}
+  \item The test module can be run standalone from the command line.
+  \item The test code can more easily be separated from shipped code.
+  \item There is less temptation to change test code to fit the code.
+        it tests without a good reason.
+  \item Test code should be modified much less frequently than the
+        code it tests.
+  \item Tested code can be refactored more easily.
+  \item Tests for modules written in C must be in separate modules
+        anyway, so why not be consistent?
+  \item If the testing strategy changes, there is no need to change
+        the source code.
+\end{itemize}
+
 
 \subsection{Re-using old test code
             \label{legacy-unit-tests}}
@@ -101,6 +314,11 @@ testcase = unittest.FunctionTestCase(testSomething,
                                      setUp=makeSomethingDB,
                                      tearDown=deleteSomethingDB)
 \end{verbatim}
+
+
+\strong{Note:}  PyUnit supports the use of \exception{AssertionError}
+as an indicator of test failure, but does not recommend it.  Future
+versions may treat \exception{AssertionError} differently.
 
 
 \subsection{Classes and functions
@@ -156,15 +374,21 @@ testcase = unittest.FunctionTestCase(testSomething,
 \begin{funcdesc}{main}{\optional{module\optional{,
                  defaultTest\optional{, argv\optional{,
                  testRunner\optional{, testRunner}}}}}}
-A command-line program that runs a set of tests; this is primarily
-for making test modules conveniently executable.  The simplest use for
-this function is:
+  A command-line program that runs a set of tests; this is primarily
+  for making test modules conveniently executable.  The simplest use
+  for this function is:
 
 \begin{verbatim}
 if __name__ == '__main__':
     unittest.main()
 \end{verbatim}
 \end{funcdesc}
+
+\begin{excdesc}{TestFailed}
+  Exception raised to indicate that a test failed.  The
+  \method{TestCase.fail()} method is responsible for creating and
+  raising this exception.
+\end{excdesc}
 
 
 \subsection{TestCase Objects
@@ -213,37 +437,33 @@ Methods in the first group are:
 \end{methoddesc}
 
 
-The test code can either raise \exception{AssertionError} or use any
-of the following methods to check for and report failures:
+The test code can use any of the following methods to check for and
+report failures:
 
 \begin{methoddesc}[TestCase]{failUnless}{expr\optional{, msg}}
-\methodline[TestCase]{assert_}{value\optional{, msg}}
   This method is similar to the \keyword{assert} statement, except it
   works even when Python is executed in ``optimizing'' mode (using the
-  \programopt{-O} command line switch).  If \var{expr} is false,
-  \exception{AssertionError} will be raised with \var{msg} as the
+  \programopt{-O} command line switch), and raises the
+  \exception{TestFailed} exception.  If \var{expr} is false,
+  \exception{TestFailed} will be raised with \var{msg} as the
   message describing the failure; \code{None} will be used for the
-  message if \var{msg} is omitted.  This method is equivalent to
-
-\begin{alltt}
-assert \var{expr}, \var{msg}
-\end{alltt}
+  message if \var{msg} is omitted.
 \end{methoddesc}
 
-\begin{methoddesc}[TestCase]{assertEqual}{first, second\optional{, msg}}
+\begin{methoddesc}[TestCase]{failUnlessEqual}{first, second\optional{, msg}}
   Test that \var{first} and \var{second} are equal.  If the values do
   not compare equal, the test will fail with the explanation given by
-  \var{msg}, or \code{None}.  Note that using \method{assertEqual()}
+  \var{msg}, or \code{None}.  Note that using \method{failUnlessEqual()}
   improves upon doing the comparison as the first parameter to
   \method{failUnless()} is that the default value for \var{msg} can be
   computed to include representations of both \var{first} and
   \var{second}.
 \end{methoddesc}
 
-\begin{methoddesc}[TestCase]{assertNotEqual}{first, second\optional{, msg}}
+\begin{methoddesc}[TestCase]{failIfEqual}{first, second\optional{, msg}}
   Test that \var{first} and \var{second} are not equal.  If the values
   do compare equal, the test will fail with the explanation given by
-  \var{msg}, or \code{None}.  Note that using \method{assertNotEqual()}
+  \var{msg}, or \code{None}.  Note that using \method{failIfEqual()}
   improves upon doing the comparison as the first parameter to
   \method{failUnless()} is that the default value for \var{msg} can be
   computed to include representations of both \var{first} and
@@ -251,8 +471,8 @@ assert \var{expr}, \var{msg}
 \end{methoddesc}
 
 \begin{methoddesc}[TestCase]{failIf}{expr\optional{, msg}}
-  The inverse of the \method{assert_()} method is the
-  \method{failIf()} method.  This raises \exception{AssertionError} if
+  The inverse of the \method{failUnless()} method is the
+  \method{failIf()} method.  This raises \exception{TestFailed} if
   \var{expr} is true, with \var{msg} or \code{None} for the error
   message.
 \end{methoddesc}
@@ -337,13 +557,13 @@ be of interest when inspecting the results of running a set of tests:
 \begin{memberdesc}[TestResult]{errors}
   A list containing pairs of \class{TestCase} instances and the
   \function{sys.exc_info()} results for tests which raised exceptions
-  other than \exception{AssertionError}.
+  other than \exception{AssertionError} and \exception{TestFailed}.
 \end{memberdesc}
 
 \begin{memberdesc}[TestResult]{failures}
   A list containing pairs of \class{TestCase} instances and the
-  \function{sys.exc_info()} results for tests which raised the
-  \exception{AssertionError} exception.
+  \function{sys.exc_info()} results for tests which raised either
+  \exception{TestFailed} or \exception{AssertionError}.
 \end{memberdesc}
 
 \begin{memberdesc}[TestResult]{testsRun}
@@ -373,18 +593,20 @@ reporting while tests are being run.
 
 \begin{methoddesc}[TestResult]{addError}{test, err}
   Called when the test case \var{test} results in an exception other
-  than \exception{AssertionError}.  \var{err} is a tuple of the form
-  returned by \function{sys.exc_info()}:  \code{(\var{type},
-  \var{value}, \var{traceback})}.
+  than \exception{TestFailed} or \exception{AssertionError}.
+  \var{err} is a tuple of the form returned by
+  \function{sys.exc_info()}:  \code{(\var{type}, \var{value},
+  \var{traceback})}.
 \end{methoddesc}
 
 \begin{methoddesc}[TestResult]{addFailure}{test, err}
   Called when the test case \var{test} results in an
   \exception{AssertionError} exception; the assumption is that the
-  test raised the \exception{AssertionError} and not the
-  implementation being tested.  \var{err} is a tuple of the form
-  returned by \function{sys.exc_info()}:  \code{(\var{type},
-  \var{value}, \var{traceback})}.
+  test raised either \exception{TestFailed} or
+  \exception{AssertionError} and not the implementation being tested.
+  \var{err} is a tuple of the form returned by
+  \function{sys.exc_info()}:  \code{(\var{type}, \var{value},
+  \var{traceback})}.
 \end{methoddesc}
 
 \begin{methoddesc}[TestResult]{addSuccess}{test}
