@@ -9,16 +9,11 @@
 package main;
 
 
-sub next_argument_id{
-    my ($param,$br_id);
-    $param = missing_braces()
-        unless ((s/$next_pair_pr_rx/$br_id=$1;$param=$2;''/eo)
-		||(s/$next_pair_rx/$br_id=$1;$param=$2;''/eo));
-    return ($param, $br_id);
-}
-
 sub next_argument{
-    my ($param,$br_id) = next_argument_id();
+    my $param;
+    $param = missing_braces()
+      unless ((s/$next_pair_pr_rx/$param=$2;''/eo)
+	      ||(s/$next_pair_rx/$param=$2;''/eo));
     return $param;
 }
 
@@ -110,7 +105,7 @@ sub use_current{
     return use_wrappers(@_[0], '', '');
 }
 sub use_sans_serif{
-    return use_wrappers(@_[0], '<font face=sans-serif>', '</font>');
+    return use_wrappers(@_[0], '<font face="sans-serif">', '</font>');
 }
 sub use_italics{
     return use_wrappers(@_[0], '<i>', '</i>');
@@ -163,8 +158,8 @@ sub do_cmd_newsgroup{
 
 sub do_cmd_envvar{
     local($_) = @_;
-    my($envvar,$br_id) = next_argument_id();
-    my($name,$aname,$ahref) = link_info($br_id);
+    my $envvar = next_argument();
+    my($name,$aname,$ahref) = new_link_info();
     # The <tt> here is really to keep buildindex.py from making
     # the variable name case-insensitive.
     add_index_entry("environment variables!$envvar@<tt>\$$envvar</tt>",
@@ -192,13 +187,14 @@ sub do_cmd_manpage{
 
 sub do_cmd_rfc{
     local($_) = @_;
-    my($rfcnumber,$br_id) = next_argument_id();
+    my $rfcnumber = next_argument();
+    my $id = "rfcref-" . ++$global{'max_id'};
     my $href =
       "http://info.internet.isi.edu/in-notes/rfc/files/rfc$rfcnumber.txt";
     # Save the reference
     my $nstr = gen_index_id("RFC!RFC $rfcnumber", '');
-    $index{$nstr} .= make_half_href("$CURRENT_FILE#$br_id");
-    return "<a name=\"$br_id\"\nhref=\"$href\">RFC $rfcnumber</a>" .$_;
+    $index{$nstr} .= make_half_href("$CURRENT_FILE#$id");
+    return "<a name=\"$id\"\nhref=\"$href\">RFC $rfcnumber</a>" .$_;
 }
 
 sub do_cmd_deprecated{
@@ -249,10 +245,11 @@ sub do_cmd_withsubitem{
     my $oldsubitem = $INDEX_SUBITEM;
     $INDEX_SUBITEM = next_argument();
     my $stuff = next_argument();
-    my ($open, $close) = ($O, $C);
+    my $br_id = ++$globals{'max_id'};
+    my $marker = "$O$br_id$C";
     return
       $stuff
-      . "\\setindexsubitem${open}1$close$oldsubitem${open}1$close"
+      . "\\setindexsubitem$marker$oldsubitem$marker"
       . $_;
 }
 
@@ -273,16 +270,11 @@ print INTLABELS "1;		# hack in case there are no entries\n\n";
 #
 $IDXFILE_FIELD_SEP = "\1";
 
-
-sub gen_target_name{
-    my($stuff) = @_;
-    return "l2h-" . $stuff;
+sub write_idxfile{
+    my ($ahref, $str) = @_;
+    print IDXFILE $ahref, $IDXFILE_FIELD_SEP, $str, "\n";
 }
 
-sub gen_target{
-    my($name) = @_;
-    return '<a name="' . $name . '">';
-}
 
 sub gen_link{
     my($node,$target) = @_;
@@ -291,8 +283,8 @@ sub gen_link{
 }
 
 sub make_index_entry{
-    my($br_id,$str) = @_;
-    my($name,$aname,$ahref) = link_info($br_id);
+    my($str) = @_;
+    my($name,$aname,$ahref) = new_link_info();
     add_index_entry($str, $ahref);
     return "$aname$anchor_invisible_mark</a>";
 }
@@ -302,31 +294,31 @@ sub add_index_entry{
     my($str,$ahref) = @_;
     $str = gen_index_id($str, '');
     $index{$str} .= $ahref;
-    print IDXFILE $ahref, $IDXFILE_FIELD_SEP, $str, "\n";
+    write_idxfile($ahref, $str);
 }
 
-sub link_info{
-    my $name = gen_target_name(@_[0]);
-    my $aname = gen_target($name);
+sub new_link_info{
+    my $name = "l2h-" . ++$globals{'max_id'};
+    my $aname = '<a name="' . $name . '">';
     my $ahref = gen_link($CURRENT_FILE, $name);
     return ($name, $aname, $ahref);
 }
 
 sub do_cmd_index{
     local($_) = @_;
-    my($str,$br_id) = next_argument_id();
+    my $str = next_argument();
     swallow_newline();
     #
-    my($name,$aname,$ahref) = link_info($br_id);
+    my($name,$aname,$ahref) = new_link_info();
     add_index_entry("$str", $ahref);
     return "$aname$anchor_invisible_mark</a>" . $_;
 }
 
 sub do_cmd_kwindex{
     local($_) = @_;
-    my($str,$br_id) = next_argument_id();
+    my $str = next_argument();
     #
-    my($name,$aname,$ahref) = link_info($br_id);
+    my($name,$aname,$ahref) = new_link_info();
     add_index_entry("<tt>$str</tt>!keyword", $ahref);
     add_index_entry("keyword!<tt>$str</tt>", $ahref);
     return "$aname$anchor_invisible_mark</a>" . $_;
@@ -334,10 +326,10 @@ sub do_cmd_kwindex{
 
 sub do_cmd_indexii{
     local($_) = @_;
-    my($str1,$br_id) = next_argument_id();
+    my $str1 = next_argument();
     my $str2 = next_argument();
     #
-    my($name,$aname,$ahref) = link_info($br_id);
+    my($name,$aname,$ahref) = new_link_info();
     add_index_entry("$str1!$str2", $ahref);
     add_index_entry("$str2!$str1", $ahref);
     return "$aname$anchor_invisible_mark</a>" . $_;
@@ -345,11 +337,11 @@ sub do_cmd_indexii{
 
 sub do_cmd_indexiii{
     local($_) = @_;
-    my($str1,$br_id) = next_argument_id();
+    my $str1 = next_argument();
     my $str2 = next_argument();
     my $str3 = next_argument();
     #
-    my($name,$aname,$ahref) = link_info($br_id);
+    my($name,$aname,$ahref) = new_link_info();
     add_index_entry("$str1!$str2 $str3", $ahref);
     add_index_entry("$str2!$str3, $str1", $ahref);
     add_index_entry("$str3!$str1 $str2", $ahref);
@@ -358,12 +350,12 @@ sub do_cmd_indexiii{
 
 sub do_cmd_indexiv{
     local($_) = @_;
-    my($str1,$br_id) = next_argument_id();
+    my $str1 = next_argument();
     my $str2 = next_argument();
     my $str3 = next_argument();
     my $str4 = next_argument();
     #
-    my($name,$aname,$ahref) = link_info($br_id);
+    my($name,$aname,$ahref) = new_link_info();
     add_index_entry("$str1!$str2 $str3 $str4", $ahref);
     add_index_entry("$str2!$str3 $str4, $str1", $ahref);
     add_index_entry("$str3!$str4, $str1 $str2", $ahref);
@@ -373,17 +365,18 @@ sub do_cmd_indexiv{
 
 sub do_cmd_ttindex{
     local($_) = @_;
-    my($str,$br_id) = next_argument_id();
+    my $str = next_argument();
+    my $entry = $str . get_indexsubitem();
     swallow_newline();
-    return make_index_entry($br_id, $str . get_indexsubitem()) . $_;
+    return make_index_entry($entry) . $_;
 }
 
 sub my_typed_index_helper{
     local($word,$_) = @_;
-    my($str,$br_id) = next_argument_id();
+    my $str = next_argument();
     swallow_newline();
     #
-    my($name,$aname,$ahref) = link_info($br_id1);
+    my($name,$aname,$ahref) = new_link_info();
     add_index_entry("$str $word", $ahref);
     add_index_entry("$word!$str", $ahref);
     return "$aname$anchor_invisible_mark</a>" . $_;
@@ -396,19 +389,19 @@ sub do_cmd_obindex{ return my_typed_index_helper('object', @_); }
 
 sub my_parword_index_helper{
     local($word,$_) = @_;
-    my($str,$br_id) = next_argument_id();
+    my $str = next_argument();
     swallow_newline();
-    return make_index_entry($br_id, "$str ($word)") . $_;
+    return make_index_entry("$str ($word)") . $_;
 }
 
 
 sub make_mod_index_entry{
-    my($br_id,$str,$define) = @_;
-    my($name,$aname,$ahref) = link_info($br_id);
+    my($str,$define) = @_;
+    my($name,$aname,$ahref) = new_link_info();
     # equivalent of add_index_entry() using $define instead of ''
     $str = gen_index_id($str, $define);
     $index{$str} .= $ahref;
-    print IDXFILE $ahref, $IDXFILE_FIELD_SEP, $str, "\n";
+    write_idxfile($ahref, $str);
 
     if ($define eq 'DEF') {
 	# add to the module index
@@ -426,8 +419,7 @@ sub define_module{
     my $section_tag = join('', @curr_sec_id);
     $word = "$word " if $word;
     $THIS_MODULE = "$name";
-    return make_mod_index_entry("SECTION$section_tag",
-				"<tt>$name</tt> (${word}module)", 'DEF');
+    return make_mod_index_entry("<tt>$name</tt> (${word}module)", 'DEF');
 }
 
 sub my_module_index_helper{
@@ -439,19 +431,18 @@ sub my_module_index_helper{
 
 sub ref_module_index_helper{
     local($word, $_) = @_;
-    my($str,$br_id) = next_argument_id();
+    my $str = next_argument();
     swallow_newline();
     $word = "$word " if $word;
-    return make_mod_index_entry($br_id,
-				"<tt>$str</tt> (${word}module)", 'REF') . $_;
+    return make_mod_index_entry("<tt>$str</tt> (${word}module)", 'REF') . $_;
 }
 
 sub do_cmd_bifuncindex{
     local($_) = @_;
-    my($str,$br_id) = next_argument_id();
-    swallow_newline();
+    my $str = next_argument();
     my $fname = "<tt>$str()</tt>";
-    return make_index_entry($br_id, "$fname (built-in function)") . $_;
+    swallow_newline();
+    return make_index_entry("$fname (built-in function)") . $_;
 }
 
 sub do_cmd_modindex{ return my_module_index_helper('', @_); }
@@ -478,8 +469,8 @@ init_myformat();
 # instead of the dummy filler.
 #
 sub make_str_index_entry{
-    my($br_id,$str) = @_;
-    my($name,$aname,$ahref) = link_info($br_id);
+    my($str) = @_;
+    my($name,$aname,$ahref) = new_link_info();
     add_index_entry($str, $ahref);
     return "$aname$str</a>";
 }
@@ -487,10 +478,10 @@ sub make_str_index_entry{
 sub do_env_cfuncdesc{
     local($_) = @_;
     my $return_type = next_argument();
-    my($function_name,$br_id) = next_argument_id();
+    my $function_name = next_argument();
     my $arg_list = next_argument();
-    my $idx = make_str_index_entry($br_id,
-			"<tt>$function_name()</tt>" . get_indexsubitem());
+    my $idx = make_str_index_entry("<tt>$function_name()</tt>"
+				   . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;		# ????
     return "<dl><dt>$return_type <b>$idx</b>"
@@ -501,9 +492,8 @@ sub do_env_cfuncdesc{
 
 sub do_env_ctypedesc{
     local($_) = @_;
-    my($type_name,$br_id) = next_argument_id();
-    my $idx = make_str_index_entry($br_id,
-				   "<tt>$type_name</tt>" . get_indexsubitem());
+    my $type_name = next_argument();
+    my $idx = make_str_index_entry("<tt>$type_name</tt>" . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
     return "<dl><dt><b>$idx</b>\n<dd>"
            . $_
@@ -513,9 +503,8 @@ sub do_env_ctypedesc{
 sub do_env_cvardesc{
     local($_) = @_;
     my $var_type = next_argument();
-    my($var_name,$br_id) = next_argument_id();
-    my $idx = make_str_index_entry($br_id,
-				   "<tt>$var_name</tt>" . get_indexsubitem());
+    my $var_name = next_argument();
+    my $idx = make_str_index_entry("<tt>$var_name</tt>" . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
     return "<dl><dt>$var_type <b>$idx</b>\n"
            . '<dd>'
@@ -526,11 +515,11 @@ sub do_env_cvardesc{
 sub do_env_funcdesc{
     local($_) = @_;
     my $function_name = next_argument();
-    my($arg_list,$br_id) = next_argument_id();
-    my $idx = make_str_index_entry($br_id, "<tt>$function_name()</tt>"
+    my $arg_list = next_argument();
+    my $idx = make_str_index_entry("<tt>$function_name()</tt>"
 				   . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
-    $idx =~ s/\(\)//;
+    $idx =~ s/\(\)<\/tt>/<\/tt>/;
     return "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
 }
 
@@ -546,8 +535,8 @@ sub do_env_funcdescni{
 sub do_cmd_funcline{
     local($_) = @_;
     my $function_name = next_argument();
-    my($arg_list,$br_id) = next_argument_id();
-    my $idx = make_str_index_entry($br_id, "<tt>$function_name()</tt>"
+    my $arg_list = next_argument();
+    my $idx = make_str_index_entry("<tt>$function_name()</tt>"
 				   . get_indexsubitem());
     $idx =~ s/\(\)//;
     return "<dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_;
@@ -562,10 +551,10 @@ $INDEX_OPCODES = 0;
 sub do_env_opcodedesc{
     local($_) = @_;
     my $opcode_name = next_argument();
-    my($arg_list,$br_id) = next_argument_id();
+    my $arg_list = next_argument();
     my $idx;
     if ($INDEX_OPCODES) {
-	$idx = make_str_index_entry($br_id,
+	$idx = make_str_index_entry(
 			"<tt>$opcode_name</tt> (byte code instruction)");
 	$idx =~ s/ \(byte code instruction\)//;
     }
@@ -581,9 +570,8 @@ sub do_env_opcodedesc{
 
 sub do_env_datadesc{
     local($_) = @_;
-    my($dataname,$br_id) = next_argument_id();
-    my $idx = make_str_index_entry($br_id,
-				   "<tt>$dataname</tt>" . get_indexsubitem());
+    my $dataname = next_argument();
+    my $idx = make_str_index_entry("<tt>$dataname</tt>" . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
     return "<dl><dt><b>$idx</b>\n<dd>"
            . $_
@@ -601,17 +589,16 @@ sub do_env_datadescni{
 
 sub do_cmd_dataline{
     local($_) = @_;
-    my($data_name,$br_id) = next_argument_id();
-    my $idx = make_str_index_entry($br_id, "<tt>$data_name</tt>"
-				   . get_indexsubitem());
+    my $data_name = next_argument();
+    my $idx = make_str_index_entry("<tt>$data_name</tt>" . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
     return "<dt><b>$idx</b><dd>" . $_;
 }
 
 sub do_env_excdesc{
     local($_) = @_;
-    my($excname,$br_id) = next_argument_id();
-    my $idx = make_str_index_entry($br_id, "<tt>$excname</tt>");
+    my $excname = next_argument();
+    my $idx = make_str_index_entry("<tt>$excname</tt>");
     return "<dl><dt><b>$idx</b>\n<dd>" . $_ . '</dl>'
 }
 
@@ -621,8 +608,8 @@ sub do_env_fulllineitems{ return do_env_itemize(@_); }
 sub do_env_classdesc{
     local($_) = @_;
     $THIS_CLASS = next_argument();
-    my($arg_list,$br_id) = next_argument_id();
-    $idx = make_str_index_entry($br_id,
+    my $arg_list = next_argument();
+    $idx = make_str_index_entry(
 			"<tt>$THIS_CLASS</tt> (class in $THIS_MODULE)" );
     $idx =~ s/ \(.*\)//;
     return "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
@@ -634,13 +621,13 @@ sub do_env_methoddesc{
     my $class_name = next_optional_argument();
     $class_name = $THIS_CLASS
         unless $class_name;
-    my($method_name,$br_id) = next_argument_id();
+    my $method_name = next_argument();
     my $arg_list = next_argument();
     my $extra = '';
     if ($class_name) {
 	$extra = " ($class_name method)";
     }
-    my $idx = make_str_index_entry($br_id, "<tt>$method_name()</tt>$extra");
+    my $idx = make_str_index_entry("<tt>$method_name()</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
     return "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
@@ -658,7 +645,7 @@ sub do_cmd_methodline{
     if ($class_name) {
 	$extra = " ($class_name method)";
     }
-    my $idx = make_str_index_entry($br_id, "<tt>$method_name()</tt>$extra");
+    my $idx = make_str_index_entry("<tt>$method_name()</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
     return "<dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>"
@@ -689,13 +676,13 @@ sub do_env_methoddescni{
 sub do_env_memberdesc{
     local($_) = @_;
     my $class = next_optional_argument();
-    my($member,$br_id) = next_argument_id();
+    my $member = next_argument();
     $class = $THIS_CLASS
         unless $class;
     my $extra = '';
     $extra = " ($class_name attribute)"
         if (!($class eq ''));
-    my $idx = make_str_index_entry($br_id, "<tt>$member</tt>$extra");
+    my $idx = make_str_index_entry("<tt>$member</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
     return "<dl><dt><b>$idx</b>\n<dd>" . $_ . '</dl>';
@@ -705,13 +692,13 @@ sub do_env_memberdesc{
 sub do_cmd_memberline{
     local($_) = @_;
     my $class = next_optional_argument();
-    my($member,$br_id) = next_argument_id();
+    my $member = next_argument();
     $class = $THIS_CLASS
         unless $class;
     my $extra = '';
     $extra = " ($class_name attribute)"
         if (!($class eq ''));
-    my $idx = make_str_index_entry($br_id, "<tt>$member</tt>$extra");
+    my $idx = make_str_index_entry("<tt>$member</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
     return "<dt><b>$idx</b><dd>" . $_;
@@ -1019,8 +1006,8 @@ sub do_env_definitions{
 
 sub do_cmd_term{
     local($_) = @_;
-    my($term, $id) = next_argument_id();
-    my($name,$aname,$ahref) = link_info($id);
+    my $term = next_argument();
+    my($name,$aname,$ahref) = new_link_info();
     swallow_newline();
     # could easily add an index entry here...
     return "<dt><b>$aname" . $term . "</a></b>\n<dd>" . $_;
