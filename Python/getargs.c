@@ -647,7 +647,7 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf)
 			if (arg == Py_None)
 				*p = 0;
 			else if (PyString_Check(arg))
-				*p = PyString_AsString(arg);
+				*p = PyString_AS_STRING(arg);
 #ifdef Py_USING_UNICODE
 			else if (PyUnicode_Check(arg)) {
 				uarg = UNICODE_DEFAULT_ENCODING(arg);
