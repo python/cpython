@@ -2049,15 +2049,20 @@ posix_utime(PyObject *self, PyObject *args)
 	else if (!PyTuple_Check(arg) || PyTuple_Size(arg) != 2) {
 		PyErr_SetString(PyExc_TypeError,
 				"utime() arg 2 must be a tuple (atime, mtime)");
+		PyMem_Free(path);
 		return NULL;
 	}
 	else {
 		if (extract_time(PyTuple_GET_ITEM(arg, 0),
-				 &atime, &ausec) == -1)
+				 &atime, &ausec) == -1) {
+			PyMem_Free(path);
 			return NULL;
+		}
 		if (extract_time(PyTuple_GET_ITEM(arg, 1),
-				 &mtime, &musec) == -1)
+				 &mtime, &musec) == -1) {
+			PyMem_Free(path);
 			return NULL;
+		}
 		ATIME = atime;
 		MTIME = mtime;
 #ifdef HAVE_UTIMES
@@ -2082,11 +2087,14 @@ posix_utime(PyObject *self, PyObject *args)
 	}
 	if (res < 0) {
 #ifdef Py_WIN_WIDE_FILENAMES
-		if (have_unicode_filename)
+		if (have_unicode_filename) {
+			PyMem_Free(path);
 			return posix_error_with_unicode_filename(wpath);
+		}
 #endif /* Py_WIN_WIDE_FILENAMES */
-		return posix_error_with_filename(path);
+		return posix_error_with_allocated_filename(path);
 	}
+	PyMem_Free(path);
 	Py_INCREF(Py_None);
 	return Py_None;
 #undef UTIME_ARG
