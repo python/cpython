@@ -11,7 +11,7 @@ file causing it."""
 
 __revision__ = "$Id$"
 
-import os, string
+import os, string, shutil
 from distutils.errors import *
 
 
@@ -376,6 +376,25 @@ def copy_tree (src, dst,
     return outputs
 
 # copy_tree ()
+
+
+def remove_tree (directory, verbose=0, dry_run=0):
+    """Recursively remove an entire directory tree.  Any errors are ignored
+       (apart from being reported to stdout if 'verbose' is true)."""
+
+    if verbose:
+        print "removing '%s' (and everything under it)" % directory
+    if dry_run:
+        return
+    try:
+        shutil.rmtree(directory,1)
+    except (IOError, OSError), exc:
+        if verbose:
+            if exc.filename:
+                print "error removing %s: %s (%s)" % \
+                       (directory, exc.strerror, exc.filename)
+            else:
+                print "error removing %s: %s" % (directory, exc.strerror)
 
 
 # XXX I suspect this is Unix-specific -- need porting help!
