@@ -1,33 +1,38 @@
-#
-# socket.py for mac - Emulate socket module with mactcp and macdnr
-#
-# Jack Jansen, CWI, November 1994
-#
+"""socket.py for mac - Emulate socket module with mactcp and macdnr
+
+Currently only implements TCP sockets (AF_INET, SOCK_STREAM).
+Esoteric things like socket options don't work,
+but getpeername() and makefile() do work; everything used by ftplib works!
+"""
+
+# Jack Jansen, CWI, November 1994 (initial version)
+# Guido van Rossum, CWI, March 1995 (bug fixes and lay-out)
+
+
 import mactcp
 import MACTCP
 import macdnr
-import sys
 
-#
-# Constants
-#
+
+# Exported constants
+
 _myerror = 'socket_wrapper.error'
 error = (mactcp.error, macdnr.error, _myerror)
 
-SOCK_DGRAM=1
-SOCK_STREAM=2
+SOCK_DGRAM = 1
+SOCK_STREAM = 2
 
-AF_INET=1
+AF_INET = 1
 
-#
+
 # Internal constants
-#
-_BUFSIZE=4096		# Size of tcp/udp input buffer
-_connectionClosing=-42 # XXXX
 
-_myaddress=None
-_myname=None
-_myaddrstr=None
+_BUFSIZE = 4096			# Size of TCP/UDP input buffer
+
+_myaddress = None
+_myname = None
+_myaddrstr = None
+
 
 def _myipaddress():
 	global _myaddress
@@ -35,17 +40,20 @@ def _myipaddress():
 		_myaddress = mactcp.IPAddr()
 	return _myaddress
 
+
 def _ipaddress(str):
 	if type(str) == type(1):
 		return str			# Already numeric
 	ptr = macdnr.StrToAddr(str)
 	ptr.wait()
 	return ptr.ip0
-	
+
+
 def gethostbyname(str):
 	id = _ipaddress(str)
 	return macdnr.AddrToStr(id)
-	
+
+
 def gethostname():
 	global _myname
 	if _myname == None:
@@ -55,46 +63,53 @@ def gethostname():
 		_myname = ptr.cname
 	return _myname
 
+
 def _gethostaddress():
 	global _myaddrstr
 	if _myaddrstr == None:
 		id = _myipaddress()
 		_myaddrstr = macdnr.AddrToStr(id)
 	return _myaddrstr
-	
+
+
 def socket(family, type, *which):
 	if family <> AF_INET:
-		raise my_error, 'Protocol family not supported'
+		raise my_error, 'Protocol family %d not supported' % type
 	if type == SOCK_DGRAM:
 		return _udpsocket()
 	elif type == SOCK_STREAM:
 		return _tcpsocket()
-	raise my_error, 'Protocol type not supported'
-	
+	raise my_error, 'Protocol type %d not supported' % type
+
+
 def fromfd(*args):
 	raise my_error, 'Operation not supported on a mac'
-	
+
+
 class _socket:
-	def accept(self, *args):
+	def unsupported(self, *args):
 		raise my_error, 'Operation not supported on this socket'
-		
-	bind = accept
-	close = accept
-	connect = accept
-	fileno = accept
-	getpeername = accept
-	getsockname = accept
-	getsockopt = accept
-	listen = accept
-	recv = accept
-	recvfrom = accept
-	send = accept
-	sendto = accept
-	setblocking = accept
-	setsockopt = accept
-	shutdown = accept
-	 
+	
+	accept = unsupported
+	bind = unsupported
+	close = unsupported
+	connect = unsupported
+	fileno = unsupported
+	getpeername = unsupported
+	getsockname = unsupported
+	getsockopt = unsupported
+	listen = unsupported
+	recv = unsupported
+	recvfrom = unsupported
+	send = unsupported
+	sendto = unsupported
+	setblocking = unsupported
+	setsockopt = unsupported
+	shutdown = unsupported
+
+
 class _tcpsocket(_socket):
+	
 	def __init__(self):
 		self.stream = mactcp.TCPCreate(_BUFSIZE)
 		##self.stream.asr = self.asr
@@ -111,8 +126,14 @@ class _tcpsocket(_socket):
 		self.stream.wait()
 		self.accepted = 1
 		return self, self.getsockname()
-		
-	def bind(self, host, port):
+	
+	# bind has two ways of calling: s.bind(host, port) or s.bind((host, port));
+	# the latter is more proper but the former more common
+	def bind(self, a1, a2=None):
+		if a2 is None:
+			host, port = a1
+		else:
+			host, port = a1, a2
 		self.port = port
 		
 	def close(self):
@@ -120,8 +141,13 @@ class _tcpsocket(_socket):
 			self.accepted = 0
 			return
 		self.stream.Abort()
-			
-	def connect(self, host, port):
+	
+	# connect has the same problem as bind (see above)
+	def connect(self, a1, a2=None):
+		if a2 is None:
+			host, port = a1
+		else:
+			host, port = a1, a2
 		self.stream.ActiveOpen(self.port, _ipaddress(host), port)
 		
 	def getsockname(self):
@@ -138,8 +164,8 @@ class _tcpsocket(_socket):
 		self.stream.PassiveOpen(self.port)
 		self.listening = 1
 		
-	def makefile(self, rw):
-		return _socketfile(self)
+	def makefile(self, rw = 'r'):
+		return _socketfile(self, rw)
 		
 	def recv(self, bufsize, flags=0):
 		if flags:
@@ -170,20 +196,24 @@ class _tcpsocket(_socket):
 	def bytes_writeable(self):
 		st = self.stream.Status()
 		return st.sendWindow - st.sendUnacked;
-		
+
+
 class _udpsocket(_socket):
+	
 	def __init__(self):
 		pass
-		
+
+
 class _socketfile:
-	def __init__(self, sock):
+	
+	def __init__(self, sock, rw):
+		if rw not in ('r', 'w'): raise ValueError, "mode must be 'r' or 'w'"
 		self.sock = sock
+		self.rw = rw
 		self.buf = ''
 		
-	def read(self, *arg):
-		if arg:
-			length = arg
-		else:
+	def read(self, length = 0):
+		if length <= 0:
 			length = 0x7fffffff
 		while len(self.buf) < length:
 			new = self.sock.recv(0x7fffffff)
@@ -209,14 +239,29 @@ class _socketfile:
 			rv = self.buf[:i+1]
 			self.buf = self.buf[i+1:]
 		return rv
-			
+		
 	def write(self, buf):
-		self.sock.send(buf)
+		BS = 512
+		if len(buf) >= BS:
+			self.flush()
+			self.sock.send(buf)
+		elif len(buf) + len(self.buf) >= BS:
+			self.flush()
+			self.buf = buf
+		else:
+			self.buf = self.buf + buf
 		
+	def flush(self):
+		if self.buf and self.rw == 'w':
+			self.sock.send(self.buf)
+			self.buf = ''
+	
 	def close(self):
-		self.sock.close()
+		self.flush()
+		##self.sock.close()
 		del self.sock
-		
+
+
 def __test_tcp():
 	s = socket(AF_INET, SOCK_STREAM)
 	s.connect('poseidon.cwi.nl', 13)
@@ -227,10 +272,10 @@ def __test_tcp():
 		print 'Unexpected extra data:', rv
 	s.close()
 	
+
 def __test_udp():
 	s = socket(AF_INET, SOCK_DGRAM)
 	print 'Sending data... (hello world)'
 	s.sendto(('poseidon.cwi.nl', 7), 'hello world')
 	rv, host = s.recvfrom(1000)
 	print 'Got from ', host, ':', rv
-	
