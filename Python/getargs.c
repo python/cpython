@@ -498,6 +498,17 @@ convertsimple1(arg, p_format, p_va)
 			break;
 		}
 	
+	case 'D': /* complex double */
+		{
+			complex *p = va_arg(*p_va, complex *);
+			complex cval = PyComplex_AsCComplex(arg);
+			if (err_occurred())
+				return "complex<D>";
+			else
+				*p = cval;
+			break;
+		}
+	
 	case 'c': /* char */
 		{
 			char *p = va_arg(*p_va, char *);

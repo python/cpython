@@ -39,6 +39,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define TYPE_NONE	'N'
 #define TYPE_INT	'i'
 #define TYPE_FLOAT	'f'
+#define TYPE_COMPLEX	'x'
 #define TYPE_LONG	'l'
 #define TYPE_STRING	's'
 #define TYPE_TUPLE	'('
@@ -150,6 +151,26 @@ w_object(v, p)
 		w_byte(n, p);
 		w_string(buf, n, p);
 	}
+#ifndef WITHOUT_COMPLEX
+	else if (is_complexobject(v)) {
+		extern void float_buf_repr PROTO((char *, floatobject *));
+		char buf[256]; /* Plenty to format any double */
+		floatobject *temp;
+		w_byte(TYPE_COMPLEX, p);
+		temp = (floatobject*)newfloatobject(PyComplex_RealAsDouble(v));
+		float_buf_repr(buf, temp);
+		DECREF(temp);
+		n = strlen(buf);
+		w_byte(n, p);
+		w_string(buf, n, p);
+		temp = (floatobject*)newfloatobject(PyComplex_ImagAsDouble(v));
+		float_buf_repr(buf, temp);
+		DECREF(temp);
+		n = strlen(buf);
+		w_byte(n, p);
+		w_string(buf, n, p);
+	}
+#endif
 	else if (is_stringobject(v)) {
 		w_byte(TYPE_STRING, p);
 		n = getstringsize(v);
@@ -328,6 +349,32 @@ r_object(p)
 			buf[n] = '\0';
 			return newfloatobject(atof(buf));
 		}
+	
+#ifndef WITHOUT_COMPLEX
+	case TYPE_COMPLEX:
+		{
+			extern double atof PROTO((const char *));
+			char buf[256];
+			complex c;
+			n = r_byte(p);
+			if (r_string(buf, (int)n, p) != n) {
+				err_setstr(EOFError,
+					"EOF read where object expected");
+				return NULL;
+			}
+			buf[n] = '\0';
+			c.real = atof(buf);
+			n = r_byte(p);
+			if (r_string(buf, (int)n, p) != n) {
+				err_setstr(EOFError,
+					"EOF read where object expected");
+				return NULL;
+			}
+			buf[n] = '\0';
+			c.imag = atof(buf);
+			return newcomplexobject(c);
+		}
+#endif
 	
 	case TYPE_STRING:
 		n = r_long(p);
