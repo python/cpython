@@ -143,7 +143,9 @@ def decodeerror(arguments):
 class TalkTo:
     """An AE connection to an application"""
     _signature = None   # Can be overridden by subclasses
-    _moduleName = None # Can be overridden by subclasses
+    _moduleName = None  # Can be overridden by subclasses
+    _elemdict = {}      # Can be overridden by subclasses
+    _propdict = {}      # Can be overridden by subclasses
     
     __eventloop_initialized = 0
     def __ensure_WMAvailable(klass):
@@ -284,9 +286,9 @@ class TalkTo:
             
     set = _set
 
-	# Magic glue to allow suite-generated classes to function somewhat
-	# like the "application" class in OSA.
-	
+    # Magic glue to allow suite-generated classes to function somewhat
+    # like the "application" class in OSA.
+    
     def __getattr__(self, name):
         if self._elemdict.has_key(name):
             cls = self._elemdict[name]
