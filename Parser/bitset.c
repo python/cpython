@@ -39,10 +39,10 @@ newbitset(nbits)
 	int nbits;
 {
 	int nbytes = NBYTES(nbits);
-	bitset ss = NEW(BYTE, nbytes);
+	bitset ss = PyMem_NEW(BYTE, nbytes);
 	
 	if (ss == NULL)
-		fatal("no mem for bitset");
+		Py_FatalError("no mem for bitset");
 	
 	ss += nbytes;
 	while (--nbytes >= 0)
@@ -54,7 +54,7 @@ void
 delbitset(ss)
 	bitset ss;
 {
-	DEL(ss);
+	PyMem_DEL(ss);
 }
 
 int

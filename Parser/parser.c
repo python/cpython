@@ -45,8 +45,8 @@ PERFORMANCE OF THIS SOFTWARE.
 
 
 #ifdef Py_DEBUG
-extern int debugging;
-#define D(x) if (!debugging); else x
+extern int Py_DebugFlag;
+#define D(x) if (!Py_DebugFlag); else x
 #else
 #define D(x)
 #endif
@@ -54,7 +54,7 @@ extern int debugging;
 
 /* STACK DATA TYPE */
 
-static void s_reset PROTO((stack *));
+static void s_reset Py_PROTO((stack *));
 
 static void
 s_reset(s)
@@ -65,7 +65,7 @@ s_reset(s)
 
 #define s_empty(s) ((s)->s_top == &(s)->s_base[MAXSTACK])
 
-static int s_push PROTO((stack *, dfa *, node *));
+static int s_push Py_PROTO((stack *, dfa *, node *));
 
 static int
 s_push(s, d, parent)
@@ -87,14 +87,14 @@ s_push(s, d, parent)
 
 #ifdef Py_DEBUG
 
-static void s_pop PROTO((stack *));
+static void s_pop Py_PROTO((stack *));
 
 static void
 s_pop(s)
 	register stack *s;
 {
 	if (s_empty(s))
-		fatal("s_pop: parser stack underflow -- FATAL");
+		Py_FatalError("s_pop: parser stack underflow -- FATAL");
 	s->s_top++;
 }
 
@@ -108,42 +108,42 @@ s_pop(s)
 /* PARSER CREATION */
 
 parser_state *
-newparser(g, start)
+PyParser_New(g, start)
 	grammar *g;
 	int start;
 {
 	parser_state *ps;
 	
 	if (!g->g_accel)
-		addaccelerators(g);
-	ps = NEW(parser_state, 1);
+		PyGrammar_AddAccelerators(g);
+	ps = PyMem_NEW(parser_state, 1);
 	if (ps == NULL)
 		return NULL;
 	ps->p_grammar = g;
-	ps->p_tree = newtree(start);
+	ps->p_tree = PyNode_New(start);
 	if (ps->p_tree == NULL) {
-		DEL(ps);
+		PyMem_DEL(ps);
 		return NULL;
 	}
 	s_reset(&ps->p_stack);
-	(void) s_push(&ps->p_stack, finddfa(g, start), ps->p_tree);
+	(void) s_push(&ps->p_stack, PyGrammar_FindDFA(g, start), ps->p_tree);
 	return ps;
 }
 
 void
-delparser(ps)
+PyParser_Delete(ps)
 	parser_state *ps;
 {
 	/* NB If you want to save the parse tree,
 	   you must set p_tree to NULL before calling delparser! */
-	freetree(ps->p_tree);
-	DEL(ps);
+	PyNode_Free(ps->p_tree);
+	PyMem_DEL(ps);
 }
 
 
 /* PARSER STACK OPERATIONS */
 
-static int shift PROTO((stack *, int, char *, int, int));
+static int shift Py_PROTO((stack *, int, char *, int, int));
 
 static int
 shift(s, type, str, newstate, lineno)
@@ -154,7 +154,7 @@ shift(s, type, str, newstate, lineno)
 	int lineno;
 {
 	assert(!s_empty(s));
-	if (addchild(s->s_top->s_parent, type, str, lineno) == NULL) {
+	if (PyNode_AddChild(s->s_top->s_parent, type, str, lineno) == NULL) {
 		fprintf(stderr, "shift: no mem in addchild\n");
 		return -1;
 	}
@@ -162,7 +162,7 @@ shift(s, type, str, newstate, lineno)
 	return 0;
 }
 
-static int push PROTO((stack *, int, dfa *, int, int));
+static int push Py_PROTO((stack *, int, dfa *, int, int));
 
 static int
 push(s, type, d, newstate, lineno)
@@ -175,7 +175,7 @@ push(s, type, d, newstate, lineno)
 	register node *n;
 	n = s->s_top->s_parent;
 	assert(!s_empty(s));
-	if (addchild(n, type, (char *)NULL, lineno) == NULL) {
+	if (PyNode_AddChild(n, type, (char *)NULL, lineno) == NULL) {
 		fprintf(stderr, "push: no mem in addchild\n");
 		return -1;
 	}
@@ -186,7 +186,7 @@ push(s, type, d, newstate, lineno)
 
 /* PARSER PROPER */
 
-static int classify PROTO((grammar *, int, char *));
+static int classify Py_PROTO((grammar *, int, char *));
 
 static int
 classify(g, type, str)
@@ -226,7 +226,7 @@ classify(g, type, str)
 }
 
 int
-addtoken(ps, type, str, lineno)
+PyParser_AddToken(ps, type, str, lineno)
 	register parser_state *ps;
 	register int type;
 	char *str;
@@ -234,7 +234,7 @@ addtoken(ps, type, str, lineno)
 {
 	register int ilabel;
 	
-	D(printf("Token %s/'%s' ... ", tok_name[type], str));
+	D(printf("Token %s/'%s' ... ", _PyParser_TokenNames[type], str));
 	
 	/* Find out which label this token is */
 	ilabel = classify(ps->p_grammar, type, str);
@@ -258,10 +258,11 @@ addtoken(ps, type, str, lineno)
 					/* Push non-terminal */
 					int nt = (x >> 8) + NT_OFFSET;
 					int arrow = x & ((1<<7)-1);
-					dfa *d1 = finddfa(ps->p_grammar, nt);
+					dfa *d1 = PyGrammar_FindDFA(
+						ps->p_grammar, nt);
 					if (push(&ps->p_stack, nt, d1,
 						arrow, lineno) < 0) {
-						D(printf(" MemError: push.\n"));
+						D(printf(" MemError: push\n"));
 						return E_NOMEM;
 					}
 					D(printf(" Push ...\n"));
@@ -326,7 +327,7 @@ dumptree(g, n)
 		label l;
 		l.lb_type = TYPE(n);
 		l.lb_str = STR(n);
-		printf("%s", labelrepr(&l));
+		printf("%s", PyGrammar_LabelRepr(&l));
 		if (ISNONTERMINAL(TYPE(n))) {
 			printf("(");
 			for (i = 0; i < NCH(n); i++) {
@@ -353,7 +354,7 @@ showtree(g, n)
 			showtree(g, CHILD(n, i));
 	}
 	else if (ISTERMINAL(TYPE(n))) {
-		printf("%s", tok_name[TYPE(n)]);
+		printf("%s", _PyParser_TokenNames[TYPE(n)]);
 		if (TYPE(n) == NUMBER || TYPE(n) == NAME)
 			printf("(%s)", STR(n));
 		printf(" ");
@@ -366,7 +367,7 @@ void
 printtree(ps)
 	parser_state *ps;
 {
-	if (debugging) {
+	if (Py_DebugFlag) {
 		printf("Parse tree:\n");
 		dumptree(ps->p_grammar, ps->p_tree);
 		printf("\n");
@@ -375,7 +376,7 @@ printtree(ps)
 		printf("\n");
 	}
 	printf("Listing:\n");
-	listtree(ps->p_tree);
+	PyNode_ListTree(ps->p_tree);
 	printf("\n");
 }
 

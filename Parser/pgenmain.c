@@ -49,17 +49,17 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "parsetok.h"
 #include "pgen.h"
 
-int debugging;
+int Py_DebugFlag;
 
 /* Forward */
-grammar *getgrammar PROTO((char *filename));
+grammar *getgrammar Py_PROTO((char *filename));
 #ifdef THINK_C
-int main PROTO((int, char **));
-char *askfile PROTO((void));
+int main Py_PROTO((int, char **));
+char *askfile Py_PROTO((void));
 #endif
 
 void
-goaway(sts)
+Py_Exit(sts)
 	int sts;
 {
 	exit(sts);
@@ -79,7 +79,7 @@ main(argc, argv)
 #else
 	if (argc != 2) {
 		fprintf(stderr, "usage: %s grammar\n", argv[0]);
-		goaway(2);
+		Py_Exit(2);
 	}
 	filename = argv[1];
 #endif
@@ -87,7 +87,7 @@ main(argc, argv)
 	fp = fopen("graminit.c", "w");
 	if (fp == NULL) {
 		perror("graminit.c");
-		goaway(1);
+		Py_Exit(1);
 	}
 	printf("Writing graminit.c ...\n");
 	printgrammar(g, fp);
@@ -95,12 +95,12 @@ main(argc, argv)
 	fp = fopen("graminit.h", "w");
 	if (fp == NULL) {
 		perror("graminit.h");
-		goaway(1);
+		Py_Exit(1);
 	}
 	printf("Writing graminit.h ...\n");
 	printnonterminals(g, fp);
 	fclose(fp);
-	goaway(0);
+	Py_Exit(0);
 	return 0; /* Make gcc -Wall happy */
 }
 
@@ -116,10 +116,10 @@ getgrammar(filename)
 	fp = fopen(filename, "r");
 	if (fp == NULL) {
 		perror(filename);
-		goaway(1);
+		Py_Exit(1);
 	}
 	g0 = meta_grammar();
-	n = parsefile(fp, filename, g0, g0->g_start,
+	n = PyParser_ParseFile(fp, filename, g0, g0->g_start,
 		      (char *)NULL, (char *)NULL, &err);
 	fclose(fp);
 	if (n == NULL) {
@@ -140,12 +140,12 @@ getgrammar(filename)
 			fprintf(stderr, "^\n");
 			free(err.text);
 		}
-		goaway(1);
+		Py_Exit(1);
 	}
 	g = pgen(n);
 	if (g == NULL) {
 		printf("Bad grammar.\n");
-		goaway(1);
+		Py_Exit(1);
 	}
 	return g;
 }
@@ -159,23 +159,23 @@ askfile()
 	printf("Input file name: ");
 	if (fgets(buf, sizeof buf, stdin) == NULL) {
 		printf("EOF\n");
-		goaway(1);
+		Py_Exit(1);
 	}
 	/* XXX The (unsigned char *) case is needed by THINK C 3.0 */
 	if (sscanf(/*(unsigned char *)*/buf, " %s ", name) != 1) {
 		printf("No file\n");
-		goaway(1);
+		Py_Exit(1);
 	}
 	return name;
 }
 #endif
 
 void
-fatal(msg)
+Py_FatalError(msg)
 	char *msg;
 {
 	fprintf(stderr, "pgen: FATAL ERROR: %s\n", msg);
-	goaway(1);
+	Py_Exit(1);
 }
 
 #ifdef macintosh
@@ -191,7 +191,7 @@ guesstabsize(path)
 /* No-nonsense my_readline() for tokenizer.c */
 
 char *
-my_readline(prompt)
+PyOS_Readline(prompt)
 	char *prompt;
 {
 	int n = 1000;

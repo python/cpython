@@ -42,7 +42,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "metagrammar.h"
 #include "pgen.h"
 
-extern int debugging;
+extern int Py_DebugFlag;
 
 
 /* PART ONE -- CONSTRUCT NFA -- Cf. Algorithm 3.2 from [Aho&Ullman 77] */
@@ -66,13 +66,13 @@ typedef struct _nfa {
 } nfa;
 
 /* Forward */
-static void compile_rhs PROTO((labellist *ll,
+static void compile_rhs Py_PROTO((labellist *ll,
 			       nfa *nf, node *n, int *pa, int *pb));
-static void compile_alt PROTO((labellist *ll,
+static void compile_alt Py_PROTO((labellist *ll,
 			       nfa *nf, node *n, int *pa, int *pb));
-static void compile_item PROTO((labellist *ll,
+static void compile_item Py_PROTO((labellist *ll,
 				nfa *nf, node *n, int *pa, int *pb));
-static void compile_atom PROTO((labellist *ll,
+static void compile_atom Py_PROTO((labellist *ll,
 				nfa *nf, node *n, int *pa, int *pb));
 
 static int
@@ -81,9 +81,9 @@ addnfastate(nf)
 {
 	nfastate *st;
 	
-	RESIZE(nf->nf_state, nfastate, nf->nf_nstates + 1);
+	PyMem_RESIZE(nf->nf_state, nfastate, nf->nf_nstates + 1);
 	if (nf->nf_state == NULL)
-		fatal("out of mem");
+		Py_FatalError("out of mem");
 	st = &nf->nf_state[nf->nf_nstates++];
 	st->st_narcs = 0;
 	st->st_arc = NULL;
@@ -99,9 +99,9 @@ addnfaarc(nf, from, to, lbl)
 	nfaarc *ar;
 	
 	st = &nf->nf_state[from];
-	RESIZE(st->st_arc, nfaarc, st->st_narcs + 1);
+	PyMem_RESIZE(st->st_arc, nfaarc, st->st_narcs + 1);
 	if (st->st_arc == NULL)
-		fatal("out of mem");
+		Py_FatalError("out of mem");
 	ar = &st->st_arc[st->st_narcs++];
 	ar->ar_label = lbl;
 	ar->ar_arrow = to;
@@ -114,9 +114,9 @@ newnfa(name)
 	nfa *nf;
 	static type = NT_OFFSET; /* All types will be disjunct */
 	
-	nf = NEW(nfa, 1);
+	nf = PyMem_NEW(nfa, 1);
 	if (nf == NULL)
-		fatal("no mem for new nfa");
+		Py_FatalError("no mem for new nfa");
 	nf->nf_type = type++;
 	nf->nf_name = name; /* XXX strdup(name) ??? */
 	nf->nf_nstates = 0;
@@ -132,16 +132,16 @@ typedef struct _nfagrammar {
 } nfagrammar;
 
 /* Forward */
-static void compile_rule PROTO((nfagrammar *gr, node *n));
+static void compile_rule Py_PROTO((nfagrammar *gr, node *n));
 
 static nfagrammar *
 newnfagrammar()
 {
 	nfagrammar *gr;
 	
-	gr = NEW(nfagrammar, 1);
+	gr = PyMem_NEW(nfagrammar, 1);
 	if (gr == NULL)
-		fatal("no mem for new nfa grammar");
+		Py_FatalError("no mem for new nfa grammar");
 	gr->gr_nnfas = 0;
 	gr->gr_nfa = NULL;
 	gr->gr_ll.ll_nlabels = 0;
@@ -158,9 +158,9 @@ addnfa(gr, name)
 	nfa *nf;
 	
 	nf = newnfa(name);
-	RESIZE(gr->gr_nfa, nfa *, gr->gr_nnfas + 1);
+	PyMem_RESIZE(gr->gr_nfa, nfa *, gr->gr_nnfas + 1);
 	if (gr->gr_nfa == NULL)
-		fatal("out of mem");
+		Py_FatalError("out of mem");
 	gr->gr_nfa[gr->gr_nnfas++] = nf;
 	addlabel(&gr->gr_ll, NAME, nf->nf_name);
 	return nf;
@@ -173,7 +173,7 @@ static char REQNFMT[] = "metacompile: less than %d children\n";
 #define REQN(i, count) \
  	if (i < count) { \
 		fprintf(stderr, REQNFMT, count); \
-		fatal("REQN"); \
+		Py_FatalError("REQN"); \
 	} else
 
 #else
@@ -379,7 +379,7 @@ dumpstate(ll, nf, istate)
 		if (i > 0)
 			printf("\n    ");
 		printf("-> %2d  %s", ar->ar_arrow,
-			labelrepr(&ll->ll_label[ar->ar_label]));
+			PyGrammar_LabelRepr(&ll->ll_label[ar->ar_label]));
 		ar++;
 	}
 	printf("\n");
@@ -441,10 +441,10 @@ typedef struct _ss_dfa {
 } ss_dfa;
 
 /* Forward */
-static void printssdfa PROTO((int xx_nstates, ss_state *xx_state, int nbits,
+static void printssdfa Py_PROTO((int xx_nstates, ss_state *xx_state, int nbits,
 			      labellist *ll, char *msg));
-static void simplify PROTO((int xx_nstates, ss_state *xx_state));
-static void convert PROTO((dfa *d, int xx_nstates, ss_state *xx_state));
+static void simplify Py_PROTO((int xx_nstates, ss_state *xx_state));
+static void convert Py_PROTO((dfa *d, int xx_nstates, ss_state *xx_state));
 
 static void
 makedfa(gr, nf, d)
@@ -463,9 +463,9 @@ makedfa(gr, nf, d)
 	
 	ss = newbitset(nbits);
 	addclosure(ss, nf, nf->nf_start);
-	xx_state = NEW(ss_state, 1);
+	xx_state = PyMem_NEW(ss_state, 1);
 	if (xx_state == NULL)
-		fatal("no mem for xx_state in makedfa");
+		Py_FatalError("no mem for xx_state in makedfa");
 	xx_nstates = 1;
 	yy = &xx_state[0];
 	yy->ss_ss = ss;
@@ -501,9 +501,10 @@ makedfa(gr, nf, d)
 						goto found;
 				}
 				/* Add new arc for this state */
-				RESIZE(yy->ss_arc, ss_arc, yy->ss_narcs + 1);
+				PyMem_RESIZE(yy->ss_arc, ss_arc,
+					     yy->ss_narcs + 1);
 				if (yy->ss_arc == NULL)
-					fatal("out of mem");
+					Py_FatalError("out of mem");
 				zz = &yy->ss_arc[yy->ss_narcs++];
 				zz->sa_label = ar->ar_label;
 				zz->sa_bitset = newbitset(nbits);
@@ -523,9 +524,9 @@ makedfa(gr, nf, d)
 					goto done;
 				}
 			}
-			RESIZE(xx_state, ss_state, xx_nstates + 1);
+			PyMem_RESIZE(xx_state, ss_state, xx_nstates + 1);
 			if (xx_state == NULL)
-				fatal("out of mem");
+				Py_FatalError("out of mem");
 			zz->sa_arrow = xx_nstates;
 			yy = &xx_state[xx_nstates++];
 			yy->ss_ss = zz->sa_bitset;
@@ -537,13 +538,13 @@ makedfa(gr, nf, d)
 		}
 	}
 	
-	if (debugging)
+	if (Py_DebugFlag)
 		printssdfa(xx_nstates, xx_state, nbits, &gr->gr_ll,
 						"before minimizing");
 	
 	simplify(xx_nstates, xx_state);
 	
-	if (debugging)
+	if (Py_DebugFlag)
 		printssdfa(xx_nstates, xx_state, nbits, &gr->gr_ll,
 						"after minimizing");
 	
@@ -582,7 +583,8 @@ printssdfa(xx_nstates, xx_state, nbits, ll, msg)
 			zz = &yy->ss_arc[iarc];
 			printf("  Arc to state %d, label %s\n",
 				zz->sa_arrow,
-				labelrepr(&ll->ll_label[zz->sa_label]));
+				PyGrammar_LabelRepr(
+					&ll->ll_label[zz->sa_label]));
 		}
 	}
 }
@@ -621,7 +623,7 @@ renamestates(xx_nstates, xx_state, from, to)
 {
 	int i, j;
 	
-	if (debugging)
+	if (Py_DebugFlag)
 		printf("Rename state %d to %d.\n", from, to);
 	for (i = 0; i < xx_nstates; i++) {
 		if (xx_state[i].ss_deleted)
@@ -651,7 +653,8 @@ simplify(xx_nstates, xx_state)
 					continue;
 				if (samestate(&xx_state[i], &xx_state[j])) {
 					xx_state[i].ss_deleted++;
-					renamestates(xx_nstates, xx_state, i, j);
+					renamestates(xx_nstates, xx_state,
+						     i, j);
 					changes++;
 					break;
 				}
@@ -719,7 +722,7 @@ maketables(gr)
 	
 	for (i = 0; i < gr->gr_nnfas; i++) {
 		nf = gr->gr_nfa[i];
-		if (debugging) {
+		if (Py_DebugFlag) {
 			printf("Dump of NFA for '%s' ...\n", nf->nf_name);
 			dumpnfa(&gr->gr_ll, nf);
 		}

@@ -35,10 +35,10 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "grammar.h"
 
 /* Forward */
-static void printarcs PROTO((int, dfa *, FILE *));
-static void printstates PROTO((grammar *, FILE *));
-static void printdfas PROTO((grammar *, FILE *));
-static void printlabels PROTO((grammar *, FILE *));
+static void printarcs Py_PROTO((int, dfa *, FILE *));
+static void printstates Py_PROTO((grammar *, FILE *));
+static void printdfas Py_PROTO((grammar *, FILE *));
+static void printlabels Py_PROTO((grammar *, FILE *));
 
 void
 printgrammar(g, fp)

@@ -47,11 +47,11 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "parser.h"
 
 /* Forward references */
-static void fixdfa PROTO((grammar *, dfa *));
-static void fixstate PROTO((grammar *, state *));
+static void fixdfa Py_PROTO((grammar *, dfa *));
+static void fixstate Py_PROTO((grammar *, state *));
 
 void
-addaccelerators(g)
+PyGrammar_AddAccelerators(g)
 	grammar *g;
 {
 	dfa *d;
@@ -90,7 +90,7 @@ fixstate(g, s)
 	int *accel;
 	int nl = g->g_ll.ll_nlabels;
 	s->s_accept = 0;
-	accel = NEW(int, nl);
+	accel = PyMem_NEW(int, nl);
 	for (k = 0; k < nl; k++)
 		accel[k] = -1;
 	a = s->s_arc;
@@ -103,7 +103,7 @@ fixstate(g, s)
 			continue;
 		}
 		if (ISNONTERMINAL(type)) {
-			dfa *d1 = finddfa(g, type);
+			dfa *d1 = PyGrammar_FindDFA(g, type);
 			int ibit;
 			if (type - NT_OFFSET >= (1 << 7)) {
 				printf("XXX too high nonterminal number!\n");
@@ -146,7 +146,7 @@ fixstate(g, s)
 		k++;
 	if (k < nl) {
 		int i;
-		s->s_accel = NEW(int, nl-k);
+		s->s_accel = PyMem_NEW(int, nl-k);
 		if (s->s_accel == NULL) {
 			fprintf(stderr, "no mem to add parser accelerators\n");
 			exit(1);
@@ -156,5 +156,5 @@ fixstate(g, s)
 		for (i = 0; k < nl; i++, k++)
 			s->s_accel[i] = accel[k];
 	}
-	DEL(accel);
+	PyMem_DEL(accel);
 }

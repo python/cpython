@@ -37,10 +37,10 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Parser generator interface */
 
-extern grammar *meta_grammar PROTO((void));
+extern grammar *meta_grammar Py_PROTO((void));
 
 struct _node;
-extern grammar *pgen PROTO((struct _node *));
+extern grammar *pgen Py_PROTO((struct _node *));
 
 #ifdef __cplusplus
 }

@@ -35,10 +35,10 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "node.h"
 
 node *
-newtree(type)
+PyNode_New(type)
 	int type;
 {
-	node *n = NEW(node, 1);
+	node *n = PyMem_NEW(node, 1);
 	if (n == NULL)
 		return NULL;
 	n->n_type = type;
@@ -53,7 +53,7 @@ newtree(type)
 #define XXXROUNDUP(n) ((n) == 1 ? 1 : ((n) + XXX - 1) / XXX * XXX)
 
 node *
-addchild(n1, type, str, lineno)
+PyNode_AddChild(n1, type, str, lineno)
 	register node *n1;
 	int type;
 	char *str;
@@ -65,7 +65,7 @@ addchild(n1, type, str, lineno)
 	if (XXXROUNDUP(nch) < nch1) {
 		n = n1->n_child;
 		nch1 = XXXROUNDUP(nch1);
-		RESIZE(n, node, nch1);
+		PyMem_RESIZE(n, node, nch1);
 		if (n == NULL)
 			return NULL;
 		n1->n_child = n;
@@ -80,16 +80,16 @@ addchild(n1, type, str, lineno)
 }
 
 /* Forward */
-static void freechildren PROTO((node *));
+static void freechildren Py_PROTO((node *));
 
 
 void
-freetree(n)
+PyNode_Free(n)
 	node *n;
 {
 	if (n != NULL) {
 		freechildren(n);
-		DEL(n);
+		PyMem_DEL(n);
 	}
 }
 
@@ -101,7 +101,7 @@ freechildren(n)
 	for (i = NCH(n); --i >= 0; )
 		freechildren(CHILD(n, i));
 	if (n->n_child != NULL)
-		DEL(n->n_child);
+		PyMem_DEL(n->n_child);
 	if (STR(n) != NULL)
-		DEL(STR(n));
+		PyMem_DEL(STR(n));
 }
