@@ -3,7 +3,7 @@ from Carbon import Qd
 from Carbon import Win
 from Carbon import Qt, QuickTime
 import W
-import macfs
+from Carbon import File
 from Carbon import Evt, Events
 
 _moviesinitialized = 0
@@ -33,14 +33,9 @@ class Movie(W.Widget):
 		if self.movie:
 			#self.GetWindow().InvalWindowRect(self.movie.GetMovieBox())
 			Qd.PaintRect(self.movie.GetMovieBox())
-		if type(path_or_fss) == type(''):
-			path = path_or_fss
-			fss = macfs.FSSpec(path)
-		else:
-			path = path_or_fss.as_pathname()
-			fss = path_or_fss
+		path = File.pathname(path)
 		self.movietitle = os.path.basename(path)
-		movieResRef = Qt.OpenMovieFile(fss, 1)
+		movieResRef = Qt.OpenMovieFile(path_or_fss, 1)
 		self.movie, dummy, dummy = Qt.NewMovieFromFile(movieResRef, 0, QuickTime.newMovieActive)
 		self.moviebox = self.movie.GetMovieBox()
 		self.calcmoviebox()
