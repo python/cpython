@@ -2,7 +2,7 @@ import minidom
 import types
 import string
 import sys
-from xml.sax import ExpatParser
+import xml.sax
 
 #todo: SAX2/namespace handling
 
@@ -166,7 +166,7 @@ class DOMEventStream:
 
         
 def _getParser():
-     return ExpatParser()
+     return xml.sax.make_parser()
 
 default_bufsize=(2**14)-20
 # FIXME: move into sax package for common usage
