@@ -18,6 +18,8 @@ HTML options:
     --iconserver, -i	Specify location of icons (default: ../).
     --image-type	Specify the image type to use in HTML output;
                         values: gif (default), png.
+    --numeric           Don't rename the HTML files; just keep node#.html for
+                        the filenames.
 
 Other options:
     --a4		Format for A4 paper.
@@ -84,6 +86,7 @@ class Options:
     paper = "letter"
     quiet = 0
     runs = 0
+    numeric = 0
     style_file = os.path.join(TOPDIR, "html", "style.css")
     about_file = os.path.join(TOPDIR, "html", "about.dat")
     #
@@ -107,7 +110,7 @@ class Options:
                                     "address=", "a4", "l2h-config=", "letter",
                                     "link=", "split=", "logging", "debugging",
                                     "keep", "quiet", "runs=", "image-type=",
-                                    "about="]
+                                    "about=", "numeric"]
                                    + list(self.ALL_FORMATS))
         for opt, arg in opts:
             if opt == "--all":
@@ -145,6 +148,8 @@ class Options:
                 # always make this absolute:
                 self.about_file = os.path.normpath(
                     os.path.join(os.getcwd(), arg))
+            elif opt == "--numeric":
+                self.numeric = 1
             #
             # Format specifiers:
             #
@@ -337,7 +342,7 @@ class Job:
                         os.path.join(builddir, self.doc + ".css"))
         shutil.copyfile(os.path.join(builddir, self.doc + ".html"),
                         os.path.join(builddir, "index.html"))
-        if max_split_depth != 1:
+        if max_split_depth != 1 and not self.options.numeric:
             pwd = os.getcwd()
             try:
                 os.chdir(builddir)
