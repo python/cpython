@@ -682,6 +682,7 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
   (make-local-variable 'paragraph-start)
   (make-local-variable 'require-final-newline)
   (make-local-variable 'comment-start)
+  (make-local-variable 'comment-end)
   (make-local-variable 'comment-start-skip)
   (make-local-variable 'comment-column)
   (make-local-variable 'indent-region-function)
@@ -697,6 +698,7 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
 	paragraph-start        "^[ \t]*$"
 	require-final-newline  t
 	comment-start          "# "
+	comment-end            ""
 	comment-start-skip     "# *"
 	comment-column         40
 	indent-region-function 'py-indent-region
