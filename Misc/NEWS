@@ -12,6 +12,8 @@ Core and builtins
 
 Extension modules
 
+- Various bugfixes to the curses module.
+
 Library
 
 Tools/Demos
@@ -23,6 +25,9 @@ C API
 New platforms
 
 Tests
+
+- Added a test script for the curses module.  It isn't run automatically;
+  regrtest.py must be run with '-u curses' to enable it.
 
 Windows
 
