@@ -89,7 +89,7 @@ package.  The interpreter detects syntax errors in two distinct
 phases.  One set of errors is detected by the interpreter's parser,
 the other set by the compiler.  The compiler package relies on the
 interpreter's parser, so it get the first phases of error checking for
-free.  It implements the second phase itself, and that implement is
+free.  It implements the second phase itself, and that implementation is
 incomplete.  For example, the compiler package does not raise an error
 if a name appears more than once in an argument list: 
 \code{def f(x, x): ...}
