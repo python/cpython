@@ -3,7 +3,7 @@ try:
     import zlib
 except ImportError:
     zlib = None
-    
+
 import zipfile, os, unittest
 
 from StringIO import StringIO

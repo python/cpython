@@ -372,7 +372,7 @@ class CodeGenerator:
             ndecorators = len(node.decorators.nodes)
         else:
             ndecorators = 0
- 
+
         gen = self.FunctionGen(node, self.scopes, isLambda,
                                self.class_name, self.get_module())
         walk(node.code, gen)

@@ -29,7 +29,7 @@ def nametofont(name):
     """Given the name of a tk named font, returns a Font representation.
     """
     return Font(name=name, exists=True)
-    
+
 class Font:
 
     """Represents a named font.
@@ -50,7 +50,7 @@ class Font:
     slant -- font slant: ROMAN, ITALIC
     underline -- font underlining: false (0), true (1)
     overstrike -- font strikeout: false (0), true (1)
-        
+
     """
 
     def _set(self, kw):
@@ -95,7 +95,7 @@ class Font:
                 root.tk.call("font", "configure", self.name, *font)
         else:
             # create new font (raises TclError if the font exists)
-            root.tk.call("font", "create", self.name, *font) 
+            root.tk.call("font", "create", self.name, *font)
             self.delete_font = True
         # backlinks!
         self._root  = root
@@ -120,7 +120,7 @@ class Font:
                 self._call("font", "delete", self.name)
         except (AttributeError, Tkinter.TclError):
             pass
-  
+
     def copy(self):
         "Return a distinct copy of the current font"
         return Font(self._root, **self.actual())

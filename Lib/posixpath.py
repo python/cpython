@@ -404,7 +404,7 @@ symbolic links encountered in the path."""
         bits = ['/'] + filename.split('/')[1:]
     else:
         bits = filename.split('/')
-        
+
     for i in range(2, len(bits)+1):
         component = join(*bits[0:i])
         # Resolve symbolic links.
@@ -415,10 +415,10 @@ symbolic links encountered in the path."""
                 return abspath(join(*([component] + bits[i:])))
             else:
                 newpath = join(*([resolved] + bits[i:]))
-                return realpath(newpath)        
+                return realpath(newpath)
 
     return abspath(filename)
-    
+
 
 def _resolve_link(path):
     """Internal helper function.  Takes a path and follows symlinks
