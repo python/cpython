@@ -51,8 +51,8 @@ entry definitions are then ignored, but key bindings are still applied.  (This
 should probably be refined in the future.)
 
 Extensions are not required to define menu entries for all the events they
-implement. (XXX KBK 15Jul03: But it appears they must have keybindings for each
-virtual event?)
+implement.  (They are also not required to create keybindings, but in that
+case there must be empty bindings in cofig-extensions.def)
 
 Here is a complete example example:
 
