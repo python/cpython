@@ -2548,12 +2548,8 @@ date_setstate(PyDateTime_Date *self, PyObject *arg)
 	int len;
 	unsigned char *pdata;
 
-	if (!PyTuple_Check(arg) || PyTuple_GET_SIZE(arg) != 1) {
-  error:
-		PyErr_SetString(PyExc_TypeError,
-				"bad argument to date.__setstate__");
-		return NULL;
-	}
+	if (!PyTuple_Check(arg) || PyTuple_GET_SIZE(arg) != 1)
+		goto error;
 	state = PyTuple_GET_ITEM(arg, 0);
 	if (!PyString_Check(state))
 		goto error;
@@ -2568,6 +2564,10 @@ date_setstate(PyDateTime_Date *self, PyObject *arg)
 
 	Py_INCREF(Py_None);
 	return Py_None;
+ error:
+	PyErr_SetString(PyExc_TypeError,
+			"bad argument to date.__setstate__");
+	return NULL;
 }
 
 static PyObject *
