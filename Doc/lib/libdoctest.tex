@@ -365,6 +365,10 @@ example's expected output:
     is prone to in regular expressions.
 \end{datadesc}
 
+\begin{datadesc}{COMPARISON_FLAGS}
+    A bitmask or'ing together all the comparison flags above.
+\end{datadesc}
+
 The second group of options controls how test failures are reported:
 
 \begin{datadesc}{REPORT_UDIFF}
@@ -396,6 +400,10 @@ The second group of options controls how test failures are reported:
   \constant{REPORT_ONLY_FIRST_FAILURE} is specified, the remaining
   examples are still run, and still count towards the total number of
   failures reported; only the output is suppressed.
+\end{datadesc}
+
+\begin{datadesc}{REPORTING_FLAGS}
+    A bitmask or'ing together all the reporting flags above.
 \end{datadesc}
 
 A "doctest directive" is a trailing Python comment on a line of a doctest
@@ -456,7 +464,8 @@ can be useful.
 \versionchanged[Constants \constant{DONT_ACCEPT_BLANKLINE},
     \constant{NORMALIZE_WHITESPACE}, \constant{ELLIPSIS},
     \constant{REPORT_UDIFF}, \constant{REPORT_CDIFF},
-    \constant{REPORT_NDIFF}, and \constant{REPORT_ONLY_FIRST_FAILURE}
+    \constant{REPORT_NDIFF}, \constant{REPORT_ONLY_FIRST_FAILURE},
+    \constant{COMPARISON_FLAGS} and \constant{REPORTING_FLAGS}
     were added; by default \code{<BLANKLINE>} in expected output
     matches an empty line in actual output; and doctest directives
     were added]{2.4}
