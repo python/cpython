@@ -35,7 +35,7 @@ class HMAC:
         self.outer = digestmod.new()
         self.inner = digestmod.new()
         self.digest_size = digestmod.digest_size
-        
+
         blocksize = 64
         ipad = "\x36" * blocksize
         opad = "\x5C" * blocksize
@@ -97,4 +97,3 @@ def new(key, msg = None, digestmod = None):
     method.
     """
     return HMAC(key, msg, digestmod)
-

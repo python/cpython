@@ -283,7 +283,7 @@ def _safe_repr(object, context, maxlevels, level):
                 recursive = 1
         del context[objid]
         return format % _commajoin(components), readable, recursive
-        
+
     rep = `object`
     return rep, (rep and not rep.startswith('<')), 0
 

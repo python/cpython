@@ -45,7 +45,7 @@ class ConstructorTestCase(unittest.TestCase):
             h = hmac.HMAC("key", "", sha)
         except:
             self.fail("Constructor call with sha module raised exception.")
-        
+
 class SanityTestCase(unittest.TestCase):
     def test_default_is_md5(self):
         """Testing if HMAC defaults to MD5 algorithm."""
@@ -106,4 +106,3 @@ def test_main():
 
 if __name__ == "__main__":
     test_main()
-

@@ -24,7 +24,7 @@ class DumbDBMTestCase(unittest.TestCase):
         unittest.TestCase.__init__(self, *args)
         self._dkeys = self._dict.keys()
         self._dkeys.sort()
-        
+
     def test_dumbdbm_creation(self):
         for ext in [".dir", ".dat", ".bak"]:
             try: os.unlink(self._fname+ext)
@@ -57,7 +57,7 @@ class DumbDBMTestCase(unittest.TestCase):
         keys = self.keys_helper(f)
         for key in self._dict:
             self.assertEqual(self._dict[key], f[key])
-        
+
     def keys_helper(self, f):
         keys = f.keys()
         keys.sort()
