@@ -123,9 +123,12 @@ class variable.
 \end{memberdesc}
 
 \begin{memberdesc}{protocol_version}
-This specifies the HTTP protocol version used in responses.
-Typically, this should not be overridden. Defaults to
-\code{'HTTP/1.0'}.
+This specifies the HTTP protocol version used in responses.  If set
+to \code{'HTTP/1.1'}, the server will permit HTTP persistent
+connections; however, your server \emph{must} then include an
+accurate \code{Content-Length} header (using \method{send_header()})
+in all of its responses to clients.  For backwards compatibility,
+the setting defaults to \code{'HTTP/1.0'}.
 \end{memberdesc}
 
 \begin{memberdesc}{MessageClass}
@@ -148,9 +151,16 @@ error response, and \var{longmessage} as the \var{explain} key
 A \class{BaseHTTPRequestHandler} instance has the following methods:
 
 \begin{methoddesc}{handle}{}
-Overrides the superclass' \method{handle()} method to provide the
-specific handler behavior. This method will parse and dispatch
-the request to the appropriate \method{do_*()} method.
+Calls \method{handle_one_request()} once (or, if persistent connections
+are enabled, multiple times) to handle incoming HTTP requests.
+You should never need to override it; instead, implement appropriate
+\method{do_*()} methods.
+\end{methoddesc}
+
+\begin{methoddesc}{handle_one_request}{}
+This method will parse and dispatch
+the request to the appropriate \method{do_*()} method.  You should
+never need to override it.
 \end{methoddesc}
 
 \begin{methoddesc}{send_error}{code\optional{, message}}
