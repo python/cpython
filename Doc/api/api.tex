@@ -1135,7 +1135,7 @@ The functions in this chapter perform various utility tasks, such as
 parsing function arguments and constructing Python values from C
 values.
 
-\section{OS Utilities \label{os}}
+\section{Operating System Utilities \label{os}}
 
 \begin{cfuncdesc}{int}{Py_FdIsInteractive}{FILE *fp, char *filename}
 Return true (nonzero) if the standard I/O file \var{fp} with name
@@ -1854,7 +1854,7 @@ and \NULL{} on failure. The operation is done \emph{in-place} when
 Returns the ``bitwise exclusive or'' of \var{o1} by \var{o2} on success, or
 \NULL{} on failure.  The operation is done \emph{in-place} when \var{o1}
 supports it.  This is the equivalent of the Python expression \samp{\var{o1}
-\^= \var{o2}}.
+\textasciicircum= \var{o2}}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceOr}{PyObject *o1, PyObject *o2}
