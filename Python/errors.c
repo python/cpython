@@ -206,6 +206,14 @@ PyErr_NormalizeException(exc, val, tb)
 			Py_DECREF(value);
 			value = res;
 		}
+		/* if the class of the instance doesn't exactly match the
+		   class of the type, believe the instance
+		*/
+		else if (inclass != type) {
+ 			Py_DECREF(type);
+			type = inclass;
+			Py_INCREF(type);
+		}
 	}
 	*exc = type;
 	*val = value;
