@@ -2,8 +2,8 @@ FAQ Wizard
 ----------
 
 Author: Guido van Rossum <guido@python.org>
-Version: 0.6
-Date: 12 July 1997
+Version: 0.7
+Date: 14 August 1997
 
 
 This is a CGI program that maintains a user-editable FAQ.  It uses RCS
