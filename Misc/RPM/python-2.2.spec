@@ -5,7 +5,7 @@
 #  Is the resulting package and the installed binary named "python" or
 #  "python2"?
 # Valid values: [none/2/2.2]
-%define config_binsuffix 2.2.2b1
+%define config_binsuffix 2
 
 #  Build tkinter?  "auto" enables it if /usr/bin/wish exists.
 # Valid values: [no/yes/auto]
@@ -25,7 +25,7 @@
 #################################
 
 %define name python
-%define version 2.2.2b1
+%define version 2.2.3
 %define release 1
 %define __prefix /usr
 %define libvers %(echo "%{version}" | awk -F. '{ printf "%s.%s", $1, $2 }')
@@ -51,7 +51,6 @@ Source1: html-%{version}.tar.bz2
 %endif
 BuildRoot: /var/tmp/%{name}-%{version}-root
 BuildPrereq: expat-devel
-BuildPrereq: /usr/include/db1/db.h
 BuildPrereq: gdbm-devel
 Prefix: %{__prefix}
 Packager: Sean Reifschneider <jafo-rpms@tummy.com>
