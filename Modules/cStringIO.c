@@ -224,6 +224,40 @@ O_readline(Oobject *self, PyObject *args) {
   return PyString_FromStringAndSize(output, n);
 }
 
+static char O_readlines__doc__[] = 
+"readlines() -- Read all lines"
+;
+
+static PyObject *
+O_readlines(Oobject *self, PyObject *args) {
+	int n;
+	char *output;
+	PyObject *result, *line;
+        int hint = 0, length = 0;
+	
+        UNLESS(PyArg_ParseTuple(args, "|i:write", &hint)) return NULL;
+	result = PyList_New(0);
+	if (!result)
+		return NULL;
+
+	while(1){
+		n = O_creadline((PyObject*)self,&output);
+		if (n == 0)
+			break;
+		line = PyString_FromStringAndSize (output, n);
+		if (!line){
+			Py_DECREF (result);
+			return NULL;
+		}
+		PyList_Append (result, line);
+		Py_DECREF (line);
+                length += n;
+                if (hint > 0 && length >= hint)
+			break;
+	}
+	return result;
+}
+
 static char O_write__doc__[] = 
 "write(s) -- Write a string to the file"
 "\n\nNote (hack:) writing None resets the buffer"
@@ -390,6 +424,7 @@ static struct PyMethodDef O_methods[] = {
   {"write",	 (PyCFunction)O_write,      METH_VARARGS, O_write__doc__},
   {"read",       (PyCFunction)O_read,       METH_VARARGS, O_read__doc__},
   {"readline",   (PyCFunction)O_readline,   METH_VARARGS, O_readline__doc__},
+  {"readlines",  (PyCFunction)O_readlines,  METH_VARARGS, O_readlines__doc__},
   {"reset",      (PyCFunction)O_reset,      METH_VARARGS, O_reset__doc__},
   {"seek",       (PyCFunction)O_seek,       METH_VARARGS, O_seek__doc__},
   {"tell",       (PyCFunction)O_tell,       METH_VARARGS, O_tell__doc__},
@@ -522,6 +557,7 @@ I_seek(Oobject *self, PyObject *args) {
 static struct PyMethodDef I_methods[] = {
   {"read",	(PyCFunction)O_read,     METH_VARARGS, O_read__doc__},
   {"readline",	(PyCFunction)O_readline, METH_VARARGS, O_readline__doc__},
+  {"readlines",	(PyCFunction)O_readlines,METH_VARARGS, O_readlines__doc__},
   {"reset",	(PyCFunction)O_reset,	 METH_VARARGS, O_reset__doc__},
   {"seek",      (PyCFunction)I_seek,     METH_VARARGS, O_seek__doc__},  
   {"tell",      (PyCFunction)O_tell,     METH_VARARGS, O_tell__doc__},
