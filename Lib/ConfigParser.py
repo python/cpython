@@ -199,7 +199,7 @@ class ConfigParser:
         # Update with the entry specific variables
         if vars:
             d.update(vars)
-        option = string.lower(option)
+        option = self.optionxform(option)
         try:
             rawval = d[option]
         except KeyError:
@@ -236,16 +236,19 @@ class ConfigParser:
             raise ValueError, 'Not a boolean: %s' % v
         return val
 
+    def optionxform(self, optionstr):
+        return string.lower(optionstr)
+
     #
     # Regular expressions for parsing section headers and options.  Note a
     # slight semantic change from the previous version, because of the use
     # of \w, _ is allowed in section header names.
-    __SECTCRE = re.compile(
+    SECTCRE = re.compile(
         r'\['                                 # [
         r'(?P<header>[-\w]+)'                 # `-', `_' or any alphanum
         r'\]'                                 # ]
         )
-    __OPTCRE = re.compile(
+    OPTCRE = re.compile(
         r'(?P<option>[-.\w]+)'                # - . _ alphanum
         r'[ \t]*[:=][ \t]*'                   # any number of space/tab,
                                               # followed by separator
@@ -287,7 +290,7 @@ class ConfigParser:
             # a section header or option header?
             else:
                 # is it a section header?
-                mo = self.__SECTCRE.match(line)
+                mo = self.SECTCRE.match(line)
                 if mo:
                     sectname = mo.group('header')
                     if self.__sections.has_key(sectname):
@@ -304,7 +307,7 @@ class ConfigParser:
                     raise MissingSectionHeaderError(fp.name, lineno, `line`)
                 # an option line?
                 else:
-                    mo = self.__OPTCRE.match(line)
+                    mo = self.OPTCRE.match(line)
                     if mo:
                         optname, optval = mo.group('option', 'value')
                         optname = string.lower(optname)
