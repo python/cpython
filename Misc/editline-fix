@@ -1,0 +1,80 @@
+Subject: Problems trying to use readline or editline ...
+From: Skip Montanaro <skip@dolphin.automatrix.com>
+To: python-list@cwi.nl
+Date: 19 Nov 1995 14:19:56 GMT
+X-Newsgroups: comp.lang.python
+X-Organization: Automatrix, Inc.
+
+
+I'm having some trouble with either of the line editing libraries available
+to me.  If I build Python with libreadline, I get "staircases" in my
+interpreter output:
+
+    >>> s = 1
+             >>> a = 3
+                      >>> etc.
+
+So I figured I'd give Rich Salz's editline a try.  It seems to be missing a
+couple readline functions.  When I link I get:
+
+    myreadline.o: Undefined symbol _rl_insert referenced from text segment
+    myreadline.o: Undefined symbol _rl_bind_key referenced from text segment
+
+I'm running on BSD/OS 2.0 with GCC 2.6.3 as the compiler.  My configure line
+was
+
+    ./configure --with-readline=/home/dolphin/skip/src/editline \
+	--with-dl-dld=/home/dolphin/skip/src/dl-dld,/home/dolphin/skip/src/dld
+
+For editline I tried several things before arriving at something that does
+work ... sort of.  First I commented out the tab key binding in Python's
+Parser/myreadline.c then had to fiddle with editline.c to get tabs to
+insert.  The diffs below seem to work, but have no notion of tab stops (I
+like 4-char tab stops).
+
+I'd be grateful if anybody had a solution to the readline staircases or a
+better solution for making editline work.
+
+*** editline.c~	Tue Nov 15 08:53:01 1994
+--- editline.c	Sun Nov 19 09:15:16 1995
+***************
+*** 142,145 ****
+--- 142,148 ----
+  	TTYput('?');
+      }
++     else if (c == '\t') {
++         TTYput('\t');
++     }
+      else if (ISCTL(c)) {
+  	TTYput('^');
+***************
+*** 1326,1329 ****
+--- 1329,1338 ----
+  }
+  
++ STATIC STATUS
++ tab()
++ {
++     return insert_char('\t');
++ }
++ 
+  STATIC KEYMAP	Map[33] = {
+      {	CTL('@'),	ring_bell	},
+***************
+*** 1335,1339 ****
+      {	CTL('G'),	ring_bell	},
+      {	CTL('H'),	bk_del_char	},
+!     {	CTL('I'),	c_complete	},
+      {	CTL('J'),	accept_line	},
+      {	CTL('K'),	kill_line	},
+--- 1344,1348 ----
+      {	CTL('G'),	ring_bell	},
+      {	CTL('H'),	bk_del_char	},
+!     {	CTL('I'),	tab		},
+      {	CTL('J'),	accept_line	},
+      {	CTL('K'),	kill_line	},
+-- 
+Skip Montanaro		skip@automatrix.com			  (518)372-5583
+Musi-Cal: http://www.calendar.com/concerts/ or mailto:concerts@calendar.com
+Internet Conference Calendar: http://www.calendar.com/conferences/
+	       >>> ZLDF: http://www.netresponse.com/zldf <<<

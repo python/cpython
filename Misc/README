@@ -25,6 +25,7 @@ NEWS		News for this release
 README		The file you're reading now
 RFD		Request For Discussion about a Python newsgroup
 cheatsheet	Quick summary of Python by Ken Manheimer
+editline-fix	A news article on how to fix R$'s editline for Python
 fixfuncptrs.sh	Shell script to fix function pointer initializers
 gMakefile	Generic Makefile for dynamically loadable modules
 indent.pro	GNU indent profile approximating my C style
