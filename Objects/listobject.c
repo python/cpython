@@ -2349,6 +2349,11 @@ list_nohash(PyObject *self)
 	return -1;
 }
 
+static PyObject *list_iter(PyObject *seq);
+static PyObject *list_reversed(PyListObject* seq, PyObject* unused);
+
+PyDoc_STRVAR(reversed_doc,
+"L.__reversed__() -- return a reverse iterator over the list");
 PyDoc_STRVAR(append_doc,
 "L.append(object) -- append object to end");
 PyDoc_STRVAR(extend_doc,
@@ -2373,6 +2378,7 @@ PyDoc_STRVAR(sorted_doc,
 cmp(x, y) -> -1, 0, 1");
 
 static PyMethodDef list_methods[] = {
+	{"__reversed__",(PyCFunction)list_reversed, METH_NOARGS, reversed_doc},
 	{"append",	(PyCFunction)listappend,  METH_O, append_doc},
 	{"insert",	(PyCFunction)listinsert,  METH_VARARGS, insert_doc},
 	{"extend",      (PyCFunction)listextend,  METH_O, extend_doc},
@@ -2403,8 +2409,6 @@ static PySequenceMethods list_as_sequence = {
 PyDoc_STRVAR(list_doc,
 "list() -> new list\n"
 "list(sequence) -> new list initialized from sequence's items");
-
-static PyObject *list_iter(PyObject *seq);
 
 static PyObject *
 list_subscript(PyListObject* self, PyObject* item)
@@ -2759,4 +2763,94 @@ PyTypeObject PyListIter_Type = {
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */
+};
+
+/*********************** List Reverse Iterator **************************/
+
+typedef struct {
+	PyObject_HEAD
+	long it_index;
+	PyListObject *it_seq;
+} listreviterobject;
+
+PyTypeObject PyListRevIter_Type;
+
+static PyObject *
+list_reversed(PyListObject *seq, PyObject *unused)
+{
+	listreviterobject *it;
+
+	it = PyObject_GC_New(listreviterobject, &PyListRevIter_Type);
+	if (it == NULL)
+		return NULL;
+	assert(PyList_Check(seq));
+	it->it_index = PyList_GET_SIZE(seq) - 1;
+	Py_INCREF(seq);
+	it->it_seq = seq;
+	PyObject_GC_Track(it);
+	return (PyObject *)it;
+}
+
+static void
+listreviter_dealloc(listreviterobject *it)
+{
+	PyObject_GC_UnTrack(it);
+	Py_XDECREF(it->it_seq);
+	PyObject_GC_Del(it);
+}
+
+static int
+listreviter_traverse(listreviterobject *it, visitproc visit, void *arg)
+{
+	if (it->it_seq == NULL)
+		return 0;
+	return visit((PyObject *)it->it_seq, arg);
+}
+
+static PyObject *
+listreviter_next(listreviterobject *it)
+{
+	PyObject *item = NULL;
+
+	assert(PyList_Check(it->it_seq));
+	if (it->it_index >= 0) {
+		assert(it->it_index < PyList_GET_SIZE(it->it_seq));
+		item = PyList_GET_ITEM(it->it_seq, it->it_index);
+		it->it_index--;
+		Py_INCREF(item);
+	}
+	return item;
+}
+
+PyTypeObject PyListRevIter_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,					/* ob_size */
+	"listreverseiterator",			/* tp_name */
+	sizeof(listreviterobject),		/* tp_basicsize */
+	0,					/* tp_itemsize */
+	/* methods */
+	(destructor)listreviter_dealloc,	/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+	0,					/* tp_doc */
+	(traverseproc)listreviter_traverse,	/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	PyObject_SelfIter,			/* tp_iter */
+	(iternextfunc)listreviter_next,		/* tp_iternext */
+	0,
 };
