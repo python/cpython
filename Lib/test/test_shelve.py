@@ -7,7 +7,7 @@ from test import test_support
 class TestCase(unittest.TestCase):
 
     fn = "shelftemp.db"
-    
+
     def test_ascii_file_shelf(self):
         try:
             s = shelve.open(self.fn, binary=False)

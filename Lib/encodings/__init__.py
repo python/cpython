@@ -46,7 +46,7 @@ def normalize_encoding(encoding):
         characters except the dot used for Python package names are
         collapsed and replaced with a single underscore, e.g. '  -;#'
         becomes '_'.
-        
+
     """
     return '_'.join(_norm_encoding_RE.split(encoding))
 

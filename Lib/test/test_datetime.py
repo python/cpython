@@ -2258,7 +2258,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
         cls = self.theclass
         datestr = '0001-02-03'
         for ofs in None, zero, plus, minus, unknown:
-             for us in 0, 987001:
+            for us in 0, 987001:
                 d = cls(1, 2, 3, 4, 5, 59, us, tzinfo=ofs)
                 timestr = '04:05:59' + (us and '.987001' or '')
                 ofsstr = ofs is not None and d.tzname() or ''
