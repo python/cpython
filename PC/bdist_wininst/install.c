@@ -1708,7 +1708,7 @@ FinishedDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			if (logfile)
 				fprintf(logfile, "300 Run Script: [%s]%s\n", pythondll, fname);
 
-			tempname = tmpnam(NULL);
+			tempname = tempnam(NULL, NULL);
 
 			if (!freopen(tempname, "a", stderr))
 				MessageBox(GetFocus(), "freopen stderr", NULL, MB_OK);
@@ -2067,7 +2067,7 @@ BOOL Run_RemoveScript(char *line)
 
 		argv[0] = scriptname;
 
-		tempname = tmpnam(NULL);
+		tempname = tempnam(NULL, NULL);
 
 		if (!freopen(tempname, "a", stderr))
 			MessageBox(GetFocus(), "freopen stderr", NULL, MB_OK);
