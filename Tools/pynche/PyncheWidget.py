@@ -111,9 +111,9 @@ Color and Hue Editor
 Copyright (C) 1998 CNRI
 All rights reserved
 
-For information about Pynche
-contact: Barry A. Warsaw
-email:   bwarsaw@python.org''' % __version__)
+For information about Pynche contact
+author: Barry A. Warsaw
+email : bwarsaw@python.org''' % __version__)
 
     def __popup_text(self, event=None):
         if not self.__textwin:
