@@ -134,6 +134,12 @@ text
     ("data", "\n"),
     ])
 
+    def test_unclosed_entityref(self):
+        self._run_check("&entityref foo", [
+            ("entityref", "entityref"),
+            ("data", " foo"),
+            ])
+
     def test_doctype_decl(self):
         inside = """\
 DOCTYPE html [
