@@ -37,7 +37,10 @@ int     optind = 1;             /* index into argv array   */
 char *  optarg = NULL;          /* optional argument       */
 
 
-int getopt(int argc, char *argv[], const char optstring[])
+int getopt(argc,argv,optstring)
+int argc; 
+char *argv[]; 
+char optstring[];
 {
 	static   char *opt_ptr = "";
 	register char *ptr;
