@@ -2291,18 +2291,22 @@ filterstring(PyObject *func, PyObject *strobj)
 		if (item == NULL)
 			goto Fail_1;
 		arg = Py_BuildValue("(O)", item);
-		Py_DECREF(item);
-		if (arg == NULL)
+		if (arg == NULL) {
+			Py_DECREF(item);
 			goto Fail_1;
+		}
 		good = PyEval_CallObject(func, arg);
 		Py_DECREF(arg);
-		if (good == NULL)
+		if (good == NULL) {
+			Py_DECREF(item);
 			goto Fail_1;
+		}
 		ok = PyObject_IsTrue(good);
 		Py_DECREF(good);
 		if (ok)
 			PyString_AS_STRING((PyStringObject *)result)[j++] =
 				PyString_AS_STRING((PyStringObject *)item)[0];
+		Py_DECREF(item);
 	}
 
 	if (j < len && _PyString_Resize(&result, j) < 0)
