@@ -332,6 +332,7 @@ do_mkvalue(p_format, p_va)
 			return v;
 		}
 
+		case 'N':
 		case 'S':
 		case 'O':
 		if (**p_format == '&') {
@@ -345,7 +346,8 @@ do_mkvalue(p_format, p_va)
 			PyObject *v;
 			v = va_arg(*p_va, PyObject *);
 			if (v != NULL)
-				Py_INCREF(v);
+				if (*(*p_format - 1) != 'N')
+					Py_INCREF(v);
 			else if (!PyErr_Occurred())
 				/* If a NULL was passed
 				 * because a call that should
