@@ -9,6 +9,21 @@
 
 #include "Python.h"
 
+/* Precisions used by repr() and str(), respectively.
+
+   The repr() precision (17 significant decimal digits) is the minimal number
+   that is guaranteed to have enough precision so that if the number is read
+   back in the exact same binary value is recreated.  This is true for IEEE
+   floating point by design, and also happens to work for all other modern
+   hardware.
+
+   The str() precision is chosen so that in most cases, the rounding noise
+   created by various operations is suppressed, while giving plenty of
+   precision for practical use.
+*/
+
+#define PREC_REPR	17
+#define PREC_STR	12
 
 /* elementary operations on complex numbers */
 
@@ -173,7 +188,7 @@ PyComplex_AsCComplex(PyObject *op)
 		cv.real = PyFloat_AsDouble(op);
 		cv.imag = 0.;
 		return cv;
-	}   
+	}
 }
 
 static void
@@ -184,20 +199,21 @@ complex_dealloc(PyObject *op)
 
 
 static void
-complex_buf_repr(char *buf, PyComplexObject *v)
+complex_to_buf(char *buf, PyComplexObject *v, int precision)
 {
 	if (v->cval.real == 0.)
-		sprintf(buf, "%.12gj", v->cval.imag);
+		sprintf(buf, "%.*gj", precision, v->cval.imag);
 	else
-		sprintf(buf, "(%.12g%+.12gj)", v->cval.real, v->cval.imag);
+		sprintf(buf, "(%.*g%+.*gj)", precision, v->cval.real,
+					     precision, v->cval.imag);
 }
 
 static int
 complex_print(PyComplexObject *v, FILE *fp, int flags)
-     /* flags -- not used but required by interface */
 {
 	char buf[100];
-	complex_buf_repr(buf, v);
+	complex_to_buf(buf, v,
+		       (flags & Py_PRINT_RAW) ? PREC_STR : PREC_REPR);
 	fputs(buf, fp);
 	return 0;
 }
@@ -206,7 +222,15 @@ static PyObject *
 complex_repr(PyComplexObject *v)
 {
 	char buf[100];
-	complex_buf_repr(buf, v);
+	complex_to_buf(buf, v, PREC_REPR);
+	return PyString_FromString(buf);
+}
+
+static PyObject *
+complex_str(PyComplexObject *v)
+{
+	char buf[100];
+	complex_to_buf(buf, v, PREC_STR);
 	return PyString_FromString(buf);
 }
 
@@ -541,7 +565,7 @@ PyTypeObject PyComplex_Type = {
 	0,					/* tp_as_mapping */
 	(hashfunc)complex_hash, 		/* tp_hash */
 	0,					/* tp_call */
-	0,					/* tp_str */
+	(reprfunc)complex_str,			/* tp_str */
 	0,					/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
