@@ -29,43 +29,9 @@ PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* Error handling -- see also run.c */
+/* Error handling */
 
-/* New error handling interface.
-
-   The following problem exists (existed): methods of built-in modules
-   are called with 'self' and 'args' arguments, but without a context
-   argument, so they have no way to raise a specific exception.
-   The same is true for the object implementations: no context argument.
-   The old convention was to set 'errno' and to return NULL.
-   The caller (usually call_function() in eval.c) detects the NULL
-   return value and then calls puterrno(ctx) to turn the errno value
-   into a true exception.  Problems with this approach are:
-   - it used standard errno values to indicate Python-specific errors,
-     but this means that when such an error code is reported by a system
-     call (e.g., in module posix), the user gets a confusing message
-   - errno is a global variable, which makes extensions to a multi-
-     threading environment difficult; e.g., in IRIX, multi-threaded
-     programs must use the function oserror() instead of looking in errno
-   - there is no portable way to add new error numbers for specic
-     situations -- the value space for errno is reserved to the OS, yet
-     the way to turn module-specific errors into a module-specific
-     exception requires module-specific values for errno
-   - there is no way to add a more situation-specific message to an
-     error.
-  
-  The new interface solves all these problems.  To return an error, a
-  built-in function calls err_set(exception), err_setval(exception,
-  value) or err_setstr(exception, string), and returns NULL.  These
-  functions save the value for later use by puterrno().  To adapt this
-  scheme to a multi-threaded environment, only the implementation of
-  err_setval() has to be changed.
-*/
-
-#include "allobjects.h"
-#include "traceback.h"
-
-#include <errno.h>
+#include "Python.h"
 
 #ifdef SYMANTEC__CFM68K__
 #pragma lib_export on
@@ -77,7 +43,7 @@ PERFORMANCE OF THIS SOFTWARE.
    XXX PROBLEM: some positive errors have a meaning for MacOS,
    but some library routines set Unix error numbers...
 */
-extern char *PyMac_StrError PROTO((int));
+extern char *PyMac_StrError Py_PROTO((int));
 #undef strerror
 #define strerror PyMac_StrError
 #endif
@@ -85,127 +51,127 @@ extern char *PyMac_StrError PROTO((int));
 
 #ifndef __STDC__
 #ifndef MS_WINDOWS
-extern char *strerror PROTO((int));
+extern char *strerror Py_PROTO((int));
 #endif
 #endif
 
-/* Last exception stored by err_setval() */
+/* Last exception stored */
 
-static object *last_exception;
-static object *last_exc_val;
+static PyObject *last_exception;
+static PyObject *last_exc_val;
 
 void
-err_restore(exception, value, traceback)
-	object *exception;
-	object *value;
-	object *traceback;
+PyErr_Restore(exception, value, traceback)
+	PyObject *exception;
+	PyObject *value;
+	PyObject *traceback;
 {
-	err_clear();
+	PyErr_Clear();
 
 	last_exception = exception;
 	last_exc_val = value;
-	(void) tb_store(traceback);
-	XDECREF(traceback);
+	(void) PyTraceBack_Store(traceback);
+	Py_XDECREF(traceback);
 }
 
 void
-err_setval(exception, value)
-	object *exception;
-	object *value;
+PyErr_SetObject(exception, value)
+	PyObject *exception;
+	PyObject *value;
 {
-	XINCREF(exception);
-	XINCREF(value);
-	err_restore(exception, value, (object *)NULL);
+	Py_XINCREF(exception);
+	Py_XINCREF(value);
+	PyErr_Restore(exception, value, (PyObject *)NULL);
 }
 
 void
-err_set(exception)
-	object *exception;
+PyErr_SetNone(exception)
+	PyObject *exception;
 {
-	err_setval(exception, (object *)NULL);
+	PyErr_SetObject(exception, (PyObject *)NULL);
 }
 
 void
-err_setstr(exception, string)
-	object *exception;
+PyErr_SetString(exception, string)
+	PyObject *exception;
 	const char *string;
 {
-	object *value = newstringobject(string);
-	err_setval(exception, value);
-	XDECREF(value);
+	PyObject *value = PyString_FromString(string);
+	PyErr_SetObject(exception, value);
+	Py_XDECREF(value);
 }
 
 
-object *
-err_occurred()
+PyObject *
+PyErr_Occurred()
 {
 	return last_exception;
 }
 
 void
-err_fetch(p_exc, p_val, p_tb)
-	object **p_exc;
-	object **p_val;
-	object **p_tb;
+PyErr_Fetch(p_exc, p_val, p_tb)
+	PyObject **p_exc;
+	PyObject **p_val;
+	PyObject **p_tb;
 {
 	*p_exc = last_exception;
 	last_exception = NULL;
 	*p_val = last_exc_val;
 	last_exc_val = NULL;
-	*p_tb = tb_fetch();
+	*p_tb = PyTraceBack_Fetch();
 }
 
 void
-err_clear()
+PyErr_Clear()
 {
-	object *tb;
-	XDECREF(last_exception);
+	PyObject *tb;
+	Py_XDECREF(last_exception);
 	last_exception = NULL;
-	XDECREF(last_exc_val);
+	Py_XDECREF(last_exc_val);
 	last_exc_val = NULL;
 	/* Also clear interpreter stack trace */
-	tb = tb_fetch();
-	XDECREF(tb);
+	tb = PyTraceBack_Fetch();
+	Py_XDECREF(tb);
 }
 
 /* Convenience functions to set a type error exception and return 0 */
 
 int
-err_badarg()
+PyErr_BadArgument()
 {
-	err_setstr(TypeError, "illegal argument type for built-in operation");
+	PyErr_SetString(PyExc_TypeError, "illegal argument type for built-in operation");
 	return 0;
 }
 
-object *
-err_nomem()
+PyObject *
+PyErr_NoMemory()
 {
-	err_set(MemoryError);
+	PyErr_SetNone(PyExc_MemoryError);
 	return NULL;
 }
 
-object *
-err_errno(exc)
-	object *exc;
+PyObject *
+PyErr_SetFromErrno(exc)
+	PyObject *exc;
 {
-	object *v;
+	PyObject *v;
 	int i = errno;
 #ifdef EINTR
-	if (i == EINTR && sigcheck())
+	if (i == EINTR && PyErr_CheckSignals())
 		return NULL;
 #endif
-	v = mkvalue("(is)", i, strerror(i));
+	v = Py_BuildValue("(is)", i, strerror(i));
 	if (v != NULL) {
-		err_setval(exc, v);
-		DECREF(v);
+		PyErr_SetObject(exc, v);
+		Py_DECREF(v);
 	}
 	return NULL;
 }
 
 void
-err_badcall()
+PyErr_BadInternalCall()
 {
-	err_setstr(SystemError, "bad argument to internal function");
+	PyErr_SetString(PyExc_SystemError, "bad argument to internal function");
 }
 
 
