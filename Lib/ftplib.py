@@ -508,7 +508,7 @@ class FTP:
             s = resp[3:].strip()
             try:
                 return int(s)
-            except OverflowError:
+            except (OverflowError, ValueError):
                 return long(s)
 
     def mkd(self, dirname):
@@ -558,7 +558,7 @@ def parse150(resp):
     s = m.group(1)
     try:
         return int(s)
-    except OverflowError:
+    except (OverflowError, ValueError):
         return long(s)
 
 
