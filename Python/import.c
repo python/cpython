@@ -1154,7 +1154,8 @@ check_case(char *buf, int len, int namelen, char *name)
 		     name, buf);
 		return 0;
 	}
-	if ( namelen > fss.name[0] || strncmp(name, (char *)fss.name+1, namelen) != 0 ) {
+	if (namelen > fss.name[0] ||
+	    strncmp(name, (char *)fss.name+1, namelen) != 0) {
 		PyErr_Format(PyExc_NameError,
 		     "Case mismatch for module name %.100s\n(filename %.300s)",
 		     name, fss.name);
@@ -1873,7 +1874,6 @@ PyImport_Import(PyObject *module_name)
 	static PyObject *silly_list = NULL;
 	static PyObject *builtins_str = NULL;
 	static PyObject *import_str = NULL;
-	static PyObject *standard_builtins = NULL;
 	PyObject *globals = NULL;
 	PyObject *import = NULL;
 	PyObject *builtins = NULL;
@@ -1894,7 +1894,7 @@ PyImport_Import(PyObject *module_name)
 
 	/* Get the builtins from current globals */
 	globals = PyEval_GetGlobals();
-	if(globals != NULL) {
+	if (globals != NULL) {
 	        Py_INCREF(globals);
 		builtins = PyObject_GetItem(globals, builtins_str);
 		if (builtins == NULL)
@@ -1904,16 +1904,10 @@ PyImport_Import(PyObject *module_name)
 		/* No globals -- use standard builtins, and fake globals */
 		PyErr_Clear();
 
-		if (standard_builtins == NULL) {
-			standard_builtins =
-				PyImport_ImportModuleEx("__builtin__",
-							NULL, NULL, NULL);
-			if (standard_builtins == NULL)
-				return NULL;
-		}
-
-		builtins = standard_builtins;
-		Py_INCREF(builtins);
+		builtins = PyImport_ImportModuleEx("__builtin__",
+						   NULL, NULL, NULL);
+		if (builtins == NULL)
+			return NULL;
 		globals = Py_BuildValue("{OO}", builtins_str, builtins);
 		if (globals == NULL)
 			goto err;
