@@ -1543,14 +1543,13 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 	
 	size_b = b->ob_size;
 	if (size_b < 0) {
-		if (a->ob_size)
-			PyErr_SetString(PyExc_ValueError,
-					"long integer to a negative power");
-		else
-			PyErr_SetString(PyExc_ZeroDivisionError,
-					"zero to a negative power");
-		z = NULL;
-		goto error;
+		/* Return a float.  This works because we know that
+		   this calls float_pow() which converts its
+		   arguments to double. */
+		Py_DECREF(a);
+		Py_DECREF(b);
+		Py_DECREF(c);
+		return PyFloat_Type.tp_as_number->nb_power(v, w, x);
 	}
 	z = (PyLongObject *)PyLong_FromLong(1L);
 	for (i = 0; i < size_b; ++i) {
