@@ -30,7 +30,6 @@ PyAPI_DATA(PyTypeObject) PyInt_Type;
 #define PyInt_Check(op) PyObject_TypeCheck(op, &PyInt_Type)
 #define PyInt_CheckExact(op) ((op)->ob_type == &PyInt_Type)
 
-PyAPI_FUNC(int) _PyInt_Init(void);
 PyAPI_FUNC(PyObject *) PyInt_FromString(char*, char**, int);
 #ifdef Py_USING_UNICODE
 PyAPI_FUNC(PyObject *) PyInt_FromUnicode(Py_UNICODE*, int, int);
