@@ -405,13 +405,13 @@ If the right argument is a dictionary (or any kind of mapping), then
 the formats in the string must have a parenthesized key into that
 dictionary inserted immediately after the \code{\%} character, and
 each format formats the corresponding entry from the mapping.  E.g.
-\begin{verbatim}
-    >>> count = 2
-    >>> language = 'Python'
-    >>> print '%(language)s has %(count)03d quote types.' % vars()
-    Python has 002 quote types.
-    >>> 
-\end{verbatim}
+\bcode\begin{verbatim}
+>>> count = 2
+>>> language = 'Python'
+>>> print '%(language)s has %(count)03d quote types.' % vars()
+Python has 002 quote types.
+>>> 
+\end{verbatim}\ecode
 In this case no * specifiers may occur in a format (since they
 require a sequential parameter list).
 
@@ -685,6 +685,13 @@ Files have the following methods:
   \code{0}.
 \end{funcdesc}
 
+\begin{funcdesc}{fileno}{}
+Return the integer ``file descriptor'' that is used by the underlying
+implementation to request I/O operations from the operating system.
+This can be useful for other, lower level interfaces that use file
+descriptors, e.g. module \code{fcntl} or \code{os.read} and friends.
+\end{funcdesc}
+
 \begin{funcdesc}{read}{\optional{size}}
   Read at most \var{size} bytes from the file (less if the read hits
   \EOF{} or no more data is immediately available on a pipe, tty or
@@ -714,9 +721,11 @@ Files have the following methods:
   input.
 \end{funcdesc}
 
-\begin{funcdesc}{readlines}{}
+\begin{funcdesc}{readlines}{\optional{sizehint}}
   Read until \EOF{} using \code{readline()} and return a list containing
-  the lines thus read.
+  the lines thus read.  If the optional \var{bufferhint} argument is
+  present, instead of reading up to \EOF{}, whole lines totalling
+  approximately \var{sizehint} bytes are read.
 \end{funcdesc}
 
 \begin{funcdesc}{seek}{offset\, whence}
@@ -750,6 +759,12 @@ Write a list of strings to the file.  There is no return value.
 (The name is intended to match \code{readlines}; \code{writelines}
 does not add line separators.)
 \end{funcdesc}
+
+Classes that are trying to simulate a file object should also have a
+writable \code{softspace} attribute, which should be initialized to
+zero.  (\code{softspace} is used by the \code{print} statement.)  This
+will be automatic for classes implemented in Python; types implemented
+in C will have to provide a writable \code{softspace} attribute.
 
 \subsubsection{Internal Objects}
 
