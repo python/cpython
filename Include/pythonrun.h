@@ -87,6 +87,9 @@ DL_IMPORT(void) PyOS_FiniInterrupts(void);
 DL_IMPORT(char *) PyOS_Readline(char *);
 extern DL_IMPORT(int) (*PyOS_InputHook)(void);
 extern DL_IMPORT(char) *(*PyOS_ReadlineFunctionPointer)(char *);
+#ifdef USE_STACKCHECK
+int PyOS_CheckStack(void);		/* Check that we aren't overflowing our stack */
+#endif
 
 #ifdef __cplusplus
 }
