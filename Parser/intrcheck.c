@@ -195,4 +195,7 @@ PyOS_InterruptOccurred(void)
 void
 PyOS_AfterFork(void)
 {
+#ifdef WITH_THREAD
+	PyEval_ReInitThreads();
+#endif
 }

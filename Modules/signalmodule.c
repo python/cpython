@@ -667,6 +667,7 @@ void
 PyOS_AfterFork(void)
 {
 #ifdef WITH_THREAD
+	PyEval_ReInitThreads();
 	main_thread = PyThread_get_thread_ident();
 	main_pid = getpid();
 #endif
