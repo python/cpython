@@ -21,7 +21,7 @@ __all__ = ["shlex", "split"]
 
 class shlex:
     "A lexical analyzer class for simple shell-like syntaxes."
-    def __init__(self, instream=None, infile=None, posix=0):
+    def __init__(self, instream=None, infile=None, posix=False):
         if type(instream) in StringTypes:
             instream = StringIO(instream)
         if instream is not None:
@@ -42,7 +42,7 @@ class shlex:
             self.wordchars += ('ßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ'
                                'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ')
         self.whitespace = ' \t\r\n'
-        self.whitespace_split = 0
+        self.whitespace_split = False
         self.quotes = '\'"'
         self.escape = '\\'
         self.escapedquotes = '"'
@@ -61,7 +61,7 @@ class shlex:
         "Push a token onto the stack popped by the get_token method"
         if self.debug >= 1:
             print "shlex: pushing token " + `tok`
-        self.pushback = [tok] + self.pushback
+        self.pushback.insert(0, tok)
 
     def push_source(self, newstream, newfile=None):
         "Push an input source onto the lexer's input source stack."
@@ -90,8 +90,7 @@ class shlex:
     def get_token(self):
         "Get a token from the input stream (or from stack if it's nonempty)"
         if self.pushback:
-            tok = self.pushback[0]
-            self.pushback = self.pushback[1:]
+            tok = self.pushback.pop(0)
             if self.debug >= 1:
                 print "shlex: popping token " + `tok`
             return tok
@@ -107,7 +106,7 @@ class shlex:
                 raw = self.get_token()
         # Maybe we got EOF instead?
         while raw == self.eof:
-            if len(self.filestack) == 0:
+            if not self.filestack:
                 return self.eof
             else:
                 self.pop_source()
@@ -121,7 +120,7 @@ class shlex:
         return raw
 
     def read_token(self):
-        quoted = 0
+        quoted = False
         escapedstate = ' '
         while 1:
             nextchar = self.instream.read(1)
@@ -167,7 +166,7 @@ class shlex:
                     else:
                         continue
             elif self.state in self.quotes:
-                quoted = 1
+                quoted = True
                 if not nextchar:      # end of file
                     if self.debug >= 2:
                         print "shlex: I see EOF in quotes state"
@@ -229,7 +228,7 @@ class shlex:
                     or self.whitespace_split:
                     self.token = self.token + nextchar
                 else:
-                    self.pushback = [nextchar] + self.pushback
+                    self.pushback.insert(0, nextchar)
                     if self.debug >= 2:
                         print "shlex: I see punctuation in word state"
                     self.state = ' '
