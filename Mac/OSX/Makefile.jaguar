@@ -6,7 +6,8 @@ VERSION=2.2
 builddir = ../..
 srcdir = ../..
 dstroot=/.
-PYTHONAPPSDIR=$(dstroot)/Applications/MacPython-OSX
+PYTHONAPPSPATH=/Applications/MacPython-OSX
+PYTHONAPPSDIR=$(dstroot)$(PYTHONAPPSPATH)
 prefix=/usr
 
 # These are normally computed form the previous ones
@@ -29,9 +30,20 @@ INSTALL_PROGRAM=${INSTALL}
 INSTALL_SCRIPT= ${INSTALL_PROGRAM}
 INSTALL_DATA=	${INSTALL} -m 644
 
-install: install_dirs install_dynlib install_lib \
+# These can be done as a normal user
+install: preflight install_dirs install_dynlib install_lib \
 	install_Python install_IDE install_IDLE install_BuildApplet \
-	install_pythonw 
+	install_PythonLauncher install_pythonw 
+	
+preflight:
+	@if test ! -w $(LIBDEST)/site-packages; then \
+		echo Please make directory $(LIBDEST)/site-packages writeable; \
+		exit 1; \
+	fi
+	@if grep "arch i386" $(LIBDEST)/config/Makefile >/dev/null; then \
+		echo Please edit $(LIBDEST)/config/Makefile, see README.JAGUAR; \
+		exit 1; \
+	fi
 	
 install_dirs:
 	$(INSTALL) -d -m $(DIRMODE) $(PYTHONAPPSDIR)
@@ -75,7 +87,16 @@ install_BuildApplet:
 		srcdir=$(srcdir) INSTALLED_PYTHONW=$(INSTALLED_PYTHONW) \
 		PYTHONAPPSDIR=$(PYTHONAPPSDIR)
 	
+install_PythonLauncher:
+	$(MAKE) -f $(osxdir)/Makefile install_PythonLauncher \
+		srcdir=$(srcdir) dstroot=$(dstroot) \
+		PYTHONAPPSPATH=$(PYTHONAPPSPATH)
+	
 install_pythonw:
+	@if test ! -w $(prefix)/bin; then \
+		echo Cannot write to $(prefix)/bin, use \"sudo make -f Makefile.jaguar install_pythonw\"; \
+		exit 1; \
+	fi
 	echo "#!/bin/sh" > pythonw.sh
 	echo "exec \"$(INSTALLED_PYTHONW)\" \"\$$@\"" >> pythonw.sh
 	$(INSTALL) pythonw.sh $(prefix)/bin/pythonw
