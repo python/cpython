@@ -1,6 +1,7 @@
 """Tests for HTMLParser.py."""
 
 import HTMLParser
+import pprint
 import sys
 import test_support
 import unittest
@@ -83,9 +84,10 @@ class TestCaseBase(unittest.TestCase):
         for c in self.epilogue:
             parser.feed(c)
         parser.close()
-        self.assert_(parser.get_events() ==
-                     self.initial_events + events + self.final_events,
-                     parser.get_events())
+        events = parser.get_events()
+        self.assertEqual(events,
+                         self.initial_events + events + self.final_events,
+                         "got events:\n" + pprint.pformat(events))
 
     def _run_check_extra(self, source, events):
         self._run_check(source, events, EventCollectorExtra)
@@ -137,6 +139,18 @@ text
     ("data", "\n"),
     ])
 
+    def test_doctype_decl(self):
+        inside = """\
+DOCTYPE html [
+  <!ELEMENT html - O EMPTY>
+  <!ATTLIST html
+      version CDATA #IMPLIED '4.0'>
+  <!-- comment -->
+]"""
+        self._run_check("<!%s>" % inside, [
+            ("decl", inside),
+            ])
+
     def test_bad_nesting(self):
         # Strangely, this *is* supposed to test that overlapping
         # elements are allowed.  HTMLParser is more geared toward
@@ -146,6 +160,16 @@ text
             ("starttag", "b", []),
             ("endtag", "a"),
             ("endtag", "b"),
+            ])
+
+    def test_bare_ampersands(self):
+        self._run_check("this text & contains & ampersands &", [
+            ("data", "this text & contains & ampersands &"),
+            ])
+
+    def test_bare_pointy_brackets(self):
+        self._run_check("this < text > contains < bare>pointy< brackets", [
+            ("data", "this < text > contains < bare>pointy< brackets"),
             ])
 
     def test_attr_syntax(self):
@@ -199,16 +223,12 @@ text
         self._run_check(["<a b='>'", ">"], output)
 
     def test_starttag_junk_chars(self):
-        self._parse_error("<")
-        self._parse_error("<>")
         self._parse_error("</>")
         self._parse_error("</$>")
         self._parse_error("</")
         self._parse_error("</a")
         self._parse_error("<a<a>")
         self._parse_error("</a<a>")
-        self._parse_error("<$")
-        self._parse_error("<$>")
         self._parse_error("<!")
         self._parse_error("<a $>")
         self._parse_error("<a")

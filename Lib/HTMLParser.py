@@ -15,7 +15,8 @@ import string
 
 interesting_normal = re.compile('[&<]')
 interesting_cdata = re.compile(r'<(/|\Z)')
-incomplete = re.compile('&([a-zA-Z][-.a-zA-Z0-9]*|#[0-9]*)?')
+incomplete = re.compile('&([a-zA-Z][-.a-zA-Z0-9]*'
+                        '|#([0-9]*|[xX][0-9a-fA-F]*))?')
 
 entityref = re.compile('&([a-zA-Z][-.a-zA-Z0-9]*)[^a-zA-Z0-9]')
 charref = re.compile('&#(?:[0-9]+|[xX][0-9a-fA-F]+)[^0-9a-fA-F]')
@@ -185,11 +186,8 @@ class HTMLParser:
                 elif declopen.match(rawdata, i): # <!
                     k = self.parse_declaration(i)
                 else:
-                    if i < n-1:
-                        raise HTMLParseError(
-                            "invalid '<' construct: %s" % `rawdata[i:i+2]`,
-                            self.getpos())
-                    k = -1
+                    self.handle_data("<")
+                    k = i + 1
                 if k < 0:
                     if end:
                         raise HTMLParseError("EOF in middle of construct",
@@ -203,7 +201,7 @@ class HTMLParser:
                     self.handle_charref(name)
                     k = match.end()
                     if rawdata[k-1] != ';':
-                        k = k-1
+                        k = k - 1
                     i = self.updatepos(i, k)
                     continue
                 match = entityref.match(rawdata, i)
@@ -212,17 +210,19 @@ class HTMLParser:
                     self.handle_entityref(name)
                     k = match.end()
                     if rawdata[k-1] != ';':
-                        k = k-1
+                        k = k - 1
                     i = self.updatepos(i, k)
                     continue
-                if incomplete.match(rawdata, i):
-                    if end:
+                match = incomplete.match(rawdata, i)
+                if match:
+                    rest = rawdata[i:]
+                    if end and rest != "&" and match.group() == rest:
                         raise HTMLParseError(
                             "EOF in middle of entity or char ref",
                             self.getpos())
                     return -1 # incomplete
-                raise HTMLParseError("'&' not part of entity or char ref",
-                                     self.getpos())
+                self.handle_data("&")
+                i = self.updatepos(i, i + 1)
             else:
                 assert 0, "interesting.search() lied"
         # end while
