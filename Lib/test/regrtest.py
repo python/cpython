@@ -416,6 +416,9 @@ class _Set:
                 del data[x]
         return result
 
+    def __iter__(self):
+        return iter(self.data)
+
     def tolist(self, sorted=1):
         "Return _Set elements as a list."
         data = self.data.keys()
