@@ -135,8 +135,11 @@ class Parser:
                 r'(?P<sep>' + re.escape(separator) + r')(?P<ws>[ \t]*)',
                 payload)
             if not mo:
-                raise Errors.BoundaryError(
-                    "Couldn't find starting boundary: %s" % boundary)
+                if self._strict:
+                    raise Errors.BoundaryError(
+                        "Couldn't find starting boundary: %s" % boundary)
+                container.set_payload(payload)
+                return
             start = mo.start()
             if start > 0:
                 # there's some pre-MIME boundary preamble
