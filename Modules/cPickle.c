@@ -1124,106 +1124,10 @@ save_float(Picklerobject *self, PyObject *args)
 	double x = PyFloat_AS_DOUBLE((PyFloatObject *)args);
 
 	if (self->bin) {
-		int s, e;
-		double f;
-		long fhi, flo;
 		char str[9];
-		unsigned char *p = (unsigned char *)str;
-
-		*p = BINFLOAT;
-		p++;
-
-		if (x < 0) {
-			s = 1;
-			x = -x;
-		}
-		else
-			s = 0;
-
-		f = frexp(x, &e);
-
-		/* Normalize f to be in the range [1.0, 2.0) */
-		if (0.5 <= f && f < 1.0) {
-			f *= 2.0;
-			e--;
-		}
-		else if (f == 0.0) {
-			e = 0;
-		}
-		else {
-			PyErr_SetString(PyExc_SystemError,
-					"frexp() result out of range");
+		str[0] = BINFLOAT;
+		if (_PyFloat_Pack8(x, (unsigned char *)&str[1], 0) < 0)
 			return -1;
-		}
-
-		if (e >= 1024)
-			goto Overflow;
-		else if (e < -1022) {
-			/* Gradual underflow */
-			f = ldexp(f, 1022 + e);
-			e = 0;
-		}
-		else if (!(e == 0 && f == 0.0)) {
-			e += 1023;
-			f -= 1.0; /* Get rid of leading 1 */
-		}
-
-		/* fhi receives the high 28 bits;
-		   flo the low 24 bits (== 52 bits) */
-		f *= 268435456.0; /* 2**28 */
-		fhi = (long) floor(f); /* Truncate */
-		assert(fhi < 268435456);
-
-		f -= (double)fhi;
-		f *= 16777216.0; /* 2**24 */
-		flo = (long) floor(f + 0.5); /* Round */
-		assert(flo <= 16777216);
-		if (flo >> 24) {
-			/* The carry propagated out of a string of 24 1 bits. */
-			flo = 0;
-			++fhi;
-			if (fhi >> 28) {
-				/* And it also progagated out of the next
-				 * 28 bits.
-				 */
-				fhi = 0;
-				++e;
-				if (e >= 2047)
-					goto Overflow;
-			}
-		}
-
-		/* First byte */
-		*p = (s<<7) | (e>>4);
-		p++;
-
-		/* Second byte */
-		*p = (unsigned char) (((e&0xF)<<4) | (fhi>>24));
-		p++;
-
-		/* Third byte */
-		*p = (unsigned char) ((fhi>>16) & 0xFF);
-		p++;
-
-		/* Fourth byte */
-		*p = (unsigned char) ((fhi>>8) & 0xFF);
-		p++;
-
-		/* Fifth byte */
-		*p = (unsigned char) (fhi & 0xFF);
-		p++;
-
-		/* Sixth byte */
-		*p = (unsigned char) ((flo>>16) & 0xFF);
-		p++;
-
-		/* Seventh byte */
-		*p = (unsigned char) ((flo>>8) & 0xFF);
-		p++;
-
-		/* Eighth byte */
-		*p = (unsigned char) (flo & 0xFF);
-
 		if (self->write_func(self, str, 9) < 0)
 			return -1;
 	}
@@ -1237,11 +1141,6 @@ save_float(Picklerobject *self, PyObject *args)
 	}
 
 	return 0;
-
- Overflow:
-	PyErr_SetString(PyExc_OverflowError,
-			"float too large to pack with d format");
-	return -1;
 }
 
 
@@ -3372,64 +3271,20 @@ load_float(Unpicklerobject *self)
 static int
 load_binfloat(Unpicklerobject *self)
 {
-	PyObject *py_float = 0;
-	int s, e;
-	long fhi, flo;
+	PyObject *py_float;
 	double x;
 	char *p;
 
 	if (self->read_func(self, &p, 8) < 0)
 		return -1;
 
-	/* First byte */
-	s = (*p>>7) & 1;
-	e = (*p & 0x7F) << 4;
-	p++;
+	x = _PyFloat_Unpack8((unsigned char *)p, 0);
+	if (x == -1.0 && PyErr_Occurred())
+		return -1;
 
-	/* Second byte */
-	e |= (*p>>4) & 0xF;
-	fhi = (*p & 0xF) << 24;
-	p++;
-
-	/* Third byte */
-	fhi |= (*p & 0xFF) << 16;
-	p++;
-
-	/* Fourth byte */
-	fhi |= (*p & 0xFF) << 8;
-	p++;
-
-	/* Fifth byte */
-	fhi |= *p & 0xFF;
-	p++;
-
-	/* Sixth byte */
-	flo = (*p & 0xFF) << 16;
-	p++;
-
-	/* Seventh byte */
-	flo |= (*p & 0xFF) << 8;
-	p++;
-
-	/* Eighth byte */
-	flo |= *p & 0xFF;
-
-	x = (double)fhi + (double)flo / 16777216.0; /* 2**24 */
-	x /= 268435456.0; /* 2**28 */
-
-	/* XXX This sadly ignores Inf/NaN */
-	if (e == 0)
-		e = -1022;
-	else {
-		x += 1.0;
-		e -= 1023;
-	}
-	x = ldexp(x, e);
-
-	if (s)
-		x = -x;
-
-	if (!( py_float = PyFloat_FromDouble(x)))  return -1;
+	py_float = PyFloat_FromDouble(x);
+	if (py_float == NULL)
+		return -1;
 
 	PDATA_PUSH(self->stack, py_float, -1);
 	return 0;
