@@ -312,8 +312,7 @@ def runtest(test, generate, verbose, quiet, testdir = None):
             sys.stdout = save_stdout
     except (ImportError, test_support.TestSkipped), msg:
         if not quiet:
-            print "test", test,
-            print "skipped -- ", msg
+            print "test", test, "skipped --", msg
         return -1
     except KeyboardInterrupt:
         raise
