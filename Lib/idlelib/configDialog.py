@@ -82,7 +82,7 @@ class ConfigDialog(Toplevel):
         self.fontBold=BooleanVar(self)
         self.fontName=StringVar(self)
         self.spaceNum=IntVar(self)
-        self.tabCols=IntVar(self)
+        #self.tabCols=IntVar(self)
         self.indentBySpaces=BooleanVar(self) 
         self.editFont=tkFont.Font(self,('courier',12,'normal'))
         ##widget creation
@@ -127,7 +127,7 @@ class ConfigDialog(Toplevel):
         labelSpaceNumTitle=Label(frameIndentSize,justify=LEFT,
                 text='when tab key inserts spaces,\nspaces per indent')
         self.scaleSpaceNum=Scale(frameIndentSize,variable=self.spaceNum,
-                orient='horizontal',tickinterval=2,from_=2,to=8)
+                orient='horizontal',tickinterval=2,from_=2,to=10)
         #labeltabColsTitle=Label(frameIndentSize,justify=LEFT,
         #        text='when tab key inserts tabs,\ncolumns per tab')
         #self.scaleTabCols=Scale(frameIndentSize,variable=self.tabCols,
@@ -407,7 +407,7 @@ class ConfigDialog(Toplevel):
         self.fontName.trace_variable('w',self.VarChanged_fontName)
         self.fontBold.trace_variable('w',self.VarChanged_fontBold)
         self.spaceNum.trace_variable('w',self.VarChanged_spaceNum)
-        self.tabCols.trace_variable('w',self.VarChanged_tabCols)
+        #self.tabCols.trace_variable('w',self.VarChanged_tabCols)
         self.indentBySpaces.trace_variable('w',self.VarChanged_indentBySpaces)
         self.colour.trace_variable('w',self.VarChanged_colour)
         self.builtinTheme.trace_variable('w',self.VarChanged_builtinTheme)
@@ -442,9 +442,9 @@ class ConfigDialog(Toplevel):
         value=self.spaceNum.get()
         self.AddChangedItem('main','Indent','num-spaces',value)
 
-    def VarChanged_tabCols(self,*params):
-        value=self.tabCols.get()
-        self.AddChangedItem('main','Indent','tab-cols',value)
+    #def VarChanged_tabCols(self,*params):
+    #    value=self.tabCols.get()
+    #    self.AddChangedItem('main','Indent','tab-cols',value)
 
     def VarChanged_colour(self,*params):
         self.OnNewColourSet()
