@@ -230,6 +230,7 @@ clean:		localclean
 
 localclobber:	localclean
 		-rm -f tags TAGS python
+		-rm -f config.log config.cache config.h Makefile
 
 clobber:	localclobber
 		-for i in $(SUBDIRS); do \
