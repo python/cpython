@@ -920,6 +920,7 @@ static char Nav_module_documentation[] =
 "if you want the default options.\n"
 "Use NavGetDefaultDialogOptions() to find out common option names.\n"
 "See individual docstrings for additional keyword args/dictentries supported by each call.\n"
+"Pass None as eventProc to get movable-modal dialogs that process updates through the standard Python mechanism."
 ;
 
 void
