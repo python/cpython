@@ -337,7 +337,7 @@ class ConfigParser:
                 fp.write("%s = %s\n" % (key, value))
             fp.write("\n")
 
-    def remove_option(section, option):
+    def remove_option(self, section, option):
         """Remove an option."""
         if not section or section == "DEFAULT":
             sectdict = self.__defaults
@@ -351,7 +351,7 @@ class ConfigParser:
             del sectdict[key]
         return existed
 
-    def remove_section(section):
+    def remove_section(self, section):
         """Remove a file section."""
         if self.__sections.has_key(section):
             del self.__sections[section]
