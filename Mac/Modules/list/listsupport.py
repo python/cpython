@@ -83,13 +83,23 @@ ListObj_setattr(self, name, value)
 
 
 class MyObjectDefinition(GlobalObjectDefinition):
+
+	def outputStructMembers(self):
+		ObjectDefinition.outputStructMembers(self)
+		Output("int ob_must_be_disposed;")
+
 	def outputCheckNewArg(self):
 		Output("""if (itself == NULL) {
 					PyErr_SetString(List_Error,"Cannot create null List");
 					return NULL;
 				}""")
+				
+	def outputInitStructMembers(self):
+		ObjectDefinition.outputInitStructMembers(self)
+		Output("it->ob_must_be_disposed = 1;")
+
 	def outputFreeIt(self, itselfname):
-		Output("LDispose(%s);", itselfname)
+		Output("if (self->ob_must_be_disposed && %s) LDispose(%s);", itselfname, itselfname)
 		
 	def outputGetattrHook(self):
 		Output(getattrHookCode)
@@ -114,7 +124,18 @@ methods = []
 execfile(INPUTFILE)
 
 # Function to convert any handle to a list and vv.
-f = Function(ListHandle, 'as_List', (Handle, 'h', InMode))
+##f = Function(ListHandle, 'as_List', (Handle, 'h', InMode))
+as_List_body = """
+Handle h;
+ListObject *l;
+if (!PyArg_ParseTuple(_args, "O&", ResObj_Convert, &h))
+	return NULL;
+l = (ListObject *)ListObj_New(as_List(h));
+l->ob_must_be_disposed = 0;
+return Py_BuildValue("O", l);
+"""
+f = ManualGenerator("as_List", as_List_body)
+f.docstring = lambda: "(Resource)->List.\nReturns List object (which is not auto-freed!)"
 functions.append(f)
 
 f = Method(Handle, 'as_Resource', (ListHandle, 'lh', InMode))
