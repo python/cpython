@@ -29,6 +29,9 @@ LIBS=		@LIBS@
 LIBM=		@LIBM@
 LIBC=		@LIBC@
 
+# Machine-dependent subdirectories
+MACHDEP=	@MACHDEP@
+
 # Install prefix for architecture-independent files
 prefix=		@prefix@
 
