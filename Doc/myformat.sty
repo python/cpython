@@ -275,6 +275,7 @@
 % Add the defining entry for a module
 \newcommand{\defmodindex}[2]{%
   \index{#1@{\idxcode{#1}} (#2module)|textbf}%
+  \setindexsubitem{(in module #1)}%
   \write\modindexfile{#1 \thepage}}
 
 % built-in & Python modules in the main distribution
@@ -616,3 +617,10 @@
 
 % Tell TeX about pathological hyphenation cases:
 \hyphenation{Base-HTTP-Re-quest-Hand-ler}
+
+% Don't use this at this time.
+% Should probably do a little more, and will get moved around as the
+% document classes get defined.
+\newenvironment{howto}{
+  \chapter{\@title}
+}{}
