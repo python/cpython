@@ -1056,36 +1056,43 @@ static char *mymemreplace(char *str, int len, char *pat, int pat_len, char *sub,
 		nfound = nfound > count ? count : nfound;
 	if (nfound == 0)
 		goto return_same;
+
 	new_len = len + nfound*(sub_len - pat_len);
-
-	new_s = (char *)PyMem_MALLOC(new_len);
-	if (new_s == NULL) return NULL;
-
-	*out_len = new_len;
-	out_s = new_s;
-
-	while (len > 0) {
-		/* find index of next instance of pattern */
-		offset = mymemfind(str, len, pat, pat_len);
-		/* if not found,  break out of loop */
-		if (offset == -1) break;
-
-		/* copy non matching part of input string */
-		memcpy(new_s, str, offset); /* copy part of str before pat */
-		str += offset + pat_len; /* move str past pattern */
-		len -= offset + pat_len; /* reduce length of str remaining */
-
-		/* copy substitute into the output string */
-		new_s += offset; /* move new_s to dest for sub string */
-		memcpy(new_s, sub, sub_len); /* copy substring into new_s */
-		new_s += sub_len; /* offset new_s past sub string */
-
-		/* break when we've done count replacements */
-		if (--count == 0) break;
+	if (new_len == 0) {
+		out_s = "";
 	}
-	/* copy any remaining values into output string */
-	if (len > 0)
-		memcpy(new_s, str, len);
+	else {
+		assert(new_len > 0);
+		new_s = (char *)PyMem_MALLOC(new_len);
+		if (new_s == NULL)
+			return NULL;
+		out_s = new_s;
+
+		while (len > 0) {
+			/* find index of next instance of pattern */
+			offset = mymemfind(str, len, pat, pat_len);
+			if (offset == -1)
+				break;
+
+			/* copy non matching part of input string */
+			memcpy(new_s, str, offset);
+			str += offset + pat_len;
+			len -= offset + pat_len;
+
+			/* copy substitute into the output string */
+			new_s += offset;
+			memcpy(new_s, sub, sub_len);
+			new_s += sub_len;
+
+			/* note count==0 is effectively infinity */
+			if (--count == 0)
+				break;
+		}
+		/* copy any remaining values into output string */
+		if (len > 0)
+			memcpy(new_s, str, len);
+	}
+	*out_len = new_len;
 	return out_s;
 
   return_same:
