@@ -90,8 +90,6 @@ static PyUnicodeObject *unicode_empty;
 static PyUnicodeObject *unicode_freelist;
 static int unicode_freelist_size;
 
-static PyUnicodeObject *unicode_ascii[128];
-
 /* Default encoding to use and assume when NULL is passed as encoding
    parameter; it is initialized by _PyUnicode_Init().
 
@@ -252,19 +250,6 @@ PyObject *PyUnicode_FromUnicode(const Py_UNICODE *u,
 				int size)
 {
     PyUnicodeObject *unicode;
-
-    if (size == 1 && *u < 128) {
-	    unicode = unicode_ascii[*u];
-	    if (!unicode) {
-		    unicode = _PyUnicode_New(1);
-		    unicode->str[0] = *u;
-		    if (!unicode)
-			    return NULL;
-		    unicode_ascii[*u] = unicode;
-	    }
-	    Py_INCREF(unicode);
-	    return (PyObject*)unicode;
-    }
 
     unicode = _PyUnicode_New(size);
     if (!unicode)
@@ -1670,11 +1655,6 @@ PyObject *PyUnicode_DecodeASCII(const char *s,
 {
     PyUnicodeObject *v;
     Py_UNICODE *p;
-
-    if (size == 1 && *(unsigned char*)s < 128) {
-	    Py_UNICODE r = *(unsigned char*)s;
-	    return PyUnicode_FromUnicode(&r, 1);
-    }
     
     /* ASCII is equivalent to the first 128 ordinals in Unicode. */
     v = _PyUnicode_New(size);
@@ -5209,8 +5189,6 @@ PyTypeObject PyUnicode_Type = {
 
 void _PyUnicode_Init(void)
 {
-    int i;
-
     /* Doublecheck the configuration... */
     if (sizeof(Py_UNICODE) != 2)
         Py_FatalError("Unicode configuration error: "
@@ -5221,9 +5199,6 @@ void _PyUnicode_Init(void)
     unicode_freelist_size = 0;
     unicode_empty = _PyUnicode_New(0);
     strcpy(unicode_default_encoding, "ascii");
-
-    for (i = 0; i < 128; i++)
-	unicode_ascii[i] = NULL;
 }
 
 /* Finalize the Unicode implementation */
@@ -5232,17 +5207,9 @@ void
 _PyUnicode_Fini(void)
 {
     PyUnicodeObject *u;
-    int i;
 
     Py_XDECREF(unicode_empty);
     unicode_empty = NULL;
-
-    for (i = 0; i < 128; i++) {
-	if (unicode_ascii[i]) {
-	    Py_DECREF(unicode_ascii[i]);
-	    unicode_ascii[i] = NULL;
-	}
-    }
 
     for (u = unicode_freelist; u != NULL;) {
 	PyUnicodeObject *v = u;
