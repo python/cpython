@@ -840,17 +840,20 @@ long_format(PyObject *aa, int base, int addL)
 				Py_DECREF(str);
 				return NULL;
 			})
-			while (--ntostore >= 0) {
+			assert(ntostore > 0);
+			do {
 				digit nextrem = (digit)(rem / base);
 				char c = (char)(rem - nextrem * base);
 				assert(p > PyString_AS_STRING(str));
 				c += (c < 10) ? '0' : 'A'-10;
 				*--p = c;
 				rem = nextrem;
-				if (a->ob_size == 0 && rem == 0)
-					break;  /* skip leading zeroes */
-			}
-		} while (ABS(a->ob_size) != 0);
+				--ntostore;
+				/* Termination is a bit delicate:  must not
+				   store leading zeroes, so must get out if
+				   a and rem are both 0 now. */
+			} while (ntostore && (a->ob_size || rem));
+		} while (a->ob_size != 0);
 		Py_DECREF(a);
 	}
 
