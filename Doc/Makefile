@@ -14,7 +14,7 @@ tut.dvi tut.ps:	tut.toc tut.tex myformat.sty
 mod:		mod.dvi
 		$(TEXPREVIEW) mod
 
-mod.dvi mod.ps:	mod.toc mod.tex myformat.sty
+mod.dvi mod.ps:	mod.toc mod.tex mod1.tex mod2.tex mod3.tex myformat.sty
 
 ALL=		tut.ps mod.ps
 
