@@ -78,7 +78,7 @@ by functions or loops that truncate the stream.
   Make an iterator that returns consecutive integers starting with \var{n}.
   Does not currently support python long integers.  Often used as an
   argument to \function{imap()} to generate consecutive data points.
-  Also, used in \function{izip()} to add sequence numbers.  Equivalent to:
+  Also, used with \function{izip()} to add sequence numbers.  Equivalent to:
 
   \begin{verbatim}
      def count(n=0):
@@ -103,9 +103,7 @@ by functions or loops that truncate the stream.
          for element in iterable:
              yield element
              saved.append(element)
-         if len(saved) == 0:
-             return
-         while True:
+         while saved:
              for element in saved:
                    yield element
   \end{verbatim}
@@ -124,13 +122,12 @@ by functions or loops that truncate the stream.
   \begin{verbatim}
      def dropwhile(predicate, iterable):
          iterable = iter(iterable)
-         while True:
-             x = iterable.next()
-             if predicate(x): continue # drop when predicate is true
+         for x in iterable:
+             if not predicate(x):
+                 yield x
+                 break
+         for x in iterable:
              yield x
-             break
-         while True:
-             yield iterable.next()
   \end{verbatim}
 \end{funcdesc}
 
@@ -209,9 +206,7 @@ by functions or loops that truncate the stream.
   \begin{verbatim}
      def islice(iterable, *args):
          s = slice(*args)
-         next = s.start or 0
-         stop = s.stop
-         step = s.step or 1
+         next, stop, step = s.start or 0, s.stop, s.step or 1
          for cnt, element in enumerate(iterable):
              if cnt < next:
                  continue
@@ -278,9 +273,7 @@ by functions or loops that truncate the stream.
 
   \begin{verbatim}
      def takewhile(predicate, iterable):
-         iterable = iter(iterable)
-         while True:
-             x = iterable.next()
+         for x in iterable:
              if predicate(x):
                  yield x
              else:
@@ -357,6 +350,10 @@ from building blocks.
 >>> def no(pred, seq):
 ...     "Returns True if pred(x) is False for every element in the iterable"
 ...     return True not in imap(pred, seq)
+
+>>> def quantify(pred, seq):
+...     "Count how many times the predicate is True in the sequence"
+...     return sum(imap(pred, seq))
 
 >>> def padnone(seq):
 ...     "Returns the sequence elements and then returns None indefinitely"
