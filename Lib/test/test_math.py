@@ -1,7 +1,6 @@
 # Python test set -- math module
 # XXXX Should not do tests around zero only
 
-import sys
 from test_support import *
 
 seps='1e-05'
@@ -36,10 +35,7 @@ testit('atan(1)', math.atan(1), math.pi/4)
 print 'atan2'
 testit('atan2(-1, 0)', math.atan2(-1, 0), -math.pi/2)
 testit('atan2(-1, 1)', math.atan2(-1, 1), -math.pi/4)
-if sys.platform in ['unixware7']:
-    testit('atan2(0, 1)', math.atan2(0, 1), math.pi)
-else:
-    testit('atan2(0, 1)', math.atan2(0, 1), 0)
+testit('atan2(0, 1)', math.atan2(0, 1), 0)
 testit('atan2(1, 1)', math.atan2(1, 1), math.pi/4)
 testit('atan2(1, 0)', math.atan2(1, 0), math.pi/2)
 
