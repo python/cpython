@@ -116,7 +116,7 @@
  * other UNIX International compliant systems that don't have the full
  * pthread implementation.
  */
-#ifdef HAVE_PTHREAD_SIGMASK
+#if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK)
 #  define SET_THREAD_SIGMASK pthread_sigmask
 #else
 #  define SET_THREAD_SIGMASK sigprocmask

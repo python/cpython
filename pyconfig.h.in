@@ -47,6 +47,9 @@
 /* Define if the Posix semaphores do not work on your system */
 #undef HAVE_BROKEN_POSIX_SEMAPHORES
 
+/* Define if pthread_sigmask() does not work on your system. */
+#undef HAVE_BROKEN_PTHREAD_SIGMASK
+
 /* Define to 1 if you have the `chown' function. */
 #undef HAVE_CHOWN
 
@@ -829,9 +832,6 @@
 /* Define on NetBSD to activate all library features */
 #undef _NETBSD_SOURCE
 
-/* Define on FreeBSD to activate all library features */
-#undef __BSD_VISIBLE
-
 /* Define _OSF_SOURCE to get the makedev macro. */
 #undef _OSF_SOURCE
 
@@ -856,6 +856,9 @@
 
 /* Define to activate Unix95-and-earlier features */
 #undef _XOPEN_SOURCE_EXTENDED
+
+/* Define on FreeBSD to activate all library features */
+#undef __BSD_VISIBLE
 
 /* Define to 1 if type `char' is unsigned and you are not using gcc.  */
 #ifndef __CHAR_UNSIGNED__

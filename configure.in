@@ -1701,7 +1701,13 @@ if test "$posix_threads" = "yes"; then
       if test "$ac_cv_pthread_system_supported" = "yes"; then
         AC_DEFINE(PTHREAD_SYSTEM_SCHED_SUPPORTED, 1, [Defined if PTHREAD_SCOPE_SYSTEM supported.])
       fi
-      AC_CHECK_FUNCS(pthread_sigmask)
+      AC_CHECK_FUNCS(pthread_sigmask,
+        [case $ac_sys_system in
+        CYGWIN*)
+          AC_DEFINE(HAVE_BROKEN_PTHREAD_SIGMASK, 1,
+            [Define if pthread_sigmask() does not work on your system.])
+            ;;
+        esac])
 fi
 
 
