@@ -227,3 +227,12 @@ def run_setup (script_name, script_args=None, stop_after="run"):
     return _setup_distribution
 
 # run_setup ()
+
+def get_distutil_options ():
+    """Returns a list of strings recording changes to the Distutils.
+
+    setup.py files can then do:
+      if 'optional-thing' in get_distutil_options():
+          ...
+    """
+    return []
