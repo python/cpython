@@ -763,7 +763,7 @@ dictinsert(v, key, item)
 		last_name_object = newstringobject(key);
 		if (last_name_object == NULL) {
 			last_name_char = NULL;
-			return NULL;
+			return -1;
 		}
 		last_name_char = key;
 	}
@@ -780,7 +780,7 @@ dictremove(v, key)
 		last_name_object = newstringobject(key);
 		if (last_name_object == NULL) {
 			last_name_char = NULL;
-			return NULL;
+			return -1;
 		}
 		last_name_char = key;
 	}

@@ -156,7 +156,7 @@ imageop_tovideo(self, args)
     ncp = (unsigned char *)getstringvalue(rv);
 
     if ( width == 1 ) {
-	bcopy(cp, ncp, maxx);		/* Copy first line */
+	memcpy(ncp, cp, maxx);		/* Copy first line */
 	ncp += maxx;
 	for (y=1; y<maxy; y++) {	/* Interpolate other lines */
 	    for(x=0; x<maxx; x++) {
@@ -165,7 +165,7 @@ imageop_tovideo(self, args)
 	    }
 	}
     } else {
-	bcopy(cp, ncp, maxx*4);		/* Copy first line */
+	memcpy(ncp, cp, maxx*4);		/* Copy first line */
 	ncp += maxx*4;
 	for (y=1; y<maxy; y++) {	/* Interpolate other lines */
 	    for(x=0; x<maxx; x++) {
