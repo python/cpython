@@ -1044,7 +1044,7 @@ arbitrary objects):
   \ttindex{setdefault()}
   \ttindex{popitem()}
   \ttindex{iteritems()}
-  \ttindex{iterkeys)}
+  \ttindex{iterkeys()}
   \ttindex{itervalues()}}
 
 \begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
@@ -1345,7 +1345,7 @@ Modifying this dictionary will actually change the module's symbol
 table, but direct assignment to the \member{__dict__} attribute is not
 possible (you can write \code{\var{m}.__dict__['a'] = 1}, which
 defines \code{\var{m}.a} to be \code{1}, but you can't write
-\code{\var{m}.__dict__ = \{\}}.
+\code{\var{m}.__dict__ = \{\}}).
 
 Modules built into the interpreter are written like this:
 \code{<module 'sys' (built-in)>}.  If loaded from a file, they are

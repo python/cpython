@@ -164,7 +164,7 @@ same thing as in the \method{transfercmd()} method.
 Retrieve a file or directory listing in \ASCII{} transfer mode.
 \var{command} should be an appropriate \samp{RETR} command (see
 \method{retrbinary()} or a \samp{LIST} command (usually just the string
-\code{'LIST'}).  The \var{callback} function is called for each line,
+\code{'LIST'})).  The \var{callback} function is called for each line,
 with the trailing CRLF stripped.  The default \var{callback} prints
 the line to \code{sys.stdout}.
 \end{methoddesc}
@@ -284,7 +284,7 @@ calls (see below).
 \begin{methoddesc}{close}{}
 Close the connection unilaterally.  This should not be applied to an
 already closed connection (such as after a successful call to
-\method{quit()}.  After this call the \class{FTP} instance should not
+\method{quit()}).  After this call the \class{FTP} instance should not
 be used any more (after a call to \method{close()} or
 \method{quit()} you cannot reopen the connection by issuing another
 \method{login()} method).

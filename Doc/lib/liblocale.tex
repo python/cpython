@@ -412,8 +412,8 @@ threads that happen to run before the settings have been restored.
 
 If, when coding a module for general use, you need a locale
 independent version of an operation that is affected by the locale
-(e.g. \function{string.lower()}, or certain formats used with
-\function{time.strftime()})), you will have to find a way to do it
+(such as \function{string.lower()}, or certain formats used with
+\function{time.strftime()}), you will have to find a way to do it
 without using the standard library routine.  Even better is convincing
 yourself that using locale settings is okay.  Only as a last resort
 should you document that your module is not compatible with

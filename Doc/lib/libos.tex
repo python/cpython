@@ -438,7 +438,7 @@ this calls the native \cfunction{fsync()} function; on Windows, the
 MS \cfunction{_commit()} function.
 
 If you're starting with a Python file object \var{f}, first do
-\code{\var{f}.flush()}, and then do \code{os.fsync(\var{f}.fileno()},
+\code{\var{f}.flush()}, and then do \code{os.fsync(\var{f}.fileno())},
 to ensure that all internal buffers associated with \var{f} are written
 to disk.
 Availability: \UNIX, and Windows starting in 2.2.3.
@@ -787,7 +787,7 @@ the \ctype{stat} structure, namely:
 \member{st_mode} (protection bits),
 \member{st_ino} (inode number),
 \member{st_dev} (device),
-\member{st_nlink} (number of hard links,
+\member{st_nlink} (number of hard links),
 \member{st_uid} (user ID of owner),
 \member{st_gid} (group ID of owner),
 \member{st_size} (size of file, in bytes),

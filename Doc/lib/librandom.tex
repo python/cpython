@@ -76,7 +76,7 @@ That creates 10 distinct generators, which can be passed out to 10
 distinct threads.  The generators don't share state so can be called
 safely in parallel.  So long as no thread calls its \code{g.random()}
 more than a million times (the second argument to
-\function{create_generators()}, the sequences seen by each thread will
+\function{create_generators()}), the sequences seen by each thread will
 not overlap.  The period of the underlying Wichmann-Hill generator
 limits how far this technique can be pushed.
 
