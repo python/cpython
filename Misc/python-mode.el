@@ -436,11 +436,11 @@ argument is provided, that many colons are inserted non-electrically."
 			   (py-compute-indentation)))
 	       )
 	  (setq outdent py-indent-offset))
-      ;; electric colon won't re-indent lines that start to the left
-      ;; of the current computed indentation, under the assumption
-      ;; that these are already outdented properly.  Use TAB, C-c C-l
-      ;; or C-c C-r to adjust.  TBD: Is there a better way to
-      ;; determine this???
+      ;; Don't indent, only outdent.  This assumes that any lines that
+      ;; are already outdented relative to py-compute-indentation were
+      ;; put there on purpose.  Its highly annoying to have `:' indent
+      ;; for you.  Use TAB, C-c C-l or C-c C-r to adjust.  TBD: Is
+      ;; there a better way to determine this???
       (if (< (current-indentation) indent) nil
 	(goto-char here)
 	(beginning-of-line)
