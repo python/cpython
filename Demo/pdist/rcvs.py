@@ -8,11 +8,10 @@
 # - if the remote file is deleted, "rcvs update" will fail
 #
 # Functionality:
-# - descend into directories (alraedy done for update)
-# - cvs add; cvs rm
-# - commit new files
-# - conflict resolution
 # - cvs log
+# - cvs rm
+# - descend into directories (alraedy done for update)
+# - conflict resolution
 # - other relevant commands?
 # - branches
 #
@@ -191,7 +190,8 @@ class MyFile(File):
 	def put(self, message = ""):
 		print "Checking in", self.file, "..."
 		data = open(self.file).read()
-		self.proxy.lock(self.file)
+		if not self.enew:
+			self.proxy.lock(self.file)
 		messages = self.proxy.put(self.file, data, message)
 		if messages:
 			print messages
@@ -203,6 +203,16 @@ class MyFile(File):
 		f.write(data)
 		f.close()
 		self.setentry(self.rrev, self.rsum)
+
+	def add(self):
+		self.eseen = 0		# While we're hacking...
+		self.esum = self.lsum
+		self.emtime, self.ectime = 0, 0
+		self.erev = ''
+		self.enew = 1
+		self.edeleted = 0
+		self.eseen = 1		# Done
+		self.extra = ''
 
 	def setentry(self, erev, esum):
 		self.eseen = 0		# While we're hacking...
@@ -252,9 +262,11 @@ class RCVS(CVS):
 			return
 		if not message:
 			message = raw_input("One-liner: ")
+		committed = []
 		for e in list:
+			committed.append(e.file)
 			e.commit(message)
-		self.mailinfo(files, message)
+		self.mailinfo(committed, message)
 
 	def mailinfo(self, files, message = ""):
 		towhom = "sjoerd@cwi.nl, jack@cwi.nl" # XXX
@@ -282,6 +294,25 @@ class RCVS(CVS):
 	def diff(self, files, opts):
 		for e in self.whichentries(files):
 			e.diff(opts)
+
+	def add(self, files):
+		if not files:
+			raise RuntimeError, "'cvs add' needs at least one file"
+		list = []
+		for e in self.whichentries(files, 1):
+			code = e.action()
+			print code, e.file
+			e.report()
+			e.add()
+			code = e.action()
+			print code, e.file
+			e.report()
+			print '='*20
+
+	def rm(self, files):
+		if not files:
+			raise RuntimeError, "'cvs rm' needs at least one file"
+		raise RuntimeError, "'cvs rm' not yet imlemented"
 
 	def whichentries(self, files, localfilestoo = 0):
 		if files:
@@ -367,6 +398,9 @@ class rcvs(CommandFrameWork):
 	def default(self):
 		self.cvs.report([])
 
+	def do_report(self, opts, files):
+		self.cvs.report(files)
+
 	def do_update(self, opts, files):
 		"""update [-l] [-R] [file] ..."""
 		local = DEF_LOCAL
@@ -398,6 +432,24 @@ class rcvs(CommandFrameWork):
 	flags_diff = 'cbitwcefhnlr:sD:S:'
 	do_dif = do_diff
 	flags_dif = flags_diff
+
+	def do_add(self, opts, files):
+		"""add file ..."""
+		if not files:
+			print "'rcvs add' requires at least one file"
+			return
+		self.cvs.add(files)
+		self.cvs.putentries()
+
+	def do_remove(self, opts, files):
+		"""remove file ..."""
+		if not files:
+			print "'rcvs remove' requires at least one file"
+			return
+		self.cvs.remove(files)
+		self.cvs.putentries()
+	do_rm = do_remove
+
 
 
 
