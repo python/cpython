@@ -175,6 +175,9 @@ html:
 htmlapi:
 	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile api)
 
+htmldoc:
+	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile doc)
+
 htmlext:
 	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile ext)
 
