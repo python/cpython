@@ -415,9 +415,12 @@ have a default value; \member{func_code} is the code object representing
 the compiled function body; \member{func_globals} is (a reference to)
 the dictionary that holds the function's global variables --- it
 defines the global namespace of the module in which the function was
-defined.
-Of these, \member{func_code}, \member{func_defaults} and
-\member{func_doc} (and this \member{__doc__}) may be writable; the
+defined; \member{func_dict} or \member{__dict__} contains the
+namespace supporting arbitrary function attributes.
+
+Of these, \member{func_code}, \member{func_defaults},
+\member{func_doc}/\member{__doc__}, and
+\member{func_dict}/\member{__dict__} may be writable; the
 others can never be changed.
 Additional information about a function's definition can be
 retrieved from its code object; see the description of internal types
@@ -426,9 +429,11 @@ below.
   \ttindex{func_doc}
   \ttindex{__doc__}
   \ttindex{__name__}
+  \ttindex{__dict__}
   \ttindex{func_defaults}
   \ttindex{func_code}
-  \ttindex{func_globals}}
+  \ttindex{func_globals}
+  \ttindex{func_dict}}
 \indexii{global}{namespace}
 
 \item[User-defined methods]
@@ -448,6 +453,9 @@ base class of the class of which \member{im_self} is an instance);
 \withsubitem{(method attribute)}{
   \ttindex{im_func}
   \ttindex{im_self}}
+
+Methods also support accessing (but not setting) the arbitrary
+function attributes on the underlying function object.
 
 User-defined method objects are created in two ways: when getting an
 attribute of a class that is a user-defined function object, or when
