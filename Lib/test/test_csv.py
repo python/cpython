@@ -227,10 +227,10 @@ class Test_Csv(unittest.TestCase):
         self.assertRaises(csv.Error, self._read_test, ['a,b\r\nc,d'], [])
 
     def test_read_escape(self):
-        self._read_test(['a,\\b,c'], [['a', '\\b', 'c']], escapechar='\\')
+        self._read_test(['a,\\b,c'], [['a', 'b', 'c']], escapechar='\\')
         self._read_test(['a,b\\,c'], [['a', 'b,c']], escapechar='\\')
         self._read_test(['a,"b\\,c"'], [['a', 'b,c']], escapechar='\\')
-        self._read_test(['a,"b,\\c"'], [['a', 'b,\\c']], escapechar='\\')
+        self._read_test(['a,"b,\\c"'], [['a', 'b,c']], escapechar='\\')
         self._read_test(['a,"b,c\\""'], [['a', 'b,c"']], escapechar='\\')
         self._read_test(['a,"b,c"\\'], [['a', 'b,c\\']], escapechar='\\')
 
