@@ -42,6 +42,8 @@ Core and builtins
 Library
 -------
 
+- Bug #924361: Properly support normalization of empty unicode strings.
+
 - Fixed a caching bug in platform.platform() where the argument of 'terse' was
   not taken into consideration when caching value.
 
