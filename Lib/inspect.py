@@ -197,20 +197,25 @@ def getsourcefile(object):
     filename = getfile(object)
     if string.lower(filename[-4:]) in ['.pyc', '.pyo']:
         filename = filename[:-4] + '.py'
-    if string.lower(filename[-3:]) == '.py' and os.path.exists(filename):
+    for suffix, mode, kind in imp.get_suffixes():
+        if 'b' in mode and string.lower(filename[-len(suffix):]) == suffix:
+            # Looks like a binary file.  We want to only return a text file.
+            return None
+    if os.path.exists(filename):
         return filename
 
 def getabsfile(object):
-    """Return an absolute path to the source file or compiled file for an object.
+    """Return an absolute path to the source or compiled file for an object.
 
-    The idea is for each object to have a unique origin, so this routine normalizes
-    the result as much as possible."""
-    return os.path.normcase(os.path.abspath(getsourcefile(object) or getfile(object)))
+    The idea is for each object to have a unique origin, so this routine
+    normalizes the result as much as possible."""
+    return os.path.normcase(
+        os.path.abspath(getsourcefile(object) or getfile(object)))
 
 modulesbyfile = {}
 
 def getmodule(object):
-    """Try to guess which module an object was defined in."""
+    """Return the module an object was defined in, or None if not found."""
     if isclass(object):
         return sys.modules.get(object.__module__)
     try:
@@ -225,15 +230,15 @@ def getmodule(object):
     if modulesbyfile.has_key(file):
         return sys.modules[modulesbyfile[file]]
     main = sys.modules['__main__']
-    try:
+    if hasattr(main, object.__name__):
         mainobject = getattr(main, object.__name__)
-        if mainobject is object: return main
-    except AttributeError: pass
+        if mainobject is object:
+            return main
     builtin = sys.modules['__builtin__']
-    try:
+    if hasattr(builtin, object.__name__):
         builtinobject = getattr(builtin, object.__name__)
-        if builtinobject is object: return builtin
-    except AttributeError: pass
+        if builtinobject is object:
+            return builtin
 
 def findsource(object):
     """Return the entire source file and starting line number for an object.
@@ -244,10 +249,10 @@ def findsource(object):
     is raised if the source code cannot be retrieved."""
     try:
         file = open(getsourcefile(object))
-        lines = file.readlines()
-        file.close()
     except (TypeError, IOError):
         raise IOError, 'could not get source code'
+    lines = file.readlines()
+    file.close()
 
     if ismodule(object):
         return lines, 0
@@ -269,20 +274,18 @@ def findsource(object):
     if isframe(object):
         object = object.f_code
     if iscode(object):
-        try:
-            lnum = object.co_firstlineno - 1
-        except AttributeError:
+        if not hasattr(object, 'co_firstlineno'):
             raise IOError, 'could not find function definition'
-        else:
-            while lnum > 0:
-                if string.split(lines[lnum])[:1] == ['def']: break
-                lnum = lnum - 1
-            return lines, lnum
+        lnum = object.co_firstlineno - 1
+        while lnum > 0:
+            if string.split(lines[lnum])[:1] == ['def']: break
+            lnum = lnum - 1
+        return lines, lnum
 
 def getcomments(object):
     """Get lines of comments immediately preceding an object's source code."""
     try: lines, lnum = findsource(object)
-    except: return None
+    except IOError: return None
 
     if ismodule(object):
         # Look for a comment block at the top of the file.
@@ -574,12 +577,13 @@ def getframeinfo(frame, context=1):
         start = lineno - 1 - context/2
         try:
             lines, lnum = findsource(frame)
+        except IOError:
+            lines = index = None
+        else:
             start = max(start, 1)
             start = min(start, len(lines) - context)
             lines = lines[start:start+context]
             index = lineno - 1 - start
-        except IOError:
-            lines = index = None
     else:
         lines = index = None
 
