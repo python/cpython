@@ -2440,9 +2440,9 @@ bltin_exc[] = {
 };
 
 
-/* import exceptions module to extract class exceptions.  on success,
- * return 1. on failure return 0 which signals _PyBuiltin_Init_2 to fall
- * back to using old-style string based exceptions.
+/* Import exceptions module to extract class exceptions.  On success,
+ * return 1.  On failure return 0 which signals _PyBuiltin_Init_2 to
+ * issue a fatal error.
  */
 static int
 init_class_exc(dict)
@@ -2457,14 +2457,7 @@ init_class_exc(dict)
 	if (m == NULL ||
 	    (d = PyModule_GetDict(m)) == NULL)
 	{
-		PySys_WriteStderr("'import exceptions' failed; ");
-		if (Py_VerboseFlag) {
-			PySys_WriteStderr("traceback:\n");
-			PyErr_Print();
-		}
-		else {
-			PySys_WriteStderr("use -v for traceback\n");
-		}
+		PySys_WriteStderr("'import exceptions' failed\n");
 		goto finally;
 	}
 	for (i = 0; bltin_exc[i].name; i++) {
@@ -2505,18 +2498,8 @@ init_class_exc(dict)
 
 	/* we're done with the exceptions module */
 	Py_DECREF(m);
-
-	if (PyErr_Occurred()) {
-	    PySys_WriteStderr("Cannot initialize standard class exceptions; ");
-	    if (Py_VerboseFlag) {
-		    PySys_WriteStderr("traceback:\n");
-		    PyErr_Print();
-	    }
-	    else
-		    PySys_WriteStderr("use -v for traceback\n");
-	    goto finally;
-	}
 	return 1;
+
   finally:
 	Py_XDECREF(m);
 	Py_XDECREF(args);
@@ -2530,18 +2513,6 @@ fini_instances()
 {
 	Py_XDECREF(PyExc_MemoryErrorInst);
 	PyExc_MemoryErrorInst = NULL;
-}
-
-
-static PyObject *
-newstdexception(dict, name)
-	PyObject *dict;
-	char *name;
-{
-	PyObject *v = PyString_FromString(name);
-	if (v == NULL || PyDict_SetItemString(dict, name, v) != 0)
-		Py_FatalError("Cannot create string-based exceptions");
-	return v;
 }
 
 
