@@ -290,12 +290,12 @@ conv_string_len_to_utf8(const XML_Char *str,  int len)
 
 /* Callback routines */
 
-static void clear_handlers(xmlparseobject *self, int decref);
+static void clear_handlers(xmlparseobject *self, int initial);
 
 static void
 flag_error(xmlparseobject *self)
 {
-    clear_handlers(self, 1);
+    clear_handlers(self, 0);
 }
 
 static PyCodeObject*
@@ -1017,7 +1017,7 @@ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
         Py_DECREF(new_parser);
         return PyErr_NoMemory();
     }
-    clear_handlers(new_parser, 0);
+    clear_handlers(new_parser, 1);
 
     /* then copy handlers from self */
     for (i = 0; handler_info[i].name != NULL; i++) {
@@ -1193,7 +1193,7 @@ newxmlparseobject(char *encoding, char *namespace_separator)
 	    Py_DECREF(self);
 	    return PyErr_NoMemory();
     }
-    clear_handlers(self, 0);
+    clear_handlers(self, 1);
 
     return (PyObject*)self;
 }
@@ -1367,7 +1367,7 @@ xmlparse_traverse(xmlparseobject *op, visitproc visit, void *arg)
 static int
 xmlparse_clear(xmlparseobject *op)
 {
-    clear_handlers(op, 1);
+    clear_handlers(op, 0);
     return 0;
 }
 #endif
@@ -1676,19 +1676,20 @@ MODULE_INITFUNC(void)
 }
 
 static void
-clear_handlers(xmlparseobject *self, int decref)
+clear_handlers(xmlparseobject *self, int initial)
 {
     int i = 0;
     PyObject *temp;
 
     for (; handler_info[i].name!=NULL; i++) {
-        if (decref) {
+        if (initial)
+	    self->handlers[i]=NULL;
+	else {
             temp = self->handlers[i];
             self->handlers[i] = NULL;
             Py_XDECREF(temp);
+	    handler_info[i].setter(self->itself, NULL);
         }
-        self->handlers[i]=NULL;
-        handler_info[i].setter(self->itself, NULL);
     }
 }
 
