@@ -228,10 +228,17 @@ buffer_hash(PyBufferObject *self)
 	if ( self->b_hash != -1 )
 		return self->b_hash;
 
+	/* XXX potential bugs here, a readonly buffer does not imply that the
+	 * underlying memory is immutable.  b_readonly is a necessary but not
+	 * sufficient condition for a buffer to be hashable.  Perhaps it would
+	 * be better to only allow hashing if the underlying object is known to
+	 * be immutable (e.g. PyString_Check() is true).  Another idea would
+	 * be to call tp_hash on the underlying object and see if it raises
+	 * an error. */
 	if ( !self->b_readonly )
 	{
-		/* ### use different wording, since this is conditional? */
-		PyErr_SetString(PyExc_TypeError, "unhashable type");
+		PyErr_SetString(PyExc_TypeError,
+				"writable buffers are not hashable");
 		return -1;
 	}
 
