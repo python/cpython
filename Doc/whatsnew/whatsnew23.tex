@@ -313,6 +313,12 @@ L\"owis.}
 
 
 %======================================================================
+\section{PEP 277: XXX}
+
+XXX write this section
+
+
+%======================================================================
 \section{PEP 278: Universal Newline Support}
 
 The three major operating systems used today are Microsoft Windows,
@@ -846,15 +852,6 @@ ext = Extension("samp",
 
 Modifying \file{sample.h} would then cause the module to be recompiled.
 (Contributed by Jeremy Hylton.)
-
-\item Two new binary packagers were added to the Distutils.
-\code{bdist_pkgtool} builds \file{.pkg} files to use with Solaris
-\program{pkgtool}, and \code{bdist_sdux} builds \program{swinstall}
-packages for use on HP-UX.  
-An abstract binary packager class, 
-\module{distutils.command.bdist_packager}, was added; this may make it
-easier to write binary packaging commands.  (Contributed by Mark
-Alexander.)
 
 \item The \module{getopt} module gained a new function,
 \function{gnu_getopt()}, that supports the same arguments as the existing
