@@ -11,13 +11,25 @@
 \maketitle
 \tableofcontents
 
-% To do:
-% MacOS framework-related changes (section of its own, probably)
-
-%\section{Introduction \label{intro}}
-
-This article explains the new features in Python 2.3.  The tentative
+This article explains the new features in Python 2.3.  The 
 release date of Python 2.3 is currently scheduled for August 2003.
+
+The main themes for Python 2.3 are polishing some of the features
+added in 2.2, adding various small but useful enhancements to the core
+language, and expanding the standard library.  The new object model
+introduced in the previous version has benefited from 18 months of
+bugfixes and from optimization efforts that have improved the
+performance of new-style classes.  A few new built-in functions have
+been added such as \function{sum()} and \function{enumerate()}.  The
+\keyword{in} operator can now be used for substring searches (e.g.
+\code{"ab" in "abc"} returns \constant{True}).
+
+Some of the many new library features include Boolean, set, heap, and
+date/time data types, the ability to import modules from ZIP-format
+archives, metadata support for the long-awaited Python catalog, an
+updated version of IDLE, and modules for logging messages, wrapping
+text, parsing CSV files, processing command-line options, using BerkeleyDB
+databases...  the list of new and enhanced modules is lengthy.
 
 This article doesn't attempt to provide a complete specification of
 the new features, but instead provides a convenient overview.  For
@@ -301,6 +313,57 @@ Hisao and Martin von~L\"owis.}
 
 \end{seealso}
 
+
+%======================================================================
+\section{PEP 273: Importing Modules from Zip Archives}
+
+The new \module{zipimport} module adds support for importing
+modules from a ZIP-format archive.  You don't need to import the
+module explicitly; it will be automatically imported if a ZIP
+archive's filename is added to \code{sys.path}.  For example:
+
+\begin{verbatim}
+amk@nyman:~/src/python$ unzip -l /tmp/example.zip
+Archive:  /tmp/example.zip
+  Length     Date   Time    Name
+ --------    ----   ----    ----
+     8467  11-26-02 22:30   jwzthreading.py
+ --------                   -------
+     8467                   1 file
+amk@nyman:~/src/python$ ./python
+Python 2.3 (#1, Aug 1 2003, 19:54:32) 
+>>> import sys
+>>> sys.path.insert(0, '/tmp/example.zip')  # Add .zip file to front of path
+>>> import jwzthreading
+>>> jwzthreading.__file__
+'/tmp/example.zip/jwzthreading.py'
+>>>
+\end{verbatim}
+
+An entry in \code{sys.path} can now be the filename of a ZIP archive.
+The ZIP archive can contain any kind of files, but only files named
+\file{*.py}, \file{*.pyc}, or \file{*.pyo} can be imported.  If an
+archive only contains \file{*.py} files, Python will not attempt to
+modify the archive by adding the corresponding \file{*.pyc} file, meaning
+that if a ZIP archive doesn't contain \file{*.pyc} files, importing may be
+rather slow.
+
+A path within the archive can also be specified to only import from a
+subdirectory; for example, the path \file{/tmp/example.zip/lib/}
+would only import from the \file{lib/} subdirectory within the
+archive.
+
+\begin{seealso}
+
+\seepep{273}{Import Modules from Zip Archives}{Written by James C. Ahlstrom, 
+who also provided an implementation.
+Python 2.3 follows the specification in \pep{273}, 
+but uses an implementation written by Just van~Rossum 
+that uses the import hooks described in \pep{302}.
+See section~\ref{section-pep302} for a description of the new import hooks.
+}
+
+\end{seealso}
 
 %======================================================================
 \section{PEP 277: Unicode file name support for Windows NT}
@@ -652,57 +715,6 @@ Walter D\"orwald.}
 
 \end{seealso}
 
-
-%======================================================================
-\section{PEP 273: Importing Modules from Zip Archives}
-
-The new \module{zipimport} module adds support for importing
-modules from a ZIP-format archive.  You don't need to import the
-module explicitly; it will be automatically imported if a ZIP
-archive's filename is added to \code{sys.path}.  For example:
-
-\begin{verbatim}
-amk@nyman:~/src/python$ unzip -l /tmp/example.zip
-Archive:  /tmp/example.zip
-  Length     Date   Time    Name
- --------    ----   ----    ----
-     8467  11-26-02 22:30   jwzthreading.py
- --------                   -------
-     8467                   1 file
-amk@nyman:~/src/python$ ./python
-Python 2.3 (#1, Aug 1 2003, 19:54:32) 
->>> import sys
->>> sys.path.insert(0, '/tmp/example.zip')  # Add .zip file to front of path
->>> import jwzthreading
->>> jwzthreading.__file__
-'/tmp/example.zip/jwzthreading.py'
->>>
-\end{verbatim}
-
-An entry in \code{sys.path} can now be the filename of a ZIP archive.
-The ZIP archive can contain any kind of files, but only files named
-\file{*.py}, \file{*.pyc}, or \file{*.pyo} can be imported.  If an
-archive only contains \file{*.py} files, Python will not attempt to
-modify the archive by adding the corresponding \file{*.pyc} file, meaning
-that if a ZIP archive doesn't contain \file{*.pyc} files, importing may be
-rather slow.
-
-A path within the archive can also be specified to only import from a
-subdirectory; for example, the path \file{/tmp/example.zip/lib/}
-would only import from the \file{lib/} subdirectory within the
-archive.
-
-\begin{seealso}
-
-\seepep{273}{Import Modules from Zip Archives}{Written by James C. Ahlstrom, 
-who also provided an implementation.
-Python 2.3 follows the specification in \pep{273}, 
-but uses an implementation written by Just van~Rossum 
-that uses the import hooks described in \pep{302}.
-See section~\ref{section-pep302} for a description of the new import hooks.
-}
-
-\end{seealso}
 
 %======================================================================
 \section{PEP 301: Package Index and Metadata for
