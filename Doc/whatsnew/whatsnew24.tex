@@ -569,6 +569,25 @@ For example:
 %======================================================================
 % whole new modules get described in \subsections here
 
+\subsection{cookielib}
+
+The \module{cookielib} library supports client-side handling for HTTP
+cookies, just as the \module{Cookie} provides server-side cookie
+support in CGI scripts. This library manages cookies in a way similar
+to web browsers. Cookies are stored in cookie jars; the library
+transparently stores cookies offered by the web server in the cookie
+jar, and fetches the cookie from the jar when connecting to the
+server. Similar to web browsers, policy objects control whether
+cookies are accepted or not.
+
+In order to store cookies across sessions, two implementations of
+cookie jars are provided: one that stores cookies in the Netscape
+format, so applications can use the Mozilla or Lynx cookie jars, and
+one that stores cookies in the same format as the Perl libwww libary.
+
+\module{urllib2} has been changed to interact with \module{cookielib}:
+\class{HTTPCookieProcessor} manages a cookie jar that is used when
+accessing URLs.
 
 % ======================================================================
 \section{Build and C API Changes}

@@ -1,0 +1,1620 @@
+# -*- coding: utf-8 -*-
+"""Tests for cookielib.py."""
+
+import re, os, time
+from unittest import TestCase
+
+from test import test_support
+
+class DateTimeTests(TestCase):
+
+    def test_time2isoz(self):
+        from cookielib import time2isoz
+
+        base = 1019227000
+        day = 24*3600
+        self.assertEquals(time2isoz(base), "2002-04-19 14:36:40Z")
+        self.assertEquals(time2isoz(base+day), "2002-04-20 14:36:40Z")
+        self.assertEquals(time2isoz(base+2*day), "2002-04-21 14:36:40Z")
+        self.assertEquals(time2isoz(base+3*day), "2002-04-22 14:36:40Z")
+
+        az = time2isoz()
+        bz = time2isoz(500000)
+        for text in (az, bz):
+            self.assert_(re.search(r"^\d{4}-\d\d-\d\d \d\d:\d\d:\d\dZ$", text),
+                         "bad time2isoz format: %s %s" % (az, bz))
+
+    def test_http2time(self):
+        from cookielib import http2time
+
+        def parse_date(text):
+            return time.gmtime(http2time(text))[:6]
+
+        self.assertEquals(parse_date("01 Jan 2001"), (2001, 1, 1, 0, 0, 0.0))
+
+        # this test will break around year 2070
+        self.assertEquals(parse_date("03-Feb-20"), (2020, 2, 3, 0, 0, 0.0))
+
+        # this test will break around year 2048
+        self.assertEquals(parse_date("03-Feb-98"), (1998, 2, 3, 0, 0, 0.0))
+
+    def test_http2time_formats(self):
+        from cookielib import http2time, time2isoz
+
+        # test http2time for supported dates.  Test cases with 2 digit year
+        # will probably break in year 2044.
+        tests = [
+         'Thu, 03 Feb 1994 00:00:00 GMT',  # proposed new HTTP format
+         'Thursday, 03-Feb-94 00:00:00 GMT',  # old rfc850 HTTP format
+         'Thursday, 03-Feb-1994 00:00:00 GMT',  # broken rfc850 HTTP format
+
+         '03 Feb 1994 00:00:00 GMT',  # HTTP format (no weekday)
+         '03-Feb-94 00:00:00 GMT',  # old rfc850 (no weekday)
+         '03-Feb-1994 00:00:00 GMT',  # broken rfc850 (no weekday)
+         '03-Feb-1994 00:00 GMT',  # broken rfc850 (no weekday, no seconds)
+         '03-Feb-1994 00:00',  # broken rfc850 (no weekday, no seconds, no tz)
+
+         '03-Feb-94',  # old rfc850 HTTP format (no weekday, no time)
+         '03-Feb-1994',  # broken rfc850 HTTP format (no weekday, no time)
+         '03 Feb 1994',  # proposed new HTTP format (no weekday, no time)
+
+         # A few tests with extra space at various places
+         '  03   Feb   1994  0:00  ',
+         '  03-Feb-1994  ',
+        ]
+
+        test_t = 760233600  # assume broken POSIX counting of seconds
+        result = time2isoz(test_t)
+        expected = "1994-02-03 00:00:00Z"
+        self.assertEquals(result, expected,
+                          "%s  =>  '%s' (%s)" % (test_t, result, expected))
+
+        for s in tests:
+            t = http2time(s)
+            t2 = http2time(s.lower())
+            t3 = http2time(s.upper())
+
+            self.assert_(t == t2 == t3 == test_t,
+                         "'%s'  =>  %s, %s, %s (%s)" % (s, t, t2, t3, test_t))
+
+    def test_http2time_garbage(self):
+        from cookielib import http2time
+
+        for test in [
+            '',
+            'Garbage',
+            'Mandag 16. September 1996',
+            '01-00-1980',
+            '01-13-1980',
+            '00-01-1980',
+            '32-01-1980',
+            '01-01-1980 25:00:00',
+            '01-01-1980 00:61:00',
+            '01-01-1980 00:00:62',
+            ]:
+            self.assert_(http2time(test) is None,
+                         "http2time(%s) is not None\n"
+                         "http2time(test) %s" % (test, http2time(test))
+                         )
+
+
+class HeaderTests(TestCase):
+    def test_parse_ns_headers(self):
+        from cookielib import parse_ns_headers
+
+        # quotes should be stripped
+        expected = [[('expires', 2209069412L), ('version', '0')]]
+        for hdr in [
+            'expires=01 Jan 2040 22:23:32 GMT',
+            'expires="01 Jan 2040 22:23:32 GMT"',
+            ]:
+            self.assertEquals(parse_ns_headers([hdr]), expected)
+
+    def test_join_header_words(self):
+        from cookielib import join_header_words
+
+        joined = join_header_words([[("foo", None), ("bar", "baz")]])
+        self.assertEquals(joined, "foo; bar=baz")
+
+        self.assertEquals(join_header_words([[]]), "")
+
+    def test_split_header_words(self):
+        from cookielib import split_header_words
+
+        tests = [
+            ("foo", [[("foo", None)]]),
+            ("foo=bar", [[("foo", "bar")]]),
+            ("   foo   ", [[("foo", None)]]),
+            ("   foo=   ", [[("foo", "")]]),
+            ("   foo=", [[("foo", "")]]),
+            ("   foo=   ; ", [[("foo", "")]]),
+            ("   foo=   ; bar= baz ", [[("foo", ""), ("bar", "baz")]]),
+            ("foo=bar bar=baz", [[("foo", "bar"), ("bar", "baz")]]),
+            # doesn't really matter if this next fails, but it works ATM
+            ("foo= bar=baz", [[("foo", "bar=baz")]]),
+            ("foo=bar;bar=baz", [[("foo", "bar"), ("bar", "baz")]]),
+            ('foo bar baz', [[("foo", None), ("bar", None), ("baz", None)]]),
+            ("a, b, c", [[("a", None)], [("b", None)], [("c", None)]]),
+            (r'foo; bar=baz, spam=, foo="\,\;\"", bar= ',
+             [[("foo", None), ("bar", "baz")],
+              [("spam", "")], [("foo", ',;"')], [("bar", "")]]),
+            ]
+
+        for arg, expect in tests:
+            try:
+                result = split_header_words([arg])
+            except:
+                import traceback, StringIO
+                f = StringIO.StringIO()
+                traceback.print_exc(None, f)
+                result = "(error -- traceback follows)\n\n%s" % f.getvalue()
+            self.assertEquals(result,  expect, """
+When parsing: '%s'
+Expected:     '%s'
+Got:          '%s'
+""" % (arg, expect, result))
+
+    def test_roundtrip(self):
+        from cookielib import split_header_words, join_header_words
+
+        tests = [
+            ("foo", "foo"),
+            ("foo=bar", "foo=bar"),
+            ("   foo   ", "foo"),
+            ("foo=", 'foo=""'),
+            ("foo=bar bar=baz", "foo=bar; bar=baz"),
+            ("foo=bar;bar=baz", "foo=bar; bar=baz"),
+            ('foo bar baz', "foo; bar; baz"),
+            (r'foo="\"" bar="\\"', r'foo="\""; bar="\\"'),
+            ('foo,,,bar', 'foo, bar'),
+            ('foo=bar,bar=baz', 'foo=bar, bar=baz'),
+
+            ('text/html; charset=iso-8859-1',
+             'text/html; charset="iso-8859-1"'),
+
+            ('foo="bar"; port="80,81"; discard, bar=baz',
+             'foo=bar; port="80,81"; discard, bar=baz'),
+
+            (r'Basic realm="\"foo\\\\bar\""',
+             r'Basic; realm="\"foo\\\\bar\""')
+            ]
+
+        for arg, expect in tests:
+            input = split_header_words([arg])
+            res = join_header_words(input)
+            self.assertEquals(res, expect, """
+When parsing: '%s'
+Expected:     '%s'
+Got:          '%s'
+Input was:    '%s'
+""" % (arg, expect, res, input))
+
+
+class FakeResponse:
+    def __init__(self, headers=[], url=None):
+        """
+        headers: list of RFC822-style 'Key: value' strings
+        """
+        import mimetools, StringIO
+        f = StringIO.StringIO("\n".join(headers))
+        self._headers = mimetools.Message(f)
+        self._url = url
+    def info(self): return self._headers
+
+def interact_2965(cookiejar, url, *set_cookie_hdrs):
+    return _interact(cookiejar, url, set_cookie_hdrs, "Set-Cookie2")
+
+def interact_netscape(cookiejar, url, *set_cookie_hdrs):
+    return _interact(cookiejar, url, set_cookie_hdrs, "Set-Cookie")
+
+def _interact(cookiejar, url, set_cookie_hdrs, hdr_name):
+    """Perform a single request / response cycle, returning Cookie: header."""
+    from urllib2 import Request
+    req = Request(url)
+    cookiejar.add_cookie_header(req)
+    cookie_hdr = req.get_header("Cookie", "")
+    headers = []
+    for hdr in set_cookie_hdrs:
+        headers.append("%s: %s" % (hdr_name, hdr))
+    res = FakeResponse(headers, url)
+    cookiejar.extract_cookies(res, req)
+    return cookie_hdr
+
+
+class CookieTests(TestCase):
+    # XXX
+    # Get rid of string comparisons where not actually testing str / repr.
+    # .clear() etc.
+    # IP addresses like 50 (single number, no dot) and domain-matching
+    #  functions (and is_HDN)?  See draft RFC 2965 errata.
+    # Strictness switches
+    # is_third_party()
+    # unverifiability / third-party blocking
+    # Netscape cookies work the same as RFC 2965 with regard to port.
+    # Set-Cookie with negative max age.
+    # If turn RFC 2965 handling off, Set-Cookie2 cookies should not clobber
+    #  Set-Cookie cookies.
+    # Cookie2 should be sent if *any* cookies are not V1 (ie. V0 OR V2 etc.).
+    # Cookies (V1 and V0) with no expiry date should be set to be discarded.
+    # RFC 2965 Quoting:
+    #  Should accept unquoted cookie-attribute values?  check errata draft.
+    #   Which are required on the way in and out?
+    #  Should always return quoted cookie-attribute values?
+    # Proper testing of when RFC 2965 clobbers Netscape (waiting for errata).
+    # Path-match on return (same for V0 and V1).
+    # RFC 2965 acceptance and returning rules
+    #  Set-Cookie2 without version attribute is rejected.
+
+    # Netscape peculiarities list from Ronald Tschalar.
+    # The first two still need tests, the rest are covered.
+## - Quoting: only quotes around the expires value are recognized as such
+##   (and yes, some folks quote the expires value); quotes around any other
+##   value are treated as part of the value.
+## - White space: white space around names and values is ignored
+## - Default path: if no path parameter is given, the path defaults to the
+##   path in the request-uri up to, but not including, the last '/'. Note
+##   that this is entirely different from what the spec says.
+## - Commas and other delimiters: Netscape just parses until the next ';'.
+##   This means it will allow commas etc inside values (and yes, both
+##   commas and equals are commonly appear in the cookie value). This also
+##   means that if you fold multiple Set-Cookie header fields into one,
+##   comma-separated list, it'll be a headache to parse (at least my head
+##   starts hurting everytime I think of that code).
+## - Expires: You'll get all sorts of date formats in the expires,
+##   including emtpy expires attributes ("expires="). Be as flexible as you
+##   can, and certainly don't expect the weekday to be there; if you can't
+##   parse it, just ignore it and pretend it's a session cookie.
+## - Domain-matching: Netscape uses the 2-dot rule for _all_ domains, not
+##   just the 7 special TLD's listed in their spec. And folks rely on
+##   that...
+
+    def test_domain_return_ok(self):
+        # test optimization: .domain_return_ok() should filter out most
+        # domains in the CookieJar before we try to access them (because that
+        # may require disk access -- in particular, with MSIECookieJar)
+        # This is only a rough check for performance reasons, so it's not too
+        # critical as long as it's sufficiently liberal.
+        import cookielib, urllib2
+        pol = cookielib.DefaultCookiePolicy()
+        for url, domain, ok in [
+            ("http://foo.bar.com/", "blah.com", False),
+            ("http://foo.bar.com/", "rhubarb.blah.com", False),
+            ("http://foo.bar.com/", "rhubarb.foo.bar.com", False),
+            ("http://foo.bar.com/", ".foo.bar.com", True),
+            ("http://foo.bar.com/", "foo.bar.com", True),
+            ("http://foo.bar.com/", ".bar.com", True),
+            ("http://foo.bar.com/", "com", True),
+            ("http://foo.com/", "rhubarb.foo.com", False),
+            ("http://foo.com/", ".foo.com", True),
+            ("http://foo.com/", "foo.com", True),
+            ("http://foo.com/", "com", True),
+            ("http://foo/", "rhubarb.foo", False),
+            ("http://foo/", ".foo", True),
+            ("http://foo/", "foo", True),
+            ("http://foo/", "foo.local", True),
+            ("http://foo/", ".local", True),
+            ]:
+            request = urllib2.Request(url)
+            r = pol.domain_return_ok(domain, request)
+            if ok: self.assert_(r)
+            else: self.assert_(not r)
+
+    def test_missing_value(self):
+        from cookielib import MozillaCookieJar, lwp_cookie_str
+
+        # missing = sign in Cookie: header is regarded by Mozilla as a missing
+        # name, and by cookielib as a missing value
+        filename = test_support.TESTFN
+        c = MozillaCookieJar(filename)
+        interact_netscape(c, "http://www.acme.com/", 'eggs')
+        interact_netscape(c, "http://www.acme.com/", '"spam"; path=/foo/')
+        cookie = c._cookies["www.acme.com"]["/"]["eggs"]
+        self.assert_(cookie.value is None)
+        self.assertEquals(cookie.name, "eggs")
+        cookie = c._cookies["www.acme.com"]['/foo/']['"spam"']
+        self.assert_(cookie.value is None)
+        self.assertEquals(cookie.name, '"spam"')
+        self.assertEquals(lwp_cookie_str(cookie), (
+            r'"spam"; path="/foo/"; domain="www.acme.com"; '
+            'path_spec; discard; version=0'))
+        old_str = repr(c)
+        c.save(ignore_expires=True, ignore_discard=True)
+        try:
+            c = MozillaCookieJar(filename)
+            c.revert(ignore_expires=True, ignore_discard=True)
+        finally:
+            os.unlink(c.filename)
+        # cookies unchanged apart from lost info re. whether path was specified
+        self.assertEquals(
+            repr(c),
+            re.sub("path_specified=%s" % True, "path_specified=%s" % False,
+                   old_str)
+            )
+        self.assertEquals(interact_netscape(c, "http://www.acme.com/foo/"),
+                          '"spam"; eggs')
+
+    def test_ns_parser(self):
+        from cookielib import CookieJar, DEFAULT_HTTP_PORT
+
+        c = CookieJar()
+        interact_netscape(c, "http://www.acme.com/",
+                          'spam=eggs; DoMain=.acme.com; port; blArgh="feep"')
+        interact_netscape(c, "http://www.acme.com/", 'ni=ni; port=80,8080')
+        interact_netscape(c, "http://www.acme.com:80/", 'nini=ni')
+        interact_netscape(c, "http://www.acme.com:80/", 'foo=bar; expires=')
+        interact_netscape(c, "http://www.acme.com:80/", 'spam=eggs; '
+                          'expires="Foo Bar 25 33:22:11 3022"')
+
+        cookie = c._cookies[".acme.com"]["/"]["spam"]
+        self.assertEquals(cookie.domain, ".acme.com")
+        self.assert_(cookie.domain_specified)
+        self.assertEquals(cookie.port, DEFAULT_HTTP_PORT)
+        self.assert_(not cookie.port_specified)
+        # case is preserved
+        self.assert_(cookie.has_nonstandard_attr("blArgh") and
+                     not cookie.has_nonstandard_attr("blargh"))
+
+        cookie = c._cookies["www.acme.com"]["/"]["ni"]
+        self.assertEquals(cookie.domain, "www.acme.com")
+        self.assert_(not cookie.domain_specified)
+        self.assertEquals(cookie.port, "80,8080")
+        self.assert_(cookie.port_specified)
+
+        cookie = c._cookies["www.acme.com"]["/"]["nini"]
+        self.assert_(cookie.port is None)
+        self.assert_(not cookie.port_specified)
+
+        # invalid expires should not cause cookie to be dropped
+        foo = c._cookies["www.acme.com"]["/"]["foo"]
+        spam = c._cookies["www.acme.com"]["/"]["foo"]
+        self.assert_(foo.expires is None)
+        self.assert_(spam.expires is None)
+
+    def test_expires(self):
+        from cookielib import time2netscape, CookieJar
+
+        # if expires is in future, keep cookie...
+        c = CookieJar()
+        future = time2netscape(time.time()+3600)
+        interact_netscape(c, "http://www.acme.com/", 'spam="bar"; expires=%s' %
+                          future)
+        self.assertEquals(len(c), 1)
+        now = time2netscape(time.time()-1)
+        # ... and if in past or present, discard it
+        interact_netscape(c, "http://www.acme.com/", 'foo="eggs"; expires=%s' %
+                          now)
+        h = interact_netscape(c, "http://www.acme.com/")
+        self.assertEquals(len(c), 1)
+        self.assert_('spam="bar"' in h and "foo" not in h)
+
+        # max-age takes precedence over expires, and zero max-age is request to
+        # delete both new cookie and any old matching cookie
+        interact_netscape(c, "http://www.acme.com/", 'eggs="bar"; expires=%s' %
+                          future)
+        interact_netscape(c, "http://www.acme.com/", 'bar="bar"; expires=%s' %
+                          future)
+        self.assertEquals(len(c), 3)
+        interact_netscape(c, "http://www.acme.com/", 'eggs="bar"; '
+                          'expires=%s; max-age=0' % future)
+        interact_netscape(c, "http://www.acme.com/", 'bar="bar"; '
+                          'max-age=0; expires=%s' % future)
+        h = interact_netscape(c, "http://www.acme.com/")
+        self.assertEquals(len(c), 1)
+
+        # test expiry at end of session for cookies with no expires attribute
+        interact_netscape(c, "http://www.rhubarb.net/", 'whum="fizz"')
+        self.assertEquals(len(c), 2)
+        c.clear_session_cookies()
+        self.assertEquals(len(c), 1)
+        self.assert_('spam="bar"' in h)
+
+        # XXX RFC 2965 expiry rules (some apply to V0 too)
+
+    def test_default_path(self):
+        from cookielib import CookieJar, DefaultCookiePolicy
+
+        # RFC 2965
+        pol = DefaultCookiePolicy(rfc2965=True)
+
+        c = CookieJar(pol)
+        interact_2965(c, "http://www.acme.com/", 'spam="bar"; Version="1"')
+        self.assert_("/" in c._cookies["www.acme.com"])
+
+        c = CookieJar(pol)
+        interact_2965(c, "http://www.acme.com/blah", 'eggs="bar"; Version="1"')
+        self.assert_("/" in c._cookies["www.acme.com"])
+
+        c = CookieJar(pol)
+        interact_2965(c, "http://www.acme.com/blah/rhubarb",
+                      'eggs="bar"; Version="1"')
+        self.assert_("/blah/" in c._cookies["www.acme.com"])
+
+        c = CookieJar(pol)
+        interact_2965(c, "http://www.acme.com/blah/rhubarb/",
+                      'eggs="bar"; Version="1"')
+        self.assert_("/blah/rhubarb/" in c._cookies["www.acme.com"])
+
+        # Netscape
+
+        c = CookieJar()
+        interact_netscape(c, "http://www.acme.com/", 'spam="bar"')
+        self.assert_("/" in c._cookies["www.acme.com"])
+
+        c = CookieJar()
+        interact_netscape(c, "http://www.acme.com/blah", 'eggs="bar"')
+        self.assert_("/" in c._cookies["www.acme.com"])
+
+        c = CookieJar()
+        interact_netscape(c, "http://www.acme.com/blah/rhubarb", 'eggs="bar"')
+        self.assert_("/blah" in c._cookies["www.acme.com"])
+
+        c = CookieJar()
+        interact_netscape(c, "http://www.acme.com/blah/rhubarb/", 'eggs="bar"')
+        self.assert_("/blah/rhubarb" in c._cookies["www.acme.com"])
+
+    def test_escape_path(self):
+        from cookielib import escape_path
+        cases = [
+            # quoted safe
+            ("/foo%2f/bar", "/foo%2F/bar"),
+            ("/foo%2F/bar", "/foo%2F/bar"),
+            # quoted %
+            ("/foo%%/bar", "/foo%%/bar"),
+            # quoted unsafe
+            ("/fo%19o/bar", "/fo%19o/bar"),
+            ("/fo%7do/bar", "/fo%7Do/bar"),
+            # unquoted safe
+            ("/foo/bar&", "/foo/bar&"),
+            ("/foo//bar", "/foo//bar"),
+            ("\176/foo/bar", "\176/foo/bar"),
+            # unquoted unsafe
+            ("/foo\031/bar", "/foo%19/bar"),
+            ("/\175foo/bar", "/%7Dfoo/bar"),
+            # unicode
+            (u"/foo/bar\uabcd", "/foo/bar%EA%AF%8D"),  # UTF-8 encoded
+            ]
+        for arg, result in cases:
+            self.assertEquals(escape_path(arg), result)
+
+    def test_request_path(self):
+        from urllib2 import Request
+        from cookielib import request_path
+        # with parameters
+        req = Request("http://www.example.com/rheum/rhaponicum;"
+                      "foo=bar;sing=song?apples=pears&spam=eggs#ni")
+        self.assertEquals(request_path(req), "/rheum/rhaponicum;"
+                     "foo=bar;sing=song?apples=pears&spam=eggs#ni")
+        # without parameters
+        req = Request("http://www.example.com/rheum/rhaponicum?"
+                      "apples=pears&spam=eggs#ni")
+        self.assertEquals(request_path(req), "/rheum/rhaponicum?"
+                     "apples=pears&spam=eggs#ni")
+        # missing final slash
+        req = Request("http://www.example.com")
+        self.assertEquals(request_path(req), "/")
+
+    def test_request_port(self):
+        from urllib2 import Request
+        from cookielib import request_port, DEFAULT_HTTP_PORT
+        req = Request("http://www.acme.com:1234/",
+                      headers={"Host": "www.acme.com:4321"})
+        self.assertEquals(request_port(req), "1234")
+        req = Request("http://www.acme.com/",
+                      headers={"Host": "www.acme.com:4321"})
+        self.assertEquals(request_port(req), DEFAULT_HTTP_PORT)
+
+    def test_request_host(self):
+        from urllib2 import Request
+        from cookielib import request_host
+        # this request is illegal (RFC2616, 14.2.3)
+        req = Request("http://1.1.1.1/",
+                      headers={"Host": "www.acme.com:80"})
+        # libwww-perl wants this response, but that seems wrong (RFC 2616,
+        # section 5.2, point 1., and RFC 2965 section 1, paragraph 3)
+        #self.assertEquals(request_host(req), "www.acme.com")
+        self.assertEquals(request_host(req), "1.1.1.1")
+        req = Request("http://www.acme.com/",
+                      headers={"Host": "irrelevant.com"})
+        self.assertEquals(request_host(req), "www.acme.com")
+        # not actually sure this one is valid Request object, so maybe should
+        # remove test for no host in url in request_host function?
+        req = Request("/resource.html",
+                      headers={"Host": "www.acme.com"})
+        self.assertEquals(request_host(req), "www.acme.com")
+        # port shouldn't be in request-host
+        req = Request("http://www.acme.com:2345/resource.html",
+                      headers={"Host": "www.acme.com:5432"})
+        self.assertEquals(request_host(req), "www.acme.com")
+
+    def test_is_HDN(self):
+        from cookielib import is_HDN
+        self.assert_(is_HDN("foo.bar.com"))
+        self.assert_(is_HDN("1foo2.3bar4.5com"))
+        self.assert_(not is_HDN("192.168.1.1"))
+        self.assert_(not is_HDN(""))
+        self.assert_(not is_HDN("."))
+        self.assert_(not is_HDN(".foo.bar.com"))
+        self.assert_(not is_HDN("..foo"))
+        self.assert_(not is_HDN("foo."))
+
+    def test_reach(self):
+        from cookielib import reach
+        self.assertEquals(reach("www.acme.com"), ".acme.com")
+        self.assertEquals(reach("acme.com"), "acme.com")
+        self.assertEquals(reach("acme.local"), ".local")
+        self.assertEquals(reach(".local"), ".local")
+        self.assertEquals(reach(".com"), ".com")
+        self.assertEquals(reach("."), ".")
+        self.assertEquals(reach(""), "")
+        self.assertEquals(reach("192.168.0.1"), "192.168.0.1")
+
+    def test_domain_match(self):
+        from cookielib import domain_match, user_domain_match
+        self.assert_(domain_match("192.168.1.1", "192.168.1.1"))
+        self.assert_(not domain_match("192.168.1.1", ".168.1.1"))
+        self.assert_(domain_match("x.y.com", "x.Y.com"))
+        self.assert_(domain_match("x.y.com", ".Y.com"))
+        self.assert_(not domain_match("x.y.com", "Y.com"))
+        self.assert_(domain_match("a.b.c.com", ".c.com"))
+        self.assert_(not domain_match(".c.com", "a.b.c.com"))
+        self.assert_(domain_match("example.local", ".local"))
+        self.assert_(not domain_match("blah.blah", ""))
+        self.assert_(not domain_match("", ".rhubarb.rhubarb"))
+        self.assert_(domain_match("", ""))
+
+        self.assert_(user_domain_match("acme.com", "acme.com"))
+        self.assert_(not user_domain_match("acme.com", ".acme.com"))
+        self.assert_(user_domain_match("rhubarb.acme.com", ".acme.com"))
+        self.assert_(user_domain_match("www.rhubarb.acme.com", ".acme.com"))
+        self.assert_(user_domain_match("x.y.com", "x.Y.com"))
+        self.assert_(user_domain_match("x.y.com", ".Y.com"))
+        self.assert_(not user_domain_match("x.y.com", "Y.com"))
+        self.assert_(user_domain_match("y.com", "Y.com"))
+        self.assert_(not user_domain_match(".y.com", "Y.com"))
+        self.assert_(user_domain_match(".y.com", ".Y.com"))
+        self.assert_(user_domain_match("x.y.com", ".com"))
+        self.assert_(not user_domain_match("x.y.com", "com"))
+        self.assert_(not user_domain_match("x.y.com", "m"))
+        self.assert_(not user_domain_match("x.y.com", ".m"))
+        self.assert_(not user_domain_match("x.y.com", ""))
+        self.assert_(not user_domain_match("x.y.com", "."))
+        self.assert_(user_domain_match("192.168.1.1", "192.168.1.1"))
+        # not both HDNs, so must string-compare equal to match
+        self.assert_(not user_domain_match("192.168.1.1", ".168.1.1"))
+        self.assert_(not user_domain_match("192.168.1.1", "."))
+        # empty string is a special case
+        self.assert_(not user_domain_match("192.168.1.1", ""))
+
+    def test_wrong_domain(self):
+        # Cookies whose effective request-host name does not domain-match the
+        # domain are rejected.
+
+        # XXX far from complete
+        from cookielib import CookieJar
+        c = CookieJar()
+        interact_2965(c, "http://www.nasty.com/",
+                      'foo=bar; domain=friendly.org; Version="1"')
+        self.assertEquals(len(c), 0)
+
+    def test_two_component_domain_ns(self):
+        # Netscape: .www.bar.com, www.bar.com, .bar.com, bar.com, no domain
+        # should all get accepted, as should .acme.com, acme.com and no domain
+        # for 2-component domains like acme.com.
+        from cookielib import CookieJar, DefaultCookiePolicy
+
+        c = CookieJar()
+
+        # two-component V0 domain is OK
+        interact_netscape(c, "http://foo.net/", 'ns=bar')
+        self.assertEquals(len(c), 1)
+        self.assertEquals(c._cookies["foo.net"]["/"]["ns"].value, "bar")
+        self.assertEquals(interact_netscape(c, "http://foo.net/"), "ns=bar")
+        # *will* be returned to any other domain (unlike RFC 2965)...
+        self.assertEquals(interact_netscape(c, "http://www.foo.net/"),
+                          "ns=bar")
+        # ...unless requested otherwise
+        pol = DefaultCookiePolicy(
+            strict_ns_domain=DefaultCookiePolicy.DomainStrictNonDomain)
+        c.set_policy(pol)
+        self.assertEquals(interact_netscape(c, "http://www.foo.net/"), "")
+
+        # unlike RFC 2965, even explicit two-component domain is OK,
+        # because .foo.net matches foo.net
+        interact_netscape(c, "http://foo.net/foo/",
+                          'spam1=eggs; domain=foo.net')
+        # even if starts with a dot -- in NS rules, .foo.net matches foo.net!
+        interact_netscape(c, "http://foo.net/foo/bar/",
+                          'spam2=eggs; domain=.foo.net')
+        self.assertEquals(len(c), 3)
+        self.assertEquals(c._cookies[".foo.net"]["/foo"]["spam1"].value,
+                          "eggs")
+        self.assertEquals(c._cookies[".foo.net"]["/foo/bar"]["spam2"].value,
+                          "eggs")
+        self.assertEquals(interact_netscape(c, "http://foo.net/foo/bar/"),
+                          "spam2=eggs; spam1=eggs; ns=bar")
+
+        # top-level domain is too general
+        interact_netscape(c, "http://foo.net/", 'nini="ni"; domain=.net')
+        self.assertEquals(len(c), 3)
+
+##         # Netscape protocol doesn't allow non-special top level domains (such
+##         # as co.uk) in the domain attribute unless there are at least three
+##         # dots in it.
+        # Oh yes it does!  Real implementations don't check this, and real
+        # cookies (of course) rely on that behaviour.
+        interact_netscape(c, "http://foo.co.uk", 'nasty=trick; domain=.co.uk')
+##         self.assertEquals(len(c), 2)
+        self.assertEquals(len(c), 4)
+
+    def test_two_component_domain_rfc2965(self):
+        from cookielib import CookieJar, DefaultCookiePolicy
+
+        pol = DefaultCookiePolicy(rfc2965=True)
+        c = CookieJar(pol)
+
+        # two-component V1 domain is OK
+        interact_2965(c, "http://foo.net/", 'foo=bar; Version="1"')
+        self.assertEquals(len(c), 1)
+        self.assertEquals(c._cookies["foo.net"]["/"]["foo"].value, "bar")
+        self.assertEquals(interact_2965(c, "http://foo.net/"),
+                          "$Version=1; foo=bar")
+        # won't be returned to any other domain (because domain was implied)
+        self.assertEquals(interact_2965(c, "http://www.foo.net/"), "")
+
+        # unless domain is given explicitly, because then it must be
+        # rewritten to start with a dot: foo.net --> .foo.net, which does
+        # not domain-match foo.net
+        interact_2965(c, "http://foo.net/foo",
+                      'spam=eggs; domain=foo.net; path=/foo; Version="1"')
+        self.assertEquals(len(c), 1)
+        self.assertEquals(interact_2965(c, "http://foo.net/foo"),
+                          "$Version=1; foo=bar")
+
+        # explicit foo.net from three-component domain www.foo.net *does* get
+        # set, because .foo.net domain-matches .foo.net
+        interact_2965(c, "http://www.foo.net/foo/",
+                      'spam=eggs; domain=foo.net; Version="1"')
+        self.assertEquals(c._cookies[".foo.net"]["/foo/"]["spam"].value,
+                          "eggs")
+        self.assertEquals(len(c), 2)
+        self.assertEquals(interact_2965(c, "http://foo.net/foo/"),
+                          "$Version=1; foo=bar")
+        self.assertEquals(interact_2965(c, "http://www.foo.net/foo/"),
+                          '$Version=1; spam=eggs; $Domain="foo.net"')
+
+        # top-level domain is too general
+        interact_2965(c, "http://foo.net/",
+                      'ni="ni"; domain=".net"; Version="1"')
+        self.assertEquals(len(c), 2)
+
+        # RFC 2965 doesn't require blocking this
+        interact_2965(c, "http://foo.co.uk/",
+                      'nasty=trick; domain=.co.uk; Version="1"')
+        self.assertEquals(len(c), 3)
+
+    def test_domain_allow(self):
+        from cookielib import CookieJar, DefaultCookiePolicy
+        from urllib2 import Request
+
+        c = CookieJar(policy=DefaultCookiePolicy(
+            blocked_domains=["acme.com"],
+            allowed_domains=["www.acme.com"]))
+
+        req = Request("http://acme.com/")
+        headers = ["Set-Cookie: CUSTOMER=WILE_E_COYOTE; path=/"]
+        res = FakeResponse(headers, "http://acme.com/")
+        c.extract_cookies(res, req)
+        self.assertEquals(len(c), 0)
+
+        req = Request("http://www.acme.com/")
+        res = FakeResponse(headers, "http://www.acme.com/")
+        c.extract_cookies(res, req)
+        self.assertEquals(len(c), 1)
+
+        req = Request("http://www.coyote.com/")
+        res = FakeResponse(headers, "http://www.coyote.com/")
+        c.extract_cookies(res, req)
+        self.assertEquals(len(c), 1)
+
+        # set a cookie with non-allowed domain...
+        req = Request("http://www.coyote.com/")
+        res = FakeResponse(headers, "http://www.coyote.com/")
+        cookies = c.make_cookies(res, req)
+        c.set_cookie(cookies[0])
+        self.assertEquals(len(c), 2)
+        # ... and check is doesn't get returned
+        c.add_cookie_header(req)
+        self.assert_(not req.has_header("Cookie"))
+
+    def test_domain_block(self):
+        from cookielib import CookieJar, DefaultCookiePolicy
+        from urllib2 import Request
+
+        pol = DefaultCookiePolicy(
+            rfc2965=True, blocked_domains=[".acme.com"])
+        c = CookieJar(policy=pol)
+        headers = ["Set-Cookie: CUSTOMER=WILE_E_COYOTE; path=/"]
+
+        req = Request("http://www.acme.com/")
+        res = FakeResponse(headers, "http://www.acme.com/")
+        c.extract_cookies(res, req)
+        self.assertEquals(len(c), 0)
+
+        p = pol.set_blocked_domains(["acme.com"])
+        c.extract_cookies(res, req)
+        self.assertEquals(len(c), 1)
+
+        c.clear()
+        req = Request("http://www.roadrunner.net/")
+        res = FakeResponse(headers, "http://www.roadrunner.net/")
+        c.extract_cookies(res, req)
+        self.assertEquals(len(c), 1)
+        req = Request("http://www.roadrunner.net/")
+        c.add_cookie_header(req)
+        self.assert_((req.has_header("Cookie") and
+                      req.has_header("Cookie2")))
+
+        c.clear()
+        pol.set_blocked_domains([".acme.com"])
+        c.extract_cookies(res, req)
+        self.assertEquals(len(c), 1)
+
+        # set a cookie with blocked domain...
+        req = Request("http://www.acme.com/")
+        res = FakeResponse(headers, "http://www.acme.com/")
+        cookies = c.make_cookies(res, req)
+        c.set_cookie(cookies[0])
+        self.assertEquals(len(c), 2)
+        # ... and check is doesn't get returned
+        c.add_cookie_header(req)
+        self.assert_(not req.has_header("Cookie"))
+
+    def test_secure(self):
+        from cookielib import CookieJar, DefaultCookiePolicy
+
+        for ns in True, False:
+            for whitespace in " ", "":
+                c = CookieJar()
+                if ns:
+                    pol = DefaultCookiePolicy(rfc2965=False)
+                    int = interact_netscape
+                    vs = ""
+                else:
+                    pol = DefaultCookiePolicy(rfc2965=True)
+                    int = interact_2965
+                    vs = "; Version=1"
+                c.set_policy(pol)
+                url = "http://www.acme.com/"
+                int(c, url, "foo1=bar%s%s" % (vs, whitespace))
+                int(c, url, "foo2=bar%s; secure%s" %  (vs, whitespace))
+                self.assert_(
+                    not c._cookies["www.acme.com"]["/"]["foo1"].secure,
+                    "non-secure cookie registered secure")
+                self.assert_(
+                    c._cookies["www.acme.com"]["/"]["foo2"].secure,
+                    "secure cookie registered non-secure")
+
+    def test_quote_cookie_value(self):
+        from cookielib import CookieJar, DefaultCookiePolicy
+        c = CookieJar(policy=DefaultCookiePolicy(rfc2965=True))
+        interact_2965(c, "http://www.acme.com/", r'foo=\b"a"r; Version=1')
+        h = interact_2965(c, "http://www.acme.com/")
+        self.assertEquals(h, r'$Version=1; foo=\\b\"a\"r')
+
+    def test_missing_final_slash(self):
+        # Missing slash from request URL's abs_path should be assumed present.
+        from cookielib import CookieJar, DefaultCookiePolicy
+        from urllib2 import Request
+        url = "http://www.acme.com"
+        c = CookieJar(DefaultCookiePolicy(rfc2965=True))
+        interact_2965(c, url, "foo=bar; Version=1")
+        req = Request(url)
+        self.assertEquals(len(c), 1)
+        c.add_cookie_header(req)
+        self.assert_(req.has_header("Cookie"))
+
+    def test_domain_mirror(self):
+        from cookielib import CookieJar, DefaultCookiePolicy
+
+        pol = DefaultCookiePolicy(rfc2965=True)
+
+        c = CookieJar(pol)
+        url = "http://foo.bar.com/"
+        interact_2965(c, url, "spam=eggs; Version=1")
+        h = interact_2965(c, url)
+        self.assert_("Domain" not in h,
+                     "absent domain returned with domain present")
+
+        c = CookieJar(pol)
+        url = "http://foo.bar.com/"
+        interact_2965(c, url, 'spam=eggs; Version=1; Domain=.bar.com')
+        h = interact_2965(c, url)
+        self.assert_('$Domain=".bar.com"' in h, "domain not returned")
+
+        c = CookieJar(pol)
+        url = "http://foo.bar.com/"
+        # note missing initial dot in Domain
+        interact_2965(c, url, 'spam=eggs; Version=1; Domain=bar.com')
+        h = interact_2965(c, url)
+        self.assert_('$Domain="bar.com"' in h, "domain not returned")
+
+    def test_path_mirror(self):
+        from cookielib import CookieJar, DefaultCookiePolicy
+
+        pol = DefaultCookiePolicy(rfc2965=True)
+
+        c = CookieJar(pol)
+        url = "http://foo.bar.com/"
+        interact_2965(c, url, "spam=eggs; Version=1")
+        h = interact_2965(c, url)
+        self.assert_("Path" not in h,
+                     "absent path returned with path present")
+
+        c = CookieJar(pol)
+        url = "http://foo.bar.com/"
+        interact_2965(c, url, 'spam=eggs; Version=1; Path=/')
+        h = interact_2965(c, url)
+        self.assert_('$Path="/"' in h, "path not returned")
+
+    def test_port_mirror(self):
+        from cookielib import CookieJar, DefaultCookiePolicy
+
+        pol = DefaultCookiePolicy(rfc2965=True)
+
+        c = CookieJar(pol)
+        url = "http://foo.bar.com/"
+        interact_2965(c, url, "spam=eggs; Version=1")
+        h = interact_2965(c, url)
+        self.assert_("Port" not in h,
+                     "absent port returned with port present")
+
+        c = CookieJar(pol)
+        url = "http://foo.bar.com/"
+        interact_2965(c, url, "spam=eggs; Version=1; Port")
+        h = interact_2965(c, url)
+        self.assert_(re.search("\$Port([^=]|$)", h),
+                     "port with no value not returned with no value")
+
+        c = CookieJar(pol)
+        url = "http://foo.bar.com/"
+        interact_2965(c, url, 'spam=eggs; Version=1; Port="80"')
+        h = interact_2965(c, url)
+        self.assert_('$Port="80"' in h,
+                     "port with single value not returned with single value")
+
+        c = CookieJar(pol)
+        url = "http://foo.bar.com/"
+        interact_2965(c, url, 'spam=eggs; Version=1; Port="80,8080"')
+        h = interact_2965(c, url)
+        self.assert_('$Port="80,8080"' in h,
+                     "port with multiple values not returned with multiple "
+                     "values")
+
+    def test_no_return_comment(self):
+        from cookielib import CookieJar, DefaultCookiePolicy
+
+        c = CookieJar(DefaultCookiePolicy(rfc2965=True))
+        url = "http://foo.bar.com/"
+        interact_2965(c, url, 'spam=eggs; Version=1; '
+                      'Comment="does anybody read these?"; '
+                      'CommentURL="http://foo.bar.net/comment.html"')
+        h = interact_2965(c, url)
+        self.assert_(
+            "Comment" not in h,
+            "Comment or CommentURL cookie-attributes returned to server")
+
+    def test_Cookie_iterator(self):
+        from cookielib import CookieJar, Cookie, DefaultCookiePolicy
+
+        cs = CookieJar(DefaultCookiePolicy(rfc2965=True))
+        # add some random cookies
+        interact_2965(cs, "http://blah.spam.org/", 'foo=eggs; Version=1; '
+                      'Comment="does anybody read these?"; '
+                      'CommentURL="http://foo.bar.net/comment.html"')
+        interact_netscape(cs, "http://www.acme.com/blah/", "spam=bar; secure")
+        interact_2965(cs, "http://www.acme.com/blah/",
+                      "foo=bar; secure; Version=1")
+        interact_2965(cs, "http://www.acme.com/blah/",
+                      "foo=bar; path=/; Version=1")
+        interact_2965(cs, "http://www.sol.no",
+                      r'bang=wallop; version=1; domain=".sol.no"; '
+                      r'port="90,100, 80,8080"; '
+                      r'max-age=100; Comment = "Just kidding! (\"|\\\\) "')
+
+        versions = [1, 1, 1, 0, 1]
+        names = ["bang", "foo", "foo", "spam", "foo"]
+        domains = [".sol.no", "blah.spam.org", "www.acme.com",
+                   "www.acme.com", "www.acme.com"]
+        paths = ["/", "/", "/", "/blah", "/blah/"]
+
+        for i in range(4):
+            i = 0
+            for c in cs:
+                self.assert_(isinstance(c, Cookie))
+                self.assertEquals(c.version, versions[i])
+                self.assertEquals(c.name, names[i])
+                self.assertEquals(c.domain, domains[i])
+                self.assertEquals(c.path, paths[i])
+                i = i + 1
+
+    def test_parse_ns_headers(self):
+        from cookielib import parse_ns_headers
+
+        # missing domain value (invalid cookie)
+        self.assertEquals(
+            parse_ns_headers(["foo=bar; path=/; domain"]),
+            [[("foo", "bar"),
+              ("path", "/"), ("domain", None), ("version", "0")]]
+            )
+        # invalid expires value
+        self.assertEquals(
+            parse_ns_headers(["foo=bar; expires=Foo Bar 12 33:22:11 2000"]),
+            [[("foo", "bar"), ("expires", None), ("version", "0")]]
+            )
+        # missing cookie value (valid cookie)
+        self.assertEquals(
+            parse_ns_headers(["foo"]),
+            [[("foo", None), ("version", "0")]]
+            )
+        # shouldn't add version if header is empty
+        self.assertEquals(parse_ns_headers([""]), [])
+
+    def test_bad_cookie_header(self):
+
+        def cookiejar_from_cookie_headers(headers):
+            from cookielib import CookieJar
+            from urllib2 import Request
+            c = CookieJar()
+            req = Request("http://www.example.com/")
+            r = FakeResponse(headers, "http://www.example.com/")
+            c.extract_cookies(r, req)
+            return c
+
+        # none of these bad headers should cause an exception to be raised
+        for headers in [
+            ["Set-Cookie: "],  # actually, nothing wrong with this
+            ["Set-Cookie2: "],  # ditto
+            # missing domain value
+            ["Set-Cookie2: a=foo; path=/; Version=1; domain"],
+            # bad max-age
+            ["Set-Cookie: b=foo; max-age=oops"],
+            ]:
+            c = cookiejar_from_cookie_headers(headers)
+            # these bad cookies shouldn't be set
+            self.assertEquals(len(c), 0)
+
+        # cookie with invalid expires is treated as session cookie
+        headers = ["Set-Cookie: c=foo; expires=Foo Bar 12 33:22:11 2000"]
+        c = cookiejar_from_cookie_headers(headers)
+        cookie = c._cookies["www.example.com"]["/"]["c"]
+        self.assert_(cookie.expires is None)
+
+
+class LWPCookieTests(TestCase):
+    # Tests taken from libwww-perl, with a few modifications and additions.
+
+    def test_netscape_example_1(self):
+        from cookielib import CookieJar, DefaultCookiePolicy
+        from urllib2 import Request
+
+        #-------------------------------------------------------------------
+        # First we check that it works for the original example at
+        # http://www.netscape.com/newsref/std/cookie_spec.html
+
+        # Client requests a document, and receives in the response:
+        #
+        #       Set-Cookie: CUSTOMER=WILE_E_COYOTE; path=/; expires=Wednesday, 09-Nov-99 23:12:40 GMT
+        #
+        # When client requests a URL in path "/" on this server, it sends:
+        #
+        #       Cookie: CUSTOMER=WILE_E_COYOTE
+        #
+        # Client requests a document, and receives in the response:
+        #
+        #       Set-Cookie: PART_NUMBER=ROCKET_LAUNCHER_0001; path=/
+        #
+        # When client requests a URL in path "/" on this server, it sends:
+        #
+        #       Cookie: CUSTOMER=WILE_E_COYOTE; PART_NUMBER=ROCKET_LAUNCHER_0001
+        #
+        # Client receives:
+        #
+        #       Set-Cookie: SHIPPING=FEDEX; path=/fo
+        #
+        # When client requests a URL in path "/" on this server, it sends:
+        #
+        #       Cookie: CUSTOMER=WILE_E_COYOTE; PART_NUMBER=ROCKET_LAUNCHER_0001
+        #
+        # When client requests a URL in path "/foo" on this server, it sends:
+        #
+        #       Cookie: CUSTOMER=WILE_E_COYOTE; PART_NUMBER=ROCKET_LAUNCHER_0001; SHIPPING=FEDEX
+        #
+        # The last Cookie is buggy, because both specifications say that the
+        # most specific cookie must be sent first.  SHIPPING=FEDEX is the
+        # most specific and should thus be first.
+
+        year_plus_one = time.localtime()[0] + 1
+
+        headers = []
+
+        c = CookieJar(DefaultCookiePolicy(rfc2965 = True))
+
+        #req = Request("http://1.1.1.1/",
+        #              headers={"Host": "www.acme.com:80"})
+        req = Request("http://www.acme.com:80/",
+                      headers={"Host": "www.acme.com:80"})
+
+        headers.append(
+            "Set-Cookie: CUSTOMER=WILE_E_COYOTE; path=/ ; "
+            "expires=Wednesday, 09-Nov-%d 23:12:40 GMT" % year_plus_one)
+        res = FakeResponse(headers, "http://www.acme.com/")
+        c.extract_cookies(res, req)
+
+        req = Request("http://www.acme.com/")
+        c.add_cookie_header(req)
+
+        self.assertEqual(req.get_header("Cookie"), "CUSTOMER=WILE_E_COYOTE")
+        self.assertEqual(req.get_header("Cookie2"), '$Version="1"')
+
+        headers.append("Set-Cookie: PART_NUMBER=ROCKET_LAUNCHER_0001; path=/")
+        res = FakeResponse(headers, "http://www.acme.com/")
+        c.extract_cookies(res, req)
+
+        req = Request("http://www.acme.com/foo/bar")
+        c.add_cookie_header(req)
+
+        h = req.get_header("Cookie")
+        self.assert_("PART_NUMBER=ROCKET_LAUNCHER_0001" in h and
+                     "CUSTOMER=WILE_E_COYOTE" in h)
+
+        headers.append('Set-Cookie: SHIPPING=FEDEX; path=/foo')
+        res = FakeResponse(headers, "http://www.acme.com")
+        c.extract_cookies(res, req)
+
+        req = Request("http://www.acme.com/")
+        c.add_cookie_header(req)
+
+        h = req.get_header("Cookie")
+        self.assert_("PART_NUMBER=ROCKET_LAUNCHER_0001" in h and
+                     "CUSTOMER=WILE_E_COYOTE" in h and
+                     "SHIPPING=FEDEX" not in h)
+
+        req = Request("http://www.acme.com/foo/")
+        c.add_cookie_header(req)
+
+        h = req.get_header("Cookie")
+        self.assert_(("PART_NUMBER=ROCKET_LAUNCHER_0001" in h and
+                      "CUSTOMER=WILE_E_COYOTE" in h and
+                      h.startswith("SHIPPING=FEDEX;")))
+
+    def test_netscape_example_2(self):
+        from cookielib import CookieJar
+        from urllib2 import Request
+
+        # Second Example transaction sequence:
+        #
+        # Assume all mappings from above have been cleared.
+        #
+        # Client receives:
+        #
+        #       Set-Cookie: PART_NUMBER=ROCKET_LAUNCHER_0001; path=/
+        #
+        # When client requests a URL in path "/" on this server, it sends:
+        #
+        #       Cookie: PART_NUMBER=ROCKET_LAUNCHER_0001
+        #
+        # Client receives:
+        #
+        #       Set-Cookie: PART_NUMBER=RIDING_ROCKET_0023; path=/ammo
+        #
+        # When client requests a URL in path "/ammo" on this server, it sends:
+        #
+        #       Cookie: PART_NUMBER=RIDING_ROCKET_0023; PART_NUMBER=ROCKET_LAUNCHER_0001
+        #
+        #       NOTE: There are two name/value pairs named "PART_NUMBER" due to
+        #       the inheritance of the "/" mapping in addition to the "/ammo" mapping.
+
+        c = CookieJar()
+        headers = []
+
+        req = Request("http://www.acme.com/")
+        headers.append("Set-Cookie: PART_NUMBER=ROCKET_LAUNCHER_0001; path=/")
+        res = FakeResponse(headers, "http://www.acme.com/")
+
+        c.extract_cookies(res, req)
+
+        req = Request("http://www.acme.com/")
+        c.add_cookie_header(req)
+
+        self.assertEquals(req.get_header("Cookie"),
+                          "PART_NUMBER=ROCKET_LAUNCHER_0001")
+
+        headers.append(
+            "Set-Cookie: PART_NUMBER=RIDING_ROCKET_0023; path=/ammo")
+        res = FakeResponse(headers, "http://www.acme.com/")
+        c.extract_cookies(res, req)
+
+        req = Request("http://www.acme.com/ammo")
+        c.add_cookie_header(req)
+
+        self.assert_(re.search(r"PART_NUMBER=RIDING_ROCKET_0023;\s*"
+                               "PART_NUMBER=ROCKET_LAUNCHER_0001",
+                               req.get_header("Cookie")))
+
+    def test_ietf_example_1(self):
+        from cookielib import CookieJar, DefaultCookiePolicy
+        #-------------------------------------------------------------------
+        # Then we test with the examples from draft-ietf-http-state-man-mec-03.txt
+        #
+        # 5.  EXAMPLES
+
+        c = CookieJar(DefaultCookiePolicy(rfc2965=True))
+
+        #
+        # 5.1  Example 1
+        #
+        # Most detail of request and response headers has been omitted.  Assume
+        # the user agent has no stored cookies.
+        #
+        #   1.  User Agent -> Server
+        #
+        #       POST /acme/login HTTP/1.1
+        #       [form data]
+        #
+        #       User identifies self via a form.
+        #
+        #   2.  Server -> User Agent
+        #
+        #       HTTP/1.1 200 OK
+        #       Set-Cookie2: Customer="WILE_E_COYOTE"; Version="1"; Path="/acme"
+        #
+        #       Cookie reflects user's identity.
+
+        cookie = interact_2965(
+            c, 'http://www.acme.com/acme/login',
+            'Customer="WILE_E_COYOTE"; Version="1"; Path="/acme"')
+        self.assert_(not cookie)
+
+        #
+        #   3.  User Agent -> Server
+        #
+        #       POST /acme/pickitem HTTP/1.1
+        #       Cookie: $Version="1"; Customer="WILE_E_COYOTE"; $Path="/acme"
+        #       [form data]
+        #
+        #       User selects an item for ``shopping basket.''
+        #
+        #   4.  Server -> User Agent
+        #
+        #       HTTP/1.1 200 OK
+        #       Set-Cookie2: Part_Number="Rocket_Launcher_0001"; Version="1";
+        #               Path="/acme"
+        #
+        #       Shopping basket contains an item.
+
+        cookie = interact_2965(c, 'http://www.acme.com/acme/pickitem',
+                               'Part_Number="Rocket_Launcher_0001"; '
+                               'Version="1"; Path="/acme"');
+        self.assert_(re.search(
+            r'^\$Version="?1"?; Customer="?WILE_E_COYOTE"?; \$Path="/acme"$',
+            cookie))
+
+        #
+        #   5.  User Agent -> Server
+        #
+        #       POST /acme/shipping HTTP/1.1
+        #       Cookie: $Version="1";
+        #               Customer="WILE_E_COYOTE"; $Path="/acme";
+        #               Part_Number="Rocket_Launcher_0001"; $Path="/acme"
+        #       [form data]
+        #
+        #       User selects shipping method from form.
+        #
+        #   6.  Server -> User Agent
+        #
+        #       HTTP/1.1 200 OK
+        #       Set-Cookie2: Shipping="FedEx"; Version="1"; Path="/acme"
+        #
+        #       New cookie reflects shipping method.
+
+        cookie = interact_2965(c, "http://www.acme.com/acme/shipping",
+                               'Shipping="FedEx"; Version="1"; Path="/acme"')
+
+        self.assert_(re.search(r'^\$Version="?1"?;', cookie))
+        self.assert_(re.search(r'Part_Number="?Rocket_Launcher_0001"?;'
+                               '\s*\$Path="\/acme"', cookie))
+        self.assert_(re.search(r'Customer="?WILE_E_COYOTE"?;\s*\$Path="\/acme"',
+                               cookie))
+
+        #
+        #   7.  User Agent -> Server
+        #
+        #       POST /acme/process HTTP/1.1
+        #       Cookie: $Version="1";
+        #               Customer="WILE_E_COYOTE"; $Path="/acme";
+        #               Part_Number="Rocket_Launcher_0001"; $Path="/acme";
+        #               Shipping="FedEx"; $Path="/acme"
+        #       [form data]
+        #
+        #       User chooses to process order.
+        #
+        #   8.  Server -> User Agent
+        #
+        #       HTTP/1.1 200 OK
+        #
+        #       Transaction is complete.
+
+        cookie = interact_2965(c, "http://www.acme.com/acme/process")
+        self.assert_(
+            re.search(r'Shipping="?FedEx"?;\s*\$Path="\/acme"', cookie) and
+            "WILE_E_COYOTE" in cookie)
+
+        #
+        # The user agent makes a series of requests on the origin server, after
+        # each of which it receives a new cookie.  All the cookies have the same
+        # Path attribute and (default) domain.  Because the request URLs all have
+        # /acme as a prefix, and that matches the Path attribute, each request
+        # contains all the cookies received so far.
+
+    def test_ietf_example_2(self):
+        from cookielib import CookieJar, DefaultCookiePolicy
+
+        # 5.2  Example 2
+        #
+        # This example illustrates the effect of the Path attribute.  All detail
+        # of request and response headers has been omitted.  Assume the user agent
+        # has no stored cookies.
+
+        c = CookieJar(DefaultCookiePolicy(rfc2965=True))
+
+        # Imagine the user agent has received, in response to earlier requests,
+        # the response headers
+        #
+        # Set-Cookie2: Part_Number="Rocket_Launcher_0001"; Version="1";
+        #         Path="/acme"
+        #
+        # and
+        #
+        # Set-Cookie2: Part_Number="Riding_Rocket_0023"; Version="1";
+        #         Path="/acme/ammo"
+
+        interact_2965(
+            c, "http://www.acme.com/acme/ammo/specific",
+            'Part_Number="Rocket_Launcher_0001"; Version="1"; Path="/acme"',
+            'Part_Number="Riding_Rocket_0023"; Version="1"; Path="/acme/ammo"')
+
+        # A subsequent request by the user agent to the (same) server for URLs of
+        # the form /acme/ammo/...  would include the following request header:
+        #
+        # Cookie: $Version="1";
+        #         Part_Number="Riding_Rocket_0023"; $Path="/acme/ammo";
+        #         Part_Number="Rocket_Launcher_0001"; $Path="/acme"
+        #
+        # Note that the NAME=VALUE pair for the cookie with the more specific Path
+        # attribute, /acme/ammo, comes before the one with the less specific Path
+        # attribute, /acme.  Further note that the same cookie name appears more
+        # than once.
+
+        cookie = interact_2965(c, "http://www.acme.com/acme/ammo/...")
+        self.assert_(
+            re.search(r"Riding_Rocket_0023.*Rocket_Launcher_0001", cookie))
+
+        # A subsequent request by the user agent to the (same) server for a URL of
+        # the form /acme/parts/ would include the following request header:
+        #
+        # Cookie: $Version="1"; Part_Number="Rocket_Launcher_0001"; $Path="/acme"
+        #
+        # Here, the second cookie's Path attribute /acme/ammo is not a prefix of
+        # the request URL, /acme/parts/, so the cookie does not get forwarded to
+        # the server.
+
+        cookie = interact_2965(c, "http://www.acme.com/acme/parts/")
+        self.assert_("Rocket_Launcher_0001" in cookie and
+                     "Riding_Rocket_0023" not in cookie)
+
+    def test_rejection(self):
+        # Test rejection of Set-Cookie2 responses based on domain, path, port.
+        from cookielib import DefaultCookiePolicy, LWPCookieJar
+
+        pol = DefaultCookiePolicy(rfc2965=True)
+
+        c = LWPCookieJar(policy=pol)
+
+        max_age = "max-age=3600"
+
+        # illegal domain (no embedded dots)
+        cookie = interact_2965(c, "http://www.acme.com",
+                               'foo=bar; domain=".com"; version=1')
+        self.assert_(not c)
+
+        # legal domain
+        cookie = interact_2965(c, "http://www.acme.com",
+                               'ping=pong; domain="acme.com"; version=1')
+        self.assertEquals(len(c), 1)
+
+        # illegal domain (host prefix "www.a" contains a dot)
+        cookie = interact_2965(c, "http://www.a.acme.com",
+                               'whiz=bang; domain="acme.com"; version=1')
+        self.assertEquals(len(c), 1)
+
+        # legal domain
+        cookie = interact_2965(c, "http://www.a.acme.com",
+                               'wow=flutter; domain=".a.acme.com"; version=1')
+        self.assertEquals(len(c), 2)
+
+        # can't partially match an IP-address
+        cookie = interact_2965(c, "http://125.125.125.125",
+                               'zzzz=ping; domain="125.125.125"; version=1')
+        self.assertEquals(len(c), 2)
+
+        # illegal path (must be prefix of request path)
+        cookie = interact_2965(c, "http://www.sol.no",
+                               'blah=rhubarb; domain=".sol.no"; path="/foo"; '
+                               'version=1')
+        self.assertEquals(len(c), 2)
+
+        # legal path
+        cookie = interact_2965(c, "http://www.sol.no/foo/bar",
+                               'bing=bong; domain=".sol.no"; path="/foo"; '
+                               'version=1')
+        self.assertEquals(len(c), 3)
+
+        # illegal port (request-port not in list)
+        cookie = interact_2965(c, "http://www.sol.no",
+                               'whiz=ffft; domain=".sol.no"; port="90,100"; '
+                               'version=1')
+        self.assertEquals(len(c), 3)
+
+        # legal port
+        cookie = interact_2965(
+            c, "http://www.sol.no",
+            r'bang=wallop; version=1; domain=".sol.no"; '
+            r'port="90,100, 80,8080"; '
+            r'max-age=100; Comment = "Just kidding! (\"|\\\\) "')
+        self.assertEquals(len(c), 4)
+
+        # port attribute without any value (current port)
+        cookie = interact_2965(c, "http://www.sol.no",
+                               'foo9=bar; version=1; domain=".sol.no"; port; '
+                               'max-age=100;')
+        self.assertEquals(len(c), 5)
+
+        # encoded path
+        # LWP has this test, but unescaping allowed path characters seems
+        # like a bad idea, so I think this should fail:
+##         cookie = interact_2965(c, "http://www.sol.no/foo/",
+##                           r'foo8=bar; version=1; path="/%66oo"')
+        # but this is OK, because '<' is not an allowed HTTP URL path
+        # character:
+        cookie = interact_2965(c, "http://www.sol.no/<oo/",
+                               r'foo8=bar; version=1; path="/%3coo"')
+        self.assertEquals(len(c), 6)
+
+        # save and restore
+        filename = test_support.TESTFN
+
+        try:
+            c.save(filename, ignore_discard=True)
+            old = repr(c)
+
+            c = LWPCookieJar(policy=pol)
+            c.load(filename, ignore_discard=True)
+        finally:
+            try: os.unlink(filename)
+            except OSError: pass
+
+        self.assertEquals(old, repr(c))
+
+    def test_url_encoding(self):
+        # Try some URL encodings of the PATHs.
+        # (the behaviour here has changed from libwww-perl)
+        from cookielib import CookieJar, DefaultCookiePolicy
+
+        c = CookieJar(DefaultCookiePolicy(rfc2965=True))
+        interact_2965(c, "http://www.acme.com/foo%2f%25/%3c%3c%0Anew%E5/%E5",
+                      "foo  =   bar; version    =   1")
+
+        cookie = interact_2965(
+            c, "http://www.acme.com/foo%2f%25/<<%0anewå/æøå",
+            'bar=baz; path="/foo/"; version=1');
+        version_re = re.compile(r'^\$version=\"?1\"?', re.I)
+        self.assert_("foo=bar" in cookie and version_re.search(cookie))
+
+        cookie = interact_2965(
+            c, "http://www.acme.com/foo/%25/<<%0anewå/æøå")
+        self.assert_(not cookie)
+
+        # unicode URL doesn't raise exception
+        cookie = interact_2965(c, u"http://www.acme.com/\xfc")
+
+    def test_mozilla(self):
+        # Save / load Mozilla/Netscape cookie file format.
+        from cookielib import MozillaCookieJar, DefaultCookiePolicy
+
+        year_plus_one = time.localtime()[0] + 1
+
+        filename = test_support.TESTFN
+
+        c = MozillaCookieJar(filename,
+                             policy=DefaultCookiePolicy(rfc2965=True))
+        interact_2965(c, "http://www.acme.com/",
+                      "foo1=bar; max-age=100; Version=1")
+        interact_2965(c, "http://www.acme.com/",
+                      'foo2=bar; port="80"; max-age=100; Discard; Version=1')
+        interact_2965(c, "http://www.acme.com/", "foo3=bar; secure; Version=1")
+
+        expires = "expires=09-Nov-%d 23:12:40 GMT" % (year_plus_one,)
+        interact_netscape(c, "http://www.foo.com/",
+                          "fooa=bar; %s" % expires)
+        interact_netscape(c, "http://www.foo.com/",
+                          "foob=bar; Domain=.foo.com; %s" % expires)
+        interact_netscape(c, "http://www.foo.com/",
+                          "fooc=bar; Domain=www.foo.com; %s" % expires)
+
+        def save_and_restore(cj, ignore_discard):
+            try:
+                cj.save(ignore_discard=ignore_discard)
+                new_c = MozillaCookieJar(filename,
+                                         DefaultCookiePolicy(rfc2965=True))
+                new_c.load(ignore_discard=ignore_discard)
+            finally:
+                try: os.unlink(filename)
+                except OSError: pass
+            return new_c
+
+        new_c = save_and_restore(c, True)
+        self.assertEquals(len(new_c), 6)  # none discarded
+        self.assert_("name='foo1', value='bar'" in repr(new_c))
+
+        new_c = save_and_restore(c, False)
+        self.assertEquals(len(new_c), 4)  # 2 of them discarded on save
+        self.assert_("name='foo1', value='bar'" in repr(new_c))
+
+    def test_netscape_misc(self):
+        # Some additional Netscape cookies tests.
+        from cookielib import CookieJar
+        from urllib2 import Request
+
+        c = CookieJar()
+        headers = []
+        req = Request("http://foo.bar.acme.com/foo")
+
+        # Netscape allows a host part that contains dots
+        headers.append("Set-Cookie: Customer=WILE_E_COYOTE; domain=.acme.com")
+        res = FakeResponse(headers, "http://www.acme.com/foo")
+        c.extract_cookies(res, req)
+
+        # and that the domain is the same as the host without adding a leading
+        # dot to the domain.  Should not quote even if strange chars are used
+        # in the cookie value.
+        headers.append("Set-Cookie: PART_NUMBER=3,4; domain=foo.bar.acme.com")
+        res = FakeResponse(headers, "http://www.acme.com/foo")
+        c.extract_cookies(res, req)
+
+        req = Request("http://foo.bar.acme.com/foo")
+        c.add_cookie_header(req)
+        self.assert_(
+            "PART_NUMBER=3,4" in req.get_header("Cookie") and
+            "Customer=WILE_E_COYOTE" in req.get_header("Cookie"))
+
+    def test_intranet_domains_2965(self):
+        # Test handling of local intranet hostnames without a dot.
+        from cookielib import CookieJar, DefaultCookiePolicy
+
+        c = CookieJar(DefaultCookiePolicy(rfc2965=True))
+        interact_2965(c, "http://example/",
+                      "foo1=bar; PORT; Discard; Version=1;")
+        cookie = interact_2965(c, "http://example/",
+                               'foo2=bar; domain=".local"; Version=1')
+        self.assert_("foo1=bar" in cookie)
+
+        interact_2965(c, "http://example/", 'foo3=bar; Version=1')
+        cookie = interact_2965(c, "http://example/")
+        self.assert_("foo2=bar" in cookie and len(c) == 3)
+
+    def test_intranet_domains_ns(self):
+        from cookielib import CookieJar, DefaultCookiePolicy
+
+        c = CookieJar(DefaultCookiePolicy(rfc2965 = False))
+        interact_netscape(c, "http://example/", "foo1=bar")
+        cookie = interact_netscape(c, "http://example/",
+                                   'foo2=bar; domain=.local')
+        self.assertEquals(len(c), 2)
+        self.assert_("foo1=bar" in cookie)
+
+        cookie = interact_netscape(c, "http://example/")
+        self.assert_("foo2=bar" in cookie)
+        self.assertEquals(len(c), 2)
+
+    def test_empty_path(self):
+        from cookielib import CookieJar, DefaultCookiePolicy
+        from urllib2 import Request
+
+        # Test for empty path
+        # Broken web-server ORION/1.3.38 returns to the client response like
+        #
+        #       Set-Cookie: JSESSIONID=ABCDERANDOM123; Path=
+        #
+        # ie. with Path set to nothing.
+        # In this case, extract_cookies() must set cookie to / (root)
+        c = CookieJar(DefaultCookiePolicy(rfc2965 = True))
+        headers = []
+
+        req = Request("http://www.ants.com/")
+        headers.append("Set-Cookie: JSESSIONID=ABCDERANDOM123; Path=")
+        res = FakeResponse(headers, "http://www.ants.com/")
+        c.extract_cookies(res, req)
+
+        req = Request("http://www.ants.com/")
+        c.add_cookie_header(req)
+
+        self.assertEquals(req.get_header("Cookie"),
+                          "JSESSIONID=ABCDERANDOM123")
+        self.assertEquals(req.get_header("Cookie2"), '$Version="1"')
+
+        # missing path in the request URI
+        req = Request("http://www.ants.com:8080")
+        c.add_cookie_header(req)
+
+        self.assertEquals(req.get_header("Cookie"),
+                          "JSESSIONID=ABCDERANDOM123")
+        self.assertEquals(req.get_header("Cookie2"), '$Version="1"')
+
+    def test_session_cookies(self):
+        from cookielib import CookieJar
+        from urllib2 import Request
+
+        year_plus_one = time.localtime()[0] + 1
+
+        # Check session cookies are deleted properly by
+        # CookieJar.clear_session_cookies method
+
+        req = Request('http://www.perlmeister.com/scripts')
+        headers = []
+        headers.append("Set-Cookie: s1=session;Path=/scripts")
+        headers.append("Set-Cookie: p1=perm; Domain=.perlmeister.com;"
+                       "Path=/;expires=Fri, 02-Feb-%d 23:24:20 GMT" %
+                       year_plus_one)
+        headers.append("Set-Cookie: p2=perm;Path=/;expires=Fri, "
+                       "02-Feb-%d 23:24:20 GMT" % year_plus_one)
+        headers.append("Set-Cookie: s2=session;Path=/scripts;"
+                       "Domain=.perlmeister.com")
+        headers.append('Set-Cookie2: s3=session;Version=1;Discard;Path="/"')
+        res = FakeResponse(headers, 'http://www.perlmeister.com/scripts')
+
+        c = CookieJar()
+        c.extract_cookies(res, req)
+        # How many session/permanent cookies do we have?
+        counter = {"session_after": 0,
+                   "perm_after": 0,
+                   "session_before": 0,
+                   "perm_before": 0}
+        for cookie in c:
+            key = "%s_before" % cookie.value
+            counter[key] = counter[key] + 1
+        c.clear_session_cookies()
+        # How many now?
+        for cookie in c:
+            key = "%s_after" % cookie.value
+            counter[key] = counter[key] + 1
+
+        self.assert_(not (
+            # a permanent cookie got lost accidently
+            counter["perm_after"] != counter["perm_before"] or
+            # a session cookie hasn't been cleared
+            counter["session_after"] != 0 or
+            # we didn't have session cookies in the first place
+            counter["session_before"] == 0))
+
+
+def test_main(verbose=None):
+    from test import test_sets
+    test_support.run_unittest(
+        DateTimeTests,
+        HeaderTests,
+        CookieTests,
+        LWPCookieTests,
+        )
+
+if __name__ == "__main__":
+    test_main(verbose=True)

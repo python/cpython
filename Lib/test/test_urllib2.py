@@ -54,6 +54,10 @@ class MockFile:
     def readline(self, count=None): pass
     def close(self): pass
 
+class MockHeaders(dict):
+    def getheaders(self, name):
+        return self.values()
+
 class MockResponse(StringIO.StringIO):
     def __init__(self, code, msg, headers, data, url=None):
         StringIO.StringIO.__init__(self, data)
@@ -62,6 +66,12 @@ class MockResponse(StringIO.StringIO):
         return self.headers
     def geturl(self):
         return self.url
+
+class MockCookieJar:
+    def add_cookie_header(self, request):
+        self.ach_req = request
+    def extract_cookies(self, response, request):
+        self.ec_req, self.ec_r = request, response
 
 class FakeMethod:
     def __init__(self, meth_name, action, handle):
@@ -474,7 +484,7 @@ class HandlerTests(unittest.TestCase):
         for data in "", None:  # POST, GET
             req = Request("http://example.com/", data)
             r = MockResponse(200, "OK", {}, "")
-            newreq = h.do_request(req)
+            newreq = h.do_request_(req)
             if data is None:  # GET
                 self.assert_("Content-length" not in req.unredirected_hdrs)
                 self.assert_("Content-type" not in req.unredirected_hdrs)
@@ -491,7 +501,7 @@ class HandlerTests(unittest.TestCase):
             req.add_unredirected_header("Content-type", "bar")
             req.add_unredirected_header("Host", "baz")
             req.add_unredirected_header("Spam", "foo")
-            newreq = h.do_request(req)
+            newreq = h.do_request_(req)
             self.assertEqual(req.unredirected_hdrs["Content-length"], "foo")
             self.assertEqual(req.unredirected_hdrs["Content-type"], "bar")
             self.assertEqual(req.unredirected_hdrs["Host"], "baz")
@@ -514,6 +524,21 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(o.proto, "http")  # o.error called
         self.assertEqual(o.args, (req, r, 201, "Created", {}))
 
+    def test_cookies(self):
+        cj = MockCookieJar()
+        h = urllib2.HTTPCookieProcessor(cj)
+        o = h.parent = MockOpener()
+
+        req = Request("http://example.com/")
+        r = MockResponse(200, "OK", {}, "")
+        newreq = h.http_request(req)
+        self.assert_(cj.ach_req is req is newreq)
+        self.assertEquals(req.get_origin_req_host(), "example.com")
+        self.assert_(not req.is_unverifiable())
+        newr = h.http_response(req, r)
+        self.assert_(cj.ec_req is req)
+        self.assert_(cj.ec_r is r is newr)
+
     def test_redirect(self):
         from_url = "http://example.com/a.html"
         to_url = "http://example.com/b.html"
@@ -528,7 +553,8 @@ class HandlerTests(unittest.TestCase):
                 req.add_header("Nonsense", "viking=withhold")
                 req.add_unredirected_header("Spam", "spam")
                 try:
-                    method(req, MockFile(), code, "Blah", {"location": to_url})
+                    method(req, MockFile(), code, "Blah",
+                           MockHeaders({"location": to_url}))
                 except urllib2.HTTPError:
                     # 307 in response to POST requires user OK
                     self.assert_(code == 307 and data is not None)
@@ -544,37 +570,64 @@ class HandlerTests(unittest.TestCase):
 
         # loop detection
         req = Request(from_url)
-        req.origin_req_host = "example.com"
-        def redirect(h, req, code, url=to_url):
-            method = getattr(h, "http_error_%s" % code)
-            method(req, MockFile(), code, "Blah", {"location": url})
+        def redirect(h, req, url=to_url):
+            h.http_error_302(req, MockFile(), 302, "Blah",
+                             MockHeaders({"location": url}))
         # Note that the *original* request shares the same record of
         # redirections with the sub-requests caused by the redirections.
-        # once
-        redirect(h, req, 302)
-        # twice: loop detected
-        self.assertRaises(urllib2.HTTPError, redirect, h, req, 302)
-        # and again
-        self.assertRaises(urllib2.HTTPError, redirect, h, req, 302)
-        # but this is a different redirect code, so OK...
-        redirect(h, req, 301)
-        self.assertRaises(urllib2.HTTPError, redirect, h, req, 301)
-        # order doesn't matter
-        redirect(h, req, 303)
-        redirect(h, req, 307)
-        self.assertRaises(urllib2.HTTPError, redirect, h, req, 303)
 
-        # detect endless non-repeating chain of redirects
-        req = Request(from_url)
-        req.origin_req_host = "example.com"
+        # detect infinite loop redirect of a URL to itself
+        req = Request(from_url, origin_req_host="example.com")
         count = 0
         try:
             while 1:
-                redirect(h, req, 302, "http://example.com/%d" % count)
+                redirect(h, req, "http://example.com/")
+                count = count + 1
+        except urllib2.HTTPError:
+            # don't stop until max_repeats, because cookies may introduce state
+            self.assertEqual(count, urllib2.HTTPRedirectHandler.max_repeats)
+
+        # detect endless non-repeating chain of redirects
+        req = Request(from_url, origin_req_host="example.com")
+        count = 0
+        try:
+            while 1:
+                redirect(h, req, "http://example.com/%d" % count)
                 count = count + 1
         except urllib2.HTTPError:
             self.assertEqual(count,
                              urllib2.HTTPRedirectHandler.max_redirections)
+
+    def test_cookie_redirect(self):
+        class MockHTTPHandler(urllib2.HTTPHandler):
+            def __init__(self): self._count = 0
+            def http_open(self, req):
+                import mimetools
+                from StringIO import StringIO
+                if self._count == 0:
+                    self._count = self._count + 1
+                    msg = mimetools.Message(
+                        StringIO("Location: http://www.cracker.com/\r\n\r\n"))
+                    return self.parent.error(
+                        "http", req, MockFile(), 302, "Found", msg)
+                else:
+                    self.req = req
+                    msg = mimetools.Message(StringIO("\r\n\r\n"))
+                    return MockResponse(200, "OK", msg, "", req.get_full_url())
+        # cookies shouldn't leak into redirected requests
+        from cookielib import CookieJar
+        from urllib2 import build_opener, HTTPHandler, HTTPError, \
+             HTTPCookieProcessor
+
+        from test_cookielib import interact_netscape
+
+        cj = CookieJar()
+        interact_netscape(cj, "http://www.example.com/", "spam=eggs")
+        hh = MockHTTPHandler()
+        cp = HTTPCookieProcessor(cj)
+        o = build_opener(hh, cp)
+        o.open("http://www.example.com/")
+        self.assert_(not hh.req.has_header("Cookie"))
 
 
 class MiscTests(unittest.TestCase):
