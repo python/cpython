@@ -9,8 +9,8 @@ class XMLReader:
     
     def __init__(self):
         self._cont_handler = handler.ContentHandler()
-        #self._dtd_handler = handler.DTDHandler()
-        #self._ent_handler = handler.EntityResolver()
+        self._dtd_handler = handler.DTDHandler()
+        self._ent_handler = handler.EntityResolver()
         self._err_handler = handler.ErrorHandler()
 
     def parse(self, source):
@@ -109,8 +109,6 @@ class IncrementalParser(XMLReader):
         while buffer != "":
             self.feed(buffer)
             buffer = file.read(self._bufsize)
-            
-        self.reset()
 
     def feed(self, data):        
         """This method gives the raw XML data in the data parameter to

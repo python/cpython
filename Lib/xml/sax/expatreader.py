@@ -3,17 +3,6 @@ SAX driver for the Pyexpat C module.  This driver works with
 pyexpat.__version__ == '1.5'.
 """
 
-# Todo on driver:
-#  - make it support external entities (wait for pyexpat.c)
-#  - enable configuration between reset() and feed() calls
-#  - support lexical events?
-#  - proper inputsource handling
-#  - properties and features
-
-# Todo on pyexpat.c:
-#  - support XML_ExternalEntityParserCreate
-#  - exceptions in callouts from pyexpat to python code lose position info
-
 version = "0.20"
 
 from xml.sax._exceptions import *
@@ -30,10 +19,11 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
 
     def __init__(self, namespaceHandling=0, bufsize=2**16-20):
         xmlreader.IncrementalParser.__init__(self, bufsize)
-        self._source = None
+        self._source = xmlreader.InputSource()
         self._parser = None
         self._namespaces = namespaceHandling
         self._parsing = 0
+        self._entity_stack = []
 
     # XMLReader methods
 
@@ -186,11 +176,23 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         self._dtd_handler.notationDecl(name, pubid, sysid)
 
     def external_entity_ref(self, context, base, sysid, pubid):
-        raise NotImplementedError()
         source = self._ent_handler.resolveEntity(pubid, sysid)
-        source = saxutils.prepare_input_source(source)
-        # FIXME: create new parser, stack self._source and self._parser
-        # FIXME: reuse code from self.parse(...)
+        source = saxutils.prepare_input_source(source,
+                                               self._source.getSystemId() or
+                                               "")
+        
+        self._entity_stack.append((self._parser, self._source))
+        self._parser = self._parser.ExternalEntityParserCreate(context)
+        self._source = source
+
+        try:
+            xmlreader.IncrementalParser.parse(self, source)
+            self.close()
+        except:
+            return 0  # FIXME: save error info here?
+
+        (self._parser, self._source) = self._entity_stack[-1]
+        del self._entity_stack[-1]
         return 1
         
 # ---
