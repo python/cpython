@@ -127,11 +127,11 @@ PyFunction_SetDefaults(op, defaults)
 #define OFF(x) offsetof(PyFunctionObject, x)
 
 static struct memberlist func_memberlist[] = {
-	{"func_code",	T_OBJECT,	OFF(func_code),		READONLY},
+	{"func_code",	T_OBJECT,	OFF(func_code)},
 	{"func_globals",T_OBJECT,	OFF(func_globals),	READONLY},
 	{"func_name",	T_OBJECT,	OFF(func_name),		READONLY},
 	{"__name__",	T_OBJECT,	OFF(func_name),		READONLY},
-	{"func_defaults",T_OBJECT,	OFF(func_defaults),	READONLY},
+	{"func_defaults",T_OBJECT,	OFF(func_defaults)},
 	{"func_doc",	T_OBJECT,	OFF(func_doc)},
 	{"__doc__",	T_OBJECT,	OFF(func_doc)},
 	{NULL}	/* Sentinel */
@@ -148,6 +148,38 @@ func_getattr(op, name)
 		return NULL;
 	}
 	return PyMember_Get((char *)op, func_memberlist, name);
+}
+
+static int
+func_setattr(op, name, value)
+	PyFunctionObject *op;
+	char *name;
+	PyObject *value;
+{
+	if (PyEval_GetRestricted()) {
+		PyErr_SetString(PyExc_RuntimeError,
+		  "function attributes not settable in restricted mode");
+		return -1;
+	}
+	if (strcmp(name, "func_code") == 0) {
+		if (value == NULL || !PyCode_Check(value)) {
+			PyErr_SetString(
+				PyExc_TypeError,
+				"func_code must be set to a code object");
+			return -1;
+		}
+	}
+	else if (strcmp(name, "func_defaults") == 0) {
+		if (value != Py_None && !PyTuple_Check(value)) {
+			PyErr_SetString(
+				PyExc_TypeError,
+				"func_defaults must be set to a tuple object");
+			return -1;
+		}
+		if (value == Py_None)
+			value = NULL;
+	}
+	return PyMember_Set((char *)op, func_memberlist, name, value);
 }
 
 static void
@@ -216,7 +248,7 @@ PyTypeObject PyFunction_Type = {
 	(destructor)func_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
 	(getattrfunc)func_getattr, /*tp_getattr*/
-	0,		/*tp_setattr*/
+	(setattrfunc)func_setattr, /*tp_setattr*/
 	(cmpfunc)func_compare, /*tp_compare*/
 	(reprfunc)func_repr, /*tp_repr*/
 	0,		/*tp_as_number*/
