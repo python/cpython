@@ -233,6 +233,12 @@ Core and builtins
 - The UTF-8 codec will now encode and decode Unicode surrogates
   correctly and without raising exceptions for unpaired ones.
 
+- Universal newlines (PEP 278) is implemented.  Briefly, using 'U'
+  instead of 'r' when opening a text file for reading changes the line
+  ending convention so that any of '\r', '\r\n', and '\n' is
+  recognized (even mixed in one file); all three are converted to
+  '\n', the standard Python line end character.
+
 - file.xreadlines() now raises a ValueError if the file is closed:
   Previously, an xreadlines object was returned which would raise
   a ValueError when the xreadlines.next() method was called.
@@ -463,8 +469,10 @@ Build
   doc strings from the builtin functions and modules; this reduces the
   size of the executable.
 
-- XXX WITH_UNIVERSAL_NEWLINES Somebody fill this in; the PEP doesn't
-  say how or when to configure it, or how to turn it off.
+- The universal newlines option (PEP 278) is on by default.  On Unix
+  it can be disabled by passing --without-universal-newlines to the
+  configure script.  On other platforms, remove
+  WITH_UNIVERSAL_NEWLINES from pyconfig.h.
 
 - On Unix, a shared libpython2.3.so can be created with --enable-shared.
 
