@@ -147,10 +147,10 @@ getpath.o:	getpath.c Makefile
 # gets remade from scratch; this ensures to remove modules that are no
 # longer pertinent (but that were in a previous configuration).
 config.c Makefile: Makefile.pre config.c.in $(MAKESETUP)
-config.c Makefile: Setup.thread Setup Setup.local
+config.c Makefile: Setup.config Setup Setup.local
 config.c Makefile:
 		-rm -f $(LIBRARY)
-		$(SHELL) $(MAKESETUP) Setup.thread Setup.local Setup
+		$(SHELL) $(MAKESETUP) Setup.config Setup.local Setup
 
 hassignal:
 		-rm -f hassignal
