@@ -78,6 +78,13 @@ Return the current collection thresholds as a tuple of
 \code{(\var{threshold0}, \var{threshold1}, \var{threshold2})}.
 \end{funcdesc}
 
+\begin{funcdesc}{get_referrers}{*objs}
+Return the list of objects that directly refer to any of objs. This
+function will only locate those containers which support garbage
+collection; extension types which do refer to other objects but do not
+support garbage collection will not be found.
+\versionadded{2.2}
+\end{funcdesc}
 
 The following variable is provided for read-only access (you can
 mutate its value but should not rebind it):

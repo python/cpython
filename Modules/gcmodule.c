@@ -648,7 +648,7 @@ gc_get_thresh(PyObject *self, PyObject *args)
 }
 
 static int
-referentsvisit(PyObject* obj, PyObject *objs)
+referrersvisit(PyObject* obj, PyObject *objs)
 {
 	if (PySequence_Contains(objs, obj)) {
 		return 1;
@@ -657,7 +657,7 @@ referentsvisit(PyObject* obj, PyObject *objs)
 }
 
 static int
-gc_referents_for(PyObject *objs, PyGC_Head *list, PyObject *resultlist)
+gc_referrers_for(PyObject *objs, PyGC_Head *list, PyObject *resultlist)
 {
 	PyGC_Head *gc;
 	PyObject *obj;
@@ -667,7 +667,7 @@ gc_referents_for(PyObject *objs, PyGC_Head *list, PyObject *resultlist)
 		traverse = obj->ob_type->tp_traverse;
 		if (obj == objs || obj == resultlist)
 			continue;
-		if (traverse(obj, (visitproc)referentsvisit, objs)) {
+		if (traverse(obj, (visitproc)referrersvisit, objs)) {
 			if (PyList_Append(resultlist, obj) < 0)
 				return 0; /* error */
 		}
@@ -675,17 +675,17 @@ gc_referents_for(PyObject *objs, PyGC_Head *list, PyObject *resultlist)
 	return 1; /* no error */
 }
 
-static char gc_get_referents__doc__[]=
-"get_referents(*objs) -> list\n\
+static char gc_get_referrers__doc__[]=
+"get_referrers(*objs) -> list\n\
 Return the list of objects that directly refer to any of objs.";
 
 static PyObject *
-gc_get_referents(PyObject *self, PyObject *args)
+gc_get_referrers(PyObject *self, PyObject *args)
 {
 	PyObject *result = PyList_New(0);
-	if (!(gc_referents_for(args, &_PyGC_generation0, result) &&
-	      gc_referents_for(args, &generation1, result) &&
-	      gc_referents_for(args, &generation2, result))) {
+	if (!(gc_referrers_for(args, &_PyGC_generation0, result) &&
+	      gc_referrers_for(args, &generation1, result) &&
+	      gc_referrers_for(args, &generation2, result))) {
 		Py_DECREF(result);
 		return NULL;
 	}
@@ -740,7 +740,7 @@ static char gc__doc__ [] =
 "set_threshold() -- Set the collection thresholds.\n"
 "get_threshold() -- Return the current the collection thresholds.\n"
 "get_objects() -- Return a list of all objects tracked by the collector.\n"
-"get_referents() -- Return the list of objects that refer to an object.\n"
+"get_referrers() -- Return the list of objects that refer to an object.\n"
 ;
 
 static PyMethodDef GcMethods[] = {
@@ -753,8 +753,8 @@ static PyMethodDef GcMethods[] = {
 	{"get_threshold",  gc_get_thresh, METH_VARARGS, gc_get_thresh__doc__},
 	{"collect",	   gc_collect,	  METH_VARARGS, gc_collect__doc__},
 	{"get_objects",    gc_get_objects,METH_VARARGS, gc_get_objects__doc__},
-	{"get_referents",  gc_get_referents, METH_VARARGS,
-		gc_get_referents__doc__},
+	{"get_referrers",  gc_get_referrers, METH_VARARGS,
+		gc_get_referrers__doc__},
 	{NULL,	NULL}		/* Sentinel */
 };
 
