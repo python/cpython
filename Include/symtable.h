@@ -30,6 +30,7 @@ struct symtable {
 	int st_errors;           /* number of errors */
 	char *st_private;        /* name of current class or NULL */
 	int st_tmpname;          /* temporary name counter */
+	PyFutureFeatures *st_future; /* module's future features */
 };
 
 typedef struct _symtable_entry {

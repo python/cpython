@@ -200,6 +200,7 @@ PYTHON_OBJS=	\
 		Python/errors.o \
 		Python/frozen.o \
 		Python/frozenmain.o \
+		Python/future.o \
 		Python/getargs.o \
 		Python/getcompiler.o \
 		Python/getcopyright.o \
