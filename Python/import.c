@@ -957,23 +957,8 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 #endif
 		    )
 			buf[len++] = SEP;
-#ifdef IMPORT_8x3_NAMES
-		/* see if we are searching in directory dos-8x3 */
-		if (len > 7 && !strncmp(buf + len - 8, "dos-8x3", 7)){
-			int j;
-			char ch;  /* limit name to 8 lower-case characters */
-			for (j = 0; (ch = name[j]) && j < 8; j++)
-				if (isupper(ch))
-					buf[len++] = tolower(ch);
-				else
-					buf[len++] = ch;
-		}
-		else /* Not in dos-8x3, use the full name */
-#endif
-		{
-			strcpy(buf+len, name);
-			len += namelen;
-		}
+		strcpy(buf+len, name);
+		len += namelen;
 #ifdef HAVE_STAT
 		if (stat(buf, &statbuf) == 0) {
 			if (S_ISDIR(statbuf.st_mode)) {
