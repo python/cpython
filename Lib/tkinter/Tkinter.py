@@ -101,14 +101,14 @@ class StringVar(Variable):
 		return self._tk.globalgetvar(self._name)
 
 class IntVar(Variable):
-	_default = "0"
+	_default = 0
 	def __init__(self, master=None):
 		Variable.__init__(self, master)
 	def get(self):
 		return self._tk.getint(self._tk.globalgetvar(self._name))
 
 class DoubleVar(Variable):
-	_default = "0.0"
+	_default = 0.0
 	def __init__(self, master=None):
 		Variable.__init__(self, master)
 	def get(self):
