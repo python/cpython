@@ -108,6 +108,8 @@ class ConsoleTextWidget(W.EditText):
 		self._buf = ""
 		self.ted.WEClearUndo()
 		self.updatescrollbars()
+		if Qd.QDIsPortBuffered(self._parentwindow.wid):
+			Qd.QDFlushPortBuffer(self._parentwindow.wid, None)
 	
 	def selection_ok(self):
 		selstart, selend = self.getselection()
@@ -298,6 +300,8 @@ class PyOutput:
 		self._buf = ""
 		self.w.outputtext.updatescrollbars()
 		self.w.outputtext.ted.WEFeatureFlag(WASTEconst.weFReadOnly, 1)
+		if Qd.QDIsPortBuffered(self.w.wid):
+			Qd.QDFlushPortBuffer(self.w.wid, None)
 	
 	def show(self):
 		if self.closed:
