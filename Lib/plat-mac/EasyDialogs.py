@@ -290,6 +290,8 @@ class ProgressBar:
 			if maxval > 32767:
 				value = int(value/(maxval/32767.0))
 				maxval = 32767
+			maxval = int(maxval)
+			value = int(value)
 			progbar = self.d.GetDialogItemAsControl(3)
 			progbar.SetControlMaximum(maxval)
 			progbar.SetControlValue(value)	# set the bar length
