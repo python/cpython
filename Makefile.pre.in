@@ -281,7 +281,7 @@ platform: $(PYTHON)
 
 # Build the shared modules
 sharedmods: $(PYTHON)
-	./$(PYTHON) $(srcdir)/setup.py build
+	PYTHONPATH= ./$(PYTHON) $(srcdir)/setup.py build
 
 # buildno should really depend on something like LIBRARY_SRC
 buildno: $(PARSER_OBJS) \
@@ -689,7 +689,7 @@ libainstall:	all
 # Install the dynamically loadable modules
 # This goes into $(exec_prefix)
 sharedinstall:
-	./python$(EXEEXT) $(srcdir)/setup.py install \
+	PYTHONPATH= ./python$(EXEEXT) $(srcdir)/setup.py install \
 		--install-platlib=$(DESTSHARED)
 
 # Build the toplevel Makefile
