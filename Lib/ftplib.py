@@ -422,7 +422,7 @@ class FTP:
 	def delete(self, filename):
 		'''Delete a file.'''
 		resp = self.sendcmd('DELE ' + filename)
-		if resp[:3] == '250':
+		if resp[:3] in ('250', '200'):
 			return resp
 		elif resp[:1] == '5':
 			raise error_perm, resp
