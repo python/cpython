@@ -38,6 +38,8 @@ import ColorDB
 from PyncheWidget import PyncheWidget
 from Switchboard import Switchboard
 from StripViewer import StripViewer
+from ChipViewer import ChipViewer
+from TypeinViewer import TypeinViewer
 
 
 
@@ -92,10 +94,6 @@ def main():
     else:
 	raise IOError('No color database file found')
 
-    # create the application window decorations
-    app = PyncheWidget(__version__)
-    parent = app.parent()
-
     # get triplet for initial color
     try:
 	red, green, blue = colordb.find_byname(initialcolor)
@@ -112,8 +110,15 @@ def main():
                 usage(1, 'Cannot find an initial color to use')
 
     # create all output widgets
-    s = Switchboard()
+    s = Switchboard(colordb)
+
+    # create the application window decorations
+    app = PyncheWidget(__version__, s)
+    parent = app.parent()
+
     s.add_view(StripViewer(s, parent))
+    s.add_view(ChipViewer(s, parent))
+    s.add_view(TypeinViewer(s, parent))
     s.update_views(red, green, blue)
 
     try:
