@@ -493,16 +493,16 @@ my_set_callback(dummy, arg)
 \end{verbatim}
 
 This function must be registered with the interpreter using the
-\constant{METH_VARARGS} flag; this is described in Section
+\constant{METH_VARARGS} flag; this is described in section
 \ref{methodTable}, ``The Module's Method Table and Initialization
 Function.''  The \cfunction{PyArg_ParseTuple()} function and its
-arguments are documented in Section \ref{parseTuple}, ``Format Strings
+arguments are documented in section \ref{parseTuple}, ``Format Strings
 for \cfunction{PyArg_ParseTuple()}.''
 
 The macros \cfunction{Py_XINCREF()} and \cfunction{Py_XDECREF()}
 increment/decrement the reference count of an object and are safe in
 the presence of \NULL{} pointers (but note that \var{temp} will not be 
-\NULL{} in this context).  More info on them in Section
+\NULL{} in this context).  More info on them in section
 \ref{refcounts}, ``Reference Counts.''
 
 Later, when it is time to call the function, you call the C function
