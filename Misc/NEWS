@@ -12,7 +12,7 @@ What's New in Python 2.4 beta 1?
 Core and builtins
 -----------------
 
-...
+- PyLong_AsUnsignedLong[Mask] now support int objects as well.
 
 Extension modules
 -----------------
