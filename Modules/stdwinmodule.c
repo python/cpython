@@ -104,6 +104,8 @@ static type_lock StdwinLock; /* Lock held when interpreter not locked */
 
 static object *StdwinError; /* Exception stdwin.error */
 
+int StdwinIsActive;			/* True as soon as stdwin imported */
+
 /* Window and menu object types declared here because of forward references */
 
 typedef struct {
@@ -2631,6 +2633,7 @@ initstdwin()
 		}
 #endif
 		inited = 1;
+		StdwinIsActive = 1;
 	}
 	m = initmodule("stdwin", stdwin_methods);
 	d = getmoduledict(m);
