@@ -2770,12 +2770,17 @@ A `nomenclature' is a fancy way of saying AWordWithMixedCaseNotUnderscores."
    (let ((default
            (format "%s %s %s" py-pychecker-command
 		   (mapconcat 'identity py-pychecker-command-args " ")
-		   (buffer-file-name))))
+		   (buffer-file-name)))
+	 (last (when py-pychecker-history
+		 (let* ((lastcmd (car py-pychecker-history))
+			(cmd (cdr (reverse (split-string lastcmd))))
+			(newcmd (reverse (cons (buffer-file-name) cmd))))
+		   (mapconcat 'identity newcmd " ")))))
 
      (list
       (read-shell-command "Run pychecker like this: "
-                          (if py-pychecker-history
-			      (car py-pychecker-history)
+                          (if last
+			      last
 			    default)
                           'py-pychecker-history))))
   (save-some-buffers (not py-ask-about-save) nil)
