@@ -14,8 +14,7 @@ The defaults are (currently) tuned to scanning Apple Macintosh header files,
 although most Mac specific details are contained in header-specific subclasses.
 """
 
-import regex
-import regsub
+import re
 import string
 import sys
 import os
@@ -33,7 +32,7 @@ Error = "scantools.Error"
 class Scanner:
 
 	# Set to 1 in subclass to debug your scanner patterns.
-	debug = 0 
+	debug = 0
 
 	def __init__(self, input = None, output = None, defsoutput = None):
 		self.initsilent()
@@ -240,27 +239,27 @@ if missing: raise "Missing Types"
 		self.includepath = [':', INCLUDEDIR]
 
 	def initpatterns(self):
-		self.head_pat = "^EXTERN_API[^_]"
-		self.tail_pat = "[;={}]"
-		self.type_pat = "EXTERN_API" + \
-						"[ \t\n]*([ \t\n]*" + \
-						"\(<type>[a-zA-Z0-9_* \t]*[a-zA-Z0-9_*]\)" + \
-						"[ \t\n]*)[ \t\n]*"
-		self.name_pat = "\(<name>[a-zA-Z0-9_]+\)[ \t\n]*"
-		self.args_pat = "(\(<args>\([^(;=)]+\|([^(;=)]*)\)*\))"
+		self.head_pat = r"^EXTERN_API[^_]"
+		self.tail_pat = r"[;={}]"
+		self.type_pat = r"EXTERN_API" + \
+						r"[ \t\n]*\([ \t\n]*" + \
+						r"(?P<type>[a-zA-Z0-9_* \t]*[a-zA-Z0-9_*])" + \
+						r"[ \t\n]*\)[ \t\n]*"
+		self.name_pat = r"(?P<name>[a-zA-Z0-9_]+)[ \t\n]*"
+		self.args_pat = r"\((?P<args>([^\(;=\)]+|\([^\(;=\)]*\))*)\)"
 		self.whole_pat = self.type_pat + self.name_pat + self.args_pat
-		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
-		               "[ \t]*\(<defn>[-0-9_a-zA-Z'\"(][^\t\n,;}]*\),?"
-		self.asplit_pat = "^\(<type>.*[^a-zA-Z0-9_]\)\(<name>[a-zA-Z0-9_]+\)\(<array>\[\]\)?$"
-		self.comment1_pat = "\(<rest>.*\)//.*"
+		self.sym_pat = r"^[ \t]*(?P<name>[a-zA-Z0-9_]+)[ \t]*=" + \
+		               r"[ \t]*(?P<defn>[-0-9_a-zA-Z'\"\(][^\t\n,;}]*),?"
+		self.asplit_pat = r"^(?P<type>.*[^a-zA-Z0-9_])(?P<name>[a-zA-Z0-9_]+)(?P<array>\[\])?$"
+		self.comment1_pat = r"(?P<rest>.*)//.*"
 		# note that the next pattern only removes comments that are wholly within one line
-		self.comment2_pat = "\(<rest1>.*\)/\*.*\*/\(<rest2>.*\)"
+		self.comment2_pat = r"(?P<rest1>.*)/\*.*\*/(?P<rest2>.*)"
 
 	def compilepatterns(self):
 		for name in dir(self):
 			if name[-4:] == "_pat":
 				pat = getattr(self, name)
-				prog = regex.symcomp(pat)
+				prog = re.compile(pat)
 				setattr(self, name[:-4], prog)
 
 	def initosspecifics(self):
@@ -404,20 +403,26 @@ if missing: raise "Missing Types"
 				except EOFError: break
 				if self.debug:
 					self.report("LINE: %s" % `line`)
-				if self.comment1.match(line) >= 0:
-					line = self.comment1.group('rest')
+				match = self.comment1.match(line)
+				if match:
+					line = match.group('rest')
 					if self.debug:
 						self.report("\tafter comment1: %s" % `line`)
-				while self.comment2.match(line) >= 0:
-					line = self.comment2.group('rest1')+self.comment2.group('rest2')
+				match = self.comment2.match(line)
+				while match:
+					line = match.group('rest1')+match.group('rest2')
 					if self.debug:
 						self.report("\tafter comment2: %s" % `line`)
-				if self.defsfile and self.sym.match(line) >= 0:
-					if self.debug:
-						self.report("\tmatches sym.")
-					self.dosymdef()
-					continue
-				if self.head.match(line) >= 0:
+					match = self.comment2.match(line)
+				if self.defsfile:
+					match = self.sym.match(line)
+					if match:
+						if self.debug:
+							self.report("\tmatches sym.")
+						self.dosymdef(match)
+						continue
+				match = self.head.match(line)
+				if match:
 					if self.debug:
 						self.report("\tmatches head.")
 					self.dofuncspec()
@@ -426,8 +431,8 @@ if missing: raise "Missing Types"
 			self.error("Uncaught EOF error")
 		self.reportusedtypes()
 
-	def dosymdef(self):
-		name, defn = self.sym.group('name', 'defn')
+	def dosymdef(self, match):
+		name, defn = match.group('name', 'defn')
 		if self.debug:
 			self.report("\tsym: name=%s, defn=%s" % (`name`, `defn`))
 		if not name in self.blacklistnames:
@@ -438,35 +443,39 @@ if missing: raise "Missing Types"
 
 	def dofuncspec(self):
 		raw = self.line
-		while self.tail.search(raw) < 0:
+		while not self.tail.search(raw):
 			line = self.getline()
 			if self.debug:
 				self.report("* CONTINUATION LINE: %s" % `line`)
-			if self.comment1.match(line) >= 0:
-				line = self.comment1.group('rest')
+			match = self.comment1.match(line)
+			if match:
+				line = match.group('rest')
 				if self.debug:
 					self.report("\tafter comment1: %s" % `line`)
-			while self.comment2.match(line) >= 0:
-				line = self.comment2.group('rest1')+self.comment2.group('rest2')
+			match = self.comment2.match(line)
+			while match:
+				line = match.group('rest1')+match.group('rest2')
 				if self.debug:
 					self.report("\tafter comment1: %s" % `line`)
+				match = self.comment2.match(line)
 			raw = raw + line
 		if self.debug:
 			self.report("* WHOLE LINE: %s" % `raw`)
 		self.processrawspec(raw)
 
 	def processrawspec(self, raw):
-		if self.whole.search(raw) < 0:
+		match = self.whole.search(raw)
+		if not match:
 			self.report("Bad raw spec: %s", `raw`)
 			if self.debug:
-				if self.type.search(raw) < 0:
+				if not self.type.search(raw):
 					self.report("(Type already doesn't match)")
 				else:
-					self.report("(Type matched: %s)" % `self.type.group('type')`)
+					self.report("(but type matched)")
 			return
-		type, name, args = self.whole.group('type', 'name', 'args')
-		type = regsub.gsub("\*", " ptr", type)
-		type = regsub.gsub("[ \t]+", "_", type)
+		type, name, args = match.group('type', 'name', 'args')
+		type = re.sub("\*", " ptr", type)
+		type = re.sub("[ \t]+", "_", type)
 		if name in self.alreadydone:
 			self.report("Name has already been defined: %s", `name`)
 			return
@@ -500,16 +509,18 @@ if missing: raise "Missing Types"
 
 	def extractarg(self, part):
 		mode = "InMode"
-		if self.asplit.match(part) < 0:
+		part = part.strip()
+		match = self.asplit.match(part)
+		if not match:
 			self.error("Indecipherable argument: %s", `part`)
 			return ("unknown", part, mode)
-		type, name, array = self.asplit.group('type', 'name', 'array')
+		type, name, array = match.group('type', 'name', 'array')
 		if array:
 			# array matches an optional [] after the argument name
 			type = type + " ptr "
-		type = regsub.gsub("\*", " ptr ", type)
+		type = re.sub("\*", " ptr ", type)
 		type = string.strip(type)
-		type = regsub.gsub("[ \t]+", "_", type)
+		type = re.sub("[ \t]+", "_", type)
 		return self.modifyarg(type, name, mode)
 	
 	def modifyarg(self, type, name, mode):
@@ -610,23 +621,23 @@ class Scanner_PreUH3(Scanner):
 	def initpatterns(self):
 		Scanner.initpatterns(self)
 		self.head_pat = "^extern pascal[ \t]+" # XXX Mac specific!
-		self.type_pat = "pascal[ \t\n]+\(<type>[a-zA-Z0-9_ \t]*[a-zA-Z0-9_]\)[ \t\n]+"
+		self.type_pat = "pascal[ \t\n]+(?P<type>[a-zA-Z0-9_ \t]*[a-zA-Z0-9_])[ \t\n]+"
 		self.whole_pat = self.type_pat + self.name_pat + self.args_pat
-		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
-		               "[ \t]*\(<defn>[-0-9'\"][^\t\n,;}]*\),?"
+		self.sym_pat = "^[ \t]*(?P<name>[a-zA-Z0-9_]+)[ \t]*=" + \
+		               "[ \t]*(?P<defn>[-0-9'\"][^\t\n,;}]*),?"
 
 class Scanner_OSX(Scanner):
 	"""Scanner for modern (post UH3.3) Universal Headers """
 	def initpatterns(self):
 		Scanner.initpatterns(self)
-		self.head_pat = "^EXTERN_API\(_C\)?"
-		self.type_pat = "EXTERN_API\(_C\)?" + \
-						"[ \t\n]*([ \t\n]*" + \
-						"\(<type>[a-zA-Z0-9_* \t]*[a-zA-Z0-9_*]\)" + \
-						"[ \t\n]*)[ \t\n]*"
+		self.head_pat = "^EXTERN_API(_C)?"
+		self.type_pat = "EXTERN_API(_C)?" + \
+						"[ \t\n]*\([ \t\n]*" + \
+						"(?P<type>[a-zA-Z0-9_* \t]*[a-zA-Z0-9_*])" + \
+						"[ \t\n]*\)[ \t\n]*"
 		self.whole_pat = self.type_pat + self.name_pat + self.args_pat
-		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
-		               "[ \t]*\(<defn>[-0-9_a-zA-Z'\"(][^\t\n,;}]*\),?"
+		self.sym_pat = "^[ \t]*(?P<name>[a-zA-Z0-9_]+)[ \t]*=" + \
+		               "[ \t]*(?P<defn>[-0-9_a-zA-Z'\"\(][^\t\n,;}]*),?"
 	
 def test():
 	input = "D:Development:THINK C:Mac #includes:Apple #includes:AppleEvents.h"
