@@ -1,8 +1,10 @@
 """Guess the MIME type of a file.
 
-This module defines one useful function:
+This module defines two useful functions:
 
 guess_type(url) -- guess the MIME type and encoding of a URL.
+
+guess_extension(type) -- guess the extension for a given MIME type.
 
 It also contains the following, for tuning the behavior:
 
@@ -27,6 +29,8 @@ import posixpath
 knownfiles = [
     "/usr/local/etc/httpd/conf/mime.types",
     "/usr/local/lib/netscape/mime.types",
+    "/usr/local/etc/httpd/conf/mime.types",	# Apache 1.2
+    "/usr/local/etc/mime.types",		# Apache 1.3
     ]
 
 inited = 0
@@ -44,7 +48,7 @@ def guess_type(url):
 
     The suffixes .tgz, .taz and .tz (case sensitive!) are all mapped
     to ".tar.gz".  (This is table-driven too, using the dictionary
-    suffixes_map).
+    suffix_map).
 
     """
     if not inited:
@@ -63,6 +67,24 @@ def guess_type(url):
         return types_map[string.lower(ext)], encoding
     else:
         return None, encoding
+
+def guess_extension(type):
+    """Guess the extension for a file based on its MIME type.
+
+    Return value is a string giving a filename extension, including the
+    leading dot ('.').  The extension is not guaranteed to have been
+    associated with any particular data stream, but would be mapped to the
+    MIME type `type' by guess_type().  If no extension can be guessed for
+    `type', None is returned.
+    """
+    global inited
+    if not inited:
+        init()
+    type = string.lower(type)
+    for ext, stype in types_map.items():
+        if type == stype:
+            return ext
+    return None
 
 def init(files=None):
     global inited
@@ -184,6 +206,7 @@ types_map = {
     '.ustar': 'application/x-ustar',
     '.wav': 'audio/x-wav',
     '.xbm': 'image/x-xbitmap',
+    '.xml': 'text/xml',
     '.xpm': 'image/x-xpixmap',
     '.xwd': 'image/x-xwindowdump',
     '.zip': 'application/zip',

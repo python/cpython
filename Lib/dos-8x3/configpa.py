@@ -2,10 +2,11 @@
 
 A setup file consists of sections, lead by a "[section]" header,
 and followed by "name: value" entries, with continuations and such in
-the style of rfc822.
+the style of RFC 822.
 
-The option values can contain format strings which refer to other
-values in the same section, or values in a special [DEFAULT] section.
+The option values can contain format strings which refer to other values in
+the same section, or values in a special [DEFAULT] section.
+
 For example:
 
     something: %(dir)s/whatever
@@ -27,7 +28,7 @@ ConfigParser -- responsible for for parsing a list of
                                dictionary of intrinsic defaults.  The
                                keys must be strings, the values must
                                be appropriate for %()s string
-                               interpolation.  Note that `name' is
+                               interpolation.  Note that `__name__' is
                                always an intrinsic default; it's value
                                is the section's name.
 
@@ -55,14 +56,7 @@ ConfigParser -- responsible for for parsing a list of
 
 import sys
 import string
-import regex
-from types import ListType
-
-
-SECTHEAD_RE = "^\[\([-A-Za-z0-9]*\)\][" + string.whitespace + "]*$"
-secthead_cre = regex.compile(SECTHEAD_RE)
-OPTION_RE = "^\([-A-Za-z0-9.]+\)\(:\|[" + string.whitespace + "]*=\)\(.*\)$"
-option_cre = regex.compile(OPTION_RE)
+import re
 
 DEFAULTSECT = "DEFAULT"
 
@@ -71,9 +65,9 @@ DEFAULTSECT = "DEFAULT"
 # exception classes
 class Error:
     def __init__(self, msg=''):
-        self.__msg = msg
+        self._msg = msg
     def __repr__(self):
-        return self.__msg
+        return self._msg
 
 class NoSectionError(Error):
     def __init__(self, section):
@@ -93,13 +87,37 @@ class NoOptionError(Error):
         self.section = section
 
 class InterpolationError(Error):
-    def __init__(self, reference, option, section):
+    def __init__(self, reference, option, section, rawval):
         Error.__init__(self,
-                       "Bad value substitution: sect `%s', opt `%s', ref `%s'"
-                       % (section, option, reference))
+                       "Bad value substitution:\n"
+                       "\tsection: [%s]\n"
+                       "\toption : %s\n"
+                       "\tkey    : %s\n"
+                       "\trawval : %s\n"
+                       % (section, option, reference, rawval))
         self.reference = reference
         self.option = option
         self.section = section
+
+class MissingSectionHeaderError(Error):
+    def __init__(self, filename, lineno, line):
+        Error.__init__(
+            self,
+            'File contains no section headers.\nfile: %s, line: %d\n%s' %
+            (filename, lineno, line))
+        self.filename = filename
+        self.lineno = lineno
+        self.line = line
+
+class ParsingError(Error):
+    def __init__(self, filename):
+        Error.__init__(self, 'File contains parsing errors: %s' % filename)
+        self.filename = filename
+        self.errors = []
+
+    def append(self, lineno, line):
+        self.errors.append((lineno, line))
+        self._msg = self._msg + '\n\t[line %2d]: %s' % (lineno, line)
 
 
 
@@ -159,7 +177,8 @@ class ConfigParser:
         """Get an option value for a given section.
 
         All % interpolations are expanded in the return values, based
-        on the defaults passed into the constructor.
+        on the defaults passed into the constructor, unless the optional
+        argument `raw' is true.
 
         The section DEFAULT is special.
         """
@@ -183,7 +202,7 @@ class ConfigParser:
         try:
             return rawval % d
         except KeyError, key:
-            raise InterpolationError(key, option, section)
+            raise InterpolationError(key, option, section, rawval)
 
     def __get(self, section, conv, option):
         return conv(self.get(section, option))
@@ -201,6 +220,24 @@ class ConfigParser:
             raise ValueError, 'Not a boolean: %s' % v
         return val
 
+    #
+    # Regular expressions for parsing section headers and options.  Note a
+    # slight semantic change from the previous version, because of the use
+    # of \w, _ is allowed in section header names.
+    __SECTCRE = re.compile(
+        r'\['                                 # [
+        r'(?P<header>[-\w]+)'                 # `-', `_' or any alphanum
+        r'\]'                                 # ]
+        )
+    __OPTCRE = re.compile(
+        r'(?P<option>[-.\w]+)'                # - . _ alphanum
+        r'[ \t]*[:=][ \t]*'                   # any number of space/tab,
+                                              # followed by separator
+                                              # (either : or =), followed
+                                              # by any # space/tab
+        r'(?P<value>.*)$'                     # everything up to eol
+        )
+
     def __read(self, fp):
         """Parse a sectioned setup file.
 
@@ -211,9 +248,10 @@ class ConfigParser:
         leading whitespace.  Blank lines, lines beginning with a '#',
         and just about everything else is ignored.
         """
-        cursect = None                  # None, or a dictionary
+        cursect = None                            # None, or a dictionary
         optname = None
         lineno = 0
+        e = None                                  # None, or an exception
         while 1:
             line = fp.readline()
             if not line:
@@ -226,31 +264,47 @@ class ConfigParser:
                and line[0] == "r":      # no leading whitespace
                 continue
             # continuation line?
-            if line[0] in ' \t' and cursect <> None and optname:
+            if line[0] in ' \t' and cursect is not None and optname:
                 value = string.strip(line)
                 if value:
-                    cursect = cursect[optname] + '\n ' + value
-            # a section header?
-            elif secthead_cre.match(line) >= 0:
-                sectname = secthead_cre.group(1)
-                if self.__sections.has_key(sectname):
-                    cursect = self.__sections[sectname]
-                elif sectname == DEFAULTSECT:
-                    cursect = self.__defaults
-                else:
-                    cursect = {'name': sectname}
-                    self.__sections[sectname] = cursect
-                # So sections can't start with a continuation line.
-                optname = None
-            # an option line?
-            elif option_cre.match(line) >= 0:
-                optname, optval = option_cre.group(1, 3)
-                optname = string.lower(optname)
-                optval = string.strip(optval)
-                # allow empty values
-                if optval == '""':
-                    optval = ''
-                cursect[optname] = optval
-            # an error
+                    cursect[optname] = cursect[optname] + '\n ' + value
+            # a section header or option header?
             else:
-                print 'Error in %s at %d: %s', (fp.name, lineno, `line`)
+                # is it a section header?
+                mo = self.__SECTCRE.match(line)
+                if mo:
+                    sectname = mo.group('header')
+                    if self.__sections.has_key(sectname):
+                        cursect = self.__sections[sectname]
+                    elif sectname == DEFAULTSECT:
+                        cursect = self.__defaults
+                    else:
+                        cursect = {'__name__': sectname}
+                        self.__sections[sectname] = cursect
+                    # So sections can't start with a continuation line
+                    optname = None
+                # no section header in the file?
+                elif cursect is None:
+                    raise MissingSectionHeaderError(fp.name, lineno, `line`)
+                # an option line?
+                else:
+                    mo = self.__OPTCRE.match(line)
+                    if mo:
+                        optname, optval = mo.group('option', 'value')
+                        optname = string.lower(optname)
+                        optval = string.strip(optval)
+                        # allow empty values
+                        if optval == '""':
+                            optval = ''
+                        cursect[optname] = optval
+                    else:
+                        # a non-fatal parsing error occurred.  set up the
+                        # exception but keep going. the exception will be
+                        # raised at the end of the file and will contain a
+                        # list of all bogus lines
+                        if not e:
+                            e = ParsingError(fp.name)
+                        e.append(lineno, `line`)
+        # if any parsing errors occurred, raise an exception
+        if e:
+            raise e

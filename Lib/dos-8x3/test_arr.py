@@ -3,7 +3,7 @@
    Roger E. Masse
 """
 import array
-from test_support import verbose, TESTFN, unlink
+from test_support import verbose, TESTFN, unlink, TestFailed
 
 def main():
 
@@ -53,6 +53,33 @@ def testtype(type, example):
         if verbose:
             print 'array of %s converted to a string: ' \
                    % a.typecode, `a.tostring()`
+
+        if type == 'c':
+            a = array.array(type, "abcde")
+            a[:-1] = a
+            if a != array.array(type, "abcdee"):
+                raise TestFailed, "array(%s) self-slice-assign (head)" % `type`
+            a = array.array(type, "abcde")
+            a[1:] = a
+            if a != array.array(type, "aabcde"):
+                raise TestFailed, "array(%s) self-slice-assign (tail)" % `type`
+            a = array.array(type, "abcde")
+            a[1:-1] = a
+            if a != array.array(type, "aabcdee"):
+                raise TestFailed, "array(%s) self-slice-assign (cntr)" % `type`
+        else:
+            a = array.array(type, [1, 2, 3, 4, 5])
+            a[:-1] = a
+            if a != array.array(type, [1, 2, 3, 4, 5, 5]):
+                raise TestFailed, "array(%s) self-slice-assign (head)" % `type`
+            a = array.array(type, [1, 2, 3, 4, 5])
+            a[1:] = a
+            if a != array.array(type, [1, 1, 2, 3, 4, 5]):
+                raise TestFailed, "array(%s) self-slice-assign (tail)" % `type`
+            a = array.array(type, [1, 2, 3, 4, 5])
+            a[1:-1] = a
+            if a != array.array(type, [1, 1, 2, 3, 4, 5, 5]):
+                raise TestFailed, "array(%s) self-slice-assign (cntr)" % `type`
 
 
 main()

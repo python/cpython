@@ -80,15 +80,44 @@ class SyntaxError(StandardError):
     def __str__(self):
         return str(self.msg)
 
-class IOError(StandardError):
+class EnvironmentError(StandardError):
+    """Base class for exceptions that occur outside the Python system.
+    Primarily used as a base class for OSError and IOError."""
     def __init__(self, *args):
         self.args = args
         self.errno = None
         self.strerror = None
+        self.filename = None
+        if len(args) == 3:
+            # open() errors give third argument which is the filename.  BUT,
+            # so common in-place unpacking doesn't break, e.g.:
+            #
+            # except IOError, (errno, strerror):
+            #
+            # we hack args so that it only contains two items.  This also
+            # means we need our own __str__() which prints out the filename
+            # when it was supplied.
+            self.errno, self.strerror, self.filename = args
+            self.args = args[0:2]
         if len(args) == 2:
             # common case: PyErr_SetFromErrno()
-            self.errno = args[0]
-            self.strerror = args[1]
+            self.errno, self.strerror = args
+
+    def __str__(self):
+        if self.filename is not None:
+            return '[Errno %s] %s: %s' % (self.errno, self.strerror,
+                                          repr(self.filename))
+        elif self.errno and self.strerror:
+            return '[Errno %s] %s' % (self.errno, self.strerror)
+        else:
+            return StandardError.__str__(self)
+
+class IOError(EnvironmentError):
+    pass
+
+class OSError(EnvironmentError):
+    """Used by the posix module."""
+    pass
 
 class RuntimeError(StandardError):
     pass

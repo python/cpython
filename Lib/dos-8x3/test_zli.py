@@ -11,9 +11,9 @@ except ImportError:
 buf = file.read() * 8
 file.close()
 
-# test the chucksums
-print zlib.crc32('penguin'), zlib.crc32('penguin', 1)
-print zlib.adler32('penguin'), zlib.adler32('penguin', 1)
+# test the chucksums (hex so the test doesn't break on 64-bit machines)
+print hex(zlib.crc32('penguin')), hex(zlib.crc32('penguin', 1))
+print hex(zlib.adler32('penguin')), hex(zlib.adler32('penguin', 1))
 
 # make sure we generate some expected errors
 try:
