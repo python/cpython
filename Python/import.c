@@ -646,7 +646,12 @@ open_exclusive(char *filename)
 	*/
 	int fd;
 	(void) unlink(filename);
-	fd = open(filename, O_EXCL|O_CREAT|O_WRONLY|O_TRUNC, 0666);
+	fd = open(filename, O_EXCL|O_CREAT|O_WRONLY|O_TRUNC
+#ifdef O_BINARY
+				|O_BINARY   /* necessary for Windows */
+#endif
+		
+			, 0666);
 	if (fd < 0)
 		return NULL;
 	return fdopen(fd, "wb");
