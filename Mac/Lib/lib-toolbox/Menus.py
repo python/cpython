@@ -1,4 +1,4 @@
-# Generated from 'SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Menus.h'
+# Generated from 'flap:CodeWarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Menus.h'
 
 def FOUR_CHAR_CODE(x): return x
 gestaltMenuMgrAttr = FOUR_CHAR_CODE('menu')
@@ -27,6 +27,10 @@ mctLastIDIndic = -99
 kMenuStdMenuProc = 63
 kMenuStdMenuBarProc = 63
 kMenuNoModifiers = 0
+kMenuShiftModifier = (1 << 0)
+kMenuOptionModifier = (1 << 1)
+kMenuControlModifier = (1 << 2)
+kMenuNoCommandModifier = (1 << 3)
 kMenuNoIcon = 0
 kMenuIconType = 1
 kMenuShrinkIconType = 2

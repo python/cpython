@@ -1,4 +1,4 @@
-# Generated from 'SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Events.h'
+# Generated from 'flap:CodeWarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Events.h'
 
 nullEvent = 0
 mouseDown = 1
@@ -25,6 +25,7 @@ everyEvent = 0xFFFF
 charCodeMask = 0x000000FF
 keyCodeMask = 0x0000FF00
 adbAddrMask = 0x00FF0000
+# osEvtMessageMask = (long)0xFF000000
 mouseMovedMessage = 0x00FA
 suspendResumeMessage = 0x0001
 resumeFlag = 1

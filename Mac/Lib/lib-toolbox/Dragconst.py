@@ -1,4 +1,4 @@
-# Generated from 'SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Drag.h'
+# Generated from 'flap:CodeWarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Drag.h'
 
 def FOUR_CHAR_CODE(x): return x
 from TextEdit import *
@@ -13,6 +13,10 @@ flavorSenderOnly			= (1 << 0)
 flavorSenderTranslated		= (1 << 1)
 flavorNotSaved				= (1 << 2)
 flavorSystemTranslated		= (1 << 8)
+kDragHasLeftSenderWindow = (1L << 0)
+kDragInsideSenderApplication = (1L << 1)
+kDragInsideSenderWindow = (1L << 2)
+kDragRegionAndImage = (1L << 4)
 kDragStandardTranslucency = 0L
 kDragDarkTranslucency = 1L
 kDragDarkerTranslucency = 2L
@@ -25,13 +29,17 @@ kDragRegionEnd = 5
 kZoomNoAcceleration = 0
 kZoomAccelerate = 1
 kZoomDecelerate = 2
+flavorSenderOnly = (1 << 0)
+flavorSenderTranslated = (1 << 1)
+flavorNotSaved = (1 << 2)
+flavorSystemTranslated = (1 << 8)
 flavorTypeHFS = FOUR_CHAR_CODE('hfs ')
 flavorTypePromiseHFS = FOUR_CHAR_CODE('phfs')
 flavorTypeDirectory = FOUR_CHAR_CODE('diry')
 kFlavorTypeClippingName = FOUR_CHAR_CODE('clnm')
 kFlavorTypeClippingFilename = FOUR_CHAR_CODE('clfn')
 kFlavorTypeDragToTrashOnly = FOUR_CHAR_CODE('fdtt')
-kFlavorTypeFinderNoTrackingBehavior = FOUR_CHAR_CODE('fntb')
+kFlavorTypeFinderNoTrackingBehavior = FOUR_CHAR_CODE('fntb') 
 kDragTrackingEnterHandler = 1
 kDragTrackingEnterWindow = 2
 kDragTrackingInWindow = 3

@@ -1,4 +1,4 @@
-# Generated from 'SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Balloons.h'
+# Generated from 'flap:CodeWarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Balloons.h'
 
 def FOUR_CHAR_CODE(x): return x
 kTopLeftTipPointsLeftVariant = 0

@@ -1,4 +1,4 @@
-# Generated from 'SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Controls.h'
+# Generated from 'flap:CodeWarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Controls.h'
 
 def FOUR_CHAR_CODE(x): return x
 from TextEdit import *
@@ -6,6 +6,7 @@ from QuickDraw import *
 
 _ControlDispatch = 0xAA73
 gestaltControlMgrAttr = FOUR_CHAR_CODE('cntl')
+gestaltControlMgrPresent = (1L << 0)
 kControlDefProcType = FOUR_CHAR_CODE('CDEF')
 kControlTemplateResourceType = FOUR_CHAR_CODE('CNTL')
 kControlColorTableResourceType = FOUR_CHAR_CODE('cctb')
@@ -62,7 +63,7 @@ kControlKeyFilterBlockKey = 0
 kControlKeyFilterPassKey = 1
 kControlKeyScriptBehaviorAllowAnyScript = FOUR_CHAR_CODE('any ')
 kControlKeyScriptBehaviorPrefersRoman = FOUR_CHAR_CODE('prmn')
-kControlKeyScriptBehaviorRequiresRoman = FOUR_CHAR_CODE('rrmn')
+kControlKeyScriptBehaviorRequiresRoman = FOUR_CHAR_CODE('rrmn') 
 kControlFontBigSystemFont = -1
 kControlFontSmallSystemFont = -2
 kControlFontSmallBoldSystemFont = -3
@@ -134,6 +135,9 @@ kControlBevelButtonPlaceToLeftOfGraphic = 2
 kControlBevelButtonPlaceBelowGraphic = 3
 kControlBevelButtonPlaceAboveGraphic = 4
 kControlBevelButtonSmallBevelVariant = 0
+kControlBevelButtonNormalBevelVariant = (1 << 0)
+kControlBevelButtonLargeBevelVariant = (1 << 1)
+kControlBevelButtonMenuOnRight = (1 << 2)
 kControlBehaviorPushbutton = 0
 kControlBehaviorToggles = 0x0100
 kControlBehaviorSticky = 0x0200
@@ -161,6 +165,10 @@ kControlBevelButtonLastMenuTag = FOUR_CHAR_CODE('lmnu')
 kControlBevelButtonMenuDelayTag = FOUR_CHAR_CODE('mdly')
 kControlBevelButtonScaleIconTag = FOUR_CHAR_CODE('scal')
 kControlSliderProc = 48
+kControlSliderLiveFeedback = (1 << 0)
+kControlSliderHasTickMarks = (1 << 1)
+kControlSliderReverseDirection = (1 << 2)
+kControlSliderNonDirectional = (1 << 3)
 kControlTriangleProc = 64
 kControlTriangleLeftFacingProc = 65
 kControlTriangleAutoToggleProc = 66
@@ -239,7 +247,7 @@ kControlEditTextLockedTag = FOUR_CHAR_CODE('lock')
 kControlEditTextFixedTextTag = FOUR_CHAR_CODE('ftxt')
 kControlEditTextValidationProcTag = FOUR_CHAR_CODE('vali')
 kControlEditTextInlinePreUpdateProcTag = FOUR_CHAR_CODE('prup')
-kControlEditTextInlinePostUpdateProcTag = FOUR_CHAR_CODE('poup')
+kControlEditTextInlinePostUpdateProcTag = FOUR_CHAR_CODE('poup') 
 kControlStaticTextProc = 288
 kControlStaticTextStyleTag = kControlFontStyleTag
 kControlStaticTextTextTag = FOUR_CHAR_CODE('text')
