@@ -11,3 +11,4 @@ test_scope
 10. recursion
 11. unoptimized namespaces
 12. lambdas
+13. UnboundLocal
