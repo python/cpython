@@ -414,8 +414,6 @@ readinst(char *buf, int buf_size, PyObject *meth)
     PyObject *str = NULL;
     int len = -1;
 
-    fprintf(stderr, "calling readinst()\n");
-
     if ((bytes = PyInt_FromLong(buf_size)) == NULL) {
         if (!PyErr_Occurred())
             PyErr_SetNone(PyExc_EOFError);
