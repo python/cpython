@@ -11,20 +11,20 @@ from string import join, split, rfind
 # A classification of schemes ('' means apply by default)
 uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'wais', 'file',
 		 'https', 'shttp',
-		 'prospero', '']
+		 'prospero', 'rtsp', 'rtspu', '']
 uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet', 'wais',
 	       'file',
 	       'https', 'shttp', 'snews',
-	       'prospero', '']
+	       'prospero', 'rtsp', 'rtspu', '']
 non_hierarchical = ['gopher', 'hdl', 'mailto', 'news', 'telnet', 'wais',
 		    'snews',
 		    ]
 uses_params = ['ftp', 'hdl', 'prospero', 'http',
-	       'https', 'shttp',
+	       'https', 'shttp', 'rtsp', 'rtspu',
 	       '']
 uses_query = ['http', 'wais',
 	      'https', 'shttp',
-	      'gopher',
+	      'gopher', 'rtsp', 'rtspu',
 	      '']
 uses_fragment = ['ftp', 'hdl', 'http', 'gopher', 'news', 'nntp', 'wais',
 		 'https', 'shttp', 'snews',
