@@ -169,10 +169,9 @@ LIBFILES = lib.tex \
 
 # Library document
 lib.dvi: tools/modindex.py tools/indfix.py $(LIBFILES)
-	tools/newind.py >$*.ind
-	tools/newind.py modindex >mod$*.ind
+	rm -f $*.ind mod$*.ind
 	$(LATEX) $*
-	tools/modindex.py mod$*.idx
+	$(MAKEINDEX) mod$*.idx
 	tools/fix_hack $*.idx
 	$(MAKEINDEX) $*.idx
 	tools/indfix.py $*.ind
@@ -186,7 +185,7 @@ tut.dvi: tut.tex
 # Extending & Embedding, Python/C API documents.
 # Done this way to avoid repeated command sets.
 .tex.dvi:
-	tools/newind.py >$*.ind
+	rm -f $*.ind
 	$(LATEX) $*
 	tools/fix_hack $*.idx
 	$(MAKEINDEX) $*.idx
