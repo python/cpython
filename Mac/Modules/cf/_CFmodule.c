@@ -4325,44 +4325,64 @@ void init_CF(void)
 		return;
 	CFTypeRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&CFTypeRef_Type);
-	if (PyDict_SetItemString(d, "CFTypeRefType", (PyObject *)&CFTypeRef_Type) != 0)
-		Py_FatalError("can't initialize CFTypeRefType");
+	PyModule_AddObject(m, "CFTypeRef", (PyObject *)&CFTypeRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&CFTypeRef_Type);
+	PyModule_AddObject(m, "CFTypeRefType", (PyObject *)&CFTypeRef_Type);
 	CFArrayRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&CFArrayRef_Type);
-	if (PyDict_SetItemString(d, "CFArrayRefType", (PyObject *)&CFArrayRef_Type) != 0)
-		Py_FatalError("can't initialize CFArrayRefType");
+	PyModule_AddObject(m, "CFArrayRef", (PyObject *)&CFArrayRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&CFArrayRef_Type);
+	PyModule_AddObject(m, "CFArrayRefType", (PyObject *)&CFArrayRef_Type);
 	CFMutableArrayRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&CFMutableArrayRef_Type);
-	if (PyDict_SetItemString(d, "CFMutableArrayRefType", (PyObject *)&CFMutableArrayRef_Type) != 0)
-		Py_FatalError("can't initialize CFMutableArrayRefType");
+	PyModule_AddObject(m, "CFMutableArrayRef", (PyObject *)&CFMutableArrayRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&CFMutableArrayRef_Type);
+	PyModule_AddObject(m, "CFMutableArrayRefType", (PyObject *)&CFMutableArrayRef_Type);
 	CFDictionaryRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&CFDictionaryRef_Type);
-	if (PyDict_SetItemString(d, "CFDictionaryRefType", (PyObject *)&CFDictionaryRef_Type) != 0)
-		Py_FatalError("can't initialize CFDictionaryRefType");
+	PyModule_AddObject(m, "CFDictionaryRef", (PyObject *)&CFDictionaryRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&CFDictionaryRef_Type);
+	PyModule_AddObject(m, "CFDictionaryRefType", (PyObject *)&CFDictionaryRef_Type);
 	CFMutableDictionaryRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&CFMutableDictionaryRef_Type);
-	if (PyDict_SetItemString(d, "CFMutableDictionaryRefType", (PyObject *)&CFMutableDictionaryRef_Type) != 0)
-		Py_FatalError("can't initialize CFMutableDictionaryRefType");
+	PyModule_AddObject(m, "CFMutableDictionaryRef", (PyObject *)&CFMutableDictionaryRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&CFMutableDictionaryRef_Type);
+	PyModule_AddObject(m, "CFMutableDictionaryRefType", (PyObject *)&CFMutableDictionaryRef_Type);
 	CFDataRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&CFDataRef_Type);
-	if (PyDict_SetItemString(d, "CFDataRefType", (PyObject *)&CFDataRef_Type) != 0)
-		Py_FatalError("can't initialize CFDataRefType");
+	PyModule_AddObject(m, "CFDataRef", (PyObject *)&CFDataRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&CFDataRef_Type);
+	PyModule_AddObject(m, "CFDataRefType", (PyObject *)&CFDataRef_Type);
 	CFMutableDataRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&CFMutableDataRef_Type);
-	if (PyDict_SetItemString(d, "CFMutableDataRefType", (PyObject *)&CFMutableDataRef_Type) != 0)
-		Py_FatalError("can't initialize CFMutableDataRefType");
+	PyModule_AddObject(m, "CFMutableDataRef", (PyObject *)&CFMutableDataRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&CFMutableDataRef_Type);
+	PyModule_AddObject(m, "CFMutableDataRefType", (PyObject *)&CFMutableDataRef_Type);
 	CFStringRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&CFStringRef_Type);
-	if (PyDict_SetItemString(d, "CFStringRefType", (PyObject *)&CFStringRef_Type) != 0)
-		Py_FatalError("can't initialize CFStringRefType");
+	PyModule_AddObject(m, "CFStringRef", (PyObject *)&CFStringRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&CFStringRef_Type);
+	PyModule_AddObject(m, "CFStringRefType", (PyObject *)&CFStringRef_Type);
 	CFMutableStringRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&CFMutableStringRef_Type);
-	if (PyDict_SetItemString(d, "CFMutableStringRefType", (PyObject *)&CFMutableStringRef_Type) != 0)
-		Py_FatalError("can't initialize CFMutableStringRefType");
+	PyModule_AddObject(m, "CFMutableStringRef", (PyObject *)&CFMutableStringRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&CFMutableStringRef_Type);
+	PyModule_AddObject(m, "CFMutableStringRefType", (PyObject *)&CFMutableStringRef_Type);
 	CFURLRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&CFURLRef_Type);
-	if (PyDict_SetItemString(d, "CFURLRefType", (PyObject *)&CFURLRef_Type) != 0)
-		Py_FatalError("can't initialize CFURLRefType");
+	PyModule_AddObject(m, "CFURLRef", (PyObject *)&CFURLRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&CFURLRef_Type);
+	PyModule_AddObject(m, "CFURLRefType", (PyObject *)&CFURLRef_Type);
 
 #define _STRINGCONST(name) PyModule_AddObject(m, #name, CFStringRefObj_New(name))
 	_STRINGCONST(kCFPreferencesAnyApplication);

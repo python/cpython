@@ -410,11 +410,30 @@ static PyMethodDef EventRef_methods[] = {
 
 #define EventRef_getsetlist NULL
 
+
 #define EventRef_compare NULL
 
 #define EventRef_repr NULL
 
 #define EventRef_hash NULL
+#define EventRef_tp_init 0
+
+#define EventRef_tp_alloc PyType_GenericAlloc
+
+static PyObject *EventRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	EventRef itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, EventRef_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((EventRefObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define EventRef_tp_free PyObject_Del
+
 
 PyTypeObject EventRef_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -437,19 +456,27 @@ PyTypeObject EventRef_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	EventRef_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	EventRef_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	EventRef_tp_init, /* tp_init */
+	EventRef_tp_alloc, /* tp_alloc */
+	EventRef_tp_new, /* tp_new */
+	EventRef_tp_free, /* tp_free */
 };
 
 /* -------------------- End object type EventRef -------------------- */
@@ -603,11 +630,30 @@ static PyMethodDef EventQueueRef_methods[] = {
 
 #define EventQueueRef_getsetlist NULL
 
+
 #define EventQueueRef_compare NULL
 
 #define EventQueueRef_repr NULL
 
 #define EventQueueRef_hash NULL
+#define EventQueueRef_tp_init 0
+
+#define EventQueueRef_tp_alloc PyType_GenericAlloc
+
+static PyObject *EventQueueRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	EventQueueRef itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, EventQueueRef_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((EventQueueRefObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define EventQueueRef_tp_free PyObject_Del
+
 
 PyTypeObject EventQueueRef_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -630,19 +676,27 @@ PyTypeObject EventQueueRef_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	EventQueueRef_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	EventQueueRef_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	EventQueueRef_tp_init, /* tp_init */
+	EventQueueRef_tp_alloc, /* tp_alloc */
+	EventQueueRef_tp_new, /* tp_new */
+	EventQueueRef_tp_free, /* tp_free */
 };
 
 /* ----------------- End object type EventQueueRef ------------------ */
@@ -705,11 +759,30 @@ static PyMethodDef EventLoopRef_methods[] = {
 
 #define EventLoopRef_getsetlist NULL
 
+
 #define EventLoopRef_compare NULL
 
 #define EventLoopRef_repr NULL
 
 #define EventLoopRef_hash NULL
+#define EventLoopRef_tp_init 0
+
+#define EventLoopRef_tp_alloc PyType_GenericAlloc
+
+static PyObject *EventLoopRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	EventLoopRef itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, EventLoopRef_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((EventLoopRefObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define EventLoopRef_tp_free PyObject_Del
+
 
 PyTypeObject EventLoopRef_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -732,19 +805,27 @@ PyTypeObject EventLoopRef_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	EventLoopRef_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	EventLoopRef_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	EventLoopRef_tp_init, /* tp_init */
+	EventLoopRef_tp_alloc, /* tp_alloc */
+	EventLoopRef_tp_new, /* tp_new */
+	EventLoopRef_tp_free, /* tp_free */
 };
 
 /* ------------------ End object type EventLoopRef ------------------ */
@@ -825,11 +906,30 @@ static PyMethodDef EventLoopTimerRef_methods[] = {
 
 #define EventLoopTimerRef_getsetlist NULL
 
+
 #define EventLoopTimerRef_compare NULL
 
 #define EventLoopTimerRef_repr NULL
 
 #define EventLoopTimerRef_hash NULL
+#define EventLoopTimerRef_tp_init 0
+
+#define EventLoopTimerRef_tp_alloc PyType_GenericAlloc
+
+static PyObject *EventLoopTimerRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	EventLoopTimerRef itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, EventLoopTimerRef_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((EventLoopTimerRefObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define EventLoopTimerRef_tp_free PyObject_Del
+
 
 PyTypeObject EventLoopTimerRef_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -852,19 +952,27 @@ PyTypeObject EventLoopTimerRef_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	EventLoopTimerRef_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	EventLoopTimerRef_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	EventLoopTimerRef_tp_init, /* tp_init */
+	EventLoopTimerRef_tp_alloc, /* tp_alloc */
+	EventLoopTimerRef_tp_new, /* tp_new */
+	EventLoopTimerRef_tp_free, /* tp_free */
 };
 
 /* --------------- End object type EventLoopTimerRef ---------------- */
@@ -990,11 +1098,30 @@ static PyMethodDef EventHandlerRef_methods[] = {
 
 #define EventHandlerRef_getsetlist NULL
 
+
 #define EventHandlerRef_compare NULL
 
 #define EventHandlerRef_repr NULL
 
 #define EventHandlerRef_hash NULL
+#define EventHandlerRef_tp_init 0
+
+#define EventHandlerRef_tp_alloc PyType_GenericAlloc
+
+static PyObject *EventHandlerRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	EventHandlerRef itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, EventHandlerRef_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((EventHandlerRefObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define EventHandlerRef_tp_free PyObject_Del
+
 
 PyTypeObject EventHandlerRef_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -1017,19 +1144,27 @@ PyTypeObject EventHandlerRef_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	EventHandlerRef_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	EventHandlerRef_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	EventHandlerRef_tp_init, /* tp_init */
+	EventHandlerRef_tp_alloc, /* tp_alloc */
+	EventHandlerRef_tp_new, /* tp_new */
+	EventHandlerRef_tp_free, /* tp_free */
 };
 
 /* ---------------- End object type EventHandlerRef ----------------- */
@@ -1095,11 +1230,30 @@ static PyMethodDef EventHandlerCallRef_methods[] = {
 
 #define EventHandlerCallRef_getsetlist NULL
 
+
 #define EventHandlerCallRef_compare NULL
 
 #define EventHandlerCallRef_repr NULL
 
 #define EventHandlerCallRef_hash NULL
+#define EventHandlerCallRef_tp_init 0
+
+#define EventHandlerCallRef_tp_alloc PyType_GenericAlloc
+
+static PyObject *EventHandlerCallRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	EventHandlerCallRef itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, EventHandlerCallRef_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((EventHandlerCallRefObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define EventHandlerCallRef_tp_free PyObject_Del
+
 
 PyTypeObject EventHandlerCallRef_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -1122,19 +1276,27 @@ PyTypeObject EventHandlerCallRef_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	EventHandlerCallRef_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	EventHandlerCallRef_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	EventHandlerCallRef_tp_init, /* tp_init */
+	EventHandlerCallRef_tp_alloc, /* tp_alloc */
+	EventHandlerCallRef_tp_new, /* tp_new */
+	EventHandlerCallRef_tp_free, /* tp_free */
 };
 
 /* -------------- End object type EventHandlerCallRef --------------- */
@@ -1222,11 +1384,30 @@ static PyMethodDef EventTargetRef_methods[] = {
 
 #define EventTargetRef_getsetlist NULL
 
+
 #define EventTargetRef_compare NULL
 
 #define EventTargetRef_repr NULL
 
 #define EventTargetRef_hash NULL
+#define EventTargetRef_tp_init 0
+
+#define EventTargetRef_tp_alloc PyType_GenericAlloc
+
+static PyObject *EventTargetRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	EventTargetRef itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, EventTargetRef_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((EventTargetRefObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define EventTargetRef_tp_free PyObject_Del
+
 
 PyTypeObject EventTargetRef_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -1249,19 +1430,27 @@ PyTypeObject EventTargetRef_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	EventTargetRef_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	EventTargetRef_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	EventTargetRef_tp_init, /* tp_init */
+	EventTargetRef_tp_alloc, /* tp_alloc */
+	EventTargetRef_tp_new, /* tp_new */
+	EventTargetRef_tp_free, /* tp_free */
 };
 
 /* ----------------- End object type EventTargetRef ----------------- */
@@ -1324,11 +1513,30 @@ static PyMethodDef EventHotKeyRef_methods[] = {
 
 #define EventHotKeyRef_getsetlist NULL
 
+
 #define EventHotKeyRef_compare NULL
 
 #define EventHotKeyRef_repr NULL
 
 #define EventHotKeyRef_hash NULL
+#define EventHotKeyRef_tp_init 0
+
+#define EventHotKeyRef_tp_alloc PyType_GenericAlloc
+
+static PyObject *EventHotKeyRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	EventHotKeyRef itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, EventHotKeyRef_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((EventHotKeyRefObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define EventHotKeyRef_tp_free PyObject_Del
+
 
 PyTypeObject EventHotKeyRef_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -1351,19 +1559,27 @@ PyTypeObject EventHotKeyRef_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	EventHotKeyRef_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	EventHotKeyRef_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	EventHotKeyRef_tp_init, /* tp_init */
+	EventHotKeyRef_tp_alloc, /* tp_alloc */
+	EventHotKeyRef_tp_new, /* tp_new */
+	EventHotKeyRef_tp_free, /* tp_free */
 };
 
 /* ----------------- End object type EventHotKeyRef ----------------- */
@@ -1942,36 +2158,52 @@ void init_CarbonEvt(void)
 		return;
 	EventRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&EventRef_Type);
-	if (PyDict_SetItemString(d, "EventRefType", (PyObject *)&EventRef_Type) != 0)
-		Py_FatalError("can't initialize EventRefType");
+	PyModule_AddObject(m, "EventRef", (PyObject *)&EventRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&EventRef_Type);
+	PyModule_AddObject(m, "EventRefType", (PyObject *)&EventRef_Type);
 	EventQueueRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&EventQueueRef_Type);
-	if (PyDict_SetItemString(d, "EventQueueRefType", (PyObject *)&EventQueueRef_Type) != 0)
-		Py_FatalError("can't initialize EventQueueRefType");
+	PyModule_AddObject(m, "EventQueueRef", (PyObject *)&EventQueueRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&EventQueueRef_Type);
+	PyModule_AddObject(m, "EventQueueRefType", (PyObject *)&EventQueueRef_Type);
 	EventLoopRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&EventLoopRef_Type);
-	if (PyDict_SetItemString(d, "EventLoopRefType", (PyObject *)&EventLoopRef_Type) != 0)
-		Py_FatalError("can't initialize EventLoopRefType");
+	PyModule_AddObject(m, "EventLoopRef", (PyObject *)&EventLoopRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&EventLoopRef_Type);
+	PyModule_AddObject(m, "EventLoopRefType", (PyObject *)&EventLoopRef_Type);
 	EventLoopTimerRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&EventLoopTimerRef_Type);
-	if (PyDict_SetItemString(d, "EventLoopTimerRefType", (PyObject *)&EventLoopTimerRef_Type) != 0)
-		Py_FatalError("can't initialize EventLoopTimerRefType");
+	PyModule_AddObject(m, "EventLoopTimerRef", (PyObject *)&EventLoopTimerRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&EventLoopTimerRef_Type);
+	PyModule_AddObject(m, "EventLoopTimerRefType", (PyObject *)&EventLoopTimerRef_Type);
 	EventHandlerRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&EventHandlerRef_Type);
-	if (PyDict_SetItemString(d, "EventHandlerRefType", (PyObject *)&EventHandlerRef_Type) != 0)
-		Py_FatalError("can't initialize EventHandlerRefType");
+	PyModule_AddObject(m, "EventHandlerRef", (PyObject *)&EventHandlerRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&EventHandlerRef_Type);
+	PyModule_AddObject(m, "EventHandlerRefType", (PyObject *)&EventHandlerRef_Type);
 	EventHandlerCallRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&EventHandlerCallRef_Type);
-	if (PyDict_SetItemString(d, "EventHandlerCallRefType", (PyObject *)&EventHandlerCallRef_Type) != 0)
-		Py_FatalError("can't initialize EventHandlerCallRefType");
+	PyModule_AddObject(m, "EventHandlerCallRef", (PyObject *)&EventHandlerCallRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&EventHandlerCallRef_Type);
+	PyModule_AddObject(m, "EventHandlerCallRefType", (PyObject *)&EventHandlerCallRef_Type);
 	EventTargetRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&EventTargetRef_Type);
-	if (PyDict_SetItemString(d, "EventTargetRefType", (PyObject *)&EventTargetRef_Type) != 0)
-		Py_FatalError("can't initialize EventTargetRefType");
+	PyModule_AddObject(m, "EventTargetRef", (PyObject *)&EventTargetRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&EventTargetRef_Type);
+	PyModule_AddObject(m, "EventTargetRefType", (PyObject *)&EventTargetRef_Type);
 	EventHotKeyRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&EventHotKeyRef_Type);
-	if (PyDict_SetItemString(d, "EventHotKeyRefType", (PyObject *)&EventHotKeyRef_Type) != 0)
-		Py_FatalError("can't initialize EventHotKeyRefType");
+	PyModule_AddObject(m, "EventHotKeyRef", (PyObject *)&EventHotKeyRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&EventHotKeyRef_Type);
+	PyModule_AddObject(m, "EventHotKeyRefType", (PyObject *)&EventHotKeyRef_Type);
 }
 
 /* ===================== End module _CarbonEvt ====================== */

@@ -201,7 +201,7 @@ initstuff = initstuff + """
 
 
 # Define a class which specializes our object definition
-class MyObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+class MyObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 	def __init__(self, name, prefix = None, itselftype = None):
 		GlobalObjectDefinition.__init__(self, name, prefix, itselftype)
 ## This won't work in Carbon, so we disable it for all MacPythons:-(

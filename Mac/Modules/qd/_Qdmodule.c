@@ -1115,6 +1115,24 @@ static PyGetSetDef GrafObj_getsetlist[] = {
 #define GrafObj_repr NULL
 
 #define GrafObj_hash NULL
+#define GrafObj_tp_init 0
+
+#define GrafObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *GrafObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	GrafPtr itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, GrafObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((GrafPortObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define GrafObj_tp_free PyObject_Del
+
 
 PyTypeObject GrafPort_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -1137,19 +1155,27 @@ PyTypeObject GrafPort_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	GrafObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	GrafObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	GrafObj_tp_init, /* tp_init */
+	GrafObj_tp_alloc, /* tp_alloc */
+	GrafObj_tp_new, /* tp_new */
+	GrafObj_tp_free, /* tp_free */
 };
 
 /* -------------------- End object type GrafPort -------------------- */
@@ -1287,6 +1313,24 @@ static PyGetSetDef BMObj_getsetlist[] = {
 #define BMObj_repr NULL
 
 #define BMObj_hash NULL
+#define BMObj_tp_init 0
+
+#define BMObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *BMObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	BitMapPtr itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, BMObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((BitMapObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define BMObj_tp_free PyObject_Del
+
 
 PyTypeObject BitMap_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -1309,19 +1353,27 @@ PyTypeObject BitMap_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	BMObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	BMObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	BMObj_tp_init, /* tp_init */
+	BMObj_tp_alloc, /* tp_alloc */
+	BMObj_tp_new, /* tp_new */
+	BMObj_tp_free, /* tp_free */
 };
 
 /* --------------------- End object type BitMap --------------------- */
@@ -6872,12 +6924,16 @@ void init_Qd(void)
 		return;
 	GrafPort_Type.ob_type = &PyType_Type;
 	Py_INCREF(&GrafPort_Type);
-	if (PyDict_SetItemString(d, "GrafPortType", (PyObject *)&GrafPort_Type) != 0)
-		Py_FatalError("can't initialize GrafPortType");
+	PyModule_AddObject(m, "GrafPort", (PyObject *)&GrafPort_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&GrafPort_Type);
+	PyModule_AddObject(m, "GrafPortType", (PyObject *)&GrafPort_Type);
 	BitMap_Type.ob_type = &PyType_Type;
 	Py_INCREF(&BitMap_Type);
-	if (PyDict_SetItemString(d, "BitMapType", (PyObject *)&BitMap_Type) != 0)
-		Py_FatalError("can't initialize BitMapType");
+	PyModule_AddObject(m, "BitMap", (PyObject *)&BitMap_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&BitMap_Type);
+	PyModule_AddObject(m, "BitMapType", (PyObject *)&BitMap_Type);
 }
 
 /* ========================= End module _Qd ========================= */

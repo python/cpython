@@ -72,7 +72,8 @@ execfile(string.lower(MODPREFIX) + 'typetest.py')
 # Create the generator groups and link them
 module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff)
 
-class AliasDefinition(PEP252Mixin, GlobalObjectDefinition):
+class AliasDefinition(PEP253Mixin, GlobalObjectDefinition):
+	# XXXX Should inherit from resource?
 
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")

@@ -1268,11 +1268,30 @@ static PyMethodDef CGContextRefObj_methods[] = {
 
 #define CGContextRefObj_getsetlist NULL
 
+
 #define CGContextRefObj_compare NULL
 
 #define CGContextRefObj_repr NULL
 
 #define CGContextRefObj_hash NULL
+#define CGContextRefObj_tp_init 0
+
+#define CGContextRefObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *CGContextRefObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	CGContextRef itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CGContextRefObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((CGContextRefObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define CGContextRefObj_tp_free PyObject_Del
+
 
 PyTypeObject CGContextRef_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -1295,19 +1314,27 @@ PyTypeObject CGContextRef_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	CGContextRefObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	CGContextRefObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	CGContextRefObj_tp_init, /* tp_init */
+	CGContextRefObj_tp_alloc, /* tp_alloc */
+	CGContextRefObj_tp_new, /* tp_new */
+	CGContextRefObj_tp_free, /* tp_free */
 };
 
 /* ------------------ End object type CGContextRef ------------------ */
@@ -1373,8 +1400,10 @@ void init_CG(void)
 		return;
 	CGContextRef_Type.ob_type = &PyType_Type;
 	Py_INCREF(&CGContextRef_Type);
-	if (PyDict_SetItemString(d, "CGContextRefType", (PyObject *)&CGContextRef_Type) != 0)
-		Py_FatalError("can't initialize CGContextRefType");
+	PyModule_AddObject(m, "CGContextRef", (PyObject *)&CGContextRef_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&CGContextRef_Type);
+	PyModule_AddObject(m, "CGContextRefType", (PyObject *)&CGContextRef_Type);
 }
 
 /* ========================= End module _CG ========================= */

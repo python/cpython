@@ -3002,11 +3002,30 @@ static PyMethodDef MenuObj_methods[] = {
 
 #define MenuObj_getsetlist NULL
 
+
 #define MenuObj_compare NULL
 
 #define MenuObj_repr NULL
 
 #define MenuObj_hash NULL
+#define MenuObj_tp_init 0
+
+#define MenuObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *MenuObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	MenuHandle itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, MenuObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((MenuObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define MenuObj_tp_free PyObject_Del
+
 
 PyTypeObject Menu_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -3029,19 +3048,27 @@ PyTypeObject Menu_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	MenuObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	MenuObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	MenuObj_tp_init, /* tp_init */
+	MenuObj_tp_alloc, /* tp_alloc */
+	MenuObj_tp_new, /* tp_new */
+	MenuObj_tp_free, /* tp_free */
 };
 
 /* ---------------------- End object type Menu ---------------------- */
@@ -4127,8 +4154,10 @@ void init_Menu(void)
 		return;
 	Menu_Type.ob_type = &PyType_Type;
 	Py_INCREF(&Menu_Type);
-	if (PyDict_SetItemString(d, "MenuType", (PyObject *)&Menu_Type) != 0)
-		Py_FatalError("can't initialize MenuType");
+	PyModule_AddObject(m, "Menu", (PyObject *)&Menu_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&Menu_Type);
+	PyModule_AddObject(m, "MenuType", (PyObject *)&Menu_Type);
 }
 
 /* ======================== End module _Menu ======================== */

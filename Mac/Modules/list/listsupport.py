@@ -137,7 +137,8 @@ class ListMethodGenerator(MethodGenerator):
 		FunctionGenerator.parseArgumentList(self, args)
 		self.argumentList.append(self.itself)
 
-class MyObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+class MyObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
+	# XXXX Should inherit from Resource
 	getsetlist = [(
 		'listFlags',
 		'return Py_BuildValue("l", (long)GetListFlags(self->ob_itself) & 0xff);',

@@ -386,11 +386,30 @@ static PyMethodDef WEOObj_methods[] = {
 
 #define WEOObj_getsetlist NULL
 
+
 #define WEOObj_compare NULL
 
 #define WEOObj_repr NULL
 
 #define WEOObj_hash NULL
+#define WEOObj_tp_init 0
+
+#define WEOObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *WEOObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	WEObjectReference itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, WEOObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((WEOObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define WEOObj_tp_free PyObject_Del
+
 
 PyTypeObject WEO_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -413,19 +432,27 @@ PyTypeObject WEO_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	WEOObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	WEOObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	WEOObj_tp_init, /* tp_init */
+	WEOObj_tp_alloc, /* tp_alloc */
+	WEOObj_tp_new, /* tp_new */
+	WEOObj_tp_free, /* tp_free */
 };
 
 /* ---------------------- End object type WEO ----------------------- */
@@ -2108,11 +2135,30 @@ static PyMethodDef wasteObj_methods[] = {
 
 #define wasteObj_getsetlist NULL
 
+
 #define wasteObj_compare NULL
 
 #define wasteObj_repr NULL
 
 #define wasteObj_hash NULL
+#define wasteObj_tp_init 0
+
+#define wasteObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *wasteObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	WEReference itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, wasteObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((wasteObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define wasteObj_tp_free PyObject_Del
+
 
 PyTypeObject waste_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -2135,19 +2181,27 @@ PyTypeObject waste_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	wasteObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	wasteObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	wasteObj_tp_init, /* tp_init */
+	wasteObj_tp_alloc, /* tp_alloc */
+	wasteObj_tp_new, /* tp_new */
+	wasteObj_tp_free, /* tp_free */
 };
 
 /* --------------------- End object type waste ---------------------- */
@@ -2506,12 +2560,16 @@ void initwaste(void)
 		return;
 	WEO_Type.ob_type = &PyType_Type;
 	Py_INCREF(&WEO_Type);
-	if (PyDict_SetItemString(d, "WEOType", (PyObject *)&WEO_Type) != 0)
-		Py_FatalError("can't initialize WEOType");
+	PyModule_AddObject(m, "WEO", (PyObject *)&WEO_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&WEO_Type);
+	PyModule_AddObject(m, "WEOType", (PyObject *)&WEO_Type);
 	waste_Type.ob_type = &PyType_Type;
 	Py_INCREF(&waste_Type);
-	if (PyDict_SetItemString(d, "wasteType", (PyObject *)&waste_Type) != 0)
-		Py_FatalError("can't initialize wasteType");
+	PyModule_AddObject(m, "waste", (PyObject *)&waste_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&waste_Type);
+	PyModule_AddObject(m, "wasteType", (PyObject *)&waste_Type);
 
 		callbackdict = PyDict_New();
 		if (callbackdict == NULL || PyDict_SetItemString(d, "callbacks", callbackdict) != 0)

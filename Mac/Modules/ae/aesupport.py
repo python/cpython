@@ -174,7 +174,7 @@ initstuff = initstuff + """
 
 module = MacModule('_AE', 'AE', includestuff, finalstuff, initstuff)
 
-class AEDescDefinition(PEP252Mixin, GlobalObjectDefinition):
+class AEDescDefinition(PEP253Mixin, GlobalObjectDefinition):
 	getsetlist = [(
 		'type',
 		'return PyMac_BuildOSType(self->ob_itself.descriptorType);',

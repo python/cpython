@@ -93,7 +93,8 @@ class TEMethodGenerator(OSErrWeakLinkMethodGenerator):
 
 
 
-class MyObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+class MyObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
+	# XXXX Could be subtype of Resource
 	# Attributes that can be set.
 	getsetlist = [
 		(

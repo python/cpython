@@ -307,11 +307,30 @@ static PyMethodDef CmpInstObj_methods[] = {
 
 #define CmpInstObj_getsetlist NULL
 
+
 #define CmpInstObj_compare NULL
 
 #define CmpInstObj_repr NULL
 
 #define CmpInstObj_hash NULL
+#define CmpInstObj_tp_init 0
+
+#define CmpInstObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *CmpInstObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	ComponentInstance itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CmpInstObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((ComponentInstanceObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define CmpInstObj_tp_free PyObject_Del
+
 
 PyTypeObject ComponentInstance_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -334,19 +353,27 @@ PyTypeObject ComponentInstance_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	CmpInstObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	CmpInstObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	CmpInstObj_tp_init, /* tp_init */
+	CmpInstObj_tp_alloc, /* tp_alloc */
+	CmpInstObj_tp_new, /* tp_new */
+	CmpInstObj_tp_free, /* tp_free */
 };
 
 /* --------------- End object type ComponentInstance ---------------- */
@@ -713,11 +740,30 @@ static PyMethodDef CmpObj_methods[] = {
 
 #define CmpObj_getsetlist NULL
 
+
 #define CmpObj_compare NULL
 
 #define CmpObj_repr NULL
 
 #define CmpObj_hash NULL
+#define CmpObj_tp_init 0
+
+#define CmpObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *CmpObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	Component itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CmpObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((ComponentObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define CmpObj_tp_free PyObject_Del
+
 
 PyTypeObject Component_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -740,19 +786,27 @@ PyTypeObject Component_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	CmpObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	CmpObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	CmpObj_tp_init, /* tp_init */
+	CmpObj_tp_alloc, /* tp_alloc */
+	CmpObj_tp_new, /* tp_new */
+	CmpObj_tp_free, /* tp_free */
 };
 
 /* ------------------- End object type Component -------------------- */
@@ -930,12 +984,16 @@ void init_Cm(void)
 		return;
 	ComponentInstance_Type.ob_type = &PyType_Type;
 	Py_INCREF(&ComponentInstance_Type);
-	if (PyDict_SetItemString(d, "ComponentInstanceType", (PyObject *)&ComponentInstance_Type) != 0)
-		Py_FatalError("can't initialize ComponentInstanceType");
+	PyModule_AddObject(m, "ComponentInstance", (PyObject *)&ComponentInstance_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&ComponentInstance_Type);
+	PyModule_AddObject(m, "ComponentInstanceType", (PyObject *)&ComponentInstance_Type);
 	Component_Type.ob_type = &PyType_Type;
 	Py_INCREF(&Component_Type);
-	if (PyDict_SetItemString(d, "ComponentType", (PyObject *)&Component_Type) != 0)
-		Py_FatalError("can't initialize ComponentType");
+	PyModule_AddObject(m, "Component", (PyObject *)&Component_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&Component_Type);
+	PyModule_AddObject(m, "ComponentType", (PyObject *)&Component_Type);
 }
 
 /* ========================= End module _Cm ========================= */

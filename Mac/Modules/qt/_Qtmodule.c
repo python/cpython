@@ -1092,11 +1092,30 @@ static PyMethodDef MovieCtlObj_methods[] = {
 
 #define MovieCtlObj_getsetlist NULL
 
+
 #define MovieCtlObj_compare NULL
 
 #define MovieCtlObj_repr NULL
 
 #define MovieCtlObj_hash NULL
+#define MovieCtlObj_tp_init 0
+
+#define MovieCtlObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *MovieCtlObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	MovieController itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, MovieCtlObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((MovieControllerObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define MovieCtlObj_tp_free PyObject_Del
+
 
 PyTypeObject MovieController_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -1119,19 +1138,27 @@ PyTypeObject MovieController_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	MovieCtlObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	MovieCtlObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	MovieCtlObj_tp_init, /* tp_init */
+	MovieCtlObj_tp_alloc, /* tp_alloc */
+	MovieCtlObj_tp_new, /* tp_new */
+	MovieCtlObj_tp_free, /* tp_free */
 };
 
 /* ---------------- End object type MovieController ----------------- */
@@ -1553,11 +1580,30 @@ static PyMethodDef TimeBaseObj_methods[] = {
 
 #define TimeBaseObj_getsetlist NULL
 
+
 #define TimeBaseObj_compare NULL
 
 #define TimeBaseObj_repr NULL
 
 #define TimeBaseObj_hash NULL
+#define TimeBaseObj_tp_init 0
+
+#define TimeBaseObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *TimeBaseObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	TimeBase itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, TimeBaseObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((TimeBaseObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define TimeBaseObj_tp_free PyObject_Del
+
 
 PyTypeObject TimeBase_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -1580,19 +1626,27 @@ PyTypeObject TimeBase_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	TimeBaseObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	TimeBaseObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	TimeBaseObj_tp_init, /* tp_init */
+	TimeBaseObj_tp_alloc, /* tp_alloc */
+	TimeBaseObj_tp_new, /* tp_new */
+	TimeBaseObj_tp_free, /* tp_free */
 };
 
 /* -------------------- End object type TimeBase -------------------- */
@@ -1867,11 +1921,30 @@ static PyMethodDef UserDataObj_methods[] = {
 
 #define UserDataObj_getsetlist NULL
 
+
 #define UserDataObj_compare NULL
 
 #define UserDataObj_repr NULL
 
 #define UserDataObj_hash NULL
+#define UserDataObj_tp_init 0
+
+#define UserDataObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *UserDataObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	UserData itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, UserDataObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((UserDataObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define UserDataObj_tp_free PyObject_Del
+
 
 PyTypeObject UserData_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -1894,19 +1967,27 @@ PyTypeObject UserData_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	UserDataObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	UserDataObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	UserDataObj_tp_init, /* tp_init */
+	UserDataObj_tp_alloc, /* tp_alloc */
+	UserDataObj_tp_new, /* tp_new */
+	UserDataObj_tp_free, /* tp_free */
 };
 
 /* -------------------- End object type UserData -------------------- */
@@ -3052,11 +3133,30 @@ static PyMethodDef MediaObj_methods[] = {
 
 #define MediaObj_getsetlist NULL
 
+
 #define MediaObj_compare NULL
 
 #define MediaObj_repr NULL
 
 #define MediaObj_hash NULL
+#define MediaObj_tp_init 0
+
+#define MediaObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *MediaObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	Media itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, MediaObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((MediaObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define MediaObj_tp_free PyObject_Del
+
 
 PyTypeObject Media_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -3079,19 +3179,27 @@ PyTypeObject Media_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	MediaObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	MediaObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	MediaObj_tp_init, /* tp_init */
+	MediaObj_tp_alloc, /* tp_alloc */
+	MediaObj_tp_new, /* tp_new */
+	MediaObj_tp_free, /* tp_free */
 };
 
 /* --------------------- End object type Media ---------------------- */
@@ -4343,11 +4451,30 @@ static PyMethodDef TrackObj_methods[] = {
 
 #define TrackObj_getsetlist NULL
 
+
 #define TrackObj_compare NULL
 
 #define TrackObj_repr NULL
 
 #define TrackObj_hash NULL
+#define TrackObj_tp_init 0
+
+#define TrackObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *TrackObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	Track itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, TrackObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((TrackObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define TrackObj_tp_free PyObject_Del
+
 
 PyTypeObject Track_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -4370,19 +4497,27 @@ PyTypeObject Track_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	TrackObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	TrackObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	TrackObj_tp_init, /* tp_init */
+	TrackObj_tp_alloc, /* tp_alloc */
+	TrackObj_tp_new, /* tp_new */
+	TrackObj_tp_free, /* tp_free */
 };
 
 /* --------------------- End object type Track ---------------------- */
@@ -6774,11 +6909,30 @@ static PyMethodDef MovieObj_methods[] = {
 
 #define MovieObj_getsetlist NULL
 
+
 #define MovieObj_compare NULL
 
 #define MovieObj_repr NULL
 
 #define MovieObj_hash NULL
+#define MovieObj_tp_init 0
+
+#define MovieObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *MovieObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	Movie itself;
+	char *kw[] = {"itself", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, MovieObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((MovieObject *)self)->ob_itself = itself;
+	return self;
+}
+
+#define MovieObj_tp_free PyObject_Del
+
 
 PyTypeObject Movie_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -6801,19 +6955,27 @@ PyTypeObject Movie_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	MovieObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	MovieObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	MovieObj_tp_init, /* tp_init */
+	MovieObj_tp_alloc, /* tp_alloc */
+	MovieObj_tp_new, /* tp_new */
+	MovieObj_tp_free, /* tp_free */
 };
 
 /* --------------------- End object type Movie ---------------------- */
@@ -9966,28 +10128,40 @@ void init_Qt(void)
 		return;
 	MovieController_Type.ob_type = &PyType_Type;
 	Py_INCREF(&MovieController_Type);
-	if (PyDict_SetItemString(d, "MovieControllerType", (PyObject *)&MovieController_Type) != 0)
-		Py_FatalError("can't initialize MovieControllerType");
+	PyModule_AddObject(m, "MovieController", (PyObject *)&MovieController_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&MovieController_Type);
+	PyModule_AddObject(m, "MovieControllerType", (PyObject *)&MovieController_Type);
 	TimeBase_Type.ob_type = &PyType_Type;
 	Py_INCREF(&TimeBase_Type);
-	if (PyDict_SetItemString(d, "TimeBaseType", (PyObject *)&TimeBase_Type) != 0)
-		Py_FatalError("can't initialize TimeBaseType");
+	PyModule_AddObject(m, "TimeBase", (PyObject *)&TimeBase_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&TimeBase_Type);
+	PyModule_AddObject(m, "TimeBaseType", (PyObject *)&TimeBase_Type);
 	UserData_Type.ob_type = &PyType_Type;
 	Py_INCREF(&UserData_Type);
-	if (PyDict_SetItemString(d, "UserDataType", (PyObject *)&UserData_Type) != 0)
-		Py_FatalError("can't initialize UserDataType");
+	PyModule_AddObject(m, "UserData", (PyObject *)&UserData_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&UserData_Type);
+	PyModule_AddObject(m, "UserDataType", (PyObject *)&UserData_Type);
 	Media_Type.ob_type = &PyType_Type;
 	Py_INCREF(&Media_Type);
-	if (PyDict_SetItemString(d, "MediaType", (PyObject *)&Media_Type) != 0)
-		Py_FatalError("can't initialize MediaType");
+	PyModule_AddObject(m, "Media", (PyObject *)&Media_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&Media_Type);
+	PyModule_AddObject(m, "MediaType", (PyObject *)&Media_Type);
 	Track_Type.ob_type = &PyType_Type;
 	Py_INCREF(&Track_Type);
-	if (PyDict_SetItemString(d, "TrackType", (PyObject *)&Track_Type) != 0)
-		Py_FatalError("can't initialize TrackType");
+	PyModule_AddObject(m, "Track", (PyObject *)&Track_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&Track_Type);
+	PyModule_AddObject(m, "TrackType", (PyObject *)&Track_Type);
 	Movie_Type.ob_type = &PyType_Type;
 	Py_INCREF(&Movie_Type);
-	if (PyDict_SetItemString(d, "MovieType", (PyObject *)&Movie_Type) != 0)
-		Py_FatalError("can't initialize MovieType");
+	PyModule_AddObject(m, "Movie", (PyObject *)&Movie_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&Movie_Type);
+	PyModule_AddObject(m, "MovieType", (PyObject *)&Movie_Type);
 }
 
 /* ========================= End module _Qt ========================= */
