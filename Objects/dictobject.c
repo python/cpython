@@ -427,16 +427,20 @@ dictresize(dictobject *mp, int minused)
 	is_oldtable_malloced = oldtable != mp->ma_smalltable;
 
 	if (newsize == MINSIZE) {
-		/* Either a large table is shrinking, or we can't get any
-		   smaller. */
+		/* A large table is shrinking, or we can't get any smaller. */
 		newtable = mp->ma_smalltable;
 		if (newtable == oldtable) {
-			if (mp->ma_fill < mp->ma_size)
+			if (mp->ma_fill == mp->ma_used) {
+				/* No dummies, so no point doing anything. */
 				return 0;
-			/* The small table is entirely full.  We're not
-			   going to resise it, but need to rebuild it
-			   anyway to purge old dummy entries. */
-			assert(mp->ma_fill > mp->ma_used); /* a dummy exists */
+			}
+			/* We're not going to resize it, but rebuild the
+			   table anyway to purge old dummy entries.
+			   Subtle:  This is *necessary* if fill==size,
+			   as lookdict needs at least one virgin slot to
+			   terminate failing searches.  If fill < size, it's
+			   merely desirable, as dummies slow searches. */
+			assert(mp->ma_fill > mp->ma_used);
 			memcpy(small_copy, oldtable, sizeof(small_copy));
 			oldtable = small_copy;
 		}
