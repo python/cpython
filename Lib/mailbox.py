@@ -66,6 +66,19 @@ class _Subfile:
 		self.pos = self.fp.tell()
 		return data
 
+        def readlines(self, sizehint = -1):
+		lines = []
+		while 1:
+			line = self.readline()
+			if not line:
+				break
+			lines.append(line)
+			if sizehint >= 0:
+				sizehint = sizehint - len(line)
+				if sizehint <= 0:
+					break
+		return lines
+
 	def tell(self):
 		return self.pos - self.start
 
