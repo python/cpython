@@ -51,7 +51,7 @@ def _bencode(s):
 def encode_base64(msg):
     """Encode the message's payload in Base64.
 
-    Also, add an appropriate Content-Transfer-Encoding: header.
+    Also, add an appropriate Content-Transfer-Encoding header.
     """
     orig = msg.get_payload()
     encdata = _bencode(orig)
@@ -61,9 +61,9 @@ def encode_base64(msg):
 
 
 def encode_quopri(msg):
-    """Encode the message's payload in Quoted-Printable.
+    """Encode the message's payload in quoted-printable.
 
-    Also, add an appropriate Content-Transfer-Encoding: header.
+    Also, add an appropriate Content-Transfer-Encoding header.
     """
     orig = msg.get_payload()
     encdata = _qencode(orig)
@@ -73,7 +73,7 @@ def encode_quopri(msg):
 
 
 def encode_7or8bit(msg):
-    """Set the Content-Transfer-Encoding: header to 7bit or 8bit."""
+    """Set the Content-Transfer-Encoding header to 7bit or 8bit."""
     orig = msg.get_payload()
     if orig is None:
         # There's no payload.  For backwards compatibility we use 7bit
