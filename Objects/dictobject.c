@@ -979,12 +979,6 @@ dict_fromkeys(PyObject *mp, PyObject *args)
 	d = PyObject_CallObject(cls, NULL);
 	if (d == NULL)
 		return NULL;
-	if (!PyDict_Check(d)) {
-		Py_DECREF(d);
-		PyErr_SetString(PyExc_TypeError,
-			"class constructor must return a subclass of dict");
-		return NULL;
-	}
 
 	it = PyObject_GetIter(seq);
 	if (it == NULL){
@@ -999,7 +993,7 @@ dict_fromkeys(PyObject *mp, PyObject *args)
 				goto Fail;
 			break;
 		}
-		status = PyDict_SetItem(d, key, value);
+		status = PyObject_SetItem(d, key, value);
 		Py_DECREF(key);
 		if (status < 0)
 			goto Fail;
