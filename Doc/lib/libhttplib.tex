@@ -197,8 +197,8 @@ Send a blank line to the server, signalling the end of the headers.
 
 \class{HTTPResponse} instances have the following methods and attributes:
 
-\begin{methoddesc}{read}{}
-Reads and returns the response body.
+\begin{methoddesc}{read}{\optional{amt}}
+Reads and returns the response body, or up to the next \var{amt} bytes.
 \end{methoddesc}
 
 \begin{methoddesc}{getheader}{name\optional{, default}}
