@@ -92,7 +92,7 @@ class Executive:
             if sys.stdout.softspace:
                 sys.stdout.softspace = 0
                 sys.stdout.write("\n")
-        except AttributeError:
+        except (AttributeError, EOFError):
             pass
 
     def cleanup_traceback(self, tb, exclude):
