@@ -10,28 +10,35 @@ import test_support
 class TestGenericStringIO(unittest.TestCase):
     # use a class variable MODULE to define which module is being tested
 
+    # Line of data to test as string
+    _line = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!'
+
+    # Constructor to use for the test data (._line is passed to this
+    # constructor)
+    constructor = str
+
     def setUp(self):
-        self._line = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        self._lines = (self._line + '\n') * 5
+        self._line = self.constructor(self._line)
+        self._lines = self.constructor((self._line + '\n') * 5)
         self._fp = self.MODULE.StringIO(self._lines)
 
     def test_reads(self):
         eq = self.assertEqual
-        eq(self._fp.read(10), 'abcdefghij')
-        eq(self._fp.readline(), 'klmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\n')
+        eq(self._fp.read(10), self._line[:10])
+        eq(self._fp.readline(), self._line[10:] + '\n')
         eq(len(self._fp.readlines(60)), 2)
 
     def test_writes(self):
         f = self.MODULE.StringIO()
-        f.write('abcdef')
+        f.write(self._line[:6])
         f.seek(3)
-        f.write('uvwxyz')
-        f.write('!')
+        f.write(self._line[20:26])
+        f.write(self._line[52])
         self.assertEqual(f.getvalue(), 'abcuvwxyz!')
 
     def test_writelines(self):
         f = self.MODULE.StringIO()
-        f.writelines(['a', 'b', 'c'])
+        f.writelines([self._line[0], self._line[1], self._line[2]])
         f.seek(0)
         self.assertEqual(f.getvalue(), 'abc')
 
@@ -64,10 +71,18 @@ class TestStringIO(TestGenericStringIO):
 class TestcStringIO(TestGenericStringIO):
     MODULE = cStringIO
 
+class TestBufferStringIO(TestStringIO):
+    constructor = buffer
+
+class TestBuffercStringIO(TestcStringIO):
+    constructor = buffer
+
 
 def test_main():
     test_support.run_unittest(TestStringIO)
     test_support.run_unittest(TestcStringIO)
+    test_support.run_unittest(TestBufferStringIO)
+    test_support.run_unittest(TestBuffercStringIO)
 
 if __name__ == '__main__':
     test_main()
