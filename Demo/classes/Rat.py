@@ -52,12 +52,18 @@ class Rat:
 		raise TypeError, 'Rat.__coerce__: bad other arg'
 			
 	def __add__(a, b):
+		if type(b) <> type(a):
+			a, b = a.__coerce__(b)
+			return a + b
 		return rat(a.num*b.den + b.num*a.den, a.den*b.den)
 
 	def __sub__(a, b):
 		return rat(a.num*b.den - b.num*a.den, a.den*b.den)
 
 	def __mul__(a, b):
+		if type(b) <> type(a):
+			a, b = a.__coerce__(b)
+			return a * b
 		return rat(a.num*b.num, a.den*b.den)
 
 	def __div__(a, b):
@@ -78,9 +84,13 @@ def test():
 	l.sort()
 	print l
 	print rat(0, 1)
-	print rat(1, 0)
 	print a+1
 	print a+1L
 	print a+1.0
+	try:
+		print rat(1, 0)
+		raise SystemError, 'should have been ZeroDivisionError'
+	except ZeroDivisionError:
+		print 'OK'
 
-test()
+#test()
