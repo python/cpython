@@ -127,10 +127,13 @@ def stripid(text):
 def modulename(path):
     """Return the Python module name for a given path, or None."""
     filename = os.path.basename(path)
-    for ending in ['.py', '.pyc', '.pyd', '.pyo',
-                   'module.so', 'module.so.1', '.so']:
-        if len(filename) > len(ending) and filename[-len(ending):] == ending:
-            return filename[:-len(ending)]
+    suffixes = map(lambda (suffix, mode, kind): (len(suffix), suffix),
+                   imp.get_suffixes())
+    suffixes.sort()
+    suffixes.reverse() # try longest suffixes first, in case they overlap
+    for length, suffix in suffixes:
+        if len(filename) > length and filename[-length:] == suffix:
+            return filename[:-length]
 
 class DocImportError(Exception):
     """Class for errors while trying to import something to document it."""
@@ -205,9 +208,15 @@ class HTMLRepr(Repr):
             return self.escape(cram(stripid(repr(x)), self.maxother))
 
     def repr_string(self, x, level):
-        text = self.escape(cram(x, self.maxstring))
-        return re.sub(r'((\\[\\abfnrtv]|\\x..|\\u....)+)',
-                      r'<font color="#c040c0">\1</font>', repr(text))
+        test = cram(x, self.maxstring)
+        testrepr = repr(test)
+        if '\\' in test and '\\' not in replace(testrepr, (r'\\', '')):
+            # Backslashes are only literal in the string and are never
+            # needed to make any special characters, so show a raw string.
+            return 'r' + testrepr[0] + self.escape(test) + testrepr[0]
+        return re.sub(r'((\\[\\abfnrtv\'"]|\\x..|\\u....)+)',
+                      r'<font color="#c040c0">\1</font>',
+                      self.escape(testrepr))
 
     def repr_instance(self, x, level):
         try:
@@ -595,6 +604,15 @@ class TextRepr(Repr):
             return getattr(self, methodname)(x, level)
         else:
             return cram(stripid(repr(x)), self.maxother)
+
+    def repr_string(self, x, level):
+        test = cram(x, self.maxstring)
+        testrepr = repr(test)
+        if '\\' in test and '\\' not in replace(testrepr, (r'\\', '')):
+            # Backslashes are only literal in the string and are never
+            # needed to make any special characters, so show a raw string.
+            return 'r' + testrepr[0] + test + testrepr[0]
+        return testrepr
 
     def repr_instance(self, x, level):
         try:
