@@ -6,7 +6,9 @@ for machine-independent changes. Changes since 2.1b1 are
 marked with [*] and at the bottom of the list.
 
 - This release is Carbon-based, so it runs natively on MacOS 8.6 or
-  later and MacOSX.
+  later and MacOSX. (Note that on MacOSX MacPython will run as a normal Mac application,
+  if you want to run Python from the BSD commandline get a unix-Python distribution
+  from www.python.org).
 - Alternatively there is a classic PPC interpreter as well. There are two reasons you
   might want to use this: (a) you have a pre-MacOS9 system and don't want to install
   CarbonLib, or (b) you need Tkinter, for which no Carbon version is available yet.
@@ -14,6 +16,9 @@ marked with [*] and at the bottom of the list.
 - There's a new module (package, actually) mkcwproject which builds CodeWarrior
   projects from simple templates. See Distutils or :Mac:scripts:genpluginprojects.py
   for examples of use.
+- The Numerical extension has moved to :Lib:site-python from :Extensions. As Numerical
+  is now distutils-based you can easily install newer versions when they become
+  available.
 - Windows and Dialogs can now be different beasts, so you may have to call
   dlg.GetDialogWindow() where you used to be able to call window methods straight
   on the dialog. This also has consequences for code using FrameWork.DialogWindow.
