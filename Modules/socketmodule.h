@@ -83,9 +83,8 @@ typedef struct {
 	PyObject *(*errorhandler)(void); /* Error handler; checks
 					    errno, returns NULL and
 					    sets a Python exception */
-	int sock_blocking;		 /* Flag indicated whether the
-					    socket is in blocking mode */
-	double sock_timeout;		 /* Operation timeout value */
+	double sock_timeout;		 /* Operation timeout in seconds;
+					    0.0 means non-blocking */
 } PySocketSockObject;
 
 /* --- C API ----------------------------------------------------*/
