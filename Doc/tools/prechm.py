@@ -1,4 +1,4 @@
-'''
+"""
     Makes the necesary files to convert from plain html of
     Python 1.5 and 1.5.x Documentation to
     Microsoft HTML Help format version 1.1
@@ -13,7 +13,7 @@
     project, 19-Apr-2002 by Tim Peters.  Assorted modifications by Tim
     and Fred Drake.  Obtained from Robin Dunn's .chm packaging of the
     Python 2.2 docs, at <http://alldunn.com/python/>.
-'''
+"""
 
 import sys
 import os
@@ -38,12 +38,12 @@ Usage: make_chm.py [-c] [-k] [-p] [-v 1.5[.x]] filename
 # user-visible features (visible buttons, tabs, etc).
 project_template = '''
 [OPTIONS]
-Compatibility=1.1
 Compiled file=%(arch)s.chm
 Contents file=%(arch)s.hhc
 Default Window=%(arch)s
 Default topic=index.html
 Display compile progress=No
+Full text search stop list file=%(arch)s.stp
 Full-text search=Yes
 Index file=%(arch)s.hhk
 Language=0x409
@@ -78,6 +78,23 @@ object_sitemap = '''
         <param name="Local" value="%s">
         <param name="Name" value="%s">
         </OBJECT>
+'''
+
+
+# List of words the full text search facility shouldn't index.  This
+# becomes file ARCH.stp.  Note that this list must be pretty small!
+# Different versions of the MS docs claim the file has a maximum size of
+# 256 or 512 bytes (including \r\n at the end of each line).
+# Note that "and", "or", "not" and "near" are operators in the search
+# language, so not point indexing them even if wanted to.
+stop_list = '''
+a  an  and
+is
+near
+not
+of
+or
+the
 '''
 
 # Library Doc list of tuples:
@@ -335,6 +352,15 @@ def do_it(args = None) :
     library = supported_libraries[ version ]
 
     if not (('-p','') in optlist) :
+        fname = arch + '.stp'
+        f = openfile(fname)
+        print "Building stoplist", fname, "..."
+        words = stop_list.split()
+        words.sort()
+        for word in words:
+            print >> f, word
+        f.close()
+
         f = openfile(arch + '.hhp')
         print "Building Project..."
         do_project(library, f, arch, version)
