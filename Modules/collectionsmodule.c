@@ -108,19 +108,19 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 deque_append(dequeobject *deque, PyObject *item)
 {
-	deque->rightindex++;
-	deque->len++;
 	deque->state++;
-	if (deque->rightindex == BLOCKLEN) {
+	if (deque->rightindex == BLOCKLEN-1) {
 		block *b = newblock(deque->rightblock, NULL);
 		if (b == NULL)
 			return NULL;
 		assert(deque->rightblock->rightlink == NULL);
 		deque->rightblock->rightlink = b;
 		deque->rightblock = b;
-		deque->rightindex = 0;
+		deque->rightindex = -1;
 	}
 	Py_INCREF(item);
+	deque->len++;
+	deque->rightindex++;
 	deque->rightblock->data[deque->rightindex] = item;
 	Py_RETURN_NONE;
 }
@@ -130,19 +130,19 @@ PyDoc_STRVAR(append_doc, "Add an element to the right side of the deque.");
 static PyObject *
 deque_appendleft(dequeobject *deque, PyObject *item)
 {
-	deque->leftindex--;
-	deque->len++;
 	deque->state++;
-	if (deque->leftindex == -1) {
+	if (deque->leftindex == 0) {
 		block *b = newblock(NULL, deque->leftblock);
 		if (b == NULL)
 			return NULL;
 		assert(deque->leftblock->leftlink == NULL);
 		deque->leftblock->leftlink = b;
 		deque->leftblock = b;
-		deque->leftindex = BLOCKLEN - 1;
+		deque->leftindex = BLOCKLEN;
 	}
 	Py_INCREF(item);
+	deque->len++;
+	deque->leftindex--;
 	deque->leftblock->data[deque->leftindex] = item;
 	Py_RETURN_NONE;
 }
@@ -233,10 +233,8 @@ deque_extend(dequeobject *deque, PyObject *iterable)
 		return NULL;
 
 	while ((item = PyIter_Next(it)) != NULL) {
-		deque->rightindex++;
-		deque->len++;
 		deque->state++;
-		if (deque->rightindex == BLOCKLEN) {
+		if (deque->rightindex == BLOCKLEN-1) {
 			block *b = newblock(deque->rightblock, NULL);
 			if (b == NULL) {
 				Py_DECREF(item);
@@ -246,8 +244,10 @@ deque_extend(dequeobject *deque, PyObject *iterable)
 			assert(deque->rightblock->rightlink == NULL);
 			deque->rightblock->rightlink = b;
 			deque->rightblock = b;
-			deque->rightindex = 0;
+			deque->rightindex = -1;
 		}
+		deque->len++;
+		deque->rightindex++;
 		deque->rightblock->data[deque->rightindex] = item;
 	}
 	Py_DECREF(it);
@@ -269,10 +269,8 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
 		return NULL;
 
 	while ((item = PyIter_Next(it)) != NULL) {
-		deque->leftindex--;
-		deque->len++;
 		deque->state++;
-		if (deque->leftindex == -1) {
+		if (deque->leftindex == 0) {
 			block *b = newblock(NULL, deque->leftblock);
 			if (b == NULL) {
 				Py_DECREF(item);
@@ -282,8 +280,10 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
 			assert(deque->leftblock->leftlink == NULL);
 			deque->leftblock->leftlink = b;
 			deque->leftblock = b;
-			deque->leftindex = BLOCKLEN - 1;
+			deque->leftindex = BLOCKLEN;
 		}
+		deque->len++;
+		deque->leftindex--;
 		deque->leftblock->data[deque->leftindex] = item;
 	}
 	Py_DECREF(it);
@@ -365,7 +365,7 @@ deque_item(dequeobject *deque, int i)
 {
 	block *b;
 	PyObject *item;
-	int n;
+	int n, index=i;
 
 	if (i < 0 || i >= deque->len) {
 		PyErr_SetString(PyExc_IndexError,
@@ -383,7 +383,7 @@ deque_item(dequeobject *deque, int i)
 		i += deque->leftindex;
 		n = i / BLOCKLEN;
 		i %= BLOCKLEN;
-		if (i < (deque->len >> 1)) {
+		if (index < (deque->len >> 1)) {
 			b = deque->leftblock;
 			while (n--)
 				b = b->rightlink;
@@ -514,7 +514,6 @@ deque_traverse(dequeobject *deque, visitproc visit, void *arg)
 	int index;
 	int indexlo = deque->leftindex;
 
-	assert(deque->leftblock != NULL);
 	for (b = deque->leftblock; b != NULL; b = b->rightlink) {
 		const int indexhi = b == deque->rightblock ?
 					 deque->rightindex :
@@ -642,7 +641,7 @@ static PyObject *
 deque_richcompare(PyObject *v, PyObject *w, int op)
 {
 	PyObject *it1=NULL, *it2=NULL, *x, *y;
-	int i, b, vs, ws, minlen, cmp=-1;
+	int b, vs, ws, cmp=-1;
 
 	if (!PyObject_TypeCheck(v, &deque_type) ||
 	    !PyObject_TypeCheck(w, &deque_type)) {
@@ -673,16 +672,13 @@ deque_richcompare(PyObject *v, PyObject *w, int op)
 	it2 = PyObject_GetIter(w);
 	if (it2 == NULL)
 		goto done;
-	minlen = (vs < ws)  ?  vs  :  ws;
-	for (i=0 ; i < minlen ; i++) {
+	for (;;) {
 		x = PyIter_Next(it1);
-		if (x == NULL)
+		if (x == NULL && PyErr_Occurred())
 			goto done;
 		y = PyIter_Next(it2);
-		if (y == NULL) {
-			Py_DECREF(x);
-			goto done;
-		}
+		if (x == NULL || y == NULL)
+			break;
 		b = PyObject_RichCompareBool(x, y, Py_EQ);
 		if (b == 0) {
 			cmp = PyObject_RichCompareBool(x, y, op);
@@ -695,14 +691,18 @@ deque_richcompare(PyObject *v, PyObject *w, int op)
 		if (b == -1)
 			goto done;
 	}
-	/* Elements are equal through minlen.  The longest input is the greatest */
+	/* We reached the end of one deque or both */
+	Py_XDECREF(x);
+	Py_XDECREF(y);
+	if (PyErr_Occurred())
+		goto done;
 	switch (op) {
-	case Py_LT: cmp = vs <  ws; break;
-	case Py_LE: cmp = vs <= ws; break;
-	case Py_EQ: cmp = vs == ws; break;
-	case Py_NE: cmp = vs != ws; break;
-	case Py_GT: cmp = vs >  ws; break;
-	case Py_GE: cmp = vs >= ws; break;
+	case Py_LT: cmp = y != NULL; break;  /* if w was longer */
+	case Py_LE: cmp = x == NULL; break;  /* if v was not longer */
+	case Py_EQ: cmp = x == y;    break;  /* if we reached the end of both */
+	case Py_NE: cmp = x != y;    break;  /* if one deque continues */
+	case Py_GT: cmp = x != NULL; break;  /* if v was longer */
+	case Py_GE: cmp = y == NULL; break;  /* if w was not longer */
 	}
 
 done:
