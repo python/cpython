@@ -89,6 +89,8 @@ class Distribution:
          "alias for --licence"),
         ('description', None,
          "print the package description"),
+        ('long-description', None,
+         "print the long package description"),
         ]
     display_option_names = map(lambda x: string.translate(x[0], longopt_xlate),
                            display_options)
@@ -638,6 +640,7 @@ class DistributionMetadata:
         self.url = None
         self.licence = None
         self.description = None
+        self.long_description = None
         
     # -- Metadata query methods ----------------------------------------
 
@@ -680,7 +683,10 @@ class DistributionMetadata:
 
     def get_description(self):
         return self.description or "UNKNOWN"
-    
+
+    def get_long_description(self):
+        return self.long_description or "UNKNOWN"
+
 # class DistributionMetadata
 
 if __name__ == "__main__":
