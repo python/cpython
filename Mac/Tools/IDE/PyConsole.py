@@ -75,9 +75,11 @@ class ConsoleTextWidget(W.EditText):
 			if char == Wkeys.returnkey:
 				text = self.get()[self._inputstart:selstart]
 				text = string.join(string.split(text, "\r"), "\n")
-				saveyield = MacOS.EnableAppswitch(0)
+				if hasattr(MacOS, 'EnableAppswitch'):
+					saveyield = MacOS.EnableAppswitch(0)
 				self.pyinteractive.executeline(text, self, self._namespace)
-				MacOS.EnableAppswitch(saveyield)
+				if hasattr(MacOS, 'EnableAppswitch'):
+					MacOS.EnableAppswitch(saveyield)
 				selstart, selend = self.getselection()
 				self._inputstart = selstart
 	
@@ -275,13 +277,15 @@ class PyOutput:
 		self.w.bind("<activate>", self.activate)
 	
 	def write(self, text):
-		oldyield = MacOS.EnableAppswitch(-1)
+		if hasattr(MacOS, 'EnableAppswitch'):
+			oldyield = MacOS.EnableAppswitch(-1)
 		try:
 			self._buf = self._buf + text
 			if '\n' in self._buf:
 				self.flush()
 		finally:
-			MacOS.EnableAppswitch(oldyield)
+			if hasattr(MacOS, 'EnableAppswitch'):
+				MacOS.EnableAppswitch(oldyield)
 	
 	def flush(self):
 		self.show()
