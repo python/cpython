@@ -6465,7 +6465,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 			     "unsupported format character '%c' (0x%x) "
 			     "at index %i",
 			     (31<=c && c<=126) ? (char)c : '?', 
-                             c,
+                             (int)c,
 			     (int)(fmt -1 - PyUnicode_AS_UNICODE(uformat)));
 		goto onError;
 	    }
