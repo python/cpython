@@ -3286,6 +3286,7 @@ half_compare(PyObject *self, PyObject *other)
 			res = PyObject_Call(func, args, NULL);
 			Py_DECREF(args);
 		}
+		Py_DECREF(func);
 		if (res != Py_NotImplemented) {
 			if (res == NULL)
 				return -2;
