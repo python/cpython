@@ -230,6 +230,7 @@ class Distribution:
                     setattr(self.metadata, key, val)
                 elif hasattr(self, key):
                     setattr(self, key, val)
+                else:
                     msg = "Unknown distribution option: %s" % repr(key)
                     if warnings is not None:
                         warnings.warn(msg)
