@@ -285,6 +285,9 @@
 /* Define if you have the fork function.  */
 #undef HAVE_FORK
 
+/* Define if you have the forkpty function.  */
+#undef HAVE_FORKPTY
+
 /* Define if you have the fpathconf function.  */
 #undef HAVE_FPATHCONF
 
@@ -365,6 +368,9 @@
 
 /* Define if you have the nice function.  */
 #undef HAVE_NICE
+
+/* Define if you have the openpty function.  */
+#undef HAVE_OPENPTY
 
 /* Define if you have the pathconf function.  */
 #undef HAVE_PATHCONF
@@ -483,6 +489,9 @@
 /* Define if you have the <fcntl.h> header file.  */
 #undef HAVE_FCNTL_H
 
+/* Define if you have the <libutil.h> header file.  */
+#undef HAVE_LIBUTIL_H
+
 /* Define if you have the <limits.h> header file.  */
 #undef HAVE_LIMITS_H
 
@@ -497,6 +506,9 @@
 
 /* Define if you have the <pthread.h> header file.  */
 #undef HAVE_PTHREAD_H
+
+/* Define if you have the <pty.h> header file.  */
+#undef HAVE_PTY_H
 
 /* Define if you have the <signal.h> header file.  */
 #undef HAVE_SIGNAL_H
