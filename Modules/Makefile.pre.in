@@ -222,6 +222,7 @@ timemodule.o: timemodule.c
 timingmodule.o: timingmodule.c
 unicodedata.o: unicodedata.c unicodedatabase.o
 unicodedatabase.o: unicodedatabase.c unicodedatabase.h
+ucnhash.o: ucnhash.c
 xxmodule.o: xxmodule.c
 yuvconvert.o: yuvconvert.c
 
