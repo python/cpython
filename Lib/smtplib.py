@@ -290,10 +290,10 @@ class SMTP:
             af, socktype, proto, canonname, sa = res
             try:
                 self.sock = socket.socket(af, socktype, proto)
-                if self.debuglevel > 0: print>>stderr, 'connect:', (host, port)
+                if self.debuglevel > 0: print>>stderr, 'connect:', sa
                 self.sock.connect(sa)
             except socket.error, msg:
-                if self.debuglevel > 0: print>>stderr, 'connect fail:', (host, port)
+                if self.debuglevel > 0: print>>stderr, 'connect fail:', msg
                 if self.sock:
                     self.sock.close()
                 self.sock = None
