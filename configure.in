@@ -397,9 +397,9 @@ DLINCLDIR=${dldir}
 LIBS="$LIBS -ldl -ldld"], AC_MSG_RESULT(no))
 
 # checks for library functions
-AC_CHECK_FUNCS(chown clock dlopen flock ftime ftruncate \
+AC_CHECK_FUNCS(chown clock dlopen execv flock fork ftime ftruncate \
  gethostname_r getpeername getpgrp getpid gettimeofday getwd \
- link lstat mkfifo nice plock putenv readlink \
+ kill link lstat mkfifo nice plock putenv readlink \
  select setgid setuid setsid setpgid setpgrp setvbuf \
  sigaction siginterrupt sigrelse strftime symlink \
  tcgetpgrp tcsetpgrp times truncate uname waitpid)
