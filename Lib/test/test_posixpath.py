@@ -150,6 +150,7 @@ class PosixPathTest(unittest.TestCase):
                 os.remove(test_support.TESTFN + "1")
                 self.assertIs(posixpath.islink(test_support.TESTFN + "2"), True)
                 self.assertIs(posixpath.exists(test_support.TESTFN + "2"), False)
+                self.assertIs(posixpath.lexists(test_support.TESTFN + "2"), True)
         finally:
             if not f.close():
                 f.close()
@@ -171,6 +172,7 @@ class PosixPathTest(unittest.TestCase):
             f.write("foo")
             f.close()
             self.assertIs(posixpath.exists(test_support.TESTFN), True)
+            self.assertIs(posixpath.lexists(test_support.TESTFN), True)
         finally:
             if not f.close():
                 f.close()

@@ -220,6 +220,8 @@ def exists(path):
         return False
     return True
 
+lexists = exists
+
 
 # Is a path a directory?
 

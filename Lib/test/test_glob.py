@@ -48,6 +48,9 @@ class GlobTests(unittest.TestCase):
         self.mktemp('ZZZ')
         self.mktemp('a', 'bcd', 'EF')
         self.mktemp('a', 'bcd', 'efg', 'ha')
+        if hasattr(os, 'symlink'):
+            os.symlink(self.norm('broken'), self.norm('sym1'))
+            os.symlink(self.norm('broken'), self.norm('sym2'))
 
     def tearDown(self):
         deltree(self.tempdir)
@@ -97,6 +100,13 @@ class GlobTests(unittest.TestCase):
            [self.norm('a', 'bcd', 'efg', 'ha')])
         eq(self.glob('?a?', '*F'), map(self.norm, [os.path.join('aaa', 'zzzF'),
                                                    os.path.join('aab', 'F')]))
+
+    def test_glob_broken_symlinks(self):
+        if hasattr(os, 'symlink'):
+            eq = self.assertSequencesEqual_noorder
+            eq(self.glob('sym*'), [self.norm('sym1'), self.norm('sym2')])
+            eq(self.glob('sym1'), [self.norm('sym1')])
+            eq(self.glob('sym2'), [self.norm('sym2')])
 
 
 def test_main():

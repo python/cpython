@@ -79,6 +79,9 @@ Extension modules
 Library
 -------
 
+- Patch #941486: added os.path.lexists(), which returns True for broken
+  symlinks, unlike os.path.exists().
+
 - the random module now uses os.urandom() for seeding if it is available.
   Added a new generator based on os.urandom().
 

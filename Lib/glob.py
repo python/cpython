@@ -13,7 +13,7 @@ def glob(pathname):
 
     """
     if not has_magic(pathname):
-        if os.path.exists(pathname):
+        if os.path.lexists(pathname):
             return [pathname]
         else:
             return []
@@ -29,7 +29,7 @@ def glob(pathname):
         for dirname in list:
             if basename or os.path.isdir(dirname):
                 name = os.path.join(dirname, basename)
-                if os.path.exists(name):
+                if os.path.lexists(name):
                     result.append(name)
     else:
         result = []
