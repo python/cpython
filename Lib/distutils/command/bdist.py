@@ -52,17 +52,20 @@ class bdist (Command):
     default_format = { 'posix': 'gztar',
                        'nt': 'zip', }
 
+    # Establish the preferred order (for the --help-formats option).
+    format_commands = ['rpm', 'gztar', 'bztar', 'ztar', 'tar',
+                       'wininst', 'zip']
+
+    # And the real information.
     format_command = { 'rpm':   ('bdist_rpm',  "RPM distribution"),
                        'gztar': ('bdist_dumb', "gzip'ed tar file"),
                        'bztar': ('bdist_dumb', "bzip2'ed tar file"),
                        'ztar':  ('bdist_dumb', "compressed tar file"),
                        'tar':   ('bdist_dumb', "tar file"),
-                       'zip':   ('bdist_dumb', "ZIP file"),
                        'wininst': ('bdist_wininst',
                                    "Windows executable installer"),
+                       'zip':   ('bdist_dumb', "ZIP file"),
                      }
-    # establish the preferred order
-    format_commands = ['rpm', 'gztar', 'bztar', 'ztar', 'tar', 'zip']
 
 
     def initialize_options (self):
