@@ -26,6 +26,10 @@ class CalendarTestCase(unittest.TestCase):
         self.assertEqual(calendar.firstweekday(), calendar.MONDAY)
         calendar.setfirstweekday(orig)
 
+    def test_enumerateweekdays(self):
+        self.assertRaises(IndexError, calendar.day_abbr.__getitem__, -10)
+        self.assertRaises(IndexError, calendar.day_name.__getitem__, 10)
+        self.assertEqual(len([d for d in calendar.day_abbr]), 7)
 
 def test_main():
     run_unittest(CalendarTestCase)
