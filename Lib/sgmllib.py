@@ -33,7 +33,7 @@ commentopen = regex.compile('<!--')
 commentclose = regex.compile('--[ \t\n]*>')
 tagfind = regex.compile('[a-zA-Z][a-zA-Z0-9]*')
 attrfind = regex.compile(
-    '[ \t\n]+\([a-zA-Z_][a-zA-Z_0-9]*\)'
+    '[ \t\n]+\([a-zA-Z_][-.a-zA-Z_0-9]*\)'
     '\([ \t\n]*=[ \t\n]*'
     '\(\'[^\']*\'\|"[^"]*"\|[-a-zA-Z0-9./:+*%?!()_#=~]*\)\)?')
 
