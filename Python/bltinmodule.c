@@ -1735,7 +1735,7 @@ filterstring(func, strobj)
 				GETSTRINGVALUE((stringobject *)item)[0];
 	}
 
-	if (resizestring(&result, j) < 0)
+	if (j < len && resizestring(&result, j) < 0)
 		return NULL;
 
 	return result;
