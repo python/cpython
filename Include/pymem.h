@@ -92,9 +92,9 @@ extern DL_IMPORT(void) PyMem_Free(void *);
 	
 /* pymalloc (private to the interpreter) */
 #ifdef WITH_PYMALLOC
-void *_PyMalloc_Malloc(size_t nbytes);
-void *_PyMalloc_Realloc(void *p, size_t nbytes);
-void _PyMalloc_Free(void *p);
+DL_IMPORT(void *) _PyMalloc_Malloc(size_t nbytes);
+DL_IMPORT(void *) _PyMalloc_Realloc(void *p, size_t nbytes);
+DL_IMPORT(void) _PyMalloc_Free(void *p);
 #define _PyMalloc_MALLOC _PyMalloc_Malloc
 #define _PyMalloc_REALLOC _PyMalloc_Realloc
 #define _PyMalloc_FREE _PyMalloc_Free
