@@ -2673,9 +2673,20 @@ string_encode(PyStringObject *self, PyObject *args)
 {
     char *encoding = NULL;
     char *errors = NULL;
+    PyObject *v;
+    
     if (!PyArg_ParseTuple(args, "|ss:encode", &encoding, &errors))
         return NULL;
-    return PyString_AsEncodedObject((PyObject *)self, encoding, errors);
+    v = PyString_AsEncodedObject((PyObject *)self, encoding, errors);
+    if (!PyString_Check(v) && !PyUnicode_Check(v)) {
+        PyErr_Format(PyExc_TypeError,
+                     "encoder did not return a string/unicode object "
+                     "(type=%.400s)",
+                     v->ob_type->tp_name);
+        Py_DECREF(v);
+        return NULL;
+    }
+    return v;
 }
 
 
@@ -2694,9 +2705,20 @@ string_decode(PyStringObject *self, PyObject *args)
 {
     char *encoding = NULL;
     char *errors = NULL;
+    PyObject *v;
+    
     if (!PyArg_ParseTuple(args, "|ss:decode", &encoding, &errors))
         return NULL;
-    return PyString_AsDecodedObject((PyObject *)self, encoding, errors);
+    v = PyString_AsDecodedObject((PyObject *)self, encoding, errors);
+    if (!PyString_Check(v) && !PyUnicode_Check(v)) {
+        PyErr_Format(PyExc_TypeError,
+                     "decoder did not return a string/unicode object "
+                     "(type=%.400s)",
+                     v->ob_type->tp_name);
+        Py_DECREF(v);
+        return NULL;
+    }
+    return v;
 }
 
 

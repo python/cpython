@@ -141,6 +141,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 
 # define PyUnicode_AsASCIIString PyUnicodeUCS2_AsASCIIString
 # define PyUnicode_AsCharmapString PyUnicodeUCS2_AsCharmapString
+# define PyUnicode_AsEncodedObject PyUnicodeUCS2_AsEncodedObject
 # define PyUnicode_AsEncodedString PyUnicodeUCS2_AsEncodedString
 # define PyUnicode_AsLatin1String PyUnicodeUCS2_AsLatin1String
 # define PyUnicode_AsRawUnicodeEscapeString PyUnicodeUCS2_AsRawUnicodeEscapeString
@@ -215,6 +216,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 
 # define PyUnicode_AsASCIIString PyUnicodeUCS4_AsASCIIString
 # define PyUnicode_AsCharmapString PyUnicodeUCS4_AsCharmapString
+# define PyUnicode_AsEncodedObject PyUnicodeUCS4_AsEncodedObject
 # define PyUnicode_AsEncodedString PyUnicodeUCS4_AsEncodedString
 # define PyUnicode_AsLatin1String PyUnicodeUCS4_AsLatin1String
 # define PyUnicode_AsRawUnicodeEscapeString PyUnicodeUCS4_AsRawUnicodeEscapeString
@@ -624,6 +626,15 @@ PyAPI_FUNC(PyObject*) PyUnicode_Encode(
     int size,                   /* number of Py_UNICODE chars to encode */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
+    );
+
+/* Encodes a Unicode object and returns the result as Python
+   object. */
+
+PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedObject(
+    PyObject *unicode,	 	/* Unicode object */
+    const char *encoding,	/* encoding */
+    const char *errors		/* error handling */
     );
 
 /* Encodes a Unicode object and returns the result as Python string
