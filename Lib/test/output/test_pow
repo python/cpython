@@ -1,0 +1,29 @@
+test_pow
+Testing integer mode...
+    Testing 2-argument pow() function...
+    Testing 3-argument pow() function...
+Testing long integer mode...
+    Testing 2-argument pow() function...
+    Testing 3-argument pow() function...
+Testing floating point mode...
+    Testing 3-argument pow() function...
+The number in both columns should match.
+3 3
+-5 -5
+-1 -1
+5 5
+-3 -3
+-7 -7
+
+3L 3L
+-5L -5L
+-1L -1L
+5L 5L
+-3L -3L
+-7L -7L
+
+3.0 3.0
+-5.0 -5.0
+-1.0 -1.0
+-7.0 -7.0
+
