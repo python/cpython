@@ -94,6 +94,10 @@ class BundleBuilder(Defaults):
 	# (eg. "Contents/Resources/MyStuff/SomeFile.ext).
 	files = []
 
+	# List of shared libraries (dylibs, Frameworks) to bundle with the app
+	# will be placed in Contents/Frameworks
+	libs = []
+
 	# Directory where the bundle will be assembled.
 	builddir = "build"
 
@@ -167,6 +171,9 @@ class BundleBuilder(Defaults):
 		files = self.files[:]
 		for path in self.resources:
 			files.append((path, pathjoin("Contents", "Resources",
+				os.path.basename(path))))
+		for path in self.libs:
+			files.append((path, pathjoin("Contents", "Frameworks",
 				os.path.basename(path))))
 		if self.symlink:
 			self.message("Making symbolic links", 1)
@@ -268,12 +275,14 @@ import sys, os
 execdir = os.path.dirname(sys.argv[0])
 executable = os.path.join(execdir, "%(executable)s")
 resdir = os.path.join(os.path.dirname(execdir), "Resources")
+libdir = os.path.join(os.path.dirname(execdir), "Frameworks")
 mainprogram = os.path.join(resdir, "%(mainprogram)s")
 
 sys.argv.insert(1, mainprogram)
 os.environ["PYTHONPATH"] = resdir
 os.environ["PYTHONHOME"] = resdir
 os.environ["PYTHONEXECUTABLE"] = executable
+os.environ["DYLD_LIBRARY_PATH"] = libdir
 os.execve(executable, sys.argv, os.environ)
 """
 
@@ -697,6 +706,8 @@ Options:
       --link-exec        symlink the executable instead of copying it
       --standalone       build a standalone application, which is fully
                          independent of a Python installation
+      --lib=FILE         shared library or framework to be copied into
+                         the bundle
   -x, --exclude=MODULE   exclude module (with --standalone)
   -i, --include=MODULE   include module (with --standalone)
       --package=PACKAGE  include a whole package (with --standalone)
@@ -720,7 +731,8 @@ def main(builder=None):
 	longopts = ("builddir=", "name=", "resource=", "file=", "executable=",
 		"mainprogram=", "creator=", "nib=", "plist=", "link",
 		"link-exec", "help", "verbose", "quiet", "argv", "standalone",
-		"exclude=", "include=", "package=", "strip", "iconfile=")
+		"exclude=", "include=", "package=", "strip", "iconfile=",
+		"lib=")
 
 	try:
 		options, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -750,6 +762,8 @@ def main(builder=None):
 			builder.creator = arg
 		elif opt == '--iconfile':
 			builder.iconfile = arg
+		elif opt == "--lib":
+			builder.libs.append(arg)
 		elif opt == "--nib":
 			builder.nibname = arg
 		elif opt in ('-p', '--plist'):
