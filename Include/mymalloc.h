@@ -53,12 +53,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define NULL 0
 #endif
 
-#define NEW(type, n) ( (type *) malloc((n) * sizeof(type)) )
+/* XXX Always allocate one extra byte, since some malloc's return NULL
+   XXX for malloc(0) or realloc(p, 0). */
+#define NEW(type, n) ( (type *) malloc(1 + (n) * sizeof(type)) )
 #define RESIZE(p, type, n) \
 	if ((p) == NULL) \
-		(p) =  (type *) malloc((n) * sizeof(type)); \
+		(p) =  (type *) malloc(1 + (n) * sizeof(type)); \
 	else \
-		(p) = (type *) realloc((ANY *)(p), (n) * sizeof(type))
+		(p) = (type *) realloc((ANY *)(p), 1 + (n) * sizeof(type))
 #define DEL(p) free((ANY *)p)
 #define XDEL(p) if ((p) == NULL) ; else DEL(p)
 

@@ -790,6 +790,8 @@ eval_code(co, globals, locals, arg)
 			   (a) f(a,b,...) should accept f((1,2,...))
 			   (b) f((a,b,...)) should accept f(1,2,...)
 			   (c) f(self,(a,b,...)) should accept f(x,1,2,...)
+			   Actually, (c) is dangerous, and (b) seems
+			   unnecessary, but (a) can't be missed...
 			*/
 			{
 				int n;
@@ -817,6 +819,7 @@ eval_code(co, globals, locals, arg)
 						n = gettuplesize(v);
 					}
 				}
+#if 0 /* Compatibility hacks no longer needed (I think) */
 				else if (n != 1 && oparg == 1) {
 					/* Rule (b) */
 					PUSH(v);
@@ -848,6 +851,7 @@ eval_code(co, globals, locals, arg)
 					v = u;
 					n = 2;
 				}
+#endif /* Disabled compatibility hacks */
 				if (n != oparg) {
 					err_setstr(TypeError,
 						"arg count mismatch");
