@@ -332,12 +332,16 @@ class PosixPathTest(unittest.TestCase):
 
     def test_expanduser(self):
         self.assertEqual(posixpath.expanduser("foo"), "foo")
-        self.assert_(isinstance(posixpath.expanduser("~/"), basestring))
         try:
             import pwd
         except ImportError:
             pass
         else:
+            self.assert_(isinstance(posixpath.expanduser("~/"), basestring))
+            self.assertEqual(
+                posixpath.expanduser("~") + "/",
+                posixpath.expanduser("~/")
+            )
             self.assert_(isinstance(posixpath.expanduser("~root/"), basestring))
             self.assert_(isinstance(posixpath.expanduser("~foo/"), basestring))
 
