@@ -731,7 +731,6 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        /*
 	 Return the ith element of o, or NULL on failure. This is the
 	 equivalent of the Python expression: o[i].
-
        */
 
      DL_IMPORT(PyObject *) PySequence_GetSlice Py_PROTO((PyObject *o, int i1, int i2));
@@ -783,11 +782,31 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 This is equivalent to the Python expression: tuple(o)
        */
 
+
      DL_IMPORT(PyObject *) PySequence_List Py_PROTO((PyObject *o));
 
        /*
 	 Returns the sequence, o, as a list on success, and NULL on failure.
 	 This is equivalent to the Python expression: list(o)
+       */
+
+     DL_IMPORT(PyObject *) PySequence_Fast Py_PROTO((PyObject *o, const char* m));
+
+       /*
+         Returns the sequence, o, as a tuple, unless it's already a
+         tuple or list.  Use PySequence_Fast_GET_ITEM to access the
+         members of this list.
+
+         Returns NULL on failure.  If the object is not a sequence,
+         raises a TypeError exception with m as the message text.
+       */
+
+#define PySequence_Fast_GET_ITEM(o, i)\
+     (PyList_Check(o) ? PyList_GET_ITEM(o, i) : PyTuple_GET_ITEM(o, i))
+
+       /*
+	 Return the ith element of o, assuming that o was returned by
+         PySequence_Fast, and that i is within bounds.
        */
 
      DL_IMPORT(int) PySequence_Count Py_PROTO((PyObject *o, PyObject *value));

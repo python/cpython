@@ -1207,6 +1207,26 @@ PySequence_List(v)
 	return type_error("list() argument must be a sequence");
 }
 
+PyObject *
+PySequence_Fast(v, m)
+	PyObject *v;
+	const char* m;
+{
+	if (v == NULL)
+		return null_error();
+
+	if (PyList_Check(v) || PyTuple_Check(v)) {
+		Py_INCREF(v);
+		return v;
+	}
+
+	v = PySequence_Tuple(v);
+	if (v == NULL && PyErr_ExceptionMatches(PyExc_TypeError))
+		return type_error(m);
+
+	return v;
+}
+
 int
 PySequence_Count(s, o)
 	PyObject *s;
