@@ -175,10 +175,11 @@ long
 PyLong_AsLong(vv)
 	PyObject *vv;
 {
+	/* This version by Tim Peters */
 	register PyLongObject *v;
-	long x, prev;
+	unsigned long x, prev;
 	int i, sign;
-	
+
 	if (vv == NULL || !PyLong_Check(vv)) {
 		PyErr_BadInternalCall();
 		return -1;
@@ -194,13 +195,22 @@ PyLong_AsLong(vv)
 	while (--i >= 0) {
 		prev = x;
 		x = (x << SHIFT) + v->ob_digit[i];
-		if ((x >> SHIFT) != prev) {
-			PyErr_SetString(PyExc_OverflowError,
-				"long int too long to convert");
-			return -1;
-		}
+		if ((x >> SHIFT) != prev)
+			goto overflow;
 	}
-	return x * sign;
+	/* Haven't lost any bits, but if the sign bit is set we're in
+	 * trouble *unless* this is the min negative number.  So,
+	 * trouble iff sign bit set && (positive || some bit set other
+	 * than the sign bit).
+	 */
+	if ((long)x < 0 && (sign > 0 || (x << 1) != 0))
+		goto overflow;
+	return (long)x * sign;
+
+ overflow:
+	PyErr_SetString(PyExc_OverflowError,
+			"long int too long to convert");
+	return -1;
 }
 
 /* Get a C long int from a long int object.
