@@ -63,6 +63,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- Tkinter wrappers around Tcl variables now pass objects directly
+  to Tcl, instead of first converting them to strings.
+
 - The .*? pattern in the re module is now special-cased to avoid the
   recursion limit.  (SF patch #720991 -- many thanks to Gary Herron
   and Greg Chapman.)
