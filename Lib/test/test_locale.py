@@ -1,12 +1,17 @@
 from test_support import verbose
 import locale
+import sys
 
 oldlocale = locale.setlocale(locale.LC_NUMERIC)
 
+tloc = "en_US"
+if sys.platform[:3] == "win":
+    tloc = "en"
+
 try:
-    locale.setlocale(locale.LC_NUMERIC, "en_US")
+    locale.setlocale(locale.LC_NUMERIC, tloc)
 except locale.Error:
-    raise ImportError, "test locale en_US not supported"
+    raise ImportError, "test locale %s not supported" % tloc
 
 def testformat(formatstr, value, grouping = 0, output=None):
     if verbose:
