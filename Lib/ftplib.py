@@ -168,7 +168,7 @@ class FTP:
     def putline(self, line):
         line = line + CRLF
         if self.debugging > 1: print '*put*', self.sanitize(line)
-        self.sock.send(line)
+        self.sock.sendall(line)
 
     # Internal: send one command to the server (through putline())
     def putcmd(self, line):
@@ -231,7 +231,7 @@ class FTP:
         tried.  Instead, just send the ABOR command as OOB data.'''
         line = 'ABOR' + CRLF
         if self.debugging > 1: print '*put urgent*', self.sanitize(line)
-        self.sock.send(line, MSG_OOB)
+        self.sock.sendall(line, MSG_OOB)
         resp = self.getmultiline()
         if resp[:3] not in ('426', '226'):
             raise error_proto, resp
@@ -417,7 +417,7 @@ class FTP:
         while 1:
             buf = fp.read(blocksize)
             if not buf: break
-            conn.send(buf)
+            conn.sendall(buf)
         conn.close()
         return self.voidresp()
 
@@ -431,7 +431,7 @@ class FTP:
             if buf[-2:] != CRLF:
                 if buf[-1] in CRLF: buf = buf[:-1]
                 buf = buf + CRLF
-            conn.send(buf)
+            conn.sendall(buf)
         conn.close()
         return self.voidresp()
 

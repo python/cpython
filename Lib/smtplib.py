@@ -290,9 +290,7 @@ class SMTP:
         if self.debuglevel > 0: print 'send:', `str`
         if self.sock:
             try:
-                sendptr = 0
-                while sendptr < len(str):
-                    sendptr = sendptr + self.sock.send(str[sendptr:])
+                self.sock.sendall(str)
             except socket.error:
                 self.close()
                 raise SMTPServerDisconnected('Server not connected')
