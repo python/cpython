@@ -29,6 +29,10 @@ Library
 - decimal.py now only uses signals in the spec.  The other conditions are
   no longer part of the public API.
 
+- codecs module now has two new generic APIs: encode() and decode()
+  which don't restrict the return types (unlike the unicode and
+  string methods of the same name).
+
 Tools/Demos
 -----------
 
