@@ -2081,6 +2081,8 @@ def pickles():
 
     for p in pickle, cPickle:
         for bin in 0, 1:
+            if verbose:
+                print p.__name__, ["text", "binary"][bin]
 
             for cls in C, C1, C2:
                 s = p.dumps(cls, bin)
@@ -2101,24 +2103,26 @@ def pickles():
                 print "a = x =", a
                 print "b = y =", b
 
-        # Testing copy.deepcopy()
-        import copy
-        for cls in C, C1, C2:
-            cls2 = copy.deepcopy(cls)
-            verify(cls2 is cls)
+    # Testing copy.deepcopy()
+    if verbose:
+        print "deepcopy"
+    import copy
+    for cls in C, C1, C2:
+        cls2 = copy.deepcopy(cls)
+        verify(cls2 is cls)
 
-        a = C1(1, 2); a.append(42); a.append(24)
-        b = C2("hello", "world", 42)
-        x, y = copy.deepcopy((a, b))
-        assert x.__class__ == a.__class__
-        assert sorteditems(x.__dict__) == sorteditems(a.__dict__)
-        assert y.__class__ == b.__class__
-        assert sorteditems(y.__dict__) == sorteditems(b.__dict__)
-        assert `x` == `a`
-        assert `y` == `b`
-        if verbose:
-            print "a = x =", a
-            print "b = y =", b
+    a = C1(1, 2); a.append(42); a.append(24)
+    b = C2("hello", "world", 42)
+    x, y = copy.deepcopy((a, b))
+    assert x.__class__ == a.__class__
+    assert sorteditems(x.__dict__) == sorteditems(a.__dict__)
+    assert y.__class__ == b.__class__
+    assert sorteditems(y.__dict__) == sorteditems(b.__dict__)
+    assert `x` == `a`
+    assert `y` == `b`
+    if verbose:
+        print "a = x =", a
+        print "b = y =", b
 
 def copies():
     if verbose: print "Testing copy.copy() and copy.deepcopy()..."
