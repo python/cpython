@@ -1,69 +1,64 @@
-This is Python release 1.5 alpha 3
+This is Python release 1.5 alpha 4
 ==================================
 
 ******************************************
 *** RELEASE RESTRICTED TO PSA MEMBERS! ***
 ******************************************
 
+
 What's new in this release?
 ---------------------------
 
-Too much has changed to list it all here.  There's a long list of
-changes in Misc/NEWS.  That's still not complete, but it's getting
-there...  I'm working my way through a year of change logs to extract
-meaningful descriptions of all but the most insignificant changes.
+Too much has changed to list it all here.  There's a loooong list of
+changes in Misc/NEWS.  This file is now *complete*: it has all changes
+made since 1.4 (all changes worth mentioning, anyway).  The complete
+list of changes since 1.5a4 is presented at the end of the file.  (It
+could still use a better organization.  Want to volunteer to add
+better structor or convert it to HTML?)
 
-Here are the most important changes since 1.5a2:
+  - There's support in the readline module to change bindings and
+  write your own command completer in Python.  An example completer is
+  in rlcompleter.py.
 
-  - The new "re" module is here (still very experimental).  This is a
-  new regular expression package that uses Perl syntax and solves some
-  thread-safeness problems with the matching interface.
+  - The new re module is here.  It is based on Philip Hazel's pcre
+  code; the Python interfaces were put together by Andrew Kuchling.
+  The regex module is declared obsolete.  (The previous re
+  implementation, obsolete though it is, is still available as
+  re1.py, as a keepsake.)
 
-  - In support of the re module, a new form of string literals is
-  introduced, "raw strings": e.g. r"\n" is equal to "\\n".
+  - All standard exceptions and most exceptions defined in standard
+  extension modules are now classes.  Use python -X to revert back to
+  string exceptions.  See
+    http://grail.cnri.reston.va.us/python/essays/stdexceptions.html
+  for more info.
 
-  - Many previously undocumented modules are now documented; some are
-  now officially obsolete or deprecated.
+  - Sequence assignments no longer require exact matching of the type
+  of sequence on the left- and right-hand side.  For example
+    (a, b, c) = [1, 2, 3]
+  is now legal.  (The lengths must still match exactly.)
 
-  - The build process now builds a single library (libpython1.5.a)
-  which contains everything except for the main() entry point.  This
-  makes life much easier for applications that embed Python.
+  - dict.get(key, default) returns dict[key] if it exists, and default
+  otherwise; default defaults to None.
 
-  - GNU readline is now configured as an extension module.
+  - Class objects now have a __module__ attribute giving the module
+  name in which they were defined.
 
-  - There is much better support for embedding Python in applications
-  that use threads.  Such applications can now create multiple
-  interpreter instances if they like to.  Embedding applications can
-  also uninitialize or reinitialize Python, and explicitly manipulate
-  the global lock.
+  - There is now built-in support for importing hierarchical module
+  names (e.g. "import spam.ham.eggs"); ni is declared obsolete.  Note
+  that the built-in package support is somewhat simpler (no __ and
+  __domain__) and differs in one crucial aspect: __init__.py is loaded
+  in the package's namespace instead of as a submodule.  See
+    http://grail.cnri.reston.va.us/python/essays/packages.html
+  for more info.
 
-  - Tk 8.0b2 is supported.  Support for Tk 4.0 is dropped (4.1 and
-  higher are still supported).
-
-  - New Tk dialog modules by Fredrik Lundh: tkColorChooser.py,
-  tkCommonDialog.py, tkMessageBox.py, tkFileDialog.py,
-  tkSimpleDialog.py.
-
-  - I've redone many aspects of the Windows version -- e.g. sys.path
-  is set more like it is done on Unix, there's a new module msvcrt
-  which exports a bunch of MS VC runtime functions like setmode() and
-  kbhit(), and there are new project files for DevStudio VC++ 5.0.
-
-  - Some new speedups, e.g. inlined some opcodes for int arguments.
-
-  - All known leaks have been plugged.
-
-  - New dictionary d.update(e): for k, v in e.items(): d[k] = v.
-
-  - New strategy for clearing modules: globals whose name starts with
-  a single underscore are deleted first.
-
-  - Comparisons can now raise exceptions.
-
-  - Metaclasses can now be programmed in Python (see Misc/NEWS, search
-  for "corollary").
-
-  - New tools faqwiz and webchecker included.
+  - A site can append items to the end of the default sys.path by
+  placing directory names in files named *.pth in either
+  $prefix/lib/site-python/ or $prefix/lib/python1.5/site-packages/.
+  This is implemented in the module site.py which is now loaded by
+  default at the end of initialization; use python -S to skip this.
+  See
+    http://grail.cnri.reston.va.us/python/essays/packages.html
+  for more info.
 
 Other important changes, if this is the first release you see since
 1.4:
@@ -73,13 +68,33 @@ Other important changes, if this is the first release you see since
 
   - There's an assert statement.
 
-  - There's a -O option that removes SET_LINENO instructions, assert
-  statements and code prefixed with ``if __debug__: ...''.
+  - In support of the re module, a new form of string literals is
+  introduced, "raw strings": e.g. r"\n" is equal to "\\n".
+
+  - Comparisons can now raise exceptions.
+
+  - New dictionary methods: .clear(), .update(), .copy().
 
   - It's much smarter about the initial value for sys.path; you can
   control it easier using $PYTHONHOME (see the usage message, e.g. try
   ``python -h'').  In most situations, the interpreter can be
   installed at an arbitrary location without having to recompile.
+
+  - The infamous killer joke, ehh, metaclass support, is now
+  available.  See Demo/metaclasses/ for more info.
+
+  - The build process now builds a single library (libpython1.5.a)
+  which contains everything except for the main() entry point.  This
+  makes life much easier for applications that embed Python.
+
+  - Much better support for embedding, including threads, multiple
+  interpreters(!), uninitialization, and access to the global
+  interpreter lock.
+
+  - There's a -O option that removes SET_LINENO instructions, assert
+  statements and code prefixed with ``if __debug__: ...''.  (It still
+  only makes a few percent difference, so don't get all worked up
+  about this.)
 
   - The Grand Renaming is completed: all linker-visible symbols
   defined by Python now have a "Py" or "_Py" prefix, and the same is
@@ -92,9 +107,22 @@ What is Python anyway?
 ----------------------
 
 Python is an interpreted object-oriented programming language, and is
-often compared to Tcl, Perl, Java or Scheme.  For a quick summary of
-what Python can mean for a UNIX/C programmer, read Misc/BLURB.LUTZ.
-If you have web access, point your browser to http://www.python.org.
+often compared to Tcl, Perl, Java or Scheme.  To find out more, point
+your browser to http://www.python.org/.
+
+
+A modest plug
+-------------
+
+************************************************************************
+* Without your support, I won't be able to continue to work on Python! *
+************************************************************************
+
+If you use Python, please consider joining the Python Software
+Activity (PSA).  See http://www.python.org/psa/.
+
+Organizations that make heavy use of Python are especially encouraged
+to become corporate members!
 
 
 How do I learn Python?
@@ -103,13 +131,15 @@ How do I learn Python?
 The official tutorial is still a good place to start (in the Doc
 directory as tut.tex; and http://www.python.org/doc/tut/tut.html).
 Aaron Watters wrote a second tutorial, that may be more accessible for
-some: http://www.wcmh.com/uworld/archives/95/tutorial/005.html.
+some: http://www.wcmh.com/uworld/archives/95/tutorial/005.html.  Both
+tutorials (as well as most other sources) assume that you already know
+how to program -- if you'd like to write "Python for Dummies", I know
+a publisher who would like to talk to you...
 
 There are now also several books on Python.  While these are still
-based on Python 1.3 or 1.4, the language is so stable now that you'd
-be hard pressed to find places where the books are out of date.  The
-first two books, both first published in October 1996 and both
-including a CD-ROM, form excellent companions to each other:
+based on Python 1.3 or 1.4, the information in them is still 99%
+correct.  The first two books, both first published in October 1996
+and both including a CD-ROM, form excellent companions to each other:
 
 	Internet Programming with Python
 	by Aaron Watters, Guido van Rossum, and James Ahlstrom
@@ -121,7 +151,7 @@ including a CD-ROM, form excellent companions to each other:
 	O'Reilly & Associates
 	ISBN: 1-56592-197-6
 
-If you prefer to read German, try:
+If you can read German, try:
 
 	Das Python-Buch
 	by Martin von Loewis and Nils Fischbeck
@@ -149,21 +179,6 @@ The Python distribution is *not* affected by the GNU Public Licence
 (GPL).  There are interfaces to some GNU code but these are entirely
 optional and no GNU code is distributed with Python.  For all these
 packages, GPL-free public domain versions also exist.
-
-
-
-A modest plug
-=============
-
-*********************************************************************
-* Without your help, I won't be able to continue to support Python! *
-*********************************************************************
-
-If you use Python, please consider joining the Python Software
-Activity (PSA).  See http://www.python.org/psa/.
-
-Organizations that make heavy use of Python are especially encouraged
-to become corporate members!
 
 
 Build instructions
@@ -214,7 +229,17 @@ not, "make clean" sometimes helps to clean up other inexplicable
 problems as well.  Try it before sending in a bug report!
 
 If the configure script fails or doesn't seem to find things that
-should be there, inspect the config.log file.
+should be there, inspect the config.log file.  When you fix a
+configure problem, be sure to remove config.cache!
+
+If you get a warning for every file about the -Olimit option being no
+longer supported, you can ignore it.  There's no foolproof way to know
+whether this option is needed; all I can do is test whether it is
+accepted without error.  On some systems, e.g. older SGI compilers, it
+is essential for performance (specifically when compiling ceval.c,
+which has more basic blocks than the default limit of 1000).  If the
+warning bothers you, edit the Makefile to remove "-Olimit 1500" from
+the OPT variable.
 
 
 Platform specific notes
@@ -223,6 +248,11 @@ Platform specific notes
 (Some of these may no longer apply.  If you find you can build Python
 on these platforms without the special directions mentioned here, let
 me know so I can remove them!)
+
+64-bit platforms: The modules audioop, imageop and rgbimg don't work.
+	Don't try to enable them in the Modules/Setup file.  They
+	contain code that is quite wordsize sensitive.  (If you have a
+	fix, let me know!)
 
 Solaris: When using Sun's C compiler with threads, at least on Solaris
 	2.5.1, you need to add the "-mt" compiler option (the simplest
@@ -293,7 +323,9 @@ SGI:	SGI's standard "make" utility (/bin/make or /usr/bin/make)
 	does not check whether a command actually changed the file it
 	is supposed to build.  This means that whenever you say "make"
 	it will redo the link step.  The remedy is to use SGI's much
-	smarter "smake " utility (/usr/bin/smake), or GNU make.
+	smarter "smake " utility (/usr/sbin/smake), or GNU make.  If
+	you set the first line of the Makefile to #!/usr/sbin/smake
+	smake will be invoked by make (likewise for GNU make).
 
 
 Configuring additional built-in modules
@@ -592,10 +624,15 @@ http://www.python.org/doc/FAQ.html) for more info.
 Emacs mode
 ----------
 
-There's an excellent Emacs editing mode for Python code; see the file 
-Misc/python-mode.el.  Originally written by Tim Peters, it is now 
-maintained by Barry Warsaw <bwarsaw@cnri.reston.va.us>.  The latest
-version is online at ftp://ftp.python.org/pub/emacs/python-mode.el.
+There's an excellent Emacs editing mode for Python code; see the file
+Misc/python-mode.el.  Originally written by the famous Tim Peters, it
+is now maintained by the equally famous Barry Warsaw
+<bwarsaw@cnri.reston.va.us>.  The latest version is online at
+ftp://ftp.python.org/pub/emacs/python-mode.el.  As you might expect of
+Barry (and even if you don't know what the heck I'm talking about :-),
+a configuration file for his cc-mode.el which selects the style used
+throughout most Python C source files is also provided; see the file
+Misc/ccpy-style.el.
 
 
 Web site
@@ -609,7 +646,7 @@ that's close you you.
 Ftp site
 --------
 
-Python's own ftp site is ftp://ftp.python.org/pub/python.  There are
+Python's own ftp site is ftp://ftp.python.org/pub/python/.  There are
 numerous mirrors; see http://www.python.org/python/Mirrors.html for a
 list of mirror sites.
 
@@ -628,7 +665,7 @@ no LISTPROC or Majordomo commands, please, and please be patient --
 normal turn-around time is about one working day.)
 
 The Python web site contains a search form that lets you search the
-newsgroup archives (or the web site itself).  Click on the "search"
+newsgroup archives (and the web site itself).  Click on the "search"
 link in the banner menu on any page of http://www.python.org/.
 
 
@@ -638,7 +675,8 @@ Bug reports
 Bugs are best reported to the comp.lang.python newsgroup or the Python
 mailing list -- see the section "Newsgroup and mailing list" above.
 Before posting, check the newsgroup archives (see above) to see if
-your bug has already been reported!
+your bug has already been reported!  If you don't want to go public,
+send them to me <guido@python.org>.
 
 
 Questions
@@ -647,7 +685,10 @@ Questions
 For help, if you can't find it in the manuals or on the web site, it's
 best to post to the comp.lang.python or the Python mailing list (see
 above).  If you specifically don't want to involve the newsgroup or
-mailing list, send questions to python-help@python.org.
+mailing list, send questions to <python-help@python.org> (a group of
+volunteers which does *not* include me).  Because of my work and email
+volume, I'm often be slow in answering questions sent to me directly;
+I prefer to answer questions posted to the newsgroup.
 
 
 The Tk interface
@@ -655,10 +696,10 @@ The Tk interface
 
 Tk (the user interface component of John Ousterhout's Tcl language) is
 also usable from Python.  Since this requires that you first build and
-install Tcl/Tk, the Tk interface is not enabled by default.  It works
-with Tcl 7.5 and Tk 4.1 as well as with Tcl 7.4 and Tk 4.0.  I didn't
-have the time to test it with Tcl 7.6 and Tk 4.2 yet, but it might
-well work.
+install Tcl/Tk, the Tk interface is not enabled by default.  Python
+supports all Tcl/Tk versions from version 7.5/4.1 through 8.0 (and it
+is expected that it will also work with newer versions).  Tcl/Tk
+7.4/4.0 is no longer supported.
 
 See http://www.sunlabs.com/research/tcl/ for more info on where to get
 Tcl/Tk.  Also http://sunscript.sun.com/.
@@ -679,6 +720,9 @@ tar file containing a PostScript file) or the on-line version
 http://www.python.org/doc/life-preserver/index.html.  Reading the
 Tkinter.py source will reveal most details on how Tkinter calls are
 translated into Tcl code.
+
+A more recent introduction to Tkinter programming, by Fredrik Lundh,
+is at http://www.pythonware.com/library/tkinter/introduction/index.htm.
 
 There are demos in the Demo/tkinter directory, in the subdirectories
 guido, matt and www (the matt and guido subdirectories have been
@@ -705,21 +749,19 @@ Distribution structure
 Most subdirectories have their own README file.  Most files have
 comments.
 
-BUGS            A list of known bugs (not completely up-to-date)
 Demo/           Demonstration scripts, modules and programs
 Doc/            Documentation (LaTeX sources)
 Grammar/        Input for the parser generator
 Include/        Public header files
 Lib/            Python library modules
 Makefile.in     Source from which config.status creates Makefile
-Misc/           Miscellaneous files
+Misc/           Miscellaneous useful files
 Modules/        Implementation of most built-in modules
 Objects/        Implementation of most built-in object types
 PC/             PC porting files (DOS, Windows, NT, OS/2)
 Parser/         The parser and tokenizer and their input handling
 Python/         The "compiler" and interpreter
 README          The file you're reading now
-TODO            A list of things that could be done (not up-to-date)
 Tools/          Some useful programs written in Python
 acconfig.h      Additional input for the autoheader program
 config.h.in     Source from which config.status creates config.h
@@ -733,8 +775,9 @@ the configuration and build processes:
 Makefile        Build rules
 config.cache    cache of configuration variables
 config.h        Configuration header
-config.log      log from last configure run
-config.status   status from last run of configure script
+config.log      Log from last configure run
+config.status   Status from last run of configure script
+libpython1.5.a	The library archive
 python          The executable interpreter
 tags, TAGS      Tags files for vi and Emacs
 
