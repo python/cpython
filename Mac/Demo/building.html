@@ -90,11 +90,11 @@ you need:
 
 <UL>
 
-<LI> Tcl and Tk can be obtained from <A
-HREF="ftp://ftp.smli.com/pub/tcl/mac/">ftp://ftp.smli.com/pub/tcl/mac/</A>.
-The current distributions, Tcl 8.0p2 and Tk 8.0p2 need a bit of work,
-see the section on <A HREF="#tcltk">building Tcl/Tk Python</A>
-below. Get the "full source" distribution, which includes MoreFiles.
+<LI> Tcl and Tk are in a sad state on the Mac, the standard source distributions
+simply don't compile, so I have created a distribution especially for use
+with MacPython. 
+See the section on <A HREF="#tcltk">building Tcl/Tk Python</A>
+below.
 
 <LI> Waste, a TextEdit replacement written by Marco Piovanelli, <A
 HREF="mailto:piovanel@kagi.com">&lt;piovanel@kagi.com&gt;</A>.  Python
@@ -181,24 +181,24 @@ static 68K, CFM68K or PPC you can skip building the other libraries.
 
 <H2><A NAME="tcltk">Building Tcl/Tk</H2>
 
-You need to make some minor changes to the Tcl/Tk 8.0
-distribution. You should make the CW Pro projects (in the mac subfolders).
-<UL>
+The Tcl/Tk 8.3.0 source distribution does not work on the Mac. I have created
+an archive of the sources that I used to build _tkinter for MacPython,
+you can obtain this from <a 
+href="ftp://ftp.cwi.nl/pub/jack/python/mac/tcltk830src-for-python.sit">
+ftp://ftp.cwi.nl/pub/jack/python/mac/tcltk830src-for-python.sit</a>. Only the
+libraries needed to build _tkinter for PPC have been fixed. <P>
 
-<LI> There are no cfm68k targets. You make these by copying the 68k targets,
-setting the "68k target" to "cfm68k library" and changing the output filename,
-and changing the prefix
-header filename in the C/C++ settings panel to "MW_???HeaderCFM68K".
-
-<LI> I had to add Search.c (from MoreFiles) to the tcl library projects. I don't
-understand why this is, but it seemed to cure the problems I had.
-
-<LI> Note that if you use a different release of Tcl and Tk than the ones
+Note that if you use a different release of Tcl and Tk than the ones
 I have used you may have to adapt the Python <code>tkresources.rsrc</code> file.
 This is easiest done by building <code>SimpleTk</code> and copying the TEXT, ICON
 and CRSR resources from it to <code>tkresources.rsrc</code>. This allows
 the <code>_tkinter</code> module to work without an installed Tk/Tcl on your
-machine.
+machine. <P>
+
+Also note that the <code>_tkinter.ppc.slb</code> that is normally distributed
+in the <code>PlugIns</code> folder is the one from the Imaging extension,
+which has some extra features needed by PIL (and which features should not
+hinder normal operation).
 
 </UL>
 
@@ -454,6 +454,11 @@ based on the filename extension. In the maccvs preferences you should
 also set (in the "binary files" section) "use mac encoding:
 applesingle" and (in the "text files" section) "use ISO latin 1
 conversion". <p>
+
+It is also a good idea to disable Quicktime Exchange in the Quicktime
+control panel. Quicktime Exchange will magically map some extensions to
+filetypes, and this can seriously hinder you if, for instance, <code>.bmp</code>
+is not a Windows bitmap file. <p>
 
 The machine-independent Python sources are checked out from the main
 Python CVS archive, see the <a
