@@ -840,7 +840,10 @@ parsestr(s)
 	char *p;
 	char *end;
 	int c;
-	int quote = *s;
+	int first = *s;
+	int quote = first;
+	if (isalpha(quote) || quote == '_')
+		quote = *++s;
 	if (quote != '\'' && quote != '\"') {
 		err_badcall();
 		return NULL;
@@ -859,7 +862,7 @@ parsestr(s)
 			return NULL;
 		}
 	}
-	if (strchr(s, '\\') == NULL)
+	if (first != quote || strchr(s, '\\') == NULL)
 		return newsizedstringobject(s, len);
 	v = newsizedstringobject((char *)NULL, len);
 	p = buf = getstringvalue(v);
@@ -1903,7 +1906,7 @@ com_expr_stmt(c, n)
 {
 	REQ(n, expr_stmt); /* testlist ('=' testlist)* */
 	/* Forget it if we have just a doc string here */
-	if (NCH(n) == 1 && get_rawdocstring(n) != NULL)
+	if (!c->c_interactive && NCH(n) == 1 && get_rawdocstring(n) != NULL)
 		return;
 	com_node(c, CHILD(n, NCH(n)-1));
 	if (NCH(n) == 1) {
