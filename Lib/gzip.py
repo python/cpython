@@ -64,6 +64,7 @@ class GzipFile:
             raise ValueError, "Mode " + mode + " not supported"
 
         self.fileobj = fileobj
+        self.offset = 0
 
         if self.mode == WRITE:
             self._write_gzip_header()
@@ -138,6 +139,7 @@ class GzipFile:
             self.size = self.size + len(data)
             self.crc = zlib.crc32(data, self.crc)
             self.fileobj.write( self.compress.compress(data) )
+            self.offset += len(data)
 
     def writelines(self,lines):
         self.write(" ".join(lines))
@@ -167,11 +169,13 @@ class GzipFile:
         self.extrabuf = self.extrabuf[size:]
         self.extrasize = self.extrasize - size
 
+        self.offset += size
         return chunk
 
     def _unread(self, buf):
         self.extrabuf = buf + self.extrabuf
         self.extrasize = len(buf) + self.extrasize
+        self.offset -= len(buf)
 
     def _read(self, size=1024):
         if self.fileobj is None: raise EOFError, "Reached EOF"
@@ -185,7 +189,6 @@ class GzipFile:
             pos = self.fileobj.tell()   # Save current position
             self.fileobj.seek(0, 2)     # Seek to end of file
             if pos == self.fileobj.tell():
-                self.fileobj = None
                 raise EOFError, "Reached EOF"
             else:
                 self.fileobj.seek( pos ) # Return to original position
@@ -204,7 +207,6 @@ class GzipFile:
         if buf == "":
             uncompress = self.decompress.flush()
             self._read_eof()
-            self.fileobj = None
             self._add_read_data( uncompress )
             raise EOFError, 'Reached EOF'
 
@@ -269,6 +271,36 @@ class GzipFile:
 
     def isatty(self):
         return 0
+
+    def tell(self):
+        return self.offset
+
+    def rewind(self):
+        '''Return the uncompressed stream file position indicator to the
+        beginning of the file''' 
+        if self.mode != READ:
+            raise IOError("Can't rewind in write mode")
+        self.fileobj.seek(0)
+        self._new_member = 1
+        self.extrabuf = ""
+        self.extrasize = 0
+        self.offset = 0
+
+    def seek(self, offset):
+        if self.mode == WRITE:
+            if offset < self.offset:
+                raise IOError('Negative seek in write mode')
+            count = offset - self.offset
+            for i in range(count/1024): 
+                f.write(1024*'\0')
+            self.write((count%1024)*'\0')
+        elif self.mode == READ:
+            if offset < self.offset:
+                # for negative seek, rewind and do positive seek
+                self.rewind()
+            count = offset - self.offset
+            for i in range(count/1024): self.read(1024)
+            self.read(count % 1024)
 
     def readline(self, size=-1):
         if size < 0: size = sys.maxint
