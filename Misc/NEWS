@@ -90,8 +90,7 @@ Library
 
 - sets.py now runs under Py2.2.  In addition, the argument restrictions
   for most set methods (but not the operators) have been relaxed to
-  allow any iterable.  Also the Set.update() has been deprecated because
-  it duplicates Set.union_update().
+  allow any iterable.
 
 - Bug #801342:  random.sample() now accepts a Set as a possible argument.
   Previously, it insisted that the population argument be indexable.
