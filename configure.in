@@ -793,6 +793,7 @@ AC_CHECK_FUNC(gethostbyname_r, [
 
     (void) gethostbyname_r(name, he, buffer, buflen, &res, &h_errnop)
   ], [
+    AC_DEFINE(HAVE_GETHOSTBYNAME_R)
     AC_DEFINE(HAVE_GETHOSTBYNAME_R_6_ARG)
     AC_MSG_RESULT(yes)
   ], [
@@ -809,6 +810,7 @@ AC_CHECK_FUNC(gethostbyname_r, [
 
       (void) gethostbyname_r(name, he, buffer, buflen, &h_errnop)
     ], [
+      AC_DEFINE(HAVE_GETHOSTBYNAME_R)
       AC_DEFINE(HAVE_GETHOSTBYNAME_R_5_ARG)
       AC_MSG_RESULT(yes)
     ], [
@@ -823,6 +825,7 @@ AC_CHECK_FUNC(gethostbyname_r, [
 
         (void) gethostbyname_r(name, he, &data);
       ], [
+        AC_DEFINE(HAVE_GETHOSTBYNAME_R)
         AC_DEFINE(HAVE_GETHOSTBYNAME_R_3_ARG)
         AC_MSG_RESULT(yes)
       ], [
@@ -837,6 +840,7 @@ AC_CHECK_FUNC(gethostbyname_r, [
 AC_SUBST(HAVE_GETHOSTBYNAME_R_6_ARG)
 AC_SUBST(HAVE_GETHOSTBYNAME_R_5_ARG)
 AC_SUBST(HAVE_GETHOSTBYNAME_R_3_ARG)
+AC_SUBST(HAVE_GETHOSTBYNAME_R)
 AC_SUBST(HAVE_GETHOSTBYNAME)
 
 # checks for system services
