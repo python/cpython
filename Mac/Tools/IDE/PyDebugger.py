@@ -153,7 +153,7 @@ class Debugger(bdb.Bdb):
 		browserpanes.globals.browser = PyBrowser.BrowserWidget((0, 16, 0, 0))
 		
 		w.panes.bottom = bottom = W.Group(None)
-		bottom.src = src = W.Group((0, 52, 0, 0))
+		bottom.src = src = W.Group((0, 64, 0, 0))
 		source = SourceViewer((1, 1, -15, -15), readonly = 1, debugger = self)
 		src.optionsmenu = W.PopupMenu((-16, 0, 16, 16), [])
 		src.optionsmenu.bind('<click>', self.makeoptionsmenu)
@@ -164,10 +164,10 @@ class Debugger(bdb.Bdb):
 		src.frame = W.Frame((0, 0, -15, -15))
 		
 		bottom.tracingmonitor = TracingMonitor((0, 23, 6, 6))
-		bottom.state = W.TextBox((12, 20, 0, 16), self.reason)
+		bottom.state = W.TextBox((12, 24, 0, 16), self.reason)
 		
-		bottom.srctitle = W.TextBox((12, 36, 0, 14))
-		bottom.buttons = buttons = W.Group((12, 0, 0, 16))
+		bottom.srctitle = W.TextBox((12, 44, 0, 16))
+		bottom.buttons = buttons = W.Group((12, 0, 0, 20))
 		
 		buttons.runbutton = W.Button((0, 0, 50, 16), "Run", self.do_run)
 		buttons.stopbutton = W.Button((58, 0, 50, 16), "Stop", self.do_stop)
