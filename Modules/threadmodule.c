@@ -32,7 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 /* Thread module */
 /* Interface to Sjoerd's portable C thread library */
 
-#include "allobjects.h"
+#include "Python.h"
 
 #ifndef WITH_THREAD
 Error!  The rest of Python is not compiled with thread support.
@@ -41,25 +41,25 @@ Rerun configure, adding a --with-thread option.
 
 #include "thread.h"
 
-extern int threads_started;
+extern int _PyThread_Started;
 
-static object *ThreadError;
+static PyObject *ThreadError;
 
 
 /* Lock objects */
 
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	type_lock lock_lock;
 } lockobject;
 
-staticforward typeobject Locktype;
+staticforward PyTypeObject Locktype;
 
 #define is_lockobject(v)		((v)->ob_type == &Locktype)
 
 type_lock
 getlocklock(lock)
-	object *lock;
+	PyObject *lock;
 {
 	if (lock == NULL || !is_lockobject(lock))
 		return NULL;
@@ -71,14 +71,14 @@ static lockobject *
 newlockobject()
 {
 	lockobject *self;
-	self = NEWOBJ(lockobject, &Locktype);
+	self = PyObject_NEW(lockobject, &Locktype);
 	if (self == NULL)
 		return NULL;
 	self->lock_lock = allocate_lock();
 	if (self->lock_lock == NULL) {
-		DEL(self);
+		PyMem_DEL(self);
 		self = NULL;
-		err_setstr(ThreadError, "can't allocate lock");
+		PyErr_SetString(ThreadError, "can't allocate lock");
 	}
 	return self;
 }
@@ -92,90 +92,90 @@ lock_dealloc(self)
 	release_lock(self->lock_lock);
 	
 	free_lock(self->lock_lock);
-	DEL(self);
+	PyMem_DEL(self);
 }
 
-static object *
+static PyObject *
 lock_acquire_lock(self, args)
 	lockobject *self;
-	object *args;
+	PyObject *args;
 {
 	int i;
 
 	if (args != NULL) {
-		if (!getargs(args, "i", &i))
+		if (!PyArg_Parse(args, "i", &i))
 			return NULL;
 	}
 	else
 		i = 1;
 
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	i = acquire_lock(self->lock_lock, i);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 
 	if (args == NULL) {
-		INCREF(None);
-		return None;
+		Py_INCREF(Py_None);
+		return Py_None;
 	}
 	else
-		return newintobject((long)i);
+		return PyInt_FromLong((long)i);
 }
 
-static object *
+static PyObject *
 lock_release_lock(self, args)
 	lockobject *self;
-	object *args;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 
 	/* Sanity check: the lock must be locked */
 	if (acquire_lock(self->lock_lock, 0)) {
 		release_lock(self->lock_lock);
-		err_setstr(ThreadError, "release unlocked lock");
+		PyErr_SetString(ThreadError, "release unlocked lock");
 		return NULL;
 	}
 
 	release_lock(self->lock_lock);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 lock_locked_lock(self, args)
 	lockobject *self;
-	object *args;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 
 	if (acquire_lock(self->lock_lock, 0)) {
 		release_lock(self->lock_lock);
-		return newintobject(0L);
+		return PyInt_FromLong(0L);
 	}
-	return newintobject(1L);
+	return PyInt_FromLong(1L);
 }
 
-static struct methodlist lock_methods[] = {
-	{"acquire_lock",	(method)lock_acquire_lock},
-	{"acquire",		(method)lock_acquire_lock},
-	{"release_lock",	(method)lock_release_lock},
-	{"release",		(method)lock_release_lock},
-	{"locked_lock",		(method)lock_locked_lock},
-	{"locked",		(method)lock_locked_lock},
+static PyMethodDef lock_methods[] = {
+	{"acquire_lock",	(PyCFunction)lock_acquire_lock},
+	{"acquire",		(PyCFunction)lock_acquire_lock},
+	{"release_lock",	(PyCFunction)lock_release_lock},
+	{"release",		(PyCFunction)lock_release_lock},
+	{"locked_lock",		(PyCFunction)lock_locked_lock},
+	{"locked",		(PyCFunction)lock_locked_lock},
 	{NULL,			NULL}		/* sentinel */
 };
 
-static object *
+static PyObject *
 lock_getattr(self, name)
 	lockobject *self;
 	char *name;
 {
-	return findmethod(lock_methods, (object *)self, name);
+	return Py_FindMethod(lock_methods, (PyObject *)self, name);
 }
 
-static typeobject Locktype = {
-	OB_HEAD_INIT(&Typetype)
+static PyTypeObject Locktype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
 	"lock",				/*tp_name*/
 	sizeof(lockobject),		/*tp_size*/
@@ -196,113 +196,113 @@ static void
 t_bootstrap(args_raw)
 	void *args_raw;
 {
-	object *args = (object *) args_raw;
-	object *func, *arg, *res;
+	PyObject *args = (PyObject *) args_raw;
+	PyObject *func, *arg, *res;
 
-	threads_started++;
+	_PyThread_Started++;
 
-	restore_thread((void *)NULL);
-	func = gettupleitem(args, 0);
-	arg = gettupleitem(args, 1);
-	res = call_object(func, arg);
-	DECREF(args); /* Matches the INCREF(args) in thread_start_new_thread */
+	PyEval_RestoreThread((void *)NULL);
+	func = PyTuple_GetItem(args, 0);
+	arg = PyTuple_GetItem(args, 1);
+	res = PyEval_CallObject(func, arg);
+	Py_DECREF(args); /* Matches the INCREF(args) in thread_start_new_thread */
 	if (res == NULL) {
-		if (err_occurred() == SystemExit)
-			err_clear();
+		if (PyErr_Occurred() == PyExc_SystemExit)
+			PyErr_Clear();
 		else {
 			fprintf(stderr, "Unhandled exception in thread:\n");
-			print_error(); /* From pythonmain.c */
+			PyErr_Print(); /* From pythonmain.c */
 		}
 	}
 	else
-		DECREF(res);
-	(void) save_thread(); /* Should always be NULL */
+		Py_DECREF(res);
+	(void) PyEval_SaveThread(); /* Should always be NULL */
 	exit_thread();
 }
 
-static object *
+static PyObject *
 thread_start_new_thread(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
-	object *func, *arg;
+	PyObject *func, *arg;
 
-	if (!getargs(args, "(OO)", &func, &arg))
+	if (!PyArg_Parse(args, "(OO)", &func, &arg))
 		return NULL;
-	INCREF(args);
+	Py_INCREF(args);
 	/* Initialize the interpreter's stack save/restore mechanism */
-	init_save_thread();
+	PyEval_InitThreads();
 	if (!start_new_thread(t_bootstrap, (void*) args)) {
-		DECREF(args);
-		err_setstr(ThreadError, "can't start new thread\n");
+		Py_DECREF(args);
+		PyErr_SetString(ThreadError, "can't start new thread\n");
 		return NULL;
 	}
 	/* Otherwise the DECREF(args) is done by t_bootstrap */
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 thread_exit_thread(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	err_set(SystemExit);
+	PyErr_SetNone(PyExc_SystemExit);
 	return NULL;
 }
 
 #ifndef NO_EXIT_PROG
-static object *
+static PyObject *
 thread_exit_prog(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	int sts;
-	if (!getargs(args, "i", &sts))
+	if (!PyArg_Parse(args, "i", &sts))
 		return NULL;
-	goaway(sts); /* Calls exit_prog(sts) or _exit_prog(sts) */
+	Py_Exit(sts); /* Calls exit_prog(sts) or _exit_prog(sts) */
 	for (;;) { } /* Should not be reached */
 }
 #endif
 
-static object *
+static PyObject *
 thread_allocate_lock(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	return (object *) newlockobject();
+	return (PyObject *) newlockobject();
 }
 
-static object *
+static PyObject *
 thread_get_ident(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	long ident;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	ident = get_thread_ident();
 	if (ident == -1) {
-		err_setstr(ThreadError, "no current thread ident");
+		PyErr_SetString(ThreadError, "no current thread ident");
 		return NULL;
 	}
-	return newintobject(ident);
+	return PyInt_FromLong(ident);
 }
 
-static struct methodlist thread_methods[] = {
-	{"start_new_thread",	(method)thread_start_new_thread},
-	{"start_new",		(method)thread_start_new_thread},
-	{"allocate_lock",	(method)thread_allocate_lock},
-	{"allocate",		(method)thread_allocate_lock},
-	{"exit_thread",		(method)thread_exit_thread},
-	{"exit",		(method)thread_exit_thread},
-	{"get_ident",		(method)thread_get_ident},
+static PyMethodDef thread_methods[] = {
+	{"start_new_thread",	(PyCFunction)thread_start_new_thread},
+	{"start_new",		(PyCFunction)thread_start_new_thread},
+	{"allocate_lock",	(PyCFunction)thread_allocate_lock},
+	{"allocate",		(PyCFunction)thread_allocate_lock},
+	{"exit_thread",		(PyCFunction)thread_exit_thread},
+	{"exit",		(PyCFunction)thread_exit_thread},
+	{"get_ident",		(PyCFunction)thread_get_ident},
 #ifndef NO_EXIT_PROG
-	{"exit_prog",		(method)thread_exit_prog},
+	{"exit_prog",		(PyCFunction)thread_exit_prog},
 #endif
 	{NULL,			NULL}		/* sentinel */
 };
@@ -313,20 +313,20 @@ static struct methodlist thread_methods[] = {
 void
 initthread()
 {
-	object *m, *d;
+	PyObject *m, *d;
 
 	/* Create the module and add the functions */
-	m = initmodule("thread", thread_methods);
+	m = Py_InitModule("thread", thread_methods);
 
 	/* Add a symbolic constant */
-	d = getmoduledict(m);
-	ThreadError = newstringobject("thread.error");
-	INCREF(ThreadError);
-	dictinsert(d, "error", ThreadError);
+	d = PyModule_GetDict(m);
+	ThreadError = PyString_FromString("thread.error");
+	Py_INCREF(ThreadError);
+	PyDict_SetItemString(d, "error", ThreadError);
 
 	/* Check for errors */
-	if (err_occurred())
-		fatal("can't initialize module thread");
+	if (PyErr_Occurred())
+		Py_FatalError("can't initialize module thread");
 
 	/* Initialize the C thread library */
 	init_thread();
