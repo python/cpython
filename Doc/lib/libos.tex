@@ -1053,7 +1053,8 @@ Availability: Macintosh, \UNIX, Windows.
 \begin{funcdesc}{walk}{top\optional{, topdown\code{=True}}}
 \index{directory!walking}
 \index{directory!traversal}
-\function{walk()} generates the file names in a directory tree.
+\function{walk()} generates the file names in a directory tree, by
+walking the tree either top down or bottom up.
 For each directory in the tree rooted at directory \var{top} (including
 \var{top} itself), it yields a 3-tuple
 \code{(\var{dirpath}, \var{dirnames}, \var{filenames})}.
@@ -1112,6 +1113,22 @@ for root, dirs, files in os.walk('python/Lib/email'):
     if 'CVS' in dirs:
         dirs.remove('CVS')  # don't visit CVS directories
 \end{verbatim}
+
+In the next example, walking the tree bottom up is essential:
+\function{rmdir()} doesn't allow deleting a directory before the
+directory is empty:
+
+\begin{verbatim}
+import os
+from os.path import join
+# Delete everything reachable from the directory named in 'top'.
+for root, dirs, files in os.walk(top, topdown=False):
+    for name in files:
+        os.remove(join(root, name))
+    for name in dirs:
+        os.rmdir(join(root, name))
+\end{verbatim}
+
 \versionadded{2.3}
 \end{funcdesc}
 
