@@ -361,12 +361,18 @@ def _selectoption(d, optionlist, idx):
 		MacOS.SysBeep()
 		return
 	option = optionlist[idx]
-	if type(option) == type(()) and \
-			len(option) > 1:
-		help = option[-1]
+	if type(option) == type(()):
+		if len(option) == 4:
+			help = option[2]
+		elif len(option) > 1:
+			help = option[-1]
+		else:
+			help = ''
 	else:
 		help = ''
 	h = d.GetDialogItemAsControl(ARGV_OPTION_EXPLAIN)
+	if help and len(help) > 250:
+		help = help[:250] + '...'
 	Dlg.SetDialogItemText(h, help)
 	hasvalue = 0
 	if type(option) == type(()):
