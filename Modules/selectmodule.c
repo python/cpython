@@ -635,7 +635,7 @@ PyDoc_STRVAR(module_doc,
 *** IMPORTANT NOTICE ***\n\
 On Windows, only sockets are supported; on Unix, all file descriptors.");
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initselect(void)
 {
 	PyObject *m;

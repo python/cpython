@@ -1051,7 +1051,7 @@ static struct PyMethodDef mmap_functions[] = {
 	{NULL,		NULL}	     /* Sentinel */
 };
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 	initmmap(void)
 {
 	PyObject *dict, *module;

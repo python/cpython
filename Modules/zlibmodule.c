@@ -834,7 +834,7 @@ PyDoc_STRVAR(zlib_module_documentation,
 "Compressor objects support compress() and flush() methods; decompressor\n"
 "objects support decompress() and flush().");
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 PyInit_zlib(void)
 {
     PyObject *m, *ver;

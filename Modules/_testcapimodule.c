@@ -376,7 +376,7 @@ static PyMethodDef TestMethods[] = {
 	{NULL, NULL} /* sentinel */
 };
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 init_testcapi(void)
 {
 	PyObject *m;

@@ -460,7 +460,7 @@ static PyMethodDef unicodedata_functions[] = {
 
 PyDoc_STRVAR(unicodedata_docstring, "unicode character database");
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initunicodedata(void)
 {
     PyObject *m, *v;
