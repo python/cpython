@@ -80,17 +80,13 @@ def main(win):
 
     cx = (curses.COLS - 1) / 2
     cy = curses.LINES / 2
-    if cx > cy:
-        ch = cy
-    else:
-        ch = cx
-    mradius = (3 * cy) / 4
-    hradius = cy / 2
-    sradius = (2 * cy) / 3
+    ch = min( cy-1, int(cx / ASPECT) - 1) 
+    mradius = (3 * ch) / 4
+    hradius = ch / 2
+    sradius = 5 * ch / 6
 
     for i in range(0, 12):
         sangle = (i + 1) * 2.0 * pi / 12.0
-        sradius = 5 * cy / 6
         sdx, sdy = A2XY(sangle, sradius)
 
         stdscr.addstr(cy - sdy, cx + sdx, "%d" % (i + 1))
@@ -98,7 +94,8 @@ def main(win):
     stdscr.addstr(0, 0,
                   "ASCII Clock by Howard Jones <ha.jones@ic.ac.uk>, 1994")
 
-    sradius = 8
+    sradius = max(sradius-4, 8)
+    
     while 1:
         curses.napms(1000)
 
