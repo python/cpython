@@ -22,13 +22,18 @@
 /* #define USE_MAC_SHARED_LIBRARY	/* Enable code to add shared-library resources */
 /* #define USE_MAC_APPLET_SUPPORT	/* Enable code to run a PYC resource */
 /* #define HAVE_DYNAMIC_LOADING		/* Enable dynamically loaded modules */
-#define USE_MALLOC_DEBUG			/* Enable range checking and other malloc debugging */
 /* #define USE_GDBM		/* Include the gdbm module */
 /* #define USE_ZLIB		/* Include the zlib module */
 #define USE_APPEARANCE	/* Enable Appearance support */
+
+#define USE_MSL_MALLOC	/* Disable private malloc. Also disables next two defines */
+#ifndef USE_MSL_MALLOC
+/* #define USE_MALLOC_DEBUG			/* Enable range checking and other malloc debugging */
 #ifdef __powerc
 #define USE_CACHE_ALIGNED 8		/* Align on 32-byte boundaries for 604 */
 #endif
+#endif
+
 #ifdef USE_MSL
 #define MSL_USE_PRECOMPILED_HEADERS 0	/* Don't use precomp headers: we include our own */
 #include <ansi_prefix.mac.h>
