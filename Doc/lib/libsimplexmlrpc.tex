@@ -55,7 +55,8 @@ simple, stand alone XML-RPC servers.
   period character.
 \end{methoddesc}
 
-\begin{methoddesc}[SimpleXMLRPCServer]{register_instance}{instance}
+\begin{methoddesc}[SimpleXMLRPCServer]{register_instance}{instance\optional{,
+                                       allow_dotted_names}}
   Register an object which is used to expose method names which have
   not been registered using \method{register_function()}.  If
   \var{instance} contains a \method{_dispatch()} method, it is called
@@ -67,12 +68,26 @@ simple, stand alone XML-RPC servers.
   The return value from \method{_dispatch()} is returned to the client as
   the result.  If
   \var{instance} does not have a \method{_dispatch()} method, it is
-  searched for an attribute matching the name of the requested method;
+  searched for an attribute matching the name of the requested method.
+
+  If the optional \var{allow_dotted_names} argument is true and the
+  instance does not have a \method{_dispatch()} method, then
   if the requested method name contains periods, each component of the
   method name is searched for individually, with the effect that a
   simple hierarchical search is performed.  The value found from this
   search is then called with the parameters from the request, and the
   return value is passed back to the client.
+
+  \begin{notice}[warning]
+  Enabling the \var{allow_dotted_names} option allows intruders to access
+  your module's global variables and may allow intruders to execute
+  arbitrary code on your machine.  Only use this option on a secure,
+  closed network.
+  \end{notice}
+
+  \versionchanged[\var{allow_dotted_names} was added to plug a security hole;
+  prior versions are insecure]{2.3.5, 2.4.1}
+
 \end{methoddesc}
 
 \begin{methoddesc}{register_introspection_functions}{}
