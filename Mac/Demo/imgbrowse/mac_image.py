@@ -3,6 +3,7 @@ import imgformat
 import Qd
 import time
 import struct
+import MacOS
 
 _fmt_to_mac = {
 	imgformat.macrgb16 : (16, 16, 3, 5),
@@ -13,7 +14,7 @@ def mkpixmap(w, h, fmt, data):
 	fmtinfo = _fmt_to_mac[fmt]
 	
 	rv = struct.pack("lhhhhhhhlllhhhhlll",
-		id(data)+16,
+		id(data)+MacOS.string_id_to_buffer, # HACK HACK!!
 		w*2 + 0x8000,
 		0, 0, h, w,
 		0,
