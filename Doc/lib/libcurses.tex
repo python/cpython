@@ -342,6 +342,18 @@ Returns the value of the environment variable TERM, truncated to 14
 characters.
 \end{funcdesc}
 
+\begin{funcdesc}{typeahead}{fd}
+Specifies that the file descriptor \var{fd} be used for typeahead
+checking.  If \var{fd} is -1, then no typeahead checking is done.
+
+The curses library does ``line-breakout optimization'' by looking for
+typeahead periodically while updating the screen.  If input is found,
+and it is coming from a tty, the current update is postponed until
+refresh or doupdate is called again, allowing faster response to
+commands typed in advance. This function allows specifying a different
+file descriptor for typeahead checking.
+\end{funcdesc}
+
 \begin{funcdesc}{unctrl}{ch}
 Returns a string which is a printable representation of the character
 \var{ch}.  Control characters are displayed as a caret followed by the
@@ -778,6 +790,16 @@ called automatically whenever there is a change in the window.
 \begin{methoddesc}{syncup}{}
 Touches all locations in ancestors of the window that have been changed in 
 the window.  
+\end{methoddesc}
+
+\begin{methoddesc}{timeout}{delay}
+Sets blocking or non-blocking read behaviour for the window.  If
+\var{delay} is negative, blocking read is used, which will wait
+indefinitely for input).  If \var{delay} is zero, then non-blocking
+read is used, and -1 will be returned by \method{getch()} if no input
+is waiting.  If \var{delay} is positive, then \method{getch()} will
+block for \var{delay} milliseconds, and return -1 if there is still no
+input at the end of that time.
 \end{methoddesc}
 
 \begin{methoddesc}{touchline}{start, count}
