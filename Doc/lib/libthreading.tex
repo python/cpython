@@ -40,10 +40,10 @@ threads and threads that have not yet been started.
 \end{funcdesc}
 
 \begin{funcdesc}{Event}{}
-A factory function that returns a new event object.  An event
-manages a flag that can be set to true with the \method{set()} method and
-reset to false with the \method{clear()} method.  The \method{wait()} method blocks
-until the flag is true.
+A factory function that returns a new event object.  An event manages
+a flag that can be set to true with the \method{set()} method and
+reset to false with the \method{clear()} method.  The \method{wait()}
+method blocks until the flag is true.
 \end{funcdesc}
 
 \begin{funcdesc}{Lock}{}
@@ -79,7 +79,8 @@ semaphore is released too many times it's a sign of a bug.  If not given,
 \end{funcdesc}
 
 \begin{classdesc*}{Thread}{}
-A class that represents a thread of control.  This class can be safely subclassed in a limited fashion.
+A class that represents a thread of control.  This class can be safely
+subclassed in a limited fashion.
 \end{classdesc*}
 
 \begin{classdesc*}{Timer}{}
@@ -409,15 +410,15 @@ The use of a bounded semaphore reduces the chance that a programming error
 which causes the semaphore to be released more than it's acquired will go
 undetected.
 
+
 \subsection{Event Objects \label{event-objects}}
 
 This is one of the simplest mechanisms for communication between
-threads: one thread signals an event and one or more other threads
-are waiting for it.
+threads: one thread signals an event and other threads wait for it.
 
 An event object manages an internal flag that can be set to true with
-the \method{set()} method and reset to false with the \method{clear()} method.  The
-\method{wait()} method blocks until the flag is true.
+the \method{set()} method and reset to false with the \method{clear()}
+method.  The \method{wait()} method blocks until the flag is true.
 
 
 \begin{classdesc}{Event}{}
@@ -437,8 +438,8 @@ at all.
 
 \begin{methoddesc}{clear}{}
 Reset the internal flag to false.
-Subsequently, threads calling \method{wait()} will block until \method{set()} is
-called to set the internal flag to true again.
+Subsequently, threads calling \method{wait()} will block until
+\method{set()} is called to set the internal flag to true again.
 \end{methoddesc}
 
 \begin{methoddesc}{wait}{\optional{timeout}}
@@ -542,10 +543,10 @@ separate thread of control.
 Method representing the thread's activity.
 
 You may override this method in a subclass.  The standard
-\method{run()} method invokes the callable object passed to the object's constructor as the
-\var{target} argument, if any, with sequential and keyword
-arguments taken from the \var{args} and \var{kwargs} arguments,
-respectively.
+\method{run()} method invokes the callable object passed to the
+object's constructor as the \var{target} argument, if any, with
+sequential and keyword arguments taken from the \var{args} and
+\var{kwargs} arguments, respectively.
 \end{methoddesc}
 
 \begin{methoddesc}{join}{\optional{timeout}}
@@ -554,8 +555,8 @@ This blocks the calling thread until the thread whose \method{join()}
 method is called terminates -- either normally or through an
 unhandled exception -- or until the optional timeout occurs.
 
-When the \var{timeout} argument is present and not \code{None}, it should
-be a floating point number specifying a timeout for the
+When the \var{timeout} argument is present and not \code{None}, it
+should be a floating point number specifying a timeout for the
 operation in seconds (or fractions thereof).
 
 A thread can be \method{join()}ed many times.
@@ -603,15 +604,16 @@ threads are left.
 
 \subsection{Timer Objects \label{timer-objects}}
 
-This class represents an action that should be run only after a certain amount
-of time has passed --- a timer. \class{Timer} is a subclass of \class{Thread} and
-as such also functions as an example of creating custom threads.
+This class represents an action that should be run only after a
+certain amount of time has passed --- a timer.  \class{Timer} is a
+subclass of \class{Thread} and as such also functions as an example of
+creating custom threads.
 
-Timers are started, as with threads, by calling their \method{start()} method. The
-timer can be stopped (before its action has begun) by calling the
-\method{cancel()} method. The interval the timer will wait before executing
-its action may not be exactly the same as the interval specified by the
-user.
+Timers are started, as with threads, by calling their \method{start()}
+method.  The timer can be stopped (before its action has begun) by
+calling the \method{cancel()} method.  The interval the timer will
+wait before executing its action may not be exactly the same as the
+interval specified by the user.
 
 For example:
 \begin{verbatim}
@@ -628,6 +630,6 @@ keyword arguments \var{kwargs}, after \var{interval} seconds have passed.
 \end{classdesc}
 
 \begin{methoddesc}{cancel}{}
-Stop the timer, and cancel the execution of the timer's action. This will only
-work if the timer is still in its waiting stage.
+Stop the timer, and cancel the execution of the timer's action.  This
+will only work if the timer is still in its waiting stage.
 \end{methoddesc}
