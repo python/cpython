@@ -19,9 +19,36 @@ import addpack
 import aetools
 import AppleEvents
 from Metrowerks_Shell_Suite import Metrowerks_Shell_Suite
-from Required_Suite import Required_Suite 
+from Required_Suite import Required_Suite
+
+import Res
+import Dlg
 
 import mkapplet
+import cfmfile
+
+# Dialog resource. Note that the item numbers should correspond
+# to those in the DITL resource. Also note that the order is important:
+# things are built in this order, so there should be no forward dependencies.
+DIALOG_ID = 512
+
+I_OK=1
+I_CANCEL=2
+
+I_PPC_CORE=3
+I_PPC_PLUGINS=4
+I_PPC_EXTENSIONS=5
+I_68K_CORE=6
+I_68K_PLUGINS=7
+I_68K_EXTENSIONS=8
+I_PPC_FULL=9
+I_PPC_SMALL=10
+I_68K_FULL=11
+I_68K_SMALL=12
+I_FAT=13
+I_APPLETS=14
+
+N_BUTTONS=15
 
 class MwShell(aetools.TalkTo, Metrowerks_Shell_Suite, Required_Suite):
 	pass
@@ -46,7 +73,7 @@ def buildmwproject(top, creator, projects):
 ##	mgr.quit()
 	
 def buildapplet(top, dummy, list):
-	"""Create a PPC python applet"""
+	"""Create python applets"""
 	template = mkapplet.findtemplate()
 	for src in list:
 		if src[-3:] != '.py':
@@ -60,32 +87,55 @@ def buildapplet(top, dummy, list):
 			pass
 		print 'Building applet', dst
 		mkapplet.process(template, src, dst)
+		
+def buildfat(top, dummy, list):
+	"""Build fat binaries"""
+	for dst, src1, src2 in list:
+		dst = os.path.join(top, dst)
+		src1 = os.path.join(top, src1)
+		src2 = os.path.join(top, src2)
+		print 'Building fat binary', dst
+		cfmfile.mergecfmfiles((src1, src2), dst)
+		
+def handle_dialog():
+	"""Handle selection dialog, return list of selected items"""
+	d = Dlg.GetNewDialog(DIALOG_ID, -1)
+	d.SetDialogDefaultItem(I_OK)
+	d.SetDialogCancelItem(I_CANCEL)
+	results = [0]*N_BUTTONS
+	while 1:
+		n = Dlg.ModalDialog(None)
+		if n == I_OK:
+			break
+		if n == I_CANCEL:
+			return []
+		if n < len(results):
+			results[n] = (not results[n])
+			tp, h, rect = d.GetDialogItem(n)
+			h.as_Control().SetControlValue(results[n])
+	rv = []
+	for i in range(len(results)):
+		if results[i]:
+			rv.append(i)
+	return rv
 
 #
 # The build instructions. Entries are (routine, arg, list-of-files)
 # XXXX We could also include the builds for stdwin and such here...
-PPC_INSTRUCTIONS=[
-	(buildmwproject, "CWIE", [
+BUILD_DICT = {
+I_PPC_CORE : (buildmwproject, "CWIE", [
 		":build.macppc.shared:PythonCorePPC.µ",
 		":build.macppc.shared:PythonPPC.µ",
 		":build.macppc.shared:PythonAppletPPC.µ",
-	])
-]
-CFM68K_INSTRUCTIONS=[
-	(buildmwproject, "CWIE", [
+	]),
+
+I_68K_CORE : (buildmwproject, "CWIE", [
 		":build.mac68k.shared:PythonCoreCFM68K.µ",
 		":build.mac68k.shared:PythonCFM68K.µ",
 		":build.mac68k.shared:PythonAppletCFM68K.µ",
-	])
-]
-FAT_INSTRUCTIONS=[
-	(buildmwproject, "CWIE", [
-		":build.macppc.shared:Python.µ",
-		":build.macppc.shared:PythonApplet.µ",
-	])
-]
-PLUGIN_INSTRUCTIONS=[
-	(buildmwproject, "CWIE", [
+	]),
+
+I_PPC_PLUGINS : (buildmwproject, "CWIE", [
 		":PlugIns:ctb.ppc.µ",
 		":PlugIns:gdbm.ppc.µ",
 		":PlugIns:icglue.ppc.µ",
@@ -96,10 +146,9 @@ PLUGIN_INSTRUCTIONS=[
 		":PlugIns:waste.ppc.µ",
 		":PlugIns:_tkinter.ppc.µ",
 		":PlugIns:calldll.ppc.µ",
-	])
-]
-CFM68KPLUGIN_INSTRUCTIONS=[
-	(buildmwproject, "CWIE", [
+	]),
+
+I_68K_PLUGINS : (buildmwproject, "CWIE", [
 		":PlugIns:ctb.CFM68K.µ",
 		":PlugIns:gdbm.CFM68K.µ",
 		":PlugIns:icglue.CFM68K.µ",
@@ -108,62 +157,71 @@ CFM68KPLUGIN_INSTRUCTIONS=[
 		":PlugIns:qtmodules.CFM68K.µ",
 		":PlugIns:waste.CFM68K.µ",
 		":PlugIns:_tkinter.CFM68K.µ",
-	])
-]
-M68K_INSTRUCTIONS=[
-	(buildmwproject, "CWIE", [
+	]),
+
+I_68K_FULL : (buildmwproject, "CWIE", [
 		":build.mac68k.stand:Python68K.µ",
-	])
-]
-PPCSTAND_INSTRUCTIONS=[
-	(buildmwproject, "CWIE", [
+	]),
+	
+I_68K_SMALL : (buildmwproject, "CWIE", [
+		":build.mac68k.stand:Python68Ksmall.µ",
+	]),
+
+I_PPC_FULL : (buildmwproject, "CWIE", [
 		":build.macppc.stand:PythonStandalone.µ",
-	])
-]
-EXTENSION_INSTRUCTIONS=[
-	(buildmwproject, "CWIE", [
+	]),
+
+I_PPC_SMALL : (buildmwproject, "CWIE", [
+		":build.macppc.stand:PythonStandSmall.µ",
+	]),
+
+I_PPC_EXTENSIONS : (buildmwproject, "CWIE", [
 		":Extensions:Imaging:_imaging.ppc.µ",
-		":Extensions:Imaging:_imaging.CFM68K.µ",
 		":Extensions:Imaging:_tkinter.ppc.µ",
-		":Extensions:Imaging:_tkinter.CFM68K.µ",
 		":Extensions:NumPy:numpymodules.ppc.µ",
+	]),
+
+I_68K_EXTENSIONS : (buildmwproject, "CWIE", [
+		":Extensions:Imaging:_imaging.CFM68K.µ",
+		":Extensions:Imaging:_tkinter.CFM68K.µ",
 		":Extensions:NumPy:numpymodules.CFM68K.µ",
-	])
-]
-APPLET_INSTRUCTIONS=[
-	(buildapplet, None, [
+	]),
+
+I_APPLETS : (buildapplet, None, [
 		":Mac:scripts:EditPythonPrefs.py",
 		":Mac:scripts:mkapplet.py",
 		":Mac:scripts:MkPluginAliases.py"
-	])
-]
+	]),
 
-ALLINST=[
-	("PPC shared executable", PPC_INSTRUCTIONS),
-	("PPC plugin modules", PLUGIN_INSTRUCTIONS),
-	("CFM68K shared executable", CFM68K_INSTRUCTIONS),
-	("CFM68K plugin modules", CFM68KPLUGIN_INSTRUCTIONS),
-	("FAT shared executables", FAT_INSTRUCTIONS),
-	("68K standalone executable", M68K_INSTRUCTIONS),
-	("PPC standalone executable", PPCSTAND_INSTRUCTIONS),
-	("Extensions", EXTENSION_INSTRUCTIONS),
-	("Applets", APPLET_INSTRUCTIONS)
-]
+I_FAT : (buildfat, None, [
+			(":Python", ":build.macppc.shared:PythonPPC", 
+						":build.mac68k.shared:PythonCFM68K"),
+			(":PythonApplet", ":build.macppc.shared:PythonAppletPPC",
+							  ":build.mac68k.shared:PythonAppletCFM68K")
+	])
+}
 				
 def main():
+	try:
+		h = Res.OpenResFile('fullbuild.rsrc')
+	except Res.Error:
+		pass	# Assume we already have acces to our own resource
+
 	dir, ok = macfs.GetDirectory('Python source folder:')
 	if not ok:
 		sys.exit(0)
 	dir = dir.as_pathname()
-	INSTRUCTIONS = []
-	for string, inst in ALLINST:
-		answer = EasyDialogs.AskYesNoCancel("Build %s?"%string, 1)
-		if answer < 0:
-			sys.exit(0)
-		if answer:
-			INSTRUCTIONS = INSTRUCTIONS + inst
-	for routine, arg, list in INSTRUCTIONS:
-		routine(dir, arg, list)
+	
+	todo = handle_dialog()
+	
+	instructions = []
+	for i in todo:
+		instructions.append(BUILD_DICT[i])
+		
+	for routine, arg, list in instructions:
+		#routine(dir, arg, list)
+		print routine, dir, arg, list # DBG
+		
 	print "All done!"
 	sys.exit(1)	
 	
