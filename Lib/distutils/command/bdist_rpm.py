@@ -348,31 +348,30 @@ class bdist_rpm (Command):
                 assert len(srpms) == 1, \
                        "unexpected number of SRPM files found: %s" % srpms
                 dist_file = ('bdist_rpm', 'any',
-                             os.path.join(self.dist_dir,
-                                          os.path.basename(srpms[0])))
+                             self._dist_path(srpms[0]))
                 self.distribution.dist_files.append(dist_file)
                 self.move_file(srpms[0], self.dist_dir)
 
             if not self.source_only:
                 rpms = glob.glob(os.path.join(rpm_dir['RPMS'], "*/*.rpm"))
-                debuginfo = glob.glob(os.path.join(rpm_dir['RPMS'], \
+                debuginfo = glob.glob(os.path.join(rpm_dir['RPMS'],
                                                    "*/*debuginfo*.rpm"))
                 if debuginfo:
                     rpms.remove(debuginfo[0])
                 assert len(rpms) == 1, \
                        "unexpected number of RPM files found: %s" % rpms
                 dist_file = ('bdist_rpm', get_python_version(),
-                             os.path.join(self.dist_dir,
-                                          os.path.basename(rpms[0])))
+                             self._dist_path(rpms[0])
                 self.distribution.dist_files.append(dist_file)
                 self.move_file(rpms[0], self.dist_dir)
                 if debuginfo:
                     dist_file = ('bdist_rpm', get_python_version(),
-                                 os.path.join(self.dist_dir,
-                                              os.path.basename(debuginfo[0])))
+                                 self._dist_path(debuginfo[0])
                     self.move_file(debuginfo[0], self.dist_dir)
     # run()
 
+    def _dist_path(self, path):
+        return os.path.join(self.dist_dir, os.path.basename(path))
 
     def _make_spec_file(self):
         """Generate the text of an RPM spec file and return it as a
