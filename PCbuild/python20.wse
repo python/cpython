@@ -139,17 +139,6 @@ item: Custom Dialog Set
       Text Italian=&Avanti >
     end
     item: Push Button
-      Rectangle=105 187 150 202
-      Variable=DISABLED
-      Value=!
-      Create Flags=01010000000000010000000000000000
-      Text=< &Back
-      Text French=< &Retour
-      Text German=< &Zurück
-      Text Spanish=< &Atrás
-      Text Italian=< &Indietro
-    end
-    item: Push Button
       Rectangle=211 186 256 201
       Action=3
       Create Flags=01010000000000010000000000000000
@@ -164,7 +153,7 @@ item: Custom Dialog Set
       Create Flags=01010000000000000000000000000000
       Text=This installation program will install %APPTITLE% on your system.
       Text=
-      Text=Press the Next button to start the installation. You can press the Exit Setup button now if you do not want to install %APPTITLE% at this time.
+      Text=Click the Next button to start the installation. Click the Cancel button now if you do not want to install %APPTITLE% at this time.
       Text French=Ce programme d'installation va installer %APPTITLE%.
       Text French=
       Text French=Cliquez sur le bouton Suite pour démarrer l'installation. Vous pouvez cliquer sur le bouton Quitter l'installation si vous ne voulez pas installer %APPTITLE% tout de suite.
@@ -654,6 +643,16 @@ item: If/While Statement
   Variable=COMPONENTS
   Value=D
   Flags=00001010
+end
+item: Install File
+  Source=%_SRC_%\LICENSE
+  Destination=%MAINDIR%\LICENSE.txt
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\README
+  Destination=%MAINDIR%\README.txt
+  Flags=0000000000000010
 end
 item: Install File
   Source=%_SRC_%\PCbuild\python.exe
