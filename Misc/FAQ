@@ -9,8 +9,8 @@ Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
 Submitted-by: Guido van Rossum <guido@cwi.nl>
-Version: 1.29
-Last-modified: 11 October 1995
+Version: 1.31
+Last-modified: 26 June 1996
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -29,7 +29,7 @@ Author's address:
 Email:  <guido@python.org>, <guido@cnri.reston.va.us>, <guido@cwi.nl>
 
 The latest version of this FAQ is available by anonymous ftp from
-<URL:ftp://ftp.python.org/pub/doc/FAQ>.  It will also be posted
+<URL:ftp://ftp.python.org/pub/python/doc/FAQ>.  It will also be posted
 regularly to the newsgroups comp.answers <URL:news:comp.answers> and
 comp.lang.python <URL:news:comp.lang.python>.
 
@@ -106,16 +106,20 @@ Here's an overview of the questions per chapter:
   3.7. Q. I use VPATH but some targets are built in the source directory.
   3.8. Q. Trouble building or linking with the GNU readline library.
   3.9. Q. Trouble building Python on Linux.
-  3.10. Q. Trouble with prototypes on Ultrix.
-  3.11. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
-  3.12. Q. Other trouble building Python on platform X.
-  3.13. Q. How to configure dynamic loading on Lixux.
-  3.14. Q. Under Solaris 2.x, using GCC, how do I use shared libraries?
-  3.15. Q. Errors when linking with a shared library containing C++ code.
-  3.16. Q. Tk menus or radiobuttons don't work properly in Python 1.2.
-  3.17. Q. I built with _tkintermodule.c enabled but get "Tkinter not found".
-  3.18. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
-  3.19. Q. Tk doesn't work right on DEC Alpha.
+  3.10. Q. Trouble with socket I/O on Linux.
+  3.11. Q. Trouble with prototypes on Ultrix.
+  3.12. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
+  3.13. Q. Other trouble building Python on platform X.
+  3.14. Q. How to configure dynamic loading on Linux.
+  3.15. Q. Under Solaris 2.x, using GCC, how do I use shared libraries?
+  3.16. Q. Errors when linking with a shared library containing C++ code.
+  3.17. Q. Tk menus or radiobuttons don't work properly in Python 1.2.
+  3.18. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
+  3.19. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
+  3.20. Q. Tk doesn't work right on DEC Alpha.
+  3.21. Q. Several common system calls are missing from the posix module.
+  3.22. Q. ImportError: No module named string, on MS Windows.
+  3.23. Q. Core dump on SGI when using the gl module.
 
  4. Programming in Python
   4.1. Q. Is there a source code level debugger with breakpoints, step,
@@ -169,6 +173,8 @@ Here's an overview of the questions per chapter:
   4.31. Q. How do I call a function if I have the arguments in a tuple?
   4.32. Q. How do I enable font-lock-mode for Python in Emacs?
   4.33. Q. Is there an inverse to the format operator (a la C's scanf())?
+  4.34. Q. Can I have Tk events handled while waiting for I/O?
+  4.35. Q. How do I write a function with output parameters (call by reference)?
 
  5. Extending Python
   5.1. Q. Can I create my own functions in C?
@@ -788,12 +794,18 @@ from Lib/test/test_b2.py.
 Apart from this, Python builds and runs fine on most Linux versions
 (if you run into trouble on an old Linux version, consider upgrading).
 
-3.10. Q. Trouble with prototypes on Ultrix.
+3.10. Q. Trouble with socket I/O on Linux.
+
+A. Once you've built Python, use it to run the regen.py script in the
+Lib/linux1 directory.  Apparently the files as distributed don't match
+the system headers on some Linux versions.
+
+3.11. Q. Trouble with prototypes on Ultrix.
 
 A. Ultrix cc seems broken -- use gcc, or edit config.h to #undef
 HAVE_PROTOTYPES.
 
-3.11. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
+3.12. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
 
 A.  (This often manifests itself as a weird error from the
 compileall.py script run by "make libinstall".)
@@ -803,7 +815,7 @@ derived from (an old version of) gcc, its interpretation of the
 "-posix" switch is different; in this particular case, cc is right and
 gcc is wrong.
 
-3.12. Q. Other trouble building Python on platform X.
+3.13. Q. Other trouble building Python on platform X.
 
 A. Please email the details to <guido@cwi.nl> and I'll look into it.
 Please provide as many details as possible.  In particular, if you
@@ -812,7 +824,7 @@ version) you are using it will be difficult for me to figure out what
 is the matter.  If you get a specific error message, please email it
 to me too.
 
-3.13. Q. How to configure dynamic loading on Lixux.
+3.14. Q. How to configure dynamic loading on Linux.
 
 A. There are two answers, depending on whether you are using the new
 ELF object format or not.
@@ -860,23 +872,23 @@ of using dynamic libraries on Linux are:
 
     4) Recompile Python.
 
-3.14. Q. Under Solaris 2.x, using GCC, how do I use shared libraries?
+3.15. Q. Under Solaris 2.x, using GCC, how do I use shared libraries?
 
 A. Use the linker in /usr/ucb/ld, not the GNU linker.  The latter
 cannot create shared libraries.
 
-3.15. Q. Errors when linking with a shared library containing C++ code.
+3.16. Q. Errors when linking with a shared library containing C++ code.
 
 A. Link the main Python binary with C++.  Change the definition of
 LINKCC in Modules/Makefile to be your C++ compiler.  You may have to
 edit config.c slightly to make it compilable with C++.
 
-3.16. Q. Tk menus or radiobuttons don't work properly in Python 1.2.
+3.17. Q. Tk menus or radiobuttons don't work properly in Python 1.2.
 
 A. There's a bug in Tkinter.py; remove ClassType and InstanceType from
 the definition of CallableTypes near the top of Lib/tkinter/Tkinter.py.
 
-3.17. Q. I built with _tkintermodule.c enabled but get "Tkinter not found".
+3.18. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
 
 A. Tkinter.py (note: upper case T) lives in a subdirectory of Lib,
 Lib/tkinter.  If you are using the default module search path, you
@@ -884,7 +896,7 @@ probably didn't enable the line in the Modules/Setup file defining
 TKPATH; if you use the environment variable PYTHONPATH, you'll have to
 add  the proper tkinter subdirectory.
 
-3.18. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
+3.19. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
 
 A. Several things could cause this.  You most likely have a Tk 3.6
 installation that wasn't completely eradicated by the Tk 4.0
@@ -895,7 +907,7 @@ have compiled Python with the old tk.h header file (yes, this actually
 compiles!); you may actually have linked with Tk 3.6 even though Tk
 4.0 is also around.  Similar for Tcl 7.4 vs. Tcl 7.3.
 
-3.19. Q. Tk doesn't work right on DEC Alpha.
+3.20. Q. Tk doesn't work right on DEC Alpha.
 
 A. You probably compiled either Tcl, Tk or Python with gcc.  Don't.
 For this platform, which has 64-bit integers, gcc is known to generate
@@ -906,6 +918,33 @@ fixes the problem, report the bug to the gcc developers instead.  (As
 far as we know, there are no problem with gcc on other platforms --
 the instabilities seem to be restricted to the DEC Alpha.)  See also
 question 3.6.
+
+3.21. Q. Several common system calls are missing from the posix module.
+
+A. Most likely, *all* test compilations run by the configure script
+are failing for some reason or another.  Have a look in config.log to
+see what could be the reason.  A common reason is specifying a
+directory to the --with-readline option that doesn't contain the
+libreadline.a file.
+
+3.22. Q. ImportError: No module named string, on MS Windows.
+
+A. Most likely, your PYTHONPATH environment variable should be set to
+something like:
+
+set PYTHONPATH=c:\python;c:\python\lib;c:\python\scripts
+
+(assuming Python was installed in c:\python)
+
+3.23. Q. Core dump on SGI when using the gl module.
+
+There are conflicts between entry points in the termcap and curses
+libraries and an entry point in the GL library.  There's a hack of a
+fix for the termcap library if it's needed for the GNU readline
+library, but it doesn't work when you're using curses.  Concluding,
+you can't build a Python binary containing both the curses and gl
+modules.
+
 
 
 4. Programming in Python
@@ -1111,10 +1150,10 @@ the module only works on specific platforms (e.g. gl only works on SGI
 machines).
 
 NOTE: if the complaint is about "Tkinter" (upper case T) and you have
-already configured module "_tkinter" (lower case t and underscore),
-the solution is *not* to rename tkinter to Tkinter or vice versa.
-There is probably something wrong with your module search path.  Check
-out the value of sys.path.
+already configured module "tkinter" (lower case t), the solution is
+*not* to rename tkinter to Tkinter or vice versa.  There is probably
+something wrong with your module search path.  Check out the value of
+sys.path.
 
 For X-related modules (Xt and Xm) you will have to do more work: they
 are currently not part of the standard Python distribution.  You will
@@ -1498,9 +1537,9 @@ due to Jack Jansen:
                         # Child
                         os.close(0)
                         os.close(1)
-                        if os.dup(p2cread) <> 0:
+                        if os.dup(p2cread) != 0:
                                 sys.stderr.write('popen2: bad read dup\n')
-                        if os.dup(c2pwrite) <> 1:
+                        if os.dup(c2pwrite) != 1:
                                 sys.stderr.write('popen2: bad write dup\n')
                         for i in range(3, MAXFD):
                                 try:
@@ -1567,6 +1606,95 @@ string.strip() which removes surrounding whitespace from a string).
 
 For more complicated input parsing, regular expressions (see module
 regex) are better suited and more powerful than C's scanf().
+
+4.34. Q. Can I have Tk events handled while waiting for I/O?
+
+A. Yes, and you don't even need threads!  But you'll have to
+restructure your I/O code a bit.  Tk has the equivalent of Xt's
+XtAddInput() call, which allows you to register a callback function
+which will be called from the Tk mainloop when I/O is possible on a
+file descriptor.  Here's what you need:
+
+	from Tkinter import tkinter
+	tkinter.createfilehandler(file, mask, callback)
+
+The file may be a Python file or socket object (actually, anything
+with a fileno() method), or an integer file descriptor.  The mask is
+one of the constants tkinter.READABLE or tkinter.WRITABLE.  The
+callback is called as follows:
+
+	callback(file, mask)
+
+You must unregister the callback when you're done, using
+
+	tkinter.deletefilehandler(file)
+
+Note: since you don't know *how many bytes* are available for reading,
+you can't use the Python file object's read or readline methods, since
+these will insist on reading a predefined number of bytes.  For
+sockets, the recv() or recvfrom() methods will work fine; for other
+files, use os.read(file.fileno(), maxbytecount).
+
+4.35. Q. How do I write a function with output parameters (call by reference)?
+
+A. [Mark Lutz] The thing to remember is that arguments are passed by
+assignment in Python.  Since assignment just creates references to
+objects, there's no alias between an argument name in the caller and
+callee, and so no call-by-reference per se.  But you can simulate it
+in a number of ways:
+
+1) By using global variables; but you probably shouldn't :-)
+
+2) By passing a mutable (changeable in-place) object:
+
+      def func1(a):
+          a[0] = 'new-value'     # 'a' references a mutable list
+          a[1] = a[1] + 1        # changes a shared object
+
+      args = ['old-value', 99]
+      func1(args)
+      print args[0], args[1]     # output: new-value 100
+
+3) By return a tuple, holding the final values of arguments:
+
+      def func2(a, b):
+          a = 'new-value'        # a and b are local names
+          b = b + 1              # assigned to new objects
+          return a, b            # return new values
+
+      x, y = 'old-value', 99
+      x, y = func2(x, y)
+      print x, y                 # output: new-value 100
+
+4) And other ideas that fall-out from Python's object model. For
+   instance, it might be clearer to pass in a mutable dictionary:
+
+      def func3(args):
+          args['a'] = 'new-value'     # args is a mutable dictionary
+          args['b'] = args['b'] + 1   # change it in-place
+
+      args = {'a':' old-value', 'b': 99}
+      func3(args)
+      print args['a'], args['b']
+
+5) Or bundle-up values in a class instance:
+
+      class callByRef:
+          def __init__(self, **args):
+              for (key, value) in args.items():
+                  setattr(self, key, value)
+
+      def func4(args):
+          args.a = 'new-value'        # args is a mutable callByRef
+          args.b = args.b + 1         # change object in-place
+
+      args = callByRef(a='old-value', b=99)
+      func4(args)
+      print args.a, args.b
+
+   But there's probably no good reason to get this complicated :-).
+
+[Python' author favors solution 3 in most cases.]
 
 
 5. Extending Python
