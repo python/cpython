@@ -145,7 +145,7 @@ def main():
         prefix = sys.prefix
 
     # determine whether -p points to the Python source tree
-    ishome = os.path.exists(os.path.join(prefix, 'Include', 'pythonrun.h'))
+    ishome = os.path.exists(os.path.join(prefix, 'Python', 'ceval.c'))
 
     # locations derived from options
     version = sys.version[:3]
@@ -275,8 +275,8 @@ def main():
         outfp.close()
     if backup:
         if cmp.cmp(backup, frozen_c):
-            sys.stderr.write('%s not changed, not written\n' %
-                             frozen_c)
+            sys.stderr.write('%s not changed, not written\n' % frozen_c)
+            os.unlink(frozen_c)
             os.rename(backup, frozen_c)
 
     # windows gets different treatment
@@ -332,8 +332,8 @@ def main():
     infp.close()
     if backup:
         if cmp.cmp(backup, config_c):
-            sys.stderr.write('%s not changed, not written\n' %
-                             config_c)
+            sys.stderr.write('%s not changed, not written\n' % config_c)
+            os.unlink(config_c)
             os.rename(backup, config_c)
 
     cflags = defines + includes + ['$(OPT)']
@@ -351,6 +351,11 @@ def main():
             ['$(MODLIBS)', '$(LIBS)', '$(SYSLIBS)']
 
     backup = makefile + '~'
+    if os.path.exists(makefile):
+        try:
+            os.unlink(backup)
+        except os.error:
+            pass
     try:
         os.rename(makefile, backup)
     except os.error:
@@ -364,8 +369,8 @@ def main():
         if not cmp.cmp(backup, makefile):
             print 'previous Makefile saved as', backup
         else:
-            sys.stderr.write('%s not changed, not written\n' %
-                             makefile)
+            sys.stderr.write('%s not changed, not written\n' % makefile)
+            os.unlink(makefile)
             os.rename(backup, makefile)
 
     # Done!
