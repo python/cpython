@@ -68,11 +68,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #undef sync
 int sync(void);
 #else
-#ifdef x__MWERKS__
-#include <unix.h>
-#else
+#define mode_t int
 #include <fcntl.h>
-#endif
 #endif
 
 /* Optional routines, for some compiler/runtime combinations */
