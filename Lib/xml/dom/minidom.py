@@ -18,6 +18,8 @@ import string
 _string = string
 del string
 
+from xml.dom import HierarchyRequestErr
+
 # localize the types, and allow support for Unicode values if available:
 import types
 _TupleType = types.TupleType
@@ -37,7 +39,8 @@ class Node(_Node):
     _debug = 0
     _makeParentNodes = 1
     debug = None
-
+    childNodeTypes = ()
+    
     def __init__(self):
         self.childNodes = []
         self.parentNode = None
@@ -99,6 +102,9 @@ class Node(_Node):
             return self.childNodes[-1]
 
     def insertBefore(self, newChild, refChild):
+        if newChild.nodeType not in self.childNodeTypes:
+            raise HierarchyRequestErr, \
+                  "%s cannot be child of %s" % (repr(newChild), repr(self) )
         if newChild.parentNode is not None:
             newChild.parentNode.removeChild(newChild)
         if refChild is None:
@@ -119,6 +125,9 @@ class Node(_Node):
         return newChild
 
     def appendChild(self, node):
+        if node.nodeType not in self.childNodeTypes:
+            raise HierarchyRequestErr, \
+                  "%s cannot be child of %s" % (repr(node), repr(self) )
         if node.parentNode is not None:
             node.parentNode.removeChild(node)
         if self.childNodes:
@@ -134,6 +143,9 @@ class Node(_Node):
         return node
 
     def replaceChild(self, newChild, oldChild):
+        if newChild.nodeType not in self.childNodeTypes:
+            raise HierarchyRequestErr, \
+                  "%s cannot be child of %s" % (repr(newChild), repr(self) )
         if newChild.parentNode is not None:
             newChild.parentNode.removeChild(newChild)
         if newChild is oldChild:
@@ -250,7 +262,8 @@ class Attr(Node):
     nodeType = Node.ATTRIBUTE_NODE
     attributes = None
     ownerElement = None
-
+    childNodeTypes = (Node.TEXT_NODE, Node.ENTITY_REFERENCE_NODE)
+    
     def __init__(self, qName, namespaceURI="", localName=None, prefix=None):
         # skip setattr for performance
         d = self.__dict__
@@ -374,7 +387,10 @@ class Element(Node):
     nodeType = Node.ELEMENT_NODE
     nextSibling = None
     previousSibling = None
-
+    childNodeTypes = (Node.ELEMENT_NODE, Node.PROCESSING_INSTRUCTION_NODE,
+                      Node.COMMENT_NODE, Node.TEXT_NODE,
+                      Node.CDATA_SECTION_NODE, Node.ENTITY_REFERENCE_NODE)
+    
     def __init__(self, tagName, namespaceURI="", prefix="",
                  localName=None):
         Node.__init__(self)
@@ -508,7 +524,8 @@ class Comment(Node):
     nodeType = Node.COMMENT_NODE
     nodeName = "#comment"
     attributes = None
-
+    childNodeTypes = ()
+    
     def __init__(self, data):
         Node.__init__(self)
         self.data = self.nodeValue = data
@@ -519,7 +536,8 @@ class Comment(Node):
 class ProcessingInstruction(Node):
     nodeType = Node.PROCESSING_INSTRUCTION_NODE
     attributes = None
-
+    childNodeTypes = ()
+    
     def __init__(self, target, data):
         Node.__init__(self)
         self.target = self.nodeName = target
@@ -532,7 +550,8 @@ class Text(Node):
     nodeType = Node.TEXT_NODE
     nodeName = "#text"
     attributes = None
-
+    childNodeTypes = ()
+    
     def __init__(self, data):
         Node.__init__(self)
         self.data = self.nodeValue = data
@@ -627,8 +646,13 @@ class Document(Node):
     parentNode = None
 
     implementation = DOMImplementation()
+    childNodeTypes = (Node.ELEMENT_NODE, Node.PROCESSING_INSTRUCTION_NODE,
+                      Node.COMMENT_NODE, Node.DOCUMENT_TYPE_NODE)
 
     def appendChild(self, node):
+        if node.nodeType not in self.childNodeTypes:
+            raise HierarchyRequestErr, \
+                  "%s cannot be child of %s" % (repr(node), repr(self) )
         if node.parentNode is not None:
             node.parentNode.removeChild(node)
 
