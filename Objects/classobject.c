@@ -1224,7 +1224,8 @@ instance_contains(PyInstanceObject *inst, PyObject *member)
 		 * __contains__ attribute, and try iterating instead.
 		 */
 		PyErr_Clear();
-		return _PySequence_IterContains((PyObject *)inst, member);
+		return _PySequence_IterSearch((PyObject *)inst, member,
+					      PY_ITERSEARCH_CONTAINS);
 	}
 	else
 		return -1;

@@ -600,6 +600,47 @@ class TestCase(unittest.TestCase):
             except OSError:
                 pass
 
+    # Test iterators with operator.indexOf (PySequence_Index).
+    def test_indexOf(self):
+        from operator import indexOf
+        self.assertEqual(indexOf([1,2,2,3,2,5], 1), 0)
+        self.assertEqual(indexOf((1,2,2,3,2,5), 2), 1)
+        self.assertEqual(indexOf((1,2,2,3,2,5), 3), 3)
+        self.assertEqual(indexOf((1,2,2,3,2,5), 5), 5)
+        self.assertRaises(ValueError, indexOf, (1,2,2,3,2,5), 0)
+        self.assertRaises(ValueError, indexOf, (1,2,2,3,2,5), 6)
+
+        self.assertEqual(indexOf("122325", "2"), 1)
+        self.assertEqual(indexOf("122325", "5"), 5)
+        self.assertRaises(ValueError, indexOf, "122325", "6")
+
+        self.assertRaises(TypeError, indexOf, 42, 1)
+        self.assertRaises(TypeError, indexOf, indexOf, indexOf)
+
+        f = open(TESTFN, "w")
+        try:
+            f.write("a\n" "b\n" "c\n" "d\n" "e\n")
+        finally:
+            f.close()
+        f = open(TESTFN, "r")
+        try:
+            fiter = iter(f)
+            self.assertEqual(indexOf(fiter, "b\n"), 1)
+            self.assertEqual(indexOf(fiter, "d\n"), 1)
+            self.assertEqual(indexOf(fiter, "e\n"), 0)
+            self.assertRaises(ValueError, indexOf, fiter, "a\n")
+        finally:
+            f.close()
+            try:
+                unlink(TESTFN)
+            except OSError:
+                pass
+
+        iclass = IteratingSequenceClass(3)
+        for i in range(3):
+            self.assertEqual(indexOf(iclass, i), i)
+        self.assertRaises(ValueError, indexOf, iclass, -1)
+
     # Test iterators on RHS of unpacking assignments.
     def test_unpack_iter(self):
         a, b = 1, 2

@@ -988,14 +988,24 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      DL_IMPORT(int) PySequence_Contains(PyObject *seq, PyObject *ob);
        /*
          Return -1 if error; 1 if ob in seq; 0 if ob not in seq.
-         Use __contains__ if possible, else _PySequence_IterContains().
+         Use __contains__ if possible, else _PySequence_IterSearch().
        */
 
-     DL_IMPORT(int) _PySequence_IterContains(PyObject *seq, PyObject *ob);
-       /*
-         Return -1 if error; 1 if ob in seq; 0 if ob not in seq.
-         Always uses the iteration protocol, and only Py_EQ comparisons.
-       */
+#define PY_ITERSEARCH_COUNT    1
+#define PY_ITERSEARCH_INDEX    2
+#define PY_ITERSEARCH_CONTAINS 3
+     DL_IMPORT(int) _PySequence_IterSearch(PyObject *seq, PyObject *obj,
+     		    int operation);
+	/*
+	  Iterate over seq.  Result depends on the operation:
+	  PY_ITERSEARCH_COUNT:  return # of times obj appears in seq; -1 if
+	  	error.
+	  PY_ITERSEARCH_INDEX:  return 0-based index of first occurence of
+	  	obj in seq; set ValueError and return -1 if none found;
+	  	also return -1 on error.
+	  PY_ITERSEARCH_CONTAINS:  return 1 if obj in seq, else 0; -1 on
+	  	error.
+	*/
 
 /* For DLL-level backwards compatibility */
 #undef PySequence_In

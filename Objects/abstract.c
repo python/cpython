@@ -1372,25 +1372,31 @@ PySequence_Fast(PyObject *v, const char *m)
 	return v;
 }
 
-/* Return # of times o appears in s. */
+/* Iterate over seq.  Result depends on the operation:
+   PY_ITERSEARCH_COUNT:  -1 if error, else # of times obj appears in seq.
+   PY_ITERSEARCH_INDEX:  0-based index of first occurence of obj in seq;
+   	set ValueError and return -1 if none found; also return -1 on error.
+   Py_ITERSEARCH_CONTAINS:  return 1 if obj in seq, else 0; -1 on error.
+*/
 int
-PySequence_Count(PyObject *s, PyObject *o)
+_PySequence_IterSearch(PyObject *seq, PyObject *obj, int operation)
 {
-	int n;  /* running count of o hits */
-	PyObject *it;  /* iter(s) */
+	int n;
+	int wrapped;  /* for PY_ITERSEARCH_INDEX, true iff n wrapped around */
+	PyObject *it;  /* iter(seq) */
 
-	if (s == NULL || o == NULL) {
+	if (seq == NULL || obj == NULL) {
 		null_error();
 		return -1;
 	}
 
-	it = PyObject_GetIter(s);
+	it = PyObject_GetIter(seq);
 	if (it == NULL) {
-		type_error(".count() requires iterable argument");
+		type_error("iterable argument required");
 		return -1;
 	}
 
-	n = 0;
+	n = wrapped = 0;
 	for (;;) {
 		int cmp;
 		PyObject *item = PyIter_Next(it);
@@ -1399,61 +1405,70 @@ PySequence_Count(PyObject *s, PyObject *o)
 				goto Fail;
 			break;
 		}
-		cmp = PyObject_RichCompareBool(o, item, Py_EQ);
+
+		cmp = PyObject_RichCompareBool(obj, item, Py_EQ);
 		Py_DECREF(item);
 		if (cmp < 0)
 			goto Fail;
 		if (cmp > 0) {
-			if (n == INT_MAX) {
-				PyErr_SetString(PyExc_OverflowError,
+			switch (operation) {
+			case PY_ITERSEARCH_COUNT:
+				++n;
+				if (n <= 0) {
+					PyErr_SetString(PyExc_OverflowError,
 				                "count exceeds C int size");
-				goto Fail;
+					goto Fail;
+				}
+				break;
+
+			case PY_ITERSEARCH_INDEX:
+				if (wrapped) {
+					PyErr_SetString(PyExc_OverflowError,
+			                	"index exceeds C int size");
+					goto Fail;
+				}
+				goto Done;
+
+			case PY_ITERSEARCH_CONTAINS:
+				n = 1;
+				goto Done;
+
+			default:
+				assert(!"unknown operation");
 			}
-			n++;
+		}
+
+		if (operation == PY_ITERSEARCH_INDEX) {
+			++n;
+			if (n <= 0)
+				wrapped = 1;
 		}
 	}
+
+	if (operation != PY_ITERSEARCH_INDEX)
+		goto Done;
+
+	PyErr_SetString(PyExc_ValueError,
+		        "sequence.index(x): x not in sequence");
+	/* fall into failure code */
+Fail:
+	n = -1;
+	/* fall through */
+Done:
 	Py_DECREF(it);
 	return n;
 
-Fail:
-	Py_DECREF(it);
-	return -1;
 }
 
-/* Return -1 if error; 1 if ob in seq; 0 if ob not in seq.
- * Always uses the iteration protocol, and only Py_EQ comparison.
- */
+/* Return # of times o appears in s. */
 int
-_PySequence_IterContains(PyObject *seq, PyObject *ob)
+PySequence_Count(PyObject *s, PyObject *o)
 {
-	int result;
-	PyObject *it = PyObject_GetIter(seq);
-	if (it == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-			"'in' or 'not in' needs iterable right argument");
-		return -1;
-	}
-
-	for (;;) {
-		int cmp;
-		PyObject *item = PyIter_Next(it);
-		if (item == NULL) {
-			result = PyErr_Occurred() ? -1 : 0;
-			break;
-		}
-		cmp = PyObject_RichCompareBool(ob, item, Py_EQ);
-		Py_DECREF(item);
-		if (cmp == 0)
-			continue;
-		result = cmp > 0 ? 1 : -1;
-		break;
-	}
-	Py_DECREF(it);
-	return result;
+	return _PySequence_IterSearch(s, o, PY_ITERSEARCH_COUNT);
 }
 
 /* Return -1 if error; 1 if ob in seq; 0 if ob not in seq.
- * Use sq_contains if possible, else defer to _PySequence_IterContains().
+ * Use sq_contains if possible, else defer to _PySequence_IterSearch().
  */
 int
 PySequence_Contains(PyObject *seq, PyObject *ob)
@@ -1463,7 +1478,7 @@ PySequence_Contains(PyObject *seq, PyObject *ob)
 	        if (sqm != NULL && sqm->sq_contains != NULL)
 			return (*sqm->sq_contains)(seq, ob);
 	}
-	return _PySequence_IterContains(seq, ob);
+	return _PySequence_IterSearch(seq, ob, PY_ITERSEARCH_CONTAINS);
 }
 
 /* Backwards compatibility */
@@ -1477,32 +1492,7 @@ PySequence_In(PyObject *w, PyObject *v)
 int
 PySequence_Index(PyObject *s, PyObject *o)
 {
-	int l, i, cmp, err;
-	PyObject *item;
-
-	if (s == NULL || o == NULL) {
-		null_error();
-		return -1;
-	}
-	
-	l = PySequence_Size(s);
-	if (l < 0)
-		return -1;
-
-	for (i = 0; i < l; i++) {
-		item = PySequence_GetItem(s, i);
-		if (item == NULL)
-			return -1;
-		err = PyObject_Cmp(item, o, &cmp);
-		Py_DECREF(item);
-		if (err < 0)
-			return err;
-		if (cmp == 0)
-			return i;
-	}
-
-	PyErr_SetString(PyExc_ValueError, "sequence.index(x): x not in list");
-	return -1;
+	return _PySequence_IterSearch(s, o, PY_ITERSEARCH_INDEX);
 }
 
 /* Operations on mappings */
