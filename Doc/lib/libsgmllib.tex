@@ -17,19 +17,19 @@ constructs:
 
 \item
 Opening and closing tags of the form
-``\code{<\var{tag} \var{attr}="\var{value}" ...>}'' and
-``\code{</\var{tag}>}'', respectively.
+\samp{<\var{tag} \var{attr}="\var{value}" ...>} and
+\samp{</\var{tag}>}, respectively.
 
 \item
-Numeric character references of the form ``\code{\&\#\var{name};}''.
+Numeric character references of the form \samp{\&\#\var{name};}.
 
 \item
-Entity references of the form ``\code{\&\var{name};}''.
+Entity references of the form \samp{\&\var{name};}.
 
 \item
-SGML comments of the form ``\code{<!--\var{text}-->}''.  Note that
+SGML comments of the form \samp{<!--\var{text}-->}.  Note that
 spaces, tabs, and newlines are allowed between the trailing
-``\code{>}'' and the immediately preceeding ``\code{--}''.
+\samp{>} and the immediately preceeding \samp{--}.
 
 \end{itemize}
 
@@ -102,7 +102,7 @@ nothing.
 
 \begin{funcdesc}{handle_charref}{ref}
 This method is called to process a character reference of the form
-``\code{\&\#\var{ref};}''.  In the base implementation, \var{ref} must
+\samp{\&\#\var{ref};}.  In the base implementation, \var{ref} must
 be a decimal number in the
 range 0-255.  It translates the character to \ASCII{} and calls the
 method \code{handle_data()} with the character as argument.  If
@@ -114,7 +114,7 @@ character entities.
 
 \begin{funcdesc}{handle_entityref}{ref}
 This method is called to process a general entity reference of the form
-``\code{\&\var{ref};}'' where \var{ref} is an general entity
+\samp{\&\var{ref};} where \var{ref} is an general entity
 reference.  It looks for \var{ref} in the instance (or class)
 variable \code{entitydefs} which should be a mapping from entity names
 to corresponding translations.
@@ -128,8 +128,8 @@ defines translations for \code{\&amp;}, \code{\&apos}, \code{\&gt;},
 \begin{funcdesc}{handle_comment}{comment}
 This method is called when a comment is encountered.  The
 \code{comment} argument is a string containing the text between the
-``\code{<!--}'' and ``\code{-->}'' delimiters, but not the delimiters
-themselves.  For example, the comment ``\code{<!--text-->}'' will
+\samp{<!--} and \samp{-->} delimiters, but not the delimiters
+themselves.  For example, the comment \samp{<!--text-->} will
 cause this method to be called with the argument \code{'text'}.  The
 default method does nothing.
 \end{funcdesc}
@@ -169,21 +169,21 @@ processing of specific tags.  Tag names in the input stream are case
 independent; the \var{tag} occurring in method names must be in lower
 case:
 
-\begin{funcdesc}{start_\var{tag}}{attributes}
+\begin{funcdescni}{start_\var{tag}}{attributes}
 This method is called to process an opening tag \var{tag}.  It has
 preference over \code{do_\var{tag}()}.  The \var{attributes} argument
 has the same meaning as described for \code{handle_starttag()} above.
-\end{funcdesc}
+\end{funcdescni}
 
-\begin{funcdesc}{do_\var{tag}}{attributes}
+\begin{funcdescni}{do_\var{tag}}{attributes}
 This method is called to process an opening tag \var{tag} that does
 not come with a matching closing tag.  The \var{attributes} argument
 has the same meaning as described for \code{handle_starttag()} above.
-\end{funcdesc}
+\end{funcdescni}
 
-\begin{funcdesc}{end_\var{tag}}{}
+\begin{funcdescni}{end_\var{tag}}{}
 This method is called to process a closing tag \var{tag}.
-\end{funcdesc}
+\end{funcdescni}
 
 Note that the parser maintains a stack of open elements for which no
 end tag has been found yet.  Only tags processed by
