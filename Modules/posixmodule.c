@@ -4969,7 +4969,7 @@ posix_fstat(PyObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(posix_fdopen__doc__,
-"fdopen(fd, [, mode='r' [, bufsize]]) -> file_object\n\n\
+"fdopen(fd [, mode='r' [, bufsize]]) -> file_object\n\n\
 Return an open file object connected to a file descriptor.");
 
 static PyObject *
@@ -5064,7 +5064,7 @@ posix_pipe(PyObject *self, PyObject *args)
 
 #ifdef HAVE_MKFIFO
 PyDoc_STRVAR(posix_mkfifo__doc__,
-"mkfifo(filename, [, mode=0666])\n\n\
+"mkfifo(filename [, mode=0666])\n\n\
 Create a FIFO (a POSIX named pipe).");
 
 static PyObject *
@@ -5088,7 +5088,7 @@ posix_mkfifo(PyObject *self, PyObject *args)
 
 #if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
 PyDoc_STRVAR(posix_mknod__doc__,
-"mknod(filename, [, mode=0600, device])\n\n\
+"mknod(filename [, mode=0600, device])\n\n\
 Create a filesystem node (file, device special file or named pipe)\n\
 named filename. mode specifies both the permissions to use and the\n\
 type of node to be created, being combined (bitwise OR) with one of\n\
