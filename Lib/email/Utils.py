@@ -75,14 +75,14 @@ def decode(s):
         # The first element is any non-encoded leading text
         rtn.append(parts[0])
         charset = parts[1]
-        encoding = parts[2]
+        encoding = parts[2].lower()
         atom = parts[3]
         # The next chunk to decode should be in parts[4]
         parts = ecre.split(parts[4])
         # The encoding must be either `q' or `b', case-insensitive
-        if encoding.lower() == 'q':
+        if encoding == 'q':
             func = _qdecode
-        elif encoding.lower() == 'b':
+        elif encoding == 'b':
             func = _bdecode
         else:
             func = _identity
@@ -96,13 +96,14 @@ def decode(s):
 
 def encode(s, charset='iso-8859-1', encoding='q'):
     """Encode a string according to RFC 2047."""
-    if encoding.lower() == 'q':
+    encoding = encoding.lower()
+    if encoding == 'q':
         estr = _qencode(s)
-    elif encoding.lower() == 'b':
+    elif encoding == 'b':
         estr = _bencode(s)
     else:
         raise ValueError, 'Illegal encoding code: ' + encoding
-    return '=?%s?%s?%s?=' % (charset.lower(), encoding.lower(), estr)
+    return '=?%s?%s?%s?=' % (charset.lower(), encoding, estr)
 
 
 
