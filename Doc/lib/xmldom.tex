@@ -1,144 +1,126 @@
-\section{\module{xml.dom.minidom} ---
-         The Document Object Model}
+\section{\module{xml.dom} ---
+         The Document Object Model API}
 
-\declaremodule{standard}{xml.dom.minidom}
-\modulesynopsis{Lightweight Document Object Model (DOM) implementation.}
-\moduleauthor{Paul Prescod}{paul@prescod.net}
+\declaremodule{standard}{xml.dom}
+\modulesynopsis{Document Object Model API for Python.}
 \sectionauthor{Paul Prescod}{paul@prescod.net}
 \sectionauthor{Martin v. L\"owis}{loewis@informatik.hu-berlin.de}
 
 \versionadded{2.0}
 
-The \module{xml.dom.minidom} provides a light-weight implementation of
-the W3C Document Object Model. The DOM is a cross-language API from
-the Web Consortium (W3C) for accessing and modifying XML documents. A
-DOM implementation allows to convert an XML document into a tree-like
-structure, or to build such a structure from scratch.  It then gives
-access to the structure through a set of objects which provided
-well-known interfaces. Minidom is intended to be simpler than the full
-DOM and also significantly smaller.
+The Document Object Model, or ``DOM,'' is a cross-language API from
+the World Wide Web Consortium (W3C) for accessing and modifying XML
+documents.  A DOM implementation presents an XML document as a tree
+structure, or allows client code to build such a structure from
+scratch.  It then gives access to the structure through a set of
+objects which provided well-known interfaces.
 
-The DOM is extremely useful for random-access applications. SAX only
-allows you a view of one bit of the document at a time. If you are
-looking at one SAX element, you have no access to another. If you are
-looking at a text node, you have no access to a containing
-element. When you write a SAX application, you need to keep track of
-your program's position in the document somewhere in your own
-code. Sax does not do it for you. Also, if you need to look ahead in
-the XML document, you are just out of luck.
+The DOM is extremely useful for random-access applications.  SAX only
+allows you a view of one bit of the document at a time.  If you are
+looking at one SAX element, you have no access to another.  If you are
+looking at a text node, you have no access to a containing element.
+When you write a SAX application, you need to keep track of your
+program's position in the document somewhere in your own code.  SAX
+does not do it for you.  Also, if you need to look ahead in the XML
+document, you are just out of luck.
 
 Some applications are simply impossible in an event driven model with
-no access to a tree. Of course you could build some sort of tree
+no access to a tree.  Of course you could build some sort of tree
 yourself in SAX events, but the DOM allows you to avoid writing that
-code. The DOM is a standard tree representation for XML data.
+code.  The DOM is a standard tree representation for XML data.
 
-%What if your needs are somewhere between SAX and the DOM? Perhaps you cannot
-%afford to load the entire tree in memory but you find the SAX model 
-%somewhat cumbersome and low-level. There is also an experimental module
-%called pulldom that allows you to build trees of only the parts of a 
-%document that you need structured access to. It also has features that allow
-%you to find your way around the DOM. 
+%What if your needs are somewhere between SAX and the DOM?  Perhaps
+%you cannot afford to load the entire tree in memory but you find the
+%SAX model somewhat cumbersome and low-level.  There is also a module
+%called xml.dom.pulldom that allows you to build trees of only the
+%parts of a document that you need structured access to.  It also has
+%features that allow you to find your way around the DOM.
 % See http://www.prescod.net/python/pulldom
 
-DOM applications typically start by parsing some XML into a DOM. This
-is done through the parse functions:
+The Document Object Model is being defined by the W3C in stages, or
+``levels'' in their terminology.  The Python mapping of the API is
+substantially based on the DOM Level 2 recommendation.  Some aspects
+of the API will only became available in Python 2.1, or may only be
+available in particular DOM implementations.
 
-\begin{verbatim}
-from xml.dom.minidom import parse, parseString
-
-dom1 = parse('c:\\temp\\mydata.xml') # parse an XML file by name
-
-datasource = open('c:\\temp\\mydata.xml')
-dom2 = parse(datasource)   # parse an open file
-
-dom3 = parseString('<myxml>Some data<empty/> some more data</myxml>')
-\end{verbatim}
-
-The parse function can take either a filename or an open file object. 
-
-\begin{funcdesc}{parse}{filename_or_file{, parser}}
-  Return a \class{Document} from the given input. \var{filename_or_file}
-  may be either a file name, or a file-like object. \var{parser}, if
-  given, must be a SAX2 parser object. This function will change the
-  document handler of the parser and activate namespace support; other
-  parser configuration (like setting an entity resolver) must have been
-  done in advance.
-\end{funcdesc}
-
-If you have XML in a string, you can use the parseString function
-instead:
-
-\begin{funcdesc}{parseString}{string\optional{, parser}}
-  Return a \class{Document} that represents the \var{string}. This
-  method creates a \class{StringIO} object for the string and passes
-  that on to \function{parse}.
-\end{funcdesc}
-
-Both functions return a document object representing the content of
-the document.
-
-You can also create a document node merely by instantiating a 
-document object. Then you could add child nodes to it to populate
-the DOM.
-
-\begin{verbatim}
-from xml.dom.minidom import Document
-
-newdoc = Document()
-newel = newdoc.createElement("some_tag")
-newdoc.appendChild(newel)
-\end{verbatim}
+DOM applications typically start by parsing some XML into a DOM.  How
+this is accomplished is not covered at all by DOM Level 1, and Level 2
+provides only limited improvements.  There is a
+\class{DOMImplementation} object class which provides access to
+\class{Document} creation methods, but these methods were only added
+in DOM Level 2 and were not implemented in time for Python 2.0.  There
+is also no well-defined way to access this functions without an
+existing \class{Document} object.  For Python 2.0, consult the
+documentation for each particular DOM implementation to determine the
+bootstrap procedure needed to create and initialize \class{Document}
+instances.
 
 Once you have a DOM document object, you can access the parts of your
 XML document through its properties and methods.  These properties are
-defined in the DOM specification.  The main property of the document
-object is the documentElement property.  It gives you the main element
-in the XML document: the one that holds all others.  Here is an
-example program:
+defined in the DOM specification; this portion of the reference manual
+describes the interpretation of the specification in Python.
 
-\begin{verbatim}
-dom3 = parseString("<myxml>Some data</myxml>")
-assert dom3.documentElement.tagName == "myxml"
-\end{verbatim}
+The specification provided by the W3C defines the DOM API for Java,
+ECMAScript, and OMG IDL.  The Python mapping defined here is based in
+large part on the IDL version of the specification, but strict
+compliance is not required (though implementations are free to support
+the strict mapping from IDL).  See section \ref{dom-conformance},
+``Conformance,'' for a detailed discussion of mapping requirements.
 
-When you are finished with a DOM, you should clean it up.  This is
-necessary because some versions of Python do not support garbage
-collection of objects that refer to each other in a cycle.  Until this
-restriction is removed from all versions of Python, it is safest to
-write your code as if cycles would not be cleaned up.
-
-The way to clean up a DOM is to call its \method{unlink()} method:
-
-\begin{verbatim}
-dom1.unlink()
-dom2.unlink()
-dom3.unlink()
-\end{verbatim}
-
-\method{unlink()} is a \module{minidom}-specific extension to the DOM
-API.  After calling \method{unlink()}, a DOM is basically useless.
 
 \begin{seealso}
-  \seetitle[http://www.w3.org/TR/REC-DOM-Level-1/]{DOM Specification}
-           {This is the canonical specification for the level of the
+  \seetitle[http://www.w3.org/TR/DOM-Level-2-Core/]{Document Object
+            Model (DOM) Level 2 Specification}
+           {The W3C recommendation upon which the Python DOM API is
+            based.}
+  \seetitle[http://www.w3.org/TR/REC-DOM-Level-1/]{Document Object
+            Model (DOM) Level 1 Specification}
+           {The W3C recommendation for the
             DOM supported by \module{xml.dom.minidom}.}
   \seetitle[http://pyxml.sourceforge.net]{PyXML}{Users that require a
             full-featured implementation of DOM should use the PyXML
             package.}
+  \seetitle[http://cgi.omg.org/cgi-bin/doc?orbos/99-08-02.pdf]{CORBA
+            Scripting with Python}
+           {This specifies the mapping from OMG IDL to Python.}
 \end{seealso}
 
 
-\subsection{DOM objects \label{dom-objects}}
+\subsection{Objects in the DOM \label{dom-objects}}
 
 The definitive documentation for the DOM is the DOM specification from
 the W3C.  This section lists the properties and methods supported by
 \refmodule{xml.dom.minidom}.
 
-\begin{classdesc}{Node}{}
+Note that DOM attributes may also be manipulated as nodes instead of
+as simple strings.  It is fairly rare that you must do this, however,
+so this usage is not yet documented.
+
+
+\begin{tableiii}{l|l|l}{class}{Interface}{Section}{Purpose}
+  \lineiii{Node}{\ref{dom-node-objects}}
+          {Base interface for most objects in a document.}
+  \lineiii{Document}{\ref{dom-document-objects}}
+          {Object which represents an entire document.}
+  \lineiii{Element}{\ref{dom-element-objects}}
+          {Element nodes in the document hierarchy.}
+  \lineiii{Attr}{\ref{dom-attr-objects}}
+          {Attribute value nodes on element nodes.}
+  \lineiii{Comment}{\ref{dom-comment-objects}}
+          {Representation of comments in the source document.}
+  \lineiii{Text}{\ref{dom-text-objects}}
+          {Nodes containing textual content from the document.}
+  \lineiii{ProcessingInstruction}{\ref{dom-pi-objects}}
+          {Processing instruction representation.}
+\end{tableiii}
+
+
+\subsubsection{Node Objects \label{dom-node-objects}}
+
 All of the components of an XML document are subclasses of
 \class{Node}.
 
-\begin{memberdesc}{nodeType}
+\begin{memberdesc}[Node]{nodeType}
 An integer representing the node type.  Symbolic constants for the
 types are on the \class{Node} object: \constant{DOCUMENT_NODE},
 \constant{ELEMENT_NODE}, \constant{ATTRIBUTE_NODE},
@@ -148,16 +130,16 @@ types are on the \class{Node} object: \constant{DOCUMENT_NODE},
 \constant{DOCUMENT_TYPE_NODE}, \constant{NOTATION_NODE}.
 \end{memberdesc}
 
-\begin{memberdesc}{parentNode}
+\begin{memberdesc}[Node]{parentNode}
 The parent of the current node.  \code{None} for the document node.
 \end{memberdesc}
 
-\begin{memberdesc}{attributes}
-An \class{AttributeList} of attribute objects.  Only
-elements have this attribute.  Others return \code{None}.
+\begin{memberdesc}[Node]{attributes}
+An \class{AttributeList} of attribute objects.  Only elements have
+actual values for this; others provide \code{None} for this attribute.
 \end{memberdesc}
 
-\begin{memberdesc}{previousSibling}
+\begin{memberdesc}[Node]{previousSibling}
 The node that immediately precedes this one with the same parent.  For
 instance the element with an end-tag that comes just before the
 \var{self} element's start-tag.  Of course, XML documents are made
@@ -165,134 +147,130 @@ up of more than just elements so the previous sibling could be text, a
 comment, or something else.
 \end{memberdesc}
 
-\begin{memberdesc}{nextSibling}
+\begin{memberdesc}[Node]{nextSibling}
 The node that immediately follows this one with the same parent.  See
 also \member{previousSibling}.
 \end{memberdesc}
 
-\begin{memberdesc}{childNodes}
+\begin{memberdesc}[Node]{childNodes}
 A list of nodes contained within this node.
 \end{memberdesc}
 
-\begin{memberdesc}{firstChild}
-Equivalent to \code{childNodes[0]}.
+\begin{memberdesc}[Node]{firstChild}
+The first child of the node, if there are any, or \code{None}.
 \end{memberdesc}
 
-\begin{memberdesc}{lastChild}
-Equivalent to \code{childNodes[-1]}.
+\begin{memberdesc}[Node]{lastChild}
+The last child of the node, if there are any, or \code{None}.
 \end{memberdesc}
 
-\begin{memberdesc}{nodeName}
+\begin{memberdesc}[Node]{nodeName}
 Has a different meaning for each node type.  See the DOM specification
 for details.  You can always get the information you would get here
 from another property such as the \member{tagName} property for
 elements or the \member{name} property for attributes.
 \end{memberdesc}
 
-\begin{memberdesc}{nodeValue}
+\begin{memberdesc}[Node]{nodeValue}
 Has a different meaning for each node type.  See the DOM specification
 for details.  The situation is similar to that with \member{nodeName}.
 \end{memberdesc}
 
-\begin{methoddesc}{unlink}{}
-Break internal references within the DOM so that it will be garbage
-collected on versions of Python without cyclic GC.
+\begin{methoddesc}[Node]{hasChildNodes}{}
+Returns true if the node has any child nodes.
 \end{methoddesc}
 
-\begin{methoddesc}{writexml}{writer}
-Write XML to the writer object.  The writer should have a
-\method{write()} method which matches that of the file object
-interface.
-\end{methoddesc}
-
-\begin{methoddesc}{toxml}{}
-Return the XML string that the DOM represents.
-\end{methoddesc}
-
-\begin{methoddesc}{hasChildNodes}{}
-Returns true the node has any child nodes.
-\end{methoddesc}
-
-\begin{methoddesc}{insertBefore}{newChild, refChild}
+\begin{methoddesc}[Node]{insertBefore}{newChild, refChild}
 Insert a new child node before an existing child.  It must be the case
 that \var{refChild} is a child of this node; if not,
 \exception{ValueError} is raised.
 \end{methoddesc}
 
-\begin{methoddesc}{replaceChild}{newChild, oldChild}
+\begin{methoddesc}[Node]{replaceChild}{newChild, oldChild}
 Replace an existing node with a new node. It must be the case that 
 \var{oldChild} is a child of this node; if not,
 \exception{ValueError} is raised.
 \end{methoddesc}
 
-\begin{methoddesc}{removeChild}{oldChild}
+\begin{methoddesc}[Node]{removeChild}{oldChild}
 Remove a child node.  \var{oldChild} must be a child of this node; if
-not, \exception{ValueError} is raised.
+not, \exception{ValueError} is raised.  \var{oldChild} is returned on
+success.  If \var{oldChild} will not be used further, its
+\method{unlink()} method should be called.
 \end{methoddesc}
 
-\begin{methoddesc}{appendChild}{newChild}
-Add a new child node to this node list.
+\begin{methoddesc}[Node]{appendChild}{newChild}
+Add a new child node to this node at the end of the list of children,
+returning \var{newChild}.
 \end{methoddesc}
 
-\begin{methoddesc}{cloneNode}{deep}
-Clone this node. Deep means to clone all children also. Deep cloning
-is not implemented in Python 2 so the deep parameter should always be
-0 for now.
+\begin{methoddesc}[Node]{normalize}{}
+Join adjacent text nodes so that all stretches of text are stored as
+single \class{Text} instances.  This simplifies processing text from a
+DOM tree for many applications.
+\versionadded{2.1}
 \end{methoddesc}
 
-\end{classdesc}
+\begin{methoddesc}[Node]{cloneNode}{deep}
+Clone this node.  Setting \var{deep} means to clone all child nodes as
+well.
+
+\strong{Warning:}  Although this method was present in the version of
+\refmodule{xml.dom.minidom} packaged with Python 2.0, it was seriously
+broken.  This has been corrected for subsequent releases.
+\end{methoddesc}
 
 
-\begin{classdesc}{Document}{}
-Represents an entire XML document, including its constituent elements,
-attributes, processing instructions, comments etc.  Remeber that it
-inherits properties from \class{Node}.
+\subsubsection{Document Objects \label{dom-document-objects}}
 
-\begin{memberdesc}{documentElement}
+A \class{Document} represents an entire XML document, including its
+constituent elements, attributes, processing instructions, comments
+etc.  Remeber that it inherits properties from \class{Node}.
+
+\begin{memberdesc}[Document]{documentElement}
 The one and only root element of the document.
 \end{memberdesc}
 
-\begin{methoddesc}{createElement}{tagName}
+\begin{methoddesc}[Document]{createElement}{tagName}
 Create a new element.  The element is not inserted into the document
 when it is created.  You need to explicitly insert it with one of the
 other methods such as \method{insertBefore()} or
 \method{appendChild()}.
 \end{methoddesc}
 
-\begin{methoddesc}{createTextNode}{data}
-Create a text node containing the data passed as a parameter.  As with
-the other creation methods, this one does not insert the node into the
-tree.
-\end{methoddesc}
-
-\begin{methoddesc}{createComment}{data}
-Create a comment node containing the data passed as a parameter.  As
-with the other creation methods, this one does not insert the node
-into the tree.
-\end{methoddesc}
-
-\begin{methoddesc}{createProcessingInstruction}{target, data}
-Create a processing instruction node containing the \var{target} and
-\var{data} passed as parameters.  As with the other creation methods,
-this one does not insert the node into the tree.
-\end{methoddesc}
-
-\begin{methoddesc}{createAttribute}{name}
-Create an attribute node.  This method does not associate the
-attribute node with any particular element.  You must use
-\method{setAttributeNode()} on the appropriate \class{Element} object
-to use the newly created attribute instance.
-\end{methoddesc}
-
-\begin{methoddesc}{createElementNS}{namespaceURI, tagName}
+\begin{methoddesc}[Document]{createElementNS}{namespaceURI, tagName}
 Create a new element with a namespace.  The \var{tagName} may have a
 prefix.  The element is not inserted into the document when it is
 created.  You need to explicitly insert it with one of the other
 methods such as \method{insertBefore()} or \method{appendChild()}.
 \end{methoddesc}
 
+\begin{methoddesc}[Document]{createTextNode}{data}
+Create a text node containing the data passed as a parameter.  As with
+the other creation methods, this one does not insert the node into the
+tree.
+\end{methoddesc}
 
-\begin{methoddesc}{createAttributeNS}{namespaceURI, qualifiedName}
+\begin{methoddesc}[Document]{createComment}{data}
+Create a comment node containing the data passed as a parameter.  As
+with the other creation methods, this one does not insert the node
+into the tree.
+\end{methoddesc}
+
+\begin{methoddesc}[Document]{createProcessingInstruction}{target, data}
+Create a processing instruction node containing the \var{target} and
+\var{data} passed as parameters.  As with the other creation methods,
+this one does not insert the node into the tree.
+\end{methoddesc}
+
+\begin{methoddesc}[Document]{createAttribute}{name}
+Create an attribute node.  This method does not associate the
+attribute node with any particular element.  You must use
+\method{setAttributeNode()} on the appropriate \class{Element} object
+to use the newly created attribute instance.
+\end{methoddesc}
+
+\begin{methoddesc}[Document]{createAttributeNS}{namespaceURI, qualifiedName}
 Create an attribute node with a namespace.  The \var{tagName} may have
 a prefix.  This method does not associate the attribute node with any
 particular element. You must use \method{setAttributeNode()} on the
@@ -300,315 +278,202 @@ appropriate \class{Element} object to use the newly created attribute
 instance.
 \end{methoddesc}
 
-\begin{methoddesc}{getElementsByTagName}{tagName}
+\begin{methoddesc}[Document]{getElementsByTagName}{tagName}
 Search for all descendants (direct children, children's children,
 etc.) with a particular element type name.
 \end{methoddesc}
 
-\begin{methoddesc}{getElementsByTagNameNS}{namespaceURI, localName}
+\begin{methoddesc}[Document]{getElementsByTagNameNS}{namespaceURI, localName}
 Search for all descendants (direct children, children's children,
 etc.) with a particular namespace URI and localname.  The localname is
 the part of the namespace after the prefix.
 \end{methoddesc}
 
-\end{classdesc}
 
+\subsubsection{Element Objects \label{dom-element-objects}}
 
-\begin{classdesc}{Element}{}
-\begin{memberdesc}{tagName}
+\class{Element} is a subclass of \class{Node}, so inherits all the
+attributes of that class.
+
+\begin{memberdesc}[Element]{tagName}
 The element type name.  In a namespace-using document it may have
 colons in it.
 \end{memberdesc}
 
-\begin{memberdesc}{localName}
+\begin{memberdesc}[Element]{localName}
 The part of the \member{tagName} following the colon if there is one,
 else the entire \member{tagName}.
 \end{memberdesc}
 
-\begin{memberdesc}{prefix}
+\begin{memberdesc}[Element]{prefix}
 The part of the \member{tagName} preceding the colon if there is one,
 else the empty string.
 \end{memberdesc}
 
-\begin{memberdesc}{namespaceURI}
+\begin{memberdesc}[Element]{namespaceURI}
 The namespace associated with the tagName.
 \end{memberdesc}
 
-\begin{methoddesc}{getAttribute}{attname}
+\begin{methoddesc}[Element]{getAttribute}{attname}
 Return an attribute value as a string.
 \end{methoddesc}
 
-\begin{methoddesc}{setAttribute}{attname, value}
+\begin{methoddesc}[Element]{setAttribute}{attname, value}
 Set an attribute value from a string.
 \end{methoddesc}
 
-\begin{methoddesc}{removeAttribute}{attname}
+\begin{methoddesc}[Element]{removeAttribute}{attname}
 Remove an attribute by name.
 \end{methoddesc}
 
-\begin{methoddesc}{getAttributeNS}{namespaceURI, localName}
+\begin{methoddesc}[Element]{getAttributeNS}{namespaceURI, localName}
 Return an attribute value as a string, given a \var{namespaceURI} and
 \var{localName}.  Note that a localname is the part of a prefixed
 attribute name after the colon (if there is one).
 \end{methoddesc}
 
-\begin{methoddesc}{setAttributeNS}{namespaceURI, qname, value}
+\begin{methoddesc}[Element]{setAttributeNS}{namespaceURI, qname, value}
 Set an attribute value from a string, given a \var{namespaceURI} and a
 \var{qname}.  Note that a qname is the whole attribute name.  This is
 different than above.
 \end{methoddesc}
 
-\begin{methoddesc}{removeAttributeNS}{namespaceURI, localName}
+\begin{methoddesc}[Element]{removeAttributeNS}{namespaceURI, localName}
 Remove an attribute by name.  Note that it uses a localName, not a
 qname.
 \end{methoddesc}
 
-\begin{methoddesc}{getElementsByTagName}{tagName}
+\begin{methoddesc}[Element]{getElementsByTagName}{tagName}
 Same as equivalent method in the \class{Document} class.
 \end{methoddesc}
 
-\begin{methoddesc}{getElementsByTagNameNS}{tagName}
+\begin{methoddesc}[Element]{getElementsByTagNameNS}{tagName}
 Same as equivalent method in the \class{Document} class.
 \end{methoddesc}
 
-\end{classdesc}
 
+\subsubsection{Attr Objects \label{dom-attr-objects}}
 
-\begin{classdesc}{Attribute}{}
+\class{Attr} inherits from \class{Node}, so inherits all its
+attributes.
 
-\begin{memberdesc}{name}
+\begin{memberdesc}[Attr]{name}
 The attribute name.  In a namespace-using document it may have colons
 in it.
 \end{memberdesc}
 
-\begin{memberdesc}{localName}
+\begin{memberdesc}[Attr]{localName}
 The part of the name following the colon if there is one, else the
 entire name.
 \end{memberdesc}
 
-\begin{memberdesc}{prefix}
+\begin{memberdesc}[Attr]{prefix}
 The part of the name preceding the colon if there is one, else the
 empty string.
 \end{memberdesc}
 
-\begin{memberdesc}{namespaceURI}
+\begin{memberdesc}[Attr]{namespaceURI}
 The namespace associated with the attribute name.
 \end{memberdesc}
 
-\end{classdesc}
 
+\subsubsection{NamedNodeMap Objects \label{dom-attributelist-objects}}
 
-\begin{classdesc}{AttributeList}{}
+\class{NamedNodeMap} does \emph{not} inherit from \class{Node}.
 
-\begin{memberdesc}{length}
+\begin{memberdesc}[NamedNodeMap]{length}
 The length of the attribute list.
 \end{memberdesc}
 
-\begin{methoddesc}{item}{index}
+\begin{methoddesc}[NamedNodeMap]{item}{index}
 Return an attribute with a particular index.  The order you get the
 attributes in is arbitrary but will be consistent for the life of a
 DOM.  Each item is an attribute node.  Get its value with the
 \member{value} attribbute.
 \end{methoddesc}
 
-There are also experimental methods that give this class more
-dictionary-like behavior. You can use them or you can use the
-standardized \method{getAttribute*()}-family methods.
-
-\end{classdesc}
+There are also experimental methods that give this class more mapping
+behavior.  You can use them or you can use the standardized
+\method{getAttribute*()}-family methods on the \class{Element} objects.
 
 
-\begin{classdesc}{Comment}{}
-Represents a comment in the XML document.
+\subsubsection{Comment Objects \label{dom-comment-objects}}
 
-\begin{memberdesc}{data}
+\class{Comment} represents a comment in the XML document.  It is a
+subclass of \class{Node}.
+
+\begin{memberdesc}[Comment]{data}
 The content of the comment.
 \end{memberdesc}
-\end{classdesc}
 
 
-\begin{classdesc}{Text}{}
-Represents text in the XML document.
+\subsubsection{Text Objects \label{dom-text-objects}}
 
-\begin{memberdesc}{data}
+The \class{Text} interface represents text in the XML document.  It
+inherits from \class{Node}.
+
+\begin{memberdesc}[Text]{data}
 The content of the text node.
 \end{memberdesc}
-\end{classdesc}
 
 
-\begin{classdesc}{ProcessingInstruction}{}
-Represents a processing instruction in the XML document.
+\subsubsection{ProcessingInstruction Objects \label{dom-pi-objects}}
 
-\begin{memberdesc}{target}
+Represents a processing instruction in the XML document; this inherits
+from the \class{Node} interface.
+
+\begin{memberdesc}[ProcessingInstruction]{target}
 The content of the processing instruction up to the first whitespace
 character.
 \end{memberdesc}
 
-\begin{memberdesc}{data}
+\begin{memberdesc}[ProcessingInstruction]{data}
 The content of the processing instruction following the first
 whitespace character.
 \end{memberdesc}
-\end{classdesc}
-
-Note that DOM attributes may also be manipulated as nodes instead of as
-simple strings. It is fairly rare that you must do this, however, so this
-usage is not yet documented here.
 
 
-\begin{seealso}
-  \seetitle[http://www.w3.org/TR/REC-DOM-Level-1/]{DOM Specification}
-           {This is the canonical specification for the level of the
-            DOM supported by \module{xml.dom.minidom}.}
-\end{seealso}
+\subsection{Conformance \label{dom-conformance}}
 
+This section describes the conformance requirements and relationships
+between the Python DOM API, the W3C DOM recommendations, and the OMG
+IDL mapping for Python.
 
-\subsection{DOM Example \label{dom-example}}
+\subsubsection{Type Mapping \label{dom-type-mapping}}
 
-This example program is a fairly realistic example of a simple
-program. In this particular case, we do not take much advantage
-of the flexibility of the DOM.
+XXX  Explain what a \class{DOMString} maps to...
+
+\subsubsection{Accessor Methods \label{dom-accessor-methods}}
+
+The mapping from OMG IDL to Python defines accessor functions for IDL
+\keyword{attribute} declarations in much the way the Java mapping
+does.  Mapping the IDL declarations
 
 \begin{verbatim}
-from xml.dom.minidom import parse, parseString
-
-document="""
-<slideshow>
-<title>Demo slideshow</title>
-<slide><title>Slide title</title>
-<point>This is a demo</point>
-<point>Of a program for processing slides</point>
-</slide>
-
-<slide><title>Another demo slide</title>
-<point>It is important</point>
-<point>To have more than</point>
-<point>one slide</point>
-</slide>
-</slideshow>
-"""
-
-dom = parseString(document)
-
-space=" "
-def getText(nodelist):
-    rc=""
-    for node in nodelist:
-        if node.nodeType==node.TEXT_NODE:
-            rc=rc+node.data
-    return rc
-
-def handleSlideshow(slideshow):
-    print "<html>"
-    handleSlideshowTitle(slideshow.getElementsByTagName("title")[0])
-    slides = slideshow.getElementsByTagName("slide")
-    handleToc(slides)
-    handleSlides(slides)
-    print "</html>"
-
-def handleSlides(slides):
-    for slide in slides:
-       handleSlide(slide)
-
-def handleSlide(slide):
-    handleSlideTitle(slide.getElementsByTagName("title")[0])
-    handlePoints(slide.getElementsByTagName("point"))
-    
-def handleSlideshowTitle(title):
-    print "<title>%s</title>"%getText(title.childNodes)
-
-def handleSlideTitle(title):
-    print "<h2>%s</h2>"%getText(title.childNodes)
-
-def handlePoints(points):
-    print "<ul>"
-    for point in points:
-        handlePoint(point)
-    print "</ul>"
-
-def handlePoint(point):
-    print "<li>%s</li>"%getText(point.childNodes)
-
-def handleToc(slides):
-    for slide in slides:
-        title = slide.getElementsByTagName("title")[0]
-        print "<p>%s</p>"%getText(title.childNodes)
-    
-handleSlideshow(dom)
+readonly attribute string someValue;
+         attribute string anotherValue;
 \end{verbatim}
 
-\subsection{minidom and the DOM standard \label{minidom-and-dom}}
+yeilds three accessor functions:  a ``get'' method for
+\member{someValue} (\method{_get_someValue()}), and ``get'' and
+``set'' methods for
+\member{anotherValue} (\method{_get_anotherValue()} and
+\method{_set_anotherValue()}).  The mapping, in particular, does not
+require that the IDL attributes are accessible as normal Python
+attributes:  \code{\var{object}.someValue} is \emph{not} required to
+work, and may raise an \exception{AttributeError}.
 
-Minidom is basically a DOM 1.0-compatible DOM with some DOM 2 features
-(primarily namespace features). 
+The Python DOM API, however, \emph{does} require that normal attribute
+access work.  This means that the typical surrogates generated by
+Python IDL compilers are not likely to work, and wrapper objects may
+be needed on the client if the DOM objects are accessed via CORBA.
+While this does require some additional consideration for CORBA DOM
+clients, the implementers with experience using DOM over CORBA from
+Python do not consider this a problem.  Attributes that are declared
+\keyword{readonly} may not restrict write access in all DOM
+implementations.
 
-Usage of the other DOM interfaces in Python is straight-forward. The
-following mapping rules apply:
-
-\begin{itemize}
-
-\item Interfaces are accessed through instance objects. Applications
-should
-not instantiate the classes themselves; they should use the creator
-functions. Derived interfaces support all operations (and attributes) 
-from the base interfaces, plus any new operations.
-
-\item Operations are used as methods. Since the DOM uses only
-\code{in} 
-parameters, the arguments are passed in normal order (from left to
-right). 
-There are no optional arguments. \code{void} operations return
-\code{None}.
-
-\item IDL attributes map to instance attributes. For compatibility
-with
-the OMG IDL language mapping for Python, an attribute \code{foo} can
-also be accessed through accessor functions \code{_get_foo} and
-\code{_set_foo}. \code{readonly} attributes must not be changed.
-
-\item The types \code{short int},\code{unsigned int},\code{unsigned
-long long},
-and \code{boolean} all map to Python integer objects.
-
-\item The type \code{DOMString} maps to Python strings. \code{minidom}
-supports either byte or Unicode strings, but will normally produce
-Unicode
-strings. Attributes of type \code{DOMString} may also be \code{None}.
-
-\item \code{const} declarations map to variables in their respective
-scope
-(e.g. \code{xml.dom.minidom.Node.PROCESSING_INSTRUCTION_NODE}); they
-must
-not be changed.
-
-\item \code{DOMException} is currently not supported in
-\module{minidom}. Instead, minidom returns standard Python exceptions
-such as TypeError and AttributeError.
-
-\end{itemize}
-
-The following interfaces have no equivalent in minidom:
-
-\begin{itemize}
-
-\item DOMTimeStamp
-
-\item DocumentType
-
-\item DOMImplementation
-
-\item CharacterData
-
-\item CDATASection
-
-\item Notation
-
-\item Entity
-
-\item EntityReference
-
-\item DocumentFragment
-
-\end{itemize}
-
-Most of these reflect information in the XML document that is not of
-general utility to most DOM users.
+Additionally, the accessor functions are not required.  If provided,
+they should take the form defined by the Python IDL mapping, but
+these methods are considered unnecessary since the attributes are
+accessible directly from Python.
