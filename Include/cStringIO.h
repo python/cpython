@@ -70,8 +70,11 @@
   This would typically be done in your init function.
 
   $Log$
-  Revision 2.2  1997/01/06 22:50:12  guido
-  Jim's latest version
+  Revision 2.3  1997/04/09 17:34:28  guido
+  Changed the way the C API was exported.  Jim Fulton.
+
+  Revision 1.2  1997/01/27 14:13:05  jim
+  Changed the way the C API was exported.
 
   Revision 1.1  1997/01/02 15:18:36  chris
   initial version
@@ -81,54 +84,59 @@
 
 /* Basic fuctions to manipulate cStringIO objects from C */
 
-/* Read a string.  If the last argument is -1, the remainder will be read. */
-static int(*PycStringIO_cread)(PyObject *, char **, int)=NULL;
+static struct PycStringIO_CAPI {
+  
+  /* Read a string.  If the last argument is -1, the remainder will be read. */
+  int(*cread)(PyObject *, char **, int);
 
-/* Read a line */
-static int(*PycStringIO_creadline)(PyObject *, char **)=NULL;
+  /* Read a line */
+  int(*creadline)(PyObject *, char **);
 
-/* Write a string */
-static int(*PycStringIO_cwrite)(PyObject *, char *, int)=NULL;
+  /* Write a string */
+  int(*cwrite)(PyObject *, char *, int);
 
-/* Get the cStringIO object as a Python string */
-static PyObject *(*PycStringIO_cgetvalue)(PyObject *)=NULL;
+  /* Get the cStringIO object as a Python string */
+  PyObject *(*cgetvalue)(PyObject *);
 
-/* Create a new output object */
-static PyObject *(*PycStringIO_NewOutput)(int)=NULL;
+  /* Create a new output object */
+  PyObject *(*NewOutput)(int);
 
-/* Create an input object from a Python string */
-static PyObject *(*PycStringIO_NewInput)(PyObject *)=NULL;
+  /* Create an input object from a Python string */
+  PyObject *(*NewInput)(PyObject *);
 
-/* The Python types for cStringIO input and output objects.
-   Note that you can do input on an output object.
-*/
-static PyObject *PycStringIO_InputType=NULL, *PycStringIO_OutputType=NULL;
+  /* The Python types for cStringIO input and output objects.
+     Note that you can do input on an output object.
+     */
+  PyTypeObject *InputType, *OutputType;
+
+} * PycStringIO = NULL;
 
 /* These can be used to test if you have one */
 #define PycStringIO_InputCheck(O) \
-  ((O)->ob_type==(PyTypeObject*)PycStringIO_InputType)
+  ((O)->ob_type==PycStringIO->InputType)
 #define PycStringIO_OutputCheck(O) \
-  ((O)->ob_type==(PyTypeObject*)PycStringIO_OutputType)
+  ((O)->ob_type==PycStringIO->OutputType)
 
-/* The following is used to implement PycString_IMPORT: */
-static PyObject *PycStringIO_Module=NULL, *PycStringIO_CObject=NULL;
+static void *
+PyCObject_Import(char *module_name, char *name)
+{
+  PyObject *m, *c;
+  void *r=NULL;
+  
+  if(m=PyImport_ImportModule(module_name))
+    {
+      if(c=PyObject_GetAttrString(m,name))
+	{
+	  r=PyCObject_AsVoidPtr(c);
+	  Py_DECREF(c);
+	}
+      Py_DECREF(m);
+    }
 
-#define IMPORT_C_OBJECT(N) \
-  if((PycStringIO_CObject=PyObject_GetAttrString(PycStringIO_Module, #N))) { \
-    PycStringIO_ ## N = PyCObject_AsVoidPtr(PycStringIO_CObject); \
-    Py_DECREF(PycStringIO_CObject); }
+  return r;
+}
 
 #define PycString_IMPORT \
-  if((PycStringIO_Module=PyImport_ImportModule("cStringIO"))) { \
-    PycStringIO_InputType=PyObject_GetAttrString(PycStringIO_Module, \
-						 "InputType"); \
-    PycStringIO_OutputType=PyObject_GetAttrString(PycStringIO_Module, \
-						  "OutputType"); \
-    IMPORT_C_OBJECT(cread); \
-    IMPORT_C_OBJECT(creadline); \
-    IMPORT_C_OBJECT(cwrite); \
-    IMPORT_C_OBJECT(NewInput); \
-    IMPORT_C_OBJECT(NewOutput); \
-    IMPORT_C_OBJECT(cgetvalue);   }
+  PycStringIO=PyCObject_Import("cStringIO", "cStringIO_CAPI")
 
 #endif /* CSTRINGIO_INCLUDED */
