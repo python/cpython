@@ -69,6 +69,8 @@ void PyMac_PromptGetFile(short numTypes, ConstSFTypeListPtr typeList,
 int PyMac_GetOSType(PyObject *, OSType *);	/* argument parser for OSType */
 PyObject *PyMac_BuildOSType(OSType);		/* Convert OSType to PyObject */
 
+PyObject *PyMac_BuildNumVersion(NumVersion);	/* Convert NumVersion to PyObject */
+
 int PyMac_GetStr255(PyObject *, Str255);	/* argument parser for Str255 */
 PyObject *PyMac_BuildStr255(Str255);		/* Convert Str255 to PyObject */
 
