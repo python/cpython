@@ -184,9 +184,25 @@ class build_clib (Command):
     # get_library_names ()
 
 
-    def build_libraries (self, libraries):
+    def get_source_files (self):
+        self.check_library_list(self.libraries)
+        filenames = []
+        for (lib_name, build_info) in self.libraries:
+            sources = build_info.get('sources')
+            if (sources is None or
+                type(sources) not in (ListType, TupleType) ):
+                raise DistutilsSetupError, \
+                      ("in 'libraries' option (library '%s'), "
+                       "'sources' must be present and must be "
+                       "a list of source filenames") % lib_name
+            
+            filenames.extend(sources)
 
-        compiler = self.compiler
+        return filenames
+    # get_source_files ()
+
+
+    def build_libraries (self, libraries):
 
         for (lib_name, build_info) in libraries:
             sources = build_info.get('sources')
