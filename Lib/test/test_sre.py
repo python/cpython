@@ -96,6 +96,10 @@ test(r"""sre.match('.*?cd', 20000*'abc'+'de').end(0)""", 60001)
 # non-simple '*?' still recurses and hits the recursion limit
 test(r"""sre.search('(a|b)*?c', 10000*'ab'+'cd').end(0)""", None, RuntimeError)
 
+# bug 612074
+pat=u"["+sre.escape(u"\u2039")+u"]"
+test(r"""sre.compile(pat) and 1""", 1, None)
+
 if verbose:
     print 'Running tests on sre.sub'
 
