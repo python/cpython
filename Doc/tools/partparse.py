@@ -836,9 +836,10 @@ class Wobj:
 	self.data = self.data + data
 
 # ignore these commands
-ignoredcommands = ('bcode', 'ecode', 'hline', 'small', '/')
+ignoredcommands = ('hline', 'small', '/', 'tableofcontents', 'Large')
 # map commands like these to themselves as plaintext
-wordsselves = ('UNIX', 'ABC', 'C', 'ASCII', 'EOF', 'LaTeX', 'POSIX')
+wordsselves = ('UNIX', 'ABC', 'C', 'ASCII', 'EOF', 'LaTeX', 'POSIX', 'TeX',
+	       'SliTeX')
 # \{ --> {,  \} --> }, etc
 themselves = ('{', '}', ',', '.', '@', ' ', '\n') + wordsselves
 # these ones also themselves (see argargs macro in myformat.sty)
@@ -850,10 +851,6 @@ markcmds = {'code': ('', ''), 'var': 1, 'emph': ('_', '_'),
 
 # recognise patter {\FONTCHANGE-CMD TEXT} to \MAPPED-FC-CMD{TEXT}
 fontchanges = {'rm': 'r', 'it': 'i', 'em': 'emph', 'bf': 'b', 'tt': 't'}
-
-# transparent for these commands
-for_texi = ('emph', 'var', 'strong', 'code', 'kbd', 'key', 'dfn', 'samp',
-	    'file', 'r', 'i', 't')
 
 
 # try to remove macros and return flat text
@@ -874,11 +871,10 @@ def flattext(buf, pp):
 	    pass
 	elif ch.chtype == chunk_type[CSNAME]:
 	    s_buf_data = s(buf, ch.data)
-	    if s_buf_data in themselves or hist.inargs and s_buf_data in inargsselves:
+	    if convertible_csname(s_buf_data):
+		ch.chtype, ch.data, nix = conversion(s_buf_data)
+	    if hist.inargs and s_buf_data in inargsselves:
 		ch.chtype = chunk_type[PLAIN]
-	    elif s_buf_data == 'e':
-		ch.chtype = chunk_type[PLAIN]
-		ch.data = '\\'
 	    elif len(s_buf_data) == 1 \
 		      and s_buf_data in onlylatexspecial:
 		ch.chtype = chunk_type[PLAIN]
@@ -993,6 +989,7 @@ out = Struct()
 def startchange():
     global hist, out
 
+    hist.chaptertype = "chapter"
     hist.inenv = []
     hist.nodenames = []
     hist.cindex = []
@@ -1013,17 +1010,42 @@ itemizesymbols = ['bullet', 'minus', 'dots']
 # same for enumerate
 enumeratesymbols = ['1', 'A', 'a']
 
+# Map of things that convert one-to-one.  Each entry is a 3-tuple:
+#
+#	new_chtype, new_data, nix_trailing_empty_group
+#
 d = {}
+# add stuff that converts from one name to another:
 for name in ('url', 'module', 'function', 'cfunction',
 	     'keyword', 'method', 'exception', 'constant',
 	     'email', 'class', 'member', 'cdata', 'ctype',
-	     'member'):
-    d[name] = 'code'
-d['program'] = 'strong'
-d['sectcode'] = 'code'
+	     'member', 'sectcode', 'verb'):
+    d[name] = chunk_type[CSNAME], 'code', 0
+for name in ('emph', 'var', 'strong', 'code', 'kbd', 'key',
+	     'dfn', 'samp', 'file', 'r', 'i', 't'):
+    d[name] = chunk_type[CSNAME], name, 0
+d['program'] = chunk_type[CSNAME], 'strong', 0
+d['\\'] = chunk_type[CSNAME], '*', 0
+# add stuff that converts to text:
+for name in themselves:
+    d[name] = chunk_type[PLAIN], name, 0
+for name in wordsselves:
+    d[name] = chunk_type[PLAIN], name, 1
+for name in ',[]()':
+    d[name] = chunk_type[PLAIN], name, 0
+# a lot of these are LaTeX2e additions
+for name, value in [('quotedblbase', ',,'), ('quotesinglbase', ','),
+		    ('textquotedbl', '"'), ('LaTeXe', 'LaTeX2e'),
+		    ('e', '\\'), ('textquotedblleft', "``"),
+		    ('textquotedblright', "''"), ('textquoteleft', "`"),
+		    ('textquoteright', "'"), ('textbackslash', '\\'),
+		    ('textbar', '|'), ('textless', '<'),
+		    ('textgreater', '>'), ('textasciicircum', '^'),
+		    ('Cpp', 'C++'), ('copyright', '')]:
+    d[name] = chunk_type[PLAIN], value, 1
 convertible_csname = d.has_key
 conversion = d.get
-del d, name
+del d, name, value
 
 ##
 ## \begin{ {func,data,exc}desc }{name}...
@@ -1261,6 +1283,7 @@ def changeit(buf, pp):
     while 1:
 	# sanity check: length should always equal len(pp)
 	if len(pp) != length:
+	    print i, pp[i]
 	    raise 'FATAL', 'inconsistent length. thought ' + `length` + ', but should really be ' + `len(pp)`
 	if i >= length:
 	    break
@@ -1404,7 +1427,7 @@ def changeit(buf, pp):
 		    raise error, 'Sorry, expected plain text argument'
 		hist.itemargmacro = s(buf, pp[i].data)
 		if convertible_csname(hist.itemargmacro):
-		    hist.itemargmacro = conversion(hist.itemargmacro)
+		    hist.itemargmacro = conversion(hist.itemargmacro)[1]
 		del pp[i:newi]
 		length = length - (newi-i)
 
@@ -1466,7 +1489,7 @@ def changeit(buf, pp):
 		length = length + len(chunks) - 1
 		i = i + len(chunks) - 1
 
-	    elif envname in ('sloppypar', 'flushleft'):
+	    elif envname in ('sloppypar', 'flushleft', 'document'):
 		pass
 
 	    else:
@@ -1523,7 +1546,7 @@ def changeit(buf, pp):
 			       chunk(PLAIN, ch.where, "deffn")])]
 		i, length = i+2, length+2
 
-	    elif envname in ('seealso', 'sloppypar', 'flushleft'):
+	    elif envname in ('seealso', 'sloppypar', 'flushleft', 'document'):
 		pass
 
 	    else:
@@ -1541,9 +1564,11 @@ def changeit(buf, pp):
 		    pp[i:i+1]=cp + [
 			chunk(PLAIN, ch.where, ']')]
 		    length = length+len(cp)
+
 	    elif s_buf_data in ignoredcommands:
 		del pp[i-1]
 		i, length = i-1, length-1
+
 	    elif s_buf_data == '@' and \
 		      i != length and \
 		      pp[i].chtype == chunk_type[PLAIN] and \
@@ -1551,10 +1576,22 @@ def changeit(buf, pp):
 		# \@. --> \. --> @.
 		ch.data = '.'
 		del pp[i]
-		length = length-1
+		length = length - 1
+
+	    elif convertible_csname(s_buf_data):
+		ch.chtype, ch.data, nix = conversion(s_buf_data)
+		try:
+		    if nix and pp[i].chtype == chunk_type[GROUP] \
+		       and len(pp[i].data) == 0:
+			del pp[i]
+			length = length - 1
+		except IndexError:
+		    pass
+
 	    elif s_buf_data == '\\':
 		# \\ --> \* --> @*
 		ch.data = '*'
+
 	    elif len(s_buf_data) == 1 and \
 		      s_buf_data in onlylatexspecial:
 		ch.chtype = chunk_type[PLAIN]
@@ -1566,6 +1603,11 @@ def changeit(buf, pp):
 			  and len(pp[i].data) == 0:
 		    del pp[i]
 		    length = length-1
+
+	    elif s_buf_data == "appendix":
+		hist.chaptertype = "appendix"
+		del pp[i-1]
+		i, length = i-1, length-1
 
 	    elif hist.inargs and s_buf_data in inargsselves:
 		# This is the special processing of the
@@ -1593,6 +1635,13 @@ def changeit(buf, pp):
 
 	    elif s_buf_data == 'newcommand':
 		print "ignoring definition of \\" + s(buf, pp[i].data[0].data)
+		del pp[i-1:i+2]
+		i = i - 1
+		length = length - 3
+
+	    elif s_buf_data == 'renewcommand':
+		print "ignoring redefinition of \\" \
+		      + s(buf, pp[i].data[0].data)
 		del pp[i-1:i+2]
 		i = i - 1
 		length = length - 3
@@ -1672,6 +1721,7 @@ def changeit(buf, pp):
 			  or pp[i].data != []:
 		    pp.insert(i, chunk(GROUP, ch.where, []))
 		    i, length = i+1, length+1
+
 	    elif s_buf_data in themselves:
 		# \UNIX --> &UNIX;
 		ch.chtype = chunk_type[PLAIN]
@@ -1680,8 +1730,14 @@ def changeit(buf, pp):
 			  and pp[i].data == []:
 		    del pp[i]
 		    length = length-1
-	    elif s_buf_data in for_texi:
-		pass
+
+## 	    elif s_buf_data == 'copyright':
+## 		if (pp[i].chtype == chunk_type[GROUP]
+## 		    and not pp[i].data):
+## 		    del pp[i]
+## 		    length = length - 1
+## 		del pp[i-1]
+## 		i, length = i-1, length-1
 
 	    elif s_buf_data == 'manpage':
 		ch.data = 'emph'
@@ -1689,10 +1745,6 @@ def changeit(buf, pp):
 		pp[i+1].data = "(%s)" % sect
 		pp[i+1].chtype = chunk_type[PLAIN]
 
-	    elif s_buf_data == 'e':
-		# "\e" --> "\"
-		ch.data = '\\'
-		ch.chtype = chunk_type[PLAIN]
 	    elif s_buf_data in ('lineiii', 'lineii'):
 		# This is the most tricky one
 		# \lineiii{a1}{a2}[{a3}] -->
@@ -1726,11 +1778,14 @@ def changeit(buf, pp):
 		if length != len(pp):
 		    raise 'IN LINEIII IS THE ERR', `i`
 
-	    elif s_buf_data in ('chapter', 'section', 'subsection', 'subsubsection'):
+	    elif s_buf_data in ('chapter', 'section',
+				'subsection', 'subsubsection'):
 		#\xxxsection{A} ---->
 		# @node A, , ,
 		# @xxxsection A
 		## also: remove commas and quotes
+		if s_buf_data == "chapter":
+		    ch.data = hist.chaptertype
 		ch.chtype = chunk_type[CSLINE]
 		length, newi = getnextarg(length, buf, pp, i)
 		afternodenamecmd = next_command_p(length, buf,
@@ -1915,7 +1970,7 @@ def changeit(buf, pp):
 		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
 		length, i = length+1, i+1
 
-	    elif s_buf_data in ('stindex', 'kwindex'):
+	    elif s_buf_data == 'stindex':
 		# XXX must actually go to newindex st
 		what = (s_buf_data[:2] == "st") and "statement" or "keyword"
 		wh = ch.where
@@ -2091,11 +2146,12 @@ def changeit(buf, pp):
 		ch.chtype = PLAIN
 		ch.data = "    "
 
+	    elif s_buf_data in ('usepackage', 'input'):
+		del pp[i-1:i+1]
+		i, length = i-1, length-2
+
 	    elif s_buf_data in ('noindent', 'indexsubitem', 'footnote'):
 		pass
-
-	    elif convertible_csname(s_buf_data):
-		ch.data = conversion(s_buf_data)
 
 	    elif s_buf_data == 'label':
 		name = s(buf, pp[i].data[0].data)
@@ -2108,11 +2164,6 @@ def changeit(buf, pp):
 		ch.chtype = chunk_type[PLAIN]
 		ch.data = "RFC " + s(buf, pp[i].data[0].data)
 		del pp[i]
-		length = length - 1
-
-	    elif s_buf_data == 'Large':
-		del pp[i-1]
-		i = i - 1
 		length = length - 1
 
 	    elif s_buf_data == 'ref':
@@ -2154,12 +2205,12 @@ def dumpit(buf, wm, pp):
 
 	if ch.chtype == chunk_type[CSNAME]:
 	    s_buf_data = s(buf, ch.data)
-            if s_buf_data == 'e':
-                wm('\\')
-                continue
-            if s_buf_data == '$':
-                wm('$')
-                continue
+##             if s_buf_data == 'e':
+##                 wm('\\')
+##                 continue
+##             if s_buf_data == '$':
+##                 wm('$')
+##                 continue
 	    wm('@' + s_buf_data)
 	    if s_buf_data == 'node' and \
 		      pp[i].chtype == chunk_type[PLAIN] and \
@@ -2232,13 +2283,11 @@ def dumpit(buf, wm, pp):
 		wm('\n')
 
 	elif ch.chtype == chunk_type[COMMENT]:
-## 	    print 'COMMENT: previous chunk =', pp[i-2]
-## 	    if pp[i-2].chtype == chunk_type[PLAIN]:
-## 		print 'PLAINTEXT =', `s(buf, pp[i-2].data)`
 	    if s(buf, ch.data) and \
 		      regex.match('^[ \t]*$', s(buf, ch.data)) < 0:
 		if i >= 2 \
-		   and pp[i-2].chtype not in (chunk_type[ENDLINE], chunk_type[DENDLINE]) \
+		   and pp[i-2].chtype not in (chunk_type[ENDLINE],
+					      chunk_type[DENDLINE]) \
 		   and not (pp[i-2].chtype == chunk_type[PLAIN]
 			    and regex.match('\\(.\\|\n\\)*[ \t]*\n$', s(buf, pp[i-2].data)) >= 0):
 		    wm('\n')
