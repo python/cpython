@@ -22,6 +22,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
+/* This is published for the benefit of "friend" marshal.c only. */
+
 /* Parameters of the long integer representation.
    These shouldn't have to be changed as C should guarantee that a short
    contains at least 16 bits, but it's made changeable any way.
@@ -52,17 +54,10 @@ typedef long stwodigits; /* signed variant of twodigits */
    The allocation fuction takes care of allocating extra memory
    so that ob_digit[0] ... ob_digit[abs(ob_size)-1] are actually available. */
 
-typedef struct {
+struct _longobject {
 	OB_HEAD
 	int ob_size; /* XXX Hack! newvarobj() stores it as unsigned! */
 	digit ob_digit[1];
-} longobject;
+};
 
-#define ABS(x) ((x) < 0 ? -(x) : (x))
-
-/* Internal use only */
 longobject *alloclongobject PROTO((int));
-longobject *long_normalize PROTO((longobject *));
-longobject *mul1 PROTO((longobject *, wdigit));
-longobject *muladd1 PROTO((longobject *, wdigit, wdigit));
-longobject *divrem1 PROTO((longobject *, wdigit, digit *));
