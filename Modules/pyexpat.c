@@ -796,7 +796,7 @@ static char pyexpat_module_documentation[] =
 
 /* Initialization function for the module */
 
-DL_EXPORT(void) initpyexpat(void);  /* supply a prototype */
+void initpyexpat(void);  /* avoid compiler warnings */
 
 DL_EXPORT(void)
 initpyexpat(void)
@@ -818,29 +818,29 @@ initpyexpat(void)
                        (PyObject*)NULL, PYTHON_API_VERSION);
 
     /* Add some symbolic constants to the module */
-    d = PyModule_GetDict(m);
     if (ErrorObject == NULL)
-        ErrorObject = PyErr_NewException("pyexpat.error", NULL, NULL);
-    PyDict_SetItemString(d, "error", ErrorObject);
+        ErrorObject = PyErr_NewException("xml.parsers.expat.error",
+                                         NULL, NULL);
+    PyModule_AddObject(m, "error", ErrorObject);
 
-    PyDict_SetItemString(d, "__version__",
-                         PyString_FromStringAndSize(rev+11,
-                                                    strlen(rev+11)-2));
+    PyModule_AddObject(m, "__version__",
+                       PyString_FromStringAndSize(rev+11, strlen(rev+11)-2));
 
     /* XXX When Expat supports some way of figuring out how it was
        compiled, this should check and set native_encoding 
        appropriately. 
     */
-    PyDict_SetItemString(d, "native_encoding", 
-                         PyString_FromString("UTF-8"));
+    PyModule_AddStringConstant(m, "native_encoding", "UTF-8");
 
+    d = PyModule_GetDict(m);
     errors_module = PyDict_GetItem(d, errmod_name);
     if (errors_module == NULL) {
         errors_module = PyModule_New("pyexpat.errors");
         if (errors_module != NULL) {
             sys_modules = PySys_GetObject("modules");
-            PyDict_SetItemString(d, "errors", errors_module);
             PyDict_SetItem(sys_modules, errmod_name, errors_module);
+            /* gives away the reference to errors_module */
+            PyModule_AddObject(m, "errors", errors_module);
         }
     }
     Py_DECREF(errmod_name);
@@ -851,8 +851,8 @@ initpyexpat(void)
     errors_dict = PyModule_GetDict(errors_module);
 
 #define MYCONST(name) \
-    PyDict_SetItemString(errors_dict, #name,  \
-			 PyString_FromString(XML_ErrorString(name)))
+    PyModule_AddStringConstant(errors_module, #name, \
+                               (char*)XML_ErrorString(name))
 
     MYCONST(XML_ERROR_NO_MEMORY);
     MYCONST(XML_ERROR_SYNTAX);
@@ -873,6 +873,7 @@ initpyexpat(void)
     MYCONST(XML_ERROR_MISPLACED_XML_PI);
     MYCONST(XML_ERROR_UNKNOWN_ENCODING);
     MYCONST(XML_ERROR_INCORRECT_ENCODING);
+#undef MYCONST
 }
 
 static void
