@@ -656,6 +656,8 @@ PyErr_Print()
 			if (code) {
 				Py_DECREF(v);
 				v = code;
+				if (v == Py_None)
+					Py_Exit(0);
 			}
 			/* if we failed to dig out the "code" attribute,
 			   then just let the else clause below print the
