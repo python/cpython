@@ -58,9 +58,9 @@
   allocated by the Python interpreter may not be freed (if you find a
   leak, please report it).  Memory tied up in circular references
   between objects is not freed.  Some memory allocated by extension
-  modules may not be freed.  Some extension may not work properly if
+  modules may not be freed.  Some extensions may not work properly if
   their initialization routine is called more than once; this can
-  happen if an applcation calls \cfunction{Py_Initialize()} and
+  happen if an application calls \cfunction{Py_Initialize()} and
   \cfunction{Py_Finalize()} more than once.
 \end{cfuncdesc}
 
@@ -256,7 +256,7 @@
   Python version; the first three characters are the major and minor
   version separated by a period.  The returned string points into
   static storage; the caller should not modify its value.  The value
-  is available to Python code as the list \code{sys.version}.
+  is available to Python code as \code{sys.version}.
   \withsubitem{(in module sys)}{\ttindex{version}}
 \end{cfuncdesc}
 
@@ -279,8 +279,8 @@
   \code{'Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam'}
 
   The returned string points into static storage; the caller should
-  not modify its value.  The value is available to Python code as the
-  list \code{sys.copyright}.
+  not modify its value.  The value is available to Python code as
+  \code{sys.copyright}.
   \withsubitem{(in module sys)}{\ttindex{copyright}}
 \end{cfuncdesc}
 
