@@ -475,7 +475,7 @@ i.e. the limit on how far back to scan."
   ;; interface.
   ;;
   ;; WARNING: Watch out for infinite recursion.
-  (let* ((lim (or lim (c-point 'bod)))
+  (let* ((lim (or lim (py-point 'bod)))
 	 (state (parse-partial-sexp lim (point))))
     (cond
      ((nth 3 state) 'string)
