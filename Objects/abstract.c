@@ -1793,7 +1793,11 @@ objargs_mktuple(va_list va)
 #ifdef VA_LIST_IS_ARRAY
 	memcpy(countva, va, sizeof(va_list));
 #else
+#ifdef __va_copy
+	__va_copy(countva, va);
+#else
 	countva = va;
+#endif
 #endif
 
 	while (((PyObject *)va_arg(countva, PyObject *)) != NULL)
