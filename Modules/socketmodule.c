@@ -155,6 +155,14 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 # include <os2.h>
 #endif
 
+#if defined(__sgi)&&_COMPILER_VERSION>700 && !_SGIAPI
+/* make sure that the reentrant (gethostbyaddr_r etc)
+   functions are declared correctly if compiling with
+   MIPSPro 7.x in ANSI C mode (default) */
+#define _SGIAPI 1
+#include "netdb.h"
+#endif
+
 /* Generic includes */
 #include <sys/types.h>
 #include <signal.h>

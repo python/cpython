@@ -55,6 +55,12 @@ typedef struct timeval hs_time;
 #define PATH_MAX 260
 #endif
 
+#if defined(__sgi) && _COMPILER_VERSION>700 && !defined(PATH_MAX)
+/* fix PATH_MAX not being defined with MIPSPro 7.x
+   if mode is ANSI C (default) */
+#define PATH_MAX 1024
+#endif
+
 #ifndef PATH_MAX
 #   ifdef MAX_PATH
 #       define PATH_MAX MAX_PATH
