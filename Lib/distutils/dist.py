@@ -131,6 +131,12 @@ class Distribution:
         # for the setup script to override command classes
         self.cmdclass = {}
 
+        # 'script_name' and 'script_args' are usually set to sys.argv[0]
+        # and sys.argv[1:], but they can be overridden when the caller is
+        # not necessarily a setup script run from the command-line.
+        self.script_name = None
+        self.script_args = None
+
         # 'command_options' is where we store command options between
         # parsing them (from config files, the command-line, etc.) and when
         # they are actually needed -- ie. when the command in question is
@@ -326,24 +332,24 @@ class Distribution:
 
     # -- Command-line parsing methods ----------------------------------
 
-    def parse_command_line (self, args):
-        """Parse the setup script's command line.  'args' must be a list
-        of command-line arguments, most likely 'sys.argv[1:]' (see the
-        'setup()' function).  This list is first processed for "global
-        options" -- options that set attributes of the Distribution
-        instance.  Then, it is alternately scanned for Distutils
-        commands and options for that command.  Each new command
-        terminates the options for the previous command.  The allowed
-        options for a command are determined by the 'user_options'
-        attribute of the command class -- thus, we have to be able to
-        load command classes in order to parse the command line.  Any
-        error in that 'options' attribute raises DistutilsGetoptError;
-        any error on the command-line raises DistutilsArgError.  If no
-        Distutils commands were found on the command line, raises
-        DistutilsArgError.  Return true if command-line were
-        successfully parsed and we should carry on with executing
-        commands; false if no errors but we shouldn't execute commands
-        (currently, this only happens if user asks for help).
+    def parse_command_line (self):
+        """Parse the setup script's command line, taken from the
+        'script_args' instance attribute (which defaults to 'sys.argv[1:]'
+        -- see 'setup()' in core.py).  This list is first processed for
+        "global options" -- options that set attributes of the Distribution
+        instance.  Then, it is alternately scanned for Distutils commands
+        and options for that command.  Each new command terminates the
+        options for the previous command.  The allowed options for a
+        command are determined by the 'user_options' attribute of the
+        command class -- thus, we have to be able to load command classes
+        in order to parse the command line.  Any error in that 'options'
+        attribute raises DistutilsGetoptError; any error on the
+        command-line raises DistutilsArgError.  If no Distutils commands
+        were found on the command line, raises DistutilsArgError.  Return
+        true if command-line were successfully parsed and we should carry
+        on with executing commands; false if no errors but we shouldn't
+        execute commands (currently, this only happens if user asks for
+        help).
         """
         # We have to parse the command line a bit at a time -- global
         # options, then the first command, then its options, and so on --
@@ -356,7 +362,7 @@ class Distribution:
         parser = FancyGetopt (self.global_options + self.display_options)
         parser.set_negative_aliases (self.negative_opt)
         parser.set_aliases ({'license': 'licence'})
-        args = parser.getopt (object=self)
+        args = parser.getopt (args=self.script_args, object=self)
         option_order = parser.get_option_order()
 
         # for display options we return immediately
@@ -506,7 +512,7 @@ class Distribution:
         in 'commands'.
         """
         # late import because of mutual dependence between these modules
-        from distutils.core import usage
+        from distutils.core import gen_usage
         from distutils.cmd import Command
 
         if global_options:
@@ -535,7 +541,7 @@ class Distribution:
             parser.print_help ("Options for '%s' command:" % klass.__name__)
             print
 
-        print usage
+        print gen_usage(self.script_name)
         return
 
     # _show_help ()
@@ -547,7 +553,7 @@ class Distribution:
         line, display the requested info and return true; else return
         false.
         """
-        from distutils.core import usage
+        from distutils.core import gen_usage
 
         # User just wants a list of commands -- we'll print it out and stop
         # processing now (ie. if they ran "setup --help-commands foo bar",
@@ -555,7 +561,7 @@ class Distribution:
         if self.help_commands:
             self.print_commands ()
             print
-            print usage
+            print gen_usage(self.script_name)
             return 1
 
         # If user supplied any of the "display metadata" options, then
