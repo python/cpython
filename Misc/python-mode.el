@@ -74,6 +74,8 @@
 ;;   write-file-hooks that runs untabify on the whole buffer (to work
 ;;   around potential tab/space mismatch problems).  In practice this
 ;;   hasn't been a problem... yet.
+;; - have py-execute-region on indented code act as if the region is
+;;   left justified. Avoids syntax errors.
 
 ;; If you can think of more things you'd like to see, drop me a line.
 ;; If you want to report bugs, use py-submit-bug-report (C-c C-b).
