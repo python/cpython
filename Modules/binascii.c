@@ -265,7 +265,9 @@ binascii_a2b_uu(self, args)
 	*/
 	while( ascii_len-- > 0 ) {
 		this_ch = *ascii_data++;
-		if ( this_ch != ' ' && this_ch != '\n' && this_ch != '\r' ) {
+		/* Extra '@' may be written as padding in some cases */
+		if ( this_ch != ' ' && this_ch != '@' &&
+		     this_ch != '\n' && this_ch != '\r' ) {
 			PyErr_SetString(Error, "Trailing garbage");
 			Py_DECREF(rv);
 			return NULL;
