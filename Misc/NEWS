@@ -64,6 +64,9 @@ Core and builtins
 
 - Implemented bind_textdomain_codeset() in locale module.
 
+- Added a workaround for proper string operations in BSDs.  str.split
+  and str.is* methods can now work correctly with UTF-8 locales.
+
 Extension modules
 -----------------
 
