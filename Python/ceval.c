@@ -1402,7 +1402,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		case BREAK_LOOP:
 			why = WHY_BREAK;
 			break;
-		
+
 		case CONTINUE_LOOP:
 			retval = PyInt_FromLong(oparg);
 			why = WHY_CONTINUE;
@@ -2181,7 +2181,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			if (b->b_type == SETUP_LOOP && why == WHY_CONTINUE) {
 				/* For a continue inside a try block,
 				   don't pop the block for the loop. */
-				PyFrame_BlockSetup(f, b->b_type, b->b_level, 
+				PyFrame_BlockSetup(f, b->b_type, b->b_level,
 						   b->b_handler);
 				why = WHY_NOT;
 				JUMPTO(PyInt_AS_LONG(retval));
@@ -2825,22 +2825,28 @@ call_method(PyObject *func, PyObject *arg, PyObject *kw)
 	if (self == NULL) {
 		/* Unbound methods must be called with an instance of
 		   the class (or a derived class) as first argument */
+		int ok;
 		if (PyTuple_Size(arg) >= 1)
 			self = PyTuple_GET_ITEM(arg, 0);
-		if (!(self != NULL && PyInstance_Check(self)
-		    && PyClass_IsSubclass((PyObject *)
-				  (((PyInstanceObject *)self)->in_class),
-					  class))) {
-                PyObject* fn = ((PyFunctionObject*) func)->func_name;
-		PyErr_Format(PyExc_TypeError,
-                             "unbound method %s%smust be "
-                             "called with instance as first argument",
-                             fn ? PyString_AsString(fn) : "",
-                             fn ? "() " : "");
+		if (self == NULL)
+			ok = 0;
+		else {
+			ok = PyObject_IsInstance(self, class);
+			if (ok < 0)
+				return NULL;
+		}
+		if (!ok) {
+			PyObject* fn = ((PyFunctionObject*) func)->func_name;
+			PyErr_Format(PyExc_TypeError,
+				     "unbound method %s%smust be "
+				     "called with instance as first argument",
+				     fn ? PyString_AsString(fn) : "",
+				     fn ? "() " : "");
 			return NULL;
 		}
 		Py_INCREF(arg);
-	} else {
+	}
+	else {
 		int argcount = PyTuple_Size(arg);
 		PyObject *newarg = PyTuple_New(argcount + 1);
 		int i;
