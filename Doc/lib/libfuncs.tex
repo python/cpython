@@ -234,12 +234,13 @@ class instances are callable if they have a \method{__call__()} method.
 \end{funcdesc}
 
 \begin{funcdesc}{filter}{function, list}
-Construct a list from those elements of \var{list} for which
-\var{function} returns true.  If \var{list} is a string or a tuple,
-the result also has that type; otherwise it is always a list.  If
-\var{function} is \code{None}, the identity function is assumed,
-i.e.\ all elements of \var{list} that are false (zero or empty) are
-removed.
+  Construct a list from those elements of \var{list} for which
+  \var{function} returns true.  \var{list} may be either a sequence, a
+  container which supports iteration, or an iterator,  If \var{list}
+  is a string or a tuple, the result also has that type; otherwise it
+  is always a list.  If \var{function} is \code{None}, the identity
+  function is assumed, i.e.\ all elements of \var{list} that are false
+  (zero or empty) are removed.
 \end{funcdesc}
 
 \begin{funcdesc}{float}{x}
@@ -378,12 +379,13 @@ raised.
 \end{funcdesc}
 
 \begin{funcdesc}{list}{sequence}
-Return a list whose items are the same and in the same order as
-\var{sequence}'s items.  If \var{sequence} is already a list,
-a copy is made and returned, similar to \code{\var{sequence}[:]}.  
-For instance, \code{list('abc')} returns
-returns \code{['a', 'b', 'c']} and \code{list( (1, 2, 3) )} returns
-\code{[1, 2, 3]}.
+  Return a list whose items are the same and in the same order as
+  \var{sequence}'s items.  \var{sequence} may be either a sequence, a
+  container that supports iteration, or an iterator object.  If
+  \var{sequence} is already a list, a copy is made and returned,
+  similar to \code{\var{sequence}[:]}.  For instance,
+  \code{list('abc')} returns \code{['a', 'b', 'c']} and \code{list(
+  (1, 2, 3) )} returns \code{[1, 2, 3]}.
 \end{funcdesc}
 
 \begin{funcdesc}{locals}{}
