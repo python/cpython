@@ -252,6 +252,8 @@ w_object(v, p)
 		w_object(co->co_varnames, p);
 		w_object(co->co_filename, p);
 		w_object(co->co_name, p);
+		w_short(co->co_firstlineno, p);
+		w_object(co->co_lnotab, p);
 	}
 	else {
 		w_byte(TYPE_UNKNOWN, p);
@@ -520,6 +522,8 @@ r_object(p)
 			object *varnames = NULL;
 			object *filename = NULL;
 			object *name = NULL;
+			int firstlineno;
+			object *lnotab = NULL;
 			
 			code = r_object(p);
 			if (code) consts = r_object(p);
@@ -527,12 +531,16 @@ r_object(p)
 			if (names) varnames = r_object(p);
 			if (varnames) filename = r_object(p);
 			if (filename) name = r_object(p);
+			if (name) {
+				firstlineno = r_short(p);
+				lnotab = r_object(p);
+			}
 			
 			if (!err_occurred()) {
 				v = (object *) newcodeobject(
 					argcount, nlocals, stacksize, flags, 
 					code, consts, names, varnames,
-					filename, name);
+					filename, name, firstlineno, lnotab);
 			}
 			else
 				v = NULL;
