@@ -259,11 +259,13 @@ removed.
   and is known to vary.
 \end{funcdesc}
 
-\begin{funcdesc}{getattr}{object, name}
-  The arguments are an object and a string.  The string must be the
-  name of one of the object's attributes.  The result is the value of
-  that attribute.  For example, \code{getattr(\var{x},
-  '\var{foobar}')} is equivalent to \code{\var{x}.\var{foobar}}.
+\begin{funcdesc}{getattr}{object, name\optional{, default}}
+  Return the value of the named attributed of \var{object}.  \var{name}
+  must be a string.  If the string is the name of one of the object's
+  attributes, the result is the value of that attribute.  For example,
+  \code{getattr(x, 'foobar')} is equivalent to \code{x.foobar}.  If the
+  named attribute does not exist, \var{default} is returned if provided,
+  otherwise \exception{AttributeError} is raised.
 \end{funcdesc}
 
 \begin{funcdesc}{globals}{}
