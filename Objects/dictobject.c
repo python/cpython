@@ -1703,7 +1703,7 @@ dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 		return -1;
 	if (arg != NULL) {
 		if (PyDict_Merge(self, arg, 1) < 0) {
-			/* An error like "AttibuteError: keys" is too
+			/* An error like "AttributeError: keys" is too
 			   cryptic in this context. */
 			if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
 				PyErr_SetString(PyExc_TypeError,
