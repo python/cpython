@@ -14,6 +14,7 @@ class StackBrowser:
     def __init__(self, root, flist, stack=None):
         self.top = top = ListedToplevel(root)
         top.protocol("WM_DELETE_WINDOW", self.close)
+        top.bind("<Key-Escape>", self.close)
         top.wm_title("Stack viewer")
         top.wm_iconname("Stack")
         # Create help label
@@ -27,7 +28,7 @@ class StackBrowser:
             stack = get_stack()
         self.sv.load_stack(stack)
 
-    def close(self):
+    def close(self, event=None):
         self.top.destroy()
 
     localsframe = None
