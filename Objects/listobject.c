@@ -560,7 +560,7 @@ listappend(self, args)
 /* CMPERROR is returned by our comparison function when an error
    occurred.  This is the largest negative integer (0x80000000 on a
    32-bit system). */
-#define CMPERROR (1 << (8*sizeof(int) - 1))
+#define CMPERROR ( (int) ((unsigned int)1 << (8*sizeof(int) - 1)) )
 
 /* Comparison function.  Takes care of calling a user-supplied
    comparison function (any callable Python object).  Calls the
