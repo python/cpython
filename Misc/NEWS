@@ -24,6 +24,11 @@ Type/class unification and new-style classes
   (c) The __get__ method didn't check whether the argument was an
       instance of the type used in creation of the super instance.
 
+- Previously, hash() of an instance of a subclass of a mutable type
+  (list or dictionary) would return some value, rather than raising
+  TypeError.  This has been fixed.  Also, directly calling
+  dict.__hash__ and list.__hash__ now raises the same TypeError
+  (previously, these were the same as object.__hash__).
 
 Core and builtins
 
