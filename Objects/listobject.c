@@ -472,15 +472,6 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		n = 0;
 	else {
 		char msg[256];
-		PyOS_snprintf(msg, sizeof(msg),
-			      "must assign sequence"
-			      " (not \"%.200s\") to slice",
-			      v->ob_type->tp_name);
-		v_as_SF = PySequence_Fast(v, msg);
-		if(v_as_SF == NULL)
-			return -1;
-		n = PySequence_Fast_GET_SIZE(v_as_SF);
-
 		if (a == b) {
 			/* Special case "a[i:j] = a" -- copy b first */
 			int ret;
@@ -491,6 +482,15 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 			Py_DECREF(v);
 			return ret;
 		}
+
+		PyOS_snprintf(msg, sizeof(msg),
+			      "must assign sequence"
+			      " (not \"%.200s\") to slice",
+			      v->ob_type->tp_name);
+		v_as_SF = PySequence_Fast(v, msg);
+		if(v_as_SF == NULL)
+			return -1;
+		n = PySequence_Fast_GET_SIZE(v_as_SF);
 	}
 	if (ilow < 0)
 		ilow = 0;
