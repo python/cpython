@@ -137,7 +137,8 @@ writeframesraw.
 import struct
 import __builtin__
 
-Error = 'aifc.Error'
+class Error(Exception):
+    pass
 
 _AIFC_version = 0xA2805140      # Version 1 of AIFF-C
 

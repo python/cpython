@@ -52,8 +52,9 @@ __getstate__() and __setstate__().  See the documentation for module
 
 import types
 
-error = 'copy.error'
-Error = error # backward compatibility
+class Error(Exception):
+	pass
+error = Error	# backward compatibility
 
 def copy(x):
 	"""Shallow copy operation on arbitrary Python objects.

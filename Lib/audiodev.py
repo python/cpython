@@ -1,6 +1,7 @@
 """Classes for manipulating audio devices (currently only for Sun and SGI)"""
 
-error = 'audiodev.error'
+class error(Exception):
+	pass
 
 class Play_Audio_sgi:
 	# Private instance variables
