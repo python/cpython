@@ -588,7 +588,10 @@ The \file{Python/importdl.c} file, which was a mass of \#ifdefs to
 support dynamic loading on many different platforms, was cleaned up
 and reorganised by Greg Stein.  \file{importdl.c} is now quite small,
 and platform-specific code has been moved into a bunch of
-\file{Python/dynload_*.c} files.  
+\file{Python/dynload_*.c} files.  Another cleanup: there were also a
+number of \file{my*.h} files in the Include/ directory that held
+various portability hacks; they've been merged into a single file,
+\file{Include/pyport.h}.
 
 Vladimir Marangozov's long-awaited malloc restructuring was completed,
 to make it easy to have the Python interpreter use a custom allocator
