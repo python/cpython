@@ -41,6 +41,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- The iconv module has been removed from this release.
+
 - The platform-independent routines for packing floats in IEEE formats
   (struct.pack's <f, >f, <d, and >d codes; pickle and cPickle's protocol 1
   pickling of floats) ignored that rounding can cause a carry to
@@ -104,8 +106,6 @@ TBD
 
 Build
 -----
-
-- Fix build problems when _iconv_codec failed.  (SF bug #690012.)
 
 - Fix problem building on OSF1 because the compiler only accepted
   preprocessor directives that start in column 1.  (SF bug #691793.)
@@ -275,9 +275,6 @@ Extension modules
 
 - The SSL module now handles sockets with a timeout set correctly (SF
   patch #675750, fixing SF bug #675552).
-
-- A new module _iconv_codec has been added, to expose the iconv(3)
-  library.
 
 - os/posixmodule has grown the sysexits.h constants (EX_OK and friends).
 
