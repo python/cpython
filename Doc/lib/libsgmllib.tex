@@ -70,6 +70,14 @@ define additional processing at the end of the input, but the
 redefined version should always call \method{close()}.
 \end{methoddesc}
 
+\begin{methoddesc}{get_starttag_text}{}
+Return the text of the most recently opened start tag.  This should
+not normally be needed for structured processing, but may be useful in
+dealing with HTML ``as deployed'' or for re-generating input with
+minimal changes (whitespace between attributes can be preserved,
+etc.).
+\end{methoddesc}
+
 \begin{methoddesc}{handle_starttag}{tag, method, attributes}
 This method is called to handle start tags for which either a
 \method{start_\var{tag}()} or \method{do_\var{tag}()} method has been
