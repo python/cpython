@@ -550,35 +550,31 @@ class PyBuildExt(build_ext):
         #
         # Expat is written by James Clark and must be downloaded separately
         # (see below).  The pyexpat module was written by Paul Prescod after a
-        # prototype by Jack Jansen.
-        #
-        # The Expat dist includes Windows .lib and .dll files.  Home page is
-        # at http://www.jclark.com/xml/expat.html, the current production
-        # release is always ftp://ftp.jclark.com/pub/xml/expat.zip.
-        #
-        # EXPAT_DIR, below, should point to the expat/ directory created by
-        # unpacking the Expat source distribution.
-        #
-        # Note: the expat build process doesn't yet build a libexpat.a; you
-        # can do this manually while we try convince the author to add it.  To
-        # do so, cd to EXPAT_DIR, run "make" if you have not done so, then
-        # run:
-        #
-        #    ar cr libexpat.a xmltok/*.o xmlparse/*.o
-        #
-        expat_defs = []
-        expat_incs = find_file('expat.h', inc_dirs, [])
-        if expat_incs is not None:
-            # expat.h was found
-            expat_defs = [('HAVE_EXPAT_H', 1)]
+        # prototype by Jack Jansen. Source of Expat 1.95.2 is included
+        # in Modules/expat. Usage of a system shared libexpat.so/expat.dll
+        # is only advised if that has the same or newer version and was
+        # build using the same defines.
+        if sys.byteorder == "little":
+            xmlbo = "12"
         else:
-            expat_incs = find_file('xmlparse.h', inc_dirs, [])
-
-        if (expat_incs is not None and
-            self.compiler.find_library_file(lib_dirs, 'expat')):
-            exts.append( Extension('pyexpat', ['pyexpat.c'],
-                                   define_macros = expat_defs,
-                                   libraries = ['expat']) )
+            xmlbo = "21"
+        exts.append(Extension('pyexpat',
+                              sources = [
+            'pyexpat.c',
+            'expat/xmlparse.c',
+            'expat/xmlrole.c',
+            'expat/xmltok.c',
+            ],
+                              define_macros = [
+            ('HAVE_EXPAT_H',None),
+            ('VERSION', '"1.95.2"'),
+            ('XML_NS', '1'),
+            ('XML_DTD', '1'),
+            ('XML_BYTE_ORDER', xmlbo),
+            ('XML_CONTEXT_BYTES','1024'),
+            ],
+                              include_dirs = ['Modules/expat']
+                               ))                        
 
         # Dynamic loading module
         dl_inc = find_file('dlfcn.h', [], inc_dirs)
