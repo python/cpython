@@ -15,14 +15,14 @@ PyCFunction_New(PyMethodDef *ml, PyObject *self)
 		PyObject_INIT(op, &PyCFunction_Type);
 	}
 	else {
-		op = PyObject_NEW(PyCFunctionObject, &PyCFunction_Type);
+		op = PyObject_GC_New(PyCFunctionObject, &PyCFunction_Type);
 		if (op == NULL)
 			return NULL;
 	}
 	op->m_ml = ml;
 	Py_XINCREF(self);
 	op->m_self = self;
-	PyObject_GC_Init(op);
+	_PyObject_GC_TRACK(op);
 	return (PyObject *)op;
 }
 
@@ -111,7 +111,7 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 static void
 meth_dealloc(PyCFunctionObject *m)
 {
-	PyObject_GC_Fini(m);
+	_PyObject_GC_UNTRACK(m);
 	Py_XDECREF(m->m_self);
 	m->m_self = (PyObject *)free_list;
 	free_list = m;
@@ -216,7 +216,7 @@ PyTypeObject PyCFunction_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"builtin_function_or_method",
-	sizeof(PyCFunctionObject) + PyGC_HEAD_SIZE,
+	sizeof(PyCFunctionObject),
 	0,
 	(destructor)meth_dealloc, 		/* tp_dealloc */
 	0,					/* tp_print */
@@ -233,7 +233,7 @@ PyTypeObject PyCFunction_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
  	0,					/* tp_doc */
  	(traverseproc)meth_traverse,		/* tp_traverse */
 	0,					/* tp_clear */
@@ -327,7 +327,6 @@ PyCFunction_Fini(void)
 	while (free_list) {
 		PyCFunctionObject *v = free_list;
 		free_list = (PyCFunctionObject *)(v->m_self);
-		v = (PyCFunctionObject *) PyObject_AS_GC(v);
-		PyObject_DEL(v);
+		PyObject_GC_Del(v);
 	}
 }
