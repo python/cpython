@@ -85,7 +85,7 @@
 /* 40 = 4.0, 33 = 3.3; this will break if the second number is > 9 */
 #define DBVER (DB_VERSION_MAJOR * 10 + DB_VERSION_MINOR)
 
-#define PY_BSDDB_VERSION "4.1.1"
+#define PY_BSDDB_VERSION "4.1.2"
 static char *rcs_id = "$Id$";
 
 
@@ -465,6 +465,7 @@ static int makeDBError(int err)
     }
 
     if (errObj != NULL) {
+        /* FIXME this needs proper bounds checking on errTxt */
         strcpy(errTxt, db_strerror(err));
         if (_db_errmsg[0]) {
             strcat(errTxt, " -- ");
@@ -3722,15 +3723,23 @@ static PyObject*
 DBTxn_commit(DBTxnObject* self, PyObject* args)
 {
     int flags=0, err;
+    DB_TXN *txn;
 
     if (!PyArg_ParseTuple(args, "|i:commit", &flags))
         return NULL;
 
+    if (!self->txn) {
+        PyErr_SetObject(DBError, Py_BuildValue("(is)", 0,
+            "DBTxn must not be used after txn_commit or txn_abort"));
+        return NULL;
+    }
+    txn = self->txn;
+    self->txn = NULL;   /* this DB_TXN is no longer valid after this call */
     MYDB_BEGIN_ALLOW_THREADS;
 #if (DBVER >= 40)
-    err = self->txn->commit(self->txn, flags);
+    err = txn->commit(txn, flags);
 #else
-    err = txn_commit(self->txn, flags);
+    err = txn_commit(txn, flags);
 #endif
     MYDB_END_ALLOW_THREADS;
     RETURN_IF_ERR();
@@ -3754,6 +3763,11 @@ DBTxn_prepare(DBTxnObject* self, PyObject* args)
         return NULL;
     }
 
+    if (!self->txn) {
+        PyErr_SetObject(DBError, Py_BuildValue("(is)", 0,
+            "DBTxn must not be used after txn_commit or txn_abort"));
+        return NULL;
+    }
     MYDB_BEGIN_ALLOW_THREADS;
 #if (DBVER >= 40)
     err = self->txn->prepare(self->txn, (u_int8_t*)gid);
@@ -3769,6 +3783,11 @@ DBTxn_prepare(DBTxnObject* self, PyObject* args)
     if (!PyArg_ParseTuple(args, ":prepare"))
         return NULL;
 
+    if (!self->txn) {
+        PyErr_SetObject(DBError, Py_BuildValue("(is)", 0,
+            "DBTxn must not be used after txn_commit or txn_abort"));
+        return NULL;
+    }
     MYDB_BEGIN_ALLOW_THREADS;
     err = txn_prepare(self->txn);
     MYDB_END_ALLOW_THREADS;
@@ -3782,15 +3801,23 @@ static PyObject*
 DBTxn_abort(DBTxnObject* self, PyObject* args)
 {
     int err;
+    DB_TXN *txn;
 
     if (!PyArg_ParseTuple(args, ":abort"))
         return NULL;
 
+    if (!self->txn) {
+        PyErr_SetObject(DBError, Py_BuildValue("(is)", 0,
+            "DBTxn must not be used after txn_commit or txn_abort"));
+        return NULL;
+    }
+    txn = self->txn;
+    self->txn = NULL;   /* this DB_TXN is no longer valid after this call */
     MYDB_BEGIN_ALLOW_THREADS;
 #if (DBVER >= 40)
-    err = self->txn->abort(self->txn);
+    err = txn->abort(txn);
 #else
-    err = txn_abort(self->txn);
+    err = txn_abort(txn);
 #endif
     MYDB_END_ALLOW_THREADS;
     RETURN_IF_ERR();
@@ -3806,6 +3833,11 @@ DBTxn_id(DBTxnObject* self, PyObject* args)
     if (!PyArg_ParseTuple(args, ":id"))
         return NULL;
 
+    if (!self->txn) {
+        PyErr_SetObject(DBError, Py_BuildValue("(is)", 0,
+            "DBTxn must not be used after txn_commit or txn_abort"));
+        return NULL;
+    }
     MYDB_BEGIN_ALLOW_THREADS;
 #if (DBVER >= 40)
     id = self->txn->id(self->txn);
