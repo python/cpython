@@ -39,6 +39,7 @@
 # dict = f.getsequences() # dictionary of sequences in folder {name: list}
 # f.putsequences(dict)    # write sequences back to folder
 #
+# f.createmessage(n, fp)  # add message from file f as number n
 # f.removemessages(list)  # remove messages in list from folder
 # f.refilemessages(list, tofolder) # move messages in list to other folder
 # f.movemessage(n, tofolder, ton)  # move one message to a given destination
@@ -53,7 +54,7 @@
 #
 # XXX To do, functionality:
 # - annotate messages
-# - create, send messages
+# - send messages
 #
 # XXX To do, organization:
 # - move IntSet to separate file
@@ -699,7 +700,7 @@ class Message(mimetools.Message):
     def getbodytext(self, decode = 1):
         self.fp.seek(self.startofbody)
         encoding = self.getencoding()
-        if not decode or encoding in ('7bit', '8bit', 'binary'):
+        if not decode or encoding in ('', '7bit', '8bit', 'binary'):
             return self.fp.read()
         from StringIO import StringIO
         output = StringIO()
@@ -743,6 +744,7 @@ class SubMessage(Message):
             self.body = Message.getbodyparts(self)
         else:
             self.body = Message.getbodytext(self)
+        self.bodyencoded = Message.getbodytext(self, decode=0)
             # XXX If this is big, should remember file pointers
 
     # String representation
@@ -750,7 +752,9 @@ class SubMessage(Message):
         f, n, fp = self.folder, self.number, self.fp
         return 'SubMessage(%s, %s, %s)' % (f, n, fp)
 
-    def getbodytext(self):
+    def getbodytext(self, decode = 1):
+        if not decode:
+            return self.bodyencoded
         if type(self.body) == type(''):
             return self.body
 
