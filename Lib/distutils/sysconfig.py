@@ -205,6 +205,21 @@ def parse_makefile(fp, g=None):
                 # bogus variable reference; just drop it since we can't deal
                 del notdone[name]
 
+    # "Fix" all pathnames in the Makefile that are explicitly relative,
+    # ie. that start with "./".  This is a kludge to fix the "./ld_so_aix"
+    # problem, the nature of which is that Python's installed Makefile
+    # refers to "./ld_so_aix", but when we are building extensions we are
+    # far from the directory where Python's Makefile (and ld_so_aix, for
+    # that matter) is installed.  Unfortunately, there are several other
+    # relative pathnames in the Makefile, and this fix doesn't fix them,
+    # because the layout of Python's source tree -- which is what the
+    # Makefile refers to -- is not fully preserved in the Python
+    # installation.  Grumble.
+    from os.path import normpath, join, dirname
+    for (name, value) in done.items():
+        if value[0:2] == "./":
+            done[name] = normpath(join(dirname(fp.name), value))
+
     # save the results in the global dictionary
     g.update(done)
     return g
