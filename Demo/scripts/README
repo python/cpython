@@ -29,6 +29,7 @@ linktree.py		Make a copy of a tree with links to original files
 lll.py			Find and list symbolic links in current directory
 lpwatch.py		Watch BSD line printer queues
 markov.py		Markov chain simulation of words or characters
+mboxconvvert.py		Convert MH or MMDF mailboxes to unix mailbox format
 methfix.py		Fix old method syntax def f(self, (a1, ..., aN)):
 mkreal.py		Turn a symbolic link into a real file or directory
 mpzpi.py		test mpz -- print digits of pi (compare pi.py)
