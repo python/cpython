@@ -166,9 +166,9 @@ class build_ext (Command):
             self.compiler.set_link_objects (self.link_objects)
 
         if self.distribution.libraries:
-            build_lib = self.find_peer ('build_lib')
-            self.libraries = build_lib.get_library_names () or []
-            self.library_dirs = [build_lib.build_clib]
+            build_clib = self.find_peer ('build_clib')
+            self.libraries = build_clib.get_library_names () or []
+            self.library_dirs = [build_clib.build_clib]
         else:
             self.libraries = []
             self.library_dirs = []
