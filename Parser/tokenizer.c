@@ -81,6 +81,11 @@ char *tok_name[] = {
 	"BACKQUOTE",
 	"LBRACE",
 	"RBRACE",
+	"EQEQUAL",
+	"NOTEQUAL",
+	"LESSEQUAL",
+	"GREATEREQUAL",
+	/* This table must match the #defines in token.h! */
 	"OP",
 	"<ERRORTOKEN>",
 	"<N_TOKENS>"
@@ -298,6 +303,37 @@ tok_1char(c)
 	case '}':	return RBRACE;
 	default:	return OP;
 	}
+}
+
+
+int
+tok_2char(c1, c2)
+	int c1, c2;
+{
+	switch (c1) {
+	case '=':
+		switch (c2) {
+		case '=':	return EQEQUAL;
+		}
+		break;
+	case '!':
+		switch (c2) {
+		case '=':	return NOTEQUAL;
+		}
+		break;
+	case '<':
+		switch (c2) {
+		case '>':	return NOTEQUAL;
+		case '=':	return LESSEQUAL;
+		}
+		break;
+	case '>':
+		switch (c2) {
+		case '=':	return GREATEREQUAL;
+		}
+		break;
+	}
+	return OP;
 }
 
 
@@ -529,6 +565,17 @@ tok_get(tok, p_start, p_end)
 		}
 		tok->lineno++;
 		goto again; /* Read next line */
+	}
+	
+	/* Check for two-character token */
+	{
+		int c2 = tok_nextc(tok);
+		int token = tok_2char(c, c2);
+		if (token != OP) {
+			*p_end = tok->cur;
+			return token;
+		}
+		tok_backup(tok, c2);
 	}
 	
 	/* Punctuation character */
