@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+Copyright 1991-1997 by Stichting Mathematisch Centrum, Amsterdam,
 The Netherlands.
 
                         All Rights Reserved
@@ -22,7 +22,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* xx module */
 
 #include "Python.h"
 
