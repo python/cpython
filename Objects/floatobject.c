@@ -8,21 +8,6 @@
 
 #include <ctype.h>
 
-#ifdef i860
-/* Cray APP has bogus definition of HUGE_VAL in <math.h> */
-#undef HUGE_VAL
-#endif
-
-#if defined(HUGE_VAL) && !defined(CHECK)
-#define CHECK(x) if (errno != 0) ; \
-	else if (-HUGE_VAL <= (x) && (x) <= HUGE_VAL) ; \
-	else errno = ERANGE
-#endif
-
-#ifndef CHECK
-#define CHECK(x) /* Don't know how to check */
-#endif
-
 #if !defined(__STDC__) && !defined(macintosh)
 extern double fmod(double, double);
 extern double pow(double, double);
@@ -535,7 +520,7 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 	PyFPE_START_PROTECT("pow", return NULL)
 	ix = pow(iv, iw);
 	PyFPE_END_PROTECT(ix)
-	CHECK(ix);
+	Py_SET_ERANGE_IF_OVERFLOW(ix);
 	if (errno != 0) {
 		/* XXX could it be another type of error? */
 		PyErr_SetFromErrno(PyExc_OverflowError);

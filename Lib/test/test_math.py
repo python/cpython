@@ -181,7 +181,7 @@ def test_exceptions():
         raise TestFailed("overflowing exp() didn't trigger OverflowError")
 
     # If this fails, it could be a puzzle.  One odd possibility is that
-    # mathmodule.c's CHECK() macro is getting confused while comparing
+    # mathmodule.c's macros are getting confused while comparing
     # Inf (HUGE_VAL) to a NaN, and artificially setting errno to ERANGE
     # as a result (and so raising OverflowError instead).
     try:

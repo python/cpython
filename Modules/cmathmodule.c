@@ -4,19 +4,6 @@
 
 #include "Python.h"
 
-#ifdef i860
-/* Cray APP has bogus definition of HUGE_VAL in <math.h> */
-#undef HUGE_VAL
-#endif
-
-#ifdef HUGE_VAL
-#define CHECK(x) if (errno != 0) ; \
-	else if (-HUGE_VAL <= (x) && (x) <= HUGE_VAL) ; \
-	else errno = ERANGE
-#else
-#define CHECK(x) /* Don't know how to check */
-#endif
-
 #ifndef M_PI
 #define M_PI (3.141592653589793239)
 #endif
@@ -366,8 +353,8 @@ math_1(PyObject *args, Py_complex (*func)(Py_complex))
 	PyFPE_START_PROTECT("complex function", return 0)
 	x = (*func)(x);
 	PyFPE_END_PROTECT(x)
-	CHECK(x.real);
-	CHECK(x.imag);
+	Py_SET_ERANGE_IF_OVERFLOW(x.real);
+	Py_SET_ERANGE_IF_OVERFLOW(x.imag);
 	if (errno != 0)
 		return math_error();
 	else

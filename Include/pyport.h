@@ -230,6 +230,18 @@ extern "C" {
  */
 #define Py_IS_INFINITY(X) ((X) && (X)*0.5 == (X))
 
+/* According to
+ * http://www.cray.com/swpubs/manuals/SN-2194_2.0/html-SN-2194_2.0/x3138.htm
+ * on some Cray systems HUGE_VAL is incorrectly (according to the C std)
+ * defined to be the largest positive finite rather than infinity.  We need
+ * the std-conforming infinity meaning (provided the platform has one!).
+ */
+#ifdef INFINITY
+#define Py_HUGE_VAL INFINITY
+#else
+#define Py_HUGE_VAL HUGE_VAL
+#endif
+
 /* Py_OVERFLOWED(X)
  * Return 1 iff a libm function overflowed.  Set errno to 0 before calling
  * a libm function, and invoke this macro after, passing the function
@@ -246,9 +258,24 @@ extern "C" {
  *	  in non-overflow cases.
  *    X is evaluated more than once.
  */
-#define Py_OVERFLOWED(X) ((X) != 0.0 && (errno == ERANGE || \
-					 (X) == HUGE_VAL || \
-					 (X) == -HUGE_VAL))
+#define Py_OVERFLOWED(X) ((X) != 0.0 && (errno == ERANGE ||    \
+					 (X) == Py_HUGE_VAL || \
+					 (X) == -Py_HUGE_VAL))
+
+/* Py_SET_ERANGE_ON_OVERFLOW(x)
+ * If a libm function did not set errno, but it looks like the result
+ * overflowed, set errno to ERANGE.  Set errno to 0 before calling a libm
+ * function, and invoke this macro after, passing the function result.
+ * Caution:
+ *    This isn't reliable.  See Py_OVERFLOWED comments.
+ *    X is evaluated more than once.
+ */
+#define Py_SET_ERANGE_IF_OVERFLOW(X) \
+	do { \
+		if (errno == 0 && ((X) == Py_HUGE_VAL ||  \
+				   (X) == -Py_HUGE_VAL))  \
+			errno = ERANGE; \
+	} while(0)
 
 /**************************************************************************
 Prototypes that are missing from the standard include files on some systems

@@ -81,6 +81,13 @@ Core
 
 Library
 
+- The new C standard no longer requires that math libraries set errno to
+  ERANGE on overflow.  For platform libraries that exploit this new
+  freedom, Python's overflow-checking was wholly broken.  A new overflow-
+  checking scheme attempts to repair that, but may not be reliable on all
+  platforms (C doesn't seem to provide anything both useful and portable
+  in this area anymore).
+
 - Asynchronous timeout actions are available through the new class
   threading.Timer.
 
