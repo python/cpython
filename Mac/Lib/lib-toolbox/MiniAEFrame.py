@@ -82,6 +82,7 @@ class MiniApplication:
 					raise KeyboardInterrupt, "Command-period"
 				if c == 'q':
 					self.quitting = 1
+					return
 		elif what == mouseDown:
 			partcode, window = Win.FindWindow(where)
 			if partcode == inMenuBar:
@@ -97,9 +98,9 @@ class MiniApplication:
 				elif id == self.quitid and item == 1:
 					self.quitting = 1
 				Menu.HiliteMenu(0)
-		else:
-			# Anything not handled is passed to Python/SIOUX
-			MacOS.HandleEvent(event)
+				return
+		# Anything not handled is passed to Python/SIOUX
+		MacOS.HandleEvent(event)
 	
 	def getabouttext(self):
 		return self.__class__.__name__
