@@ -622,6 +622,49 @@ sub set_depth_levels {
                  %declarations);
 
 
+# This is a modified version of what's provided by LaTeX2HTML; see the
+# comment on the middle stanza for an explanation of why we keep our
+# own version.
+#
+# This routine must be called once on the text only,
+# else it will "eat up" sensitive constructs.
+sub text_cleanup {
+    # MRO: replaced $* with /m
+    s/(\s*\n){3,}/\n\n/gom;	# Replace consecutive blank lines with one
+    s/<(\/?)P>\s*(\w)/<$1P>\n$2/gom;      # clean up paragraph starts and ends
+    s/$O\d+$C//go;		# Get rid of bracket id's
+    s/$OP\d+$CP//go;		# Get rid of processed bracket id's
+    s/(<!)?--?(>)?/(length($1) || length($2)) ? "$1--$2" : "-"/ge;
+    # Spacing commands
+    s/\\( |$)/ /go;
+    #JKR: There should be no more comments in the source now.
+    #s/([^\\]?)%/$1/go;        # Remove the comment character
+    # Cannot treat \, as a command because , is a delimiter ...
+    s/\\,/ /go;
+    # Replace tilde's with non-breaking spaces
+    s/ *~/&nbsp;/g;
+
+    # This is why we have this copy of this routine; the following
+    # isn't so desirable as the author/maintainers of LaTeX2HTML seem
+    # to think.  It's not commented out in the main script, so we have
+    # to override the whole thing.  In particular, we don't want empty
+    # table cells to disappear.
+
+    ### DANGEROUS ?? ###
+    # remove redundant (not <P></P>) empty tags, incl. with attributes
+    #s/\n?<([^PD >][^>]*)>\s*<\/\1>//g;
+    #s/\n?<([^PD >][^>]*)>\s*<\/\1>//g;
+    # remove redundant empty tags (not </P><P> or <TD> or <TH>)
+    #s/<\/(TT|[^PTH][A-Z]+)><\1>//g;
+    #s/<([^PD ]+)(\s[^>]*)?>\n*<\/\1>//g;
+
+    #JCL(jcl-hex)
+    # Replace ^^ special chars (according to p.47 of the TeX book)
+    # Useful when coming from the .aux file (german umlauts, etc.)
+    s/\^\^([^0-9a-f])/chr((64+ord($1))&127)/ge;
+    s/\^\^([0-9a-f][0-9a-f])/chr(hex($1))/ge;
+}
+
 # This is used to map the link rel attributes LaTeX2HTML uses to those
 # currently recommended by the W3C.
 sub custom_REL_hook {
