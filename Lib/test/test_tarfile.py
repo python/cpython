@@ -1,6 +1,7 @@
 import sys
 import os
 import shutil
+import tempfile
 
 import unittest
 import tarfile
@@ -21,9 +22,9 @@ except ImportError:
 def path(path):
     return test_support.findfile(path)
 
-testtar = path("testtar" + os.extsep + "tar")
-tempdir = path("testtar" + os.extsep + "dir")
-tempname = path("testtar" + os.extsep + "tmp")
+testtar = path("testtar.tar")
+tempdir = os.path.join(tempfile.gettempdir(), "testtar" + os.extsep + "dir")
+tempname = test_support.TESTFN
 membercount = 10
 
 def tarname(comp=""):
@@ -265,10 +266,10 @@ def test_main():
             os.remove(tarname("gz"))
         if bz2:
             os.remove(tarname("bz2"))
-        if os.path.exists(tempdir):
-            shutil.rmtree(tempdir)
-        if os.path.exists(tempname):
-            os.remove(tempname)
+        if os.path.exists(dirname()):
+            shutil.rmtree(dirname())
+        if os.path.exists(tmpname()):
+            os.remove(tmpname())
 
 if __name__ == "__main__":
     test_main()
