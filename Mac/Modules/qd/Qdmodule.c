@@ -3848,18 +3848,493 @@ static PyObject *Qd_SetPort(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_OpenDeskAcc(_self, _args)
+static PyObject *Qd_GetCursor(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	Str255 name;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetStr255, name))
+	CursHandle _rv;
+	short cursorID;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &cursorID))
 		return NULL;
-	OpenDeskAcc(name);
+	_rv = GetCursor(cursorID);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qd_SetCursor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Cursor *crsr__in__;
+	int crsr__in_len__;
+	if (!PyArg_ParseTuple(_args, "s#",
+	                      (char **)&crsr__in__, &crsr__in_len__))
+		return NULL;
+	if (crsr__in_len__ != sizeof(Cursor))
+	{
+		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(Cursor)");
+		goto crsr__error__;
+	}
+	SetCursor(crsr__in__);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+ crsr__error__: ;
+	return _res;
+}
+
+static PyObject *Qd_ShowCursor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	ShowCursor();
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_LineTo(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short h;
+	short v;
+	if (!PyArg_ParseTuple(_args, "hh",
+	                      &h,
+	                      &v))
+		return NULL;
+	LineTo(h,
+	       v);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_SetRect(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect r;
+	short left;
+	short top;
+	short right;
+	short bottom;
+	if (!PyArg_ParseTuple(_args, "hhhh",
+	                      &left,
+	                      &top,
+	                      &right,
+	                      &bottom))
+		return NULL;
+	SetRect(&r,
+	        left,
+	        top,
+	        right,
+	        bottom);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &r);
+	return _res;
+}
+
+static PyObject *Qd_OffsetRect(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect r;
+	short dh;
+	short dv;
+	if (!PyArg_ParseTuple(_args, "O&hh",
+	                      PyMac_GetRect, &r,
+	                      &dh,
+	                      &dv))
+		return NULL;
+	OffsetRect(&r,
+	           dh,
+	           dv);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &r);
+	return _res;
+}
+
+static PyObject *Qd_InsetRect(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect r;
+	short dh;
+	short dv;
+	if (!PyArg_ParseTuple(_args, "O&hh",
+	                      PyMac_GetRect, &r,
+	                      &dh,
+	                      &dv))
+		return NULL;
+	InsetRect(&r,
+	          dh,
+	          dv);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &r);
+	return _res;
+}
+
+static PyObject *Qd_UnionRect(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect src1;
+	Rect src2;
+	Rect dstRect;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetRect, &src1,
+	                      PyMac_GetRect, &src2))
+		return NULL;
+	UnionRect(&src1,
+	          &src2,
+	          &dstRect);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &dstRect);
+	return _res;
+}
+
+static PyObject *Qd_EqualRect(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	Rect rect1;
+	Rect rect2;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetRect, &rect1,
+	                      PyMac_GetRect, &rect2))
+		return NULL;
+	_rv = EqualRect(&rect1,
+	                &rect2);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_FrameRect(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect r;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetRect, &r))
+		return NULL;
+	FrameRect(&r);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_InvertRect(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect r;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetRect, &r))
+		return NULL;
+	InvertRect(&r);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_FillRect(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect r;
+	Pattern *pat__in__;
+	int pat__in_len__;
+	if (!PyArg_ParseTuple(_args, "O&s#",
+	                      PyMac_GetRect, &r,
+	                      (char **)&pat__in__, &pat__in_len__))
+		return NULL;
+	if (pat__in_len__ != sizeof(Pattern))
+	{
+		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(Pattern)");
+		goto pat__error__;
+	}
+	FillRect(&r,
+	         pat__in__);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+ pat__error__: ;
+	return _res;
+}
+
+static PyObject *Qd_CopyRgn(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle srcRgn;
+	RgnHandle dstRgn;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      ResObj_Convert, &srcRgn,
+	                      ResObj_Convert, &dstRgn))
+		return NULL;
+	CopyRgn(srcRgn,
+	        dstRgn);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_SetRectRgn(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle rgn;
+	short left;
+	short top;
+	short right;
+	short bottom;
+	if (!PyArg_ParseTuple(_args, "O&hhhh",
+	                      ResObj_Convert, &rgn,
+	                      &left,
+	                      &top,
+	                      &right,
+	                      &bottom))
+		return NULL;
+	SetRectRgn(rgn,
+	           left,
+	           top,
+	           right,
+	           bottom);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_OffsetRgn(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle rgn;
+	short dh;
+	short dv;
+	if (!PyArg_ParseTuple(_args, "O&hh",
+	                      ResObj_Convert, &rgn,
+	                      &dh,
+	                      &dv))
+		return NULL;
+	OffsetRgn(rgn,
+	          dh,
+	          dv);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_UnionRgn(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle srcRgnA;
+	RgnHandle srcRgnB;
+	RgnHandle dstRgn;
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      ResObj_Convert, &srcRgnA,
+	                      ResObj_Convert, &srcRgnB,
+	                      ResObj_Convert, &dstRgn))
+		return NULL;
+	UnionRgn(srcRgnA,
+	         srcRgnB,
+	         dstRgn);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_XorRgn(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle srcRgnA;
+	RgnHandle srcRgnB;
+	RgnHandle dstRgn;
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      ResObj_Convert, &srcRgnA,
+	                      ResObj_Convert, &srcRgnB,
+	                      ResObj_Convert, &dstRgn))
+		return NULL;
+	XorRgn(srcRgnA,
+	       srcRgnB,
+	       dstRgn);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_EqualRgn(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	RgnHandle rgnA;
+	RgnHandle rgnB;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      ResObj_Convert, &rgnA,
+	                      ResObj_Convert, &rgnB))
+		return NULL;
+	_rv = EqualRgn(rgnA,
+	               rgnB);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_FrameRgn(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle rgn;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &rgn))
+		return NULL;
+	FrameRgn(rgn);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_PaintRgn(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle rgn;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &rgn))
+		return NULL;
+	PaintRgn(rgn);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_InvertRgn(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle rgn;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &rgn))
+		return NULL;
+	InvertRgn(rgn);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_FillRgn(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle rgn;
+	Pattern *pat__in__;
+	int pat__in_len__;
+	if (!PyArg_ParseTuple(_args, "O&s#",
+	                      ResObj_Convert, &rgn,
+	                      (char **)&pat__in__, &pat__in_len__))
+		return NULL;
+	if (pat__in_len__ != sizeof(Pattern))
+	{
+		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(Pattern)");
+		goto pat__error__;
+	}
+	FillRgn(rgn,
+	        pat__in__);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+ pat__error__: ;
+	return _res;
+}
+
+static PyObject *Qd_GetPixel(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	short h;
+	short v;
+	if (!PyArg_ParseTuple(_args, "hh",
+	                      &h,
+	                      &v))
+		return NULL;
+	_rv = GetPixel(h,
+	               v);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_PtInRect(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	Point pt;
+	Rect r;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetPoint, &pt,
+	                      PyMac_GetRect, &r))
+		return NULL;
+	_rv = PtInRect(pt,
+	               &r);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_DrawText(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	char *textBuf__in__;
+	int textBuf__len__;
+	int textBuf__in_len__;
+	short firstByte;
+	short byteCount;
+	if (!PyArg_ParseTuple(_args, "s#hh",
+	                      &textBuf__in__, &textBuf__in_len__,
+	                      &firstByte,
+	                      &byteCount))
+		return NULL;
+	DrawText(textBuf__in__,
+	         firstByte,
+	         byteCount);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+ textBuf__error__: ;
 	return _res;
 }
 
@@ -4309,8 +4784,56 @@ static PyMethodDef Qd_methods[] = {
 	 "(Fixed extra) -> None"},
 	{"SetPort", (PyCFunction)Qd_SetPort, 1,
 	 "(WindowPtr thePort) -> None"},
-	{"OpenDeskAcc", (PyCFunction)Qd_OpenDeskAcc, 1,
-	 "(Str255 name) -> None"},
+	{"GetCursor", (PyCFunction)Qd_GetCursor, 1,
+	 "(short cursorID) -> (CursHandle _rv)"},
+	{"SetCursor", (PyCFunction)Qd_SetCursor, 1,
+	 "(Cursor crsr) -> None"},
+	{"ShowCursor", (PyCFunction)Qd_ShowCursor, 1,
+	 "() -> None"},
+	{"LineTo", (PyCFunction)Qd_LineTo, 1,
+	 "(short h, short v) -> None"},
+	{"SetRect", (PyCFunction)Qd_SetRect, 1,
+	 "(short left, short top, short right, short bottom) -> (Rect r)"},
+	{"OffsetRect", (PyCFunction)Qd_OffsetRect, 1,
+	 "(Rect r, short dh, short dv) -> (Rect r)"},
+	{"InsetRect", (PyCFunction)Qd_InsetRect, 1,
+	 "(Rect r, short dh, short dv) -> (Rect r)"},
+	{"UnionRect", (PyCFunction)Qd_UnionRect, 1,
+	 "(Rect src1, Rect src2) -> (Rect dstRect)"},
+	{"EqualRect", (PyCFunction)Qd_EqualRect, 1,
+	 "(Rect rect1, Rect rect2) -> (Boolean _rv)"},
+	{"FrameRect", (PyCFunction)Qd_FrameRect, 1,
+	 "(Rect r) -> None"},
+	{"InvertRect", (PyCFunction)Qd_InvertRect, 1,
+	 "(Rect r) -> None"},
+	{"FillRect", (PyCFunction)Qd_FillRect, 1,
+	 "(Rect r, Pattern pat) -> None"},
+	{"CopyRgn", (PyCFunction)Qd_CopyRgn, 1,
+	 "(RgnHandle srcRgn, RgnHandle dstRgn) -> None"},
+	{"SetRectRgn", (PyCFunction)Qd_SetRectRgn, 1,
+	 "(RgnHandle rgn, short left, short top, short right, short bottom) -> None"},
+	{"OffsetRgn", (PyCFunction)Qd_OffsetRgn, 1,
+	 "(RgnHandle rgn, short dh, short dv) -> None"},
+	{"UnionRgn", (PyCFunction)Qd_UnionRgn, 1,
+	 "(RgnHandle srcRgnA, RgnHandle srcRgnB, RgnHandle dstRgn) -> None"},
+	{"XorRgn", (PyCFunction)Qd_XorRgn, 1,
+	 "(RgnHandle srcRgnA, RgnHandle srcRgnB, RgnHandle dstRgn) -> None"},
+	{"EqualRgn", (PyCFunction)Qd_EqualRgn, 1,
+	 "(RgnHandle rgnA, RgnHandle rgnB) -> (Boolean _rv)"},
+	{"FrameRgn", (PyCFunction)Qd_FrameRgn, 1,
+	 "(RgnHandle rgn) -> None"},
+	{"PaintRgn", (PyCFunction)Qd_PaintRgn, 1,
+	 "(RgnHandle rgn) -> None"},
+	{"InvertRgn", (PyCFunction)Qd_InvertRgn, 1,
+	 "(RgnHandle rgn) -> None"},
+	{"FillRgn", (PyCFunction)Qd_FillRgn, 1,
+	 "(RgnHandle rgn, Pattern pat) -> None"},
+	{"GetPixel", (PyCFunction)Qd_GetPixel, 1,
+	 "(short h, short v) -> (Boolean _rv)"},
+	{"PtInRect", (PyCFunction)Qd_PtInRect, 1,
+	 "(Point pt, Rect r) -> (Boolean _rv)"},
+	{"DrawText", (PyCFunction)Qd_DrawText, 1,
+	 "(Buffer textBuf, short firstByte, short byteCount) -> None"},
 	{"BitMap", (PyCFunction)Qd_BitMap, 1,
 	 "Take (string, int, Rect) argument and create BitMap"},
 	{"RawBitMap", (PyCFunction)Qd_RawBitMap, 1,

@@ -434,6 +434,23 @@ static PyObject *ResObj_as_Menu(_self, _args)
 
 }
 
+static PyObject *ResObj_LoadResource(_self, _args)
+	ResourceObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	LoadResource(_self->ob_itself);
+	{
+		OSErr _err = ResError();
+		if (_err != noErr) return PyMac_Error(_err);
+	}
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef ResObj_methods[] = {
 	{"HomeResFile", (PyCFunction)ResObj_HomeResFile, 1,
 	 "() -> (short _rv)"},
@@ -473,6 +490,8 @@ static PyMethodDef ResObj_methods[] = {
 	 "Return this resource/handle as a Control"},
 	{"as_Menu", (PyCFunction)ResObj_as_Menu, 1,
 	 "Return this resource/handle as a Menu"},
+	{"LoadResource", (PyCFunction)ResObj_LoadResource, 1,
+	 "() -> None"},
 	{NULL, NULL, 0}
 };
 

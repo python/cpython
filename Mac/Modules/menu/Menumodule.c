@@ -916,6 +916,57 @@ static PyObject *MenuObj_as_Resource(_self, _args)
 
 }
 
+static PyObject *MenuObj_AppendMenu(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Str255 data;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetStr255, data))
+		return NULL;
+	AppendMenu(_self->ob_itself,
+	           data);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MenuObj_InsertMenu(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short beforeID;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &beforeID))
+		return NULL;
+	InsertMenu(_self->ob_itself,
+	           beforeID);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MenuObj_InsertMenuItem(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Str255 itemString;
+	short afterItem;
+	if (!PyArg_ParseTuple(_args, "O&h",
+	                      PyMac_GetStr255, itemString,
+	                      &afterItem))
+		return NULL;
+	InsertMenuItem(_self->ob_itself,
+	               itemString,
+	               afterItem);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef MenuObj_methods[] = {
 	{"DisposeMenu", (PyCFunction)MenuObj_DisposeMenu, 1,
 	 "() -> None"},
@@ -1005,6 +1056,12 @@ static PyMethodDef MenuObj_methods[] = {
 	 "(SInt16 inItem) -> (SInt16 outGlyph)"},
 	{"as_Resource", (PyCFunction)MenuObj_as_Resource, 1,
 	 "Return this Menu as a Resource"},
+	{"AppendMenu", (PyCFunction)MenuObj_AppendMenu, 1,
+	 "(Str255 data) -> None"},
+	{"InsertMenu", (PyCFunction)MenuObj_InsertMenu, 1,
+	 "(short beforeID) -> None"},
+	{"InsertMenuItem", (PyCFunction)MenuObj_InsertMenuItem, 1,
+	 "(Str255 itemString, short afterItem) -> None"},
 	{NULL, NULL, 0}
 };
 
@@ -1398,6 +1455,50 @@ static PyObject *Menu_OpenDeskAcc(_self, _args)
 	return _res;
 }
 
+static PyObject *Menu_GetMenu(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	MenuHandle _rv;
+	short resourceID;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &resourceID))
+		return NULL;
+	_rv = GetMenu(resourceID);
+	_res = Py_BuildValue("O&",
+	                     MenuObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Menu_DeleteMenu(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short menuID;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &menuID))
+		return NULL;
+	DeleteMenu(menuID);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Menu_DrawMenuBar(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	DrawMenuBar();
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef Menu_methods[] = {
 	{"GetMBarHeight", (PyCFunction)Menu_GetMBarHeight, 1,
 	 "() -> (short _rv)"},
@@ -1447,6 +1548,12 @@ static PyMethodDef Menu_methods[] = {
 	 "(EventRecord inEvent) -> (UInt32 _rv)"},
 	{"OpenDeskAcc", (PyCFunction)Menu_OpenDeskAcc, 1,
 	 "(Str255 name) -> None"},
+	{"GetMenu", (PyCFunction)Menu_GetMenu, 1,
+	 "(short resourceID) -> (MenuHandle _rv)"},
+	{"DeleteMenu", (PyCFunction)Menu_DeleteMenu, 1,
+	 "(short menuID) -> None"},
+	{"DrawMenuBar", (PyCFunction)Menu_DrawMenuBar, 1,
+	 "() -> None"},
 	{NULL, NULL, 0}
 };
 

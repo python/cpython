@@ -967,6 +967,54 @@ static PyObject *WinObj_SetWindowUserState(_self, _args)
 	return _res;
 }
 
+static PyObject *WinObj_CloseWindow(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	CloseWindow(_self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_MoveWindow(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short hGlobal;
+	short vGlobal;
+	Boolean front;
+	if (!PyArg_ParseTuple(_args, "hhb",
+	                      &hGlobal,
+	                      &vGlobal,
+	                      &front))
+		return NULL;
+	MoveWindow(_self->ob_itself,
+	           hGlobal,
+	           vGlobal,
+	           front);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_ShowWindow(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	ShowWindow(_self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef WinObj_methods[] = {
 	{"MacCloseWindow", (PyCFunction)WinObj_MacCloseWindow, 1,
 	 "() -> None"},
@@ -1080,6 +1128,12 @@ static PyMethodDef WinObj_methods[] = {
 	 "(Rect r) -> None"},
 	{"SetWindowUserState", (PyCFunction)WinObj_SetWindowUserState, 1,
 	 "(Rect r) -> None"},
+	{"CloseWindow", (PyCFunction)WinObj_CloseWindow, 1,
+	 "() -> None"},
+	{"MoveWindow", (PyCFunction)WinObj_MoveWindow, 1,
+	 "(short hGlobal, short vGlobal, Boolean front) -> None"},
+	{"ShowWindow", (PyCFunction)WinObj_ShowWindow, 1,
+	 "() -> None"},
 	{NULL, NULL, 0}
 };
 
@@ -1448,6 +1502,25 @@ static PyObject *Win_WhichWindow(_self, _args)
 
 }
 
+static PyObject *Win_FindWindow(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short _rv;
+	Point thePoint;
+	WindowPtr theWindow;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetPoint, &thePoint))
+		return NULL;
+	_rv = FindWindow(thePoint,
+	                 &theWindow);
+	_res = Py_BuildValue("hO&",
+	                     _rv,
+	                     WinObj_WhichWindow, theWindow);
+	return _res;
+}
+
 static PyMethodDef Win_methods[] = {
 	{"GetNewCWindow", (PyCFunction)Win_GetNewCWindow, 1,
 	 "(short windowID, WindowPtr behind) -> (WindowPtr _rv)"},
@@ -1487,6 +1560,8 @@ static PyMethodDef Win_methods[] = {
 	 "() -> (RgnHandle _rv)"},
 	{"WhichWindow", (PyCFunction)Win_WhichWindow, 1,
 	 "Resolve an integer WindowPtr address to a Window object"},
+	{"FindWindow", (PyCFunction)Win_FindWindow, 1,
+	 "(Point thePoint) -> (short _rv, WindowPtr theWindow)"},
 	{NULL, NULL, 0}
 };
 
