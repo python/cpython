@@ -412,13 +412,19 @@ Upon unpickling, if the class also defines the method
 \method{__setstate__()}, it is called with the unpickled
 state\footnote{These methods can also be used to implement copying
 class instances.}.  If there is no \method{__setstate__()} method, the
-pickled object must be a dictionary and its items are assigned to the
+pickled state must be a dictionary and its items are assigned to the
 new instance's dictionary.  If a class defines both
 \method{__getstate__()} and \method{__setstate__()}, the state object
 needn't be a dictionary and these methods can do what they
-want\footnote{This protocol is also used by the shallow and deep
+want.\footnote{This protocol is also used by the shallow and deep
 copying operations defined in the
-\refmodule{copy} module.}.
+\refmodule{copy} module.}
+
+\begin{notice}[warning]
+  For new-style classes, if \method{__getstate__()} returns a false
+  value, the \method{__setstate__()} method will not be called.
+\end{notice}
+
 
 \subsubsection{Pickling and unpickling extension types}
 
