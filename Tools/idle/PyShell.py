@@ -712,12 +712,6 @@ def main():
         if o == '-t':
             PyShell.shell_title = a
 
-    if not edit:
-        if cmd:
-            sys.argv = ["-c"] + args
-        else:
-            sys.argv = args or [""]
-
     for i in range(len(sys.path)):
         sys.path[i] = os.path.abspath(sys.path[i])
 
@@ -735,7 +729,7 @@ def main():
             sys.path.insert(0, dir)
 
     global flist, root
-    root = Tk()
+    root = Tk(className="Idle")
     fixwordbreaks(root)
     root.withdraw()
     flist = PyShellFileList(root)
@@ -743,6 +737,12 @@ def main():
     if edit:
         for filename in args:
             flist.open(filename)
+    else:
+        if cmd:
+            sys.argv = ["-c"] + args
+        else:
+            sys.argv = args or [""]
+
 
     shell = PyShell(flist)
     interp = shell.interp
