@@ -1033,7 +1033,7 @@ class OptionParser (OptionContainer):
             self.usage = "%prog [options]"
         elif usage is SUPPRESS_USAGE:
             self.usage = None
-        elif usage.startswith("usage: "):
+        elif usage.lower().startswith("usage: "):
             # for backwards compatibility with Optik 1.3 and earlier
             self.usage = usage[7:]
         else:
