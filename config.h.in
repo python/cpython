@@ -362,6 +362,9 @@
 /* Define if you have the getpid function.  */
 #undef HAVE_GETPID
 
+/* Define if you have the getpriority function.  */
+#undef HAVE_GETPRIORITY
+
 /* Define if you have the getpwent function.  */
 #undef HAVE_GETPWENT
 

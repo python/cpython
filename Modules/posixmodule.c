@@ -1078,8 +1078,25 @@ posix_nice(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "i:nice", &increment))
 		return NULL;
+
+	/* There are two flavours of 'nice': one that returns the new
+	   priority (as required by almost all standards out there) and the
+	   Linux one, which returns '0' on success and advices the use of
+	   getpriority() to get the new priority.
+	   
+	   If we are of the nice family that returns the new priority, we
+	   need to clear errno before the call, and check if errno is filled
+	   before calling posix_error() on a returnvalue of -1, because the
+	   -1 may be the actual new priority! */
+
+	errno = 0;
 	value = nice(increment);
-	if (value == -1)
+#ifdef HAVE_GETPRIORITY
+	if (value == 0)
+		value = getpriority(PRIO_PROCESS, 0);
+#endif
+	if (value == -1 && errno != 0)
+		/* either nice() or getpriority() returned an error */
 		return posix_error();
 	return PyInt_FromLong((long) value);
 }
