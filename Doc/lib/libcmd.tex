@@ -60,6 +60,10 @@ the method \method{do_help()}.  As another special case, a line
 beginning with the character \character{!} is dispatched to the
 method \method{do_shell()} (if such a method is defined).
 
+This method will return when the \method{postcmd()} method returns a
+true value.  The \var{stop} argument to \method{postcmd()} is the
+return value from the command's corresponding \method{do_*()} method.
+
 If completion is enabled, completing commands will be done
 automatically, and completing of commands args is done by calling
 \method{complete_foo()} with arguments \var{text}, \var{line},
@@ -83,7 +87,10 @@ Interpret the argument as though it had been typed in response to the
 prompt.  This may be overridden, but should not normally need to be;
 see the \method{precmd()} and \method{postcmd()} methods for useful
 execution hooks.  The return value is a flag indicating whether
-interpretation of commands by the interpreter should stop.
+interpretation of commands by the interpreter should stop.  If there
+is a \method{do_*()} method for the command \var{str}, the return
+value of that method is returned, otherwise the return value from the
+\method{default()} method is returned.
 \end{methoddesc}
 
 \begin{methoddesc}{emptyline}{}
