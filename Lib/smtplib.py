@@ -214,7 +214,11 @@ class SMTP:
         if not port: port = SMTP_PORT
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if self.debuglevel > 0: print 'connect:', (host, port)
-        self.sock.connect((host, port))
+        try:
+            self.sock.connect((host, port))
+        except socket.error:
+            self.close()
+            raise
         (code,msg)=self.getreply()
         if self.debuglevel >0 : print "connect:", msg
         return (code,msg)
