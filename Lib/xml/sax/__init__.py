@@ -96,7 +96,7 @@ else:
             else:
             	info = (mod,) + _imp.find_module(mod, [path])
             	
-            lastmod = apply(imp.load_module, info)
+            lastmod = _imp.load_module(*info)
     
             try:
             	path = lastmod.__path__[0]
@@ -107,7 +107,7 @@ else:
     	
     def _create_parser(parser_name):
     	info = _rec_find_module(parser_name)
-    	drv_module = apply(imp.load_module, info)
+    	drv_module = _imp.load_module(*info)
     	return drv_module.create_parser()
 
 del sys
