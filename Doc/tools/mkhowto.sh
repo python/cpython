@@ -34,6 +34,7 @@ build_html() {
 
 build_dvi() {
     latex $1 || exit $?
+    latex $1 || exit $?
     if [ -f $1.idx ] ; then
 	`dirname $0`/fix_hack $1.idx || exit $?
 	makeindex $1.idx || exit $?
