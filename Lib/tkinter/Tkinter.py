@@ -167,7 +167,7 @@ class Misc:
 		self.tk.call('focus', 'none')
 	def focus_get(self):
 		name = self.tk.call('focus')
-		if name == 'none' or not Name: return None
+		if name == 'none' or not name: return None
 		return self._nametowidget(name)
 	def tk_focusNext(self):
 		name = self.tk.call('tk_focusNext', self._w)
