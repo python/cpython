@@ -50,8 +50,13 @@ overwritten, but all work done in the current run is lost.
 
 Miscellaneous:
 
+- Webchecker honors the "robots.txt" convention.  Thanks to Skip
+Montanaro for his robotparser.py module (included in this directory)!
+The agent name is hardwired to "webchecker".  URLs that are disallowed
+by the robots.txt file are reported as external URLs.
+
 - Because the HTML parser is a bit slow, very large HTML files are
-  skipped.  The size limit can be set with the -m option.
+skipped.  The size limit can be set with the -m option.
 
 - Before fetching a page, it guesses its type based on its extension.
 If it is a known extension and the type is not text/http, the page is
@@ -103,6 +108,7 @@ import htmllib
 import formatter
 
 import mimetypes
+import robotparser
 
 
 # Tunable parameters
@@ -110,6 +116,7 @@ DEFROOT = "file:/usr/local/etc/httpd/htdocs/"	# Default root URL
 MAXPAGE = 50000				# Ignore files bigger than this
 ROUNDSIZE = 50				# Number of links processed per round
 DUMPFILE = "@webchecker.pickle"		# Pickled checkpoint
+AGENTNAME = "webchecker"		# Agent name for robots.txt parser
 
 
 # Global variables
@@ -208,11 +215,32 @@ class Checker:
 	self.bad = {}
 	self.urlopener = MyURLopener()
 	self.round = 0
+	self.robots = {}
+
+    def __getstate__(self):
+	return (self.roots, self.todo, self.done,
+		self.ext, self.bad, self.round)
+
+    def __setstate__(self, state):
+	(self.roots, self.todo, self.done,
+	 self.ext, self.bad, self.round) = state
+	for root in self.roots:
+	    self.addrobot(root)
 
     def addroot(self, root):
 	if root not in self.roots:
 	    self.roots.append(root)
 	    self.todo[root] = []
+	    self.addrobot(root)
+
+    def addrobot(self, root):
+	self.robots[root] = rp = robotparser.RobotFileParser()
+	if verbose > 3:
+	    print "Parsing robots.txt file"
+	    rp.debug = 1
+	url = urlparse.urljoin(root, "/robots.txt")
+	rp.set_url(url)
+	rp.read()
 
     def run(self):
 	while self.todo:
@@ -332,7 +360,7 @@ class Checker:
     def inroots(self, url):
 	for root in self.roots:
 	    if url[:len(root)] == root:
-		return 1
+		return self.robots[root].can_fetch(AGENTNAME, url)
 	return 0
 
     def getpage(self, url):
@@ -348,6 +376,13 @@ class Checker:
 	try:
 	    f = self.urlopener.open(url)
 	except IOError, msg:
+	    if (type(msg) == TupleType and
+		len(msg) >= 4 and
+		msg[0] == 'http error' and
+		type(msg[3]) == InstanceType):
+		# Remove the Message instance -- it may contain
+		# a file object which prevents pickling.
+		msg = msg[:3] + msg[4:]
 	    if verbose > 0:
 		print "Error ", msg
 	    if verbose > 0:
@@ -360,7 +395,7 @@ class Checker:
 	    ctype = string.lower(info['content-type'])
 	if nurl != url:
 	    if verbose > 1:
-		print "Redirected to", nurl
+		print " Redirected to", nurl
 	    if not ctype:
 		ctype, encoding = mimetypes.guess_type(nurl)
 	if ctype != 'text/html':
