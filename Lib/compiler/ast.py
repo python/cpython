@@ -19,9 +19,9 @@ def flatten(list):
 def flatten_nodes(list):
     return [n for n in flatten(list) if isinstance(n, Node)]
 
-def asList(nodes):
+def asList(nodearg):
     l = []
-    for item in nodes:
+    for item in nodearg:
         if hasattr(item, "asList"):
             l.append(item.asList())
         else:
@@ -65,11 +65,11 @@ class Slice(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.append(self.expr)
-        if self.lower is not None:            nodes.append(self.lower)
-        if self.upper is not None:            nodes.append(self.upper)
-        return tuple(nodes)
+        nodelist = []
+        nodelist.append(self.expr)
+        if self.lower is not None:            nodelist.append(self.lower)
+        if self.upper is not None:            nodelist.append(self.upper)
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Slice(%s, %s, %s, %s)" % (repr(self.expr), repr(self.flags), repr(self.lower), repr(self.upper))
@@ -103,11 +103,11 @@ class Raise(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        if self.expr1 is not None:            nodes.append(self.expr1)
-        if self.expr2 is not None:            nodes.append(self.expr2)
-        if self.expr3 is not None:            nodes.append(self.expr3)
-        return tuple(nodes)
+        nodelist = []
+        if self.expr1 is not None:            nodelist.append(self.expr1)
+        if self.expr2 is not None:            nodelist.append(self.expr2)
+        if self.expr3 is not None:            nodelist.append(self.expr3)
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Raise(%s, %s, %s)" % (repr(self.expr1), repr(self.expr2), repr(self.expr3))
@@ -129,12 +129,12 @@ class For(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.append(self.assign)
-        nodes.append(self.list)
-        nodes.append(self.body)
-        if self.else_ is not None:            nodes.append(self.else_)
-        return tuple(nodes)
+        nodelist = []
+        nodelist.append(self.assign)
+        nodelist.append(self.list)
+        nodelist.append(self.body)
+        if self.else_ is not None:            nodelist.append(self.else_)
+        return tuple(nodelist)
 
     def __repr__(self):
         return "For(%s, %s, %s, %s)" % (repr(self.assign), repr(self.list), repr(self.body), repr(self.else_))
@@ -150,9 +150,9 @@ class AssTuple(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.nodes))
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.nodes))
+        return tuple(nodelist)
 
     def __repr__(self):
         return "AssTuple(%s)" % (repr(self.nodes),)
@@ -212,9 +212,9 @@ class AssList(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.nodes))
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.nodes))
+        return tuple(nodelist)
 
     def __repr__(self):
         return "AssList(%s)" % (repr(self.nodes),)
@@ -260,9 +260,9 @@ class Dict(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.items))
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.items))
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Dict(%s)" % (repr(self.items),)
@@ -338,10 +338,10 @@ class Print(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.nodes))
-        if self.dest is not None:            nodes.append(self.dest)
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.nodes))
+        if self.dest is not None:            nodelist.append(self.dest)
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Print(%s, %s)" % (repr(self.nodes), repr(self.dest))
@@ -375,10 +375,10 @@ class Subscript(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.append(self.expr)
-        nodes.extend(flatten_nodes(self.subs))
-        return tuple(nodes)
+        nodelist = []
+        nodelist.append(self.expr)
+        nodelist.extend(flatten_nodes(self.subs))
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Subscript(%s, %s, %s)" % (repr(self.expr), repr(self.flags), repr(self.subs))
@@ -398,11 +398,11 @@ class TryExcept(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.append(self.body)
-        nodes.extend(flatten_nodes(self.handlers))
-        if self.else_ is not None:            nodes.append(self.else_)
-        return tuple(nodes)
+        nodelist = []
+        nodelist.append(self.body)
+        nodelist.extend(flatten_nodes(self.handlers))
+        if self.else_ is not None:            nodelist.append(self.else_)
+        return tuple(nodelist)
 
     def __repr__(self):
         return "TryExcept(%s, %s, %s)" % (repr(self.body), repr(self.handlers), repr(self.else_))
@@ -418,9 +418,9 @@ class Or(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.nodes))
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.nodes))
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Or(%s)" % (repr(self.nodes),)
@@ -467,10 +467,10 @@ class Function(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.defaults))
-        nodes.append(self.code)
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.defaults))
+        nodelist.append(self.code)
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Function(%s, %s, %s, %s, %s, %s)" % (repr(self.name), repr(self.argnames), repr(self.defaults), repr(self.flags), repr(self.doc), repr(self.code))
@@ -488,10 +488,10 @@ class Assert(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.append(self.test)
-        if self.fail is not None:            nodes.append(self.fail)
-        return tuple(nodes)
+        nodelist = []
+        nodelist.append(self.test)
+        if self.fail is not None:            nodelist.append(self.fail)
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Assert(%s, %s)" % (repr(self.test), repr(self.fail))
@@ -540,11 +540,11 @@ class Exec(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.append(self.expr)
-        if self.locals is not None:            nodes.append(self.locals)
-        if self.globals is not None:            nodes.append(self.globals)
-        return tuple(nodes)
+        nodelist = []
+        nodelist.append(self.expr)
+        if self.locals is not None:            nodelist.append(self.locals)
+        if self.globals is not None:            nodelist.append(self.globals)
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Exec(%s, %s, %s)" % (repr(self.expr), repr(self.locals), repr(self.globals))
@@ -560,9 +560,9 @@ class Stmt(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.nodes))
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.nodes))
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Stmt(%s)" % (repr(self.nodes),)
@@ -578,9 +578,9 @@ class Sliceobj(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.nodes))
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.nodes))
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Sliceobj(%s)" % (repr(self.nodes),)
@@ -610,9 +610,9 @@ class Bitand(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.nodes))
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.nodes))
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Bitand(%s)" % (repr(self.nodes),)
@@ -678,10 +678,10 @@ class Class(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.bases))
-        nodes.append(self.code)
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.bases))
+        nodelist.append(self.code)
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Class(%s, %s, %s, %s)" % (repr(self.name), repr(self.bases), repr(self.doc), repr(self.code))
@@ -714,10 +714,10 @@ class Printnl(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.nodes))
-        if self.dest is not None:            nodes.append(self.dest)
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.nodes))
+        if self.dest is not None:            nodelist.append(self.dest)
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Printnl(%s, %s)" % (repr(self.nodes), repr(self.dest))
@@ -733,9 +733,9 @@ class Tuple(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.nodes))
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.nodes))
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Tuple(%s)" % (repr(self.nodes),)
@@ -798,9 +798,9 @@ class List(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.nodes))
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.nodes))
+        return tuple(nodelist)
 
     def __repr__(self):
         return "List(%s)" % (repr(self.nodes),)
@@ -864,11 +864,11 @@ class While(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.append(self.test)
-        nodes.append(self.body)
-        if self.else_ is not None:            nodes.append(self.else_)
-        return tuple(nodes)
+        nodelist = []
+        nodelist.append(self.test)
+        nodelist.append(self.body)
+        if self.else_ is not None:            nodelist.append(self.else_)
+        return tuple(nodelist)
 
     def __repr__(self):
         return "While(%s, %s, %s)" % (repr(self.test), repr(self.body), repr(self.else_))
@@ -943,10 +943,10 @@ class Assign(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.nodes))
-        nodes.append(self.expr)
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.nodes))
+        nodelist.append(self.expr)
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Assign(%s, %s)" % (repr(self.nodes), repr(self.expr))
@@ -974,10 +974,10 @@ class Lambda(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.defaults))
-        nodes.append(self.code)
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.defaults))
+        nodelist.append(self.code)
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Lambda(%s, %s, %s, %s)" % (repr(self.argnames), repr(self.defaults), repr(self.flags), repr(self.code))
@@ -993,9 +993,9 @@ class And(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.nodes))
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.nodes))
+        return tuple(nodelist)
 
     def __repr__(self):
         return "And(%s)" % (repr(self.nodes),)
@@ -1013,10 +1013,10 @@ class Compare(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.append(self.expr)
-        nodes.extend(flatten_nodes(self.ops))
-        return tuple(nodes)
+        nodelist = []
+        nodelist.append(self.expr)
+        nodelist.extend(flatten_nodes(self.ops))
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Compare(%s, %s)" % (repr(self.expr), repr(self.ops))
@@ -1032,9 +1032,9 @@ class Bitor(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.nodes))
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.nodes))
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Bitor(%s)" % (repr(self.nodes),)
@@ -1050,9 +1050,9 @@ class Bitxor(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.nodes))
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.nodes))
+        return tuple(nodelist)
 
     def __repr__(self):
         return "Bitxor(%s)" % (repr(self.nodes),)
@@ -1074,12 +1074,12 @@ class CallFunc(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.append(self.node)
-        nodes.extend(flatten_nodes(self.args))
-        if self.star_args is not None:            nodes.append(self.star_args)
-        if self.dstar_args is not None:            nodes.append(self.dstar_args)
-        return tuple(nodes)
+        nodelist = []
+        nodelist.append(self.node)
+        nodelist.extend(flatten_nodes(self.args))
+        if self.star_args is not None:            nodelist.append(self.star_args)
+        if self.dstar_args is not None:            nodelist.append(self.dstar_args)
+        return tuple(nodelist)
 
     def __repr__(self):
         return "CallFunc(%s, %s, %s, %s)" % (repr(self.node), repr(self.args), repr(self.star_args), repr(self.dstar_args))
@@ -1183,10 +1183,10 @@ class If(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.extend(flatten_nodes(self.tests))
-        if self.else_ is not None:            nodes.append(self.else_)
-        return tuple(nodes)
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.tests))
+        if self.else_ is not None:            nodelist.append(self.else_)
+        return tuple(nodelist)
 
     def __repr__(self):
         return "If(%s, %s)" % (repr(self.tests), repr(self.else_))
@@ -1204,10 +1204,10 @@ class ListComp(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.append(self.expr)
-        nodes.extend(flatten_nodes(self.quals))
-        return tuple(nodes)
+        nodelist = []
+        nodelist.append(self.expr)
+        nodelist.extend(flatten_nodes(self.quals))
+        return tuple(nodelist)
 
     def __repr__(self):
         return "ListComp(%s, %s)" % (repr(self.expr), repr(self.quals))
@@ -1227,11 +1227,11 @@ class ListCompFor(Node):
         return tuple(children)
 
     def getChildNodes(self):
-        nodes = []
-        nodes.append(self.assign)
-        nodes.append(self.list)
-        nodes.extend(flatten_nodes(self.ifs))
-        return tuple(nodes)
+        nodelist = []
+        nodelist.append(self.assign)
+        nodelist.append(self.list)
+        nodelist.extend(flatten_nodes(self.ifs))
+        return tuple(nodelist)
 
     def __repr__(self):
         return "ListCompFor(%s, %s, %s)" % (repr(self.assign), repr(self.list), repr(self.ifs))
