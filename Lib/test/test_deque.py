@@ -40,6 +40,18 @@ class TestBasic(unittest.TestCase):
         d.extendleft('bcd')
         self.assertEqual(list(d), list(reversed('abcd')))
 
+    def test_rotate(self):
+        s = 'abcde'
+        d = deque(s)
+        d.rotate(2)
+        self.assertEqual(''.join(d), 'deabc')
+        d.rotate(3)
+        self.assertEqual(''.join(d), s)
+        d.rotate(-3)
+        self.assertEqual(''.join(d), 'deabc')
+        d.rotate(-15)
+        self.assertEqual(''.join(d), 'deabc')
+
     def test_len(self):
         d = deque('ab')
         self.assertEqual(len(d), 2)
