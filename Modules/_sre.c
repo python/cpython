@@ -30,6 +30,7 @@
  * 2001-04-15 fl  export copyright as Python attribute, not global
  * 2001-04-28 fl  added __copy__ methods (work in progress)
  * 2001-05-14 fl  fixes for 1.5.2
+ * 2001-07-01 fl  added BIGCHARSET support (from Martin von Loewis)
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
@@ -506,18 +507,18 @@ SRE_CHARSET(SRE_CODE* set, SRE_CODE ch)
             set += 16;
             break;
 
-	case SRE_OP_BIGCHARSET:
-	    /* <BIGCHARSET> <blockcount> <256 blockindices> <blocks> */
-	{
-	    int count, block;
-	    count = *(set++);
-	    block = ((unsigned char*)set)[ch >> 8];
-	    set += 128;
-	    if (set[block*16 + ((ch & 255)>>4)] & (1 << (ch & 15)))
-		return ok;
-	    set += count*16;
-	    break;
-	}
+        case SRE_OP_BIGCHARSET:
+            /* <BIGCHARSET> <blockcount> <256 blockindices> <blocks> */
+        {
+            int count, block;
+            count = *(set++);
+            block = ((unsigned char*)set)[ch >> 8];
+            set += 128;
+            if (set[block*16 + ((ch & 255)>>4)] & (1 << (ch & 15)))
+                return ok;
+            set += count*16;
+            break;
+        }
 
         case SRE_OP_CATEGORY:
             /* <CATEGORY> <code> */
