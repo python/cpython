@@ -24,9 +24,15 @@ functions or class instances.
   Declares that \var{function} should be used as a ``reduction''
   function for objects of type \var{type}; \var{type} should not a
   class object.  \var{function} should return either a string or a
-  tuple.  The optional \var{constructor} parameter, if provided, is a
+  tuple containing two or three elements.
+
+  The optional \var{constructor} parameter, if provided, is a
   callable object which can be used to reconstruct the object when
   called with the tuple of arguments returned by \var{function} at
   pickling time.  \exception{TypeError} will be raised if
   \var{object} is a class or \var{constructor} is not callable.
+
+  See the \refmodule{pickle} module for more
+  details on the interface expected of \var{function} and
+  \var{constructor}.
 \end{funcdesc}
