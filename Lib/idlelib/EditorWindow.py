@@ -46,7 +46,6 @@ class EditorWindow:
     from Tkinter import Toplevel
     from MultiStatusBar import MultiStatusBar
 
-    vars = {}
     help_url = None
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
@@ -78,10 +77,13 @@ class EditorWindow:
         self.menubar = Menu(root)
         self.top = top = self.Toplevel(root, menu=self.menubar)
         if flist:
-            self.vars = flist.vars
+            self.tkinter_vars = flist.vars
             #self.top.instance_dict makes flist.inversedict avalable to
             #configDialog.py so it can access all EditorWindow instaces
             self.top.instance_dict=flist.inversedict
+        else:
+            self.tkinter_vars = {}  # keys: Tkinter event names
+                                    # values: Tkinter variable instances
         self.recent_files_path=os.path.join(idleConf.GetUserCfgDir(),
                 'recent-files.lst')
         self.vbar = vbar = Scrollbar(top, name='vbar')
@@ -553,10 +555,8 @@ class EditorWindow:
                             if menuEventDict[menubarItem].has_key(itemName):
                                 event=menuEventDict[menubarItem][itemName]
                         if event:
-                            #print 'accel was:',accel
                             accel=get_accelerator(keydefs, event)
                             menu.entryconfig(index,accelerator=accel)
-                            #print 'accel now:',accel,'\n'
 
     def reset_help_menu_entries(self):
         "Update the additional help entries on the Help menu"
@@ -711,7 +711,6 @@ class EditorWindow:
         return reply
 
     def _close(self):
-        #print self.io.filename
         if self.io.filename:
             self.update_recent_files_list(new_file=self.io.filename)
         WindowList.unregister_callback(self.postwindowsmenu)
@@ -727,7 +726,7 @@ class EditorWindow:
             doh = colorizing and self.top
             self.color.close(doh) # Cancel colorization
         self.text = None
-        self.vars = None
+        self.tkinter_vars = None
         self.per.close(); self.per = None
         if not colorizing:
             self.top.destroy()
@@ -784,35 +783,35 @@ class EditorWindow:
             if keylist:
                 text.event_add(event, *keylist)
 
-    def fill_menus(self, defs=None, keydefs=None):
+    def fill_menus(self, menudefs=None, keydefs=None):
         """Add appropriate entries to the menus and submenus
 
         Menus that are absent or None in self.menudict are ignored.
         """
-        if defs is None:
-            defs = self.Bindings.menudefs
+        if menudefs is None:
+            menudefs = self.Bindings.menudefs
         if keydefs is None:
             keydefs = self.Bindings.default_keydefs
         menudict = self.menudict
         text = self.text
-        for mname, itemlist in defs:
+        for mname, entrylist in menudefs:
             menu = menudict.get(mname)
             if not menu:
                 continue
-            for item in itemlist:
-                if not item:
+            for entry in entrylist:
+                if not entry:
                     menu.add_separator()
                 else:
-                    label, event = item
+                    label, eventname = entry
                     checkbutton = (label[:1] == '!')
                     if checkbutton:
                         label = label[1:]
                     underline, label = prepstr(label)
-                    accelerator = get_accelerator(keydefs, event)
-                    def command(text=text, event=event):
-                        text.event_generate(event)
+                    accelerator = get_accelerator(keydefs, eventname)
+                    def command(text=text, eventname=eventname):
+                        text.event_generate(eventname)
                     if checkbutton:
-                        var = self.getrawvar(event, BooleanVar)
+                        var = self.get_var_obj(eventname, BooleanVar)
                         menu.add_checkbutton(label=label, underline=underline,
                             command=command, accelerator=accelerator,
                             variable=var)
@@ -822,19 +821,25 @@ class EditorWindow:
                                          accelerator=accelerator)
 
     def getvar(self, name):
-        var = self.getrawvar(name)
+        var = self.get_var_obj(name)
         if var:
-            return var.get()
+            value = var.get()
+            return value
+        else:
+            raise NameError, name
 
     def setvar(self, name, value, vartype=None):
-        var = self.getrawvar(name, vartype)
+        var = self.get_var_obj(name, vartype)
         if var:
             var.set(value)
+        else:
+            raise NameError, name
 
-    def getrawvar(self, name, vartype=None):
-        var = self.vars.get(name)
+    def get_var_obj(self, name, vartype=None):
+        var = self.tkinter_vars.get(name)
         if not var and vartype:
-            self.vars[name] = var = vartype(self.text)
+            # create a Tkinter variable object with self.text as master:
+            self.tkinter_vars[name] = var = vartype(self.text)
         return var
 
     # Tk implementations of "virtual text methods" -- each platform
@@ -1367,8 +1372,8 @@ keynames = {
  'slash': '/',
 }
 
-def get_accelerator(keydefs, event):
-    keylist = keydefs.get(event)
+def get_accelerator(keydefs, eventname):
+    keylist = keydefs.get(eventname)
     if not keylist:
         return ""
     s = keylist[0]
