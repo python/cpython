@@ -377,7 +377,7 @@ class PEP253Mixin(PEP252Mixin):
 	
 	def output_tp_init(self):
 		if self.output_tp_initBody:
-			Output("static int %s_init(PyObject *self, PyObject *args, PyObject *kwds)", self.prefix)
+			Output("static int %s_tp_init(PyObject *self, PyObject *args, PyObject *kwds)", self.prefix)
 			OutLbrace()
 			self.output_tp_initBody()
 			OutRbrace()
