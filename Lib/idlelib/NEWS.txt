@@ -1,7 +1,10 @@
-What's New in IDLE 1.0+?
+What's New in IDLE 1.1a0?
 ===================================
 
-*Release date: XX-XXX-2003*
+*Release date: XX-XXX-2004*
+
+- Print correct exception even if source file changed since shell was 
+  restarted.  IDLEfork Patch 869012 Noam Raphael
 
 - Keybindings with the Shift modifier now work correctly.  So do bindings which
   use the Space key.  Limit unmodified user keybindings to the function keys.
