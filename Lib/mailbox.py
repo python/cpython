@@ -108,7 +108,7 @@ class UnixMailbox(_Mailbox):
 	# the 5 characters "From ".
 
 	_fromlinepattern = r"From \s*[^\s]+\s+\w\w\w\s+\w\w\w\s+\d?\d\s+" \
-			   r"\d?\d:\d\d:\d\d(\s+[^\s]+)?\s+\d\d\d\d\s*$"
+			   r"\d?\d:\d\d(:\d\d)?(\s+[^\s]+)?\s+\d\d\d\d\s*$"
 	_regexp = None
 
 	def _isrealfromline(self, line):
