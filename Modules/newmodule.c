@@ -47,6 +47,9 @@ new_instancemethod(unused, args)
 	return newinstancemethodobject(func, self, classObj);
 }
 
+/* XXX These internal interfaces have changed -- who'll fix this code? */
+#if 0
+
 static char new_function_doc[] =
 "Create a function object from (CODE, GLOBALS, [NAME, ARGCOUNT, ARGDEFS]).";
 
@@ -109,6 +112,7 @@ new_code(unused, args)
 		return NULL;
 	return (object *)newcodeobject(code, consts, names, filename, name);
 }
+#endif
 
 static char new_module_doc[] =
 "Create a module object from (NAME).";
@@ -127,8 +131,10 @@ new_module(unused, args)
 
 static struct methodlist new_methods[] = {
 	{"instancemethod",	new_instancemethod,	1, new_im_doc},
+#if 0
 	{"function",		new_function,		1, new_function_doc},
 	{"code",		new_code,		1, new_code_doc},
+#endif
 	{"module",		new_module,		1, new_module_doc},
 	{NULL,			NULL}		/* sentinel */
 };
