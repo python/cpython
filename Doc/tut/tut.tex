@@ -1618,45 +1618,54 @@ more detail, and adds some new things as well.
 The list data type has some more methods.  Here are all of the methods
 of list objects:
 
-\begin{description}
-
-\item[\code{append(x)}]
+\begin{methoddesc}[list]{append}{x}
 Add an item to the end of the list;
-equivalent to \code{a[len(a):] = [x]}.
+equivalent to \code{a[len(a):] = [\var{x}]}.
+\end{methoddesc}
 
-\item[\code{extend(L)}]
+\begin{methoddesc}[list]{extend}{L}
 Extend the list by appending all the items in the given list;
-equivalent to \code{a[len(a):] = L}.
+equivalent to \code{a[len(a):] = \var{L}}.
+\end{methoddesc}
 
-\item[\code{insert(i, x)}]
-Insert an item at a given position.  The first argument is the index of
-the element before which to insert, so \code{a.insert(0, x)} inserts at
-the front of the list, and \code{a.insert(len(a), x)} is equivalent to
-\code{a.append(x)}.
+\begin{methoddesc}[list]{insert}{i, x}
+Insert an item at a given position.  The first argument is the index
+of the element before which to insert, so \code{a.insert(0, \var{x})}
+inserts at the front of the list, and \code{a.insert(len(a), \var{x})}
+is equivalent to \code{a.append(\var{x})}.
+\end{methoddesc}
 
-\item[\code{remove(x)}]
-Remove the first item from the list whose value is \code{x}.
+\begin{methoddesc}[list]{remove}{x}
+Remove the first item from the list whose value is \var{x}.
 It is an error if there is no such item.
+\end{methoddesc}
 
-\item[\code{pop(\optional{i})}]
+\begin{methoddesc}[list]{pop}{\optional{i}}
 Remove the item at the given position in the list, and return it.  If
 no index is specified, \code{a.pop()} returns the last item in the
-list.  The item is also removed from the list.
+list.  The item is also removed from the list.  (The square brackets
+around the \var{i} in the method signature denote that the parameter
+is optional, not that you should type square brackets at that
+position.  You will see this notation frequently in the
+\citetitle[../lib/lib.html]{Python Library Reference}.)
+\end{methoddesc}
 
-\item[\code{index(x)}]
-Return the index in the list of the first item whose value is \code{x}.
+\begin{methoddesc}[list]{index}{x}
+Return the index in the list of the first item whose value is \var{x}.
 It is an error if there is no such item.
+\end{methoddesc}
 
-\item[\code{count(x)}]
-Return the number of times \code{x} appears in the list.
+\begin{methoddesc}[list]{count}{x}
+Return the number of times \var{x} appears in the list.
+\end{methoddesc}
 
-\item[\code{sort()}]
+\begin{methoddesc}[list]{sort}{}
 Sort the items of the list, in place.
+\end{methoddesc}
 
-\item[\code{reverse()}]
+\begin{methoddesc}[list]{reverse}{}
 Reverse the elements of the list, in place.
-
-\end{description}
+\end{methoddesc}
 
 An example that uses most of the list methods:
 
