@@ -226,6 +226,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
         error is sent back.
 
         """
+        self.command = None  # set in case of error on the first line
         self.request_version = version = "HTTP/0.9" # Default
         self.close_connection = 1
         requestline = self.raw_requestline
@@ -241,15 +242,25 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
                 self.send_error(400, "Bad request version (%s)" % `version`)
                 return False
             try:
-                version_number = float(version.split('/', 1)[1])
-            except ValueError:
+                base_version_number = version.split('/', 1)[1]
+                version_number = base_version_number.split(".")
+                # RFC 2145 section 3.1 says there can be only one "." and
+                #   - major and minor numbers MUST be treated as
+                #      separate integers;
+                #   - HTTP/2.4 is a lower version than HTTP/2.13, which in
+                #      turn is lower than HTTP/12.3;
+                #   - Leading zeros MUST be ignored by recipients.
+                if len(version_number) != 2:
+                    raise ValueError
+                version_number = int(version_number[0]), int(version_number[1])
+            except (ValueError, IndexError):
                 self.send_error(400, "Bad request version (%s)" % `version`)
                 return False
-            if version_number >= 1.1 and self.protocol_version >= "HTTP/1.1":
+            if version_number >= (1, 1) and self.protocol_version >= "HTTP/1.1":
                 self.close_connection = 0
-            if version_number >= 2.0:
+            if version_number >= (2, 0):
                 self.send_error(505,
-                                "Invalid HTTP Version (%f)" % version_number)
+                          "Invalid HTTP Version (%s)" % base_version_number)
                 return False
         elif len(words) == 2:
             [command, path] = words
