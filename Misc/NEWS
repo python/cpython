@@ -28,16 +28,14 @@ Extension Modules
 Library
 -------
 
+- moved deprecated modules to Lib/lib-old:  whrandom, tzparse, statcache.
+
 - the pickle module no longer accepts the deprecated None option in the
   args tuple returned by __reduce__().
 
 - optparse now optionally imports gettext.  This allows its use in setup.py.
 
-- the deprecated tzparse module was removed.
-
 - the pickle module no longer uses the deprecated bin parameter.
-
-- the depecated statcache module was removed.
 
 - the shelve module no longer uses the deprecated binary parameter.
 
@@ -48,8 +46,6 @@ Library
 - unittest.TestCase.run() and unittest.TestSuite.run() can now be successfully
   extended or overridden by subclasses.  Formerly, the subclassed method would
   be ignored by the rest of the module.  (Bug #1078905).
-
-- the deprecated whrandom module was removed.  Use the random module instead.
 
 - heapq.nsmallest() and heapq.nlargest() now support key= arguments with
   the same meaning as in list.sort().
