@@ -528,12 +528,13 @@ class build_ext (Command):
         "foo\bar.pyd").
         """
 
-        from distutils import sysconfig
+        from distutils.sysconfig import get_config_var
         ext_path = string.split (ext_name, '.')
         # extensions in debug_mode are named 'module_d.pyd' under windows
+        so_ext = get_config_var('SO')
         if os.name == 'nt' and self.debug:
-            return apply (os.path.join, ext_path) + '_d' + sysconfig.SO
-        return apply (os.path.join, ext_path) + sysconfig.SO
+            return apply (os.path.join, ext_path) + '_d' + so_ext
+        return apply (os.path.join, ext_path) + so_ext
 
     def get_ext_libname (self, ext_name):
         # create a filename for the (unneeded) lib-file.
