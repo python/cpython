@@ -134,6 +134,9 @@ extern void initamoeba();
 #endif
 #ifdef USE_GL
 extern void initgl();
+#ifdef USE_FM
+extern void initfm();
+#endif
 #ifdef USE_PANEL
 extern void initpanel();
 #endif
@@ -167,6 +170,9 @@ struct {
 
 #ifdef USE_GL
 	{"gl",		initgl},
+#ifdef USE_FM
+	{"fm",		initfm},
+#endif
 #ifdef USE_PANEL
 	{"pnl",		initpanel},
 #endif
