@@ -29,7 +29,8 @@ _names = sys.builtin_module_names
 
 # Note:  more names are added to __all__ later.
 __all__ = ["altsep", "curdir", "pardir", "sep", "pathsep", "linesep",
-           "defpath", "name", "path", "devnull"]
+           "defpath", "name", "path", "devnull",
+           "SEEK_SET", "SEEK_CUR", "SEEK_END"]
 
 def _get_exports_list(module):
     try:
@@ -134,6 +135,12 @@ from os.path import (curdir, pardir, sep, pathsep, defpath, extsep, altsep,
     devnull)
 
 del _names
+
+# Python uses fixed values for the SEEK_ constants; they are mapped
+# to native constants if necessary in posixmodule.c
+SEEK_SET = 0
+SEEK_CUR = 1
+SEEK_END = 2
 
 #'
 

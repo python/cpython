@@ -37,6 +37,8 @@ Extension Modules
 Library
 -------
 
+- os.{SEEK_SET, SEEK_CUR, SEEK_END} have been added for convenience.
+
 - Enhancements to the csv module:
 
   + Dialects are now validated by the underlying C code, better
