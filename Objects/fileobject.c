@@ -381,47 +381,97 @@ file_isatty(f, args)
 	return PyInt_FromLong(res);
 }
 
+/* We expect that fstat exists on most systems.
+   It's confirmed on Unix, Mac and Windows.
+   If you don't have it, add #define DONT_HAVE_FSTAT to your config.h. */
+#ifndef DONT_HAVE_FSTAT
+#define HAVE_FSTAT
+
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#endif
+
+#if BUFSIZ < 8192
+#define SMALLCHUNK 8192
+#else
+#define SMALLCHUNK BUFSIZ
+#endif
+
+#define BIGCHUNK (512*1024)
+
+static size_t
+new_buffersize(f, currentsize)
+	PyFileObject *f;
+	size_t currentsize;
+{
+#ifdef HAVE_FSTAT
+	long pos, end;
+	struct stat st;
+	if (fstat(fileno(f->f_fp), &st) == 0) {
+		end = st.st_size;
+		pos = ftell(f->f_fp);
+		if (end > pos && pos >= 0)
+			return end - pos + 1;
+	}
+#endif
+	if (currentsize > SMALLCHUNK) {
+		/* Keep doubling until we reach BIGCHUNK;
+		   then keep adding BIGCHUNK. */
+		if (currentsize <= BIGCHUNK)
+			return currentsize + currentsize;
+		else
+			return currentsize + BIGCHUNK;
+	}
+	return currentsize + SMALLCHUNK;
+}
+
 static PyObject *
 file_read(f, args)
 	PyFileObject *f;
 	PyObject *args;
 {
-	int n, n1, n2, n3;
+	long bytesrequested;
+	size_t bytesread, buffersize, chunksize;
 	PyObject *v;
 	
 	if (f->f_fp == NULL)
 		return err_closed();
 	if (args == NULL)
-		n = -1;
+		bytesrequested = -1;
 	else {
-		if (!PyArg_Parse(args, "i", &n))
+		if (!PyArg_Parse(args, "l", &bytesrequested))
 			return NULL;
 	}
-	n2 = n >= 0 ? n : BUFSIZ;
-	v = PyString_FromStringAndSize((char *)NULL, n2);
+	if (bytesrequested < 0)
+		buffersize = new_buffersize(f, 0);
+	else
+		buffersize = bytesrequested;
+	v = PyString_FromStringAndSize((char *)NULL, buffersize);
 	if (v == NULL)
 		return NULL;
-	n1 = 0;
+	bytesread = 0;
 	Py_BEGIN_ALLOW_THREADS
 	for (;;) {
-		n3 = fread(BUF(v)+n1, 1, n2-n1, f->f_fp);
+		chunksize = fread(BUF(v) + bytesread, 1,
+				  buffersize - bytesread, f->f_fp);
 		/* XXX Error check? */
-		if (n3 == 0)
+		if (chunksize == 0)
 			break;
-		n1 += n3;
-		if (n1 == n)
+		bytesread += chunksize;
+		if (bytesread < buffersize)
 			break;
-		if (n < 0) {
-			n2 = n1 + BUFSIZ;
+		if (bytesrequested < 0) {
+			buffersize = new_buffersize(f, buffersize);
 			Py_BLOCK_THREADS
-			if (_PyString_Resize(&v, n2) < 0)
+			if (_PyString_Resize(&v, buffersize) < 0)
 				return NULL;
 			Py_UNBLOCK_THREADS
 		}
 	}
 	Py_END_ALLOW_THREADS
-	if (n1 != n2)
-		_PyString_Resize(&v, n1);
+	if (bytesread != buffersize)
+		_PyString_Resize(&v, bytesread);
 	return v;
 }
 
