@@ -280,7 +280,7 @@ class PackageImporter(ModuleImporter):
 	    p = package
 	    name = name[3:]
 	    while name[:3] in ('__.', '__'):
-		p = package.__
+		p = p.__
 		name = name[3:]
 	    if not name:
 		return self.finish(package, p, '', fromlist)
