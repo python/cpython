@@ -1,4 +1,4 @@
-# Module VUMeter
+# Module 'VUMeter'
 
 import audio
 from StripChart import StripChart
