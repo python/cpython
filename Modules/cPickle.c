@@ -89,6 +89,8 @@ static char cPickle_module_documentation[] =
 #define STRING      'S'
 #define BINSTRING   'T'
 #define SHORT_BINSTRING 'U'
+#define UNICODE     'V'
+#define BINUNICODE  'X'
 #define APPEND      'a'
 #define BUILD       'b'
 #define GLOBAL      'c'
@@ -1160,6 +1162,79 @@ err:
 
 
 static int
+save_unicode(Picklerobject *self, PyObject *args, int doput) {
+    int size, len;
+    PyObject *repr=0;
+
+    if (!PyUnicode_Check(args))
+      return -1;
+
+    if (!self->bin) {
+        char *repr_str;
+        static char string = UNICODE;
+
+        UNLESS (repr = PyUnicode_AsRawUnicodeEscapeString(args))
+            return -1;
+
+        if ((len = PyString_Size(repr)) < 0)
+          goto err;
+        repr_str = PyString_AS_STRING((PyStringObject *)repr);
+
+        if ((*self->write_func)(self, &string, 1) < 0)
+            goto err;
+
+        if ((*self->write_func)(self, repr_str, len) < 0)
+            goto err;
+
+        if ((*self->write_func)(self, "\n", 1) < 0)
+            goto err;
+
+        Py_XDECREF(repr);
+    }
+    else {
+        int i;
+        char c_str[5];
+
+        UNLESS (repr = PyUnicode_AsUTF8String(args))
+            return -1;
+
+        if ((size = PyString_Size(repr)) < 0)
+	    goto err;
+
+	c_str[0] = BINUNICODE;
+	for (i = 1; i < 5; i++)
+	    c_str[i] = (int)(size >> ((i - 1) * 8));
+	len = 5;
+
+        if ((*self->write_func)(self, c_str, len) < 0)
+            goto err;
+
+        if (size > 128 && Pdata_Check(self->file)) {
+            if (write_other(self, NULL, 0) < 0)
+		goto err;
+            PDATA_APPEND(self->file, repr, -1);
+          }
+        else {
+          if ((*self->write_func)(self, PyString_AS_STRING(repr), size) < 0)
+	      goto err;
+        }
+
+	Py_DECREF(repr);
+    }
+
+    if (doput)
+      if (put(self, args) < 0)
+        return -1;
+
+    return 0;
+
+err:
+    Py_XDECREF(repr);
+    return -1;
+}
+
+
+static int
 save_tuple(Picklerobject *self, PyObject *args) {
     PyObject *element = 0, *py_tuple_id = 0;
     int len, i, has_key, res = -1;
@@ -1691,6 +1766,12 @@ save(Picklerobject *self, PyObject *args, int  pers_save) {
                 res = save_string(self, args, 0);
                 goto finally;
             }
+
+        case 'u':
+            if ((type == &PyUnicode_Type) && (PyString_GET_SIZE(args) < 2)) {
+                res = save_unicode(self, args, 0);
+                goto finally;
+            }
     }
 
     if (args->ob_refcnt > 1) {
@@ -1718,6 +1799,13 @@ save(Picklerobject *self, PyObject *args, int  pers_save) {
         case 's':
             if (type == &PyString_Type) {
                 res = save_string(self, args, 1);
+                goto finally;
+            }
+            break;
+
+        case 'u':
+            if (type == &PyUnicode_Type) {
+                res = save_unicode(self, args, 1);
                 goto finally;
             }
             break;
@@ -2667,6 +2755,47 @@ load_short_binstring(Unpicklerobject *self) {
 
 
 static int
+load_unicode(Unpicklerobject *self) {
+    PyObject *str = 0;
+    int len, res = -1;
+    char *s;
+
+    if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
+    if (len < 2) return bad_readline();
+
+    UNLESS (str = PyUnicode_DecodeRawUnicodeEscape(s, len - 1, NULL))
+        goto finally;
+
+    PDATA_PUSH(self->stack, str, -1);
+    return 0;
+
+finally:
+    return res;
+} 
+
+
+static int
+load_binunicode(Unpicklerobject *self) {
+    PyObject *unicode;
+    long l;
+    char *s;
+
+    if ((*self->read_func)(self, &s, 4) < 0) return -1;
+
+    l = calc_binint(s, 4);
+
+    if ((*self->read_func)(self, &s, l) < 0)
+        return -1;
+
+    UNLESS (unicode = PyUnicode_DecodeUTF8(s, l, NULL))
+        return -1;
+
+    PDATA_PUSH(self->stack, unicode, -1);
+    return 0;
+}
+
+
+static int
 load_tuple(Unpicklerobject *self) {
     PyObject *tup;
     int i;
@@ -3412,6 +3541,16 @@ load(Unpicklerobject *self) {
                     break;
                 continue;
 
+            case UNICODE:
+                if (load_unicode(self) < 0)
+                    break;
+                continue;
+
+            case BINUNICODE:
+                if (load_binunicode(self) < 0)
+                    break;
+                continue;
+
             case EMPTY_TUPLE:
                 if (load_empty_tuple(self) < 0)
                     break;
@@ -3689,6 +3828,16 @@ noload(Unpicklerobject *self) {
 
             case STRING:
                 if (load_string(self) < 0)
+                    break;
+                continue;
+
+            case UNICODE:
+                if (load_unicode(self) < 0)
+                    break;
+                continue;
+
+            case BINUNICODE:
+                if (load_binunicode(self) < 0)
                     break;
                 continue;
 
