@@ -264,6 +264,9 @@ PyErr_SetFromErrnoWithFilename(PyObject *exc, char *filename)
 	PyObject *v;
 	char *s;
 	int i = errno;
+#ifdef PLAN9
+	char errbuf[ERRMAX];
+#endif
 #ifdef MS_WIN32
 	char *s_buf = NULL;
 #endif
@@ -271,6 +274,10 @@ PyErr_SetFromErrnoWithFilename(PyObject *exc, char *filename)
 	if (i == EINTR && PyErr_CheckSignals())
 		return NULL;
 #endif
+#ifdef PLAN9
+	rerrstr(errbuf, sizeof errbuf);
+	s = errbuf;
+#else
 	if (i == 0)
 		s = "Error"; /* Sometimes errno didn't get set */
 	else
@@ -305,7 +312,8 @@ PyErr_SetFromErrnoWithFilename(PyObject *exc, char *filename)
 				s[--len] = '\0';
 		}
 	}
-#endif
+#endif /* Unix/Windows */
+#endif /* PLAN 9*/
 	if (filename != NULL)
 		v = Py_BuildValue("(iss)", i, s, filename);
 	else
