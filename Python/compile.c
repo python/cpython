@@ -920,7 +920,7 @@ parsestr(s)
 			return NULL;
 		}
 	}
-	if (unicode) {
+	if (unicode || Py_UnicodeFlag) {
 		if (rawmode)
 			return PyUnicode_DecodeRawUnicodeEscape(
 				s, len, NULL);
