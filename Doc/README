@@ -107,16 +107,16 @@ To create PostScript files:
 
 To create info files:
 
-	(Note that info is not currently supported.  If you need it,
-	please fix or replace tools/partparse.py and send the new
-	version to python-docs@python.org.  We'll be glad to provide
-	free copies of the info files to anyone who can support the
-	process.  ;-)
+	Note that info support is currently being revised using new
+	conversion tools by Michael Ernst <mernst@cs.washington.edu>.
 
 	- makeinfo.  This is available from any GNU mirror.
 
 	- emacs or xemacs.  Emacs is available from the same place as
 	  makeinfo, and xemacs is available from ftp.xemacs.org.
+
+	- Perl.  Find the software at
+	  <http://language.perl.com/info/software.html>.
 
 To create HTML files:
 
