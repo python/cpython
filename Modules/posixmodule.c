@@ -2171,12 +2171,6 @@ posix_execv(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	if (argc == 0) {
-		PyErr_SetString(PyExc_ValueError, "execv() arg 2 must not be empty");
-                PyMem_Free(path);
-		return NULL;
-	}
-
 	argvlist = PyMem_NEW(char *, argc+1);
 	if (argvlist == NULL) {
 		PyMem_Free(path);
@@ -2250,12 +2244,6 @@ posix_execve(PyObject *self, PyObject *args)
 	if (!PyMapping_Check(env)) {
 		PyErr_SetString(PyExc_TypeError,
 				"execve() arg 3 must be a mapping object");
-		goto fail_0;
-	}
-
-	if (argc == 0) {
-		PyErr_SetString(PyExc_ValueError,
-				"execve() arg 2 must not be empty");
 		goto fail_0;
 	}
 
