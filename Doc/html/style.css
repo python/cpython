@@ -42,7 +42,7 @@ h1                      { font-size: 180% }
 h2                      { font-size: 150% }
 h3, h4                  { font-size: 120% }
 code, tt                { font-family: monospace }
-var                     { font-family: serif;
+var                     { font-family: times, serif;
                           font-style: italic;
                           font-weight: normal }
 
