@@ -185,13 +185,14 @@ static void beos_add_dyn( char *name, image_id id )
 
 
 
-dl_funcptr _PyImport_GetDynLoadFunc(const char *name, const char *funcname,
+dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 				    const char *pathname, FILE *fp)
 {
 	dl_funcptr p;
 	image_id the_id;
 	status_t retval;
 	char fullpath[PATH_MAX];
+	char funcname[258];
 
 	if( Py_VerboseFlag ) {
 		printf( "load_add_on( %s )\n", pathname );
@@ -236,6 +237,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *name, const char *funcname,
 		return NULL;
 	}
 
+	sprintf(funcname, "init%.200s", shortname);
 	if( Py_VerboseFlag ) {
 		printf( "get_image_symbol( %s )\n", funcname );
 	}
@@ -274,7 +276,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *name, const char *funcname,
 	/* Save the module name and image ID for later so we can clean up
 	 * gracefully.
 	 */
-	beos_add_dyn( name, the_id );
+	beos_add_dyn( fqname, the_id );
 
 	return p;
 }

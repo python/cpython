@@ -68,10 +68,13 @@ const struct filedescr _PyImport_DynLoadFiletab[] = {
 	{0, 0}
 };
 
-dl_funcptr _PyImport_GetDynLoadFunc(const char *name, const char *funcname,
+dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 				    const char *pathname, FILE *fp)
 {
 	dl_funcptr p = NULL;
+	char funcname[258];
+
+	sprintf(funcname, "_init%.200s", shortname);
 
 #ifdef USE_RLD
 	{

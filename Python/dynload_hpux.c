@@ -37,6 +37,11 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 #include "importdl.h"
 
+#if defined(__hp9000s300)
+#define FUNCNAME_PATTERN "_init%.200s"
+#else
+#define FUNCNAME_PATTERN "init%.200s"
+#endif
 
 const struct filedescr _PyImport_DynLoadFiletab[] = {
 	{".sl", "rb", C_EXTENSION},
@@ -44,12 +49,13 @@ const struct filedescr _PyImport_DynLoadFiletab[] = {
 	{0, 0}
 };
 
-dl_funcptr _PyImport_GetDynLoadFunc(const char *name, const char *funcname,
+dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 				    const char *pathname, FILE *fp)
 {
 	dl_funcptr p;
 	shl_t lib;
 	int flags;
+	char funcname[258];
 
 	flags = BIND_FIRST | BIND_DEFERRED;
 	if (Py_VerboseFlag) {
@@ -67,6 +73,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *name, const char *funcname,
 		PyErr_SetString(PyExc_ImportError, buf);
 		return NULL;
 	}
+	sprintf(funcname, FUNCNAME_PATTERN, shortname);
 	if (Py_VerboseFlag)
 		printf("shl_findsym %s\n", funcname);
 	shl_findsym(&lib, funcname, TYPE_UNDEFINED, (void *) &p);
