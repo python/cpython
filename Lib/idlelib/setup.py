@@ -55,15 +55,15 @@ class idle_build_py(build_py):
 
 # Arghhh. install_lib thinks that all files returned from build_py's
 # get_outputs are bytecode files
+
 class idle_install_lib(install_lib):
     def _bytecode_filenames(self, files):
         files = [n for n in files if n.endswith('.py')]
         return install_lib._bytecode_filenames(self,files)
 
-
 setup(name="IDLE",
       version = idlever.IDLE_VERSION,
-      description = "IDLE, the Python IDE",
+      description = "IDLE Fork, the Forked Python IDE",
       author = "Guido van Rossum",
       author_email = "guido@python.org",
       #url =
@@ -71,11 +71,16 @@ setup(name="IDLE",
 """IDLE is a Tkinter based IDE for Python. It is written in 100% pure
 Python and works both on Windows and Unix. It features a multi-window
 text editor with multiple undo, Python colorizing, and many other things,
-as well as a Python shell window and a debugger.""",
+as well as a Python shell window and a debugger.
+
+IDLE Fork is a separate line of development which was initiated by D. Scherer
+at CMU as part of Visual Python.  It features execution in a separate
+process, with a fresh environment for each run. For further details, 
+refer to idlefork.sourceforge.net.""",
 
       cmdclass = {'build_py':idle_build_py,
                   'install_lib':idle_install_lib},
       package_dir = {idlelib:'.'},
       packages = [idlelib],
-      scripts = ['idle', 'idles']
+      scripts = ['idle']
       )
