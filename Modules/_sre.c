@@ -76,10 +76,6 @@ static char copyright[] =
 /* -------------------------------------------------------------------- */
 /* optional features */
 
-/* test: define to use sre.py helpers instead of C code */
-#undef USE_PYTHON_SPLIT
-#undef USE_PYTHON_SUB
-
 /* prevent run-away recursion (bad patterns on long strings) */
 
 #if !defined(USE_STACKCHECK)
@@ -1251,6 +1247,8 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
             TRACE(("|%p|%p|SEARCH LITERAL\n", pattern, ptr));
             state->start = ptr;
             state->ptr = ++ptr;
+            if (flags & SRE_INFO_LITERAL)
+                return 1; /* we got all of it */
             status = SRE_MATCH(state, pattern + 2, 1);
             if (status != 0)
                 break;
@@ -1820,66 +1818,6 @@ join(PyObject* list, PyObject* pattern)
     return result;
 }
 
-
-#ifdef USE_PYTHON_SUB
-static PyObject*
-pattern_sub(PatternObject* self, PyObject* args, PyObject* kw)
-{
-    PyObject* template;
-    PyObject* string;
-    PyObject* count = Py_False; /* zero */
-    static char* kwlist[] = { "repl", "string", "count", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|O:sub", kwlist,
-                                     &template, &string, &count))
-        return NULL;
-
-    /* delegate to Python code */
-    return call(
-        SRE_MODULE, "_sub",
-        Py_BuildValue("OOOO", self, template, string, count)
-        );
-}
-#endif
-
-#ifdef USE_PYTHON_SUB
-static PyObject*
-pattern_subn(PatternObject* self, PyObject* args, PyObject* kw)
-{
-    PyObject* template;
-    PyObject* string;
-    PyObject* count = Py_False; /* zero */
-    static char* kwlist[] = { "repl", "string", "count", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|O:subn", kwlist,
-                                     &template, &string, &count))
-        return NULL;
-
-    /* delegate to Python code */
-    return call(
-        SRE_MODULE, "_subn",
-        Py_BuildValue("OOOO", self, template, string, count)
-        );
-}
-#endif
-
-#if defined(USE_PYTHON_SPLIT)
-static PyObject*
-pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
-{
-    PyObject* string;
-    PyObject* maxsplit = Py_False; /* zero */
-    static char* kwlist[] = { "source", "maxsplit", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O:split", kwlist,
-                                     &string, &maxsplit))
-        return NULL;
-
-    /* delegate to Python code */
-    return call(
-        SRE_MODULE, "_split",
-        Py_BuildValue("OOO", self, string, maxsplit)
-        );
-}
-#endif
-
 static PyObject*
 pattern_findall(PatternObject* self, PyObject* args, PyObject* kw)
 {
@@ -1980,7 +1918,6 @@ error:
     
 }
 
-#if !defined(USE_PYTHON_SPLIT)
 static PyObject*
 pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
 {
@@ -2071,15 +2008,16 @@ pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
     }
 
     /* get segment following last match */
-    item = PySequence_GetSlice(
-        string, STATE_OFFSET(&state, last), state.endpos
-        );
-    if (!item)
-        goto error;
-    status = PyList_Append(list, item);
-    Py_DECREF(item);
-    if (status < 0)
-        goto error;
+    i = STATE_OFFSET(&state, last);
+    if (i < state.endpos) {
+        item = PySequence_GetSlice(string, i, state.endpos);
+        if (!item)
+            goto error;
+        status = PyList_Append(list, item);
+        Py_DECREF(item);
+        if (status < 0)
+            goto error;
+    }
 
     state_fini(&state);
     return list;
@@ -2090,9 +2028,7 @@ error:
     return NULL;
     
 }
-#endif
 
-#if !defined(USE_PYTHON_SUB)
 static PyObject*
 pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
              int count, int subn)
@@ -2108,15 +2044,22 @@ pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
     int i, b, e;
     int filter_is_callable;
 
-    /* call subx helper to get the filter */
-    filter = call(
-        SRE_MODULE, "_subx",
-        Py_BuildValue("OO", self, template)
-        );
-    if (!filter)
-        return NULL;
-
-    filter_is_callable = PyCallable_Check(filter);
+    if (PyCallable_Check(template)) {
+        /* sub/subn takes either a function or a template */
+        filter = template;
+        Py_INCREF(filter);
+        filter_is_callable = 1;
+    } else {
+        /* if not callable, call the template compiler.  it may return
+           either a filter function or a literal string */
+        filter = call(
+            SRE_MODULE, "_subx",
+            Py_BuildValue("OO", self, template)
+            );
+        if (!filter)
+            return NULL;
+        filter_is_callable = PyCallable_Check(filter);
+    }
 
     string = state_init(&state, self, string, 0, INT_MAX);
     if (!string)
@@ -2169,7 +2112,7 @@ pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
             goto next;
 
         if (filter_is_callable) {
-            /* filter match */
+            /* pass match object through filter */
             match = pattern_new_match(self, &state, 1);
             if (!match)
                 goto error;
@@ -2186,7 +2129,7 @@ pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
         } else {
             /* filter is literal string */
             item = filter;
-            Py_INCREF(filter);
+            Py_INCREF(item);
         }
 
         /* add to list */
@@ -2208,18 +2151,21 @@ next:
     }
 
     /* get segment following last match */
-    item = PySequence_GetSlice(string, i, state.endpos);
-    if (!item)
-        goto error;
-    status = PyList_Append(list, item);
-    Py_DECREF(item);
-    if (status < 0)
-        goto error;
+    if (i < state.endpos) {
+        item = PySequence_GetSlice(string, i, state.endpos);
+        if (!item)
+            goto error;
+        status = PyList_Append(list, item);
+        Py_DECREF(item);
+        if (status < 0)
+            goto error;
+    }
 
     state_fini(&state);
 
-    /* convert list to single string */
+    /* convert list to single string (also removes list) */
     item = join(list, self->pattern);
+
     if (!item)
         return NULL;
 
@@ -2262,7 +2208,6 @@ pattern_subn(PatternObject* self, PyObject* args, PyObject* kw)
 
     return pattern_subx(self, template, string, count, 1);
 }
-#endif
 
 static PyObject*
 pattern_copy(PatternObject* self, PyObject* args)
