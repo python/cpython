@@ -1,0 +1,759 @@
+\chapter{Expressions and conditions}
+\index{expression}
+\index{condition}
+
+{\bf Note:} In this and the following chapters, extended BNF notation
+will be used to describe syntax, not lexical analysis.
+\index{BNF}
+
+This chapter explains the meaning of the elements of expressions and
+conditions.  Conditions are a superset of expressions, and a condition
+may be used wherever an expression is required by enclosing it in
+parentheses.  The only places where expressions are used in the syntax
+instead of conditions is in expression statements and on the
+right-hand side of assignment statements; this catches some nasty bugs
+like accidentally writing \verb@x == 1@ instead of \verb@x = 1@.
+\indexii{assignment}{statement}
+
+The comma plays several roles in Python's syntax.  It is usually an
+operator with a lower precedence than all others, but occasionally
+serves other purposes as well; e.g. it separates function arguments,
+is used in list and dictionary constructors, and has special semantics
+in \verb@print@ statements.
+\index{comma}
+
+When (one alternative of) a syntax rule has the form
+
+\begin{verbatim}
+name:           othername
+\end{verbatim}
+
+and no semantics are given, the semantics of this form of \verb@name@
+are the same as for \verb@othername@.
+\index{syntax}
+
+\section{Arithmetic conversions}
+\indexii{arithmetic}{conversion}
+
+When a description of an arithmetic operator below uses the phrase
+``the numeric arguments are converted to a common type'',
+this both means that if either argument is not a number, a
+\verb@TypeError@ exception is raised, and that otherwise
+the following conversions are applied:
+\exindex{TypeError}
+\indexii{floating point}{number}
+\indexii{long}{integer}
+\indexii{plain}{integer}
+
+\begin{itemize}
+\item	first, if either argument is a floating point number,
+	the other is converted to floating point;
+\item	else, if either argument is a long integer,
+	the other is converted to long integer;
+\item	otherwise, both must be plain integers and no conversion
+	is necessary.
+\end{itemize}
+
+\section{Atoms}
+\index{atom}
+
+Atoms are the most basic elements of expressions.  Forms enclosed in
+reverse quotes or in parentheses, brackets or braces are also
+categorized syntactically as atoms.  The syntax for atoms is:
+
+\begin{verbatim}
+atom:      identifier | literal | enclosure
+enclosure: parenth_form|list_display|dict_display|string_conversion
+\end{verbatim}
+
+\subsection{Identifiers (Names)}
+\index{name}
+\index{identifier}
+
+An identifier occurring as an atom is a reference to a local, global
+or built-in name binding.  If a name is assigned to anywhere in a code
+block (even in unreachable code), and is not mentioned in a
+\verb@global@ statement in that code block, then it refers to a local
+name throughout that code block.  When it is not assigned to anywhere
+in the block, or when it is assigned to but also explicitly listed in
+a \verb@global@ statement, it refers to a global name if one exists,
+else to a built-in name (and this binding may dynamically change).
+\indexii{name}{binding}
+\index{code block}
+\stindex{global}
+\indexii{built-in}{name}
+\indexii{global}{name}
+
+When the name is bound to an object, evaluation of the atom yields
+that object.  When a name is not bound, an attempt to evaluate it
+raises a \verb@NameError@ exception.
+\exindex{NameError}
+
+\subsection{Literals}
+\index{literal}
+
+Python knows string and numeric literals:
+
+\begin{verbatim}
+literal:        stringliteral | integer | longinteger | floatnumber
+\end{verbatim}
+
+Evaluation of a literal yields an object of the given type (string,
+integer, long integer, floating point number) with the given value.
+The value may be approximated in the case of floating point literals.
+See section \ref{literals} for details.
+
+All literals correspond to immutable data types, and hence the
+object's identity is less important than its value.  Multiple
+evaluations of literals with the same value (either the same
+occurrence in the program text or a different occurrence) may obtain
+the same object or a different object with the same value.
+\indexiii{immutable}{data}{type}
+
+(In the original implementation, all literals in the same code block
+with the same type and value yield the same object.)
+
+\subsection{Parenthesized forms}
+\index{parenthesized form}
+
+A parenthesized form is an optional condition list enclosed in
+parentheses:
+
+\begin{verbatim}
+parenth_form:      "(" [condition_list] ")"
+\end{verbatim}
+
+A parenthesized condition list yields whatever that condition list
+yields.
+
+An empty pair of parentheses yields an empty tuple object.  Since
+tuples are immutable, the rules for literals apply here.
+\indexii{empty}{tuple}
+
+(Note that tuples are not formed by the parentheses, but rather by use
+of the comma operator.  The exception is the empty tuple, for which
+parentheses {\em are} required --- allowing unparenthesized ``nothing''
+in expressions would cause ambiguities and allow common typos to
+pass uncaught.)
+\index{comma}
+\indexii{tuple}{display}
+
+\subsection{List displays}
+\indexii{list}{display}
+
+A list display is a possibly empty series of conditions enclosed in
+square brackets:
+
+\begin{verbatim}
+list_display:   "[" [condition_list] "]"
+\end{verbatim}
+
+A list display yields a new list object.
+\obindex{list}
+
+If it has no condition list, the list object has no items.  Otherwise,
+the elements of the condition list are evaluated from left to right
+and inserted in the list object in that order.
+\indexii{empty}{list}
+
+\subsection{Dictionary displays} \label{dict}
+\indexii{dictionary}{display}
+
+A dictionary display is a possibly empty series of key/datum pairs
+enclosed in curly braces:
+\index{key}
+\index{datum}
+\index{key/datum pair}
+
+\begin{verbatim}
+dict_display:   "{" [key_datum_list] "}"
+key_datum_list: key_datum ("," key_datum)* [","]
+key_datum:      condition ":" condition
+\end{verbatim}
+
+A dictionary display yields a new dictionary object.
+\obindex{dictionary}
+
+The key/datum pairs are evaluated from left to right to define the
+entries of the dictionary: each key object is used as a key into the
+dictionary to store the corresponding datum.
+
+Restrictions on the types of the key values are listed earlier in
+section \ref{types}.
+Clashes between duplicate keys are not detected; the last
+datum (textually rightmost in the display) stored for a given key
+value prevails.
+\exindex{TypeError}
+
+\subsection{String conversions}
+\indexii{string}{conversion}
+\indexii{reverse}{quotes}
+\indexii{backward}{quotes}
+\index{back-quotes}
+
+A string conversion is a condition list enclosed in reverse (or
+backward) quotes:
+
+\begin{verbatim}
+string_conversion: "`" condition_list "`"
+\end{verbatim}
+
+A string conversion evaluates the contained condition list and
+converts the resulting object into a string according to rules
+specific to its type.
+
+If the object is a string, a number, \verb@None@, or a tuple, list or
+dictionary containing only objects whose type is one of these, the
+resulting string is a valid Python expression which can be passed to
+the built-in function \verb@eval()@ to yield an expression with the
+same value (or an approximation, if floating point numbers are
+involved).
+
+(In particular, converting a string adds quotes around it and converts
+``funny'' characters to escape sequences that are safe to print.)
+
+It is illegal to attempt to convert recursive objects (e.g. lists or
+dictionaries that contain a reference to themselves, directly or
+indirectly.)
+\obindex{recursive}
+
+The built-in function \verb@repr()@ performs exactly the same
+conversion in its argument as enclosing it it reverse quotes does.
+The built-in function \verb@str()@ performs a similar but more
+user-friendly conversion.
+\bifuncindex{repr}
+\bifuncindex{str}
+
+\section{Primaries} \label{primaries}
+\index{primary}
+
+Primaries represent the most tightly bound operations of the language.
+Their syntax is:
+
+\begin{verbatim}
+primary:        atom | attributeref | subscription | slicing | call
+\end{verbatim}
+
+\subsection{Attribute references}
+\indexii{attribute}{reference}
+
+An attribute reference is a primary followed by a period and a name:
+
+\begin{verbatim}
+attributeref:   primary "." identifier
+\end{verbatim}
+
+The primary must evaluate to an object of a type that supports
+attribute references, e.g. a module or a list.  This object is then
+asked to produce the attribute whose name is the identifier.  If this
+attribute is not available, the exception \verb@AttributeError@ is
+raised.  Otherwise, the type and value of the object produced is
+determined by the object.  Multiple evaluations of the same attribute
+reference may yield different objects.
+\obindex{module}
+\obindex{list}
+
+\subsection{Subscriptions}
+\index{subscription}
+
+A subscription selects an item of a sequence (string, tuple or list)
+or mapping (dictionary) object:
+\obindex{sequence}
+\obindex{mapping}
+\obindex{string}
+\obindex{tuple}
+\obindex{list}
+\obindex{dictionary}
+\indexii{sequence}{item}
+
+\begin{verbatim}
+subscription:   primary "[" condition "]"
+\end{verbatim}
+
+The primary must evaluate to an object of a sequence or mapping type.
+
+If it is a mapping, the condition must evaluate to an object whose
+value is one of the keys of the mapping, and the subscription selects
+the value in the mapping that corresponds to that key.
+
+If it is a sequence, the condition must evaluate to a plain integer.
+If this value is negative, the length of the sequence is added to it
+(so that, e.g. \verb@x[-1]@ selects the last item of \verb@x@.)
+The resulting value must be a nonnegative integer smaller than the
+number of items in the sequence, and the subscription selects the item
+whose index is that value (counting from zero).
+
+A string's items are characters.  A character is not a separate data
+type but a string of exactly one character.
+\index{character}
+\indexii{string}{item}
+
+\subsection{Slicings}
+\index{slicing}
+\index{slice}
+
+A slicing (or slice) selects a range of items in a sequence (string,
+tuple or list) object:
+\obindex{sequence}
+\obindex{string}
+\obindex{tuple}
+\obindex{list}
+
+\begin{verbatim}
+slicing:        primary "[" [condition] ":" [condition] "]"
+\end{verbatim}
+
+The primary must evaluate to a sequence object.  The lower and upper
+bound expressions, if present, must evaluate to plain integers;
+defaults are zero and the sequence's length, respectively.  If either
+bound is negative, the sequence's length is added to it.  The slicing
+now selects all items with index \var{k} such that
+\code{\var{i} <= \var{k} < \var{j}} where \var{i}
+and \var{j} are the specified lower and upper bounds.  This may be an
+empty sequence.  It is not an error if \var{i} or \var{j} lie outside the
+range of valid indexes (such items don't exist so they aren't
+selected).
+
+\subsection{Calls} \label{calls}
+\index{call}
+
+A call calls a callable object (e.g. a function) with a possibly empty
+series of arguments:\footnote{The new syntax for keyword arguments is
+not yet documented in this manual.  See chapter 12 of the Tutorial.}
+\obindex{callable}
+
+\begin{verbatim}
+call:           primary "(" [condition_list] ")"
+\end{verbatim}
+
+The primary must evaluate to a callable object (user-defined
+functions, built-in functions, methods of built-in objects, class
+objects, and methods of class instances are callable).  If it is a
+class, the argument list must be empty; otherwise, the arguments are
+evaluated.
+
+A call always returns some value, possibly \verb@None@, unless it
+raises an exception.  How this value is computed depends on the type
+of the callable object.  If it is:
+
+\begin{description}
+
+\item[a user-defined function:] the code block for the function is
+executed, passing it the argument list.  The first thing the code
+block will do is bind the formal parameters to the arguments; this is
+described in section \ref{function}.  When the code block executes a
+\verb@return@ statement, this specifies the return value of the
+function call.
+\indexii{function}{call}
+\indexiii{user-defined}{function}{call}
+\obindex{user-defined function}
+\obindex{function}
+
+\item[a built-in function or method:] the result is up to the
+interpreter; see the library reference manual for the descriptions of
+built-in functions and methods.
+\indexii{function}{call}
+\indexii{built-in function}{call}
+\indexii{method}{call}
+\indexii{built-in method}{call}
+\obindex{built-in method}
+\obindex{built-in function}
+\obindex{method}
+\obindex{function}
+
+\item[a class object:] a new instance of that class is returned.
+\obindex{class}
+\indexii{class object}{call}
+
+\item[a class instance method:] the corresponding user-defined
+function is called, with an argument list that is one longer than the
+argument list of the call: the instance becomes the first argument.
+\obindex{class instance}
+\obindex{instance}
+\indexii{instance}{call}
+\indexii{class instance}{call}
+
+\end{description}
+
+\section{Unary arithmetic operations}
+\indexiii{unary}{arithmetic}{operation}
+\indexiii{unary}{bit-wise}{operation}
+
+All unary arithmetic (and bit-wise) operations have the same priority:
+
+\begin{verbatim}
+u_expr:         primary | "-" u_expr | "+" u_expr | "~" u_expr
+\end{verbatim}
+
+The unary \verb@"-"@ (minus) operator yields the negation of its
+numeric argument.
+\index{negation}
+\index{minus}
+
+The unary \verb@"+"@ (plus) operator yields its numeric argument
+unchanged.
+\index{plus}
+
+The unary \verb@"~"@ (invert) operator yields the bit-wise inversion
+of its plain or long integer argument.  The bit-wise inversion of
+\verb@x@ is defined as \verb@-(x+1)@.
+\index{inversion}
+
+In all three cases, if the argument does not have the proper type,
+a \verb@TypeError@ exception is raised.
+\exindex{TypeError}
+
+\section{Binary arithmetic operations}
+\indexiii{binary}{arithmetic}{operation}
+
+The binary arithmetic operations have the conventional priority
+levels.  Note that some of these operations also apply to certain
+non-numeric types.  There is no ``power'' operator, so there are only
+two levels, one for multiplicative operators and one for additive
+operators:
+
+\begin{verbatim}
+m_expr:         u_expr | m_expr "*" u_expr
+              | m_expr "/" u_expr | m_expr "%" u_expr
+a_expr:         m_expr | aexpr "+" m_expr | aexpr "-" m_expr
+\end{verbatim}
+
+The \verb@"*"@ (multiplication) operator yields the product of its
+arguments.  The arguments must either both be numbers, or one argument
+must be a plain integer and the other must be a sequence.  In the
+former case, the numbers are converted to a common type and then
+multiplied together.  In the latter case, sequence repetition is
+performed; a negative repetition factor yields an empty sequence.
+\index{multiplication}
+
+The \verb@"/"@ (division) operator yields the quotient of its
+arguments.  The numeric arguments are first converted to a common
+type.  Plain or long integer division yields an integer of the same
+type; the result is that of mathematical division with the `floor'
+function applied to the result.  Division by zero raises the
+\verb@ZeroDivisionError@ exception.
+\exindex{ZeroDivisionError}
+\index{division}
+
+The \verb@"%"@ (modulo) operator yields the remainder from the
+division of the first argument by the second.  The numeric arguments
+are first converted to a common type.  A zero right argument raises
+the \verb@ZeroDivisionError@ exception.  The arguments may be floating
+point numbers, e.g. \verb@3.14 % 0.7@ equals \verb@0.34@.  The modulo
+operator always yields a result with the same sign as its second
+operand (or zero); the absolute value of the result is strictly
+smaller than the second operand.
+\index{modulo}
+
+The integer division and modulo operators are connected by the
+following identity: \verb@x == (x/y)*y + (x%y)@.  Integer division and
+modulo are also connected with the built-in function \verb@divmod()@:
+\verb@divmod(x, y) == (x/y, x%y)@.  These identities don't hold for
+floating point numbers; there a similar identity holds where
+\verb@x/y@ is replaced by \verb@floor(x/y)@).
+
+The \verb@"+"@ (addition) operator yields the sum of its arguments.
+The arguments must either both be numbers, or both sequences of the
+same type.  In the former case, the numbers are converted to a common
+type and then added together.  In the latter case, the sequences are
+concatenated.
+\index{addition}
+
+The \verb@"-"@ (subtraction) operator yields the difference of its
+arguments.  The numeric arguments are first converted to a common
+type.
+\index{subtraction}
+
+\section{Shifting operations}
+\indexii{shifting}{operation}
+
+The shifting operations have lower priority than the arithmetic
+operations:
+
+\begin{verbatim}
+shift_expr:     a_expr | shift_expr ( "<<" | ">>" ) a_expr
+\end{verbatim}
+
+These operators accept plain or long integers as arguments.  The
+arguments are converted to a common type.  They shift the first
+argument to the left or right by the number of bits given by the
+second argument.
+
+A right shift by \var{n} bits is defined as division by
+\code{pow(2,\var{n})}.  A left shift by \var{n} bits is defined as
+multiplication with \code{pow(2,\var{n})}; for plain integers there is
+no overflow check so this drops bits and flips the sign if the result
+is not less than \code{pow(2,31)} in absolute value.
+
+Negative shift counts raise a \verb@ValueError@ exception.
+\exindex{ValueError}
+
+\section{Binary bit-wise operations}
+\indexiii{binary}{bit-wise}{operation}
+
+Each of the three bitwise operations has a different priority level:
+
+\begin{verbatim}
+and_expr:       shift_expr | and_expr "&" shift_expr
+xor_expr:       and_expr | xor_expr "^" and_expr
+or_expr:       xor_expr | or_expr "|" xor_expr
+\end{verbatim}
+
+The \verb@"&"@ operator yields the bitwise AND of its arguments, which
+must be plain or long integers.  The arguments are converted to a
+common type.
+\indexii{bit-wise}{and}
+
+The \verb@"^"@ operator yields the bitwise XOR (exclusive OR) of its
+arguments, which must be plain or long integers.  The arguments are
+converted to a common type.
+\indexii{bit-wise}{xor}
+\indexii{exclusive}{or}
+
+The \verb@"|"@ operator yields the bitwise (inclusive) OR of its
+arguments, which must be plain or long integers.  The arguments are
+converted to a common type.
+\indexii{bit-wise}{or}
+\indexii{inclusive}{or}
+
+\section{Comparisons}
+\index{comparison}
+
+Contrary to C, all comparison operations in Python have the same
+priority, which is lower than that of any arithmetic, shifting or
+bitwise operation.  Also contrary to C, expressions like
+\verb@a < b < c@ have the interpretation that is conventional in
+mathematics:
+\index{C}
+
+\begin{verbatim}
+comparison:     or_expr (comp_operator or_expr)*
+comp_operator:  "<"|">"|"=="|">="|"<="|"<>"|"!="|"is" ["not"]|["not"] "in"
+\end{verbatim}
+
+Comparisons yield integer values: 1 for true, 0 for false.
+
+Comparisons can be chained arbitrarily, e.g. \code{x < y <= z} is
+equivalent to \code{x < y and y <= z}, except that \code{y} is
+evaluated only once (but in both cases \code{z} is not evaluated at all
+when \code{x < y} is found to be false).
+\indexii{chaining}{comparisons}
+
+Formally, if \var{a}, \var{b}, \var{c}, \ldots, \var{y}, \var{z} are
+expressions and \var{opa}, \var{opb}, \ldots, \var{opy} are comparison
+operators, then \var{a opa b opb c} \ldots \var{y opy z} is equivalent
+to \var{a opa b} \code{and} \var{b opb c} \code{and} \ldots \code{and}
+\var{y opy z}, except that each expression is evaluated at most once.
+
+Note that \var{a opa b opb c} doesn't imply any kind of comparison
+between \var{a} and \var{c}, so that e.g.\ \code{x < y > z} is
+perfectly legal (though perhaps not pretty).
+
+The forms \verb@<>@ and \verb@!=@ are equivalent; for consistency with
+C, \verb@!=@ is preferred; where \verb@!=@ is mentioned below
+\verb@<>@ is also implied.
+
+The operators {\tt "<", ">", "==", ">=", "<="}, and {\tt "!="} compare
+the values of two objects.  The objects needn't have the same type.
+If both are numbers, they are coverted to a common type.  Otherwise,
+objects of different types {\em always} compare unequal, and are
+ordered consistently but arbitrarily.
+
+(This unusual definition of comparison is done to simplify the
+definition of operations like sorting and the \verb@in@ and
+\verb@not@ \verb@in@ operators.)
+
+Comparison of objects of the same type depends on the type:
+
+\begin{itemize}
+
+\item
+Numbers are compared arithmetically.
+
+\item
+Strings are compared lexicographically using the numeric equivalents
+(the result of the built-in function \verb@ord@) of their characters.
+
+\item
+Tuples and lists are compared lexicographically using comparison of
+corresponding items.
+
+\item
+Mappings (dictionaries) are compared through lexicographic
+comparison of their sorted (key, value) lists.%
+\footnote{This is expensive since it requires sorting the keys first,
+but about the only sensible definition.  An earlier version of Python
+compared dictionaries by identity only, but this caused surprises
+because people expected to be able to test a dictionary for emptiness
+by comparing it to {\tt \{\}}.}
+
+\item
+Most other types compare unequal unless they are the same object;
+the choice whether one object is considered smaller or larger than
+another one is made arbitrarily but consistently within one
+execution of a program.
+
+\end{itemize}
+
+The operators \verb@in@ and \verb@not in@ test for sequence
+membership: if \var{y} is a sequence, \code{\var{x} in \var{y}} is
+true if and only if there exists an index \var{i} such that
+\code{\var{x} = \var{y}[\var{i}]}.
+\code{\var{x} not in \var{y}} yields the inverse truth value.  The
+exception \verb@TypeError@ is raised when \var{y} is not a sequence,
+or when \var{y} is a string and \var{x} is not a string of length one.%
+\footnote{The latter restriction is sometimes a nuisance.}
+\opindex{in}
+\opindex{not in}
+\indexii{membership}{test}
+\obindex{sequence}
+
+The operators \verb@is@ and \verb@is not@ test for object identity:
+\var{x} \code{is} \var{y} is true if and only if \var{x} and \var{y}
+are the same object.  \var{x} \code{is not} \var{y} yields the inverse
+truth value.
+\opindex{is}
+\opindex{is not}
+\indexii{identity}{test}
+
+\section{Boolean operations} \label{Booleans}
+\indexii{Boolean}{operation}
+
+Boolean operations have the lowest priority of all Python operations:
+
+\begin{verbatim}
+condition:      or_test | lambda_form
+or_test:        and_test | or_test "or" and_test
+and_test:       not_test | and_test "and" not_test
+not_test:       comparison | "not" not_test
+lambda_form:	"lambda" [parameter_list]: condition
+\end{verbatim}
+
+In the context of Boolean operations, and also when conditions are
+used by control flow statements, the following values are interpreted
+as false: \verb@None@, numeric zero of all types, empty sequences
+(strings, tuples and lists), and empty mappings (dictionaries).  All
+other values are interpreted as true.
+
+The operator \verb@not@ yields 1 if its argument is false, 0 otherwise.
+\opindex{not}
+
+The condition \var{x} \verb@and@ \var{y} first evaluates \var{x}; if
+\var{x} is false, its value is returned; otherwise, \var{y} is
+evaluated and the resulting value is returned.
+\opindex{and}
+
+The condition \var{x} \verb@or@ \var{y} first evaluates \var{x}; if
+\var{x} is true, its value is returned; otherwise, \var{y} is
+evaluated and the resulting value is returned.
+\opindex{or}
+
+(Note that \verb@and@ and \verb@or@ do not restrict the value and type
+they return to 0 and 1, but rather return the last evaluated argument.
+This is sometimes useful, e.g. if \verb@s@ is a string that should be
+replaced by a default value if it is empty, the expression
+\verb@s or 'foo'@ yields the desired value.  Because \verb@not@ has to
+invent a value anyway, it does not bother to return a value of the
+same type as its argument, so e.g. \verb@not 'foo'@ yields \verb@0@,
+not \verb@''@.)
+
+Lambda forms (lambda expressions) have the same syntactic position as
+conditions.  They are a shorthand to create anonymous functions; the
+expression {\em {\tt lambda} arguments{\tt :} condition}
+yields a function object that behaves virtually identical to one
+defined with
+{\em {\tt def} name {\tt (}arguments{\tt ): return} condition}.
+See section \ref{function} for the syntax of
+parameter lists.  Note that functions created with lambda forms cannot
+contain statements.
+\label{lambda}
+\indexii{lambda}{expression}
+\indexii{lambda}{form}
+\indexii{anonmymous}{function}
+
+\section{Expression lists and condition lists}
+\indexii{expression}{list}
+\indexii{condition}{list}
+
+\begin{verbatim}
+expression_list:      or_expr ("," or_expr)* [","]
+condintion_list:      condition ("," condition)* [","]
+\end{verbatim}
+
+The only difference between expression lists and condition lists is
+the lowest priority of operators that can be used in them without
+being enclosed in parentheses; condition lists allow all operators,
+while expression lists don't allow comparisons and Boolean operators
+(they do allow bitwise and shift operators though).
+
+Expression lists are used in expression statements and assignments;
+condition lists are used everywhere else where a list of
+comma-separated values is required.
+
+An expression (condition) list containing at least one comma yields a
+tuple.  The length of the tuple is the number of expressions
+(conditions) in the list.  The expressions (conditions) are evaluated
+from left to right.  (Condition lists are used syntactically is a few
+places where no tuple is constructed but a list of values is needed
+nevertheless.)
+\obindex{tuple}
+
+The trailing comma is required only to create a single tuple (a.k.a. a
+{\em singleton}); it is optional in all other cases.  A single
+expression (condition) without a trailing comma doesn't create a
+tuple, but rather yields the value of that expression (condition).
+\indexii{trailing}{comma}
+
+(To create an empty tuple, use an empty pair of parentheses:
+\verb@()@.)
+
+\section{Summary}
+
+The following table summarizes the operator precedences in Python,
+from lowest precedence (least binding) to highest precedence (most
+binding).  Operators in the same box have the same precedence.  Unless
+the syntax is explicitly given, operators are binary.  Operators in
+the same box group left to right (except for comparisons, which
+chain from left to right --- see above).
+
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\code{or} & Boolean OR \\
+\hline
+\code{and} & Boolean AND \\
+\hline
+\code{not} \var{x} & Boolean NOT \\
+\hline
+\code{in}, \code{not} \code{in} & Membership tests \\
+\code{is}, \code{is} \code{not} & Identity tests \\
+\code{<}, \code{<=}, \code{>}, \code{>=}, \code{<>}, \code{!=}, \code{=} &
+	Comparisons \\
+\hline
+\code{|} & Bitwise OR \\
+\hline
+\code{\^} & Bitwise XOR \\
+\hline
+\code{\&} & Bitwise AND \\
+\hline
+\code{<<}, \code{>>} & Shifts \\
+\hline
+\code{+}, \code{-} & Addition and subtraction \\
+\hline
+\code{*}, \code{/}, \code{\%} & Multiplication, division, remainder \\
+\hline
+\code{+\var{x}}, \code{-\var{x}} & Positive, negative \\
+\code{\~\var{x}} & Bitwise not \\
+\hline
+\code{\var{x}.\var{attribute}} & Attribute reference \\
+\code{\var{x}[\var{index}]} &  Subscription \\
+\code{\var{x}[\var{index}:\var{index}]} &  Slicing \\
+\code{\var{f}(\var{arguments}...)} & Function call \\
+\hline
+\code{(\var{expressions}\ldots)} & Binding or tuple display \\
+\code{[\var{expressions}\ldots]} & List display \\
+\code{\{\var{key}:\var{datum}\ldots\}} & Dictionary display \\
+\code{`\var{expression}\ldots`} & String conversion \\
+\hline
+\end{tabular}
+\end{center}

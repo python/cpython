@@ -1,0 +1,889 @@
+\chapter{Data model}
+
+\section{Objects, values and types}
+
+\dfn{Objects} are Python's abstraction for data.  All data in a Python
+program is represented by objects or by relations between objects.
+(In a sense, and in conformance to Von Neumann's model of a
+``stored program computer'', code is also represented by objects.)
+\index{object}
+\index{data}
+
+Every object has an identity, a type and a value.  An object's
+\emph{identity} never changes once it has been created; you may think
+of it as the object's address in memory.  An object's \dfn{type} is
+also unchangeable.  It determines the operations that an object
+supports (e.g.\ ``does it have a length?'') and also defines the
+possible values for objects of that type.  The \emph{value} of some
+objects can change.  Objects whose value can change are said to be
+\emph{mutable}; objects whose value is unchangeable once they are
+created are called \emph{immutable}.  The type determines an object's
+(im)mutability.
+\index{identity of an object}
+\index{value of an object}
+\index{type of an object}
+\index{mutable object}
+\index{immutable object}
+
+Objects are never explicitly destroyed; however, when they become
+unreachable they may be garbage-collected.  An implementation is
+allowed to delay garbage collection or omit it altogether --- it is a
+matter of implementation quality how garbage collection is
+implemented, as long as no objects are collected that are still
+reachable.  (Implementation note: the current implementation uses a
+reference-counting scheme which collects most objects as soon as they
+become unreachable, but never collects garbage containing circular
+references.)
+\index{garbage collection}
+\index{reference counting}
+\index{unreachable object}
+
+Note that the use of the implementation's tracing or debugging
+facilities may keep objects alive that would normally be collectable.
+
+Some objects contain references to ``external'' resources such as open
+files or windows.  It is understood that these resources are freed
+when the object is garbage-collected, but since garbage collection is
+not guaranteed to happen, such objects also provide an explicit way to
+release the external resource, usually a \method{close()} method.
+Programs are strongly recommended to always explicitly close such
+objects.
+
+Some objects contain references to other objects; these are called
+\emph{containers}.  Examples of containers are tuples, lists and
+dictionaries.  The references are part of a container's value.  In
+most cases, when we talk about the value of a container, we imply the
+values, not the identities of the contained objects; however, when we
+talk about the (im)mutability of a container, only the identities of
+the immediately contained objects are implied.  (So, if an immutable
+container contains a reference to a mutable object, its value changes
+if that mutable object is changed.)
+\index{container}
+
+Types affect almost all aspects of objects' lives.  Even the meaning
+of object identity is affected in some sense: for immutable types,
+operations that compute new values may actually return a reference to
+any existing object with the same type and value, while for mutable
+objects this is not allowed.  E.g. after
+
+\begin{verbatim}
+a = 1; b = 1; c = []; d = []
+\end{verbatim}
+
+\code{a} and \code{b} may or may not refer to the same object with the
+value one, depending on the implementation, but \code{c} and \code{d}
+are guaranteed to refer to two different, unique, newly created empty
+lists.
+
+\section{The standard type hierarchy} \label{types}
+
+Below is a list of the types that are built into Python.  Extension
+modules written in C can define additional types.  Future versions of
+Python may add types to the type hierarchy (e.g.\ rational or complex
+numbers, efficiently stored arrays of integers, etc.).
+\index{type}
+\indexii{data}{type}
+\indexii{type}{hierarchy}
+\indexii{extension}{module}
+\indexii{C}{language}
+
+Some of the type descriptions below contain a paragraph listing
+`special attributes'.  These are attributes that provide access to the
+implementation and are not intended for general use.  Their definition
+may change in the future.  There are also some `generic' special
+attributes, not listed with the individual objects: \member{__methods__}
+is a list of the method names of a built-in object, if it has any;
+\member{__members__} is a list of the data attribute names of a built-in
+object, if it has any.
+\index{attribute}
+\indexii{special}{attribute}
+\indexiii{generic}{special}{attribute}
+\ttindex{__methods__}
+\ttindex{__members__}
+
+\begin{description}
+
+\item[None]
+This type has a single value.  There is a single object with this value.
+This object is accessed through the built-in name \code{None}.
+It is returned from functions that don't explicitly return an object.
+\ttindex{None}
+\obindex{None@{\tt None}}
+
+\item[Numbers]
+These are created by numeric literals and returned as results by
+arithmetic operators and arithmetic built-in functions.  Numeric
+objects are immutable; once created their value never changes.  Python
+numbers are of course strongly related to mathematical numbers, but
+subject to the limitations of numerical representation in computers.
+\obindex{number}
+\obindex{numeric}
+
+Python distinguishes between integers and floating point numbers:
+
+\begin{description}
+\item[Integers]
+These represent elements from the mathematical set of whole numbers.
+\obindex{integer}
+
+There are two types of integers:
+
+\begin{description}
+
+\item[Plain integers]
+These represent numbers in the range -2147483648 through 2147483647.
+(The range may be larger on machines with a larger natural word
+size, but not smaller.)
+When the result of an operation falls outside this range, the
+exception \exception{OverflowError} is raised.
+For the purpose of shift and mask operations, integers are assumed to
+have a binary, 2's complement notation using 32 or more bits, and
+hiding no bits from the user (i.e., all 4294967296 different bit
+patterns correspond to different values).
+\obindex{plain integer}
+\withsubitem{(built-in exception)}{\ttindex{OverflowError}}
+
+\item[Long integers]
+These represent numbers in an unlimited range, subject to available
+(virtual) memory only.  For the purpose of shift and mask operations,
+a binary representation is assumed, and negative numbers are
+represented in a variant of 2's complement which gives the illusion of
+an infinite string of sign bits extending to the left.
+\obindex{long integer}
+
+\end{description} % Integers
+
+The rules for integer representation are intended to give the most
+meaningful interpretation of shift and mask operations involving
+negative integers and the least surprises when switching between the
+plain and long integer domains.  For any operation except left shift,
+if it yields a result in the plain integer domain without causing
+overflow, it will yield the same result in the long integer domain or
+when using mixed operands.
+\indexii{integer}{representation}
+
+\item[Floating point numbers]
+These represent machine-level double precision floating point numbers.  
+You are at the mercy of the underlying machine architecture and
+C implementation for the accepted range and handling of overflow.
+\obindex{floating point}
+\indexii{floating point}{number}
+\indexii{C}{language}
+
+\end{description} % Numbers
+
+\item[Sequences]
+These represent finite ordered sets indexed by natural numbers.
+The built-in function \function{len()}\bifuncindex{len} returns the
+number of elements of a sequence.  When this number is \var{n}, the
+index set contains the numbers 0, 1, \ldots, \var{n}-1.  Element
+\var{i} of sequence \var{a} is selected by \code{\var{a}[\var{i}]}.
+\obindex{seqence}
+\index{index operation}
+\index{item selection}
+\index{subscription}
+
+Sequences also support slicing: \code{\var{a}[\var{i}:\var{j}]}
+selects all elements with index \var{k} such that \var{i} \code{<=}
+\var{k} \code{<} \var{j}.  When used as an expression, a slice is a
+sequence of the same type --- this implies that the index set is
+renumbered so that it starts at 0 again.
+\index{slicing}
+
+Sequences are distinguished according to their mutability:
+
+\begin{description}
+%
+\item[Immutable sequences]
+An object of an immutable sequence type cannot change once it is
+created.  (If the object contains references to other objects,
+these other objects may be mutable and may be changed; however
+the collection of objects directly referenced by an immutable object
+cannot change.)
+\obindex{immutable sequence}
+\obindex{immutable}
+
+The following types are immutable sequences:
+
+\begin{description}
+
+\item[Strings]
+The elements of a string are characters.  There is no separate
+character type; a character is represented by a string of one element.
+Characters represent (at least) 8-bit bytes.  The built-in
+functions \function{chr()}\bifuncindex{chr} and
+\function{ord()}\bifuncindex{ord} convert between characters and
+nonnegative integers representing the byte values.  Bytes with the
+values 0-127 represent the corresponding \ASCII{} values.  The string
+data type is also used to represent arrays of bytes, e.g.\ to hold data
+read from a file.
+\obindex{string}
+\index{character}
+\index{byte}
+\index{ASCII}
+
+(On systems whose native character set is not \ASCII{}, strings may use
+EBCDIC in their internal representation, provided the functions
+\function{chr()} and \function{ord()} implement a mapping between \ASCII{} and
+EBCDIC, and string comparison preserves the \ASCII{} order.
+Or perhaps someone can propose a better rule?)
+\index{ASCII}
+\index{EBCDIC}
+\index{character set}
+\indexii{string}{comparison}
+\bifuncindex{chr}
+\bifuncindex{ord}
+
+\item[Tuples]
+The elements of a tuple are arbitrary Python objects.
+Tuples of two or more elements are formed by comma-separated lists
+of expressions.  A tuple of one element (a `singleton') can be formed
+by affixing a comma to an expression (an expression by itself does
+not create a tuple, since parentheses must be usable for grouping of
+expressions).  An empty tuple can be formed by enclosing `nothing' in
+parentheses.
+\obindex{tuple}
+\indexii{singleton}{tuple}
+\indexii{empty}{tuple}
+
+\end{description} % Immutable sequences
+
+\item[Mutable sequences]
+Mutable sequences can be changed after they are created.  The
+subscription and slicing notations can be used as the target of
+assignment and \keyword{del} (delete) statements.
+\obindex{mutable sequece}
+\obindex{mutable}
+\indexii{assignment}{statement}
+\index{delete}
+\stindex{del}
+\index{subscription}
+\index{slicing}
+
+There is currently a single mutable sequence type:
+
+\begin{description}
+
+\item[Lists]
+The elements of a list are arbitrary Python objects.  Lists are formed
+by placing a comma-separated list of expressions in square brackets.
+(Note that there are no special cases needed to form lists of length 0
+or 1.)
+\obindex{list}
+
+\end{description} % Mutable sequences
+
+\end{description} % Sequences
+
+\item[Mapping types]
+These represent finite sets of objects indexed by arbitrary index sets.
+The subscript notation \code{a[k]} selects the element indexed
+by \code{k} from the mapping \code{a}; this can be used in
+expressions and as the target of assignments or \keyword{del} statements.
+The built-in function \function{len()} returns the number of elements
+in a mapping.
+\bifuncindex{len}
+\index{subscription}
+\obindex{mapping}
+
+There is currently a single mapping type:
+
+\begin{description}
+
+\item[Dictionaries]
+These represent finite sets of objects indexed by almost arbitrary
+values.  The only types of values not acceptable as keys are values
+containing lists or dictionaries or other mutable types that are
+compared by value rather than by object identity --- the reason being
+that the implementation requires that a key's hash value be constant.
+Numeric types used for keys obey the normal rules for numeric
+comparison: if two numbers compare equal (e.g.\ \code{1} and
+\code{1.0}) then they can be used interchangeably to index the same
+dictionary entry.
+
+Dictionaries are mutable; they are created by the \code{...}
+notation (see section \ref{dict}).
+\obindex{dictionary}
+\obindex{mutable}
+
+\end{description} % Mapping types
+
+\item[Callable types]
+These are the types to which the function call (invocation) operation,
+written as \code{function(argument, argument, ...)}, can be applied:
+\indexii{function}{call}
+\index{invocation}
+\indexii{function}{argument}
+\obindex{callable}
+
+\begin{description}
+
+\item[User-defined functions]
+A user-defined function object is created by a function definition
+(see section \ref{function}).  It should be called with an argument
+list containing the same number of items as the function's formal
+parameter list.
+\indexii{user-defined}{function}
+\obindex{function}
+\obindex{user-defined function}
+
+Special read-only attributes: \member{func_code} is the code object
+representing the compiled function body, and \member{func_globals} is (a
+reference to) the dictionary that holds the function's global
+variables --- it implements the global name space of the module in
+which the function was defined.
+\ttindex{func_code}
+\ttindex{func_globals}
+\indexii{global}{name space}
+
+\item[User-defined methods]
+A user-defined method (a.k.a. \dfn{object closure}) is a pair of a
+class instance object and a user-defined function.  It should be
+called with an argument list containing one item less than the number
+of items in the function's formal parameter list.  When called, the
+class instance becomes the first argument, and the call arguments are
+shifted one to the right.
+\obindex{method}
+\obindex{user-defined method}
+\indexii{user-defined}{method}
+\index{object closure}
+
+Special read-only attributes: \member{im_self} is the class instance
+object, \member{im_func} is the function object.
+\ttindex{im_func}
+\ttindex{im_self}
+
+\item[Built-in functions]
+A built-in function object is a wrapper around a C function.  Examples
+of built-in functions are \function{len()} and \function{math.sin()}.  There
+are no special attributes.  The number and type of the arguments are
+determined by the C function.
+\obindex{built-in function}
+\obindex{function}
+\indexii{C}{language}
+
+\item[Built-in methods]
+This is really a different disguise of a built-in function, this time
+containing an object passed to the \C{} function as an implicit extra
+argument.  An example of a built-in method is \code{\var{list}.append()} if
+\var{list} is a list object.
+\obindex{built-in method}
+\obindex{method}
+\indexii{built-in}{method}
+
+\item[Classes]
+Class objects are described below.  When a class object is called as a
+function, a new class instance (also described below) is created and
+returned.  This implies a call to the class's \method{__init__()} method
+if it has one.  Any arguments are passed on to the \method{__init__()}
+method --- if there is no \method{__init__()} method, the class must be called
+without arguments.
+\ttindex{__init__}
+\obindex{class}
+\obindex{class instance}
+\obindex{instance}
+\indexii{class object}{call}
+
+\end{description}
+
+\item[Modules]
+Modules are imported by the \keyword{import} statement (see section
+\ref{import}).  A module object is a container for a module's name
+space, which is a dictionary (the same dictionary as referenced by the
+\member{func_globals} attribute of functions defined in the module).
+Module attribute references are translated to lookups in this
+dictionary.  A module object does not contain the code object used to
+initialize the module (since it isn't needed once the initialization
+is done).
+\stindex{import}
+\obindex{module}
+
+Attribute assignment update the module's name space dictionary.
+
+Special read-only attribute: \member{__dict__} yields the module's name
+space as a dictionary object.  Predefined attributes: \member{__name__}
+yields the module's name as a string object; \member{__doc__} yields the
+module's documentation string as a string object, or
+\code{None} if no documentation string was found.
+\ttindex{__dict__}
+\ttindex{__name__}
+\ttindex{__doc__}
+\indexii{module}{name space}
+
+\item[Classes]
+Class objects are created by class definitions (see section
+\ref{class}).  A class is a container for a dictionary containing the
+class's name space.  Class attribute references are translated to
+lookups in this dictionary.  When an attribute name is not found
+there, the attribute search continues in the base classes.  The search
+is depth-first, left-to-right in the order of their occurrence in the
+base class list.
+\obindex{class}
+\obindex{class instance}
+\obindex{instance}
+\indexii{class object}{call}
+\index{container}
+\obindex{dictionary}
+\indexii{class}{attribute}
+
+Class attribute assignments update the class's dictionary, never the
+dictionary of a base class.
+\indexiii{class}{attribute}{assignment}
+
+A class can be called as a function to yield a class instance (see
+above).
+\indexii{class object}{call}
+
+Special read-only attributes: \member{__dict__} yields the dictionary
+containing the class's name space; \member{__bases__} yields a tuple
+(possibly empty or a singleton) containing the base classes, in the
+order of their occurrence in the base class list.
+\ttindex{__dict__}
+\ttindex{__bases__}
+
+\item[Class instances]
+A class instance is created by calling a class object as a
+function.  A class instance has a dictionary in which
+attribute references are searched.  When an attribute is not found
+there, and the instance's class has an attribute by that name, and
+that class attribute is a user-defined function (and in no other
+cases), the instance attribute reference yields a user-defined method
+object (see above) constructed from the instance and the function.
+\obindex{class instance}
+\obindex{instance}
+\indexii{class}{instance}
+\indexii{class instance}{attribute}
+
+Attribute assignments update the instance's dictionary.
+\indexiii{class instance}{attribute}{assignment}
+
+Class instances can pretend to be numbers, sequences, or mappings if
+they have methods with certain special names.  These are described in
+section \ref{specialnames}.
+\obindex{number}
+\obindex{sequence}
+\obindex{mapping}
+
+Special read-only attributes: \member{__dict__} yields the attribute
+dictionary; \member{__class__} yields the instance's class.
+\ttindex{__dict__}
+\ttindex{__class__}
+
+\item[Files]
+A file object represents an open file.  (It is a wrapper around a \C{}
+\code{stdio} file pointer.)  File objects are created by the
+\function{open()} built-in function, and also by \function{posix.popen()} and
+the \method{makefile()} method of socket objects.  \code{sys.stdin},
+\code{sys.stdout} and \code{sys.stderr} are file objects corresponding
+to the interpreter's standard input, output and error streams.
+See the \emph{Python Library Reference} for methods of file objects
+and other details.
+\obindex{file}
+\indexii{C}{language}
+\index{stdio}
+\bifuncindex{open}
+\bifuncindex{popen}
+\bifuncindex{makefile}
+\ttindex{stdin}
+\ttindex{stdout}
+\ttindex{stderr}
+\ttindex{sys.stdin}
+\ttindex{sys.stdout}
+\ttindex{sys.stderr}
+
+\item[Internal types]
+A few types used internally by the interpreter are exposed to the user.
+Their definition may change with future versions of the interpreter,
+but they are mentioned here for completeness.
+\index{internal type}
+\index{types, internal}
+
+\begin{description}
+
+\item[Code objects]
+Code objects represent ``pseudo-compiled'' executable Python code.
+The difference between a code
+object and a function object is that the function object contains an
+explicit reference to the function's context (the module in which it
+was defined) while a code object contains no context.
+\obindex{code}
+
+Special read-only attributes: \member{co_code} is a string representing
+the sequence of instructions; \member{co_consts} is a list of literals
+used by the code; \member{co_names} is a list of names (strings) used by
+the code; \member{co_filename} is the filename from which the code was
+compiled.  (To find out the line numbers, you would have to decode the
+instructions; the standard library module
+\module{dis}\refstmodindex{dis} contains an example of how to do
+this.)
+\ttindex{co_code}
+\ttindex{co_consts}
+\ttindex{co_names}
+\ttindex{co_filename}
+
+\item[Frame objects]
+Frame objects represent execution frames.  They may occur in traceback
+objects (see below).
+\obindex{frame}
+
+Special read-only attributes: \member{f_back} is to the previous
+stack frame (towards the caller), or \code{None} if this is the bottom
+stack frame; \member{f_code} is the code object being executed in this
+frame; \member{f_globals} is the dictionary used to look up global
+variables; \member{f_locals} is used for local variables;
+\member{f_lineno} gives the line number and \member{f_lasti} gives the
+precise instruction (this is an index into the instruction string of
+the code object).
+\ttindex{f_back}
+\ttindex{f_code}
+\ttindex{f_globals}
+\ttindex{f_locals}
+\ttindex{f_lineno}
+\ttindex{f_lasti}
+
+\item[Traceback objects] \label{traceback}
+Traceback objects represent a stack trace of an exception.  A
+traceback object is created when an exception occurs.  When the search
+for an exception handler unwinds the execution stack, at each unwound
+level a traceback object is inserted in front of the current
+traceback.  When an exception handler is entered
+(see also section \ref{try}), the stack trace is
+made available to the program as \code{sys.exc_traceback}.  When the
+program contains no suitable handler, the stack trace is written
+(nicely formatted) to the standard error stream; if the interpreter is
+interactive, it is also made available to the user as
+\code{sys.last_traceback}.
+\obindex{traceback}
+\indexii{stack}{trace}
+\indexii{exception}{handler}
+\indexii{execution}{stack}
+\ttindex{exc_traceback}
+\ttindex{last_traceback}
+\ttindex{sys.exc_traceback}
+\ttindex{sys.last_traceback}
+
+Special read-only attributes: \member{tb_next} is the next level in the
+stack trace (towards the frame where the exception occurred), or
+\code{None} if there is no next level; \member{tb_frame} points to the
+execution frame of the current level; \member{tb_lineno} gives the line
+number where the exception occurred; \member{tb_lasti} indicates the
+precise instruction.  The line number and last instruction in the
+traceback may differ from the line number of its frame object if the
+exception occurred in a \keyword{try} statement with no matching
+except clause or with a finally clause.
+\ttindex{tb_next}
+\ttindex{tb_frame}
+\ttindex{tb_lineno}
+\ttindex{tb_lasti}
+\stindex{try}
+
+\end{description} % Internal types
+
+\end{description} % Types
+
+
+\section{Special method names} \label{specialnames}
+
+A class can implement certain operations that are invoked by special
+syntax (such as subscription or arithmetic operations) by defining
+methods with special names.  For instance, if a class defines a
+method named \method{__getitem__()}, and \code{x} is an instance of this
+class, then \code{x[i]} is equivalent to \code{x.__getitem__(i)}.
+(The reverse is not true --- if \code{x} is a list object,
+\code{x.__getitem__(i)} is not equivalent to \code{x[i]}.)
+\ttindex{__getitem__}
+
+Except for \method{__repr__()}, \method{__str__()} and \method{__cmp__()},
+attempts to execute an
+operation raise an exception when no appropriate method is defined.
+For \method{__repr__()}, the default is to return a string describing the
+object's class and address.
+For \method{__cmp__()}, the default is to compare instances based on their
+address.
+For \method{__str__()}, the default is to use \method{__repr__()}.
+\ttindex{__repr__}
+\ttindex{__str__}
+\ttindex{__cmp__}
+
+
+\subsection{Special methods for any type}
+
+\begin{description}
+
+\item[{\tt __init__(self, args...)}]
+Called when the instance is created.  The arguments are those passed
+to the class constructor expression.  If a base class has an
+\code{__init__} method the derived class's \code{__init__} method must
+explicitly call it to ensure proper initialization of the base class
+part of the instance.
+\ttindex{__init__}
+\indexii{class}{constructor}
+
+
+\item[{\tt __del__(self)}]
+Called when the instance is about to be destroyed.  If a base class
+has a \method{__del__()} method the derived class's \method{__del__()} method
+must explicitly call it to ensure proper deletion of the base class
+part of the instance.  Note that it is possible for the \method{__del__()}
+method to postpone destruction of the instance by creating a new
+reference to it.  It may then be called at a later time when this new
+reference is deleted.  It is not guaranteed that
+\method{__del__()} methods are called for objects that still exist when
+the interpreter exits.
+If an exception occurs in a \method{__del__()} method, it is ignored, and
+a warning is printed on stderr.
+\ttindex{__del__}
+\stindex{del}
+
+Note that \code{del x} doesn't directly call \code{x.__del__()} --- the
+former decrements the reference count for \code{x} by one, but
+\code{x.__del__()} is only called when its reference count reaches zero.
+
+\strong{Warning:} due to the precarious circumstances under which
+\code{__del__()} methods are executed, exceptions that occur during
+their execution are \emph{ignored}.
+
+\item[{\tt __repr__(self)}]
+Called by the \function{repr()} built-in function and by string conversions
+(reverse or backward quotes) to compute the string representation of an object.
+\ttindex{__repr__}
+\bifuncindex{repr}
+\indexii{string}{conversion}
+\indexii{reverse}{quotes}
+\indexii{backward}{quotes}
+\index{back-quotes}
+
+\item[{\tt __str__(self)}]
+Called by the \function{str()} built-in function and by the \keyword{print}
+statement compute the string representation of an object.
+\ttindex{__str__}
+\bifuncindex{str}
+\stindex{print}
+
+\item[{\tt __cmp__(self, other)}]
+Called by all comparison operations.  Should return \code{-1} if
+\code{self < other},  \code{0} if \code{self == other}, \code{+1} if
+\code{self > other}.  If no \method{__cmp__()} operation is defined, class
+instances are compared by object identity (``address'').
+(Implementation note: due to limitations in the interpreter,
+exceptions raised by comparisons are ignored, and the objects will be
+considered equal in this case.)
+\ttindex{__cmp__}
+\bifuncindex{cmp}
+\index{comparisons}
+
+\item[{\tt __hash__(self)}]
+Called for the key object for dictionary operations,
+and by the built-in function
+\function{hash()}\bifuncindex{hash}.  Should return a 32-bit integer
+usable as a hash value
+for dictionary operations.  The only required property is that objects
+which compare equal have the same hash value; it is advised to somehow
+mix together (e.g.\ using exclusive or) the hash values for the
+components of the object that also play a part in comparison of
+objects.  If a class does not define a \method{__cmp__()} method it should
+not define a \method{__hash__()} operation either; if it defines
+\method{__cmp__()} but not \method{__hash__()} its instances will not be
+usable as dictionary keys.  If a class defines mutable objects and
+implements a \method{__cmp__()} method it should not implement
+\method{__hash__()}, since the dictionary implementation assumes that a
+key's hash value is a constant.
+\obindex{dictionary}
+\ttindex{__cmp__}
+\ttindex{__hash__}
+
+\item[{\tt __call__(self, *args)}]
+Called when the instance is ``called'' as a function.
+\ttindex{__call__}
+\indexii{call}{instance}
+
+\end{description}
+
+
+\subsection{Special methods for attribute access}
+
+The following methods can be used to change the meaning of attribute
+access for class instances.
+
+\begin{description}
+
+\item[{\tt __getattr__(self, name)}]
+Called when an attribute lookup has not found the attribute in the
+usual places (i.e. it is not an instance attribute nor is it found in
+the class tree for \code{self}).  \code{name} is the attribute name.
+\ttindex{__getattr__}
+
+Note that if the attribute is found through the normal mechanism,
+\code{__getattr__} is not called.  (This is an asymmetry between
+\code{__getattr__} and \code{__setattr__}.)
+This is done both for efficiency reasons and because otherwise
+\code{__getattr__} would have no way to access other attributes of the
+instance.
+Note that at least for instance variables, \code{__getattr__} can fake
+total control by simply not inserting any values in the instance
+attribute dictionary.
+\ttindex{__setattr__}
+
+\item[{\tt __setattr__(self, name, value)}]
+Called when an attribute assignment is attempted.  This is called
+instead of the normal mechanism (i.e. store the value as an instance
+attribute).  \code{name} is the attribute name, \code{value} is the
+value to be assigned to it.
+\ttindex{__setattr__}
+
+If \code{__setattr__} wants to assign to an instance attribute, it
+should not simply execute \code{self.\var{name} = value} --- this would
+cause a recursive call.  Instead, it should insert the value in the
+dictionary of instance attributes, e.g.\ \code{self.__dict__[name] =
+value}.
+\ttindex{__dict__}
+
+\item[{\tt __delattr__(self, name)}]
+Like \code{__setattr__} but for attribute deletion instead of
+assignment.
+\ttindex{__delattr__}
+
+\end{description}
+
+
+\subsection{Special methods for sequence and mapping types}
+
+\begin{description}
+
+\item[{\tt __len__(self)}]
+Called to implement the built-in function \function{len()}.  Should return
+the length of the object, an integer \code{>=} 0.  Also, an object
+whose \method{__len__()} method returns 0 is considered to be false in a
+Boolean context.
+\ttindex{__len__}
+
+\item[{\tt __getitem__(self, key)}]
+Called to implement evaluation of \code{self[key]}.  Note that the
+special interpretation of negative keys (if the class wishes to
+emulate a sequence type) is up to the \method{__getitem__()} method.
+\ttindex{__getitem__}
+
+\item[{\tt __setitem__(self, key, value)}]
+Called to implement assignment to \code{self[key]}.  Same note as for
+\method{__getitem__()}.
+\ttindex{__setitem__}
+
+\item[{\tt __delitem__(self, key)}]
+Called to implement deletion of \code{self[key]}.  Same note as for
+\method{__getitem__()}.
+\ttindex{__delitem__}
+
+\end{description}
+
+
+\subsection{Special methods for sequence types}
+
+\begin{description}
+
+\item[{\tt __getslice__(self, i, j)}]
+Called to implement evaluation of \code{self[i:j]}.  Note that missing
+\code{i} or \code{j} are replaced by 0 or \code{len(self)},
+respectively, and \code{len(self)} has been added (once) to originally
+negative \code{i} or \code{j} by the time this function is called
+(unlike for \method{__getitem__()}).
+\ttindex{__getslice__}
+
+\item[{\tt __setslice__(self, i, j, sequence)}]
+Called to implement assignment to \code{self[i:j]}.  Same notes as for
+\method{__getslice__()}.
+\ttindex{__setslice__}
+
+\item[{\tt __delslice__(self, i, j)}]
+Called to implement deletion of \code{self[i:j]}.  Same notes as for
+\method{__getslice__()}.
+\ttindex{__delslice__}
+
+\end{description}
+
+
+\subsection{Special methods for numeric types}
+
+\begin{description}
+
+\item[{\tt __add__(self, other)}]\itemjoin
+\item[{\tt __sub__(self, other)}]\itemjoin
+\item[{\tt __mul__(self, other)}]\itemjoin
+\item[{\tt __div__(self, other)}]\itemjoin
+\item[{\tt __mod__(self, other)}]\itemjoin
+\item[{\tt __divmod__(self, other)}]\itemjoin
+\item[{\tt __pow__(self, other)}]\itemjoin
+\item[{\tt __lshift__(self, other)}]\itemjoin
+\item[{\tt __rshift__(self, other)}]\itemjoin
+\item[{\tt __and__(self, other)}]\itemjoin
+\item[{\tt __xor__(self, other)}]\itemjoin
+\item[{\tt __or__(self, other)}]\itembreak
+Called to implement the binary arithmetic operations (\code{+},
+\code{-}, \code{*}, \code{/}, \code{\%}, \function{divmod()}, \function{pow()},
+\code{<<}, \code{>>}, \code{\&}, \code{\^}, \code{|}).
+\ttindex{__or__}
+\ttindex{__xor__}
+\ttindex{__and__}
+\ttindex{__rshift__}
+\ttindex{__lshift__}
+\ttindex{__pow__}
+\ttindex{__divmod__}
+\ttindex{__mod__}
+\ttindex{__div__}
+\ttindex{__mul__}
+\ttindex{__sub__}
+\ttindex{__add__}
+
+\item[{\tt __neg__(self)}]\itemjoin
+\item[{\tt __pos__(self)}]\itemjoin
+\item[{\tt __abs__(self)}]\itemjoin
+\item[{\tt __invert__(self)}]\itembreak
+Called to implement the unary arithmetic operations (\code{-}, \code{+},
+\function{abs()} and \code{~}).
+\ttindex{__invert__}
+\ttindex{__abs__}
+\ttindex{__pos__}
+\ttindex{__neg__}
+
+\item[{\tt __nonzero__(self)}]
+Called to implement boolean testing; should return 0 or 1.  An
+alternative name for this method is \method{__len__()}.
+\ttindex{__nonzero__}
+
+\item[{\tt __coerce__(self, other)}]
+Called to implement ``mixed-mode'' numeric arithmetic.  Should either
+return a tuple containing self and other converted to a common numeric
+type, or None if no way of conversion is known.  When the common type
+would be the type of other, it is sufficient to return None, since the
+interpreter will also ask the other object to attempt a coercion (but
+sometimes, if the implementation of the other type cannot be changed,
+it is useful to do the conversion to the other type here).
+\ttindex{__coerce__}
+
+Note that this method is not called to coerce the arguments to \code{+}
+and \code{*}, because these are also used to implement sequence
+concatenation and repetition, respectively.  Also note that, for the
+same reason, in \code{\var{n} * \var{x}}, where \var{n} is a built-in
+number and \var{x} is an instance, a call to
+\code{\var{x}.__mul__(\var{n})} is made.%
+\footnote{The interpreter should really distinguish between
+user-defined classes implementing sequences, mappings or numbers, but
+currently it doesn't --- hence this strange exception.}
+\ttindex{__mul__}
+
+\item[{\tt __int__(self)}]\itemjoin
+\item[{\tt __long__(self)}]\itemjoin
+\item[{\tt __float__(self)}]\itembreak
+Called to implement the built-in functions \function{int()}, \function{long()}
+and \function{float()}.  Should return a value of the appropriate type.
+\ttindex{__float__}
+\ttindex{__long__}
+\ttindex{__int__}
+
+\item[{\tt __oct__(self)}]\itemjoin
+\item[{\tt __hex__(self)}]\itembreak
+Called to implement the built-in functions \function{oct()} and
+\function{hex()}.  Should return a string value.
+\ttindex{__hex__}
+\ttindex{__oct__}
+
+\end{description}
