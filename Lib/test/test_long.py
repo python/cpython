@@ -88,7 +88,8 @@ def test_division_2(x, y):
         check(y < r <= 0, "bad mod from divmod on", x, y)
 
 def test_division(maxdigits=MAXDIGITS):
-    print "long / * % divmod"
+    if verbose:
+        print "long / * % divmod"
     digits = range(1, maxdigits+1)
     for lenx in digits:
         x = getran(lenx)
@@ -149,7 +150,8 @@ def test_bitop_identities_3(x, y, z):
          "x | (y & z) != (x | y) & (x | z) for", x, y, z)
 
 def test_bitop_identities(maxdigits=MAXDIGITS):
-    print "long bit-operation identities"
+    if verbose:
+        print "long bit-operation identities"
     for x in special:
         test_bitop_identities_1(x)
     digits = range(1, maxdigits+1)
@@ -197,7 +199,8 @@ def test_format_1(x):
           got, "but expected", expected, "for", x)
 
 def test_format(maxdigits=MAXDIGITS):
-    print "long str/hex/oct/atol"
+    if verbose:
+        print "long str/hex/oct/atol"
     for x in special:
         test_format_1(x)
     for i in range(10):
@@ -208,7 +211,8 @@ def test_format(maxdigits=MAXDIGITS):
 # ----------------------------------------------------------------- misc
 
 def test_misc(maxdigits=MAXDIGITS):
-    print "long miscellaneous operations"
+    if verbose:
+        print "long miscellaneous operations"
     import sys
 
     # check the extremes in int<->long conversion
