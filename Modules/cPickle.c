@@ -3775,7 +3775,7 @@ load_extension(Unpicklerobject *self, int nbytes)
 		return -1;
 	}
 	/* Since the extension registry is manipulable via Python code,
-	 * confirm that obj is really a 2-tuple of strings.
+	 * confirm that pair is really a 2-tuple of strings.
 	 */
 	if (!PyTuple_Check(pair) || PyTuple_Size(pair) != 2 ||
 	    !PyString_Check(module_name = PyTuple_GET_ITEM(pair, 0)) ||
