@@ -16,8 +16,6 @@
 %
 % New sorting code
 %
-% Karatsuba multiplication for long ints (#560379)
-%
 % xreadlines obsolete; files are their own iterator
 
 %\section{Introduction \label{intro}}
@@ -500,26 +498,6 @@ language.
 \item The \keyword{yield} statement is now always a keyword, as
 described in section~\ref{section-generators} of this document.
 
-\item The \code{in} operator now works differently for strings.
-Previously, when evaluating \code{\var{X} in \var{Y}} where \var{X}
-and \var{Y} are strings, \var{X} could only be a single character.
-That's now changed; \var{X} can be a string of any length, and
-\code{\var{X} in \var{Y}} will return \constant{True} if \var{X} is a
-substring of \var{Y}.  If \var{X} is the empty string, the result is
-always \constant{True}.
-
-\begin{verbatim}
->>> 'ab' in 'abcd'
-True
->>> 'ad' in 'abcd'
-False
->>> '' in 'abcd'
-True
-\end{verbatim}
-
-Note that this doesn't tell you where the substring starts; the
-\method{find()} method is still necessary to figure that out.
-
 \item A new built-in function \function{enumerate()} 
 was added, as described in section~\ref{section-enumerate} of this
 document.
@@ -557,6 +535,85 @@ KeyError: pop(): dictionary is empty
 \end{verbatim}
 
 (Patch contributed by Raymond Hettinger.)
+
+\item The \keyword{assert} statement no longer  checks the \code{__debug__}
+flag, so you can no longer disable assertions by assigning to \code{__debug__}.
+Running Python with the \programopt{-O} switch will still generate 
+code that doesn't execute any assertions.
+
+\item Most type objects are now callable, so you can use them
+to create new objects such as functions, classes, and modules.  (This
+means that the \module{new} module can be deprecated in a future
+Python version, because you can now use the type objects available
+in the \module{types} module.)
+% XXX should new.py use PendingDeprecationWarning?
+For example, you can create a new module object with the following code:
+
+\begin{verbatim}
+>>> import types
+>>> m = types.ModuleType('abc','docstring')
+>>> m
+<module 'abc' (built-in)>
+>>> m.__doc__
+'docstring'
+\end{verbatim}
+
+\item 
+A new warning, \exception{PendingDeprecationWarning} was added to
+indicate features which are in the process of being
+deprecated.  The warning will \emph{not} be printed by default.  To
+check for use of features that will be deprecated in the future,
+supply \programopt{-Walways::PendingDeprecationWarning::} on the
+command line or use \function{warnings.filterwarnings()}.
+
+\item Using \code{None} as a variable name will now result in a
+\exception{SyntaxWarning} warning.  In a future version of Python,
+\code{None} may finally become a keyword.
+
+\item One minor but far-reaching change is that the names of extension
+types defined by the modules included with Python now contain the
+module and a \samp{.} in front of the type name.  For example, in
+Python 2.2, if you created a socket and printed its
+\member{__class__}, you'd get this output:
+
+\begin{verbatim}
+>>> s = socket.socket()
+>>> s.__class__
+<type 'socket'>
+\end{verbatim}
+
+In 2.3, you get this:
+\begin{verbatim}
+>>> s.__class__
+<type '_socket.socket'>
+\end{verbatim}
+
+\end{itemize}
+
+
+\subsection{String Changes}
+
+\begin{itemize}
+
+\item The \code{in} operator now works differently for strings.
+Previously, when evaluating \code{\var{X} in \var{Y}} where \var{X}
+and \var{Y} are strings, \var{X} could only be a single character.
+That's now changed; \var{X} can be a string of any length, and
+\code{\var{X} in \var{Y}} will return \constant{True} if \var{X} is a
+substring of \var{Y}.  If \var{X} is the empty string, the result is
+always \constant{True}.
+
+\begin{verbatim}
+>>> 'ab' in 'abcd'
+True
+>>> 'ad' in 'abcd'
+False
+>>> '' in 'abcd'
+True
+\end{verbatim}
+
+Note that this doesn't tell you where the substring starts; the
+\method{find()} method is still necessary to figure that out.
 
 \item The \method{strip()}, \method{lstrip()}, and \method{rstrip()}
 string methods now have an optional argument for specifying the
@@ -598,65 +655,45 @@ than \method{zfill()}.
 
 (Contributed by Walter D\"orwald.)
 
-\item The \keyword{assert} statement no longer  checks the \code{__debug__}
-flag, so you can no longer disable assertions by assigning to \code{__debug__}.
-Running Python with the \programopt{-O} switch will still generate 
-code that doesn't execute any assertions.
-
 \item A new type object, \class{basestring}, has been added.  
    Both 8-bit strings and Unicode strings inherit from this type, so
    \code{isinstance(obj, basestring)} will return \constant{True} for
    either kind of string.  It's a completely abstract type, so you
    can't create \class{basestring} instances.
 
+\item Interned strings are no longer immortal.  Interned will now be
+garbage-collected in the usual way when the only reference to them is
+from the internal dictionary of interned strings.  (Implemented by
+Oren Tirosh.)
+
+\end{itemize}
+
+
+\subsection{Optimizations}
+
+\begin{itemize}
+
 \item The \method{sort()} method of list objects has been extensively
 rewritten by Tim Peters, and the implementation is significantly
 faster.
 
-\item Most type objects are now callable, so you can use them
-to create new objects such as functions, classes, and modules.  (This
-means that the \module{new} module can be deprecated in a future
-Python version, because you can now use the type objects available
-in the \module{types} module.)
-% XXX should new.py use PendingDeprecationWarning?
-For example, you can create a new module object with the following code:
+\item Multiplication of large long integers is now much faster thanks
+to an implementation of Karatsuba multiplication, an algorithm that
+scales better than the O(n*n) required for the grade-school
+multiplication algorithm.  (Original patch by Christopher A. Craig,
+and significantly reworked by Tim Peters.)
 
-\begin{verbatim}
->>> import types
->>> m = types.ModuleType('abc','docstring')
->>> m
-<module 'abc' (built-in)>
->>> m.__doc__
-'docstring'
-\end{verbatim}
+\item The \code{SET_LINENO} opcode is now gone.  This may provide a
+small speed increase, subject to your compiler's idiosyncrasies.
+(Removed by Michael Hudson.)
 
-\item 
-A new warning, \exception{PendingDeprecationWarning} was added to
-indicate features which are in the process of being
-deprecated.  The warning will \emph{not} be printed by default.  To
-check for use of features that will be deprecated in the future,
-supply \programopt{-Walways::PendingDeprecationWarning::} on the
-command line or use \function{warnings.filterwarnings()}.
-
-\item One minor but far-reaching change is that the names of extension
-types defined by the modules included with Python now contain the
-module and a \samp{.} in front of the type name.  For example, in
-Python 2.2, if you created a socket and printed its
-\member{__class__}, you'd get this output:
-
-\begin{verbatim}
->>> s = socket.socket()
->>> s.__class__
-<type 'socket'>
-\end{verbatim}
-
-In 2.3, you get this:
-\begin{verbatim}
->>> s.__class__
-<type '_socket.socket'>
-\end{verbatim}
+\item A number of small rearrangements have been made in various
+hotspots to improve performance, inlining a function here, removing
+some code there.  (Implemented mostly by GvR, but lots of people have
+contributed to one change or another.)
 
 \end{itemize}
+
 
 %======================================================================
 \section{New and Improved Modules}
