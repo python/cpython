@@ -402,18 +402,21 @@ class PimpDatabase:
             self._maintainer = plistdata.get('Maintainer', '')
             self._description = plistdata.get('Description', '').strip()
             self._url = url
-        self._appendPackages(plistdata['Packages'])
+        self._appendPackages(plistdata['Packages'], url)
         others = plistdata.get('Include', [])
-        for url in others:
-            self.appendURL(url, included=1)
+        for o in others:
+            o = urllib.basejoin(url, o)
+            self.appendURL(o, included=1)
 
-    def _appendPackages(self, packages):
+    def _appendPackages(self, packages, url):
         """Given a list of dictionaries containing package
         descriptions create the PimpPackage objects and append them
         to our internal storage."""
 
         for p in packages:
             p = dict(p)
+            if p.has_key('Download-URL'):
+                p['Download-URL'] = urllib.basejoin(url, p['Download-URL'])
             flavor = p.get('Flavor')
             if flavor == 'source':
                 pkg = PimpPackage_source(self, p)
