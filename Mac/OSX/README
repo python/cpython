@@ -50,7 +50,8 @@ information.
 
 This directory contains a Makefile that will create a couple of python-related
 applications (fullblown OSX .app applications, that is) in /Applications/Python,
-and a hidden helper application Python.app inside the Python.framework. In addition
+and a hidden helper application Python.app inside the Python.framework, and
+unix tools "python" and "pythonw" into /usr/local/bin. In addition
 it has a target "installmacsubtree" that installs the relevant portions of the
 Mac subtree into the Python.framework.
 
@@ -59,13 +60,30 @@ in the sequence
 1. configure --enable-framework
 2. make
 3. make frameworkinstall
-4. make osxapps
-5. [optional] in Mac/OSX do "make installunixprograms", see below.
 
-This sequence will put the framework in /Library/Framework/Python.framework and
-the applications in /Applications/Python. Building in another place, for instance
-$HOME/Library/Frameworks if you have no admin privileges on your machine, has only
-been tested very lightly.
+This sequence will put the framework in /Library/Framework/Python.framework, 
+the applications in /Applications/Python and the unix tools in /usr/local/bin. 
+
+Building in another place, for instance $HOME/Library/Frameworks if you have no
+admin privileges on your machine, has only been tested very lightly. This can be done
+by configuring with --enable-framework=$HOME/Library/Frameworks. The other two
+directories, /Applications/Python and /usr/local/bin, will then also be deposited
+in $HOME. This is sub-optimal for the unix tools, which you would want in $HOME/bin,
+but there is no easy way to fix this right now.
+
+Note that there are no references to the actual locations in the code or resource
+files, so you are free to move things around afterwards. For example, you could
+use --enable-framework=/tmp/newversion/Library/Frameworks and use /tmp/newversion
+as the basis for an installer or something.
+
+If you want to install some part, but not all, read the main Makefile. The
+frameworkinstall is composed of a couple of sub-targets that install the framework
+itself, the Mac subtree, the applications and the unix tools.
+
+If you want to run the Makefile here directly, in stead of through the main Makefile,
+you will have to pass various variable-assignments. Read the beginning of the Makefile
+for details.
+
 
 5. What do all these programs do?
 ---------------------------------
@@ -85,23 +103,12 @@ BuildApplet.app creates an applet from a Python script. Drop the script on it
 and out comes a full-featured MacOS application. There is much more to this, to
 be supplied later. Some useful (but outdated) info can be found in Mac/Demo.
 
-If you install the commandline scripts /usr/local/bin/python and pythonw these
+The commandline scripts /usr/local/bin/python and pythonw
 can be used to run non-GUI and GUI python scripts from the command line, respectively.
 
 6. Odds and ends.
 -----------------
 
-The interesting targets in the makefile are:
-installmacsubtree - explained above,
-dontinstallmacsubtree - Put only a .pth file into the framework (pointing to this
-	sourcetree), which may be easier for development,
-install_all - install all three .app applications,
-install_Python - install the hidden interpreter .app into the framework,
-install_PythonLauncher - install the user-visible script launch helper
-install_IDE - install the IDE
-installunixprograms - install symlinks/scripts mimicking normal unix Python into
-	/usr/local.
-	
 The PythonLauncher is actually an Objective C Cocoa app built with Project Builder.
 It could be a Python program, except for the fact that pyobjc is not a part of
 the core distribution, and is not completely finished yet as of this writing.
@@ -111,4 +118,4 @@ actually resource files, they're AppleSingle encoded resource files. The macreso
 module and the Mac/OSX/Makefile cater for this, and create ".rsrc.df.rsrc" files
 on the fly that are normal datafork-based resource files.
 
-	Jack Jansen, jack@oratrix.com, 02-Aug-02
+	Jack Jansen, jack@oratrix.com, 12-Aug-02
