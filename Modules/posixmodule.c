@@ -5102,6 +5102,38 @@ posix_abort(PyObject *self, PyObject *args)
     return NULL;
 }
 
+#ifdef MS_WIN32
+static char win32_startfile__doc__[] = "\
+startfile(filepath) - Start a file with its associated application.\n\
+\n\
+This acts like double-clicking the file in Explorer, or giving the file\n\
+name as an argument to the DOS \"start\" command:  the file is opened\n\
+with whatever application (if any) its extension is associated.\n\
+\n\
+startfile returns as soon as the associated application is launched.\n\
+There is no option to wait for the application to close, and no way\n\
+to retrieve the application's exit status.\n\
+\n\
+The filepath is relative to the current directory.  If you want to use\n\
+an absolute path, make sure the first character is not a slash (\"/\");\n\
+the underlying Win32 ShellExecute function doesn't work if it is.";
+
+static PyObject *
+win32_startfile(PyObject *self, PyObject *args)
+{
+	char *filepath;
+	HINSTANCE rc;
+	if (!PyArg_ParseTuple(args, "s:startfile", &filepath))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	rc = ShellExecute((HWND)0, NULL, filepath, NULL, NULL, SW_SHOWNORMAL);
+	Py_END_ALLOW_THREADS
+	if (rc <= (HINSTANCE)32)
+		return win32_error("startfile", filepath);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+#endif
 
 static PyMethodDef posix_methods[] = {
 	{"access",	posix_access, METH_VARARGS, posix_access__doc__},
@@ -5205,6 +5237,7 @@ static PyMethodDef posix_methods[] = {
 	{"popen2",	win32_popen2, METH_VARARGS},
 	{"popen3",	win32_popen3, METH_VARARGS},
 	{"popen4",	win32_popen4, METH_VARARGS},
+	{"startfile",	win32_startfile, METH_VARARGS, win32_startfile__doc__},
 #endif
 #endif /* HAVE_POPEN */
 #ifdef HAVE_SETUID
