@@ -823,14 +823,18 @@ The value of \var{endpos} which was passed to the
 into the string beyond which the RE engine will not go.
 \end{memberdesc}
 
+\begin{memberdesc}[MatchObject]{lastindex}
+The integer index of the last matched capturing group, or \code{None}
+if no group was matched at all. For example, the expressions
+\regexp{(a)b}, \regexp{((a)(b))}, and \regexp{((ab))} will have
+\code{lastindex == 1} if applyied to the string \code{'ab'},
+while the expression \regexp{(a)(b)} will have \code{lastindex == 2},
+if applyied to the same string.
+\end{memberdesc}
+
 \begin{memberdesc}[MatchObject]{lastgroup}
 The name of the last matched capturing group, or \code{None} if the
 group didn't have a name, or if no group was matched at all.
-\end{memberdesc}
-
-\begin{memberdesc}[MatchObject]{lastindex}
-The integer index of the last matched capturing group, or \code{None}
-if no group was matched at all.
 \end{memberdesc}
 
 \begin{memberdesc}[MatchObject]{re}
