@@ -594,7 +594,7 @@ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
       }
     }
       
-    return new_parser;    
+    return (PyObject *)new_parser;    
 }
 
 
