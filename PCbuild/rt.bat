@@ -18,6 +18,8 @@
 @set _exe=python
 @set _qmode=no
 @set _dashO=
+@set _oldpath=%PATH%
+@PATH %PATH%;..\..\tcl84\bin
 @goto CheckOpts
 :Again
 @shift
@@ -39,3 +41,5 @@
 @set _exe=
 @set _qmode=
 @set _dashO=
+@PATH %_oldpath%
+@set _oldpath=
