@@ -9,8 +9,8 @@ Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
 Submitted-by: Guido van Rossum <guido@cnri.reston.va.us>
-Version: 1.33
-Last-modified: 6 September 1996
+Version: 1.34
+Last-modified: 9 September 1996
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -76,21 +76,18 @@ Here's an overview of the questions per chapter:
   1.13. Q. How do I get a beta test version of Python?
   1.14. Q. Are there copyright restrictions on the use of Python?
   1.15. Q. Why was Python created in the first place?
-  1.16. Q. What happened to Tim Peters (the author of python-mode.el, and many
-        entertaining and enlightening pieces of Python email)?
 
  2. Python in the real world
   2.1. Q. How many people are using Python?
   2.2. Q. Have any significant projects been done in Python?
   2.3. Q. Are there any commercial projects going on using Python?
   2.4. Q. How stable is Python?
-  2.5. Q. When will the next version be released?
-  2.6. Q. What new developments are expected for Python in the future?
-  2.7. Q. Is it reasonable to propose incompatible changes to Python?
-  2.8. Q. What is the future of Python?
-  2.9. Q. What is the PSA, anyway?
-  2.10. Q. How do I join the PSA?
-  2.11. Q. What are the benefits of joining the PSA?
+  2.5. Q. What new developments are expected for Python in the future?
+  2.6. Q. Is it reasonable to propose incompatible changes to Python?
+  2.7. Q. What is the future of Python?
+  2.8. Q. What is the PSA, anyway?
+  2.9. Q. How do I join the PSA?
+  2.10. Q. What are the benefits of joining the PSA?
 
  3. Building Python and Other Known Bugs
   3.1. Q. Is there a test set?
@@ -102,24 +99,23 @@ Here's an overview of the questions per chapter:
        script (after the script name).
   3.5. Q. When building on the SGI, make tries to run python to create
        glmodule.c, but python hasn't been built or installed yet.
-  3.6. Q. Python built with gcc for the DEC Alpha doesn't work.
-  3.7. Q. I use VPATH but some targets are built in the source directory.
-  3.8. Q. Trouble building or linking with the GNU readline library.
-  3.9. Q. Trouble building Python on Linux.
-  3.10. Q. Trouble with socket I/O on Linux.
-  3.11. Q. Trouble with prototypes on Ultrix.
-  3.12. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
-  3.13. Q. Other trouble building Python on platform X.
-  3.14. Q. How to configure dynamic loading on Linux.
-  3.15. Q. Under Solaris 2.x, using GCC, how do I use shared libraries?
-  3.16. Q. Errors when linking with a shared library containing C++ code.
-  3.17. Q. Tk menus or radiobuttons don't work properly in Python 1.2.
-  3.18. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
-  3.19. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
-  3.20. Q. Tk doesn't work right on DEC Alpha.
-  3.21. Q. Several common system calls are missing from the posix module.
-  3.22. Q. ImportError: No module named string, on MS Windows.
-  3.23. Q. Core dump on SGI when using the gl module.
+  3.6. Q. I use VPATH but some targets are built in the source directory.
+  3.7. Q. Trouble building or linking with the GNU readline library.
+  3.8. Q. Trouble with socket I/O on older Linux 1.x versions.
+  3.9. Q. Trouble with prototypes on Ultrix.
+  3.10. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
+  3.11. Q. Other trouble building Python on platform X.
+  3.12. Q. How to configure dynamic loading on Linux.
+  3.13. Q. Errors when linking with a shared library containing C++ code.
+  3.14. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
+  3.15. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
+  3.16. Q. Link errors for Tcl/Tk symbols when linking with Tcl/Tk.
+  3.17. Q. I configured and built Python for Tcl/Tk but "import Tkinter"
+        fails.
+  3.18. Q. Tk doesn't work right on DEC Alpha.
+  3.19. Q. Several common system calls are missing from the posix module.
+  3.20. Q. ImportError: No module named string, on MS Windows.
+  3.21. Q. Core dump on SGI when using the gl module.
 
  4. Programming in Python
   4.1. Q. Is there a source code level debugger with breakpoints, step,
@@ -177,6 +173,9 @@ Here's an overview of the questions per chapter:
   4.35. Q. How do I write a function with output parameters (call by reference)?
   4.36. Q. Please explain the rules for local and global variables in Python.
   4.37. Q. How can I have modules that mutually import each other?
+  4.38. Q. How do I copy an object in Python?
+  4.39. Q. How to implement persistent objects in Python?  (Persistent ==
+        automatically saved to and restored from disk.)
 
  5. Extending Python
   5.1. Q. Can I create my own functions in C?
@@ -185,32 +184,29 @@ Here's an overview of the questions per chapter:
   5.4. Q. How can I evaluate an arbitrary Python expression from C?
   5.5. Q. How do I extract C values from a Python object?
   5.6. Q. How do I use mkvalue() to create a tuple of arbitrary length?
-  5.7. Q. What happened to mktuple(), featured in an example in the
-       Extensions manual?
-  5.8. Q. How do I call an object's method from C?
-  5.9. Q. How do I catch the output from print_error()?
-  5.10. Q. How do I access a module written in Python from C?
-  5.11. Q. How do I interface to C++ objects from Python?
+  5.7. Q. How do I call an object's method from C?
+  5.8. Q. How do I catch the output from print_error()?
+  5.9. Q. How do I access a module written in Python from C?
+  5.10. Q. How do I interface to C++ objects from Python?
 
  6. Python's design
-  6.1. Q. Why isn't there a generic copying operation for objects in Python?
-  6.2. Q. Why isn't there a generic way to implement persistent objects
-       in Python?  (Persistent == automatically saved to and restored from
-       disk.)
-  6.3. Q. Why isn't there a switch or case statement in Python?
-  6.4. Q. Why does Python use indentation for grouping of statements?
-  6.5. Q. Why are Python strings immutable?
-  6.6. Q. Why don't strings have methods like index() or sort(), like
+  6.1. Q. Why isn't there a switch or case statement in Python?
+  6.2. Q. Why does Python use indentation for grouping of statements?
+  6.3. Q. Why are Python strings immutable?
+  6.4. Q. Why don't strings have methods like index() or sort(), like
        lists?
-  6.7. Q. Why does Python use methods for some functionality
+  6.5. Q. Why does Python use methods for some functionality
        (e.g. list.index()) but functions for other (e.g. len(list))?
-  6.8. Q. Why can't I derive a class from built-in types (e.g. lists or
+  6.6. Q. Why can't I derive a class from built-in types (e.g. lists or
        files)?
-  6.9. Q. Why must 'self' be declared and used explicitly in method
+  6.7. Q. Why must 'self' be declared and used explicitly in method
        definitions and calls?
-  6.10. Q. Can't you emulate threads in the interpreter instead of
-        relying on an OS-specific thread implementation?
-  6.11. Q. Why can't lambda forms contain statements?
+  6.8. Q. Can't you emulate threads in the interpreter instead of
+       relying on an OS-specific thread implementation?
+  6.9. Q. Why can't lambda forms contain statements?
+  6.10. Q. Why don't lambdas have access to variables defined in the
+        containing scope?
+  6.11. Q. Why can't recursive functions be defined inside other functions?
   6.12. Q. Why is there no more efficient way of iterating over a dictionary
         than first constructing the list of keys()?
   6.13. Q. Can Python be compiled to machine code, C or some other language?
@@ -275,17 +271,23 @@ the TV series or of a can of SPAM :-)
 
 A. The latest complete Python source distribution is always available
 by anonymous ftp, e.g.
-<URL:ftp://ftp.python.org/pub/python/src/python1.2.tar.gz>.  It is a
+<URL:ftp://ftp.python.org/pub/python/src/python1.3.tar.gz>.  It is a
 gzipped tar file containing the complete C source, LaTeX
 documentation, Python library modules, example programs, and several
 useful pieces of freely distributable software.  This will compile and
 run out of the box on most UNIX platforms.  (See section 7 for
 non-UNIX information.)
 
+Sometimes beta versions of a newer release are available; check the
+subdirectory "beta" of the above-mentioned URL (i.e.
+<URL:ftp://ftp.python.org/pub/python/src/beta/>).  (At the time of
+writing, beta3 for Python 1.4 is available there, and should be
+checked before reporting problems with version 1.3.)
+
 Occasionally a set of patches is issued which has to be applied using
 the patch program.  These patches are placed in the same directory,
 e.g. <URL:ftp://ftp.python.org/pub/python/src/patch1.1.1>.  (At the time
-of writing, no patches exist for 1.2.)
+of writing, no patches exist.)
 
 An index of said ftp directory can be found in the file INDEX.  An
 HTML version of the index can be found in the file index.html,
@@ -431,9 +433,9 @@ releases.  Note that in the past, patches have added significant
 changes; in fact the changeover from 0.9.9 to 1.0.0 was the first time
 that either A or B changed!
 
-Beta versions have an additional suffix of "-beta-N" for some small
-number N.  Note that (for instance) all versions labeled 1.2-beta-N
-*precede* the actual release of 1.2.  1.3b1 is short for 1.3-beta-1.
+Beta versions have an additional suffix of "betaN" for some small
+number N.  Note that (for instance) all versions labeled 1.4betaN
+*precede* the actual release of 1.4.  1.4b3 is short for 1.4beta3.
 
 1.13. Q. How do I get a beta test version of Python?
 
@@ -498,20 +500,6 @@ me add many early improvements.
 
 - In February 1991, after just over a year of development, I decided
 to post to USENET.  The rest is in the Misc/HISTORY file.
-
-1.16. Q. What happened to Tim Peters (the author of python-mode.el, and many
-entertaining and enlightening pieces of Python email)?
-
-A. He worked at KSR (Kendall Square Research, a start-up building a
-new kind of massively parallel processor).  When KSR folded down a
-couple of years ago, Tim lost his email access.  He hasn't surfaced
-on the net since then.
-
-        Missing-him-too-ly yours...
-
-PS: support for Python's Emacs mode (Misc/python-mode.el in the
-distribution) has been taken up by Barry Warsaw.  Questions about it
-should be mailed to <python-mode@python.org>.
 
 
 2. Python in the real world
@@ -601,20 +589,14 @@ in the early stages of development, in fact new, stable releases
 (numbered 0.9.x through 1.3) have been coming out roughly every 3 to
 6 months for the past four years.
 
-2.5. Q. When will the next version be released?
-
-A. Version 1.3 is being released on 13 October 1995.  It is too early
-to predict when the next release will be necessary, but you can expect
-something awesome within half a year!
-
-2.6. Q. What new developments are expected for Python in the future?
+2.5. Q. What new developments are expected for Python in the future?
 
 A. See my Work-In-Progress web page, currently at
 <URL:http://www.python.org:~guido/WIP.html>, and the pages for the
 Second Python Workshop (best reached via the Python home page,
 <URL:http://www.python.org/>).  Also follow the newsgroup discussions!
 
-2.7. Q. Is it reasonable to propose incompatible changes to Python?
+2.6. Q. Is it reasonable to propose incompatible changes to Python?
 
 A. In general, no.  There are already millions of lines of Python code
 around the world, so any changes in the language that invalidates more
@@ -623,7 +605,7 @@ upon.  Even if you can provide a conversion program, there still is
 the problem of updating all documentation.  Providing a gradual
 upgrade path is the only way if a feature has to be changed.
 
-2.8. Q. What is the future of Python?
+2.7. Q. What is the future of Python?
 
 A. If I knew, I'd be rich :-)
 
@@ -642,7 +624,7 @@ committed to improving Python, and my current benefactor, CNRI (see
 its support of Python and the PSA.  In fact, we have great plans for
 Python -- we just can't tell yet!
 
-2.9. Q. What is the PSA, anyway?
+2.8. Q. What is the PSA, anyway?
 
 A. The Python Software Activity <URL:http://www.python.org/psa/> was
 created by a number of Python aficionados who want Python to be more
@@ -650,7 +632,7 @@ than the product and responsibility of a single individual.  It has
 found a home at CNRI <URL:http://www.cnri.reston.va.us>.  Anybody who
 wishes Python well should join the PSA.
 
-2.10. Q. How do I join the PSA?
+2.9. Q. How do I join the PSA?
 
 A. The full scoop is available on the web, see
 <URL:http://www.python.org/psa/Joining.html>.  Summary: send a check
@@ -658,7 +640,7 @@ of at least $50 to CNRI/PSA, 1895 Preston White Drive, Suite 100, in
 Reston, VA 20191.  Full-time students pay $25.  Companies can join for
 a mere $500.
 
-2.11. Q. What are the benefits of joining the PSA?
+2.10. Q. What are the benefits of joining the PSA?
 
 A. Like National Public Radio, if not enough people join, Python will
 wither.  Your name will be mentioned on the PSA's web server.
@@ -724,21 +706,14 @@ again.  You don't need to do "make clean"; you do need to run "make
 Makefile" in the Modules subdirectory (or just run "make" at the
 toplevel).
 
-3.6. Q. Python built with gcc for the DEC Alpha doesn't work.
-
-People have reported problems with gcc 2.5.8 up to 2.6.3.  The DEC
-OSF/1 cc compiler does not have these problems so it's likely a gcc
-bug.  The latest news is that this has been fixed in Python 1.2 by a
-source change (I gave up waiting for a fixed gcc).
-
-3.7. Q. I use VPATH but some targets are built in the source directory.
+3.6. Q. I use VPATH but some targets are built in the source directory.
 
 A. On some systems (e.g. Sun), if the target already exists in the
 source directory, it is created there instead of in the build
 directory.  This is usually because you have previously built without
 VPATH.  Try running "make clobber" in the source directory.
 
-3.8. Q. Trouble building or linking with the GNU readline library.
+3.7. Q. Trouble building or linking with the GNU readline library.
 
 A. Consider using readline 2.0.  Some hints:
 
@@ -780,34 +755,18 @@ hack that forces use of the static version of the termcap library.
 specific problems with the readline library (I don't read this group
 but I've been told that it is the place for readline bugs).
 
-3.9. Q. Trouble building Python on Linux.
-
-A. If you're building Python 1.2, Slackware 2.2 has a buggy bash
-(version 1.14.3) which breaks a sed script that is used to build
-Modules/Makefile.  Replace /bin/sh with /bin/ash in both makesetup and
-Makefile.pre.in.
-
-In 1.1 and 1.1.1, there's a bug in the reference counting logic of
-ternary pow() which is only tripped by very picky mallocs, like the
-GNU malloc on Linux.  This has been fixed in 1.2.  To continue the
-tests in 1.1(.1), just disable the tests of pow() with three arguments
-from Lib/test/test_b2.py.
-
-Apart from this, Python builds and runs fine on most Linux versions
-(if you run into trouble on an old Linux version, consider upgrading).
-
-3.10. Q. Trouble with socket I/O on Linux.
+3.8. Q. Trouble with socket I/O on older Linux 1.x versions.
 
 A. Once you've built Python, use it to run the regen.py script in the
 Lib/linux1 directory.  Apparently the files as distributed don't match
 the system headers on some Linux versions.
 
-3.11. Q. Trouble with prototypes on Ultrix.
+3.9. Q. Trouble with prototypes on Ultrix.
 
 A. Ultrix cc seems broken -- use gcc, or edit config.h to #undef
 HAVE_PROTOTYPES.
 
-3.12. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
+3.10. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
 
 A.  (This often manifests itself as a weird error from the
 compileall.py script run by "make libinstall".)
@@ -817,7 +776,7 @@ derived from (an old version of) gcc, its interpretation of the
 "-posix" switch is different; in this particular case, cc is right and
 gcc is wrong.
 
-3.13. Q. Other trouble building Python on platform X.
+3.11. Q. Other trouble building Python on platform X.
 
 A. Please email the details to <guido@cnri.reston.va.us> and I'll look
 into it.  Please provide as many details as possible.  In particular,
@@ -826,71 +785,18 @@ if you don't tell me what type of computer and what operating system
 what is the matter.  If you get a specific error message, please email
 it to me too.
 
-3.14. Q. How to configure dynamic loading on Linux.
+3.12. Q. How to configure dynamic loading on Linux.
 
-A. There are two answers, depending on whether you are using the new
-ELF object format or not.
+A. This is now automatic as long as your Linux version uses the ELF
+object format (all recent Linuxes do).
 
-For ELF, this seems to be the procedure (thanks to Martin von Loewis):
-
-Compile Python to an ELF binary.
-
-In addition, you have to use the following flags:
-
-  - when linking python: -rdynamic -ldl
-  - when compiling an object that goes into a shared module: -fPIC
-  - when linking a shared module: -shared -ldl
-
-Furthermore, it appears that some Python releases did not understand
-that Linux has dynamic linking.  Python 1.2 did it right, but you
-should check wether the generated config.h indicates the use of -ldl
-(i.e. dlopen, dlsym).  Finally, you can load a shared module by saying
-'use foo'.  Make sure the module is in your PYTHONPATH.
-
-For pre-ELF systems (thanks to Andrew Kuchling):
-
-Pre-ELF Linux requires that you use the GNU DLD library.  The stages
-of using dynamic libraries on Linux are:
-
-    1) Get dld 3.2.5 from a Linux site.  Be careful here; the most
-    recent GNU version is 3.2.3, and doesn't support Linux; be sure to
-    get it from a Linux mirror, not a GNU mirror (3.2.4 should also
-    work).  Compile it and install the library libdld.a somewhere; I
-    used /usr/local/lib.
-
-    Suitable URLs for the dld distribution are currently:
-    <URL:ftp://sunsite.unc.edu/pub/Linux/libs/dld-3.2.5.src.tar.gz> and
-    <URL:ftp://tsx-11.mit.edu/pub/linux/sources/libs/dld-3.2.5.src.tar.gz>.
-    There's also a binary distribution of it:
-    <URL:ftp://sunsite.unc.edu/pub/Linux/libs/dld-3.2.5.bin.tar.gz>.
-
-    2) Get Jack Jansen's DL library; its location is given in the
-    _Extending Python_ manual as <URL:ftp://ftp.cwi.nl/pub/dynload/>.
-    Compile it and install libdl.a wherever you put libdld.a.
-
-    3) Run Python's configure script, giving it the --with-dl-dld option,
-    which requires a parameter giving the directory where you put the
-    libraries.
-
-    4) Recompile Python.
-
-3.15. Q. Under Solaris 2.x, using GCC, how do I use shared libraries?
-
-A. Use the linker in /usr/ucb/ld, not the GNU linker.  The latter
-cannot create shared libraries.
-
-3.16. Q. Errors when linking with a shared library containing C++ code.
+3.13. Q. Errors when linking with a shared library containing C++ code.
 
 A. Link the main Python binary with C++.  Change the definition of
 LINKCC in Modules/Makefile to be your C++ compiler.  You may have to
 edit config.c slightly to make it compilable with C++.
 
-3.17. Q. Tk menus or radiobuttons don't work properly in Python 1.2.
-
-A. There's a bug in Tkinter.py; remove ClassType and InstanceType from
-the definition of CallableTypes near the top of Lib/tkinter/Tkinter.py.
-
-3.18. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
+3.14. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
 
 A. Tkinter.py (note: upper case T) lives in a subdirectory of Lib,
 Lib/tkinter.  If you are using the default module search path, you
@@ -898,7 +804,7 @@ probably didn't enable the line in the Modules/Setup file defining
 TKPATH; if you use the environment variable PYTHONPATH, you'll have to
 add  the proper tkinter subdirectory.
 
-3.19. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
+3.15. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
 
 A. Several things could cause this.  You most likely have a Tk 3.6
 installation that wasn't completely eradicated by the Tk 4.0
@@ -909,7 +815,24 @@ have compiled Python with the old tk.h header file (yes, this actually
 compiles!); you may actually have linked with Tk 3.6 even though Tk
 4.0 is also around.  Similar for Tcl 7.4 vs. Tcl 7.3.
 
-3.20. Q. Tk doesn't work right on DEC Alpha.
+3.16. Q. Link errors for Tcl/Tk symbols when linking with Tcl/Tk.
+
+Quite possibly, there's a version mismatch between the Tcl/Tk header
+files (tcl.h and tk.h) and the tck/tk libraries you are using (the
+"-ltk4.0" and "-ltcl7.4" arguments for _tkinter in the Setup file).
+If you have installed both versions 7.4/4.0 and 7.5/4.1 of Tcl/Tk,
+most likely your header files are for The newer versions, but the
+Setup line for _tkinter in some Python distributions references
+7.4/4.0 by default.  Changing this to 7.5/4.1 should take care of
+this.
+
+3.17. Q. I configured and built Python for Tcl/Tk but "import Tkinter"
+fails.
+
+A. Most likely, you forgot to enable the line in Setup that says
+"TKPATH=:$(DESTLIB)/tkinter".
+
+3.18. Q. Tk doesn't work right on DEC Alpha.
 
 A. You probably compiled either Tcl, Tk or Python with gcc.  Don't.
 For this platform, which has 64-bit integers, gcc is known to generate
@@ -921,7 +844,7 @@ far as we know, there are no problem with gcc on other platforms --
 the instabilities seem to be restricted to the DEC Alpha.)  See also
 question 3.6.
 
-3.21. Q. Several common system calls are missing from the posix module.
+3.19. Q. Several common system calls are missing from the posix module.
 
 A. Most likely, *all* test compilations run by the configure script
 are failing for some reason or another.  Have a look in config.log to
@@ -929,7 +852,7 @@ see what could be the reason.  A common reason is specifying a
 directory to the --with-readline option that doesn't contain the
 libreadline.a file.
 
-3.22. Q. ImportError: No module named string, on MS Windows.
+3.20. Q. ImportError: No module named string, on MS Windows.
 
 A. Most likely, your PYTHONPATH environment variable should be set to
 something like:
@@ -938,7 +861,7 @@ set PYTHONPATH=c:\python;c:\python\lib;c:\python\scripts
 
 (assuming Python was installed in c:\python)
 
-3.23. Q. Core dump on SGI when using the gl module.
+3.21. Q. Core dump on SGI when using the gl module.
 
 There are conflicts between entry points in the termcap and curses
 libraries and an entry point in the GL library.  There's a hack of a
@@ -1250,19 +1173,8 @@ no longer seems to exist.  Inquire with Mark Linton.)
 
 4.14. Q. Are there any interfaces to database packages in Python?
 
-A. There's an interface to SYBASE by John Redford
-<jredford@lehman.com>.
-
-There's an interface to metalbase by Lance Ellinghaus
-<lance@markv.com>; it is part of the separate Extensions distribution
-<URL:ftp://ftp.python.org/pub/python/src/extensions.tar.gz>.
-
-Anthony Baxter <anthony.baxter@aaii.oz.au> has written an interface to
-mSQL (mini-SQL).
-<URL:ftp://ftp.python.org/pub/python/contrib/PymSQL.tar.gz>.
-
-Tom Culliton <culliton@clark.net> has written an Oracle module.  
-See <URL:ftp://ftp.clark.net/pub/culliton/oramod.tgz>.
+A. There's a whole collection of them in the contrib area of the ftp
+server, see <URL:http://www.python.org/ftp/python/contrib/Database/>.
 
 4.15. Q. Is it possible to write obfuscated one-liners in Python?
 
@@ -1339,9 +1251,9 @@ but if your Python has been configured to support threads, it is not
 called (because other threads may still be active).  You can define
 your own cleanup function using sys.exitfunc (see question 4.4).
 
-- Finally, there are some obscure bugs if your __del__ method does
-complicated things such as updating dictionaries or lists or
-references globals.  I hope to have fixed these in release 1.2.
+- Finally, if your __del__ method raises an exception, this will be
+ignored.  Starting with Python 1.4beta3, a warning message is printed
+to sys.stderr when this happens.
 
 4.18. Q. How do I change the shell environment for programs called
 using os.popen() or os.system()?  Changing os.environ doesn't work.
@@ -1484,9 +1396,9 @@ Hint: the freeze program only works if your script's filename ends in
 
 4.29. Q. What WWW tools are there for Python?
 
-A. There's a whole lot in the 1.2 release; see the section on
-"Internet and WWW" in the Library Reference Manual.  Highlights: a CGI
-parser, a url retriever, an html parser.
+A. See the chapter titled "Internet and WWW" in the Library Reference
+Manual.  There's also a web browser written in Python, called Grail --
+see <URL:http://monty.cnri.reston.va.us/grail/>.
 
 Steve Miale <smiale@cs.indiana.edu> has written a modular WWW browser
 called Dancer.  An alpha version can be FTP'ed from
@@ -1730,6 +1642,39 @@ recommended strategy is to avoid all uses of "from <module> import *"
 Initializations of global variables and class variables should use
 constants or built-in functions only.
 
+4.38. Q. How do I copy an object in Python?
+
+A. There is no generic copying operation built into Python, however
+most object types have some way to create a clone.  Here's how for the
+most common objects:
+
+- For immutable objects (numbers, strings, tuples), cloning is
+unnecessary since their value can't change.
+
+- For lists (and generally for mutable sequence types), a clone is
+created by the expression l[:].
+
+- For dictionaries, the following function returns a clone:
+
+	def dictclone(o):
+	    n = {}
+	    for k in o.keys(): n[k] = o[k]
+	    return n
+
+- Finally, for generic objects, the "copy" module defines two
+functions for copying objects.  copy.copy(x) returns a copy as shown
+by the above rules.  copy.deepcopy(x) also copies the elements of
+composite objects.  See the section on this module in the Library
+Reference Manual.
+
+4.39. Q. How to implement persistent objects in Python?  (Persistent ==
+automatically saved to and restored from disk.)
+
+A. The library module "pickle" now solves this in a very general way
+(though you still can't store things like open files, sockests or
+windows), and the library module "shelve" uses pickle and (g)dbm to
+create presistent mappings containing arbitrary Python objects.
+
 
 5. Extending Python
 ===================
@@ -1784,12 +1729,7 @@ some value before you pass the tuple to Python code --
 newtupleobject(n) initializes them to NULL, which isn't a valid Python
 value.
 
-5.7. Q. What happened to mktuple(), featured in an example in the
-Extensions manual?
-
-A. It's a typo, I meant newtupleobject() (see previous question).
-
-5.8. Q. How do I call an object's method from C?
+5.7. Q. How do I call an object's method from C?
 
 A. Here's a function (untested) that might become part of the next
 release in some form.  It uses <stdarg.h> to allow passing the
@@ -1836,13 +1776,11 @@ list, to call a function without arguments, pass "()" for the format,
 and to call a function with one argument, surround the argument in
 parentheses, e.g. "(i)".
 
-5.9. Q. How do I catch the output from print_error()?
+5.8. Q. How do I catch the output from print_error()?
 
 A. (Due to Mark Hammond):
 
 * in Python code, define an object that supports the "write()" method.
-FWIW, there seems to be a small problem that requires the 'softspace'
-attribute to be defined too (fixed in 1.2).
 
 * redirect sys.stdout and sys.stderr to this object.
 
@@ -1851,7 +1789,7 @@ work.
 
 Then, the output will go wherever your write() method sends it.
 
-5.10. Q. How do I access a module written in Python from C?
+5.9. Q. How do I access a module written in Python from C?
 
 A. You can get a pointer to the module object as follows:
 
@@ -1870,7 +1808,7 @@ the module) as follows:
 
 Calling setattr(), to assign to variables in the module, also works.
 
-5.11. Q. How do I interface to C++ objects from Python?
+5.10. Q. How do I interface to C++ objects from Python?
 
 A. Depending on your requirements, there are many approaches.  Begin
 by reading the "Extending and Embedding" document (Doc/ext.tex, see
@@ -1904,34 +1842,14 @@ interesting and useful responses.
 6. Python's design
 ==================
 
-6.1. Q. Why isn't there a generic copying operation for objects in Python?
-
-A. Historically, there wasn't.  However, starting in Python 1.2,
-there's a library module "copy" which supports both shallow and deep
-copying of most common Python objects (though not things like open
-files, sockets or windows), including an extensible mechanism to copy
-class instances.
-
-6.2. Q. Why isn't there a generic way to implement persistent objects
-in Python?  (Persistent == automatically saved to and restored from
-disk.)
-
-A. Like the previous question, historically, there wasn't.  The
-library module "pickle" now solves this in a very general way (though
-you still can't store things like open files, sockests or windows),
-and the library module "shelve" uses pickle and (g)dbm to create
-presistent mappings containing arbitrary Python objects.  There are
-some problems with shelve when using gdbm which will be solved in
-Python 1.3.
-
-6.3. Q. Why isn't there a switch or case statement in Python?
+6.1. Q. Why isn't there a switch or case statement in Python?
 
 A. You can do this easily enough with a sequence of
 if... elif... elif... else.  There have been some proposals for switch
 statement syntax, but there is no consensus (yet) on whether and how
 to do range tests.
 
-6.4. Q. Why does Python use indentation for grouping of statements?
+6.2. Q. Why does Python use indentation for grouping of statements?
 
 A. Basically I believe that using indentation for grouping is
 extremely elegant and contributes a lot to the clarity of the average
@@ -1967,7 +1885,7 @@ This is not solely due to the lack of begin/end brackets (the lack of
 declarations also helps, and the powerful operations of course), but
 it certainly helps!
 
-6.5. Q. Why are Python strings immutable?
+6.3. Q. Why are Python strings immutable?
 
 A. There are two advantages.  One is performance: knowing that a
 string is immutable makes it easy to lay it out at construction time
@@ -1978,7 +1896,7 @@ numbers.  No amount of activity will change the value 8 to anything
 else, and in Python, no amount of activity will change the string
 "eight" to anything else.  (Adapted from Jim Roskind)
 
-6.6. Q. Why don't strings have methods like index() or sort(), like
+6.4. Q. Why don't strings have methods like index() or sort(), like
 lists?
 
 A. Good question.  Strings currently don't have methods at all
@@ -1994,7 +1912,7 @@ but others (e.g. sort()) can't, since their interface prescribes that
 they modify the object, while strings are immutable (see the previous
 question).
 
-6.7. Q. Why does Python use methods for some functionality
+6.5. Q. Why does Python use methods for some functionality
 (e.g. list.index()) but functions for other (e.g. len(list))?
 
 A. Functions are used for those operations that are generic for a
@@ -2005,7 +1923,7 @@ implementing them as methods for each type.  One can quibble about
 individual cases but it's really too late to change such things
 fundamentally now.
 
-6.8. Q. Why can't I derive a class from built-in types (e.g. lists or
+6.6. Q. Why can't I derive a class from built-in types (e.g. lists or
 files)?
 
 A. This is caused by the relatively late addition of (user-defined)
@@ -2013,7 +1931,7 @@ classes to the language -- the implementation framework doesn't easily
 allow it.  See the answer to question 4.2 for a work-around.  This
 *may* be fixed in the (distant) future.
 
-6.9. Q. Why must 'self' be declared and used explicitly in method
+6.7. Q. Why must 'self' be declared and used explicitly in method
 definitions and calls?
 
 A. By asking this question you reveal your C++ background. :-)
@@ -2054,7 +1972,7 @@ variables, having to write "self.var" means that references to
 unqualified names inside a method don't have to search the instance's
 directories.
 
-6.10. Q. Can't you emulate threads in the interpreter instead of
+6.8. Q. Can't you emulate threads in the interpreter instead of
 relying on an OS-specific thread implementation?
 
 A. Unfortunately, the interpreter pushes at least one C stack frame
@@ -2062,7 +1980,7 @@ for each Python stack frame.  Also, extensions can call back into
 Python at almost random moments.  Therefore a complete threads
 implementation requires thread support for C.
 
-6.11. Q. Why can't lambda forms contain statements?
+6.9. Q. Why can't lambda forms contain statements?
 
 A. Python lambda forms cannot contain statements because Python's
 syntactic framework can't handle statements nested inside expressions.
@@ -2077,6 +1995,16 @@ lambda form instead of a locally-defined function is that you'll have
 to invent a name for the function -- but that's just a local variable
 to which the function object (which is exactly the same type of object
 that a lambda form yields) is assigned!
+
+6.10. Q. Why don't lambdas have access to variables defined in the
+containing scope?
+
+A. Because they are implemented as ordinary functions.  See question
+4.5 above.
+
+6.11. Q. Why can't recursive functions be defined inside other functions?
+
+A. See question 4.5 above.
 
 6.12. Q. Why is there no more efficient way of iterating over a dictionary
 than first constructing the list of keys()?
