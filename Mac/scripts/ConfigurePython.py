@@ -12,6 +12,7 @@ import os
 import macfs
 import MacOS
 import gestalt
+import string
 
 SPLASH_COPYCORE=512
 SPLASH_COPYCARBON=513
@@ -103,6 +104,12 @@ def buildcopy(top, dummy, list):
 		macostools.copy(src, dst)
 
 def main():
+	verbose = 0
+	try:
+		h = Res.GetResource('DLOG', SPLASH_COPYCORE)
+		del h
+	except:
+		verbose = 1
 	os.chdir(sys.prefix)
 	
 	sys.path.append('::Mac:Lib')
@@ -110,22 +117,36 @@ def main():
 				
 	# Create the PythonCore alias(es)
 	MacOS.splash(SPLASH_COPYCORE)
+	if verbose:
+		print "Copying PythonCore..."
 	n = 0
 	n = n + mkcorealias('PythonCore', 'PythonCore')
 	n = n + mkcorealias('PythonCoreCarbon', 'PythonCoreCarbon')
 	if n == 0:
 		import Dlg
 		Dlg.CautionAlert(ALERT_NOCORE, None)
-		return
+		if verbose:
+			print "Warning: PythonCore not copied to Extensions folder"
 	if sys.argv[0][-7:] == 'Classic':
 		do_classic = 1
 	elif sys.argv[0][-6:] == 'Carbon':
 		do_classic = 0
-	elif sys.argv[0][-15:] == 'ConfigurePython' or sys.argv[0][-18:] == 'ConfigurePython.py':
-		return
 	else:
 		print "I don't know the sys.argv[0] function", sys.argv[0]
-		sys.exit(1)
+		if verbose:
+			print "Configure classic or carbon - ",
+			rv = string.strip(sys.stdin.readline())
+			while rv and rv != "classic" and rv != "carbon":
+				print "Configure classic or carbon - ",
+				rv = string.strip(sys.stdin.readline())
+			if rv == "classic":
+				do_classic = 1
+			elif rv == "carbon":
+				do_classic = 0
+			else:
+				return
+		else:
+			sys.exit(1)
 	if do_classic:
 		MacOS.splash(SPLASH_COPYCLASSIC)
 		buildcopy(sys.prefix, None, [("PythonInterpreterClassic", "PythonInterpreter")])
