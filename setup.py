@@ -410,7 +410,7 @@ class PyBuildExt(build_ext):
             curses_libs = ['ncurses']
             exts.append( Extension('_curses', ['_cursesmodule.c'],
                                    libraries = curses_libs) )
-        elif (self.compiler.find_library_file(lib_dirs, 'curses')) and platform != 'darwin1':
+        elif (self.compiler.find_library_file(lib_dirs, 'curses')) and platform[:6] != 'darwin':
         	# OSX has an old Berkeley curses, not good enough for the _curses module.
             if (self.compiler.find_library_file(lib_dirs, 'terminfo')):
                 curses_libs = ['curses', 'terminfo']
