@@ -370,7 +370,6 @@ static int FSCatalogInfo_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 			"atributeModDate",
 			"accessDate",
 			"backupDate",
-			"permissions",
 			"valence",
 			"dataLogicalSize",
 			"dataPhysicalSize",
@@ -380,7 +379,7 @@ static int FSCatalogInfo_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 			"userPrivileges"
 			, 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|HhllO&O&O&O&O&(llll)llllllb", kw, &((FSCatalogInfoObject *)self)->ob_itself.nodeFlags,
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|HhllO&O&O&O&O&llllllb", kw, &((FSCatalogInfoObject *)self)->ob_itself.nodeFlags,
 			&((FSCatalogInfoObject *)self)->ob_itself.volume,
 			&((FSCatalogInfoObject *)self)->ob_itself.parentDirID,
 			&((FSCatalogInfoObject *)self)->ob_itself.nodeID,
@@ -389,10 +388,6 @@ static int FSCatalogInfo_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 			UTCDateTime_Convert, &((FSCatalogInfoObject *)self)->ob_itself.attributeModDate,
 			UTCDateTime_Convert, &((FSCatalogInfoObject *)self)->ob_itself.accessDate,
 			UTCDateTime_Convert, &((FSCatalogInfoObject *)self)->ob_itself.backupDate,
-			&((FSCatalogInfoObject *)self)->ob_itself.permissions[0],
-			&((FSCatalogInfoObject *)self)->ob_itself.permissions[1],
-			&((FSCatalogInfoObject *)self)->ob_itself.permissions[2],
-			&((FSCatalogInfoObject *)self)->ob_itself.permissions[3],
 			&((FSCatalogInfoObject *)self)->ob_itself.valence,
 			&((FSCatalogInfoObject *)self)->ob_itself.dataLogicalSize,
 			&((FSCatalogInfoObject *)self)->ob_itself.dataPhysicalSize,

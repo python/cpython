@@ -413,7 +413,7 @@ class FSCatalogInfoDefinition(PEP253Mixin, ObjectDefinition):
 		),
 	]
 	# The same info, but in a different form
-	INITFORMAT = "HhllO&O&O&O&O&(llll)llllllb"
+	INITFORMAT = "HhllO&O&O&O&O&llllllb"
 	INITARGS = """&((FSCatalogInfoObject *)self)->ob_itself.nodeFlags,
 		&((FSCatalogInfoObject *)self)->ob_itself.volume,
 		&((FSCatalogInfoObject *)self)->ob_itself.parentDirID,
@@ -423,10 +423,6 @@ class FSCatalogInfoDefinition(PEP253Mixin, ObjectDefinition):
 		UTCDateTime_Convert, &((FSCatalogInfoObject *)self)->ob_itself.attributeModDate,
 		UTCDateTime_Convert, &((FSCatalogInfoObject *)self)->ob_itself.accessDate,
 		UTCDateTime_Convert, &((FSCatalogInfoObject *)self)->ob_itself.backupDate,
-		&((FSCatalogInfoObject *)self)->ob_itself.permissions[0],
-		&((FSCatalogInfoObject *)self)->ob_itself.permissions[1],
-		&((FSCatalogInfoObject *)self)->ob_itself.permissions[2],
-		&((FSCatalogInfoObject *)self)->ob_itself.permissions[3],
 		&((FSCatalogInfoObject *)self)->ob_itself.valence,
 		&((FSCatalogInfoObject *)self)->ob_itself.dataLogicalSize,
 		&((FSCatalogInfoObject *)self)->ob_itself.dataPhysicalSize,
@@ -444,7 +440,6 @@ class FSCatalogInfoDefinition(PEP253Mixin, ObjectDefinition):
 		"atributeModDate",
 		"accessDate",
 		"backupDate",
-		"permissions",
 		"valence",
 		"dataLogicalSize",
 		"dataPhysicalSize",
