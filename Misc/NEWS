@@ -33,6 +33,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- socket.IPPROTO_IPV6 was added.
+
 - readline.clear_history was added.
 
 - select.select() now accepts sequences for its first three arguments.
