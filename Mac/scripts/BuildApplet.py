@@ -14,6 +14,7 @@ import os
 import marshal
 import imp
 import macfs
+import MACFS
 import MacOS
 from Res import *
 
@@ -42,18 +43,16 @@ def main():
 	for p in sys.path:
 		template = os.path.join(p, TEMPLATE)
 		try:
-			tmpl = open(template, "rb")
-			tmpl.close()
+			template, d1, d2 = macfs.ResolveAliasFile(template)
 			break
-		except IOError:
+		except (macfs.error, ValueError):
 			continue
 	else:
-		die("Template %s not found" % `template`)
+		die("Template %s not found on sys.path" % `TEMPLATE`)
 		return
-		
-	# Convert to full pathname
-	template = macfs.FSSpec(template).as_pathname()
-	
+	template = template.as_pathname()
+	print 'Using template', template
+			
 	# Ask for source text if not specified in sys.argv[1:]
 	
 	if not sys.argv[1:]:
@@ -106,6 +105,10 @@ def process(template, filename, output):
 		destname = output
 	# Copy the data from the template (creating the file as well)
 	
+	template_fss = macfs.FSSpec(template)
+	template_fss, d1, d2 = macfs.ResolveAliasFile(template_fss)
+	dest_fss = macfs.FSSpec(destname)
+	
 	tmpl = open(template, "rb")
 	dest = open(destname, "wb")
 	data = tmpl.read()
@@ -117,23 +120,23 @@ def process(template, filename, output):
 	# Copy the creator of the template to the destination
 	# unless it already got one.  Set type to APPL
 	
-	tctor, ttype = MacOS.GetCreatorAndType(template)
-	ctor, type = MacOS.GetCreatorAndType(destname)
+	tctor, ttype = template_fss.GetCreatorType()
+	ctor, type = dest_fss.GetCreatorType()
 	if type in undefs: type = 'APPL'
 	if ctor in undefs: ctor = tctor
 	
 	# Open the output resource fork
 	
 	try:
-		output = FSpOpenResFile(destname, WRITE)
+		output = FSpOpenResFile(dest_fss, WRITE)
 	except MacOS.Error:
 		print "Creating resource fork..."
 		CreateResFile(destname)
-		output = FSpOpenResFile(destname, WRITE)
+		output = FSpOpenResFile(dest_fss, WRITE)
 	
 	# Copy the resources from the template
 	
-	input = FSpOpenResFile(template, READ)
+	input = FSpOpenResFile(template_fss, READ)
 	newctor = copyres(input, output)
 	CloseResFile(input)
 	if newctor: ctor = newctor
@@ -149,9 +152,13 @@ def process(template, filename, output):
 		CloseResFile(input)
 		if newctor: ctor = newctor
 	
-	# Now set the creator and type of the destination
-	
-	MacOS.SetCreatorAndType(destname, ctor, type)
+	# Now set the creator, type and bundle bit of the destination
+	dest_finfo = dest_fss.GetFInfo()
+	dest_finfo.Creator = ctor
+	dest_finfo.Type = type
+	dest_finfo.Flags = dest_finfo.Flags | MACFS.kHasBundle
+	dest_finfo.Flags = dest_finfo.Flags & ~MACFS.kHasBeenInited
+	dest_fss.SetFInfo(dest_finfo)
 	
 	# Make sure we're manipulating the output resource file now
 	
