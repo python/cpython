@@ -136,8 +136,11 @@ class ObjectDefinition(GeneratorGroup):
 		self.outputCleanupStructMembers()
 		if self.basetype:
 			Output("%s.tp_dealloc(self)", self.basetype)
-		else:
+		elif hasattr(self, 'output_tp_free'):
+			# This is a new-style object with tp_free slot
 			Output("self->ob_type->tp_free((PyObject *)self);")
+		else:
+			Output("PyObject_Free((PyObject *)self);")
 		OutRbrace()
 
 	def outputCleanupStructMembers(self):
@@ -205,9 +208,10 @@ class ObjectDefinition(GeneratorGroup):
 		Output("};")
 		
 	def outputTypeObjectInitializer(self):
-		Output("""%s.ob_type = &PyType_Type;""", self.typename);
+		Output("""%s.ob_type = &PyType_Type;""", self.typename)
 		if self.basetype:
 			Output("%s.tp_base = %s;", self.typename, self.basetype)
+		Output("if (PyType_Ready(&%s) < 0) return;", self.typename)
 		Output("""Py_INCREF(&%s);""", self.typename)
 		Output("PyModule_AddObject(m, \"%s\", (PyObject *)&%s);", self.name, self.typename);
 		Output("/* Backward-compatible name */")
