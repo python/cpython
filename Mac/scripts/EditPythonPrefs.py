@@ -14,6 +14,9 @@ import os
 import sys
 import Res # For Res.Error
 
+# Resource in the Python resource chain
+PREFNAME_NAME="PythonPreferenceFileName"
+
 # resource IDs in our own resources (dialogs, etc)
 MESSAGE_ID = 256
 
@@ -53,7 +56,9 @@ GUSIPOS_TYPE=0
 GUSIPOS_CREATOR=4
 GUSIPOS_SKIP=8
 GUSIPOS_FLAGS=9
-GUSIFLAGS_DELAY=0x04 # Mask
+GUSIPOS_VERSION=10
+GUSIVERSION='0181'
+GUSIFLAGS_DELAY=0x20 # Mask
 
 READ = 1
 WRITE = 2
@@ -201,23 +206,37 @@ def getgusioptions(id):
 	type = data[GUSIPOS_TYPE:GUSIPOS_TYPE+4]
 	creator = data[GUSIPOS_CREATOR:GUSIPOS_CREATOR+4]
 	flags = ord(data[GUSIPOS_FLAGS])
+	version = data[GUSIPOS_VERSION:GUSIPOS_VERSION+4]
+	if version <> GUSIVERSION:
+		message('GU\267I resource version "%s", fixing to "%s"'%(version, GUSIVERSION))
+		flags = 0
 	delay = (not not (flags & GUSIFLAGS_DELAY))
 	return creator, type, delay, opr
 	
 def setgusioptions(opr, creator, type, delay):
 	data = opr.data
 	flags = ord(data[GUSIPOS_FLAGS])
+	version = data[GUSIPOS_VERSION:GUSIPOS_VERSION+4]
+	if version <> GUSIVERSION:
+		flags = 0x88
+		version = GUSIVERSION
 	if delay:
 		flags = flags | GUSIFLAGS_DELAY
 	else:
 		flags = flags & ~GUSIFLAGS_DELAY
-	data = type + creator + data[GUSIPOS_SKIP] + chr(flags) + data[GUSIPOS_FLAGS+1:]
+	data = type + creator + data[GUSIPOS_SKIP] + chr(flags) + GUSIVERSION + data[GUSIPOS_VERSION+4:]
 	return data
 	
 def openpreffile(rw):
 	# Find the preferences folder and our prefs file, create if needed.	
 	vrefnum, dirid = macfs.FindFolder(kOnSystemDisk, 'pref', 0)
-	preff_fss = macfs.FSSpec((vrefnum, dirid, 'Python Preferences'))
+	try:
+		pnhandle = GetNamedResource('STR ', PREFNAME_NAME)
+	except Res.Error:
+		message("No %s resource (old Python?)"%PREFNAME_NAME)
+		sys.exit(1)
+	prefname = pnhandle.data[1:]
+	preff_fss = macfs.FSSpec((vrefnum, dirid, prefname))
 	try:
 		preff_handle = FSpOpenResFile(preff_fss, rw)
 	except Res.Error:
