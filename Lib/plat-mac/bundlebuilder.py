@@ -230,6 +230,18 @@ if USE_ZIPIMPORT:
 		path = fullname.replace(".", os.sep) + PYC_EXT
 		return path, MAGIC + '\0\0\0\0' + marshal.dumps(code)
 
+#
+# The following snippet gets added as sitecustomize.py[co] to
+# non-standalone apps and appended to our custom site.py for
+# standalone apps. The bootstrap scripts calls os.execve() with
+# an argv[0] that's different from the actual executable: argv[0]
+# is the bootstrap script itself and matches the CFBundleExecutable
+# value in the Info.plist. This is needed to keep the Finder happy
+# and have the app work from the command line as well. However,
+# this causes sys.executable to also be that value, so we correct
+# that from the PYTHONEXECUTABLE environment variable that the
+# bootstrap script sets.
+# 
 SITECUSTOMIZE_PY = """\
 import sys, os
 executable = os.getenv("PYTHONEXECUTABLE")
@@ -241,7 +253,10 @@ SITE_PY += SITECUSTOMIZE_PY
 SITE_CO = compile(SITE_PY, "<-bundlebuilder.py->", "exec")
 SITECUSTOMIZE_CO = compile(SITECUSTOMIZE_PY, "<-bundlebuilder.py->", "exec")
 
-
+#
+# Extension modules can't be in the modules zip archive, so a placeholder
+# is added instead, that loads the extension from a specified location.
+#
 EXT_LOADER = """\
 def __load():
 	import imp, sys, os
@@ -264,6 +279,17 @@ MAYMISS_MODULES = ['mac', 'os2', 'nt', 'ntpath', 'dos', 'dospath',
 
 STRIP_EXEC = "/usr/bin/strip"
 
+#
+# We're using a stock interpreter to run the app, yet we need
+# a way to pass the Python main program to the interpreter. The
+# bootstrapping script fires up the interpreter with the right
+# arguments. os.execve() is used as OSX doesn't like us to
+# start a real new process. Also, the executable name must match
+# the CFBundleExecutable value in the Info.plist, so we lie
+# deliberately with argv[0]. The actual Python executable is
+# passed in an environment variable so we can "repair"
+# sys.executable later.
+#
 BOOTSTRAP_SCRIPT = """\
 #!/usr/bin/env python
 
@@ -279,12 +305,17 @@ os.environ["PYTHONEXECUTABLE"] = executable
 os.execve(executable, sys.argv, os.environ)
 """
 
-ARGVEMULATOR="""\
+
+#
+# Optional wrapper that converts "dropped files" into sys.argv values.
+#
+ARGV_EMULATOR = """\
 import argvemulator, os
 
 argvemulator.ArgvCollector().mainloop()
 execfile(os.path.join(os.path.split(__file__)[0], "%(realmainprogram)s"))
 """
+
 
 class AppBuilder(BundleBuilder):
 
@@ -401,7 +432,7 @@ class AppBuilder(BundleBuilder):
 				resdirpath = pathjoin(self.bundlepath, resdir)
 				mainprogrampath = pathjoin(resdirpath, mainprogram)
 				makedirs(resdirpath)
-				open(mainprogrampath, "w").write(ARGVEMULATOR % locals())
+				open(mainprogrampath, "w").write(ARGV_EMULATOR % locals())
 				if self.standalone:
 					self.includeModules.append("argvemulator")
 					self.includeModules.append("os")
