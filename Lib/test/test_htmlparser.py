@@ -60,6 +60,9 @@ class EventCollector(HTMLParser.HTMLParser):
     def handle_pi(self, data):
         self.append(("pi", data))
 
+    def unknown_decl(self, decl):
+        self.append(("unknown decl", decl))
+
 
 class EventCollectorExtra(EventCollector):
 
@@ -70,24 +73,16 @@ class EventCollectorExtra(EventCollector):
 
 class TestCaseBase(unittest.TestCase):
 
-    # Constant pieces of source and events
-    prologue = ""
-    epilogue = ""
-    initial_events = []
-    final_events = []
-
-    def _run_check(self, source, events, collector=EventCollector):
+    def _run_check(self, source, expected_events, collector=EventCollector):
         parser = collector()
-        parser.feed(self.prologue)
         for s in source:
             parser.feed(s)
-        for c in self.epilogue:
-            parser.feed(c)
         parser.close()
         events = parser.get_events()
-        self.assertEqual(events,
-                         self.initial_events + events + self.final_events,
-                         "got events:\n" + pprint.pformat(events))
+        if events != expected_events:
+            self.fail("received events did not match expected events\n"
+                      "Expected:\n" + pprint.pformat(expected_events) +
+                      "\nReceived:\n" + pprint.pformat(events))
 
     def _run_check_extra(self, source, events):
         self._run_check(source, events, EventCollectorExtra)
@@ -144,7 +139,13 @@ text
 DOCTYPE html [
   <!ELEMENT html - O EMPTY>
   <!ATTLIST html
-      version CDATA #IMPLIED '4.0'>
+      version CDATA #IMPLIED
+      profile CDATA 'DublinCore'>
+  <!NOTATION datatype SYSTEM 'http://xml.python.org/notations/python-module'>
+  <!ENTITY myEntity 'internal parsed entity'>
+  <!ENTITY anEntity SYSTEM 'http://xml.python.org/entities/something.xml'>
+  <!ENTITY % paramEntity 'name|name|name'>
+  %paramEntity;
   <!-- comment -->
 ]"""
         self._run_check("<!%s>" % inside, [
@@ -199,6 +200,14 @@ DOCTYPE html [
     def test_attr_funky_names(self):
         self._run_check("""<a a.b='v' c:d=v e-f=v>""", [
             ("starttag", "a", [("a.b", "v"), ("c:d", "v"), ("e-f", "v")]),
+            ])
+
+    def test_illegal_declarations(self):
+        s = 'abc<!spacer type="block" height="25">def'
+        self._run_check(s, [
+            ("data", "abc"),
+            ("unknown decl", 'spacer type="block" height="25"'),
+            ("data", "def"),
             ])
 
     def test_starttag_end_boundary(self):
