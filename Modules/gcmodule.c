@@ -339,13 +339,26 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 	}
 }
 
-/* return true if object has a finalization method */
+/* Return true if object has a finalization method.
+ * CAUTION:  An instance of an old-style class has to be checked for a
+ *__del__ method, and that can cause arbitrary Python code to get executed
+ * via the class's __getattr__ hook (if any).  This function can therefore
+ * mutate the object graph, and that's been the source of subtle bugs.
+ */
 static int
 has_finalizer(PyObject *op)
 {
-	return PyInstance_Check(op) ? PyObject_HasAttr(op, delstr) :
-	        PyType_HasFeature(op->ob_type, Py_TPFLAGS_HEAPTYPE) ?
-		op->ob_type->tp_del != NULL : 0;
+	if (PyInstance_Check(op)) {
+		/* This is the dangerous path:  hasattr can invoke
+		 * the class __getattr__(), and that can do anything.
+		 */
+		assert(delstr != NULL);
+		return PyObject_HasAttr(op, delstr);
+	}
+	else if (PyType_HasFeature(op->ob_type, Py_TPFLAGS_HEAPTYPE))
+		return op->ob_type->tp_del != NULL;
+	else
+		return 0;
 }
 
 /* Move all objects out of unreachable and into collectable or finalizers.
@@ -586,8 +599,10 @@ collect(int generation)
 	 * instance objects with __del__ methods.
 	 *
 	 * Move each object into the collectable set or the finalizers set.
-	 * It's possible that a classic class with a getattr() hook will
-	 * be revived or deallocated in this step.
+	 * Because we need to check for __del__ methods on instances of
+	 * classic classes, arbitrary Python code may get executed by
+	 * getattr hooks:  that may resurrect or deallocate (via refcount
+	 * falling to 0) unreachable objects, so this is very delicate.
 	 */
 	gc_list_init(&collectable);
 	gc_list_init(&finalizers);
