@@ -76,6 +76,8 @@ argument = 318
 list_iter = 319
 list_for = 320
 list_if = 321
+testlist1 = 322
+encoding_decl = 323
 #--end constants--
 
 sym_name = {}
