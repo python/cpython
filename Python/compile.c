@@ -490,10 +490,10 @@ com_pop(c, n)
 	int n;
 {
 	if (c->c_stacklevel < n) {
-		fprintf(stderr,
+		/* fprintf(stderr,
 			"%s:%d: underflow! nexti=%d, level=%d, n=%d\n",
 			c->c_filename, c->c_lineno,
-			c->c_nexti, c->c_stacklevel, n);
+			c->c_nexti, c->c_stacklevel, n); */
 		c->c_stacklevel = 0;
 	}
 	else
