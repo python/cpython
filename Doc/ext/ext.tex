@@ -1398,7 +1398,8 @@ references generally return \NULL{} only to indicate that an
 exception occurred.  The reason for not testing for \NULL{}
 arguments is that functions often pass the objects they receive on to
 other function --- if each function were to test for \NULL{},
-there would be a lot of redundant tests and the code would run slower.
+there would be a lot of redundant tests and the code would run more
+slowly.
 
 It is better to test for \NULL{} only at the ``source'', i.e.\ when a
 pointer that may be \NULL{} is received, e.g.\ from
@@ -1422,7 +1423,13 @@ These guarantees don't hold when you use the ``old'' style
 calling convention --- this is still found in much existing code.}
 
 It is a severe error to ever let a \NULL{} pointer ``escape'' to
-the Python user.  
+the Python user.
+
+% Frank Stajano:
+% A pedagogically buggy example, along the lines of the previous listing, 
+% would be helpful here -- showing in more concrete terms what sort of 
+% actions could cause the problem. I can't very well imagine it from the 
+% description.
 
 
 \section{Writing Extensions in \Cpp{}
