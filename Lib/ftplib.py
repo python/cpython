@@ -343,7 +343,7 @@ class FTP:
         return conn, size
 
     def transfercmd(self, cmd, rest=None):
-        """Like nstransfercmd() but returns only the socket."""
+        """Like ntransfercmd() but returns only the socket."""
         return self.ntransfercmd(cmd, rest)[0]
 
     def login(self, user = '', passwd = '', acct = ''):
@@ -505,7 +505,11 @@ class FTP:
         # Note that the RFC doesn't say anything about 'SIZE'
         resp = self.sendcmd('SIZE ' + filename)
         if resp[:3] == '213':
-            return int(resp[3:].strip())
+            s = resp[3:].strip()
+            try:
+                return int(s)
+            except OverflowError:
+                return long(s)
 
     def mkd(self, dirname):
         '''Make a directory, return its full pathname.'''
@@ -549,9 +553,13 @@ def parse150(resp):
         import re
         _150_re = re.compile("150 .* \((\d+) bytes\)", re.IGNORECASE)
     m = _150_re.match(resp)
-    if m:
-        return int(m.group(1))
-    return None
+    if not m:
+        return None
+    s = m.group(1)
+    try:
+        return int(s)
+    except OverflowError:
+        return long(s)
 
 
 _227_re = None
