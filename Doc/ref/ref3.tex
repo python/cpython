@@ -499,22 +499,41 @@ module the method was defined in, or \code{None} if unavailable.
 Methods also support accessing (but not setting) the arbitrary
 function attributes on the underlying function object.
 
-User-defined method objects are created in two ways: when getting an
-attribute of a class that is a user-defined function object, or when
-getting an attribute of a class instance that is a user-defined
-function object defined by the class of the instance.  In the former
-case (class attribute), the \member{im_self} attribute is \code{None},
-and the method object is said to be unbound; in the latter case
-(instance attribute), \method{im_self} is the instance, and the method
-object is said to be bound.  For
-instance, when \class{C} is a class which has a method
-\method{f()}, \code{C.f} does not yield the function object
-\code{f}; rather, it yields an unbound method object \code{m} where
-\code{m.im_class} is \class{C}, \code{m.im_func} is \method{f()}, and
-\code{m.im_self} is \code{None}.  When \code{x} is a \class{C}
-instance, \code{x.f} yields a bound method object \code{m} where
-\code{m.im_class} is \code{C}, \code{m.im_func} is \method{f()}, and
-\code{m.im_self} is \code{x}.
+User-defined method objects may be created when getting an attribute
+of a class (perhaps via an instance of that class), if that attribute
+is a user-defined function object, an unbound user-defined method object,
+or a class method object.
+When the attribute is a user-defined method object, a new
+method object is only created if the class from which it is being
+retrieved is the same as, or a derived class of, the class stored
+in the original method object; otherwise, the original method object
+is used as it is.
+
+When a user-defined method object is created by retrieving
+a user-defined function object from a class, its \member{im_self}
+attribute is \code{None} and the method object is said to be unbound.
+When one is created by retrieving a user-defined function object
+from a class via one of its instances, its \member{im_self} attribute
+is the instance, and the method object is said to be bound.
+In either case, the new method's \member{im_class} attribute
+is the class from which the retrieval takes place, and
+its \member{im_func} attribute is the original function object.
+\withsubitem{(method attribute)}{
+  \ttindex{im_class}\ttindex{im_func}\ttindex{im_self}}
+
+When a user-defined method object is created by retrieving another
+method object from a class or instance, the behaviour is the same
+as for a function object, except that the \member{im_func} attribute
+of the new instance is not the original method object but its
+\member{im_func} attribute.
+\withsubitem{(method attribute)}{
+  \ttindex{im_func}}
+
+When a user-defined method object is created by retrieving a
+class method object from a class or instance, its \member{im_self}
+attribute is the class itself (the same as the \member{im_class}
+attribute), and its \member{im_func} attribute is the function
+object underlying the class method.
 \withsubitem{(method attribute)}{
   \ttindex{im_class}\ttindex{im_func}\ttindex{im_self}}
 
@@ -529,6 +548,12 @@ function (\member{im_func}) is called, inserting the class instance
 \class{C} is a class which contains a definition for a function
 \method{f()}, and \code{x} is an instance of \class{C}, calling
 \code{x.f(1)} is equivalent to calling \code{C.f(x, 1)}.
+
+When a user-defined method object is derived from a class method object,
+the ``class instance'' stored in \member{im_self} will actually be the
+class itself, so that calling either \code{x.f(1)} or \code{C.f(1)} is
+equivalent to calling \code{f(C,1)} where \code{f} is the underlying
+function.
 
 Note that the transformation from function object to (unbound or
 bound) method object happens each time the attribute is retrieved from
@@ -654,10 +679,19 @@ When the attribute name is not found
 there, the attribute search continues in the base classes.  The search
 is depth-first, left-to-right in the order of occurrence in the
 base class list.
-When a class attribute reference would yield a user-defined function
-object, it is transformed into an unbound user-defined method object
-(see above).  The \member{im_class} attribute of this method object is the
-class for which the attribute reference was initiated.
+
+When a class attribute reference (for class \class{C}, say)
+would yield a user-defined function object or
+an unbound user-defined method object whose associated class is either
+\class{C} or one of its base classes, it is transformed into an unbound
+user-defined method object whose \member{im_class} attribute is~\class{C}.
+When it would yield a class method object, it is transformed into
+a bound user-defined method object whose \member{im_class} and
+\member{im_self} attributes are both~\class{C}.  When it would yield
+a static method object, it is transformed into the object wrapped
+by the static method object. See section~\ref{descriptors} for another
+way in which attributes retrieved from a class may differ from those
+actually contained in its \member{__dict__}.
 \obindex{class}
 \obindex{class instance}
 \obindex{instance}
@@ -695,11 +729,18 @@ is the first place in which
 attribute references are searched.  When an attribute is not found
 there, and the instance's class has an attribute by that name,
 the search continues with the class attributes.  If a class attribute
-is found that is a user-defined function object (and in no other
-case), it is transformed into an unbound user-defined method object
-(see above).  The \member{im_class} attribute of this method object is
-the
-class of the instance for which the attribute reference was initiated.
+is found that is a user-defined function object or an unbound
+user-defined method object whose associated class is the class
+(call it~\class{C}) of the instance for which the attribute reference
+was initiated or one of its bases,
+it is transformed into a bound user-defined method object whose
+\member{im_class} attribute is~\class{C} whose \member{im_self} attribute
+is the instance. Static method and class method objects are also
+transformed, as if they had been retrieved from class~\class{C};
+see above under ``Classes''. See section~\ref{descriptors} for
+another way in which attributes of a class retrieved via its
+instances may differ from the objects actually stored in the
+class's \member{__dict__}.
 If no class attribute is found, and the object's class has a
 \method{__getattr__()} method, that is called to satisfy the lookup.
 \obindex{class instance}
@@ -937,6 +978,25 @@ Missing or out-of-bounds indices are handled in a manner consistent
 with regular slices.
 \versionadded{2.3}
 \end{methoddesc}
+
+\item[Static method objects]
+Static method objects provide a way of defeating the transformation
+of function objects to method objects described above. A static method
+object is a wrapper around any other object, usually a user-defined
+method object. When a static method object is retrieved from a class
+or a class instance, the object actually returned is the wrapped object,
+which is not subject to any further transformation. Static method
+objects are not themselves callable, although the objects they
+wrap usually are. Static method objects are created by the built-in
+\function{staticmethod()} constructor.
+
+\item[Class method objects]
+A class method object, like a static method object, is a wrapper
+around another object that alters the way in which that object
+is retrieved from classes and class instances. The behaviour of
+class method objects upon such retrieval is described above,
+under ``User-defined methods''. Class method objects are created
+by the built-in \function{classmethod()} constructor.
 
 \end{description} % Internal types
 
