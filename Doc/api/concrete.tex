@@ -121,13 +121,13 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
   \withsubitem{(in modules types)}{\ttindex{IntType}}
 \end{cvardesc}
 
-\begin{cfuncdesc}{int}{PyInt_Check}{PyObject* o}
+\begin{cfuncdesc}{int}{PyInt_Check}{PyObject *o}
   Returns true if \var{o} is of type \cdata{PyInt_Type} or a subtype
   of \cdata{PyInt_Type}.
   \versionchanged[Allowed subtypes to be accepted]{2.2}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyInt_CheckExact}{PyObject* o}
+\begin{cfuncdesc}{int}{PyInt_CheckExact}{PyObject *o}
   Returns true if \var{o} is of type \cdata{PyInt_Type}, but not a
   subtype of \cdata{PyInt_Type}.
   \versionadded{2.2}
@@ -199,7 +199,7 @@ are only two booleans, \constant{Py_False} and \constant{Py_True}.  As
 such, the normal creation and deletion functions don't apply to
 booleans.  The following macros are available, however.
 
-\begin{cfuncdesc}{int}{PyBool_Check}{PyObject* o}
+\begin{cfuncdesc}{int}{PyBool_Check}{PyObject *o}
   Returns true if \var{o} is of type \cdata{PyBool_Type}.
   \versionadded{2.3}
 \end{cfuncdesc}
@@ -221,15 +221,10 @@ booleans.  The following macros are available, however.
 \end{csimplemacrodesc}
 
 \begin{csimplemacrodesc}{Py_RETURN_TRUE}
-Return Py_True from a function, properly incrementing its reference
-count.
+  Return \constant{Py_True} from a function, properly incrementing its
+  reference count.
 \versionadded{2.4}
 \end{csimplemacrodesc}
-
-\begin{cfuncdesc}{int}{PyBool_Check}{PyObject* o}
-  Returns true if \var{o} is of type \cdata{PyBool_Type}.
-  \versionadded{2.3}
-\end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyBool_FromLong}{long v}
 Returns \constant{Py_True} or \constant{Py_False} depending on the
