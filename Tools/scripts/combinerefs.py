@@ -74,13 +74,11 @@ import sys
 # (when whilematch is false), is lost, and fileiter will resume at the line
 # following it.
 def read(fileiter, pat, whilematch):
-    result = []
     for line in fileiter:
         if bool(pat.match(line)) == whilematch:
-            result.append(line)
+            yield line
         else:
             break
-    return result
 
 def combine(fname):
     f = file(fname)
