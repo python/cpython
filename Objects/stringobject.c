@@ -306,7 +306,7 @@ resizestring(pv, newsize)
 		return -1;
 	}
 	/* XXX UNREF/NEWREF interface should be more symmetrical */
-#ifdef TRACE_REFS
+#ifdef REF_DEBUG
 	--ref_total;
 #endif
 	UNREF(v);
