@@ -349,38 +349,45 @@ def runtest(test, generate, verbose, quiet, testdir = None):
         return 0
 
 def reportdiff(expected, output):
-    print "*" * 70
     import difflib
-    a = expected.splitlines()
-    b = output.splitlines()
+    print "*" * 70
+    a = expected.splitlines(1)
+    b = output.splitlines(1)
     sm = difflib.SequenceMatcher(a=a, b=b)
     tuples = sm.get_opcodes()
+
     def pair(x0, x1):
+        # x0:x1 are 0-based slice indices; convert to 1-based line indices.
         x0 += 1
         if x0 >= x1:
-            return str(x0)
+            return "line " + str(x0)
         else:
-            return "%d,%d" % (x0, x1)
+            return "lines %d-%d" % (x0, x1)
+
     for op, a0, a1, b0, b1 in tuples:
         if op == 'equal':
             pass
+
         elif op == 'delete':
-            print pair(a0, a1) + "d" + pair(b0, b1)
+            print "***", pair(a0, a1), "of expected output missing:"
             for line in a[a0:a1]:
-                print "<", line
+                print "-", line,
+
         elif op == 'replace':
-            print pair(a0, a1) + "c" + pair(b0, b1)
-            for line in a[a0:a1]:
-                print "<", line
-            print "---"
-            for line in b[b0:b1]:
-                print ">", line
+            print "*** mismatch between", pair(a0, a1), "of expected", \
+                  "output and", pair(b0, b1), "of actual output:"
+            for line in difflib.ndiff(a[a0:a1], b[b0:b1]):
+                print line,
+
         elif op == 'insert':
-            print str(a0) + "a" + pair(b0, b1)
+            print "***", pair(b0, b1), "of actual output doesn't appear", \
+                  "in expected output after line", str(a1)+":"
             for line in b[b0:b1]:
-                print ">", line
+                print "+", line,
+
         else:
             print "get_opcodes() returned bad tuple?!?!", (op, a0, a1, b0, b1)
+
     print "*" * 70
 
 def findtestdir():
