@@ -28,17 +28,48 @@ second request to the same server, you create a new HTTP object.
 connection for each request.)
 """
 
+import os
 import socket
 import string
 import mimetools
 
+try:
+    from cStringIO import StringIO
+except:
+    from StringIO import StringIO
+
 HTTP_VERSION = 'HTTP/1.0'
 HTTP_PORT = 80
+HTTPS_PORT = 443
+
+class FakeSocket:
+    def __init__(self, sock, ssl):
+	self.__sock = sock
+	self.__ssl = ssl
+	return
+
+    def makefile(self, mode):		# hopefully, never have to write
+	msgbuf = ""
+	while 1:
+	    try:
+		msgbuf = msgbuf + self.__ssl.read()
+	    except socket.sslerror, msg:
+		break
+	return StringIO(msgbuf)
+
+    def send(self, stuff, flags = 0):
+	return self.__ssl.write(stuff)
+
+    def recv(self, len = 1024, flags = 0):
+	return self.__ssl.read(len)
+
+    def __getattr__(self, attr):
+	return getattr(self.__sock, attr)
 
 class HTTP:
     """This class manages a connection to an HTTP server."""
-    
-    def __init__(self, host = '', port = 0):
+
+    def __init__(self, host = '', port = 0, **x509):
         """Initialize a new instance.
 
         If specified, `host' is the name of the remote host to which
@@ -46,10 +77,12 @@ class HTTP:
         to connect.  By default, httplib.HTTP_PORT is used.
 
         """
+        self.key_file = x509.get('key_file')
+        self.cert_file = x509.get('cert_file')
         self.debuglevel = 0
         self.file = None
         if host: self.connect(host, port)
-    
+
     def set_debuglevel(self, debuglevel):
         """Set the debug output level.
 
@@ -58,10 +91,10 @@ class HTTP:
 
         """
         self.debuglevel = debuglevel
-    
+
     def connect(self, host, port = 0):
         """Connect to a host on a given port.
-        
+
         Note:  This method is automatically invoked by __init__,
         if a host is specified during instantiation.
 
@@ -77,12 +110,12 @@ class HTTP:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if self.debuglevel > 0: print 'connect:', (host, port)
         self.sock.connect(host, port)
-    
+
     def send(self, str):
         """Send `str' to the server."""
         if self.debuglevel > 0: print 'send:', `str`
         self.sock.send(str)
-    
+
     def putrequest(self, request, selector):
         """Send a request to the server.
 
@@ -94,7 +127,7 @@ class HTTP:
         if not selector: selector = '/'
         str = '%s %s %s\r\n' % (request, selector, HTTP_VERSION)
         self.send(str)
-    
+
     def putheader(self, header, *args):
         """Send a request header line to the server.
 
@@ -103,14 +136,14 @@ class HTTP:
         """
         str = '%s: %s\r\n' % (header, string.joinfields(args,'\r\n\t'))
         self.send(str)
-    
+
     def endheaders(self):
         """Indicate that the last header line has been sent to the server."""
         self.send('\r\n')
-    
+
     def getreply(self):
         """Get a reply from the server.
-        
+
         Returns a tuple consisting of:
         - server response code (e.g. '200' if all goes well)
         - server response string corresponding to response code
@@ -136,7 +169,7 @@ class HTTP:
         errmsg = string.strip(msg)
         self.headers = mimetools.Message(self.file, 0)
         return errcode, errmsg, self.headers
-    
+
     def getfile(self):
         """Get a file object from which to receive data from the HTTP server.
 
@@ -145,7 +178,7 @@ class HTTP:
 
         """
         return self.file
-    
+
     def close(self):
         """Close the connection to the HTTP server."""
         if self.file:
@@ -154,6 +187,31 @@ class HTTP:
         if self.sock:
             self.sock.close()
         self.sock = None
+
+if hasattr(socket, "ssl"):
+    class HTTPS(HTTP):
+        """This class allows communication via SSL."""
+
+        def connect(self, host, port = 0):
+            """Connect to a host on a given port.
+
+            Note:  This method is automatically invoked by __init__,
+            if a host is specified during instantiation.
+
+            """
+            if not port:
+                i = string.find(host, ':')
+                if i >= 0:
+                    host, port = host[:i], host[i+1:]
+                    try: port = string.atoi(port)
+                    except string.atoi_error:
+                        raise socket.error, "nonnumeric port"
+            if not port: port = HTTPS_PORT
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            if self.debuglevel > 0: print 'connect:', (host, port)
+            sock.connect(host, port)
+            ssl = socket.ssl(sock, self.key_file, self.cert_file)
+            self.sock = FakeSocket(sock, ssl)
 
 
 def test():
@@ -170,6 +228,7 @@ def test():
     dl = 0
     for o, a in opts:
         if o == '-d': dl = dl + 1
+    print "testing HTTP..."
     host = 'www.python.org'
     selector = '/'
     if args[0:]: host = args[0]
@@ -187,6 +246,26 @@ def test():
         for header in headers.headers: print string.strip(header)
     print
     print h.getfile().read()
+    if hasattr(socket, "ssl"):
+        print "-"*40
+        print "testing HTTPS..."
+        host = 'synergy.as.cmu.edu'
+        selector = '/~geek/'
+        if args[0:]: host = args[0]
+        if args[1:]: selector = args[1]
+        h = HTTPS()
+        h.set_debuglevel(dl)
+        h.connect(host)
+        h.putrequest('GET', selector)
+        h.endheaders()
+        errcode, errmsg, headers = h.getreply()
+        print 'errcode =', errcode
+        print 'errmsg  =', errmsg
+        print
+        if headers:
+            for header in headers.headers: print string.strip(header)
+        print
+        print h.getfile().read()
 
 
 if __name__ == '__main__':
