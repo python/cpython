@@ -116,6 +116,10 @@ static char *GetPythonImport (HINSTANCE hModule)
 	   string constant holding the import name is located. */
 
 	if (DWORD_AT(dllbase + opt_offset + num_dict_off) >= 2) {
+		/* We have at least 2 tables - the import table is the second
+		   one.  But still it may be that the table size is zero */
+		if (0 == DWORD_AT(dllbase + opt_offset + import_off + sizeof(DWORD)))
+			return NULL;
 		import_data = dllbase + DWORD_AT(dllbase +
 						 opt_offset +
 						 import_off);
@@ -128,7 +132,11 @@ static char *GetPythonImport (HINSTANCE hModule)
 				/* Ensure python prefix is followed only
 				   by numbers to the end of the basename */
 				pch = import_name + 6;
+#ifdef _DEBUG
+				while (*pch && pch[0] != '_' && pch[1] != 'd' && pch[2] != '.') {
+#else
 				while (*pch && *pch != '.') {
+#endif
 					if (*pch >= '0' && *pch <= '9') {
 						pch++;
 					} else {
@@ -221,7 +229,11 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 		} else {
 			char buffer[256];
 
+#ifdef _DEBUG
+			PyOS_snprintf(buffer, sizeof(buffer), "python%d%d_d.dll",
+#else
 			PyOS_snprintf(buffer, sizeof(buffer), "python%d%d.dll",
+#endif
 				      PY_MAJOR_VERSION,PY_MINOR_VERSION);
 			import_python = GetPythonImport(hDLL);
 
