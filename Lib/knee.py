@@ -1,4 +1,11 @@
-# More structured (slower) alternative to mini
+"""An Python re-implementation of hierarchical module import.
+
+This code is intended to be read, not executed.  However, it does work
+-- all you need to do to enable it is "import knee".
+
+(The name is a pun on the klunkier predecessor of this module, "ni".)
+
+"""
 
 import sys, imp, __builtin__, string
 
