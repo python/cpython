@@ -14,7 +14,7 @@ class PythonIDE(Wapplication.Application):
 	
 	def __init__(self):
 		self.preffilepath = ":Python:PythonIDE preferences"
-		Wapplication.Application.__init__(self, 'Pyth')
+		Wapplication.Application.__init__(self, 'Pide')
 		import AE, AppleEvents
 		
 		AE.AEInstallEventHandler(AppleEvents.kCoreEventClass, AppleEvents.kAEOpenApplication, 
