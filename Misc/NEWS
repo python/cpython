@@ -140,6 +140,14 @@ Library
 
 - pprint functions now much faster for large containers (tuple, list, dict).
 
+- New 'q' and 'Q' format codes in the struct module, corresponding to C
+  types "long long" and "unsigned long long" (on Windows, __int64).  In
+  native mode, these can be used only when the platform C compiler supports
+  these types (when HAVE_LONG_LONG is #define'd by the Python config
+  process), and then they inherit the sizes and alignments of the C types.
+  XXX TODO In standard mode, 'q' and 'Q' are supported on all platforms, and
+  XXX TODO are 8-byte integral types.
+
 Tests
 
 - New test_mutants.py runs dict comparisons where the key and value
