@@ -46,7 +46,6 @@ class ListViewer:
                                             outline='',
                                             tags=(exactcolor,))
             canvas.bind('<ButtonRelease>', self.__onrelease)
-            canvas.bind('<Motion>', self.__onmotion)
             bboxes.append(boxid)
             if textend+3 > widest:
                 widest = textend+3
@@ -56,16 +55,8 @@ class ListViewer:
         for box in bboxes:
             x1, y1, x2, y2 = canvas.coords(box)
             canvas.coords(box, x1, y1, widest, y2)
-        #
-        # Update while dragging?
-        #
-        self.__uwd = BooleanVar()
-        self.__uwdbtn = Checkbutton(root,
-                                    text='Update while dragging',
-                                    variable=self.__uwd)
-        self.__uwdbtn.pack()
 
-    def __onmotion(self, event=None):
+    def __onrelease(self, event=None):
         canvas = self.__canvas
         # find the current box
         x = canvas.canvasx(event.x)
@@ -77,30 +68,15 @@ class ListViewer:
         else:
 ##            print 'No box found!'
             return
-        if self.__uwd.get():
-            self.__onrelease(event)
+        tags = self.__canvas.gettags(boxid)
+        for t in tags:
+            if t[0] == '#':
+                break
         else:
-            self.__selectbox(boxid)
-
-    def __selectbox(self, boxid):
-        canvas = self.__canvas
-        # turn off the last box
-        if self.__lastbox:
-            canvas.itemconfigure(self.__lastbox, outline='')
-        self.__lastbox = boxid
-        canvas.itemconfigure(boxid, outline='black')
-
-    def __onrelease(self, event=None):
-        if self.__lastbox:
-            tags = self.__canvas.gettags(self.__lastbox)
-            for t in tags:
-                if t[0] == '#':
-                    break
-            else:
-##                print 'No color tag found!'
-                return
-            red, green, blue = ColorDB.rrggbb_to_triplet(t)
-            self.__sb.update_views(red, green, blue)
+##            print 'No color tag found!'
+            return
+        red, green, blue = ColorDB.rrggbb_to_triplet(t)
+        self.__sb.update_views(red, green, blue)
 
     def __quit(self, event=None):
         sys.exit(0)
@@ -112,5 +88,11 @@ class ListViewer:
         self.__root.deiconify()
 
     def update_yourself(self, red, green, blue):
-        colorname = ColorDB.triplet_to_rrggbb((red, green, blue))
-        self.__selectbox(colorname)
+        canvas = self.__canvas
+        # turn off the last box
+        if self.__lastbox:
+            canvas.itemconfigure(self.__lastbox, outline='')
+        # turn on the current box
+        colortag = ColorDB.triplet_to_rrggbb((red, green, blue))
+        canvas.itemconfigure(colortag, outline='black')
+        self.__lastbox = colortag
