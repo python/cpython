@@ -449,11 +449,11 @@ class CCompiler:
         pass
 
 
-    def link_static_lib (self,
-                         objects,
-                         output_libname,
-                         output_dir=None,
-                         debug=0):
+    def create_static_lib (self,
+                           objects,
+                           output_libname,
+                           output_dir=None,
+                           debug=0):
         """Link a bunch of stuff together to create a static library
            file.  The "bunch of stuff" consists of the list of object
            files supplied as 'objects', the extra object files supplied
@@ -484,10 +484,11 @@ class CCompiler:
                          extra_preargs=None,
                          extra_postargs=None):
         """Link a bunch of stuff together to create a shared library
-           file.  Has the same effect as 'link_static_lib()' except
-           that the filename inferred from 'output_libname' will most
-           likely be different, and the type of file generated will
-           almost certainly be different
+           file.  Similar semantics to 'create_static_lib()', with the
+           addition of other libraries to link against and directories to
+           search for them.  Also, of course, the type and name of
+           the generated file will almost certainly be different, as will
+           the program used to create it.
 
            'libraries' is a list of libraries to link against.  These are
            library names, not filenames, since they're translated into
@@ -503,9 +504,9 @@ class CCompiler:
            default and those supplied to 'add_library_dir()' and/or
            'set_library_dirs()'.
 
-           'debug' is as for 'compile()' and 'link_static_lib()', with the
+           'debug' is as for 'compile()' and 'create_static_lib()', with the
            slight distinction that it actually matters on most platforms
-           (as opposed to 'link_static_lib()', which includes a 'debug'
+           (as opposed to 'create_static_lib()', which includes a 'debug'
            flag mostly for form's sake).
 
            'extra_preargs' and 'extra_postargs' are as for 'compile()'
@@ -543,7 +544,7 @@ class CCompiler:
                          extra_preargs=None,
                          extra_postargs=None):
         """Link a bunch of stuff together to create a binary executable
-           file.  The "bunch of stuff" is as for 'link_static_lib()'.
+           file.  The "bunch of stuff" is as for 'link_shared_lib()'.
            'output_progname' should be the base name of the executable
            program--e.g. on Unix the same as the output filename, but
            on DOS/Windows ".exe" will be appended."""

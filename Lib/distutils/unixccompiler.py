@@ -140,11 +140,11 @@ class UnixCCompiler (CCompiler):
     # compile ()
     
 
-    def link_static_lib (self,
-                         objects,
-                         output_libname,
-                         output_dir=None,
-                         debug=0):
+    def create_static_lib (self,
+                           objects,
+                           output_libname,
+                           output_dir=None,
+                           debug=0):
 
         (objects, output_dir) = self._fix_link_args (objects, output_dir, takes_libs=0)
 
@@ -160,7 +160,7 @@ class UnixCCompiler (CCompiler):
         else:
             self.announce ("skipping %s (up-to-date)" % output_filename)
 
-    # link_static_lib ()
+    # create_static_lib ()
 
 
     def link_shared_lib (self,
