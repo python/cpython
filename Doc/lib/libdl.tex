@@ -8,7 +8,7 @@
 The \module{dl} module defines an interface to the
 \cfunction{dlopen()} function, which is the most common interface on
 \UNIX{} platforms for handling dynamically linked libraries. It allows
-the program to call arbitary functions in such a library.
+the program to call arbitrary functions in such a library.
 
 \strong{Note:} This module will not work unless
 \begin{verbatim}
@@ -23,7 +23,7 @@ The \module{dl} module defines the following function:
 Open a shared object file, and return a handle. Mode
 signifies late binding (\constant{RTLD_LAZY}) or immediate binding
 (\constant{RTLD_NOW}). Default is \constant{RTLD_LAZY}. Note that some
-sytems do not support \constant{RTLD_NOW}.
+systems do not support \constant{RTLD_NOW}.
 
 Return value is a \pytype{dlobject}.
 \end{funcdesc}
@@ -44,7 +44,7 @@ determine if the system supports immediate binding.
 The \module{dl} module defines the following exception:
 
 \begin{excdesc}{error}
-Exception raised when an error has occured inside the dynamic loading
+Exception raised when an error has occurred inside the dynamic loading
 and linking routines.
 \end{excdesc}
 

@@ -5,7 +5,7 @@
 \modulesynopsis{Convert Python objects to streams of bytes and back.}
 % Substantial improvements by Jim Kerr <jbkerr@sr.hp.com>.
 
-\index{persistency}
+\index{persistence}
 \indexii{persistent}{objects}
 \indexii{serializing}{objects}
 \indexii{marshalling}{objects}
@@ -17,7 +17,7 @@ The \module{pickle} module implements a basic but powerful algorithm
 for ``pickling'' (a.k.a.\ serializing, marshalling or flattening)
 nearly arbitrary Python objects.  This is the act of converting
 objects to a stream of bytes (and back: ``unpickling'').  This is a
-more primitive notion than persistency --- although \module{pickle}
+more primitive notion than persistence --- although \module{pickle}
 reads and writes file objects, it does not handle the issue of naming
 persistent objects, nor the (even more complicated) area of concurrent
 access to persistent objects.  The \module{pickle} module can
@@ -92,7 +92,7 @@ great need for it right now (as long as \refmodule{marshal} continues
 to be used for reading and writing code objects), and at least this
 avoids the possibility of smuggling Trojan horses into a program.
 
-For the benefit of persistency modules written using \module{pickle}, it
+For the benefit of persistence modules written using \module{pickle}, it
 supports the notion of a reference to an object outside the pickled
 data stream.  Such objects are referenced by a name, which is an
 arbitrary string of printable \ASCII{} characters.  The resolution of
@@ -250,7 +250,7 @@ Apart from the \class{Pickler} and \class{Unpickler} classes, the
 module defines the following functions, and an exception:
 
 \begin{funcdesc}{dump}{object, file\optional{, bin}}
-Write a pickled representation of \var{obect} to the open file object
+Write a pickled representation of \var{object} to the open file object
 \var{file}.  This is equivalent to
 \samp{Pickler(\var{file}, \var{bin}).dump(\var{object})}.
 If the optional \var{bin} argument is present and nonzero, the binary
@@ -380,7 +380,7 @@ cannot be subclassed.  This should not be an issue in most cases.
 
 The format of the pickle data is identical to that produced using the
 \refmodule{pickle} module, so it is possible to use \refmodule{pickle} and
-\module{cPickle} interchangably with existing pickles.
+\module{cPickle} interchangeably with existing pickles.
 
 (Since the pickle data format is actually a tiny stack-oriented
 programming language, and there are some freedoms in the encodings of

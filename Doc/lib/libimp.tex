@@ -52,7 +52,7 @@ returned by \function{get_suffixes()} describing the kind of module found.
 If the module does not live in a file, the returned \var{file} is
 \code{None}, \var{filename} is the empty string, and the
 \var{description} tuple contains empty strings for its suffix and
-mode; the module type is as indicate in parentheses dabove.  If the
+mode; the module type is as indicate in parentheses above.  If the
 search is unsuccessful, \exception{ImportError} is raised.  Other
 exceptions indicate problems with the arguments or environment.
 
@@ -187,7 +187,7 @@ don't like that and may raise an exception.  The \var{pathname}
 argument must point to the shared library.  The \var{name} argument is
 used to construct the name of the initialization function: an external
 C function called \samp{init\var{name}()} in the shared library is
-called.  The optional \var{file} argment is ignored.  (Note: using
+called.  The optional \var{file} argument is ignored.  (Note: using
 shared libraries is highly system dependent, and not all systems
 support it.)
 \end{funcdesc}

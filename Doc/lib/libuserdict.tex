@@ -8,11 +8,11 @@ This module defines a class that acts as a wrapper around
 dictionary objects.  It is a useful base class for
 your own dictionary-like classes, which can inherit from
 them and override existing methods or add new ones.  In this way one
-can add new behaviours to dictionaries.
+can add new behaviors to dictionaries.
 
 The \module{UserDict} module defines the \class{UserDict} class:
 
-\begin{classdesc}{UserDict}{\optional{intialdata}}
+\begin{classdesc}{UserDict}{\optional{initialdata}}
 Return a class instance that simulates a dictionary.  The instance's
 contents are kept in a regular dictionary, which is accessible via the
 \member{data} attribute of \class{UserDict} instances.  If
@@ -42,7 +42,7 @@ This module defines a class that acts as a wrapper around
 list objects.  It is a useful base class for
 your own list-like classes, which can inherit from
 them and override existing methods or add new ones.  In this way one
-can add new behaviours to lists.
+can add new behaviors to lists.
 
 The \module{UserList} module defines the \class{UserList} class:
 
@@ -77,7 +77,7 @@ This module defines a class that acts as a wrapper around
 string objects.  It is a useful base class for
 your own string-like classes, which can inherit from
 them and override existing methods or add new ones.  In this way one
-can add new behaviours to strings.
+can add new behaviors to strings.
 
 The \module{UserString} module defines the \class{UserString} class:
 
@@ -109,5 +109,5 @@ keys.  The main intention of this class is to serve as an educational
 example for inheritance and necessity to remove (override) the
 \function{__hash__} method in order to trap attempts to use a
 mutable object as dictionary key, which would be otherwise very
-errorprone and hard to track down.
+error prone and hard to track down.
 \end{classdesc}

@@ -6,7 +6,7 @@
 
 
 
-This module supports two interface definitions, each with mulitple
+This module supports two interface definitions, each with multiple
 implementations.  The \emph{formatter} interface is used by the
 \class{HTMLParser} class of the \refmodule{htmllib} module, and the
 \emph{writer} interface is required by the formatter interface.
@@ -75,8 +75,8 @@ not broken.  The arguments and keywords are passed on to the writer's
 \end{methoddesc}
 
 \begin{methoddesc}[formatter]{add_flowing_data}{data}
-Provide data which should be formatted with collapsed whitespaces.
-Whitespace from preceeding and successive calls to
+Provide data which should be formatted with collapsed whitespace.
+Whitespace from preceding and successive calls to
 \method{add_flowing_data()} is considered as well when the whitespace
 collapse is performed.  The data which is passed to this method is
 expected to be word-wrapped by the output device.  Note that any
@@ -106,7 +106,7 @@ value, are used to compute label values.  Each character in the format
 string is copied to the label value, with some characters recognized
 to indicate a transform on the counter value.  Specifically, the
 character \character{1} represents the counter value formatter as an
-arabic number, the characters \character{A} and \character{a}
+Arabic number, the characters \character{A} and \character{a}
 represent alphabetic representations of the counter value in upper and
 lower case, respectively, and \character{I} and \character{i}
 represent the counter value in Roman numerals, in upper and lower
@@ -264,7 +264,7 @@ Break the current line.
 
 \begin{methoddesc}[writer]{send_paragraph}{blankline}
 Produce a paragraph separation of at least \var{blankline} blank
-lines, or the equivelent.  The \var{blankline} value will be an
+lines, or the equivalent.  The \var{blankline} value will be an
 integer.  Note that the implementation will receive a call to
 \method{send_line_break()} before this call if a line break is needed; 
 this method should not include ending the last line of the paragraph.

@@ -19,7 +19,7 @@ The \module{nis} module defines the following functions:
 Return the match for \var{key} in map \var{mapname}, or raise an
 error (\exception{nis.error}) if there is none.
 Both should be strings, \var{key} is 8-bit clean.
-Return value is an arbitary array of bytes (i.e., may contain \code{NULL}
+Return value is an arbitrary array of bytes (i.e., may contain \code{NULL}
 and other joys).
 
 Note that \var{mapname} is first checked if it is an alias to another name.
@@ -28,7 +28,7 @@ Note that \var{mapname} is first checked if it is an alias to another name.
 \begin{funcdesc}{cat}{mapname}
 Return a dictionary mapping \var{key} to \var{value} such that
 \code{match(\var{key}, \var{mapname})==\var{value}}.
-Note that both keys and values of the dictionary are arbitary
+Note that both keys and values of the dictionary are arbitrary
 arrays of bytes.
 
 Note that \var{mapname} is first checked if it is an alias to another name.

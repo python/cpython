@@ -56,7 +56,7 @@ only the main thread can set a new signal handler, and the main thread
 will be the only one to receive signals (this is enforced by the
 Python \module{signal} module, even if the underlying thread
 implementation supports sending signals to individual threads).  This
-means that signals can't be used as a means of interthread
+means that signals can't be used as a means of inter-thread
 communication.  Use locks instead.
 
 \end{itemize}

@@ -1,5 +1,5 @@
 \section{\module{curses} ---
-         Terminal independant console handling}
+         Terminal independent console handling}
 
 \declaremodule{extension}{curses}
 \sectionauthor{Moshe Zadka}{mzadka@geocities.com}
@@ -243,7 +243,7 @@ allow only 7-bit chars.
 \end{funcdesc}
 
 \begin{funcdesc}{mouseinterval}{interval}
-Sets the maximum time in millisecondsthat can elapse between press and
+Sets the maximum time in milliseconds that can elapse between press and
 release events in order for them to be recognized as a click, and
 returns the previous interval value.  The default value is 200 msec,
 or one fifth of a second.
@@ -846,7 +846,7 @@ the window.
 \end{methoddesc}
 
 \begin{methoddesc}{timeout}{delay}
-Sets blocking or non-blocking read behaviour for the window.  If
+Sets blocking or non-blocking read behavior for the window.  If
 \var{delay} is negative, blocking read is used, which will wait
 indefinitely for input).  If \var{delay} is zero, then non-blocking
 read is used, and -1 will be returned by \method{getch()} if no input
