@@ -726,6 +726,9 @@ PySequence_SetSlice:int:i1::
 PySequence_SetSlice:int:i2::
 PySequence_SetSlice:PyObject*:v:+1:
 
+PySequence_List:PyObject*::+1:
+PySequence_List:PyObject*:o:0:
+
 PySequence_Tuple:PyObject*::+1:
 PySequence_Tuple:PyObject*:o:0:
 
