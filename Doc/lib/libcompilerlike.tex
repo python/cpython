@@ -31,7 +31,7 @@ simply passed as the first argument to the transformation function.
 Typically it is a string that names the filter and is used in
 generating error messages, but it could be arbitrary data.
 
-The second argument, is interpreted as a list of filenames.  The files
+The second argument is interpreted as a list of filenames.  The files
 are transformed in left to right order in the list. A filename
 consisting of a dash is interpreted as a directive to read from
 standard input (this can be useful in pipelines).
@@ -59,27 +59,27 @@ translation of that file has completed.  Any tempfiles are removed
 automatically on any exception thrown by the translation function,
 and the exception is then passed upwards.
 
-\begin{funcdesc}{filefilter}{name, arguments, trans_data\optional{,trans_file}}
-Filter using a function taking the name and two file-object
+\begin{funcdesc}{filefilter}{name, file, arguments, trans_data\optional{,trans_file}}
+Filter using a function taking the name, filename, and two file-object
 arguments. The function is expected to read data from the input file
 object, transform it, and write the data to the output file object.
 When the function terminates, the translation is done.  The return
 value of the transformation function is not used.
 \end{funcdesc}
 
-\begin{funcdesc}{linefilter}{name,arguments,trans_data\optional{,trans_file}}
-Filter using a function taking the name and a string argument.  The return
-value of the function should be a string.  This function is applied to
-each line in the input file in turn; the return values become the
-lines of the transformed file.
+\begin{funcdesc}{linefilter}{name, file, arguments,trans_data\optional{,trans_file}}
+Filter using a function taking the name, the filename, and a string
+argument.  The return value of the function should be a string.  This
+function is applied to each line in the input file in turn; the return
+values become the lines of the transformed file.
 \end{funcdesc}
 
-\begin{funcdesc}{sponge}{name, arguments, trans_data\optional{, trans_file}}
-Filter using a function taking the name and a string argument.  The
-return value of the function should be a string. The function will be
-passed the entire contents of the input file as a string.  The string
-return value of the function will become the entire contents of the
-transformed file.
+\begin{funcdesc}{sponge}{name, file, arguments, trans_data\optional{, trans_file}}
+Filter using a function taking the name, the filename, and a string
+argument.  The return value of the function should be a string. The
+function will be passed the entire contents of the input file as a
+string.  The string return value of the function will become the
+entire contents of the transformed file.
 \end{funcdesc}
 
 # End

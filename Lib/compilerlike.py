@@ -7,12 +7,23 @@ behaves as a filter when no argument files are specified on the command
 line, but otherwise transforms each file individually into a corresponding
 output file.
 
-This module provides framework and glue code to make such programs easy
-to write.  You supply a function to massage the file data; depending
-on which entry point you use, it can take input and output file pointers,
-or it can take a string consisting of the entire file's data and return
-a replacement, or it can take in succession strings consisting of each
-of the file's lines and return a translated line for each.
+This module provides framework and glue code to make such programs
+easy to write.  You supply a function to massage the file data.  It
+always takes initial name and filename arguments; depending on which
+entry point you use, it can also take input and output file pointers,
+or it can take a string consisting of the entire file's data and
+return a replacement, or it can take in succession strings consisting
+of each of the file's lines and return a translated line for each.
+
+The fourth, optional argument of each entry point is a name
+transformation function or name suffix string.  If it is of string
+type, the shortest suffix of each filename beginning with the first
+character of the argument string is stripped off.  If the first
+character of the argument does not occur in the filename, no suffix is
+removed.  Then the name suffix argument is concatenated to the end of
+the stripped filename.  (Thus, a name suffix argument of ".x" will
+cause the filenames foo.c and bar.d to be transformed to foo.x and
+bar.x respectively.)
 
 Argument files are transformed in left to right order in the argument list.
 A filename consisting of a dash is interpreted as a directive to read from
@@ -25,14 +36,12 @@ and the exception is then passed upwards.
 """
 
 # Requires Python 2.
-from __future__ import nested_scopes
-
 import sys, os, filecmp, traceback
 
 def filefilter(name, arguments, trans_data, trans_filename=None):
     "Filter stdin to stdout, or file arguments to renamed files."
     if not arguments:
-        trans_data("stdin", sys.stdin, sys.stdout)
+        trans_data(name, "stdin", sys.stdin, sys.stdout)
     else:
         for file in arguments:
             if file == '-':		# - is conventional for stdin
@@ -43,7 +52,7 @@ def filefilter(name, arguments, trans_data, trans_filename=None):
             tempfile = file + ".~%s-%d~" % (name, os.getpid())
             outfp = open(tempfile, "w")
             try:
-                trans_data(file, infp, outfp)
+                trans_data(name, file, infp, outfp)
             except:
                 os.remove(tempfile)
                 # Pass the exception upwards
@@ -62,26 +71,26 @@ def filefilter(name, arguments, trans_data, trans_filename=None):
                 else:
                     os.rename(tempfile, trans_filename(file))
 
-def line_by_line(name, infp, outfp, translate_line):
+def line_by_line(name, file, infp, outfp, translate_line):
     "Hook to do line-by-line translation for filters."
     while 1:
         line = infp.readline()
         if line == "":
             break
         elif line:	# None returns are skipped
-            outfp.write(translate_line(name, line))
+            outfp.write(translate_line(name, file, line))
 
 def linefilter(name, arguments, trans_data, trans_filename=None):
     "Filter framework for line-by-line transformation."
     return filefilter(name,
                   arguments,
-                  lambda name, infp, outfp: line_by_line(name, infp, outfp, trans_data),
+                  lambda name, file, infp, outfp: line_by_line(name, file, infp, outfp, trans_data),
                   trans_filename)
 
 def sponge(name, arguments, trans_data, trans_filename=None):
     "Read input sources entire and transform them in memory."
     if not arguments:
-        sys.stdout.write(trans_data(name, sys.stdin.read()))
+        sys.stdout.write(trans_data(name, "stdin", sys.stdin.read()))
     else:
         for file in arguments:
             infp = open(file)
@@ -94,7 +103,7 @@ def sponge(name, arguments, trans_data, trans_filename=None):
                 sys.stderr.write("%s: can't open tempfile" % name)
                 return 1
             try:
-                outdoc = trans_data(name, indoc)
+                outdoc = trans_data(name, file, indoc)
             except:
                 os.remove(tempfile)
                 # Pass the exception upwards
@@ -120,7 +129,7 @@ if __name__ == '__main__':
     def nametrans(name):
         return name + ".out"
 
-    def filefilter_test(name, infp, outfp):
+    def filefilter_test(name, file, infp, outfp):
         "Test hook for filefilter entry point -- put dashes before blank lines."
         while 1:
             line = infp.readline()
@@ -130,11 +139,11 @@ if __name__ == '__main__':
                 outfp.write("------------------------------------------\n")
             outfp.write(line)
 
-    def linefilter_test(name, data):
+    def linefilter_test(name, file, data):
         "Test hook for linefilter entry point -- wrap lines in brackets."
         return "<" + data[:-1] + ">\n"
 
-    def sponge_test(name, data):
+    def sponge_test(name, file, data):
         "Test hook for the sponge entry point -- reverse file lines."
         lines = data.split("\n")
         lines.reverse()
