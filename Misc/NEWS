@@ -24,6 +24,8 @@ Library
 Tools/Demos
 -----------
 
+- SF bug 753592: webchecker/wsgui now handles user supplied directories.
+
 Build
 -----
 
