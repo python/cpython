@@ -565,6 +565,7 @@ static struct PyMethodDef regex_global_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
+void
 initregex()
 {
 	PyObject *m, *d, *v;
