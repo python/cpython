@@ -1156,10 +1156,10 @@ def do_datadesc(length, buf, pp, i):
 	command = 'defcv'
 	cat_class = 'data'
 	class_class = string.join(idxsi[2:])
-
-    if not command:
-	return length, i
-	#raise error, 'don\'t know what to do with indexsubitem ' + `idxsi` *)
+    else:
+	command = 'defcv'
+	cat_class = 'data'
+	class_class = string.join(idxsi)
 
     ch.chtype = chunk_type[CSLINE]
     ch.data = command
