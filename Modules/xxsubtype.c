@@ -1,7 +1,11 @@
 #include "Python.h"
 #include "structmember.h"
 
-/* Examples showing how to subtype the builtin list and dict types from C. */
+static char xxsubtype__doc__[] =
+"xxsubtype is an example module showing how to subtype builtin types from C.\n"
+"test_descr.py in the standard test suite requires it in order to complete.\n"
+"If you don't care about the examples, and don't intend to run the Python\n"
+"test suite, you can recompile Python without Modules/xxsubtype.c.";
 
 /* spamlist -- a list subtype */
 
@@ -227,7 +231,9 @@ initxxsubtype(void)
 {
 	PyObject *m, *d;
 
-	m = Py_InitModule("xxsubtype", xxsubtype_functions);
+	m = Py_InitModule3("xxsubtype",
+			   xxsubtype_functions,
+			   xxsubtype__doc__);
 	if (m == NULL)
 		return;
 
