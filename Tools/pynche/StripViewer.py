@@ -170,7 +170,7 @@ class StripWidget(Pmw.MegaWidget):
 	assert self.__axis in (0, 1, 2)
 	self.initialiseoptions(StripWidget)
 	self.__delegate = self['delegate']
-	self.__update_while_dragging = 1
+	self.__update_while_dragging = 0
 
     def __set_color(self):
 	rgbtuple = self['color']
