@@ -310,15 +310,23 @@ PyMac_HandleEvent(evp)
 {
 			
 #ifdef __MWERKS__
-	/* If SIOUX wants it we're done */
-	(void)SIOUXHandleOneEvent(evp);
+	{
+		int siouxdidit;
+
+		/* If SIOUX wants it we're done */
+		siouxdidit = SIOUXHandleOneEvent(evp);
+		if ( siouxdidit )
+			return;
+	}
 #else
 	/* Other compilers are just unlucky: we only weed out clicks in other applications */
 	if ( evp->what == mouseDown ) {
 		WindowPtr wp;
 		
-		if ( FindWindow(evp->where, &wp) == inSysWindow )
+		if ( FindWindow(evp->where, &wp) == inSysWindow ) {
 			SystemClick(evp, wp);
+			return;
+		}
 	}
 #endif /* !__MWERKS__ */
 }
