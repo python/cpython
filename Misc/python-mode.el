@@ -524,6 +524,7 @@ Currently-active file is at the head of the list.")
   (define-key py-mode-map "\C-c\C-u"  'py-goto-block-up)
   (define-key py-mode-map "\C-c#"     'py-comment-region)
   (define-key py-mode-map "\C-c?"     'py-describe-mode)
+  (define-key py-mode-map [f1]        'py-help-at-point)
   (define-key py-mode-map "\C-c\C-h"  'py-help-at-point)
   (define-key py-mode-map "\e\C-a"    'py-beginning-of-def-or-class)
   (define-key py-mode-map "\e\C-e"    'py-end-of-def-or-class)
@@ -2687,10 +2688,13 @@ A `nomenclature' is a fancy way of saying AWordWithMixedCaseNotUnderscores."
         (setq cmd (concat "import " base "\n")))
     (setq cmd (concat "import pydoc\n"
                       cmd
-		      "try: pydoc.help(" sym ")\n"
+		      "try: pydoc.help('" sym "')\n"
 		      "except: print 'No help available on:', \"" sym "\""))
     (message cmd)
-    (py-execute-string cmd)))
+    (py-execute-string cmd)
+    (set-buffer "*Python Output*")
+    ;; BAW: Should we really be leaving the output buffer in help-mode?
+    (help-mode)))
 
 
 
