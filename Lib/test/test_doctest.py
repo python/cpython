@@ -387,12 +387,13 @@ will only be generated for it once:
 
 Filter Functions
 ~~~~~~~~~~~~~~~~
-Two filter functions can be used to restrict which objects get
-examined: a name-based filter and an object-based filter.
+A filter function can be used to restrict which objects get examined,
+but this is temporary, undocumented internal support for testmod's
+deprecated isprivate gimmick.
 
     >>> def namefilter(prefix, base):
     ...     return base.startswith('a_')
-    >>> tests = doctest.DocTestFinder(namefilter=namefilter).find(SampleClass)
+    >>> tests = doctest.DocTestFinder(_namefilter=namefilter).find(SampleClass)
     >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
@@ -400,20 +401,6 @@ examined: a name-based filter and an object-based filter.
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
-     1  SampleClass.double
-     1  SampleClass.get
-
-    >>> def objfilter(obj):
-    ...     return isinstance(obj, (staticmethod, classmethod))
-    >>> tests = doctest.DocTestFinder(objfilter=objfilter).find(SampleClass)
-    >>> tests.sort()
-    >>> for t in tests:
-    ...     print '%2s  %s' % (len(t.examples), t.name)
-     1  SampleClass
-     3  SampleClass.NestedClass
-     1  SampleClass.NestedClass.__init__
-     1  SampleClass.__init__
-     1  SampleClass.a_property
      1  SampleClass.double
      1  SampleClass.get
 
@@ -422,7 +409,7 @@ contains will be added either:
 
     >>> def namefilter(prefix, base):
     ...     return base == 'NestedClass'
-    >>> tests = doctest.DocTestFinder(namefilter=namefilter).find(SampleClass)
+    >>> tests = doctest.DocTestFinder(_namefilter=namefilter).find(SampleClass)
     >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
@@ -434,12 +421,12 @@ contains will be added either:
      1  SampleClass.double
      1  SampleClass.get
 
-The filter functions apply to contained objects, and *not* to the
+The filter function apply to contained objects, and *not* to the
 object explicitly passed to DocTestFinder:
 
     >>> def namefilter(prefix, base):
     ...     return base == 'SampleClass'
-    >>> tests = doctest.DocTestFinder(namefilter=namefilter).find(SampleClass)
+    >>> tests = doctest.DocTestFinder(_namefilter=namefilter).find(SampleClass)
     >>> len(tests)
     9
 
@@ -1066,7 +1053,7 @@ def test_DocTestSuite():
        poorly conceived, and will go away someday.
 
          >>> finder = doctest.DocTestFinder(
-         ...    namefilter=lambda prefix, base: base!='bar')
+         ...    _namefilter=lambda prefix, base: base!='bar')
          >>> suite = doctest.DocTestSuite('test.sample_doctest',
          ...                              test_finder=finder)
          >>> suite.run(unittest.TestResult())

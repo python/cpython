@@ -307,6 +307,7 @@ import __future__
 
 import sys, traceback, inspect, linecache, os, re, types
 import unittest, difflib, tempfile
+import warnings
 from StringIO import StringIO
 
 # Option constants.
@@ -778,25 +779,10 @@ class DocTestFinder:
     objects.  Doctests can currently be extracted from the following
     object types: modules, functions, classes, methods, staticmethods,
     classmethods, and properties.
-
-    An optional name filter and an optional object filter may be
-    passed to the constructor, to restrict which contained objects are
-    examined by the doctest finder:
-
-      - The name filter is a function `f(prefix, base)`, that returns
-        true if an object named `prefix.base` should be ignored.
-      - The object filter is a function `f(obj)` that returns true
-        if the given object should be ignored.
-
-    Each object is ignored if either filter function returns true for
-    that object.  These filter functions are applied when examining
-    the contents of a module or of a class, but not when examining a
-    module's `__test__` dictionary.  By default, no objects are
-    ignored.
     """
 
     def __init__(self, verbose=False, doctest_factory=DocTest,
-                 namefilter=None, objfilter=None, recurse=True):
+                 recurse=True, _namefilter=None):
         """
         Create a new doctest finder.
 
@@ -811,9 +797,10 @@ class DocTestFinder:
         """
         self._doctest_factory = doctest_factory
         self._verbose = verbose
-        self._namefilter = namefilter
-        self._objfilter = objfilter
         self._recurse = recurse
+        # _namefilter is undocumented, and exists only for temporary backward-
+        # compatibility support of testmod's deprecated isprivate mess.
+        self._namefilter = _namefilter
 
     def find(self, obj, name=None, module=None, globs=None,
              extraglobs=None, ignore_imports=True):
@@ -894,10 +881,8 @@ class DocTestFinder:
         """
         Return true if the given object should not be examined.
         """
-        return ((self._namefilter is not None and
-                 self._namefilter(prefix, base)) or
-                (self._objfilter is not None and
-                 self._objfilter(obj)))
+        return (self._namefilter is not None and
+                self._namefilter(prefix, base))
 
     def _from_module(self, module, object):
         """
@@ -1744,12 +1729,6 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
     Optional keyword arg "verbose" prints lots of stuff if true, prints
     only failures if false; by default, it's true iff "-v" is in sys.argv.
 
-    Optional keyword arg "isprivate" specifies a function used to
-    determine whether a name is private.  The default function is
-    treat all functions as public.  Optionally, "isprivate" can be
-    set to doctest.is_private to skip over functions marked as private
-    using the underscore naming convention; see its docs for details.
-
     Optional keyword arg "report" prints a summary at the end when true,
     else prints nothing at the end.  In verbose mode, the summary is
     detailed, else very brief (in fact, empty if all tests passed).
@@ -1796,6 +1775,12 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
     first unexpected exception or failure. This allows failures to be
     post-mortem debugged.
 
+    Deprecated in Python 2.4:
+    Optional keyword arg "isprivate" specifies a function used to
+    determine whether a name is private.  The default function is
+    treat all functions as public.  Optionally, "isprivate" can be
+    set to doctest.is_private to skip over functions marked as private
+    using the underscore naming convention; see its docs for details.
     """
 
     """ [XX] This is no longer true:
@@ -1807,6 +1792,11 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
     displaying a summary.  Invoke doctest.master.summarize(verbose)
     when you're done fiddling.
     """
+    if isprivate is not None:
+        warnings.warn("the isprivate argument is deprecated; "
+                      "examine DocTestFinder.find() lists instead",
+                      DeprecationWarning)
+
     # If no module was given, then use __main__.
     if m is None:
         # DWA - m will still be None if this wasn't invoked from the command
@@ -1823,7 +1813,7 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
         name = m.__name__
 
     # Find, parse, and run all tests in the given module.
-    finder = DocTestFinder(namefilter=isprivate)
+    finder = DocTestFinder(_namefilter=isprivate)
 
     if raise_on_error:
         runner = DebugRunner(verbose=verbose, optionflags=optionflags)
@@ -1882,7 +1872,7 @@ class Tester:
         self.verbose = verbose
         self.isprivate = isprivate
         self.optionflags = optionflags
-        self.testfinder = DocTestFinder(namefilter=isprivate)
+        self.testfinder = DocTestFinder(_namefilter=isprivate)
         self.testrunner = DocTestRunner(verbose=verbose,
                                         optionflags=optionflags)
 
@@ -2494,17 +2484,11 @@ def test4(): """
 
         Tests that objects outside m1 are excluded:
 
-        >>> t = Tester(globs={}, verbose=0, isprivate=is_private)
-        >>> t.rundict(m1.__dict__, "rundict_test", m1)  # _f, f2 and g2 and h2 skipped
-        (0, 3)
-
-        Again, but with the default isprivate function allowing _f:
-
         >>> t = Tester(globs={}, verbose=0)
-        >>> t.rundict(m1.__dict__, "rundict_test_pvt", m1)  # Only f2, g2 and h2 skipped
+        >>> t.rundict(m1.__dict__, "rundict_test", m1)  # f2 and g2 and h2 skipped
         (0, 4)
 
-        And once more, not excluding stuff outside m1:
+        Once more, not excluding stuff outside m1:
 
         >>> t = Tester(globs={}, verbose=0)
         >>> t.rundict(m1.__dict__, "rundict_test_pvt")  # None are skipped.
@@ -2513,8 +2497,8 @@ def test4(): """
         The exclusion of objects from outside the designated module is
         meant to be invoked automagically by testmod.
 
-        >>> testmod(m1, isprivate=is_private, verbose=False)
-        (0, 3)
+        >>> testmod(m1, verbose=False)
+        (0, 4)
 """
 
 def _test():
