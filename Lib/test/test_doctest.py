@@ -467,8 +467,8 @@ functions, classes, and the `__test__` dictionary, if it exists:
      1  some_module.SampleClass.a_staticmethod
      1  some_module.SampleClass.double
      1  some_module.SampleClass.get
-     1  some_module.c
-     2  some_module.d
+     1  some_module.__test__.c
+     2  some_module.__test__.d
      1  some_module.sample_func
 
 Duplicate Removal
