@@ -3351,7 +3351,7 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 #endif
 	
 	/* Guarantee NUL-termination for PyString_FromString() below */
-	memset((void *) &ip[0], '\0', sizeof(ip) + 1);
+	memset((void *) &ip[0], '\0', sizeof(ip));
 
 	if (!PyArg_ParseTuple(args, "is#:inet_ntop", &af, &packed, &len)) {
 		return NULL;
