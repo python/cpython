@@ -10,7 +10,7 @@ from macsupport import *
 HRReference = OpaqueByValueType("HRReference", "HtmlObj")
 
 HRScrollbarState = Type("HRScrollbarState", "h")
-URLSourceType = Type("URLSourceType", "h")
+URLSourceType = Type("URLSourceType", "H")
 GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
 char_ptr = Type("char *", "s")

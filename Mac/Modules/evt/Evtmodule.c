@@ -167,7 +167,7 @@ static PyObject *Evt_SetEventMask(_self, _args)
 {
 	PyObject *_res = NULL;
 	EventMask value;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &value))
 		return NULL;
 	SetEventMask(value);
@@ -184,7 +184,7 @@ static PyObject *Evt_GetNextEvent(_self, _args)
 	Boolean _rv;
 	EventMask eventMask;
 	EventRecord theEvent;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &eventMask))
 		return NULL;
 	_rv = GetNextEvent(eventMask,
@@ -203,7 +203,7 @@ static PyObject *Evt_EventAvail(_self, _args)
 	Boolean _rv;
 	EventMask eventMask;
 	EventRecord theEvent;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &eventMask))
 		return NULL;
 	_rv = EventAvail(eventMask,
@@ -222,7 +222,7 @@ static PyObject *Evt_PostEvent(_self, _args)
 	OSErr _err;
 	EventKind eventNum;
 	UInt32 eventMsg;
-	if (!PyArg_ParseTuple(_args, "hl",
+	if (!PyArg_ParseTuple(_args, "Hl",
 	                      &eventNum,
 	                      &eventMsg))
 		return NULL;
@@ -244,7 +244,7 @@ static PyObject *Evt_OSEventAvail(_self, _args)
 	Boolean _rv;
 	EventMask mask;
 	EventRecord theEvent;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &mask))
 		return NULL;
 	_rv = OSEventAvail(mask,
@@ -266,7 +266,7 @@ static PyObject *Evt_GetOSEvent(_self, _args)
 	Boolean _rv;
 	EventMask mask;
 	EventRecord theEvent;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &mask))
 		return NULL;
 	_rv = GetOSEvent(mask,
@@ -285,7 +285,7 @@ static PyObject *Evt_FlushEvents(_self, _args)
 	PyObject *_res = NULL;
 	EventMask whichMask;
 	EventMask stopMask;
-	if (!PyArg_ParseTuple(_args, "hh",
+	if (!PyArg_ParseTuple(_args, "HH",
 	                      &whichMask,
 	                      &stopMask))
 		return NULL;

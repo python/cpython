@@ -42,8 +42,8 @@ RGBColor = OpaqueType("RGBColor", "QdRGB")
 # KeyMap = ArrayOutputBufferType("KeyMap")
 #MacOSEventKind = Type("MacOSEventKind", "h") # Old-style
 #MacOSEventMask = Type("MacOSEventMask", "h") # Old-style
-#EventMask = Type("EventMask", "h")
-#EventKind = Type("EventKind", "h")
+#EventMask = Type("EventMask", "H")
+#EventKind = Type("EventKind", "H")
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """

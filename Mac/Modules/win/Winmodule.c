@@ -525,7 +525,7 @@ static PyObject *WinObj_GetWindowRegion(_self, _args)
 	OSStatus _err;
 	WindowRegionCode inRegionCode;
 	RgnHandle ioWinRgn;
-	if (!PyArg_ParseTuple(_args, "hO&",
+	if (!PyArg_ParseTuple(_args, "HO&",
 	                      &inRegionCode,
 	                      ResObj_Convert, &ioWinRgn))
 		return NULL;
@@ -1110,7 +1110,7 @@ static PyObject *WinObj_SetWindowBounds(_self, _args)
 	OSStatus _err;
 	WindowRegionCode regionCode;
 	Rect globalBounds;
-	if (!PyArg_ParseTuple(_args, "hO&",
+	if (!PyArg_ParseTuple(_args, "HO&",
 	                      &regionCode,
 	                      PyMac_GetRect, &globalBounds))
 		return NULL;
@@ -1131,7 +1131,7 @@ static PyObject *WinObj_GetWindowBounds(_self, _args)
 	OSStatus _err;
 	WindowRegionCode regionCode;
 	Rect globalBounds;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &regionCode))
 		return NULL;
 	_err = GetWindowBounds(_self->ob_itself,

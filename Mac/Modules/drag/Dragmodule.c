@@ -248,7 +248,7 @@ static PyObject *DragObj_CountDragItems(_self, _args)
 	_err = CountDragItems(_self->ob_itself,
 	                      &numItems);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("h",
+	_res = Py_BuildValue("H",
 	                     numItems);
 	return _res;
 }
@@ -261,7 +261,7 @@ static PyObject *DragObj_GetDragItemReferenceNumber(_self, _args)
 	OSErr _err;
 	UInt16 index;
 	ItemReference theItemRef;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &index))
 		return NULL;
 	_err = GetDragItemReferenceNumber(_self->ob_itself,
@@ -288,7 +288,7 @@ static PyObject *DragObj_CountDragItemFlavors(_self, _args)
 	                            theItemRef,
 	                            &numFlavors);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("h",
+	_res = Py_BuildValue("H",
 	                     numFlavors);
 	return _res;
 }
@@ -302,7 +302,7 @@ static PyObject *DragObj_GetFlavorType(_self, _args)
 	ItemReference theItemRef;
 	UInt16 index;
 	FlavorType theType;
-	if (!PyArg_ParseTuple(_args, "lh",
+	if (!PyArg_ParseTuple(_args, "lH",
 	                      &theItemRef,
 	                      &index))
 		return NULL;

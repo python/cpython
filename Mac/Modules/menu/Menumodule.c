@@ -149,7 +149,7 @@ static PyObject *MenuObj_GetMenuFont(_self, _args)
 	                   &outFontID,
 	                   &outFontSize);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("hh",
+	_res = Py_BuildValue("hH",
 	                     outFontID,
 	                     outFontSize);
 	return _res;
@@ -163,7 +163,7 @@ static PyObject *MenuObj_SetMenuFont(_self, _args)
 	OSStatus _err;
 	SInt16 inFontID;
 	UInt16 inFontSize;
-	if (!PyArg_ParseTuple(_args, "hh",
+	if (!PyArg_ParseTuple(_args, "hH",
 	                      &inFontID,
 	                      &inFontSize))
 		return NULL;
@@ -361,7 +361,7 @@ static PyObject *MenuObj_InsertMenuItemText(_self, _args)
 	OSStatus _err;
 	Str255 inString;
 	UInt16 afterItem;
-	if (!PyArg_ParseTuple(_args, "O&h",
+	if (!PyArg_ParseTuple(_args, "O&H",
 	                      PyMac_GetStr255, inString,
 	                      &afterItem))
 		return NULL;
@@ -1045,7 +1045,7 @@ static PyObject *MenuObj_MacEnableMenuItem(_self, _args)
 {
 	PyObject *_res = NULL;
 	UInt16 item;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &item))
 		return NULL;
 	MacEnableMenuItem(_self->ob_itself,
@@ -1061,7 +1061,7 @@ static PyObject *MenuObj_DisableMenuItem(_self, _args)
 {
 	PyObject *_res = NULL;
 	UInt16 item;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &item))
 		return NULL;
 	DisableMenuItem(_self->ob_itself,
@@ -1078,7 +1078,7 @@ static PyObject *MenuObj_IsMenuItemEnabled(_self, _args)
 	PyObject *_res = NULL;
 	Boolean _rv;
 	UInt16 item;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &item))
 		return NULL;
 	_rv = IsMenuItemEnabled(_self->ob_itself,
@@ -1094,7 +1094,7 @@ static PyObject *MenuObj_EnableMenuItemIcon(_self, _args)
 {
 	PyObject *_res = NULL;
 	UInt16 item;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &item))
 		return NULL;
 	EnableMenuItemIcon(_self->ob_itself,
@@ -1110,7 +1110,7 @@ static PyObject *MenuObj_DisableMenuItemIcon(_self, _args)
 {
 	PyObject *_res = NULL;
 	UInt16 item;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &item))
 		return NULL;
 	DisableMenuItemIcon(_self->ob_itself,
@@ -1127,7 +1127,7 @@ static PyObject *MenuObj_IsMenuItemIconEnabled(_self, _args)
 	PyObject *_res = NULL;
 	Boolean _rv;
 	UInt16 item;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &item))
 		return NULL;
 	_rv = IsMenuItemIconEnabled(_self->ob_itself,

@@ -459,7 +459,7 @@ static PyObject *App_DrawThemeMenuBarBackground(_self, _args)
 	Rect inBounds;
 	ThemeMenuBarState inState;
 	UInt32 inAttributes;
-	if (!PyArg_ParseTuple(_args, "O&hl",
+	if (!PyArg_ParseTuple(_args, "O&Hl",
 	                      PyMac_GetRect, &inBounds,
 	                      &inState,
 	                      &inAttributes))
@@ -497,7 +497,7 @@ static PyObject *App_DrawThemeMenuBackground(_self, _args)
 	OSStatus _err;
 	Rect inMenuRect;
 	ThemeMenuType inMenuType;
-	if (!PyArg_ParseTuple(_args, "O&h",
+	if (!PyArg_ParseTuple(_args, "O&H",
 	                      PyMac_GetRect, &inMenuRect,
 	                      &inMenuType))
 		return NULL;
@@ -517,7 +517,7 @@ static PyObject *App_GetThemeMenuBackgroundRegion(_self, _args)
 	OSStatus _err;
 	Rect inMenuRect;
 	ThemeMenuType menuType;
-	if (!PyArg_ParseTuple(_args, "O&h",
+	if (!PyArg_ParseTuple(_args, "O&H",
 	                      PyMac_GetRect, &inMenuRect,
 	                      &menuType))
 		return NULL;
@@ -572,7 +572,7 @@ static PyObject *App_GetThemeMenuItemExtra(_self, _args)
 	ThemeMenuItemType inItemType;
 	SInt16 outHeight;
 	SInt16 outWidth;
-	if (!PyArg_ParseTuple(_args, "h",
+	if (!PyArg_ParseTuple(_args, "H",
 	                      &inItemType))
 		return NULL;
 	_err = GetThemeMenuItemExtra(inItemType,
@@ -633,7 +633,7 @@ static PyObject *App_GetThemeTabRegion(_self, _args)
 	Rect inRect;
 	ThemeTabStyle inStyle;
 	ThemeTabDirection inDirection;
-	if (!PyArg_ParseTuple(_args, "O&hh",
+	if (!PyArg_ParseTuple(_args, "O&HH",
 	                      PyMac_GetRect, &inRect,
 	                      &inStyle,
 	                      &inDirection))
@@ -696,7 +696,7 @@ static PyObject *App_GetThemeScrollBarThumbStyle(_self, _args)
 		return NULL;
 	_err = GetThemeScrollBarThumbStyle(&outStyle);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("h",
+	_res = Py_BuildValue("H",
 	                     outStyle);
 	return _res;
 }
@@ -712,7 +712,7 @@ static PyObject *App_GetThemeScrollBarArrowStyle(_self, _args)
 		return NULL;
 	_err = GetThemeScrollBarArrowStyle(&outStyle);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("h",
+	_res = Py_BuildValue("H",
 	                     outStyle);
 	return _res;
 }
@@ -728,7 +728,7 @@ static PyObject *App_GetThemeCheckBoxStyle(_self, _args)
 		return NULL;
 	_err = GetThemeCheckBoxStyle(&outStyle);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("h",
+	_res = Py_BuildValue("H",
 	                     outStyle);
 	return _res;
 }
@@ -741,7 +741,7 @@ static PyObject *App_UseThemeFont(_self, _args)
 	OSStatus _err;
 	ThemeFontID inFontID;
 	ScriptCode inScript;
-	if (!PyArg_ParseTuple(_args, "hh",
+	if (!PyArg_ParseTuple(_args, "Hh",
 	                      &inFontID,
 	                      &inScript))
 		return NULL;
@@ -853,7 +853,7 @@ static PyObject *App_DrawThemeScrollBarDelimiters(_self, _args)
 	Rect inContRect;
 	ThemeDrawState state;
 	ThemeWindowAttributes attributes;
-	if (!PyArg_ParseTuple(_args, "hO&ll",
+	if (!PyArg_ParseTuple(_args, "HO&ll",
 	                      &flavor,
 	                      PyMac_GetRect, &inContRect,
 	                      &state,
@@ -948,7 +948,7 @@ static PyObject *App_DrawThemeStandaloneGrowBox(_self, _args)
 	ThemeGrowDirection growDirection;
 	Boolean isSmall;
 	ThemeDrawState state;
-	if (!PyArg_ParseTuple(_args, "O&hbl",
+	if (!PyArg_ParseTuple(_args, "O&Hbl",
 	                      PyMac_GetPoint, &origin,
 	                      &growDirection,
 	                      &isSmall,
@@ -974,7 +974,7 @@ static PyObject *App_DrawThemeStandaloneNoGrowBox(_self, _args)
 	ThemeGrowDirection growDirection;
 	Boolean isSmall;
 	ThemeDrawState state;
-	if (!PyArg_ParseTuple(_args, "O&hbl",
+	if (!PyArg_ParseTuple(_args, "O&Hbl",
 	                      PyMac_GetPoint, &origin,
 	                      &growDirection,
 	                      &isSmall,
@@ -1000,7 +1000,7 @@ static PyObject *App_GetThemeStandaloneGrowBoxBounds(_self, _args)
 	ThemeGrowDirection growDirection;
 	Boolean isSmall;
 	Rect bounds;
-	if (!PyArg_ParseTuple(_args, "O&hb",
+	if (!PyArg_ParseTuple(_args, "O&Hb",
 	                      PyMac_GetPoint, &origin,
 	                      &growDirection,
 	                      &isSmall))

@@ -881,7 +881,7 @@ mfs_FindFolder(self, args)
 	short refnum;
 	long dirid;
 		
-	if (!PyArg_ParseTuple(args, "hO&i", &where, PyMac_GetOSType, &which, &create) )
+	if (!PyArg_ParseTuple(args, "HO&i", &where, PyMac_GetOSType, &which, &create) )
 		return NULL;
 	err = FindFolder(where, which, (Boolean)create, &refnum, &dirid);
 	if ( err ) {

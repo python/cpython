@@ -164,6 +164,7 @@ extern void init_locale();
 #ifdef USE_UCNHASH
 extern void initucnhash();
 #endif
+extern void init_sre();
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void PyMarshal_Init();
@@ -281,7 +282,7 @@ struct _inittab _PyImport_Inittab[] = {
 #ifdef USE_UCNHASH
 	{"ucnhash", initucnhash},
 #endif
-
+	{"_sre", init_sre},
 /* -- ADDMODULE MARKER 2 -- */
 
 	/* This module "lives in" with marshal.c */
