@@ -1360,10 +1360,12 @@ problem as best as we can determine."
                             (set-buffer funcbuffer)
                             (count-lines
                              (point-min)
-                             (string-match "^\\([^#]\\|#[^#]\\|#$\\)"
-                                           (buffer-substring (point-min)
-                                                             (point-max)
-                                                             funcbuffer)))))))
+                             (max (point-min)
+                                  (string-match "^\\([^#]\\|#[^#]\\|#$\\)"
+                                                (buffer-substring (point-min)
+                                                                  (point-max)
+                                                                  funcbuffer))
+                                  ))))))
              (list lineno funcbuffer))
 
             ((= (elt filename 0) ?\<)
