@@ -131,6 +131,15 @@ a script to profile another script.  For example:
 python /usr/local/lib/python1.5/profile.py myscript.py
 \end{verbatim}
 
+\file{profile.py} accepts two optional arguments on the command line:
+
+\begin{verbatim}
+profile.py [-o output_file] [-s sort_order]
+\end{verbatim}
+
+\samp{-s} only applies to stdout (i.e. \samp{-o} is not supplied.
+Look in the \class{Stats} documentation for valid sort values.
+
 When you wish to review the profile, you should use the methods in the
 \module{pstats} module.  Typically you would load the statistics data as
 follows:
