@@ -38,7 +38,7 @@ distribution, to create or maintain whole documents or sections.
 \tableofcontents
 
 
-\section{Introduction}
+\section{Introduction \label{intro}}
 
   Python's documentation has long been considered to be good for a
   free programming language.  There are a number of reasons for this,
@@ -71,7 +71,7 @@ distribution, to create or maintain whole documents or sections.
   discussing future directions for the Python documentation and where
   to turn for more information.
 
-\section{Directory Structure}
+\section{Directory Structure \label{directories}}
 
   The source distribution for the standard Python documentation
   contains a large number of directories.  While third-party documents
@@ -153,7 +153,7 @@ distribution, to create or maintain whole documents or sections.
   \end{definitions}
 
 
-\section{Style Guide}
+\section{Style Guide \label{style-guide}}
 
   The Python documentation should follow the \citetitle
   [http://developer.apple.com/techpubs/macos8/pdf/apple_styleguide00.pdf]
@@ -249,7 +249,7 @@ distribution, to create or maintain whole documents or sections.
   bulleted lists, and special structures for the document abstract and
   indexes.
 
-  \subsection{Syntax}
+  \subsection{Syntax \label{latex-syntax}}
 
     There are some things that an author of Python documentation needs
     to know about \LaTeX{} syntax.
@@ -403,7 +403,7 @@ This \UNIX\ is also followed by a space.
 \end{tableii}
 
 
-  \subsection{Hierarchical Structure}
+  \subsection{Hierarchical Structure \label{latex-syntax}}
 
     \LaTeX{} expects documents to be arranged in a conventional,
     hierarchical way, with chapters, sections, sub-sections,
@@ -470,7 +470,7 @@ This \UNIX\ is also followed by a space.
   single chapter from a larger work.
 
 
-\section{Special Markup Constructs}
+\section{Special Markup Constructs \label{special-constructs}}
 
   The Python document classes define a lot of new environments and
   macros.  This section contains the reference material for these
@@ -637,7 +637,7 @@ This \UNIX\ is also followed by a space.
     \end{envdesc}
 
 
-  \subsection{Showing Code Examples}
+  \subsection{Showing Code Examples \label{showing-examples}}
 
     Examples of Python source code or interactive sessions are
     represented as \env{verbatim} environments.  This environment
@@ -685,7 +685,7 @@ This \UNIX\ is also followed by a space.
     for more information on this topic.
 
 
-  \subsection{Inline Markup}
+  \subsection{Inline Markup \label{inline-markup}}
 
     The macros described in this section are used to mark just about
     anything interesting in the document text.  They may be used in
@@ -978,7 +978,7 @@ This \UNIX\ is also followed by a space.
     \end{macrodesc}
 
 
-  \subsection{Module-specific Markup}
+  \subsection{Module-specific Markup \label{module-markup}}
 
   The markup described in this section is used to provide information
   about a module being documented.  A typical use of this markup
@@ -1056,7 +1056,7 @@ This \UNIX\ is also followed by a space.
   \end{macrodesc}
 
 
-  \subsection{Library-level Markup}
+  \subsection{Library-level Markup \label{library-markup}}
 
     This markup is used when describing a selection of modules.  For
     example, the \citetitle[../mac/mac.html]{Macintosh Library
@@ -1073,7 +1073,7 @@ This \UNIX\ is also followed by a space.
   \end{macrodesc}
 
 
-  \subsection{Table Markup}
+  \subsection{Table Markup \label{table-markup}}
 
     There are three general-purpose table environments defined which
     should be used whenever possible.  These environments are defined
@@ -1460,15 +1460,15 @@ This \UNIX\ is also followed by a space.
 \end{verbatim}
 
 
-\section{Graphical Interface Components}
+\section{Graphical Interface Components \label{gui-markup}}
 
   The components of graphical interfaces will be assigned markup, but
   the specifics have not been determined.
 
 
-\section{Processing Tools}
+\section{Processing Tools \label{tools}}
 
-  \subsection{External Tools}
+  \subsection{External Tools \label{tools-external}}
 
     Many tools are needed to be able to process the Python
     documentation if all supported formats are required.  This
@@ -1548,7 +1548,7 @@ This \UNIX\ is also followed by a space.
     \end{description}
 
 
-  \subsection{Internal Tools}
+  \subsection{Internal Tools \label{tools-internal}}
 
     This section describes the various scripts that are used to
     implement various stages of document processing or to orchestrate
