@@ -40,10 +40,10 @@ simple example that gets all the recipients of a message:
 \begin{verbatim}
 from email.Utils import getaddresses
 
-tos = msg.get_all('to')
-ccs = msg.get_all('cc')
-resent_tos = msg.get_all('resent-to')
-resent_ccs = msg.get_all('resent-cc')
+tos = msg.get_all('to', [])
+ccs = msg.get_all('cc', [])
+resent_tos = msg.get_all('resent-to', [])
+resent_ccs = msg.get_all('resent-cc', [])
 all_recipients = getaddresses(tos + ccs + resent_tos + resent_ccs)
 \end{verbatim}
 \end{funcdesc}
