@@ -367,7 +367,7 @@ while not msg:
     finally:
         msg = "continue + try/finally ok"
 print msg
-    
+
 print 'return_stmt' # 'return' [testlist]
 def g1(): return
 def g2(): return 1

@@ -105,14 +105,14 @@ verify(test_func(5) == 47)
 print "8. mixed freevars and cellvars"
 
 def identity(x):
-	return x
+    return x
 
 def f(x, y, z):
     def g(a, b, c):
         a = a + x # 3
         def h():
-	    # z * (4 + 9)
-	    # 3 * 13
+            # z * (4 + 9)
+            # 3 * 13
             return identity(z * (b + y))
         y = c + z # 9
         return h
@@ -120,7 +120,7 @@ def f(x, y, z):
 
 g = f(1, 2, 3)
 h = g(2, 4, 6)
-verify(h() == 39) 
+verify(h() == 39)
 
 print "9. free variable in method"
 
@@ -206,7 +206,7 @@ test2 = \
 """
 # check_syntax(test2)
 
-# XXX could allow this for exec with const argument, but what's the point 
+# XXX could allow this for exec with const argument, but what's the point
 test3 = \
 """def error(y):
     exec "a = 1"
@@ -275,4 +275,3 @@ except UnboundLocalError:
     pass
 else:
     raise TestFailed
-
