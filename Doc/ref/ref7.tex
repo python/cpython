@@ -218,7 +218,8 @@ raised the exception).
 
 When a matching except clause is found, the exception's parameter is
 assigned to the target specified in that except clause, if present,
-and the except clause's suite is executed.  When the end of this suite
+and the except clause's suite is executed.  All except clauses must
+have an executable block.  When the end of this block
 is reached, execution continues normally after the entire try
 statement.  (This means that if two nested handlers exist for the same
 exception, and the exception occurs in the try clause of the inner
