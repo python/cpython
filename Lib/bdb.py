@@ -255,7 +255,7 @@ class Bdb:
 	def get_breaks(self, filename, lineno):
 		return self.breaks.has_key(filename) and \
 			lineno in self.breaks[filename] and \
-			Breakpoint.bplist[filename, line] or []
+			Breakpoint.bplist[filename, lineno] or []
 	
 	def get_file_breaks(self, filename):
 		if self.breaks.has_key(filename):
