@@ -28,7 +28,7 @@ extern double fmod(double, double);
 extern double pow(double, double);
 #endif
 
-#ifdef sun
+#if defined(sun) && !defined(__SVR4)
 /* On SunOS4.1 only libm.a exists. Make sure that references to all
    needed math functions exist in the executable, so that dynamic
    loading of mathmodule does not fail. */
