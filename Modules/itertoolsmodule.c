@@ -7,6 +7,264 @@
    All rights reserved.
 */
 
+/* independent iterator object supporting the tee object ***************/
+
+/* The tee object maintains a queue of data seen by the leading iterator
+   but not seen by the trailing iterator.  When the leading iterator
+   gets data from PyIter_Next() it appends a copy to the inbasket stack.
+   When the trailing iterator needs data, it is popped from the outbasket
+   stack.  If the outbasket stack is empty, then it is filled from the
+   inbasket (i.e. the queue is implemented using two stacks so that only
+   O(n) operations like append() and pop() are used to access data and
+   calls to reverse() never move any data element more than once).
+
+   If one of the independent iterators gets deallocated, it sets tee's
+   save_mode to zero so that future calls to PyIter_Next() stop getting
+   saved to the queue (because there is no longer a second iterator that
+   may need the data).
+*/
+
+typedef struct {
+	PyObject_HEAD
+	PyObject *it;
+	PyObject *inbasket;
+	PyObject *outbasket;
+	int save_mode;
+	int num_seen;
+} teeobject;
+
+typedef struct {
+	PyObject_HEAD
+	teeobject *tee;
+	int num_seen;
+} iiobject;
+
+static PyTypeObject ii_type;
+
+static PyObject *
+ii_next(iiobject *lz)
+{
+	teeobject *to = lz->tee;
+	PyObject *result, *tmp;
+
+	if (lz->num_seen == to->num_seen) { 
+		/* This instance is leading, use iter to get more data */
+		result = PyIter_Next(to->it);
+		if (result == NULL)
+			return NULL;
+		if (to->save_mode)
+			PyList_Append(to->inbasket, result);
+		to->num_seen++;
+		lz->num_seen++;
+		return result;
+	}
+
+	/* This instance is trailing, get data from the queue */
+	if (PyList_GET_SIZE(to->outbasket) == 0) {
+		/* outbasket is empty, so refill from the inbasket */
+		tmp = to->outbasket;
+		to->outbasket = to->inbasket;
+		to->inbasket = tmp;
+		PyList_Reverse(to->outbasket);
+		assert(PyList_GET_SIZE(to->outbasket) > 0);
+	}
+
+	lz->num_seen++;
+	return PyObject_CallMethod(to->outbasket, "pop", NULL);
+}
+
+static void
+ii_dealloc(iiobject *ii)
+{
+	PyObject_GC_UnTrack(ii);
+	ii->tee->save_mode = 0;  /* Stop saving data */
+	Py_XDECREF(ii->tee);
+	PyObject_GC_Del(ii);
+}
+
+static int
+ii_traverse(iiobject *ii, visitproc visit, void *arg)
+{
+	if (ii->tee)
+		return visit((PyObject *)(ii->tee), arg);
+	return 0;
+}
+
+PyDoc_STRVAR(ii_doc, "Independent iterators linked to a tee() object.");
+
+static PyTypeObject ii_type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,					/* ob_size */
+	"itertools.independent_iterator",	/* tp_name */
+	sizeof(iiobject),			/* tp_basicsize */
+	0,					/* tp_itemsize */
+	/* methods */
+	(destructor)ii_dealloc,			/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+	ii_doc,					/* tp_doc */
+	(traverseproc)ii_traverse,		/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */	
+	0,					/* tp_weaklistoffset */
+	PyObject_SelfIter,			/* tp_iter */
+	(iternextfunc)ii_next,			/* tp_iternext */
+	0,					/* tp_methods */
+};
+
+/* tee object **********************************************************/
+
+static PyTypeObject tee_type;
+
+static PyObject *
+tee_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *it = NULL;
+	PyObject *iterable;
+	PyObject *inbasket = NULL, *outbasket = NULL, *result = NULL;
+	teeobject *to = NULL;
+	int i;
+
+	if (!PyArg_UnpackTuple(args, "tee", 1, 1, &iterable))
+		return NULL;
+
+	it = PyObject_GetIter(iterable);
+	if (it == NULL) goto fail;
+
+	inbasket = PyList_New(0);
+	if (inbasket == NULL) goto fail;
+
+	outbasket = PyList_New(0);
+	if (outbasket == NULL) goto fail;
+
+	to = (teeobject *)type->tp_alloc(type, 0);
+	if (to == NULL)  goto fail;
+
+	to->it = it;
+	to->inbasket = inbasket;
+	to->outbasket = outbasket;
+	to->save_mode = 1;
+	to->num_seen = 0;
+
+	/* create independent iterators */
+	result = PyTuple_New(2);
+	if (result == NULL)  goto fail;
+	for (i=0 ; i<2 ; i++) {
+		iiobject *indep_it = PyObject_GC_New(iiobject, &ii_type);
+		if (indep_it == NULL) goto fail;
+		Py_INCREF(to);
+		indep_it->tee = to;
+		indep_it->num_seen = 0;
+		PyObject_GC_Track(indep_it);
+		PyTuple_SET_ITEM(result, i, (PyObject *)indep_it);
+	}
+	goto succeed;
+fail:
+	Py_XDECREF(it);
+	Py_XDECREF(inbasket);
+	Py_XDECREF(outbasket);
+	Py_XDECREF(result);
+succeed:
+	Py_XDECREF(to);
+	return result;
+}
+
+static void
+tee_dealloc(teeobject *to)
+{
+	PyObject_GC_UnTrack(to);
+	Py_XDECREF(to->inbasket);
+	Py_XDECREF(to->outbasket);
+	Py_XDECREF(to->it);
+	to->ob_type->tp_free(to);
+}
+
+static int
+tee_traverse(teeobject *to, visitproc visit, void *arg)
+{
+	int err;
+
+	if (to->it) {
+		err = visit(to->it, arg);
+		if (err)
+			return err;
+	}
+	if (to->inbasket) {
+		err = visit(to->inbasket, arg);
+		if (err)
+			return err;
+	}
+	if (to->outbasket) {
+		err = visit(to->outbasket, arg);
+		if (err)
+			return err;
+	}
+	return 0;
+}
+
+PyDoc_STRVAR(tee_doc,
+"tee(iterable) --> (it1, it2)\n\
+\n\
+Split the iterable into to independent iterables.");
+
+static PyTypeObject tee_type = {
+	PyObject_HEAD_INIT(NULL)
+	0,				/* ob_size */
+	"itertools.tee",		/* tp_name */
+	sizeof(teeobject),		/* tp_basicsize */
+	0,				/* tp_itemsize */
+	/* methods */
+	(destructor)tee_dealloc,	/* tp_dealloc */
+	0,				/* tp_print */
+	0,				/* tp_getattr */
+	0,				/* tp_setattr */
+	0,				/* tp_compare */
+	0,				/* tp_repr */
+	0,				/* tp_as_number */
+	0,				/* tp_as_sequence */
+	0,				/* tp_as_mapping */
+	0,				/* tp_hash */
+	0,				/* tp_call */
+	0,				/* tp_str */
+	PyObject_GenericGetAttr,	/* tp_getattro */
+	0,				/* tp_setattro */
+	0,				/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+		Py_TPFLAGS_BASETYPE,	/* tp_flags */
+	tee_doc,			/* tp_doc */
+	(traverseproc)tee_traverse,	/* tp_traverse */
+	0,				/* tp_clear */
+	0,				/* tp_richcompare */
+	0,				/* tp_weaklistoffset */
+	0,				/* tp_iter */
+	0,				/* tp_iternext */
+	0,				/* tp_methods */
+	0,				/* tp_members */
+	0,				/* tp_getset */
+	0,				/* tp_base */
+	0,				/* tp_dict */
+	0,				/* tp_descr_get */
+	0,				/* tp_descr_set */
+	0,				/* tp_dictoffset */
+	0,				/* tp_init */
+	0,				/* tp_alloc */
+	tee_new,			/* tp_new */
+	PyObject_GC_Del,		/* tp_free */
+};
+
 /* cycle object **********************************************************/
 
 typedef struct {
@@ -1824,6 +2082,7 @@ inititertools(void)
 	PyObject *m;
 	char *name;
 	PyTypeObject *typelist[] = {
+		&tee_type,
 		&cycle_type,
 		&dropwhile_type,
 		&takewhile_type,

@@ -108,9 +108,8 @@ by functions or loops that truncate the stream.
                    yield element
   \end{verbatim}
 
-  Note, this is the only member of the toolkit that may require
-  significant auxiliary storage (depending on the length of the
-  iterable).
+  Note, this member of the toolkit may require significant
+  auxiliary storage (depending on the length of the iterable).
 \end{funcdesc}
 
 \begin{funcdesc}{dropwhile}{predicate, iterable}
@@ -282,6 +281,32 @@ by functions or loops that truncate the stream.
   \end{verbatim}
 \end{funcdesc}
 
+\begin{funcdesc}{tee}{iterable}
+  Return two independent iterators from a single iterable.
+  Equivalent to:
+
+  \begin{verbatim}
+     def tee(iterable):
+         def gen(next, data={}, cnt=[0]):
+             for i in count():
+                 if i == cnt[0]:
+                     item = data[i] = next()
+                     cnt[0] += 1
+                 else:
+                     item = data.pop(i)
+                 yield item
+         it = iter(iterable)
+         return (gen(it.next), gen(it.next))
+  \end{verbatim}
+
+  Note, this member of the toolkit may require significant auxiliary
+  storage (depending on how much temporary data needs to be stored).
+  In general, if one iterator is going use most or all of the data before
+  the other iterator, it is faster to use \function{list()} instead of
+  \function{tee()}.
+  \versionadded{2.4}
+\end{funcdesc}
+
 
 \subsection{Examples \label{itertools-example}}
 
@@ -369,6 +394,17 @@ def ncycles(seq, n):
 def dotproduct(vec1, vec2):
     return sum(imap(operator.mul, vec1, vec2))
 
+def flatten(listOfLists):
+    return list(chain(*listOfLists))
+
+def repeatfunc(func, times=None, *args):
+    "Repeat calls to func with specified arguments."
+    "Example:  repeatfunc(random.random)"
+    if times is None:
+        return starmap(func, repeat(args))
+    else:
+        return starmap(func, repeat(args, times))
+
 def window(seq, n=2):
     "Returns a sliding window (of width n) over data from the iterable"
     "   s -> (s0,s1,...s[n-1]), (s1,s2,...,sn), ...                   "
@@ -379,19 +415,5 @@ def window(seq, n=2):
     for elem in it:
         result = result[1:] + (elem,)
         yield result
-
-def tee(iterable):
-    "Return two independent iterators from a single iterable"
-    def gen(next, data={}, cnt=[0]):
-        dpop = data.pop
-        for i in count():
-            if i == cnt[0]:
-                item = data[i] = next()
-                cnt[0] += 1
-            else:
-                item = dpop(i)
-            yield item
-    next = iter(iterable).next
-    return (gen(next), gen(next))
 
 \end{verbatim}
