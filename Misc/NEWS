@@ -4,6 +4,44 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.3 alpha 2?
+=================================
+
+*Release date: XX-XXX-2003
+
+Core and builtins
+-----------------
+
+Extension modules
+-----------------
+
+- fcntl now exposes the strops.h I_* constants.
+
+Library
+-------
+
+Tools/Demos
+-----------
+
+Build
+-----
+
+C API
+-----
+
+New platforms
+-------------
+
+Tests
+-----
+
+Windows
+-------
+
+Mac
+---
+
+
 What's New in Python 2.3 alpha 1?
 =================================
 

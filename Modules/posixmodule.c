@@ -2726,8 +2726,8 @@ posix_fork(PyObject *self, PyObject *args)
 #include <libutil.h>
 #endif /* HAVE_LIBUTIL_H */
 #endif /* HAVE_PTY_H */
-#if defined(sun) || defined(__hpux)
-#include <sys/stropts.h>
+#ifdef HAVE_STROPTS_H
+#include <stropts.h>
 #endif
 #endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX */
 
