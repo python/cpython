@@ -163,6 +163,10 @@ class Pickler:
         try:
             f = self.dispatch[t]
         except KeyError:
+            if issubclass(t, TypeType):
+                self.save_global(object)
+                return
+
             pid = self.inst_persistent_id(object)
             if pid is not None:
                 self.save_pers(pid)
