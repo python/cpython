@@ -1,76 +1,330 @@
 import os
+import base64
 import gettext
 
-def get_qualified_path(name):
-    """Return a more qualified path to name"""
-    import sys
-    import os
-    path = sys.path
-    try:
-        path = [os.path.dirname(__file__)] + path
-    except NameError:
-        pass
-    for dir in path:
-        fullname = os.path.join(dir, name)
-        if os.path.exists(fullname):
-            return fullname
-    return name
+def test(localedir, mofile):
+    # Test basic interface
+    os.environ['LANGUAGE'] = 'xx'
 
-# Test basic interface
-os.environ['LANGUAGE'] = 'xx'
+    print 'installing gettext'
+    gettext.install()
 
-mofile = get_qualified_path('xx')
-localedir = os.path.dirname(mofile)
+    print _('calling bindtextdomain with localedir %s') % localedir
+    print gettext.bindtextdomain('gettext', localedir)
+    print gettext.bindtextdomain()
 
-print 'installing gettext'
-gettext.install()
+    print gettext.textdomain('gettext')
+    print gettext.textdomain()
 
-print _('calling bindtextdomain with localedir %s') % localedir
-print gettext.bindtextdomain('gettext', localedir)
-print gettext.bindtextdomain()
+    # test some translations
+    print _(u'mullusk')
+    print _(r'Raymond Luxury Yach-t')
+    print _(ur'nudge nudge')
 
-print gettext.textdomain('gettext')
-print gettext.textdomain()
+    # double quotes
+    print _(u"mullusk")
+    print _(r"Raymond Luxury Yach-t")
+    print _(ur"nudge nudge")
 
-# test some translations
-print _(u'mullusk')
-print _(r'Raymond Luxury Yach-t')
-print _(ur'nudge nudge')
+    # triple single quotes
+    print _(u'''mullusk''')
+    print _(r'''Raymond Luxury Yach-t''')
+    print _(ur'''nudge nudge''')
 
-# double quotes
-print _(u"mullusk")
-print _(r"Raymond Luxury Yach-t")
-print _(ur"nudge nudge")
+    # triple double quotes
+    print _(u"""mullusk""")
+    print _(r"""Raymond Luxury Yach-t""")
+    print _(ur"""nudge nudge""")
 
-# triple single quotes
-print _(u'''mullusk''')
-print _(r'''Raymond Luxury Yach-t''')
-print _(ur'''nudge nudge''')
-
-# triple double quotes
-print _(u"""mullusk""")
-print _(r"""Raymond Luxury Yach-t""")
-print _(ur"""nudge nudge""")
-
-# multiline strings
-print _('''This module provides internationalization and localization
+    # multiline strings
+    print _('''This module provides internationalization and localization
 support for your Python programs by providing an interface to the GNU
 gettext message catalog library.''')
 
-print gettext.dgettext('gettext', 'nudge nudge')
+    print gettext.dgettext('gettext', 'nudge nudge')
 
-# dcgettext
-##import locale
-##if gettext.dcgettext('gettext', 'nudge nudge',
-##                     locale.LC_MESSAGES) <> 'wink wink':
-##    print _('dcgettext failed')
+    # dcgettext
+    ##import locale
+    ##if gettext.dcgettext('gettext', 'nudge nudge',
+    ##                     locale.LC_MESSAGES) <> 'wink wink':
+    ##    print _('dcgettext failed')
 
-# test the alternative interface
-fp = open(os.path.join(mofile, 'LC_MESSAGES', 'gettext.mo'), 'rb')
-t = gettext.GNUTranslations(fp)
-fp.close()
+    # test the alternative interface
+    fp = open(os.path.join(mofile), 'rb')
+    t = gettext.GNUTranslations(fp)
+    fp.close()
 
-gettext.set(t)
-print t == gettext.get()
+    gettext.set(t)
+    print t == gettext.get()
 
-print _('nudge nudge')
+    print _('nudge nudge')
+
+GNU_MO_DATA = '''\
+3hIElQAAAAAFAAAAHAAAAEQAAAAHAAAAbAAAAAAAAACIAAAAFQAAAIkAAAChAAAAnwAAAAcAAABB
+AQAACwAAAEkBAAAWAQAAVQEAABYAAABsAgAAoQAAAIMCAAAFAAAAJQMAAAkAAAArAwAAAQAAAAQA
+AAACAAAAAAAAAAUAAAAAAAAAAwAAAABSYXltb25kIEx1eHVyeSBZYWNoLXQAVGhpcyBtb2R1bGUg
+cHJvdmlkZXMgaW50ZXJuYXRpb25hbGl6YXRpb24gYW5kIGxvY2FsaXphdGlvbgpzdXBwb3J0IGZv
+ciB5b3VyIFB5dGhvbiBwcm9ncmFtcyBieSBwcm92aWRpbmcgYW4gaW50ZXJmYWNlIHRvIHRoZSBH
+TlUKZ2V0dGV4dCBtZXNzYWdlIGNhdGFsb2cgbGlicmFyeS4AbXVsbHVzawBudWRnZSBudWRnZQBQ
+cm9qZWN0LUlkLVZlcnNpb246IDIuMApQTy1SZXZpc2lvbi1EYXRlOiBGcmkgQXVnIDE4IDIwOjQ1
+OjAzIDIwMDAKTGFzdC1UcmFuc2xhdG9yOiBCYXJyeSBXYXJzYXcgPGJ3YXJzYXdAYmVvcGVuLmNv
+bT4KTGFuZ3VhZ2UtVGVhbTogWFggPHB5dGhvbi1kZXZAcHl0aG9uLm9yZz4KTUlNRS1WZXJzaW9u
+OiAxLjAKQ29udGVudC1UeXBlOiB0ZXh0L3BsYWluOyBjaGFyc2V0PWVuCkNvbnRlbnQtVHJhbnNm
+ZXItRW5jb2Rpbmc6IG5vbmUKR2VuZXJhdGVkLUJ5OiBweWdldHRleHQucHkgMS4xCgBUaHJvYXR3
+b2JibGVyIE1hbmdyb3ZlAEd1dmYgemJxaHlyIGNlYml2cXJmIHZhZ3JlYW5ndmJhbnl2bW5ndmJh
+IG5hcSB5YnBueXZtbmd2YmEKZmhjY2JlZyBzYmUgbGJoZSBDbGd1YmEgY2VidGVuemYgb2wgY2Vi
+aXZxdmF0IG5hIHZhZ3Jlc25wciBnYiBndXIgVEFICnRyZ2dya2cgenJmZm50ciBwbmdueWJ0IHl2
+b2VuZWwuAGJhY29uAHdpbmsgd2luawA=
+'''
+
+SOLARIS_MO_DATA = '''\
+AAAACAAAABEAAAIXAAAB0gAAARD///+d////nQAAAAAAAAAAAAAAAAAAAAIAAAAkAAAAAf///53/
+//+dAAAAQgAAAAIAAAABAAAABQAAAGgAAAAD////nf///50AAAB0AAAADQAAAAQAAAAGAAAAmAAA
+AA7///+dAAAABwAAAKAAAAAU////nf///50AAAC5AAAAFQAAAAMAAAAMAAAAywAAABb///+d////
+nQAAANsAAAAXAAAACQAAAAsAAADsAAAAGP///53///+dAAAA/wAAABkAAAAKAAAADgAAAScAAAAa
+////nf///50AAAFDAAAAGwAAAA0AAAAPAAABXgAAABz///+dAAAAEAAAAgAAAAC+////nf///50A
+AAIWAAAA1XRleHQgZG9tYWluIGRpZG4ndCBnZXQgc2V0IHByb3Blcmx5AHJhdyBzdHJpbmcgdHJh
+bnNsYXRpb24gZmFpbGVkAHJhdyBVbmljb2RlIHN0cmluZyB0cmFuc2xhdGlvbiBmYWlsZWQAbnVk
+Z2UgbnVkZ2UAbXVsdGlsaW5lIHN0cmluZyB0cmFuc2xhdGlvbiBmYWlsZWQAbXVsbHVzawBnb3Qg
+dW5leHBlY3RlZCBsb2NhbGVkaXIAZ2V0dGV4dCBpbnN0YWxsZWQAZGdldHRleHQgZmFpbGVkAGRj
+Z2V0dGV4dCBmYWlsZWQAY2FsbGluZyB0ZXh0ZG9tYWluAGNhbGxpbmcgYmluZHRleHRkb21haW4g
+d2l0aCBsb2NhbGRpciAlcwBiaW5kdGV4dGRvbWFpbihOb25lKSBmYWlsZWQAVW5pY29kZSB0cmFu
+c2xhdGlvbiBmYWlsZWQAVGhpcyBtb2R1bGUgcHJvdmlkZXMgaW50ZXJuYXRpb25hbGl6YXRpb24g
+YW5kIGxvY2FsaXphdGlvbgpzdXBwb3J0IGZvciB5b3VyIFB5dGhvbiBwcm9ncmFtcyBieSBwcm92
+aWRpbmcgYW4gaW50ZXJmYWNlIHRvIHRoZSBHTlUKZ2V0dGV4dCBtZXNzYWdlIGNhdGFsb2cgbGli
+cmFyeS4AUmF5bW9uZCBMdXh1cnkgWWFjaC10AAAAAAB3aW5rIHdpbmsAAGJhY29uAAAAAAAAAAAA
+R3V2ZiB6YnFoeXIgY2ViaXZxcmYgdmFncmVhbmd2YmFueXZtbmd2YmEgbmFxIHlicG55dm1uZ3Zi
+YQpmaGNjYmVnIHNiZSBsYmhlIENsZ3ViYSBjZWJ0ZW56ZiBvbCBjZWJpdnF2YXQgbmEgdmFncmVz
+bnByIGdiIGd1ciBUQUgKdHJnZ3JrZyB6cmZmbnRyIHBuZ255YnQgeXZvZW5lbC4AVGhyb2F0d29i
+YmxlciBNYW5ncm92ZQBQcm9qZWN0LUlkLVZlcnNpb246IFBBQ0tBR0UgVkVSU0lPTgpQTy1SZXZp
+c2lvbi1EYXRlOiAyMDAwLTA4LTE4IDIxOjAxLTA0OjAwCkxhc3QtVHJhbnNsYXRvcjogRlVMTCBO
+QU1FIDxFTUFJTEBBRERSRVNTPgpMYW5ndWFnZS1UZWFtOiBMQU5HVUFHRSA8TExAbGkub3JnPgpN
+SU1FLVZlcnNpb246IDEuMApDb250ZW50LVR5cGU6IHRleHQvcGxhaW47IGNoYXJzZXQ9Q0hBUlNF
+VApDb250ZW50LVRyYW5zZmVyLUVuY29kaW5nOiBFTkNPRElORwoA
+'''
+
+LOCALEDIR = os.path.join('xx', 'LC_MESSAGES')
+MOFILE = os.path.join(LOCALEDIR, 'gettext.mo')
+
+def setup():
+    os.makedirs(LOCALEDIR)
+    fp = open(MOFILE, 'w')
+    fp.write(base64.decodestring(GNU_MO_DATA))
+    fp.close()
+
+def teardown():
+    os.unlink(MOFILE)
+    os.removedirs(LOCALEDIR)
+
+
+
+try:
+    setup()
+    test('.', MOFILE)
+finally:
+    teardown()
+    pass
+
+
+
+# For reference, here's the .pot and .po files used to created the .mo data
+# above.  The .pot file was generated by pygettext.
+
+# =============================== messages.pot
+
+### SOME DESCRIPTIVE TITLE.
+### Copyright (C) YEAR ORGANIZATION
+### FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+###
+##msgid ""
+##msgstr ""
+##"Project-Id-Version: PACKAGE VERSION\n"
+##"PO-Revision-Date: Fri Aug 18 20:45:03 2000\n"
+##"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+##"Language-Team: LANGUAGE <LL@li.org>\n"
+##"MIME-Version: 1.0\n"
+##"Content-Type: text/plain; charset=CHARSET\n"
+##"Content-Transfer-Encoding: ENCODING\n"
+##"Generated-By: pygettext.py 1.1\n"
+
+
+###: Lib/test/test_gettext.py:34
+##msgid "calling textdomain"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:94
+##msgid "dgettext failed"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:25
+##msgid "gettext installed"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:32
+##msgid "bindtextdomain(None) failed"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:44 Lib/test/test_gettext.py:54
+###: Lib/test/test_gettext.py:64 Lib/test/test_gettext.py:74
+##msgid "Raymond Luxury Yach-t"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:41 Lib/test/test_gettext.py:51
+###: Lib/test/test_gettext.py:61 Lib/test/test_gettext.py:71
+##msgid "mullusk"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:38
+##msgid "text domain didn't get set properly"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:98
+##msgid "dcgettext failed"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:47 Lib/test/test_gettext.py:57
+###: Lib/test/test_gettext.py:67 Lib/test/test_gettext.py:77
+##msgid "nudge nudge"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:45 Lib/test/test_gettext.py:55
+###: Lib/test/test_gettext.py:65 Lib/test/test_gettext.py:75
+##msgid "raw string translation failed"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:30
+##msgid "got unexpected localedir"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:48 Lib/test/test_gettext.py:58
+###: Lib/test/test_gettext.py:68 Lib/test/test_gettext.py:78
+##msgid "raw Unicode string translation failed"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:42 Lib/test/test_gettext.py:52
+###: Lib/test/test_gettext.py:62 Lib/test/test_gettext.py:72
+##msgid "Unicode translation failed"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:90
+##msgid "multiline string translation failed"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:81
+##msgid ""
+##"This module provides internationalization and localization\n"
+##"support for your Python programs by providing an interface to the GNU\n"
+##"gettext message catalog library."
+##msgstr ""
+
+###: Lib/test/test_gettext.py:26
+##msgid "calling bindtextdomain with localdir %s"
+##msgstr ""
+
+# =============================== messages.po
+
+### Dummy translation for Python's test_gettext.py module.
+### Copyright (C) 2000 BeOpen.com
+### Barry Warsaw <bwarsaw@beopen.com>, 2000.
+###
+###, fuzzy
+##msgid ""
+##msgstr ""
+##"Project-Id-Version: PACKAGE VERSION\n"
+##"PO-Revision-Date: 2000-08-18 21:01-04:00\n"
+##"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+##"Language-Team: LANGUAGE <LL@li.org>\n"
+##"MIME-Version: 1.0\n"
+##"Content-Type: text/plain; charset=CHARSET\n"
+##"Content-Transfer-Encoding: ENCODING\n"
+
+### SOME DESCRIPTIVE TITLE.
+### Copyright (C) YEAR ORGANIZATION
+### FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+###
+##msgid ""
+##msgstr ""
+##"Project-Id-Version: 2.0\n"
+##"PO-Revision-Date: Fri Aug 18 20:45:03 2000\n"
+##"Last-Translator: Barry Warsaw <bwarsaw@beopen.com>\n"
+##"Language-Team: XX <python-dev@python.org>\n"
+##"MIME-Version: 1.0\n"
+##"Content-Type: text/plain; charset=en\n"
+##"Content-Transfer-Encoding: none\n"
+##"Generated-By: pygettext.py 1.1\n"
+
+
+###: Lib/test/test_gettext.py:34
+##msgid "calling textdomain"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:94
+##msgid "dgettext failed"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:25
+##msgid "gettext installed"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:32
+##msgid "bindtextdomain(None) failed"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:44 Lib/test/test_gettext.py:54
+###: Lib/test/test_gettext.py:64 Lib/test/test_gettext.py:74
+##msgid "Raymond Luxury Yach-t"
+##msgstr "Throatwobbler Mangrove"
+
+###: Lib/test/test_gettext.py:41 Lib/test/test_gettext.py:51
+###: Lib/test/test_gettext.py:61 Lib/test/test_gettext.py:71
+##msgid "mullusk"
+##msgstr "bacon"
+
+###: Lib/test/test_gettext.py:38
+##msgid "text domain didn't get set properly"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:98
+##msgid "dcgettext failed"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:47 Lib/test/test_gettext.py:57
+###: Lib/test/test_gettext.py:67 Lib/test/test_gettext.py:77
+##msgid "nudge nudge"
+##msgstr "wink wink"
+
+###: Lib/test/test_gettext.py:45 Lib/test/test_gettext.py:55
+###: Lib/test/test_gettext.py:65 Lib/test/test_gettext.py:75
+##msgid "raw string translation failed"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:30
+##msgid "got unexpected localedir"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:48 Lib/test/test_gettext.py:58
+###: Lib/test/test_gettext.py:68 Lib/test/test_gettext.py:78
+##msgid "raw Unicode string translation failed"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:42 Lib/test/test_gettext.py:52
+###: Lib/test/test_gettext.py:62 Lib/test/test_gettext.py:72
+##msgid "Unicode translation failed"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:90
+##msgid "multiline string translation failed"
+##msgstr ""
+
+###: Lib/test/test_gettext.py:81
+##msgid ""
+##"This module provides internationalization and localization\n"
+##"support for your Python programs by providing an interface to the GNU\n"
+##"gettext message catalog library."
+##msgstr "Guvf zbqhyr cebivqrf vagreangvbanyvmngvba naq ybpnyvmngvba\n"
+##"fhccbeg sbe lbhe Clguba cebtenzf ol cebivqvat na vagresnpr gb gur TAH\n"
+##"trggrkg zrffntr pngnybt yvoenel."
+
+###: Lib/test/test_gettext.py:26
+##msgid "calling bindtextdomain with localdir %s"
+##msgstr ""
