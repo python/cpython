@@ -289,6 +289,9 @@ PyErr_SetFromErrnoWithFilename(exc, filename)
 	PyObject *v;
 	char *s;
 	int i = errno;
+#ifdef MS_WIN32
+	char *s_buf = NULL;
+#endif
 #ifdef EINTR
 	if (i == EINTR && PyErr_CheckSignals())
 		return NULL;
@@ -300,20 +303,32 @@ PyErr_SetFromErrnoWithFilename(exc, filename)
 		s = strerror(i);
 #else
 	{
-		int len = FormatMessage(
-			FORMAT_MESSAGE_ALLOCATE_BUFFER |
-			FORMAT_MESSAGE_FROM_SYSTEM |
-			FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL,	/* no message source */
-			i,
-			MAKELANGID(LANG_NEUTRAL,
-				   SUBLANG_DEFAULT), /* Default language */
-			(LPTSTR) &s,
-			0,	/* size not used */
-			NULL);	/* no args */
-		/* remove trailing cr/lf and dots */
-		while (len > 0 && s[len-1] <= '.')
-			s[--len] = '\0';
+		/* Note that the Win32 errors do not lineup with the
+		   errno error.  So if the error is in the MSVC error
+		   table, we use it, otherwise we assume it really _is_ 
+		   a Win32 error code
+		*/
+		if (i < _sys_nerr) {
+			s = _sys_errlist[i];
+		}
+		else {
+			int len = FormatMessage(
+				FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				FORMAT_MESSAGE_FROM_SYSTEM |
+				FORMAT_MESSAGE_IGNORE_INSERTS,
+				NULL,	/* no message source */
+				i,
+				MAKELANGID(LANG_NEUTRAL,
+					   SUBLANG_DEFAULT),
+				           /* Default language */
+				(LPTSTR) &s_buf,
+				0,	/* size not used */
+				NULL);	/* no args */
+			s = s_buf;
+			/* remove trailing cr/lf and dots */
+			while (len > 0 && (s[len-1] <= ' ' || s[len-1] == '.'))
+				s[--len] = '\0';
+		}
 	}
 #endif
 	if (filename != NULL && Py_UseClassExceptionsFlag)
@@ -325,7 +340,7 @@ PyErr_SetFromErrnoWithFilename(exc, filename)
 		Py_DECREF(v);
 	}
 #ifdef MS_WIN32
-	LocalFree(s);
+	LocalFree(s_buf);
 #endif
 	return NULL;
 }
@@ -337,6 +352,51 @@ PyErr_SetFromErrno(exc)
 {
 	return PyErr_SetFromErrnoWithFilename(exc, NULL);
 }
+
+#ifdef MS_WINDOWS 
+/* Windows specific error code handling */
+PyObject *PyErr_SetFromWindowsErrWithFilename(
+	int ierr, 
+	const char *filename)
+{
+	int len;
+	char *s;
+	PyObject *v;
+	DWORD err = (DWORD)ierr;
+	if (err==0) err = GetLastError();
+	len = FormatMessage(
+		/* Error API error */
+		FORMAT_MESSAGE_ALLOCATE_BUFFER |
+		FORMAT_MESSAGE_FROM_SYSTEM |
+		FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL,	/* no message source */
+		err,
+		MAKELANGID(LANG_NEUTRAL,
+		SUBLANG_DEFAULT), /* Default language */
+		(LPTSTR) &s,
+		0,	/* size not used */
+		NULL);	/* no args */
+	/* remove trailing cr/lf and dots */
+	while (len > 0 && (s[len-1] <= ' ' || s[len-1] == '.'))
+		s[--len] = '\0';
+	if (filename != NULL && Py_UseClassExceptionsFlag)
+		v = Py_BuildValue("(iss)", err, s, filename);
+	else
+		v = Py_BuildValue("(is)", err, s);
+	if (v != NULL) {
+		PyErr_SetObject(PyExc_EnvironmentError, v);
+		Py_DECREF(v);
+	}
+	LocalFree(s);
+	return NULL;
+}
+
+PyObject *PyErr_SetFromWindowsErr(int ierr)
+{
+	return PyErr_SetFromWindowsErrWithFilename(ierr, NULL);
+
+}
+#endif /* MS_WINDOWS */
 
 void
 PyErr_BadInternalCall()
