@@ -39,7 +39,7 @@ class MaildirTestCase(unittest.TestCase):
         os.rmdir(self._dir)
 
     def createMessage(self, dir):
-        t = int(time.time())
+        t = int(time.time() % 1000000)
         pid = self._counter
         self._counter += 1
         filename = "%s.%s.myhostname.mydomain" % (t, pid)
