@@ -44,6 +44,9 @@
 /* Define if nice() returns success/failure instead of the new priority. */
 #undef HAVE_BROKEN_NICE
 
+/* Define if the Posix semaphores do not work on your system */
+#undef HAVE_BROKEN_POSIX_SEMAPHORES
+
 /* Define to 1 if you have the `chown' function. */
 #undef HAVE_CHOWN
 

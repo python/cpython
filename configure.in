@@ -1447,6 +1447,12 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
           and your system does not define that.])
       fi
 
+      # Bug 662787: Using semaphores causes unexplicable hangs on Solaris 8.
+      case  $ac_sys_system/$ac_sys_release in
+      SunOS/5.8) AC_DEFINE(HAVE_BROKEN_POSIX_SEMAPHORES, 1,
+                           Define if the Posix semaphores do not work on your system);;
+      esac
+
       AC_MSG_CHECKING(if PTHREAD_SCOPE_SYSTEM is supported)
       AC_CACHE_VAL(ac_cv_pthread_system_supported,
       [AC_TRY_RUN([#include <pthread.h>

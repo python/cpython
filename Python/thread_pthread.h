@@ -104,7 +104,7 @@
 /* Whether or not to use semaphores directly rather than emulating them with
  * mutexes and condition variables:
  */
-#ifdef _POSIX_SEMAPHORES
+#if defined(_POSIX_SEMAPHORES) && !defined(HAVE_BROKEN_POSIX_SEMAPHORES)
 #  define USE_SEMAPHORES
 #else
 #  undef USE_SEMAPHORES
