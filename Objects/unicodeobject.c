@@ -5020,9 +5020,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    case 'X':
 		if (c == 'i')
 		    c = 'd';
-		if (PyLong_Check(v) && PyLong_AsLong(v) == -1
-		    && PyErr_Occurred()) {
-		    PyErr_Clear();
+		if (PyLong_Check(v)) {
 		    temp = formatlong(v, flags, prec, c);
 		    if (!temp)
 			goto onError;

@@ -63,11 +63,6 @@ testboth("%o", 100000000000L, "1351035564000")
 testboth("%d", 10L, "10")
 testboth("%d", 100000000000L, "100000000000")
 
-# Make sure big is too big to fit in a 64-bit int, else the unbounded
-# int formatting will be sidestepped on some machines.  That's vital,
-# because bitwise (x, X, o) formats of regular Python ints never
-# produce a sign ("+" or "-").
-
 big = 123456789012345678901234567890L
 testboth("%d", big, "123456789012345678901234567890")
 testboth("%d", -big, "-123456789012345678901234567890")
@@ -163,3 +158,19 @@ testboth("%#.32o", big, "012345670123456701234567012345670")
 testboth("%034.33o", big, "0012345670123456701234567012345670")
 # base marker shouldn't change that
 testboth("%0#34.33o", big, "0012345670123456701234567012345670")
+
+# Some small ints, in both Python int and long flavors).
+testboth("%d", 42, "42")
+testboth("%d", -42, "-42")
+testboth("%d", 42L, "42")
+testboth("%d", -42L, "-42")
+
+testboth("%x", 0x42, "42")
+# testboth("%x", -0x42, "ffffffbe") # Alas, that's specific to 32-bit machines
+testboth("%x", 0x42L, "42")
+testboth("%x", -0x42L, "-42")
+
+testboth("%o", 042, "42")
+# testboth("%o", -042, "37777777736") # Alas, that's specific to 32-bit machines
+testboth("%o", 042L, "42")
+testboth("%o", -042L, "-42")

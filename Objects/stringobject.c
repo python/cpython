@@ -2897,10 +2897,7 @@ PyString_Format(PyObject *format, PyObject *args)
 			case 'X':
 				if (c == 'i')
 					c = 'd';
-				if (PyLong_Check(v) && PyLong_AsLong(v) == -1
-				    && PyErr_Occurred()) {
-					/* Too big for a C long. */
-					PyErr_Clear();
+				if (PyLong_Check(v)) {
 					temp = _PyString_FormatLong(v, flags,
 						prec, c, &pbuf, &len);
 					if (!temp)
