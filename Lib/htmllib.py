@@ -48,7 +48,9 @@ class HTMLParser(SGMLParser):
     def save_end(self):
         data = self.savedata
         self.savedata = None
-        return string.join(string.split(data))
+	if not self.nofill:
+	    data = string.join(string.split(data))
+	return data
 
     # --- Hooks for anchors; should probably be overridden
 
@@ -66,36 +68,6 @@ class HTMLParser(SGMLParser):
 
     def handle_image(self, src, alt):
         self.handle_data(alt)
-
-    # --- Hooks for forms; should probably be overridden
-
-    def form_bgn(self, action, method, enctype):
-        self.do_p([])
-        self.handle_data("<FORM>")
-
-    def form_end(self):
-        self.handle_data("</FORM>")
-        self.do_p([])
-
-    def handle_input(self, type, options):
-        self.handle_data("<INPUT>")
-
-    def select_bgn(self, name, size, multiple):
-        self.handle_data("<SELECT>")
-
-    def select_end(self):
-        self.handle_data("</SELECT>")
-
-    def handle_option(self, value, selected):
-        self.handle_data("<OPTION>")
-
-    def textarea_bgn(self, name, rows, cols):
-        self.handle_data("<TEXTAREA>")
-        self.start_pre([])
-
-    def textarea_end(self):
-        self.end_pre()
-        self.handle_data("</TEXTAREA>")
 
     # --------- Top level elememts
 
@@ -386,69 +358,6 @@ class HTMLParser(SGMLParser):
             if attrname == 'src':
                 src = value
         self.handle_image(src, alt)
-
-    # ------ Forms
-
-    def start_form(self, attrs):
-        action = ''
-        method = ''
-        enctype = ''
-        for a, v in attrs:
-            if a == 'action': action = v
-            if a == 'method': method = v
-            if a == 'enctype': enctype = v
-        self.form_bgn(action, method, enctype)
-
-    def end_form(self):
-        self.form_end()
-
-    def do_input(self, attrs):
-        type = ''
-        options = {}
-        for a, v in attrs:
-	    if a == 'type': type = string.lower(v)
-	    else: options[a] = v
-        self.handle_input(type, options)
-
-    def start_select(self, attrs):
-        name = ''
-        size = 0
-        multiple = 0
-        for a, v in attrs:
-            if a == 'multiple': multiple = 1
-            if a == 'name': name = v
-            if a == 'size':
-                try: size = string.atoi(size)
-                except: pass
-        self.select_bgn(name, size, multiple)
-
-    def end_select(self):
-        self.select_end()
-
-    def do_option(self, attrs):
-        value = ''
-        selected = 1
-        for a, v in attrs:
-            if a == 'value': value = v
-            if a == 'selected': selected = 1
-        self.handle_option(value, selected)
-
-    def start_textarea(self, attrs):
-        name = ''
-        rows = 0
-        cols = 0
-        for a, v in attrs:
-            if a == 'name': name = v
-            if a == 'rows':
-                try: rows = string.atoi(v)
-                except: pass
-            if a == 'cols':
-                try: cols = string.atoi(v)
-                except: pass
-        self.textarea_bgn(name, rows, cols)
-
-    def end_textarea(self):
-        self.textarea_end()
 
     # --- Really Old Unofficial Deprecated Stuff
 
