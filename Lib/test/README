@@ -115,6 +115,11 @@ In designing test cases you should pay attention to the following:
       test, try to write a test case that exposes the bug (preferably before
       fixing it).
 
+    * If you need to create a temporary file, you can use the filename in
+      test_support.TESTFN to do so.  It is important to remove the file
+      when done; other tests should be able to use the name without cleaning
+      up after your test.
+
 
 Regression Test Writing Rules
 
