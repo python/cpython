@@ -33,8 +33,8 @@ digits = '0123456789'
 #
 def getnum(s):
 	n = ''
-	while s[:1] in digits:
-		n = n + s[:1]
+	while s and s[0] in digits:
+		n = n + s[0]
 		s = s[1:]
 	return n, s
 

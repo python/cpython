@@ -1,12 +1,10 @@
 /* Parser generator */
+/* XXX This file is not yet fully PROTOized */
 
 /* For a description, see the comments at end of this file */
 
-#include <stdio.h>
+#include "pgenheaders.h"
 #include "assert.h"
-
-#include "PROTO.h"
-#include "malloc.h"
 #include "token.h"
 #include "node.h"
 #include "grammar.h"

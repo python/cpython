@@ -6,5 +6,4 @@ extern typeobject Moduletype;
 
 extern object *newmoduleobject PROTO((char *));
 extern object *getmoduledict PROTO((object *));
-extern int setmoduledict PROTO((object *, object *));
 extern char *getmodulename PROTO((object *));

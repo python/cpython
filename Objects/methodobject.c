@@ -1,15 +1,8 @@
 /* Method object implementation */
 
-#include <stdio.h>
+#include "allobjects.h"
 
-#include "PROTO.h"
-#include "object.h"
-#include "node.h"
-#include "stringobject.h"
-#include "methodobject.h"
-#include "objimpl.h"
 #include "token.h"
-#include "errors.h"
 
 typedef struct {
 	OB_HEAD
@@ -75,11 +68,10 @@ meth_print(m, fp, flags)
 	int flags;
 {
 	if (m->m_self == NULL)
-		fprintf(fp, "<%s method>", m->m_name);
+		fprintf(fp, "<built-in function '%s'>", m->m_name);
 	else
-		fprintf(fp, "<%s method of %s object at %lx>",
-			m->m_name, m->m_self->ob_type->tp_name,
-			(long)m->m_self);
+		fprintf(fp, "<built-in method '%s' of some %s object>",
+			m->m_name, m->m_self->ob_type->tp_name);
 }
 
 static object *
@@ -88,11 +80,11 @@ meth_repr(m)
 {
 	char buf[200];
 	if (m->m_self == NULL)
-		sprintf(buf, "<%.80s method>", m->m_name);
+		sprintf(buf, "<built-in function '%.80s'>", m->m_name);
 	else
-		sprintf(buf, "<%.80s method of %.80s object at %lx>",
-			m->m_name, m->m_self->ob_type->tp_name,
-			(long)m->m_self);
+		sprintf(buf,
+			"<built-in method '%.80s' of some %.80s object>",
+			m->m_name, m->m_self->ob_type->tp_name);
 	return newstringobject(buf);
 }
 
@@ -112,3 +104,20 @@ typeobject Methodtype = {
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
 };
+
+/* Find a method in a module's method table.
+   Usually called from an object's getattr method. */
+
+object *
+findmethod(ml, op, name)
+	struct methodlist *ml;
+	object *op;
+	char *name;
+{
+	for (; ml->ml_name != NULL; ml++) {
+		if (strcmp(name, ml->ml_name) == 0)
+			return newmethodobject(ml->ml_name, ml->ml_meth, op);
+	}
+	err_setstr(NameError, name);
+	return NULL;
+}

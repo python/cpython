@@ -1,16 +1,11 @@
 /* Type object implementation */
 
-#include <stdio.h>
-
-#include "PROTO.h"
-#include "object.h"
-#include "stringobject.h"
-#include "objimpl.h"
+#include "allobjects.h"
 
 /* Type object implementation */
 
 static void
-typeprint(v, fp, flags)
+type_print(v, fp, flags)
 	typeobject *v;
 	FILE *fp;
 	int flags;
@@ -19,7 +14,7 @@ typeprint(v, fp, flags)
 }
 
 static object *
-typerepr(v)
+type_repr(v)
 	typeobject *v;
 {
 	char buf[100];
@@ -27,21 +22,16 @@ typerepr(v)
 	return newstringobject(buf);
 }
 
-typedef struct {
-	OB_HEAD
-	long ob_ival;
-} intobject;
-
 typeobject Typetype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/* Number of items for varobject */
 	"type",			/* Name of this type */
 	sizeof(typeobject),	/* Basic object size */
 	0,			/* Item size for varobject */
-	0,		/*tp_dealloc*/
-	typeprint,	/*tp_print*/
-	0,		/*tp_getattr*/
-	0,		/*tp_setattr*/
-	0,		/*tp_compare*/
-	typerepr,	/*tp_repr*/
+	0,			/*tp_dealloc*/
+	type_print,		/*tp_print*/
+	0,			/*tp_getattr*/
+	0,			/*tp_setattr*/
+	0,			/*tp_compare*/
+	type_repr,		/*tp_repr*/
 };

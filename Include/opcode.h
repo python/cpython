@@ -1,9 +1,10 @@
 /* Instruction opcodes for compiled code */
 
-#define DUP_TOP		0
+#define STOP_CODE	0
 #define POP_TOP		1
 #define ROT_TWO		2
 #define ROT_THREE	3
+#define DUP_TOP		4
 
 #define UNARY_POSITIVE	10
 #define UNARY_NEGATIVE	11
@@ -76,5 +77,9 @@
 #define SETUP_EXCEPT	121	/* "" */
 #define SETUP_FINALLY	122	/* "" */
 
+#define SET_LINENO	127	/* Current line number */
+
 /* Comparison operator codes (argument to COMPARE_OP) */
 enum cmp_op {LT, LE, EQ, NE, GT, GE, IN, NOT_IN, IS, IS_NOT, EXC_MATCH, BAD};
+
+#define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)

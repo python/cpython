@@ -14,6 +14,11 @@ inserted in the tuple.  Similarly, gettupleitem does not increment the
 returned item's reference count.
 */
 
+typedef struct {
+	OB_VARHEAD
+	object *ob_item[1];
+} tupleobject;
+
 extern typeobject Tupletype;
 
 #define is_tupleobject(op) ((op)->ob_type == &Tupletype)
@@ -22,3 +27,6 @@ extern object *newtupleobject PROTO((int size));
 extern int gettuplesize PROTO((object *));
 extern object *gettupleitem PROTO((object *, int));
 extern int settupleitem PROTO((object *, int, object *));
+
+/* Macro, trading safety for speed */
+#define GETTUPLEITEM(op, i) ((op)->ob_item[i])

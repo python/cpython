@@ -1,14 +1,6 @@
 /* Module object implementation */
 
-#include <stdio.h>
-
-#include "PROTO.h"
-#include "object.h"
-#include "stringobject.h"
-#include "dictobject.h"
-#include "moduleobject.h"
-#include "objimpl.h"
-#include "errors.h"
+#include "allobjects.h"
 
 typedef struct {
 	OB_HEAD
@@ -37,29 +29,10 @@ getmoduledict(m)
 	object *m;
 {
 	if (!is_moduleobject(m)) {
-		err_badarg();
+		err_badcall();
 		return NULL;
 	}
 	return ((moduleobject *)m) -> md_dict;
-}
-
-int
-setmoduledict(m, v)
-	object *m;
-	object *v;
-{
-	if (!is_moduleobject(m)) {
-		err_badarg();
-		return -1;
-	}
-	if (!is_dictobject(v)) {
-		err_badarg();
-		return -1;
-	}
-	DECREF(((moduleobject *)m) -> md_dict);
-	INCREF(v);
-	((moduleobject *)m) -> md_dict = v;
-	return 0;
 }
 
 char *
@@ -76,7 +49,7 @@ getmodulename(m)
 /* Methods */
 
 static void
-moduledealloc(m)
+module_dealloc(m)
 	moduleobject *m;
 {
 	if (m->md_name != NULL)
@@ -87,32 +60,36 @@ moduledealloc(m)
 }
 
 static void
-moduleprint(m, fp, flags)
+module_print(m, fp, flags)
 	moduleobject *m;
 	FILE *fp;
 	int flags;
 {
-	fprintf(fp, "<module %s>", getstringvalue(m->md_name));
+	fprintf(fp, "<module '%s'>", getstringvalue(m->md_name));
 }
 
 static object *
-modulerepr(m)
+module_repr(m)
 	moduleobject *m;
 {
 	char buf[100];
-	sprintf(buf, "<module %.80s>", getstringvalue(m->md_name));
+	sprintf(buf, "<module '%.80s'>", getstringvalue(m->md_name));
 	return newstringobject(buf);
 }
 
 static object *
-modulegetattr(m, name)
+module_getattr(m, name)
 	moduleobject *m;
 	char *name;
 {
 	object *res;
-	if (strcmp(name, "__dict") == 0) {
+	if (strcmp(name, "__dict__") == 0) {
 		INCREF(m->md_dict);
 		return m->md_dict;
+	}
+	if (strcmp(name, "__name__") == 0) {
+		INCREF(m->md_name);
+		return m->md_name;
 	}
 	res = dictlookup(m->md_dict, name);
 	if (res == NULL)
@@ -123,15 +100,13 @@ modulegetattr(m, name)
 }
 
 static int
-modulesetattr(m, name, v)
+module_setattr(m, name, v)
 	moduleobject *m;
 	char *name;
 	object *v;
 {
-	if (strcmp(name, "__dict") == 0) {
-		/* Can't allow assignment to __dict, it would screw up
-		   module's functions which still use the old dictionary. */
-		err_setstr(NameError, "__dict is a reserved member name");
+	if (strcmp(name, "__dict__") == 0 || strcmp(name, "__name__") == 0) {
+		err_setstr(NameError, "can't assign to reserved member name");
 		return NULL;
 	}
 	if (v == NULL)
@@ -146,10 +121,10 @@ typeobject Moduletype = {
 	"module",		/*tp_name*/
 	sizeof(moduleobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
-	moduledealloc,	/*tp_dealloc*/
-	moduleprint,	/*tp_print*/
-	modulegetattr,	/*tp_getattr*/
-	modulesetattr,	/*tp_setattr*/
-	0,		/*tp_compare*/
-	modulerepr,	/*tp_repr*/
+	module_dealloc,		/*tp_dealloc*/
+	module_print,		/*tp_print*/
+	module_getattr,		/*tp_getattr*/
+	module_setattr,		/*tp_setattr*/
+	0,			/*tp_compare*/
+	module_repr,		/*tp_repr*/
 };

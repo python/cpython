@@ -1,4 +1,4 @@
-#include "PROTO.h"
+#include "pgenheaders.h"
 #include "grammar.h"
 static arc arcs_0_0[3] = {
 	{2, 1},

@@ -1,16 +1,14 @@
-/* Object implementation; and 'noobject' implementation */
+/* Generic object operations; and implementation of None (NoObject) */
 
-#include <stdio.h>
+#include "allobjects.h"
 
-#include "PROTO.h"
-#include "object.h"
-#include "stringobject.h"
-#include "objimpl.h"
-#include "errors.h"
+#ifdef REF_DEBUG
+long ref_total;
+#endif
 
-int StopPrint; /* Flag to indicate printing must be stopped */
-
-/* Object allocation routines used by NEWOBJ and NEWVAROBJ macros */
+/* Object allocation routines used by NEWOBJ and NEWVAROBJ macros.
+   These are used by the individual routines for object creation.
+   Do not call them otherwise, they do not initialize the object! */
 
 object *
 newobject(tp)
@@ -43,6 +41,8 @@ newvarobject(tp, size)
 
 #endif
 
+int StopPrint; /* Flag to indicate printing must be stopped */
+
 static int prlevel;
 
 void
@@ -52,6 +52,7 @@ printobject(op, fp, flags)
 	int flags;
 {
 	/* Hacks to make printing a long or recursive object interruptible */
+	/* XXX Interrupts should leave a more permanent error */
 	prlevel++;
 	if (!StopPrint && intrcheck()) {
 		fprintf(fp, "\n[print interrupted]\n");
@@ -61,12 +62,16 @@ printobject(op, fp, flags)
 		if (op == NULL) {
 			fprintf(fp, "<nil>");
 		}
-		else if (op->ob_type->tp_print == NULL) {
-			fprintf(fp, "<%s object at %lx>",
-				op->ob_type->tp_name, (long)op);
-		}
 		else {
-			(*op->ob_type->tp_print)(op, fp, flags);
+			if (op->ob_refcnt <= 0)
+				fprintf(fp, "(refcnt %d):", op->ob_refcnt);
+			if (op->ob_type->tp_print == NULL) {
+				fprintf(fp, "<%s object at %lx>",
+					op->ob_type->tp_name, (long)op);
+			}
+			else {
+				(*op->ob_type->tp_print)(op, fp, flags);
+			}
 		}
 	}
 	prlevel--;
@@ -78,17 +83,16 @@ object *
 reprobject(v)
 	object *v;
 {
-	object *w;
+	object *w = NULL;
 	/* Hacks to make converting a long or recursive object interruptible */
 	prlevel++;
 	if (!StopPrint && intrcheck()) {
 		StopPrint = 1;
-		w = NULL;
 		err_set(KeyboardInterrupt);
 	}
 	if (!StopPrint) {
 		if (v == NULL) {
-			w = newstringobject("<nil>");
+			w = newstringobject("<NULL>");
 		}
 		else if (v->ob_type->tp_repr == NULL) {
 			char buf[100];
@@ -98,6 +102,10 @@ reprobject(v)
 		}
 		else {
 			w = (*v->ob_type->tp_repr)(v);
+		}
+		if (StopPrint) {
+			XDECREF(w);
+			w = NULL;
 		}
 	}
 	prlevel--;
@@ -124,30 +132,76 @@ cmpobject(v, w)
 	return ((*tp->tp_compare)(v, w));
 }
 
+object *
+getattr(v, name)
+	object *v;
+	char *name;
+{
+	if (v->ob_type->tp_getattr == NULL) {
+		err_setstr(TypeError, "attribute-less object");
+		return NULL;
+	}
+	else {
+		return (*v->ob_type->tp_getattr)(v, name);
+	}
+}
+
+int
+setattr(v, name, w)
+	object *v;
+	char *name;
+	object *w;
+{
+	if (v->ob_type->tp_setattr == NULL) {
+		if (v->ob_type->tp_getattr == NULL)
+			err_setstr(TypeError, "attribute-less object");
+		else
+			err_setstr(TypeError, "object has read-only attributes");
+		return NULL;
+	}
+	else {
+		return (*v->ob_type->tp_setattr)(v, name, w);
+	}
+}
+
 
 /*
 NoObject is usable as a non-NULL undefined value, used by the macro None.
 There is (and should be!) no way to create other objects of this type,
-so there is exactly one.
+so there is exactly one (which is indestructible, by the way).
 */
 
 static void
-noprint(op, fp, flags)
+none_print(op, fp, flags)
 	object *op;
 	FILE *fp;
 	int flags;
 {
-	fprintf(fp, "<no value>");
+	fprintf(fp, "None");
+}
+
+static object *
+none_repr(op)
+	object *op;
+{
+	return newstringobject("None");
 }
 
 static typeobject Notype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
-	"novalue",
+	"None",
 	0,
 	0,
 	0,		/*tp_dealloc*/ /*never called*/
-	noprint,	/*tp_print*/
+	none_print,	/*tp_print*/
+	0,		/*tp_getattr*/
+	0,		/*tp_setattr*/
+	0,		/*tp_compare*/
+	none_repr,	/*tp_repr*/
+	0,		/*tp_as_number*/
+	0,		/*tp_as_sequence*/
+	0,		/*tp_as_mapping*/
 };
 
 object NoObject = {
@@ -170,15 +224,30 @@ NEWREF(op)
 	refchain._ob_next = op;
 }
 
-DELREF(op)
-	object *op;
+UNREF(op)
+	register object *op;
 {
+	register object *p;
 	if (op->ob_refcnt < 0) {
-		fprintf(stderr, "negative refcnt\n");
+		fprintf(stderr, "UNREF negative refcnt\n");
+		abort();
+	}
+	for (p = refchain._ob_next; p != &refchain; p = p->_ob_next) {
+		if (p == op)
+			break;
+	}
+	if (p == &refchain) { /* Not found */
+		fprintf(stderr, "UNREF unknown object\n");
 		abort();
 	}
 	op->_ob_next->_ob_prev = op->_ob_prev;
 	op->_ob_prev->_ob_next = op->_ob_next;
+}
+
+DELREF(op)
+	object *op;
+{
+	UNREF(op);
 	(*(op)->ob_type->tp_dealloc)(op);
 }
 

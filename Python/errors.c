@@ -11,12 +11,11 @@
    return value and then calls puterrno(ctx) to turn the errno value
    into a true exception.  Problems with this approach are:
    - it used standard errno values to indicate Python-specific errors,
-     but this means that when such an error code is reported by UNIX the
-     user gets a confusing message
+     but this means that when such an error code is reported by a system
+     call (e.g., in module posix), the user gets a confusing message
    - errno is a global variable, which makes extensions to a multi-
      threading environment difficult; e.g., in IRIX, multi-threaded
-     programs must use the function getoserror() (sp.?) instead of
-     looking in errno
+     programs must use the function oserror() instead of looking in errno
    - there is no portable way to add new error numbers for specic
      situations -- the value space for errno is reserved to the OS, yet
      the way to turn module-specific errors into a module-specific
@@ -25,21 +24,18 @@
      error.
   
   The new interface solves all these problems.  To return an error, a
-  built-in function calls err_set(exception), err_set(valexception,
+  built-in function calls err_set(exception), err_setval(exception,
   value) or err_setstr(exception, string), and returns NULL.  These
   functions save the value for later use by puterrno().  To adapt this
   scheme to a multi-threaded environment, only the implementation of
   err_setval() has to be changed.
 */
 
-#include <stdio.h>
+#include "errno.h"
 
-#include "PROTO.h"
-#include "object.h"
-#include "intobject.h"
-#include "stringobject.h"
-#include "tupleobject.h"
-#include "errors.h"
+#include "allobjects.h"
+
+#include "errcode.h"
 
 extern char *strerror PROTO((int));
 
@@ -53,16 +49,12 @@ err_setval(exception, value)
 	object *exception;
 	object *value;
 {
-	if (last_exception != NULL)
-		DECREF(last_exception);
-	if (exception != NULL)
-		INCREF(exception);
+	XDECREF(last_exception);
+	XINCREF(exception);
 	last_exception = exception;
 	
-	if (last_exc_val != NULL)
-		DECREF(last_exc_val);
-	if (value != NULL)
-		INCREF(value);
+	XDECREF(last_exc_val);
+	XINCREF(value);
 	last_exc_val = value;
 }
 
@@ -80,8 +72,7 @@ err_setstr(exception, string)
 {
 	object *value = newstringobject(string);
 	err_setval(exception, value);
-	if (value != NULL)
-		DECREF(value);
+	XDECREF(value);
 }
 
 int
@@ -104,14 +95,10 @@ err_get(p_exc, p_val)
 void
 err_clear()
 {
-	if (last_exception != NULL) {
-		DECREF(last_exception);
-		last_exception = NULL;
-	}
-	if (last_exc_val != NULL) {
-		DECREF(last_exc_val);
-		last_exc_val = NULL;
-	}
+	XDECREF(last_exception);
+	last_exception = NULL;
+	XDECREF(last_exc_val);
+	last_exc_val = NULL;
 }
 
 /* Convenience functions to set a type error exception and return 0 */
@@ -126,7 +113,7 @@ err_badarg()
 object *
 err_nomem()
 {
-	err_setstr(MemoryError, "in built-in function");
+	err_set(MemoryError);
 	return NULL;
 }
 
@@ -140,8 +127,7 @@ err_errno(exc)
 		settupleitem(v, 1, newstringobject(strerror(errno)));
 	}
 	err_setval(exc, v);
-	if (v != NULL)
-		DECREF(v);
+	XDECREF(v);
 	return NULL;
 }
 
@@ -149,4 +135,35 @@ void
 err_badcall()
 {
 	err_setstr(SystemError, "bad argument to internal function");
+}
+
+/* Set the error appropriate to the given input error code (see errcode.h) */
+
+void
+err_input(err)
+	int err;
+{
+	switch (err) {
+	case E_DONE:
+	case E_OK:
+		break;
+	case E_SYNTAX:
+		err_setstr(RuntimeError, "syntax error");
+		break;
+	case E_TOKEN:
+		err_setstr(RuntimeError, "illegal token");
+		break;
+	case E_INTR:
+		err_set(KeyboardInterrupt);
+		break;
+	case E_NOMEM:
+		err_nomem();
+		break;
+	case E_EOF:
+		err_set(EOFError);
+		break;
+	default:
+		err_setstr(RuntimeError, "unknown input error");
+		break;
+	}
 }

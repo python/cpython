@@ -1,31 +1,49 @@
 /* Compile an expression node to intermediate code */
 
-#include <stdio.h>
-#include <ctype.h>
-#include "string.h"
+/* XXX TO DO:
+   XXX Compute maximum needed stack sizes while compiling
+   XXX Generate simple jump for break/return outside 'try...finally'
+   XXX Include function name in code (and module names?)
+*/
 
-#include "PROTO.h"
-#include "object.h"
-#include "objimpl.h"
-#include "intobject.h"
-#include "floatobject.h"
-#include "stringobject.h"
-#include "listobject.h"
+#include "allobjects.h"
+
 #include "node.h"
 #include "token.h"
 #include "graminit.h"
-#include "errors.h"
 #include "compile.h"
 #include "opcode.h"
+#include "structmember.h"
+
+#include <ctype.h>
+
+#define OFF(x) offsetof(codeobject, x)
+
+static struct memberlist code_memberlist[] = {
+	{"co_code",	T_OBJECT,	OFF(co_code)},
+	{"co_consts",	T_OBJECT,	OFF(co_consts)},
+	{"co_names",	T_OBJECT,	OFF(co_names)},
+	{"co_filename",	T_OBJECT,	OFF(co_filename)},
+	{NULL}	/* Sentinel */
+};
+
+static object *
+code_getattr(co, name)
+	codeobject *co;
+	char *name;
+{
+	return getmember((char *)co, code_memberlist, name);
+}
 
 static void
-code_dealloc(c)
-	codeobject *c;
+code_dealloc(co)
+	codeobject *co;
 {
-	XDECREF(c->co_code);
-	XDECREF(c->co_consts);
-	XDECREF(c->co_names);
-	DEL(c);
+	XDECREF(co->co_code);
+	XDECREF(co->co_consts);
+	XDECREF(co->co_names);
+	XDECREF(co->co_filename);
+	DEL(co);
 }
 
 typeobject Codetype = {
@@ -36,7 +54,7 @@ typeobject Codetype = {
 	0,
 	code_dealloc,	/*tp_dealloc*/
 	0,		/*tp_print*/
-	0,		/*tp_getattr*/
+	code_getattr,	/*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
 	0,		/*tp_repr*/
@@ -45,13 +63,14 @@ typeobject Codetype = {
 	0,		/*tp_as_mapping*/
 };
 
-static codeobject *newcodeobject PROTO((object *, object *, object *));
+static codeobject *newcodeobject PROTO((object *, object *, object *, char *));
 
 static codeobject *
-newcodeobject(code, consts, names)
+newcodeobject(code, consts, names, filename)
 	object *code;
 	object *consts;
 	object *names;
+	char *filename;
 {
 	codeobject *co;
 	int i;
@@ -78,6 +97,10 @@ newcodeobject(code, consts, names)
 		co->co_consts = consts;
 		INCREF(names);
 		co->co_names = names;
+		if ((co->co_filename = newstringobject(filename)) == NULL) {
+			DECREF(co);
+			co = NULL;
+		}
 	}
 	return co;
 }
@@ -90,10 +113,13 @@ struct compiling {
 	object *c_names;	/* list of strings (names) */
 	int c_nexti;		/* index into c_code */
 	int c_errors;		/* counts errors occurred */
+	int c_infunction;	/* set when compiling a function */
+	int c_loops;		/* counts nested loops */
+	char *c_filename;	/* filename of current node */
 };
 
 /* Prototypes */
-static int com_init PROTO((struct compiling *));
+static int com_init PROTO((struct compiling *, char *));
 static void com_free PROTO((struct compiling *));
 static void com_done PROTO((struct compiling *));
 static void com_node PROTO((struct compiling *, struct _node *));
@@ -108,8 +134,9 @@ static int com_addname PROTO((struct compiling *, object *));
 static void com_addopname PROTO((struct compiling *, int, node *));
 
 static int
-com_init(c)
+com_init(c, filename)
 	struct compiling *c;
+	char *filename;
 {
 	if ((c->c_code = newsizedstringobject((char *)NULL, 0)) == NULL)
 		goto fail_3;
@@ -119,6 +146,9 @@ com_init(c)
 		goto fail_1;
 	c->c_nexti = 0;
 	c->c_errors = 0;
+	c->c_infunction = 0;
+	c->c_loops = 0;
+	c->c_filename = filename;
 	return 1;
 	
   fail_1:
@@ -153,6 +183,8 @@ com_addbyte(c, byte)
 {
 	int len;
 	if (byte < 0 || byte > 255) {
+		fprintf(stderr, "XXX compiling bad byte: %d\n", byte);
+		abort();
 		err_setstr(SystemError, "com_addbyte: byte out of range");
 		c->c_errors++;
 	}
@@ -1076,6 +1108,10 @@ com_return_stmt(c, n)
 	node *n;
 {
 	REQ(n, return_stmt); /* 'return' [testlist] NEWLINE */
+	if (!c->c_infunction) {
+		err_setstr(TypeError, "'return' outside function");
+		c->c_errors++;
+	}
 	if (NCH(n) == 2)
 		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
 	else
@@ -1134,6 +1170,9 @@ com_if_stmt(c, n)
 	/*'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite] */
 	for (i = 0; i+3 < NCH(n); i+=4) {
 		int a = 0;
+		node *ch = CHILD(n, i+1);
+		if (i > 0)
+			com_addoparg(c, SET_LINENO, ch->n_lineno);
 		com_node(c, CHILD(n, i+1));
 		com_addfwref(c, JUMP_IF_FALSE, &a);
 		com_addbyte(c, POP_TOP);
@@ -1158,10 +1197,13 @@ com_while_stmt(c, n)
 	REQ(n, while_stmt); /* 'while' test ':' suite ['else' ':' suite] */
 	com_addfwref(c, SETUP_LOOP, &break_anchor);
 	begin = c->c_nexti;
+	com_addoparg(c, SET_LINENO, n->n_lineno);
 	com_node(c, CHILD(n, 1));
 	com_addfwref(c, JUMP_IF_FALSE, &anchor);
 	com_addbyte(c, POP_TOP);
+	c->c_loops++;
 	com_node(c, CHILD(n, 3));
+	c->c_loops--;
 	com_addoparg(c, JUMP_ABSOLUTE, begin);
 	com_backpatch(c, anchor);
 	com_addbyte(c, POP_TOP);
@@ -1190,9 +1232,12 @@ com_for_stmt(c, n)
 	com_addoparg(c, LOAD_CONST, com_addconst(c, v));
 	XDECREF(v);
 	begin = c->c_nexti;
+	com_addoparg(c, SET_LINENO, n->n_lineno);
 	com_addfwref(c, FOR_LOOP, &anchor);
 	com_assign(c, CHILD(n, 1), 1/*assigning*/);
+	c->c_loops++;
 	com_node(c, CHILD(n, 5));
+	c->c_loops--;
 	com_addoparg(c, JUMP_ABSOLUTE, begin);
 	com_backpatch(c, anchor);
 	com_addbyte(c, POP_BLOCK);
@@ -1225,7 +1270,6 @@ com_for_stmt(c, n)
 		<code for S>
 		POP_BLOCK
 		LOAD_CONST	<nil>
-		LOAD_CONST	<nil>
 	L:	<code for Sf>
 		END_FINALLY
    
@@ -1242,13 +1286,9 @@ com_for_stmt(c, n)
 	stack until its level is the same as indicated on the
 	block stack.  (The label is ignored.)
    END_FINALLY:
-	Pops two entries from the *value* stack and re-raises
-	the exception they specify.  If the top entry is nil,
-	no exception is raised.  If it is a number, a pseudo
-	exception is raised ('return' or 'break').  Otherwise,
-	a real exception (specified by a string) is raised.
-	The second entry popped from the is the value that goes
-	with the exception (or the return value).
+	Pops a variable number of entries from the *value* stack
+	and re-raises the exception they specify.  The number of
+	entries popped depends on the (pseudo) exception type.
    
    The block stack is unwound when an exception is raised:
    when a SETUP_FINALLY entry is found, the exception is pushed
@@ -1257,6 +1297,9 @@ com_for_stmt(c, n)
    stack.
    
    Code generated for "try: S except E1, V1: S1 except E2, V2: S2 ...":
+   (The contents of the value stack is shown in [], with the top
+   at the right; 'tb' is trace-back info, 'val' the exception's
+   associated value, and 'exc' the exception.)
    
    Value stack		Label	Instruction	Argument
    []				SETUP_EXCEPT	L1
@@ -1264,22 +1307,23 @@ com_for_stmt(c, n)
    []				POP_BLOCK
    []				JUMP_FORWARD	L0
    
-   [val, exc]		L1:	DUP
-   [val, exc, exc]		<evaluate E1>
-   [val, exc, exc, E1]		COMPARE_OP	EXC_MATCH
-   [val, exc, 1-or-0]		JUMP_IF_FALSE	L2
-   [val, exc, 1]		POP
-   [val, exc]			POP
-   [val]			<assign to V1>
+   [tb, val, exc]	L1:	DUP				)
+   [tb, val, exc, exc]		<evaluate E1>			)
+   [tb, val, exc, exc, E1]	COMPARE_OP	EXC_MATCH	) only if E1
+   [tb, val, exc, 1-or-0]	JUMP_IF_FALSE	L2		)
+   [tb, val, exc, 1]		POP				)
+   [tb, val, exc]		POP
+   [tb, val]			<assign to V1>	(or POP if no V1)
+   [tb]				POP
    []				<code for S1>
    				JUMP_FORWARD	L0
    
-   [val, exc, 0]	L2:	POP
-   [val, exc]			DUP
+   [tb, val, exc, 0]	L2:	POP
+   [tb, val, exc]		DUP
    .............................etc.......................
 
-   [val, exc, 0]	Ln+1:	POP
-   [val, exc]	   		END_FINALLY	# re-raise exception
+   [tb, val, exc, 0]	Ln+1:	POP
+   [tb, val, exc]	   	END_FINALLY	# re-raise exception
    
    []			L0:	<next statement>
    
@@ -1323,6 +1367,7 @@ com_try_stmt(c, n)
 				break;
 			}
 			except_anchor = 0;
+			com_addoparg(c, SET_LINENO, ch->n_lineno);
 			if (NCH(ch) > 1) {
 				com_addbyte(c, DUP_TOP);
 				com_node(c, CHILD(ch, 1));
@@ -1335,6 +1380,7 @@ com_try_stmt(c, n)
 				com_assign(c, CHILD(ch, 3), 1/*assigning*/);
 			else
 				com_addbyte(c, POP_TOP);
+			com_addbyte(c, POP_TOP);
 			com_node(c, CHILD(n, i+2));
 			com_addfwref(c, JUMP_FORWARD, &end_anchor);
 			if (except_anchor) {
@@ -1346,11 +1392,13 @@ com_try_stmt(c, n)
 		com_backpatch(c, end_anchor);
 	}
 	if (finally_anchor) {
+		node *ch;
 		com_addbyte(c, POP_BLOCK);
 		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
-		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
 		com_backpatch(c, finally_anchor);
-		com_node(c, CHILD(n, NCH(n)-1));
+		ch = CHILD(n, NCH(n)-1);
+		com_addoparg(c, SET_LINENO, ch->n_lineno);
+		com_node(c, ch);
 		com_addbyte(c, END_FINALLY);
 	}
 }
@@ -1382,7 +1430,7 @@ com_funcdef(c, n)
 {
 	object *v;
 	REQ(n, funcdef); /* funcdef: 'def' NAME parameters ':' suite */
-	v = (object *)compile(n);
+	v = (object *)compile(n, c->c_filename);
 	if (v == NULL)
 		c->c_errors++;
 	else {
@@ -1426,7 +1474,7 @@ com_classdef(c, n)
 		com_bases(c, CHILD(n, 4));
 	else
 		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
-	v = (object *)compile(n);
+	v = (object *)compile(n, c->c_filename);
 	if (v == NULL)
 		c->c_errors++;
 	else {
@@ -1459,9 +1507,13 @@ com_node(c, n)
 	/* Trivial parse tree nodes */
 	
 	case stmt:
-	case simple_stmt:
 	case flow_stmt:
+		com_node(c, CHILD(n, 0));
+		break;
+
+	case simple_stmt:
 	case compound_stmt:
+		com_addoparg(c, SET_LINENO, n->n_lineno);
 		com_node(c, CHILD(n, 0));
 		break;
 
@@ -1479,6 +1531,10 @@ com_node(c, n)
 	case pass_stmt:
 		break;
 	case break_stmt:
+		if (c->c_loops == 0) {
+			err_setstr(TypeError, "'break' outside loop");
+			c->c_errors++;
+		}
 		com_addbyte(c, BREAK_LOOP);
 		break;
 	case return_stmt:
@@ -1608,24 +1664,10 @@ compile_funcdef(c, n)
 		com_addbyte(c, REQUIRE_ARGS);
 		com_fplist(c, ch);
 	}
+	c->c_infunction = 1;
 	com_node(c, CHILD(n, 4));
+	c->c_infunction = 0;
 	com_addoparg(c, LOAD_CONST, com_addconst(c, None));
-	com_addbyte(c, RETURN_VALUE);
-}
-
-static void
-compile_classdef(c, n)
-	struct compiling *c;
-	node *n;
-{
-	node *ch;
-	REQ(n, classdef);
-	/*
-	classdef: 'class' NAME parameters ['=' baselist] ':' suite
-	*/
-	com_addbyte(c, REFUSE_ARGS);
-	com_node(c, CHILD(n, NCH(n)-1));
-	com_addbyte(c, LOAD_LOCALS);
 	com_addbyte(c, RETURN_VALUE);
 }
 
@@ -1634,22 +1676,38 @@ compile_node(c, n)
 	struct compiling *c;
 	node *n;
 {
+	com_addoparg(c, SET_LINENO, n->n_lineno);
+	
 	switch (TYPE(n)) {
 	
 	case single_input:
 		/* NEWLINE | simple_stmt | compound_stmt NEWLINE */
+		com_addbyte(c, REFUSE_ARGS);
 		n = CHILD(n, 0);
 		if (TYPE(n) != NEWLINE)
 			com_node(c, n);
+		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+		com_addbyte(c, RETURN_VALUE);
 		break;
 	
 	case file_input:
+		com_addbyte(c, REFUSE_ARGS);
 		com_file_input(c, n);
+		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+		com_addbyte(c, RETURN_VALUE);
 		break;
 	
 	case expr_input:
-	case eval_input:
+		com_addbyte(c, REFUSE_ARGS);
 		com_node(c, CHILD(n, 0));
+		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+		com_addbyte(c, RETURN_VALUE);
+		break;
+	
+	case eval_input:
+		com_addbyte(c, REFUSE_ARGS);
+		com_node(c, CHILD(n, 0));
+		com_addbyte(c, RETURN_VALUE);
 		break;
 	
 	case funcdef:
@@ -1657,7 +1715,11 @@ compile_node(c, n)
 		break;
 	
 	case classdef:
-		compile_classdef(c, n);
+		/* 'class' NAME parameters ['=' baselist] ':' suite */
+		com_addbyte(c, REFUSE_ARGS);
+		com_node(c, CHILD(n, NCH(n)-1));
+		com_addbyte(c, LOAD_LOCALS);
+		com_addbyte(c, RETURN_VALUE);
 		break;
 	
 	default:
@@ -1668,17 +1730,18 @@ compile_node(c, n)
 }
 
 codeobject *
-compile(n)
+compile(n, filename)
 	node *n;
+	char *filename;
 {
 	struct compiling sc;
 	codeobject *co;
-	if (!com_init(&sc))
+	if (!com_init(&sc, filename))
 		return NULL;
 	compile_node(&sc, n);
 	com_done(&sc);
 	if (sc.c_errors == 0)
-		co = newcodeobject(sc.c_code, sc.c_consts, sc.c_names);
+		co = newcodeobject(sc.c_code, sc.c_consts, sc.c_names, filename);
 	else
 		co = NULL;
 	com_free(&sc);

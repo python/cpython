@@ -2,19 +2,16 @@
 
 /* XXX This should become a built-in module 'io'.  It should support more
    functionality, better exception handling for invalid calls, etc.
+   (Especially reading on a write-only file or vice versa!)
    It should also cooperate with posix to support popen(), which should
    share most code but have a special close function. */
 
-#include <stdio.h>
+#include "allobjects.h"
 
-#include "PROTO.h"
-#include "object.h"
-#include "stringobject.h"
-#include "intobject.h"
-#include "fileobject.h"
-#include "methodobject.h"
-#include "objimpl.h"
-#include "errors.h"
+#include "errno.h"
+#ifndef errno
+extern int errno;
+#endif
 
 typedef struct {
 	OB_HEAD
@@ -29,7 +26,7 @@ getfilefile(f)
 	object *f;
 {
 	if (!is_fileobject(f)) {
-		errno = EBADF;
+		err_badcall();
 		return NULL;
 	}
 	return ((fileobject *)f)->f_fp;
@@ -49,7 +46,6 @@ newopenfileobject(fp, name, mode)
 	f->f_mode = newstringobject(mode);
 	if (f->f_name == NULL || f->f_mode == NULL) {
 		DECREF(f);
-		errno = ENOMEM;
 		return NULL;
 	}
 	f->f_fp = fp;
@@ -67,6 +63,7 @@ newfileobject(name, mode)
 		return NULL;
 	if ((f->f_fp = fopen(name, mode)) == NULL) {
 		DECREF(f);
+		err_errno(RuntimeError); /* XXX Should use another error */
 		return NULL;
 	}
 	return (object *)f;
@@ -75,7 +72,7 @@ newfileobject(name, mode)
 /* Methods */
 
 static void
-filedealloc(f)
+file_dealloc(f)
 	fileobject *f;
 {
 	if (f->f_fp != NULL)
@@ -88,7 +85,7 @@ filedealloc(f)
 }
 
 static void
-fileprint(f, fp, flags)
+file_print(f, fp, flags)
 	fileobject *f;
 	FILE *fp;
 	int flags;
@@ -101,11 +98,11 @@ fileprint(f, fp, flags)
 }
 
 static object *
-filerepr(f)
+file_repr(f)
 	fileobject *f;
 {
 	char buf[300];
-	/* XXX This differs from fileprint if the filename contains
+	/* XXX This differs from file_print if the filename contains
 	   quotes or other funny characters. */
 	sprintf(buf, "<%s file '%.256s', mode '%.10s'>",
 		f->f_fp == NULL ? "closed" : "open",
@@ -115,12 +112,12 @@ filerepr(f)
 }
 
 static object *
-fileclose(f, args)
+file_close(f, args)
 	fileobject *f;
 	object *args;
 {
 	if (args != NULL) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 	if (f->f_fp != NULL) {
@@ -132,30 +129,28 @@ fileclose(f, args)
 }
 
 static object *
-fileread(f, args)
+file_read(f, args)
 	fileobject *f;
 	object *args;
 {
 	int n;
 	object *v;
 	if (f->f_fp == NULL) {
-		errno = EBADF;
+		err_badarg();
 		return NULL;
 	}
 	if (args == NULL || !is_intobject(args)) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 	n = getintvalue(args);
 	if (n < 0) {
-		errno = EDOM;
+		err_badarg();
 		return NULL;
 	}
 	v = newsizedstringobject((char *)NULL, n);
-	if (v == NULL) {
-		errno = ENOMEM;
+	if (v == NULL)
 		return NULL;
-	}
 	n = fread(getstringvalue(v), 1, n, f->f_fp);
 	/* EOF is reported as an empty string */
 	/* XXX should detect real I/O errors? */
@@ -166,14 +161,14 @@ fileread(f, args)
 /* XXX Should this be unified with raw_input()? */
 
 static object *
-filereadline(f, args)
+file_readline(f, args)
 	fileobject *f;
 	object *args;
 {
 	int n;
 	object *v;
 	if (f->f_fp == NULL) {
-		errno = EBADF;
+		err_badarg();
 		return NULL;
 	}
 	if (args == NULL) {
@@ -181,21 +176,23 @@ filereadline(f, args)
 	}
 	else if (is_intobject(args)) {
 		n = getintvalue(args);
-		if (n < 0 || n > 0x7fff /*XXX*/ ) {
-			errno = EDOM;
+		if (n < 0) {
+			err_badarg();
 			return NULL;
 		}
 	}
 	else {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 	v = newsizedstringobject((char *)NULL, n);
-	if (v == NULL) {
-		errno = ENOMEM;
+	if (v == NULL)
 		return NULL;
-	}
-	if (fgets(getstringvalue(v), n+1, f->f_fp) == NULL) {
+#ifndef THINK_C
+	/* XXX Think C reads n characters, others read n-1 characters... */
+	n = n+1;
+#endif
+	if (fgets(getstringvalue(v), n, f->f_fp) == NULL) {
 		/* EOF is reported as an empty string */
 		/* XXX should detect real I/O errors? */
 		n = 0;
@@ -208,17 +205,17 @@ filereadline(f, args)
 }
 
 static object *
-filewrite(f, args)
+file_write(f, args)
 	fileobject *f;
 	object *args;
 {
 	int n, n2;
 	if (f->f_fp == NULL) {
-		errno = EBADF;
+		err_badarg();
 		return NULL;
 	}
 	if (args == NULL || !is_stringobject(args)) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 	errno = 0;
@@ -226,36 +223,27 @@ filewrite(f, args)
 	if (n2 != n) {
 		if (errno == 0)
 			errno = EIO;
+		err_errno(RuntimeError);
 		return NULL;
 	}
 	INCREF(None);
 	return None;
 }
 
-static struct methodlist {
-	char *ml_name;
-	method ml_meth;
-} filemethods[] = {
-	{"write",	filewrite},
-	{"read",	fileread},
-	{"readline",	filereadline},
-	{"close",	fileclose},
+static struct methodlist file_methods[] = {
+	{"write",	file_write},
+	{"read",	file_read},
+	{"readline",	file_readline},
+	{"close",	file_close},
 	{NULL,		NULL}		/* sentinel */
 };
 
 static object *
-filegetattr(f, name)
+file_getattr(f, name)
 	fileobject *f;
 	char *name;
 {
-	struct methodlist *ml = filemethods;
-	for (; ml->ml_name != NULL; ml++) {
-		if (strcmp(name, ml->ml_name) == 0)
-			return newmethodobject(ml->ml_name, ml->ml_meth,
-				(object *)f);
-	}
-	err_setstr(NameError, name);
-	return NULL;
+	return findmethod(file_methods, (object *)f, name);
 }
 
 typeobject Filetype = {
@@ -264,10 +252,10 @@ typeobject Filetype = {
 	"file",
 	sizeof(fileobject),
 	0,
-	filedealloc,	/*tp_dealloc*/
-	fileprint,	/*tp_print*/
-	filegetattr,	/*tp_getattr*/
+	file_dealloc,	/*tp_dealloc*/
+	file_print,	/*tp_print*/
+	file_getattr,	/*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
-	filerepr,	/*tp_repr*/
+	file_repr,	/*tp_repr*/
 };

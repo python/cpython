@@ -1,3 +1,4 @@
+#define NDEBUG
 /* Object and type object interface */
 
 /*
@@ -47,11 +48,15 @@ whose size is determined when the object is allocated.
 123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
 */
 
-#ifdef THINK_C
-/* Debugging options for THINK_C (which has no -D compiler option): */
-/*#define TRACE_REFS*/
-/*#define REF_DEBUG*/
-#endif
+#ifndef NDEBUG
+
+/* Turn on heavy reference debugging */
+#define TRACE_REFS
+
+/* Turn on reference counting */
+#define REF_DEBUG
+
+#endif /* NDEBUG */
 
 #ifdef TRACE_REFS
 #define OB_HEAD \
@@ -147,9 +152,12 @@ extern typeobject Typetype; /* The type of type objects */
 
 #define is_typeobject(op) ((op)->ob_type == &Typetype)
 
+/* Generic operations on objects */
 extern void printobject PROTO((object *, FILE *, int));
 extern object * reprobject PROTO((object *));
 extern int cmpobject PROTO((object *, object *));
+extern object *getattr PROTO((object *, char *));
+extern int setattr PROTO((object *, char *, object *));
 
 /* Flag bits for printing: */
 #define PRINT_RAW	1	/* No string quotes etc. */
@@ -215,6 +223,10 @@ extern long ref_total;
 		DELREF(op)
 #endif
 
+/* Macros to use in case the object pointer may be NULL: */
+
+#define XINCREF(op) if ((op) == NULL) ; else INCREF(op)
+#define XDECREF(op) if ((op) == NULL) ; else DECREF(op)
 
 /* Definition of NULL, so you don't have to include <stdio.h> */
 
@@ -252,22 +264,12 @@ Failure Modes
 -------------
 
 Functions may fail for a variety of reasons, including running out of
-memory.  This is communicated to the caller in two ways: 'errno' is set
-to indicate the error, and the function result differs: functions that
-normally return a pointer return nil for failure, functions returning
-an integer return -1 (which can be a legal return value too!), and
-other functions return 0 for success and the error number for failure.
-Callers should always check for errors before using the result.  The
-following error codes are used:
-
-	EBADF		bad object type (first argument only)
-	EINVAL		bad argument type (second and further arguments)
-	ENOMEM		no memory (malloc failed)
-	ENOENT		key not found in dictionary
-	EDOM		index out of range or division by zero
-	ERANGE		result not representable
-	
-	XXX any others?
+memory.  This is communicated to the caller in two ways: an error string
+is set (see errors.h), and the function result differs: functions that
+normally return a pointer return NULL for failure, functions returning
+an integer return -1 (which could be a legal return value too!), and
+other functions return 0 for success and -1 for failure.
+Callers should always check for errors before using the result.
 
 Reference Counts
 ----------------
@@ -296,16 +298,3 @@ times.
 
 123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
 */
-
-/* Error number interface */
-#include <errno.h>
-
-#ifndef errno
-extern int errno;
-#endif
-
-#ifdef THINK_C
-/* Lightspeed C doesn't define these in <errno.h> */
-#define EDOM 33
-#define ERANGE 34
-#endif

@@ -1,11 +1,8 @@
 /* Function object implementation */
 
-#include <stdio.h>
+#include "allobjects.h"
 
-#include "PROTO.h"
-#include "object.h"
-#include "funcobject.h"
-#include "objimpl.h"
+#include "structmember.h"
 
 typedef struct {
 	OB_HEAD
@@ -52,8 +49,24 @@ getfuncglobals(op)
 
 /* Methods */
 
+#define OFF(x) offsetof(funcobject, x)
+
+static struct memberlist func_memberlist[] = {
+	{"func_code",	T_OBJECT,	OFF(func_code)},
+	{"func_globals",T_OBJECT,	OFF(func_globals)},
+	{NULL}	/* Sentinel */
+};
+
+static object *
+func_getattr(op, name)
+	funcobject *op;
+	char *name;
+{
+	return getmember((char *)op, func_memberlist, name);
+}
+
 static void
-funcdealloc(op)
+func_dealloc(op)
 	funcobject *op;
 {
 	DECREF(op->func_code);
@@ -67,9 +80,9 @@ typeobject Functype = {
 	"function",
 	sizeof(funcobject),
 	0,
-	funcdealloc,	/*tp_dealloc*/
+	func_dealloc,	/*tp_dealloc*/
 	0,		/*tp_print*/
-	0,		/*tp_getattr*/
+	func_getattr,	/*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
 	0,		/*tp_repr*/

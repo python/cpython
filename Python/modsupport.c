@@ -1,36 +1,8 @@
 /* Module support implementation */
 
-#include <stdio.h>
-
-#include "PROTO.h"
-#include "object.h"
-#include "intobject.h"
-#include "stringobject.h"
-#include "tupleobject.h"
-#include "listobject.h"
-#include "methodobject.h"
-#include "moduleobject.h"
+#include "allobjects.h"
 #include "modsupport.h"
 #include "import.h"
-#include "errors.h"
-
-
-/* Find a method in a module's method table.
-   Usually called from a module's getattr method. */
-
-object *
-findmethod(ml, op, name)
-	struct methodlist *ml;
-	object *op;
-	char *name;
-{
-	for (; ml->ml_name != NULL; ml++) {
-		if (strcmp(name, ml->ml_name) == 0)
-			return newmethodobject(ml->ml_name, ml->ml_meth, op);
-	}
-	err_setstr(NameError, name);
-	return NULL;
-}
 
 
 object *
@@ -40,21 +12,24 @@ initmodule(name, methods)
 {
 	object *m, *d, *v;
 	struct methodlist *ml;
-	if ((m = new_module(name)) == NULL) {
+	char namebuf[256];
+	if ((m = add_module(name)) == NULL) {
 		fprintf(stderr, "initializing module: %s\n", name);
 		fatal("can't create a module");
 	}
 	d = getmoduledict(m);
 	for (ml = methods; ml->ml_name != NULL; ml++) {
-		v = newmethodobject(ml->ml_name, ml->ml_meth, (object *)NULL);
+		sprintf(namebuf, "%s.%s", name, ml->ml_name);
+		v = newmethodobject(strdup(namebuf), ml->ml_meth,
+						(object *)NULL);
+		/* XXX The strdup'ed memory is never freed */
 		if (v == NULL || dictinsert(d, ml->ml_name, v) != 0) {
 			fprintf(stderr, "initializing module: %s\n", name);
 			fatal("can't initialize module");
 		}
 		DECREF(v);
 	}
-	DECREF(m);
-	return m; /* Yes, it still exists, in sys.modules... */
+	return m;
 }
 
 

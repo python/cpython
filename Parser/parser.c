@@ -4,20 +4,17 @@
 
 /* XXX To do: error recovery */
 
-#include <stdio.h>
+#include "pgenheaders.h"
 #include "assert.h"
-
-#include "PROTO.h"
-#include "malloc.h"
 #include "token.h"
 #include "grammar.h"
 #include "node.h"
 #include "parser.h"
 #include "errcode.h"
 
-extern int debugging;
 
 #ifdef DEBUG
+extern int debugging;
 #define D(x) if (!debugging); else x
 #else
 #define D(x)
@@ -94,7 +91,7 @@ newparser(g, start)
 	if (ps == NULL)
 		return NULL;
 	ps->p_grammar = g;
-	ps->p_tree = newnode(start);
+	ps->p_tree = newtree(start);
 	if (ps->p_tree == NULL) {
 		DEL(ps);
 		return NULL;
@@ -110,24 +107,25 @@ delparser(ps)
 {
 	/* NB If you want to save the parse tree,
 	   you must set p_tree to NULL before calling delparser! */
-	freenode(ps->p_tree);
+	freetree(ps->p_tree);
 	DEL(ps);
 }
 
 
 /* PARSER STACK OPERATIONS */
 
-static int shift PROTO((stack *, int, char *, int));
+static int shift PROTO((stack *, int, char *, int, int));
 
 static int
-shift(s, type, str, newstate)
+shift(s, type, str, newstate, lineno)
 	register stack *s;
 	int type;
 	char *str;
 	int newstate;
+	int lineno;
 {
 	assert(!s_empty(s));
-	if (addchild(s->s_top->s_parent, type, str) == NULL) {
+	if (addchild(s->s_top->s_parent, type, str, lineno) == NULL) {
 		fprintf(stderr, "shift: no mem in addchild\n");
 		return -1;
 	}
@@ -135,19 +133,20 @@ shift(s, type, str, newstate)
 	return 0;
 }
 
-static int push PROTO((stack *, int, dfa *, int));
+static int push PROTO((stack *, int, dfa *, int, int));
 
 static int
-push(s, type, d, newstate)
+push(s, type, d, newstate, lineno)
 	register stack *s;
 	int type;
 	dfa *d;
 	int newstate;
+	int lineno;
 {
 	register node *n;
 	n = s->s_top->s_parent;
 	assert(!s_empty(s));
-	if (addchild(n, type, (char *)NULL) == NULL) {
+	if (addchild(n, type, (char *)NULL, lineno) == NULL) {
 		fprintf(stderr, "push: no mem in addchild\n");
 		return -1;
 	}
@@ -198,10 +197,11 @@ classify(g, type, str)
 }
 
 int
-addtoken(ps, type, str)
+addtoken(ps, type, str, lineno)
 	register parser_state *ps;
 	register int type;
 	char *str;
+	int lineno;
 {
 	register int ilabel;
 	
@@ -230,7 +230,8 @@ addtoken(ps, type, str)
 					int nt = (x >> 8) + NT_OFFSET;
 					int arrow = x & ((1<<7)-1);
 					dfa *d1 = finddfa(ps->p_grammar, nt);
-					if (push(&ps->p_stack, nt, d1, arrow) < 0) {
+					if (push(&ps->p_stack, nt, d1,
+						arrow, lineno) < 0) {
 						D(printf(" MemError: push.\n"));
 						return E_NOMEM;
 					}
@@ -239,7 +240,8 @@ addtoken(ps, type, str)
 				}
 				
 				/* Shift the token */
-				if (shift(&ps->p_stack, type, str, x) < 0) {
+				if (shift(&ps->p_stack, type, str,
+						x, lineno) < 0) {
 					D(printf(" MemError: shift.\n"));
 					return E_NOMEM;
 				}

@@ -1,13 +1,28 @@
 /* Computation of FIRST stets */
 
-#include <stdio.h>
-
-#include "PROTO.h"
-#include "malloc.h"
+#include "pgenheaders.h"
 #include "grammar.h"
 #include "token.h"
 
 extern int debugging;
+
+/* Forward */
+static void calcfirstset PROTO((grammar *, dfa *));
+
+void
+addfirstsets(g)
+	grammar *g;
+{
+	int i;
+	dfa *d;
+	
+	printf("Adding FIRST sets ...\n");
+	for (i = 0; i < g->g_ndfas; i++) {
+		d = &g->g_dfa[i];
+		if (d->d_first == NULL)
+			calcfirstset(g, d);
+	}
+}
 
 static void
 calcfirstset(g, d)
@@ -90,20 +105,5 @@ calcfirstset(g, d)
 				printf(" %s", labelrepr(&l0[i]));
 		}
 		printf(" }\n");
-	}
-}
-
-void
-addfirstsets(g)
-	grammar *g;
-{
-	int i;
-	dfa *d;
-	
-	printf("Adding FIRST sets ...\n");
-	for (i = 0; i < g->g_ndfas; i++) {
-		d = &g->g_dfa[i];
-		if (d->d_first == NULL)
-			calcfirstset(g, d);
 	}
 }

@@ -1,6 +1,5 @@
 /* POSIX module implementation */
 
-#include <stdio.h>
 #include <signal.h>
 #include <string.h>
 #include <setjmp.h>
@@ -14,20 +13,8 @@
 #include <sys/dir.h>
 #endif
 
-#include "PROTO.h"
-#include "object.h"
-#include "intobject.h"
-#include "stringobject.h"
-#include "tupleobject.h"
-#include "listobject.h"
-#include "dictobject.h"
-#include "methodobject.h"
-#include "moduleobject.h"
-#include "objimpl.h"
-#include "import.h"
-#include "sigtype.h"
+#include "allobjects.h"
 #include "modsupport.h"
-#include "errors.h"
 
 extern char *strerror PROTO((int));
 
@@ -140,7 +127,6 @@ posix_do_stat(self, args, statfunc)
 	v = newtupleobject(10);
 	if (v == NULL)
 		return NULL;
-	errno = 0;
 #define SET(i, st_member) settupleitem(v, i, newintobject((long)st.st_member))
 	SET(0, st_mode);
 	SET(1, st_ino);
@@ -153,9 +139,9 @@ posix_do_stat(self, args, statfunc)
 	SET(8, st_mtime);
 	SET(9, st_ctime);
 #undef SET
-	if (errno != 0) {
+	if (err_occurred()) {
 		DECREF(v);
-		return err_nomem();
+		return NULL;
 	}
 	return v;
 }
@@ -334,6 +320,8 @@ posix_utimes(self, args)
 }
 
 #ifdef NO_GETCWD
+
+#include "errno.h"
 
 /* Quick hack to get posix.getcwd() working for pure BSD 4.3 */
 /* XXX This assumes MAXPATHLEN = 1024 !!! */

@@ -1,22 +1,6 @@
 /* List object implementation */
 
-#include <stdio.h>
-
-#include "PROTO.h"
-#include "object.h"
-#include "intobject.h"
-#include "stringobject.h"
-#include "tupleobject.h"
-#include "methodobject.h"
-#include "listobject.h"
-#include "objimpl.h"
-#include "modsupport.h"
-#include "errors.h"
-
-typedef struct {
-	OB_VARHEAD
-	object **ob_item;
-} listobject;
+#include "allobjects.h"
 
 object *
 newlistobject(size)

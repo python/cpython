@@ -76,3 +76,6 @@ void translatelabels PROTO((grammar *g));
 void addfirstsets PROTO((grammar *g));
 
 void addaccellerators PROTO((grammar *g));
+
+void printgrammar PROTO((grammar *g, FILE *fp));
+void printnonterminals PROTO((grammar *g, FILE *fp));

@@ -1,11 +1,52 @@
 /* Parser accelerator module */
 
-#include <stdio.h>
+/* The parser as originally conceived had disappointing performance.
+   This module does some precomputation that speeds up the selection
+   of a DFA based upon a token, turning a search through an array
+   into a simple indexing operation.  The parser now cannot work
+   without the accelerators installed.  Note that the accelerators
+   are installed dynamically when the parser is initialized, they
+   are not part of the static data structure written on graminit.[ch]
+   by the parser generator. */
 
-#include "PROTO.h"
+#include "pgenheaders.h"
 #include "grammar.h"
 #include "token.h"
-#include "malloc.h"
+#include "parser.h"
+
+/* Forward references */
+static void fixdfa PROTO((grammar *, dfa *));
+static void fixstate PROTO((grammar *, dfa *, state *));
+
+void
+addaccelerators(g)
+	grammar *g;
+{
+	dfa *d;
+	int i;
+#ifdef DEBUG
+	printf("Adding parser accellerators ...\n");
+#endif
+	d = g->g_dfa;
+	for (i = g->g_ndfas; --i >= 0; d++)
+		fixdfa(g, d);
+	g->g_accel = 1;
+#ifdef DEBUG
+	printf("Done.\n");
+#endif
+}
+
+static void
+fixdfa(g, d)
+	grammar *g;
+	dfa *d;
+{
+	state *s;
+	int j;
+	s = d->d_state;
+	for (j = 0; j < d->d_nstates; j++, s++)
+		fixstate(g, d, s);
+}
 
 static void
 fixstate(g, d, s)
@@ -68,34 +109,4 @@ fixstate(g, d, s)
 			s->s_accel[i] = accel[k];
 	}
 	DEL(accel);
-}
-
-static void
-fixdfa(g, d)
-	grammar *g;
-	dfa *d;
-{
-	state *s;
-	int j;
-	s = d->d_state;
-	for (j = 0; j < d->d_nstates; j++, s++)
-		fixstate(g, d, s);
-}
-
-void
-addaccelerators(g)
-	grammar *g;
-{
-	dfa *d;
-	int i;
-#ifdef DEBUG
-	printf("Adding parser accellerators ...\n");
-#endif
-	d = g->g_dfa;
-	for (i = g->g_ndfas; --i >= 0; d++)
-		fixdfa(g, d);
-	g->g_accel = 1;
-#ifdef DEBUG
-	printf("Done.\n");
-#endif
 }
