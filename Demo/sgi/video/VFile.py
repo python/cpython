@@ -158,6 +158,10 @@ def is_entry_indigo():
 # XXX Temporarily disabled, since it is unclear which machines support
 # XXX which pixelsizes.
 #
+# XXX The XS appears to support 4 bit pixels, but (looking at osview) it
+# XXX seems as if the conversion is done by the kernel (unpacking ourselves
+# XXX is faster than using PM_SIZE=4)
+#
 def support_packed_pixels():
 	return 0   # To be architecture-dependent
 
