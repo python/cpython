@@ -1193,6 +1193,20 @@ class TestRFC2047(unittest.TestCase):
         eq(Utils.encode(s2, charset='iso-8859-2', encoding='b'),
            '=?iso-8859-2?b?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=')
 
+    def test_rfc2047_multiline(self):
+        eq = self.assertEqual
+        s = """Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz
+ foo bar =?mac-iceland?q?r=8Aksm=9Arg=8Cs?="""
+        dh = decode_header(s)
+        eq(dh, [
+            ('Re:', None),
+            ('r\x8aksm\x9arg\x8cs', 'mac-iceland'),
+            ('baz foo bar', None),
+            ('r\x8aksm\x9arg\x8cs', 'mac-iceland')])
+        eq(str(make_header(dh)),
+           """Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar
+ =?mac-iceland?q?r=8Aksm=9Arg=8Cs?=""")
+
 
 
 # Test the MIMEMessage class
