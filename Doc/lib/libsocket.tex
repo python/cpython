@@ -284,7 +284,7 @@ checked --- subsequent operations on the object may fail if the file
 descriptor is invalid.  This function is rarely needed, but can be
 used to get or set socket options on a socket passed to a program as
 standard input or output (such as a server started by the \UNIX{} inet
-daemon).  The socket is assumed to be created in blocking mode without
+daemon).  The socket is assumed to be in blocking mode without
 a timeout.
 Availability: \UNIX.
 \end{funcdesc}
@@ -455,6 +455,7 @@ are described in \ref{bltin-file-objects}, ``File Objects.'')
 The file object references a \cfunction{dup()}ped version of the
 socket file descriptor, so the file object and socket object may be
 closed or garbage-collected independently.
+The socket should be in blocking mode.
 \index{I/O control!buffering}The optional \var{mode}
 and \var{bufsize} arguments are interpreted the same way as by the
 built-in \function{file()} function; see ``Built-in Functions''
@@ -545,6 +546,14 @@ Calling \method{settimeout()} cancels non-blocking mode as set by
 previously set timeout.  Setting the timeout to zero acts similarly
 but is implemented different than setting the socket in non-blocking
 mode (this could be considered a bug and may even be fixed).
+
+Timeout mode internally sets the socket in non-blocking mode.  The
+blocking and timeout modes are shared between file descriptors and
+socket objects that refer to the same network endpoint.  A consequence
+of this is that file objects returned by the \method{makefile()}
+method should only be used when the socket is in blocking mode; in
+timeout or non-blocking mode file operations that cannot be completed
+immediately will fail.
 
 \begin{methoddesc}[socket]{setsockopt}{level, optname, value}
 Set the value of the given socket option (see the \UNIX{} manual page
