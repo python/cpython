@@ -33,9 +33,14 @@ static PyStringObject *nullstring;
    a NULL first argument, because in the future these routines may try to do 
    even more sharing of objects.
 
-   The parameter `size' denotes number of characters to allocate, not counting 
-   the null terminating character.  If the `str' argument is not NULL, then it 
-   must point to a null-terminated string of length `size'.
+   The string in the  `str' parameter does not have to be null-character 
+   terminated.  (Therefore it is safe to construct a substring by using 
+   `PyString_FromStringAndSize(origstring, substrlen)'.)
+
+   The parameter `size' denotes number of characters to allocate, not
+   counting the null terminating character.  If the `str' argument is
+   not NULL, then it points to a of length `size'. For
+   PyString_FromString, this string must be null-terminated.
 
    The member `op->ob_size' denotes the number of bytes of data in the string, 
    not counting the null terminating character, and is therefore equal to the 
