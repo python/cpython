@@ -48,9 +48,9 @@
 #	getsampwidth()	-- returns sample width in bytes
 #	getframerate()	-- returns sampling frequency
 #	getnframes()	-- returns number of audio frames
-#	getcomptype()	-- returns compression type ('NONE' for AIFF files)
+#	getcomptype()	-- returns compression type ('NONE' or 'ULAW')
 #	getcompname()	-- returns human-readable version of
-#			   compression type ('not compressed' for AIFF files)
+#			   compression type ('not compressed' matches 'NONE')
 #	getparams()	-- returns a tuple consisting of all of the
 #			   above in the above order
 #	getmarkers()	-- returns None (for compatibility with the
@@ -82,8 +82,7 @@
 #	setcomptype(type, name)
 #			-- set the compression type and the
 #			   human-readable compression type
-#	setparams(nchannels, sampwidth, framerate, nframes, comptype, compname)
-#			-- set all parameters at once
+#	setparams(tuple)-- set all parameters at once
 #	tell()		-- return current position in output file
 #	writeframesraw(data)
 #			-- write audio frames without pathing up the

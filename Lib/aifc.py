@@ -102,7 +102,7 @@
 #	setcomptype(type, name)
 #			-- set the compression type and the
 #			   human-readable compression type
-#	setparams(nchannels, sampwidth, framerate, nframes, comptype, compname)
+#	setparams(tuple)
 #			-- set all parameters at once
 #	setmark(id, pos, name)
 #			-- add specified mark to the list of marks
