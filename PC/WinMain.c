@@ -5,7 +5,7 @@
 
 #include "Python.h"
 
-extern int Py_Main();
+extern int Py_Main(int, char **);
 
 int WINAPI WinMain(
     HINSTANCE hInstance,      /* handle to current instance */
