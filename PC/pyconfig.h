@@ -98,6 +98,10 @@ MS_CORE_DLL.
 #ifdef MS_WIN64
 #ifdef _M_IX86
 #define COMPILER _Py_PASTE_VERSION("64 bit (Intel)")
+#elif defined(_M_IA64)
+#define COMPILER _Py_PASTE_VERSION("64 bit (Itanium)")
+#elif defined(_M_AMD64)
+#define COMPILER _Py_PASTE_VERSION("64 bit (AMD64)")
 #else
 #define COMPILER _Py_PASTE_VERSION("64 bit (Unknown)")
 #endif
