@@ -153,12 +153,7 @@ new_code(PyObject* unused, PyObject* args)
 		Py_DECREF(empty);
 	}
 
-	pb = code->ob_type->tp_as_buffer;
-	if (pb == NULL ||
-	    pb->bf_getreadbuffer == NULL ||
-	    pb->bf_getsegcount == NULL ||
-	    (*pb->bf_getsegcount)(code, NULL) != 1)
-	{
+	if (!PyObject_CheckReadBuffer(code)) {
 		PyErr_SetString(PyExc_TypeError,
 		  "bytecode object must be a single-segment read-only buffer");
 		return NULL;
