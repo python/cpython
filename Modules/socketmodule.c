@@ -505,7 +505,12 @@ internal_select(PySocketSockObject *s, int writing)
 	fd_set fds;
 	struct timeval tv;
 
+	/* Nothing to do unless we're in timeout mode (not non-blocking) */
 	if (s->sock_timeout <= 0.0)
+		return;
+
+	/* Guard against closed socket */
+	if (s->sock_fd < 0)
 		return;
 
 	/* Construct the arguments to select */
