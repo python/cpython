@@ -449,7 +449,9 @@ PyZlib_objdecompress(self, args)
       self->zst.next_out=buf+length;
       self->zst.avail_out=ADDCHUNK;
       length += ADDCHUNK;
+
       err=inflate(&(self->zst), Z_NO_FLUSH);
+      
     } while (self->zst.avail_in!=0 && err==Z_OK);
   if (err!=Z_OK && err!=Z_STREAM_END) 
     {
@@ -547,6 +549,7 @@ PyZlib_unflush(self, args)
 	  return NULL;
 	}
       self->zst.next_out=buf+length;
+      self->zst.avail_out = ADDCHUNK;
       length += ADDCHUNK;
       err=inflate(&(self->zst), Z_FINISH);
     } while (err==Z_OK);
