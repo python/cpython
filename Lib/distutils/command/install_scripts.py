@@ -1,16 +1,26 @@
+import os
 from distutils.cmd import install_misc
+from stat import ST_MODE
 
 class install_scripts(install_misc):
 
     description = "install scripts"
-    # XXX needed?
-    user_options = [('install-dir=', 'd', "directory to install to")]
 
     def finalize_options (self):
         self._install_dir_from('install_scripts')
 
     def run (self):
-        self._copydata(self.distribution.scripts)
+        self._copy_files(self.distribution.scripts)
+        if os.name == 'posix':
+            # Set the executable bits (owner, group, and world) on
+            # all the scripts we just installed.
+            files = self.get_outputs()
+            for file in files:
+                if self.dry_run:
+                    self.announce("changing mode of %s" % file)
+                else:
+                    mode = (os.stat(file)[ST_MODE]) | 0111
+                    self.announce("changing mode of %s to %o" % (file, mode))
+                    os.chmod(file, mode)
 
-    def get_outputs(self):
-        return self._outputdata(self.distribution.scripts)
+# class install_scripts
