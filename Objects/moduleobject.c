@@ -209,6 +209,12 @@ module_traverse(PyModuleObject *m, visitproc visit, void *arg)
 	return 0;
 }
 
+static char module_doc[] =
+"module(name[, doc])\n\
+\n\
+Create a module object.\n\
+The name must be a string; the optional doc argument can have any type.";
+
 PyTypeObject PyModule_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
@@ -232,7 +238,7 @@ PyTypeObject PyModule_Type = {
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,		/* tp_flags */
-	0,					/* tp_doc */
+	module_doc,				/* tp_doc */
 	(traverseproc)module_traverse,		/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
