@@ -542,7 +542,7 @@ newmfssobject
 mfs_GetFSSpecFSSpec
 newmfsaobject
 initmac
-MacOS_Init
+initMacOS
 calloc
 realloc
 free
@@ -673,7 +673,6 @@ socket__12SocketDomainFis		# SocketDomain::socket(int,short)
 __dt__12SocketDomainFv		# SocketDomain::~SocketDomain()
 __ct__12SocketDomainFi		# SocketDomain::SocketDomain(int)
 Ready__12SocketDomainFv		# SocketDomain::Ready()
-Domain__12SocketDomainFi		# SocketDomain::Domain(int)
 GUSIGetEvents
 GUSISetEvents
 GUSIGetHook

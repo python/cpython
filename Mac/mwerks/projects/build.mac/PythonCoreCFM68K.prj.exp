@@ -1035,7 +1035,7 @@ realloc
 free
 malloc
 calloc
-MacOS_Init
+initMacOS
 initmac
 initmacfs
 newmfssobject
