@@ -168,9 +168,13 @@ static type_lock tcl_lock = 0;
 #define LEAVE_TCL \
 	release_lock(tcl_lock); Py_END_ALLOW_THREADS
 
+#define ENTER_OVERLAP \
+	Py_END_ALLOW_THREADS
+
+#define LEAVE_OVERLAP_TCL \
+	release_lock(tcl_lock);
+
 #define ENTER_PYTHON(tstate) \
-	if (PyThreadState_Swap(NULL) != NULL) \
-		Py_FatalError("ENTER_PYTHON with non-NULL tstate\n"); \
 	release_lock(tcl_lock); PyEval_RestoreThread((tstate));
 
 #define LEAVE_PYTHON \
@@ -180,6 +184,8 @@ static type_lock tcl_lock = 0;
 
 #define ENTER_TCL
 #define LEAVE_TCL
+#define ENTER_OVERLAP
+#define LEAVE_OVERLAP_TCL
 #define ENTER_PYTHON(tstate)
 #define LEAVE_PYTHON
 
@@ -528,6 +534,12 @@ Tkapp_Call(self, args)
 	Tcl_CmdInfo info; /* and this is added */
 	Tcl_Interp *interp = Tkapp_Interp(self); /* and this too */
 
+	/* and this test */
+	if (Tcl_InterpDeleted(interp)) {
+		PyErr_SetString(Tkinter_TclError, "application is destroyed");
+		return NULL;
+	}
+
 	if (!(tmp = PyList_New(0)))
 	    return NULL;
 
@@ -579,25 +591,24 @@ Tkapp_Call(self, args)
 		for (i = 0; i < argc; i++)
 			PySys_WriteStderr("%s ", argv[i]);
 	}
+	ENTER_TCL
+	info.proc = NULL;
 	if (argc < 1 ||
 	    !Tcl_GetCommandInfo(interp, argv[0], &info) ||
 	    info.proc == NULL)
 	{
 		char *cmd;
-		if (Py_VerboseFlag >= 2)
-			PySys_WriteStderr("... use TclEval ");
 		cmd = Tcl_Merge(argc, argv);
-		ENTER_TCL
 		i = Tcl_Eval(interp, cmd);
-		LEAVE_TCL
 		ckfree(cmd);
 	}
 	else {
 		Tcl_ResetResult(interp);
-		ENTER_TCL
 		i = (*info.proc)(info.clientData, interp, argc, argv);
-		LEAVE_TCL
 	}
+	ENTER_OVERLAP
+	if (info.proc == NULL && Py_VerboseFlag >= 2)
+		PySys_WriteStderr("... use TclEval ");
 	if (i == TCL_ERROR) {
 		if (Py_VerboseFlag >= 2)
 			PySys_WriteStderr("... error: '%s'\n",
@@ -609,6 +620,7 @@ Tkapp_Call(self, args)
 			PySys_WriteStderr("-> '%s'\n", interp->result);
 		res = PyString_FromString(interp->result);
 	}
+	LEAVE_OVERLAP_TCL
 
 	/* Copied from Merge() again */
   finally:
@@ -637,10 +649,15 @@ Tkapp_GlobalCall(self, args)
 	   reset the scope pointer, call the local version, restore the saved
 	   scope pointer). */
 
-	char *cmd  = Merge(args);
+	char *cmd;
 	PyObject *res = NULL;
-	
 
+	if (Tcl_InterpDeleted(Tkapp_Interp(self))) {
+		PyErr_SetString(Tkinter_TclError, "application is destroyed");
+		return NULL;
+	}
+
+	cmd  = Merge(args);
 	if (!cmd)
 		PyErr_SetString(Tkinter_TclError, "merge failed");
 
@@ -648,11 +665,12 @@ Tkapp_GlobalCall(self, args)
 		int err;
 		ENTER_TCL
 		err = Tcl_GlobalEval(Tkapp_Interp(self), cmd);
-		LEAVE_TCL
+		ENTER_OVERLAP
 		if (err == TCL_ERROR)
 			res = Tkinter_Error(self);
 		else
 			res = PyString_FromString(Tkapp_Result(self));
+		LEAVE_OVERLAP_TCL
 	}
 
 	if (cmd)
@@ -667,18 +685,26 @@ Tkapp_Eval(self, args)
 	PyObject *args;
 {
 	char *script;
+	PyObject *res = NULL;
 	int err;
   
 	if (!PyArg_ParseTuple(args, "s", &script))
 		return NULL;
 
+	if (Tcl_InterpDeleted(Tkapp_Interp(self))) {
+		PyErr_SetString(Tkinter_TclError, "application is destroyed");
+		return NULL;
+	}
+
 	ENTER_TCL
 	err = Tcl_Eval(Tkapp_Interp(self), script);
-	LEAVE_TCL
+	ENTER_OVERLAP
 	if (err == TCL_ERROR)
-		return Tkinter_Error(self);
-  
-	return PyString_FromString(Tkapp_Result(self));
+		res = Tkinter_Error(self);
+	else
+		res = PyString_FromString(Tkapp_Result(self));
+	LEAVE_OVERLAP_TCL
+	return res;
 }
 
 static PyObject *
@@ -687,18 +713,26 @@ Tkapp_GlobalEval(self, args)
 	PyObject *args;
 {
 	char *script;
+	PyObject *res = NULL;
 	int err;
-  
+
+	if (Tcl_InterpDeleted(Tkapp_Interp(self))) {
+		PyErr_SetString(Tkinter_TclError, "application is destroyed");
+		return NULL;
+	}
+
 	if (!PyArg_ParseTuple(args, "s", &script))
 		return NULL;
 
 	ENTER_TCL
 	err = Tcl_GlobalEval(Tkapp_Interp(self), script);
-	LEAVE_TCL
+	ENTER_OVERLAP
 	if (err == TCL_ERROR)
-		return Tkinter_Error(self);
-  
-	return PyString_FromString(Tkapp_Result(self));
+		res = Tkinter_Error(self);
+	else
+		res = PyString_FromString(Tkapp_Result(self));
+	LEAVE_OVERLAP_TCL
+	return res;
 }
 
 static PyObject *
@@ -707,18 +741,27 @@ Tkapp_EvalFile(self, args)
 	PyObject *args;
 {
 	char *fileName;
+	PyObject *res = NULL;
 	int err;
+
+	if (Tcl_InterpDeleted(Tkapp_Interp(self))) {
+		PyErr_SetString(Tkinter_TclError, "application is destroyed");
+		return NULL;
+	}
 
 	if (!PyArg_ParseTuple(args, "s", &fileName))
 		return NULL;
 
 	ENTER_TCL
 	err = Tcl_EvalFile(Tkapp_Interp(self), fileName);
-	LEAVE_TCL
+	ENTER_OVERLAP
 	if (err == TCL_ERROR)
-		return Tkinter_Error(self);
+		res = Tkinter_Error(self);
 
-	return PyString_FromString(Tkapp_Result(self));
+	else
+		res = PyString_FromString(Tkapp_Result(self));
+	LEAVE_OVERLAP_TCL
+	return res;
 }
 
 static PyObject *
@@ -727,18 +770,26 @@ Tkapp_Record(self, args)
 	PyObject *args;
 {
 	char *script;
+	PyObject *res = NULL;
 	int err;
+
+	if (Tcl_InterpDeleted(Tkapp_Interp(self))) {
+		PyErr_SetString(Tkinter_TclError, "application is destroyed");
+		return NULL;
+	}
 
 	if (!PyArg_ParseTuple(args, "s", &script))
 		return NULL;
 
 	ENTER_TCL
 	err = Tcl_RecordAndEval(Tkapp_Interp(self), script, TCL_NO_EVAL);
-	LEAVE_TCL
+	ENTER_OVERLAP
 	if (err == TCL_ERROR)
-		return Tkinter_Error(self);
-
-	return PyString_FromString(Tkapp_Result(self));
+		res = Tkinter_Error(self);
+	else
+		res = PyString_FromString(Tkapp_Result(self));
+	LEAVE_OVERLAP_TCL
+	return res;
 }
 
 static PyObject *
@@ -770,8 +821,14 @@ SetVar(self, args, flags)
 {
 	char *name1, *name2, *ok, *s;
 	PyObject *newValue;
-	PyObject *tmp = PyList_New(0);
+	PyObject *tmp;
 
+	if (Tcl_InterpDeleted(Tkapp_Interp(self))) {
+		PyErr_SetString(Tkinter_TclError, "application is destroyed");
+		return NULL;
+	}
+
+	tmp = PyList_New(0);
 	if (!tmp)
 		return NULL;
 
@@ -830,21 +887,24 @@ GetVar(self, args, flags)
 	int flags;
 {
 	char *name1, *name2=NULL, *s;
+	PyObject *res = NULL;
 
 	if (!PyArg_ParseTuple(args, "s|s", &name1, &name2))
 		return NULL;
 	ENTER_TCL
 	if (name2 == NULL)
-		s = Tcl_GetVar(Tkapp_Interp (self), name1, flags);
+		s = Tcl_GetVar(Tkapp_Interp(self), name1, flags);
 
 	else
 		s = Tcl_GetVar2(Tkapp_Interp(self), name1, name2, flags);
-	LEAVE_TCL
+	ENTER_OVERLAP
 
 	if (s == NULL)
-		return Tkinter_Error(self);
-
-	return PyString_FromString(s);
+		res = Tkinter_Error(self);
+	else
+		res = PyString_FromString(s);
+	LEAVE_OVERLAP_TCL
+	return res;
 }
 
 static PyObject *
@@ -872,6 +932,7 @@ UnsetVar(self, args, flags)
 	int flags;
 {
 	char *name1, *name2=NULL;
+	PyObject *res = NULL;
 	int code;
 
 	if (!PyArg_ParseTuple(args, "s|s", &name1, &name2))
@@ -882,13 +943,16 @@ UnsetVar(self, args, flags)
 
 	else
 		code = Tcl_UnsetVar2(Tkapp_Interp(self), name1, name2, flags);
-	LEAVE_TCL
+	ENTER_OVERLAP
 
 	if (code == TCL_ERROR)
-		return Tkinter_Error(self);
-
-	Py_INCREF(Py_None);
-	return Py_None;
+		res = Tkinter_Error(self);
+	else {
+		Py_INCREF(Py_None);
+		res = Py_None;
+	}
+	LEAVE_OVERLAP_TCL
+	return res;
 }
 
 static PyObject *
@@ -962,16 +1026,20 @@ Tkapp_ExprString(self, args)
 	PyObject *args;
 {
 	char *s;
+	PyObject *res = NULL;
 	int retval;
 
 	if (!PyArg_ParseTuple(args, "s", &s))
 		return NULL;
 	ENTER_TCL
 	retval = Tcl_ExprString(Tkapp_Interp(self), s);
-	LEAVE_TCL
+	ENTER_OVERLAP
 	if (retval == TCL_ERROR)
-		return Tkinter_Error(self);
-	return Py_BuildValue("s", Tkapp_Result(self));
+		res = Tkinter_Error(self);
+	else
+		res = Py_BuildValue("s", Tkapp_Result(self));
+	LEAVE_OVERLAP_TCL
+	return res;
 }
 
 static PyObject *
@@ -980,6 +1048,7 @@ Tkapp_ExprLong(self, args)
 	PyObject *args;
 {
 	char *s;
+	PyObject *res = NULL;
 	int retval;
 	long v;
 
@@ -987,10 +1056,13 @@ Tkapp_ExprLong(self, args)
 		return NULL;
 	ENTER_TCL
 	retval = Tcl_ExprLong(Tkapp_Interp(self), s, &v);
-	LEAVE_TCL
+	ENTER_OVERLAP
 	if (retval == TCL_ERROR)
-		return Tkinter_Error(self);
-	return Py_BuildValue("l", v);
+		res = Tkinter_Error(self);
+	else
+		res = Py_BuildValue("l", v);
+	LEAVE_OVERLAP_TCL
+	return res;
 }
 
 static PyObject *
@@ -999,6 +1071,7 @@ Tkapp_ExprDouble(self, args)
 	PyObject *args;
 {
 	char *s;
+	PyObject *res = NULL;
 	double v;
 	int retval;
 
@@ -1007,11 +1080,14 @@ Tkapp_ExprDouble(self, args)
 	PyFPE_START_PROTECT("Tkapp_ExprDouble", return 0)
 	ENTER_TCL
 	retval = Tcl_ExprDouble(Tkapp_Interp(self), s, &v);
-	LEAVE_TCL
+	ENTER_OVERLAP
 	PyFPE_END_PROTECT(retval)
 	if (retval == TCL_ERROR)
-		return Tkinter_Error(self);
-	return Py_BuildValue("d", v);
+		res = Tkinter_Error(self);
+	else
+		res = Py_BuildValue("d", v);
+	LEAVE_OVERLAP_TCL
+	return res;
 }
 
 static PyObject *
@@ -1020,6 +1096,7 @@ Tkapp_ExprBoolean(self, args)
 	PyObject *args;
 {
 	char *s;
+	PyObject *res = NULL;
 	int retval;
 	int v;
 
@@ -1027,10 +1104,13 @@ Tkapp_ExprBoolean(self, args)
 		return NULL;
 	ENTER_TCL
 	retval = Tcl_ExprBoolean(Tkapp_Interp(self), s, &v);
-	LEAVE_TCL
+	ENTER_OVERLAP
 	if (retval == TCL_ERROR)
-		return Tkinter_Error(self);
-	return Py_BuildValue("i", v);
+		res = Tkinter_Error(self);
+	else
+		res = Py_BuildValue("i", v);
+	LEAVE_OVERLAP_TCL
+	return res;
 }
 
 
@@ -1624,7 +1704,8 @@ Tkapp_MainLoop(self, args)
 		int result;
 
 #ifdef WITH_THREAD
-		ENTER_TCL
+		Py_BEGIN_ALLOW_THREADS
+		acquire_lock(tcl_lock, 1);
 		result = Tcl_DoOneEvent(TCL_DONT_WAIT);
 		release_lock(tcl_lock);
 		if (result == 0)
@@ -1863,7 +1944,8 @@ EventHook()
 		}
 #endif
 #if defined(WITH_THREAD) || defined(MS_WINDOWS)
-		ENTER_TCL
+		Py_BEGIN_ALLOW_THREADS
+		acquire_lock(tcl_lock, 1);
 		result = Tcl_DoOneEvent(TCL_DONT_WAIT);
 		release_lock(tcl_lock);
 		if (result == 0)
