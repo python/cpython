@@ -98,8 +98,12 @@ def AskYesNoCancel(question, default = 0):
 	tp, h, rect = d.GetDialogItem(5)
 	SetDialogItemText(h, question)
 	d.SetDialogCancelItem(4)
-	if default in (2, 3, 4):
-		d.SetDialogDefaultItem(default)
+	if default == 1:
+		d.SetDialogDefaultItem(2)
+	elif default == 0:
+		d.SetDialogDefaultItem(3)
+	elif default == -1:
+		d.SetDialogDefaultItem(4)
 	while 1:
 		n = ModalDialog(None)
 		if n == 1: return default
