@@ -1354,9 +1354,15 @@ sequence type.  For example:
 \item The \module{imaplib} module now supports IMAP over SSL.
 (Contributed by Piers Lauder and Tino Lange.)
 
-\item The \ulink{\module{itertools}}{../lib/module-itertools.html}
-module provides several functions to support efficient looping using
-iterators.
+\item The \module{itertools} contains a number of useful functions for
+use with iterators, inspired by various functions provided by the ML
+and Haskell languages.  For example,
+\code{itertools.ifilter(predicate, iterator)} returns all elements in
+the iterator for which the function \function{predicate()} returns
+\constant{True}, and \code{itertools.times(\var{N}, obj)} returns
+\code{obj} \var{N} times.  There are a number of other functions in
+the module; see the \ulink{package's reference
+documentation}{../lib/module-itertools.html} for details.
 
 \item Two new functions in the \module{math} module,
 \function{degrees(\var{rads})} and \function{radians(\var{degs})},
