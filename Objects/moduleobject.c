@@ -18,8 +18,7 @@ typedef struct {
 } PyModuleObject;
 
 PyObject *
-PyModule_New(name)
-	char *name;
+PyModule_New(char *name)
 {
 	PyModuleObject *m;
 	PyObject *nameobj;
@@ -44,8 +43,7 @@ PyModule_New(name)
 }
 
 PyObject *
-PyModule_GetDict(m)
-	PyObject *m;
+PyModule_GetDict(PyObject *m)
 {
 	if (!PyModule_Check(m)) {
 		PyErr_BadInternalCall();
@@ -55,8 +53,7 @@ PyModule_GetDict(m)
 }
 
 char *
-PyModule_GetName(m)
-	PyObject *m;
+PyModule_GetName(PyObject *m)
 {
 	PyObject *nameobj;
 	if (!PyModule_Check(m)) {
@@ -73,8 +70,7 @@ PyModule_GetName(m)
 }
 
 char *
-PyModule_GetFilename(m)
-        PyObject *m;
+PyModule_GetFilename(PyObject *m)
 {
 	PyObject *fileobj;
 	if (!PyModule_Check(m)) {
@@ -91,8 +87,7 @@ PyModule_GetFilename(m)
 }
 
 void
-_PyModule_Clear(m)
-	PyObject *m;
+_PyModule_Clear(PyObject *m)
 {
 	/* To make the execution order of destructors for global
 	   objects a bit more predictable, we first zap all objects
@@ -142,8 +137,7 @@ _PyModule_Clear(m)
 /* Methods */
 
 static void
-module_dealloc(m)
-	PyModuleObject *m;
+module_dealloc(PyModuleObject *m)
 {
 	if (m->md_dict != NULL) {
 		_PyModule_Clear((PyObject *)m);
@@ -153,8 +147,7 @@ module_dealloc(m)
 }
 
 static PyObject *
-module_repr(m)
-	PyModuleObject *m;
+module_repr(PyModuleObject *m)
 {
 	char buf[400];
 	char *name;
@@ -176,9 +169,7 @@ module_repr(m)
 }
 
 static PyObject *
-module_getattr(m, name)
-	PyModuleObject *m;
-	char *name;
+module_getattr(PyModuleObject *m, char *name)
 {
 	PyObject *res;
 	if (strcmp(name, "__dict__") == 0) {
@@ -194,10 +185,7 @@ module_getattr(m, name)
 }
 
 static int
-module_setattr(m, name, v)
-	PyModuleObject *m;
-	char *name;
-	PyObject *v;
+module_setattr(PyModuleObject *m, char *name, PyObject *v)
 {
 	if (name[0] == '_' && strcmp(name, "__dict__") == 0) {
 		PyErr_SetString(PyExc_TypeError,

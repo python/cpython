@@ -15,9 +15,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "structmember.h"
 
 PyObject *
-PyFunction_New(code, globals)
-	PyObject *code;
-	PyObject *globals;
+PyFunction_New(PyObject *code, PyObject *globals)
 {
 	PyFunctionObject *op = PyObject_NEW(PyFunctionObject,
 					    &PyFunction_Type);
@@ -47,8 +45,7 @@ PyFunction_New(code, globals)
 }
 
 PyObject *
-PyFunction_GetCode(op)
-	PyObject *op;
+PyFunction_GetCode(PyObject *op)
 {
 	if (!PyFunction_Check(op)) {
 		PyErr_BadInternalCall();
@@ -58,8 +55,7 @@ PyFunction_GetCode(op)
 }
 
 PyObject *
-PyFunction_GetGlobals(op)
-	PyObject *op;
+PyFunction_GetGlobals(PyObject *op)
 {
 	if (!PyFunction_Check(op)) {
 		PyErr_BadInternalCall();
@@ -69,8 +65,7 @@ PyFunction_GetGlobals(op)
 }
 
 PyObject *
-PyFunction_GetDefaults(op)
-	PyObject *op;
+PyFunction_GetDefaults(PyObject *op)
 {
 	if (!PyFunction_Check(op)) {
 		PyErr_BadInternalCall();
@@ -80,9 +75,7 @@ PyFunction_GetDefaults(op)
 }
 
 int
-PyFunction_SetDefaults(op, defaults)
-	PyObject *op;
-	PyObject *defaults;
+PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
 {
 	if (!PyFunction_Check(op)) {
 		PyErr_BadInternalCall();
@@ -118,9 +111,7 @@ static struct memberlist func_memberlist[] = {
 };
 
 static PyObject *
-func_getattr(op, name)
-	PyFunctionObject *op;
-	char *name;
+func_getattr(PyFunctionObject *op, char *name)
 {
 	if (name[0] != '_' && PyEval_GetRestricted()) {
 		PyErr_SetString(PyExc_RuntimeError,
@@ -131,10 +122,7 @@ func_getattr(op, name)
 }
 
 static int
-func_setattr(op, name, value)
-	PyFunctionObject *op;
-	char *name;
-	PyObject *value;
+func_setattr(PyFunctionObject *op, char *name, PyObject *value)
 {
 	if (PyEval_GetRestricted()) {
 		PyErr_SetString(PyExc_RuntimeError,
@@ -163,8 +151,7 @@ func_setattr(op, name, value)
 }
 
 static void
-func_dealloc(op)
-	PyFunctionObject *op;
+func_dealloc(PyFunctionObject *op)
 {
 	PyObject_GC_Fini(op);
 	Py_DECREF(op->func_code);
@@ -177,8 +164,7 @@ func_dealloc(op)
 }
 
 static PyObject*
-func_repr(op)
-	PyFunctionObject *op;
+func_repr(PyFunctionObject *op)
 {
 	char buf[140];
 	if (op->func_name == Py_None)
@@ -191,8 +177,7 @@ func_repr(op)
 }
 
 static int
-func_compare(f, g)
-	PyFunctionObject *f, *g;
+func_compare(PyFunctionObject *f, PyFunctionObject *g)
 {
 	int c;
 	if (f->func_globals != g->func_globals)
@@ -210,8 +195,7 @@ func_compare(f, g)
 }
 
 static long
-func_hash(f)
-	PyFunctionObject *f;
+func_hash(PyFunctionObject *f)
 {
 	long h,x;
 	h = PyObject_Hash(f->func_code);
