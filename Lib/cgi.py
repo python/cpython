@@ -5,6 +5,7 @@
 # 
 # modified by Steve Majewski <sdm7g@Virginia.EDU> 12/5/94 
 #
+# now maintained as part of the Python distribution
 
 # Several classes to parse the name/value pairs that are passed to 
 # a server's CGI by GET, POST or PUT methods by a WWW FORM. This 
@@ -42,11 +43,17 @@ from os import environ
 
 
 def parse():
+	"""Parse the query passed in the environment or on stdin"""
 	if environ['REQUEST_METHOD'] == 'POST':
 		qs = sys.stdin.read(string.atoi(environ['CONTENT_LENGTH']))
 		environ['QUERY_STRING'] = qs
 	else:
 		qs = environ['QUERY_STRING']
+	return parse_qs(qs)
+
+
+def parse_qs(qs):
+	"""Parse a query given as a string argument"""
 	name_value_pairs = string.splitfields(qs, '&')
 	dict = {}
 	for name_value in name_value_pairs:
