@@ -70,6 +70,7 @@ class CodeGenerator:
         self.loops = misc.Stack()
         self.curStack = 0
         self.maxStack = 0
+        self.last_lineno = None
         self._setupGraphDelegation()
 
     def _setupGraphDelegation(self):
@@ -107,7 +108,8 @@ class CodeGenerator:
             self.emit(prefix + '_GLOBAL', name)
 
     def set_lineno(self, node):
-        """Emit SET_LINENO if node has lineno attribute
+        """Emit SET_LINENO if node has lineno attribute and it is 
+        different than the last lineno emitted.
 
         Returns true if SET_LINENO was emitted.
 
@@ -117,8 +119,9 @@ class CodeGenerator:
         then, this method works around missing line numbers.
         """
         lineno = getattr(node, 'lineno', None)
-        if lineno is not None:
+        if lineno is not None and lineno != self.last_lineno:
             self.emit('SET_LINENO', lineno)
+            self.last_lineno = lineno
             return 1
         return 0
 
@@ -414,6 +417,7 @@ class CodeGenerator:
         pass
 
     def visitName(self, node):
+        self.set_lineno(node)
         self.loadName(node.name)
         
     def visitPass(self, node):
