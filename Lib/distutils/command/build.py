@@ -6,9 +6,9 @@ Implements the Distutils 'build' command."""
 
 __rcsid__ = "$Id$"
 
-import os
+import sys, os
 from distutils.core import Command
-
+from distutils.util import get_platform
 
 class build (Command):
 
@@ -17,10 +17,15 @@ class build (Command):
     user_options = [
         ('build-base=', 'b',
          "base directory for build library"),
-        ('build-lib=', 'l',
-         "directory for platform-shared files"),
-        ('build-platlib=', 'p',
-         "directory for platform-specific files"),
+        ('build-purelib=', None,
+         "build directory for platform-neutral distributions"),
+        ('build-platlib=', None,
+         "build directory for platform-specific distributions"),
+        ('build-lib=', None,
+         "build directory for all distribution (defaults to either " +
+         "build-purelib or build-platlib"),
+        ('build-temp=', 't',
+         "temporary build directory"),
         ('debug', 'g',
          "compile extensions and libraries with debugging information"),
         ]
@@ -29,17 +34,43 @@ class build (Command):
         self.build_base = 'build'
         # these are decided only after 'build_base' has its final value
         # (unless overridden by the user or client)
-        self.build_lib = None
+        self.build_purelib = None
         self.build_platlib = None
+        self.build_lib = None
+        self.build_temp = None
         self.debug = None
 
     def finalize_options (self):
-        # 'build_lib' and 'build_platlib' just default to 'lib' and
-        # 'platlib' under the base build directory
-        if self.build_lib is None:
-            self.build_lib = os.path.join (self.build_base, 'lib')
+
+        # Need this to name platform-specific directories, but sys.platform
+        # is not enough -- it only names the OS and version, not the
+        # hardware architecture!
+        self.plat = get_platform ()
+
+        # 'build_purelib' and 'build_platlib' just default to 'lib' and
+        # 'lib.<plat>' under the base build directory.  We only use one of
+        # them for a given distribution, though --
+        if self.build_purelib is None:
+            self.build_purelib = os.path.join (self.build_base, 'lib')
         if self.build_platlib is None:
-            self.build_platlib = os.path.join (self.build_base, 'platlib')
+            self.build_platlib = os.path.join (self.build_base,
+                                               'lib.' + self.plat)
+
+        # 'build_lib' is the actual directory that we will use for this
+        # particular module distribution -- if user didn't supply it, pick
+        # one of 'build_purelib' or 'build_platlib'.
+        if self.build_lib is None:
+            if self.distribution.ext_modules:
+                self.build_lib = self.build_platlib
+            else:
+                self.build_lib = self.build_purelib
+
+        # 'build_temp' -- temporary directory for compiler turds,
+        # "build/temp.<plat>"
+        if self.build_temp is None:
+            self.build_temp = os.path.join (self.build_base,
+                                            'temp.' + self.plat)
+    # finalize_options ()
 
 
     def run (self):
