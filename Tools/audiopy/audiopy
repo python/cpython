@@ -282,7 +282,8 @@ class MainWindow:
 
 def usage(msg='', code=1):
     print __doc__ % globals()
-    print msg
+    if msg:
+        print msg
     sys.exit(code)
 
 
