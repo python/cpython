@@ -417,7 +417,7 @@ mpz_divide(mpzobject *a, mpzobject *b)
 	putc('\n', stderr);
 #endif /* def MPZ_TEST_DIV */
 	return (PyObject *)z;
-	
+
 } /* mpz_divide() */
 
 static PyObject *
@@ -428,7 +428,7 @@ mpz_remainder(mpzobject *a, mpzobject *b)
 #endif /* def MPZ_SPARE_MALLOC */	
 	mpzobject *z;
 
-	
+
 	if ((
 #ifdef MPZ_SPARE_MALLOC	     
 	     cmpres =
@@ -486,7 +486,7 @@ mpz_remainder(mpzobject *a, mpzobject *b)
 	putc('\n', stderr);
 #endif /* def MPZ_TEST_DIV */
 	return (PyObject *)z;
-	
+
 } /* mpz_remainder() */
 
 static PyObject *
@@ -543,7 +543,7 @@ mpz_div_and_mod(mpzobject *a, mpzobject *b)
 
 	(void)PyTuple_SetItem(z, 0, (PyObject *)x);
 	(void)PyTuple_SetItem(z, 1, (PyObject *)y);
-	
+
 	return z;
 } /* mpz_div_and_mod() */
 
@@ -570,7 +570,7 @@ mpz_power(mpzobject *a, mpzobject *b, mpzobject *m)
 		Py_INCREF(mpz_value_one);
 		return (PyObject *)mpz_value_one;
 	}
-		
+
 	if (cmpres < 0) {
 		PyErr_SetString(PyExc_ValueError,
 				"mpz.pow to negative exponent");
@@ -631,9 +631,9 @@ mpz_power(mpzobject *a, mpzobject *b, mpzobject *m)
 
 	if ((z = newmpzobject()) == NULL)
 		return NULL;
-	
+
 	mpz_pow_ui(&z->mpz, &a->mpz, mpz_get_ui(&b->mpz));
-	
+
 	return (PyObject *)z;
 } /* mpz_power() */
 
@@ -643,7 +643,7 @@ mpz_negative(mpzobject *v)
 {
 	mpzobject *z;
 
-	
+
 #ifdef MPZ_SPARE_MALLOC
 	if (mpz_cmp_ui(&v->mpz, (unsigned long int)0) == 0) {
 		/* -0 == 0 */
@@ -673,7 +673,7 @@ mpz_absolute(mpzobject *v)
 {
 	mpzobject *z;
 
-	
+
 	if (mpz_cmp_ui(&v->mpz, (unsigned long int)0) >= 0) {
 		Py_INCREF(v);
 		return (PyObject *)v;
@@ -791,7 +791,7 @@ void
 mpz_xor(MP_INT *res, const MP_INT *op1, const MP_INT *op2)
 {
 	MP_INT tmpmpz;
-	
+
 	mpz_init(&tmpmpz);
 
 	mpz_and(res, op1, op2);
@@ -854,7 +854,7 @@ MPZ_mpz(PyObject *self, PyObject *args)
 
 		if (!PyArg_Parse(objp, "l", &lval))
 			return NULL;
-		
+
 		if (lval == (long)0) {
 			Py_INCREF(mpz_value_zero);
 			mpzp = mpz_value_zero;
@@ -871,14 +871,14 @@ MPZ_mpz(PyObject *self, PyObject *args)
 		MP_INT mplongdigit;
 		int i;
 		unsigned char isnegative;
-		
+
 
 		if ((mpzp = newmpzobject()) == NULL)
 			return NULL;
 
 		mpz_set_si(&mpzp->mpz, 0L);
 		mpz_init(&mplongdigit);
-		
+
 		/* how we're gonna handle this? */
 		if ((isnegative =
 		     ((i = ((PyLongObject *)objp)->ob_size) < 0) ))
@@ -909,7 +909,7 @@ MPZ_mpz(PyObject *self, PyObject *args)
 
 		mpz_set_si(&mpzp->mpz, 0L);
 		mpz_init(&mplongdigit);
-		
+
 		/* let's do it the same way as with the long conversion:
 		   without thinking how it can be faster (-: :-) */
 
@@ -973,7 +973,7 @@ MPZ_powm(PyObject *self, PyObject *args)
 	mpzobject *z;
 	int tstres;
 
-	
+
 	if (!PyArg_Parse(args, "(OOO)", &base, &exp, &mod))
 		return NULL;
 
@@ -1007,7 +1007,7 @@ MPZ_powm(PyObject *self, PyObject *args)
 	else {
 		mpz_powm(&z->mpz, &mpzbase->mpz, &mpzexp->mpz, &mpzmod->mpz);
 	}
-		
+	
 	Py_DECREF(mpzbase);
 	Py_DECREF(mpzexp);
 	Py_DECREF(mpzmod);
@@ -1023,7 +1023,7 @@ MPZ_gcd(PyObject *self, PyObject *args)
 	mpzobject *mpzop1 = NULL, *mpzop2 = NULL;
 	mpzobject *z;
 
-	
+
 	if (!PyArg_Parse(args, "(OO)", &op1, &op2))
 		return NULL;
 
@@ -1052,7 +1052,7 @@ MPZ_gcdext(PyObject *self, PyObject *args)
 	mpzobject *mpzop1 = NULL, *mpzop2 = NULL;
 	mpzobject *g = NULL, *s = NULL, *t = NULL;
 
-	
+
 	if (!PyArg_Parse(args, "(OO)", &op1, &op2))
 		return NULL;
 
@@ -1091,7 +1091,7 @@ MPZ_sqrt(PyObject *self, PyObject *args)
 	mpzobject *mpzop = NULL;
 	mpzobject *z;
 
-	
+
 	if (!PyArg_Parse(args, "O", &op))
 		return NULL;
 
@@ -1116,7 +1116,7 @@ MPZ_sqrtrem(PyObject *self, PyObject *args)
 	mpzobject *mpzop = NULL;
 	mpzobject *root = NULL, *rem = NULL;
 
-	
+
 	if (!PyArg_Parse(args, "O", &op))
 		return NULL;
 
@@ -1189,7 +1189,7 @@ mpz_divm(MP_INT *res, const MP_INT *num, const MP_INT *den, const MP_INT *mod)
 		}
 		else
 			mpz_mod(res, &s0, mod);
-		
+
 #else /* def MPZ_MDIV_BUG */
 		mpz_mmod(res, &s0, mod);
 #endif /* def MPZ_MDIV_BUG else */
@@ -1212,7 +1212,7 @@ MPZ_divm(PyObject *self, PyObject *args)
 	mpzobject *mpznum, *mpzden = NULL, *mpzmod = NULL;
 	mpzobject *z = NULL;
 
-	
+
 	if (!PyArg_Parse(args, "(OOO)", &num, &den, &mod))
 		return NULL;
 
@@ -1225,7 +1225,7 @@ MPZ_divm(PyObject *self, PyObject *args)
 		Py_XDECREF(mpzmod);
 		return NULL;
 	}
-	
+
 	mpz_divm(&z->mpz, &mpznum->mpz, &mpzden->mpz, &mpzmod->mpz);
 
 	Py_DECREF(mpznum);
@@ -1340,19 +1340,19 @@ mpz_long(mpzobject *self)
 	while (ldcount > 0 && longobjp->ob_digit[ldcount-1] == 0)
 		ldcount--;
 	longobjp->ob_size = ldcount;
-	
+
 
 	if (isnegative)
 		longobjp->ob_size = -longobjp->ob_size;
 
 	return (PyObject *)longobjp;
-	
+
 } /* mpz_long() */
 
 
 /* I would have avoided pow() anyways, so ... */
 static const double multiplier = 256.0 * 256.0 * 256.0 * 256.0;
-	
+
 #ifdef MPZ_CONVERSIONS_AS_METHODS
 static PyObject *
 mpz_float(mpzobject *self, PyObject *args)
@@ -1373,7 +1373,7 @@ mpz_float(mpzobject *self)
 #endif /* def MPZ_CONVERSIONS_AS_METHODS */
 
 	i = (int)mpz_size(&self->mpz);
-	
+
 	/* determine sign, and copy abs(self) to scratch var */
 	if ((isnegative = (mpz_cmp_ui(&self->mpz, (unsigned long int)0) < 0)))
 	{
@@ -1404,7 +1404,7 @@ mpz_float(mpzobject *self)
 		x = -x;
 
 	return PyFloat_FromDouble(x);
-	
+
 } /* mpz_float() */
 
 #ifdef MPZ_CONVERSIONS_AS_METHODS
@@ -1419,10 +1419,10 @@ mpz_hex(mpzobject *self)
 	if (!PyArg_NoArgs(args))
 		return NULL;
 #endif /* def MPZ_CONVERSIONS_AS_METHODS */
-	
+
 	return mpz_format((PyObject *)self, 16, (unsigned char)1);
 } /* mpz_hex() */
-	
+
 #ifdef MPZ_CONVERSIONS_AS_METHODS
 static PyObject *
 mpz_oct(mpzobject *self, PyObject *args)
@@ -1438,7 +1438,7 @@ mpz_oct(mpzobject *self)
 	
 	return mpz_format((PyObject *)self, 8, (unsigned char)1);
 } /* mpz_oct() */
-	
+
 static PyObject *
 mpz_binary(mpzobject *self, PyObject *args)
 {
@@ -1447,7 +1447,7 @@ mpz_binary(mpzobject *self, PyObject *args)
 	char *cp;
 	MP_INT mp;
 	unsigned long ldigit;
-	
+
 	if (!PyArg_NoArgs(args))
 		return NULL;
 
@@ -1477,6 +1477,12 @@ mpz_binary(mpzobject *self, PyObject *args)
 		*cp++ = (unsigned char)((ldigit >>= 8) & 0xFF);
 		*cp++ = (unsigned char)((ldigit >>= 8) & 0xFF);
 		*cp++ = (unsigned char)((ldigit >>= 8) & 0xFF);
+		if (sizeof(ldigit) == 8 && BITS_PER_MP_LIMB == 64) {
+			*cp++ = (unsigned char)((ldigit >>= 8) & 0xFF);
+			*cp++ = (unsigned char)((ldigit >>= 8) & 0xFF);
+			*cp++ = (unsigned char)((ldigit >>= 8) & 0xFF);
+			*cp++ = (unsigned char)((ldigit >>= 8) & 0xFF);
+		}
 	}
 
 	while (strobjp->ob_size && !*--cp)
@@ -1484,7 +1490,7 @@ mpz_binary(mpzobject *self, PyObject *args)
 
 	return (PyObject *)strobjp;
 } /* mpz_binary() */
-	
+
 
 static PyMethodDef mpz_methods[] = {
 #ifdef MPZ_CONVERSIONS_AS_METHODS
