@@ -443,9 +443,7 @@ class AppBuilder(BundleBuilder):
 				# /usr/bin/python
 				hashbang = "/usr/bin/python"
 			else:
-				hashbang = sys.executable
-				while os.path.islink(hashbang):
-					hashbang = os.readlink(hashbang)
+				hashbang = os.path.realpath(sys.executable)
 			standalone = self.standalone
 			open(bootstrappath, "w").write(BOOTSTRAP_SCRIPT % locals())
 			os.chmod(bootstrappath, 0775)
