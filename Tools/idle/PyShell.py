@@ -157,6 +157,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.tkconsole = tkconsole
         locals = sys.modules['__main__'].__dict__
         InteractiveInterpreter.__init__(self, locals=locals)
+        self.save_warnings_filters = None
 
     gid = 0
 
