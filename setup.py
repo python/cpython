@@ -694,114 +694,104 @@ class PyBuildExt(build_ext):
             exts.append( Extension('sunaudiodev', ['sunaudiodev.c']) )
 
         if platform == 'darwin':
-            # Mac OS X specific modules. Modules linked against the Carbon
-            # framework are only built for framework-enabled Pythons. As
-            # of MacOSX 10.1 importing the Carbon framework from a non-windowing
-            # application (MacOSX server, not logged in on the console) may
-            # result in Python crashing.
-            #
-            # I would like to trigger on WITH_NEXT_FRAMEWORK but that isn't
-            # available here. This Makefile variable is also what the install
-            # procedure triggers on.
+            # Mac OS X specific modules.
             exts.append( Extension('_CF', ['cf/_CFmodule.c', 'cf/pycfbridge.c'],
                         extra_link_args=['-framework', 'CoreFoundation']) )
 
-            framework = sysconfig.get_config_var('PYTHONFRAMEWORK')
-            if framework:
-                exts.append( Extension('gestalt', ['gestaltmodule.c'],
-                            extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('MacOS', ['macosmodule.c'],
-                            extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('icglue', ['icgluemodule.c'],
-                            extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('macfs',
-                                       ['macfsmodule.c',
-                                        '../Python/getapplbycreator.c'],
-                            extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_Res', ['res/_Resmodule.c'],
-                            extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_Snd', ['snd/_Sndmodule.c'],
-                            extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('Nav', ['Nav.c'],
+            exts.append( Extension('gestalt', ['gestaltmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_AE', ['ae/_AEmodule.c'],
+            exts.append( Extension('MacOS', ['macosmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_AH', ['ah/_AHmodule.c'],
+            exts.append( Extension('icglue', ['icgluemodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_Alias', ['alias/_Aliasmodule.c'],
+            exts.append( Extension('macfs',
+                                   ['macfsmodule.c',
+                                    '../Python/getapplbycreator.c'],
                         extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_App', ['app/_Appmodule.c'],
+            exts.append( Extension('_Res', ['res/_Resmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_CarbonEvt', ['carbonevt/_CarbonEvtmodule.c'],
+            exts.append( Extension('_Snd', ['snd/_Sndmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_CG', ['cg/_CGmodule.c'],
-                        extra_link_args=['-framework', 'ApplicationServices',
-                                         '-framework', 'Carbon']) )
-                exts.append( Extension('_Cm', ['cm/_Cmmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_Ctl', ['ctl/_Ctlmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_Dlg', ['dlg/_Dlgmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_Drag', ['drag/_Dragmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_Evt', ['evt/_Evtmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_File', ['file/_Filemodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_Folder', ['folder/_Foldermodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_Fm', ['fm/_Fmmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_Help', ['help/_Helpmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_Icn', ['icn/_Icnmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_IBCarbon', ['ibcarbon/_IBCarbon.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_List', ['list/_Listmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_Menu', ['menu/_Menumodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_Mlte', ['mlte/_Mltemodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_Qd', ['qd/_Qdmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_Qdoffs', ['qdoffs/_Qdoffsmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_Qt', ['qt/_Qtmodule.c'],
-                        extra_link_args=['-framework', 'QuickTime',
-                                         '-framework', 'Carbon']) )
-                exts.append( Extension('_Scrap', ['scrap/_Scrapmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                exts.append( Extension('_TE', ['te/_TEmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-                # As there is no standardized place (yet) to put
-                # user-installed Mac libraries on OSX, we search for "waste"
-                # in parent directories of the Python source tree. You
-                # should put a symlink to your Waste installation in the
-                # same folder as your python source tree.  Or modify the
-                # next few lines:-)
-                waste_incs = find_file("WASTE.h", [], 
-                        ['../'*n + 'waste/C_C++ Headers' for n in (0,1,2,3,4)])
-                waste_libs = find_library_file(self.compiler, "WASTE", [],
-            [           "../"*n + "waste/Static Libraries" for n in (0,1,2,3,4)])
-                if waste_incs != None and waste_libs != None:
-                    (srcdir,) = sysconfig.get_config_vars('srcdir')
-                    exts.append( Extension('waste',
-                                   ['waste/wastemodule.c'] + [
-                                    os.path.join(srcdir, d) for d in 
-                                    'Mac/Wastemods/WEObjectHandlers.c',
-                                    'Mac/Wastemods/WETabHooks.c',
-                                    'Mac/Wastemods/WETabs.c'
-                                   ],
-                                   include_dirs = waste_incs + [os.path.join(srcdir, 'Mac/Wastemods')],
-                                   library_dirs = waste_libs,
-                                   libraries = ['WASTE'],
-                                   extra_link_args = ['-framework', 'Carbon'],
-                    ) )
-                exts.append( Extension('_Win', ['win/_Winmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('Nav', ['Nav.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_AE', ['ae/_AEmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_AH', ['ah/_AHmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_Alias', ['alias/_Aliasmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_App', ['app/_Appmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_CarbonEvt', ['carbonevt/_CarbonEvtmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_CG', ['cg/_CGmodule.c'],
+                    extra_link_args=['-framework', 'ApplicationServices',
+                                     '-framework', 'Carbon']) )
+            exts.append( Extension('_Cm', ['cm/_Cmmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_Ctl', ['ctl/_Ctlmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_Dlg', ['dlg/_Dlgmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_Drag', ['drag/_Dragmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_Evt', ['evt/_Evtmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_File', ['file/_Filemodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_Folder', ['folder/_Foldermodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_Fm', ['fm/_Fmmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_Help', ['help/_Helpmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_Icn', ['icn/_Icnmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_IBCarbon', ['ibcarbon/_IBCarbon.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_List', ['list/_Listmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_Menu', ['menu/_Menumodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_Mlte', ['mlte/_Mltemodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_Qd', ['qd/_Qdmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_Qdoffs', ['qdoffs/_Qdoffsmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_Qt', ['qt/_Qtmodule.c'],
+                    extra_link_args=['-framework', 'QuickTime',
+                                     '-framework', 'Carbon']) )
+            exts.append( Extension('_Scrap', ['scrap/_Scrapmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_TE', ['te/_TEmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
+            # As there is no standardized place (yet) to put
+            # user-installed Mac libraries on OSX, we search for "waste"
+            # in parent directories of the Python source tree. You
+            # should put a symlink to your Waste installation in the
+            # same folder as your python source tree.  Or modify the
+            # next few lines:-)
+            waste_incs = find_file("WASTE.h", [], 
+                    ['../'*n + 'waste/C_C++ Headers' for n in (0,1,2,3,4)])
+            waste_libs = find_library_file(self.compiler, "WASTE", [],
+                    ["../"*n + "waste/Static Libraries" for n in (0,1,2,3,4)])
+            if waste_incs != None and waste_libs != None:
+                (srcdir,) = sysconfig.get_config_vars('srcdir')
+                exts.append( Extension('waste',
+                               ['waste/wastemodule.c'] + [
+                                os.path.join(srcdir, d) for d in 
+                                'Mac/Wastemods/WEObjectHandlers.c',
+                                'Mac/Wastemods/WETabHooks.c',
+                                'Mac/Wastemods/WETabs.c'
+                               ],
+                               include_dirs = waste_incs + [os.path.join(srcdir, 'Mac/Wastemods')],
+                               library_dirs = waste_libs,
+                               libraries = ['WASTE'],
+                               extra_link_args = ['-framework', 'Carbon'],
+                ) )
+            exts.append( Extension('_Win', ['win/_Winmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
 
         self.extensions.extend(exts)
 
