@@ -32,12 +32,12 @@ polling objects.
 
 \begin{funcdesc}{select}{iwtd, owtd, ewtd\optional{, timeout}}
 This is a straightforward interface to the \UNIX{} \cfunction{select()}
-system call.  The first three arguments are lists of `waitable
+system call.  The first three arguments are sequences of `waitable
 objects': either integers representing file descriptors or
 objects with a parameterless method named \method{fileno()} returning
-such an integer.  The three lists of waitable objects are for input,
-output and `exceptional conditions', respectively.  Empty lists are
-allowed, but acceptance of three empty lists is platform-dependent.
+such an integer.  The three sequences of waitable objects are for input,
+output and `exceptional conditions', respectively.  Empty sequences are
+allowed, but acceptance of three empty sequences is platform-dependent.
 (It is known to work on \UNIX{} but not on Windows.)  The optional
 \var{timeout} argument specifies a time-out as a floating point number
 in seconds.  When the \var{timeout} argument is omitted the function
@@ -49,7 +49,7 @@ subsets of the first three arguments.  When the time-out is reached
 without a file descriptor becoming ready, three empty lists are
 returned.
 
-Among the acceptable object types in the lists are Python file
+Among the acceptable object types in the sequences are Python file
 objects (e.g. \code{sys.stdin}, or objects returned by
 \function{open()} or \function{os.popen()}), socket objects
 returned by \function{socket.socket()}.%
