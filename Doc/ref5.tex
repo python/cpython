@@ -176,8 +176,9 @@ The key/datum pairs are evaluated from left to right to define the
 entries of the dictionary: each key object is used as a key into the
 dictionary to store the corresponding datum.
 
-Keys must be strings, otherwise a \verb\TypeError\ exception is
-raised.  Clashes between duplicate keys are not detected; the last
+Restrictions on the types of the key values are listed earlier in
+section \ref{types}.
+Clashes between duplicate keys are not detected; the last
 datum (textually rightmost in the display) stored for a given key
 value prevails.
 \exindex{TypeError}
@@ -565,10 +566,10 @@ corresponding items.
 Mappings (dictionaries) are compared through lexicographic
 comparison of their sorted (key, value) lists.%
 \footnote{This is expensive since it requires sorting the keys first,
-but about the only sensible definition.  It was tried to compare
-dictionaries by identity only, but this caused surprises because
-people expected to be able to test a dictionary for emptiness by
-comparing it to {\tt \{\}}.}
+but about the only sensible definition.  An earlier version of Python
+compared dictionaries by identity only, but this caused surprises
+because people expected to be able to test a dictionary for emptiness
+by comparing it to {\tt \{\}}.}
 
 \item
 Most other types compare unequal unless they are the same object;

@@ -290,10 +290,17 @@ There is currently a single mapping type:
 \begin{description}
 
 \item[Dictionaries]
-These represent finite sets of objects indexed by strings.
+These represent finite sets of objects indexed by almost arbitrary
+values.  The only types of values not acceptable as keys are values
+containing lists or dictionaries or other mutable types that are
+compared by value rather than by object identity --- the reason being
+that the implementation requires that a key's hash value be constant.
+Numeric types used for keys obey the normal rules for numeric
+comparison: if two numbers compare equal (e.g. 1 and 1.0) then they
+can be used interchangeably to index the same dictionary entry.
+
 Dictionaries are mutable; they are created by the \verb\{...}\
-notation (see section \ref{dict}).  (Implementation note: the strings
-used for indexing must not contain null bytes.)
+notation (see section \ref{dict}).
 \obindex{dictionary}
 \obindex{mutable}
 
@@ -409,7 +416,7 @@ base class list.
 \obindex{instance}
 \indexii{class object}{call}
 \index{container}
-\index{dictionary}
+\obindex{dictionary}
 \indexii{class}{attribute}
 
 Class attribute assignments update the class's dictionary, never the
@@ -589,12 +596,30 @@ interpretations are used in this case.
 Called by the \verb\print\ statement and conversions (reverse quotes) to
 compute the string representation of an object.
 
-\item[\tt _cmp__(self, other)]
+\item[\tt __cmp__(self, other)]
 Called by all comparison operations.  Should return -1 if
 \verb\self < other\,  0 if \verb\self == other\, +1 if
-\verb\self > other\.  (Implementation note: due to limitations in the
-interpreter, exceptions raised by comparisons are ignored, and the
-objects will be considered equal in this case.)
+\verb\self > other\.  If no \code{__cmp__} operation is defined, class
+instances are compared by object identity (``address'').
+(Implementation note: due to limitations in the interpreter,
+exceptions raised by comparisons are ignored, and the objects will be
+considered equal in this case.)
+
+\item[\tt __hash__(self)]
+Called by dictionary operations and by the built-in function
+\code{hash()}.  Should return a 32-bit integer usable as a hash value
+for dictionary operations.  The only required property is that objects
+which compare equal have the same hash value; it is advised to somehow
+mix together (e.g. using exclusing or) the hash values for the
+components of the object that also play a part in comparison of
+objects.  If a class does not define a \code{__cmp__} method it should
+not define a \code{__hash__} operation either; if it defines
+\code{__cmp__} but not \code{__hash__} its instances will not be
+usable as dictionary keys.  If a class defines mutable objects and
+implements a \code{__cmp__} method it should not implement
+\code{__hash__}, since the dictionary implementation assumes that a
+key's hash value is a constant.
+\obindex{dictionary}
 
 \end{description}
 

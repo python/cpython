@@ -183,6 +183,12 @@ program will encounter EOF immediately.  In the former case (which is
 usually what you want) they are satisfied from whatever file or device
 is connected to standard input of the Python interpreter.
 
+When a script file is used, it is sometimes useful to be able to run
+the script and enter interactive mode afterwards.  This can be done by
+passing {\tt -i} before the script.  (This does not work if the script
+is read from standard input, for the same reason as explained in the
+previous paragraph.)
+
 \subsection{Argument Passing}
 
 When known to the interpreter, the script name and additional
@@ -211,8 +217,8 @@ and a copyright notice before printing the first prompt, e.g.:
 
 \bcode\begin{verbatim}
 python
-Python 0.9.7 (Aug 28 1992).
-Copyright 1990, 1991, 1992 Stichting Mathematisch Centrum, Amsterdam
+Python 0.9.9 (Apr  2 1993).
+Copyright 1990, 1991, 1992, 1993 Stichting Mathematisch Centrum, Amsterdam
 >>>
 \end{verbatim}\ecode
 
@@ -1748,58 +1754,44 @@ however, and result in error messages as shown here:
 
 \bcode\small\begin{verbatim}
 >>> 10 * (1/0)
-Unhandled exception: run-time error: integer division by zero
 Stack backtrace (innermost last):
   File "<stdin>", line 1
+ZeroDivisionError: integer division or modulo
 >>> 4 + foo*3
-Unhandled exception: undefined name: foo
 Stack backtrace (innermost last):
   File "<stdin>", line 1
+NameError: foo
 >>> '2' + 2
-Unhandled exception: type error: illegal argument type for built-in operation
 Stack backtrace (innermost last):
   File "<stdin>", line 1
+TypeError: illegal argument type for built-in operation
 >>> 
 \end{verbatim}\ecode
 %
-The first line of the error message indicates what happened.
+The last line of the error message indicates what happened.
 Exceptions come in different types, and the type is printed as part of
 the message: the types in the example are
-{\tt run-time error},
-{\tt undefined name}
+{\tt ZeroDivisionError},
+{\tt NameError}
 and
-{\tt type error}.
-The rest of the line is a detail whose interpretation depends on the
-exception type.
+{\tt TypeError}.
+The string printed as the exception type is the name of the built-in
+name for the exception that occurred.  This is true for all built-in
+exceptions, but need not be true for user-defined exceptions (although
+it is a useful convention).
+Standard exception names are built-in identifiers (not reserved
+keywords).
 
-The rest of the error message shows the context where the
-exception happened.
+The rest of the line is a detail whose interpretation depends on the
+exception type; its meaning is dependent on the exception type.
+
+The preceding part of the error message shows the context where the
+exception happened, in the form of a stack backtrace.
 In general it contains a stack backtrace listing source lines; however,
 it will not display lines read from standard input.
 
-Here is a summary of the most common exceptions:
-\begin{itemize}
-\item
-{\em Run-time\ errors}
-are generally caused by wrong data used by the program; this can be the
-programmer's fault or caused by bad input.
-The detail states the cause of the error in more detail.
-\item
-{\em Undefined\ name}
-errors are more serious: these are usually caused by misspelled
-identifiers.%
-\footnote{
-	The parser does not check whether names used in a program are at
-	all defined elsewhere in the program; such checks are
-	postponed until run-time.  The same holds for type checking.
-}
-The detail is the offending identifier.
-\item
-{\em Type\ errors} are also pretty serious: this is another case of
-using wrong data (or better, using data the wrong way), but here the
-error can be gleaned from the object type(s) alone.  The detail shows
-in what context the error was detected.
-\end{itemize}
+The Python library reference manual lists the built-in exceptions and
+their meanings.
 
 \section{Handling Exceptions}
 
@@ -1813,7 +1805,7 @@ some floating point numbers:
 ...     print x,
 ...     try:
 ...         print 1.0 / x
-...     except RuntimeError:
+...     except ZeroDivisionError:
 ...         print '*** has no inverse ***'
 ... 
 0.3333 3.00030003
@@ -1862,7 +1854,8 @@ e.g.:
 %
 The last except clause may omit the exception name(s), to serve as a
 wildcard.
-Use this with extreme caution!
+Use this with extreme caution, since it is easy to mask a real
+programming error in this way!
 
 When an exception occurs, it may have an associated value, also known as
 the exceptions's
@@ -1882,30 +1875,8 @@ name foo undefined
 >>> 
 \end{verbatim}\ecode
 %
-If an exception has an argument, it is printed as the third part
+If an exception has an argument, it is printed as the last part
 (`detail') of the message for unhandled exceptions.
-
-Standard exception names are built-in identifiers (not reserved
-keywords).
-These are in fact string objects whose
-{\em object\ identity}
-(not their value!) identifies the exceptions.
-The string is printed as the second part of the message for unhandled
-exceptions.
-Their names and values are:
-
-\bcode\begin{verbatim}
-EOFError              'end-of-file read'
-KeyboardInterrupt     'keyboard interrupt'
-MemoryError           'out of memory'           *
-NameError             'undefined name'          *
-RuntimeError          'run-time error'          *
-SystemError           'system error'            *
-TypeError             'type error'              *
-\end{verbatim}\ecode
-%
-The meanings should be clear enough.
-Those exceptions with a {\tt *} in the third column have an argument.
 
 Exception handlers don't just handle exceptions if they occur
 immediately in the try clause, but also if they occur inside functions
@@ -1918,10 +1889,10 @@ For example:
 ... 
 >>> try:
 ...     this_fails()
-... except RuntimeError, detail:
+... except ZeroDivisionError, detail:
 ...     print 'Handling run-time error:', detail
 ... 
-Handling run-time error: integer division by zero
+Handling run-time error: integer division or modulo
 >>> 
 \end{verbatim}\ecode
 
@@ -1932,10 +1903,10 @@ exception to occur.
 For example:
 
 \bcode\begin{verbatim}
->>> raise NameError, 'Hi There!'
-Unhandled exception: undefined name: Hi There!
+>>> raise NameError, 'HiThere'
 Stack backtrace (innermost last):
   File "<stdin>", line 1
+NameError: HiThere
 >>> 
 \end{verbatim}\ecode
 %
@@ -1949,7 +1920,7 @@ variable.
 For example:
 
 \bcode\begin{verbatim}
->>> my_exc = 'Nobody likes me'
+>>> my_exc = 'my_exc'
 >>> try:
 ...     raise my_exc, 2*2
 ... except my_exc, val:
@@ -1957,9 +1928,9 @@ For example:
 ... 
 My exception occured, value: 4
 >>> raise my_exc, 1
-Nobody likes me: 1
 Stack backtrace (innermost last):
   File "<stdin>", line 7
+my_exc: 1
 >>> 
 \end{verbatim}\ecode
 %
@@ -1979,9 +1950,9 @@ For example:
 ...     print 'Goodbye, world!'
 ... 
 Goodbye, world!
-Unhandled exception: keyboard interrupt
 Stack backtrace (innermost last):
   File "<stdin>", line 2
+KeyboardInterrupt
 >>> 
 \end{verbatim}\ecode
 %
