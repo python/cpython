@@ -18,6 +18,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- The signal module now exposes SIGRTMIN and SIGRTMAX (if available).
+
 Library
 -------
 
