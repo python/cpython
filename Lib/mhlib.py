@@ -85,7 +85,8 @@ from bisect import bisect
 
 # Exported constants
 
-Error = 'mhlib.Error'
+class Error(Exception):
+    pass
 
 
 class MH:
@@ -330,7 +331,7 @@ class Folder:
             f.close()
 
     def getcurrent(self):
-        """Return the current message.  Raise KeyError when there is none."""
+        """Return the current message.  Raise Error when there is none."""
         seqs = self.getsequences()
         try:
             return max(seqs['cur'])
