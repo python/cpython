@@ -34,10 +34,14 @@ Py_TRACE_REFS                                             introduced in 1.4
 
 Turn on heavy reference debugging.  This is major surgery.  Every PyObject
 grows two more pointers, to maintain a doubly-linked list of all live
-heap-allocated objects (note that, e.g., most builtin type objects are not
-in this list, as they're statically allocated).  Note that because the
-fundamental PyObject layout changes, Python modules compiled with
-Py_TRACE_REFS are incompatible with modules compiled without it.
+heap-allocated objects.  Most builtin type objects are not in this list,
+as they're statically allocated.  Starting in Python 2.3, if COUNT_ALLOCS
+(see below) is also defined, a static type object T does appear in this
+list if at least one object of type T has been created.
+
+Note that because the fundamental PyObject layout changes, Python modules
+compiled with Py_TRACE_REFS are incompatible with modules compiled without
+it.
 
 Py_TRACE_REFS implies Py_REF_DEBUG.
 
@@ -170,6 +174,11 @@ class objects can go away.  COUNT_ALLOCS can blow up in 2.2 and 2.2.1
 because of this; this was fixed in 2.2.2.  Use of COUNT_ALLOCS makes
 all heap-allocated type objects immortal, except for those for which no
 object of that type is ever allocated.
+
+Starting with Python 2.3, If Py_TRACE_REFS is also defined, COUNT_ALLOCS
+arranges to ensure that the type object for each allocated object
+appears in the doubly-linked list of all objects maintained by
+Py_TRACE_REFS.
 
 Special gimmicks:
 
