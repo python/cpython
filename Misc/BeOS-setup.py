@@ -443,7 +443,7 @@ class PyBuildExt(build_ext):
 
         # Andrew Kuchling's zlib module.
         # This require zlib 1.1.3 (or later).
-        # See http://www.cdrom.com/pub/infozip/zlib/
+        # See http://www.gzip.org/zlib/
         if (self.compiler.find_library_file(lib_dirs, 'z')):
             exts.append( Extension('zlib', ['zlibmodule.c'],
                                    libraries = ['z']) )
