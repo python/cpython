@@ -70,9 +70,7 @@ number of bytes.  As a special case, \code{'0s'} means a single, empty
 string (while \code{'0c'} means 0 characters).
 
 For the \code{'I'} and \code{'L'} format characters, the return
-value is a Python long integer if a Python plain integer can't
-represent the required range (note: this is dependent on the size of
-the relevant C types only, not of the sign of the actual value).
+value is a Python long integer.
 
 By default, C numbers are represented in the machine's native format
 and byte order, and properly aligned by skipping pad bytes if
