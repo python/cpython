@@ -219,6 +219,23 @@ joinpath(char *buffer, char *stuff)
     buffer[n+k] = '\0';
 }
 
+static void
+init_path_from_argv0(char *path, char *argv0_path)
+{
+    if (argv0_path[0] == '/')
+	strcpy(path, argv0_path);
+    else if (argv0_path[0] == '.') {
+	getcwd(path, MAXPATHLEN);
+	if (argv0_path[1] == '/') 
+	    joinpath(path, argv0_path + 2);
+	else
+	    joinpath(path, argv0_path);
+    }
+    else {
+	getcwd(path, MAXPATHLEN);
+	joinpath(path, argv0_path);
+    }
+}
 
 static int
 search_for_prefix(char *argv0_path, char *home)
@@ -264,7 +281,7 @@ search_for_prefix(char *argv0_path, char *home)
     }
 
     /* Search from argv0_path, until root is found */
-    strcpy(prefix, argv0_path);
+    init_path_from_argv0(prefix, argv0_path);
     do {
         n = strlen(prefix);
         joinpath(prefix, lib_python);
@@ -314,7 +331,7 @@ search_for_exec_prefix(char *argv0_path, char *home)
     }
 
     /* Search from argv0_path, until root is found */
-    strcpy(exec_prefix, argv0_path);
+    init_path_from_argv0(exec_prefix, argv0_path);
     do {
         n = strlen(exec_prefix);
         joinpath(exec_prefix, lib_python);
