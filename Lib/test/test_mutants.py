@@ -1,5 +1,6 @@
-from test_support import verbose
+from test_support import verbose, TESTFN
 import random
+import os
 
 # From SF bug #422121:  Insecurities in dict comparison.
 
@@ -151,3 +152,66 @@ def test(n):
 
 # See last comment block for clues about good values for n.
 test(100)
+
+##########################################################################
+# Another segfault bug, distilled by Micheal Hundson from a c.l.py post.
+
+class Child:
+    def __init__(self, parent):
+        self.__dict__['parent'] = parent
+    def __getattr__(self, attr):
+        self.parent.a = 1
+        self.parent.b = 1
+        self.parent.c = 1
+        self.parent.d = 1
+        self.parent.e = 1
+        self.parent.f = 1
+        self.parent.g = 1
+        self.parent.h = 1
+        self.parent.i = 1
+        return getattr(self.parent, attr)
+
+class Parent:
+    def __init__(self):
+        self.a = Child(self)
+
+# Hard to say what this will print!  May vary from time to time.  But
+# we're specifically trying to test the tp_print slot here, and this is
+# the clearest way to do it.  We print the result to a temp file so that
+# the expected-output file doesn't need to change.
+
+f = open(TESTFN, "w")
+print >> f, Parent().__dict__
+f.close()
+os.unlink(TESTFN)
+
+##########################################################################
+# And another core-dumper from Michael Hudson.
+
+dict = {}
+
+# Force dict to malloc its table.
+for i in range(1, 10):
+    dict[i] = i
+
+f = open(TESTFN, "w")
+
+class Machiavelli:
+    def __repr__(self):
+        dict.clear()
+
+        # Michael sez:  "doesn't crash without this.  don't know why."
+        # Tim sez:  "luck of the draw; crashes with or without for me."
+        print >> f
+
+        return `"machiavelli"`
+
+    def __hash__(self):
+        return 0
+
+dict[Machiavelli()] = Machiavelli()
+
+print >> f, str(dict)
+f.close()
+os.unlink(TESTFN)
+del f, dict
