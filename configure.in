@@ -1050,6 +1050,7 @@ then with_threads="yes"
 fi
 AC_MSG_RESULT($with_threads)
 
+AC_SUBST(THREADOBJ)
 if test "$with_threads" = "no"
 then
     USE_THREAD_MODULE="#"
@@ -1059,13 +1060,13 @@ then
     # Defining _REENTRANT on system with POSIX threads should not hurt.
     AC_DEFINE(_REENTRANT)
     posix_threads=yes
-    LIBOBJS="$LIBOBJS thread.o"    
+    THREADOBJ="Python/thread.o"    
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
     AC_DEFINE(WITH_THREAD)
     posix_threads=yes
-    LIBOBJS="$LIBOBJS thread.o"
+    THREADOBJ="Python/thread.o"
 else
     if test ! -z "$with_threads" -a -d "$with_threads"
     then LDFLAGS="$LDFLAGS -L$with_threads"
@@ -1090,11 +1091,11 @@ else
     AC_DEFINE(C_THREADS)
     AC_DEFINE(HURD_C_THREADS)
     LIBS="$LIBS -lthreads"
-    LIBOBJS="$LIBOBJS thread.o"],[
+    THREADOBJ="Python/thread.o"],[
     AC_CHECK_HEADER(mach/cthreads.h, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(C_THREADS)
     AC_DEFINE(MACH_C_THREADS)
-    LIBOBJS="$LIBOBJS thread.o"],[
+    THREADOBJ="Python/thread.o"],[
     AC_MSG_CHECKING(for --with-pth)
     AC_ARG_WITH(pth,
     [  --with-pth                      use GNU pth threading libraries], [
@@ -1102,7 +1103,7 @@ else
     AC_DEFINE(WITH_THREAD)
     AC_DEFINE(HAVE_PTH)
     LIBS="-lpth $LIBS"
-    LIBOBJS="$LIBOBJS thread.o"],[
+    THREADOBJ="Python/thread.o"],[
     AC_MSG_RESULT(no)
 
     # Just looking for pthread_create in libpthread is not enough:
@@ -1118,34 +1119,34 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
     AC_MSG_RESULT(yes)
     AC_DEFINE(WITH_THREAD)
     posix_threads=yes
-    LIBOBJS="$LIBOBJS thread.o"],[
+    THREADOBJ="Python/thread.o"],[
     LIBS=$_libs
     AC_CHECK_FUNC(pthread_detach, [AC_DEFINE(WITH_THREAD)
     posix_threads=yes
-    LIBOBJS="$LIBOBJS thread.o"],[
+    THREADOBJ="Python/thread.o"],[
     AC_CHECK_HEADER(kernel/OS.h, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(BEOS_THREADS)
-    LIBOBJS="$LIBOBJS thread.o"],[
+    THREADOBJ="Python/thread.o"],[
     AC_CHECK_LIB(pthreads, pthread_create, [AC_DEFINE(WITH_THREAD)
     posix_threads=yes
     LIBS="$LIBS -lpthreads"
-    LIBOBJS="$LIBOBJS thread.o"], [
+    THREADOBJ="Python/thread.o"], [
     AC_CHECK_LIB(c_r, pthread_create, [AC_DEFINE(WITH_THREAD)
     posix_threads=yes
     LIBS="$LIBS -lc_r"
-    LIBOBJS="$LIBOBJS thread.o"], [
+    THREADOBJ="Python/thread.o"], [
     AC_CHECK_LIB(thread, __d6_pthread_create, [AC_DEFINE(WITH_THREAD)
     posix_threads=yes
     LIBS="$LIBS -lthread"
-    LIBOBJS="$LIBOBJS thread.o"], [
+    THREADOBJ="Python/thread.o"], [
     AC_CHECK_LIB(pthread, __pthread_create_system, [AC_DEFINE(WITH_THREAD)
     posix_threads=yes
     LIBS="$LIBS -lpthread"
-    LIBOBJS="$LIBOBJS thread.o"], [
+    THREADOBJ="Python/thread.o"], [
     AC_CHECK_LIB(cma, pthread_create, [AC_DEFINE(WITH_THREAD)
     posix_threads=yes
     LIBS="$LIBS -lcma"
-    LIBOBJS="$LIBOBJS thread.o"],[
+    THREADOBJ="Python/thread.o"],[
     USE_THREAD_MODULE="#"])
     ])])])])])])])])])])
 
@@ -1181,13 +1182,13 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
 
     AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
     LIBS="$LIBS -lmpc"
-    LIBOBJS="$LIBOBJS thread.o"
+    THREADOBJ="Python/thread.o"
     USE_THREAD_MODULE=""])
 
     if test $posix_threads != "yes"; then     
       AC_CHECK_LIB(thread, thr_create, [AC_DEFINE(WITH_THREAD)
       LIBS="$LIBS -lthread"
-      LIBOBJS="$LIBOBJS thread.o"
+      THREADOBJ="Python/thread.o"
       USE_THREAD_MODULE=""])
     fi
 
@@ -2085,13 +2086,6 @@ cat >> confdefs.h <<\EOF
 #endif
 EOF
 AC_CHECK_TYPE(socklen_t, int)
-
-# Add Python/ prefix to LIBOBJS
-libobjs=$LIBOBJS
-LIBOBJS=
-for obj in $libobjs; do
-    LIBOBJS="$LIBOBJS Python/$obj"
-done
 
 #AC_MSG_CHECKING(for Modules/Setup)
 #if test ! -f Modules/Setup ; then

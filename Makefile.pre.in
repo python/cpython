@@ -148,7 +148,7 @@ LIBC=		@LIBC@
 SYSLIBS=	$(LIBM) $(LIBC)
 
 MAINOBJ=	@MAINOBJ@
-LIBOBJS=	@LIBOBJS@
+THREADOBJ=	@THREADOBJ@
 DLINCLDIR=	@DLINCLDIR@
 DYNLOADFILE=	@DYNLOADFILE@
 MACHDEP_OBJS=	@MACHDEP_OBJS@
@@ -242,7 +242,7 @@ PYTHON_OBJS=	\
 		Python/getopt.o \
 		Python/$(DYNLOADFILE) \
 		$(MACHDEP_OBJS) \
-		$(LIBOBJS)
+		$(THREADOBJ)
 
 
 ##########################################################################
