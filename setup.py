@@ -68,6 +68,7 @@ class PyBuildExt(build_ext):
         # a fixed list
         lib_dirs = self.compiler.library_dirs[:]
         lib_dirs += ['/lib', '/usr/lib', '/usr/local/lib']
+        inc_dirs = ['/usr/include', '/usr/local/include'] + self.include_dirs
         exts = []
 
         # XXX Omitted modules: gl, pure, dl, SGI-specific modules
@@ -232,8 +233,7 @@ class PyBuildExt(build_ext):
         # Setup.config before enabling it here.
 
         if (self.compiler.find_library_file(lib_dirs, 'db') and
-            find_file(['/usr/include', '/usr/local/include'] + self.include_dirs,
-                      'db_185.h') ):
+            find_file(inc_dirs, 'db_185.h') ):
             exts.append( Extension('bsddb', ['bsddbmodule.c'],
                                    libraries = ['db'] ) )
 
@@ -340,8 +340,15 @@ class PyBuildExt(build_ext):
         #    ar cr libexpat.a xmltok/*.o xmlparse/*.o
         #
         if (self.compiler.find_library_file(lib_dirs, 'expat')):
-            exts.append( Extension('pyexpat', ['pyexpat.c'],
-                                   libraries = ['expat']) )
+            defs = None
+            if find_file(inc_dirs, 'expat.h'):
+                defs = [('HAVE_EXPAT_H', 1)]
+            elif find_file(inc_dirs, 'xmlparse.h'):
+                defs = []
+            if defs is not None:
+                exts.append( Extension('pyexpat', ['pyexpat.c'],
+                                       define_macros = defs,
+                                       libraries = ['expat']) )
 
         # Platform-specific libraries
         plat = sys.platform
