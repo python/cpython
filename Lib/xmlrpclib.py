@@ -34,6 +34,7 @@
 # 2001-10-01 fl  Remove containers from memo cache when done with them
 # 2001-10-01 fl  Use faster escape method (80% dumps speedup)
 # 2001-10-10 sm  Allow long ints to be passed as ints if they don't overflow
+# 2001-10-17 sm  test for int and long overflow (allows use on 64-bit systems)
 #
 # Copyright (c) 1999-2001 by Secret Labs AB.
 # Copyright (c) 1999-2001 by Fredrik Lundh.
@@ -143,6 +144,9 @@ def escape(s, replace=string.replace):
     s = replace(s, "&", "&amp;")
     s = replace(s, "<", "&lt;")
     return replace(s, ">", "&gt;",)
+
+MAXINT =  2L**31-1
+MININT = -2L**31
 
 if unicode:
     def _stringify(string):
@@ -462,12 +466,17 @@ class Marshaller:
             f(self, value)
 
     def dump_int(self, value):
+        # in case ints are > 32 bits
+        if value > MAXINT or value < MININT:
+            raise OverflowError, "int exceeds XML-RPC limits"
         self.write("<value><int>%s</int></value>\n" % value)
     dispatch[IntType] = dump_int
 
     def dump_long(self, value):
-        val = int(value)
-        self.write("<value><int>%s</int></value>\n" % val)
+        # in case ints are > 32 bits
+        if value > MAXINT or value < MININT:
+            raise OverflowError, "long int exceeds XML-RPC limits"
+        self.write("<value><int>%s</int></value>\n" % int(value))
     dispatch[LongType] = dump_long
 
     def dump_double(self, value):
