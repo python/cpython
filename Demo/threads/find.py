@@ -3,14 +3,16 @@
 # This demonstrates the use of a work queue and worker threads.
 # It really does do more stats/sec when using multiple threads,
 # although the improvement is only about 20-30 percent.
+# (That was 8 years ago.  In 2002, on Linux, I can't measure
+# a speedup. :-( )
 
 # I'm too lazy to write a command line parser for the full find(1)
 # command line syntax, so the predicate it searches for is wired-in,
 # see function selector() below.  (It currently searches for files with
-# group or world write permission.)
+# world write permission.)
 
 # Usage: parfind.py [-w nworkers] [directory] ...
-# Default nworkers is 4, maximum appears to be 8 (on Irix 4.0.2)
+# Default nworkers is 4
 
 
 import sys
@@ -98,7 +100,6 @@ class WorkQ:
 # Main program
 
 def main():
-    sys.argv.append("/tmp")
     nworkers = 4
     opts, args = getopt.getopt(sys.argv[1:], '-w:')
     for opt, arg in opts:
@@ -122,8 +123,8 @@ def main():
 # Feel free to change this to suit your purpose
 
 def selector(dir, name, fullname, stat):
-    # Look for group or world writable files
-    return (stat[ST_MODE] & 0022) != 0
+    # Look for world writable files that are not symlinks
+    return (stat[ST_MODE] & 0002) != 0 and not S_ISLNK(stat[ST_MODE])
 
 
 # The find procedure -- calls wq.addwork() for subdirectories
