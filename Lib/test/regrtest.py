@@ -199,11 +199,6 @@ NOTTESTS = [
     'test_b2',
     'test_future1',
     'test_future2',
-    'test_future3',
-    'test_future4',
-    'test_future5',
-    'test_future6',
-    'test_future7',
     ]
 
 def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):

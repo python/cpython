@@ -19,26 +19,26 @@ import test_future2
 
 # The remaining tests should fail
 try:
-    import test_future3
+    import badsyntax_future3
 except SyntaxError, msg:
     check_error_location(str(msg))
 
 try:
-    import test_future4
+    import badsyntax_future4
 except SyntaxError, msg:
     check_error_location(str(msg))
 
 try:
-    import test_future5
+    import badsyntax_future5
 except SyntaxError, msg:
     check_error_location(str(msg))
 
 try:
-    import test_future6
+    import badsyntax_future6
 except SyntaxError, msg:
     check_error_location(str(msg))
 
 try:
-    import test_future7
+    import badsyntax_future7
 except SyntaxError, msg:
     check_error_location(str(msg))
