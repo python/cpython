@@ -34,6 +34,36 @@ long ref_total;
    These are used by the individual routines for object creation.
    Do not call them otherwise, they do not initialize the object! */
 
+#ifdef COUNT_ALLOCS
+static typeobject *type_list;
+
+void
+dump_counts()
+{
+	typeobject *tp;
+
+	for (tp = type_list; tp; tp = tp->tp_next)
+		printf("%s %d %d %d\n", tp->tp_name, tp->tp_alloc, tp->tp_free,
+		       tp->tp_maxalloc);
+}
+
+void
+inc_count(tp)
+	typeobject *tp;
+{
+	if (tp->tp_alloc == 0) {
+		/* first time; hang in linked list */
+		if (tp->tp_next != NULL) /* sanity check */
+			abort();
+		tp->tp_next = type_list;
+		type_list = tp;
+	}
+	tp->tp_alloc++;
+	if (tp->tp_alloc - tp->tp_free > tp->tp_maxalloc)
+		tp->tp_maxalloc = tp->tp_alloc - tp->tp_free;
+}
+#endif
+
 object *
 newobject(tp)
 	typeobject *tp;
@@ -41,8 +71,8 @@ newobject(tp)
 	object *op = (object *) malloc(tp->tp_basicsize);
 	if (op == NULL)
 		return err_nomem();
-	NEWREF(op);
 	op->ob_type = tp;
+	NEWREF(op);
 	return op;
 }
 
@@ -55,9 +85,9 @@ newvarobject(tp, size)
 		malloc(tp->tp_basicsize + size * tp->tp_itemsize);
 	if (op == NULL)
 		return (varobject *)err_nomem();
-	NEWREF(op);
 	op->ob_type = tp;
 	op->ob_size = size;
+	NEWREF(op);
 	return op;
 }
 
@@ -301,6 +331,9 @@ NEWREF(op)
 	op->_ob_prev = &refchain;
 	refchain._ob_next->_ob_prev = op;
 	refchain._ob_next = op;
+#ifdef COUNT_ALLOCS
+	inc_count(op->ob_type);
+#endif
 }
 
 UNREF(op)
@@ -335,6 +368,9 @@ DELREF(op)
 	object *op;
 {
 	UNREF(op);
+#ifdef COUNT_ALLOCS
+	op->ob_type->tp_free++;
+#endif
 	(*(op)->ob_type->tp_dealloc)(op);
 	op->ob_type = NULL;
 }

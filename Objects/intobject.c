@@ -87,9 +87,9 @@ newintobject(ival)
 	}
 	v = free_list;
 	free_list = *(intobject **)free_list;
-	NEWREF(v);
 	v->ob_type = &Inttype;
 	v->ob_ival = ival;
+	NEWREF(v);
 	return (object *) v;
 }
 

@@ -310,6 +310,9 @@ extern void initGlx();
 #ifdef USE_HTML
 extern void initHTML();
 #endif
+#ifdef USE_XLIB
+extern void initXlib();
+#endif
 /* -- ADDMODULE MARKER 1 -- */
 
 struct {
@@ -483,6 +486,10 @@ struct {
 
 #ifdef USE_HTML
 	{"HTML", initHTML},
+#endif
+
+#ifdef USE_XLIB
+       {"Xlib", initXlib},
 #endif
 
 /* -- ADDMODULE MARKER 2 -- */

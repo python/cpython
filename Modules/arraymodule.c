@@ -252,10 +252,10 @@ newarrayobject(size, descr)
 			return err_nomem();
 		}
 	}
-	NEWREF(op);
 	op->ob_type = &Arraytype;
 	op->ob_size = size;
 	op->ob_descr = descr;
+	NEWREF(op);
 	return (object *) op;
 }
 

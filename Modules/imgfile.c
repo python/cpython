@@ -43,6 +43,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 static object * ImgfileError; /* Exception we raise for various trouble */
 
+static int top_to_bottom;	/* True if we want top-to-bottom images */
 
 /* The image library does not always call the error hander :-(,
    therefore we have a global variable indicating that it was called.
@@ -86,6 +87,20 @@ imgfile_open(fname)
     return image;
 }
 
+static object *
+imgfile_ttob(self, args)
+    object *self;
+    object *args;
+{
+    int newval;
+    object *rv;
+    
+    if (!getargs(args, "i", &newval))
+      return NULL;
+    rv = newintobject(top_to_bottom);
+    top_to_bottom = newval;
+    return rv;
+}
 
 static object *
 imgfile_read(self, args)
@@ -100,7 +115,8 @@ imgfile_read(self, args)
     static short rs[8192], gs[8192], bs[8192];
     int x, y;
     IMAGE *image;
-    
+    int yfirst, ylast, ystep;
+
     if ( !getargs(args, "s", &fname) )
       return NULL;
     
@@ -139,7 +155,17 @@ imgfile_read(self, args)
     }
     cdatap = getstringvalue(rv);
     idatap = (long *)cdatap;
-    for ( y=0; y < ysize && !error_called; y++ ) {
+
+    if (top_to_bottom) {
+	yfirst = ysize-1;
+	ylast = -1;
+	ystep = -1;
+    } else {
+	yfirst = 0;
+	ylast = ysize;
+	ystep = 1;
+    }
+    for ( y=yfirst; y != ylast && !error_called; y += ystep ) {
 	if ( zsize == 1 ) {
 	    getrow(image, rs, y, 0);
 	    for(x=0; x<xsize; x++ )
@@ -164,14 +190,17 @@ imgfile_read(self, args)
 
 static IMAGE *glob_image;
 static long *glob_datap;
-static int glob_width, glob_z;
+static int glob_width, glob_z, glob_ysize;
 
 static
 xs_get(buf, y)
     short *buf;
     int y;
 {
-    getrow(glob_image, buf, y, glob_z);
+    if (top_to_bottom)
+      getrow(glob_image, buf, (glob_ysize-1-y), glob_z);
+    else
+      getrow(glob_image, buf, y, glob_z);
 }
 
 static
@@ -221,6 +250,7 @@ xscale(image, xsize, ysize, zsize, datap, xnew, ynew, fmode, blur)
     glob_image = image;
     glob_datap = datap;
     glob_width = xnew;
+    glob_ysize = ysize;
     if ( zsize == 1 ) {
 	glob_z = 0;
 	filterzoom(xs_get, xs_put_c, xsize, ysize, xnew, ynew, fmode, blur);
@@ -255,6 +285,7 @@ imgfile_readscaled(self, args)
     double blur;
     int extended;
     int fmode;
+    int yfirst, ylast, ystep;
 
     /*
      ** Parse args. Funny, since arg 4 and 5 are optional
@@ -331,7 +362,16 @@ imgfile_readscaled(self, args)
     if ( extended ) {
 	xscale(image, xsize, ysize, zsize, idatap, xwtd, ywtd, fmode, blur);
     } else {
-	for ( y=0; y < ywtd && !error_called; y++ ) {
+	if (top_to_bottom) {
+	    yfirst = ywtd-1;
+	    ylast = -1;
+	    ystep = -1;
+	} else {
+	    yfirst = 0;
+	    ylast = ywtd;
+	    ystep = 1;
+	}
+	for ( y=yfirst; y != ylast && !error_called; y += ystep ) {
 	    yorig = (int)(y*yfac);
 	    if ( zsize == 1 ) {
 		getrow(image, rs, yorig, 0);
@@ -392,6 +432,8 @@ imgfile_write(self, args)
     short r, g, b;
     long rgb;
     int x, y;
+    int yfirst, ylast, ystep;
+
 
     if ( !getargs(args, "(ss#iii)",
 		  &fname, &cdatap, &len, &xsize, &ysize, &zsize) )
@@ -425,7 +467,16 @@ imgfile_write(self, args)
 
     idatap = (long *)cdatap;
     
-    for( y=0; y<ysize && !error_called; y++ ) {
+    if (top_to_bottom) {
+	yfirst = ysize-1;
+	ylast = -1;
+	ystep = -1;
+    } else {
+	yfirst = 0;
+	ylast = ysize;
+	ystep = 1;
+    }
+    for ( y=yfirst; y != ylast && !error_called; y += ystep ) {
 	if ( zsize == 1 ) {
 	    for( x=0; x<xsize; x++ )
 	      rs[x] = *cdatap++;
@@ -459,6 +510,7 @@ static struct methodlist imgfile_methods[] = {
     { "read",		imgfile_read },
     { "readscaled",	imgfile_readscaled, 1},
     { "write",		imgfile_write },
+    { "ttob",		imgfile_ttob },
     { NULL,		NULL } /* Sentinel */
 };
 

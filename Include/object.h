@@ -198,6 +198,13 @@ typedef struct _typeobject {
 	/* More standard operations (at end for binary compatibility) */
 
 	long (*tp_hash) FPROTO((object *));
+#ifdef COUNT_ALLOCS
+	/* these must be last */
+	int tp_alloc;
+	int tp_free;
+	int tp_maxalloc;
+	struct _typeobject *tp_next;
+#endif
 } typeobject;
 
 extern typeobject Typetype; /* The type of type objects */
@@ -253,14 +260,26 @@ environment the global variable trick is not safe.)
 #endif
 
 #ifndef TRACE_REFS
+#ifdef COUNT_ALLOCS
+#define DELREF(op) ((op)->ob_type->tp_free++, (*(op)->ob_type->tp_dealloc)((object *)(op)))
+#else
 #define DELREF(op) (*(op)->ob_type->tp_dealloc)((object *)(op))
+#endif
 #define UNREF(op) /*empty*/
+#endif
+
+#ifdef COUNT_ALLOCS
+extern void inc_count PROTO((typeobject *));
 #endif
 
 #ifdef REF_DEBUG
 extern long ref_total;
 #ifndef TRACE_REFS
+#ifdef COUNT_ALLOCS
+#define NEWREF(op) (inc_count((op)->ob_type), ref_total++, (op)->ob_refcnt = 1)
+#else
 #define NEWREF(op) (ref_total++, (op)->ob_refcnt = 1)
+#endif
 #endif
 #define INCREF(op) (ref_total++, (op)->ob_refcnt++)
 #define DECREF(op) \
@@ -269,7 +288,11 @@ extern long ref_total;
 	else \
 		DELREF(op)
 #else
+#ifdef COUNT_ALLOCS
+#define NEWREF(op) (inc_count((op)->ob_type), (op)->ob_refcnt = 1)
+#else
 #define NEWREF(op) ((op)->ob_refcnt = 1)
+#endif
 #define INCREF(op) ((op)->ob_refcnt++)
 #define DECREF(op) \
 	if (--(op)->ob_refcnt > 0) \

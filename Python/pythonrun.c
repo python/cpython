@@ -417,11 +417,19 @@ cleanup()
 	flushline();
 }
 
+#ifdef COUNT_ALLOCS
+extern void dump_counts PROTO((void));
+#endif
+
 void
 goaway(sts)
 	int sts;
 {
 	cleanup();
+
+#ifdef COUNT_ALLOCS
+	dump_counts();
+#endif
 
 #ifdef USE_THREAD
 

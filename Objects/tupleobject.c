@@ -40,11 +40,11 @@ newtupleobject(size)
 		malloc(sizeof(tupleobject) + size * sizeof(object *));
 	if (op == NULL)
 		return err_nomem();
-	NEWREF(op);
 	op->ob_type = &Tupletype;
 	op->ob_size = size;
 	for (i = 0; i < size; i++)
 		op->ob_item[i] = NULL;
+	NEWREF(op);
 	return (object *) op;
 }
 

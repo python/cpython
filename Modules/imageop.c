@@ -542,9 +542,15 @@ imageop_rgb2rgb8(self, args)
     for ( i=0; i < nlen; i++ ) {
 	/* Bits in source: aaaaaaaa BBbbbbbb GGGggggg RRRrrrrr */
 	value = *cp++;
+#if 0
 	r = (value >>  5) & 7;
 	g = (value >> 13) & 7;
 	b = (value >> 22) & 3;
+#else
+	r = (int) ((value & 0xff) / 255. * 7. + .5);
+	g = (int) (((value >> 8) & 0xff) / 255. * 7. + .5);
+	b = (int) (((value >> 16) & 0xff) / 255. * 3. + .5);
+#endif
 	nvalue = (r<<5) | (b<<3) | g;
 	*ncp++ = nvalue;
     }
