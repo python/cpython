@@ -580,12 +580,20 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      /* Implemented elsewhere:
 
-     int PyNumber_Coerce(PyObject *o1, PyObject *o2);
+     int PyNumber_Coerce(PyObject **p1, PyObject **p2);
 
-         On success, returns a tuple containing o1 and o2 converted to
-	 a common numeric type, or None if no conversion is possible.
-	 Returns -1 on failure. This is equivalent to the Python
-	 expression: coerce(o1,o2).
+	 This function takes the addresses of two variables of type
+	 PyObject*.
+
+	 If the objects pointed to by *p1 and *p2 have the same type,
+	 increment their reference count and return 0 (success).
+	 If the objects can be converted to a common numeric type,
+	 replace *p1 and *p2 by their converted value (with 'new'
+	 reference counts), and return 0.
+	 If no conversion is possible, or if some other error occurs,
+	 return -1 (failure) and don't increment the reference counts.
+	 The call PyNumber_Coerce(&o1, &o2) is equivalent to the Python
+	 statement o1, o2 = coerce(o1, o2).
 
        */
 
