@@ -12,6 +12,12 @@ import imp
 from Tkinter import *
 import tkSimpleDialog
 import tkMessageBox
+try:
+    import webbrowser
+except ImportError:
+    import BrowserControl
+    webbrowser = BrowserControl
+    del BrowserControl
 import idlever
 import WindowList
 from IdleConf import idleconf
@@ -32,6 +38,7 @@ TK_TABWIDTH_DEFAULT = 8
 #$ event <<open-path-browser>>
 
 #$ event <<close-window>>
+
 #$ unix <Control-x><Control-0>
 #$ unix <Control-x><Key-0>
 #$ win <Alt-F4>
@@ -303,22 +310,17 @@ class EditorWindow:
         else:
             self.io.loadfile(helpfile)
 
-    help_viewer = "netscape -remote 'openurl(%(url)s)' 2>/dev/null || " \
-                  "netscape %(url)s &"
     help_url = "http://www.python.org/doc/current/"
+    if sys.platform[:3] == "win":
+        fn = os.path.dirname(__file__)
+        fn = os.path.join(fn, "../../Doc/index.html")
+        fn = os.path.normpath(fn)
+        if os.path.isfile(fn):
+            help_url = fn
+        del fn
 
     def python_docs(self, event=None):
-        if sys.platform=='win32':
-          try:
-            import win32api
-            import ExecBinding
-            doc = os.path.join( os.path.dirname( ExecBinding.pyth_exe ), "doc", "index.html" )
-            win32api.ShellExecute(0, None, doc, None, sys.path[0], 1)
-          except:
-            pass
-        else:
-          cmd = self.help_viewer % {"url": self.help_url}
-          os.system(cmd)
+        webbrowser.open(self.help_url)
 
     def select_all(self, event=None):
         self.text.tag_add("sel", "1.0", "end-1c")
@@ -688,7 +690,7 @@ class EditorWindow:
         if self.get_tabwidth() != newtabwidth:
             pixels = text.tk.call("font", "measure", text["font"],
                                   "-displayof", text.master,
-                                  "n" * newtabwith)
+                                  "n" * newtabwidth)
             text.configure(tabs=pixels)
 
 def prepstr(s):
