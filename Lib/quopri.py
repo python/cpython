@@ -12,7 +12,7 @@ HEX = '0123456789ABCDEF'
 EMPTYSTRING = ''
 
 
-
+
 def needsquoting(c, quotetabs):
     """Decide whether a particular character needs to be quoted.
 
@@ -30,7 +30,7 @@ def quote(c):
     return ESCAPE + HEX[i/16] + HEX[i%16]
 
 
-
+
 def encode(input, output, quotetabs):
     """Read 'input', apply quoted-printable encoding, and write to 'output'.
 
@@ -88,7 +88,7 @@ def encodestring(s, quotetabs=0):
     return outfp.getvalue()
 
 
-
+
 def decode(input, output):
     """Read 'input', apply quoted-printable decoding, and write to 'output'.
 
@@ -131,7 +131,7 @@ def decodestring(s):
     return outfp.getvalue()
 
 
-
+
 # Other helper functions
 def ishex(c):
     """Return true if the character 'c' is a hexadecimal digit."""
@@ -153,7 +153,7 @@ def unhex(s):
     return bits
 
 
-
+
 def main():
     import sys
     import getopt
@@ -197,6 +197,6 @@ def main():
         sys.exit(sts)
 
 
-
+
 if __name__ == '__main__':
     main()
