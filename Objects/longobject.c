@@ -6,7 +6,6 @@
 #include "Python.h"
 #include "longintrepr.h"
 
-#include <assert.h>
 #include <ctype.h>
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))

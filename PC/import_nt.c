@@ -8,7 +8,6 @@
 
 #include "Python.h"
 #include "osdefs.h"
-#include <assert.h>
 #include <windows.h>
 #include "importdl.h"
 #include "malloc.h" /* for alloca */
