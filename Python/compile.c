@@ -4043,9 +4043,12 @@ PyNode_CompileSymtable(node *n, char *filename)
 	ff = PyNode_Future(n, filename);
 	if (ff == NULL)
 		return NULL;
+
 	st = symtable_init();
-	if (st == NULL)
+	if (st == NULL) {
+		PyMem_Free((void *)ff);
 		return NULL;
+	}
 	st->st_future = ff;
 	symtable_enter_scope(st, TOP, TYPE(n), n->n_lineno);
 	if (st->st_errors > 0)
