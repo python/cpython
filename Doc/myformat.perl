@@ -8,11 +8,6 @@
 
 package main;
 
-# \bcode and \ecode brackets around verbatim
-
-sub do_cmd_bcode{ @_[0]; }
-sub do_cmd_ecode{ @_[0]; }
-
 # words typeset in a special way (not in HTML though)
 
 sub do_cmd_ABC{ join('', 'ABC', @_[0]); }
@@ -72,6 +67,7 @@ sub do_cmd_url{
     local($_) = @_;
     s/$any_next_pair_pr_rx//;
     local($url) = $2;
+    $url =~ s/~/&#126;/g;
     "<tt><font face=sans-serif><a href=\"$url\">$url</a></font></tt>" . $_;
 }
 
@@ -305,7 +301,7 @@ sub make_str_index_entry{
 # Changed from the stock version to indent {verbatim} sections:
 sub replace_verbatim {
     # Modifies $_
-    s/$verbatim_mark(verbatim)(\d+)/<dl><dd><pre>$verbatim{$2}<\/pre><\/dl>/go;
+    s/$verbatim_mark(verbatim)(\d+)/<p><dl><dd><pre>$verbatim{$2}<\/pre><\/dl>/go;
     s/$verbatim_mark(rawhtml)(\d+)/$verbatim{$2}/ego;	# Raw HTML
 }
 
