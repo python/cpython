@@ -70,7 +70,8 @@ static PyObject *
 dl_call(dlobject *xp, PyObject *args)
 {
 	PyObject *name;
-	long (*func)();
+	long (*func)(long, long, long, long, long,
+                     long, long, long, long, long);
 	long alist[10];
 	long res;
 	int i;
