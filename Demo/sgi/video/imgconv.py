@@ -11,6 +11,27 @@ def null(img, x, y):
 def mono2grey(img, x, y):
 	return imageop.mono2grey(img, x, y, 0, 255)
 
+def grey2jpeggrey(img, x, y):
+	import jpeg
+	return jpeg.compress(img, x, y, 1)
+
+def rgb2jpeg(img, x, y):
+	import jpeg
+	return jpeg.compress(img, x, y, 4)
+
+def jpeggrey2grey(img, width, height):
+	import jpeg
+	data, width, height, bytesperpixel = jpeg.decompress(data)
+	if bytesperpixel <> 1: raise RuntimeError, 'not grayscale jpeg'
+	return data
+
+def jpeg2rgb(img, width, height):
+	import cl, CL
+	import jpeg
+	data, width, height, bytesperpixel = jpeg.decompress(data)
+	if bytesperpixel <> 4: raise RuntimeError, 'not rgb jpeg'
+	return data
+
 converters = [ \
 	  ('grey',  'grey4', imageop.grey2grey4,   LOSSY), \
 	  ('grey',  'grey2', imageop.dither2grey2, LOSSY), \
@@ -21,7 +42,11 @@ converters = [ \
 	  ('rgb',   'rgb8',  imageop.rgb2rgb8,     LOSSY), \
 	  ('rgb8',  'rgb',   imageop.rgb82rgb,     NOT_LOSSY), \
 	  ('rgb',   'grey',  imageop.rgb2grey,     LOSSY), \
-	  ('grey',  'rgb',   imageop.grey2rgb,     NOT_LOSSY) \
+	  ('grey',  'rgb',   imageop.grey2rgb,     NOT_LOSSY), \
+	  ('jpeggrey','grey',jpeggrey2grey,        NOT_LOSSY), \
+	  ('grey',  'jpeggrey',grey2jpeggrey,      NOT_LOSSY), \
+	  ('jpeg',  'rgb',   jpeg2rgb,             NOT_LOSSY), \
+	  ('rgb',   'jpeg',  rgb2jpeg,             NOT_LOSSY), \
 ]
 
 built = {}
