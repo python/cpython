@@ -17,4 +17,5 @@ LIBS=gdi32.lib wsock32.lib /libpath:$(SSL_LIB_DIR) libeay32.lib ssleay32.lib
 SOURCE=../Modules/_ssl.c 
 
 $(MODULE): $(SOURCE) ../PC/*.h ../Include/*.h
+    @if not exist "$(TEMP_DIR)/." mkdir "$(TEMP_DIR)"
     cl /nologo $(SOURCE) $(CFLAGS) /Fo$(TEMP_DIR)\$*.obj $(INCLUDES) /link /out:$(MODULE) $(LIBS)
