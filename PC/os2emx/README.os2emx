@@ -5,7 +5,7 @@ What's new since the previous release
 -------------------------------------
 
 This release of the port incorporates the following changes from the 
-April 14, 2002 release of the Python 2.2.1 port:
+October 24, 2002 release of the Python 2.2.2 port:
 
 - based on the Python v2.3 final release source.
 - now setting higher number of file handles (250).
@@ -79,6 +79,7 @@ Previous Python port releases by me:-
  - v2.2 on December 24, 2001;
  - v2.2.1c2 on March 31, 2002 (not uploaded to archive sites);
  - v2.2.1 on April 14, 2002.
+ - v2.2.2 on October 24, 2002.
 
 It is possible to have these earlier ports still usable after installing 
 this port - see the README.os2emx.multiple_versions file, contributed by
