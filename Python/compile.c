@@ -529,7 +529,7 @@ parsestr(s)
 		return newsizedstringobject(s, len);
 	v = newsizedstringobject((char *)NULL, len);
 	p = buf = getstringvalue(v);
-	while (*s != '\0' && *s != '\'') {
+	while (*s != '\0' && *s != quote) {
 		if (*s != '\\') {
 			*p++ = *s++;
 			continue;

@@ -866,6 +866,34 @@ posix_popen(self, args)
 }
 
 static object *
+posix_setuid(self, args)
+	object *self;
+	object *args;
+{
+	int uid;
+	if (!getargs(args, "i", &uid))
+		return NULL;
+	if (setuid(uid) < 0)
+		return posix_error();
+	INCREF(None);
+	return None;
+}
+
+static object *
+posix_setgid(self, args)
+	object *self;
+	object *args;
+{
+	int gid;
+	if (!getargs(args, "i", &gid))
+		return NULL;
+	if (setgid(gid) < 0)
+		return posix_error();
+	INCREF(None);
+	return None;
+}
+
+static object *
 posix_waitpid(self, args)
 	object *self;
 	object *args;
@@ -1288,6 +1316,8 @@ static struct methodlist posix_methods[] = {
 	{"getuid",	posix_getuid},
 	{"kill",	posix_kill},
 	{"popen",	posix_popen},
+	{"setuid",	posix_setuid},
+	{"setgid",	posix_setgid},
 	{"setpgrp",	posix_setpgrp},
 	{"wait",	posix_wait},
 	{"waitpid",	posix_waitpid},

@@ -200,7 +200,7 @@ list_print(op, fp, flags)
 	for (i = 0; i < op->ob_size; i++) {
 		if (i > 0)
 			fprintf(fp, ", ");
-		if (printobject(op->ob_item[i], fp, flags) != 0)
+		if (printobject(op->ob_item[i], fp, 0) != 0)
 			return -1;
 	}
 	fprintf(fp, "]");

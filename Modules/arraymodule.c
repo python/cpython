@@ -993,6 +993,18 @@ array_getattr(a, name)
 	if (strcmp(name, "itemsize") == 0) {
 		return newintobject((long)a->ob_descr->itemsize);
 	}
+	if (strcmp(name, "__members__") == 0) {
+		object *list = newlistobject(2);
+		if (list) {
+			setlistitem(list, 0, newstringobject("typecode"));
+			setlistitem(list, 1, newstringobject("itemsize"));
+			if (err_occurred()) {
+				DECREF(list);
+				list = NULL;
+			}
+		}
+		return list;
+	}
 	return findmethod(array_methods, (object *)a, name);
 }
 
@@ -1013,7 +1025,7 @@ array_print(a, fp, flags)
 	if (a->ob_descr->typecode == 'c') {
 		fprintf(fp, "array('c', ");
 		v = array_tostring(a, (object *)NULL);
-		ok = printobject(v, fp, flags);
+		ok = printobject(v, fp, 0);
 		XDECREF(v);
 		fprintf(fp, ")");
 		return ok;
@@ -1023,7 +1035,7 @@ array_print(a, fp, flags)
 		if (i > 0)
 			fprintf(fp, ", ");
 		v = (a->ob_descr->getitem)(a, i);
-		ok = printobject(v, fp, flags);
+		ok = printobject(v, fp, 0);
 		XDECREF(v);
 	}
 	fprintf(fp, "])");
