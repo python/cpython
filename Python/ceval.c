@@ -762,7 +762,22 @@ eval_code2(co, globals, locals,
 		case BINARY_ADD:
 			w = POP();
 			v = POP();
-			x = PyNumber_Add(v, w);
+			if (PyInt_Check(v) && PyInt_Check(w)) {
+				/* INLINE: int + int */
+				register long a, b, i;
+				a = ((PyIntObject*) v)->ob_ival;
+				b = ((PyIntObject*) w)->ob_ival;
+				i = a + b;
+				if ((i^a) < 0 && (i^b) < 0) {
+					PyErr_SetString(PyExc_OverflowError,
+							"integer addition");
+					x = NULL;
+				}
+				else
+					x = PyInt_FromLong(i);
+			}
+			else
+				x = PyNumber_Add(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
 			PUSH(x);
@@ -772,7 +787,22 @@ eval_code2(co, globals, locals,
 		case BINARY_SUBTRACT:
 			w = POP();
 			v = POP();
-			x = PyNumber_Subtract(v, w);
+			if (PyInt_Check(v) && PyInt_Check(w)) {
+				/* INLINE: int - int */
+				register long a, b, i;
+				a = ((PyIntObject*) v)->ob_ival;
+				b = ((PyIntObject*) w)->ob_ival;
+				i = a - b;
+				if ((i^a) < 0 && (i^~b) < 0) {
+					PyErr_SetString(PyExc_OverflowError,
+							"integer subtraction");
+					x = NULL;
+				}
+				else
+					x = PyInt_FromLong(i);
+			}
+			else
+				x = PyNumber_Subtract(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
 			PUSH(x);
@@ -782,7 +812,24 @@ eval_code2(co, globals, locals,
 		case BINARY_SUBSCR:
 			w = POP();
 			v = POP();
-			x = PyObject_GetItem(v, w);
+			if (PyList_Check(v) && PyInt_Check(w)) {
+				/* INLINE: list[int] */
+				long i = PyInt_AsLong(w);
+				if (i < 0)
+					i += ((PyListObject*) v)->ob_size;
+				if (i < 0 ||
+				    i >= ((PyListObject*) v)->ob_size) {
+					PyErr_SetString(PyExc_IndexError,
+						"list index out of range");
+					x = NULL;
+				}
+				else {
+					x = ((PyListObject*) v)->ob_item[i];
+					Py_INCREF(x);
+				}
+			}
+			else
+				x = PyObject_GetItem(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
 			PUSH(x);
@@ -934,7 +981,7 @@ eval_code2(co, globals, locals,
 				    f->f_builtins, "_", v)) == 0 &&
 			    !Py_SuppressPrintingFlag) {
 				err = Py_FlushLine();
-				if (err == NULL) {
+				if (err == 0) {
 					x = PySys_GetObject("stdout");
 					if (x == NULL)
 						err = -1;
@@ -1287,7 +1334,30 @@ eval_code2(co, globals, locals,
 		case COMPARE_OP:
 			w = POP();
 			v = POP();
-			x = cmp_outcome(oparg, v, w);
+			if (PyInt_Check(v) && PyInt_Check(w)) {
+				/* INLINE: cmp(int, int) */
+				register long a, b;
+				register int res;
+				a = ((PyIntObject*) v)->ob_ival;
+				b = ((PyIntObject*) w)->ob_ival;
+				switch (oparg) {
+				case LT: res = a <  b; break;
+				case LE: res = a <= b; break;
+				case EQ: res = a == b; break;
+				case NE: res = a != b; break;
+				case GT: res = a >  b; break;
+				case GE: res = a >= b; break;
+				case IS: res = v == w; break;
+				case IS_NOT: res = v != w; break;
+				default: goto slow_compare;
+				}
+				x = res ? Py_True : Py_False;
+				Py_INCREF(x);
+			}
+			else {
+			  slow_compare:
+				x = cmp_outcome(oparg, v, w);
+			}
 			Py_DECREF(v);
 			Py_DECREF(w);
 			PUSH(x);
