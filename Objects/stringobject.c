@@ -580,18 +580,18 @@ getnextarg(args, arglen, p_argidx)
 
 extern double fabs PROTO((double));
 
-static char *
-formatfloat(flags, prec, type, v)
+static int
+formatfloat(buf, flags, prec, type, v)
+	char *buf;
 	int flags;
 	int prec;
 	int type;
 	object *v;
 {
 	char fmt[20];
-	static char buf[120];
 	double x;
 	if (!getargs(v, "d;float argument required", &x))
-		return NULL;
+		return -1;
 	if (prec < 0)
 		prec = 6;
 	if (prec > 50)
@@ -600,43 +600,43 @@ formatfloat(flags, prec, type, v)
 		type = 'g';
 	sprintf(fmt, "%%%s.%d%c", (flags&F_ALT) ? "#" : "", prec, type);
 	sprintf(buf, fmt, x);
-	return buf;
+	return strlen(buf);
 }
 
-static char *
-formatint(flags, prec, type, v)
+static int
+formatint(buf, flags, prec, type, v)
+	char *buf;
 	int flags;
 	int prec;
 	int type;
 	object *v;
 {
 	char fmt[20];
-	static char buf[50];
 	long x;
 	if (!getargs(v, "l;int argument required", &x))
-		return NULL;
+		return -1;
 	if (prec < 0)
 		prec = 1;
 	sprintf(fmt, "%%%s.%dl%c", (flags&F_ALT) ? "#" : "", prec, type);
 	sprintf(buf, fmt, x);
-	return buf;
+	return strlen(buf);
 }
 
-static char *
-formatchar(v)
+static int
+formatchar(buf, v)
+	char *buf;
 	object *v;
 {
-	static char buf[2];
 	if (is_stringobject(v)) {
 		if (!getargs(v, "c;%c requires int or char", &buf[0]))
-			return NULL;
+			return -1;
 	}
 	else {
 		if (!getargs(v, "b;%c requires int or char", &buf[0]))
-			return NULL;
+			return -1;
 	}
 	buf[1] = '\0';
-	return buf;
+	return 1;
 }
 
 
@@ -698,6 +698,7 @@ formatstring(format, args)
 			char *buf;
 			int sign;
 			int len;
+			char tmpbuf[120]; /* For format{float,int,char}() */
 			fmt++;
 			if (*fmt == '(') {
 				char *keystart;
@@ -849,10 +850,10 @@ formatstring(format, args)
 			case 'X':
 				if (c == 'i')
 					c = 'd';
-				buf = formatint(flags, prec, c, v);
-				if (buf == NULL)
+				buf = tmpbuf;
+				len = formatint(buf, flags, prec, c, v);
+				if (len < 0)
 					goto error;
-				len = strlen(buf);
 				sign = (c == 'd');
 				if (flags&F_ZERO)
 					fill = '0';
@@ -862,19 +863,19 @@ formatstring(format, args)
 			case 'f':
 			case 'g':
 			case 'G':
-				buf = formatfloat(flags, prec, c, v);
-				if (buf == NULL)
+				buf = tmpbuf;
+				len = formatfloat(buf, flags, prec, c, v);
+				if (len < 0)
 					goto error;
-				len = strlen(buf);
 				sign = 1;
 				if (flags&F_ZERO)
 					fill = '0';
 				break;
 			case 'c':
-				buf = formatchar(v);
-				if (buf == NULL)
+				buf = tmpbuf;
+				len = formatchar(buf, v);
+				if (len < 0)
 					goto error;
-				len = 1;
 				break;
 			default:
 				err_setstr(ValueError,
