@@ -576,7 +576,7 @@ rotorobj_getattr(Rotorobj *s, char *name)
 
 
 statichere PyTypeObject Rotor_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0,				/*ob_size*/
 	"rotor",			/*tp_name*/
 	sizeof(Rotorobj),		/*tp_size*/
@@ -619,5 +619,6 @@ rotor_methods[] = {
 DL_EXPORT(void)
 initrotor(void)
 {
+	Rotor_Type.ob_type = &PyType_Type;
 	(void)Py_InitModule("rotor", rotor_methods);
 }
