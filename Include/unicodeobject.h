@@ -160,6 +160,17 @@ typedef unsigned short Py_UNICODE;
 
 #endif
 
+#define Py_UNICODE_ISALPHA(ch) \
+       (Py_UNICODE_ISLOWER(ch) || \
+        Py_UNICODE_ISUPPER(ch) || \
+        Py_UNICODE_ISTITLE(ch))
+
+#define Py_UNICODE_ISALNUM(ch) \
+       (Py_UNICODE_ISALPHA(ch) || \
+        Py_UNICODE_ISDECIMAL(ch) || \
+        Py_UNICODE_ISDIGIT(ch) || \
+        Py_UNICODE_ISNUMERIC(ch))
+
 #define Py_UNICODE_COPY(target, source, length)\
     (memcpy((target), (source), (length)*sizeof(Py_UNICODE)))
 
