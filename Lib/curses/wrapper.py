@@ -17,9 +17,11 @@ def wrapper(func, *rest):
     wrapper().
     """
     
+    res = None
     try:
 	# Initialize curses
 	stdscr=curses.initscr()
+        
 	# Turn off echoing of keys, and enter cbreak mode,
 	# where no buffering is performed on keyboard input
 	curses.noecho() ; curses.cbreak()
@@ -29,11 +31,21 @@ def wrapper(func, *rest):
 	# a special value like curses.KEY_LEFT will be returned
         stdscr.keypad(1)
 
-	return apply(func, (stdscr,) + rest)
-
-    finally:
-	# Restore the terminal to a sane state on the way out.
+        res = apply(func, (stdscr,) + rest)
+    except:
+	# In the event of an error, restore the terminal
+	# to a sane state.
 	stdscr.keypad(0)
 	curses.echo() ; curses.nocbreak()
 	curses.endwin()
+        
+        # Pass the exception upwards
+        (exc_type, exc_value, exc_traceback) = sys.exc_info()
+        raise exc_type, exc_value, exc_traceback
+    else:
+	# Set everything back to normal
+	stdscr.keypad(0)
+	curses.echo() ; curses.nocbreak()
+	curses.endwin()		 # Terminate curses
 
+        return res
