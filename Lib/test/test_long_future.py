@@ -41,7 +41,7 @@ def test_true_division():
                      "100 / mhuge", "100L / mhuge"]:
         result = eval(underflow, namespace)
         if result != 0.0:
-            raise TestFailed("expected undeflow to 0 from %r" % undeflow)
+            raise TestFailed("expected underflow to 0 from %r" % underflow)
 
     for zero in ["huge / 0", "huge / 0L",
                  "mhuge / 0", "mhuge / 0L"]:
