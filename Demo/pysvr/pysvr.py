@@ -6,13 +6,15 @@ This is really a prototype for the same thing in C.
 
 Usage: pysvr.py [port]
 
+For security reasons, it only accepts requests from the current host.
+This can still be insecure, but restricts violations from people who
+can log in on your machine.  Use with caution!
+
 """
 
 import sys, os, string, getopt, thread, socket, traceback
 
-OK_DOMAINS = [".cnri.reston.va.us", ".python.org"]
-
-PORT = 7585892 % 0xFFFF			# == 49367
+PORT = 4000				# Default port
 
 def main():
     try:
@@ -43,6 +45,7 @@ def main_thread(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind(("", port))
     sock.listen(5)
+    print "Listening on port", port, "..."
     while 1:
 	(conn, addr) = sock.accept()
 	thread.start_new_thread(service_thread, (conn, addr))
@@ -50,26 +53,11 @@ def main_thread(port):
 
 def service_thread(conn, addr):
     (caddr, cport) = addr
-    try:
-	host, aliases, ipaddrs = socket.gethostbyaddr(caddr)
-    except socket.error:
-	print "Don't know hostname for", caddr
-	return
-    if '.' not in host:
-	for a in aliases:
-	    if '.' in a:
-		host = a
-		break
-	else:
-	    print "Only a local name (%s) for %s" % (host, caddr)
-	    return
-    i = string.find(host, '.')
-    domain = string.lower(host[i:])
-    if domain not in OK_DOMAINS:
-	print "Connection from", host, "not accepted"
+    if caddr != socket.gethostbyname(socket.gethostname()):
+	print "Connection from", caddr, "not accepted."
 	return
     print "Thread %s has connection from %s.\n" % (str(thread.get_ident()),
-						   host),
+						   caddr),
     stdin = conn.makefile("r")
     stdout = conn.makefile("w", 0)
     run_interpreter(stdin, stdout)
