@@ -3,7 +3,11 @@
 #include "Python.h"
 
 static char cprt[] = 
-"Copyright (c) 2000 BeOpen.com.\n\
+"\
+Copyright (c) 2000, 2001 Guido van Rossum.\n\
+All Rights Reserved.\n\
+\n\
+Copyright (c) 2000 BeOpen.com.\n\
 All Rights Reserved.\n\
 \n\
 Copyright (c) 1995-2000 Corporation for National Research Initiatives.\n\
