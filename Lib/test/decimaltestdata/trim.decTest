@@ -1,0 +1,152 @@
+------------------------------------------------------------------------
+-- trim.decTest -- remove insignificant trailing zeros                --
+-- Copyright (c) IBM Corporation, 2003.  All rights reserved.         --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.35
+
+extended:    1
+precision:   9
+rounding:    half_up
+maxExponent: 999
+minexponent: -999
+
+trmx001 trim '1'      -> '1'
+trmx002 trim '-1'     -> '-1'
+trmx003 trim '1.00'   -> '1'
+trmx004 trim '-1.00'  -> '-1'
+trmx005 trim '0'      -> '0'
+trmx006 trim '0.00'   -> '0'
+trmx007 trim '00.0'   -> '0'
+trmx008 trim '00.00'  -> '0'
+trmx009 trim '00'     -> '0'
+
+trmx010 trim '-2'     -> '-2'
+trmx011 trim '2'      -> '2'
+trmx012 trim '-2.00'  -> '-2'
+trmx013 trim '2.00'   -> '2'
+trmx014 trim '-0'     -> '-0'
+trmx015 trim '-0.00'  -> '-0'
+trmx016 trim '-00.0'  -> '-0'
+trmx017 trim '-00.00' -> '-0'
+trmx018 trim '-00'    -> '-0'
+trmx019 trim '0E+5'   -> '0'
+trmx020 trim '-0E+1'  -> '-0'
+
+trmx030 trim '+0.1'            -> '0.1'
+trmx031 trim '-0.1'            -> '-0.1'
+trmx032 trim '+0.01'           -> '0.01'
+trmx033 trim '-0.01'           -> '-0.01'
+trmx034 trim '+0.001'          -> '0.001'
+trmx035 trim '-0.001'          -> '-0.001'
+trmx036 trim '+0.000001'       -> '0.000001'
+trmx037 trim '-0.000001'       -> '-0.000001'
+trmx038 trim '+0.000000000001' -> '1E-12'
+trmx039 trim '-0.000000000001' -> '-1E-12'
+
+trmx041 trim 1.1        -> 1.1
+trmx042 trim 1.10       -> 1.1
+trmx043 trim 1.100      -> 1.1
+trmx044 trim 1.110      -> 1.11
+trmx045 trim -1.1       -> -1.1
+trmx046 trim -1.10      -> -1.1
+trmx047 trim -1.100     -> -1.1
+trmx048 trim -1.110     -> -1.11
+trmx049 trim 9.9        -> 9.9
+trmx050 trim 9.90       -> 9.9
+trmx051 trim 9.900      -> 9.9
+trmx052 trim 9.990      -> 9.99
+trmx053 trim -9.9       -> -9.9
+trmx054 trim -9.90      -> -9.9
+trmx055 trim -9.900     -> -9.9
+trmx056 trim -9.990     -> -9.99
+
+-- some insignificant trailing fractional zeros
+trmx060 trim  10.0        -> 10
+trmx061 trim  10.00       -> 10
+trmx062 trim  100.0       -> 100
+trmx063 trim  100.00      -> 100
+trmx064 trim  1.1000E+3   -> 1100
+trmx065 trim  1.10000E+3  -> 1100
+trmx066 trim -10.0        -> -10
+trmx067 trim -10.00       -> -10
+trmx068 trim -100.0       -> -100
+trmx069 trim -100.00      -> -100
+trmx070 trim -1.1000E+3   -> -1100
+trmx071 trim -1.10000E+3  -> -1100
+
+-- some insignificant trailing zeros with positive exponent
+trmx080 trim  10E+1       -> 1E+2
+trmx081 trim  100E+1      -> 1E+3
+trmx082 trim  1.0E+2      -> 1E+2
+trmx083 trim  1.0E+3      -> 1E+3
+trmx084 trim  1.1E+3      -> 1.1E+3
+trmx085 trim  1.00E+3     -> 1E+3
+trmx086 trim  1.10E+3     -> 1.1E+3
+trmx087 trim -10E+1       -> -1E+2
+trmx088 trim -100E+1      -> -1E+3
+trmx089 trim -1.0E+2      -> -1E+2
+trmx090 trim -1.0E+3      -> -1E+3
+trmx091 trim -1.1E+3      -> -1.1E+3
+trmx092 trim -1.00E+3     -> -1E+3
+trmx093 trim -1.10E+3     -> -1.1E+3
+
+-- some significant trailing zeros
+trmx100 trim  11          -> 11
+trmx101 trim  10          -> 10
+trmx102 trim  10.         -> 10
+trmx103 trim  1.1E+1      -> 11
+trmx104 trim  1.0E+1      -> 10
+trmx105 trim  1.10E+2     -> 110
+trmx106 trim  1.00E+2     -> 100
+trmx107 trim  1.100E+3    -> 1100
+trmx108 trim  1.000E+3    -> 1000
+trmx109 trim  1.000000E+6 -> 1000000
+trmx110 trim -11          -> -11
+trmx111 trim -10          -> -10
+trmx112 trim -10.         -> -10
+trmx113 trim -1.1E+1      -> -11
+trmx114 trim -1.0E+1      -> -10
+trmx115 trim -1.10E+2     -> -110
+trmx116 trim -1.00E+2     -> -100
+trmx117 trim -1.100E+3    -> -1100
+trmx118 trim -1.000E+3    -> -1000
+trmx119 trim -1.00000E+5  -> -100000
+trmx120 trim -1.000000E+6 -> -1000000
+
+-- examples from decArith
+trmx140 trim '2.1'     ->  '2.1'
+trmx141 trim '-2.0'    ->  '-2'
+trmx142 trim '1.200'   ->  '1.2'
+trmx143 trim '-120'    ->  '-120'
+trmx144 trim '120.00'  ->  '120'
+trmx145 trim '0.00'    ->  '0'
+
+-- utilities pass through specials without raising exceptions
+trmx320 trim 'Inf'    -> 'Infinity'
+trmx321 trim '-Inf'   -> '-Infinity'
+trmx322 trim   NaN    ->  NaN
+trmx323 trim  sNaN    ->  sNaN
+trmx324 trim   NaN999 ->  NaN999
+trmx325 trim  sNaN777 ->  sNaN777
+trmx326 trim  -NaN    -> -NaN
+trmx327 trim -sNaN    -> -sNaN
+trmx328 trim  -NaN999 -> -NaN999
+trmx329 trim -sNaN777 -> -sNaN777
+
+-- Null test
+trmx900 trim  # -> NaN Invalid_operation

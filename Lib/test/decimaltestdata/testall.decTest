@@ -1,0 +1,58 @@
+------------------------------------------------------------------------
+-- testall.decTest -- run all general decimal arithmetic testcases    --
+-- Copyright (c) IBM Corporation, 1981, 2003.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.35
+
+-- core tests (using Extended: 1) --------------------------------------
+dectest: base
+dectest: abs
+dectest: add
+dectest: clamp
+dectest: compare
+dectest: divide
+dectest: divideint
+dectest: inexact
+dectest: max
+dectest: min
+dectest: minus
+dectest: multiply
+dectest: normalize
+dectest: plus
+dectest: power
+dectest: quantize
+dectest: randoms
+dectest: remainder
+dectest: remaindernear
+dectest: rescale              -- [obsolete]
+dectest: rounding
+dectest: samequantum
+dectest: squareroot
+dectest: subtract
+dectest: tointegral
+dectest: trim
+
+-- The next are for the Strawman 4d concrete representations
+dectest: decimal32
+dectest: decimal64
+dectest: decimal128
+
+
+-- General 31->33-digit boundary tests
+dectest: randomBound32
+
