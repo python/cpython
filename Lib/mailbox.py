@@ -201,7 +201,7 @@ class Maildir:
             return None
         fn = self.boxes[0]
         del self.boxes[0]
-        fp = open(os.path.join(self.dirname, fn))
+        fp = open(fn)
         return rfc822.Message(fp)
 
 
@@ -275,7 +275,7 @@ def _test():
             f = msg.getheader('from') or ""
             s = msg.getheader('subject') or ""
             d = msg.getheader('date') or ""
-            print '%20.20s   %18.18s   %-30.30s'%(f, d[5:], s)
+            print '-%20.20s   %20.20   %-30.30s'%(f, d[5:], s)
 
 
 if __name__ == '__main__':
