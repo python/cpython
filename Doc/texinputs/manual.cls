@@ -6,11 +6,12 @@
 \ProvidesClass{manual}
              [1998/03/03 Document class (Python manual)]
 
+\RequirePackage{pypaper}
 
-% Change the options here to get a different set of basic options,  This
-% is where to add things like "a4paper" or "10pt".
+% Change the options here to get a different set of basic options, but only
+% if you have to.  Paper and font size should be adjusted in pypaper.sty.
 %
-\LoadClass[twoside,openright]{report}
+\LoadClass[\py@paper,\py@ptsize,twoside,openright]{report}
 
 
 % Optional packages:
