@@ -2598,6 +2598,7 @@ initstdwin()
 {
 	object *m, *d;
 	static int inited = 0;
+	char buf[1000];
 
 	if (!inited) {
 		int argc = 0;
@@ -2606,6 +2607,18 @@ initstdwin()
 		if (sys_argv != NULL) {
 			if (!checkstringlist(sys_argv, &argv, &argc))
 				err_clear();
+		}
+		if (argc > 0) {
+			/* If argv[0] has a ".py" suffix, remove the suffix */
+			char *p = strrchr(argv[0], '.');
+			if (p != NULL && strcmp(p, ".py") == 0) {
+				int n = p - argv[0];
+				if (n >= sizeof(buf))
+					n = sizeof(buf)-1;
+				strncpy(buf, argv[0], n);
+				buf[n] = '\0';
+				argv[0] = buf;
+			}
 		}
 		winitargs(&argc, &argv);
 		if (argv != NULL) {
