@@ -26,7 +26,7 @@ expand-word=<Alt-Key-slash>
 [ZoomHeight]
 enable=1
 [ZoomHeight_cfgBindings]
-zoom-height=<Alt-Key-h>
+zoom-height=<Alt-Key-2>
 
 [ScriptBinding]
 enable=1
