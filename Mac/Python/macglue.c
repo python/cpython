@@ -345,6 +345,7 @@ Pstring(char *str)
 	return buf;
 }
 
+#if !TARGET_API_MAC_CARBON
 void
 c2pstrcpy(unsigned char *dst, const char *src)
 {
@@ -355,6 +356,7 @@ c2pstrcpy(unsigned char *dst, const char *src)
 	strncpy((char *)dst+1, src, len);
 	dst[0] = len;
 }
+#endif
 
 /* Like strerror() but for Mac OS error numbers */
 char *PyMac_StrError(int err)
