@@ -50,7 +50,7 @@ script.
 
 
 # XXX Change the following line to point to your Tools/freeze directory
-PACK = '/ufs/guido/src/python/Tools/freeze'
+PACK = '/home/guido/python/src/Tools/freeze'
 
 # XXX Change the following line to point to your install prefix
 PREFIX = '/usr/local'
@@ -126,15 +126,14 @@ def main():
 			exec_prefix = prefix
 
 	# locations derived from options
-	binlib = os.path.join(exec_prefix, 'lib/python/lib')
-	incldir = os.path.join(prefix, 'include/Py')
+	binlib = os.path.join(exec_prefix, 'lib/python1.4/config')
+	incldir = os.path.join(prefix, 'include/python1.4')
 	config_c_in = os.path.join(binlib, 'config.c.in')
 	frozenmain_c = os.path.join(binlib, 'frozenmain.c')
 	getpath_c = os.path.join(binlib, 'getpath.c')
 	supp_sources = [frozenmain_c, getpath_c]
 	makefile_in = os.path.join(binlib, 'Makefile')
-	defines = ['-DHAVE_CONFIG_H',
-		   '-DPYTHONPATH=\\"$(PYTHONPATH)\\"']
+	defines = ['-DPYTHONPATH=\\"$(PYTHONPATH)\\"']
 	includes = ['-I' + incldir, '-I' + binlib]
 
 	# sanity check of directories and files
@@ -261,7 +260,7 @@ def main():
 		somevars[key] = makevars[key]
 
 	somevars['CFLAGS'] = string.join(cflags) # override
-	files = ['$(OPT)', config_c, frozen_c] + \
+	files = ['$(OPT)', '$(LDFLAGS)', config_c, frozen_c] + \
 		supp_sources +  addfiles + libs + \
 		['$(MODLIBS)', '$(LIBS)', '$(SYSLIBS)']
 
