@@ -53,7 +53,9 @@ mac: mac/mac.html
 ref: ref/ref.html
 tut: tut/tut.html
 
-$(INDEXFILES): $(COMMONPERL) $(TOPDIR)/html/about.dat
+$(INDEXFILES): $(COMMONPERL) \
+	       $(TOPDIR)/html/about.dat \
+	       $(TOPDIR)/tools/node2label.pl
 
 # The index.html target is at the end since it screws up font-lock.
 

@@ -183,11 +183,11 @@ statement.  The \keyword{try} ... \keyword{finally} statement
 specifies cleanup code which does not handle the exception, but is
 executed whether an exception occurred or not in the preceding code.
 
-Python uses the ``termination'' model of error handling: an exception
-handler can find out what happened and continue execution at an outer
-level, but it cannot repair the cause of the error and retry the
-failing operation (except by re-entering the offending piece of
-code from the top).
+Python uses the ``termination'' \index{termination model}model of
+error handling: an exception handler can find out what happened and
+continue execution at an outer level, but it cannot repair the cause
+of the error and retry the failing operation (except by re-entering
+the offending piece of code from the top).
 
 When an exception is not handled at all, the interpreter terminates
 execution of the program, or returns to its interactive main loop.  In
@@ -210,5 +210,5 @@ selected exception handler as additional information.  For class
 exceptions, this object must be an instance of the exception class
 being raised.
 
-See also the description of the \keyword{try} and \keyword{raise}
-statements in chapter \ref{compound}.
+See also the description of the \keyword{try} statement in section
+\ref{try} and \keyword{raise} statement in section \ref{raise}.

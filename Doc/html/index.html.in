@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>Python 1.5.2 Documentation</title>
+    <title>Python @RELEASE@ Documentation - @DATE@</title>
     <link rel=STYLESHEET href="lib/lib.css" type="text/css">
     <style type="text/css">
       a.title { font-weight: bold; font-size: 110%; }
@@ -38,7 +38,7 @@
       </p>
     </div>
 
-    <table>
+    <table align="center">
       <tbody>
       <tr><td>
 	  <ul>

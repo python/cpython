@@ -15,13 +15,13 @@ sub ltx_next_argument{
 sub do_cmd_macro{
     local($_) = @_;
     my $macro = ltx_next_argument();
-    return "<tt class=macro>&#92;$macro</tt>" . $_;
+    return "<tt class='macro'>&#92;$macro</tt>" . $_;
 }
 
 sub do_cmd_env{
     local($_) = @_;
     my $env = ltx_next_argument();
-    return "<tt class=environment>&#92;$env</tt>" . $_;
+    return "<tt class='environment'>&#92;$env</tt>" . $_;
 }
 
 sub ltx_process_params{
@@ -43,8 +43,8 @@ sub do_env_macrodesc{
     local($_) = @_;
     my $macro = ltx_next_argument();
     my $params = ltx_process_params(ltx_next_argument());
-    return "\n<dl class=macrodesc>"
-         . "\n<dt><b><tt class=macro>&#92;$macro</tt></b>"
+    return "\n<dl class='macrodesc'>"
+         . "\n<dt><b><tt class='macro'>&#92;$macro</tt></b>"
          . "\n    $params"
 	 . "\n<dd>"
 	 . $_
@@ -55,9 +55,10 @@ sub do_env_envdesc{
     local($_) = @_;
     my $env = ltx_next_argument();
     my $params = ltx_process_params(ltx_next_argument());
-    return "\n<dl class=envdesc>"
-         . "\n<dt><tt>&#92;begin{<b class=environment>$env</b>}</tt>"
+    return "\n<dl class='envdesc'>"
+         . "\n<dt><tt>&#92;begin{<b class='environment'>$env</b>}</tt>"
          . "\n    $params"
+         . "\n<br /><tt>&#92;end{<b class='environment'>$env</b>}</tt>"
 	 . "\n<dd>"
 	 . $_
 	 . "</dl>";

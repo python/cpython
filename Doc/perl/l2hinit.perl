@@ -16,6 +16,7 @@ package main;
 $HTML_VERSION = 4.0;
 
 $MAX_LINK_DEPTH = 2;
+$MAX_SPLIT_DEPTH = 5;      # split at subsections but not sub-subsections
 $ADDRESS = '';
 
 $NO_FOOTNODE = 1;
@@ -143,22 +144,22 @@ sub adjust_icon_information{
     $BLANK_ICON =~ s/alt="blank"/alt=""/;
     $NAV_BGCOLOR = " bgcolor=\"#99CCFF\"";
 }
+
 adjust_icon_information();
 
 
 sub make_nav_sectref{
     my($label,$title) = @_;
     if ($title) {
-        $title =~ s/<A/<A class=sectref/;
-	return ("<b class=navlabel>$label:</b> "
-		. "$title\n");
+	return ("<b class='navlabel'>$label:</b> "
+		. "<span class='sectref'>$title</span>\n");
     }
     return '';
 }
 
 sub make_nav_panel{
     my $s;
-    $s = "<table align=center width=\"100%\" cellpadding=0 cellspacing=2>"
+    $s = "<table align='center' width='100%' cellpadding='0' cellspacing='2'>"
          . "\n<tr>"
 	 . "\n<td>$NEXT</td>"
 	 . "\n<td>$UP</td>"
@@ -184,13 +185,13 @@ sub make_nav_panel{
 }
 
 sub top_navigation_panel {
-    "<div class=navigation>\n"
+    "<div class='navigation'>\n"
       . make_nav_panel()
       . '<br><hr></div>';
 }
 
 sub bot_navigation_panel {
-    "<p>\n<div class=navigation><hr>"
+    "<p>\n<div class='navigation'><hr>"
       . make_nav_panel()
       . '</div>';
 }
@@ -334,13 +335,11 @@ sub add_module_idx{
 	my $plat = '';
 	$key =~ s/<tt>([a-zA-Z0-9._]*)<\/tt>/\1/;
 	if ($ModulePlatforms{$key} && !$allthesame) {
-	    $plat = (" <em>(<span class=platform>$ModulePlatforms{$key}"
+	    $plat = (" <em>(<span class='platform'>$ModulePlatforms{$key}"
 		     . '</span>)</em>');
 	}
-	print MODIDXFILE
-	  $moditem
-	    . $IDXFILE_FIELD_SEP
-	    . "<tt class=module>$key</tt>$plat###\n";
+	print MODIDXFILE $moditem . $IDXFILE_FIELD_SEP
+              . "<tt class='module'>$key</tt>$plat###\n";
     }
     close(MODIDXFILE);
     if (!$allthesame) {
@@ -556,9 +555,55 @@ sub protect_useritems {
 #
 # Note that this *must* be done in the init file, not the python.perl
 # style support file.  The %declarations must be set before initialize()
-# is called in the main script.
+# is called in the main LaTeX2HTML script (which happens before style files
+# are loaded).
 #
-%declarations = ('preform' => '<dl><dd><pre class=verbatim></pre></dl>',
+%declarations = ('preform' => '<dl><dd><pre class="verbatim"></pre></dl>',
 		 %declarations);
+
+
+# This is added to get rid of the long comment that follows the doctype
+# declaration; MSIE5 on NT4 SP4 barfs on it and drops the content of the
+# page.
+sub make_head_and_body {
+    local($title,$body) = @_;
+    local($DTDcomment) = '';
+    local($version,$isolanguage) = ($HTML_VERSION, 'EN');
+    local(%isolanguages) = (  'english',  'EN'   , 'USenglish', 'EN.US'
+			    , 'original', 'EN'   , 'german'   , 'DE'
+			    , 'austrian', 'DE.AT', 'french'   , 'FR'
+			    , 'spanish',  'ES'
+			    , %isolanguages );
+    $isolanguage = $isolanguages{$default_language};
+    $isolanguage = 'EN' unless $isolanguage;
+    $title = &purify($title,1);
+    eval("\$title = ". $default_title ) unless ($title);
+
+    # allow user-modification of the <TITLE> tag; thanks Dan Young
+    if (defined &custom_TITLE_hook) {
+	$title = &custom_TITLE_hook($title, $toc_sec_title);
+    }
+
+    if ($DOCTYPE =~ /\/\/[\w\.]+\s*$/) { # language spec included
+	$DTDcomment = "<!DOCTYPE html PUBLIC \"$DOCTYPE\">\n";
+    } else {
+	$DTDcomment = "<!DOCTYPE html PUBLIC \"$DOCTYPE//"
+	    . ($ISO_LANGUAGE ? $ISO_LANGUAGE : $isolanguage) . "\">\n";
+    }
+
+    $STYLESHEET = $FILE.".css" unless $STYLESHEET;
+    if (!$charset && $CHARSET) { $charset = $CHARSET; $charset =~ s/_/\-/go; }
+
+    join('', ($DOCTYPE ? $DTDcomment : '' )
+	,"<html>\n<head>\n<title>", $title, "</title>\n"
+	, &meta_information($title)
+	, ($CHARSET && $HTML_VERSION ge "2.1" ?
+           "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=$charset\">\n"
+           : "" )
+	, ($BASE ? "<base href=\"$BASE\">\n" : "" )
+	, "<link rel=\"STYLESHEET\" href=\"$STYLESHEET\">"
+	, $more_links_mark
+	, "\n</head>\n<body $body>\n");
+}
 
 1;	# This must be the last line

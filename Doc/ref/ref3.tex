@@ -144,7 +144,6 @@ arithmetic operators and arithmetic built-in functions.  Numeric
 objects are immutable; once created their value never changes.  Python
 numbers are of course strongly related to mathematical numbers, but
 subject to the limitations of numerical representation in computers.
-\obindex{number}
 \obindex{numeric}
 
 Python distinguishes between integers and floating point numbers:
@@ -162,7 +161,7 @@ There are two types of integers:
 These represent numbers in the range -2147483648 through 2147483647.
 (The range may be larger on machines with a larger natural word
 size, but not smaller.)
-When the result of an operation falls outside this range, the
+When the result of an operation would fall outside this range, the
 exception \exception{OverflowError} is raised.
 For the purpose of shift and mask operations, integers are assumed to
 have a binary, 2's complement notation using 32 or more bits, and
@@ -221,7 +220,7 @@ number of items of a sequence.
 When the lenth of a sequence is \var{n}, the
 index set contains the numbers 0, 1, \ldots, \var{n}-1.  Item
 \var{i} of sequence \var{a} is selected by \code{\var{a}[\var{i}]}.
-\obindex{seqence}
+\obindex{sequence}
 \index{index operation}
 \index{item selection}
 \index{subscription}
@@ -618,7 +617,7 @@ instance dictionary directly.
 Class instances can pretend to be numbers, sequences, or mappings if
 they have methods with certain special names.  See
 section \ref{specialnames}, ``Special method names.''
-\obindex{number}
+\obindex{numeric}
 \obindex{sequence}
 \obindex{mapping}
 
@@ -702,15 +701,14 @@ a number of flags for the interpreter.
   \ttindex{co_stacksize}
   \ttindex{co_varnames}}
 
-The following flag bits are defined for \member{co_flags}: bit 2 is set
-if the function uses the \samp{*arguments} syntax to accept an
-arbitrary number of positional arguments; bit 3 is set if the function
-uses the \samp{**keywords} syntax to accept arbitrary keyword
-arguments; other bits are used internally or reserved for future use.
-If a code object represents a function, the first item in
-\member{co_consts} is the documentation string of the
-function, or \code{None} if undefined.
-\index{documentation string}
+The following flag bits are defined for \member{co_flags}: bit
+\code{0x04} is set if the function uses the \samp{*arguments} syntax
+to accept an arbitrary number of positional arguments; bit
+\code{0x08} is set if the function uses the \samp{**keywords} syntax
+to accept arbitrary keyword arguments; other bits are used internally
+or reserved for future use.  If\index{documentation string} a code
+object represents a function, the first item in \member{co_consts} is
+the documentation string of the function, or \code{None} if undefined.
 
 \item[Frame objects]
 Frame objects represent execution frames.  They may occur in traceback
@@ -1098,10 +1096,13 @@ three methods.
 Called to implement evaluation of \code{\var{self}[\var{i}:\var{j}]}.
 The returned object should be of the same type as \var{self}.  Note
 that missing \var{i} or \var{j} in the slice expression are replaced
-by zero or \code{sys.maxint}, respectively, and no further
-transformations on the indices is performed.  The interpretation of
-negative indices and indices larger than the length of the sequence is
-up to the method.
+by zero or \code{sys.maxint}, respectively.  If negative indexes are
+used in the slice, the length of the sequence is added to that index.
+If the instance does not implement the \method{__len__()} method, an
+\exception{AttributeError} is raised.
+No guarantee is made that indexes adjusted this way are not still
+negative.  Indexes which are greater than the length of the sequence
+are not modified.
 \end{methoddesc}
 
 \begin{methoddesc}[sequence object]{__setslice__}{self, i, j, sequence}
