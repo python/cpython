@@ -168,15 +168,13 @@ class GNUTranslations(UserDict):
 Translations = GNUTranslations
 
 # Locate a .mo file using the gettext strategy
-def _find(localedir=None, languages=None, category=None, domain=None):
+def _find(localedir=None, languages=None, domain=None):
     global _current_domain
     global _localedirs
 
     # Get some reasonable defaults for arguments that were not supplied
     if domain is None:
         domain = _current_domain
-    if category is None:
-        category = 'LC_MESSAGES'
     if localedir is None:
         localedir = _localedirs.get(
             domain,
@@ -199,7 +197,7 @@ def _find(localedir=None, languages=None, category=None, domain=None):
     for lang in languages:
         if lang == 'C':
             break
-        mofile = os.path.join(localedir, lang, category, '%s.mo' % domain)
+        mofile = os.path.join(localedir, lang, 'LC_MESSAGES', '%s.mo' % domain)
         # see if it's in the cache
         mo = _translations.get(mofile)
         if mo:
@@ -249,23 +247,6 @@ def gettext(message):
 def dgettext(domain, message):
     """Like gettext(), but look up message in specified domain."""
     return _find(domain=domain).get(message, message)
-
-
-def dcgettext(domain, message, category):
-    try:
-        from locale import LC_CTYPE, LC_TIME, LC_COLLATE
-        from locale import LC_MONETARY, LC_MESSAGES, LC_NUMERIC
-    except ImportError:
-        return message
-    categories = {
-        LC_CTYPE    : 'LC_CTYPE',
-        LC_TIME     : 'LC_TIME',
-        LC_COLLATE  : 'LC_COLLATE',
-        LC_MONETARY : 'LC_MONETARY',
-        LC_MESSAGES : 'LC_MESSAGES',
-        LC_NUMERIC  : 'LC_NUMERIC'
-        }
-    return _find(domain=domain, category=category).get(message, message)
 
 
 
