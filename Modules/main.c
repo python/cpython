@@ -327,7 +327,6 @@ Py_Main(int argc, char **argv)
 		_setmode(fileno(stdin), O_BINARY);
 		_setmode(fileno(stdout), O_BINARY);
 #endif
-#ifndef MPW
 #ifdef HAVE_SETVBUF
 		setvbuf(stdin,  (char *)NULL, _IONBF, BUFSIZ);
 		setvbuf(stdout, (char *)NULL, _IONBF, BUFSIZ);
@@ -337,12 +336,6 @@ Py_Main(int argc, char **argv)
 		setbuf(stdout, (char *)NULL);
 		setbuf(stderr, (char *)NULL);
 #endif /* !HAVE_SETVBUF */
-#else /* MPW */
-		/* On MPW (3.2) unbuffered seems to hang */
-		setvbuf(stdin,  (char *)NULL, _IOLBF, BUFSIZ);
-		setvbuf(stdout, (char *)NULL, _IOLBF, BUFSIZ);
-		setvbuf(stderr, (char *)NULL, _IOLBF, BUFSIZ);
-#endif /* MPW */
 	}
 	else if (Py_InteractiveFlag) {
 #ifdef MS_WINDOWS

@@ -123,13 +123,6 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 		*p = '\0';
 		break;
 	}
-#ifdef MPW
-	/* Hack for MPW C where the prompt comes right back in the input */
-	/* XXX (Actually this would be rather nice on most systems...) */
-	n = strlen(prompt);
-	if (strncmp(p, prompt, n) == 0)
-		memmove(p, p + n, strlen(p) - n + 1);
-#endif
 	n = strlen(p);
 	while (n > 0 && p[n-1] != '\n') {
 		size_t incr = n+2;

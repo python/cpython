@@ -47,10 +47,6 @@ static PyObject *MacOS_Error; /* Exception MacOS.Error */
 #define PATHNAMELEN 256
 #endif
 
-#ifdef MPW
-#define bufferIsSmall -607	/*error returns from Post and Accept */
-#endif
-
 /* ----------------------------------------------------- */
 
 /* Declarations for objects of type Resource fork */
@@ -778,4 +774,3 @@ initMacOS(void)
 		return;
 
 }
-

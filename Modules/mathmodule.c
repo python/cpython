@@ -121,13 +121,8 @@ FUNC2(fmod, fmod,
       "  x % y may differ.")
 FUNC2(hypot, hypot,
       "hypot(x,y)\n\nReturn the Euclidean distance, sqrt(x*x + y*y).")
-#ifdef MPW_3_1 /* This hack is needed for MPW 3.1 but not for 3.2 ... */
-FUNC2(pow, power,
-      "pow(x,y)\n\nReturn x**y (x to the power of y).")
-#else
 FUNC2(pow, pow,
       "pow(x,y)\n\nReturn x**y (x to the power of y).")
-#endif
 FUNC1(sin, sin,
       "sin(x)\n\nReturn the sine of x (measured in radians).")
 FUNC1(sinh, sinh,
@@ -190,15 +185,7 @@ math_modf(PyObject *self, PyObject *args)
 	if (! PyArg_ParseTuple(args, "d:modf", &x))
 		return NULL;
 	errno = 0;
-#ifdef MPW /* MPW C modf expects pointer to extended as second argument */
-        {
-		extended e;
-		x = modf(x, &e);
-		y = e;
-        }
-#else
 	x = modf(x, &y);
-#endif
 	Py_SET_ERANGE_IF_OVERFLOW(x);
 	if (errno && is_error(x))
 		return NULL;
