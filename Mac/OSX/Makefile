@@ -11,7 +11,8 @@ LIBDEST=$(prefix)/lib/python$(VERSION)
 
 # These are normally glimpsed from the previous set
 bindir=$(dstroot)/usr/local/bin
-PYTHONAPPSDIR=$(dstroot)/Applications/Python
+PYTHONAPPSPATH=/Applications/Python
+PYTHONAPPSDIR=$(dstroot)$(PYTHONAPPSPATH)
 APPINSTALLDIR=$(prefix)/Resources/Python.app
 PTHFILE=$(srcdir)/Mac/OSX/Mac.pth
 
@@ -50,7 +51,8 @@ installapps: install_PythonLauncher install_Python install_BuildApplet install_I
 
 install_PythonLauncher:
 	cd $(srcdir)/Mac/OSX/PythonLauncher/PythonLauncher.pbproj ; \
-	pbxbuild -target PythonLauncher -buildstyle Deployment DSTROOT=$(dstroot) install
+	pbxbuild -target PythonLauncher -buildstyle Deployment \
+		DSTROOT=$(dstroot) INSTALL_PATH=$(PYTHONAPPSPATH) install
 	
 install_Python: $(PYTHON)
 	@for i in $(PYTHONAPPSDIR) $(APPINSTALLDIR) $(APPINSTALLDIR)/Contents; do \
