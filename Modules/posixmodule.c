@@ -29,12 +29,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define SYSV
 #endif
 
-#ifdef MSDOS
-#define NO_LSTAT
-#define NO_UNAME
-#include <dos.h>
-#endif
-
 #ifdef __sgi
 #define DO_PG
 #endif
@@ -67,9 +61,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #else /* !SYSV */
 
-#ifndef MSDOS
 #include <sys/dir.h>
-#endif
 
 #endif /* !SYSV */
 
@@ -90,14 +82,12 @@ extern int chdir PROTO((const char *));
 extern int rmdir PROTO((const char *));
 extern int chmod PROTO((const char *, mode_t));
 extern char *getcwd(); /* No PROTO((char *, int)) -- non portable */
-#ifndef MSDOS
 extern char *strerror PROTO((int));
 extern int link PROTO((const char *, const char *));
 extern int rename PROTO((const char *, const char *));
 extern int stat PROTO((const char *, struct stat *));
 extern int unlink PROTO((const char *));
 extern int pclose PROTO((FILE *));
-#endif /* !MSDOS */
 #endif /* !_SEQUENT_ */
 #ifdef NO_LSTAT
 #define lstat stat
@@ -269,7 +259,6 @@ posix_getcwd(self, args)
 	return newstringobject(buf);
 }
 
-#ifndef MSDOS
 static object *
 posix_link(self, args)
 	object *self;
@@ -277,7 +266,6 @@ posix_link(self, args)
 {
 	return posix_2str(args, link);
 }
-#endif /* !MSDOS */
 
 static object *
 posix_listdir(self, args)
@@ -286,83 +274,6 @@ posix_listdir(self, args)
 {
 	char *name;
 	object *d, *v;
-
-#ifdef TURBO_C
-	struct ffblk ep;
-	int rv;
-	if (!getargs(args, "s", &name))
-		return NULL;
-
-	if (findfirst(name, &ep, 0) == -1)
-		return posix_error();
-	if ((d = newlistobject(0)) == NULL)
-		return NULL;
-	do {
-		v = newstringobject(ep.ff_name);
-		if (v == NULL) {
-			DECREF(d);
-			d = NULL;
-			break;
-		}
-		if (addlistitem(d, v) != 0) {
-			DECREF(v);
-			DECREF(d);
-			d = NULL;
-			break;
-		}
-		DECREF(v);
-	} while ((rv = findnext(&ep)) == 0);
-#endif /* TURBO_C */
-#ifdef MSDOS
-	struct find_t ep;
-	int rv;
-	char _name[100];
-	int attrib;
-	int num= 0;
-
-	if (!getargs(args, "s", &name))
-		return NULL;
-	strcpy( _name, name );
-
-again:
-	if ((d = newlistobject(0)) == NULL)
-		return NULL;
-
-	if( _name[strlen( _name )-1]=='/' )
-		strcat( _name, "*.*" );
-
-	if (_dos_findfirst(_name, _A_NORMAL|_A_SUBDIR, &ep) == -1)
-		return posix_error();
-	attrib= ep.attrib;
-	do {
-		v = newstringobject(ep.name);
-		if (v == NULL) {
-			DECREF(d);
-			d = NULL;
-			break;
-		}
-		if (addlistitem(d, v) != 0) {
-			DECREF(v);
-			DECREF(d);
-			d = NULL;
-			break;
-		}
-		num++;
-		DECREF(v);
-	} while ((rv = _dos_findnext(&ep)) == 0);
-
-	if( attrib&_A_SUBDIR && num==1 )
-		{
-		DECREF( d );
-		strcat( _name, "/*.*" );
-		/* This comment is here to help the DEC alpha OSF/1 cpp
-		   (which scans for comments but not for strings in
-		   code that is #ifdef'ed out...) */
-		goto again;
-		}
-
-#endif /* MSDOS */
-#ifdef unix
 	DIR *dirp;
 	struct direct *ep;
 	if (!getargs(args, "s", &name))
@@ -394,7 +305,6 @@ again:
 	}
 	closedir(dirp);
 	END_SAVE
-#endif /* unix */
 
 	return d;
 }
@@ -407,7 +317,6 @@ posix_mkdir(self, args)
 	return posix_strint(args, mkdir);
 }
 
-#ifndef MSDOS
 static object *
 posix_nice(self, args)
 	object *self;
@@ -422,7 +331,6 @@ posix_nice(self, args)
 		return posix_error();
 	return newintobject((long) value);
 }
-#endif
 
 #if i386 && ! _SEQUENT_
 int
@@ -478,7 +386,6 @@ posix_system(self, args)
 	return newintobject(sts);
 }
 
-#ifndef MSDOS
 static object *
 posix_umask(self, args)
 	object *self;
@@ -492,7 +399,6 @@ posix_umask(self, args)
 		return posix_error();
 	return newintobject((long)i);
 }
-#endif /* !MSDOS */
 
 static object *
 posix_unlink(self, args)
@@ -570,8 +476,6 @@ posix_utime(self, args)
 #undef MTIME
 }
 
-
-#ifndef MSDOS
 
 /* Process operations */
 
@@ -933,8 +837,6 @@ posix_wait(self, args)
 		return mkvalue("ii", pid, sts);
 }
 
-#endif /* MSDOS */
-
 static object *
 posix_lstat(self, args)
 	object *self;
@@ -1252,7 +1154,6 @@ posix_fdopen(self, args)
 	return newopenfileobject(fp, "(fdopen)", mode, fclose);
 }
 
-#ifndef MSDOS
 static object *
 posix_pipe(self, args)
 	object *self;
@@ -1269,30 +1170,23 @@ posix_pipe(self, args)
 		return posix_error();
 	return mkvalue("(ii)", fds[0], fds[1]);
 }
-#endif /* MSDOS */
 
 static struct methodlist posix_methods[] = {
 	{"chdir",	posix_chdir},
 	{"chmod",	posix_chmod},
 	{"getcwd",	posix_getcwd},
-#ifndef MSDOS
 	{"link",	posix_link},
-#endif
 	{"listdir",	posix_listdir},
 	{"lstat",	posix_lstat},
 	{"mkdir",	posix_mkdir},
-#ifndef MSDOS
 	{"nice",	posix_nice},
-#endif
 	{"readlink",	posix_readlink},
 	{"rename",	posix_rename},
 	{"rmdir",	posix_rmdir},
 	{"stat",	posix_stat},
 	{"symlink",	posix_symlink},
 	{"system",	posix_system},
-#ifndef MSDOS
 	{"umask",	posix_umask},
-#endif
 #ifndef NO_UNAME
 	{"uname",	posix_uname},
 #endif
@@ -1301,8 +1195,6 @@ static struct methodlist posix_methods[] = {
 #ifdef DO_TIMES
 	{"times",	posix_times},
 #endif
-
-#ifndef MSDOS
 	{"_exit",	posix__exit},
 	{"execv",	posix_execv},
 	{"execve",	posix_execve},
@@ -1321,15 +1213,12 @@ static struct methodlist posix_methods[] = {
 	{"setpgrp",	posix_setpgrp},
 	{"wait",	posix_wait},
 	{"waitpid",	posix_waitpid},
-#endif
-
 #ifdef DO_PG
 	{"setsid",	posix_setsid},
 	{"setpgid",	posix_setpgid},
 	{"tcgetpgrp",	posix_tcgetpgrp},
 	{"tcsetpgrp",	posix_tcsetpgrp},
 #endif
-
 	{"open",	posix_open},
 	{"close",	posix_close},
 	{"dup",		posix_dup},
@@ -1339,9 +1228,7 @@ static struct methodlist posix_methods[] = {
 	{"write",	posix_write},
 	{"fstat",	posix_fstat},
 	{"fdopen",	posix_fdopen},
-#ifndef MSDOS
 	{"pipe",	posix_pipe},
-#endif
 
 	{NULL,		NULL}		 /* Sentinel */
 };
@@ -1380,48 +1267,3 @@ getmtime(path)
 	else
 		return st.st_mtime;
 }
-
-
-#ifdef TURBO_C
-
-/* A small "compatibility library" for TurboC under MS-DOS */
-
-//#include <sir.h>
-#include <io.h>
-#include <dos.h>
-#include <fcntl.h>
-
-int
-chmod(path, mode)
-	char *path;
-	int mode;
-{
-	return _chmod(path, 1, mode);
-}
-
-int
-utime(path, times)
-	char *path;
-	time_t times[2];
-{
-	struct date dt;
-	struct time tm;
-	struct ftime dft;
-	int	fh;
-	unixtodos(tv[0].tv_sec,&dt,&tm);
-	dft.ft_tsec = tm.ti_sec; dft.ft_min = tm.ti_min;
-	dft.ft_hour = tm.ti_hour; dft.ft_day = dt.da_day;
-	dft.ft_month = dt.da_mon;
-	dft.ft_year = (dt.da_year - 1980);	/* this is for TC library */
-
-	if ((fh = open(path,O_RDWR)) < 0)
-		return posix_error();	/* can't open file to set time */
-	if (setftime(fh,&dft) < 0)
-	{
-		close(fh);
-		return posix_error();
-	}
-	close(fh);				/* close the temp handle */
-}
-
-#endif /* TURBO_C */
