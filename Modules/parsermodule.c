@@ -183,6 +183,8 @@ staticforward void parser_free Py_PROTO((PyAST_Object *ast));
 staticforward int  parser_compare Py_PROTO((PyAST_Object *left,
 					    PyAST_Object *right));
 
+staticforward PyObject *parser_getattr Py_PROTO((PyObject *self, char *name));
+
 
 /* static */
 PyTypeObject PyAST_Type = {
@@ -194,7 +196,7 @@ PyTypeObject PyAST_Type = {
     0,					/* tp_itemsize		*/
     (destructor)parser_free,		/* tp_dealloc		*/
     0,					/* tp_print		*/
-    0,					/* tp_getattr		*/
+    parser_getattr,			/* tp_getattr		*/
     0,					/* tp_setattr		*/
     (cmpfunc)parser_compare,		/* tp_compare		*/
     0,					/* tp_repr		*/
@@ -321,25 +323,28 @@ parser_free(ast)
  */
 static PyObject*
 parser_ast2tuple(self, args)
-     PyObject *self;
+     PyAST_Object *self;
      PyObject *args;
 {
-    PyObject *ast;
     PyObject *line_option = 0;
     PyObject *res = 0;
+    int ok;
 
-    if (PyArg_ParseTuple(args, "O!|O:ast2tuple", &PyAST_Type, &ast,
-			 &line_option)) {
+    if (self == NULL)
+	ok = PyArg_ParseTuple(
+		args, "O!|O:ast2tuple", &PyAST_Type, &self, &line_option);
+    else
+	ok = PyArg_ParseTuple(args, "|O:totuple", &line_option);
+    if (ok) {
 	int lineno = 0;
-	if (line_option != 0) {
-	    lineno = PyObject_IsTrue(line_option);
-	    lineno = lineno ? 1 : 0;
+	if (line_option != NULL) {
+	    lineno = PyObject_IsTrue(line_option) ? 1 : 0;
 	}
 	/*
 	 *  Convert AST into a tuple representation.  Use Guido's function,
 	 *  since it's known to work already.
 	 */
-	res = node2tuple(((PyAST_Object*)ast)->ast_node,
+	res = node2tuple(((PyAST_Object*)self)->ast_node,
 			 PyTuple_New, PyTuple_SetItem, lineno);
     }
     return (res);
@@ -355,25 +360,28 @@ parser_ast2tuple(self, args)
  */
 static PyObject*
 parser_ast2list(self, args)
-     PyObject *self;
+     PyAST_Object *self;
      PyObject *args;
 {
-    PyObject *ast;
     PyObject *line_option = 0;
     PyObject *res = 0;
+    int ok;
 
-    if (PyArg_ParseTuple(args, "O!|O:ast2list", &PyAST_Type, &ast,
-			 &line_option)) {
+    if (self == NULL)
+	ok = PyArg_ParseTuple(
+		args, "O!|O:ast2list", &PyAST_Type, &self, &line_option);
+    else
+	ok = PyArg_ParseTuple(args, "|O:tolist", &line_option);
+    if (ok) {
 	int lineno = 0;
 	if (line_option != 0) {
-	    lineno = PyObject_IsTrue(line_option);
-	    lineno = lineno ? 1 : 0;
+	    lineno = PyObject_IsTrue(line_option) ? 1 : 0;
 	}
 	/*
 	 *  Convert AST into a tuple representation.  Use Guido's function,
 	 *  since it's known to work already.
 	 */
-	res = node2tuple(((PyAST_Object*)ast)->ast_node,
+	res = node2tuple(((PyAST_Object *)self)->ast_node,
 			 PyList_New, PyList_SetItem, lineno);
     }
     return (res);
@@ -389,15 +397,21 @@ parser_ast2list(self, args)
  */
 static PyObject*
 parser_compileast(self, args)
-     PyObject *self;
+     PyAST_Object *self;
      PyObject *args;
 {
-    PyAST_Object* ast;
     PyObject*     res = 0;
     char*	  str = "<ast>";
+    int ok;
 
-    if (PyArg_ParseTuple(args, "O!|s", &PyAST_Type, &ast, &str))
-	res = (PyObject*) PyNode_Compile(ast->ast_node, str);
+    if (self == NULL)
+	ok = PyArg_ParseTuple(
+		args, "O!|s:compileast", &PyAST_Type, &self, &str);
+    else
+	ok = PyArg_ParseTuple(args, "|s:compile", &str);
+
+    if (ok)
+	res = (PyObject *)PyNode_Compile(self->ast_node, str);
 
     return (res);
 
@@ -413,17 +427,20 @@ parser_compileast(self, args)
  */
 static PyObject*
 parser_isexpr(self, args)
-     PyObject *self;
+     PyAST_Object *self;
      PyObject *args;
 {
-    PyAST_Object* ast;
     PyObject* res = 0;
+    int ok;
 
-    if (PyArg_ParseTuple(args, "O!:isexpr", &PyAST_Type, &ast)) {
-	/*
-	 *  Check to see if the AST represents an expression or not.
-	 */
-	res = (ast->ast_type == PyAST_EXPR) ? Py_True : Py_False;
+    if (self == NULL)
+	ok = PyArg_ParseTuple(args, "O!:isexpr", &PyAST_Type, &self);
+    else
+	ok = PyArg_ParseTuple(args, ":isexpr");
+
+    if (ok) {
+	/* Check to see if the AST represents an expression or not. */
+	res = (self->ast_type == PyAST_EXPR) ? Py_True : Py_False;
 	Py_INCREF(res);
     }
     return (res);
@@ -433,22 +450,54 @@ parser_isexpr(self, args)
 
 static PyObject*
 parser_issuite(self, args)
-     PyObject *self;
+     PyAST_Object *self;
      PyObject *args;
 {
-    PyAST_Object* ast;
     PyObject* res = 0;
+    int ok;
 
-    if (PyArg_ParseTuple(args, "O!:issuite", &PyAST_Type, &ast)) {
-	/*
-	 *  Check to see if the AST represents an expression or not.
-	 */
-	res = (ast->ast_type == PyAST_EXPR) ? Py_False : Py_True;
+    if (self == NULL)
+	ok = PyArg_ParseTuple(args, "O!:issuite", &PyAST_Type, &self);
+    else
+	ok = PyArg_ParseTuple(args, ":issuite");
+
+    if (ok) {
+	/* Check to see if the AST represents an expression or not. */
+	res = (self->ast_type == PyAST_EXPR) ? Py_False : Py_True;
 	Py_INCREF(res);
     }
     return (res);
 
 }   /* parser_issuite() */
+
+
+static PyMethodDef
+parser_methods[] = {
+    {"compile",		parser_compileast,	METH_VARARGS},
+    {"isexpr",		parser_isexpr,		METH_VARARGS},
+    {"issuite",		parser_issuite,		METH_VARARGS},
+    {"tolist",		parser_ast2list,	METH_VARARGS},
+    {"totuple",		parser_ast2tuple,	METH_VARARGS},
+
+    {NULL}
+};
+
+static PyObject*
+parser_method_list = NULL;
+
+
+static PyObject*
+parser_getattr(self, name)
+     PyObject *self;
+     char *name;
+{
+    if (strcmp(name, "__methods__") == 0) {
+	Py_INCREF(parser_method_list);
+	return (parser_method_list);
+    }
+    return (Py_FindMethod(parser_methods, self, name));
+
+}   /* parser_getattr() */
 
 
 /*  err_string(char* message)
@@ -2668,7 +2717,6 @@ initparser()
  {
     PyObject* module;
     PyObject* dict;
-    PyObject *temp;
 	
     PyAST_Type.ob_type = &PyType_Type;
     module = Py_InitModule("parser", parser_functions);
@@ -2695,6 +2743,20 @@ initparser()
 			 PyString_FromString(parser_doc_string));
     PyDict_SetItemString(dict, "__version__",
 			 PyString_FromString(parser_version_string));
+
+    parser_method_list = PyList_New(0);
+    if (parser_method_list != NULL) {
+	PyMethodDef *mdef = parser_methods;
+
+	while (mdef->ml_name != NULL) {
+	    PyObject *temp = PyString_FromString(mdef->ml_name);
+	    if (temp != NULL) {
+		PyList_Append(parser_method_list, temp);
+		Py_DECREF(temp);
+	    }
+	    ++mdef;
+	}
+    }
 
     /* register to support pickling */
     module = PyImport_ImportModule("copy_reg");
