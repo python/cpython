@@ -83,9 +83,9 @@ all-dvi: $(DVIFILES)
 all-pdf: $(PDFFILES)
 all-ps:	 $(PSFILES)
 
-# This target gets both the PDF and PS files updated; the more specific
-# targets above don't ensure that both are done if the "alternate" rules
-# (using pdflatex) for PDF generation are used.
+# This target gets both the PDF and PS files updated; the all-pdf target
+# above doesn't ensure that both are done if the "alternate" rule (using
+# pdflatex) for PDF generation is used.
 #
 all-formats:  $(PSFILES) $(PDFFILES)
 
