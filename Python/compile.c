@@ -141,11 +141,11 @@ code_compare(co, cp)
 	PyCodeObject *co, *cp;
 {
 	int cmp;
-	cmp = cp->co_argcount - cp->co_argcount;
+	cmp = co->co_argcount - cp->co_argcount;
 	if (cmp) return cmp;
-	cmp = cp->co_nlocals - cp->co_nlocals;
+	cmp = co->co_nlocals - cp->co_nlocals;
 	if (cmp) return cmp;
-	cmp = cp->co_flags - cp->co_flags;
+	cmp = co->co_flags - cp->co_flags;
 	if (cmp) return cmp;
 	cmp = PyObject_Compare((PyObject *)co->co_code,
 			       (PyObject *)cp->co_code);
