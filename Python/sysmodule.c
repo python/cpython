@@ -251,9 +251,9 @@ list_builtin_module_names()
 	int i;
 	if (list == NULL)
 		return NULL;
-	for (i = 0; _PyImport_Inittab[i].name != NULL; i++) {
+	for (i = 0; PyImport_Inittab[i].name != NULL; i++) {
 		PyObject *name = PyString_FromString(
-			_PyImport_Inittab[i].name);
+			PyImport_Inittab[i].name);
 		if (name == NULL)
 			break;
 		PyList_Append(list, name);
