@@ -74,13 +74,14 @@ def browserexec(tb, cmd):
 	try:
 		exec cmd+'\n' in globals, locals
 	except:
+		t, v = sys.exc_info()[:2]
 		print '*** Exception:',
-		if type(sys.exc_type) == type(''):
-			print sys.exc_type,
+		if type(t) == type(''):
+			print t,
 		else:
-			print sys.exc_type.__name__,
-		if sys.exc_value <> None:
-			print ':', sys.exc_value,
+			print t.__name__,
+		if v <> None:
+			print ':', v,
 		print
 		print 'Type help to get help.'
 

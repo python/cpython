@@ -148,7 +148,7 @@ class Bdb: # Basic Debugger
 		try:
 			1 + ''
 		except:
-			frame = sys.exc_traceback.tb_frame.f_back
+			frame = sys.exc_info()[2].tb_frame.f_back
 		self.reset()
 		while frame:
 			frame.f_trace = self.trace_dispatch
@@ -168,7 +168,7 @@ class Bdb: # Basic Debugger
 			try:
 				1 + ''	# raise an exception
 			except:
-				frame = sys.exc_traceback.tb_frame.f_back
+				frame = sys.exc_info()[2].tb_frame.f_back
 			while frame and frame is not self.botframe:
 				del frame.f_trace
 				frame = frame.f_back

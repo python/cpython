@@ -80,10 +80,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			code = compile(line + '\n', '<stdin>', 'single')
 			exec code in globals, locals
 		except:
-			if type(sys.exc_type) == type(''):
-				exc_type_name = sys.exc_type
-			else: exc_type_name = sys.exc_type.__name__
-			print '***', exc_type_name + ':', sys.exc_value
+			t, v = sys.exc_info()[:2]
+			if type(t) == type(''):
+				exc_type_name = t
+			else: exc_type_name = t.__name__
+			print '***', exc_type_name + ':', v
 
 	# Command definitions, called by cmdloop()
 	# The argument is the remaining string on the command line
@@ -219,10 +220,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			value = eval(arg, self.curframe.f_globals, \
 					self.curframe.f_locals)
 		except:
-			if type(sys.exc_type) == type(''):
-				exc_type_name = sys.exc_type
-			else: exc_type_name = sys.exc_type.__name__
-			print '***', exc_type_name + ':', `sys.exc_value`
+			t, v = sys.exc_info()[:2]
+			if type(t) == type(''):
+				exc_type_name = t
+			else: exc_type_name = t.__name__
+			print '***', exc_type_name + ':', `v`
 			return
 
 		print `value`
@@ -277,10 +279,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			value = eval(arg, self.curframe.f_globals, \
 					self.curframe.f_locals)
 		except:
-			if type(sys.exc_type) == type(''):
-				exc_type_name = sys.exc_type
-			else: exc_type_name = sys.exc_type.__name__
-			print '***', exc_type_name + ':', `sys.exc_value`
+			t, v = sys.exc_info()[:2]
+			if type(t) == type(''):
+				exc_type_name = t
+			else: exc_type_name = t.__name__
+			print '***', exc_type_name + ':', `v`
 			return
 		code = None
 		# Is it a function?

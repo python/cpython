@@ -379,7 +379,7 @@ class Folder:
 		if not seqs.has_key(head):
 		    if not msg:
 			msg = "bad message list %s" % seq
-		    raise Error, msg, sys.exc_traceback
+		    raise Error, msg, sys.exc_info()[2]
 		msgs = seqs[head]
 		if not msgs:
 		    raise Error, "sequence %s empty" % head
