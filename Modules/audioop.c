@@ -44,7 +44,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define MAXLIN 32767
 #define LINCLIP(x) do { if ( x < MINLIN ) x = MINLIN ; else if ( x > MAXLIN ) x = MAXLIN; } while ( 0 )
 
-unsigned char st_linear_to_ulaw( /* int sample */ );
+static unsigned char st_linear_to_ulaw( /* int sample */ );
 
 /*
 ** This macro converts from ulaw to 16 bit linear, faster.
@@ -95,7 +95,7 @@ static int ulaw_table[256] = {
 #define BIAS 0x84   /* define the add-in bias for 16 bit samples */
 #define CLIP 32635
 
-unsigned char
+static unsigned char
 st_linear_to_ulaw( sample )
 int sample;
     {
@@ -297,7 +297,7 @@ audioop_rms(self, args)
     return newintobject(val);
 }
 
-double _sum2(a, b, len)
+static double _sum2(a, b, len)
     short *a;
     short *b;
     int len;

@@ -31,7 +31,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "graminit.h"
 #include "errcode.h"
 
-object *
+static object *
 node2tuple(n)
 	node *n;
 {
