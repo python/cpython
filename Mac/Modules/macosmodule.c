@@ -25,6 +25,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Macintosh OS-specific interface */
 
 #include "Python.h"
+#include "macglue.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -32,29 +33,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <OSUtils.h> /* for Set(Current)A5 */
 #include <Resources.h>
+#include <Memory.h>
 #include <Sound.h>
+
+#ifndef __MWERKS__
+#define SndCallBackUPP ProcPtr
+#define NewSndCallBackProc(x) (x)
+#endif
 
 /*----------------------------------------------------------------------*/
 /* General tools */
 
 static PyObject *MacOS_Error; /* Exception MacOS.Error */
-
-/* Set a MAC-specific error from errno, and return NULL; return None if no error */
-static PyObject * 
-Err(OSErr err)
-{
-	char buf[100];
-	PyObject *v;
-	if (err == 0) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
-	sprintf(buf, "Mac OS error code %d", (int)err);
-	v = Py_BuildValue("(is)", (int)err, buf);
-	PyErr_SetObject(MacOS_Error, v);
-	Py_DECREF(v);
-	return NULL;
-}
 
 /* Convert a ResType argument */
 static int
@@ -101,7 +91,7 @@ Rsrc_FromHandle(Handle h)
 {
 	RsrcObject *r;
 	if (h == NULL)
-		return (RsrcObject *)Err(ResError());
+		return (RsrcObject *)PyErr_Mac(MacOS_Error, (int)ResError());
 	r = PyObject_NEW(RsrcObject, &RsrcType);
 	if (r != NULL)
 		r->h = h;
@@ -111,6 +101,7 @@ Rsrc_FromHandle(Handle h)
 static void
 Rsrc_Dealloc(RsrcObject *r)
 {
+	/* XXXX Note by Jack: shouldn't we ReleaseResource here? */
 	PyMem_DEL(r);
 }
 
@@ -127,8 +118,41 @@ Rsrc_GetResInfo(RsrcObject *r, PyObject *args)
 		(int)id, (char *)&type, 4, name+1, (int)name[0]);
 }
 
+static PyObject *
+Rsrc_AsBytes(RsrcObject *r, PyObject *args)
+{
+	long len;
+	PyObject *rv;
+	char *cp;
+	
+	if (!PyArg_Parse(args, "(l)", &len))
+		return NULL;
+	HLock(r->h);
+	cp = (char *)*r->h;
+	rv = PyString_FromStringAndSize(cp, len);
+	HUnlock(r->h);
+	return rv;
+}
+
+static PyObject *
+Rsrc_AsString(RsrcObject *r, PyObject *args)
+{
+	PyObject *rv;
+	unsigned char *cp;
+	
+	if (!PyArg_Parse(args, "()"))
+		return NULL;
+	HLock(r->h);
+	cp = (unsigned char *)*r->h;
+	rv = PyString_FromStringAndSize((char *)cp+1, cp[0]);
+	HUnlock(r->h);
+	return rv;
+}
+
 static PyMethodDef Rsrc_Methods[] = {
 	{"GetResInfo",	(PyCFunction)Rsrc_GetResInfo, 1},
+	{"AsString",	(PyCFunction)Rsrc_AsString, 1},
+	{"AsBytes",		(PyCFunction)Rsrc_AsBytes, 1},
 	{NULL,			NULL}		 /* Sentinel */
 };
 
@@ -302,7 +326,7 @@ SndCh_SndDoCommand(SndChObject *s, PyObject *args)
 	if (!SndCh_OK(s))
 		return NULL;
 	err = SndDoCommand(s->chan, &c, noWait);
-	return Err(err);
+	return PyErr_Mac(MacOS_Error, (int)err);
 }
 
 static PyObject *
@@ -315,7 +339,7 @@ SndCh_SndDoImmediate(SndChObject *s, PyObject *args)
 	if (!SndCh_OK(s))
 		return NULL;
 	err = SndDoImmediate(s->chan, &c);
-	return Err(err);
+	return PyErr_Mac(MacOS_Error, (int)err);
 }
 
 static PyMethodDef SndCh_Methods[] = {
@@ -380,11 +404,19 @@ MySafeCallback(arg)
 }
 
 static pascal void
+#ifdef __MWERKS__
+MyUserRoutine(SndChannelPtr chan, SndCommand *cmd)
+#else
 MyUserRoutine(SndChannelPtr chan, SndCommand cmd)
+#endif
 {
 	cbinfo *p = (cbinfo *)chan->userInfo;
 	long A5 = SetA5(p->A5);
+#ifdef __MWERKS__
+	p->cmd = *cmd;
+#else
 	p->cmd = cmd;
+#endif
 	Py_AddPendingCall(MySafeCallback, (void *)p);
 	SetA5(A5);
 }
@@ -397,7 +429,7 @@ MacOS_SndNewChannel(PyObject *self, PyObject *args)
 	long init = 0;
 	PyObject *callback = NULL;
 	cbinfo *p = NULL;
-	SndCallBackProcPtr userroutine = 0;
+	SndCallBackUPP userroutine = 0;
 	OSErr err;
 	PyObject *res;
 	if (!PyArg_Parse(args, "(h)", &synth)) {
@@ -414,14 +446,14 @@ MacOS_SndNewChannel(PyObject *self, PyObject *args)
 			return PyErr_NoMemory();
 		p->A5 = SetCurrentA5();
 		p->callback = callback;
-		userroutine = MyUserRoutine;
+		userroutine = NewSndCallBackProc(MyUserRoutine);
 	}
 	chan = NULL;
 	err = SndNewChannel(&chan, synth, init, userroutine);
 	if (err) {
 		if (p)
 			DEL(p);
-		return Err(err);
+		return PyErr_Mac(MacOS_Error, (int)err);
 	}
 	res = (PyObject *)SndCh_FromSndChannelPtr(chan);
 	if (res == NULL) {
@@ -443,7 +475,7 @@ MacOS_SndPlay(PyObject *self, PyObject *args)
 	if (!PyArg_Parse(args, "(O!)", &RsrcType, &r))
 		return NULL;
 	err = SndPlay((SndChannelPtr)NULL, r->h, 0);
-	return Err(err);
+	return PyErr_Mac(MacOS_Error, (int)err);
 }
 
 static PyObject *
@@ -456,7 +488,7 @@ MacOS_SndControl(PyObject *self, PyObject *args)
 		return NULL;
 	err = SndControl(id, &c);
 	if (err)
-		return Err(err);
+		return PyErr_Mac(MacOS_Error, (int)err);
 	return Py_BuildValue("(hhl)", c.cmd, c.param1, c.param2);
 }
 
