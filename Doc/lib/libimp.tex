@@ -38,7 +38,7 @@ returned by \code{get_suffixes} describing the kind of file found.
 \begin{funcdesc}{init_builtin}{name}
 Initialize the built-in module called \var{name} and return its module
 object.  If the module was already initialized, it will be initialized
-{\em again}.  A few modules cannot be initialized twice -- attempting
+{\em again}.  A few modules cannot be initialized twice --- attempting
 to initialize these again will raise an exception.  If there is no
 built-in module called \var{name}, \code{None} is returned.
 \end{funcdesc}
@@ -73,7 +73,7 @@ it will be initialized {\em again}.  The \var{name} argument is used
 to create or access a module object.  The \var{pathname} argument
 points to the byte-compiled code file.  The optional \var{file}
 argument is the byte-compiled code file, open for reading in binary
-mode, from the beginning -- if not given, the function opens
+mode, from the beginning --- if not given, the function opens
 \var{pathname}.  It must currently be a real file object, not a
 user-defined class emulating a file.
 \end{funcdesc}
@@ -97,7 +97,7 @@ return its module object.  If the module was already initialized, it
 will be initialized {\em again}.  The \var{name} argument is used to
 create or access a module object.  The \var{pathname} argument points
 to the source file.  The optional \var{file} argument is the source
-file, open for reading as text, from the beginning -- if not given,
+file, open for reading as text, from the beginning --- if not given,
 the function opens \var{pathname}.  It must currently be a real file
 object, not a user-defined class emulating a file.  Note that if a
 properly matching byte-compiled file (with suffix \code{.pyc}) exists,

@@ -4,6 +4,8 @@
 \indexii{World-Wide}{Web}
 \index{URL}
 
+\renewcommand{\indexsubitem}{(in module urllib)}
+
 This module provides a high-level interface for fetching data across
 the World-Wide Web.  In particular, the \code{urlopen} function is
 similar to the built-in function \code{open}, but accepts URLs
@@ -55,13 +57,13 @@ Letters, digits, and the characters ``\code{_,.-}'' are never quoted.
 The optional \var{addsafe} parameter specifies additional characters
 that should not be quoted --- its default value is \code{'/'}.
 
-Example: \code{quote('/~conolly/')} yields \code{'/\%7econnolly/'}.
+Example: \code{quote('/\~conolly/')} yields \code{'/\%7econnolly/'}.
 \end{funcdesc}
 
 \begin{funcdesc}{unquote}{string}
 Remove \code{\%xx} escapes by their single-character equivalent.
 
-Example: \code{unquote('/\%7Econnolly/')} yields \code{'/~connolly/'}.
+Example: \code{unquote('/\%7Econnolly/')} yields \code{'/\~connolly/'}.
 \end{funcdesc}
 
 Restrictions:

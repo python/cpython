@@ -2965,7 +2965,7 @@ Reference for a full description.
 
 \section{Generalized Dictionaries}
 
-The keys of dictionaries are no longer restricted to strings -- they
+The keys of dictionaries are no longer restricted to strings --- they
 can be any immutable basic type including strings, numbers, tuples, or
 (certain) class instances.  (Lists and dictionaries are not acceptable
 as dictionary keys, in order to avoid problems when the object used as
@@ -3097,7 +3097,7 @@ You can define three new ``magic'' methods in a class now:
 and \code{__delattr__(self, name)}.
 
 The \code{__getattr__} method is called when an attribute access fails,
-i.e. when an attribute access would otherwise raise AttributeError --
+i.e. when an attribute access would otherwise raise AttributeError ---
 this is {\em after} the instance's dictionary and its class hierarchy
 have been searched for the named attribute.  Note that if this method
 attempts to access any undefined instance attribute it will be called
@@ -3108,7 +3108,7 @@ assignment to, respectively deletion of an attribute are attempted.
 They are called {\em instead} of the normal action (which is to insert
 or delete the attribute in the instance dictionary).  If either of
 these methods most set or delete any attribute, they can only do so by
-using the instance dictionary directly -- \code{self.__dict__} -- else
+using the instance dictionary directly --- \code{self.__dict__} --- else
 they would be called recursively.
 
 For example, here's a near-universal ``Wrapper'' class that passes all
@@ -3504,9 +3504,9 @@ A rudimentary, parser for HTML files is available in the module
 \code{htmllib}.  It currently supports a subset of HTML 1.0 (if you
 bring it up to date, I'd love to receive your fixes!).  Unfortunately
 Python seems to be too slow for real-time parsing and formatting of
-HTML such as required by interactive WWW browsers --- but it's ideal
-for writing a ``robot'' (an automated WWW browser that searches the
-web for information).
+HTML such as required by interactive WWW browsers --- but it's good
+enough to write a ``robot'' (an automated WWW browser that searches
+the web for information).
 
 
 \section{Miscellaneous}

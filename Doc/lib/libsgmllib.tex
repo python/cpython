@@ -1,3 +1,148 @@
 \section{Built-in module \sectcode{sgmllib}}
 \stmodindex{sgmllib}
-To be provided.
+\index{SGML}
+
+\renewcommand{\indexsubitem}{(in module sgmllib)}
+
+This module defines a class \code{SGMLParser} which serves as the
+basis for parsing text files formatted in SGML (Standard Generalized
+Mark-up Language).  In fact, it does not provide a full SGML parser
+--- it only parses SGML insofar as it is used by HTML, and module only
+exists as a basis for the \code{htmllib} module.
+\stmodindex{htmllib}
+
+In particular, the parser is hardcoded to recognize the following
+elements:
+
+\begin{itemize}
+
+\item
+Opening and closing tags of the form
+``\code{<\var{tag} \var{attr}="\var{value}" ...>}'' and
+``\code{</\var{tag}>}'', respectively.
+
+\item
+Character references of the form ``\code{\&\#\var{name};}''.
+
+\item
+Entity references of the form ``\code{\&\var{name};}''.
+
+\item
+SGML comments of the form ``\code{<!--\var{text}>}''.
+
+\end{itemize}
+
+The \code{SGMLParser} class must be instantiated without arguments.
+It has the following interface methods:
+
+\begin{funcdesc}{reset}{}
+Reset the instance.  Loses all unprocessed data.  This is called
+implicitly at instantiation time.
+\end{funcdesc}
+
+\begin{funcdesc}{setnomoretags}{}
+Stop processing tags.  Treat all following input as literal input
+(CDATA).  (This is only provided so the HTML tag \code{<PLAINTEXT>}
+can be implemented.)
+\end{funcdesc}
+
+\begin{funcdesc}{setliteral}{}
+Enter literal mode (CDATA mode).
+\end{funcdesc}
+
+\begin{funcdesc}{feed}{data}
+Feed some text to the parser.  It is processed insofar as it consists
+of complete elements; incomplete data is buffered until more data is
+fed or \code{close()} is called.
+\end{funcdesc}
+
+\begin{funcdesc}{close}{}
+Force processing of all buffered data as if it were followed by an
+end-of-file mark.  This method may be redefined by a derived class to
+define additional processing at the end of the input, but the
+redefined version should always call \code{SGMLParser.close()}.
+\end{funcdesc}
+
+\begin{funcdesc}{handle_charref}{ref}
+This method is called to process a character reference of the form
+``\code{\&\#\var{ref};}'' where \var{ref} is a decimal number in the
+range 0-255.  It translates the character to ASCII and calls the
+method \code{handle_data()} with the character as argument.  If
+\var{ref} is invalid or out of range, the method
+\code{unknown_charref(\var{ref})} is called instead.
+\end{funcdesc}
+
+\begin{funcdesc}{handle_entityref}{ref}
+This method is called to process an entity reference of the form
+``\code{\&\var{ref};}'' where \var{ref} is an alphabetic entity
+reference.  It looks for \var{ref} in the instance (or class)
+variable \code{entitydefs} which should give the entity's translation.
+If a translation is found, it callse the method \code{handle_data()}
+with the translation; otherwise, it callse the method
+\code{unknown_entityref(\var{ref})}.
+\end{funcdesc}
+
+\begin{funcdesc}{handle_data}{data}
+This method is called to process arbitrary data.  It is intended to be
+overridden by a derived class; the base class implementation does
+nothing.
+\end{funcdesc}
+
+\begin{funcdesc}{unknown_starttag}{tag\, attributes}
+This method is called to process an unknown start tag.  It is intended
+to be overridden by a derived class; the base class implementation
+does nothing.  The \var{attributes} argument is a list of
+(\var{name}, \var{value}) pairs containing the attributes found inside
+the tag's \code{<>} brackets.  The \var{name} has been translated to
+lower case and double quotes and backslashes in the \var{value} have
+been interpreted.  For instance, for the tag
+\code{<A HREF="http://www.cwi.nl/">}, this method would be
+called as \code{unknown_starttag('a', [('href', 'http://www.cwi.nl/')])}.
+\end{funcdesc}
+
+\begin{funcdesc}{unknown_endtag}{tag}
+This method is called to process an unknown end tag.  It is intended
+to be overridden by a derived class; the base class implementation
+does nothing.
+\end{funcdesc}
+
+\begin{funcdesc}{unknown_charref}{ref}
+This method is called to process an unknown character reference.  It
+is intended to be overridden by a derived class; the base class
+implementation does nothing.
+\end{funcdesc}
+
+\begin{funcdesc}{unknown_entityref}{ref}
+This method is called to process an unknown entity reference.  It is
+intended to be overridden by a derived class; the base class
+implementation does nothing.
+\end{funcdesc}
+
+Apart from overriding or extending the methods listed above, derived
+classes may also define methods of the following form to define
+processing of specific tags.  Tag names in the input stream are case
+independent; the \var{tag} occurring in method names must be in lower
+case:
+
+\begin{funcdesc}{start_\var{tag}}{attributes}
+This method is called to process an opening tag \var{tag}.  It has
+preference over \code{do_\var{tag}()}.  The \var{attributes} argument
+has the same meaning as described for \code{unknown_tag()} above.
+\end{funcdesc}
+
+\begin{funcdesc}{do_\var{tag}}{attributes}
+This method is called to process an opening tag \var{tag} that does
+not come with a matching closing tag.  The \var{attributes} argument
+has the same meaning as described for \code{unknown_tag()} above.
+\end{funcdesc}
+
+\begin{funcdesc}{end_\var{tag}}{}
+This method is called to process a closing tag \var{tag}.
+\end{funcdesc}
+
+Note that the parser maintains a stack of opening tags for which no
+matching closing tag has been found yet.  Only tags processed by
+\code{start_\var{tag}()} are pushed on this stack.  Definition if a
+\code{end_\var{tag}()} method is optional for these tags.  For tags
+processed by \code{do_\var{tag}()} or by \code{unknown_tag()}, no
+\code{end_\var{tag}()} method must be defined.
