@@ -29,8 +29,12 @@ Notes:
 - There's a simple test set (see end of this file).
 """
 
-import errno
-import string
+try:
+	from errno import EINVAL
+except ImportError:
+	EINVAL = 22
+
+EMPTYSTRING = ''
 
 class StringIO:
 	def __init__(self, buf = ''):
@@ -52,12 +56,12 @@ class StringIO:
 		if self.closed:
 			raise ValueError, "I/O operation on closed file"
 		if self.buflist:
-			self.buf = self.buf + string.joinfields(self.buflist, '')
+			self.buf += EMPTYSTRING.join(self.buflist)
 			self.buflist = []
 		if mode == 1:
-			pos = pos + self.pos
+			pos += self.pos
 		elif mode == 2:
-			pos = pos + self.len
+			pos += self.len
 		self.pos = max(0, pos)
 	def tell(self):
 		if self.closed:
@@ -67,7 +71,7 @@ class StringIO:
 		if self.closed:
 			raise ValueError, "I/O operation on closed file"
 		if self.buflist:
-			self.buf = self.buf + string.joinfields(self.buflist, '')
+			self.buf += EMPTYSTRING.join(self.buflist)
 			self.buflist = []
 		if n < 0:
 			newpos = self.len
@@ -80,9 +84,9 @@ class StringIO:
 		if self.closed:
 			raise ValueError, "I/O operation on closed file"
 		if self.buflist:
-			self.buf = self.buf + string.joinfields(self.buflist, '')
+			self.buf += EMPTYSTRING.join(self.buflist)
 			self.buflist = []
-		i = string.find(self.buf, '\n', self.pos)
+		i = self.buf.find('\n', self.pos)
 		if i < 0:
 			newpos = self.len
 		else:
@@ -110,8 +114,7 @@ class StringIO:
 		if size is None:
 			size = self.pos
 		elif size < 0:
-			raise IOError(errno.EINVAL,
-                                      "Negative size not allowed")
+			raise IOError(EINVAL, "Negative size not allowed")
 		elif size < self.pos:
 			self.pos = size
 		self.buf = self.getvalue()[:size]
@@ -125,7 +128,7 @@ class StringIO:
 		newpos = self.pos + len(s)
 		if self.pos < self.len:
 			if self.buflist:
-				self.buf = self.buf + string.joinfields(self.buflist, '')
+				self.buf += EMPTYSTRING.join(self.buflist)
 				self.buflist = []
 			self.buflist = [self.buf[:self.pos], s, self.buf[newpos:]]
 			self.buf = ''
@@ -136,13 +139,13 @@ class StringIO:
 			self.len = newpos
 		self.pos = newpos
 	def writelines(self, list):
-		self.write(string.joinfields(list, ''))
+		self.write(EMPTYSTRING.join(list))
 	def flush(self):
 		if self.closed:
 			raise ValueError, "I/O operation on closed file"
 	def getvalue(self):
 		if self.buflist:
-			self.buf = self.buf + string.joinfields(self.buflist, '')
+			self.buf += EMPTYSTRING.join(self.buflist)
 			self.buflist = []
 		return self.buf
 
