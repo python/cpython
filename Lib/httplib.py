@@ -370,50 +370,9 @@ class HTTPResponse:
             return ''
 
         if self.chunked:
-            assert self.chunked != _UNKNOWN
-            chunk_left = self.chunk_left
-            value = ''
-            while 1:
-                if chunk_left is None:
-                    line = self.fp.readline()
-                    i = line.find(';')
-                    if i >= 0:
-                        line = line[:i] # strip chunk-extensions
-                    chunk_left = int(line, 16)
-                    if chunk_left == 0:
-                        break
-                if amt is None:
-                    value = value + self._safe_read(chunk_left)
-                elif amt < chunk_left:
-                    value = value + self._safe_read(amt)
-                    self.chunk_left = chunk_left - amt
-                    return value
-                elif amt == chunk_left:
-                    value = value + self._safe_read(amt)
-                    self._safe_read(2)  # toss the CRLF at the end of the chunk
-                    self.chunk_left = None
-                    return value
-                else:
-                    value = value + self._safe_read(chunk_left)
-                    amt = amt - chunk_left
-
-                # we read the whole chunk, get another
-                self._safe_read(2)      # toss the CRLF at the end of the chunk
-                chunk_left = None
-
-            # read and discard trailer up to the CRLF terminator
-            ### note: we shouldn't have any trailers!
-            while 1:
-                line = self.fp.readline()
-                if line == '\r\n':
-                    break
-
-            # we read everything; close the "file"
-            self.close()
-
-            return value
-
-        elif amt is None:
+            return self._read_chunked(amt)
+        
+        if amt is None:
             # unbounded read
             if self.will_close:
                 s = self.fp.read()
@@ -426,7 +385,7 @@ class HTTPResponse:
             if amt > self.length:
                 # clip the read to the "end of response"
                 amt = self.length
-            self.length = self.length - amt
+            self.length -= amt
 
         # we do not use _safe_read() here because this may be a .will_close
         # connection, and the user is reading more bytes than will be provided
@@ -435,6 +394,54 @@ class HTTPResponse:
 
         return s
 
+    def _read_chunked(self, amt):
+        assert self.chunked != _UNKNOWN
+        chunk_left = self.chunk_left
+        value = ''
+
+        # XXX This accumulates chunks by repeated string concatenation,
+        # which is not efficient as the number or size of chunks gets big.
+        while 1:
+            if chunk_left is None:
+                line = self.fp.readline()
+                i = line.find(';')
+                if i >= 0:
+                    line = line[:i] # strip chunk-extensions
+                chunk_left = int(line, 16)
+                if chunk_left == 0:
+                    break
+            if amt is None:
+                value += self._safe_read(chunk_left)
+            elif amt < chunk_left:
+                value += self._safe_read(amt)
+                self.chunk_left = chunk_left - amt
+                return value
+            elif amt == chunk_left:
+                value += self._safe_read(amt)
+                self._safe_read(2)  # toss the CRLF at the end of the chunk
+                self.chunk_left = None
+                return value
+            else:
+                value += self._safe_read(chunk_left)
+                amt -= chunk_left
+
+            # we read the whole chunk, get another
+            self._safe_read(2)      # toss the CRLF at the end of the chunk
+            chunk_left = None
+
+        # read and discard trailer up to the CRLF terminator
+        ### note: we shouldn't have any trailers!
+        while 1:
+            line = self.fp.readline()
+            if line == '\r\n':
+                break
+
+        # we read everything; close the "file"
+        # XXX Shouldn't the client close the file?
+        self.close()
+
+        return value
+    
     def _safe_read(self, amt):
         """Read the number of bytes requested, compensating for partial reads.
 
