@@ -1,3 +1,96 @@
+Tue Jan 11 10:56:00 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Makefile.in: "make (local)clean" shouldn't bother about Include
+
+	* Modules/md5.h: define PROTOTYES as 1 if HAVE_PROTOTYPES is
+	defined
+
+	* Modules/md5module.c: grand cleanup
+
+	* Modules/Setup.sgi: renamed to Setup.irix4
+
+	* Modules/Setup.sunos5: renamed to Setup.solaris2
+
+	* Modules/Setup.in: some makes (e.g. Ultrix) don't strip trailing
+	whitespace from variable definitions -- make sure there isn't any
+	in the defs used to generate PYTHONPATH
+
+	* Many modules and objects: use 'staticforward' where needed
+
+	* Include/object.h: added #define 'staticforward' as either static
+	or extern depending on BAD_STATIC_FORWARD
+
+	* acconfig.h: added BAD_STATIC_FORWARD
+
+	* configure.in: added test for bad static forward
+
+Mon Jan 10 10:35:21 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/md5module.c: SCO ODT 3.0 dependent fix
+
+	* Objects/xxobject.c: quote size fields as tp_basicsize instead of
+	(incorrectly) tp_size
+
+	* Objects/listobject.c (cmp): arguments must be const!!!
+
+	* Modules/imageopmodule.c: another attempt at casting away
+	warnings about changed semantics in ANSI C
+
+	* Modules/regexpr.c: cast away warning about changed semantics in
+	ANSI C
+
+	* Modules/Makefile.pre.in: add LIBC_S (shared version of -lc, to
+	be figured out by configure)
+
+	* README, Python/version.c: version 1.0.0 BETA 6
+
+	* README: fixed description of Setup (which was buried under the
+	SVR4 exception!); added description of --prefix, --exec-prefix,
+	--with-libm and --with-libc
+
+	* configure.in: added --with-libc=... and --with-libm=...
+
+	* Modules/Makefile.pre.in: Remove dependency of Setup on Setup.in,
+	so it is only copied when Setup does not exist at all; add
+	prefix=/usr/local so Setup can base default path on --prefix
+	option to toplevel configure script
+
+	* Modules/Setup.in: clarified build procedure in comments; don't
+	include GNN's timing module by default; use $(prefix) instead
+	requiring manual edit of DESTDIR
+
+	* Makefile.in: replace DESTDIR by prefix and exec_prefix and
+	updated affected targets; added inclinstall and libainstall
+	targets
+
+	* Objects/accessobject.c: removed (???) from comment to avoid
+	trigraph warning
+
+	* Makefile.in (libinstall): correct typo: (D)DESTDIR
+
+Fri Jan  7 10:34:43 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* README: describe --with-sgi-dl and --with-dl-dld
+
+	* Python/Makefile.in: compile import.c with -I$(DLINCLDIR)
+
+	* Python/import.c: check for WITH_SGI_DL and WITH_DL_DLD
+
+	* acconfig.h: added WITH_SGI_DL and WITH_DL_DLD
+
+	* configure.in: added --with-sgi-dl=DIR and
+	--with-dl-dld=DIR,DIR; now require --with-readline=DIR and test
+	for existing directory
+
+	* Lib/test_audioop.py: new module to test (you guessed it) audioop
+
+	* Modules/audioopmodule.c: got rid of adpcm32lin and lin2adpcm3 --
+	Jack says they're not useful
+
+========================================================================
+Release of 1.0.0 BETA 5 (Jan 6 1994)
+========================================================================
+
 Thu Jan  6 13:36:32 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* readline/Makefile: remove some cruft so it works with VPATH
