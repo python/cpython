@@ -36,7 +36,7 @@ Windows Python BUILD numbers
   35    2.1.3 (final)
         8-Apr-2002
   34    2.2.1 (final)
-        9-Apr-2002
+        10-Apr-2002
   33    2.2.1c2
         26-Mar-2002
   32    2.2.1c1
