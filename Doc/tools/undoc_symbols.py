@@ -46,7 +46,7 @@ INCLUDEPATTERN = "*.h"
 # v variable definitions
 # x extern and forward variable declarations
 
-import os, glob, re, sys, tempfile
+import os, glob, re, sys
 
 def findnames(file, prefixes=()):
     names = {}
@@ -83,7 +83,7 @@ def print_undoc_symbols(prefix, docdir, incdir):
     names = dict.keys()
     names.sort()
     for name in names:
-        if docs.find(name) == -1:
+        if not re.search("%s\\W" % name, docs):
             print dict[name], name
 
 if __name__ == '__main__':
