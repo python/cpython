@@ -455,7 +455,7 @@ time_strptime(PyObject *self, PyObject *args)
 {
     PyObject *strptime_module = PyImport_ImportModule("_strptime");
 
-    if (!strptime_module) 
+    if (!strptime_module)
         return NULL;
     return PyObject_CallMethod(strptime_module, "strptime", "O", args);
 }
@@ -811,26 +811,31 @@ floatsleep(double secs)
 #elif defined(MS_WINDOWS)
 	{
 		double millisecs = secs * 1000.0;
+		unsigned long ul_millis;
+
 		if (millisecs > (double)ULONG_MAX) {
-			PyErr_SetString(PyExc_OverflowError, "sleep length is too large");
+			PyErr_SetString(PyExc_OverflowError,
+					"sleep length is too large");
 			return -1;
 		}
 		Py_BEGIN_ALLOW_THREADS
-		/* allow sleep(0) to maintain win32 semantics, and as decreed by
-		   Guido, only the main thread can be interrupted. */
-		if ((unsigned long)millisecs==0 || main_thread != PyThread_get_thread_ident())
-			Sleep((unsigned long)millisecs);
+		/* Allow sleep(0) to maintain win32 semantics, and as decreed
+		 * by Guido, only the main thread can be interrupted.
+		 */
+		ul_millis = (unsigned long)millisecs;
+		if (ul_millis == 0 ||
+		    main_thread != PyThread_get_thread_ident())
+			Sleep(ul_millis);
 		else {
 			DWORD rc;
 			ResetEvent(hInterruptEvent);
-			rc = WaitForSingleObject(hInterruptEvent, (unsigned long)millisecs);
-			if (rc==WAIT_OBJECT_0) {
-				/* yield to make sure real Python signal handler called */
+			rc = WaitForSingleObject(hInterruptEvent, ul_millis);
+			if (rc == WAIT_OBJECT_0) {
+				/* Yield to make sure real Python signal
+				 * handler called.
+				 */
 				Sleep(1);
 				Py_BLOCK_THREADS
-				/* PyErr_SetFromErrno() does the "right thing" wrt signals
-				   if errno=EINTR
-				*/
 				errno = EINTR;
 				PyErr_SetFromErrno(PyExc_IOError);
 				return -1;
