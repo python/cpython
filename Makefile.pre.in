@@ -391,6 +391,8 @@ Parser/grammar.o:	$(srcdir)/Parser/grammar.c \
 Parser/metagrammar.o:	$(srcdir)/Parser/metagrammar.c
 
 
+Python/compile.o Python/symtable.o: $(GRAMMAR_H)
+
 Python/getplatform.o: $(srcdir)/Python/getplatform.c
 		$(CC) -c $(CFLAGS) -DPLATFORM='"$(MACHDEP)"' -o $@ $(srcdir)/Python/getplatform.c
 
