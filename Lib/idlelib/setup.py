@@ -1,5 +1,5 @@
 import os, glob, sys
-from distutils.core import setup
+from distutils.core import setup, Extension
 from distutils.command.build_py import build_py
 from distutils.command.install_lib import install_lib
 import idlever
@@ -111,5 +111,6 @@ For further details, refer to idlefork.sourceforge.net.
                   'install_lib':IDLE_Installer},
       package_dir = {pkgname: pkg_dir},
       packages = [pkgname],
+      ext_modules = [Extension("interrupt", ["interruptmodule.c"])],
       scripts = [os.path.join(pkg_dir, idle_name)]
       )
