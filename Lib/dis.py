@@ -262,7 +262,6 @@ jrel_op('JUMP_FORWARD', 110)    # Number of bytes to skip
 jrel_op('JUMP_IF_FALSE', 111)   # ""
 jrel_op('JUMP_IF_TRUE', 112)    # ""
 jabs_op('JUMP_ABSOLUTE', 113)   # Target byte offset from beginning of code
-jrel_op('FOR_LOOP', 114)        # Number of bytes to skip
 
 name_op('LOAD_GLOBAL', 116)     # Index in name list
 
