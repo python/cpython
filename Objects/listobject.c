@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -27,6 +27,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "allobjects.h"
 #include "modsupport.h"
 #include "ceval.h"
+#ifdef STDC_HEADERS
+#include <stddef.h>
+#else
+#include <sys/types.h>		/* For size_t */
+#endif
 
 object *
 newlistobject(size)
@@ -34,7 +39,7 @@ newlistobject(size)
 {
 	int i;
 	listobject *op;
-	MALLARG nbytes;
+	size_t nbytes;
 	if (size < 0) {
 		err_badcall();
 		return NULL;
@@ -211,21 +216,17 @@ static object *
 list_repr(v)
 	listobject *v;
 {
-	object *s, *t, *comma;
+	object *s, *comma;
 	int i;
 	s = newstringobject("[");
 	comma = newstringobject(", ");
 	for (i = 0; i < v->ob_size && s != NULL; i++) {
 		if (i > 0)
 			joinstring(&s, comma);
-		t = reprobject(v->ob_item[i]);
-		joinstring(&s, t);
-		DECREF(t);
+		joinstring_decref(&s, reprobject(v->ob_item[i]));
 	}
-	DECREF(comma);
-	t = newstringobject("]");
-	joinstring(&s, t);
-	DECREF(t);
+	XDECREF(comma);
+	joinstring_decref(&s, newstringobject("]"));
 	return s;
 }
 
@@ -500,15 +501,11 @@ listappend(self, args)
 	return ins(self, (int) self->ob_size, v);
 }
 
-static object *cmpfunc;
+static object *comparefunc;
 
 static int
 cmp(v, w)
-#ifdef __STDC__
-	void *v, *w;
-#else
-	char *v, *w;
-#endif
+	const ANY *v, *w;
 {
 	object *t, *res;
 	long i;
@@ -516,14 +513,14 @@ cmp(v, w)
 	if (err_occurred())
 		return 0;
 
-	if (cmpfunc == NULL)
+	if (comparefunc == NULL)
 		return cmpobject(* (object **) v, * (object **) w);
 
 	/* Call the user-supplied comparison function */
 	t = mkvalue("OO", * (object **) v, * (object **) w);
 	if (t == NULL)
 		return 0;
-	res = call_object(cmpfunc, t);
+	res = call_object(comparefunc, t);
 	DECREF(t);
 	if (res == NULL)
 		return 0;
@@ -547,24 +544,24 @@ listsort(self, args)
 	listobject *self;
 	object *args;
 {
-	object *save_cmpfunc;
+	object *save_comparefunc;
 	if (self->ob_size <= 1) {
 		INCREF(None);
 		return None;
 	}
-	save_cmpfunc = cmpfunc;
-	cmpfunc = args;
-	if (cmpfunc != NULL) {
+	save_comparefunc = comparefunc;
+	comparefunc = args;
+	if (comparefunc != NULL) {
 		/* Test the comparison function for obvious errors */
-		(void) cmp(&self->ob_item[0], &self->ob_item[1]);
+		(void) cmp((ANY *)&self->ob_item[0], (ANY *)&self->ob_item[1]);
 		if (err_occurred()) {
-			cmpfunc = save_cmpfunc;
+			comparefunc = save_comparefunc;
 			return NULL;
 		}
 	}
 	qsort((char *)self->ob_item,
 				(int) self->ob_size, sizeof(object *), cmp);
-	cmpfunc = save_cmpfunc;
+	comparefunc = save_comparefunc;
 	if (err_occurred())
 		return NULL;
 	INCREF(None);
@@ -610,6 +607,32 @@ sortlist(v)
 		return -1;
 	DECREF(v);
 	return 0;
+}
+
+object *
+listtuple(v)
+	object *v;
+{
+	object *w;
+	object **p;
+	int n;
+	if (v == NULL || !is_listobject(v)) {
+		err_badcall();
+		return NULL;
+	}
+	n = ((listobject *)v)->ob_size;
+	w = newtupleobject(n);
+	if (w == NULL)
+		return NULL;
+	p = ((tupleobject *)w)->ob_item;
+	memcpy((ANY *)p,
+	       (ANY *)((listobject *)v)->ob_item,
+	       n*sizeof(object *));
+	while (--n >= 0) {
+		INCREF(*p);
+		p++;
+	}
+	return w;
 }
 
 static object *
@@ -675,13 +698,13 @@ listremove(self, args)
 }
 
 static struct methodlist list_methods[] = {
-	{"append",	listappend},
-	{"count",	listcount},
-	{"index",	listindex},
-	{"insert",	listinsert},
-	{"sort",	listsort},
-	{"remove",	listremove},
-	{"reverse",	listreverse},
+	{"append",	(method)listappend},
+	{"count",	(method)listcount},
+	{"index",	(method)listindex},
+	{"insert",	(method)listinsert},
+	{"sort",	(method)listsort},
+	{"remove",	(method)listremove},
+	{"reverse",	(method)listreverse},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -694,13 +717,13 @@ list_getattr(f, name)
 }
 
 static sequence_methods list_as_sequence = {
-	list_length,	/*sq_length*/
-	list_concat,	/*sq_concat*/
-	list_repeat,	/*sq_repeat*/
-	list_item,	/*sq_item*/
-	list_slice,	/*sq_slice*/
-	list_ass_item,	/*sq_ass_item*/
-	list_ass_slice,	/*sq_ass_slice*/
+	(inquiry)list_length, /*sq_length*/
+	(binaryfunc)list_concat, /*sq_concat*/
+	(intargfunc)list_repeat, /*sq_repeat*/
+	(intargfunc)list_item, /*sq_item*/
+	(intintargfunc)list_slice, /*sq_slice*/
+	(intobjargproc)list_ass_item, /*sq_ass_item*/
+	(intintobjargproc)list_ass_slice, /*sq_ass_slice*/
 };
 
 typeobject Listtype = {
@@ -709,12 +732,12 @@ typeobject Listtype = {
 	"list",
 	sizeof(listobject),
 	0,
-	list_dealloc,	/*tp_dealloc*/
-	list_print,	/*tp_print*/
-	list_getattr,	/*tp_getattr*/
+	(destructor)list_dealloc, /*tp_dealloc*/
+	(printfunc)list_print, /*tp_print*/
+	(getattrfunc)list_getattr, /*tp_getattr*/
 	0,		/*tp_setattr*/
-	list_compare,	/*tp_compare*/
-	list_repr,	/*tp_repr*/
+	(cmpfunc)list_compare, /*tp_compare*/
+	(reprfunc)list_repr, /*tp_repr*/
 	0,		/*tp_as_number*/
 	&list_as_sequence,	/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
