@@ -12,7 +12,7 @@ program is represented by objects or by relations between objects.
 
 Every object has an identity, a type and a value.  An object's
 \emph{identity} never changes once it has been created; you may think
-of it as the object's address in memory.  The `\code{is}' operator
+of it as the object's address in memory.  The `\keyword{is}' operator
 compares the identity of two objects; the
 \function{id()}\bifuncindex{id} function returns an integer
 representing its identity (currently implemented as its address).
@@ -1487,74 +1487,116 @@ the common type would be the type of \code{other}, it is sufficient to
 return \code{None}, since the interpreter will also ask the other
 object to attempt a coercion (but sometimes, if the implementation of
 the other type cannot be changed, it is useful to do the conversion to
-the other type here).
+the other type here).  A return value of \code{NotImplemented} is
+equivalent to returning \code{None}.
 \end{methoddesc}
 
-\strong{Coercion rules}: to evaluate \var{x} \var{op} \var{y}, the
-following steps are taken (where \method{__\var{op}__()} and
-\method{__r\var{op}__()} are the method names corresponding to
-\var{op}, e.g., if \var{op} is `\code{+}', \method{__add__()} and
-\method{__radd__()} are used).  If an exception occurs at any point,
-the evaluation is abandoned and exception handling takes over.
+\subsection{Coercion rules\label{coercion-rules}}
+
+This section used to document the rules for coercion.  As the language
+has evolved, the coercion rules have become hard to document
+precisely; documenting what one version of one particular
+implementation does is undesirable.  Instead, here are some informal
+guidelines regarding coercion.  In Python 3.0, coercion will not be
+supported.
 
 \begin{itemize}
 
-\item[0.] If \var{x} is a string object and \var{op} is the modulo
-        operator (\%), the string formatting operation is invoked and
-        the remaining steps are skipped.
+\item
 
-\item[1.] If \var{x} is a class instance:
+If the left operand of a \% operator is a string or Unicode object, no
+coercion takes place and the string formatting operation is invoked
+instead.
 
-        \begin{itemize}
+\item
 
-        \item[1a.] If \var{x} has a \method{__coerce__()} method:
-        replace \var{x} and \var{y} with the 2-tuple returned by
-        \code{\var{x}.__coerce__(\var{y})}; skip to step 2 if the
-        coercion returns \code{None}.
+It is no longer recommended to define a coercion operation.
+Mixed-mode operations on types that don't define coercion pass the
+original arguments to the operation.
 
-        \item[1b.] If neither \var{x} nor \var{y} is a class instance
-        after coercion, go to step 3.
+\item
 
-        \item[1c.] If \var{x} has a method \method{__\var{op}__()}, return
-        \code{\var{x}.__\var{op}__(\var{y})}; otherwise, restore \var{x} and
-        \var{y} to their value before step 1a.
+New-style classes (those derived from \class{object}) never invoke the
+\method{__coerce__()} method in response to a binary operator; the only
+time \method{__coerce__()} is invoked is when the built-in function
+\function{coerce()} is called.
 
-        \end{itemize}
+\item
 
-\item[2.] If \var{y} is a class instance:
+For most intents and purposes, an operator that returns
+\code{NotImplemented} is treated the same as one that is not
+implemented at all.
 
-        \begin{itemize}
+\item
 
-        \item[2a.] If \var{y} has a \method{__coerce__()} method:
-        replace \var{y} and \var{x} with the 2-tuple returned by
-        \code{\var{y}.__coerce__(\var{x})}; skip to step 3 if the
-        coercion returns \code{None}.
+Below, \method{__op__()} and \method{__rop__()} are used to signify
+the generic method names corresponding to an operator;
+\method{__iop__} is used for the corresponding in-place operator.  For
+example, for the operator `\code{+}', \method{__add__()} and
+\method{__radd__()} are used for the left and right variant of the
+binary operator, and \method{__iadd__} for the in-place variant.
 
-        \item[2b.] If neither \var{x} nor \var{y} is a class instance
-        after coercion, go to step 3.
+\item
 
-        \item[2b.] If \var{y} has a method \method{__r\var{op}__()},
-        return \code{\var{y}.__r\var{op}__(\var{x})}; otherwise,
-        restore \var{x} and \var{y} to their value before step 2a.
+For objects \var{x} and \var{y}, first \code{\var{x}.__op__(\var{y})}
+is tried.  If this is not implemented or returns \code{NotImplemented},
+\code{\var{y}.__rop__(\var{x})} is tried.  If this is also not
+implemented or returns \code{NotImplemented}, a \exception{TypeError}
+exception is raised.  But see the following exception:
 
-        \end{itemize}
+\item
 
-\item[3.] We only get here if neither \var{x} nor \var{y} is a class
-instance.
+Exception to the previous item: if the left operand is an instance of
+a built-in type or a new-style class, and the right operand is an
+instance of a proper subclass of that type or class, the right
+operand's \method{__rop__()} method is tried \emph{before} the left
+operand's \method{__op__()} method.  This is done so that a subclass can
+completely override binary operators.  Otherwise, the left operand's
+__op__ method would always accept the right operand: when an instance
+of a given class is expected, an instance of a subclass of that class
+is always acceptable.
 
-        \begin{itemize}
+\item
 
-        \item[3a.] If \var{op} is `\code{+}' and \var{x} is a
-        sequence, sequence concatenation is invoked.
+When either operand type defines a coercion, this coercion is called
+before that type's \method{__op__()} or \method{__rop__()} method is
+called, but no sooner.  If the coercion returns an object of a
+different type for the operand whose coercion is invoked, part of the
+process is redone using the new object.
 
-        \item[3b.] If \var{op} is `\code{*}' and one operand is a
-        sequence and the other an integer, sequence repetition is
-        invoked.
+\item
 
-        \item[3c.] Otherwise, both operands must be numbers; they are
-        coerced to a common type if possible, and the numeric
-        operation is invoked for that type.
+When an in-place operator (like `\code{+=}') is used, if the left
+operand implements \method{__iop__()}, it is invoked without any
+coercion.  When the operation falls back to \method{__op__()} and/or
+\method{__rop__()}, the normal coercion rules apply.
 
-        \end{itemize}
+\item
+
+In \var{x}\code{+}\var{y}, if \var{x} is a sequence that implements
+sequence concatenation, sequence concatenation is invoked.
+
+\item
+
+In \var{x}\code{*}\var{y}, if one operator is a sequence that
+implements sequence repetition, and the other is an integer
+(\class{int} or \class{long}), sequence repetition is invoked.
+
+\item
+
+Rich comparisons (implemented by methods \method{__eq__()} and so on)
+never use coercion.  Three-way comparison (implemented by
+\method{__cmp__()}) does use coercion under the same conditions as
+other binary operations use it.
+
+\item
+
+In the current implementation, the built-in numeric types \class{int},
+\class{long} and \class{float} do not use coercion; the type
+\class{complex} however does use it.  The difference can become
+apparent when subclassing these types.  Over time, the type
+\class{complex} may be fixed to avoid coercion.  All these types
+implement a \method{__coerce__()} method, for use by the built-in
+\function{coerce()} function.
 
 \end{itemize}
