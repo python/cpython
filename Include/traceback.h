@@ -38,8 +38,8 @@ int PyTraceBack_Store Py_PROTO((PyObject *));
 int PyTraceBack_Print Py_PROTO((PyObject *, PyObject *));
 
 /* Reveale traceback type so we can typecheck traceback objects */
-extern PyTypeObject PyTraceback_Type;
-#define PyTraceback_Check(v) ((v)->ob_type == &PyTraceback_Type)
+extern PyTypeObject PyTraceBack_Type;
+#define PyTraceBack_Check(v) ((v)->ob_type == &PyTraceBack_Type)
 
 #ifdef __cplusplus
 }

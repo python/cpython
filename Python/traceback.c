@@ -68,8 +68,8 @@ tb_dealloc(tb)
 	DEL(tb);
 }
 
-#define Tracebacktype PyTraceback_Type
-#define is_tracebackobject PyTraceback_Check
+#define Tracebacktype PyTraceBack_Type
+#define is_tracebackobject PyTraceBack_Check
 
 typeobject Tracebacktype = {
 	OB_HEAD_INIT(&Typetype)

@@ -912,7 +912,7 @@ eval_code2(co, globals, locals,
 					DECREF(u);
 					u = NULL;
 				}
-				else if (!PyTraceback_Check(u)) {
+				else if (!PyTraceBack_Check(u)) {
 					err_setstr(TypeError,
 				    "raise 3rd arg must be traceback or None");
 					goto raise_error;
