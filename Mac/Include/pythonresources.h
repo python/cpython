@@ -26,7 +26,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ** Resource-IDs in use by Python.
 **
 ** All resources used by the python interpreter itself fall
-** in the range 128-256.
+** in the range 228-256. The range 128-228 is not used, because
+** there is too much chance of conflicts with other packages.
 **
 ** Standard python modules use resources in the range
 ** 256-512.
@@ -41,23 +42,23 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 /* The alert for "No Python directory, where is it?" (OBSOLETE) */
-#define NOPYTHON_ALERT	128
+#define NOPYTHON_ALERT	228
 #define YES_ITEM		1
 #define NO_ITEM			2
 #define CURWD_ITEM		3
 
 /* The alert for "this is an applet template" */
-#define NOPYC_ALERT		129
+#define NOPYC_ALERT		229
 
 /* The dialog for our GetDirectory and PromptGetFile call */
-#define GETDIR_ID 		130		/* Resource ID for our "get directory" */
-#define GETFILEPROMPT_ID 132	/* Resource id for prompted get file */
+#define GETDIR_ID 		230		/* Resource ID for our "get directory" */
+#define GETFILEPROMPT_ID 232	/* Resource id for prompted get file */
 #define PROMPT_ITEM		10		/* The prompt, at the top */
 #define SELECTCUR_ITEM	11	/* "Select current directory" button */
 
 
 /* The dialog for interactive options */
-#define OPT_DIALOG		131		/* Resource ID for dialog */
+#define OPT_DIALOG		231		/* Resource ID for dialog */
 #define OPT_OK			1
 #define OPT_CANCEL		2
 #define OPT_INSPECT		3
@@ -73,21 +74,21 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define OPT_HELP	16
 
 /* Dialog for 'No preferences directory' */
-#define NOPREFDIR_ID	133
+#define NOPREFDIR_ID	233
 
 /* Dialog for 'Bad or outdated preferences' */
-#define BADPREFERENCES_ID	134
+#define BADPREFERENCES_ID	234
 #define BADPREF_DELETE		1
 #define BADPREF_CONTINUE	2
 #define BADPREF_QUIT		3
 /* Dialog for 'Bad preference file' */
-#define BADPREFFILE_ID	135
+#define BADPREFFILE_ID	235
 
 /* About box */
-#define ABOUT_ID		136
+#define ABOUT_ID		236
 
 /* No preferences file name resource */
-#define NOPREFNAME_ID	137
+#define NOPREFNAME_ID	237
 
 /* EditPythonPrefs range. Needed here to forestall conflicts with applets */
 #define EDITPYTHONPREFS_MIN	508
@@ -108,27 +109,27 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ** of the resource file chain and the non-override version of the resource is
 ** searched in any resource file.
 **
-** The effect of this is that, for example, a 'Popt' of 128 in the application or
+** The effect of this is that, for example, a 'Popt' of 228 in the application or
 ** shared library provides default options for use when no preferences are set,
-** while a 'Popt' of 129 (in the application *only*) overrides any options in the
+** while a 'Popt' of 229 (in the application *only*) overrides any options in the
 ** preferences file.
 */
 
 /* The STR resource that holds the preference file name */
-/* #define PREFFILENAME_ID 128 */
+/* #define PREFFILENAME_ID 228 */
 #define PREFFILENAME_NAME "\pPythonPreferenceFileName"
 
 /* The STR# resource for sys.path initialization */
-#define PYTHONPATH_ID 128
-#define PYTHONPATHOVERRIDE_ID 129
+#define PYTHONPATH_ID 228
+#define PYTHONPATHOVERRIDE_ID 229
 
 /* The alis resource for locating the python home directory */
-#define PYTHONHOME_ID 128
-#define PYTHONHOMEOVERRIDE_ID 129
+#define PYTHONHOME_ID 228
+#define PYTHONHOMEOVERRIDE_ID 229
 
 /* The Python options resource and offset of its members */
-#define PYTHONOPTIONS_ID 128
-#define PYTHONOPTIONSOVERRIDE_ID 129
+#define PYTHONOPTIONS_ID 228
+#define PYTHONOPTIONSOVERRIDE_ID 229
 #if 0
 #define POPT_INSPECT	0
 #define POPT_VERBOSE	1

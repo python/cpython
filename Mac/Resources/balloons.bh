@@ -1,4 +1,4 @@
-DIALOG 131 Options
+DIALOG 231 Options
 1.1 Start the interpreter.
 2.1 Return to the finder.
 3.1 Turn this item on to get the standard >>> prompt after a script terminates.
@@ -22,7 +22,7 @@ DIALOG 131 Options
 14.3 Deselecting this enables the new package and site-python features.
 16.1 Turn off balloon help.
 END-DIALOG
-DIALOG 134
+DIALOG 234
 1.1 Deleting the incorrect preference will not always work, but Python will run with standard options. 
 2.1 Python will continue to run, but with standard options.
 3.1 Don't run, return to the finder.
