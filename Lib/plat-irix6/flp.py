@@ -448,7 +448,3 @@ def _printform(form):
 	print '    Label ', i.Label, ' size/style/col/align ', i.Size,i.Style, i.Lcol, i.Alignment
 	print '    cols ', i.Colors
 	print '    cback ', i.Callback, i.Argument
-
-# Local variables:
-# py-indent-offset: 4
-# end:
