@@ -249,7 +249,7 @@ except ImportError:
         release = acquire
 
     _counter = _ThreadSafeCounter(_DummyMutex())
-    _tempdir_lock = _DummyMutes()
+    _tempdir_lock = _DummyMutex()
     del _DummyMutex
 
 else:
