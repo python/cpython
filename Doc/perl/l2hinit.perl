@@ -1,5 +1,10 @@
 #LaTeX2HTML Version 96.1 : dot.latex2html-init		-*- perl -*-
 #
+#  Significantly revised by Fred L. Drake, Jr. <fdrake@acm.org> for use
+#  with the Python documentation.
+#
+#  New name to avoid distributing "dot" files with the Python documentation.
+#
 
 $INFO = 1;              # 0 = do not make a "About this document..." section
 $MAX_LINK_DEPTH = 3;
@@ -47,101 +52,29 @@ $mydir = getcwd() . "$dd$mydir"
 $LATEX2HTMLSTYLES = "$mydir$envkey$LATEX2HTMLSTYLES";
 
 
+sub make_nav_panel{
+    ($NEXT_TITLE ? "$NEXT\n" : '')
+      . ($UP_TITLE ? "$UP\n" : '')
+      . ($PREVIOUS_TITLE ? "$PREVIOUS\n" : '')
+      . "$CONTENTS\n$INDEX"
+#      . " $CUSTOM_BUTTONS"
+      . "<br>\n"
+      . ($NEXT_TITLE ? "<b> Next:</b> $NEXT_TITLE\n" : '')
+      . ($UP_TITLE ? "<b>Up:</b> $UP_TITLE\n" : '')
+      . ($PREVIOUS_TITLE ? "<b>Previous:</b> $PREVIOUS_TITLE\n" : '');
+}
+
 sub top_navigation_panel {
-
-    # Now add a few buttons with a space between them
-    "<div class=navigation>\n" .
-    "$NEXT\n$UP\n$PREVIOUS\n$CONTENTS\n$INDEX $CUSTOM_BUTTONS" .
-
-    "<br>\n" .		# Line break
-
-    # If ``next'' section exists, add its title to the navigation panel
-    ($NEXT_TITLE ? "<b> Next:</b> $NEXT_TITLE\n" : undef) .
-
-    # Similarly with the ``up'' title ...
-    ($UP_TITLE ? "<b>Up:</b> $UP_TITLE\n" : undef) .
-
-    # ... and the ``previous'' title
-    ($PREVIOUS_TITLE ? "<b> Previous:</b> $PREVIOUS_TITLE\n" : undef) .
-
-    #  Line Break, horizontal rule (3-d dividing line) and new paragraph
-    "<br><hr><p></div>"
+    "<div class=navigation>\n"
+      . &make_nav_panel
+      . "<br><hr><p></div>"
 }
 
 sub bot_navigation_panel {
-
-    #  Start with a horizontal rule (3-d dividing line)
-    "<div class=navigation><hr>".
-
-    # Now add a few buttons with a space between them
-    "$NEXT\n$UP\n$PREVIOUS\n$CONTENTS\n$INDEX $CUSTOM_BUTTONS" .
-
-    "<br>\n" .		# Line break
-
-    # If ``next'' section exists, add its title to the navigation panel
-    ($NEXT_TITLE ? "<b> Next:</b> $NEXT_TITLE\n" : undef) .
-
-    # Similarly with the ``up'' title ...
-    ($UP_TITLE ? "<b>Up:</b> $UP_TITLE\n" : undef) .
-
-    # ... and the ``previous'' title
-    ($PREVIOUS_TITLE ? "<b> Previous:</b> $PREVIOUS_TITLE\n" : undef) .
-
-    "</div>"
+    "<div class=navigation><hr>"
+      . &make_nav_panel
+      . "</div>"
 }
-
-
-# sub make_section_heading {
-#     local($text, $level, $anchors) = @_;
-#     local($section_tag) = join('', @curr_sec_id);
-#     local($align,$pre_anchors);
-#     # separate any invisible anchors or alignment, if this has not already been done
-#     if (!($anchors)){ ($anchors,$text) = &extract_anchors($text) }
-#     else { 
-# 	$anchors =~ s/(ALIGN=\"\w*\")/$align = " $1";''/e;
-# 	$anchors = &translate_commands($anchors) if ($anchors =~ /\\/);
-#     }
-#     if (!($text)) {
-# 	# anchor to a single `.' only
-# 	$text = "<a name=SECTION$section_tag>.</a>$anchors\n";
-#     } elsif ($anchors) {
-# 	# keep it short and simple!
-# 	$text = "<a name=SECTION$section_tag>$text</a>";
-#     } elsif (!($text =~ /<A[^\w]/io)) {
-# 	# no embedded anchors, so anchor it all
-# 	$text = "<a name=SECTION$section_tag>\n" . $text . "</a>";
-#     } else {
-# 	# there are embedded anchors; these cannot be nested
-# 	local ($tmp) = $text;
-# 	$tmp =~ s/<//o ;	# find 1st <
-# 	if ($`) {		# anchor text before the first < 
-# #	    $text = "<A NAME=\"SECTION$section_tag\">\n" . $` . "</A>\n<" . $';
-# 	    $text = "<a name=SECTION$section_tag>\n" . $` . "</a>";
-# 	    $pre_anchors = "<" . $';
-#             if ($pre_anchors =~ /^(<A NAME=\"[^\"]+>${anchor_invisible_mark}<\/A>\s*)+$/) {
-#                 $pre_anchors .= "\n"
-#             } else { $text .= $pre_anchors; $pre_anchors = '' }
-# 	} else {
-# 	    # $text starts with a tag
-# 	    local($after,$tmp) = ($','');
-# 	    if ( $after =~ /^A[^\w]/i ) {	
-# 		# it is an anchor already, so need a separate line
-# 		$text = "<a name=SECTION$section_tag>$anchor_invisible_mark</a><br>\n$text";
-# 	    } else {
-# 		# Is it a tag enclosing the anchor ?
-# 		$after =~ s/^(\w)*[\s|>]/$tmp = $1;''/eo;
-# 		if ($after =~ /<A.*<\/$tmp>/) {
-# 		    # it encloses an anchor, so use anchor_mark + break
-# 		    $text = "<a name=SECTION$section_tag>$anchor_invisible_mark</a><br>\n$text";
-# 		} else {
-# 		    # take up to the anchor
-# 		    $text =~ s/^(.*)<A([^\w])/"<a name=SECTION$section_tag>$1<A$2"/oe;
-# 		}
-# 	    }
-# 	}
-#     }
-#     "$pre_anchors\n<$level$align>$text\n<\/$level>";
-# }
 
 
 sub gen_index_id {
@@ -150,84 +83,84 @@ sub gen_index_id {
     sprintf("%s###%s%010d", $str, $extra, ++$global{'max_id'});
 }
 
-# sub make_index_entry {
-#     local($br_id,$str) = @_;
-#     # If TITLE is not yet available (i.e the \index command is in the title of the
-#     # current section), use $ref_before.
-#     $TITLE = $ref_before unless $TITLE;
-#     # Save the reference
-#     $str = gen_index_id($str, '');
-#     $index{$str} .= &make_half_href("$CURRENT_FILE#$br_id");
-#     "<a name=\"$br_id\">$anchor_invisible_mark<\/a>";
-# }
+sub make_index_entry {
+    local($br_id,$str) = @_;
+    # If TITLE is not yet available (i.e the \index command is in the title of the
+    # current section), use $ref_before.
+    $TITLE = $ref_before unless $TITLE;
+    # Save the reference
+    $str = gen_index_id($str, '');
+    $index{$str} .= &make_half_href("$CURRENT_FILE#$br_id");
+    "<a name=\"$br_id\">$anchor_invisible_mark<\/a>";
+}
 
-# sub add_idx {
-#     print "\nDoing the index ...";
-#     local($key, $str, @keys, $index, $level, $count, @previous, @current);
-#     @keys = keys %index;
-#     @keys = sort keysort  @keys;
-#     $level = 0;
-#     foreach $key (@keys) {
-# 	@current = split(/!/, $key);
-# 	$count = 0;
-# 	while ($current[$count] eq $previous[$count]) {
-# 	    $count++;
-# 	}
-# 	while ($count > $level) {
-# 	    $index .= "<dl compact>\n";
-# 	    $level++;
-# 	}
-# 	while ($count < $level) {
-# 	    $index .= "</dl>\n";
-# 	    $level--;
-# 	}
-# 	foreach $term (@current[$count .. $#current-1]) {
-# 	    # need to "step in" a little
-# 	    $index .= "<dt>" . $term . "\n<dl compact>\n";
-# 	    $level++;
-# 	}
-# 	$str = $current[$#current];
-# 	$str =~ s/\#\#\#\d+$//o;	# Remove the unique id's
-# 	$str =~ s/\#\#\#[DR]EF\d+$//o;	# Remove the unique id's
-# 	if (&index_key_eq(join('',@current), join('',@previous))) {
-# 	    $index .= ",\n$index{$key}" . $cross_ref_visible_mark . "</a>"; }
-# 	else {
-# 	    $index .= "\n<dt>$index{$key}" . $str . "</a>"; }
-# 	@previous = @current;
-#     }
-#     while ($count < $level) {
-# 	$index .= "</dl>\n";
-# 	$level--;
-#     }
-#     s/$idx_mark/<dl compact>$index<\/dl>/o;
-# }
+sub add_idx {
+    print "\nDoing the index ...";
+    local($key, $str, @keys, $index, $level, $count, @previous, @current);
+    @keys = keys %index;
+    @keys = sort keysort  @keys;
+    $level = 0;
+    foreach $key (@keys) {
+	@current = split(/!/, $key);
+	$count = 0;
+	while ($current[$count] eq $previous[$count]) {
+	    $count++;
+	}
+	while ($count > $level) {
+	    $index .= "<dl compact>\n";
+	    $level++;
+	}
+	while ($count < $level) {
+	    $index .= "</dl>\n";
+	    $level--;
+	}
+	foreach $term (@current[$count .. $#current-1]) {
+	    # need to "step in" a little
+	    $index .= "<dt>" . $term . "\n<dl compact>\n";
+	    $level++;
+	}
+	$str = $current[$#current];
+	$str =~ s/\#\#\#\d+$//o;	# Remove the unique id's
+	$str =~ s/\#\#\#[DR]EF\d+$//o;	# Remove the unique id's
+	if (&index_key_eq(join('',@current), join('',@previous))) {
+	    $index .= ",\n$index{$key}" . $cross_ref_visible_mark . "</a>"; }
+	else {
+	    $index .= "\n<dt>$index{$key}" . $str . "</a>"; }
+	@previous = @current;
+    }
+    while ($count < $level) {
+	$index .= "</dl>\n";
+	$level--;
+    }
+    s/$idx_mark/<dl compact>$index<\/dl>/o;
+}
 
 
-# sub index_key_eq {
-#     local($a,$b) = @_;
-#     $a = &clean_key($a);
-#     $a =~ s/\#\#\#\d+$//o;  		# Remove the unique id's
-#     $a =~ s/\#\#\#[dr]ef\d+$//o;	# Remove the unique id's
-#     $b = &clean_key($b);
-#     $b =~ s/\#\#\#\d+$//o;  		# Remove the unique id's
-#     $b =~ s/\#\#\#[dr]ef\d+$//o;	# Remove the unique id's
-#     $a eq $b;
-# }
+sub index_key_eq{
+    local($a,$b) = @_;
+    $a = &clean_key($a);
+    $a =~ s/\#\#\#\d+$//o;  		# Remove the unique id's
+    $a =~ s/\#\#\#[dr]ef\d+$//o;	# Remove the unique id's
+    $b = &clean_key($b);
+    $b =~ s/\#\#\#\d+$//o;  		# Remove the unique id's
+    $b =~ s/\#\#\#[dr]ef\d+$//o;	# Remove the unique id's
+    $a eq $b;
+}
 
 # need to remove leading <...>
-# sub clean_key {
-#     local ($_) = @_;
-#     tr/A-Z/a-z/;
-#     s/\s//;
-#     s/^<[a-z][-._a-z0-9]*>//;	# Remove leading <gi>
-#     $_;
-# }
+sub clean_key{
+    local ($_) = @_;
+    tr/A-Z/a-z/;
+    s/\s//;
+    s/^<[a-z][-._a-z0-9]*>//;	# Remove leading <gi> (no attributes)
+    $_;
+}
 
 
 $idx_module_mark = '<tex2html_idx_module_mark>';
 $idx_module_title = 'Module Index';
 
-sub add_module_idx {
+sub add_module_idx{
     print "\nDoing the module index ...";
     local($key, @keys, $index);
     $index = "<p>";
@@ -261,7 +194,7 @@ sub do_cmd_tableofcontents {
     $TITLE = $toc_title;
     $tocfile = $CURRENT_FILE;
     local($closures,$reopens) = &preserve_open_tags();
-    &anchor_label("contents",$CURRENT_FILE,$_);	# this is added
+    &anchor_label("contents",$CURRENT_FILE,$_);		# this is added
     join('', "<BR>\n", $closures
 	 , &make_section_heading($toc_title, "H2"), $toc_mark
 	 , $reopens, $_);
@@ -272,7 +205,7 @@ sub do_cmd_listoffigures {
     $TITLE = $lof_title;
     $loffile = $CURRENT_FILE;
     local($closures,$reopens) = &preserve_open_tags();
-    &anchor_label("lof",$CURRENT_FILE,$_);	# this is added
+    &anchor_label("lof",$CURRENT_FILE,$_);		# this is added
     join('', "<BR>\n", $closures
 	 , &make_section_heading($lof_title, "H2"), $lof_mark
 	 , $reopens, $_);
@@ -283,7 +216,7 @@ sub do_cmd_listoftables {
     $TITLE = $lot_title;
     $lotfile = $CURRENT_FILE;
     local($closures,$reopens) = &preserve_open_tags();
-    &anchor_label("lot",$CURRENT_FILE,$_);	# this is added
+    &anchor_label("lot",$CURRENT_FILE,$_);		# this is added
     join('', "<BR>\n", $closures
 	 , &make_section_heading($lot_title, "H2"), $lot_mark
 	 , $reopens, $_);
@@ -320,7 +253,7 @@ sub do_cmd_textohtmlindex {
     local($heading) = join('',&make_section_heading($idx_title, "H2"),
 			   $idx_mark);
     local($pre,$post) = &minimize_open_tags($heading);
-    &anchor_label("genindex",$CURRENT_FILE,$_);	# this is added
+    &anchor_label("genindex",$CURRENT_FILE,$_);		# this is added
     join('',"<BR>\n" , $pre, $_);
 }
 
@@ -377,38 +310,38 @@ sub add_bbl_and_idx_dummy_commands {
 # sectioning command. This subroutine finds what is the outermost level and
 # sets the above to the same level;
 
-%section_commands = ('textohtmlmoduleindex', 2, %section_commands);
+#%section_commands = ('textohtmlmoduleindex', 1, %section_commands);
 
-# sub set_depth_levels {
-#     # Sets $outermost_level
-#     local($level);
-#     #RRM:  do not alter user-set value for  $MAX_SPLIT_DEPTH
-#     foreach $level ("part", "chapter", "section", "subsection",
-# 		    "subsubsection", "paragraph") {
-# 	last if (($outermost_level) = /\\($level)$delimiter_rx/);
-#     }
-#     $level = ($outermost_level ? $section_commands{$outermost_level} :
-# 	      do {$outermost_level = 'section'; 3;});
+sub set_depth_levels {
+    # Sets $outermost_level
+    local($level);
+    #RRM:  do not alter user-set value for  $MAX_SPLIT_DEPTH
+    foreach $level ("part", "chapter", "section", "subsection",
+		    "subsubsection", "paragraph") {
+	last if (($outermost_level) = /\\($level)$delimiter_rx/);
+    }
+    $level = ($outermost_level ? $section_commands{$outermost_level} :
+	      do {$outermost_level = 'section'; 3;});
 
-#     #RRM:  but calculate value for $MAX_SPLIT_DEPTH when a $REL_DEPTH was given
-#     if ($REL_DEPTH && $MAX_SPLIT_DEPTH) { 
-# 	$MAX_SPLIT_DEPTH = $level + $MAX_SPLIT_DEPTH;
-#     } elsif (!($MAX_SPLIT_DEPTH)) { $MAX_SPLIT_DEPTH = 1 };
+    #RRM:  but calculate value for $MAX_SPLIT_DEPTH when a $REL_DEPTH was given
+    if ($REL_DEPTH && $MAX_SPLIT_DEPTH) { 
+	$MAX_SPLIT_DEPTH = $level + $MAX_SPLIT_DEPTH;
+    } elsif (!($MAX_SPLIT_DEPTH)) { $MAX_SPLIT_DEPTH = 1 };
 
-#     %unnumbered_section_commands = (
-#           'tableofcontents', $level
-# 	, 'listoffigures', $level
-# 	, 'listoftables', $level
-# 	, 'bibliography', $level
-# 	, 'textohtmlindex', $level
-# 	, 'textohtmlmoduleindex', $level
-#         );
+    %unnumbered_section_commands = (
+          'tableofcontents', $level
+	, 'listoffigures', $level
+	, 'listoftables', $level
+	, 'bibliography', $level
+	, 'textohtmlindex', $level
+	, 'textohtmlmoduleindex', $level
+        );
 
-#     %section_commands = ( 
-# 	  %unnumbered_section_commands
-#         , %section_commands
-#         );
-# }
+    %section_commands = ( 
+	  %unnumbered_section_commands
+        , %section_commands
+        );
+}
 
 
 # Fix from Ross Moore for ']' in \item[...]; this can be removed once the next
