@@ -33,6 +33,10 @@ class WrapperTestCase(unittest.TestCase):
             'Expected:\n%s\nbut got:\n%s' % (
                 self.show(result), self.show(expect)))
 
+    def check_wrap (self, text, width, expect):
+        result = wrap(text, width)
+        self.check(result, expect)
+
 
 class WrapTestCase(WrapperTestCase):
 
@@ -42,29 +46,25 @@ class WrapTestCase(WrapperTestCase):
     def test_simple(self):
         '''Simple case: just words, spaces, and a bit of punctuation.'''
 
-        t = "Hello there, how are you this fine day?  I'm glad to hear it!"
+        text = "Hello there, how are you this fine day?  I'm glad to hear it!"
 
-        subcases = [
-            (12, ["Hello there,",
-                  "how are you",
-                  "this fine",
-                  "day?  I'm",
-                  "glad to hear",
-                  "it!"]),
-            (42, ["Hello there, how are you this fine day?",
-                  "I'm glad to hear it!"]),
-            (80, [t]),
-            ]
-
-        for width, expect in subcases:
-            result = wrap(t, width)
-            self.check(result, expect)
+        self.check_wrap(text, 12,
+                        ["Hello there,",
+                         "how are you",
+                         "this fine",
+                         "day?  I'm",
+                         "glad to hear",
+                         "it!"])
+        self.check_wrap(text, 42,
+                        ["Hello there, how are you this fine day?",
+                         "I'm glad to hear it!"])
+        self.check_wrap(text, 80, [text])
 
 
     def test_whitespace(self):
         '''Whitespace munging and end-of-sentence detection.'''
 
-        t = """\
+        text = """\
 This is a paragraph that already has
 line breaks.  But some of its lines are much longer than the others,
 so it needs to be wrapped.
@@ -72,63 +72,53 @@ Some lines are \ttabbed too.
 What a mess!
 """
 
-        expect = [
-                "This is a paragraph that already has line",
-                "breaks.  But some of its lines are much",
-                "longer than the others, so it needs to be",
-                "wrapped.  Some lines are  tabbed too.  What a",
-                "mess!"
-                ]
+        expect = ["This is a paragraph that already has line",
+                  "breaks.  But some of its lines are much",
+                  "longer than the others, so it needs to be",
+                  "wrapped.  Some lines are  tabbed too.  What a",
+                  "mess!"]
 
-        result = self.wrapper.wrap(t)
+        result = self.wrapper.wrap(text)
         self.check(result, expect)
 
-        result = self.wrapper.fill(t)
+        result = self.wrapper.fill(text)
         self.check(result, '\n'.join(expect))
 
 
     def test_wrap_short(self):
         '''Wrapping to make short lines longer.'''
 
-        t = "This is a\nshort paragraph."
+        text = "This is a\nshort paragraph."
 
-        subcases = [
-            (20, ["This is a short",
-                  "paragraph."]),
-            (40, ["This is a short paragraph."]),
-            ]
-
-        for width, expect in subcases:
-            result = wrap(t, width)
-            self.check(result, expect)
+        self.check_wrap(text, 20, ["This is a short",
+                                   "paragraph."])
+        self.check_wrap(text, 40, ["This is a short paragraph."])
 
 
     def test_hyphenated(self):
         '''Test breaking hyphenated words.'''
 
-        t = "this-is-a-useful-feature-for-reformatting-posts-from-tim-peters'ly"
+        text = ("this-is-a-useful-feature-for-"
+                "reformatting-posts-from-tim-peters'ly")
 
-        subcases = [
-            (40, ["this-is-a-useful-feature-for-",
-                  "reformatting-posts-from-tim-peters'ly"]),
-            (41, ["this-is-a-useful-feature-for-",
-                  "reformatting-posts-from-tim-peters'ly"]),
-            (42, ["this-is-a-useful-feature-for-reformatting-",
-                  "posts-from-tim-peters'ly"]),
-            ]
-
-        for width, expect in subcases:
-            result = wrap(t, width)
-            self.check(result, expect)
+        self.check_wrap(text, 40,
+                        ["this-is-a-useful-feature-for-",
+                         "reformatting-posts-from-tim-peters'ly"])
+        self.check_wrap(text, 41,
+                        ["this-is-a-useful-feature-for-",
+                         "reformatting-posts-from-tim-peters'ly"])
+        self.check_wrap(text, 42,
+                        ["this-is-a-useful-feature-for-reformatting-",
+                         "posts-from-tim-peters'ly"])
 
 
     def test_split(self):
         '''Ensure that the standard _split() method works as advertised 
            in the comments.'''
 
-        t = "Hello there -- you goof-ball, use the -b option!"
+        text = "Hello there -- you goof-ball, use the -b option!"
 
-        result = self.wrapper._split(t)
+        result = self.wrapper._split(text)
         self.check(result,
              ["Hello", " ", "there", " ", "--", " ", "you", " ", "goof-",
               "ball,", " ", "use", " ", "the", " ", "-b", " ",  "option!"])
@@ -137,43 +127,38 @@ What a mess!
     def test_funky_punc(self):
         '''Wrap text with long words and lots of punctuation.'''
 
-        t = '''
+        text = '''
 Did you say "supercalifragilisticexpialidocious?"
 How *do* you spell that odd word, anyways?
 '''
-        subcases = [
-            (30, ['Did you say "supercalifragilis',
-                  'ticexpialidocious?" How *do*',
-                  'you spell that odd word,',
-                  'anyways?']),
-            (50, ['Did you say "supercalifragilisticexpialidocious?"',
-                  'How *do* you spell that odd word, anyways?']),
-            ]
-
-        for width, expect in subcases:
-            result = wrap(t, width)
-            self.check(result, expect)
+        self.check_wrap(text, 30,
+                        ['Did you say "supercalifragilis',
+                         'ticexpialidocious?" How *do*',
+                         'you spell that odd word,',
+                         'anyways?'])
+        self.check_wrap(text, 50,
+                        ['Did you say "supercalifragilisticexpialidocious?"',
+                         'How *do* you spell that odd word, anyways?'])
 
 
     def test_long_words(self):        
         '''Test with break_long_words disabled.'''
-        t = '''
+        text = '''
 Did you say "supercalifragilisticexpialidocious?"
 How *do* you spell that odd word, anyways?
 '''
         self.wrapper.break_long_words = 0
         self.wrapper.width = 30
-        result = self.wrapper.wrap(t)
-        expect = [
-                'Did you say',
-                '"supercalifragilisticexpialidocious?"',
-                'How *do* you spell that odd',
-                'word, anyways?'
-                ] 
+        expect = ['Did you say',
+                  '"supercalifragilisticexpialidocious?"',
+                  'How *do* you spell that odd',
+                  'word, anyways?'
+                  ] 
+        result = self.wrapper.wrap(text)
         self.check(result, expect)
 
         # Same thing with kwargs passed to standalone wrap() function.
-        result = wrap(t, width=30, break_long_words=0)
+        result = wrap(text, width=30, break_long_words=0)
         self.check(result, expect)
 
 
