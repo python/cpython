@@ -384,7 +384,7 @@ run_inspect(void)
 		sts = PyRun_AnyFile(stdin, "<stdin>") != 0;
 	return sts;
 }
-
+	
 /*
 ** Import the macfsn module, which will override the Standard File
 ** calls in the macfs builtin module by Navigation Services versions,
@@ -405,6 +405,7 @@ PyMac_InstallNavServicesForSF(void)
 			else {
 				PySys_WriteStderr("use -v for traceback\n");
 			}
+			PyErr_Clear();
 		}
 	}
 }
