@@ -113,6 +113,11 @@ class PyBuildExt(build_ext):
         inc_dirs = ['/usr/include'] + self.compiler.include_dirs
         exts = []
 
+ 	# Check for MacOS X, which doesn't need libm.a at all
+ 	math_libs = ['m']
+ 	if sys.platform == 'Darwin1.2':
+ 	    math_libs = []
+
         # XXX Omitted modules: gl, pure, dl, SGI-specific modules
 
         #
@@ -129,13 +134,17 @@ class PyBuildExt(build_ext):
         # array objects
         exts.append( Extension('array', ['arraymodule.c']) )
         # complex math library functions
-        exts.append( Extension('cmath', ['cmathmodule.c'], libraries=['m']) )
+        exts.append( Extension('cmath', ['cmathmodule.c'],
+                               libraries=math_libs) )
+        
         # math library functions, e.g. sin()
-        exts.append( Extension('math',  ['mathmodule.c'], libraries=['m']) )
+        exts.append( Extension('math',  ['mathmodule.c'],
+                               libraries=math_libs) )
         # fast string operations implemented in C
         exts.append( Extension('strop', ['stropmodule.c']) )
         # time operations and variables
-        exts.append( Extension('time', ['timemodule.c'], libraries=['m']) )
+        exts.append( Extension('time', ['timemodule.c'],
+                               libraries=math_libs) )
         # operator.add() and similar goodies
         exts.append( Extension('operator', ['operator.c']) )
         # access to the builtin codecs and codec registry
