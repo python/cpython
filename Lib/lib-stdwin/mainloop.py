@@ -30,10 +30,11 @@ def register(win):
 def unregister(win):
 	if win in windows:
 		windows.remove(win) # Not in 0.9.1
-		for i in range(len(windows)):
-			if windows[i] = win:
-				del windows[i]
-				break
+		# 0.9.1 solution:
+		#for i in range(len(windows)):
+		#	if windows[i] = win:
+		#		del windows[i]
+		#		break
 
 
 # Interfaces used by WindowSched.
