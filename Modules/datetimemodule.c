@@ -3314,7 +3314,7 @@ time_minute(PyDateTime_Time *self, void *unused)
 }
 
 static PyObject *
-time_second(PyDateTime_Time *self, void *unused)
+py_time_second(PyDateTime_Time *self, void *unused)
 {
 	return PyInt_FromLong(TIME_GET_SECOND(self));
 }
@@ -3328,7 +3328,7 @@ time_microsecond(PyDateTime_Time *self, void *unused)
 static PyGetSetDef time_getset[] = {
 	{"hour",        (getter)time_hour},
 	{"minute",      (getter)time_minute},
-	{"second",      (getter)time_second},
+	{"second",      (getter)py_time_second},
 	{"microsecond", (getter)time_microsecond},
 	{NULL}
 };
