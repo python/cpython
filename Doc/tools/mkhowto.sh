@@ -157,7 +157,8 @@ build_text() {
 
 l2hoption() {
     if [ "$2" ] ; then
-	echo "\$$1 = \"$2\";" >>$L2H_AUX_INIT_FILE
+	VALUE=`echo "$2" | sed 's/[$"@]/\\\\&/g'`
+	echo "\$$1 = \"$VALUE\";" >>$L2H_AUX_INIT_FILE
     fi
 }
 
