@@ -16,6 +16,18 @@
  */
 #include "Python.h"
 
+#if SIZEOF_INT == 4
+typedef int Py_Int32;
+typedef unsigned int Py_UInt32;
+#else
+#if SIZEOF_LONG == 4
+typedef long Py_Int32;
+typedef unsigned long Py_UInt32;
+#else
+#error "No 4-byte integral type"
+#endif
+#endif
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -32,13 +44,13 @@ typedef struct {
 	unsigned short 	xsize;
 	unsigned short 	ysize;
 	unsigned short 	zsize;
-	unsigned long 	min;
-	unsigned long 	max;
-	unsigned long	wastebytes;	
+	Py_UInt32 	min;
+	Py_UInt32 	max;
+	Py_UInt32	wastebytes;	
 	char 		name[80];
-	unsigned long	colormap;
+	Py_UInt32	colormap;
 
-	long 		file;		/* stuff used in core only */
+	Py_Int32	file;		/* stuff used in core only */
 	unsigned short 	flags;
 	short		dorev;
 	short		x;
@@ -48,10 +60,10 @@ typedef struct {
 	unsigned short	*ptr;
 	unsigned short	*base;
 	unsigned short	*tmpbuf;
-	unsigned long	offset;
-	unsigned long	rleend;		/* for rle images */
-	unsigned long	*rowstart;	/* for rle images */
-	long		*rowsize;	/* for rle images */
+	Py_UInt32	offset;
+	Py_UInt32	rleend;		/* for rle images */
+	Py_UInt32	*rowstart;	/* for rle images */
+	Py_Int32	*rowsize;	/* for rle images */
 } IMAGE;
 
 #define IMAGIC 	0732
@@ -85,7 +97,7 @@ typedef struct {
 
 static void expandrow Py_PROTO((unsigned char *, unsigned char *, int));
 static void setalpha Py_PROTO((unsigned char *, int));
-static void copybw Py_PROTO((long *, int));
+static void copybw Py_PROTO((Py_Int32 *, int));
 static void interleaverow Py_PROTO((unsigned char*, unsigned char*, int, int));
 static int compressrow Py_PROTO((unsigned char *, unsigned char *, int, int));
 static void lumrow Py_PROTO((unsigned char *, unsigned char *, int));
@@ -108,7 +120,7 @@ static int reverse_order;
  */
 static void 
 addlongimgtag(dptr, xsize, ysize)
-	unsigned long *dptr;
+	Py_UInt32 *dptr;
 	int xsize, ysize;
 {
 	dptr = dptr + (xsize * ysize);
@@ -134,7 +146,7 @@ getshort(inf)
 	return (buf[0] << 8) + (buf[1] << 0);
 }
 
-static unsigned long
+static Py_UInt32
 getlong(inf)
 	FILE *inf;
 {
@@ -159,7 +171,7 @@ putshort(outf, val)
 static int
 putlong(outf, val)
 	FILE *outf;
-	unsigned long val;
+	Py_UInt32 val;
 {
 	unsigned char buf[4];
 
@@ -209,7 +221,7 @@ writeheader(outf, image)
 static int
 writetab(outf, tab, len)
 	FILE *outf;
-	/*unsigned*/ long *tab;
+	/*unsigned*/ Py_Int32 *tab;
 	int len;
 {
 	int r = 0;
@@ -224,7 +236,7 @@ writetab(outf, tab, len)
 static void
 readtab(inf, tab, len)
 	FILE *inf;
-	/*unsigned*/ long *tab;
+	/*unsigned*/ Py_Int32 *tab;
 	int len;
 {
 	while(len) {
@@ -277,7 +289,7 @@ longimagedata(self, args)
 	char *name;
 	unsigned char *base, *lptr;
 	unsigned char *rledat = NULL, *verdat = NULL;
-	long *starttab = NULL, *lengthtab = NULL;
+	Py_Int32 *starttab = NULL, *lengthtab = NULL;
 	FILE *inf = NULL;
 	IMAGE image;
 	int y, z, tablen;
@@ -311,9 +323,9 @@ longimagedata(self, args)
 	ysize = image.ysize;
 	zsize = image.zsize;
 	if (rle) {
-		tablen = ysize * zsize * sizeof(long);
-		starttab = (long *)malloc(tablen);
-		lengthtab = (long *)malloc(tablen);
+		tablen = ysize * zsize * sizeof(Py_Int32);
+		starttab = (Py_Int32 *)malloc(tablen);
+		lengthtab = (Py_Int32 *)malloc(tablen);
 		rlebuflen = (int) (1.05 * xsize +10);
 		rledat = (unsigned char *)malloc(rlebuflen);
 		if (!starttab || !lengthtab || !rledat) {
@@ -343,7 +355,7 @@ longimagedata(self, args)
 		fseek(inf, 512 + 2 * tablen, SEEK_SET);
 		cur = 512 + 2 * tablen;
 		rv = PyString_FromStringAndSize((char *)NULL,
-				      (xsize * ysize + TAGLEN) * sizeof(long));
+				      (xsize * ysize + TAGLEN) * sizeof(Py_Int32));
 		if (rv == NULL)
 			goto finally;
 
@@ -356,7 +368,7 @@ longimagedata(self, args)
 				lptr = base;
 				if (reverse_order)
 					lptr += (ysize - 1) * xsize
-						* sizeof(unsigned long);
+						* sizeof(Py_UInt32);
 				for (y = 0; y < ysize; y++) {
 					int idx = y + z * ysize;
 					if (cur != starttab[idx]) {
@@ -376,17 +388,17 @@ longimagedata(self, args)
 					expandrow(lptr, rledat, 3-z);
 					if (reverse_order)
 						lptr -= xsize
-						      * sizeof(unsigned long);
+						      * sizeof(Py_UInt32);
 					else
 						lptr += xsize
-						      * sizeof(unsigned long);
+						      * sizeof(Py_UInt32);
 				}
 			}
 		} else {
 			lptr = base;
 			if (reverse_order)
 				lptr += (ysize - 1) * xsize
-					* sizeof(unsigned long);
+					* sizeof(Py_UInt32);
 			for (y = 0; y < ysize; y++) {
 				for(z = 0; z < zsize; z++) {
 					int idx = y + z * ysize;
@@ -400,19 +412,19 @@ longimagedata(self, args)
 					expandrow(lptr, rledat, 3-z);
 				}
 				if (reverse_order)
-					lptr -= xsize * sizeof(unsigned long);
+					lptr -= xsize * sizeof(Py_UInt32);
 				else
-					lptr += xsize * sizeof(unsigned long);
+					lptr += xsize * sizeof(Py_UInt32);
 			}
 		}
 		if (zsize == 3) 
 			setalpha(base, xsize * ysize);
 		else if (zsize < 3) 
-			copybw((long *) base, xsize * ysize);
+			copybw((Py_Int32 *) base, xsize * ysize);
 	}
 	else {
 		rv = PyString_FromStringAndSize((char *) 0,
-					   (xsize*ysize+TAGLEN)*sizeof(long));
+					   (xsize*ysize+TAGLEN)*sizeof(Py_Int32));
 		if (rv == NULL)
 			goto finally;
 
@@ -426,20 +438,20 @@ longimagedata(self, args)
 			lptr = base;
 			if (reverse_order)
 				lptr += (ysize - 1) * xsize
-				        * sizeof(unsigned long);
+				        * sizeof(Py_UInt32);
 			for (y = 0; y < ysize; y++) {
 				fread(verdat, xsize, 1, inf);
 				interleaverow(lptr, verdat, 3-z, xsize);
 				if (reverse_order)
-					lptr -= xsize * sizeof(unsigned long);
+					lptr -= xsize * sizeof(Py_UInt32);
 				else
-					lptr += xsize * sizeof(unsigned long);
+					lptr += xsize * sizeof(Py_UInt32);
 			}
 		}
 		if (zsize == 3)
 			setalpha(base, xsize * ysize);
 		else if (zsize < 3) 
-			copybw((long *) base, xsize * ysize);
+			copybw((Py_Int32 *) base, xsize * ysize);
 	}
   finally:
 	free(starttab);
@@ -466,7 +478,7 @@ interleaverow(lptr, cptr, z, n)
 
 static void
 copybw(lptr, n)
-	long *lptr;
+	Py_Int32 *lptr;
 	int n;
 {
 	while (n >= 8) {
@@ -583,7 +595,7 @@ longstoimage(self, args)
 	FILE *outf = NULL;
 	IMAGE image;
 	int tablen, y, z, pos, len;
-	long *starttab = NULL, *lengthtab = NULL;
+	Py_Int32 *starttab = NULL, *lengthtab = NULL;
 	unsigned char *rlebuf = NULL;
 	unsigned char *lumbuf = NULL;
 	int rlebuflen, goodwrite;
@@ -599,13 +611,13 @@ longstoimage(self, args)
 		PyErr_SetString(ImgfileError, "can't open output file");
 		return NULL;
 	}
-	tablen = ysize * zsize * sizeof(long);
+	tablen = ysize * zsize * sizeof(Py_Int32);
 
-	starttab = (long *)malloc(tablen);
-	lengthtab = (long *)malloc(tablen);
+	starttab = (Py_Int32 *)malloc(tablen);
+	lengthtab = (Py_Int32 *)malloc(tablen);
 	rlebuflen = (int) (1.05 * xsize + 10);
 	rlebuf = (unsigned char *)malloc(rlebuflen);
-	lumbuf = (unsigned char *)malloc(xsize * sizeof(long));
+	lumbuf = (unsigned char *)malloc(xsize * sizeof(Py_Int32));
 	if (!starttab || !lengthtab || !rlebuf || !lumbuf) {
 		PyErr_NoMemory();
 		goto finally;
@@ -627,7 +639,7 @@ longstoimage(self, args)
 	pos = 512 + 2 * tablen;
 	fseek(outf, pos, SEEK_SET);
 	if (reverse_order)
-		lptr += (ysize - 1) * xsize * sizeof(unsigned long);
+		lptr += (ysize - 1) * xsize * sizeof(Py_UInt32);
 	for (y = 0; y < ysize; y++) {
 		for (z = 0; z < zsize; z++) {
 			if (zsize == 1) {
@@ -649,9 +661,9 @@ longstoimage(self, args)
 			pos += len;
 		}
 		if (reverse_order)
-			lptr -= xsize * sizeof(unsigned long);
+			lptr -= xsize * sizeof(Py_UInt32);
 		else
-			lptr += xsize * sizeof(unsigned long);
+			lptr += xsize * sizeof(Py_UInt32);
 	}
 
 	fseek(outf, 512, SEEK_SET);
@@ -696,7 +708,7 @@ compressrow(lbuf, rlebuf, z, cnt)
 {
 	unsigned char *iptr, *ibufend, *sptr, *optr;
 	short todo, cc;							
-	long count;
+	Py_Int32 count;
 
 	lbuf += z;
 	iptr = lbuf;

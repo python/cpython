@@ -33,6 +33,18 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
+#if SIZEOF_INT == 4
+typedef int Py_Int32;
+typedef unsigned int Py_UInt32;
+#else
+#if SIZEOF_LONG == 4
+typedef long Py_Int32;
+typedef unsigned long Py_UInt32;
+#else
+#error "No 4-byte integral type"
+#endif
+#endif
+
 #if defined(__CHAR_UNSIGNED__)
 #if defined(signed)
 !ERROR!; READ THE SOURCE FILE!;
@@ -164,7 +176,7 @@ static int stepsizeTable[89] = {
     
 #define CHARP(cp, i) ((signed char *)(cp+i))
 #define SHORTP(cp, i) ((short *)(cp+i))
-#define LONGP(cp, i) ((long *)(cp+i))
+#define LONGP(cp, i) ((Py_Int32 *)(cp+i))
 
 
 
@@ -670,7 +682,7 @@ audioop_mul(self, args)
 		val = (int)fval;
 		if ( size == 1 )      *CHARP(ncp, i) = (signed char)val;
 		else if ( size == 2 ) *SHORTP(ncp, i) = (short)val;
-		else if ( size == 4 ) *LONGP(ncp, i) = (long)val;
+		else if ( size == 4 ) *LONGP(ncp, i) = (Py_Int32)val;
 	}
 	return rv;
 }
@@ -716,7 +728,7 @@ audioop_tomono(self, args)
 		val1 = (int)fval;
 		if ( size == 1 )      *CHARP(ncp, i/2) = (signed char)val1;
 		else if ( size == 2 ) *SHORTP(ncp, i/2) = (short)val1;
-		else if ( size == 4 ) *LONGP(ncp, i/2)= (long)val1;
+		else if ( size == 4 ) *LONGP(ncp, i/2)= (Py_Int32)val1;
 	}
 	return rv;
 }
@@ -766,11 +778,11 @@ audioop_tostereo(self, args)
 
 		if ( size == 1 )      *CHARP(ncp, i*2) = (signed char)val1;
 		else if ( size == 2 ) *SHORTP(ncp, i*2) = (short)val1;
-		else if ( size == 4 ) *LONGP(ncp, i*2) = (long)val1;
+		else if ( size == 4 ) *LONGP(ncp, i*2) = (Py_Int32)val1;
 
 		if ( size == 1 )      *CHARP(ncp, i*2+1) = (signed char)val2;
 		else if ( size == 2 ) *SHORTP(ncp, i*2+2) = (short)val2;
-		else if ( size == 4 ) *LONGP(ncp, i*2+4) = (long)val2;
+		else if ( size == 4 ) *LONGP(ncp, i*2+4) = (Py_Int32)val2;
 	}
 	return rv;
 }
@@ -825,7 +837,7 @@ audioop_add(self, args)
 
 		if ( size == 1 )      *CHARP(ncp, i) = (signed char)newval;
 		else if ( size == 2 ) *SHORTP(ncp, i) = (short)newval;
-		else if ( size == 4 ) *LONGP(ncp, i) = (long)newval;
+		else if ( size == 4 ) *LONGP(ncp, i) = (Py_Int32)newval;
 	}
 	return rv;
 }
@@ -863,7 +875,7 @@ audioop_bias(self, args)
 	
 		if ( size == 1 )      *CHARP(ncp, i) = (signed char)(val+bias);
 		else if ( size == 2 ) *SHORTP(ncp, i) = (short)(val+bias);
-		else if ( size == 4 ) *LONGP(ncp, i) = (long)(val+bias);
+		else if ( size == 4 ) *LONGP(ncp, i) = (Py_Int32)(val+bias);
 	}
 	return rv;
 }
@@ -902,7 +914,7 @@ audioop_reverse(self, args)
 	
 		if ( size == 1 )      *CHARP(ncp, j) = (signed char)(val >> 8);
 		else if ( size == 2 ) *SHORTP(ncp, j) = (short)(val);
-		else if ( size == 4 ) *LONGP(ncp, j) = (long)(val<<16);
+		else if ( size == 4 ) *LONGP(ncp, j) = (Py_Int32)(val<<16);
 	}
 	return rv;
 }
@@ -940,7 +952,7 @@ audioop_lin2lin(self, args)
 
 		if ( size2 == 1 )  *CHARP(ncp, j) = (signed char)(val >> 8);
 		else if ( size2 == 2 ) *SHORTP(ncp, j) = (short)(val);
-		else if ( size2 == 4 ) *LONGP(ncp, j) = (long)(val<<16);
+		else if ( size2 == 4 ) *LONGP(ncp, j) = (Py_Int32)(val<<16);
 	}
 	return rv;
 }
@@ -1080,7 +1092,7 @@ audioop_ratecv(self, args)
 				else if (size == 2)
 				    *SHORTP(ncp, 0) = (short)(cur_o);
 				else if (size == 4)
-				    *LONGP(ncp, 0) = (long)(cur_o<<16);
+				    *LONGP(ncp, 0) = (Py_Int32)(cur_o<<16);
 				ncp += size;
 			}
 			d -= inrate;
@@ -1155,7 +1167,7 @@ audioop_ulaw2lin(self, args)
 	
 		if ( size == 1 )      *CHARP(ncp, i) = (signed char)(val >> 8);
 		else if ( size == 2 ) *SHORTP(ncp, i) = (short)(val);
-		else if ( size == 4 ) *LONGP(ncp, i) = (long)(val<<16);
+		else if ( size == 4 ) *LONGP(ncp, i) = (Py_Int32)(val<<16);
 	}
 	return rv;
 }
@@ -1355,7 +1367,7 @@ audioop_adpcm2lin(self, args)
 		/* Step 6 - Output value */
 		if ( size == 1 ) *CHARP(ncp, i) = (signed char)(valpred >> 8);
 		else if ( size == 2 ) *SHORTP(ncp, i) = (short)(valpred);
-		else if ( size == 4 ) *LONGP(ncp, i) = (long)(valpred<<16);
+		else if ( size == 4 ) *LONGP(ncp, i) = (Py_Int32)(valpred<<16);
 	}
 
 	rv = Py_BuildValue("(O(ii))", str, valpred, index);
