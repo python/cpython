@@ -1751,6 +1751,7 @@ def inherits():
     # Check that negative clones don't segfault
     a = longclone(-1)
     vereq(a.__dict__, {})
+    vereq(long(a), -1)  # verify PyNumber_Long() copies the sign bit
 
     class precfloat(float):
         __slots__ = ['prec']

@@ -63,7 +63,7 @@ _PyLong_Copy(PyLongObject *src)
 		i = -(i);
 	result = _PyLong_New(i);
 	if (result != NULL) {
-		result->ob_size = i;
+		result->ob_size = src->ob_size;
 		while (--i >= 0)
 			result->ob_digit[i] = src->ob_digit[i];
 	}
