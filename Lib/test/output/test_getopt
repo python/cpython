@@ -1,7 +1,1 @@
 test_getopt
-Running tests on getopt.short_has_arg
-Running tests on getopt.long_has_args
-Running tests on getopt.do_shorts
-Running tests on getopt.do_longs
-Running tests on getopt.getopt
-Module getopt: tests completed successfully.
