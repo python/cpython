@@ -613,6 +613,11 @@ def dynamics():
     else:
         verify(0, "expected AttributeError")
     verify(a.spam == "spam")
+    class D(C):
+        pass
+    d = D()
+    d.foo = 1
+    verify(d.foo == 1)
 
 def errors():
     if verbose: print "Testing errors..."
