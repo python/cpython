@@ -473,6 +473,7 @@ class Pickler:
         if hasattr(object, '__getinitargs__'):
             args = object.__getinitargs__()
             len(args) # XXX Assert it's a sequence
+	    _keep_alive(args, memo)
         else:
             args = ()
 
@@ -501,6 +502,7 @@ class Pickler:
             stuff = object.__dict__
         else:
             stuff = getstate()
+	    _keep_alive(stuff, memo)
         save(stuff)
         write(BUILD)
     dispatch[InstanceType] = save_inst
@@ -521,6 +523,23 @@ class Pickler:
     dispatch[ClassType] = save_global
     dispatch[FunctionType] = save_global
     dispatch[BuiltinFunctionType] = save_global
+
+
+def _keep_alive(x, memo):
+    """Keeps a reference to the object x in the memo.
+
+    Because we remember objects by their id, we have
+    to assure that possibly temporary objects are kept
+    alive by referencing them.
+    We store a reference at the id of the memo, which should
+    normally not be used unless someone tries to deepcopy
+    the memo itself...
+    """
+    try:
+	memo[id(memo)].append(x)
+    except KeyError:
+	# aha, this is the first one :-)
+	memo[id(memo)]=[x]
 
 
 classmap = {}
