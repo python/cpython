@@ -217,6 +217,8 @@ screenbounds = screenbounds[0]+4, screenbounds[1]+4, \
 				
 class ProgressBar:
 	def __init__(self, title="Working...", maxval=100, label="", id=263):
+		self.w = None
+		self.d = None
 		self.maxval = maxval
 		self.curval = -1
 		self.d = GetNewDialog(id, -1)
@@ -229,8 +231,9 @@ class ProgressBar:
 		self.d.DrawDialog()
 
 	def __del__( self ):
-		self.w.BringToFront()
-		self.w.HideWindow()
+		if self.w:
+			self.w.BringToFront()
+			self.w.HideWindow()
 		del self.w
 		del self.d
 		
@@ -268,6 +271,9 @@ class ProgressBar:
 			if Dlg.IsDialogEvent(ev):
 				ds = Dlg.DialogSelect(ev)
 				if ds[0] and ds[1] == self.d and ds[-1] == 1:
+					self.w.HideWindow()
+					self.w = None
+					self.d = None
 					raise KeyboardInterrupt, ev
 			else:
 				if part == 4:	# inDrag 
