@@ -65,7 +65,7 @@ descr_check(PyDescrObject *descr, PyObject *obj, PyTypeObject *type,
 		*pres = (PyObject *)descr;
 		return 1;
 	}
-	if (!PyObject_IsInstance(obj, (PyObject *)(descr->d_type))) {
+	if (!PyObject_TypeCheck(obj, descr->d_type)) {
 		PyErr_Format(PyExc_TypeError,
 			     "descriptor '%s' for '%s' objects "
 			     "doesn't apply to '%s' object",
