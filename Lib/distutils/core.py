@@ -80,7 +80,10 @@ def setup (**attrs):
 
     # Create the Distribution instance, using the remaining arguments
     # (ie. everything except distclass) to initialize it
-    dist = klass (attrs)
+    try:
+        dist = klass (attrs)
+    except DistutilsSetupError, msg:
+        raise SystemExit, "error in setup script: %s" % msg
 
     # Find and parse the config file(s): they will override options from
     # the setup script, but be overridden by the command line.
