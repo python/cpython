@@ -329,7 +329,7 @@ tok_nextc(tok)
 		}
 		if (tok->done != E_OK) {
 			if (tok->prompt != NULL)
-				fprintf(stderr, "\n");
+				PySys_WriteStderr("\n");
 			tok->cur = tok->inp;
 			return EOF;
 		}
@@ -437,7 +437,7 @@ indenterror(tok)
 		return 1;
 	}
 	if (tok->altwarning) {
-		fprintf(stderr, "%s: inconsistent tab/space usage\n",
+		PySys_WriteStderr("%s: inconsistent tab/space usage\n",
 			tok->filename);
 		tok->altwarning = 0;
 	}
@@ -504,7 +504,8 @@ PyTokenizer_Get(tok, p_start, p_end)
 			else if (col > tok->indstack[tok->indent]) {
 				/* Indent -- always one */
 				if (tok->indent+1 >= MAXINDENT) {
-					fprintf(stderr, "excessive indent\n");
+					PySys_WriteStderr(
+						"excessive indent\n");
 					tok->done = E_TOKEN;
 					tok->cur = tok->inp;
 					return ERRORTOKEN;
@@ -575,7 +576,7 @@ PyTokenizer_Get(tok, p_start, p_end)
 		if (sscanf(tok->cur,
 				" vi:set tabsize=%d:", &x) == 1 &&
 						x >= 1 && x <= 40) {
-			/* fprintf(stderr, "# vi:set tabsize=%d:\n", x); */
+			/* PySys_WriteStderr("# vi:set tabsize=%d:\n", x); */
 			tok->tabsize = x;
 		}
 		do {
@@ -618,7 +619,7 @@ PyTokenizer_Get(tok, p_start, p_end)
 	
 #ifdef macintosh
 	if (c == '\r') {
-		fprintf(stderr,
+		PySys_WriteStderr(
 		  "File contains \\r characters (incorrect line endings?)\n");
 		tok->done = E_TOKEN;
 		tok->cur = tok->inp;
