@@ -46,28 +46,27 @@
 # Customizations -- you *may* have to edit these
 
 # Where are the various programs?
-LATEX=		latex
-PDFLATEX=	pdflatex
-BIBTEX=		bibtex
+LATEX=		TEXINPUTS=$(TEXINPUTS) latex
+PDFLATEX=	TEXINPUTS=$(TEXINPUTS) pdflatex
+TEXINPUTS=	texinputs:
 DVIPS=		dvips -f -N0
 DISTILL=	distill
 MAKEINDEX=	makeindex
-L2H=		latex2html
+L2H=		TEXINPUTS=$(TEXINPUTS) latex2html -init_file perl/l2hinit.perl
 L2HARGS=	-address $$LOGNAME@`domainname`
+WEBCHECKER=	$(PYTHON) ../Tools/webchecker/webchecker.py
 
 # Install destination -- not used now but might be useful some time...
 DESTDIR=	/usr/local
 LIBDESTDIR=	$DESTDIR/lib
-LIBDEST=	$LIBDESTDIR/python
+LIBDEST=	$LIBDESTDIR/python$(VERSION)
 DOCDESTDIR=	$LIBDEST/doc
 
 # This is only used for .info generation:
 EMACS=		emacs
 PYTHON=		python
 MAKEINFO=	makeinfo
-# When debugging partparse.py, make this the pyc file:
-PARTPARSEOBJ=	partparse.pyc
-PARTPARSE=	$(PYTHON) $(PARTPARSEOBJ)
+PARTPARSE=	$(PYTHON) tools/partparse.py
 
 # Ideally, you shouldn't need to edit beyond this point
 
@@ -78,8 +77,12 @@ INFOFILES=	python-lib.info
 PDFFILES=	api.pdf ext.pdf lib.pdf tut.pdf
 PSFILES=	api.ps ext.ps lib.ps tut.ps
 
+MANSTYLES=texinputs/fncychap.sty texinputs/manual.cls texinputs/python.sty
+
 # Main target
 all:	all-ps
+
+world:	all-ps all-pdf l2h lib.info tarballs
 
 all-dvi: $(DVIFILES)
 all-pdf: $(PDFFILES)
@@ -121,13 +124,15 @@ tut-all:  tut.dvi tut.pdf tut.ps l2htut
 # This rule avoids creation of the intermediate PostScript files and uses
 # only free software.
 #
-.dvi.pdf:
+.dvi.pdf: $*.bkm
+	$(PYTHON) tools/toc2bkm.py $*
 	$(PDFLATEX) $*
 
 # Dependencies
-COMMONTEX=python.sty manual.cls copyright.tex boilerplate.tex
+COMMONTEX=$(MANSTYLES) copyright.tex boilerplate.tex
+COMMONPERL=perl/manual.perl perl/python.perl
 
-$(DVIFILES): fix_hack $(COMMONTEX)
+$(DVIFILES): tools/fix_hack $(COMMONTEX)
 
 # LaTeX source files for the Python Library Reference
 LIBFILES = lib.tex \
@@ -163,14 +168,14 @@ LIBFILES = lib.tex \
     libframework.tex libminiae.tex libbinhex.tex libuu.tex libsunaudio.tex
 
 # Library document
-lib.dvi: modindex.py indfix.py $(LIBFILES)
-	./newind.py >$*.ind
-	./newind.py modindex >mod$*.ind
+lib.dvi: tools/modindex.py tools/indfix.py $(LIBFILES)
+	tools/newind.py >$*.ind
+	tools/newind.py modindex >mod$*.ind
 	$(LATEX) $*
-	./modindex.py mod$*.idx
-	./fix_hack $*.idx
+	tools/modindex.py mod$*.idx
+	tools/fix_hack $*.idx
 	$(MAKEINDEX) $*.idx
-	./indfix.py $*.ind
+	tools/indfix.py $*.ind
 	$(LATEX) $*
 
 # Tutorial document
@@ -181,23 +186,15 @@ tut.dvi: tut.tex
 # Extending & Embedding, Python/C API documents.
 # Done this way to avoid repeated command sets.
 .tex.dvi:
-	./newind.py >$*.ind
+	tools/newind.py >$*.ind
 	$(LATEX) $*
-	./fix_hack $*.idx
+	tools/fix_hack $*.idx
 	$(MAKEINDEX) $*.idx
 	$(LATEX) $*
 
 
 # The remaining part of the Makefile is concerned with various
 # conversions, as described above.  See also the README file.
-
-.SUFFIXES: .py .pyc .pyo
-
-.py.pyo:
-	$(PYTHON) -O -c "import $*"
-
-.py.pyc:
-	$(PYTHON) -c "import $*"
 
 .PRECIOUS:	python-lib.texi
 
@@ -207,13 +204,13 @@ tut.dvi: tut.tex
 # least the info file gets generated.
 
 lib1.texi: $(LIBFILES) texipre.dat texipost.dat $(PARTPARSEOBJ)
-	$(PARTPARSE) -o $@ `./whichlibs`
+	$(PARTPARSE) -o $@ `tools/whichlibs`
 	sed 's/"{\\}n{\\}n/"\\n\\n/' $@ >temp.texi
 	mv temp.texi $@
 
-python-lib.texi: lib1.texi fix.el
+python-lib.texi: lib1.texi tools/fix.el
 	cp lib1.texi temp.texi
-	$(EMACS) -batch -l fix.el -f save-buffer -kill
+	$(EMACS) -batch -l tools/fix.el -f save-buffer -kill
 	mv temp.texi $@
 
 python-lib.info: python-lib.texi
@@ -241,40 +238,43 @@ lib.texi: python-lib.texi
 
 l2h: l2hapi l2hext l2hlib l2htut
 
-l2htut: tut.dvi manual.perl python.perl
+l2htut: tut.dvi $(COMMONPERL)
 	$(L2H) $(L2HARGS) tut.tex
-	(cd tut; ../node2label.pl *.html)
-	ln -s tut.html tut/index.html || true
+	(cd tut; ../tools/node2label.pl *.html)
 
-l2hext: ext.dvi manual.perl python.perl
+l2hext: ext.dvi $(COMMONPERL)
 	$(L2H) $(L2HARGS) ext.tex
-	(cd ext; ../node2label.pl *.html)
-	ln -s ext.html ext/index.html || true
+	(cd ext; ../tools/node2label.pl *.html)
 
-l2hlib: lib.dvi manual.perl python.perl
-	./fix_libaux.sed <lib.aux >lib1.aux
+l2hlib: lib.dvi $(COMMONPERL)
+	tools/fix_libaux.sed <lib.aux >lib1.aux
 	mv lib1.aux lib.aux
-	if [ -d lib ] ; then rm -f lib/*.html ; fi
+	if test -d lib ; then rm -f lib/*.html ; fi
 	$(L2H) $(L2HARGS) lib.tex
-	(cd lib; ../node2label.pl *.html)
-	ln -s lib.html lib/index.html || true
+	(cd lib; ../tools/node2label.pl *.html)
 
-l2hapi: api.dvi manual.perl python.perl
+l2hapi: api.dvi $(COMMONPERL)
 	$(L2H) $(L2HARGS) api.tex
-	(cd api; ../node2label.pl *.html)
-	ln -s api.html api/index.html || true
+	(cd api; ../tools/node2label.pl *.html)
 
-info-$(VERSION).tar.gz: $(INFOFILES)
+# webchecker needs an extra flag to process the huge index from the libref
+webcheck:
+	$(WEBCHECKER) file:`pwd`/api/
+	$(WEBCHECKER) file:`pwd`/ext/
+	$(WEBCHECKER) -m290000 file:`pwd`/lib/
+	$(WEBCHECKER) file:`pwd`/tut/
+
+lib-info-$(VERSION).tar.gz: $(INFOFILES)
 	tar cf - python-???.info* | gzip -9 >$@
 
 latex-$(VERSION).tar.gz:
-	./mktarball.sh
+	tools/mktarball.sh
 
 # This snags a PDF version if available, but doesn't fail if not.
 pdf-$(VERSION).tar.gz: $(PDFFILES)
-	if [ -f ref/ref.pdf ] ; then cp ref/ref.pdf . ; else true ; fi
+	if test -f ref/ref.pdf ; then cp ref/ref.pdf . ; else true ; fi
 	tar cf - ???.pdf | gzip -9 >$@
-	if [ -f ref.pdf ] ; then rm ref.pdf ; else true ; fi
+	if test -f ref.pdf ; then rm ref.pdf ; else true ; fi
 
 postscript-$(VERSION).tar.gz: $(PSFILES) ref/ref.ps
 	cp ref/ref.ps .
@@ -288,7 +288,7 @@ tarhtml:
 
 # convenience targets:
 
-tarinfo:  info-$(VERSION).tar.gz
+tarinfo:  lib-info-$(VERSION).tar.gz
 
 tarps:	postscript-$(VERSION).tar.gz
 
@@ -304,7 +304,7 @@ tarballs:  tarpdf tarps tarhtml tarinfo tarlatex
 # Remove temporary files; all except the following:
 # - sources: .tex, .bib, .sty, *.cls
 # - useful results: .dvi, .pdf, .ps, .texi, .info
-clean:	l2hclean
+clean:
 	rm -f @* *~ *.aux *.idx *.ilg *.ind *.log *.toc *.blg *.bbl *.py[co]
 	rm -f *.bak *.orig lib1.texi *.out
 	rm -f html-$(VERSION).tar.gz info-$(VERSION).tar.gz
@@ -315,8 +315,8 @@ l2hclean:
 	rm -rf api ext lib tut
 
 # Remove temporaries as well as final products
-clobber: clean
-	 rm -f *.dvi *.pdf *.ps *.texi *.info *.info-[0-9]*
+clobber: clean l2hclean
+	 rm -f *.dvi *.pdf *.ps *.texi python-*.info python-*.info-[0-9]*
 
 realclean:  clobber
 distclean:  clobber
