@@ -475,8 +475,7 @@ my_##NAME##Handler PARAMS {\
     if (self->handlers[NAME] \
         && self->handlers[NAME] != Py_None) { \
         args = Py_BuildValue PARAM_FORMAT ;\
-        if (!args) \
-            return RETURN; \
+        if (!args) { flag_error(self); return RETURN;} \
         self->in_callback = 1; \
         rv = call_with_frame(getcode(NAME,#NAME,__LINE__), \
                              self->handlers[NAME], args); \
