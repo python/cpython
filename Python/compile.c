@@ -329,7 +329,7 @@ com_backpatch(c, anchor)
 	}
 }
 
-/* Handle constants and names uniformly */
+/* Handle literals and names uniformly */
 
 static int
 com_add(c, list, v)
@@ -423,7 +423,7 @@ parsenumber(s)
 	if (*end == '\0') {
 		if (errno != 0) {
 			err_setstr(OverflowError,
-				   "integer constant too large");
+				   "integer literal too large");
 			return NULL;
 		}
 		return newintobject(x);
@@ -431,10 +431,15 @@ parsenumber(s)
 	errno = 0;
 	xx = strtod(s, &end);
 	if (*end == '\0') {
+#ifndef BROKEN_STRTOD
+		/* Some strtod() versions (e.g., in older SunOS systems)
+		   set errno incorrectly; better to ignore overflows
+		   than not to be able to use float literals at all! */
 		if (errno != 0) {
-			err_setstr(OverflowError, "float constant too large");
+			err_setstr(OverflowError, "float literal too large");
 			return NULL;
 		}
+#endif
 		return newfloatobject(xx);
 	}
 	err_setstr(SystemError, "bad number syntax?!?!");
@@ -1258,7 +1263,7 @@ com_assign(c, n, assigning)
 				return;
 			default:
 				err_setstr(TypeError,
-						"can't assign to constant");
+						"can't assign to literal");
 				c->c_errors++;
 				return;
 			}
@@ -1938,7 +1943,7 @@ com_fplist(c, n)
 	struct compiling *c;
 	node *n;
 {
-	REQ(n, fplist); /* fplist: fpdef (',' fpdef)* */
+	REQ(n, fplist); /* fplist: fpdef (',' fpdef)* [','] */
 	if (NCH(n) == 1) {
 		com_fpdef(c, CHILD(n, 0));
 	}
