@@ -44,7 +44,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #define DELIM '\n'
 #endif
 
-#if defined(MS_WINDOWS) || defined(__BORLANDC__) || defined(__WATCOMC__)
+#if defined(MS_WINDOWS) || defined(__BORLANDC__) || defined(__WATCOMC__) ||  defined(__DJGPP__)
 #define SEP '\\'
 #define ALTSEP '/'
 #define MAXPATHLEN 256
