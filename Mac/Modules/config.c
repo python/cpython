@@ -34,7 +34,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "myproto.h"
 #include "mymalloc.h"
 #include "osdefs.h"
-#include "intrcheck.h"
 
 
 #ifndef NO_MAIN
