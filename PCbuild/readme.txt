@@ -97,13 +97,6 @@ _tkinter
 
     XXX Some tests failed in "nmake -f makefile.vc test".
 
-    XXX Should rename destination directory to something more generic
-    XXX then tcl84.  But unless I can backport 8.4.1 to the 2.2 line
-    XXX too, I've got to be able to build using more than one Tcl/Tk
-    XXX release, and that effectively reserves the "tcl" directory name
-    XXX for the duration.  Nothing that requires thought is going to
-    XXX work when it comes to release crunch times.
-
     Build Tk
     --------
     cd dist\tk8.4.1\win
@@ -116,6 +109,13 @@ _tkinter
 
     XXX Our installer copies a lot of stuff out of the Tcl/Tk install
     XXX directory.  Is all of that really needed for Python use of Tcl/Tk?
+
+    Make sure the installer matches
+    -------------------------------
+    Ensure that the Wise compiler vrbl _TCLDIR_ is set to the name of
+    the common Tcl/Tk installation directory (tcl84 for the instructions
+    above).  This is needed so the installer can copy various Tcl/Tk
+    files into the Python distribution.
 
 
 zlib
