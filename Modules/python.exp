@@ -107,7 +107,6 @@ PyEval_RestoreThread
 PyEval_SaveThread
 PyExc_AccessError
 PyExc_AttributeError
-PyExc_ConflictError
 PyExc_EOFError
 PyExc_IOError
 PyExc_ImportError
