@@ -281,6 +281,8 @@ static struct memberlist generic_memberlist[] = {
 	{NULL}	/* Sentinel */
 };
 
+#undef OFF
+
 static object *
 generic_getattr(g, name)
 	genericobject *g;
@@ -1734,6 +1736,8 @@ form_dealloc(f)
 	DEL(f);
 }
 
+#define OFF(x) offsetof(FL_FORM, x)
+
 static struct memberlist form_memberlist[] = {
 	{"window",	T_LONG,		OFF(window),	RO},
 	{"w",		T_FLOAT,	OFF(w)},
@@ -1746,6 +1750,8 @@ static struct memberlist form_memberlist[] = {
 	{"doublebuf",	T_INT,		OFF(doublebuf)},
 	{NULL}	/* Sentinel */
 };
+
+#undef OFF
 
 static object *
 form_getattr(f, name)
