@@ -12,6 +12,9 @@ _curfolder = None
 _movablemodal = 1
 
 def _mktypelist(typelist):
+	# Workaround for OSX typeless files:
+	if 'TEXT' in typelist and not '\0\0\0\0' in typelist:
+		typelist = typelist + ('\0\0\0\0',)
 	if not typelist:
 		return None
 	data = 'Pyth' + struct.pack("hh", 0, len(typelist))
@@ -44,7 +47,7 @@ def _PromptGetFile(prompt, *typelist):
 		if arg[0] != -128: # userCancelledErr
 			raise Nav.error, arg
 		good = 0
-		fss = macfs.FSSpec(':cancelled')
+		fss = None
 	else:
 		if rr.selection:
 			fss = rr.selection[0]
@@ -74,7 +77,7 @@ def _StandardPutFile(prompt, default=None):
 		if arg[0] != -128: # userCancelledErr
 			raise Nav.error, arg
 		good = 0
-		fss = macfs.FSSpec(':cancelled')
+		fss = None
 	else:
 		fss = rr.selection[0]
 	return fss, good
@@ -115,7 +118,7 @@ def _GetDirectory(prompt=None):
 		if arg[0] != -128: # userCancelledErr
 			raise Nav.error, arg
 		good = 0
-		fss = macfs.FSSpec(':cancelled')
+		fss = None
 	else:
 		fss = rr.selection[0]
 	return fss, good
