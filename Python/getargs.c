@@ -997,6 +997,7 @@ convertbuffer(PyObject *arg, void **p, char **errmsg)
 /* Support for keyword arguments donated by
    Geoff Philbrick <philbric@delphi.hks.com> */
 
+/* Return false (0) for error, else true. */
 int
 PyArg_ParseTupleAndKeywords(PyObject *args,
 			    PyObject *keywords,
@@ -1012,7 +1013,7 @@ PyArg_ParseTupleAndKeywords(PyObject *args,
 	    kwlist == NULL)
 	{
 		PyErr_BadInternalCall();
-		return -1;
+		return 0;
 	}
 
 	va_start(va, kwlist);
@@ -1028,10 +1029,8 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 {
 	char msgbuf[256];
 	int levels[32];
-	char *fname = NULL;
-	char *message = NULL;
-	int min = -1;
-	int max = 0;
+	char *fname, *message;
+	int min, max;
 	char *formatsave = format;
 	int i, len, tplen, kwlen;
 	char *msg, *ks, **p;
@@ -1044,44 +1043,49 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	assert(kwlist != NULL);
 	assert(p_va != NULL);
 
-	/* nested tuples cannot be parsed when using keyword arguments */
-
-	for (;;) {
-		int c = *format++;
-		if (c == '(') {
+	/* Search the format:
+	   message <- error msg, if any (else NULL).
+	   name <- routine name, if any (else NULL).
+	   min <- # of required arguments, or -1 if all are required.
+	   max <- most arguments (required + optional).
+	   Raise error if a tuple arg spec is found.
+	*/
+	fname = message = NULL;
+	min = -1;
+	max = 0;
+	while ((i = *format++) != '\0') {
+		if (isalpha(i) && i != 'e')
+			max++;
+		else if (i == '|')
+			min = max;
+		else if (i == ':') {
+			fname = format;
+			break;
+		}
+		else if (i == ';') {
+			message = format;
+			break;
+		}
+		else if (i == '(') {
 			PyErr_SetString(PyExc_SystemError,
 		      "tuple found in format when using keyword arguments");
 			return 0;
 		}
-		else if (c == '\0')
-			break;
-		else if (c == ':') {
-			fname = format;
-			break;
-		} else if (c == ';') {
-			message = format;
-			break;
-		} else if (c == 'e')
-			; /* Pass */
-		else if (isalpha(c))
-			max++;
-		else if (c == '|')
-			min = max;
 	}	
-	
-	if (min < 0)
+	if (min < 0) {
+		/* All arguments are required. */
 		min = max;
-	
+	}
 	format = formatsave;
-	
+
 	if (!PyTuple_Check(args)) {
 		PyErr_SetString(PyExc_SystemError,
 		    "new style getargs format but argument is not a tuple");
 		return 0;
 	}	
-	
+
 	tplen = PyTuple_GET_SIZE(args);
-	
+
 	/* do a cursory check of the keywords just to see how many we got */
 
 	kwlen = 0;
