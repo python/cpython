@@ -235,18 +235,25 @@ handle_open_doc(AppleEvent *theAppleEvent, AppleEvent *reply, long refCon)
 }
 
 /* Install standard core event handlers */
+AEEventHandlerUPP open_doc_upp;
+AEEventHandlerUPP open_app_upp;
+AEEventHandlerUPP not_upp;
 
 static void
 set_ae_handlers()
 {
+	open_doc_upp = NewAEEventHandlerProc(handle_open_doc);
+	open_app_upp = NewAEEventHandlerProc(handle_open_app);
+	not_upp = NewAEEventHandlerProc(handle_not);
+	
 	AEInstallEventHandler(kCoreEventClass, kAEOpenApplication,
-			      NewAEEventHandlerProc(handle_open_app), 0L, false);
+			      open_app_upp, 0L, false);
 	AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments,
-			      NewAEEventHandlerProc(handle_open_doc), 0L, false);
+			      open_doc_upp, 0L, false);
 	AEInstallEventHandler(kCoreEventClass, kAEPrintDocuments,
-			      NewAEEventHandlerProc(handle_not), 0L, false);
+			      not_upp, 0L, false);
 	AEInstallEventHandler(kCoreEventClass, kAEQuitApplication,
-			      NewAEEventHandlerProc(handle_not), 0L, false);
+			      not_upp, 0L, false);
 }
 
 /* Uninstall standard core event handlers */
@@ -255,13 +262,13 @@ static void
 reset_ae_handlers()
 {
 	AERemoveEventHandler(kCoreEventClass, kAEOpenApplication,
-			     NewAEEventHandlerProc(handle_open_app), false);
+			     open_app_upp, false);
 	AERemoveEventHandler(kCoreEventClass, kAEOpenDocuments,
-			     NewAEEventHandlerProc(handle_open_doc), false);
+			     open_doc_upp, false);
 	AERemoveEventHandler(kCoreEventClass, kAEPrintDocuments,
-			     NewAEEventHandlerProc(handle_not), false);
+			     not_upp, false);
 	AERemoveEventHandler(kCoreEventClass, kAEQuitApplication,
-			     NewAEEventHandlerProc(handle_not), false);
+			     not_upp, false);
 }
 
 /* Wait for events until a core event has been handled */
