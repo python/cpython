@@ -84,6 +84,10 @@ Type/class unification and new-style classes
 Core and builtins
 -----------------
 
+- issubclass now supports a tuple as the second argument, just like
+  isinstance does. ``issubclass(X, (A, B))`` is equivalent to
+  ``issubclass(X, A) or issubclass(X, B)``.
+
 - Thanks to Armin Rigo, the last known way to provoke a system crash
   by cleverly arranging for a comparison function to mutate a list
   during a list.sort() operation has been fixed.  The effect of

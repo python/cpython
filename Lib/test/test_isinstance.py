@@ -218,6 +218,15 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertEqual(False, issubclass(AbstractChild, Super))
         self.assertEqual(False, issubclass(AbstractChild, Child))
 
+    def test_subclass_tuple(self):
+        # test with a tuple as the second argument classes
+        self.assertEqual(True, issubclass(Child, (Child,)))
+        self.assertEqual(True, issubclass(Child, (Super,)))
+        self.assertEqual(False, issubclass(Super, (Child,)))
+        self.assertEqual(True, issubclass(Super, (Child, Super)))
+        self.assertEqual(False, issubclass(Child, ()))
+        self.assertRaises(TypeError, issubclass, Child, ((Child,),))
+
 
 
 

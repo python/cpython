@@ -487,6 +487,13 @@ PyClass_IsSubclass(PyObject *class, PyObject *base)
 	PyClassObject *cp;
 	if (class == base)
 		return 1;
+	if (PyTuple_Check(base)) {
+		n = PyTuple_GET_SIZE(base);
+		for (i = 0; i < n; i++) {
+			if (class == PyTuple_GET_ITEM(base, i))
+				return 1;
+		}
+	}
 	if (class == NULL || !PyClass_Check(class))
 		return 0;
 	cp = (PyClassObject *)class;

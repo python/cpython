@@ -205,10 +205,15 @@ determination.
                                             PyObject *cls}
   Returns \code{1} if the class \var{derived} is identical to or
   derived from the class \var{cls}, otherwise returns \code{0}.  In
-  case of an error, returns \code{-1}.  If either \var{derived} or
-  \var{cls} is not an actual class object, this function uses the
-  generic algorithm described above.
+  case of an error, returns \code{-1}. If \var{cls}
+  is a tuple, the check will be done against every entry in \var{cls}.
+  The result will be \code{1} when at least one of the checks returns
+  \code{1}, otherwise it will be \code{0}. If either \var{derived} or
+  \var{cls} is not an actual class object (or tuple), this function
+  uses the generic algorithm described above.
   \versionadded{2.1}
+  \versionchanged[Older versions of Python did not support a tuple
+                  as the second argument]{2.3}
 \end{cfuncdesc}
 
 
