@@ -921,12 +921,13 @@ class TestMiscellaneous(unittest.TestCase):
 
     def test_formatdate(self):
         now = 1005327232.109884
-        epoch = time.gmtime(0)[0]
+        gm_epoch = time.gmtime(0)[0:3]
+        loc_epoch = time.localtime(0)[0:3]
         # When does the epoch start?
-        if epoch == 1970:
+        if gm_epoch == (1970, 1, 1):
             # traditional Unix epoch
             matchdate = 'Fri, 09 Nov 2001 17:33:52 -0000'
-        elif epoch == 1904:
+        elif loc_epoch == (1904, 1, 1):
             # Mac epoch
             matchdate = 'Sat, 09 Nov 1935 16:33:52 -0000'
         else:
