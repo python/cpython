@@ -43,6 +43,7 @@ menudefs = [
   ]),
  ('help', [
    ('_Help...', '<<help>>'),
+   ('Python _Documentation...', '<<python-docs>>'),
    None,
    ('_About IDLE...', '<<about-idle>>'),
   ]),
@@ -52,3 +53,5 @@ if sys.platform == 'win32':
     default_keydefs = windows_keydefs
 else:
     default_keydefs = unix_keydefs
+
+del sys
