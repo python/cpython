@@ -362,6 +362,11 @@ class Message:
             parts.insert(0, _value)
         self._headers.append((_name, SEMISPACE.join(parts)))
 
+    #
+    # These methods are silently deprecated in favor of get_content_type() and
+    # friends (see below).  They will be noisily deprecated in email 3.0.
+    #
+
     def get_type(self, failobj=None):
         """Returns the message's content type.
 
@@ -381,10 +386,9 @@ class Message:
         ctype = self.get_type(missing)
         if ctype is missing:
             return failobj
-        parts = ctype.split('/')
-        if len(parts) > 0:
-            return ctype.split('/')[0]
-        return failobj
+        if ctype.count('/') <> 1:
+            return failobj
+        return ctype.split('/')[0]
 
     def get_subtype(self, failobj=None):
         """Return the message's content subtype if present."""
@@ -392,10 +396,57 @@ class Message:
         ctype = self.get_type(missing)
         if ctype is missing:
             return failobj
-        parts = ctype.split('/')
-        if len(parts) > 1:
-            return ctype.split('/')[1]
-        return failobj
+        if ctype.count('/') <> 1:
+            return failobj
+        return ctype.split('/')[1]
+
+    #
+    # Use these three methods instead of the three above.
+    #
+
+    def get_content_type(self):
+        """Returns the message's content type.
+
+        The returned string is coerced to lowercase and returned as a ingle
+        string of the form `maintype/subtype'.  If there was no Content-Type:
+        header in the message, the default type as give by get_default_type()
+        will be returned.  Since messages always have a default type this will
+        always return a value.
+
+        The current state of RFC standards define a message's default type to
+        be text/plain unless it appears inside a multipart/digest container,
+        in which case it would be message/rfc822.
+        """
+        missing = []
+        value = self.get('content-type', missing)
+        if value is missing:
+            # This should have no parameters
+            return self.get_default_type()
+        return paramre.split(value)[0].lower().strip()
+
+    def get_content_maintype(self):
+        """Returns the message's main content type.
+
+        This is the `maintype' part of the string returned by
+        get_content_type().  If no slash is found in the full content type, a
+        ValueError is raised.
+        """
+        ctype = self.get_content_type()
+        if ctype.count('/') <> 1:
+            raise ValueError, 'No maintype found in: %s' % ctype
+        return ctype.split('/')[0]
+
+    def get_content_subtype(self):
+        """Returns the message's sub content type.
+
+        This is the `subtype' part of the string returned by
+        get_content_type().  If no slash is found in the full content type, a
+        ValueError is raised.
+        """
+        ctype = self.get_content_type()
+        if ctype.count('/') <> 1:
+            raise ValueError, 'No subtype found in: %s' % ctype
+        return ctype.split('/')[1]
 
     def get_default_type(self):
         """Return the `default' content type.
@@ -409,12 +460,10 @@ class Message:
     def set_default_type(self, ctype):
         """Set the `default' content type.
 
-        ctype must be either "text/plain" or "message/rfc822".  The default
-        content type is not stored in the Content-Type: header.
+        ctype should be either "text/plain" or "message/rfc822", although this
+        is not enforced.  The default content type is not stored in the
+        Content-Type: header.
         """
-        if ctype not in ('text/plain', 'message/rfc822'):
-            raise ValueError(
-                'first arg must be either "text/plain" or "message/rfc822"')
         self._default_type = ctype
 
     def _get_params_preserve(self, failobj, header):
