@@ -244,9 +244,7 @@ The result is always rounded towards minus infinity: 1/2 is 0,
 Conversion from floating point to (long or plain) integer may round or
 truncate as in \C{}; see functions \function{floor()} and \function{ceil()} in
 module \module{math} for well-defined conversions.
-\withsubitem{(in module math)}{%
-  \ttindex{floor()}%
-  \ttindex{ceil()}}
+\withsubitem{(in module math)}{\ttindex{floor()}\ttindex{ceil()}}
 \indexii{numeric}{conversions}
 \refbimodindex{math}
 \indexii{C@\C{}}{language}
@@ -377,7 +375,8 @@ Notes:
 
 \end{description}
 
-\subsubsection{More String Operations}
+
+\subsubsection{More String Operations \label{typesseq-strings}}
 
 String objects have one unique built-in operation: the \code{\%}
 operator (modulo) with a string left argument interprets this string
@@ -433,7 +432,7 @@ Additional string operations are defined in standard module
 \refstmodindex{string}
 \refstmodindex{re}
 
-\subsubsection{Mutable Sequence Types}
+\subsubsection{Mutable Sequence Types \label{typesseq-mutable}}
 
 List objects support additional operations that allow in-place
 modification of the object.
@@ -479,15 +478,15 @@ The following operations are defined on mutable sequence types (where
 \indexii{subscript}{assignment}
 \indexii{slice}{assignment}
 \stindex{del}
-\withsubitem{(list method)}{%
-  \ttindex{append()}%
-  \ttindex{extend()}%
-  \ttindex{count()}%
-  \ttindex{index()}%
-  \ttindex{insert()}%
-  \ttindex{pop()}%
-  \ttindex{remove()}%
-  \ttindex{reverse()}%
+\withsubitem{(list method)}{
+  \ttindex{append()}
+  \ttindex{extend()}
+  \ttindex{count()}
+  \ttindex{index()}
+  \ttindex{insert()}
+  \ttindex{pop()}
+  \ttindex{remove()}
+  \ttindex{reverse()}
   \ttindex{sort()}}
 \noindent
 Notes:
@@ -562,14 +561,14 @@ mapping, \var{k} is a key and \var{x} is an arbitrary object):
 \indexiii{operations on}{dictionary}{type}
 \stindex{del}
 \bifuncindex{len}
-\withsubitem{(dictionary method)}{%
-  \ttindex{clear()}%
-  \ttindex{copy()}%
-  \ttindex{has_key()}%
-  \ttindex{items()}%
-  \ttindex{keys()}%
-  \ttindex{update()}%
-  \ttindex{values()}%
+\withsubitem{(dictionary method)}{
+  \ttindex{clear()}
+  \ttindex{copy()}
+  \ttindex{has_key()}
+  \ttindex{items()}
+  \ttindex{keys()}
+  \ttindex{update()}
+  \ttindex{values()}
   \ttindex{get()}}
 \noindent
 Notes:
@@ -591,7 +590,7 @@ and \var{k} is not in the map, \code{None} is returned.
 The interpreter supports several other kinds of objects.
 Most of these support only one or two operations.
 
-\subsubsection{Modules}
+\subsubsection{Modules \label{typesmodules}}
 
 The only special operation on a module is attribute access:
 \code{\var{m}.\var{name}}, where \var{m} is a module and \var{name}
@@ -612,12 +611,12 @@ defines \code{\var{m}.a} to be \code{1}, but you can't write
 
 Modules are written like this: \code{<module 'sys'>}.
 
-\subsubsection{Classes and Class Instances}
+\subsubsection{Classes and Class Instances \label{typesobjects}}
 \nodename{Classes and Instances}
 
 See Chapters 3 and 7 of the \emph{Python Reference Manual} for these.
 
-\subsubsection{Functions}
+\subsubsection{Functions \label{typesfunctions}}
 
 Function objects are created by function definitions.  The only
 operation on a function object is to call it:
@@ -636,7 +635,7 @@ same as \code{\var{m}.__dict__} where \var{m} is the module in which
 the function \var{f} was defined).
 
 
-\subsubsection{Methods}
+\subsubsection{Methods \label{typesmethods}}
 \obindex{method}
 
 Methods are functions that are called using the attribute notation.
@@ -848,7 +847,7 @@ implemented in \C{} will have to provide a writable \member{softspace}
 attribute.
 \end{memberdesc}
 
-\subsubsection{Internal Objects}
+\subsubsection{Internal Objects \label{typesinternal}}
 
 See the \emph{Python Reference Manual} for this information.  It
 describes code objects, stack frame objects, traceback objects, and
