@@ -11,8 +11,8 @@ def main():
     form = cgi.FieldStorage()
     print "Content-type: text/html"
     print
-    cmd = form.getvalue("cmd") or "view"
-    page = form.getvalue("page") or "FrontPage"
+    cmd = form.getvalue("cmd", "view")
+    page = form.getvalue("page", "FrontPage")
     wiki = WikiPage(page)
     wiki.load()
     method = getattr(wiki, 'cmd_' + cmd, None) or wiki.cmd_view
@@ -20,10 +20,12 @@ def main():
 
 class WikiPage:
 
-    homedir = os.path.dirname(sys.argv[0])
+    homedir = "/tmp"
     scripturl = os.path.basename(sys.argv[0])
 
     def __init__(self, name):
+        if not self.iswikiword(name):
+            raise ValueError, "page name is not a wiki word"
         self.name = name
         self.load()
 
@@ -48,7 +50,7 @@ class WikiPage:
                 words[i] = word
             print "".join(words)
         print "<hr>"
-        print "<p>", self.mklink("edit", self.name, "Edit this page") + ","
+        print "<p>", self.mklink("edit", self.name, "Edit this page") + ";"
         print self.mklink("view", "FrontPage", "go to front page") + "."
 
     def cmd_edit(self, form, label="Change"):
@@ -64,8 +66,13 @@ class WikiPage:
 
     def cmd_create(self, form):
         self.data = form.getvalue("text", "").strip()
-        self.store()
-        self.cmd_view(form)
+        error = self.store()
+        if error:
+            print "<h1>I'm sorry.  That didn't work</h1>"
+            print "<p>An error occurred while attempting to write the file:"
+            print "<p>", escape(error)
+        else:
+            self.cmd_view(form)
 
     def cmd_new(self, form):
         self.cmd_edit(form, label="Create Page")
