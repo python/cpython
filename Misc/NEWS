@@ -29,6 +29,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- readline.clear_history was added.
+
 - select.select() now accepts sequences for its first three arguments.
 
 - cStringIO now supports the f.closed attribute.

@@ -42,6 +42,12 @@ Save a readline history file.
 The default filename is \file{\~{}/.history}.
 \end{funcdesc}
 
+\begin{funcdesc}{clear_history}{}
+Clear the current history.  (Note: this function is not available if
+the installed version of GNU readline doesn't support it.)
+\versionadded{2.4}
+\end{funcdesc}
+
 \begin{funcdesc}{get_history_length}{}
 Return the desired length of the history file.  Negative values imply
 unlimited history file size.
