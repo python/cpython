@@ -177,7 +177,7 @@ class Cmd:
 
     def print_topics(self, header, cmds, cmdlen, maxcol):
         if cmds:
-            print header;
+            print header
             if self.ruler:
                 print self.ruler * len(header)
             (cmds_per_line,junk)=divmod(maxcol,cmdlen)
