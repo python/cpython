@@ -54,6 +54,7 @@ DISTILL=	distill
 KPSEWHICH=	TEXINPUTS=$(TEXINPUTS) kpsewhich
 MAKEINDEX=	makeindex -s $(srcdir)/texinputs/myindex.ist
 L2H=		TEXINPUTS=$(TEXINPUTS) latex2html -init_file $(L2HINIT)
+L2HOUTPUTBASE=	.
 L2HARGS=
 L2HINIT=	$(srcdir)/perl/l2hinit.perl
 WEBCHECKER=	$(PYTHON) $(srcdir)/../Tools/webchecker/webchecker.py
@@ -78,10 +79,10 @@ VPATH=.
 RELEASE=1.5.1
 VERSION=1.5
 
-DVIFILES=	api.dvi ext.dvi lib.dvi tut.dvi
+DVIFILES=	api.dvi ext.dvi lib.dvi ref.dvi tut.dvi
 INFOFILES=	python-lib.info
-PDFFILES=	api.pdf ext.pdf lib.pdf tut.pdf
-PSFILES=	api.ps ext.ps lib.ps tut.ps
+PDFFILES=	api.pdf ext.pdf lib.pdf ref.pdf tut.pdf
+PSFILES=	api.ps ext.ps lib.ps ref.ps tut.ps
 
 MANSTYLES=$(srcdir)/texinputs/fncychap.sty $(srcdir)/texinputs/manual.cls \
 	$(srcdir)/texinputs/python.sty $(srcdir)/texinputs/myindex.ist
@@ -142,6 +143,9 @@ COMMONTEX=$(MANSTYLES) copyright.tex boilerplate.tex
 COMMONPERL=perl/manual.perl perl/python.perl
 
 $(DVIFILES): tools/fix_hack $(COMMONTEX)
+
+ref.dvi:  ref1.tex ref2.tex ref3.tex ref4.tex \
+	  ref5.tex ref6.tex ref7.tex ref8.tex
 
 # LaTeX source files for the Python Library Reference
 LIBFILES = lib.tex \
@@ -249,32 +253,37 @@ lib.texi: python-lib.texi
 # a (trivial) index.html.  Change the definition of $ICONSERVER in
 # perl/l2hinit.perl to use a different location for the icons directory.
 
-l2h: l2hapi l2hext l2hlib l2htut
+l2h: l2hapi l2hext l2hlib l2href l2htut
 
 l2hapi: $(COMMONPERL)
-	$(L2H) $(L2HARGS) api.tex
-	(cd api; ../tools/node2label.pl *.html)
+	$(L2H) $(L2HARGS) -dir $(L2HOUTPUTBASE)/api api.tex
+	(cd $(L2HOUTPUTBASE)/api; ../tools/node2label.pl *.html)
 
 l2hext: $(COMMONPERL)
-	$(L2H) $(L2HARGS) ext.tex
-	(cd ext; ../tools/node2label.pl *.html)
+	$(L2H) $(L2HARGS) -dir $(L2HOUTPUTBASE)/ext ext.tex
+	(cd $(L2HOUTPUTBASE)/ext; ../tools/node2label.pl *.html)
 
 l2hlib: $(COMMONPERL)
 	$(srcdir)/tools/fix_libaux.sed <`$(KPSEWHICH) lib.aux` >lib1.aux
 	mv lib1.aux `$(KPSEWHICH) lib.aux`
 	if test -d lib ; then rm -f lib/*.html ; fi
-	$(L2H) $(L2HARGS) lib.tex
-	(cd lib; ../tools/node2label.pl *.html)
+	$(L2H) $(L2HARGS) -dir $(L2HOUTPUTBASE)/lib lib.tex
+	(cd $(L2HOUTPUTBASE)/lib; ../tools/node2label.pl *.html)
+
+l2href: $(COMMONPERL)
+	$(L2H) $(L2HARGS) -dir $(L2HOUTPUTBASE)/ref ref.tex
+	(cd $(L2HOUTPUTBASE)/ref; ../tools/node2label.pl *.html)
 
 l2htut: $(COMMONPERL)
-	$(L2H) $(L2HARGS) tut.tex
-	(cd tut; ../tools/node2label.pl *.html)
+	$(L2H) $(L2HARGS) -dir $(L2HOUTPUTBASE)/tut tut.tex
+	(cd $(L2HOUTPUTBASE)/tut; ../tools/node2label.pl *.html)
 
 # webchecker needs an extra flag to process the huge index from the libref
 webcheck:
 	$(WEBCHECKER) file:`pwd`/api/
 	$(WEBCHECKER) file:`pwd`/ext/
 	$(WEBCHECKER) -m290000 file:`pwd`/lib/
+	$(WEBCHECKER) file:`pwd`/ref/
 	$(WEBCHECKER) file:`pwd`/tut/
 
 lib-info-$(RELEASE).tar.gz: $(INFOFILES)
@@ -296,8 +305,8 @@ postscript-$(RELEASE).tar.gz: $(PSFILES) ref/ref.ps
 	rm ref.ps
 
 tarhtml:
-	@echo "Did you remember to run makeMIFs.py in the ref subdirectory...?"
-	tar cf - index.html ???/???.css ???/*.html */*.gif \
+	tar cf - index.html icons/ \
+		-C $(L2HOUTPUTBASE) ???/???.css ???/*.html */*.gif \
 		| gzip -9 >html-$(RELEASE).tar.gz
 
 # convenience targets:
