@@ -2343,7 +2343,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 		if (c) {
 			PyErr_SetString(PyExc_TypeError, "pow() 2nd argument "
 			    "cannot be negative when 3rd argument specified");
-			return NULL;
+			goto Error;
 		}
 		else {
 			/* else return a float.  This works because we know
@@ -2361,7 +2361,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 		if (c->ob_size == 0) {
 			PyErr_SetString(PyExc_ValueError,
 					"pow() 3rd argument cannot be 0");
-			goto Done;
+			goto Error;
 		}
 
 		/* if modulus < 0:
@@ -2390,7 +2390,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 		   Having the base positive just makes things easier. */
 		if (a->ob_size < 0) {
 			if (l_divmod(a, c, NULL, &temp) < 0)
-				goto Done;
+				goto Error;
 			Py_DECREF(a);
 			a = temp;
 			temp = NULL;
