@@ -1,7 +1,0 @@
--- SGML-Open-style catalog for the Python documentation system --
-
-CATALOG	"iso/catalog"
-CATALOG	"oasis/catalog"
-
-PUBLIC  "+//IDN python.org//DTD Python Documentation 1.0//EN" "python.dtd"
-PUBLIC  "+//IDN python.org//ENTITIES Python Version//EN" "version.ent"
