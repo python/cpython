@@ -32,6 +32,7 @@ if test -f /usr/lib/NextStep/software_version; then
 	fi
 fi
 
+
 # Set name for machine-dependent library files
 AC_SUBST(MACHDEP)
 AC_MSG_CHECKING(MACHDEP)
@@ -53,7 +54,43 @@ then
 	'')	MACHDEP="unknown";;
 	esac
 fi
+
+#
+# SGI compilers allow the specification of the both the ABI and the
+# ISA on the command line.  Depending on the values of these switches,
+# different and often incompatable code will be generated.
+#
+# The SGI_ABI variable can be used to modify the CC and LDFLAGS and
+# thus supply support for various ABI/ISA combinations.  The MACHDEP
+# variable is also adjusted.
+#
+AC_SUBST(SGI_ABI)
+if test ! -z "$SGI_ABI"
+then
+        CC="cc $SGI_ABI"
+        LDFLAGS="$SGI_ABI $LDFLAGS"
+        MACHDEP=`echo "${MACHDEP}${SGI_ABI}" | sed 's/ *//g'`
+fi
 AC_MSG_RESULT($MACHDEP)
+
+#
+# CCC is the command that compiles C++ programs
+#
+# Not all make programs have this predefined.
+#
+AC_SUBST(SET_CCC)
+AC_MSG_CHECKING(CCC)
+if test -z "$CCC"
+then
+	case $ac_sys_system in
+	IRIX*)	SET_CCC="CCC= CC ${SGI_ABI}";;
+	*)	SET_CCC=""
+	esac
+else
+        SET_CCC="CCC= ${CCC}"
+fi
+AC_MSG_RESULT($SET_CCC)
+
 
 # checks for alternative programs
 AC_MSG_CHECKING(for --without-gcc)
@@ -153,6 +190,19 @@ AC_TRY_RUN([int main() { return 0; }],
 CC="$ac_save_cc"])
 AC_MSG_RESULT($ac_cv_olimit_ok)
 if test $ac_cv_olimit_ok = yes; then
+  OPT="$OPT -OPT:Olimit=0"
+fi
+
+AC_MSG_CHECKING(whether $CC accepts -OPT:Olimit=0)
+AC_CACHE_VAL(ac_cv_opt_olimit_ok,
+[ac_save_cc="$CC"
+CC="$CC -OPT:Olimit=0"
+AC_TRY_RUN([int main() { return 0; }],
+  ac_cv_opt_olimit_ok=yes,
+  ac_cv_opt_olimit_ok=no)
+CC="$ac_save_cc"])
+AC_MSG_RESULT($ac_cv_opt_olimit_ok)
+if test $ac_cv_olimit_ok = yes; then
   OPT="$OPT -Olimit 1500"
 fi
 
@@ -221,7 +271,7 @@ then
 	case $ac_sys_system/$ac_sys_release in
 	AIX*) LDSHARED="\$(srcdir)/ld_so_aix \$(CC)";;
 	IRIX/5*) LDSHARED="ld -shared";;
-	IRIX*/6*) LDSHARED="ld $SGI_ABI -shared -all"; OPT="$OPT $SGI_ABI";;
+	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
 	SunOS/4*) LDSHARED="ld";;
 	SunOS/5*) LDSHARED="ld -G";;
 	hp*|HP*) LDSHARED="ld -b";;
@@ -248,7 +298,7 @@ then
 	Linux*) CCSHARED="-fpic";;
 	FreeBSD*) CCSHARED="-fpic";;
 	SCO_SV*) CCSHARED="-KPIC -dy -Bdynamic";;
-	IRIX*/6*) CCSHARED="$SGI_ABI -all";;
+	IRIX*/6*) CCSHARED="-all";;
 	esac
 fi
 AC_MSG_RESULT($CCSHARED)
@@ -264,7 +314,7 @@ then
 	Linux*) LINKFORSHARED="-rdynamic";;
 	next/*) LINKFORSHARED="-u libsys_s";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
-	IRIX*/6*) LINKFORSHARED="$SGI_ABI -all";;
+	IRIX*/6*) LINKFORSHARED="-all";;
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
