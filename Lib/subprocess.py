@@ -372,11 +372,11 @@ if mswindows:
                              STD_OUTPUT_HANDLE, STD_ERROR_HANDLE
         from win32api import GetCurrentProcess, DuplicateHandle, \
                              GetModuleFileName, GetVersion
-        from win32con import DUPLICATE_SAME_ACCESS
+        from win32con import DUPLICATE_SAME_ACCESS, SW_HIDE
         from win32pipe import CreatePipe
         from win32process import CreateProcess, STARTUPINFO, \
                                  GetExitCodeProcess, STARTF_USESTDHANDLES, \
-                                 CREATE_NEW_CONSOLE
+                                 STARTF_USESHOWWINDOW, CREATE_NEW_CONSOLE
         from win32event import WaitForSingleObject, INFINITE, WAIT_OBJECT_0
     else:
         from _subprocess import *
@@ -673,7 +673,19 @@ class Popen(object):
             if not isinstance(args, types.StringTypes):
                 args = list2cmdline(args)
 
+            # Process startup details
+            default_startupinfo = STARTUPINFO()
+            if startupinfo == None:
+                startupinfo = default_startupinfo
+            if not None in (p2cread, c2pwrite, errwrite):
+                startupinfo.dwFlags |= STARTF_USESTDHANDLES
+                startupinfo.hStdInput = p2cread
+                startupinfo.hStdOutput = c2pwrite
+                startupinfo.hStdError = errwrite
+
             if shell:
+                default_startupinfo.dwFlags |= STARTF_USESHOWWINDOW
+                default_startupinfo.wShowWindow = SW_HIDE
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
                 args = comspec + " /c " + args
                 if (GetVersion() >= 0x80000000L or
@@ -691,15 +703,6 @@ class Popen(object):
                     # stability of your system.  Cost is Ctrl+C wont
                     # kill children.
                     creationflags |= CREATE_NEW_CONSOLE
-
-            # Process startup details
-            if startupinfo == None:
-                startupinfo = STARTUPINFO()
-            if not None in (p2cread, c2pwrite, errwrite):
-                startupinfo.dwFlags |= STARTF_USESTDHANDLES
-                startupinfo.hStdInput = p2cread
-                startupinfo.hStdOutput = c2pwrite
-                startupinfo.hStdError = errwrite
 
             # Start the process
             try:
