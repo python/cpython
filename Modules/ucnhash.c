@@ -22,7 +22,6 @@ typedef struct {
  * Generated on: Fri Jul 14 08:00:58 2000
  */
 
-#define cKeys 10538
 #define k_cHashElements 18836
 #define k_cchMaxKey  83
 #define k_cKeys  10538
@@ -111,12 +110,6 @@ hash(const char *key, unsigned int cch)
     return ((unsigned long)(G[ f1(key, cch) ]) + (unsigned long)(G[ f2(key, cch) ]) ) % k_cHashElements;
 }
 
-const _Py_UnicodeCharacterName *
-getValue(unsigned long iKey)
-{
-    return (_Py_UnicodeCharacterName *) &aucn[iKey];
-}
-
 static int
 mystrnicmp(const char *s1, const char *s2, size_t count)
 {
@@ -136,22 +129,34 @@ mystrnicmp(const char *s1, const char *s2, size_t count)
 /* bindings for the new API */
 
 static int
-ucnhash_getname(Py_UCS4 code, char* buffer, int buflen)
+getname(Py_UCS4 code, char* buffer, int buflen)
 {
+    int i;
+
+    /* brute force search */
+    for (i = 0; i < k_cKeys; i++)
+        if (aucn[i].value == code) {
+            int len = strlen(aucn[i].pszUCN);
+            if (buflen <= len)
+                return 0;
+            memcpy(buffer, aucn[i].pszUCN, len+1);
+            return 1;
+        }
+
     return 0;
 }
 
 static int
-ucnhash_getcode(const char* name, int namelen, Py_UCS4* code)
+getcode(const char* name, int namelen, Py_UCS4* code)
 {
     unsigned long j;
 
     j = hash(name, namelen);
 
-    if (j > cKeys || mystrnicmp(name, getValue(j)->pszUCN, namelen) != 0)
+    if (j > k_cKeys || mystrnicmp(name, aucn[j].pszUCN, namelen) != 0)
         return 0;
 
-    *code = getValue(j)->value;
+    *code = aucn[j].value;
 
     return 1;
 }
@@ -159,13 +164,53 @@ ucnhash_getcode(const char* name, int namelen, Py_UCS4* code)
 static const _PyUnicode_Name_CAPI hashAPI = 
 {
     sizeof(_PyUnicode_Name_CAPI),
-    ucnhash_getname,
-    ucnhash_getcode
+    getname,
+    getcode
 };
+
+/* -------------------------------------------------------------------- */
+/* Python bindings */
+
+static PyObject *
+ucnhash_getname(PyObject* self, PyObject* args)
+{
+    char name[256];
+
+    int code;
+    if (!PyArg_ParseTuple(args, "i", &code))
+        return NULL;
+
+    if (!getname((Py_UCS4) code, name, sizeof(name))) {
+        PyErr_SetString(PyExc_ValueError, "undefined character code");
+        return NULL;
+    }
+
+    return Py_BuildValue("s", name);
+}
+
+static PyObject *
+ucnhash_getcode(PyObject* self, PyObject* args)
+{
+    Py_UCS4 code;
+
+    char* name;
+    int namelen;
+    if (!PyArg_ParseTuple(args, "s#", &name, &namelen))
+        return NULL;
+
+    if (!getcode(name, namelen, &code)) {
+        PyErr_SetString(PyExc_ValueError, "undefined character name");
+        return NULL;
+    }
+
+    return Py_BuildValue("i", code);
+}
 
 static  
 PyMethodDef ucnhash_methods[] =
 {   
+    {"getname", ucnhash_getname, 1},
+    {"getcode", ucnhash_getcode, 1},
     {NULL, NULL},
 };
 
