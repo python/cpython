@@ -2155,7 +2155,7 @@ posix_popen(PyObject *self, PyObject *args)
   
 	char *cmdstring;
 	char *mode = "r";
-	if (!PyArg_ParseTuple(args, "s|s:popen", &cmdstring, &mode))
+	if (!PyArg_ParseTuple(args, "s|si:popen", &cmdstring, &mode, &bufsize))
 		return NULL;
 
 	s = PyTuple_New(0);
@@ -2168,6 +2168,11 @@ posix_popen(PyObject *self, PyObject *args)
 	} else
 		tm = _O_WRONLY;
 	 
+	if (bufsize != -1) {
+		PyErr_SetString(PyExc_ValueError, "bufsize must be -1");
+		return NULL;
+	}
+
 	if (*(mode+1) == 't')
 		f = _PyPopen(cmdstring, tm | _O_TEXT , POPEN_1);
 	else if (*(mode+1) == 'b')
@@ -2192,7 +2197,8 @@ win32_popen2(PyObject *self, PyObject  *args)
   
 	char *cmdstring;
 	char *mode = "t";
-	if (!PyArg_ParseTuple(args, "s|s:popen2", &cmdstring, &mode))
+	int bufsize = -1;
+	if (!PyArg_ParseTuple(args, "s|si:popen2", &cmdstring, &mode, &bufsize))
 		return NULL;
   
 	if (*mode == 't')
@@ -2203,7 +2209,12 @@ win32_popen2(PyObject *self, PyObject  *args)
 	} else
 		tm = _O_BINARY;
   
-	f = _PyPopen(cmdstring, tm , POPEN_2);
+	if (bufsize != -1) {
+		PyErr_SetString(PyExc_ValueError, "bufsize must be -1");
+		return NULL;
+	}
+
+	f = _PyPopen(cmdstring, tm, POPEN_2);
   
 	return f;
 }
@@ -2223,7 +2234,8 @@ win32_popen3(PyObject *self, PyObject *args)
   
 	char *cmdstring;
 	char *mode = "t";
-	if (!PyArg_ParseTuple(args, "s|s:Popen3", &cmdstring, &mode))
+	int bufsize = -1;
+	if (!PyArg_ParseTuple(args, "s|si:popen3", &cmdstring, &mode, &bufsize))
 		return NULL;
   
 	if (*mode == 't')
@@ -2234,6 +2246,11 @@ win32_popen3(PyObject *self, PyObject *args)
 	} else
 		tm = _O_BINARY;
   
+	if (bufsize != -1) {
+		PyErr_SetString(PyExc_ValueError, "bufsize must be -1");
+		return NULL;
+	}
+
 	f = _PyPopen(cmdstring, tm, POPEN_3);
   
 	return f;
@@ -2254,7 +2271,8 @@ win32_popen4(PyObject *self, PyObject  *args)
   
 	char *cmdstring;
 	char *mode = "t";
-	if (!PyArg_ParseTuple(args, "s|s:popen4", &cmdstring, &mode))
+	int bufsize = -1;
+	if (!PyArg_ParseTuple(args, "s|si:popen4", &cmdstring, &mode, &bufsize))
 		return NULL;
   
 	if (*mode == 't')
@@ -2264,9 +2282,14 @@ win32_popen4(PyObject *self, PyObject  *args)
 		return NULL;
 	} else
 		tm = _O_BINARY;
-  
+
+	if (bufsize != -1) {
+		PyErr_SetString(PyExc_ValueError, "bufsize must be -1");
+		return NULL;
+	}
+
 	f = _PyPopen(cmdstring, tm , POPEN_4);
-  
+
 	return f;
 }
 
