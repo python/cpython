@@ -5,7 +5,8 @@
 \renewcommand{\indexsubitem}{(in module pdb)}
 
 The module \code{pdb} defines an interactive source code debugger for
-Python programs.  It supports setting breakpoints and single stepping
+Python programs.  It supports setting
+(conditional) breakpoints and single stepping
 at the source line level, inspection of stack frames, source code
 listing, and evaluation of arbitrary Python code in the context of any
 stack frame.  It also supports post-mortem debugging and can be called
@@ -161,11 +162,14 @@ Move the current frame one level down in the stack trace
 Move the current frame one level up in the stack trace
 (to a newer frame).
 
-\item[b(reak) [\var{lineno}\code{|}\var{function}]]
+\item[b(reak) [\var{lineno}\code{|}\var{function}] [, "condition"]]
 
 With a \var{lineno} argument, set a break there in the current
 file.  With a \var{function} argument, set a break at the entry of
 that function.  Without argument, list all breaks.
+If a second argument is present, it is a string specifying an
+expression which must evaluate to true before the breakpoint is
+honored.
 
 \item[cl(ear) [\var{lineno}]]
 
@@ -194,7 +198,7 @@ Continue execution until the current function returns.
 
 Continue execution, only stop when a breakpoint is encountered.
 
-\item[l(ist) [\var{first} [, \var{last}]]]
+\item[l(ist) [\var{first}] [, \var{last}]]
 
 List source code for the current file.  Without arguments, list 11
 lines around the current line or continue the previous listing.  With
