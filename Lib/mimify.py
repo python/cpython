@@ -239,7 +239,7 @@ def mime_encode(line, header):
 		line = line[i:]
 	return newline + line
 
-mime_header = regex.compile('\\([ \t(]\\)\\([-a-zA-Z0-9_+]*[\240-\377][-a-zA-Z0-9_+\240-\377]*\\)\\([ \t)]\\|$\\)')
+mime_header = regex.compile('\\([ \t(]\\|^\\)\\([-a-zA-Z0-9_+]*[\240-\377][-a-zA-Z0-9_+\240-\377]*\\)\\([ \t)]\\|$\\)')
 
 def mime_encode_header(line):
 	'''Code a single header line as quoted-printable.'''
