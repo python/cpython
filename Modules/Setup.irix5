@@ -27,12 +27,22 @@
 # Some special rules to define PYTHONPATH
 # Edit the definitions below to indicate which options you are using
 
+# Don't edit this (usually)
 DESTLIB=$(prefix)/lib/python
-ARCHPATH=:$(DESTLIB)/sgi
-#ARCHPATH=:$(DESTLIB)/sun4
-#STDWINPATH=:$(DESTLIB)/stdwin
 
-PYTHONPATH=.:$(DESTLIB)$(ARCHPATH)$(STDWINPATH)
+# Standard enabled (tests are always available)
+TESTPATH=$(DESTLIB)/test
+
+# Enable this for SGI systems
+ARCHPATH=:$(DESTLIB)/sgi
+
+# Enable this for Sun systems
+#ARCHPATH=:$(DESTLIB)/sun4
+
+# Enable this if stdwin installed
+STDWINPATH=:$(DESTLIB)/stdwin
+
+PYTHONPATH=.:$(DESTLIB)$(TESTPATH)$(ARCHPATH)$(STDWINPATH)
 
 
 # Modules that should always be present (non UNIX dependent)
