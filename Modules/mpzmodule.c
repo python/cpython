@@ -586,10 +586,10 @@ mpz_power(a, b, m)
  	  {
  	    mpzobject *z2;
 	    INCREF(Py_None);
- 	    z=mpz_power(a, b, (mpzobject *)Py_None);
+ 	    z=(mpzobject *)mpz_power(a, b, (mpzobject *)Py_None);
 	    DECREF(Py_None);
- 	    if (z==NULL) return(z);
- 	    z2=mpz_remainder(z, m);
+ 	    if (z==NULL) return((object *)z);
+ 	    z2=(mpzobject *)mpz_remainder(z, m);
  	    DECREF(z);
  	    return((object *)z2);
  	  }	    
