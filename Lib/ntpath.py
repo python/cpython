@@ -407,7 +407,7 @@ def expandvars(path):
     return res
 
 
-# Normalize a path, e.g. A//B, A/./B and A/foo/../B all become A/B.
+# Normalize a path, e.g. A//B, A/./B and A/foo/../B all become A\B.
 # Previously, this function also truncated pathnames to 8+3 format,
 # but as this module is called "ntpath", that's obviously wrong!
 
@@ -421,15 +421,18 @@ def normpath(path):
     comps = path.split("\\")
     i = 0
     while i < len(comps):
-        if comps[i] == '.':
+        if comps[i] in ('.', ''):
             del comps[i]
-        elif comps[i] == '..' and i > 0 and comps[i-1] not in ('', '..'):
-            del comps[i-1:i+1]
-            i = i - 1
-        elif comps[i] == '' and i > 0 and comps[i-1] != '':
-            del comps[i]
+        elif comps[i] == '..':
+            if i > 0 and comps[i-1] != '..':
+                del comps[i-1:i+1]
+                i -= 1
+            elif i == 0 and prefix.endswith("\\"):
+                del comps[i]
+            else:
+                i += 1
         else:
-            i = i + 1
+            i += 1
     # If the path is now empty, substitute '.'
     if not prefix and not comps:
         comps.append('.')
