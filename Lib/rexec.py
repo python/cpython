@@ -553,12 +553,12 @@ def test():
             return 1
     if fp.isatty():
         import code
-        interp = code.InteractiveConsole(r.modules['__main__'].__dict__)
         try:
-            interp.interact(
+            code.interact(
                 "*** RESTRICTED *** Python %s on %s\n"
                 'Type "help", "copyright", "credits" or "license" '
-                "for more information." % (sys.version, sys.platform))
+                "for more information." % (sys.version, sys.platform),
+                local=r.modules['__main__'].__dict__)
         except SystemExit, n:
             return n
     else:
