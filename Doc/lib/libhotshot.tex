@@ -2,30 +2,30 @@
          High performance logging profiler}
 
 \declaremodule{standard}{hotshot}
+\modulesynopsis{High performance logging profiler, mostly written in C.}
 \moduleauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
 \sectionauthor{Anthony Baxter}{anthony@interlink.com.au}
 
-
 \versionadded{2.2}
 
-\modulesynopsis{High performance logging profiler, mostly written in C.}
 
-
-This module provides a nicer interface to the \code{_hotshot} C module.
+This module provides a nicer interface to the \module{_hotshot} C module.
 Hotshot is a replacement for the existing \refmodule{profile} module. As it's
-written mostly in C, it should result in a much smaller performance impact 
-than the existing profile module.
+written mostly in C, it should result in a much smaller performance impact
+than the existing \refmodule{profile} module.
 
-\begin{classdesc}{Profile}{logfile, \optional{, lineevents=0, linetimings=1}}
-
-The profiler object. The argument \var{logfile} is the name of a log file
-to use for logged profile data. The argument \var{lineevents} specifies whether
-to generate events for every source line, or just on function call/return. It
-defaults to 0 (only log function call/return). The argument \var{linetimings}
-specifies whether to record timing information. It defaults to 1 (store timing
+\begin{classdesc}{Profile}{logfile\optional{,
+                           lineevents\code{=0}\optional{,
+                           linetimings\code{=1}}}}
+The profiler object. The argument \var{logfile} is the name of a log
+file to use for logged profile data. The argument \var{lineevents}
+specifies whether to generate events for every source line, or just on
+function call/return. It defaults to \code{0} (only log function
+call/return). The argument \var{linetimings} specifies whether to
+record timing information. It defaults to \code{1} (store timing
 information).
-
 \end{classdesc}
+
 
 \subsection{Profile Objects \label{hotshot-objects}}
 
@@ -38,22 +38,19 @@ Add an arbitrary labelled value to the profile output.
 \begin{methoddesc}{close}{}
 Close the logfile and terminate the profiler.
 \end{methoddesc}
- 
-%
+
 \begin{methoddesc}{fileno}{}
 Return the file descriptor of the profiler's log file.
 \end{methoddesc}
 
 \begin{methoddesc}{run}{cmd}
-Profile an exec-compatible string in the script environment.
-
-The globals from the \module{__main__} module are used as 
+Profile an \keyword{exec}-compatible string in the script environment.
+The globals from the \refmodule[main]{__main__} module are used as
 both the globals and locals for the script.
 \end{methoddesc}
 
 \begin{methoddesc}{runcall}{func, *args, **keywords}
 Profile a single call of a callable.
-
 Additional positional and keyword arguments may be passed
 along; the result of the call is returned, and exceptions are
 allowed to propogate cleanly, while ensuring that profiling is
@@ -62,8 +59,7 @@ disabled on the way out.
 
 
 \begin{methoddesc}{runctx}{cmd, globals, locals}
-Evaluate an exec-compatible string in a specific environment.
-
+Evaluate an \keyword{exec}-compatible string in a specific environment.
 The string is compiled before profiling begins.
 \end{methoddesc}
 
@@ -75,32 +71,33 @@ Start the profiler.
 Stop the profiler.
 \end{methoddesc}
 
-\subsection{Using hotshot data}
-\declaremodule{standard}{hotshot.stats}
 
+\subsection{Using hotshot data}
+
+\declaremodule{standard}{hotshot.stats}
 \modulesynopsis{Statistical analysis for Hotshot}
 
 \versionadded{2.2}
 
-This module loads hotshot profiling data into the standard \module{pstats} 
+This module loads hotshot profiling data into the standard \module{pstats}
 Stats objects.
 
 \begin{funcdesc}{load}{filename}
-Load hotshot data from \var{filename}. Returns an instance 
+Load hotshot data from \var{filename}. Returns an instance
 of the \class{pstats.Stats} class.
 \end{funcdesc}
 
 \begin{seealso}
-  \seemodule{profile}{The profile module's \class{Stats} class }
+  \seemodule{profile}{The \module{profile} module's \class{Stats} class}
 \end{seealso}
+
 
 \subsection{Example Usage \label{hotshot-example}}
 
-Note that this example runs the python "benchmark" pystones. It can
+Note that this example runs the python ``benchmark'' pystones.  It can
 take some time to run, and will produce large output files.
 
 \begin{verbatim}
-
 >>> import hotshot, hotshot.stats, test.pystone
 >>> prof = hotshot.Profile("stones.prof")
 >>> benchtime, stones = prof.runcall(test.pystone.pystones)
@@ -120,7 +117,4 @@ take some time to run, and will produce large output files.
  .
  .
  .
-
 \end{verbatim}
-
-
