@@ -693,7 +693,7 @@ This new feature is implemented using the new import hooks from
 \seepep{273}{Import Modules from Zip Archives}{Written by James C. Ahlstrom, 
 who also provided an implementation.
 Python 2.3 follows the specification in \pep{273}, 
-but uses an implementation written by Just van Rossum 
+but uses an implementation written by Just van~Rossum 
 that uses the import hooks described in \pep{302}.}
 
 \end{seealso}
@@ -759,8 +759,7 @@ raise ImportError
 \begin{seealso}
 
 \seepep{302}{New Import Hooks}{Written by Just van~Rossum and Paul Moore.
-Implemented by Just van Rossum.
-% XXX is that credit right?  
+Implemented by Just van~Rossum.
 }
 
 \end{seealso}
@@ -964,7 +963,7 @@ simplify creating small dictionaries:
 {'blue': 2, 'black': 4, 'green': 3, 'red': 1}    
 \end{verbatim}
 
-(Contributed by Just van Rossum.)       
+(Contributed by Just van~Rossum.)       
 
 \item The \keyword{assert} statement no longer checks the \code{__debug__}
 flag, so you can no longer disable assertions by assigning to \code{__debug__}.
@@ -1302,11 +1301,11 @@ radians.  Also, an optional \var{base} argument was added to
 bases other than \code{e} and \code{10}.  (Contributed by Raymond
 Hettinger.)
 
-\item Seven new functions, \function{getpgid()}, \function{killpg()},
-\function{lchown()}, \function{major()}, \function{makedev()},
-\function{minor()}, and \function{mknod()}, were added to the
+\item Several new functions (\function{getpgid()}, \function{killpg()},
+\function{lchown()}, \function{loadavg()}, \function{major()}, \function{makedev()},
+\function{minor()}, and \function{mknod()}) were added to the
 \module{posix} module that underlies the \module{os} module.
-(Contributed by Gustavo Niemeyer and Geert Jansen.)
+(Contributed by Gustavo Niemeyer, Geert Jansen, and Denis S. Otkidach.)
 
 \item The old and never-documented \module{linuxaudiodev} module has
 been renamed to \module{ossaudiodev}, because the OSS sound drivers
