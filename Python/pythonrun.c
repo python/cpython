@@ -286,6 +286,18 @@ print_error()
 				writestring(buf, f);
 				writestring("\n", f);
 				if (text != NULL) {
+					char *nl;
+					if (offset > 0 &&
+					    offset == strlen(text))
+						offset--;
+					for (;;) {
+						nl = strchr(text, '\n');
+						if (nl == NULL ||
+						    nl-text >= offset)
+							break;
+						offset -= (nl+1-text);
+						text = nl+1;
+					}
 					while (*text == ' ' || *text == '\t') {
 						text++;
 						offset--;
