@@ -585,7 +585,8 @@ instance_dealloc(register PyInstanceObject *inst)
 	extern long _Py_RefTotal;
 #endif
 	_PyObject_GC_UNTRACK(inst);
-	PyObject_ClearWeakRefs((PyObject *) inst);
+	if (inst->in_weakreflist != NULL)
+		PyObject_ClearWeakRefs((PyObject *) inst);
 
 	/* Temporarily resurrect the object. */
 #ifdef Py_TRACE_REFS
@@ -2071,7 +2072,8 @@ static void
 instancemethod_dealloc(register PyMethodObject *im)
 {
 	_PyObject_GC_UNTRACK(im);
-	PyObject_ClearWeakRefs((PyObject *)im);
+	if (im->im_weakreflist != NULL)
+		PyObject_ClearWeakRefs((PyObject *)im);
 	Py_DECREF(im->im_func);
 	Py_XDECREF(im->im_self);
 	Py_XDECREF(im->im_class);
