@@ -40,7 +40,7 @@ COMMONPERL= $(TOPDIR)/perl/manual.perl \
 	$(TOPDIR)/perl/l2hinit.perl
 
 
-all:	$(INDEXFILES) modindex.html
+all:	$(INDEXFILES) index.html modindex.html
 
 .PHONY: api ext lib mac ref tut
 
@@ -58,6 +58,17 @@ modindex.html: lib/lib.html mac/mac.html $(TOOLSDIR)/mkmodindex
 	$(TOOLSDIR)/mkmodindex --columns 4 --output modindex.html \
 		--address $(PYTHONDOCS) \
 		lib/modindex.html mac/modindex.html
+
+# This is really ugly, but we're not dependent on $(RELEASE), which isn't
+# defined here.  It also maintains the proper dependency on boilerplate.tex.
+
+BOILERPLATE=$(TOPDIR)/texinputs/boilerplate.tex
+index.html: index.html.in $(BOILERPLATE)
+	REL=`grep '\\release{' $(BOILERPLATE) | sed 's/.*\\release{\(.*\)}.*$$/\1/'` ; \
+		sed "s/@RELEASE@/$$REL/g" $< >TEMP
+	DATE=`grep '\\date{' $(BOILERPLATE) | sed 's/.*\\date{\(.*\)}.*$$/\1/'` ; \
+		sed "s/@DATE@/$$DATE/g" TEMP >$@
+	rm -f TEMP
 
 api/api.html:  $(PAPERDIR)/api.aux $(BUILDINDEX)
 	$(MKHTML) api $(L2HARGS)
