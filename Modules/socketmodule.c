@@ -3559,6 +3559,7 @@ static
 PySocketModule_APIObject PySocketModuleAPI =
 {
 	&sock_type,
+        NULL
 };
 
 
@@ -3596,6 +3597,7 @@ init_socket(void)
 	socket_error = PyErr_NewException("socket.error", NULL, NULL);
 	if (socket_error == NULL)
 		return;
+        PySocketModuleAPI.error = socket_error;
 	Py_INCREF(socket_error);
 	PyModule_AddObject(m, "error", socket_error);
 	socket_herror = PyErr_NewException("socket.herror",
