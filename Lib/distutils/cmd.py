@@ -9,7 +9,7 @@ in the distutils.command package.
 
 __revision__ = "$Id$"
 
-import sys, os, string
+import sys, os, string, re
 from types import *
 from distutils.errors import *
 from distutils import util
@@ -171,6 +171,77 @@ class Command:
         """
         if self.verbose >= level:
             print msg
+
+
+    # -- Option validation methods -------------------------------------
+    # (these are very handy in writing the 'finalize_options()' method)
+    # 
+    # NB. the general philosophy here is to ensure that a particular option
+    # value meets certain type and value constraints.  If not, we try to
+    # force it into conformance (eg. if we expect a list but have a string,
+    # split the string on comma and/or whitespace).  If we can't force the
+    # option into conformance, raise DistutilsOptionError.  Thus, command
+    # classes need do nothing more than (eg.)
+    #   self.ensure_string_list('foo')
+    # and they can be guaranteed that thereafter, self.foo will be
+    # a list of strings.
+
+    def _ensure_stringlike (self, option, what, default=None):
+        val = getattr(self, option)
+        if val is None:
+            setattr(self, option, default)
+            return default
+        elif type(val) is not StringType:
+            raise DistutilsOptionError, \
+                  "'%s' must be a %s (got `%s`)" % (option, what, val)
+        return val
+
+    def ensure_string (self, option, default=None):
+        """Ensure that 'option' is a string; if not defined, set it to
+        'default'.
+        """
+        self._ensure_stringlike(option, "string", default)
+
+    def ensure_string_list (self, option):
+        """Ensure that 'option' is a list of strings.  If 'option' is
+        currently a string, we split it either on /,\s*/ or /\s+/, so
+        "foo bar baz", "foo,bar,baz", and "foo,   bar baz" all become
+        ["foo", "bar", "baz"].
+        """
+        val = getattr(self, option)
+        if val is None:
+            return
+        elif type(val) is StringType:
+            setattr(self, option, re.split(r',\s*|\s+', val))
+        else:
+            if type(val) is ListType:
+                types = map(type, val)
+                ok = (types == [StringType] * len(val))
+            else:
+                ok = 0
+
+            if not ok:
+                raise DistutilsOptionError, \
+                      "'%s' must be a list of strings (got %s)" % \
+                      (option, `val`)
+        
+    def _ensure_tested_string (self, option, tester,
+                               what, error_fmt, default=None):
+        val = self._ensure_stringlike(option, what, default)
+        if val is not None and not tester(val):
+            raise DistutilsOptionError, \
+                  ("error in '%s' option: " + error_fmt) % (option, val)
+
+    def ensure_filename (self, option):
+        """Ensure that 'option' is the name of an existing file."""
+        self._ensure_tested_string(option, os.path.isfile,
+                                   "filename",
+                                   "'%s' does not exist or is not a file")
+
+    def ensure_dirname (self, option):
+        self._ensure_tested_string(option, os.path.isdir,
+                                   "directory name",
+                                   "'%s' does not exist or is not a directory")
 
 
     # -- Convenience methods for commands ------------------------------
