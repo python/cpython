@@ -26,7 +26,7 @@ sys.path more than once.  Blank lines and lines beginning with
 \code{#} are skipped.
 
 For example, suppose sys.prefix and sys.exec_prefix are set to
-/usr/local and there is a directory /usr/local/python1.5/site-packages
+/usr/local and there is a directory /usr/local/lib/python1.5/site-packages
 with three subdirectories, foo, bar and spam, and two path
 configuration files, foo.pth and bar.pth.  Assume foo.pth contains the
 following:
