@@ -1361,6 +1361,7 @@ static FSSpec library_fss;
 OSErr pascal
 init_tkinter_shlib(InitBlockPtr data)
 {
+	__sinit(); /* Sez Jack */
 	if ( data == nil ) return noErr;
 	if ( data->fragLocator.where == kOnDiskFlat ) {
 		library_fss = *data->fragLocator.u.onDisk.fileSpec;
