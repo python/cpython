@@ -79,7 +79,9 @@ PyParser_New(grammar *g, int start)
 	if (ps == NULL)
 		return NULL;
 	ps->p_grammar = g;
+#if 0 /* future keyword */
 	ps->p_generators = 0;
+#endif
 	ps->p_tree = PyNode_New(start);
 	if (ps->p_tree == NULL) {
 		PyMem_DEL(ps);
@@ -145,10 +147,12 @@ classify(parser_state *ps, int type, char *str)
 			if (l->lb_type == NAME && l->lb_str != NULL &&
 					l->lb_str[0] == s[0] &&
 					strcmp(l->lb_str, s) == 0) {
+#if 0 /* future keyword */
 				if (!ps->p_generators &&
 				    s[0] == 'y' &&
 				    strcmp(s, "yield") == 0)
 					break; /* not a keyword */
+#endif
 				D(printf("It's a keyword\n"));
 				return n - i;
 			}
@@ -170,6 +174,7 @@ classify(parser_state *ps, int type, char *str)
 	return -1;
 }
 
+#if 0 /* future keyword */
 static void
 future_hack(parser_state *ps)
 {
@@ -191,6 +196,7 @@ future_hack(parser_state *ps)
 		}
 	}
 }
+#endif /* future keyword */
 
 int
 PyParser_AddToken(register parser_state *ps, register int type, char *str,
@@ -249,10 +255,12 @@ PyParser_AddToken(register parser_state *ps, register int type, char *str,
 						 "Direct pop.\n",
 						 d->d_name,
 						 ps->p_stack.s_top->s_state));
+#if 0 /* future keyword */
 					if (d->d_name[0] == 'i' &&
 					    strcmp(d->d_name,
 						   "import_stmt") == 0)
 						future_hack(ps);
+#endif
 					s_pop(&ps->p_stack);
 					if (s_empty(&ps->p_stack)) {
 						D(printf("  ACCEPT.\n"));
@@ -265,9 +273,11 @@ PyParser_AddToken(register parser_state *ps, register int type, char *str,
 		}
 		
 		if (s->s_accept) {
+#if 0 /* future keyword */
 			if (d->d_name[0] == 'i' &&
 			    strcmp(d->d_name, "import_stmt") == 0)
 				future_hack(ps);
+#endif
 			/* Pop this dfa and try again */
 			s_pop(&ps->p_stack);
 			D(printf(" Pop ...\n"));
