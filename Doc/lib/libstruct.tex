@@ -39,7 +39,7 @@ The module defines the following exception and functions:
 Format characters have the following meaning; the conversion between C
 and Python values should be obvious given their types:
 
-\begin{tableiii}{|c|l|l|}{samp}{Format}{C}{Python}
+\begin{tableiii}{c|l|l}{samp}{Format}{C Type}{Python}
   \lineiii{x}{pad byte}{no value}
   \lineiii{c}{char}{string of length 1}
   \lineiii{b}{signed char}{integer}
@@ -81,7 +81,7 @@ Alternatively, the first character of the format string can be used to
 indicate the byte order, size and alignment of the packed data,
 according to the following table:
 
-\begin{tableiii}{|c|l|l|}{samp}{Character}{Byte order}{Size and alignment}
+\begin{tableiii}{c|l|l}{samp}{Character}{Byte order}{Size and alignment}
   \lineiii{@}{native}{native}
   \lineiii{=}{native}{standard}
   \lineiii{<}{little-endian}{standard}

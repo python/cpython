@@ -62,9 +62,8 @@ their operands.)
 These are the Boolean operations, ordered by ascending priority:
 \indexii{Boolean}{operations}
 
-\begin{tableiii}{|c|l|c|}{code}{Operation}{Result}{Notes}
+\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
   \lineiii{\var{x} or \var{y}}{if \var{x} is false, then \var{y}, else \var{x}}{(1)}
-  \hline
   \lineiii{\var{x} and \var{y}}{if \var{x} is false, then \var{x}, else \var{y}}{(1)}
   \hline
   \lineiii{not \var{x}}{if \var{x} is false, then \code{1}, else \code{0}}{(2)}
@@ -102,7 +101,7 @@ all when \code{x < y} is found to be false).
 
 This table summarizes the comparison operations:
 
-\begin{tableiii}{|c|l|c|}{code}{Operation}{Meaning}{Notes}
+\begin{tableiii}{c|l|c}{code}{Operation}{Meaning}{Notes}
   \lineiii{<}{strictly less than}{}
   \lineiii{<=}{less than or equal}{}
   \lineiii{>}{strictly greater than}{}
@@ -212,7 +211,7 @@ ascending priority (operations in the same box have the same
 priority; all numeric operations have a higher priority than
 comparison operations):
 
-\begin{tableiii}{|c|l|c|}{code}{Operation}{Result}{Notes}
+\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
   \lineiii{\var{x} + \var{y}}{sum of \var{x} and \var{y}}{}
   \lineiii{\var{x} - \var{y}}{difference of \var{x} and \var{y}}{}
   \hline
@@ -277,16 +276,12 @@ operations (\samp{+} and \samp{-}).
 This table lists the bit-string operations sorted in ascending
 priority (operations in the same box have the same priority):
 
-\begin{tableiii}{|c|l|c|}{code}{Operation}{Result}{Notes}
+\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
   \lineiii{\var{x} | \var{y}}{bitwise \dfn{or} of \var{x} and \var{y}}{}
-  \hline
   \lineiii{\var{x} \^{} \var{y}}{bitwise \dfn{exclusive or} of \var{x} and \var{y}}{}
-  \hline
   \lineiii{\var{x} \&{} \var{y}}{bitwise \dfn{and} of \var{x} and \var{y}}{}
-  \hline
   \lineiii{\var{x} << \var{n}}{\var{x} shifted left by \var{n} bits}{(1), (2)}
   \lineiii{\var{x} >> \var{n}}{\var{x} shifted right by \var{n} bits}{(1), (3)}
-  \hline
   \hline
   \lineiii{\~\var{x}}{the bits of \var{x} inverted}{}
 \end{tableiii}
@@ -337,13 +332,12 @@ This table lists the sequence operations sorted in ascending priority
 \var{s} and \var{t} are sequences of the same type; \var{n}, \var{i}
 and \var{j} are integers:
 
-\begin{tableiii}{|c|l|c|}{code}{Operation}{Result}{Notes}
+\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
   \lineiii{\var{x} in \var{s}}{\code{1} if an item of \var{s} is equal to \var{x}, else \code{0}}{}
   \lineiii{\var{x} not in \var{s}}{\code{0} if an item of \var{s} is
 equal to \var{x}, else \code{1}}{}
   \hline
   \lineiii{\var{s} + \var{t}}{the concatenation of \var{s} and \var{t}}{}
-  \hline
   \lineiii{\var{s} * \var{n}{\rm ,} \var{n} * \var{s}}{\var{n} copies of \var{s} concatenated}{(3)}
   \hline
   \lineiii{\var{s}[\var{i}]}{\var{i}'th item of \var{s}, origin 0}{(1)}
@@ -456,7 +450,7 @@ The following operations are defined on mutable sequence types (where
 \indexiii{mutable}{sequence}{types}
 \indexii{list}{type}
 
-\begin{tableiii}{|c|l|c|}{code}{Operation}{Result}{Notes}
+\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
   \lineiii{\var{s}[\var{i}] = \var{x}}
 	{item \var{i} of \var{s} is replaced by \var{x}}{}
   \lineiii{\var{s}[\var{i}:\var{j}] = \var{t}}
@@ -542,7 +536,7 @@ Dictionaries are created by placing a comma-separated list of
 The following operations are defined on mappings (where \var{a} is a
 mapping, \var{k} is a key and \var{x} is an arbitrary object):
 
-\begin{tableiii}{|c|l|c|}{code}{Operation}{Result}{Notes}
+\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
   \lineiii{len(\var{a})}{the number of items in \var{a}}{}
   \lineiii{\var{a}[\var{k}]}{the item of \var{a} with key \var{k}}{(1)}
   \lineiii{\var{a}[\var{k}] = \var{x}}{set \code{\var{a}[\var{k}]} to \var{x}}{}
