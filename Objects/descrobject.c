@@ -555,12 +555,6 @@ PyDescr_NewWrapper(PyTypeObject *type, struct wrapperbase *base, void *wrapped)
 	return (PyObject *)descr;
 }
 
-int
-PyDescr_IsData(PyObject *d)
-{
-	return d->ob_type->tp_descr_set != NULL;
-}
-
 
 /* --- Readonly proxy for dictionaries (actually any mapping) --- */
 
