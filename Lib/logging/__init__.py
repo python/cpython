@@ -42,7 +42,7 @@ except ImportError:
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "beta"
 __version__ = "0.4.9.6"
-__date__    = "12 March 2005"
+__date__    = "27 March 2005"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -241,8 +241,10 @@ class LogRecord:
         self.relativeCreated = (self.created - _startTime) * 1000
         if thread:
             self.thread = thread.get_ident()
+            self.threadName = threading.currentThread().getName()
         else:
             self.thread = None
+            self.threadName = None
         if hasattr(os, 'getpid'):
             self.process = os.getpid()
         else:
@@ -320,6 +322,7 @@ class Formatter:
                         relative to the time the logging module was loaded
                         (typically at application startup time)
     %(thread)d          Thread ID (if available)
+    %(threadName)s      Thread name (if available)
     %(process)d         Process ID (if available)
     %(message)s         The result of record.getMessage(), computed just as
                         the record is emitted
@@ -570,7 +573,7 @@ class Handler(Filterer):
         Acquire a thread lock for serializing access to the underlying I/O.
         """
         if thread:
-            self.lock = thread.allocate_lock()
+            self.lock = threading.RLock()
         else:
             self.lock = None
 
