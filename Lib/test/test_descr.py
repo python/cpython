@@ -3871,8 +3871,32 @@ def carloverre():
     else:
         raise TestFailed, "Carlo Verre __delattr__ succeeded!"
 
+def weakref_segfault():
+    # SF 742911
+    if verbose:
+        print "Testing weakref segfault..."
+
+    import weakref
+
+    class Provoker:
+        def __init__(self, referrent):
+            self.ref = weakref.ref(referrent)
+
+        def __del__(self):
+            x = self.ref()
+            print x
+            return x
+
+    class Oops(object):
+        pass
+
+    o = Oops()
+    o.whatever = Provoker(o)
+    del o
+
 
 def test_main():
+    weakref_segfault() # Must be first, somehow
     do_this_first()
     class_docstrings()
     lists()
