@@ -910,6 +910,31 @@ class SSLFile(SharedSocketClient):
             self._buf = all[i:]
             return line
 
+    def readlines(self, sizehint=0):
+        total = 0
+        list = []
+        while True:
+            line = self.readline()
+            if not line:
+                break
+            list.append(line)
+            total += len(line)
+            if sizehint and total >= sizehint:
+                break
+        return list
+
+    def fileno(self):
+        return self._sock.fileno()
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        line = self.readline()
+        if not line:
+            raise StopIteration
+        return line
+
 class FakeSocket(SharedSocketClient):
 
     class _closedsocket:
