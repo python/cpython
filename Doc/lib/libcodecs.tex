@@ -122,6 +122,16 @@ represent big endian (\samp{_BE} suffix) and little endian
 (\samp{_LE} suffix) byte order using 32-bit and 64-bit encodings.
 \end{datadesc}
 
+
+\begin{seealso}
+  \seeurl{http://sourceforge.net/projects/python-codecs/}{A
+          SourceForge project working on additional support for Asian
+          codecs for use with Python.  They are in the early stages of
+          development at the time of this writing --- look in their
+          FTP area for downloadable files.}
+\end{seealso}
+
+
 \subsection{Codec Base Classes}
 
 The \module{codecs} defines a set of base classes which define the
@@ -142,14 +152,14 @@ schemes by providing the \var{errors} string argument.  The following
 string values are defined and implemented by all standard Python
 codecs:
 
-\begin{itemize}
-  \item \code{'strict'} Raise \exception{ValueError} (or a subclass);
-                      this is the default.
-  \item \code{'ignore'} Ignore the character and continue with the next.
-  \item \code{'replace'} Replace with a suitable replacement character;
-                      Python will use the official U+FFFD REPLACEMENT
-                      CHARACTER for the builtin Unicode codecs.
-\end{itemize}
+\begin{tableii}{l|l}{code}{Value}{Meaning}
+  \lineii{'strict'}{Raise \exception{ValueError} (or a subclass);
+                    this is the default.}
+  \lineii{'ignore'}{Ignore the character and continue with the next.}
+  \lineii{'replace'}{Replace with a suitable replacement character;
+                     Python will use the official U+FFFD REPLACEMENT
+                     CHARACTER for the built-in Unicode codecs.}
+\end{tableii}
 
 
 \subsubsection{Codec Objects \label{codec-objects}}
