@@ -423,9 +423,11 @@ class Misc:
 		data = self.tk.split(
 			self.tk.call('winfo', 'visualsavailable', self._w,
 				     includeids and 'includeids' or None))
-		def parseitem(x, self=self):
-			return x[:1] + tuple(map(getint, x[1:]))
-		return map(parseitem, data)
+		return map(self.__winfo_parseitem, data)
+	def __winfo_parseitem(self, t):
+		return t[:1] + tuple(map(self.__winfo_getint, t[1:]))
+	def __winfo_getint(self, x):
+		return _string.atoi(x, 0)
 	def winfo_vrootheight(self):
 		return getint(
 			self.tk.call('winfo', 'vrootheight', self._w))
