@@ -1172,85 +1172,92 @@ int utf8_encoding_error(const Py_UNICODE **source,
 }
 #endif
 
+/* Allocation strategy: we default to Latin-1, then do one resize
+   whenever we hit an order boundary. The assumption is that
+   characters from higher orders usually occur often enough to warrant
+   this.
+*/
+
 PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 			       int size,
 			       const char *errors)
 {
     PyObject *v;
     char *p;
-    unsigned int cbAllocated = 2 * size;
-    unsigned int cbWritten = 0;
     int i = 0;
-
+    int overalloc = 2;
+    int len;
+    
     /* Short-cut for emtpy strings */
     if (size == 0)
 	return PyString_FromStringAndSize(NULL, 0);
 
-    /* We allocate 4 more bytes to have room for at least one full
-       UTF-8 sequence; saves a few cycles in the loop below */
-    v = PyString_FromStringAndSize(NULL, cbAllocated + 4);
+    v = PyString_FromStringAndSize(NULL, overalloc * size);
     if (v == NULL)
         return NULL;
 
     p = PyString_AS_STRING(v);
+
     while (i < size) {
         Py_UCS4 ch = s[i++];
 
-        if (ch < 0x80) {
+        if (ch < 0x80)
+	    /* Encode ASCII */
             *p++ = (char) ch;
-            cbWritten++;
-        }
 
         else if (ch < 0x0800) {
+	    /* Encode Latin-1 */
             *p++ = (char)(0xc0 | (ch >> 6));
             *p++ = (char)(0x80 | (ch & 0x3f));
-            cbWritten += 2;
         }
                         
         else {
-	    
-	    /* Assure that we have enough room for high order Unicode
-	       ordinals */
-	    if (cbWritten >= cbAllocated) {
-		cbAllocated += 4 * 10;
-		if (_PyString_Resize(&v, cbAllocated + 4))
-		    goto onError;
-		p = PyString_AS_STRING(v) + cbWritten;
-	    }
-
+	    /* Encode UCS2 Unicode ordinals */
 	    if (ch < 0x10000) {
-		/* Check for high surrogate */
+
+		/* Special case: check for high surrogate */
 		if (0xD800 <= ch && ch <= 0xDBFF && i != size) {
 		    Py_UCS4 ch2 = s[i];
-		    /* Check for low surrogate */
+		    /* Check for low surrogate and combine the two to
+		       form a UCS4 value */
 		    if (0xDC00 <= ch2 && ch2 <= 0xDFFF) {
-                        ch = ((ch - 0xD800) << 10 | (ch2 - 0xDC00)) + 0x00010000;
-                        *p++ = (char)(0xf0 | (ch >> 18));
-                        *p++ = (char)(0x80 | ((ch >> 12) & 0x3f));
-			*p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
-			*p++ = (char)(0x80 | (ch & 0x3f));
-                        i++;
-                        cbWritten += 4;
-			continue;
+                        ch = ((ch - 0xD800) << 10 | (ch2 - 0xDC00)) + 0x10000;
+			i++;
+			goto encodeUCS4;
                     }
 		    /* Fall through: handles isolated high surrogates */
                 }
+
+		if (overalloc < 3) {
+		    len = (int)(p - PyString_AS_STRING(v));
+		    overalloc = 3;
+		    if (_PyString_Resize(&v, overalloc * size))
+			goto onError;
+		    p = PyString_AS_STRING(v) + len;
+		}
                 *p++ = (char)(0xe0 | (ch >> 12));
 		*p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
 		*p++ = (char)(0x80 | (ch & 0x3f));
-		cbWritten += 3;
-    
-	    } else {
-		*p++ = (char)(0xf0 | (ch>>18));
-		*p++ = (char)(0x80 | ((ch>>12) & 0x3f));
-		*p++ = (char)(0x80 | ((ch>>6) & 0x3f));
-		*p++ = (char)(0x80 | (ch & 0x3f));
-		cbWritten += 4;
+		continue;
 	    }
+
+	    /* Encode UCS4 Unicode ordinals */
+	encodeUCS4:
+	    if (overalloc < 4) {
+		len = (int)(p - PyString_AS_STRING(v));
+		overalloc = 4;
+		if (_PyString_Resize(&v, overalloc * size))
+		    goto onError;
+		p = PyString_AS_STRING(v) + len;
+	    }
+	    *p++ = (char)(0xf0 | (ch >> 18));
+	    *p++ = (char)(0x80 | ((ch >> 12) & 0x3f));
+	    *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+	    *p++ = (char)(0x80 | (ch & 0x3f));
 	}
     }
     *p = '\0';
-    if (_PyString_Resize(&v, cbWritten))
+    if (_PyString_Resize(&v, (int)(p - PyString_AS_STRING(v))))
 	goto onError;
     return v;
 
