@@ -1387,8 +1387,8 @@ static PyTypeObject BZ2File_Type = {
 	0,			/*tp_hash*/
         0,                      /*tp_call*/
         0,                      /*tp_str*/
-        PyObject_GenericGetAttr,/*tp_getattro*/
-        PyObject_GenericSetAttr,/*tp_setattro*/
+        0,                      /*tp_getattro*/
+        0,                      /*tp_setattro*/
         0,                      /*tp_as_buffer*/
         Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /*tp_flags*/
         BZ2File__doc__,         /*tp_doc*/
@@ -1407,9 +1407,9 @@ static PyTypeObject BZ2File_Type = {
         0,                      /*tp_descr_set*/
         0,                      /*tp_dictoffset*/
         (initproc)BZ2File_init, /*tp_init*/
-        PyType_GenericAlloc,    /*tp_alloc*/
+        0,                      /*tp_alloc*/
         0,                      /*tp_new*/
-      	_PyObject_Del,          /*tp_free*/
+      	0,                      /*tp_free*/
         0,                      /*tp_is_gc*/
 };
 
@@ -1652,8 +1652,8 @@ static PyTypeObject BZ2Comp_Type = {
 	0,			/*tp_hash*/
         0,                      /*tp_call*/
         0,                      /*tp_str*/
-        PyObject_GenericGetAttr,/*tp_getattro*/
-        PyObject_GenericSetAttr,/*tp_setattro*/
+        0,                      /*tp_getattro*/
+        0,                      /*tp_setattro*/
         0,                      /*tp_as_buffer*/
         Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /*tp_flags*/
         BZ2Comp__doc__,         /*tp_doc*/
@@ -1672,9 +1672,9 @@ static PyTypeObject BZ2Comp_Type = {
         0,                      /*tp_descr_set*/
         0,                      /*tp_dictoffset*/
         (initproc)BZ2Comp_init, /*tp_init*/
-        PyType_GenericAlloc,    /*tp_alloc*/
-        PyType_GenericNew,      /*tp_new*/
-      	_PyObject_Del,          /*tp_free*/
+        0,                      /*tp_alloc*/
+        0,                      /*tp_new*/
+      	0,                      /*tp_free*/
         0,                      /*tp_is_gc*/
 };
 
@@ -1869,8 +1869,8 @@ static PyTypeObject BZ2Decomp_Type = {
 	0,			/*tp_hash*/
         0,                      /*tp_call*/
         0,                      /*tp_str*/
-        PyObject_GenericGetAttr,/*tp_getattro*/
-        PyObject_GenericSetAttr,/*tp_setattro*/
+        0,                      /*tp_getattro*/
+        0,                      /*tp_setattro*/
         0,                      /*tp_as_buffer*/
         Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /*tp_flags*/
         BZ2Decomp__doc__,       /*tp_doc*/
@@ -1889,9 +1889,9 @@ static PyTypeObject BZ2Decomp_Type = {
         0,                      /*tp_descr_set*/
         0,                      /*tp_dictoffset*/
         (initproc)BZ2Decomp_init, /*tp_init*/
-        PyType_GenericAlloc,    /*tp_alloc*/
-        PyType_GenericNew,      /*tp_new*/
-      	_PyObject_Del,          /*tp_free*/
+        0,                      /*tp_alloc*/
+        0,                      /*tp_new*/
+      	0,                      /*tp_free*/
         0,                      /*tp_is_gc*/
 };
 
@@ -2089,9 +2089,24 @@ initbz2(void)
 	BZ2File_Type.ob_type = &PyType_Type;
 	BZ2File_Type.tp_base = &PyFile_Type;
 	BZ2File_Type.tp_new = PyFile_Type.tp_new;
+	BZ2File_Type.tp_getattro = PyObject_GenericGetAttr;
+	BZ2File_Type.tp_setattro = PyObject_GenericSetAttr;
+	BZ2File_Type.tp_alloc = PyType_GenericAlloc;
+	BZ2File_Type.tp_free = _PyObject_Del;
 
 	BZ2Comp_Type.ob_type = &PyType_Type;
+	BZ2Comp_Type.tp_getattro = PyObject_GenericGetAttr;
+	BZ2Comp_Type.tp_setattro = PyObject_GenericSetAttr;
+	BZ2Comp_Type.tp_alloc = PyType_GenericAlloc;
+	BZ2Comp_Type.tp_new = PyType_GenericNew;
+	BZ2Comp_Type.tp_free = _PyObject_Del;
+
 	BZ2Decomp_Type.ob_type = &PyType_Type;
+	BZ2Decomp_Type.tp_getattro = PyObject_GenericGetAttr;
+	BZ2Decomp_Type.tp_setattro = PyObject_GenericSetAttr;
+	BZ2Decomp_Type.tp_alloc = PyType_GenericAlloc;
+	BZ2Decomp_Type.tp_new = PyType_GenericNew;
+	BZ2Decomp_Type.tp_free = _PyObject_Del;
 
 	m = Py_InitModule3("bz2", bz2_methods, bz2__doc__);
 
