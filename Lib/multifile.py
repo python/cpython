@@ -131,9 +131,9 @@ class MultiFile:
 		if self.level > 0:
 			raise Error, 'bad MultiFile.push() call'
 		self.stack.insert(0, sep)
-	        if self.seekable:
-                	self.posstack.insert(0, self.start)
-                	self.start = self.fp.tell()
+		if self.seekable:
+			self.posstack.insert(0, self.start)
+			self.start = self.fp.tell()
 	#
 	def pop(self):
 		if self.stack == []:
