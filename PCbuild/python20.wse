@@ -1160,8 +1160,9 @@ item: If/While Statement
   Flags=00001010
 end
 item: Create Shortcut
-  Source=%MAINDIR%\Tools\idle\idle.pyw
+  Source=%MAINDIR%\pythonw.exe
   Destination=%GROUP%\IDLE (Python GUI).lnk
+  Command Options=%MAINDIR%\Tools\idle\idle.pyw
   Working Directory=%MAINDIR%
   Key Type=1536
   Flags=00000001
