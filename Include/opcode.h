@@ -92,6 +92,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define DELETE_ATTR	96	/* "" */
 #define STORE_GLOBAL	97	/* "" */
 #define DELETE_GLOBAL	98	/* "" */
+#define UNPACK_VARARG	99	/* Minimal number of arguments */
 
 #define LOAD_CONST	100	/* Index in const list */
 #define LOAD_NAME	101	/* Index in name list */
