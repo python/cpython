@@ -60,4 +60,33 @@ except IOError, msg:
 else:
     print "no error for invalid mode: %s" % bad_mode
 
+f = open(TESTFN)
+if f.name != TESTFN:
+    raise TestError, 'file.name should be "%s"' % TESTFN
+if f.isatty():
+    raise TestError, 'file.isatty() should be false'
+
+if f.closed:
+    raise TestError, 'file.closed should be false'
+
+f.close()
+if not f.closed:
+    raise TestError, 'file.closed should be true'
+
+for methodname in ['fileno', 'flush', 'isatty', 'read', 'readinto', 'readline', 'readlines', 'seek', 'tell', 'truncate', 'write', 'xreadlines' ]:
+    method = getattr(f, methodname)
+    try:
+        method()
+    except ValueError:
+        pass
+    else:
+        raise TestError, 'file.%s() on a closed file should raise a ValueError' % methodname
+
+try:
+    f.writelines([])
+except ValueError:
+    pass
+else:
+    raise TestError, 'file.writelines([]) on a closed file should raise a ValueError'
+
 os.unlink(TESTFN)
