@@ -57,6 +57,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	lib/libinspect.tex \
 	lib/libdifflib.tex \
 	lib/libdoctest.tex \
+	lib/libunittest.tex \
 	lib/libtypes.tex \
 	lib/libtraceback.tex \
 	lib/libpickle.tex \
