@@ -248,7 +248,7 @@ is not     negated object identity   (2)
 Notes :
     Comparison behavior can be overridden for a given class by defining special
 method __cmp__.
-    The above comparisions return True or False which are of type bool
+    The above comparisons return True or False which are of type bool
 (a subclass of int) and behave exactly as 1 or 0 except for their type and
 that they print as True or False instead of 1 or 0.
     (1) X < Y < Z < W has expected meaning, unlike C
