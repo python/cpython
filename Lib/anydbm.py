@@ -47,5 +47,8 @@ for _name in _names:
 		break
 else:
 	raise ImportError, "no dbm clone found; tried %s" % _names
+
+error = _mod.error
+
 def open(file, flag = 'r', mode = 0666):
 	return _mod.open(file, flag, mode)
