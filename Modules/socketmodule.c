@@ -2097,8 +2097,8 @@ sock_shutdown(PySocketSockObject *s, PyObject *arg)
 PyDoc_STRVAR(shutdown_doc,
 "shutdown(flag)\n\
 \n\
-Shut down the reading side of the socket (flag == 0), the writing side\n\
-of the socket (flag == 1), or both ends (flag == 2).");
+Shut down the reading side of the socket (flag == SHUT_RD), the writing side\n\
+of the socket (flag == SHUT_WR), or both ends (flag == SHUT_RDWR).");
 
 
 /* List of methods for socket objects */
@@ -4099,6 +4099,29 @@ init_socket(void)
 #endif
 #ifdef NI_DGRAM
 	PyModule_AddIntConstant(m, "NI_DGRAM", NI_DGRAM);
+#endif
+
+	/* shutdown() parameters */
+#ifdef SHUT_RD
+	PyModule_AddIntConstant(m, "SHUT_RD", SHUT_RD);
+#elif defined(SD_RECEIVE)
+	PyModule_AddIntConstant(m, "SHUT_RD", SD_RECEIVE);
+#else
+	PyModule_AddIntConstant(m, "SHUT_RD", 0);
+#endif
+#ifdef SHUT_WR
+	PyModule_AddIntConstant(m, "SHUT_WR", SHUT_WR);
+#elif defined(SD_SEND)
+	PyModule_AddIntConstant(m, "SHUT_WR", SD_SEND);
+#else
+	PyModule_AddIntConstant(m, "SHUT_WR", 1);
+#endif
+#ifdef SHUT_RDWR
+	PyModule_AddIntConstant(m, "SHUT_RDWR", SHUT_RDWR);
+#elif defined(SD_BOTH)
+	PyModule_AddIntConstant(m, "SHUT_RDWR", SD_BOTH);
+#else
+	PyModule_AddIntConstant(m, "SHUT_RDWR", 2);
 #endif
 
 	/* Initialize gethostbyname lock */
