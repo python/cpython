@@ -23,6 +23,10 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - Patch #130117: add a prototype required to compile cleanly on IRIX
 
+- In Lib/locale.py, setlocale emulation, use != and not is not to compare
+  strings
+
+
 What's New in Python 2.0?
 =========================
 

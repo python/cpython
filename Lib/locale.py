@@ -65,7 +65,7 @@ except ImportError:
             Activates/queries locale processing.
         """
         if value is not None and \
-           value is not 'C':
+           value != 'C':
             raise Error, '_locale emulation only supports "C" locale'
         return 'C'
 
