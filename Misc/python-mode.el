@@ -290,6 +290,15 @@ Currently-active file is at the head of the list.")
 (defconst py-blank-or-comment-re "[ \t]*\\($\\|#\\)"
   "Regexp matching blank or comment lines.")
 
+(defconst py-outdent-re
+  (concat "\\(" (mapconcat 'identity
+			   '("else:"
+			     "except\\s +.*:"
+			     "finally:"
+			     "elif\\s +.*:")
+			   "\\|")
+	  "\\)")
+  "Regexp matching clauses to be outdented one level.")
 
 
 ;;;###autoload
@@ -374,8 +383,8 @@ argument is provided, that many colons are inserted non-electrically."
   (let (this-indent)
     (if (and (not arg)
 	     (save-excursion
-	       (forward-word -1)
-	       (looking-at "\\(else\\|except\\|finally\\elif\\):"))
+	       (back-to-indentation)
+	       (looking-at py-outdent-re))
 	     (= (setq this-indent (py-compute-indentation))
 		(save-excursion
 		  (forward-line -1)
@@ -604,6 +613,11 @@ needed so that only a single column position is deleted."
   (let* ((ci (current-indentation))
 	 (move-to-indentation-p (<= (current-column) ci))
 	 (need (py-compute-indentation)))
+    ;; watch for outdents
+    (if (save-excursion
+	  (back-to-indentation)
+	  (looking-at py-outdent-re))
+	(setq need (- need py-indent-offset)))
     (if (/= ci need)
 	(save-excursion
 	  (beginning-of-line)
