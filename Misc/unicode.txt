@@ -1,5 +1,0 @@
-This document has been PEP-ified.  Please see PEP 100 at:
-
-    http://www.python.org/peps/pep-0100.html
-
--Barry
