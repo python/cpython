@@ -1442,6 +1442,10 @@ def inherits():
     #XXX verify(str(s) == "12345")
     verify(str(s).__class__ is str)
 
+    s = madstring("\x00" * 5)
+    #XXX verify(str(s) == "\x00" ( 5)
+    verify(str(s).__class__ is str)
+
     class madunicode(unicode):
         _rev = None
         def rev(self):
