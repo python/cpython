@@ -246,6 +246,7 @@ class RawUDPClient(Client):
 		p.pack_callheader(xid, self.prog, self.vers, proc, cred, verf)
 
 	def do_call(self, *rest):
+		from select import select
 		if len(rest) == 0:
 			bufsize = 8192
 		elif len(rest) > 1:
@@ -253,16 +254,26 @@ class RawUDPClient(Client):
 		else:
 			bufsize = rest[0] + 512
 		call = self.packer.get_buf()
+		timeout = 1
+		count = 5
 		self.sock.send(call)
-		# XXX What about time-out and retry?
-		reply = self.sock.recv(bufsize)
-		u = self.unpacker
-		u.reset(reply)
-		xid, verf = u.unpack_replyheader()
-		if xid <> self.lastxid:
-			# XXX Should assume it's an old reply
-			raise RuntimeError, 'wrong xid in reply ' + `xid` + \
-				' instead of ' + `self.lastxid`
+		while 1:
+			r, w, x = select([self.sock], [], [], timeout)
+			if self.sock not in r:
+				count = count - 1
+				if count < 0: raise RuntimeError, 'timeout'
+				if timeout < 25: timeout = timeout *2
+				print 'RESEND', timeout, count
+				self.sock.send(call)
+				continue
+			reply = self.sock.recv(bufsize)
+			u = self.unpacker
+			u.reset(reply)
+			xid, verf = u.unpack_replyheader()
+			if xid <> self.lastxid:
+				print 'BAD xid'
+				continue
+			break
 
 	def end_call(self):
 		self.unpacker.done()
