@@ -151,12 +151,12 @@ None
 \end{verbatim}
 
 Testing that a weak reference object is still live should be done
-using the expression \code{\var{ref}.get() is not None}.  Normally,
+using the expression \code{\var{ref}() is not None}.  Normally,
 application code that needs to use a reference object should follow
 this pattern:
 
 \begin{verbatim}
-o = ref.get()
+o = ref()
 if o is None:
     # referent has been garbage collected
     print "Object has been allocated; can't frobnicate."
@@ -190,7 +190,7 @@ def remember(obj):
     _id2obj_dict[id(obj)] = obj
 
 def id2obj(id):
-    return _id2obj_dict.get(id)
+    return _id2obj_dict(id)
 \end{verbatim}
 
 
