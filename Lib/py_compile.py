@@ -25,6 +25,6 @@ def compile(file, cfile = None):
 	marshal.dump(codeobject, fc)
 	fc.close()
 	if os.name == 'mac':
-		import MacOS
-		MacOS.SetFileType(cfile, 'PYC ', 'PYTH')
-		MacOS.SetFileType(file, 'TEXT', 'PYTH')
+		import macfs
+		macfs.FSSpec(cfile).SetCreatorType('PYTH', 'PYC ')
+		macfs.FSSpec(file).SetCreatorType('PYTH', 'TEXT')
