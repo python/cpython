@@ -1,9 +1,8 @@
 \section{\module{traceback} ---
-         Print or retrieve a stack traceback.}
+         Print or retrieve a stack traceback}
+
 \declaremodule{standard}{traceback}
-
 \modulesynopsis{Print or retrieve a stack traceback.}
-
 
 
 This module provides a standard interface to extract, format and print
@@ -125,7 +124,13 @@ field is not updated correctly; this function calculates the correct
 value.
 \end{funcdesc}
 
-A simple example follows:
+
+\subsection{Traceback Example \label{traceback-example}}
+
+This simple example implements a basic read-eval-print loop, similar
+to (but less useful than) the standard Python interactive interpreter
+loop.  For a more complete implementation of the interpreter loop,
+refer to the \refmodule{code} module.
 
 \begin{verbatim}
 import sys, traceback
