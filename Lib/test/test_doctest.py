@@ -269,10 +269,10 @@ will return a single test (for that function's docstring):
 
     >>> finder = doctest.DocTestFinder()
     >>> tests = finder.find(sample_func)
-    
+
     >>> print tests  # doctest: +ELLIPSIS
     [<DocTest sample_func from ...:12 (1 example)>]
-    
+
     >>> e = tests[0].examples[0]
     >>> (e.source, e.want, e.lineno)
     ('print sample_func(22)\n', '44\n', 3)
@@ -620,6 +620,7 @@ message is raised, then it is reported as a failure:
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
     **********************************************************************
     Failure in example: raise ValueError, 'message'
     from line #1 of f
@@ -628,6 +629,7 @@ message is raised, then it is reported as a failure:
         ValueError: wrong message
     Got:
         Traceback (most recent call last):
+        ...
         ValueError: message
     (1, 1)
 
@@ -897,7 +899,7 @@ comment of the form ``# doctest: -OPTION``:
 
 Option directives affect only the example that they appear with; they
 do not change the options for surrounding examples:
-    
+
     >>> def f(x): r'''
     ...     >>> print range(10)       # Should fail: no ellipsis
     ...     [0, 1, ..., 9]
@@ -984,7 +986,7 @@ long as a continuation prompt is used:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
     (0, 1)
-    
+
 For examples with multi-line source, the option directive may appear
 at the end of any line:
 
