@@ -958,7 +958,7 @@ PyTypeObject *_Py_cobject_hack = &PyCObject_Type;
 
 
 /* Hack to force loading of abstract.o */
-int (*_Py_abstract_hack)(PyObject *) = &PyObject_Length;
+int (*_Py_abstract_hack)(PyObject *) = &PyObject_Size;
 
 
 /* Python's malloc wrappers (see mymalloc.h) */
