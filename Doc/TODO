@@ -2,8 +2,6 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 ===============================
 
 
-* array module:  methods read(), reverse(), write() of the array object.
-
 * Document native package semantics.
 
 * Figure out indexsubitem handling in HTML; some of them are wrong for the
@@ -23,3 +21,6 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 
 * Figure out the texinfo indexing and function-description markup, and make
   partparse.py do the right thing.  Or toss the info conversion (again).
+
+* Identify all Python classes documented in the libref and make sure they're
+  marked with {classdesc} instead of {funcdesc}.
