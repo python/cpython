@@ -16,7 +16,6 @@
 
 import os
 import sys
-import string
 from Tkinter import *
 import imp
 
@@ -291,6 +290,12 @@ class TreeNode:
         self.canvas.focus_set()
 
     def edit_cancel(self, event=None):
+        try:
+            entry = self.entry
+            del self.entry
+        except AttributeError:
+            return
+        entry.destroy()
         self.drawtext()
         self.canvas.focus_set()
 
