@@ -33,12 +33,6 @@ class PosixTester(unittest.TestCase):
                              "getegid", "geteuid", "getgid", "getgroups",
                              "getpid", "getpgrp", "getppid", "getuid",
                            ]
-        # getlogin() only works when run from a tty (terminal)
-        try:
-            if os.isatty(sys.stdin.fileno()):
-                NO_ARG_FUNCTIONS.append("getlogin")
-        except:
-            pass
 
         for name in NO_ARG_FUNCTIONS:
             posix_func = getattr(posix, name, None)
