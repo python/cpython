@@ -2127,10 +2127,14 @@ AC_TRY_COMPILE([
   AC_MSG_RESULT(no)
 )
 
+# On some systems, setgroups is in unistd.h, on others, in grp.h
 AC_MSG_CHECKING(for setgroups)
 AC_TRY_COMPILE([
 #include "confdefs.h" 
 #include <unistd.h>
+#ifdef HAVE_GRP_H
+#include <grp.h>
+#endif
 ], 
 void* p = setgroups,
   AC_DEFINE(HAVE_SETGROUPS, 1, Define if you have the 'setgroups' function.)
