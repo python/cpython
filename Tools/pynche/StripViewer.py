@@ -16,6 +16,11 @@ proc setcolor {canv colors} {
 }
 '''
 
+# Tcl event types
+BTNDOWN = 4
+BTNUP = 5
+BTNDRAG = 6
+
 
 
 class LeftArrow:
@@ -89,6 +94,8 @@ class StripWidget(Pmw.MegaWidget):
     _NUMCHIPS = 40
 
     def __init__(self, parent=None, **kw):
+        self.__lastchip = None
+
 	options = (('color',      (128, 128, 128),  self.__set_color),
 		   ('delegate',   None,             self.__set_delegate),
 		   ('chipwidth',  self._CHIPWIDTH,  Pmw.INITOPT),
@@ -122,8 +129,9 @@ class StripWidget(Pmw.MegaWidget):
 	    )
 
 	canvas.pack()
+	canvas.bind('<ButtonPress-1>', self.__select_chip)
 	canvas.bind('<ButtonRelease-1>', self.__select_chip)
-	canvas.bind('<B1-Motion>', self.__drag_select_chip)
+	canvas.bind('<B1-Motion>', self.__select_chip)
 
 	# Load a proc into the Tcl interpreter.  This is used in the
 	# set_color() method to speed up setting the chip colors.
@@ -175,46 +183,33 @@ class StripWidget(Pmw.MegaWidget):
 	return (x1 + x0) / 2.0
 
     def __select_chip(self, event=None):
-	if self.__delegate:
-	    x = event.x
-	    y = event.y
-	    canvas = self.__canvas
-	    chip = canvas.find_overlapping(x, y, x, y)
-	    if chip and (1 <= chip[0] <= self.__numchips):
-		color = self.__chips[chip[0]-1]
-		rgbtuple = ColorDB.rrggbb_to_triplet(color)
-		self.__delegate.set_color(self, rgbtuple)
+        if self.__delegate:
+            x = event.x
+            y = event.y
+            canvas = self.__canvas
+            chip = canvas.find_overlapping(x, y, x, y)
+            if chip and (1 <= chip[0] <= self.__numchips):
+                color = self.__chips[chip[0]-1]
+                rgbtuple = ColorDB.rrggbb_to_triplet(color)
+                etype = int(event.type)
+                if (etype == BTNUP or self.__update_while_dragging):
+                    # update everyone
+                    self.__delegate.set_color(self, rgbtuple)
+                else:
+                    # just track the arrows
+                    self.__trackarrow(chip[0], rgbtuple)
 
-    def __drag_select_chip(self, event=None):
-	if self.__update_while_dragging:
-	    self.__select_chip(event)
 
     def __set_delegate(self):
 	self.__delegate = self['delegate']
 	
 
-    #
-    # public interface
-    #
-
-    def set_color(self, obj, rgbtuple):
-	red, green, blue = rgbtuple
-	assert self.__generator
-	i = 1
-	chip = 0
-	chips = self.__chips = []
-	tclcmd = []
-	tk = self.__canvas.tk
-	for t in self.__generator(self.__numchips, rgbtuple):
-	    rrggbb = ColorDB.triplet_to_rrggbb(t)
-	    chips.append(rrggbb)
-	    tred, tgreen, tblue = t
-	    if tred <= red and tgreen <= green and tblue <= blue:
-		chip = i
-	    i = i + 1
-	# call the raw tcl script
-	colors = string.join(chips)
- 	tk.eval('setcolor %s {%s}' % (self.__canvas._w, colors))
+    def __trackarrow(self, chip, rgbtuple):
+        # invert the last chip
+        if self.__lastchip is not None:
+            color = self.__canvas.itemcget(self.__lastchip, 'fill')
+            self.__canvas.itemconfigure(self.__lastchip, outline=color)
+        self.__lastchip = chip
 
 	# get the arrow's text
 	coloraxis = rgbtuple[self.__axis]
@@ -239,6 +234,34 @@ class StripWidget(Pmw.MegaWidget):
 	else:
 	    outline = 'black'
 	self.__canvas.itemconfigure(chip, outline=outline)
+
+
+    #
+    # public interface
+    #
+
+    def set_color(self, obj, rgbtuple):
+	red, green, blue = rgbtuple
+	assert self.__generator
+	i = 1
+	chip = 0
+	chips = self.__chips = []
+	tclcmd = []
+	tk = self.__canvas.tk
+
+        for t in self.__generator(self.__numchips, rgbtuple):
+            rrggbb = ColorDB.triplet_to_rrggbb(t)
+            chips.append(rrggbb)
+            tred, tgreen, tblue = t
+            if tred <= red and tgreen <= green and tblue <= blue:
+                chip = i
+            i = i + 1
+        # call the raw tcl script
+        colors = string.join(chips)
+        tk.eval('setcolor %s {%s}' % (self.__canvas._w, colors))
+
+        # move the arrows around
+        self.__trackarrow(chip, rgbtuple)
 
     def set_update_while_dragging(self, flag):
 	self.__update_while_dragging = flag
