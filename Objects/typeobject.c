@@ -497,21 +497,21 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	PyObject *name, *bases, *dict;
 	static char *kwlist[] = {"name", "bases", "dict", 0};
 	PyObject *slots, *tmp;
-	PyTypeObject *type, *base, *tmptype;
+	PyTypeObject *type, *base, *tmptype, *winner;
 	etype *et;
 	struct memberlist *mp;
 	int i, nbases, nslots, slotoffset, dynamic;
 
+	/* Special case: type(x) should return x->ob_type */
 	if (metatype == &PyType_Type &&
 	    PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1 &&
 	    (kwds == NULL || (PyDict_Check(kwds) && PyDict_Size(kwds) == 0))) {
-		/* type(x) -> x.__class__ */
 		PyObject *x = PyTuple_GET_ITEM(args, 0);
 		Py_INCREF(x->ob_type);
 		return (PyObject *) x->ob_type;
 	}
 
-	/* Check arguments */
+	/* Check arguments: (name, bases, dict) */
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "SO!O!:type", kwlist,
 					 &name,
 					 &PyTuple_Type, &bases,
@@ -523,21 +523,25 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	   Note that if some other metatype wins to contract,
 	   it's possible that its instances are not types. */
 	nbases = PyTuple_GET_SIZE(bases);
+	winner = metatype;
 	for (i = 0; i < nbases; i++) {
 		tmp = PyTuple_GET_ITEM(bases, i);
 		tmptype = tmp->ob_type;
-		if (PyType_IsSubtype(metatype, tmptype))
+		if (PyType_IsSubtype(winner, tmptype))
 			continue;
-		if (PyType_IsSubtype(tmptype, metatype)) {
-			metatype = tmptype;
+		if (PyType_IsSubtype(tmptype, winner)) {
+			winner = tmptype;
 			continue;
 		}
 		PyErr_SetString(PyExc_TypeError,
 				"metatype conflict among bases");
 		return NULL;
 	}
-	if (metatype->tp_new != type_new) /* Pass it to the winner */
-		return metatype->tp_new(metatype, args, kwds);
+	if (winner != metatype) {
+		if (winner->tp_new != type_new) /* Pass it to the winner */
+			return winner->tp_new(winner, args, kwds);
+		metatype = winner;
+	}
 
 	/* Adjust for empty tuple bases */
 	if (nbases == 0) {
