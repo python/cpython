@@ -168,11 +168,13 @@ strop_joinfields(self, args)
 	PyObject *self; /* Not used */
 	PyObject *args;
 {
-	PyObject *seq, *item, *res;
-	char *p, *sep = NULL;
-	int seqlen, reslen, itemlen, i, seplen = 0;
-	int ownrefs = 0;
-	PyObject* (*getitemfunc) Py_PROTO((PyObject*, int));
+	PyObject *seq;
+	char *sep = NULL;
+	int seqlen, seplen = 0;
+	int i, reslen = 0, slen = 0, sz = 100;
+	PyObject *res = NULL;
+	char* p = NULL;
+	intargfunc getitemfunc;
 
 	if (!PyArg_ParseTuple(args, "O|s#", &seq, &sep, &seplen))
 		return NULL;
@@ -180,83 +182,103 @@ strop_joinfields(self, args)
 		sep = " ";
 		seplen = 1;
 	}
-	/* do it this way to optimize for the common cases, but also
-	 * support the more general sequence protocol
+
+	seqlen = PySequence_Length(seq);
+	if (seqlen < 0 && PyErr_Occurred())
+		return NULL;
+
+	if (seqlen == 1) {
+		/* Optimization if there's only one item */
+		PyObject *item = PySequence_GetItem(seq, 0);
+		if (item && !PyString_Check(item))
+			PyErr_SetString(PyExc_TypeError,
+				 "first argument must be sequence of strings");
+		return item;
+	}
+
+	if (!(res = PyString_FromStringAndSize((char*)NULL, sz)))
+		return NULL;
+	p = PyString_AsString(res);
+
+	/* optimize for lists, since it's the most common case.  all others
+	 * (tuples and arbitrary sequences) just use the sequence abstract
+	 * interface.
 	 */
 	if (PyList_Check(seq)) {
-		getitemfunc = PyList_GetItem;
-		seqlen = PyList_Size(seq);
+		for (i = 0; i < seqlen; i++) {
+			PyObject *item = PyList_GET_ITEM(seq, i);
+			if (!PyString_Check(item)) {
+				PyErr_SetString(PyExc_TypeError,
+				"first argument must be sequence of strings");
+				Py_DECREF(res);
+				return NULL;
+			}
+			slen = PyString_GET_SIZE(item);
+			while (reslen + slen + seplen >= sz) {
+				if (_PyString_Resize(&res, sz * 2)) {
+					Py_DECREF(res);
+					return NULL;
+				}
+				sz *= 2;
+				p = PyString_AsString(res) + reslen;
+			}
+			if (i > 0) {
+				memcpy(p, sep, seplen);
+				p += seplen;
+				reslen += seplen;
+			}
+			memcpy(p, PyString_AS_STRING(item), slen);
+			p += slen;
+			reslen += slen;
+		}
+		if (_PyString_Resize(&res, reslen)) {
+			Py_DECREF(res);
+			res = NULL;
+		}
+		return res;
 	}
-	else if (PyTuple_Check(seq)) {
-		getitemfunc = PyTuple_GetItem;
-		seqlen = PyTuple_Size(seq);
-	}
-	else if (PySequence_Check(seq)) {
-		getitemfunc = PySequence_GetItem;
-		seqlen = PySequence_Length(seq);
-		ownrefs = 1;
-	}
-	else {
+	else if (!PySequence_Check(seq)) {
 		PyErr_SetString(PyExc_TypeError,
 				"first argument must be a sequence");
 		return NULL;
 	}
-	if (seqlen < 0 && PyErr_Occurred())
-		return NULL;
-
-	reslen = 0;
+	/* type safe */
+	getitemfunc = seq->ob_type->tp_as_sequence->sq_item;
 	for (i = 0; i < seqlen; i++) {
-		if (!(item = getitemfunc(seq, i)))
-			return NULL;
-
-		if (!PyString_Check(item)) {
+		PyObject *item = getitemfunc(seq, i);
+		if (!item || !PyString_Check(item)) {
 			PyErr_SetString(PyExc_TypeError,
 				 "first argument must be sequence of strings");
-			if (ownrefs)
-				Py_DECREF(item);
+			Py_DECREF(res);
+			Py_XDECREF(item);
 			return NULL;
 		}
-		if (i > 0)
-			reslen += seplen;
-		reslen += PyString_Size(item);
-		if (ownrefs)
-			Py_DECREF(item);
-	}
-	if (seqlen == 1) {
-		/* Optimization if there's only one item */
-		item = getitemfunc(seq, 0);
-		if (!ownrefs)
-			Py_XINCREF(item);
-		return item;
-	}
-
-	res = PyString_FromStringAndSize((char *)NULL, reslen);
-	if (res == NULL)
-		return NULL;
-	p = PyString_AsString(res);
-	for (i = 0; i < seqlen; i++) {
-		if (!(item = getitemfunc(seq, i))) {
-			Py_DECREF(res);
-			return NULL;
+		slen = PyString_GET_SIZE(item);
+		while (reslen + slen + seplen >= sz) {
+			if (_PyString_Resize(&res, sz * 2)) {
+				Py_DECREF(res);
+				Py_DECREF(item);
+				return NULL;
+			}
+			sz *= 2;
+			p = PyString_AsString(res) + reslen;
 		}
 		if (i > 0) {
 			memcpy(p, sep, seplen);
 			p += seplen;
+			reslen += seplen;
 		}
-		itemlen = PyString_Size(item);
-		memcpy(p, PyString_AsString(item), itemlen);
-		p += itemlen;
-		if (ownrefs)
-			Py_DECREF(item);
+		memcpy(p, PyString_AS_STRING(item), slen);
+		p += slen;
+		reslen += slen;
+		Py_DECREF(item);
 	}
-	if (p != PyString_AsString(res) + reslen) {
-		PyErr_SetString(PyExc_SystemError,
-                                "strop.joinfields: assertion failed");
-		return NULL;
+	if (_PyString_Resize(&res, reslen)) {
+		Py_DECREF(res);
+		res = NULL;
 	}
 	return res;
 }
-
 
 static PyObject *
 strop_find(self, args)
