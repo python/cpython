@@ -8,19 +8,19 @@ internationalization of C programs.  Most of these tools are independent of
 the programming language and can be used from within Python programs.  Martin
 von Loewis' work[1] helps considerably in this regard.
 
-There's one hole though; xgettext is the program that scans source code
+There's one problem though; xgettext is the program that scans source code
 looking for message strings, but it groks only C (or C++).  Python introduces
 a few wrinkles, such as dual quoting characters, triple quoted strings, and
 raw strings.  xgettext understands none of this.
 
 Enter pygettext, which uses Python's standard tokenize module to scan Python
 source code, generating .pot files identical to what GNU xgettext[2] generates
-for C and C++ code.  From there, the standard GNU tools can be used.  
+for C and C++ code.  From there, the standard GNU tools can be used.
 
 A word about marking Python strings as candidates for translation.  GNU
 xgettext recognizes the following keywords: gettext, dgettext, dcgettext, and
 gettext_noop.  But those can be a lot of text to include all over your code.
-C and C++ have a trick: they use the C preprocessor.  Most internationalized C 
+C and C++ have a trick: they use the C preprocessor.  Most internationalized C
 source includes a #define for gettext() to _() so that what has to be written
 in the source is much less.  Thus these are both translatable strings:
 
@@ -33,7 +33,6 @@ below for how to augment this.
 
  [1] http://www.python.org/workshops/1997-10/proceedings/loewis.html
  [2] http://www.gnu.org/software/gettext/gettext.html
-
 
 NOTE: pygettext attempts to be option and feature compatible with GNU xgettext
 where ever possible.
@@ -74,6 +73,10 @@ Options:
         If style is omitted, Gnu is used.  The style name is case
         insensitive.  By default, locations are included.
 
+    -v
+    --verbose
+        Print the names of the files being processed.
+
     --help
     -h
         print this help message and exit
@@ -87,8 +90,33 @@ import time
 import getopt
 import tokenize
 
-__version__ = '0.1'
+__version__ = '0.2'
 
+
+
+# for selftesting
+def _(s): return s
+
+
+# The normal pot-file header. msgmerge and EMACS' po-mode work better if
+# it's there.
+pot_header = _('''\
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\\n"
+"PO-Revision-Date: %(time)s\\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\\n"
+"Language-Team: LANGUAGE <LL@li.org>\\n"
+"MIME-Version: 1.0\\n"
+"Content-Type: text/plain; charset=CHARSET\\n"
+"Content-Transfer-Encoding: ENCODING\\n"
+"Generated-By: pygettext.py %(version)s\\n"
+
+''')
 
 
 def usage(code, msg=''):
@@ -97,39 +125,45 @@ def usage(code, msg=''):
         print msg
     sys.exit(code)
 
-
 
+escapes = []
+for i in range(256):
+    if i < 32 or i > 127:
+        escapes.append("\\%03o" % i)
+    else:
+        escapes.append(chr(i))
+
+escapes[ord('\\')] = '\\\\'
+escapes[ord('\t')] = '\\t'
+escapes[ord('\r')] = '\\r'
+escapes[ord('\n')] = '\\n'
+
+def escape(s):
+    s = list(s)
+    for i in range(len(s)):
+        s[i] = escapes[ord(s[i])]
+    return string.join(s, '')
+
+
+def safe_eval(s):
+    # unwrap quotes, safely
+    return eval(s, {'__builtins__':{}}, {})
+
+
 def normalize(s):
     # This converts the various Python string types into a format that is
     # appropriate for .po files, namely much closer to C style.
-    #
-    # unwrap quotes, safely
-    s = eval(s, {'__builtins__':{}}, {})
-    # now escape any embedded double quotes
-    parts = []
-    last = 0
-    i = string.find(s, '"')
-    while i >= 0:
-        # find the number of preceding backslashes
-        j = i
-        n = 0
-        while j >= 0 and s[i] == '\\':
-            j = j - 1
-            n = n + 1
-        if (n % 2) == 0:
-            parts.append(s[last:j])
-            parts.append('\\')
-            parts.append(s[j:i])
-        else:
-            parts.append(s[last:i])
-        last = i
-        i = string.find(s, '"', i+1)
+    lines = string.split(s, '\n')
+    if len(lines) == 1:
+        s = '"' + escape(s) + '"'
     else:
-        parts.append(s[last:])
-    if parts:
-        return '"' + string.join(parts, '') + '"'
-    else:
-        return '"' + s + '"'
+        if not lines[-1]:
+            del lines[-1]
+            lines[-1] = lines[-1] + '\n'
+        for i in range(len(lines)):
+            lines[i] = escape(lines[i])
+        s = '""\n"' + string.join(lines, '\\n"\n"') + '"'
+    return s
 
 
 
@@ -173,7 +207,7 @@ class TokenEater:
                     linenos.append(entry)
             self.__state = self.__waiting
         elif ttype == tokenize.STRING:
-            self.__data.append(normalize(tstring))
+            self.__data.append(safe_eval(tstring))
         # TBD: should we warn if we seen anything else?
 
     def set_filename(self, filename):
@@ -185,19 +219,21 @@ class TokenEater:
         # common header
         try:
             sys.stdout = fp
-            print '# POT file generated by pygettext.py', __version__
-            print '#', timestamp
-            print '#'
+            # The time stamp in the header doesn't have the same format
+            # as that generated by xgettext...
+            print pot_header % {'time': timestamp, 'version':__version__}
             for k, v in self.__messages.items():
                 for filename, lineno in v:
                     # location comments are different b/w Solaris and GNU
+                    d = {'filename': filename,
+                         'lineno': lineno}
                     if options.location == options.SOLARIS:
-                        print '# File: %s,' % filename, 'line: %d' % lineno
+                        print _('# File: %(filename)s, line: %(lineno)d') % d
                     elif options.location == options.GNU:
-                        print '#: %s:%d' % (filename, lineno)
+                        print _('#: %(filename)s:%(lineno)d') % d
                 # TBD: sorting, normalizing
-                print 'msgid', k
-                print 'msgstr '
+                print 'msgid', normalize(k)
+                print 'msgstr ""'
                 print
         finally:
             sys.stdout = sys.__stdout__
@@ -208,9 +244,9 @@ def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            'k:d:n:h',
+            'k:d:n:hv',
             ['keyword', 'default-domain', 'help',
-             'add-location=', 'no-location'])
+             'add-location=', 'no-location', 'verbose'])
     except getopt.error, msg:
         usage(1, msg)
 
@@ -223,6 +259,7 @@ def main():
         keywords = []
         outfile = 'messages.pot'
         location = GNU
+        verbose = 0
 
     options = Options()
     locations = {'gnu' : options.GNU,
@@ -245,9 +282,12 @@ def main():
             try:
                 options.location = locations[string.lower(arg)]
             except KeyError:
-                usage(1, 'Invalid value for --add-location: ' + arg)
+                d = {'arg':arg}
+                usage(1, _('Invalid value for --add-location: %(arg)s') % d)
         elif opt in ('--no-location',):
             options.location = 0
+        elif opt in ('-v', '--verbose'):
+            options.verbose = 1
 
     # calculate all keywords
     options.keywords.extend(default_keywords)
@@ -255,6 +295,8 @@ def main():
     # slurp through all the files
     eater = TokenEater(options)
     for filename in args:
+        if options.verbose:
+            print _('Working on %(filename)s') % {'filename':filename}
         fp = open(filename)
         eater.set_filename(filename)
         tokenize.tokenize(fp.readline, eater)
