@@ -206,10 +206,9 @@ any kind of sequence; the result is always a list.
   expression.
 \end{funcdesc}
 
-\begin{funcdesc}{open}{filename\, mode}
-  % XXXJH xrefs here to Built-in types?
+\begin{funcdesc}{open}{filename\, mode\, bufsize}
   Return a new file object (described earlier under Built-in Types).
-  The string arguments are the same as for \code{stdio}'s
+  The first two arguments are the same as for \code{stdio}'s
   \code{fopen()}: \var{filename} is the file name to be opened,
   \var{mode} indicates how the file is to be opened: \code{'r'} for
   reading, \code{'w'} for writing (truncating an existing file), and
@@ -219,6 +218,18 @@ any kind of sequence; the result is always a list.
   between binary and text files, \code{'b'} appended to the mode opens
   the file in binary mode.  If the file cannot be opened, \code{IOError}
   is raised.
+If \var{mode} is omitted, it defaults to \code{'r'}.
+The optional \var{bufsize} argument specifies the file's desired
+buffer size: 0 means unbuffered, 1 means line buffered, any other
+positive value means use a buffer of (approximately) that size.  A
+negative \var{bufsize} means to use the system default, which is
+usually line buffered for for tty devices and fully buffered for other
+files.%
+\footnote{Specifying a buffer size currently has no effect on systems
+that don't have \code{setvbuf()}.  The interface to specify the buffer
+size is not done using a method that calls \code{setvbuf()}, because
+that may dump core when called after any I/O has been performed, and
+there's no reliable way to determine whether this is the case.}
 \end{funcdesc}
 
 \begin{funcdesc}{ord}{c}
