@@ -9,9 +9,7 @@
 The \code{xdrlib} module supports the External Data Representation
 Standard as described in RFC 1014, written by Sun Microsystems,
 Inc. June 1987.  It supports most of the data types described in the
-RFC, although some, most notably \code{float} and \code{double} are
-only supported on those operating systems that provide an XDR
-library.
+RFC.
 
 The \code{xdrlib} module defines two classes, one for packing
 variables into XDR representation, and another for unpacking from XDR
@@ -230,21 +228,3 @@ try:
 except xdrlib.ConversionError, instance:
     print 'packing the double failed:', instance.msg
 \end{verbatim}\ecode
-%
-\subsection{Supporting Floating Point Data}
-
-Packing and unpacking floating point data,
-i.e. \code{Packer.pack_float}, \code{Packer.pack_double},
-\code{Unpacker.unpack_float}, and \code{Unpacker.unpack_double}, are
-only supported with the helper built-in \code{_xdr} module, which
-relies on your operating system having the appropriate XDR library
-routines.
-
-If you have built the Python interpeter with the \code{_xdr} module,
-or have built the \code{_xdr} module as a shared library,
-\code{xdrlib} will use these to pack and unpack floating point
-numbers.  Otherwise, using these routines will raise a
-\code{ConversionError} exception.
-
-See the Python installation instructions for details on building the
-\code{_xdr} module.
