@@ -83,10 +83,7 @@ __all__ = [
     # 7. Tester
     'Tester',
     # 8. Unittest Support
-    'DocTestCase',
     'DocTestSuite',
-    'DocFileCase',
-    'DocFileTest',
     'DocFileSuite',
     # 9. Debugging Support
     'script_from_examples',
