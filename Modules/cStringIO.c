@@ -639,7 +639,7 @@ static struct PycStringIO_CAPI CAPI = {
 #define DL_EXPORT(RTYPE) RTYPE
 #endif
 DL_EXPORT(void)
-initcStringIO() {
+initcStringIO(void) {
   PyObject *m, *d, *v;
 
 

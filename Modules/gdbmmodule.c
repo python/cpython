@@ -474,7 +474,7 @@ static PyMethodDef dbmmodule_methods[] = {
 };
 
 DL_EXPORT(void)
-initgdbm() {
+initgdbm(void) {
     PyObject *m, *d;
 
     Dbmtype.ob_type = &PyType_Type;
