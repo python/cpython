@@ -31,8 +31,8 @@ decide which module to use based upon the extension or contents of an
 existing database file.
 
 The open function has an optional second argument.  This can be set to
-'r' to open the database for reading only.  The default is 'w', which
-differs from the dbm default ('r') for historic reasons.
+'r' to open the database for reading only.  The default is 'r', like
+the dbm default.
 
 """
 
@@ -47,5 +47,5 @@ for _name in _names:
 		break
 else:
 	raise ImportError, "no dbm clone found; tried %s" % _names
-def open(file, flag = 'w', mode = 0666):
+def open(file, flag = 'r', mode = 0666):
 	return _mod.open(file, flag, mode)
