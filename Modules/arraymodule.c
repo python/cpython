@@ -1697,7 +1697,7 @@ statichere PyTypeObject Arraytype = {
 	0, 					/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
-	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_getattro */
 	0,					/* tp_setattro */
 	&array_as_buffer,			/* tp_as_buffer*/
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /* tp_flags */
@@ -1717,9 +1717,9 @@ statichere PyTypeObject Arraytype = {
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
 	0,					/* tp_init */
-	PyType_GenericAlloc,			/* tp_alloc */
+	0,					/* tp_alloc */
 	array_new,				/* tp_new */
-	PyObject_Del,	                 	/* tp_free */
+	0,					/* tp_free */
 };
 
 /* No functions in array module. */
@@ -1734,6 +1734,9 @@ initarray(void)
 	PyObject *m;
 
 	Arraytype.ob_type = &PyType_Type;
+	Arraytype.tp_getattro = PyObject_GenericGetAttr;
+	Arraytype.tp_alloc = PyType_GenericAlloc;
+	Arraytype.tp_free = PyObject_Del;
 	m = Py_InitModule3("array", a_methods, module_doc);
 
         Py_INCREF((PyObject *)&Arraytype);
