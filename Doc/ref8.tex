@@ -13,9 +13,9 @@ While a language specification need not prescribe how the language
 interpreter is invoked, it is useful to have a notion of a complete
 Python program.  A complete Python program is executed in a minimally
 initialized environment: all built-in and standard modules are
-available, but none have been initialized, except for \verb\sys\
-(various system services), \verb\__builtin__\ (built-in functions,
-exceptions and \verb\None\) and \verb\__main__\.  The latter is used
+available, but none have been initialized, except for \verb@sys@
+(various system services), \verb@__builtin__@ (built-in functions,
+exceptions and \verb@None@) and \verb@__main__@.  The latter is used
 to provide the local and global name space for execution of the
 complete program.
 \bimodindex{sys}
@@ -29,7 +29,7 @@ The interpreter may also be invoked in interactive mode; in this case,
 it does not read and execute a complete program but reads and executes
 one statement (possibly compound) at a time.  The initial environment
 is identical to that of a complete program; each statement is executed
-in the name space of \verb\__main__\.
+in the name space of \verb@__main__@.
 \index{interactive mode}
 
 Under {\UNIX}, a complete program can be passed to the interpreter in
@@ -58,7 +58,7 @@ This syntax is used in the following situations:
 
 \item when parsing a module;
 
-\item when parsing a string passed to the \verb\exec\ statement;
+\item when parsing a string passed to the \verb@exec@ statement;
 
 \end{itemize}
 
@@ -80,14 +80,14 @@ end of the input.
 There are two forms of expression input.  Both ignore leading
 whitespace.
  
-The string argument to \verb\eval()\ must have the following form:
+The string argument to \verb@eval()@ must have the following form:
 \bifuncindex{eval}
 
 \begin{verbatim}
 eval_input:     condition_list NEWLINE*
 \end{verbatim}
 
-The input line read by \verb\input()\ must have the following form:
+The input line read by \verb@input()@ must have the following form:
 \bifuncindex{input}
 
 \begin{verbatim}
@@ -95,7 +95,7 @@ input_input:    condition_list NEWLINE
 \end{verbatim}
 
 Note: to read `raw' input line without interpretation, you can use the
-built-in function \verb\raw_input()\  or the \verb\readline()\ method
+built-in function \verb@raw_input()@  or the \verb@readline()@ method
 of file objects.
 \obindex{file}
 \index{input!raw}

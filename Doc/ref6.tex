@@ -27,14 +27,14 @@ simple_stmt:    expression_stmt
 Expression statements are used (mostly interactively) to compute and
 write a value, or (usually) to call a procedure (a function that
 returns no meaningful result; in Python, procedures return the value
-\verb\None\):
+\verb@None@):
 
 \begin{verbatim}
 expression_stmt: expression_list
 \end{verbatim}
 
 An expression statement evaluates the expression list (which may be a
-single expression).  If the value is not \verb\None\, it is converted
+single expression).  If the value is not \verb@None@, it is converted
 to a string using the rules for string conversions (expressions in
 reverse quotes), and the resulting string is written to standard
 output (see section \ref{print}) on a line by itself.
@@ -45,9 +45,9 @@ output (see section \ref{print}) on a line by itself.
 \indexii{standard}{output}
 \indexii{writing}{values}
 
-(The exception for \verb\None\ is made so that procedure calls, which
+(The exception for \verb@None@ is made so that procedure calls, which
 are syntactically equivalent to expressions, do not cause any output.
-A tuple with only \verb\None\ items is written normally.)
+A tuple with only \verb@None@ items is written normally.)
 \indexii{procedure}{call}
 
 \section{Assignment statements}
@@ -114,7 +114,7 @@ If the target is an identifier (name):
 \begin{itemize}
 
 \item
-If the name does not occur in a \verb\global\ statement in the current
+If the name does not occur in a \verb@global@ statement in the current
 code block: the name is bound to the object in the current local name
 space.
 \stindex{global}
@@ -140,10 +140,10 @@ the corresponding targets.
 \item
 If the target is an attribute reference: The primary expression in the
 reference is evaluated.  It should yield an object with assignable
-attributes; if this is not the case, \verb\TypeError\ is raised.  That
+attributes; if this is not the case, \verb@TypeError@ is raised.  That
 object is then asked to assign the assigned object to the given
 attribute; if it cannot perform the assignment, it raises an exception
-(usually but not necessarily \verb\AttributeError\).
+(usually but not necessarily \verb@AttributeError@).
 \indexii{attribute}{assignment}
 
 \item
@@ -159,7 +159,7 @@ must yield a plain integer.  If it is negative, the sequence's length
 is added to it.  The resulting value must be a nonnegative integer
 less than the sequence's length, and the sequence is asked to assign
 the assigned object to its item with that index.  If the index is out
-of range, \verb\IndexError\ is raised (assignment to a subscripted
+of range, \verb@IndexError@ is raised (assignment to a subscripted
 sequence cannot add new items to a list).
 \obindex{sequence}
 \obindex{list}
@@ -175,16 +175,17 @@ key with the same value existed).
 
 \item
 If the target is a slicing: The primary expression in the reference is
-evaluated.  It should yield a mutable sequence (list) object.  The
+evaluated.  It should yield a mutable sequence object (e.g. a list).  The
 assigned object should be a sequence object of the same type.  Next,
 the lower and upper bound expressions are evaluated, insofar they are
 present; defaults are zero and the sequence's length.  The bounds
 should evaluate to (small) integers.  If either bound is negative, the
 sequence's length is added to it.  The resulting bounds are clipped to
 lie between zero and the sequence's length, inclusive.  Finally, the
-sequence object is asked to replace the items indicated by the slice
-with the items of the assigned sequence.  This may change the
-sequence's length, if it allows it.
+sequence object is asked to replace the slice with the items of the
+assigned sequence.  The length of the slice may be different from the
+length of the assigned sequence, thus changing the length of the
+target sequence, if the object allows it.
 \indexii{slicing}{assignment}
 
 \end{itemize}
@@ -201,7 +202,7 @@ messages.)
 pass_stmt:      "pass"
 \end{verbatim}
 
-\verb\pass\ is a null operation --- when it is executed, nothing
+\verb@pass@ is a null operation --- when it is executed, nothing
 happens.  It is useful as a placeholder when a statement is
 required syntactically, but no code needs to be executed, for example:
 \indexii{null}{operation}
@@ -230,7 +231,7 @@ to right.
 
 Deletion of a name removes the binding of that name (which must exist)
 from the local or global name space, depending on whether the name
-occurs in a \verb\global\ statement in the same code block.
+occurs in a \verb@global@ statement in the same code block.
 \stindex{global}
 \indexii{unbinding}{name}
 
@@ -247,7 +248,7 @@ right type (but even this is determined by the sliced object).
 print_stmt:     "print" [ condition ("," condition)* [","] ]
 \end{verbatim}
 
-\verb\print\ evaluates each condition in turn and writes the resulting
+\verb@print@ evaluates each condition in turn and writes the resulting
 object to standard output (see below).  If an object is not a string,
 it is first converted to a string using the rules for string
 conversions.  The (resulting or original) string is then written.  A
@@ -256,21 +257,21 @@ the output system believes it is positioned at the beginning of a
 line.  This is the case: (1) when no characters have yet been written
 to standard output; or (2) when the last character written to standard
 output is \verb/\n/; or (3) when the last write operation on standard
-output was not a \verb\print\ statement.  (In some cases it may be
+output was not a \verb@print@ statement.  (In some cases it may be
 functional to write an empty string to standard output for this
 reason.)
 \index{output}
 \indexii{writing}{values}
 
-A \verb/"\n"/ character is written at the end, unless the \verb\print\
+A \verb/"\n"/ character is written at the end, unless the \verb@print@
 statement ends with a comma.  This is the only action if the statement
-contains just the keyword \verb\print\.
+contains just the keyword \verb@print@.
 \indexii{trailing}{comma}
 \indexii{newline}{suppression}
 
-Standard output is defined as the file object named \verb\stdout\
-in the built-in module \verb\sys\.  If no such object exists,
-or if it is not a writable file, a \verb\RuntimeError\ exception is raised.
+Standard output is defined as the file object named \verb@stdout@
+in the built-in module \verb@sys@.  If no such object exists,
+or if it is not a writable file, a \verb@RuntimeError@ exception is raised.
 (The original implementation attempts to write to the system's original
 standard output instead, but this is not safe, and should be fixed.)
 \indexii{standard}{output}
@@ -285,19 +286,19 @@ standard output instead, but this is not safe, and should be fixed.)
 return_stmt:    "return" [condition_list]
 \end{verbatim}
 
-\verb\return\ may only occur syntactically nested in a function
+\verb@return@ may only occur syntactically nested in a function
 definition, not within a nested class definition.
 \indexii{function}{definition}
 \indexii{class}{definition}
 
-If a condition list is present, it is evaluated, else \verb\None\
+If a condition list is present, it is evaluated, else \verb@None@
 is substituted.
 
-\verb\return\ leaves the current function call with the condition
-list (or \verb\None\) as return value.
+\verb@return@ leaves the current function call with the condition
+list (or \verb@None@) as return value.
 
-When \verb\return\ passes control out of a \verb\try\ statement
-with a \verb\finally\ clause, that finally clause is executed
+When \verb@return@ passes control out of a \verb@try@ statement
+with a \verb@finally@ clause, that finally clause is executed
 before really leaving the function.
 \kwindex{finally}
 
@@ -308,14 +309,14 @@ before really leaving the function.
 raise_stmt:     "raise" condition ["," condition]
 \end{verbatim}
 
-\verb\raise\ evaluates its first condition, which must yield
+\verb@raise@ evaluates its first condition, which must yield
 a string object.  If there is a second condition, this is evaluated,
-else \verb\None\ is substituted.
+else \verb@None@ is substituted.
 \index{exception}
 \indexii{raising}{exception}
 
 It then raises the exception identified by the first object,
-with the second one (or \verb\None\) as its parameter.
+with the second one (or \verb@None@) as its parameter.
 
 \section{The {\tt break} statement}
 \stindex{break}
@@ -324,22 +325,23 @@ with the second one (or \verb\None\) as its parameter.
 break_stmt:     "break"
 \end{verbatim}
 
-\verb\break\ may only occur syntactically nested in a \verb\for\
-or \verb\while\ loop, not nested in a function or class definition.
+\verb@break@ may only occur syntactically nested in a \verb@for@
+or \verb@while@ loop, but not nested in a function or class definition
+within that loop.
 \stindex{for}
 \stindex{while}
 \indexii{loop}{statement}
 
-It terminates the neares enclosing loop, skipping the optional
-\verb\else\ clause if the loop has one.
+It terminates the nearest enclosing loop, skipping the optional
+\verb@else@ clause if the loop has one.
 \kwindex{else}
 
-If a \verb\for\ loop is terminated by \verb\break\, the loop control
+If a \verb@for@ loop is terminated by \verb@break@, the loop control
 target keeps its current value.
 \indexii{loop control}{target}
 
-When \verb\break\ passes control out of a \verb\try\ statement
-with a \verb\finally\ clause, that finally clause is executed
+When \verb@break@ passes control out of a \verb@try@ statement
+with a \verb@finally@ clause, that finally clause is executed
 before really leaving the loop.
 \kwindex{finally}
 
@@ -350,11 +352,10 @@ before really leaving the loop.
 continue_stmt:  "continue"
 \end{verbatim}
 
-\verb\continue\ may only occur syntactically nested in a \verb\for\ or
-\verb\while\ loop, not nested in a function or class definition, and
-not nested in the \verb\try\ clause of a \verb\try\ statement with a
-\verb\finally\ clause (it may occur nested in a \verb\except\ or
-\verb\finally\ clause of a \verb\try\ statement though).
+\verb@continue@ may only occur syntactically nested in a \verb@for@ or
+\verb@while@ loop, but not nested in a function or class definition or
+\verb@try@ statement within that loop.\footnote{Except that it may
+currently occur within an \verb@except@ clause.}
 \stindex{for}
 \stindex{while}
 \indexii{loop}{statement}
@@ -373,9 +374,9 @@ import_stmt:    "import" identifier ("," identifier)*
 
 Import statements are executed in two steps: (1) find a module, and
 initialize it if necessary; (2) define a name or names in the local
-name space (of the scope where the \verb\import\ statement occurs).
-The first form (without \verb\from\) repeats these steps for each
-identifier in the list, the \verb\from\ form performs them once, with
+name space (of the scope where the \verb@import@ statement occurs).
+The first form (without \verb@from@) repeats these steps for each
+identifier in the list, the \verb@from@ form performs them once, with
 the first identifier specifying the module name.
 \indexii{importing}{module}
 \indexii{name}{binding}
@@ -383,15 +384,15 @@ the first identifier specifying the module name.
 
 The system maintains a table of modules that have been initialized,
 indexed by module name.  (The current implementation makes this table
-accessible as \verb\sys.modules\.)  When a module name is found in
+accessible as \verb@sys.modules@.)  When a module name is found in
 this table, step (1) is finished.  If not, a search for a module
 definition is started.  This first looks for a built-in module
 definition, and if no built-in module if the given name is found, it
 searches a user-specified list of directories for a file whose name is
-the module name with extension \verb\".py"\.  (The current
-implementation uses the list of strings \verb\sys.path\ as the search
+the module name with extension \verb@".py"@.  (The current
+implementation uses the list of strings \verb@sys.path@ as the search
 path; it is initialized from the shell environment variable
-\verb\$PYTHONPATH\, with an installation-dependent default.)
+\verb@$PYTHONPATH@, with an installation-dependent default.)
 \ttindex{modules}
 \ttindex{sys.modules}
 \indexii{module}{name}
@@ -404,9 +405,9 @@ path; it is initialized from the shell environment variable
 
 If a built-in module is found, its built-in initialization code is
 executed and step (1) is finished.  If no matching file is found,
-\verb\ImportError\ is raised.  If a file is found, it is parsed,
+\verb@ImportError@ is raised.  If a file is found, it is parsed,
 yielding an executable code block.  If a syntax error occurs,
-\verb\SyntaxError\ is raised.  Otherwise, an empty module of the given
+\verb@SyntaxError@ is raised.  Otherwise, an empty module of the given
 name is created and inserted in the module table, and then the code
 block is executed in the context of this module.  Exceptions during
 this execution terminate step (1).
@@ -418,23 +419,23 @@ this execution terminate step (1).
 When step (1) finishes without raising an exception, step (2) can
 begin.
 
-The first form of \verb\import\ statement binds the module name in the
+The first form of \verb@import@ statement binds the module name in the
 local name space to the module object, and then goes on to import the
-next identifier, if any.  The \verb\from\ from does not bind the
+next identifier, if any.  The \verb@from@ from does not bind the
 module name: it goes through the list of identifiers, looks each one
 of them up in the module found in step (1), and binds the name in the
 local name space to the object thus found.  If a name is not found,
-\verb\ImportError\ is raised.  If the list of identifiers is replaced
-by a star (\verb\*\), all names defined in the module are bound,
-except those beginning with an underscore(\verb\_\).
+\verb@ImportError@ is raised.  If the list of identifiers is replaced
+by a star (\verb@*@), all names defined in the module are bound,
+except those beginning with an underscore(\verb@_@).
 \indexii{name}{binding}
 \exindex{ImportError}
 
-Names bound by import statements may not occur in \verb\global\
+Names bound by import statements may not occur in \verb@global@
 statements in the same scope.
 \stindex{global}
 
-The \verb\from\ form with \verb\*\ may only occur in a module scope.
+The \verb@from@ form with \verb@*@ may only occur in a module scope.
 \kwindex{from}
 \ttindex{from ... import *}
 
@@ -450,19 +451,19 @@ program.)
 global_stmt:    "global" identifier ("," identifier)*
 \end{verbatim}
 
-The \verb\global\ statement is a declaration which holds for the
+The \verb@global@ statement is a declaration which holds for the
 entire current scope.  It means that the listed identifiers are to be
 interpreted as globals.  While {\em using} global names is automatic
 if they are not defined in the local scope, {\em assigning} to global
-names would be impossible without \verb\global\.
+names would be impossible without \verb@global@.
 \indexiii{global}{name}{binding}
 
-Names listed in a \verb\global\ statement must not be used in the same
-scope before that \verb\global\ statement is executed.
+Names listed in a \verb@global@ statement must not be used in the same
+scope before that \verb@global@ statement is executed.
 
-Names listed in a \verb\global\ statement must not be defined as formal
-parameters or in a \verb\for\ loop control target, \verb\class\
-definition, function definition, or \verb\import\ statement.
+Names listed in a \verb@global@ statement must not be defined as formal
+parameters or in a \verb@for@ loop control target, \verb@class@
+definition, function definition, or \verb@import@ statement.
 
 (The current implementation does not enforce the latter two
 restrictions, but programs should not abuse this freedom, as future
@@ -478,7 +479,7 @@ access_stmt:    "access" ...
 
 This statement will be used in the future to control access to
 instance and class variables.  Currently its syntax and effects are
-undefined; however the keyword \verb\access\ is a reserved word for
+undefined; however the keyword \verb@access@ is a reserved word for
 the parser.
 
 \section{The {\tt exec} statement} \label{exec}
@@ -496,12 +497,12 @@ occurs).  If it is an open file, the file is parsed until EOF and
 executed.  If it is a code object, it is simply executed.
 
 In all cases, if the optional parts are omitted, the code is executed
-in the current scope.  If only the first expression after \verb\in\ is
+in the current scope.  If only the first expression after \verb@in@ is
 specified, it should be a dictionary, which will be used for both the
 global and the local variables.  If two expressions are given, both
 must be dictionaries and they are used for the global and local
 variables, respectively.
 
 Note: dynamic evaluation of expressions is supported by the built-in
-function \verb\eval\.
+function \verb@eval@.
 
