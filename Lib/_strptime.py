@@ -2,7 +2,7 @@
 
 CLASSES:
     LocaleTime -- Discovers and/or stores locale-specific time information
-    TimeRE -- Creates regexes for pattern matching string of text containing
+    TimeRE -- Creates regexes for pattern matching a string of text containing
                 time information as is returned by time.strftime()
 
 FUNCTIONS:
@@ -249,24 +249,23 @@ class LocaleTime(object):
         date_time[2] = time.strftime("%X", time_tuple)
         for offset,directive in ((0,'%c'), (1,'%x'), (2,'%X')):
             current_format = date_time[offset]
-            current_format = current_format.replace('%', '%%')
-            current_format = current_format.replace(self.f_weekday[2], '%A')
-            current_format = current_format.replace(self.f_month[3], '%B')
-            current_format = current_format.replace(self.a_weekday[2], '%a')
-            current_format = current_format.replace(self.a_month[3], '%b')
-            current_format = current_format.replace(self.am_pm[1], '%p')
-            current_format = current_format.replace(self.timezone[0], '%Z')
-            current_format = current_format.replace(self.timezone[1], '%Z')
-            current_format = current_format.replace('1999', '%Y')
-            current_format = current_format.replace('99', '%y')
-            current_format = current_format.replace('22', '%H')
-            current_format = current_format.replace('44', '%M')
-            current_format = current_format.replace('55', '%S')
-            current_format = current_format.replace('76', '%j')
-            current_format = current_format.replace('17', '%d')
-            current_format = current_format.replace('03', '%m')
-            current_format = current_format.replace('2', '%w')
-            current_format = current_format.replace('10', '%I')
+            for old, new in (
+                    ('%', '%%'), (self.f_weekday[2], '%A'),
+                    (self.f_month[3], '%B'), (self.a_weekday[2], '%a'),
+                    (self.a_month[3], '%b'), (self.am_pm[1], '%p'),
+                    (self.timezone[0], '%Z'), (self.timezone[1], '%Z'),
+                    ('1999', '%Y'), ('99', '%y'), ('22', '%H'),
+                    ('44', '%M'), ('55', '%S'), ('76', '%j'),
+                    ('17', '%d'), ('03', '%m'), ('3', '%m'),
+                    # '3' needed for when no leading zero.
+                    ('2', '%w'), ('10', '%I')):
+                try:
+                    # Done this way to deal with possible lack of locale info
+                    # manifesting itself as the empty string (i.e., Swedish's
+                    # lack of AM/PM info).
+                    current_format = current_format.replace(old, new)
+                except ValueError:
+                    pass
             time_tuple = time.struct_time((1999,1,3,1,1,1,6,3,0))
             if time.strftime(directive, time_tuple).find('00'):
                 U_W = '%U'
@@ -321,34 +320,27 @@ class TimeRE(dict):
     def __getitem__(self, fetch):
         """Try to fetch regex; if it does not exist, construct it."""
         try:
-            return super(TimeRE,self).__getitem__(fetch)
+            return super(TimeRE, self).__getitem__(fetch)
         except KeyError:
-            if fetch == 'A':
-                self[fetch] = self.__seqToRE(self.locale_time.f_weekday,
-                                             fetch)
-            elif fetch == 'a':
-                self[fetch] = self.__seqToRE(self.locale_time.a_weekday,
-                                             fetch)
-            elif fetch == 'B':
-                self[fetch] = self.__seqToRE(self.locale_time.f_month[1:],
-                                             fetch)
-            elif fetch == 'b':
-                self[fetch] = self.__seqToRE(self.locale_time.a_month[1:],
-                                             fetch)
-            elif fetch == 'c':
-                self[fetch] = self.pattern(self.locale_time.LC_date_time)
-            elif fetch == 'p':
-                self[fetch] = self.__seqToRE(self.locale_time.am_pm, fetch)
-            elif fetch == 'x':
-                self[fetch] = self.pattern(self.locale_time.LC_date)
-            elif fetch == 'X':
-                self[fetch] = self.pattern(self.locale_time.LC_time)
-            elif fetch == 'Z':
-                self[fetch] = self.__seqToRE(self.locale_time.timezone,
-                                             fetch)
-            elif fetch == '%':
-                return '%'
-            return super(TimeRE,self).__getitem__(fetch)
+            constructors = {
+                'A': lambda: self.__seqToRE(self.locale_time.f_weekday, fetch),
+                'a': lambda: self.__seqToRE(self.locale_time.a_weekday, fetch),
+                'B': lambda: self.__seqToRE(self.locale_time.f_month[1:],
+                                            fetch),
+                'b': lambda: self.__seqToRE(self.locale_time.a_month[1:],
+                                            fetch),
+                'c': lambda: self.pattern(self.locale_time.LC_date_time),
+                'p': lambda: self.__seqToRE(self.locale_time.am_pm, fetch),
+                'x': lambda: self.pattern(self.locale_time.LC_date),
+                'X': lambda: self.pattern(self.locale_time.LC_time),
+                'Z': lambda: self.__seqToRE(self.locale_time.timezone, fetch),
+                '%': lambda: '%',
+                }
+            if fetch in constructors:
+                self[fetch] = constructors[fetch]()
+                return self[fetch]
+            else:
+                raise
 
     def __seqToRE(self, to_convert, directive):
         """Convert a list to a regex string for matching directive."""
@@ -371,11 +363,8 @@ class TimeRE(dict):
 
         to_convert = to_convert[:]  # Don't want to change value in-place.
         to_convert.sort(sorter)
-        regex = '(?P<%s>' % directive
-        for item in to_convert:
-            regex = "%s(?:%s)|" % (regex, item)
-        else:
-            regex = regex[:-1]
+        regex = '|'.join(to_convert)
+        regex = '(?P<%s>%s' % (directive, regex)
         return '%s)' % regex
 
     def pattern(self, format):
@@ -431,23 +420,24 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             elif group_key == 'm':
                 month = int(found_dict['m'])
             elif group_key == 'B':
-                month = locale_time.f_month.index(found_dict['B'])
+                month = _insensitiveindex(locale_time.f_month, found_dict['B'])
             elif group_key == 'b':
-                month = locale_time.a_month.index(found_dict['b'])
+                month = _insensitiveindex(locale_time.a_month, found_dict['b'])
             elif group_key == 'd':
                 day = int(found_dict['d'])
             elif group_key is 'H':
                 hour = int(found_dict['H'])
             elif group_key == 'I':
                 hour = int(found_dict['I'])
-                ampm = found_dict.get('p')
-                if ampm == locale_time.am_pm[0]:
+                ampm = found_dict.get('p', '').lower()
+                # If there was no AM/PM indicator, we'll treat this like AM
+                if ampm in ('', locale_time.am_pm[0].lower()):
                     # We're in AM so the hour is correct unless we're
                     # looking at 12 midnight.
                     # 12 midnight == 12 AM == hour 0
                     if hour == 12:
                         hour = 0
-                elif ampm == locale_time.am_pm[1]:
+                elif ampm == locale_time.am_pm[1].lower():
                     # We're in PM so we need to add 12 to the hour unless
                     # we're looking at 12 noon.
                     # 12 noon == 12 PM == hour 12
@@ -458,9 +448,11 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             elif group_key == 'S':
                 second = int(found_dict['S'])
             elif group_key == 'A':
-                weekday = locale_time.f_weekday.index(found_dict['A'])
+                weekday = _insensitiveindex(locale_time.f_weekday,
+                                            found_dict['A'])
             elif group_key == 'a':
-                weekday = locale_time.a_weekday.index(found_dict['a'])
+                weekday = _insensitiveindex(locale_time.a_weekday,
+                                            found_dict['a'])
             elif group_key == 'w':
                 weekday = int(found_dict['w'])
                 if weekday == 0:
@@ -470,12 +462,15 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             elif group_key == 'j':
                 julian = int(found_dict['j'])
             elif group_key == 'Z':
-                if locale_time.timezone[0] == found_dict['Z']:
+                found_zone = found_dict['Z'].lower()
+                if locale_time.timezone[0].lower() == found_zone:
                     tz = 0
-                elif locale_time.timezone[1] == found_dict['Z']:
+                elif locale_time.timezone[1].lower() == found_zone:
                     tz = 1
-                elif locale_time.timezone[2] == found_dict['Z']:
+                elif locale_time.timezone[2].lower() == found_zone:
                     tz = 0
+        #XXX <bc>: If calculating fxns are never exposed to the general
+        #          populous then just inline calculations.
         if julian == -1 and year != -1 and month != -1 and day != -1:
             julian = julianday(year, month, day)
         if (month == -1 or day == -1) and julian != -1 and year != -1:
@@ -484,6 +479,19 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             weekday = dayofweek(year, month, day)
         return time.struct_time(
             (year,month,day,hour,minute,second,weekday, julian,tz))
+
+def _insensitiveindex(lst, findme):
+    # Perform a case-insensitive index search.
+
+    #XXX <bc>: If LocaleTime is not exposed, then consider removing this and
+    #          just lowercase when LocaleTime sets its vars and lowercasing
+    #          search values.
+    findme = findme.lower()
+    for key,item in enumerate(lst):
+        if item.lower() == findme:
+            return key
+    else:
+        raise ValueError("value not in list")
 
 def firstjulian(year):
     """Calculate the Julian date up until the first of the year."""

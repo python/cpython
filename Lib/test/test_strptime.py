@@ -1,4 +1,4 @@
-"""PyUnit testing against strptime >= 2.1.0."""
+"""PyUnit testing against strptime"""
 
 import unittest
 import time
@@ -55,12 +55,21 @@ class LocaleTime_Tests(unittest.TestCase):
 
     def test_date_time(self):
         # Check that LC_date_time, LC_date, and LC_time are correct
-##        strftime_output = time.strftime("%c", self.time_tuple)
-##        self.failUnless(strftime_output == time.strftime(self.LT_ins.LC_date_time, self.time_tuple), "LC_date_time incorrect")
-        strftime_output = time.strftime("%x", self.time_tuple)
-        self.failUnless(strftime_output == time.strftime(self.LT_ins.LC_date, self.time_tuple), "LC_date incorrect")
-        strftime_output = time.strftime("%X", self.time_tuple)
-        self.failUnless(strftime_output == time.strftime(self.LT_ins.LC_time, self.time_tuple), "LC_time incorrect")
+        # the magic date is used so as to not have issues with %c when day of
+        #  the month is a single digit and has a leading space.  This is not an
+        #  issue since strptime still parses it correctly.  The problem is
+        #  testing these directives for correctness by comparing strftime
+        #  output.
+        magic_date = (1999, 3, 17, 22, 44, 55, 2, 76, 0)
+        strftime_output = time.strftime("%c", magic_date)
+        self.failUnless(strftime_output == time.strftime(self.LT_ins.LC_date_time, magic_date), "LC_date_time incorrect")
+        strftime_output = time.strftime("%x", magic_date)
+        self.failUnless(strftime_output == time.strftime(self.LT_ins.LC_date, magic_date), "LC_date incorrect")
+        strftime_output = time.strftime("%X", magic_date)
+        self.failUnless(strftime_output == time.strftime(self.LT_ins.LC_time, magic_date), "LC_time incorrect")
+        LT = _strptime.LocaleTime(am_pm=('',''))
+        self.failUnless(LT.LC_time, "LocaleTime's LC directives cannot handle "
+                                    "empty strings")
 
     def test_lang(self):
         # Make sure lang is set
@@ -220,6 +229,16 @@ class StrptimeTests(unittest.TestCase):
         strf_output = time.strftime("%m %% %Y", self.time_tuple)
         strp_output = _strptime.strptime(strf_output, "%m %% %Y")
         self.failUnless(strp_output[0] == self.time_tuple[0] and strp_output[1] == self.time_tuple[1], "handling of percent sign failed")
+
+    def test_caseinsensitive(self):
+        # Should handle names case-insensitively.
+        strf_output = time.strftime("%B", self.time_tuple)
+        self.failUnless(_strptime.strptime(strf_output.upper(), "%B"),
+                        "strptime does not handle ALL-CAPS names properly")
+        self.failUnless(_strptime.strptime(strf_output.lower(), "%B"),
+                        "strptime does not handle lowercase names properly")
+        self.failUnless(_strptime.strptime(strf_output.capitalize(), "%B"),
+                        "strptime does not handle capword names properly")
 
 class FxnTests(unittest.TestCase):
     """Test functions that fill in info by validating result and are triggered properly."""
