@@ -36,7 +36,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "traceback.h"
 
 #ifndef NDEBUG
-#define TRACE
+/* For debugging the interpreter: */
+#define LLTRACE  1	/* Low-level trace feature */
+#define CHECKEXC 1	/* Double-check exception checking */
 #endif
 
 /* Forward declarations */
@@ -69,6 +71,7 @@ static int testbool();
 static int assign_subscript PROTO((object *, object *, object *));
 static int assign_slice PROTO((object *, object *, object *, object *));
 static int import_from PROTO((object *, object *, object *));
+static object *call_trace PROTO((object *, frameobject *, char *, object *));
 
 
 static frameobject *current_frame;
@@ -106,12 +109,12 @@ eval_code(co, globals, locals, arg)
 	register object *u;
 	register object *t;
 	register frameobject *f; /* Current frame */
-	int lineno;		/* Current line number */
+	object *trace;		/* Trace function or NULL */
 	object *retval;		/* Return value iff why == WHY_RETURN */
 	char *name;		/* Name used by some instructions */
 	FILE *fp;		/* Used by print operations */
-#ifdef TRACE
-	int trace = dictlookup(globals, "__trace__") != NULL;
+#ifdef LLTRACE
+	int lltrace = dictlookup(globals, "__lltrace__") != NULL;
 #endif
 
 /* Code access macros */
@@ -134,9 +137,9 @@ eval_code(co, globals, locals, arg)
 #define BASIC_PUSH(v)	(*stack_pointer++ = (v))
 #define BASIC_POP()	(*--stack_pointer)
 
-#ifdef TRACE
-#define PUSH(v)		(BASIC_PUSH(v), trace && prtrace(TOP(), "push"))
-#define POP()		(trace && prtrace(TOP(), "pop"), BASIC_POP())
+#ifdef LLTRACE
+#define PUSH(v)		(BASIC_PUSH(v), lltrace && prtrace(TOP(), "push"))
+#define POP()		(lltrace && prtrace(TOP(), "pop"), BASIC_POP())
 #else
 #define PUSH(v)		BASIC_PUSH(v)
 #define POP()		BASIC_POP()
@@ -153,9 +156,37 @@ eval_code(co, globals, locals, arg)
 		return NULL;
 	
 	current_frame = f;
+
+	trace = sysget("trace");
+	if (trace != NULL) {
+		/* sys.trace, if defined, is a function that will
+		   be called  on *every* entry to a code block.
+		   Its return value, if not None, is a function that
+		   will be called at the start of each executed line
+		   of code.  (Actually, the function must return
+		   itself in order to continue tracing.)
+		   The trace functions are called with three arguments:
+		   a pointer to the current frame, a string indicating
+		   why the function is called, and an argument which
+		   depends on the situation.  The global trace function
+		   (sys.trace) is also called whenever an exception
+		   is detected. */
+		trace = call_trace(trace, f, "call", arg);
+		if (trace == NULL) {
+			/* Trace function raised an error */
+			sysset("trace", (object *)NULL);
+			current_frame = f->f_back;
+			DECREF(f);
+			return NULL;
+		}
+		if (trace == None) {
+			/* No need to trace this code block */
+			DECREF(trace);
+			trace = NULL;
+		}
+	}
 	
 	next_instr = GETUSTRINGVALUE(f->f_code->co_code);
-	
 	stack_pointer = f->f_valuestack;
 	
 	if (arg != NULL) {
@@ -166,7 +197,6 @@ eval_code(co, globals, locals, arg)
 	why = WHY_NOT;
 	err = 0;
 	x = None;	/* Not a reference, just anything non-NULL */
-	lineno = -1;
 	
 	for (;;) {
 		static int ticker;
@@ -178,7 +208,6 @@ eval_code(co, globals, locals, arg)
 			if (intrcheck()) {
 				err_set(KeyboardInterrupt);
 				why = WHY_EXCEPTION;
-				tb_here(f, INSTR_OFFSET(), lineno);
 				goto on_error;
 			}
 		}
@@ -189,10 +218,10 @@ eval_code(co, globals, locals, arg)
 		if (HAS_ARG(opcode))
 			oparg = NEXTARG();
 
-#ifdef TRACE
+#ifdef LLTRACE
 		/* Instruction tracing */
 		
-		if (trace) {
+		if (lltrace) {
 			if (HAS_ARG(opcode)) {
 				printf("%d: %d, %d\n",
 					(int) (INSTR_OFFSET() - 3),
@@ -273,6 +302,7 @@ eval_code(co, globals, locals, arg)
 		
 		case UNARY_CALL:
 			v = POP();
+			f->f_lasti = INSTR_OFFSET() - 1; /* For tracing */
 			x = call_object(v, (object *)NULL);
 			DECREF(v);
 			PUSH(x);
@@ -342,6 +372,7 @@ eval_code(co, globals, locals, arg)
 		case BINARY_CALL:
 			w = POP();
 			v = POP();
+			f->f_lasti = INSTR_OFFSET() - 1; /* For tracing */
 			x = call_object(v, w);
 			DECREF(v);
 			DECREF(w);
@@ -921,17 +952,31 @@ eval_code(co, globals, locals, arg)
 			break;
 		
 		case SET_LINENO:
-#ifdef TRACE
-			if (trace)
+#ifdef LLTRACE
+			if (lltrace)
 				printf("--- Line %d ---\n", oparg);
 #endif
-			lineno = oparg;
+			f->f_lineno = oparg;
+			if (trace != NULL) {
+				/* Trace each line of code reached */
+				f->f_lasti = INSTR_OFFSET();
+				x = call_trace(trace, f, "line", None);
+				/* The trace function must return itself
+				   in order to continue tracing */
+				DECREF(trace);
+				if (x == None) {
+					DECREF(x);
+					trace = NULL;
+				}
+				else
+					trace = x;
+			}
 			break;
 		
 		default:
 			fprintf(stderr,
 				"XXX lineno: %d, opcode: %d\n",
-				lineno, opcode);
+				f->f_lineno, opcode);
 			err_setstr(SystemError, "eval_code: unknown opcode");
 			why = WHY_EXCEPTION;
 			break;
@@ -950,7 +995,7 @@ eval_code(co, globals, locals, arg)
 			err = 0;
 		}
 
-#ifndef NDEBUG
+#ifndef CHECKEXC
 		/* Double-check exception status */
 		
 		if (why == WHY_EXCEPTION || why == WHY_RERAISE) {
@@ -971,10 +1016,49 @@ eval_code(co, globals, locals, arg)
 		/* Log traceback info if this is a real exception */
 		
 		if (why == WHY_EXCEPTION) {
-			int lasti = INSTR_OFFSET() - 1;
+			f->f_lasti = INSTR_OFFSET() - 1;
 			if (HAS_ARG(opcode))
-				lasti -= 2;
-			tb_here(f, lasti, lineno);
+				f->f_lasti -= 2;
+			tb_here(f);
+
+			if (trace)
+				v = trace;
+			else
+				v = sysget("trace");
+			if (v) {
+				object *type, *value, *traceback, *arg;
+				err_get(&type, &value);
+				traceback = tb_fetch();
+				arg = newtupleobject(3);
+				if (arg == NULL)
+					err_clear();
+				else {
+					settupleitem(arg, 0, type);
+					settupleitem(arg, 1, value);
+					settupleitem(arg, 2, traceback);
+				}
+				v = call_trace(v, f, "exception", arg);
+				if (v == NULL) {
+					/* Trace function raised error */
+					tb_here(f);
+					sysset("trace", (object *)NULL);
+					XDECREF(trace);
+					trace = NULL;
+				}
+				else {
+					/* Restore original exception */
+					err_setval(type, value);
+					tb_store(traceback);
+					if (v == None)
+						DECREF(v);
+					else {
+						/* Set trace function */
+						XDECREF(trace);
+						trace = v;
+					}
+				}
+				XDECREF(arg);
+			}
 		}
 		
 		/* For the rest, treat WHY_RERAISE as WHY_EXCEPTION */
@@ -1012,9 +1096,7 @@ eval_code(co, globals, locals, arg)
 					   Python main loop.  Don't do
 					   this for 'finally'. */
 					if (b->b_type == SETUP_EXCEPT) {
-#if 1 /* Oops, this breaks too many things */
 						sysset("exc_traceback", v);
-#endif
 						sysset("exc_value", val);
 						sysset("exc_type", exc);
 						err_clear();
@@ -1049,18 +1131,31 @@ eval_code(co, globals, locals, arg)
 		XDECREF(v);
 	}
 	
+	if (why != WHY_RETURN)
+		retval = NULL;
+	
+	if (trace) {
+		if (why == WHY_RETURN) {
+			x = call_trace(trace, f, "return", retval);
+			if (x == NULL) {
+				XDECREF(retval);
+				retval = NULL;
+			}
+			else
+				DECREF(x);
+		}
+		DECREF(trace);
+	}
+	
 	/* Restore previous frame and release the current one */
 	
 	current_frame = f->f_back;
 	DECREF(f);
 	
-	if (why == WHY_RETURN)
-		return retval;
-	else
-		return NULL;
+	return retval;
 }
 
-#ifdef TRACE
+#ifdef LLTRACE
 static int
 prtrace(v, str)
 	object *v;
@@ -1072,6 +1167,46 @@ prtrace(v, str)
 	printf("\n");
 }
 #endif
+
+static object *
+call_trace(trace, f, msg, arg)
+	object *trace;
+	frameobject *f;
+	char *msg;
+	object *arg;
+{
+	object *arglist, *what, *res;
+	static int tracing = 0;
+	
+	if (tracing) {
+		/* Don't trace the trace code! */
+		INCREF(None);
+		return None;
+	}
+	
+	arglist = newtupleobject(3);
+	if (arglist == NULL)
+		return NULL;
+	what = newstringobject(msg);
+	if (what == NULL) {
+		DECREF(arglist);
+		return NULL;
+	}
+	INCREF(f);
+	if (arg == NULL)
+		arg = None;
+	INCREF(arg);
+	settupleitem(arglist, 0, (object *)f);
+	settupleitem(arglist, 1, what);
+	settupleitem(arglist, 2, arg);
+	tracing++;
+	res = call_object(trace, arglist);
+	tracing--;
+	if (res == NULL)
+		tb_here(f);
+	DECREF(arglist);
+	return res;
+}
 
 object *
 getlocals()
