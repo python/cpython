@@ -635,6 +635,12 @@ Return a string representing the current working directory.
 Availability: Macintosh, \UNIX, Windows.
 \end{funcdesc}
 
+\begin{funcdesc}{getcwdu}{}
+Return a Unicode object representing the current working directory.
+Availability: \UNIX, Windows.
+\versionadded{2.3}
+\end{funcdesc}
+
 \begin{funcdesc}{chroot}{path}
 Change the root directory of the current process to \var{path}.
 Availability: \UNIX.
@@ -670,6 +676,9 @@ The list is in arbitrary order.  It does not include the special
 entries \code{'.'} and \code{'..'} even if they are present in the
 directory.
 Availability: Macintosh, \UNIX, Windows.
+
+\versionadded[On Windows NT/2k/XP, if \var{path} is a Unicode object,
+the result will be a list of Unicode objects.]{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{lstat}{path}

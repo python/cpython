@@ -66,6 +66,8 @@ Type/class unification and new-style classes
 Core and builtins
 -----------------
 
+- Unicode file name processing for Windows (PEP 277) is implemented.
+
 - Codec error handling callbacks (PEP 293) are implemented.
   Error handling in unicode.encode or str.decode can now be customized.
 
