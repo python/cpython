@@ -10,22 +10,25 @@ MODULEDIRS = [	# Relative to projectdirs
 	":::Modules",
 ]
 
+# Global variable to control forced rebuild (otherwise the project is only rebuilt
+# when it is changed)
+FORCEREBUILD=0
+
 def relpath(base, path):
 	"""Turn abs path into path relative to another. Only works for 2 abs paths
 	both pointing to folders"""
 	if not os.path.isabs(base) or not os.path.isabs(path):
 		raise 'Absolute paths only'
-	if base[-1] != ':':
-		base = base +':'
-	if path[-1] != ':':
-		path = path + ':'
+	if base[-1] == ':':
+		base = base[:-1]
 	basefields = string.split(base, os.sep)
 	pathfields = string.split(path, os.sep)
 	commonfields = len(os.path.commonprefix((basefields, pathfields)))
 	basefields = basefields[commonfields:]
 	pathfields = pathfields[commonfields:]
-	pathfields = ['']*len(basefields) + pathfields
-	return string.join(pathfields, os.sep)
+	pathfields = ['']*(len(basefields)+1) + pathfields
+	rv = string.join(pathfields, os.sep)
+	return rv
 
 def genpluginproject(module,
 		project=None, projectdir=None,
@@ -45,23 +48,25 @@ def genpluginproject(module,
 			fn = os.path.join(projectdir, os.path.join(moduledir, sources[0]))
 			if os.path.exists(fn):
 				moduledir, sourcefile = os.path.split(fn)
-				sourcedirs = [moduledir]
+				sourcedirs = [relpath(projectdir, moduledir)]
 				sources[0] = sourcefile
 				break
 		else:
 			print "Warning: %s: sourcefile not found: %s"%(module, sources[0])
 			sourcedirs = []
 	dict = {
-		"sysprefix" : sys.prefix,
+		"sysprefix" : relpath(projectdir, sys.prefix),
 		"sources" : sources,
 		"extrasearchdirs" : sourcedirs + extradirs,
 		"libraries": libraries,
 		"mac_outputdir" : "::Plugins",
 		"extraexportsymbols" : extraexportsymbols,
 	}
-	mkcwproject.mkproject(os.path.join(projectdir, project), module, dict)
+	mkcwproject.mkproject(os.path.join(projectdir, project), module, dict, force=FORCEREBUILD)
 
-def	genallprojects():
+def	genallprojects(force=0):
+	global FORCEREBUILD
+	FORCEREBUILD = force
 	# Standard Python modules
 	genpluginproject("ucnhash", sources=["ucnhash.c"])
 	genpluginproject("pyexpat", 
@@ -123,4 +128,5 @@ def	genallprojects():
 
 if __name__ == '__main__':
 	genallprojects()
+	
 	
