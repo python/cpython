@@ -26,15 +26,32 @@
 #include <Carbon/Carbon.h>
 #endif
 
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern int _PyMac_GetFSSpec(PyObject *v, FSSpec *spec);
+extern int _PyMac_GetFSRef(PyObject *v, FSRef *fsr);
+extern PyObject *_PyMac_BuildFSSpec(FSSpec *spec);
+extern PyObject *_PyMac_BuildFSRef(FSRef *spec);
+
+#define PyMac_GetFSSpec _PyMac_GetFSSpec
+#define PyMac_GetFSRef _PyMac_GetFSRef
+#define PyMac_BuildFSSpec _PyMac_BuildFSSpec
+#define PyMac_BuildFSRef _PyMac_BuildFSRef
+#else
+extern int PyMac_GetFSSpec(PyObject *v, FSSpec *spec);
+extern int PyMac_GetFSRef(PyObject *v, FSRef *fsr);
+extern PyObject *PyMac_BuildFSSpec(FSSpec *spec);
+extern PyObject *PyMac_BuildFSRef(FSRef *spec);
+#endif
+
 /* Forward declarations */
-extern PyObject *FSRef_New(FSRef *itself);
-extern PyObject *FSSpec_New(FSSpec *itself);
-extern PyObject *Alias_New(AliasHandle itself);
-extern int FSRef_Convert(PyObject *v, FSRef *p_itself);
-extern int FSSpec_Convert(PyObject *v, FSSpec *p_itself);
-extern int Alias_Convert(PyObject *v, AliasHandle *p_itself);
-static int myPyMac_GetFSSpec(PyObject *v, FSSpec *spec);
-static int myPyMac_GetFSRef(PyObject *v, FSRef *fsr);
+static PyObject *FInfo_New(FInfo *itself);
+static PyObject *FSRef_New(FSRef *itself);
+static PyObject *FSSpec_New(FSSpec *itself);
+static PyObject *Alias_New(AliasHandle itself);
+static int FInfo_Convert(PyObject *v, FInfo *p_itself);
+#define FSRef_Convert PyMac_GetFSRef
+#define FSSpec_Convert PyMac_GetFSSpec
+static int Alias_Convert(PyObject *v, AliasHandle *p_itself);
 
 /*
 ** Optional fsspec and fsref pointers. None will pass NULL
@@ -46,7 +63,7 @@ myPyMac_GetOptFSSpecPtr(PyObject *v, FSSpec **spec)
 		*spec = NULL;
 		return 1;
 	}
-	return myPyMac_GetFSSpec(v, *spec);
+	return PyMac_GetFSSpec(v, *spec);
 }
 
 static int
@@ -56,7 +73,7 @@ myPyMac_GetOptFSRefPtr(PyObject *v, FSRef **ref)
 		*ref = NULL;
 		return 1;
 	}
-	return myPyMac_GetFSRef(v, *ref);
+	return PyMac_GetFSRef(v, *ref);
 }
 
 /*
@@ -69,37 +86,197 @@ PyMac_BuildHFSUniStr255(HFSUniStr255 *itself)
 	return Py_BuildValue("u#", itself->unicode, itself->length);
 }
 
-/*
-** Parse/generate objsect
-*/
-static PyObject *
-PyMac_BuildFInfo(FInfo *itself)
-{
-
-	return Py_BuildValue("O&O&HO&h",
-		PyMac_BuildOSType, itself->fdType,
-		PyMac_BuildOSType, itself->fdCreator,
-		itself->fdFlags,
-		PyMac_BuildPoint, &itself->fdLocation,
-		itself->fdFldr);
-}
-
-static int
-PyMac_GetFInfo(PyObject *v, FInfo *itself)
-{
-	return PyArg_ParseTuple(v, "O&O&HO&h",
-		PyMac_GetOSType, &itself->fdType,
-		PyMac_GetOSType, &itself->fdCreator,
-		&itself->fdFlags,
-		PyMac_GetPoint, &itself->fdLocation,
-		&itself->fdFldr);
-}
 
 static PyObject *File_Error;
 
+/* ----------------------- Object type FInfo ------------------------ */
+
+static PyTypeObject FInfo_Type;
+
+#define FInfo_Check(x) ((x)->ob_type == &FInfo_Type || PyObject_TypeCheck((x), &FInfo_Type))
+
+typedef struct FInfoObject {
+	PyObject_HEAD
+	FInfo ob_itself;
+} FInfoObject;
+
+static PyObject *FInfo_New(FInfo *itself)
+{
+	FInfoObject *it;
+	if (itself == NULL) return PyMac_Error(resNotFound);
+	it = PyObject_NEW(FInfoObject, &FInfo_Type);
+	if (it == NULL) return NULL;
+	it->ob_itself = *itself;
+	return (PyObject *)it;
+}
+static int FInfo_Convert(PyObject *v, FInfo *p_itself)
+{
+	if (!FInfo_Check(v))
+	{
+		PyErr_SetString(PyExc_TypeError, "FInfo required");
+		return 0;
+	}
+	*p_itself = ((FInfoObject *)v)->ob_itself;
+	return 1;
+}
+
+static void FInfo_dealloc(FInfoObject *self)
+{
+	/* Cleanup of self->ob_itself goes here */
+	self->ob_type->tp_free((PyObject *)self);
+}
+
+static PyMethodDef FInfo_methods[] = {
+	{NULL, NULL, 0}
+};
+
+static PyObject *FInfo_get_Type(FInfoObject *self, void *closure)
+{
+	return Py_BuildValue("O&", PyMac_BuildOSType, self->ob_itself.fdType);
+}
+
+static int FInfo_set_Type(FInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "O&", PyMac_GetOSType, &self->ob_itself.fdType)-1;
+	return 0;
+}
+
+static PyObject *FInfo_get_Creator(FInfoObject *self, void *closure)
+{
+	return Py_BuildValue("O&", PyMac_BuildOSType, self->ob_itself.fdCreator);
+}
+
+static int FInfo_set_Creator(FInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "O&", PyMac_GetOSType, &self->ob_itself.fdCreator)-1;
+	return 0;
+}
+
+static PyObject *FInfo_get_Flags(FInfoObject *self, void *closure)
+{
+	return Py_BuildValue("H", self->ob_itself.fdFlags);
+}
+
+static int FInfo_set_Flags(FInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "H", &self->ob_itself.fdFlags)-1;
+	return 0;
+}
+
+static PyObject *FInfo_get_Location(FInfoObject *self, void *closure)
+{
+	return Py_BuildValue("O&", PyMac_BuildPoint, self->ob_itself.fdLocation);
+}
+
+static int FInfo_set_Location(FInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "O&", PyMac_GetPoint, &self->ob_itself.fdLocation)-1;
+	return 0;
+}
+
+static PyObject *FInfo_get_Fldr(FInfoObject *self, void *closure)
+{
+	return Py_BuildValue("h", self->ob_itself.fdFldr);
+}
+
+static int FInfo_set_Fldr(FInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "h", &self->ob_itself.fdFldr)-1;
+	return 0;
+}
+
+static PyGetSetDef FInfo_getsetlist[] = {
+	{"Type", (getter)FInfo_get_Type, (setter)FInfo_set_Type, "4-char file type"},
+	{"Creator", (getter)FInfo_get_Creator, (setter)FInfo_set_Creator, "4-char file creator"},
+	{"Flags", (getter)FInfo_get_Flags, (setter)FInfo_set_Flags, "Finder flag bits"},
+	{"Location", (getter)FInfo_get_Location, (setter)FInfo_set_Location, "(x, y) location of the file's icon in its parent finder window"},
+	{"Fldr", (getter)FInfo_get_Fldr, (setter)FInfo_set_Fldr, "Original folder, for 'put away'"},
+	{NULL, NULL, NULL, NULL},
+};
+
+
+#define FInfo_compare NULL
+
+#define FInfo_repr NULL
+
+#define FInfo_hash NULL
+static int FInfo_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	FInfo *itself = NULL;
+	char *kw[] = {"itself", 0};
+
+	if (PyArg_ParseTupleAndKeywords(args, kwds, "|O&", kw, FInfo_Convert, &itself))
+	{
+		if (itself) memcpy(&((FInfoObject *)self)->ob_itself, itself, sizeof(FInfo));
+		return 0;
+	}
+	return -1;
+}
+
+#define FInfo_tp_alloc PyType_GenericAlloc
+
+static PyObject *FInfo_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	memset(&((FInfoObject *)self)->ob_itself, 0, sizeof(FInfo));
+	return self;
+}
+
+#define FInfo_tp_free PyObject_Del
+
+
+static PyTypeObject FInfo_Type = {
+	PyObject_HEAD_INIT(NULL)
+	0, /*ob_size*/
+	"Carbon.File.FInfo", /*tp_name*/
+	sizeof(FInfoObject), /*tp_basicsize*/
+	0, /*tp_itemsize*/
+	/* methods */
+	(destructor) FInfo_dealloc, /*tp_dealloc*/
+	0, /*tp_print*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
+	(cmpfunc) FInfo_compare, /*tp_compare*/
+	(reprfunc) FInfo_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) FInfo_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
+	FInfo_methods, /* tp_methods */
+	0, /*tp_members*/
+	FInfo_getsetlist, /*tp_getset*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	FInfo_tp_init, /* tp_init */
+	FInfo_tp_alloc, /* tp_alloc */
+	FInfo_tp_new, /* tp_new */
+	FInfo_tp_free, /* tp_free */
+};
+
+/* --------------------- End object type FInfo ---------------------- */
+
+
 /* ----------------------- Object type Alias ------------------------ */
 
-PyTypeObject Alias_Type;
+static PyTypeObject Alias_Type;
 
 #define Alias_Check(x) ((x)->ob_type == &Alias_Type || PyObject_TypeCheck((x), &Alias_Type))
 
@@ -109,7 +286,7 @@ typedef struct AliasObject {
 	void (*ob_freeit)(AliasHandle ptr);
 } AliasObject;
 
-PyObject *Alias_New(AliasHandle itself)
+static PyObject *Alias_New(AliasHandle itself)
 {
 	AliasObject *it;
 	if (itself == NULL) return PyMac_Error(resNotFound);
@@ -119,7 +296,7 @@ PyObject *Alias_New(AliasHandle itself)
 	it->ob_freeit = NULL;
 	return (PyObject *)it;
 }
-int Alias_Convert(PyObject *v, AliasHandle *p_itself)
+static int Alias_Convert(PyObject *v, AliasHandle *p_itself)
 {
 	if (!Alias_Check(v))
 	{
@@ -137,7 +314,7 @@ static void Alias_dealloc(AliasObject *self)
 		self->ob_freeit(self->ob_itself);
 	}
 	self->ob_itself = NULL;
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *Alias_ResolveAlias(AliasObject *_self, PyObject *_args)
@@ -396,7 +573,7 @@ static PyObject *Alias_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds
 #define Alias_tp_free PyObject_Del
 
 
-PyTypeObject Alias_Type = {
+static PyTypeObject Alias_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"Carbon.File.Alias", /*tp_name*/
@@ -445,7 +622,7 @@ PyTypeObject Alias_Type = {
 
 /* ----------------------- Object type FSSpec ----------------------- */
 
-PyTypeObject FSSpec_Type;
+static PyTypeObject FSSpec_Type;
 
 #define FSSpec_Check(x) ((x)->ob_type == &FSSpec_Type || PyObject_TypeCheck((x), &FSSpec_Type))
 
@@ -454,7 +631,7 @@ typedef struct FSSpecObject {
 	FSSpec ob_itself;
 } FSSpecObject;
 
-PyObject *FSSpec_New(FSSpec *itself)
+static PyObject *FSSpec_New(FSSpec *itself)
 {
 	FSSpecObject *it;
 	if (itself == NULL) return PyMac_Error(resNotFound);
@@ -463,21 +640,11 @@ PyObject *FSSpec_New(FSSpec *itself)
 	it->ob_itself = *itself;
 	return (PyObject *)it;
 }
-int FSSpec_Convert(PyObject *v, FSSpec *p_itself)
-{
-	if (!FSSpec_Check(v))
-	{
-		PyErr_SetString(PyExc_TypeError, "FSSpec required");
-		return 0;
-	}
-	*p_itself = ((FSSpecObject *)v)->ob_itself;
-	return 1;
-}
 
 static void FSSpec_dealloc(FSSpecObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *FSSpec_FSpOpenDF(FSSpecObject *_self, PyObject *_args)
@@ -580,7 +747,7 @@ static PyObject *FSSpec_FSpGetFInfo(FSSpecObject *_self, PyObject *_args)
 	                   &fndrInfo);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     PyMac_BuildFInfo, &fndrInfo);
+	                     FInfo_New, &fndrInfo);
 	return _res;
 }
 
@@ -590,7 +757,7 @@ static PyObject *FSSpec_FSpSetFInfo(FSSpecObject *_self, PyObject *_args)
 	OSErr _err;
 	FInfo fndrInfo;
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetFInfo, &fndrInfo))
+	                      FInfo_Convert, &fndrInfo))
 		return NULL;
 	_err = FSpSetFInfo(&_self->ob_itself,
 	                   &fndrInfo);
@@ -847,7 +1014,7 @@ static int FSSpec_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 		memcpy(&((FSSpecObject *)self)->ob_itself, rawdata, rawdatalen);
 		return 0;
 	}
-	if (myPyMac_GetFSSpec(v, &((FSSpecObject *)self)->ob_itself)) return 0;
+	if (PyMac_GetFSSpec(v, &((FSSpecObject *)self)->ob_itself)) return 0;
 	return -1;
 }
 
@@ -858,14 +1025,14 @@ static PyObject *FSSpec_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwd
 	PyObject *self;
 
 	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	memset(&((FSSpecObject *)self)->ob_itself, 0, sizeof(FSSpecObject));
+	memset(&((FSSpecObject *)self)->ob_itself, 0, sizeof(FSSpec));
 	return self;
 }
 
 #define FSSpec_tp_free PyObject_Del
 
 
-PyTypeObject FSSpec_Type = {
+static PyTypeObject FSSpec_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"Carbon.File.FSSpec", /*tp_name*/
@@ -914,7 +1081,7 @@ PyTypeObject FSSpec_Type = {
 
 /* ----------------------- Object type FSRef ------------------------ */
 
-PyTypeObject FSRef_Type;
+static PyTypeObject FSRef_Type;
 
 #define FSRef_Check(x) ((x)->ob_type == &FSRef_Type || PyObject_TypeCheck((x), &FSRef_Type))
 
@@ -923,7 +1090,7 @@ typedef struct FSRefObject {
 	FSRef ob_itself;
 } FSRefObject;
 
-PyObject *FSRef_New(FSRef *itself)
+static PyObject *FSRef_New(FSRef *itself)
 {
 	FSRefObject *it;
 	if (itself == NULL) return PyMac_Error(resNotFound);
@@ -932,21 +1099,11 @@ PyObject *FSRef_New(FSRef *itself)
 	it->ob_itself = *itself;
 	return (PyObject *)it;
 }
-int FSRef_Convert(PyObject *v, FSRef *p_itself)
-{
-	if (!FSRef_Check(v))
-	{
-		PyErr_SetString(PyExc_TypeError, "FSRef required");
-		return 0;
-	}
-	*p_itself = ((FSRefObject *)v)->ob_itself;
-	return 1;
-}
 
 static void FSRef_dealloc(FSRefObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *FSRef_FSMakeFSRefUnicode(FSRefObject *_self, PyObject *_args)
@@ -1288,7 +1445,7 @@ static int FSRef_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 		memcpy(&((FSRefObject *)self)->ob_itself, rawdata, rawdatalen);
 		return 0;
 	}
-	if (myPyMac_GetFSRef(v, &((FSRefObject *)self)->ob_itself)) return 0;
+	if (PyMac_GetFSRef(v, &((FSRefObject *)self)->ob_itself)) return 0;
 	return -1;
 }
 
@@ -1299,14 +1456,14 @@ static PyObject *FSRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds
 	PyObject *self;
 
 	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	memset(&((FSRefObject *)self)->ob_itself, 0, sizeof(FSRefObject));
+	memset(&((FSRefObject *)self)->ob_itself, 0, sizeof(FSRef));
 	return self;
 }
 
 #define FSRef_tp_free PyObject_Del
 
 
-PyTypeObject FSRef_Type = {
+static PyTypeObject FSRef_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"Carbon.File.FSRef", /*tp_name*/
@@ -1737,7 +1894,7 @@ static PyObject *File_HGetFInfo(PyObject *_self, PyObject *_args)
 	                 &fndrInfo);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     PyMac_BuildFInfo, &fndrInfo);
+	                     FInfo_New, &fndrInfo);
 	return _res;
 }
 
@@ -1753,7 +1910,7 @@ static PyObject *File_HSetFInfo(PyObject *_self, PyObject *_args)
 	                      &vRefNum,
 	                      &dirID,
 	                      PyMac_GetStr255, fileName,
-	                      PyMac_GetFInfo, &fndrInfo))
+	                      FInfo_Convert, &fndrInfo))
 		return NULL;
 	_err = HSetFInfo(vRefNum,
 	                 dirID,
@@ -2458,8 +2615,8 @@ static PyMethodDef File_methods[] = {
 
 
 
-static int
-myPyMac_GetFSSpec(PyObject *v, FSSpec *spec)
+int
+PyMac_GetFSSpec(PyObject *v, FSSpec *spec)
 {
 	Str255 path;
 	short refnum;
@@ -2503,7 +2660,7 @@ myPyMac_GetFSSpec(PyObject *v, FSSpec *spec)
 	** on OS9 we accept only a real FSRef object
 	*/
 #if TARGET_API_MAC_OSX
-	if ( myPyMac_GetFSRef(v, &fsr) ) {
+	if ( PyMac_GetFSRef(v, &fsr) ) {
 #else
 	if ( PyArg_Parse(v, "O&", FSRef_Convert, &fsr) ) {
 #endif	
@@ -2518,8 +2675,8 @@ myPyMac_GetFSSpec(PyObject *v, FSSpec *spec)
 	return 0;
 }
 
-static int
-myPyMac_GetFSRef(PyObject *v, FSRef *fsr)
+int
+PyMac_GetFSRef(PyObject *v, FSRef *fsr)
 {
 	OSStatus err;
 	
@@ -2550,6 +2707,17 @@ myPyMac_GetFSRef(PyObject *v, FSRef *fsr)
 	return 0;
 }
 
+extern PyObject *
+PyMac_BuildFSSpec(FSSpec *spec)
+{
+	return FSSpec_New(spec);
+}
+
+extern PyObject *
+PyMac_BuildFSRef(FSRef *spec)
+{
+	return FSRef_New(spec);
+}
 
 
 void init_File(void)
@@ -2559,6 +2727,11 @@ void init_File(void)
 
 
 
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(FSSpec *, PyMac_BuildFSSpec);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(FSRef *, PyMac_BuildFSRef);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(FSSpec, PyMac_GetFSSpec);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(FSRef, PyMac_GetFSRef);
+
 
 	m = Py_InitModule("_File", File_methods);
 	d = PyModule_GetDict(m);
@@ -2566,6 +2739,12 @@ void init_File(void)
 	if (File_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", File_Error) != 0)
 		return;
+	FInfo_Type.ob_type = &PyType_Type;
+	Py_INCREF(&FInfo_Type);
+	PyModule_AddObject(m, "FInfo", (PyObject *)&FInfo_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&FInfo_Type);
+	PyModule_AddObject(m, "FInfoType", (PyObject *)&FInfo_Type);
 	Alias_Type.ob_type = &PyType_Type;
 	Py_INCREF(&Alias_Type);
 	PyModule_AddObject(m, "Alias", (PyObject *)&Alias_Type);
