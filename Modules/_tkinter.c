@@ -1451,17 +1451,30 @@ static PyMethodDef moduleMethods[] =
 	{NULL,                 NULL}
 };
 
+static PyInterpreterState *event_interp = NULL;
+
 static int
 EventHook()
 {
+	PyThreadState *tstate;
+
+	if (Tk_GetNumMainWindows() == 0)
+		return 0;
+	if (event_interp == NULL)
+		return 0;
+	tstate = PyThreadState_New(event_interp);
+	PyEval_AcquireThread(tstate);
+	if (!errorInCmd)
+		Tcl_DoOneEvent(TCL_DONT_WAIT);
 	if (errorInCmd) {
 		errorInCmd = 0;
 		PyErr_Restore(excInCmd, valInCmd, trbInCmd);
 		excInCmd = valInCmd = trbInCmd = NULL;
 		PyErr_Print();
 	}
-	if (Tk_GetNumMainWindows() > 0)
-		Tcl_DoOneEvent(TCL_DONT_WAIT);
+	PyThreadState_Clear(tstate);
+	PyEval_ReleaseThread(tstate);
+	PyThreadState_Delete(tstate);
 	return 0;
 }
 
@@ -1522,8 +1535,11 @@ init_tkinter()
 	PyDict_SetItemString(d, "TkappType", (PyObject *)&Tkapp_Type);
 	PyDict_SetItemString(d, "TkttType", (PyObject *)&Tktt_Type);
 
-	if (PyOS_InputHook == NULL)
+	if (PyOS_InputHook == NULL) {
+		PyEval_InitThreads();
+		event_interp = PyThreadState_Get()->interp;
 		PyOS_InputHook = EventHook;
+	}
 
 	if (PyErr_Occurred())
 		Py_FatalError("can't initialize module _tkinter");
