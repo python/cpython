@@ -71,6 +71,9 @@ resources to test.  Currently only the following are defined:
     bsddb -     It is okay to run the bsddb testsuite, which takes
                 a long time to complete.
 
+    decimal -   Test the decimal module against a large suite that
+                verifies compliance with standards.
+
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the bsddb tests, give the
 option '-uall,-bsddb'.
@@ -112,7 +115,8 @@ if sys.platform == 'darwin':
 
 from test import test_support
 
-RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb')
+RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
+                  'decimal')
 
 
 def usage(code, msg=''):
