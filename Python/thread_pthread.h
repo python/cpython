@@ -27,9 +27,24 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <stdlib.h>
 #include <pthread.h>
 
+#ifdef _AIX
+
+#ifndef SCHED_BG_NP
+/* SCHED_BG_NP is defined if using AIX DCE pthreads
+ * but it is unsupported by AIX 4 pthreads. Default
+ * attributes for AIX 4 pthreads equal to NULL. For
+ * AIX DCE pthreads they should be left unchanged.
+ */
+#define pthread_attr_default NULL
+#define pthread_mutexattr_default NULL
+#define pthread_condattr_default NULL
+#endif
+
+#else
 #define pthread_attr_default ((pthread_attr_t *)0)
 #define pthread_mutexattr_default ((pthread_mutexattr_t *)0)
 #define pthread_condattr_default ((pthread_condattr_t *)0)
+#endif
 
 /* A pthread mutex isn't sufficient to model the Python lock type
  * because, according to Draft 5 of the docs (P1003.4a/D5), both of the
