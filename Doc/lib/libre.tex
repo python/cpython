@@ -916,8 +916,8 @@ RuntimeError: maximum recursion limit exceeded
 
 You can often restructure your regular expression to avoid recursion.
 
-\versionchanged[Simple uses of the \regexp{*?} pattern are now
+Starting with Python 2.3, simple uses of the \regexp{*?} pattern are
 special-cased to avoid recursion.  Thus, the above regular expression
-can avoid recursion by being recast as \regexp{Begin [a-zA-Z0-9_ ]*?end}.
-As a further benefit, such regular expressions will run faster than
-their recursive equivalents.]{2.3}
+can avoid recursion by being recast as
+\regexp{Begin [a-zA-Z0-9_ ]*?end}.  As a further benefit, such regular
+expressions will run faster than their recursive equivalents.
