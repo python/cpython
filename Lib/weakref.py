@@ -31,8 +31,9 @@ class WeakValueDictionary(UserDict.UserDict):
 
     # We inherit the constructor without worrying about the input
     # dictionary; since it uses our .update() method, we get the right
-    # checks (if the other dictionary is a WeakDictionary, objects are
-    # unwrapped on the way out, and we always wrap on the way in).
+    # checks (if the other dictionary is a WeakValueDictionary,
+    # objects are unwrapped on the way out, and we always wrap on the
+    # way in).
 
     def __getitem__(self, key):
         o = self.data.get(key)()
@@ -42,7 +43,7 @@ class WeakValueDictionary(UserDict.UserDict):
             return o
 
     def __repr__(self):
-        return "<WeakDictionary at %s>" % id(self)
+        return "<WeakValueDictionary at %s>" % id(self)
 
     def __setitem__(self, key, value):
         def remove(o, data=self.data, key=key):
@@ -50,11 +51,12 @@ class WeakValueDictionary(UserDict.UserDict):
         self.data[key] = ref(value, remove)
 
     def copy(self):
-        new = WeakDictionary()
+        new = WeakValueDictionary()
         for key, ref in self.data.items():
             o = ref()
             if o is not None:
                 new[key] = o
+        return new
 
     def get(self, key, default):
         try:
@@ -139,6 +141,7 @@ class WeakKeyDictionary(UserDict.UserDict):
             o = key()
             if o is not None:
                 new[o] = value
+        return new
 
     def get(self, key, default):
         return self.data.get(ref(key),default)
