@@ -16,7 +16,7 @@ class FakeSocket:
 body = "HTTP/1.1 200 Ok\r\n\r\nText"
 sock = FakeSocket(body)
 resp = httplib.HTTPResponse(sock, 1)
-resp._begin()
+resp.begin()
 print resp.read()
 resp.close()
 
@@ -24,7 +24,7 @@ body = "HTTP/1.1 400.100 Not Ok\r\n\r\nText"
 sock = FakeSocket(body)
 resp = httplib.HTTPResponse(sock, 1)
 try:
-    resp._begin()
+    resp.begin()
 except httplib.BadStatusLine:
     print "BadStatusLine raised as expected"
 else:
@@ -52,7 +52,7 @@ hdr = ('Customer="WILE_E_COYOTE"; Version="1"; Path="/acme"'
        'Part_Number="Rocket_Launcher_0001"; Version="1"; Path="/acme"')
 s = FakeSocket(text)
 r = httplib.HTTPResponse(s, 1)
-r._begin()
+r.begin()
 cookies = r.getheader("Set-Cookie")
 if cookies != hdr:
     raise AssertionError, "multiple headers not combined properly"
