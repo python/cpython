@@ -1790,14 +1790,17 @@ class Text(Widget):
 		self.tk.call((self._w, 'yview', '-pickplace') + what)
 
 class _setit:
-	def __init__(self, var, value):
+	def __init__(self, var, value, callback=None):
 		self.__value = value
 		self.__var = var
+		self.__callback = callback
 	def __call__(self, *args):
 		self.__var.set(self.__value)
+		if self.__callback:
+			apply(self.__callback, (self.__value,)+args)
 
 class OptionMenu(Menubutton):
-	def __init__(self, master, variable, value, *values):
+	def __init__(self, master, variable, value, *values, **kwargs):
 		kw = {"borderwidth": 2, "textvariable": variable,
 		      "indicatoron": 1, "relief": RAISED, "anchor": "c",
 		      "highlightthickness": 2}
@@ -1805,9 +1808,17 @@ class OptionMenu(Menubutton):
 		self.widgetName = 'tk_optionMenu'
 		menu = self.__menu = Menu(self, name="menu", tearoff=0)
 		self.menuname = menu._w
-		menu.add_command(label=value, command=_setit(variable, value))
+		# 'command' is the only supported keyword
+		callback = kwargs.get('command')
+		if kwargs.has_key('command')
+			del kwargs['command']
+		if kwargs:
+			raise TclError, 'unknown option -'+kwargs.keys()[0]
+		menu.add_command(label=value,
+				 command=_setit(variable, value, callback))
 		for v in values:
-			menu.add_command(label=v, command=_setit(variable, v))
+			menu.add_command(label=v,
+					 command=_setit(variable, v, callback))
 		self["menu"] = menu
 
 	def __getitem__(self, name):
