@@ -806,7 +806,7 @@ class TexinfoParser:
         # if self.savetext <> None:
         #       print '*** Recursive footnote -- expect weirdness'
         id = len(self.footnotes) + 1
-        self.write(self.FN_SOURCE_PATTERN % {'id': repr(id))
+        self.write(self.FN_SOURCE_PATTERN % {'id': repr(id)})
         self.startsaving()
 
     def close_footnote(self):
@@ -1857,7 +1857,7 @@ class HTMLHelp:
     def dumpnodes(self, outfile=sys.stdout):
         self.dumped = {}
         if self.nodelist:
-            (nodename,None,None,None,None) = self.nodelist[0]
+            nodename, dummy, dummy, dummy, dummy = self.nodelist[0]
             self.topnode = nodename
 
         print>>outfile,  '<UL>'
@@ -2056,16 +2056,16 @@ def test():
     file = sys.argv[1]
     dirname  = sys.argv[2]
     parser.setdirname(dirname)
-        parser.setincludedir(os.path.dirname(file))
+    parser.setincludedir(os.path.dirname(file))
 
     htmlhelp = HTMLHelp(helpbase, dirname)
     parser.sethtmlhelp(htmlhelp)
 
-        try:
-            fp = open(file, 'r')
-        except IOError, msg:
-            print file, ':', msg
-            sys.exit(1)
+    try:
+        fp = open(file, 'r')
+    except IOError, msg:
+        print file, ':', msg
+        sys.exit(1)
 
     parser.parse(fp)
     fp.close()
