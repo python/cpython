@@ -55,7 +55,13 @@ all_feature_names = [
 
 __all__ = ["all_feature_names"] + all_feature_names
 
-import new as _new  # for CO_xxx symbols
+try:
+    import new as _new  # for CO_xxx symbols
+except ImportError: # May happen during build
+    class _new:
+        CO_NESTED = 0x0010
+        CO_GENERATOR_ALLOWED = 0x1000
+        CO_FUTURE_DIVISION = 0x2000
 
 class _Feature:
     def __init__(self, optionalRelease, mandatoryRelease, compiler_flag):
