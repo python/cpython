@@ -11,7 +11,7 @@ from scantools import Scanner
 from bgenlocations import TOOLBOXDIR
 
 LONG = "Scrap"
-SHORT = "Scrap"
+SHORT = "scrap"
 
 def main():
 	input = "Scrap.h"

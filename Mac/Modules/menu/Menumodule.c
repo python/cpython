@@ -104,6 +104,106 @@ static PyObject *MenuObj_DisposeMenu(_self, _args)
 	return _res;
 }
 
+static PyObject *MenuObj_CalcMenuSize(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	CalcMenuSize(_self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MenuObj_CountMItems(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CountMItems(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MenuObj_GetMenuFont(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	SInt16 outFontID;
+	UInt16 outFontSize;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = GetMenuFont(_self->ob_itself,
+	                   &outFontID,
+	                   &outFontSize);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("hh",
+	                     outFontID,
+	                     outFontSize);
+	return _res;
+}
+
+static PyObject *MenuObj_SetMenuFont(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	SInt16 inFontID;
+	UInt16 inFontSize;
+	if (!PyArg_ParseTuple(_args, "hh",
+	                      &inFontID,
+	                      &inFontSize))
+		return NULL;
+	_err = SetMenuFont(_self->ob_itself,
+	                   inFontID,
+	                   inFontSize);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MenuObj_GetMenuExcludesMarkColumn(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetMenuExcludesMarkColumn(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MenuObj_SetMenuExcludesMarkColumn(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Boolean excludesMark;
+	if (!PyArg_ParseTuple(_args, "b",
+	                      &excludesMark))
+		return NULL;
+	_err = SetMenuExcludesMarkColumn(_self->ob_itself,
+	                                 excludesMark);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *MenuObj_MacAppendMenu(_self, _args)
 	MenuObject *_self;
 	PyObject *_args;
@@ -134,22 +234,6 @@ static PyObject *MenuObj_InsertResMenu(_self, _args)
 	InsertResMenu(_self->ob_itself,
 	              theType,
 	              afterItem);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *MenuObj_MacInsertMenu(_self, _args)
-	MenuObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short beforeID;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &beforeID))
-		return NULL;
-	MacInsertMenu(_self->ob_itself,
-	              beforeID);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -201,6 +285,144 @@ static PyObject *MenuObj_DeleteMenuItem(_self, _args)
 		return NULL;
 	DeleteMenuItem(_self->ob_itself,
 	               item);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MenuObj_InsertFontResMenu(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short afterItem;
+	short scriptFilter;
+	if (!PyArg_ParseTuple(_args, "hh",
+	                      &afterItem,
+	                      &scriptFilter))
+		return NULL;
+	InsertFontResMenu(_self->ob_itself,
+	                  afterItem,
+	                  scriptFilter);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MenuObj_InsertIntlResMenu(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ResType theType;
+	short afterItem;
+	short scriptFilter;
+	if (!PyArg_ParseTuple(_args, "O&hh",
+	                      PyMac_GetOSType, &theType,
+	                      &afterItem,
+	                      &scriptFilter))
+		return NULL;
+	InsertIntlResMenu(_self->ob_itself,
+	                  theType,
+	                  afterItem,
+	                  scriptFilter);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MenuObj_AppendMenuItemText(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Str255 inString;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetStr255, inString))
+		return NULL;
+	_err = AppendMenuItemText(_self->ob_itself,
+	                          inString);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MenuObj_InsertMenuItemText(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Str255 inString;
+	UInt16 afterItem;
+	if (!PyArg_ParseTuple(_args, "O&h",
+	                      PyMac_GetStr255, inString,
+	                      &afterItem))
+		return NULL;
+	_err = InsertMenuItemText(_self->ob_itself,
+	                          inString,
+	                          afterItem);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MenuObj_PopUpMenuSelect(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	long _rv;
+	short top;
+	short left;
+	short popUpItem;
+	if (!PyArg_ParseTuple(_args, "hhh",
+	                      &top,
+	                      &left,
+	                      &popUpItem))
+		return NULL;
+	_rv = PopUpMenuSelect(_self->ob_itself,
+	                      top,
+	                      left,
+	                      popUpItem);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MenuObj_MacInsertMenu(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short beforeID;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &beforeID))
+		return NULL;
+	MacInsertMenu(_self->ob_itself,
+	              beforeID);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MenuObj_CheckItem(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short item;
+	Boolean checked;
+	if (!PyArg_ParseTuple(_args, "hb",
+	                      &item,
+	                      &checked))
+		return NULL;
+	CheckItem(_self->ob_itself,
+	          item,
+	          checked);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -391,19 +613,6 @@ static PyObject *MenuObj_GetItemStyle(_self, _args)
 	return _res;
 }
 
-static PyObject *MenuObj_CalcMenuSize(_self, _args)
-	MenuObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	CalcMenuSize(_self->ob_itself);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
 static PyObject *MenuObj_DisableItem(_self, _args)
 	MenuObject *_self;
 	PyObject *_args;
@@ -431,103 +640,6 @@ static PyObject *MenuObj_EnableItem(_self, _args)
 		return NULL;
 	EnableItem(_self->ob_itself,
 	           item);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *MenuObj_PopUpMenuSelect(_self, _args)
-	MenuObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	long _rv;
-	short top;
-	short left;
-	short popUpItem;
-	if (!PyArg_ParseTuple(_args, "hhh",
-	                      &top,
-	                      &left,
-	                      &popUpItem))
-		return NULL;
-	_rv = PopUpMenuSelect(_self->ob_itself,
-	                      top,
-	                      left,
-	                      popUpItem);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *MenuObj_CheckItem(_self, _args)
-	MenuObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short item;
-	Boolean checked;
-	if (!PyArg_ParseTuple(_args, "hb",
-	                      &item,
-	                      &checked))
-		return NULL;
-	CheckItem(_self->ob_itself,
-	          item,
-	          checked);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *MenuObj_CountMItems(_self, _args)
-	MenuObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = CountMItems(_self->ob_itself);
-	_res = Py_BuildValue("h",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *MenuObj_InsertFontResMenu(_self, _args)
-	MenuObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short afterItem;
-	short scriptFilter;
-	if (!PyArg_ParseTuple(_args, "hh",
-	                      &afterItem,
-	                      &scriptFilter))
-		return NULL;
-	InsertFontResMenu(_self->ob_itself,
-	                  afterItem,
-	                  scriptFilter);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *MenuObj_InsertIntlResMenu(_self, _args)
-	MenuObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ResType theType;
-	short afterItem;
-	short scriptFilter;
-	if (!PyArg_ParseTuple(_args, "O&hh",
-	                      PyMac_GetOSType, &theType,
-	                      &afterItem,
-	                      &scriptFilter))
-		return NULL;
-	InsertIntlResMenu(_self->ob_itself,
-	                  theType,
-	                  afterItem,
-	                  scriptFilter);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -908,6 +1020,104 @@ static PyObject *MenuObj_GetMenuItemKeyGlyph(_self, _args)
 	return _res;
 }
 
+static PyObject *MenuObj_MacEnableMenuItem(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	UInt16 item;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &item))
+		return NULL;
+	MacEnableMenuItem(_self->ob_itself,
+	                  item);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MenuObj_DisableMenuItem(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	UInt16 item;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &item))
+		return NULL;
+	DisableMenuItem(_self->ob_itself,
+	                item);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MenuObj_IsMenuItemEnabled(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	UInt16 item;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &item))
+		return NULL;
+	_rv = IsMenuItemEnabled(_self->ob_itself,
+	                        item);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MenuObj_EnableMenuItemIcon(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	UInt16 item;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &item))
+		return NULL;
+	EnableMenuItemIcon(_self->ob_itself,
+	                   item);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MenuObj_DisableMenuItemIcon(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	UInt16 item;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &item))
+		return NULL;
+	DisableMenuItemIcon(_self->ob_itself,
+	                    item);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MenuObj_IsMenuItemIconEnabled(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	UInt16 item;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &item))
+		return NULL;
+	_rv = IsMenuItemIconEnabled(_self->ob_itself,
+	                            item);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
 static PyObject *MenuObj_as_Resource(_self, _args)
 	MenuObject *_self;
 	PyObject *_args;
@@ -972,18 +1182,42 @@ static PyObject *MenuObj_InsertMenuItem(_self, _args)
 static PyMethodDef MenuObj_methods[] = {
 	{"DisposeMenu", (PyCFunction)MenuObj_DisposeMenu, 1,
 	 "() -> None"},
+	{"CalcMenuSize", (PyCFunction)MenuObj_CalcMenuSize, 1,
+	 "() -> None"},
+	{"CountMItems", (PyCFunction)MenuObj_CountMItems, 1,
+	 "() -> (short _rv)"},
+	{"GetMenuFont", (PyCFunction)MenuObj_GetMenuFont, 1,
+	 "() -> (SInt16 outFontID, UInt16 outFontSize)"},
+	{"SetMenuFont", (PyCFunction)MenuObj_SetMenuFont, 1,
+	 "(SInt16 inFontID, UInt16 inFontSize) -> None"},
+	{"GetMenuExcludesMarkColumn", (PyCFunction)MenuObj_GetMenuExcludesMarkColumn, 1,
+	 "() -> (Boolean _rv)"},
+	{"SetMenuExcludesMarkColumn", (PyCFunction)MenuObj_SetMenuExcludesMarkColumn, 1,
+	 "(Boolean excludesMark) -> None"},
 	{"MacAppendMenu", (PyCFunction)MenuObj_MacAppendMenu, 1,
 	 "(Str255 data) -> None"},
 	{"InsertResMenu", (PyCFunction)MenuObj_InsertResMenu, 1,
 	 "(ResType theType, short afterItem) -> None"},
-	{"MacInsertMenu", (PyCFunction)MenuObj_MacInsertMenu, 1,
-	 "(short beforeID) -> None"},
 	{"AppendResMenu", (PyCFunction)MenuObj_AppendResMenu, 1,
 	 "(ResType theType) -> None"},
 	{"MacInsertMenuItem", (PyCFunction)MenuObj_MacInsertMenuItem, 1,
 	 "(Str255 itemString, short afterItem) -> None"},
 	{"DeleteMenuItem", (PyCFunction)MenuObj_DeleteMenuItem, 1,
 	 "(short item) -> None"},
+	{"InsertFontResMenu", (PyCFunction)MenuObj_InsertFontResMenu, 1,
+	 "(short afterItem, short scriptFilter) -> None"},
+	{"InsertIntlResMenu", (PyCFunction)MenuObj_InsertIntlResMenu, 1,
+	 "(ResType theType, short afterItem, short scriptFilter) -> None"},
+	{"AppendMenuItemText", (PyCFunction)MenuObj_AppendMenuItemText, 1,
+	 "(Str255 inString) -> None"},
+	{"InsertMenuItemText", (PyCFunction)MenuObj_InsertMenuItemText, 1,
+	 "(Str255 inString, UInt16 afterItem) -> None"},
+	{"PopUpMenuSelect", (PyCFunction)MenuObj_PopUpMenuSelect, 1,
+	 "(short top, short left, short popUpItem) -> (long _rv)"},
+	{"MacInsertMenu", (PyCFunction)MenuObj_MacInsertMenu, 1,
+	 "(short beforeID) -> None"},
+	{"CheckItem", (PyCFunction)MenuObj_CheckItem, 1,
+	 "(short item, Boolean checked) -> None"},
 	{"SetMenuItemText", (PyCFunction)MenuObj_SetMenuItemText, 1,
 	 "(short item, Str255 itemString) -> None"},
 	{"GetMenuItemText", (PyCFunction)MenuObj_GetMenuItemText, 1,
@@ -1004,22 +1238,10 @@ static PyMethodDef MenuObj_methods[] = {
 	 "(short item, StyleParameter chStyle) -> None"},
 	{"GetItemStyle", (PyCFunction)MenuObj_GetItemStyle, 1,
 	 "(short item) -> (Style chStyle)"},
-	{"CalcMenuSize", (PyCFunction)MenuObj_CalcMenuSize, 1,
-	 "() -> None"},
 	{"DisableItem", (PyCFunction)MenuObj_DisableItem, 1,
 	 "(short item) -> None"},
 	{"EnableItem", (PyCFunction)MenuObj_EnableItem, 1,
 	 "(short item) -> None"},
-	{"PopUpMenuSelect", (PyCFunction)MenuObj_PopUpMenuSelect, 1,
-	 "(short top, short left, short popUpItem) -> (long _rv)"},
-	{"CheckItem", (PyCFunction)MenuObj_CheckItem, 1,
-	 "(short item, Boolean checked) -> None"},
-	{"CountMItems", (PyCFunction)MenuObj_CountMItems, 1,
-	 "() -> (short _rv)"},
-	{"InsertFontResMenu", (PyCFunction)MenuObj_InsertFontResMenu, 1,
-	 "(short afterItem, short scriptFilter) -> None"},
-	{"InsertIntlResMenu", (PyCFunction)MenuObj_InsertIntlResMenu, 1,
-	 "(ResType theType, short afterItem, short scriptFilter) -> None"},
 	{"SetMenuItemCommandID", (PyCFunction)MenuObj_SetMenuItemCommandID, 1,
 	 "(SInt16 inItem, UInt32 inCommandID) -> None"},
 	{"GetMenuItemCommandID", (PyCFunction)MenuObj_GetMenuItemCommandID, 1,
@@ -1056,6 +1278,18 @@ static PyMethodDef MenuObj_methods[] = {
 	 "(SInt16 inItem, SInt16 inGlyph) -> None"},
 	{"GetMenuItemKeyGlyph", (PyCFunction)MenuObj_GetMenuItemKeyGlyph, 1,
 	 "(SInt16 inItem) -> (SInt16 outGlyph)"},
+	{"MacEnableMenuItem", (PyCFunction)MenuObj_MacEnableMenuItem, 1,
+	 "(UInt16 item) -> None"},
+	{"DisableMenuItem", (PyCFunction)MenuObj_DisableMenuItem, 1,
+	 "(UInt16 item) -> None"},
+	{"IsMenuItemEnabled", (PyCFunction)MenuObj_IsMenuItemEnabled, 1,
+	 "(UInt16 item) -> (Boolean _rv)"},
+	{"EnableMenuItemIcon", (PyCFunction)MenuObj_EnableMenuItemIcon, 1,
+	 "(UInt16 item) -> None"},
+	{"DisableMenuItemIcon", (PyCFunction)MenuObj_DisableMenuItemIcon, 1,
+	 "(UInt16 item) -> None"},
+	{"IsMenuItemIconEnabled", (PyCFunction)MenuObj_IsMenuItemIconEnabled, 1,
+	 "(UInt16 item) -> (Boolean _rv)"},
 	{"as_Resource", (PyCFunction)MenuObj_as_Resource, 1,
 	 "Return this Menu as a Resource"},
 	{"AppendMenu", (PyCFunction)MenuObj_AppendMenu, 1,
@@ -1078,6 +1312,12 @@ static PyObject *MenuObj_getattr(self, name)
 
 #define MenuObj_setattr NULL
 
+#define MenuObj_compare NULL
+
+#define MenuObj_repr NULL
+
+#define MenuObj_hash NULL
+
 PyTypeObject Menu_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -1089,22 +1329,29 @@ PyTypeObject Menu_Type = {
 	0, /*tp_print*/
 	(getattrfunc) MenuObj_getattr, /*tp_getattr*/
 	(setattrfunc) MenuObj_setattr, /*tp_setattr*/
+	(cmpfunc) MenuObj_compare, /*tp_compare*/
+	(reprfunc) MenuObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) MenuObj_hash, /*tp_hash*/
 };
 
 /* ---------------------- End object type Menu ---------------------- */
 
 
-static PyObject *Menu_GetMBarHeight(_self, _args)
+static PyObject *Menu_InitProcMenu(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short _rv;
-	if (!PyArg_ParseTuple(_args, ""))
+	short resID;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &resID))
 		return NULL;
-	_rv = GetMBarHeight();
-	_res = Py_BuildValue("h",
-	                     _rv);
+	InitProcMenu(resID);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -1156,21 +1403,6 @@ static PyObject *Menu_MacGetMenu(_self, _args)
 	return _res;
 }
 
-static PyObject *Menu_MacDeleteMenu(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short menuID;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &menuID))
-		return NULL;
-	MacDeleteMenu(menuID);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
 static PyObject *Menu_MenuKey(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1187,49 +1419,19 @@ static PyObject *Menu_MenuKey(_self, _args)
 	return _res;
 }
 
-static PyObject *Menu_HiliteMenu(_self, _args)
+static PyObject *Menu_MenuSelect(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short menuID;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &menuID))
+	long _rv;
+	Point startPt;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetPoint, &startPt))
 		return NULL;
-	HiliteMenu(menuID);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Menu_GetMenuHandle(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	MenuHandle _rv;
-	short menuID;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &menuID))
-		return NULL;
-	_rv = GetMenuHandle(menuID);
-	_res = Py_BuildValue("O&",
-	                     MenuObj_New, _rv);
-	return _res;
-}
-
-static PyObject *Menu_FlashMenuBar(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short menuID;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &menuID))
-		return NULL;
-	FlashMenuBar(menuID);
-	Py_INCREF(Py_None);
-	_res = Py_None;
+	_rv = MenuSelect(startPt);
+	_res = Py_BuildValue("l",
+	                     _rv);
 	return _res;
 }
 
@@ -1247,21 +1449,33 @@ static PyObject *Menu_MenuChoice(_self, _args)
 	return _res;
 }
 
-static PyObject *Menu_DeleteMCEntries(_self, _args)
+static PyObject *Menu_MenuEvent(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short menuID;
-	short menuItem;
-	if (!PyArg_ParseTuple(_args, "hh",
-	                      &menuID,
-	                      &menuItem))
+	UInt32 _rv;
+	EventRecord inEvent;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetEventRecord, &inEvent))
 		return NULL;
-	DeleteMCEntries(menuID,
-	                menuItem);
-	Py_INCREF(Py_None);
-	_res = Py_None;
+	_rv = MenuEvent(&inEvent);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Menu_GetMBarHeight(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetMBarHeight();
+	_res = Py_BuildValue("h",
+	                     _rv);
 	return _res;
 }
 
@@ -1291,18 +1505,34 @@ static PyObject *Menu_InvalMenuBar(_self, _args)
 	return _res;
 }
 
-static PyObject *Menu_InitProcMenu(_self, _args)
+static PyObject *Menu_HiliteMenu(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short resID;
+	short menuID;
 	if (!PyArg_ParseTuple(_args, "h",
-	                      &resID))
+	                      &menuID))
 		return NULL;
-	InitProcMenu(resID);
+	HiliteMenu(menuID);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Menu_GetNewMBar(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Handle _rv;
+	short menuBarID;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &menuBarID))
+		return NULL;
+	_rv = GetNewMBar(menuBarID);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
 	return _res;
 }
 
@@ -1330,6 +1560,80 @@ static PyObject *Menu_SetMenuBar(_self, _args)
 	                      ResObj_Convert, &menuList))
 		return NULL;
 	SetMenuBar(menuList);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Menu_GetMenuHandle(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	MenuHandle _rv;
+	short menuID;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &menuID))
+		return NULL;
+	_rv = GetMenuHandle(menuID);
+	_res = Py_BuildValue("O&",
+	                     MenuObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Menu_MacDeleteMenu(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short menuID;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &menuID))
+		return NULL;
+	MacDeleteMenu(menuID);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Menu_ClearMenuBar(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	ClearMenuBar();
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Menu_SetMenuFlash(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short count;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &count))
+		return NULL;
+	SetMenuFlash(count);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Menu_FlashMenuBar(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short menuID;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &menuID))
+		return NULL;
+	FlashMenuBar(menuID);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1366,78 +1670,91 @@ static PyObject *Menu_SystemMenu(_self, _args)
 	return _res;
 }
 
-static PyObject *Menu_GetNewMBar(_self, _args)
+static PyObject *Menu_IsMenuBarVisible(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	Handle _rv;
-	short menuBarID;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &menuBarID))
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_rv = GetNewMBar(menuBarID);
-	_res = Py_BuildValue("O&",
-	                     ResObj_New, _rv);
+	_rv = IsMenuBarVisible();
+	_res = Py_BuildValue("b",
+	                     _rv);
 	return _res;
 }
 
-static PyObject *Menu_ClearMenuBar(_self, _args)
+static PyObject *Menu_ShowMenuBar(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	ClearMenuBar();
+	ShowMenuBar();
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *Menu_SetMenuFlash(_self, _args)
+static PyObject *Menu_HideMenuBar(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short count;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &count))
+	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	SetMenuFlash(count);
+	HideMenuBar();
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *Menu_MenuSelect(_self, _args)
+static PyObject *Menu_DeleteMCEntries(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long _rv;
-	Point startPt;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetPoint, &startPt))
+	short menuID;
+	short menuItem;
+	if (!PyArg_ParseTuple(_args, "hh",
+	                      &menuID,
+	                      &menuItem))
 		return NULL;
-	_rv = MenuSelect(startPt);
-	_res = Py_BuildValue("l",
-	                     _rv);
+	DeleteMCEntries(menuID,
+	                menuItem);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
-static PyObject *Menu_MenuEvent(_self, _args)
+static PyObject *Menu_InitContextualMenus(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	UInt32 _rv;
+	OSStatus _err;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = InitContextualMenus();
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Menu_IsShowContextualMenuClick(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
 	EventRecord inEvent;
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetEventRecord, &inEvent))
 		return NULL;
-	_rv = MenuEvent(&inEvent);
-	_res = Py_BuildValue("l",
+	_rv = IsShowContextualMenuClick(&inEvent);
+	_res = Py_BuildValue("b",
 	                     _rv);
 	return _res;
 }
@@ -1518,52 +1835,62 @@ static PyObject *Menu_DrawMenuBar(_self, _args)
 }
 
 static PyMethodDef Menu_methods[] = {
-	{"GetMBarHeight", (PyCFunction)Menu_GetMBarHeight, 1,
-	 "() -> (short _rv)"},
+	{"InitProcMenu", (PyCFunction)Menu_InitProcMenu, 1,
+	 "(short resID) -> None"},
 	{"InitMenus", (PyCFunction)Menu_InitMenus, 1,
 	 "() -> None"},
 	{"NewMenu", (PyCFunction)Menu_NewMenu, 1,
 	 "(short menuID, Str255 menuTitle) -> (MenuHandle _rv)"},
 	{"MacGetMenu", (PyCFunction)Menu_MacGetMenu, 1,
 	 "(short resourceID) -> (MenuHandle _rv)"},
-	{"MacDeleteMenu", (PyCFunction)Menu_MacDeleteMenu, 1,
-	 "(short menuID) -> None"},
 	{"MenuKey", (PyCFunction)Menu_MenuKey, 1,
 	 "(CharParameter ch) -> (long _rv)"},
-	{"HiliteMenu", (PyCFunction)Menu_HiliteMenu, 1,
-	 "(short menuID) -> None"},
-	{"GetMenuHandle", (PyCFunction)Menu_GetMenuHandle, 1,
-	 "(short menuID) -> (MenuHandle _rv)"},
-	{"FlashMenuBar", (PyCFunction)Menu_FlashMenuBar, 1,
-	 "(short menuID) -> None"},
+	{"MenuSelect", (PyCFunction)Menu_MenuSelect, 1,
+	 "(Point startPt) -> (long _rv)"},
 	{"MenuChoice", (PyCFunction)Menu_MenuChoice, 1,
 	 "() -> (long _rv)"},
-	{"DeleteMCEntries", (PyCFunction)Menu_DeleteMCEntries, 1,
-	 "(short menuID, short menuItem) -> None"},
+	{"MenuEvent", (PyCFunction)Menu_MenuEvent, 1,
+	 "(EventRecord inEvent) -> (UInt32 _rv)"},
+	{"GetMBarHeight", (PyCFunction)Menu_GetMBarHeight, 1,
+	 "() -> (short _rv)"},
 	{"MacDrawMenuBar", (PyCFunction)Menu_MacDrawMenuBar, 1,
 	 "() -> None"},
 	{"InvalMenuBar", (PyCFunction)Menu_InvalMenuBar, 1,
 	 "() -> None"},
-	{"InitProcMenu", (PyCFunction)Menu_InitProcMenu, 1,
-	 "(short resID) -> None"},
+	{"HiliteMenu", (PyCFunction)Menu_HiliteMenu, 1,
+	 "(short menuID) -> None"},
+	{"GetNewMBar", (PyCFunction)Menu_GetNewMBar, 1,
+	 "(short menuBarID) -> (Handle _rv)"},
 	{"GetMenuBar", (PyCFunction)Menu_GetMenuBar, 1,
 	 "() -> (Handle _rv)"},
 	{"SetMenuBar", (PyCFunction)Menu_SetMenuBar, 1,
 	 "(Handle menuList) -> None"},
-	{"SystemEdit", (PyCFunction)Menu_SystemEdit, 1,
-	 "(short editCmd) -> (Boolean _rv)"},
-	{"SystemMenu", (PyCFunction)Menu_SystemMenu, 1,
-	 "(long menuResult) -> None"},
-	{"GetNewMBar", (PyCFunction)Menu_GetNewMBar, 1,
-	 "(short menuBarID) -> (Handle _rv)"},
+	{"GetMenuHandle", (PyCFunction)Menu_GetMenuHandle, 1,
+	 "(short menuID) -> (MenuHandle _rv)"},
+	{"MacDeleteMenu", (PyCFunction)Menu_MacDeleteMenu, 1,
+	 "(short menuID) -> None"},
 	{"ClearMenuBar", (PyCFunction)Menu_ClearMenuBar, 1,
 	 "() -> None"},
 	{"SetMenuFlash", (PyCFunction)Menu_SetMenuFlash, 1,
 	 "(short count) -> None"},
-	{"MenuSelect", (PyCFunction)Menu_MenuSelect, 1,
-	 "(Point startPt) -> (long _rv)"},
-	{"MenuEvent", (PyCFunction)Menu_MenuEvent, 1,
-	 "(EventRecord inEvent) -> (UInt32 _rv)"},
+	{"FlashMenuBar", (PyCFunction)Menu_FlashMenuBar, 1,
+	 "(short menuID) -> None"},
+	{"SystemEdit", (PyCFunction)Menu_SystemEdit, 1,
+	 "(short editCmd) -> (Boolean _rv)"},
+	{"SystemMenu", (PyCFunction)Menu_SystemMenu, 1,
+	 "(long menuResult) -> None"},
+	{"IsMenuBarVisible", (PyCFunction)Menu_IsMenuBarVisible, 1,
+	 "() -> (Boolean _rv)"},
+	{"ShowMenuBar", (PyCFunction)Menu_ShowMenuBar, 1,
+	 "() -> None"},
+	{"HideMenuBar", (PyCFunction)Menu_HideMenuBar, 1,
+	 "() -> None"},
+	{"DeleteMCEntries", (PyCFunction)Menu_DeleteMCEntries, 1,
+	 "(short menuID, short menuItem) -> None"},
+	{"InitContextualMenus", (PyCFunction)Menu_InitContextualMenus, 1,
+	 "() -> None"},
+	{"IsShowContextualMenuClick", (PyCFunction)Menu_IsShowContextualMenuClick, 1,
+	 "(EventRecord inEvent) -> (Boolean _rv)"},
 	{"OpenDeskAcc", (PyCFunction)Menu_OpenDeskAcc, 1,
 	 "(Str255 name) -> None"},
 	{"as_Menu", (PyCFunction)Menu_as_Menu, 1,

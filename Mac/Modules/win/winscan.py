@@ -37,12 +37,18 @@ class MyScanner(Scanner):
 		return [
 			'DisposeWindow', # Implied when the object is deleted
 			'CloseWindow',
+			'SetWindowProperty',	# For the moment
+			'GetWindowProperty',
+			'GetWindowPropertySize',
+			'RemoveWindowProperty',
 			]
 
 	def makeblacklisttypes(self):
 		return [
 			'ProcPtr',
 			'DragGrayRgnUPP',
+			'Collection',		# For now, to be done later
+			'DragReference',	# Ditto, dragmodule doesn't export it yet.
 			]
 
 	def makerepairinstructions(self):

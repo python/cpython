@@ -272,6 +272,48 @@ static PyObject *SndCh_SndChannelStatus(_self, _args)
 	return _res;
 }
 
+static PyObject *SndCh_SndGetInfo(_self, _args)
+	SndChannelObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	OSType selector;
+	void * infoPtr;
+	if (!PyArg_ParseTuple(_args, "O&w",
+	                      PyMac_GetOSType, &selector,
+	                      &infoPtr))
+		return NULL;
+	_err = SndGetInfo(_self->ob_itself,
+	                  selector,
+	                  infoPtr);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *SndCh_SndSetInfo(_self, _args)
+	SndChannelObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	OSType selector;
+	void * infoPtr;
+	if (!PyArg_ParseTuple(_args, "O&w",
+	                      PyMac_GetOSType, &selector,
+	                      &infoPtr))
+		return NULL;
+	_err = SndSetInfo(_self->ob_itself,
+	                  selector,
+	                  infoPtr);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef SndCh_methods[] = {
 	{"SndDoCommand", (PyCFunction)SndCh_SndDoCommand, 1,
 	 "(SndCommand cmd, Boolean noWait) -> None"},
@@ -287,6 +329,10 @@ static PyMethodDef SndCh_methods[] = {
 	 "(Boolean quietNow) -> None"},
 	{"SndChannelStatus", (PyCFunction)SndCh_SndChannelStatus, 1,
 	 "(short theLength) -> (SCStatus theStatus)"},
+	{"SndGetInfo", (PyCFunction)SndCh_SndGetInfo, 1,
+	 "(OSType selector, void * infoPtr) -> None"},
+	{"SndSetInfo", (PyCFunction)SndCh_SndSetInfo, 1,
+	 "(OSType selector, void * infoPtr) -> None"},
 	{NULL, NULL, 0}
 };
 
@@ -301,6 +347,12 @@ static PyObject *SndCh_getattr(self, name)
 
 #define SndCh_setattr NULL
 
+#define SndCh_compare NULL
+
+#define SndCh_repr NULL
+
+#define SndCh_hash NULL
+
 staticforward PyTypeObject SndChannel_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -312,6 +364,12 @@ staticforward PyTypeObject SndChannel_Type = {
 	0, /*tp_print*/
 	(getattrfunc) SndCh_getattr, /*tp_getattr*/
 	(setattrfunc) SndCh_setattr, /*tp_setattr*/
+	(cmpfunc) SndCh_compare, /*tp_compare*/
+	(reprfunc) SndCh_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) SndCh_hash, /*tp_hash*/
 };
 
 /* ------------------- End object type SndChannel ------------------- */
@@ -423,6 +481,12 @@ static int SPBObj_setattr(self, name, value)
 		else return -1;
 }
 
+#define SPBObj_compare NULL
+
+#define SPBObj_repr NULL
+
+#define SPBObj_hash NULL
+
 staticforward PyTypeObject SPB_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -434,6 +498,12 @@ staticforward PyTypeObject SPB_Type = {
 	0, /*tp_print*/
 	(getattrfunc) SPBObj_getattr, /*tp_getattr*/
 	(setattrfunc) SPBObj_setattr, /*tp_setattr*/
+	(cmpfunc) SPBObj_compare, /*tp_compare*/
+	(reprfunc) SPBObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) SPBObj_hash, /*tp_hash*/
 };
 
 /* ---------------------- End object type SPB ----------------------- */
@@ -859,6 +929,98 @@ static PyObject *Snd_GetSoundHeaderOffset(_self, _args)
 	return _res;
 }
 
+static PyObject *Snd_GetCompressionInfo(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	short compressionID;
+	OSType format;
+	short numChannels;
+	short sampleSize;
+	CompressionInfo cp__out__;
+	if (!PyArg_ParseTuple(_args, "hO&hh",
+	                      &compressionID,
+	                      PyMac_GetOSType, &format,
+	                      &numChannels,
+	                      &sampleSize))
+		return NULL;
+	_err = GetCompressionInfo(compressionID,
+	                          format,
+	                          numChannels,
+	                          sampleSize,
+	                          &cp__out__);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("s#",
+	                     (char *)&cp__out__, (int)sizeof(CompressionInfo));
+ cp__error__: ;
+	return _res;
+}
+
+static PyObject *Snd_SetSoundPreference(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	OSType theType;
+	Str255 name;
+	Handle settings;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetOSType, &theType,
+	                      ResObj_Convert, &settings))
+		return NULL;
+	_err = SetSoundPreference(theType,
+	                          name,
+	                          settings);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildStr255, name);
+	return _res;
+}
+
+static PyObject *Snd_GetSoundPreference(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	OSType theType;
+	Str255 name;
+	Handle settings;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetOSType, &theType,
+	                      ResObj_Convert, &settings))
+		return NULL;
+	_err = GetSoundPreference(theType,
+	                          name,
+	                          settings);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildStr255, name);
+	return _res;
+}
+
+static PyObject *Snd_GetCompressionName(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	OSType compressionType;
+	Str255 compressionName;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetOSType, &compressionType))
+		return NULL;
+	_err = GetCompressionName(compressionType,
+	                          compressionName);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildStr255, compressionName);
+	return _res;
+}
+
 static PyObject *Snd_SPBVersion(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1220,6 +1382,14 @@ static PyMethodDef Snd_methods[] = {
 	 "(long level) -> None"},
 	{"GetSoundHeaderOffset", (PyCFunction)Snd_GetSoundHeaderOffset, 1,
 	 "(SndListHandle sndHandle) -> (long offset)"},
+	{"GetCompressionInfo", (PyCFunction)Snd_GetCompressionInfo, 1,
+	 "(short compressionID, OSType format, short numChannels, short sampleSize) -> (CompressionInfo cp)"},
+	{"SetSoundPreference", (PyCFunction)Snd_SetSoundPreference, 1,
+	 "(OSType theType, Handle settings) -> (Str255 name)"},
+	{"GetSoundPreference", (PyCFunction)Snd_GetSoundPreference, 1,
+	 "(OSType theType, Handle settings) -> (Str255 name)"},
+	{"GetCompressionName", (PyCFunction)Snd_GetCompressionName, 1,
+	 "(OSType compressionType) -> (Str255 compressionName)"},
 	{"SPBVersion", (PyCFunction)Snd_SPBVersion, 1,
 	 "() -> (NumVersion _rv)"},
 	{"SPBSignInDevice", (PyCFunction)Snd_SPBSignInDevice, 1,

@@ -26,6 +26,7 @@ DialogItemType = Type("DialogItemType", "h")
 DialogItemIndexZeroBased = Type("DialogItemIndexZeroBased", "h")
 AlertType = Type("AlertType", "h")
 StringPtr = Str255
+EventMask = Type("EventMask", "h")
 
 includestuff = includestuff + """
 #include <Dialogs.h>

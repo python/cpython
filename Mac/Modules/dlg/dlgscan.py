@@ -50,7 +50,7 @@ class MyScanner(Scanner):
 			'FreeDialog',
 			'GetStdFilterProc',
 			'GetDialogParent',
-			# Can't find these in the CW Pro 3 libraries
+##			# Can't find these in the CW Pro 3 libraries
 			'SetDialogMovableModal',
 			'GetDialogControlNotificationProc',
 			]
@@ -86,6 +86,10 @@ class MyScanner(Scanner):
 			([("DialogRef", "*", "OutMode")],
 			 [("ExistingDialogPtr", "*", "*")]),
 			]
+
+	def writeinitialdefs(self):
+		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
+
 
 if __name__ == "__main__":
 	main()

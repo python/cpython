@@ -1,4 +1,4 @@
-# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Components.h'
+# Generated from 'SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Components.h'
 
 def FOUR_CHAR_CODE(x): return x
 kAppleManufacturer = FOUR_CHAR_CODE('appl')
@@ -9,7 +9,6 @@ kAnyComponentSubType = 0
 kAnyComponentManufacturer = 0
 kAnyComponentFlagsMask = 0
 cmpWantsRegisterMessage = 1L << 31
-cmpIsComponentAlias = 1L << 28
 kComponentOpenSelect = -1
 kComponentCloseSelect = -2
 kComponentCanDoSelect = -3

@@ -32,8 +32,12 @@ class MyScanner(Scanner):
 
 	def makeblacklistnames(self):
 		return [
-			"IsShowContextualMenuClick", # Can't find it in the library
-			"InitContextualMenus", # ditto
+##			"IsShowContextualMenuClick", # Can't find it in the library
+##			"InitContextualMenus", # ditto
+			"GetMenuItemProperty",	# difficult for the moment
+			"GetMenuItemPropertySize",
+			"SetMenuItemProperty",
+			"RemoveMenuItemProperty",
 			]
 
 	def makeblacklisttypes(self):

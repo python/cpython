@@ -1,4 +1,4 @@
-# Generated from 'Moes:Codewarrior Pro 4:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QDOffscreen.h'
+# Generated from 'SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:QDOffscreen.h'
 
 def FOUR_CHAR_CODE(x): return x
 pixPurgeBit = 0

@@ -1,5 +1,8 @@
-# Generated from 'moes:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Dialogs.h'
+# Generated from 'SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Dialogs.h'
 
+def FOUR_CHAR_CODE(x): return x
+gestaltDialogMgrAttr = FOUR_CHAR_CODE('dlog')
+dialogNoTimeoutErr = -5640
 kControlDialogItem = 4
 kButtonDialogItem = kControlDialogItem | 0
 kCheckBoxDialogItem = kControlDialogItem | 1
@@ -59,3 +62,4 @@ kDialogFontUseJustMask = 0x0040
 kDialogFontUseAllMask = 0x00FF
 kDialogFontAddFontSizeMask = 0x0100
 kDialogFontUseFontNameMask = 0x0200
+kDialogFontAddToMetaFontMask = 0x0400

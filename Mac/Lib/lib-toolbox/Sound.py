@@ -1,4 +1,4 @@
-# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Sound.h'
+# Generated from 'SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Sound.h'
 
 def FOUR_CHAR_CODE(x): return x
 soundListRsrc = FOUR_CHAR_CODE('snd ')
@@ -115,10 +115,12 @@ siAsync = FOUR_CHAR_CODE('asyn')
 siAVDisplayBehavior = FOUR_CHAR_CODE('avdb')
 siChannelAvailable = FOUR_CHAR_CODE('chav')
 siCompressionAvailable = FOUR_CHAR_CODE('cmav')
+siCompressionChannels = FOUR_CHAR_CODE('cpct')
 siCompressionFactor = FOUR_CHAR_CODE('cmfa')
 siCompressionHeader = FOUR_CHAR_CODE('cmhd')
 siCompressionNames = FOUR_CHAR_CODE('cnam')
 siCompressionParams = FOUR_CHAR_CODE('evaw')
+siCompressionSampleRate = FOUR_CHAR_CODE('cprt')
 siCompressionType = FOUR_CHAR_CODE('comp')
 siContinuous = FOUR_CHAR_CODE('cont')
 siDecompressionParams = FOUR_CHAR_CODE('wave')
@@ -186,6 +188,7 @@ siUserInterruptProc = FOUR_CHAR_CODE('user')
 kNoSource = FOUR_CHAR_CODE('none')
 kCDSource = FOUR_CHAR_CODE('cd  ')
 kExtMicSource = FOUR_CHAR_CODE('emic')
+kSoundInSource = FOUR_CHAR_CODE('sinj')
 kRCAInSource = FOUR_CHAR_CODE('irca')
 kTVFMTunerSource = FOUR_CHAR_CODE('tvfm')
 kDAVInSource = FOUR_CHAR_CODE('idav')
@@ -248,6 +251,8 @@ kALawCompression = FOUR_CHAR_CODE('alaw')
 kMicrosoftADPCMFormat = 0x6D730002
 kDVIIntelIMAFormat = 0x6D730011
 kDVAudioFormat = FOUR_CHAR_CODE('dvca')
+kQDesignCompression = FOUR_CHAR_CODE('QDMC')
+kQUALCOMMCompression = FOUR_CHAR_CODE('Qclp')
 kOffsetBinary = k8BitOffsetBinaryFormat
 kTwosComplement = k16BitBigEndianFormat
 kLittleEndianFormat = k16BitLittleEndianFormat
@@ -276,6 +281,7 @@ siCDQuality = FOUR_CHAR_CODE('cd  ')
 siBestQuality = FOUR_CHAR_CODE('best')
 siBetterQuality = FOUR_CHAR_CODE('betr')
 siGoodQuality = FOUR_CHAR_CODE('good')
+siNoneQuality = FOUR_CHAR_CODE('none')
 siDeviceIsConnected = 1
 siDeviceNotConnected = 0
 siDontKnowIfConnected = -1

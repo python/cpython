@@ -305,6 +305,12 @@ static PyObject *CmpInstObj_getattr(self, name)
 
 #define CmpInstObj_setattr NULL
 
+#define CmpInstObj_compare NULL
+
+#define CmpInstObj_repr NULL
+
+#define CmpInstObj_hash NULL
+
 PyTypeObject ComponentInstance_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -316,6 +322,12 @@ PyTypeObject ComponentInstance_Type = {
 	0, /*tp_print*/
 	(getattrfunc) CmpInstObj_getattr, /*tp_getattr*/
 	(setattrfunc) CmpInstObj_setattr, /*tp_setattr*/
+	(cmpfunc) CmpInstObj_compare, /*tp_compare*/
+	(reprfunc) CmpInstObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) CmpInstObj_hash, /*tp_hash*/
 };
 
 /* --------------- End object type ComponentInstance ---------------- */
@@ -654,6 +666,12 @@ static PyObject *CmpObj_getattr(self, name)
 
 #define CmpObj_setattr NULL
 
+#define CmpObj_compare NULL
+
+#define CmpObj_repr NULL
+
+#define CmpObj_hash NULL
+
 PyTypeObject Component_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -665,6 +683,12 @@ PyTypeObject Component_Type = {
 	0, /*tp_print*/
 	(getattrfunc) CmpObj_getattr, /*tp_getattr*/
 	(setattrfunc) CmpObj_setattr, /*tp_setattr*/
+	(cmpfunc) CmpObj_compare, /*tp_compare*/
+	(reprfunc) CmpObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) CmpObj_hash, /*tp_hash*/
 };
 
 /* ------------------- End object type Component -------------------- */

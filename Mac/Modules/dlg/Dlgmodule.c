@@ -587,6 +587,106 @@ static PyObject *DlgObj_SizeDialogItem(_self, _args)
 	return _res;
 }
 
+static PyObject *DlgObj_AppendDialogItemList(_self, _args)
+	DialogObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	SInt16 ditlID;
+	DITLMethod method;
+	if (!PyArg_ParseTuple(_args, "hh",
+	                      &ditlID,
+	                      &method))
+		return NULL;
+	_err = AppendDialogItemList(_self->ob_itself,
+	                            ditlID,
+	                            method);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *DlgObj_SetDialogTimeout(_self, _args)
+	DialogObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	SInt16 inButtonToPress;
+	UInt32 inSecondsToWait;
+	if (!PyArg_ParseTuple(_args, "hl",
+	                      &inButtonToPress,
+	                      &inSecondsToWait))
+		return NULL;
+	_err = SetDialogTimeout(_self->ob_itself,
+	                        inButtonToPress,
+	                        inSecondsToWait);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *DlgObj_GetDialogTimeout(_self, _args)
+	DialogObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	SInt16 outButtonToPress;
+	UInt32 outSecondsToWait;
+	UInt32 outSecondsRemaining;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = GetDialogTimeout(_self->ob_itself,
+	                        &outButtonToPress,
+	                        &outSecondsToWait,
+	                        &outSecondsRemaining);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("hll",
+	                     outButtonToPress,
+	                     outSecondsToWait,
+	                     outSecondsRemaining);
+	return _res;
+}
+
+static PyObject *DlgObj_SetModalDialogEventMask(_self, _args)
+	DialogObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	EventMask inMask;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &inMask))
+		return NULL;
+	_err = SetModalDialogEventMask(_self->ob_itself,
+	                               inMask);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *DlgObj_GetModalDialogEventMask(_self, _args)
+	DialogObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	EventMask outMask;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = GetModalDialogEventMask(_self->ob_itself,
+	                               &outMask);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("h",
+	                     outMask);
+	return _res;
+}
+
 static PyObject *DlgObj_GetDialogWindow(_self, _args)
 	DialogObject *_self;
 	PyObject *_args;
@@ -703,6 +803,16 @@ static PyMethodDef DlgObj_methods[] = {
 	 "(SInt16 inItemNo, SInt16 inHoriz, SInt16 inVert) -> None"},
 	{"SizeDialogItem", (PyCFunction)DlgObj_SizeDialogItem, 1,
 	 "(SInt16 inItemNo, SInt16 inWidth, SInt16 inHeight) -> None"},
+	{"AppendDialogItemList", (PyCFunction)DlgObj_AppendDialogItemList, 1,
+	 "(SInt16 ditlID, DITLMethod method) -> None"},
+	{"SetDialogTimeout", (PyCFunction)DlgObj_SetDialogTimeout, 1,
+	 "(SInt16 inButtonToPress, UInt32 inSecondsToWait) -> None"},
+	{"GetDialogTimeout", (PyCFunction)DlgObj_GetDialogTimeout, 1,
+	 "() -> (SInt16 outButtonToPress, UInt32 outSecondsToWait, UInt32 outSecondsRemaining)"},
+	{"SetModalDialogEventMask", (PyCFunction)DlgObj_SetModalDialogEventMask, 1,
+	 "(EventMask inMask) -> None"},
+	{"GetModalDialogEventMask", (PyCFunction)DlgObj_GetModalDialogEventMask, 1,
+	 "() -> (EventMask outMask)"},
 	{"GetDialogWindow", (PyCFunction)DlgObj_GetDialogWindow, 1,
 	 "() -> (DialogPtr _rv)"},
 	{"GetDialogDefaultItem", (PyCFunction)DlgObj_GetDialogDefaultItem, 1,
@@ -727,6 +837,12 @@ static PyObject *DlgObj_getattr(self, name)
 
 #define DlgObj_setattr NULL
 
+#define DlgObj_compare NULL
+
+#define DlgObj_repr NULL
+
+#define DlgObj_hash NULL
+
 PyTypeObject Dialog_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -738,6 +854,12 @@ PyTypeObject Dialog_Type = {
 	0, /*tp_print*/
 	(getattrfunc) DlgObj_getattr, /*tp_getattr*/
 	(setattrfunc) DlgObj_setattr, /*tp_setattr*/
+	(cmpfunc) DlgObj_compare, /*tp_compare*/
+	(reprfunc) DlgObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) DlgObj_hash, /*tp_hash*/
 };
 
 /* --------------------- End object type Dialog --------------------- */
@@ -1048,11 +1170,11 @@ static PyObject *Dlg_SetDialogFont(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	SInt16 value;
+	SInt16 fontNum;
 	if (!PyArg_ParseTuple(_args, "h",
-	                      &value))
+	                      &fontNum))
 		return NULL;
-	SetDialogFont(value);
+	SetDialogFont(fontNum);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1173,7 +1295,7 @@ static PyMethodDef Dlg_methods[] = {
 	{"GetAlertStage", (PyCFunction)Dlg_GetAlertStage, 1,
 	 "() -> (SInt16 _rv)"},
 	{"SetDialogFont", (PyCFunction)Dlg_SetDialogFont, 1,
-	 "(SInt16 value) -> None"},
+	 "(SInt16 fontNum) -> None"},
 	{"ResetAlertStage", (PyCFunction)Dlg_ResetAlertStage, 1,
 	 "() -> None"},
 	{"NewFeaturesDialog", (PyCFunction)Dlg_NewFeaturesDialog, 1,

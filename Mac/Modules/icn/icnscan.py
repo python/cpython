@@ -45,6 +45,7 @@ class MyScanner(Scanner):
 		return [
 			"IconActionUPP",
 			"IconGetterUPP",
+			"CFragInitBlockPtr",
 			]
 
 	def makerepairinstructions(self):

@@ -44,6 +44,10 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <Appearance.h>
 
+/* Exported by Qdmodule.c: */
+extern PyObject *QdRGB_New(RGBColor *);
+extern int QdRGB_Convert(PyObject *, RGBColor *);
+
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
 static PyObject *App_Error;

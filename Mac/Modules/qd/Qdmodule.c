@@ -223,6 +223,12 @@ static PyObject *GrafObj_getattr(self, name)
 
 #define GrafObj_setattr NULL
 
+#define GrafObj_compare NULL
+
+#define GrafObj_repr NULL
+
+#define GrafObj_hash NULL
+
 PyTypeObject GrafPort_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -234,6 +240,12 @@ PyTypeObject GrafPort_Type = {
 	0, /*tp_print*/
 	(getattrfunc) GrafObj_getattr, /*tp_getattr*/
 	(setattrfunc) GrafObj_setattr, /*tp_setattr*/
+	(cmpfunc) GrafObj_compare, /*tp_compare*/
+	(reprfunc) GrafObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) GrafObj_hash, /*tp_hash*/
 };
 
 /* -------------------- End object type GrafPort -------------------- */
@@ -312,6 +324,12 @@ static PyObject *BMObj_getattr(self, name)
 
 #define BMObj_setattr NULL
 
+#define BMObj_compare NULL
+
+#define BMObj_repr NULL
+
+#define BMObj_hash NULL
+
 PyTypeObject BitMap_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -323,6 +341,12 @@ PyTypeObject BitMap_Type = {
 	0, /*tp_print*/
 	(getattrfunc) BMObj_getattr, /*tp_getattr*/
 	(setattrfunc) BMObj_setattr, /*tp_setattr*/
+	(cmpfunc) BMObj_compare, /*tp_compare*/
+	(reprfunc) BMObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) BMObj_hash, /*tp_hash*/
 };
 
 /* --------------------- End object type BitMap --------------------- */
@@ -387,6 +411,12 @@ static PyObject *QDGA_getattr(self, name)
 
 #define QDGA_setattr NULL
 
+#define QDGA_compare NULL
+
+#define QDGA_repr NULL
+
+#define QDGA_hash NULL
+
 staticforward PyTypeObject QDGlobalsAccess_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -398,6 +428,12 @@ staticforward PyTypeObject QDGlobalsAccess_Type = {
 	0, /*tp_print*/
 	(getattrfunc) QDGA_getattr, /*tp_getattr*/
 	(setattrfunc) QDGA_setattr, /*tp_setattr*/
+	(cmpfunc) QDGA_compare, /*tp_compare*/
+	(reprfunc) QDGA_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) QDGA_hash, /*tp_hash*/
 };
 
 /* ---------------- End object type QDGlobalsAccess ----------------- */

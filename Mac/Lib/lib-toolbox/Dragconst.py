@@ -1,4 +1,4 @@
-# Generated from 'flap:CodeWarrior Pro 4:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Drag.h'
+# Generated from 'SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Drag.h'
 
 def FOUR_CHAR_CODE(x): return x
 from TextEdit import *
@@ -31,7 +31,7 @@ flavorTypeDirectory = FOUR_CHAR_CODE('diry')
 kFlavorTypeClippingName = FOUR_CHAR_CODE('clnm')
 kFlavorTypeClippingFilename = FOUR_CHAR_CODE('clfn')
 kFlavorTypeDragToTrashOnly = FOUR_CHAR_CODE('fdtt')
-kFlavorTypeFinderNoTrackingBehavior = FOUR_CHAR_CODE('fntb')
+kFlavorTypeFinderNoTrackingBehavior = FOUR_CHAR_CODE('fntb') /* Finder completely ignores any drag containing this flavor*/
 kDragTrackingEnterHandler = 1
 kDragTrackingEnterWindow = 2
 kDragTrackingInWindow = 3

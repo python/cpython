@@ -549,6 +549,12 @@ ResObj_setattr(self, name, value)
 }
 
 
+#define ResObj_compare NULL
+
+#define ResObj_repr NULL
+
+#define ResObj_hash NULL
+
 PyTypeObject Resource_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -560,6 +566,12 @@ PyTypeObject Resource_Type = {
 	0, /*tp_print*/
 	(getattrfunc) ResObj_getattr, /*tp_getattr*/
 	(setattrfunc) ResObj_setattr, /*tp_setattr*/
+	(cmpfunc) ResObj_compare, /*tp_compare*/
+	(reprfunc) ResObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) ResObj_hash, /*tp_hash*/
 };
 
 /* -------------------- End object type Resource -------------------- */
