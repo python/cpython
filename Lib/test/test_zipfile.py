@@ -42,6 +42,22 @@ finally:
     if os.path.isfile(zipname):
         os.unlink(zipname)
 
+
+# This test checks that the ZipFile constructor closes the file object
+# it opens if there's an error in the file.  If it doesn't, the traceback
+# holds a reference to the ZipFile object and, indirectly, the file object.
+# On Windows, this causes the os.unlink() call to fail because the
+# underlying file is still open.  This is SF bug #412214.
+#
+fp = open(srcname, "w")
+fp.write("this is not a legal zip file\n")
+fp.close()
+try:
+    zf = zipfile.ZipFile(srcname)
+except zipfile.BadZipfile:
+    os.unlink(srcname)
+
+
 # make sure we don't raise an AttributeError when a partially-constructed
 # ZipFile instance is finalized; this tests for regression on SF tracker
 # bug #403871.
