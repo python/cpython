@@ -69,3 +69,38 @@ try:
             test_with_extension(ext)
 finally:
     del sys.path[0]
+
+def touch(path):
+    fp = open(path, 'w')
+    fp.close()
+
+# test imports of packages with really long names, but specifically that their
+# reprs include the full name
+try:
+    longname = 'areallylongpackageandmodulenametotestreprtruncation'
+    os.mkdir(longname)
+    touch(os.path.join(longname, '__init__.py'))
+    os.mkdir(os.path.join(longname, longname))
+    touch(os.path.join(longname, longname, '__init__.py'))
+    touch(os.path.join(longname, longname, longname + '.py'))
+    sys.path.insert(0, os.getcwd())
+    from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import areallylongpackageandmodulenametotestreprtruncation
+    if `areallylongpackageandmodulenametotestreprtruncation` <> \
+       "<module 'areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation' from '%s'>" % areallylongpackageandmodulenametotestreprtruncation.__file__:
+        raise TestFailed, 'module name truncation'
+finally:
+    # Delete recursively
+    del sys.path[0]
+    def zap(actions, dirname, names):
+        for name in names:
+            actions.append(os.path.join(dirname, name))
+    actions = []
+    os.path.walk(longname, zap, actions)
+    actions.append(longname)
+    actions.sort()
+    actions.reverse()
+    for p in actions:
+        if os.path.isdir(p):
+            os.rmdir(p)
+        else:
+            os.remove(p)
