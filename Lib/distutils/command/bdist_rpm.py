@@ -434,7 +434,7 @@ class bdist_rpm (Command):
         ]
 
         for (rpm_opt, attr, default) in script_options:
-            # Insert contents of file referred to, if no file is refered to
+            # Insert contents of file referred to, if no file is referred to
             # use 'default' as contents of script
             val = getattr(self, attr)
             if val or default:
