@@ -47,7 +47,7 @@ class PICTbrowse(FrameWork.Application):
 		self.quititem = FrameWork.MenuItem(m, "Quit", "Q", self.quit)
 	
 	def quit(self, *args):
-		raise self
+		self._quit()
 		
 	def showPICT(self, resid):
 		w = PICTwindow(self)

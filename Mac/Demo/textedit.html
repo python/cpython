@@ -108,8 +108,7 @@ lines. <p>
 
 Oh yes: the <code>quit</code> callback does a little magic too. It closes all windows, and only if this
 succeeds it actually quits. This gives the user a chance to cancel the operation if some files are unsaved.
-Quitting itself is also a bit strange: you raise <code>self</code> to break out of the main loop. This bit
-of idiom was invented by Guido, so blame him:-). <p>
+<p>
 
 Lastly, there is the <code>idle</code> method, called by the Application base class when no event
 is available. It is forwarded to the active window, so it can blink the text caret. <p>

@@ -85,8 +85,8 @@ Next comes the definition of our main class,
 menu bar and the main event loop and event dispatching. In the
 <CODE>__init__</CODE> routine we first let the base class initialize
 itself, then we create our modeless dialog and finally we jump into
-the main loop. The main loop continues until <CODE>self</CODE> is
-raised, which we will do when the user selects "quit". When we create
+the main loop. The main loop continues until we call <CODE>self._quit</CODE>,
+which we will do when the user selects "quit". When we create
 the instance of <CODE>MyDialog</CODE> (which inherits
 <CODE>DialogWindow</CODE>, which inherits <CODE>Window</CODE>) we pass
 a reference to the application object, this reference is used to tell
@@ -97,8 +97,8 @@ clicks. <p>
 The <CODE>makeusermenus()</CODE> method (which is called sometime
 during the Application <CODE>__init__</CODE> routine) creates a File
 menu with a Quit command (shortcut command-Q), which will callback to
-our quit() method. <CODE>Quit()</CODE>, in turn, raises 'self' which
-causes the mainloop to terminate. <p>
+our quit() method. <CODE>Quit()</CODE>, in turn, calls <CODE>_quit</CODE> which
+causes the mainloop to terminate at a convenient time. <p>
 
 Application provides a standard about box, but we override this by
 providing our own <CODE>do_about()</CODE> method which shows an about

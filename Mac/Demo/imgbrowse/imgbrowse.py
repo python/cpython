@@ -81,7 +81,7 @@ class imgbrowse(FrameWork.Application):
 		self.quititem = FrameWork.MenuItem(m, "Quit", "Q", self.quit)
 	
 	def quit(self, *args):
-		raise self
+		self._quit()
 		
 	def opendoc(self, *args):
 		fss, ok = macfs.StandardGetFile() # Any file type
