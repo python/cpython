@@ -1194,6 +1194,7 @@ int routinename(PyObject *pyobj, object *cobj) { \
     } \
     return (*PyMacGluePtr_##routinename)(pyobj, cobj); \
 }
+GLUE_CONVERT(FSSpec, PyMac_GetFSSpec, "macfs")
 
 GLUE_NEW(AppleEvent *, AEDesc_New, "AE") /* XXXX Why by address? */
 GLUE_CONVERT(AppleEvent, AEDesc_Convert, "AE")

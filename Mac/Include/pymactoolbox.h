@@ -42,6 +42,9 @@
 #define PyMac_INIT_TOOLBOX_OBJECT_CONVERT(object, rtn)
 #endif /* USE_TOOLBOX_OBJECT_GLUE */
 
+/* macfs exports */
+extern int PyMac_GetFSSpec(PyObject *, FSSpec *);
+
 /* AE exports */
 extern PyObject *AEDesc_New(AppleEvent *); /* XXXX Why passed by address?? */
 extern int AEDesc_Convert(PyObject *, AppleEvent *);
