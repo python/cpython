@@ -1326,6 +1326,7 @@ microseconds_to_delta(PyObject *pyus)
 	int us;
 	int s;
 	int d;
+	long temp;
 
 	PyObject *tuple = NULL;
 	PyObject *num = NULL;
@@ -1338,8 +1339,12 @@ microseconds_to_delta(PyObject *pyus)
 	num = PyTuple_GetItem(tuple, 1);	/* us */
 	if (num == NULL)
 		goto Done;
-	us = PyLong_AsLong(num);
+	temp = PyLong_AsLong(num);
 	num = NULL;
+	if (temp == -1 && PyErr_Occurred())
+		goto Done;
+	assert(0 <= temp && temp < 1000000);
+	us = (int)temp;
 	if (us < 0) {
 		/* The divisor was positive, so this must be an error. */
 		assert(PyErr_Occurred());
@@ -1360,8 +1365,13 @@ microseconds_to_delta(PyObject *pyus)
 	num = PyTuple_GetItem(tuple, 1); 	/* seconds */
 	if (num == NULL)
 		goto Done;
-	s = PyLong_AsLong(num);
+	temp = PyLong_AsLong(num);
 	num = NULL;
+	if (temp == -1 && PyErr_Occurred())
+		goto Done;
+	assert(0 <= temp && temp < 24*3600);
+	s = (int)temp;
+
 	if (s < 0) {
 		/* The divisor was positive, so this must be an error. */
 		assert(PyErr_Occurred());
@@ -1372,10 +1382,15 @@ microseconds_to_delta(PyObject *pyus)
 	if (num == NULL)
 		goto Done;
 	Py_INCREF(num);
-
-	d = PyLong_AsLong(num);
-	if (d == -1 && PyErr_Occurred())
+	temp = PyLong_AsLong(num);
+	if (temp == -1 && PyErr_Occurred())
 		goto Done;
+	d = (int)temp;
+	if ((long)d != temp) {
+		PyErr_SetString(PyExc_OverflowError, "normalized days too "
+				"large to fit in a C int");
+		goto Done;
+	}
 	result = new_delta(d, s, us, 0);
 
 Done:
