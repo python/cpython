@@ -20,7 +20,7 @@ VERSION=2.3
 AC_SUBST(SOVERSION)
 SOVERSION=1.0
 
-AC_DEFINE(_XOPEN_SOURCE, 500)
+AC_DEFINE(_XOPEN_SOURCE, 500, [Needed on Tru64 and does no harm on Linux])
 
 # Arguments passed to configure.
 AC_SUBST(CONFIG_ARGS)
