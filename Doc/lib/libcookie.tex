@@ -42,11 +42,10 @@ This class derives from \class{BaseCookie} and overrides
 \method{value_decode()} and \method{value_encode()} to be the
 \function{pickle.loads()} and  \function{pickle.dumps()}.  
 
-Do not use this class.  Reading pickled values from a cookie is a
-security hole, as arbitrary client-code can be run on
-\function{pickle.loads()}.  It is supported for backwards
-compatibility.
-
+\strong{Do not use this class!}  Reading pickled values from untrusted
+cookie data is a huge security hole, as pickle strings can be crafted
+to cause arbitrary code to execute on your server.  It is supported
+for backwards compatibility only, and may eventually go away.
 \end{classdesc}
 
 \begin{classdesc}{SmartCookie}{\optional{input}}
@@ -56,8 +55,16 @@ valid pickle, and otherwise the value itself. It overrides
 \method{value_encode()} to be \function{pickle.dumps()} unless it is a
 string, in which case it returns the value itself.
 
-The same security warning from \class{SerialCookie} applies here.
+\strong{Note:} The same security warning from \class{SerialCookie}
+applies here.
 \end{classdesc}
+
+A further security note is warranted.  For backwards compatibility,
+the \module{Cookie} module exports a class named \class{Cookie} which
+is just an alias for \class{SmartCookie}.  This is probably a mistake
+and will likely be removed in a future version.  You should not use
+the \class{Cookie} class in your applications, for the same reason why
+you should not use the \class{SerialCookie} class.
 
 
 \begin{seealso}
@@ -180,8 +187,6 @@ The following example demonstrates how to use the \module{Cookie} module.
 >>> import Cookie
 >>> C = Cookie.SimpleCookie()
 >>> C = Cookie.SerialCookie()
->>> C = Cookie.SmartCookie()
->>> C = Cookie.Cookie() # backwards-compatible alias for SmartCookie
 >>> C = Cookie.SmartCookie()
 >>> C["fig"] = "newton"
 >>> C["sugar"] = "wafer"
