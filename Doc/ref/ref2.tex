@@ -14,7 +14,7 @@ insert 8-bit characters in string literals is by using octal or
 hexadecimal escape sequences.
 
 The run-time character set depends on the I/O devices connected to the
-program but is generally a superset of \ASCII{}.
+program but is generally a superset of \ASCII.
 
 \strong{Future compatibility note:} It may be tempting to assume that the
 character set for 8-bit characters is ISO Latin-1 (an \ASCII{}
@@ -52,7 +52,7 @@ by following the explicit or implicit \emph{line joining} rules.
 \subsection{Physical lines\label{physical}}
 
 A physical line ends in whatever the current platform's convention is
-for terminating lines.  On \UNIX{}, this is the \ASCII{} LF (linefeed)
+for terminating lines.  On \UNIX, this is the \ASCII{} LF (linefeed)
 character.  On DOS/Windows, it is the \ASCII{} sequence CR LF (return
 followed by linefeed).  On Macintosh, it is the \ASCII{} CR (return)
 character.
@@ -142,7 +142,7 @@ turn is used to determine the grouping of statements.
 First, tabs are replaced (from left to right) by one to eight spaces
 such that the total number of characters up to and including the
 replacement is a multiple of
-eight (this is intended to be the same rule as used by \UNIX{}).  The
+eight (this is intended to be the same rule as used by \UNIX).  The
 total number of spaces preceding the first non-blank character then
 determines the line's indentation.  Indentation cannot be split over
 multiple physical lines using backslashes; the whitespace up to the
@@ -308,7 +308,7 @@ Literals are notations for constant values of some built-in types.
 String literals are described by the following lexical definitions:
 \index{string literal}
 
-\index{ASCII@\ASCII{}}
+\index{ASCII@\ASCII}
 \begin{productionlist}
   \production{stringliteral}
              {[\token{stringprefix}](\token{shortstring} | \token{longstring})}
@@ -388,7 +388,7 @@ to those used by Standard C.  The recognized escape sequences are:
 \lineii{\e\var{ooo}} {\ASCII{} character with octal value \var{ooo}}
 \lineii{\e x\var{hh}} {\ASCII{} character with hex value \var{hh}}
 \end{tableii}
-\index{ASCII@\ASCII{}}
+\index{ASCII@\ASCII}
 
 As in Standard C, up to three octal digits are accepted.  However,
 exactly two hex digits are taken in hex escapes.
@@ -596,7 +596,7 @@ sequence of three periods has a special meaning as an ellipsis in slices.
 The second half of the list, the augmented assignment operators, serve
 lexically as delimiters, but also perform an operation.
 
-The following printing ASCII characters have special meaning as part
+The following printing \ASCII{} characters have special meaning as part
 of other tokens or are otherwise significant to the lexical analyzer:
 
 \begin{verbatim}
@@ -606,7 +606,7 @@ of other tokens or are otherwise significant to the lexical analyzer:
 The following printing \ASCII{} characters are not used in Python.  Their
 occurrence outside string literals and comments is an unconditional
 error:
-\index{ASCII@\ASCII{}}
+\index{ASCII@\ASCII}
 
 \begin{verbatim}
 @       $       ?

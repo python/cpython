@@ -16,13 +16,13 @@ An explanation of some terminology and conventions is in order.
 \item
 The \dfn{epoch}\index{epoch} is the point where the time starts.  On
 January 1st of that year, at 0 hours, the ``time since the epoch'' is
-zero.  For \UNIX{}, the epoch is 1970.  To find out what the epoch is,
+zero.  For \UNIX, the epoch is 1970.  To find out what the epoch is,
 look at \code{gmtime(0)}.
 
 \item
 The functions in this module do not handle dates and times before the
 epoch or far in the future.  The cut-off point in the future is
-determined by the C library; for \UNIX{}, it is typically in
+determined by the C library; for \UNIX, it is typically in
 2038\index{Year 2038}.
 
 \item

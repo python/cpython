@@ -1,4 +1,4 @@
-\chapter{Extending Python with C or \Cpp{} \label{intro}}
+\chapter{Extending Python with C or \Cpp \label{intro}}
 
 
 It is quite easy to add new built-in modules to Python, if you know
@@ -499,14 +499,14 @@ This function must be registered with the interpreter using the
 \constant{METH_VARARGS} flag; this is described in section
 \ref{methodTable}, ``The Module's Method Table and Initialization
 Function.''  The \cfunction{PyArg_ParseTuple()} function and its
-arguments are documented in section \ref{parseTuple}, ``Extracting
+arguments are documented in section~\ref{parseTuple}, ``Extracting
 Parameters in Extension Functions.''
 
 The macros \cfunction{Py_XINCREF()} and \cfunction{Py_XDECREF()}
 increment/decrement the reference count of an object and are safe in
 the presence of \NULL{} pointers (but note that \var{temp} will not be 
-\NULL{} in this context).  More info on them in section
-\ref{refcounts}, ``Reference Counts.''
+\NULL{} in this context).  More info on them in
+section~\ref{refcounts}, ``Reference Counts.''
 
 Later, when it is time to call the function, you call the C function
 \cfunction{PyEval_CallObject()}.  This function has two arguments, both
@@ -544,7 +544,7 @@ global variable, you should somehow \cfunction{Py_DECREF()} the result,
 even (especially!) if you are not interested in its value.
 
 Before you do this, however, it is important to check that the return
-value isn't \NULL{}.  If it is, the Python function terminated by
+value isn't \NULL.  If it is, the Python function terminated by
 raising an exception.  If the C code that called
 \cfunction{PyEval_CallObject()} is called from Python, it should now
 return an error indication to its Python caller, so the interpreter
@@ -652,7 +652,7 @@ representation.
 
 \item[\samp{z} (string or \code{None}) {[char *]}]
 Like \samp{s}, but the Python object may also be \code{None}, in which
-case the C pointer is set to \NULL{}.
+case the C pointer is set to \NULL.
 
 \item[\samp{z\#} (string or \code{None} or any read buffer compatible object) 
 {[char *, int]}]
@@ -680,7 +680,7 @@ first one a pointer to an encoding name string (\var{encoding}), and the
 second a pointer to a pointer to a character buffer (\var{**buffer},
 the buffer used for storing the encoded data).
 
-The encoding name must map to a registered codec. If set to \NULL{},
+The encoding name must map to a registered codec. If set to \NULL,
 the default encoding is used.
 
 \cfunction{PyArg_ParseTuple()} will allocate a buffer of the needed
@@ -705,7 +705,7 @@ pointer to a character buffer (\var{**buffer}, the buffer used for
 storing the encoded data) and the third one a pointer to an integer
 (\var{*buffer_length}, the buffer length).
 
-The encoding name must map to a registered codec. If set to \NULL{},
+The encoding name must map to a registered codec. If set to \NULL,
 the default encoding is used.
 
 There are two modes of operation: 
@@ -766,7 +766,7 @@ Convert a Python complex number to a C \ctype{Py_complex} structure.
 Store a Python object (without any conversion) in a C object pointer.
 The C program thus receives the actual object that was passed.  The
 object's reference count is not increased.  The pointer stored is not
-\NULL{}.
+\NULL.
 
 \item[\samp{O!} (object) {[\var{typeobject}, PyObject *]}]
 Store a Python object in a C object pointer.  This is similar to
@@ -945,7 +945,7 @@ int PyArg_ParseTupleAndKeywords(PyObject *arg, PyObject *kwdict,
 The \var{arg} and \var{format} parameters are identical to those of the
 \cfunction{PyArg_ParseTuple()} function.  The \var{kwdict} parameter
 is the dictionary of keywords received as the third parameter from the
-Python runtime.  The \var{kwlist} parameter is a \NULL{}-terminated
+Python runtime.  The \var{kwlist} parameter is a \NULL-terminated
 list of strings which identify the parameters; the names are matched
 with the type information from \var{format} from left to right.  On
 success, \cfunction{PyArg_ParseTupleAndKeywords()} returns true,
@@ -1055,11 +1055,11 @@ used to make long format strings a tad more readable.
 
 \item[\samp{s} (string) {[char *]}]
 Convert a null-terminated C string to a Python object.  If the C
-string pointer is \NULL{}, \code{None} is used.
+string pointer is \NULL, \code{None} is used.
 
 \item[\samp{s\#} (string) {[char *, int]}]
 Convert a C string and its length to a Python object.  If the C string
-pointer is \NULL{}, the length is ignored and \code{None} is
+pointer is \NULL, the length is ignored and \code{None} is
 returned.
 
 \item[\samp{z} (string or \code{None}) {[char *]}]
@@ -1171,10 +1171,10 @@ Examples (to the left the call, to the right the resulting Python value):
 \section{Reference Counts
          \label{refcounts}}
 
-In languages like C or \Cpp{}, the programmer is responsible for
+In languages like C or \Cpp, the programmer is responsible for
 dynamic allocation and deallocation of memory on the heap.  In C,
 this is done using the functions \cfunction{malloc()} and
-\cfunction{free()}.  In \Cpp{}, the operators \keyword{new} and
+\cfunction{free()}.  In \Cpp, the operators \keyword{new} and
 \keyword{delete} are used with essentially the same meaning; they are
 actually implemented using \cfunction{malloc()} and
 \cfunction{free()}, so we'll restrict the following discussion to the
@@ -1423,7 +1423,7 @@ cause later core dumps) if you do so.  Functions that return object
 references generally return \NULL{} only to indicate that an
 exception occurred.  The reason for not testing for \NULL{}
 arguments is that functions often pass the objects they receive on to
-other function --- if each function were to test for \NULL{},
+other function --- if each function were to test for \NULL,
 there would be a lot of redundant tests and the code would run more
 slowly.
 
@@ -1458,10 +1458,10 @@ the Python user.
 % description.
 
 
-\section{Writing Extensions in \Cpp{}
+\section{Writing Extensions in \Cpp
          \label{cplusplus}}
 
-It is possible to write extension modules in \Cpp{}.  Some restrictions
+It is possible to write extension modules in \Cpp.  Some restrictions
 apply.  If the main program (the Python interpreter) is compiled and
 linked by the C compiler, global or static objects with constructors
 cannot be used.  This is not a problem if the main program is linked

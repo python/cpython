@@ -9,7 +9,7 @@ This module provides access to the \cfunction{select()}
 and \cfunction{poll()} functions
 available in most operating systems.  Note that on Windows, it only
 works for sockets; on other operating systems, it also works for other
-file types (in particular, on \UNIX{}, it works on pipes).  It cannot
+file types (in particular, on \UNIX, it works on pipes).  It cannot
 be used on regular files to determine whether a file has grown since
 it was last read.
 
@@ -67,7 +67,7 @@ desciptors that don't originate from WinSock.}
 \subsection{Polling Objects
             \label{poll-objects}}
 
-The \cfunction{poll()} system call, supported on most Unix systems,
+The \cfunction{poll()} system call, supported on most \UNIX{} systems,
 provides better scalability for network servers that service many,
 many clients at the same time.
 \cfunction{poll()} scales better because the system call only

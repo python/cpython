@@ -52,7 +52,7 @@ For a description of standard objects and modules, see the
 \citetitle[../lib/lib.html]{Python Library Reference} document.  The
 \citetitle[../ref/ref.html]{Python Reference Manual} gives a more
 formal definition of the language.  To write extensions in C or
-\Cpp{}, read \citetitle[../ext/ext.html]{Extending and Embedding the
+\Cpp, read \citetitle[../ext/ext.html]{Extending and Embedding the
 Python Interpreter} and \citetitle[../api/api.html]{Python/C API
 Reference}.  There are also several books covering Python in depth.
 
@@ -182,7 +182,7 @@ you can exit the interpreter by typing the following commands:
 \samp{import sys; sys.exit()}.
 
 The interpreter's line-editing features usually aren't very
-sophisticated.  On \UNIX{}, whoever installed the interpreter may have
+sophisticated.  On \UNIX, whoever installed the interpreter may have
 enabled support for the GNU readline library, which adds more
 elaborate interactive editing and history features. Perhaps the
 quickest check to see whether command line editing is supported is
@@ -2230,7 +2230,7 @@ the environment variable \envvar{PYTHONPATH}.  This has the same syntax as
 the shell variable \envvar{PATH}, that is, a list of
 directory names.  When \envvar{PYTHONPATH} is not set, or when the file
 is not found there, the search continues in an installation-dependent
-default path; on \UNIX{}, this is usually \file{.:/usr/local/lib/python}.
+default path; on \UNIX, this is usually \file{.:/usr/local/lib/python}.
 
 Actually, modules are searched in the list of directories given by the 
 variable \code{sys.path} which is initialized from the directory 
@@ -2599,7 +2599,7 @@ in the \module{Sound.Effects} package, it can use \code{from
 Sound.Effects import echo}.
 
 %(One could design a notation to refer to parent packages, similar to
-%the use of ".." to refer to the parent directory in Unix and Windows
+%the use of ".." to refer to the parent directory in \UNIX{} and Windows
 %filesystems.  In fact, the \module{ni} module, which was the
 %ancestor of this package system, supported this using \code{__} for
 %the package containing the current module,
@@ -3335,7 +3335,7 @@ subscripting etc.) can be redefined for class instances.
 Lacking universally accepted terminology to talk about classes, I will
 make occasional use of Smalltalk and \Cpp{} terms.  (I would use Modula-3
 terms, since its object-oriented semantics are closer to those of
-Python than \Cpp{}, but I expect that few readers have heard of it.)
+Python than \Cpp, but I expect that few readers have heard of it.)
 
 I also have to warn you that there's a terminological pitfall for
 object-oriented readers: the word ``object'' in Python does not
@@ -3592,7 +3592,7 @@ two kinds of valid attribute names.
 
 The first I'll call \emph{data attributes}.  These correspond to
 ``instance variables'' in Smalltalk, and to ``data members'' in
-\Cpp{}.  Data attributes need not be declared; like local variables,
+\Cpp.  Data attributes need not be declared; like local variables,
 they spring into existence when they are first assigned to.  For
 example, if \code{x} is the instance of \class{MyClass} created above,
 the following piece of code will print the value \code{16}, without
