@@ -416,7 +416,7 @@ and \var{j} are integers:
 equal to \var{x}, else \code{1}}{}
   \hline
   \lineiii{\var{s} + \var{t}}{the concatenation of \var{s} and \var{t}}{}
-  \lineiii{\var{s} * \var{n}\textrm{,} \var{n} * \var{s}}{\var{n} copies of \var{s} concatenated}{(1)}
+  \lineiii{\var{s} * \var{n}\textrm{,} \var{n} * \var{s}}{\var{n} shallow copies of \var{s} concatenated}{(1)}
   \hline
   \lineiii{\var{s}[\var{i}]}{\var{i}'th item of \var{s}, origin 0}{(2)}
   \lineiii{\var{s}[\var{i}:\var{j}]}{slice of \var{s} from \var{i} to \var{j}}{(2), (3)}
@@ -442,7 +442,31 @@ Notes:
 \begin{description}
 \item[(1)] Values of \var{n} less than \code{0} are treated as
   \code{0} (which yields an empty sequence of the same type as
-  \var{s}).
+  \var{s}).  Note also that the copies are shallow; nested structures
+  are not copied.  This often haunts new Python programmers; consider:
+
+\begin{verbatim}
+>>> lists = [[]] * 3
+>>> lists
+[[], [], []]
+>>> lists[0].append(3)
+>>> lists
+[[3], [3], [3]]
+\end{verbatim}
+
+  What has happened is that \code{lists} is a list containing three
+  copies of the list \code{[[]]} (a one-element list containing an
+  empty list), but the contained list is shared by each copy.  You can
+  create a list of different lists this way:
+
+\begin{verbatim}
+>>> lists = [[] for i in range(3)]
+>>> lists[0].append(3)
+>>> lists[1].append(5)
+>>> lists[2].append(7)
+>>> lists
+[[3], [5], [7]]
+\end{verbatim}
 
 \item[(2)] If \var{i} or \var{j} is negative, the index is relative to
   the end of the string: \code{len(\var{s}) + \var{i}} or
