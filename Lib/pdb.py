@@ -102,8 +102,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.rcLines = []
             for line in rcLines:
                 line = line[:-1]
-                if len (line) > 0 and line[0] != '#':
-                    self.onecmd (line)
+                if len(line) > 0 and line[0] != '#':
+                    self.onecmd(line)
 
     # Override Bdb methods (except user_call, for now)
 
@@ -151,7 +151,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def precmd(self, line):
         """Handle alias expansion and ';;' separator."""
-        if not line:
+        if not line.strip():
             return line
         args = line.split()
         while args[0] in self.aliases:
@@ -321,8 +321,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return 0
         line = line.strip()
         # Don't allow setting breakpoint at a blank line
-        if ( not line or (line[0] == '#') or
-             (line[:3] == '"""') or line[:3] == "'''" ):
+        if (not line or (line[0] == '#') or
+             (line[:3] == '"""') or line[:3] == "'''"):
             print '*** Blank or comment'
             return 0
         # When a file is read in and a breakpoint is at
@@ -401,9 +401,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         bp = bdb.Breakpoint.bpbynumber[bpnum]
         if bp:
             bp.ignore = count
-            if (count > 0):
+            if count > 0:
                 reply = 'Will ignore next '
-                if (count > 1):
+                if count > 1:
                     reply = reply + '%d crossings' % count
                 else:
                     reply = reply + '1 crossing'
@@ -614,7 +614,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             for alias in keys:
                 print "%s = %s" % (alias, self.aliases[alias])
             return
-        if args[0] in self.aliases and len (args) == 1:
+        if args[0] in self.aliases and len(args) == 1:
             print "%s = %s" % (args[0], self.aliases[args[0]])
         else:
             self.aliases[args[0]] = ' '.join(args[1:])
