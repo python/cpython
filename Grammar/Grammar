@@ -2,6 +2,9 @@
 
 # Change log:
 
+# 17-Aug-94:
+#	Added #diagram:... comments for Kees Blom's railroad diagram generator
+
 # 3-May-94:
 #	Added else clause to try-except
 
@@ -92,6 +95,16 @@
 #	eval_input is the input for the eval() and input() functions.
 
 # NB: compound_stmt in single_input is followed by extra NEWLINE!
+#diagram:token NAME
+#diagram:token NUMBER
+#diagram:token STRING
+#diagram:token NEWLINE
+#diagram:token ENDMARKER
+#diagram:token INDENT
+#diagram:output\input python.bla
+#diagram:token DEDENT
+#diagram:output\textwidth 20.04cm\oddsidemargin  0.0cm\evensidemargin 0.0cm
+#diagram:rules
 single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
 file_input: (NEWLINE | stmt)* ENDMARKER
 eval_input: testlist NEWLINE* ENDMARKER
@@ -117,17 +130,20 @@ return_stmt: 'return' [testlist]
 raise_stmt: 'raise' test [',' test]
 import_stmt: 'import' NAME (',' NAME)* | 'from' NAME 'import' ('*' | NAME (',' NAME)*)
 global_stmt: 'global' NAME (',' NAME)*
-access_stmt: 'access' ('*' | NAME (',' NAME)*) ':' accesstype (',' accesstype)*
+access_stmt: ('access' ('*' | NAME (',' NAME)*) ':' #diagram:break
+              accesstype  (',' accesstype)*)
 accesstype: NAME+
 # accesstype should be ('public' | 'protected' | 'private') ['read'] ['write']
 # but can't be because that would create undesirable reserved words!
 exec_stmt: 'exec' expr ['in' test [',' test]]
 
 compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
-if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
+if_stmt: ('if' test ':' suite ('elif' test ':' suite)* #diagram:break
+          ['else' ':' suite])
 while_stmt: 'while' test ':' suite ['else' ':' suite]
 for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
-try_stmt: 'try' ':' suite (except_clause ':' suite)+ ['else' ':' suite] | 'try' ':' suite 'finally' ':' suite
+try_stmt: ('try' ':' suite (except_clause ':' suite)+ #diagram:break
+           ['else' ':' suite] | 'try' ':' suite 'finally' ':' suite)
 # NB compile.c makes sure that the default except clause is last
 except_clause: 'except' [test [',' test]]
 suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
