@@ -385,12 +385,14 @@ sub add_idx_hook {
 
 # In addition to the standard stuff, add label to allow named node files and
 # support suppression of the page complete (for HTML Help use).
+$MY_CONTENTS_PAGE = '';
 sub do_cmd_tableofcontents {
     local($_) = @_;
     $TITLE = $toc_title;
     $tocfile = $CURRENT_FILE;
     my($closures,$reopens) = preserve_open_tags();
     anchor_label('contents', $CURRENT_FILE, $_);	# this is added
+    $MY_CONTENTS_PAGE = "$CURRENT_FILE";
     join('', "<BR>\n\\tableofchildlinks[off]", $closures
 	 , make_section_heading($toc_title, 'H2'), $toc_mark
 	 , $reopens, $_);
@@ -619,8 +621,8 @@ sub make_head_and_body {
             "<link rel=\"STYLESHEET\" href=\"$STYLESHEET\">\n",
             "<link rel=\"first\" href=\"$FILE.html\">\n",
             ($HAVE_TABLE_OF_CONTENTS
-             ? ('<link rel="contents" href="contents.html" title="Contents">'
-                . "\n")
+             ? ("<link rel='contents' href='$MY_CONTENTS_PAGE'"
+                . " title='Contents'>\n")
              : ''),
             ($HAVE_GENERAL_INDEX
              ? '<link rel="index" href="genindex.html" title="Index">'
