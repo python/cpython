@@ -1712,17 +1712,38 @@ fi
 AC_MSG_RESULT(MACHDEP_OBJS)
 
 # checks for library functions
-AC_CHECK_FUNCS(alarm chown chroot clock confstr ctermid ctermid_r execv \
+AC_CHECK_FUNCS(alarm chown clock confstr ctermid ctermid_r execv \
  fchdir flock fork fsync fdatasync fpathconf ftime ftruncate \
  gai_strerror getgroups getlogin getpeername getpgid getpid getpwent getwd \
- hstrerror inet_pton kill killpg lchown link lstat mkfifo mknod mktime \
+ hstrerror inet_pton kill killpg lchown lstat mkfifo mknod mktime \
  mremap nice pathconf pause plock poll pthread_init \
  putenv readlink \
  select setegid seteuid setgid setgroups \
  setlocale setregid setreuid setsid setpgid setuid setvbuf snprintf \
- sigaction siginterrupt sigrelse strftime strptime symlink \
+ sigaction siginterrupt sigrelse strftime strptime \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname unsetenv utimes waitpid _getpty getpriority)
+
+# For some functions, having a definition is not sufficient, since
+# we want to take their address.
+AC_MSG_CHECKING(for chroot)
+AC_TRY_COMPILE([#include <unistd.h>], void *x=chroot,
+  AC_DEFINE(HAVE_CHROOT, 1, Define if you have the 'chroot' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+AC_MSG_CHECKING(for link)
+AC_TRY_COMPILE([#include <unistd.h>], void *x=link,
+  AC_DEFINE(HAVE_LINK, 1, Define if you have the 'link' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+AC_MSG_CHECKING(for symlink)
+AC_TRY_COMPILE([#include <unistd.h>], void *x=symlink,
+  AC_DEFINE(HAVE_SYMLINK, 1, Define if you have the 'symlink' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
 
 # check for openpty and forkpty
 
