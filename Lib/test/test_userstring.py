@@ -11,8 +11,7 @@ class UserStringTest(
     string_tests.CommonTest,
     string_tests.MixinStrUnicodeUserStringTest,
     string_tests.MixinStrStringUserStringTest,
-    string_tests.MixinStrUserStringTest,
-    string_tests.MixinUnicodeUserStringTest
+    string_tests.MixinStrUserStringTest
     ):
 
     type2test = UserString

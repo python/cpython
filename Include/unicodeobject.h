@@ -181,7 +181,6 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_GetDefaultEncoding PyUnicodeUCS2_GetDefaultEncoding
 # define PyUnicode_GetMax PyUnicodeUCS2_GetMax
 # define PyUnicode_GetSize PyUnicodeUCS2_GetSize
-# define PyUnicode_GetWidth PyUnicodeUCS2_GetWidth
 # define PyUnicode_Join PyUnicodeUCS2_Join
 # define PyUnicode_Replace PyUnicodeUCS2_Replace
 # define PyUnicode_Resize PyUnicodeUCS2_Resize
@@ -201,7 +200,6 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define _PyUnicode_IsLinebreak _PyUnicodeUCS2_IsLinebreak
 # define _PyUnicode_IsLowercase _PyUnicodeUCS2_IsLowercase
 # define _PyUnicode_IsNumeric _PyUnicodeUCS2_IsNumeric
-# define _PyUnicode_IsWide _PyUnicodeUCS2_IsWide
 # define _PyUnicode_IsTitlecase _PyUnicodeUCS2_IsTitlecase
 # define _PyUnicode_IsUppercase _PyUnicodeUCS2_IsUppercase
 # define _PyUnicode_IsWhitespace _PyUnicodeUCS2_IsWhitespace
@@ -256,7 +254,6 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_GetDefaultEncoding PyUnicodeUCS4_GetDefaultEncoding
 # define PyUnicode_GetMax PyUnicodeUCS4_GetMax
 # define PyUnicode_GetSize PyUnicodeUCS4_GetSize
-# define PyUnicode_GetWidth PyUnicodeUCS4_GetWidth
 # define PyUnicode_Join PyUnicodeUCS4_Join
 # define PyUnicode_Replace PyUnicodeUCS4_Replace
 # define PyUnicode_Resize PyUnicodeUCS4_Resize
@@ -275,7 +272,6 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define _PyUnicode_IsLinebreak _PyUnicodeUCS4_IsLinebreak
 # define _PyUnicode_IsLowercase _PyUnicodeUCS4_IsLowercase
 # define _PyUnicode_IsNumeric _PyUnicodeUCS4_IsNumeric
-# define _PyUnicode_IsWide _PyUnicodeUCS4_IsWide
 # define _PyUnicode_IsTitlecase _PyUnicodeUCS4_IsTitlecase
 # define _PyUnicode_IsUppercase _PyUnicodeUCS4_IsUppercase
 # define _PyUnicode_IsWhitespace _PyUnicodeUCS4_IsWhitespace
@@ -321,8 +317,6 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 
 #define Py_UNICODE_ISALPHA(ch) iswalpha(ch)
 
-#define Py_UNICODE_ISWIDE(ch) _PyUnicode_IsWide(ch)
-
 #else
 
 #define Py_UNICODE_ISSPACE(ch) _PyUnicode_IsWhitespace(ch)
@@ -345,8 +339,6 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 #define Py_UNICODE_TONUMERIC(ch) _PyUnicode_ToNumeric(ch)
 
 #define Py_UNICODE_ISALPHA(ch) _PyUnicode_IsAlpha(ch)
-
-#define Py_UNICODE_ISWIDE(ch) _PyUnicode_IsWide(ch)
 
 #endif
 
@@ -437,12 +429,6 @@ PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicode(
 /* Get the length of the Unicode object. */
 
 PyAPI_FUNC(int) PyUnicode_GetSize(
-    PyObject *unicode	 	/* Unicode object */
-    );
-
-/* Get the fixed-width representation length of the Unicode object */
-
-PyAPI_FUNC(int) PyUnicode_GetWidth(
     PyObject *unicode	 	/* Unicode object */
     );
 
@@ -1173,10 +1159,6 @@ PyAPI_FUNC(int) _PyUnicode_IsNumeric(
     );
 
 PyAPI_FUNC(int) _PyUnicode_IsAlpha(
-    Py_UNICODE ch 	/* Unicode character */
-    );
-
-PyAPI_FUNC(int) _PyUnicode_IsWide(
     Py_UNICODE ch 	/* Unicode character */
     );
 
