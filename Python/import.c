@@ -979,13 +979,13 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 #endif
 #ifdef macintosh
 		fdp = PyMac_FindModuleExtension(buf, &len, name);
-		if (fdp)
-			fp = fopen(buf, fdp->mode);
+		if (fdp) {
 #else
 		for (fdp = _PyImport_Filetab; fdp->suffix != NULL; fdp++) {
 			strcpy(buf+len, fdp->suffix);
 			if (Py_VerboseFlag > 1)
 				PySys_WriteStderr("# trying %s\n", buf);
+#endif /* !macintosh */
 			fp = fopen(buf, fdp->mode);
 			if (fp != NULL) {
 				if (case_ok(buf, len, namelen, name))
@@ -996,7 +996,6 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 				}
 			}
 		}
-#endif /* !macintosh */
 		if (fp != NULL)
 			break;
 	}
