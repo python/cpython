@@ -3452,6 +3452,11 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
 			return NULL;
 	}
 	getattr = _PyType_Lookup(tp, getattr_str);
+	if (getattr == NULL && tp->tp_getattro == slot_tp_getattr_hook) {
+		/* No __getattr__ hook: use a simpler dispatcher */
+		tp->tp_getattro = slot_tp_getattro;
+		return slot_tp_getattro(self, name);
+	}
 	getattribute = _PyType_Lookup(tp, getattribute_str);
 	if (getattribute != NULL &&
 	    getattribute->ob_type == &PyWrapperDescr_Type &&
@@ -3459,14 +3464,7 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
 	    PyObject_GenericGetAttr)
 		    getattribute = NULL;
 	if (getattr == NULL && getattribute == NULL) {
-		/* Avoid further slowdowns */
-		/* XXX This is questionable: it means that a class that
-		   isn't born with __getattr__ or __getattribute__ cannot
-		   acquire them in later life.  But it's a relatively big
-		   speedup, so I'm keeping it in for now.  If this is
-		   removed, you can also remove the "def __getattr__" from
-		   class C (marked with another XXX comment) in dynamics()
-		   in Lib/test/test_descr.py. */
+		/* Use the default dispatcher */
 		if (tp->tp_getattro == slot_tp_getattr_hook)
 			tp->tp_getattro = PyObject_GenericGetAttr;
 		return PyObject_GenericGetAttr(self, name);
@@ -3813,7 +3811,7 @@ static slotdef slotdefs[] = {
 	TPSLOT("__cmp__", tp_compare, _PyObject_SlotCompare, wrap_cmpfunc),
 	TPSLOT("__hash__", tp_hash, slot_tp_hash, wrap_hashfunc),
 	TPSLOT("__call__", tp_call, slot_tp_call, wrap_call),
-	TPSLOT("__getattribute__", tp_getattro, slot_tp_getattro,
+	TPSLOT("__getattribute__", tp_getattro, slot_tp_getattr_hook,
 	       wrap_binaryfunc),
 	TPSLOT("__getattribute__", tp_getattr, NULL, NULL),
 	TPSLOT("__getattr__", tp_getattro, slot_tp_getattr_hook, NULL),
@@ -3864,26 +3862,26 @@ slotptr(PyTypeObject *type, int offset)
 	return (void **)ptr;
 }
 
-staticforward int recurse_down_subclasses(PyTypeObject *type, int offset);
+staticforward int recurse_down_subclasses(PyTypeObject *type, slotdef *p);
 
 static int
-update_one_slot(PyTypeObject *type, int offset)
+update_one_slot(PyTypeObject *type, slotdef *p0)
 {
-	slotdef *p;
+	slotdef *p = p0;
 	PyObject *descr;
 	PyWrapperDescrObject *d;
 	void *generic = NULL, *specific = NULL;
 	int use_generic = 0;
+	int offset;
 	void **ptr;
 
-	for (p = slotdefs; p->name; p++) {
-		if (p->offset != offset)
-			continue;
+	offset = p->offset;
+	ptr = slotptr(type, offset);
+	if (ptr == NULL)
+		return recurse_down_subclasses(type, p);
+	do {
 		descr = _PyType_Lookup(type, p->name_strobj);
 		if (descr == NULL)
-			continue;
-		ptr = slotptr(type, p->offset);
-		if (ptr == NULL)
 			continue;
 		generic = p->function;
 		if (descr->ob_type == &PyWrapperDescr_Type) {
@@ -3899,18 +3897,16 @@ update_one_slot(PyTypeObject *type, int offset)
 		}
 		else
 			use_generic = 1;
-		if (specific && !use_generic)
-			*ptr = specific;
-		else
-			*ptr = generic;
-	}
-	if (recurse_down_subclasses(type, offset) < 0)
-		return -1;
-	return 0;
+	} while ((++p)->offset == offset);
+	if (specific && !use_generic)
+		*ptr = specific;
+	else
+		*ptr = generic;
+	return recurse_down_subclasses(type, p0);
 }
 
 static int
-recurse_down_subclasses(PyTypeObject *type, int offset)
+recurse_down_subclasses(PyTypeObject *type, slotdef *p)
 {
 	PyTypeObject *subclass;
 	PyObject *ref, *subclasses;
@@ -3928,14 +3924,25 @@ recurse_down_subclasses(PyTypeObject *type, int offset)
 		if (subclass == NULL)
 			continue;
 		assert(PyType_Check(subclass));
-		if (update_one_slot(subclass, offset) < 0)
+		if (update_one_slot(subclass, p) < 0)
 			return -1;
 	}
 	return 0;
 }
 
+static int
+slotdef_cmp(const void *aa, const void *bb)
+{
+	const slotdef *a = (const slotdef *)aa, *b = (const slotdef *)bb;
+	int c = a->offset - b->offset;
+	if (c != 0)
+		return c;
+	else
+		return a - b;
+}
+
 static void
-init_name_strobj(void)
+init_slotdefs(void)
 {
 	slotdef *p;
 	static int initialized = 0;
@@ -3947,31 +3954,36 @@ init_name_strobj(void)
 		if (!p->name_strobj)
 			Py_FatalError("XXX ouch");
 	}
+	qsort((void *)slotdefs, (size_t)(p-slotdefs), sizeof(slotdef), slotdef_cmp);
 	initialized = 1;
 }
 
 static void
-collect_offsets(PyObject *name, int offsets[])
+collect_ptrs(PyObject *name, slotdef *ptrs[])
 {
 	slotdef *p;
 
-	init_name_strobj();
+	init_slotdefs();
 	for (p = slotdefs; p->name; p++) {
 		if (name == p->name_strobj)
-			*offsets++ = p->offset;
+			*ptrs++ = p;
 	}
-	*offsets = 0;
+	*ptrs = NULL;
 }
 
 static int
 update_slot(PyTypeObject *type, PyObject *name)
 {
-	int offsets[10];
-	int *ip;
+	slotdef *ptrs[10];
+	slotdef *p;
+	slotdef **pp;
 
-	collect_offsets(name, offsets);
-	for (ip = offsets; *ip; ip++) {
-		if (update_one_slot(type, *ip) < 0)
+	collect_ptrs(name, ptrs);
+	for (pp = ptrs; *pp; pp++) {
+		p = *pp;
+		while (p > slotdefs && p->offset == (p-1)->offset)
+			--p;
+		if (update_one_slot(type, p) < 0)
 			return -1;
 	}
 	return 0;
@@ -3984,42 +3996,57 @@ fixup_slot_dispatchers(PyTypeObject *type)
 	PyObject *mro, *descr;
 	PyTypeObject *base;
 	PyWrapperDescrObject *d;
-	int i, n;
+	int i, n, offset;
 	void **ptr;
+	void *generic, *specific;
+	int use_generic;
 
-	for (p = slotdefs; p->name; p++) {
-		ptr = slotptr(type, p->offset);
-		if (ptr)
-			*ptr = NULL;
-	}
+	init_slotdefs();
 	mro = type->tp_mro;
 	assert(PyTuple_Check(mro));
 	n = PyTuple_GET_SIZE(mro);
-	for (p = slotdefs; p->name; p++) {
-		for (i = 0; i < n; i++) {
-			base = (PyTypeObject *)PyTuple_GET_ITEM(mro, i);
-			assert(PyType_Check(base));
-			descr = PyDict_GetItemString(
-				base->tp_defined, p->name);
+	for (p = slotdefs; p->name; ) {
+		offset = p->offset;
+		ptr = slotptr(type, offset);
+		if (!ptr) {
+			do {
+				++p;
+			} while (p->offset == offset);
+			continue;
+		}
+		generic = specific = NULL;
+		use_generic = 0;
+		do {
+			descr = NULL;
+			for (i = 0; i < n; i++) {
+				base = (PyTypeObject *)PyTuple_GET_ITEM(mro, i);
+				assert(PyType_Check(base));
+				descr = PyDict_GetItem(
+					base->tp_defined, p->name_strobj);
+				if (descr != NULL)
+					break;
+			}
 			if (descr == NULL)
 				continue;
-			ptr = slotptr(type, p->offset);
-			if (ptr == NULL)
-				continue;
+			generic = p->function;
 			if (descr->ob_type == &PyWrapperDescr_Type) {
 				d = (PyWrapperDescrObject *)descr;
-				if (d->d_base->wrapper == p->wrapper) {
-					if (*ptr == NULL) {
-						*ptr = d->d_wrapped;
-						continue;
-					}
-					if (p->wrapper == wrap_binaryfunc_r)
-						continue;
+				if (d->d_base->wrapper == p->wrapper &&
+					PyType_IsSubtype(type, d->d_type)) {
+					if (specific == NULL ||
+						specific == d->d_wrapped)
+						specific = d->d_wrapped;
+					else
+						use_generic = 1;
 				}
 			}
-			*ptr = p->function;
-			break;
-		}
+			else
+				use_generic = 1;
+		} while ((++p)->offset == offset);
+		if (specific && !use_generic)
+			*ptr = specific;
+		else
+			*ptr = generic;
 	}
 }
 
