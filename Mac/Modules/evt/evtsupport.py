@@ -72,6 +72,11 @@ functions = []
 ##methods = []
 execfile(INPUTFILE)
 
+# Move TickCount here, for convenience
+f = Function(UInt32, 'TickCount',
+)
+functions.append(f)
+
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)
 for f in functions: module.add(f)
@@ -101,6 +106,7 @@ return _res;
 f = ManualGenerator("WaitNextEvent", WaitNextEvent_body);
 f.docstring = lambda: "(EventMask eventMask, UInt32 sleep [,RegionHandle]) -> (Boolean _rv, EventRecord theEvent)"
 module.add(f)
+
 
 # generate output (open the output file as late as possible)
 SetOutputFileName(OUTPUTFILE)
