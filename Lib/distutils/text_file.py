@@ -23,6 +23,7 @@ class TextFile:
                         'join_lines':     0,
                         'lstrip_ws':      0,
                         'rstrip_ws':      1,
+                        'collapse_ws':    0,
                       }
 
     def __init__ (self, filename=None, **options):
@@ -136,6 +137,10 @@ class TextFile:
                 if line[-2:] == '\\\n':
                     buildup_line = line[0:-2] + '\n'
                     continue
+
+            # collapse internal whitespace (*after* joining lines!)
+            if self.collapse_ws:
+                line = re.sub (r'(\S)\s+(\S)', r'\1 \2', line)            
 
             # well, I guess there's some actual content there: return it
             return line
