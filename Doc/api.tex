@@ -2390,8 +2390,8 @@ set with \cfunction{Py_SetProgramName()} and some environment variables;
 for example, if the program name is \code{"/usr/local/bin/python"}, 
 the prefix is \code{"/usr/local"}.  The returned string points into 
 static storage; the caller should not modify its value.  This 
-corresponds to the \code{prefix} variable in the top-level 
-\file{Makefile} and the \code{--prefix} argument to the 
+corresponds to the \makevar{prefix} variable in the top-level 
+\file{Makefile} and the \code{-}\code{-prefix} argument to the 
 \program{configure} script at build time.  The value is available to 
 Python code as \code{sys.prefix}.  It is only useful on \UNIX{}.  See 
 also the next function.
@@ -2405,9 +2405,9 @@ variables; for example, if the program name is
 \code{"/usr/local/bin/python"}, the exec-prefix is 
 \code{"/usr/local"}.  The returned string points into static storage; 
 the caller should not modify its value.  This corresponds to the 
-\code{exec_prefix} variable in the top-level \file{Makefile} and the 
-\code{--exec_prefix} argument to the \program{configure} script at build 
-time.  The value is available to Python code as 
+\makevar{exec_prefix} variable in the top-level \file{Makefile} and the 
+\code{-}\code{-exec_prefix} argument to the \program{configure} script
+at build  time.  The value is available to Python code as 
 \code{sys.exec_prefix}.  It is only useful on \UNIX{}.
 
 Background: The exec-prefix differs from the prefix when platform 
