@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-"""SMTP/ESMTP client class.
+'''SMTP/ESMTP client class.
 
 This should follow RFC 821 (SMTP) and RFC 1869 (ESMTP).
 
@@ -29,7 +29,7 @@ Example:
   >>> s.getreply()
   (250, "Somebody OverHere <somebody@here.my.org>")
   >>> s.quit()
-"""
+'''
 
 # Author: The Dragon De Monsyne <dragondm@integral.org>
 # ESMTP support, test code and doc fixes added by
