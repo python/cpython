@@ -612,6 +612,48 @@ static PyGetSetDef ResObj_getsetlist[] = {
 #define ResObj_repr NULL
 
 #define ResObj_hash NULL
+static int ResObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	char *srcdata = NULL;
+	int srclen = 0;
+	Handle itself;
+	char *kw[] = {"itself", 0};
+
+	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, ResObj_Convert, &itself))
+	{
+		((ResourceObject *)self)->ob_itself = itself;
+		return 0;
+	}
+	PyErr_Clear();
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|s#", kw, &srcdata, &srclen)) return -1;
+	if ((itself = NewHandle(srclen)) == NULL)
+	{
+		PyErr_NoMemory();
+		return 0;
+	}
+	((ResourceObject *)self)->ob_itself = itself;
+	if (srclen && srcdata)
+	{
+		HLock(itself);
+		memcpy(*itself, srcdata, srclen);
+		HUnlock(itself);
+	}
+	return 0;
+}
+
+#define ResObj_tp_alloc PyType_GenericAlloc
+
+static PyObject *ResObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((ResourceObject *)self)->ob_itself = NULL;
+	((ResourceObject *)self)->ob_freeit = NULL;
+	return self;
+}
+
+#define ResObj_tp_free PyObject_Del
+
 
 PyTypeObject Resource_Type = {
 	PyObject_HEAD_INIT(NULL)
@@ -634,19 +676,27 @@ PyTypeObject Resource_Type = {
 	0, /*tp_str*/
 	PyObject_GenericGetAttr, /*tp_getattro*/
 	PyObject_GenericSetAttr, /*tp_setattro */
-	0, /*outputHook_tp_as_buffer*/
-	0, /*outputHook_tp_flags*/
-	0, /*outputHook_tp_doc*/
-	0, /*outputHook_tp_traverse*/
-	0, /*outputHook_tp_clear*/
-	0, /*outputHook_tp_richcompare*/
-	0, /*outputHook_tp_weaklistoffset*/
-	0, /*outputHook_tp_iter*/
-	0, /*outputHook_tp_iternext*/
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
 	ResObj_methods, /* tp_methods */
-	0, /*outputHook_tp_members*/
+	0, /*tp_members*/
 	ResObj_getsetlist, /*tp_getset*/
-	0, /*outputHook_tp_base*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	ResObj_tp_init, /* tp_init */
+	ResObj_tp_alloc, /* tp_alloc */
+	ResObj_tp_new, /* tp_new */
+	ResObj_tp_free, /* tp_free */
 };
 
 /* -------------------- End object type Resource -------------------- */
@@ -1694,29 +1744,6 @@ static PyObject *Res_FSOpenResourceFile(PyObject *_self, PyObject *_args)
 }
 #endif
 
-static PyObject *Res_Resource(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-
-	char *buf;
-	int len;
-	Handle h;
-
-	if (!PyArg_ParseTuple(_args, "s#", &buf, &len))
-		return NULL;
-	h = NewHandle(len);
-	if ( h == NULL ) {
-		PyErr_NoMemory();
-		return NULL;
-	}
-	HLock(h);
-	memcpy(*h, buf, len);
-	HUnlock(h);
-	_res = ResObj_New(h);
-	return _res;
-
-}
-
 static PyObject *Res_Handle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1871,8 +1898,6 @@ static PyMethodDef Res_methods[] = {
 	{"FSOpenResourceFile", (PyCFunction)Res_FSOpenResourceFile, 1,
 	 PyDoc_STR("(FSRef ref, Buffer forkNameLength, SignedByte permissions) -> (SInt16 refNum)")},
 #endif
-	{"Resource", (PyCFunction)Res_Resource, 1,
-	 PyDoc_STR("Convert a string to a resource object.\n\nThe created resource object is actually just a handle,\napply AddResource() to write it to a resource file.\nSee also the Handle() docstring.\n")},
 	{"Handle", (PyCFunction)Res_Handle, 1,
 	 PyDoc_STR("Convert a string to a Handle object.\n\nResource() and Handle() are very similar, but objects created with Handle() are\nby default automatically DisposeHandle()d upon object cleanup. Use AutoDispose()\nto change this.\n")},
 	{NULL, NULL, 0}
@@ -1937,8 +1962,10 @@ void init_Res(void)
 		return;
 	Resource_Type.ob_type = &PyType_Type;
 	Py_INCREF(&Resource_Type);
-	if (PyDict_SetItemString(d, "ResourceType", (PyObject *)&Resource_Type) != 0)
-		Py_FatalError("can't initialize ResourceType");
+	PyModule_AddObject(m, "Resource", (PyObject *)&Resource_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&Resource_Type);
+	PyModule_AddObject(m, "ResourceType", (PyObject *)&Resource_Type);
 }
 
 /* ======================== End module _Res ========================= */
