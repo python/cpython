@@ -198,16 +198,13 @@ python setup.py install
 
 On Mac~OS, ... \XXX{again, how do you run Python scripts on Mac~OS?}
 
-\XXX{arg, my lovely ``bslash'' macro doesn't work in non-tt fonts! help
-  me \LaTeX, you're my only hope...}
-
 
 \subsection{Splitting the job up}
 
 Running \code{setup.py install} builds and installs all modules in one
-fell swoop.  If you prefer to work incrementally---especially useful if
-you want to customize the build process, or if things are going
-wrong---you can use the setup script to do one thing at a time.  This is
+run.  If you prefer to work incrementally---especially useful if you
+want to customize the build process, or if things are going wrong---you
+can use the setup script to do one thing at a time.  This is
 particularly helpful when the build and install will be done by
 different users---e.g., you might want to build a module distribution
 and hand it off to a system administrator for installation (or do it
@@ -220,11 +217,15 @@ python setup.py build
 python setup.py install
 \end{verbatim}
 (If you do this, you will notice that running the \command{install}
-command first runs the \command{build} command, which quickly notices
-that it has nothing to do, since everything in the \file{build}
-directory is up-to-date.)
+command first runs the \command{build} command, which---in this
+case---quickly notices that it has nothing to do, since everything in
+the \file{build} directory is up-to-date.)
 
-\XXX{concrete reason for splitting things up?}
+You may not need this ability to break things down often if all you do
+is install modules downloaded off the 'net, but it's very handy for more
+advanced tasks.  If you get into distributing your own Python modules
+and extensions, you'll run lots of individual Distutils commands on
+their own.
 
 
 \subsection{How building works}
