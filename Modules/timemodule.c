@@ -281,7 +281,7 @@ static struct methodlist time_methods[] = {
 	{"ctime",	time_ctime},
 	{"mktime",	time_mktime},
 #ifdef HAVE_STRFTIME
-	{"strftime",	time_strftime},
+	{"strftime",	time_strftime, 1},
 #endif
 	{NULL,		NULL}		/* sentinel */
 };
