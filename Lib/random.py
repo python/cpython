@@ -774,8 +774,9 @@ def _test_sample(n):
     population = xrange(n)
     for k in xrange(n+1):
         s = sample(population, k)
-        assert len(dict([(elem,True) for elem in s])) == len(s) == k
-        assert None not in s
+        uniq = dict.fromkeys(s)
+        assert len(uniq) == len(s) == k
+        assert None not in uniq
 
 def _sample_generator(n, k):
     # Return a fixed element from the sample.  Validates random ordering.
