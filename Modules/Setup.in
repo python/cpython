@@ -425,5 +425,9 @@ cPickle cPickle.c
 # See http://www.cdrom.com/pub/infozip/zlib/
 #zlib zlibmodule.c -I$(prefix)/include -L$(exec_prefix)/lib -lz
 
+# Interface to the Expat XML parser
+#EXPAT_DIR=/usr/local/src/expat/
+#pyexpat pyexpat.c -I$(EXPAT_DIR)/xmlparse -L$(EXPAT_DIR) -lexpat
+
 # Example -- included for reference only:
 # xx xxmodule.c
