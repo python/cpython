@@ -1,10 +1,10 @@
 #! /usr/bin/env python
 # Format du output in a tree shape
 
-import os, string, sys, errno
+import os, sys, errno
 
 def main():
-    p = os.popen('du ' + string.join(sys.argv[1:]), 'r')
+    p = os.popen('du ' + ' '.join(sys.argv[1:]), 'r')
     total, d = None, {}
     for line in p.readlines():
         i = 0
@@ -12,7 +12,7 @@ def main():
         size = eval(line[:i])
         while line[i] in ' \t': i = i+1
         file = line[i:-1]
-        comps = string.splitfields(file, '/')
+        comps = file.split('/')
         if comps[0] == '': comps[0] = '/'
         if comps[len(comps)-1] == '': del comps[len(comps)-1]
         total, d = store(size, comps, total, d)
@@ -51,7 +51,7 @@ def show(total, d, prefix):
         if tsub is None:
             psub = prefix
         else:
-            print prefix + string.rjust(`tsub`, width) + ' ' + key
+            print prefix + repr(tsub).rjust(width) + ' ' + key
             psub = prefix + ' '*(width-1) + '|' + ' '*(len(key)+1)
         if d.has_key(key):
             show(tsub, d[key][1], psub)

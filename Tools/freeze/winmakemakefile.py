@@ -1,4 +1,4 @@
-import sys, os, string
+import sys, os
 
 # Template used then the program is a GUI program
 WINMAINTEMPLATE = """
@@ -112,7 +112,7 @@ def realwork(vars, moddefns, target):
             print "\t\t$(cflags) $(cdebug) $(cinclude) \\"
             extra = moddefn.GetCompilerOptions()
             if extra:
-                print "\t\t%s \\" % (string.join(extra),)
+                print "\t\t%s \\" % (' '.join(extra),)
             print '\t\t"%s"' % file
             print
 

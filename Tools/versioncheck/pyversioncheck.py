@@ -3,7 +3,6 @@ import types
 import rfc822
 import urllib
 import sys
-import string
 
 # Verbose options
 VERBOSE_SILENT=0	# Single-line reports per package
@@ -60,8 +59,8 @@ def _check1version(package, url, version, verbose=0):
         if verbose >= VERBOSE_EACHFILE:
             print '    No "Current-Version:" header in URL or URL not found'
         return -1, None, None
-    version = string.strip(string.lower(version))
-    newversion = string.strip(string.lower(newversion))
+    version = version.lower().strip()
+    newversion = newversion.lower().strip()
     if version == newversion:
         if verbose >= VERBOSE_EACHFILE:
             print '    Version identical (%s)'%newversion

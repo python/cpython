@@ -311,7 +311,7 @@ class CommandSequence(Command):
         strs = []
         for cmd in self.cmds:
             strs.append("    " + `cmd`)
-        return s + "(\n" + string.join(strs, ",\n") + "\n)"
+        return s + "(\n" + ",\n".join(strs) + "\n)"
 
     def __len__(self):
         return len(self.cmds)

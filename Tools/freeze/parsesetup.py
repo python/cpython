@@ -1,7 +1,6 @@
 # Parse Makefiles and Python Setup(.in) files.
 
 import re
-import string
 
 
 # Extract variable definitions from a Makefile.
@@ -29,10 +28,10 @@ def getmakevars(filename):
 				continue
 			(name, value) = matchobj.group(1, 2)
 			# Strip trailing comment
-			i = string.find(value, '#')
+			i = value.find('#')
 			if i >= 0:
 				value = value[:i]
-			value = string.strip(value)
+			value = value.strip()
 			variables[name] = value
 	finally:
 		fp.close()
@@ -60,7 +59,7 @@ def getsetupinfo(filename):
 			if not line:
 				break
 			# Strip comments
-			i = string.find(line, '#')
+			i = line.find('#')
 			if i >= 0:
 				line = line[:i]
 			if line.endswith('\\\n'):
@@ -69,9 +68,9 @@ def getsetupinfo(filename):
 			matchobj = setupvardef.match(line)
 			if matchobj:
 				(name, value) = matchobj.group(1, 2)
-				variables[name] = string.strip(value)
+				variables[name] = value.strip()
 			else:
-				words = string.split(line)
+				words = line.split()
 				if words:
 					modules[words[0]] = words[1:]
 	finally:

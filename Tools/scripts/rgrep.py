@@ -7,7 +7,6 @@ Usage: rgrep [-i] pattern file
 
 import sys
 import re
-import string
 import getopt
 
 def main():
@@ -38,7 +37,7 @@ def main():
         pos = pos - size
         f.seek(pos)
         buffer = f.read(size)
-        lines = string.split(buffer, "\n")
+        lines = buffer.split("\n")
         del buffer
         if leftover is None:
             if not lines[-1]:

@@ -100,7 +100,7 @@ def makeunicodedata(unicode, trace):
         record = unicode.table[char]
         if record:
             if record[5]:
-                decomp = string.split(record[5])
+                decomp = record[5].split()
                 # prefix
                 if decomp[0][0] == "<":
                     prefix = decomp.pop(0)
@@ -362,7 +362,7 @@ def makeunicodename(unicode, trace):
         # indicates the last character in an entire string)
         ww = w[:-1] + chr(ord(w[-1])+128)
         # reuse string tails, when possible
-        o = string.find(lexicon, ww)
+        o = lexicon.find(ww)
         if o < 0:
             o = offset
             lexicon = lexicon + ww
@@ -442,7 +442,7 @@ def makeunicodename(unicode, trace):
 
 # load a unicode-data file from disk
 
-import string, sys
+import sys
 
 class UnicodeData:
 
@@ -453,8 +453,8 @@ class UnicodeData:
             s = file.readline()
             if not s:
                 break
-            s = string.split(string.strip(s), ";")
-            char = string.atoi(s[0], 16)
+            s = s.strip().split(";")
+            char = int(s[0], 16)
             table[char] = s
 
         # expand first-last ranges (ignore surrogates and private use)
@@ -490,7 +490,7 @@ class UnicodeData:
 
 def myhash(s, magic):
     h = 0
-    for c in map(ord, string.upper(s)):
+    for c in map(ord, s.upper()):
         h = (h * magic) + c
         ix = h & 0xff000000
         if ix:
@@ -598,7 +598,7 @@ class Array:
                     s = "    " + i
                 else:
                     s = s + i
-            if string.strip(s):
+            if s.strip():
                 file.write(s + "\n")
         file.write("};\n\n")
 

@@ -7,13 +7,13 @@
 import sys
 if sys.path[0] in (".", ""): del sys.path[0]
 
-import sys, os, string
+import sys, os
 from stat import *
 
 def msg(str):
     sys.stderr.write(str + '\n')
 
-pathlist = string.splitfields(os.environ['PATH'], ':')
+pathlist = os.environ['PATH'].split(':')
 
 sts = 0
 longlist = ''

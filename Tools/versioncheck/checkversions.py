@@ -5,7 +5,6 @@ new versions available for any packages you have installed."""
 import os
 import getopt
 import sys
-import string
 import pyversioncheck
 
 CHECKNAME="_checkversion.py"
@@ -43,7 +42,7 @@ def main():
 		sys.exit(1)
 	for o, a in options:
 		if o == '-v':
-			VERBOSE = string.atoi(a)
+			VERBOSE = int(a)
 	if not arguments:
 		arguments = [sys.prefix]
 	for dir in arguments:

@@ -5,7 +5,6 @@
 import re
 import sys
 import os
-import string
 import getopt
 import glob
 import fileinput
@@ -25,7 +24,7 @@ def main():
             if not sublist:
                 sublist.append('file %s' % fileinput.filename())
                 sublist.append('line %d' % fileinput.lineno())
-            sublist.append(string.strip(line[2:-1]))
+            sublist.append(line[2:-1].strip())
         else:
             if sublist:
                 hits.append(sublist)
@@ -37,7 +36,7 @@ def main():
     for sublist in hits:
         d = {}
         for line in sublist:
-            words = string.split(line, None, 1)
+            words = line.split(None, 1)
             if len(words) != 2:
                 continue
             tag = words[0]

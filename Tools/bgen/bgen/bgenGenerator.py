@@ -131,7 +131,6 @@ class FunctionGenerator(BaseFunctionGenerator):
 			self.argumentList.append(arg)
 	
 	def docstring(self):
-		import string
 		input = []
 		output = []
 		for arg in self.argumentList:
@@ -156,11 +155,11 @@ class FunctionGenerator(BaseFunctionGenerator):
 		if not input:
 			instr = "()"
 		else:
-			instr = "(%s)" % string.joinfields(input, ", ")
+			instr = "(%s)" % ", ".join(input)
 		if not output or output == ["void"]:
 			outstr = "None"
 		else:
-			outstr = "(%s)" % string.joinfields(output, ", ")
+			outstr = "(%s)" % ", ".join(output)
 		return instr + " -> " + outstr
 	
 	def functionbody(self):

@@ -24,7 +24,7 @@ from their output.
 
 """
 
-import os, sys, getopt, string, re
+import os, sys, getopt, re
 
 sep1 = '='*77 + '\n'                    # file separator
 sep2 = '-'*28 + '\n'                    # revision separator
@@ -84,7 +84,7 @@ def digest_chunk(chunk):
     keylen = len(key)
     for line in lines:
         if line[:keylen] == key:
-            working_file = string.strip(line[keylen:])
+            working_file = line[keylen:].strip()
             break
     else:
         working_file = None
@@ -93,7 +93,7 @@ def digest_chunk(chunk):
         revline = lines[0]
         dateline = lines[1]
         text = lines[2:]
-        words = string.split(dateline)
+        words = dateline.split()
         author = None
         if len(words) >= 3 and words[0] == 'date:':
             dateword = words[1]
@@ -108,7 +108,7 @@ def digest_chunk(chunk):
         else:
             date = None
             text.insert(0, revline)
-        words = string.split(revline)
+        words = revline.split()
         if len(words) >= 2 and words[0] == 'revision':
             rev = words[1]
         else:

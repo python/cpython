@@ -1,4 +1,3 @@
-import string
 from Tkinter import *
 
 class SearchDialogBase:

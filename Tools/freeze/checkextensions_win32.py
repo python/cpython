@@ -22,7 +22,7 @@ At the moment the name and location of this INI file is hardcoded,
 but an obvious enhancement would be to provide command line options.
 """
 
-import os, string, sys
+import os, sys
 try:
 	import win32api
 except ImportError:
@@ -107,12 +107,12 @@ def get_extension_defn(moduleName, mapFileName, prefix):
 		module.AddCompilerOption(win32api.ExpandEnvironmentStrings(cl_options))
 
 	exclude = win32api.GetProfileVal(moduleName, "exclude", "", mapFileName)
-	exclude = string.split(exclude)
+	exclude = exclude.split()
 
 	if win32api.GetProfileVal(moduleName, "Unicode", 0, mapFileName):
 		module.AddCompilerOption('/D UNICODE /D _UNICODE')
 
-	libs = string.split(win32api.GetProfileVal(moduleName, "libs", "", mapFileName))
+	libs = win32api.GetProfileVal(moduleName, "libs", "", mapFileName).split()
 	for lib in libs:
 		module.AddLinkerLib(win32api.ExpandEnvironmentStrings(lib))
 
@@ -135,9 +135,9 @@ def parse_dsp(dsp):
 		sys.stderr.write("%s: %s\n" % (dsp, msg))
 		return None
 	for line in lines:
-		fields = string.split(string.strip(line), "=", 2)
+		fields = line.strip().split("=", 2)
 		if fields[0]=="SOURCE":
-			if string.lower(os.path.splitext(fields[1])[1]) in ['.cpp', '.c']:
+			if os.path.splitext(fields[1])[1].lower() in ['.cpp', '.c']:
 				ret.append( win32api.GetFullPathName(os.path.join(dsp_path, fields[1] ) ) )
 	return ret
 
@@ -148,12 +148,12 @@ def write_extension_table(fname, modules):
 		# Write fn protos
 		for module in modules:
 			# bit of a hack for .pyd's as part of packages.
-			name = string.split(module.name,'.')[-1]
+			name = module.name.split('.')[-1]
 			fp.write('extern void init%s(void);\n' % (name) )
 		# Write the table
 		fp.write (ext_tab_header)
 		for module in modules:
-			name = string.split(module.name,'.')[-1]
+			name = module.name.split('.')[-1]
 			fp.write('\t{"%s", init%s},\n' % (name, name) )
 
 		fp.write (ext_tab_footer)

@@ -1,4 +1,3 @@
-import string
 import os
 import re
 import fnmatch
