@@ -1,7 +1,7 @@
 % Format this file with latex.
 
-%\documentstyle[palatino,11pt,myformat]{article}
-\documentstyle[11pt,myformat]{article}
+\documentstyle[palatino,11pt,myformat]{article}
+%\documentstyle[11pt,myformat]{article}
 
 \sloppy
 
@@ -1983,13 +1983,13 @@ before calling
 or
 {\tt panel.defpanellist()}.
 
-\subsection{Standard Module {\tt parser}}
+\subsection{Standard Module {\tt panelparser}}
 
 This module defines a self-contained parser for S-expressions as output
 by the Panel Editor (which is written in Scheme so it can't help writing
 S-expressions).
 The relevant function is
-{\tt parser.parse\_file(file)}
+{\tt panelparser.parse\_file(file)}
 which has a file object (not a filename!) as argument and returns a list
 of parsed S-expressions.
 Each S-expression is converted into a {\Python} list, with atoms converted
