@@ -413,7 +413,7 @@ posix_utime(self, args)
 		return NULL;
 	}
 	if (!getstrarg(gettupleitem(args, 0), &path) ||
-	    !getlonglongargs(gettupleitem(args, 1), &ATIME, &MTIME))
+	    !getlonglongarg(gettupleitem(args, 1), &ATIME, &MTIME))
 		return NULL;
 	if (utime(getstringvalue(path), UTIME_ARG) < 0)
 		return posix_error();
@@ -574,7 +574,8 @@ posix_popen(self, args)
 	/* From now on, ignore SIGPIPE and let the error checking
 	   do the work. */
 	(void) signal(SIGPIPE, SIG_IGN);
-	return newopenfileobject(fp, name, mode, pclose);
+	return newopenfileobject(fp, getstringvalue(name),
+				 getstringvalue(mode), pclose);
 }
 
 static object *
