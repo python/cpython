@@ -2,24 +2,44 @@
 
 \documentstyle[myformat]{report}		% To preview with xdvi
 
-% Support to leave changebars in...
+% Underscores are not magic throughout this document
+\catcode`_=12
+
+% Dummy \cbstart and \cbend so I can leave the changebars in...
 \newcommand{\cbstart}{}
 \newcommand{\cbend}{}
 
-% A command to force the text after an item to start on a new line
+% Define \itembreak: force the text after an item to start on a new line
 \newcommand{\itembreak}{
-	\mbox{}\\*[0mm]
+\mbox{}
+\\*[0mm]
 }
 
-% A command to define a function item
-\newcommand{\funcitem}[2]{\item[#1(#2)]}
+% Define \itemjoin: some negative vspace to join two items together
+\newcommand{\itemjoin}{
+\mbox{}
+\vspace{-\itemsep}
+\vspace{-\parsep}
+}
 
-% A command to define a data item
-\newcommand{\dataitem}[1]{\item[#1]}
+% Define \funcitem{func}{args}: define a function item
+\newcommand{\funcitem}[2]{
+\index{#1@{\tt#1}}
+\item[{\tt #1(#2)}]
+\ 
+}
 
-% A command to define an exception item
+% Define \dataitem{name}: define a data item
+\newcommand{\dataitem}[1]{
+\index{#1@{\tt#1}}
+\item[{\tt #1}]
+\ 
+}
+
+% Define \excitem{name}{string}: define an exception item
 \newcommand{\excitem}[2]{
-\item[#1 = {\tt '#2'}]
+\index{#1@{\tt#1}}
+\item[{\tt #1 = '#2'}]
 \itembreak
 }
 
@@ -33,6 +53,8 @@
 	1098 SJ Amsterdam, The Netherlands \\
 	E-mail: {\tt guido@cwi.nl}
 }
+
+\makeindex
 
 \begin{document}
 
@@ -63,7 +85,8 @@ language.
 \input{lib1.tex}	% intro; built-in types, functions and exceptions
 \input{lib2.tex}	% built-in modules
 \input{lib3.tex}	% standard modules
-\input{lib4.tex}	% OS-dependent appendixes
-\input{lib5.tex}	% Graphics appendixes
+\input{lib4.tex}	% OS-dependent chapters
+\input{lib5.tex}	% Graphics chapters
+\input{libindex.tex}	% The index
 
 \end{document}
