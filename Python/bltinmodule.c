@@ -903,6 +903,7 @@ builtin_map(self, args)
 		if (i >= len) {
 			if (PyList_Append(result, value) < 0)
 				goto Fail_1;
+			Py_DECREF(value);
 		}
 		else {
 			if (PyList_SetItem(result, i, value) < 0)
