@@ -234,7 +234,10 @@ typedef int pid_t;
 /* End of compilers - finish up */
 
 #if defined(MS_WIN64)
-#define PLATFORM "win64"
+/* maintain "win32" sys.platform for backward compatibility of Python code,
+   the Win64 API should be close enough to the Win32 API to make this
+   preferable */
+#define PLATFORM "win32"
 #define SIZEOF_VOID_P 8
 #elif defined(MS_WIN32)
 #define PLATFORM "win32"
