@@ -272,8 +272,9 @@ Notes:
     The range really is \code{0} to \code{61}; this accounts for leap
     seconds and the (very rare) double leap seconds.
   \item[(3)]
-    \code{\%U} and \code{\%W} are only used in calculations when the day of the
-    week and the year are specified.
+    When used with the \function{strptime()} function, \code{\%U} and \code{\%W}
+    are only used in calculations when the day of the week and the year are
+    specified.
 \end{description}
 
 Here is an example, a format for dates compatible with that specified 
