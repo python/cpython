@@ -48,6 +48,12 @@ int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 	return success < 0 ? 0 : 1;
 }
 
+long get_thread_ident _P0()
+{
+	if (!initialized)
+		init_thread();
+}
+
 static void do_exit_thread _P1(no_cleanup, int no_cleanup)
 {
 	dprintf(("exit_thread called\n"));

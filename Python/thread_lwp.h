@@ -52,14 +52,22 @@ static void _init_thread _P0()
 int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 {
 	thread_t tid;
-	int success = 0;	/* init not needed when SOLARIS_THREADS and */
-				/* C_THREADS implemented properly */
-
+	int success;
 	dprintf(("start_new_thread called\n"));
 	if (!initialized)
 		init_thread();
 	success = lwp_create(&tid, func, MINPRIO, 0, lwp_newstk(), 1, arg);
 	return success < 0 ? 0 : 1;
+}
+
+long get_thread_ident _P0()
+{
+	thread_t tid;
+	if (!initialized)
+		init_thread();
+	if (lwp_self(&tid) < 0)
+		return -1;
+	return tid.thread_id;
 }
 
 static void do_exit_thread _P1(no_cleanup, int no_cleanup)
