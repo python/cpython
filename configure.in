@@ -1304,8 +1304,8 @@ then
 		LDSHARED='$(CC) $(LDFLAGS) -bundle'
 		if test "$enable_framework" ; then
 			# Link against the framework. All externals should be defined.
-			BLDSHARED="$LDSHARED "'-Wl,-F. -framework $(PYTHONFRAMEWORK)'
-			LDSHARED="$LDSHARED "'-Wl,-F$(PYTHONFRAMEWORKPREFIX) -framework $(PYTHONFRAMEWORK)'
+			BLDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+			LDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 		else
 			# No framework. Ignore undefined symbols, assuming they come from Python
 			LDSHARED="$LDSHARED -undefined suppress"
@@ -1314,8 +1314,8 @@ then
 		LDSHARED='$(CC) $(LDFLAGS) -bundle'
 		if test "$enable_framework" ; then
 			# Link against the framework. All externals should be defined.
-			BLDSHARED="$LDSHARED "'-Wl,-F. -framework $(PYTHONFRAMEWORK)'
-			LDSHARED="$LDSHARED "'-Wl,-F$(PYTHONFRAMEWORKPREFIX) -framework $(PYTHONFRAMEWORK)'
+			BLDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+			LDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 		else
 			# No framework, use the Python app as bundle-loader
 			BLDSHARED="$LDSHARED "'-bundle_loader $(BUILDPYTHON)'
@@ -1334,8 +1334,8 @@ then
 			LDSHARED='$(CC) $(LDFLAGS) -bundle'
 			if test "$enable_framework" ; then
 				# Link against the framework. All externals should be defined.
-				BLDSHARED="$LDSHARED "'-Wl,-F. -framework $(PYTHONFRAMEWORK)'
-				LDSHARED="$LDSHARED "'-Wl,-F$(PYTHONFRAMEWORKPREFIX) -framework $(PYTHONFRAMEWORK)'
+				BLDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+				LDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 			else
 				# No framework, use the Python app as bundle-loader
 				BLDSHARED="$LDSHARED "'-bundle_loader $(BUILDPYTHON)'
@@ -1427,7 +1427,7 @@ then
 		LINKFORSHARED="$extra_undefs"
 		if test "$enable_framework"
 		then
-			LINKFORSHARED="$LINKFORSHARED -Wl,-F. -framework "'$(PYTHONFRAMEWORK)'
+			LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 		fi
 		LINKFORSHARED="$LINKFORSHARED";;
 	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
