@@ -161,9 +161,6 @@ Build
 
 - Patch #798202: detect redhat9 Tcl/Tk in configure script.
 
-C API
------
-
 Windows
 -------
 
@@ -171,9 +168,6 @@ Windows
 
 - The Windows installer includes documentation in HTMLHelp format
   instead of single HTML pages.
-
-Mac
----
 
 
 What's New in Python 2.3 final?
@@ -247,9 +241,6 @@ Build
 
 - For MacOSX, added -mno-fused-madd to BASECFLAGS to fix test_coercion
   on Panther (OSX 10.3).
-
-C API
------
 
 Windows
 -------
