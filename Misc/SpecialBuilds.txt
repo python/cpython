@@ -2,7 +2,8 @@ This file describes some special Python build types enabled via
 compile-time preprocessor defines.
 
 ---------------------------------------------------------------------------
-Py_REF_DEBUG
+Py_REF_DEBUG                                              introduced in 1.4
+                                                 named REF_DEBUG before 1.4
 
 Turn on aggregate reference counting.  This arranges that extern
 _Py_RefTotal hold a count of all references, the sum of ob_refcnt across
@@ -28,7 +29,8 @@ sys.gettotalrefcount()
     Available under Py_REF_DEBUG in Python 2.3.
     Before 2.3, Py_TRACE_REFS was required to enable this function.
 ---------------------------------------------------------------------------
-Py_TRACE_REFS
+Py_TRACE_REFS                                             introduced in 1.4
+                                                named TRACE_REFS before 1.4
 
 Turn on heavy reference debugging.  This is major surgery.  Every PyObject
 grows two more pointers, to maintain a doubly-linked list of all live
@@ -58,7 +60,7 @@ envar PYTHONDUMPREFS
     If this envar exists, Py_Finalize() arranges to print a list of
     all still-live heap objects.
 ---------------------------------------------------------------------------
-PYMALLOC_DEBUG
+PYMALLOC_DEBUG                                            introduced in 2.3
 
 When pymalloc is enabled (WITH_PYMALLOC is defined), calls to the PyObject_
 memory routines are handled by Python's own small-object allocator, while
@@ -90,12 +92,12 @@ p[-8:-4]
 p[-4:0]
     Copies of FORBIDDENBYTE.  Used to catch under- writes and reads.
 p[0:N]
-    The requested memory, filled with copies of CLEANBYTE.
-    Used to catch reference to uninitialized memory.
+    The requested memory, filled with copies of CLEANBYTE, used to catch
+    reference to uninitialized memory.
     When a realloc-like function is called requesting a larger memory
     block, the new excess bytes are also filled with CLEANBYTE.
     When a free-like function is called, these are overwritten with
-    DEADBYTE, to catch reference to free()ed memory.  When a realloc-
+    DEADBYTE, to catch reference to freed memory.  When a realloc-
     like function is called requesting a smaller memory block, the excess
     old bytes are also filled with DEADBYTE.
 p[N:N+4]
@@ -110,9 +112,14 @@ p[N+4:N+8]
     bumpserialno() in obmalloc.c is the only place the serial number
     is incremented, and exists so you can set such a breakpoint easily.
 
-A malloc-like or free-like function first checks that the FORBIDDENBYTEs
+A realloc-like or free-like function first checks that the FORBIDDENBYTEs
 at each end are intact.  If they've been altered, diagnostic output is
-written to stderr, and the program is aborted by Py_FatalError().
+written to stderr, and the program is aborted via Py_FatalError().  The
+other main failure mode is provoking a memory error when a program
+reads up one of the special bit patterns and tries to use it as an address.
+If you get in a debugger then and look at the object, you're likely
+to see that it's entirely filled with 0xDB (meaning freed memory is
+getting used) or 0xCB (meaning uninitialized memory is getting used).
 
 Note that PYMALLOC_DEBUG requires WITH_PYMALLOC.
 
@@ -123,7 +130,8 @@ envar PYTHONMALLOCSTATS
     printed to stderr whenever a new arena is allocated, and also
     by Py_Finalize().
 ---------------------------------------------------------------------------
-Py_DEBUG
+Py_DEBUG                                                  introduced in 1.5
+                                                     named DEBUG before 1.5
 
 This is what is generally meant by "a debug build" of Python.
 
@@ -132,7 +140,7 @@ WITH_PYMALLOC is enabled).  In addition, C assert()s are enabled (via
 the C way:  by not defining NDEBUG), and some routines do additional
 sanity checks inside "#ifdef Py_DEBUG" blocks.
 ---------------------------------------------------------------------------
-COUNT_ALLOCS
+COUNT_ALLOCS                                            introduced in 0.9.9
 
 Each type object grows three new members:
 
