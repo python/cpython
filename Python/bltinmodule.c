@@ -816,10 +816,10 @@ builtin_execfile(PyObject *self, PyObject *args)
 	if (PyEval_GetNestedScopes()) {
 		PyCompilerFlags cf;
 		cf.cf_nested_scopes = 1;
-		res = PyRun_FileExFlags(fp, filename, Py_file_input, globals, 
+		res = PyRun_FileExFlags(fp, filename, Py_file_input, globals,
 				   locals, 1, &cf);
-	} else 
-		res = PyRun_FileEx(fp, filename, Py_file_input, globals, 
+	} else
+		res = PyRun_FileEx(fp, filename, Py_file_input, globals,
 				   locals, 1);
 	return res;
 }
@@ -924,7 +924,7 @@ builtin_map(PyObject *self, PyObject *args)
 	typedef struct {
 		PyObject *seq;
 		PySequenceMethods *sqf;
-		int len;
+		int saw_IndexError;
 	} sequence;
 
 	PyObject *func, *result;
@@ -952,6 +952,10 @@ builtin_map(PyObject *self, PyObject *args)
 		goto Fail_2;
 	}
 
+	/* Do a first pass to (a) verify the args are sequences; (b) set
+	 * len to the largest of their lengths; (c) initialize the seqs
+	 * descriptor vector.
+	 */
 	for (len = 0, i = 0, sqp = seqs; i < n; ++i, ++sqp) {
 		int curlen;
 		PySequenceMethods *sqf;
@@ -959,9 +963,10 @@ builtin_map(PyObject *self, PyObject *args)
 		if ((sqp->seq = PyTuple_GetItem(args, i + 1)) == NULL)
 			goto Fail_2;
 
+		sqp->saw_IndexError = 0;
+
 		sqp->sqf = sqf = sqp->seq->ob_type->tp_as_sequence;
 		if (sqf == NULL ||
-		    sqf->sq_length == NULL ||
 		    sqf->sq_item == NULL)
 		{
 			static char errmsg[] =
@@ -973,9 +978,13 @@ builtin_map(PyObject *self, PyObject *args)
 			goto Fail_2;
 		}
 
-		if ((curlen = sqp->len = (*sqp->sqf->sq_length)(sqp->seq)) < 0)
+		if (sqf->sq_length == NULL)
+			/* doesn't matter -- make something up */
+			curlen = 8;
+		else
+			curlen = (*sqf->sq_length)(sqp->seq);
+		if (curlen < 0)
 			goto Fail_2;
-
 		if (curlen > len)
 			len = curlen;
 	}
@@ -983,6 +992,7 @@ builtin_map(PyObject *self, PyObject *args)
 	if ((result = (PyObject *) PyList_New(len)) == NULL)
 		goto Fail_2;
 
+	/* Iterate over the sequences until all have raised IndexError. */
 	for (i = 0; ; ++i) {
 		PyObject *alist, *item=NULL, *value;
 		int any = 0;
@@ -995,7 +1005,7 @@ builtin_map(PyObject *self, PyObject *args)
 		}
 
 		for (j = 0, sqp = seqs; j < n; ++j, ++sqp) {
-			if (sqp->len < 0) {
+			if (sqp->saw_IndexError) {
 				Py_INCREF(Py_None);
 				item = Py_None;
 			}
@@ -1008,7 +1018,7 @@ builtin_map(PyObject *self, PyObject *args)
 						PyErr_Clear();
 						Py_INCREF(Py_None);
 						item = Py_None;
-						sqp->len = -1;
+						sqp->saw_IndexError = 1;
 					}
 					else {
 						goto Fail_0;
