@@ -40,11 +40,11 @@ int myvsnprintf(char *str, size_t size, const char  *format, va_list va)
     assert(len >= 0);
     if ((size_t)len > size + 512)
 	Py_FatalError("Buffer overflow in PyOS_snprintf/PyOS_vsnprintf");
-    if ((size_t)len > size) {
-	PyMem_Free(buffer);
-	return len - 1;
-    }
-    memcpy(str, buffer, len);
+    if ((size_t)len > size)
+	buffer[size-1] = '\0';
+    else
+	size = len;
+    memcpy(str, buffer, size);
     PyMem_Free(buffer);
     return len - 1;
 }
