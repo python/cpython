@@ -219,6 +219,16 @@ MacOS_HandleEvent(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
+static PyObject *
+MacOS_GetErrorString(PyObject *self, PyObject *args)
+{
+	int errn;
+	
+	if (!PyArg_ParseTuple(args, "i", &errn))
+		return NULL;
+	return Py_BuildValue("s", PyMac_StrError(errn));
+}
+
 static PyMethodDef MacOS_Methods[] = {
 	{"AcceptHighLevelEvent",	MacOS_AcceptHighLevelEvent, 1},
 	{"GetCreatorAndType",		MacOS_GetCreatorAndType, 1},
@@ -229,6 +239,7 @@ static PyMethodDef MacOS_Methods[] = {
 	{"SetScheduleTimes",	MacOS_SetScheduleTimes, 1},
 	{"EnableAppswitch",		MacOS_EnableAppswitch, 1},
 	{"HandleEvent",			MacOS_HandleEvent, 1},
+	{"GetErrorString",		MacOS_GetErrorString, 1},
 	{NULL,				NULL}		 /* Sentinel */
 };
 
