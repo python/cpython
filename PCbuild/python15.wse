@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=5.0
-  Title=Python 1.5.2c1
+  Title=Python 1.5.2 (final)
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -56,7 +56,7 @@ item: Check Configuration
 end
 item: Set Variable
   Variable=APPTITLE
-  Value=Python 1.5.2c1
+  Value=Python 1.5.2 (final)
 end
 item: Set Variable
   Variable=GROUP
