@@ -31,9 +31,11 @@ class Extension:
         the full name of the extension, including any packages -- ie.
         *not* a filename or pathname, but Python dotted name
       sources : [string]
-        list of C/C++ source filenames, relative to the distribution
-        root (where the setup script lives), in Unix form
-        (slash-separated) for portability
+        list of source filenames, relative to the distribution root
+        (where the setup script lives), in Unix form (slash-separated)
+        for portability.  Source files may be C, C++, SWIG (.i),
+        platform-specific resource files, or whatever else is recognized
+        by the "build_ext" command as source for a Python extension.
       include_dirs : [string]
         list of directories to search for C/C++ header files (in Unix
         form for portability)
