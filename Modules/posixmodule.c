@@ -3244,6 +3244,21 @@ posix_fdopen(PyObject *self, PyObject *args)
 	return f;
 }
 
+static char posix_isatty__doc__[] =
+"isatty(fd) -> Boolean\n\
+Return true if the file descriptor 'fd' is an open file descriptor\n\
+connected to a terminal.";
+
+static PyObject *
+posix_isatty(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	int fd;
+	if (!PyArg_ParseTuple(args, "i:isatty", &fd))
+		return NULL;
+	return Py_BuildValue("i", isatty(fd));
+}
 
 #ifdef HAVE_PIPE
 static char posix_pipe__doc__[] =
@@ -5038,6 +5053,7 @@ static PyMethodDef posix_methods[] = {
 	{"write",	posix_write, METH_VARARGS, posix_write__doc__},
 	{"fstat",	posix_fstat, METH_VARARGS, posix_fstat__doc__},
 	{"fdopen",	posix_fdopen, METH_VARARGS, posix_fdopen__doc__},
+	{"isatty",	posix_isatty, METH_VARARGS, posix_isatty__doc__},
 #ifdef HAVE_PIPE
 	{"pipe",	posix_pipe, METH_VARARGS, posix_pipe__doc__},
 #endif
