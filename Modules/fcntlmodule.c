@@ -34,6 +34,14 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "allobjects.h"
 #include "modsupport.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_SYS_FILE_H
+#include <sys/file.h>
+#endif
+
 #include <fcntl.h>
 
 
@@ -147,7 +155,6 @@ fcntl_flock(self, args)
 	int fd;
 	int code;
 	int ret;
-	FILE *f;
 
 	if (!getargs(args, "(ii)", &fd, &code))
 		return NULL;
@@ -195,7 +202,6 @@ fcntl_lockf(self, args)
 	object *args;
 {
 	int fd, code, len = 0, start = 0, whence = 0, ret;
-	FILE *f;
 
 	if (!PyArg_ParseTuple(args, "ii|iii", &fd, &code, &len, 
 			       &start, &whence))

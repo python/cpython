@@ -281,10 +281,10 @@ int size;
 regexp_t bufp;
 {
   int a, pos, op, current_level, level, opcode;
-  int pattern_offset, alloc;
+  int pattern_offset = 0, alloc;
   int starts[NUM_LEVELS * MAX_NESTING], starts_base;
   int future_jumps[MAX_NESTING], num_jumps;
-  unsigned char ch;
+  unsigned char ch = '\0';
   char *pattern, *translate;
   int next_register, paren_depth, num_open_registers, open_registers[RE_NREGS];
   int beginning_context;

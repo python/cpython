@@ -64,11 +64,15 @@ staticforward typeobject Arraytype;
 
 /* Forward */
 static object *newarrayobject PROTO((int, struct arraydescr *));
+#if 0
 static int getarraysize PROTO((object *));
+#endif
 static object *getarrayitem PROTO((object *, int));
 static int setarrayitem PROTO((object *, int, object *));
+#if 0
 static int insarrayitem PROTO((object *, int, object *));
 static int addarrayitem PROTO((object *, object *));
+#endif
 
 static object *
 c_getitem(ap, i)
@@ -278,6 +282,7 @@ newarrayobject(size, descr)
 	return (object *) op;
 }
 
+#if 0
 static int
 getarraysize(op)
 	object *op;
@@ -288,6 +293,7 @@ getarraysize(op)
 	}
 	return ((arrayobject *)op) -> ob_size;
 }
+#endif
 
 static object *
 getarrayitem(op, i)
@@ -338,6 +344,7 @@ ins1(self, where, v)
 	return (*self->ob_descr->setitem)(self, where, v);
 }
 
+#if 0
 static int
 insarrayitem(op, where, newitem)
 	object *op;
@@ -363,6 +370,7 @@ addarrayitem(op, newitem)
 	return ins1((arrayobject *)op,
 		(int) ((arrayobject *)op)->ob_size, newitem);
 }
+#endif
 
 /* Methods */
 

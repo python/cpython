@@ -175,7 +175,6 @@ xx_new(self, args)
 	PyObject *self; /* Not used */
 	PyObject *args;
 {
-	int i, j;
 	XxoObject *rv;
 	
 	if (!PyArg_ParseTuple(args, ""))

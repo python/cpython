@@ -15,7 +15,6 @@ static object *crypt_crypt(self, args)
 	char *word, *salt; 
 	extern char * crypt();
 
-	struct passwd *p;
 	if (!getargs(args, "(ss)", &word, &salt)) {
 		return NULL;
 	}

@@ -532,7 +532,7 @@ CD_callback(arg, type, data)
 	CDDATATYPES type;
 	void *data;
 {
-	object *result, *args, *v;
+	object *result, *args, *v = NULL;
 	char *p;
 	int i;
 	cdparserobject *self;

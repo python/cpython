@@ -366,7 +366,6 @@ al_writesamps (self, args)
 	portobject *self;
 	object *args;
 {
-	long count;
 	char *buf;
 	int size, width;
 	ALconfig c;
@@ -623,7 +622,6 @@ al_queryparams(self, args)
 	long *PVbuffer;
 	long PVdummy[2];
 	object *v;
-	object *w;
 
 	if (!getlongarg (args, &device))
 		return NULL;

@@ -566,7 +566,7 @@ parser_tuple2ast(self, args)
     PyObject *tuple = 0;
     PyObject *temp = 0;
     int ok;
-    int start_sym;
+    int start_sym = 0;
 
     if (!PyArg_ParseTuple(args, "O:tuple2ast", &tuple))
 	return (0);
@@ -1829,7 +1829,7 @@ validate_comp_op(tree)
 	      break;
 	}
     }
-    else if (res = validate_numnodes(tree, 2, "comp_op")) {
+    else if ((res = validate_numnodes(tree, 2, "comp_op")) != 0) {
 	res = (validate_ntype(CHILD(tree, 0), NAME)
 	       && validate_ntype(CHILD(tree, 1), NAME)
 	       && (((strcmp(STR(CHILD(tree, 0)), "is") == 0)

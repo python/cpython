@@ -168,9 +168,13 @@ typedef struct {
 	WINDOW *pad;
 } PyCursesPadObject;
 
+#if 0
 staticforward PyTypeObject PyCursesScreen_Type;
+#endif
 staticforward PyTypeObject PyCursesWindow_Type;
+#if 0
 staticforward PyTypeObject PyCursesPad_Type;
+#endif
 
 #define PyCursesScreen_Check(v)	 ((v)->ob_type == &PyCursesScreen_Type)
 #define PyCursesWindow_Check(v)	 ((v)->ob_type == &PyCursesWindow_Type)
@@ -386,7 +390,7 @@ PyCursesWindow_AddCh(self,arg)
   int rtn;
   int x, y;
   int ch;
-  int attr, attr_old;
+  int attr, attr_old = 0;
   int use_xy = FALSE, use_attr = FALSE;
 
   switch (ARG_COUNT(arg)) {
@@ -436,7 +440,7 @@ PyCursesWindow_InsCh(self,arg)
   int rtn;
   int x, y;
   int ch;
-  int attr, attr_old;
+  int attr, attr_old = 0;
   int use_xy = TRUE, use_attr = FALSE;
 
   switch (ARG_COUNT(arg)) {
@@ -542,7 +546,7 @@ PyCursesWindow_AddStr(self,arg)
   int rtn;
   int x, y;
   char *str;
-  int attr, attr_old;
+  int attr, attr_old = 0;
   int use_xy = FALSE, use_attr = FALSE;
 
   switch (ARG_COUNT(arg)) {
@@ -1116,6 +1120,7 @@ PyCursesPad_New(pad)
 
 /* -------------------------------------------------------*/
 
+#if 0
 static PyTypeObject PyCursesScreen_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
@@ -1134,6 +1139,7 @@ static PyTypeObject PyCursesScreen_Type = {
 	0,			/*tp_as_mapping*/
 	0,			/*tp_hash*/
 };
+#endif
 
 static PyTypeObject PyCursesWindow_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -1154,6 +1160,7 @@ static PyTypeObject PyCursesWindow_Type = {
 	0,			/*tp_hash*/
 };
 
+#if 0
 static PyTypeObject PyCursesPad_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
@@ -1172,6 +1179,7 @@ static PyTypeObject PyCursesPad_Type = {
 	0,			/*tp_as_mapping*/
 	0,			/*tp_hash*/
 };
+#endif
 
 
 /* -------------------------------------------------------*/

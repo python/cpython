@@ -134,7 +134,6 @@ fh_getfontinfo(self, args)
 	object *args;
 {
 	fmfontinfo info;
-	object *v;
 	if (!getnoarg(args))
 		return NULL;
 	if (fmgetfontinfo(self->fh_fh, &info) < 0) {

@@ -33,8 +33,10 @@ static Py_complex c_1 = {1., 0.};
 static Py_complex c_half = {0.5, 0.};
 static Py_complex c_i = {0., 1.};
 static Py_complex c_i2 = {0., 0.5};
+#if 0
 static Py_complex c_mi = {0., -1.};
 static Py_complex c_pi2 = {M_PI/2., 0.};
+#endif
 
 /* forward declarations */
 staticforward Py_complex c_log();

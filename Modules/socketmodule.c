@@ -85,6 +85,10 @@ Socket methods:
 
 #include "Python.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #include <sys/types.h>
 #include "mytime.h"
 
@@ -259,6 +263,7 @@ BUILD_FUNC_DEF_2(setipaddr, char*,name, struct sockaddr_in *,addr_ret)
 	int errnop;
 #endif /* HAVE_GETHOSTBYNAME_R */
 
+	memset((void *) addr_ret, '\0', sizeof(*addr_ret));
 	if (name[0] == '\0') {
 		addr_ret->sin_addr.s_addr = INADDR_ANY;
 		return 4;
