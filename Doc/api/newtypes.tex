@@ -122,9 +122,71 @@ DL_IMPORT
 
 \section{Common Object Structures \label{common-structs}}
 
-PyObject, PyVarObject
+There are a large number of structures which are used in the
+definition of object types for Python.  This section describes these
+structures and how they are used.
 
-PyObject_HEAD, PyObject_HEAD_INIT, PyObject_VAR_HEAD
+All Python objects ultimately share a small number of fields at the
+beginning of the object's representation in memory.  These are
+represented by the \ctype{PyObject} and \ctype{PyVarObject} types,
+which are defined, in turn, by the expansions of some macros also
+used, whether directly or indirectly, in the definition of all other
+Python objects.
+
+\begin{ctypedesc}{PyObject}
+  All object types are extensions of this type.  This is a type which
+  contains the information Python needs to treat a pointer to an
+  object as an object.  In a normal ``release'' build, it contains
+  only the objects reference count and a pointer to the corresponding
+  type object.  It corresponds to the fields defined by the
+  expansion of the \code{PyObject_VAR_HEAD} macro.
+\end{ctypedesc}
+
+\begin{ctypedesc}{PyVarObject}
+  This is an extension of \ctype{PyObject} that adds the
+  \member{ob_size} field.  This is only used for objects that have
+  some notion of \emph{length}.  This type does not often appear in
+  the Python/C API.  It corresponds to the fields defined by the
+  expansion of the \code{PyObject_VAR_HEAD} macro.
+\end{ctypedesc}
+
+These macros are used in the definition of \ctype{PyObject} and
+\ctype{PyVarObject}:
+
+\begin{csimplemacrodesc}{PyObject_HEAD}
+  This is a macro which expands to the declarations of the fields of
+  the \ctype{PyObject} type; it is used when declaring new types which
+  represent objects without a varying length.  The specific fields it
+  expands to depends on the definition of
+  \csimplemacro{Py_TRACE_REFS}.  By default, that macro is not
+  defined, and \csimplemacro{PyObject_HEAD} expands to:
+  \begin{verbatim}
+    int ob_refcnt;
+    PyTypeObject *ob_type;
+  \end{verbatim}
+  When \csimplemacro{Py_TRACE_REFS} is defined, it expands to:
+  \begin{verbatim}
+    PyObject *_ob_next, *_ob_prev;
+    int ob_refcnt;
+    PyTypeObject *ob_type;
+  \end{verbatim}
+\end{csimplemacrodesc}
+
+\begin{csimplemacrodesc}{PyObject_VAR_HEAD}
+  This is a macro which expands to the declarations of the fields of
+  the \ctype{PyVarObject} type; it is used when declaring new types which
+  represent objects with a length that varies from instance to
+  instance.  This macro always expands to:
+  \begin{verbatim}
+    PyObject_HEAD
+    int ob_size;
+  \end{verbatim}
+  Note that \csimplemacro{PyObject_HEAD} is part of the expansion, and
+  that it's own expansion varies depending on the definition of
+  \csimplemacro{Py_TRACE_REFS}.
+\end{csimplemacrodesc}
+
+PyObject_HEAD_INIT
 
 Typedefs:
 unaryfunc, binaryfunc, ternaryfunc, inquiry, coercion, intargfunc,
@@ -134,6 +196,11 @@ setattrofunc, cmpfunc, reprfunc, hashfunc
 
 \begin{ctypedesc}{PyCFunction}
   Type of the functions used to implement most Python callables in C.
+  Functions of this type take two \ctype{PyObject*} parameters and
+  return one such value.  If the return value is \NULL, an exception
+  shall have been set.  If not \NULL, the return value is interpreted
+  as the return value of the function as exposed in Python.  The
+  function must return a new reference.
 \end{ctypedesc}
 
 \begin{ctypedesc}{PyMethodDef}
