@@ -1,0 +1,18 @@
+Contents of this directory:
+
+byteyears.py		Print product of a file's size and age
+eptags.py		Create Emacs TAGS file for Python modules
+fact.py			Factorize numbers
+findlinksto.py		Find symbolic links to a given path (prefix)
+from.py			Summarize mailbox
+lfact.py		Factorize long numbers
+lpwatch.py		Watch BSD line printer queues
+mkreal.py		Turn a symbolic link into a real file or directory
+objgraph.py		Print object graph from nm output on a library
+pdeps.py		Print dependencies between Python modules
+pi.py			Print digits of pi (uses arbitrary precision integers)
+primes.py		Print prime numbers
+ptags.py		Create vi tags file for Python modules
+suff.py			Sort a list of files by suffix
+which.py		Find a program in $PATH
+xxci.py			Wrapper for rcsdiff and ci
