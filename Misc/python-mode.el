@@ -1148,12 +1148,12 @@ at the beginning of the line."
                 (progn
                   (find-file-other-window fname)
                   (goto-line (string-to-int lineno))
-                  (message "L%s %s" lineno fname)
+                  (message "pdbtrack: line %s, file %s" lineno fname)
                   (py-pdbtrack-overlay-arrow t)
                   (pop-to-buffer origbuf t) )
               (if (= (elt fname 0) ?\<)
-                  (message "(Non-file source: '%s')" fname)
-                (message "Not found: %s" fname))
+                  (message "pdbtrack: (Non-file source: '%s')" fname)
+                (message "pdbtrack: File not found: %s" fname))
               )))))))
 
 (defun py-postprocess-output-buffer (buf)
