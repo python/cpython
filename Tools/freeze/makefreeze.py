@@ -14,12 +14,16 @@ trailer = """\
 };
 """
 
+# if __debug__ == 0 (i.e. -O option given), set Py_OptimizeFlag in frozen app.
 default_entry_point = """
 int
 main(argc, argv)
     int argc;
     char **argv;
 {
+""" + ((not __debug__ and """
+        Py_OptimizeFlag++;
+""") or "")  + """
         PyImport_FrozenModules = _PyImport_FrozenModules;
         return Py_FrozenMain(argc, argv);
 }
