@@ -1655,21 +1655,35 @@ the synthesized code under the debugger:
   is converted to a Python script, where doctest examples in \var{s}
   are converted to regular code, and everything else is converted to
   Python comments.  The generated script is returned as a string.
-  For example, given file \file{a.py} as above,
+  For example,
 
     \begin{verbatim}
-    >>> print doctest.script_from_examples(open("a.py").read())
-    # """
-    def f(x):
-        g(x*2)
-    def g(x):
-        print x+3
-        import pdb; pdb.set_trace()
-    f(3)
-    # Expected:
-    ## 9
-    ## """
+    import doctest
+    print doctest.script_from_examples(r"""
+        Set x and y to 1 and 2.
+        >>> x, y = 1, 2
+
+        Print their sum:
+        >>> print x+y
+        3
+    """)
     \end{verbatim}
+
+  displays:
+
+    \begin{verbatim}
+    # Set x and y to 1 and 2.
+    x, y = 1, 2
+    #
+    # Print their sum:
+    print x+y
+    # Expected:
+    ## 3
+    \end{verbatim}
+
+  This function is used internally by other functions (see below), but
+  can also be useful when you want to transform an interactive Python
+  session into a Python script.
 
   \versionadded{2.4}
 \end{funcdesc}
