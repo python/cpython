@@ -45,7 +45,7 @@ def test():
                 else:
                     print "%s != %s" % (a, b)
     # Ensure default comparison compares id() of args
-    L = [None]
+    L = []
     for i in range(10):
         L.insert(len(L)/2, Empty())
     for a in L:

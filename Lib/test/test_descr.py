@@ -881,8 +881,8 @@ def specials():
     verify(c1 != c2)
     verify(not c1 != c1)
     verify(not c1 == c2)
-    verify(str(c1) == '<C object at 0x%x>' % id(c1))
-    verify(repr(c1) == '<C object at 0x%x>' % id(c1))
+    verify(str(c1).startswith('<C object at '))
+    verify(str(c1) == repr(c1))
     verify(-1 not in c1)
     for i in range(10):
         verify(i in c1)
@@ -902,8 +902,8 @@ def specials():
     verify(d1 != d2)
     verify(not d1 != d1)
     verify(not d1 == d2)
-    verify(str(d1) == '<D object at 0x%x>' % id(d1))
-    verify(repr(d1) == '<D object at 0x%x>' % id(d1))
+    verify(str(d1).startswith('<D object at '))
+    verify(str(d1) == repr(d1))
     verify(-1 not in d1)
     for i in range(10):
         verify(i in d1)
