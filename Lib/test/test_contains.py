@@ -140,13 +140,13 @@ class Deviant1:
 	works when the list is modified during the check.
 	"""
 
-	aLongList = range(15)
-	aShortList = range(5)
-	aList = aLongList
+	aList = range(15)
 	
 	def __cmp__(self, other):
 		if other == 12:
-			self.aList = self.aShortList
+			self.aList.remove(12)
+			self.aList.remove(13)
+			self.aList.remove(14)
 		return 1
 
 check(Deviant1() not in Deviant1.aList, "Deviant1 failed")
