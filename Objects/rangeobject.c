@@ -47,6 +47,76 @@ PyRange_New(long start, long len, long step, int reps)
 	return (PyObject *) obj;
 }
 
+/* Return number of items in range/xrange (lo, hi, step).  step > 0
+ * required.  Return a value < 0 if & only if the true value is too
+ * large to fit in a signed long.
+ */
+static long
+get_len_of_range(long lo, long hi, long step)
+{
+	/* -------------------------------------------------------------
+	If lo >= hi, the range is empty.
+	Else if n values are in the range, the last one is
+	lo + (n-1)*step, which must be <= hi-1.  Rearranging,
+	n <= (hi - lo - 1)/step + 1, so taking the floor of the RHS gives
+	the proper value.  Since lo < hi in this case, hi-lo-1 >= 0, so
+	the RHS is non-negative and so truncation is the same as the
+	floor.  Letting M be the largest positive long, the worst case
+	for the RHS numerator is hi=M, lo=-M-1, and then
+	hi-lo-1 = M-(-M-1)-1 = 2*M.  Therefore unsigned long has enough
+	precision to compute the RHS exactly.
+	---------------------------------------------------------------*/
+	long n = 0;
+	if (lo < hi) {
+		unsigned long uhi = (unsigned long)hi;
+		unsigned long ulo = (unsigned long)lo;
+		unsigned long diff = uhi - ulo - 1;
+		n = (long)(diff / (unsigned long)step + 1);
+	}
+	return n;
+}
+
+static PyObject *
+range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
+{
+	long ilow = 0, ihigh = 0, istep = 1;
+	long n;
+
+	if (PyTuple_Size(args) <= 1) {
+		if (!PyArg_ParseTuple(args,
+				"l;xrange() requires 1-3 int arguments",
+				&ihigh))
+			return NULL;
+	}
+	else {
+		if (!PyArg_ParseTuple(args,
+				"ll|l;xrange() requires 1-3 int arguments",
+				&ilow, &ihigh, &istep))
+			return NULL;
+	}
+	if (istep == 0) {
+		PyErr_SetString(PyExc_ValueError, "xrange() arg 3 must not be zero");
+		return NULL;
+	}
+	if (istep > 0)
+		n = get_len_of_range(ilow, ihigh, istep);
+	else
+		n = get_len_of_range(ihigh, ilow, -istep);
+	if (n < 0) {
+		PyErr_SetString(PyExc_OverflowError,
+				"xrange() result has too many items");
+		return NULL;
+	}
+	return PyRange_New(ilow, n, istep, 1);
+}
+
+static char range_doc[] =
+"xrange([start,] stop[, step]) -> xrange object\n\
+\n\
+Like range(), but instead of returning a list, returns an object that\n\
+generates the numbers in the range on demand.  This is slightly slower\n\
+than range() but more memory efficient.";
+
 static PyObject *
 range_item(rangeobject *r, int i)
 {
@@ -118,12 +188,24 @@ PyTypeObject PyRange_Type = {
 	0,				/* tp_setattro */
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT,		/* tp_flags */
-	0,				/* tp_doc */
+	range_doc,			/* tp_doc */
 	0,				/* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)range_iter,	/* tp_iter */	
+	(getiterfunc)range_iter,	/* tp_iter */
+	0,				/* tp_iternext */
+	0,				/* tp_methods */	
+	0,				/* tp_members */
+	0,				/* tp_getset */
+	0,				/* tp_base */
+	0,				/* tp_dict */
+	0,				/* tp_descr_get */
+	0,				/* tp_descr_set */
+	0,				/* tp_dictoffset */
+	0,				/* tp_init */
+	0,				/* tp_alloc */
+	range_new,			/* tp_new */
 };
 
 /*********************** Xrange Iterator **************************/

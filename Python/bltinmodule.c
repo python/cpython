@@ -1365,48 +1365,6 @@ These are exactly the valid indices for a list of 4 elements.";
 
 
 static PyObject *
-builtin_xrange(PyObject *self, PyObject *args)
-{
-	long ilow = 0, ihigh = 0, istep = 1;
-	long n;
-
-	if (PyTuple_Size(args) <= 1) {
-		if (!PyArg_ParseTuple(args,
-				"l;xrange() requires 1-3 int arguments",
-				&ihigh))
-			return NULL;
-	}
-	else {
-		if (!PyArg_ParseTuple(args,
-				"ll|l;xrange() requires 1-3 int arguments",
-				&ilow, &ihigh, &istep))
-			return NULL;
-	}
-	if (istep == 0) {
-		PyErr_SetString(PyExc_ValueError, "xrange() arg 3 must not be zero");
-		return NULL;
-	}
-	if (istep > 0)
-		n = get_len_of_range(ilow, ihigh, istep);
-	else
-		n = get_len_of_range(ihigh, ilow, -istep);
-	if (n < 0) {
-		PyErr_SetString(PyExc_OverflowError,
-				"xrange() result has too many items");
-		return NULL;
-	}
-	return PyRange_New(ilow, n, istep, 1);
-}
-
-static char xrange_doc[] =
-"xrange([start,] stop[, step]) -> xrange object\n\
-\n\
-Like range(), but instead of returning a list, returns an object that\n\
-generates the numbers in the range on demand.  This is slightly slower\n\
-than range() but more memory efficient.";
-
-
-static PyObject *
 builtin_raw_input(PyObject *self, PyObject *args)
 {
 	PyObject *v = NULL;
@@ -1860,7 +1818,6 @@ static PyMethodDef builtin_methods[] = {
  	{"unichr",	builtin_unichr,     METH_VARARGS, unichr_doc},
 #endif
  	{"vars",	builtin_vars,       METH_VARARGS, vars_doc},
- 	{"xrange",	builtin_xrange,     METH_VARARGS, xrange_doc},
   	{"zip",         builtin_zip,        METH_VARARGS, zip_doc},
 	{NULL,		NULL},
 };
@@ -1909,6 +1866,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("super",		&PySuper_Type);
 	SETBUILTIN("tuple",		&PyTuple_Type);
 	SETBUILTIN("type",		&PyType_Type);
+	SETBUILTIN("xrange",		&PyRange_Type);
 
 	/* Note that open() is just an alias of file(). */
 	SETBUILTIN("open",		&PyFile_Type);
