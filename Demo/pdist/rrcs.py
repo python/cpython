@@ -13,7 +13,7 @@ from rcsclient import openrcsclient
 def main():
 	sys.stdout = sys.stderr
 	try:
-		opts, rest = getopt.getopt(sys.argv[1:], 'h:p:d:qv')
+		opts, rest = getopt.getopt(sys.argv[1:], 'h:p:d:qvL')
 		if not rest:
 			cmd = 'head'
 		else:
