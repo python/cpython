@@ -10,6 +10,950 @@ here, I'm grateful to many more people who remain unnamed.  You may
 find your name in the ACKS file.  If you believe you deserve more
 credit, let me know and I'll add you to the list!
 
+(In the sake of steramlining the release process, I'm now using output
+from rcs2log.  This gives complete disclosure but is more verbose and
+requires more effort to read.  Let me know if this is acceptable.
+--Guido.)
+
+
+======================================================================
+
+From 1.5.2b2 to 1.5.2c1
+=======================
+
+Thu Apr  8 17:23:11 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/test/test_strftime.py:
+	On Windows, we suddenly find, strftime() may return "" for an
+	unsupported format string.  (I guess this is because the logic for
+	deciding whether to reallocate the buffer or not has been improved.)
+	This caused the test code to crash on result[0].  Fix this by assuming
+	an empty result also means the format is not supported.
+
+	* Demo/tkinter/matt/window-creation-w-location.py:
+	This demo imported some private code from Matt.  Make it cripple along.
+
+	* Lib/lib-tk/Tkinter.py:
+	Delete an accidentally checked-in feature that actually broke more
+	than was worth it: when deleting a canvas item, it would try to
+	automatically delete the bindings for that item.  Since there's
+	nothing that says you can't reuse the tag and still have the bindings,
+	this is not correct.  Also, it broke at least one demo
+	(Demo/tkinter/matt/rubber-band-box-demo-1.py).
+
+	* Python/thread_wince.h: Win/CE thread support by Mark Hammond.
+
+Wed Apr  7 20:23:17 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Modules/zlibmodule.c:
+	Patch by Andrew Kuchling to unflush() (flush() for deflating).
+	Without this, if inflate() returned Z_BUF_ERROR asking for more output
+	space, we would report the error; now, we increase the buffer size and
+	try again, just as for Z_OK.
+
+	* Lib/test/test_gzip.py: Use binary mode for all gzip files we open.
+
+	* Tools/idle/ChangeLog: New change log.
+
+	* Tools/idle/README.txt, Tools/idle/NEWS.txt: New version.
+
+	* Python/pythonrun.c:
+	Alas, get rid of the Win specific hack to ask the user to press Return
+	before exiting when an error happened.  This didn't work right when
+	Python is invoked from a daemon.
+
+	* Tools/idle/idlever.py: Version bump awaiting impending new release.
+	(Not much has changed :-( )
+
+	* Lib/lib-tk/Tkinter.py:
+	lower, tkraise/lift hide Misc.lower, Misc.tkraise/lift,
+	so the preferred name for them is tag_lower, tag_raise
+	(similar to tag_bind, and similar to the Text widget);
+	unfortunately can't delete the old ones yet (maybe in 1.6)
+
+	* Python/thread.c, Python/strtod.c, Python/mystrtoul.c, Python/import.c, Python/ceval.c:
+	Changes by Mark Hammond for Windows CE.  Mostly of the form
+	  #ifdef DONT_HAVE_header_H ... #endif around #include <header.h>.
+
+	* Python/bltinmodule.c:
+	Remove unused variable from complex_from_string() code.
+
+	* Include/patchlevel.h:
+	Add the possibility of a gamma release (release candidate).
+	Add '+' to string version number to indicate we're beyond b2 now.
+
+	* Modules/posixmodule.c: Add extern decl for fsync() for SunOS 4.x.
+
+	* Lib/smtplib.py: Changes by Per Cederquist and The Dragon.
+
+	Per writes:
+
+	"""
+	The application where Signum Support uses smtplib needs to be able to
+	report good error messages to the user when sending email fails.  To
+	help in diagnosing problems it is useful to be able to report the
+	entire message sent by the server, not only the SMTP error code of the
+	offending command.
+
+	A lot of the functions in sendmail.py unfortunately discards the
+	message, leaving only the code.  The enclosed patch fixes that
+	problem.
+
+	The enclosed patch also introduces a base class for exceptions that
+	include an SMTP error code and error message, and make the code and
+	message available on separate attributes, so that surrounding code can
+	deal with them in whatever way it sees fit.  I've also added some
+	documentation to the exception classes.
+
+	The constructor will now raise an exception if it cannot connect to
+	the SMTP server.
+
+	The data() method will raise an SMTPDataError if it doesn't receive
+	the expected 354 code in the middle of the exchange.
+
+	According to section 5.2.10 of RFC 1123 a smtp client must accept "any
+	text, including no text at all" after the error code.  If the response
+	of a HELO command contains no text self.helo_resp will be set to the
+	empty string ("").  The patch fixes the test in the sendmail() method
+	so that helo_resp is tested against None; if it has the empty string
+	as value the sendmail() method would invoke the helo() method again.
+
+	The code no longer accepts a -1 reply from the ehlo() method in
+	sendmail().
+
+	[Text about removing SMTPRecipientsRefused deleted --GvR]
+	"""
+
+	and also:
+
+	"""
+	smtplib.py appends an extra blank line to the outgoing mail if the
+	`msg' argument to the sendmail method already contains a trailing
+	newline.  This patch should fix the problem.
+	"""
+
+	The Dragon writes:
+
+	"""
+		Mostly I just re-added the SMTPRecipientsRefused exception
+	(the exeption object now has the appropriate info in it ) [Per had
+	removed this in his patch --GvR] and tweaked the behavior of the
+	sendmail method whence it throws the newly added SMTPHeloException (it
+	was closing the connection, which it shouldn't.  whatever catches the
+	exception should do that. )
+
+		I pondered the change of the return values to tuples all around,
+	and after some thinking I decided that regularizing the return values was
+	too much of the Right Thing (tm) to not do.
+
+		My one concern is that code expecting an integer & getting a tuple
+	may fail silently.
+
+	(i.e. if it's doing :
+
+	      x.somemethod() >= 400:
+	expecting an integer, the expression will always be true if it gets a
+	tuple instead. )
+
+		However, most smtplib code I've seen only really uses the
+	sendmail() method, so this wouldn't bother it.  Usually code I've seen
+	that calls the other methods usually only calls helo() and ehlo() for
+	doing ESMTP, a feature which was not in the smtplib included with 1.5.1,
+	and thus I would think not much code uses it yet.
+	"""
+
+Tue Apr  6 19:38:18 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/test/test_ntpath.py:
+	Fix the tests now that splitdrive() no longer treats UNC paths special.
+	(Some tests converted to splitunc() tests.)
+
+	* Lib/ntpath.py:
+	Withdraw the UNC support from splitdrive().  Instead, a new function
+	splitunc() parses UNC paths.  The contributor of the UNC parsing in
+	splitdrive() doesn't like it, but I haven't heard a good reason to
+	keep it, and it causes some problems.  (I think there's a
+	philosophical problem -- to me, the split*() functions are purely
+	syntactical, and the fact that \\foo is not a valid path doesn't mean
+	that it shouldn't be considered an absolute path.)
+
+	Also (quite separately, but strangely related to the philosophical
+	issue above) fix abspath() so that if win32api exists, it doesn't fail
+	when the path doesn't actually exist -- if GetFullPathName() fails,
+	fall back on the old strategy (join with getcwd() if neccessary, and
+	then use normpath()).
+
+	* configure.in, configure, config.h.in, acconfig.h:
+	For BeOS PowerPC.  Chris Herborth.
+
+Mon Apr  5 21:54:14 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Modules/timemodule.c:
+	Jonathan Giddy notes, and Chris Lawrence agrees, that some comments on
+	#else/#endif are wrong, and that #if HAVE_TM_ZONE should be #ifdef.
+
+	* Misc/ACKS:
+	Bunch of new contributors, including 9 who contributed to the Docs,
+	reported by Fred.
+
+Mon Apr  5 18:37:59 1999  Fred Drake  <fdrake@eric.cnri.reston.va.us>
+
+	* Lib/gzip.py:
+	Oops, missed mode parameter to open().
+
+	* Lib/gzip.py:
+	Made the default mode 'rb' instead of 'r', for better cross-platform
+	support.  (Based on comment on the documentation by Bernhard Reiter
+	<bernhard@csd.uwm.edu>).
+
+Fri Apr  2 22:18:25 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Tools/scripts/dutree.py:
+	For reasons I dare not explain, this script should always execute
+	main() when imported (in other words, it is not usable as a module).
+
+Thu Apr  1 15:32:30 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/test/test_cpickle.py: Jonathan Giddy write:
+
+	In test_cpickle.py, the module os got imported, but the line to remove
+	the temp file has gone missing.
+
+Tue Mar 30 20:17:31 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/BaseHTTPServer.py: Per Cederqvist writes:
+
+	If you send something like "PUT / HTTP/1.0" to something derived from
+	BaseHTTPServer that doesn't define do_PUT, you will get a response
+	that begins like this:
+
+		HTTP/1.0 501 Unsupported method ('do_PUT')
+		Server: SimpleHTTP/0.3 Python/1.5
+		Date: Tue, 30 Mar 1999 18:53:53 GMT
+
+	The server should complain about 'PUT' instead of 'do_PUT'.  This
+	patch should fix the problem.
+
+Mon Mar 29 20:33:21 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/smtplib.py: Patch by Per Cederqvist, who writes:
+
+	"""
+	 - It needlessly used the makefile() method for each response that is
+	   read from the SMTP server.
+
+	 - If the remote SMTP server closes the connection unexpectedly the
+	   code raised an IndexError.  It now raises an SMTPServerDisconnected
+	   exception instead.
+
+	 - The code now checks that all lines in a multiline response actually
+	   contains an error code.
+	"""
+
+	The Dragon approves.
+
+Mon Mar 29 20:25:40 1999  Fred Drake  <fdrake@eric.cnri.reston.va.us>
+
+	* Lib/compileall.py:
+	When run as a script, report failures in the exit code as well.
+	Patch largely based on changes by Andrew Dalke, as discussed in the
+	distutils-sig.
+
+Mon Mar 29 20:23:41 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/urllib.py:
+	Hack so that if a 302 or 301 redirect contains a relative URL, the
+	right thing "just happens" (basejoin() with old URL).
+
+	* Modules/cPickle.c:
+	Protection against picling to/from closed (real) file.
+	The problem was reported by Moshe Zadka.
+
+	* Lib/test/test_cpickle.py:
+	Test protection against picling to/from closed (real) file.
+
+	* Modules/timemodule.c: Chris Lawrence writes:
+
+	"""
+	The GNU folks, in their infinite wisdom, have decided not to implement
+	altzone in libc6; this would not be horrible, except that timezone
+	(which is implemented) includes the current DST setting (i.e. timezone
+	for Central is 18000 in summer and 21600 in winter).  So Python's
+	timezone and altzone variables aren't set correctly during DST.
+
+	Here's a patch relative to 1.5.2b2 that (a) makes timezone and altzone
+	show the "right" thing on Linux (by using the tm_gmtoff stuff
+	available in BSD, which is how the GLIBC manual claims things should
+	be done) and (b) should cope with the southern hemisphere.  In pursuit
+	of (b), I also took the liberty of renaming the "summer" and "winter"
+	variables to "july" and "jan".  This patch should also make certain
+	time calculations on Linux actually work right (like the tz-aware
+	functions in the rfc822 module).
+
+	(It's hard to find DST that's currently being used in the southern
+	hemisphere; I tested using Africa/Windhoek.)
+	"""
+
+	* Lib/test/output/test_gzip:
+	Jonathan Giddy discovered this file was missing.
+
+	* Modules/shamodule.c:
+	Avoid warnings from AIX compiler.  Reported by Vladimir (AIX is my
+	middlename) Marangozov, patch coded by Greg Stein.
+
+	* Tools/idle/ScriptBinding.py, Tools/idle/PyShell.py:
+	At Tim Peters' recommendation, add a dummy flush() method to PseudoFile.
+
+Sun Mar 28 17:55:32 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Tools/scripts/ndiff.py: Tim Peters writes:
+
+	I should have waited overnight <wink/sigh>.  Nothing wrong with the one I
+	sent, but I couldn't resist going on to add new -r1 / -r2 cmdline options
+	for recreating the original files from ndiff's output.  That's attached, if
+	you're game!  Us Windows guys don't usually have a sed sitting around
+	<wink>.
+
+Sat Mar 27 13:34:01 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Tools/scripts/ndiff.py: Tim Peters writes:
+
+	Attached is a cleaned-up version of ndiff (added useful module
+	docstring, now echo'ed in case of cmd line mistake); added -q option
+	to suppress initial file identification lines; + other minor cleanups,
+	& a slightly faster match engine.
+
+Fri Mar 26 22:36:00 1999  Fred Drake  <fdrake@eric.cnri.reston.va.us>
+
+	* Tools/scripts/dutree.py:
+	During display, if EPIPE is raised, it's probably because a pager was
+	killed.  Discard the error in that case, but propogate it otherwise.
+
+Fri Mar 26 16:20:45 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/test/output/test_userlist, Lib/test/test_userlist.py:
+	Test suite for UserList.
+
+	* Lib/UserList.py: Use isinstance() where appropriate.
+	Reformatted with 4-space indent.
+
+Fri Mar 26 16:11:40 1999  Barry Warsaw  <bwarsaw@eric.cnri.reston.va.us>
+
+	* Tools/pynche/PyncheWidget.py:
+	Helpwin.__init__(): The text widget should get focus.
+
+	* Tools/pynche/pyColorChooser.py:
+	Removed unnecessary import `from PyncheWidget import PyncheWidget'
+
+Fri Mar 26 15:32:05 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/test/output/test_userdict, Lib/test/test_userdict.py:
+	Test suite for UserDict
+
+	* Lib/UserDict.py: Improved a bunch of things.
+	The constructor now takes an optional dictionary.
+	Use isinstance() where appropriate.
+
+Thu Mar 25 22:38:49 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/test/output/test_pickle, Lib/test/output/test_cpickle, Lib/test/test_pickle.py, Lib/test/test_cpickle.py:
+	Basic regr tests for pickle/cPickle
+
+	* Lib/pickle.py:
+	Don't use "exec" in find_class().  It's slow, unnecessary, and (as AMK
+	points out) it doesn't work in JPython Applets.
+
+Thu Mar 25 21:50:27 1999  Andrew Kuchling  <akuchlin@eric.cnri.reston.va.us>
+
+	* Lib/test/test_gzip.py:
+	Added a simple test suite for gzip.  It simply opens a temp file,
+	writes a chunk of compressed data, closes it, writes another chunk, and
+	reads the contents back to verify that they are the same.
+
+	* Lib/gzip.py:
+	Based on a suggestion from bruce@hams.com, make a trivial change to
+	allow using the 'a' flag as a mode for opening a GzipFile.  gzip
+	files, surprisingly enough, can be concatenated and then decompressed;
+	the effect is to concatenate the two chunks of data.
+
+	If we support it on writing, it should also be supported on reading.
+	This *wasn't* trivial, and required rearranging the code in the
+	reading path, particularly the _read() method.
+
+	Raise IOError instead of RuntimeError in two cases, 'Not a gzipped file'
+	and 'Unknown compression method'
+
+Thu Mar 25 21:25:01 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/test/test_b1.py:
+	Add tests for float() and complex() with string args (Nick/Stephanie
+	Lockwood).
+
+Thu Mar 25 21:21:08 1999  Andrew Kuchling  <akuchlin@eric.cnri.reston.va.us>
+
+	* Modules/zlibmodule.c:
+	Add an .unused_data attribute to decompressor objects.  If .unused_data
+	is not an empty string, this means that you have arrived at the
+	end of the stream of compressed data, and the contents of .unused_data are
+	whatever follows the compressed stream.
+
+Thu Mar 25 21:16:07 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Python/bltinmodule.c:
+	Patch by Nick and Stephanie Lockwood to implement complex() with a string
+	argument.  This closes TODO item 2.19.
+
+Wed Mar 24 19:09:00 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Tools/webchecker/wcnew.py: Added Samuel Bayer's new webchecker.
+	Unfortunately his code breaks wcgui.py in a way that's not easy
+	to fix.  I expect that this is a temporary situation --
+	eventually Sam's changes will be merged back in.
+	(The changes add a -t option to specify exceptions to the -x
+	option, and explicit checking for #foo style fragment ids.)
+
+	* Objects/dictobject.c:
+	Vladimir Marangozov contributed updated comments.
+
+	* Objects/bufferobject.c: Folded long lines.
+
+	* Lib/test/output/test_sha, Lib/test/test_sha.py:
+	Added Jeremy's test code for the sha module.
+
+	* Modules/shamodule.c, Modules/Setup.in:
+	Added Greg Stein and Andrew Kuchling's sha module.
+	Fix comments about zlib version and URL.
+
+	* Lib/test/test_bsddb.py: Remove the temp file when we're done.
+
+	* Include/pythread.h: Conform to standard boilerplate.
+
+	* configure.in, configure, BeOS/linkmodule, BeOS/ar-fake:
+	Chris Herborth: the new compiler in R4.1 needs some new options to work...
+
+	* Modules/socketmodule.c:
+	Implement two suggestions by Jonathan Giddy: (1) in AIX, clear the
+	data struct before calling gethostby{name,addr}_r(); (2) ignore the
+	3/5/6 args determinations made by the configure script and switch on
+	platform identifiers instead:
+
+	AIX, OSF have 3 args
+	Sun, SGI have 5 args
+	Linux has 6 args
+
+	On all other platforms, undef HAVE_GETHOSTBYNAME_R altogether.
+
+	* Modules/socketmodule.c:
+	Vladimir Marangozov implements the AIX 3-arg gethostbyname_r code.
+
+	* Lib/mailbox.py:
+	Add readlines() to _Subfile class.  Not clear who would need it, but
+	Chris Lawrence sent me a broken version; this one is a tad simpler and
+	more conforming to the standard.
+
+Tue Mar 23 23:05:34 1999  Jeremy Hylton  <jhylton@eric.cnri.reston.va.us>
+
+	* Lib/gzip.py: use struct instead of bit-manipulate in Python
+
+Tue Mar 23 19:00:55 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Modules/Makefile.pre.in:
+	Add $(EXE) to various occurrences of python so it will work on Cygwin
+	with egcs (after setting EXE=.exe).  Patch by Norman Vine.
+
+	* configure, configure.in:
+	Ack!  It never defined HAVE_GETHOSTBYNAME_R so that code was never tested!
+
+Mon Mar 22 22:25:39 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Include/thread.h:
+	Adding thread.h -- unused but for b/w compatibility.
+	As requested by Bill Janssen.
+
+	* configure.in, configure:
+	Add code to test for all sorts of gethostbyname_r variants,
+	donated by David Arnold.
+
+	* config.h.in, acconfig.h:
+	Add symbols for gethostbyname_r variants (sigh).
+
+	* Modules/socketmodule.c: Clean up pass for the previous patches.
+
+	- Use HAVE_GETHOSTBYNAME_R_6_ARG instead of testing for Linux and
+	glibc2.
+
+	- If gethostbyname takes 3 args, undefine HAVE_GETHOSTBYNAME_R --
+	don't know what code should be used.
+
+	- New symbol USE_GETHOSTBYNAME_LOCK defined iff the lock should be used.
+
+	- Modify the gethostbyaddr() code to also hold on to the lock until
+	after it is safe to release, overlapping with the Python lock.
+
+	(Note: I think that it could in theory be possible that Python code
+	executed while gethostbyname_lock is held could attempt to reacquire
+	the lock -- e.g. in a signal handler or destructor.  I will simply say
+	"don't do that then.")
+
+	* Modules/socketmodule.c: Jonathan Giddy writes:
+
+	Here's a patch to fix the race condition, which wasn't fixed by Rob's
+	patch.  It holds the gethostbyname lock until the results are copied out,
+	which means that this lock and the Python global lock are held at the same
+	time.  This shouldn't be a problem as long as the gethostbyname lock is
+	always acquired when the global lock is not held.
+
+Mon Mar 22 19:25:30 1999  Andrew Kuchling  <akuchlin@eric.cnri.reston.va.us>
+
+	* Modules/zlibmodule.c:
+	Fixed the flush() method of compression objects; the test for
+	    the end of loop was incorrect, and failed when the flushmode != Z_FINISH.
+	    Logic cleaned up and commented.
+
+	* Lib/test/test_zlib.py:
+	Added simple test for the flush() method of compression objects, trying the
+	    different flush values Z_NO_FLUSH, Z_SYNC_FLUSH, Z_FULL_FLUSH.
+
+Mon Mar 22 15:28:08 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/shlex.py:
+	Bug reported by Tobias Thelen: missing "self." in assignment target.
+
+Fri Mar 19 21:50:11 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Modules/arraymodule.c:
+	Use an unsigned cast to avoid a warning in VC++.
+
+	* Lib/dospath.py, Lib/ntpath.py:
+	New code for split() by Tim Peters, behaves more like posixpath.split().
+
+	* Objects/floatobject.c:
+	Fix a problem with Vladimir's PyFloat_Fini code: clear the free list; if
+	a block cannot be freed, add its free items back to the free list.
+	This is necessary to avoid leaking when Python is reinitialized later.
+
+	* Objects/intobject.c:
+	Fix a problem with Vladimir's PyInt_Fini code: clear the free list; if
+	a block cannot be freed, add its free items back to the free list, and
+	add its valid ints back to the small_ints array if they are in range.
+	This is necessary to avoid leaking when Python is reinitialized later.
+
+	* Lib/types.py:
+	Added BufferType, the type returned by the new builtin buffer().  Greg Stein.
+
+	* Python/bltinmodule.c:
+	New builtin buffer() creates a derived read-only buffer from any
+	object that supports the buffer interface (e.g. strings, arrays).
+
+	* Objects/bufferobject.c:
+	Added check for negative offset for PyBuffer_FromObject and check for
+	negative size for PyBuffer_FromMemory.  Greg Stein.
+
+Thu Mar 18 15:10:44 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/urlparse.py: Sjoerd Mullender writes:
+
+	If a filename on Windows starts with \\, it is converted to a URL
+	which starts with ////.  If this URL is passed to urlparse.urlparse
+	you get a path that starts with // (and an empty netloc).  If you pass
+	the result back to urlparse.urlunparse, you get a URL that starts with
+	//, which is parsed differently by urlparse.urlparse.  The fix is to
+	add the (empty) netloc with accompanying slashes if the path in
+	urlunparse starts with //.  Do this for all schemes that use a netloc.
+
+	* Lib/nturl2path.py: Sjoerd Mullender writes:
+
+	Pathnames of files on other hosts in the same domain
+	(\\host\path\to\file) are not translated correctly to URLs and back.
+	The URL should be something like file:////host/path/to/file.
+	Note that a combination of drive letter and remote host is not
+	possible.
+
+Wed Mar 17 22:30:10 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/urlparse.py:
+	Delete non-standard-conforming code in urljoin() that would use the
+	netloc from the base url as the default netloc for the resulting url
+	even if the schemes differ.
+
+	Once upon a time, when the web was wild, this was a valuable hack
+	because some people had a URL referencing an ftp server colocated with
+	an http server without having the host in the ftp URL (so they could
+	replicate it or change the hostname easily).
+
+	More recently, after the file: scheme got added back to the list of
+	schemes that accept a netloc, it turns out that this caused weirdness
+	when joining an http: URL with a file: URL -- the resulting file: URL
+	would always inherit the host from the http: URL because the file:
+	scheme supports a netloc but in practice never has one.
+
+	There are two reasons to get rid of the old, once-valuable hack,
+	instead of removing the file: scheme from the uses_netloc list.  One,
+	the RFC says that file: uses the netloc syntax, and does not endorse
+	the old hack.  Two, neither netscape 4.5 nor IE 4.0 support the old
+	hack.
+
+	* Include/ceval.h, Include/abstract.h:
+	Add DLL level b/w compat for PySequence_In and PyEval_CallObject
+
+Tue Mar 16 21:54:50 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/lib-tk/Tkinter.py: Bug reported by Jim Robinson:
+
+	An attempt to execute grid_slaves with arguments (0,0) results in
+	*all* of the slaves being returned, not just the slave associated with
+	row 0, column 0.  This is because the test for arguments in the method
+	does not test to see if row (and column) does not equal None, but
+	rather just whether is evaluates to non-false.  A value of 0 fails
+	this test.
+
+Tue Mar 16 14:17:48 1999  Fred Drake  <fdrake@eric.cnri.reston.va.us>
+
+	* Modules/cmathmodule.c:
+	Docstring fix:  acosh() returns the hyperbolic arccosine, not the
+	hyperbolic cosine.  Problem report via David Ascher by one of his
+	students.
+
+Mon Mar 15 21:40:59 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* configure.in:
+	Should test for gethost*by*name_r, not for gethostname_r (which
+	doesn't exist and doesn't make sense).
+
+	* Modules/socketmodule.c:
+	Patch by Rob Riggs for Linux -- glibc2 has a different argument
+	converntion for gethostbyname_r() etc. than Solaris!
+
+	* Python/thread_pthread.h: Rob Riggs wrote:
+
+	"""
+	Spec says that on success pthread_create returns 0. It does not say
+	that an error code will be < 0. Linux glibc2 pthread_create() returns
+	ENOMEM (12) when one exceed process limits. (It looks like it should
+	return EAGAIN, but that's another story.)
+
+	For reference, see:
+	http://www.opengroup.org/onlinepubs/7908799/xsh/pthread_create.html
+	"""
+
+	[I have a feeling that similar bugs were fixed before; perhaps someone
+	could check that all error checks no check for != 0?]
+
+	* Tools/bgen/bgen/bgenObjectDefinition.py:
+	New mixin class that defines cmp and hash that use
+	the ob_itself pointer.  This allows (when using the mixin)
+	different Python objects pointing to the same C object and
+	behaving well as dictionary keys.
+
+	Or so sez Jack Jansen...
+
+	* Lib/urllib.py: Yet another patch by Sjoerd Mullender:
+
+	Don't convert URLs to URLs using pathname2url.
+
+Fri Mar 12 22:15:43 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/cmd.py: Patch by Michael Scharf.  He writes:
+
+	    The module cmd requires for each do_xxx command a help_xxx
+	    function. I think this is a little old fashioned.
+
+	    Here is a patch: use the docstring as help if no help_xxx
+	    function can be found.
+
+	[I'm tempted to rip out all the help_* functions from pdb, but I'll
+	resist it.  Any takers?  --Guido]
+
+	* Tools/freeze/freeze.py: Bug submitted by Wayne Knowles, who writes:
+
+	   Under Windows, python freeze.py -o hello hello.py
+	   creates all the correct files in the hello subdirectory, but the
+	   Makefile has the directory prefix in it for frozen_extensions.c
+	   nmake fails because it tries to locate hello/frozen_extensions.c
+
+	(His fix adds a call to os.path.basename() in the appropriate place.)
+
+	* Objects/floatobject.c, Objects/intobject.c:
+	Vladimir has restructured his code somewhat so that the blocks are now
+	represented by an explicit structure.  (There are still too many casts
+	in the code, but that may be unavoidable.)
+
+	Also added code so that with -vv it is very chatty about what it does.
+
+	* Demo/zlib/zlibdemo.py, Demo/zlib/minigzip.py:
+	Change #! line to modern usage; also chmod +x
+
+	* Demo/pdist/rrcs, Demo/pdist/rcvs, Demo/pdist/rcsbump:
+	Change #! line to modern usage
+
+	* Lib/nturl2path.py, Lib/urllib.py: From: Sjoerd Mullender
+
+	The filename to URL conversion didn't properly quote special
+	characters.
+	The URL to filename didn't properly unquote special chatacters.
+
+	* Objects/floatobject.c:
+	OK, try again.  Vladimir gave me a fix for the alignment bus error,
+	so here's his patch again.  This time it works (at least on Solaris,
+	Linux and Irix).
+
+Thu Mar 11 23:21:23 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Tools/idle/PathBrowser.py:
+	Don't crash when sys.path contains an empty string.
+
+	* Tools/idle/PathBrowser.py:
+	- Don't crash in the case where a superclass is a string instead of a
+	pyclbr.Class object; this can happen when the superclass is
+	unrecognizable (to pyclbr), e.g. when module renaming is used.
+
+	- Show a watch cursor when calling pyclbr (since it may take a while
+	recursively parsing imported modules!).
+
+Thu Mar 11 16:04:04 1999  Fred Drake  <fdrake@eric.cnri.reston.va.us>
+
+	* Lib/mimetypes.py:
+	Added .rdf and .xsl as application/xml types.  (.rdf is for the
+	Resource Description Framework, a metadata encoding, and .xsl is for
+	the Extensible Stylesheet Language.)
+
+Thu Mar 11 13:26:23 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/test/output/test_popen2, Lib/test/test_popen2.py:
+	Test for popen2 module, by Chris Tismer.
+
+	* Objects/floatobject.c:
+	Alas, Vladimir's patch caused a bus error (probably double
+	alignment?), and I didn't test it.  Withdrawing it for now.
+
+Wed Mar 10 22:55:47 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Objects/floatobject.c:
+	Patch by Vladimir Marangoz to allow freeing of the allocated blocks of
+	floats on finalization.
+
+	* Objects/intobject.c:
+	Patch by Vladimir Marangoz to allow freeing of the allocated blocks of
+	integers on finalization.
+
+	* Tools/idle/EditorWindow.py, Tools/idle/Bindings.py:
+	Add PathBrowser to File module
+
+	* Tools/idle/PathBrowser.py:
+	"Path browser" - 4 scrolled lists displaying:
+	    directories on sys.path
+	    modules in selected directory
+	    classes in selected module
+	    methods of selected class
+
+	Sinlge clicking in a directory, module or class item updates the next
+	column with info about the selected item.  Double clicking in a
+	module, class or method item opens the file (and selects the clicked
+	item if it is a class or method).
+
+	I guess eventually I should be using a tree widget for this, but the
+	ones I've seen don't work well enough, so for now I use the old
+	Smalltalk or NeXT style multi-column hierarchical browser.
+
+	* Tools/idle/MultiScrolledLists.py:
+	New utility: multiple scrolled lists in parallel
+
+	* Tools/idle/ScrolledList.py: - White background.
+	- Display "(None)" (or text of your choosing) when empty.
+	- Don't set the focus.
+
+Tue Mar  9 19:31:21 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/urllib.py:
+	open_http also had the 'data is None' test backwards.  don't call with the
+	extra argument if data is None.
+
+	* Demo/embed/demo.c:
+	Call Py_SetProgramName() instead of redefining getprogramname(),
+	reflecting changes in the runtime around 1.5 or earlier.
+
+	* Python/ceval.c:
+	Always test for an error return (usually NULL or -1) without setting
+	an exception.
+
+	* Modules/timemodule.c: Patch by Chris Herborth for BeOS code.
+	He writes:
+
+	I had an off-by-1000 error in floatsleep(),
+	and the problem with time.clock() is that it's not implemented properly
+	on QNX... ANSI says it's supposed to return _CPU_ time used by the
+	process, but on QNX it returns the amount of real time used... so I was
+	confused.
+
+	* Tools/bgen/bgen/macsupport.py: Small change by Jack Jansen.
+	Test for self.returntype behaving like OSErr rather than being it.
+
+Thu Feb 25 16:14:58 1999  Jeremy Hylton  <jhylton@eric.cnri.reston.va.us>
+
+	* Lib/urllib.py:
+	http_error had the 'data is None' test backwards.  don't call with the
+	extra argument if data is None.
+
+	* Lib/urllib.py: change indentation from 8 spaces to 4 spaces
+
+	* Lib/urllib.py: pleasing the tabnanny
+
+Thu Feb 25 14:26:02 1999  Fred Drake  <fdrake@eric.cnri.reston.va.us>
+
+	* Lib/colorsys.py:
+	Oops, one more "x, y, z" to convert...
+
+	* Lib/colorsys.py:
+	Adjusted comment at the top to be less confusing, following Fredrik
+	Lundh's example.
+
+	Converted comment to docstring.
+
+Wed Feb 24 18:49:15 1999  Fred Drake  <fdrake@eric.cnri.reston.va.us>
+
+	* Lib/toaiff.py:
+	Use sndhdr instead of the obsolete whatsound module.
+
+Wed Feb 24 18:42:38 1999  Jeremy Hylton  <jhylton@eric.cnri.reston.va.us>
+
+	* Lib/urllib.py:
+	When performing a POST request, i.e. when the second argument to
+	urlopen is used to specify form data, make sure the second argument is
+	threaded through all of the http_error_NNN calls.  This allows error
+	handlers like the redirect and authorization handlers to properly
+	re-start the connection.
+
+Wed Feb 24 16:25:17 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/mhlib.py: Patch by Lars Wirzenius:
+
+		o the initial comment is wrong: creating messages is already
+		  implemented
+
+		o Message.getbodytext: if the mail or it's part contains an
+		  empty content-transfer-encoding header, the code used to
+		  break; the change below treats an empty encoding value the same
+		  as the other types that do not need decoding
+
+		o SubMessage.getbodytext was missing the decode argument; the
+		  change below adds it; I also made it unconditionally return
+		  the raw text if decoding was not desired, because my own
+		  routines needed that (and it was easier than rewriting my
+		  own routines ;-)
+
+Wed Feb 24 00:35:43 1999  Barry Warsaw  <bwarsaw@eric.cnri.reston.va.us>
+
+	* Python/bltinmodule.c (initerrors):
+	Make sure that the exception tuples ("base-classes" when
+	string-based exceptions are used) reflect the real class hierarchy,
+	i.e. that SystemExit derives from Exception not StandardError.
+
+	* Lib/exceptions.py:
+	Document the correct class hierarchy for SystemExit.  It is not an
+	error and so it derives from Exception and not SystemError.  The
+	docstring was incorrect but the implementation was fine.
+
+Tue Feb 23 23:07:51 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/shutil.py:
+	Add import sys, needed by reference to sys.exc_info() in rmtree().
+	Discovered by Mitch Chapman.
+
+	* config.h.in:
+	Now that we don't have AC_CHECK_LIB(m, pow), the HAVE_LIBM symbol
+	disappears.  It wasn't used anywhere anyway...
+
+	* Modules/arraymodule.c:
+	Carefully check for overflow when allocating the memory for fromfile
+	-- someone tried to pass in sys.maxint and got bitten by the bogus
+	calculations.
+
+	* configure.in:
+	Get rid of AC_CHECK_LIB(m, pow) since this is taken care of later with
+	LIBM (from --with-libm=...); this actually broke the customizability
+	offered by the latter option.  Thanks go to Clay Spence for reporting
+	this.
+
+	* Lib/test/test_dl.py:
+	1. Print the error message (carefully) when a dl.open() fails in verbose mode.
+	2. When no test case worked, raise ImportError instead of failing.
+
+	* Python/bltinmodule.c:
+	Patch by Tim Peters to improve the range checks for range() and
+	xrange(), especially for platforms where int and long are different
+	sizes (so sys.maxint isn't actually the theoretical limit for the
+	length of a list, but the largest C int is -- sys.maxint is the
+	largest Python int, which is actually a C long).
+
+	* Makefile.in:
+	1. Augment the DG/UX rule so it doesn't break the BeOS build.
+	2. Add $(EXE) to various occurrences of python so it will work on
+	   Cygwin with egcs (after setting EXE=.exe).  These patches by
+	   Norman Vine.
+
+	* Lib/posixfile.py:
+	According to Jeffrey Honig, bsd/os 2.0 - 4.0 should be added to the
+	list (of bsd variants that have a different lock structure).
+
+	* Lib/test/test_fcntl.py:
+	According to Jeffrey Honig, bsd/os 4.0 should be added to the list.
+
+	* Modules/timemodule.c:
+	Patch by Tadayoshi Funaba (with some changes) to be smarter about
+	guessing what happened when strftime() returns 0.  Is it buffer
+	overflow or was the result simply 0 bytes long?  (This happens for an
+	empty format string, or when the format string is a single %Z and the
+	timezone is unknown.)  if the buffer is at least 256 times as long as
+	the format, assume the latter.
+
+Mon Feb 22 19:01:42 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/urllib.py:
+	As Des Barry points out, we need to call pathname2url(file) in two
+	calls to addinfourl() in open_file().
+
+	* Modules/Setup.in: Document *static* -- in two places!
+
+	* Modules/timemodule.c:
+	We don't support leap seconds, so the seconds field of a time 9-tuple
+	should be in the range [0-59].  Noted by Tadayoshi Funaba.
+
+	* Modules/stropmodule.c:
+	In atoi(), don't use isxdigit() to test whether the last character
+	converted was a "digit" -- use isalnum().  This test is there only to
+	guard against "+" or "-" being interpreted as a valid int literal.
+	Reported by Takahiro Nakayama.
+
+	* Lib/os.py:
+	As Finn Bock points out, _P_WAIT etc. don't have a leading underscore
+	so they don't need to be treated specially here.
+
+Mon Feb 22 15:38:58 1999  Fred Drake  <fdrake@eric.cnri.reston.va.us>
+
+	* Misc/NEWS:
+	Typo:  "apparentlt" --> "apparently"
+
+Mon Feb 22 15:38:46 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Lib/urlparse.py: Steve Clift pointed out that 'file' allows a netloc.
+
+	* Modules/posixmodule.c:
+	The docstring for ttyname(..) claims a second "mode" argument. The
+	actual code does not allow such an argument.  (Finn Bock.)
+
+	* Lib/lib-old/poly.py:
+	Dang.  Even though this is obsolete code, somebody found a bug, and I
+	fix it.  Oh well.
+
+Thu Feb 18 20:51:50 1999  Fred Drake  <fdrake@eric.cnri.reston.va.us>
+
+	* Lib/pyclbr.py:
+	Bow to font-lock at the end of the docstring, since it throws stuff
+	off.
+
+	Make sure the path paramter to readmodule() is a list before adding it
+	with sys.path, or the addition could fail.
+
 
 ======================================================================
 
