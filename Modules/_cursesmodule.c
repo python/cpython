@@ -2051,7 +2051,7 @@ static PyObject *
 PyCurses_NewWindow(PyObject *self, PyObject *args)
 {
   WINDOW *win;
-  int nlines, ncols, begin_y, begin_x;
+  int nlines, ncols, begin_y=0, begin_x=0;
 
   PyCursesInitialised
 
@@ -2059,19 +2059,18 @@ PyCurses_NewWindow(PyObject *self, PyObject *args)
   case 2:
     if (!PyArg_Parse(args,"(ii);nlines,ncols",&nlines,&ncols))
       return NULL;
-    win = newpad(nlines, ncols);
     break;
   case 4:
     if (!PyArg_Parse(args, "(iiii);nlines,ncols,begin_y,begin_x",
 		   &nlines,&ncols,&begin_y,&begin_x))
       return NULL;
-    win = newwin(nlines,ncols,begin_y,begin_x);
     break;
   default:
     PyErr_SetString(PyExc_TypeError, "newwin requires 2 or 4 arguments");
     return NULL;
   }
 
+  win = newwin(nlines,ncols,begin_y,begin_x);
   if (win == NULL) {
     PyErr_SetString(PyCursesError, catchall_NULL);
     return NULL;
