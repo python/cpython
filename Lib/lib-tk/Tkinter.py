@@ -1191,6 +1191,13 @@ class Misc:
         and pad (how much space to let additionally)."""
         return self._grid_configure('columnconfigure', index, cnf, kw)
     columnconfigure = grid_columnconfigure
+    def grid_location(self, x, y):
+        """Return a tuple of column and row which identify the cell
+        at which the pixel at position X and Y inside the master
+        widget is located."""
+        return self._getints(
+            self.tk.call(
+                'grid', 'location', self._w, x, y)) or None
     def grid_propagate(self, flag=_noarg_):
         """Set or get the status for propagation of geometry information.
 
@@ -1701,14 +1708,7 @@ class Grid:
             dict[key] = value
         return dict
     info = grid_info
-    def grid_location(self, x, y):
-        """Return a tuple of column and row which identify the cell
-        at which the pixel at position X and Y inside the master
-        widget is located."""
-        return self._getints(
-            self.tk.call(
-                'grid', 'location', self._w, x, y)) or None
-    location = grid_location
+    location = grid_location = Misc.grid_location
     propagate = grid_propagate = Misc.grid_propagate
     rowconfigure = grid_rowconfigure = Misc.grid_rowconfigure
     size = grid_size = Misc.grid_size
