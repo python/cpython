@@ -386,6 +386,13 @@ support for features needed by `python-mode'.")
 Currently-active file is at the head of the list.")
 
 (defvar py-pdbtrack-is-tracking-p nil)
+(defvar py-pdbtrack-last-grubbed-buffer nil
+  "Record of the last buffer used when the source path was invalid.
+
+This buffer is consulted before the buffer-list history for satisfying
+`py-pdbtrack-grub-for-buffer', since it's the most often the likely
+prospect as debugging continues.")
+(make-variable-buffer-local 'py-pdbtrack-last-grubbed-buffer)
 (defvar py-pychecker-history nil)
 
 
@@ -1379,24 +1386,29 @@ problem as best as we can determine."
 (defun py-pdbtrack-grub-for-buffer (funcname lineno)
   "Find most recent buffer itself named or having function funcname.
 
-Must have a least int(lineno) lines in it."
+We first check the last buffer this function found, if any, then walk
+throught the buffer-list history for python-mode buffers that are
+named for funcname or define a function funcname."
   (let ((buffers (buffer-list))
-        ;(buffers (list (get-buffer "workflow_do_action.py")))
         curbuf
         got)
+    (if (and py-pdbtrack-last-grubbed-buffer
+             (member py-pdbtrack-last-grubbed-buffer buffers))
+        ; Prefer last grubbed buffer by putting it at the front of the list:
+        (setq buffers (cons py-pdbtrack-last-grubbed-buffer buffers)))
     (while (and buffers (not got))
       (setq buf (car buffers)
             buffers (cdr buffers))
-      (if (or (save-excursion (set-buffer buf)
-                              (string= major-mode "python-mode"))
-              (and (string-match funcname (buffer-name buf))
+      (if (and (save-excursion (set-buffer buf)
+                               (string= major-mode "python-mode"))
+               (or (string-match funcname (buffer-name buf))
                    (string-match (concat "^\\s-*\\(def\\|class\\)\\s-+"
                                          funcname "\\s-*(")
                                  (buffer-substring (point-min buf)
                                                    (point-max buf)
                                                    buf))))
           (setq got buf)))
-    got))
+    (setq py-pdbtrack-last-grubbed-buffer got)))
 
 (defun py-postprocess-output-buffer (buf)
   "Highlight exceptions found in BUF.
