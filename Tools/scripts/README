@@ -15,6 +15,7 @@ copytime.py		Copy one file's atime and mtime to another
 crlf.py			Change CRLF line endings to LF (Windows to Unix)
 cvsfiles.py		Print a list of files that are under CVS
 db2pickle.py		Dump a database file to a pickle
+diff.py			Print file diffs in context, unified, or ndiff formats
 dutree.py		Format du(1) output as a tree sorted by size
 eptags.py		Create Emacs TAGS file for Python modules
 finddiv.py		A grep-like tool that looks for division operators.
