@@ -192,12 +192,14 @@ distribution, to create or maintain whole documents or sections.
 
   The document body follows the preamble.  This contains all the
   printed components of the document marked up structurally.  Generic
-  \LaTeX{} structures include hierarchical sections
+  \LaTeX{} structures include hierarchical sections, numbered and
+  bulleted lists, and special structures for the document abstract and
+  indexes.
 
   \subsection{Syntax}
 
-    There are a things that an author of Python documentation needs to
-    know about \LaTeX{} syntax.
+    There are some things that an author of Python documentation needs
+    to know about \LaTeX{} syntax.
 
     A \dfn{comment} is started by the ``percent'' character
     (\character{\%}) and continues through the end of the line and all
@@ -235,7 +237,7 @@ Still more text.
 {text in a group}
 \end{verbatim}
 
-    An alternate syntax for a group using brackets (\code{[...]}) is
+    An alternate syntax for a group using brackets, \code{[...]}, is
     used by macros and environment constructors which take optional
     parameters; brackets do not normally hold syntactic significance.
     A degenerate group, containing only one atomic bit of content,
@@ -246,7 +248,7 @@ Still more text.
     Groups are used only sparingly in the Python documentation, except
     for their use in marking parameters to macros and environments.
 
-    A \dfn{macro} is usually simple construct which is identified by
+    A \dfn{macro} is usually a simple construct which is identified by
     name and can take some number of parameters.  In normal \LaTeX{}
     usage, one of these can be optional.  The markup is introduced
     using the backslash character (\character{\e}), and the name is
@@ -279,14 +281,14 @@ Still more text.
     A macro name may be followed by a space or newline; a space
     between the macro name and any parameters will be consumed, but
     this usage is not practiced in the Python documentation.  Such a
-    space is still consumed if there are no parameters to the marco,
+    space is still consumed if there are no parameters to the macro,
     in which case inserting an empty group (\code{\{\}}) or explicit
     word space (\samp{\e\ }) immediately after the macro name helps to
     avoid running the expansion of the macro into the following text.
     Macros which take no parameters but which should not be followed
     by a word space do not need special treatment if the following
     character in the document source if not a name character (such as
-    puctuation).
+    punctuation).
 
     Each line of this example shows an appropriate way to write text
     which includes a macro which takes no parameters:
@@ -298,12 +300,12 @@ This \UNIX\ is also followed by a space.
 \end{verbatim}
 
     An \dfn{environment} is a larger construct than a macro, and can
-    be used for things with more content that would conveniently fit
+    be used for things with more content than would conveniently fit
     in a macro parameter.  They are primarily used when formatting
     parameters need to be changed before and after a large chunk of
     content, but the content itself needs to be highly flexible.  Code
     samples are presented using an environment, and descriptions of
-    functions, methods, and classes are also marked using envionments.
+    functions, methods, and classes are also marked using environments.
 
     Since the content of an environment is free-form and can consist
     of several paragraphs, they are actually marked using a pair of
@@ -333,11 +335,11 @@ This \UNIX\ is also followed by a space.
 \end{datadesc}
 \end{verbatim}
 
-    There are a number of less-used marks in \LaTeX{} are used to
-    enter non-\ASCII{} characters, especially those used in European
-    names.  Given that these are often used adjacent to other
+    There are a number of less-used marks in \LaTeX{} which are used
+    to enter non-\ASCII{} characters, especially those used in
+    European names.  Given that these are often used adjacent to other
     characters, the markup required to produce the proper character
-    may need to be followed by a space or an empty group, or the the
+    may need to be followed by a space or an empty group, or the
     markup can be enclosed in a group.  Some which are found in Python
     documentation are:
 
@@ -357,8 +359,9 @@ This \UNIX\ is also followed by a space.
     safely inferred when a section of equal or higher level starts.
 
     There are six ``levels'' of sectioning in the document classes
-    used for Python documentation, and the lowest two levels are not
-    used.  The levels are:
+    used for Python documentation, and the deepest two
+    levels\footnote{The deepest levels have the highest numbers in the
+      table.} are not used.  The levels are:
 
       \begin{tableiii}{c|l|c}{textrm}{Level}{Macro Name}{Notes}
         \lineiii{1}{\macro{chapter}}{(1)}
