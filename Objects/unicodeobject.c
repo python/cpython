@@ -4935,6 +4935,8 @@ unicode_encode(PyUnicodeObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|ss:encode", &encoding, &errors))
         return NULL;
     v = PyUnicode_AsEncodedObject((PyObject *)self, encoding, errors);
+    if (v == NULL)
+        goto onError;
     if (!PyString_Check(v) && !PyUnicode_Check(v)) {
         PyErr_Format(PyExc_TypeError,
                      "encoder did not return a string/unicode object "
@@ -4944,6 +4946,9 @@ unicode_encode(PyUnicodeObject *self, PyObject *args)
         return NULL;
     }
     return v;
+
+ onError:
+    return NULL;
 }
 
 PyDoc_STRVAR(decode__doc__,
@@ -4966,6 +4971,8 @@ unicode_decode(PyStringObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|ss:decode", &encoding, &errors))
         return NULL;
     v = PyUnicode_AsDecodedObject((PyObject *)self, encoding, errors);
+    if (v == NULL)
+        goto onError;
     if (!PyString_Check(v) && !PyUnicode_Check(v)) {
         PyErr_Format(PyExc_TypeError,
                      "decoder did not return a string/unicode object "
@@ -4975,6 +4982,9 @@ unicode_decode(PyStringObject *self, PyObject *args)
         return NULL;
     }
     return v;
+
+ onError:
+    return NULL;
 }
 
 PyDoc_STRVAR(expandtabs__doc__,
