@@ -5298,6 +5298,9 @@ static PyBufferProcs unicode_as_buffer = {
     (getcharbufferproc) unicode_buffer_getcharbuf,
 };
 
+staticforward PyObject *
+unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+
 static PyObject *
 unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -5306,13 +5309,40 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	char *encoding = NULL;
 	char *errors = NULL;
 
-	assert(type == &PyUnicode_Type);
+	if (type != &PyUnicode_Type)
+		return unicode_subtype_new(type, args, kwds);
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oss:unicode",
 					  kwlist, &x, &encoding, &errors))
 	    return NULL;
 	if (x == NULL)
 		return (PyObject *)_PyUnicode_New(0);
 	return PyUnicode_FromEncodedObject(x, encoding, errors);
+}
+
+static PyObject *
+unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyUnicodeObject *tmp, *new;
+	int n;
+
+	assert(PyType_IsSubtype(type, &PyUnicode_Type));
+	tmp = (PyUnicodeObject *)unicode_new(&PyUnicode_Type, args, kwds);
+	if (tmp == NULL)
+		return NULL;
+	assert(PyUnicode_Check(tmp));
+	new = (PyUnicodeObject *) type->tp_alloc(type, n = tmp->length);
+	if (new == NULL)
+		return NULL;
+	new->str = PyMem_NEW(Py_UNICODE, n+1);
+	if (new->str == NULL) {
+		_Py_ForgetReference((PyObject *)new);
+		PyObject_DEL(new);
+		return NULL;
+	}
+	Py_UNICODE_COPY(new->str, tmp->str, n+1);
+	new->length = n;
+	Py_DECREF(tmp);
+	return (PyObject *)new;
 }
 
 static char unicode_doc[] =
@@ -5344,7 +5374,7 @@ PyTypeObject PyUnicode_Type = {
     PyObject_GenericGetAttr, 		/* tp_getattro */
     0,			 		/* tp_setattro */
     &unicode_as_buffer,			/* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,			/* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
     unicode_doc,			/* tp_doc */
     0,					/* tp_traverse */
     0,					/* tp_clear */
