@@ -30,6 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 extern void PyMac_InitApplet();
 
+void
 main() {
 	PyMac_InitApplet();
 }
