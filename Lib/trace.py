@@ -418,7 +418,7 @@ def find_executable_linenos(filename):
     """Return dict where keys are line numbers in the line number table."""
     assert filename.endswith('.py')
     try:
-        prog = open(filename).read()
+        prog = open(filename, "rU").read()
     except IOError, err:
         print >> sys.stderr, ("Not printing coverage data for %r: %s"
                               % (filename, err))
