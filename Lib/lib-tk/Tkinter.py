@@ -456,21 +456,25 @@ class Misc:
 			self.tk.call('bindtags', self._w, tagList)
 	def _bind(self, what, sequence, func, add, needcleanup=1):
 		if func:
+			funcid = self._register(func, self._substitute,
+						needcleanup)
 			cmd = ("%sset _tkinter_break [%s %s]\n"
 			       'if {"$_tkinter_break" == "break"} break\n') \
 			       % (add and '+' or '',
-				  self._register(func, self._substitute,
-						 needcleanup),
+				  funcid,
 				  _string.join(self._subst_format))
 			apply(self.tk.call, what + (sequence, cmd))
+			return funcid
 		elif func == '':
 			apply(self.tk.call, what + (sequence, func))
 		else:
 			return apply(self.tk.call, what + (sequence,))
 	def bind(self, sequence=None, func=None, add=None):
 		return self._bind(('bind', self._w), sequence, func, add)
-	def unbind(self, sequence):
+	def unbind(self, sequence, funcid=None):
 		self.tk.call('bind', self._w, sequence, '')
+		if funcid:
+			self.deletecommand(funcid)
 	def bind_all(self, sequence=None, func=None, add=None):
 		return self._bind(('bind', 'all'), sequence, func, add, 0)
 	def unbind_all(self, sequence):
@@ -1130,8 +1134,10 @@ class Canvas(Widget):
 		self.addtag(newtag, 'withtag', tagOrId)
 	def bbox(self, *args):
 		return self._getints(self._do('bbox', args)) or None
-	def tag_unbind(self, tagOrId, sequence):
+	def tag_unbind(self, tagOrId, sequence, funcid=None):
 		self.tk.call(self._w, 'bind', tagOrId, sequence, '')
+		if funcid:
+			self.deletecommand(funcid)
 	def tag_bind(self, tagOrId, sequence=None, func=None, add=None):
 		return self._bind((self._w, 'bind', tagOrId),
 				  sequence, func, add)
@@ -1594,8 +1600,10 @@ class Text(Widget):
 	def tag_add(self, tagName, index1, index2=None):
 		self.tk.call(
 			self._w, 'tag', 'add', tagName, index1, index2)
-	def tag_unbind(self, tagName, sequence):
+	def tag_unbind(self, tagName, sequence, funcid=None):
 		self.tk.call(self._w, 'tag', 'bind', tagName, sequence, '')
+		if funcid:
+			self.deletecommand(funcid)
 	def tag_bind(self, tagName, sequence, func, add=None):
 		return self._bind((self._w, 'tag', 'bind', tagName),
 				  sequence, func, add)
