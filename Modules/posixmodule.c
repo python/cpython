@@ -2966,7 +2966,7 @@ posix_setgid(PyObject *self, PyObject *args)
 #ifdef HAVE_WAITPID
 static char posix_waitpid__doc__[] =
 "waitpid(pid, options) -> (pid, status)\n\
-Wait for completion of a give child process.";
+Wait for completion of a given child process.";
 
 static PyObject *
 posix_waitpid(PyObject *self, PyObject *args)
