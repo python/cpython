@@ -133,21 +133,29 @@ def quotedata(data):
     return re.sub(r'(?m)^\.', '..',
         re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data))
 
-def _get_fqdn_hostname(name):
+def make_fqdn(name = ''):
+    """Get fully qualified domain name from name.
+
+    An empty argument is interpreted as meaning the local host.
+
+    First the hostname returned by socket.gethostbyaddr()
+    is checked, then possibly existing aliases. In case
+    no FQDN is available, hostname is returned.
+    """
     name = string.strip(name)
     if len(name) == 0:
         name = socket.gethostname()
-        try:
-            hostname, aliases, ipaddrs = socket.gethostbyaddr(name)
-        except socket.error:
-            pass
+    try:
+        hostname, aliases, ipaddrs = socket.gethostbyaddr(name)
+    except socket.error:
+        pass
+    else:
+        aliases.insert(0, hostname)
+        for name in aliases:
+            if '.' in name:
+                break
         else:
-            aliases.insert(0, hostname)
-            for name in aliases:
-                if '.' in name:
-                    break
-            else:
-                name = hostname
+            name = hostname
     return name
 
 
@@ -306,7 +314,10 @@ class SMTP:
         Hostname to send for this command defaults to the FQDN of the local
         host.
         """
-        self.putcmd("helo", _get_fqdn_hostname(name))
+        if name:
+            self.putcmd("helo", name)
+        else:
+            self.putcmd("helo", make_fqdn())
         (code,msg)=self.getreply()
         self.helo_resp=msg
         return (code,msg)
@@ -316,7 +327,10 @@ class SMTP:
         Hostname to send for this command defaults to the FQDN of the local
         host.
         """
-        self.putcmd("ehlo", _get_fqdn_hostname(name))
+        if name:
+            self.putcmd("ehlo", name)
+        else:
+            self.putcmd("ehlo", make_fqdn())
         (code,msg)=self.getreply()
         # According to RFC1869 some (badly written) 
         # MTA's will disconnect on an ehlo. Toss an exception if 
