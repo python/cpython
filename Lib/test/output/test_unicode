@@ -5,3 +5,6 @@ Testing Unicode formatting strings... done.
 Testing builtin codecs... done.
 Testing standard mapping codecs... 0-127... 128-255... done.
 Testing Unicode string concatenation... done.
+Testing General Unicode Character Name, and case insensitivity... done.
+Testing misc. symbols for unicode character name expansion.... done.
+Testing unicode character name expansion strict error handling.... done.
