@@ -271,32 +271,32 @@ static PyObject *SndCh_SndSetInfo(SndChannelObject *_self, PyObject *_args)
 
 static PyMethodDef SndCh_methods[] = {
 	{"SndDoCommand", (PyCFunction)SndCh_SndDoCommand, 1,
-	 "(SndCommand cmd, Boolean noWait) -> None"},
+	 PyDoc_STR("(SndCommand cmd, Boolean noWait) -> None")},
 	{"SndDoImmediate", (PyCFunction)SndCh_SndDoImmediate, 1,
-	 "(SndCommand cmd) -> None"},
+	 PyDoc_STR("(SndCommand cmd) -> None")},
 	{"SndPlay", (PyCFunction)SndCh_SndPlay, 1,
-	 "(SndListHandle sndHandle, Boolean async) -> None"},
+	 PyDoc_STR("(SndListHandle sndHandle, Boolean async) -> None")},
 
 #if !TARGET_API_MAC_CARBON
 	{"SndStartFilePlay", (PyCFunction)SndCh_SndStartFilePlay, 1,
-	 "(short fRefNum, short resNum, long bufferSize, Boolean async) -> None"},
+	 PyDoc_STR("(short fRefNum, short resNum, long bufferSize, Boolean async) -> None")},
 #endif
 
 #if !TARGET_API_MAC_CARBON
 	{"SndPauseFilePlay", (PyCFunction)SndCh_SndPauseFilePlay, 1,
-	 "() -> None"},
+	 PyDoc_STR("() -> None")},
 #endif
 
 #if !TARGET_API_MAC_CARBON
 	{"SndStopFilePlay", (PyCFunction)SndCh_SndStopFilePlay, 1,
-	 "(Boolean quietNow) -> None"},
+	 PyDoc_STR("(Boolean quietNow) -> None")},
 #endif
 	{"SndChannelStatus", (PyCFunction)SndCh_SndChannelStatus, 1,
-	 "(short theLength) -> (SCStatus theStatus)"},
+	 PyDoc_STR("(short theLength) -> (SCStatus theStatus)")},
 	{"SndGetInfo", (PyCFunction)SndCh_SndGetInfo, 1,
-	 "(OSType selector, void * infoPtr) -> None"},
+	 PyDoc_STR("(OSType selector, void * infoPtr) -> None")},
 	{"SndSetInfo", (PyCFunction)SndCh_SndSetInfo, 1,
-	 "(OSType selector, void * infoPtr) -> None"},
+	 PyDoc_STR("(OSType selector, void * infoPtr) -> None")},
 	{NULL, NULL, 0}
 };
 
@@ -1292,109 +1292,109 @@ static PyObject *Snd_SPBBytesToMilliseconds(PyObject *_self, PyObject *_args)
 
 static PyMethodDef Snd_methods[] = {
 	{"SPB", (PyCFunction)Snd_SPB, 1,
-	 NULL},
+	 PyDoc_STR(NULL)},
 	{"SysBeep", (PyCFunction)Snd_SysBeep, 1,
-	 "(short duration) -> None"},
+	 PyDoc_STR("(short duration) -> None")},
 	{"SndNewChannel", (PyCFunction)Snd_SndNewChannel, 1,
-	 "(short synth, long init, PyObject* userRoutine) -> (SndChannelPtr chan)"},
+	 PyDoc_STR("(short synth, long init, PyObject* userRoutine) -> (SndChannelPtr chan)")},
 
 #if !TARGET_API_MAC_CARBON
 	{"SndControl", (PyCFunction)Snd_SndControl, 1,
-	 "(short id) -> (SndCommand cmd)"},
+	 PyDoc_STR("(short id) -> (SndCommand cmd)")},
 #endif
 	{"SndSoundManagerVersion", (PyCFunction)Snd_SndSoundManagerVersion, 1,
-	 "() -> (NumVersion _rv)"},
+	 PyDoc_STR("() -> (NumVersion _rv)")},
 	{"SndManagerStatus", (PyCFunction)Snd_SndManagerStatus, 1,
-	 "(short theLength) -> (SMStatus theStatus)"},
+	 PyDoc_STR("(short theLength) -> (SMStatus theStatus)")},
 	{"SndGetSysBeepState", (PyCFunction)Snd_SndGetSysBeepState, 1,
-	 "() -> (short sysBeepState)"},
+	 PyDoc_STR("() -> (short sysBeepState)")},
 	{"SndSetSysBeepState", (PyCFunction)Snd_SndSetSysBeepState, 1,
-	 "(short sysBeepState) -> None"},
+	 PyDoc_STR("(short sysBeepState) -> None")},
 
 #if !TARGET_API_MAC_CARBON
 	{"MACEVersion", (PyCFunction)Snd_MACEVersion, 1,
-	 "() -> (NumVersion _rv)"},
+	 PyDoc_STR("() -> (NumVersion _rv)")},
 #endif
 
 #if !TARGET_API_MAC_CARBON
 	{"Comp3to1", (PyCFunction)Snd_Comp3to1, 1,
-	 "(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)"},
+	 PyDoc_STR("(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)")},
 #endif
 
 #if !TARGET_API_MAC_CARBON
 	{"Exp1to3", (PyCFunction)Snd_Exp1to3, 1,
-	 "(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)"},
+	 PyDoc_STR("(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)")},
 #endif
 
 #if !TARGET_API_MAC_CARBON
 	{"Comp6to1", (PyCFunction)Snd_Comp6to1, 1,
-	 "(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)"},
+	 PyDoc_STR("(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)")},
 #endif
 
 #if !TARGET_API_MAC_CARBON
 	{"Exp1to6", (PyCFunction)Snd_Exp1to6, 1,
-	 "(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)"},
+	 PyDoc_STR("(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)")},
 #endif
 	{"GetSysBeepVolume", (PyCFunction)Snd_GetSysBeepVolume, 1,
-	 "() -> (long level)"},
+	 PyDoc_STR("() -> (long level)")},
 	{"SetSysBeepVolume", (PyCFunction)Snd_SetSysBeepVolume, 1,
-	 "(long level) -> None"},
+	 PyDoc_STR("(long level) -> None")},
 	{"GetDefaultOutputVolume", (PyCFunction)Snd_GetDefaultOutputVolume, 1,
-	 "() -> (long level)"},
+	 PyDoc_STR("() -> (long level)")},
 	{"SetDefaultOutputVolume", (PyCFunction)Snd_SetDefaultOutputVolume, 1,
-	 "(long level) -> None"},
+	 PyDoc_STR("(long level) -> None")},
 	{"GetSoundHeaderOffset", (PyCFunction)Snd_GetSoundHeaderOffset, 1,
-	 "(SndListHandle sndHandle) -> (long offset)"},
+	 PyDoc_STR("(SndListHandle sndHandle) -> (long offset)")},
 	{"GetCompressionInfo", (PyCFunction)Snd_GetCompressionInfo, 1,
-	 "(short compressionID, OSType format, short numChannels, short sampleSize) -> (CompressionInfo cp)"},
+	 PyDoc_STR("(short compressionID, OSType format, short numChannels, short sampleSize) -> (CompressionInfo cp)")},
 	{"SetSoundPreference", (PyCFunction)Snd_SetSoundPreference, 1,
-	 "(OSType theType, Handle settings) -> (Str255 name)"},
+	 PyDoc_STR("(OSType theType, Handle settings) -> (Str255 name)")},
 	{"GetSoundPreference", (PyCFunction)Snd_GetSoundPreference, 1,
-	 "(OSType theType, Handle settings) -> (Str255 name)"},
+	 PyDoc_STR("(OSType theType, Handle settings) -> (Str255 name)")},
 	{"GetCompressionName", (PyCFunction)Snd_GetCompressionName, 1,
-	 "(OSType compressionType) -> (Str255 compressionName)"},
+	 PyDoc_STR("(OSType compressionType) -> (Str255 compressionName)")},
 	{"SPBVersion", (PyCFunction)Snd_SPBVersion, 1,
-	 "() -> (NumVersion _rv)"},
+	 PyDoc_STR("() -> (NumVersion _rv)")},
 	{"SndRecord", (PyCFunction)Snd_SndRecord, 1,
-	 "(Point corner, OSType quality) -> (SndListHandle sndHandle)"},
+	 PyDoc_STR("(Point corner, OSType quality) -> (SndListHandle sndHandle)")},
 
 #if !TARGET_API_MAC_CARBON
 	{"SndRecordToFile", (PyCFunction)Snd_SndRecordToFile, 1,
-	 "(Point corner, OSType quality, short fRefNum) -> None"},
+	 PyDoc_STR("(Point corner, OSType quality, short fRefNum) -> None")},
 #endif
 	{"SPBSignInDevice", (PyCFunction)Snd_SPBSignInDevice, 1,
-	 "(short deviceRefNum, Str255 deviceName) -> None"},
+	 PyDoc_STR("(short deviceRefNum, Str255 deviceName) -> None")},
 	{"SPBSignOutDevice", (PyCFunction)Snd_SPBSignOutDevice, 1,
-	 "(short deviceRefNum) -> None"},
+	 PyDoc_STR("(short deviceRefNum) -> None")},
 	{"SPBGetIndexedDevice", (PyCFunction)Snd_SPBGetIndexedDevice, 1,
-	 "(short count) -> (Str255 deviceName, Handle deviceIconHandle)"},
+	 PyDoc_STR("(short count) -> (Str255 deviceName, Handle deviceIconHandle)")},
 	{"SPBOpenDevice", (PyCFunction)Snd_SPBOpenDevice, 1,
-	 "(Str255 deviceName, short permission) -> (long inRefNum)"},
+	 PyDoc_STR("(Str255 deviceName, short permission) -> (long inRefNum)")},
 	{"SPBCloseDevice", (PyCFunction)Snd_SPBCloseDevice, 1,
-	 "(long inRefNum) -> None"},
+	 PyDoc_STR("(long inRefNum) -> None")},
 	{"SPBRecord", (PyCFunction)Snd_SPBRecord, 1,
-	 "(SPBPtr inParamPtr, Boolean asynchFlag) -> None"},
+	 PyDoc_STR("(SPBPtr inParamPtr, Boolean asynchFlag) -> None")},
 
 #if !TARGET_API_MAC_CARBON
 	{"SPBRecordToFile", (PyCFunction)Snd_SPBRecordToFile, 1,
-	 "(short fRefNum, SPBPtr inParamPtr, Boolean asynchFlag) -> None"},
+	 PyDoc_STR("(short fRefNum, SPBPtr inParamPtr, Boolean asynchFlag) -> None")},
 #endif
 	{"SPBPauseRecording", (PyCFunction)Snd_SPBPauseRecording, 1,
-	 "(long inRefNum) -> None"},
+	 PyDoc_STR("(long inRefNum) -> None")},
 	{"SPBResumeRecording", (PyCFunction)Snd_SPBResumeRecording, 1,
-	 "(long inRefNum) -> None"},
+	 PyDoc_STR("(long inRefNum) -> None")},
 	{"SPBStopRecording", (PyCFunction)Snd_SPBStopRecording, 1,
-	 "(long inRefNum) -> None"},
+	 PyDoc_STR("(long inRefNum) -> None")},
 	{"SPBGetRecordingStatus", (PyCFunction)Snd_SPBGetRecordingStatus, 1,
-	 "(long inRefNum) -> (short recordingStatus, short meterLevel, unsigned long totalSamplesToRecord, unsigned long numberOfSamplesRecorded, unsigned long totalMsecsToRecord, unsigned long numberOfMsecsRecorded)"},
+	 PyDoc_STR("(long inRefNum) -> (short recordingStatus, short meterLevel, unsigned long totalSamplesToRecord, unsigned long numberOfSamplesRecorded, unsigned long totalMsecsToRecord, unsigned long numberOfMsecsRecorded)")},
 	{"SPBGetDeviceInfo", (PyCFunction)Snd_SPBGetDeviceInfo, 1,
-	 "(long inRefNum, OSType infoType, void * infoData) -> None"},
+	 PyDoc_STR("(long inRefNum, OSType infoType, void * infoData) -> None")},
 	{"SPBSetDeviceInfo", (PyCFunction)Snd_SPBSetDeviceInfo, 1,
-	 "(long inRefNum, OSType infoType, void * infoData) -> None"},
+	 PyDoc_STR("(long inRefNum, OSType infoType, void * infoData) -> None")},
 	{"SPBMillisecondsToBytes", (PyCFunction)Snd_SPBMillisecondsToBytes, 1,
-	 "(long inRefNum) -> (long milliseconds)"},
+	 PyDoc_STR("(long inRefNum) -> (long milliseconds)")},
 	{"SPBBytesToMilliseconds", (PyCFunction)Snd_SPBBytesToMilliseconds, 1,
-	 "(long inRefNum) -> (long byteCount)"},
+	 PyDoc_STR("(long inRefNum) -> (long byteCount)")},
 	{NULL, NULL, 0}
 };
 

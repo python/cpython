@@ -380,31 +380,31 @@ static PyObject *EventRef_GetEventParameter(EventRefObject *_self, PyObject *_ar
 
 static PyMethodDef EventRef_methods[] = {
 	{"RetainEvent", (PyCFunction)EventRef_RetainEvent, 1,
-	 "() -> (EventRef _rv)"},
+	 PyDoc_STR("() -> (EventRef _rv)")},
 	{"GetEventRetainCount", (PyCFunction)EventRef_GetEventRetainCount, 1,
-	 "() -> (UInt32 _rv)"},
+	 PyDoc_STR("() -> (UInt32 _rv)")},
 	{"ReleaseEvent", (PyCFunction)EventRef_ReleaseEvent, 1,
-	 "() -> None"},
+	 PyDoc_STR("() -> None")},
 	{"SetEventParameter", (PyCFunction)EventRef_SetEventParameter, 1,
-	 "(OSType inName, OSType inType, Buffer inDataPtr) -> None"},
+	 PyDoc_STR("(OSType inName, OSType inType, Buffer inDataPtr) -> None")},
 	{"GetEventClass", (PyCFunction)EventRef_GetEventClass, 1,
-	 "() -> (UInt32 _rv)"},
+	 PyDoc_STR("() -> (UInt32 _rv)")},
 	{"GetEventKind", (PyCFunction)EventRef_GetEventKind, 1,
-	 "() -> (UInt32 _rv)"},
+	 PyDoc_STR("() -> (UInt32 _rv)")},
 	{"GetEventTime", (PyCFunction)EventRef_GetEventTime, 1,
-	 "() -> (double _rv)"},
+	 PyDoc_STR("() -> (double _rv)")},
 	{"SetEventTime", (PyCFunction)EventRef_SetEventTime, 1,
-	 "(double inTime) -> None"},
+	 PyDoc_STR("(double inTime) -> None")},
 	{"IsUserCancelEventRef", (PyCFunction)EventRef_IsUserCancelEventRef, 1,
-	 "() -> (Boolean _rv)"},
+	 PyDoc_STR("() -> (Boolean _rv)")},
 	{"ConvertEventRefToEventRecord", (PyCFunction)EventRef_ConvertEventRefToEventRecord, 1,
-	 "() -> (Boolean _rv, EventRecord outEvent)"},
+	 PyDoc_STR("() -> (Boolean _rv, EventRecord outEvent)")},
 	{"IsEventInMask", (PyCFunction)EventRef_IsEventInMask, 1,
-	 "(UInt16 inMask) -> (Boolean _rv)"},
+	 PyDoc_STR("(UInt16 inMask) -> (Boolean _rv)")},
 	{"SendEventToEventTarget", (PyCFunction)EventRef_SendEventToEventTarget, 1,
-	 "(EventTargetRef inTarget) -> None"},
+	 PyDoc_STR("(EventTargetRef inTarget) -> None")},
 	{"GetEventParameter", (PyCFunction)EventRef_GetEventParameter, 1,
-	 "(EventParamName eventName, EventParamType eventType) -> (String eventParamData)"},
+	 PyDoc_STR("(EventParamName eventName, EventParamType eventType) -> (String eventParamData)")},
 	{NULL, NULL, 0}
 };
 
@@ -577,17 +577,17 @@ static PyObject *EventQueueRef_IsEventInQueue(EventQueueRefObject *_self, PyObje
 
 static PyMethodDef EventQueueRef_methods[] = {
 	{"PostEventToQueue", (PyCFunction)EventQueueRef_PostEventToQueue, 1,
-	 "(EventRef inEvent, SInt16 inPriority) -> None"},
+	 PyDoc_STR("(EventRef inEvent, SInt16 inPriority) -> None")},
 	{"FlushEventsMatchingListFromQueue", (PyCFunction)EventQueueRef_FlushEventsMatchingListFromQueue, 1,
-	 "(UInt32 inNumTypes, EventTypeSpec inList) -> None"},
+	 PyDoc_STR("(UInt32 inNumTypes, EventTypeSpec inList) -> None")},
 	{"FlushEventQueue", (PyCFunction)EventQueueRef_FlushEventQueue, 1,
-	 "() -> None"},
+	 PyDoc_STR("() -> None")},
 	{"GetNumEventsInQueue", (PyCFunction)EventQueueRef_GetNumEventsInQueue, 1,
-	 "() -> (UInt32 _rv)"},
+	 PyDoc_STR("() -> (UInt32 _rv)")},
 	{"RemoveEventFromQueue", (PyCFunction)EventQueueRef_RemoveEventFromQueue, 1,
-	 "(EventRef inEvent) -> None"},
+	 PyDoc_STR("(EventRef inEvent) -> None")},
 	{"IsEventInQueue", (PyCFunction)EventQueueRef_IsEventInQueue, 1,
-	 "(EventRef inEvent) -> (Boolean _rv)"},
+	 PyDoc_STR("(EventRef inEvent) -> (Boolean _rv)")},
 	{NULL, NULL, 0}
 };
 
@@ -679,7 +679,7 @@ static PyObject *EventLoopRef_QuitEventLoop(EventLoopRefObject *_self, PyObject 
 
 static PyMethodDef EventLoopRef_methods[] = {
 	{"QuitEventLoop", (PyCFunction)EventLoopRef_QuitEventLoop, 1,
-	 "() -> None"},
+	 PyDoc_STR("() -> None")},
 	{NULL, NULL, 0}
 };
 
@@ -787,9 +787,9 @@ static PyObject *EventLoopTimerRef_SetEventLoopTimerNextFireTime(EventLoopTimerR
 
 static PyMethodDef EventLoopTimerRef_methods[] = {
 	{"RemoveEventLoopTimer", (PyCFunction)EventLoopTimerRef_RemoveEventLoopTimer, 1,
-	 "() -> None"},
+	 PyDoc_STR("() -> None")},
 	{"SetEventLoopTimerNextFireTime", (PyCFunction)EventLoopTimerRef_SetEventLoopTimerNextFireTime, 1,
-	 "(double inNextFire) -> None"},
+	 PyDoc_STR("(double inNextFire) -> None")},
 	{NULL, NULL, 0}
 };
 
@@ -940,11 +940,11 @@ static PyObject *EventHandlerRef_RemoveEventHandler(EventHandlerRefObject *_self
 
 static PyMethodDef EventHandlerRef_methods[] = {
 	{"AddEventTypesToHandler", (PyCFunction)EventHandlerRef_AddEventTypesToHandler, 1,
-	 "(UInt32 inNumTypes, EventTypeSpec inList) -> None"},
+	 PyDoc_STR("(UInt32 inNumTypes, EventTypeSpec inList) -> None")},
 	{"RemoveEventTypesFromHandler", (PyCFunction)EventHandlerRef_RemoveEventTypesFromHandler, 1,
-	 "(UInt32 inNumTypes, EventTypeSpec inList) -> None"},
+	 PyDoc_STR("(UInt32 inNumTypes, EventTypeSpec inList) -> None")},
 	{"RemoveEventHandler", (PyCFunction)EventHandlerRef_RemoveEventHandler, 1,
-	 "() -> None"},
+	 PyDoc_STR("() -> None")},
 	{NULL, NULL, 0}
 };
 
@@ -1039,7 +1039,7 @@ static PyObject *EventHandlerCallRef_CallNextEventHandler(EventHandlerCallRefObj
 
 static PyMethodDef EventHandlerCallRef_methods[] = {
 	{"CallNextEventHandler", (PyCFunction)EventHandlerCallRef_CallNextEventHandler, 1,
-	 "(EventRef inEvent) -> None"},
+	 PyDoc_STR("(EventRef inEvent) -> None")},
 	{NULL, NULL, 0}
 };
 
@@ -1154,9 +1154,9 @@ static PyObject *EventTargetRef_InstallEventHandler(EventTargetRefObject *_self,
 
 static PyMethodDef EventTargetRef_methods[] = {
 	{"InstallStandardEventHandler", (PyCFunction)EventTargetRef_InstallStandardEventHandler, 1,
-	 "() -> None"},
+	 PyDoc_STR("() -> None")},
 	{"InstallEventHandler", (PyCFunction)EventTargetRef_InstallEventHandler, 1,
-	 "(EventTypeSpec inSpec, Method callback) -> (EventHandlerRef outRef)"},
+	 PyDoc_STR("(EventTypeSpec inSpec, Method callback) -> (EventHandlerRef outRef)")},
 	{NULL, NULL, 0}
 };
 
@@ -1248,7 +1248,7 @@ static PyObject *EventHotKeyRef_UnregisterEventHotKey(EventHotKeyRefObject *_sel
 
 static PyMethodDef EventHotKeyRef_methods[] = {
 	{"UnregisterEventHotKey", (PyCFunction)EventHotKeyRef_UnregisterEventHotKey, 1,
-	 "() -> None"},
+	 PyDoc_STR("() -> None")},
 	{NULL, NULL, 0}
 };
 
@@ -1778,65 +1778,65 @@ static PyObject *CarbonEvents_RunApplicationEventLoop(PyObject *_self, PyObject 
 
 static PyMethodDef CarbonEvents_methods[] = {
 	{"GetCurrentEventLoop", (PyCFunction)CarbonEvents_GetCurrentEventLoop, 1,
-	 "() -> (EventLoopRef _rv)"},
+	 PyDoc_STR("() -> (EventLoopRef _rv)")},
 	{"GetMainEventLoop", (PyCFunction)CarbonEvents_GetMainEventLoop, 1,
-	 "() -> (EventLoopRef _rv)"},
+	 PyDoc_STR("() -> (EventLoopRef _rv)")},
 	{"RunCurrentEventLoop", (PyCFunction)CarbonEvents_RunCurrentEventLoop, 1,
-	 "(double inTimeout) -> None"},
+	 PyDoc_STR("(double inTimeout) -> None")},
 	{"ReceiveNextEvent", (PyCFunction)CarbonEvents_ReceiveNextEvent, 1,
-	 "(UInt32 inNumTypes, EventTypeSpec inList, double inTimeout, Boolean inPullEvent) -> (EventRef outEvent)"},
+	 PyDoc_STR("(UInt32 inNumTypes, EventTypeSpec inList, double inTimeout, Boolean inPullEvent) -> (EventRef outEvent)")},
 	{"GetCurrentEventQueue", (PyCFunction)CarbonEvents_GetCurrentEventQueue, 1,
-	 "() -> (EventQueueRef _rv)"},
+	 PyDoc_STR("() -> (EventQueueRef _rv)")},
 	{"GetMainEventQueue", (PyCFunction)CarbonEvents_GetMainEventQueue, 1,
-	 "() -> (EventQueueRef _rv)"},
+	 PyDoc_STR("() -> (EventQueueRef _rv)")},
 	{"GetCurrentEventTime", (PyCFunction)CarbonEvents_GetCurrentEventTime, 1,
-	 "() -> (double _rv)"},
+	 PyDoc_STR("() -> (double _rv)")},
 	{"TrackMouseLocation", (PyCFunction)CarbonEvents_TrackMouseLocation, 1,
-	 "(GrafPtr inPort) -> (Point outPt, UInt16 outResult)"},
+	 PyDoc_STR("(GrafPtr inPort) -> (Point outPt, UInt16 outResult)")},
 	{"TrackMouseLocationWithOptions", (PyCFunction)CarbonEvents_TrackMouseLocationWithOptions, 1,
-	 "(GrafPtr inPort, OptionBits inOptions, double inTimeout) -> (Point outPt, UInt32 outModifiers, UInt16 outResult)"},
+	 PyDoc_STR("(GrafPtr inPort, OptionBits inOptions, double inTimeout) -> (Point outPt, UInt32 outModifiers, UInt16 outResult)")},
 	{"TrackMouseRegion", (PyCFunction)CarbonEvents_TrackMouseRegion, 1,
-	 "(GrafPtr inPort, RgnHandle inRegion, Boolean ioWasInRgn) -> (Boolean ioWasInRgn, UInt16 outResult)"},
+	 PyDoc_STR("(GrafPtr inPort, RgnHandle inRegion, Boolean ioWasInRgn) -> (Boolean ioWasInRgn, UInt16 outResult)")},
 	{"GetLastUserEventTime", (PyCFunction)CarbonEvents_GetLastUserEventTime, 1,
-	 "() -> (double _rv)"},
+	 PyDoc_STR("() -> (double _rv)")},
 	{"GetWindowEventTarget", (PyCFunction)CarbonEvents_GetWindowEventTarget, 1,
-	 "(WindowPtr inWindow) -> (EventTargetRef _rv)"},
+	 PyDoc_STR("(WindowPtr inWindow) -> (EventTargetRef _rv)")},
 	{"GetControlEventTarget", (PyCFunction)CarbonEvents_GetControlEventTarget, 1,
-	 "(ControlHandle inControl) -> (EventTargetRef _rv)"},
+	 PyDoc_STR("(ControlHandle inControl) -> (EventTargetRef _rv)")},
 	{"GetMenuEventTarget", (PyCFunction)CarbonEvents_GetMenuEventTarget, 1,
-	 "(MenuHandle inMenu) -> (EventTargetRef _rv)"},
+	 PyDoc_STR("(MenuHandle inMenu) -> (EventTargetRef _rv)")},
 	{"GetApplicationEventTarget", (PyCFunction)CarbonEvents_GetApplicationEventTarget, 1,
-	 "() -> (EventTargetRef _rv)"},
+	 PyDoc_STR("() -> (EventTargetRef _rv)")},
 	{"GetUserFocusEventTarget", (PyCFunction)CarbonEvents_GetUserFocusEventTarget, 1,
-	 "() -> (EventTargetRef _rv)"},
+	 PyDoc_STR("() -> (EventTargetRef _rv)")},
 	{"GetEventDispatcherTarget", (PyCFunction)CarbonEvents_GetEventDispatcherTarget, 1,
-	 "() -> (EventTargetRef _rv)"},
+	 PyDoc_STR("() -> (EventTargetRef _rv)")},
 	{"QuitApplicationEventLoop", (PyCFunction)CarbonEvents_QuitApplicationEventLoop, 1,
-	 "() -> None"},
+	 PyDoc_STR("() -> None")},
 	{"RunAppModalLoopForWindow", (PyCFunction)CarbonEvents_RunAppModalLoopForWindow, 1,
-	 "(WindowPtr inWindow) -> None"},
+	 PyDoc_STR("(WindowPtr inWindow) -> None")},
 	{"QuitAppModalLoopForWindow", (PyCFunction)CarbonEvents_QuitAppModalLoopForWindow, 1,
-	 "(WindowPtr inWindow) -> None"},
+	 PyDoc_STR("(WindowPtr inWindow) -> None")},
 	{"BeginAppModalStateForWindow", (PyCFunction)CarbonEvents_BeginAppModalStateForWindow, 1,
-	 "(WindowPtr inWindow) -> None"},
+	 PyDoc_STR("(WindowPtr inWindow) -> None")},
 	{"EndAppModalStateForWindow", (PyCFunction)CarbonEvents_EndAppModalStateForWindow, 1,
-	 "(WindowPtr inWindow) -> None"},
+	 PyDoc_STR("(WindowPtr inWindow) -> None")},
 	{"SetUserFocusWindow", (PyCFunction)CarbonEvents_SetUserFocusWindow, 1,
-	 "(WindowPtr inWindow) -> None"},
+	 PyDoc_STR("(WindowPtr inWindow) -> None")},
 	{"GetUserFocusWindow", (PyCFunction)CarbonEvents_GetUserFocusWindow, 1,
-	 "() -> (WindowPtr _rv)"},
+	 PyDoc_STR("() -> (WindowPtr _rv)")},
 	{"SetWindowDefaultButton", (PyCFunction)CarbonEvents_SetWindowDefaultButton, 1,
-	 "(WindowPtr inWindow, ControlHandle inControl) -> None"},
+	 PyDoc_STR("(WindowPtr inWindow, ControlHandle inControl) -> None")},
 	{"SetWindowCancelButton", (PyCFunction)CarbonEvents_SetWindowCancelButton, 1,
-	 "(WindowPtr inWindow, ControlHandle inControl) -> None"},
+	 PyDoc_STR("(WindowPtr inWindow, ControlHandle inControl) -> None")},
 	{"GetWindowDefaultButton", (PyCFunction)CarbonEvents_GetWindowDefaultButton, 1,
-	 "(WindowPtr inWindow) -> (ControlHandle outControl)"},
+	 PyDoc_STR("(WindowPtr inWindow) -> (ControlHandle outControl)")},
 	{"GetWindowCancelButton", (PyCFunction)CarbonEvents_GetWindowCancelButton, 1,
-	 "(WindowPtr inWindow) -> (ControlHandle outControl)"},
+	 PyDoc_STR("(WindowPtr inWindow) -> (ControlHandle outControl)")},
 	{"RegisterEventHotKey", (PyCFunction)CarbonEvents_RegisterEventHotKey, 1,
-	 "(UInt32 inHotKeyCode, UInt32 inHotKeyModifiers, EventHotKeyID inHotKeyID, EventTargetRef inTarget, OptionBits inOptions) -> (EventHotKeyRef outRef)"},
+	 PyDoc_STR("(UInt32 inHotKeyCode, UInt32 inHotKeyModifiers, EventHotKeyID inHotKeyID, EventTargetRef inTarget, OptionBits inOptions) -> (EventHotKeyRef outRef)")},
 	{"RunApplicationEventLoop", (PyCFunction)CarbonEvents_RunApplicationEventLoop, 1,
-	 "() -> ()"},
+	 PyDoc_STR("() -> ()")},
 	{NULL, NULL, 0}
 };
 
