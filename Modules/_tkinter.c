@@ -1117,8 +1117,6 @@ typedef struct
 }
 TkttObject;
 
-/* XXXX For now... */
-#if TKMAJORMINOR < 8000 || !defined(macintosh)
 static PyObject *
 Tktt_DeleteTimerHandler(self, args)
 	PyObject *self;
@@ -1225,7 +1223,6 @@ TimerHandler(clientData)
 	else
 		Py_DECREF(res);
 }
-#endif /* macintosh */
 
 static PyObject *
 Tkapp_CreateTimerHandler(self, args)
