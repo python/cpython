@@ -261,7 +261,6 @@ imgfile_write(self, args)
 	return 0;
     }
 
-    printf("Opening %s, %d %d %d\n", fname, xsize, ysize, zsize);
     image =iopen(fname, "w", RLE(1), 3, xsize, ysize, zsize);
     if ( image == 0 ) {
 	if ( ! error_called )
