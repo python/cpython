@@ -604,15 +604,98 @@ TT { font-family: lucidatypewriter, lucida console, courier }
         realname = object.__name__
         name = name or realname
         bases = object.__bases__
-        contents = ''
 
-        methods, mdict = allmethods(object).items(), {}
-        methods.sort()
-        for key, value in methods:
-            mdict[key] = mdict[value] = '#' + name + '-' + key
-        for key, value in methods:
-            contents = contents + self.document(
-                value, key, mod, funcs, classes, mdict, object)
+        contents = []
+        push = contents.append
+
+        def spill(msg, attrs, predicate):
+            ok, attrs = _split_class_attrs(attrs, predicate)
+            if ok:
+                push(msg)
+                for name, kind, homecls, value in ok:
+                    push(self.document(getattr(object, name), name, mod,
+                                       funcs, classes, mdict, object))
+                    push('\n')
+            return attrs
+
+        # pydoc can't make any reasonable sense of properties on its own,
+        # and it doesn't appear that the getter, setter and del'er methods
+        # are discoverable.  For now, just pump out their names.
+        def spillproperties(msg, attrs):
+            ok, attrs = _split_class_attrs(attrs, lambda t: t[1] == 'property')
+            if ok:
+                push(msg)
+                for name, kind, homecls, value in ok:
+                    push('<dl><dt><strong>%s</strong></dl>\n' % name)
+            return attrs
+
+        def spilldata(msg, attrs):
+            ok, attrs = _split_class_attrs(attrs, lambda t: t[1] == 'data')
+            if ok:
+                push(msg)
+                for name, kind, homecls, value in ok:
+                    base = self.docother(getattr(object, name), name, mod)
+                    doc = getattr(value, "__doc__", None)
+                    if doc is None:
+                        push('<dl><dt>%s</dl>\n' % base)
+                    else:
+                        doc = self.markup(getdoc(value), self.preformat,
+                                          funcs, classes, mdict)
+                        doc = '<dd>' + self.small('<tt>%s</tt>' % doc)
+                        push('<dl><dt>%s%s</dl>\n' % (base, doc))
+                    push('\n')
+            return attrs
+
+        attrs = inspect.classify_class_attrs(object)
+        mdict = {}
+        for key, kind, homecls, value in attrs:
+            mdict[key] = anchor = '#' + name + '-' + key
+            value = getattr(object, key)
+            try:
+                # The value may not be hashable (e.g., a data attr with
+                # a dict or list value).
+                mdict[value] = anchor
+            except TypeError:
+                pass
+
+        # All attrs defined in this class come first.
+        attrs, inherited = _split_class_attrs(attrs,
+                                              lambda t: t[2] is object)
+        # Sort inherited attrs by name of defining class.
+        inherited.sort(lambda t1, t2: cmp(t1[2].__name__, t2[2].__name__))
+
+        thisclass = object
+        while attrs or inherited:
+            if thisclass is object:
+                tag = "defined here"
+            else:
+                tag = "inherited from class %s" % self.classlink(thisclass,
+                                                          object.__module__)
+            tag += ':<br>\n'
+
+            # Sort attrs by name.
+            attrs.sort(lambda t1, t2: cmp(t1[0], t2[0]))
+
+            # Pump out the attrs, segregated by kind.
+            attrs = spill("Methods %s" % tag, attrs,
+                          lambda t: t[1] == 'method')
+            attrs = spill("Class methods %s" % tag, attrs,
+                          lambda t: t[1] == 'class method')
+            attrs = spill("Static methods %s" % tag, attrs,
+                          lambda t: t[1] == 'static method')
+            attrs = spillproperties("Properties %s" % tag, attrs)
+            attrs = spilldata("Data %s" % tag, attrs)
+            assert attrs == []
+
+            # Split off the attributes inherited from the next class (note
+            # that inherited remains sorted by class name).
+            if inherited:
+                attrs = inherited
+                thisclass = attrs[0][2]
+                attrs, inherited = _split_class_attrs(attrs,
+                                                lambda t: t[2] is thisclass)
+
+        contents = ''.join(contents)
 
         if name == realname:
             title = '<a name="%s">class <strong>%s</strong></a>' % (
@@ -908,7 +991,7 @@ class TextDoc(Doc):
                 for name, kind, homecls, value in ok:
                     push(name + '\n')
             return attrs
-    
+
         def spilldata(msg, attrs):
             ok, attrs = _split_class_attrs(attrs, lambda t: t[1] == 'data')
             if ok:
