@@ -88,8 +88,8 @@ access.  The documentation is available in HTML, PostScript, PDF, and
 LaTeX formats; the LaTeX version is primarily for documentation
 authors, translators, and people with special formatting requirements.
 
-The best documentation for the new (in Python 2.2) type/class unification
-features is Guido's tutorial introduction, at
+The best documentation for the new (in Python 2.2) type/class
+unification features is Guido's tutorial introduction, at
 
     http://www.python.org/2.2/descrintro.html
 
@@ -100,7 +100,8 @@ Web sites
 New Python releases and related technologies are published at
 http://www.python.org/.  Come visit us!
 
-There's also a Python community web site at http://starship.python.net/.
+There's also a Python community web site at
+http://starship.python.net/.
 
 
 Newsgroups and Mailing Lists
@@ -112,8 +113,8 @@ for Python-related announcements.  These are also accessible as
 mailing lists: see http://www.python.org/psa/MailingLists.html for an
 overview of the many Python-related mailing lists.
 
-Archives are accessible via Deja.com Usenet News: see
-http://www.deja.com/usenet.  The mailing lists are also archived, see
+Archives are accessible via the Google Groups usenet archive; see
+http://groups.google.com/.  The mailing lists are also archived, see
 http://www.python.org/psa/MailingLists.html for details.
 
 
@@ -925,11 +926,11 @@ platforms -- see http://www.python.org/.
 To port Python to a new non-UNIX system, you will have to fake the
 effect of running the configure script manually (for Mac and PC, this
 has already been done for you).  A good start is to copy the file
-config.h.in to config.h and edit the latter to reflect the actual
+pyconfig.h.in to pyconfig.h and edit the latter to reflect the actual
 configuration of your system.  Most symbols must simply be defined as
 1 only if the corresponding feature is present and can be left alone
-otherwise; however the *_t type symbols must be defined as some variant
-of int if they need to be defined at all.
+otherwise; however the *_t type symbols must be defined as some
+variant of int if they need to be defined at all.
 
 For all platforms, it's important that the build arrange to define the
 preprocessor symbol NDEBUG on the compiler command line in a release
@@ -996,6 +997,7 @@ Grammar/        Input for the parser generator
 Include/        Public header files
 LICENSE		Licensing information
 Lib/            Python library modules
+Mac/            Macintosh specific resources
 Makefile.pre.in Source from which config.status creates the Makefile.pre
 Misc/           Miscellaneous useful files
 Modules/        Implementation of most built-in modules
@@ -1006,8 +1008,7 @@ Parser/         The parser and tokenizer and their input handling
 Python/         The byte-compiler and interpreter
 README          The file you're reading now
 Tools/          Some useful programs written in Python
-acconfig.h      Additional input for the GNU autoheader program
-config.h.in     Source from which config.h is created (GNU autoheader output)
+pyconfig.h.in   Source from which pyconfig.h is created (GNU autoheader output)
 configure       Configuration shell script (GNU autoconf output)
 configure.in    Configuration specification (input for GNU autoconf)
 install-sh      Shell script used to install files
@@ -1017,9 +1018,9 @@ the configuration and build processes:
 
 Makefile        Build rules
 Makefile.pre    Build rules before running Modules/makesetup
-buildno		Keeps track of the build number
+buildno         Keeps track of the build number
 config.cache    Cache of configuration variables
-config.h        Configuration header
+pyconfig.h      Configuration header
 config.log      Log from last configure run
 config.status   Status from last run of the configure script
 getbuildinfo.o	Object file from Modules/getbuildinfo.c
