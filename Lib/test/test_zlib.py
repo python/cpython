@@ -1,4 +1,5 @@
 import zlib
+from test_support import TestFailed
 import sys
 import imp
 
@@ -87,6 +88,31 @@ for sync in [zlib.Z_NO_FLUSH, zlib.Z_SYNC_FLUSH, zlib.Z_FULL_FLUSH]:
         if zlib.decompress(d) != buf:
             print "Decompress failed: flush mode=%i, level=%i" % (sync,level)
         del obj
+
+# Test for the odd flushing bugs noted in 2.0, and hopefully fixed in 2.1
+
+import random
+random.seed(1)                          
+
+print 'Testing on 17K of random data'
+
+# Create compressor and decompressor objects
+c=zlib.compressobj(9)
+d=zlib.decompressobj()
+
+# Try 17K of data
+# generate random data stream
+a=""
+for i in range(17*1024):
+    a=a+chr(random.randint(0,255))
+        
+# compress, sync-flush, and decompress
+t = d.decompress( c.compress(a)+c.flush(zlib.Z_SYNC_FLUSH) )
+
+# if decompressed data is different from the input data, choke.
+if len(t) != len(a):
+    print len(a),len(t),len(d.unused_data)
+    raise TestFailed, "output of 17K doesn't match"
 
 def ignore():
     """An empty function with a big string.
