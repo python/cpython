@@ -124,29 +124,29 @@ What a mess!
               "ball,", " ", "use", " ", "the", " ", "-b", " ",  "option!"])
 
 
-    def test_funky_punc(self):
-        '''Wrap text with long words and lots of punctuation.'''
-
-        text = '''
+class LongWordTestCase (BaseTestCase):
+    def setUp(self):
+        self.wrapper = TextWrapper()
+        self.text = '''
 Did you say "supercalifragilisticexpialidocious?"
 How *do* you spell that odd word, anyways?
 '''
-        self.check_wrap(text, 30,
+
+    def test_break_long(self):
+        '''Wrap text with long words and lots of punctuation.'''
+
+        self.check_wrap(self.text, 30,
                         ['Did you say "supercalifragilis',
                          'ticexpialidocious?" How *do*',
                          'you spell that odd word,',
                          'anyways?'])
-        self.check_wrap(text, 50,
+        self.check_wrap(self.text, 50,
                         ['Did you say "supercalifragilisticexpialidocious?"',
                          'How *do* you spell that odd word, anyways?'])
 
 
-    def test_long_words(self):        
+    def test_nobreak_long(self):        
         '''Test with break_long_words disabled.'''
-        text = '''
-Did you say "supercalifragilisticexpialidocious?"
-How *do* you spell that odd word, anyways?
-'''
         self.wrapper.break_long_words = 0
         self.wrapper.width = 30
         expect = ['Did you say',
@@ -154,11 +154,11 @@ How *do* you spell that odd word, anyways?
                   'How *do* you spell that odd',
                   'word, anyways?'
                   ] 
-        result = self.wrapper.wrap(text)
+        result = self.wrapper.wrap(self.text)
         self.check(result, expect)
 
         # Same thing with kwargs passed to standalone wrap() function.
-        result = wrap(text, width=30, break_long_words=0)
+        result = wrap(self.text, width=30, break_long_words=0)
         self.check(result, expect)
 
 
@@ -221,6 +221,7 @@ with some (including a hanging indent).'''
 def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(WrapTestCase))
+    suite.addTest(unittest.makeSuite(LongWordTestCase))
     suite.addTest(unittest.makeSuite(IndentTestCases))
     test_support.run_suite(suite)
 
