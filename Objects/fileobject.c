@@ -1268,7 +1268,6 @@ static struct memberlist file_memberlist[] = {
 	{"mode",	T_OBJECT,	OFF(f_mode),	RO},
 	{"name",	T_OBJECT,	OFF(f_name),	RO},
 	/* getattr(f, "closed") is implemented without this table */
-	{"closed",	T_INT,		0,		RO},
 	{NULL}	/* Sentinel */
 };
 
