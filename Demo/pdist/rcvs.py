@@ -119,7 +119,11 @@ class MyFile(File):
 		return self.action() != 'C'
 
 	def put(self, message = ""):
-		print "%s: put not yet implemented" % self.file
+		print "Checking in", self.file, "..."
+		data = open(self.file).read()
+		messages = self.proxy.put(self.file, data, message)
+		if messages:
+			print messages
 	
 	def get(self):
 		data = self.proxy.get(self.file)
