@@ -5,7 +5,7 @@
 
 Error = 'TransParent.Error'	# Exception
 
-class ManageOneChild():
+class ManageOneChild:
 	#
 	# Upcalls shared with other single-child parents
 	#
@@ -23,7 +23,7 @@ class ManageOneChild():
 			raise Error, 'delchild: not my child'
 		self.child = 0
 
-class TransParent() = ManageOneChild():
+class TransParent(ManageOneChild):
 	#
 	# Calls from creator
 	# NB derived classes may add parameters to create()
