@@ -176,7 +176,8 @@ Convert a time expressed in seconds since the epoch to a \class{struct_time}
 in UTC in which the dst flag is always zero.  If \var{secs} is not
 provided or \constant{None}, the current time as returned by
 \function{time()} is used.  Fractions of a second are ignored.  See
-above for a description of the \class{struct_time} object.
+above for a description of the \class{struct_time} object. See
+\function{calendar.timegm()} for the inverse of this function.
 \versionchanged[Allowed \var{secs} to be omitted]{2.1}
 \versionchanged[If \var{secs} is \constant{None}, the current time is
                 used]{2.4}
