@@ -663,20 +663,22 @@ frozenset_hash(PyObject *self)
 	PySetObject *so = (PySetObject *)self;
 	PyObject *key, *value;
 	int pos = 0;
-	long hash = 1905176217L;
+	long hash = 1927868237L;
 
 	if (so->hash != -1)
 		return so->hash;
 
+	hash *= (PyDict_Size(so->data) + 1);
 	while (PyDict_Next(so->data, &pos, &key, &value)) {
-		/* Multiplying by a large prime increases the bit dispersion for
-		   closely spaced hash values.  The is important because some
-		   use cases have many combinations of a small number of 
-		   elements with nearby hashes so that many distinct combinations
-		   collapse to only a handful of distinct hash values. */
-		hash ^= PyObject_Hash(key) * 3644798167u;
+		/* Work to increase the bit dispersion for closely spaced hash
+		   values.  The is important because some use cases have many 
+		   combinations of a small number of elements with nearby 
+		   hashes so that many distinct combinations collapse to only 
+		   a handful of distinct hash values. */
+		long h = PyObject_Hash(key);
+		hash ^= (h ^ (h << 16) ^ 89869747L)  * 3644798167u;
 	}
-	hash *= 69069L;
+	hash = hash * 69069L + 907133923L;
 	if (hash == -1)
 		hash = 590923713L;
 	so->hash = hash;
