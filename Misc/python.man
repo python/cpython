@@ -253,7 +253,7 @@ Here
 .I command
 may contain multiple statements separated by newlines.
 Leading whitespace is significant in Python statements!
-In non-interactive mode, the entire input is parsed befored it is
+In non-interactive mode, the entire input is parsed before it is
 executed.
 .PP
 If available, the script name and additional arguments thereafter are
@@ -330,7 +330,7 @@ for these, set $PYTHONHOME to ${prefix}:${exec_prefix}.
 Augments the default search path for module files.
 The format is the same as the shell's $PATH: one or more directory
 pathnames separated by colons.
-Non-existant directories are silently ignored.
+Non-existent directories are silently ignored.
 The default search path is installation dependent, but generally
 begins with ${prefix}/lib/python<version> (see PYTHONHOME above).
 The default search path is always appended to $PYTHONPATH.
