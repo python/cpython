@@ -1352,14 +1352,15 @@ SelectPythonDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 								    (LPARAM)pbuf);
 						result = sscanf(pbuf, "Python Version %d.%d",
 								 &py_major, &py_minor);
-						if (result == 2)
+						if (result == 2) {
 #ifdef _DEBUG
-							wsprintf(pythondll, "c:\\python22\\PCBuild\\python%d%d_d.dll",
-								  py_major, py_minor);
+							wsprintf(pythondll, "python%d%d_d.dll",
+								 py_major, py_minor);
 #else
-						wsprintf(pythondll, "python%d%d.dll",
-							  py_major, py_minor);
+							wsprintf(pythondll, "python%d%d.dll",
+								 py_major, py_minor);
 #endif
+						}
 						free(pbuf);
 					} else
 						strcpy(pythondll, "");
@@ -1523,6 +1524,22 @@ static void CloseLogfile(void)
 		fclose(logfile);
 }
 
+static HINSTANCE LoadPythonDll(char *fname)
+{
+	char fullpath[_MAX_PATH];
+	LONG size = sizeof(fullpath);
+	HINSTANCE h = LoadLibrary(fname);
+	if (h)
+		return h;
+	if (ERROR_SUCCESS != RegQueryValue(HKEY_CURRENT_USER,
+					   "SOFTWARE\\Python\\PythonCore\\2.3\\InstallPath",
+					   fullpath, &size))
+		return NULL;
+	strcat(fullpath, "\\");
+	strcat(fullpath, fname);
+	return LoadLibrary(fullpath);
+}
+
 BOOL CALLBACK
 InstallFilesDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -1616,7 +1633,7 @@ InstallFilesDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						"Compiling files to .pyc...");
 
 				SetDlgItemText(hDialog, IDC_INFO, "Loading python...");
-				hPython = LoadLibrary(pythondll);
+				hPython = LoadPythonDll(pythondll);
 				if (hPython) {
 					errors = compile_filelist(hPython, FALSE);
 					FreeLibrary(hPython);
@@ -1635,7 +1652,7 @@ InstallFilesDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						"Compiling files to .pyo...");
 
 				SetDlgItemText(hDialog, IDC_INFO, "Loading python...");
-				hPython = LoadLibrary(pythondll);
+				hPython = LoadPythonDll(pythondll);
 				if (hPython) {
 					errors = compile_filelist(hPython, TRUE);
 					FreeLibrary(hPython);
@@ -1711,7 +1728,7 @@ FinishedDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 			argv[0] = fname;
 
-			hPython = LoadLibrary(pythondll);
+			hPython = LoadPythonDll(pythondll);
 			if (hPython) {
 				int result;
 				result = run_installscript(hPython, fname, 2, argv);
