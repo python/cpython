@@ -648,6 +648,7 @@ Options:
   -b, --builddir=DIR     the build directory; defaults to "build"
   -n, --name=NAME        application name
   -r, --resource=FILE    extra file or folder to be copied to Resources
+  -f, --copyfile=SRC:DST extra file or folder to be copied into the bundle
   -e, --executable=FILE  the executable to be used
   -m, --mainprogram=FILE the Python main program
   -a, --argv             add a wrapper main program to create sys.argv
@@ -679,8 +680,8 @@ def main(builder=None):
 	if builder is None:
 		builder = AppBuilder(verbosity=1)
 
-	shortopts = "b:n:r:e:m:c:p:lx:i:hvqa"
-	longopts = ("builddir=", "name=", "resource=", "executable=",
+	shortopts = "b:n:r:f:e:m:c:p:lx:i:hvqa"
+	longopts = ("builddir=", "name=", "resource=", "copyfile=", "executable=",
 		"mainprogram=", "creator=", "nib=", "plist=", "link",
 		"link-exec", "help", "verbose", "quiet", "argv", "standalone",
 		"exclude=", "include=", "package=", "strip", "iconfile=")
@@ -697,6 +698,11 @@ def main(builder=None):
 			builder.name = arg
 		elif opt in ('-r', '--resource'):
 			builder.resources.append(arg)
+		elif opt in ('-f', '--copyfile'):
+			srcdst = arg.split(':')
+			if len(srcdst) != 2:
+				usage()
+			builder.files.append(srcdst)
 		elif opt in ('-e', '--executable'):
 			builder.executable = arg
 		elif opt in ('-m', '--mainprogram'):
