@@ -715,6 +715,7 @@ listextend(PyListObject *self, PyObject *b)
 	int n;		   /* guess for size of b */
 	int mn;		   /* m + n */
 	int i;
+	PyObject *(*iternext)(PyObject *);
 
 	/* Special cases:
 	   1) lists and tuples which can use PySequence_Fast ops 
@@ -732,6 +733,7 @@ listextend(PyListObject *self, PyObject *b)
 	it = PyObject_GetIter(b);
 	if (it == NULL)
 		return NULL;
+	iternext = *it->ob_type->tp_iternext;
 
 	/* Guess a result list size. */
 	n = PyObject_Size(b);
@@ -747,10 +749,14 @@ listextend(PyListObject *self, PyObject *b)
 
 	/* Run iterator to exhaustion. */
 	for (i = m; ; i++) {
-		PyObject *item = PyIter_Next(it);
+		PyObject *item = iternext(it);
 		if (item == NULL) {
-			if (PyErr_Occurred())
-				goto error;
+			if (PyErr_Occurred()) {
+				if (PyErr_ExceptionMatches(PyExc_StopIteration))
+					PyErr_Clear();
+				else
+					goto error;
+			}
 			break;
 		}
 		if (i < mn)
