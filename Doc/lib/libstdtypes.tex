@@ -1,5 +1,4 @@
-\section{Built-in Types}
-\label{types}
+\section{Built-in Types \label{types}}
 
 The following sections describe the standard types that are built into
 the interpreter.  These are the numeric types, sequence types, and
@@ -15,8 +14,7 @@ implicitly used when an object is written by the \code{print} statement.
 \stindex{print}
 
 
-\subsection{Truth Value Testing}
-\label{truth}
+\subsection{Truth Value Testing \label{truth}}
 
 Any object can be tested for truth value, for use in an \code{if} or
 \code{while} condition or as operand of the Boolean operations below.
@@ -27,11 +25,10 @@ The following values are considered false:
 \indexii{Boolean}{operations}
 \index{false}
 
-\setindexsubitem{(Built-in object)}
 \begin{itemize}
 
 \item	\code{None}
-	\ttindex{None}
+	\withsubitem{(Built-in object)}{\ttindex{None}}
 
 \item	zero of any numeric type, e.g., \code{0}, \code{0L}, \code{0.0}.
 
@@ -40,7 +37,7 @@ The following values are considered false:
 \item	any empty mapping, e.g., \code{\{\}}.
 
 \item	instances of user-defined classes, if the class defines a
-	\code{__nonzero__()} or \code{__len__()} method, when that
+	\method{__nonzero__()} or \method{__len__()} method, when that
 	method returns zero.
 
 \end{itemize}
@@ -56,8 +53,7 @@ stated.  (Important exception: the Boolean operations
 their operands.)
 
 
-\subsection{Boolean Operations}
-\label{boolean}
+\subsection{Boolean Operations \label{boolean}}
 
 These are the Boolean operations, ordered by ascending priority:
 \indexii{Boolean}{operations}
@@ -88,8 +84,7 @@ These only evaluate their second argument if needed for their outcome.
 \end{description}
 
 
-\subsection{Comparisons}
-\label{comparisons}
+\subsection{Comparisons \label{comparisons}}
 
 Comparison operations are supported by all objects.  They all have the
 same priority (which is higher than that of the Boolean operations).
@@ -150,8 +145,7 @@ Two more operations with the same syntactic priority, \samp{in} and
 \opindex{not in}
 
 
-\subsection{Numeric Types}
-\label{typesnumeric}
+\subsection{Numeric Types \label{typesnumeric}}
 
 There are four numeric types: \dfn{plain integers}, \dfn{long integers}, 
 \dfn{floating point numbers}, and \dfn{complex numbers}.
@@ -302,8 +296,7 @@ division by \code{pow(2, \var{n})} without overflow check.
 \end{description}
 
 
-\subsection{Sequence Types}
-\label{typesseq}
+\subsection{Sequence Types \label{typesseq}}
 
 There are three sequence types: strings, lists and tuples.
 
@@ -481,16 +474,16 @@ The following operations are defined on mutable sequence types (where
 \indexii{subscript}{assignment}
 \indexii{slice}{assignment}
 \stindex{del}
-\setindexsubitem{(list method)}
-\ttindex{append}
-\ttindex{count}
-\ttindex{index}
-\ttindex{insert}
-\ttindex{pop}
-\ttindex{remove}
-\ttindex{reverse}
-\ttindex{sort}
-
+\withsubitem{(list method)}{%
+  \ttindex{append}%
+  \ttindex{count}%
+  \ttindex{index}%
+  \ttindex{insert}%
+  \ttindex{pop}%
+  \ttindex{remove}%
+  \ttindex{reverse}%
+  \ttindex{sort}%
+}
 \noindent
 Notes:
 \begin{description}
@@ -519,8 +512,7 @@ by default the last item is removed and returned.
 \end{description}
 
 
-\subsection{Mapping Types}
-\label{typesmapping}
+\subsection{Mapping Types \label{typesmapping}}
 
 A \dfn{mapping} object maps values of one type (the key type) to
 arbitrary objects.  Mappings are mutable objects.  There is currently
@@ -552,20 +544,26 @@ mapping, \var{k} is a key and \var{x} is an arbitrary object):
   \lineiii{\var{a}.clear()}{remove all items from \code{a}}{}
   \lineiii{\var{a}.copy()}{a (shallow) copy of \code{a}}{}
   \lineiii{\var{a}.has_key(\var{k})}{\code{1} if \var{a} has a key \var{k}, else \code{0}}{}
-  \lineiii{\var{a}.items()}{a copy of \var{a}'s list of (key, item) pairs}{(2)}
+  \lineiii{\var{a}.items()}{a copy of \var{a}'s list of (\var{key}, \var{value}) pairs}{(2)}
   \lineiii{\var{a}.keys()}{a copy of \var{a}'s list of keys}{(2)}
   \lineiii{\var{a}.update(\var{b})}{\code{for k, v in \var{b}.items(): \var{a}[k] = v}}{(3)}
   \lineiii{\var{a}.values()}{a copy of \var{a}'s list of values}{(2)}
-  \lineiii{\var{a}.get(\var{k}\optional{, \var{f}})}{the item of \var{a} with key \var{k}}{(4)}
+  \lineiii{\var{a}.get(\var{k}\optional{, \var{f}})}{the value of \var{a} with key \var{k}}{(4)}
 \end{tableiii}
 \indexiii{operations on}{mapping}{types}
 \indexiii{operations on}{dictionary}{type}
 \stindex{del}
 \bifuncindex{len}
-\setindexsubitem{(dictionary method)}
-\ttindex{keys}
-\ttindex{has_key}
-
+\withsubitem{(dictionary method)}{%
+  \ttindex{clear}%
+  \ttindex{copy}%
+  \ttindex{has_key}%
+  \ttindex{items}%
+  \ttindex{keys}%
+  \ttindex{update}%
+  \ttindex{values}%
+  \ttindex{get}%
+}
 \noindent
 Notes:
 \begin{description}
@@ -581,8 +579,7 @@ and \var{k} is not in the map, \code{None} is returned.
 \end{description}
 
 
-\subsection{Other Built-in Types}
-\label{typesother}
+\subsection{Other Built-in Types \label{typesother}}
 
 The interpreter supports several other kinds of objects.
 Most of these support only one or two operations.
@@ -650,7 +647,8 @@ calling \code{\var{m}.im_func(\var{m}.im_self, \var{arg-1},
 
 See the \emph{Python Reference Manual} for more information.
 
-\subsubsection{Code Objects}
+
+\subsubsection{Code Objects \label{bltin-code-objects}}
 \obindex{code}
 
 Code objects are used by the implementation to represent
@@ -661,7 +659,7 @@ returned by the built-in \code{compile()} function and can be
 extracted from function objects through their \code{func_code}
 attribute.
 \bifuncindex{compile}
-\ttindex{func_code}
+\withsubitem{(code object attribute)}{\ttindex{func_code}}
 
 A code object can be executed or evaluated by passing it (instead of a
 source string) to the \code{exec} statement or the built-in
@@ -671,8 +669,8 @@ source string) to the \code{exec} statement or the built-in
 
 See the \emph{Python Reference Manual} for more information.
 
-\subsubsection{Type Objects}
-\label{bltin-type-objects}
+
+\subsubsection{Type Objects \label{bltin-type-objects}}
 
 Type objects represent the various object types.  An object's type is
 accessed by the built-in function \code{type()}.  There are no special
@@ -683,8 +681,8 @@ for all standard built-in types.
 
 Types are written like this: \code{<type 'int'>}.
 
-\subsubsection{The Null Object}
-\label{bltin-null-object}
+
+\subsubsection{The Null Object \label{bltin-null-object}}
 
 This object is returned by functions that don't explicitly return a
 value.  It supports no special operations.  There is exactly one null
@@ -692,8 +690,8 @@ object, named \code{None} (a built-in name).
 
 It is written as \code{None}.
 
-\subsubsection{The Ellipsis Object}
-\label{bltin-ellipsis-object}
+
+\subsubsection{The Ellipsis Object \label{bltin-ellipsis-object}}
 
 This object is used by extended slice notation (see the \emph{Python
 Reference Manual}).  It supports no special operations.  There is
@@ -701,14 +699,13 @@ exactly one ellipsis object, named \code{Ellipsis} (a built-in name).
 
 It is written as \code{Ellipsis}.
 
-\subsubsection{File Objects}
-\label{bltin-file-objects}
+\subsubsection{File Objects \label{bltin-file-objects}}
 
 File objects are implemented using \C{}'s \code{stdio} package and can be
 created with the built-in function \code{open()} described under
 Built-in Functions below.  They are also returned by some other
-built-in functions and methods, e.g.\ \code{posix.popen()} and
-\code{posix.fdopen()} and the \code{makefile()} method of socket
+built-in functions and methods, e.g.\ \function{posix.popen()} and
+\function{posix.fdopen()} and the \method{makefile()} method of socket
 objects.
 \bifuncindex{open}
 \refbimodindex{posix}
@@ -851,30 +848,31 @@ describes code objects, stack frame objects, traceback objects, and
 slice objects.
 
 
-\subsection{Special Attributes}
-\label{specialattrs}
+\subsection{Special Attributes \label{specialattrs}}
 
 The implementation adds a few special read-only attributes to several
 object types, where they are relevant:
 
-\begin{itemize}
+\begin{memberdescni}{__dict__}
+A dictionary of some sort used to store an
+object's (writable) attributes.
+\end{memberdescni}
 
-\item
-\code{\var{x}.__dict__} is a dictionary of some sort used to store an
-object's (writable) attributes;
-
-\item
-\code{\var{x}.__methods__} lists the methods of many built-in object types,
+\begin{memberdescni}{__methods__}
+List of the methods of many built-in object types,
 e.g., \code{[].__methods__} yields
-\code{['append', 'count', 'index', 'insert', 'pop', 'remove', 'reverse', 'sort']};
+\code{['append', 'count', 'index', 'insert', 'pop', 'remove',
+'reverse', 'sort']}.
+\end{memberdescni}
 
-\item
-\code{\var{x}.__members__} lists data attributes;
+\begin{memberdescni}{__members__}
+Similar to \member{__methods__}, but lists data attributes.
+\end{memberdescni}
 
-\item
-\code{\var{x}.__class__} is the class to which a class instance belongs;
+\begin{memberdescni}{__class__}
+The class to which a class instance belongs.
+\end{memberdescni}
 
-\item
-\code{\var{x}.__bases__} is the tuple of base classes of a class object.
-
-\end{itemize}
+\begin{memberdescni}{__bases__}
+The tuple of base classes of a class object.
+\end{memberdescni}
