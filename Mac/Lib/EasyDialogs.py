@@ -75,6 +75,7 @@ def AskString(prompt, default = "", id=257):
 	SetDialogItemText(h, lf2cr(prompt))
 	tp, h, rect = d.GetDialogItem(4)
 	SetDialogItemText(h, lf2cr(default))
+	d.SelectDialogItemText(4, 0, 999)
 #	d.SetDialogItem(4, 0, 255)
 	d.SetDialogDefaultItem(1)
 	d.SetDialogCancelItem(2)
@@ -228,7 +229,7 @@ def test():
 	ok = AskYesNoCancel("Do you want to proceed?")
 	ok = AskYesNoCancel("Do you want to identify?", yes="Indentify", no="Don't identify")
 	if ok > 0:
-		s = AskString("Enter your first name")
+		s = AskString("Enter your first name", "Joe")
 		Message("Thank you,\n%s" % `s`)
 	text = ( "Working Hard...", "Hardly Working..." , 
 			"So far, so good!", "Keep on truckin'" )
