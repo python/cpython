@@ -653,9 +653,13 @@ when running Python's \file{configure} script.  (Contributed by Ondrej
 Palkovsky.)
 
 \item The \cfunction{PyArg_NoArgs()} macro is now deprecated, and code
-that
-uses it should be changed to use \code{PyArg_ParseTuple(args, "")}
-instead.
+that uses it should be changed.  For Python 2.2 and later, the method
+definition table can specify the
+\constant{METH_NOARGS} flag, signalling that there are no arguments, and 
+the argument checking can then be removed.  If compatibility with
+pre-2.2 versions of Python is important, the code could use
+\code{PyArg_ParseTuple(args, "")} instead, but this will be slower 
+than using \constant{METH_NOARGS}.
 
 \item A new function, \cfunction{PyObject_DelItemString(\var{mapping},
 char *\var{key})} was added
@@ -721,7 +725,7 @@ as well as \UNIX.
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Michael Chermside, Scott David Daniels, Fred~L. Drake, Jr.,
-Michael Hudson, Detlef Lannert, Andrew MacIntyre, Gustavo Niemeyer,
-Neal Norwitz.
+Michael Hudson, Detlef Lannert, Martin von L\"owis, Andrew MacIntyre,
+Gustavo Niemeyer, Neal Norwitz.
 
 \end{document}
