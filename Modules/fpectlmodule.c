@@ -160,7 +160,7 @@ static void fpe_reset(Sigfunc *handler)
     signal(SIGFPE, handler);
 
 /*-- DEC ALPHA OSF --------------------------------------------------------*/
-#elif defined(__alpha)
+#elif defined(__alpha) && defined(__osf__)
     /* References:   exception_intro, ieee man pages */
     /* cc -c -I/usr/local/python/include fpectlmodule.c */
     /* ld -shared -o fpectlmodule.so fpectlmodule.o */
