@@ -579,7 +579,6 @@ __test__ = {'libreftest' : libreftest}
 
 def test_main(verbose=None):
     import sys
-    from test import test_sets
     test_classes = (
         TestBasic,
         TestVariousIteratorArgs,
