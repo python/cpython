@@ -1,0 +1,374 @@
+\chapter{Using Python on the Macintosh \label{using}}
+\sectionauthor{Bob Savage}{bobsavage@mac.com}
+
+Using Python on the Macintosh can seem like something completely
+different than using it on a \UNIX-like or Windows system. Most of the
+Python documentation, both the ``official'' documentation and
+published books, describe only how Python is used on these systems,
+causing confusion for the new user of MacPython. This chapter gives a
+brief introduction to the specifics of using Python on a Macintosh.
+
+
+\section{Getting and Installing MacPython \label{getting}}
+
+The most recent release version as well as possible newer experimental
+versions are best found at the MacPython page maintained by Jack
+Jansen: \url{http://www.cwi.nl/~jack/macpython.html}.
+
+
+Please refer to the \file{README} included with your distribution for
+the most up-to-date instructions.
+
+
+\section{Entering the interactive Interpreter
+         \label{interpreter}}
+
+The interactive interpreter that you will see used in Python
+documentation is started by double-clicking the
+\program{PythonInterpreter} icon, which looks like a 16-ton weight
+falling. You should see the version information and the
+\samp{>>>~} prompt.  Use it exactly as described in the standard
+documentation.
+
+
+\section{How to run a Python script}
+
+There are several ways to run an existing Python script; two common
+ways to run a Python script are ``drag and drop'' and ``double
+clicking''.  Other ways include running it from within the IDE (see
+Section \ref{IDE}), or launching via AppleScript.
+
+
+\subsection{Drag and drop}
+
+One of the easiest ways to launch a Python script is via ``Drag and
+Drop''. This is just like launching a text file in the Finder by
+``dragging'' it over your word processor's icon and ``dropping'' it
+there. Make sure that you use an icon referring to the
+\program{PythonInterpreter}, not the \program{IDE} or \program{Idle}
+icons which have different behaviour which is described below.
+
+Some things that might have gone wrong:
+
+\begin{itemize}
+\item
+A window flashes after dropping the script onto the
+\program{PythonInterpreter}, but then disappears. Most likely this is a
+configuration issue; your \program{PythonInterpreter} is setup to exit
+immediately upon completion, but your script assumes that if it prints
+something that text will stick around for a while. To fix this, see
+section \ref{Defaults}.
+
+\item
+After dropping the script onto the \program{PythonInterpreter}, a
+window appeared which said: ``File contains \code{\e r} characters
+(incorrect line endings?)''. That script probably originated on a
+\UNIX{} or Windows machine. You will need to change the line endings
+to the standard Mac usage.  One way to do this is to open the file in
+\program{BBedit}
+(\url{http://www.barebones.com/products/bbedit_lite.html}) which can
+easily change the line endings between Mac, DOS, and \UNIX\ styles.
+
+\item
+When you waved the script icon over the \program{PythonInterpreter},
+the \program{PythonInterpreter} icon did not hilight.  Most likely the
+Creator code and document type is unset (or set incorrectly) -- this
+often happens when a file originates on a non-Mac computer.  See
+section \ref{CreatorCode} for more details.
+\end{itemize}
+
+
+\subsection{Set Creator and Double Click \label{creator-code}}
+
+If the script that you want to launch has the appropriate Creator Code
+and File Type you can simply double-click on the script to launch it.
+To be ``double-clickable'' a file needs to be of type \samp{TEXT},
+with a creator code of \samp{Pyth}.
+
+Setting the creator code and filetype can be done with the IDE (see
+sections \ref{IDEwrite} and \ref{IDEapplet}), with an editor with a
+Python mode (\program{BBEdit}) -- see section
+\ref{scripting-with-BBedit}, or with assorted other Mac utilities, but
+a script (\file{fixfiletypes.py}) has been included in the MacPython
+distribution, making it possible to set the proper Type and Creator
+Codes with Python.
+
+The \file{fixfiletypes.py} script will change the file type and
+creator codes for the indicated directory.  To use
+\file{fixfiletypes.py}:
+
+\begin{enumerate}
+\item
+Locate it in the \file{scripts} folder of the \file{Mac} folder of the
+MacPython distribution.
+
+\item
+Put all of the scripts that you want to fix in a folder with nothing
+else in it.
+
+\item
+Double-click on the \file{fixfiletypes.py} icon.
+
+\item
+Navigate into the folder of files you want to fix, and press the
+``Select current folder'' button.
+\end{enumerate}
+
+
+\section{Simulating command line arguments
+         \label{argv}}
+
+There are two ways to simulate command-line arguments with MacPython.
+ 
+\begin{enumerate}
+\item via Interpreter options
+\begin{itemize} % nestable? I hope so!
+  \item Hold the option-key down when launching your script. This will
+        bring up a dialog box of Python Interpreter options.
+  \item Click ``Set \UNIX-style command line..'' button. 
+  \item Type the arguments into the ``Argument'' field.
+  \item Click ``OK''
+  \item Click ``Run''.
+\end{itemize} % end
+
+\item via drag and drop
+If you save the script as an applet (see Section \ref{IDEapplet}), you
+can also simulate some command-line arguments via
+``Drag-and-Drop''. In this case, the names of the files that were
+dropped onto the applet will be appended to \code{sys.argv}, so that
+it will appear to the script as though they had been typed on a
+command line.  As on \UNIX\ systems, the first item in \code{sys.srgv} is
+the path to the applet, and the rest are the files dropped on the
+applet.
+\end{enumerate}
+
+
+\section{Creating a Python script}
+
+Since Python scripts are simply text files, they can be created in any
+way that text files can be created, but some special tools also exist
+with extra features.
+
+
+\subsection{In an editor}
+
+You can create a text file with any word processing program such as
+\program{MSWord} or \program{AppleWorks} but you need to make sure
+that the file is saved as ``\ASCII'' or ``plain text''.
+
+
+\subsubsection{Editors with Python modes}
+
+Several text editors have additional features that add functionality
+when you are creating a Python script.  These can include coloring
+Python keywords to make your code easier to read, module browsing, or
+a built-in debugger. These include \program{Alpha}, \program{Pepper},
+and \program{BBedit}, and the MacPython IDE (Section \ref{IDE}).
+
+%\subsubsection{Alpha}
+% **NEED INFO HERE**
+ 
+\subsubsection{BBedit \label{scripting-with-BBedit}}
+
+If you use \program{BBEdit} to create your scripts you will want to tell it about the Python creator code so that
+you can simply double click on the saved file to launch it.
+\begin{itemize}
+  \item Launch \program{BBEdit}.
+  \item Select ``Preferences'' from the ``Edit'' menu.
+  \item Select ``File Types'' from the scrolling list.
+  \item click on the ``Add...'' button and navigate to
+        \program{PythonInterpreter} in the main directory of the
+        MacPython distribution; click ``open''.
+  \item Click on the ``Save'' button in the Preferences panel.
+\end{itemize}
+% Are there additional BBedit Python-specific features? I'm not aware of any.
+ 
+%\subsubsection{IDE}
+%You can use the \program{Python IDE} supplied in the MacPython Distribution to create longer Python scripts 
+%-- see Section \ref{IDEwrite} for details.
+ 
+%\subsubsection{IDLE}
+%Idle is an IDE for Python that was written in Python, using TKInter. You should be able to use it on a Mac by following
+%the standard documentation, but see Section \ref{TKInter} for guidance on using TKInter with MacPython.
+
+%\subsubsection{Pepper}
+% **NEED INFO HERE**
+
+
+\section{The IDE\label{IDE}}
+
+The \program{Python IDE} (Integrated Development Environment) is a
+separate application that acts as a text editor for your Python code,
+a class browser, a graphical debugger, and more.
+
+
+\subsection{Using the ``Python Interactive'' window}
+
+Use this window like you would the \program{PythonInterpreter}, except
+that you cannot use the ``Drag and drop'' method above. Instead,
+dropping a script onto the \program{Python IDE} icon will open the
+file in a seperate script window (which you can then execute manually
+-- see section \ref{IDEexecution}).
+
+
+\subsection{Writing a Python Script \label{IDEwrite}}
+
+In addition to using the \program{Python IDE} interactively, you can
+also type out a complete Python program, saving it incrementally, and
+execute it or smaller selections of it.
+
+You can create a new script, open a previously saved script, and save
+your currently open script by selecting the appropriate item in the
+``File'' menu. Dropping a Python script onto the
+\program{Python IDE} will open it for editting.
+
+If you try to open a script with the \program{Python IDE} but either
+can't locate it from the ``Open'' dialog box, or you get an error
+message like ``Can't open file of type ...'' see section
+\ref{CreatorCode}.
+
+When the \program{Python IDE} saves a script, it uses the creator code
+settings which are available by clicking on the small black triangle
+on the top right of the document window, and selecting ``save
+options''. The default is to save the file with the \program{Python
+IDE} as the creator, this means that you can open the file for editing
+by simply double-clicking on its icon. You might want to change this
+behaviour so that it will be opened by the
+\program{PythonInterpreter}, and run. To do this simply choose
+``Python Interpreter'' from the ``save options''. Note that these
+options are associated with the \emph{file} not the application.
+
+
+\subsection{Executing a script from within the IDE
+            \label{IDEexecution}}
+
+You can run the script in the frontmost window of the \program{Python
+IDE} by hitting the run all button.  You should be aware, however that
+if you use the Python convention \samp{if __name__ == "__main__":} the
+script will \emph{not} be ``__main__'' by default. To get that
+behaviour you must select the ``Run as __main__'' option from the
+small black triangle on the top right of the document window.  Note
+that this option is associated with the \emph{file} not the
+application. It \emph{will} stay active after a save, however; to shut
+this feature off simply select it again.
+ 
+
+\subsection{``Save as'' versus ``Save as Applet''
+            \label{IDEapplet}}
+
+When you are done writing your Python script you have the option of
+saving it as an ``applet'' (by selecting ``Save as applet'' from the
+``File'' menu). This has a significant advantage in that you can drop
+files or folders onto it, to pass them to the applet the way
+command-line users would type them onto the command-line to pass them
+as arguments to the script. However, you should make sure to save the
+applet as a seperate file, do not overwrite the script you are
+writing, because you will not be able to edit it again.
+
+Accessing the items passed to the applet via ``drag-and-drop'' is done
+using the standard \member{sys.argv} mechanism. See the general
+documentation for more
+% need to link to the appropriate place in non-Mac docs
+
+Note that saving a script as an applet will not make it runnable on a
+system without a Python installation.
+
+%\subsection{Debugger}
+% **NEED INFO HERE**
+ 
+%\subsection{Module Browser}
+% **NEED INFO HERE**
+ 
+%\subsection{Profiler}
+% **NEED INFO HERE**
+% end IDE
+
+%\subsection{The ``Scripts'' menu}
+% **NEED INFO HERE**
+ 
+\section{Configuration \label{configuration}}
+
+The MacPython distribution comes with \program{EditPythonPrefs}, an
+applet which will help you to customize the MacPython environment for
+your working habits.
+ 
+\subsection{EditPythonPrefs\label{EditPythonPrefs}}
+
+\program{EditPythonPrefs} gives you the capability to configure Python
+to behave the way you want it to.  There are two ways to use
+\program{EditPythonPrefs}, you can use it to set the preferences in
+general, or you can drop a particular Python engine onto it to
+customize only that version. The latter can be handy if, for example,
+you want to have a second copy of the \program{PythonInterpreter} that
+keeps the output window open on a normal exit even though you prefer
+to normally not work that way.
+
+To change the default preferences, simply double-click on
+\program{EditPythonPrefs}. To change the preferences only for one copy
+of the Interpreter, drop the icon for that copy onto
+\program{EditPythonPrefs}.  You can also use \program{EditPythonPrefs}
+in this fashion to set the preferences of the \program{Python IDE} and
+any applets you create -- see Sections \ref{BuildApplet} and
+\ref{IDEapplet}.
+
+\subsection{Adding modules to the Module Search Path
+            \label{search-path}}
+
+When executing an \keyword{import} statement, Python looks for modules
+in places defined by the \member{sys.path} To edit the
+\member{sys.path} on a Mac, launch \program{EditPythonPrefs}, and
+enter them into the largish field at the top (one per line).
+
+Since MacPython defines a main Python directory, the easiest thing is
+to add folders to search within the main Python directory. To add a
+folder of scripts that you created called ``My Folder'' located in the
+main Python Folder, enter \samp{\$(PYTHON):My Folder} onto a new line.
+
+To add the Desktop under OS 9 or below, add
+\samp{StartupDriveName:Desktop Folder} on a new line.
+
+\subsection{Default startup options \label{defaults}}
+
+% I'm assuming that there exists some other documentation on the
+% rest of the options so I only go over a couple here.
+
+The ``Default startup options...'' button in the
+\program{EditPythonPrefs} dialog box gives you many options including
+the ability to keep the ``Output'' window open after the script
+terminates, and the ability to enter interactive mode after the
+termination of the run script. The latter can be very helpful if you
+want to examine the objects that were created during your script.
+
+%\section{Nifty Tools}
+%There are many other tools included with the MacPython
+%distribution. In addition to those discussed here, make 
+%sure to check the \file{Mac} directory.
+
+%\subsection{BuildApplet \label{BuildApplet}}
+% **NEED INFO HERE**
+
+%\subsection{BuildApplication}
+% **NEED INFO HERE**
+ 
+%\section{TKInter on the Mac \label{TKInter}}
+
+%TKinter is installed by default with the MacPython distribution, but
+%you may need to add the \file{lib-tk} folder to the Python Path (see
+%section \ref{search-path}).  Also, it is important that you do not
+%try to launch Tk from within the \program{Python IDE} because the two
+%event loops will collide -- always run a script which uses Tkinter
+%with the \program{PythonInterpreter} instead -- see section
+%\ref{interpreter}.
+ 
+%\section{CGI on the Mac with Python \label{CGI}}
+%**NEED INFO HERE**
+
+\section{Mac OS X}
+
+At the time of this writing Mac OS X had just been released as a
+Public Beta. Efforts are under way to bring MacPython to Mac OS X. The
+MacPython release \version{1.5.2c1} runs quite well within the
+``Classic'' environment.  A ``Carbon'' port of the MacPython code is
+being prepared for release, and several people have made a command
+line version available to the ``Darwin'' layer (which is accessible
+via Terminal.app).
