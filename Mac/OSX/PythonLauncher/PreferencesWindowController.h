@@ -8,6 +8,7 @@
 {
     IBOutlet NSPopUpButton *filetype;
     IBOutlet NSTextField *interpreter;
+    IBOutlet NSButton *honourhashbang;
     IBOutlet NSButton *debug;
     IBOutlet NSButton *verbose;
     IBOutlet NSButton *inspect;

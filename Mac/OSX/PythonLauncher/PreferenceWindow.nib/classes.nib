@@ -9,6 +9,7 @@
                 commandline = NSTextField; 
                 debug = NSButton; 
                 filetype = NSPopUpButton; 
+                honourhashbang = NSButton; 
                 inspect = NSButton; 
                 interpreter = NSTextField; 
                 nosite = NSButton; 

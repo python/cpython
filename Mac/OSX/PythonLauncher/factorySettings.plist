@@ -16,6 +16,8 @@
                     <string>/usr/bin/pythonw</string>
                     <string>/Applications/MacPython-OSX/python-additions/Python.app/Contents/MacOS/python</string>
                 </array>
+                <key>honourhashbang</key>
+                <false/>
                 <key>nosite</key>
                 <false/>
                 <key>optimize</key>
@@ -45,7 +47,9 @@
                     <string>/usr/bin/pythonw</string>
                     <string>/Applications/MacPython-OSX/python-additions/Python.app/Contents/MacOS/python</string>
                 </array>
-                <key>nosite</key>
+                <key>honourhashbang</key>
+                <false/>
+                 <key>nosite</key>
                 <false/>
                 <key>optimize</key>
                 <false/>
@@ -69,7 +73,9 @@
                     <string>/Library/Frameworks/Python.framework/Versions/Current/bin/python</string>
                     <string>/usr/bin/python</string>
                 </array>
-                <key>nosite</key>
+                <key>honourhashbang</key>
+                <false/>
+                 <key>nosite</key>
                 <false/>
                 <key>optimize</key>
                 <false/>

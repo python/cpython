@@ -69,6 +69,7 @@
     if (!self) return self;
     
     interpreter = [source->interpreter retain];
+    honourhashbang = source->honourhashbang;
     debug = source->debug;
     verbose = source->verbose;
     inspect = source->inspect;
@@ -182,6 +183,7 @@
 - (void)updateFromSource: (id <FileSettingsSource>)source
 {
     interpreter = [[source interpreter] retain];
+    honourhashbang = [source honourhashbang];
     debug = [source debug];
     verbose = [source verbose];
     inspect = [source inspect];
@@ -196,6 +198,7 @@
         NSUserDefaults *defaults;
         NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
             interpreter, @"interpreter",
+            [NSNumber numberWithBool: honourhashbang], @"honourhashbang",
             [NSNumber numberWithBool: debug], @"debug",
             [NSNumber numberWithBool: verbose], @"verbose",
             [NSNumber numberWithBool: inspect], @"inspect",
@@ -216,6 +219,8 @@
     
     value = [dict objectForKey: @"interpreter"];
     if (value) interpreter = [value retain];
+    value = [dict objectForKey: @"honourhashbang"];
+    if (value) honourhashbang = [value boolValue];
     value = [dict objectForKey: @"debug"];
     if (value) debug = [value boolValue];
     value = [dict objectForKey: @"verbose"];
@@ -236,9 +241,27 @@
 
 - (NSString *)commandLineForScript: (NSString *)script
 {
+    NSString *cur_interp = NULL;
+    char hashbangbuf[1024];
+    FILE *fp;
+    char *p;
+    
+    if (honourhashbang &&
+       (fp=fopen([script cString], "r")) &&
+       fgets(hashbangbuf, sizeof(hashbangbuf), fp) &&
+       strncmp(hashbangbuf, "#!", 2) == 0 &&
+       (p=strchr(hashbangbuf, '\n'))) {
+            *p = '\0';
+            p = hashbangbuf + 2;
+            while (*p == ' ') p++;
+            cur_interp = [NSString stringWithCString: p];
+    }
+    if (!cur_interp)
+        cur_interp = interpreter;
+        
     return [NSString stringWithFormat:
         @"\"%@\"%s%s%s%s%s%s %@ \"%@\" %s",
-        interpreter,
+        cur_interp,
         debug?" -d":"",
         verbose?" -v":"",
         inspect?" -i":"",
@@ -254,6 +277,7 @@
 
 // FileSettingsSource protocol 
 - (NSString *) interpreter { return interpreter;};
+- (BOOL) honourhashbang { return honourhashbang; };
 - (BOOL) debug { return debug;};
 - (BOOL) verbose { return verbose;};
 - (BOOL) inspect { return inspect;};

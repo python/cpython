@@ -52,6 +52,7 @@
 //    [[self window] setTitle: script];
     
     [interpreter setStringValue: [settings interpreter]];
+    [honourhashbang setState: [settings honourhashbang]];
     [debug setState: [settings debug]];
     [verbose setState: [settings verbose]];
     [inspect setState: [settings inspect]];
@@ -152,6 +153,7 @@
 
 // FileSettingsSource protocol 
 - (NSString *) interpreter { return [interpreter stringValue];};
+- (BOOL) honourhashbang { return [honourhashbang state];};
 - (BOOL) debug { return [debug state];};
 - (BOOL) verbose { return [verbose state];};
 - (BOOL) inspect { return [inspect state];};
