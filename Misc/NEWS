@@ -61,6 +61,12 @@ Otherwise modules such as thread didn't get incorporated in extensions.
 New library modules
 -------------------
 
+- shlex.py by Eric Raymond provides a lexical analyzer class for
+simple shell-like syntaxes.
+
+- netrc.py by Eric Raymond provides a parser for .netrc files.  (The
+undocumented Netrc class in ftplib.py is now obsolete.)
+
 - codeop.py is a new module that contains the compile_command()
 function that was previously in code.py.  This is so that JPython can
 provide its own version of this function, while still sharing the
@@ -117,6 +123,10 @@ patches).
 - types.py: use type(__stdin__) for FileType.
 
 - urllib.py: fix translations for filenames with "funny" characters.
+Patch by Sjoerd Mullender.  Note that if you subclass one of the
+URLopener classes, and you have copied code from the old urllib.py,
+your subclass may stop working.  A long-term solution is to provide
+more methods so that you don't have to copy code.
 
 - cgi.py: In read_multi, allow a subclass to override the class we
 instantiate when we create a recursive instance, by setting the class
