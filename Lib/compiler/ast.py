@@ -105,6 +105,11 @@ class Lambda(Node):
     self.flags = flags
     self.code = code
     self._children = ('lambda', argnames, defaults, flags, code)
+    self.varargs = self.kwargs = None
+    if flags & CO_VARARGS:
+      self.varargs = 1
+    if flags & CO_VARKEYWORDS:
+      self.kwargs = 1
 
   def __repr__(self):
     return "Lambda(%s,%s,%s,%s)" % self._children[1:]
