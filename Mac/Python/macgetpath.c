@@ -108,7 +108,6 @@ Py_GetPath()
 	char *p, *endp;
 	int newlen;
 	char *curwd;
-	staticforward char *PyMac_GetPythonDir();
 #ifndef USE_BUILTIN_PATH
 	staticforward char *PyMac_GetPythonPath();
 #endif
@@ -200,7 +199,7 @@ PyMac_OpenPrefFile()
 /*
 ** Return the name of the Python directory
 */
-static char *
+char *
 PyMac_GetPythonDir()
 {
 	static int diditbefore = 0;
@@ -257,7 +256,7 @@ PyMac_GetPythonDir()
 }
 
 #ifndef USE_BUILTIN_PATH
-static char *
+char *
 PyMac_GetPythonPath()
 {
     short oldrh, prefrh = -1;
@@ -364,7 +363,8 @@ PyMac_PreferenceOptions(PyMac_PrefRecord *pr)
 	short oldrh, prefrh = -1;
 	Handle handle;
 	int size;
-	char *p;
+	PyMac_PrefRecord *p;
+	int action;
 	
 	
     oldrh = CurResFile();
@@ -384,18 +384,23 @@ PyMac_PreferenceOptions(PyMac_PrefRecord *pr)
     }
     HLock(handle);
     size = GetHandleSize(handle);
-    p = (char *)*handle;
-    
-    if ( size > POPT_INSPECT ) pr->inspect = p[POPT_INSPECT];
-    if ( size > POPT_VERBOSE ) pr->verbose = p[POPT_VERBOSE];
-    if ( size > POPT_SUPPRESS ) pr->suppress_print = p[POPT_SUPPRESS];
-    if ( size > POPT_UNBUFFERED ) pr->unbuffered = p[POPT_UNBUFFERED];
-    if ( size > POPT_DEBUGGING ) pr->debugging = p[POPT_DEBUGGING];
-    if ( size > POPT_KEEPNORM ) pr->keep_normal = p[POPT_KEEPNORM];
-    if ( size > POPT_KEEPERR ) pr->keep_error = p[POPT_KEEPERR];
-    if ( size > POPT_NOINTOPT ) pr->nointopt = p[POPT_NOINTOPT];
-    if ( size > POPT_NOARGS ) pr->noargs = p[POPT_NOARGS];
-    
+    p = (PyMac_PrefRecord *)*handle;
+    if ( p->version == POPT_VERSION_CURRENT && size == sizeof(PyMac_PrefRecord) ) {
+    	*pr = *p;
+    } else {
+	action = CautionAlert(BADPREFERENCES_ID, NULL);
+	if ( action == BADPREF_DELETE ) {
+		OSErr err;
+		
+		RemoveResource(handle);
+		if ( (err=ResError()) ) printf("RemoveResource: %d\n", err);
+		if ( prefrh != -1 ) {
+			UpdateResFile(prefrh);
+			if ( (err=ResError()) ) printf("UpdateResFile: %d\n", err);
+		}
+	} else if ( action == BADPREF_QUIT )
+		exit(1);
+    }    
     HUnlock(handle);
 
    	if ( prefrh != -1) CloseResFile(prefrh);
