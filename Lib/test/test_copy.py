@@ -375,6 +375,42 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(y, x)
         self.assert_(y.foo is not x.foo)
 
+    # Additions for Python 2.3 and pickle protocol 2
+
+    def test_reduce_4tuple(self):
+        class C(list):
+            def __reduce__(self):
+                return (C, (), self.__dict__, iter(self))
+            def __cmp__(self, other):
+                return (cmp(list(self), list(other)) or
+                        cmp(self.__dict__, other.__dict__))
+        x = C([[1, 2], 3])
+        y = copy.copy(x)
+        self.assertEqual(x, y)
+        self.assert_(x is not y)
+        self.assert_(x[0] is y[0])
+        y = copy.deepcopy(x)
+        self.assertEqual(x, y)
+        self.assert_(x is not y)
+        self.assert_(x[0] is not y[0])
+
+    def test_reduce_5tuple(self):
+        class C(dict):
+            def __reduce__(self):
+                return (C, (), self.__dict__, None, self.iteritems())
+            def __cmp__(self, other):
+                return (cmp(dict(self), list(dict)) or
+                        cmp(self.__dict__, other.__dict__))
+        x = C([("foo", [1, 2]), ("bar", 3)])
+        y = copy.copy(x)
+        self.assertEqual(x, y)
+        self.assert_(x is not y)
+        self.assert_(x["foo"] is y["foo"])
+        y = copy.deepcopy(x)
+        self.assertEqual(x, y)
+        self.assert_(x is not y)
+        self.assert_(x["foo"] is not y["foo"])
+
 def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestCopy))
