@@ -157,10 +157,12 @@ sound_similar(PyObject *self, PyObject *args)
  */
 static PyMethodDef SoundexMethods[] =
 {
-	{"sound_similar", sound_similar, 1, soundex_sound_similar__doc__},
-	{"get_soundex", get_soundex, 1, soundex_get_soundex__doc__},
+	{"sound_similar", sound_similar, 
+	 METH_VARARGS, soundex_sound_similar__doc__},
+	{"get_soundex", get_soundex, 
+	 METH_VARARGS, soundex_get_soundex__doc__},
 
-    {NULL, NULL }               /* sentinel */
+	{NULL, NULL }               /* sentinel */
 };
 
 

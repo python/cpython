@@ -498,16 +498,16 @@ static PyMethodDef time_methods[] = {
 	{"sleep",	time_sleep, 0, sleep_doc},
 	{"gmtime",	time_gmtime, 0, gmtime_doc},
 	{"localtime",	time_localtime, 0, localtime_doc},
-	{"asctime",	time_asctime, 1, asctime_doc},
+	{"asctime",	time_asctime, METH_VARARGS, asctime_doc},
 	{"ctime",	time_ctime, 0, ctime_doc},
 #ifdef HAVE_MKTIME
-	{"mktime",	time_mktime, 1, mktime_doc},
+	{"mktime",	time_mktime, METH_VARARGS, mktime_doc},
 #endif
 #ifdef HAVE_STRFTIME
-	{"strftime",	time_strftime, 1, strftime_doc},
+	{"strftime",	time_strftime, METH_VARARGS, strftime_doc},
 #endif
 #ifdef HAVE_STRPTIME
-	{"strptime",	time_strptime, 1, strptime_doc},
+	{"strptime",	time_strptime, METH_VARARGS, strptime_doc},
 #endif
 	{NULL,		NULL}		/* sentinel */
 };

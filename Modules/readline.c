@@ -323,15 +323,19 @@ Insert text into the command line.\
 
 static struct PyMethodDef readline_methods[] =
 {
-	{"parse_and_bind", parse_and_bind, 1, doc_parse_and_bind},
+	{"parse_and_bind", parse_and_bind, METH_VARARGS, doc_parse_and_bind},
 	{"get_line_buffer", get_line_buffer, 0, doc_get_line_buffer},
-	{"insert_text", insert_text, 1, doc_insert_text},
-	{"read_init_file", read_init_file, 1, doc_read_init_file},
-	{"read_history_file", read_history_file, 1, doc_read_history_file},
-	{"write_history_file", write_history_file, 1, doc_write_history_file},
- 	{"set_history_length", set_history_length, 1, set_history_length_doc},
- 	{"get_history_length", get_history_length, 1, get_history_length_doc},
-	{"set_completer", set_completer, 1, doc_set_completer},
+	{"insert_text", insert_text, METH_VARARGS, doc_insert_text},
+	{"read_init_file", read_init_file, METH_VARARGS, doc_read_init_file},
+	{"read_history_file", read_history_file, 
+	 METH_VARARGS, doc_read_history_file},
+	{"write_history_file", write_history_file, 
+	 METH_VARARGS, doc_write_history_file},
+ 	{"set_history_length", set_history_length, 
+	 METH_VARARGS, set_history_length_doc},
+ 	{"get_history_length", get_history_length, 
+	 METH_VARARGS, get_history_length_doc},
+	{"set_completer", set_completer, METH_VARARGS, doc_set_completer},
 	{"get_begidx", get_begidx, 0, doc_get_begidx},
 	{"get_endidx", get_endidx, 0, doc_get_endidx},
 
