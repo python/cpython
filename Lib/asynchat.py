@@ -280,20 +280,18 @@ class fifo:
 # characters matched.
 # for example:
 # f_p_a_e ("qwerty\r", "\r\n") => 1
-# f_p_a_e ("qwerty\r\n", "\r\n") => 2
 # f_p_a_e ("qwertydkjf", "\r\n") => 0
+# f_p_a_e ("qwerty\r\n", "\r\n") => <undefined>
 
 # this could maybe be made faster with a computed regex?
 # [answer: no; circa Python-2.0, Jan 2001]
-# python:    18307/s
+# new python:   28961/s
+# old python:   18307/s
 # re:        12820/s
 # regex:     14035/s
 
 def find_prefix_at_end (haystack, needle):
-    nl = len(needle)
-    result = 0
-    for i in range (1,nl):
-        if haystack[-(nl-i):] == needle[:(nl-i)]:
-            result = nl-i
-            break
-    return result
+	l = len(needle) - 1
+	while l and not haystack.endswith(needle[:l]):
+		l -= 1
+	return l
