@@ -874,6 +874,7 @@ VALIDATER(print_stmt);		VALIDATER(del_stmt);
 VALIDATER(return_stmt);
 VALIDATER(raise_stmt);		VALIDATER(import_stmt);
 VALIDATER(global_stmt);
+VALIDATER(assert_stmt);
 VALIDATER(exec_stmt);		VALIDATER(compound_stmt);
 VALIDATER(while);		VALIDATER(for);
 VALIDATER(try);			VALIDATER(except_clause);
@@ -1333,6 +1334,7 @@ validate_small_stmt(tree)
 		   || (TYPE(CHILD(tree, 0)) == flow_stmt)
 		   || (TYPE(CHILD(tree, 0)) == import_stmt)
 		   || (TYPE(CHILD(tree, 0)) == global_stmt)
+		   || (TYPE(CHILD(tree, 0)) == assert_stmt)
 		   || (TYPE(CHILD(tree, 0)) == exec_stmt)));
 
     if (res)
@@ -1582,6 +1584,32 @@ validate_exec_stmt(tree)
     return (res);
 
 }   /* validate_exec_stmt() */
+
+
+/*  assert_stmt:
+ *
+ *  'assert' test [',' test]
+ */
+static int
+validate_assert_stmt(tree)
+    node *tree;
+{
+    int nch = NCH(tree);
+    int res = (validate_ntype(tree, assert_stmt)
+	       && ((nch == 2) || (nch == 4))
+	       && (validate_name(CHILD(tree, 0), "__assert__") ||
+		   validate_name(CHILD(tree, 0), "assert"))
+	       && validate_test(CHILD(tree, 1)));
+
+    if (!res && !PyErr_Occurred())
+	err_string("Illegal assert statement.");
+    if (res && (nch > 2))
+	res = (validate_comma(CHILD(tree, 2))
+	       && validate_test(CHILD(tree, 3)));
+
+    return (res);
+
+}   /* validate_assert_stmt() */
 
 
 static int
@@ -2373,7 +2401,7 @@ validate_node(tree)
 	  case small_stmt:
 	    /*
 	     *  expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt
-	     *  | import_stmt | global_stmt | exec_stmt
+	     *  | import_stmt | global_stmt | exec_stmt | assert_stmt
 	     */
 	    res = validate_small_stmt(tree);
 	    break;
@@ -2435,6 +2463,9 @@ validate_node(tree)
 	    break;
 	  case exec_stmt:
 	    res = validate_exec_stmt(tree);
+	    break;
+	  case assert_stmt:
+	    res = validate_assert_stmt(tree);
 	    break;
 	  case if_stmt:
 	    res = validate_if(tree);
