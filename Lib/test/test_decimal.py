@@ -35,7 +35,12 @@ from test.test_support import TestSkipped, run_unittest, run_doctest, is_resourc
 import threading
 
 TESTDATADIR = 'decimaltestdata'
-dir = os.curdir + os.sep + TESTDATADIR + os.sep
+if __name__ == '__main__':
+    file = sys.argv[0]
+else:
+    file = __file__
+testdir = os.path.dirname(file) or os.curdir
+dir = testdir + os.sep + TESTDATADIR + os.sep
 
 skip_expected = not os.path.isdir(dir)
 
@@ -190,7 +195,7 @@ class DecimalTest(unittest.TestCase):
         quote = 0
         theirexceptions = [ErrorNames[x.lower()] for x in exceptions]
 
-        for exception in ExceptionList:
+        for exception in Signals:
             self.context.trap_enablers[exception] = 1 #Catch these bugs...
         for exception in theirexceptions:
             self.context.trap_enablers[exception] = 0
@@ -212,7 +217,7 @@ class DecimalTest(unittest.TestCase):
                             funct(self.context.create_decimal(v))
                         except error:
                             pass
-                        except ExceptionList, e:
+                        except Signals, e:
                             self.fail("Raised %s in %s when %s disabled" % \
                                       (e, s, error))
                         else:
@@ -232,7 +237,7 @@ class DecimalTest(unittest.TestCase):
                     funct(*vals)
                 except error:
                     pass
-                except ExceptionList, e:
+                except Signals, e:
                     self.fail("Raised %s in %s when %s disabled" % \
                               (e, s, error))
                 else:
@@ -242,7 +247,7 @@ class DecimalTest(unittest.TestCase):
             result = str(funct(*vals))
             if fname == 'same_quantum':
                 result = str(int(eval(result))) # 'True', 'False' -> '1', '0'
-        except ExceptionList, error:
+        except Signals, error:
             self.fail("Raised %s in %s" % (error, s))
         except: #Catch any error long enough to state the test case.
             print "ERROR:", s
@@ -263,13 +268,13 @@ class DecimalTest(unittest.TestCase):
 
     def getexceptions(self):
         L = []
-        for exception in ExceptionList:
+        for exception in Signals:
             if self.context.flags[exception]:
                 L.append(exception)
         return L
 
     def resetflags(self):
-        for exception in ExceptionList:
+        for exception in Signals:
             self.context.flags[exception] = 0
 
     def change_precision(self, prec):
@@ -1046,6 +1051,16 @@ class DecimalPythonAPItests(unittest.TestCase):
         e = pickle.loads(p)
         self.assertEqual(d, e)
 
+class ContextAPItests(unittest.TestCase):
+
+    def test_pickle(self):
+        c = Context()
+        e = pickle.loads(pickle.dumps(c))
+        for k in vars(c):
+            v1 = vars(c)[k]
+            v2 = vars(e)[k]
+            self.assertEqual(v1, v2)
+
 def test_main(arith=False, verbose=None):
     """ Execute the tests.
 
@@ -1059,6 +1074,7 @@ def test_main(arith=False, verbose=None):
         DecimalUseOfContextTest,
         DecimalUsabilityTest,
         DecimalPythonAPItests,
+        ContextAPItests,
     ]
 
     if arith or is_resource_enabled('decimal'):
