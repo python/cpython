@@ -1,7 +1,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <errno.h>
 #include </usr/include/thread.h>
 #undef _POSIX_THREADS

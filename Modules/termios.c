@@ -12,10 +12,6 @@
 #endif
 #include <sys/ioctl.h>
 
-#ifdef __BEOS__
-#include <unistd.h>
-#endif
-
 /* HP-UX requires that this be included to pick up MDCD, MCTS, MDSR,
  * MDTR, MRI, and MRTS (appearantly used internally by some things
  * defined as macros; these are not used here directly).

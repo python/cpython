@@ -49,6 +49,9 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 /* CAUTION:  Build setups should ensure that NDEBUG is defined on the
  * compiler command line when building Python in release mode; else

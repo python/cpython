@@ -8,10 +8,6 @@
 #include "frameobject.h"
 #include "structmember.h"
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
 /*
  * Which timer to use should be made more configurable, but that should not
  * be difficult.  This will do for now.

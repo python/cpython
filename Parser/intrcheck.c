@@ -107,9 +107,6 @@ PyOS_InterruptOccurred(void)
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
 static int interrupted;
 

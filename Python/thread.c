@@ -5,7 +5,7 @@
    which is included by this file dependent on config settings.
    Stuff shared by all thread_*.h files is collected here. */
 
-#include "pyconfig.h"
+#include "Python.h"
 
 /* pyconfig.h may or may not define DL_IMPORT */
 #ifndef DL_IMPORT	/* declarations for DLL import/export */
@@ -22,10 +22,6 @@
 #ifdef Py_DEBUG
 extern char *getenv(const char *);
 #endif
-#endif
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
 #endif
 
 #ifdef __DGUX

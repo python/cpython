@@ -66,10 +66,6 @@
 #include <sys/stat.h>
 #include <string.h>
 
-#if HAVE_UNISTD_H
-#include <unistd.h>
-#endif /* HAVE_UNISTD_H */
-
 /* Search in some common locations for the associated Python libraries.
  *
  * Py_GetPath() tries to return a sensible Python module search path.

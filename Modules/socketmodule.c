@@ -115,10 +115,6 @@ Socket methods:
 #include "pythread.h"
 #endif
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
 #if defined(PYCC_VACPP)
 #include <types.h>
 #include <io.h>
