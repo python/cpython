@@ -4,7 +4,7 @@
 
 \NeedsTeXFormat{LaTeX2e}[1995/12/01]
 \ProvidesPackage{python}
-             [1998/01/11 LaTeX package (Python manual markup)]
+             [1998/01/11 LaTeX package (Python markup)]
 
 % The "fncychap" package is used to get the nice chapter headers.  The
 % .sty file is distributed with Python, so you should not need to disable
@@ -12,11 +12,14 @@
 %
 \RequirePackage[Bjarne]{fncychap}\typeout{Using fancy chapter headings.}
 
-% for PDF output, use maximal compression
-\@ifundefined{pdfannotlink}{
+
+% for PDF output, use maximal compression & a lot of other stuff
+% (test for PDF recommended by Tanmoy Bhattacharya <tanmoy@qcd.lanl.gov>)
+%
+\ifx\pdfoutput\undefined\else\ifcase\pdfoutput
   \let\LinkColor=\relax
   \let\NormalColor=\relax
-}{%
+\else
   \input{pdfcolor}
   \let\LinkColor=\NavyBlue
   \let\NormalColor=\Black
@@ -33,13 +36,12 @@
       \pdfendlink%
     }{#3}%
   }
-  \renewcommand{\thepage}{\roman{page}}
   %
   % This is supposed to build the "outline" view of the document; it seems
   % quite fragile.  The breakages are the same as in the ToC.
   %
   \AtEndDocument{
-    \InputIfFileExists{\jobname.bkm}{\pdfcatalog pagemode{/UseOutlines}}{}
+    \InputIfFileExists{\jobname.bkm}{\pdfcatalog{/PageMode /UseOutlines}}{}
   }
   \let\OldLabel=\label
   \renewcommand{\label}[1]{%
@@ -65,7 +67,7 @@
        \def\H@old@thehead{\hfil}\fi
     \def\@thehead{\@foo\relax\H@old@thehead}%
   }
-}
+\fi\fi
 
 % Increase printable page size (copied from fullpage.sty)
 \topmargin 0pt
@@ -291,10 +293,6 @@
   \newwrite\modindexfile
   \openout\modindexfile=mod\jobname.idx
   \@UseModuleIndextrue
-}
-
-\newcommand{\inputindex}[1]{
-  \IfFileExists{#1}{\input{#1}}{\begin{theindex}\end{theindex}}
 }
 
 % Add the defining entry for a module
