@@ -4,7 +4,7 @@
 /* This file is also used for Windows NT/MS-Win and OS/2.  In that case the
    module actually calls itself 'nt' or 'os2', not 'posix', and a few
    functions are either unimplemented or implemented differently.  The source
-   assumes that for Windows NT, the macro 'MS_WIN32' is defined independent
+   assumes that for Windows NT, the macro 'MS_WINDOWS' is defined independent
    of the compiler used.  Different compilers define their own feature
    test macro, e.g. '__BORLANDC__' or '_MSC_VER'.  For OS/2, the compiler
    independent macro PYOS_OS2 should be defined.  On OS/2 the default
@@ -82,15 +82,12 @@ corresponding Unix manual entries for more information on calls.");
 #else
 #ifdef _MSC_VER		/* Microsoft compiler */
 #define HAVE_GETCWD     1
-#ifdef MS_WIN32
 #define HAVE_SPAWNV	1
 #define HAVE_EXECV      1
 #define HAVE_PIPE       1
 #define HAVE_POPEN      1
 #define HAVE_SYSTEM	1
 #define HAVE_CWAIT	1
-#else /* 16-bit Windows */
-#endif /* !MS_WIN32 */
 #else
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
 /* Everything needed is defined in PC/os2emx/pyconfig.h */
@@ -222,13 +219,8 @@ extern int lstat(const char *, struct stat *);
 #include "osdefs.h"
 #define WINDOWS_LEAN_AND_MEAN
 #include <windows.h>
-#ifdef MS_WIN32
 #define popen	_popen
 #define pclose	_pclose
-#else /* 16-bit Windows */
-#include <dos.h>
-#include <ctype.h>
-#endif /* MS_WIN32 */
 #endif /* _MSC_VER */
 
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
@@ -268,7 +260,7 @@ extern int lstat(const char *, struct stat *);
 
 /* choose the appropriate stat and fstat functions and return structs */
 #undef STAT
-#if defined(MS_WIN64) || defined(MS_WIN32)
+#if defined(MS_WIN64) || defined(MS_WINDOWS)
 #	define STAT _stati64
 #	define FSTAT _fstati64
 #	define STRUCT_STAT struct _stati64
@@ -367,7 +359,7 @@ posix_error_with_allocated_filename(char* name)
 	return rc;
 }
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 static PyObject *
 win32_error(char* function, char* filename)
 {
@@ -684,17 +676,17 @@ posix_do_stat(PyObject *self, PyObject *args, char *format,
 	char *pathfree = NULL;  /* this memory must be free'd */
 	int res;
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 	int pathlen;
 	char pathcopy[MAX_PATH];
-#endif /* MS_WIN32 */
+#endif /* MS_WINDOWS */
 
 	if (!PyArg_ParseTuple(args, format,
 	                      Py_FileSystemDefaultEncoding, &path))
 		return NULL;
 	pathfree = path;
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 	pathlen = strlen(path);
 	/* the library call can blow up if the file name is too long! */
 	if (pathlen > MAX_PATH) {
@@ -719,7 +711,7 @@ posix_do_stat(PyObject *self, PyObject *args, char *format,
 			path = pathcopy;
 		}
 	}
-#endif /* MS_WIN32 */
+#endif /* MS_WINDOWS */
 
 	Py_BEGIN_ALLOW_THREADS
 	res = (*statfunc)(path, &st);
@@ -991,7 +983,7 @@ posix_listdir(PyObject *self, PyObject *args)
 {
 	/* XXX Should redo this putting the (now four) versions of opendir
 	   in separate files instead of having them all here... */
-#if defined(MS_WIN32) && !defined(HAVE_OPENDIR)
+#if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
 
 	PyObject *d, *v;
 	HANDLE hFindFile;
@@ -1044,67 +1036,6 @@ posix_listdir(PyObject *self, PyObject *args)
 
 	if (FindClose(hFindFile) == FALSE)
 		return win32_error("FindClose", namebuf);
-
-	return d;
-
-#elif defined(_MSC_VER) /* 16-bit Windows */
-
-#ifndef MAX_PATH
-#define MAX_PATH	250
-#endif
-	char *name, *pt;
-	int len;
-	PyObject *d, *v;
-	char namebuf[MAX_PATH+5];
-	struct _find_t ep;
-
-	if (!PyArg_ParseTuple(args, "t#:listdir", &name, &len))
-		return NULL;
-	if (len >= MAX_PATH) {
-		PyErr_SetString(PyExc_ValueError, "path too long");
-		return NULL;
-	}
-	strcpy(namebuf, name);
-	for (pt = namebuf; *pt; pt++)
-		if (*pt == ALTSEP)
-			*pt = SEP;
-	if (namebuf[len-1] != SEP)
-		namebuf[len++] = SEP;
-	strcpy(namebuf + len, "*.*");
-
-	if ((d = PyList_New(0)) == NULL)
-		return NULL;
-
-	if (_dos_findfirst(namebuf, _A_RDONLY |
-			   _A_HIDDEN | _A_SYSTEM | _A_SUBDIR, &ep) != 0)
-        {
-		errno = ENOENT;
-		return posix_error_with_filename(name);
-	}
-	do {
-		if (ep.name[0] == '.' &&
-		    (ep.name[1] == '\0' ||
-		     ep.name[1] == '.' &&
-		     ep.name[2] == '\0'))
-			continue;
-		strcpy(namebuf, ep.name);
-		for (pt = namebuf; *pt; pt++)
-			if (isupper(*pt))
-				*pt = tolower(*pt);
-		v = PyString_FromString(namebuf);
-		if (v == NULL) {
-			Py_DECREF(d);
-			d = NULL;
-			break;
-		}
-		if (PyList_Append(d, v) != 0) {
-			Py_DECREF(v);
-			Py_DECREF(d);
-			d = NULL;
-			break;
-		}
-		Py_DECREF(v);
-	} while (_dos_findnext(&ep) == 0);
 
 	return d;
 
@@ -1220,7 +1151,7 @@ posix_listdir(PyObject *self, PyObject *args)
 #endif /* which OS */
 }  /* end of posix_listdir */
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 /* A helper function for abspath on win32 */
 static PyObject *
 posix__getfullpathname(PyObject *self, PyObject *args)
@@ -1240,7 +1171,7 @@ posix__getfullpathname(PyObject *self, PyObject *args)
 		return win32_error("GetFullPathName", inbuf);
 	return PyString_FromString(outbuf);
 } /* end of posix__getfullpathname */
-#endif /* MS_WIN32 */
+#endif /* MS_WINDOWS */
 
 PyDoc_STRVAR(posix_mkdir__doc__,
 "mkdir(path [, mode=0777])\n\n\
@@ -3050,7 +2981,7 @@ static int _PyPclose(FILE *file)
 
 #endif /* PYCC_??? */
 
-#elif defined(MS_WIN32)
+#elif defined(MS_WINDOWS)
 
 /*
  * Portable 'popen' replacement for Win32.
@@ -4211,7 +4142,7 @@ posix_times(PyObject *self, PyObject *args)
 #endif /* HAVE_TIMES */
 
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 #define HAVE_TIMES	/* so the method table will pick it up */
 static PyObject *
 posix_times(PyObject *self, PyObject *args)
@@ -4237,7 +4168,7 @@ posix_times(PyObject *self, PyObject *args)
 		(double)0,
 		(double)0);
 }
-#endif /* MS_WIN32 */
+#endif /* MS_WINDOWS */
 
 #ifdef HAVE_TIMES
 PyDoc_STRVAR(posix_times__doc__,
@@ -4414,7 +4345,7 @@ static PyObject *
 posix_lseek(PyObject *self, PyObject *args)
 {
 	int fd, how;
-#if defined(MS_WIN64) || defined(MS_WIN32)
+#if defined(MS_WIN64) || defined(MS_WINDOWS)
 	LONG_LONG pos, res;
 #else
 	off_t pos, res;
@@ -4441,7 +4372,7 @@ posix_lseek(PyObject *self, PyObject *args)
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
-#if defined(MS_WIN64) || defined(MS_WIN32)
+#if defined(MS_WIN64) || defined(MS_WINDOWS)
 	res = _lseeki64(fd, pos, how);
 #else
 	res = lseek(fd, pos, how);
@@ -4590,7 +4521,7 @@ posix_pipe(PyObject *self, PyObject *args)
 
     return Py_BuildValue("(ii)", read, write);
 #else
-#if !defined(MS_WIN32)
+#if !defined(MS_WINDOWS)
 	int fds[2];
 	int res;
 	if (!PyArg_ParseTuple(args, ":pipe"))
@@ -4601,7 +4532,7 @@ posix_pipe(PyObject *self, PyObject *args)
 	if (res != 0)
 		return posix_error();
 	return Py_BuildValue("(ii)", fds[0], fds[1]);
-#else /* MS_WIN32 */
+#else /* MS_WINDOWS */
 	HANDLE read, write;
 	int read_fd, write_fd;
 	BOOL ok;
@@ -4615,7 +4546,7 @@ posix_pipe(PyObject *self, PyObject *args)
 	read_fd = _open_osfhandle((Py_intptr_t)read, 0);
 	write_fd = _open_osfhandle((Py_intptr_t)write, 1);
 	return Py_BuildValue("(ii)", read_fd, write_fd);
-#endif /* MS_WIN32 */
+#endif /* MS_WINDOWS */
 #endif
 }
 #endif  /* HAVE_PIPE */
@@ -5189,7 +5120,7 @@ posix_tempnam(PyObject *self, PyObject *args)
 		  "tempnam is a potential security risk to your program") < 0)
 	    return NULL;
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
     name = _tempnam(dir, pfx);
 #else
     name = tempnam(dir, pfx);
@@ -6250,7 +6181,7 @@ posix_abort(PyObject *self, PyObject *args)
     return NULL;
 }
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 PyDoc_STRVAR(win32_startfile__doc__,
 "startfile(filepath) - Start a file with its associated application.\n\
 \n\
@@ -6390,7 +6321,7 @@ static PyMethodDef posix_methods[] = {
 #endif /* HAVE_PLOCK */
 #ifdef HAVE_POPEN
 	{"popen",	posix_popen, METH_VARARGS, posix_popen__doc__},
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 	{"popen2",	win32_popen2, METH_VARARGS},
 	{"popen3",	win32_popen3, METH_VARARGS},
 	{"popen4",	win32_popen4, METH_VARARGS},
@@ -6542,7 +6473,7 @@ static PyMethodDef posix_methods[] = {
 	{"pathconf",	posix_pathconf, METH_VARARGS, posix_pathconf__doc__},
 #endif
 	{"abort",	posix_abort, METH_VARARGS, posix_abort__doc__},
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 	{"_getfullpathname",	posix__getfullpathname, METH_VARARGS, NULL},
 #endif
 	{NULL,		NULL}		 /* Sentinel */

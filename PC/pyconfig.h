@@ -12,8 +12,7 @@ The code specific to Windows should be wrapped around one of
 the following #defines
 
 MS_WIN64 - Code specific to the MS Win64 API
-MS_WIN32 - Code specific to the MS Win32 (and Win64) API
-MS_WIN16 - Code specific to the old 16 bit Windows API.
+MS_WIN32 - Code specific to the MS Win32 (and Win64) API (obsolete, this covers all supported APIs)
 MS_WINDOWS - Code specific to Windows, but all versions.
 MS_COREDLL - Code if the Python core is built as a DLL.
 
@@ -64,9 +63,6 @@ compiler specific".  Therefore, these should be very rare.
 #ifdef _WIN32
 #define NT	/* NT is obsolete - please use MS_WIN32 instead */
 #define MS_WIN32
-#endif
-#ifdef _WIN16
-#define MS_WIN16
 #endif
 #define MS_WINDOWS
 
@@ -451,10 +447,7 @@ typedef int pid_t;
 /* #define HAVE_ALTZONE */
 
 /* Define if you have the putenv function.  */
-#ifdef MS_WIN32
-/* Does this exist on Win16? */
 #define HAVE_PUTENV
-#endif
 
 /* Define if your compiler supports function prototypes */
 #define HAVE_PROTOTYPES

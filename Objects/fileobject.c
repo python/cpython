@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #endif /* DONT_HAVE_SYS_TYPES_H */
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 #define fileno _fileno
 /* can simulate truncate with Win32 API functions; see file_truncate */
 #define HAVE_FTRUNCATE
@@ -480,7 +480,7 @@ file_truncate(PyFileObject *f, PyObject *args)
 	if (ret != 0)
 		goto onioerror;
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 	/* MS _chsize doesn't work if newsize doesn't fit in 32 bits,
 	   so don't even try using it. */
 	{
@@ -542,7 +542,7 @@ file_truncate(PyFileObject *f, PyObject *args)
 	ret = ftruncate(fileno(f->f_fp), newsize);
 	Py_END_ALLOW_THREADS
 	if (ret != 0) goto onioerror;
-#endif /* !MS_WIN32 */
+#endif /* !MS_WINDOWS */
 
 	Py_INCREF(Py_None);
 	return Py_None;

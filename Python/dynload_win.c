@@ -20,8 +20,6 @@ const struct filedescr _PyImport_DynLoadFiletab[] = {
 };
 
 
-#ifdef MS_WIN32
-
 /* Case insensitive string compare, to avoid any dependencies on particular
    C RTL implementations */
 
@@ -150,7 +148,6 @@ static char *GetPythonImport (HINSTANCE hModule)
 
 	return NULL;
 }
-#endif /* MS_WIN32 */
 
 
 dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
@@ -161,7 +158,6 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 
 	PyOS_snprintf(funcname, sizeof(funcname), "init%.200s", shortname);
 
-#ifdef MS_WIN32
 	{
 		HINSTANCE hDLL = NULL;
 		char pathbuf[260];
@@ -242,31 +238,6 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 		}
 		p = GetProcAddress(hDLL, funcname);
 	}
-#endif /* MS_WIN32 */
-#ifdef MS_WIN16
-	{
-		HINSTANCE hDLL;
-		char pathbuf[16];
-		if (strchr(pathname, '\\') == NULL &&
-		    strchr(pathname, '/') == NULL)
-		{
-			/* Prefix bare filename with ".\" */
-			PyOS_snprintf(pathbuf, sizeof(pathbuf),
-				      ".\\%-.13s", pathname);
-			pathname = pathbuf;
-		}
-		hDLL = LoadLibrary(pathname);
-		if (hDLL < HINSTANCE_ERROR){
-			char errBuf[256];
-			PyOS_snprintf(errBuf, sizeof(errBuf),
-				      "DLL load failed with error code %d",
-				      hDLL);
-			PyErr_SetString(PyExc_ImportError, errBuf);
-			return NULL;
-		}
-		p = GetProcAddress(hDLL, funcname);
-	}
-#endif /* MS_WIN16 */
 
 	return p;
 }
