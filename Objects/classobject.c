@@ -227,21 +227,26 @@ set_slot(slot, v)
 	Py_XDECREF(temp);
 }
 
+static void
+set_attr_slots(c)
+	PyClassObject *c;
+{
+	PyClassObject *dummy;
+
+	set_slot(&c->cl_getattr, class_lookup(c, getattrstr, &dummy));
+	set_slot(&c->cl_setattr, class_lookup(c, setattrstr, &dummy));
+	set_slot(&c->cl_delattr, class_lookup(c, delattrstr, &dummy));
+}
+
 static char *
 set_dict(c, v)
 	PyClassObject *c;
 	PyObject *v;
 {
-	PyClassObject *dummy;
-
 	if (v == NULL || !PyDict_Check(v))
 		return "__dict__ must be a dictionary object";
 	set_slot(&c->cl_dict, v);
-
-	set_slot(&c->cl_getattr, class_lookup(c, getattrstr, &dummy));
-	set_slot(&c->cl_setattr, class_lookup(c, setattrstr, &dummy));
-	set_slot(&c->cl_delattr, class_lookup(c, delattrstr, &dummy));
-
+	set_attr_slots(c);
 	return "";
 }
 
@@ -263,6 +268,7 @@ set_bases(c, v)
 			return "a __bases__ item causes an inheritance cycle";
 	}
 	set_slot(&c->cl_bases, v);
+	set_attr_slots(c);
 	return "";
 }
 
