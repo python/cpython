@@ -39,7 +39,7 @@ __all__ = ["StringIO"]
 class StringIO:
     def __init__(self, buf = ''):
         # Force self.buf to be a string or unicode
-        if not isinstance(buf, types.UnicodeType):
+        if not isinstance(buf, types.StringTypes):
             buf = str(buf)
         self.buf = buf
         self.len = len(buf)
@@ -138,7 +138,7 @@ class StringIO:
             raise ValueError, "I/O operation on closed file"
         if not s: return
         # Force s to be a string or unicode
-        if not isinstance(s, types.UnicodeType):
+        if not isinstance(s, types.StringTypes):
             s = str(s)
         if self.pos > self.len:
             self.buflist.append('\0'*(self.pos - self.len))
