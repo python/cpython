@@ -10,7 +10,7 @@ __revision__ = "$Id$"
 
 import os
 from distutils.core import Command
-from distutils.util import get_platform, create_tree
+from distutils.util import get_platform, create_tree, remove_tree
 
 
 class bdist_dumb (Command):
@@ -19,6 +19,9 @@ class bdist_dumb (Command):
 
     user_options = [('format=', 'f',
                      "archive format to create (tar, ztar, gztar, zip)"),
+                    ('keep-tree', 'k',
+                     "keep the pseudo-installation tree around after " +
+                     "creating the distribution archive"),
                    ]
 
     default_format = { 'posix': 'gztar',
@@ -27,6 +30,7 @@ class bdist_dumb (Command):
 
     def initialize_options (self):
         self.format = None
+        self.keep_tree = 0
 
     # initialize_options()
 
@@ -68,8 +72,13 @@ class bdist_dumb (Command):
         # pseudo-installation tree.
         archive_basename = "%s.%s" % (self.distribution.get_full_name(),
                                       get_platform())
+        print "output_dir = %s" % output_dir
+        print "self.format = %s" % self.format
         self.make_archive (archive_basename, self.format,
                            root_dir=output_dir)
+
+        if not self.keep_tree:
+            remove_tree (output_dir, self.verbose, self.dry_run)
 
     # run()
 
