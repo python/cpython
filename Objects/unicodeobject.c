@@ -2013,7 +2013,7 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
 	    continue;
 	}
 	if (0 < ch && ch < 256) {
-	    *output++ = ch;
+	    *output++ = (char)ch;
 	    continue;
 	}
 	/* All other characters are considered invalid */
