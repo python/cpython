@@ -106,7 +106,7 @@ The server classes support the following class variables:
 
 \begin{datadesc}{allow_reuse_address}
 Whether the server will allow the reuse of an address. This defaults
-to \code{False}, and can be set in subclasses to change the policy.
+to \constant{False}, and can be set in subclasses to change the policy.
 \end{datadesc}
 
 \begin{datadesc}{request_queue_size}
@@ -170,10 +170,10 @@ address.  May be overridden.
 \end{funcdesc}
 
 \begin{funcdesc}{verify_request}{request, client_address}
-Must return a Boolean value; if the value is true, the request will be
-processed, and if it's false, the request will be denied.
+Must return a Boolean value; if the value is \constant{True}, the request will be
+processed, and if it's \constant{False}, the request will be denied.
 This function can be overridden to implement access controls for a server.
-The default implementation always return true.
+The default implementation always returns \constant{True}.
 \end{funcdesc}
 
 The request handler class must define a new \method{handle()} method,
