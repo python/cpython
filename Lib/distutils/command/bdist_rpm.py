@@ -332,8 +332,8 @@ class bdist_rpm (Command):
         # definitions and headers
         spec_file = [
             '%define name ' + self.distribution.get_name(),
-            '%define version ' + self.distribution.get_version(),
-            '%define release ' + self.release,
+            '%define version ' + self.distribution.get_version().replace('-','_'),
+            '%define release ' + self.release.replace('-','_'),
             '',
             'Summary: ' + self.distribution.get_description(),
             ]

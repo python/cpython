@@ -57,7 +57,8 @@ Extension modules
 Library
 -------
 
-- bdist_rpm now includes version and release in the BuildRoot.
+- bdist_rpm now includes version and release in the BuildRoot, and
+  replaces - by ``_`` in version and release.
 
 - distutils build/build_scripts now has an -e option to specify the
   path to the Python interpreter for installed scripts.
