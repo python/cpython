@@ -587,8 +587,6 @@ class ConfigDialog(Toplevel):
 
     def GetNewKeysName(self,message):
         usedNames=idleConf.GetSectionList('user','keys')
-#         for newName in self.changedItems['keys'].keys():
-#             if newName not in usedNames: usedNames.append(newName)
         newKeySet=GetCfgSectionNameDialog(self,'New Custom Key Set',
                 message,usedNames).result
         return newKeySet
@@ -608,35 +606,21 @@ class ConfigDialog(Toplevel):
             prevKeySetName=self.builtinKeys.get()
         else:  
             prevKeySetName=self.customKeys.get()
-#         #add the new core key set to changedItems
-#         if prevKeySetName in self.changedItems['keys'].keys():
-#             #existing core key set hasn't been saved yet, copy from changedItems
-#             self.changedItems['keys'][newKeySetName]=copy.deepcopy(
-#                     self.changedItems['keys'][prevKeySetName]) #copy core bindings
-#         else: #get core key set from config
         prevKeys=idleConf.GetCoreKeys(prevKeySetName)
-
         newKeys={}
         for event in prevKeys.keys(): #add key set to changed items
             eventName=event[2:-2] #trim off the angle brackets
             binding=string.join(prevKeys[event])
             newKeys[eventName]=binding
-#             self.AddChangedItem('keys',newKeySetName,eventName,binding)
-
         #handle any unsaved changes to prev key set
         if prevKeySetName in self.changedItems['keys'].keys():
             keySetChanges=self.changedItems['keys'][prevKeySetName]
             for event in keySetChanges.keys():
                 newKeys[event]=keySetChanges[event]
-        
         #save the new theme
         self.SaveNewKeySet(newKeySetName,newKeys)
-
-        
         #change gui over to the new key set
         customKeyList=idleConf.GetSectionList('user','keys')
-#         for newName in self.changedItems['keys'].keys():
-#             if newName not in customKeyList: customKeyList.append(newName)
         customKeyList.sort()
         self.optMenuKeysCustom.SetMenu(customKeyList,newKeySetName)
         self.keysAreBuiltin.set(0)
@@ -648,37 +632,18 @@ class ConfigDialog(Toplevel):
         if self.listBindings.curselection():
             reselect=1
             listIndex=self.listBindings.index(ANCHOR)
-#         if keySetName in self.changedItems['keys'].keys():
-#             #new key set, not yet in saved configuration
-#             newKeySet=1
-#             keySet=self.changedItems['keys'][keySetName] #core keys
-#             for section in self.changedItems['extensions'].keys():
-#                 #add active extension bindings
-#                 keySet
-#         else: #key set in existing configuration
-
         keySet=idleConf.GetKeySet(keySetName)
-#         print 'copy from new key set:',newKeySet
         bindNames=keySet.keys()
         bindNames.sort()
         self.listBindings.delete(0,END)
         for bindName in bindNames: 
-#             if newKeySet:
-#                 key=keySet[bindName]
-        
             key=string.join(keySet[bindName]) #make key(s) into a string
             bindName=bindName[2:-2] #trim off the angle brackets
-            
             if keySetName in self.changedItems['keys'].keys():
                 #handle any unsaved changes to this key set
                 if bindName in self.changedItems['keys'][keySetName].keys():
                     key=self.changedItems['keys'][keySetName][bindName]
-            
-#             else: #convert existing config keys to list display string
-#                 key=string.join(keySet[bindName]) #make key(s) into a string
-            
             self.listBindings.insert(END, bindName+' - '+key)
-
         if reselect:
             self.listBindings.see(listIndex)
             self.listBindings.select_set(listIndex)
