@@ -102,6 +102,9 @@ Library
 - distutils.commands.upload was added to support uploading distribution
   files to PyPI.
 
+- distutils.commands.register now encodes the data as UTF-8 before posting
+  them to PyPI.
+
 - decimal operator and comparison methods now return NotImplemented
   instead of raising a TypeError when interacting with other types.  This
   allows other classes to implement __radd__ style methods and have them
