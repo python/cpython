@@ -31,8 +31,7 @@ INSTALL=	@INSTALL@
 
 # Install prefixes are treated specially by the configure script:
 # it only changes these lines if it has received a --prefix=... or
-# --exec-prefix-... command line option, or if it has figured out
-# a value by searching for python in $PATH.  Note that $(prefix) is
+# --exec-prefix=... command line option.  Note that $(prefix) is
 # also used when compiling config.c in Modules to set the default
 # module search path, so if you change it later be sure to change it
 # there too and rebuild.
