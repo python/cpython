@@ -790,12 +790,16 @@ else
     AC_DEFINE(_POSIX_THREADS)
     LIBS="$LIBS -lthread"
     LIBOBJS="$LIBOBJS thread.o"], [
+    AC_CHECK_LIB(pthread, __pthread_create_system, [AC_DEFINE(WITH_THREAD)
+    AC_DEFINE(_POSIX_THREADS)
+    LIBS="$LIBS -lpthread"
+    LIBOBJS="$LIBOBJS thread.o"], [
     AC_CHECK_LIB(cma, pthread_create, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(_POSIX_THREADS)
     LIBS="$LIBS -lcma"
     LIBOBJS="$LIBOBJS thread.o"],[
     USE_THREAD_MODULE="#"])
-    ])])])])])])])])
+    ])])])])])])])])])
 
     AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
     LIBS="$LIBS -lmpc"
