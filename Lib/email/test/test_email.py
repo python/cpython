@@ -2402,6 +2402,22 @@ Here's the message body
         eq(msg.get('Header'), value1)
         eq(msg.get('Next-Header'), value2)
 
+    def test_rfc2822_header_syntax(self):
+        eq = self.assertEqual
+        m = '>From: foo\nFrom: bar\n!"#QUX;~: zoo\n\nbody'
+        msg = email.message_from_string(m)
+        eq(len(msg.keys()), 3)
+        keys = msg.keys()
+        keys.sort()
+        eq(keys, ['!"#QUX;~', '>From', 'From'])
+        eq(msg.get_payload(), 'body')
+
+    def test_rfc2822_space_not_allowed_in_header(self):
+        eq = self.assertEqual
+        m = '>From foo@example.com 11:25:53\nFrom: bar\n!"#QUX;~: zoo\n\nbody'
+        msg = email.message_from_string(m)
+        eq(len(msg.keys()), 0)
+
 
 
 class TestBase64(unittest.TestCase):
