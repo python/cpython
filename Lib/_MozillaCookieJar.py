@@ -2,8 +2,8 @@
 
 import re, time, logging
 
-from cookielib import reraise_unmasked_exceptions, FileCookieJar, Cookie, \
-     MISSING_FILENAME_TEXT
+from cookielib import (reraise_unmasked_exceptions, FileCookieJar, Cookie, 
+     MISSING_FILENAME_TEXT)
 
 class MozillaCookieJar(FileCookieJar):
     """

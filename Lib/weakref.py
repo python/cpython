@@ -11,14 +11,14 @@ http://python.sourceforge.net/peps/pep-0205.html
 
 import UserDict
 
-from _weakref import \
-     getweakrefcount, \
-     getweakrefs, \
-     ref, \
-     proxy, \
-     CallableProxyType, \
-     ProxyType, \
-     ReferenceType
+from _weakref import (
+     getweakrefcount,
+     getweakrefs,
+     ref,
+     proxy,
+     CallableProxyType,
+     ProxyType,
+     ReferenceType)
 
 from exceptions import ReferenceError
 

@@ -17,10 +17,10 @@ from cStringIO import StringIO
 from pprint import pprint
 from test import test_support
 
-from optparse import make_option, Option, IndentedHelpFormatter, \
-     TitledHelpFormatter, OptionParser, OptionContainer, OptionGroup, \
-     SUPPRESS_HELP, SUPPRESS_USAGE, OptionError, OptionConflictError, \
-     BadOptionError, OptionValueError, _match_abbrev
+from optparse import (make_option, Option, IndentedHelpFormatter, 
+     TitledHelpFormatter, OptionParser, OptionContainer, OptionGroup, 
+     SUPPRESS_HELP, SUPPRESS_USAGE, OptionError, OptionConflictError, 
+     BadOptionError, OptionValueError, _match_abbrev)
 
 class BaseTest(unittest.TestCase):
     def assertParseOK(self, args, expected_opts, expected_positional_args):
