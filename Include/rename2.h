@@ -115,6 +115,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #define longobject PyLongObject
 #define noobject PyNothingObject
 #define object PyObject
+#define varobject PyVarObject
 #define stringobject PyStringObject
 #define typeobject PyTypeObject
 #define listobject PyListObject

@@ -79,6 +79,7 @@ intobject PyIntObject
 longobject PyLongObject
 noobject PyNothingObject
 object PyObject
+varobject PyVarObject
 stringobject PyStringObject
 typeobject PyTypeObject
 listobject PyListObject
