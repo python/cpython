@@ -197,5 +197,12 @@ selection of an exception handler, but is passed to the selected
 exception handler as additional information.  For class exceptions,
 this object must be an instance of the exception class being raised.
 
+\begin{notice}[warning]
+Messages to exceptions are not part of the Python API.  Their contents may
+change from one version of Python to the next without warning and should not
+be relied on by code which will run under multiple versions of the
+interpreter.
+\end{notice}
+
 See also the description of the \keyword{try} statement in section
 \ref{try} and \keyword{raise} statement in section \ref{raise}.
