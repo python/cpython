@@ -70,9 +70,9 @@ example_nt\textbackslash} directory.
       \item
         Select a configuration.  This step is optional.  Choose
         \menuselection{Build \sub Select Active Configuration} and
-        select either ``example - Win32 Release'' or ``example - Win32
-        Debug.''  If you skip this step, V\Cpp{} will use the Debug
-        configuration by default.
+        select either \guilabel{example - Win32 Release} or
+        \guilabel{example - Win32 Debug}.  If you skip this step,
+        V\Cpp{} will use the Debug configuration by default.
 
       \item
         Build the DLL.  Choose \menuselection{Build \sub Build
@@ -147,8 +147,8 @@ Hello, world
   \item
   \strong{Creating a brand new project}\\
     Use the \menuselection{File \sub New \sub Projects} dialog to
-    create a new Project Workspace.  Select ``Win32 Dynamic-Link
-    Library,'' enter the name (\samp{spam}), and make sure the
+    create a new Project Workspace.  Select \guilabel{Win32 Dynamic-Link
+    Library}, enter the name (\samp{spam}), and make sure the
     Location is set to the \file{spam} directory you have created
     (which should be a direct subdirectory of the Python build tree, a
     sibling of \file{Include} and \file{PC}).  Select Win32 as the
@@ -160,7 +160,7 @@ Hello, world
     is selected from the Settings for: dropdown list.  Select the
     C/\Cpp{} tab.  Choose the Preprocessor category in the popup menu
     at the top.  Type the following text in the entry box labeled
-    Addditional include directories:
+    \guilabel{Additional include directories}:
 
 \begin{verbatim}
 ..\Include,..\PC
@@ -172,25 +172,26 @@ Hello, world
 ..\PCbuild
 \end{verbatim}
 
-    in the text box labelled ``Additional library path.''
+    in the text box labelled \guilabel{Additional library path}.
 
     Now you need to add some mode-specific settings:
 
-    Select ``Win32 Release'' in the ``Settings for'' dropdown list.
-    Click the Link tab, choose the Input Category, and append
-    \code{pythonXY.lib} to the list in the ``Object/library modules''
-    box.
+    Select \guilabel{Win32 Release} in the \guilabel{Settings for}
+    dropdown list.  Choose the \guilabel{Link} tab, choose the
+    \guilabel{Input Category}, and append \code{pythonXY.lib} to the
+    list in the \guilabel{Object/library modules} box.
 
-    Select ``Win32 Debug'' in the ``Settings for'' dropdown list, and
-    append \code{pythonXY_d.lib} to the list in the ``Object/library
-    modules'' box.  Then click the C/\Cpp{} tab, select ``Code
-    Generation'' from the Category dropdown list, and select ``Debug
-    Multithreaded DLL'' from the ``Use run-time library'' dropdown
+    Select \guilabel{Win32 Debug} in the \guilabel{Settings for}
+    dropdown list, and append \code{pythonXY_d.lib} to the list in the
+    \guilabel{Object/library modules} box.  Then click the C/\Cpp{}
+    tab, select \guilabel{Code Generation} from the
+    \guilabel{Category} dropdown list, and select \guilabel{Debug 
+    Multithreaded DLL} from the \guilabel{Use run-time library} dropdown
     list.
 
-    Select ``Win32 Release'' again from the ``Settings for'' dropdown
-    list.  Select ``Multithreaded DLL'' from the ``Use run-time
-    library:'' dropdown list.
+    Select \guilabel{Win32 Release} again from the \guilabel{Settings
+    for} dropdown list.  Select \guilabel{Multithreaded DLL} from the
+    \guilabel{Use run-time library:} dropdown list.
 
     You should now create the file \file{spam.def} as instructed in the
     previous section.  Then chose the \menuselection{Insert \sub Files
