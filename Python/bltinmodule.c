@@ -920,9 +920,9 @@ do_pow(v, w)
 		err_setstr(TypeError, "pow() requires numeric arguments");
 		return NULL;
 	}
-	if ((w->ob_type==&Floattype) &&
-	    (*v->ob_type->tp_as_number->nb_negative)(v)) {
-		err_setstr(ValueError, "negative number to float power");
+	if (is_floatobject(w) && getfloatvalue(v) < 0.0) {
+		if (!err_occurred())
+		    err_setstr(ValueError, "negative number to float power");
 		return NULL;
 	}
 	if (coerce(&v, &w) != 0)
