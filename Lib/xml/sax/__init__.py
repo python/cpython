@@ -26,7 +26,7 @@ from _exceptions import SAXException, SAXNotRecognizedException, \
 
 
 def parse(source, handler, errorHandler=ErrorHandler()):
-    parser = ExpatParser()
+    parser = make_parser()
     parser.setContentHandler(handler)
     parser.setErrorHandler(errorHandler)
     parser.parse(source)
@@ -39,7 +39,7 @@ def parseString(string, handler, errorHandler=ErrorHandler()):
         
     if errorHandler is None:
         errorHandler = ErrorHandler()
-    parser = ExpatParser()
+    parser = make_parser()
     parser.setContentHandler(handler)
     parser.setErrorHandler(errorHandler)
 
@@ -87,29 +87,8 @@ if sys.platform[ : 4] == "java":
         return drv_module.create_parser()
 
 else:
-    import imp as _imp
-
-    def _rec_find_module(module):
-        "Improvement over imp.find_module which finds submodules."
-        path=""
-        for mod in string.split(module,"."):
-            if path == "":
-                info = (mod,) + _imp.find_module(mod)
-            else:
-                info = (mod,) + _imp.find_module(mod, [path])
-                
-            lastmod = _imp.load_module(*info)
-
-            try:
-                path = lastmod.__path__[0]
-            except AttributeError, e:
-                pass
-
-        return info
-
     def _create_parser(parser_name):
-        info = _rec_find_module(parser_name)
-        drv_module = _imp.load_module(*info)
+        drv_module = __import__(parser_name,{},{},['create_parser'])
         return drv_module.create_parser()
 
 del sys
