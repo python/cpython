@@ -22,7 +22,7 @@ windows_keydefs = \
  '<<save-copy-of-window-as-file>>': ['<Alt-Shift-s>'],
  '<<save-window-as-file>>': ['<Alt-s>'],
  '<<save-window>>': ['<Control-s>'],
- '<<select-all>>': ['<Alt-a>'],
+ '<<select-all>>': ['<Control-a>'],
  '<<toggle-auto-coloring>>': ['<Control-slash>'],
  '<<undo>>': ['<Control-z>']}
 
