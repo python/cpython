@@ -86,8 +86,6 @@ PLUGIN_INSTRUCTIONS=[
 		":PlugIns:ctbmodule.µ",
 		":PlugIns:imgmodules.µ",
 		":PlugIns:macspeechmodule.µ",
-		":PlugIns:mactcpmodules.µ",
-		":PlugIns:stdwinmodule.µ",
 		":PlugIns:toolboxmodules.µ",
 		":PlugIns:wastemodule.µ",
 		":PlugIns:_tkintermodule.µ",
