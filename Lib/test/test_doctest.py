@@ -123,46 +123,107 @@ class SampleNewStyleClass(object):
 def test_Example(): r"""
 Unit tests for the `Example` class.
 
-Example is a simple container class that holds a source code string,
-an expected output string, and a line number (within the docstring):
+Example is a simple container class that holds:
+  - `source`: A source string.
+  - `want`: An expected output string.
+  - `exc_msg`: An expected exception message string (or None if no
+    exception is expected).
+  - `lineno`: A line number (within the docstring).
+  - `indent`: The example's indentation in the input string.
+  - `options`: An option dictionary, mapping option flags to True or
+    False.
 
-    >>> example = doctest.Example('print 1', '1\n', 0)
-    >>> (example.source, example.want, example.lineno)
-    ('print 1\n', '1\n', 0)
+These attributes are set by the constructor.  `source` and `want` are
+required; the other attributes all have default values:
 
-The `source` string ends in a newline:
+    >>> example = doctest.Example('print 1', '1\n')
+    >>> (example.source, example.want, example.exc_msg,
+    ...  example.lineno, example.indent, example.options)
+    ('print 1\n', '1\n', None, 0, 0, {})
+
+The first three attributes (`source`, `want`, and `exc_msg`) may be
+specified positionally; the remaining arguments should be specified as
+keyword arguments:
+
+    >>> exc_msg = 'IndexError: pop from an empty list'
+    >>> example = doctest.Example('[].pop()', '', exc_msg,
+    ...                           lineno=5, indent=4,
+    ...                           options={doctest.ELLIPSIS: True})
+    >>> (example.source, example.want, example.exc_msg,
+    ...  example.lineno, example.indent, example.options)
+    ('[].pop()\n', '', 'IndexError: pop from an empty list\n', 5, 4, {8: True})
+
+The constructor normalizes the `source` string to end in a newline:
 
     Source spans a single line: no terminating newline.
-    >>> e = doctest.Example('print 1', '1\n', 0)
+    >>> e = doctest.Example('print 1', '1\n')
     >>> e.source, e.want
     ('print 1\n', '1\n')
 
-    >>> e = doctest.Example('print 1\n', '1\n', 0)
+    >>> e = doctest.Example('print 1\n', '1\n')
     >>> e.source, e.want
     ('print 1\n', '1\n')
 
     Source spans multiple lines: require terminating newline.
-    >>> e = doctest.Example('print 1;\nprint 2\n', '1\n2\n', 0)
+    >>> e = doctest.Example('print 1;\nprint 2\n', '1\n2\n')
     >>> e.source, e.want
     ('print 1;\nprint 2\n', '1\n2\n')
 
-    >>> e = doctest.Example('print 1;\nprint 2', '1\n2\n', 0)
+    >>> e = doctest.Example('print 1;\nprint 2', '1\n2\n')
     >>> e.source, e.want
     ('print 1;\nprint 2\n', '1\n2\n')
 
-The `want` string ends with a newline, unless it's the empty string:
+    Empty source string (which should never appear in real examples)
+    >>> e = doctest.Example('', '')
+    >>> e.source, e.want
+    ('\n', '')
 
-    >>> e = doctest.Example('print 1', '1\n', 0)
+The constructor normalizes the `want` string to end in a newline,
+unless it's the empty string:
+
+    >>> e = doctest.Example('print 1', '1\n')
     >>> e.source, e.want
     ('print 1\n', '1\n')
 
-    >>> e = doctest.Example('print 1', '1', 0)
+    >>> e = doctest.Example('print 1', '1')
     >>> e.source, e.want
     ('print 1\n', '1\n')
 
-    >>> e = doctest.Example('print', '', 0)
+    >>> e = doctest.Example('print', '')
     >>> e.source, e.want
     ('print\n', '')
+
+The constructor normalizes the `exc_msg` string to end in a newline,
+unless it's `None`:
+
+    Message spans one line
+    >>> exc_msg = 'IndexError: pop from an empty list'
+    >>> e = doctest.Example('[].pop()', '', exc_msg)
+    >>> e.exc_msg
+    'IndexError: pop from an empty list\n'
+
+    >>> exc_msg = 'IndexError: pop from an empty list\n'
+    >>> e = doctest.Example('[].pop()', '', exc_msg)
+    >>> e.exc_msg
+    'IndexError: pop from an empty list\n'
+
+    Message spans multiple lines
+    >>> exc_msg = 'ValueError: 1\n  2'
+    >>> e = doctest.Example('raise ValueError("1\n  2")', '', exc_msg)
+    >>> e.exc_msg
+    'ValueError: 1\n  2\n'
+
+    >>> exc_msg = 'ValueError: 1\n  2\n'
+    >>> e = doctest.Example('raise ValueError("1\n  2")', '', exc_msg)
+    >>> e.exc_msg
+    'ValueError: 1\n  2\n'
+
+    Empty (but non-None) exception message (which should never appear
+    in real examples)
+    >>> exc_msg = ''
+    >>> e = doctest.Example('raise X()', '', exc_msg)
+    >>> e.exc_msg
+    '\n'
 """
 
 def test_DocTest(): r"""
