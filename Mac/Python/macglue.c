@@ -42,6 +42,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Processes.h>
 #include <Fonts.h>
 #include <Menus.h>
+#include <TextUtils.h>
 #ifdef THINK_C
 #include <OSEvents.h> /* For EvQElPtr */
 #endif
@@ -71,6 +72,9 @@ typedef FileFilterYDProcPtr FileFilterYDUPP;
 /* The dialog for our GetDirectory call */
 #define GETDIR_ID 130		/* Resource ID for our "get directory" */
 #define SELECTCUR_ITEM 10	/* "Select current directory" button */
+
+/* The STR# resource for sys.path initialization */
+#define PYTHONPATH_ID 128
 
 /*
 ** We have to be careful, since we can't handle
@@ -421,6 +425,7 @@ PyMac_GetPythonDir()
     	(void)FSMakeFSSpec(prefdirRefNum, prefdirDirID, "\pPython Preferences", &dirspec);
 		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
 		if ( prefrh == -1 ) {
+#ifdef USE_MAC_MODPREFS
 			/* It doesn't exist. Try to create it */
 			FSpCreateResFile(&dirspec, 'PYTH', 'pref', 0);
 	  		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
@@ -430,6 +435,12 @@ PyMac_GetPythonDir()
 			} else {
 				UseResFile(prefrh);
     		}
+#else
+			printf("Error: no Preferences file. Attempting to limp on...\n");
+			name[0] = 0;
+			getwd(name);
+			return name;
+#endif
     	}
     }
     /* So, we've opened our preferences file, we hope. Look for the alias */
@@ -441,6 +452,7 @@ PyMac_GetPythonDir()
     	}
     }
     if ( !ok ) {
+#ifdef USE_MAC_MODPREFS
     	/* No luck, so far. ask the user for help */
 	    item = Alert(NOPYTHON_ALERT, NULL);
 	    if ( item == YES_ITEM ) {
@@ -461,7 +473,14 @@ PyMac_GetPythonDir()
 	    	/* Set the (old, invalid) alias record to the new data */
 	    	UpdateAlias(NULL, &dirspec, handle, &modified);
 	    }
+#else
+		printf("Error: no Preferences file. Attempting to limp on...\n");
+		name[0] = 0;
+		getwd(name);
+		return name;
+#endif
     }
+#ifdef USE_MAC_MODPREFS
     if ( ok && modified && !cannotmodify) {
     	/* We have a new, valid fsspec and we can update the preferences file. Do so. */
     	if ( !handle ) {
@@ -472,6 +491,7 @@ PyMac_GetPythonDir()
     	}
     	UpdateResFile(prefrh);
     }
+#endif
     if ( !cannotmodify ) {
     	/* This means we have the resfile open. Close it. */
     	CloseResFile(prefrh);
@@ -490,6 +510,83 @@ PyMac_GetPythonDir()
 	}
 	return name;
 }
+
+#ifndef USE_BUILTIN_PATH
+char *
+PyMac_GetPythonPath(dir)
+char *dir;
+{
+    FSSpec dirspec;
+    short oldrh, prefrh = -1;
+    short prefdirRefNum;
+    long prefdirDirID;
+    char *rv;
+    int i, newlen;
+    Str255 pathitem;
+    
+    /*
+    ** Remember old resource file and try to open preferences file
+    ** in the preferences folder.
+    */
+    oldrh = CurResFile();
+    if ( FindFolder(kOnSystemDisk, 'pref', kDontCreateFolder, &prefdirRefNum,
+    				&prefdirDirID) == noErr ) {
+    	(void)FSMakeFSSpec(prefdirRefNum, prefdirDirID, "\pPython Preferences", &dirspec);
+		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
+    }
+    /* At this point, we may or may not have the preferences file open, and it
+    ** may or may not contain a sys.path STR# resource. We don't care, if it doesn't
+    ** exist we use the one from the application (the default).
+    ** We put an initial '\n' in front of the path that we don't return to the caller
+    */
+    if( (rv = malloc(2)) == NULL )
+    	goto out;
+    strcpy(rv, "\n");
+    for(i=1; ; i++) {
+    	GetIndString(pathitem, PYTHONPATH_ID, i);
+    	if( pathitem[0] == 0 )
+    		break;
+    	if ( pathitem[0] >= 9 && strncmp((char *)pathitem+1, "$(PYTHON)", 9) == 0 ) {
+    		/* We have to put the directory in place */
+    		newlen = strlen(rv) + strlen(dir) + (pathitem[0]-9) + 2;
+    		if( (rv=realloc(rv, newlen)) == NULL)
+    			goto out;
+    		strcat(rv, dir);
+    		/* Skip a colon at the beginning of the item */
+    		if ( pathitem[0] > 9 && pathitem[1+9] == ':' ) {
+				memcpy(rv+strlen(rv), pathitem+1+10, pathitem[0]-10);
+				newlen--;
+			} else {
+				memcpy(rv+strlen(rv), pathitem+1+9, pathitem[0]-9);
+			}
+    		rv[newlen-2] = '\n';
+    		rv[newlen-1] = 0;
+    	} else {
+    		/* Use as-is */
+    		newlen = strlen(rv) + (pathitem[0]) + 2;
+    		if( (rv=realloc(rv, newlen)) == NULL)
+    			goto out;
+    		memcpy(rv+strlen(rv), pathitem+1, pathitem[0]);
+    		rv[newlen-2] = '\n';
+    		rv[newlen-1] = 0;
+    	}
+	}
+	if( strlen(rv) == 1) {
+		free(rv);
+		rv = NULL;
+	}
+	if ( rv ) {
+		rv[strlen(rv)-1] = 0;
+		rv++;
+	}
+out:
+	if ( prefrh ) {
+		CloseResFile(prefrh);
+		UseResFile(oldrh);
+	}
+	return rv;
+}
+#endif /* !USE_BUILTIN_PATH */
 
 /*
 ** Returns true if the argument has a resource fork, and it contains
