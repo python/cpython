@@ -55,7 +55,7 @@ def _nt_quote_args (args):
     for i in range (len (args)):
         if string.find (args[i], ' ') != -1:
             args[i] = '"%s"' % args[i]
-    return 
+    return args
 
 def _spawn_nt (cmd,
                search_path=1,
