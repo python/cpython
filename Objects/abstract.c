@@ -1427,69 +1427,21 @@ Fail:
 PyObject *
 PySequence_List(PyObject *v)
 {
-	PyObject *it;      /* iter(v) */
 	PyObject *result;  /* result list */
-	int n;		   /* guess for result list size */
-	int i;
+	PyObject *rv;      /* return value from PyList_Extend */
 
 	if (v == NULL)
 		return null_error();
 
-	/* Special-case list(a_list), for speed. */
-	if (PyList_Check(v))
-		return PyList_GetSlice(v, 0, PyList_GET_SIZE(v));
-
-	/* Get iterator.  There may be some low-level efficiency to be gained
-	 * by caching the tp_iternext slot instead of using PyIter_Next()
-	 * later, but premature optimization is the root etc.
-	 */
-	it = PyObject_GetIter(v);
-	if (it == NULL)
+	result = PyList_New(0);
+	if (result == NULL)
 		return NULL;
 
-	/* Guess a result list size. */
-	n = PyObject_Size(v);
-	if (n < 0) {
-		PyErr_Clear();
-		n = 8;	/* arbitrary */
-	}
-	result = PyList_New(n);
-	if (result == NULL) {
-		Py_DECREF(it);
+	rv = _PyList_Extend((PyListObject *)result, v);
+	if (rv == NULL) {
+		Py_DECREF(result);
 		return NULL;
 	}
-
-	/* Run iterator to exhaustion. */
-	for (i = 0; ; i++) {
-		PyObject *item = PyIter_Next(it);
-		if (item == NULL) {
-			if (PyErr_Occurred()) {
-				Py_DECREF(result);
-				result = NULL;
-			}
-			break;
-		}
-		if (i < n)
-			PyList_SET_ITEM(result, i, item); /* steals ref */
-		else {
-			int status = PyList_Append(result, item);
-			Py_DECREF(item);  /* append creates a new ref */
-			if (status < 0) {
-				Py_DECREF(result);
-				result = NULL;
-				break;
-			}
-		}
-	}
-
-	/* Cut back result list if initial guess was too large. */
-	if (i < n && result != NULL) {
-		if (PyList_SetSlice(result, i, n, (PyObject *)NULL) != 0) {
-			Py_DECREF(result);
-			result = NULL;
-		}
-	}
-	Py_DECREF(it);
 	return result;
 }
 

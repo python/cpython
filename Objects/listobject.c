@@ -776,6 +776,12 @@ listextend(PyListObject *self, PyObject *b)
 	return NULL;
 }
 
+PyObject *
+_PyList_Extend(PyListObject *self, PyObject *b)
+{
+	return listextend(self, b);
+}
+
 static PyObject *
 list_inplace_concat(PyListObject *self, PyObject *other)
 {
