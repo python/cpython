@@ -474,6 +474,8 @@ cm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 				"uninitialized classmethod object");
 		return NULL;
 	}
+	if (type == NULL)
+		type = (PyObject *)(obj->ob_type);
  	return PyMethod_New(cm->cm_callable,
 			    type, (PyObject *)(type->ob_type));
 }
