@@ -33,6 +33,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patches #925152, #1118602: Avoid reading after the end of the buffer
+  in pyexpat.GetInputContext.
+
 - Patch #1093585: raise a ValueError for negative history items in readline.
   {remove_history,replace_history}
 
