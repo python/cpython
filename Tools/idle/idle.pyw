@@ -1,6 +1,5 @@
 try:
-    import PyShell
-    PyShell.main()
+    import idle
 except SystemExit:
     raise
 except:
