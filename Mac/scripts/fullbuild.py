@@ -88,6 +88,7 @@ PLUGIN_INSTRUCTIONS=[
 	(buildmwproject, "CWIE", [
 		":PlugIns:ctb.ppc.µ",
 		":PlugIns:gdbm.ppc.µ",
+		":PlugIns:icglue.ppc.µ",
 		":PlugIns:imgmodules.ppc.µ",
 		":PlugIns:macspeech.ppc.µ",
 		":PlugIns:toolboxmodules.ppc.µ",
@@ -100,6 +101,7 @@ CFM68KPLUGIN_INSTRUCTIONS=[
 	(buildmwproject, "CWIE", [
 		":PlugIns:ctb.CFM68K.µ",
 		":PlugIns:gdbm.CFM68K.µ",
+		":PlugIns:icglue.CFM68K.µ",
 		":PlugIns:imgmodules.CFM68K.µ",
 		":PlugIns:toolboxmodules.CFM68K.µ",
 		":PlugIns:qtmodules.CFM68K.µ",
@@ -115,6 +117,14 @@ M68K_INSTRUCTIONS=[
 PPCSTAND_INSTRUCTIONS=[
 	(buildmwproject, "CWIE", [
 		":build.macppc.stand:PythonStandalone.µ",
+	])
+]
+EXTENSION_INSTRUCTIONS=[
+	(buildmwproject, "CWIE", [
+		":Extensions:Imaging:_imaging.ppc.µ",
+		":Extensions:Imaging:_imaging.CFM68K.µ",
+		":Extensions:NumPy:numpymodules.ppc.µ",
+		":Extensions:NumPy:numpymodules.CFM68K.µ",
 	])
 ]
 APPLET_INSTRUCTIONS=[
@@ -133,6 +143,7 @@ ALLINST=[
 	("FAT shared executables", FAT_INSTRUCTIONS),
 	("68K standalone executable", M68K_INSTRUCTIONS),
 	("PPC standalone executable", PPCSTAND_INSTRUCTIONS),
+	("Extensions", EXTENSION_INSTRUCTIONS),
 	("Applets", APPLET_INSTRUCTIONS)
 ]
 				
