@@ -1,16 +1,16 @@
 #####################==================----------------
 #
-# Top-Level Makefile for Building Python 2.3 for OS/2 using GCC/EMX
+# Top-Level Makefile for Building Python 2.4 for OS/2 using GCC/EMX
 # Originally written by Andrew Zabolotny, <bit@eltech.ru> for Python 1.5.2
-# Modified by Andrew MacIntyre, <andymac@pcug.org.au> for Python 2.3
+# Modified by Andrew MacIntyre, <andymac@pcug.org.au> for Python 2.4
 #
 # This makefile was developed for use with [P]GCC/EMX compiler any
 # version and GNU Make.
 #
-# The output of the build is a largish Python23.DLL containing the
+# The output of the build is a largish Python24.DLL containing the
 # essential modules of Python and a small Python.exe program to start
 # the interpreter. When embedding Python within another program, only
-# Python23.DLL is needed. We also build python_s.a static library (which
+# Python24.DLL is needed. We also build python_s.a static library (which
 # can be converted into OMF (.lib) format using emxomf tool) and both
 # python.a and python.lib import libraries.  Then the optional 
 # extension modules, which are OS/2 DLLs renamed with a PYD file extension.
@@ -64,7 +64,7 @@ HAVE_BZ2=	no
 
 # === install locations ===
 # default value of PYTHONHOME
-LIB_DIR=C:/Python23
+LIB_DIR=C:/Python24
 # default is to have everything in or under PYTHONHOME
 EXE_DIR=$(LIB_DIR)
 DLL_DIR=$(EXE_DIR)
@@ -220,8 +220,8 @@ $(OUT)%$O: %.c
 	@echo STACKSIZE 1572864 >>$@
 
 # Output file names
-PYTHON_VER=	2.3
-PYTHON_LIB=	python23
+PYTHON_VER=	2.4
+PYTHON_LIB=	python24
 PYTHON.LIB=	$(PYTHON_LIB)_s$A
 PYTHON.IMPLIB=	$(PYTHON_LIB)$A
 ifeq ($(EXEOMF),yes)
@@ -272,6 +272,7 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/binascii.c \
 		Modules/cmathmodule.c \
 		Modules/_codecsmodule.c \
+		Modules/collectionsmodule.c \
 		Modules/cPickle.c \
 		Modules/cStringIO.c \
 		Modules/_csv.c \
@@ -279,6 +280,7 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/dlmodule.c \
 		Modules/errnomodule.c \
 		Modules/fcntlmodule.c \
+		Modules/_heapqmodule.c \
 		Modules/imageop.c \
 		Modules/itertoolsmodule.c \
 		Modules/_localemodule.c \
@@ -286,8 +288,6 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/md5c.c \
 		Modules/md5module.c \
 		Modules/operator.c \
-		Modules/pcremodule.c \
-		Modules/pypcre.c \
 		Modules/_randommodule.c \
 		Modules/regexmodule.c \
 		Modules/regexpr.c \
@@ -343,6 +343,7 @@ SRC.PYTHON=	$(addprefix $(TOP), \
 		Python/mystrtoul.c \
 		Python/pyfpe.c \
 		Python/pystate.c \
+		Python/pystrtod.c \
 		Python/pythonrun.c \
 		Python/structmember.c \
 		Python/symtable.c \
@@ -366,6 +367,7 @@ SRC.OBJECT=	$(addprefix $(TOP), \
 		Objects/floatobject.c \
 		Objects/frameobject.c \
 		Objects/funcobject.c \
+		Objects/genobject.c \
 		Objects/intobject.c \
 		Objects/iterobject.c \
 		Objects/listobject.c \
@@ -375,6 +377,7 @@ SRC.OBJECT=	$(addprefix $(TOP), \
 		Objects/object.c \
 		Objects/obmalloc.c \
 		Objects/rangeobject.c \
+		Objects/setobject.c \
 		Objects/sliceobject.c \
 		Objects/stringobject.c \
 		Objects/structseq.c \
@@ -491,7 +494,7 @@ python_noncore:
 clean:
 	rm -f $(OUT)*
 	rm -f $(PYTHON.LIB) $(PYTHON.IMPLIB) $(PYTHON.EXEIMP) $(PYTHON.DLL) \
-	  $(PYTHON.EXE) $(PYTHONPM.EXE) $(PGEN.EXE) *$(MODULE.EXT)
+	  $(PYTHON.EXE) $(PYTHONPM.EXE) $(PGEN.EXE) *$(MODULE.EXT) *.dll
 	find ../../Lib -name "*.py[co]" -exec rm {} ";"
 
 lx:
