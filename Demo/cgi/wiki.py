@@ -67,10 +67,17 @@ class WikiPage:
             print "<p>An error occurred while attempting to write the file:"
             print "<p>", escape(error)
         else:
-            self.cmd_view(form)
+            # Use a redirect directive, to avoid "reload page" problems
+            print "<head>"
+            s = '<meta http-equiv="refresh" content="1; URL=%s">'
+            print s % (self.scripturl + "?cmd=view&page=" + self.name)
+            print "<head>"
+            print "<h1>OK</h1>"
+            print "<p>If nothing happens, please click here:",
+            print self.mklink("view", self.name, self.name)
 
     def cmd_new(self, form):
-        self.cmd_edit(form, label="Create Page")
+        self.cmd_edit(form, label="Create")
 
     def iswikiword(self, word):
         return re.match("[A-Z][a-z]+([A-Z][a-z]*)+", word)
