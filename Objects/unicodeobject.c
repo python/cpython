@@ -3173,7 +3173,7 @@ unicode_center(PyUnicodeObject *self, PyObject *args)
 
 /* This code should go into some future Unicode collation support
    module. The basic comparison should compare ordinals on a naive
-   basis (this is what Java does and thus JPython too).
+   basis (this is what Java does and thus JPython too). */
 
 /* speedy UTF-16 code point order comparison */
 /* gleaned from: */
