@@ -549,6 +549,11 @@ Extension modules
   letter 'r', 'w' or 'a', otherwise a ValueError is raised. This fixes
   bug #623464.
 
+- The linuxaudiodev module is now deprecated; it is being replaced by
+  ossaudiodev.  The interface has been extended to cover a lot more of
+  OSS (see www.opensound.com), including most DSP ioctls and the
+  OSS mixer API.  Documentation forthcoming in 2.3a2.
+
 Library
 -------
 
