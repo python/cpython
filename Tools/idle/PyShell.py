@@ -390,6 +390,7 @@ class PyShell(OutputWindow):
         return PyShellEditorWindow.close(self)
 
     def _close(self):
+        self.close_debugger()
         # Restore std streams
         sys.stdout = self.save_stdout
         sys.stderr = self.save_stderr
