@@ -1761,17 +1761,21 @@ functions.  The resulting construct tends often to be clearer than use
 of those functions.
 
 \begin{verbatim}
->>> spcs = ["  Apple", " Banana ", "Coco  nut  "]
->>> print [s.strip() for s in spcs]
-['Apple', 'Banana', 'Coco  nut']
+>>> freshfruit = ['  banana', '  loganberry ', 'passion fruit  ']
+>>> [weapon.strip() for weapon in freshfruit]
+['banana', 'loganberry', 'passion fruit']
 >>> vec = [2, 4, 6]
->>> print [3*x for x in vec]
+>>> [3*x for x in vec]
 [6, 12, 18]
+>>> [3*x for x in vec if x > 3]
+[12, 18]
+>>> [3*x for x in vec if x < 2]
+[]
 >>> vec1 = [2, 4, 6]
 >>> vec2 = [4, 3, -9]
->>> print [x*y for x in vec1 for y in vec2]
+>>> [x*y for x in vec1 for y in vec2]
 [8, 6, -18, 16, 12, -36, 24, 18, -54]
->>> print [x+y for x in vec1 for y in vec2]
+>>> [x+y for x in vec1 for y in vec2]
 [6, 5, -7, 8, 7, -5, 10, 9, -3]
 \end{verbatim}
 
