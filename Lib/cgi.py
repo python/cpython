@@ -163,7 +163,13 @@ parse(fp, [environ, [keep_blank_values, [strict_parsing]]]): parse a
 form into a Python dictionary.
 
 parse_qs(qs, [keep_blank_values, [strict_parsing]]): parse a query
-string (data of type application/x-www-form-urlencoded).
+string (data of type application/x-www-form-urlencoded).  Data are
+returned as a dictionary.  The dictionary keys are the unique query
+variable names and the values are lists of vales for each name.
+
+parse_qsl(qs, [keep_blank_values, [strict_parsing]]): parse a query
+string (data of type application/x-www-form-urlencoded).  Data are
+returned as a list of (name, value) pairs.
 
 parse_multipart(fp, pdict): parse input of type multipart/form-data (for 
 file uploads).
@@ -555,8 +561,37 @@ def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
             If false (the default), errors are silently ignored.
             If true, errors raise a ValueError exception.
     """
-    name_value_pairs = string.splitfields(qs, '&')
     dict = {}
+    for name, value in parse_qsl(qs, keep_blank_values, strict_parsing):
+        if len(value) or keep_blank_values:
+            if dict.has_key(name):
+                dict[name].append(value)
+            else:
+                dict[name] = [value]
+    return dict
+
+def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
+    """Parse a query given as a string argument.
+
+        Arguments:
+
+        qs: URL-encoded query string to be parsed
+
+        keep_blank_values: flag indicating whether blank values in
+            URL encoded queries should be treated as blank strings.  
+            A true value inicates that blanks should be retained as 
+            blank strings.  The default false value indicates that
+            blank values are to be ignored and treated as if they were
+            not included.
+
+        strict_parsing: flag indicating what to do with parsing errors.
+            If false (the default), errors are silently ignored.
+            If true, errors raise a ValueError exception.
+
+       Returns a list, as God intended.
+    """
+    name_value_pairs = string.splitfields(qs, '&')
+    r=[]
     for name_value in name_value_pairs:
         nv = string.splitfields(name_value, '=')
         if len(nv) != 2:
@@ -565,12 +600,9 @@ def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
             continue
         name = urllib.unquote(string.replace(nv[0], '+', ' '))
         value = urllib.unquote(string.replace(nv[1], '+', ' '))
-        if len(value) or keep_blank_values:
-            if dict.has_key (name):
-                dict[name].append(value)
-            else:
-                dict[name] = [value]
-    return dict
+        r.append(name, value)
+
+    return r
 
 
 def parse_multipart(fp, pdict):
@@ -934,11 +966,10 @@ class FieldStorage:
     def read_urlencoded(self):
         """Internal: read data in query string format."""
         qs = self.fp.read(self.length)
-        dict = parse_qs(qs, self.keep_blank_values, self.strict_parsing)
-        self.list = []
-        for key, valuelist in dict.items():
-            for value in valuelist:
-                self.list.append(MiniFieldStorage(key, value))
+        self.list = list = []
+        for key, value in parse_qsl(qs, self.keep_blank_values,
+                                    self.strict_parsing):
+            list.append(MiniFieldStorage(key, value))
         self.skip_lines()
 
     FieldStorageClass = None
