@@ -284,6 +284,10 @@ class LocaleTime(object):
         # Set self.__timezone by using time.tzname.
         #
         # Empty string used for matching when timezone is not used/needed.
+        try:
+            time.tzset()
+        except AttributeError:
+            pass
         time_zones = ["UTC", "GMT"]
         if time.daylight:
             time_zones.extend(time.tzname)
