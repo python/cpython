@@ -230,13 +230,17 @@ nlargest(PyObject *self, PyObject *args)
 		return NULL;
 
 	heap = PyList_New(0);
-	if (it == NULL)
+	if (heap == NULL)
 		goto fail;
 
 	for (i=0 ; i<n ; i++ ){
 		elem = PyIter_Next(it);
-		if (elem == NULL)
-			goto sortit;
+		if (elem == NULL) {
+			if (PyErr_Occurred())
+				goto fail;
+			else
+				goto sortit;
+		}
 		if (PyList_Append(heap, elem) == -1) {
 			Py_DECREF(elem);
 			goto fail;
@@ -271,11 +275,11 @@ nlargest(PyObject *self, PyObject *args)
 		sol = PyList_GET_ITEM(heap, 0);
 	}
 sortit:
-	Py_DECREF(it);
 	if (PyList_Sort(heap) == -1)
 		goto fail;
 	if (PyList_Reverse(heap) == -1)
 		goto fail;
+	Py_DECREF(it);
 	return heap;
 
 fail:
@@ -385,13 +389,17 @@ nsmallest(PyObject *self, PyObject *args)
 		return NULL;
 
 	heap = PyList_New(0);
-	if (it == NULL)
+	if (heap == NULL)
 		goto fail;
 
 	for (i=0 ; i<n ; i++ ){
 		elem = PyIter_Next(it);
-		if (elem == NULL)
-			goto sortit;
+		if (elem == NULL) {
+			if (PyErr_Occurred())
+				goto fail;
+			else
+				goto sortit;
+		}
 		if (PyList_Append(heap, elem) == -1) {
 			Py_DECREF(elem);
 			goto fail;
@@ -429,9 +437,9 @@ nsmallest(PyObject *self, PyObject *args)
 	}
 
 sortit:
-	Py_DECREF(it);
 	if (PyList_Sort(heap) == -1)
 		goto fail;
+	Py_DECREF(it);
 	return heap;
 
 fail:
