@@ -109,6 +109,8 @@ def manage_socket(address):
     server.handle_request() # A single request only
 
 def print_exception():
+    import linecache
+    linecache.checkcache()
     flush_stdout()
     efile = sys.stderr
     typ, val, tb = excinfo = sys.exc_info()
