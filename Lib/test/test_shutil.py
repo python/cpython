@@ -3,6 +3,7 @@
 import unittest
 import shutil
 import tempfile
+import sys
 import stat
 import os
 import os.path
@@ -15,7 +16,7 @@ class TestShutil(unittest.TestCase):
         filename = tempfile.mktemp()
         self.assertRaises(OSError, shutil.rmtree, filename)
 
-    if hasattr(os, 'chmod'):
+    if hasattr(os, 'chmod') and sys.platform[:6] != 'cygwin':
         def test_on_error(self):
             self.errorState = 0
             os.mkdir(TESTFN)
@@ -29,6 +30,8 @@ class TestShutil(unittest.TestCase):
             os.chmod(TESTFN, stat.S_IREAD)
 
             shutil.rmtree(TESTFN, onerror=self.check_args_to_onerror)
+            # Test whether onerror has actually been called.
+            self.assertEqual(self.errorState, 2)
 
             # Make writable again.
             os.chmod(TESTFN, old_dir_mode)
@@ -47,6 +50,7 @@ class TestShutil(unittest.TestCase):
             self.assertEqual(func, os.rmdir)
             self.assertEqual(arg, TESTFN)
             self.assertEqual(exc[0], OSError)
+            self.errorState = 2
 
     def test_rmtree_dont_delete_file(self):
         # When called on a file instead of a directory, don't delete it.
