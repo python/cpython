@@ -653,19 +653,19 @@ class PyBuildExt(build_ext):
 
 
         # Andrew Kuchling's zlib module.
-        # This require zlib 1.1.3 (or later).
-        # See http://www.cdrom.com/pub/infozip/zlib/
+        # This requires zlib 1.1.4 (1.1.3 has a security problem).
+        # See http://www.gzip.org/zlib/
         zlib_inc = find_file('zlib.h', [], inc_dirs)
         if zlib_inc is not None:
             zlib_h = zlib_inc[0] + '/zlib.h'
             version = '"0.0.0"'
-            version_req = '"1.1.3"'
+            version_req = '"1.1.4"'
             fp = open(zlib_h)
             while 1:
                 line = fp.readline()
                 if not line:
                     break
-                if line.find('#define ZLIB_VERSION', 0) == 0:
+                if line.startswith('#define ZLIB_VERSION'):
                     version = line.split()[2]
                     break
             if version >= version_req:
