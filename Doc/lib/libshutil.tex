@@ -88,7 +88,7 @@ rather than printing a message]{2.3}
   If \var{onerror} is provided, it must be a callable that accepts
   three parameters: \var{function}, \var{path}, and \var{excinfo}.
   The first parameter, \var{function}, is the function which raised
-  the exception; it will be \function{os.remove()} or
+  the exception; it will be \function{os.listdir()}, \function{os.remove()} or
   \function{os.rmdir()}.  The second parameter, \var{path}, will be
   the path name passed to \var{function}.  The third parameter,
   \var{excinfo}, will be the exception information return by
