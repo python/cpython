@@ -1017,7 +1017,13 @@ def freshimport(path, cache={}):
         # isn't good enough (e.g. what if the module contains a class that
         # inherits from another module that has changed?).
         if path not in sys.builtin_module_names:
-            del sys.modules[path]
+            # Python never loads a dynamic extension a second time from the
+            # same path, even if the file is changed or missing.  Deleting
+            # the entry in sys.modules doesn't help for dynamic extensions,
+            # so we're not even going to try to keep them up to date.
+            info = inspect.getmoduleinfo(sys.modules[path].__file__)
+            if info[3] != imp.C_EXTENSION:
+                del sys.modules[path]
     try:
         module = __import__(path)
     except:
