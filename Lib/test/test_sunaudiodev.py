@@ -1,6 +1,14 @@
-from test_support import verbose, findfile, TestFailed
+from test_support import verbose, findfile, TestFailed, TestSkipped
 import sunaudiodev
 import os
+
+try:
+    audiodev = os.environ["AUDIODEV"]
+except KeyError:
+    audiodev = "/dev/audio"
+
+if not os.path.exists(audiodev):
+    raise TestSkipped("no audio device found!")
 
 def play_sound_file(path):
     fp = open(path, 'r')
