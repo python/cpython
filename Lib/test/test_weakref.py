@@ -517,11 +517,28 @@ class MappingTestCase(TestBase):
         self.assert_(len(d) == 1)
         self.assert_(d.items() == [('something else', o2)])
 
+from test_userdict import TestMappingProtocol
+
+class WeakValueDictionaryTestCase(TestMappingProtocol):
+    """Check that WeakValueDictionary class conforms to the mapping protocol"""
+    __ref = {"key1":Object(1), "key2":Object(2), "key3":Object(3)}
+    _tested_class = weakref.WeakValueDictionary
+    def _reference(self):
+        return self.__ref.copy()
+
+class WeakKeyDictionaryTestCase(TestMappingProtocol):
+    """Check that WeakKeyDictionary class conforms to the mapping protocol"""
+    __ref = {Object("key1"):1, Object("key2"):2, Object("key3"):3}
+    _tested_class = weakref.WeakKeyDictionary
+    def _reference(self):
+        return self.__ref.copy()
 
 def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(ReferencesTestCase))
     suite.addTest(unittest.makeSuite(MappingTestCase))
+    suite.addTest(unittest.makeSuite(WeakValueDictionaryTestCase))
+    suite.addTest(unittest.makeSuite(WeakKeyDictionaryTestCase))
     test_support.run_suite(suite)
 
 

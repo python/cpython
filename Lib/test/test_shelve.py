@@ -43,9 +43,54 @@ class TestCase(unittest.TestCase):
         self.assertEqual(len(d1), 1)
         self.assertNotEqual(d1, d2)
 
-def test_main():
-    test_support.run_unittest(TestCase)
+from test_userdict import TestMappingProtocol
 
+class TestShelveBase(TestMappingProtocol):
+    fn = "shelftemp.db"
+    counter = 0
+    def __init__(self, *args, **kw):
+        self._db = []
+        TestMappingProtocol.__init__(self, *args, **kw)
+    _tested_class = shelve.Shelf
+    def _reference(self):
+        return {"key1":"value1", "key2":2, "key3":(1,2,3)}
+    def _empty_mapping(self):
+        if self._in_mem:
+            x= shelve.Shelf({}, binary = self._binary)
+        else:
+            self.counter+=1
+            x= shelve.open(self.fn+str(self.counter), binary=self._binary)
+        self._db.append(x)
+        return x
+    def tearDown(self):
+        for db in self._db:
+            db.close()
+        self._db = []
+        if not self._in_mem:
+            for f in glob.glob(self.fn+"*"):
+                os.unlink(f)
+
+class TestAsciiFileShelve(TestShelveBase):
+    _binary = False
+    _in_mem = False
+class TestBinaryFileShelve(TestShelveBase):
+    _binary = True
+    _in_mem = False
+class TestAsciiMemShelve(TestShelveBase):
+    _binary = False
+    _in_mem = True
+class TestBinaryMemShelve(TestShelveBase):
+    _binary = True
+    _in_mem = True
+
+def test_main():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestAsciiFileShelve))
+    suite.addTest(unittest.makeSuite(TestBinaryFileShelve))
+    suite.addTest(unittest.makeSuite(TestAsciiMemShelve))
+    suite.addTest(unittest.makeSuite(TestBinaryMemShelve))
+    suite.addTest(unittest.makeSuite(TestCase))
+    test_support.run_suite(suite)
 
 if __name__ == "__main__":
     test_main()
