@@ -195,7 +195,7 @@ static struct methodlist sys_methods[] = {
 #endif
 	{"setprofile",	sys_setprofile, 0},
 	{"settrace",	sys_settrace, 0},
-	{"setcheckinterval",	sys_setcheckinterval, 0},
+	{"setcheckinterval",	sys_setcheckinterval, 1},
 	{NULL,		NULL}		/* sentinel */
 };
 
