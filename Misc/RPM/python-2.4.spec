@@ -35,7 +35,7 @@
 %define name python
 %define version 2.4
 %define libvers 2.4
-%define release 1pydotorg
+%define release 3pydotorg
 %define __prefix /usr
 
 #  kludge to get around rpm <percent>define weirdness
@@ -131,6 +131,9 @@ formats.
 %endif
 
 %changelog
+* Wed Jan 05 2004 Sean Reifschneider <jafo-rpms@tummy.com> [2.4-3pydotorg]
+- Changing the idle wrapper so that it passes arguments to idle.
+
 * Tue Oct 19 2004 Sean Reifschneider <jafo-rpms@tummy.com> [2.4b1-1pydotorg]
 - Updating to 2.4.
 
@@ -257,8 +260,11 @@ fi
 
 ########
 #  Tools
-echo '#!/bin/bash' >${RPM_BUILD_ROOT}%{__prefix}/bin/idle%{binsuffix}
-echo 'exec %{__prefix}/bin/python%{binsuffix} %{__prefix}/%{libdirname}/python%{libvers}/idlelib/idle.py' >>$RPM_BUILD_ROOT%{__prefix}/bin/idle%{binsuffix}
+echo '#!%{__prefix}/bin/env python%{binsuffix}' >${RPM_BUILD_ROOT}%{__prefix}/bin/idle%{binsuffix}
+echo 'import os, sys' >>${RPM_BUILD_ROOT}%{__prefix}/bin/idle%{binsuffix}
+echo 'os.execvp("%{__prefix}/bin/python%{binsuffix}", ["%{__prefix}/bin/python%{binsuffix}", "%{__prefix}/lib/python%{libvers}/idlelib/idle.py"] + sys.argv[1:])' >>${RPM_BUILD_ROOT}%{__prefix}/bin/idle%{binsuffix}
+echo 'print "Failed to exec Idle"' >>${RPM_BUILD_ROOT}%{__prefix}/bin/idle%{binsuffix}
+echo 'sys.exit(1)' >>${RPM_BUILD_ROOT}%{__prefix}/bin/idle%{binsuffix}
 chmod 755 $RPM_BUILD_ROOT%{__prefix}/bin/idle%{binsuffix}
 cp -a Tools $RPM_BUILD_ROOT%{__prefix}/%{libdirname}/python%{libvers}
 
