@@ -709,8 +709,10 @@ string_join(self, args)
 				goto finally;
 			slen = PyString_GET_SIZE(sitem);
 			while (reslen + slen + seplen >= sz) {
-				if (_PyString_Resize(&res, sz*2))
+				if (_PyString_Resize(&res, sz*2)) {
+					Py_DECREF(sitem);
 					goto finally;
+				}
 				sz *= 2;
 				p = PyString_AsString(res) + reslen;
 			}
@@ -720,6 +722,7 @@ string_join(self, args)
 				reslen += seplen;
 			}
 			memcpy(p, PyString_AS_STRING(sitem), slen);
+			Py_DECREF(sitem);
 			p += slen;
 			reslen += slen;
 		}
@@ -728,14 +731,20 @@ string_join(self, args)
 		for (i = 0; i < seqlen; i++) {
 			PyObject *item = PySequence_GetItem(seq, i);
 			PyObject *sitem;
-			if (!item || !(sitem = PyObject_Str(item))) {
-				Py_XDECREF(item);
+
+			if (!item)
 				goto finally;
-			}
+			sitem = PyObject_Str(item);
+			Py_DECREF(item);
+			if (!sitem)
+				goto finally;
+
 			slen = PyString_GET_SIZE(sitem);
 			while (reslen + slen + seplen >= sz) {
-				if (_PyString_Resize(&res, sz*2))
+				if (_PyString_Resize(&res, sz*2)) {
+					Py_DECREF(sitem);
 					goto finally;
+				}
 				sz *= 2;
 				p = PyString_AsString(res) + reslen;
 			}
@@ -745,6 +754,7 @@ string_join(self, args)
 				reslen += seplen;
 			}
 			memcpy(p, PyString_AS_STRING(sitem), slen);
+			Py_DECREF(sitem);
 			p += slen;
 			reslen += slen;
 		}
