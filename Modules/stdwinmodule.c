@@ -68,7 +68,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "stdwin.h"
 
-#define StdwinError RuntimeError /* XXX Change this later */
+static object *StdwinError; /* Exception stdwin.error */
 
 /* Window and menu object types declared here because of forward references */
 
@@ -1744,14 +1744,6 @@ window2object(win)
 			w = None;
 		else
 			w = (object *)windowlist[tag];
-#ifdef sgi
-		/* XXX Trap for unexplained weird bug */
-		if ((long)w == (long)0x80000001) {
-			err_setstr(SystemError,
-				"bad pointer in stdwin.getevent()");
-			return NULL;
-		}
-#endif
 	}
 	INCREF(w);
 	return w;
@@ -2201,10 +2193,18 @@ static struct methodlist stdwin_methods[] = {
 void
 initstdwin()
 {
-	static int inited;
+	object *m, *d;
+	static int inited = 0;
+
 	if (!inited) {
 		winit();
 		inited = 1;
 	}
-	initmodule("stdwin", stdwin_methods);
+	m = initmodule("stdwin", stdwin_methods);
+	d = getmoduledict(m);
+	
+	/* Initialize stdwin.error exception */
+	StdwinError = newstringobject("stdwin.error");
+	if (StdwinError == NULL || dictinsert(d, "error", StdwinError) != 0)
+		fatal("can't define stdwin.error");
 }
