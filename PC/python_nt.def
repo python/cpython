@@ -6,8 +6,10 @@ EXPORTS
 	PyComplex_Type DATA
 	PyDict_Type DATA
 	PyExc_ArithmeticError DATA
+	PyExc_AssertionError DATA
 	PyExc_AttributeError DATA
 	PyExc_EOFError DATA
+	PyExc_EnvironmentError DATA
 	PyExc_Exception DATA
 	PyExc_FloatingPointError DATA
 	PyExc_IOError DATA
@@ -17,7 +19,9 @@ EXPORTS
 	PyExc_KeyboardInterrupt DATA
 	PyExc_LookupError DATA
 	PyExc_MemoryError DATA
+	PyExc_MemoryErrorInst DATA
 	PyExc_NameError DATA
+	PyExc_OSError DATA
 	PyExc_OverflowError DATA
 	PyExc_RuntimeError DATA
 	PyExc_StandardError DATA
@@ -31,6 +35,7 @@ EXPORTS
 	PyFloat_Type DATA
 	PyFrame_Type DATA
 	PyFunction_Type DATA
+	PyImport_FrozenModules DATA
 	PyImport_Inittab DATA
 	PyInstance_Type DATA
 	PyInt_Type DATA
@@ -43,36 +48,50 @@ EXPORTS
 	PyRange_Type DATA
 	PySlice_Type DATA
 	PyString_Type DATA
+	PyTraceBack_Type DATA
 	PyTuple_Type DATA
 	PyType_Type DATA
 	Py_DebugFlag DATA
+	Py_FrozenFlag DATA
 	Py_InteractiveFlag DATA
 	Py_NoSiteFlag DATA
+	Py_OptimizeFlag DATA
+	Py_TabcheckFlag DATA
 	Py_UseClassExceptionsFlag DATA
 	Py_VerboseFlag DATA
-	Py_FrozenFlag DATA
-	Py_TabcheckFlag DATA
+	_PyImport_Filetab DATA
+	_PyImport_Inittab DATA
 	_PyParser_Grammar DATA
 	_PyParser_TokenNames DATA
 	_PyThread_Started DATA
 	_Py_EllipsisObject DATA
 	_Py_NoneStruct DATA
+	_Py_PackageContext DATA
 	_Py_TrueStruct DATA
 	_Py_ZeroStruct DATA
+	_Py_abstract_hack DATA
+	_Py_cobject_hack DATA
+	_Py_re_syntax DATA
+	_Py_re_syntax_table DATA
 
 	PyArg_Parse
 	PyArg_ParseTuple
 	PyArg_ParseTupleAndKeywords
 	PyArg_VaParse
+	PyCFunction_Fini
+	PyCFunction_GetFlags
 	PyCFunction_GetFunction
 	PyCFunction_GetSelf
 	PyCFunction_New
 	PyCObject_AsVoidPtr
 	PyCObject_FromVoidPtr
+	PyCObject_FromVoidPtrAndDesc
+	PyCObject_GetDesc
 	PyCObject_Import
 	PyCallable_Check
 	PyClass_IsSubclass
 	PyClass_New
+	PyCode_Addr2Line
 	PyCode_New
 	PyComplex_AsCComplex
 	PyComplex_FromCComplex
@@ -101,13 +120,14 @@ EXPORTS
 	PyErr_Format
 	PyErr_GivenExceptionMatches
 	PyErr_NewException
-	PyErr_NormalizeException
 	PyErr_NoMemory
+	PyErr_NormalizeException
 	PyErr_Occurred
 	PyErr_Print
 	PyErr_PrintEx
 	PyErr_Restore
 	PyErr_SetFromErrno
+	PyErr_SetFromErrnoWithFilename
 	PyErr_SetInterrupt
 	PyErr_SetNone
 	PyErr_SetObject
@@ -140,22 +160,29 @@ EXPORTS
 	PyFile_WriteString
 	PyFloat_AsDouble
 	PyFloat_AsString
+	PyFloat_Fini
 	PyFloat_FromDouble
 	PyFrame_BlockPop
 	PyFrame_BlockSetup
 	PyFrame_FastToLocals
+	PyFrame_Fini
 	PyFrame_LocalsToFast
 	PyFrame_New
 	PyFunction_GetCode
+	PyFunction_GetDefaults
 	PyFunction_GetGlobals
 	PyFunction_New
+	PyFunction_SetDefaults
 	PyGrammar_AddAccelerators
 	PyGrammar_FindDFA
 	PyGrammar_LabelRepr
+	PyGrammar_RemoveAccelerators
 	PyImport_AddModule
-	PyImport_Cleanup
-	PyImport_ExtendInittab
 	PyImport_AppendInittab
+	PyImport_Cleanup
+	PyImport_ExecCodeModule
+	PyImport_ExecCodeModuleEx
+	PyImport_ExtendInittab
 	PyImport_GetMagicNumber
 	PyImport_GetModuleDict
 	PyImport_Import
@@ -166,6 +193,7 @@ EXPORTS
 	PyInstance_DoBinOp
 	PyInstance_New
 	PyInt_AsLong
+	PyInt_Fini
 	PyInt_FromLong
 	PyInt_GetMax
 	PyInterpreterState_Clear
@@ -201,12 +229,14 @@ EXPORTS
 	PyMarshal_ReadObjectFromString
 	PyMarshal_WriteLongToFile
 	PyMarshal_WriteObjectToFile
+	PyMarshal_WriteObjectToString
 	PyMem_Free
 	PyMem_Malloc
 	PyMem_Realloc
 	PyMember_Get
 	PyMember_Set
 	PyMethod_Class
+	PyMethod_Fini
 	PyMethod_Function
 	PyMethod_New
 	PyMethod_Self
@@ -216,12 +246,14 @@ EXPORTS
 	PyNode_AddChild
 	PyNode_Compile
 	PyNode_Free
+	PyNode_ListTree
 	PyNode_New
 	PyNumber_Absolute
 	PyNumber_Add
 	PyNumber_And
 	PyNumber_Check
 	PyNumber_Coerce
+	PyNumber_CoerceEx
 	PyNumber_Divide
 	PyNumber_Divmod
 	PyNumber_Float
@@ -239,10 +271,12 @@ EXPORTS
 	PyNumber_Subtract
 	PyNumber_Xor
 	PyOS_AfterFork
+	PyOS_FiniInterrupts
 	PyOS_GetLastModificationTime
 	PyOS_InitInterrupts
 	PyOS_InterruptOccurred
 	PyOS_Readline
+	PyOS_StdioReadline
 	PyOS_strtol
 	PyOS_strtoul
 	PyObject_CallFunction
@@ -254,10 +288,12 @@ EXPORTS
 	PyObject_GetAttr
 	PyObject_GetAttrString
 	PyObject_GetItem
+	PyObject_HasAttr
 	PyObject_HasAttrString
 	PyObject_Hash
 	PyObject_IsTrue
 	PyObject_Length
+	PyObject_Not
 	PyObject_Print
 	PyObject_Repr
 	PyObject_SetAttr
@@ -291,6 +327,7 @@ EXPORTS
 	PySequence_In
 	PySequence_Index
 	PySequence_Length
+	PySequence_List
 	PySequence_Repeat
 	PySequence_SetItem
 	PySequence_SetSlice
@@ -300,22 +337,27 @@ EXPORTS
 	PyString_AsString
 	PyString_Concat
 	PyString_ConcatAndDel
+	PyString_Fini
 	PyString_Format
 	PyString_FromString
 	PyString_FromStringAndSize
+	PyString_InternFromString
+	PyString_InternInPlace
 	PyString_Size
 	PySys_GetFile
 	PySys_GetObject
 	PySys_SetArgv
 	PySys_SetObject
 	PySys_SetPath
-	PySys_WriteStdout
 	PySys_WriteStderr
+	PySys_WriteStdout
 	PyThreadState_Clear
 	PyThreadState_Delete
 	PyThreadState_Get
+	PyThreadState_GetDict
 	PyThreadState_New
 	PyThreadState_Swap
+	PyThread__exit_thread
 	PyThread_acquire_lock
 	PyThread_allocate_lock
 	PyThread_allocate_sema
@@ -336,11 +378,13 @@ EXPORTS
 	PyTokenizer_Get
 	PyTraceBack_Here
 	PyTraceBack_Print
+	PyTuple_Fini
 	PyTuple_GetItem
 	PyTuple_GetSlice
 	PyTuple_New
 	PyTuple_SetItem
 	PyTuple_Size
+	Py_AddPendingCall
 	Py_AtExit
 	Py_BuildValue
 	Py_CompileString
@@ -353,10 +397,13 @@ EXPORTS
 	Py_FindMethodInChain
 	Py_FlushLine
 	Py_Free
+	Py_GetArgcArgv
 	Py_GetBuildInfo
+	Py_GetCompiler
 	Py_GetCopyright
 	Py_GetExecPrefix
 	Py_GetPath
+	Py_GetPlatform
 	Py_GetPrefix
 	Py_GetProgramFullPath
 	Py_GetProgramName
@@ -366,19 +413,49 @@ EXPORTS
 	Py_Initialize
 	Py_IsInitialized
 	Py_Main
+	Py_MakePendingCalls
 	Py_Malloc
 	Py_NewInterpreter
 	Py_Realloc
+	Py_ReprEnter
+	Py_ReprLeave
 	Py_SetProgramName
 	Py_SetPythonHome
 	Py_VaBuildValue
+	_PyBuiltin_Fini_1
+	_PyBuiltin_Fini_2
+	_PyBuiltin_Init_1
+	_PyBuiltin_Init_2
+	_PyImport_FindExtension
+	_PyImport_Fini
+	_PyImport_FixupExtension
+	_PyImport_Init
+	_PyImport_LoadDynamicModule
+	_PyLong_New
+	_PyModule_Clear
 	_PyObject_New
 	_PyObject_NewVar
 	_PyString_Resize
+	_PySys_Init
 	_PyTuple_Resize
+	_Py_MD5Final
+	_Py_MD5Init
+	_Py_MD5Update
+	_Py_addbit
 	_Py_c_diff
 	_Py_c_neg
 	_Py_c_pow
 	_Py_c_prod
 	_Py_c_quot
 	_Py_c_sum
+	_Py_delbitset
+	_Py_mergebitset
+	_Py_meta_grammar
+	_Py_newbitset
+	_Py_re_compile_fastmap
+	_Py_re_compile_initialize
+	_Py_re_compile_pattern
+	_Py_re_match
+	_Py_re_search
+	_Py_re_set_syntax
+	_Py_samebitset
