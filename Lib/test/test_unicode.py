@@ -90,7 +90,7 @@ class UnicodeTest(unittest.TestCase):
         self.checkmethod('title', u"fOrMaT,thIs-aS*titLe;String", u'Format,This-As*Title;String')
         self.checkmethod('title', u"getInt", u'Getint')
 
-        self.assertRaises(TypeError, u'hello'.count, 42)
+        self.assertRaises(TypeError, u'hello'.title, 42)
 
     def test_find(self):
         self.checkmethod('find', u'abcdefghiabc', 0, u'abc')
