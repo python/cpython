@@ -25,7 +25,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Configurable Python configuration file */
 
 #include "PROTO.h"
-#include "malloc.h"
+#include "mymalloc.h"
 
 #include "patchlevel.h"
 
@@ -115,14 +115,14 @@ getpythonpath()
    These are initialized when first imported. */
 
 /* Standard modules */
-extern void inittime();
+extern void initgrp();
+extern void initmarshal();
 extern void initmath();
 extern void initposix();
 extern void initpwd();
-extern void initgrp();
-extern void initmarshal();
 extern void initselect();
 extern void initsocket();
+extern void inittime();
 
 #ifdef USE_AUDIO
 extern void initaudio();
@@ -133,17 +133,26 @@ extern void inital();
 #ifdef USE_AMOEBA
 extern void initamoeba();
 #endif
-#ifdef USE_GL
-extern void initgl();
-#ifdef USE_FM
-extern void initfm();
+#ifdef USE_CD
+extern void initcd();
+#endif
 #ifdef USE_FL
 extern void initfl();
 #endif
+#ifdef USE_FM
+extern void initfm();
+#endif
+#ifdef USE_GL
+extern void initgl();
+#endif
+#ifdef USE_JPEG
+extern void initjpeg();
+#endif
+#ifdef USE_NIS
+extern void initnis();
 #endif
 #ifdef USE_PANEL
 extern void initpanel();
-#endif
 #endif
 #ifdef USE_REGEX
 extern void initregex();
@@ -151,17 +160,11 @@ extern void initregex();
 #ifdef USE_STDWIN
 extern void initstdwin();
 #endif
-#ifdef USE_JPEG
-extern void initjpeg();
-#endif
-#ifdef USE_CD
-extern void initcd();
-#endif
 #ifdef USE_THREAD
 extern void initthread();
 #endif
-#ifdef USE_NIS
-extern void initnis();
+#ifdef USE_SV
+extern void initsv();
 #endif
 
 struct {
@@ -169,19 +172,18 @@ struct {
 	void (*initfunc)();
 } inittab[] = {
 
-	/* Standard modules */
+	/* Standard modules, in alphabetical order */
 
-	{"time",	inittime},
+	{"grp",		initgrp},
+	{"marshal",	initmarshal},
 	{"math",	initmath},
 	{"posix",	initposix},
 	{"pwd",		initpwd},
-	{"grp",		initgrp},
-	{"marshal",	initmarshal},
 	{"select",	initselect},
 	{"socket",	initsocket},
+	{"time",	inittime},
 
-
-	/* Optional modules */
+	/* Optional modules, in alphabetical order */
 
 #ifdef USE_AUDIO
 	{"audio",	initaudio},
@@ -195,17 +197,32 @@ struct {
 	{"amoeba",	initamoeba},
 #endif
 
-#ifdef USE_GL
-	{"gl",		initgl},
-#ifdef USE_FM
-	{"fm",		initfm},
+#ifdef USE_CD
+	{"cd",		initcd},
+#endif
+
 #ifdef USE_FL
 	{"fl",		initfl},
 #endif
+
+#ifdef USE_FM
+	{"fm",		initfm},
 #endif
+
+#ifdef USE_GL
+	{"gl",		initgl},
+#endif
+
+#ifdef USE_JPEG
+	{"jpeg",	initjpeg},
+#endif
+
+#ifdef USE_NIS
+	{"nis",		initnis},
+#endif
+
 #ifdef USE_PANEL
 	{"pnl",		initpanel},
-#endif
 #endif
 
 #ifdef USE_REGEX
@@ -216,20 +233,12 @@ struct {
 	{"stdwin",	initstdwin},
 #endif
 
-#ifdef USE_JPEG
-	{"jpeg",	initjpeg},
-#endif
-
-#ifdef USE_CD
-	{"cd",		initcd},
-#endif
-
 #ifdef USE_THREAD
 	{"thread",	initthread},
 #endif
 
-#ifdef USE_NIS
-	{"nis",		initnis},
+#ifdef USE_SV
+	{"sv",		initsv},
 #endif
 
 	{0,		0}		/* Sentinel */
