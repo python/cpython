@@ -572,7 +572,7 @@ class _DummyThread(Thread):
     def _set_daemon(self):
         return 1
 
-    def join(self):
+    def join(self, timeout=None):
         assert 0, "cannot join a dummy thread"
 
 
