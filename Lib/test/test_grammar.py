@@ -701,6 +701,7 @@ print [3 * x for x in nums]
 print [x for x in nums if x > 2]
 print [(i, s) for i in nums for s in strs]
 print [(i, s) for i in nums for s in [f for f in strs if "n" in f]]
+print [(lambda a:[a**i for i in range(a+1)])(j) for j in range(5)] 
 
 def test_in_func(l):
     return [None < x < 3 for x in l if x > 2]
