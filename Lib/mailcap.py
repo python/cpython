@@ -58,7 +58,7 @@ def readmailcapfile(fp):
 	# Parse the line
 	key, fields = parseline(line)
 	if not (key and fields):
-	    cotinue
+	    continue
 	# Normalize the key
 	types = string.splitfields(key, '/')
 	for j in range(len(types)):
