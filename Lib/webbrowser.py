@@ -136,7 +136,7 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
             register("mosaic", None, GenericBrowser("mosaic %s >/dev/null &"))
 
         # Konqueror/kfm, the KDE browser.
-        if _iscommand("kfm"):
+        if _iscommand("kfm") or _iscommand("konqueror"):
             class Konqueror:
                 """Controller for the KDE File Manager (kfm, or Konqueror).
 
@@ -149,7 +149,10 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
                     rc = os.system(cmd)
                     if rc:
                         import time
-                        os.system("kfm -d &")
+                        if _iscommand("konqueror"):
+                            os.system("konqueror --silent &")
+                        else:
+                            os.system("kfm -d &")
                         time.sleep(PROCESS_CREATION_DELAY)
                         rc = os.system(cmd)
                     return not rc
