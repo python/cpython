@@ -34,10 +34,24 @@ class LogReader:
         # (fileno, lineno) -> filename, funcname
         self._funcmap = {}
 
-        self._info = {}
         self._reader = _hotshot.logreader(logfn)
         self._nextitem = self._reader.next
+        self._info = self._reader.info
         self._stack = []
+
+    def addinfo(self, key, value):
+        """This method is called for each additional ADD_INFO record.
+
+        This can be overridden by applications that want to receive
+        these events.  The default implementation does not need to be
+        called by alternate implementations.
+
+        The initial set of ADD_INFO records do not pass through this
+        mechanism; this is only needed to receive notification when
+        new values are added.  Subclasses can inspect self._info after
+        calling LogReader.__init__().
+        """
+        pass
 
     # Iteration support:
     # This adds an optional (& ignored) parameter to next() so that the
@@ -60,15 +74,10 @@ class LogReader:
                 self._funcmap[(fileno, lineno)] = (filename, tdelta)
                 continue
             if what == WHAT_ADD_INFO:
-                key = tdelta.lower()
-                try:
-                    L = self._info[key]
-                except KeyError:
-                    L = []
-                    self._info[key] = L
-                L.append(lineno)
-                if key == "current-directory":
-                    self.cwd = lineno
+                # value already loaded into self.info; call the
+                # overridable addinfo() handler so higher-level code
+                # can pick up the new value
+                self.addinfo(tdelta, lineno)
                 continue
             if what == WHAT_ENTER:
                 t = self._decode_location(fileno, lineno)
