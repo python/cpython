@@ -61,10 +61,11 @@ Bookkeeping functions:
   Optional argument \var{x} can be any hashable object.
   If \var{x} is omitted or \code{None}, current system time is used;
   current system time is also used to initialize the generator when the
-  module is first imported.  If hardware random sources are available,
-  they are used instead of the system time (see the \function{os.urandom()}
+  module is first imported.  If randomness sources are provided by the
+  operating system, they are used instead of the system time (see the
+  \function{os.urandom()}
   function for details on availability).  \versionchanged[formerly,
-  hardward sources were not used]{2.4}
+  operating system resources were not used]{2.4}
   If \var{x} is not \code{None} or an int or long,
   \code{hash(\var{x})} is used instead.
   If \var{x} is an int or long, \var{x} is used directly.
@@ -249,9 +250,10 @@ require care that two independent random sequences do not overlap.
   yield no more than about 2**24 distinct internal states in all.
 \end{funcdesc}
 
-\begin{classdesc}{HardwareRandom}{\optional{seed}}
+\begin{classdesc}{SystemRandom}{\optional{seed}}
 Class that uses the \function{os.urandom()} function for generating
-random numbers from hardware.  Not available on all systems.
+random numbers from sources provided by the operating system.
+Not available on all systems.
 Does not rely on software state and sequences are not reproducible.
 Accordingly, the \method{seed()} and \method{jumpahead()} methods
 have no effect and are ignored.  The \method{getstate()} and

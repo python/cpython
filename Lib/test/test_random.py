@@ -164,8 +164,8 @@ class WichmannHill_TestBasicOps(TestBasicOps):
         self.assertRaises(UserWarning, self.gen.randrange, 2**60)
         warnings.filters[:] = oldfilters
 
-class HardwareRandom_TestBasicOps(TestBasicOps):
-    gen = random.HardwareRandom()
+class SystemRandom_TestBasicOps(TestBasicOps):
+    gen = random.SystemRandom()
 
     def test_autoseed(self):
         # Doesn't need to do anything except not fail
@@ -496,11 +496,11 @@ def test_main(verbose=None):
                       TestModule]
 
     try:
-        random.HardwareRandom().random()
+        random.SystemRandom().random()
     except NotImplementedError:
         pass
     else:
-        testclasses.append(HardwareRandom_TestBasicOps)
+        testclasses.append(SystemRandom_TestBasicOps)
 
     test_support.run_unittest(*testclasses)
 

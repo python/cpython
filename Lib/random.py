@@ -52,7 +52,7 @@ __all__ = ["Random","seed","random","uniform","randint","choice","sample",
            "expovariate","vonmisesvariate","gammavariate",
            "gauss","betavariate","paretovariate","weibullvariate",
            "getstate","setstate","jumpahead", "WichmannHill", "getrandbits",
-           "HardwareRandom"]
+           "SystemRandom"]
 
 NV_MAGICCONST = 4 * _exp(-0.5)/_sqrt(2.0)
 TWOPI = 2.0*_pi
@@ -99,8 +99,8 @@ class Random(_random.Random):
     def seed(self, a=None):
         """Initialize internal state from hashable object.
 
-        None or no argument seeds from current time or from a hardware
-        randomness source if available.
+        None or no argument seeds from current time or from an operating
+        system specific randomness source if available.
 
         If a is not None or an int or long, hash(a) is used instead.
         """
@@ -603,8 +603,8 @@ class WichmannHill(Random):
     def seed(self, a=None):
         """Initialize internal state from hashable object.
 
-        None or no argument seeds from current time or from a hardware
-        randomness source if available.
+        None or no argument seeds from current time or from an operating
+        system specific randomness source if available.
 
         If a is not None or an int or long, hash(a) is used instead.
 
@@ -744,10 +744,12 @@ class WichmannHill(Random):
         z = (z + a) % 256 or 1
         self.__whseed(x, y, z)
 
-## -------------------- Hardware Random Source  -------------------
+## --------------- Operating System Random Source  ------------------
 
-class HardwareRandom(Random):
-    """Alternate random number generator using hardware sources.
+class SystemRandom(Random):
+    """Alternate random number generator using sources provided
+    by the operating system (such as /dev/urandom on Unix or
+    CryptGenRandom on Windows).
 
      Not available on all systems (see os.urandom() for details).
     """
@@ -767,13 +769,13 @@ class HardwareRandom(Random):
         return x >> (bytes * 8 - k)             # trim excess bits
 
     def _stub(self, *args, **kwds):
-        "Stub method.  Not used for a hardware random number generator."
+        "Stub method.  Not used for a system random number generator."
         return None
     seed = jumpahead = _stub
 
     def _notimplemented(self, *args, **kwds):
-        "Method should not be called for a hardware random number generator."
-        raise NotImplementedError('Hardware entropy source does not have state.')
+        "Method should not be called for a system random number generator."
+        raise NotImplementedError('System entropy source does not have state.')
     getstate = setstate = _notimplemented
 
 ## -------------------- test program --------------------
