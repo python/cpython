@@ -175,6 +175,28 @@ def my_import(name):
   \code{del \var{x}.\var{foobar}}.
 \end{funcdesc}
 
+\begin{funcdesc}{dictionary}{\optional{mapping-or-sequence}}
+  Return a new dictionary initialized from the optional argument.
+  If an argument is not specified, return a new empty dictionary.
+  If the argument is a mapping object, return a dictionary mapping the
+  same keys to the same values as does the mapping object.
+  Else the argument must be a sequence, a container that supports
+  iteration, or an iterator object.  The elements of the argument must
+  each also be of one of those kinds, and each must in turn contain
+  exactly two objects.  The first is used as a key in the new dictionary,
+  and the second as the key's value.  If a given key is seen more than
+  once, the last value associated with it is retained in the new
+  dictionary.
+  For example, these all return a dictionary equal to
+  \code{\{1: 2, 2: 3\}}:
+  \code{dictionary(\{1: 2, 2: 3\})},
+  \code{dictionary(\{1: 2, 2: 3\}.items()},
+  \code{dictionary(\{1: 2, 2: 3\}.iteritems()},
+  \code{dictionary(zip((1, 2), (2, 3)))},
+  \code{dictionary([[2, 3], [1, 2]])}, and
+  \code{dictionary([(i-1, i) for i in (2, 3)])}.
+\end{funcdesc}
+
 \begin{funcdesc}{dir}{\optional{object}}
   Without arguments, return the list of names in the current local
   symbol table.  With an argument, attempts to return a list of valid
@@ -472,7 +494,7 @@ def my_import(name):
   may be a sequence (string, tuple or list) or a mapping (dictionary).
 \end{funcdesc}
 
-\begin{funcdesc}{list}{sequence}
+\begin{funcdesc}{list}{\optional{sequence}}
   Return a list whose items are the same and in the same order as
   \var{sequence}'s items.  \var{sequence} may be either a sequence, a
   container that supports iteration, or an iterator object.  If
@@ -726,7 +748,7 @@ def my_import(name):
   printable string.
 \end{funcdesc}
 
-\begin{funcdesc}{tuple}{sequence}
+\begin{funcdesc}{tuple}{\optional{sequence}}
   Return a tuple whose items are the same and in the same order as
   \var{sequence}'s items.  \var{sequence} may be a sequence, a
   container that supports iteration, or an iterator object.
