@@ -10,8 +10,6 @@ CallableTypes = (FunctionType, MethodType,
 
 TkVersion = eval(tkinter.TK_VERSION)
 TclVersion = eval(tkinter.TCL_VERSION)
-if TkVersion < 4.0:
-    raise ImportError, "This version of Tkinter.py requires Tk 4.0 or higher"
 
 
 def _flatten(tuple):
@@ -578,6 +576,21 @@ class Tk(Misc, Wm):
 			baseName = os.path.basename(sys.argv[0])
 			if baseName[-3:] == '.py': baseName = baseName[:-3]
 		self.tk = tkinter.create(screenName, baseName, className)
+		# Version sanity checks
+		tk_version = self.tk.getvar('tk_version')
+		if tk_version != tkinter.TK_VERSION:
+		    raise RuntimeError, \
+		    "tk.h version (%s) doesn't match libtk.a version (%s)" \
+		    % (tkinter.TK_VERSION, tk_version)
+		tcl_version = self.tk.getvar('tcl_version')
+		if tcl_version != tkinter.TCL_VERSION:
+		    raise RuntimeError, \
+		    "tcl.h version (%s) doesn't match libtcl.a version (%s)" \
+		    % (tkinter.TCL_VERSION, tcl_version)
+		if TkVersion < 4.0:
+		    raise RuntimeError, \
+			  "Tk 4.0 or higher is required; found Tk %s" \
+			  % str(TkVersion)
 		self.tk.createcommand('tkerror', _tkerror)
 		self.tk.createcommand('exit', _exit)
 		self.readprofile(baseName, className)
@@ -744,8 +757,9 @@ class Widget(Misc, Pack, Place):
 		self.tk.call('destroy', self._w)
 	def _do(self, name, args=()):
 		return apply(self.tk.call, (self._w, name) + args)
-	def unbind_class(self, seq):
-	    Misc.unbind_class(self, self.widgetName, seq)
+	# XXX The following method seems out of place here
+##	def unbind_class(self, seq):
+##		Misc.unbind_class(self, self.widgetName, seq)
 
 class Toplevel(Widget, Wm):
 	def __init__(self, master=None, cnf={}, **kw):
