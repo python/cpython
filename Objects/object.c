@@ -386,6 +386,35 @@ coerce(pv, pw)
 }
 
 
+/* Test whether an object can be called */
+
+int
+callable(x)
+	object *x;
+{
+	if (x == NULL)
+		return 0;
+	if (x->ob_type->tp_call != NULL ||
+	    is_funcobject(x) ||
+	    is_instancemethodobject(x) ||
+	    is_methodobject(x) ||
+	    is_classobject(x))
+		return 1;
+	if (is_instanceobject(x)) {
+		object *call = getattr(x, "__call__");
+		if (call == NULL) {
+			err_clear();
+			return 0;
+		}
+		/* Could test recursively but don't, for fear of endless
+		   recursion if some joker sets self.__call__ = self */
+		DECREF(call);
+		return 1;
+	}
+	return 0;
+}
+
+
 /*
 NoObject is usable as a non-NULL undefined value, used by the macro None.
 There is (and should be!) no way to create other objects of this type,
