@@ -1479,7 +1479,7 @@ extern PyTypeObject PyDictIter_Type; /* Forward */
 typedef struct {
 	PyObject_HEAD
 	dictobject *di_dict;
-	int di_size;
+	int di_used;
 	int di_pos;
 	binaryfunc di_select;
 } dictiterobject;
@@ -1493,7 +1493,7 @@ dictiter_new(dictobject *dict, binaryfunc select)
 		return NULL;
 	Py_INCREF(dict);
 	di->di_dict = dict;
-	di->di_size = dict->ma_size;
+	di->di_used = dict->ma_used;
 	di->di_pos = 0;
 	di->di_select = select;
 	return (PyObject *)di;
@@ -1511,7 +1511,7 @@ dictiter_next(dictiterobject *di, PyObject *args)
 {
 	PyObject *key, *value;
 
-	if (di->di_size != di->di_dict->ma_size) {
+	if (di->di_used != di->di_dict->ma_used) {
 		PyErr_SetString(PyExc_RuntimeError,
 				"dictionary changed size during iteration");
 		return NULL;
@@ -1546,7 +1546,7 @@ static PyObject *dictiter_iternext(dictiterobject *di)
 {
 	PyObject *key, *value;
 
-	if (di->di_size != di->di_dict->ma_size) {
+	if (di->di_used != di->di_dict->ma_used) {
 		PyErr_SetString(PyExc_RuntimeError,
 				"dictionary changed size during iteration");
 		return NULL;
