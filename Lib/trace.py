@@ -183,7 +183,9 @@ def fullmodname(path):
         base = path[len(longest) + 1:]
     else:
         base = path
-    base = base.replace("/", ".")
+    base = base.replace(os.sep, ".")
+    if os.altsep:
+        base = base.replace(os.altsep, ".")
     filename, ext = os.path.splitext(base)
     return filename
 
@@ -297,7 +299,7 @@ class CoverageResults:
         except IOError, err:
             print >> sys.stderr, ("trace: Could not open %r for writing: %s"
                                   "- skipping" % (path, err))
-            return
+            return 0, 0
 
         n_lines = 0
         n_hits = 0
