@@ -92,7 +92,7 @@ The value ma_fill is the number of non-NULL keys (sum of Active and Dummy);
 ma_used is the number of non-NULL, non-dummy keys (== the number of non-NULL
 values == the number of Active items).
 To avoid slowing down lookups on a near-full table, we resize the table when
-it is more than half filled.
+it's two-thirds full.
 */
 typedef struct dictobject dictobject;
 struct dictobject {
@@ -486,13 +486,15 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 		if (hash == -1)
 			return -1;
 	}
-	/* if fill >= 2/3 size, double in size */
-	if (mp->ma_fill*3 >= mp->ma_size*2) {
-		if (dictresize(mp, mp->ma_used*2) != 0) {
-			if (mp->ma_fill+1 > mp->ma_size)
-				return -1;
-		}
-	}
+	/* If fill >= 2/3 size, adjust size.  Normally, this doubles the
+	 * size, but it's also possible for the dict to shrink (if ma_fill is
+	 * much larger than ma_used, meaning a lot of dict keys have been
+	 * deleted).
+	 * CAUTION: this resize logic must match the logic in PyDict_Next.
+	 */
+	if (mp->ma_fill*3 >= mp->ma_size*2 &&
+	    dictresize(mp, mp->ma_used*2) != 0)
+		return -1;
 	Py_INCREF(value);
 	Py_INCREF(key);
 	insertdict(mp, key, hash, value);
@@ -562,6 +564,11 @@ PyDict_Clear(PyObject *op)
 	PyMem_DEL(table);
 }
 
+/* CAUTION:  In general, it isn't safe to use PyDict_Next in a loop that
+ * mutates the dict.  One exception:  it is safe if the loop merely changes
+ * the values associated with the keys (but doesn't insert new keys or
+ * delete keys), via PyDict_SetItem().
+ */
 int
 PyDict_Next(PyObject *op, int *ppos, PyObject **pkey, PyObject **pvalue)
 {
@@ -573,6 +580,23 @@ PyDict_Next(PyObject *op, int *ppos, PyObject **pkey, PyObject **pvalue)
 	i = *ppos;
 	if (i < 0)
 		return 0;
+
+	/* A hack to support loops that merely change values.
+	 * The problem:  PyDict_SetItem() can either grow  or shrink the dict
+	 * even when passed a key that's already in the dict.  This was a
+	 * repeated source of subtle bugs, bad enough to justify a hack here.
+	 * Approach:  If this is the first time PyDict_Next() is being called
+	 * (i==0), first figure out whether PyDict_SetItem() *will* change the
+	 * size, and if so get it changed before we start passing out internal
+	 * indices.
+	 */
+	if (i == 0) {
+		/* This must be a clone of PyDict_SetItem's resize logic. */
+		if (mp->ma_fill*3 >= mp->ma_size*2 &&
+		    dictresize(mp, mp->ma_used*2) != 0)
+			return -1;
+	}
+
 	while (i < mp->ma_size && mp->ma_table[i].me_value == NULL)
 		i++;
 	*ppos = i+1;
