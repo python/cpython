@@ -142,20 +142,23 @@ class URLopener:
             fp = open(filename, 'rb')
             return addinfourl(fp, headers, fullurl)
         type, url = splittype(fullurl)
-        if not type: type = 'file'
+        if not type:
+            type = 'file'
         if self.proxies.has_key(type):
             proxy = self.proxies[type]
-            type, proxy = splittype(proxy)
-            host, selector = splithost(proxy)
+            type, proxyhost = splittype(proxy)
+            host, selector = splithost(proxyhost)
             url = (host, fullurl) # Signal special case to open_*()
+        else:
+            proxy = None
         name = 'open_' + type
         self.type = type
         if '-' in name:
             # replace - with _
             name = string.join(string.split(name, '-'), '_')
         if not hasattr(self, name):
-            if data is None:
-                return self.open_unknown(fullurl)
+            if proxy:
+                return self.open_unknown_proxy(proxy, fullurl, data)
             else:
                 return self.open_unknown(fullurl, data)
         try:
@@ -170,6 +173,11 @@ class URLopener:
         """Overridable interface to open unknown URL type."""
         type, url = splittype(fullurl)
         raise IOError, ('url error', 'unknown url type', type)
+
+    def open_unknown_proxy(self, proxy, fullurl, data=None):
+        """Overridable interface to open unknown URL type."""
+        type, url = splittype(fullurl)
+        raise IOError, ('url error', 'invalid proxy for %s' % type, proxy)
 
     # External interface
     def retrieve(self, url, filename=None, reporthook=None, data=None):
