@@ -203,21 +203,30 @@ def exists(p):
   """
 Test whether a path exists.
 """
-  return swi.swi('OS_File', '5s;i', p)!=0
+  try:
+    return swi.swi('OS_File', '5s;i', p)!=0
+  except swi.error:
+    return 0
 
 
 def isdir(p):
   """
 Is a path a directory? Includes image files.
 """
-  return swi.swi('OS_File', '5s;i', p) in [2, 3]
+  try:
+    return swi.swi('OS_File', '5s;i', p) in [2, 3]
+  except swi.error:
+    return 0
 
 
 def isfile(p):
   """
 Test whether a path is a file, including image files.
 """
-  return swi.swi('OS_File', '5s;i', p) in [1, 3]
+  try:
+    return swi.swi('OS_File', '5s;i', p) in [1, 3]
+  except swi.error:
+    return 0
 
 
 def islink(p):

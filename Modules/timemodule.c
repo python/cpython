@@ -756,9 +756,7 @@ floatsleep(double secs)
 #if defined(__WATCOMC__) && !defined(__QNX__)
 	/* XXX Can't interrupt this sleep */
 	Py_BEGIN_ALLOW_THREADS
-#ifndef RISCOS
 	delay((int)(secs * 1000 + 0.5));  /* delay() uses milliseconds */
-#endif
 	Py_END_ALLOW_THREADS
 #else /* !__WATCOMC__ || __QNX__ */
 #ifdef MSDOS
@@ -831,10 +829,20 @@ floatsleep(double secs)
 		Py_END_ALLOW_THREADS
 	}
 #else /* !__BEOS__ */
+#ifdef RISCOS
+	if (secs <= 0.0)
+		return 0;
+	Py_BEGIN_ALLOW_THREADS
+	/* This sleep *CAN BE* interrupted. */
+	if ( sleep(secs) )
+		return -1;
+	Py_END_ALLOW_THREADS
+#else /* !RISCOS */
 	/* XXX Can't interrupt this sleep */
 	Py_BEGIN_ALLOW_THREADS
 	sleep((int)secs);
 	Py_END_ALLOW_THREADS
+#endif /* !RISCOS */
 #endif /* !__BEOS__ */
 #endif /* !PYOS_OS2 */
 #endif /* !MS_WIN32 */

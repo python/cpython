@@ -12,9 +12,9 @@ EXPAT = $(LIBSROOT).expat.lib
 OBJSCAN = $(DLKLIB).objscan
 MAKEDLK = $(DLKLIB).makedlk
 
-# change from time to time
+# change from time to time (don't forget to change !Boot also)
 TARGET=Python21
-BUILD=10
+BUILD=12
 
 
 #
@@ -23,7 +23,7 @@ BUILD=10
 OSLIBS = OSLib:Computer,OSLib:Core,OSLib:User
 
 DLKFLAG= -DDLK
-DLKOBJS = $(DLKLIB).o.dlk_load o.linktab
+DLKOBJS = $(DLKLIB).o.dlk_load @.o.linktab
 
 HEADERS = @,@.^.Include,@.^.Modules,@.^.Objects,@.^.Python,$(CLIB),$(OSLIBS),$(DLKLIB)
 
@@ -32,7 +32,7 @@ CC = cc -c -j$(HEADERS) $(DLKFLAG) -DRISCOS -DHAVE_CONFIG_H -wad -throwback
 CCEXPAT = cc -c -j$(HEADERS),$(EXPAT) $(DLKFLAG) -DHAVE_EXPAT_H -DRISCOS -DHAVE_CONFIG_H -wad -throwback
 
 LINK = link
-LINKFLAGS = -aif -NOUNUSED #-d
+LINKFLAGS = -aif #-NOUNUSED #-d
 LOADLIBS = $(CLIB).o.Stubs $(OSLIB).o.OSLib $(DLKOBJS)
 
 
@@ -41,143 +41,135 @@ LOADLIBS = $(CLIB).o.Stubs $(OSLIB).o.OSLib $(DLKOBJS)
 
 
 # code for main Python binary
-MODULES_STATIC = \
-	@.^.Modules.o.python \
-	@.^.Modules.o.main \
-	Modules.o.config \
-	@.^.Modules.o.getbuildinfo \
-	Modules.o.getpath_riscos \
-	Modules.o.riscosmodule \
-	@.^.Modules.o._sre
+MODULES_STATIC =\
+	@.^.Modules.o.python\
+	@.^.Modules.o.main\
+	Modules.o.config\
+	@.^.Modules.o.getbuildinfo\
+	Modules.o.getpath_riscos\
+	Modules.o.riscosmodule
 
 
 # dynamic Modules
-MODULES_DYNAMIC = \
-	@.^.Lib.array/pyd \
-	@.^.Lib.audioop/pyd \
-	@.^.Lib.binascii/pyd \
-	@.^.Lib.cmath/pyd \
-	@.^.Lib.cPickle/pyd \
-	@.^.Lib.cStringIO/pyd \
-	@.^.Lib.errno/pyd \
-	@.^.Lib.imageop/pyd \
-	@.^.Lib.math/pyd \
-	@.^.Lib.md5/pyd \
-	@.^.Lib.new/pyd \
-	@.^.Lib.operator/pyd \
-	@.^.Lib.parser/pyd \
-	@.^.Lib.pcre/pyd \
-	@.^.Lib.regex/pyd \
-	@.^.Lib.rgbimg/pyd \
-	@.^.Lib.rotor/pyd \
-	@.^.Lib.sha/pyd \
-	@.^.Lib.signal/pyd \
-	@.^.Lib.struct/pyd \
-	@.^.Lib.time/pyd \
-	@.^.Lib._locale/pyd \
-	@.^.Lib.zlib/pyd \
-	@.^.Lib.select/pyd \
-	@.^.Lib._socket/pyd \
-	@.^.Lib._codecs/pyd \
-	@.^.Lib._weakref/pyd \
-	@.^.Lib._testcapi/pyd \
-	@.^.Lib.unicodedata/pyd \
-	@.^.Lib.xreadlines/pyd \
-	@.^.Lib.pyexpat/pyd \
-	@.^.Lib.plat-riscos.drawf/pyd \
-	@.^.Lib.plat-riscos.swi/pyd
-
-	# @.^.Lib.soundex/pyd \
-	# leave  strop out? It's no longer in use for string operations
-	# @.^.Lib.mmap/pyd would it make sense? I read about a mmap
-	# implementation for RISC OS recently in usenet news.
-
-	#@.^.Lib.strop/pyd \
-	#@.^.Lib._sre/pyd \
+MODULES_DYNAMIC =\
+	@.^.Lib.array/pyd\
+	@.^.Lib.audioop/pyd\
+	@.^.Lib.binascii/pyd\
+	@.^.Lib.cmath/pyd\
+	@.^.Lib.cPickle/pyd\
+	@.^.Lib.cStringIO/pyd\
+	@.^.Lib.errno/pyd\
+	@.^.Lib.imageop/pyd\
+	@.^.Lib.math/pyd\
+	@.^.Lib.md5/pyd\
+	@.^.Lib.new/pyd\
+	@.^.Lib.operator/pyd\
+	@.^.Lib.parser/pyd\
+	@.^.Lib.pcre/pyd\
+	@.^.Lib.regex/pyd\
+	@.^.Lib.rgbimg/pyd\
+	@.^.Lib.rotor/pyd\
+	@.^.Lib.sha/pyd\
+	@.^.Lib.signal/pyd\
+	@.^.Lib.struct/pyd\
+	@.^.Lib.time/pyd\
+	@.^.Lib._locale/pyd\
+	@.^.Lib.zlib/pyd\
+	@.^.Lib.select/pyd\
+	@.^.Lib._socket/pyd\
+	@.^.Lib._codecs/pyd\
+	@.^.Lib._weakref/pyd\
+	@.^.Lib._testcapi/pyd\
+	@.^.Lib.unicodedata/pyd\
+	@.^.Lib.xreadlines/pyd\
+	@.^.Lib.pyexpat/pyd\
+	@.^.Lib.plat-riscos.drawf/pyd\
+	@.^.Lib.plat-riscos.swi/pyd\
+	@.^.Lib._sre/pyd
 
 
-OBJECTS_PYTHON = \
-	@.^.Python.o.traceback \
-	@.^.Python.o.sysmodule \
-	@.^.Python.o.structmember \
-	@.^.Python.o.strdup \
-	@.^.Python.o.sigcheck \
-	@.^.Python.o.pythonrun \
-	@.^.Python.o.pystate \
-	@.^.Python.o.pyfpe \
-	@.^.Python.o.mystrtoul \
-	@.^.Python.o.modsupport \
-	@.^.Python.o.marshal \
-	@.^.Python.o.importdl \
-	@.^.Python.o.import \
-	@.^.Python.o.graminit \
-	@.^.Python.o.getversion \
-	@.^.Python.o.getplatform \
-	@.^.Python.o.getopt \
-	@.^.Python.o.getcopyright \
-	@.^.Python.o.getcompiler \
-	@.^.Python.o.getargs \
-	@.^.Python.o.frozenmain \
-	@.^.Python.o.frozen \
-	@.^.Python.o.errors \
-	@.^.Python.o.compile \
-	@.^.Python.o.ceval \
-	@.^.Python.o.bltinmodule \
-	@.^.Python.o.exceptions \
-	@.^.Python.o.hypot \
-	@.^.Python.o.codecs \
-	@.^.Python.o.symtable
-# @.^.Python.o.atof @.^.Python.o.strerror
+OBJECTS_PYTHON =\
+	@.^.Python.o.traceback\
+	@.^.Python.o.sysmodule\
+	@.^.Python.o.structmember\
+	@.^.Python.o.strdup\
+	@.^.Python.o.sigcheck\
+	@.^.Python.o.pythonrun\
+	@.^.Python.o.pystate\
+	@.^.Python.o.pyfpe\
+	@.^.Python.o.mystrtoul\
+	@.^.Python.o.modsupport\
+	@.^.Python.o.marshal\
+	@.^.Python.o.importdl\
+	@.^.Python.o.import\
+	@.^.Python.o.graminit\
+	@.^.Python.o.getversion\
+	@.^.Python.o.getplatform\
+	@.^.Python.o.getopt\
+	@.^.Python.o.getcopyright\
+	@.^.Python.o.getcompiler\
+	@.^.Python.o.getargs\
+	@.^.Python.o.frozenmain\
+	@.^.Python.o.frozen\
+	@.^.Python.o.errors\
+	@.^.Python.o.compile\
+	@.^.Python.o.ceval\
+	@.^.Python.o.bltinmodule\
+	@.^.Python.o.exceptions\
+	@.^.Python.o.hypot\
+	@.^.Python.o.codecs\
+	@.^.Python.o.symtable\
+	@.^.Python.o.future
 
 
-OBJECTS_RISCOS =  \
-	@.Python.o.dynload_riscos \
-	@.Python.o.getcwd_riscos \
-	@.Python.o.getmtime_riscos \
+OBJECTS_RISCOS = \
+	@.Python.o.dynload_riscos\
+	@.Python.o.getcwd_riscos\
+	@.Python.o.getmtime_riscos\
 	@.o.unixstuff
 
 
-OBJECTS_OBJECTS = \
-	@.^.Objects.o.typeobject \
-	@.^.Objects.o.tupleobject \
-	@.^.Objects.o.stringobject \
-	@.^.Objects.o.sliceobject \
-	@.^.Objects.o.rangeobject \
-	@.^.Objects.o.object \
-	@.^.Objects.o.moduleobject \
-	@.^.Objects.o.methodobject \
-	@.^.Objects.o.longobject \
-	@.^.Objects.o.listobject \
-	@.^.Objects.o.intobject \
-	@.^.Objects.o.funcobject \
-	@.^.Objects.o.frameobject \
-	@.^.Objects.o.floatobject \
-	@.^.Objects.o.fileobject \
-	@.^.Objects.o.dictobject \
-	@.^.Objects.o.complexobject \
-	@.^.Objects.o.cobject \
-	@.^.Objects.o.classobject \
-	@.^.Objects.o.cellobject \
-	@.^.Objects.o.bufferobject \
-	@.^.Objects.o.abstract \
-	@.^.Objects.o.unicodectype \
+OBJECTS_OBJECTS =\
+	@.^.Objects.o.typeobject\
+	@.^.Objects.o.tupleobject\
+	@.^.Objects.o.stringobject\
+	@.^.Objects.o.sliceobject\
+	@.^.Objects.o.rangeobject\
+	@.^.Objects.o.object\
+	@.^.Objects.o.moduleobject\
+	@.^.Objects.o.methodobject\
+	@.^.Objects.o.longobject\
+	@.^.Objects.o.listobject\
+	@.^.Objects.o.intobject\
+	@.^.Objects.o.funcobject\
+	@.^.Objects.o.frameobject\
+	@.^.Objects.o.floatobject\
+	@.^.Objects.o.fileobject\
+	@.^.Objects.o.dictobject\
+	@.^.Objects.o.complexobject\
+	@.^.Objects.o.cobject\
+	@.^.Objects.o.classobject\
+	@.^.Objects.o.cellobject\
+	@.^.Objects.o.bufferobject\
+	@.^.Objects.o.abstract\
+	@.^.Objects.o.unicodectype\
 	@.^.Objects.o.unicodeobject
 
 
-OBJECTS_PARSER = \
-	@.^.Parser.o.tokenizer \
-	@.^.Parser.o.printgrammar \
-	@.^.Parser.o.parsetok \
-	@.^.Parser.o.parser \
-	@.^.Parser.o.node \
-	@.^.Parser.o.myreadline \
-	@.^.Parser.o.metagrammar \
-	@.^.Parser.o.listnode \
-	@.^.Parser.o.intrcheck \
-	@.^.Parser.o.grammar1 \
-	@.^.Parser.o.grammar \
-	@.^.Parser.o.firstsets \
-	@.^.Parser.o.bitset \
+OBJECTS_PARSER =\
+	@.^.Parser.o.tokenizer\
+	@.^.Parser.o.printgrammar\
+	@.^.Parser.o.parsetok\
+	@.^.Parser.o.parser\
+	@.^.Parser.o.node\
+	@.^.Parser.o.myreadline\
+	@.^.Parser.o.metagrammar\
+	@.^.Parser.o.listnode\
+	@.^.Parser.o.intrcheck\
+	@.^.Parser.o.grammar1\
+	@.^.Parser.o.grammar\
+	@.^.Parser.o.firstsets\
+	@.^.Parser.o.bitset\
 	@.^.Parser.o.acceler
 
 SUPPORT_FILES = @.^.!Boot @.^.!Run @.^.!Sprites @.^.!Sprites22 @.^.AddToPath
@@ -196,7 +188,8 @@ all: @.^.$(TARGET) $(MODULES_DYNAMIC) $(SUPPORT_FILES)
 
 
 #########################################################################
-# Support files
+# RISC OS support files
+#
 @.^.!Boot: support.!Boot
 	copy support.!Boot @.^.!Boot ~C~VF
 	settype @.^.!Boot feb
@@ -297,9 +290,6 @@ all: @.^.$(TARGET) $(MODULES_DYNAMIC) $(SUPPORT_FILES)
 	$(LINK) -aof -o Modules.o.swilink Modules.o.swimodule $(OSLIB).o.OSLIB
 	$(MAKEDLK) -d @.^.Lib.plat-riscos.swi/pyd -s s.linktab -o Modules.o.swilink -e initswi
 
-@.^.Lib.time/pyd: @.^.Modules.o.timemodule s.linktab
-	$(MAKEDLK) -d @.^.Lib.time/pyd -s s.linktab -o @.^.Modules.o.timemodule -e inittime
-
 @.^.Lib._locale/pyd: @.^.Modules.o._localemodule s.linktab
 	$(MAKEDLK) -d @.^.Lib._locale/pyd -s s.linktab -o @.^.Modules.o._localemodule -e init_locale
 
@@ -320,10 +310,6 @@ all: @.^.$(TARGET) $(MODULES_DYNAMIC) $(SUPPORT_FILES)
 
 @.^.Lib.xreadlines/pyd: @.^.Modules.o.xreadlinesmodule s.linktab
 	$(MAKEDLK) -d @.^.Lib.xreadlines/pyd -s s.linktab -o @.^.Modules.o.xreadlinesmodule -e initxreadlines
-
-
-##@.^.Lib.mmap/pyd: @.^.Modules.o.mmapmodule s.linktab
-##	$(MAKEDLK) -d @.^.Lib.mmap/pyd -s s.linktab -o @.^.Modules.o.mmapmodule -e initmmap
 
 
 
@@ -353,6 +339,11 @@ all: @.^.$(TARGET) $(MODULES_DYNAMIC) $(SUPPORT_FILES)
 	$(CC) -I$(ZLIB) -o $@ @.^.Modules.c.zlibmodule
 
 
+@.^.Lib.time/pyd: @.^.Modules.o.timemodule s.linktab @.o.sleep
+	$(LINK) -aof -o @.^.Modules.o.timelink @.^.Modules.o.timemodule @.o.sleep $(OSLIB).o.OSLib
+	$(MAKEDLK) -d @.^.Lib.time/pyd -s s.linktab -o @.^.Modules.o.timelink -e inittime
+
+
 @.^.Lib.pyexpat/pyd: @.^.Modules.o.pyexpat s.linktab
 	$(LINK) -aof -o @.^.Modules.o.pyexpatlink @.^.Modules.o.pyexpat $(EXPAT).expat_lib
 	$(MAKEDLK) -d @.^.Lib.pyexpat/pyd -s s.linktab -o @.^.Modules.o.pyexpatlink -e initpyexpat
@@ -362,35 +353,42 @@ all: @.^.$(TARGET) $(MODULES_DYNAMIC) $(SUPPORT_FILES)
 
 
 ##########################################################################
-
+# dynamic linking symbol table
+#
 o.linktab: s.linktab
 	ObjAsm s.linktab o.linktab
 
 s.linktab: $(OBJECTS)
 	$(OBJSCAN) -s s.linktab -o $(OBJECTS) $(clib).o.stubs
 
-
-clean:
-	create @.^.Objects.o.dummy
-	create @.^.Parser.o.dummy
-	create @.^.Modules.o.dummy
-	create o.dummy
-	create @.^.Python.o.dummy
+##########################################################################
+# special targets
+#
+libclean:
 	create @.^.Lib.dummy/pyc
 	create @.^.Lib.dummy/pyo
 	create @.^.Lib.plat-riscos.dummy/pyc
 	create @.^.Lib.plat-riscos.dummy/pyo
 	create @.^.Lib.test.dummy/pyc
-	wipe @.^.Modules.o.* ~C ~V
-	wipe @.^.Objects.o.* ~C ~V
-	wipe @.^.Parser.o.* ~C ~V
-	wipe @.^.Python.o.* ~C ~V
-	wipe o.* ~C ~V
+	create @.^.Lib.test.dummy/pyo
 	wipe @.^.Lib.*/pyc ~C~V
 	wipe @.^.Lib.*/pyo ~C~V
 	wipe @.^.Lib.plat-riscos.*/pyc ~C~V
 	wipe @.^.Lib.plat-riscos.*/pyo ~C~V
 	wipe @.^.Lib.test.*/pyc ~C~V
+	wipe @.^.Lib.test.*/pyo ~C~V
+
+clean: libclean
+	create @.^.Objects.o.dummy
+	create @.^.Parser.o.dummy
+	create @.^.Modules.o.dummy
+	create o.dummy
+	create @.^.Python.o.dummy
+	wipe @.^.Modules.o.* ~C ~V
+	wipe @.^.Objects.o.* ~C ~V
+	wipe @.^.Parser.o.* ~C ~V
+	wipe @.^.Python.o.* ~C ~V
+	wipe o.* ~C ~V
 
 rebuild: clean
 	create @.^.Lib.dummy/pyd

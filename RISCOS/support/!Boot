@@ -1,0 +1,12 @@
+set Python$Dir <Obey$Dir>
+set PythonApp$Path <Obey$Dir>.
+
+IconSprites <Obey$Dir>.!Sprites
+
+<Obey$Dir>.AddToPath Python$Path PythonApp:Lib
+<Obey$Dir>.AddToPath Python$Path PythonApp:Lib.plat-riscos
+<Obey$Dir>.AddToPath Python$Path PythonApp:Lib.site-packages
+set Alias$@RunType_ae5 TaskWindow |"python %%*0|" -name |"Python|" -quit
+| -display
+set File$Type_ae5 Python
+set Alias$Python Run <Python$Dir>.python21 %*0
