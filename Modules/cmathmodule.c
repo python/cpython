@@ -83,7 +83,11 @@ Return the arc sine of x.";
 static Py_complex c_asinh(x)
 	Py_complex x;
 {
-	return c_neg(c_log(c_diff(c_sqrt(c_sum(c_1,c_prod(x,x))),x)));
+	/* Break up long expression for WATCOM */
+	Py_complex z;
+	z = c_sum(c_1,c_prod(x,x));
+	z = c_diff(c_sqrt(z),x);
+	return c_neg(c_log(z));
 }
 
 static char c_asinh_doc [] =
