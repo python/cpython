@@ -209,25 +209,30 @@ search_for_prefix(argv0_path, home)
 	int i, n;
 	char *vpath;
 
-	/* Check VPATH to see if argv0_path is in the build directory.
-	 * Complication: the VPATH passed in is relative to the
-	 * Modules build directory and points to the Modules source
-	 * directory; we need it relative to the build tree and
-	 * pointing to the source tree.  Solution: chop off a leading
-	 * ".." (but only if it's there -- it could be an absolute
-	 * path) and chop off the final component (assuming it's
-	 * "Modules").
-	 */
-	vpath = VPATH;
-	if (vpath[0] == '.' && vpath[1] == '.' && vpath[2] == '/')
-		vpath += 3;
+	/* Check to see if argv[0] is in the build directory */
 	strcpy(prefix, argv0_path);
-	join(prefix, vpath);
-	reduce(prefix);
-	join(prefix, "Lib");
-	join(prefix, LANDMARK);
-	if (exists(prefix))
-		return -1;
+	join(prefix, "Modules/Setup");
+	if (exists(prefix)) {
+		/* Check VPATH to see if argv0_path is in the build directory.
+		 * Complication: the VPATH passed in is relative to the
+		 * Modules build directory and points to the Modules source
+		 * directory; we need it relative to the build tree and
+		 * pointing to the source tree.  Solution: chop off a leading
+		 * ".." (but only if it's there -- it could be an absolute
+		 * path) and chop off the final component (assuming it's
+		 * "Modules").
+		 */
+		vpath = VPATH;
+		if (vpath[0] == '.' && vpath[1] == '.' && vpath[2] == '/')
+			vpath += 3;
+		strcpy(prefix, argv0_path);
+		join(prefix, vpath);
+		reduce(prefix);
+		join(prefix, "Lib");
+		join(prefix, LANDMARK);
+		if (exists(prefix))
+			return -1;
+	}
 
 	if (home) {
 		/* Check $PYTHONHOME */
@@ -474,6 +479,8 @@ calculate_path()
 			strcpy(buf, rtpypath);
 			strcat(buf, delimiter);
 		}
+		else
+			buf[0] = '\0';
 
 		/* Next goes merge of compile-time $PYTHONPATH with
 		 * dynamically located prefix.
