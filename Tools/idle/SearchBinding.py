@@ -74,7 +74,8 @@ class SearchBinding:
 	
 	def goto_line_event(self, event):
 		lineno = tkSimpleDialog.askinteger("Goto",
-						   "Go to line number:")
+						   "Go to line number:",
+						   parent=self.text)
 		if lineno is None:
 			return "break"
 		if lineno <= 0:
