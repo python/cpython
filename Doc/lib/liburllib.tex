@@ -37,7 +37,7 @@ protocol that uses this is HTTP).  See the description of the
 
 \begin{funcdesc}{urlretrieve}{url}
 Copy a network object denoted by a URL to a local file, if necessary.
-If the URL points to a local file, or a valid cached copy of the the
+If the URL points to a local file, or a valid cached copy of the
 object exists, the object is not copied.  Return a tuple (\var{filename},
 \var{headers}) where \var{filename} is the local file name under which
 the object can be found, and \var{headers} is either \code{None} (for
@@ -61,7 +61,7 @@ Example: \code{quote('/\~conolly/')} yields \code{'/\%7econnolly/'}.
 \end{funcdesc}
 
 \begin{funcdesc}{unquote}{string}
-Remove \code{\%xx} escapes by their single-character equivalent.
+Replace \samp{\%xx} escapes by their single-character equivalent.
 
 Example: \code{unquote('/\%7Econnolly/')} yields \code{'/\~connolly/'}.
 \end{funcdesc}
@@ -82,7 +82,7 @@ The caching feature of \code{urlretrieve()} has been disabled until I
 find the time to hack proper processing of Expiration time headers.
 
 \item
-There should be an function to query whether a particular URL is in
+There should be a function to query whether a particular URL is in
 the cache.
 
 \item
