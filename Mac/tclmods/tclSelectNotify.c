@@ -23,6 +23,10 @@
 	#pragma import reset
 #endif
 
+#ifdef USE_GUSI
+/* Move this include up otherwise tclPort.h tried to redefine signals */
+#include <sys/signal.h>
+#endif
 #include "tclInt.h"
 #include "tclPort.h"
 #include <signal.h> 

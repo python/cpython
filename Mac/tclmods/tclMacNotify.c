@@ -13,6 +13,10 @@
  * SCCS: @(#) tclMacNotify.c 1.36 97/05/07 19:09:29
  */
 
+#ifdef USE_GUSI
+/* Move this include up otherwise tclPort.h tried to redefine signals */
+#include <sys/signal.h>
+#endif
 #include "tclInt.h"
 #include "tclPort.h"
 #include "tclMac.h"
