@@ -50,6 +50,28 @@ extern int _MenuObj_Convert(PyObject *, MenuHandle *);
 #define as_Menu(h) ((MenuHandle)h)
 #define as_Resource(h) ((Handle)h)
 
+
+/* Alternative version of ResObj_New, which returns None for null argument */
+PyObject *OptMenuObj_New(MenuRef itself)
+{
+	if (itself == NULL) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	return MenuObj_New(itself);
+}
+
+int OptMenuObj_Convert(PyObject *v, MenuRef *p_itself)
+{
+	PyObject *tmp;
+	
+	if ( v == Py_None ) {
+		*p_itself = NULL;
+		return 1;
+	}
+	return MenuObj_Convert(v, p_itself);
+}
+
 static PyObject *Menu_Error;
 
 /* ------------------------ Object type Menu ------------------------ */
@@ -3678,6 +3700,243 @@ static PyObject *Menu_DrawMenuBar(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Menu_CountMenuItemsWithCommandID(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ItemCount _rv;
+	MenuHandle inMenu;
+	MenuCommand inCommandID;
+#ifndef CountMenuItemsWithCommandID
+	PyMac_PRECHECK(CountMenuItemsWithCommandID);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      OptMenuObj_Convert, &inMenu,
+	                      &inCommandID))
+		return NULL;
+	_rv = CountMenuItemsWithCommandID(inMenu,
+	                                  inCommandID);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Menu_GetIndMenuItemWithCommandID(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	MenuHandle inMenu;
+	MenuCommand inCommandID;
+	UInt32 inItemIndex;
+	MenuHandle outMenu;
+	MenuItemIndex outIndex;
+#ifndef GetIndMenuItemWithCommandID
+	PyMac_PRECHECK(GetIndMenuItemWithCommandID);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      OptMenuObj_Convert, &inMenu,
+	                      &inCommandID,
+	                      &inItemIndex))
+		return NULL;
+	_err = GetIndMenuItemWithCommandID(inMenu,
+	                                   inCommandID,
+	                                   inItemIndex,
+	                                   &outMenu,
+	                                   &outIndex);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&h",
+	                     MenuObj_New, outMenu,
+	                     outIndex);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Menu_EnableMenuCommand(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	MenuHandle inMenu;
+	MenuCommand inCommandID;
+#ifndef EnableMenuCommand
+	PyMac_PRECHECK(EnableMenuCommand);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      OptMenuObj_Convert, &inMenu,
+	                      &inCommandID))
+		return NULL;
+	EnableMenuCommand(inMenu,
+	                  inCommandID);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Menu_DisableMenuCommand(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	MenuHandle inMenu;
+	MenuCommand inCommandID;
+#ifndef DisableMenuCommand
+	PyMac_PRECHECK(DisableMenuCommand);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      OptMenuObj_Convert, &inMenu,
+	                      &inCommandID))
+		return NULL;
+	DisableMenuCommand(inMenu,
+	                   inCommandID);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Menu_IsMenuCommandEnabled(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	MenuHandle inMenu;
+	MenuCommand inCommandID;
+#ifndef IsMenuCommandEnabled
+	PyMac_PRECHECK(IsMenuCommandEnabled);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      OptMenuObj_Convert, &inMenu,
+	                      &inCommandID))
+		return NULL;
+	_rv = IsMenuCommandEnabled(inMenu,
+	                           inCommandID);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Menu_SetMenuCommandMark(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	MenuHandle inMenu;
+	MenuCommand inCommandID;
+	UniChar inMark;
+#ifndef SetMenuCommandMark
+	PyMac_PRECHECK(SetMenuCommandMark);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lh",
+	                      OptMenuObj_Convert, &inMenu,
+	                      &inCommandID,
+	                      &inMark))
+		return NULL;
+	_err = SetMenuCommandMark(inMenu,
+	                          inCommandID,
+	                          inMark);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Menu_GetMenuCommandMark(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	MenuHandle inMenu;
+	MenuCommand inCommandID;
+	UniChar outMark;
+#ifndef GetMenuCommandMark
+	PyMac_PRECHECK(GetMenuCommandMark);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      OptMenuObj_Convert, &inMenu,
+	                      &inCommandID))
+		return NULL;
+	_err = GetMenuCommandMark(inMenu,
+	                          inCommandID,
+	                          &outMark);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("h",
+	                     outMark);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Menu_GetMenuCommandPropertySize(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	MenuHandle inMenu;
+	MenuCommand inCommandID;
+	OSType inPropertyCreator;
+	OSType inPropertyTag;
+	ByteCount outSize;
+#ifndef GetMenuCommandPropertySize
+	PyMac_PRECHECK(GetMenuCommandPropertySize);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lO&O&",
+	                      OptMenuObj_Convert, &inMenu,
+	                      &inCommandID,
+	                      PyMac_GetOSType, &inPropertyCreator,
+	                      PyMac_GetOSType, &inPropertyTag))
+		return NULL;
+	_err = GetMenuCommandPropertySize(inMenu,
+	                                  inCommandID,
+	                                  inPropertyCreator,
+	                                  inPropertyTag,
+	                                  &outSize);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     outSize);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Menu_RemoveMenuCommandProperty(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	MenuHandle inMenu;
+	MenuCommand inCommandID;
+	OSType inPropertyCreator;
+	OSType inPropertyTag;
+#ifndef RemoveMenuCommandProperty
+	PyMac_PRECHECK(RemoveMenuCommandProperty);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lO&O&",
+	                      OptMenuObj_Convert, &inMenu,
+	                      &inCommandID,
+	                      PyMac_GetOSType, &inPropertyCreator,
+	                      PyMac_GetOSType, &inPropertyTag))
+		return NULL;
+	_err = RemoveMenuCommandProperty(inMenu,
+	                                 inCommandID,
+	                                 inPropertyCreator,
+	                                 inPropertyTag);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
 static PyMethodDef Menu_methods[] = {
 
 #if !TARGET_API_MAC_CARBON
@@ -3787,6 +4046,51 @@ static PyMethodDef Menu_methods[] = {
 	 "(short menuID) -> None"},
 	{"DrawMenuBar", (PyCFunction)Menu_DrawMenuBar, 1,
 	 "() -> None"},
+
+#if TARGET_API_MAC_CARBON
+	{"CountMenuItemsWithCommandID", (PyCFunction)Menu_CountMenuItemsWithCommandID, 1,
+	 "(MenuHandle inMenu, MenuCommand inCommandID) -> (ItemCount _rv)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"GetIndMenuItemWithCommandID", (PyCFunction)Menu_GetIndMenuItemWithCommandID, 1,
+	 "(MenuHandle inMenu, MenuCommand inCommandID, UInt32 inItemIndex) -> (MenuHandle outMenu, MenuItemIndex outIndex)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"EnableMenuCommand", (PyCFunction)Menu_EnableMenuCommand, 1,
+	 "(MenuHandle inMenu, MenuCommand inCommandID) -> None"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"DisableMenuCommand", (PyCFunction)Menu_DisableMenuCommand, 1,
+	 "(MenuHandle inMenu, MenuCommand inCommandID) -> None"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"IsMenuCommandEnabled", (PyCFunction)Menu_IsMenuCommandEnabled, 1,
+	 "(MenuHandle inMenu, MenuCommand inCommandID) -> (Boolean _rv)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"SetMenuCommandMark", (PyCFunction)Menu_SetMenuCommandMark, 1,
+	 "(MenuHandle inMenu, MenuCommand inCommandID, UniChar inMark) -> None"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"GetMenuCommandMark", (PyCFunction)Menu_GetMenuCommandMark, 1,
+	 "(MenuHandle inMenu, MenuCommand inCommandID) -> (UniChar outMark)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"GetMenuCommandPropertySize", (PyCFunction)Menu_GetMenuCommandPropertySize, 1,
+	 "(MenuHandle inMenu, MenuCommand inCommandID, OSType inPropertyCreator, OSType inPropertyTag) -> (ByteCount outSize)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"RemoveMenuCommandProperty", (PyCFunction)Menu_RemoveMenuCommandProperty, 1,
+	 "(MenuHandle inMenu, MenuCommand inCommandID, OSType inPropertyCreator, OSType inPropertyTag) -> None"},
+#endif
 	{NULL, NULL, 0}
 };
 
