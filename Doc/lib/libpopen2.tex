@@ -57,7 +57,7 @@ This class represents a child process.  Normally, \class{Popen3}
 instances are created using the \function{popen2()} and
 \function{popen3()} factory functions described above.
 
-If not using one off the helper functions to create \class{Popen3}
+If not using one of the helper functions to create \class{Popen3}
 objects, the parameter \var{cmd} is the shell command to execute in a
 sub-process.  The \var{capturestderr} flag, if true, specifies that
 the object should capture standard error output of the child process.
@@ -129,7 +129,7 @@ module equivalents).
 
 When reading output from a child process that writes a lot of data to
 standard error while the parent is reading from the child's standard
-out, a deadlock can occur.  A similar situation can occur with other
+output, a deadlock can occur.  A similar situation can occur with other
 combinations of reads and writes.  The essential factors are that more
 than \constant{_PC_PIPE_BUF} bytes are being written by one process in
 a blocking fashion, while the other process is reading from the other
