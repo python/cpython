@@ -347,11 +347,19 @@ SOURCE=..\Parser\parsetok.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\Modules\pcremodule.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\Modules\posixmodule.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\Python\pyfpe.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\Modules\pypcre.c
 # End Source File
 # Begin Source File
 
