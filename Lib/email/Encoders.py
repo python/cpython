@@ -1,8 +1,7 @@
-# Copyright (C) 2001,2002 Python Software Foundation
-# Author: barry@zope.com (Barry Warsaw)
+# Copyright (C) 2001-2004 Python Software Foundation
+# Author: barry@python.org (Barry Warsaw)
 
-"""Module containing encoding functions for Image.Image and Text.Text.
-"""
+"""Encodings and related functions."""
 
 import base64
 
@@ -84,7 +83,13 @@ def encode_7or8bit(msg):
     try:
         orig.encode('ascii')
     except UnicodeError:
-        msg['Content-Transfer-Encoding'] = '8bit'
+        # iso-2022-* is non-ASCII but still 7-bit
+        charset = msg.get_charset()
+        output_cset = charset and charset.output_charset
+        if output_cset and output_cset.lower().startswith('iso-2202-'):
+            msg['Content-Transfer-Encoding'] = '7bit'
+        else:
+            msg['Content-Transfer-Encoding'] = '8bit'
     else:
         msg['Content-Transfer-Encoding'] = '7bit'
 
