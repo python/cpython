@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "structmember.h"
 
 /* collections module implementation of a deque() datatype
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
@@ -32,6 +33,7 @@ typedef struct {
 	int leftindex;
 	int rightindex;
 	int len;
+	PyObject *weakreflist; /* List of weak references */
 } dequeobject;
 
 static PyTypeObject deque_type;
@@ -58,6 +60,7 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	deque->leftindex = BLOCKLEN / 2 + 1;
 	deque->rightindex = BLOCKLEN / 2;
 	deque->len = 0;
+	deque->weakreflist = NULL;
 
 	return (PyObject *)deque;
 }
@@ -439,6 +442,8 @@ static void
 deque_dealloc(dequeobject *deque)
 {
 	PyObject_GC_UnTrack(deque);
+	if (deque->weakreflist != NULL)
+		PyObject_ClearWeakRefs((PyObject *) deque);
 	if (deque->leftblock != NULL) {
 		int err = deque_clear(deque);
 		assert(err == 0);
@@ -744,12 +749,13 @@ static PyTypeObject deque_type = {
 	PyObject_GenericGetAttr,	/* tp_getattro */
 	0,				/* tp_setattro */
 	0,				/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,	/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+		Py_TPFLAGS_HAVE_WEAKREFS,	/* tp_flags */
 	deque_doc,			/* tp_doc */
 	(traverseproc)deque_traverse,	/* tp_traverse */
 	(inquiry)deque_clear,		/* tp_clear */
 	(richcmpfunc)deque_richcompare,	/* tp_richcompare */
-	0,				/* tp_weaklistoffset*/
+	offsetof(dequeobject, weakreflist),	/* tp_weaklistoffset*/
 	(getiterfunc)deque_iter,	/* tp_iter */
 	0,				/* tp_iternext */
 	deque_methods,			/* tp_methods */

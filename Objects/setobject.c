@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "structmember.h"
 
 /* set object implementation 
    written and maintained by Raymond D. Hettinger <python@rcn.com>
@@ -61,6 +62,7 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
 	}
 	so->data = data;
 	so->hash = -1;
+	so->weakreflist = NULL;
 
 	if (iterable != NULL) {
 		tmp = set_update(so, iterable);
@@ -113,6 +115,8 @@ static void
 set_dealloc(PySetObject *so)
 {
 	PyObject_GC_UnTrack(so);
+	if (so->weakreflist != NULL)
+		PyObject_ClearWeakRefs((PyObject *) so);
 	Py_XDECREF(so->data);
 	so->ob_type->tp_free(so);
 }
@@ -1009,12 +1013,12 @@ PyTypeObject PySet_Type = {
 	0,				/* tp_setattro */
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_CHECKTYPES |
-		Py_TPFLAGS_BASETYPE,	/* tp_flags */
+		Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_WEAKREFS,	/* tp_flags */
 	set_doc,			/* tp_doc */
 	(traverseproc)set_traverse,	/* tp_traverse */
 	(inquiry)set_tp_clear,		/* tp_clear */
 	(richcmpfunc)set_richcompare,	/* tp_richcompare */
-	0,				/* tp_weaklistoffset */
+	offsetof(PySetObject, weakreflist),	/* tp_weaklistoffset */
 	(getiterfunc)set_iter,		/* tp_iter */
 	0,				/* tp_iternext */
 	set_methods,			/* tp_methods */
@@ -1104,12 +1108,12 @@ PyTypeObject PyFrozenSet_Type = {
 	0,				/* tp_setattro */
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_CHECKTYPES |
-		Py_TPFLAGS_BASETYPE,	/* tp_flags */
+		Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_WEAKREFS,	/* tp_flags */
 	frozenset_doc,			/* tp_doc */
 	(traverseproc)set_traverse,	/* tp_traverse */
 	0,				/* tp_clear */
 	(richcmpfunc)set_richcompare,	/* tp_richcompare */
-	0,				/* tp_weaklistoffset */
+	offsetof(PySetObject, weakreflist),	/* tp_weaklistoffset */
 	(getiterfunc)set_iter,		/* tp_iter */
 	0,				/* tp_iternext */
 	frozenset_methods,		/* tp_methods */
