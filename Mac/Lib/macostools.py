@@ -34,9 +34,13 @@ def mkalias(src, dst, relative=None):
 		alias = srcfss.NewAlias(relativefss)
 	else:
 		alias = srcfss.NewAlias()
-	srcfinfo = srcfss.GetFInfo()
-
-	Res.FSpCreateResFile(dstfss, srcfinfo.Creator, srcfinfo.Type, -1)
+	
+	if os.path.isdir(src):
+		cr, tp = 'MACS', 'fdrp'
+	else:
+		cr, tp = srcfss.GetCreatorType()
+	
+	Res.FSpCreateResFile(dstfss, cr, tp, -1)
 	h = Res.FSpOpenResFile(dstfss, 3)
 	resource = Res.Resource(alias.data)
 	resource.AddResource('alis', 0, '')
