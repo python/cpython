@@ -72,7 +72,7 @@ def buildapplication(debug = 0):
 	else:
 		tf = tf + '.app'
 	
-	dstfilename = EasyDialogs.AskFileForSate(message='Save application as:', 
+	dstfilename = EasyDialogs.AskFileForSave(message='Save application as:', 
 		savedFileName=tf)
 	if not ok:
 		return
