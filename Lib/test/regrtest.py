@@ -121,7 +121,7 @@ def main(tests=None, testdir=None):
             skipped.append(test)
         # Unload the newly imported modules (best effort finalization)
         for module in sys.modules.keys():
-            if module not in save_modules:
+            if module not in save_modules and module.startswith("test."):
                 test_support.unload(module)
     if good and not quiet:
         if not bad and not skipped and len(good) > 1:
