@@ -23,14 +23,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 #ifndef Py_MACGLUE_H
 #define Py_MACGLUE_H
-#ifdef WITHOUT_FRAMEWORKS
-#include <Types.h>
-#include <Files.h>
-#include <Events.h>
-#include <StandardFile.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 #include "pymactoolbox.h"
 
@@ -49,11 +42,6 @@ typedef struct {
 
 unsigned char *Pstring(char *str);		/* Convert c-string to pascal-string in static buffer */
 
-#ifdef USE_GUSI
-extern int PyMac_ConsoleIsDead;			/* True when exiting */
-extern void PyMac_StopGUSISpin(void);		/* Stop eventprocessing during exit() */
-#endif
-
 extern short PyMac_AppRefNum;			/* RefNum of application rsrcfork (from macmain.c) */
 extern FSSpec PyMac_ApplicationFSSpec;		/* Application location (from macargv.c) */
 extern char PyMac_ApplicationPath[];		/* Application location (from macargv.c) */
@@ -63,20 +51,10 @@ extern int PyMac_GetArgv(char ***, int);	/* Get argc, argv (from macargv.c) */
 extern PyObject *PyMac_OSErrException;		/* Exception for OSErr */
 PyObject *PyMac_GetOSErrException(void);	/* Initialize & return it */
 
-#if !TARGET_API_MAC_OSX
-void PyMac_GetSchedParams(PyMacSchedParams *);	/* Get schedulers params */
-void PyMac_SetSchedParams(PyMacSchedParams *);	/* Set schedulers params */
-int PyMac_DoYield(int, int);	/* Yield cpu. First arg is maxtime, second ok to call python */
-#endif
 int PyMac_HandleEvent(EventRecord *);	/* Handle one event, possibly in Python */
 void PyMac_HandleEventIntern(EventRecord *); /* Handle one event internal only */
 int PyMac_SetEventHandler(PyObject *);	/* set python-coded event handler */
 
-#if !TARGET_API_MAC_OSX
-void PyMac_InitMenuBar(void);			/* Setup menu bar as we want it */
-void PyMac_RestoreMenuBar(void);		/* Restore menu bar for ease of exiting */
-void PyMac_RaiseConsoleWindow();		/* Bring console window to front, if it exists */
-#endif
 int PyMac_FindResourceModule(PyStringObject *, char *, char *); /* Test for 'PYC ' resource in a file */
 PyObject * PyMac_LoadResourceModule(char *, char *); /* Load 'PYC ' resource from file */
 int PyMac_FindCodeResourceModule(PyStringObject *, char *, char *); /* Test for 'PYD ' resource in a file */
@@ -85,10 +63,6 @@ struct filedescr *PyMac_FindModuleExtension(char *, size_t *, char *); /* Look f
 
 void PyMac_InitApplet(void);			/* Initialize and run an Applet */
 void PyMac_Initialize(void);			/* Initialize function for embedding Python */
-
-#ifdef USE_GUSI2
-short PyMac_OpenPrefFile(void);			/* From macgetpath.c, open and return preference file */
-#endif
 
 
 /* From macfiletype.c: */
@@ -102,32 +76,10 @@ void PyMac_InitApplication(void);
 void PyMac_OutputSeen(void);
 void PyMac_OutputNotSeen(void);
 int PyMac_GetDelayConsoleFlag(void);
-#ifdef USE_MAC_APPLET_SUPPORT
-void PyMac_InitApplet(void);
-#endif
 
 /* from macgetargv: */
 OSErr PyMac_init_process_location(void);
 char *	strdup(const char *str);
-
-#ifdef USE_GUSI2
-/* from pyGUSISIOUX.cp */
-typedef long (*PyWriteHandler)(char *buffer, long n);
-typedef long (*PyReadHandler)(char *buffer, long n);
-
-/* Override routines that normally reads and writes to the
-** SIOUX console window. Intended for embedding applications
-** that want to forestall a Python console window ever showing up.
-*/
-void PyMac_SetConsoleHandler(PyReadHandler stdinH, PyWriteHandler stdoutH,
-			     PyWriteHandler stderrH);
-
-/* Courtesy console handlers that drop all output and return
-** 0 on reads.
-*/
-long PyMac_DummyReadHandler(char *, long);
-long PyMac_DummyWriteHandler(char *, long);
-#endif /* USE_GUSI2 */
 
 #ifdef __cplusplus
 	}

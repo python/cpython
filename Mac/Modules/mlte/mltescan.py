@@ -81,12 +81,6 @@ kTXNFontSizeAttributeSize = 4
 			'TXNTSMCheck', # OS8
 			]
 
-	def makegreylist(self):
-		return [
-			('#if TARGET_API_MAC_OS8', [
-			])]
-
-
 	def makeblacklisttypes(self):
 		return [
 			"TXNTab", # TBD

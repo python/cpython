@@ -99,20 +99,6 @@ class MyScanner(Scanner):
 			'SetControlColor',
 			]
 
-	def makegreylist(self):
-		return [
-			('#if TARGET_API_MAC_OSX', [
-				'CreateRoundButtonControl',
-				'CreateDisclosureButtonControl',
-				'CreateRelevanceBarControl',
-				'DisableControl',
-				'EnableControl',
-				'IsControlEnabled',
-				'CreateEditUnicodeTextControl',
-				'CopyDataBrowserEditText',
-			]),
-			]
-			
 	def makeblacklisttypes(self):
 		return [
 			'ProcPtr',

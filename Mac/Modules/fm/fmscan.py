@@ -48,10 +48,6 @@ class MyScanner(Scanner):
 			'FlushFonts',
 			]
 
-	def makegreylist(self):
-		return [
-			('#if !TARGET_API_MAC_CARBON', [
-			])]
 	def makeblacklisttypes(self):
 		return [
 			"FMInput_ptr",	# Not needed for now
