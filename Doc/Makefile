@@ -1,4 +1,10 @@
 # Makefile for Python documentation.
+# Actually, it is easier to just do:
+#	latex tut
+#	latex tut
+#	latex lib
+#	latex lib
+# (Doing everything twice so the table of contents comes out right!)
 
 LATEX=		latex
 DVIPS=		dvips
@@ -11,12 +17,12 @@ tut:		tut.dvi
 
 tut.dvi tut.ps:	tut.toc tut.tex myformat.sty
 
-mod:		mod.dvi
-		$(TEXPREVIEW) mod
+lib:		lib.dvi
+		$(TEXPREVIEW) lib
 
-mod.dvi mod.ps:	mod.toc mod.tex mod1.tex mod2.tex mod3.tex myformat.sty
+lib.dvi lib.ps:	lib.toc lib.tex lib1.tex lib2.tex lib3.tex myformat.sty
 
-ALL=		tut.ps mod.ps
+ALL=		tut.ps lib.ps
 
 all:		$(ALL)
 
