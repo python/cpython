@@ -979,6 +979,7 @@ builtin_input(PyObject *self, PyObject *args)
 	char *str;
 	PyObject *res;
 	PyObject *globals, *locals;
+	PyCompilerFlags cf;
 
 	line = builtin_raw_input(self, args);
 	if (line == NULL)
@@ -994,7 +995,9 @@ builtin_input(PyObject *self, PyObject *args)
 					 PyEval_GetBuiltins()) != 0)
 			return NULL;
 	}
-	res = PyRun_String(str, Py_eval_input, globals, locals);
+	cf.cf_flags = 0;
+	PyEval_MergeCompilerFlags(&cf);
+	res = PyRun_StringFlags(str, Py_eval_input, globals, locals, &cf);
 	Py_DECREF(line);
 	return res;
 }

@@ -12,6 +12,9 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- input() builtin function now respects compiler flags such as
+  __future__ statements.  SF patch 876178.
+
 - Removed PendingDeprecationWarning from apply().  apply() remains
   deprecated, but the nuisance warning will not be issued.
 

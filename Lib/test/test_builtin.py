@@ -931,6 +931,19 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(input(), 'whitespace')
             sys.stdin = cStringIO.StringIO()
             self.assertRaises(EOFError, input)
+
+            # SF 876178: make sure input() respect future options.
+            sys.stdin = cStringIO.StringIO('1/2')
+            sys.stdout = cStringIO.StringIO()
+            exec compile('print input()', 'test_builtin_tmp', 'exec')
+            sys.stdin.seek(0, 0)
+            exec compile('from __future__ import division;print input()',
+                         'test_builtin_tmp', 'exec')
+            sys.stdin.seek(0, 0)
+            exec compile('print input()', 'test_builtin_tmp', 'exec')
+            self.assertEqual(sys.stdout.getvalue().splitlines(),
+                             ['0', '0.5', '0'])
+
             del sys.stdout
             self.assertRaises(RuntimeError, input, 'prompt')
             del sys.stdin
