@@ -1244,7 +1244,12 @@ PyType_Ready(PyTypeObject *type)
 		inherit_special(type, type->tp_base);
 
 	/* Initialize tp_dict properly */
-	if (!PyType_HasFeature(type, Py_TPFLAGS_DYNAMICTYPE)) {
+	if (PyType_HasFeature(type, Py_TPFLAGS_DYNAMICTYPE)) {
+		/* XXX This is not enough -- see checkin msg 2.30. */
+		if (type->tp_base != NULL)
+			inherit_slots(type, type->tp_base);
+	}
+	else {
 		/* For a static type, tp_dict is the consolidation
 		   of the tp_defined of its bases in MRO. */
 		Py_DECREF(type->tp_dict);
