@@ -176,7 +176,8 @@ class PrettyPrinter:
 
         else:
             stream.write(rep)
-            del context[objid]
+
+        del context[objid]
 
     def __repr(self, object, context, level):
         repr, readable = _safe_repr(object, context, self.__depth, level)
