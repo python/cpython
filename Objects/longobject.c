@@ -453,6 +453,7 @@ PyLong_FromString(str, pend, base)
 	int base;
 {
 	int sign = 1;
+	char *start;
 	PyLongObject *z;
 	
 	if ((base != 0 && base < 2) || base > 36) {
@@ -481,6 +482,7 @@ PyLong_FromString(str, pend, base)
 	if (base == 16 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
 		str += 2;
 	z = _PyLong_New(0);
+	start = str;
 	for ( ; z != NULL; ++str) {
 		int k = -1;
 		PyLongObject *temp;
@@ -496,6 +498,11 @@ PyLong_FromString(str, pend, base)
 		temp = muladd1(z, (digit)base, (digit)k);
 		Py_DECREF(z);
 		z = temp;
+	}
+	if (str == start) {
+		PyErr_SetString(PyExc_ValueError,
+				"no digits in long int constant");
+		return NULL;
 	}
 	if (sign < 0 && z != NULL && z->ob_size != 0)
 		z->ob_size = -(z->ob_size);
