@@ -92,10 +92,17 @@ Returns a string containing the base set by a previous call to
 \method{SetBase()} hasn't been called.
 \end{methoddesc}
 
-\class{xmlparser} objects have the following attributes, containing 
-values relating to the most recent error encountered by an
-\class{xmlparser} object. These attributes will only have correct
-values once a call to \method{Parse()} or \method{ParseFile()}
+\class{xmlparser} objects have the following attributes.  
+
+\begin{datadesc}{returns_unicode} 
+If this attribute is set to 1, the handler functions will be passed
+Unicode strings.  If \member{returns_unicode} is 0, 8-bit strings
+containing UTF-8 encoded data will be passed to the handlers.
+\end{datadesc} 
+
+The following attributes contain values relating to the most recent
+error encountered by an \class{xmlparser} object, and will only have
+correct values once a call to \method{Parse()} or \method{ParseFile()}
 has raised a \exception{pyexpat.error} exception.
 
 \begin{datadesc}{ErrorByteIndex} 
