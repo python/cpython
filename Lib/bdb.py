@@ -6,6 +6,7 @@
 # and 'wdb', a window-oriented debugger.
 # And of course... you can roll your own!
 
+
 import sys
 
 BdbQuit = 'bdb.BdbQuit' # Exception to give up completely
@@ -220,9 +221,8 @@ class Bdb: # Basic Debugger
 	# a debugger to debug a statement, given as a string.
 	
 	def run(self, cmd):
-		import __main__
-		dict = __main__.__dict__
-		self.runctx(cmd, dict, dict)
+		modname = self.writetempfile(cmd)
+		self.runctx('import ' + modname + '\n', {}, {})
 	
 	def runctx(self, cmd, globals, locals):
 		self.reset()
@@ -236,6 +236,18 @@ class Bdb: # Basic Debugger
 			sys.trace = None
 			del sys.trace
 		# XXX What to do if the command finishes normally?
+
+	def writetempfile(self, cmd):
+		import os
+		modname = 'bdb' + `os.getpid()`
+		filename = '/tmp/' + modname + '.py'
+		f = open(filename, 'w')
+		f.write(cmd + '\n')
+		f.close()
+		import sys
+		if sys.modules.has_key(modname): del sys.modules[modname]
+		if '/tmp' not in sys.path: sys.path.insert(0, '/tmp')
+		return modname
 
 
 # -------------------- testing --------------------
