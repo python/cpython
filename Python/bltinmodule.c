@@ -1282,7 +1282,7 @@ builtin_range(self, args)
 			Py_DECREF(v);
 			return NULL;
 		}
-		PyList_GET_ITEM(v, i) = w;
+		PyList_SET_ITEM(v, i, w);
 		ilow += istep;
 	}
 	return v;

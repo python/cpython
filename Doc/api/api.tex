@@ -1953,6 +1953,11 @@ Returns a new tuple object containing the contents of \var{list}.
 Macro form of \cfunction{PyList_GetItem()} without error checking.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyList_SET_ITEM}{PyObject *list, int i,
+                                              PyObject *o}
+Macro form of \cfunction{PyList_SetItem()} without error checking.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{int}{PyList_GET_SIZE}{PyObject *list}
 Macro form of \cfunction{PyList_GetSize()} without error checking.
 \end{cfuncdesc}
