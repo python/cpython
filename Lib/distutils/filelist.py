@@ -105,7 +105,7 @@ class FileList:
     def process_template_line (self, line):    
 
         # Parse the line: split it up, make sure the right number of words
-        # are there, and return the relevant words.  'action' is always
+        # is there, and return the relevant words.  'action' is always
         # defined: it's the first word of the line.  Which of the other
         # three are defined depends on the action; it'll be either
         # patterns, (dir and patterns), or (dir_pattern).
@@ -117,7 +117,7 @@ class FileList:
         if action == 'include':
             self.debug_print("include " + string.join(patterns))
             for pattern in patterns:
-                if not self.select_pattern (pattern, anchor=1):
+                if not self.include_pattern (pattern, anchor=1):
                     self.warn("no files found matching '%s'" % pattern)
 
         elif action == 'exclude':
@@ -131,7 +131,7 @@ class FileList:
         elif action == 'global-include':
             self.debug_print("global-include " + string.join(patterns))
             for pattern in patterns:
-                if not self.select_pattern (pattern, anchor=0):
+                if not self.include_pattern (pattern, anchor=0):
                     self.warn (("no files found matching '%s' " +
                                 "anywhere in distribution") %
                                pattern)
@@ -148,7 +148,7 @@ class FileList:
             self.debug_print("recursive-include %s %s" %
                              (dir, string.join(patterns)))
             for pattern in patterns:
-                if not self.select_pattern (pattern, prefix=dir):
+                if not self.include_pattern (pattern, prefix=dir):
                     self.warn (("no files found matching '%s' " +
                                 "under directory '%s'") %
                                (pattern, dir))
@@ -164,7 +164,7 @@ class FileList:
 
         elif action == 'graft':
             self.debug_print("graft " + dir_pattern)
-            if not self.select_pattern(None, prefix=dir_pattern):
+            if not self.include_pattern(None, prefix=dir_pattern):
                 self.warn ("no directories found matching '%s'" % dir_pattern)
 
         elif action == 'prune':
@@ -180,14 +180,15 @@ class FileList:
     # process_template_line ()
 
 
-    def select_pattern (self, pattern,
+    def include_pattern (self, pattern,
                         anchor=1, prefix=None, is_regex=0):
-        """Select strings (presumably filenames) from 'files' that match
-        'pattern', a Unix-style wildcard (glob) pattern.  Patterns are not
-        quite the same as implemented by the 'fnmatch' module: '*' and '?'
-        match non-special characters, where "special" is platform-dependent:
-        slash on Unix, colon, slash, and backslash on DOS/Windows, and colon on
-        Mac OS.
+
+        """Select strings (presumably filenames) from 'self.files' that
+        match 'pattern', a Unix-style wildcard (glob) pattern.  Patterns
+        are not quite the same as implemented by the 'fnmatch' module: '*'
+        and '?'  match non-special characters, where "special" is platform-
+        dependent: slash on Unix; colon, slash, and backslash on
+        DOS/Windows; and colon on Mac OS.
 
         If 'anchor' is true (the default), then the pattern match is more
         stringent: "*.py" will match "foo.py" but not "foo/bar.py".  If
@@ -208,7 +209,7 @@ class FileList:
         """
         files_found = 0
         pattern_re = translate_pattern (pattern, anchor, prefix, is_regex)
-        self.debug_print("select_pattern: applying regex r'%s'" %
+        self.debug_print("include_pattern: applying regex r'%s'" %
                          pattern_re.pattern)
 
         # delayed loading of allfiles list
@@ -222,14 +223,14 @@ class FileList:
     
         return files_found
 
-    # select_pattern ()
+    # include_pattern ()
 
 
     def exclude_pattern (self, pattern,
                          anchor=1, prefix=None, is_regex=0):
         """Remove strings (presumably filenames) from 'files' that match
         'pattern'.  Other parameters are the same as for
-        'select_pattern()', above.  
+        'include_pattern()', above.  
         The list 'self.files' is modified in place.
         Return 1 if files are found.
         """
