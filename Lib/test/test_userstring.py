@@ -1,45 +1,52 @@
 #!/usr/bin/env python
-import sys
-from test.test_support import verbose
-from test import string_tests
 # UserString is a wrapper around the native builtin string type.
 # UserString instances should behave similar to builtin string objects.
-# The test cases were in part derived from 'test_string.py'.
+
+import unittest
+from test import test_support, string_tests
+
 from UserString import UserString
 
+class UserStringTest(
+    string_tests.CommonTest,
+    string_tests.MixinStrUnicodeUserStringTest,
+    string_tests.MixinStrStringUserStringTest,
+    string_tests.MixinStrUserStringTest
+    ):
+
+    type2test = UserString
+
+    # Overwrite the three testing methods, because UserString
+    # can't cope with arguments propagated to UserString
+    # (and we don't test with subclasses)
+    def checkequal(self, result, object, methodname, *args):
+        result = self.fixtype(result)
+        object = self.fixtype(object)
+        # we don't fix the arguments, because UserString can't cope with it
+        realresult = getattr(object, methodname)(*args)
+        self.assertEqual(
+            result,
+            realresult
+        )
+
+    def checkraises(self, exc, object, methodname, *args):
+        object = self.fixtype(object)
+        # we don't fix the arguments, because UserString can't cope with it
+        self.assertRaises(
+            exc,
+            getattr(object, methodname),
+            *args
+        )
+
+    def checkcall(self, object, methodname, *args):
+        object = self.fixtype(object)
+        # we don't fix the arguments, because UserString can't cope with it
+        getattr(object, methodname)(*args)
+
+def test_main():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(UserStringTest))
+    test_support.run_suite(suite)
+
 if __name__ == "__main__":
-    verbose = '-v' in sys.argv
-
-tested_methods = {}
-
-def test(methodname, input, output, *args):
-    global tested_methods
-    tested_methods[methodname] = 1
-    if verbose:
-        print '%r.%s(%s)' % (input, methodname, ", ".join(map(repr, args))),
-    u = UserString(input)
-    objects = [input, u, UserString(u)]
-    res = [""] * 3
-    for i in range(3):
-        object = objects[i]
-        try:
-            f = getattr(object, methodname)
-        except AttributeError:
-            f = None
-            res[i] = AttributeError
-        else:
-            try:
-                res[i] = apply(f, args)
-            except:
-                res[i] = sys.exc_type
-    if res[0] == res[1] == res[2] == output:
-        if verbose:
-            print 'yes'
-    else:
-        if verbose:
-            print 'no'
-        print (methodname, input, output, args, res[0], res[1], res[2])
-
-string_tests.run_method_tests(test)
-string_tests.run_contains_tests(test)
-string_tests.run_inplace_tests(UserString)
+    test_main()
