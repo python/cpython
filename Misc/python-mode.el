@@ -83,6 +83,8 @@
 ;;   hasn't been a problem... yet.
 ;; - have py-execute-region on indented code act as if the region is
 ;;   left justified. Avoids syntax errors.
+;; - Add a py-goto-error or some such that would scan an exception in
+;;   the py-shell buffer, and pop you to that line in the file.
 
 ;; If you can think of more things you'd like to see, drop me a line.
 ;; If you want to report bugs, use py-submit-bug-report (C-c C-b).
@@ -497,8 +499,8 @@ better alternative for finding the index.")
 ;; These next two variables are used when searching for the python
 ;; class/definitions. Just saving some time in accessing the
 ;; generic-python-expression, really.
-(defvar imenu-example--python-generic-regexp)
-(defvar imenu-example--python-generic-parens)
+(defvar imenu-example--python-generic-regexp nil)
+(defvar imenu-example--python-generic-parens nil)
 
 
 ;;;###autoload
