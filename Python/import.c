@@ -698,7 +698,7 @@ write_compiled_module(co, cpathname, mtime)
 	if (Py_VerboseFlag)
 		PySys_WriteStderr("# wrote %s\n", cpathname);
 #ifdef macintosh
-	setfiletype(cpathname, 'Pyth', 'PYC ');
+	PyMac_setfiletype(cpathname, 'Pyth', 'PYC ');
 #endif
 }
 

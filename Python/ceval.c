@@ -23,6 +23,10 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "eval.h"
 #include "opcode.h"
 
+#ifdef macintosh
+#include "macglue.h"
+#endif
+
 #include <ctype.h>
 
 #ifdef HAVE_LIMITS_H
