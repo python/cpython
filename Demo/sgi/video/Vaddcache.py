@@ -42,7 +42,8 @@ def main():
 def process(filename):
 	try:
 		fp = open(filename, 'r+')
-		vin = VFile.RandomVinFile().initfp(fp, filename)
+		vin = VFile.RandomVinFile(fp)
+		vin.filename = filename
 	except IOError, msg:
 		sys.stderr.write(filename + ': I/O error: ' + `msg` + '\n')
 		return 1
