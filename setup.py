@@ -88,7 +88,7 @@ def find_module_file(module, dirlist):
     if not list:
         return module
     if len(list) > 1:
-        self.announce("WARNING: multiple copies of %s found"%module)
+        log.info("WARNING: multiple copies of %s found"%module)
     return os.path.join(list[0], module)
 
 class PyBuildExt(build_ext):
@@ -211,7 +211,7 @@ class PyBuildExt(build_ext):
 
             if 1:
                 self.announce('*** WARNING: renaming "%s" since importing it'
-                              ' failed: %s' % (ext.name, why))
+                              ' failed: %s' % (ext.name, why), level=3)
                 assert not self.inplace
                 basename, tail = os.path.splitext(ext_filename)
                 newname = basename + "_failed" + tail
@@ -231,7 +231,7 @@ class PyBuildExt(build_ext):
                     self.announce('unable to remove files (ignored)')
             else:
                 self.announce('*** WARNING: importing extension "%s" '
-                              'failed: %s' % (ext.name, why))
+                              'failed: %s' % (ext.name, why), level=3)
 
     def get_platform (self):
         # Get value of sys.platform
