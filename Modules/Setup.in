@@ -65,6 +65,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 
 # Modules that should always be present (non UNIX dependent)
+# NB when using shared libraries, don't make posix a shared library!
 
 array arraymodule.c	# array objects
 math mathmodule.c -lm	# math library functions, e.g. sin()
@@ -155,16 +156,17 @@ md5 md5module.c md5c.c
 # Note that some required libraries and header files aren't always
 # installed; you may be better off switching on only 'fm' and 'gl'
 # (Font Manager and Graphics Library).
+# NB when using shared libraries, don't make gl a shared library!
 
-#                               # ADD THESE FOR IRIX5:
+#				      # THESE ARE ONLY FOR IRIX5:
 #al almodule.c -laudio
-#cd cdmodule.c -lcdaudio -lds	# -lmediad
-#cl clmodule.c -lcl		# -lawareaudio
-#fm fmmodule.c -lfm_s -lgl_s
-#gl glmodule.c -lgl_s -lX11_s
-#imgfile imgfile.c -limage -lgutil
+#cd cdmodule.c -lcdaudio -lds		-lmediad
+#cl clmodule.c -lcl			-lawareaudio
+#fm fmmodule.c -lfm -lgl
+#gl glmodule.c -lgl -lX11
+#imgfile imgfile.c -limage -lgutil -lm
 #sgi sgimodule.c
-#sv svmodule.c yuvconvert.c -lsvideo -lXext -lX11_s
+#sv svmodule.c yuvconvert.c -lsvideo -lXext -lX11
 
 # The FORMS library, by Mark Overmars, implements user interface
 # components such as dialogs and buttons using SGI's GL and FM
@@ -174,23 +176,25 @@ md5 md5module.c md5c.c
 # toplevel directory.
 
 #FORMS=/ufs/guido/src/forms/FORMS
-#fl flmodule.c -I$(FORMS) $(FORMS)/libforms.a -lfm_s -lgl_s
+#fl flmodule.c -I$(FORMS) $(FORMS)/libforms.a -lfm -lgl
 
 
 # SunOS specific modules -- off by default
 
-# sunaudiodev sunaudiodev.c
+#sunaudiodev sunaudiodev.c
 
 
 # Thread module -- works on SGI IRIX and on SunOS 5.x (SOLARIS) only.
 # Note that you must have configured (and built!) Python with the
 # --with-thread option passed to the configure script for this to work.
+# NB when using shared libraries, don't make thread a shared library!
 
-# thread threadmodule.c
+#thread threadmodule.c
 
 
 # GNN's timing module
-# timing timingmodule.c
+
+#timing timingmodule.c
 
 
 # Steen Lumholt's tkinter module.  For use with plain Tk, use the
@@ -198,36 +202,45 @@ md5 md5module.c md5c.c
 # appropriate -DWITH_... and libraries/objects to the second line, and
 # use that.  In all cases also enable the last line (TKPATH).
 
+# *** Use ONE of the following two lines, see previous comments ***
 #tkinter tkintermodule.c -I/usr/local/include -L/usr/local/lib -ltk -ltcl -lX11
 #tkinter tkintermodule.c tkappinit.c -DWITH_APPINIT -I/usr/local/include -L/usr/local/lib -ltk -ltcl -lX11
+
 #TKPATH=:$(DESTLIB)/tkinter
 
 
 # Lance Ellinghouse's modules
+
 rotor rotormodule.c		# enigma-inspired encryption
-# syslog syslogmodule.c		# syslog daemon interface
-# curses cursesmodule.c -lcurses -ltermcap	# guess what?
+#syslog syslogmodule.c		# syslog daemon interface
+#curses cursesmodule.c -lcurses -ltermcap	# guess what?
+
 
 
 # Tommy Burnette's 'new' module (creates new empty objects of certain kinds)
-# new newmodule.c
+
+#new newmodule.c
 
 
 # John Redford's sybase module
-# sybase sybasemodule.c
+
+#sybase sybasemodule.c
 
 
 # Generic (SunOS / SVR4) dynamic loading module
-# dl dlmodule.c
+
+#dl dlmodule.c
 
 
 # Jack Jansen's imgformat module
-# imgformat imgformat.c
+
+#imgformat imgformat.c
 
 
 # Anthony Baxter's gdbm module (derived from Jack's dbm module)
 # GNU dbm(3) will require -lgdbm
-# gdbm gdbmmodule.c -I/usr/local/include -L/usr/local/lib -lgdbm
+
+#gdbm gdbmmodule.c -I/usr/local/include -L/usr/local/lib -lgdbm
 
 
 # Example -- included for reference only
