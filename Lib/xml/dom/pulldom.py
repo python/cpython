@@ -51,7 +51,6 @@ class PullDOM(xml.sax.ContentHandler):
             node.setAttributeNode(attr)
         
         parent = self.curNode
-        parent.appendChild(node)
         node.parentNode = parent
         self.curNode = node
 
@@ -75,7 +74,6 @@ class PullDOM(xml.sax.ContentHandler):
             node.setAttributeNode(attr)
         
         parent = self.curNode
-        parent.appendChild(node)
         node.parentNode = parent
         self.curNode = node
 
@@ -93,7 +91,6 @@ class PullDOM(xml.sax.ContentHandler):
     def comment(self, s):
         node = self.document.createComment(s)
         parent = self.curNode
-        parent.appendChild(node)
         node.parentNode = parent
         self.lastEvent[1] = [(COMMENT, node), None]
         self.lastEvent = self.lastEvent[1]
@@ -103,7 +100,6 @@ class PullDOM(xml.sax.ContentHandler):
         node = self.document.createProcessingInstruction(target, data)
         
         parent = self.curNode
-        parent.appendChild(node)
         node.parentNode = parent
         self.lastEvent[1] = [(PROCESSING_INSTRUCTION, node), None]
         self.lastEvent = self.lastEvent[1]
@@ -112,7 +108,6 @@ class PullDOM(xml.sax.ContentHandler):
     def ignorableWhitespace(self, chars):
         node = self.document.createTextNode(chars[start:start + length])
         parent = self.curNode
-        parent.appendChild(node)
         node.parentNode = parent
         self.lastEvent[1] = [(IGNORABLE_WHITESPACE, node), None]
         self.lastEvent = self.lastEvent[1]
@@ -121,7 +116,6 @@ class PullDOM(xml.sax.ContentHandler):
     def characters(self, chars):
         node = self.document.createTextNode(chars)
         parent = self.curNode
-        parent.appendChild(node)
         node.parentNode = parent
         self.lastEvent[1] = [(CHARACTERS, node), None]
         self.lastEvent = self.lastEvent[1]
@@ -177,6 +171,8 @@ class DOMEventStream:
             token, cur_node = event
             if cur_node is node:
                 return
+            if token != END_ELEMENT:
+                cur_node.parentNode.appendChild(cur_node)
             event = self.getEvent()
 
     def getEvent(self):
@@ -193,9 +189,33 @@ class DOMEventStream:
         self.pulldom.firstEvent[1] = self.pulldom.firstEvent[1][1]
         return rc
 
+class SAX2DOM(PullDOM):
+
+    def startElementNS(self, name, tagName , attrs):
+        PullDOM.startElementNS(self, name, tagName, attrs)
+        self.curNode.parentNode.appendChild(self.curNode)
+
+    def startElement(self, name, attrs):
+        PullDOM.startElement(self, name, attrs)
+        self.curNode.parentNode.appendChild(self.curNode)
+
+    def processingInstruction(self, target, data):
+        PullDOM.processingInstruction(self, target, data)
+        node = self.lastEvent[0][1]
+        node.parentNode.appendChild(node)        
+
+    def ignorableWhitespace(self, chars):
+        PullDOM.ignorableWhitespace(self, chars)
+        node = self.lastEvent[0][1]
+        node.parentNode.appendChild(node)        
+
+    def characters(self, chars):
+        PullDOM.characters(self, chars)
+        node = self.lastEvent[0][1]
+        node.parentNode.appendChild(node)        
+    
 default_bufsize = (2 ** 14) - 20
 
-# FIXME: move into sax package for common usage
 def parse(stream_or_string, parser=None, bufsize=default_bufsize):
     if type(stream_or_string) is type(""):
         stream = open(stream_or_string)
