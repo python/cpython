@@ -20,6 +20,8 @@ Command line options:
 -h: help       -- print this text and exit
 -t: threshold  -- call gc.set_threshold(N)
 -T: coverage   -- turn on code coverage using the trace module
+-D: coverdir   -- Directory where coverage files are put
+-N: nocoverdir -- Put coverage files alongside modules
 -L: runleaks   -- run the leaks(1) command just before exit
 -R: huntrleaks -- search for reference leaks (needs debug build, v. slow)
 
@@ -30,6 +32,10 @@ If no test names are given, all tests are run.
 -v is incompatible with -g and does not compare test output files.
 
 -T turns on code coverage tracing with the trace module.
+
+-D specifies the directory where coverage files are put.
+
+-N Put coverage files alongside modules.
 
 -s means to run only a single test and exit.  This is useful when
 doing memory analysis on the Python interpreter (which tend to consume
@@ -141,8 +147,8 @@ def usage(code, msg=''):
 
 def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
          exclude=False, single=False, randomize=False, fromfile=None,
-         findleaks=False, use_resources=None, trace=False, runleaks=False,
-         huntrleaks=False):
+         findleaks=False, use_resources=None, trace=False, coverdir='coverage',
+         runleaks=False, huntrleaks=False):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -160,18 +166,19 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
     files beginning with test_ will be used.
 
     The other default arguments (verbose, quiet, generate, exclude, single,
-    randomize, findleaks, use_resources, and trace) allow programmers calling
-    main() directly to set the values that would normally be set by flags on
-    the command line.
+    randomize, findleaks, use_resources, trace and coverdir) allow programmers
+    calling main() directly to set the values that would normally be set by
+    flags on the command line.
     """
 
     test_support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrf:lu:t:TLR:',
+        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrf:lu:t:TD:NLR:',
                                    ['help', 'verbose', 'quiet', 'generate',
                                     'exclude', 'single', 'random', 'fromfile',
                                     'findleaks', 'use=', 'threshold=', 'trace',
-                                    'runleaks', 'huntrleaks='
+                                    'coverdir=', 'nocoverdir', 'runleaks',
+                                    'huntrleaks='
                                     ])
     except getopt.error, msg:
         usage(2, msg)
@@ -206,6 +213,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
             gc.set_threshold(int(a))
         elif o in ('-T', '--coverage'):
             trace = True
+        elif o in ('-D', '--coverdir'):
+            coverdir = os.path.join(os.getcwd(), a)
+        elif o in ('-N', '--nocoverdir'):
+            coverdir = None
         elif o in ('-R', '--huntrleaks'):
             huntrleaks = a.split(':')
             if len(huntrleaks) != 3:
@@ -304,7 +315,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         import trace
         tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix],
                              trace=False, count=True)
-        coverdir = os.path.join(os.getcwd(), 'coverage')
     test_support.verbose = verbose      # Tell tests to be moderately quiet
     test_support.use_resources = use_resources
     save_modules = sys.modules.keys()
