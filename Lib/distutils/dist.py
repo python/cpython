@@ -13,7 +13,6 @@ import sys, os, string, re
 from types import *
 from copy import copy
 from distutils.errors import *
-from distutils import sysconfig
 from distutils.fancy_getopt import FancyGetopt, translate_longopt
 from distutils.util import check_environ, strtobool, rfc822_escape
 
@@ -77,10 +76,10 @@ class Distribution:
          "print the maintainer's email address if known, else the author's"),
         ('url', None,
          "print the URL for this package"),
-        ('licence', None,
-         "print the licence of the package"),
         ('license', None,
-         "alias for --licence"),
+         "print the license of the package"),
+        ('licence', None,
+         "alias for --license"),
         ('description', None,
          "print the package description"),
         ('long-description', None,
@@ -395,7 +394,7 @@ class Distribution:
         self.commands = []
         parser = FancyGetopt(self.global_options + self.display_options)
         parser.set_negative_aliases(self.negative_opt)
-        parser.set_aliases({'license': 'licence'})
+        parser.set_aliases({'licence': 'license'})
         args = parser.getopt(args=self.script_args, object=self)
         option_order = parser.get_option_order()
 
@@ -580,7 +579,7 @@ class Distribution:
             print
 
         for command in self.commands:
-            if type(command) is ClassType and issubclass(klass, Command):
+            if type(command) is ClassType and issubclass(command, Command):
                 klass = command
             else:
                 klass = self.get_command_class(command)
@@ -971,7 +970,7 @@ class DistributionMetadata:
         self.maintainer = None
         self.maintainer_email = None
         self.url = None
-        self.licence = None
+        self.license = None
         self.description = None
         self.long_description = None
         self.keywords = None
@@ -990,7 +989,7 @@ class DistributionMetadata:
         pkg_info.write('Home-page: %s\n' % self.get_url() )
         pkg_info.write('Author: %s\n' % self.get_contact() )
         pkg_info.write('Author-email: %s\n' % self.get_contact_email() )
-        pkg_info.write('License: %s\n' % self.get_licence() )
+        pkg_info.write('License: %s\n' % self.get_license() )
 
         long_desc = rfc822_escape( self.get_long_description() )
         pkg_info.write('Description: %s\n' % long_desc)
@@ -1042,9 +1041,10 @@ class DistributionMetadata:
     def get_url(self):
         return self.url or "UNKNOWN"
 
-    def get_licence(self):
-        return self.licence or "UNKNOWN"
-
+    def get_license(self):
+        return self.license or "UNKNOWN"
+    get_licence = get_license
+    
     def get_description(self):
         return self.description or "UNKNOWN"
 
