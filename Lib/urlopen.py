@@ -48,8 +48,8 @@ class URLopener:
 	# Constructor
 	def __init__(self):
 		self.addheaders = []
-		self.ftpcache = ftpcache
 		self.tempfiles = []
+		self.ftpcache = ftpcache
 		# Undocumented feature: you can use a different
 		# ftp cache by assigning to the .ftpcache member;
 		# in case you want logically independent URL openers
@@ -84,9 +84,8 @@ class URLopener:
 			name = regsub.gsub('-', '_', name)
 		if not hasattr(self, name):
 			raise IOError, ('url error', 'unknown url type', type)
-		meth = getattr(self, name)
 		try:
-			return meth(url)
+			return getattr(self, name)(url)
 		except socket.error, msg:
 			raise IOError, ('socket error', msg)
 
@@ -98,6 +97,7 @@ class URLopener:
 		if not type or type == 'file':
 			try:
 				fp = self.open_local_file(url1)
+				del fp
 				return splithost(url1)[1], None
 			except IOError, msg:
 				pass
@@ -112,8 +112,8 @@ class URLopener:
 			tfp.write(block)
 			block = fp.read(bs)
 		headers = fp.info()
-		fp.close()
-		tfp.close()
+		del fp
+		del tfp
 		return tfn, headers
 
 	# Each method named open_<type> knows how to open that type of URL
@@ -258,6 +258,9 @@ class addbase:
 		self.readline = self.fp.readline
 		self.readlines = self.fp.readlines
 		self.fileno = self.fp.fileno
+	def __repr__(self):
+		return '<%s at %s whose fp = %s>' % (
+			  self.__class__.__name__, `id(self)`, `self.fp`)
 	def __del__(self):
 		self.close()
 	def close(self):
@@ -265,7 +268,6 @@ class addbase:
 		self.readline = None
 		self.readlines = None
 		self.fileno = None
-		self.fp.close()
 		self.fp = None
 
 # Class to add a close hook to an open file
@@ -363,7 +365,9 @@ def test():
 				print '======'
 			fp = open(fn, 'r')
 			data = fp.read()
+			del fp
 			print regsub.gsub('\r', '', data)
+			fn, h = None, None
 		print '-'*40
 	finally:
 		_urlopener.cleanup()
