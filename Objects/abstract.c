@@ -6,7 +6,7 @@
 #include "structmember.h" /* we need the offsetof() macro from there */
 
 #define NEW_STYLE_NUMBER(o) PyType_HasFeature((o)->ob_type, \
-				Py_TPFLAGS_NEWSTYLENUMBER)
+				Py_TPFLAGS_CHECKTYPES)
 
 /* Shorthands to return certain errors */
 
@@ -1363,11 +1363,11 @@ PySequence_Contains(PyObject *w, PyObject *v) /* v in w */
 			}
 			return -1;
 		}
-		cmp = PyObject_Compare(v, x);
+		cmp = PyObject_RichCompareBool(v, x, Py_EQ);
 		Py_XDECREF(x);
-		if (cmp == 0)
+		if (cmp > 0)
 			return 1;
-		if (PyErr_Occurred())
+		if (cmp < 0)
 			return -1;
 	}
 
