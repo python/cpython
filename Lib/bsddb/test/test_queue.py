@@ -8,11 +8,11 @@ from pprint import pprint
 import unittest
 
 try:
+    # For Pythons w/distutils pybsddb
+    from bsddb3 import db
+except ImportError:
     # For Python 2.3
     from bsddb import db
-except ImportError:
-    # For earlier Pythons w/distutils pybsddb
-    from bsddb3 import db
 
 from test_all import verbose
 

@@ -4,11 +4,11 @@ import unittest
 import glob
 
 try:
+    # For Pythons w/distutils pybsddb
+    from bsddb3 import db, dbobj
+except ImportError:
     # For Python 2.3
     from bsddb import db, dbobj
-except ImportError:
-    # For earlier Pythons w/distutils pybsddb
-    from bsddb3 import db, dbobj
 
 
 #----------------------------------------------------------------------

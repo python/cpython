@@ -26,11 +26,11 @@ from types import ListType, StringType
 import cPickle as pickle
 
 try:
+    # For Pythons w/distutils pybsddb
+    from bsddb3.db import *
+except ImportError:
     # For Python 2.3
     from bsddb.db import *
-except ImportError:
-    # For earlier Pythons w/distutils pybsddb
-    from bsddb3.db import *
 
 
 class TableDBError(StandardError):
