@@ -14,7 +14,11 @@
 #include "sre_constants.h"
 
 /* size of a code word (must be unsigned short or larger) */
+#ifdef USE_UCS4_STORAGE
+#define SRE_CODE unsigned long
+#else
 #define SRE_CODE unsigned short
+#endif
 
 typedef struct {
     PyObject_VAR_HEAD

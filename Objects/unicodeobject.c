@@ -5282,9 +5282,11 @@ void _PyUnicode_Init(void)
     int i;
 
     /* Doublecheck the configuration... */
+#ifndef USE_UCS4_STORAGE
     if (sizeof(Py_UNICODE) != 2)
         Py_FatalError("Unicode configuration error: "
 		      "sizeof(Py_UNICODE) != 2 bytes");
+#endif
 
     /* Init the implementation */
     unicode_freelist = NULL;
