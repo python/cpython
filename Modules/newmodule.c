@@ -170,5 +170,5 @@ initnew(void)
 	m = Py_InitModule4("new", new_methods, new_doc, (PyObject *)NULL,
 			   PYTHON_API_VERSION);
 	if (m)
-		PyModule_AddObject(m, "function", &PyFunction_Type);
+		PyModule_AddObject(m, "function", (PyObject *)&PyFunction_Type);
 }
