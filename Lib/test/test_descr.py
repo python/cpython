@@ -3586,6 +3586,13 @@ def test_mutable_bases():
         raise TestFailed, "shouldn't be able to create inheritance cycles"
 
     try:
+        D.__bases__ = (C, C)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "didn't detect repeated base classes"
+
+    try:
         D.__bases__ = (E,)
     except TypeError:
         pass
