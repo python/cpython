@@ -1,4 +1,4 @@
-What's New in Python 2.0c1?
+What's New in Python 2.0?
 ===========================
 
 Below is a list of all relevant changes since release 1.6.  Older
@@ -14,6 +14,76 @@ http://starship.python.net/crew/amk/python/writing/new-python/.
 
 ======================================================================
 
+What's new in 2.0 (since release candidate 1)?
+==============================================
+
+Standard library
+
+- The copy_reg module was modified to clarify its intended use: to
+  register pickle support for extension types, not for classes.
+  pickle() will raise a TypeError if it is passed a class.
+
+- Fixed a bug in gettext's "normalize and expand" code that prevented
+  it from finding an existing .mo file.
+
+- Restored support for HTTP/0.9 servers in httplib.
+
+- XXX The math module was changed to suppress underflow errors and
+  just return 0.
+
+- Fixed a bug in StringIO that occurred when the file position was not
+  at the end of the file and write() was called with enough data to
+  extend past the end of the file.
+
+- Fixed a bug that caused Tkinter error messages to get lost on
+  Windows.  The bug was fixed by replacing direct use of
+  interp->result with Tcl_GetStringResult(interp).
+
+- Fixed bug in urllib2 that caused it to fail when it received an HTTP
+  redirect response.
+
+- Several changes were made to distutils: Some debugging code was
+  removed from util.  Fixed the installer used when an external zip
+  program (like WinZip) is not found; the source code for this
+  installer is in Misc/distutils.  check_lib() was modified to behave
+  more like AC_CHECK_LIB by add other_libraries() as a parameter.  The
+  test for whether installed modules are on sys.path was changed to
+  use both normcase() and normpath().
+
+- XXX xml minidom, pulldom, expatreader, and saxutils changes (can't
+  tell what happened from the CVS logs)
+
+- The regression test driver (regrtest.py) behavior when invoked with
+  -l changed: It now reports a count of objects that are recognized as
+  garbage but not freed by the garbage collector.
+
+- The regression test for the math module was changed to report
+  exceptional behavior when the test is run in verbose mode.
+
+Internals
+
+- PyOS_CheckStack() has been disabled on Win64, where it caused
+  test_sre to fail.
+
+Build issues
+
+- Changed compiler flags, so that gcc is always invoked with -Wall and
+  -Wstrict-prototypes.  Users compiling Python with GCC should see
+  exactly one warning, except if they have passed configure the
+  --with-pydebug flag.  The expect warning is for getopt() in
+  Modules/main.c. 
+
+- Fixed configure to add -threads argument during linking on OSF1. 
+
+Tools and other miscellany
+
+- The compiler in Tools/compiler was updated to support the new
+  language features introduced in 2.0: extended print statement, list
+  comprehensions, and augmented assignments.  The new compiler should
+  also be backwards compatible with Python 1.5.2; the compiler will
+  always generate code for the version of the interpreter it runs
+  under. 
+
 What's new in 2.0 release candidate 1 (since beta 2)?
 =====================================================
 
@@ -28,7 +98,7 @@ any show-stopping (or brown bag) bugs are found by testers of the
 release candidate.
 
 All the changes since the last beta release are bug fixes or changes
-to build support for specific platforms.
+to support building Python for specific platforms.
 
 Core language, builtins, and interpreter
 
@@ -55,11 +125,11 @@ Standard library
 - Keyword arguments are now accepted for most pattern and match object
   methods in SRE, the standard regular expression engine.
 
-- In SRE, fix error with negative lookahead and lookbehind that
+- In SRE, fixed error with negative lookahead and lookbehind that
   manifested itself as a runtime error in patterns like "(?<!abc)(def)".
 
-- Tkinter now supports Unicode strings and will set a Python exception
-  when an error occurs handling a specific Unicode string.  
+- Several bugs in the Unicode handling and error handling in _tkinter
+  were fixed.
 
 - Fix memory management errors in Merge() and Tkapp_Call() routines.
 
@@ -94,7 +164,7 @@ Standard library
 
 Internals
 
-- Fix several buffer overflow vulnerabilities in calculate_path(),
+- Fixed several buffer overflow vulnerabilities in calculate_path(),
   which is called when the interpreter starts up to determine where
   the standard library is installed.  These vulnerabilities affect all
   previous versions of Python and can be exploited by setting very
@@ -123,8 +193,8 @@ Internals
 Build issues
 
 - configure now accepts a --with-suffix option that specifies the
-  executable.  This is useful for builds on Cygwin and Mac OS X, for
-  example. 
+  executable suffix.  This is useful for builds on Cygwin and Mac OS
+  X, for example. 
 
 - The mmap.PAGESIZE constant is now initialized using sysconf when
   possible, which eliminates a dependency on -lucb for Reliant UNIX.
@@ -142,7 +212,7 @@ Build issues
   dl_export.h is gone, and its macros now appear on the mwcc command
   line during build on PPC BeOS.
 
-  Platform directory in lib/python2.0 is "plat-beos5" (or
+- Platform directory in lib/python2.0 is "plat-beos5" (or
   "plat-beos4", if building on BeOS 4.5), rather than "plat-beos".
 
 - Cygwin: Support for shared libraries, Tkinter, and sockets.
