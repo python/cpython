@@ -570,6 +570,9 @@ Cygwin: With recent (relative to the time of writing, 2001-12-19)
 Configuring the bsddb and dbm modules
 -------------------------------------
 
+XXX Shouldn't this section be rewritten now that we use Sleepycat's
+BSDDB 4.0?
+
 Configuring the bsddb module can sometimes be a bit tricky.  This module
 provides a Python interface to the Berkeley DB library.  As of this writing
 several versions of the underlying library are in common use (versions 1.85,
