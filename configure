@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.27 
+# From configure.in Revision: 1.28 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.10 
@@ -1447,7 +1447,7 @@ then
 	hp*|HP*) LDSHARED="ld -b";;
 	OSF*) LDSHARED="ld -shared -expect_unresolved \"*\"";;
 	DYNIX/ptx*) LDSHARED="ld -G";;
-	Linux*) LDSHARED="gcc-elf -shared";;
+	Linux*) LDSHARED="gcc -shared";;
 	FreeBSD*) LDSHARED="ld -Bshareable";;
 	*)	LDSHARED="ld";;
 	esac
