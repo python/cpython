@@ -56,7 +56,7 @@ _end_env_rx = re.compile(r"[\\]end{([^}]*)}")
 _begin_macro_rx = re.compile(r"[\\]([a-zA-Z]+[*]?) ?({|\s*\n?)")
 _comment_rx = re.compile("%+ ?(.*)\n[ \t]*")
 _text_rx = re.compile(r"[^]~%\\{}]+")
-_optional_rx = re.compile(r"\s*[[]([^]]*)[]]")
+_optional_rx = re.compile(r"\s*[[]([^]]*)[]]", re.MULTILINE)
 # _parameter_rx is this complicated to allow {...} inside a parameter;
 # this is useful to match tabular layout specifications like {c|p{24pt}}
 _parameter_rx = re.compile("[ \n]*{(([^{}}]|{[^}]*})*)}")
