@@ -580,7 +580,15 @@ to the object denoted by \var{list}.
 \obindex{method}
 \indexii{built-in}{method}
 
-\item[Classes]
+\item[Class Types]
+Class types, or ``new-style classes,'' are callable.  These objects
+normally act as factories for new instances of themselves, but
+variations are possible for class types that override
+\method{__new__()}.  The arguments of the call are passed to
+\method{__new__()} and, in the typical case, to \method{__init__()} to
+initialize the new instance.
+
+\item[Classic Classes]
 Class objects are described below.  When a class object is called,
 a new class instance (also described below) is created and
 returned.  This implies a call to the class's \method{__init__()} method
