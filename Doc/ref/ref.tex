@@ -674,7 +674,7 @@ the numbers $0, 1, \ldots, n-1$.  Element \verb\i\ of sequence
 \index{subscription}
 
 Sequences also support slicing: \verb\a[i:j]\ selects all elements
-with index $k$ such that $i < k < j$.  When used as an expression,
+with index $k$ such that $i <= k < j$.  When used as an expression,
 a slice is a sequence of the same type --- this implies that the
 index set is renumbered so that it starts at 0 again.
 \index{slicing}
