@@ -5,7 +5,6 @@
 \modulesynopsis{Basic restricted execution framework.}
 
 
-
 This module contains the \class{RExec} class, which supports
 \method{r_eval()}, \method{r_execfile()}, \method{r_exec()}, and
 \method{r_import()} methods, which are restricted versions of the standard
@@ -15,10 +14,23 @@ Code executed in this restricted environment will
 only have access to modules and functions that are deemed safe; you
 can subclass \class{RExec} to add or remove capabilities as desired.
 
-\note{The \class{RExec} class can prevent code from performing
-unsafe operations like reading or writing disk files, or using TCP/IP
-sockets.  However, it does not protect against code using extremely
-large amounts of memory or processor time.}
+\begin{notice}[warning]
+  While the \module{rexec} module is designed to perform as described
+  below, it does have a few known vulnerabilities which could be
+  exploited by carefully written code.  Thus it should not be relied
+  upon in situations requiring ``production ready'' security.  In such
+  situations, execution via sub-processes or very careful
+  ``cleansing'' of both code and data to be processed may be
+  necessary.  Alternatively, help in patching known \module{rexec}
+  vulnerabilities would be welcomed.
+\end{notice}
+
+\begin{notice}
+  The \class{RExec} class can prevent code from performing unsafe
+  operations like reading or writing disk files, or using TCP/IP
+  sockets.  However, it does not protect against code using extremely
+  large amounts of memory or processor time.
+\end{notice}
 
 \begin{classdesc}{RExec}{\optional{hooks\optional{, verbose}}}
 Returns an instance of the \class{RExec} class.  
