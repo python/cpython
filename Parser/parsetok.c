@@ -27,11 +27,7 @@ static node *parsetok(struct tok_state *, grammar *, int, perrdetail *);
 /* Parse input coming from a string.  Return error code, print some errors. */
 
 node *
-PyParser_ParseString(s, g, start, err_ret)
-	char *s;
-	grammar *g;
-	int start;
-	perrdetail *err_ret;
+PyParser_ParseString(char *s, grammar *g, int start, perrdetail *err_ret)
 {
 	struct tok_state *tok;
 
@@ -60,13 +56,8 @@ PyParser_ParseString(s, g, start, err_ret)
 /* Parse input coming from a file.  Return error code, print some errors. */
 
 node *
-PyParser_ParseFile(fp, filename, g, start, ps1, ps2, err_ret)
-	FILE *fp;
-	char *filename;
-	grammar *g;
-	int start;
-	char *ps1, *ps2;
-	perrdetail *err_ret;
+PyParser_ParseFile(FILE *fp, char *filename, grammar *g, int start,
+		   char *ps1, char *ps2, perrdetail *err_ret)
 {
 	struct tok_state *tok;
 
@@ -95,11 +86,7 @@ PyParser_ParseFile(fp, filename, g, start, ps1, ps2, err_ret)
    Return error code. */
 
 static node *
-parsetok(tok, g, start, err_ret)
-	struct tok_state *tok;
-	grammar *g;
-	int start;
-	perrdetail *err_ret;
+parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret)
 {
 	parser_state *ps;
 	node *n;

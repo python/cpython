@@ -21,8 +21,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 extern int Py_DebugFlag;
 
 grammar *
-newgrammar(start)
-	int start;
+newgrammar(int start)
 {
 	grammar *g;
 	
@@ -39,10 +38,7 @@ newgrammar(start)
 }
 
 dfa *
-adddfa(g, type, name)
-	grammar *g;
-	int type;
-	char *name;
+adddfa(grammar *g, int type, char *name)
 {
 	dfa *d;
 	
@@ -60,8 +56,7 @@ adddfa(g, type, name)
 }
 
 int
-addstate(d)
-	dfa *d;
+addstate(dfa *d)
 {
 	state *s;
 	
@@ -79,9 +74,7 @@ addstate(d)
 }
 
 void
-addarc(d, from, to, lbl)
-	dfa *d;
-	int lbl;
+addarc(dfa *d, int from, int to, int lbl)
 {
 	state *s;
 	arc *a;
@@ -99,10 +92,7 @@ addarc(d, from, to, lbl)
 }
 
 int
-addlabel(ll, type, str)
-	labellist *ll;
-	int type;
-	char *str;
+addlabel(labellist *ll, int type, char *str)
 {
 	int i;
 	label *lb;
@@ -124,10 +114,7 @@ addlabel(ll, type, str)
 /* Same, but rather dies than adds */
 
 int
-findlabel(ll, type, str)
-	labellist *ll;
-	int type;
-	char *str;
+findlabel(labellist *ll, int type, char *str)
 {
 	int i;
 	
@@ -145,8 +132,7 @@ findlabel(ll, type, str)
 static void translabel(grammar *, label *);
 
 void
-translatelabels(g)
-	grammar *g;
+translatelabels(grammar *g)
 {
 	int i;
 
@@ -159,9 +145,7 @@ translatelabels(g)
 }
 
 static void
-translabel(g, lb)
-	grammar *g;
-	label *lb;
+translabel(grammar *g, label *lb)
 {
 	int i;
 	
