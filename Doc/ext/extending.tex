@@ -792,7 +792,7 @@ follows:
 
 where \var{object} is the Python object to be converted and
 \var{address} is the \ctype{void *} argument that was passed to
-\cfunction{PyArg_ConvertTuple()}.  The returned \var{status} should be
+\cfunction{PyArg_ParseTuple()}.  The returned \var{status} should be
 \code{1} for a successful conversion and \code{0} if the conversion
 has failed.  When the conversion fails, the \var{converter} function
 should raise an exception.
