@@ -10,10 +10,8 @@ forgotten) from the programmer.
 #include "windows.h"
 
 /* NT and Python share these */
-#undef INCREF
-#undef DECREF
 #include "config.h"
-#include "allobjects.h"
+#include "Python.h"
 
 HMODULE PyWin_DLLhModule = NULL;
 
@@ -25,7 +23,7 @@ BOOL	WINAPI	DllMain (HANDLE hInst,
 	{
 		case DLL_PROCESS_ATTACH:
 			PyWin_DLLhModule = hInst;
-			initall();
+			//initall();
 			break;
 		case DLL_PROCESS_DETACH:
 			break;
