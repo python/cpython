@@ -475,6 +475,18 @@ class MenuItem:
 	def settext(self, text):
 		self.menu.menu.SetMenuItemText(self.item, text)
 		
+	def setstyle(self, style):
+		self.menu.menu.SetItemStyle(self.item, style)
+		
+	def seticon(self, icon):
+		self.menu.menu.SetItemIcon(self.item, icon)
+		
+	def setcmd(self, cmd):
+		self.menu.menu.SetItemCmd(self.item, cmd)
+		
+	def setmark(self, cmd):
+		self.menu.menu.SetItemMark(self.item, cmd)
+		
 
 class RadioItem(MenuItem):
 	def __init__(self, menu, title, shortcut=None, callback=None):
