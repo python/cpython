@@ -169,6 +169,7 @@ class URLopener:
 	# Use FTP protocol
 	def open_ftp(self, url):
 		host, file = splithost(url)
+		if not host: raise IOError, ('ftp error', 'no host given')
 		host, port = splitport(host)
 		host = socket.gethostbyname(host)
 		if not port:
