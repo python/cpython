@@ -19,10 +19,6 @@ class Text_Events(Text_Suite_Events):
 class styleset(aetools.ComponentItem):
 	"""styleset - A style \xd2set\xd3 that may be used repeatedly in text objects. """
 	want = 'stys'
-class name(aetools.NProperty):
-	"""name - style name """
-	which = 'pnam'
-	want = 'TEXT'
 class color(aetools.NProperty):
 	"""color - the color """
 	which = 'colr'
@@ -31,17 +27,21 @@ class font(aetools.NProperty):
 	"""font - font name """
 	which = 'font'
 	want = 'TEXT'
+class name(aetools.NProperty):
+	"""name - style name """
+	which = 'pnam'
+	want = 'TEXT'
 class size(aetools.NProperty):
 	"""size - the size in points """
 	which = 'ptsz'
 	want = 'long'
-class writing_code(aetools.NProperty):
-	"""writing code - the script system and language """
-	which = 'psct'
-	want = 'tsty'
 class style(aetools.NProperty):
 	"""style - the text styles or face attributes """
 	which = 'txst'
+	want = 'tsty'
+class writing_code(aetools.NProperty):
+	"""writing code - the script system and language """
+	which = 'psct'
 	want = 'tsty'
 
 stylesets = styleset
@@ -49,10 +49,6 @@ stylesets = styleset
 class text(aetools.ComponentItem):
 	"""text - independent text view objects """
 	want = 'ctxt'
-class updateLevel(aetools.NProperty):
-	"""updateLevel - updating level.  Can only be incremented or decremented.  Do so only in a try block -- if the level is greater than zero, visual text updating will cease. """
-	which = 'pUpL'
-	want = 'long'
 class beginning(aetools.NProperty):
 	"""beginning - Beginning of element """
 	which = 'bgng'
@@ -69,25 +65,29 @@ class justbehind(aetools.NProperty):
 	"""justbehind - Immediately after element """
 	which = 'pAft'
 	want = 'obj '
+class updateLevel(aetools.NProperty):
+	"""updateLevel - updating level.  Can only be incremented or decremented.  Do so only in a try block -- if the level is greater than zero, visual text updating will cease. """
+	which = 'pUpL'
+	want = 'long'
 #        element 'stys' as ['indx', 'name']
 styleset._superclassnames = []
 styleset._privpropdict = {
-	'name' : name,
 	'color' : color,
 	'font' : font,
+	'name' : name,
 	'size' : size,
-	'writing_code' : writing_code,
 	'style' : style,
+	'writing_code' : writing_code,
 }
 styleset._privelemdict = {
 }
 text._superclassnames = []
 text._privpropdict = {
-	'updateLevel' : updateLevel,
 	'beginning' : beginning,
 	'end' : end,
 	'infront' : infront,
 	'justbehind' : justbehind,
+	'updateLevel' : updateLevel,
 }
 text._privelemdict = {
 	'styleset' : styleset,
@@ -97,22 +97,22 @@ text._privelemdict = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'stys' : styleset,
 	'ctxt' : text,
+	'stys' : styleset,
 }
 
 _propdeclarations = {
-	'ptsz' : size,
 	'bgng' : beginning,
 	'colr' : color,
-	'txst' : style,
-	'psct' : writing_code,
-	'pAft' : justbehind,
-	'font' : font,
 	'end ' : end,
+	'font' : font,
+	'pAft' : justbehind,
+	'pBef' : infront,
 	'pUpL' : updateLevel,
 	'pnam' : name,
-	'pBef' : infront,
+	'psct' : writing_code,
+	'ptsz' : size,
+	'txst' : style,
 }
 
 _compdeclarations = {

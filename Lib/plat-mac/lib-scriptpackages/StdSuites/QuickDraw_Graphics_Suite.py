@@ -76,46 +76,46 @@ class color_table(aetools.NProperty):
 	"""color table - the color table """
 	which = 'cltb'
 	want = 'clrt'
-class ordering(aetools.NProperty):
-	"""ordering - the ordered list of graphic objects in the drawing area """
-	which = 'gobs'
-	want = 'obj '
-class name(aetools.NProperty):
-	"""name - the name """
-	which = 'pnam'
+class default_font(aetools.NProperty):
+	"""default font - the name of the default font for text objects """
+	which = 'ptxf'
 	want = 'itxt'
 class default_location(aetools.NProperty):
 	"""default location - the default location of each new graphic object """
 	which = 'pnel'
 	want = 'QDpt'
-class pixel_depth(aetools.NProperty):
-	"""pixel depth - the number of bits per pixel """
-	which = 'pdpt'
-	want = 'shor'
-class writing_code(aetools.NProperty):
-	"""writing code - the script system and language of text objects in the drawing area """
-	which = 'psct'
-	want = 'intl'
-class text_color(aetools.NProperty):
-	"""text color - the default color for text objects """
-	which = 'ptxc'
-	want = 'cRGB'
-class default_font(aetools.NProperty):
-	"""default font - the name of the default font for text objects """
-	which = 'ptxf'
-	want = 'itxt'
 class default_size(aetools.NProperty):
 	"""default size - the default size for text objects """
 	which = 'ptps'
 	want = 'fixd'
+class name(aetools.NProperty):
+	"""name - the name """
+	which = 'pnam'
+	want = 'itxt'
+class ordering(aetools.NProperty):
+	"""ordering - the ordered list of graphic objects in the drawing area """
+	which = 'gobs'
+	want = 'obj '
+class pixel_depth(aetools.NProperty):
+	"""pixel depth - the number of bits per pixel """
+	which = 'pdpt'
+	want = 'shor'
 class style(aetools.NProperty):
 	"""style - the default text style for text objects """
 	which = 'txst'
 	want = 'tsty'
+class text_color(aetools.NProperty):
+	"""text color - the default color for text objects """
+	which = 'ptxc'
+	want = 'cRGB'
 class update_on_change(aetools.NProperty):
 	"""update on change - Redraw after each change? """
 	which = 'pupd'
 	want = 'bool'
+class writing_code(aetools.NProperty):
+	"""writing code - the script system and language of text objects in the drawing area """
+	which = 'psct'
+	want = 'intl'
 
 drawing_areas = drawing_area
 
@@ -128,22 +128,22 @@ graphic_groups = graphic_group
 class graphic_line(aetools.ComponentItem):
 	"""graphic line - A graphic line """
 	want = 'glin'
-class start_point(aetools.NProperty):
-	"""start point - the starting point of the line """
-	which = 'pstp'
-	want = 'QDpt'
-class end_point(aetools.NProperty):
-	"""end point - the ending point of the line """
-	which = 'pend'
-	want = 'QDpt'
-class dash_style(aetools.NProperty):
-	"""dash style - the dash style """
-	which = 'pdst'
-	want = 'tdas'
 class arrow_style(aetools.NProperty):
 	"""arrow style - the arrow style """
 	which = 'arro'
 	want = 'arro'
+class dash_style(aetools.NProperty):
+	"""dash style - the dash style """
+	which = 'pdst'
+	want = 'tdas'
+class end_point(aetools.NProperty):
+	"""end point - the ending point of the line """
+	which = 'pend'
+	want = 'QDpt'
+class start_point(aetools.NProperty):
+	"""start point - the starting point of the line """
+	which = 'pstp'
+	want = 'QDpt'
 
 graphic_lines = graphic_line
 
@@ -246,16 +246,16 @@ drawing_area._privpropdict = {
 	'background_color' : background_color,
 	'background_pattern' : background_pattern,
 	'color_table' : color_table,
-	'ordering' : ordering,
-	'name' : name,
-	'default_location' : default_location,
-	'pixel_depth' : pixel_depth,
-	'writing_code' : writing_code,
-	'text_color' : text_color,
 	'default_font' : default_font,
+	'default_location' : default_location,
 	'default_size' : default_size,
+	'name' : name,
+	'ordering' : ordering,
+	'pixel_depth' : pixel_depth,
 	'style' : style,
+	'text_color' : text_color,
 	'update_on_change' : update_on_change,
+	'writing_code' : writing_code,
 }
 drawing_area._privelemdict = {
 }
@@ -266,10 +266,10 @@ graphic_group._privelemdict = {
 }
 graphic_line._superclassnames = []
 graphic_line._privpropdict = {
-	'start_point' : start_point,
-	'end_point' : end_point,
-	'dash_style' : dash_style,
 	'arrow_style' : arrow_style,
+	'dash_style' : dash_style,
+	'end_point' : end_point,
+	'start_point' : start_point,
 }
 graphic_line._privelemdict = {
 }
@@ -356,56 +356,56 @@ _Enum_tran = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'cpic' : graphic_group,
-	'covl' : oval,
-	'cgtx' : graphic_text,
-	'cgsh' : graphic_shape,
-	'glin' : graphic_line,
-	'cgob' : graphic_object,
-	'cdrw' : drawing_area,
-	'cpgn' : polygon,
-	'cpxl' : pixel,
-	'crrc' : rounded_rectangle,
 	'carc' : arc,
+	'cdrw' : drawing_area,
+	'cgob' : graphic_object,
+	'cgsh' : graphic_shape,
+	'cgtx' : graphic_text,
+	'covl' : oval,
+	'cpgn' : polygon,
+	'cpic' : graphic_group,
 	'cpix' : pixel_map,
+	'cpxl' : pixel,
 	'crec' : rectangle,
+	'crrc' : rounded_rectangle,
+	'glin' : graphic_line,
 }
 
 _propdeclarations = {
-	'pbpt' : background_pattern,
-	'flcl' : fill_color,
-	'parc' : arc_angle,
-	'pbnd' : bounds,
-	'colr' : color,
-	'flpt' : fill_pattern,
-	'ustl' : uniform_styles,
-	'font' : font,
-	'pend' : end_point,
-	'pstp' : start_point,
-	'pang' : start_angle,
-	'pptm' : transfer_mode,
+	'arro' : arrow_style,
 	'cltb' : color_table,
+	'colr' : color,
+	'flcl' : fill_color,
+	'flpt' : fill_pattern,
+	'font' : font,
+	'gobs' : ordering,
+	'pang' : start_angle,
+	'parc' : arc_angle,
+	'pbcl' : background_color,
+	'pbnd' : bounds,
+	'pbpt' : background_pattern,
+	'pchd' : corner_curve_height,
+	'pcwd' : corner_curve_width,
+	'pdpt' : pixel_depth,
+	'pdrt' : definition_rect,
+	'pdst' : dash_style,
+	'pend' : end_point,
+	'pnam' : name,
+	'pnel' : default_location,
+	'ppcl' : pen_color,
+	'pppa' : pen_pattern,
+	'pptm' : transfer_mode,
+	'ppwd' : pen_width,
+	'psct' : writing_code,
+	'pstp' : start_point,
+	'ptlt' : point_list,
+	'ptps' : default_size,
+	'ptsz' : size,
 	'ptxc' : text_color,
 	'ptxf' : default_font,
-	'ppcl' : pen_color,
-	'ptps' : default_size,
-	'ppwd' : pen_width,
-	'arro' : arrow_style,
-	'pcwd' : corner_curve_width,
-	'txst' : style,
-	'psct' : writing_code,
-	'pdst' : dash_style,
-	'ptlt' : point_list,
-	'gobs' : ordering,
-	'pdpt' : pixel_depth,
-	'pnel' : default_location,
-	'pchd' : corner_curve_height,
-	'pbcl' : background_color,
-	'pnam' : name,
-	'pdrt' : definition_rect,
-	'ptsz' : size,
 	'pupd' : update_on_change,
-	'pppa' : pen_pattern,
+	'txst' : style,
+	'ustl' : uniform_styles,
 }
 
 _compdeclarations = {

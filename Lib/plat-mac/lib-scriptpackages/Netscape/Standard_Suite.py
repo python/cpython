@@ -117,33 +117,57 @@ class kiosk_mode(aetools.NProperty):
 class window(aetools.ComponentItem):
 	"""window - A Window """
 	want = 'cwin'
+class URL(aetools.NProperty):
+	"""URL - Current URL """
+	which = 'curl'
+	want = 'TEXT'
 class bounds(aetools.NProperty):
 	"""bounds - the boundary rectangle for the window """
 	which = 'pbnd'
 	want = 'qdrt'
+class busy(aetools.NProperty):
+	"""busy - Is window loading something right now. 2, window is busy and will reject load requests. 1, window is busy, but will interrupt outstanding loads """
+	which = 'busy'
+	want = 'long'
 class closeable(aetools.NProperty):
 	"""closeable - Does the window have a close box? """
 	which = 'hclb'
 	want = 'bool'
-class titled(aetools.NProperty):
-	"""titled - Does the window have a title bar? """
-	which = 'ptit'
+class floating(aetools.NProperty):
+	"""floating - Does the window float? """
+	which = 'isfl'
 	want = 'bool'
 class index(aetools.NProperty):
 	"""index - the number of the window """
 	which = 'pidx'
 	want = 'long'
-class floating(aetools.NProperty):
-	"""floating - Does the window float? """
-	which = 'isfl'
-	want = 'bool'
 class modal(aetools.NProperty):
 	"""modal - Is the window modal? """
 	which = 'pmod'
 	want = 'bool'
+class name(aetools.NProperty):
+	"""name - the title of the window """
+	which = 'pnam'
+	want = 'itxt'
+class position(aetools.NProperty):
+	"""position - upper left coordinates of window """
+	which = 'ppos'
+	want = 'QDpt'
 class resizable(aetools.NProperty):
 	"""resizable - Is the window resizable? """
 	which = 'prsz'
+	want = 'bool'
+class titled(aetools.NProperty):
+	"""titled - Does the window have a title bar? """
+	which = 'ptit'
+	want = 'bool'
+class unique_ID(aetools.NProperty):
+	"""unique ID - Window\xd5s unique ID (a bridge between WWW! suite window id\xd5s and standard AE windows) """
+	which = 'wiid'
+	want = 'long'
+class visible(aetools.NProperty):
+	"""visible - is the window visible? """
+	which = 'pvis'
 	want = 'bool'
 class zoomable(aetools.NProperty):
 	"""zoomable - Is the window zoomable? """
@@ -153,30 +177,6 @@ class zoomed(aetools.NProperty):
 	"""zoomed - Is the window zoomed? """
 	which = 'pzum'
 	want = 'bool'
-class name(aetools.NProperty):
-	"""name - the title of the window """
-	which = 'pnam'
-	want = 'itxt'
-class visible(aetools.NProperty):
-	"""visible - is the window visible? """
-	which = 'pvis'
-	want = 'bool'
-class position(aetools.NProperty):
-	"""position - upper left coordinates of window """
-	which = 'ppos'
-	want = 'QDpt'
-class URL(aetools.NProperty):
-	"""URL - Current URL """
-	which = 'curl'
-	want = 'TEXT'
-class unique_ID(aetools.NProperty):
-	"""unique ID - Window\xd5s unique ID (a bridge between WWW! suite window id\xd5s and standard AE windows) """
-	which = 'wiid'
-	want = 'long'
-class busy(aetools.NProperty):
-	"""busy - Is window loading something right now. 2, window is busy and will reject load requests. 1, window is busy, but will interrupt outstanding loads """
-	which = 'busy'
-	want = 'long'
 application._superclassnames = []
 application._privpropdict = {
 	'alert_application' : alert_application,
@@ -187,21 +187,21 @@ application._privelemdict = {
 }
 window._superclassnames = []
 window._privpropdict = {
+	'URL' : URL,
 	'bounds' : bounds,
+	'busy' : busy,
 	'closeable' : closeable,
-	'titled' : titled,
-	'index' : index,
 	'floating' : floating,
+	'index' : index,
 	'modal' : modal,
+	'name' : name,
+	'position' : position,
 	'resizable' : resizable,
+	'titled' : titled,
+	'unique_ID' : unique_ID,
+	'visible' : visible,
 	'zoomable' : zoomable,
 	'zoomed' : zoomed,
-	'name' : name,
-	'visible' : visible,
-	'position' : position,
-	'URL' : URL,
-	'unique_ID' : unique_ID,
-	'busy' : busy,
 }
 window._privelemdict = {
 }
@@ -210,28 +210,28 @@ window._privelemdict = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'cwin' : window,
 	'capp' : application,
+	'cwin' : window,
 }
 
 _propdeclarations = {
-	'prsz' : resizable,
-	'busy' : busy,
-	'KOSK' : kiosk_mode,
-	'pvis' : visible,
-	'hclb' : closeable,
-	'pmod' : modal,
-	'wiid' : unique_ID,
-	'pbnd' : bounds,
-	'iszm' : zoomable,
 	'ALAP' : alert_application,
-	'pidx' : index,
+	'KOSK' : kiosk_mode,
+	'busy' : busy,
+	'curl' : URL,
+	'hclb' : closeable,
 	'isfl' : floating,
+	'iszm' : zoomable,
+	'pbnd' : bounds,
+	'pidx' : index,
+	'pmod' : modal,
 	'pnam' : name,
 	'ppos' : position,
-	'curl' : URL,
-	'pzum' : zoomed,
+	'prsz' : resizable,
 	'ptit' : titled,
+	'pvis' : visible,
+	'pzum' : zoomed,
+	'wiid' : unique_ID,
 }
 
 _compdeclarations = {

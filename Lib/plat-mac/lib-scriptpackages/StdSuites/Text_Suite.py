@@ -54,10 +54,6 @@ class size(aetools.NProperty):
 	"""size - the size in points of the first character """
 	which = 'ptsz'
 	want = 'fixd'
-class writing_code(aetools.NProperty):
-	"""writing code - the script system and language """
-	which = 'psct'
-	want = 'intl'
 class style(aetools.NProperty):
 	"""style - the text style of the first character of the first character """
 	which = 'txst'
@@ -66,6 +62,10 @@ class uniform_styles(aetools.NProperty):
 	"""uniform styles - the text styles that are uniform throughout the text """
 	which = 'ustl'
 	want = 'tsty'
+class writing_code(aetools.NProperty):
+	"""writing code - the script system and language """
+	which = 'psct'
+	want = 'intl'
 #        element 'cha ' as ['indx']
 #        element 'clin' as ['indx']
 #        element 'cpar' as ['indx']
@@ -85,13 +85,13 @@ text_flows = text_flow
 class text_style_info(aetools.ComponentItem):
 	"""text style info - On and Off styles of text run """
 	want = 'tsty'
-class on_styles(aetools.NProperty):
-	"""on styles - the styles that are on for the text """
-	which = 'onst'
-	want = 'styl'
 class off_styles(aetools.NProperty):
 	"""off styles - the styles that are off for the text """
 	which = 'ofst'
+	want = 'styl'
+class on_styles(aetools.NProperty):
+	"""on styles - the styles that are on for the text """
+	which = 'onst'
 	want = 'styl'
 
 text_style_infos = text_style_info
@@ -125,9 +125,9 @@ text._privpropdict = {
 	'color' : color,
 	'font' : font,
 	'size' : size,
-	'writing_code' : writing_code,
 	'style' : style,
 	'uniform_styles' : uniform_styles,
+	'writing_code' : writing_code,
 }
 text._privelemdict = {
 	'character' : character,
@@ -145,8 +145,8 @@ text_flow._privelemdict = {
 }
 text_style_info._superclassnames = []
 text_style_info._privpropdict = {
-	'on_styles' : on_styles,
 	'off_styles' : off_styles,
+	'on_styles' : on_styles,
 }
 text_style_info._privelemdict = {
 }
@@ -186,33 +186,33 @@ _Enum_styl = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'cpar' : paragraph,
-	'cha ' : character,
 	'cflo' : text_flow,
-	'tsty' : text_style_info,
+	'cha ' : character,
 	'clin' : line,
-	'cwor' : word,
+	'cpar' : paragraph,
 	'ctxt' : text,
+	'cwor' : word,
+	'tsty' : text_style_info,
 }
 
 _propdeclarations = {
-	'ptsz' : size,
-	'ofst' : off_styles,
-	'pjst' : justification,
-	'colr' : color,
-	'txst' : style,
-	'psct' : writing_code,
-	'ustl' : uniform_styles,
 	'c@#^' : _3c_inheritance_3e_,
-	'pnam' : name,
+	'colr' : color,
 	'font' : font,
+	'ofst' : off_styles,
 	'onst' : on_styles,
+	'pjst' : justification,
+	'pnam' : name,
+	'psct' : writing_code,
+	'ptsz' : size,
+	'txst' : style,
+	'ustl' : uniform_styles,
 }
 
 _compdeclarations = {
 }
 
 _enumdeclarations = {
-	'styl' : _Enum_styl,
 	'just' : _Enum_just,
+	'styl' : _Enum_styl,
 }

@@ -179,44 +179,44 @@ class user_interaction(aetools.NProperty):
 	"""user interaction - user interaction level """
 	which = 'inte'
 	want = 'Inte'
-#        element 'docu' as ['indx', 'name', 'rang']
 #        element 'cwin' as ['indx', 'name', 'rang']
+#        element 'docu' as ['indx', 'name', 'rang']
 
 class character(aetools.ComponentItem):
 	"""character - a character """
 	want = 'cha '
-class offset(aetools.NProperty):
-	"""offset - offset of a text object from the beginning of the document (first char has offset 1) """
-	which = 'pOff'
-	want = 'long'
 class length(aetools.NProperty):
 	"""length - length in characters of this object """
 	which = 'pLen'
+	want = 'long'
+class offset(aetools.NProperty):
+	"""offset - offset of a text object from the beginning of the document (first char has offset 1) """
+	which = 'pOff'
 	want = 'long'
 
 class document(aetools.ComponentItem):
 	"""document - a document """
 	want = 'docu'
-class name(aetools.NProperty):
-	"""name - the title of the document """
-	which = 'pnam'
-	want = 'itxt'
-class kind(aetools.NProperty):
-	"""kind - the kind of document """
-	which = 'DKND'
-	want = 'DKND'
-class index(aetools.NProperty):
-	"""index - the number of the document """
-	which = 'pidx'
-	want = 'long'
-class location(aetools.NProperty):
-	"""location - the file of the document """
-	which = 'FILE'
-	want = 'fss '
 class file_permissions(aetools.NProperty):
 	"""file permissions - the file permissions for the document """
 	which = 'PERM'
 	want = 'PERM'
+class index(aetools.NProperty):
+	"""index - the number of the document """
+	which = 'pidx'
+	want = 'long'
+class kind(aetools.NProperty):
+	"""kind - the kind of document """
+	which = 'DKND'
+	want = 'DKND'
+class location(aetools.NProperty):
+	"""location - the file of the document """
+	which = 'FILE'
+	want = 'fss '
+class name(aetools.NProperty):
+	"""name - the title of the document """
+	which = 'pnam'
+	want = 'itxt'
 class window(aetools.NProperty):
 	"""window - the window of the document. """
 	which = 'cwin'
@@ -295,18 +295,18 @@ application._privelemdict = {
 }
 character._superclassnames = []
 character._privpropdict = {
-	'offset' : offset,
 	'length' : length,
+	'offset' : offset,
 }
 character._privelemdict = {
 }
 document._superclassnames = []
 document._privpropdict = {
-	'name' : name,
-	'kind' : kind,
-	'index' : index,
-	'location' : location,
 	'file_permissions' : file_permissions,
+	'index' : index,
+	'kind' : kind,
+	'location' : location,
+	'name' : name,
 	'window' : window,
 }
 document._privelemdict = {
@@ -326,8 +326,8 @@ insertion_point._privelemdict = {
 line._superclassnames = []
 line._privpropdict = {
 	'index' : index,
-	'offset' : offset,
 	'length' : length,
+	'offset' : offset,
 }
 line._privelemdict = {
 	'character' : character,
@@ -356,10 +356,10 @@ text._privelemdict = {
 }
 window._superclassnames = []
 window._privpropdict = {
-	'name' : name,
-	'index' : index,
 	'bounds' : bounds,
 	'document' : document,
+	'index' : index,
+	'name' : name,
 	'position' : position,
 	'visible' : visible,
 	'zoomed' : zoomed,
@@ -371,33 +371,33 @@ window._privelemdict = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
+	'capp' : application,
 	'cha ' : character,
-	'ctxt' : text,
-	'cwin' : window,
-	'file' : file,
+	'cins' : insertion_point,
 	'clin' : line,
 	'csel' : selection_2d_object,
-	'capp' : application,
-	'cins' : insertion_point,
+	'ctxt' : text,
+	'cwin' : window,
 	'docu' : document,
+	'file' : file,
 }
 
 _propdeclarations = {
-	'inte' : user_interaction,
-	'pvis' : visible,
 	'DKND' : kind,
-	'pbnd' : bounds,
-	'PERM' : file_permissions,
-	'docu' : document,
-	'pidx' : index,
-	'pOff' : offset,
-	'cwin' : window,
 	'FILE' : location,
-	'pnam' : name,
+	'PERM' : file_permissions,
+	'cwin' : window,
+	'docu' : document,
+	'inte' : user_interaction,
 	'pLen' : length,
-	'ppos' : position,
-	'pzum' : zoomed,
+	'pOff' : offset,
+	'pbnd' : bounds,
 	'pcnt' : contents,
+	'pidx' : index,
+	'pnam' : name,
+	'ppos' : position,
+	'pvis' : visible,
+	'pzum' : zoomed,
 }
 
 _compdeclarations = {

@@ -328,14 +328,14 @@ single_class_hierarchy = single_class_hierarchies
 class subtarget(aetools.ComponentItem):
 	"""subtarget - a target that is prerequisite for another target """
 	want = 'SBTG'
-class target(aetools.NProperty):
-	"""target - the target that is dependent on this subtarget """
-	which = 'TrgT'
-	want = 'TRGT'
 class link_against_output(aetools.NProperty):
 	"""link against output - is the output of this subtarget linked into its dependent target? """
 	which = 'LNKO'
 	want = 'bool'
+class target(aetools.NProperty):
+	"""target - the target that is dependent on this subtarget """
+	which = 'TrgT'
+	want = 'TRGT'
 
 subtargets = subtarget
 
@@ -356,48 +356,20 @@ class project_document(aetools.NProperty):
 	"""project document - the project document that contains this target """
 	which = 'PrjD'
 	want = 'PRJD'
-#        element 'SRCF' as ['indx', 'test', 'rang']
 #        element 'SBTG' as ['indx', 'test', 'rang']
+#        element 'SRCF' as ['indx', 'test', 'rang']
 
 class target_file(aetools.ComponentItem):
 	"""target file - a source or header file in a target """
 	want = 'SRCF'
-class id(aetools.NProperty):
-	"""id - the unique ID number of the target file """
-	which = 'ID  '
-	want = 'long'
-class type(aetools.NProperty):
-	"""type - the type of source file """
-	which = 'FTYP'
-	want = 'FTYP'
-class location(aetools.NProperty):
-	"""location - the location of the target file on disk """
-	which = 'FILE'
-	want = 'fss '
-class path(aetools.NProperty):
-	"""path - the path of the source file on disk """
-	which = 'Path'
-	want = 'itxt'
-class linked(aetools.NProperty):
-	"""linked - is the source file in the link order of its target? """
-	which = 'LINK'
-	want = 'bool'
-class link_index(aetools.NProperty):
-	"""link index - the index of the source file in its target\xd5s link order (-1 if source file is not in link order) """
-	which = 'LIDX'
-	want = 'long'
-class modified_date(aetools.NProperty):
-	"""modified date - the date and time this source file was last modified """
-	which = 'MODD'
-	want = 'ldt '
-class compiled_date(aetools.NProperty):
-	"""compiled date - the date and this source file was last compiled """
-	which = 'CMPD'
-	want = 'ldt '
 class code_size(aetools.NProperty):
 	"""code size - the size of the code (in bytes) produced by compiling this source file """
 	which = 'CSZE'
 	want = 'long'
+class compiled_date(aetools.NProperty):
+	"""compiled date - the date and this source file was last compiled """
+	which = 'CMPD'
+	want = 'ldt '
 class data_size(aetools.NProperty):
 	"""data size - the size of the date (in bytes) produced by compiling this source file """
 	which = 'DSZE'
@@ -406,26 +378,54 @@ class debug(aetools.NProperty):
 	"""debug - is debugging information generated for this source file? """
 	which = 'DBUG'
 	want = 'bool'
-class weak_link(aetools.NProperty):
-	"""weak link - is this shared library linked weakly? """
-	which = 'WEAK'
-	want = 'bool'
-class init_before(aetools.NProperty):
-	"""init before - is the \xd4initialize before\xd5 flag set for this shared library? """
-	which = 'INIT'
-	want = 'bool'
-class merge_output(aetools.NProperty):
-	"""merge output - is this shared library merged into another code fragment? """
-	which = 'MRGE'
-	want = 'bool'
-class prerequisites(aetools.NProperty):
-	"""prerequisites - the source files needed to build this source file """
-	which = 'PRER'
-	want = 'list'
 class dependents(aetools.NProperty):
 	"""dependents - the source files that need this source file in order to build """
 	which = 'DPND'
 	want = 'list'
+class id(aetools.NProperty):
+	"""id - the unique ID number of the target file """
+	which = 'ID  '
+	want = 'long'
+class init_before(aetools.NProperty):
+	"""init before - is the \xd4initialize before\xd5 flag set for this shared library? """
+	which = 'INIT'
+	want = 'bool'
+class link_index(aetools.NProperty):
+	"""link index - the index of the source file in its target\xd5s link order (-1 if source file is not in link order) """
+	which = 'LIDX'
+	want = 'long'
+class linked(aetools.NProperty):
+	"""linked - is the source file in the link order of its target? """
+	which = 'LINK'
+	want = 'bool'
+class location(aetools.NProperty):
+	"""location - the location of the target file on disk """
+	which = 'FILE'
+	want = 'fss '
+class merge_output(aetools.NProperty):
+	"""merge output - is this shared library merged into another code fragment? """
+	which = 'MRGE'
+	want = 'bool'
+class modified_date(aetools.NProperty):
+	"""modified date - the date and time this source file was last modified """
+	which = 'MODD'
+	want = 'ldt '
+class path(aetools.NProperty):
+	"""path - the path of the source file on disk """
+	which = 'Path'
+	want = 'itxt'
+class prerequisites(aetools.NProperty):
+	"""prerequisites - the source files needed to build this source file """
+	which = 'PRER'
+	want = 'list'
+class type(aetools.NProperty):
+	"""type - the type of source file """
+	which = 'FTYP'
+	want = 'FTYP'
+class weak_link(aetools.NProperty):
+	"""weak link - is this shared library linked weakly? """
+	which = 'WEAK'
+	want = 'bool'
 
 target_files = target_file
 
@@ -498,8 +498,8 @@ message_document._privelemdict = {
 }
 project_document._superclassnames = ['document']
 project_document._privpropdict = {
-	'inherits' : inherits,
 	'current_target' : current_target,
+	'inherits' : inherits,
 }
 project_document._privelemdict = {
 	'target' : target,
@@ -524,8 +524,8 @@ single_class_hierarchies._privelemdict = {
 subtarget._superclassnames = ['target']
 subtarget._privpropdict = {
 	'inherits' : inherits,
-	'target' : target,
 	'link_against_output' : link_against_output,
+	'target' : target,
 }
 subtarget._privelemdict = {
 }
@@ -541,27 +541,27 @@ target._privpropdict = {
 	'project_document' : project_document,
 }
 target._privelemdict = {
-	'target_file' : target_file,
 	'subtarget' : subtarget,
+	'target_file' : target_file,
 }
 target_file._superclassnames = []
 target_file._privpropdict = {
-	'id' : id,
-	'type' : type,
-	'location' : location,
-	'path' : path,
-	'linked' : linked,
-	'link_index' : link_index,
-	'modified_date' : modified_date,
-	'compiled_date' : compiled_date,
 	'code_size' : code_size,
+	'compiled_date' : compiled_date,
 	'data_size' : data_size,
 	'debug' : debug,
-	'weak_link' : weak_link,
-	'init_before' : init_before,
-	'merge_output' : merge_output,
-	'prerequisites' : prerequisites,
 	'dependents' : dependents,
+	'id' : id,
+	'init_before' : init_before,
+	'link_index' : link_index,
+	'linked' : linked,
+	'location' : location,
+	'merge_output' : merge_output,
+	'modified_date' : modified_date,
+	'path' : path,
+	'prerequisites' : prerequisites,
+	'type' : type,
+	'weak_link' : weak_link,
 }
 target_file._privelemdict = {
 }
@@ -624,57 +624,57 @@ _Enum_PERM = {
 #
 _classdeclarations = {
 	'1BRW' : single_class_browser,
-	'PRJD' : project_document,
-	'SYMB' : symbol_browser,
-	'EDIT' : editor_document,
-	'COMP' : file_compare_document,
-	'TOOL' : ToolServer_worksheet,
-	'SBTG' : subtarget,
-	'MSSG' : message_document,
-	'INSP' : project_inspector,
-	'TXTD' : text_document,
-	'CTLG' : catalog_document,
-	'HIER' : class_hierarchies,
-	'TRGT' : target,
-	'PRGS' : build_progress_document,
-	'SRCF' : target_file,
-	'BROW' : class_browser,
 	'1HIR' : single_class_hierarchies,
+	'BROW' : class_browser,
+	'COMP' : file_compare_document,
+	'CTLG' : catalog_document,
+	'EDIT' : editor_document,
+	'HIER' : class_hierarchies,
+	'INSP' : project_inspector,
+	'MSSG' : message_document,
+	'PRGS' : build_progress_document,
+	'PRJD' : project_document,
+	'SBTG' : subtarget,
+	'SRCF' : target_file,
+	'SYMB' : symbol_browser,
+	'TOOL' : ToolServer_worksheet,
+	'TRGT' : target,
+	'TXTD' : text_document,
 }
 
 _propdeclarations = {
-	'CURT' : current_target,
-	'PrjD' : project_document,
-	'MRGE' : merge_output,
-	'WEAK' : weak_link,
-	'DPND' : dependents,
-	'c@#^' : inherits,
-	'ID  ' : id,
 	'CMPD' : compiled_date,
-	'LIDX' : link_index,
-	'FILE' : location,
-	'Path' : path,
-	'LNKO' : link_against_output,
-	'imod' : modified,
-	'sele' : selection,
-	'DSZE' : data_size,
-	'INIT' : init_before,
-	'MODD' : modified_date,
-	'FTYP' : type,
-	'TrgT' : target,
-	'pnam' : name,
-	'LINK' : linked,
 	'CSZE' : code_size,
+	'CURT' : current_target,
 	'DBUG' : debug,
+	'DPND' : dependents,
+	'DSZE' : data_size,
+	'FILE' : location,
+	'FTYP' : type,
+	'ID  ' : id,
+	'INIT' : init_before,
+	'LIDX' : link_index,
+	'LINK' : linked,
+	'LNKO' : link_against_output,
+	'MODD' : modified_date,
+	'MRGE' : merge_output,
 	'PRER' : prerequisites,
+	'Path' : path,
+	'PrjD' : project_document,
+	'TrgT' : target,
+	'WEAK' : weak_link,
+	'c@#^' : inherits,
+	'imod' : modified,
+	'pnam' : name,
+	'sele' : selection,
 }
 
 _compdeclarations = {
 }
 
 _enumdeclarations = {
-	'Inte' : _Enum_Inte,
 	'DKND' : _Enum_DKND,
 	'FTYP' : _Enum_FTYP,
+	'Inte' : _Enum_Inte,
 	'PERM' : _Enum_PERM,
 }

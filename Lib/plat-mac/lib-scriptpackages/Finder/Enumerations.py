@@ -106,12 +106,12 @@ _compdeclarations = {
 }
 
 _enumdeclarations = {
-	'ipnl' : _Enum_ipnl,
-	'sodr' : _Enum_sodr,
-	'pple' : _Enum_pple,
-	'ese0' : _Enum_ese0,
-	'vwby' : _Enum_vwby,
-	'isiz' : _Enum_isiz,
 	'earr' : _Enum_earr,
+	'ese0' : _Enum_ese0,
 	'gsen' : _Enum_gsen,
+	'ipnl' : _Enum_ipnl,
+	'isiz' : _Enum_isiz,
+	'pple' : _Enum_pple,
+	'sodr' : _Enum_sodr,
+	'vwby' : _Enum_vwby,
 }

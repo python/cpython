@@ -42,6 +42,7 @@ import StdSuites
 #
 getbaseclasses(window)
 getbaseclasses(application)
+getbaseclasses(application)
 getbaseclasses(StdSuites.Type_Names_Suite.small_integer)
 getbaseclasses(StdSuites.Type_Names_Suite.RGB16_color)
 getbaseclasses(StdSuites.Type_Names_Suite.system_dictionary)
@@ -82,13 +83,13 @@ getbaseclasses(StdSuites.Type_Names_Suite.null)
 getbaseclasses(StdSuites.Type_Names_Suite.target_id)
 getbaseclasses(StdSuites.Type_Names_Suite.point)
 getbaseclasses(StdSuites.Type_Names_Suite.bounding_rectangle)
-getbaseclasses(application)
 
 #
 # Indices of types declared in this module
 #
 _classdeclarations = {
 	'cwin' : window,
+	'capp' : application,
 	'capp' : application,
 	'shor' : StdSuites.Type_Names_Suite.small_integer,
 	'tr16' : StdSuites.Type_Names_Suite.RGB16_color,
@@ -130,7 +131,6 @@ _classdeclarations = {
 	'targ' : StdSuites.Type_Names_Suite.target_id,
 	'QDpt' : StdSuites.Type_Names_Suite.point,
 	'qdrt' : StdSuites.Type_Names_Suite.bounding_rectangle,
-	'capp' : application,
 }
 
 

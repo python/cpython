@@ -68,53 +68,6 @@ import StdSuites
 #
 # Set property and element dictionaries now that all classes have been defined
 #
-getbaseclasses(window)
-getbaseclasses(file)
-getbaseclasses(selection_2d_object)
-getbaseclasses(alias)
-getbaseclasses(application)
-getbaseclasses(insertion_point)
-getbaseclasses(document)
-getbaseclasses(small_integer)
-getbaseclasses(RGB16_color)
-getbaseclasses(version)
-getbaseclasses(system_dictionary)
-getbaseclasses(color_table)
-getbaseclasses(fixed_point)
-getbaseclasses(plain_text)
-getbaseclasses(type_element_info)
-getbaseclasses(location_reference)
-getbaseclasses(machine_location)
-getbaseclasses(PostScript_picture)
-getbaseclasses(point)
-getbaseclasses(menu_item)
-getbaseclasses(pixel_map_record)
-getbaseclasses(application_dictionary)
-getbaseclasses(unsigned_integer)
-getbaseclasses(menu)
-getbaseclasses(fixed_rectangle)
-getbaseclasses(long_fixed_rectangle)
-getbaseclasses(type_event_info)
-getbaseclasses(small_real)
-getbaseclasses(type_suite_info)
-getbaseclasses(rotation)
-getbaseclasses(type_parameter_info)
-getbaseclasses(fixed)
-getbaseclasses(scrap_styles)
-getbaseclasses(long_point)
-getbaseclasses(type_class_info)
-getbaseclasses(TIFF_picture)
-getbaseclasses(RGB96_color)
-getbaseclasses(dash_style)
-getbaseclasses(extended_real)
-getbaseclasses(type_property_info)
-getbaseclasses(long_fixed_point)
-getbaseclasses(long_rectangle)
-getbaseclasses(bounding_rectangle)
-getbaseclasses(double_integer)
-getbaseclasses(long_fixed)
-getbaseclasses(null)
-getbaseclasses(target_id)
 getbaseclasses(paragraph)
 getbaseclasses(character)
 getbaseclasses(text_flow)
@@ -258,58 +211,58 @@ getbaseclasses(Saturday)
 getbaseclasses(September)
 getbaseclasses(file_specification)
 getbaseclasses(text)
+getbaseclasses(window)
+getbaseclasses(file)
+getbaseclasses(selection_2d_object)
+getbaseclasses(alias)
+getbaseclasses(application)
+getbaseclasses(insertion_point)
+getbaseclasses(document)
+getbaseclasses(small_integer)
+getbaseclasses(RGB16_color)
+getbaseclasses(version)
+getbaseclasses(system_dictionary)
+getbaseclasses(color_table)
+getbaseclasses(fixed_point)
+getbaseclasses(plain_text)
+getbaseclasses(type_element_info)
+getbaseclasses(location_reference)
+getbaseclasses(machine_location)
+getbaseclasses(PostScript_picture)
+getbaseclasses(point)
+getbaseclasses(menu_item)
+getbaseclasses(pixel_map_record)
+getbaseclasses(application_dictionary)
+getbaseclasses(unsigned_integer)
+getbaseclasses(menu)
+getbaseclasses(fixed_rectangle)
+getbaseclasses(long_fixed_rectangle)
+getbaseclasses(type_event_info)
+getbaseclasses(small_real)
+getbaseclasses(type_suite_info)
+getbaseclasses(rotation)
+getbaseclasses(type_parameter_info)
+getbaseclasses(fixed)
+getbaseclasses(scrap_styles)
+getbaseclasses(long_point)
+getbaseclasses(type_class_info)
+getbaseclasses(TIFF_picture)
+getbaseclasses(RGB96_color)
+getbaseclasses(dash_style)
+getbaseclasses(extended_real)
+getbaseclasses(type_property_info)
+getbaseclasses(long_fixed_point)
+getbaseclasses(long_rectangle)
+getbaseclasses(bounding_rectangle)
+getbaseclasses(double_integer)
+getbaseclasses(long_fixed)
+getbaseclasses(null)
+getbaseclasses(target_id)
 
 #
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'cwin' : window,
-	'file' : file,
-	'csel' : selection_2d_object,
-	'alis' : alias,
-	'capp' : application,
-	'cins' : insertion_point,
-	'docu' : document,
-	'shor' : small_integer,
-	'tr16' : RGB16_color,
-	'vers' : version,
-	'aeut' : system_dictionary,
-	'clrt' : color_table,
-	'fpnt' : fixed_point,
-	'TEXT' : plain_text,
-	'elin' : type_element_info,
-	'insl' : location_reference,
-	'mLoc' : machine_location,
-	'EPS ' : PostScript_picture,
-	'QDpt' : point,
-	'cmen' : menu_item,
-	'tpmm' : pixel_map_record,
-	'aete' : application_dictionary,
-	'magn' : unsigned_integer,
-	'cmnu' : menu,
-	'frct' : fixed_rectangle,
-	'lfrc' : long_fixed_rectangle,
-	'evin' : type_event_info,
-	'sing' : small_real,
-	'suin' : type_suite_info,
-	'trot' : rotation,
-	'pmin' : type_parameter_info,
-	'fixd' : fixed,
-	'styl' : scrap_styles,
-	'lpnt' : long_point,
-	'gcli' : type_class_info,
-	'TIFF' : TIFF_picture,
-	'tr96' : RGB96_color,
-	'tdas' : dash_style,
-	'exte' : extended_real,
-	'pinf' : type_property_info,
-	'lfpt' : long_fixed_point,
-	'lrct' : long_rectangle,
-	'qdrt' : bounding_rectangle,
-	'comp' : double_integer,
-	'lfxd' : long_fixed,
-	'null' : null,
-	'targ' : target_id,
 	'cpar' : paragraph,
 	'cha ' : character,
 	'cflo' : text_flow,
@@ -453,6 +406,53 @@ _classdeclarations = {
 	'sep ' : September,
 	'fss ' : file_specification,
 	'ctxt' : text,
+	'cwin' : window,
+	'file' : file,
+	'csel' : selection_2d_object,
+	'alis' : alias,
+	'capp' : application,
+	'cins' : insertion_point,
+	'docu' : document,
+	'shor' : small_integer,
+	'tr16' : RGB16_color,
+	'vers' : version,
+	'aeut' : system_dictionary,
+	'clrt' : color_table,
+	'fpnt' : fixed_point,
+	'TEXT' : plain_text,
+	'elin' : type_element_info,
+	'insl' : location_reference,
+	'mLoc' : machine_location,
+	'EPS ' : PostScript_picture,
+	'QDpt' : point,
+	'cmen' : menu_item,
+	'tpmm' : pixel_map_record,
+	'aete' : application_dictionary,
+	'magn' : unsigned_integer,
+	'cmnu' : menu,
+	'frct' : fixed_rectangle,
+	'lfrc' : long_fixed_rectangle,
+	'evin' : type_event_info,
+	'sing' : small_real,
+	'suin' : type_suite_info,
+	'trot' : rotation,
+	'pmin' : type_parameter_info,
+	'fixd' : fixed,
+	'styl' : scrap_styles,
+	'lpnt' : long_point,
+	'gcli' : type_class_info,
+	'TIFF' : TIFF_picture,
+	'tr96' : RGB96_color,
+	'tdas' : dash_style,
+	'exte' : extended_real,
+	'pinf' : type_property_info,
+	'lfpt' : long_fixed_point,
+	'lrct' : long_rectangle,
+	'qdrt' : bounding_rectangle,
+	'comp' : double_integer,
+	'lfxd' : long_fixed,
+	'null' : null,
+	'targ' : target_id,
 }
 
 

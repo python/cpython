@@ -457,22 +457,22 @@ aliases = alias
 class application(aetools.ComponentItem):
 	"""application - An application program """
 	want = 'capp'
-class name(aetools.NProperty):
-	"""name - the name of the application """
-	which = 'pnam'
-	want = 'itxt'
-class frontmost(aetools.NProperty):
-	"""frontmost - Is this the frontmost application? """
-	which = 'pisf'
-	want = 'bool'
-class selection(aetools.NProperty):
-	"""selection - the selection visible to the user.  Use the \xd4select\xd5 command to set a new selection; use \xd4contents of selection\xd5 to get or change information in the document. """
-	which = 'sele'
-	want = 'csel'
 class clipboard(aetools.NProperty):
 	"""clipboard - the contents of the clipboard for this application """
 	which = 'pcli'
 	want = '****'
+class frontmost(aetools.NProperty):
+	"""frontmost - Is this the frontmost application? """
+	which = 'pisf'
+	want = 'bool'
+class name(aetools.NProperty):
+	"""name - the name of the application """
+	which = 'pnam'
+	want = 'itxt'
+class selection(aetools.NProperty):
+	"""selection - the selection visible to the user.  Use the \xd4select\xd5 command to set a new selection; use \xd4contents of selection\xd5 to get or change information in the document. """
+	which = 'sele'
+	want = 'csel'
 class version(aetools.NProperty):
 	"""version - the version of the application """
 	which = 'vers'
@@ -525,18 +525,14 @@ class closeable(aetools.NProperty):
 	"""closeable - Does the window have a close box? """
 	which = 'hclb'
 	want = 'bool'
-class titled(aetools.NProperty):
-	"""titled - Does the window have a title bar? """
-	which = 'ptit'
+class floating(aetools.NProperty):
+	"""floating - Does the window float? """
+	which = 'isfl'
 	want = 'bool'
 class index(aetools.NProperty):
 	"""index - the number of the window """
 	which = 'pidx'
 	want = 'long'
-class floating(aetools.NProperty):
-	"""floating - Does the window float? """
-	which = 'isfl'
-	want = 'bool'
 class modal(aetools.NProperty):
 	"""modal - Is the window modal? """
 	which = 'pmod'
@@ -545,6 +541,14 @@ class resizable(aetools.NProperty):
 	"""resizable - Is the window resizable? """
 	which = 'prsz'
 	want = 'bool'
+class titled(aetools.NProperty):
+	"""titled - Does the window have a title bar? """
+	which = 'ptit'
+	want = 'bool'
+class visible(aetools.NProperty):
+	"""visible - Is the window visible? """
+	which = 'pvis'
+	want = 'bool'
 class zoomable(aetools.NProperty):
 	"""zoomable - Is the window zoomable? """
 	which = 'iszm'
@@ -552,10 +556,6 @@ class zoomable(aetools.NProperty):
 class zoomed(aetools.NProperty):
 	"""zoomed - Is the window zoomed? """
 	which = 'pzum'
-	want = 'bool'
-class visible(aetools.NProperty):
-	"""visible - Is the window visible? """
-	which = 'pvis'
 	want = 'bool'
 
 windows = window
@@ -566,10 +566,10 @@ alias._privelemdict = {
 }
 application._superclassnames = []
 application._privpropdict = {
-	'name' : name,
-	'frontmost' : frontmost,
-	'selection' : selection,
 	'clipboard' : clipboard,
+	'frontmost' : frontmost,
+	'name' : name,
+	'selection' : selection,
 	'version' : version,
 }
 application._privelemdict = {
@@ -601,14 +601,14 @@ window._superclassnames = []
 window._privpropdict = {
 	'bounds' : bounds,
 	'closeable' : closeable,
-	'titled' : titled,
-	'index' : index,
 	'floating' : floating,
+	'index' : index,
 	'modal' : modal,
 	'resizable' : resizable,
+	'titled' : titled,
+	'visible' : visible,
 	'zoomable' : zoomable,
 	'zoomed' : zoomed,
-	'visible' : visible,
 }
 window._privelemdict = {
 }
@@ -663,49 +663,49 @@ _Enum_styl = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'cwin' : window,
-	'file' : file,
-	'csel' : selection_2d_object,
 	'alis' : alias,
 	'capp' : application,
 	'cins' : insertion_point,
+	'csel' : selection_2d_object,
+	'cwin' : window,
 	'docu' : document,
+	'file' : file,
 }
 
 _propdeclarations = {
-	'prsz' : resizable,
-	'vers' : version,
-	'pidx' : index,
-	'pvis' : visible,
+	'hclb' : closeable,
 	'imod' : modified,
-	'pbnd' : bounds,
-	'sele' : selection,
-	'pisf' : frontmost,
-	'pspd' : stationery,
 	'isfl' : floating,
 	'iszm' : zoomable,
-	'hclb' : closeable,
+	'pbnd' : bounds,
 	'pcli' : clipboard,
-	'pmod' : modal,
 	'pcnt' : contents,
+	'pidx' : index,
+	'pisf' : frontmost,
+	'pmod' : modal,
 	'pnam' : name,
-	'pzum' : zoomed,
+	'prsz' : resizable,
+	'pspd' : stationery,
 	'ptit' : titled,
+	'pvis' : visible,
+	'pzum' : zoomed,
+	'sele' : selection,
+	'vers' : version,
 }
 
 _compdeclarations = {
 	'<   ' : _3c_,
-	'ends' : ends_with,
-	'>=  ' : _b3_,
-	'cont' : contains,
 	'<=  ' : _b2_,
 	'=   ' : _3d_,
-	'bgwt' : starts_with,
 	'>   ' : _3e_,
+	'>=  ' : _b3_,
+	'bgwt' : starts_with,
+	'cont' : contains,
+	'ends' : ends_with,
 }
 
 _enumdeclarations = {
+	'kfrm' : _Enum_kfrm,
 	'savo' : _Enum_savo,
 	'styl' : _Enum_styl,
-	'kfrm' : _Enum_kfrm,
 }
