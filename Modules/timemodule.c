@@ -84,6 +84,35 @@ static double floattime(void);
 /* For Y2K check */
 static PyObject *moddict;
 
+/* Cast double x to time_t, but raise ValueError if x is too large
+ * to fit in a time_t.  ValueError is set on return iff the return
+ * value is (time_t)-1 and PyErr_Occurred().
+ */
+static time_t
+_PyTime_DoubleToTimet(double x)
+{
+	time_t result;
+	double diff;
+
+	result = (time_t)x;
+	/* How much info did we lose?  time_t may be an integral or
+	 * floating type, and we don't know which.  If it's integral,
+	 * we don't know whether C truncates, rounds, returns the floor,
+	 * etc.  If we lost a second or more, the C rounding is
+	 * unreasonable, or the input just doesn't fit in a time_t;
+	 * call it an error regardless.  Note that the original cast to
+	 * time_t can cause a C error too, but nothing we can do to
+	 * worm around that.
+	 */
+	diff = x - (double)result;
+	if (diff <= -1.0 || diff >= 1.0) {
+		PyErr_SetString(PyExc_ValueError,
+		                "timestamp out of range for platform time_t");
+		result = (time_t)-1;
+	}
+	return result;
+}
+
 static PyObject *
 time_time(PyObject *self, PyObject *args)
 {
@@ -231,11 +260,15 @@ tmtotuple(struct tm *p)
 }
 
 static PyObject *
-time_convert(time_t when, struct tm * (*function)(const time_t *))
+time_convert(double when, struct tm * (*function)(const time_t *))
 {
 	struct tm *p;
+	time_t whent = _PyTime_DoubleToTimet(when);
+
+	if (whent == (time_t)-1 && PyErr_Occurred())
+		return NULL;
 	errno = 0;
-	p = function(&when);
+	p = function(&whent);
 	if (p == NULL) {
 #ifdef EINVAL
 		if (errno == 0)
@@ -254,7 +287,7 @@ time_gmtime(PyObject *self, PyObject *args)
 		when = floattime();
 	if (!PyArg_ParseTuple(args, "|d:gmtime", &when))
 		return NULL;
-	return time_convert((time_t)when, gmtime);
+	return time_convert(when, gmtime);
 }
 
 PyDoc_STRVAR(gmtime_doc,
@@ -272,7 +305,7 @@ time_localtime(PyObject *self, PyObject *args)
 		when = floattime();
 	if (!PyArg_ParseTuple(args, "|d:localtime", &when))
 		return NULL;
-	return time_convert((time_t)when, localtime);
+	return time_convert(when, localtime);
 }
 
 PyDoc_STRVAR(localtime_doc,
@@ -480,7 +513,9 @@ time_ctime(PyObject *self, PyObject *args)
 	else {
 		if (!PyArg_ParseTuple(args, "|d:ctime", &dt))
 			return NULL;
-		tt = (time_t)dt;
+		tt = _PyTime_DoubleToTimet(dt);
+		if (tt == (time_t)-1 && PyErr_Occurred())
+			return NULL;
 	}
 	p = ctime(&tt);
 	if (p == NULL) {
