@@ -225,6 +225,20 @@ sub do_cmd_deprecated{
     "<b>Deprecated since release $release.</b>\n$reason<p>" . $_;
 }
 
+sub do_cmd_versionadded{
+    # one parameter:  \versionadded{version}
+    local($_) = @_;
+    my $release = next_argument();
+    "<b>New in version $release.</b><p>" . $_;
+}
+
+sub do_cmd_versionchanged{
+    # one parameter:  \versionchanged{version}
+    local($_) = @_;
+    my $release = next_argument();
+    "<b>Changed in version $release.</b><p>" . $_;
+}
+
 # file and samp are at the end of this file since they screw up fontlock.
 
 # index commands
