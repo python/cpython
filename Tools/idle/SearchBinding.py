@@ -36,6 +36,7 @@ class SearchBinding:
 
     unix_keydefs = {
         '<<find-again>>': ['<Control-u><Control-s>'],
+        '<<find-in-files>>': ['<Alt-s>', '<Meta-s>'],
         '<<find-selection>>': ['<Control-s>'],
         '<<find>>': ['<Control-u><Control-u><Control-s>'],
         '<<goto-line>>': ['<Alt-g>', '<Meta-g>'],
