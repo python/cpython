@@ -51,6 +51,5 @@ while (<>) {
 }
 
 foreach $oldname (keys %newnames) {
-# or ln -s
-  system("mv $oldname $newnames{$oldname}");
+  rename($oldname, $newnames{$oldname});
 }
