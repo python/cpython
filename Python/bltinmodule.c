@@ -308,6 +308,28 @@ builtin_complex(self, args)
 			   "complex() argument can't be converted to complex");
 		return NULL;
 	}
+	/* XXX Hack to support classes with __complex__ method */
+	if (is_instanceobject(r)) {
+		static object *complexstr;
+		object *f;
+		if (complexstr == NULL) {
+			complexstr = newstringobject("__complex__");
+			if (complexstr == NULL)
+				return NULL;
+		}
+		f = getattro(r, complexstr);
+		if (f == NULL)
+			err_clear();
+		else {
+			object *args = mkvalue("()");
+			if (args == NULL)
+				return NULL;
+			r = call_object(f, args);
+			DECREF(args);
+			if (r == NULL)
+				return NULL;
+		}
+	}
 	if (is_complexobject(r))
 		cr = ((complexobject*)r)->cval;
 	else {
@@ -632,7 +654,7 @@ builtin_map(self, args)
 
 	/* XXX Special case map(None, single_list) could be more efficient */
 	for (i = 0; ; ++i) {
-		object *alist, *item, *value;
+		object *alist, *item=NULL, *value;
 		int any = 0;
 
 		if (func == None && n == 1)
