@@ -32,24 +32,26 @@ instead of the 8-bit number used by ASCII, meaning that 65,536
 distinct characters can be supported.
 
 The final interface for Unicode support was arrived at through
-countless often-stormy discussions on the python-dev mailing list.  A
-detailed explanation of the interface is in \file{Misc/unicode.txt} in
-the Python source distribution; this file is also available on the Web
-at \url{http://starship.python.net/crew/lemburg/unicode-proposal.txt}.
+countless often-stormy discussions on the python-dev mailing list, and
+mostly implemented by Marc-Andr\'e Lemburg.  A detailed explanation of
+the interface is in the file
+\file{Misc/unicode.txt} in the Python source distribution; it's also
+available on the Web at
+\url{http://starship.python.net/crew/lemburg/unicode-proposal.txt}.
 This article will simply cover the most significant points from the
 full interface.
 
 In Python source code, Unicode strings are written as
 \code{u"string"}.  Arbitrary Unicode characters can be written using a
-new escape sequence, \code{\\u\var{HHHH}}, where \var{HHHH} is a
+new escape sequence, \code{\e u\var{HHHH}}, where \var{HHHH} is a
 4-digit hexadecimal number from 0000 to FFFF.  The existing
-\code{\\x\var{HHHH}} escape sequence can also be used, and octal
+\code{\e x\var{HHHH}} escape sequence can also be used, and octal
 escapes can be used for characters up to U+01FF, which is represented
-by \code{\\777}.
+by \code{\e 777}.
 
 Unicode strings, just like regular strings, are an immutable sequence
 type, so they can be indexed and sliced.  They also have an
-\method{encode( \optional{encoding} )} method that returns an 8-bit
+\method{encode( \optional{\var{encoding}} )} method that returns an 8-bit
 string in the desired encoding.  Encodings are named by strings, such
 as \code{'ascii'}, \code{'utf-8'}, \code{'iso-8859-1'}, or whatever.
 A codec API is defined for implementing and registering new encodings
@@ -70,11 +72,9 @@ long, containing the character \var{ch}.
 
 \item \code{ord(\var{u})}, where \var{u} is a 1-character regular or Unicode string, returns the number of the character as an integer.
 
-\item \code{unicode(\var{string}, \optional{encoding = '\var{encoding
-string}', } \optional{errors = 'strict' \textit{or} 'ignore'
-\textit{or} 'replace'} ) } creates a Unicode string from an 8-bit
+\item \code{unicode(\var{string}, \optional{\var{encoding},} 
+\optional{\var{errors}} ) } creates a Unicode string from an 8-bit
 string.  \code{encoding} is a string naming the encoding to use.
-
 The \code{errors} parameter specifies the treatment of characters that
 are invalid for the current encoding; passing \code{'strict'} as the
 value causes an exception to be raised on any encoding error, while
@@ -88,15 +88,15 @@ A new module, \module{unicodedata}, provides an interface to Unicode
 character properties.  For example, \code{unicodedata.category(u'A')}
 returns the 2-character string 'Lu', the 'L' denoting it's a letter,
 and 'u' meaning that it's uppercase.
-\code{u.bidirectional(u'\x0660')} returns 'AN', meaning that U+0660 is
+\code{u.bidirectional(u'\e x0660')} returns 'AN', meaning that U+0660 is
 an Arabic number.
 
-The \module{codecs} module contains coders and decoders for various
-encodings, along with functions to register new encodings and look up
-existing ones.  Unless you want to implement a new encoding, you'll
-most often use the \function{codecs.lookup(\var{encoding})} function,
-which returns a 4-element tuple: \code{(\var{encode_func},
-\var{decode_func}, \var{stream_reader}, \var{stream_writer}.
+The \module{codecs} module contains functions to look up existing encodings
+and register new ones.  Unless you want to implement a
+new encoding, you'll most often use the
+\function{codecs.lookup(\var{encoding})} function, which returns a
+4-element tuple: \code{(\var{encode_func},
+\var{decode_func}, \var{stream_reader}, \var{stream_writer})}.
 
 \begin{itemize}
 \item \var{encode_func} is a function that takes a Unicode string, and
@@ -166,7 +166,7 @@ installation instructions
 
 The SIG for distribution utilities, shepherded by Greg Ward, has
 created the Distutils, a system to make package installation much
-easier.  They form the \package{distutils} package, a new part of
+easier.  They form the \module{distutils} package, a new part of
 Python's standard library. In the best case, installing a Python
 module from source will require the same steps: first you simply mean
 unpack the tarball or zip archive, and the run ``\code{python setup.py
@@ -365,7 +365,7 @@ handy conveniences.
 
 A change to syntax makes it more convenient to call a given function
 with a tuple of arguments and/or a dictionary of keyword arguments.
-In Python 1.5 and earlier, you do this with the \builtin{apply()}
+In Python 1.5 and earlier, you do this with the \function{apply()}
 built-in function: \code{apply(f, \var{args}, \var{kw})} calls the
 function \function{f()} with the argument tuple \var{args} and the
 keyword arguments in the dictionary \var{kw}.  Thanks to a patch from
@@ -380,29 +380,29 @@ def f(*args, **kw):
     ...
 \end{verbatim}
 
-A new format style is available when using the \operator{\%} operator.
+A new format style is available when using the \code{\%} operator.
 '\%r' will insert the \function{repr()} of its argument.  This was
 also added from symmetry considerations, this time for symmetry with
 the existing '\%s' format style, which inserts the \function{str()} of
-its argument.  For example, \code{'%r %s' % ('abc', 'abc')} returns a
+its argument.  For example, \code{'\%r \%s' \% ('abc', 'abc')} returns a
 string containing \verb|'abc' abc|.
 
-The \builtin{int()} and \builtin{long()} functions now accept an
+The \function{int()} and \function{long()} functions now accept an
 optional ``base'' parameter when the first argument is a string.
 \code{int('123', 10)} returns 123, while \code{int('123', 16)} returns
 291.  \code{int(123, 16)} raises a \exception{TypeError} exception
 with the message ``can't convert non-string with explicit base''.
 
 Previously there was no way to implement a class that overrode
-Python's built-in \operator{in} operator and implemented a custom
+Python's built-in \keyword{in} operator and implemented a custom
 version.  \code{\var{obj} in \var{seq}} returns true if \var{obj} is
 present in the sequence \var{seq}; Python computes this by simply
 trying every index of the sequence until either \var{obj} is found or
 an \exception{IndexError} is encountered.  Moshe Zadka contributed a
 patch which adds a \method{__contains__} magic method for providing a
-custom implementation for \operator{in}. Additionally, new built-in objects
-can define what \operator{in} means for them via a new slot in the sequence
-protocol.
+custom implementation for \keyword{in}. Additionally, new built-in
+objects written in C can define what \keyword{in} means for them via a
+new slot in the sequence protocol.
 
 Earlier versions of Python used a recursive algorithm for deleting
 objects.  Deeply nested data structures could cause the interpreter to
@@ -468,7 +468,7 @@ This means you no longer have to remember to write code such as
 \code{if type(obj) == myExtensionClass}, but can use the more natural
 \code{if isinstance(obj, myExtensionClass)}.
 
-The \file{Python/importdl.c} file, which was a mass of #ifdefs to
+The \file{Python/importdl.c} file, which was a mass of \#ifdefs to
 support dynamic loading on many different platforms, was cleaned up
 are reorganized by Greg Stein.  \file{importdl.c} is now quite small,
 and platform-specific code has been moved into a bunch of
@@ -533,16 +533,12 @@ XXX re - changed to be a frontend to sre
 \section{New modules}
 
 winreg - Windows registry interface.
-Distutils - tools for distributing Python modules
 PyExpat - interface to Expat XML parser
 robotparser - parse a robots.txt file (for writing web spiders)
 linuxaudio - audio for Linux
 mmap - treat a file as a memory buffer
 filecmp - supersedes the old cmp.py and dircmp.py modules
 tabnanny - check Python sources for tab-width dependance
-sre -  regular expressions (fast, supports unicode)
-unicode - support for unicode
-codecs - support for Unicode encoders/decoders
 
 % ======================================================================
 \section{IDLE Improvements}
