@@ -41,6 +41,8 @@ Other options are:
 """
 
 import sys
+import os
+import string
 import sunaudiodev
 from SUNAUDIODEV import *
 
@@ -54,13 +56,34 @@ __version__ = '0.1'
 class MainWindow:
     def __init__(self, device):
         from Tkinter import *
+        self.__helpwin = None
         self.__devctl = device
         info = device.getinfo()
         #
         self.__tkroot = tkroot = Tk(className='Audiopy')
         tkroot.withdraw()
+        # create the menubar
+        menubar = Menu(tkroot)
+        filemenu = Menu(menubar, tearoff=0)
+        filemenu.add_command(label='Quit',
+                             command=self.__quit,
+                             accelerator='Alt-Q',
+                             underline=0)
+        helpmenu = Menu(menubar, name='help', tearoff=0)
+        helpmenu.add_command(label='About Audiopy...',
+                             command=self.__popup_about,
+                             underline=0)
+        helpmenu.add_command(label='Help...',
+                             command=self.__popup_using,
+                             underline=0)
+        menubar.add_cascade(label='File',
+                            menu=filemenu,
+                            underline=0)
+        menubar.add_cascade(label='Help',
+                            menu=helpmenu,
+                            underline=0)
         # now create the top level window
-        root = self.__root = Toplevel(tkroot, class_='Audiopy')
+        root = self.__root = Toplevel(tkroot, class_='Audiopy', menu=menubar)
         root.protocol('WM_DELETE_WINDOW', self.__quit)
         root.title('audiopy ' + __version__)
         root.iconname('audiopy ' + __version__)
@@ -70,7 +93,7 @@ class MainWindow:
         #
         # where does input come from?
         frame = Frame(root, bd=1, relief=RAISED)
-        frame.grid(row=0, column=0, sticky='NSEW')
+        frame.grid(row=1, column=0, sticky='NSEW')
         label = Label(frame, text='Input From:')
         label.grid(row=0, column=0, sticky=E)
         self.__inputvar = IntVar()
@@ -133,7 +156,7 @@ class MainWindow:
         #
         # where does output go to?
         frame = Frame(root, bd=1, relief=RAISED)
-        frame.grid(row=1, column=0, sticky='NSEW')
+        frame.grid(row=2, column=0, sticky='NSEW')
         label = Label(frame, text='Output To:')
         label.grid(row=0, column=0, sticky=E)
         self.__spkvar = IntVar()
@@ -156,10 +179,10 @@ class MainWindow:
                           variable=self.__headvar,
                           onvalue=HEADPHONE,
                           command=self.__pushtodev,
-                          underline=0)
+                          underline=4)
         btn.grid(row=1, column=1, sticky=W)
-        root.bind('<Alt-h>', self.__headphones)
-        root.bind('<Alt-H>', self.__headphones)
+        root.bind('<Alt-p>', self.__headphones)
+        root.bind('<Alt-P>', self.__headphones)
         if not info.o_avail_ports & HEADPHONE:
             btn.configure(state=DISABLED)
         buttons.append(btn)
@@ -186,15 +209,7 @@ class MainWindow:
                 widest = width
         for b in buttons:
             b.configure(width=widest)
-        #
-        # Add quit button
-        frame = Frame(root)
-        frame.grid(row=2, column=0, sticky='EW', ipady=5)
-        btn = Button(frame,
-                     text='Quit',
-                     command=self.__quit,
-                     underline=0)
-        btn.pack(expand=YES)
+        # root bindings
         root.bind('<Alt-q>', self.__quit)
         root.bind('<Alt-Q>', self.__quit)
         #
@@ -217,6 +232,23 @@ class MainWindow:
     def __quit(self, event=None):
         self.__devctl.close()
         self.__root.quit()
+
+    def __popup_about(self, event=None):
+        import tkMessageBox
+        tkMessageBox.showinfo('About Audiopy ' + __version__,
+                              '''\
+Audiopy %s
+Control the Solaris audio device
+
+For information contact
+author: Barry A. Warsaw
+email : bwarsaw@python.org''' % __version__)
+
+    def __popup_using(self, event=None):
+        if not self.__helpwin:
+            self.__helpwin = Helpwin(self.__tkroot, self.__quit)
+        self.__helpwin.deiconify()
+            
 
     def __keepalive(self):
         # Exercise the Python interpreter regularly so keyboard interrupts get
@@ -277,6 +309,55 @@ class MainWindow:
     def start(self):
         self.__keepalive()
         self.__tkroot.mainloop()
+
+
+
+class Helpwin:
+    def __init__(self, master, quitfunc):
+        from Tkinter import *
+        self.__root = root = Toplevel(master, class_='Audiopy')
+        root.protocol('WM_DELETE_WINDOW', self.__withdraw)
+        root.title('Audiopy Help Window')
+        root.iconname('Audiopy Help Window')
+        root.bind('<Alt-q>', quitfunc)
+        root.bind('<Alt-Q>', quitfunc)
+        root.bind('<Alt-w>', self.__withdraw)
+        root.bind('<Alt-W>', self.__withdraw)
+
+        # more elaborate help is available in the README file
+        readmefile = os.path.join(sys.path[0], 'README')
+        try:
+            fp = None
+            try:
+                fp = open(readmefile)
+                contents = fp.read()
+                # wax the last page, it contains Emacs cruft
+                i = string.rfind(contents, '\f')
+                if i > 0:
+                    contents = string.rstrip(contents[:i])
+            finally:
+                if fp:
+                    fp.close()
+        except IOError:
+            sys.stderr.write("Couldn't open audiopy's README, "
+                             'using docstring instead.\n')
+            contents = __doc__ % globals()
+
+        self.__text = text = Text(root, relief=SUNKEN,
+                                  width=80, height=24)
+        text.insert(0.0, contents)
+        scrollbar = Scrollbar(root)
+        scrollbar.pack(fill=Y, side=RIGHT)
+        text.pack(fill=BOTH, expand=YES)
+        text.configure(yscrollcommand=(scrollbar, 'set'))
+        scrollbar.configure(command=(text, 'yview'))
+
+    def __withdraw(self, event=None):
+        self.__root.withdraw()
+
+    def deiconify(self):
+        self.__root.deiconify()
+
 
 
 
