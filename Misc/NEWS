@@ -260,6 +260,8 @@ Library
 
 - Bug #823328: urllib2.py's HTTP Digest Auth support works again.
 
+- Patch #873597: CJK codecs are imported into rank of default codecs.
+
 Tools/Demos
 -----------
 
