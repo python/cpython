@@ -1673,6 +1673,13 @@ class TestMiscellaneous(unittest.TestCase):
            [('Al Person', 'aperson@dom.ain'),
             ('Bud Person', 'bperson@dom.ain')])
 
+    def test_utils_quote_unquote(self):
+        eq = self.assertEqual
+        msg = Message()
+        msg.add_header('content-disposition', 'attachment',
+                       filename='foo\\wacky"name')
+        eq(msg.get_filename(), 'foo\\wacky"name')
+
 
 
 # Test the iterator/generators
