@@ -26,8 +26,12 @@ item: Global
   Variable Description3=Root of Python Build Tree
   Variable Default3=D:\src\Python-1.5
   Variable Flags3=00001001
+  Variable Name4=_DOC_
+  Variable Description4=HTML documentation tree
+  Variable Default4=D:\src\Python-1.5\html
+  Variable Flags4=00001000
 end
-item: Open/Close INSTALL.LOG
+remarked item: Open/Close INSTALL.LOG
   Flags=00000001
 end
 item: Check if File/Dir Exists
@@ -496,90 +500,39 @@ item: Custom Dialog Set
     end
   end
 end
-item: Custom Dialog Set
-  Name=Select Program Manager Group
+item: End Block
+end
+item: Get ProgMan Group
+  Variable=GROUP
+  Window=Select Start Menu Group
+  Description=Select the group where the Python shortcuts are installed in your start menu.  By default, a new group named "Python 1.5" is created.
+  Title=Group name for Python:
+  Default=Python 1.5
+end
+item: Wizard Block
+  Direction Variable=DIRECTION
   Display Variable=DISPLAY
-  item: Dialog
-    Title=%APPTITLE% Installation
-    Title French=Installation de %APPTITLE%
-    Title German=Installation von %APPTITLE%
-    Title Spanish=Instalación de %APPTITLE%
-    Title Italian=Installazione di %APPTITLE%
-    Width=271
-    Height=224
-    Font Name=Helv
-    Font Size=8
-    item: Push Button
-      Rectangle=150 187 195 202
-      Variable=DIRECTION
-      Value=N
-      Create Flags=01010000000000010000000000000001
-      Text=&Next >
-      Text French=&Suite >
-      Text German=&Weiter >
-      Text Spanish=&Siguiente >
-      Text Italian=&Avanti >
-    end
-    item: Push Button
-      Rectangle=105 187 150 202
-      Variable=DIRECTION
-      Value=B
-      Create Flags=01010000000000010000000000000000
-      Flags=0000000000000001
-      Text=< &Back
-      Text French=< &Retour
-      Text German=< &Zurück
-      Text Spanish=< &Atrás
-      Text Italian=< &Indietro
-    end
-    item: Push Button
-      Rectangle=211 187 256 202
-      Action=3
-      Create Flags=01010000000000010000000000000000
-      Text=&Cancel
-      Text French=&Annuler
-      Text German=&Abbrechen
-      Text Spanish=&Cancelar
-      Text Italian=&Annulla
-    end
-    item: Static
-      Rectangle=8 180 256 181
-      Action=3
-      Create Flags=01010000000000000000000000000111
-    end
-    item: Static
-      Rectangle=86 8 258 42
-      Create Flags=01010000000000000000000000000000
-      Flags=0000000000000001
-      Name=Times New Roman
-      Font Style=-24 0 0 0 700 255 0 0 0 3 2 1 18
-      Text=Select ProgMan Group
-      Text French=Sélectionner le groupe du Gestionnaire de programme 
-      Text German=Bestimmung der Programm-Managergruppe
-      Text Spanish=Seleccione grupo del Administrador de programas
-      Text Italian=Selezionare il gruppo ProgMan 
-    end
-    item: Static
-      Rectangle=86 44 256 68
-      Create Flags=01010000000000000000000000000000
-      Text=Enter the name of the Program Manager group to add the %APPTITLE% icons to:
-      Text French=Entrez le nom du groupe du Gestionnaire de programme dans lequel vous souhaitez ajouter les icônes de %APPTITLE% :
-      Text German=Geben Sie den Namen der Programmgruppe ein, der das Symbol %APPTITLE% hinzugefügt werden soll:
-      Text Spanish=Escriba el nombre del grupo del Administrador de programas en el que desea agregar los iconos de %APPTITLE%:
-      Text Italian=Inserire il nome del gruppo Program Manager per aggiungere le icone %APPTITLE% a:
-    end
-    item: Combobox
-      Rectangle=86 69 256 175
-      Variable=GROUP
-      Create Flags=01010000000000010000001000000001
-      Flags=0000000000000001
-      Text=%GROUP%
-      Text French=%GROUP%
-      Text German=%GROUP%
-      Text Spanish=%GROUP%
-      Text Italian=%GROUP%
-    end
-  end
+  Bitmap Pathname=%_WISE_%\DIALOGS\TEMPLATE\WIZARD.BMP
+  X Position=9
+  Y Position=10
+  Filler Color=8421440
+  Dialog=Welcome
+  Dialog=Select Destination Directory
+  Dialog=Select Components
+  Dialog=Select Program Manager Group
+  Variable=
+  Variable=
+  Variable=
+  Variable=EXPLORER
+  Value=
+  Value=
+  Value=
+  Value=1
+  Compare=0
+  Compare=0
+  Compare=0
+  Compare=0
+  Flags=00000011
 end
 item: Custom Dialog Set
   Name=Start Installation
@@ -829,9 +782,33 @@ item: Install File
   Description=Utility Scripts
   Flags=0000000000000010
 end
-item: Install File
-  Source=%_SRC_%\Tools\freeze\*.*
+remarked item: Install File
+  Source=%_SRC_%\Tools\freeze\*.py
   Destination=%MAINDIR%\Tools\freeze
+  Description=Freeze tool
+  Flags=0000000000000010
+end
+remarked item: Install File
+  Source=%_SRC_%\Tools\freeze\*.ini
+  Destination=%MAINDIR%\Tools\freeze
+  Description=Freeze tool
+  Flags=0000000000000010
+end
+remarked item: Install File
+  Source=%_SRC_%\Tools\freeze\*.html
+  Destination=%MAINDIR%\Tools\freeze
+  Description=Freeze tool
+  Flags=0000000000000010
+end
+remarked item: Install File
+  Source=%_SRC_%\Tools\freeze\README
+  Destination=%MAINDIR%\Tools\freeze\README.txt
+  Description=Freeze tool
+  Flags=0000000000000010
+end
+remarked item: Install File
+  Source=%_SRC_%\Python\frozenmain.c
+  Destination=%MAINDIR%\Tools\freeze\frozenmain.c
   Description=Freeze tool
   Flags=0000000000000010
 end
@@ -883,6 +860,36 @@ item: Install File
   Description=IDLE bootstrap script
   Flags=0000000000000010
 end
+item: Install File
+  Source=%_SRC_%\Tools\pynche\*.py
+  Destination=%MAINDIR%\Tools\pynche
+  Description=pynche color editor
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Tools\pynche\X\*.txt
+  Destination=%MAINDIR%\Tools\pynche\X
+  Description=pynche color editor - X files
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Tools\pynche\README
+  Destination=%MAINDIR%\Tools\pynche\README.txt
+  Description=pynche color editor - README
+  Flags=0000000100000010
+end
+item: Install File
+  Source=%_SRC_%\Tools\pynche\pynche
+  Destination=%MAINDIR%\Tools\pynche\pynche.py
+  Description=pynche color editor - main
+  Flags=0000000100000010
+end
+item: Install File
+  Source=%_SRC_%\Tools\pynche\pynche.pyw
+  Destination=%MAINDIR%\Tools\pynche\pynche.pyw
+  Description=pynche color editor - noconsole main
+  Flags=0000000100000010
+end
 item: End Block
 end
 item: If/While Statement
@@ -891,43 +898,43 @@ item: If/While Statement
   Flags=00001010
 end
 item: Install File
-  Source=%_SRC_%\Doc\index.html
+  Source=%_DOC_%\index.html
   Destination=%MAINDIR%\Doc\index.html
   Description=Python Documentation root (HTML)
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\Doc\icons\*.*
+  Source=%_DOC_%\icons\*.*
   Destination=%MAINDIR%\Doc\icons
   Description=Python Documentation (HTML)
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\Doc\tut\*.*
+  Source=%_DOC_%\tut\*.*
   Destination=%MAINDIR%\Doc\tut
   Description=Python Documentation (HTML)
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\Doc\lib\*.*
+  Source=%_DOC_%\lib\*.*
   Destination=%MAINDIR%\Doc\lib
   Description=Python Documentation (HTML)
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\Doc\ext\*.*
+  Source=%_DOC_%\ext\*.*
   Destination=%MAINDIR%\Doc\ext
   Description=Python Documentation (HTML)
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\Doc\api\*.*
+  Source=%_DOC_%\api\*.*
   Destination=%MAINDIR%\Doc\api
   Description=Python Documentation (HTML)
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\Doc\ref\*.*
+  Source=%_DOC_%\ref\*.*
   Destination=%MAINDIR%\Doc\ref
   Description=Python Documentation (HTML)
   Flags=0000000000000010
