@@ -1,4 +1,3 @@
-#! /ufs/guido/bin/sgi/python
 #! /usr/local/bin/python
 
 # Fix Python source files to avoid using 

@@ -1,4 +1,4 @@
-#! /ufs/guido/bin/sgi/python
+#! /usr/local/bin/python
 
 # Given a Python script, create a binary that runs the script.
 # The binary is 100% independent of Python libraries and binaries.
