@@ -163,24 +163,21 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 
 #ifdef MS_WIN32
 	{
-		HINSTANCE hDLL;
+		HINSTANCE hDLL = NULL;
 		char pathbuf[260];
-		if (strchr(pathname, '\\') == NULL &&
-		    strchr(pathname, '/') == NULL)
-		{
-			/* Prefix bare filename with ".\" */
-			char *p = pathbuf;
-			*p = '\0';
-			_getcwd(pathbuf, sizeof pathbuf);
-			if (*p != '\0' && p[1] == ':')
-				p += 2;
-			sprintf(p, ".\\%-.255s", pathname);
-			pathname = pathbuf;
-		}
-		/* Look for dependent DLLs in directory of pathname first */
-		/* XXX This call doesn't exist in Windows CE */
-		hDLL = LoadLibraryEx(pathname, NULL,
-				     LOAD_WITH_ALTERED_SEARCH_PATH);
+		LPTSTR dummy;
+		/* We use LoadLibraryEx so Windows looks for dependent DLLs 
+		    in directory of pathname first.  However, Windows95
+		    can sometimes not work correctly unless the absolute
+		    path is used.  If GetFullPathName() fails, the LoadLibrary
+		    will certainly fail too, so use its error code */
+		if (GetFullPathName(pathname,
+				    sizeof(pathbuf),
+				    pathbuf,
+				    &dummy))
+			/* XXX This call doesn't exist in Windows CE */
+			hDLL = LoadLibraryEx(pathname, NULL,
+					     LOAD_WITH_ALTERED_SEARCH_PATH);
 		if (hDLL==NULL){
 			char errBuf[256];
 			unsigned int errorCode;
