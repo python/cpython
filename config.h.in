@@ -163,8 +163,14 @@
 /* Define if you have the dup2 function.  */
 #undef HAVE_DUP2
 
+/* Define if you have the execv function.  */
+#undef HAVE_EXECV
+
 /* Define if you have the flock function.  */
 #undef HAVE_FLOCK
+
+/* Define if you have the fork function.  */
+#undef HAVE_FORK
 
 /* Define if you have the ftime function.  */
 #undef HAVE_FTIME
@@ -195,6 +201,9 @@
 
 /* Define if you have the hypot function.  */
 #undef HAVE_HYPOT
+
+/* Define if you have the kill function.  */
+#undef HAVE_KILL
 
 /* Define if you have the link function.  */
 #undef HAVE_LINK
