@@ -506,6 +506,7 @@ class Distribution:
         cmd_obj = self.command_obj.get (command)
         if not cmd_obj and create:
             cmd_obj = self.create_command_obj (command)
+            cmd_obj.ensure_ready ()
             self.command_obj[command] = cmd_obj
 
         return cmd_obj
