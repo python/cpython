@@ -156,7 +156,7 @@ python:		Makefiles
 		done
 
 # Test the interpreter (twice, once without .pyc files, once with)
-TESTPATH=	$(srcdir)/Lib:$(srcdir)/Lib/test:./Modules
+TESTPATH=	$(srcdir)/Lib:$(srcdir)/Lib/$(MACHDEP):$(srcdir)/Lib/test:./Modules
 TESTOPTS=	
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
 test:		python
