@@ -283,10 +283,10 @@ def test_main(verbose=None):
     # verify reference counting
     import sys
     if verbose and hasattr(sys, "gettotalrefcount"):
-        counts = []
-        for i in xrange(5):
+        counts = [None] * 5
+        for i in xrange(len(counts)):
             test_support.run_suite(suite)
-            counts.append(sys.gettotalrefcount()-i)
+            counts[i] = sys.gettotalrefcount()
         print counts
 
 if __name__ == "__main__":
