@@ -17,6 +17,8 @@
 
 #define TYPE_NULL	'0'
 #define TYPE_NONE	'N'
+#define TYPE_FALSE	'F'
+#define TYPE_TRUE	'T'
 #define TYPE_STOPITER	'S'
 #define TYPE_ELLIPSIS   '.'
 #define TYPE_INT	'i'
@@ -125,6 +127,12 @@ w_object(PyObject *v, WFILE *p)
 	}
 	else if (v == Py_Ellipsis) {
 	        w_byte(TYPE_ELLIPSIS, p);
+	}
+	else if (v == Py_False) {
+	        w_byte(TYPE_FALSE, p);
+	}
+	else if (v == Py_True) {
+	        w_byte(TYPE_TRUE, p);
 	}
 	else if (PyInt_Check(v)) {
 		long x = PyInt_AS_LONG((PyIntObject *)v);
@@ -397,6 +405,14 @@ r_object(RFILE *p)
 	case TYPE_ELLIPSIS:
 		Py_INCREF(Py_Ellipsis);
 		return Py_Ellipsis;
+
+	case TYPE_FALSE:
+		Py_INCREF(Py_False);
+		return Py_False;
+
+	case TYPE_TRUE:
+		Py_INCREF(Py_True);
+		return Py_True;
 
 	case TYPE_INT:
 		return PyInt_FromLong(r_long(p));

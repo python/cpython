@@ -162,7 +162,7 @@ complex numbers:
 These represent elements from the mathematical set of whole numbers.
 \obindex{integer}
 
-There are two types of integers:
+There are three types of integers:
 
 \begin{description}
 
@@ -186,6 +186,17 @@ a binary representation is assumed, and negative numbers are
 represented in a variant of 2's complement which gives the illusion of
 an infinite string of sign bits extending to the left.
 \obindex{long integer}
+
+\item[Booleans]
+These represent the truth values False and True.  The two objects
+representing the values False and True are the only Boolean objects.
+The Boolean type is a subtype of plain integers, and Boolean values
+behave like the values 0 and 1, respectively, in almost all contexts,
+the exception being that when converted to a string, the strings
+\code{"False"} or \code{"True"} are returned, respectively.
+\obindex{Boolean}
+\ttindex{False}
+\ttindex{True}
 
 \end{description} % Integers
 
@@ -221,6 +232,7 @@ and \code{z.imag}.
 \indexii{complex}{number}
 
 \end{description} % Numbers
+
 
 \item[Sequences]
 These represent finite ordered sets indexed by non-negative numbers.
@@ -1074,8 +1086,10 @@ wrong hash bucket).
 \end{methoddesc}
 
 \begin{methoddesc}[object]{__nonzero__}{self}
-Called to implement truth value testing; should return \code{0} or
-\code{1}.  When this method is not defined, \method{__len__()} is
+Called to implement truth value testing, and the built-in operation
+\code{bool()}; should return \code{False} or \code{True}, or their
+integer equivalents \code{0} or \code{1}.
+When this method is not defined, \method{__len__()} is
 called, if it is defined (see below).  If a class defines neither
 \method{__len__()} nor \method{__nonzero__()}, all its instances are
 considered true.

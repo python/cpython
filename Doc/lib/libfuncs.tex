@@ -77,6 +77,16 @@ def my_import(name):
   to \code{\var{function}(*\var{args}, **\var{keywords})}.
 \end{funcdesc}
 
+\begin{funcdesc}{bool}{x}
+  Convert a value to a Boolean, using the standard truth testing
+  procedure.  If \code{x} is false, this returns \code{False};
+  otherwise it returns \code{True}.  \code{bool} is also a class,
+  which is a subclass of \code{int}.  Class \code{bool} cannot be
+  subclassed further.  Its only instances are \code{False} and
+  \code{True}.
+\indexii{Boolean}{type}
+\end{funcdesc}
+
 \begin{funcdesc}{buffer}{object\optional{, offset\optional{, size}}}
   The \var{object} argument must be an object that supports the buffer
   call interface (such as strings, arrays, and buffers).  A new buffer

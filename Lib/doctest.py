@@ -545,19 +545,19 @@ def is_private(prefix, base):
     does not both begin and end with (at least) two underscores.
 
     >>> is_private("a.b", "my_func")
-    0
+    False
     >>> is_private("____", "_my_func")
-    1
+    True
     >>> is_private("someclass", "__init__")
-    0
+    False
     >>> is_private("sometypo", "__init_")
-    1
+    True
     >>> is_private("x.y.z", "_")
-    1
+    True
     >>> is_private("_x.y.z", "__")
-    0
+    False
     >>> is_private("", "")  # senseless but consistent
-    0
+    False
     """
 
     return base[:1] == "_" and not base[:2] == "__" == base[-2:]

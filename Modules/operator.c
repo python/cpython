@@ -102,13 +102,19 @@ used for special class methods; variants without leading and trailing\n\
   PyObject *a1; long r; \
   if(! PyArg_ParseTuple(a,"O:" #OP,&a1)) return NULL; \
   if(-1 == (r=AOP(a1))) return NULL; \
-  return PyInt_FromLong(r); }
+  return PyBool_FromLong(r); }
 
 #define spami2(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2; long r; \
   if(! PyArg_ParseTuple(a,"OO:" #OP,&a1,&a2)) return NULL; \
   if(-1 == (r=AOP(a1,a2))) return NULL; \
   return PyInt_FromLong(r); }
+
+#define spami2b(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
+  PyObject *a1, *a2; long r; \
+  if(! PyArg_ParseTuple(a,"OO:" #OP,&a1,&a2)) return NULL; \
+  if(-1 == (r=AOP(a1,a2))) return NULL; \
+  return PyBool_FromLong(r); }
 
 #define spamrc(OP,A) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2; \
@@ -139,8 +145,8 @@ spam2(op_or_           , PyNumber_Or)
 spami(isSequenceType   , PySequence_Check)
 spam2(op_concat        , PySequence_Concat)
 spamoi(op_repeat       , PySequence_Repeat)
-spami2(op_contains     , PySequence_Contains)
-spami2(sequenceIncludes, PySequence_Contains)
+spami2b(op_contains     , PySequence_Contains)
+spami2b(sequenceIncludes, PySequence_Contains)
 spami2(indexOf         , PySequence_Index)
 spami2(countOf         , PySequence_Count)
 spami(isMappingType    , PyMapping_Check)
@@ -208,11 +214,11 @@ static struct PyMethodDef operator_methods[] = {
 spam1(isCallable,
  "isCallable(a) -- Same as callable(a).")
 spam1(isNumberType,
- "isNumberType(a) -- Return 1 if a has a numeric type, and zero otherwise.")
+ "isNumberType(a) -- Return True if a has a numeric type, False otherwise.")
 spam1(isSequenceType,
- "isSequenceType(a) -- Return 1 if a has a sequence type, and zero otherwise.")
+ "isSequenceType(a) -- Return True if a has a sequence type, False otherwise.")
 spam1(truth,
- "truth(a) -- Return 1 if a is true, and 0 otherwise.")
+ "truth(a) -- Return True if a is true, False otherwise.")
 spam2(contains,__contains__,
  "contains(a, b) -- Same as b in a (note reversed operands).")
 spam1(sequenceIncludes,
@@ -222,7 +228,7 @@ spam1(indexOf,
 spam1(countOf,
  "countOf(a, b) -- Return the number of times b occurs in a.")
 spam1(isMappingType,
- "isMappingType(a) -- Return 1 if a has a mapping type, and zero otherwise.")
+ "isMappingType(a) -- Return True if a has a mapping type, False otherwise.")
 
 spam2(add,__add__, "add(a, b) -- Same as a + b.")
 spam2(sub,__sub__, "sub(a, b) -- Same as a - b.")

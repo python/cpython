@@ -48,7 +48,7 @@ Here's the new type at work:
     >>> print a.__class__               # show its class
     <class 'test.test_descrtut.defaultdict'>
     >>> print type(a) is a.__class__    # its type is its class
-    1
+    True
     >>> a[1] = 3.25                     # modify the instance
     >>> print a                         # show the new value
     {1: 3.25}
@@ -98,14 +98,14 @@ just like classic classes:
     >>> print a["noway"]
     -1000
     >>> 'default' in dir(a)
-    1
+    True
     >>> a.x1 = 100
     >>> a.x2 = 200
     >>> print a.x1
     100
     >>> d = dir(a)
     >>> 'default' in d and 'x1' in d and 'x2' in d
-    1
+    True
     >>> print a.__dict__
     {'default': -1000, 'x2': 200, 'x1': 100}
     >>>
@@ -167,11 +167,11 @@ For instance of built-in types, x.__class__ is now the same as type(x):
     >>> list
     <type 'list'>
     >>> isinstance([], list)
-    1
+    True
     >>> isinstance([], dict)
-    0
+    False
     >>> isinstance([], object)
-    1
+    True
     >>>
 
 Under the new proposal, the __methods__ attribute no longer exists:

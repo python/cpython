@@ -1763,6 +1763,9 @@ _Py_ReadyTypes(void)
 	if (PyType_Ready(&PyType_Type) < 0)
 		Py_FatalError("Can't initialize 'type'");
 
+	if (PyType_Ready(&PyBool_Type) < 0)
+		Py_FatalError("Can't initialize 'bool'");
+
 	if (PyType_Ready(&PyList_Type) < 0)
 		Py_FatalError("Can't initialize 'list'");
 

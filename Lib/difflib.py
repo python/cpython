@@ -976,11 +976,11 @@ def IS_LINE_JUNK(line, pat=re.compile(r"\s*#?\s*$").match):
     Examples:
 
     >>> IS_LINE_JUNK('\n')
-    1
+    True
     >>> IS_LINE_JUNK('  #   \n')
-    1
+    True
     >>> IS_LINE_JUNK('hello\n')
-    0
+    False
     """
 
     return pat(line) is not None
@@ -992,13 +992,13 @@ def IS_CHARACTER_JUNK(ch, ws=" \t"):
     Examples:
 
     >>> IS_CHARACTER_JUNK(' ')
-    1
+    True
     >>> IS_CHARACTER_JUNK('\t')
-    1
+    True
     >>> IS_CHARACTER_JUNK('\n')
-    0
+    False
     >>> IS_CHARACTER_JUNK('x')
-    0
+    False
     """
 
     return ch in ws

@@ -2,10 +2,8 @@
 
 The following sections describe the standard types that are built into
 the interpreter.  These are the numeric types, sequence types, and
-several others, including types themselves.  There is no explicit
-Boolean type; use integers instead.
+several others, including types themselves.
 \indexii{built-in}{types}
-\indexii{Boolean}{type}
 
 Some operations are supported by several object types; in particular,
 all objects can be compared, tested for truth value, and converted to
@@ -30,6 +28,9 @@ The following values are considered false:
 \item	\code{None}
 	\withsubitem{(Built-in object)}{\ttindex{None}}
 
+\item	\code{False}
+	\withsubitem{(Built-in object)}{\ttindex{False}}
+
 \item	zero of any numeric type, for example, \code{0}, \code{0L},
         \code{0.0}, \code{0j}.
 
@@ -50,11 +51,12 @@ always true.
 \index{true}
 
 Operations and built-in functions that have a Boolean result always
-return \code{0} for false and \code{1} for true, unless otherwise
-stated.  (Important exception: the Boolean operations
-\samp{or}\opindex{or} and \samp{and}\opindex{and} always return one of
-their operands.)
-
+return \code{0} or \code{False} for false and \code{1} or \code{True}
+for true, unless otherwise stated.  (Important exception: the Boolean
+operations \samp{or}\opindex{or} and \samp{and}\opindex{and} always
+return one of their operands.)
+\index{False}
+\index{True}
 
 \subsection{Boolean Operations \label{boolean}}
 
@@ -68,7 +70,7 @@ These are the Boolean operations, ordered by ascending priority:
           {if \var{x} is false, then \var{x}, else \var{y}}{(1)}
   \hline
   \lineiii{not \var{x}}
-          {if \var{x} is false, then \code{1}, else \code{0}}{(2)}
+          {if \var{x} is false, then \code{True}, else \code{False}}{(2)}
 \end{tableiii}
 \opindex{and}
 \opindex{or}
@@ -161,8 +163,10 @@ only by sequence types (below).
 
 \subsection{Numeric Types \label{typesnumeric}}
 
-There are four numeric types: \dfn{plain integers}, \dfn{long integers},
+There are four distinct numeric types: \dfn{plain integers},
+\dfn{long integers}, 
 \dfn{floating point numbers}, and \dfn{complex numbers}.
+In addition, Booleans are a subtype of plain integers.
 Plain integers (also just called \dfn{integers})
 are implemented using \ctype{long} in C, which gives them at least 32
 bits of precision.  Long integers have unlimited precision.  Floating
@@ -170,6 +174,7 @@ point numbers are implemented using \ctype{double} in C.  All bets on
 their precision are off unless you happen to know the machine you are
 working with.
 \obindex{numeric}
+\obindex{Boolean}
 \obindex{integer}
 \obindex{long integer}
 \obindex{floating point}
@@ -1388,6 +1393,22 @@ special operations.  There is exactly one ellipsis object, named
 \constant{Ellipsis} (a built-in name).
 
 It is written as \code{Ellipsis}.
+
+\subsubsection{Boolean Values}
+
+Boolean values are the two constant objects \code{False} and
+\code{True}.  They are used to represent truth values (although other
+values can also be considered false or true).  In numeric contexts
+(for example when used as the argument to an arithmetic operator),
+they behave like the integers 0 and 1, respectively.  The built-in
+function \function{bool()} can be used to cast any value to a Boolean,
+if the value can be interpreted as a truth value (see section Truth
+Value Testing above).
+
+They are written as \code{False} and \code{True}, respectively.
+\index{False}
+\index{True}
+\indexii{Boolean}{values}
 
 
 \subsubsection{Internal Objects \label{typesinternal}}

@@ -10,18 +10,6 @@ PyInt_GetMax(void)
 	return LONG_MAX;	/* To initialize sys.maxint */
 }
 
-/* Standard Booleans */
-
-PyIntObject _Py_ZeroStruct = {
-	PyObject_HEAD_INIT(&PyInt_Type)
-	0
-};
-
-PyIntObject _Py_TrueStruct = {
-	PyObject_HEAD_INIT(&PyInt_Type)
-	1
-};
-
 /* Return 1 if exception raised, 0 if caller should retry using longs */
 static int
 err_ovf(char *msg)

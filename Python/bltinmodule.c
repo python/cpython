@@ -130,11 +130,11 @@ extend to the end of the target object (or with the specified size).";
 static PyObject *
 builtin_callable(PyObject *self, PyObject *v)
 {
-	return PyInt_FromLong((long)PyCallable_Check(v));
+	return PyBool_FromLong((long)PyCallable_Check(v));
 }
 
 static char callable_doc[] =
-"callable(object) -> Boolean\n\
+"callable(object) -> bool\n\
 \n\
 Return whether the object is callable (i.e., some kind of function).\n\
 Note that classes are callable, as are instances with a __call__() method.";
@@ -713,7 +713,7 @@ builtin_hasattr(PyObject *self, PyObject *args)
 }
 
 static char hasattr_doc[] =
-"hasattr(object, name) -> Boolean\n\
+"hasattr(object, name) -> bool\n\
 \n\
 Return whether the object has an attribute with the given name.\n\
 (This is done by calling getattr(object, name) and catching exceptions.)";
@@ -1666,11 +1666,11 @@ builtin_isinstance(PyObject *self, PyObject *args)
 	retval = PyObject_IsInstance(inst, cls);
 	if (retval < 0)
 		return NULL;
-	return PyInt_FromLong(retval);
+	return PyBool_FromLong(retval);
 }
 
 static char isinstance_doc[] =
-"isinstance(object, class-or-type-or-tuple) -> Boolean\n\
+"isinstance(object, class-or-type-or-tuple) -> bool\n\
 \n\
 Return whether an object is an instance of a class or of a subclass thereof.\n\
 With a type as second argument, return whether that is the object's type.\n\
@@ -1691,11 +1691,11 @@ builtin_issubclass(PyObject *self, PyObject *args)
 	retval = PyObject_IsSubclass(derived, cls);
 	if (retval < 0)
 		return NULL;
-	return PyInt_FromLong(retval);
+	return PyBool_FromLong(retval);
 }
 
 static char issubclass_doc[] =
-"issubclass(C, B) -> Boolean\n\
+"issubclass(C, B) -> bool\n\
 \n\
 Return whether class C is a subclass (i.e., a derived class) of class B.";
 
@@ -1856,6 +1856,9 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("None",		Py_None);
 	SETBUILTIN("Ellipsis",		Py_Ellipsis);
 	SETBUILTIN("NotImplemented",	Py_NotImplemented);
+	SETBUILTIN("False",		Py_False);
+	SETBUILTIN("True",		Py_True);
+	SETBUILTIN("bool",		&PyBool_Type);
 	SETBUILTIN("classmethod",	&PyClassMethod_Type);
 #ifndef WITHOUT_COMPLEX
 	SETBUILTIN("complex",		&PyComplex_Type);
@@ -1879,7 +1882,7 @@ _PyBuiltin_Init(void)
 #ifdef Py_USING_UNICODE
 	SETBUILTIN("unicode",		&PyUnicode_Type);
 #endif
-	debug = PyInt_FromLong(Py_OptimizeFlag == 0);
+	debug = PyBool_FromLong(Py_OptimizeFlag == 0);
 	if (PyDict_SetItemString(dict, "__debug__", debug) < 0) {
 		Py_XDECREF(debug);
 		return NULL;

@@ -1429,7 +1429,7 @@ dict_has_key(register dictobject *mp, PyObject *key)
 			return NULL;
 	}
 	ok = (mp->ma_lookup)(mp, key, hash)->me_value != NULL;
-	return PyInt_FromLong(ok);
+	return PyBool_FromLong(ok);
 }
 
 static PyObject *
