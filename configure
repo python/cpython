@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.296 
+# From configure.in Revision: 1.297 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -1430,9 +1430,9 @@ then
 	AIX*)
 	   LINKCC="\$(srcdir)/Modules/makexp_aix Modules/python.exp \"\" \$(LIBRARY); $LINKCC";;
 	dgux*)
-	   LINKCC="LD_RUN_PATH=$libdir $(LINKCC)";;
+	   LINKCC="LD_RUN_PATH=$libdir $LINKCC";;
 	Monterey64*)
-	   LINKCC="$(LINKCC) -L/usr/lib/ia64l64";;
+	   LINKCC="$LINKCC -L/usr/lib/ia64l64";;
 	esac
 fi
 echo "$ac_t""$LINKCC" 1>&6
