@@ -600,6 +600,18 @@ get_tzinfo_member(PyObject *self)
 	return tzinfo;
 }
 
+/* self is a datetimetz.  Replace its tzinfo member. */
+void
+replace_tzinfo(PyObject *self, PyObject *newtzinfo)
+{
+	assert(self != NULL);
+	assert(PyDateTimeTZ_Check(self));
+	assert(check_tzinfo_subclass(newtzinfo) >= 0);
+	Py_INCREF(newtzinfo);
+	Py_DECREF(((PyDateTime_DateTimeTZ *)self)->tzinfo);
+	((PyDateTime_DateTimeTZ *)self)->tzinfo = newtzinfo;
+}
+
 /* Internal helper.
  * Call getattr(tzinfo, name)(tzinfoarg), and extract an int from the
  * result.  tzinfo must be an instance of the tzinfo class.  If the method
@@ -2915,10 +2927,7 @@ datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
 				    		TIME_GET_MICROSECOND(time));
 	if (result && PyTimeTZ_Check(time) && PyDateTimeTZ_Check(result)) {
 		/* Copy the tzinfo field. */
-		PyObject *tzinfo = ((PyDateTime_TimeTZ *)time)->tzinfo;
-		Py_INCREF(tzinfo);
-		Py_DECREF(((PyDateTime_DateTimeTZ *)result)->tzinfo);
-		((PyDateTime_DateTimeTZ *)result)->tzinfo = tzinfo;
+		replace_tzinfo(result, ((PyDateTime_TimeTZ *)time)->tzinfo);
 	}
 	return result;
 }
@@ -3247,6 +3256,24 @@ datetime_replace(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
+datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
+{
+	PyObject *tzinfo;
+	static char *keywords[] = {"tz", NULL};
+
+	if (! PyArg_ParseTupleAndKeywords(args, kw, "O:astimezone", keywords,
+					  &tzinfo))
+		return NULL;
+	if (check_tzinfo_subclass(tzinfo) < 0)
+		return NULL;
+	return new_datetimetz(GET_YEAR(self), GET_MONTH(self), GET_DAY(self),
+			      DATE_GET_HOUR(self), DATE_GET_MINUTE(self),
+			      DATE_GET_SECOND(self),
+			      DATE_GET_MICROSECOND(self),
+			      tzinfo);
+}
+
+static PyObject *
 datetime_timetuple(PyDateTime_DateTime *self)
 {
 	return build_struct_time(GET_YEAR(self),
@@ -3396,6 +3423,9 @@ static PyMethodDef datetime_methods[] = {
 
 	{"replace",     (PyCFunction)datetime_replace,	METH_KEYWORDS,
 	 PyDoc_STR("Return datetime with new specified fields.")},
+
+	{"astimezone",  (PyCFunction)datetime_astimezone, METH_KEYWORDS,
+	 PyDoc_STR("tz -> datetimetz with same date & time, and tzinfo=tz\n")},
 
 	{"__setstate__", (PyCFunction)datetime_setstate, METH_O,
 	 PyDoc_STR("__setstate__(state)")},
@@ -4398,20 +4428,6 @@ static PyGetSetDef datetimetz_getset[] = {
  * optional tzinfo argument.
  */
 
-/* Internal helper.
- * self is a datetimetz.  Replace its tzinfo member.
- */
-void
-replace_tzinfo(PyObject *self, PyObject *newtzinfo)
-{
-	assert(self != NULL);
-	assert(newtzinfo != NULL);
-	assert(PyDateTimeTZ_Check(self));
-	Py_INCREF(newtzinfo);
-	Py_DECREF(((PyDateTime_DateTimeTZ *)self)->tzinfo);
-	((PyDateTime_DateTimeTZ *)self)->tzinfo = newtzinfo;
-}
-
 static char *datetimetz_kws[] = {
 	"year", "month", "day", "hour", "minute", "second",
 	"microsecond", "tzinfo", NULL
@@ -4697,6 +4713,53 @@ datetimetz_replace(PyDateTime_DateTimeTZ *self, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
+datetimetz_astimezone(PyDateTime_DateTimeTZ *self, PyObject *args,
+		      PyObject *kw)
+{
+	int y = GET_YEAR(self);
+	int m = GET_MONTH(self);
+	int d = GET_DAY(self);
+	int hh = DATE_GET_HOUR(self);
+	int mm = DATE_GET_MINUTE(self);
+	int ss = DATE_GET_SECOND(self);
+	int us = DATE_GET_MICROSECOND(self);
+
+	PyObject *tzinfo;
+	static char *keywords[] = {"tz", NULL};
+
+	if (! PyArg_ParseTupleAndKeywords(args, kw, "O:astimezone", keywords,
+					  &tzinfo))
+		return NULL;
+	if (check_tzinfo_subclass(tzinfo) < 0)
+		return NULL;
+
+	if (tzinfo != Py_None && self->tzinfo != Py_None) {
+		int none;
+		int selfoffset;
+		selfoffset = call_utcoffset(self->tzinfo,
+					    (PyObject *)self,
+					    &none);
+	        if (selfoffset == -1 && PyErr_Occurred())
+	        	return NULL;
+	        if (! none) {
+			int tzoffset;
+	        	tzoffset = call_utcoffset(tzinfo,
+	        				  (PyObject *)self,
+	        				  &none);
+	        	if (tzoffset == -1 && PyErr_Occurred())
+	        		return NULL;
+	        	if (! none) {
+	        		mm -= selfoffset - tzoffset;
+	        		if (normalize_datetime(&y, &m, &d,
+	        				       &hh, &mm, &ss, &us) < 0)
+	        			return NULL;
+	        	}
+	        }
+	}
+	return new_datetimetz(y, m, d, hh, mm, ss, us, tzinfo);
+}
+
+static PyObject *
 datetimetz_timetuple(PyDateTime_DateTimeTZ *self)
 {
 	int dstflag = -1;
@@ -4907,6 +4970,9 @@ static PyMethodDef datetimetz_methods[] = {
 
 	{"replace",     (PyCFunction)datetimetz_replace,	METH_KEYWORDS,
 	 PyDoc_STR("Return datetimetz with new specified fields.")},
+
+	{"astimezone",  (PyCFunction)datetimetz_astimezone, METH_KEYWORDS,
+	 PyDoc_STR("tz -> convert to local time in new timezone tz\n")},
 
 	{"__setstate__", (PyCFunction)datetimetz_setstate, METH_O,
 	 PyDoc_STR("__setstate__(state)")},

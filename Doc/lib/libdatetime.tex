@@ -601,6 +601,11 @@ Instance methods:
     Return a datetime with the same value, except for those fields given
     new values by whichever keyword arguments are specified.
 
+  - astimezone(tz)
+    Return a \class{datetimetz} with the same date and time fields, and
+    with \member{tzinfo} member \var{tz}.  \var{tz} must be an instance
+    of a \class{tzinfo} subclass.
+
   - timetuple()
     Return a 9-element tuple of the form returned by
     \function{time.localtime()}.
@@ -1082,6 +1087,23 @@ Instance methods:
     new values by whichever keyword arguments are specified.  Note that
     \code{tzinfo=None} can be specified to create a naive datetimetz from
     an aware datetimetz.
+
+  - astimezone(tz)
+    Return a \class{datetimetz} with new tzinfo member \var{tz}.  \var{tz}
+    must be an instance of a \class{tzinfo} subclass.  If self is naive, or
+    if \code(tz.utcoffset(self)} returns \code{None},
+    \code{self.astimezone(tz)} is equivalent to
+    \code{self.replace(tzinfo=tz)}:  a new timezone object is attached
+    without any conversion of date or time fields.  If self is aware and
+    \code{tz.utcoffset(self)} does not return \code{None}, the date and
+    time fields are adjusted so that the result is local time in timezone
+    tz, representing the same UTC time as self.  \code{self.astimezone(tz)}
+    is then equivalent to
+    \begin{verbatim}
+        (self - (self.utcoffset() - tz.utcoffset(self)).replace(tzinfo=tz)
+    \end{verbatim}
+    where the result of \code{tz.uctcoffset(self)} is converted to a
+    \class{timedelta} if it's an integer.
 
   - utcoffset()
     If \member{tzinfo} is \code{None}, returns \code{None}, else

@@ -1295,6 +1295,21 @@ class TestDateTime(TestDate):
         base = cls(2000, 2, 29)
         self.assertRaises(ValueError, base.replace, year=2001)
 
+    def test_astimezone(self):
+        # Pretty boring for a datetime!  datetimetz is more interesting here.
+        dt = self.theclass.now()
+        f = FixedOffset(44, "")
+        for dtz in dt.astimezone(f), dt.astimezone(tz=f):
+            self.failUnless(isinstance(dtz, datetimetz))
+            self.assertEqual(dt.date(), dtz.date())
+            self.assertEqual(dt.time(), dtz.time())
+            self.failUnless(dtz.tzinfo is f)
+            self.assertEqual(dtz.utcoffset(), timedelta(minutes=44))
+
+        self.assertRaises(TypeError, dt.astimezone) # not enough args
+        self.assertRaises(TypeError, dt.astimezone, f, f) # too many args
+        self.assertRaises(TypeError, dt.astimezone, dt) # arg wrong type
+
 
 class TestTime(unittest.TestCase):
 
@@ -2307,6 +2322,44 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
         # Out of bounds.
         base = cls(2000, 2, 29)
         self.assertRaises(ValueError, base.replace, year=2001)
+
+    def test_more_astimezone(self):
+        # The inherited test_astimezone covered some trivial and error cases.
+        fnone = FixedOffset(None, "None")
+        f44m = FixedOffset(44, "44")
+        fm5h = FixedOffset(-timedelta(hours=5), "m300")
+
+        dt = self.theclass.now(tzinfo=f44m)
+        self.failUnless(dt.tzinfo is f44m)
+        # Replacing with degenerate tzinfo doesn't do any adjustment.
+        for x in dt.astimezone(fnone), dt.astimezone(tz=fnone):
+            self.failUnless(x.tzinfo is fnone)
+            self.assertEqual(x.date(), dt.date())
+            self.assertEqual(x.time(), dt.time())
+        # Ditt with None tz.
+        x = dt.astimezone(tz=None)
+        self.failUnless(x.tzinfo is None)
+        self.assertEqual(x.date(), dt.date())
+        self.assertEqual(x.time(), dt.time())
+        # Ditto replacing with same tzinfo.
+        x = dt.astimezone(dt.tzinfo)
+        self.failUnless(x.tzinfo is f44m)
+        self.assertEqual(x.date(), dt.date())
+        self.assertEqual(x.time(), dt.time())
+
+        # Replacing with different tzinfo does adjust.
+        got = dt.astimezone(fm5h)
+        self.failUnless(got.tzinfo is fm5h)
+        self.assertEqual(got.utcoffset(), timedelta(hours=-5))
+        expected = dt - dt.utcoffset()  # in effect, convert to UTC
+        expected += fm5h.utcoffset(dt)  # and from there to local time
+        expected = expected.replace(tzinfo=fm5h) # and attach new tzinfo
+        self.assertEqual(got.date(), expected.date())
+        self.assertEqual(got.time(), expected.time())
+        self.assertEqual(got.timetz(), expected.timetz())
+        self.failUnless(got.tzinfo is expected.tzinfo)
+        self.assertEqual(got, expected)
+
 
 def test_suite():
     allsuites = [unittest.makeSuite(klass, 'test')
