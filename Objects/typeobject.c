@@ -2559,7 +2559,8 @@ slot_sq_contains(PyObject *self, PyObject *value)
 	}
 	else {
 		PyErr_Clear();
-		return _PySequence_IterContains(self, value);
+		return _PySequence_IterSearch(self, value,
+					      PY_ITERSEARCH_CONTAINS);
 	}
 }
 

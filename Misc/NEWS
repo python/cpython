@@ -5,6 +5,9 @@ Core
 
 Library
 
+- operator.indexOf() (PySequence_Index() in the C API) now works with any
+  iterable object.
+
 Tools
 
 Build
