@@ -76,7 +76,7 @@ Test Succeeded testClonePIShallow
 Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testComment
 Passed assertion: len(Node.allnodes) == 0
-Test Succeeded testCreatAttributeNS
+Test Succeeded testCreateAttributeNS
 Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testCreateElementNS
 Passed assertion: len(Node.allnodes) == 0
@@ -120,6 +120,8 @@ Passed testInsertBefore -- node properly placed in tree
 Passed testInsertBefore -- node properly placed in tree
 Passed testInsertBefore -- node properly placed in tree
 Test Succeeded testInsertBefore
+Passed assertion: len(Node.allnodes) == 0
+Test Succeeded testLegalChildren
 Passed assertion: len(Node.allnodes) == 0
 Passed Test
 Passed Test
