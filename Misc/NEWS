@@ -71,7 +71,8 @@ Standard library
   for interactively converting docstrings to HTML or text.
   Tools/scripts/pydoc, which is now automatically installed into
   <prefix>/bin, uses pydoc.py to display documentation; try running
-  'pydoc' for the instructions.
+  "pydoc -h" for instructions.  "pydoc -g" pops up a small GUI that
+  lets you browse the module docstrings using a web browser.
 
 - New library module difflib.py, primarily packaging the SequenceMatcher
   class at the heart of the popular ndiff.py file-comparison tool.
@@ -80,6 +81,10 @@ Standard library
   is now part of the std library.
 
 Windows changes
+
+- A new entry in the Start menu, "Module Docs", runs "pydoc -g" -- a
+  small GUI that lets you browse the module docstrings using your
+  default web browser.
 
 - Import is now case-sensitive.  PEP 235 (Import on Case-Insensitive
   Platforms) is implemented.  See
