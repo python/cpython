@@ -263,6 +263,7 @@ OBJECT_OBJS=	\
 		Objects/methodobject.o \
 		Objects/moduleobject.o \
 		Objects/object.o \
+		Objects/obmalloc.o \
 		Objects/rangeobject.o \
 		Objects/sliceobject.o \
 		Objects/stringobject.o \
@@ -423,8 +424,6 @@ Python/getplatform.o: $(srcdir)/Python/getplatform.c
 
 Python/importdl.o: $(srcdir)/Python/importdl.c
 		$(CC) -c $(CFLAGS) $(CPPFLAGS) -I$(DLINCLDIR) -o $@ $(srcdir)/Python/importdl.c
-
-Objects/object.o: $(srcdir)/Objects/object.c $(srcdir)/Objects/obmalloc.c
 
 Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
 				$(srcdir)/Objects/unicodetype_db.h

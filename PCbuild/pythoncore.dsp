@@ -1268,6 +1268,21 @@ SOURCE=..\Objects\object.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\Objects\obmalloc.c
+
+!IF  "$(CFG)" == "pythoncore - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "pythoncore - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "pythoncore - Win32 Alpha Debug"
+
+!ELSEIF  "$(CFG)" == "pythoncore - Win32 Alpha Release"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\Modules\operator.c
 
 !IF  "$(CFG)" == "pythoncore - Win32 Release"
