@@ -261,7 +261,7 @@ class GNUTranslations(NullTranslations):
             # See if we're looking at GNU .mo conventions for metadata
             if mlen == 0:
                 # Catalog description
-                lastk = None
+                lastk = k = None
                 for item in tmsg.splitlines():
                     item = item.strip()
                     if not item:
