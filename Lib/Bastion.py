@@ -26,9 +26,6 @@ bastion is created.
 
 """
 
-__version__ = '$Revision$'
-# $Source$
-
 
 from types import MethodType
 
