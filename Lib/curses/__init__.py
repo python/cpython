@@ -32,3 +32,10 @@ def initscr():
     
     return stdscr
 
+# Import Python has_key() implementation if _curses doesn't contain has_key()
+
+try:
+    has_key
+except NameError:
+    from has_key import has_key
+
