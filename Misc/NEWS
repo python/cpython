@@ -3,6 +3,16 @@ What's New in Python 2.2a4?
 
 Core
 
+- In 2.2a3, hash() applied to an instance of a subclass of str or unicode
+  always returned 0.  This has been repaired.
+
+- In 2.2a3, an operation on an instance of a subclass of an immutable type
+  (int, long, float, complex, tuple, str, unicode), where the subtype
+  didn't override the operation (and so the operation was handled by the
+  builtin type), could return that instance instead a value of the base
+  type.  For example, if s was of a str sublass type, s[:] returned s
+  as-is.  Now it returns a str with the same value as s.
+
 Library
 
 - operator.indexOf() (PySequence_Index() in the C API) now works with any
