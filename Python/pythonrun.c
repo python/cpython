@@ -149,11 +149,11 @@ Py_Initialize()
 	PyDict_SetItemString(interp->sysdict, "modules",
 			     interp->modules);
 
+	_PyImport_Init();
+
 	/* phase 2 of builtins */
 	_PyBuiltin_Init_2(interp->builtins);
 	_PyImport_FixupExtension("__builtin__", "__builtin__");
-
-	_PyImport_Init();
 
 	initsigs(); /* Signal handling stuff, including initintr() */
 
