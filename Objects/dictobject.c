@@ -129,38 +129,88 @@ is a prime number).  My choice for incr is somewhat arbitrary.
 static mappingentry *lookmapping PROTO((mappingobject *, object *, long));
 static mappingentry *
 lookmapping(mp, key, hash)
-	register mappingobject *mp;
+	mappingobject *mp;
 	object *key;
 	long hash;
 {
-	register int i, incr;
-	register unsigned long sum = (unsigned long) hash;
-	register mappingentry *freeslot = NULL;
-	register int size = mp->ma_size;
-	/* We must come up with (i, incr) such that 0 <= i < ma_size
-	   and 0 < incr < ma_size and both are a function of hash */
-	i = sum % size;
+	/* Optimizations based on observations by Jyrki Alakuijala
+	   (paraphrased):
+
+	   - This routine is very heavily used, so should be AFAP
+	   (As Fast As Possible).
+
+	   - Most of the time, the first try is a hit or a definite
+	   miss; so postpone the calculation of incr until we know the
+	   first try was a miss.
+
+	   - Write the loop twice, so we can move the test for
+	   freeslot==NULL out of the loop.
+
+	   - Write the loop using pointer increments and comparisons
+	   rather than using an integer loop index.
+
+	   Note that it behooves the compiler to calculate the values
+	   of incr*sizeof(*ep) outside the loops and use this in the
+	   increment of ep.  I've reduced the number of register
+	   variables to the two most obvious candidates.
+
+	   */
+
+	register mappingentry *ep;
+	mappingentry *end;
+	register object *ekey;
+	mappingentry *freeslot;
+	unsigned long sum;
+	int incr;
+	int size;
+
+	ep = &mp->ma_table[(unsigned long)hash%mp->ma_size];
+	ekey = ep->me_key;
+	if (ekey == NULL)
+		return ep;
+	if (ekey == dummy)
+		freeslot = ep;
+	else if (ep->me_hash == hash && cmpobject(ekey, key) == 0)
+		return ep;
+	else
+		freeslot = NULL;
+
+	size = mp->ma_size;
+	sum = hash;
 	do {
 		sum = 3*sum + 1;
 		incr = sum % size;
 	} while (incr == 0);
-	for (;;) {
-		register mappingentry *ep = &mp->ma_table[i];
-		if (ep->me_key == NULL) {
-			if (freeslot != NULL)
-				return freeslot;
-			else
+
+	end = mp->ma_table + size;
+
+	if (freeslot == NULL) {
+		for (;;) {
+			ep += incr;
+			if (ep >= end)
+				ep -= size;
+			ekey = ep->me_key;
+			if (ekey == NULL)
+				return ep;
+			if (ekey == dummy) {
+				freeslot = ep;
+				break;
+			}
+			if (ep->me_hash == hash && cmpobject(ekey, key) == 0)
 				return ep;
 		}
-		if (ep->me_key == dummy) {
-			if (freeslot == NULL)
-				freeslot = ep;
-		}
-		else if (ep->me_hash == hash &&
-			 cmpobject(ep->me_key, key) == 0) {
+	}
+
+	for (;;) {
+		ep += incr;
+		if (ep >= end)
+			ep -= size;
+		ekey = ep->me_key;
+		if (ekey == NULL)
+			return freeslot;
+		if (ekey != dummy &&
+		    ep->me_hash == hash && cmpobject(ekey, key) == 0)
 			return ep;
-		}
-		i = (i + incr) % size;
 	}
 }
 
