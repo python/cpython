@@ -84,7 +84,9 @@ extern char *PyMac_StrError PROTO((int));
 #endif /* macintosh */
 
 #ifndef __STDC__
+#ifndef MS_WINDOWS
 extern char *strerror PROTO((int));
+#endif
 #endif
 
 /* Last exception stored by err_setval() */

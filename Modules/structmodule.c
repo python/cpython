@@ -179,7 +179,7 @@ pack_float(x, p, incr)
 	p += incr;
 
 	/* Second byte */
-	*p = ((e&1)<<7) | (fbits>>16);
+	*p = (char) (((e&1)<<7) | (fbits>>16));
 	p += incr;
 
 	/* Third byte */
@@ -255,7 +255,7 @@ pack_double(x, p, incr)
 	p += incr;
 
 	/* Second byte */
-	*p = ((e&0xF)<<4) | (fhi>>24);
+	*p = (char) (((e&0xF)<<4) | (fhi>>24));
 	p += incr;
 
 	/* Third byte */
@@ -508,7 +508,7 @@ np_byte(p, v, f)
 	long x;
 	if (get_long(v, &x) < 0)
 		return -1;
-	*p = x;
+	*p = (char)x;
 	return 0;
 }
 
@@ -536,7 +536,7 @@ np_short(p, v, f)
 	long x;
 	if (get_long(v, &x) < 0)
 		return -1;
-	* (short *)p = x;
+	* (short *)p = (short)x;
 	return 0;
 }
 
@@ -700,7 +700,7 @@ bp_int(p, v, f)
 		return -1;
 	i = f->size;
 	do {
-		p[--i] = x;
+		p[--i] = (char)x;
 		x >>= 8;
 	} while (i > 0);
 	return 0;
@@ -718,7 +718,7 @@ bp_uint(p, v, f)
 		return -1;
 	i = f->size;
 	do {
-		p[--i] = x;
+		p[--i] = (char)x;
 		x >>= 8;
 	} while (i > 0);
 	return 0;
@@ -830,7 +830,7 @@ lp_int(p, v, f)
 		return -1;
 	i = f->size;
 	do {
-		*p++ = x;
+		*p++ = (char)x;
 		x >>= 8;
 	} while (--i > 0);
 	return 0;
@@ -848,7 +848,7 @@ lp_uint(p, v, f)
 		return -1;
 	i = f->size;
 	do {
-		*p++ = x;
+		*p++ = (char)x;
 		x >>= 8;
 	} while (--i > 0);
 	return 0;

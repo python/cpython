@@ -93,12 +93,12 @@ set_seed(r)
 }
 	
 /* Return the next random number in the range [0.0 .. 1.0) */
-static float
+static double
 r_random(r)
 	Rotorobj *r;
 {
 	int x, y, z;
-	float val, term;
+	double val, term;
 
 	x = r->seed[0];
 	y = r->seed[1];
@@ -116,12 +116,12 @@ r_random(r)
 	r->seed[1] = y;
 	r->seed[2] = z;
 
-	term = (float)(
-		(((float)x)/(float)30269.0) + 
-		(((float)y)/(float)30307.0) + 
-		(((float)z)/(float)30323.0)
+	term = (double)(
+		(((double)x)/(double)30269.0) + 
+		(((double)y)/(double)30307.0) + 
+		(((double)z)/(double)30323.0)
 		);
-	val = term - (float)floor((double)term);
+	val = term - (double)floor((double)term);
 
 	if (val >= 1.0)
 		val = 0.0;
@@ -134,7 +134,7 @@ r_rand(r, s)
 	Rotorobj *r;
 	short s;
 {
-	return (short)((short)(r_random(r) * (float)s) % s);
+	return (short)((short)(r_random(r) * (double)s) % s);
 }
 
 static void
@@ -340,7 +340,7 @@ RTR_init(r)
 	RTR_e_rotors(r);
 	RTR_d_rotors(r);
 	for (i = 0; i < r->rotors; i++) {
-		r->positions[i] = r_rand(r,r->size);
+		r->positions[i] = (unsigned char) r_rand(r,r->size);
 		r->advances[i] = (1+(2*(r_rand(r,r->size/2))));
 		RTR_permute_rotor(r,
 				  &(r->e_rotor[(i*r->size)]),
