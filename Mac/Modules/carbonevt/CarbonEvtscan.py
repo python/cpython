@@ -109,8 +109,10 @@ class CarbonEvents_Scanner(Scanner_OSX):
 	def makerepairinstructions(self):
 		return [
 			([("UInt32", 'inSize', "InMode"), ("void_ptr", 'inDataPtr', "InMode")],
-				[("MyInBuffer", 'inDataPtr', "InMode")])
+			 [("MyInBuffer", 'inDataPtr', "InMode")]),
+			([("Boolean", 'ioWasInRgn', "OutMode")],
+			 [("Boolean", 'ioWasInRgn', "InOutMode")]),
 		]
-		
+
 if __name__ == "__main__":
 	main()
