@@ -6,7 +6,7 @@
 #ifndef COMPILER
 
 #ifdef __GNUC__
-#define COMPILER " [GCC " __VERSION__ "]"
+#define COMPILER "\n[GCC " __VERSION__ "]"
 #endif
 
 #endif /* !COMPILER */
