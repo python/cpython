@@ -50,6 +50,12 @@ class TestEmailBase(unittest.TestCase):
 
 # Test various aspects of the Message class's API
 class TestMessageAPI(TestEmailBase):
+    def test_get_all(self):
+        eq = self.assertEqual
+        msg = self._msgobj('msg_20.txt')
+        eq(msg.get_all('cc'), ['ccc@zzz.org', 'ddd@zzz.org', 'eee@zzz.org'])
+        eq(msg.get_all('xx', 'n/a'), 'n/a')
+
     def test_get_charsets(self):
         eq = self.assertEqual
 
