@@ -738,7 +738,9 @@ The original string is returned if
 Return a list of the words in the string, using \var{sep} as the
 delimiter string.  If \var{maxsplit} is given, at most \var{maxsplit}
 splits are done, the \emph{rightmost} ones.  If \var{sep} is not specified
-or \code{None}, any whitespace string is a separator.
+or \code{None}, any whitespace string is a separator.  Except for splitting
+from the right, \method{rsplit()} behaves like \method{split()} which
+is described in detail below.
 \versionadded{2.4}
 \end{methoddesc}
 
@@ -765,11 +767,13 @@ multiple characters (for example, \samp{'1, 2, 3'.split(', ')} returns
 separator returns an empty list.
 
 If \var{sep} is not specified or is \code{None}, a different splitting
-algorithm is applied.  Words are separated by arbitrary length strings of
-whitespace characters (spaces, tabs, newlines, returns, and formfeeds).
-Consecutive whitespace delimiters are treated as a single delimiter
-(\samp{'1   2  3'.split()} returns \samp{['1', '2', '3']}).  Splitting an
-empty string returns \samp{['']}.
+algorithm is applied.  First, whitespace characters (spaces, tabs,
+newlines, returns, and formfeeds) are stripped from both ends.  Then,
+words are separated by arbitrary length strings of whitespace
+characters. Consecutive whitespace delimiters are treated as a single
+delimiter (\samp{'1  2  3'.split()} returns \samp{['1', '2', '3']}).
+Splitting an empty string or a string consisting of just whitespace
+will return \samp{['']}.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{splitlines}{\optional{keepends}}
