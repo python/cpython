@@ -59,8 +59,8 @@ DVIPS=		dvips -f
 MAKEINDEX=	makeindex
 PYTHON=		python
 MAKEINFO=	makeinfo
-L2H=		/ufs/guido/l2h/latex2html
-L2HARGS=	-address $$USER@`domainname` -dont_include myformat
+L2H=		latex2html
+L2HARGS=	-address $$USER@`domainname` -info ""
 
 # Destination directory for output of libwww target.
 PARTPARSE=	$(PYTHON) ./partparse.pyc
