@@ -777,21 +777,19 @@ This has no effect if the element is already present.");
 static PyObject *
 set_remove(PySetObject *so, PyObject *item)
 {
-	PyObject *tmp;
+	PyObject *tmp, *result;
 
-	if (PyDict_DelItem(so->data, item) == -1) {
-		if (!PyType_IsSubtype(item->ob_type, &PySet_Type)) 
-			return NULL;
-		PyErr_Clear();
+	if (PyType_IsSubtype(item->ob_type, &PySet_Type)) {
 		tmp = frozenset_dict_wrapper(((PySetObject *)(item))->data);
 		if (tmp == NULL)
 			return NULL;
-		if (PyDict_DelItem(so->data, tmp) == -1) {
-			Py_DECREF(tmp);
-			return NULL;
-		}
+		result = set_remove(so, tmp);
 		Py_DECREF(tmp);
+		return result;
 	}
+
+	if (PyDict_DelItem(so->data, item) == -1) 
+		return NULL;
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -804,28 +802,21 @@ If the element is not a member, raise a KeyError.");
 static PyObject *
 set_discard(PySetObject *so, PyObject *item)
 {
-	PyObject *tmp;
+	PyObject *tmp, *result;
+
+	if (PyType_IsSubtype(item->ob_type, &PySet_Type)) {
+		tmp = frozenset_dict_wrapper(((PySetObject *)(item))->data);
+		if (tmp == NULL)
+			return NULL;
+		result = set_discard(so, tmp);
+		Py_DECREF(tmp);
+		return result;
+	}
 
 	if (PyDict_DelItem(so->data, item) == -1) {
-		if  (PyErr_ExceptionMatches(PyExc_KeyError))
-			PyErr_Clear();
-		else {
-			if (!PyType_IsSubtype(item->ob_type, &PySet_Type)) 
-				return NULL;
-			PyErr_Clear();
-			tmp = frozenset_dict_wrapper(((PySetObject *)(item))->data);
-			if (tmp == NULL)
-				return NULL;
-			if (PyDict_DelItem(so->data, tmp) == -1) {
-				if  (PyErr_ExceptionMatches(PyExc_KeyError))
-					PyErr_Clear();
-				else {
-					Py_DECREF(tmp);
-					return NULL;
-				}
-			}
-			Py_DECREF(tmp);
-		}
+		if (!PyErr_ExceptionMatches(PyExc_KeyError))
+			return NULL;
+		PyErr_Clear();
 	}
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -916,7 +907,7 @@ static PyMethodDef set_methods[] = {
 	 add_doc},
 	{"clear",	(PyCFunction)set_clear,		METH_NOARGS,
 	 clear_doc},
-	{"__contains__",	(PyCFunction)set_direct_contains,	METH_O | METH_COEXIST,
+	{"__contains__",(PyCFunction)set_direct_contains,	METH_O | METH_COEXIST,
 	 contains_doc},
 	{"copy",	(PyCFunction)set_copy,		METH_NOARGS,
 	 copy_doc},
@@ -1044,7 +1035,7 @@ PyTypeObject PySet_Type = {
 
 
 static PyMethodDef frozenset_methods[] = {
-	{"__contains__",	(PyCFunction)set_direct_contains,	METH_O | METH_COEXIST,
+	{"__contains__",(PyCFunction)set_direct_contains,	METH_O | METH_COEXIST,
 	 contains_doc},
 	{"copy",	(PyCFunction)frozenset_copy,	METH_NOARGS,
 	 copy_doc},
