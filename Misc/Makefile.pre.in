@@ -126,6 +126,9 @@ exec_prefix=	$(prefix)
 
 # === Fixed definitions ===
 
+# Shell used by make (some versions default to the login shell, which is bad)
+SHELL=		/bin/sh
+
 # Expanded directories
 BINDIR=		$(exec_installdir)/bin
 LIBDIR=		$(exec_prefix)/lib
