@@ -1,17 +1,19 @@
-# Conversion functions between RGB and other color systems.
-#
-# Define two functions for each color system XYZ:
-#   rgb_to_xyz(r, g, b) --> x, y, z
-#   xyz_to_rgb(x, y, z) --> r, g, b
-# All inputs and outputs are triples of floats in the range [0.0...1.0].
-# Inputs outside this range may cause exceptions or invalid outputs.
-#
-# Supported color systems:
-# RGB: Red, Green, Blue components
-# YIQ: used by composite video signals
-# HLS: Hue, Luminance, S???
-# HSV: Hue, Saturation, Value(?)
-#
+"""Conversion functions between RGB and other color systems.
+
+This modules provides two functions for each color system ABC:
+
+  rgb_to_abc(r, g, b) --> a, b, c
+  abc_to_rgb(x, y, z) --> r, g, b
+
+All inputs and outputs are triples of floats in the range [0.0...1.0].
+Inputs outside this range may cause exceptions or invalid outputs.
+
+Supported color systems:
+RGB: Red, Green, Blue components
+YIQ: used by composite video signals
+HLS: Hue, Luminance, S???
+HSV: Hue, Saturation, Value(?)
+"""
 # References:
 # XXX Where's the literature?
 
