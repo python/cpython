@@ -1074,6 +1074,13 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
       */
 
 
+DL_IMPORT(int) PyObject_IsInstance(PyObject *object, PyObject *typeorclass);
+      /* isinstance(object, typeorclass) */
+
+DL_IMPORT(int) PyObject_IsSubclass(PyObject *object, PyObject *typeorclass);
+      /* issubclass(object, typeorclass) */
+
+
 #ifdef __cplusplus
 }
 #endif
