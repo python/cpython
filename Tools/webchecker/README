@@ -18,3 +18,6 @@ other options.
 - Nov 1999.  Sam Bayer contributed patches to reintegrate wcnew.py
 into webchecker.py, and corresponding mods to wcgui.py and
 websucker.py.
+
+- Mar 2004.  Chris Herborth contributed a patch to let webchecker.py
+handle XHTML's 'id' attribute.
