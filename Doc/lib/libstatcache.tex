@@ -1,0 +1,53 @@
+\section{\module{statcache} ---
+         An optimization of \function{os.stat()}}
+
+\declaremodule{standard}{statcache}
+\sectionauthor{Moshe Zadka}{mzadka@geocities.com}
+\modulesynopsis{Stat files, and remember results.}
+
+The \module{statcache} module provides a simple optimization to
+\function{os.stat()}: remembering the values of previous invocations.
+
+The \module{statcache} module defines the following functions:
+
+\begin{funcdesc}{stat}{path}
+This is the main module entry-point.
+Identical for \function{os.stat()}, except for remembering the result
+for future invocations of the function.
+\end{funcdesc}
+
+The rest of the functions are used to clear the cache, or parts of
+it.
+
+\begin{funcdesc}{reset}{}
+Clear the cache: forget all results of previous \code{stat}s.
+\end{funcdesc}
+
+\begin{funcdesc}{forget}{path}
+Forget the result of \code{stat(\var{path})}, if any.
+\end{funcdesc}
+
+\begin{funcdesc}{forget_prefix}{prefix}
+Forget all results of \code{stat(\var{path})} for \var{path} starting
+with \var{prefix}.
+\end{funcdesc}
+
+\begin{funcdesc}{forget_dir}{prefix}
+Forget all results of \code{stat(\var{path})} for \var{path} a file in
+the directory \var{prefix}, including \code{stat(\var{prefix})}.
+\end{funcdesc}
+
+\begin{funcdesc}{forget_except_prefix}{prefix}
+Similar to \function{forget_prefix()}, but for all \var{path}
+\emph{not} starting with \var{prefix}.
+\end{funcdesc}
+
+Example:
+
+\begin{verbatim}
+>>> import os, statcache
+>>> statcache.stat('.')
+(16893, 2049, 772, 18, 1000, 1000, 2048, 929609777, 929609777, 929609777)
+>>> os.stat('.')
+(16893, 2049, 772, 18, 1000, 1000, 2048, 929609777, 929609777, 929609777)
+\end{verbatim}
