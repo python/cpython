@@ -28,7 +28,6 @@ try:
     # We can only do this trick on Unix (if tput is on $PATH)!
     if sys.platform != "posix" or not sys.stderr.isatty():
         raise ImportError
-    import curses
     import commands
 except ImportError:
     bwrite = ewrite
