@@ -33,7 +33,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Aliases.h>
 #include <LowMem.h>
 
-#include "nfullpath.h"
 #include "getapplbycreator.h"
 
 #ifdef THINK_C
@@ -406,7 +405,7 @@ mfss_as_pathname(self, args)
 
 	if (!newgetargs(args, ""))
 		return NULL;
-	err = nfullpath(&self->fsspec, strbuf);
+	err = PyMac_GetFullPath(&self->fsspec, strbuf);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
