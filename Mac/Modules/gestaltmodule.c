@@ -25,7 +25,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Macintosh Gestalt interface */
 
 #include "Python.h"
-#include "macglue.h"
+#include "pymactoolbox.h"
 
 #include <Carbon/Carbon.h>
 

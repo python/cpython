@@ -23,7 +23,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include <Carbon/Carbon.h>
 #include "Python.h"
-#include "macglue.h"
 #include "pymactoolbox.h"
 
 /* ----------------------------------------------------- */

@@ -25,8 +25,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Macintosh OS-specific interface */
 
 #include "Python.h"
-#include "macglue.h"
-#include "pythonresources.h"
+#include "pymactoolbox.h"
 
 #include <Carbon/Carbon.h>
 #include <ApplicationServices/ApplicationServices.h>

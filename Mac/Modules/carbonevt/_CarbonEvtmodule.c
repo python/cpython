@@ -5,24 +5,17 @@
 
 
 
-#include <Carbon/Carbon.h>
-
-#include "macglue.h"
+#include "pymactoolbox.h"
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
-		PyErr_SetString(PyExc_NotImplementedError, \
-		"Not available in this shared library/OS version"); \
-		return; \
-	}} while(0)
+        PyErr_SetString(PyExc_NotImplementedError, \
+        "Not available in this shared library/OS version"); \
+        return NULL; \
+    }} while(0)
 
 
-#define USE_MAC_MP_MULTITHREADING 0
-
-#if USE_MAC_MP_MULTITHREADING
-static PyThreadState *_save;
-static MPCriticalRegionID reentrantLock;
-#endif /* USE_MAC_MP_MULTITHREADING */
+#include <Carbon/Carbon.h>
 
 extern int CFStringRef_New(CFStringRef *);
 
@@ -99,11 +92,6 @@ myEventHandler(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject
 	PyObject *retValue;
 	int status;
 
-#if USE_MAC_MP_MULTITHREADING
-	MPEnterCriticalRegion(reentrantLock, kDurationForever);
-	PyEval_RestoreThread(_save);
-#endif /* USE_MAC_MP_MULTITHREADING */
-
 	retValue = PyObject_CallFunction((PyObject *)outPyObject, "O&O&",
 	                                 EventHandlerCallRef_New, handlerRef,
 	                                 EventRef_New, event);
@@ -120,11 +108,6 @@ myEventHandler(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject
 			status = noErr; /* wrong object type, complain? */
 		Py_DECREF(retValue);
 	}
-
-#if USE_MAC_MP_MULTITHREADING
-	_save = PyEval_SaveThread();
-	MPExitCriticalRegion(reentrantLock);
-#endif /* USE_MAC_MP_MULTITHREADING */
 
 	return status;
 }
@@ -1845,6 +1828,17 @@ static PyObject *CarbonEvents_GetEventDispatcherTarget(PyObject *_self, PyObject
 	return _res;
 }
 
+static PyObject *CarbonEvents_RunApplicationEventLoop(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	RunApplicationEventLoop();
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *CarbonEvents_QuitApplicationEventLoop(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -2042,32 +2036,6 @@ static PyObject *CarbonEvents_RegisterEventHotKey(PyObject *_self, PyObject *_ar
 	return _res;
 }
 
-static PyObject *CarbonEvents_RunApplicationEventLoop(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-
-#if USE_MAC_MP_MULTITHREADING
-	if (MPCreateCriticalRegion(&reentrantLock) != noErr) {
-		PySys_WriteStderr("lock failure\n");
-		return NULL;
-	}
-	_save = PyEval_SaveThread();
-#endif /* USE_MAC_MP_MULTITHREADING */
-
-	RunApplicationEventLoop();
-
-#if USE_MAC_MP_MULTITHREADING
-	PyEval_RestoreThread(_save);
-
-	MPDeleteCriticalRegion(reentrantLock);
-#endif /* USE_MAC_MP_MULTITHREADING */
-
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-
-}
-
 static PyMethodDef CarbonEvents_methods[] = {
 	{"GetCurrentEventLoop", (PyCFunction)CarbonEvents_GetCurrentEventLoop, 1,
 	 PyDoc_STR("() -> (EventLoopRef _rv)")},
@@ -2103,6 +2071,8 @@ static PyMethodDef CarbonEvents_methods[] = {
 	 PyDoc_STR("() -> (EventTargetRef _rv)")},
 	{"GetEventDispatcherTarget", (PyCFunction)CarbonEvents_GetEventDispatcherTarget, 1,
 	 PyDoc_STR("() -> (EventTargetRef _rv)")},
+	{"RunApplicationEventLoop", (PyCFunction)CarbonEvents_RunApplicationEventLoop, 1,
+	 PyDoc_STR("() -> None")},
 	{"QuitApplicationEventLoop", (PyCFunction)CarbonEvents_QuitApplicationEventLoop, 1,
 	 PyDoc_STR("() -> None")},
 	{"RunAppModalLoopForWindow", (PyCFunction)CarbonEvents_RunAppModalLoopForWindow, 1,
@@ -2127,8 +2097,6 @@ static PyMethodDef CarbonEvents_methods[] = {
 	 PyDoc_STR("(WindowPtr inWindow) -> (ControlHandle outControl)")},
 	{"RegisterEventHotKey", (PyCFunction)CarbonEvents_RegisterEventHotKey, 1,
 	 PyDoc_STR("(UInt32 inHotKeyCode, UInt32 inHotKeyModifiers, EventHotKeyID inHotKeyID, EventTargetRef inTarget, OptionBits inOptions) -> (EventHotKeyRef outRef)")},
-	{"RunApplicationEventLoop", (PyCFunction)CarbonEvents_RunApplicationEventLoop, 1,
-	 PyDoc_STR("() -> ()")},
 	{NULL, NULL, 0}
 };
 
@@ -2142,7 +2110,6 @@ void init_CarbonEvt(void)
 
 
 
-	PyMac_PRECHECK(NewEventHandlerUPP); /* This can fail if CarbonLib is too old */
 	myEventHandlerUPP = NewEventHandlerUPP(myEventHandler);
 
 
