@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# From configure.in Revision: 1.14 
+# From configure.in Revision: 1.15 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.0 
@@ -1415,7 +1415,7 @@ cat > conftest.$ac_ext <<EOF
 
 int main() { return 0; }
 int t() {
-gethostbyname()
+t_open()
 ; return 0; }
 EOF
 if eval $ac_link; then
@@ -1435,20 +1435,20 @@ if eval "test \"`echo '$ac_cv_lib_'nsl`\" = yes"; then
 else
   echo "$ac_t""no" 1>&4
 fi
- # hosts db interface
+ # SVR4
 echo $ac_n "checking for -linet""... $ac_c" 1>&4
 if eval "test \"`echo '${'ac_cv_lib_inet'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&4
 else
   ac_save_LIBS="$LIBS"
-LIBS="$LIBS -linet "
+LIBS="$LIBS -linet -lnsl"
 cat > conftest.$ac_ext <<EOF
 #line 1447 "configure"
 #include "confdefs.h"
 
 int main() { return 0; }
 int t() {
-???()
+gethostbyname()
 ; return 0; }
 EOF
 if eval $ac_link; then
@@ -1468,13 +1468,13 @@ if eval "test \"`echo '$ac_cv_lib_'inet`\" = yes"; then
 else
   echo "$ac_t""no" 1>&4
 fi
- # SVR4 internet???
+ # Sequent
 echo $ac_n "checking for -lsocket""... $ac_c" 1>&4
 if eval "test \"`echo '${'ac_cv_lib_socket'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&4
 else
   ac_save_LIBS="$LIBS"
-LIBS="$LIBS -lsocket "
+LIBS="$LIBS -lsocket $LIBS"
 cat > conftest.$ac_ext <<EOF
 #line 1480 "configure"
 #include "confdefs.h"

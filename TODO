@@ -1,3 +1,9 @@
+(-) always use my getopt.c
+
+(-) get Extensions/X11/Doc checked in and out
+
+(-) investigate PPRC <URL:ftp://ftp.parc.xerox.com/pub/ppcr/>
+
 (*) add buffering parameter to fdopen() and popen()
 
 (-) "f()=0" generates syntax error msg without line number

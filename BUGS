@@ -6,10 +6,28 @@ nother to make an entry in this file, unless it was a serious bug
 ==> Status indicators: (-) not fixed; (*) fixed; (?) not sure.
 
 ======================================================================
-Known BUGS in 1.1.1 and 1.2
----------------------------
+Known BUGS in 1.2 BETA 1, fixed in 1.2 BETA 2
+---------------------------------------------
 
-(-) a file with unmatched triple quotes causes a loop in the scanner
+(*) list slice assignment contains reantrancy bug
+
+(*) range() and xrange() break on Alpha's
+
+(*) interactive use of vars() gives barrage of output due to recursive
+inclusion of '_'
+
+(*) configure.in contains bogus name to check for inet library
+
+Known BUGS in 1.1.1 and 1.2 BETA 1
+----------------------------------
+
+(*) a file with unmatched triple quotes causes a loop in the scanner
+
+(-) still a memory leak in threads; bigger when thread.exit_thread()
+is used
+
+Problems in 1.1.1 that are difficult to solve
+---------------------------------------------
 
 (-) tkinter seems to leave an exception around sometime which breaks
 unmarshalling code objects [hard to reproduce, have added a trap to
