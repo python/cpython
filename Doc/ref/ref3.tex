@@ -610,7 +610,8 @@ is a shorthand for \code{x.__call__(arguments)}.
 
 \item[Modules]
 Modules are imported by the \keyword{import} statement (see
-section~\ref{import}, ``The \keyword{import} statement'').
+section~\ref{import}, ``The \keyword{import} statement'').%
+\stindex{import}\obindex{module}
 A module object has a namespace implemented by a dictionary object
 (this is the dictionary referenced by the func_globals attribute of
 functions defined in the module).  Attribute references are translated
@@ -619,8 +620,6 @@ to lookups in this dictionary, e.g., \code{m.x} is equivalent to
 A module object does not contain the code object used to
 initialize the module (since it isn't needed once the initialization
 is done).
-\stindex{import}
-\obindex{module}
 
 Attribute assignment updates the module's namespace dictionary,
 e.g., \samp{m.x = 1} is equivalent to \samp{m.__dict__["x"] = 1}.

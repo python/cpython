@@ -660,18 +660,16 @@ given as \code{sys.path}.
 \indexii{filename}{extension}
 \indexiii{module}{search}{path}
 
-If a built-in module is found, its built-in initialization code is
-executed and step (1) is finished.  If no matching file is found,
-\exception{ImportError} is raised.  If a file is found, it is parsed,
+If a built-in module is found,\indexii{module}{initialization} its
+built-in initialization code is executed and step (1) is finished.  If
+no matching file is found,
+\exception{ImportError}\exindex{ImportError} is raised.
+\index{code block}If a file is found, it is parsed,
 yielding an executable code block.  If a syntax error occurs,
-\exception{SyntaxError} is raised.  Otherwise, an empty module of the given
-name is created and inserted in the module table, and then the code
-block is executed in the context of this module.  Exceptions during
-this execution terminate step (1).
-\indexii{module}{initialization}
-\exindex{SyntaxError}
-\exindex{ImportError}
-\index{code block}
+\exception{SyntaxError}\exindex{SyntaxError} is raised.  Otherwise, an
+empty module of the given name is created and inserted in the module
+table, and then the code block is executed in the context of this
+module.  Exceptions during this execution terminate step (1).
 
 When step (1) finishes without raising an exception, step (2) can
 begin.
