@@ -1089,6 +1089,11 @@ used in a Boolean context, the return value should be interpretable as
 a Boolean value, else a \exception{TypeError} will be raised.
 By convention, \code{False} is used for false and \code{True} for true.
 
+There are no implied relationships among the comparison operators.
+The truth of {\var{x}==\var{y}} does not imply that \code{\var{x}!=\var{y}}
+is false.  Accordingly, when defining \method{__eq__}, one should also
+define \method{__ne__} so that the operators will behave as expected.
+
 There are no reflected (swapped-argument) versions of these methods
 (to be used when the left argument does not support the operation but
 the right argument does); rather, \method{__lt__()} and
