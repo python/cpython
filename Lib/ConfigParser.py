@@ -84,6 +84,7 @@ ConfigParser -- responsible for for parsing a list of
 """
 
 import re
+import types
 
 __all__ = ["NoSectionError","DuplicateSectionError","NoOptionError",
            "InterpolationError","InterpolationDepthError","ParsingError",
@@ -222,7 +223,7 @@ class ConfigParser:
         configuration files in the list will be read.  A single
         filename may also be given.
         """
-        if isinstance(filenames, (str, unicode)):
+        if isinstance(filenames, types.StringTypes):
             filenames = [filenames]
         for filename in filenames:
             try:
