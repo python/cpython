@@ -177,8 +177,28 @@ class TraceTestCase(unittest.TestCase):
     def test_9_settrace_and_raise(self):
         self.run_test2(settrace_and_raise)
 
+class RaisingTraceFuncTestCase(unittest.TestCase):
+    def test_it(self):
+        def tr(frame, event, arg):
+            raise ValueError # just something that isn't RuntimeError
+        def f():
+            return 1
+        try:
+            for i in xrange(sys.getrecursionlimit() + 1):
+                sys.settrace(tr)
+                try:
+                    f()
+                except ValueError:
+                    pass
+                else:
+                    self.fail("exception not thrown!")
+        except RuntimeError:
+            self.fail("recursion counter not reset")
+            
+
 def test_main():
     test_support.run_unittest(TraceTestCase)
+    test_support.run_unittest(RaisingTraceFuncTestCase)
 
 if __name__ == "__main__":
     test_main()
