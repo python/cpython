@@ -428,14 +428,14 @@
 /* Define to 1 if you have the `snprintf' function. */
 #undef HAVE_SNPRINTF
 
-/* Define to 1 if you have the `socketpair' function. */
-#undef HAVE_SOCKETPAIR
-
 /* Define if sockaddr has sa_len member */
 #undef HAVE_SOCKADDR_SA_LEN
 
 /* struct sockaddr_storage (sys/socket.h) */
 #undef HAVE_SOCKADDR_STORAGE
+
+/* Define if you have the 'socketpair' function. */
+#undef HAVE_SOCKETPAIR
 
 /* Define to 1 if you have the `statvfs' function. */
 #undef HAVE_STATVFS
@@ -805,6 +805,9 @@
 #ifndef _ALL_SOURCE
 # undef _ALL_SOURCE
 #endif
+
+/* Define on Irix to enable u_int */
+#undef _BSD_TYPES
 
 /* This must be set to 64 on some systems to enable large file support. */
 #undef _FILE_OFFSET_BITS
