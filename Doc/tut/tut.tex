@@ -2022,6 +2022,208 @@ standard module \module{__builtin__}\refbimodindex{__builtin__}:
 'reduce', 'reload', 'repr', 'round', 'setattr', 'str', 'type', 'xrange']
 \end{verbatim}
 
+\section{Packages}
+
+Packages are a way of structuring Python's module namespace
+by using ``dotted module names''.  For example, the module name \module{A.B}
+designates a submodule named \samp{B} in a package named \samp{A}.  Just like the
+use of modules saves the authors of different modules from having to
+worry about each other's global variable names, the use of dotted
+module names saves the authors of multi-module packages like NumPy or
+PIL from having to worry about each other's module names.
+
+Suppose you want to design a collection of modules (a ``package'') for
+the uniform handling of sound files and sound data.  There are many
+different sound file formats (usually recognized by their extension,
+e.g. \file{.wav}, \file{.aiff}, \file{.au}), so you may need to create
+and maintain a growing collection of modules for the conversion
+between the various file formats.  There are also many different
+operations you might want to perform on sound data (e.g. mixing,
+adding echo, applying an equalizer function, creating an artificial
+stereo effect), so in addition you will be writing a never-ending
+stream of modules to perform these operations.  Here's a possible
+structure for your package (expressed in terms of a hierarchical
+filesystem):
+
+\begin{verbatim}
+Sound/                          Top-level package
+      __init__.py               Initialize the sound package
+      Formats/                  Subpackage for file format conversions
+              __init__.py
+              wavread.py
+              wavwrite.py
+              aiffread.py
+              aiffwrite.py
+              auread.py
+              auwrite.py
+              ...
+      Effects/                  Subpackage for sound effects
+              __init__.py
+              echo.py
+              surround.py
+              reverse.py
+              ...
+      Filters/                  Subpackage for filters
+              __init__.py
+              equalizer.py
+              vocoder.py
+              karaoke.py
+              ...
+\end{verbatim}
+The \file{__init__.py} files are required to make Python treat the
+directories as containing packages; this is done to prevent
+directories with a common name, such as \samp{string}, from
+unintentionally hiding valid modules that occur later on the module
+search path. In the simplest case, \file{__init__.py} can just be an
+empty file, but it can also execute initialization code for the
+package or set the \code{__all__} variable, described later.
+
+Users of the package can import individual modules from the
+package, for example:
+
+\begin{verbatim}
+import Sound.Effects.echo
+\end{verbatim}
+This loads the submodule \module{Sound.Effects.echo}.  It must be referenced
+with its full name, e.g.
+
+\begin{verbatim}
+Sound.Effects.echo.echofilter(input, output, delay=0.7, atten=4)
+\end{verbatim}
+An alternative way of importing the submodule is:
+
+\begin{verbatim}
+from Sound.Effects import echo
+\end{verbatim}
+This also loads the submodule \module{echo}, and makes it available without
+its package prefix, so it can be used as follows:
+
+\begin{verbatim}
+echo.echofilter(input, output, delay=0.7, atten=4)
+\end{verbatim}
+
+Yet another variation is to import the desired function or variable directly:
+
+\begin{verbatim}
+from Sound.Effects.echo import echofilter
+\end{verbatim}
+
+Again, this loads the submodule \module{echo}, but this makes its function
+echofilter directly available:
+
+\begin{verbatim}
+echofilter(input, output, delay=0.7, atten=4)
+\end{verbatim}
+
+Note that when using \code{from \var{package} import \var{item}}, the
+item can be either a submodule (or subpackage) of the package, or some
+other name defined in the package, like a function, class or
+variable.  The \code{import} statement first tests whether the item is
+defined in the package; if not, it assumes it is a module and attempts
+to load it.  If it fails to find it, \exception{ImportError} is raised.
+
+Contrarily, when using syntax like \code{import
+\var{item.subitem.subsubitem}}, each item except for the last must be
+a package; the last item can be a module or a package but can't be a
+class or function or variable defined in the previous item.
+
+\subsection{Importing * From a Package}
+%The \code{__all__} Attribute
+
+Now what happens when the user writes \code{from Sound.Effects import
+*}?  Ideally, one would hope that this somehow goes out to the
+filesystem, finds which submodules are present in the package, and
+imports them all.  Unfortunately, this operation does not work very
+well on Mac and Windows platforms, where the filesystem does not
+always have accurate information about the case of a filename!  On
+these platforms, there is no guaranteed way to know whether a file
+\file{ECHO.PY} should be imported as a module \module{echo},
+\module{Echo} or \module{ECHO}.  (For example, Windows 95 has the
+annoying practice of showing all file names with a capitalized first
+letter.)  The DOS 8+3 filename restriction adds another interesting
+problem for long module names.
+
+The only solution is for the package author to provide an explicit
+index of the package.  The import statement uses the following
+convention: if a package's \file{__init__.py} code defines a list named
+\code{__all__}, it is taken to be the list of module names that should be imported
+when \code{from \var{package} import *} is
+encountered.  It is up to the package author to keep this list
+up-to-date when a new version of the package is released.  Package
+authors may also decide not to support it, if they don't see a use for
+importing * from their package.  For example, the file
+\code{Sounds/Effects/__init__.py} could contain the following code:
+
+\begin{verbatim}
+__all__ = ["echo", "surround", "reverse"]
+\end{verbatim}
+
+This would mean that \code{from Sound.Effects import *} would
+import the three named submodules of the \module{Sound} package.
+
+If \code{__all__} is not defined, the statement \code{from Sound.Effects
+import *} does \emph{not} import all submodules from the package
+\module{Sound.Effects} into the current namespace; it only ensures that the
+package \module{Sound.Effects} has been imported (possibly running its
+initialization code, \file{__init__.py}) and then imports whatever names are
+defined in the package.  This includes any names defined (and
+submodules explicitly loaded) by \file{__init__.py}.  It also includes any
+submodules of the package that were explicitly loaded by previous
+import statements, e.g.
+
+\begin{verbatim}
+import Sound.Effects.echo
+import Sound.Effects.surround
+from Sound.Effects import *
+\end{verbatim}
+
+
+In this example, the echo and surround modules are imported in the
+current namespace because they are defined in the \module{Sound.Effects}
+package when the \code{from...import} statement is executed.  (This also
+works when \code{__all__} is defined.)
+
+Note that in general the practicing of importing * from a module or
+package is frowned upon, since it often causes poorly readable code.
+However, it is okay to use it to save typing in interactive sessions,
+and certain modules are designed to export only names that follow
+certain patterns.
+
+Remember, there is nothing wrong with using \code{from Package
+import specific_submodule}!  In fact, this is the
+recommended notation unless the importing module needs to use
+submodules with the same name from different packages.
+
+
+\subsection{Intra-package References}
+
+The submodules often need to refer to each other.  For example, the
+\module{surround} module might use the \module{echo} module.  In fact, such references
+are so common that the \code{import} statement first looks in the
+containing package before looking in the standard module search path.
+Thus, the surround module can simply use \code{import echo} or
+\code{from echo import echofilter}.  If the imported module is not
+found in the current package (the package of which the current module
+is a submodule), the \code{import} statement looks for a top-level module
+with the given name.
+
+When packages are structured into subpackages (as with the \module{Sound}
+package in the example), there's no shortcut to refer to submodules of
+sibling packages - the full name of the subpackage must be used.  For
+example, if the module \module{Sound.Filters.vocoder} needs to use the \module{echo}
+module in the \module{Sound.Effects} package, it can use \code{from
+Sound.Effects import echo}.
+
+%(One could design a notation to refer to parent packages, similar to
+%the use of ".." to refer to the parent directory in Unix and Windows
+%filesystems.  In fact, the \module{ni} module, which was the
+%ancestor of this package system, supported this using \code{__} for
+%the package containing the current module,
+%\code{__.__} for the parent package, and so on.  This feature was dropped
+%because of its awkwardness; since most packages will have a relative
+%shallow substructure, this is no big loss.)
+
+
 
 \chapter{Input and Output}
 \label{io}
