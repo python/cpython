@@ -429,10 +429,7 @@ subtype_dealloc(PyObject *self)
 	PyTypeObject *type, *base;
 	destructor basedealloc;
 
-	/* This exists so we can DECREF self->ob_type */
-
-	if (call_finalizer(self) < 0)
-		return;
+	/* This function exists so we can DECREF self->ob_type */
 
 	/* Find the nearest base with a different tp_dealloc
 	   and clear slots while we're at it */
@@ -445,6 +442,13 @@ subtype_dealloc(PyObject *self)
 		assert(base);
 	}
 
+	/* If we added weaklist, we clear it */
+	if (type->tp_weaklistoffset && !base->tp_weaklistoffset)
+		PyObject_ClearWeakRefs(self);
+
+	if (call_finalizer(self) < 0)
+		return;
+
 	/* If we added a dict, DECREF it */
 	if (type->tp_dictoffset && !base->tp_dictoffset) {
 		PyObject **dictptr = _PyObject_GetDictPtr(self);
@@ -456,10 +460,6 @@ subtype_dealloc(PyObject *self)
 			}
 		}
 	}
-
-	/* If we added weaklist, we clear it */
-	if (type->tp_weaklistoffset && !base->tp_weaklistoffset)
-		PyObject_ClearWeakRefs(self);
 
 	/* Finalize GC if the base doesn't do GC and we do */
 	if (PyType_IS_GC(type) && !PyType_IS_GC(base))
