@@ -805,6 +805,26 @@ SyntaxError: invalid syntax
 ...         yield 2             # because it's a generator
 Traceback (most recent call last):
 SyntaxError: 'return' with argument inside generator (<string>, line 8)
+
+This one caused a crash (see SF bug 567538):
+
+>>> def f():
+...     for i in range(3):
+...         try:
+...             continue
+...         finally:
+...             yield i
+... 
+>>> g = f()
+>>> print g.next()
+0
+>>> print g.next()
+1
+>>> print g.next()
+2
+>>> print g.next()
+Traceback (most recent call last):
+StopIteration
 """
 
 # conjoin is a simple backtracking generator, named in honor of Icon's

@@ -6,6 +6,9 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- Fixed a bug with a continue inside a try block and a yield in the
+  finally clause.  [SF bug 567538]
+
 - Most builtin sequences now support "extended slices", i.e. slices
   with a third "stride" parameter.  For example, "range(10)[1:6:2]"
   evaluates to [1, 3, 5].
