@@ -124,7 +124,11 @@ printobject(op, fp, flags)
 					op->ob_type->tp_name, (long)op);
 			}
 			else {
-				object *s = reprobject(op);
+				object *s;
+				if (flags & PRINT_RAW)
+					s = strobject(op);
+				else
+					s = reprobject(op);
 				if (s == NULL)
 					ret = -1;
 				else if (!is_stringobject(s)) {
@@ -169,6 +173,36 @@ reprobject(v)
 	}
 	else
 		return (*v->ob_type->tp_repr)(v);
+}
+
+object *
+strobject(v)
+	object *v;
+{
+	if (v == NULL)
+		return newstringobject("<NULL>");
+	if (is_stringobject(v)) {
+		INCREF(v);
+		return v;
+	}
+	else {
+		object *func = getattr(v, "__str__");
+		object *args;
+		object *res;
+		if (func == NULL) {
+			err_clear();
+			return reprobject(v);
+		}
+		args = newtupleobject(0);
+		if (args == NULL)
+			res = NULL;
+		else {
+			res = call_object(func, args);
+			DECREF(args);
+		}
+		DECREF(func);
+		return res;
+	}
 }
 
 int

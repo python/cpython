@@ -265,24 +265,6 @@ mpz_dealloc(mpzp)
 	DEL(mpzp);
 } /* mpz_dealloc() */
 
-/* ARGSUSED */
-static int
-mpz_print(v, fp, flags)
-	object *v;
-	FILE *fp;
-	int flags; /* Not used but required by interface */
-{
-	stringobject *str
-		= (stringobject *)mpz_format(v, 10, (unsigned char)1);
-
-	if (str == NULL)
-		return -1;
-
-	fputs(GETSTRINGVALUE(str), fp);
-	DECREF(str);
-	return 0;
-} /* mpz_print() */
-
 
 /* pointers to frequently used values 0, 1 and -1 */
 static mpzobject *mpz_value_zero, *mpz_value_one, *mpz_value_mone;
@@ -1658,7 +1640,7 @@ static typeobject MPZtype = {
 	0,			/*tp_itemsize*/
 	/* methods */
 	mpz_dealloc,	/*tp_dealloc*/
-	mpz_print,	/*tp_print*/
+	0,		/*tp_print*/
 	mpz_getattr,	/*tp_getattr*/
 	0,		/*tp_setattr*/
 	mpz_compare,	/*tp_compare*/
