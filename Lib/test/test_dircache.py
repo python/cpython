@@ -56,7 +56,7 @@ class DircacheTests(unittest.TestCase):
             self.assert_(dircache.listdir(self.tempdir) is entries)
 
         ## UNSUCCESSFUL CASES
-        self.assertEquals(dircache.listdir(self.tempdir+"_nonexistent"), [])
+        self.assertRaises(OSError, dircache.listdir, self.tempdir+"_nonexistent")
 
     def test_annotate(self):
         self.writeTemp("test2")
