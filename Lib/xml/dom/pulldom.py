@@ -33,6 +33,7 @@ class PullDOM(xml.sax.ContentHandler):
             pass
         self._ns_contexts = [{}] # contains uri -> prefix dicts
         self._current_context = self._ns_contexts[-1]
+        self.pending_events = []
 
     def pop(self):
         result = self.elementStack[-1]
@@ -115,15 +116,22 @@ class PullDOM(xml.sax.ContentHandler):
         self.lastEvent = self.lastEvent[1]
 
     def comment(self, s):
-        node = self.document.createComment(s)
-        self.lastEvent[1] = [(COMMENT, node), None]
-        self.lastEvent = self.lastEvent[1]
+        if self.document:
+            node = self.document.createComment(s)
+            self.lastEvent[1] = [(COMMENT, node), None]
+            self.lastEvent = self.lastEvent[1]
+        else:
+            event = [(COMMENT, s), None]
+            self.pending_events.append(event)
 
     def processingInstruction(self, target, data):
-        node = self.document.createProcessingInstruction(target, data)
-
-        self.lastEvent[1] = [(PROCESSING_INSTRUCTION, node), None]
-        self.lastEvent = self.lastEvent[1]
+        if self.document:
+            node = self.document.createProcessingInstruction(target, data)
+            self.lastEvent[1] = [(PROCESSING_INSTRUCTION, node), None]
+            self.lastEvent = self.lastEvent[1]
+        else:
+            event = [(PROCESSING_INSTRUCTION, target, data), None]
+            self.pending_events.append(event)
 
     def ignorableWhitespace(self, chars):
         node = self.document.createTextNode(chars)
@@ -148,6 +156,20 @@ class PullDOM(xml.sax.ContentHandler):
         self.lastEvent[1] = [(START_DOCUMENT, node), None]
         self.lastEvent = self.lastEvent[1]
         self.push(node)
+        # Put everything we have seen so far into the document
+        for e in self.pending_events:
+            if e[0][0] == PROCESSING_INSTRUCTION:
+                _,target,data = e[0]
+                n = self.document.createProcessingInstruction(target, data)
+                e[0] = (PROCESSING_INSTRUCTION, n)
+            elif e[0][0] == COMMENT:
+                n = self.document.createComment(e[0][1])
+                e[0] = (COMMENT, n)
+            else:
+                raise AssertionError("Unknown pending event ",e[0][0])
+            self.lastEvent[1] = e
+            self.lastEvent = e
+        self.pending_events = None
         return node.firstChild
 
     def endDocument(self):

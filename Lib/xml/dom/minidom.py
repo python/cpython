@@ -38,10 +38,11 @@ class Node(_Node):
     _makeParentNodes = 1
     debug = None
     childNodeTypes = ()
+    namespaceURI = None # this is non-null only for elements and attributes
 
     def __init__(self):
         self.childNodes = []
-        self.parentNode = None
+        self.parentNode = self.ownerDocument = None
         if Node._debug:
             index = repr(id(self)) + repr(self.__class__)
             Node.allnodes[index] = repr(self.__dict__)
@@ -107,6 +108,11 @@ class Node(_Node):
             return self.childNodes[-1]
 
     def insertBefore(self, newChild, refChild):
+        if newChild.nodeType == self.DOCUMENT_FRAGMENT_NODE:
+            for c in newChild.childNodes:
+                self.insertBefore(c, refChild)
+            ### The DOM does not clearly specify what to return in this case
+            return newChild
         if newChild.nodeType not in self.childNodeTypes:
             raise HierarchyRequestErr, \
                   "%s cannot be child of %s" % (repr(newChild), repr(self))
@@ -130,6 +136,11 @@ class Node(_Node):
         return newChild
 
     def appendChild(self, node):
+        if node.nodeType == self.DOCUMENT_FRAGMENT_NODE:
+            for c in node.childNodes:
+                self.appendChild(c)
+            ### The DOM does not clearly specify what to return in this case
+            return node
         if node.nodeType not in self.childNodeTypes:
             raise HierarchyRequestErr, \
                   "%s cannot be child of %s" % (repr(node), repr(self))
@@ -148,6 +159,10 @@ class Node(_Node):
         return node
 
     def replaceChild(self, newChild, oldChild):
+        if newChild.nodeType == self.DOCUMENT_FRAGMENT_NODE:
+            refChild = oldChild.nextSibling
+            self.removeChild(oldChild)
+            return self.insertBefore(newChild, refChild)
         if newChild.nodeType not in self.childNodeTypes:
             raise HierarchyRequestErr, \
                   "%s cannot be child of %s" % (repr(newChild), repr(self))
@@ -233,7 +248,7 @@ class Node(_Node):
     # minidom-specific API:
 
     def unlink(self):
-        self.parentNode = None
+        self.parentNode = self.ownerDocument = None
         for child in self.childNodes:
             child.unlink()
         self.childNodes = None
@@ -269,6 +284,21 @@ def _getElementsByTagNameNSHelper(parent, nsURI, localName, rc):
                 rc.append(node)
             _getElementsByTagNameNSHelper(node, nsURI, localName, rc)
     return rc
+
+class DocumentFragment(Node):
+    nodeType = Node.DOCUMENT_FRAGMENT_NODE
+    nodeName = "#document-fragment"
+    nodeValue = None
+    attributes = None
+    parentNode = None
+    childNodeTypes = (Node.ELEMENT_NODE,
+                      Node.TEXT_NODE,
+                      Node.CDATA_SECTION_NODE,
+                      Node.ENTITY_REFERENCE_NODE,
+                      Node.PROCESSING_INSTRUCTION_NODE,
+                      Node.COMMENT_NODE,
+                      Node.NOTATION_NODE)
+
 
 class Attr(Node):
     nodeType = Node.ATTRIBUTE_NODE
@@ -409,7 +439,7 @@ class Element(Node):
                       Node.COMMENT_NODE, Node.TEXT_NODE,
                       Node.CDATA_SECTION_NODE, Node.ENTITY_REFERENCE_NODE)
 
-    def __init__(self, tagName, namespaceURI="", prefix="",
+    def __init__(self, tagName, namespaceURI=None, prefix="",
                  localName=None):
         Node.__init__(self)
         self.tagName = self.nodeName = tagName
@@ -494,6 +524,8 @@ class Element(Node):
             # it doesn't represent a change, and should not be returned.
             return old
 
+    setAttributeNodeNS = setAttributeNode
+
     def removeAttribute(self, name):
         attr = self._attrs[name]
         self.removeAttributeNode(attr)
@@ -506,6 +538,8 @@ class Element(Node):
         node.unlink()
         del self._attrs[node.name]
         del self._attrsNS[(node.namespaceURI, node.localName)]
+
+    removeAttributeNodeNS = removeAttributeNode
 
     def hasAttribute(self, name):
         return self._attrs.has_key(name)
@@ -651,7 +685,7 @@ class DOMImplementation:
         if doctype and doctype.parentNode is not None:
             raise xml.dom.WrongDocumentErr(
                 "doctype object owned by another DOM tree")
-        doc = Document()
+        doc = self._createDocument()
         if doctype is None:
             doctype = self.createDocumentType(qualifiedName, None, None)
         if not qualifiedName:
@@ -671,7 +705,7 @@ class DOMImplementation:
                 "illegal use of prefix without namespaces")
         element = doc.createElementNS(namespaceURI, qualifiedName)
         doc.appendChild(element)
-        doctype.parentNode = doc
+        doctype.parentNode = doctype.ownerDocument = doc
         doc.doctype = doctype
         doc.implementation = self
         return doc
@@ -682,6 +716,9 @@ class DOMImplementation:
         doctype.systemId = systemId
         return doctype
 
+    # internal
+    def _createDocument(self):
+        return Document()
 
 class Document(Node):
     nodeType = Node.DOCUMENT_NODE
@@ -690,6 +727,7 @@ class Document(Node):
     attributes = None
     doctype = None
     parentNode = None
+    previousSibling = nextSibling = None
 
     implementation = DOMImplementation()
     childNodeTypes = (Node.ELEMENT_NODE, Node.PROCESSING_INSTRUCTION_NODE,
@@ -728,25 +766,47 @@ class Document(Node):
             self.doctype = None
         Node.unlink(self)
 
-    createElement = Element
+    def createDocumentFragment(self):
+        d = DocumentFragment()
+        d.ownerDoc = self
+        return d
 
-    createTextNode = Text
+    def createElement(self, tagName):
+        e = Element(tagName)
+        e.ownerDocument = self
+        return e
 
-    createComment = Comment
+    def createTextNode(self, data):
+        t = Text(data)
+        t.ownerDocument = self
+        return t
 
-    createProcessingInstruction = ProcessingInstruction
+    def createComment(self, data):
+        c = Comment(data)
+        c.ownerDocument = self
+        return c
 
-    createAttribute = Attr
+    def createProcessingInstruction(self, target, data):
+        p = ProcessingInstruction(target, data)
+        p.ownerDocument = self
+        return p
+
+    def createAttribute(self, qName):
+        a = Attr(qName)
+        a.ownerDocument = self
+        return a
 
     def createElementNS(self, namespaceURI, qualifiedName):
         prefix, localName = _nssplit(qualifiedName)
-        return self.createElement(qualifiedName, namespaceURI,
-                                  prefix, localName)
+        e = Element(qualifiedName, namespaceURI, prefix, localName)
+        e.ownerDocument = self
+        return e
 
     def createAttributeNS(self, namespaceURI, qualifiedName):
         prefix, localName = _nssplit(qualifiedName)
-        return self.createAttribute(qualifiedName, namespaceURI,
-                                    localName, prefix)
+        a = Attr(qualifiedName, namespaceURI, localName, prefix)
+        a.ownerDocument = self
+        return a
 
     def getElementsByTagNameNS(self, namespaceURI, localName):
         _getElementsByTagNameNSHelper(self, namespaceURI, localName)
