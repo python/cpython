@@ -32,12 +32,64 @@ PERFORMANCE OF THIS SOFTWARE.
 /* Return the initial module search path. */
 /* Used by DOS, OS/2, Windows 3.1, Windows 95/98, Windows NT. */
 
+/* ----------------------------------------------------------------
+   PATH RULES FOR WINDOWS:
+   This describes how sys.path is formed on Windows.  It describes the 
+   functionality, not the implementation (ie, the order in which these 
+   are actually fetched is different)
+
+   * Python always adds an empty entry at the start, which corresponds
+     to the current directory.
+
+   * If the PYTHONPATH env. var. exists, it's entries are added next.
+
+   * We look in the registry for "application paths" - that is, sub-keys
+     under the main PythonPath registry key.  These are added next (the
+     order of sub-key processing is undefined).
+     HKEY_CURRENT_USER is searched and added first.
+     HKEY_LOCAL_MACHINE is searched and added next.
+     (Note that all known installers only use HKLM, so HKCU is typically
+     empty)
+
+   * We attempt to locate the "Python Home" - if the PYTHONHOME env var
+     is set, we believe it.  Otherwise, we use the path of our host .EXE's
+     to try and locate our "landmark" (lib\\string.py) and deduce our home.
+     - If we DO have a Python Home: The relevant sub-directories (Lib, 
+       plat-win, lib-tk, etc) are based on the Python Home
+     - If we DO NOT have a Python Home, the core Python Path is
+       loaded from the registry.  This is the main PythonPath key, 
+       and both HKLM and HKCU are combined to form the path)
+
+   * Iff - we can not locate the Python Home, have not had a PYTHONPATH
+     specified, and can't locate any Registry entries (ie, we have _nothing_
+     we can assume is a good path), a default path with relative entries is 
+     used (eg. .\Lib;.\plat-win, etc)
+
+
+  The end result of all this is:
+  * When running python.exe, or any other .exe in the main Python directory
+    (either an installed version, or directly from the PCbuild directory),
+    the core path is deduced, and the core paths in the registry are
+    ignored.  Other "application paths" in the registry are always read.
+
+  * When Python is hosted in another exe (different directory, embedded via 
+    COM, etc), the Python Home will not be deduced, so the core path from
+    the registry is used.  Other "application paths "in the registry are 
+    always read.
+
+  * If Python can't find its home and there is no registry (eg, frozen
+    exe, some very strange installation setup) you get a path with
+    some default, but relative, paths.
+
+   ---------------------------------------------------------------- */
+
+
 #include "Python.h"
 #include "osdefs.h"
 
 #ifdef MS_WIN32
 #include <windows.h>
-extern BOOL PyWin_IsWin32s();
+#include <tchar.h>
 #endif
 
 #include <sys/types.h>
@@ -168,107 +220,146 @@ search_for_prefix(argv0_path, landmark)
 
 #ifdef MS_WIN32
 
-#ifndef BUILD_LANDMARK
-#define BUILD_LANDMARK "PC\\getpathp.c"
-#endif
-
-#include "malloc.h" // for alloca - see comments below!
-extern const char *PyWin_DLLVersionString; // a string loaded from the DLL at startup.
+/* a string loaded from the DLL at startup.*/
+extern const char *PyWin_DLLVersionString;
 
 
 /* Load a PYTHONPATH value from the registry.
    Load from either HKEY_LOCAL_MACHINE or HKEY_CURRENT_USER.
 
+   Works in both Unicode and 8bit environments.  Only uses the
+   Ex family of functions so it also works with Windows CE.
+
    Returns NULL, or a pointer that should be freed.
 */
 
 static char *
-getpythonregpath(HKEY keyBase)
+getpythonregpath(HKEY keyBase, int skipcore)
 {
 	HKEY newKey = 0;
-	DWORD nameSize = 0;
 	DWORD dataSize = 0;
-	DWORD numEntries = 0;
+	DWORD numKeys = 0;
 	LONG rc;
 	char *retval = NULL;
-	char *dataBuf;
-	const char keyPrefix[] = "Software\\Python\\PythonCore\\";
-	const char keySuffix[] = "\\PythonPath";
+	TCHAR *dataBuf = NULL;
+	static const TCHAR keyPrefix[] = _T("Software\\Python\\PythonCore\\");
+	static const TCHAR keySuffix[] = _T("\\PythonPath");
 	int versionLen;
-	char *keyBuf;
+	DWORD index;
+	TCHAR *keyBuf = NULL;
+	TCHAR *keyBufPtr;
+	TCHAR **ppPaths = NULL;
 
-	// Tried to use sysget("winver") but here is too early :-(
-	versionLen = strlen(PyWin_DLLVersionString);
-	// alloca == no free required, but memory only local to fn.
-	// also no heap fragmentation!  Am I being silly?
-	keyBuf = alloca(sizeof(keyPrefix)-1 + versionLen + sizeof(keySuffix)); // chars only, plus 1 NULL.
-	// lots of constants here for the compiler to optimize away :-)
-	memcpy(keyBuf, keyPrefix, sizeof(keyPrefix)-1);
-	memcpy(keyBuf+sizeof(keyPrefix)-1, PyWin_DLLVersionString, versionLen);
-	memcpy(keyBuf+sizeof(keyPrefix)-1+versionLen, keySuffix, sizeof(keySuffix)); // NULL comes with this one!
+	/* Tried to use sysget("winver") but here is too early :-( */
+	versionLen = _tcslen(PyWin_DLLVersionString);
+	/* Space for all the chars, plus one \0 */
+	keyBuf = keyBufPtr = malloc(sizeof(keyPrefix) + 
+		                    sizeof(TCHAR)*(versionLen-1) + 
+				    sizeof(keySuffix));
+	if (keyBuf==NULL) goto done;
 
-	rc=RegOpenKey(keyBase,
-		      keyBuf,
-		      &newKey);
-	if (rc==ERROR_SUCCESS) {
-		RegQueryInfoKey(newKey, NULL, NULL, NULL, NULL, NULL, NULL, 
-		                &numEntries, &nameSize, &dataSize, NULL, NULL);
-	}
-	if (numEntries) {
-		/* Loop over all subkeys. */
-		/* Win32s doesnt know how many subkeys, so we do
-		   it twice */
-		char keyBuf[MAX_PATH+1];
-		int index = 0;
-		int off = 0;
-		for(index=0;;index++) {
-			long reqdSize = 0;
-			DWORD rc = RegEnumKey(newKey,
-					      index, keyBuf, MAX_PATH+1);
-			if (rc) break;
-			rc = RegQueryValue(newKey, keyBuf, NULL, &reqdSize);
-			if (rc) break;
-			dataSize += reqdSize + 1; /* 1 for the ";" */
-		}
-		dataBuf = malloc(dataSize+1);
-		if (dataBuf==NULL)
-			return NULL; /* pretty serious?  Raise error? */
-		/* Now loop over, grabbing the paths.
-		   Subkeys before main library */
-		for(index=0;;index++) {
-			int adjust;
-			long reqdSize = dataSize;
-			DWORD rc = RegEnumKey(newKey,
-					      index, keyBuf,MAX_PATH+1);
-			if (rc) break;
-			rc = RegQueryValue(newKey,
-					   keyBuf, dataBuf+off, &reqdSize);
-			if (rc) break;
-			if (reqdSize>1) {
-				/* If Nothing, or only '\0' copied. */
-				adjust = strlen(dataBuf+off);
-				dataSize -= adjust;
-				off += adjust;
-				dataBuf[off++] = ';';
-				dataBuf[off] = '\0';
-				dataSize--;
+	memcpy(keyBufPtr, keyPrefix, sizeof(keyPrefix)-sizeof(TCHAR));
+	keyBufPtr += sizeof(keyPrefix)/sizeof(TCHAR) - 1;
+	memcpy(keyBufPtr, PyWin_DLLVersionString, versionLen * sizeof(TCHAR));
+	keyBufPtr += versionLen;
+	/* NULL comes with this one! */
+	memcpy(keyBufPtr, keySuffix, sizeof(keySuffix));
+	/* Open the root Python key */
+	rc=RegOpenKeyEx(keyBase,
+	                keyBuf, /* subkey */
+	                0, /* reserved */
+	                KEY_READ,
+	                &newKey);
+	if (rc!=ERROR_SUCCESS) goto done;
+	/* Find out how big our core buffer is, and how many subkeys we have */
+	rc = RegQueryInfoKey(newKey, NULL, NULL, NULL, &numKeys, NULL, NULL, 
+	                NULL, NULL, &dataSize, NULL, NULL);
+	if (rc!=ERROR_SUCCESS) goto done;
+	if (skipcore) dataSize = 0; /* Only count core ones if we want them! */
+	/* Allocate a temp array of char buffers, so we only need to loop 
+	   reading the registry once
+	*/
+	ppPaths = malloc( sizeof(TCHAR *) * numKeys );
+	if (ppPaths==NULL) goto done;
+	memset(ppPaths, 0, sizeof(TCHAR *) * numKeys);
+	/* Loop over all subkeys, allocating a temp sub-buffer. */
+	for(index=0;index<numKeys;index++) {
+		TCHAR keyBuf[MAX_PATH+1];
+		HKEY subKey = 0;
+		DWORD reqdSize = MAX_PATH+1;
+		/* Get the sub-key name */
+		DWORD rc = RegEnumKeyEx(newKey, index, keyBuf, &reqdSize,
+		                        NULL, NULL, NULL, NULL );
+		if (rc!=ERROR_SUCCESS) goto done;
+		/* Open the sub-key */
+		rc=RegOpenKeyEx(newKey,
+						keyBuf, /* subkey */
+						0, /* reserved */
+						KEY_READ,
+						&subKey);
+		if (rc!=ERROR_SUCCESS) goto done;
+		/* Find the value of the buffer size, malloc, then read it */
+		RegQueryValueEx(subKey, NULL, 0, NULL, NULL, &reqdSize);
+		if (reqdSize) {
+			ppPaths[index] = malloc(reqdSize);
+			if (ppPaths[index]) {
+				RegQueryValueEx(subKey, NULL, 0, NULL, (LPBYTE)ppPaths[index], &reqdSize);
+				dataSize += reqdSize + 1; /* 1 for the ";" */
 			}
 		}
-		/* Additionally, win32s doesnt work as expected, so
-		   the specific strlen() is required for 3.1. */
-		rc = RegQueryValue(newKey, "", dataBuf+off, &dataSize);
-		if (rc==ERROR_SUCCESS) {
-			if (strlen(dataBuf)==0)
-				free(dataBuf);
-			else
-				retval = dataBuf; /* caller will free */
-		}
-		else
-			free(dataBuf);
+		RegCloseKey(subKey);
 	}
-
+	dataBuf = malloc((dataSize+1) * sizeof(TCHAR));
+	if (dataBuf) {
+		TCHAR *szCur = dataBuf;
+		DWORD reqdSize = dataSize;
+		/* Copy our collected strings */
+		for (index=0;index<numKeys;index++) {
+			int len;
+			if (index > 0) {
+				*(szCur++) = _T(';');
+				dataSize--;
+			}
+			len = _tcslen(ppPaths[index]);
+			_tcsncpy(szCur, ppPaths[index], len);
+			szCur += len;
+			dataSize -= len;
+		}
+		if (skipcore)
+			*szCur = '\0';
+		else {
+			*(szCur++) = _T(';');
+			dataSize--;
+			/* Now append the core path entries - this will include the NULL */
+			rc = RegQueryValueEx(newKey, NULL, 0, NULL, (LPBYTE)szCur, &dataSize);
+		}
+		/* And set the result - caller must free 
+		   If MBCS, it is fine as is.  If Unicode, allocate new
+		   buffer and convert.
+		*/
+#ifdef UNICODE
+		retval = (char *)malloc(reqdSize+1);
+		if (retval)
+			WideCharToMultiByte(CP_ACP, 0, 
+					dataBuf, -1, /* source */ 
+					retval, dataSize+1, /* dest */
+					NULL, NULL);
+		free(dataBuf);
+#else
+		retval = dataBuf;
+#endif
+	}
+done:
+	/* Loop freeing my temp buffers */
+	if (ppPaths) {
+		for(index=0;index<numKeys;index++)
+			if (ppPaths[index]) free(ppPaths[index]);
+		free(ppPaths);
+	}
 	if (newKey)
 		RegCloseKey(newKey);
+	if (keyBuf)
+		free(keyBuf);
 	return retval;
 }
 #endif /* MS_WIN32 */
@@ -281,8 +372,16 @@ get_progpath()
 	char *prog = Py_GetProgramName();
 
 #ifdef MS_WIN32
+#ifdef UNICODE
+	WCHAR wprogpath[MAXPATHLEN+1];
+	if (GetModuleFileName(NULL, wprogpath, MAXPATHLEN)) {
+		WideCharToMultiByte(CP_ACP, 0, wprogpath, -1, progpath, MAXPATHLEN+1, NULL, NULL);
+		return;
+	}
+#else
 	if (GetModuleFileName(NULL, progpath, MAXPATHLEN))
 		return;
+#endif
 #endif
 	if (prog == NULL || *prog == '\0')
 		prog = "python";
@@ -335,7 +434,7 @@ calculate_path()
 	char *envpath = getenv("PYTHONPATH");
 
 #ifdef MS_WIN32
-	int skiphome = 0;
+	int skiphome, skipdefault;
 	char *machinepath = NULL;
 	char *userpath = NULL;
 #endif
@@ -357,10 +456,13 @@ calculate_path()
 
 
 #ifdef MS_WIN32
-	if (!gotlandmark(BUILD_LANDMARK)) {
-		machinepath = getpythonregpath(HKEY_LOCAL_MACHINE);
-		userpath = getpythonregpath(HKEY_CURRENT_USER);
-	}
+	skiphome = pythonhome==NULL ? 0 : 1;
+	machinepath = getpythonregpath(HKEY_LOCAL_MACHINE, skiphome);
+	userpath = getpythonregpath(HKEY_CURRENT_USER, skiphome);
+	/* We only use the default relative PYTHONPATH if we havent
+	   anything better to use! */
+	skipdefault = envpath!=NULL || pythonhome!=NULL || \
+		      machinepath!=NULL || userpath!=NULL;
 #endif
 
 	/* We need to construct a path from the following parts.
@@ -430,24 +532,25 @@ calculate_path()
 		buf = strchr(buf, '\0');
 		*buf++ = DELIM;
 		free(userpath);
-		skiphome = 1;
 	}
 	if (machinepath) {
 		strcpy(buf, machinepath);
 		buf = strchr(buf, '\0');
 		*buf++ = DELIM;
 		free(machinepath);
-		skiphome = 1;
 	}
-	if (skiphome) {
-		*buf = 0;
-		return;
+	if (pythonhome == NULL) {
+		if (!skipdefault) {
+			strcpy(buf, PYTHONPATH);
+			buf = strchr(buf, '\0');
+		}
 	}
-#endif
+#else
 	if (pythonhome == NULL) {
 		strcpy(buf, PYTHONPATH);
 		buf = strchr(buf, '\0');
 	}
+#endif /* MS_WIN32 */
 	else {
 		char *p = PYTHONPATH;
 		char *q;
@@ -512,4 +615,3 @@ Py_GetProgramFullPath()
 		calculate_path();
 	return progpath;
 }
-
