@@ -573,10 +573,6 @@ listappend(self, args)
 	return ins(self, (int) self->ob_size, v);
 }
 
-#define NEWSORT
-
-#ifdef NEWSORT
-
 /* New quicksort implementation for arrays of object pointers.
    Thanks to discussions with Tim Peters. */
 
@@ -827,78 +823,6 @@ listsort(self, compare)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
-
-#else /* !NEWSORT */
-
-static PyObject *comparefunc;
-
-static int
-cmp(v, w)
-	const ANY *v, *w;
-{
-	PyObject *t, *res;
-	long i;
-
-	if (PyErr_Occurred())
-		return 0;
-
-	if (comparefunc == NULL)
-		return PyObject_Compare(* (PyObject **) v, * (PyObject **) w);
-
-	/* Call the user-supplied comparison function */
-	t = Py_BuildValue("(OO)", * (PyObject **) v, * (PyObject **) w);
-	if (t == NULL)
-		return 0;
-	res = PyEval_CallObject(comparefunc, t);
-	Py_DECREF(t);
-	if (res == NULL)
-		return 0;
-	if (!PyInt_Check(res)) {
-		PyErr_SetString(PyExc_TypeError,
-				"comparison function should return int");
-		i = 0;
-	}
-	else {
-		i = PyInt_AsLong(res);
-		if (i < 0)
-			i = -1;
-		else if (i > 0)
-			i = 1;
-	}
-	Py_DECREF(res);
-	return (int) i;
-}
-
-static PyObject *
-listsort(self, args)
-	PyListObject *self;
-	PyObject *args;
-{
-	PyObject *save_comparefunc;
-	if (self->ob_size <= 1) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
-	save_comparefunc = comparefunc;
-	comparefunc = args;
-	if (comparefunc != NULL) {
-		/* Test the comparison function for obvious errors */
-		(void) cmp((ANY *)&self->ob_item[0], (ANY *)&self->ob_item[1]);
-		if (PyErr_Occurred()) {
-			comparefunc = save_comparefunc;
-			return NULL;
-		}
-	}
-	qsort((char *)self->ob_item,
-				(int) self->ob_size, sizeof(PyObject *), cmp);
-	comparefunc = save_comparefunc;
-	if (PyErr_Occurred())
-		return NULL;
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-#endif
 
 static PyObject *
 listreverse(self, args)
