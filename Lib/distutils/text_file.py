@@ -13,9 +13,6 @@ import sys, os, string, re
 
 
 class TextFile:
-    filename = None
-    file = None
-    current_line = None
 
     default_options = { 'strip_comments': 1,
                         'comment_re':     re.compile (r'\s*#.*'),
@@ -26,7 +23,11 @@ class TextFile:
                         'collapse_ws':    0,
                       }
 
-    def __init__ (self, filename=None, **options):
+    def __init__ (self, filename=None, file=None, **options):
+
+        if filename is None and file is None:
+            raise RuntimeError, \
+                  "you must supply either or both of 'filename' and 'file'" 
 
         # set values for all options -- either from client option hash
         # or fallback to default_options
@@ -45,18 +46,16 @@ class TextFile:
             if not self.default_options.has_key (opt):
                 raise KeyError, "invalid TextFile option '%s'" % opt
 
-        self.filename = filename
-        if self.filename:
-            self.open ()
+        if file is None:
+            self.open (filename)
+        else:
+            self.filename = filename
+            self.file = file
+            self.current_line = 0       # assuming that file is at BOF!
         
 
-    def open (self, filename=None):
-        if not self.filename:
-            if not filename:
-                raise RuntimeError, "must provide a filename somehow"
-
-            self.filename = filename
-
+    def open (self, filename):
+        self.filename = filename
         self.file = open (self.filename, 'r')
         self.current_line = 0
 
