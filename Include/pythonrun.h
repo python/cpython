@@ -41,6 +41,7 @@ void Py_SetProgramName Py_PROTO((char *));
 char *Py_GetProgramName Py_PROTO((void));
 
 void Py_Initialize Py_PROTO((void));
+void Py_Finalize Py_PROTO((void));
 PyThreadState *Py_NewInterpreter Py_PROTO((void));
 void Py_EndInterpreter Py_PROTO((PyThreadState *));
 
@@ -85,6 +86,18 @@ const char *Py_GetBuildInfo Py_PROTO((void));
 PyObject *_PyBuiltin_Init Py_PROTO((void));
 PyObject *_PySys_Init Py_PROTO((void));
 void _PyImport_Init Py_PROTO((void));
+
+/* Various internal finalizers */
+void _PyImport_Fini Py_PROTO((void));
+void _PyBuiltin_Fini Py_PROTO((void));
+void PyMethod_Fini Py_PROTO((void));
+void PyFrame_Fini Py_PROTO((void));
+void PyCFunction_Fini Py_PROTO((void));
+void PyTuple_Fini Py_PROTO((void));
+void PyString_Fini Py_PROTO((void));
+void PyInt_Fini Py_PROTO((void));
+void PyFloat_Fini Py_PROTO((void));
+void PyOS_FiniInterrupts Py_PROTO((void));
 
 #ifdef __cplusplus
 }
