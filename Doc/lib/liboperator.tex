@@ -300,6 +300,39 @@ Example: Build a dictionary that maps the ordinals from \code{0} to
 \end{verbatim}
 
 
+The \module{operator} module also defines tools for generalized attribute
+and item lookups.  These are useful for making fast field extractors
+as arguments for \function{map()}, \method{list.sort()},
+\method{itertools.groupby()}, or other functions that expect a
+function argument.
+
+\begin{funcdesc}{attrgetter}{attr}
+Return a callable object that fetches \var{attr} from its operand.
+After, \samp{f=attrgetter('name')}, the call \samp{f(b)} returns
+\samp{b.name}.
+\versionadded{2.4}
+\end{funcdesc}
+    
+\begin{funcdesc}{itemgetter}{item}
+Return a callable object that fetches \var{item} from its operand.
+After, \samp{f=itemgetter(2)}, the call \samp{f(b)} returns
+\samp{b[2]}.
+\versionadded{2.4}
+\end{funcdesc}
+
+Examples:
+                
+\begin{verbatim}
+>>> from operator import *
+>>> inventory = [('apple', 3), ('banana', 2), ('pear', 5), ('orange', 1)]
+>>> getcount = itemgetter(1)
+>>> map(getcount, inventory)
+[3, 2, 5, 1]
+>>> list.sorted(inventory, key=getcount)
+[('orange', 1), ('banana', 2), ('apple', 3), ('pear', 5)]
+\end{verbatim}
+                
+
 \subsection{Mapping Operators to Functions \label{operator-map}}
 
 This table shows how abstract operations correspond to operator

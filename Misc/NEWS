@@ -104,6 +104,11 @@ Core and builtins
 Extension modules
 -----------------
 
+- The operator module has two new functions, attrgetter() and
+  itemgetter() which are useful for creating fast data extractor
+  functions for map(), list.sort(), itertools.groupby(), and
+  other functions that expect a function argument.
+
 - socket.SHUT_{RD,WR,RDWR} was added.
 
 - os.getsid was added.
