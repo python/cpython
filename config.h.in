@@ -1,0 +1,83 @@
+/* NOTE: config.h.in is converted into config.h by the configure
+   script in the toplevel directory.
+
+   On non-UNIX systems, manually copy config.h.in to config.h, and
+   edit the latter to reflect the actual configuration of your system.
+
+   Then arrange that the symbol HAVE_CONFIG_H is defined during
+   compilation (usually by passing an argument of the form
+   `-DHAVE_CONFIG_H' to the compiler, but this is necessarily
+   system-dependent).  */
+
+
+/* Types which have no traditional name -- edit the definition if necessary */
+
+#define RETSIGTYPE int		/* int or void: return of signal handlers */
+
+
+/* Types which are often defined in <sys/types.h> -- either define as
+   some variant of int or leave undefined.  Uncomment a definition if
+   your <sys/types.h> does not define the type */
+
+/* #define mode_t int */
+/* #define off_t long */
+/* #define pid_t int */
+/* #define size_t unsigned */
+/* #define uid_t int */
+/* #define gid_t int */
+
+
+/* Feature test symbols -- either define as 1 or leave undefined */
+
+/*	symbol name:		#define as 1 if: */
+
+#undef	STDC_HEADERS  		/* the standard C header files exist
+				   (in particular, <stdlib.h>,
+				   <stdarg.h>, <string.h> and <float.h>) */
+
+#undef	HAVE_DLFCN_H  		/* <dlfcn.h> exists */
+#undef	HAVE_SIGNAL_H  		/* <signal.h> exists */
+#undef	HAVE_STDARG_H  		/* <stdarg.h> exists (else need <varargs.h>) */
+#undef	HAVE_STDLIB_H  		/* <stdlib.h> exists */
+#undef	HAVE_UNISTD_H  		/* <unistd.h> exists */
+#undef	HAVE_UTIME_H  		/* <utime.h> exists */
+
+#undef	HAVE_SYS_PARAM_H  	/* <sys/param.h> exists */
+#undef	HAVE_SYS_SELECT_H  	/* <sys/select.h> exists */
+#undef	HAVE_SYS_TIMES_H  	/* <sys/times.h> exists */
+#undef	HAVE_SYS_TIME_H  	/* <sys/time.h> exists */
+#undef	HAVE_SYS_UTSNAME_H  	/* <sys/utsname.h> exists */
+#undef	HAVE_SYS_UN_H		/* <sys/un.h> exists */
+
+#undef	TIME_WITH_SYS_TIME  	/* <sys/time.h> and <time.h> can be included
+				   together */
+
+#undef	HAVE_TM_ZONE  		/* struct tm has a tm_zone member */
+#undef	HAVE_TZNAME  		/* extern char *tzname[] exists */
+
+#undef	HAVE_CLOCK  		/* clock() exists */
+#undef	HAVE_FTIME  		/* ftime() exists */
+#undef	HAVE_GETPEERNAME 	/* getpeername() exists */
+#undef	HAVE_GETPGRP  		/* getpgrp() exists */
+#undef	HAVE_GETTIMEOFDAY  	/* gettimeofday() exists */
+#undef	HAVE_LSTAT  		/* lstat() exists */
+#undef	HAVE_PROTOTYPES  	/* the compiler understands prototypes */
+#undef	HAVE_READLINK  		/* readlink() exists */
+#undef	HAVE_SELECT  		/* select() exists */
+#undef	HAVE_SETPGID  		/* setpgid() exists */
+#undef	HAVE_SETPGRP  		/* setpgrp() exists */
+#undef	HAVE_SETSID  		/* setsid() exists */
+#undef	HAVE_SYMLINK  		/* symlink() exists */
+#undef	HAVE_SIGINTERRUPT  	/* siginterrupt() exists */
+#undef	HAVE_TCGETPGRP  	/* tcgetpgrp() exists */
+#undef	HAVE_TCSETPGRP  	/* tcsetpgrp() exists */
+#undef	HAVE_TIMES  		/* times() exists */
+#undef	HAVE_UNAME  		/* uname() exists */
+#undef	HAVE_WAITPID  		/* waitpid() exists */
+
+#undef	GETPGRP_HAVE_ARG  	/* getpgrp() must be called as getpgrp(0)
+				   (and setpgrp() as setpgrp(0, 0)) */
+
+#undef	WITH_READLINE  		/* GNU readline() should be used */
+#undef	USE_THREAD		/* Build in thread support */
+#undef	SOLARIS			/* This is SOLARIS 2.x */
