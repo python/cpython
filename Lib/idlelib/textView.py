@@ -1,8 +1,8 @@
 ##---------------------------------------------------------------------------##
 ##
-## idle - simple text view dialog 
+## idle - simple text view dialog
 ## elguavas
-## 
+##
 ##---------------------------------------------------------------------------##
 """
 simple text browser for idle
@@ -13,7 +13,7 @@ import tkMessageBox
 class TextViewer(Toplevel):
     """
     simple text viewer dialog for idle
-    """ 
+    """
     def __init__(self,parent,title,fileName):
         """
         fileName - string,should be an absoulute filename
@@ -39,7 +39,7 @@ class TextViewer(Toplevel):
         self.LoadTextFile(fileName)
         self.textView.config(state=DISABLED)
         self.wait_window()
-        
+
     def LoadTextFile(self, fileName):
         textFile = None
         try:
@@ -49,7 +49,7 @@ class TextViewer(Toplevel):
                     message='Unable to load file '+`fileName`+' .')
         else:
             self.textView.insert(0.0,textFile.read())
-        
+
     def CreateWidgets(self):
         frameText = Frame(self)
         frameButtons = Frame(self)
@@ -65,7 +65,7 @@ class TextViewer(Toplevel):
         self.textView.pack(side=LEFT,expand=TRUE,fill=BOTH)
         frameButtons.pack(side=BOTTOM,fill=X)
         frameText.pack(side=TOP,expand=TRUE,fill=BOTH)
-        
+
     def Ok(self, event=None):
         self.destroy()
 

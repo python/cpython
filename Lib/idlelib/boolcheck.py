@@ -1,5 +1,5 @@
 "boolcheck - import this module to ensure True, False, bool() builtins exist."
-try: 
+try:
     True
 except NameError:
     import __builtin__
@@ -7,4 +7,3 @@ except NameError:
     __builtin__.False = 0
     from operator import truth
     __builtin__.bool = truth
-

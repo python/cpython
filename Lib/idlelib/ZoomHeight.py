@@ -10,7 +10,7 @@ class ZoomHeight:
             ('_Zoom Height', '<<zoom-height>>'),
          ])
     ]
- 
+
     def __init__(self, editwin):
         self.editwin = editwin
 
@@ -33,7 +33,7 @@ def zoom_height(top):
         #newy = 24
         newy = 0
         #newheight = newheight - 96
-        newheight = newheight - 88       
+        newheight = newheight - 88
     if height >= newheight:
         newgeom = ""
     else:

@@ -10,7 +10,7 @@ import idlever
 class AboutDialog(Toplevel):
     """
     modal about dialog for idle
-    """ 
+    """
     def __init__(self,parent,title):
         Toplevel.__init__(self, parent)
         self.configure(borderwidth=5)
@@ -18,7 +18,7 @@ class AboutDialog(Toplevel):
                 parent.winfo_rooty()+30))
         self.bg="#707070"
         self.fg="#ffffff"
-        
+
         self.CreateWidgets()
         self.resizable(height=FALSE,width=FALSE)
         self.title(title)
@@ -33,7 +33,7 @@ class AboutDialog(Toplevel):
         self.bind('<Return>',self.Ok) #dismiss dialog
         self.bind('<Escape>',self.Ok) #dismiss dialog
         self.wait_window()
-        
+
     def CreateWidgets(self):
         frameMain = Frame(self,borderwidth=2,relief=SUNKEN)
         frameButtons = Frame(self)
@@ -83,7 +83,7 @@ class AboutDialog(Toplevel):
         #handle weird tk version num in windoze python >= 1.6 (?!?)
         tkVer = `TkVersion`.split('.')
         tkVer[len(tkVer)-1] = str('%.3g' % (float('.'+tkVer[len(tkVer)-1])))[2:]
-        if tkVer[len(tkVer)-1] == '': 
+        if tkVer[len(tkVer)-1] == '':
             tkVer[len(tkVer)-1] = '0'
         tkVer = string.join(tkVer,'.')
         labelTkVer = Label(frameBg,text='Tk version:  '+
@@ -105,7 +105,7 @@ class AboutDialog(Toplevel):
 
     def ShowLicense(self):
         self.ViewFile('About - License','LICENSE.txt')
-        
+
     def ShowCredits(self):
         self.ViewFile('About - Credits','CREDITS.txt')
 
@@ -115,7 +115,7 @@ class AboutDialog(Toplevel):
 
     def Ok(self, event=None):
         self.destroy()
-    
+
 if __name__ == '__main__':
     #test the dialog
     root=Tk()

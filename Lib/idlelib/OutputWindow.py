@@ -146,10 +146,3 @@ class OnDemandOutputWindow:
 
 #      def flush(self):
 #          pass
-
-
-
-
-
-
-

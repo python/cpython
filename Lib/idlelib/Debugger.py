@@ -15,17 +15,17 @@ class Idb(bdb.Bdb):
     def user_line(self, frame):
 
         co_filename = frame.f_code.co_filename
-        co_name = frame.f_code.co_name 
+        co_name = frame.f_code.co_name
 
         ## print>>sys.__stderr__, "*function: ", frame.f_code.co_name
-        ## print>>sys.__stderr__, "*file: ", frame.f_code.co_filename        
+        ## print>>sys.__stderr__, "*file: ", frame.f_code.co_filename
         ## print>>sys.__stderr__, "*line number: ", frame.f_code.co_firstlineno
         ## print>>sys.__stderr__, "*name: ", co_name
         ## print>>sys.__stderr__, "*function: ", frame.f_locals.get(co_name,None)
 
         try:
             # XXX 12 Dec 2002 CGT TO DO: Find way to get a reference to the
-            # XXX currently running function. If the function has an 
+            # XXX currently running function. If the function has an
             #     attribute called "DebuggerStepThrough", prevent the debugger
             #     from stepping through Idle code. The following doesn't work
             #     in instance methods. Hard coded some workarounds.
@@ -75,7 +75,7 @@ class Debugger:
         self.frame = None
         self.make_gui()
         self.interacting = 0
-        
+
     def run(self, *args):
         try:
             self.interacting = 1

@@ -56,7 +56,7 @@ def pickle_code(co):
 #  def pickle_function(fn):
 #      assert isinstance(fn, type.FunctionType)
 #      return `fn`
- 
+
 copy_reg.pickle(types.CodeType, pickle_code, unpickle_code)
 # copy_reg.pickle(types.FunctionType, pickle_function, unpickle_function)
 
@@ -75,13 +75,13 @@ class RPCServer(SocketServer.TCPServer):
 
     def server_activate(self):
         """Override TCPServer method, connect() instead of listen()
-        
+
         Due to the reversed connection, self.server_address is actually the
         address of the Idle Client to which we are connecting.
 
         """
         self.socket.connect(self.server_address)
-        
+
     def get_request(self):
         "Override TCPServer method, return already connected socket"
         return self.socket, self.server_address
@@ -126,7 +126,7 @@ class SocketIO:
             pass
 
     def localcall(self, request):
-        self.debug("localcall:", request) 
+        self.debug("localcall:", request)
         try:
             how, (oid, methodname, args, kwargs) = request
         except TypeError:
@@ -174,7 +174,7 @@ class SocketIO:
             return ("EXCEPTION", (mod, name, args, tb))
 
     def remotecall(self, oid, methodname, args, kwargs):
-        self.debug("remotecall:") 
+        self.debug("remotecall:")
         seq = self.asynccall(oid, methodname, args, kwargs)
         return self.asyncreturn(seq)
 
@@ -215,7 +215,7 @@ class SocketIO:
             # do the best we can:
             raise name, args
         if how == "ERROR":
-            self.debug("decoderesponse: Internal ERROR:", what)            
+            self.debug("decoderesponse: Internal ERROR:", what)
             raise RuntimeError, what
         raise SystemError, (how, what)
 
@@ -359,7 +359,7 @@ class SocketIO:
                     cv.notify()
                 self.statelock.release()
                 continue
-            
+
 #----------------- end class SocketIO --------------------
 
 class RemoteObject:
@@ -465,7 +465,7 @@ def _getattributes(obj, attributes):
     for name in dir(obj):
         attr = getattr(obj, name)
         if not callable(attr):
-           attributes[name] = 1
+            attributes[name] = 1
 
 class MethodProxy:
 
@@ -486,14 +486,14 @@ def testServer(addr):
     # XXX 25 Jul 02 KBK needs update to use rpc.py register/unregister methods
     class RemotePerson:
         def __init__(self,name):
-            self.name = name 
+            self.name = name
         def greet(self, name):
             print "(someone called greet)"
             print "Hello %s, I am %s." % (name, self.name)
             print
         def getName(self):
             print "(someone called getName)"
-            print 
+            print
             return self.name
         def greet_this_guy(self, name):
             print "(someone called greet_this_guy)"
@@ -502,7 +502,7 @@ def testServer(addr):
             remote_guy.greet("Thomas Edison")
             print "Done."
             print
-            
+
     person = RemotePerson("Thomas Edison")
     svr = RPCServer(addr)
     svr.register('thomas', person)
@@ -526,12 +526,12 @@ def testClient(addr):
     thomas.greet("Alexander Bell")
     #clt.remotecall("thomas","greet",("Alexander Bell",), {})
     print "Done."
-    print 
+    print
     time.sleep(2)
     # demonstrates remote server calling local instance
     class LocalPerson:
         def __init__(self,name):
-            self.name = name 
+            self.name = name
         def greet(self, name):
             print "You've greeted me!"
         def getName(self):
@@ -551,5 +551,3 @@ def test():
 
 if __name__ == '__main__':
     test()
-
-        

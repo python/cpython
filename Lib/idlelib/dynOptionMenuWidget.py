@@ -20,12 +20,12 @@ class DynOptionMenu(OptionMenu):
         #self.menu=self['menu']
         self.variable=variable
         self.command=kwargs.get('command')
-    
+
     def SetMenu(self,valueList,value=None):
         """
         clear and reload the menu with a new set of options.
         valueList - list of new options
-        value - initial value to set the optionmenu's menubutton to 
+        value - initial value to set the optionmenu's menubutton to
         """
         self['menu'].delete(0,'end')
         for item in valueList:

@@ -10,23 +10,23 @@ class AlreadyExists(Exception): pass
 class PageTab(Frame):
     """
     a 'page tab' like framed button
-    """ 
+    """
     def __init__(self,parent):
         Frame.__init__(self, parent,borderwidth=2,relief=RIDGE)
         self.button=Radiobutton(self,padx=5,pady=5,takefocus=FALSE,
                 indicatoron=FALSE,highlightthickness=0,
                 borderwidth=0,selectcolor=self.cget('bg'))
         self.button.pack()
-      
+
 class TabPageSet(Frame):
     """
     a set of 'pages' with TabButtons for controlling their display
-    """ 
+    """
     def __init__(self,parent,pageNames=[],**kw):
         """
         pageNames - a list of strings, each string will be the dictionary key
-        to a page's data, and the name displayed on the page's tab. Should be 
-        specified in desired page order. The first page will be the default 
+        to a page's data, and the name displayed on the page's tab. Should be
+        specified in desired page order. The first page will be the default
         and first active page.
         """
         Frame.__init__(self, parent, kw)
@@ -48,12 +48,12 @@ class TabPageSet(Frame):
             else:
                 raise InvalidTabPage, 'Invalid TabPage Name'
         ## pop up the active 'tab' only
-        for page in self.pages.keys(): 
+        for page in self.pages.keys():
             self.pages[page]['tab'].config(relief=RIDGE)
         self.pages[self.GetActivePage()]['tab'].config(relief=RAISED)
         ## switch page
         self.pages[self.GetActivePage()]['page'].lift()
-        
+
     def GetActivePage(self):
         return self.activePage.get()
 
@@ -67,7 +67,7 @@ class TabPageSet(Frame):
                 value=pageName)
         self.pages[pageName]['tab'].pack(side=LEFT)
         self.pages[pageName]['page'].grid(row=1,column=0,sticky=NSEW)
-        if len(self.pages)==1: # adding first page    
+        if len(self.pages)==1: # adding first page
             self.defaultPage=pageName
             self.activePage.set(self.defaultPage)
             self.ChangePage()
@@ -83,11 +83,11 @@ class TabPageSet(Frame):
         # handle removing last remaining, or default, or active page
         if not self.pages: # removed last remaining page
             self.defaultPage=''
-            return 
+            return
         if pageName==self.defaultPage: # set a new default page
             self.defaultPage=\
                 self.tabBar.winfo_children()[0].button.cget('text')
-        if pageName==self.GetActivePage(): # set a new active page 
+        if pageName==self.GetActivePage(): # set a new active page
             self.activePage.set(self.defaultPage)
         self.ChangePage()
 
@@ -111,4 +111,3 @@ if __name__ == '__main__':
     entryPgName.pack(padx=5)
     tabPage.ChangePage()
     root.mainloop()
-        

@@ -3,8 +3,8 @@
 
 Installation:
   see the install_IDLE target in python/dist/src/Mac/OSX/Makefile
-  
-Usage: 
+
+Usage:
 
 1. Double clicking IDLE icon will open IDLE.
 2. Dropping file on IDLE icon will open that file in IDLE.
@@ -26,7 +26,7 @@ except NameError:
     __file__ = sys.argv[0]
 idlelib = join(split(__file__)[0], 'idlelib')
 if isdir(idlelib):
-  sys.path.append(idlelib)
+    sys.path.append(idlelib)
 
 # see if we are being asked to execute the subprocess code
 if '-p' in sys.argv:

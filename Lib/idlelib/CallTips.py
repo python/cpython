@@ -81,10 +81,10 @@ class CallTips:
         while i and str[i-1] in idchars:
             i -= 1
         return str[i:]
-        
+
     def fetch_tip(self, name):
-        """Return the argument list and docstring of a function or class 
-        
+        """Return the argument list and docstring of a function or class
+
         If there is a Python subprocess, get the calltip there.  Otherwise,
         either fetch_tip() is running in the subprocess itself or it was called
         in an IDLE EditorWindow before any script had been run.
@@ -93,7 +93,7 @@ class CallTips:
         two unrelated modules are being edited some calltips in the current
         module may be inoperative if the module was not the last to run.
 
-        """  
+        """
         try:
             rpcclt = self.editwin.flist.pyshell.interp.rpcclt
         except:
@@ -211,7 +211,7 @@ if __name__=='__main__':
         print "%d of %d tests failed" % (len(failed), len(tests))
 
     tc = TC()
-    tests = (t1, t2, t3, t4, t5, t6, 
+    tests = (t1, t2, t3, t4, t5, t6,
              TC, tc.t1, tc.t2, tc.t3, tc.t4, tc.t5, tc.t6)
 
     test(tests)

@@ -103,7 +103,7 @@ class IOBinding:
                                             self.save_a_copy)
         self.fileencoding = None
         self.__id_print = self.text.bind("<<print-window>>", self.print_window)
-        
+
     def close(self):
         # Undo command bindings
         self.text.unbind("<<open-window-from-file>>", self.__id_open)
@@ -366,7 +366,7 @@ class IOBinding:
             "# -*- coding: %s -*- \nto your file" % enc,
             master = self.text)
         return chars
- 
+
     def fixlastline(self):
         c = self.text.get("end-2c")
         if c != '\n':
@@ -403,10 +403,10 @@ class IOBinding:
                 output = "Printing command: %s\n" % repr(command) + output
                 tkMessageBox.showerror("Print status", output, master=self.text)
         else:  #no printing for this platform
-            message="Printing is not enabled for this platform: %s" % platform 
+            message="Printing is not enabled for this platform: %s" % platform
             tkMessageBox.showinfo("Print status", message, master=self.text)
         return "break"
-    
+
     opendialog = None
     savedialog = None
 

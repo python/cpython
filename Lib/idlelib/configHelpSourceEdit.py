@@ -27,7 +27,7 @@ class GetHelpSourceDialog(Toplevel):
         self.withdraw() #hide while setting geometry
         self.update_idletasks()
         #needs to be done here so that the winfo_reqwidth is valid
-        self.geometry("+%d+%d" % 
+        self.geometry("+%d+%d" %
             ((parent.winfo_rootx()+((parent.winfo_width()/2)
                 -(self.winfo_reqwidth()/2)),
               parent.winfo_rooty()+((parent.winfo_height()/2)
@@ -63,7 +63,7 @@ class GetHelpSourceDialog(Toplevel):
         self.buttonCancel.grid(row=0,column=1,padx=5,pady=5)
 
     def MenuOk(self):
-        #simple validity check for a sensible 
+        #simple validity check for a sensible
         #menu item name
         menuOk=1
         menu=self.menu.get()
@@ -80,9 +80,9 @@ class GetHelpSourceDialog(Toplevel):
             self.entryMenu.focus_set()
             menuOk=0
         return menuOk
-    
+
     def PathOk(self):
-        #simple validity check for menu file path 
+        #simple validity check for menu file path
         pathOk=1
         path=self.path.get()
         path.strip()
@@ -97,13 +97,13 @@ class GetHelpSourceDialog(Toplevel):
             self.entryPath.focus_set()
             pathOk=0
         return pathOk
-            
+
     def Ok(self, event=None):
         if self.MenuOk():
             if self.PathOk():
-                self.result=( self.menu.get().strip(),self.path.get().strip() ) 
+                self.result=( self.menu.get().strip(),self.path.get().strip() )
                 self.destroy()
-        
+
     def Cancel(self, event=None):
         self.result=None
         self.destroy()
@@ -117,5 +117,3 @@ if __name__ == '__main__':
         print dlg.result
     Button(root,text='Dialog',command=run).pack()
     root.mainloop()
-    
- 

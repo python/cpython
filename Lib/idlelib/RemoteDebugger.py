@@ -121,7 +121,7 @@ class IdbAdapter:
     def clear_all_file_breaks(self, filename):
         msg = self.idb.clear_all_file_breaks(filename)
         return msg
-    
+
     #----------called by a FrameProxy----------
 
     def frame_attr(self, fid, name):
@@ -366,7 +366,7 @@ def close_remote_debugger(rpcclt):
     debugger and RPC link objects.  (The second reference to the debugger GUI
     is deleted in PyShell.close_remote_debugger().)
 
-    """    
+    """
     close_subprocess_debugger(rpcclt)
     rpcclt.unregister(gui_adap_oid)
 
@@ -377,4 +377,3 @@ def restart_subprocess_debugger(rpcclt):
     idb_adap_oid_ret = rpcclt.remotecall("exec", "start_the_debugger",\
                                          (gui_adap_oid,), {})
     assert idb_adap_oid_ret == idb_adap_oid, 'Idb restarted with different oid'
-
