@@ -25,7 +25,7 @@
 % Mention other important restrictions or general operating principles.
 % For example:
 
-The \code{spam} module defines operations for handling cans of Spam.
+The \module{spam} module defines operations for handling cans of Spam.
 It knows the four generally available Spam varieties and understands
 both can sizes.
 
@@ -39,7 +39,7 @@ is only available on genuine \UNIX{} systems.
 % items defined in the module, insofar as they are important for the
 % user.
 
-The \code{spam} module defines the following functions:
+The \module{spam} module defines the following functions:
 
 % ---- 3.1. ----
 % Redefine the ``indexsubitem'' macro to point to this module
@@ -75,7 +75,7 @@ system dependent).
 \begin{datadesc}{cansize}
 The default can size, in ounces.  Legal values are 7 and 12.  The
 default varies per supermarket.  This variable should not be changed
-once the \code{open()} function has been called.
+once the \function{open()} function has been called.
 \end{datadesc}
 
 % --- 3.4. ---
@@ -117,7 +117,7 @@ Example:
 
 \subsection{Spam Objects}
 
-Spam objects (returned by \code{open()} above) have the following
+Spam objects (returned by \function{open()} above) have the following
 methods.
 
 \setindexsubitem{(spam method)}
