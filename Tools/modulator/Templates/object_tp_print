@@ -1,0 +1,10 @@
+
+static int
+$abbrev$_print(self, fp, flags)
+	$abbrev$object *self;
+	FILE *fp;
+	int flags;
+{
+	/* XXXX Add code here to print self to fp */
+	return 0;
+}

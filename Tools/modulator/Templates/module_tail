@@ -1,0 +1,30 @@
+
+/* List of methods defined in the module */
+
+static struct methodlist $abbrev$_methods[] = {
+ $methodlist$
+ {NULL,		NULL}		/* sentinel */
+};
+
+
+/* Initialization function for the module (*must* be called init$name$) */
+
+void
+init$name$()
+{
+	object *m, *d;
+
+	/* Create the module and add the functions */
+	m = initmodule("$name$", $abbrev$_methods);
+
+	/* Add some symbolic constants to the module */
+	d = getmoduledict(m);
+	ErrorObject = newstringobject("$name$.error");
+	dictinsert(d, "error", ErrorObject);
+
+	/* XXXX Add constants here */
+	
+	/* Check for errors */
+	if (err_occurred())
+		fatal("can't initialize module $name$");
+}

@@ -1,0 +1,7 @@
+
+#include "allobjects.h"
+#include "modsupport.h"		/* For getargs() etc. */
+
+static object *ErrorObject;
+
+/* ----------------------------------------------------- */

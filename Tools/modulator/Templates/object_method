@@ -1,0 +1,11 @@
+
+static object *
+$abbrev$_$method$(self, args)
+	$abbrev$object *self;
+	object *args;
+{
+	if (!newgetargs(args, ""))
+		return NULL;
+	INCREF(None);
+	return None;
+}

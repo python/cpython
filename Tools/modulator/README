@@ -1,0 +1,17 @@
+This is release 1.0 of modulator, a generator of boilerplate code for
+modules to be written in C.
+
+Usage when you have tk is *reall* simple: start modulator, fill out
+the forms specifying all the objects and methods, tell modulator
+whether objects should also be accessible as sequences, etc and press
+'generate code'. It will write a complete skeleton module for you.
+
+Usage when you don't have tk is slightly more difficult. Look at
+EXAMPLE.py for some details.
+
+Oh yeah: you'll probably want to change Templates/copyright, or all
+your code ends up as being copyrighted to CWI:-)
+
+Let me know what you think,
+				Jack Jansen, jack@cwi.nl
+				

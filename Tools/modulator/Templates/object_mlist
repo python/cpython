@@ -1,0 +1,7 @@
+
+static struct methodlist $abbrev$_methods[] = {
+ $methodlist$
+ {NULL,		NULL}		/* sentinel */
+};
+
+/* ---------- */
