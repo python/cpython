@@ -93,6 +93,7 @@ query the type of parse tree represented by an AST object.
 
 
 \subsection{Creating AST Objects}
+\label{Creating ASTs}
 
 AST objects may be created from source code or from a parse tree.
 When creating an AST object from source, different functions are used
@@ -145,6 +146,7 @@ is maintained for backward compatibility.
 
 
 \subsection{Converting AST Objects}
+\label{Converting ASTs}
 
 AST objects, regardless of the input used to create them, may be
 converted to parse trees represented as list- or tuple- trees, or may
@@ -205,6 +207,7 @@ inspection of the parse tree.
 
 
 \subsection{Queries on AST Objects}
+\label{Querying ASTs}
 
 Two functions are provided which allow an application to determine if
 an AST was create as an expression or a suite.  Neither of these
@@ -233,6 +236,7 @@ be supported in the future.
 
 
 \subsection{Exceptions and Error Handling}
+\label{AST Errors}
 
 The parser module defines a single exception, but may also pass other
 built-in exceptions from other portions of the Python runtime
@@ -261,6 +265,7 @@ to the descriptions of each function for detailed information.
 
 
 \subsection{AST Objects}
+\label{AST Objects}
 
 AST objects returned by \function{expr()}, \function{suite()}, and
 \function{sequence2ast()} have no methods of their own.
