@@ -26,9 +26,9 @@ except NameError:
 StringType = str
 try:
     UnicodeType = unicode
-    StringTypes = [StringType, UnicodeType]
+    StringTypes = (StringType, UnicodeType)
 except NameError:
-    StringTypes = [StringType]
+    StringTypes = (StringType,)
 
 BufferType = type(buffer(''))
 
