@@ -203,16 +203,16 @@ def _optimize_charset(charset, fixup):
     # internal: optimize character set
     out = []
     outappend = out.append
-    charmap = [False]*256
+    charmap = [0]*256
     try:
         for op, av in charset:
             if op is NEGATE:
                 outappend((op, av))
             elif op is LITERAL:
-                charmap[fixup(av)] = True
+                charmap[fixup(av)] = 1
             elif op is RANGE:
                 for i in range(fixup(av[0]), fixup(av[1])+1):
-                    charmap[i] = True
+                    charmap[i] = 1
             elif op is CATEGORY:
                 # XXX: could append to charmap tail
                 return charset # cannot compress
@@ -298,17 +298,17 @@ def _optimize_unicode(charset, fixup):
         import array
     except ImportError:
         return charset
-    charmap = [False]*65536
+    charmap = [0]*65536
     negate = 0
     try:
         for op, av in charset:
             if op is NEGATE:
                 negate = 1
             elif op is LITERAL:
-                charmap[fixup(av)] = True
+                charmap[fixup(av)] = 1
             elif op is RANGE:
                 for i in xrange(fixup(av[0]), fixup(av[1])+1):
-                    charmap[i] = True
+                    charmap[i] = 1
             elif op is CATEGORY:
                 # XXX: could expand category
                 return charset # cannot compress
