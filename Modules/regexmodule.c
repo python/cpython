@@ -43,7 +43,7 @@ static void
 reg_dealloc(regexobject *re)
 {
 	if (re->re_patbuf.buffer)
-		PyMem_DEL(re->re_patbuf.buffer);
+		free(re->re_patbuf.buffer);
 	Py_XDECREF(re->re_translate);
 	Py_XDECREF(re->re_lastok);
 	Py_XDECREF(re->re_groupindex);
