@@ -1025,6 +1025,8 @@ file_xreadlines(PyFileObject *f)
 {
 	static PyObject* xreadlines_function = NULL;
 
+	if (f->f_fp == NULL)
+		return err_closed();
 	if (!xreadlines_function) {
 		PyObject *xreadlines_module =
 			PyImport_ImportModule("xreadlines");

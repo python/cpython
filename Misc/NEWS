@@ -6,6 +6,10 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- file.xreadlines() now raises a ValueError if the file is closed:
+  Previously, an xreadlines object was returned which would raise
+  a ValueError when the xreadlines.next() method was called.
+
 Extension modules
 
 Library
