@@ -744,106 +744,66 @@ string_join(PyStringObject *self, PyObject *args)
 	int seqlen = 0;
 	int sz = 100;
 	int i, slen;
-	PyObject *seq;
+	PyObject *orig, *seq, *item;
 
-	if (!PyArg_ParseTuple(args, "O:join", &seq))
+	if (!PyArg_ParseTuple(args, "O:join", &orig))
 		return NULL;
+
+	seq = PySequence_Fast(orig, "");
+	if (seq == NULL) {
+		if (PyErr_ExceptionMatches(PyExc_TypeError))
+			PyErr_Format(PyExc_TypeError,
+				     "sequence expected, %.80s found",
+				     orig->ob_type->tp_name);
+		return NULL;
+	}
 
 	seqlen = PySequence_Length(seq);
-	if (seqlen < 0 && PyErr_Occurred())
-		return NULL;
-
 	if (seqlen == 1) {
-		/* Optimization if there's only one item */
-		PyObject *item = PySequence_GetItem(seq, 0);
-		if (item == NULL)
-		    return NULL;
-		if (!PyString_Check(item) && 
-		    !PyUnicode_Check(item)) {
-		        PyErr_SetString(PyExc_TypeError,
-			      "first argument must be sequence of strings");
-			Py_DECREF(item);
-			return NULL;
-		}
+		item = PySequence_Fast_GET_ITEM(seq, 0);
+		Py_INCREF(item);
 		return item;
 	}
+
 	if (!(res = PyString_FromStringAndSize((char*)NULL, sz)))
 		return NULL;
 	p = PyString_AsString(res);
 
-	/* optimize for lists.  all others (tuples and arbitrary sequences)
-	 * just use the abstract interface.
-	 */
-	if (PyList_Check(seq)) {
-		for (i = 0; i < seqlen; i++) {
-			PyObject *item = PyList_GET_ITEM(seq, i);
-			if (!PyString_Check(item)){
-				if (PyUnicode_Check(item)) {
-					Py_DECREF(res);
-					return PyUnicode_Join(
-							 (PyObject *)self, 
-							 seq);
-				}
-				PyErr_Format(PyExc_TypeError,
-					     "sequence item %i not a string",
-					     i);
-				goto finally;
-			}
-			slen = PyString_GET_SIZE(item);
-			while (reslen + slen + seplen >= sz) {
-				if (_PyString_Resize(&res, sz*2))
-					goto finally;
-				sz *= 2;
-				p = PyString_AsString(res) + reslen;
-			}
-			if (i > 0) {
-				memcpy(p, sep, seplen);
-				p += seplen;
-				reslen += seplen;
-			}
-			memcpy(p, PyString_AS_STRING(item), slen);
-			p += slen;
-			reslen += slen;
-		}
-	}
-	else {
-		for (i = 0; i < seqlen; i++) {
-			PyObject *item = PySequence_GetItem(seq, i);
-			if (!item)
-				goto finally;
-			if (!PyString_Check(item)){
-				if (PyUnicode_Check(item)) {
-					Py_DECREF(res);
-					Py_DECREF(item);
-					return PyUnicode_Join(
-							 (PyObject *)self, 
-							 seq);
-				}
+	for (i = 0; i < seqlen; i++) {
+		item = PySequence_Fast_GET_ITEM(seq, i);
+		if (!PyString_Check(item)){
+			if (PyUnicode_Check(item)) {
+				Py_DECREF(res);
 				Py_DECREF(item);
-				PyErr_Format(PyExc_TypeError,
-					     "sequence item %i not a string",
-					     i);
+				return PyUnicode_Join((PyObject *)self, 
+						      seq);
+			}
+			PyErr_Format(PyExc_TypeError,
+			     "sequence item %i: expected string, %.80s found",
+				     i, item->ob_type->tp_name);
+			Py_DECREF(item);
+			Py_DECREF(seq);
+			goto finally;
+		}
+		slen = PyString_GET_SIZE(item);
+		while (reslen + slen + seplen >= sz) {
+			if (_PyString_Resize(&res, sz*2)) {
+				Py_DECREF(item);
+				Py_DECREF(seq);
 				goto finally;
 			}
-			slen = PyString_GET_SIZE(item);
-			while (reslen + slen + seplen >= sz) {
-				if (_PyString_Resize(&res, sz*2)) {
-					Py_DECREF(item);
-					goto finally;
-				}
-				sz *= 2;
-				p = PyString_AsString(res) + reslen;
-			}
-			if (i > 0) {
-				memcpy(p, sep, seplen);
-				p += seplen;
-				reslen += seplen;
-			}
-			memcpy(p, PyString_AS_STRING(item), slen);
-			Py_DECREF(item);
-			p += slen;
-			reslen += slen;
+			sz *= 2;
+			p = PyString_AsString(res) + reslen;
 		}
+		if (i > 0) {
+			memcpy(p, sep, seplen);
+			p += seplen;
+			reslen += seplen;
+		}
+		memcpy(p, PyString_AS_STRING(item), slen);
+		Py_DECREF(item);
+		p += slen;
+		reslen += slen;
 	}
 	if (_PyString_Resize(&res, reslen))
 		goto finally;
