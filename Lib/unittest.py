@@ -46,7 +46,7 @@ SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 __author__ = "Steve Purcell"
 __email__ = "stephen_purcell at yahoo dot com"
-__version__ = "#Revision: 1.61 $"[11:-2]
+__version__ = "#Revision: 1.62 $"[11:-2]
 
 import time
 import sys
@@ -341,7 +341,7 @@ class TestCase:
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero.
 
-           Note that decimal places (from zero) is usually not the same
+           Note that decimal places (from zero) are usually not the same
            as significant digits (measured from the most signficant digit).
         """
         if round(second-first, places) == 0:
