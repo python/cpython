@@ -46,6 +46,9 @@ Extension modules
 Library
 -------
 
+- encodings.bz2_codec was added for access to bz2 compression
+  using "a long string".encode('bz2')
+
 - Various improvements to unittest.py, realigned with PyUnit CVS.
 
 - dircache now passes exceptions to the caller, instead of returning
