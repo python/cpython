@@ -5,6 +5,7 @@
 #-----------------------------------------------------------------------
 #
 # Copyright (C) 2000, 2001 by Autonomous Zone Industries
+# Copyright (C) 2002 Gregory P. Smith
 #
 # March 20, 2000
 #
@@ -157,6 +158,40 @@ class TableDBTestCase(unittest.TestCase):
             conditions={'c': lambda c: c == 'meep'})
         assert len(values) == 1
         assert values[0]['b'] == "bad"
+
+
+    def test04_MultiCondSelect(self):
+        tabname = "test04_MultiCondSelect"
+        try:
+            self.tdb.Drop(tabname)
+        except dbtables.TableDBError:
+            pass
+        self.tdb.CreateTable(tabname, ['a', 'b', 'c', 'd', 'e'])
+
+        try:
+            self.tdb.Insert(tabname, {'a': "", 'e': pickle.dumps([{4:5, 6:7}, 'foo'], 1), 'f': "Zero"})
+            assert 0
+        except dbtables.TableDBError:
+            pass
+
+        self.tdb.Insert(tabname, {'a': "A", 'b': "B", 'c': "C", 'd': "D", 'e': "E"})
+        self.tdb.Insert(tabname, {'a': "-A", 'b': "-B", 'c': "-C", 'd': "-D", 'e': "-E"})
+        self.tdb.Insert(tabname, {'a': "A-", 'b': "B-", 'c': "C-", 'd': "D-", 'e': "E-"})
+
+        if verbose:
+            self.tdb._db_print()
+
+        # This select should return 0 rows.  it is designed to test
+        # the bug identified and fixed in sourceforge bug # 590449
+        # (Big Thanks to "Rob Tillotson (n9mtb)" for tracking this down
+        # and supplying a fix!!  This one caused many headaches to say
+        # the least...)
+        values = self.tdb.Select(tabname, ['b', 'a', 'd'],
+            conditions={'e': dbtables.ExactCond('E'),
+                        'a': dbtables.ExactCond('A'),
+                        'd': dbtables.PrefixCond('-')
+                       } )
+        assert len(values) == 0, values
 
 
     def test_CreateOrExtend(self):

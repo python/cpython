@@ -210,7 +210,7 @@ class BTreeShelveTestCase(BasicShelveTestCase):
 
 
 class HashShelveTestCase(BasicShelveTestCase):
-    dbtype = db.DB_BTREE
+    dbtype = db.DB_HASH
     dbflags = db.DB_CREATE
 
 
@@ -220,7 +220,7 @@ class ThreadBTreeShelveTestCase(BasicShelveTestCase):
 
 
 class ThreadHashShelveTestCase(BasicShelveTestCase):
-    dbtype = db.DB_BTREE
+    dbtype = db.DB_HASH
     dbflags = db.DB_CREATE | db.DB_THREAD
 
 
@@ -261,7 +261,7 @@ class EnvBTreeShelveTestCase(BasicEnvShelveTestCase):
 
 class EnvHashShelveTestCase(BasicEnvShelveTestCase):
     envflags = 0
-    dbtype = db.DB_BTREE
+    dbtype = db.DB_HASH
     dbflags = db.DB_CREATE
 
 
@@ -273,7 +273,7 @@ class EnvThreadBTreeShelveTestCase(BasicEnvShelveTestCase):
 
 class EnvThreadHashShelveTestCase(BasicEnvShelveTestCase):
     envflags = db.DB_THREAD
-    dbtype = db.DB_BTREE
+    dbtype = db.DB_HASH
     dbflags = db.DB_CREATE | db.DB_THREAD
 
 
