@@ -62,7 +62,8 @@ class MWerksCompiler (CCompiler) :
                  include_dirs=None,
                  debug=0,
                  extra_preargs=None,
-                 extra_postargs=None):
+                 extra_postargs=None,
+                 depends=None):
         (output_dir, macros, include_dirs) = \
            self._fix_compile_args (output_dir, macros, include_dirs)
         self.__sources = sources
