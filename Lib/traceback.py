@@ -186,16 +186,16 @@ def extract_stack(f=None, limit = None):
 # with -O on).
 # Coded by Marc-Andre Lemburg from the example of PyCode_Addr2Line()
 # in compile.c.
+# Revised version by Jim Hugunin to work with JPython too.
 
 def tb_lineno(tb):
-	f = tb.tb_frame
-	try:
-		c = f.f_code
-		tab = c.co_lnotab
-		line = c.co_firstlineno
-		stopat = tb.tb_lasti
-	except AttributeError:
-		return f.f_lineno
+	c = tb.tb_frame.f_code
+	if not hasattr(c, 'co_lnotab'):
+		return tb.tb_lineno
+
+	tab = c.co_lnotab
+	line = c.co_firstlineno
+	stopat = tb.tb_lasti
 	addr = 0
 	for i in range(0, len(tab), 2):
 		addr = addr + ord(tab[i])
