@@ -875,8 +875,18 @@ parsestr(s)
 	int c;
 	int first = *s;
 	int quote = first;
-	if (isalpha(quote) || quote == '_')
-		quote = *++s;
+	int rawmode = 0;
+	int unicode = 0;
+	if (isalpha(quote) || quote == '_') {
+		if (quote == 'u' || quote == 'U') {
+			quote = *++s;
+			unicode = 1;
+		}
+		if (quote == 'r' || quote == 'R') {
+			quote = *++s;
+			rawmode = 1;
+		}
+	}
 	if (quote != '\'' && quote != '\"') {
 		PyErr_BadInternalCall();
 		return NULL;
@@ -895,8 +905,17 @@ parsestr(s)
 			return NULL;
 		}
 	}
-	if (first != quote || strchr(s, '\\') == NULL)
+	if (unicode) {
+		if (rawmode)
+			return PyUnicode_DecodeRawUnicodeEscape(
+				s, len, NULL);
+		else
+			return PyUnicode_DecodeUnicodeEscape(
+				s, len, NULL);
+	}
+	else if (rawmode || strchr(s, '\\') == NULL) {
 		return PyString_FromStringAndSize(s, len);
+	}
 	v = PyString_FromStringAndSize((char *)NULL, len);
 	p = buf = PyString_AsString(v);
 	end = s + len;
