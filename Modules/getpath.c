@@ -98,7 +98,7 @@
  */
 
 #ifndef VERSION
-#define VERSION "2.0"
+#define VERSION "2.1"
 #endif
 
 #ifndef VPATH
@@ -114,7 +114,6 @@
 #endif
 
 #ifndef PYTHONPATH
-/* I know this isn't K&R C, but the Makefile specifies it anyway */
 #define PYTHONPATH PREFIX "/lib/python" VERSION ":" \
 	      EXEC_PREFIX "/lib/python" VERSION "/lib-dynload"
 #endif
@@ -224,7 +223,7 @@ joinpath(char *buffer, char *stuff)
     buffer[n+k] = '\0';
 }
 
-/* init_path_from_argv0 requirs that path be allocated at least
+/* init_path_from_argv0 requires that path be allocated at least
    MAXPATHLEN + 1 bytes and that argv0_path be no more than MAXPATHLEN
    bytes. 
 */
