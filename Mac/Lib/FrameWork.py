@@ -713,6 +713,9 @@ class Window:
 	def SetPort(self):
 		# Convinience method
 		SetPort(self.wid)
+		
+	def GetWindow(self):
+		return self.wid
 	
 	def do_inDrag(self, partcode, window, event):
 		where = event[3]
@@ -753,13 +756,13 @@ class Window:
 	def do_resize(self, width, height, window):
 		l, t, r, b = self.wid.GetWindowPort().portRect			# jvr, forGrowIcon
 		self.SetPort()							# jvr
-		InvalWindowRect((r - SCROLLBARWIDTH + 1, b - SCROLLBARWIDTH + 1, r, b))	# jvr
+		self.wid.InvalWindowRect((r - SCROLLBARWIDTH + 1, b - SCROLLBARWIDTH + 1, r, b))	# jvr
 		window.SizeWindow(width, height, 1)		# changed updateFlag to true jvr
 		self.do_postresize(width, height, window)
 	
 	def do_postresize(self, width, height, window):
 		SetPort(window)
-		InvalWindowRect(window.GetWindowPort().portRect)
+		self.wid.InvalWindowRect(window.GetWindowPort().portRect)
 	
 	def do_inContent(self, partcode, window, event):
 		#
@@ -853,12 +856,12 @@ class ScrolledWindow(ControlsWindow):
 			rect = x0-1, y1-(SCROLLBARWIDTH-1), x1-(SCROLLBARWIDTH-2), y1+1
 			self.barx = NewControl(self.wid, rect, "", 1, vx, 0, 32767, 16, 0)
 			if not self.barx_enabled: self.barx.HiliteControl(255)
-##			InvalWindowRect(rect)
+##			self.wid.InvalWindowRect(rect)
 		if wanty:
 			rect = x1-(SCROLLBARWIDTH-1), y0-1, x1+1, y1-(SCROLLBARWIDTH-2)
 			self.bary = NewControl(self.wid, rect, "", 1, vy, 0, 32767, 16, 0)
 			if not self.bary_enabled: self.bary.HiliteControl(255)
-##			InvalWindowRect(rect)
+##			self.wid.InvalWindowRect(rect)
 			
 	def do_postclose(self):
 		self.barx = self.bary = None
@@ -893,11 +896,11 @@ class ScrolledWindow(ControlsWindow):
 			self.bary.SizeControl(SCROLLBARWIDTH, (b-t)-(SCROLLBARWIDTH-3))	# jvr
 		if self.barx:
 			self.barx.ShowControl()		# jvr
-			ValidWindowRect((l, b - SCROLLBARWIDTH + 1, r - SCROLLBARWIDTH + 2, b))	# jvr
+			self.wid.ValidWindowRect((l, b - SCROLLBARWIDTH + 1, r - SCROLLBARWIDTH + 2, b))	# jvr
 		if self.bary:
 			self.bary.ShowControl()		# jvr
-			ValidWindowRect((r - SCROLLBARWIDTH + 1, t, r, b - SCROLLBARWIDTH + 2))	# jvr
-		InvalWindowRect((r - SCROLLBARWIDTH + 1, b - SCROLLBARWIDTH + 1, r, b))	# jvr, growicon
+			self.wid.ValidWindowRect((r - SCROLLBARWIDTH + 1, t, r, b - SCROLLBARWIDTH + 2))	# jvr
+		self.wid.InvalWindowRect((r - SCROLLBARWIDTH + 1, b - SCROLLBARWIDTH + 1, r, b))	# jvr, growicon
 
 			
 	def do_rawcontrolhit(self, window, control, pcode, local, event):

@@ -104,8 +104,8 @@ class Widget:
 	
 	def adjust(self, oldbounds):
 		self.SetPort()
-		Win.InvalWindowRect(oldbounds)
-		Win.InvalWindowRect(self._bounds)
+		self.GetWindow().InvalWindowRect(oldbounds)
+		self.GetWindow().InvalWindowRect(self._bounds)
 	
 	def _calcbounds(self):
 		# calculate absolute bounds relative to the window origin from our
@@ -218,7 +218,7 @@ class Widget:
 		self._setparentwindow(widget)
 		if self._parentwindow and self._parentwindow.wid:
 			widget.forall_frombottom("open")
-			Win.InvalWindowRect(widget._bounds)
+			self.GetWindow().InvalWindowRect(widget._bounds)
 	
 	def _setparentwindow(self, widget):
 		widget._parentwindow = self._parentwindow
@@ -235,7 +235,7 @@ class Widget:
 			widget.select(0)
 			self._parentwindow._currentwidget = None
 		self.SetPort()
-		Win.InvalWindowRect(widget._bounds)
+		self.GetWindow().InvalWindowRect(widget._bounds)
 		widget.close()
 		del self._widgetsdict[key]
 		self._widgets.remove(widget)
@@ -274,7 +274,11 @@ class Widget:
 	
 	def SetPort(self):
 		self._parentwindow.SetPort()
-	
+		
+
+	def GetWindow(self):
+		return self._parentwindow.GetWindow()
+		
 	def __del__(self):
 		if DEBUG:
 			print "%s instance deleted" % self.__class__.__name__
@@ -340,11 +344,11 @@ class SelectableWidget(ClickableWidget):
 	def adjust(self, oldbounds):
 		self.SetPort()
 		if self._selected:
-			Win.InvalWindowRect(Qd.InsetRect(oldbounds, -3, -3))
-			Win.InvalWindowRect(Qd.InsetRect(self._bounds, -3, -3))
+			self.GetWindow().InvalWindowRect(Qd.InsetRect(oldbounds, -3, -3))
+			self.GetWindow().InvalWindowRect(Qd.InsetRect(self._bounds, -3, -3))
 		else:
-			Win.InvalWindowRect(oldbounds)
-			Win.InvalWindowRect(self._bounds)
+			self.GetWindow().InvalWindowRect(oldbounds)
+			self.GetWindow().InvalWindowRect(self._bounds)
 
 
 class _Line(Widget):

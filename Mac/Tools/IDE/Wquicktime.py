@@ -24,14 +24,14 @@ class Movie(W.Widget):
 	
 	def adjust(self, oldbounds):
 		self.SetPort()
-		Win.InvalWindowRect(oldbounds)
-		Win.InvalWindowRect(self._bounds)
+		self.GetWindow().InvalWindowRect(oldbounds)
+		self.GetWindow().InvalWindowRect(self._bounds)
 		self.calcmoviebox()
 	
 	def set(self, path_or_fss, start = 0):
 		self.SetPort()
 		if self.movie:
-			#Win.InvalWindowRect(self.movie.GetMovieBox())
+			#self.GetWindow().InvalWindowRect(self.movie.GetMovieBox())
 			Qd.PaintRect(self.movie.GetMovieBox())
 		if type(path_or_fss) == type(''):
 			path = path_or_fss
@@ -106,7 +106,7 @@ class Movie(W.Widget):
 			elif self.running:
 				box = self.movie.GetMovieBox()
 				self.SetPort()
-				Win.InvalWindowRect(box)
+				self.GetWindow().InvalWindowRect(box)
 				self.movie = None
 				self.running = 0
 	

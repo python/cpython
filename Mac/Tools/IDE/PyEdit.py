@@ -957,7 +957,7 @@ class SearchEngine:
 			editor.ted.WEUseText(Res.Resource(Text))
 			editor.ted.WECalText()
 			editor.SetPort()
-			Win.InvalWindowRect(editor._bounds)
+			editor.GetWindow().InvalWindowRect(editor._bounds)
 			#editor.ted.WEUpdate(self.w.wid.GetWindowPort().visRgn)
 			EasyDialogs.Message("Replaced %d occurrences" % counter)
 	
