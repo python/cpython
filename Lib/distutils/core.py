@@ -8,7 +8,7 @@ may be subclassed by clients for still more flexibility)."""
 
 # created 1999/03/01, Greg Ward
 
-__rcsid__ = "$Id$"
+__revision__ = "$Id$"
 
 import sys, os
 import string, re

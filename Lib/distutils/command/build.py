@@ -4,7 +4,7 @@ Implements the Distutils 'build' command."""
 
 # created 1999/03/08, Greg Ward
 
-__rcsid__ = "$Id$"
+__revision__ = "$Id$"
 
 import sys, os
 from distutils.core import Command

@@ -4,7 +4,7 @@ Implements the Distutils 'build_py' command."""
 
 # created 1999/03/08, Greg Ward
 
-__rcsid__ = "$Id$"
+__revision__ = "$Id$"
 
 import sys, string, os
 from types import *

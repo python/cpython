@@ -7,7 +7,7 @@ module."""
 # created (an empty husk) 1999/12/18, Greg Ward
 # fleshed out 2000/02/03-04
 
-__rcsid__ = "$Id$"
+__revision__ = "$Id$"
 
 
 # XXX this module has *lots* of code ripped-off quite transparently from

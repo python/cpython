@@ -6,7 +6,7 @@ for the Microsoft Visual Studio."""
 
 # created 1999/08/19, Perry Stoll
 # 
-__rcsid__ = "$Id$"
+__revision__ = "$Id$"
 
 import os
 import sys

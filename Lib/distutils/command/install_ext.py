@@ -4,7 +4,7 @@ Implement the Distutils "install_ext" command to install extension modules."""
 
 # created 1999/09/12, Greg Ward
 
-__rcsid__ = "$Id$"
+__revision__ = "$Id$"
 
 from distutils.core import Command
 from distutils.util import copy_tree

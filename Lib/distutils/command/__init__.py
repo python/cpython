@@ -13,7 +13,7 @@ commands.  Currently this means:
 
 but this list will undoubtedly grow with time."""
 
-__rcsid__ = "$Id$"
+__revision__ = "$Id$"
 
 __all__ = ['build',
            'build_py',

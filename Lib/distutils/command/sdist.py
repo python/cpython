@@ -4,7 +4,7 @@ Implements the Distutils 'sdist' command (create a source distribution)."""
 
 # created 1999/09/22, Greg Ward
 
-__rcsid__ = "$Id$"
+__revision__ = "$Id$"
 
 import sys, os, string, re
 import fnmatch

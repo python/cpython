@@ -15,7 +15,7 @@ the "typical" Unix-style command-line C compiler:
 
 # created 1999/07/05, Greg Ward
 
-__rcsid__ = "$Id$"
+__revision__ = "$Id$"
 
 import string, re, os
 from types import *
