@@ -1270,6 +1270,43 @@ static char close_doc[] =
 \n\
 Close the socket.  It cannot be used after this call.";
 
+static int
+internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen)
+{
+	int res;
+
+	res = connect(s->sock_fd, addr, addrlen);
+
+#ifdef MS_WINDOWS
+
+	if (s->sock_timeout > 0.0) {
+		if (res < 0 && WSAGetLastError() == WSAEWOULDBLOCK) {
+			internal_select(s, 1);
+			res = connect(s->sock_fd, addr, addrlen);
+			if (res < 0 && WSAGetLastError() == WSAEISCONN)
+				res = 0;
+		}
+	}
+
+	if (res < 0)
+		res = WSAGetLastError();
+
+#else
+
+	if (s->sock_timeout > 0.0) {
+		if (res < 0 && errno == EINPROGRESS) {
+			internal_select(s, 1);
+			res = connect(s->sock_fd, addr, addrlen);
+		}
+	}
+
+	if (res < 0)
+		res = errno;
+
+#endif
+
+	return res;
+}
 
 /* s.connect(sockaddr) method */
 
@@ -1284,18 +1321,10 @@ sock_connect(PySocketSockObject *s, PyObject *addro)
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
-	if (s->sock_timeout > 0.0) {
-		res = connect(s->sock_fd, addr, addrlen);
-		if (res == EINPROGRESS) {
-			internal_select(s, 1);
-			res = connect(s->sock_fd, addr, addrlen);
-		}
-	}
-	else
-		res = connect(s->sock_fd, addr, addrlen);
+	res = internal_connect(s, addr, addrlen);
 	Py_END_ALLOW_THREADS
 
-	if (res < 0)
+	if (res != 0)
 		return s->errorhandler();
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -1321,24 +1350,8 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
-	if (s->sock_timeout > 0.0) {
-		res = connect(s->sock_fd, addr, addrlen);
-		if (res == EINPROGRESS) {
-			internal_select(s, 1);
-			res = connect(s->sock_fd, addr, addrlen);
-		}
-	}
-	else
-		res = connect(s->sock_fd, addr, addrlen);
+	res = internal_connect(s, addr, addrlen);
 	Py_END_ALLOW_THREADS
-
-	if (res != 0) {
-#ifdef MS_WINDOWS
-		res = WSAGetLastError();
-#else
-		res = errno;
-#endif
-	}
 
 	return PyInt_FromLong((long) res);
 }
