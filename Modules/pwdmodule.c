@@ -102,6 +102,7 @@ pwd_getpwall(PyObject *self, PyObject *args)
 		}
 		Py_DECREF(v);
 	}
+	endpwent();
 	return d;
 }
 #endif

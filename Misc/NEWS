@@ -41,6 +41,10 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 - complex() could segfault on numeric types with NULL for float conversion.
   Fixed.
 
+- Fixed #407504 -- closing pwd and grp database when finished.
+
+- Fixed memory leak in from import ...
+
 
 What's New in Python 2.0?
 =========================
