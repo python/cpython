@@ -1,16 +1,23 @@
+import sys
 import sv, SV
 import gl, GL, DEVICE
 
 def main():
 	format = SV.RGB8_FRAMES
 	requestedwidth = SV.PAL_XMAX
-	queuesize = 2
+	queuesize = 30
+	if sys.argv[1:]:
+		queuesize = eval(sys.argv[1])
 
 	v = sv.OpenVideo()
 	svci = (format, requestedwidth, 0, queuesize, 0)
 
-	svci, buffer, bitvec = v.CaptureBurst(svci)
-	[bitvec]
+	go = raw_input('Press return to capture ' + `queuesize` + ' frames: ')
+	result = v.CaptureBurst(svci)
+##	svci, buffer, bitvec = result # XXX Bit vector not yet implemented
+	svci, buffer = result
+
+	print 'Captured', svci[3], 'frames, i.e.', len(buffer)/1024, 'K bytes'
 
 	w, h = svci[1:3]
 	framesize = w * h
@@ -22,6 +29,8 @@ def main():
 	gl.gconfig()
 	gl.qdevice(DEVICE.LEFTMOUSE)
 	gl.qdevice(DEVICE.ESCKEY)
+
+	print 'Click left mouse for next frame'
 
 	for i in range(svci[3]):
 		inverted_frame = sv.RGB8toRGB32(1, \
