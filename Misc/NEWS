@@ -66,7 +66,7 @@ Augmented Assignment
 This must have been the most-requested feature of the past years!
 Eleven new assignment operators were added:
 
-    += -+ *= /= %= **= <<= >>= &= ^= |=
+    += -= *= /= %= **= <<= >>= &= ^= |=
 
 For example,
 
@@ -249,6 +249,31 @@ backwards-compatible updates to the standard xml package.
 webbrowser - a platform-independent API to launch a web browser.
 
 
+Changed Modules
+---------------
+
+ftplib - ntransfercmd(), transfercmd(), and retrbinary() all now
+optionally support the RFC 959 REST command.
+
+socket - new function getfqdn()
+
+XXX: I'm sure there are others
+
+
+Obsolete Modules
+----------------
+
+None.  However note that 1.6 made a whole slew of modules obsolete:
+stdwin, soundex, cml, cmpcache, dircache, dump, find, grep, packmail,
+poly, zmod, strop, util, whatsound.
+
+
+Changed, New, Obsolete Tools
+----------------------------
+
+XXX: are there any?  If not, say "None" here.
+
+
 C-level Changes
 ---------------
 
@@ -269,6 +294,8 @@ memory.  See pymem.h.
 Trent Mick ensured portability to 64-bit platforms, under both Linux
 and Win64, especially for the new Intel Itanium processor.
 
-Numerous new APIs were added, e.g. 
+Numerous new APIs were added, e.g.
+
+	XXX: Fill this out.
 
 ======================================================================
