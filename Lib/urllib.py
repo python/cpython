@@ -323,6 +323,8 @@ class URLopener:
 		if not port:
 			import ftplib
 			port = ftplib.FTP_PORT
+		else:
+			port = int(port)
 		path, attrs = splitattr(path)
 		dirs = string.splitfields(path, '/')
 		dirs, file = dirs[:-1], dirs[-1]
