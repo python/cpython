@@ -1936,12 +1936,15 @@ class TarFileCompat:
     def write(self, filename, arcname=None, compress_type=None):
         self.tarfile.add(filename, arcname)
     def writestr(self, zinfo, bytes):
-        import StringIO
+        try:
+            from cStringIO import StringIO
+        except ImportError:
+            from StringIO import StringIO
         import calendar
         zinfo.name = zinfo.filename
         zinfo.size = zinfo.file_size
         zinfo.mtime = calendar.timegm(zinfo.date_time)
-        self.tarfile.addfile(zinfo, StringIO.StringIO(bytes))
+        self.tarfile.addfile(zinfo, StringIO(bytes))
     def close(self):
         self.tarfile.close()
 #class TarFileCompat

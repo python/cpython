@@ -697,7 +697,10 @@ class Message(mimetools.Message):
         encoding = self.getencoding()
         if not decode or encoding in ('', '7bit', '8bit', 'binary'):
             return self.fp.read()
-        from StringIO import StringIO
+        try:
+            from cStringIO import StringIO
+        except ImportError:
+            from StringIO import StringIO
         output = StringIO()
         mimetools.decode(self.fp, output, encoding)
         return output.getvalue()
