@@ -237,7 +237,15 @@ directives as those used by \function{strftime()}; it defaults to
 returned by \function{ctime()}.  The same platform caveats apply; see
 the local \UNIX{} documentation for restrictions or additional
 supported directives.  If \var{string} cannot be parsed according to
-\var{format}, \exception{ValueError} is raised.
+\var{format}, \exception{ValueError} is raised.  Values which are not
+provided as part of the input string are filled in with default
+values; the specific values are platform-dependent as the XPG standard
+does not provide sufficient information to constrain the result.
+
+\strong{Note:} This function relies entirely on the underlying
+platform's C library for the date parsing, and some of these libraries
+are buggy.  There's nothing to be done about this short of a new,
+portable implementation of \cfunction{strptime()}.
 
 Availability: Most modern \UNIX{} systems.
 \end{funcdesc}
