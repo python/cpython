@@ -1555,7 +1555,7 @@ PyObject *PyUnicode_DecodeMBCS(const char *s,
 
     /* First get the size of the result */
     DWORD usize = MultiByteToWideChar(CP_ACP, 0, s, size, NULL, 0);
-    if (usize==0)
+    if (size > 0 && usize==0)
         return PyErr_SetFromWindowsErrWithFilename(0, NULL);
 
     v = _PyUnicode_New(usize);
@@ -1578,9 +1578,14 @@ PyObject *PyUnicode_EncodeMBCS(const Py_UNICODE *p,
 {
     PyObject *repr;
     char *s;
+    DWORD mbcssize;
+
+    /* If there are no characters, bail now! */
+    if (size==0)
+	    return PyString_FromString("");
 
     /* First get the size of the result */
-    DWORD mbcssize = WideCharToMultiByte(CP_ACP, 0, p, size, NULL, 0, NULL, NULL);
+    mbcssize = WideCharToMultiByte(CP_ACP, 0, p, size, NULL, 0, NULL, NULL);
     if (mbcssize==0)
         return PyErr_SetFromWindowsErrWithFilename(0, NULL);
 
