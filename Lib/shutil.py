@@ -127,6 +127,9 @@ def copytree(src, dst, symlinks=False):
     if errors:
         raise Error, errors
 
+def _raise_err(err):
+    raise err
+
 def rmtree(path, ignore_errors=False, onerror=None):
     """Recursively delete a directory tree.
 
@@ -134,12 +137,20 @@ def rmtree(path, ignore_errors=False, onerror=None):
     onerror is set, it is called to handle the error; otherwise, an
     exception is raised.
     """
-    cmdtuples = []
+    # This strange way of calling functions is necessary to keep the onerror
+    # argument working. Maybe sys._getframe hackery would work as well, but
+    # this is simple.
+    func = os.listdir
     arg = path
     try:
-        func = os.listdir # Make sure it isn't unset
-        _build_cmdtuple(path, cmdtuples)
-        for func, arg in cmdtuples:
+        for (dirpath, dirnames, filenames) in os.walk(path, topdown=False,
+                                                      onerror=_raise_err):
+            for filename in filenames:
+                func = os.remove
+                arg = os.path.join(dirpath, filename)
+                func(arg)
+            func = os.rmdir
+            arg = dirpath
             func(arg)
     except OSError:
         exc = sys.exc_info()
@@ -149,17 +160,6 @@ def rmtree(path, ignore_errors=False, onerror=None):
             onerror(func, arg, exc)
         else:
             raise exc[0], (exc[1][0], exc[1][1] + ' removing '+arg)
-
-# Helper for rmtree()
-def _build_cmdtuple(path, cmdtuples):
-    for f in os.listdir(path):
-        real_f = os.path.join(path,f)
-        if os.path.isdir(real_f) and not os.path.islink(real_f):
-            _build_cmdtuple(real_f, cmdtuples)
-        else:
-            cmdtuples.append((os.remove, real_f))
-    cmdtuples.append((os.rmdir, path))
-
 
 def move(src, dst):
     """Recursively move a file or directory to another location.
