@@ -690,7 +690,7 @@ class Message(mimetools.Message):
                 if i > 0:
                     hit = pred(line[:i].lower())
             if hit: headers.append(line)
-        return ''.joinfields(headers)
+        return ''.join(headers)
 
     def getbodytext(self, decode = 1):
         """Return the message's body text as string.  This undoes a
