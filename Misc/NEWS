@@ -23,6 +23,11 @@ Tests
 
 Core
 
+- Future statements are now effective in simulated interactive shells
+  (like IDLE).  This should "just work" by magic, but read Michael
+  Hudson's "Future statements in simulated shells" PEP 264 for full
+  details:  <http://python.sf.net/peps/pep-0264.html>.
+
 - The type/class unification (PEP 252-253) was integrated into the
   trunk and is not so tentative any more (the exact specification of
   some features is still tentative).  A lot of work has done on fixing
