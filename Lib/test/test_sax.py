@@ -4,6 +4,8 @@
 
 from xml.sax.saxutils import XMLGenerator, escape, XMLFilterBase
 from xml.sax.expatreader import create_parser
+from xml.sax.xmlreader import AttributesImpl, AttributesNSImpl
+from xml.sax.handler import ContentHandler
 from cStringIO import StringIO
 from test_support import verbose, TestFailed
 
@@ -172,6 +174,212 @@ class TestDTDHandler:
 # ===== EntityResolver support
 
 # can't test this until InputSource is in place
+
+# ===== Attributes support
+
+class AttrGatherer(ContentHandler):
+
+    def startElement(self, name, attrs):
+        self._attrs = attrs
+
+    def startElementNS(self, name, qname, attrs):
+        self._attrs = attrs
+        
+def test_expat_attrs_empty():
+    parser = create_parser()
+    gather = AttrGatherer()
+    parser.setContentHandler(gather)
+
+    parser.feed("<doc/>")
+    parser.close()
+
+    return verify_empty_attrs(gather._attrs)
+
+def test_expat_attrs_wattr():
+    parser = create_parser()
+    gather = AttrGatherer()
+    parser.setContentHandler(gather)
+
+    parser.feed("<doc attr='val'/>")
+    parser.close()
+
+    return verify_attrs_wattr(gather._attrs)
+
+def test_expat_nsattrs_empty():
+    parser = create_parser(1)
+    gather = AttrGatherer()
+    parser.setContentHandler(gather)
+
+    parser.feed("<doc/>")
+    parser.close()
+
+    return verify_empty_nsattrs(gather._attrs)
+
+def test_expat_nsattrs_wattr():
+    parser = create_parser(1)
+    gather = AttrGatherer()
+    parser.setContentHandler(gather)
+
+    parser.feed("<doc xmlns:ns='%s' ns:attr='val'/>" % ns_uri)
+    parser.close()
+
+    attrs = gather._attrs
+    
+    return attrs.getLength() == 1 and \
+           attrs.getNames() == [(ns_uri, "attr")] and \
+           attrs.getQNames() == [] and \
+           len(attrs) == 1 and \
+           attrs.has_key((ns_uri, "attr")) and \
+           attrs.keys() == [(ns_uri, "attr")] and \
+           attrs.get((ns_uri, "attr")) == "val" and \
+           attrs.get((ns_uri, "attr"), 25) == "val" and \
+           attrs.items() == [((ns_uri, "attr"), "val")] and \
+           attrs.values() == ["val"] and \
+           attrs.getValue((ns_uri, "attr")) == "val" and \
+           attrs[(ns_uri, "attr")] == "val"
+
+# ===========================================================================
+#
+#   xmlreader tests
+#
+# ===========================================================================
+
+# ===== AttributesImpl
+
+def verify_empty_attrs(attrs):
+    try:
+        attrs.getValue("attr")
+        gvk = 0
+    except KeyError:
+        gvk = 1
+
+    try:
+        attrs.getValueByQName("attr")
+        gvqk = 0
+    except KeyError:
+        gvqk = 1
+
+    try:
+        attrs.getNameByQName("attr")
+        gnqk = 0
+    except KeyError:
+        gnqk = 1
+
+    try:
+        attrs.getQNameByName("attr")
+        gqnk = 0
+    except KeyError:
+        gqnk = 1
+        
+    try:
+        attrs["attr"]
+        gik = 0
+    except KeyError:
+        gik = 1
+        
+    return attrs.getLength() == 0 and \
+           attrs.getNames() == [] and \
+           attrs.getQNames() == [] and \
+           len(attrs) == 0 and \
+           not attrs.has_key("attr") and \
+           attrs.keys() == [] and \
+           attrs.get("attrs") == None and \
+           attrs.get("attrs", 25) == 25 and \
+           attrs.items() == [] and \
+           attrs.values() == [] and \
+           gvk and gvqk and gnqk and gik and gqnk
+
+def verify_attrs_wattr(attrs):
+    return attrs.getLength() == 1 and \
+           attrs.getNames() == ["attr"] and \
+           attrs.getQNames() == ["attr"] and \
+           len(attrs) == 1 and \
+           attrs.has_key("attr") and \
+           attrs.keys() == ["attr"] and \
+           attrs.get("attr") == "val" and \
+           attrs.get("attr", 25) == "val" and \
+           attrs.items() == [("attr", "val")] and \
+           attrs.values() == ["val"] and \
+           attrs.getValue("attr") == "val" and \
+           attrs.getValueByQName("attr") == "val" and \
+           attrs.getNameByQName("attr") == "attr" and \
+           attrs["attr"] == "val" and \
+           attrs.getQNameByName("attr") == "attr"
+
+def test_attrs_empty():
+    return verify_empty_attrs(AttributesImpl({}))
+
+def test_attrs_wattr():
+    return verify_attrs_wattr(AttributesImpl({"attr" : "val"}))
+
+# ===== AttributesImpl
+
+def verify_empty_nsattrs(attrs):
+    try:
+        attrs.getValue((ns_uri, "attr"))
+        gvk = 0
+    except KeyError:
+        gvk = 1
+
+    try:
+        attrs.getValueByQName("ns:attr")
+        gvqk = 0
+    except KeyError:
+        gvqk = 1
+
+    try:
+        attrs.getNameByQName("ns:attr")
+        gnqk = 0
+    except KeyError:
+        gnqk = 1
+
+    try:
+        attrs.getQNameByName((ns_uri, "attr"))
+        gqnk = 0
+    except KeyError:
+        gqnk = 1
+        
+    try:
+        attrs[(ns_uri, "attr")]
+        gik = 0
+    except KeyError:
+        gik = 1
+        
+    return attrs.getLength() == 0 and \
+           attrs.getNames() == [] and \
+           attrs.getQNames() == [] and \
+           len(attrs) == 0 and \
+           not attrs.has_key((ns_uri, "attr")) and \
+           attrs.keys() == [] and \
+           attrs.get((ns_uri, "attr")) == None and \
+           attrs.get((ns_uri, "attr"), 25) == 25 and \
+           attrs.items() == [] and \
+           attrs.values() == [] and \
+           gvk and gvqk and gnqk and gik and gqnk
+
+def test_nsattrs_empty():
+    return verify_empty_nsattrs(AttributesNSImpl({}, {}))
+
+def test_nsattrs_wattr():
+    attrs = AttributesNSImpl({(ns_uri, "attr") : "val"},
+                             {(ns_uri, "attr") : "ns:attr"})
+    
+    return attrs.getLength() == 1 and \
+           attrs.getNames() == [(ns_uri, "attr")] and \
+           attrs.getQNames() == ["ns:attr"] and \
+           len(attrs) == 1 and \
+           attrs.has_key((ns_uri, "attr")) and \
+           attrs.keys() == [(ns_uri, "attr")] and \
+           attrs.get((ns_uri, "attr")) == "val" and \
+           attrs.get((ns_uri, "attr"), 25) == "val" and \
+           attrs.items() == [((ns_uri, "attr"), "val")] and \
+           attrs.values() == ["val"] and \
+           attrs.getValue((ns_uri, "attr")) == "val" and \
+           attrs.getValueByQName("ns:attr") == "val" and \
+           attrs.getNameByQName("ns:attr") == (ns_uri, "attr") and \
+           attrs[(ns_uri, "attr")] == "val" and \
+           attrs.getQNameByName((ns_uri, "attr")) == "ns:attr"
+        
 
 # ===== Main program
 
