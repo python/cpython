@@ -3765,7 +3765,7 @@ int PyUnicode_Contains(PyObject *container,
     else {
 	end = lhs + (PyUnicode_GET_SIZE(u) - size);
 	while (lhs <= end) {
-	    if (memcmp(lhs++, rhs, size) == 0) {
+	    if (memcmp(lhs++, rhs, size * sizeof(Py_UNICODE)) == 0) {
 		result = 1;
 		break;
 	    }
