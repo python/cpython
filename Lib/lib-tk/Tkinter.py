@@ -1552,6 +1552,10 @@ class Scale(Widget):
 			return getdouble(value)
 	def set(self, value):
 		self.tk.call(self._w, 'set', value)
+	def coords(self, value=None):
+		return self._getints(self.tk.call(self._w, 'coords', value))
+	def identify(self, x, y):
+		return self.tk.call(self._w, 'identify', x, y)
 
 class Scrollbar(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
