@@ -122,7 +122,7 @@ def DeleteTestData(root_key):
 def TestAll(root_key):
     WriteTestData(root_key)
     ReadTestData(root_key)
-#    DeleteTestData(root_key)
+    DeleteTestData(root_key)
 
 # Test on my local machine.
 TestAll(HKEY_CURRENT_USER)
