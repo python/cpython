@@ -74,7 +74,8 @@ PyTuple_New(size)
 #ifdef COUNT_ALLOCS
 		fast_tuple_allocs++;
 #endif
-	} else
+	}
+	else
 #endif
 	{
 		op = (PyTupleObject *) malloc(
@@ -466,4 +467,26 @@ _PyTuple_Resize(pv, newsize, last_is_sticky)
 	}
 	sv->ob_size = newsize;
 	return 0;
+}
+
+void
+PyTuple_Fini()
+{
+#if MAXSAVESIZE > 0
+	int i;
+
+	Py_XDECREF(free_tuples[0]);
+	free_tuples[0] = NULL;
+
+	for (i = 1; i < MAXSAVESIZE; i++) {
+		PyTupleObject *p, *q;
+		p = free_tuples[i];
+		free_tuples[i] = NULL;
+		while (p) {
+			q = p;
+			p = (PyTupleObject *)(p->ob_item[0]);
+			PyMem_DEL(q);
+		}
+	}
+#endif
 }
