@@ -24,9 +24,9 @@ PAUSE=10
 def import_as_main(name):
 	fp, path, (suffix, mode, type) = imp.find_module(name)
 	if type == imp.PY_SOURCE:
-		imp.load_source('__main__', path)
+		imp.load_source('__main__', path, fp)
 	elif type == imp.PY_COMPILED:
-		imp.load_compiled('__main__', path)
+		imp.load_compiled('__main__', path, fp)
 	elif type == imp.PY_RESOURCE:
 		imp.load_resource('__main__', path)
 		
@@ -84,7 +84,10 @@ def interact():
 def main():
 	curdir = os.getcwd()
 	import Res
-	Res.OpenResFile('RunLibScript.rsrc')
+	try:
+		Res.OpenResFile('RunLibScript.rsrc')
+	except:
+		pass # Assume we're an applet already
 	name, argv, stdin, stdout, wdir, pause = interact()
 	if not name:
 		sys.exit(0)
