@@ -710,5 +710,16 @@
   }
 }
 
+
+% Definition lists; requested by AMK for HOWTO documents.  Probably useful
+% elsewhere as well, so keep in in the general style support.
+%
+\newenvironment{definitions}{%
+  \begin{description}%
+  \def\term##1{\item[##1]\itembreak}
+}{%
+  \end{description}%
+}
+
 % Tell TeX about pathological hyphenation cases:
 \hyphenation{Base-HTTP-Re-quest-Hand-ler}
