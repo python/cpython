@@ -32,7 +32,11 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 #include "macglue.h"
 #include "pymactoolbox.h"
+#ifdef WITHOUT_FRAMEWORKS
 #include <Navigation.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 static PyObject *ErrorObject;
 
@@ -965,9 +969,9 @@ initNav()
 	/* XXXX Add constants here */
 	
 	/* Set UPPs */
-	my_eventProcUPP = NewNavEventProc(my_eventProc);
-	my_previewProcUPP = NewNavPreviewProc(my_previewProc);
-	my_filterProcUPP = NewNavObjectFilterProc(my_filterProc);
+	my_eventProcUPP = NewNavEventUPP(my_eventProc);
+	my_previewProcUPP = NewNavPreviewUPP(my_previewProc);
+	my_filterProcUPP = NewNavObjectFilterUPP(my_filterProc);
 	
 }
 
