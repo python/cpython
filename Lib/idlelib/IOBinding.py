@@ -178,6 +178,10 @@ class IOBinding:
             self.text.focus_set()
         return "break"
 
+    eol = r"(\r\n)|\n|\r"  # \r\n (Windows), \n (UNIX), or \r (Mac)
+    eol_re = re.compile(eol)
+    eol_convention = os.linesep # Default
+
     def loadfile(self, filename):
         try:
             # open the file in binary mode so that we can handle
@@ -191,8 +195,10 @@ class IOBinding:
 
         chars = self.decode(chars)
         # We now convert all end-of-lines to '\n's
-        eol = r"(\r\n)|\n|\r"  # \r\n (Windows), \n (UNIX), or \r (Mac)
-        chars = re.compile( eol ).sub( r"\n", chars )
+        firsteol = self.eol_re.search(chars)
+        if firsteol:
+            self.eol_convention = firsteol.group(0)
+            chars = self.eol_re.sub(r"\n", chars)
 
         self.text.delete("1.0", "end")
         self.set_filename(None)
@@ -306,8 +312,10 @@ class IOBinding:
     def writefile(self, filename):
         self.fixlastline()
         chars = self.encode(self.text.get("1.0", "end-1c"))
+        if self.eol_convention != "\n":
+            chars = chars.replace("\n", self.eol_convention)
         try:
-            f = open(filename, "w")
+            f = open(filename, "wb")
             f.write(chars)
             f.close()
             return True
