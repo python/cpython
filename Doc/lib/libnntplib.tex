@@ -1,6 +1,8 @@
 \section{Standard Module \sectcode{nntplib}}
 \label{module-nntplib}
 \stmodindex{nntplib}
+\indexii{NNTP}{protocol}
+\index{RFC!977}
 
 \renewcommand{\indexsubitem}{(in module nntplib)}
 
@@ -51,7 +53,7 @@ valid headers):
 %
 The module itself defines the following items:
 
-\begin{funcdesc}{NNTP}{host\optional{\, port}}
+\begin{funcdesc}{NNTP}{host\optional{, port}}
 Return a new instance of the \code{NNTP} class, representing a
 connection to the NNTP server running on host \var{host}, listening at
 port \var{port}.  The default \var{port} is 119.
@@ -99,7 +101,7 @@ higher produces the maximum amount of debugging output, logging each
 line sent and received on the connection (including message text).
 \end{funcdesc}
 
-\begin{funcdesc}{newgroups}{date\, time}
+\begin{funcdesc}{newgroups}{date, time}
 Send a \samp{NEWGROUPS} command.  The \var{date} argument should be a
 string of the form \code{"\var{yy}\var{mm}\var{dd}"} indicating the
 date, and \var{time} should be a string of the form
@@ -108,7 +110,7 @@ date, and \var{time} should be a string of the form
 group names that are new since the given date and time.
 \end{funcdesc}
 
-\begin{funcdesc}{newnews}{group\, date\, time}
+\begin{funcdesc}{newnews}{group, date, time}
 Send a \samp{NEWNEWS} command.  Here, \var{group} is a group name or
 \code{"*"}, and \var{date} and \var{time} have the same meaning as for
 \code{newgroups()}.  Return a pair \code{(\var{response},
@@ -180,7 +182,7 @@ uninterpreted list of lines, without trailing newlines).
 Send a \samp{SLAVE} command.  Return the server's \var{response}.
 \end{funcdesc}
 
-\begin{funcdesc}{xhdr}{header\, string}
+\begin{funcdesc}{xhdr}{header, string}
 Send an \samp{XHDR} command.  This command is not defined in the RFC
 but is a common extension.  The \var{header} argument is a header
 keyword, e.g. \code{"subject"}.  The \var{string} argument should have
@@ -200,7 +202,7 @@ including the required headers.  The \code{post()} method
 automatically escapes lines beginning with \samp{.}.
 \end{funcdesc}
 
-\begin{funcdesc}{ihave}{id\, file}
+\begin{funcdesc}{ihave}{id, file}
 Send an \samp{IHAVE} command.  If the response is not an error, treat
 \var{file} exactly as for the \code{post()} method.
 \end{funcdesc}
@@ -222,11 +224,11 @@ This is an optional NNTP extension, and may not be supported by all
 servers.
 \end{funcdesc}
 
-\begin{funcdesc}{xover}{start\, end}
+\begin{funcdesc}{xover}{start, end}
 Return a pair \code{(\var{resp}, \var{list})}.  \var{list} is a list
 of tuples, one for each article in the range delimited by the \var{start}
 and \var{end} article numbers.  Each tuple is of the form
-\code{(\var{article number}, \var{subject}, \var{poster}, \var{date}, \var{id}, \var{references}, \var{size}, \var{lines})}.
+\code{(}\var{article number}, \var{subject}, \var{poster}, \var{date}, \var{id}, \var{references}, \var{size}, \var{lines}\code{)}.
 This is an optional NNTP extension, and may not be supported by all
 servers.
 \end{funcdesc}
