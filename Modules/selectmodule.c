@@ -362,7 +362,7 @@ poll_register(pollObject *self, PyObject *args)
 	PyObject *o, *key, *value;
 	int fd, events = POLLIN | POLLPRI | POLLOUT;
 
-	if (!PyArg_ParseTuple(args, "O|i", &o, &events)) {
+	if (!PyArg_ParseTuple(args, "O|i:register", &o, &events)) {
 		return NULL;
 	}
   
@@ -392,7 +392,7 @@ poll_unregister(pollObject *self, PyObject *args)
 	PyObject *o, *key;
 	int fd;
 
-	if (!PyArg_ParseTuple(args, "O", &o)) {
+	if (!PyArg_ParseTuple(args, "O:unregister", &o)) {
 		return NULL;
 	}
   
@@ -431,7 +431,7 @@ poll_poll(pollObject *self, PyObject *args)
 	int timeout = 0, poll_result, i, j;
 	PyObject *value = NULL, *num = NULL;
 
-	if (!PyArg_ParseTuple(args, "|O", &tout)) {
+	if (!PyArg_ParseTuple(args, "|O:poll", &tout)) {
 		return NULL;
 	}
 
