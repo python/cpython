@@ -323,7 +323,7 @@ enum why_code {
 		WHY_RERAISE,	/* Exception re-raised by 'finally' */
 		WHY_RETURN,	/* 'return' statement */
 		WHY_BREAK,	/* 'break' statement */
-		WHY_CONTINUE,	/* 'continue' statement */
+		WHY_CONTINUE	/* 'continue' statement */
 };
 
 static enum why_code do_raise(PyObject *, PyObject *, PyObject *);
