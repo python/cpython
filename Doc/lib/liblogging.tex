@@ -79,7 +79,8 @@ files.
 
 \item \class{BaseRotatingHandler} is tha base class for handlers that
 rotate log files at a certain point. It is not meant to be  instantiated
-directly. Instead, use RotatingFileHandler or TimedRotatingFileHandler.
+directly. Instead, use \class{RotatingFileHandler} or
+\class{TimedRotatingFileHandler}.
 
 \item \class{RotatingFileHandler} instances send error messages to disk
 files, with support for maximum log file sizes and log file rotation.
@@ -703,8 +704,7 @@ class LogRecordSocketReceiver(SocketServer.ThreadingTCPServer):
 
 def main():
     logging.basicConfig(
-        format="%(relativeCreated)5d %(name)-15s %(levelname)-8s %(message)s",
-        datefmt="%H:%M:%S")
+        format="%(relativeCreated)5d %(name)-15s %(levelname)-8s %(message)s")
     tcpserver = LogRecordSocketReceiver()
     print "About to start TCP server..."
     tcpserver.serve_until_stopped()
@@ -713,9 +713,8 @@ if __name__ == "__main__":
     main()
 \end{verbatim}
 
-If you first run the server, and then the client. On the client side, nothing
-is printed on the client console; on the server side, you should see something
-like this:
+First run the server, and then the client. On the client side, nothing is
+printed on the console; on the server side, you should see something like:
 
 \begin{verbatim}
 About to start TCP server...
@@ -910,7 +909,7 @@ at certain timed intervals.
 Returns a new instance of the \class{TimedRotatingFileHandler} class. The
 specified file is opened and used as the stream for logging. On rotating
 it also sets the filename suffix. Rotating happens based on the product
-of \var{when} and \var{interval}. 
+of \var{when} and \var{interval}.
 
 You can use the \var{when} to specify the type of \var{interval}. The
 list of possible values is, note that they are not case sensitive:
