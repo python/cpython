@@ -653,6 +653,28 @@ Availability: \UNIX.
 
 \begin{funcdesc}{chmod}{path, mode}
 Change the mode of \var{path} to the numeric \var{mode}.
+\var{mode} may take one of the following values:
+\begin{itemize}
+  \item \code{S_ISUID}
+  \item \code{S_ISGID}
+  \item \code{S_ENFMT}
+  \item \code{S_ISVTX}
+  \item \code{S_IREAD}
+  \item \code{S_IWRITE}
+  \item \code{S_IEXEC}
+  \item \code{S_IRWXU}
+  \item \code{S_IRUSR}
+  \item \code{S_IWUSR}
+  \item \code{S_IXUSR}
+  \item \code{S_IRWXG}
+  \item \code{S_IRGRP}
+  \item \code{S_IWGRP}
+  \item \code{S_IXGRP}
+  \item \code{S_IRWXO}
+  \item \code{S_IROTH}
+  \item \code{S_IWOTH}
+  \item \code{S_IXOTH}
+\end{itemize}
 Availability: \UNIX, Windows.
 \end{funcdesc}
 
