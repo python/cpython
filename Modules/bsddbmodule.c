@@ -193,7 +193,7 @@ bsddb_dealloc(dp)
     if (dp->di_bsddb != NULL) {
 	if ((dp->di_bsddb->close)(dp->di_bsddb) != 0)
 	    fprintf(stderr,
-		    "Python bsddb: close errno %s in dealloc\n", errno);
+		    "Python bsddb: close errno %d in dealloc\n", errno);
     }
     PyMem_DEL(dp);
 }
@@ -225,7 +225,6 @@ bsddb_subscript(dp, key)
     PyObject *key;
 {
     int status;
-    PyObject *v;
     DBT krec, drec;
     char *data;
     int size;
@@ -381,7 +380,6 @@ bsddb_set_location(dp, key)
     PyObject *key;
 {
     int status;
-    PyObject *v;
     DBT krec, drec;
     char *data;
     int size;
