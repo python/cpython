@@ -60,10 +60,11 @@ Standard library and extensions
 
 - cStringIO: Implemented readlines() method.
 
-- dbm: Add set() and setdefault() methods to dbm object.  Add constant
-  `library' to module that names the library used.  Better doc strings
-  and argument checking.  Uses configure to determine which ndbm.h
-  file to include; Berkeley DB's nbdm is now an option.
+- dbm: Add get() and setdefault() methods to dbm object.  Add constant
+  `library' to module that names the library used.  Added doc strings
+  and method names to error messages.  Uses configure to determine
+  which ndbm.h file to include; Berkeley DB's nbdm and GDBM's ndbm is
+  now available options.
 
 - distutils: Update to version 0.9.3.
 
@@ -140,7 +141,7 @@ Standard library and extensions
 
 - UserList: now implements __contains__().
 
-- webbrower: On Windows, use os.startfile() instead of os.popen(),
+- webbrowser: On Windows, use os.startfile() instead of os.popen(),
   which works around a bug in Norton AntiVirus 2000 that leads directly
   to a Blue Screen freeze.
 
