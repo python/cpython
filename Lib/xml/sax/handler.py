@@ -177,10 +177,7 @@ class ContentHandler:
         chunk, or they may split it into several chunks; however, all
         of the characters in any single event must come from the same
         external entity, so that the Locator provides useful
-        information.
-
-        The application must not attempt to read from the array
-        outside of the specified range."""
+        information."""
 
     def processingInstruction(self, target, data):
         """Receive notification of a processing instruction.
