@@ -842,7 +842,7 @@ xmlparse_ParseFile(xmlparseobject *self, PyObject *args)
             PyErr_Clear();
             PyErr_SetString(PyExc_TypeError,
                             "argument must have 'read' attribute");
-            return 0;
+            return NULL;
         }
     }
     for (;;) {
