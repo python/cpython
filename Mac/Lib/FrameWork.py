@@ -93,9 +93,13 @@ class Application:
 	
 	"Application framework -- your application should be a derived class"
 	
-	def __init__(self):
+	def __init__(self, nomenubar=0):
+		self.quitting = 0
 		self._windows = {}
-		self.makemenubar()
+		if nomenubar:
+			self.menubar = None
+		else:
+			self.makemenubar()
 	
 	def makemenubar(self):
 		self.menubar = MenuBar()
@@ -107,7 +111,7 @@ class Application:
 		self._quititem = MenuItem(m, "Quit", "Q", self._quit)
 	
 	def _quit(self, *args):
-		raise self
+		self.quitting = 1
 		
 	def appendwindow(self, wid, window):
 		self._windows[wid] = window
@@ -131,12 +135,16 @@ class Application:
 	# way to define the mask and wait time passed to WaitNextEvent.)
 	
 	def mainloop(self, mask = everyEvent, wait = 0):
+		self.quitting = 0
 		saveyield = MacOS.EnableAppswitch(self.yield)
 		try:
-			while 1:
+			while not self.quitting:
 				try:
 					self.do1event(mask, wait)
 				except (Application, SystemExit):
+					# Note: the raising of "self" is old-fashioned idiom to
+					# exit the mainloop. Calling _quit() is better for new
+					# applications.
 					break
 		finally:
 			MacOS.EnableAppswitch(saveyield)
@@ -222,6 +230,9 @@ class Application:
 		MacOS.HandleEvent(event)
 	
 	def do_inMenuBar(self, partcode, window, event):
+		if not self.menubar:
+			MacOS.HandleEvent(event)
+			return
 		(what, message, when, where, modifiers) = event
 		result = MenuSelect(where)
 		id = (result>>16) & 0xffff	# Hi word
@@ -263,6 +274,9 @@ class Application:
 			if c == '.':
 				raise self
 			else:
+				if not self.menubar:
+					MacOS.HandleEvent(event)
+					return
 				result = MenuKey(ord(c))
 				id = (result>>16) & 0xffff	# Hi word
 				item = result & 0xffff		# Lo word
