@@ -74,8 +74,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		locals = self.curframe.f_locals
 		globals = self.curframe.f_globals
 		globals['__privileged__'] = 1
+		code = compile(line + '\n', '<stdin>', 'single')
 		try:
-			exec(line + '\n', globals, locals)
+			exec code in globals, locals
 		except:
 			if type(sys.exc_type) == type(''):
 				exc_type_name = sys.exc_type
