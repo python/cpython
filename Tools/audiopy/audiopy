@@ -6,23 +6,26 @@ When no arguments are given, this pops up a graphical window which lets you
 choose which audio output device you want sound to go to.
 
 This program can be driven via the command line, and when done so, no window
-pops up.  Here are the options:
+pops up.  Options have the general form:
 
-    --headphones[={0,1}]
-    -p[={0,1}]
-        Set the headphones output device.  With no value, it toggles the
-        headphone device.  With a value, 0 turns the headphones off and 1
-        turns the headphones on.
+    --device[={0,1}]
+    -d[={0,1}]
+        Set the I/O device.  With no value, it toggles the specified device.
+        With a value, 0 turns the device off and 1 turns the device on.
 
-    --speaker[={0,1}]
-    -s[={0,1}]
-        Set the speaker output device.  Value semantics are the same as
-        above.
+The list of devices and their short options are:
 
-    --lineout[={0,1}]
-    -l[={0,1}]
-        Set the line out output device.  Value semantics are the same as
-        above.
+ (input)
+    microphone  -- m
+    linein      -- i
+    cd          -- c
+
+ (output)
+    headphones  -- p
+    speaker     -- s
+    lineout     -- o
+
+Other options are:
 
     --help
     -h
@@ -41,38 +44,20 @@ KEEPALIVE_TIMER = 500
 
 
 class MainWindow:
-    def __init__(self):
+    def __init__(self, device):
+        self.__devctl = device
+        info = device.getinfo()
+        #
         self.__tkroot = tkroot = Tk(className='Pynche')
         tkroot.withdraw()
-        # create the menubar
-        menubar = Menu(tkroot)
-        #
-        # File menu
-        #
-        filemenu = Menu(menubar, tearoff=0)
-        filemenu.add_command(label='Quit',
-                             command=self.__quit,
-                             accelerator='Alt-Q',
-                             underline=0)
-        #
-        # Tie them together
-        #
-        menubar.add_cascade(label='File',
-                            menu=filemenu,
-                            underline=0)
         # now create the top level window
-        root = self.__root = Toplevel(tkroot, class_='Audiopy', menu=menubar)
+        root = self.__root = Toplevel(tkroot, class_='Audiopy')
         root.protocol('WM_DELETE_WINDOW', self.__quit)
         root.title('Audiopy')
         root.iconname('Audiopy')
         root.tk.createtimerhandler(KEEPALIVE_TIMER, self.__keepalive)
-        root.bind('<Alt-q>', self.__quit)
-        root.bind('<Alt-Q>', self.__quit)
         #
-        # Open up the audio control device and query for the current output
-        # device
-        self.__devctl = sunaudiodev.open('control')
-        info = self.__devctl.getinfo()
+        buttons = []
         #
         # where does input come from?
         frame = Frame(root, bd=1, relief=RAISED)
@@ -89,6 +74,10 @@ class MainWindow:
         btn.grid(row=0, column=1, sticky=W)
         root.bind('<Alt-m>', self.__mic)
         root.bind('<Alt-M>', self.__mic)
+        if not info.i_avail_ports & MICROPHONE:
+            btn.configure(state=DISABLED)
+        buttons.append(btn)
+        ##
         self.__lineinvar = IntVar()
         btn = Checkbutton(frame,
                           text='Line In',
@@ -99,6 +88,10 @@ class MainWindow:
         btn.grid(row=1, column=1, sticky=W)
         root.bind('<Alt-i>', self.__linein)
         root.bind('<Alt-I>', self.__linein)
+        if not info.i_avail_ports & LINE_IN:
+            btn.configure(state=DISABLED)
+        buttons.append(btn)
+        ##
         self.__cdvar = IntVar()
         btn = Checkbutton(frame,
                           text='CD',
@@ -109,6 +102,9 @@ class MainWindow:
         btn.grid(row=2, column=1, sticky=W)
         root.bind('<Alt-c>', self.__cd)
         root.bind('<Alt-C>', self.__cd)
+        if not info.i_avail_ports & CD:
+            btn.configure(state=DISABLED)
+        buttons.append(btn)
         #
         # where does output go to?
         frame = Frame(root, bd=1, relief=RAISED)
@@ -125,6 +121,10 @@ class MainWindow:
         btn.grid(row=0, column=1, sticky=W)
         root.bind('<Alt-s>', self.__speaker)
         root.bind('<Alt-S>', self.__speaker)
+        if not info.o_avail_ports & SPEAKER:
+            btn.configure(state=DISABLED)
+        buttons.append(btn)
+        ##
         self.__headvar = IntVar()
         btn = Checkbutton(frame,
                           text='Headphones',
@@ -135,6 +135,10 @@ class MainWindow:
         btn.grid(row=1, column=1, sticky=W)
         root.bind('<Alt-h>', self.__headphones)
         root.bind('<Alt-H>', self.__headphones)
+        if not info.o_avail_ports & HEADPHONE:
+            btn.configure(state=DISABLED)
+        buttons.append(btn)
+        ##
         self.__linevar = IntVar()
         btn = Checkbutton(frame,
                           variable=self.__linevar,
@@ -145,6 +149,29 @@ class MainWindow:
         btn.grid(row=2, column=1, sticky=W)
         root.bind('<Alt-l>', self.__lineout)
         root.bind('<Alt-L>', self.__lineout)
+        if not info.o_avail_ports & LINE_OUT:
+            btn.configure(state=DISABLED)
+        buttons.append(btn)
+        #
+        # Fix up widths
+        widest = 0
+        for b in buttons:
+            width = b['width']
+            if width > widest:
+                widest = width
+        for b in buttons:
+            b.configure(width=widest)
+        #
+        # Add quit button
+        frame = Frame(root)
+        frame.grid(row=2, column=0, sticky='EW', ipady=5)
+        btn = Button(frame,
+                     text='Quit',
+                     command=self.__quit,
+                     underline=0)
+        btn.pack(expand=YES)
+        root.bind('<Alt-q>', self.__quit)
+        root.bind('<Alt-Q>', self.__quit)
         #
         # do we need to poll for changes?
         self.__needtopoll = 1
@@ -211,7 +238,9 @@ class MainWindow:
         self.__getset(self.__lineinvar, LINE_IN)
 
     def __cd(self, event=None):
+        print 'pre:', self.__cdvar.get()
         self.__getset(self.__cdvar, CD)
+        print 'post:', self.__cdvar.get()
 
     def __speaker(self, event=None):
         self.__getset(self.__spkvar, SPEAKER)
@@ -235,16 +264,38 @@ def usage(msg='', code=1):
 
 
 def main():
+    #
+    # Open up the audio control device and query for the current output
+    # device
+    device = sunaudiodev.open('control')
+
     if len(sys.argv) == 1:
         # GUI
-        w = MainWindow()
+        w = MainWindow(device)
         try:
             w.start()
         except KeyboardInterrupt:
             pass
         return
 
-    # command line
+    # spec:    LONG OPT, SHORT OPT, 0=input,1=output, MASK
+    options = (('--microphone', '-m', 0, MICROPHONE),
+               ('--linein',     '-i', 0, LINE_IN),
+               ('--cd',         '-c', 0, CD),
+               ('--headphones', '-p', 1, HEADPHONE),
+               ('--speaker',    '-s', 1, SPEAKER),
+               ('--lineout',    '-o', 1, LINE_OUT),
+               )
+    values = []
+    info = device.getinfo()
+    # first get the existing values
+    for long, short, io, mask in options:
+        if io == 0:
+            flags = info.i_port
+        else:
+            flags = info.o_port
+        values.append(flags & mask)
+
     sval = None
     hval = None
     lval = None
