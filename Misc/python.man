@@ -25,6 +25,9 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-v
 ]
 [
+.B \-x
+]
+[
 .B \-X
 ]
 .br
@@ -93,6 +96,11 @@ Force stdin, stdout and stderr to be totally unbuffered.
 .B \-v
 Print a message each time a module is initialized, showing the place
 (filename or built-in module) from which it is loaded.
+.TP
+.B \-x
+Skip the first line of the source.  This is intended for a DOS
+specific hack only.  Warning: the line numbers in error messages will
+be off by one!
 .TP
 .B \-X
 Make the standard exceptions strings instead of classes.
