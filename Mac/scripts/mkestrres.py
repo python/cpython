@@ -1,7 +1,6 @@
 """Parse sys/errno.h and Errors.h and create Estr resource"""
 
 import re
-import macfs
 import string
 from Carbon import Res
 import os
@@ -105,47 +104,47 @@ def parse_errors_h(fp, dict):
 			
 def main():
 	dict = {}
-	fss, ok = macfs.PromptGetFile("Where is GUSI sys/errno.h?")
-	if not ok: return
-	fp = open(fss.as_pathname())
-	parse_errno_h(fp, dict)
-	fp.close()
+	pathname = EasyDialogs.AskFileForOpen(message="Where is GUSI sys/errno.h?")
+	if pathname:
+		fp = open(pathname)
+		parse_errno_h(fp, dict)
+		fp.close()
 	
-	fss, ok = macfs.PromptGetFile("Select cerrno (MSL) or cancel")
-	if not ok: return
-	fp = open(fss.as_pathname())
-	parse_errno_h(fp, dict)
-	fp.close()
+	pathname = EasyDialogs.AskFileForOpen(message="Select cerrno (MSL) or cancel")
+	if pathname:
+		fp = open(pathname)
+		parse_errno_h(fp, dict)
+		fp.close()
 	
-	fss, ok = macfs.PromptGetFile("Where is MacErrors.h?")
-	if not ok: return
-	fp = open(fss.as_pathname())
-	parse_errors_h(fp, dict)
-	fp.close()
+	pathname = EasyDialogs.AskFileForOpen(message="Where is MacErrors.h?")
+	if pathname:
+		fp = open(pathname)
+		parse_errors_h(fp, dict)
+		fp.close()
 	
-	fss, ok = macfs.PromptGetFile("Where is mkestrres-MacErrors.h?")
-	if not ok: return
-	fp = open(fss.as_pathname())
-	parse_errors_h(fp, dict)
-	fp.close()
+	pathname = EasyDialogs.AskFileForOpen(message="Where is mkestrres-MacErrors.h?")
+	if pathname:
+		fp = open(pathname)
+		parse_errors_h(fp, dict)
+		fp.close()
 	
 	if not dict:
 		return
 		
-	fss, ok = macfs.StandardPutFile("Resource output file?", "errors.rsrc")
-	if ok:
+	pathname = EasyDialogs.AskFileForSave(message="Resource output file?", savedFileName="errors.rsrc")
+	if pathname:
 		writeestr(fss, dict)
 	
-	fss, ok = macfs.StandardPutFile("Python output file?", "macerrors.py")
-	if ok:
-		fp = open(fss.as_pathname(), "w")
+	pathname = EasyDialogs.AskFileForSave(message="Python output file?", savedFileName="macerrors.py")
+	if pathname:
+		fp = open(pathname, "w")
 		writepython(fp, dict)
 		fp.close()
 		fss.SetCreatorType('Pyth', 'TEXT')
 
-	fss, ok = macfs.StandardPutFile("Text output file?", "errors.txt")
-	if ok:
-		fp = open(fss.as_pathname(), "w")
+	pathname = EasyDialogs.AskFileForSave(message="Text output file?", savedFileName="errors.txt")
+	if pathname:
+		fp = open(pathname, "w")
 		
 		k = dict.keys()
 		k.sort()
