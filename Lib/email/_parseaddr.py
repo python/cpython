@@ -135,8 +135,8 @@ def quote(str):
 class AddrlistClass:
     """Address parser class by Ben Escoto.
 
-    To understand what this class does, it helps to have a copy of
-    RFC-822 in front of you.
+    To understand what this class does, it helps to have a copy of RFC 2822 in
+    front of you.
 
     Note: this class interface is deprecated and may be removed in the future.
     Use rfc822.AddressList instead.
@@ -153,6 +153,10 @@ class AddrlistClass:
         self.LWS = ' \t'
         self.CR = '\r\n'
         self.atomends = self.specials + self.LWS + self.CR
+        # Note that RFC 2822 now specifies `.' as obs-phrase, meaning that it
+        # is obsolete syntax.  RFC 2822 requires that we recognize obsolete
+        # syntax, so allow dots in phrases.
+        self.phraseends = self.atomends.replace('.', '')
         self.field = field
         self.commentlist = []
 
@@ -170,10 +174,14 @@ class AddrlistClass:
 
         Returns a list containing all of the addresses.
         """
-        ad = self.getaddress()
-        if ad:
-            return ad + self.getaddrlist()
-        else: return []
+        result = []
+        while 1:
+            ad = self.getaddress()
+            if ad:
+                result += ad
+            else:
+                break
+        return result
 
     def getaddress(self):
         """Parse the next address."""
@@ -257,7 +265,6 @@ class AddrlistClass:
                 expectroute = 1
             elif self.field[self.pos] == ':':
                 self.pos = self.pos + 1
-                expectaddrspec = 1
             else:
                 adlist = self.getaddrspec()
                 self.pos = self.pos + 1
@@ -267,7 +274,7 @@ class AddrlistClass:
         return adlist
 
     def getaddrspec(self):
-        """Parse an RFC-822 addr-spec."""
+        """Parse an RFC 2822 addr-spec."""
         aslist = []
 
         self.gotonext()
@@ -318,8 +325,8 @@ class AddrlistClass:
         `endchars' is a sequence of allowable end-delimiting characters.
         Parsing stops when one of these is encountered.
 
-        If `allowcomments' is non-zero, embedded RFC-822 comments
-        are allowed within the parsed fragment.
+        If `allowcomments' is non-zero, embedded RFC 2822 comments are allowed
+        within the parsed fragment.
         """
         if self.field[self.pos] != beginchar:
             return ''
@@ -353,15 +360,22 @@ class AddrlistClass:
         return self.getdelimited('(', ')\r', 1)
 
     def getdomainliteral(self):
-        """Parse an RFC-822 domain-literal."""
+        """Parse an RFC 2822 domain-literal."""
         return '[%s]' % self.getdelimited('[', ']\r', 0)
 
-    def getatom(self):
-        """Parse an RFC-822 atom."""
+    def getatom(self, atomends=None):
+        """Parse an RFC 2822 atom.
+
+        Optional atomends specifies a different set of end token delimiters
+        (the default is to use self.atomends).  This is used e.g. in
+        getphraselist() since phrase endings must not include the `.' (which
+        is legal in phrases)."""
         atomlist = ['']
+        if atomends is None:
+            atomends = self.atomends
 
         while self.pos < len(self.field):
-            if self.field[self.pos] in self.atomends:
+            if self.field[self.pos] in atomends:
                 break
             else: atomlist.append(self.field[self.pos])
             self.pos = self.pos + 1
@@ -369,11 +383,11 @@ class AddrlistClass:
         return ''.join(atomlist)
 
     def getphraselist(self):
-        """Parse a sequence of RFC-822 phrases.
+        """Parse a sequence of RFC 2822 phrases.
 
-        A phrase is a sequence of words, which are in turn either
-        RFC-822 atoms or quoted-strings.  Phrases are canonicalized
-        by squeezing all runs of continuous whitespace into one space.
+        A phrase is a sequence of words, which are in turn either RFC 2822
+        atoms or quoted-strings.  Phrases are canonicalized by squeezing all
+        runs of continuous whitespace into one space.
         """
         plist = []
 
@@ -384,14 +398,14 @@ class AddrlistClass:
                 plist.append(self.getquote())
             elif self.field[self.pos] == '(':
                 self.commentlist.append(self.getcomment())
-            elif self.field[self.pos] in self.atomends:
+            elif self.field[self.pos] in self.phraseends:
                 break
-            else: plist.append(self.getatom())
+            else: plist.append(self.getatom(self.phraseends))
 
         return plist
 
 class AddressList(AddrlistClass):
-    """An AddressList encapsulates a list of parsed RFC822 addresses."""
+    """An AddressList encapsulates a list of parsed RFC 2822 addresses."""
     def __init__(self, field):
         AddrlistClass.__init__(self, field)
         if field:
