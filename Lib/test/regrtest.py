@@ -55,6 +55,9 @@ resources to test.  Currently only the following are defined:
 
     network -   It is okay to run tests that use external network
                 resource, e.g. testing SSL support for sockets.
+
+    bsddb -     It is okay to run the bsddb testsuite, which takes
+                a long time to complete.
 """
 
 import sys
@@ -78,7 +81,7 @@ if sys.maxint > 0x7fffffff:
 
 from test import test_support
 
-RESOURCE_NAMES = ('curses', 'largefile', 'network')
+RESOURCE_NAMES = ('curses', 'largefile', 'network', 'bsddb')
 
 
 def usage(code, msg=''):
