@@ -36,12 +36,11 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 /* Forward */
 static void initmain(void);
 static void initsite(void);
-static PyObject *run_err_node(node *n, char *filename,
-			      PyObject *globals, PyObject *locals);
-static PyObject *run_node(node *n, char *filename,
-			  PyObject *globals, PyObject *locals);
-static PyObject *run_pyc_file(FILE *fp, char *filename,
-			      PyObject *globals, PyObject *locals);
+static PyObject *run_err_node(node *, char *, PyObject *, PyObject *,
+			      PyCompilerFlags *);
+static PyObject *run_node(node *, char *, PyObject *, PyObject *,
+			  PyCompilerFlags *);
+static PyObject *run_pyc_file(FILE *, char *, PyObject *, PyObject *);
 static void err_input(perrdetail *);
 static void initsigs(void);
 static void call_sys_exitfunc(void);
@@ -55,7 +54,6 @@ extern void _PyUnicode_Init(void);
 extern void _PyUnicode_Fini(void);
 extern void _PyCodecRegistry_Init(void);
 extern void _PyCodecRegistry_Fini(void);
-
 
 int Py_DebugFlag; /* Needed by parser.c */
 int Py_VerboseFlag; /* Needed by import.c */
@@ -472,6 +470,9 @@ PyRun_InteractiveLoop(FILE *fp, char *filename)
 {
 	PyObject *v;
 	int ret;
+	PyCompilerFlags flags;
+
+	flags.cf_nested_scopes = 0;
 	v = PySys_GetObject("ps1");
 	if (v == NULL) {
 		PySys_SetObject("ps1", v = PyString_FromString(">>> "));
@@ -483,7 +484,7 @@ PyRun_InteractiveLoop(FILE *fp, char *filename)
 		Py_XDECREF(v);
 	}
 	for (;;) {
-		ret = PyRun_InteractiveOne(fp, filename);
+		ret = PyRun_InteractiveOneFlags(fp, filename, &flags);
 #ifdef Py_REF_DEBUG
 		fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
 #endif
@@ -498,6 +499,12 @@ PyRun_InteractiveLoop(FILE *fp, char *filename)
 
 int
 PyRun_InteractiveOne(FILE *fp, char *filename)
+{
+	return PyRun_InteractiveOneFlags(fp, filename, NULL);
+}
+
+int
+PyRun_InteractiveOneFlags(FILE *fp, char *filename, PyCompilerFlags *flags)
 {
 	PyObject *m, *d, *v, *w;
 	node *n;
@@ -537,7 +544,7 @@ PyRun_InteractiveOne(FILE *fp, char *filename)
 	if (m == NULL)
 		return -1;
 	d = PyModule_GetDict(m);
-	v = run_node(n, filename, d, d);
+	v = run_node(n, filename, d, d, flags);
 	if (v == NULL) {
 		PyErr_Print();
 		return -1;
@@ -907,7 +914,7 @@ PyObject *
 PyRun_String(char *str, int start, PyObject *globals, PyObject *locals)
 {
 	return run_err_node(PyParser_SimpleParseString(str, start),
-			    "<string>", globals, locals);
+			    "<string>", globals, locals, NULL);
 }
 
 PyObject *
@@ -924,23 +931,26 @@ PyRun_FileEx(FILE *fp, char *filename, int start, PyObject *globals,
 	node *n = PyParser_SimpleParseFile(fp, filename, start);
 	if (closeit)
 		fclose(fp);
-	return run_err_node(n, filename, globals, locals);
+	return run_err_node(n, filename, globals, locals, NULL);
 }
 
 static PyObject *
-run_err_node(node *n, char *filename, PyObject *globals, PyObject *locals)
+run_err_node(node *n, char *filename, PyObject *globals, PyObject *locals,
+	     PyCompilerFlags *flags)
 {
 	if (n == NULL)
 		return  NULL;
-	return run_node(n, filename, globals, locals);
+	return run_node(n, filename, globals, locals, flags);
 }
 
 static PyObject *
-run_node(node *n, char *filename, PyObject *globals, PyObject *locals)
+run_node(node *n, char *filename, PyObject *globals, PyObject *locals,
+	 PyCompilerFlags *flags)
 {
 	PyCodeObject *co;
 	PyObject *v;
-	co = PyNode_Compile(n, filename);
+	/* XXX pass sess->ss_nested_scopes to PyNode_Compile */
+	co = PyNode_CompileFlags(n, filename, flags);
 	PyNode_Free(n);
 	if (co == NULL)
 		return NULL;

@@ -7,6 +7,10 @@
 extern "C" {
 #endif
 
+typedef struct {
+	int cf_nested_scopes;
+} PyCompilerFlags;
+
 DL_IMPORT(void) Py_SetProgramName(char *);
 DL_IMPORT(char *) Py_GetProgramName(void);
 
@@ -26,6 +30,7 @@ DL_IMPORT(int) PyRun_SimpleString(char *);
 DL_IMPORT(int) PyRun_SimpleFile(FILE *, char *);
 DL_IMPORT(int) PyRun_SimpleFileEx(FILE *, char *, int);
 DL_IMPORT(int) PyRun_InteractiveOne(FILE *, char *);
+DL_IMPORT(int) PyRun_InteractiveOneFlags(FILE *, char *, PyCompilerFlags *);
 DL_IMPORT(int) PyRun_InteractiveLoop(FILE *, char *);
 
 DL_IMPORT(struct _node *) PyParser_SimpleParseString(char *, int);
