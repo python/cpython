@@ -730,7 +730,7 @@ class Distribution:
     def reinitialize_command (self, command):
         """Reinitializes a command to the state it was in when first
         returned by 'get_command_obj()': ie., initialized but not yet
-        finalized.  This gives provides the opportunity to sneak option
+        finalized.  This provides the opportunity to sneak option
         values in programmatically, overriding or supplementing
         user-supplied values from the config files and command line.
         You'll have to re-finalize the command object (by calling
