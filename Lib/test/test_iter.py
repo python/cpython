@@ -799,6 +799,82 @@ class TestCase(unittest.TestCase):
         del l
         self.assertEqual(C.count, 0)
 
+
+    # Make sure StopIteration is a "sink state".
+    # This tests various things that weren't sink states in Python 2.2.1,
+    # plus various things that always were fine.
+
+    def test_sinkstate_list(self):
+        # This used to fail
+        a = range(5)
+        b = iter(a)
+        self.assertEqual(list(b), range(5))
+        a.extend(range(5, 10))
+        self.assertEqual(list(b), [])
+
+    def test_sinkstate_tuple(self):
+        a = (0, 1, 2, 3, 4)
+        b = iter(a)
+        self.assertEqual(list(b), range(5))
+        self.assertEqual(list(b), [])
+
+    def test_sinkstate_string(self):
+        a = "abcde"
+        b = iter(a)
+        self.assertEqual(list(b), ['a', 'b', 'c', 'd', 'e'])
+        self.assertEqual(list(b), [])
+
+    def test_sinkstate_sequence(self):
+        # This used to fail
+        a = SequenceClass(5)
+        b = iter(a)
+        self.assertEqual(list(b), range(5))
+        a.n = 10
+        self.assertEqual(list(b), [])
+
+    def test_sinkstate_callable(self):
+        # This used to fail
+        def spam(state=[0]):
+            i = state[0]
+            state[0] = i+1
+            if i == 10:
+                raise AssertionError, "shouldn't have gotten this far"
+            return i
+        b = iter(spam, 5)
+        self.assertEqual(list(b), range(5))
+        self.assertEqual(list(b), [])
+
+    def test_sinkstate_dict(self):
+        # XXX For a more thorough test, see towards the end of:
+        # http://mail.python.org/pipermail/python-dev/2002-July/026512.html
+        a = {1:1, 2:2, 0:0, 4:4, 3:3}
+        for b in iter(a), a.iterkeys(), a.iteritems(), a.itervalues():
+            b = iter(a)
+            self.assertEqual(len(list(b)), 5)
+            self.assertEqual(list(b), [])
+
+    def test_sinkstate_yield(self):
+        def gen():
+            for i in range(5):
+                yield i
+        b = gen()
+        self.assertEqual(list(b), range(5))
+        self.assertEqual(list(b), [])
+
+    def test_sinkstate_range(self):
+        a = xrange(5)
+        b = iter(a)
+        self.assertEqual(list(b), range(5))
+        self.assertEqual(list(b), [])
+
+    def test_sinkstate_enumerate(self):
+        a = range(5)
+        e = enumerate(a)
+        b = iter(e)
+        self.assertEqual(list(b), zip(range(5), range(5)))
+        self.assertEqual(list(b), [])
+
+
 def test_main():
     run_unittest(TestCase)
 
