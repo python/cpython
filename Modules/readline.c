@@ -143,7 +143,8 @@ set_history_length(PyObject *self, PyObject *args)
 
 static char get_history_length_doc[] = "\
 get_history_length() -> int\n\
-return the current history length value.\n\
+return the maximum number of items that will be written to\n\
+the history file.\n\
 ";
 
 static PyObject*
@@ -332,6 +333,47 @@ for state in 0, 1, 2, ..., until it returns a non-string.\n\
 It should return the next possible completion starting with 'text'.\
 ";
 
+/* Exported function to get any element of history */
+
+static PyObject *
+get_history_item(PyObject *self, PyObject *args)
+{
+	int idx = 0;
+	HIST_ENTRY *hist_ent;
+
+	if (!PyArg_ParseTuple(args, "i:index", &idx))
+		return NULL;
+	if ((hist_ent = history_get(idx)))
+	    return PyString_FromString(hist_ent->line);
+	else {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+}
+
+static char doc_get_history_item[] = "\
+get_history_item() -> string\n\
+return the current contents of history item at index.\
+";
+
+/* Exported function to get current length of history */
+
+static PyObject *
+get_current_history_length(PyObject *self, PyObject *args)
+{
+	HISTORY_STATE *hist_st;
+
+	if (!PyArg_NoArgs(args))
+		return NULL;
+	hist_st = history_get_history_state();
+	return PyInt_FromLong(hist_st ? (long) hist_st->length : (long) 0);
+}
+
+static char doc_get_current_history_length[] = "\
+get_current_history_length() -> integer\n\
+return the current (not the maximum) length of history.\
+";
+
 /* Exported function to read the current line buffer */
 
 static PyObject *
@@ -360,12 +402,24 @@ insert_text(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-
 static char doc_insert_text[] = "\
 insert_text(string) -> None\n\
 Insert text into the command line.\
 ";
 
+static PyObject *
+redisplay(PyObject *self)
+{
+	rl_redisplay();
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char doc_redisplay[] = "\
+redisplay() -> None\n\
+Change what's displayed on the screen to reflect the current\n\
+contents of the line buffer.\
+";
 
 /* Table of functions exported by the module */
 
@@ -375,11 +429,16 @@ static struct PyMethodDef readline_methods[] =
 	{"get_line_buffer", get_line_buffer, 
 	 METH_OLDARGS, doc_get_line_buffer},
 	{"insert_text", insert_text, METH_VARARGS, doc_insert_text},
+	{"redisplay", (PyCFunction)redisplay, METH_NOARGS, doc_redisplay},
 	{"read_init_file", read_init_file, METH_VARARGS, doc_read_init_file},
 	{"read_history_file", read_history_file, 
 	 METH_VARARGS, doc_read_history_file},
 	{"write_history_file", write_history_file, 
 	 METH_VARARGS, doc_write_history_file},
+	{"get_history_item", get_history_item,
+	 METH_VARARGS, doc_get_history_item},
+	{"get_current_history_length", get_current_history_length,
+	 METH_OLDARGS, doc_get_current_history_length},
  	{"set_history_length", set_history_length, 
 	 METH_VARARGS, set_history_length_doc},
  	{"get_history_length", get_history_length, 
