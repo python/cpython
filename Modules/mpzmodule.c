@@ -34,8 +34,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* MPZ objects */
 
 #include "allobjects.h"
-#include "modsupport.h"		/* For getargs() etc. */
-#include "rename1.h"
+
 #include <assert.h>
 #include <sys/types.h>		/* For size_t */
 

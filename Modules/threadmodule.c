@@ -26,8 +26,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Interface to Sjoerd's portable C thread library */
 
 #include "allobjects.h"
-#include "modsupport.h"
-#include "ceval.h"
 
 #ifndef WITH_THREAD
 Error!  The rest of Python is not compiled with thread support.

@@ -24,12 +24,9 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* syslog module */
 
-#include "allobjects.h"
-#include "modsupport.h"
+#include "Python.h"
 
 #include <syslog.h>
-
-#include "rename1.h"
 
 static PyObject * 
 syslog_openlog(self, args)

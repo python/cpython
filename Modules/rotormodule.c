@@ -57,8 +57,8 @@ NOTE: you MUST use the SAME key in rotor.newrotor()
 
 #include "Python.h"
 
-#include <stdio.h>
 #include <math.h>
+
 #define TRUE	1
 #define FALSE	0
 
@@ -217,7 +217,7 @@ PyRotor_New(num_rotors, key)
 		goto fail;
 	return xp;
 fail:
-	DECREF(xp);
+	Py_DECREF(xp);
 	return (PyRotorObject *)PyErr_NoMemory();
 }
 
@@ -736,7 +736,7 @@ PyRotor_SetKey(self, args)
 	return Py_None;
 }
 
-static struct methodlist PyRotor_Methods[] = {
+static struct PyMethodDef PyRotor_Methods[] = {
 	{"encrypt",	(PyCFunction)PyRotor_Encrypt},
 	{"encryptmore",	(PyCFunction)PyRotor_EncryptMore},
 	{"decrypt",	(PyCFunction)PyRotor_Decrypt},
@@ -756,7 +756,7 @@ PyRotor_GetAttr(s, name)
 }
 
 static PyTypeObject PyRotor_Type = {
-	PyObject_HEAD_INIT(&Typetype)
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
 	"rotor",			/*tp_name*/
 	sizeof(PyRotorObject),		/*tp_size*/
@@ -793,7 +793,7 @@ PyRotor_Rotor(self, args)
 	return (PyObject * )r;
 }
 
-static struct methodlist PyRotor_Rotor_Methods[] = {
+static struct PyMethodDef PyRotor_Rotor_Methods[] = {
 	{"newrotor",		(PyCFunction)PyRotor_Rotor},
 	{NULL,			NULL}		 /* Sentinel */
 };

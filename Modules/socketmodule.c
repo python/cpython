@@ -580,7 +580,7 @@ BUILD_FUNC_DEF_2(PySocketSock_getsockopt,PySocketSockObject *,s, PyObject *,args
 	if (buf == NULL)
 		return NULL;
 	res = getsockopt(s->sock_fd, level, optname,
-			 (ANY *)getstringvalue(buf), &buflen);
+			 (ANY *)PyString_AsString(buf), &buflen);
 	if (res < 0) {
 		Py_DECREF(buf);
 		return PySocket_Err();
@@ -732,7 +732,7 @@ BUILD_FUNC_DEF_2(PySocketSock_listen,PySocketSockObject *,s, PyObject *,args)
 static PyObject *
 BUILD_FUNC_DEF_2(PySocketSock_makefile,PySocketSockObject *,s, PyObject *,args)
 {
-	extern int fclose PROTO((FILE *));
+	extern int fclose Py_PROTO((FILE *));
 	char *mode;
 	int fd;
 	FILE *fp;
@@ -762,7 +762,7 @@ BUILD_FUNC_DEF_2(PySocketSock_recv,PySocketSockObject *,s, PyObject *,args)
 	if (buf == NULL)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	n = recv(s->sock_fd, getstringvalue(buf), len, flags);
+	n = recv(s->sock_fd, PyString_AsString(buf), len, flags);
 	Py_END_ALLOW_THREADS
 	if (n < 0)
 		return PySocket_Err();
@@ -937,12 +937,12 @@ BUILD_FUNC_DEF_1(PySocketSock_repr,PySocketSockObject *,s)
 	PyObject *addro;
 	struct sockaddr *addr;
 	char buf[512];
-	object *t, *comma, *v;
+	PyObject *t, *comma, *v;
 	int i, len;
 	sprintf(buf, 
 		"<socket object, fd=%d, family=%d, type=%d, protocol=%d>", 
 		s->sock_fd, s->sock_family, s->sock_type, s->sock_proto);
-	t = newstringobject(buf);
+	t = PyString_FromString(buf);
 	return t;
 }
 
