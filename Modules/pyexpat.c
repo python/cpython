@@ -840,41 +840,43 @@ static char pyexpat_module_documentation[] =
 void
 initpyexpat(){
 	PyObject *m, *d;
-        char *rev="$Revision$";
+	char *rev = "$Revision$";
 	PyObject *errors_module, *errors_dict;
+	PyObject *sys_modules;
 
-	Xmlparsetype.ob_type = &PyType_Type;
+        Xmlparsetype.ob_type = &PyType_Type;
 
 	/* Create the module and add the functions */
 	m = Py_InitModule4("pyexpat", pyexpat_methods,
-		pyexpat_module_documentation,
-		(PyObject*)NULL,PYTHON_API_VERSION);
+			   pyexpat_module_documentation,
+			   (PyObject*)NULL, PYTHON_API_VERSION);
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
 	ErrorObject = PyString_FromString("pyexpat.error");
 	PyDict_SetItemString(d, "error", ErrorObject);
 
-	PyDict_SetItemString(d,"__version__",
+	PyDict_SetItemString(d, "__version__",
 			     PyString_FromStringAndSize(rev+11,
 							strlen(rev+11)-2));
 
-	errors_module=PyModule_New( "errors" );
-	PyDict_SetItemString(d,"errors", errors_module );
+	sys_modules = PySys_GetObject("modules");
+	errors_module = PyModule_New("pyexpat.errors");
+	PyDict_SetItemString(d, "errors", errors_module);
+	PyDict_SetItemString(sys_modules, "pyexpat.errors", errors_module);
 
 	/* XXX When Expat supports some way of figuring out how it was
 	   compiled, this should check and set native_encoding 
 	   appropriately. 
 	*/
 	PyDict_SetItemString(d, "native_encoding", 
-			     PyString_FromString("UTF-8") );
-			     
-	errors_dict=PyModule_GetDict( errors_module );
+			     PyString_FromString("UTF-8"));
+	errors_dict = PyModule_GetDict(errors_module);
 
 #define MYCONST(name) \
 	PyDict_SetItemString(errors_dict, #name,  \
-				PyString_FromString( XML_ErrorString(name)))
-		
+			     PyString_FromString(XML_ErrorString(name)))
+
 	MYCONST(XML_ERROR_NO_MEMORY);
 	MYCONST(XML_ERROR_SYNTAX);
 	MYCONST(XML_ERROR_NO_ELEMENTS);
@@ -894,7 +896,7 @@ initpyexpat(){
 	MYCONST(XML_ERROR_MISPLACED_XML_PI);
 	MYCONST(XML_ERROR_UNKNOWN_ENCODING);
 	MYCONST(XML_ERROR_INCORRECT_ENCODING);
-	
+
 	/* Check for errors */
 	if (PyErr_Occurred())
 		Py_FatalError("can't initialize module pyexpat");
@@ -1030,4 +1032,3 @@ statichere struct HandlerInfo handler_info[]=
 
 {NULL, NULL, NULL } /* sentinel */
 };
-
