@@ -121,7 +121,7 @@ w_object(v, p)
 	object *v;
 	WFILE *p;
 {
-	long i, n;
+	int i, n;
 	
 	if (v == NULL)
 		w_byte(TYPE_NULL, p);
@@ -147,29 +147,29 @@ w_object(v, p)
 		float_buf_repr(buf, (floatobject *)v);
 		n = strlen(buf);
 		w_byte(TYPE_FLOAT, p);
-		w_byte((int)n, p);
-		w_string(buf, (int)n, p);
+		w_byte(n, p);
+		w_string(buf, n, p);
 	}
 	else if (is_stringobject(v)) {
 		w_byte(TYPE_STRING, p);
 		n = getstringsize(v);
-		w_long(n, p);
-		w_string(getstringvalue(v), (int)n, p);
+		w_long((long)n, p);
+		w_string(getstringvalue(v), n, p);
 	}
 	else if (is_tupleobject(v)) {
 		w_byte(TYPE_TUPLE, p);
 		n = gettuplesize(v);
-		w_long(n, p);
+		w_long((long)n, p);
 		for (i = 0; i < n; i++) {
-			w_object(gettupleitem(v, (int)i), p);
+			w_object(gettupleitem(v, i), p);
 		}
 	}
 	else if (is_listobject(v)) {
 		w_byte(TYPE_LIST, p);
 		n = getlistsize(v);
-		w_long(n, p);
+		w_long((long)n, p);
 		for (i = 0; i < n; i++) {
-			w_object(getlistitem(v, (int)i), p);
+			w_object(getlistitem(v, i), p);
 		}
 	}
 	else if (is_dictobject(v)) {
