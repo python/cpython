@@ -8,6 +8,7 @@ import getopt
 import re
 import socket
 import time
+import threading
 import traceback
 import types
 import exceptions
@@ -361,9 +362,23 @@ class ModifiedInterpreter(InteractiveInterpreter):
         # close only the subprocess debugger
         debug = self.getdebugger()
         if debug:
-            RemoteDebugger.close_subprocess_debugger(self.rpcclt)
-        # kill subprocess, spawn a new one, accept connection
-        self.rpcclt.close()
+            try:
+                RemoteDebugger.close_subprocess_debugger(self.rpcclt)
+            except:
+                pass
+        # Kill subprocess, spawn a new one, accept connection.
+        if hasattr(os, 'kill'):
+            # We can interrupt any loop if we can use SIGINT. This doesn't
+            # work in Windows, currently we can only interrupt loops doing I/O.
+            self.__signal_interrupt()
+        # XXX KBK 13Feb03 Don't close the socket until the interrupt thread
+        # finishes.
+        self.tkconsole.executing = False
+        try:
+            self.rpcclt.close()
+            os.wait()
+        except:
+            pass
         self.spawn_subprocess()
         self.rpcclt.accept()
         self.transfer_path()
@@ -374,11 +389,29 @@ class ModifiedInterpreter(InteractiveInterpreter):
         console.write(halfbar + ' RESTART ' + halfbar)
         console.text.mark_set("restart", "end-1c")
         console.text.mark_gravity("restart", "left")
-        # restart remote debugger
+        # restart subprocess debugger
         if debug:
             gui = RemoteDebugger.restart_subprocess_debugger(self.rpcclt)
             # reload remote debugger breakpoints for all PyShellEditWindows
             debug.load_breakpoints()
+
+    def __signal_interrupt(self):
+        try:
+            from signal import SIGINT
+        except ImportError:
+            SIGINT = 2
+        os.kill(self.rpcpid, SIGINT)
+
+    def __request_interrupt(self):
+        self.rpcclt.asynccall("exec", "interrupt_the_server", (), {})
+
+    def interrupt_subprocess(self):
+        if hasattr(os, "kill"):
+            self.__signal_interrupt()
+        else:
+            # Windows has no os.kill(), use an RPC message.
+            # This is async, must be done in a thread.
+            threading.Thread(target=self.__request_interrupt).start()
 
     def transfer_path(self):
         self.runcommand("""if 1:
@@ -393,7 +426,20 @@ class ModifiedInterpreter(InteractiveInterpreter):
         clt = self.rpcclt
         if clt is None:
             return
-        response = clt.pollresponse(self.active_seq)
+        try:
+            response = clt.pollresponse(self.active_seq)
+        except (EOFError, IOError):
+            # lost connection: subprocess terminated itself, restart
+            if self.tkconsole.closing:
+                return
+            response = None
+            try:
+                # stake any zombie before restarting
+                os.wait()
+            except (AttributeError, OSError):
+                pass
+            self.restart_subprocess()
+            self.tkconsole.endexecuting()
         # Reschedule myself in 50 ms
         self.tkconsole.text.after(50, self.poll_subprocess)
         if response:
@@ -571,8 +617,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def runcode(self, code):
         "Override base class method"
         if self.tkconsole.executing:
-            self.display_executing_dialog()
-            return
+            self.interp.restart_subprocess()
         self.checklinecache()
         if self.save_warnings_filters is not None:
             warnings.filters[:] = self.save_warnings_filters
@@ -670,10 +715,11 @@ class PyShell(OutputWindow):
         if use_subprocess:
             self.interp.start_subprocess()
 
-    reading = 0
-    executing = 0
-    canceled = 0
-    endoffile = 0
+    reading = False
+    executing = False
+    canceled = False
+    endoffile = False
+    closing = False
 
     def toggle_debugger(self, event=None):
         if self.executing:
@@ -748,17 +794,17 @@ class PyShell(OutputWindow):
     def close(self):
         "Extend EditorWindow.close()"
         if self.executing:
-            # XXX Need to ask a question here
-            if not tkMessageBox.askokcancel(
+            response = tkMessageBox.askokcancel(
                 "Kill?",
-                "The program is still running; do you want to kill it?",
+                "The program is still running!\n Do you want to kill it?",
                 default="ok",
-                master=self.text):
+                master=self.text)
+            if response == False:
                 return "cancel"
-            self.canceled = 1
-            if self.reading:
-                self.top.quit()
-            return "cancel"
+            # interrupt the subprocess
+            self.closing = True
+            self.cancel_callback()
+            self.endexecuting()
         return EditorWindow.close(self)
 
     def _close(self):
@@ -819,7 +865,7 @@ class PyShell(OutputWindow):
     def isatty(self):
         return True
 
-    def cancel_callback(self, event):
+    def cancel_callback(self, event=None):
         try:
             if self.text.compare("sel.first", "!=", "sel.last"):
                 return # Active selection -- always use default binding
@@ -831,18 +877,11 @@ class PyShell(OutputWindow):
             self.showprompt()
             return "break"
         self.endoffile = 0
+        self.canceled = 1
         if self.reading:
-            self.canceled = 1
             self.top.quit()
-        elif (self.executing and self.interp.rpcclt and
-              self.interp.rpcpid and hasattr(os, "kill")):
-            try:
-                from signal import SIGINT
-            except ImportError:
-                SIGINT = 2
-            os.kill(self.interp.rpcpid, SIGINT)
-        else:
-            self.canceled = 1
+        elif (self.executing and self.interp.rpcclt):
+            self.interp.interrupt_subprocess()
         return "break"
 
     def eof_callback(self, event):
@@ -1020,12 +1059,14 @@ class PyShell(OutputWindow):
         sys.stdout.softspace = 0
 
     def write(self, s, tags=()):
-        self.text.mark_gravity("iomark", "right")
-        OutputWindow.write(self, s, tags, "iomark")
-        self.text.mark_gravity("iomark", "left")
+        try:
+            self.text.mark_gravity("iomark", "right")
+            OutputWindow.write(self, s, tags, "iomark")
+            self.text.mark_gravity("iomark", "left")
+        except:
+            pass
         if self.canceled:
             self.canceled = 0
-            raise KeyboardInterrupt
 
 class PseudoFile:
 

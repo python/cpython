@@ -124,9 +124,6 @@ class ScriptBinding:
         flist = self.editwin.flist
         shell = flist.open_shell()
         interp = shell.interp
-        if interp.tkconsole.executing:
-            interp.display_executing_dialog()
-            return
         interp.restart_subprocess()
         # XXX Too often this discards arguments the user just set...
         interp.runcommand("""if 1:

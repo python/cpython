@@ -2,6 +2,32 @@
 IDLEfork NEWS
 +++++++++++++
 
+What's New in IDLEfork 0.9 Alpha 3?
+===================================
+
+*Release date: xx-xxx-2003*
+
+- Exit IDLE cleanly even when doing subprocess I/O
+
+- Handle subprocess interrupt in Windows with an RPC message.  
+
+- Calling Run will restart the subprocess even if user code is running.
+
+- Restart the subprocess if it terminates itself. (VPython programs do that)
+
+- Support subclassing of exceptions, including in the shell, by moving the 
+  exception formatting to the subprocess.
+
+- Known issues:
+
+  + Can't kill/restart a tight loop in the Windows version: add 
+    I/O to the loop or use the Task Manager to kill the subprocess.
+  + Typing two Control-C in close succession when the subprocess is busy can
+    cause IDLE to lose communication with the subprocess.  Please type one
+    only and wait for the exception to complete.
+  + Printing under some versions of Linux may be problematic.
+
+
 What's New in IDLEfork 0.9 Alpha 2?
 ===================================
 
@@ -104,15 +130,6 @@ What's New in IDLEfork 0.9 Alpha 2?
   Properly credit David Scherer.
 
 - Modified idle, idle.py, idle.pyw to improve exception handling.
-
-- Known issues:
-
-  + Can't kill a tight loop in the Windows version: Insert a
-    ``print "*",`` in an outer loop or use the Task Manager to kill.
-  + Typing two Control-C in close succession when the subprocess is busy can
-    cause IDLE to lose communication with the subprocess.  Please type one
-    only and wait for the exception to complete.
-  + Printing under some versions of Linux may be problematic.
 
 
 What's New in IDLEfork 0.9 Alpha 1?
