@@ -4,8 +4,14 @@ klmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
 
 2
 'abcdefghij'
+'abcde'
+Caught expected ValueError writing to closed StringIO:
+I/O operation on closed file
 abcdefghij
 klmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
 
 2
 'abcdefghij'
+'abcde'
+Caught expected ValueError writing to closed StringIO:
+I/O operation on closed file
