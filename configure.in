@@ -270,6 +270,15 @@ AC_MSG_RESULT($LDLIBRARY)
 AC_PROG_RANLIB
 AC_SUBST(AR)
 AC_CHECK_PROGS(AR, ar aal, ar)
+
+case $MACHDEP in
+bsdos*)
+	# install -d does not work on BSDI
+	if test -z "$INSTALL"
+	then
+		INSTALL="${srcdir}/install-sh -c"
+	fi
+esac
 AC_PROG_INSTALL
 
 # Not every filesystem supports hard links
