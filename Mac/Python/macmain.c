@@ -48,6 +48,22 @@ main(argc, argv)
 	char **argv;
 {
 #ifdef USE_STDWIN
+#ifdef THINK_C
+	/* This is done to initialize the Think console I/O library before stdwin.
+	   If we don't do this, the console I/O library will only be usable for
+	   output, and the interactive version of the interpreter will quit
+	   immediately because it sees an EOF from stdin.
+	   The disadvantage is that when using STDWIN, your stdwin menus will
+	   appear next to the console I/O's File and Edit menus, and you will have
+	   an empty console window in your application (though it can be removed
+	   by clever use of console library I believe).
+	   Remove this line if you want to be able to double-click Python scripts
+	   that use STDWIN and never use stdin for input.
+	   (A more dynamic solution may be possible e.g. based on bits in the
+	   SIZE resource or whatever...  Have fun, and let me know if you find
+	   a better way!) */
+	printf("\n");   
+#endif
 	/* Use STDWIN's wargs() to set argc/argv to list of files to open */
 	wargs(&argc, &argv);
 	/* Put About Python... in Apple menu */
