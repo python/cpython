@@ -23,7 +23,7 @@ January = 1
 February = 2
 
 # Number of days per month (except for February in leap years)
-mdays = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+mdays = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
 # Exception raised for bad input (with string parameter for details)
 error = 'calendar error'
@@ -67,16 +67,16 @@ def mktime(year, month, day, hours, mins, secs):
 	return ((days*24 + hours)*60 + mins)*60 + secs
 
 # Full and abbreviated names of weekdays
-day_name = ('Monday', 'Tuesday', 'Wednesday', 'Thursday')
-day_name = day_name + ('Friday', 'Saturday', 'Sunday')
-day_abbr = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
+day_name = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', \
+	    'Friday', 'Saturday', 'Sunday']
+day_abbr = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 # Full and abbreviated of months (1-based arrays!!!)
-month_name =          ('', 'January',   'February', 'March',    'April')
-month_name = month_name + ('May',       'June',     'July',     'August')
-month_name = month_name + ('September', 'October',  'November', 'December')
-month_abbr =       ('   ', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun')
-month_abbr = month_abbr + ('Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
+month_name =          ['', 'January',   'February', 'March',    'April', \
+		           'May',       'June',     'July',     'August', \
+			   'September', 'October',  'November', 'December']
+month_abbr =       ['   ', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', \
+		           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 # Zero-fill string to two positions (helper for asctime())
 def dd(s):
