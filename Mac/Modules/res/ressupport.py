@@ -25,6 +25,7 @@ class ResMethod(ResMixIn, MethodGenerator): pass
 
 includestuff = includestuff + """
 #include <Resources.h>
+#include <string.h>
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 """

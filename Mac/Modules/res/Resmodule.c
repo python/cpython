@@ -43,6 +43,7 @@ extern int BMObj_Convert(PyObject *, BitMapPtr *);
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <Resources.h>
+#include <string.h>
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
