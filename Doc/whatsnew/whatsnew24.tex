@@ -1000,9 +1000,15 @@ euc-jisx0213, iso-2022-jp, iso-2022-jp-1, iso-2022-jp-2,
  \item Korean: cp949, euc-kr, johab, iso-2022-kr
 \end{itemize} 
 
+\item The UTF-8 and UTF-16 codecs now cope better with receiving partial input.
+Previously the \class{StreamReader} class would try to read more data,
+which made it impossible to resume decoding from the stream.  The
+\method{read()} method will now return as much data as it can and future
+calls will resume decoding where previous ones left off. 
+(Implemented by Walter D\"orwald.)
+
 \item Some other new encodings were added: HP Roman8, 
-ISO_8859-11, ISO_8859-16, PCTP-154, 
-and TIS-620.
+ISO_8859-11, ISO_8859-16, PCTP-154, and TIS-620.
 
 \item There is a new \module{collections} module for 
    various specialized collection datatypes.  
@@ -1046,12 +1052,15 @@ improved performance, such as the \module{Queue} and
 that creates an HTML table showing a side by side comparison
 of two versions of a text.   (Contributed by Dan Gass.)
 
-\item The \module{email} package uses a new incremental parser for MIME
-message, available in the \module{email.FeedParser} module.  
-The new parser doesn't require reading the entire message into memory, 
-and doesn't throw exceptions if a message is malformed; instead it records
-any problems as a \member{defect} attribute of the message.
-(Developed by Anthony Baxter, Barry Warsaw, Thomas Wouters, and others.)
+\item The \module{email} package was updated to version 3.0, 
+which dropped various deprecated APIs and removes support for Python
+versions earlier than 2.3.  The 3.0 version of the package uses a new
+incremental parser for MIME message, available in the
+\module{email.FeedParser} module.  The new parser doesn't require
+reading the entire message into memory, and doesn't throw exceptions
+if a message is malformed; instead it records any problems as a
+\member{defect} attribute of the message.  (Developed by Anthony
+Baxter, Barry Warsaw, Thomas Wouters, and others.)
 
 \item The \module{heapq} module has been converted to C.  The resulting
    tenfold improvement in speed makes the module suitable for handling
@@ -1170,12 +1179,15 @@ logging.basicConfig(filename = '/var/log/application.log',
     format='%(levelname):%(process):%(thread):%(message)')	            
 \end{verbatim}
 
-Another addition to \module{logging} is a
-\class{TimedRotatingFileHandler} class which rotates its log files at
+Other additions to \module{logging} include a \method{log(\var{level},
+\var{msg})} convenience method, and a
+\class{TimedRotatingFileHandler} class that rotates its log files at
 a timed interval.  The module already had \class{RotatingFileHandler},
 which rotated logs once the file exceeded a certain size.  Both
 classes derive from a new \class{BaseRotatingHandler} class that can
 be used to implement other rotating handlers.
+
+(Changes implemented by Vinay Sajip.)
 
 \item The \module{marshal} module now shares interned strings on unpacking a 
 data structure.  This may shrink the size of certain pickle strings,
