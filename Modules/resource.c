@@ -1,5 +1,6 @@
 
 #include "Python.h"
+#include "structseq.h"
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <string.h>
@@ -16,11 +17,48 @@
 
 static PyObject *ResourceError;
 
+static char struct_rusage__doc__[] =
+	"struct_rusage: Result from getrusage.\n\n"
+	"This object may be accessed either as a tuple of\n"
+	"    (utime,stime,maxrss,ixrss,idrss,isrss,minflt,majflt,\n"
+	"    nswap,inblock,oublock,msgsnd,msgrcv,nsignals,nvcsw,nivcsw)\n"
+	"or via the attributes ru_utime, ru_stime, ru_maxrss, and so on.\n";
+
+static PyStructSequence_Field struct_rusage_fields[] = {
+	{"ru_utime",	"user time used"},
+	{"ru_stime",	"system time used"},
+	{"ru_maxrss",	"max. resident set size"},
+	{"ru_ixrss",	"shared memory size"},
+	{"ru_idrss",	"unshared data size"},
+	{"ru_isrss",	"unshared stack size"},
+	{"ru_minflt",	"page faults not requiring I/O"},
+	{"ru_majflt",	"page faults requiring I/O"},
+	{"ru_nswap",	"number of swap outs"},
+	{"ru_inblock",	"block input operations"},
+	{"ru_oublock",	"block output operations"},
+	{"ru_msgsnd",	"IPC messages sent"},
+	{"ru_msgrcv",	"IPC messages received"},
+	{"ru_nsignals",	"signals received"},
+	{"ru_nvcsw",	"voluntary context switches"},
+	{"ru_nivcsw",	"involuntary context switches"},
+	{0}
+};
+
+static PyStructSequence_Desc struct_rusage_desc = {
+	"resource.struct_rusage",	/* name */
+	struct_rusage__doc__,	/* doc */
+	struct_rusage_fields,	/* fields */
+	16	/* n_in_sequence */
+};
+
+static PyTypeObject StructRUsageType;
+
 static PyObject *
 resource_getrusage(PyObject *self, PyObject *args)
 {
 	int who;
 	struct rusage ru;
+	PyObject *result;
 
 	if (!PyArg_ParseTuple(args, "i:getrusage", &who))
 		return NULL;
@@ -35,29 +73,35 @@ resource_getrusage(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	/* Yeah, this 16-tuple is way ugly. It's probably a lot less
-	   ugly than a dictionary with keys (or object attributes)
-	   named things like 'ixrss'. 
-	   */
-	return Py_BuildValue(
-		"ddiiiiiiiiiiiiii",
-		doubletime(ru.ru_utime),     /* user time used */
-		doubletime(ru.ru_stime),     /* system time used */
-		ru.ru_maxrss,		     /* max. resident set size */
-		ru.ru_ixrss,		     /* shared memory size */
-		ru.ru_idrss,		     /* unshared memory size */
-		ru.ru_isrss,		     /* unshared stack size */
-		ru.ru_minflt,		     /* page faults not requiring I/O*/
-		ru.ru_majflt,		     /* page faults requiring I/O */
-		ru.ru_nswap,		     /* number of swap outs */
-		ru.ru_inblock,		     /* block input operations */
-		ru.ru_oublock,		     /* block output operations */
-		ru.ru_msgsnd,		     /* messages sent */
-		ru.ru_msgrcv,		     /* messages received */
-		ru.ru_nsignals,		     /* signals received */
-		ru.ru_nvcsw,		     /* voluntary context switches */
-		ru.ru_nivcsw		     /* involuntary context switches */
-		);
+	result = PyStructSequence_New(&StructRUsageType);
+	if (!result)
+		return NULL;
+
+	PyStructSequence_SET_ITEM(result, 0,
+			PyFloat_FromDouble(doubletime(ru.ru_utime)));
+	PyStructSequence_SET_ITEM(result, 1,
+			PyFloat_FromDouble(doubletime(ru.ru_stime)));
+	PyStructSequence_SET_ITEM(result, 2, PyInt_FromLong(ru.ru_maxrss));
+	PyStructSequence_SET_ITEM(result, 3, PyInt_FromLong(ru.ru_ixrss));
+	PyStructSequence_SET_ITEM(result, 4, PyInt_FromLong(ru.ru_idrss));
+	PyStructSequence_SET_ITEM(result, 5, PyInt_FromLong(ru.ru_isrss));
+	PyStructSequence_SET_ITEM(result, 6, PyInt_FromLong(ru.ru_minflt));
+	PyStructSequence_SET_ITEM(result, 7, PyInt_FromLong(ru.ru_majflt));
+	PyStructSequence_SET_ITEM(result, 8, PyInt_FromLong(ru.ru_nswap));
+	PyStructSequence_SET_ITEM(result, 9, PyInt_FromLong(ru.ru_inblock));
+	PyStructSequence_SET_ITEM(result, 10, PyInt_FromLong(ru.ru_oublock));
+	PyStructSequence_SET_ITEM(result, 11, PyInt_FromLong(ru.ru_msgsnd));
+	PyStructSequence_SET_ITEM(result, 12, PyInt_FromLong(ru.ru_msgrcv));
+	PyStructSequence_SET_ITEM(result, 13, PyInt_FromLong(ru.ru_nsignals));
+	PyStructSequence_SET_ITEM(result, 14, PyInt_FromLong(ru.ru_nvcsw));
+	PyStructSequence_SET_ITEM(result, 15, PyInt_FromLong(ru.ru_nivcsw));
+
+	if (PyErr_Occurred()) {
+		Py_DECREF(result);
+		return NULL;
+	}
+
+	return result;
 }
 
 
@@ -172,6 +216,9 @@ initresource(void)
 	}
 	Py_INCREF(ResourceError);
 	PyModule_AddObject(m, "error", ResourceError);
+ 	PyStructSequence_InitType(&StructRUsageType, &struct_rusage_desc);
+ 	PyModule_AddObject(m, "struct_rusage", 
+			   (PyObject*) &StructRUsageType);
 
 	/* insert constants */
 #ifdef RLIMIT_CPU

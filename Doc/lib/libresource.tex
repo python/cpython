@@ -133,50 +133,56 @@ not be available from this module on that platform.
 
 \subsection{Resource Usage}
 
-These functiona are used to retrieve resource usage information:
+These functions are used to retrieve resource usage information:
 
 \begin{funcdesc}{getrusage}{who}
-  This function returns a large tuple that describes the resources
+  This function returns an object that describes the resources
   consumed by either the current process or its children, as specified
   by the \var{who} parameter.  The \var{who} parameter should be
   specified using one of the \constant{RUSAGE_*} constants described
   below.
 
-  The elements of the return value each
-  describe how a particular system resource has been used, e.g. amount
-  of time spent running is user mode or number of times the process was
-  swapped out of main memory. Some values are dependent on the clock
-  tick internal, e.g. the amount of memory the process is using.
+  The fields of the return value each describe how a particular system
+  resource has been used, e.g. amount of time spent running is user mode
+  or number of times the process was swapped out of main memory. Some
+  values are dependent on the clock tick internal, e.g. the amount of
+  memory the process is using.
 
-  The first two elements of the return value are floating point values
-  representing the amount of time spent executing in user mode and the
-  amount of time spent executing in system mode, respectively. The
-  remaining values are integers. Consult the \manpage{getrusage}{2}
-  man page for detailed information about these values. A brief
-  summary is presented here:
+  For backward compatibility, the return value is also accessible as
+  a tuple of 16 elements.
 
-\begin{tableii}{r|l}{code}{Offset}{Resource}
-  \lineii{0}{time in user mode (float)}
-  \lineii{1}{time in system mode (float)}
-  \lineii{2}{maximum resident set size}
-  \lineii{3}{shared memory size}
-  \lineii{4}{unshared memory size}
-  \lineii{5}{unshared stack size}
-  \lineii{6}{page faults not requiring I/O}
-  \lineii{7}{page faults requiring I/O}
-  \lineii{8}{number of swap outs}
-  \lineii{9}{block input operations}
-  \lineii{10}{block output operations}
-  \lineii{11}{messages sent}
-  \lineii{12}{messages received}
-  \lineii{13}{signals received}
-  \lineii{14}{voluntary context switches}
-  \lineii{15}{involuntary context switches}
-\end{tableii}
+  The fields \member{ru_utime} and \member{ru_stime} of the return value
+  are floating point values representing the amount of time spent
+  executing in user mode and the amount of time spent executing in system
+  mode, respectively. The remaining values are integers. Consult the
+  \manpage{getrusage}{2} man page for detailed information about these
+  values. A brief summary is presented here:
+
+\begin{tableiii}{r|l|l}{code}{Index}{Field}{Resource}
+  \lineiii{0}{\member{ru_utime}}{time in user mode (float)}
+  \lineiii{1}{\member{ru_stime}}{time in system mode (float)}
+  \lineiii{2}{\member{ru_maxrss}}{maximum resident set size}
+  \lineiii{3}{\member{ru_ixrss}}{shared memory size}
+  \lineiii{4}{\member{ru_idrss}}{unshared memory size}
+  \lineiii{5}{\member{ru_isrss}}{unshared stack size}
+  \lineiii{6}{\member{ru_minflt}}{page faults not requiring I/O}
+  \lineiii{7}{\member{ru_majflt}}{page faults requiring I/O}
+  \lineiii{8}{\member{ru_nswap}}{number of swap outs}
+  \lineiii{9}{\member{ru_inblock}}{block input operations}
+  \lineiii{10}{\member{ru_oublock}}{block output operations}
+  \lineiii{11}{\member{ru_msgsnd}}{messages sent}
+  \lineiii{12}{\member{ru_msgrcv}}{messages received}
+  \lineiii{13}{\member{ru_nsignals}}{signals received}
+  \lineiii{14}{\member{ru_nvcsw}}{voluntary context switches}
+  \lineiii{15}{\member{ru_nivcsw}}{involuntary context switches}
+\end{tableiii}
 
   This function will raise a \exception{ValueError} if an invalid
   \var{who} parameter is specified. It may also raise
   \exception{error} exception in unusual circumstances.
+
+  \versionchanged[Added access to values as attributes of the
+  returned object]{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{getpagesize}{}
