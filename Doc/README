@@ -1,24 +1,36 @@
 This directory contains the LaTeX source to the Python documentation.
-The documentation is not all finished, but good enough to get you
-started.
+It is not all finished, but good enough to get you started.
 
-The following are the important latex source files:
+The following are the LaTeX source files:
 
-	tut.tex				A tutorial
+	tut.tex				The tutorial
 	lib.tex, lib[1-5].tex		The library reference
+	ref.tex				The reference manual
+	qua.tex, quabib.bib		Article published in CWI Quarterly
 
-They both read the style option file "myformat.sty".
+All except qua.tex use the style option file "myformat.sty".  This
+contains some simple macro definitions and sets style parameters.  You
+can easily edit it to change the paper size (the default is European
+paper, "A4" or 21 x 29.7 cm).
 
-You can use the Makefile to format, preview and print the documents.
-Type "make tut" or "make mod" to preview either document with xdvi.
-Type "make print" to print them both (this only works if your print
-spooler is set up just like mine...), or "make all" to create postscript
-files that you can you can print using your local printing commands.
-Type "make clean" to get rid of all the intermediate files produced by
-the latex process, and other junk files.
+To format a document, run latex on it, twice, to get the forward
+references right, then use dvips and lpr to print it, e.g.:
 
-You can just as well ignore the Makefile; all you really need is:
-	latex tut
-	latex tut
-	dvips tut | lpr
-and similar for the "mod" document.
+	latex lib
+	latex lib
+	dvips lib | lpr
+
+Before calling dvips and lpr, you should really preview the dvi file,
+e.g.
+
+	xdvi lib
+
+The qua document (which is not user documentation but a somewhat more
+abstract review of Python and some work for which it was used) needs
+a little more work:
+
+	latex qua
+	latex qua
+	bibtex qua
+	latex qua
+	dvips qua | lpr
