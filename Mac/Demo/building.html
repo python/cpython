@@ -32,7 +32,10 @@ The following things you definitely need:
 
 <LI> You need a MacPython source distribution, of course. You can
 obtain one from <A
-HREF="ftp://ftp.cwi.nl/pub/jack/python/mac">ftp://ftp.cwi.nl/pub/jack/python/mac</A>,
+HREF="ftp://ftp.cwi.nl/pub/jack/python/mac">ftp://ftp.cwi.nl/pub/jack/python/mac</A>
+or from the companion webpage at <A HREF="http://www.cwi.nl/~jack/macpython.html">
+http://www.cwi.nl/~jack/macpython.html</A> (which has up-to-date links to the other
+packages needed too)
 and possibly also from the standard <A
 HREF="ftp://ftp.python.org/pub/python/mac">python.org ftp
 site</A>. Everything you need is also included in the standard Python
@@ -41,18 +44,19 @@ directory <code>Mac/mwerks/projects</code> for the project files and
 related stuff.
 
 <LI> You need MetroWerks CodeWarrior. The current distribution has
-been built with version 10 of CodeWarrior. Ordering information is
+been built with version 11 of CodeWarrior. Ordering information is
 available on the <A HREF="http://www.metrowerks.com/">MetroWerks
 homepage</A>. You might still be able to build Python with MPW or
 Think/Symantec C but you are basically on your own.
 
 <LI> You need GUSI, the Grand Unified Socket Interface, by Matthias
-Neeracher. The current distribution has been built with a modified version of
-CWGUSI 1.8.0. CWGUSI is
+Neeracher. The original CWGUSI is
 obtainable from <A
 HREF="ftp://sunsite.cnlab-switch.ch/software/platform/macos/src">
-ftp://sunsite.cnlab-switch.ch/software/platform/macos/src</A>.
-It is possible to build a non-GUSI Python, see below.
+ftp://sunsite.cnlab-switch.ch/software/platform/macos/src</A>,
+but at the moment Python is built with a rather hacked-up version of GUSI,
+available from Jack's Python webpage and ftp-directory referenced above.
+It is also possible to build a non-GUSI Python, see below.
 
 </UL>
 
@@ -82,30 +86,30 @@ was built using version 1.2, which you can obtain from <A
 HREF="ftp://rhino.harvard.edu/pub/dan/WASTE">&lt;ftp://rhino.harvard.edu/pub/dan/WASTE&gt;</A>
 and various other places.
 
-<LI> JPEG library by the Independent JPEG Group. Python is still built
-using an archaic version of the library, version 4. It can be obtained
-from the <A HREF="ftp://ftp.cwi.nl/pub/jack/python/mac">
-ftp://ftp.cwi.nl/pub/jack/python/mac</A> directory, complete with CW8
-projects. If someone manages to build Python with the version 6
-library I would be grateful if they sent me the changes needed.  The
-most recent JPEG library can always be obtained from <A
+<LI> Gdbm library for the Mac. Available from Jack's Mac software page at
+<A HREF="http://www.cwi.nl/~jack/macsoftware.html">
+http://www.cwi.nl/~jack/macsoftware.html</A> and <A HREF="ftp://ftp.cwi.nl/pub/jack/mac">
+ftp://ftp.cwi.nl/pub/jack/mac</A>.
+
+<LI> JPEG library by the Independent JPEG Group. A version including
+Mac projects can be found at Jack's page mentioned above. 
+The most recent JPEG library can always be obtained from <A
 HREF="ftp://ftp.uu.net/graphics/jpeg/">ftp://ftp.uu.net/graphics/jpeg/</A>.
 
-<LI> The netpbm/pbmplus and libtiff libraries. The netpbm distribution
+<LI> The netpbm/pbmplus, libtiff, zlib and png libraries. The netpbm distribution
 (which includes libtiff) is generally available on Internet ftp
 servers. For Python pbmplus, an older incarnation of netpbm, is
 functionally identical to netpbm, since Python only uses the library
 and not the complete applications. A distribution with correct
-projects and library source only is available from, you guessed it, <A
-HREF="ftp://ftp.cwi.nl/pub/jack/python/mac">ftp://ftp.cwi.nl/pub/jack/python/mac</A>.
+projects and library source only is available from, you guessed it, Jack's Mac software
+page mentioned above.
 
 </UL>
 
 <H2>Setting Up</H2>
 
 Now that you have collected everything you should start with building
-the various parts. Everything is independent, with the single
-exception that Tcl and Tk depend on CWGUSI. If you don't want to fix
+the various parts.  If you don't want to fix
 access paths try to set things up as follows:
 
 <PRE>
@@ -114,7 +118,10 @@ Top-level-folder:
 	imglibs
 		libjpeg
 		pbmplus
-			libtiff
+		libtiff
+		zlib
+		libpng
+	gdbm
 	MoreFiles 1.4.3 (not needed by Python, only by tcl/tk)
 	Python
 	Tcl 7.6
@@ -122,7 +129,8 @@ Top-level-folder:
 	Waste 1.2 distribution (if you want waste)
 </PRE>
 
-First build GUSI. Move the files from the "CWGUSI-mods" to the right
+First build GUSI. If you didn't get the python-specific GUSI you have to 
+move the files from the "CWGUSI-mods" to the right
 place in the CWGUSI distribution folder, and build the
 projects <code>GUSI.68K.µ</code>, <code>GUSI.CFM68K.µ</code> and
 <code>GUSI.PPC.µ</code>.
@@ -141,8 +149,10 @@ in the Python sources. This will disable the "default file creator/type" and
 "Delay Sioux window" preferences in Python.
 
 Next, in
-<code>MoreFiles</code>, <code>libjpeg</code>, <code>pbmplus</code>
-and<code>libtiff</code> you build all projects. Tcl/tk is a special
+<code>MoreFiles</code>, <code>libjpeg</code>, <code>pbmplus</code>,
+<code>zlib</code>, <code>libpng</code>, <code>gdbm</code>,
+and<code>libtiff</code> you build all projects. Sometimes the projects are in "mac"
+subfolders, sometimes they are in the main folder. Tcl/tk is a special
 case, see below. Of course, if you are only interested in one of
 static 68K, CFM68K or PPC you can skip building the other libraries.
 
@@ -187,6 +197,8 @@ and CRSR resources from it to <code>tkresources.rsrc</code>. This allows
 the <code>_tkinter</code> module to work without an installed Tk/Tcl on your
 machine.
 
+<LI> You have to adapt the projects to use the MSL libraries. This is important.
+
 </UL>
 
 Build first the Tcl library, then
@@ -215,7 +227,7 @@ folders:
 
 <DL>
 <DT> build.mac68k.stand
-<DD> This is where you will build static 68K interpreters.
+<DD> This is where you build static 68K interpreters.
 
 <DT> build.mac68k.shared
 <DD> This is where you build the CFM68K shared library, interpreter
@@ -363,10 +375,6 @@ folder <code>build.macppc.stand</code>.  The order to build things is
 the following:
 
 <DL>
-<DT> MWRuntimeStaticLib
-<DD> A modified version of the MetroWerks runtime library that is
-suitable for Pythons' shared library architecture. The sources all
-come from the MW distribution.
 
 <DT> PythonCorePPC
 <DD> The shared library that contains the bulk of the interpreter and
@@ -377,11 +385,10 @@ moving the file will cause you grief later.
 
 <DT> PythonPPC
 <DD> The interpreter. This is basically a routine to call out to the
-shared library. Because of the organization of GUSI it also contains
-the Gusi settings resource (together with a ResEdit template, so you
-can change the gusi settings should you feel like doing so).  Do
+shared library. Do
 <em>not</em> run it yet, this will possibly result in a garbled
-preferences file. <p>
+preferences file. See the section below on rebuilding .exp files if you
+get funny linker errors. <p>
 
 <DT> PythonAppletPPC
 <DD> The applet skeleton application. Very similar to
@@ -440,7 +447,9 @@ Rebuilding the .exp file is done by first removing the file and removing the
 reference to it in the project (in the "config" section). Next, build PythonCore.
 This will create a new .exp file. Edit this file to remove the references to
 the symbols <code>__initialize</code>, <code>__terminate</code>, <code>setjmp</code>,
-<code>longjmp</code> and <code>__ptmf_null</code>. Next, add the .exp file to the project
+<code>longjmp</code>, <code>main</code> and (for PPC) <code>__ptmf_null</code> or (for
+CFM68K) <code>__start</code> and <code>dummy_init_routine</code>.
+Next, add the .exp file to the project
 again and rebuild PythonCore. <p>
 
 This rather convoluted procedure is needed to ensure that plugin modules don't
@@ -455,7 +464,7 @@ Some remarks that I could not fit in elsewhere:
 
 <LI> It may be possible to use the <code>PythonCore</code> shared
 library to embed Python in another program, if your program can live
-with using GUSI for I/O. Use PythonCore in stead of your C library
+with using GUSI for I/O. Use PythonCore in stead of your MSL C library
 (or, at the very least, link it before the normal C library). Let me
 know whether this works.
 
@@ -469,17 +478,17 @@ all set. A template for a dynamic module can be found in
 <LI> The Python shared library architecture is a variant of the architecture
 described as "application with shared libraries and dropins" in the MetroWerks
 "Targeting MacOS" documentation. The Python Application and applet-template use
-the <code>AppRuntime.Lib</code> runtime library (with properly set CFM
-initialization and termination routines). PythonCore uses <code>ShlibRuntime.Lib</code>
-and <code>MWRuntimeStaticLib.Lib</code>, which is almost identical to the MW
-standard <code>MWRuntimeLib</code>, but not dynamically loaded. This library contains
-the part of the runtime that can (or must) be shared between all modules in the program.
+the <code>MSL AppRuntime.Lib</code> runtime library (with properly set CFM
+initialization and termination routines). PythonCore uses <code>MSL Runtime.Lib</code>,
+which is really intended for standalone programs but which we fool into working by
+providing a dummy main program.
 It is linked statically into PythonCore (and exported to the applications and plugins)
 so we do not have to distribute yet another shared library. Plugin modules use
-<code>ShlibRuntime.Lib</code> and obtain the rest from PythonCore. PythonCore uses a
+<code>MSL ShlibRuntime.Lib</code> (not the dropin runtime: modules are never unloaded)
+and obtain the rest from PythonCore. PythonCore uses a
 non-standard initialization entry point, <code>__initialize_with_resources</code>, to
-be able to obtain resources from the library file lateron. Plugins can do the same or
-use the standard <code>__initialize</code> entry point.
+be able to obtain resources from the library file later on. Plugins can do the same
+(_tkinter does) or use the standard <code>__initialize</code> entry point.
 
 
 </UL>
