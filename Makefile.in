@@ -159,7 +159,6 @@ libainstall:	all
 		$(INSTALL_DATA) config.h $(LIBPL)/config.h
 		$(INSTALL_DATA) $(srcdir)/Python/frozenmain.c $(LIBPL)/frozenmain.c
 		$(INSTALL_DATA) Modules/main.o $(LIBPL)/main.o
-		$(INSTALL_DATA) Modules/getpath.o $(LIBPL)/getpath.o
 
 # install the dynamically loadable modules
 sharedinstall:
