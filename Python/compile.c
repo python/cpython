@@ -380,6 +380,8 @@ intern_strings(PyObject *tuple)
 	}
 }
 
+/* Begin: Peephole optimizations ----------------------------------------- */
+
 #define GETARG(arr, i) ((int)((arr[i+2]<<8) + arr[i+1]))
 #define UNCONDITIONAL_JUMP(op)  (op==JUMP_ABSOLUTE || op==JUMP_FORWARD)
 #define ABSOLUTE_JUMP(op) (op==JUMP_ABSOLUTE || op==CONTINUE_LOOP)
@@ -387,6 +389,56 @@ intern_strings(PyObject *tuple)
 #define SETARG(arr, i, val) arr[i+2] = val>>8; arr[i+1] = val & 255
 #define CODESIZE(op)  (HAS_ARG(op) ? 3 : 1)
 #define ISBASICBLOCK(blocks, start, bytes) (blocks[start]==blocks[start+bytes-1])
+
+/* Replace LOAD_CONST c1. LOAD_CONST c2 ... LOAD_CONST cn BUILD_TUPLE n
+   with    LOAD_CONST (c1, c2, ... cn).
+   The consts table must still be in list form so that the
+       new constant (c1, c2, ... cn) can be appended.
+   Called with codestr pointing to the first LOAD_CONST.
+   Bails out with no change if one or more of the LOAD_CONSTs is missing. */
+static int
+tuple_of_constants(unsigned char *codestr, int n, PyObject *consts)
+{
+	PyObject *newconst, *constant;
+	int i, arg, len_consts;
+
+	/* Pre-conditions */
+	assert(PyList_CheckExact(consts));
+	assert(codestr[0] == LOAD_CONST);
+	assert(codestr[n*3] == BUILD_TUPLE);
+	assert(GETARG(codestr, (n*3)) == n);
+
+	/* Verify chain of n load_constants */
+	for (i=0 ; i<n ; i++)
+		if (codestr[i*3] != LOAD_CONST)
+			return 0;
+
+	/* Buildup new tuple of constants */
+	newconst = PyTuple_New(n);
+	if (newconst == NULL)
+		return 0;
+	for (i=0 ; i<n ; i++) {
+		arg = GETARG(codestr, (i*3));
+		constant = PyList_GET_ITEM(consts, arg);
+		Py_INCREF(constant);
+		PyTuple_SET_ITEM(newconst, i, constant);
+	}
+
+	/* Append folded constant onto consts */
+	len_consts = PyList_GET_SIZE(consts);
+	if (PyList_Append(consts, newconst)) {
+		Py_DECREF(newconst);
+		return 0;
+	}
+	Py_DECREF(newconst);
+
+	/* Write NOPs over old LOAD_CONSTS and
+	   add a new LOAD_CONST newconst on top of the BUILD_TUPLE n */
+	memset(codestr, NOP, n*3);
+	codestr[n*3] = LOAD_CONST;
+	SETARG(codestr, (n*3), len_consts);
+	return 1;
+}
 
 static unsigned int *
 markblocks(unsigned char *code, int len)
@@ -423,6 +475,21 @@ markblocks(unsigned char *code, int len)
 	return blocks;
 }
 
+/* Perform basic peephole optimizations to components of a code object.
+   The consts object should still be in list form to allow new constants 
+   to be appended.
+
+   To keep the optimizer simple, it bails out (does nothing) for code
+   containing extended arguments or that has a length over 32,700.  That 
+   allows us to avoid overflow and sign issues.  Likewise, it bails when
+   the lineno table has complex encoding for gaps >= 255.
+
+   Optimizations are restricted to simple transformations occuring within a
+   single basic block.  All transformations keep the code size the same or 
+   smaller.  For those that reduce size, the gaps are initially filled with 
+   NOPs.  Later those NOPs are removed and the jump addresses retargeted in 
+   a single pass.  Line numbering is adjusted accordingly. */
+
 static PyObject *
 optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *lineno_obj)
 {
@@ -447,7 +514,7 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 
 	/* Avoid situations where jump retargeting could overflow */
 	codelen = PyString_Size(code);
-	if (codelen > 32000)
+	if (codelen > 32700)
 		goto exitUnchanged;
 
 	/* Make a modifiable copy of the code string */
@@ -464,7 +531,7 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 	blocks = markblocks(codestr, codelen);
 	if (blocks == NULL)
 		goto exitUnchanged;
-	assert(PyTuple_Check(consts));
+	assert(PyList_Check(consts));
 
 	for (i=0, nops=0 ; i<codelen ; i += CODESIZE(codestr[i])) {
 		addrmap[i] = i - nops;
@@ -511,8 +578,8 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 			name = PyString_AsString(PyTuple_GET_ITEM(names, j));
 			if (name == NULL  ||  strcmp(name, "None") != 0)
 				continue;
-			for (j=0 ; j < PyTuple_GET_SIZE(consts) ; j++) {
-				if (PyTuple_GET_ITEM(consts, j) == Py_None) {
+			for (j=0 ; j < PyList_GET_SIZE(consts) ; j++) {
+				if (PyList_GET_ITEM(consts, j) == Py_None) {
 					codestr[i] = LOAD_CONST;
 					SETARG(codestr, i, j);
 					break;
@@ -525,17 +592,28 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 			j = GETARG(codestr, i);
 			if (codestr[i+3] != JUMP_IF_FALSE  ||
 			    codestr[i+6] != POP_TOP  ||
-			    !ISBASICBLOCK(blocks,i,7) ||
-			    !PyObject_IsTrue(PyTuple_GET_ITEM(consts, j)))
+			    !ISBASICBLOCK(blocks,i,7)  ||
+			    !PyObject_IsTrue(PyList_GET_ITEM(consts, j)))
 				continue;
 			memset(codestr+i, NOP, 7);
 			nops += 7;
 			break;
 
-		/* Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
+		/* Try to fold tuples of constants.
+		   Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
 		   Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2.
 		   Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2. */
 		case BUILD_TUPLE:
+			j = GETARG(codestr, i);
+			h = i - 3 * j;
+			if (h >= 0  &&
+			    codestr[h] == LOAD_CONST  && 
+			    ISBASICBLOCK(blocks, h, 3*(j+1))  &&
+			    tuple_of_constants(&codestr[h], j, consts)) {
+				nops += 3 * j;
+				break;
+			}
+			/* Intentional fallthrough */
 		case BUILD_LIST:
 			j = GETARG(codestr, i);
 			if (codestr[i+3] != UNPACK_SEQUENCE  ||
@@ -610,8 +688,8 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 
 		/* Replace RETURN LOAD_CONST None RETURN with just RETURN */
 		case RETURN_VALUE:
-			if (i+4 >= codelen ||
-			   codestr[i+4] != RETURN_VALUE ||
+			if (i+4 >= codelen  ||
+			   codestr[i+4] != RETURN_VALUE  ||
 			   !ISBASICBLOCK(blocks,i,5))
 			       continue;
 			memset(codestr+i+1, NOP, 4);
@@ -676,6 +754,8 @@ exitUnchanged:
 	Py_INCREF(code);
 	return code;
 }
+
+/* End: Peephole optimizations ----------------------------------------- */
 
 PyCodeObject *
 PyCode_New(int argcount, int nlocals, int stacksize, int flags,
@@ -4899,7 +4979,6 @@ jcompile(node *n, const char *filename, struct compiling *base,
 	if (sc.c_errors == 0) {
 		PyObject *consts, *names, *varnames, *filename, *name,
 			*freevars, *cellvars, *code;
-		consts = PyList_AsTuple(sc.c_consts);
 		names = PyList_AsTuple(sc.c_names);
 		varnames = PyList_AsTuple(sc.c_varnames);
 		cellvars = dict_keys_inorder(sc.c_cellvars, 0);
@@ -4907,7 +4986,8 @@ jcompile(node *n, const char *filename, struct compiling *base,
 					     PyTuple_GET_SIZE(cellvars));
 		filename = PyString_InternFromString(sc.c_filename);
 		name = PyString_InternFromString(sc.c_name);
-		code = optimize_code(sc.c_code, consts, names, sc.c_lnotab);
+		code = optimize_code(sc.c_code, sc.c_consts, names, sc.c_lnotab);
+		consts = PyList_AsTuple(sc.c_consts);
 		if (!PyErr_Occurred())
 			co = PyCode_New(sc.c_argcount,
 					sc.c_nlocals,

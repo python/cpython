@@ -64,14 +64,24 @@ class TestTranforms(unittest.TestCase):
 
     def test_pack_unpack(self):
         for line, elem in (
-            ('a, = 1,', 'LOAD_CONST',),
-            ('a, b = 1, 2', 'ROT_TWO',),
-            ('a, b, c = 1, 2, 3', 'ROT_THREE',),
+            ('a, = a,', 'LOAD_CONST',),
+            ('a, b = a, b', 'ROT_TWO',),
+            ('a, b, c = a, b, c', 'ROT_THREE',),
             ):
             asm = dis_single(line)
             self.assert_(elem in asm)
             self.assert_('BUILD_TUPLE' not in asm)
             self.assert_('UNPACK_TUPLE' not in asm)
+
+    def test_folding_of_tuples_of_constants(self):
+        for line, elem in (
+            ('a = 1,2,3', '((1, 2, 3))',),
+            ('("a","b","c")', "(('a', 'b', 'c'))",),
+            ('a,b,c = 1,2,3', '((1, 2, 3))',),
+            ):
+            asm = dis_single(line)
+            self.assert_(elem in asm)
+            self.assert_('BUILD_TUPLE' not in asm)
 
     def test_elim_extra_return(self):
         # RETURN LOAD_CONST None RETURN  -->  RETURN
