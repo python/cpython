@@ -272,7 +272,7 @@ class MappingTestCase(TestBase):
     def test_weak_keys(self):
         #
         #  This exercises d.copy(), d.items(), d[] = v, d[], del d[],
-        #  len(d).
+        #  len(d), d.has_key().
         #
         dict, objects = self.make_weak_keyed_dict()
         for o in objects:
@@ -294,6 +294,10 @@ class MappingTestCase(TestBase):
         del objects, o
         self.assert_(len(dict) == 0,
                      "deleting the keys did not clear the dictionary")
+        o = Object(42)
+        dict[o] = "What is the meaning of the universe?"
+        self.assert_(dict.has_key(o))
+        self.assert_(not dict.has_key(34))
 
     def test_weak_keyed_iters(self):
         dict, objects = self.make_weak_keyed_dict()
