@@ -1,11 +1,12 @@
 /* ------------------------------------------------------------------------
 
-   unicodedata -- Provides access to the Unicode 3.0 data base.
+   unicodedata -- Provides access to the Unicode 3.2 data base.
 
-   Data was extracted from the Unicode 3.0 UnicodeData.txt file.
+   Data was extracted from the Unicode 3.2 UnicodeData.txt file.
 
    Written by Marc-Andre Lemburg (mal@lemburg.com).
    Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
+   Modified by Martin v. Löwis (martin@v.loewis.de)
 
    Copyright (c) Corporation for National Research Initiatives.
 
@@ -276,6 +277,47 @@ _gethash(const char *s, int len, int scale)
     return h;
 }
 
+#define SBase   0xAC00
+#define LBase   0x1100
+#define VBase   0x1161
+#define TBase   0x11A7
+#define LCount  19
+#define VCount  21
+#define TCount  28
+#define NCount  (VCount*TCount)
+#define SCount  (LCount*NCount)
+
+static char *hangul_syllables[][3] = {
+    { "G",  "A",   ""   },
+    { "GG", "AE",  "G"  },
+    { "N",  "YA",  "GG" },
+    { "D",  "YAE", "GS" },
+    { "DD", "EO",  "N", },
+    { "R",  "E",   "NJ" },
+    { "M",  "YEO", "NH" },
+    { "B",  "YE",  "D"  },
+    { "BB", "O",   "L"  },
+    { "S",  "WA",  "LG" },
+    { "SS", "WAE", "LM" },
+    { "",   "OE",  "LB" },
+    { "J",  "YO",  "LS" },
+    { "JJ", "U",   "LT" },
+    { "C",  "WEO", "LP" },
+    { "K",  "WE",  "LH" },
+    { "T",  "WI",  "M"  },
+    { "P",  "YU",  "B"  },
+    { "H",  "EU",  "BS" },
+    { 0,    "YI",  "S"  },
+    { 0,    "I",   "SS" },
+    { 0,    0,     "NG" },
+    { 0,    0,     "J"  },
+    { 0,    0,     "C"  },
+    { 0,    0,     "K"  },
+    { 0,    0,     "T"  },
+    { 0,    0,     "P"  },
+    { 0,    0,     "H"  }
+};
+
 static int
 _getucname(Py_UCS4 code, char* buffer, int buflen)
 {
@@ -283,6 +325,28 @@ _getucname(Py_UCS4 code, char* buffer, int buflen)
     int i;
     int word;
     unsigned char* w;
+
+    if (SBase <= code && code <= SBase+SCount) {
+	/* Hangul syllable. */
+	int SIndex = code - SBase;
+	int L = SIndex / NCount;
+	int V = (SIndex % NCount) / TCount;
+	int T = SIndex % TCount;
+
+	if (buflen < 27)
+	    /* Worst case: HANGUL SYLLABLE <10chars>. */
+	    return 0;
+	strcpy(buffer, "HANGUL SYLLABLE ");
+	buffer += 16;
+	strcpy(buffer, hangul_syllables[L][0]);
+	buffer += strlen(hangul_syllables[L][0]);
+	strcpy(buffer, hangul_syllables[V][1]);
+	buffer += strlen(hangul_syllables[V][1]);
+	strcpy(buffer, hangul_syllables[T][2]);
+	buffer += strlen(hangul_syllables[T][2]);
+	*buffer = '\0';
+	return 1;
+    }
 
     if (code >= 0x110000)
         return 0;
@@ -343,12 +407,49 @@ _cmpname(int code, const char* name, int namelen)
     return buffer[namelen] == '\0';
 }
 
+static void 
+find_syllable(const char *str, int *len, int *pos, int count, int column)
+{
+    int i, len1;
+    *len = -1;
+    for (i = 0; i < count; i++) {
+	char *s = hangul_syllables[i][column];
+	len1 = strlen(s);
+	if (len1 <= *len)
+	    continue;
+	if (strncmp(str, s, len1) == 0) {
+	    *len = len1;
+	    *pos = i;
+	}
+    }
+    if (*len == -1) {
+	*len = 0;
+	*pos = -1;
+    }
+}
+
 static int
 _getcode(const char* name, int namelen, Py_UCS4* code)
 {
     unsigned int h, v;
     unsigned int mask = code_size-1;
     unsigned int i, incr;
+
+    /* Check for hangul syllables. */
+    if (strncmp(name, "HANGUL SYLLABLE ", 16) == 0) {
+	int L, V, T, len;
+	const char *pos = name + 16;
+	find_syllable(pos, &len, &L, LCount, 0);
+	pos += len;
+	find_syllable(pos, &len, &V, VCount, 1);
+	pos += len;
+	find_syllable(pos, &len, &T, TCount, 2);
+	pos += len;
+	if (V != -1 && V != -1 && T != -1 && pos-name == namelen) {
+	    *code = SBase + (L*VCount+V)*TCount + T;
+	    return 1;
+	}
+    }
 
     /* the following is the same as python's dictionary lookup, with
        only minor changes.  see the makeunicodedata script for more
@@ -475,3 +576,9 @@ initunicodedata(void)
     if (v != NULL)
         PyModule_AddObject(m, "ucnhash_CAPI", v);
 }
+
+/* 
+Local variables:
+c-basic-offset: 4
+End:
+*/
