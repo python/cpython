@@ -2,8 +2,10 @@
          Access to OSS-compatible audio devices}
 
 \declaremodule{builtin}{ossaudiodev}
-\platform{Linux, FreeBSD, maybe other Unix-like systems}
+\platform{Linux, FreeBSD}
 \modulesynopsis{Access to OSS-compatible audio devices.}
+
+\versionadded{2.3}
 
 This module allows you to access the OSS (Open Sound System) audio
 interface.  OSS is available for a wide range of open-source and
@@ -289,7 +291,7 @@ buffer to be played without blocking.
 
 \subsection{Mixer Device Objects \label{mixer-device-objects}}
 
-File-like interface
+The mixer object provides two file-like methods:
 
 \begin{methoddesc}[mixer device]{close}{}
 This method closes the open mixer device file.  Any further attempts to
@@ -300,38 +302,38 @@ use the mixer after this file is closed will raise an IOError.
 Returns the file handle number of the open mixer device file.
 \end{methoddesc}
 
-Mixer interface
+The remaining methods are specific to audio mixing:
 
 \begin{methoddesc}[mixer device]{controls}{}
 This method returns a bitmask specifying the available mixer controls
 (``Control'' being a specific mixable ``channel'', such as
 \constant{SOUND_MIXER_PCM} or \constant{SOUND_MIXER_SYNTH}).  This
-bitmask indicates a subset of all available mixer channels---the
+bitmask indicates a subset of all available mixer controls---the
 \constant{SOUND_MIXER_*} constants defined at module level.  To determine if,
 for example, the current mixer object supports a PCM mixer, use the
 following Python code:
 
 \begin{verbatim}
 mixer=ossaudiodev.openmixer()
-if mixer.channels() & (1 << ossaudiodev.SOUND_MIXER_PCM):
-	# PCM is supported
-	<code>
+if mixer.controls() & (1 << ossaudiodev.SOUND_MIXER_PCM):
+    # PCM is supported
+    ... code ...
 \end{verbatim}
 
-For most purposes, the \constant{SOUND_MIXER_VOLUME} (Master volume) and
-\constant{SOUND_MIXER_PCM} channels should suffice---but code that uses the
-mixer should be flexible when it comes to choosing sound channels.  On
+For most purposes, the \constant{SOUND_MIXER_VOLUME} (master volume) and
+\constant{SOUND_MIXER_PCM} controls should suffice---but code that uses the
+mixer should be flexible when it comes to choosing mixer controls.  On
 the Gravis Ultrasound, for example, \constant{SOUND_MIXER_VOLUME} does not
 exist.
 \end{methoddesc}
 
 \begin{methoddesc}[mixer device]{stereocontrols}{}
-Returns a bitmask indicating stereo mixer channels.  If a bit is set,
-the corresponding channel is stereo; if it is unset, the channel is
+Returns a bitmask indicating stereo mixer controls.  If a bit is set,
+the corresponding control is stereo; if it is unset, the control is
 either monophonic or not supported by the mixer (use in combination with
-\method{channels()} to determine which).
+\method{controls()} to determine which).
 
-See the code example for the \method{channels()} function for an example
+See the code example for the \method{controls()} function for an example
 of getting data from a bitmask.
 \end{methoddesc}
 
@@ -341,30 +343,30 @@ record.  See the code example for \method{controls()} for an example of
 reading from a bitmask.
 \end{methoddesc}
 
-\begin{methoddesc}[mixer device]{get}{channel}
-Returns the volume of a given mixer channel.  The returned volume is a
+\begin{methoddesc}[mixer device]{get}{control}
+Returns the volume of a given mixer control.  The returned volume is a
 2-tuple \code{(left_volume,right_volume)}.  Volumes are specified as
-numbers from 0 (silent) to 100 (full volume).  If the channel is
-monophonic, a 2-tuple is still returned, but both channel volumes are
+numbers from 0 (silent) to 100 (full volume).  If the control is
+monophonic, a 2-tuple is still returned, but both volumes are
 the same.
 
-If an unknown channel is specified, \exception{error} is raised.
+Raises \exception{OSSAudioError} if an invalid control was is specified,
+or \exception{IOError} if an unsupported control is specified.
 \end{methoddesc}
 
-\begin{methoddesc}[mixer device]{set}{channel, (left, right)}
-Sets the volume for a given mixer channel to \code{(left,right)}.
+\begin{methoddesc}[mixer device]{set}{control, (left, right)}
+Sets the volume for a given mixer control to \code{(left,right)}.
 \code{left} and \code{right} must be ints and between 0 (silent) and 100
 (full volume).  On success, the new volume is returned as a 2-tuple.
 Note that this may not be exactly the same as the volume specified,
 because of the limited resolution of some soundcard's mixers.
 
-Raises \exception{IOError} if an invalid mixer channel was specified;
-\exception{TypeError} if the argument format was incorrect, and
-\exception{error} if the specified volumes were out-of-range.
+Raises \exception{OSSAudioError} if an invalid mixer control was
+specified, or if the specified volumes were out-of-range.
 \end{methoddesc}
 
 \begin{methoddesc}[mixer device]{get_recsrc}{}
-This method returns a bitmask indicating which channel or channels are
+This method returns a bitmask indicating which control(s) are
 currently being used as a recording source.
 \end{methoddesc}
 
