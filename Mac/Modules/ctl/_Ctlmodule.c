@@ -41,6 +41,7 @@ staticforward PyObject *CtlObj_WhichControl(ControlHandle);
 #define GetControlRect(ctl, rectp) (*(rectp) = ((*(ctl))->contrlRect))
 #endif
 
+#define MAXTABS 32  /* maximum number of tabs that we support in a tabs control */
 /*
 ** Parse/generate ControlFontStyleRec records
 */
@@ -58,7 +59,7 @@ ControlFontStyle_New(ControlFontStyleRec *itself)
 static int
 ControlFontStyle_Convert(PyObject *v, ControlFontStyleRec *itself)
 {
-	return PyArg_ParseTuple(v, "hhhhhhO&O&", &itself->flags,
+	return PyArg_Parse(v, "(hhhhhhO&O&)", &itself->flags,
 		&itself->font, &itself->size, &itself->style, &itself->mode,
 		&itself->just, QdRGB_Convert, &itself->foreColor,
 		QdRGB_Convert, &itself->backColor);
@@ -77,9 +78,50 @@ PyControlID_New(ControlID *itself)
 static int
 PyControlID_Convert(PyObject *v, ControlID *itself)
 {
-	return PyArg_ParseTuple(v, "O&l", PyMac_GetOSType, &itself->signature, &itself->id);
+	return PyArg_Parse(v, "(O&l)", PyMac_GetOSType, &itself->signature, &itself->id);
 }
 
+/*
+** generate DataBrowserListViewColumnDesc records
+*/
+static int
+DataBrowserTableViewColumnDesc_Convert(PyObject *v, DataBrowserTableViewColumnDesc *itself)
+{
+	return PyArg_Parse(v, "(lO&l)",
+	                   &itself->propertyID,
+	                   PyMac_GetOSType, &itself->propertyType,
+	                   &itself->propertyFlags);
+}
+
+static int
+ControlButtonContentInfo_Convert(PyObject *v, ControlButtonContentInfo *itself)
+{
+	return PyArg_Parse(v, "(hO&)",
+	                   &itself->contentType,
+	                   OptResObj_Convert, &itself->u.iconSuite);
+}
+
+static int
+DataBrowserListViewHeaderDesc_Convert(PyObject *v, DataBrowserListViewHeaderDesc *itself)
+{
+	itself->version = kDataBrowserListViewLatestHeaderDesc;
+	return PyArg_Parse(v, "(HHhO&HO&O&)",
+	                   &itself->minimumWidth,
+	                   &itself->maximumWidth,
+	                   &itself->titleOffset,
+	                   CFStringRefObj_Convert, &itself->titleString,
+	                   &itself->initialOrder,
+	                   ControlFontStyle_Convert, &itself->btnFontStyle,
+	                   ControlButtonContentInfo_Convert, &itself->btnContentInfo);
+}
+
+static int
+DataBrowserListViewColumnDesc_Convert(PyObject *v, DataBrowserListViewColumnDesc *itself)
+{
+	return PyArg_Parse(v, "(O&O&)",
+	                   DataBrowserTableViewColumnDesc_Convert, &itself->propertyDesc,
+	                   DataBrowserListViewHeaderDesc_Convert, &itself->headerBtnDesc);
+}
 
 /* TrackControl and HandleControlClick callback support */
 static PyObject *tracker;
@@ -1664,6 +1706,28 @@ static PyObject *CtlObj_GetBevelButtonMenuHandle(ControlObject *_self, PyObject 
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *CtlObj_SetBevelButtonContentInfo(ControlObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	ControlButtonContentInfo inContent;
+#ifndef SetBevelButtonContentInfo
+	PyMac_PRECHECK(SetBevelButtonContentInfo);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ControlButtonContentInfo_Convert, &inContent))
+		return NULL;
+	_err = SetBevelButtonContentInfo(_self->ob_itself,
+	                                 &inContent);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
 static PyObject *CtlObj_SetBevelButtonTransform(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1741,6 +1805,28 @@ static PyObject *CtlObj_SetTabEnabled(ControlObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *CtlObj_SetImageWellContentInfo(ControlObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	ControlButtonContentInfo inContent;
+#ifndef SetImageWellContentInfo
+	PyMac_PRECHECK(SetImageWellContentInfo);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ControlButtonContentInfo_Convert, &inContent))
+		return NULL;
+	_err = SetImageWellContentInfo(_self->ob_itself,
+	                               &inContent);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
 
 static PyObject *CtlObj_SetImageWellTransform(ControlObject *_self, PyObject *_args)
 {
@@ -3112,6 +3198,31 @@ static PyObject *CtlObj_AutoSizeDataBrowserListViewColumns(ControlObject *_self,
 
 #if TARGET_API_MAC_CARBON
 
+static PyObject *CtlObj_AddDataBrowserListViewColumn(ControlObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	DataBrowserListViewColumnDesc columnDesc;
+	UInt32 position;
+#ifndef AddDataBrowserListViewColumn
+	PyMac_PRECHECK(AddDataBrowserListViewColumn);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      DataBrowserListViewColumnDesc_Convert, &columnDesc,
+	                      &position))
+		return NULL;
+	_err = AddDataBrowserListViewColumn(_self->ob_itself,
+	                                    &columnDesc,
+	                                    position);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
 static PyObject *CtlObj_SetDataBrowserListViewHeaderBtnHeight(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -3908,6 +4019,11 @@ static PyMethodDef CtlObj_methods[] = {
 	 "(SInt16 inValue) -> None"},
 	{"GetBevelButtonMenuHandle", (PyCFunction)CtlObj_GetBevelButtonMenuHandle, 1,
 	 "() -> (MenuHandle outHandle)"},
+
+#if TARGET_API_MAC_CARBON
+	{"SetBevelButtonContentInfo", (PyCFunction)CtlObj_SetBevelButtonContentInfo, 1,
+	 "(ControlButtonContentInfo inContent) -> None"},
+#endif
 	{"SetBevelButtonTransform", (PyCFunction)CtlObj_SetBevelButtonTransform, 1,
 	 "(IconTransformType transform) -> None"},
 	{"SetDisclosureTriangleLastValue", (PyCFunction)CtlObj_SetDisclosureTriangleLastValue, 1,
@@ -3916,6 +4032,11 @@ static PyMethodDef CtlObj_methods[] = {
 	 "() -> (Rect outContentRect)"},
 	{"SetTabEnabled", (PyCFunction)CtlObj_SetTabEnabled, 1,
 	 "(SInt16 inTabToHilite, Boolean inEnabled) -> None"},
+
+#if TARGET_API_MAC_CARBON
+	{"SetImageWellContentInfo", (PyCFunction)CtlObj_SetImageWellContentInfo, 1,
+	 "(ControlButtonContentInfo inContent) -> None"},
+#endif
 	{"SetImageWellTransform", (PyCFunction)CtlObj_SetImageWellTransform, 1,
 	 "(IconTransformType inTransform) -> None"},
 
@@ -4207,6 +4328,11 @@ static PyMethodDef CtlObj_methods[] = {
 #if TARGET_API_MAC_CARBON
 	{"AutoSizeDataBrowserListViewColumns", (PyCFunction)CtlObj_AutoSizeDataBrowserListViewColumns, 1,
 	 "() -> None"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"AddDataBrowserListViewColumn", (PyCFunction)CtlObj_AddDataBrowserListViewColumn, 1,
+	 "(DataBrowserListViewColumnDesc columnDesc, UInt32 position) -> None"},
 #endif
 
 #if TARGET_API_MAC_CARBON
@@ -4717,6 +4843,53 @@ static PyObject *Ctl_IsAutomaticControlDragTrackingEnabledForWindow(PyObject *_s
 
 #if TARGET_API_MAC_CARBON
 
+static PyObject *Ctl_CreateBevelButtonControl(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr window;
+	Rect boundsRect;
+	CFStringRef title;
+	UInt16 thickness;
+	UInt16 behavior;
+	ControlButtonContentInfo info;
+	SInt16 menuID;
+	UInt16 menuBehavior;
+	UInt16 menuPlacement;
+	ControlHandle outControl;
+#ifndef CreateBevelButtonControl
+	PyMac_PRECHECK(CreateBevelButtonControl);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&HHO&hHH",
+	                      WinObj_Convert, &window,
+	                      PyMac_GetRect, &boundsRect,
+	                      CFStringRefObj_Convert, &title,
+	                      &thickness,
+	                      &behavior,
+	                      ControlButtonContentInfo_Convert, &info,
+	                      &menuID,
+	                      &menuBehavior,
+	                      &menuPlacement))
+		return NULL;
+	_err = CreateBevelButtonControl(window,
+	                                &boundsRect,
+	                                title,
+	                                thickness,
+	                                behavior,
+	                                &info,
+	                                menuID,
+	                                menuBehavior,
+	                                menuPlacement,
+	                                &outControl);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_New, outControl);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
 static PyObject *Ctl_CreateDisclosureTriangleControl(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -5003,6 +5176,35 @@ static PyObject *Ctl_CreatePopupGroupBoxControl(PyObject *_self, PyObject *_args
 
 #if TARGET_API_MAC_CARBON
 
+static PyObject *Ctl_CreateImageWellControl(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr window;
+	Rect boundsRect;
+	ControlButtonContentInfo info;
+	ControlHandle outControl;
+#ifndef CreateImageWellControl
+	PyMac_PRECHECK(CreateImageWellControl);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      WinObj_Convert, &window,
+	                      PyMac_GetRect, &boundsRect,
+	                      ControlButtonContentInfo_Convert, &info))
+		return NULL;
+	_err = CreateImageWellControl(window,
+	                              &boundsRect,
+	                              &info,
+	                              &outControl);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_New, outControl);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
 static PyObject *Ctl_CreatePopupArrowControl(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -5192,6 +5394,70 @@ static PyObject *Ctl_CreateStaticTextControl(PyObject *_self, PyObject *_args)
 
 #if TARGET_API_MAC_CARBON
 
+static PyObject *Ctl_CreatePictureControl(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr window;
+	Rect boundsRect;
+	ControlButtonContentInfo content;
+	Boolean dontTrack;
+	ControlHandle outControl;
+#ifndef CreatePictureControl
+	PyMac_PRECHECK(CreatePictureControl);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&b",
+	                      WinObj_Convert, &window,
+	                      PyMac_GetRect, &boundsRect,
+	                      ControlButtonContentInfo_Convert, &content,
+	                      &dontTrack))
+		return NULL;
+	_err = CreatePictureControl(window,
+	                            &boundsRect,
+	                            &content,
+	                            dontTrack,
+	                            &outControl);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_New, outControl);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Ctl_CreateIconControl(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr window;
+	Rect boundsRect;
+	ControlButtonContentInfo icon;
+	Boolean dontTrack;
+	ControlHandle outControl;
+#ifndef CreateIconControl
+	PyMac_PRECHECK(CreateIconControl);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&b",
+	                      WinObj_Convert, &window,
+	                      PyMac_GetRect, &boundsRect,
+	                      ControlButtonContentInfo_Convert, &icon,
+	                      &dontTrack))
+		return NULL;
+	_err = CreateIconControl(window,
+	                         &boundsRect,
+	                         &icon,
+	                         dontTrack,
+	                         &outControl);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_New, outControl);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
 static PyObject *Ctl_CreateWindowHeaderControl(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -5241,6 +5507,41 @@ static PyObject *Ctl_CreatePushButtonControl(PyObject *_self, PyObject *_args)
 	                               &boundsRect,
 	                               title,
 	                               &outControl);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_New, outControl);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Ctl_CreatePushButtonWithIconControl(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr window;
+	Rect boundsRect;
+	CFStringRef title;
+	ControlButtonContentInfo icon;
+	UInt16 iconAlignment;
+	ControlHandle outControl;
+#ifndef CreatePushButtonWithIconControl
+	PyMac_PRECHECK(CreatePushButtonWithIconControl);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&O&H",
+	                      WinObj_Convert, &window,
+	                      PyMac_GetRect, &boundsRect,
+	                      CFStringRefObj_Convert, &title,
+	                      ControlButtonContentInfo_Convert, &icon,
+	                      &iconAlignment))
+		return NULL;
+	_err = CreatePushButtonWithIconControl(window,
+	                                       &boundsRect,
+	                                       title,
+	                                       &icon,
+	                                       iconAlignment,
+	                                       &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
 	                     CtlObj_New, outControl);
@@ -5498,6 +5799,67 @@ static PyObject *Ctl_as_Control(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Ctl_CreateTabsControl(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr window;
+	Rect boundsRect;
+	UInt16 size;
+	UInt16 direction;
+	int i;
+	UInt16 numTabs;
+	ControlTabEntry tabArray[MAXTABS];
+	ControlHandle outControl;
+	PyObject *tabArrayObj, *tabEntry;
+
+#ifndef CreateTabsControl
+	PyMac_PRECHECK(CreateTabsControl);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&HHO",
+	                      WinObj_Convert, &window,
+	                      PyMac_GetRect, &boundsRect,
+	                      &size,
+	                      &direction,
+	                      &tabArrayObj))
+		return NULL;
+
+	i = PySequence_Length(tabArrayObj);
+	if (i == -1)
+		return NULL;
+	if (i > MAXTABS) {
+		PyErr_SetString(Ctl_Error, "Too many tabs");
+		return NULL;
+	}
+	numTabs = i;
+	for (i=0; i<numTabs; i++) {
+		tabEntry = PySequence_GetItem(tabArrayObj, i);
+		if (tabEntry == NULL)
+			return NULL;
+		if (!PyArg_Parse(tabEntry, "(O&O&B)",
+		                 ControlButtonContentInfo_Convert, &tabArray[i].icon,
+		                 CFStringRefObj_Convert, &tabArray[i].name,
+		                 &tabArray[i].enabled
+		                 ))
+			return NULL;
+	}
+
+	_err = CreateTabsControl(window,
+	                         &boundsRect,
+	                         size,
+	                         direction,
+	                         numTabs,
+	                         tabArray,
+	                         &outControl);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_New, outControl);
+	return _res;
+}
+#endif
+
 static PyMethodDef Ctl_methods[] = {
 	{"NewControl", (PyCFunction)Ctl_NewControl, 1,
 	 "(WindowPtr owningWindow, Rect boundsRect, Str255 controlTitle, Boolean initiallyVisible, SInt16 initialValue, SInt16 minimumValue, SInt16 maximumValue, SInt16 procID, SInt32 controlReference) -> (ControlHandle _rv)"},
@@ -5544,6 +5906,11 @@ static PyMethodDef Ctl_methods[] = {
 #endif
 
 #if TARGET_API_MAC_CARBON
+	{"CreateBevelButtonControl", (PyCFunction)Ctl_CreateBevelButtonControl, 1,
+	 "(WindowPtr window, Rect boundsRect, CFStringRef title, UInt16 thickness, UInt16 behavior, ControlButtonContentInfo info, SInt16 menuID, UInt16 menuBehavior, UInt16 menuPlacement) -> (ControlHandle outControl)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
 	{"CreateDisclosureTriangleControl", (PyCFunction)Ctl_CreateDisclosureTriangleControl, 1,
 	 "(WindowPtr window, Rect boundsRect, UInt16 orientation, CFStringRef title, SInt32 initialValue, Boolean drawTitle, Boolean autoToggles) -> (ControlHandle outControl)"},
 #endif
@@ -5584,6 +5951,11 @@ static PyMethodDef Ctl_methods[] = {
 #endif
 
 #if TARGET_API_MAC_CARBON
+	{"CreateImageWellControl", (PyCFunction)Ctl_CreateImageWellControl, 1,
+	 "(WindowPtr window, Rect boundsRect, ControlButtonContentInfo info) -> (ControlHandle outControl)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
 	{"CreatePopupArrowControl", (PyCFunction)Ctl_CreatePopupArrowControl, 1,
 	 "(WindowPtr window, Rect boundsRect, UInt16 orientation, UInt16 size) -> (ControlHandle outControl)"},
 #endif
@@ -5614,6 +5986,16 @@ static PyMethodDef Ctl_methods[] = {
 #endif
 
 #if TARGET_API_MAC_CARBON
+	{"CreatePictureControl", (PyCFunction)Ctl_CreatePictureControl, 1,
+	 "(WindowPtr window, Rect boundsRect, ControlButtonContentInfo content, Boolean dontTrack) -> (ControlHandle outControl)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"CreateIconControl", (PyCFunction)Ctl_CreateIconControl, 1,
+	 "(WindowPtr window, Rect boundsRect, ControlButtonContentInfo icon, Boolean dontTrack) -> (ControlHandle outControl)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
 	{"CreateWindowHeaderControl", (PyCFunction)Ctl_CreateWindowHeaderControl, 1,
 	 "(WindowPtr window, Rect boundsRect, Boolean isListHeader) -> (ControlHandle outControl)"},
 #endif
@@ -5621,6 +6003,11 @@ static PyMethodDef Ctl_methods[] = {
 #if TARGET_API_MAC_CARBON
 	{"CreatePushButtonControl", (PyCFunction)Ctl_CreatePushButtonControl, 1,
 	 "(WindowPtr window, Rect boundsRect, CFStringRef title) -> (ControlHandle outControl)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"CreatePushButtonWithIconControl", (PyCFunction)Ctl_CreatePushButtonWithIconControl, 1,
+	 "(WindowPtr window, Rect boundsRect, CFStringRef title, ControlButtonContentInfo icon, UInt16 iconAlignment) -> (ControlHandle outControl)"},
 #endif
 
 #if TARGET_API_MAC_CARBON
@@ -5656,6 +6043,11 @@ static PyMethodDef Ctl_methods[] = {
 	 "(Point inWhere, WindowPtr inWindow) -> (ControlHandle _rv, SInt16 outPart)"},
 	{"as_Control", (PyCFunction)Ctl_as_Control, 1,
 	 "(Handle h) -> (ControlHandle _rv)"},
+
+#if TARGET_API_MAC_CARBON
+	{"CreateTabsControl", (PyCFunction)Ctl_CreateTabsControl, 1,
+	 NULL},
+#endif
 	{NULL, NULL, 0}
 };
 
