@@ -169,6 +169,20 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         print count(len(skipped), "test"), "skipped:",
         print " ".join(skipped)
 
+        e = _ExpectedSkips()
+        if e.isvalid():
+            surprise = _Set(skipped) - e.getexpected()
+            plat = sys.platform
+            if surprise:
+                print count(len(surprise), "skip"), \
+                      "unexpected on", plat + ":", \
+                      " ".join(surprise.tolist())
+            else:
+                print "Those skips are all expected on", plat + "."
+        else:
+            print "Ask someone to teach regrtest.py about which tests are"
+            print "expected to get skipped on", plat + "."
+
     if single:
         alltests = findtests(testdir, stdtests, nottests)
         for i in range(len(alltests)):
@@ -359,6 +373,77 @@ class Compare:
 
     def isatty(self):
         return 0
+
+class _Set:
+    def __init__(self, seq=[]):
+        data = self.data = {}
+        for x in seq:
+            data[x] = 1
+
+    def __len__(self):
+        return len(self.data)
+
+    def __sub__(self, other):
+        "Return set of all elements in self not in other."
+        result = _Set()
+        data = result.data = self.data.copy()
+        for x in other.data:
+            if x in data:
+                del data[x]
+        return result
+
+    def tolist(self, sorted=1):
+        "Return _Set elements as a list."
+        data = self.data.keys()
+        if sorted:
+            data.sort()
+        return data
+
+class _ExpectedSkips:
+    def __init__(self):
+        self.valid = 0
+
+        if sys.platform == "win32":
+            self.valid = 1
+            s = """test_al
+                   test_cd
+                   test_cl
+                   test_commands
+                   test_crypt
+                   test_dbm
+                   test_dl
+                   test_fcntl
+                   test_fork1
+                   test_gdbm
+                   test_gl
+                   test_grp
+                   test_imgfile
+                   test_largefile
+                   test_linuxaudiodev
+                   test_mhlib
+                   test_nis
+                   test_openpty
+                   test_poll
+                   test_pty
+                   test_pwd
+                   test_signal
+                   test_socketserver
+                   test_sunaudiodev
+                   test_timing"""
+            self.expected = _Set(s.split())
+
+    def isvalid(self):
+        "Return true iff _ExpectedSkips knows about the current platform."
+        return self.valid
+
+    def getexpected(self):
+        """Return set of test names we expect to skip on current platform.
+
+        self.isvalid() must be true.
+        """
+
+        assert self.isvalid()
+        return self.expected
 
 if __name__ == '__main__':
     sys.exit(main())
