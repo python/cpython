@@ -514,11 +514,17 @@ int
 PyModule_AddObject(PyObject *m, char *name, PyObject *o)
 {
 	PyObject *dict;
-	if (!PyModule_Check(m) || o == NULL) {
+	if (!PyModule_Check(m)) {
 		PyErr_SetString(PyExc_TypeError,
 			    "PyModule_AddObject() needs module as first arg");
 		return -1;
 	}
+	if (!o) {
+		PyErr_SetString(PyExc_TypeError,
+				"PyModule_AddObject() needs non-NULL value");
+		return -1;
+	}
+
 	dict = PyModule_GetDict(m);
 	if (dict == NULL) {
 		/* Internal error -- modules must have a dict! */
