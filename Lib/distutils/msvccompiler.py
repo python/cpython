@@ -159,6 +159,7 @@ class MSVCCompiler (CCompiler) :
                  output_dir=None,
                  macros=None,
                  include_dirs=None,
+                 debug=0,
                  extra_preargs=None,
                  extra_postargs=None):
 
@@ -190,6 +191,8 @@ class MSVCCompiler (CCompiler) :
             cc_args = self.compile_options + \
                       base_pp_opts + \
                       [outputOpt, inputOpt]
+            if debug:
+                pass                    # XXX what goes here?
             if extra_preargs:
                 cc_args[:0] = extra_preargs
             if extra_postargs:
@@ -200,15 +203,17 @@ class MSVCCompiler (CCompiler) :
         return objectFiles
 
 
-    # XXX this is kind of useless without 'link_binary()' or
-    # 'link_executable()' or something -- or maybe 'link_static_lib()'
-    # should not exist at all, and we just have 'link_binary()'?
+    # XXX the signature of this method is different from CCompiler and
+    # UnixCCompiler -- but those extra parameters (libraries, library_dirs)
+    # are actually used.  So: are they really *needed*, or can they be
+    # ditched?  If needed, the CCompiler API will have to change...
     def link_static_lib (self,
                          objects,
                          output_libname,
                          output_dir=None,
                          libraries=None,
                          library_dirs=None,
+                         debug=0,
                          extra_preargs=None,
                          extra_postargs=None):
 
@@ -223,6 +228,8 @@ class MSVCCompiler (CCompiler) :
 
         ld_args = self.ldflags_static + lib_opts + \
                   objects + ['/OUT:' + output_filename]
+        if debug:
+            pass                        # XXX what goes here?
         if extra_preargs:
             ld_args[:0] = extra_preargs
         if extra_postargs:
@@ -237,6 +244,7 @@ class MSVCCompiler (CCompiler) :
                          output_dir=None,
                          libraries=None,
                          library_dirs=None,
+                         debug=0,
                          extra_preargs=None,
                          extra_postargs=None):
 
@@ -267,6 +275,8 @@ class MSVCCompiler (CCompiler) :
 
         ld_args = self.ldflags_shared + lib_opts + \
                   objects + ['/OUT:' + output_filename]
+        if debug:
+            pass                        # XXX what goes here?
         if extra_preargs:
             ld_args[:0] = extra_preargs
         if extra_postargs:
