@@ -97,7 +97,7 @@ extern PyObject *Py_VaBuildValue Py_PROTO((char *, va_list));
    The full MS_DLL_VERSION_ID is imbedded in the core DLL, and
    is so installers can determine incremental changes.
 */
-#define MS_DLL_ID "1.4.0"
+#define MS_DLL_ID "1.5.0"
 #define MS_DLL_VERSION_ID       MS_DLL_ID "." PYTHON_API_STRING
 
 #endif /* MS_WINDOWS */
