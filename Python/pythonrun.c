@@ -676,7 +676,8 @@ PyErr_PrintEx(set_sys_last_vars)
 		return;
 
 	if (PyErr_GivenExceptionMatches(exception, PyExc_SystemExit)) {
-		err = Py_FlushLine();
+		if (Py_FlushLine())
+			PyErr_Clear();
 		fflush(stdout);
 		if (v == NULL || v == Py_None)
 			Py_Exit(0);
@@ -714,10 +715,10 @@ PyErr_PrintEx(set_sys_last_vars)
 	if (f == NULL)
 		fprintf(stderr, "lost sys.stderr\n");
 	else {
-		err = Py_FlushLine();
+		if (Py_FlushLine())
+			PyErr_Clear();
 		fflush(stdout);
-		if (err == 0)
-			err = PyTraceBack_Print(tb, f);
+		err = PyTraceBack_Print(tb, f);
 		if (err == 0 &&
 		    PyErr_GivenExceptionMatches(exception, PyExc_SyntaxError))
 		{
@@ -1062,7 +1063,8 @@ call_sys_exitfunc()
 		Py_DECREF(exitfunc);
 	}
 
-	Py_FlushLine();
+	if (Py_FlushLine())
+		PyErr_Clear();
 }
 
 static void
