@@ -6,7 +6,7 @@ include this in the current distribution so people could play with it.
 To create a fullblown Python.app proceed as follows.
 
 1. In the main Python source directory configure python with
-   configure --enable-framework --with-suffix
+   configure --enable-framework
 2. Do a "make clean" if you did a previous build, then "make".
 3. Install this as a framework with "make frameworkinstall". This puts a Python
    framework into /Library/Frameworks.
