@@ -1278,11 +1278,23 @@ is inserted at the end.  See also the command `py-clear-queue'."
 			 (format "python-%d-%d" sn pid)
 		       (format "python-%d" sn)))
 		 (make-temp-name "python-")))
-	 (file (expand-file-name temp py-temp-directory)))
-    (write-region start end file nil 'nomsg)
+	 (file (expand-file-name temp py-temp-directory))
+	 (cur (current-buffer))
+	 (buf (get-buffer-create file)))
+    ;; Write the contents of the buffer, watching out for indented regions.
+    (save-excursion
+      (goto-char start)
+      (when (/= (py-point 'bol) (py-point 'boi))
+	(set-buffer buf)
+	(insert "if 1:\n"))
+      (insert-buffer-substring cur start end))
     (cond
      ;; always run the code in its own asynchronous subprocess
      (async
+      ;; User explicitly wants this to run in its own async subprocess
+      (save-excursion
+	(set-buffer buf)
+	(write-region (point-min) (point-max) file nil 'nomsg))
       (let* ((buf (generate-new-buffer-name py-output-buffer))
 	     ;; TBD: a horrible hack, but why create new Custom variables?
 	     (arg (if (string-equal py-which-bufname "Python")
@@ -1290,11 +1302,15 @@ is inserted at the end.  See also the command `py-clear-queue'."
 	(start-process py-which-bufname buf py-which-shell arg file)
 	(pop-to-buffer buf)
 	(py-postprocess-output-buffer buf)
+	;; TBD: clean up the temporary file!
 	))
      ;; if the Python interpreter shell is running, queue it up for
      ;; execution there.
      (proc
       ;; use the existing python shell
+      (save-excursion
+	(set-buffer buf)
+	(write-region (point-min) (point-max) file nil 'nomsg))
       (if (not py-file-queue)
 	  (py-execute-file proc file)
 	(message "File %s queued for execution" file))
@@ -1306,7 +1322,10 @@ is inserted at the end.  See also the command `py-clear-queue'."
 			 (if (string-equal py-which-bufname "JPython")
 			     " -" ""))))
 	;; otherwise either run it synchronously in a subprocess
-	(shell-command-on-region start end cmd py-output-buffer)
+	(save-excursion
+	  (set-buffer buf)
+	  (shell-command-on-region (point-min) (point-max)
+				   cmd py-output-buffer))
 	;; shell-command-on-region kills the output buffer if it never
 	;; existed and there's no output from the command
 	(if (not (get-buffer py-output-buffer))
@@ -1316,7 +1335,9 @@ is inserted at the end.  See also the command `py-clear-queue'."
 	    (pop-to-buffer py-output-buffer)
 	    (if err-p
 		(pop-to-buffer py-exception-buffer)))
-	  )))
+	  ))
+      ;; TBD: delete the buffer
+      )
      )))
 
 
