@@ -465,14 +465,12 @@ class Unpickler:
 	dispatch[CLASS] = load_class
 
 	def find_class(self, module, name):
-		env = {}
 		try:
-			exec 'from %s import %s' % (module, name) in env
-		except ImportError:
+			klass = getattr(__import__(module), name)
+		except (ImportError, AttributeError):
 			raise SystemError, \
 			      "Failed to import class %s from module %s" % \
 			      (name, module)
-		klass = env[name]
 		if type(klass) is BuiltinFunctionType:
 			raise SystemError, \
 			 "Imported object %s from module %s is not a class" % \
