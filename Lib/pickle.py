@@ -1065,16 +1065,18 @@ class Unpickler:
         self.stack[k:] = [d]
     dispatch[DICT] = load_dict
 
-    def load_inst(self):
-        k = self.marker()
+    # INST and OBJ differ only in how they get a class object.  It's not
+    # only sensible to do the rest in a common routine, the two routines
+    # previously diverged and grew different bugs.
+    # klass is the class to instantiate, and k points to the topmost mark
+    # object, following which are the arguments for klass.__init__.
+    def _instantiate(self, klass, k):
         args = tuple(self.stack[k+1:])
         del self.stack[k:]
-        module = self.readline()[:-1]
-        name = self.readline()[:-1]
-        klass = self.find_class(module, name)
         instantiated = 0
-        if (not args and type(klass) is ClassType and
-            not hasattr(klass, "__getinitargs__")):
+        if (not args and
+                type(klass) is ClassType and
+                not hasattr(klass, "__getinitargs__")):
             try:
                 value = _EmptyClass()
                 value.__class__ = klass
@@ -1090,29 +1092,19 @@ class Unpickler:
                 raise TypeError, "in constructor for %s: %s" % (
                     klass.__name__, str(err)), sys.exc_info()[2]
         self.append(value)
+
+    def load_inst(self):
+        module = self.readline()[:-1]
+        name = self.readline()[:-1]
+        klass = self.find_class(module, name)
+        self._instantiate(klass, self.marker())
     dispatch[INST] = load_inst
 
     def load_obj(self):
-        stack = self.stack
+        # Stack is ... markobject classobject arg1 arg2 ...
         k = self.marker()
-        klass = stack[k + 1]
-        del stack[k + 1]
-        args = tuple(stack[k + 1:])
-        del stack[k:]
-        instantiated = 0
-        if (not args and type(klass) is ClassType and
-            not hasattr(klass, "__getinitargs__")):
-            try:
-                value = _EmptyClass()
-                value.__class__ = klass
-                instantiated = 1
-            except RuntimeError:
-                # In restricted execution, assignment to inst.__class__ is
-                # prohibited
-                pass
-        if not instantiated:
-            value = klass(*args)
-        self.append(value)
+        klass = self.stack.pop(k+1)
+        self._instantiate(klass, k)
     dispatch[OBJ] = load_obj
 
     def load_newobj(self):
