@@ -1,6 +1,6 @@
 # To be fixed:
 #   Implement --disable-modules setting
-            
+
 import sys, os, string, getopt
 from distutils import sysconfig
 from distutils.core import Extension, setup
@@ -13,7 +13,7 @@ def find_file(filename, std_dirs, paths):
     """Searches for the directory where a given file is located,
     and returns a possibly-empty list of additional directories, or None
     if the file couldn't be found at all.
-    
+
     'filename' is the name of a file, such as readline.h or libcrypto.a.
     'std_dirs' is the list of standard system directories; if the
         file is found in one of them, no additional directives are needed.
@@ -39,7 +39,7 @@ def find_library_file(compiler, libname, std_dirs, paths):
     filename = compiler.library_filename(libname, lib_type='shared')
     result = find_file(filename, std_dirs, paths)
     if result is not None: return result
-    
+
     filename = compiler.library_filename(libname, lib_type='static')
     result = find_file(filename, std_dirs, paths)
     return result
@@ -49,9 +49,9 @@ def module_enabled(extlist, modname):
     of extensions 'extlist'."""
     extlist = [ext for ext in extlist if ext.name == modname]
     return len(extlist)
-               
+
 class PyBuildExt(build_ext):
-    
+
     def build_extensions(self):
 
         # Detect which modules should be compiled
@@ -60,12 +60,12 @@ class PyBuildExt(build_ext):
         # Remove modules that are present on the disabled list
         self.extensions = [ext for ext in self.extensions
                            if ext.name not in disabled_module_list]
-        
+
         # Fix up the autodetected modules, prefixing all the source files
         # with Modules/ and adding Python's include directory to the path.
         (srcdir,) = sysconfig.get_config_vars('srcdir')
 
-        # 
+        #
         moddir = os.path.join(os.getcwd(), 'Modules', srcdir)
         moddir = os.path.normpath(moddir)
         srcdir, tail = os.path.split(moddir)
@@ -100,15 +100,15 @@ class PyBuildExt(build_ext):
         build_ext.build_extensions(self)
 
     def get_platform (self):
-	# Get value of sys.platform
-	platform = sys.platform
-	if platform[:6] =='cygwin': 
-	    platform = 'cygwin'
+        # Get value of sys.platform
+        platform = sys.platform
+        if platform[:6] =='cygwin':
+            platform = 'cygwin'
 
-	return platform
+        return platform
 
     def detect_modules(self):
-        # Ensure that /usr/local is always used 
+        # Ensure that /usr/local is always used
         if '/usr/local/lib' not in self.compiler.library_dirs:
             self.compiler.library_dirs.append('/usr/local/lib')
         if '/usr/local/include' not in self.compiler.include_dirs:
@@ -121,12 +121,12 @@ class PyBuildExt(build_ext):
         inc_dirs = ['/usr/include'] + self.compiler.include_dirs
         exts = []
 
-	platform = self.get_platform()
+        platform = self.get_platform()
 
- 	# Check for MacOS X, which doesn't need libm.a at all
- 	math_libs = ['m']
- 	if platform == 'Darwin1.2':
- 	    math_libs = []
+        # Check for MacOS X, which doesn't need libm.a at all
+        math_libs = ['m']
+        if platform == 'Darwin1.2':
+            math_libs = []
 
         # XXX Omitted modules: gl, pure, dl, SGI-specific modules
 
@@ -134,11 +134,11 @@ class PyBuildExt(build_ext):
         # The following modules are all pretty straightforward, and compile
         # on pretty much any POSIXish platform.
         #
-        
+
         # Some modules that are normally always on:
         exts.append( Extension('regex', ['regexmodule.c', 'regexpr.c']) )
         exts.append( Extension('pcre', ['pcremodule.c', 'pypcre.c']) )
-        
+
         exts.append( Extension('xreadlines', ['xreadlinesmodule.c']) )
 
         # array objects
@@ -146,7 +146,7 @@ class PyBuildExt(build_ext):
         # complex math library functions
         exts.append( Extension('cmath', ['cmathmodule.c'],
                                libraries=math_libs) )
-        
+
         # math library functions, e.g. sin()
         exts.append( Extension('math',  ['mathmodule.c'],
                                libraries=math_libs) )
@@ -161,8 +161,6 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_codecs', ['_codecsmodule.c']) )
         # static Unicode character database
         exts.append( Extension('unicodedata', ['unicodedata.c']) )
-        # Unicode Character Name expansion hash table
-        exts.append( Extension('ucnhash', ['ucnhash.c']) )
         # access to ISO C locale support
         exts.append( Extension('_locale', ['_localemodule.c']) )
 
@@ -225,7 +223,7 @@ class PyBuildExt(build_ext):
         # These don't work for 64-bit platforms!!!
         # These represent audio samples or images as strings:
 
-        # Disabled on 64-bit platforms 
+        # Disabled on 64-bit platforms
         if sys.maxint != 9223372036854775807L:
             # Operations on audio samples
             exts.append( Extension('audioop', ['audioop.c']) )
@@ -259,12 +257,12 @@ class PyBuildExt(build_ext):
                                      ['/usr/local/ssl/lib',
                                       '/usr/contrib/ssl/lib/'
                                      ] )
-        
+
         if (ssl_incs is not None and
             ssl_libs is not None):
             exts.append( Extension('_socket', ['socketmodule.c'],
                                    include_dirs = ssl_incs,
-                                   library_dirs = ssl_libs, 
+                                   library_dirs = ssl_libs,
                                    libraries = ['ssl', 'crypto'],
                                    define_macros = [('USE_SSL',1)] ) )
         else:
@@ -284,7 +282,7 @@ class PyBuildExt(build_ext):
                                        libraries = ['ndbm'] ) )
             else:
                 exts.append( Extension('dbm', ['dbmmodule.c']) )
-        
+
         # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
         if (self.compiler.find_library_file(lib_dirs, 'gdbm')):
             exts.append( Extension('gdbm', ['gdbmmodule.c'],
@@ -314,7 +312,7 @@ class PyBuildExt(build_ext):
                                    libraries = ['db'] ) )
 
         # The mpz module interfaces to the GNU Multiple Precision library.
-        # You need to ftp the GNU MP library.  
+        # You need to ftp the GNU MP library.
         # This was originally written and tested against GMP 1.2 and 1.3.2.
         # It has been modified by Rob Hooft to work with 2.0.2 as well, but I
         # haven't tested it recently.   For a more complete module,
@@ -344,7 +342,7 @@ class PyBuildExt(build_ext):
                                        libraries = ['nsl']) )
 
         # Curses support, requring the System V version of curses, often
-        # provided by the ncurses library. 
+        # provided by the ncurses library.
         if platform == 'sunos4':
             include_dirs += ['/usr/5include']
             lib_dirs += ['/usr/5lib']
@@ -358,18 +356,18 @@ class PyBuildExt(build_ext):
                 curses_libs = ['curses', 'terminfo']
             else:
                 curses_libs = ['curses', 'termcap']
-                
+
             exts.append( Extension('_curses', ['_cursesmodule.c'],
                                    libraries = curses_libs) )
-            
+
         # If the curses module is enabled, check for the panel module
         if (os.path.exists('Modules/_curses_panel.c') and
             module_enabled(exts, '_curses') and
             self.compiler.find_library_file(lib_dirs, 'panel')):
             exts.append( Extension('_curses_panel', ['_curses_panel.c'],
                                    libraries = ['panel'] + curses_libs) )
-            
-            
+
+
 
         # Lee Busby's SIGFPE modules.
         # The library to link fpectl with is platform specific.
@@ -424,7 +422,7 @@ class PyBuildExt(build_ext):
             expat_defs = [('HAVE_EXPAT_H', 1)]
         else:
             expat_incs = find_file('xmlparse.h', inc_dirs, [])
-            
+
         if (expat_incs is not None and
             self.compiler.find_library_file(lib_dirs, 'expat')):
             exts.append( Extension('pyexpat', ['pyexpat.c'],
@@ -437,14 +435,14 @@ class PyBuildExt(build_ext):
             exts.append( Extension('linuxaudiodev', ['linuxaudiodev.c']) )
 
         if platform == 'sunos5':
-            # SunOS specific modules 
+            # SunOS specific modules
             exts.append( Extension('sunaudiodev', ['sunaudiodev.c']) )
 
         self.extensions.extend(exts)
 
         # Call the method for detecting whether _tkinter can be compiled
         self.detect_tkinter(inc_dirs, lib_dirs)
-        
+
 
     def detect_tkinter(self, inc_dirs, lib_dirs):
         # The _tkinter module.
@@ -465,11 +463,11 @@ class PyBuildExt(build_ext):
                                                      'tk' + version )
              tcllib = self.compiler.find_library_file(lib_dirs,
                                                       'tcl' + version )
-             if tklib and tcllib: 
+             if tklib and tcllib:
                 # Exit the loop when we've found the Tcl/Tk libraries
                 break
 
-        # Now check for the header files 
+        # Now check for the header files
         if tklib and tcllib:
             # Check for the include files on Debian, where
             # they're put in /usr/include/{tcl,tk}X.Y
@@ -486,14 +484,14 @@ class PyBuildExt(build_ext):
             tcl_includes is None or tk_includes is None):
             # Something's missing, so give up
             return
-        
+
         # OK... everything seems to be present for Tcl/Tk.
 
         include_dirs = [] ; libs = [] ; defs = [] ; added_lib_dirs = []
         for dir in tcl_includes + tk_includes:
             if dir not in include_dirs:
                 include_dirs.append(dir)
-                
+
         # Check for various platform-specific directories
         platform = self.get_platform()
         if platform == 'sunos5':
@@ -506,7 +504,7 @@ class PyBuildExt(build_ext):
             include_dirs.append('/usr/X11R5/include')
             added_lib_dirs.append('/usr/X11R5/lib')
         else:
-            # Assume default location for X11 
+            # Assume default location for X11
             include_dirs.append('/usr/X11/include')
             added_lib_dirs.append('/usr/X11/lib')
 
@@ -521,9 +519,9 @@ class PyBuildExt(build_ext):
             libs.append('BLT8.0')
 
         # Add the Tcl/Tk libraries
-        libs.append('tk'+version)   
+        libs.append('tk'+version)
         libs.append('tcl'+version)
-        
+
         if platform in ['aix3', 'aix4']:
             libs.append('ld')
 
@@ -537,14 +535,14 @@ class PyBuildExt(build_ext):
                         library_dirs = added_lib_dirs,
                         )
         self.extensions.append(ext)
-        
+
         # XXX handle these, but how to detect?
         # *** Uncomment and edit for PIL (TkImaging) extension only:
-        #	-DWITH_PIL -I../Extensions/Imaging/libImaging  tkImaging.c \
+        #       -DWITH_PIL -I../Extensions/Imaging/libImaging  tkImaging.c \
         # *** Uncomment and edit for TOGL extension only:
-        #	-DWITH_TOGL togl.c \
+        #       -DWITH_TOGL togl.c \
         # *** Uncomment these for TOGL extension only:
-        #	-lGL -lGLU -lXext -lXmu \
+        #       -lGL -lGLU -lXext -lXmu \
 
 def main():
     setup(name = 'Python standard library',
@@ -554,7 +552,7 @@ def main():
           # called unless there's at least one extension module defined.
           ext_modules=[Extension('struct', ['structmodule.c'])]
         )
-          
+
 # --install-platlib
 if __name__ == '__main__':
     sysconfig.set_python_build()
