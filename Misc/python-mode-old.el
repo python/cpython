@@ -1,4 +1,4 @@
-;;; Major mode for editing Python programs, version 1.08az
+;;; Major mode for editing Python programs, version 1.09
 ;; by: Tim Peters <tim@ksr.com>
 ;; after an original idea by: Michael A. Guravage
 ;;
@@ -116,7 +116,7 @@ Currently-active file is at the head of the list.")
 (define-abbrev-table 'python-mode-abbrev-table nil)
 
 ;; arrange to kill temp files no matter what
-(if py-this-is-emacs-19-p
+(if (or py-this-is-emacs-19-p py-this-is-lucid-emacs-p)
     (add-hook 'kill-emacs-hook 'py-kill-emacs-hook)
   ;; have to trust that other people are as respectful of our hook
   ;; fiddling as we are of theirs
@@ -1634,7 +1634,7 @@ local bindings to py-newline-and-indent."))
   (while py-file-queue
     (py-delete-file-silently (car py-file-queue))
     (setq py-file-queue (cdr py-file-queue)))
-  (if (not py-this-is-emacs-19-p)
+  (if (not (or py-this-is-lucid-emacs-p py-this-is-emacs-19-p))
       ;; run the hook we inherited, if any
       (and py-inherited-kill-emacs-hook
 	   (funcall py-inherited-kill-emacs-hook))))
