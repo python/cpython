@@ -284,25 +284,39 @@ In some future version of Python, the identifiers \code{as} and
 \subsection{Reserved classes of identifiers\label{id-classes}}
 
 Certain classes of identifiers (besides keywords) have special
-meanings.  These are:
-
-\begin{tableiii}{l|l|l}{code}{Form}{Meaning}{Notes}
-\lineiii{_*}{Not imported by \samp{from \var{module} import *}}{(1)}
-\lineiii{__*__}{System-defined name}{}
-\lineiii{__*}{Class-private name mangling}{}
-\end{tableiii}
-
-See sections: \ref{import}, ``The \keyword{import} statement'';
-\ref{specialnames}, ``Special method names'';
-\ref{atom-identifiers}, ``Identifiers (Names)''.
-
-Note:
+meanings.  These classes are identified by the patterns of leading and
+trailing underscore characters:
 
 \begin{description}
-\item[(1)] The special identifier \samp{_} is used in the interactive
-interpreter to store the result of the last evaluation; it is stored
-in the \module{__builtin__} module.  When not in interactive mode,
-\samp{_} has no special meaning and is not defined.
+
+\item[\code{_*}]
+  Not imported by \samp{from \var{module} import *}.  The special
+  identifier \samp{_} is used in the interactive interpreter to store
+  the result of the last evaluation; it is stored in the
+  \module{__builtin__} module.  When not in interactive mode, \samp{_}
+  has no special meaning and is not defined.
+  See section~\ref{import}, ``The \keyword{import} statement.''
+
+  \note{The name \samp{_} is often used in conjunction with
+  internationalization; refer to the documentation for the
+  \ulink{\module{gettext} module}{../lib/module-gettext.html} for more
+  information on this convention.}
+
+\item[\code{__*__}]
+  System-defined names.  These names are defined by the interpreter
+  and it's implementation (including the standard library);
+  applications should not expect to define additional names using this
+  convention.  The set of names of this class defined by Python may be
+  extended in future versions.
+  See section~\ref{specialnames}, ``Special method names.''
+
+\item[\code{__*}]
+  Class-private names.  Names in this category, when used within the
+  context of a class definition, are re-written to use a mangled for
+  to help avoid name clashes between ``private'' attributes of base
+  and derived classes.
+  See section~\ref{atom-identifiers}, ``Identifiers (Names).''
+
 \end{description}
 
 
