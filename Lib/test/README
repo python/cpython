@@ -55,14 +55,32 @@ The module in the test package is simply a wrapper that causes doctest
 to run over the tests in the module.  The test for the difflib module
 provides a convenient example:
 
-    from test_support import verbose
-    import doctest, difflib
-    doctest.testmod(difflib, verbose=verbose)
+    import difflib, test_support
+    test_support.run_doctest(difflib)
 
 If the test is successful, nothing is written to stdout (so you should not
 create a corresponding output/test_difflib file), but running regrtest
-with -v will give a detailed report, the same as if passing -v to doctest
-(that's what importing verbose from test_support accomplishes).
+with -v will give a detailed report, the same as if passing -v to doctest.
+
+A second argument can be passed to run_doctest to tell doctest to search
+sys.argv for -v instead of using test_support's idea of verbosity.  This
+is useful for writing doctest-based tests that aren't simply running a
+doctest'ed Lib module, but contain the doctests themselves.  Then at
+times you may want to run such a test directly as a doctest, independent
+of the regrtest framework.  The tail end of test_descrtut.py is a good
+example:
+
+    def test_main(verbose=None):
+        import test_support, test.test_descrtut
+        test_support.run_doctest(test.test_descrtut, verbose)
+
+    if __name__ == "__main__":
+        test_main(1)
+
+If run via regrtest, test_main() is called (by regrtest) without specifying
+verbose, and then test_supprot's idea of verbosity is used.  But when
+run directly, test_main(1) is called, and then doctest's idea of verbosity
+is used.
 
 See the documentation for the doctest module for information on
 writing tests using the doctest framework.
