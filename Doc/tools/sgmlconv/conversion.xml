@@ -98,6 +98,9 @@
     <attribute name="name"/>
     <child name="args"/>
     </environment>
+  <environment name="csimplemacrodesc">
+    <attribute name="name"/>
+    </environment>
   <environment name="ctypedesc">
     <attribute name="tag" optional="yes"/>
     <attribute name="name"/>
@@ -732,6 +735,9 @@
     <content/>
     </macro>
   <macro name="cfunction">
+    <content/>
+    </macro>
+  <macro name="csimplemacro">
     <content/>
     </macro>
   <macro name="ctype">
