@@ -30,7 +30,7 @@ class Build (Command):
         if self.libdir is None:
             self.libdir = os.path.join (self.basedir, 'lib')
         if self.platdir is None:
-            self.platdir = os.path.join (self.basedir, 'plat')
+            self.platdir = os.path.join (self.basedir, 'platlib')
 
 
     def run (self):
@@ -44,6 +44,6 @@ class Build (Command):
         self.run_peer ('build_py')
 
         # And now 'build_ext'
-        #self.run_peer ('build_ext')
+        self.run_peer ('build_ext')
 
 # end class Build
