@@ -54,6 +54,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1049151: xdrlib now unpacks booleans as True or False.
+
 - Fixed bug in a NameError bug in cookielib.  Patch #1116583.
 
 - Applied a security fix to SimpleXMLRPCserver (PSF-2005-001).  This

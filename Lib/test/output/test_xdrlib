@@ -1,0 +1,19 @@
+test_xdrlib
+pack test 0 succeeded
+pack test 1 succeeded
+pack test 2 succeeded
+pack test 3 succeeded
+pack test 4 succeeded
+pack test 5 succeeded
+pack test 6 succeeded
+pack test 7 succeeded
+pack test 8 succeeded
+unpack test 0 succeeded : 9
+unpack test 1 succeeded : True
+unpack test 2 succeeded : False
+unpack test 3 succeeded : 45
+unpack test 4 succeeded : 1.89999997616
+unpack test 5 succeeded : 1.9
+unpack test 6 succeeded : hello world
+unpack test 7 succeeded : [0, 1, 2, 3, 4]
+unpack test 8 succeeded : ['what', 'is', 'hapnin', 'doctor']
