@@ -41,6 +41,7 @@ import FrameWork
 import sys
 import string
 import os
+import urllib
 
 import pimp
 
@@ -78,14 +79,14 @@ class PackageManagerMain(Wapplication.Application):
 		
 	def makeusermenus(self):
 		m = Wapplication.Menu(self.menubar, "File")
-##		newitem = FrameWork.MenuItem(m, "Open Standard Database", "N", 'openstandard')
-##		openitem = FrameWork.MenuItem(m, "Open"+ELIPSES, "O", 'open')
-##		openbynameitem = FrameWork.MenuItem(m, "Open URL"+ELIPSES, "D", 'openbyname')
+		newitem = FrameWork.MenuItem(m, "Open Standard Database", "N", 'openstandard')
+		openitem = FrameWork.MenuItem(m, "Open"+ELIPSES, "O", 'open')
+		openURLitem = FrameWork.MenuItem(m, "Open URL"+ELIPSES, "D", 'openURL')
 		FrameWork.Separator(m)
 		closeitem = FrameWork.MenuItem(m, "Close", "W", 'close')
 ##		saveitem = FrameWork.MenuItem(m, "Save", "S", 'save')
 ##		saveasitem = FrameWork.MenuItem(m, "Save as"+ELIPSES, None, 'save_as')
-		FrameWork.Separator(m)
+##		FrameWork.Separator(m)
 		
 		m = Wapplication.Menu(self.menubar, "Edit")
 		undoitem = FrameWork.MenuItem(m, "Undo", 'Z', "undo")
@@ -137,12 +138,26 @@ class PackageManagerMain(Wapplication.Application):
 	
 	def do_about(self, id, item, window, event):
 		EasyDialogs.Message("Package Install Manager for Python")
-			
+	
+	def domenu_openstandard(self, *args):
+		self.opendoc(None)
+		
 	def domenu_open(self, *args):
 		filename = EasyDialogs.AskFileForOpen(typeList=("TEXT",))
 		if filename:
 			filename = urllib.pathname2url(filename)
 			self.opendoc(filename)
+			
+	def domenu_openURL(self, *args):
+		ok = EasyDialogs.AskYesNoCancel(
+			"Warning: by opening a non-standard database "
+			"you are trusting the maintainer of it "
+			"to run arbitrary code on your machine.",
+			yes="OK", no="")
+		if ok <= 0: return
+		url = EasyDialogs.AskString("URL of database to open:", ok="Open")
+		if url:
+			self.opendoc(url)
 	
 	def domenu_openbyname(self, *args):
 		url = EasyDialogs.AskString("Open URL:", ok="Open")
@@ -208,7 +223,18 @@ class PimpInterface:
 		self.pimpinstaller = pimp.PimpInstaller(self.pimpdb)
 		if not url:
 			url = self.pimpprefs.pimpDatabase
-		self.pimpdb.appendURL(url)
+		try:
+			self.pimpdb.appendURL(url)
+		except IOError, arg:
+			return "Cannot open %s: %s" % (url, arg)
+		return None
+		
+	def closepimp(self):
+		self.pimpdb.close()
+		self.pimpprefs = None
+		self.pimpdb = None
+		self.pimpinstaller = None
+		self.packages = []
 
 	def getbrowserdata(self):
 		self.packages = self.pimpdb.list()
@@ -236,9 +262,14 @@ class PackageBrowser(PimpInterface):
 	
 	def __init__(self, url = None):
 		self.ic = None
-		self.setuppimp(url)
+		msg = self.setuppimp(url)
+		if msg:
+			EasyDialogs.Message(msg)
 		self.setupwidgets()
 		self.updatestatus()
+		
+	def close(self):
+		self.closepimp()
 	
 	def setupwidgets(self): 
 		self.w = W.Window((580, 400), "Python Install Manager", minsize = (300, 200), tabbable = 0)
