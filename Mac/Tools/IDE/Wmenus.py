@@ -238,7 +238,7 @@ def _makefontmenu():
 	import W
 	FontMenu.menu = Wapplication.Menu(W.getapplication().menubar, 'Foo', -1)
 	W.SetCursor('watch')
-	for i in range(FontMenu.menu.menu.CountMItems(), 0, -1):
+	for i in range(FontMenu.menu.menu.CountMenuItems(), 0, -1):
 		FontMenu.menu.menu.DeleteMenuItem(i)
 	FontMenu.menu.menu.AppendResMenu('FOND')
 
