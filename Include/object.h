@@ -362,6 +362,7 @@ extern DL_IMPORT(void) _Py_Dealloc Py_PROTO((PyObject *));
 extern DL_IMPORT(void) _Py_NewReference Py_PROTO((PyObject *));
 extern DL_IMPORT(void) _Py_ForgetReference Py_PROTO((PyObject *));
 extern DL_IMPORT(void) _Py_PrintReferences Py_PROTO((FILE *));
+extern DL_IMPORT(void) _Py_ResetReferences Py_PROTO((void));
 #endif
 
 #ifndef Py_TRACE_REFS

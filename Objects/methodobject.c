@@ -47,7 +47,7 @@ PyCFunction_New(ml, self)
 	if (op != NULL) {
 		free_list = (PyCFunctionObject *)(op->m_self);
 		op->ob_type = &PyCFunction_Type;
-		_Py_NewReference(op);
+		_Py_NewReference((PyObject *)op);
 	}
 	else {
 		op = PyObject_NEW(PyCFunctionObject, &PyCFunction_Type);

@@ -168,7 +168,7 @@ PyInt_FromLong(ival)
 	free_list = (PyIntObject *)v->ob_type;
 	v->ob_type = &PyInt_Type;
 	v->ob_ival = ival;
-	_Py_NewReference(v);
+	_Py_NewReference((PyObject *)v);
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
 	if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS) {
 		/* save this one for a following allocation */

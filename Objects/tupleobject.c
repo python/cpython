@@ -100,7 +100,7 @@ PyTuple_New(size)
 	}
 	for (i = 0; i < size; i++)
 		op->ob_item[i] = NULL;
-	_Py_NewReference(op);
+	_Py_NewReference((PyObject *)op);
 #if MAXSAVESIZE > 0
 	if (size == 0) {
 		free_tuples[0] = op;
@@ -452,7 +452,7 @@ _PyTuple_Resize(pv, newsize, last_is_sticky)
 #ifdef Py_REF_DEBUG
 	--_Py_RefTotal;
 #endif
-	_Py_ForgetReference(v);
+	_Py_ForgetReference((PyObject *)v);
 	if (last_is_sticky && sizediff < 0) {
 		/* shrinking:
 		   move entries to the front and zero moved entries */
@@ -475,7 +475,7 @@ _PyTuple_Resize(pv, newsize, last_is_sticky)
 		PyErr_NoMemory();
 		return -1;
 	}
-	_Py_NewReference(sv);
+	_Py_NewReference((PyObject *)sv);
 	for (i = sv->ob_size; i < newsize; i++)
 		sv->ob_item[i] = NULL;
 	if (last_is_sticky && sizediff > 0) {
