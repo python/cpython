@@ -2,7 +2,7 @@
 
 Exceptions can be class objects or string objects.  While
 traditionally, most exceptions have been string objects, in Python
-1.5a4, all standard exceptions have been converted to class objects,
+1.5, all standard exceptions have been converted to class objects,
 and users are encouraged to the the same.  The source code for those
 exceptions is present in the standard library module
 \code{exceptions}; this module never needs to be imported explicitly.
@@ -20,7 +20,7 @@ The string value of all built-in exceptions is their name, but this is
 not a requirement for user-defined exceptions or exceptions defined by
 library modules.
 
-For class exceptions, in a \code{try} statement with an\code{except}
+For class exceptions, in a \code{try} statement with an \code{except}
 clause that mentions a particular class, that clause also handles
 any exception classes derived from that class (but not exception
 classes from which \emph{it} is derived).  Two exception classes
