@@ -1092,6 +1092,21 @@ automatically; you should never change the definition in your own
 code.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyOS_sighandler_t}{PyOS_getsig}{int i}
+Return the current signal handler for signal \var{i}.
+This is a thin wrapper around either \cfunction{sigaction} or
+\cfunction{signal}.  Do not call those functions directly!
+\ctype{PyOS_sighandler_t} is a typedef alias for \ctype{void (*)(int)}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyOS_sighandler_t}{PyOS_setsig}{int i, PyOS_sighandler_t h}
+Set the signal handler for signal \var{i} to be \var{h};
+return the old signal handler.
+This is a thin wrapper around either \cfunction{sigaction} or
+\cfunction{signal}.  Do not call those functions directly!
+\ctype{PyOS_sighandler_t} is a typedef alias for \ctype{void (*)(int)}.
+\end{cfuncdesc}
+
 
 \section{Process Control \label{processControl}}
 
