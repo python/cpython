@@ -77,6 +77,7 @@ class _Prop_desktop_picture(aetools.NProperty):
     """desktop picture - the desktop picture of the main monitor """
     which = 'dpic'
     want = 'file'
+desktop_picture = _Prop_desktop_picture()
 
 class application_process(aetools.ComponentItem):
     """application process - A process launched from an application file """

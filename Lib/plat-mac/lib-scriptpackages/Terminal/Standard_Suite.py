@@ -337,18 +337,22 @@ class _Prop__3c_Inheritance_3e_(aetools.NProperty):
     """<Inheritance> - All of the properties of the superclass. """
     which = 'c@#^'
     want = 'cobj'
+_3c_Inheritance_3e_ = _Prop__3c_Inheritance_3e_()
 class _Prop_frontmost(aetools.NProperty):
     """frontmost - Is this the frontmost (active) application? """
     which = 'pisf'
     want = 'bool'
+frontmost = _Prop_frontmost()
 class _Prop_name(aetools.NProperty):
     """name - The name of the application. """
     which = 'pnam'
     want = 'utxt'
+name = _Prop_name()
 class _Prop_version(aetools.NProperty):
     """version - The version of the application. """
     which = 'vers'
     want = 'utxt'
+version = _Prop_version()
 #        element 'cwin' as ['name', 'indx', 'rele', 'rang', 'test', 'ID  ']
 #        element 'docu' as ['name', 'indx', 'rele', 'rang', 'test']
 

@@ -1,7 +1,7 @@
 """Suite Text Suite: A set of basic classes for text processing
 Level 1, version 1
 
-Generated from /Volumes/Moes/Systeemmap/Extensies/AppleScript
+Generated from /Volumes/Sap/System Folder/Extensions/AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -59,6 +59,10 @@ class _Prop_color(aetools.NProperty):
 class _Prop_font(aetools.NProperty):
     """font - the name of the font of the first character """
     which = 'font'
+    want = 'ctxt'
+class _Prop_quoted_form(aetools.NProperty):
+    """quoted form - the text in quoted form """
+    which = 'strq'
     want = 'ctxt'
 class _Prop_size(aetools.NProperty):
     """size - the size in points of the first character """
@@ -131,6 +135,7 @@ text._superclassnames = []
 text._privpropdict = {
     'color' : _Prop_color,
     'font' : _Prop_font,
+    'quoted_form' : _Prop_quoted_form,
     'size' : _Prop_size,
     'style' : _Prop_style,
     'uniform_styles' : _Prop_uniform_styles,
@@ -205,6 +210,7 @@ _propdeclarations = {
     'pnam' : _Prop_name,
     'psct' : _Prop_writing_code,
     'ptsz' : _Prop_size,
+    'strq' : _Prop_quoted_form,
     'txst' : _Prop_style,
     'ustl' : _Prop_uniform_styles,
 }

@@ -1,7 +1,7 @@
 """Suite Macintosh Connectivity Classes: Classes relating to Apple Macintosh personal computer connectivity
 Level 1, version 1
 
-Generated from /Volumes/Moes/Systeemmap/Extensies/AppleScript
+Generated from /Volumes/Sap/System Folder/Extensions/AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 

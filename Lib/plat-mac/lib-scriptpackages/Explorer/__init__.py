@@ -76,3 +76,5 @@ class Explorer(Standard_Suite_Events,
 
     _moduleName = 'Explorer'
 
+    _elemdict = application._elemdict
+    _propdict = application._propdict

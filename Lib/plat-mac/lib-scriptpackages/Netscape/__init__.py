@@ -1,5 +1,5 @@
 """
-Package generated from /Volumes/Moes/Applications (Mac OS 9)/Netscape Communicator\xe2\x84\xa2 Folder/Netscape Communicator\xe2\x84\xa2
+Package generated from /Volumes/Sap/Applications (Mac OS 9)/Netscape Communicator\xe2\x84\xa2 Folder/Netscape Communicator\xe2\x84\xa2
 """
 import aetools
 Error = aetools.Error
@@ -59,33 +59,33 @@ import StdSuites
 #
 # Set property and element dictionaries now that all classes have been defined
 #
-getbaseclasses(window)
-getbaseclasses(application)
-getbaseclasses(StdSuites.Text_Suite.text_flow)
-getbaseclasses(StdSuites.Text_Suite.character)
-getbaseclasses(StdSuites.Text_Suite.text_style_info)
-getbaseclasses(StdSuites.Text_Suite.line)
-getbaseclasses(StdSuites.Text_Suite.word)
-getbaseclasses(StdSuites.Text_Suite.paragraph)
-getbaseclasses(StdSuites.Text_Suite.text)
 getbaseclasses(text)
 getbaseclasses(styleset)
+getbaseclasses(StdSuites.Text_Suite.character)
+getbaseclasses(StdSuites.Text_Suite.text_flow)
+getbaseclasses(StdSuites.Text_Suite.word)
+getbaseclasses(StdSuites.Text_Suite.paragraph)
+getbaseclasses(StdSuites.Text_Suite.text_style_info)
+getbaseclasses(StdSuites.Text_Suite.line)
+getbaseclasses(StdSuites.Text_Suite.text)
+getbaseclasses(window)
+getbaseclasses(application)
 
 #
 # Indices of types declared in this module
 #
 _classdeclarations = {
-    'cwin' : window,
-    'capp' : application,
-    'cflo' : StdSuites.Text_Suite.text_flow,
-    'cha ' : StdSuites.Text_Suite.character,
-    'tsty' : StdSuites.Text_Suite.text_style_info,
-    'clin' : StdSuites.Text_Suite.line,
-    'cwor' : StdSuites.Text_Suite.word,
-    'cpar' : StdSuites.Text_Suite.paragraph,
-    'ctxt' : StdSuites.Text_Suite.text,
     'ctxt' : text,
     'stys' : styleset,
+    'cha ' : StdSuites.Text_Suite.character,
+    'cflo' : StdSuites.Text_Suite.text_flow,
+    'cwor' : StdSuites.Text_Suite.word,
+    'cpar' : StdSuites.Text_Suite.paragraph,
+    'tsty' : StdSuites.Text_Suite.text_style_info,
+    'clin' : StdSuites.Text_Suite.line,
+    'ctxt' : StdSuites.Text_Suite.text,
+    'cwin' : window,
+    'capp' : application,
 }
 
 
@@ -101,3 +101,5 @@ class Netscape(Standard_Suite_Events,
 
     _moduleName = 'Netscape'
 
+    _elemdict = application._elemdict
+    _propdict = application._propdict

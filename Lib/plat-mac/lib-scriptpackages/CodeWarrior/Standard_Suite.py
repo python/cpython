@@ -1,7 +1,7 @@
 """Suite Standard Suite: Common terms for most applications
 Level 1, version 1
 
-Generated from /Volumes/Moes/Applications (Mac OS 9)/Metrowerks CodeWarrior 7.0/Metrowerks CodeWarrior/CodeWarrior IDE 4.2.6
+Generated from /Volumes/Sap/Applications (Mac OS 9)/Metrowerks CodeWarrior 7.0/Metrowerks CodeWarrior/CodeWarrior IDE 4.2.5
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -179,6 +179,7 @@ class _Prop_user_interaction(aetools.NProperty):
     """user interaction - user interaction level """
     which = 'inte'
     want = 'Inte'
+user_interaction = _Prop_user_interaction()
 #        element 'cwin' as ['indx', 'name', 'rang']
 #        element 'docu' as ['indx', 'name', 'rang']
 

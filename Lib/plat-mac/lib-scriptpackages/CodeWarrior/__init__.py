@@ -1,5 +1,5 @@
 """
-Package generated from /Volumes/Moes/Applications (Mac OS 9)/Metrowerks CodeWarrior 7.0/Metrowerks CodeWarrior/CodeWarrior IDE 4.2.6
+Package generated from /Volumes/Sap/Applications (Mac OS 9)/Metrowerks CodeWarrior 7.0/Metrowerks CodeWarrior/CodeWarrior IDE 4.2.5
 """
 import aetools
 Error = aetools.Error
@@ -48,14 +48,14 @@ import StdSuites
 # Set property and element dictionaries now that all classes have been defined
 #
 getbaseclasses(character)
+getbaseclasses(selection_2d_object)
+getbaseclasses(application)
+getbaseclasses(document)
 getbaseclasses(text)
 getbaseclasses(window)
 getbaseclasses(file)
 getbaseclasses(line)
-getbaseclasses(selection_2d_object)
-getbaseclasses(application)
 getbaseclasses(insertion_point)
-getbaseclasses(document)
 getbaseclasses(single_class_browser)
 getbaseclasses(project_document)
 getbaseclasses(symbol_browser)
@@ -77,52 +77,52 @@ getbaseclasses(File_Mapping)
 getbaseclasses(browser_catalog)
 getbaseclasses(Build_Settings)
 getbaseclasses(ProjectFile)
-getbaseclasses(Browser_Coloring)
-getbaseclasses(Error_Information)
 getbaseclasses(VCS_Setup)
-getbaseclasses(Editor)
-getbaseclasses(Shielded_Folders)
+getbaseclasses(data_member)
 getbaseclasses(Shielded_Folder)
 getbaseclasses(Custom_Keywords)
 getbaseclasses(Path_Information)
-getbaseclasses(File_Mappings)
 getbaseclasses(Segment)
-getbaseclasses(Debugger_Target)
-getbaseclasses(Function_Information)
-getbaseclasses(Access_Paths)
-getbaseclasses(Extras)
-getbaseclasses(Debugger_Windowing)
-getbaseclasses(Global_Source_Trees)
-getbaseclasses(Syntax_Coloring)
-getbaseclasses(base_class)
-getbaseclasses(Relative_Path)
-getbaseclasses(Target_Settings)
-getbaseclasses(Environment_Variable)
 getbaseclasses(Source_Tree)
+getbaseclasses(Access_Paths)
+getbaseclasses(Debugger_Windowing)
+getbaseclasses(Relative_Path)
+getbaseclasses(Environment_Variable)
+getbaseclasses(base_class)
+getbaseclasses(Debugger_Display)
+getbaseclasses(Build_Extras)
+getbaseclasses(Error_Information)
+getbaseclasses(Editor)
+getbaseclasses(Shielded_Folders)
+getbaseclasses(Extras)
+getbaseclasses(File_Mappings)
+getbaseclasses(Function_Information)
+getbaseclasses(Debugger_Target)
+getbaseclasses(Syntax_Coloring)
+getbaseclasses(class_)
+getbaseclasses(Global_Source_Trees)
+getbaseclasses(Target_Settings)
 getbaseclasses(Debugger_Global)
 getbaseclasses(member_function)
 getbaseclasses(Runtime_Settings)
 getbaseclasses(Plugin_Settings)
-getbaseclasses(data_member)
-getbaseclasses(Build_Extras)
+getbaseclasses(Browser_Coloring)
 getbaseclasses(Font)
 getbaseclasses(Target_Source_Trees)
-getbaseclasses(Debugger_Display)
-getbaseclasses(class_)
 
 #
 # Indices of types declared in this module
 #
 _classdeclarations = {
     'cha ' : character,
+    'csel' : selection_2d_object,
+    'capp' : application,
+    'docu' : document,
     'ctxt' : text,
     'cwin' : window,
     'file' : file,
     'clin' : line,
-    'csel' : selection_2d_object,
-    'capp' : application,
     'cins' : insertion_point,
-    'docu' : document,
     '1BRW' : single_class_browser,
     'PRJD' : project_document,
     'SYMB' : symbol_browser,
@@ -144,38 +144,38 @@ _classdeclarations = {
     'Cata' : browser_catalog,
     'BSTG' : Build_Settings,
     'SrcF' : ProjectFile,
-    'BRKW' : Browser_Coloring,
-    'ErrM' : Error_Information,
     'VCSs' : VCS_Setup,
-    'EDTR' : Editor,
-    'SHFL' : Shielded_Folders,
+    'DtMb' : data_member,
     'SFit' : Shielded_Folder,
     'CUKW' : Custom_Keywords,
     'PInf' : Path_Information,
-    'FLMP' : File_Mappings,
     'Seg ' : Segment,
-    'DbTG' : Debugger_Target,
-    'FDef' : Function_Information,
-    'PATH' : Access_Paths,
-    'GXTR' : Extras,
-    'DbWN' : Debugger_Windowing,
-    'GSTs' : Global_Source_Trees,
-    'SNTX' : Syntax_Coloring,
-    'BsCl' : base_class,
-    'RlPt' : Relative_Path,
-    'TARG' : Target_Settings,
-    'EnvV' : Environment_Variable,
     'SrcT' : Source_Tree,
+    'PATH' : Access_Paths,
+    'DbWN' : Debugger_Windowing,
+    'RlPt' : Relative_Path,
+    'EnvV' : Environment_Variable,
+    'BsCl' : base_class,
+    'DbDS' : Debugger_Display,
+    'LXTR' : Build_Extras,
+    'ErrM' : Error_Information,
+    'EDTR' : Editor,
+    'SHFL' : Shielded_Folders,
+    'GXTR' : Extras,
+    'FLMP' : File_Mappings,
+    'FDef' : Function_Information,
+    'DbTG' : Debugger_Target,
+    'SNTX' : Syntax_Coloring,
+    'Clas' : class_,
+    'GSTs' : Global_Source_Trees,
+    'TARG' : Target_Settings,
     'DbGL' : Debugger_Global,
     'MbFn' : member_function,
     'RSTG' : Runtime_Settings,
     'PSTG' : Plugin_Settings,
-    'DtMb' : data_member,
-    'LXTR' : Build_Extras,
+    'BRKW' : Browser_Coloring,
     'mFNT' : Font,
     'TSTs' : Target_Source_Trees,
-    'DbDS' : Debugger_Display,
-    'Clas' : class_,
 }
 
 
