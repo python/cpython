@@ -191,42 +191,52 @@ class Readcd:
 		if len(self.list) == 0:
 			for i in range(self.status[5], self.status[6]+1):
 				self.appendtrack(i)
-		while 1:
-			if not self.playing:
-				if self.listindex >= len(self.list):
-					return
-				start, end = self.list[self.listindex]
-##				print 'starting with',`(start, end)`
-				if type(start) == type(0):
-					dummy = self.player.seektrack(start)
-				else:
-					min, sec, frame = start
-					dummy = self.player.seek(min, sec, frame)
-				if type(end) == type(0):
-					self.parser.setcallback(CD.PNUM, _dopnum, self)
-					self.end = end
-					func, arg = self.callbacks[CD.ATIME]
-					if func:
-						self.parser.setcallback(CD.ATIME, func, arg)
+		try:
+			while 1:
+				if not self.playing:
+					if self.listindex >= len(self.list):
+						return
+					start, end = self.list[self.listindex]
+					if type(start) == type(0):
+						dummy = self.player.seektrack(
+							start)
 					else:
-						self.parser.removecallback(CD.ATIME)
-				else:
-					min, sec, frame = end
-					self.parser.setcallback(CD.ATIME, _doatime, self)
-					self.end = (min * 60 + sec) * 75 + frame
-					func, arg = self.callbacks[CD.PNUM]
-					if func:
-						self.parser.setcallback(CD.PNUM, func, arg)
+						min, sec, frame = start
+						dummy = self.player.seek(
+							min, sec, frame)
+					if type(end) == type(0):
+						self.parser.setcallback(
+							CD.PNUM, _dopnum, self)
+						self.end = end
+						func, arg = \
+						      self.callbacks[CD.ATIME]
+						if func:
+							self.parser.setcallback(CD.ATIME, func, arg)
+						else:
+							self.parser.removecallback(CD.ATIME)
 					else:
-						self.parser.removecallback(CD.PNUM)
-				self.playing = 1
-			data = self.player.readda(size)
-			if data == '':
-				self.playing = 0
-				self.listindex = self.listindex + 1
-				continue
-			try:
-				self.parser.parseframe(data)
-			except _Stop:
-				self.playing = 0
-				self.listindex = self.listindex + 1
+						min, sec, frame = end
+						self.parser.setcallback(
+							CD.ATIME, _doatime,
+							self)
+						self.end = (min * 60 + sec) * \
+							   75 + frame
+						func, arg = \
+						      self.callbacks[CD.PNUM]
+						if func:
+							self.parser.setcallback(CD.PNUM, func, arg)
+						else:
+							self.parser.removecallback(CD.PNUM)
+					self.playing = 1
+				data = self.player.readda(size)
+				if data == '':
+					self.playing = 0
+					self.listindex = self.listindex + 1
+					continue
+				try:
+					self.parser.parseframe(data)
+				except _Stop:
+					self.playing = 0
+					self.listindex = self.listindex + 1
+		finally:
+			self.playing = 0
