@@ -1827,7 +1827,10 @@ PyImport_ReloadModule(m)
    more accurately -- it invokes the __import__() function from the
    builtins of the current globals.  This means that the import is
    done using whatever import hooks are installed in the current
-   environment, e.g. by "ni" or "rexec". */
+   environment, e.g. by "rexec".
+   A dummy list ["__doc__"] is passed as the 4th argument so that
+   e.g. PyImport_Import(PyString_FromString("win32com.client.gencache"))
+   will return <module "gencache"> instead of <module "win32com">. */
 
 PyObject *
 PyImport_Import(module_name)
