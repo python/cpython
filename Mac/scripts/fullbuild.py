@@ -160,7 +160,8 @@ I_PPC_PLUGINS : (buildmwproject, "CWIE", [
 	(":Mac:Build:macspeech.prj", "macspeech.ppc"),
 	(":Mac:Build:waste.prj", "waste.ppc"),
 	(":Mac:Build:zlib.prj", "zlib.ppc"),
-	(":Mac:Build:_tkinter.prj", "_tkinter.ppc"),
+##	(":Mac:Build:_tkinter.prj", "_tkinter.ppc"),
+	(":Extensions:Imaging:_tkinter.prj", "_tkinter.ppc"),
 	(":Mac:Build:ColorPicker.prj", "ColorPicker.ppc"),
 	(":Mac:Build:Printing.prj", "Printing.ppc"),
 	(":Mac:Build:AE.prj", "AE.ppc"),
@@ -187,7 +188,8 @@ I_68K_PLUGINS : (buildmwproject, "CWIE", [
 	(":Mac:Build:icglue.prj", "icglue.CFM68K"),
 	(":Mac:Build:waste.prj", "waste.CFM68K"),
 	(":Mac:Build:zlib.prj", "zlib.CFM68K"),
-	(":Mac:Build:_tkinter.prj", "_tkinter.CFM68K"),
+##	(":Mac:Build:_tkinter.prj", "_tkinter.CFM68K"),
+	(":Extensions:Imaging:_tkinter.prj", "_tkinter.CFM68K"),
 	(":Mac:Build:ColorPicker.prj", "ColorPicker.CFM68K"),
 	(":Mac:Build:Printing.prj", "Printing.CFM68K"),
 	(":Mac:Build:AE.prj", "AE.CFM68K"),
@@ -226,7 +228,7 @@ I_PPC_SMALL : (buildmwproject, "CWIE", [
 
 I_PPC_EXTENSIONS : (buildmwproject, "CWIE", [
 		(":Extensions:Imaging:_imaging.prj", "_imaging.ppc"),
-		(":Extensions:Imaging:_tkinter.prj", "_tkinter.ppc"),
+##		(":Extensions:Imaging:_tkinter.prj", "_tkinter.ppc"),
 		(":Extensions:img:Mac:imgmodules.prj", "imgmodules PPC"),
 		(":Extensions:Numerical:Mac:numpymodules.prj", "multiarraymodule"),
 		(":Extensions:Numerical:Mac:numpymodules.prj", "_numpy"),
@@ -239,7 +241,7 @@ I_PPC_EXTENSIONS : (buildmwproject, "CWIE", [
 
 I_68K_EXTENSIONS : (buildmwproject, "CWIE", [
 		(":Extensions:Imaging:_imaging.prj", "_imaging.CFM68K"),
-		(":Extensions:Imaging:_tkinter.prj", "_tkinter.CFM68K"),
+##		(":Extensions:Imaging:_tkinter.prj", "_tkinter.CFM68K"),
 		(":Extensions:img:Mac:imgmodules.prj", "imgmodules CFM68K"),
 ##		(":Extensions:NumPy:numpymodules.prj", "numpymodules.CFM68K"),
 	]),
