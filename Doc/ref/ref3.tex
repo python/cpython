@@ -1054,9 +1054,10 @@ methods \method{append()}, \method{count()}, \method{index()},
 and \method{sort()}, like Python standard list objects.  Finally,
 sequence types should implement addition (meaning concatenation) and
 multiplication (meaning repetition) by defining the methods
-\method{__add__()}, \method{__radd__()}, \method{__mul__()} and
-\method{__rmul__()} described below; they should not define
-\method{__coerce__()} or other numerical operators.
+\method{__add__()}, \method{__radd__()}, \method{__iadd__()},
+\method{__mul__()}, \method{__rmul__()} and \method{__imul__()} described
+below; they should not define \method{__coerce__()} or other numerical
+operators.
 \withsubitem{(mapping object method)}{
   \ttindex{keys()}
   \ttindex{values()}
@@ -1077,8 +1078,10 @@ multiplication (meaning repetition) by defining the methods
   \ttindex{sort()}
   \ttindex{__add__()}
   \ttindex{__radd__()}
+  \ttindex{__iadd__()}
   \ttindex{__mul__()}
-  \ttindex{__rmul__()}}
+  \ttindex{__rmul__()}
+  \ttindex{__imul__()}}
 \withsubitem{(numeric object method)}{\ttindex{__coerce__()}}
 
 \begin{methoddesc}[mapping object]{__len__}{self}

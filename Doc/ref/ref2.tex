@@ -523,10 +523,14 @@ The following tokens serve as delimiters in the grammar:
 \begin{verbatim}
 (       )       [       ]       {       }
 ,       :       .       `       =       ;
++=      -=      *=      /=      %=      **=
+&=      |=      ^=      >>=     <<=
 \end{verbatim}
 
 The period can also occur in floating-point and imaginary literals.  A
 sequence of three periods has a special meaning as an ellipsis in slices.
+The second half of the list, the augmented assignment operators, serve
+lexically as delimiters, but also perform an operation.
 
 The following printing ASCII characters have special meaning as part
 of other tokens or are otherwise significant to the lexical analyzer:
