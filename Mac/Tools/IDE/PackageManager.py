@@ -383,6 +383,8 @@ class PackageBrowser(PimpInterface):
 			self.w.user_button.enable(0)
 		else:
 			sel = sel[0]
+			if sel >= len(self.packages):
+				sel = 0
 			self.w.packagebrowser.setselection([sel])
 			installed, message = self.getstatus(sel)
 			self.w.installed.set(installed)
