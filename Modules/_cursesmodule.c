@@ -115,6 +115,7 @@ char *PyCursesVersion = "2.1";
 extern int setupterm(char *,int,int *);
 #ifdef sgi
 extern char *tigetstr(char *);
+extern char *tparm(char *instring, ...);
 #endif
 
 #if defined(sgi) || defined(__sun__)
