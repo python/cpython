@@ -203,7 +203,7 @@ class HTTPResponse:
 
     # strict: If true, raise BadStatusLine if the status line can't be
     # parsed as a valid HTTP/1.0 or 1.1 status line.  By default it is
-    # false because it prvents clients from talking to HTTP/0.9
+    # false because it prevents clients from talking to HTTP/0.9
     # servers.  Note that a response with a sufficiently corrupted
     # status line will look like an HTTP/0.9 response.
 
@@ -276,7 +276,7 @@ class HTTPResponse:
                     break
                 if self.debuglevel > 0:
                     print "header:", skip
-            
+
         self.status = status
         self.reason = reason.strip()
         if version == 'HTTP/1.0':
@@ -304,9 +304,7 @@ class HTTPResponse:
 
         # are we using the chunked-style of transfer encoding?
         tr_enc = self.msg.getheader('transfer-encoding')
-        if tr_enc:
-            if tr_enc.lower() != 'chunked':
-                raise UnknownTransferEncoding()
+        if tr_enc and tr_enc.lower() == "chunked":
             self.chunked = 1
             self.chunk_left = None
         else:
@@ -372,50 +370,9 @@ class HTTPResponse:
             return ''
 
         if self.chunked:
-            assert self.chunked != _UNKNOWN
-            chunk_left = self.chunk_left
-            value = ''
-            while 1:
-                if chunk_left is None:
-                    line = self.fp.readline()
-                    i = line.find(';')
-                    if i >= 0:
-                        line = line[:i] # strip chunk-extensions
-                    chunk_left = int(line, 16)
-                    if chunk_left == 0:
-                        break
-                if amt is None:
-                    value = value + self._safe_read(chunk_left)
-                elif amt < chunk_left:
-                    value = value + self._safe_read(amt)
-                    self.chunk_left = chunk_left - amt
-                    return value
-                elif amt == chunk_left:
-                    value = value + self._safe_read(amt)
-                    self._safe_read(2)  # toss the CRLF at the end of the chunk
-                    self.chunk_left = None
-                    return value
-                else:
-                    value = value + self._safe_read(chunk_left)
-                    amt = amt - chunk_left
-
-                # we read the whole chunk, get another
-                self._safe_read(2)      # toss the CRLF at the end of the chunk
-                chunk_left = None
-
-            # read and discard trailer up to the CRLF terminator
-            ### note: we shouldn't have any trailers!
-            while 1:
-                line = self.fp.readline()
-                if line == '\r\n':
-                    break
-
-            # we read everything; close the "file"
-            self.close()
-
-            return value
-
-        elif amt is None:
+            return self._read_chunked(amt)
+        
+        if amt is None:
             # unbounded read
             if self.will_close:
                 s = self.fp.read()
@@ -428,7 +385,7 @@ class HTTPResponse:
             if amt > self.length:
                 # clip the read to the "end of response"
                 amt = self.length
-            self.length = self.length - amt
+            self.length -= amt
 
         # we do not use _safe_read() here because this may be a .will_close
         # connection, and the user is reading more bytes than will be provided
@@ -437,6 +394,54 @@ class HTTPResponse:
 
         return s
 
+    def _read_chunked(self, amt):
+        assert self.chunked != _UNKNOWN
+        chunk_left = self.chunk_left
+        value = ''
+
+        # XXX This accumulates chunks by repeated string concatenation,
+        # which is not efficient as the number or size of chunks gets big.
+        while 1:
+            if chunk_left is None:
+                line = self.fp.readline()
+                i = line.find(';')
+                if i >= 0:
+                    line = line[:i] # strip chunk-extensions
+                chunk_left = int(line, 16)
+                if chunk_left == 0:
+                    break
+            if amt is None:
+                value += self._safe_read(chunk_left)
+            elif amt < chunk_left:
+                value += self._safe_read(amt)
+                self.chunk_left = chunk_left - amt
+                return value
+            elif amt == chunk_left:
+                value += self._safe_read(amt)
+                self._safe_read(2)  # toss the CRLF at the end of the chunk
+                self.chunk_left = None
+                return value
+            else:
+                value += self._safe_read(chunk_left)
+                amt -= chunk_left
+
+            # we read the whole chunk, get another
+            self._safe_read(2)      # toss the CRLF at the end of the chunk
+            chunk_left = None
+
+        # read and discard trailer up to the CRLF terminator
+        ### note: we shouldn't have any trailers!
+        while 1:
+            line = self.fp.readline()
+            if line == '\r\n':
+                break
+
+        # we read everything; close the "file"
+        # XXX Shouldn't the client close the file?
+        self.close()
+
+        return value
+    
     def _safe_read(self, amt):
         """Read the number of bytes requested, compensating for partial reads.
 
@@ -479,9 +484,10 @@ class HTTPConnection:
 
     def __init__(self, host, port=None, strict=None):
         self.sock = None
+        self._buffer = []
         self.__response = None
         self.__state = _CS_IDLE
-        
+
         self._set_hostport(host, port)
         if strict is not None:
             self.strict = strict
@@ -557,6 +563,23 @@ class HTTPConnection:
                 self.close()
             raise
 
+    def _output(self, s):
+        """Add a line of output to the current request buffer.
+
+        Assumes that the line does *not* end with \\r\\n.
+        """
+        self._buffer.append(s)
+
+    def _send_output(self):
+        """Send the currently buffered request and clear the buffer.
+
+        Appends an extra \\r\\n to the buffer.
+        """
+        self._buffer.extend(("", ""))
+        msg = "\r\n".join(self._buffer)
+        del self._buffer[:]
+        self.send(msg)
+
     def putrequest(self, method, url, skip_host=0):
         """Send a request to the server.
 
@@ -565,6 +588,7 @@ class HTTPConnection:
         """
 
         # check if a prior response has been completed
+        # XXX What if it hasn't?
         if self.__response and self.__response.isclosed():
             self.__response = None
 
@@ -594,16 +618,9 @@ class HTTPConnection:
 
         if not url:
             url = '/'
-        str = '%s %s %s\r\n' % (method, url, self._http_vsn_str)
+        str = '%s %s %s' % (method, url, self._http_vsn_str)
 
-        try:
-            self.send(str)
-        except socket.error, v:
-            # trap 'Broken pipe' if we're allowed to automatically reconnect
-            if v[0] != 32 or not self.auto_open:
-                raise
-            # try one more time (the socket was closed; this will reopen)
-            self.send(str)
+        self._output(str)
 
         if self._http_vsn == 11:
             # Issue some standard headers for better HTTP/1.1 compliance
@@ -664,8 +681,8 @@ class HTTPConnection:
         if self.__state != _CS_REQ_STARTED:
             raise CannotSendHeader()
 
-        str = '%s: %s\r\n' % (header, value)
-        self.send(str)
+        str = '%s: %s' % (header, value)
+        self._output(str)
 
     def endheaders(self):
         """Indicate that the last header line has been sent to the server."""
@@ -675,7 +692,7 @@ class HTTPConnection:
         else:
             raise CannotSendHeader()
 
-        self.send('\r\n')
+        self._send_output()
 
     def request(self, method, url, body=None, headers={}):
         """Send a complete request to the server."""
@@ -803,7 +820,7 @@ class SSLFile(SharedSocketClient):
     """File-like object wrapping an SSL socket."""
 
     BUFSIZE = 8192
-    
+
     def __init__(self, sock, ssl, bufsize=None):
         SharedSocketClient.__init__(self, sock)
         self._ssl = ssl
@@ -1127,7 +1144,7 @@ class LineAndFileWrapper:
             if amt is None:
                 return s + self._file.read()
             else:
-                return s + self._file.read(amt - len(s))                
+                return s + self._file.read(amt - len(s))
         else:
             assert amt <= self._line_left
             i = self._line_offset
@@ -1138,7 +1155,7 @@ class LineAndFileWrapper:
             if self._line_left == 0:
                 self._done()
             return s
-        
+
     def readline(self):
         s = self._line[self._line_offset:]
         self._done()
@@ -1195,13 +1212,14 @@ def test():
     h.close()
 
     if hasattr(socket, 'ssl'):
-        
+
         for host, selector in (('sourceforge.net', '/projects/python'),
                                ('dbserv2.theopalgroup.com', '/mediumfile'),
                                ('dbserv2.theopalgroup.com', '/smallfile'),
                                ):
             print "https://%s%s" % (host, selector)
             hs = HTTPS()
+            hs.set_debuglevel(dl)
             hs.connect(host)
             hs.putrequest('GET', selector)
             hs.endheaders()
@@ -1213,8 +1231,6 @@ def test():
             if headers:
                 for header in headers.headers: print header.strip()
             print
-
-    return
 
     # Test a buggy server -- returns garbled status line.
     # http://www.yahoo.com/promotions/mom_com97/supermom.html
