@@ -145,9 +145,6 @@
 /* Define if you want to compile in rudimentary thread support */
 #undef WITH_THREAD
 
-/* Define if you want to use the GNU readline library */
-#undef WITH_READLINE
-
 /* The number of bytes in a int.  */
 #undef SIZEOF_INT
 

@@ -1,4 +1,4 @@
-This is Python release 1.5 alpha 2
+This is Python release 1.5 alpha 3
 ==================================
 
 ******************************************
@@ -8,16 +8,37 @@ This is Python release 1.5 alpha 2
 What's new in this release?
 ---------------------------
 
-Ehm, I'll be more complete later.  Som highlights: I've completed the
-Grand Renaming.  It's much faster (almost twice for pystone.py -- see
-Tools/scripts.)  There's an assert statement, and a -O option that
-squeezes SET_LINENO instructions and if __debug__ code.  It's much
-smarter (only on Unix, so far) about the initial value for sys.path.
-See the usage message (python -h).  There's an explicit structure that
-maintains all per-thread globals.
+Too much has changed to list it all; I'll be more complete later.
 
-Unfinished projects: documentation; multiple independent interpreters;
-better embedding support; more Windows support.
+The most important changes since Python 1.4 include:
+
+- Many previously undocumented modules are now documented; some are
+now officially obsolete or deprecated.
+
+- It's much faster (almost twice for pystone.py -- see Tools/scripts.)
+
+- There's an assert statement.
+
+- There's a -O option that removes SET_LINENO instructions and code
+prefixed with ``if __debug__: ...''.
+
+- It's much smarter about the initial value for sys.path; you can
+control it easier using $PYTHONHOME (see the usage message, e.g. try
+``python -h'').
+
+- The Grand Renaming is completed: all linker-visible symbols defined
+by Python now have a "Py" or "_Py" prefix, and the same is true for
+most macros and typedefs.
+
+- The build strategy now uses a single library (libpython1.5.a) which
+contains everything except for the main() entry point.  This makes
+life much easier for applications that want to embed Python.
+
+- There is also much better support for embedding Python in
+applications that use threads.
+
+- Unfinished projects: documentation; multiple independent
+interpreters; more Windows support.
 
 
 What is Python anyway?
@@ -328,9 +349,7 @@ script.
 WARNING: if you rerun the configure script with different options, you
 must run "make clean" before rebuilding.  Exceptions to this rule:
 after changing --prefix or --exec-prefix, all you need to do is remove
-Modules/getpath.o; after changing --with-readline, just remove
-Parser/myreadline.o (but if it doesn't seem to work, always try "make
-clean" before giving up or complaining!).
+Modules/getpath.o.
 
 --with(out)-gcc: The configure script uses gcc (the GNU C compiler) if
 	it finds it.  If you don't want this, or if this compiler is
@@ -356,28 +375,8 @@ clean" before giving up or complaining!).
 	than re-running the configure script if you change your mind
 	about the install prefix...
 
---with-readline: You can use the GNU readline library to improve the
-	interactive user interface.  This gives you line editing and
-	command history when calling Python interactively.  Unless GNU
-	readline is a standard part of your system (it is on Linux),
-	you need to configure build the GNU readline library before
-	running the configure script.  Its sources are not distributed
-	with Python; you can ftp them from any GNU mirror site, or
-	from its home site:
-	ftp://slc2.ins.cwru.edu/pub/dist/readline-2.0.tar.gz (or
-	a higher version number -- using version 1.x is not
-	recommended).
-
-	A GPL-free version was posted to comp.sources.misc in volume
-	31 and is widely available from FTP archive sites, e.g.
-	ftp://gatekeeper.dec.com/.
-
-	Pass the Python configure script the option
-	--with-readline=DIRECTORY where DIRECTORY is the absolute
-	pathname of the directory where you've built the readline
-	library.  If GNU readline is a standard part of your system,
-	don't pass '=DIRECTORY'.  Some hints on building and using the
-	readline library are in the FAQ (file Misc/FAQ).
+--with-readline: This option is no longer supported.  To use GNU
+	readline, enable module "readline" in the Modules/Setup file.
 
 --with-thread: On most Unix systems, you can now use multiple threads.
 	To enable this, pass --with-thread.  (--with-threads is an
