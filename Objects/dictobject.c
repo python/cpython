@@ -963,6 +963,56 @@ dict_items(register dictobject *mp)
 }
 
 static PyObject *
+dict_fromkeys(PyObject *mp, PyObject *args)
+{
+	PyObject *seq;
+	PyObject *value = Py_None;
+	PyObject *it;	/* iter(seq) */
+	PyObject *key;
+	PyObject *d;
+	PyObject *cls;
+	int status;
+
+        if (!PyArg_ParseTuple(args, "OO|O:fromkeys", &cls, &seq, &value))
+		return NULL;
+
+	d = PyObject_CallObject(cls, NULL);
+	if (d == NULL)
+		return NULL;
+	if (!PyDict_Check(d)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+
+	it = PyObject_GetIter(seq);
+	if (it == NULL){
+		Py_DECREF(d);
+		return NULL;
+	}
+
+	for (;;) {
+		key = PyIter_Next(it);
+		if (key == NULL) {
+			if (PyErr_Occurred())
+				goto Fail;
+			break;
+		}
+		status = PyDict_SetItem(d, key, value);
+		Py_DECREF(key);
+		if (status < 0)
+			goto Fail;
+	}
+
+	Py_DECREF(it);
+	return d;
+
+Fail:
+	Py_DECREF(it);
+	Py_DECREF(d);
+	return NULL;
+}
+
+static PyObject *
 dict_update(PyObject *mp, PyObject *other)
 {
 	if (PyDict_Update(mp, other) < 0)
@@ -1682,6 +1732,10 @@ PyDoc_STRVAR(values__doc__,
 PyDoc_STRVAR(update__doc__,
 "D.update(E) -> None.  Update D from E: for k in E.keys(): D[k] = E[k]");
 
+PyDoc_STRVAR(fromkeys__doc__,
+"dict.fromkeys(S[,v]) -> New dict with keys from S and values equal to v.\n\
+v defaults to None.");
+
 PyDoc_STRVAR(clear__doc__,
 "D.clear() -> None.  Remove all items from D.");
 
@@ -1716,6 +1770,8 @@ static PyMethodDef mapp_methods[] = {
 	 values__doc__},
 	{"update",	(PyCFunction)dict_update,	METH_O,
 	 update__doc__},
+	{"fromkeys",	(PyCFunction)dict_fromkeys,	METH_VARARGS | METH_CLASS,
+	 fromkeys__doc__},
 	{"clear",	(PyCFunction)dict_clear,	METH_NOARGS,
 	 clear__doc__},
 	{"copy",	(PyCFunction)dict_copy,		METH_NOARGS,

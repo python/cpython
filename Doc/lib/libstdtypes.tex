@@ -1055,8 +1055,11 @@ arbitrary objects):
           {(3)}
   \lineiii{\var{a}.keys()}{a copy of \var{a}'s list of keys}{(3)}
   \lineiii{\var{a}.update(\var{b})}
-          {\code{for k in \var{b}.keys(): \var{a}[k] = \var{b}[k]}}
+          {\code{for \var{k} in \var{b}.keys(): \var{a}[\var{k}] = \var{b}[\var{k}]}}
           {}
+  \lineiii{\var{a}.fromkeys(\var{seq}\optional{, \var{value}})}
+          {Creates a new dictionary with keys from \var{seq} and values set to \var{value}}
+          {(7)}			   
   \lineiii{\var{a}.values()}{a copy of \var{a}'s list of values}{(3)}
   \lineiii{\var{a}.get(\var{k}\optional{, \var{x}})}
           {\code{\var{a}[\var{k}]} if \code{\var{k} in \var{a}},
@@ -1114,6 +1117,10 @@ the dictionary as the value of \var{k}.
 
 \item[(6)] \function{popitem()} is useful to destructively iterate
 over a dictionary, as often used in set algorithms.
+\end{description}
+
+\item[(7)] \function{fromkeys()} is a class method that returns a
+new dictionary. \var{value} defaults to \code{None}.  \versionadded{2.3}
 \end{description}
 
 
