@@ -644,3 +644,16 @@ verify((u"abc" "def") == u"abcdef")
 verify((u"abc" u"def" "ghi") == u"abcdefghi")
 verify(("abc" "def" u"ghi") == u"abcdefghi")
 print 'done.'
+
+print 'Testing Unicode printing...',
+print u'abc'
+print u'abc', u'def'
+print u'abc', 'def'
+print 'abc', u'def'
+print u'abc\n'
+print u'abc\n',
+print u'abc\n',
+print u'def\n'
+print u'def\n'
+print 'done.'
+

@@ -6,3 +6,16 @@ Testing builtin unicode()... done.
 Testing builtin codecs... done.
 Testing standard mapping codecs... 0-127... 128-255... done.
 Testing Unicode string concatenation... done.
+Testing Unicode printing... abc
+abc def
+abc def
+abc def
+abc
+
+abc
+abc
+def
+
+def
+
+done.
