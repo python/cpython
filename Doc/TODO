@@ -7,8 +7,8 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 * Update the pickle documentation to describe all of the current behavior;
   only a subset is described.  __reduce__, etc.
 
-* Review libppath.tex for completeness, & system-specific behaviors.  (Why
-  did this one get mentioned, specifically?)
+* Review libposixpath.tex for completeness, & system-specific behaviors.
+  (Why did this one get mentioned, specifically?)
 
 * In the indexes, some subitem entries are separated from the item entries
   by column- or page-breaks.  Reported by Lorenzo M. Catucci
