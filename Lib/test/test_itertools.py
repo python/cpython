@@ -78,12 +78,12 @@ class TestBasicOps(unittest.TestCase):
             self.assertEqual(list(islice(xrange(100), *args)), range(*tgtargs))
 
         # Test stop=None
-        self.assertEqual(list(islice(xrange(10))), range(10))
         self.assertEqual(list(islice(xrange(10), None)), range(10))
         self.assertEqual(list(islice(xrange(10), 2, None)), range(2, 10))
         self.assertEqual(list(islice(xrange(10), 1, None, 2)), range(1, 10, 2))
 
         # Test invalid arguments
+        self.assertRaises(TypeError, islice, xrange(10))
         self.assertRaises(TypeError, islice, xrange(10), 1, 2, 3, 4)
         self.assertRaises(ValueError, islice, xrange(10), -5, 10, 1)
         self.assertRaises(ValueError, islice, xrange(10), 1, -5, -1)
