@@ -497,7 +497,7 @@ eval_frame(PyFrameObject *f)
 #ifdef DXPAIRS
 	int lastopcode = 0;
 #endif
-	PyObject **stack_pointer;
+	PyObject **stack_pointer; /* Next free slot in value stack */
 	register unsigned char *next_instr;
 	register int opcode=0;	/* Current opcode */
 	register int oparg=0;	/* Current opcode argument, if any */
@@ -586,7 +586,7 @@ eval_frame(PyFrameObject *f)
 	next_instr = first_instr + f->f_lasti;
 	stack_pointer = f->f_stacktop;
 	assert(stack_pointer != NULL);
-	f->f_stacktop = NULL;
+	f->f_stacktop = NULL;	/* remains NULL unless yield suspends frame */
 
 	if (tstate->use_tracing) {
 		if (tstate->c_tracefunc != NULL) {
@@ -634,6 +634,8 @@ eval_frame(PyFrameObject *f)
 	w = NULL;
 
 	for (;;) {
+		assert(stack_pointer >= f->f_valuestack);	/* else underflow */
+		assert(STACK_LEVEL() <= f->f_stacksize);	/* else overflow */
 		/* Do periodic things.  Doing this every time through
 		   the loop would add too much overhead, so we do it
 		   only every Nth instruction.  We also do it if
