@@ -113,7 +113,12 @@ class Bdb:
             return False
         lineno = frame.f_lineno
         if not lineno in self.breaks[filename]:
-            return False
+            # The line itself has no breakpoint, but maybe the line is the
+            # first line of a function with breakpoint set by function name.
+            lineno = frame.f_code.co_firstlineno
+            if not lineno in self.breaks[filename]:
+                return False
+
         # flag says ok to delete temp. bp
         (bp, flag) = effective(filename, lineno, frame)
         if bp:
@@ -210,7 +215,8 @@ class Bdb:
     # Call self.get_*break*() to see the breakpoints or better
     # for bp in Breakpoint.bpbynumber: if bp: bp.bpprint().
 
-    def set_break(self, filename, lineno, temporary=0, cond = None):
+    def set_break(self, filename, lineno, temporary=0, cond = None,
+                  funcname=None):
         filename = self.canonic(filename)
         import linecache # Import as late as possible
         line = linecache.getline(filename, lineno)
@@ -222,7 +228,7 @@ class Bdb:
         list = self.breaks[filename]
         if not lineno in list:
             list.append(lineno)
-        bp = Breakpoint(filename, lineno, temporary, cond)
+        bp = Breakpoint(filename, lineno, temporary, cond, funcname)
 
     def clear_break(self, filename, lineno):
         filename = self.canonic(filename)
@@ -428,7 +434,10 @@ class Breakpoint:
                 # index 0 is unused, except for marking an
                 # effective break .... see effective()
 
-    def __init__(self, file, line, temporary=0, cond = None):
+    def __init__(self, file, line, temporary=0, cond=None, funcname=None):
+        self.funcname = funcname
+        # Needed if funcname is not None.
+        self.func_first_executable_line = None
         self.file = file    # This better be in canonical form!
         self.line = line
         self.temporary = temporary
@@ -483,6 +492,32 @@ class Breakpoint:
 
 # -----------end of Breakpoint class----------
 
+def checkfuncname(b, frame):
+    """Check whether we should break here because of `b.funcname`."""
+    if not b.funcname:
+        # Breakpoint was set via line number.
+        if b.line != frame.f_lineno:
+            # Breakpoint was set at a line with a def statement and the function
+            # defined is called: don't break.
+            return False
+        return True
+
+    # Breakpoint set via function name.
+
+    if frame.f_code.co_name != b.funcname:
+        # It's not a function call, but rather execution of def statement.
+        return False
+
+    # We are in the right frame.
+    if not b.func_first_executable_line:
+        # The function is entered for the 1st time.
+        b.func_first_executable_line = frame.f_lineno
+
+    if  b.func_first_executable_line != frame.f_lineno:
+        # But we are not at the first line number: don't break.
+        return False
+    return True
+
 # Determines if there is an effective (active) breakpoint at this
 # line of code.  Returns breakpoint number or 0 if none
 def effective(file, line, frame):
@@ -497,6 +532,8 @@ def effective(file, line, frame):
     for i in range(0, len(possibles)):
         b = possibles[i]
         if b.enabled == 0:
+            continue
+        if not checkfuncname(b, frame):
             continue
         # Count every hit when bp is enabled
         b.hits = b.hits + 1
