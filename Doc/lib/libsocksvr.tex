@@ -43,7 +43,9 @@ to behave on an abrupt shutdown. The \class{ThreadingMixIn} class
 defines an attribute \var{daemon_threads}, which indicates whether
 or not the server should wait for thread termination. You should
 set the flag explicitly if you would like threads to behave
-autonomously.
+autonomously; the default is \constant{False}, meaning that Python
+will not exit until all threads created by \class{ThreadingMixIn} have
+exited.
 
 Server classes have the same external methods and attributes, no
 matter what network protocol they use:
