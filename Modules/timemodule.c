@@ -435,7 +435,7 @@ time_strptime(self, args)
 }
 
 static char strptime_doc[] =
-"strptime(format, string) -> tuple\n\
+"strptime(string, format) -> tuple\n\
 Parse a string to a time tuple according to a format specification.\n\
 See the library reference manual for formatting codes (same as strftime()).";
 #endif /* HAVE_STRPTIME */
