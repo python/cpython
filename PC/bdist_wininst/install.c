@@ -760,7 +760,9 @@ static int run_simple_script(char *script)
 	rc = do_run_simple_script(hPython, script);
 	FreeLibrary(hPython);
 	fflush(stderr);
+	fclose(stderr);
 	fflush(stdout);
+	fclose(stdout);
 	/* We only care about the output when we fail.  If the script works
 	   OK, then we discard it
 	*/
@@ -1951,7 +1953,9 @@ FinishedDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				fprintf(stderr, "*** Could not load Python ***");
 			}
 			fflush(stderr);
+			fclose(stderr);
 			fflush(stdout);
+			fclose(stdout);
 	    
 			fp = fopen(tempname, "rb");
 			n = fread(buffer, 1, sizeof(buffer), fp);
@@ -2299,7 +2303,9 @@ BOOL Run_RemoveScript(char *line)
 		}
 	
 		fflush(stderr);
+		fclose(stderr);
 		fflush(stdout);
+		fclose(stdout);
 	
 		fp = fopen(tempname, "rb");
 		n = fread(buffer, 1, sizeof(buffer), fp);
