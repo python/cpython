@@ -252,7 +252,7 @@ class StreamReader(Codec):
         return self.decode(line, self.errors)[0]
 
 
-    def readlines(self, sizehint=0):
+    def readlines(self, sizehint=None):
 
         """ Read all lines available on the input stream
             and return them as list of lines.
