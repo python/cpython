@@ -86,6 +86,9 @@
 /* Define this if your time.h defines altzone */
 #undef HAVE_ALTZONE
 
+/* Define this if you have a K&R style C preprocessor */
+#undef HAVE_OLD_CPP
+
 /* Define if your compiler supports function prototypes */
 #undef HAVE_PROTOTYPES
 
