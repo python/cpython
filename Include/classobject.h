@@ -62,7 +62,7 @@ extern DL_IMPORT(PyTypeObject) PyClass_Type, PyInstance_Type, PyMethod_Type;
 #define PyMethod_Check(op) ((op)->ob_type == &PyMethod_Type)
 
 extern PyObject *PyClass_New Py_PROTO((PyObject *, PyObject *, PyObject *));
-extern PyObject *PyInstance_New Py_PROTO((PyObject *, PyObject *));
+extern PyObject *PyInstance_New Py_PROTO((PyObject *, PyObject *, PyObject *));
 extern PyObject *PyMethod_New Py_PROTO((PyObject *, PyObject *, PyObject *));
 
 extern PyObject *PyMethod_Function Py_PROTO((PyObject *));

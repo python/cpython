@@ -35,10 +35,12 @@ extern DL_IMPORT(PyTypeObject) PyCFunction_Type;
 #define PyCFunction_Check(op) ((op)->ob_type == &PyCFunction_Type)
 
 typedef PyObject *(*PyCFunction) Py_FPROTO((PyObject *, PyObject *));
+typedef PyObject *(*PyCFunctionWithKeywords)
+	Py_FPROTO((PyObject *, PyObject *, PyObject *));
 
 extern PyCFunction PyCFunction_GetFunction Py_PROTO((PyObject *));
 extern PyObject *PyCFunction_GetSelf Py_PROTO((PyObject *));
-extern int PyCFunction_IsVarArgs Py_PROTO((PyObject *));
+extern int PyCFunction_GetFlags Py_PROTO((PyObject *));
 
 struct PyMethodDef {
 	char		*ml_name;
@@ -56,6 +58,7 @@ extern PyObject *PyCFunction_New
 
 /* Flag passed to newmethodobject */
 #define METH_VARARGS  0x0001
+#define METH_KEYWORDS 0x0002
 
 typedef struct PyMethodChain {
 	PyMethodDef *methods;		/* Methods of this type */

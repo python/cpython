@@ -292,7 +292,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define findmethodinchain Py_FindMethodInChain
 #define getmethod PyCFunction_GetFunction
 #define getself PyCFunction_GetSelf
-#define getvarargs PyCFunction_IsVarArgs
+#define getflags PyCFunction_GetFlags
 #define newmethodobject PyCFunction_New
 #define getmoduledict PyModule_GetDict
 #define getmodulename PyModule_GetName
