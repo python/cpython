@@ -31,14 +31,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "myproto.h"
 #include "intrcheck.h"
 
-#ifdef macintosh
-#ifdef THINK_C
-#include <OSEvents.h>
-#endif
-#include <Events.h>
-#endif
-
-
 
 #ifdef QUICKWIN
 
