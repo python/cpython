@@ -27,7 +27,7 @@ class bdist_wininst (Command):
                      "compile to .pyo on the target system"),
                     ('target-version=', 'v',
                      "require a specific python version" +
-                     " on the target system (1.5 or 1.6)"),
+                     " on the target system (1.5 or 1.6/2.0)"),
                    ]
 
     def initialize_options (self):
@@ -47,9 +47,9 @@ class bdist_wininst (Command):
         if not self.target_version:
             self.target_version = ""
         else:
-            if not self.target_version in ("1.5", "1.6"):
+            if not self.target_version in ("1.5", "1.6", "2.0"):
                 raise DistutilsOptionError (
-                    "target version must be 1.5 or 1.6")
+                    "target version must be 1.5, 1.6, or 2.0")
         if self.distribution.has_ext_modules():
             short_version = sys.version[:3]
             if self.target_version and self.target_version != short_version:
@@ -74,8 +74,8 @@ class bdist_wininst (Command):
         # The packager can choose if .pyc and .pyo files should be created
         # on the TARGET system instead at the SOURCE system.
 
-##        # The compilation can only be done on the SOURCE system
-##        # for one python version (assuming 1.6 and 1.5 have incompatible
+##        # The compilation can only be done on the SOURCE system for one
+##        # python version (assuming 1.6/2.0 and 1.5 have incompatible
 ##        # byte-codes).
 ##        short_version = sys.version[:3]
 ##        if self.target_version == short_version:
