@@ -2,10 +2,7 @@
 
 """Parse event definitions out of comments in source files."""
 
-import re
 import sys
-import os
-import getopt
 import glob
 import fileinput
 import pprint
