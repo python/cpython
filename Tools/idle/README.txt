@@ -1,5 +1,5 @@
-IDLE 0.3 - 17 February 1999
----------------------------
+IDLE 0.4 - 7 April 1999
+-----------------------
 
 For news about this release, see the file NEWS.txt.  (For a more
 detailed change log, see the file ChangeLog.)
@@ -18,9 +18,10 @@ to avoid popping up a DOS console.  Any arguments passed are interpreted
 as files that will be opened for editing.
 
 IDLE requires Python 1.5.2, so it is currently only usable with the
-Python 1.5.2 beta distribution (luckily, IDLE is bundled with Python
+Python 1.5.2 distribution (luckily, IDLE is bundled with Python
 1.5.2).
 
-Please send feedback to the Python newsgroup, comp.lang.python.
+Please send feedback to the Python newsgroup, comp.lang.python, and cc
+me <guido@python.org>.
 
 --Guido van Rossum (home page: http://www.python.org/~guido/)

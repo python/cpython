@@ -2,6 +2,15 @@
 
 ----------------------------------------------------------------------
 
+New in IDLE 0.4 (4/7/99)
+------------------------
+
+Most important change: a new menu entry "File -> Path browser", shows
+a 4-column hierarchical browser which lets you browse sys.path,
+directories, modules, and classes.  Yes, it's a superset of the Class
+browser menu entry.  There's also a new internal module,
+MultiScrolledLists.py, which provides the framework for this dialog.
+
 New in IDLE 0.3 (2/17/99)
 -------------------------
 
