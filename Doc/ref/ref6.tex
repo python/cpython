@@ -638,9 +638,15 @@ identifier in the list.  The form with \keyword{from} performs step
 \indexii{importing}{module}
 \indexii{name}{binding}
 \kwindex{from}
-% XXX Need to define what ``initialize'' means here
 
-The system maintains a table of modules that have been initialized,
+In this context, to ``initialize'' a built-in or extension module means to
+call an initialization function that the module must provide for the purpose
+(in the reference implementation, the function's name is obtained by
+prepending string ``init'' to the module's name); to ``initialize'' a
+Python-coded module means to execute the module's body.
+  
+The system maintains a table of modules that have been or are being
+initialized,
 indexed by module name.  This table is
 accessible as \code{sys.modules}.  When a module name is found in
 this table, step (1) is finished.  If not, a search for a module
