@@ -32,8 +32,7 @@ Call SetEventHandler without parameter to clear the event handler. Setting
 an eventhandler while one is already set is an error.
 \end{funcdesc}
 
-\begin{funcdesc}{SchedParams}{\optional{doint\, evtmask\, besocial\, 
-				interval\, bgyield}}
+\begin{funcdesc}{SchedParams}{\optional{doint, evtmask, besocial, interval, bgyield}}
 Influence the interpreter inner loop event handling. \var{Interval}
 specifies how often (in seconds, floating point) the interpreter
 should enter the event processing code. When true, \var{doint} causes
@@ -75,7 +74,7 @@ early in initialization without first having to load numerous
 extension modules.
 \end{funcdesc}
 
-\begin{funcdesc}{DebugStr}{message \optional{\, object}}
+\begin{funcdesc}{DebugStr}{message \optional{, object}}
 Drop to the low-level debugger with message \var{message}. The
 optional \var{object} argument is not used, but can easily be
 inspected from the debugger.
@@ -86,7 +85,7 @@ system. It is intended mainly for developers of Python extension
 modules.
 \end{funcdesc}
 
-\begin{funcdesc}{openrf}{name \optional{\, mode}}
+\begin{funcdesc}{openrf}{name \optional{, mode}}
 Open the resource fork of a file. Arguments are the same as for the
 builtin function \code{open}. The object returned has file-like
 semantics, but it is not a python file object, so there may be subtle
