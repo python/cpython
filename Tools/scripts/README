@@ -43,6 +43,7 @@ suff.py			Sort a list of files by suffix
 sum5.py			Print md5 checksums of files
 tabnanny.py		Check for ambiguous indentation (Tim Peters)
 tabpolice.py		Check for ambiguous indentation (GvR)
+texcheck.py             Validate Python LaTeX formatting (Raymond Hettinger)
 texi2html.py		Convert GNU texinfo files into HTML
 treesync.py		Synchronize source trees (very ideosyncratic)
 untabify.py		Replace tabs with spaces in argument files
