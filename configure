@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.22 
+# From configure.in Revision: 1.24 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.4 
@@ -1216,10 +1216,10 @@ fi
 echo $ac_n "checking MACHDEP""... $ac_c" 1>&6
 if test -z "$MACHDEP"
 then
-	ac_sys_system=`uname -s | tr -d '[/ ]' | tr '[A-Z]' '[a-z]'`
-	ac_sys_release=`uname -r | tr -d '[/ ]' | sed 's/\..*//'`
+	ac_sys_system=`uname -s | tr -d '/ ' | tr '[A-Z]' '[a-z]'`
+	ac_sys_release=`uname -r | tr -d '/ ' | sed 's/\..*//'`
 	ac_sys_cpu=`(uname -p 2>/dev/null || uname -m) |
-		     tr '[A-Z]' '[-a-z]'`
+		     tr '[A-Z]' '[a-z]'`
 ##	MACHDEP="$ac_sys_system$ac_sys_release$ac_sys_cpu"
 	MACHDEP="$ac_sys_system$ac_sys_release"
 	case MACHDEP in
