@@ -300,7 +300,8 @@ convertenviron()
 		if (v == NULL)
 			continue;
 		*p = '\0';
-		(void) PyDict_SetItemString(d, *e, v);
+		if (PyDict_GetItemString(d, *e) == NULL)
+			(void) PyDict_SetItemString(d, *e, v);
 		*p = '=';
 		Py_DECREF(v);
 	}
