@@ -312,8 +312,6 @@ HP PA-RISC 2.0: A recent bug report (http://www.python.org/sf/546117)
 	in the optimizer that break Python.  Compiling without
 	optimization solves the problems.
 
-Minix:  When using ack, use "CC=cc AR=aal RANLIB=: ./configure"!
-
 SCO:	The following apply to SCO 3 only; Python builds out of the box
 	on SCO 5 (or so we've heard).
 
