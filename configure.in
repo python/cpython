@@ -805,6 +805,15 @@ else
     LIBS="$LIBS -lthread"
     LIBOBJS="$LIBOBJS thread.o"
     USE_THREAD_MODULE=""])
+
+    if test "$USE_THREAD_MODULE" != "#"
+    then
+        # If the above checks didn't disable threads, (at least) OSF1
+        # needs this '-threads' argument during linking.
+        case $ac_sys_system in
+        OSF1) LDLAST=-threads;;
+        esac
+    fi
 fi
 
 # Check for GC support
