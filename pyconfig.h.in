@@ -321,6 +321,9 @@
 /* The number of bytes in a wchar_t.  */
 #undef SIZEOF_WCHAR_T
 
+/* Define if you have the _getpty function.  */
+#undef HAVE__GETPTY
+
 /* Define if you have the alarm function.  */
 #undef HAVE_ALARM
 
@@ -422,9 +425,6 @@
 
 /* Define if you have the getpriority function.  */
 #undef HAVE_GETPRIORITY
-
-/* Define if you have the _getpty function.  */
-#undef HAVE__GETPTY
 
 /* Define if you have the getpwent function.  */
 #undef HAVE_GETPWENT
@@ -597,17 +597,20 @@
 /* Define if you have the uname function.  */
 #undef HAVE_UNAME
 
+/* Define if you have the unsetenv function.  */
+#undef HAVE_UNSETENV
+
 /* Define if you have the waitpid function.  */
 #undef HAVE_WAITPID
 
-/* Define if you have the <db_185.h> header file.  */
-#undef HAVE_DB_185_H
+/* Define if you have the <db.h> header file.  */
+#undef HAVE_DB_H
 
 /* Define if you have the <db1/ndbm.h> header file.  */
 #undef HAVE_DB1_NDBM_H
 
-/* Define if you have the <db.h> header file.  */
-#undef HAVE_DB_H
+/* Define if you have the <db_185.h> header file.  */
+#undef HAVE_DB_185_H
 
 /* Define if you have the <dirent.h> header file.  */
 #undef HAVE_DIRENT_H

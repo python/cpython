@@ -354,6 +354,14 @@ except NameError:
 else:
     import UserDict
 
+    # Fake unsetenv() for Windows
+    # not sure about os2 and dos here but 
+    # I'm guessing they are the same.
+
+    if name in ('os2', 'nt', 'dos'):
+        def unsetenv(key):
+            putenv(key, "")
+
     if name == "riscos":
         # On RISC OS, all env access goes through getenv and putenv
         from riscosenviron import _Environ
@@ -370,8 +378,15 @@ else:
                 self.data[key.upper()] = item
             def __getitem__(self, key):
                 return self.data[key.upper()]
-            def __delitem__(self, key):
-                del self.data[key.upper()]
+            try:
+                unsetenv
+            except NameError:
+                def __delitem__(self, key):
+                    del self.data[key.upper()]
+            else:
+                def __delitem__(self, key):
+                    unsetenv(key)
+                    del self.data[key.upper()]
             def has_key(self, key):
                 return self.data.has_key(key.upper())
             def get(self, key, failobj=None):
@@ -391,6 +406,15 @@ else:
             def update(self, dict):
                 for k, v in dict.items():
                     self[k] = v
+            try:
+                unsetenv
+            except NameError:
+                pass
+            else:
+                def __delitem__(self, key):
+                    unsetenv(key)
+                    del self.data[key]
+                
 
     environ = _Environ(environ)
 
