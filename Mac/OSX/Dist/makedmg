@@ -4,7 +4,7 @@
 #
 # usage: makedmg src dst name
 #
-# (C)opyright 2002 Frank Vercruesse
+# Donated by Frank Vercruesse
 
 
 $hdiUtilExec = "/usr/bin/hdiutil";
