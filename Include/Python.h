@@ -99,6 +99,7 @@
 #include "sliceobject.h"
 #include "cellobject.h"
 #include "iterobject.h"
+#include "genobject.h"
 #include "descrobject.h"
 #include "weakrefobject.h"
 

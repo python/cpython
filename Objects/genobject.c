@@ -44,7 +44,7 @@ gen_iternext(PyGenObject *gen)
 	f->f_back = tstate->frame;
 
 	gen->gi_running = 1;
-	result = PyEval_EvaluateFrame((PyObject *)f);
+	result = PyEval_EvalFrame(f);
 	gen->gi_running = 0;
 
 	/* Don't keep the reference to f_back any longer than necessary.  It

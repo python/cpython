@@ -10,7 +10,6 @@
 
 #include "compile.h"
 #include "frameobject.h"
-#include "genobject.h"
 #include "eval.h"
 #include "opcode.h"
 #include "structmember.h"
@@ -49,7 +48,6 @@ void dump_tsc(int opcode, int ticked, uint64 inst0, uint64 inst1,
 typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
-static PyObject *eval_frame(PyFrameObject *);
 #ifdef WITH_TSC
 static PyObject *call_function(PyObject ***, int, uint64*, uint64*);
 #else
@@ -458,8 +456,8 @@ PyEval_EvalCode(PyCodeObject *co, PyObject *globals, PyObject *locals)
 
 /* Interpreter main loop */
 
-static PyObject *
-eval_frame(PyFrameObject *f)
+PyObject *
+PyEval_EvalFrame(PyFrameObject *f)
 {
 #ifdef DXPAIRS
 	int lastopcode = 0;
@@ -2455,8 +2453,8 @@ fast_yield:
 }
 
 /* this is gonna seem *real weird*, but if you put some other code between
-   eval_frame() and PyEval_EvalCodeEx() you will need to adjust the test in
-   the if statement in Misc/gdbinit:ppystack */
+   PyEval_EvalFrame() and PyEval_EvalCodeEx() you will need to adjust
+	the test in the if statement in Misc/gdbinit:ppystack */
 
 PyObject *
 PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
@@ -2684,7 +2682,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		return PyGen_New(f);
 	}
 
-        retval = eval_frame(f);
+        retval = PyEval_EvalFrame(f);
 
   fail: /* Jump here from prelude on failure */
 
@@ -3415,12 +3413,6 @@ PyEval_GetFuncDesc(PyObject *func)
 	}
 }
 
-PyObject *
-PyEval_EvaluateFrame(PyObject *fo)
-{
-	return eval_frame((PyFrameObject *)fo);
-}
-
 #define EXT_POP(STACK_POINTER) (*--(STACK_POINTER))
 
 static void
@@ -3597,7 +3589,7 @@ fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
 			Py_INCREF(*stack);
 			fastlocals[i] = *stack++;
 		}
-		retval = eval_frame(f);
+		retval = PyEval_EvalFrame(f);
 		assert(tstate != NULL);
 		++tstate->recursion_depth;
 		Py_DECREF(f);
