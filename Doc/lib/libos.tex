@@ -700,13 +700,32 @@ the client opens it for writing.  Note that \function{mkfifo()}
 doesn't open the FIFO --- it just creates the rendezvous point.
 \end{funcdesc}
 
-\begin{funcdesc}{mknod}{path\optional{, mode=0600, major, minor}}
+\begin{funcdesc}{mknod}{path\optional{, mode=0600, device}}
 Create a filesystem node (file, device special file or named pipe)
-named filename. mode specifies both the permissions to use and the
-type of node to be created, being combined (bitwise OR) with one of
-S_IFREG, S_IFCHR, S_IFBLK, and S_IFIFO (those constants are available
-in \module{stat}). For S_IFCHR and S_IFBLK, major and minor define the
-newly created device special file, otherwise they are ignored.
+named filename. \var{mode} specifies both the permissions to use and
+the type of node to be created, being combined (bitwise OR) with one
+of S_IFREG, S_IFCHR, S_IFBLK, and S_IFIFO (those constants are
+available in \module{stat}). For S_IFCHR and S_IFBLK, \var{device}
+defines the newly created device special file (probably using
+\function{os.makedev()}), otherwise it is ignored.
+
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{major}{device}
+Extracts a device major number from a raw device number.
+
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{minor}{device}
+Extracts a device minor number from a raw device number.
+
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{makedev}{major, minor}
+Composes a raw device number from the major and minor device numbers.
 
 \versionadded{2.3}
 \end{funcdesc}

@@ -277,8 +277,15 @@ extern int lstat(const char *, struct stat *);
 #	define STRUCT_STAT struct stat
 #endif
 
+#if defined(MAJOR_IN_MKDEV) 
+#include <sys/mkdev.h>
+#else
+#if defined(MAJOR_IN_SYSMACROS)
+#include <sys/sysmacros.h>
+#endif
 #if defined(HAVE_MKNOD) && defined(HAVE_SYS_MKDEV_H)
 #include <sys/mkdev.h>
+#endif
 #endif
 
 /* Return a dictionary corresponding to the POSIX environment table */
@@ -5081,13 +5088,13 @@ posix_mkfifo(PyObject *self, PyObject *args)
 
 #if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
 PyDoc_STRVAR(posix_mknod__doc__,
-"mknod(filename, [, mode=0600, major, minor])\n\n\
+"mknod(filename, [, mode=0600, device])\n\n\
 Create a filesystem node (file, device special file or named pipe)\n\
 named filename. mode specifies both the permissions to use and the\n\
 type of node to be created, being combined (bitwise OR) with one of\n\
 S_IFREG, S_IFCHR, S_IFBLK, and S_IFIFO. For S_IFCHR and S_IFBLK,\n\
-major and minor define the newly created device special file, otherwise\n\
-they are ignored.");
+device defines the newly created device special file (probably using\n\
+os.makedev()), otherwise it is ignored.");
 
 
 static PyObject *
@@ -5095,14 +5102,12 @@ posix_mknod(PyObject *self, PyObject *args)
 {
 	char *filename;
 	int mode = 0600;
-	int major = 0;
-	int minor = 0;
+	int device = 0;
 	int res;
-	if (!PyArg_ParseTuple(args, "s|iii:mknod", &filename,
-			      &mode, &major, &minor))
+	if (!PyArg_ParseTuple(args, "s|iii:mknod", &filename, &mode, &device))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	res = mknod(filename, mode, makedev(major, minor));
+	res = mknod(filename, mode, device);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return posix_error();
@@ -5110,6 +5115,47 @@ posix_mknod(PyObject *self, PyObject *args)
 	return Py_None;
 }
 #endif
+
+#ifdef HAVE_DEVICE_MACROS
+PyDoc_STRVAR(posix_major__doc__,
+"major(device) -> major number\n\
+Extracts a device major number from a raw device number.");
+
+static PyObject *
+posix_major(PyObject *self, PyObject *args)
+{
+	int device;
+	if (!PyArg_ParseTuple(args, "i:major", &device))
+		return NULL;
+	return PyInt_FromLong((long)major(device));
+}
+
+PyDoc_STRVAR(posix_minor__doc__,
+"minor(device) -> minor number\n\
+Extracts a device minor number from a raw device number.");
+
+static PyObject *
+posix_minor(PyObject *self, PyObject *args)
+{
+	int device;
+	if (!PyArg_ParseTuple(args, "i:minor", &device))
+		return NULL;
+	return PyInt_FromLong((long)minor(device));
+}
+
+PyDoc_STRVAR(posix_makedev__doc__,
+"makedev(major, minor) -> device number\n\
+Composes a raw device number from the major and minor device numbers.");
+
+static PyObject *
+posix_makedev(PyObject *self, PyObject *args)
+{
+	int major, minor;
+	if (!PyArg_ParseTuple(args, "ii:makedev", &major, &minor))
+		return NULL;
+	return PyInt_FromLong((long)makedev(major, minor));
+}
+#endif /* device macros */
 
 
 #ifdef HAVE_FTRUNCATE
@@ -6904,6 +6950,11 @@ static PyMethodDef posix_methods[] = {
 #endif
 #if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
 	{"mknod",	posix_mknod, METH_VARARGS, posix_mknod__doc__},
+#endif
+#ifdef HAVE_DEVICE_MACROS
+	{"major",	posix_major, METH_VARARGS, posix_major__doc__},
+	{"minor",	posix_minor, METH_VARARGS, posix_minor__doc__},
+	{"makedev",	posix_makedev, METH_VARARGS, posix_makedev__doc__},
 #endif
 #ifdef HAVE_FTRUNCATE
 	{"ftruncate",	posix_ftruncate, METH_VARARGS, posix_ftruncate__doc__},
