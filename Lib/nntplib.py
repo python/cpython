@@ -133,6 +133,16 @@ class NNTP:
                     readermode_afterauth = 1
                 else:
                     raise
+        # If no login/password was specified, try to get them from ~/.netrc
+        # Presume that if .netc has an entry, NNRP authentication is required.
+        if not user:
+            import netrc
+            credentials = netrc.netrc()
+            auth = credentials.authenticators(host)
+            if auth:
+                user = auth[0]
+                password = auth[2]
+        # Perform NNRP authentication if needed.
         if user:
             resp = self.shortcmd('authinfo user '+user)
             if resp[:3] == '381':
@@ -555,9 +565,19 @@ class NNTP:
         return resp
 
 
-def _test():
-    """Minimal test function."""
-    s = NNTP('news', readermode='reader')
+# Test retrieval when rubn as a script.
+# Assumption: if there's a local news server, it's called 'news'.
+# Assumption: if user queries a remote news server, it's named
+# in the environment variable NNTPSERVER (used by slrn and kin)
+# and we want readermode off.
+if __name__ == '__main__':
+    import os
+    newshost = 'news' and os.environ["NNTPSERVER"]
+    if newshost.find('.') == -1:
+        mode = 'readermode'
+    else:
+        mode = None
+    s = NNTP(newshost, readermode=mode)
     resp, count, first, last, name = s.group('comp.lang.python')
     print resp
     print 'Group', name, 'has', count, 'articles, range', first, 'to', last
@@ -568,7 +588,3 @@ def _test():
     resp = s.quit()
     print resp
 
-
-# Run the test when run as a script
-if __name__ == '__main__':
-    _test()
