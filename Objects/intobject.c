@@ -208,10 +208,9 @@ PyInt_FromString(char *s, char **pend, int base)
 		return NULL;
 	}
 	else if (errno != 0) {
-		PyOS_snprintf(buffer, sizeof(buffer),
-			      "int() literal too large: %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		return NULL;
+		if (err_ovf("string/unicode conversion"))
+			return NULL;
+		return PyLong_FromString(s, pend, base);
 	}
 	if (pend)
 		*pend = end;
@@ -222,16 +221,19 @@ PyInt_FromString(char *s, char **pend, int base)
 PyObject *
 PyInt_FromUnicode(Py_UNICODE *s, int length, int base)
 {
-	char buffer[256];
+	PyObject *result;
+	char *buffer = PyMem_MALLOC(length+1);
 
-	if (length >= sizeof(buffer)) {
-		PyErr_SetString(PyExc_ValueError,
-				"int() literal too large to convert");
+	if (buffer == NULL)
+		return NULL;
+
+	if (PyUnicode_EncodeDecimal(s, length, buffer, NULL)) {
+		PyMem_FREE(buffer);
 		return NULL;
 	}
-	if (PyUnicode_EncodeDecimal(s, length, buffer, NULL))
-		return NULL;
-	return PyInt_FromString(buffer, NULL, base);
+	result = PyInt_FromString(buffer, NULL, base);
+	PyMem_FREE(buffer);
+	return result;
 }
 #endif
 

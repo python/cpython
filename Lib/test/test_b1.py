@@ -435,10 +435,8 @@ if int(s)+1 != -sys.maxint:
     raise TestFailed, "int(%s)" % `s`
 try:
     int(s[1:])
-except ValueError:
-    pass
-else:
-    raise TestFailed, "int(%s)" % `s[1:]` + " should raise ValueError"
+except:
+    raise TestFailed, "int(%s)" % `s[1:]` + " should return long"
 try:
     int(1e100)
 except OverflowError:
@@ -468,9 +466,12 @@ try: int('53', 40)
 except ValueError: pass
 else: raise TestFailed("int('53', 40) didn't raise ValueError")
 
-try: int('1' * 512)
-except ValueError: pass
-else: raise TestFailed("int('1' * 512) didn't raise ValueError")
+try: int('1' * 600)
+except: raise TestFailed("int('1' * 600) didn't return long")
+
+if have_unicode:
+	try: int(unichr(0x661) * 600)
+	except: raise TestFailed("int('\\u0661' * 600) didn't return long")
 
 try: int(1, 12)
 except TypeError: pass
