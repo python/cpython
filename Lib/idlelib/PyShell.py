@@ -2,7 +2,7 @@
 
 # changes by dscherer@cmu.edu
 
-#   the main() function has been replaced by a whole class, in order to
+#     The main() function has been replaced by a whole class, in order to
 #     address the constraint that only one process can sit on the port
 #     hard-coded into the loader.
 
@@ -13,12 +13,14 @@
 #     line) to do.  (Think netscape -remote).  The handling of command line
 #     arguments for remotes is still very incomplete.
 
-#   default behavior (no command line options) is to NOT start the Python
-#     Shell.  If files are specified, they are opened, otherwise a single
-#     blank editor window opens.
+#     Default behavior (no command line options) is to open an editor window
+#     instead of starting the Python Shell.  However, if called as
+#     Pyshell.main(0), the Shell will be started instead of the editor window.
 
-#   If any command line -options are specified, a shell does appear.  This
-#     is necessary to make the current semantics of the options make sense.
+#     In the default editor mode, if files are specified, they are opened.
+
+#     If any command line options are specified, a shell does appear, and if
+#     the -e option is used, both a shell and an editor window open.
 
 import os
 import spawn
@@ -725,11 +727,11 @@ class usageError:
     def __repr__(self): return self.string
 
 class main:
-    def __init__(self):
+    def __init__(self, noshell=1):
         try:
             self.server = protocol.Server(connection_hook = self.address_ok)
             protocol.publish( 'IDLE', self.connect )
-            self.main( sys.argv[1:] )
+            self.main(sys.argv[1:], noshell)
             return
         except protocol.connectionLost:
             try:
@@ -775,11 +777,9 @@ class main:
         if not args:
             flist.new()
 
-    def main( self, argv ):
+    def main(self, argv, noshell):
         cmd = None
         edit = 0
-        noshell = 1
-    
         debug = 0
         startup = 0
     
