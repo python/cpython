@@ -545,22 +545,13 @@ users), and a fairly simple standard Python installation.  Thus, only a
 \longprogramopt{prefix} option is needed.  It defines the installation
 base, and files are installed under it as follows:
 
-\XXX{how do MacPython users run the interpreter with command-line args?}
-
-\installscheme{prefix}{:Lib}
-              {prefix}{:Mac:PlugIns}
+\installscheme{prefix}{:Lib:site-packages}
+              {prefix}{:Lib:site-packages}
               {prefix}{:Scripts}
               {prefix}{:Data}
 
-\XXX{Corran Webster says: ``Modules are found in either \file{:Lib} or
-\file{:Mac:Lib}, while extensions usually go in
-\file{:Mac:PlugIns}''---does this mean that non-pure distributions should
-be divided between \file{:Mac:PlugIns} and \file{:Mac:Lib}?  If so, that
-changes the granularity at which we care about modules: instead of
-``modules from pure distributions'' and ``modules from non-pure
-distributions'', it becomes ``modules from pure distributions'',
-``Python modules from non-pure distributions'', and ``extensions from
-non-pure distributions''.  Is this necessary?!?}
+See section~\ref{platform-variations} for information on supplying
+command-line arguments to the setup script with MacPython.
 
 
 \section{Custom Installation}
