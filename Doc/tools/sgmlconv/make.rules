@@ -12,18 +12,20 @@ ESIS2XML=	$(TOOLSDIR)/sgmlconv/esis2sgml.py --xml
 FIXGES=		$(TOOLSDIR)/sgmlconv/fixgenents.sh
 LATEX2ESIS=	$(TOOLSDIR)/sgmlconv/latex2esis.py
 
-CUTCRUFT=	grep -v '^<?xml version="1.0"?>$$'
 
-
+ESISTARGETS=	$(patsubst %.tex,%.esis,$(wildcard *.tex))
 XMLTARGETS=	$(patsubst %.tex,%.xml,$(wildcard *.tex))
 
-.SUFFIXES: .tex .xml
+.SUFFIXES: .esis .tex .xml
 
-.tex.xml:
-	$(LATEX2ESIS) $< | $(DOCFIXER) | $(CUTCRUFT) | $(FIXGES) > $@
+.tex.esis:
+	$(LATEX2ESIS) $< $@
 
+.esis.xml:
+	$(DOCFIXER) $< | $(FIXGES) > $@
 
 all:	$(XMLTARGETS)
 
 
-$(XMLTARGETS): $(DOCFIXER) $(LATEX2ESIS) $(FIXGES)
+$(ESISTARGETS): $(LATEX2ESIS)
+$(XMLTARGETS): $(DOCFIXER) $(FIXGES)
