@@ -55,16 +55,14 @@ this mode. For example, it is enabled by default with recent versions
 of Irix, but with Solaris 2.6 and 2.7 you need to do something like:
 
 \begin{verbatim}
-CFLAGS="`getconf LFS_CFLAGS`" OPT="-g -O2 $CFLAGS" \
-        ./configure
-\end{verbatim} % $ <-- bow to font-lock
+CC="cc `getconf LFS_CFLAGS`" ./configure
+\end{verbatim}
 
 On large-file-capable Linux systems, this might work:
 
 \begin{verbatim}
-CFLAGS='-D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64' OPT="-g -O2 $CFLAGS" \
-        ./configure
-\end{verbatim} % $ <-- bow to font-lock
+CC='gcc -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64' ./configure
+\end{verbatim}
 
 
 \subsection{Module Contents \label{posix-contents}}
