@@ -16,7 +16,7 @@
 # Date objects support one visible method, date.weekday().  This returns
 # the day of the week the date falls on, as a string.
 #
-# Date objects also have 4 (conceptually) read-only data attributes:
+# Date objects also have 4 read-only data attributes:
 #   .month  in 1..12
 #   .day    in 1..31
 #   .year   int or long int
@@ -32,6 +32,11 @@
 
 # Tim Peters   tim@ksr.com
 # not speaking for Kendall Square Research Corp
+
+# Adapted to Python 1.1 (where some hacks to overcome coercion are unnecessary)
+# by Guido van Rossum
+
+# vi:set tabsize=8:
 
 _MONTH_NAMES = [ 'January', 'February', 'March', 'April', 'May',
 		 'June', 'July', 'August', 'September', 'October',
@@ -81,6 +86,7 @@ def _num2date( n ):		# return date with ordinal n
 	raise TypeError, 'argument must be integer: ' + `type(n)`
 
     ans = Date(1,1,1)	# arguments irrelevant; just getting a Date obj
+    del ans.ord, ans.month, ans.day, ans.year # un-initialize it
     ans.ord = n
 
     n400 = (n-1)/_DI400Y		# # of 400-year blocks preceding
@@ -93,7 +99,7 @@ def _num2date( n ):		# return date with ordinal n
     year, n = year + more, int(n - dby)
 
     try: year = int(year)		# chop to int, if it fits
-    except ValueError: pass
+    except (ValueError, OverflowError): pass
 
     month = min( n/29 + 1, 12 )
     dbm = _days_before_month( month, year )
@@ -118,6 +124,12 @@ class Date:
 	self.month, self.day, self.year = month, day, year
 	self.ord = _date2num( self )
 
+    # don't allow setting existing attributes
+    def __setattr__( self, name, value ):
+	if self.__dict__.has_key(name):
+	    raise AttributeError, 'read-only attribute ' + name
+	self.__dict__[name] = value
+
     def __cmp__( self, other ):
 	return cmp( self.ord, other.ord )
 
@@ -132,51 +144,26 @@ class Date:
 	      self.day,
 	      _MONTH_NAMES[self.month-1] ) + `self.year`
 
-    # automatic coercion is a pain for date arithmetic, since e.g.
-    # date-date and date-int mean different things.  So, in order to
-    # sneak integers past Python's coercion rules without losing the info
-    # that they're really integers (& not dates!), integers are disguised
-    # as instances of the derived class _DisguisedInt.  That this works
-    # relies on undocumented behavior of Python's coercion rules.
-    def __coerce__( self, other ):
-	if type(other) in _INT_TYPES:
-	    return self, _DisguisedInt(other)
-	# if another Date, fine
-	if type(other) is type(self) and other.__class__ is Date:
-	    return self, other
-
-    # Python coerces int+date, but not date+int; in the former case,
-    # _DisguisedInt.__add__ handles it, so we only need to do
-    # date+int here
+    # Python 1.1 coerces neither int+date nor date+int
     def __add__( self, n ):
 	if type(n) not in _INT_TYPES:
 	    raise TypeError, 'can\'t add ' + `type(n)` + ' to date'
 	return _num2date( self.ord + n )
+    __radd__ = __add__ # handle int+date
 
-    # Python coerces all of int-date, date-int and date-date; the first
-    # case winds up in _DisguisedInt.__sub__, leaving the latter two
-    # for us
+    # Python 1.1 coerces neither date-int nor date-date
     def __sub__( self, other ):
-	if other.__class__ is _DisguisedInt:	# date-int
-	    return _num2date( self.ord - other.ord )
+	if type(other) in _INT_TYPES:		# date-int
+	    return _num2date( self.ord - other )
 	else:
 	    return self.ord - other.ord		# date-date
 
+    # complain about int-date
+    def __rsub__( self, other ):
+	raise TypeError, 'Can\'t subtract date from integer'
+
     def weekday( self ):
 	return _num2day( self.ord )
-
-# see comments before Date.__add__
-class _DisguisedInt( Date ):
-    def __init__( self, n ):
-	self.ord = n
-
-    # handle int+date
-    def __add__( self, other ):
-	return other.__add__( self.ord )
-
-    # complain about int-date
-    def __sub__( self, other ):
-	raise TypeError, 'Can\'t subtract date from integer'
 
 def today():
     import time
@@ -189,9 +176,7 @@ def test( firstyear, lastyear ):
     b = Date(9,30,1914)
     if `a` != 'Tue 30 Sep 1913':
 	raise DateTestError, '__repr__ failure'
-    if (not a < b) or a == b or a > b or b != b or \
-	  a != 698982 or 698982 != a or \
-	  (not a > 5) or (not 5 < a):
+    if (not a < b) or a == b or a > b or b != b:
 	raise DateTestError, '__cmp__ failure'
     if a+365 != b or 365+a != b:
 	raise DateTestError, '__add__ failure'
