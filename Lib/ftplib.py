@@ -303,6 +303,10 @@ class FTP:
 			raise error_reply, resp
 		self.voidcmd('RNTO ' + toname)
 
+	# Change to a directory
+	def cwd(self, dirname):
+		self.voidcmd('CWD ' + dirname)
+
 	# Make a directory, return its full pathname
 	def mkd(self, dirname):
 		resp = self.sendcmd('MKD ' + dirname)
