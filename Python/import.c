@@ -149,10 +149,14 @@ get_module(m, name, m_ret)
 	
 	fp = open_module(name, ".py", namebuf);
 	if (fp == NULL) {
-		if (m == NULL)
-			err_setstr(NameError, name);
-		else
-			err_setstr(IOError, "no module source file");
+		if (m == NULL) {
+			sprintf(namebuf, "no module named %.200s", name);
+			err_setstr(ImportError, namebuf);
+		}
+		else {
+			sprintf(namebuf, "no source for module %.200s", name);
+			err_setstr(ImportError, namebuf);
+		}
 		return NULL;
 	}
 	/* Get mtime -- always useful */
