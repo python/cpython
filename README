@@ -666,6 +666,15 @@ Modules/getpath.o.
 --with-libs='libs': Add 'libs' to the LIBS that the python interpreter
 	is linked against.
 
+--with-cxx=<compiler>: Some C++ compilers require that main() is
+        compiled with the C++ if there is any C++ code in the application.
+        Specifically, g++ on a.out systems may require that to support
+        construction of global objects. With this option, the main() function
+        of Python will be compiled with <compiler>; use that only if you
+        plan to use C++ extension modules, and if your compiler requires
+        compilation of main() as a C++ program.
+
+
 --with-pydebug:  Enable additional debugging code to help track down
 	memory management problems.  This allows printing a list of all
 	live objects when the interpreter terminates.
