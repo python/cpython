@@ -1,7 +1,6 @@
 # Module 'shutil' -- utility functions usable in a shell-like program
 
-import posix
-import path
+import os
 
 MODEBITS = 010000	# Lower 12 mode bits
 # Change this to 01000 (9 mode bits) to avoid copying setuid etc.
@@ -19,17 +18,17 @@ def copyfile(src, dst):
 # Copy mode bits from src to dst
 #
 def copymode(src, dst):
-	st = posix.stat(src)
+	st = os.stat(src)
 	mode = divmod(st[0], MODEBITS)[1]
-	posix.chmod(dst, mode)
+	os.chmod(dst, mode)
 
 # Copy all stat info (mode bits, atime and mtime) from src to dst
 #
 def copystat(src, dst):
-	st = posix.stat(src)
+	st = os.stat(src)
 	mode = divmod(st[0], MODEBITS)[1]
-	posix.chmod(dst, mode)
-	posix.utimes(dst, st[7:9])
+	os.chmod(dst, mode)
+	os.utime(dst, st[7:9])
 
 # Copy data and mode bits ("cp src dst")
 #
@@ -47,24 +46,24 @@ def copy2(src, dst):
 # The destination must not already exist.
 #
 def copytree(src, dst):
-	names = posix.listdir(src)
-	posix.mkdir(dst, 0777)
-	dot_dotdot = '.', '..'
+	names = os.listdir(src)
+	os.mkdir(dst, 0777)
+	dot_dotdot = (os.curdir, os.pardir)
 	for name in names:
 		if name not in dot_dotdot:
-			srcname = path.join(src, name)
-			dstname = path.join(dst, name)
+			srcname = os.path.join(src, name)
+			dstname = os.path.join(dst, name)
 			#print 'Copying', srcname, 'to', dstname
 			try:
-				#if path.islink(srcname):
-				#	linkto = posix.readlink(srcname)
-				#	posix.symlink(linkto, dstname)
-				#elif path.isdir(srcname):
-				if path.isdir(srcname):
+				#if os.path.islink(srcname):
+				#	linkto = os.readlink(srcname)
+				#	os.symlink(linkto, dstname)
+				#elif os.path.isdir(srcname):
+				if os.path.isdir(srcname):
 					copytree(srcname, dstname)
 				else:
 					copy2(srcname, dstname)
 				# XXX What about devices, sockets etc.?
-			except posix.error, why:
+			except os.error, why:
 				print 'Could not copy', srcname, 'to', dstname,
 				print '(', why[1], ')'
