@@ -1,0 +1,3 @@
+test_struct
+inconsistent sizes
+expected struct.error not caught
