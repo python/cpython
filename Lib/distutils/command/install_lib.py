@@ -8,7 +8,7 @@ from distutils.util import copy_tree
 
 class install_lib (Command):
 
-    description = "install pure Python modules"
+    description = "install all Python modules (extensions and pure Python)"
 
     user_options = [
         ('install-dir=', 'd', "directory to install to"),
