@@ -236,18 +236,12 @@ def rewrite_descriptor(doc, descriptor):
     pos = skip_leading_nodes(children)
     if pos < len(children):
         child = children[pos]
-        if child.get_nodeName() == "args":
-##             bwrite("found <args> in descriptor, moving to <signature>\n")
-##             ewrite(descriptor.toxml() + "\n---\n")
-            # create an <args> in <signature>:
-            args = doc.createElement("args")
-            argchildren = []
-            map(argchildren.append, child.childNodes)
-            for n in argchildren:
-                child.removeChild(n)
-                args.appendChild(n)
-            signature.appendChild(doc.createTextNode("\n    "))
-            signature.appendChild(args)
+        if child.nodeName == "args":
+            # move <args> to <signature>, or remove if empty:
+            child.parentNode.removeChild(child)
+            if len(child.childNodes):
+                signature.appendChild(doc.createTextNode("\n    "))
+                signature.appendChild(child)
     signature.appendChild(doc.createTextNode("\n  "))
     # 3, 4.
     pos = skip_leading_nodes(children, pos)
@@ -907,6 +901,32 @@ def fixup_bifuncindexes_chunk(container):
         container.removeChild(entry)
 
 
+def join_adjacent_elements(container, gi):
+    queue = [container]
+    while queue:
+        parent = queue.pop()
+        i = 0
+        children = parent.get_childNodes()
+        nchildren = len(children)
+        while i < (nchildren - 1):
+            child = children[i]
+            if child.nodeName == gi:
+                if children[i+1].nodeName == gi:
+                    ewrite("--- merging two <%s/> elements\n" % gi)
+                    child = children[i]
+                    nextchild = children[i+1]
+                    nextchildren = nextchild.get_childNodes()
+                    while len(nextchildren):
+                        node = nextchildren[0]
+                        nextchild.removeChild(node)
+                        child.appendChild(node)
+                    parent.removeChild(nextchild)
+                    continue
+            if child.nodeType == ELEMENT:
+                queue.append(child)
+            i = i + 1
+
+
 _token_rx = re.compile(r"[a-zA-Z][a-zA-Z0-9.-]*$")
 
 def write_esis(doc, ofp, knownempty):
@@ -970,6 +990,9 @@ def convert(ifp, ofp):
     add_node_ids(fragment)
     fixup_refmodindexes(fragment)
     fixup_bifuncindexes(fragment)
+    # Take care of ugly hacks in the LaTeX markup to avoid LaTeX and
+    # LaTeX2HTML screwing with GNU-style long options (the '--' problem).
+    join_adjacent_elements(fragment, "option")
     #
     d = {}
     for gi in p.get_empties():
