@@ -692,10 +692,10 @@ raised.
 This variant on \samp{s} stores into two C variables, the first one a
 pointer to a character string, the second one its length.  In this
 case the Python string may contain embedded null bytes.  Unicode
-objects and all other read buffer compatible objects pass back a
-reference to the raw internal data representation. In case of Unicode
-objects the pointer points to a null-terminated buffer of 16-bit
-Py_UNICODE (UTF-16) data.
+objects pass back a pointer to the default encoded string version of the
+object if such a conversion is possible. All other read buffer
+compatible objects pass back a reference to the raw internal data
+representation.
 
 \item[\samp{z} (string or \code{None}) {[char *]}]
 Like \samp{s}, but the Python object may also be \code{None}, in which
