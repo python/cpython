@@ -280,12 +280,12 @@ class Random(_random.Random):
         # selections (the pool) in a list or previous selections in a
         # dictionary.
 
-        # When the number of selections is small compared to the population,
-        # then tracking selections is efficient, requiring only a small
-        # dictionary and an occasional reselection.  For a larger number of
-        # selections, the pool tracking method is preferred since the list takes
-        # less space than the dictionary and it doesn't suffer from frequent
-        # reselections.
+        # When the number of selections is small compared to the
+        # population, then tracking selections is efficient, requiring
+        # only a small dictionary and an occasional reselection.  For
+        # a larger number of selections, the pool tracking method is
+        # preferred since the list takes less space than the
+        # dictionary and it doesn't suffer from frequent reselections.
 
         n = len(population)
         if not 0 <= k <= n:
