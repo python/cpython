@@ -37,24 +37,33 @@ should be used as follows:
 
 \begin{enumerate}
 
-\item[1.] Make exactly one call to the \method{putrequest()} method.
+\item Make exactly one call to the \method{putrequest()} method.
 
-\item[2.] Make zero or more calls to the \method{putheader()} method.
+\item Make zero or more calls to the \method{putheader()} method.
 
-\item[3.] Call the \method{endheaders()} method (this can be omitted if
+\item Call the \method{endheaders()} method (this can be omitted if
 step 4 makes no calls).
 
-\item[4.] Optional calls to the \method{send()} method.
+\item Optional calls to the \method{send()} method.
 
-\item[5.] Call the \method{getreply()} method.
+\item Call the \method{getreply()} method.
 
-\item[6.] Call the \method{getfile()} method and read the data off the
+\item Call the \method{getfile()} method and read the data off the
 file object that it returns.
 
 \end{enumerate}
 \end{classdesc}
 
-\subsection{HTTP Objects}
+\begin{datadesc}{HTTP_PORT}
+  The default port for the HTTP protocol (always \code{80}).
+\end{datadesc}
+
+\begin{datadesc}{HTTPS_PORT}
+  The default port for the HTTPS protocol (always \code{443}).
+\end{datadesc}
+
+
+\subsection{HTTP Objects \label{http-objects}}
 
 \class{HTTP} instances have the following methods:
 
@@ -67,8 +76,9 @@ printed.
 
 \begin{methoddesc}{connect}{host\optional{, port}}
 Connect to the server given by \var{host} and \var{port}.  See the
-intro for the default port.  This should be called directly only if
-the instance was instantiated without passing a host.
+introduction to the \refmodule{httplib} module for information on the
+default ports.  This should be called directly only if the instance
+was instantiated without passing a host.
 \end{methoddesc}
 
 \begin{methoddesc}{send}{data}
