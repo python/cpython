@@ -3415,6 +3415,12 @@ conv_confname(arg, valuep, table, tablesize)
 
 #if defined(HAVE_FPATHCONF) || defined(HAVE_PATHCONF)
 static struct constdef  posix_constants_pathconf[] = {
+#ifdef _PC_ABI_AIO_XFER_MAX
+    {"PC_ABI_AIO_XFER_MAX",	_PC_ABI_AIO_XFER_MAX},
+#endif
+#ifdef _PC_ABI_ASYNC_IO
+    {"PC_ABI_ASYNC_IO",	_PC_ABI_ASYNC_IO},
+#endif
 #ifdef _PC_ASYNC_IO
     {"PC_ASYNC_IO",	_PC_ASYNC_IO},
 #endif
@@ -3540,6 +3546,21 @@ posix_pathconf(self, args)
 
 #ifdef HAVE_CONFSTR
 static struct constdef posix_constants_confstr[] = {
+#ifdef _CS_ARCHITECTURE
+    {"CS_ARCHITECTURE",	_CS_ARCHITECTURE},
+#endif
+#ifdef _CS_HOSTNAME
+    {"CS_HOSTNAME",	_CS_HOSTNAME},
+#endif
+#ifdef _CS_HW_PROVIDER
+    {"CS_HW_PROVIDER",	_CS_HW_PROVIDER},
+#endif
+#ifdef _CS_HW_SERIAL
+    {"CS_HW_SERIAL",	_CS_HW_SERIAL},
+#endif
+#ifdef _CS_INITTAB_NAME
+    {"CS_INITTAB_NAME",	_CS_INITTAB_NAME},
+#endif
 #ifdef _CS_LFS64_CFLAGS
     {"CS_LFS64_CFLAGS",	_CS_LFS64_CFLAGS},
 #endif
@@ -3564,8 +3585,23 @@ static struct constdef posix_constants_confstr[] = {
 #ifdef _CS_LFS_LINTFLAGS
     {"CS_LFS_LINTFLAGS",	_CS_LFS_LINTFLAGS},
 #endif
+#ifdef _CS_MACHINE
+    {"CS_MACHINE",	_CS_MACHINE},
+#endif
 #ifdef _CS_PATH
     {"CS_PATH",	_CS_PATH},
+#endif
+#ifdef _CS_RELEASE
+    {"CS_RELEASE",	_CS_RELEASE},
+#endif
+#ifdef _CS_SRPC_DOMAIN
+    {"CS_SRPC_DOMAIN",	_CS_SRPC_DOMAIN},
+#endif
+#ifdef _CS_SYSNAME
+    {"CS_SYSNAME",	_CS_SYSNAME},
+#endif
+#ifdef _CS_VERSION
+    {"CS_VERSION",	_CS_VERSION},
 #endif
 #ifdef _CS_XBS5_ILP32_OFF32_CFLAGS
     {"CS_XBS5_ILP32_OFF32_CFLAGS",	_CS_XBS5_ILP32_OFF32_CFLAGS},
@@ -3614,6 +3650,45 @@ static struct constdef posix_constants_confstr[] = {
 #endif
 #ifdef _CS_XBS5_LPBIG_OFFBIG_LINTFLAGS
     {"CS_XBS5_LPBIG_OFFBIG_LINTFLAGS",	_CS_XBS5_LPBIG_OFFBIG_LINTFLAGS},
+#endif
+#ifdef _MIPS_CS_AVAIL_PROCESSORS
+    {"MIPS_CS_AVAIL_PROCESSORS",	_MIPS_CS_AVAIL_PROCESSORS},
+#endif
+#ifdef _MIPS_CS_BASE
+    {"MIPS_CS_BASE",	_MIPS_CS_BASE},
+#endif
+#ifdef _MIPS_CS_HOSTID
+    {"MIPS_CS_HOSTID",	_MIPS_CS_HOSTID},
+#endif
+#ifdef _MIPS_CS_HW_NAME
+    {"MIPS_CS_HW_NAME",	_MIPS_CS_HW_NAME},
+#endif
+#ifdef _MIPS_CS_NUM_PROCESSORS
+    {"MIPS_CS_NUM_PROCESSORS",	_MIPS_CS_NUM_PROCESSORS},
+#endif
+#ifdef _MIPS_CS_OSREL_MAJ
+    {"MIPS_CS_OSREL_MAJ",	_MIPS_CS_OSREL_MAJ},
+#endif
+#ifdef _MIPS_CS_OSREL_MIN
+    {"MIPS_CS_OSREL_MIN",	_MIPS_CS_OSREL_MIN},
+#endif
+#ifdef _MIPS_CS_OSREL_PATCH
+    {"MIPS_CS_OSREL_PATCH",	_MIPS_CS_OSREL_PATCH},
+#endif
+#ifdef _MIPS_CS_OS_NAME
+    {"MIPS_CS_OS_NAME",	_MIPS_CS_OS_NAME},
+#endif
+#ifdef _MIPS_CS_OS_PROVIDER
+    {"MIPS_CS_OS_PROVIDER",	_MIPS_CS_OS_PROVIDER},
+#endif
+#ifdef _MIPS_CS_PROCESSORS
+    {"MIPS_CS_PROCESSORS",	_MIPS_CS_PROCESSORS},
+#endif
+#ifdef _MIPS_CS_SERIAL
+    {"MIPS_CS_SERIAL",	_MIPS_CS_SERIAL},
+#endif
+#ifdef _MIPS_CS_VENDOR
+    {"MIPS_CS_VENDOR",	_MIPS_CS_VENDOR},
 #endif
 };
 
@@ -3697,6 +3772,12 @@ static struct constdef posix_constants_sysconf[] = {
 #ifdef _SC_2_VERSION
     {"SC_2_VERSION",	_SC_2_VERSION},
 #endif
+#ifdef _SC_ABI_ASYNCHRONOUS_IO
+    {"SC_ABI_ASYNCHRONOUS_IO",	_SC_ABI_ASYNCHRONOUS_IO},
+#endif
+#ifdef _SC_ACL
+    {"SC_ACL",	_SC_ACL},
+#endif
 #ifdef _SC_AIO_LISTIO_MAX
     {"SC_AIO_LISTIO_MAX",	_SC_AIO_LISTIO_MAX},
 #endif
@@ -3718,6 +3799,9 @@ static struct constdef posix_constants_sysconf[] = {
 #ifdef _SC_ATEXIT_MAX
     {"SC_ATEXIT_MAX",	_SC_ATEXIT_MAX},
 #endif
+#ifdef _SC_AUDIT
+    {"SC_AUDIT",	_SC_AUDIT},
+#endif
 #ifdef _SC_AVPHYS_PAGES
     {"SC_AVPHYS_PAGES",	_SC_AVPHYS_PAGES},
 #endif
@@ -3732,6 +3816,9 @@ static struct constdef posix_constants_sysconf[] = {
 #endif
 #ifdef _SC_BC_STRING_MAX
     {"SC_BC_STRING_MAX",	_SC_BC_STRING_MAX},
+#endif
+#ifdef _SC_CAP
+    {"SC_CAP",	_SC_CAP},
 #endif
 #ifdef _SC_CHARCLASS_NAME_MAX
     {"SC_CHARCLASS_NAME_MAX",	_SC_CHARCLASS_NAME_MAX},
@@ -3802,6 +3889,9 @@ static struct constdef posix_constants_sysconf[] = {
 #ifdef _SC_ICACHE_SZ
     {"SC_ICACHE_SZ",	_SC_ICACHE_SZ},
 #endif
+#ifdef _SC_INF
+    {"SC_INF",	_SC_INF},
+#endif
 #ifdef _SC_INT_MAX
     {"SC_INT_MAX",	_SC_INT_MAX},
 #endif
@@ -3811,8 +3901,17 @@ static struct constdef posix_constants_sysconf[] = {
 #ifdef _SC_IOV_MAX
     {"SC_IOV_MAX",	_SC_IOV_MAX},
 #endif
+#ifdef _SC_IP_SECOPTS
+    {"SC_IP_SECOPTS",	_SC_IP_SECOPTS},
+#endif
 #ifdef _SC_JOB_CONTROL
     {"SC_JOB_CONTROL",	_SC_JOB_CONTROL},
+#endif
+#ifdef _SC_KERN_POINTERS
+    {"SC_KERN_POINTERS",	_SC_KERN_POINTERS},
+#endif
+#ifdef _SC_KERN_SIM
+    {"SC_KERN_SIM",	_SC_KERN_SIM},
 #endif
 #ifdef _SC_LINE_MAX
     {"SC_LINE_MAX",	_SC_LINE_MAX},
@@ -3825,6 +3924,9 @@ static struct constdef posix_constants_sysconf[] = {
 #endif
 #ifdef _SC_LONG_BIT
     {"SC_LONG_BIT",	_SC_LONG_BIT},
+#endif
+#ifdef _SC_MAC
+    {"SC_MAC",	_SC_MAC},
 #endif
 #ifdef _SC_MAPPED_FILES
     {"SC_MAPPED_FILES",	_SC_MAPPED_FILES},
@@ -3847,11 +3949,17 @@ static struct constdef posix_constants_sysconf[] = {
 #ifdef _SC_MESSAGE_PASSING
     {"SC_MESSAGE_PASSING",	_SC_MESSAGE_PASSING},
 #endif
+#ifdef _SC_MMAP_FIXED_ALIGNMENT
+    {"SC_MMAP_FIXED_ALIGNMENT",	_SC_MMAP_FIXED_ALIGNMENT},
+#endif
 #ifdef _SC_MQ_OPEN_MAX
     {"SC_MQ_OPEN_MAX",	_SC_MQ_OPEN_MAX},
 #endif
 #ifdef _SC_MQ_PRIO_MAX
     {"SC_MQ_PRIO_MAX",	_SC_MQ_PRIO_MAX},
+#endif
+#ifdef _SC_NACLS_MAX
+    {"SC_NACLS_MAX",	_SC_NACLS_MAX},
 #endif
 #ifdef _SC_NGROUPS_MAX
     {"SC_NGROUPS_MAX",	_SC_NGROUPS_MAX},
@@ -3879,6 +3987,12 @@ static struct constdef posix_constants_sysconf[] = {
 #endif
 #ifdef _SC_NPROCESSORS_ONLN
     {"SC_NPROCESSORS_ONLN",	_SC_NPROCESSORS_ONLN},
+#endif
+#ifdef _SC_NPROC_CONF
+    {"SC_NPROC_CONF",	_SC_NPROC_CONF},
+#endif
+#ifdef _SC_NPROC_ONLN
+    {"SC_NPROC_ONLN",	_SC_NPROC_ONLN},
 #endif
 #ifdef _SC_NZERO
     {"SC_NZERO",	_SC_NZERO},
@@ -3984,6 +4098,9 @@ static struct constdef posix_constants_sysconf[] = {
 #endif
 #ifdef _SC_SIGRT_MIN
     {"SC_SIGRT_MIN",	_SC_SIGRT_MIN},
+#endif
+#ifdef _SC_SOFTPOWER
+    {"SC_SOFTPOWER",	_SC_SOFTPOWER},
 #endif
 #ifdef _SC_SPLIT_CACHE
     {"SC_SPLIT_CACHE",	_SC_SPLIT_CACHE},
@@ -4155,6 +4272,59 @@ posix_sysconf(self, args)
             result = PyInt_FromLong(value);
     }
     return result;
+}
+#endif
+
+
+#ifdef CHECK_CONFNAME_TABLES
+/* This code should not be enabled by default; it's only purpose is to
+ * test the order of constants in the configuration name tables.  The
+ * second function defined here, check_confname_tables(), is called
+ * during module initialization if CHECK_CONFNAME_TABLES is defined.
+ * This only needs to be done when changes are made to the tables.
+ */
+static void
+check_confname_table(table, tablesize, tablename)
+     struct constdef *table;
+     size_t tablesize;
+     char *tablename;
+{
+    if (tablesize > 1) {
+        int i = 0;
+
+        for (; i < (tablesize - 1); ++i) {
+            if (strcmp(table[i].name, table[i + 1].name) >= 0) {
+                char buffer[256];
+
+                snprintf(buffer, sizeof(buffer),
+                         "confname table '%s' out of order!\n", tablename);
+                Py_FatalError(buffer);
+            }
+        }
+    }
+}
+
+static void
+check_confname_tables()
+{
+#if defined(HAVE_FPATHCONF) || defined(HAVE_PATHCONF)
+        check_confname_table(posix_constants_pathconf,
+                             sizeof(posix_constants_pathconf)
+                               / sizeof(struct constdef),
+                             "pathconf");
+#endif
+#ifdef HAVE_CONFSTR
+        check_confname_table(posix_constants_confstr,
+                             sizeof(posix_constants_confstr)
+                               / sizeof(struct constdef),
+                             "confstr");
+#endif
+#ifdef HAVE_SYSCONF
+        check_confname_table(posix_constants_sysconf,
+                             sizeof(posix_constants_sysconf)
+                               / sizeof(struct constdef),
+                             "sysconf");
+#endif
 }
 #endif
 
@@ -4576,4 +4746,8 @@ INITFUNC()
 	PyDict_SetItemString(d, "error", PyExc_OSError);
 
 	posix_putenv_garbage = PyDict_New();
+
+#ifdef CHECK_CONFNAME_TABLES
+        check_confname_tables();
+#endif
 }
