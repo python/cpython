@@ -14,7 +14,8 @@ import sys, os, string
 from types import *
 from distutils.errors import *
 from distutils.ccompiler import \
-     CCompiler, gen_preprocess_options, gen_lib_options
+     CCompiler, gen_preprocess_options, gen_lib_options, \
+     CompileError, LibError, LinkError
 
 
 _can_read_reg = 0
@@ -261,9 +262,12 @@ class MSVCCompiler (CCompiler) :
                 output_opt = "/Fo" + obj
 
                 self.mkpath (os.path.dirname (obj))
-                self.spawn ([self.cc] + compile_opts + pp_opts +
-                            [input_opt, output_opt] +
-                            extra_postargs)
+                try:
+                    self.spawn ([self.cc] + compile_opts + pp_opts +
+                                [input_opt, output_opt] +
+                                extra_postargs)
+                except DistutilsExecError, msg:
+                    raise CompileError, msg
 
         return objects
 
@@ -290,7 +294,11 @@ class MSVCCompiler (CCompiler) :
                 lib_args[:0] = extra_preargs
             if extra_postargs:
                 lib_args.extend (extra_postargs)
-            self.spawn ([self.link] + ld_args)
+            try:
+                self.spawn ([self.link] + ld_args)
+            except DistutilsExecError, msg:
+                raise LibError, msg
+                
         else:
             self.announce ("skipping %s (up-to-date)" % output_filename)
 
@@ -370,7 +378,10 @@ class MSVCCompiler (CCompiler) :
             print "  output_filename =", output_filename
             print "  mkpath'ing:", os.path.dirname (output_filename)
             self.mkpath (os.path.dirname (output_filename))
-            self.spawn ([self.link] + ld_args)
+            try:
+                self.spawn ([self.link] + ld_args)
+            except DistutilsExecError, msg:
+                raise LinkError, msg
 
         else:
             self.announce ("skipping %s (up-to-date)" % output_filename)
@@ -420,7 +431,10 @@ class MSVCCompiler (CCompiler) :
                 ld_args.extend (extra_postargs)
 
             self.mkpath (os.path.dirname (output_filename))
-            self.spawn ([self.link] + ld_args)
+            try:
+                self.spawn ([self.link] + ld_args)
+            except DistutilsExecError, msg:
+                raise LinkError, msg
         else:
             self.announce ("skipping %s (up-to-date)" % output_filename)   
     
