@@ -298,7 +298,8 @@ Extension modules
 
 - cPickle.BadPickleGet is now a class.
 
-- The time stamps in os.stat_result are floating point numbers now.
+- The time stamps in os.stat_result are floating point numbers
+  after stat_float_times has been called.
 
 - If the size passed to mmap.mmap() is larger than the length of the
   file on non-Windows platforms, a ValueError is raised. [SF bug 585792]
