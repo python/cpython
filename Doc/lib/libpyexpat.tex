@@ -1,5 +1,5 @@
 \section{\module{xml.parsers.expat} ---
-         Fast XML parsing using the Expat library}
+         Fast XML parsing using Expat}
 
 \declaremodule{standard}{xml.parsers.expat}
 \modulesynopsis{An interface to the Expat non-validating XML parser.}
@@ -8,8 +8,8 @@
 
 \versionadded{2.0}
 
-The \module{xml.parsers.expat} module is a Python interface to the Expat
-non-validating XML parser.
+The \module{xml.parsers.expat} module is a Python interface to the
+Expat\index{Expat} non-validating XML parser.
 The module provides a single extension type, \class{xmlparser}, that
 represents the current state of an XML parser.  After an
 \class{xmlparser} object has been created, various attributes of the object 
@@ -20,35 +20,48 @@ and markup in the XML document.
 This module uses the \module{pyexpat}\refbimodindex{pyexpat} module to
 provide access to the Expat parser.  Direct use of the
 \module{pyexpat} module is deprecated.
- 
+
+This module provides one exception and one type object:
+
+\begin{excdesc}{error}
+  The exception raised when Expat reports an error.
+\end{excdesc}
+
+\begin{datadesc}{XMLParserType}
+  The type of the return values from the \function{ParserCreate()}
+  function.
+\end{datadesc}
+
+
 The \module{xml.parsers.expat} module contains two functions:
 
 \begin{funcdesc}{ErrorString}{errno}
 Returns an explanatory string for a given error number \var{errno}.
 \end{funcdesc}
 
-\begin{funcdesc}{ParserCreate}{\optional{encoding, namespace_separator}}
+\begin{funcdesc}{ParserCreate}{\optional{encoding\optional{,
+                               namespace_separator}}}
 Creates and returns a new \class{xmlparser} object.  
 \var{encoding}, if specified, must be a string naming the encoding 
 used by the XML data.  Expat doesn't support as many encodings as
 Python does, and its repertoire of encodings can't be extended; it
 supports UTF-8, UTF-16, ISO-8859-1 (Latin1), and ASCII.  
 
-% XXX pyexpat.c should only allow a 1-char string for this parameter
 Expat can optionally do XML namespace processing for you, enabled by
-providing a value for \var{namespace_separator}.  When namespace
-processing is enabled, element type names and attribute names that
-belong to a namespace will be expanded.  The element name 
-passed to the element handlers 
+providing a value for \var{namespace_separator}.  The value must be a
+one-character string; a \exception{ValueError} will be raised if the
+string has an illegal length (\code{None} is considered the same as
+omission).  When namespace processing is enabled, element type names
+and attribute names that belong to a namespace will be expanded.  The
+element name passed to the element handlers
 \function{StartElementHandler()} and \function{EndElementHandler()}
 will be the concatenation of the namespace URI, the namespace
 separator character, and the local part of the name.  If the namespace
-separator is a zero byte (\code{chr(0)}) 
-then the namespace URI and the local part will be
-concatenated without any separator. 
+separator is a zero byte (\code{chr(0)}) then the namespace URI and
+the local part will be concatenated without any separator. 
 
 For example, if \var{namespace_separator} is set to 
-\samp{ }, and the following document is parsed:
+\character{ }, and the following document is parsed:
 
 \begin{verbatim}
 <?xml version="1.0"?>
@@ -72,20 +85,20 @@ elem2
 
 \class{xmlparser} objects have the following methods:
 
-\begin{methoddesc}{Parse}{data \optional{, isfinal}}
+\begin{methoddesc}[xmlparser]{Parse}{data \optional{, isfinal}}
 Parses the contents of the string \var{data}, calling the appropriate
 handler functions to process the parsed data.  \var{isfinal} must be
 true on the final call to this method.    \var{data} can be the empty
 string at any time.
 \end{methoddesc}
 
-\begin{methoddesc}{ParseFile}{file}
+\begin{methoddesc}[xmlparser]{ParseFile}{file}
 Parse XML data reading from the object \var{file}.  \var{file} only
 needs to provide the \method{read(\var{nbytes})} method, returning the
 empty string when there's no more data.
 \end{methoddesc}
 
-\begin{methoddesc}{SetBase}{base}
+\begin{methoddesc}[xmlparser]{SetBase}{base}
 Sets the base to be used for resolving relative URIs in system identifiers in
 declarations.  Resolving relative identifiers is left to the application:
 this value will be passed through as the base argument to the
@@ -93,42 +106,43 @@ this value will be passed through as the base argument to the
 and \function{UnparsedEntityDeclHandler} functions. 
 \end{methoddesc}
 
-\begin{methoddesc}{GetBase}{}
+\begin{methoddesc}[xmlparser]{GetBase}{}
 Returns a string containing the base set by a previous call to
 \method{SetBase()}, or \code{None} if 
 \method{SetBase()} hasn't been called.
 \end{methoddesc}
 
+
 \class{xmlparser} objects have the following attributes:
 
-\begin{datadesc}{returns_unicode} 
+\begin{memberdesc}[xmlparser]{returns_unicode} 
 If this attribute is set to 1, the handler functions will be passed
 Unicode strings.  If \member{returns_unicode} is 0, 8-bit strings
 containing UTF-8 encoded data will be passed to the handlers.
-\end{datadesc} 
+\end{memberdesc}
 
 The following attributes contain values relating to the most recent
 error encountered by an \class{xmlparser} object, and will only have
 correct values once a call to \method{Parse()} or \method{ParseFile()}
 has raised a \exception{xml.parsers.expat.error} exception.
 
-\begin{datadesc}{ErrorByteIndex} 
+\begin{memberdesc}[xmlparser]{ErrorByteIndex} 
 Byte index at which an error occurred.
-\end{datadesc} 
+\end{memberdesc} 
 
-\begin{datadesc}{ErrorCode} 
+\begin{memberdesc}[xmlparser]{ErrorCode} 
 Numeric code specifying the problem.  This value can be passed to the
 \function{ErrorString()} function, or compared to one of the constants
 defined in the \module{errors} object.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{ErrorColumnNumber} 
+\begin{memberdesc}[xmlparser]{ErrorColumnNumber} 
 Column number at which an error occurred.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{ErrorLineNumber}
+\begin{memberdesc}[xmlparser]{ErrorLineNumber}
 Line number at which an error occurred.
-\end{datadesc}
+\end{memberdesc}
 
 Here is the list of handlers that can be set.  To set a handler on an
 \class{xmlparser} object \var{o}, use
@@ -137,76 +151,76 @@ be taken from the following list, and \var{func} must be a callable
 object accepting the correct number of arguments.  The arguments are
 all strings, unless otherwise stated.
 
-\begin{methoddesc}{StartElementHandler}{name, attributes}
+\begin{methoddesc}[xmlparser]{StartElementHandler}{name, attributes}
 Called for the start of every element.  \var{name} is a string
 containing the element name, and \var{attributes} is a dictionary
 mapping attribute names to their values.
 \end{methoddesc}
 
-\begin{methoddesc}{EndElementHandler}{name}
+\begin{methoddesc}[xmlparser]{EndElementHandler}{name}
 Called for the end of every element.
 \end{methoddesc}
 
-\begin{methoddesc}{ProcessingInstructionHandler}{target, data}
+\begin{methoddesc}[xmlparser]{ProcessingInstructionHandler}{target, data}
 Called for every processing instruction.  
 \end{methoddesc}
 
-\begin{methoddesc}{CharacterDataHandler}{\var{data}}
+\begin{methoddesc}[xmlparser]{CharacterDataHandler}{data}
 Called for character data.  
 \end{methoddesc}
 
-\begin{methoddesc}{UnparsedEntityDeclHandler}{entityName, base,
-                                              systemId, publicId,
-                                              notationName}
+\begin{methoddesc}[xmlparser]{UnparsedEntityDeclHandler}{entityName, base,
+                                                         systemId, publicId,
+                                                         notationName}
 Called for unparsed (NDATA) entity declarations.
 \end{methoddesc}
 
-\begin{methoddesc}{NotationDeclHandler}{notationName, base, systemId,
-                                        publicId}
+\begin{methoddesc}[xmlparser]{NotationDeclHandler}{notationName, base,
+                                                   systemId, publicId}
 Called for notation declarations.
 \end{methoddesc}
 
-\begin{methoddesc}{StartNamespaceDeclHandler}{prefix, uri}
+\begin{methoddesc}[xmlparser]{StartNamespaceDeclHandler}{prefix, uri}
 Called when an element contains a namespace declaration.
 \end{methoddesc}
 
-\begin{methoddesc}{EndNamespaceDeclHandler}{prefix}
+\begin{methoddesc}[xmlparser]{EndNamespaceDeclHandler}{prefix}
 Called when the closing tag is reached for an element 
 that contained a namespace declaration.
 \end{methoddesc}
 
-\begin{methoddesc}{CommentHandler}{data}
+\begin{methoddesc}[xmlparser]{CommentHandler}{data}
 Called for comments.
 \end{methoddesc}
 
-\begin{methoddesc}{StartCdataSectionHandler}{}
+\begin{methoddesc}[xmlparser]{StartCdataSectionHandler}{}
 Called at the start of a CDATA section.
 \end{methoddesc}
 
-\begin{methoddesc}{EndCdataSectionHandler}{}
+\begin{methoddesc}[xmlparser]{EndCdataSectionHandler}{}
 Called at the end of a CDATA section.
 \end{methoddesc}
 
-\begin{methoddesc}{DefaultHandler}{data}
+\begin{methoddesc}[xmlparser]{DefaultHandler}{data}
 Called for any characters in the XML document for
 which no applicable handler has been specified.  This means
 characters that are part of a construct which could be reported, but
 for which no handler has been supplied. 
 \end{methoddesc}
 
-\begin{methoddesc}{DefaultHandlerExpand}{data}
+\begin{methoddesc}[xmlparser]{DefaultHandlerExpand}{data}
 This is the same as the \function{DefaultHandler}, 
 but doesn't inhibit expansion of internal entities.
 The entity reference will not be passed to the default handler.
 \end{methoddesc}
 
-\begin{methoddesc}{NotStandaloneHandler}{}
+\begin{methoddesc}[xmlparser]{NotStandaloneHandler}{}
 Called if the XML document hasn't been declared as being a standalone
 document.
 \end{methoddesc}
 
-\begin{methoddesc}{ExternalEntityRefHandler}{context, base, systemId,
-                                             publicId}
+\begin{methoddesc}[xmlparser]{ExternalEntityRefHandler}{context, base,
+                                                        systemId, publicId}
 Called for references to external entities.  
 \end{methoddesc}
 
