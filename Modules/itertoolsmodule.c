@@ -767,7 +767,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 				if (PyErr_Occurred())
 					PyErr_Clear();
 				PyErr_SetString(PyExc_ValueError,
-				   "Stop argument must be an integer or None.");
+				   "Stop argument must be a non-negative integer or None.");
 				return NULL;
 			}
 		}
@@ -776,7 +776,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		if (start == -1 && PyErr_Occurred()) {
 			PyErr_Clear();
 			PyErr_SetString(PyExc_ValueError,
-			   "Start argument must be an integer.");
+			   "Start argument must be a non-negative integer.");
 			return NULL;
 		}
 		if (a2 != Py_None) {
@@ -785,7 +785,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 				if (PyErr_Occurred())
 					PyErr_Clear();
 				PyErr_SetString(PyExc_ValueError,
-				   "Stop argument must be an integer or None.");
+				   "Stop argument must be a non-negative integer or None.");
 				return NULL;
 			}
 		}
@@ -793,7 +793,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	if (start<0 || stop<-1) {
 		PyErr_SetString(PyExc_ValueError,
-		   "Indices for islice() must be positive.");
+		   "Indices for islice() must be non-negative integers.");
 		return NULL;
 	}
 
