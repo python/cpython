@@ -63,12 +63,12 @@ class Packer:
     def pack_float(self, x):
 	try: self.__buf = self.__buf + struct.pack('>f', x)
 	except struct.error, msg:
-	    raise ConversionError(msg)
+	    raise ConversionError, msg
 
     def pack_double(self, x):
 	try: self.__buf = self.__buf + struct.pack('>d', x)
 	except struct.error, msg:
-	    raise ConversionError(msg)
+	    raise ConversionError, msg
 
     def pack_fstring(self, n, s):
 	if n < 0:
@@ -205,7 +205,7 @@ class Unpacker:
 	    x = self.unpack_uint()
 	    if x == 0: break
 	    if x <> 1:
-		raise ConversionError('0 or 1 expected, got ' + `x`)
+		raise ConversionError, '0 or 1 expected, got ' + `x`
 	    item = unpack_item()
 	    list.append(item)
 	return list
@@ -274,5 +274,6 @@ def _test():
 	    print 'ConversionError:', var.msg
 	count = count + 1
 
+
 if __name__ == '__main__':
     _test()
