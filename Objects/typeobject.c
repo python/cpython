@@ -1236,8 +1236,8 @@ static PyObject *
 type_getattro(PyTypeObject *type, PyObject *name)
 {
 	PyTypeObject *metatype = type->ob_type;
-	PyObject *descr, *res;
-	descrgetfunc f;
+	PyObject *meta_attribute, *attribute;
+	descrgetfunc meta_get;
 
 	/* Initialize this type (we'll assume the metatype is initialized) */
 	if (type->tp_dict == NULL) {
@@ -1245,40 +1245,58 @@ type_getattro(PyTypeObject *type, PyObject *name)
 			return NULL;
 	}
 
-	/* Get a descriptor from the metatype */
-	descr = _PyType_Lookup(metatype, name);
-	f = NULL;
-	if (descr != NULL) {
-		f = descr->ob_type->tp_descr_get;
-		if (f != NULL && PyDescr_IsData(descr))
-			return f(descr,
-				 (PyObject *)type, (PyObject *)metatype);
+	/* No readable descriptor found yet */
+	meta_get = NULL;
+		
+	/* Look for the attribute in the metatype */
+	meta_attribute = _PyType_Lookup(metatype, name);
+
+	if (meta_attribute != NULL) {
+		meta_get = meta_attribute->ob_type->tp_descr_get;
+				
+		if (meta_get != NULL && PyDescr_IsData(meta_attribute)) {
+			/* Data descriptors implement tp_descr_set to intercept
+			 * writes. Assume the attribute is not overridden in
+			 * type's tp_dict (and bases): call the descriptor now.
+			 */
+			return meta_get(meta_attribute, (PyObject *)type,
+					(PyObject *)metatype);
+		}
 	}
 
-	/* Look in tp_dict of this type and its bases */
-	res = _PyType_Lookup(type, name);
-	if (res != NULL) {
-		f = res->ob_type->tp_descr_get;
-		if (f != NULL)
-			return f(res, (PyObject *)NULL, (PyObject *)type);
-		Py_INCREF(res);
-		return res;
+	/* No data descriptor found on metatype. Look in tp_dict of this
+	 * type and its bases */
+	attribute = _PyType_Lookup(type, name);
+	if (attribute != NULL) {
+		/* Implement descriptor functionality, if any */
+		descrgetfunc local_get = attribute->ob_type->tp_descr_get;
+		if (local_get != NULL) {
+			/* NULL 2nd argument indicates the descriptor was
+			 * found on the target object itself (or a base)  */
+			return local_get(attribute, (PyObject *)NULL,
+					 (PyObject *)type);
+		}
+		
+		Py_INCREF(attribute);
+		return attribute;
 	}
 
-	/* Use the descriptor from the metatype */
-	if (f != NULL) {
-		res = f(descr, (PyObject *)type, (PyObject *)metatype);
-		return res;
-	}
-	if (descr != NULL) {
-		Py_INCREF(descr);
-		return descr;
+	/* No attribute found in local __dict__ (or bases): use the
+	 * descriptor from the metatype, if any */
+	if (meta_get != NULL)
+		return meta_get(meta_attribute, (PyObject *)type,
+				(PyObject *)metatype);
+
+	/* If an ordinary attribute was found on the metatype, return it now */
+	if (meta_attribute != NULL) {
+		Py_INCREF(meta_attribute);
+		return meta_attribute;
 	}
 
 	/* Give up */
 	PyErr_Format(PyExc_AttributeError,
-		     "type object '%.50s' has no attribute '%.400s'",
-		     type->tp_name, PyString_AS_STRING(name));
+			 "type object '%.50s' has no attribute '%.400s'",
+			 type->tp_name, PyString_AS_STRING(name));
 	return NULL;
 }
 
