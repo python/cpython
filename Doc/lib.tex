@@ -1,11 +1,20 @@
 % Format this file with latex.
 
-%\documentstyle[palatino,11pt,myformat]{article}
+%\documentstyle[garamond,11pt,myformat]{article}
 \documentstyle[11pt,myformat]{article}
 
 % A command to force the text after an item to start on a new line
 \newcommand{\itembreak}{
 	\mbox{}\\*[0mm]
+}
+
+% A command to define a function item
+\newcommand{\funcitem}[2]{\item[#1(#2)]}
+
+% A command to define an exception item
+\newcommand{\excitem}[2]{
+\item[#1 = {\tt '#2'}]
+\itembreak
 }
 
 \title{\bf
@@ -313,7 +322,8 @@ There are no operations on type objects.
 This object is returned by functions that don't explicitly return a
 value.
 It supports no operations.
-There is exactly one null object.
+There is exactly one null object, named {\tt None}
+(a built-in name).
 
 \paragraph{File Objects.}
 
@@ -323,10 +333,10 @@ package and can be created with the built-in function
 {\tt open()}.
 They have the following methods:
 \begin{description}
-\item[{\tt close()}]
+\funcitem{close}{}
 Closes the file.
 A closed file cannot be read or written anymore.
-\item[{\tt read(size)}]
+\funcitem{read}{size}
 Reads at most
 {\tt size}
 bytes from the file (less if the read hits EOF).
@@ -334,7 +344,7 @@ The bytes are returned as a string object.
 An empty string is returned when EOF is hit immediately.
 (For certain files, like ttys, it makes sense to continue reading after
 an EOF is hit.)
-\item[{\tt readline(size)}]
+\funcitem{readline}{size}
 Reads a line of at most
 {\tt size}
 bytes from the file.
@@ -342,7 +352,7 @@ A trailing newline character, if present, is kept in the string.
 The size is optional and defaults to a large number (but not infinity).
 EOF is reported as by
 {\tt read().}
-\item[{\tt write(str)}]
+\funcitem{write}{str}
 Writes a string to the file.
 Returns no value.
 \end{description}
@@ -357,37 +367,37 @@ error.
 The strings listed with the exception names are their values when used
 in an expression or printed.
 \begin{description}
-\item[{\tt EOFError = 'end-of-file read'} (no argument)]
-%.br
+\excitem{EOFError}{end-of-file read}
+(No argument.)
 Raised when a built-in function ({\tt input()} or {\tt raw\_input()})
 hits an end-of-file condition (EOF) without reading any data.
 (N.B.: the {\tt read()} and {\tt readline()} methods of file objects
 return an empty string when they hit EOF.)
-\item[{\tt KeyboardInterrupt = 'end-of-file read'} (no argument)]
-%.br
+\excitem{KeyboardInterrupt}{end-of-file read}
+(No argument.)
 Raised when the user hits the interrupt key (normally Control-C or DEL).
 During execution, a check for interrupts is made regularly.
 Interrupts typed when a built-in function ({\tt input()} or
 {\tt raw\_input()}) is waiting for input also raise this exception.
-\item[{\tt MemoryError = 'out of memory'}]
+\excitem{MemoryError}{out of memory}
 %.br
 Raised when an operation runs out of memory but the situation
 may still be rescued (by deleting some objects).
-\item[{\tt NameError = 'undefined name'}]
+\excitem{NameError}{undefined name}
 %.br
 Raised when a name is not found.
 This applies to unqualified names, module names (on {\tt import}),
 module members and object methods.
 The string argument is the name that could not be found.
-\item[{\tt RuntimeError = 'run-time error'}]
+\excitem{RuntimeError}{run-time error}
 %.br
 Raised for a variety of reasons, e.g., division by zero or index out of
 range.
-\item[{\tt SystemError = 'system error'}]
+\excitem{SystemError}{system error}
 %.br
 Raised when the interpreter finds an internal error, but the situation
 does not look so serious to cause it to abandon all hope.
-\item[{\tt TypeError = 'type error'}]
+\excitem{TypeError}{type error}
 %.br
 Raised when an operation or built-in function is applied to an object of
 inappropriate type.
@@ -399,10 +409,15 @@ The {\Python} interpreter has a small number of functions built into it that
 are always available.
 They are listed here in alphabetical order.
 \begin{description}
-\item[{\tt abs(x)}]
+\funcitem{abs}{x}
 Returns the absolute value of a number.
 The argument may be an integer or floating point number.
-\item[{\tt dir()}]
+\funcitem{chr}{i}
+Returns a string of one character
+whose ASCII code is the integer {\tt i},
+e.g., {\tt chr(97)} returns the string {\tt 'a'}.
+This is the inverse of {\tt ord()}.
+\funcitem{dir}{}
 Without arguments, this function returns the list of names in the
 current local symbol table, sorted alphabetically.
 With a module object as argument, it returns the sorted list of names in
@@ -416,7 +431,7 @@ For example:
 ['argv', 'exit', 'modules', 'path', 'stderr', 'stdin', 'stdout']
 >>> 
 \end{verbatim}\ecode
-\item[{\tt divmod(a, b)}]
+\funcitem{divmod}{a, b}
 %.br
 Takes two integers as arguments and returns a pair of integers
 consisting of their quotient and remainder.
@@ -442,7 +457,7 @@ For example:
 (14, -2)
 >>> 
 \end{verbatim}\ecode
-\item[{\tt eval(s)}]
+\funcitem{eval}{s}
 Takes a string as argument and parses and evaluates it as a {\Python}
 expression.
 The expression is executed using the current local and global symbol
@@ -455,7 +470,7 @@ For example:
 2
 >>> 
 \end{verbatim}\ecode
-\item[{\tt exec(s)}]
+\funcitem{exec}{s}
 Takes a string as argument and parses and evaluates it as a sequence of
 {\Python} statements.
 The string should end with a newline (\verb"'\n'").
@@ -470,24 +485,27 @@ For example:
 2
 >>> 
 \end{verbatim}\ecode
-\item[{\tt float(x)}]
+\funcitem{float}{x}
 Converts a number to floating point.
 The argument may be an integer or floating point number.
-\item[{\tt input(s)}]
+\funcitem{input}{s}
 Equivalent to
 {\tt eval(raw\_input(s))}.
 As for
 {\tt raw\_input()},
 the argument is optional.
-\item[{\tt len(s)}]
+\funcitem{int}{x}
+Converts a number to integer.
+The argument may be an integer or floating point number.
+\funcitem{len}{s}
 Returns the length (the number of items) of an object.
 The argument may be a sequence (string, tuple or list) or a mapping
 (dictionary).
-\item[{\tt max(s)}]
+\funcitem{max}{s}
 Returns the largest item of a non-empty sequence (string, tuple or list).
-\item[{\tt min(s)}]
+\funcitem{min}{s}
 Returns the smallest item of a non-empty sequence (string, tuple or list).
-\item[{\tt open(name, mode)}]
+\funcitem{open}{name, mode}
 %.br
 Returns a file object (described earlier under Built-in Types).
 The string arguments are the same as for stdio's
@@ -502,7 +520,11 @@ opens it for appending.%
 This function should go into a built-in module
 {\tt io}.
 }
-\item[{\tt range()}]
+\funcitem{ord}{c}
+Takes a string of one character and returns its
+ASCII value, e.g., {\tt ord('a')} returns the integer {\tt 97}.
+This is the inverse of {\tt chr()}.
+\funcitem{range}{}
 This is a versatile function to create lists containing arithmetic
 progressions of integers.
 With two integer arguments, it returns the ascending sequence of
@@ -531,7 +553,7 @@ For example:
 []
 >>> 
 \end{verbatim}\ecode
-\item[{\tt raw\_input(s)}]
+\funcitem{raw\_input}{s}
 %.br
 The argument is optional; if present, it is written to standard output
 without a trailing newline.
@@ -541,11 +563,15 @@ EOF is reported as an exception.
 For example:
 \bcode\begin{verbatim}
 >>> raw_input('Type anything: ')
-Type anything: Teenage Mutant Ninja Turtles
-'Teenage Mutant Ninja Turtles'
+Type anything: Mutant Teenage Ninja Turtles
+'Mutant Teenage Ninja Turtles'
 >>> 
 \end{verbatim}\ecode
-\item[{\tt type(x)}]
+\funcitem{reload}{module}
+Causes an already imported module to be re-parsed and re-initialized.
+This is useful if you have edited the module source file and want to
+try out the new version without leaving {\Python}.
+\funcitem{type}{x}
 Returns the type of an object.
 Types are objects themselves:
 the type of a type object is its own type.
@@ -568,14 +594,14 @@ This module provides access to some variables used or maintained by the
 interpreter and to functions that interact strongly with the interpreter.
 It is always available.
 \begin{description}
-\item[{\tt argv}]
+\funcitem{argv}
 The list of command line arguments passed to a {\Python} script.
 {\tt sys.argv[0]}
 is the script name.
 If no script name was passed to the {\Python} interpreter,
 {\tt sys.argv}
 is empty.
-\item[{\tt exit(n)}]
+\funcitem{exit}{n}
 Exits from {\Python} with numeric exit status
 {\tt n}.
 This closes all open files and performs other cleanup-actions required by
@@ -584,21 +610,21 @@ the interpreter (but
 of
 {\tt try}
 statements are not executed!).
-\item[{\tt modules}]
+\funcitem{modules}
 Gives the list of modules that have already been loaded.
 This can be manipulated to force reloading of modules and other tricks.
-\item[{\tt path}]
+\funcitem{path}
 A list of strings that specifies the search path for modules.
 Initialized from the environment variable {\tt PYTHONPATH}, or an
 installation-dependent default.
-\item[{\tt ps1,~ps2}]
+\funcitem{ps1,~ps2}
 Strings specifying the primary and secondary prompt of the interpreter.
 These are only defined if the interpreter is in interactive mode.
 Their initial values in this case are
 {\tt '>>> '}
 and
 {\tt '... '}.
-\item[{\tt stdin, stdout, stderr}]
+\funcitem{stdin, stdout, stderr}
 %.br
 File objects corresponding to the interpreter's standard input, output
 and error streams.
@@ -664,9 +690,9 @@ This module provides various time-related functions.
 It is always available.
 Functions are:
 \begin{description}
-\item[{\tt sleep(secs)}]
+\funcitem{sleep}{secs}
 Suspends execution for the given number of seconds.
-\item[{\tt time()}]
+\funcitem{time}{}
 Returns the time in seconds since the Epoch (Thursday January 1,
 00:00:00, 1970 UCT on \UNIX\ machines).
 \end{description}
@@ -674,9 +700,9 @@ Returns the time in seconds since the Epoch (Thursday January 1,
 \noindent
 In some versions (Amoeba, Mac) the following functions also exist:
 \begin{description}
-\item[{\tt millisleep(msecs)}]
+\funcitem{millisleep}{msecs}
 Suspends execution for the given number of milliseconds.
-\item[{\tt millitimer()}]
+\funcitem{millitimer}{}
 Returns the number of milliseconds of real time elapsed since some point
 in the past that is fixed per execution of the python interpreter (but
 may change in each following run).
@@ -685,6 +711,68 @@ may change in each following run).
 \noindent
 The granularity of the milliseconds functions may be more than a
 millisecond (100 msecs on Amoeba, 1/60 sec on the Mac).
+
+\subsection{Built-in Module {\tt regexp}}
+
+This module provides a regular expression matching operation.
+It is always available.
+
+The module defines a function and an exception:
+
+\begin{description}
+
+\funcitem{compile}{pattern}
+
+Compile a regular expression given as a string into a regular
+expression object.
+The string must be an egrep-style regular expression;
+this means that the characters {\tt '(' ')' '*' '+' '?' '|' '^' '$'}
+are special.
+(It is implemented using Henry Spencer's regular expression matching
+functions.)
+
+excitem{error}{regexp.error}
+
+Exception raised when a string passed to {\tt compile()} is not a
+valid regular expression (e.g., unmatched parentheses) or when some other
+error occurs during compilation or matching
+(``no match found'' is not an error).
+
+\end{description}
+
+Compiled regular expression objects support a single method:
+
+\begin{description}
+
+\funcitem{exec}{str}
+
+Find the first occurrence of the compiled regular expression in the
+string {\tt str}.
+The return value is a tuple of pairs specifying where a match was
+found and where matches were found for subpatterns specified with
+{\tt '('} and {\tt ')'} in the pattern.
+If no match is found, an empty tuple is returned; otherwise the first
+item of the tuple is a pair of slice indices into the search string
+giving the match found.
+If there were any subpatterns in the pattern, the returned tuple has an
+additional item for each subpattern, giving the slice indices into the
+search string where that subpattern was found.
+
+\end{description}
+
+For example:
+\bcode\begin{verbatim}
+>>> import regexp
+>>> r = regexp.compile('--(.*)--')
+>>> s = 'a--b--c'
+>>> r.exec(s)
+((1, 6), (3, 4))
+>>> s[1:6] # The entire match
+'--b--'
+>>> s[3:4] # The subpattern
+'b'
+>>> 
+\end{verbatim}\ecode
 
 \subsection{Built-in Module {\tt posix}}
 
@@ -695,15 +783,15 @@ It is available in all {\Python} versions except on the Macintosh.
 Errors are reported exceptions.
 It defines the following items:
 \begin{description}
-\item[{\tt chdir(path)}]
+\funcitem{chdir}{path}
 Changes the current directory to
 {\tt path}.
-\item[{\tt chmod(path, mode)}]
+\funcitem{chmod}{path, mode}
 Change the mode of
 {\tt path}
 to the numeric
 {\tt mode}.
-\item[{\tt environ}]
+\funcitem{environ}
 A dictionary representing the string environment at the time
 the interpreter was started.
 (Modifying this dictionary does not affect the string environment of the
@@ -713,7 +801,7 @@ For example,
 is the pathname of your home directory, equivalent to
 {\tt getenv("HOME")}
 in C.
-\item[{\tt error = 'posix.error'}]
+\excitem{error}{posix.error}
 %.br
 The exception raised when an POSIX function returns an error.
 The value accompanying this exception is a pair containing the numeric
@@ -721,14 +809,14 @@ error code from
 {\tt errno}
 and the corresponding string, as would be printed by the C function
 {\tt perror()}.
-\item[{\tt getcwd()}]
+\funcitem{getcwd}{}
 Returns a string representing the current working directory.
-\item[{\tt link(src, dst)}]
+\funcitem{link}{src, dst}
 Creates a hard link pointing to
 {\tt src}
 named
 {\tt dst}.
-\item[{\tt listdir(path)}]
+\funcitem{listdir}{path}
 Returns a list containing the names of the entries in the
 directory.
 The list is in arbitrary order.
@@ -737,20 +825,20 @@ It includes the special entries
 and
 {\tt '..'}
 if they are present in the directory.
-\item[{\tt mkdir(path, mode)}]
+\funcitem{mkdir}{path, mode}
 Creates a directory named
 {\tt path}
 with numeric mode
 {\tt mode}.
-\item[{\tt rename(src, dst)}]
+\funcitem{rename}{src, dst}
 Renames the file or directory
 {\tt src}
 to
 {\tt dst}.
-\item[{\tt rmdir(path)}]
+\funcitem{rmdir}{path}
 Removes the directory
 {\tt path}.
-\item[{\tt stat(path)}]
+\funcitem{stat}{path}
 Performs a
 {\em stat}
 system call on the given path.
@@ -769,7 +857,7 @@ structure, in the order
 {\tt st\_mtime},
 {\tt st\_ctime}.
 More items may be added at the end by some implementations.
-\item[{\tt system(command)}]
+\funcitem{system}{command}
 Executes the command (a string) in a subshell.
 This is implemented by calling the Standard C function
 {\tt system()},
@@ -781,12 +869,12 @@ etc. are not reflected in the environment of the executed command.
 The return value is the exit status of the process as returned by
 Standard C
 {\tt system()}.
-\item[{\tt umask(mask)}]
+\funcitem{umask}{mask}
 Sets the current numeric umask and returns the previous umask.
-\item[{\tt unlink(path)}]
+\funcitem{unlink}{path}
 Unlinks the file
 {\tt path}.
-\item[{\tt utimes(path, (atime, mtime))}]
+\funcitem{utimes(path, }{atime, mtime)}
 %.br
 Sets the access and modified time of the file to the given values.
 (The second argument is a tuple of two items.)
@@ -795,14 +883,14 @@ Sets the access and modified time of the file to the given values.
 The following functions are only available on systems that support
 symbolic links:
 \begin{description}
-\item[{\tt lstat(path)}]
+\funcitem{lstat}{path}
 Like
 {\tt stat()},
 but does not follow symbolic links.
-\item[{\tt readlink(path)}]
+\funcitem{readlink}{path}
 Returns a string representing the path to which the symbolic link
 points.
-\item[{\tt symlink(src, dst)}]
+\funcitem{symlink}{src, dst}
 Creates a symbolic link pointing to
 {\tt src}
 named
@@ -830,7 +918,7 @@ of STDWIN for C programmers (aforementioned CWI report).
 
 The following functions are defined in the {\tt stdwin} module:
 \begin{description}
-\item[{\tt open(title)}]
+\funcitem{open}{title}
 %.br
 Opens a new window whose initial title is given by the string argument.
 Returns a window object; window object methods are described below.%
@@ -838,7 +926,7 @@ Returns a window object; window object methods are described below.%
 The {\Python} version of STDWIN does not support draw procedures; all
 drawing requests are reported as draw events.
 }
-\item[{\tt getevent()}]
+\funcitem{getevent}{}
 %.br
 Waits for and returns the next event.
 An event is returned as a triple: the first element is the event
@@ -850,26 +938,26 @@ the third element is type-dependent.
 Names for event types and command codes are defined in the standard
 module
 {\tt stdwinevent}.
-\item[{\tt setdefwinpos(h, v)}]
+\funcitem{setdefwinpos}{h, v}
 %.br
 Sets the default window position.
-\item[{\tt setdefwinsize(width, height)}]
+\funcitem{setdefwinsize}{width, height}
 %.br
 Sets the default window size.
-\item[{\tt menucreate(title)}]
+\funcitem{menucreate}{title}
 %.br
 Creates a menu object referring to a global menu (a menu that appears in
 all windows).
 Methods of menu objects are described below.
-\item[{\tt fleep()}]
+\funcitem{fleep}{}
 %.br
 Causes a beep or bell (or perhaps a `visual bell' or flash, hence the
 name).
-\item[{\tt message(string)}]
+\funcitem{message}{string}
 %.br
 Displays a dialog box containing the string.
 The user must click OK before the function returns.
-\item[{\tt askync(prompt, default)}]
+\funcitem{askync}{prompt, default}
 %.br
 Displays a dialog that prompts the user to answer a question with yes or
 no.
@@ -879,14 +967,14 @@ returned.
 If the user cancels the dialog, the
 {\tt KeyboardInterrupt}
 exception is raised.
-\item[{\tt askstr(prompt, default)}]
+\funcitem{askstr}{prompt, default}
 %.br
 Displays a dialog that prompts the user for a string.
 If the user hits the Return key, the default string is returned.
 If the user cancels the dialog, the
 {\tt KeyboardInterrupt}
 exception is raised.
-\item[{\tt askfile(prompt, default, new)}]
+\funcitem{askfile}{prompt, default, new}
 %.br
 Asks the user to specify a filename.
 If
@@ -895,23 +983,23 @@ is zero it must be an existing file; otherwise, it must be a new file.
 If the user cancels the dialog, the
 {\tt KeyboardInterrupt}
 exception is raised.
-\item[{\tt setcutbuffer(i, string)}]
+\funcitem{setcutbuffer}{i, string}
 %.br
 Stores the string in the system's cut buffer number
 {\tt i},
 where it can be found (for pasting) by other applications.
 On X11, there are 8 cut buffers (numbered 0..7).
 Cut buffer number 0 is the `clipboard' on the Macintosh.
-\item[{\tt getcutbuffer(i)}]
+\funcitem{getcutbuffer}{i}
 %.br
 Returns the contents of the system's cut buffer number
 {\tt i}.
-\item[{\tt rotatebutbuffers(n)}]
+\funcitem{rotatebutbuffers}{n}
 %.br
 On X11, this rotates the 8 cut buffers by
 {\tt n}.
 Ignored on the Macintosh.
-\item[{\tt getselection(i)}]
+\funcitem{getselection}{i}
 %.br
 Returns X11 selection number
 {\tt i.}
@@ -930,14 +1018,14 @@ selection; selection {\tt WS\_CLIPBOARD} is the
 selection (used by
 xclipboard).
 On the Macintosh, this always returns an empty string.
-\item[{\tt resetselection(i)}]
+\funcitem{resetselection}{i}
 %.br
 Resets selection number
 {\tt i},
 if this process owns it.
 (See window method
 {\tt setselection()}).
-\item[{\tt baseline()}]
+\funcitem{baseline}{}
 %.br
 Return the baseline of the current font (defined by STDWIN as the
 vertical distance between the baseline and the top of the
@@ -946,15 +1034,15 @@ characters).%
 There is no way yet to set the current font.
 This will change in a future version.
 }
-\item[{\tt lineheight()}]
+\funcitem{lineheight}{}
 %.br
 Return the total line height of the current font.
-\item[{\tt textbreak(str, width)}]
+\funcitem{textbreak}{str, width}
 %.br
 Return the number of characters of the string that fit into a space of
 {\tt width}
 bits wide when drawn in the curent font.
-\item[{\tt textwidth(str)}]
+\funcitem{textwidth}{str}
 %.br
 Return the width in bits of the string when drawn in the current font.
 \end{description}
@@ -967,30 +1055,30 @@ There is no explicit function to close a window; windows are closed when
 they are garbage-collected.
 Window objects have the following methods:
 \begin{description}
-\item[{\tt begindrawing()}]
+\funcitem{begindrawing}{}
 Returns a drawing object, whose methods (described below) allow drawing
 in the window.
-\item[{\tt change(rect)}]
+\funcitem{change}{rect}
 Invalidates the given rectangle; this may cause a draw event.
-\item[{\tt gettitle()}]
+\funcitem{gettitle}{}
 Returns the window's title string.
-\item[{\tt getdocsize()}]
+\funcitem{getdocsize}{}
 \begin{sloppypar}
 Returns a pair of integers giving the size of the document as set by
 {\tt setdocsize()}.
 \end{sloppypar}
-\item[{\tt getorigin()}]
+\funcitem{getorigin}{}
 Returns a pair of integers giving the origin of the window with respect
 to the document.
-\item[{\tt getwinsize()}]
+\funcitem{getwinsize}{}
 Returns a pair of integers giving the size of the window.
-\item[{\tt menucreate(title)}]
+\funcitem{menucreate}{title}
 Creates a menu object referring to a local menu (a menu that appears
 only in this window).
 Methods menu objects are described below.
-\item[{\tt scroll(rect,~point)}]
+\funcitem{scroll}{rect,~point}
 Scrolls the given rectangle by the vector given by the point.
-\item[{\tt setwincursor(name)}]
+\funcitem{setwincursor}{name}
 \begin{sloppypar}
 Sets the window cursor to a cursor of the given name.
 It raises the
@@ -1006,11 +1094,11 @@ and
 On X11, there are many more (see
 {\tt <X11/cursorfont.h>}).
 \end{sloppypar}
-\item[{\tt setdocsize(point)}]
+\funcitem{setdocsize}{point}
 Sets the size of the drawing document.
-\item[{\tt setorigin(point)}]
+\funcitem{setorigin}{point}
 Moves the origin of the window to the given point in the document.
-\item[{\tt setselection(i, str)}]
+\funcitem{setselection}{i, str}
 Attempts to set X11 selection number
 {\tt i}
 to the string
@@ -1030,16 +1118,16 @@ When another application takes ownership of the selection, a
 event is received for no particular window and with the selection number
 as detail.
 Ignored on the Macintosh.
-\item[{\tt settitle(title)}]
+\funcitem{settitle}{title}
 Sets the window's title string.
-\item[{\tt settimer(dsecs)}]
+\funcitem{settimer}{dsecs}
 Schedules a timer event for the window in
 {\tt dsecs/10}
 seconds.
-\item[{\tt show(rect)}]
+\funcitem{show}{rect}
 Tries to ensure that the given rectangle of the document is visible in
 the window.
-\item[{\tt textcreate(rect)}]
+\funcitem{textcreate}{rect}
 Creates a text-edit object in the document at the given rectangle.
 Methods of text-edit objects are described below.
 \end{description}
@@ -1055,12 +1143,12 @@ No drawing object may exist when
 is called.
 Drawing objects have the following methods:
 \begin{description}
-\item[{\tt box(rect)}]
+\funcitem{box}{rect}
 Draws a box around a rectangle.
-\item[{\tt circle(center, radius)}]
+\funcitem{circle}{center, radius}
 %.br
 Draws a circle with given center point and radius.
-\item[{\tt elarc(center, (rh, rv), (a1, a2))}]
+\funcitem{elarc(center, (rh, rv), }{a1, a2)}
 %.br
 Draws an elliptical arc with given center point.
 {\tt (rh, rv)}
@@ -1068,28 +1156,28 @@ gives the half sizes of the horizontal and vertical radii.
 {\tt (a1, a2)}
 gives the angles (in degrees) of the begin and end points.
 0 degrees is at 3 o'clock, 90 degrees is at 12 o'clock.
-\item[{\tt erase(rect)}]
+\funcitem{erase}{rect}
 Erases a rectangle.
-\item[{\tt invert(rect)}]
+\funcitem{invert}{rect}
 Inverts a rectangle.
-\item[{\tt line(p1, p2)}]
+\funcitem{line}{p1, p2}
 Draws a line from point
 {\tt p1}
 to
 {\tt p2}.
-\item[{\tt paint(rect)}]
+\funcitem{paint}{rect}
 Fills a rectangle.
-\item[{\tt text(p, str)}]
+\funcitem{text}{p, str}
 Draws a string starting at point p (the point specifies the
 top left coordinate of the string).
-\item[{\tt shade(rect, percent)}]
+\funcitem{shade}{rect, percent}
 %.br
 Fills a rectangle with a shading pattern that is about
 {\tt percent}
 percent filled.
-\item[{\tt xorline(p1, p2)}]
+\funcitem{xorline}{p1, p2}
 Draws a line in XOR mode.
-\item[{\tt baseline(), lineheight(), textbreak(), textwidth()}]
+\funcitem{baseline(), lineheight(), textbreak(), textwidth}{}
 %.br
 These functions are similar to the corresponding functions described
 above for the
@@ -1104,18 +1192,18 @@ A menu object represents a menu.
 The menu is destroyed when the menu object is deleted.
 The following methods are defined:
 \begin{description}
-\item[{\tt additem(text, shortcut)}]
+\funcitem{additem}{text, shortcut}
 %.br
 Adds a menu item with given text.
 The shortcut must be a string of length 1, or omitted (to specify no
 shortcut).
-\item[{\tt setitem(i, text)}]
+\funcitem{setitem}{i, text}
 Sets the text of item number
 {\tt i}.
-\item[{\tt enable(i, flag)}]
+\funcitem{enable}{i, flag}
 Enables or disables item
 {\tt i}.
-\item[{\tt check(i, flag)}]
+\funcitem{check}{i, flag}
 Sets or clears the
 {\em check mark}
 for item
@@ -1128,7 +1216,7 @@ A text-edit object represents a text-edit block.
 For semantics, see the STDWIN documentation for C programmers.
 The following methods exist:
 \begin{description}
-\item[{\tt arrow(code)}]
+\funcitem{arrow}{code}
 Passes an arrow event to the text-edit block.
 The
 {\tt code}
@@ -1140,36 +1228,62 @@ or
 {\tt WC\_DOWN}
 (see module
 {\tt stdwinevents}).
-\item[{\tt draw(rect)}]
+\funcitem{draw}{rect}
 Passes a draw event to the text-edit block.
 The rectangle specifies the redraw area.
-\item[{\tt event(type, window, detail)}]
+\funcitem{event}{type, window, detail}
 %.br
 Passes an event gotten from
 {\tt stdwin.getevent()}
 to the text-edit block.
 Returns true if the event was handled.
-\item[{\tt getfocus()}]
+\funcitem{getfocus}{}
 Returns 2 integers representing the start and end positions of the
 focus, usable as slice indices on the string returned by
 {\tt getfocustext()}.
-\item[{\tt getfocustext()}]
+\funcitem{getfocustext}{}
 Returns the text in the focus.
-\item[{\tt getrect()}]
+\funcitem{getrect}{}
 Returns a rectangle giving the actual position of the text-edit block.
 (The bottom coordinate may differ from the initial position because
 the block automatically shrinks or grows to fit.)
-\item[{\tt gettext()}]
+\funcitem{gettext}{}
 Returns the entire text buffer.
-\item[{\tt move(rect)}]
+\funcitem{move}{rect}
 Specifies a new position for the text-edit block in the document.
-\item[{\tt replace(str)}]
+\funcitem{replace}{str}
 Replaces the focus by the given string.
 The new focus is an insert point at the end of the string.
-\item[{\tt setfocus(i,~j)}]
+\funcitem{setfocus}{i,~j}
 Specifies the new focus.
 Out-of-bounds values are silently clipped.
 \end{description}
+
+\subsubsection{Example}
+
+Here is a simple example of using STDWIN in Python.
+It creates a window and draws the string ``Hello world'' in the top
+left corner of the window.
+The window will be correctly redrawn when covered and re-exposed.
+The program quits when the close icon or menu item is requested.
+\bcode\begin{verbatim}
+import stdwin
+from stdwinevents import *
+
+def main():
+    mywin = stdwin.open('Hello')
+    #
+    while 1:
+        (type, win, detail) = stdwin.getevent()
+        if type = WE_DRAW:
+            draw = win.begindrawing()
+            draw.text((0, 0), 'Hello, world')
+            del draw
+        elif type = WE_CLOSE:
+            break
+
+main()
+\end{verbatim}\ecode
 
 \subsection{Built-in Module {\tt amoeba}}
 
@@ -1182,24 +1296,24 @@ The module
 {\tt amoeba}
 defines the following items:
 \begin{description}
-\item[{\tt name\_append(path,~cap)}]
+\funcitem{name\_append}{path,~cap}
 %.br
 Stores a capability in the Amoeba directory tree.
 Arguments are the pathname (a string) and the capability (a capability
 object as returned by
 {\tt name\_lookup()}).
-\item[{\tt name\_delete(path)}]
+\funcitem{name\_delete}{path}
 %.br
 Deletes a capability from the Amoeba directory tree.
 Argument is the pathname.
-\item[{\tt name\_lookup(path)}]
+\funcitem{name\_lookup}{path}
 %.br
 Looks up a capability.
 Argument is the pathname.
 Returns a
 {\em capability}
 object, to which various interesting operations apply, described below.
-\item[{\tt name\_replace(path,~cap)}]
+\funcitem{name\_replace}{path,~cap}
 %.br
 Replaces a capability in the Amoeba directory tree.
 Arguments are the pathname and the new capability.
@@ -1210,7 +1324,7 @@ in the behavior when the pathname already exists:
 finds this an error while
 {\tt name\_replace()}
 allows it, as its name suggests.)
-\item[{\tt capv}]
+\funcitem{capv}
 A table representing the capability environment at the time the
 interpreter was started.
 (Alas, modifying this table does not affect the capability environment
@@ -1220,13 +1334,13 @@ For example,
 is the capability of your root directory, similar to
 {\tt getcap("ROOT")}
 in C.
-\item[{\tt error = 'amoeba.error'}]
+\excitem{error}{amoeba.error}
 %.br
 The exception raised when an Amoeba function returns an error.
 The value accompanying this exception is a pair containing the numeric
 error code and the corresponding string, as returned by the C function
 {\tt err\_why()}.
-\item[{\tt timeout(msecs)}]
+\funcitem{timeout}{msecs}
 %.br
 Sets the transaction timeout, in milliseconds.
 Returns the previous timeout.
@@ -1248,9 +1362,9 @@ aa:1c:95:52:6a:fa/14(ff)/8e:ba:5b:8:11:1a
 \end{verbatim}\ecode
 The following methods are defined for capability objects.
 \begin{description}
-\item[{\tt dir\_list()}]
+\funcitem{dir\_list}{}
 Returns a list of the names of the entries in an Amoeba directory.
-\item[{\tt b\_read(offset, maxsize)}]
+\funcitem{b\_read}{offset, maxsize}
 %.br
 Reads (at most)
 {\tt maxsize}
@@ -1258,9 +1372,9 @@ bytes from a bullet file at offset
 {\tt offset.}
 The data is returned as a string.
 EOF is reported as an empty string.
-\item[{\tt b\_size()}]
+\funcitem{b\_size}{}
 Returns the size of a bullet file.
-\item[{\tt dir\_append(), dir\_delete(), dir\_lookup(), dir\_replace()}]
+\funcitem{dir\_append(), dir\_delete(), dir\_lookup(), dir\_replace}{}
 %.br
 \itembreak
 Like the corresponding
@@ -1268,12 +1382,12 @@ Like the corresponding
 functions, but with a path relative to the capability.
 (For paths beginning with a slash the capability is ignored, since this
 is the defined semantics for Amoeba.)
-\item[{\tt std\_info()}]
+\funcitem{std\_info}{}
 Returns the standard info string of the object.
-\item[{\tt tod\_gettime()}]
+\funcitem{tod\_gettime}{}
 Returns the time (in seconds since the Epoch, in UCT, as for POSIX) from
 a time server.
-\item[{\tt tod\_settime(t)}]
+\funcitem{tod\_settime}{t}
 Sets the time kept by a time server.
 \end{description}
 
@@ -1284,15 +1398,15 @@ This module provides rudimentary access to the audio I/O device
 on the Silicon Graphics Personal IRIS; see audio(7).
 It supports the following operations:
 \begin{description}
-\item[{\tt setoutgain(n)}]
+\funcitem{setoutgain}{n}
 Sets the output gain (0-255).
-\item[{\tt getoutgain()}]
+\funcitem{getoutgain}{}
 Returns the output gain.
-\item[{\tt setrate(n)}]
+\funcitem{setrate}{n}
 Sets the sampling rate: 1=32K/sec, 2=16K/sec, 3=8K/sec.
-\item[{\tt setduration(n)}]
+\funcitem{setduration}{n}
 Sets the `sound duration' in units of 1/100 seconds.
-\item[{\tt read(n)}]
+\funcitem{read}{n}
 Reads a chunk of
 {\tt n}
 sampled bytes from the audio input (line in or microphone).
@@ -1301,26 +1415,26 @@ Each byte encodes one sample as a signed 8-bit quantity using linear
 encoding.
 This string can be converted to numbers using {\tt chr2num()} described
 below.
-\item[{\tt write(buf)}]
+\funcitem{write}{buf}
 Writes a chunk of samples to the audio output (speaker).
 \end{description}
 
 These operations support asynchronous audio I/O:
 \begin{description}
-\item[{\tt start\_recording(n)}]
+\funcitem{start\_recording}{n}
 %.br
 Starts a second thread (a process with shared memory) that begins reading
 {\tt n}
 bytes from the audio device.
 The main thread immediately continues.
-\item[{\tt wait\_recording()}]
+\funcitem{wait\_recording}{}
 %.br
 Waits for the second thread to finish and returns the data read.
-\item[{\tt stop\_recording()}]
+\funcitem{stop\_recording}{}
 %.br
 Makes the second thread stop reading as soon as possible.
 Returns the data read so far.
-\item[{\tt poll\_recording()}]
+\funcitem{poll\_recording}{}
 %.br
 Returns true if the second thread has finished reading (so
 {\tt wait\_recording()} would return the data without delay).
@@ -1338,25 +1452,25 @@ accurate).
 The following operations do not affect the audio device but are
 implemented in C for efficiency:
 \begin{description}
-\item[{\tt amplify(buf, f1, f2)}]
+\funcitem{amplify}{buf, f1, f2}
 %.br
 Amplifies a chunk of samples by a variable factor changing from
 {\tt f1}/256 to {\tt f2}/256.
 Negative factors are allowed.
 Resulting values that are to large to fit in a byte are clipped.         
-\item[{\tt reverse(buf)}]
+\funcitem{reverse}{buf}
 %.br
 Returns a chunk of samples backwards.
-\item[{\tt add(buf1, buf2)}]
+\funcitem{add}{buf1, buf2}
 %.br
 Bytewise adds two chunks of samples.
 Bytes that exceed the range are clipped.
 If one buffer shorter, it is assumed to be padded with zeros.
-\item[{\tt chr2num(buf)}]
+\funcitem{chr2num}{buf}
 %.br
 Converts a string of sampled bytes as returned by {\tt read()} into
 a list containing the numeric values of the samples.
-\item[{\tt num2chr(list)}]
+\funcitem{num2chr}{list}
 %.br
 \begin{sloppypar}
 Converts a list as returned by
@@ -1433,7 +1547,7 @@ red, green, blue = getmcolor(i)
 The following functions are non-standard or have special argument
 conventions:
 \begin{description}
-\item[{\tt varray()}]
+\funcitem{varray}{}
 Equivalent to but faster than a number of
 {\tt v3d()}
 calls.
@@ -1447,7 +1561,7 @@ by assuming z=0.0 if necessary (as indicated in the man page),
 and for each point
 {\tt v3d()}
 is called.
-\item[{\tt nvarray()}]
+\funcitem{nvarray}{}
 Equivalent to but faster than a number of
 {\tt n3f}
 and
@@ -1463,11 +1577,11 @@ For each pair,
 is called for the normal, and then
 {\tt v3f()}
 is called for the point.
-\item[{\tt vnarray()}]
+\funcitem{vnarray}{}
 Similar to 
 {\tt nvarray()}
 but the pairs have the point first and the normal second.
-\item[{\tt nurbssurface(s\_k[], t\_k[], ctl[][], s\_ord, t\_ord, type)}]
+\funcitem{nurbssurface}{s\_k[], t\_k[], ctl[][], s\_ord, t\_ord, type}
 %.br
 \itembreak
 Defines a nurbs surface.
@@ -1476,12 +1590,12 @@ The dimensions of
 are computed as follows:
 {\tt [len(s\_k)~-~s\_ord]},
 {\tt [len(t\_k)~-~t\_ord]}.
-\item[{\tt nurbscurve(knots, ctlpoints, order, type)}]
+\funcitem{nurbscurve}{knots, ctlpoints, order, type}
 %.br
 Defines a nurbs curve.
 The length of ctlpoints is
 {\tt len(knots)~-~order}.
-\item[{\tt pwlcurve(points, type)}]
+\funcitem{pwlcurve}{points, type}
 %.br
 Defines a piecewise-linear curve.
 {\tt points}
@@ -1489,11 +1603,11 @@ is a list of points.
 {\tt type}
 must be
 {\tt N\_ST}.
-\item[{\tt pick(n), select(n)}]
+\funcitem{pick(n), select}{n}
 %.br
 The only argument to these functions specifies the desired size of the
 pick or select buffer.
-\item[{\tt endpick(), endselect()}]
+\funcitem{endpick(), endselect}{}
 %.br
 These functions have no arguments.
 They return a list of integers representing the used part of the
@@ -1560,28 +1674,28 @@ This module defines some constants useful for checking character
 classes, some exceptions, and some useful string functions.
 The constants are:
 \begin{description}
-\item[{\tt digits}]
+\funcitem{digits}
 The string
 {\tt '0123456789'}.
-\item[{\tt hexdigits}]
+\funcitem{hexdigits}
 The string
 {\tt '0123456789abcdefABCDEF'}.
-\item[{\tt letters}]
+\funcitem{letters}
 The concatenation of the strings
 {\tt lowercase}
 and
 {\tt uppercase}
 described below.
-\item[{\tt lowercase}]
+\funcitem{lowercase}
 The string
 {\tt 'abcdefghijklmnopqrstuvwxyz'}.
-\item[{\tt octdigits}]
+\funcitem{octdigits}
 The string
 {\tt '01234567'}.
-\item[{\tt uppercase}]
+\funcitem{uppercase}
 The string
 {\tt 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'}.
-\item[{\tt whitespace}]
+\funcitem{whitespace}
 A string containing all characters that are considered whitespace,
 i.e.,
 space, tab and newline.
@@ -1593,13 +1707,13 @@ and
 
 The exceptions are:
 \begin{description}
-\item[{\tt atoi\_error = 'non-numeric argument to string.atoi'}]
+\excitem{atoi\_error}{non-numeric argument to string.atoi}
 %.br
 Exception raised by
 {\tt atoi}
 when a non-numeric string argument is detected.
 The exception argument is the offending string.
-\item[{\tt index\_error = 'substring not found in string.index'}]
+\excitem{index\_error}{substring not found in string.index}
 %.br
 Exception raised by
 {\tt index}
@@ -1611,22 +1725,22 @@ The argument are the offending arguments to index: {\tt (s, sub)}.
 
 The functions are:
 \begin{description}
-\item[{\tt atoi(s)}]
+\funcitem{atoi}{s}
 Converts a string to a number.
 The string must consist of one or more digits, optionally preceded by a
 sign ({\tt '+'} or {\tt '-'}).
-\item[{\tt index(s, sub)}]
+\funcitem{index}{s, sub}
 Returns the lowest index in
 {\tt s}
 where the substring
 {\tt sub}
 is found.
-\item[{\tt lower(s)}]
+\funcitem{lower}{s}
 Convert letters to lower case.
-\item[{\tt split(s)}]
+\funcitem{split}{s}
 Returns a list of the whitespace-delimited words of the string
 {\tt s}.
-\item[{\tt splitfields(s, sep)}]
+\funcitem{splitfields}{s, sep}
 %.br
 Returns a list containing the fields of the string
 {\tt s},
@@ -1640,14 +1754,14 @@ Thus,
 is not the same as
 {\tt string.split(s)},
 as the latter only returns non-empty words.
-\item[{\tt strip(s)}]
+\funcitem{strip}{s}
 Removes leading and trailing whitespace from the string
 {\tt s}.
-\item[{\tt swapcase(s)}]
+\funcitem{swapcase}{s}
 Converts lower case letters to upper case and vice versa.
-\item[{\tt upper(s)}]
+\funcitem{upper}{s}
 Convert letters to upper case.
-\item[{\tt ljust(s, width), rjust(s, width),  center(s, width)}]
+\funcitem{ljust(s, width), rjust(s, width),  center}{s, width}
 %.br
 These functions respectively left-justify, right-justify and center a
 string in a field of given width.
@@ -1663,12 +1777,12 @@ The string is never truncated.
 
 This module implements some useful functions on POSIX pathnames.
 \begin{description}
-\item[{\tt basename(p)}]
+\funcitem{basename}{p}
 Returns the base name of pathname
 {\tt p}.
 This is the second half of the pair returned by
 {\tt path.split(p)}.
-\item[{\tt cat(p, q)}]
+\funcitem{cat}{p, q}
 Performs intelligent pathname concatenation on paths
 {\tt p}
 and
@@ -1684,27 +1798,27 @@ and
 is returned, with a slash ({\tt '/'}) inserted unless
 {\tt p}
 is empty or ends in a slash.
-\item[{\tt commonprefix(list)}]
+\funcitem{commonprefix}{list}
 %.br
 Returns the longest string that is a prefix of all strings in
 {\tt list}.
 If
 {\tt list}
 is empty, the empty string ({\tt ''}) is returned.
-\item[{\tt exists(p)}]
+\funcitem{exists}{p}
 Returns true if
 {\tt p}
 refers to an existing path.
-\item[{\tt isdir(p)}]
+\funcitem{isdir}{p}
 Returns true if
 {\tt p}
 refers to an existing directory.
-\item[{\tt islink(p)}]
+\funcitem{islink}{p}
 Returns true if
 {\tt p}
 refers to a directory entry that is a symbolic link.
 Always false if symbolic links are not supported.
-\item[{\tt ismount(p)}]
+\funcitem{ismount}{p}
 Returns true if
 {\tt p}
 is an absolute path that occurs in the mount table as output by the
@@ -1715,7 +1829,7 @@ time.%
 \footnote{
 Is there a better way to check for mount points?
 }
-\item[{\tt split(p)}]
+\funcitem{split}{p}
 Returns a pair
 {\tt (head,~tail)}
 such that
@@ -1724,7 +1838,7 @@ contains no slashes and
 {\tt path.cat(head, tail)}
 is equal to
 {\tt p}.
-\item[{\tt walk(p, visit, arg)}]
+\funcitem{walk}{p, visit, arg}
 %.br
 Calls the function
 {\tt visit}
@@ -1816,12 +1930,12 @@ This module implements a pseudo-random number generator similar to
 in C.
 It defines the following functions:
 \begin{description}
-\item[{\tt rand()}]
+\funcitem{rand}{}
 Returns an integer random number in the range [0 ... 32768).
-\item[{\tt choice(s)}]
+\funcitem{choice}{s}
 Returns a random element from the sequence (string, tuple or list)
 {\tt s.}
-\item[{\tt srand(seed)}]
+\funcitem{srand}{seed}
 Initializes the random number generator with the given integral seed.
 When the module is first imported, the random number is initialized with
 the current time.
@@ -1832,9 +1946,9 @@ the current time.
 This module implements a Wichmann-Hill pseudo-random number generator.
 It defines the following functions:
 \begin{description}
-\item[{\tt random()}]
+\funcitem{random}{}
 Returns the next random floating point number in the range [0.0 ... 1.0).
-\item[{\tt seed(x, y, z)}]
+\funcitem{seed}{x, y, z}
 Initializes the random number generator from the integers
 {\tt x},
 {\tt y}
@@ -1873,13 +1987,13 @@ Note that the positive vertical axis points down (as in
 
 The module defines the following objects:
 \begin{description}
-\item[{\tt error = 'rect.error'}]
+\excitem{error}{rect.error}
 %.br
 The exception raised by functions in this module when they detect an
 error.
 The exception argument is a string describing the problem in more
 detail.
-\item[{\tt empty}]
+\funcitem{empty}
 %.br
 The rectangle returned when some operations return an empty result.
 This makes it possible to quickly check whether a result is empty:
@@ -1892,7 +2006,7 @@ This makes it possible to quickly check whether a result is empty:
 Empty intersection
 >>> 
 \end{verbatim}\ecode
-\item[{\tt is\_empty(r)}]
+\funcitem{is\_empty}{r}
 %.br
 Returns true if the given rectangle is empty.
 A rectangle
@@ -1901,7 +2015,7 @@ is empty if
 {\em left~$\geq$~right}
 or
 {\em top~$\leq$~bottom}.
-\item[{\tt intersect(list)}]
+\funcitem{intersect}{list}
 %.br
 Returns the intersection of all rectangles in the list argument.
 It may also be called with a tuple argument or with two or more
@@ -1912,7 +2026,7 @@ if the list is empty.
 Returns
 {\tt rect.empty}
 if the intersection of the rectangles is empty.
-\item[{\tt union(list)}]
+\funcitem{union}{list}
 %.br
 Returns the smallest rectangle that contains all non-empty rectangles in
 the list argument.
@@ -1921,7 +2035,7 @@ rectangles as arguments.
 Returns
 {\tt rect.empty}
 if the list is empty or all its rectangles are empty.
-\item[{\tt pointinrect(point, rect)}]
+\funcitem{pointinrect}{point, rect}
 %.br
 Returns true if the point is inside the rectangle.
 By definition, a point
@@ -1933,7 +2047,7 @@ if
 {\em left~$\leq$~h~$<$~right}
 and
 {\em top~$\leq$~v~$<$~bottom}.
-\item[{\tt inset(rect, (dh, dv))}]
+\funcitem{inset(rect, }{dh, dv)}
 %.br
 Returns a rectangle that lies inside the
 {\tt rect}
@@ -1950,12 +2064,12 @@ or
 {\tt dv}
 is negative, the result lies outside
 {\tt rect}.
-\item[{\tt rect2geom(rect)}]
+\funcitem{rect2geom}{rect}
 %.br
 Converts a rectangle to geometry representation:
 {\em (left,~top),}
 {\em (width,~height)}.
-\item[{\tt geom2rect(geom)}]
+\funcitem{geom2rect}{geom}
 %.br
 Converts a rectangle given in geometry representation back to the
 standard rectangle representation
@@ -1983,7 +2097,7 @@ to interface with the
 The module is too large to document here in its entirety.
 One interesting function:
 \begin{description}
-\item[{\tt defpanellist(filename)}]
+\funcitem{defpanellist}{filename}
 %.br
 Parses a panel description file containing S-expressions written by the
 {\em Panel Editor}
@@ -2011,9 +2125,10 @@ Each S-expression is converted into a {\Python} list, with atoms converted
 to {\Python} strings and sub-expressions (recursively) to {\Python} lists.
 For more details, read the module file.
 
-\subsection{P.M.}
+\section{P.M.}
 
 \begin{verse}
+
 commands
 
 cmp?
@@ -2025,6 +2140,9 @@ localtime?
 calendar?
 
 \_\_dict?
+
+mac?
+
 \end{verse}
 
 \end{document}
