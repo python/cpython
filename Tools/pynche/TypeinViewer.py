@@ -58,18 +58,8 @@ class TypeinViewer:
         self.__hex.grid(row=4, column=0, columnspan=2, sticky=W)
 
     def __togglehex(self, event=None):
-        rstr = self.__x.get()
-        gstr = self.__y.get()
-        bstr = self.__z.get()
-        if self.__hexp.get():
-            # it was decimal and is now hex
-            apply(self.update_yourself, tuple(map(int, (rstr, gstr, bstr))))
-        else:
-            # it was hex and is now decimal
-            red = string.atoi(rstr, 16)
-            green = string.atoi(gstr, 16)
-            blue = string.atoi(bstr, 16)
-            self.update_yourself(red, green, blue)
+        red, green, blue = self.__sb.current_rgb()
+        self.update_yourself(red, green, blue)
 
     def __normalize(self, event=None):
         ew = event.widget
