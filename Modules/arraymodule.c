@@ -1758,13 +1758,18 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 				for (i = 0; i < len; i++) {
 					PyObject *v =
 					        PySequence_GetItem(initial, i);
-					if (setarrayitem(a, i, v) != 0) {
+					if (v == NULL) {
 						Py_DECREF(a);
 						return NULL;
 					}
+					if (setarrayitem(a, i, v) != 0) {
+						Py_DECREF(v);
+						Py_DECREF(a);
+						return NULL;
+					}
+					Py_DECREF(v);
 				}
-			}
-			if (initial != NULL && PyString_Check(initial)) {
+			} else if (initial != NULL && PyString_Check(initial)) {
 				PyObject *t_initial = Py_BuildValue("(O)",
 								    initial);
 				PyObject *v =

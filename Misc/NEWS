@@ -24,6 +24,8 @@ Library
 - Bug #781065: test_normalization is updated to the current
   URL of the Unicode 3.2 normalization file.
 
+- Bug #782369:  fix memory leak in array module.
+
 IDLE
 ----
 
