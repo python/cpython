@@ -5,8 +5,8 @@ from Tkinter import *
 import tkMessageBox
 import string, os
 
-class GetAccelDialog(Toplevel):
-    def __init__(self,parent,title,action,keySequenceStr):
+class GetKeysDialog(Toplevel):
+    def __init__(self,parent,title,action):
         Toplevel.__init__(self, parent)
         self.configure(borderwidth=5)
         self.resizable(height=FALSE,width=FALSE)
@@ -16,7 +16,7 @@ class GetAccelDialog(Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.Cancel)
         self.parent = parent
         self.action=action
-        self.keySequenceStr=keySequenceStr
+        self.result=''
         self.keyString=StringVar(self)
         self.keyString.set('')
         self.keyCtrl=StringVar(self)
@@ -107,13 +107,12 @@ class GetAccelDialog(Toplevel):
                 command=self.listKeysFinal.yview)
         self.listKeysFinal.config(yscrollcommand=scrollKeysFinal.set)
         scrollKeysFinal.grid(row=0,column=5,rowspan=4,sticky=NS)
-        self.buttonAddNew=Button(self.frameControlsBasic,
-                text='Accept Key Sequence',width=25,command=None)
-        self.buttonAddNew.grid(row=2,column=0,columnspan=4)
-        self.buttonClearLast=Button(self.frameControlsBasic,
-                text='Clear Last Key Sequence',width=25,
-                command=self.ClearLastKeySeq)
-        self.buttonClearLast.grid(row=3,column=0,columnspan=4)
+#         self.buttonAddNew=Button(self.frameControlsBasic,
+#                 text='Accept Key Sequence',width=25,command=None)
+#         self.buttonAddNew.grid(row=2,column=0,columnspan=4)
+        self.buttonClear=Button(self.frameControlsBasic,
+                text='Clear Keys',command=self.ClearKeySeq)
+        self.buttonClear.grid(row=2,column=0,columnspan=4)
         labelTitleAdvanced = Label(self.frameKeySeqAdvanced,justify=LEFT,
                 text="Enter new binding(s) for  '"+self.action+"' :\n"+
                 "(will not be checked for validity)")
@@ -133,11 +132,13 @@ class GetAccelDialog(Toplevel):
 
     def ToggleLevel(self):
         if  self.buttonLevel.cget('text')[:8]=='Advanced':
+            self.ClearKeySeq()
             self.buttonLevel.config(text='<< Basic Key Binding Entry')
             self.frameKeySeqAdvanced.lift()
             self.frameHelpAdvanced.lift()
             self.entryKeysAdvanced.focus_set()
         else:
+            self.ClearKeySeq()
             self.buttonLevel.config(text='Advanced Key Binding Entry >>')
             self.frameKeySeqBasic.lift()
             self.frameControlsBasic.lift()    
@@ -147,8 +148,7 @@ class GetAccelDialog(Toplevel):
         
     def BuildKeyString(self):
         keyList=[]
-        modifiers=self.GetModifiers(self.keyCtrl.get(),self.keyAlt.get(),
-                self.keyShift.get())
+        modifiers=self.GetModifiers()
         finalKey=self.listKeysFinal.get(ANCHOR)
         if modifiers: modifiers[0]='<'+modifiers[0]
         keyList=keyList+modifiers
@@ -160,39 +160,67 @@ class GetAccelDialog(Toplevel):
         keyStr=string.join(keyList,'-')
         self.keyString.set(keyStr)
         
-
-
-#         if (finalKey not in self.functionKeys) and (not modifiers):
-#             tkMessageBox.showerror(title='Key Binding Error',
-#                     message='At least one modifier key should be specified.')
-#             return
-        
-    def GetModifiers(self,ctrl,alt,shift):
+    def GetModifiers(self):
         modList=[]
+        ctrl=self.keyCtrl.get()
+        alt=self.keyAlt.get()
+        shift=self.keyShift.get()
         if ctrl: modList.append(ctrl)
         if alt: modList.append(alt)
         if shift: modList.append(shift)
         return modList
 
-    def ClearLastKeySeq(self):
-        pass
+    def ClearKeySeq(self):
+        self.listKeysFinal.select_clear(0,END)
+        self.listKeysFinal.yview(MOVETO, '0.0')
+        self.keyCtrl.set('')
+        self.keyAlt.set(''),
+        self.keyShift.set('')
+        self.keyString.set('')    
     
     def LoadFinalKeyList(self):
-        #make a tuple of most of the useful common 'final' keys
+        #these tuples are also available for use in validity checks
         self.functionKeys=('F1','F2','F2','F4','F5','F6','F7','F8','F9',
                 'F10','F11','F12')
-        keys=(tuple(string.ascii_lowercase+string.digits+
-               '~!@#%^&*()_-+={}[]|;:,./?')+('tab','space')+self.functionKeys)
+        self.punctuationKeys=tuple('~!@#%^&*()_-+={}[]|;:,./?')
+        self.specialKeys=('tab','space')
+        self.alphanumKeys=tuple(string.ascii_lowercase+string.digits)
+        #make a tuple of most of the useful common 'final' keys
+        keys=(self.alphanumKeys+self.punctuationKeys+self.specialKeys+
+                self.functionKeys)
         apply(self.listKeysFinal.insert,
             (END,)+keys)
     
+    def KeysOk(self):
+        #simple validity check
+        keysOk=1
+        keys=self.keyString.get()
+        keys.strip()
+        finalKey=self.listKeysFinal.get(ANCHOR)
+        modifiers=self.GetModifiers()
+        if not keys: #no keys specified
+            tkMessageBox.showerror(title='Key Sequence Error',
+                    message='No keys specified.')
+            keysOk=0
+        elif not keys.endswith('>'): #no final key specified
+            tkMessageBox.showerror(title='Key Sequence Error',
+                    message='No final key specified.')
+            keysOk=0
+        elif (modifiers==['Shift']) and (finalKey not in self.functionKeys):
+            #shift alone is only a useful modifier with a function key
+            tkMessageBox.showerror(title='Key Sequence Error',
+                    message='Shift alone is only a useful modifier '+
+                            'when used with a function key.')
+            keysOk=0
+        return keysOk
+    
     def Ok(self, event=None):
         if self.KeysOk():
-            self.keySequenceStr=self.keyDisplay.get()
+            self.result=self.keyString.get()
             self.destroy()
-    
+        
     def Cancel(self, event=None):
-        self.keySequenceStr=''
+        self.result=''
         self.destroy()
     
 if __name__ == '__main__':
@@ -202,7 +230,7 @@ if __name__ == '__main__':
         #import aboutDialog
         #aboutDialog.AboutDialog(root,'About')
         keySeq=''
-        GetAccelDialog(root,'Get Keys','find-again',keySeq)
-        print keySeq
+        dlg=GetKeysDialog(root,'Get Keys','find-again')
+        print dlg.result
     Button(root,text='Dialog',command=run).pack()
     root.mainloop()

@@ -3,10 +3,12 @@ configuration dialog
 """
 from Tkinter import *
 import tkMessageBox, tkColorChooser, tkFont
+import string
 
 from configHandler import idleConf
 from dynOptionMenuWidget import DynOptionMenu
 from tabpage import TabPageSet
+from keybindingDialog import GetKeysDialog
 
 class ConfigDialog(Toplevel):
     """
@@ -354,20 +356,17 @@ class ConfigDialog(Toplevel):
         frameKeySets=Frame(frame,borderwidth=2,relief=GROOVE)
         #frameCustom
         frameTarget=Frame(frameCustom)
-        frameSet=Frame(frameCustom)
         labelCustomTitle=Label(frameCustom,text='Set Custom Key Bindings')
-        labelTargetTitle=Label(frameTarget,text='Action')
-        scrollTarget=Scrollbar(frameTarget)
-        listTarget=Listbox(frameTarget)
-        scrollTarget.config(command=listTarget.yview)
-        listTarget.config(yscrollcommand=scrollTarget.set)
-        labelKeyBindTitle=Label(frameSet,text='Binding')
-        labelModifierTitle=Label(frameSet,text='Modifier:')
-        checkCtrl=Checkbutton(frameSet,text='Ctrl')
-        checkAlt=Checkbutton(frameSet,text='Alt')
-        checkShift=Checkbutton(frameSet,text='Shift')
-        labelKeyEntryTitle=Label(frameSet,text='Key:')        
-        entryKey=Entry(frameSet,width=4)
+        labelTargetTitle=Label(frameTarget,text='Action - Key(s)')
+        scrollTargetY=Scrollbar(frameTarget)
+        scrollTargetX=Scrollbar(frameTarget,orient=HORIZONTAL)
+        self.listBindings=Listbox(frameTarget)
+        scrollTargetY.config(command=self.listBindings.yview)
+        scrollTargetX.config(command=self.listBindings.xview)
+        self.listBindings.config(yscrollcommand=scrollTargetY.set)
+        self.listBindings.config(xscrollcommand=scrollTargetX.set)
+        buttonNewKeys=Button(frameCustom,text='Get New Keys for Selection',
+            command=self.GetNewKeys)
         buttonSaveCustomKeys=Button(frameCustom,text='Save as a Custom Key Set')
         #frameKeySets
         labelKeysTitle=Label(frameKeySets,text='Select a Key Set')
@@ -388,18 +387,15 @@ class ConfigDialog(Toplevel):
         #frameCustom
         labelCustomTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         buttonSaveCustomKeys.pack(side=BOTTOM,fill=X,padx=5,pady=5)        
-        frameTarget.pack(side=LEFT,padx=5,pady=5,fill=Y)
-        frameSet.pack(side=LEFT,padx=5,pady=5,fill=Y)
-        labelTargetTitle.pack(side=TOP,anchor=W)
-        scrollTarget.pack(side=RIGHT,anchor=W,fill=Y)
-        listTarget.pack(side=TOP,anchor=W,expand=TRUE,fill=BOTH)
-        labelKeyBindTitle.pack(side=TOP,anchor=W)
-        labelModifierTitle.pack(side=TOP,anchor=W,pady=5)
-        checkCtrl.pack(side=TOP,anchor=W)
-        checkAlt.pack(side=TOP,anchor=W,pady=2)
-        checkShift.pack(side=TOP,anchor=W)
-        labelKeyEntryTitle.pack(side=TOP,anchor=W,pady=5)
-        entryKey.pack(side=TOP,anchor=W)
+        buttonNewKeys.pack(side=BOTTOM,fill=X,padx=5,pady=5)        
+        frameTarget.pack(side=LEFT,padx=5,pady=5,expand=TRUE,fill=BOTH)
+        #frame target
+        frameTarget.columnconfigure(0,weight=1)
+        frameTarget.rowconfigure(1,weight=1)
+        labelTargetTitle.grid(row=0,column=0,columnspan=2,sticky=W)
+        self.listBindings.grid(row=1,column=0,sticky=NSEW)
+        scrollTargetY.grid(row=1,column=1,sticky=NS)
+        scrollTargetX.grid(row=2,column=0,sticky=EW)
         #frameKeySets
         labelKeysTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         labelTypeTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
@@ -432,7 +428,6 @@ class ConfigDialog(Toplevel):
             value=1,command=self.SetKeysType,text='in a Separate Process')
         #frameWinSize
         labelWinSizeTitle=Label(frameWinSize,text='Initial Window Size')
-        buttonWinSizeSet=Button(frameWinSize,text='Set to current window size')
         labelWinWidthTitle=Label(frameWinSize,text='Width')
         entryWinWidth=Entry(frameWinSize,textvariable=self.winWidth,
                 width=3)
@@ -467,12 +462,11 @@ class ConfigDialog(Toplevel):
         radioRunInternal.pack(side=LEFT,anchor=W,padx=5,pady=5)
         radioRunSeparate.pack(side=LEFT,anchor=W,padx=5,pady=5)     
         #frameWinSize
-        labelWinSizeTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
-        buttonWinSizeSet.pack(side=LEFT,anchor=W,padx=5,pady=5)
-        labelWinWidthTitle.pack(side=LEFT,anchor=W,padx=5,pady=5)
-        entryWinWidth.pack(side=LEFT,anchor=W,padx=5,pady=5)
-        labelWinHeightTitle.pack(side=LEFT,anchor=W,padx=5,pady=5)
-        entryWinHeight.pack(side=LEFT,anchor=W,padx=5,pady=5)
+        labelWinSizeTitle.pack(side=LEFT,anchor=W,padx=5,pady=5)
+        entryWinHeight.pack(side=RIGHT,anchor=E,padx=10,pady=5)
+        labelWinHeightTitle.pack(side=RIGHT,anchor=E,pady=5)
+        entryWinWidth.pack(side=RIGHT,anchor=E,padx=10,pady=5)
+        labelWinWidthTitle.pack(side=RIGHT,anchor=E,pady=5)
         #frameExt
         labelExtTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         frameExtSet.pack(side=RIGHT,padx=5,pady=5,fill=Y)
@@ -588,7 +582,31 @@ class ConfigDialog(Toplevel):
             itemList=idleConf.GetSectionList('default','keys')
             self.optMenuKeysBuiltin.SetMenu(itemList,itemList[0])
         self.SetKeysType()   
-        ##load keyset element option menu   
+        ##load keyset element list
+        keySet=idleConf.GetKeys(currentOption)
+        bindNames=keySet.keys()
+        bindNames.sort()
+        for bindName in bindNames: 
+            key=string.join(keySet[bindName]) #make key(s) into a string
+            bindName=bindName[2:-2] #trim off the angle brackets
+            self.listBindings.insert(END, bindName+' - '+key)
+   
+    def GetNewKeys(self):
+        listIndex=self.listBindings.index(ANCHOR)
+        binding=self.listBindings.get(listIndex)
+        bindName=binding.split()[0] #first part, up to first space
+        newKeys=GetKeysDialog(self,'Get New Keys',bindName)
+        print newKeys.result
+        if newKeys.result: #new keys were specified
+            self.listBindings.delete(listIndex)
+            self.listBindings.insert(listIndex,bindName+' - '+newKeys.result)
+        self.listBindings.select_set(listIndex)
+    
+    def LoadGeneralCfg(self):
+        #initial window size
+        self.winWidth.set(idleConf.GetOption('main','EditorWindow','width'))       
+        self.winHeight.set(idleConf.GetOption('main','EditorWindow','height'))
+        
         
     def LoadConfigs(self):
         """
@@ -604,6 +622,7 @@ class ConfigDialog(Toplevel):
         self.LoadKeyCfg()
         ### help page
         ### general page
+        self.LoadGeneralCfg()
         
     def SaveConfigs(self):
         """
