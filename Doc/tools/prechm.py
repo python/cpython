@@ -163,7 +163,7 @@ supported_libraries = {
         Book('api','Python/C API','api','contents','genindex'),
         Book('doc','Documenting Python','doc','contents'),
         Book('inst','Installing Python Modules', 'inst', 'index'),
-        Book('dist','Distributing Python Modules', 'dist', 'index'),
+        Book('dist','Distributing Python Modules', 'dist', 'index', 'genindex'),
     ],
 
     '2.3':
