@@ -164,7 +164,7 @@ class MWerksCompiler (CCompiler) :
                 if value is None:
                     fp.write('#define %s\n'%name)
                 else:
-                    fp.write('#define %s "%s"\n'%(name, value))
+                    fp.write('#define %s %s\n'%(name, value))
             fp.close()
             settings['prefixname'] = prefixname
 
