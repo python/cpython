@@ -731,6 +731,7 @@ static void symtable_global(struct symtable *, node *);
 static void symtable_import(struct symtable *, node *);
 static void symtable_assign(struct symtable *, node *, int);
 static void symtable_list_comprehension(struct symtable *, node *);
+static void symtable_list_for(struct symtable *, node *);
 
 static int symtable_update_free_vars(struct symtable *);
 static int symtable_undo_free(struct symtable *, PyObject *, PyObject *);
@@ -1602,6 +1603,8 @@ com_list_comprehension(struct compiling *c, node *n)
 {
 	/* listmaker: test list_for */
 	char tmpname[30];
+
+	REQ(n, listmaker);
 	PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]", ++c->c_tmpname);
 	com_addoparg(c, BUILD_LIST, 0);
 	com_addbyte(c, DUP_TOP); /* leave the result on the stack */
@@ -4921,7 +4924,6 @@ symtable_init()
 	st->st_cur = NULL;
 	st->st_nscopes = 0;
 	st->st_errors = 0;
-	st->st_tmpname = 0;
 	st->st_private = NULL;
 	return st;
  fail:
@@ -5123,9 +5125,6 @@ symtable_enter_scope(struct symtable *st, char *name, int type,
 	if (st->st_cur) {
 		prev = st->st_cur;
 		if (PyList_Append(st->st_stack, (PyObject *)st->st_cur) < 0) {
-			/* Py_DECREF(st->st_cur); */
-			/* I believe the previous line would lead to a
-			   double-DECREF when st is disposed - JRH */
 			st->st_errors++;
 			return;
 		}
@@ -5395,12 +5394,12 @@ symtable_node(struct symtable *st, node *n)
 		}
 		goto loop;
 	case list_iter:
+		/* only occurs when there are multiple for loops
+		   in a list comprehension */
 		n = CHILD(n, 0);
-		if (TYPE(n) == list_for) {
-			st->st_tmpname++;
-			symtable_list_comprehension(st, n);
-			st->st_tmpname--;
-		} else {
+		if (TYPE(n) == list_for)
+			symtable_list_for(st, n);
+		else {
 			REQ(n, list_if);
 			symtable_node(st, CHILD(n, 1));
 			if (NCH(n) == 3) {
@@ -5428,10 +5427,7 @@ symtable_node(struct symtable *st, node *n)
 		/* fall through */
 	case listmaker:
 		if (NCH(n) > 1 && TYPE(CHILD(n, 1)) == list_for) {
-			st->st_tmpname++;
-			symtable_list_comprehension(st, CHILD(n, 1));
-			symtable_node(st, CHILD(n, 0));
-			st->st_tmpname--;
+			symtable_list_comprehension(st, n);
 			break;
 		}
 		/* fall through */
@@ -5629,10 +5625,23 @@ symtable_global(struct symtable *st, node *n)
 static void
 symtable_list_comprehension(struct symtable *st, node *n)
 {
+	/* listmaker: test list_for */
 	char tmpname[30];
 
-	PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]", st->st_tmpname);
+	REQ(n, listmaker);
+	PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]", 
+		      ++st->st_cur->ste_tmpname);
 	symtable_add_def(st, tmpname, DEF_LOCAL);
+	symtable_list_for(st, CHILD(n, 1));
+	symtable_node(st, CHILD(n, 0));
+	--st->st_cur->ste_tmpname;
+}
+
+static void
+symtable_list_for(struct symtable *st, node *n)
+{
+	REQ(n, list_for);
+	/* list_for: for v in expr [list_iter] */
 	symtable_assign(st, CHILD(n, 1), 0);
 	symtable_node(st, CHILD(n, 3));
 	if (NCH(n) == 5)

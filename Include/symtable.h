@@ -28,7 +28,6 @@ struct symtable {
 	int st_nscopes;          /* number of scopes */
 	int st_errors;           /* number of errors */
 	char *st_private;        /* name of current class or NULL */
-	int st_tmpname;          /* temporary name counter */
 	PyFutureFeatures *st_future; /* module's future features */
 };
 
@@ -47,6 +46,7 @@ typedef struct _symtable_entry {
 				    including free refs to globals */
 	int ste_generator;       /* true if namespace is a generator */
 	int ste_opt_lineno;      /* lineno of last exec or import * */
+	int ste_tmpname;          /* temporary name counter */
 	struct symtable *ste_table;
 } PySymtableEntryObject;
 
