@@ -308,20 +308,96 @@ PyObject_Str(PyObject *v)
 	return res;
 }
 
-static PyObject *
+#define NEW_STYLE_NUMBER(o) PyType_HasFeature((o)->ob_type, \
+				Py_TPFLAGS_NEWSTYLENUMBER)
+
+static int
+cmp_to_int(PyObject *result)
+{
+	int c;
+	if (result == NULL)
+		return -1;
+	if (!PyInt_Check(result)) {
+	    PyErr_SetString(PyExc_TypeError,
+			"comparison did not return an int");
+	    return -1;
+	}
+	c = PyInt_AS_LONG(result);
+	Py_DECREF(result);
+	return (c < 0) ? -1 : (c > 0) ? 1 : 0;	
+}
+
+static int
 do_cmp(PyObject *v, PyObject *w)
 {
-	long c;
-	/* __rcmp__ actually won't be called unless __cmp__ isn't defined,
-	   because the check in cmpobject() reverses the objects first.
-	   This is intentional -- it makes no sense to define cmp(x,y)
-	   different than -cmp(y,x). */
-	if (PyInstance_Check(v) || PyInstance_Check(w))
-		return PyInstance_DoBinOp(v, w, "__cmp__", "__rcmp__", do_cmp);
-	c = PyObject_Compare(v, w);
-	if (c && PyErr_Occurred())
-		return NULL;
-	return PyInt_FromLong(c);
+	PyNumberMethods *mv, *mw;
+	PyObject *x;
+	int c;
+
+	/* new style nb_cmp gets priority */
+	mv = v->ob_type->tp_as_number;
+	if (mv != NULL && NEW_STYLE_NUMBER(v) && mv->nb_cmp) {
+		x = (*mv->nb_cmp)(v, w);
+		if (x != Py_NotImplemented)
+			return cmp_to_int(x);
+		Py_DECREF(x);
+	}
+	mw = w->ob_type->tp_as_number;
+	if (mw != NULL && NEW_STYLE_NUMBER(w) && mw->nb_cmp) {
+		x = (*mw->nb_cmp)(v, w);
+		if (x != Py_NotImplemented)
+			return cmp_to_int(x);
+		Py_DECREF(x);
+	}
+	/* fall back to tp_compare */
+	if (v->ob_type == w->ob_type) {
+		if (v->ob_type->tp_compare != NULL) {
+			return (*v->ob_type->tp_compare)(v, w);
+		}
+		else {
+			Py_uintptr_t iv = (Py_uintptr_t)v;
+			Py_uintptr_t iw = (Py_uintptr_t)w;
+			return (iv < iw) ? -1 : (iv > iw) ? 1 : 0;
+		}
+	}
+	if (PyUnicode_Check(v) || PyUnicode_Check(w)) {
+	    c = PyUnicode_Compare(v, w);
+	    if (c == -1 &&
+		PyErr_Occurred() &&
+		PyErr_ExceptionMatches(PyExc_TypeError))
+		/* TypeErrors are ignored: if Unicode coercion
+		fails due to one of the arguments not having
+		the right type, we continue as defined by the
+		coercion protocol (see above). Luckily,
+		decoding errors are reported as ValueErrors and
+		are not masked by this technique. */
+		PyErr_Clear();
+	    else
+		return c;
+	}
+	/* fall back to coercion */
+	if (mv && mw && (!NEW_STYLE_NUMBER(v) || !NEW_STYLE_NUMBER(w))) {
+		/* old style operand, both operations numeric, coerce  */
+		int err = PyNumber_CoerceEx(&v, &w);
+		if (err < 0)
+			return -1;
+		if (err == 0) {
+			if (v->ob_type->tp_compare) {
+				c = (*v->ob_type->tp_compare)(v, w);
+			}
+			else {
+				Py_uintptr_t iv = (Py_uintptr_t)v;
+				Py_uintptr_t iw = (Py_uintptr_t)w;
+				c = (iv < iw) ? -1 : (iv > iw) ? 1 : 0;
+			}
+			Py_DECREF(v);
+			Py_DECREF(w);
+			return c;
+		}
+	}
+	/* last resort, use type names */
+	c = strcmp(v->ob_type->tp_name, w->ob_type->tp_name);
+	return (c < 0) ? -1: (c > 0) ? 1 : 0;
 }
 
 PyObject *_PyCompareState_Key;
@@ -401,128 +477,42 @@ PyObject_Compare(PyObject *v, PyObject *w)
 	}
 	if (v == w)
 		return 0;
-	if (PyInstance_Check(v) || PyInstance_Check(w)) {
-		PyObject *res;
-		int c;
-		if (!PyInstance_Check(v))
-			return -PyObject_Compare(w, v);
-		_PyCompareState_nesting++;
-		if (_PyCompareState_nesting > NESTING_LIMIT) {
-			PyObject *inprogress, *pair;
-
-			inprogress = get_inprogress_dict();
-			if (inprogress == NULL) {
-				_PyCompareState_nesting--;
-				return -1;
-			}
-			pair = make_pair(v, w);
-			if (PyDict_GetItem(inprogress, pair)) {
-				/* already comparing these objects.  assume
-				   they're equal until shown otherwise */
-				Py_DECREF(pair);
-				_PyCompareState_nesting--;
-				return 0;
-			}
-			if (PyDict_SetItem(inprogress, pair, pair) == -1) {
-				_PyCompareState_nesting--;
-				return -1;
-			}
-			res = do_cmp(v, w);
-			/* XXX DelItem shouldn't fail */
-			PyDict_DelItem(inprogress, pair);
-			Py_DECREF(pair);
-		} else {
-			res = do_cmp(v, w);
-		}
-		_PyCompareState_nesting--;
-		if (res == NULL)
-			return -1;
-		if (!PyInt_Check(res)) {
-			Py_DECREF(res);
-			PyErr_SetString(PyExc_TypeError,
-					"comparison did not return an int");
-			return -1;
-		}
-		c = PyInt_AsLong(res);
-		Py_DECREF(res);
-		return (c < 0) ? -1 : (c > 0) ? 1 : 0;	
-	}
-	if ((vtp = v->ob_type) != (wtp = w->ob_type)) {
-		char *vname = vtp->tp_name;
-		char *wname = wtp->tp_name;
-		if (vtp->tp_as_number != NULL && wtp->tp_as_number != NULL) {
-			int err;
-			err = PyNumber_CoerceEx(&v, &w);
-			if (err < 0)
-				return -1;
-			else if (err == 0) {
-				int cmp;
-				vtp = v->ob_type;
-				if (vtp->tp_compare == NULL)
-					cmp = (v < w) ? -1 : 1;
-				else
-					cmp = (*vtp->tp_compare)(v, w);
-				Py_DECREF(v);
-				Py_DECREF(w);
-				return cmp;
-			}
-		}
-		else if (PyUnicode_Check(v) || PyUnicode_Check(w)) {
-			int result = PyUnicode_Compare(v, w);
-			if (result == -1 && PyErr_Occurred() && 
-			    PyErr_ExceptionMatches(PyExc_TypeError))
-				/* TypeErrors are ignored: if Unicode coercion
-				fails due to one of the arguments not
-			 	having the right type, we continue as
-				defined by the coercion protocol (see
-				above). Luckily, decoding errors are
-				reported as ValueErrors and are not masked
-				by this technique. */
-				PyErr_Clear();
-			else
-				return result;
-		}
-		else if (vtp->tp_as_number != NULL)
-			vname = "";
-		else if (wtp->tp_as_number != NULL)
-			wname = "";
-		/* Numerical types compare smaller than all other types */
-		return strcmp(vname, wname);
-	}
-	if (vtp->tp_compare == NULL) {
-		Py_uintptr_t iv = (Py_uintptr_t)v;
-		Py_uintptr_t iw = (Py_uintptr_t)w;
-		return (iv < iw) ? -1 : 1;
-	}
+	vtp = v->ob_type;
+	wtp = w->ob_type;
 	_PyCompareState_nesting++;
-	if (_PyCompareState_nesting > NESTING_LIMIT
-	    && (vtp->tp_as_mapping 
-		|| (vtp->tp_as_sequence && !PyString_Check(v)))) {
+	if (_PyCompareState_nesting > NESTING_LIMIT &&
+		(vtp->tp_as_mapping
+		 || PyInstance_Check(v)
+		 || (vtp->tp_as_sequence && !PyString_Check(v)))) {
+		/* try to detect circular data structures */
 		PyObject *inprogress, *pair;
 
 		inprogress = get_inprogress_dict();
 		if (inprogress == NULL) {
-			_PyCompareState_nesting--;
-			return -1;
+                        result = -1;
+                        goto exit_cmp;
 		}
 		pair = make_pair(v, w);
 		if (PyDict_GetItem(inprogress, pair)) {
 			/* already comparing these objects.  assume
 			   they're equal until shown otherwise */
 			Py_DECREF(pair);
-			_PyCompareState_nesting--;
-			return 0;
+                        result = 0;
+                        goto exit_cmp;
 		}
 		if (PyDict_SetItem(inprogress, pair, pair) == -1) {
-			_PyCompareState_nesting--;
-			return -1;
+                        result = -1;
+                        goto exit_cmp;
 		}
-		result = (*vtp->tp_compare)(v, w);
-		PyDict_DelItem(inprogress, pair); /* XXX shouldn't fail */
+		result = do_cmp(v, w);
+		/* XXX DelItem shouldn't fail */
+		PyDict_DelItem(inprogress, pair);
 		Py_DECREF(pair);
-	} else {
-		result = (*vtp->tp_compare)(v, w);
 	}
+	else {
+		result = do_cmp(v, w);
+	}
+exit_cmp:
 	_PyCompareState_nesting--;
 	return result;
 }
@@ -915,6 +905,37 @@ static PyTypeObject PyNothing_Type = {
 
 PyObject _Py_NoneStruct = {
 	PyObject_HEAD_INIT(&PyNothing_Type)
+};
+
+/* NotImplemented is an object that can be used to signal that an
+   operation is not implemented for the given type combination. */
+
+static PyObject *
+NotImplemented_repr(PyObject *op)
+{
+	return PyString_FromString("NotImplemented");
+}
+
+static PyTypeObject PyNotImplemented_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,
+	"NotImplemented",
+	0,
+	0,
+	0,		/*tp_dealloc*/ /*never called*/
+	0,		/*tp_print*/
+	0,		/*tp_getattr*/
+	0,		/*tp_setattr*/
+	0,		/*tp_compare*/
+	(reprfunc)NotImplemented_repr, /*tp_repr*/
+	0,		/*tp_as_number*/
+	0,		/*tp_as_sequence*/
+	0,		/*tp_as_mapping*/
+	0,		/*tp_hash */
+};
+
+PyObject _Py_NotImplementedStruct = {
+	PyObject_HEAD_INIT(&PyNotImplemented_Type)
 };
 
 
