@@ -1,0 +1,4 @@
+test_ucn
+Testing General Unicode Character Name, and case insensitivity... done.
+Testing misc. symbols for unicode character name expansion.... done.
+Testing unicode character name expansion strict error handling.... done.
