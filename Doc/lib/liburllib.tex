@@ -161,8 +161,6 @@ import urllib
 
 class AppURLopener(urllib.FancyURLopener):
     version = "App/1.7"
-    def __init__(self, *args):
-        urllib.FancyURLopener.__init__(self, *args)
 
 urllib._urlopener = AppURLopener()
 \end{verbatim}
