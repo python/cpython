@@ -582,7 +582,7 @@ PyTypeObject PyTuple_Type = {
 	0,					/* tp_init */
 	0,					/* tp_alloc */
 	tuple_new,				/* tp_new */
-	_PyObject_GC_Del,			/* tp_free */
+	PyObject_GC_Del,        		/* tp_free */
 };
 
 /* The following function breaks the notion that tuples are immutable:
