@@ -91,7 +91,7 @@ def truncString(s, maxwid):
 def drawTextCell(text, cellRect, ascent, theList):
 	l, t, r, b = cellRect
 	cellwidth = r - l
-	Qd.MoveTo(l + 2, t + ascent)
+	Qd.MoveTo(int(l + 2), int(t + ascent))
 	condense, text = truncString(text, cellwidth - 3)
 	if condense:
 		Qd.TextFace(QuickDraw.condense)
