@@ -12,29 +12,30 @@
 \indexii{pickling}{objects}
 
 
-The \module{pickle} module implements a basic but powerful algorithm for
-``pickling'' (a.k.a.\ serializing, marshalling or flattening) nearly
-arbitrary Python objects.  This is the act of converting objects to a
-stream of bytes (and back: ``unpickling'').
-This is a more primitive notion than
-persistency --- although \module{pickle} reads and writes file objects,
-it does not handle the issue of naming persistent objects, nor the
-(even more complicated) area of concurrent access to persistent
-objects.  The \module{pickle} module can transform a complex object into
-a byte stream and it can transform the byte stream into an object with
-the same internal structure.  The most obvious thing to do with these
-byte streams is to write them onto a file, but it is also conceivable
-to send them across a network or store them in a database.  The module
+The \module{pickle} module implements a basic but powerful algorithm
+for ``pickling'' (a.k.a.\ serializing, marshalling or flattening)
+nearly arbitrary Python objects.  This is the act of converting
+objects to a stream of bytes (and back: ``unpickling'').  This is a
+more primitive notion than persistency --- although \module{pickle}
+reads and writes file objects, it does not handle the issue of naming
+persistent objects, nor the (even more complicated) area of concurrent
+access to persistent objects.  The \module{pickle} module can
+transform a complex object into a byte stream and it can transform the
+byte stream into an object with the same internal structure.  The most
+obvious thing to do with these byte streams is to write them onto a
+file, but it is also conceivable to send them across a network or
+store them in a database.  The module
 \refmodule{shelve}\refstmodindex{shelve} provides a simple interface
 to pickle and unpickle objects on DBM-style database files.
 
 
 \strong{Note:} The \module{pickle} module is rather slow.  A
 reimplementation of the same algorithm in C, which is up to 1000 times
-faster, is available as the \refmodule{cPickle}\refbimodindex{cPickle}
-module.  This has the same interface except that \code{Pickler} and
-\code{Unpickler} are factory functions, not classes (so they cannot be
-used as base classes for inheritance).
+faster, is available as the
+\refmodule{cPickle}\refbimodindex{cPickle} module.  This has the same
+interface except that \class{Pickler} and \class{Unpickler} are
+factory functions, not classes (so they cannot be used as base classes
+for inheritance).
 
 Unlike the built-in module \refmodule{marshal}\refbimodindex{marshal},
 \module{pickle} handles the following correctly:
@@ -72,12 +73,11 @@ compatibility with the Python 1.4 pickle module.  In a future version,
 the default may change to binary.
 
 The \module{pickle} module doesn't handle code objects, which the
-\refmodule{marshal} module does.  I suppose \module{pickle} could, and maybe
-it should, but there's probably no great need for it right now (as
-long as \refmodule{marshal} continues to be used for reading and writing
-code objects), and at least this avoids the possibility of smuggling
-Trojan horses into a program.
-\refbimodindex{marshal}
+\refmodule{marshal}\refbimodindex{marshal} module does.  I suppose
+\module{pickle} could, and maybe it should, but there's probably no
+great need for it right now (as long as \refmodule{marshal} continues
+to be used for reading and writing code objects), and at least this
+avoids the possibility of smuggling Trojan horses into a program.
 
 For the benefit of persistency modules written using \module{pickle}, it
 supports the notion of a reference to an object outside the pickled
@@ -109,10 +109,15 @@ which should return a \emph{tuple} containing the arguments to be
 passed to the class constructor (\method{__init__()}).  This method is
 called at pickle time; the tuple it returns is incorporated in the
 pickle for the instance.
-\ttindex{__getinitargs__()}
-\ttindex{__init__()}
+\withsubitem{(copy protocol)}{\ttindex{__getinitargs__()}}
+\withsubitem{(instance constructor)}{\ttindex{__init__()}}
 
-Classes can further influence how their instances are pickled --- if the class
+Classes can further influence how their instances are pickled --- if
+the class
+\withsubitem{(copy protocol)}{
+  \ttindex{__getstate__()}\ttindex{__setstate__()}}
+\withsubitem{(instance attribute)}{
+  \ttindex{__dict__}}
 defines the method \method{__getstate__()}, it is called and the return
 state is pickled as the contents for the instance, and if the class
 defines the method \method{__setstate__()}, it is called with the
@@ -126,9 +131,6 @@ and \method{__setstate__()}, the state object needn't be a dictionary
 --- these methods can do what they want.)  This protocol is also used
 by the shallow and deep copying operations defined in the
 \refmodule{copy}\refstmodindex{copy} module.
-\ttindex{__getstate__()}
-\ttindex{__setstate__()}
-\ttindex{__dict__}
 
 Note that when class instances are pickled, their class's code and
 data are not pickled along with them.  Only the instance data are
@@ -175,12 +177,12 @@ x = pickle.load(f)
 \end{verbatim}
 
 The \class{Pickler} class only calls the method \code{f.write()} with a
+\withsubitem{(class in pickle)}{
+  \ttindex{Unpickler}\ttindex{Pickler}}
 string argument.  The \class{Unpickler} calls the methods \code{f.read()}
 (with an integer argument) and \code{f.readline()} (without argument),
 both returning a string.  It is explicitly allowed to pass non-file
 objects here, as long as they have the right methods.
-\ttindex{Unpickler}
-\ttindex{Pickler}
 
 The constructor for the \class{Pickler} class has an optional second
 argument, \var{bin}.  If this is present and nonzero, the binary
@@ -190,6 +192,7 @@ but backwards compatible) text pickle format is used.  The
 between binary and text pickle formats; it accepts either format.
 
 The following types can be pickled:
+
 \begin{itemize}
 
 \item \code{None}
@@ -257,7 +260,7 @@ the string past the pickled object's representation are ignored.
 
 \begin{excdesc}{PicklingError}
 This exception is raised when an unpicklable object is passed to
-\code{Pickler.dump()}.
+\method{Pickler.dump()}.
 \end{excdesc}
 
 
@@ -283,11 +286,11 @@ This exception is raised when an unpicklable object is passed to
 
 
 The \module{cPickle} module provides a similar interface and identical
-functionality as the \refmodule{pickle} module, but can be up to 1000
-times faster since it is implemented in C.  The only other
-important difference to note is that \function{Pickler()} and
-\function{Unpickler()} are functions and not classes, and so cannot be
-subclassed.  This should not be an issue in most cases.
+functionality as the \refmodule{pickle}\refstmodindex{pickle} module,
+but can be up to 1000 times faster since it is implemented in C.  The
+only other important difference to note is that \function{Pickler()}
+and \function{Unpickler()} are functions and not classes, and so
+cannot be subclassed.  This should not be an issue in most cases.
 
 The format of the pickle data is identical to that produced using the
 \refmodule{pickle} module, so it is possible to use \refmodule{pickle} and
