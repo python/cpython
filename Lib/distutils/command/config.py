@@ -187,7 +187,7 @@ class config (Command):
         self._check_compiler()
         ok = 1
         try:
-            self._preprocess(body, headers, lang)
+            self._preprocess(body, headers, include_dirs, lang)
         except CompileError:
             ok = 0
 
@@ -205,7 +205,7 @@ class config (Command):
         """
 
         self._check_compiler()
-        (src, out) = self._preprocess(body, headers, lang)
+        (src, out) = self._preprocess(body, headers, include_dirs, lang)
 
         if type(pattern) is StringType:
             pattern = re.compile(pattern)
@@ -216,7 +216,7 @@ class config (Command):
             line = file.readline()
             if line == '':
                 break
-            if pattern.search(pattern):
+            if pattern.search(line):
                 match = 1
                 break
 
@@ -231,7 +231,7 @@ class config (Command):
         from distutils.ccompiler import CompileError
         self._check_compiler()
         try:
-            self._compile(body, headers, lang)
+            self._compile(body, headers, include_dirs, lang)
             ok = 1
         except CompileError:
             ok = 0
