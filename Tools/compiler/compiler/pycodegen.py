@@ -11,6 +11,10 @@ import misc
 import marshal
 import new
 import string
+import sys
+import os
+import stat
+import struct
 
 def parse(path):
     f = open(path)
@@ -60,7 +64,7 @@ class ASTVisitor:
     XXX Perhaps I can use a postorder walk for the code generator?
     """
 
-    VERBOSE = 0
+    VERBOSE = 1
 
     def __init__(self):
 	self.node = None
@@ -101,9 +105,34 @@ class ASTVisitor:
             return meth(node)
 
 class CodeGenerator:
-    def __init__(self):
-	self.code = PythonVMCode()
+    def __init__(self, filename=None):
+        self.filename = filename
+	self.code = PythonVMCode(filename=filename)
+        self.code.setFlags(0)
 	self.locals = misc.Stack()
+        # track the current and max stack size
+        # XXX does this belong here or in the PythonVMCode?
+        self.curStack = 0
+        self.maxStack = 0
+
+    def emit(self):
+        """Create a Python code object
+
+        XXX It is confusing that this method isn't related to the
+        method named emit in the PythonVMCode.
+        """
+        return self.code.makeCodeObject(self.maxStack)
+
+    def push(self, n):
+        self.curStack = self.curStack + n
+        if self.curStack > self.maxStack:
+            self.maxStack = self.curStack
+
+    def pop(self, n):
+        if n >= self.curStack:
+            self.curStack = self.curStack - n
+        else:
+            self.curStack = 0
 
     def visitDiscard(self, node):
         return 1
@@ -112,16 +141,16 @@ class CodeGenerator:
 	lnf = walk(node.node, LocalNameFinder())
 	self.locals.push(lnf.getLocals())
         self.visit(node.node)
-        self.code.emit('LOAD_CONST', 'None')
+        self.code.emit('LOAD_CONST', None)
         self.code.emit('RETURN_VALUE')
         return 1
 
     def visitFunction(self, node):
-        codeBody = NestedCodeGenerator(node.code, node.argnames)
-        walk(node.code, codeBody)
+        codeBody = NestedCodeGenerator(node, filename=self.filename)
+        walk(node, codeBody)
         self.code.setLineNo(node.lineno)
-        self.code.emit('LOAD_CONST', codeBody.code)
-        self.code.emit('MAKE_FUNCTION')
+        self.code.emit('LOAD_CONST', codeBody)
+        self.code.emit('MAKE_FUNCTION', 0)
         self.code.emit('STORE_NAME', node.name)
         return 1
 
@@ -212,6 +241,7 @@ class CodeGenerator:
 	self.visit(node.left)
 	self.visit(node.right)
 	self.code.emit(op)
+        self.pop(1)
 	return 1
 
     def visitAdd(self, node):
@@ -232,9 +262,11 @@ class CodeGenerator:
 	    self.code.loadFast(node.name)
 	else:
 	    self.code.loadGlobal(node.name)
+        self.push(1)
 
     def visitConst(self, node):
 	self.code.loadConst(node.value)
+        self.push(1)
 
     def visitReturn(self, node):
 	self.code.setLineNo(node.lineno)
@@ -262,6 +294,7 @@ class CodeGenerator:
 	for child in node.nodes:
 	    self.visit(child)
 	    self.code.emit('PRINT_ITEM')
+        self.pop(len(node.nodes))
 	return 1
 
     def visitPrintnl(self, node):
@@ -276,15 +309,28 @@ class NestedCodeGenerator(CodeGenerator):
     """
     super_init = CodeGenerator.__init__
     
-    def __init__(self, code, args):
+    def __init__(self, func, filename='<?>'):
         """code and args of function or class being walked
 
         XXX need to separately pass to ASTVisitor.  the constructor
         only uses the code object to find the local names
+
+        Copies code form parent __init__ rather than calling it.
         """
-        self.super_init()
-        lnf = walk(code, LocalNameFinder(args))
+        self.name = func.name
+        self.super_init(filename)
+        args = func.argnames
+	self.code = PythonVMCode(len(args), name=func.name,
+                                 filename=filename) 
+        if func.varargs:
+            self.code.setVarArgs()
+        if func.kwargs:
+            self.code.setKWArgs()
+        lnf = walk(func.code, LocalNameFinder(args))
         self.locals.push(lnf.getLocals())
+
+    def __repr__(self):
+        return "<NestedCodeGenerator: %s>" % self.name
 
     def visitFunction(self, node):
 	lnf = walk(node.code, LocalNameFinder(node.argnames))
@@ -292,10 +338,9 @@ class NestedCodeGenerator(CodeGenerator):
         # XXX need to handle def foo((a, b)):
 	self.code.setLineNo(node.lineno)
         self.visit(node.code)
-        self.code.emit('LOAD_CONST', 'None')
+        self.code.emit('LOAD_CONST', None)
         self.code.emit('RETURN_VALUE')
         return 1
-	
 
 class LocalNameFinder:
     def __init__(self, names=()):
@@ -353,64 +398,86 @@ class ForwardRef:
     def resolve(self):
 	return self.val
 
-class CompiledModule:
-    """Store the code object for a compiled module
+def add_hook(hooks, type, meth):
+    """Helper function for PythonVMCode _emit_hooks"""
+    l = hooks.get(type, [])
+    l.append(meth)
+    hooks[type] = l
 
-    XXX Not clear how the code objects will be stored.  Seems possible
-    that a single code attribute is sufficient, because it will
-    contains references to all the need code objects.  That might be
-    messy, though.
-    """
-    MAGIC = (20121 | (ord('\r')<<16) | (ord('\n')<<24))
-
-    def __init__(self):
-        self.code = None
-
-    def addCode(self, code):
-        """addCode(self: SelfType, code: PythonVMCode)"""
-	
-    def dump(self, path):
-        """create a .pyc file"""
-        f = open(path, 'wb')
-        f.write(self._pyc_header())
-        marshal.dump(self.code, f)
-        f.close()
-        
-    def _pyc_header(self, path):
-        # compile.c uses marshal to write a long directly, with
-        # calling the interface that would also generate a 1-byte code
-        # to indicate the type of the value.  simplest way to get the
-        # same effect is to call marshal and then skip the code.
-        buf = marshal.dumps(self.MAGIC)[1:]
-        # skip the mtime for now, since I don't have the write
-        # structure to pass the filename being compiled into this
-        # instance 
-        return buf + chr(0) * 4
-	
 class PythonVMCode:
+    """Creates Python code objects
+    
+    The new module is used to create the code object.  The following
+    attribute definitions are included from the reference manual:
+        
+    co_name gives the function name
+    co_argcount is the number of positional arguments (including
+        arguments with default values) 
+    co_nlocals is the number of local variables used by the function
+        (including arguments)  
+    co_varnames is a tuple containing the names of the local variables
+        (starting with the argument names) 
+    co_code is a string representing the sequence of bytecode instructions 
+    co_consts is a tuple containing the literals used by the bytecode
+    co_names is a tuple containing the names used by the bytecode
+    co_filename is the filename from which the code was compiled
+    co_firstlineno is the first line number of the function
+    co_lnotab is a string encoding the mapping from byte code offsets
+        to line numbers (for detais see the source code of the
+        interpreter)
+        see code com_set_lineno and com_add_lnotab
+        it's a string with 2bytes per set_lineno
+        
+    co_stacksize is the required stack size (including local variables)
+    co_flags is an integer encoding a number of flags for the
+        interpreter.
 
-    def __init__(self):
+    The following flag bits are defined for co_flags: bit 2 is set if
+    the function uses the "*arguments" syntax to accept an arbitrary
+    number of positional arguments; bit 3 is set if the function uses
+    the "**keywords" syntax to accept arbitrary keyword arguments;
+    other bits are used internally or reserved for future use.
+
+    If a code object represents a function, the first item in
+    co_consts is the documentation string of the function, or None if
+    undefined.
+    """
+
+    # XXX flag bits
+    VARARGS = 0x04
+    KWARGS = 0x08
+
+    def __init__(self, argcount=0, name='?', filename='<?>',
+                 docstring=None):
+        # XXX why is the default value for flags 3?
 	self.insts = []
         # used by makeCodeObject
-        self.argcount = 0
+        self.argcount = argcount
         self.code = ''
-        self.consts = []
-        self.filename = ''
-        self.firstlineno = 0
-        self.flags = 0
-        self.lnotab = None
-        self.name = ''
+        self.consts = [docstring]
+        self.filename = filename
+        self.flags = 3
+        self.name = name
         self.names = []
-        self.nlocals = 0
-        self.stacksize = 2
         self.varnames = []
+        # lnotab support
+        self.firstlineno = 0
+        self.lastlineno = 0
+        self.last_addr = 0
+        self.lnotab = ''
 
     def __repr__(self):
         return "<bytecode: %d instrs>" % len(self.insts)
 
-    def emit(self, *args):
-	print "emit", args
-	self.insts.append(args)
+    def setFlags(self, val):
+        """XXX for module's function"""
+        self.flags = 0
+
+    def setVarArgs(self):
+        self.flags = self.flags | self.VARARGS
+
+    def setKWArgs(self):
+        self.flags = self.flags | self.KWARGS
 
     def getCurInst(self):
 	return len(self.insts)
@@ -418,23 +485,70 @@ class PythonVMCode:
     def getNextInst(self):
 	return len(self.insts) + 1
 
-    def convert(self):
-	"""Convert human-readable names to real bytecode"""
-	pass
+    def dump(self, io=sys.stdout):
+        i = 0
+        for inst in self.insts:
+            if inst[0] == 'SET_LINENO':
+                io.write("\n")
+            io.write("    %3d " % i)
+            if len(inst) == 1:
+                io.write("%s\n" % inst)
+            else:
+                io.write("%-15.15s\t%s\n" % inst)
+            i = i + 1
 
-    def makeCodeObject(self):
-        """Make a Python code object"""
-        code = []
+    def makeCodeObject(self, stacksize):
+        """Make a Python code object
+
+        This creates a Python code object using the new module.  This
+        seems simpler than reverse-engineering the way marshal dumps
+        code objects into .pyc files.  One of the key difficulties is
+        figuring out how to layout references to code objects that
+        appear on the VM stack; e.g.
+          3 SET_LINENO          1
+          6 LOAD_CONST          0 (<code object fact at 8115878 [...]
+          9 MAKE_FUNCTION       0
+         12 STORE_NAME          0 (fact)
+
+        """
+        
         self._findOffsets()
+        lnotab = LineAddrTable()
         for t in self.insts:
             opname = t[0]
             if len(t) == 1:
-                code.append(chr(self.opnum[opname]))
+                lnotab.addCode(chr(self.opnum[opname]))
             elif len(t) == 2:
                 oparg = self._convertArg(opname, t[1])
+                if opname == 'SET_LINENO':
+                    lnotab.nextLine(oparg)
                 hi, lo = divmod(oparg, 256)
-                code.append(chr(self.opnum[opname]) + chr(lo) + chr(hi))
-        return string.join(code, '')
+                lnotab.addCode(chr(self.opnum[opname]) + chr(lo) +
+                               chr(hi))
+        # why is a module a special case?
+        if self.flags == 0:
+            nlocals = 0
+        else:
+            nlocals = len(self.varnames)
+        co = new.code(self.argcount, nlocals, stacksize,
+                      self.flags, lnotab.getCode(), self._getConsts(),
+                      tuple(self.names), tuple(self.varnames),
+                      self.filename, self.name, self.firstlineno,
+                      lnotab.getTable())
+        return co
+
+    def _getConsts(self):
+        """Return a tuple for the const slot of a code object
+
+        Converts PythonVMCode objects to code objects
+        """
+        l = []
+        for elt in self.consts:
+            if isinstance(elt, CodeGenerator):
+                l.append(elt.emit())
+            else:
+                l.append(elt)
+        return tuple(l)
 
     def _findOffsets(self):
         """Find offsets for use in resolving ForwardRefs"""
@@ -464,7 +578,10 @@ class PythonVMCode:
         if op == 'LOAD_CONST':
             return self._lookupName(arg, self.consts)
         if op == 'LOAD_FAST':
-            return self._lookupName(arg, self.varnames, self.names)
+            if arg in self.names:
+                return self._lookupName(arg, self.varnames)
+            else:
+                return self._lookupName(arg, self.varnames, self.names)
         if op == 'LOAD_GLOBAL':
             return self._lookupName(arg, self.names)
         if op == 'STORE_NAME':
@@ -475,7 +592,6 @@ class PythonVMCode:
             return self.offsets[arg.resolve()]
         if self.hasjabs.has_elt(op):
             return self.offsets[arg.resolve()] - arg.__offset
-        print op, arg
         return arg
 
     def _lookupName(self, name, list, list2=None):
@@ -511,6 +627,11 @@ class PythonVMCode:
     # it seems redundant to add a function for each opcode,
     # particularly because the method and opcode basically have the
     # same name.
+    # on the other hand, we need to track things like stack depth in
+    # order to generator code objects.  if we wrap instructions in a
+    # method, we get an easy way to track these.  a simpler
+    # approach, however, would be to define hooks that can be called
+    # by emit.
 
     def setLineNo(self, num):
 	self.emit('SET_LINENO', num)
@@ -557,15 +678,120 @@ class PythonVMCode:
     def callFunction(self, num):
 	self.emit('CALL_FUNCTION', num)
 
+    # this version of emit + arbitrary hooks might work, but it's damn
+    # messy.
+
+    def emit(self, *args):
+        self._emitDispatch(args[0], args[1:])
+	self.insts.append(args)
+
+    def _emitDispatch(self, type, args):
+        for func in self._emit_hooks.get(type, []):
+            func(self, args)
+
+    _emit_hooks = {}
+
+class LineAddrTable:
+    """lnotab
+    
+    This class builds the lnotab, which is undocumented but described
+    by com_set_lineno in compile.c.  Here's an attempt at explanation:
+
+    For each SET_LINENO instruction after the first one, two bytes are
+    added to lnotab.  (In some cases, multiple two-byte entries are
+    added.)  The first byte is the distance in bytes between the
+    instruction for the last SET_LINENO and the current SET_LINENO.
+    The second byte is offset in line numbers.  If either offset is
+    greater than 255, multiple two-byte entries are added -- one entry
+    for each factor of 255.
+    """
+
+    def __init__(self):
+        self.code = []
+        self.codeOffset = 0
+        self.firstline = 0
+        self.lastline = 0
+        self.lastoff = 0
+        self.lnotab = []
+
+    def addCode(self, code):
+        self.code.append(code)
+        self.codeOffset = self.codeOffset + len(code)
+
+    def nextLine(self, lineno):
+        if self.firstline == 0:
+            self.firstline = lineno
+            self.lastline = lineno
+        else:
+            # compute deltas
+            addr = self.codeOffset - self.lastoff
+            line = lineno - self.lastline
+            while addr > 0 or line > 0:
+                # write the values in 1-byte chunks that sum
+                # to desired value
+                trunc_addr = addr
+                trunc_line = line
+                if trunc_addr > 255:
+                    trunc_addr = 255
+                if trunc_line > 255:
+                    trunc_line = 255
+                self.lnotab.append(trunc_addr)
+                self.lnotab.append(trunc_line)
+                addr = addr - trunc_addr
+                line = line - trunc_line
+            self.lastline = lineno
+            self.lastoff = self.codeOffset
+
+    def getCode(self):
+        return string.join(self.code, '')
+
+    def getTable(self):
+        return string.join(map(chr, self.lnotab), '')
+    
+class CompiledModule:
+    """Store the code object for a compiled module
+
+    XXX Not clear how the code objects will be stored.  Seems possible
+    that a single code attribute is sufficient, because it will
+    contains references to all the need code objects.  That might be
+    messy, though.
+    """
+    MAGIC = (20121 | (ord('\r')<<16) | (ord('\n')<<24))
+
+    def __init__(self, source, filename):
+        self.source = source
+        self.filename = filename
+
+    def compile(self):
+        t = transformer.Transformer()
+        self.ast = t.parsesuite(self.source)
+        cg = CodeGenerator(self.filename)
+        walk(self.ast, cg)
+        self.code = cg.emit()
+
+    def dump(self, path):
+        """create a .pyc file"""
+        f = open(path, 'wb')
+        f.write(self._pyc_header())
+        marshal.dump(self.code, f)
+        f.close()
+        
+    def _pyc_header(self):
+        # compile.c uses marshal to write a long directly, with
+        # calling the interface that would also generate a 1-byte code
+        # to indicate the type of the value.  simplest way to get the
+        # same effect is to call marshal and then skip the code.
+        magic = marshal.dumps(self.MAGIC)[1:]
+        mtime = os.stat(self.filename)[stat.ST_MTIME]
+        mtime = struct.pack('i', mtime)
+        return magic + mtime
+	
 if __name__ == "__main__":
-    tree = parse('test.py')
-    cg = CodeGenerator()
-    ASTVisitor.VERBOSE = 1
-    w = walk(tree, cg)
-    w.VERBOSE = 1
-    for i in range(len(cg.code.insts)):
-	inst = cg.code.insts[i]
-	if inst[0] == 'SET_LINENO':
-	    print
-	print "%4d" % i, inst
-    code = cg.code.makeCodeObject()
+    if len(sys.argv) > 1:
+        filename = sys.argv[1]
+    else:
+        filename = 'test.py'
+    buf = open(filename).read()
+    mod = CompiledModule(buf, filename)
+    mod.compile()
+    mod.dump(filename + 'c')
