@@ -212,6 +212,8 @@ sub do_cmd_longprogramopt{
     return use_wrappers(@_[0], '<b class="programopt">---', '</b>'); }
 sub do_cmd_email{
     return use_wrappers(@_[0], '<span class="email">', '</span>'); }
+sub do_cmd_mailheader{
+    return use_wrappers(@_[0], '<tt class="mimeheader">', '</tt>'); }
 sub do_cmd_mimetype{
     return use_wrappers(@_[0], '<span class="mimetype">', '</span>'); }
 sub do_cmd_var{
