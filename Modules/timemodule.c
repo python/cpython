@@ -302,7 +302,7 @@ ins(d, name, v)
 void
 inittime()
 {
-	object *m, *d, *v;
+	object *m, *d;
 	m = initmodule("time", time_methods);
 	d = getmoduledict(m);
 #ifdef HAVE_TZNAME

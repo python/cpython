@@ -260,8 +260,6 @@ mfsi_getattr(self, name)
 	mfsiobject *self;
 	char *name;
 {
-	object *rv;
-	
 	if ( strcmp(name, "Type") == 0 )
 		return PyMac_BuildOSType(self->finfo.fdType);
 	else if ( strcmp(name, "Creator") == 0 )
