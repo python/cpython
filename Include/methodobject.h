@@ -57,6 +57,14 @@ extern PyObject *PyCFunction_New
 /* Flag passed to newmethodobject */
 #define METH_VARARGS  0x0001
 
+typedef struct PyMethodChain {
+	PyMethodDef *methods;		/* Methods of this type */
+	struct PyMethodChain *link;	/* NULL or base type */
+} PyMethodChain;
+
+extern PyObject *Py_FindMethodInChain
+	Py_PROTO((PyMethodChain *, PyObject *, char *));
+
 #ifdef __cplusplus
 }
 #endif
