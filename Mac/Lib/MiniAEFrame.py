@@ -82,7 +82,8 @@ class MiniApplication:
 				if c == '.':
 					raise KeyboardInterrupt, "Command-period"
 				if c == 'q':
-					MacOS.OutputSeen()
+					if hasattr(MacOS, 'OutputSeen'):
+						MacOS.OutputSeen()
 					self.quitting = 1
 					return
 		elif what == mouseDown:
@@ -98,12 +99,16 @@ class MiniApplication:
 						name = self.applemenu.GetMenuItemText(item)
 						Menu.OpenDeskAcc(name)
 				elif id == self.quitid and item == 1:
-					MacOS.OutputSeen()
+					if hasattr(MacOS, 'OutputSeen'):
+						MacOS.OutputSeen()
 					self.quitting = 1
 				Menu.HiliteMenu(0)
 				return
 		# Anything not handled is passed to Python/SIOUX
-		MacOS.HandleEvent(event)
+		if hasattr(MacOS, 'HandleEvent'):
+			MacOS.HandleEvent(event)
+		else:
+			print "Unhandled event:", event
 	
 	def getabouttext(self):
 		return self.__class__.__name__
