@@ -25,6 +25,8 @@ f.close()
 # Test stat and chmod
 if os.stat(TESTFN_ENCODED) != os.stat(TESTFN_UNICODE):
     print "os.stat() did not agree on the 2 filenames"
+if os.lstat(TESTFN_ENCODED) != os.lstat(TESTFN_UNICODE):
+    print "os.lstat() did not agree on the 2 filenames"
 os.chmod(TESTFN_ENCODED, 0777)
 os.chmod(TESTFN_UNICODE, 0777)
 
