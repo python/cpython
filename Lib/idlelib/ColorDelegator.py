@@ -67,7 +67,7 @@ class ColorDelegator(Delegator):
         "hit": idleConf.GetHighlight(theme, "hit"),
         }
     
-    print tagdefs
+    if DEBUG: print 'tagdefs',tagdefs
 
     def insert(self, index, chars, tags=None):
         index = self.index(index)
