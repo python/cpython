@@ -78,6 +78,25 @@ def case_sensitivity():
     verify(cf.get("MySection", "Option") == "first line\nsecond line")
 
 
+def boolean(src):
+    print "Testing interpretation of boolean Values..."
+    cf = ConfigParser.ConfigParser()
+    sio = StringIO.StringIO(src)
+    cf.readfp(sio)
+    for x in range(1, 5):
+        verify(cf.getboolean('BOOLTEST', 't%d' % (x)) == 1)
+    for x in range(1, 5):
+        verify(cf.getboolean('BOOLTEST', 'f%d' % (x)) == 0)
+    for x in range(1, 5):
+        try:
+            cf.getboolean('BOOLTEST', 'e%d' % (x))
+        except ValueError:
+            pass
+        else:
+            raise TestFailed(
+                "getboolean() failed to report a non boolean value")
+
+
 def interpolation(src):
     print "Testing value interpolation..."
     cf = ConfigParser.ConfigParser({"getname": "%(__name__)s"})
@@ -180,6 +199,24 @@ foo[en]=English
 foo[de]=Deutsch
 """)
 case_sensitivity()
+boolean(r"""
+[BOOLTEST]
+T1=1
+T2=TRUE
+T3=True
+T4=oN
+T5=yes
+F1=0
+F2=FALSE
+F3=False
+F4=oFF
+F5=nO
+E1=2
+E2=foo
+E3=-1
+E4=0.1
+E5=FALSE AND MORE
+""")
 interpolation(r"""
 [Foo]
 bar=something %(with1)s interpolation (1 step)
