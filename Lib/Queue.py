@@ -44,7 +44,10 @@ class Queue:
         return n
 
     def put(self, item):
-        """Put an item into the queue."""
+        """Put an item into the queue.
+
+	If the queue is full, block until a free slot is avaiable.
+	"""
         self.fsema.acquire_lock()
         self.mutex.acquire_lock()
         was_empty = self._empty()
@@ -57,6 +60,7 @@ class Queue:
 
     def get(self):
         """Gets and returns an item from the queue.
+
         This method blocks if necessary until an item is available.
         """
         self.esema.acquire_lock()
@@ -74,6 +78,7 @@ class Queue:
     # raise Empty if the queue is empty or temporarily unavailable
     def get_nowait(self):
         """Gets and returns an item from the queue.
+
         Only gets an item if one is immediately available, Otherwise
         this raises the Empty exception if the queue is empty or
         temporarily unavailable.
