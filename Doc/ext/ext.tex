@@ -708,6 +708,27 @@ Like \samp{O} but requires that the Python object is a string object.
 Raises a \exception{TypeError} exception if the object is not a string
 object.  The C variable may also be declared as \ctype{PyObject *}.
 
+\item[\samp{t\#} (read-only character buffer) {[char *, int]}]
+Like \samp{s\#}, but accepts any object which implements the read-only 
+buffer interface.  The \ctype{char *} variable is set to point to the
+first byte of the buffer, and the \ctype{int} is set to the length of
+the buffer.  Only single-segment buffer objects are accepted;
+\exception{TypeError} is raised for all others.
+
+\item[\samp{w} (read-write character buffer) {[char *]}]
+Similar to \samp{s}, but accepts any object which implements the
+read-write buffer interface.  The caller must determine the length of
+the buffer by other means, or use \samp{w\#} instead.  Only
+single-segment buffer objects are accepted; \exception{TypeError} is
+raised for all others.
+
+\item[\samp{w\#} (read-write character buffer) {[char *, int]}]
+Like \samp{s\#}, but accepts any object which implements the
+read-write buffer interface.  The \ctype{char *} variable is set to
+point to the first byte of the buffer, and the \ctype{int} is set to
+the length of the buffer.  Only single-segment buffer objects are
+accepted; \exception{TypeError} is raised for all others.
+
 \item[\samp{(\var{items})} (tuple) {[\var{matching-items}]}]
 The object must be a Python sequence whose length is the number of
 format units in \var{items}.  The C arguments must correspond to the
