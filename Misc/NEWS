@@ -30,6 +30,10 @@ Type/class unification and new-style classes
   dict.__hash__ and list.__hash__ now raises the same TypeError
   (previously, these were the same as object.__hash__).
 
+- New-style objects now support deleting their __dict__.  This is for
+  all intents and purposes equivalent to assigning a brand new empty
+  dictionary, but saves space if the object is not used further.
+
 Core and builtins
 
 Extension modules

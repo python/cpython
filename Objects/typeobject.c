@@ -812,13 +812,13 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
 				"This object has no __dict__");
 		return -1;
 	}
-	if (value == NULL || !PyDict_Check(value)) {
+	if (value != NULL && !PyDict_Check(value)) {
 		PyErr_SetString(PyExc_TypeError,
 				"__dict__ must be set to a dictionary");
 		return -1;
 	}
 	dict = *dictptr;
-	Py_INCREF(value);
+	Py_XINCREF(value);
 	*dictptr = value;
 	Py_XDECREF(dict);
 	return 0;
