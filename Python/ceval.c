@@ -180,6 +180,10 @@ eval_code(co, globals, locals, arg)
 #ifdef LLTRACE
 	int lltrace = dictlookup(globals, "__lltrace__") != NULL;
 #endif
+#ifdef DEBUG
+	/* Make it easier to find out where we are with dbx */
+	char *filename = getstringvalue(co->co_filename);
+#endif
 
 /* Code access macros */
 
@@ -296,6 +300,10 @@ eval_code(co, globals, locals, arg)
 		}
 
 		/* Extract opcode and argument */
+
+#ifdef DEBUG
+		f->f_lasti = INSTR_OFFSET();
+#endif
 		
 		opcode = NEXTOP();
 		if (HAS_ARG(opcode))
@@ -1137,6 +1145,8 @@ eval_code(co, globals, locals, arg)
 		else {
 			if (err_occurred()) {
 				fprintf(stderr, "XXX undetected error\n");
+				abort();
+				/* NOTREACHED */
 				why = WHY_EXCEPTION;
 			}
 		}
