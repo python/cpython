@@ -228,7 +228,7 @@ spam2(or_,__or__, "or_(a, b) -- Return the bitwise or of a and b.")
 spam2(concat,__concat__,
  "concat(a, b) -- Return a + b, for a and b sequences.")
 spam2(repeat,__repeat__,
- "repeat(a, b) -- Return a + b, where a is a sequence, and b is an integer.")
+ "repeat(a, b) -- Return a * b, where a is a sequence, and b is an integer.")
 spam2(getitem,__getitem__,
  "getitem(a, b) -- Return the value of a at index b.")
 spam2(setitem,__setitem__,
