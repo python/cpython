@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=5.0
-  Title=Python 1.6 alpha 1
+  Title=Python 1.6 alpha 2
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -53,15 +53,11 @@ item: Check Configuration
 end
 item: Set Variable
   Variable=APPTITLE
-  Value=Python 1.6 alpha 1
+  Value=Python 1.6 alpha 2
 end
 item: Set Variable
   Variable=GROUP
   Value=Python 1.6
-end
-item: Set Variable
-  Variable=DISABLED
-  Value=!
 end
 item: Set Variable
   Variable=PY_VERSION
@@ -69,45 +65,18 @@ item: Set Variable
 end
 item: Set Variable
   Variable=MAINDIR
-  Value=Python-1.6
-end
-item: Check Configuration
-  Flags=10111011
+  Value=Python16
 end
 item: Get Registry Key Value
   Variable=PROGRAM_FILES
   Key=SOFTWARE\Microsoft\Windows\CurrentVersion
   Default=C:\Program Files
   Value Name=ProgramFilesDir
-  Flags=00000100
+  Flags=00000101
 end
 item: Set Variable
   Variable=MAINDIR
   Value=%PROGRAM_FILES%\%MAINDIR%
-end
-item: Set Variable
-  Variable=EXPLORER
-  Value=1
-end
-item: Else Statement
-end
-item: Set Variable
-  Variable=MAINDIR
-  Value=C:\%MAINDIR%
-end
-item: End Block
-end
-item: Set Variable
-  Variable=BACKUP
-  Value=%MAINDIR%\BACKUP
-end
-item: Set Variable
-  Variable=DOBACKUP
-  Value=B
-end
-item: Set Variable
-  Variable=BRANDING
-  Value=0
 end
 item: Set Variable
   Variable=COMPONENTS
@@ -116,25 +85,10 @@ end
 item: Wizard Block
   Direction Variable=DIRECTION
   Display Variable=DISPLAY
+  Bitmap Pathname=C:\Program Files\Wise\DIALOGS\TEMPLATE\WIZARD.BMP
   X Position=9
   Y Position=10
   Filler Color=8421440
-  Dialog=Welcome
-  Dialog=Select Destination Directory
-  Dialog=Select Components
-  Dialog=Select Program Manager Group
-  Variable=
-  Variable=
-  Variable=
-  Variable=EXPLORER
-  Value=
-  Value=
-  Value=
-  Value=1
-  Compare=0
-  Compare=0
-  Compare=0
-  Compare=0
   Flags=00000011
 end
 item: Custom Dialog Set
@@ -499,38 +453,90 @@ item: Custom Dialog Set
     end
   end
 end
-item: End Block
-end
-item: Get ProgMan Group
-  Variable=GROUP
-  Window=Select Start Menu Group
-  Description=Select the group where the Python shortcuts are installed in your start menu.  By default, a new group named "Python 1.6" is created.
-  Title=Group name for Python:
-  Default=Python 1.6
-end
-item: Wizard Block
-  Direction Variable=DIRECTION
+item: Custom Dialog Set
+  Name=Select Program Manager Group
   Display Variable=DISPLAY
-  X Position=9
-  Y Position=10
-  Filler Color=8421440
-  Dialog=Welcome
-  Dialog=Select Destination Directory
-  Dialog=Select Components
-  Dialog=Select Program Manager Group
-  Variable=
-  Variable=
-  Variable=
-  Variable=EXPLORER
-  Value=
-  Value=
-  Value=
-  Value=1
-  Compare=0
-  Compare=0
-  Compare=0
-  Compare=0
-  Flags=00000011
+  item: Dialog
+    Title=%APPTITLE% Installation
+    Title French=Installation de %APPTITLE%
+    Title German=Installation von %APPTITLE%
+    Title Spanish=Instalación de %APPTITLE%
+    Title Italian=Installazione di %APPTITLE%
+    Width=271
+    Height=224
+    Font Name=Helv
+    Font Size=8
+    item: Push Button
+      Rectangle=150 187 195 202
+      Variable=DIRECTION
+      Value=N
+      Create Flags=01010000000000010000000000000001
+      Text=&Next >
+      Text French=&Suite >
+      Text German=&Weiter >
+      Text Spanish=&Siguiente >
+      Text Italian=&Avanti >
+    end
+    item: Push Button
+      Rectangle=105 187 150 202
+      Variable=DIRECTION
+      Value=B
+      Create Flags=01010000000000010000000000000000
+      Flags=0000000000000001
+      Text=< &Back
+      Text French=< &Retour
+      Text German=< &Zurück
+      Text Spanish=< &Atrás
+      Text Italian=< &Indietro
+    end
+    item: Push Button
+      Rectangle=211 187 256 202
+      Action=3
+      Create Flags=01010000000000010000000000000000
+      Text=&Cancel
+      Text French=&Annuler
+      Text German=&Abbrechen
+      Text Spanish=&Cancelar
+      Text Italian=&Annulla
+    end
+    item: Static
+      Rectangle=8 180 256 181
+      Action=3
+      Create Flags=01010000000000000000000000000111
+    end
+    item: Static
+      Rectangle=86 8 258 42
+      Create Flags=01010000000000000000000000000000
+      Flags=0000000000000001
+      Name=Times New Roman
+      Font Style=-24 0 0 0 700 255 0 0 0 3 2 1 18
+      Text=Select ProgMan Group
+      Text French=Sélectionner le groupe du Gestionnaire de programme 
+      Text German=Bestimmung der Programm-Managergruppe
+      Text Spanish=Seleccione grupo del Administrador de programas
+      Text Italian=Selezionare il gruppo ProgMan 
+    end
+    item: Static
+      Rectangle=86 44 256 68
+      Create Flags=01010000000000000000000000000000
+      Text=Enter the name of the Program Manager group to add %APPTITLE% icons to:
+      Text French=Entrez le nom du groupe du Gestionnaire de programme dans lequel vous souhaitez ajouter les icônes de %APPTITLE% :
+      Text German=Geben Sie den Namen der Programmgruppe ein, der das Symbol %APPTITLE% hinzugefügt werden soll:
+      Text Spanish=Escriba el nombre del grupo del Administrador de programas en el que desea agregar los iconos de %APPTITLE%:
+      Text Italian=Inserire il nome del gruppo Program Manager per aggiungere le icone %APPTITLE% a:
+    end
+    item: Combobox
+      Rectangle=86 69 256 175
+      Variable=GROUP
+      Create Flags=01010000001000010000001100000001
+      Flags=0000000000000001
+      Text=%GROUP%
+      Text French=%GROUP%
+      Text German=%GROUP%
+      Text Spanish=%GROUP%
+      Text Italian=%GROUP%
+    end
+  end
 end
 item: Custom Dialog Set
   Name=Start Installation
@@ -615,26 +621,6 @@ item: Custom Dialog Set
     end
   end
 end
-item: If/While Statement
-  Variable=DISPLAY
-  Value=Select Destination Directory
-end
-item: Set Variable
-  Variable=BACKUP
-  Value=%MAINDIR%\BACKUP
-end
-item: End Block
-end
-item: End Block
-end
-item: If/While Statement
-  Variable=DOBACKUP
-  Value=A
-end
-item: Set Variable
-  Variable=BACKUPDIR
-  Value=%BACKUP%
-end
 item: End Block
 end
 item: Open/Close INSTALL.LOG
@@ -642,11 +628,11 @@ end
 item: Remark
   Text=Where system DLLs are installed (choose one of the following):
 end
-item: Set Variable
+remarked item: Set Variable
   Variable=DLLDEST
   Value=%MAINDIR%
 end
-remarked item: Set Variable
+item: Set Variable
   Variable=DLLDEST
   Value=%SYS32%
 end
@@ -669,38 +655,21 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\pcbuild\parser.pyd
-  Destination=%MAINDIR%\DLLs\parser.pyd
+  Source=%_SRC_%\pcbuild\*.pyd
+  Destination=%MAINDIR%\DLLs
+  Description=Extension modules
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\pcbuild\_tkinter.pyd
-  Destination=%MAINDIR%\DLLs\_tkinter.pyd
+  Source=%_SRC_%\..\expat\bin\xmlparse.dll
+  Destination=%MAINDIR%\DLLs\xmlparse.dll
+  Description=Expat library
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\pcbuild\zlib.pyd
-  Destination=%MAINDIR%\DLLs\zlib.pyd
-  Flags=0000000000000010
-end
-item: Install File
-  Source=%_SRC_%\pcbuild\bsddb.pyd
-  Destination=%MAINDIR%\DLLs\bsddb.pyd
-  Flags=0000000000000010
-end
-item: Install File
-  Source=%_SRC_%\pcbuild\winreg.pyd
-  Destination=%MAINDIR%\DLLs\winreg.pyd
-  Flags=0000000000000010
-end
-item: Install File
-  Source=%_SRC_%\pcbuild\mmap.pyd
-  Destination=%MAINDIR%\DLLs\mmap.pyd
-  Flags=0000000000000010
-end
-item: Install File
-  Source=%_SRC_%\pcbuild\_sre.pyd
-  Destination=%MAINDIR%\DLLs\_sre.pyd
+  Source=%_SRC_%\..\expat\bin\xmltok.dll
+  Destination=%MAINDIR%\DLLs\xmltok.dll
+  Description=Expat library
   Flags=0000000000000010
 end
 item: Install File
@@ -709,23 +678,9 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\pcbuild\python16.lib
-  Destination=%DLLDEST%\python16.lib
-  Flags=0000000000000010
-end
-item: Install File
-  Source=%_SRC_%\Pc\pycon.ico
-  Destination=%MAINDIR%\pycon.ico
-  Flags=0000000000000010
-end
-item: Install File
-  Source=%_SRC_%\Pc\pyc.ico
-  Destination=%MAINDIR%\pyc.ico
-  Flags=0000000000000010
-end
-item: Install File
-  Source=%_SRC_%\Pc\py.ico
-  Destination=%MAINDIR%\py.ico
+  Source=%_SRC_%\Pc\*.ico
+  Destination=%MAINDIR%
+  Description=Icons
   Flags=0000000000000010
 end
 item: Install File
@@ -756,18 +711,12 @@ item: Install File
   Source=%_SRC_%\Lib\distutils\*.py
   Destination=%MAINDIR%\Lib\distutils
   Description=Distribution utility modules
-  Flags=0000000000000010
-end
-item: Install File
-  Source=%_SRC_%\Lib\distutils\command\*.py
-  Destination=%MAINDIR%\Lib\distutils\command
-  Description=Distribution utility modules
-  Flags=0000000000000010
+  Flags=0000000100000010
 end
 item: Install File
   Source=%_SRC_%\pcbuild\*.lib
   Destination=%MAINDIR%\libs
-  Description=.lib files
+  Description=Link library files
   Flags=0000000000000010
 end
 item: Install File
@@ -777,7 +726,7 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\Pc\config.h
+  Source=%_SRC_%\PC\config.h
   Destination=%MAINDIR%\include\config.h
   Description=Header files (config.h)
   Flags=0000000000000010
@@ -1146,12 +1095,6 @@ item: If/While Statement
   Value=D
   Flags=00001010
 end
-item: Check Configuration
-  Flags=10111011
-end
-item: Remark
-  Text=If NT, install in a common group
-end
 item: Get Registry Key Value
   Variable=GROUPDIR
   Key=Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders
@@ -1217,29 +1160,6 @@ item: Create Shortcut
   Key Type=1536
   Flags=00000001
 end
-item: Else Statement
-end
-item: Add ProgMan Icon
-  Group=%GROUP%
-  Icon Name=Python
-  Command Line=%MAINDIR%\python.exe
-  Default Directory=%MAINDIR%
-end
-item: If/While Statement
-  Variable=COMPONENTS
-  Value=B
-  Flags=00001010
-end
-remarked item: Add ProgMan Icon
-  Group=%GROUP%
-  Icon Name=Python Manuals
-  Command Line=%MAINDIR%\Doc\index.html
-  Default Directory=%MAINDIR%\Doc
-end
-item: End Block
-end
-item: End Block
-end
 item: End Block
 end
 item: Self-Register OCXs/DLLs
@@ -1251,17 +1171,17 @@ item: If/While Statement
   Flags=00001010
 end
 item: Install File
-  Source=%_SRC_%\..\tcl8.3\bin\tcl83.dll
-  Destination=%MAINDIR%\tcl83.dll
+  Source=%_SRC_%\..\tcl8.2\bin\tcl82.dll
+  Destination=%MAINDIR%\DLLs\tcl82.dll
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\..\tcl8.3\bin\tk83.dll
-  Destination=%MAINDIR%\tk83.dll
+  Source=%_SRC_%\..\tcl8.2\bin\tk82.dll
+  Destination=%MAINDIR%\DLLs\tk82.dll
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\..\tcl8.3\lib\*.*
+  Source=%_SRC_%\..\tcl8.2\lib\*.*
   Destination=%MAINDIR%\tcl
   Flags=0000000100000010
 end
@@ -1270,6 +1190,7 @@ end
 item: Wizard Block
   Direction Variable=DIRECTION
   Display Variable=DISPLAY
+  Bitmap Pathname=C:\Program Files\Wise\DIALOGS\TEMPLATE\WIZARD.BMP
   X Position=9
   Y Position=10
   Filler Color=8421440
