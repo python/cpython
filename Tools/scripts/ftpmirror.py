@@ -141,8 +141,8 @@ def mirrorsubdir(f, localdir):
 				    print 'Skipping symbolic link %s -> %s' % \
 						  (words[-3], words[-1])
 				continue
-			filename = words[-1]
-			infostuff = words[-5:-1]
+			filename = string.join(words[8:])
+			infostuff = words[5:]
 			mode = words[0]
 		skip = 0
 		for pat in skippats:
