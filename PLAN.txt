@@ -5,7 +5,8 @@ Tasks:
 
 Do binary operators properly.  nb_add should try to call self.__add__
 and other.__radd__.  I think I'll exclude base types that define any
-binary operator without setting the CHECKTYPES flag.
+binary operator without setting the CHECKTYPES flag.  *** This is
+done, AFAICT.  Even supports __truediv__ and __floordiv__. ***
 
 Fix comparisons.  There's some nasty stuff here: when two types are
 not the same, and they're not instances, the fallback code doesn't
