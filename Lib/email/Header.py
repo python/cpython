@@ -28,8 +28,10 @@ CRLFSPACE = '\r\n '
 CRLF = '\r\n'
 NL = '\n'
 SPACE = ' '
+USPACE = u' '
 SPACE8 = ' ' * 8
 EMPTYSTRING = ''
+UEMPTYSTRING = u''
 
 MAXLINELEN = 76
 
@@ -204,9 +206,24 @@ class Header:
 
     def __unicode__(self):
         """Helper for the built-in unicode function."""
-        # charset item is a Charset instance so we need to stringify it.
-        uchunks = [unicode(s, str(charset)) for s, charset in self._chunks]
-        return u''.join(uchunks)
+        uchunks = []
+        lastcs = None
+        for s, charset in self._chunks:
+            # We must preserve spaces between encoded and non-encoded word
+            # boundaries, which means for us we need to add a space when we go
+            # from a charset to None/us-ascii, or from None/us-ascii to a
+            # charset.  Only do this for the second and subsequent chunks.
+            nextcs = charset
+            if uchunks:
+                if lastcs is not None:
+                    if nextcs is None or nextcs == 'us-ascii':
+                        uchunks.append(USPACE)
+                        nextcs = None
+                elif nextcs is not None and nextcs <> 'us-ascii':
+                    uchunks.append(USPACE)
+            lastcs = nextcs
+            uchunks.append(unicode(s, str(charset)))
+        return UEMPTYSTRING.join(uchunks)
 
     # Rich comparison operators for equality only.  BAW: does it make sense to
     # have or explicitly disable <, <=, >, >= operators?
