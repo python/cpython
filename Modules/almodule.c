@@ -1545,7 +1545,7 @@ al_Connect(self, args)
 	ALparamInfo *propinfo = NULL;
 	PyObject *propobj = NULL;
 
-	if (!PyArg_ParseTuple(args, "ii|O!", &source, &dest, &propobj))
+	if (!PyArg_ParseTuple(args, "ii|O!", &source, &dest, &PyList_Type, &propobj))
 		return NULL;
 	if (propobj != NULL) {
 		nprops = python2params(source, dest, propobj, &props, &propinfo);
