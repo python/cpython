@@ -14,7 +14,9 @@ a string (with the \code{`{\rm \ldots}`} notation).  The latter conversion is
 implicitly used when an object is written by the \code{print} statement.
 \stindex{print}
 
+
 \subsection{Truth Value Testing}
+\label{truth}
 
 Any object can be tested for truth value, for use in an \code{if} or
 \code{while} condition or as operand of the Boolean operations below.
@@ -53,7 +55,9 @@ stated.  (Important exception: the Boolean operations
 \samp{or}\opindex{or} and \samp{and}\opindex{and} always return one of
 their operands.)
 
+
 \subsection{Boolean Operations}
+\label{boolean}
 
 These are the Boolean operations, ordered by ascending priority:
 \indexii{Boolean}{operations}
@@ -84,7 +88,9 @@ These only evaluate their second argument if needed for their outcome.
 
 \end{description}
 
+
 \subsection{Comparisons}
+\label{comparisons}
 
 Comparison operations are supported by all objects.  They all have the
 same priority (which is higher than that of the Boolean operations).
@@ -143,7 +149,9 @@ Two more operations with the same syntactic priority, \code{in} and
 \opindex{in}
 \opindex{not in}
 
+
 \subsection{Numeric Types}
+\label{typesnumeric}
 
 There are four numeric types: \dfn{plain integers}, \dfn{long integers}, 
 \dfn{floating point numbers}, and \dfn{complex numbers}.
@@ -297,7 +305,9 @@ multiplication by \code{pow(2, \var{n})} without overflow check.
 division by \code{pow(2, \var{n})} without overflow check.
 \end{description}
 
+
 \subsection{Sequence Types}
+\label{typesseq}
 
 There are three sequence types: strings, lists and tuples.
 
@@ -501,7 +511,9 @@ this side effect.
 
 \end{description}
 
+
 \subsection{Mapping Types}
+\label{typesmapping}
 
 A \dfn{mapping} object maps values of one type (the key type) to
 arbitrary objects.  Mappings are mutable objects.  There is currently
@@ -561,7 +573,9 @@ instead it returns \var{f}.  \var{f} is optional, when not provided
 and \var{k} is not in the map, \code{None} is returned.
 \end{description}
 
+
 \subsection{Other Built-in Types}
+\label{typesother}
 
 The interpreter supports several other kinds of objects.
 Most of these support only one or two operations.
@@ -816,7 +830,9 @@ See the \emph{Python Reference Manual} for this information.  It
 describes code objects, stack frame objects, traceback objects, and
 slice objects.
 
+
 \subsection{Special Attributes}
+\label{specialattrs}
 
 The implementation adds a few special read-only attributes to several
 object types, where they are relevant:
