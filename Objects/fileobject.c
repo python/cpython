@@ -1503,9 +1503,14 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 	writer = PyObject_GetAttrString(f, "write");
 	if (writer == NULL)
 		return -1;
-	if (flags & Py_PRINT_RAW)
-		value = PyObject_Str(v);
-	else
+	if (flags & Py_PRINT_RAW) {
+                if (PyUnicode_Check(v)) {
+                        value = v;
+                        Py_INCREF(value);
+                } else
+                        value = PyObject_Str(v);
+	}
+        else
 		value = PyObject_Repr(v);
 	if (value == NULL) {
 		Py_DECREF(writer);

@@ -3,6 +3,11 @@ What's New in Python 2.2a4?
 
 Core
 
+- PyFile_WriteObject now passes Unicode object to the file's write
+  method. As a result, all file-like object which may be the target
+  of a print statement must support Unicode objects, i.e. they must
+  at least convert them into ASCII strings.
+
 - The builtin file type can be subclassed now.  In the usual pattern,
   "file" is the name of the builtin type, and file() is a new builtin
   constructor, with the same signature as the builtin open() function.
