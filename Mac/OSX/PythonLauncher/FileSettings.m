@@ -9,6 +9,29 @@
 #import "FileSettings.h"
 
 @implementation FileSettings
+
++ (id)getFactorySettingsForFileType: (NSString *)filetype
+{
+    static FileSettings *fsdefault_py, *fsdefault_pyw, *fsdefault_pyc;
+    FileSettings **curdefault;
+    
+    if ([filetype isEqualToString: @"Python Script"]) {
+        curdefault = &fsdefault_py;
+    } else if ([filetype isEqualToString: @"Python GUI Script"]) {
+        curdefault = &fsdefault_pyw;
+    } else if ([filetype isEqualToString: @"Python Bytecode Document"]) {
+        curdefault = &fsdefault_pyc;
+    } else {
+        NSLog(@"Funny File Type: %@\n", filetype);
+        curdefault = &fsdefault_py;
+        filetype = @"Python Script";
+    }
+    if (!*curdefault) {
+        *curdefault = [[FileSettings new] initForFSDefaultFileType: filetype];
+    }
+    return *curdefault;
+}
+
 + (id)getDefaultsForFileType: (NSString *)filetype
 {
     static FileSettings *default_py, *default_pyw, *default_pyc;
@@ -26,9 +49,7 @@
         filetype = @"Python Script";
     }
     if (!*curdefault) {
-        *curdefault = [[FileSettings new] init];
-        [*curdefault factorySettingsForFileType: filetype];
-        [*curdefault updateFromUserDefaults: filetype];
+        *curdefault = [[FileSettings new] initForDefaultFileType: filetype];
     }
     return *curdefault;
 }
@@ -37,42 +58,16 @@
 {
     FileSettings *cur;
     
-    cur = [[FileSettings new] init];
-    [cur initWithFileSettings: [FileSettings getDefaultsForFileType: filetype]];
-    return cur;
-}
-
-- (id)init
-{
-    self = [super init];
-    return [self factorySettingsForFileType: @"Python Script"];
-}
-
-- (id)factorySettingsForFileType: (NSString *)filetype
-{
-    debug = NO;
-    verbose = NO;
-    inspect = NO;
-    optimize = NO;
-    nosite = NO;
-    tabs = NO;
-    others = @"";
-    if ([filetype isEqualToString: @"Python Script"] ||
-        [filetype isEqualToString: @"Python Bytecode Document"]) {
-        interpreter = @"/Library/Frameworks/Python.framework/Versions/Current/bin/python";
-        with_terminal = YES;
-   }  else if ([filetype isEqualToString: @"Python GUI Script"]) {
-        interpreter = @"/Library/Frameworks/Python.framework/Versions/Current/Resources/Python.app/Contents/MacOS/python";
-        with_terminal = NO;
-    } else {
-        NSLog(@"Funny File Type: %@\n", filetype);
-    }
-    origsource = NULL;
-    return self;
+    cur = [FileSettings new];
+    [cur initForFileType: filetype];
+    return [cur retain];
 }
 
 - (id)initWithFileSettings: (FileSettings *)source
 {
+    self = [super init];
+    if (!self) return self;
+    
     interpreter = [source->interpreter retain];
     debug = source->debug;
     verbose = source->verbose;
@@ -82,14 +77,106 @@
     tabs = source->tabs;
     others = [source->others retain];
     with_terminal = source->with_terminal;
+    prefskey = source->prefskey;
+    if (prefskey) [prefskey retain];
     
-    origsource = [source retain];
     return self;
 }
 
-- (void)saveDefaults
+- (id)initForFileType: (NSString *)filetype
 {
-    [origsource updateFromSource: self];
+    FileSettings *defaults;
+    
+    defaults = [FileSettings getDefaultsForFileType: filetype];
+    self = [self initWithFileSettings: defaults];
+    origsource = [defaults retain];
+    return self;
+}
+
+//- (id)init
+//{
+//    self = [self initForFileType: @"Python Script"];
+//    return self;
+//}
+
+- (id)initForFSDefaultFileType: (NSString *)filetype
+{
+    int i;
+    NSString *filename;
+    NSDictionary *dict;
+    NSArray *interpreters;
+    static NSDictionary *factorySettings;
+    
+    self = [super init];
+    if (!self) return self;
+    
+    if (factorySettings == NULL) {
+        NSBundle *bdl = [NSBundle mainBundle];
+        NSString *path = [ bdl pathForResource: @"factorySettings"
+                ofType: @"plist"];
+        factorySettings = [[NSDictionary dictionaryWithContentsOfFile:
+            path] retain];
+        if (factorySettings == NULL) {
+            NSLog(@"Missing %@", path);
+            return NULL;
+        }
+    }
+    dict = [factorySettings objectForKey: filetype];
+    if (dict == NULL) {
+        NSLog(@"factorySettings.plist misses file type \"%@\"", filetype);
+        interpreter = [@"no default found" retain];
+        return NULL;
+    }
+    [self applyValuesFromDict: dict];
+    interpreters = [dict objectForKey: @"interpreter_list"];
+    interpreter = NULL;
+    for (i=0; i < [interpreters count]; i++) {
+        filename = [interpreters objectAtIndex: i];
+        filename = [filename stringByExpandingTildeInPath];
+        if ([[NSFileManager defaultManager] fileExistsAtPath: filename]) {
+            interpreter = [filename retain];
+            break;
+        }
+    }
+    if (interpreter == NULL)
+        interpreter = [@"no default found" retain];
+    origsource = NULL;
+    return self;
+}
+
+- (void)applyUserDefaults: (NSString *)filetype
+{
+    NSUserDefaults *defaults;
+    NSDictionary *dict;
+    
+    defaults = [NSUserDefaults standardUserDefaults];
+    dict = [defaults dictionaryForKey: filetype];
+    if (!dict)
+        return;
+    [self applyValuesFromDict: dict];
+}
+    
+- (id)initForDefaultFileType: (NSString *)filetype
+{
+    FileSettings *fsdefaults;
+    
+    fsdefaults = [FileSettings getFactorySettingsForFileType: filetype];
+    self = [self initWithFileSettings: fsdefaults];
+    if (!self) return self;
+    [self applyUserDefaults: filetype];
+    prefskey = [filetype retain];
+    return self;
+}
+
+- (void)reset
+{
+    if (origsource) {
+        [self updateFromSource: origsource];
+    } else {
+        FileSettings *fsdefaults;
+        fsdefaults = [FileSettings getFactorySettingsForFileType: prefskey];
+        [self updateFromSource: fsdefaults];
+    }
 }
 
 - (void)updateFromSource: (id <FileSettingsSource>)source
@@ -103,6 +190,8 @@
     tabs = [source tabs];
     others = [[source others] retain];
     with_terminal = [source with_terminal];
+    // And if this is a user defaults object we also save the
+    // values
     if (!origsource) {
         NSUserDefaults *defaults;
         NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
@@ -121,17 +210,10 @@
     }
 }
 
-- (void)updateFromUserDefaults: (NSString *)filetype
+- (void)applyValuesFromDict: (NSDictionary *)dict
 {
-    NSUserDefaults *defaults;
-    NSDictionary *dict;
     id value;
     
-    prefskey = [filetype retain];
-    defaults = [NSUserDefaults standardUserDefaults];
-    dict = [defaults dictionaryForKey: filetype];
-    if (!dict)
-        return;
     value = [dict objectForKey: @"interpreter"];
     if (value) interpreter = [value retain];
     value = [dict objectForKey: @"debug"];

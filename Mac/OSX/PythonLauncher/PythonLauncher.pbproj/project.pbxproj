@@ -235,6 +235,7 @@
 				2A37F4B4FDCFA73011CA2CEA,
 				F5A4C13E02F203F601000102,
 				089C165FFE840EACC02AAC07,
+				F5A42167038BDD8E0110C447,
 			);
 			isa = PBXGroup;
 			name = Resources;
@@ -291,6 +292,7 @@
 				INSTALL_MODE_FLAG = "a+rX";
 				INSTALL_PATH = /Applications/Python;
 				LIBRARY_SEARCH_PATHS = "";
+				OPTIMIZATION_CFLAGS = "-O0";
 				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = PythonLauncher;
 				SECTORDER_FLAGS = "";
@@ -430,6 +432,7 @@
 				F58D4A3F02F1F94B01000102,
 				F5A4C13F02F203F701000102,
 				F5449B4C02FB3F7E01000102,
+				F5A42168038BDD8E0110C447,
 			);
 			isa = PBXResourcesBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
@@ -573,6 +576,17 @@
 		};
 		F58D4A3F02F1F94B01000102 = {
 			fileRef = F58D4A3C02F1F94B01000102;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5A42167038BDD8E0110C447 = {
+			isa = PBXFileReference;
+			path = factorySettings.plist;
+			refType = 4;
+		};
+		F5A42168038BDD8E0110C447 = {
+			fileRef = F5A42167038BDD8E0110C447;
 			isa = PBXBuildFile;
 			settings = {
 			};

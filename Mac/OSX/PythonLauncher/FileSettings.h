@@ -37,17 +37,22 @@
 }
 
 + (id)getDefaultsForFileType: (NSString *)filetype;
++ (id)getFactorySettingsForFileType: (NSString *)filetype;
 + (id)newSettingsForFileType: (NSString *)filetype;
 
-- (id)init;
-- (id)initWithFileSettings: (FileSettings *)source;
+//- (id)init;
+- (id)initForFileType: (NSString *)filetype;
+- (id)initForFSDefaultFileType: (NSString *)filetype;
+- (id)initForDefaultFileType: (NSString *)filetype;
+//- (id)initWithFileSettings: (FileSettings *)source;
 
 - (void)updateFromSource: (id <FileSettingsSource>)source;
 - (NSString *)commandLineForScript: (NSString *)script;
 
-- (id)factorySettingsForFileType: (NSString *)filetype;
-- (void)saveDefaults;
-- (void)updateFromUserDefaults: (NSString *)filetype;
-
+//- (void)applyFactorySettingsForFileType: (NSString *)filetype;
+//- (void)saveDefaults;
+//- (void)applyUserDefaults: (NSString *)filetype;
+- (void)applyValuesFromDict: (NSDictionary *)dict;
+- (void)reset;
 
 @end
