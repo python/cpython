@@ -61,6 +61,7 @@ class Dialog(Toplevel):
 
         self.buttonbox()
 
+        self.wait_visibility() # window needs to be visible for the grab
         self.grab_set()
 
         if not self.initial_focus:
