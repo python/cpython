@@ -227,7 +227,7 @@ class dispatcher:
         #self.log_info('adding channel %s' % self)
         if map is None:
             map = socket_map
-        map [self._fileno] = self
+        map[self._fileno] = self
 
     def del_channel(self, map=None):
         fd = self._fileno
@@ -235,7 +235,7 @@ class dispatcher:
             map = socket_map
         if map.has_key(fd):
             #self.log_info('closing channel %d:%s' % (fd, self))
-            del map [fd]
+            del map[fd]
 
     def create_socket(self, family, type):
         self.family_and_type = family, type
@@ -461,23 +461,22 @@ class dispatcher_with_send(dispatcher):
 # ---------------------------------------------------------------------------
 
 def compact_traceback():
-    t,v,tb = sys.exc_info()
+    t, v, tb = sys.exc_info()
     tbinfo = []
-    while 1:
+    assert tb # Must have a traceback
+    while tb:
         tbinfo.append((
             tb.tb_frame.f_code.co_filename,
             tb.tb_frame.f_code.co_name,
             str(tb.tb_lineno)
             ))
         tb = tb.tb_next
-        if not tb:
-            break
 
     # just to be safe
     del tb
 
     file, function, line = tbinfo[-1]
-    info = '[' + '] ['.join(map(lambda x: '|'.join(x), tbinfo)) + ']'
+    info = ' '.join(['[%s|%s|%s]' % x for x in tbinfo])
     return (file, function, line), t, v, info
 
 def close_all(map=None):
