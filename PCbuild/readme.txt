@@ -51,7 +51,7 @@ parser
     the parser module
 select
     selectmodule.c
-unicodedata
+ucnhash, unicodedata
     large tables of Unicode data
 winreg
     Windows registry API
