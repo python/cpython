@@ -1,109 +1,383 @@
-# Minimal test of the quote function
-from test.test_support import verify, verbose
+"""Regresssion tests for urllib"""
+
 import urllib
+import unittest
+from test import test_support
+import os
+import mimetools
 
-chars = 'abcdefghijklmnopqrstuvwxyz'\
-        '\337\340\341\342\343\344\345\346\347\350\351\352\353\354\355\356' \
-        '\357\360\361\362\363\364\365\366\370\371\372\373\374\375\376\377' \
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
-        '\300\301\302\303\304\305\306\307\310\311\312\313\314\315\316\317' \
-        '\320\321\322\323\324\325\326\330\331\332\333\334\335\336'
+def hexescape(char):
+    """Escape char as RFC 2396 specifies"""
+    hex_repr = hex(ord(char))[2:].upper()
+    if len(hex_repr) == 1:
+        hex_repr = "0%s" % hex_repr
+    return "%" + hex_repr
 
-expected = 'abcdefghijklmnopqrstuvwxyz' \
-           '%DF%E0%E1%E2%E3%E4%E5%E6%E7%E8%E9%EA%EB%EC%ED%EE' \
-           '%EF%F0%F1%F2%F3%F4%F5%F6%F8%F9%FA%FB%FC%FD%FE%FF' \
-           'ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
-           '%C0%C1%C2%C3%C4%C5%C6%C7%C8%C9%CA%CB%CC%CD%CE%CF' \
-           '%D0%D1%D2%D3%D4%D5%D6%D8%D9%DA%DB%DC%DD%DE'
+class urlopen_FileTests(unittest.TestCase):
+    """Test urlopen() opening a temporary file.
 
-test = urllib.quote(chars)
-verify(test == expected, "urllib.quote problem 1")
-test2 = urllib.unquote(expected)
-verify(test2 == chars)
+    Try to test as much functionality as possible so as to cut down on reliance
+    on connect to the Net for testing.
 
-in1 = "abc/def"
-out1_1 = "abc/def"
-out1_2 = "abc%2Fdef"
+    """
 
-verify(urllib.quote(in1) == out1_1, "urllib.quote problem 2")
-verify(urllib.quote(in1, '') == out1_2, "urllib.quote problem 3")
+    def setUp(self):
+        """Setup of a temp file to use for testing"""
+        self.text = "test_urllib: %s\n" % self.__class__.__name__
+        FILE = file(test_support.TESTFN, 'w')
+        try:
+            FILE.write(self.text)
+        finally:
+            FILE.close()
+        self.pathname = test_support.TESTFN
+        self.returned_obj = urllib.urlopen("file:%s" % self.pathname)
 
-in2 = "abc?def"
-out2_1 = "abc%3Fdef"
-out2_2 = "abc?def"
+    def tearDown(self):
+        """Shut down the open object"""
+        self.returned_obj.close()
 
-verify(urllib.quote(in2) == out2_1, "urllib.quote problem 4")
-verify(urllib.quote(in2, '?') == out2_2, "urllib.quote problem 5")
+    def test_interface(self):
+        # Make sure object returned by urlopen() has the specified methods
+        for attr in ("read", "readline", "readlines", "fileno",
+                     "close", "info", "geturl", "__iter__"):
+            self.assert_(hasattr(self.returned_obj, attr),
+                         "object returned by urlopen() lacks %s attribute" %
+                         attr)
 
+    def test_read(self):
+        self.assertEqual(self.text, self.returned_obj.read())
 
+    def test_readline(self):
+        self.assertEqual(self.text, self.returned_obj.readline())
+        self.assertEqual('', self.returned_obj.readline(),
+                         "calling readline() after exhausting the file did not"
+                         " return an empty string")
 
-in3 = {"p1":"v1","p2":"v2"}
-in3list = [("p1", "v1"), ("p2","v2")]
-exp3_1 = "p2=v2&p1=v1"
-exp3_2 = "p1=v1&p2=v2"
-# dict input, only string values
-act3 = urllib.urlencode(in3)
-verify(act3==exp3_1 or act3==exp3_2, "urllib.urlencode problem 1 dict")
-# list input, only string values
-act3list = urllib.urlencode(in3list)
-verify(act3list==exp3_2, "urllib.urlencode problem 1 list")
+    def test_readlines(self):
+        lines_list = self.returned_obj.readlines()
+        self.assertEqual(len(lines_list), 1,
+                         "readlines() returned the wrong number of lines")
+        self.assertEqual(lines_list[0], self.text,
+                         "readlines() returned improper text")
 
+    def test_fileno(self):
+        file_num = self.returned_obj.fileno()
+        self.assert_(isinstance(file_num, int),
+                     "fileno() did not return an int")
+        self.assertEqual(os.read(file_num, len(self.text)), self.text,
+                         "Reading on the file descriptor returned by fileno() "
+                         "did not return the expected text")
 
-in4 = {"p1":["v1","v2"]}
-in4list = [("p1", ["v1","v2"])]
-exp4 = "p1=v1&p1=v2"
-# dict input, list values, doseq==1
-act4 = urllib.urlencode(in4,doseq=1)
-verify(act4==exp4, "urllib.urlencode problem 2 dict")
-# list input, list values, doseq==1
-act4list = urllib.urlencode(in4,doseq=1)
-verify(act4list==exp4, "urllib.urlencode problem 2 list")
+    def test_close(self):
+        # Test close() by calling it hear and then having it be called again
+        # by the tearDown() method for the test
+        self.returned_obj.close()
 
+    def test_info(self):
+        self.assert_(isinstance(self.returned_obj.info(), mimetools.Message))
 
-in5 = in4
-in5list = in4list
-exp5 = "p1=%5B%27v1%27%2C+%27v2%27%5D"
-exp5list = "p1=%5B%27v1%27%2C+%27v2%27%5D"
-# dict input, list variables, doseq=0
-act5 = urllib.urlencode(in5)
-verify(act5==exp5, "urllib.urlencode problem 3 dict")
-# list input, list variables, doseq=0
-act5list = urllib.urlencode(in5list)
-verify(act5list==exp5list, "urllib.urlencode problem 3 list")
+    def test_geturl(self):
+        self.assertEqual(self.returned_obj.geturl(), self.pathname)
 
+    def test_iter(self):
+        # Test iterator
+        # Don't need to count number of iterations since test would fail the
+        # instant it returned anything beyond the first line from the
+        # comparison
+        for line in self.returned_obj.__iter__():
+            self.assertEqual(line, self.text)
 
-in6 = {"p1":"v1","p2":"v2"}
-in6list = [("p1", "v1"), ("p2","v2")]
-exp6_1 = "p2=v2&p1=v1"
-exp6_2 = "p1=v1&p2=v2"
-# dict input, only string values, doseq==1
-act6 = urllib.urlencode(in6,doseq=1)
-verify(act6==exp6_1 or act6==exp6_2, "urllib.urlencode problem 4 dict")
-# list input, only string values
-act6list = urllib.urlencode(in6list,doseq=1)
-verify(act6list==exp6_2, "urllib.urlencode problem 4 list")
-
-
-in7 = "p1=v1&p2=v2"
-try:
-    act7 = urllib.urlencode(in7)
-    print "urllib.urlencode problem 5 string"
-except TypeError:
+class urlretrieve_Tests(unittest.TestCase):
+    """Test urllib.urlretrieve() on local files"""
     pass
 
+class _urlopener_Tests(unittest.TestCase):
+    """Make sure urlopen() and urlretrieve() use the class assigned to
+    _urlopener"""
+    #XXX: Maybe create a custom class here that takes in a list and modifies
+    #   it to signal that it was called?
+    pass
 
-import UserDict
-in8 = UserDict.UserDict()
-in8["p1"] = "v1"
-in8["p2"] = ["v1", "v2"]
-exp8_1 = "p1=v1&p2=v1&p2=v2"
-exp8_2 = "p2=v1&p2=v2&p1=v1"
-act8 = urllib.urlencode(in8,doseq=1)
-verify(act8==exp8_1 or act8==exp8_2, "urllib.urlencode problem 6 UserDict")
+class QuotingTests(unittest.TestCase):
+    """Tests for urllib.quote() and urllib.quote_plus()
+    
+    According to RFC 2396 ("Uniform Resource Identifiers), to escape a
+    character you write it as '%' + <2 character US-ASCII hex value>.  The Python
+    code of ``'%' + hex(ord(<character>))[2:]`` escapes a character properly.
+    Case does not matter on the hex letters.
+
+    The various character sets specified are:
+    
+    Reserved characters : ";/?:@&=+$,"
+        Have special meaning in URIs and must be escaped if not being used for
+        their special meaning
+    Data characters : letters, digits, and "-_.!~*'()"
+        Unreserved and do not need to be escaped; can be, though, if desired
+    Control characters : 0x00 - 0x1F, 0x7F
+        Have no use in URIs so must be escaped
+    space : 0x20
+        Must be escaped
+    Delimiters : '<>#%"'
+        Must be escaped
+    Unwise : "{}|\^[]`"
+        Must be escaped
+    
+    """
+
+    def test_never_quote(self):
+        # Make sure quote() does not quote letters, digits, and "_,.-"
+        do_not_quote = '' .join(["ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                                 "abcdefghijklmnopqrstuvwxyz",
+                                 "0123456789",
+                                 "_.-"])
+        result = urllib.quote(do_not_quote)
+        self.assertEqual(do_not_quote, result,
+                         "using quote(): %s != %s" % (do_not_quote, result))
+        result = urllib.quote_plus(do_not_quote)
+        self.assertEqual(do_not_quote, result,
+                        "using quote_plus(): %s != %s" % (do_not_quote, result))
+
+    def test_default_safe(self):
+        # Test '/' is default value for 'safe' parameter
+        self.assertEqual(urllib.quote.func_defaults[0], '/')
+
+    def test_safe(self):
+        # Test setting 'safe' parameter does what it should do
+        quote_by_default = "<>"
+        result = urllib.quote(quote_by_default, safe=quote_by_default)
+        self.assertEqual(quote_by_default, result,
+                         "using quote(): %s != %s" % (quote_by_default, result))
+        result = urllib.quote_plus(quote_by_default, safe=quote_by_default)
+        self.assertEqual(quote_by_default, result,
+                         "using quote_plus(): %s != %s" %
+                         (quote_by_default, result))
+
+    def test_default_quoting(self):
+        # Make sure all characters that should be quoted are by default sans
+        # space (separate test for that).
+        should_quote = [chr(num) for num in range(32)] # For 0x00 - 0x1F
+        should_quote.append('<>#%"{}|\^[]`')
+        should_quote.append(chr(127)) # For 0x7F
+        should_quote = ''.join(should_quote)
+        for char in should_quote:
+            result = urllib.quote(char)
+            self.assertEqual(hexescape(char), result,
+                             "using quote(): %s should be escaped to %s, not %s" %
+                             (char, hexescape(char), result))
+            result = urllib.quote_plus(char)
+            self.assertEqual(hexescape(char), result,
+                             "using quote_plus(): "
+                             "%s should be escapes to %s, not %s" % 
+                             (char, hexescape(char), result))
+        del should_quote
+        partial_quote = "ab[]cd"
+        expected = "ab%5B%5Dcd"
+        result = urllib.quote(partial_quote)
+        self.assertEqual(expected, result,
+                         "using quote(): %s != %s" % (expected, result))
+        self.assertEqual(expected, result,
+                         "using quote_plus(): %s != %s" % (expected, result))
+
+    def test_quoting_space(self):
+        # Make sure quote() and quote_plus() handle spaces as specified in
+        # their unique way
+        result = urllib.quote(' ')
+        self.assertEqual(result, hexescape(' '),
+                         "using quote(): %s != %s" % (result, hexescape(' ')))
+        result = urllib.quote_plus(' ')
+        self.assertEqual(result, '+',
+                         "using quote_plus(): %s != +" % result)
+        given = "a b cd e f"
+        expect = given.replace(' ', hexescape(' '))
+        result = urllib.quote(given)
+        self.assertEqual(expect, result,
+                         "using quote(): %s != %s" % (expect, result))
+        expect = given.replace(' ', '+')
+        result = urllib.quote_plus(given)
+        self.assertEqual(expect, result,
+                         "using quote_plus(): %s != %s" % (expect, result))
+
+class UnquotingTests(unittest.TestCase):
+    """Tests for unquote() and unquote_plus()
+    
+    See the doc string for quoting_Tests for details on quoting and such.
+
+    """
+
+    def test_unquoting(self):
+        # Make sure unquoting of all ASCII values works
+        escape_list = []
+        for num in range(128):
+            given = hexescape(chr(num))
+            expect = chr(num)
+            result = urllib.unquote(given)
+            self.assertEqual(expect, result,
+                             "using unquote(): %s != %s" % (expect, result))
+            result = urllib.unquote_plus(given)
+            self.assertEqual(expect, result,
+                             "using unquote_plus(): %s != %s" %
+                             (expect, result))
+            escape_list.append(given)
+        escape_string = ''.join(escape_list)
+        del escape_list
+        result = urllib.unquote(escape_string)
+        self.assertEqual(result.count('%'), 1,
+                         "using quote(): not all characters escaped; %s" %
+                         result)
+        result = urllib.unquote(escape_string)
+        self.assertEqual(result.count('%'), 1,
+                         "using unquote(): not all characters escaped: "
+                         "%s" % result)
+
+    def test_unquoting_parts(self):
+        # Make sure unquoting works when have non-quoted characters
+        # interspersed
+        given = 'ab%sd' % hexescape('c')
+        expect = "abcd"
+        result = urllib.unquote(given)
+        self.assertEqual(expect, result,
+                         "using quote(): %s != %s" % (expect, result))
+        result = urllib.unquote_plus(given)
+        self.assertEqual(expect, result,
+                         "using unquote_plus(): %s != %s" % (expect, result))
+        
+    def test_unquoting_plus(self):
+        # Test difference between unquote() and unquote_plus()
+        given = "are+there+spaces..."
+        expect = given
+        result = urllib.unquote(given)
+        self.assertEqual(expect, result,
+                         "using unquote(): %s != %s" % (expect, result))
+        expect = given.replace('+', ' ')
+        result = urllib.unquote_plus(given)
+        self.assertEqual(expect, result,
+                         "using unquote_plus(): %s != %s" % (expect, result))
+
+class urlencode_Tests(unittest.TestCase):
+    """Tests for urlencode()"""
+
+    def help_inputtype(self, given, test_type):
+        """Helper method for testing different input types.
+        
+        'given' must lead to only the pairs:
+            * 1st, 1
+            * 2nd, 2
+            * 3rd, 3
+        
+        Test cannot assume anything about order.  Docs make no guarantee and
+        have possible dictionary input.
+        
+        """
+        expect_somewhere = ["1st=1", "2nd=2", "3rd=3"]
+        result = urllib.urlencode(given)
+        for expected in expect_somewhere:
+            self.assert_(expected in result,
+                         "testing %s: %s not found in %s" %
+                         (test_type, expected, result))
+        self.assertEqual(result.count('&'), 2,
+                         "testing %s: expected 2 '&'s; got %s" %
+                         (test_type, result.count('&')))
+        amp_location = result.index('&')
+        on_amp_left = result[amp_location - 1]
+        on_amp_right = result[amp_location + 1]
+        self.assert_(on_amp_left.isdigit() and on_amp_right.isdigit(),
+                     "testing %s: '&' not located in proper place in %s" %
+                     (test_type, result))
+        self.assertEqual(len(result), (5 * 3) + 2, #5 chars per thing and amps
+                         "testing %s: "
+                         "unexpected number of characters: %s != %s" %
+                         (test_type, len(result), (5 * 3) + 2))
+
+    def test_using_mapping(self):
+        # Test passing in a mapping object as an argument.
+        self.help_inputtype({"1st":'1', "2nd":'2', "3rd":'3'},
+                            "using dict as input type")
+
+    def test_using_sequence(self):
+        # Test passing in a sequence of two-item sequences as an argument.
+        self.help_inputtype([('1st', '1'), ('2nd', '2'), ('3rd', '3')],
+                            "using sequence of two-item tuples as input")
+
+    def test_quoting(self):
+        # Make sure keys and values are quoted using quote_plus()
+        given = {"&":"="}
+        expect = "%s=%s" % (hexescape('&'), hexescape('='))
+        result = urllib.urlencode(given)
+        self.assertEqual(expect, result)
+        given = {"key name":"A bunch of pluses"}
+        expect = "key+name=A+bunch+of+pluses"
+        result = urllib.urlencode(given)
+        self.assertEqual(expect, result)
+
+    def test_doseq(self):
+        # Test that passing True for 'doseq' parameter works correctly
+        given = {'sequence':['1', '2', '3']}
+        expect = "sequence=%s" % urllib.quote_plus(str(['1', '2', '3']))
+        result = urllib.urlencode(given)
+        self.assertEqual(expect, result)
+        result = urllib.urlencode(given, True)
+        for value in given["sequence"]:
+            expect = "sequence=%s" % value
+            self.assert_(expect in result,
+                         "%s not found in %s" % (expect, result))
+        self.assertEqual(result.count('&'), 2,
+                         "Expected 2 '&'s, got %s" % result.count('&'))
+
+class Pathname_Tests(unittest.TestCase):
+    """Test pathname2url() and url2pathname()"""
+
+    def test_basic(self):
+        # Make sure simple tests pass
+        expected_path = os.path.join("parts", "of", "a", "path")
+        expected_url = "parts/of/a/path"
+        result = urllib.pathname2url(expected_path)
+        self.assertEqual(expected_url, result,
+                         "pathname2url() failed; %s != %s" %
+                         (result, expected_url))
+        result = urllib.url2pathname(expected_url)
+        self.assertEqual(expected_path, result,
+                         "url2pathame() failed; %s != %s" %
+                         (result, expected_path))
+
+    def test_quoting(self):
+        # Test automatic quoting and unquoting works for pathnam2url() and
+        # url2pathname() respectively
+        given = os.path.join("needs", "quot=ing", "here")
+        expect = "needs/%s/here" % urllib.quote("quot=ing")
+        result = urllib.pathname2url(given)
+        self.assertEqual(expect, result,
+                         "pathname2url() failed; %s != %s" %
+                         (expect, result))
+        expect = given
+        result = urllib.url2pathname(result)
+        self.assertEqual(expect, result,
+                         "url2pathname() failed; %s != %s" %
+                         (expect, result))
+        given = os.path.join("make sure", "using_quote")
+        expect = "%s/using_quote" % urllib.quote("make sure")
+        result = urllib.pathname2url(given)
+        self.assertEqual(expect, result,
+                         "pathname2url() failed; %s != %s" %
+                         (expect, result))
+        given = "make+sure/using_unquote"
+        expect = os.path.join("make+sure", "using_unquote")
+        result = urllib.url2pathname(given)
+        self.assertEqual(expect, result,
+                         "url2pathname() failed; %s != %s" %
+                         (expect, result))
+        
 
 
-import UserString
-in9 = UserString.UserString("")
-exp9 = ""
-act9 = urllib.urlencode(in9,doseq=1)
-verify(act9==exp9, "urllib.urlencode problem 7 UserString")
+def test_main():
+    test_suite = unittest.TestSuite()
+    test_suite.addTest(unittest.makeSuite(urlopen_FileTests))
+    test_suite.addTest(unittest.makeSuite(QuotingTests))
+    test_suite.addTest(unittest.makeSuite(UnquotingTests))
+    test_suite.addTest(unittest.makeSuite(urlencode_Tests))
+    test_suite.addTest(unittest.makeSuite(Pathname_Tests))
+    test_support.run_suite(test_suite)
+
+
+
+if __name__ == '__main__':
+    test_main()
