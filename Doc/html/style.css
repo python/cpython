@@ -49,7 +49,7 @@ h1, h2, h3, h4, h5, h6  { font-family: avantgarde, sans-serif;
 h1                      { font-size: 180%; }
 h2                      { font-size: 150%; }
 h3, h4                  { font-size: 120%; }
-code, tt                { font-family: lucida typewriter, lucidatypewriter,
+code, tt                { font-family: "lucida typewriter", lucidatypewriter,
                                        monospace; }
 var                     { font-family: times, serif;
                           font-style: italic;
@@ -86,7 +86,7 @@ div.note .label         { margin-right: 0.5em;
 .titlegraphic           { vertical-align: top; }
 
 .verbatim pre           { color: #00008b;
-                          font-family: lucida typewriter, lucidatypewriter,
+                          font-family: "lucida typewriter", lucidatypewriter,
                                        monospace;
                           font-size: 90%; }
 .verbatim               { margin-left: 2em; }
