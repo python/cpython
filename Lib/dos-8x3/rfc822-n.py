@@ -327,11 +327,11 @@ class Message:
         """
         raw = []
         for h in self.getallmatchingheaders(name):
-	    if h[0] in ' \t':
-	        raw.append(h)
-	    else:
-	        if raw:
-		    raw.append(', ')
+            if h[0] in ' \t':
+                raw.append(h)
+            else:
+                if raw:
+                    raw.append(', ')
                 i = string.find(h, ':')
                 if i > 0:
                     addr = h[i+1:]
@@ -832,16 +832,16 @@ def parsedate_tz(data):
     mm = _monthnames.index(mm)+1
     if mm > 12: mm = mm - 12
     if dd[-1] == ',':
-	dd = dd[:-1]
+        dd = dd[:-1]
     i = string.find(yy, ':')
     if i > 0:
-	yy, tm = tm, yy
+        yy, tm = tm, yy
     if yy[-1] == ',':
-	yy = yy[:-1]
+        yy = yy[:-1]
     if yy[0] not in string.digits:
-	yy, tz = tz, yy
+        yy, tz = tz, yy
     if tm[-1] == ',':
-	tm = tm[:-1]
+        tm = tm[:-1]
     tm = string.splitfields(tm, ':')
     if len(tm) == 2:
         [thh, tmm] = tm
