@@ -903,7 +903,7 @@ audioop_ratecv(PyObject *self, PyObject *args)
 	int len, size, nchannels, inrate, outrate, weightA, weightB;
 	int chan, d, *prev_i, *cur_i, cur_o;
 	PyObject *state, *samps, *str, *rv = NULL;
-	int size_times_nchannels;
+	int bytes_per_frame;
 
 	weightA = 1;
 	weightB = 0;
@@ -918,12 +918,21 @@ audioop_ratecv(PyObject *self, PyObject *args)
 		PyErr_SetString(AudioopError, "# of channels should be >= 1");
 		return NULL;
 	}
+	bytes_per_frame = size * nchannels;
+	if (bytes_per_frame / nchannels != size) {
+		/* This overflow test is rigorously correct because
+		   both multiplicands are >= 1.  Use the argument names
+		   from the docs for the error msg. */
+		PyErr_SetString(PyExc_OverflowError,
+		                "width * nchannels too big for a C int");
+		return NULL;
+	}
 	if (weightA < 1 || weightB < 0) {
 		PyErr_SetString(AudioopError,
 			"weightA should be >= 1, weightB should be >= 0");
 		return NULL;
 	}
-	if (len % (size * nchannels) != 0) {
+	if (len % bytes_per_frame != 0) {
 		PyErr_SetString(AudioopError, "not a whole number of frames");
 		return NULL;
 	}
@@ -943,16 +952,7 @@ audioop_ratecv(PyObject *self, PyObject *args)
 		goto exit;
 	}
 
-	size_times_nchannels = size * nchannels;
-	if (size_times_nchannels / nchannels != size) {
-		/* This overflow test is rigorously correct because
-		   both multiplicands are >= 1.  Use the argument names
-		   from the docs for the error msg. */
-		PyErr_SetString(PyExc_OverflowError,
-		                "width * nchannels too big for a C int");
-		goto exit;
-	}
-	len /= size_times_nchannels;	/* # of frames */
+	len /= bytes_per_frame;	/* # of frames */
 
 	if (state == Py_None) {
 		d = -outrate;
@@ -980,7 +980,7 @@ audioop_ratecv(PyObject *self, PyObject *args)
 	{
 		/* There are len input frames, so we need (mathematically)
 		   ceiling(len*outrate/inrate) output frames, and each frame
-		   requires size_times_nchannels bytes.  Computing this
+		   requires bytes_per_frame bytes.  Computing this
 		   without spurious overflow is the challenge. */
 		int ceiling;   /* the number of output frames, eventually */
 		int nbytes;    /* the number of output bytes needed */
@@ -1012,8 +1012,8 @@ audioop_ratecv(PyObject *self, PyObject *args)
 				"not enough memory for output buffer");
 			goto exit;
 		}
-		nbytes = ceiling * size_times_nchannels;
-		if (nbytes / size_times_nchannels != ceiling) {
+		nbytes = ceiling * bytes_per_frame;
+		if (nbytes / bytes_per_frame != ceiling) {
 			PyErr_SetString(PyExc_MemoryError,
 				"not enough memory for output buffer");
 			goto exit;
