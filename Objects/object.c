@@ -99,11 +99,8 @@ inc_count(PyTypeObject *tp)
 PyObject *
 PyObject_Init(PyObject *op, PyTypeObject *tp)
 {
-	if (op == NULL) {
-		PyErr_SetString(PyExc_SystemError,
-				"NULL object passed to PyObject_Init");
-		return op;
-  	}
+	if (op == NULL)
+		return PyErr_NoMemory();
 	/* Any changes should be reflected in PyObject_INIT (objimpl.h) */
 	op->ob_type = tp;
 	_Py_NewReference(op);
@@ -113,11 +110,8 @@ PyObject_Init(PyObject *op, PyTypeObject *tp)
 PyVarObject *
 PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, int size)
 {
-	if (op == NULL) {
-		PyErr_SetString(PyExc_SystemError,
-				"NULL object passed to PyObject_InitVar");
-		return op;
-	}
+	if (op == NULL)
+		return (PyVarObject *) PyErr_NoMemory();
 	/* Any changes should be reflected in PyObject_INIT_VAR */
 	op->ob_size = size;
 	op->ob_type = tp;
