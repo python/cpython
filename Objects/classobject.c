@@ -1428,7 +1428,7 @@ PyMethod_New(func, self, class)
 	PyObject *class;
 {
 	register PyMethodObject *im;
-	if (!PyFunction_Check(func)) {
+	if (!PyCallable_Check(func)) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
@@ -1506,15 +1506,11 @@ instancemethod_getattr(im, name)
 {
 	char *sname = PyString_AsString(name);
 	if (sname[0] == '_') {
-		PyFunctionObject *func = (PyFunctionObject *)(im->im_func);
-		if (strcmp(sname, "__name__") == 0) {
-			Py_INCREF(func->func_name);
-			return func->func_name;
-		}
-		if (strcmp(sname, "__doc__") == 0) {
-			Py_INCREF(func->func_doc);
-			return func->func_doc;
-		}
+		/* Inherit __name__ and __doc__ from the callable object
+		   implementing the method */
+	        if (strcmp(sname, "__name__") == 0 ||
+		    strcmp(sname, "__doc__") == 0)
+			return PyObject_GetAttr(im->im_func, name);
 	}
 	if (PyEval_GetRestricted()) {
 		PyErr_SetString(PyExc_RuntimeError,
@@ -1550,20 +1546,29 @@ instancemethod_repr(a)
 {
 	char buf[240];
 	PyInstanceObject *self = (PyInstanceObject *)(a->im_self);
-	PyFunctionObject *func = (PyFunctionObject *)(a->im_func);
+	PyObject *func = a->im_func;
 	PyClassObject *class = (PyClassObject *)(a->im_class);
 	PyObject *fclassname, *iclassname, *funcname;
 	char *fcname, *icname, *fname;
 	fclassname = class->cl_name;
-	funcname = func->func_name;
+	if (PyFunction_Check(func)) {
+		funcname = ((PyFunctionObject *)func)->func_name;
+		Py_INCREF(funcname);
+	}
+	else {
+		funcname = PyObject_GetAttrString(func,"__name__");
+		if (funcname == NULL)
+			PyErr_Clear();
+	}
+	if (funcname != NULL && PyString_Check(funcname))
+		fname = PyString_AS_STRING(funcname);
+	else
+		fname = "?";
+	Py_XDECREF(funcname);
 	if (fclassname != NULL && PyString_Check(fclassname))
 		fcname = PyString_AsString(fclassname);
 	else
 		fcname = "?";
-	if (funcname != NULL && PyString_Check(funcname))
-		fname = PyString_AsString(funcname);
-	else
-		fname = "?";
 	if (self == NULL)
 		sprintf(buf, "<unbound method %.100s.%.100s>", fcname, fname);
 	else {
