@@ -113,12 +113,15 @@ regobj_match(re, args)
 	regexobject *re;
 	PyObject *args;
 {
+	PyObject *argstring;
 	char *buffer;
 	int size;
 	int offset = 0;
 	int result;
 
-	if (!PyArg_ParseTuple(args, "s#|i", &buffer, &size, &offset))
+	if (!PyArg_ParseTuple(args, "O|i", &argstring, &offset))
+		return NULL;
+	if (!PyArg_Parse(argstring, "s#", &buffer, &size))
 		return NULL;
 
 	if (offset < 0 || offset > size) {
@@ -134,10 +137,8 @@ regobj_match(re, args)
 		return NULL;
 	}
 	if (result >= 0) {
-		PyObject* str = PyString_FromStringAndSize(buffer, size);
-		if (!str)
-			return NULL;
-		re->re_lastok = str;
+		Py_INCREF(argstring);
+		re->re_lastok = argstring;
 	}
 	return PyInt_FromLong((long)result); /* Length of the match or -1 */
 }
@@ -147,13 +148,16 @@ regobj_search(re, args)
 	regexobject *re;
 	PyObject *args;
 {
+	PyObject *argstring;
 	char *buffer;
 	int size;
 	int offset = 0;
 	int range;
 	int result;
 	
-	if (!PyArg_ParseTuple(args, "s#|i", &buffer, &size, &offset))
+	if (!PyArg_ParseTuple(args, "O|i", &argstring, &offset))
+		return NULL;
+	if (!PyArg_Parse(argstring, "s#", &buffer, &size))
 		return NULL;
 
 	if (offset < 0 || offset > size) {
@@ -175,10 +179,8 @@ regobj_search(re, args)
 		return NULL;
 	}
 	if (result >= 0) {
-		PyObject* str = PyString_FromStringAndSize(buffer, size);
-		if (!str)
-			return NULL;
-		re->re_lastok = str;
+		Py_INCREF(argstring);
+		re->re_lastok = argstring;
 	}
 	return PyInt_FromLong((long)result); /* Position of the match or -1 */
 }
