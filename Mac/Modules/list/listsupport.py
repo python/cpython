@@ -45,6 +45,38 @@ class ListMethodGenerator(MethodGenerator):
 		FunctionGenerator.parseArgumentList(self, args)
 		self.argumentList.append(self.itself)
 
+getattrHookCode = """{
+	/* XXXX Should we HLock() here?? */
+	if ( strcmp(name, "listFlags") == 0 )
+		return Py_BuildValue("l", (long)(*self->ob_itself)->listFlags & 0xff);
+	if ( strcmp(name, "selFlags") == 0 )
+		return Py_BuildValue("l", (long)(*self->ob_itself)->selFlags & 0xff);
+}"""
+
+setattrCode = """
+static int
+ListObj_setattr(self, name, value)
+	ListObject *self;
+	char *name;
+	PyObject *value;
+{
+	long intval;
+		
+	if ( value == NULL || !PyInt_Check(value) )
+		return -1;
+	intval = PyInt_AsLong(value);
+	if (strcmp(name, "listFlags") == 0 ) {
+		/* XXXX Should we HLock the handle here?? */
+		(*self->ob_itself)->listFlags = intval;
+		return 0;
+	}
+	if (strcmp(name, "selFlags") == 0 ) {
+		(*self->ob_itself)->selFlags = intval;
+		return 0;
+	}
+	return -1;
+}
+"""
 
 
 class MyObjectDefinition(GlobalObjectDefinition):
@@ -55,6 +87,12 @@ class MyObjectDefinition(GlobalObjectDefinition):
 				}""")
 	def outputFreeIt(self, itselfname):
 		Output("LDispose(%s);", itselfname)
+		
+	def outputGetattrHook(self):
+		Output(getattrHookCode)
+		
+	def outputSetattr(self):
+		Output(setattrCode)
 
 # From here on it's basically all boiler plate...
 
