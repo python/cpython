@@ -208,13 +208,13 @@ def find(domain, localedir=None, languages=None):
         if 'C' not in languages:
             languages.append('C')
     # now normalize and expand the languages
-    langdict = {}
+    nelangs = []
     for lang in languages:
         for nelang in _expand_lang(lang):
-            langdict[nelang] = nelang
-    languages = langdict.keys()
+            if nelang not in nelangs:
+                nelangs.append(nelang)
     # select a language
-    for lang in languages:
+    for lang in nelangs:
         if lang == 'C':
             break
         mofile = os.path.join(localedir, lang, 'LC_MESSAGES', '%s.mo' % domain)
