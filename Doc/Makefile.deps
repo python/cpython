@@ -1,5 +1,4 @@
-# LaTeX source dependencies; note that the files are named relative to a
-# child directory and not the directory this file is located in.
+# LaTeX source dependencies.
 
 COMMONSTYLES= texinputs/python.sty \
 	texinputs/pypaper.sty \
@@ -38,7 +37,8 @@ REFFILES= $(MANSTYLES) $(COMMONTEX) \
 	ref/ref5.tex \
 	ref/ref6.tex \
 	ref/ref7.tex \
-	ref/ref8.tex
+	ref/ref8.tex \
+	ref/refa1.tex
 
 # LaTeX source files for the Python Library Reference
 LIBFILES= $(MANSTYLES) $(COMMONTEX) \
