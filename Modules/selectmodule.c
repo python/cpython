@@ -33,13 +33,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 static object *SelectError;
 
-/* XXX This module should be re-entrant! */
-static object *fd2obj[FD_SETSIZE];
-
 static
-list2set(list, set)
+list2set(list, set, fd2obj)
     object *list;
     fd_set *set;
+    object *fd2obj[FD_SETSIZE];
 {
     int i, len, v, max=-1;
     object *o, *filenomethod, *fno;
@@ -76,9 +74,10 @@ list2set(list, set)
 }
 
 static object *
-set2list(set, max)
+set2list(set, max, fd2obj)
     fd_set *set;
     int max;
+    object *fd2obj[FD_SETSIZE];
 {
     int i, num=0;
     object *list, *o;
@@ -112,6 +111,7 @@ select_select(self, args)
     object *self;
     object *args;
 {
+    object *fd2obj[FD_SETSIZE];
     object *ifdlist, *ofdlist, *efdlist;
     fd_set ifdset, ofdset, efdset;
     double timeout;
@@ -141,14 +141,14 @@ select_select(self, args)
 	return 0;
     }
 
-    bzero((char *)fd2obj, sizeof(fd2obj)); /* Not really needed */
+    memset((char *)fd2obj, '\0', sizeof(fd2obj));
     
     /* Convert lists to fd_sets, and get maximum fd number */
-    if( (imax=list2set(ifdlist, &ifdset)) < 0 )
+    if( (imax=list2set(ifdlist, &ifdset, fd2obj)) < 0 )
       return 0;
-    if( (omax=list2set(ofdlist, &ofdset)) < 0 )
+    if( (omax=list2set(ofdlist, &ofdset, fd2obj)) < 0 )
       return 0;
-    if( (emax=list2set(efdlist, &efdset)) < 0 )
+    if( (emax=list2set(efdlist, &efdset, fd2obj)) < 0 )
       return 0;
     max = imax;
     if ( omax > max ) max = omax;
@@ -164,9 +164,9 @@ select_select(self, args)
     if ( n == 0 )
       imax = omax = emax = 0; /* Speedup hack */
 
-    ifdlist = set2list(&ifdset, imax);
-    ofdlist = set2list(&ofdset, omax);
-    efdlist = set2list(&efdset, emax);
+    ifdlist = set2list(&ifdset, imax, fd2obj);
+    ofdlist = set2list(&ofdset, omax, fd2obj);
+    efdlist = set2list(&efdset, emax, fd2obj);
 
     return mkvalue("OOO", ifdlist, ofdlist, efdlist);
 }
