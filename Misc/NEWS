@@ -48,8 +48,17 @@ Library
   without losing information).
 
 - Profile.calibrate() has a new implementation that should deliver
-  a better system-specific calibration constant.  Calibration must still
-  be done manually (see the docs for the profile module).
+  a much better system-specific calibration constant.  The constant can
+  now be specified in an instance constructor, or as a Profile class or
+  instance variable, instead of by editing profile.py's source code.
+  Calibration must still be done manually (see the docs for the profile
+  module).
+
+  Note that Profile.calibrate() must be overriden by subclasses.
+  Improving the accuracy required exploiting detailed knowledge of
+  profiler internals; the earlier method abstracted away the details
+  and measured a simplified model instead, but consequently computed
+  a constant too small by a factor of 2 on some modern machines.
 
 - quopri's encode and decode methods take an optional header parameter,
   which indicates whether output is intended for the header 'Q' encoding.

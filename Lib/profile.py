@@ -139,10 +139,16 @@ class Profile:
           it was called by us.
     """
 
-    def __init__(self, timer=None):
+    bias = 0  # calibration constant
+
+    def __init__(self, timer=None, bias=None):
         self.timings = {}
         self.cur = None
         self.cmd = ""
+
+        if bias is None:
+            bias = self.bias
+        self.bias = bias     # Materialize in local dict for lookup speed.
 
         if not timer:
             if os.name == 'mac':
@@ -190,7 +196,7 @@ class Profile:
     def trace_dispatch(self, frame, event, arg):
         timer = self.timer
         t = timer()
-        t = t[0] + t[1] - self.t # - .00053 calibration constant
+        t = t[0] + t[1] - self.t - self.bias
 
         if self.dispatch[event](self, frame,t):
             t = timer()
@@ -198,45 +204,39 @@ class Profile:
         else:
             r = timer()
             self.t = r[0] + r[1] - t # put back unrecorded delta
-        return
-
 
     # Dispatch routine for best timer program (return = scalar, fastest if
     # an integer but float works too -- and time.clock() relies on that).
 
     def trace_dispatch_i(self, frame, event, arg):
         timer = self.timer
-        t = timer() - self.t # - 16e-6 # calibration constant
+        t = timer() - self.t - self.bias
         if self.dispatch[event](self, frame,t):
             self.t = timer()
         else:
             self.t = timer() - t  # put back unrecorded delta
-        return
 
     # Dispatch routine for macintosh (timer returns time in ticks of
     # 1/60th second)
 
     def trace_dispatch_mac(self, frame, event, arg):
         timer = self.timer
-        t = timer()/60.0 - self.t # - 1 # calibration constant
-        if self.dispatch[event](self, frame,t):
+        t = timer()/60.0 - self.t - self.bias
+        if self.dispatch[event](self, frame, t):
             self.t = timer()/60.0
         else:
             self.t = timer()/60.0 - t  # put back unrecorded delta
-        return
-
 
     # SLOW generic dispatch routine for timer returning lists of numbers
 
     def trace_dispatch_l(self, frame, event, arg):
         get_time = self.get_time
-        t = get_time() - self.t
+        t = get_time() - self.t - self.bias
 
-        if self.dispatch[event](self, frame,t):
+        if self.dispatch[event](self, frame, t):
             self.t = get_time()
         else:
             self.t = get_time() - t # put back unrecorded delta
-        return
 
     # In the event handlers, the first 3 elements of self.cur are unpacked
     # into vrbls w/ 3-letter names.  The last two characters are meant to be
@@ -430,9 +430,9 @@ class Profile:
     # Similarly, there is a delay from the time that the profiler
     # re-starts the stopwatch before the user's code really gets to
     # continue.  The following code tries to measure the difference on
-    # a per-event basis. The result can the be placed in the
-    # Profile.dispatch_event() routine for the given platform.  Note
-    # that this difference is only significant if there are a lot of
+    # a per-event basis.
+    #
+    # Note that this difference is only significant if there are a lot of
     # events, and relatively little user code per event.  For example,
     # code with small functions will typically benefit from having the
     # profiler calibrated for the current platform.  This *could* be
@@ -461,12 +461,20 @@ class Profile:
     # that this additional feature will slow the heavily optimized
     # event/time ratio (i.e., the profiler would run slower, fur a very
     # low "value added" feature.)
-    #
-    # Plugging in the calibration constant doesn't slow down the
-    # profiler very much, and the accuracy goes way up.
     #**************************************************************
 
     def calibrate(self, m, verbose=0):
+        if self.__class__ is not Profile:
+            raise TypeError("Subclasses must override .calibrate().")
+
+        saved_bias = self.bias
+        self.bias = 0
+        try:
+            return self._callibrate_inner(m, verbose)
+        finally:
+            self.bias = saved_bias
+
+    def _callibrate_inner(self, m, verbose):
         get_time = self.get_time
 
         # Set up a test case to be run with and without profiling.  Include
