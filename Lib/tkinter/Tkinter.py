@@ -2,22 +2,20 @@
 
 import tkinter
 from tkinter import TclError
+from types import *
+CallableTypes = (FunctionType, MethodType,
+		 BuiltinFunctionType, BuiltinMethodType,
+		 ClassType, InstanceType)
 
-class _Dummy:
-	def meth(self):	return
-
-def _func():
-	pass
-
-FunctionType = type(_func)
-ClassType = type(_Dummy)
-MethodType = type(_Dummy.meth)
-StringType = type('')
-TupleType = type(())
-ListType = type([])
-DictionaryType = type({})
-NoneType = type(None)
-CallableTypes = (FunctionType, MethodType)
+# Older versions of tkinter don't define these variables
+try:
+	TkVersion = eval(tkinter.TK_VERSION)
+except AttributeError:
+	TkVersion = 3.6
+try:
+	TclVersion = eval(tkinter.TCL_VERSION)
+except AttributeError:
+	TclVersion = 7.3
 
 def _flatten(tuple):
 	res = ()
@@ -347,10 +345,10 @@ class Misc:
 		self.tk.quit()
 	def _getints(self, string):
 		if not string: return None
-		res = ()
-		for v in self.tk.splitlist(string):
-			res = res +  (self.tk.getint(v),)
-		return res
+		return tuple(map(self.tk.getint, self.tk.splitlist(string)))
+	def _getdoubles(self, string):
+		if not string: return None
+		return tuple(map(self.tk.getdouble, self.tk.splitlist(string)))
 	def _getboolean(self, string):
 		if string:
 			return self.tk.getboolean(string)
@@ -438,29 +436,9 @@ class _CallSafely:
 		except SystemExit, msg:
 			raise SystemExit, msg
 		except:
-			try:
-				try:
-					t = sys.exc_traceback
-					while t:
-						sys.stderr.write(
-							'  %s, line %s\n' %
-							(t.tb_frame.f_code,
-							 t.tb_lineno))
-						t = t.tb_next
-				finally:
-					sys.stderr.write('%s: %s\n' %
-							 (sys.exc_type,
-							  sys.exc_value))
-				(sys.last_type,
-				 sys.last_value,
-				 sys.last_traceback) = (sys.exc_type,
-							sys.exc_value,
-							sys.exc_traceback)
-				import pdb
-				pdb.pm()
-			except:
-				print '*** Error in error handling ***'
-				print sys.exc_type, ':', sys.exc_value
+			import traceback
+			print "Exception in Tkinter callback"
+			traceback.print_exc()
 
 class Wm:
 	def aspect(self, 
