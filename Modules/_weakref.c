@@ -8,6 +8,7 @@ struct _PyWeakReference {
     PyObject_HEAD
     PyObject *wr_object;
     PyObject *wr_callback;
+    long hash;
     PyWeakReference *wr_prev;
     PyWeakReference *wr_next;
 };
@@ -39,6 +40,8 @@ new_weakref(void)
     else {
         result = PyObject_NEW(PyWeakReference, &PyWeakReference_Type);
     }
+    if (result)
+        result->hash = -1;
     return result;
 }
 
@@ -112,6 +115,20 @@ weakref_call(PyWeakReference *self, PyObject *args, PyObject *kw)
 }
 
 
+static long
+weakref_hash(PyWeakReference *self)
+{
+    if (self->hash != -1)
+        return self->hash;
+    if (self->wr_object == Py_None) {
+        PyErr_SetString(PyExc_TypeError, "weak object has gone away");
+        return -1;
+    }
+    self->hash = PyObject_Hash(self->wr_object);
+    return self->hash;
+}
+    
+
 static PyObject *
 weakref_repr(PyWeakReference *self)
 {
@@ -126,6 +143,25 @@ weakref_repr(PyWeakReference *self)
                 (long)(self->wr_object));
     }
     return PyString_FromString(buffer);
+}
+
+/* Weak references only support equality, not ordering. Two weak references
+   are equal if the underlying objects are equal. If the underlying object has
+   gone away, they are equal if they are identical. */
+
+static PyObject *
+weakref_richcompare(PyWeakReference* self, PyWeakReference* other, int op)
+{
+    if (op != Py_EQ || self->ob_type != other->ob_type) {
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
+    if (self->wr_object == Py_None || other->wr_object == Py_None) {
+        PyObject *res = self==other ? Py_True : Py_False;
+        Py_INCREF(res);
+        return res;
+    }
+    return PyObject_RichCompare(self->wr_object, other->wr_object, op);
 }
 
 
@@ -145,16 +181,18 @@ PyWeakReference_Type = {
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
     0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash*/
+    (hashfunc)weakref_hash,      /*tp_hash*/
     (ternaryfunc)weakref_call,  /*tp_call*/
     0,                          /*tp_str*/
     0,                          /*tp_getattro*/
     0,                          /*tp_setattro*/
     0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC | Py_TPFLAGS_HAVE_RICHCOMPARE,
     0,                          /*tp_doc*/
     (traverseproc)gc_traverse,  /*tp_traverse*/
     (inquiry)gc_clear,          /*tp_clear*/
+    (richcmpfunc)weakref_richcompare,	/*tp_richcompare*/
+    0,				/*tp_weaklistoffset*/
 };
 
 

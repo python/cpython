@@ -15,6 +15,10 @@ Weak Valued Dictionaries
 objects are stored in weak dict
 weak dict test complete
 
+Weak Keyed Dictionaries
+objects are stored in weak dict
+weak key dict test complete
+
 Non-callable Proxy References
 XXX -- tests not written!
 
