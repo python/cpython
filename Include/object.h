@@ -531,8 +531,8 @@ extern DL_IMPORT(long) _Py_RefTotal;
 #define Py_DECREF(op)							\
        if (--_Py_RefTotal, 0 < (--((op)->ob_refcnt))) ;			\
        else if (0 == (op)->ob_refcnt) _Py_Dealloc( (PyObject*)(op));	\
-       else (void)fprintf( stderr, "%s:%i negative ref count %i\n",	\
-		           __FILE__, __LINE__, (op)->ob_refcnt)
+       else ((void)fprintf( stderr, "%s:%i negative ref count %i\n",	\
+		           __FILE__, __LINE__, (op)->ob_refcnt), abort())
 #else /* !Py_REF_DEBUG */
 
 #ifdef COUNT_ALLOCS

@@ -60,6 +60,6 @@ classdef
 [3, 4, 5]
 [(1, 'Apple'), (1, 'Banana'), (1, 'Coconut'), (2, 'Apple'), (2, 'Banana'), (2, 'Coconut'), (3, 'Apple'), (3, 'Banana'), (3, 'Coconut'), (4, 'Apple'), (4, 'Banana'), (4, 'Coconut'), (5, 'Apple'), (5, 'Banana'), (5, 'Coconut')]
 [(1, 'Banana'), (1, 'Coconut'), (2, 'Banana'), (2, 'Coconut'), (3, 'Banana'), (3, 'Coconut'), (4, 'Banana'), (4, 'Coconut'), (5, 'Banana'), (5, 'Coconut')]
-[0, 0, 0]
+[False, False, False]
 [[1, 2], [3, 4], [5, 6]]
 [('Boeing', 'Airliner'), ('Boeing', 'Engine'), ('Ford', 'Engine'), ('Macdonalds', 'Cheeseburger')]

@@ -1444,7 +1444,7 @@ static char flush_doc[] =
 static char close_doc[] =
 "close() -> None or (perhaps) an integer.  Close the file.\n"
 "\n"
-"Sets data attribute .closed to true.  A closed file cannot be used for\n"
+"Sets data attribute .closed to True.  A closed file cannot be used for\n"
 "further I/O operations.  close() may be called more than once without\n"
 "error.  Some kinds of file objects (for example, opened by popen())\n"
 "may return an exit status upon closing.";
@@ -1488,11 +1488,11 @@ static PyMemberDef file_memberlist[] = {
 static PyObject *
 get_closed(PyFileObject *f, void *closure)
 {
-	return PyInt_FromLong((long)(f->f_fp == 0));
+	return PyBool_FromLong((long)(f->f_fp == 0));
 }
 
 static PyGetSetDef file_getsetlist[] = {
-	{"closed", (getter)get_closed, NULL, "flag set if the file is closed"},
+	{"closed", (getter)get_closed, NULL, "True if the file is closed"},
 	{0},
 };
 

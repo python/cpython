@@ -4109,10 +4109,10 @@ unicode_index(PyUnicodeObject *self, PyObject *args)
 }
 
 static char islower__doc__[] =
-"S.islower() -> int\n\
+"S.islower() -> bool\n\
 \n\
-Return 1 if  all cased characters in S are lowercase and there is\n\
-at least one cased character in S, 0 otherwise.";
+Return True if all cased characters in S are lowercase and there is\n\
+at least one cased character in S, False otherwise.";
 
 static PyObject*
 unicode_islower(PyUnicodeObject *self)
@@ -4123,11 +4123,11 @@ unicode_islower(PyUnicodeObject *self)
 
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1)
-	return PyInt_FromLong(Py_UNICODE_ISLOWER(*p) != 0);
+	return PyBool_FromLong(Py_UNICODE_ISLOWER(*p));
 
     /* Special case for empty strings */
     if (PyString_GET_SIZE(self) == 0)
-	return PyInt_FromLong(0);
+	return PyBool_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
     cased = 0;
@@ -4135,18 +4135,18 @@ unicode_islower(PyUnicodeObject *self)
 	register const Py_UNICODE ch = *p;
 	
 	if (Py_UNICODE_ISUPPER(ch) || Py_UNICODE_ISTITLE(ch))
-	    return PyInt_FromLong(0);
+	    return PyBool_FromLong(0);
 	else if (!cased && Py_UNICODE_ISLOWER(ch))
 	    cased = 1;
     }
-    return PyInt_FromLong(cased);
+    return PyBool_FromLong(cased);
 }
 
 static char isupper__doc__[] =
-"S.isupper() -> int\n\
+"S.isupper() -> bool\n\
 \n\
-Return 1 if  all cased characters in S are uppercase and there is\n\
-at least one cased character in S, 0 otherwise.";
+Return True if  all cased characters in S are uppercase and there is\n\
+at least one cased character in S, False otherwise.";
 
 static PyObject*
 unicode_isupper(PyUnicodeObject *self)
@@ -4157,11 +4157,11 @@ unicode_isupper(PyUnicodeObject *self)
 
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1)
-	return PyInt_FromLong(Py_UNICODE_ISUPPER(*p) != 0);
+	return PyBool_FromLong(Py_UNICODE_ISUPPER(*p) != 0);
 
     /* Special case for empty strings */
     if (PyString_GET_SIZE(self) == 0)
-	return PyInt_FromLong(0);
+	return PyBool_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
     cased = 0;
@@ -4169,19 +4169,19 @@ unicode_isupper(PyUnicodeObject *self)
 	register const Py_UNICODE ch = *p;
 	
 	if (Py_UNICODE_ISLOWER(ch) || Py_UNICODE_ISTITLE(ch))
-	    return PyInt_FromLong(0);
+	    return PyBool_FromLong(0);
 	else if (!cased && Py_UNICODE_ISUPPER(ch))
 	    cased = 1;
     }
-    return PyInt_FromLong(cased);
+    return PyBool_FromLong(cased);
 }
 
 static char istitle__doc__[] =
-"S.istitle() -> int\n\
+"S.istitle() -> bool\n\
 \n\
-Return 1 if S is a titlecased string, i.e. upper- and titlecase characters\n\
-may only follow uncased characters and lowercase characters only cased\n\
-ones. Return 0 otherwise.";
+Return True if S is a titlecased string, i.e. upper- and titlecase\n\
+characters may only follow uncased characters and lowercase characters\n\
+only cased ones. Return False otherwise.";
 
 static PyObject*
 unicode_istitle(PyUnicodeObject *self)
@@ -4192,12 +4192,12 @@ unicode_istitle(PyUnicodeObject *self)
 
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1)
-	return PyInt_FromLong((Py_UNICODE_ISTITLE(*p) != 0) ||
-			      (Py_UNICODE_ISUPPER(*p) != 0));
+	return PyBool_FromLong((Py_UNICODE_ISTITLE(*p) != 0) ||
+			       (Py_UNICODE_ISUPPER(*p) != 0));
 
     /* Special case for empty strings */
     if (PyString_GET_SIZE(self) == 0)
-	return PyInt_FromLong(0);
+	return PyBool_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
     cased = 0;
@@ -4207,27 +4207,27 @@ unicode_istitle(PyUnicodeObject *self)
 	
 	if (Py_UNICODE_ISUPPER(ch) || Py_UNICODE_ISTITLE(ch)) {
 	    if (previous_is_cased)
-		return PyInt_FromLong(0);
+		return PyBool_FromLong(0);
 	    previous_is_cased = 1;
 	    cased = 1;
 	}
 	else if (Py_UNICODE_ISLOWER(ch)) {
 	    if (!previous_is_cased)
-		return PyInt_FromLong(0);
+		return PyBool_FromLong(0);
 	    previous_is_cased = 1;
 	    cased = 1;
 	}
 	else
 	    previous_is_cased = 0;
     }
-    return PyInt_FromLong(cased);
+    return PyBool_FromLong(cased);
 }
 
 static char isspace__doc__[] =
-"S.isspace() -> int\n\
+"S.isspace() -> bool\n\
 \n\
-Return 1 if there are only whitespace characters in S,\n\
-0 otherwise.";
+Return True if there are only whitespace characters in S,\n\
+False otherwise.";
 
 static PyObject*
 unicode_isspace(PyUnicodeObject *self)
@@ -4238,25 +4238,25 @@ unicode_isspace(PyUnicodeObject *self)
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1 &&
 	Py_UNICODE_ISSPACE(*p))
-	return PyInt_FromLong(1);
+	return PyBool_FromLong(1);
 
     /* Special case for empty strings */
     if (PyString_GET_SIZE(self) == 0)
-	return PyInt_FromLong(0);
+	return PyBool_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
     for (; p < e; p++) {
 	if (!Py_UNICODE_ISSPACE(*p))
-	    return PyInt_FromLong(0);
+	    return PyBool_FromLong(0);
     }
-    return PyInt_FromLong(1);
+    return PyBool_FromLong(1);
 }
 
 static char isalpha__doc__[] =
-"S.isalpha() -> int\n\
+"S.isalpha() -> bool\n\
 \n\
-Return 1 if  all characters in S are alphabetic\n\
-and there is at least one character in S, 0 otherwise.";
+Return True if  all characters in S are alphabetic\n\
+and there is at least one character in S, False otherwise.";
 
 static PyObject*
 unicode_isalpha(PyUnicodeObject *self)
@@ -4267,25 +4267,25 @@ unicode_isalpha(PyUnicodeObject *self)
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1 &&
 	Py_UNICODE_ISALPHA(*p))
-	return PyInt_FromLong(1);
+	return PyBool_FromLong(1);
 
     /* Special case for empty strings */
     if (PyString_GET_SIZE(self) == 0)
-	return PyInt_FromLong(0);
+	return PyBool_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
     for (; p < e; p++) {
 	if (!Py_UNICODE_ISALPHA(*p))
-	    return PyInt_FromLong(0);
+	    return PyBool_FromLong(0);
     }
-    return PyInt_FromLong(1);
+    return PyBool_FromLong(1);
 }
 
 static char isalnum__doc__[] =
-"S.isalnum() -> int\n\
+"S.isalnum() -> bool\n\
 \n\
-Return 1 if  all characters in S are alphanumeric\n\
-and there is at least one character in S, 0 otherwise.";
+Return True if  all characters in S are alphanumeric\n\
+and there is at least one character in S, False otherwise.";
 
 static PyObject*
 unicode_isalnum(PyUnicodeObject *self)
@@ -4296,25 +4296,25 @@ unicode_isalnum(PyUnicodeObject *self)
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1 &&
 	Py_UNICODE_ISALNUM(*p))
-	return PyInt_FromLong(1);
+	return PyBool_FromLong(1);
 
     /* Special case for empty strings */
     if (PyString_GET_SIZE(self) == 0)
-	return PyInt_FromLong(0);
+	return PyBool_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
     for (; p < e; p++) {
 	if (!Py_UNICODE_ISALNUM(*p))
-	    return PyInt_FromLong(0);
+	    return PyBool_FromLong(0);
     }
-    return PyInt_FromLong(1);
+    return PyBool_FromLong(1);
 }
 
 static char isdecimal__doc__[] =
-"S.isdecimal() -> int\n\
+"S.isdecimal() -> bool\n\
 \n\
-Return 1 if there are only decimal characters in S,\n\
-0 otherwise.";
+Return True if there are only decimal characters in S,\n\
+False otherwise.";
 
 static PyObject*
 unicode_isdecimal(PyUnicodeObject *self)
@@ -4325,25 +4325,25 @@ unicode_isdecimal(PyUnicodeObject *self)
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1 &&
 	Py_UNICODE_ISDECIMAL(*p))
-	return PyInt_FromLong(1);
+	return PyBool_FromLong(1);
 
     /* Special case for empty strings */
     if (PyString_GET_SIZE(self) == 0)
-	return PyInt_FromLong(0);
+	return PyBool_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
     for (; p < e; p++) {
 	if (!Py_UNICODE_ISDECIMAL(*p))
-	    return PyInt_FromLong(0);
+	    return PyBool_FromLong(0);
     }
-    return PyInt_FromLong(1);
+    return PyBool_FromLong(1);
 }
 
 static char isdigit__doc__[] =
-"S.isdigit() -> int\n\
+"S.isdigit() -> bool\n\
 \n\
-Return 1 if there are only digit characters in S,\n\
-0 otherwise.";
+Return True if there are only digit characters in S,\n\
+False otherwise.";
 
 static PyObject*
 unicode_isdigit(PyUnicodeObject *self)
@@ -4354,25 +4354,25 @@ unicode_isdigit(PyUnicodeObject *self)
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1 &&
 	Py_UNICODE_ISDIGIT(*p))
-	return PyInt_FromLong(1);
+	return PyBool_FromLong(1);
 
     /* Special case for empty strings */
     if (PyString_GET_SIZE(self) == 0)
-	return PyInt_FromLong(0);
+	return PyBool_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
     for (; p < e; p++) {
 	if (!Py_UNICODE_ISDIGIT(*p))
-	    return PyInt_FromLong(0);
+	    return PyBool_FromLong(0);
     }
-    return PyInt_FromLong(1);
+    return PyBool_FromLong(1);
 }
 
 static char isnumeric__doc__[] =
-"S.isnumeric() -> int\n\
+"S.isnumeric() -> bool\n\
 \n\
-Return 1 if there are only numeric characters in S,\n\
-0 otherwise.";
+Return True if there are only numeric characters in S,\n\
+False otherwise.";
 
 static PyObject*
 unicode_isnumeric(PyUnicodeObject *self)
@@ -4383,18 +4383,18 @@ unicode_isnumeric(PyUnicodeObject *self)
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1 &&
 	Py_UNICODE_ISNUMERIC(*p))
-	return PyInt_FromLong(1);
+	return PyBool_FromLong(1);
 
     /* Special case for empty strings */
     if (PyString_GET_SIZE(self) == 0)
-	return PyInt_FromLong(0);
+	return PyBool_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
     for (; p < e; p++) {
 	if (!Py_UNICODE_ISNUMERIC(*p))
-	    return PyInt_FromLong(0);
+	    return PyBool_FromLong(0);
     }
-    return PyInt_FromLong(1);
+    return PyBool_FromLong(1);
 }
 
 static char join__doc__[] =
@@ -4862,9 +4862,9 @@ unicode_freelistsize(PyUnicodeObject *self)
 #endif
 
 static char startswith__doc__[] =
-"S.startswith(prefix[, start[, end]]) -> int\n\
+"S.startswith(prefix[, start[, end]]) -> bool\n\
 \n\
-Return 1 if S starts with the specified prefix, otherwise return 0.  With\n\
+Return True if S starts with the specified prefix, False otherwise.  With\n\
 optional start, test S beginning at that position.  With optional end, stop\n\
 comparing S at that position.";
 
@@ -4885,7 +4885,7 @@ unicode_startswith(PyUnicodeObject *self,
     if (substring == NULL)
 	return NULL;
 
-    result = PyInt_FromLong(tailmatch(self, substring, start, end, -1));
+    result = PyBool_FromLong(tailmatch(self, substring, start, end, -1));
 
     Py_DECREF(substring);
     return result;
@@ -4893,9 +4893,9 @@ unicode_startswith(PyUnicodeObject *self,
 
 
 static char endswith__doc__[] =
-"S.endswith(suffix[, start[, end]]) -> int\n\
+"S.endswith(suffix[, start[, end]]) -> bool\n\
 \n\
-Return 1 if S ends with the specified suffix, otherwise return 0.  With\n\
+Return True if S ends with the specified suffix, False otherwise.  With\n\
 optional start, test S beginning at that position.  With optional end, stop\n\
 comparing S at that position.";
 
@@ -4916,7 +4916,7 @@ unicode_endswith(PyUnicodeObject *self,
     if (substring == NULL)
 	return NULL;
 
-    result = PyInt_FromLong(tailmatch(self, substring, start, end, +1));
+    result = PyBool_FromLong(tailmatch(self, substring, start, end, +1));
 
     Py_DECREF(substring);
     return result;

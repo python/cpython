@@ -2329,7 +2329,7 @@ def descrdoc():
     if verbose: print "Testing descriptor doc strings..."
     def check(descr, what):
         vereq(descr.__doc__, what)
-    check(file.closed, "flag set if the file is closed") # getset descriptor
+    check(file.closed, "True if the file is closed") # getset descriptor
     check(file.name, "file name") # member descriptor
 
 def setclass():

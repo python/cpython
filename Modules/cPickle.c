@@ -125,6 +125,9 @@ LONG            Long (unbounded) integer; repr(i), then newline.
 #define TUPLE       't'
 #define EMPTY_TUPLE ')'
 #define SETITEMS    'u'
+#define TRUE        'Z'
+#define FALSE       'z'
+
 
 static char MARKv = MARK;
 
@@ -978,6 +981,17 @@ save_none(Picklerobject *self, PyObject *args)
 	return 0;
 }
 
+static int
+save_bool(Picklerobject *self, PyObject *args) 
+{
+	static char buf[2] = {FALSE, TRUE};
+	long l = PyInt_AS_LONG((PyIntObject *)args);
+
+	if ((*self->write_func)(self, buf + l, 1) < 0)
+		return -1;
+
+	return 0;
+}
 
 static int
 save_int(Picklerobject *self, PyObject *args) 
@@ -1921,6 +1935,12 @@ save(Picklerobject *self, PyObject *args, int  pers_save)
 	type = args->ob_type;
 
 	switch (type->tp_name[0]) {
+	case 'b':
+		if (args == Py_False || args == Py_True) {
+			res = save_bool(self, args);
+			goto finally;
+		}
+		break;
         case 'i':
 		if (type == &PyInt_Type) {
 			res = save_int(self, args);
@@ -2632,6 +2652,20 @@ static int
 load_none(Unpicklerobject *self) 
 {
 	PDATA_APPEND(self->stack, Py_None, -1);
+	return 0;
+}
+
+static int
+load_false(Unpicklerobject *self) 
+{
+	PDATA_APPEND(self->stack, Py_False, -1);
+	return 0;
+}
+
+static int
+load_true(Unpicklerobject *self) 
+{
+	PDATA_APPEND(self->stack, Py_True, -1);
 	return 0;
 }
 
@@ -3774,6 +3808,16 @@ load(Unpicklerobject *self)
 		switch (s[0]) {
 		case NONE:
 			if (load_none(self) < 0)
+				break;
+			continue;
+
+		case FALSE:
+			if (load_false(self) < 0)
+				break;
+			continue;
+
+		case TRUE:
+			if (load_true(self) < 0)
 				break;
 			continue;
 

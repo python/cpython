@@ -4,54 +4,54 @@ operator: <
 
           | Number(0) | Number(1) | Number(2) |
 ----------+-----------+-----------+-----------+-
-Number(0) |         0 |         1 |         1 |
-Number(1) |         0 |         0 |         1 |
-Number(2) |         0 |         0 |         0 |
+Number(0) |     False |      True |      True |
+Number(1) |     False |     False |      True |
+Number(2) |     False |     False |     False |
 ----------+-----------+-----------+-----------+-
 
 operator: <=
 
           | Number(0) | Number(1) | Number(2) |
 ----------+-----------+-----------+-----------+-
-Number(0) |         1 |         1 |         1 |
-Number(1) |         0 |         1 |         1 |
-Number(2) |         0 |         0 |         1 |
+Number(0) |      True |      True |      True |
+Number(1) |     False |      True |      True |
+Number(2) |     False |     False |      True |
 ----------+-----------+-----------+-----------+-
 
 operator: ==
 
           | Number(0) | Number(1) | Number(2) |
 ----------+-----------+-----------+-----------+-
-Number(0) |         1 |         0 |         0 |
-Number(1) |         0 |         1 |         0 |
-Number(2) |         0 |         0 |         1 |
+Number(0) |      True |     False |     False |
+Number(1) |     False |      True |     False |
+Number(2) |     False |     False |      True |
 ----------+-----------+-----------+-----------+-
 
 operator: !=
 
           | Number(0) | Number(1) | Number(2) |
 ----------+-----------+-----------+-----------+-
-Number(0) |         0 |         1 |         1 |
-Number(1) |         1 |         0 |         1 |
-Number(2) |         1 |         1 |         0 |
+Number(0) |     False |      True |      True |
+Number(1) |      True |     False |      True |
+Number(2) |      True |      True |     False |
 ----------+-----------+-----------+-----------+-
 
 operator: >
 
           | Number(0) | Number(1) | Number(2) |
 ----------+-----------+-----------+-----------+-
-Number(0) |         0 |         0 |         0 |
-Number(1) |         1 |         0 |         0 |
-Number(2) |         1 |         1 |         0 |
+Number(0) |     False |     False |     False |
+Number(1) |      True |     False |     False |
+Number(2) |      True |      True |     False |
 ----------+-----------+-----------+-----------+-
 
 operator: >=
 
           | Number(0) | Number(1) | Number(2) |
 ----------+-----------+-----------+-----------+-
-Number(0) |         1 |         0 |         0 |
-Number(1) |         1 |         1 |         0 |
-Number(2) |         1 |         1 |         1 |
+Number(0) |      True |     False |     False |
+Number(1) |      True |      True |     False |
+Number(2) |      True |      True |      True |
 ----------+-----------+-----------+-----------+-
 
 **************************************************
@@ -60,54 +60,54 @@ operator: <
 
           | Number(0) | Number(1) | Number(2) |
 ----------+-----------+-----------+-----------+-
-        0 |         0 |         1 |         1 |
-        1 |         0 |         0 |         1 |
-        2 |         0 |         0 |         0 |
+        0 |     False |      True |      True |
+        1 |     False |     False |      True |
+        2 |     False |     False |     False |
 ----------+-----------+-----------+-----------+-
 
 operator: <=
 
           | Number(0) | Number(1) | Number(2) |
 ----------+-----------+-----------+-----------+-
-        0 |         1 |         1 |         1 |
-        1 |         0 |         1 |         1 |
-        2 |         0 |         0 |         1 |
+        0 |      True |      True |      True |
+        1 |     False |      True |      True |
+        2 |     False |     False |      True |
 ----------+-----------+-----------+-----------+-
 
 operator: ==
 
           | Number(0) | Number(1) | Number(2) |
 ----------+-----------+-----------+-----------+-
-        0 |         1 |         0 |         0 |
-        1 |         0 |         1 |         0 |
-        2 |         0 |         0 |         1 |
+        0 |      True |     False |     False |
+        1 |     False |      True |     False |
+        2 |     False |     False |      True |
 ----------+-----------+-----------+-----------+-
 
 operator: !=
 
           | Number(0) | Number(1) | Number(2) |
 ----------+-----------+-----------+-----------+-
-        0 |         0 |         1 |         1 |
-        1 |         1 |         0 |         1 |
-        2 |         1 |         1 |         0 |
+        0 |     False |      True |      True |
+        1 |      True |     False |      True |
+        2 |      True |      True |     False |
 ----------+-----------+-----------+-----------+-
 
 operator: >
 
           | Number(0) | Number(1) | Number(2) |
 ----------+-----------+-----------+-----------+-
-        0 |         0 |         0 |         0 |
-        1 |         1 |         0 |         0 |
-        2 |         1 |         1 |         0 |
+        0 |     False |     False |     False |
+        1 |      True |     False |     False |
+        2 |      True |      True |     False |
 ----------+-----------+-----------+-----------+-
 
 operator: >=
 
           | Number(0) | Number(1) | Number(2) |
 ----------+-----------+-----------+-----------+-
-        0 |         1 |         0 |         0 |
-        1 |         1 |         1 |         0 |
-        2 |         1 |         1 |         1 |
+        0 |      True |     False |     False |
+        1 |      True |      True |     False |
+        2 |      True |      True |      True |
 ----------+-----------+-----------+-----------+-
 
 **************************************************
@@ -116,72 +116,72 @@ operator: <
 
           |         0 |         1 |         2 |
 ----------+-----------+-----------+-----------+-
-Number(0) |         0 |         1 |         1 |
-Number(1) |         0 |         0 |         1 |
-Number(2) |         0 |         0 |         0 |
+Number(0) |     False |      True |      True |
+Number(1) |     False |     False |      True |
+Number(2) |     False |     False |     False |
 ----------+-----------+-----------+-----------+-
 
 operator: <=
 
           |         0 |         1 |         2 |
 ----------+-----------+-----------+-----------+-
-Number(0) |         1 |         1 |         1 |
-Number(1) |         0 |         1 |         1 |
-Number(2) |         0 |         0 |         1 |
+Number(0) |      True |      True |      True |
+Number(1) |     False |      True |      True |
+Number(2) |     False |     False |      True |
 ----------+-----------+-----------+-----------+-
 
 operator: ==
 
           |         0 |         1 |         2 |
 ----------+-----------+-----------+-----------+-
-Number(0) |         1 |         0 |         0 |
-Number(1) |         0 |         1 |         0 |
-Number(2) |         0 |         0 |         1 |
+Number(0) |      True |     False |     False |
+Number(1) |     False |      True |     False |
+Number(2) |     False |     False |      True |
 ----------+-----------+-----------+-----------+-
 
 operator: !=
 
           |         0 |         1 |         2 |
 ----------+-----------+-----------+-----------+-
-Number(0) |         0 |         1 |         1 |
-Number(1) |         1 |         0 |         1 |
-Number(2) |         1 |         1 |         0 |
+Number(0) |     False |      True |      True |
+Number(1) |      True |     False |      True |
+Number(2) |      True |      True |     False |
 ----------+-----------+-----------+-----------+-
 
 operator: >
 
           |         0 |         1 |         2 |
 ----------+-----------+-----------+-----------+-
-Number(0) |         0 |         0 |         0 |
-Number(1) |         1 |         0 |         0 |
-Number(2) |         1 |         1 |         0 |
+Number(0) |     False |     False |     False |
+Number(1) |      True |     False |     False |
+Number(2) |      True |      True |     False |
 ----------+-----------+-----------+-----------+-
 
 operator: >=
 
           |         0 |         1 |         2 |
 ----------+-----------+-----------+-----------+-
-Number(0) |         1 |         0 |         0 |
-Number(1) |         1 |         1 |         0 |
-Number(2) |         1 |         1 |         1 |
+Number(0) |      True |     False |     False |
+Number(1) |      True |      True |     False |
+Number(2) |      True |      True |      True |
 ----------+-----------+-----------+-----------+-
 
 **************************************************
-Vector([0, 1, 2, 3, 4]) <  Vector([2, 2, 2, 2, 2]) -> Vector([1, 1, 0, 0, 0])
-Vector([0, 1, 2, 3, 4]) <  [2, 2, 2, 2, 2]         -> Vector([1, 1, 0, 0, 0])
-        [0, 1, 2, 3, 4] <  Vector([2, 2, 2, 2, 2]) -> Vector([1, 1, 0, 0, 0])
-Vector([0, 1, 2, 3, 4]) <= Vector([2, 2, 2, 2, 2]) -> Vector([1, 1, 1, 0, 0])
-Vector([0, 1, 2, 3, 4]) <= [2, 2, 2, 2, 2]         -> Vector([1, 1, 1, 0, 0])
-        [0, 1, 2, 3, 4] <= Vector([2, 2, 2, 2, 2]) -> Vector([1, 1, 1, 0, 0])
-Vector([0, 1, 2, 3, 4]) == Vector([2, 2, 2, 2, 2]) -> Vector([0, 0, 1, 0, 0])
-Vector([0, 1, 2, 3, 4]) == [2, 2, 2, 2, 2]         -> Vector([0, 0, 1, 0, 0])
-        [0, 1, 2, 3, 4] == Vector([2, 2, 2, 2, 2]) -> Vector([0, 0, 1, 0, 0])
-Vector([0, 1, 2, 3, 4]) != Vector([2, 2, 2, 2, 2]) -> Vector([1, 1, 0, 1, 1])
-Vector([0, 1, 2, 3, 4]) != [2, 2, 2, 2, 2]         -> Vector([1, 1, 0, 1, 1])
-        [0, 1, 2, 3, 4] != Vector([2, 2, 2, 2, 2]) -> Vector([1, 1, 0, 1, 1])
-Vector([0, 1, 2, 3, 4]) >  Vector([2, 2, 2, 2, 2]) -> Vector([0, 0, 0, 1, 1])
-Vector([0, 1, 2, 3, 4]) >  [2, 2, 2, 2, 2]         -> Vector([0, 0, 0, 1, 1])
-        [0, 1, 2, 3, 4] >  Vector([2, 2, 2, 2, 2]) -> Vector([0, 0, 0, 1, 1])
-Vector([0, 1, 2, 3, 4]) >= Vector([2, 2, 2, 2, 2]) -> Vector([0, 0, 1, 1, 1])
-Vector([0, 1, 2, 3, 4]) >= [2, 2, 2, 2, 2]         -> Vector([0, 0, 1, 1, 1])
-        [0, 1, 2, 3, 4] >= Vector([2, 2, 2, 2, 2]) -> Vector([0, 0, 1, 1, 1])
+Vector([0, 1, 2, 3, 4]) <  Vector([2, 2, 2, 2, 2]) -> Vector([True, True, False, False, False])
+Vector([0, 1, 2, 3, 4]) <  [2, 2, 2, 2, 2]         -> Vector([True, True, False, False, False])
+        [0, 1, 2, 3, 4] <  Vector([2, 2, 2, 2, 2]) -> Vector([True, True, False, False, False])
+Vector([0, 1, 2, 3, 4]) <= Vector([2, 2, 2, 2, 2]) -> Vector([True, True, True, False, False])
+Vector([0, 1, 2, 3, 4]) <= [2, 2, 2, 2, 2]         -> Vector([True, True, True, False, False])
+        [0, 1, 2, 3, 4] <= Vector([2, 2, 2, 2, 2]) -> Vector([True, True, True, False, False])
+Vector([0, 1, 2, 3, 4]) == Vector([2, 2, 2, 2, 2]) -> Vector([False, False, True, False, False])
+Vector([0, 1, 2, 3, 4]) == [2, 2, 2, 2, 2]         -> Vector([False, False, True, False, False])
+        [0, 1, 2, 3, 4] == Vector([2, 2, 2, 2, 2]) -> Vector([False, False, True, False, False])
+Vector([0, 1, 2, 3, 4]) != Vector([2, 2, 2, 2, 2]) -> Vector([True, True, False, True, True])
+Vector([0, 1, 2, 3, 4]) != [2, 2, 2, 2, 2]         -> Vector([True, True, False, True, True])
+        [0, 1, 2, 3, 4] != Vector([2, 2, 2, 2, 2]) -> Vector([True, True, False, True, True])
+Vector([0, 1, 2, 3, 4]) >  Vector([2, 2, 2, 2, 2]) -> Vector([False, False, False, True, True])
+Vector([0, 1, 2, 3, 4]) >  [2, 2, 2, 2, 2]         -> Vector([False, False, False, True, True])
+        [0, 1, 2, 3, 4] >  Vector([2, 2, 2, 2, 2]) -> Vector([False, False, False, True, True])
+Vector([0, 1, 2, 3, 4]) >= Vector([2, 2, 2, 2, 2]) -> Vector([False, False, True, True, True])
+Vector([0, 1, 2, 3, 4]) >= [2, 2, 2, 2, 2]         -> Vector([False, False, True, True, True])
+        [0, 1, 2, 3, 4] >= Vector([2, 2, 2, 2, 2]) -> Vector([False, False, True, True, True])

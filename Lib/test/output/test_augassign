@@ -4,14 +4,14 @@ test_augassign
 6
 [1, 2, 3, 4, 1, 2, 3, 4]
 [1, 2, 1, 2, 3]
-1
-1
-1
+True
+True
+True
 11
-1
+True
 12
-1
-1
+True
+True
 13
 __add__ called
 __radd__ called

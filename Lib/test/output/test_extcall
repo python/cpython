@@ -31,7 +31,7 @@ h() argument after ** must be a dictionary
 dir() argument after ** must be a dictionary
 NoneType object argument after ** must be a dictionary
 dir() got multiple values for keyword argument 'b'
-3 512 1
+3 512 True
 3
 3
 za () {} -> za() takes exactly 1 argument (0 given)
