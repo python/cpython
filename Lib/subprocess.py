@@ -1023,6 +1023,7 @@ class Popen(object):
             data = os.read(errpipe_read, 1048576) # Exceptions limited to 1 MB
             os.close(errpipe_read)
             if data != "":
+                os.waitpid(self.pid, 0)
                 child_exception = pickle.loads(data)
                 raise child_exception
 
