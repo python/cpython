@@ -34,11 +34,10 @@ You must first include "object.h".
    allocator) and initialize its object header fields.
 
 Note that objects created with PyObject_{New, NewVar} are allocated
-within the Python heap by an object allocator, the latter being
-implemented (by default) on top of the Python raw memory
-allocator. This ensures that Python keeps control on the user's
-objects regarding their memory management; for instance, they may be
-subject to automatic garbage collection.
+within the Python heap by the raw memory allocator (usually the system
+malloc).  If you want to use the specialized Python allocator use
+PyMalloc_New and PyMalloc_NewVar to allocate the objects and
+PyMalloc_Del to free them.
 
 In case a specific form of memory management is needed, implying that
 the objects would not reside in the Python heap (for example standard
@@ -84,9 +83,9 @@ extern DL_IMPORT(void *) PyObject_Realloc(void *, size_t);
 extern DL_IMPORT(void) PyObject_Free(void *);
 
 /* Macros */
-#define PyObject_MALLOC(n)           _PyMalloc_MALLOC(n)
-#define PyObject_REALLOC(op, n)      _PyMalloc_REALLOC((void *)(op), (n))
-#define PyObject_FREE(op)            _PyMalloc_FREE((void *)(op))
+#define PyObject_MALLOC(n)           PyMem_MALLOC(n)
+#define PyObject_REALLOC(op, n)      PyMem_REALLOC((void *)(op), (n))
+#define PyObject_FREE(op)            PyMem_FREE((void *)(op))
 
 /*
  * Generic object allocator interface
@@ -177,6 +176,22 @@ extern DL_IMPORT(void) _PyObject_Del(PyObject *);
    Note that in C++, the use of the new operator usually implies that
    the 1st step is performed automatically for you, so in a C++ class
    constructor you would start directly with PyObject_Init/InitVar. */
+
+/*
+ * The PyMalloc Object Allocator
+ * =============================
+ */
+
+extern DL_IMPORT(PyObject *) _PyMalloc_New(PyTypeObject *);
+extern DL_IMPORT(PyVarObject *) _PyMalloc_NewVar(PyTypeObject *, int);
+extern DL_IMPORT(void) _PyMalloc_Del(PyObject *);
+
+#define PyMalloc_New(type, typeobj) \
+		( (type *) _PyMalloc_New(typeobj) )
+#define PyMalloc_NewVar(type, typeobj, n) \
+		( (type *) _PyMalloc_NewVar((typeobj), (n)) )
+#define PyMalloc_Del(op) _PyMalloc_Del((PyObject *)(op))
+
 
 /*
  * Garbage Collection Support
