@@ -105,6 +105,7 @@ EXPORTS
 	PyErr_NoMemory
 	PyErr_Occurred
 	PyErr_Print
+	PyErr_PrintEx
 	PyErr_Restore
 	PyErr_SetFromErrno
 	PyErr_SetInterrupt
@@ -279,6 +280,7 @@ EXPORTS
 	PyRun_String
 	PySequence_Check
 	PySequence_Concat
+	PySequence_Contains
 	PySequence_Count
 	PySequence_DelItem
 	PySequence_DelSlice
