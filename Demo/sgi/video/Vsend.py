@@ -118,10 +118,8 @@ def main():
 				w, h = gl.getsize()
 				x, y = gl.getorigin()
 				if (w, h) <> (width, height):
-					lvi.close()
 					width, height = w, h
-					lvi = LiveVideoIn.LiveVideoIn() \
-						.init(pktmax, width, height)
+					lvi.resizevideo(width, height)
 					lvo.resizevideo(width, height)
 
 		rv = lvi.getnextpacket()
