@@ -7,6 +7,7 @@
 #
 # See profile.doc for more information
 
+"""Class for profiling Python code."""
 
 # Copyright 1994, by InfoSeek Corporation, all rights reserved.
 # Written by James Roskind
@@ -79,44 +80,43 @@ def help():
 		print 'along the Python search path'
 
 
-#**************************************************************************
-# class Profile documentation:
-#**************************************************************************
-# self.cur is always a tuple.  Each such tuple corresponds to a stack
-# frame that is currently active (self.cur[-2]).  The following are the
-# definitions of its members.  We use this external "parallel stack" to
-# avoid contaminating the program that we are profiling. (old profiler
-# used to write into the frames local dictionary!!) Derived classes
-# can change the definition of some entries, as long as they leave
-# [-2:] intact.
-#
-# [ 0] = Time that needs to be charged to the parent frame's function.  It is
-#        used so that a function call will not have to access the timing data
-#        for the parents frame.
-# [ 1] = Total time spent in this frame's function, excluding time in
-#        subfunctions
-# [ 2] = Cumulative time spent in this frame's function, including time in
-#        all subfunctions to this frame.
-# [-3] = Name of the function that corresonds to this frame.  
-# [-2] = Actual frame that we correspond to (used to sync exception handling)
-# [-1] = Our parent 6-tuple (corresonds to frame.f_back)
-#**************************************************************************
-# Timing data for each function is stored as a 5-tuple in the dictionary
-# self.timings[].  The index is always the name stored in self.cur[4].
-# The following are the definitions of the members:
-#
-# [0] = The number of times this function was called, not counting direct
-#       or indirect recursion,
-# [1] = Number of times this function appears on the stack, minus one
-# [2] = Total time spent internal to this function
-# [3] = Cumulative time that this function was present on the stack.  In
-#       non-recursive functions, this is the total execution time from start
-#       to finish of each invocation of a function, including time spent in
-#       all subfunctions.
-# [5] = A dictionary indicating for each function name, the number of times
-#       it was called by us.
-#**************************************************************************
 class Profile:
+	"""Profiler class.
+	
+	self.cur is always a tuple.  Each such tuple corresponds to a stack
+	frame that is currently active (self.cur[-2]).  The following are the
+	definitions of its members.  We use this external "parallel stack" to
+	avoid contaminating the program that we are profiling. (old profiler
+	used to write into the frames local dictionary!!) Derived classes
+	can change the definition of some entries, as long as they leave
+	[-2:] intact.
+
+	[ 0] = Time that needs to be charged to the parent frame's function.
+	       It is used so that a function call will not have to access the
+	       timing data for the parent frame.
+	[ 1] = Total time spent in this frame's function, excluding time in
+	       subfunctions
+	[ 2] = Cumulative time spent in this frame's function, including time in
+	       all subfunctions to this frame.
+	[-3] = Name of the function that corresonds to this frame.  
+	[-2] = Actual frame that we correspond to (used to sync exception handling)
+	[-1] = Our parent 6-tuple (corresonds to frame.f_back)
+
+	Timing data for each function is stored as a 5-tuple in the dictionary
+	self.timings[].  The index is always the name stored in self.cur[4].
+	The following are the definitions of the members:
+
+	[0] = The number of times this function was called, not counting direct
+	      or indirect recursion,
+	[1] = Number of times this function appears on the stack, minus one
+	[2] = Total time spent internal to this function
+	[3] = Cumulative time that this function was present on the stack.  In
+	      non-recursive functions, this is the total execution time from start
+	      to finish of each invocation of a function, including time spent in
+	      all subfunctions.
+	[5] = A dictionary indicating for each function name, the number of times
+	      it was called by us.
+	"""
 
 	def __init__(self, timer=None):
 		self.timings = {}
@@ -449,19 +449,16 @@ class Profile:
 
 
 
-#****************************************************************************
-# OldProfile class documentation
-#****************************************************************************
-#
-# The following derived profiler simulates the old style profile, providing
-# errant results on recursive functions. The reason for the usefulnes of this
-# profiler is that it runs faster (i.e., less overhead).  It still creates
-# all the caller stats, and is quite useful when there is *no* recursion
-# in the user's code.
-#
-# This code also shows how easy it is to create a modified profiler.
-#****************************************************************************
 class OldProfile(Profile):
+	"""A derived profiler that simulates the old style profile, providing
+	errant results on recursive functions. The reason for the usefulness of
+	this profiler is that it runs faster (i.e., less overhead).  It still
+	creates all the caller stats, and is quite useful when there is *no*
+	recursion in the user's code.
+	
+	This code also shows how easy it is to create a modified profiler.
+	"""
+
 	def trace_dispatch_exception(self, frame, t):
 		rt, rtt, rct, rfn, rframe, rcur = self.cur
 		if rcur and not rframe is frame:
@@ -509,16 +506,13 @@ class OldProfile(Profile):
 
 		
 
-#****************************************************************************
-# HotProfile class documentation
-#****************************************************************************
-#
-# This profiler is the fastest derived profile example.  It does not
-# calculate caller-callee relationships, and does not calculate cumulative
-# time under a function.  It only calculates time spent in a function, so
-# it runs very quickly (re: very low overhead)
-#****************************************************************************
 class HotProfile(Profile):
+	"""The fastest derived profile example.  It does not calculate
+	caller-callee relationships, and does not calculate cumulative
+	time under a function.  It only calculates time spent in a
+	function, so it runs very quickly due to its very low overhead.
+	"""
+
 	def trace_dispatch_exception(self, frame, t):
 		rt, rtt, rfn, rframe, rcur = self.cur
 		if rcur and not rframe is frame:

@@ -1,14 +1,14 @@
+"""This module implements a function that reads and writes a gzipped file.
+The user of the file doesn't have to worry about the compression,
+but random access is not allowed."""
+
+# based on Andrew Kuchling's minigzip.py distributed with the zlib module
+
 import time
 import string
 import zlib
 import struct
 import __builtin__
-
-# implements a python function that reads and writes a gzipped file
-# the user of the file doesn't have to worry about the compression,
-# but random access is not allowed
-
-# based on Andrew Kuchling's minigzip.py distributed with the zlib module
 
 FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
 

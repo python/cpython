@@ -1,6 +1,4 @@
-#
-# nturl2path convert a NT pathname to a file URL and 
-# vice versa  
+"""Convert a NT pathname to a file URL and vice versa."""
 
 def url2pathname(url):
 	""" Convert a URL to a DOS path...
@@ -34,7 +32,6 @@ def url2pathname(url):
 	return path
 
 def pathname2url(p):
-
 	""" Convert a DOS path name to a file url...
 		C:\foo\bar\spam.foo
 

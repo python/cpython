@@ -1,4 +1,4 @@
-# pty.py -- Pseudo terminal utilities.
+"""Pseudo terminal utilities."""
 
 # Bugs: No signal handling.  Doesn't set slave termios and window size.
 #	Only tested on Linux.
@@ -16,8 +16,9 @@ STDERR_FILENO = 2
 
 CHILD = 0
 
-# Open pty master.  Returns (master_fd, tty_name).  SGI and Linux/BSD version.
 def master_open():
+	"""Open pty master and return (master_fd, tty_name).
+	SGI and Linux/BSD version."""
 	try:
 		import sgi
 	except ImportError:
@@ -38,14 +39,15 @@ def master_open():
 			return (fd, '/dev/tty' + x + y)
 	raise os.error, 'out of pty devices'
 
-# Open the pty slave.  Acquire the controlling terminal.
-# Returns file descriptor.  Linux version.  (Should be universal? --Guido)
 def slave_open(tty_name):
+	"""Open the pty slave and acquire the controlling terminal.
+	Return the file descriptor.  Linux version."""
+	# (Should be universal? --Guido)
 	return os.open(tty_name, FCNTL.O_RDWR)
 
-# Fork and make the child a session leader with a controlling terminal.
-# Returns (pid, master_fd)
 def fork():
+	"""Fork and make the child a session leader with a controlling terminal.
+	Return (pid, master_fd)."""
 	master_fd, tty_name = master_open() 
 	pid = os.fork()
 	if pid == CHILD:
@@ -66,21 +68,21 @@ def fork():
 	# Parent and child process.
 	return pid, master_fd
 
-# Write all the data to a descriptor.
 def writen(fd, data):
+	"""Write all the data to a descriptor."""
 	while data != '':
 		n = os.write(fd, data)
 		data = data[n:]
 
-# Default read function.
 def read(fd):
+	"""Default read function."""
 	return os.read(fd, 1024)
 
-# Parent copy loop.
-# Copies  
-# 	pty master -> standard output	(master_read)
-# 	standard input -> pty master	(stdin_read)
 def copy(master_fd, master_read=read, stdin_read=read):
+	"""Parent copy loop.
+	Copies  
+	  	pty master -> standard output	(master_read)
+	  	standard input -> pty master	(stdin_read)"""
 	while 1:
 		rfds, wfds, xfds = select(
 			[master_fd, STDIN_FILENO], [], [])
@@ -91,8 +93,8 @@ def copy(master_fd, master_read=read, stdin_read=read):
 			data = stdin_read(STDIN_FILENO)
 			writen(master_fd, data)
 
-# Create a spawned process.
 def spawn(argv, master_read=read, stdin_read=read):
+	"""Create a spawned process."""
 	if type(argv) == type(''):
 		argv = (argv,)
 	pid, master_fd = fork()

@@ -1,4 +1,4 @@
-"""create portable serialized representations of Python objects.
+"""Create portable serialized representations of Python objects.
 
 See module cPickle for a (much) faster implementation.
 See module copy_reg for a mechanism for registering custom picklers.

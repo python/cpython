@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-# pdb.py -- finally, a Python debugger!
+"""pdb.py -- finally, a Python debugger!"""
 
 # (See pdb.doc for documentation.)
 
@@ -106,18 +106,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 	# Override Bdb methods (except user_call, for now)
 	
 	def user_line(self, frame):
-		# This function is called when we stop or break at this line
+		"""This function is called when we stop or break at this line."""
 		self.interaction(frame, None)
 	
 	def user_return(self, frame, return_value):
-		# This function is called when a return trap is set here
+		"""This function is called when a return trap is set here."""
 		frame.f_locals['__return__'] = return_value
 		print '--Return--'
 		self.interaction(frame, None)
 	
 	def user_exception(self, frame, (exc_type, exc_value, exc_traceback)):
-		# This function is called if an exception occurs,
-		# but only if we are to stop at or just below this level
+		"""This function is called if an exception occurs,
+		but only if we are to stop at or just below this level."""
 		frame.f_locals['__exception__'] = exc_type, exc_value
 		if type(exc_type) == type(''):
 			exc_type_name = exc_type
@@ -148,7 +148,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			print '***', exc_type_name + ':', v
 
 	def precmd(self, line):
-		# Handle alias expansion and ';;' separator
+		"""Handle alias expansion and ';;' separator."""
 		if not line:
 			return line
 		args = string.split(line)
@@ -262,7 +262,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
 	# To be overridden in derived debuggers
 	def defaultFile(self):
-		# Produce a reasonable default
+		"""Produce a reasonable default."""
 		filename = self.curframe.f_code.co_filename
 		if filename == '<string>' and mainpyfile:
 			filename = mainpyfile
@@ -384,7 +384,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 				print 'is now unconditional.'
 
 	def do_ignore(self,arg):
-		# arg is bp number followed by ignore count
+		"""arg is bp number followed by ignore count."""
 		args = string.split(arg)
 		bpnum = int(string.strip(args[0]))
 		try:
@@ -406,10 +406,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 				print bpnum, 'is reached.'
 
 	def do_clear(self, arg):
-		# Three possibilities, tried in this order:
-		# clear -> clear all breaks, ask for confirmation
-		# clear file:lineno -> clear all breaks at file:lineno
-		# clear bpno bpno ... -> clear breakpoints by number
+		"""Three possibilities, tried in this order:
+		clear -> clear all breaks, ask for confirmation
+		clear file:lineno -> clear all breaks at file:lineno
+		clear bpno bpno ... -> clear breakpoints by number"""
 		if not arg:
 			try:
 				reply = raw_input('Clear all breaks? ')
@@ -851,9 +851,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 	def help_pdb(self):
 		help()
 
-	# Helper function for break/clear parsing -- may be overridden
-
 	def lookupmodule(self, filename):
+		"""Helper function for break/clear parsing -- may be overridden."""
 		root, ext = os.path.splitext(filename)
 		if ext == '':
 			filename = filename + '.py'

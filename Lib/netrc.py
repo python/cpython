@@ -1,3 +1,5 @@
+"""An object-oriented interface to .netrc files."""
+
 # Module and documentation by Eric S. Raymond, 21 Dec 1998 
 
 import os, shlex
@@ -63,7 +65,7 @@ class netrc:
                     raise SyntaxError, "bad follower token %s, file %s, line %d"%(tt,file,lexer.lineno)
 
     def authenticators(self, host):
-        "Return a (user, account, password) tuple for given host."
+        """Return a (user, account, password) tuple for given host."""
         if self.hosts.has_key(host):
             return self.hosts[host]
         elif self.hosts.has_key('default'):
@@ -72,7 +74,7 @@ class netrc:
             return None
 
     def __repr__(self):
-        "Dump the class data in the format of a .netrc file"
+        """Dump the class data in the format of a .netrc file."""
         rep = ""
         for host in self.hosts.keys():
             attrs = self.hosts[host]

@@ -1,63 +1,62 @@
-# Conversion pipeline templates
-# =============================
+"""Conversion pipeline templates.
+
+The problem:
+------------
+
+Suppose you have some data that you want to convert to another format
+(e.g. from GIF image format to PPM image format).  Maybe the
+conversion involves several steps (e.g. piping it through compress or
+uuencode).  Some of the conversion steps may require that their input
+is a disk file, others may be able to read standard input; similar for
+their output.  The input to the entire conversion may also be read
+from a disk file or from an open file, and similar for its output.
+
+The module lets you construct a pipeline template by sticking one or
+more conversion steps together.  It will take care of creating and
+removing temporary files if they are necessary to hold intermediate
+data.  You can then use the template to do conversions from many
+different sources to many different destinations.  The temporary
+file names used are different each time the template is used.
+
+The templates are objects so you can create templates for many
+different conversion steps and store them in a dictionary, for
+instance.
 
 
-# The problem:
-# ------------
-# 
-# Suppose you have some data that you want to convert to another format
-# (e.g. from GIF image format to PPM image format).  Maybe the
-# conversion involves several steps (e.g. piping it through compress or
-# uuencode).  Some of the conversion steps may require that their input
-# is a disk file, others may be able to read standard input; similar for
-# their output.  The input to the entire conversion may also be read
-# from a disk file or from an open file, and similar for its output.
-# 
-# The module lets you construct a pipeline template by sticking one or
-# more conversion steps together.  It will take care of creating and
-# removing temporary files if they are necessary to hold intermediate
-# data.  You can then use the template to do conversions from many
-# different sources to many different destinations.  The temporary
-# file names used are different each time the template is used.
-#
-# The templates are objects so you can create templates for many
-# different conversion steps and store them in a dictionary, for
-# instance.
+Directions:
+-----------
 
+To create a template:
+    t = Template()
 
-# Directions:
-# -----------
-#
-# To create a template:
-#   t = Template()
-#
-# To add a conversion step to a template:
-#   t.append(command, kind)
-# where kind is a string of two characters: the first is '-' if the
-# command reads its standard input or 'f' if it requires a file; the
-# second likewise for the output. The command must be valid /bin/sh
-# syntax.  If input or output files are required, they are passed as
-# $IN and $OUT; otherwise, it must be  possible to use the command in
-# a pipeline.
-#
-# To add a conversion step at the beginning:
-#   t.prepend(command, kind)
-#
-# To convert a file to another file using a template:
-#   sts = t.copy(infile, outfile)
-# If infile or outfile are the empty string, standard input is read or
-# standard output is written, respectively.  The return value is the
-# exit status of the conversion pipeline.
-# 
-# To open a file for reading or writing through a conversion pipeline:
-#   fp = t.open(file, mode)
-# where mode is 'r' to read the file, or 'w' to write it -- just like
-# for the built-in function open() or for os.popen().
-#
-# To create a new template object initialized to a given one:
-#   t2 = t.clone()
-#
-# For an example, see the function test() at the end of the file.
+To add a conversion step to a template:
+   t.append(command, kind)
+where kind is a string of two characters: the first is '-' if the
+command reads its standard input or 'f' if it requires a file; the
+second likewise for the output. The command must be valid /bin/sh
+syntax.  If input or output files are required, they are passed as
+$IN and $OUT; otherwise, it must be  possible to use the command in
+a pipeline.
+
+To add a conversion step at the beginning:
+   t.prepend(command, kind)
+
+To convert a file to another file using a template:
+  sts = t.copy(infile, outfile)
+If infile or outfile are the empty string, standard input is read or
+standard output is written, respectively.  The return value is the
+exit status of the conversion pipeline.
+
+To open a file for reading or writing through a conversion pipeline:
+   fp = t.open(file, mode)
+where mode is 'r' to read the file, or 'w' to write it -- just like
+for the built-in function open() or for os.popen().
+
+To create a new template object initialized to a given one:
+   t2 = t.clone()
+
+For an example, see the function test() at the end of the file.
+"""
 
 
 import sys
@@ -81,37 +80,36 @@ stepkinds = [FILEIN_FILEOUT, STDIN_FILEOUT, FILEIN_STDOUT, STDIN_STDOUT, \
 	     SOURCE, SINK]
 
 
-# A pipeline template is a Template object:
-
 class Template:
+	"""Class representing a pipeline template."""
 
-	# Template() returns a fresh pipeline template
 	def __init__(self):
+		"""Template() returns a fresh pipeline template."""
 		self.debugging = 0
 		self.reset()
 
-	# t.__repr__() implements `t`
 	def __repr__(self):
+		"""t.__repr__() implements `t`."""
 		return '<Template instance, steps=' + `self.steps` + '>'
 
-	# t.reset() restores a pipeline template to its initial state
 	def reset(self):
+		"""t.reset() restores a pipeline template to its initial state."""
 		self.steps = []
 
-	# t.clone() returns a new pipeline template with identical
-	# initial state as the current one
 	def clone(self):
+		"""t.clone() returns a new pipeline template with identical
+		initial state as the current one."""
 		t = Template()
 		t.steps = self.steps[:]
 		t.debugging = self.debugging
 		return t
 
-	# t.debug(flag) turns debugging on or off
 	def debug(self, flag):
+		"""t.debug(flag) turns debugging on or off."""
 		self.debugging = flag
 
-	# t.append(cmd, kind) adds a new step at the end
 	def append(self, cmd, kind):
+		"""t.append(cmd, kind) adds a new step at the end."""
 		if type(cmd) <> type(''):
 			raise TypeError, \
 			      'Template.append: cmd must be a string'
@@ -132,8 +130,8 @@ class Template:
 			      'Template.append: missing $OUT in cmd'
 		self.steps.append((cmd, kind))
 
-	# t.prepend(cmd, kind) adds a new step at the front
 	def prepend(self, cmd, kind):
+		"""t.prepend(cmd, kind) adds a new step at the front."""
 		if type(cmd) <> type(''):
 			raise TypeError, \
 			      'Template.prepend: cmd must be a string'
@@ -154,9 +152,9 @@ class Template:
 			      'Template.prepend: missing $OUT in cmd'
 		self.steps.insert(0, (cmd, kind))
 
-	# t.open(file, rw) returns a pipe or file object open for
-	# reading or writing; the file is the other end of the pipeline
 	def open(self, file, rw):
+		"""t.open(file, rw) returns a pipe or file object open for
+		reading or writing; the file is the other end of the pipeline."""
 		if rw == 'r':
 			return self.open_r(file)
 		if rw == 'w':
@@ -164,10 +162,9 @@ class Template:
 		raise ValueError, \
 		      'Template.open: rw must be \'r\' or \'w\', not ' + `rw`
 
-	# t.open_r(file) and t.open_w(file) implement
-	# t.open(file, 'r') and t.open(file, 'w') respectively
-
 	def open_r(self, file):
+		"""t.open_r(file) and t.open_w(file) implement
+		t.open(file, 'r') and t.open(file, 'w') respectively."""
 		if self.steps == []:
 			return open(file, 'r')
 		if self.steps[-1][1] == SINK:
