@@ -123,14 +123,12 @@ def isbuiltin(object):
         __doc__         documentation string
         __name__        original name of this function or method
         __self__        instance to which a method is bound, or None"""
-    return type(object) in [types.BuiltinFunctionType,
-                            types.BuiltinMethodType]
+    return type(object) is types.BuiltinFunctionType
 
 def isroutine(object):
     """Return true if the object is any kind of function or method."""
     return type(object) in [types.FunctionType, types.LambdaType,
-                            types.MethodType, types.BuiltinFunctionType,
-                            types.BuiltinMethodType]
+                            types.MethodType, types.BuiltinFunctionType]
 
 def getmembers(object, predicate=None):
     """Return all members of an object as (name, value) pairs sorted by name.
@@ -231,6 +229,8 @@ modulesbyfile = {}
 
 def getmodule(object):
     """Return the module an object was defined in, or None if not found."""
+    if ismodule(object):
+        return object
     if isclass(object):
         return sys.modules.get(object.__module__)
     try:
