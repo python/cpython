@@ -59,16 +59,16 @@ class EditDialogWindow(DialogWindow):
 		self.callback = callback
 		self.cancelrv = cancelrv
 		DialogWindow.open(self, id)
-		tp, h, rect = self.wid.GetDialogItem(DLG_SRCPATH)
+		tp, h, rect = self.dlg.GetDialogItem(DLG_SRCPATH)
 		Dlg.SetDialogItemText(h, src)
-		self.wid.SetDialogDefaultItem(DLG_OK)
-		self.wid.SetDialogCancelItem(DLG_CANCEL)
+		self.dlg.SetDialogDefaultItem(DLG_OK)
+		self.dlg.SetDialogCancelItem(DLG_CANCEL)
 		if id == ID_INCLUDE:
-			tp, h, rect = self.wid.GetDialogItem(DLG_DSTPATH)
+			tp, h, rect = self.dlg.GetDialogItem(DLG_DSTPATH)
 			if dst == None:
 				dst = ''
 			Dlg.SetDialogItemText(h, dst)
-		self.wid.DrawDialog()
+		self.dlg.DrawDialog()
 	
 	def do_itemhit(self, item, event):
 		if item in (DLG_OK, DLG_CANCEL, DLG_EXCLUDE):
@@ -76,11 +76,11 @@ class EditDialogWindow(DialogWindow):
 		# else it is not interesting
 		
 	def done(self, item):
-		tp, h, rect = self.wid.GetDialogItem(DLG_SRCPATH)
+		tp, h, rect = self.dlg.GetDialogItem(DLG_SRCPATH)
 		src = Dlg.GetDialogItemText(h)
 		if item == DLG_OK:
 			if self.id == ID_INCLUDE:
-				tp, h, rect = self.wid.GetDialogItem(DLG_DSTPATH)
+				tp, h, rect = self.dlg.GetDialogItem(DLG_DSTPATH)
 				dst = Dlg.GetDialogItemText(h)
 				rv = (src, dst)
 			else:
@@ -99,7 +99,7 @@ class ListWindow(DialogWindow):
 		self.id = id
 		DialogWindow.open(self, id)
 		Qd.SetPort(self.wid)
-		tp, h, rect = self.wid.GetDialogItem(MAIN_LIST)
+		tp, h, rect = self.dlg.GetDialogItem(MAIN_LIST)
 		self.listrect = rect
 		rect2 = rect[0]+1, rect[1]+1, rect[2]-16, rect[3]-16	# Scroll bar space
 		self.list = List.LNew(rect2, (0, 0, 1, len(contents)), (0,0), 0, self.wid,
@@ -170,7 +170,7 @@ class MainListWindow(ListWindow):
 
 	def open(self, id, cb_check, cb_run, cb_add):
 		ListWindow.open(self, id, [])
-		self.wid.SetDialogDefaultItem(MAIN_INCLUDE)
+		self.dlg.SetDialogDefaultItem(MAIN_INCLUDE)
 		self.cb_run = cb_run
 		self.cb_check = cb_check
 		self.cb_add = cb_add
@@ -212,7 +212,7 @@ class IncListWindow(ListWindow):
 	"""An include/exclude window"""
 	def open(self, id, editid, contents, cb_add, cb_del, cb_get):
 		ListWindow.open(self, id, contents)
-		self.wid.SetDialogDefaultItem(INCEXC_CHANGE)
+		self.dlg.SetDialogDefaultItem(INCEXC_CHANGE)
 		self.editid = editid
 		self.cb_add = cb_add
 		self.cb_del = cb_del
