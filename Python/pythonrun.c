@@ -242,7 +242,11 @@ Py_Finalize()
 #endif
 
 #ifdef Py_TRACE_REFS
-	if (_Py_AskYesNo("Print left references?")) {
+	if (
+#ifdef MS_WINDOWS /* Only ask on Windows if env var set */
+	    getenv("PYTHONDUMPREFS") &&
+#endif /* MS_WINDOWS */
+	    _Py_AskYesNo("Print left references?")) {
 		_Py_PrintReferences(stderr);
 	}
 #endif /* Py_TRACE_REFS */
