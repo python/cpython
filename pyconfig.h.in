@@ -790,7 +790,7 @@
    this defined. */
 #undef _POSIX_1_SOURCE
 
-/* Define to activate features from IEEE Stds 1003.{123}-1995 */
+/* Define to activate features from IEEE Stds 1003.1-2001 */
 #undef _POSIX_C_SOURCE
 
 /* Define to 1 if you need to in order for `stat' and other things to work. */
@@ -802,10 +802,8 @@
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
 
-/* Define on UNIX to activate XPG/5 features.  */
-#ifndef _XOPEN_SOURCE
-# undef _XOPEN_SOURCE
-#endif
+/* Define to the level of X/Open that your system supports */
+#undef _XOPEN_SOURCE
 
 /* Define to activate Unix95-and-earlier features */
 #undef _XOPEN_SOURCE_EXTENDED
