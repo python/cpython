@@ -740,8 +740,8 @@ These markers are used by the PyArg_ParseTuple() APIs:
 	On output, a buffer of the needed size is allocated and
 	returned through *buffer as NULL-terminated string.
 	The encoded may not contain embedded NULL characters.
-	The caller is responsible for free()ing the allocated *buffer
-	after usage.
+	The caller is responsible for calling PyMem_Free()
+	to free the allocated *buffer after usage.
 
   "es#":
 	Takes three parameters: encoding (const char *),
@@ -755,8 +755,9 @@ These markers are used by the PyArg_ParseTuple() APIs:
 
 	If *buffer is NULL, a buffer of the needed size is
 	allocated and output copied into it. *buffer is then
-	updated to point to the allocated memory area. The caller
-	is responsible for free()ing *buffer after usage.
+	updated to point to the allocated memory area.
+	The caller is responsible for calling PyMem_Free()
+	to free the allocated *buffer after usage.
 
 	In both cases *buffer_len is updated to the number of
 	characters written (excluding the trailing NULL-byte).
@@ -784,7 +785,7 @@ Using "es#" with auto-allocation:
 	    return NULL;
 	}
 	str = PyString_FromStringAndSize(buffer, buffer_len);
-	free(buffer);
+	PyMem_Free(buffer);
 	return str;
     }
 
@@ -807,7 +808,7 @@ Using "es" with auto-allocation returning a NULL-terminated string:
 	    return NULL;
 	}
 	str = PyString_FromString(buffer);
-	free(buffer);
+	PyMem_Free(buffer);
 	return str;
     }
 

@@ -286,6 +286,26 @@ charmap_decode(PyObject *self,
 		       size);
 }
 
+#ifdef MS_WIN32
+
+static PyObject *
+mbcs_decode(PyObject *self,
+	    PyObject *args)
+{
+    const char *data;
+    int size;
+    const char *errors = NULL;
+    
+    if (!PyArg_ParseTuple(args, "t#|z:mbcs_decode",
+			  &data, &size, &errors))
+	return NULL;
+
+    return codec_tuple(PyUnicode_DecodeMBCS(data, size, errors),
+		       size);
+}
+
+#endif /* MS_WIN32 */
+
 /* --- Encoder ------------------------------------------------------------ */
 
 static PyObject *
@@ -491,6 +511,28 @@ charmap_encode(PyObject *self,
 		       PyUnicode_GET_SIZE(str));
 }
 
+#ifdef MS_WIN32
+
+static PyObject *
+mbcs_encode(PyObject *self,
+	    PyObject *args)
+{
+    PyObject *str;
+    const char *errors = NULL;
+
+    if (!PyArg_ParseTuple(args, "U|z:mbcs_encode",
+			  &str, &errors))
+	return NULL;
+
+    return codec_tuple(PyUnicode_EncodeMBCS(
+			       PyUnicode_AS_UNICODE(str), 
+			       PyUnicode_GET_SIZE(str),
+			       errors),
+		       PyUnicode_GET_SIZE(str));
+}
+
+#endif /* MS_WIN32 */
+
 /* --- Module API --------------------------------------------------------- */
 
 static PyMethodDef _codecs_functions[] = {
@@ -519,6 +561,10 @@ static PyMethodDef _codecs_functions[] = {
     {"charmap_decode", 		charmap_decode,			1},
     {"readbuffer_encode",	readbuffer_encode,		1},
     {"charbuffer_encode",	charbuffer_encode,		1},
+#ifdef MS_WIN32
+    {"mbcs_encode", 		mbcs_encode,			1},
+    {"mbcs_decode", 		mbcs_decode,			1},
+#endif
     {NULL, NULL}		/* sentinel */
 };
 
