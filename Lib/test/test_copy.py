@@ -222,6 +222,23 @@ class TestCopy(unittest.TestCase):
         x = C(23)
         self.assertEqual(copy.deepcopy(x), x)
 
+    def _nomro(self):
+        class C(type):
+            def __getattribute__(self, attr):
+                if attr == '__mro__':
+                    raise AttributeError, "What, *me*, a __mro__? Nevah!"
+                return super(C, self).__getattribute__(attr)
+        class D(object):
+            __metaclass__ = C
+        return D()
+
+    def test_copy_mro(self):
+        x = self._nomro()
+        y = copy.copy(x)
+
+    def test_deepcopy_mro(self):
+        x = self._nomro()
+        y = copy.deepcopy(x)
 
     # The deepcopy() method
     def test_deepcopy_basic(self):

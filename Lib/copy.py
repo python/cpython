@@ -62,8 +62,9 @@ except ImportError:
 
 __all__ = ["Error", "copy", "deepcopy"]
 
+import inspect
 def _getspecial(cls, name):
-    for basecls in cls.__mro__:
+    for basecls in inspect.getmro(cls):
         try:
             return basecls.__dict__[name]
         except:
