@@ -129,6 +129,7 @@ int PyMac_setfiletype(char *, long, long);		/* Set file creator and type */
 /* from macmain.c: */
 void PyMac_Exit(int);
 void PyMac_InitApplication(void);
+void PyMac_OutputSeen(void);
 #ifdef USE_MAC_APPLET_SUPPORT
 void PyMac_InitApplet(void);
 #endif

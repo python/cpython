@@ -539,6 +539,15 @@ Py_Main(argc, argv)
 }
 
 /*
+** Reset the "unseen output" flag
+*/
+void
+PyMac_OutputSeen()
+{
+	gusisioux_state = GUSISIOUX_STATE_LASTREAD;
+}
+
+/*
 ** Terminate application
 */
 void

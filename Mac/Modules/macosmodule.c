@@ -691,6 +691,18 @@ MacOS_KeepConsole(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
+static char OutputSeen_doc[] = "Call to reset the 'unseen output' flag for the keep-console-open option";
+
+static PyObject *
+MacOS_OutputSeen(PyObject *self, PyObject *args)
+{
+	if (!PyArg_ParseTuple(args, ""))
+		return NULL;
+	PyMac_OutputSeen();
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static PyMethodDef MacOS_Methods[] = {
 #if !TARGET_API_MAC_CARBON
 	{"AcceptHighLevelEvent",	MacOS_AcceptHighLevelEvent, 1,	accepthle_doc},
@@ -711,6 +723,7 @@ static PyMethodDef MacOS_Methods[] = {
 	{"MaxBlock",		MacOS_MaxBlock,		1,	MaxBlock_doc},
 	{"CompactMem",		MacOS_CompactMem,	1,	CompactMem_doc},
 	{"KeepConsole",		MacOS_KeepConsole,	1,	KeepConsole_doc},
+	{"OutputSeen",		MacOS_OutputSeen,	1,	OutputSeen_doc},
 	{NULL,				NULL}		 /* Sentinel */
 };
 
