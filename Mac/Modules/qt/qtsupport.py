@@ -88,6 +88,16 @@ QtTimeRecord_Convert(PyObject *v, TimeRecord *p_itself)
 	return 1;
 }
 
+static int
+QtMusicMIDIPacket_Convert(PyObject *v, MusicMIDIPacket *p_itself)
+{
+	int dummy;
+	
+	if( !PyArg_ParseTuple(v, "hls#", &p_itself->length, &p_itself->reserved, p_itself->data, dummy) )
+		return 0;
+	return 1;
+}
+
 
 
 """
@@ -143,6 +153,10 @@ ComponentInstance = OpaqueByValueType('ComponentInstance', 'CmpInstObj')
 MediaHandler = OpaqueByValueType('MediaHandler', 'CmpInstObj')
 DataHandler = OpaqueByValueType('DataHandler', 'CmpInstObj')
 SGChannel = OpaqueByValueType('SGChannel', 'CmpInstObj')
+TunePlayer = OpaqueByValueType('TunePlayer', 'CmpInstObj')
+MusicComponent = OpaqueByValueType('MusicComponent', 'CmpInstObj')
+NoteAllocator = OpaqueByValueType('NoteAllocator', 'CmpInstObj')
+QTMIDIComponent = OpaqueByValueType('QTMIDIComponent', 'CmpInstObj')
 
 ConstFSSpecPtr = FSSpec_ptr
 GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
@@ -164,6 +178,9 @@ VdigBufferRecListHandle = OpaqueByValueType("VdigBufferRecListHandle", "ResObj")
 VDCompressionListHandle = OpaqueByValueType("VDCompressionListHandle", "ResObj")
 TimeCodeDescriptionHandle = OpaqueByValueType("TimeCodeDescriptionHandle", "ResObj")
 DataHFileTypeOrderingHandle = OpaqueByValueType("DataHFileTypeOrderingHandle", "ResObj")
+QTMIDIPortListHandle = OpaqueByValueType("QTMIDIPortListHandle", "ResObj")
+GenericKnobDescriptionListHandle =  OpaqueByValueType("GenericKnobDescriptionListHandle", "ResObj")
+InstrumentInfoListHandle = OpaqueByValueType("InstrumentInfoListHandle", "ResObj")
 # Silly Apple, passing an OStype by reference...
 OSType_ptr = OpaqueType("OSType", "PyMac_BuildOSType", "PyMac_GetOSType")
 # And even sillier: passing floats by address
@@ -173,6 +190,8 @@ RGBColor = OpaqueType("RGBColor", "QdRGB")
 RGBColor_ptr = RGBColor
 TimeRecord = OpaqueType("TimeRecord", "QtTimeRecord")
 TimeRecord_ptr = TimeRecord
+MusicMIDIPacket = OpaqueType("MusicMIDIPacket", "QtMusicMIDIPacket")
+MusicMIDIPacket_ptr = MusicMIDIPacket
 
 # Non-opaque types, mostly integer-ish
 TimeValue = Type("TimeValue", "l")
@@ -200,10 +219,15 @@ CodecType = OSTypeType("CodecType")
 GWorldPtr = OpaqueByValueType("GWorldPtr", "GWorldObj")
 QTFloatSingle = Type("QTFloatSingle", "f")
 CodecQ = Type("CodecQ", "l")
+MusicController = Type("MusicController", "l")
 
 # Could-not-be-bothered-types (NewMovieFromFile)
 dummyshortptr = FakeType('(short *)0')
 dummyStringPtr = FakeType('(StringPtr)0')
+
+# Not-quite-sure-this-is-okay types
+AtomicInstrument = OpaqueByValueType("AtomicInstrument", "ResObj")
+AtomicInstrumentPtr = InputOnlyType("AtomicInstrumentPtr", "s")
 
 # XXXX Need to override output_tp_newBody() to allow for None initializer.
 class QtGlobalObjectDefinition(PEP253Mixin, GlobalObjectDefinition):

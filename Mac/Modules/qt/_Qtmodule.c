@@ -78,6 +78,16 @@ QtTimeRecord_Convert(PyObject *v, TimeRecord *p_itself)
 	return 1;
 }
 
+static int
+QtMusicMIDIPacket_Convert(PyObject *v, MusicMIDIPacket *p_itself)
+{
+	int dummy;
+	
+	if( !PyArg_ParseTuple(v, "hls#", &p_itself->length, &p_itself->reserved, p_itself->data, dummy) )
+		return 0;
+	return 1;
+}
+
 
 
 
@@ -24794,6 +24804,1427 @@ static PyObject *Qt_MediaGSetIdleManager(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *Qt_QTMIDIGetMIDIPorts(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	QTMIDIComponent ci;
+	QTMIDIPortListHandle inputPorts;
+	QTMIDIPortListHandle outputPorts;
+#ifndef QTMIDIGetMIDIPorts
+	PyMac_PRECHECK(QTMIDIGetMIDIPorts);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &ci))
+		return NULL;
+	_rv = QTMIDIGetMIDIPorts(ci,
+	                         &inputPorts,
+	                         &outputPorts);
+	_res = Py_BuildValue("lO&O&",
+	                     _rv,
+	                     ResObj_New, inputPorts,
+	                     ResObj_New, outputPorts);
+	return _res;
+}
+
+static PyObject *Qt_QTMIDIUseSendPort(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	QTMIDIComponent ci;
+	long portIndex;
+	long inUse;
+#ifndef QTMIDIUseSendPort
+	PyMac_PRECHECK(QTMIDIUseSendPort);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpInstObj_Convert, &ci,
+	                      &portIndex,
+	                      &inUse))
+		return NULL;
+	_rv = QTMIDIUseSendPort(ci,
+	                        portIndex,
+	                        inUse);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_QTMIDISendMIDI(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	QTMIDIComponent ci;
+	long portIndex;
+	MusicMIDIPacket mp;
+#ifndef QTMIDISendMIDI
+	PyMac_PRECHECK(QTMIDISendMIDI);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lO&",
+	                      CmpInstObj_Convert, &ci,
+	                      &portIndex,
+	                      QtMusicMIDIPacket_Convert, &mp))
+		return NULL;
+	_rv = QTMIDISendMIDI(ci,
+	                     portIndex,
+	                     &mp);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicGetPart(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long part;
+	long midiChannel;
+	long polyphony;
+#ifndef MusicGetPart
+	PyMac_PRECHECK(MusicGetPart);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mc,
+	                      &part))
+		return NULL;
+	_rv = MusicGetPart(mc,
+	                   part,
+	                   &midiChannel,
+	                   &polyphony);
+	_res = Py_BuildValue("lll",
+	                     _rv,
+	                     midiChannel,
+	                     polyphony);
+	return _res;
+}
+
+static PyObject *Qt_MusicSetPart(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long part;
+	long midiChannel;
+	long polyphony;
+#ifndef MusicSetPart
+	PyMac_PRECHECK(MusicSetPart);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lll",
+	                      CmpInstObj_Convert, &mc,
+	                      &part,
+	                      &midiChannel,
+	                      &polyphony))
+		return NULL;
+	_rv = MusicSetPart(mc,
+	                   part,
+	                   midiChannel,
+	                   polyphony);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicSetPartInstrumentNumber(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long part;
+	long instrumentNumber;
+#ifndef MusicSetPartInstrumentNumber
+	PyMac_PRECHECK(MusicSetPartInstrumentNumber);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpInstObj_Convert, &mc,
+	                      &part,
+	                      &instrumentNumber))
+		return NULL;
+	_rv = MusicSetPartInstrumentNumber(mc,
+	                                   part,
+	                                   instrumentNumber);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicGetPartInstrumentNumber(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long part;
+#ifndef MusicGetPartInstrumentNumber
+	PyMac_PRECHECK(MusicGetPartInstrumentNumber);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mc,
+	                      &part))
+		return NULL;
+	_rv = MusicGetPartInstrumentNumber(mc,
+	                                   part);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicStorePartInstrument(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long part;
+	long instrumentNumber;
+#ifndef MusicStorePartInstrument
+	PyMac_PRECHECK(MusicStorePartInstrument);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpInstObj_Convert, &mc,
+	                      &part,
+	                      &instrumentNumber))
+		return NULL;
+	_rv = MusicStorePartInstrument(mc,
+	                               part,
+	                               instrumentNumber);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicGetPartAtomicInstrument(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long part;
+	AtomicInstrument ai;
+	long flags;
+#ifndef MusicGetPartAtomicInstrument
+	PyMac_PRECHECK(MusicGetPartAtomicInstrument);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpInstObj_Convert, &mc,
+	                      &part,
+	                      &flags))
+		return NULL;
+	_rv = MusicGetPartAtomicInstrument(mc,
+	                                   part,
+	                                   &ai,
+	                                   flags);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, ai);
+	return _res;
+}
+
+static PyObject *Qt_MusicSetPartAtomicInstrument(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long part;
+	AtomicInstrumentPtr aiP;
+	long flags;
+#ifndef MusicSetPartAtomicInstrument
+	PyMac_PRECHECK(MusicSetPartAtomicInstrument);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lsl",
+	                      CmpInstObj_Convert, &mc,
+	                      &part,
+	                      &aiP,
+	                      &flags))
+		return NULL;
+	_rv = MusicSetPartAtomicInstrument(mc,
+	                                   part,
+	                                   aiP,
+	                                   flags);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicGetPartKnob(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long part;
+	long knobID;
+#ifndef MusicGetPartKnob
+	PyMac_PRECHECK(MusicGetPartKnob);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpInstObj_Convert, &mc,
+	                      &part,
+	                      &knobID))
+		return NULL;
+	_rv = MusicGetPartKnob(mc,
+	                       part,
+	                       knobID);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicSetPartKnob(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long part;
+	long knobID;
+	long knobValue;
+#ifndef MusicSetPartKnob
+	PyMac_PRECHECK(MusicSetPartKnob);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lll",
+	                      CmpInstObj_Convert, &mc,
+	                      &part,
+	                      &knobID,
+	                      &knobValue))
+		return NULL;
+	_rv = MusicSetPartKnob(mc,
+	                       part,
+	                       knobID,
+	                       knobValue);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicGetKnob(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long knobID;
+#ifndef MusicGetKnob
+	PyMac_PRECHECK(MusicGetKnob);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mc,
+	                      &knobID))
+		return NULL;
+	_rv = MusicGetKnob(mc,
+	                   knobID);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicSetKnob(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long knobID;
+	long knobValue;
+#ifndef MusicSetKnob
+	PyMac_PRECHECK(MusicSetKnob);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpInstObj_Convert, &mc,
+	                      &knobID,
+	                      &knobValue))
+		return NULL;
+	_rv = MusicSetKnob(mc,
+	                   knobID,
+	                   knobValue);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicGetPartName(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long part;
+	StringPtr name;
+#ifndef MusicGetPartName
+	PyMac_PRECHECK(MusicGetPartName);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ls",
+	                      CmpInstObj_Convert, &mc,
+	                      &part,
+	                      &name))
+		return NULL;
+	_rv = MusicGetPartName(mc,
+	                       part,
+	                       name);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicSetPartName(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long part;
+	StringPtr name;
+#ifndef MusicSetPartName
+	PyMac_PRECHECK(MusicSetPartName);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ls",
+	                      CmpInstObj_Convert, &mc,
+	                      &part,
+	                      &name))
+		return NULL;
+	_rv = MusicSetPartName(mc,
+	                       part,
+	                       name);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicPlayNote(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long part;
+	long pitch;
+	long velocity;
+#ifndef MusicPlayNote
+	PyMac_PRECHECK(MusicPlayNote);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lll",
+	                      CmpInstObj_Convert, &mc,
+	                      &part,
+	                      &pitch,
+	                      &velocity))
+		return NULL;
+	_rv = MusicPlayNote(mc,
+	                    part,
+	                    pitch,
+	                    velocity);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicResetPart(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long part;
+#ifndef MusicResetPart
+	PyMac_PRECHECK(MusicResetPart);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mc,
+	                      &part))
+		return NULL;
+	_rv = MusicResetPart(mc,
+	                     part);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicSetPartController(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long part;
+	MusicController controllerNumber;
+	long controllerValue;
+#ifndef MusicSetPartController
+	PyMac_PRECHECK(MusicSetPartController);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lll",
+	                      CmpInstObj_Convert, &mc,
+	                      &part,
+	                      &controllerNumber,
+	                      &controllerValue))
+		return NULL;
+	_rv = MusicSetPartController(mc,
+	                             part,
+	                             controllerNumber,
+	                             controllerValue);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicGetPartController(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long part;
+	MusicController controllerNumber;
+#ifndef MusicGetPartController
+	PyMac_PRECHECK(MusicGetPartController);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpInstObj_Convert, &mc,
+	                      &part,
+	                      &controllerNumber))
+		return NULL;
+	_rv = MusicGetPartController(mc,
+	                             part,
+	                             controllerNumber);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicGetInstrumentNames(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long modifiableInstruments;
+	Handle instrumentNames;
+	Handle instrumentCategoryLasts;
+	Handle instrumentCategoryNames;
+#ifndef MusicGetInstrumentNames
+	PyMac_PRECHECK(MusicGetInstrumentNames);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mc,
+	                      &modifiableInstruments))
+		return NULL;
+	_rv = MusicGetInstrumentNames(mc,
+	                              modifiableInstruments,
+	                              &instrumentNames,
+	                              &instrumentCategoryLasts,
+	                              &instrumentCategoryNames);
+	_res = Py_BuildValue("lO&O&O&",
+	                     _rv,
+	                     ResObj_New, instrumentNames,
+	                     ResObj_New, instrumentCategoryLasts,
+	                     ResObj_New, instrumentCategoryNames);
+	return _res;
+}
+
+static PyObject *Qt_MusicGetDrumNames(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long modifiableInstruments;
+	Handle instrumentNumbers;
+	Handle instrumentNames;
+#ifndef MusicGetDrumNames
+	PyMac_PRECHECK(MusicGetDrumNames);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mc,
+	                      &modifiableInstruments))
+		return NULL;
+	_rv = MusicGetDrumNames(mc,
+	                        modifiableInstruments,
+	                        &instrumentNumbers,
+	                        &instrumentNames);
+	_res = Py_BuildValue("lO&O&",
+	                     _rv,
+	                     ResObj_New, instrumentNumbers,
+	                     ResObj_New, instrumentNames);
+	return _res;
+}
+
+static PyObject *Qt_MusicGetMasterTune(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+#ifndef MusicGetMasterTune
+	PyMac_PRECHECK(MusicGetMasterTune);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mc))
+		return NULL;
+	_rv = MusicGetMasterTune(mc);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicSetMasterTune(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long masterTune;
+#ifndef MusicSetMasterTune
+	PyMac_PRECHECK(MusicSetMasterTune);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mc,
+	                      &masterTune))
+		return NULL;
+	_rv = MusicSetMasterTune(mc,
+	                         masterTune);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicGetDeviceConnection(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long index;
+	long id1;
+	long id2;
+#ifndef MusicGetDeviceConnection
+	PyMac_PRECHECK(MusicGetDeviceConnection);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mc,
+	                      &index))
+		return NULL;
+	_rv = MusicGetDeviceConnection(mc,
+	                               index,
+	                               &id1,
+	                               &id2);
+	_res = Py_BuildValue("lll",
+	                     _rv,
+	                     id1,
+	                     id2);
+	return _res;
+}
+
+static PyObject *Qt_MusicUseDeviceConnection(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long id1;
+	long id2;
+#ifndef MusicUseDeviceConnection
+	PyMac_PRECHECK(MusicUseDeviceConnection);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpInstObj_Convert, &mc,
+	                      &id1,
+	                      &id2))
+		return NULL;
+	_rv = MusicUseDeviceConnection(mc,
+	                               id1,
+	                               id2);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicGetKnobSettingStrings(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long knobIndex;
+	long isGlobal;
+	Handle settingsNames;
+	Handle settingsCategoryLasts;
+	Handle settingsCategoryNames;
+#ifndef MusicGetKnobSettingStrings
+	PyMac_PRECHECK(MusicGetKnobSettingStrings);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpInstObj_Convert, &mc,
+	                      &knobIndex,
+	                      &isGlobal))
+		return NULL;
+	_rv = MusicGetKnobSettingStrings(mc,
+	                                 knobIndex,
+	                                 isGlobal,
+	                                 &settingsNames,
+	                                 &settingsCategoryLasts,
+	                                 &settingsCategoryNames);
+	_res = Py_BuildValue("lO&O&O&",
+	                     _rv,
+	                     ResObj_New, settingsNames,
+	                     ResObj_New, settingsCategoryLasts,
+	                     ResObj_New, settingsCategoryNames);
+	return _res;
+}
+
+static PyObject *Qt_MusicGetMIDIPorts(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long inputPortCount;
+	long outputPortCount;
+#ifndef MusicGetMIDIPorts
+	PyMac_PRECHECK(MusicGetMIDIPorts);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mc))
+		return NULL;
+	_rv = MusicGetMIDIPorts(mc,
+	                        &inputPortCount,
+	                        &outputPortCount);
+	_res = Py_BuildValue("lll",
+	                     _rv,
+	                     inputPortCount,
+	                     outputPortCount);
+	return _res;
+}
+
+static PyObject *Qt_MusicSendMIDI(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long portIndex;
+	MusicMIDIPacket mp;
+#ifndef MusicSendMIDI
+	PyMac_PRECHECK(MusicSendMIDI);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lO&",
+	                      CmpInstObj_Convert, &mc,
+	                      &portIndex,
+	                      QtMusicMIDIPacket_Convert, &mp))
+		return NULL;
+	_rv = MusicSendMIDI(mc,
+	                    portIndex,
+	                    &mp);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicSetOfflineTimeTo(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long newTimeStamp;
+#ifndef MusicSetOfflineTimeTo
+	PyMac_PRECHECK(MusicSetOfflineTimeTo);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mc,
+	                      &newTimeStamp))
+		return NULL;
+	_rv = MusicSetOfflineTimeTo(mc,
+	                            newTimeStamp);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicGetInfoText(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long selector;
+	Handle textH;
+	Handle styleH;
+#ifndef MusicGetInfoText
+	PyMac_PRECHECK(MusicGetInfoText);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mc,
+	                      &selector))
+		return NULL;
+	_rv = MusicGetInfoText(mc,
+	                       selector,
+	                       &textH,
+	                       &styleH);
+	_res = Py_BuildValue("lO&O&",
+	                     _rv,
+	                     ResObj_New, textH,
+	                     ResObj_New, styleH);
+	return _res;
+}
+
+static PyObject *Qt_MusicGetInstrumentInfo(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long getInstrumentInfoFlags;
+	InstrumentInfoListHandle infoListH;
+#ifndef MusicGetInstrumentInfo
+	PyMac_PRECHECK(MusicGetInstrumentInfo);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mc,
+	                      &getInstrumentInfoFlags))
+		return NULL;
+	_rv = MusicGetInstrumentInfo(mc,
+	                             getInstrumentInfoFlags,
+	                             &infoListH);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, infoListH);
+	return _res;
+}
+
+static PyObject *Qt_MusicTask(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+#ifndef MusicTask
+	PyMac_PRECHECK(MusicTask);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mc))
+		return NULL;
+	_rv = MusicTask(mc);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicSetPartInstrumentNumberInterruptSafe(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long part;
+	long instrumentNumber;
+#ifndef MusicSetPartInstrumentNumberInterruptSafe
+	PyMac_PRECHECK(MusicSetPartInstrumentNumberInterruptSafe);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpInstObj_Convert, &mc,
+	                      &part,
+	                      &instrumentNumber))
+		return NULL;
+	_rv = MusicSetPartInstrumentNumberInterruptSafe(mc,
+	                                                part,
+	                                                instrumentNumber);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicSetPartSoundLocalization(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long part;
+	Handle data;
+#ifndef MusicSetPartSoundLocalization
+	PyMac_PRECHECK(MusicSetPartSoundLocalization);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lO&",
+	                      CmpInstObj_Convert, &mc,
+	                      &part,
+	                      ResObj_Convert, &data))
+		return NULL;
+	_rv = MusicSetPartSoundLocalization(mc,
+	                                    part,
+	                                    data);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicGenericConfigure(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long mode;
+	long flags;
+	long baseResID;
+#ifndef MusicGenericConfigure
+	PyMac_PRECHECK(MusicGenericConfigure);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lll",
+	                      CmpInstObj_Convert, &mc,
+	                      &mode,
+	                      &flags,
+	                      &baseResID))
+		return NULL;
+	_rv = MusicGenericConfigure(mc,
+	                            mode,
+	                            flags,
+	                            baseResID);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicGenericGetKnobList(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	long knobType;
+	GenericKnobDescriptionListHandle gkdlH;
+#ifndef MusicGenericGetKnobList
+	PyMac_PRECHECK(MusicGenericGetKnobList);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mc,
+	                      &knobType))
+		return NULL;
+	_rv = MusicGenericGetKnobList(mc,
+	                              knobType,
+	                              &gkdlH);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, gkdlH);
+	return _res;
+}
+
+static PyObject *Qt_MusicGenericSetResourceNumbers(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	Handle resourceIDH;
+#ifndef MusicGenericSetResourceNumbers
+	PyMac_PRECHECK(MusicGenericSetResourceNumbers);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &mc,
+	                      ResObj_Convert, &resourceIDH))
+		return NULL;
+	_rv = MusicGenericSetResourceNumbers(mc,
+	                                     resourceIDH);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicDerivedMIDISend(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	MusicMIDIPacket packet;
+#ifndef MusicDerivedMIDISend
+	PyMac_PRECHECK(MusicDerivedMIDISend);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &mc,
+	                      QtMusicMIDIPacket_Convert, &packet))
+		return NULL;
+	_rv = MusicDerivedMIDISend(mc,
+	                           &packet);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicDerivedOpenResFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+#ifndef MusicDerivedOpenResFile
+	PyMac_PRECHECK(MusicDerivedOpenResFile);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mc))
+		return NULL;
+	_rv = MusicDerivedOpenResFile(mc);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MusicDerivedCloseResFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MusicComponent mc;
+	short resRefNum;
+#ifndef MusicDerivedCloseResFile
+	PyMac_PRECHECK(MusicDerivedCloseResFile);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&h",
+	                      CmpInstObj_Convert, &mc,
+	                      &resRefNum))
+		return NULL;
+	_rv = MusicDerivedCloseResFile(mc,
+	                               resRefNum);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_NAUnregisterMusicDevice(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	NoteAllocator na;
+	long index;
+#ifndef NAUnregisterMusicDevice
+	PyMac_PRECHECK(NAUnregisterMusicDevice);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &na,
+	                      &index))
+		return NULL;
+	_rv = NAUnregisterMusicDevice(na,
+	                              index);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_NASaveMusicConfiguration(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	NoteAllocator na;
+#ifndef NASaveMusicConfiguration
+	PyMac_PRECHECK(NASaveMusicConfiguration);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &na))
+		return NULL;
+	_rv = NASaveMusicConfiguration(na);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_NAGetMIDIPorts(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	NoteAllocator na;
+	QTMIDIPortListHandle inputPorts;
+	QTMIDIPortListHandle outputPorts;
+#ifndef NAGetMIDIPorts
+	PyMac_PRECHECK(NAGetMIDIPorts);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &na))
+		return NULL;
+	_rv = NAGetMIDIPorts(na,
+	                     &inputPorts,
+	                     &outputPorts);
+	_res = Py_BuildValue("lO&O&",
+	                     _rv,
+	                     ResObj_New, inputPorts,
+	                     ResObj_New, outputPorts);
+	return _res;
+}
+
+static PyObject *Qt_NATask(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	NoteAllocator na;
+#ifndef NATask
+	PyMac_PRECHECK(NATask);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &na))
+		return NULL;
+	_rv = NATask(na);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_TuneSetHeader(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+	unsigned long header;
+#ifndef TuneSetHeader
+	PyMac_PRECHECK(TuneSetHeader);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &tp))
+		return NULL;
+	_rv = TuneSetHeader(tp,
+	                    &header);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     header);
+	return _res;
+}
+
+static PyObject *Qt_TuneGetTimeBase(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+	TimeBase tb;
+#ifndef TuneGetTimeBase
+	PyMac_PRECHECK(TuneGetTimeBase);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &tp))
+		return NULL;
+	_rv = TuneGetTimeBase(tp,
+	                      &tb);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     TimeBaseObj_New, tb);
+	return _res;
+}
+
+static PyObject *Qt_TuneSetTimeScale(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+	TimeScale scale;
+#ifndef TuneSetTimeScale
+	PyMac_PRECHECK(TuneSetTimeScale);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &tp,
+	                      &scale))
+		return NULL;
+	_rv = TuneSetTimeScale(tp,
+	                       scale);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_TuneGetTimeScale(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+	TimeScale scale;
+#ifndef TuneGetTimeScale
+	PyMac_PRECHECK(TuneGetTimeScale);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &tp))
+		return NULL;
+	_rv = TuneGetTimeScale(tp,
+	                       &scale);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     scale);
+	return _res;
+}
+
+static PyObject *Qt_TuneInstant(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+	unsigned long tune;
+	unsigned long tunePosition;
+#ifndef TuneInstant
+	PyMac_PRECHECK(TuneInstant);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &tp,
+	                      &tunePosition))
+		return NULL;
+	_rv = TuneInstant(tp,
+	                  &tune,
+	                  tunePosition);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     tune);
+	return _res;
+}
+
+static PyObject *Qt_TuneStop(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+	long stopFlags;
+#ifndef TuneStop
+	PyMac_PRECHECK(TuneStop);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &tp,
+	                      &stopFlags))
+		return NULL;
+	_rv = TuneStop(tp,
+	               stopFlags);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_TuneSetVolume(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+	Fixed volume;
+#ifndef TuneSetVolume
+	PyMac_PRECHECK(TuneSetVolume);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &tp,
+	                      PyMac_GetFixed, &volume))
+		return NULL;
+	_rv = TuneSetVolume(tp,
+	                    volume);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_TuneGetVolume(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+#ifndef TuneGetVolume
+	PyMac_PRECHECK(TuneGetVolume);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &tp))
+		return NULL;
+	_rv = TuneGetVolume(tp);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_TunePreroll(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+#ifndef TunePreroll
+	PyMac_PRECHECK(TunePreroll);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &tp))
+		return NULL;
+	_rv = TunePreroll(tp);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_TuneUnroll(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+#ifndef TuneUnroll
+	PyMac_PRECHECK(TuneUnroll);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &tp))
+		return NULL;
+	_rv = TuneUnroll(tp);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_TuneSetPartTranspose(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+	unsigned long part;
+	long transpose;
+	long velocityShift;
+#ifndef TuneSetPartTranspose
+	PyMac_PRECHECK(TuneSetPartTranspose);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lll",
+	                      CmpInstObj_Convert, &tp,
+	                      &part,
+	                      &transpose,
+	                      &velocityShift))
+		return NULL;
+	_rv = TuneSetPartTranspose(tp,
+	                           part,
+	                           transpose,
+	                           velocityShift);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_TuneGetNoteAllocator(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	NoteAllocator _rv;
+	TunePlayer tp;
+#ifndef TuneGetNoteAllocator
+	PyMac_PRECHECK(TuneGetNoteAllocator);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &tp))
+		return NULL;
+	_rv = TuneGetNoteAllocator(tp);
+	_res = Py_BuildValue("O&",
+	                     CmpInstObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qt_TuneSetSofter(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+	long softer;
+#ifndef TuneSetSofter
+	PyMac_PRECHECK(TuneSetSofter);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &tp,
+	                      &softer))
+		return NULL;
+	_rv = TuneSetSofter(tp,
+	                    softer);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_TuneTask(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+#ifndef TuneTask
+	PyMac_PRECHECK(TuneTask);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &tp))
+		return NULL;
+	_rv = TuneTask(tp);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_TuneSetBalance(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+	long balance;
+#ifndef TuneSetBalance
+	PyMac_PRECHECK(TuneSetBalance);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &tp,
+	                      &balance))
+		return NULL;
+	_rv = TuneSetBalance(tp,
+	                     balance);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_TuneSetSoundLocalization(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+	Handle data;
+#ifndef TuneSetSoundLocalization
+	PyMac_PRECHECK(TuneSetSoundLocalization);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &tp,
+	                      ResObj_Convert, &data))
+		return NULL;
+	_rv = TuneSetSoundLocalization(tp,
+	                               data);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_TuneSetHeaderWithSize(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+	unsigned long header;
+	unsigned long size;
+#ifndef TuneSetHeaderWithSize
+	PyMac_PRECHECK(TuneSetHeaderWithSize);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &tp,
+	                      &size))
+		return NULL;
+	_rv = TuneSetHeaderWithSize(tp,
+	                            &header,
+	                            size);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     header);
+	return _res;
+}
+
+static PyObject *Qt_TuneSetPartMix(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+	unsigned long partNumber;
+	long volume;
+	long balance;
+	long mixFlags;
+#ifndef TuneSetPartMix
+	PyMac_PRECHECK(TuneSetPartMix);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&llll",
+	                      CmpInstObj_Convert, &tp,
+	                      &partNumber,
+	                      &volume,
+	                      &balance,
+	                      &mixFlags))
+		return NULL;
+	_rv = TuneSetPartMix(tp,
+	                     partNumber,
+	                     volume,
+	                     balance,
+	                     mixFlags);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_TuneGetPartMix(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TunePlayer tp;
+	unsigned long partNumber;
+	long volumeOut;
+	long balanceOut;
+	long mixFlagsOut;
+#ifndef TuneGetPartMix
+	PyMac_PRECHECK(TuneGetPartMix);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &tp,
+	                      &partNumber))
+		return NULL;
+	_rv = TuneGetPartMix(tp,
+	                     partNumber,
+	                     &volumeOut,
+	                     &balanceOut,
+	                     &mixFlagsOut);
+	_res = Py_BuildValue("llll",
+	                     _rv,
+	                     volumeOut,
+	                     balanceOut,
+	                     mixFlagsOut);
+	return _res;
+}
+
 static PyObject *Qt_AlignWindow(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -26415,6 +27846,134 @@ static PyMethodDef Qt_methods[] = {
 	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, IdleManager pim)")},
 	{"MediaGSetIdleManager", (PyCFunction)Qt_MediaGSetIdleManager, 1,
 	 PyDoc_STR("(MediaHandler mh, IdleManager im) -> (ComponentResult _rv)")},
+	{"QTMIDIGetMIDIPorts", (PyCFunction)Qt_QTMIDIGetMIDIPorts, 1,
+	 PyDoc_STR("(QTMIDIComponent ci) -> (ComponentResult _rv, QTMIDIPortListHandle inputPorts, QTMIDIPortListHandle outputPorts)")},
+	{"QTMIDIUseSendPort", (PyCFunction)Qt_QTMIDIUseSendPort, 1,
+	 PyDoc_STR("(QTMIDIComponent ci, long portIndex, long inUse) -> (ComponentResult _rv)")},
+	{"QTMIDISendMIDI", (PyCFunction)Qt_QTMIDISendMIDI, 1,
+	 PyDoc_STR("(QTMIDIComponent ci, long portIndex, MusicMIDIPacket mp) -> (ComponentResult _rv)")},
+	{"MusicGetPart", (PyCFunction)Qt_MusicGetPart, 1,
+	 PyDoc_STR("(MusicComponent mc, long part) -> (ComponentResult _rv, long midiChannel, long polyphony)")},
+	{"MusicSetPart", (PyCFunction)Qt_MusicSetPart, 1,
+	 PyDoc_STR("(MusicComponent mc, long part, long midiChannel, long polyphony) -> (ComponentResult _rv)")},
+	{"MusicSetPartInstrumentNumber", (PyCFunction)Qt_MusicSetPartInstrumentNumber, 1,
+	 PyDoc_STR("(MusicComponent mc, long part, long instrumentNumber) -> (ComponentResult _rv)")},
+	{"MusicGetPartInstrumentNumber", (PyCFunction)Qt_MusicGetPartInstrumentNumber, 1,
+	 PyDoc_STR("(MusicComponent mc, long part) -> (ComponentResult _rv)")},
+	{"MusicStorePartInstrument", (PyCFunction)Qt_MusicStorePartInstrument, 1,
+	 PyDoc_STR("(MusicComponent mc, long part, long instrumentNumber) -> (ComponentResult _rv)")},
+	{"MusicGetPartAtomicInstrument", (PyCFunction)Qt_MusicGetPartAtomicInstrument, 1,
+	 PyDoc_STR("(MusicComponent mc, long part, long flags) -> (ComponentResult _rv, AtomicInstrument ai)")},
+	{"MusicSetPartAtomicInstrument", (PyCFunction)Qt_MusicSetPartAtomicInstrument, 1,
+	 PyDoc_STR("(MusicComponent mc, long part, AtomicInstrumentPtr aiP, long flags) -> (ComponentResult _rv)")},
+	{"MusicGetPartKnob", (PyCFunction)Qt_MusicGetPartKnob, 1,
+	 PyDoc_STR("(MusicComponent mc, long part, long knobID) -> (ComponentResult _rv)")},
+	{"MusicSetPartKnob", (PyCFunction)Qt_MusicSetPartKnob, 1,
+	 PyDoc_STR("(MusicComponent mc, long part, long knobID, long knobValue) -> (ComponentResult _rv)")},
+	{"MusicGetKnob", (PyCFunction)Qt_MusicGetKnob, 1,
+	 PyDoc_STR("(MusicComponent mc, long knobID) -> (ComponentResult _rv)")},
+	{"MusicSetKnob", (PyCFunction)Qt_MusicSetKnob, 1,
+	 PyDoc_STR("(MusicComponent mc, long knobID, long knobValue) -> (ComponentResult _rv)")},
+	{"MusicGetPartName", (PyCFunction)Qt_MusicGetPartName, 1,
+	 PyDoc_STR("(MusicComponent mc, long part, StringPtr name) -> (ComponentResult _rv)")},
+	{"MusicSetPartName", (PyCFunction)Qt_MusicSetPartName, 1,
+	 PyDoc_STR("(MusicComponent mc, long part, StringPtr name) -> (ComponentResult _rv)")},
+	{"MusicPlayNote", (PyCFunction)Qt_MusicPlayNote, 1,
+	 PyDoc_STR("(MusicComponent mc, long part, long pitch, long velocity) -> (ComponentResult _rv)")},
+	{"MusicResetPart", (PyCFunction)Qt_MusicResetPart, 1,
+	 PyDoc_STR("(MusicComponent mc, long part) -> (ComponentResult _rv)")},
+	{"MusicSetPartController", (PyCFunction)Qt_MusicSetPartController, 1,
+	 PyDoc_STR("(MusicComponent mc, long part, MusicController controllerNumber, long controllerValue) -> (ComponentResult _rv)")},
+	{"MusicGetPartController", (PyCFunction)Qt_MusicGetPartController, 1,
+	 PyDoc_STR("(MusicComponent mc, long part, MusicController controllerNumber) -> (ComponentResult _rv)")},
+	{"MusicGetInstrumentNames", (PyCFunction)Qt_MusicGetInstrumentNames, 1,
+	 PyDoc_STR("(MusicComponent mc, long modifiableInstruments) -> (ComponentResult _rv, Handle instrumentNames, Handle instrumentCategoryLasts, Handle instrumentCategoryNames)")},
+	{"MusicGetDrumNames", (PyCFunction)Qt_MusicGetDrumNames, 1,
+	 PyDoc_STR("(MusicComponent mc, long modifiableInstruments) -> (ComponentResult _rv, Handle instrumentNumbers, Handle instrumentNames)")},
+	{"MusicGetMasterTune", (PyCFunction)Qt_MusicGetMasterTune, 1,
+	 PyDoc_STR("(MusicComponent mc) -> (ComponentResult _rv)")},
+	{"MusicSetMasterTune", (PyCFunction)Qt_MusicSetMasterTune, 1,
+	 PyDoc_STR("(MusicComponent mc, long masterTune) -> (ComponentResult _rv)")},
+	{"MusicGetDeviceConnection", (PyCFunction)Qt_MusicGetDeviceConnection, 1,
+	 PyDoc_STR("(MusicComponent mc, long index) -> (ComponentResult _rv, long id1, long id2)")},
+	{"MusicUseDeviceConnection", (PyCFunction)Qt_MusicUseDeviceConnection, 1,
+	 PyDoc_STR("(MusicComponent mc, long id1, long id2) -> (ComponentResult _rv)")},
+	{"MusicGetKnobSettingStrings", (PyCFunction)Qt_MusicGetKnobSettingStrings, 1,
+	 PyDoc_STR("(MusicComponent mc, long knobIndex, long isGlobal) -> (ComponentResult _rv, Handle settingsNames, Handle settingsCategoryLasts, Handle settingsCategoryNames)")},
+	{"MusicGetMIDIPorts", (PyCFunction)Qt_MusicGetMIDIPorts, 1,
+	 PyDoc_STR("(MusicComponent mc) -> (ComponentResult _rv, long inputPortCount, long outputPortCount)")},
+	{"MusicSendMIDI", (PyCFunction)Qt_MusicSendMIDI, 1,
+	 PyDoc_STR("(MusicComponent mc, long portIndex, MusicMIDIPacket mp) -> (ComponentResult _rv)")},
+	{"MusicSetOfflineTimeTo", (PyCFunction)Qt_MusicSetOfflineTimeTo, 1,
+	 PyDoc_STR("(MusicComponent mc, long newTimeStamp) -> (ComponentResult _rv)")},
+	{"MusicGetInfoText", (PyCFunction)Qt_MusicGetInfoText, 1,
+	 PyDoc_STR("(MusicComponent mc, long selector) -> (ComponentResult _rv, Handle textH, Handle styleH)")},
+	{"MusicGetInstrumentInfo", (PyCFunction)Qt_MusicGetInstrumentInfo, 1,
+	 PyDoc_STR("(MusicComponent mc, long getInstrumentInfoFlags) -> (ComponentResult _rv, InstrumentInfoListHandle infoListH)")},
+	{"MusicTask", (PyCFunction)Qt_MusicTask, 1,
+	 PyDoc_STR("(MusicComponent mc) -> (ComponentResult _rv)")},
+	{"MusicSetPartInstrumentNumberInterruptSafe", (PyCFunction)Qt_MusicSetPartInstrumentNumberInterruptSafe, 1,
+	 PyDoc_STR("(MusicComponent mc, long part, long instrumentNumber) -> (ComponentResult _rv)")},
+	{"MusicSetPartSoundLocalization", (PyCFunction)Qt_MusicSetPartSoundLocalization, 1,
+	 PyDoc_STR("(MusicComponent mc, long part, Handle data) -> (ComponentResult _rv)")},
+	{"MusicGenericConfigure", (PyCFunction)Qt_MusicGenericConfigure, 1,
+	 PyDoc_STR("(MusicComponent mc, long mode, long flags, long baseResID) -> (ComponentResult _rv)")},
+	{"MusicGenericGetKnobList", (PyCFunction)Qt_MusicGenericGetKnobList, 1,
+	 PyDoc_STR("(MusicComponent mc, long knobType) -> (ComponentResult _rv, GenericKnobDescriptionListHandle gkdlH)")},
+	{"MusicGenericSetResourceNumbers", (PyCFunction)Qt_MusicGenericSetResourceNumbers, 1,
+	 PyDoc_STR("(MusicComponent mc, Handle resourceIDH) -> (ComponentResult _rv)")},
+	{"MusicDerivedMIDISend", (PyCFunction)Qt_MusicDerivedMIDISend, 1,
+	 PyDoc_STR("(MusicComponent mc, MusicMIDIPacket packet) -> (ComponentResult _rv)")},
+	{"MusicDerivedOpenResFile", (PyCFunction)Qt_MusicDerivedOpenResFile, 1,
+	 PyDoc_STR("(MusicComponent mc) -> (ComponentResult _rv)")},
+	{"MusicDerivedCloseResFile", (PyCFunction)Qt_MusicDerivedCloseResFile, 1,
+	 PyDoc_STR("(MusicComponent mc, short resRefNum) -> (ComponentResult _rv)")},
+	{"NAUnregisterMusicDevice", (PyCFunction)Qt_NAUnregisterMusicDevice, 1,
+	 PyDoc_STR("(NoteAllocator na, long index) -> (ComponentResult _rv)")},
+	{"NASaveMusicConfiguration", (PyCFunction)Qt_NASaveMusicConfiguration, 1,
+	 PyDoc_STR("(NoteAllocator na) -> (ComponentResult _rv)")},
+	{"NAGetMIDIPorts", (PyCFunction)Qt_NAGetMIDIPorts, 1,
+	 PyDoc_STR("(NoteAllocator na) -> (ComponentResult _rv, QTMIDIPortListHandle inputPorts, QTMIDIPortListHandle outputPorts)")},
+	{"NATask", (PyCFunction)Qt_NATask, 1,
+	 PyDoc_STR("(NoteAllocator na) -> (ComponentResult _rv)")},
+	{"TuneSetHeader", (PyCFunction)Qt_TuneSetHeader, 1,
+	 PyDoc_STR("(TunePlayer tp) -> (ComponentResult _rv, unsigned long header)")},
+	{"TuneGetTimeBase", (PyCFunction)Qt_TuneGetTimeBase, 1,
+	 PyDoc_STR("(TunePlayer tp) -> (ComponentResult _rv, TimeBase tb)")},
+	{"TuneSetTimeScale", (PyCFunction)Qt_TuneSetTimeScale, 1,
+	 PyDoc_STR("(TunePlayer tp, TimeScale scale) -> (ComponentResult _rv)")},
+	{"TuneGetTimeScale", (PyCFunction)Qt_TuneGetTimeScale, 1,
+	 PyDoc_STR("(TunePlayer tp) -> (ComponentResult _rv, TimeScale scale)")},
+	{"TuneInstant", (PyCFunction)Qt_TuneInstant, 1,
+	 PyDoc_STR("(TunePlayer tp, unsigned long tunePosition) -> (ComponentResult _rv, unsigned long tune)")},
+	{"TuneStop", (PyCFunction)Qt_TuneStop, 1,
+	 PyDoc_STR("(TunePlayer tp, long stopFlags) -> (ComponentResult _rv)")},
+	{"TuneSetVolume", (PyCFunction)Qt_TuneSetVolume, 1,
+	 PyDoc_STR("(TunePlayer tp, Fixed volume) -> (ComponentResult _rv)")},
+	{"TuneGetVolume", (PyCFunction)Qt_TuneGetVolume, 1,
+	 PyDoc_STR("(TunePlayer tp) -> (ComponentResult _rv)")},
+	{"TunePreroll", (PyCFunction)Qt_TunePreroll, 1,
+	 PyDoc_STR("(TunePlayer tp) -> (ComponentResult _rv)")},
+	{"TuneUnroll", (PyCFunction)Qt_TuneUnroll, 1,
+	 PyDoc_STR("(TunePlayer tp) -> (ComponentResult _rv)")},
+	{"TuneSetPartTranspose", (PyCFunction)Qt_TuneSetPartTranspose, 1,
+	 PyDoc_STR("(TunePlayer tp, unsigned long part, long transpose, long velocityShift) -> (ComponentResult _rv)")},
+	{"TuneGetNoteAllocator", (PyCFunction)Qt_TuneGetNoteAllocator, 1,
+	 PyDoc_STR("(TunePlayer tp) -> (NoteAllocator _rv)")},
+	{"TuneSetSofter", (PyCFunction)Qt_TuneSetSofter, 1,
+	 PyDoc_STR("(TunePlayer tp, long softer) -> (ComponentResult _rv)")},
+	{"TuneTask", (PyCFunction)Qt_TuneTask, 1,
+	 PyDoc_STR("(TunePlayer tp) -> (ComponentResult _rv)")},
+	{"TuneSetBalance", (PyCFunction)Qt_TuneSetBalance, 1,
+	 PyDoc_STR("(TunePlayer tp, long balance) -> (ComponentResult _rv)")},
+	{"TuneSetSoundLocalization", (PyCFunction)Qt_TuneSetSoundLocalization, 1,
+	 PyDoc_STR("(TunePlayer tp, Handle data) -> (ComponentResult _rv)")},
+	{"TuneSetHeaderWithSize", (PyCFunction)Qt_TuneSetHeaderWithSize, 1,
+	 PyDoc_STR("(TunePlayer tp, unsigned long size) -> (ComponentResult _rv, unsigned long header)")},
+	{"TuneSetPartMix", (PyCFunction)Qt_TuneSetPartMix, 1,
+	 PyDoc_STR("(TunePlayer tp, unsigned long partNumber, long volume, long balance, long mixFlags) -> (ComponentResult _rv)")},
+	{"TuneGetPartMix", (PyCFunction)Qt_TuneGetPartMix, 1,
+	 PyDoc_STR("(TunePlayer tp, unsigned long partNumber) -> (ComponentResult _rv, long volumeOut, long balanceOut, long mixFlagsOut)")},
 	{"AlignWindow", (PyCFunction)Qt_AlignWindow, 1,
 	 PyDoc_STR("(WindowPtr wp, Boolean front) -> None")},
 	{"DragAlignedWindow", (PyCFunction)Qt_DragAlignedWindow, 1,

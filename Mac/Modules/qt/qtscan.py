@@ -13,7 +13,11 @@ HEADERFILES= (
 	"ImageCompression.h", 
 	"QuickTimeComponents.h",
 #	"ImageCodec.h"  -- seems not too useful, and difficult.
-	"MediaHandlers.h"
+	"MediaHandlers.h",
+#	"QTML.h", -- Windows only, needs separate module
+#	"QuickTimeStreaming.h", -- Difficult
+#	"QTStreamingComponents.h", -- Needs QTStreaming
+	"QuickTimeMusic.h",
 	)
 OBJECTS = ("Movie", "Track", "Media", "UserData", "TimeBase", "MovieController", 
 	"IdleManager", "SGOutput")
@@ -47,6 +51,24 @@ class MyScanner(Scanner):
 	def writeinitialdefs(self):
 		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
 		self.defsfile.write("xmlIdentifierUnrecognized = -1\n")
+		self.defsfile.write("kControllerMinimum = -0xf777\n")
+		self.defsfile.write("notImplementedMusicOSErr      = -2071\n")
+		self.defsfile.write("cantSendToSynthesizerOSErr    = -2072\n")
+		self.defsfile.write("cantReceiveFromSynthesizerOSErr = -2073\n")
+		self.defsfile.write("illegalVoiceAllocationOSErr   = -2074\n")
+		self.defsfile.write("illegalPartOSErr              = -2075\n")
+		self.defsfile.write("illegalChannelOSErr           = -2076\n")
+		self.defsfile.write("illegalKnobOSErr              = -2077\n")
+		self.defsfile.write("illegalKnobValueOSErr         = -2078\n")
+		self.defsfile.write("illegalInstrumentOSErr        = -2079\n")
+		self.defsfile.write("illegalControllerOSErr        = -2080\n")
+		self.defsfile.write("midiManagerAbsentOSErr        = -2081\n")
+		self.defsfile.write("synthesizerNotRespondingOSErr = -2082\n")
+		self.defsfile.write("synthesizerOSErr              = -2083\n")
+		self.defsfile.write("illegalNoteChannelOSErr       = -2084\n")
+		self.defsfile.write("noteChannelNotAllocatedOSErr  = -2085\n")
+		self.defsfile.write("tunePlayerFullOSErr           = -2086\n")
+		self.defsfile.write("tuneParseOSErr                = -2087\n")
 
 	def makeblacklistnames(self):
 		return [
@@ -100,6 +122,15 @@ class MyScanner(Scanner):
 			# MediaHandlers
 			"MediaMakeMediaTimeTable", # just lazy
 			"MediaGetSampleDataPointer", # funny output pointer
+			
+			# QuickTimeMusic
+			"kControllerMinimum",
+			# These are artefacts of a macro definition
+			"ulen",
+			"_ext",
+			"x",
+			"w1",
+			"w2",
 			]
 
 	def makeblacklisttypes(self):
@@ -223,6 +254,23 @@ class MyScanner(Scanner):
             "GetMovieCompleteParams", # Immense struct
             "LevelMeterInfoPtr", # Lazy. Also: can be an output parameter!!
             "MediaEQSpectrumBandsRecordPtr", # ditto
+            
+            # From QuickTimeMusic
+            "MusicMIDISendUPP",
+            "MusicOfflineDataUPP",
+            "TuneCallBackUPP",
+            "TunePlayCallBackUPP",
+            "GCPart", # Struct with lots of fields
+            "GCPart_ptr",
+            "GenericKnobDescription", # Struct with lots of fields
+            "KnobDescription",  # Struct with lots of fields
+            "InstrumentAboutInfo", # Struct, not too difficult
+            "NoteChannel", # XXXX Lazy. Could be opaque, I think
+            "NoteRequest", # XXXX Lazy. Not-too-difficult struct
+            "SynthesizerConnections", # Struct with lots of fields
+            "SynthesizerDescription", # Struct with lots of fields
+            "TuneStatus", # Struct with lots of fields
+            
 			]
 
 	def makerepairinstructions(self):
@@ -254,6 +302,10 @@ class MyScanner(Scanner):
 			([('char_ptr', '*', 'InMode')], [('stringptr', '*', 'InMode')]),
 			([('FSSpecPtr', '*', 'InMode')], [('FSSpec_ptr', '*', 'InMode')]),
 			([('unsigned_char', 'swfVersion', 'OutMode')], [('UInt8', 'swfVersion', 'OutMode')]),
+			
+			# It seems MusicMIDIPacket if never flagged with const but always used
+			# for sending only. If that ever changes this needs to be fixed.
+			([('MusicMIDIPacket', '*', 'OutMode')], [('MusicMIDIPacket_ptr', '*', 'InMode')]),
 			]
 			
 if __name__ == "__main__":
