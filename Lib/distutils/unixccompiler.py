@@ -99,12 +99,13 @@ class UnixCCompiler (CCompiler):
         if extra_preargs:
             pp_args[:0] = extra_preargs
         if extra_postargs:
-            extra_postargs.extend(extra_postargs)
+            pp_args.extend(extra_postargs)
 
-        # We need to preprocess: either we're being forced to, or the
-        # source file is newer than the target (or the target doesn't
+        # We need to preprocess: either we're being forced to, or we're
+        # generating output to stdout, or there's a target output file and 
+        # the source file is newer than the target (or the target doesn't
         # exist).
-        if self.force or (output_file and newer(source, output_file)):
+        if self.force or output_file is None or newer(source, output_file):
             if output_file:
                 self.mkpath(os.path.dirname(output_file))
             try:
