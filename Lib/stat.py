@@ -1,10 +1,8 @@
-# Module 'stat'
-#
-# Defines constants and functions for interpreting stat/lstat struct
-# as returned by os.stat() and os.lstat() (if it exists).
-#
-# Suggested usage: from stat import *
-#
+"""Constants/functions for interpreting results of os.stat() and os.lstat().
+
+Suggested usage: from stat import *
+"""
+
 # XXX Strictly spoken, this module may have to be adapted for each POSIX
 # implementation; in practice, however, the numeric constants used by
 # stat() are almost universal (even for stat() emulations on non-UNIX

@@ -23,11 +23,12 @@
 #   between ascii and binary. This results in a 1000-fold speedup. The C
 #   version is still 5 times faster, though.
 # - Arguments more compliant with python standard
-#
-# This file implements the UUencode and UUdecode functions.
 
-# encode(in_file, out_file [,name, mode])
-# decode(in_file [, out_file, mode])
+"""Implementation of the UUencode and UUdecode functions.
+
+encode(in_file, out_file [,name, mode])
+decode(in_file [, out_file, mode])
+"""
 
 import binascii
 import os

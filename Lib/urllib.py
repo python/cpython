@@ -1,25 +1,26 @@
-# Open an arbitrary URL
-#
-# See the following document for more info on URLs:
-# "Names and Addresses, URIs, URLs, URNs, URCs", at
-# http://www.w3.org/pub/WWW/Addressing/Overview.html
-#
-# See also the HTTP spec (from which the error codes are derived):
-# "HTTP - Hypertext Transfer Protocol", at
-# http://www.w3.org/pub/WWW/Protocols/
-#
-# Related standards and specs:
-# - RFC1808: the "relative URL" spec. (authoritative status)
-# - RFC1738 - the "URL standard". (authoritative status)
-# - RFC1630 - the "URI spec". (informational status)
-#
-# The object returned by URLopener().open(file) will differ per
-# protocol.  All you know is that is has methods read(), readline(),
-# readlines(), fileno(), close() and info().  The read*(), fileno()
-# and close() methods work like those of open files. 
-# The info() method returns a mimetools.Message object which can be
-# used to query various info about the object, if available.
-# (mimetools.Message objects are queried with the getheader() method.)
+"""Open an arbitrary URL.
+
+See the following document for more info on URLs:
+"Names and Addresses, URIs, URLs, URNs, URCs", at
+http://www.w3.org/pub/WWW/Addressing/Overview.html
+
+See also the HTTP spec (from which the error codes are derived):
+"HTTP - Hypertext Transfer Protocol", at
+http://www.w3.org/pub/WWW/Protocols/
+
+Related standards and specs:
+- RFC1808: the "relative URL" spec. (authoritative status)
+- RFC1738 - the "URL standard". (authoritative status)
+- RFC1630 - the "URI spec". (informational status)
+
+The object returned by URLopener().open(file) will differ per
+protocol.  All you know is that is has methods read(), readline(),
+readlines(), fileno(), close() and info().  The read*(), fileno()
+and close() methods work like those of open files. 
+The info() method returns a mimetools.Message object which can be
+used to query various info about the object, if available.
+(mimetools.Message objects are queried with the getheader() method.)
+"""
 
 import string
 import socket
@@ -69,14 +70,14 @@ def urlcleanup():
         _urlopener.cleanup()
 
 
-# Class to open URLs.
-# This is a class rather than just a subroutine because we may need
-# more than one set of global protocol-specific options.
-# Note -- this is a base class for those who don't want the
-# automatic handling of errors type 302 (relocated) and 401
-# (authorization needed).
 ftpcache = {}
 class URLopener:
+    """Class to open URLs.
+    This is a class rather than just a subroutine because we may need
+    more than one set of global protocol-specific options.
+    Note -- this is a base class for those who don't want the
+    automatic handling of errors type 302 (relocated) and 401
+    (authorization needed)."""
 
     __tempfiles = None
 
@@ -125,14 +126,14 @@ class URLopener:
         if self.tempcache:
             self.tempcache.clear()
 
-    # Add a header to be used by the HTTP interface only
-    # e.g. u.addheader('Accept', 'sound/basic')
     def addheader(self, *args):
+        """Add a header to be used by the HTTP interface only
+        e.g. u.addheader('Accept', 'sound/basic')"""
         self.addheaders.append(args)
 
     # External interface
-    # Use URLopener().open(file) instead of open(file, 'r')
     def open(self, fullurl, data=None):
+        """Use URLopener().open(file) instead of open(file, 'r')."""
         fullurl = unwrap(fullurl)
         if self.tempcache and self.tempcache.has_key(fullurl):
             filename, headers = self.tempcache[fullurl]
@@ -163,15 +164,15 @@ class URLopener:
         except socket.error, msg:
             raise IOError, ('socket error', msg), sys.exc_info()[2]
 
-    # Overridable interface to open unknown URL type
     def open_unknown(self, fullurl, data=None):
+        """Overridable interface to open unknown URL type."""
         type, url = splittype(fullurl)
         raise IOError, ('url error', 'unknown url type', type)
 
     # External interface
-    # retrieve(url) returns (filename, None) for a local object
-    # or (tempfilename, headers) for a remote object
     def retrieve(self, url, filename=None, reporthook=None):
+        """retrieve(url) returns (filename, None) for a local object
+        or (tempfilename, headers) for a remote object."""
         url = unwrap(url)
         if self.tempcache and self.tempcache.has_key(url):
             return self.tempcache[url]
@@ -223,8 +224,8 @@ class URLopener:
 
     # Each method named open_<type> knows how to open that type of URL
 
-    # Use HTTP protocol
     def open_http(self, url, data=None):
+        """Use HTTP protocol."""
         import httplib
         user_passwd = None
         if type(url) is type(""):
@@ -276,10 +277,10 @@ class URLopener:
             else:
                 return self.http_error(url, fp, errcode, errmsg, headers, data)
 
-    # Handle http errors.
-    # Derived class can override this, or provide specific handlers
-    # named http_error_DDD where DDD is the 3-digit error code
     def http_error(self, url, fp, errcode, errmsg, headers, data=None):
+        """Handle http errors.
+        Derived class can override this, or provide specific handlers
+        named http_error_DDD where DDD is the 3-digit error code."""
         # First check if there's a specific handler for this error
         name = 'http_error_%d' % errcode
         if hasattr(self, name):
@@ -291,15 +292,15 @@ class URLopener:
             if result: return result
         return self.http_error_default(url, fp, errcode, errmsg, headers)
 
-    # Default http error handler: close the connection and raises IOError
     def http_error_default(self, url, fp, errcode, errmsg, headers):
+        """Default error handler: close the connection and raise IOError."""
         void = fp.read()
         fp.close()
         raise IOError, ('http error', errcode, errmsg, headers)
 
-    # Use HTTPS protocol
     if hasattr(socket, "ssl"):
         def open_https(self, url):
+            """Use HTTPS protocol."""
             import httplib
             if type(url) is type(""):
                 host, selector = splithost(url)
@@ -333,8 +334,8 @@ class URLopener:
             else:
                 return self.http_error(url, fp, errcode, errmsg, headers)
   
-    # Use Gopher protocol
     def open_gopher(self, url):
+        """Use Gopher protocol."""
         import gopherlib
         host, selector = splithost(url)
         if not host: raise IOError, ('gopher error', 'no host given')
@@ -349,15 +350,15 @@ class URLopener:
             fp = gopherlib.send_selector(selector, host)
         return addinfourl(fp, noheaders(), "gopher:" + url)
 
-    # Use local file or FTP depending on form of URL
     def open_file(self, url):
+        """Use local file or FTP depending on form of URL."""
         if url[:2] == '//' and url[2:3] != '/':
             return self.open_ftp(url)
         else:
             return self.open_local_file(url)
 
-    # Use local file
     def open_local_file(self, url):
+        """Use local file."""
         import mimetypes, mimetools, StringIO
         mtype = mimetypes.guess_type(url)[0]
         headers = mimetools.Message(StringIO.StringIO(
@@ -379,8 +380,8 @@ class URLopener:
                               headers, urlfile)
         raise IOError, ('local file error', 'not on local host')
 
-    # Use FTP protocol
     def open_ftp(self, url):
+        """Use FTP protocol."""
         host, path = splithost(url)
         if not host: raise IOError, ('ftp error', 'no host given')
         host, port = splitport(host)
@@ -433,8 +434,8 @@ class URLopener:
         except ftperrors(), msg:
             raise IOError, ('ftp error', msg), sys.exc_info()[2]
 
-    # Use "data" URL
     def open_data(self, url, data=None):
+        """Use "data" URL."""
         # ignore POSTed data
         #
         # syntax of data URLs:
@@ -474,20 +475,19 @@ class URLopener:
         return addinfourl(f, headers, url)
 
 
-# Derived class with handlers for errors we can handle (perhaps)
 class FancyURLopener(URLopener):
+    """Derived class with handlers for errors we can handle (perhaps)."""
 
     def __init__(self, *args):
         apply(URLopener.__init__, (self,) + args)
         self.auth_cache = {}
 
-    # Default error handling -- don't raise an exception
     def http_error_default(self, url, fp, errcode, errmsg, headers):
+        """Default error handling -- don't raise an exception."""
         return addinfourl(fp, headers, "http:" + url)
 
-    # Error 302 -- relocated (temporarily)
-    def http_error_302(self, url, fp, errcode, errmsg, headers,
-               data=None): 
+    def http_error_302(self, url, fp, errcode, errmsg, headers, data=None): 
+        """Error 302 -- relocated (temporarily)."""
         # XXX The server can force infinite recursion here!
         if headers.has_key('location'):
             newurl = headers['location']
@@ -504,14 +504,14 @@ class FancyURLopener(URLopener):
         else:
             return self.open(newurl, data)
 
-    # Error 301 -- also relocated (permanently)
-    http_error_301 = http_error_302
+    def http_error_301(self, url, fp, errcode, errmsg, headers, data=None): 
+        """Error 301 -- also relocated (permanently)."""
+        return self.http_error_302(url, fp, errcode, errmsg, headers, data)
 
-    # Error 401 -- authentication required
-    # See this URL for a description of the basic authentication scheme:
-    # http://www.ics.uci.edu/pub/ietf/http/draft-ietf-http-v10-spec-00.txt
-    def http_error_401(self, url, fp, errcode, errmsg, headers,
-               data=None): 
+    def http_error_401(self, url, fp, errcode, errmsg, headers, data=None): 
+        """Error 401 -- authentication required.
+        See this URL for a description of the basic authentication scheme:
+        http://www.ics.uci.edu/pub/ietf/http/draft-ietf-http-v10-spec-00.txt"""
         if headers.has_key('www-authenticate'):
             stuff = headers['www-authenticate']
             import re
@@ -560,7 +560,7 @@ class FancyURLopener(URLopener):
         return user, passwd
 
     def prompt_user_passwd(self, host, realm):
-        # Override this in a GUI environment!
+        """Override this in a GUI environment!"""
         import getpass
         try:
             user = raw_input("Enter username for %s at %s: " % (realm,
@@ -575,34 +575,34 @@ class FancyURLopener(URLopener):
 
 # Utility functions
 
-# Return the IP address of the magic hostname 'localhost'
 _localhost = None
 def localhost():
+    """Return the IP address of the magic hostname 'localhost'."""
     global _localhost
     if not _localhost:
         _localhost = socket.gethostbyname('localhost')
     return _localhost
 
-# Return the IP address of the current host
 _thishost = None
 def thishost():
+    """Return the IP address of the current host."""
     global _thishost
     if not _thishost:
         _thishost = socket.gethostbyname(socket.gethostname())
     return _thishost
 
-# Return the set of errors raised by the FTP class
 _ftperrors = None
 def ftperrors():
+    """Return the set of errors raised by the FTP class."""
     global _ftperrors
     if not _ftperrors:
         import ftplib
         _ftperrors = ftplib.all_errors
     return _ftperrors
 
-# Return an empty mimetools.Message object
 _noheaders = None
 def noheaders():
+    """Return an empty mimetools.Message object."""
     global _noheaders
     if not _noheaders:
         import mimetools
@@ -614,8 +614,9 @@ def noheaders():
 
 # Utility classes
 
-# Class used by open_ftp() for cache of open FTP connections
 class ftpwrapper:
+    """Class used by open_ftp() for cache of open FTP connections."""
+
     def __init__(self, user, passwd, host, port, dirs):
         self.user = user
         self.passwd = passwd
@@ -623,6 +624,7 @@ class ftpwrapper:
         self.port = port
         self.dirs = dirs
         self.init()
+
     def init(self):
         import ftplib
         self.busy = 0
@@ -631,6 +633,7 @@ class ftpwrapper:
         self.ftp.login(self.user, self.passwd)
         for dir in self.dirs:
             self.ftp.cwd(dir)
+
     def retrfile(self, file, type):
         import ftplib
         self.endtransfer()
@@ -676,6 +679,7 @@ class ftpwrapper:
             self.ftp.voidresp()
         except ftperrors():
             pass
+
     def close(self):
         self.endtransfer()
         try:
@@ -683,17 +687,20 @@ class ftpwrapper:
         except ftperrors():
             pass
 
-# Base class for addinfo and addclosehook
 class addbase:
+    """Base class for addinfo and addclosehook."""
+
     def __init__(self, fp):
         self.fp = fp
         self.read = self.fp.read
         self.readline = self.fp.readline
         if hasattr(self.fp, "readlines"): self.readlines = self.fp.readlines
         if hasattr(self.fp, "fileno"): self.fileno = self.fp.fileno
+
     def __repr__(self):
         return '<%s at %s whose fp = %s>' % (self.__class__.__name__,
                                              `id(self)`, `self.fp`) 
+
     def close(self):
         self.read = None
         self.readline = None
@@ -702,12 +709,14 @@ class addbase:
         if self.fp: self.fp.close()
         self.fp = None
 
-# Class to add a close hook to an open file
 class addclosehook(addbase):
+    """Class to add a close hook to an open file."""
+
     def __init__(self, fp, closehook, *hookargs):
         addbase.__init__(self, fp)
         self.closehook = closehook
         self.hookargs = hookargs
+
     def close(self):
         if self.closehook:
             apply(self.closehook, self.hookargs)
@@ -715,29 +724,33 @@ class addclosehook(addbase):
             self.hookargs = None
         addbase.close(self)
 
-# class to add an info() method to an open file
 class addinfo(addbase):
+    """class to add an info() method to an open file."""
+
     def __init__(self, fp, headers):
         addbase.__init__(self, fp)
         self.headers = headers
+
     def info(self):
         return self.headers
 
-# class to add info() and geturl() methods to an open file
 class addinfourl(addbase):
+    """class to add info() and geturl() methods to an open file."""
+
     def __init__(self, fp, headers, url):
         addbase.__init__(self, fp)
         self.headers = headers
         self.url = url
+
     def info(self):
         return self.headers
+
     def geturl(self):
         return self.url
 
 
-# Utility to combine a URL with a base URL to form a new URL
-
 def basejoin(base, url):
+    """Utility to combine a URL with a base URL to form a new URL."""
     type, path = splittype(url)
     if type:
         # if url is complete (i.e., it contains a type), return it
@@ -809,6 +822,7 @@ def basejoin(base, url):
 # quote('abc def') -> 'abc%20def')
 
 def unwrap(url):
+    """unwrap('<URL:type://host/path>') --> 'type://host/path'."""
     url = string.strip(url)
     if url[:1] == '<' and url[-1:] == '>':
         url = string.strip(url[1:-1])
@@ -817,6 +831,7 @@ def unwrap(url):
 
 _typeprog = None
 def splittype(url):
+    """splittype('type:opaquestring') --> 'type', 'opaquestring'."""
     global _typeprog
     if _typeprog is None:
         import re
@@ -830,6 +845,7 @@ def splittype(url):
 
 _hostprog = None
 def splithost(url):
+    """splithost('//host[:port]/path') --> 'host[:port]', '/path'."""
     global _hostprog
     if _hostprog is None:
         import re
@@ -841,6 +857,7 @@ def splithost(url):
 
 _userprog = None
 def splituser(host):
+    """splituser('user[:passwd]@host[:port]') --> 'user[:passwd]', 'host[:port]'."""
     global _userprog
     if _userprog is None:
         import re
@@ -852,6 +869,7 @@ def splituser(host):
 
 _passwdprog = None
 def splitpasswd(user):
+    """splitpasswd('user:passwd') -> 'user', 'passwd'."""
     global _passwdprog
     if _passwdprog is None:
         import re
@@ -861,8 +879,10 @@ def splitpasswd(user):
     if match: return match.group(1, 2)
     return user, None
 
+# splittag('/path#tag') --> '/path', 'tag'
 _portprog = None
 def splitport(host):
+    """splitport('host:port') --> 'host', 'port'."""
     global _portprog
     if _portprog is None:
         import re
@@ -872,12 +892,12 @@ def splitport(host):
     if match: return match.group(1, 2)
     return host, None
 
-# Split host and port, returning numeric port.
-# Return given default port if no ':' found; defaults to -1.
-# Return numerical port if a valid number are found after ':'.
-# Return None if ':' but not a valid number.
 _nportprog = None
 def splitnport(host, defport=-1):
+    """Split host and port, returning numeric port.
+    Return given default port if no ':' found; defaults to -1.
+    Return numerical port if a valid number are found after ':'.
+    Return None if ':' but not a valid number."""
     global _nportprog
     if _nportprog is None:
         import re
@@ -896,6 +916,7 @@ def splitnport(host, defport=-1):
 
 _queryprog = None
 def splitquery(url):
+    """splitquery('/path?query') --> '/path', 'query'."""
     global _queryprog
     if _queryprog is None:
         import re
@@ -907,6 +928,7 @@ def splitquery(url):
 
 _tagprog = None
 def splittag(url):
+    """splittag('/path#tag') --> '/path', 'tag'."""
     global _tagprog
     if _tagprog is None:
         import re
@@ -917,11 +939,14 @@ def splittag(url):
     return url, None
 
 def splitattr(url):
+    """splitattr('/path;attr1=value1;attr2=value2;...') ->
+        '/path', ['attr1=value1', 'attr2=value2', ...]."""
     words = string.splitfields(url, ';')
     return words[0], words[1:]
 
 _valueprog = None
 def splitvalue(attr):
+    """splitvalue('attr=value') --> 'attr', 'value'."""
     global _valueprog
     if _valueprog is None:
         import re
@@ -932,11 +957,13 @@ def splitvalue(attr):
     return attr, None
 
 def splitgophertype(selector):
+    """splitgophertype('/Xselector') --> 'X', 'selector'."""
     if selector[:1] == '/' and selector[1:2]:
         return selector[1], selector[2:]
     return None, selector
 
 def unquote(s):
+    """unquote('abc%20def') -> 'abc def'."""
     mychr = chr
     myatoi = string.atoi
     list = string.split(s, '%')
@@ -962,6 +989,7 @@ def unquote_plus(s):
 
 always_safe = string.letters + string.digits + '_,.-'
 def quote(s, safe = '/'):
+    """quote('abc def') -> 'abc%20def')."""
     # XXX Can speed this up an order of magnitude
     safe = always_safe + safe
     res = list(s)
@@ -983,12 +1011,13 @@ def quote_plus(s, safe = '/'):
         return quote(s, safe)
 
 def urlencode(dict):
-     l = []
-     for k, v in dict.items():
-         k = quote_plus(str(k))
-         v = quote_plus(str(v))
-         l.append(k + '=' + v)
-     return string.join(l, '&')
+    """Encode a dictionary of form entries into a URL query string."""
+    l = []
+    for k, v in dict.items():
+        k = quote_plus(str(k))
+        v = quote_plus(str(v))
+        l.append(k + '=' + v)
+    return string.join(l, '&')
 
 
 # Proxy handling

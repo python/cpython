@@ -1,5 +1,8 @@
-# Parse (absolute and relative) URLs.  See RFC 1808: "Relative Uniform
-# Resource Locators", by R. Fielding, UC Irvine, June 1995.
+"""Parse (absolute and relative) URLs.
+
+See RFC 1808: "Relative Uniform Resource Locators", by R. Fielding,
+UC Irvine, June 1995.
+"""
 
 # Standard/builtin Python modules
 import string
@@ -39,12 +42,12 @@ def clear_cache():
     _parse_cache = {}
 
 
-# Parse a URL into 6 components:
-# <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
-# Return a 6-tuple: (scheme, netloc, path, params, query, fragment).
-# Note that we don't break the components up in smaller bits
-# (e.g. netloc is a single string) and we don't expand % escapes.
 def urlparse(url, scheme = '', allow_fragments = 1):
+	"""Parse a URL into 6 components:
+	<scheme>://<netloc>/<path>;<params>?<query>#<fragment>
+	Return a 6-tuple: (scheme, netloc, path, params, query, fragment).
+	Note that we don't break the components up in smaller bits
+	(e.g. netloc is a single string) and we don't expand % escapes."""
 	key = url, scheme, allow_fragments
 	cached = _parse_cache.get(key, None)
 	if cached:
@@ -107,11 +110,11 @@ def urlparse(url, scheme = '', allow_fragments = 1):
 	_parse_cache[key] = tuple
 	return tuple
 
-# Put a parsed URL back together again.  This may result in a slightly
-# different, but equivalent URL, if the URL that was parsed originally
-# had redundant delimiters, e.g. a ? with an empty query (the draft
-# states that these are equivalent).
 def urlunparse((scheme, netloc, url, params, query, fragment)):
+	"""Put a parsed URL back together again.  This may result in a
+	slightly different, but equivalent URL, if the URL that was parsed
+	originally had redundant delimiters, e.g. a ? with an empty query
+	(the draft states that these are equivalent)."""
 	if netloc or (scheme in uses_netloc and url[:2] == '//'):
 		if url[:1] != '/': url = '/' + url
 		url = '//' + (netloc or '') + url
@@ -125,9 +128,9 @@ def urlunparse((scheme, netloc, url, params, query, fragment)):
 		url = url + '#' + fragment
 	return url
 
-# Join a base URL and a possibly relative URL to form an absolute
-# interpretation of the latter.
 def urljoin(base, url, allow_fragments = 1):
+	"""Join a base URL and a possibly relative URL to form an absolute
+	interpretation of the latter."""
 	if not base:
 		return url
 	bscheme, bnetloc, bpath, bparams, bquery, bfragment = \

@@ -1,4 +1,4 @@
-"""Utility functions for copying files.
+"""Utility functions for copying files and directory trees.
 
 XXX The functions here don't copy the resource fork or other metadata on Mac.
 

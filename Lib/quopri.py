@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
-# Conversions to/from quoted-printable transport encoding as per RFC-1521
+"""Conversions to/from quoted-printable transport encoding as per RFC-1521."""
+
 # (Dec 1991 version).
 
 ESCAPE = '='
@@ -8,11 +9,15 @@ MAXLINESIZE = 76
 HEX = '0123456789ABCDEF'
 
 def needsquoting(c, quotetabs):
+	"""Decide whether a particular character needs to be quoted.
+
+	The 'quotetabs' flag indicates whether tabs should be quoted."""
 	if c == '\t':
 		return not quotetabs
 	return c == ESCAPE or not(' ' <= c <= '~')
 
 def quote(c):
+	"""Quote a single character."""
 	if c == ESCAPE:
 		return ESCAPE * 2
 	else:
@@ -20,6 +25,10 @@ def quote(c):
 		return ESCAPE + HEX[i/16] + HEX[i%16]
 
 def encode(input, output, quotetabs):
+	"""Read 'input', apply quoted-printable encoding, and write to 'output'.
+
+	'input' and 'output' are files with readline() and write() methods.
+	The 'quotetabs' flag indicates whether tabs should be quoted."""
 	while 1:
 		line = input.readline()
 		if not line: break
@@ -42,6 +51,9 @@ def encode(input, output, quotetabs):
 			output.write(new + '\n')
 
 def decode(input, output):
+	"""Read 'input', apply quoted-printable decoding, and write to 'output'.
+
+	'input' and 'output' are files with readline() and write() methods."""
 	new = ''
 	while 1:
 		line = input.readline()
@@ -73,9 +85,11 @@ def decode(input, output):
 		output.write(new)
 
 def ishex(c):
+	"""Return true if the character 'c' is a hexadecimal digit."""
 	return '0' <= c <= '9' or 'a' <= c <= 'f' or 'A' <= c <= 'F'
 
 def unhex(s):
+	"""Get the integer value of a hexadecimal number."""
 	bits = 0
 	for c in s:
 		if '0' <= c <= '9':

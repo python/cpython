@@ -1,10 +1,14 @@
-# Regular expression subroutines:
-# sub(pat, repl, str): replace first occurrence of pattern in string
-# gsub(pat, repl, str): replace all occurrences of pattern in string
-# split(str, pat, maxsplit): split string using pattern as delimiter
-# splitx(str, pat, maxsplit): split string using pattern as delimiter plus
-#			      return delimiters
+"""Regexp-based split and replace using the obsolete regex module.
 
+This module is only for backward compatibility.  These operations
+are now provided by the new regular expression module, "re".
+
+sub(pat, repl, str):        replace first occurrence of pattern in string
+gsub(pat, repl, str):       replace all occurrences of pattern in string
+split(str, pat, maxsplit):  split string using pattern as delimiter
+splitx(str, pat, maxsplit): split string using pattern as delimiter plus
+                            return delimiters
+"""
 
 import regex
 

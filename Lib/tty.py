@@ -1,4 +1,5 @@
-# tty.py -- Terminal utilities.
+"""Terminal utilities."""
+
 # Author: Steen Lumholt.
 
 from TERMIOS import *
@@ -13,8 +14,8 @@ ISPEED = 4
 OSPEED = 5
 CC = 6
 
-# Put terminal into a raw mode.
 def setraw(fd, when=TCSAFLUSH):
+	"""Put terminal into a raw mode."""
 	mode = tcgetattr(fd)
 	mode[IFLAG] = mode[IFLAG] & ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
 	mode[OFLAG] = mode[OFLAG] & ~(OPOST)
@@ -25,8 +26,8 @@ def setraw(fd, when=TCSAFLUSH):
 	mode[CC][VTIME] = 0
 	tcsetattr(fd, when, mode)
 
-# Put terminal into a cbreak mode.
 def setcbreak(fd, when=TCSAFLUSH):
+	"""Put terminal into a cbreak mode."""
 	mode = tcgetattr(fd)
 	mode[LFLAG] = mode[LFLAG] & ~(ECHO | ICANON)
 	mode[CC][VMIN] = 1

@@ -1,8 +1,4 @@
-# Module 'statvfs'
-#
-# Defines constants for interpreting statvfs struct as returned
-# by os.statvfs() and os.fstatvfs() (if they exist).
-#
+"""Constants for interpreting the results of os.statvfs() and os.fstatvfs()."""
 
 # Indices for statvfs struct members in the tuple returned by
 # os.statvfs() and os.fstatvfs().

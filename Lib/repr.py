@@ -1,4 +1,4 @@
-# Redo the `...` (representation) but with limits on most sizes.
+"""Redo the `...` (representation) but with limits on most sizes."""
 
 import string
 

@@ -1,4 +1,4 @@
-# A parser for SGML, using the derived class as static DTD.
+"""A parser for SGML, using the derived class as a static DTD."""
 
 # XXX This only supports those SGML features used by HTML.
 

@@ -1,54 +1,52 @@
-#	WICHMANN-HILL RANDOM NUMBER GENERATOR
-#
-#	Wichmann, B. A. & Hill, I. D. (1982)
-#	Algorithm AS 183: 
-#	An efficient and portable pseudo-random number generator
-#	Applied Statistics 31 (1982) 188-190
-#
-#	see also: 
-#		Correction to Algorithm AS 183
-#		Applied Statistics 33 (1984) 123  
-#
-#		McLeod, A. I. (1985)
-#		A remark on Algorithm AS 183 
-#		Applied Statistics 34 (1985),198-200
-#
-#
-#	USE:
-#	whrandom.random()	yields double precision random numbers 
-#				uniformly distributed between 0 and 1.
-#
-#	whrandom.seed(x, y, z)	must be called before whrandom.random()
-#				to seed the generator
-#
-#	There is also an interface to create multiple independent
-#	random generators, and to choose from other ranges.
+"""Wichman-Hill random number generator.
+
+Wichmann, B. A. & Hill, I. D. (1982)
+Algorithm AS 183: 
+An efficient and portable pseudo-random number generator
+Applied Statistics 31 (1982) 188-190
+
+see also: 
+        Correction to Algorithm AS 183
+        Applied Statistics 33 (1984) 123  
+
+        McLeod, A. I. (1985)
+        A remark on Algorithm AS 183 
+        Applied Statistics 34 (1985),198-200
 
 
-#	Translated by Guido van Rossum from C source provided by
-#	Adrian Baddeley.
+USE:
+whrandom.random()       yields double precision random numbers 
+                        uniformly distributed between 0 and 1.
+
+whrandom.seed(x, y, z)  must be called before whrandom.random()
+                        to seed the generator
+
+There is also an interface to create multiple independent
+random generators, and to choose from other ranges.
 
 
-# Multi-threading note: the random number generator used here is not
-# thread-safe; it is possible that nearly simultaneous calls in
-# different theads return the same random value.  To avoid this, you
-# have to use a lock around all calls.  (I didn't want to slow this
-# down in the serial case by using a lock here.)
+Translated by Guido van Rossum from C source provided by
+Adrian Baddeley.
 
+
+
+Multi-threading note: the random number generator used here is not
+thread-safe; it is possible that nearly simultaneous calls in
+different theads return the same random value.  To avoid this, you
+have to use a lock around all calls.  (I didn't want to slow this
+down in the serial case by using a lock here.)
+"""
 
 class whrandom:
-	#
-	# Initialize an instance.
-	# Without arguments, initialize from current time.
-	# With arguments (x, y, z), initialize from them.
-	#
 	def __init__(self, x = 0, y = 0, z = 0):
+		"""Initialize an instance.
+		Without arguments, initialize from current time.
+		With arguments (x, y, z), initialize from them."""
 		self.seed(x, y, z)
-	#
-	# Set the seed from (x, y, z).
-	# These must be integers in the range [0, 256).
-	#
+
 	def seed(self, x = 0, y = 0, z = 0):
+		"""Set the seed from (x, y, z).
+		These must be integers in the range [0, 256)."""
 		if not type(x) == type(y) == type(z) == type(0):
 			raise TypeError, 'seeds must be integers'
 		if not (0 <= x < 256 and 0 <= y < 256 and 0 <= z < 256):
@@ -63,10 +61,9 @@ class whrandom:
 			t, z = divmod(t, 256)
 		# Zero is a poor seed, so substitute 1
 		self._seed = (x or 1, y or 1, z or 1)
-	#
-	# Get the next random number in the range [0.0, 1.0).
-	#
+
 	def random(self):
+		"""Get the next random number in the range [0.0, 1.0)."""
 		# This part is thread-unsafe:
 		# BEGIN CRITICAL SECTION
 		x, y, z = self._seed
@@ -79,30 +76,25 @@ class whrandom:
 		# END CRITICAL SECTION
 		#
 		return (x/30269.0 + y/30307.0 + z/30323.0) % 1.0
-	#
-	# Get a random number in the range [a, b).
-	#
+
 	def uniform(self, a, b):
+		"""Get a random number in the range [a, b)."""
 		return a + (b-a) * self.random()
-	#
-	# Get a random integer in the range [a, b] including both end points.
-	# (Deprecated; use randrange below.)
-	#
+
 	def randint(self, a, b):
+		"""Get a random integer in the range [a, b] including both end points.
+		(Deprecated; use randrange below.)"""
 		return self.randrange(a, b+1)
-	#
-	# Choose a random element from a non-empty sequence.
-	#
+
 	def choice(self, seq):
+		"""Choose a random element from a non-empty sequence."""
 		return seq[int(self.random() * len(seq))]
-	#
-	# Choose a random item from range([start,] step[, stop]).
-	# This fixes the problem with randint() which includes the
-	# endpoint; in Python this is usually not what you want.
-	#
-	def randrange(self, start, stop=None, step=1,
-		      # Do not supply the following arguments
-		      int=int, default=None):
+
+	def randrange(self, start, stop=None, step=1, int=int, default=None):
+		"""Choose a random item from range([start,] step[, stop]).
+		This fixes the problem with randint() which includes the
+		endpoint; in Python this is usually not what you want.
+	    Do not supply the 'int' and 'default' arguments."""
 		# This code is a bit messy to make it fast for the
 		# common case while still doing adequate error checking
 		istart = int(start)
@@ -136,7 +128,6 @@ class whrandom:
 
 
 # Initialize from the current time
-#
 _inst = whrandom()
 seed = _inst.seed
 random = _inst.random

@@ -1,4 +1,4 @@
-"""An extensible library for opening URLs using a variety protocols
+"""An extensible library for opening URLs using a variety of protocols
 
 The simplest way to use this module is to call the urlopen function,
 which accepts a string containing a URL or a Request object (described 

@@ -1,23 +1,24 @@
-#	R A N D O M   V A R I A B L E   G E N E R A T O R S
-#
-#	distributions on the real line:
-#	------------------------------
-#	       normal (Gaussian)
-#	       lognormal
-#	       negative exponential
-#	       gamma
-#	       beta
-#
-#	distributions on the circle (angles 0 to 2pi)
-#	---------------------------------------------
-#	       circular uniform
-#	       von Mises
+"""Random variable generators.
 
-# Translated from anonymously contributed C/C++ source.
+    distributions on the real line:
+    ------------------------------
+           normal (Gaussian)
+           lognormal
+           negative exponential
+           gamma
+           beta
 
-# Multi-threading note: the random number generator used here is not
-# thread-safe; it is possible that two calls return the same random
-# value.  See whrandom.py for more info.
+    distributions on the circle (angles 0 to 2pi)
+    ---------------------------------------------
+           circular uniform
+           von Mises
+
+Translated from anonymously contributed C/C++ source.
+
+Multi-threading note: the random number generator used here is not
+thread-safe; it is possible that two calls return the same random
+value.  See whrandom.py for more info.
+"""
 
 import whrandom
 from whrandom import random, uniform, randint, choice, randrange # For export!

@@ -1,5 +1,11 @@
-# These bits are passed to regex.set_syntax() to choose among
-# alternative regexp syntaxes.
+"""Constants for selecting regexp syntaxes for the obsolete regex module.
+
+This module is only for backward compatibility.  "regex" has now
+been replaced by the new regular expression module, "re".
+
+These bits are passed to regex.set_syntax() to choose among
+alternative regexp syntaxes.
+"""
 
 # 1 means plain parentheses serve as grouping, and backslash
 #   parentheses are needed for literal searching.
