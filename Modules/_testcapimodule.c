@@ -294,94 +294,89 @@ test_L_code(PyObject *self)
 
 #endif	/* ifdef HAVE_LONG_LONG */
 
-/* Call PyArg_ParseTuple, and return the result as unsigned long */
+/* Functions to call PyArg_ParseTuple with integer format codes,
+   and return the result.
+*/
 static PyObject *
-getargs_ul(PyObject *self, PyObject *args)
+getargs_b(PyObject *self, PyObject *args)
 {
-	PyObject *ob, *result = NULL, *argtuple;
-	char *fmt;
-	unsigned long value = 0;
-
-	if (!PyArg_ParseTuple(args, "sO", &fmt, &ob))
+	unsigned char value;
+	if (!PyArg_ParseTuple(args, "b", &value))
 		return NULL;
-	argtuple = PyTuple_New(1);
-	Py_INCREF(ob);
-	PyTuple_SET_ITEM(argtuple, 0, ob);
-	if (PyArg_ParseTuple(argtuple, fmt, &value))
-		result = PyLong_FromUnsignedLong(value);
-	Py_DECREF(argtuple);
-	return result;
+	return PyLong_FromUnsignedLong((unsigned long)value);
 }
 
-/* Call PyArg_ParseTuple, and return the result as signed long */
+static PyObject *
+getargs_B(PyObject *self, PyObject *args)
+{
+	unsigned char value;
+	if (!PyArg_ParseTuple(args, "B", &value))
+		return NULL;
+	return PyLong_FromUnsignedLong((unsigned long)value);
+}
+
+static PyObject *
+getargs_H(PyObject *self, PyObject *args)
+{
+	unsigned short value;
+	if (!PyArg_ParseTuple(args, "H", &value))
+		return NULL;
+	return PyLong_FromUnsignedLong((unsigned long)value);
+}
+
+static PyObject *
+getargs_I(PyObject *self, PyObject *args)
+{
+	unsigned int value;
+	if (!PyArg_ParseTuple(args, "I", &value))
+		return NULL;
+	return PyLong_FromUnsignedLong((unsigned long)value);
+}
+
+static PyObject *
+getargs_k(PyObject *self, PyObject *args)
+{
+	unsigned long value;
+	if (!PyArg_ParseTuple(args, "k", &value))
+		return NULL;
+	return PyLong_FromUnsignedLong(value);
+}
+
+static PyObject *
+getargs_i(PyObject *self, PyObject *args)
+{
+	int value;
+	if (!PyArg_ParseTuple(args, "i", &value))
+		return NULL;
+	return PyLong_FromLong((long)value);
+}
+
 static PyObject *
 getargs_l(PyObject *self, PyObject *args)
 {
-	PyObject *ob, *result = NULL, *argtuple;
-	char *fmt;
-
-	if (!PyArg_ParseTuple(args, "sO", &fmt, &ob))
+	long value;
+	if (!PyArg_ParseTuple(args, "l", &value))
 		return NULL;
-	argtuple = PyTuple_New(1);
-	Py_INCREF(ob);
-	PyTuple_SET_ITEM(argtuple, 0, ob);
-	/* It's necessary to distinguish between ints and longs, since
-	   sizeof(int) != sizeof(long) on some (64 bit) platforms.
-	   value must be an int for: PyArg_ParseTuple(t, 'i', &value)
-	   value must be an long for: PyArg_ParseTuple(t, 'l', &value)
-	*/
-	if (*fmt == 'i') {
-		int value;
-		if (PyArg_ParseTuple(argtuple, fmt, &value))
-			result = PyLong_FromLong(value);
-	} else if (*fmt == 'l') {
-		long value;
-		if (PyArg_ParseTuple(argtuple, fmt, &value))
-			result = PyLong_FromLong(value);
-	} else {
-		PyErr_SetString(PyExc_TypeError, "format was not i or l");
-	}
-	Py_DECREF(argtuple);
-	return result;
+	return PyLong_FromLong(value);
 }
 
 #ifdef HAVE_LONG_LONG
-/* Call PyArg_ParseTuple, and return the result as signed long long */
 static PyObject *
-getargs_ll(PyObject *self, PyObject *args)
+getargs_L(PyObject *self, PyObject *args)
 {
-	PyObject *ob, *result = NULL, *argtuple;
-	char *fmt;
-	PY_LONG_LONG value = 0;
-
-	if (!PyArg_ParseTuple(args, "sO", &fmt, &ob))
+	PY_LONG_LONG value;
+	if (!PyArg_ParseTuple(args, "L", &value))
 		return NULL;
-	argtuple = PyTuple_New(1);
-	Py_INCREF(ob);
-	PyTuple_SET_ITEM(argtuple, 0, ob);
-	if (PyArg_ParseTuple(argtuple, fmt, &value))
-		result = PyLong_FromLongLong(value);
-	Py_DECREF(argtuple);
-	return result;
+	return PyLong_FromLongLong(value);
 }
 
-/* Call PyArg_ParseTuple, and return the result as unsigned long long */
 static PyObject *
-getargs_ull(PyObject *self, PyObject *args)
+getargs_K(PyObject *self, PyObject *args)
 {
-	PyObject *ob, *result = NULL, *argtuple;
-	char *fmt;
-	unsigned PY_LONG_LONG value = 0;
-
-	if (!PyArg_ParseTuple(args, "sO", &fmt, &ob))
+	unsigned PY_LONG_LONG value;
+	if (!PyArg_ParseTuple(args, "K", &value))
 		return NULL;
-	argtuple = PyTuple_New(1);
-	Py_INCREF(ob);
-	PyTuple_SET_ITEM(argtuple, 0, ob);
-	if (PyArg_ParseTuple(argtuple, fmt, &value))
-		result = PyLong_FromUnsignedLongLong(value);
-	Py_DECREF(argtuple);
-	return result;
+	return PyLong_FromUnsignedLongLong(value);
 }
 #endif
 
@@ -600,11 +595,17 @@ static PyMethodDef TestMethods[] = {
 	{"test_long_api",	(PyCFunction)test_long_api,	 METH_NOARGS},
 	{"test_long_numbits",	(PyCFunction)test_long_numbits,	 METH_NOARGS},
 	{"test_k_code",		(PyCFunction)test_k_code,	 METH_NOARGS},
-	{"getargs_ul",		(PyCFunction)getargs_ul,	 METH_VARARGS},
+
+	{"getargs_b",		(PyCFunction)getargs_b,		 METH_VARARGS},
+	{"getargs_B",		(PyCFunction)getargs_B,		 METH_VARARGS},
+	{"getargs_H",		(PyCFunction)getargs_H,		 METH_VARARGS},
+	{"getargs_I",		(PyCFunction)getargs_I,		 METH_VARARGS},
+	{"getargs_k",		(PyCFunction)getargs_k,		 METH_VARARGS},
+	{"getargs_i",		(PyCFunction)getargs_i,		 METH_VARARGS},
 	{"getargs_l",		(PyCFunction)getargs_l,		 METH_VARARGS},
 #ifdef HAVE_LONG_LONG
-	{"getargs_ll",		(PyCFunction)getargs_ll,	 METH_VARARGS},
-	{"getargs_ull",		(PyCFunction)getargs_ull,	 METH_VARARGS},
+	{"getargs_L",		(PyCFunction)getargs_L,		 METH_VARARGS},
+	{"getargs_K",		(PyCFunction)getargs_K,		 METH_VARARGS},
 	{"test_longlong_api",	(PyCFunction)test_longlong_api,	 METH_NOARGS},
 	{"test_L_code",		(PyCFunction)test_L_code,	 METH_NOARGS},
 #endif
