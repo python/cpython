@@ -1950,10 +1950,13 @@ optimizer(co)
 			oparg = NEXTARG();
 		if (opcode == LOAD_NAME) {
 			name = GETNAMEOBJ(oparg);
-			if (dictlookup(locals, getstringvalue(name)) != NULL)
+			if (dict2lookup(locals, name) != NULL)
 				*cur_instr = LOAD_LOCAL;
-			else if (!star_used)
-				*cur_instr = LOAD_GLOBAL;
+			else {
+				err_clear();
+				if (!star_used)
+					*cur_instr = LOAD_GLOBAL;
+			}
 		}
 	}
 	
