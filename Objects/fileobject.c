@@ -117,17 +117,20 @@ file_dealloc(f)
 	free((char *)f);
 }
 
-static void
+static int
 file_print(f, fp, flags)
 	fileobject *f;
 	FILE *fp;
 	int flags;
 {
 	fprintf(fp, "<%s file ", f->f_fp == NULL ? "closed" : "open");
-	printobject(f->f_name, fp, flags);
+	if (printobject(f->f_name, fp, flags) != 0)
+		return -1;
 	fprintf(fp, ", mode ");
-	printobject(f->f_mode, fp, flags);
+	if (printobject(f->f_mode, fp, flags) != 0)
+		return -1;
 	fprintf(fp, ">");
+	return 0;
 }
 
 static object *

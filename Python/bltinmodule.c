@@ -192,8 +192,10 @@ builtin_input(self, v)
 	int err;
 	object *m, *d;
 	flushline();
-	if (v != NULL)
-		printobject(v, out, PRINT_RAW);
+	if (v != NULL) {
+		if (printobject(v, out, PRINT_RAW) != 0)
+			return NULL;
+	}
 	m = add_module("__main__");
 	d = getmoduledict(m);
 	return run_file(in, "<stdin>", expr_input, d, d);
@@ -450,8 +452,10 @@ builtin_raw_input(self, v)
 {
 	FILE *out = sysgetfile("stdout", stdout);
 	flushline();
-	if (v != NULL)
-		printobject(v, out, PRINT_RAW);
+	if (v != NULL) {
+		if (printobject(v, out, PRINT_RAW) != 0)
+			return NULL;
+	}
 	return filegetline(sysget("stdin"), -1);
 }
 

@@ -85,7 +85,7 @@ meth_dealloc(m)
 	free((char *)m);
 }
 
-static void
+static int
 meth_print(m, fp, flags)
 	methodobject *m;
 	FILE *fp;
@@ -96,6 +96,7 @@ meth_print(m, fp, flags)
 	else
 		fprintf(fp, "<built-in method '%s' of some %s object>",
 			m->m_name, m->m_self->ob_type->tp_name);
+	return 0;
 }
 
 static object *

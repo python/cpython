@@ -120,13 +120,14 @@ getintvalue(op)
 
 /* Methods */
 
-static void
+static int
 int_print(v, fp, flags)
 	intobject *v;
 	FILE *fp;
 	int flags;
 {
 	fprintf(fp, "%ld", v->ob_ival);
+	return 0;
 }
 
 static object *

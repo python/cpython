@@ -98,7 +98,7 @@ float_buf_repr(buf, v)
 	}
 }
 
-static void
+static int
 float_print(v, fp, flags)
 	floatobject *v;
 	FILE *fp;
@@ -107,6 +107,7 @@ float_print(v, fp, flags)
 	char buf[100];
 	float_buf_repr(buf, v);
 	fputs(buf, fp);
+	return 0;
 }
 
 static object *

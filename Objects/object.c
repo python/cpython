@@ -61,77 +61,49 @@ newvarobject(tp, size)
 	return op;
 }
 
-int StopPrint; /* Flag to indicate printing must be stopped */
-
-static int prlevel;
-
-void
+int
 printobject(op, fp, flags)
 	object *op;
 	FILE *fp;
 	int flags;
 {
-	/* Hacks to make printing a long or recursive object interruptible */
-	/* XXX Interrupts should leave a more permanent error */
-	prlevel++;
-	if (!StopPrint && intrcheck()) {
-		fprintf(fp, "\n[print interrupted]\n");
-		StopPrint = 1;
+	if (intrcheck()) {
+		err_set(KeyboardInterrupt);
+		return -1;
 	}
-	if (!StopPrint) {
-		if (op == NULL) {
-			fprintf(fp, "<nil>");
-		}
-		else {
-			if (op->ob_refcnt <= 0)
-				fprintf(fp, "(refcnt %d):", op->ob_refcnt);
-			if (op->ob_type->tp_print == NULL) {
-				fprintf(fp, "<%s object at %lx>",
-					op->ob_type->tp_name, (long)op);
-			}
-			else {
-				(*op->ob_type->tp_print)(op, fp, flags);
-			}
-		}
+	if (op == NULL) {
+		fprintf(fp, "<nil>");
 	}
-	prlevel--;
-	if (prlevel == 0)
-		StopPrint = 0;
+	else {
+		if (op->ob_refcnt <= 0)
+			fprintf(fp, "(refcnt %d):", op->ob_refcnt);
+		if (op->ob_type->tp_print == NULL)
+			fprintf(fp, "<%s object at %lx>",
+				op->ob_type->tp_name, (long)op);
+		else
+			return (*op->ob_type->tp_print)(op, fp, flags);
+	}
+	return 0;
 }
 
 object *
 reprobject(v)
 	object *v;
 {
-	object *w = NULL;
-	/* Hacks to make converting a long or recursive object interruptible */
-	prlevel++;
-	if (!StopPrint && intrcheck()) {
-		StopPrint = 1;
+	if (intrcheck()) {
 		err_set(KeyboardInterrupt);
+		return NULL;
 	}
-	if (!StopPrint) {
-		if (v == NULL) {
-			w = newstringobject("<NULL>");
-		}
-		else if (v->ob_type->tp_repr == NULL) {
-			char buf[100];
-			sprintf(buf, "<%.80s object at %lx>",
-				v->ob_type->tp_name, (long)v);
-			w = newstringobject(buf);
-		}
-		else {
-			w = (*v->ob_type->tp_repr)(v);
-		}
-		if (StopPrint) {
-			XDECREF(w);
-			w = NULL;
-		}
+	if (v == NULL)
+		return newstringobject("<NULL>");
+	else if (v->ob_type->tp_repr == NULL) {
+		char buf[120];
+		sprintf(buf, "<%.80s object at %lx>",
+			v->ob_type->tp_name, (long)v);
+		return newstringobject(buf);
 	}
-	prlevel--;
-	if (prlevel == 0)
-		StopPrint = 0;
-	return w;
+	else
+		return (*v->ob_type->tp_repr)(v);
 }
 
 int
@@ -191,13 +163,14 @@ There is (and should be!) no way to create other objects of this type,
 so there is exactly one (which is indestructible, by the way).
 */
 
-static void
+static int
 none_print(op, fp, flags)
 	object *op;
 	FILE *fp;
 	int flags;
 {
 	fprintf(fp, "None");
+	return 0;
 }
 
 static object *
@@ -278,7 +251,8 @@ printrefs(fp)
 	fprintf(fp, "Remaining objects:\n");
 	for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
 		fprintf(fp, "[%d] ", op->ob_refcnt);
-		printobject(op, fp, 0);
+		if (printobject(op, fp, 0) != 0)
+			err_clear();
 		putc('\n', fp);
 	}
 }

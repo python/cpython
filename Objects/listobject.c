@@ -185,7 +185,7 @@ list_dealloc(op)
 	free((ANY *)op);
 }
 
-static void
+static int
 list_print(op, fp, flags)
 	listobject *op;
 	FILE *fp;
@@ -193,13 +193,14 @@ list_print(op, fp, flags)
 {
 	int i;
 	fprintf(fp, "[");
-	for (i = 0; i < op->ob_size && !StopPrint; i++) {
-		if (i > 0) {
+	for (i = 0; i < op->ob_size; i++) {
+		if (i > 0)
 			fprintf(fp, ", ");
-		}
-		printobject(op->ob_item[i], fp, flags);
+		if (printobject(op->ob_item[i], fp, flags) != 0)
+			return -1;
 	}
 	fprintf(fp, "]");
+	return 0;
 }
 
 object *
@@ -302,7 +303,7 @@ list_concat(a, bb)
 	size = a->ob_size + b->ob_size;
 	np = (listobject *) newlistobject(size);
 	if (np == NULL) {
-		return err_nomem();
+		return NULL;
 	}
 	for (i = 0; i < a->ob_size; i++) {
 		object *v = a->ob_item[i];
