@@ -7,10 +7,7 @@ import dl
 from test_support import verbose
 
 sharedlibs = [
-    # SunOS/Solaris
-    ('/usr/lib/libresolv.so', 'gethostent'),
-    # SGI IRIX
-    ('/usr/lib/libm.so', 'sin'),
+    ('/usr/lib/libc.so', 'getpid'),
     ]
 
 for s, func in sharedlibs:
