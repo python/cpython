@@ -336,6 +336,8 @@ init_common(int *argcp, char ***argvp, int embedded)
 			p = strrchr(app_wd, ':');
 			if ( p ) *p = 0;
 			chdir(app_wd);
+		} else {
+			fprintf(stderr, "Warning: No argv[0], cannot chdir to pythonhome\n");
 		}
 #endif
 #endif

@@ -97,10 +97,14 @@ PyMac_init_process_location(void)
 	info.processInfoLength = sizeof(ProcessInfoRec);
 	info.processName = NULL;
 	info.processAppSpec = &PyMac_ApplicationFSSpec;
-	if ( err=GetProcessInformation(&currentPSN, &info))
+	if ( err=GetProcessInformation(&currentPSN, &info)) {
+		fprintf(stderr, "GetProcessInformation failed: error %d\n", err);
 		return err;
-	if ( err=PyMac_GetFullPathname(&PyMac_ApplicationFSSpec, PyMac_ApplicationPath, PATHNAMELEN) )
+	}
+	if ( err=PyMac_GetFullPathname(&PyMac_ApplicationFSSpec, PyMac_ApplicationPath, PATHNAMELEN) ) {
+		fprintf(stderr, "PyMac_GetFullPathname failed for application: error %d\n", err);
 		return err;
+	}
 	applocation_inited = 1;
 	return 0;
 }
@@ -141,8 +145,10 @@ static pascal OSErr
 handle_open_app(const AppleEvent *theAppleEvent, AppleEvent *reply, refcontype refCon)
 {
 	#pragma unused (reply, refCon)
-#if 0
-	/* Test by Jack: would removing this facilitate debugging? */
+#if 1
+	/* Removing this facilitate debugging: you can start Python under CW and
+	 * then double-click a file to run it.
+	 */
 	got_one = 1;
 #endif
 	return get_missing_params(theAppleEvent);
@@ -232,11 +238,12 @@ event_loop(void)
 #if !TARGET_API_MAC_CARBON
 		SystemTask();
 #endif
-		ok = GetNextEvent(everyEvent, &event);
+		ok = WaitNextEvent(everyEvent, &event, 1, NULL);
 		if (ok && event.what == kHighLevelEvent) {
 			AEProcessAppleEvent(&event);
 		}
 	}
+	if (!got_one) fprintf(stderr, "Warning: no OAPP or ODOC AppleEvent received\n");
 }
 
 /* Get the argv vector, return argc */
