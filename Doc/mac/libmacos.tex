@@ -14,11 +14,10 @@ Note the capitalization of the module name; this is a historical
 artifact.
 
 \begin{datadesc}{runtimemodel}
-Either\code{'carbon'} or \code{'macho'}.  This
-signifies whether this Python uses the Mac OS X and Mac OS 9 compatible 
-CarbonLib style or the Mac OS
-X-only Mach-O style. In earlier versions of Python  the value could
-also be \code{'ppc'} for the classic Mac OS 8 runtime model.
+Always \code{'macho'}, from Python 2.4 on.
+In earlier versions of Python the value could
+also be \code{'ppc'} for the classic Mac OS 8 runtime model or
+\code{'carbon'} for the Mac OS 9 runtime model.
 \end{datadesc}
 
 \begin{datadesc}{linkmodel}
@@ -26,8 +25,9 @@ The way the interpreter has been linked. As extension modules may be
 incompatible between linking models, packages could use this information to give
 more decent error messages. The value is one of \code{'static'} for a
 statically linked Python, \code{'framework'} for Python in a Mac OS X framework,
-\code{'shared'} for Python in a standard unix shared library and
-\code{'cfm'} for the Mac OS 9-compatible Python.
+\code{'shared'} for Python in a standard unix shared library.
+Older Pythons could also have the value
+\code{'cfm'} for Mac OS 9-compatible Python.
 \end{datadesc}
 
 \begin{excdesc}{Error}
@@ -39,84 +39,16 @@ Symbolic names for all known error codes are defined in the standard
 module \refmodule{macerrors}.\refstmodindex{macerrors}
 \end{excdesc}
 
-\begin{funcdesc}{SetEventHandler}{handler}
-In the inner interpreter loop Python will occasionally check for events,
-unless disabled with \function{ScheduleParams()}. With this function you
-can pass a Python event-handler function that will be called if an event
-is available. The event is passed as parameter and the function should return
-non-zero if the event has been fully processed, otherwise event processing
-continues (by passing the event to the console window package, for instance).
-
-Call \function{SetEventHandler()} without a parameter to clear the
-event handler. Setting an event handler while one is already set is an
-error.
-
-Availability: MacPython-OS9.
-\end{funcdesc}
-
-\begin{funcdesc}{SchedParams}{\optional{doint\optional{, evtmask\optional{,
-                              besocial\optional{, interval\optional{,
-                              bgyield}}}}}}
-Influence the interpreter inner loop event handling. \var{Interval}
-specifies how often (in seconds, floating point) the interpreter
-should enter the event processing code. When true, \var{doint} causes
-interrupt (command-dot) checking to be done. \var{evtmask} tells the
-interpreter to do event processing for events in the mask (redraws,
-mouseclicks to switch to other applications, etc). The \var{besocial}
-flag gives other processes a chance to run. They are granted minimal
-runtime when Python is in the foreground and \var{bgyield} seconds per
-\var{interval} when Python runs in the background.
-
-All parameters are optional, and default to the current value. The return
-value of this function is a tuple with the old values of these options.
-Initial defaults are that all processing is enabled, checking is done every
-quarter second and the processor is given up for a quarter second when in the
-background.
-
-The most common use case is to call \code{SchedParams(0, 0)} to completely disable
-event handling in the interpreter mainloop.
-
-Availability: MacPython-OS9.
-\end{funcdesc}
-
-\begin{funcdesc}{HandleEvent}{ev}
-Pass the event record \var{ev} back to the Python event loop, or
-possibly to the handler for the \code{sys.stdout} window (based on the
-compiler used to build Python). This allows Python programs that do
-their own event handling to still have some command-period and
-window-switching capability.
-
-If you attempt to call this function from an event handler set through
-\function{SetEventHandler()} you will get an exception.
-
-Availability: MacPython-OS9.
-\end{funcdesc}
 
 \begin{funcdesc}{GetErrorString}{errno}
 Return the textual description of MacOS error code \var{errno}.
 \end{funcdesc}
 
-\begin{funcdesc}{splash}{resid}
-This function will put a splash window
-on-screen, with the contents of the DLOG resource specified by
-\var{resid}. Calling with a zero argument will remove the splash
-screen. This function is useful if you want an applet to post a splash screen
-early in initialization without first having to load numerous
-extension modules.
-
-Availability: MacPython-OS9.
-\end{funcdesc}
-
 \begin{funcdesc}{DebugStr}{message \optional{, object}}
-On Mac OS 9, drop to the low-level debugger with message \var{message}. The
-optional \var{object} argument is not used, but can easily be
-inspected from the debugger. On Mac OS X the string is simply printed
-to stderr.
-
-Note that you should use this function with extreme care: if no
-low-level debugger like MacsBug is installed this call will crash your
-system. It is intended mainly for developers of Python extension
-modules.
+On Mac OS X the string is simply printed to stderr (on older
+Mac OS systems more elaborate functionality was available),
+but it provides a convenient location to attach a breakpoint
+in a low-level debugger like \program{gdb}.
 \end{funcdesc}
 
 \begin{funcdesc}{SysBeep}{}
@@ -155,6 +87,4 @@ or when the current interpreter is not running from a fullblown application
 bundle. A script runs from an application bundle either when it has been
 started with \program{pythonw} instead of \program{python} or when running 
 as an applet.
-
-On Mac OS 9 the method always returns \code{True}.
 \end{funcdesc}

@@ -1,36 +1,3 @@
-\section{\module{mac} ---
-         Implementations for the \module{os} module}
-
-\declaremodule{builtin}{mac}
-  \platform{Mac}
-\modulesynopsis{Implementations for the \module{os} module.}
-
-
-This module implements the Mac OS 9 operating system dependent functionality
-provided by the standard module \module{os}\refstmodindex{os}.  It is
-best accessed through the \module{os} module. This module is only available in
-MacPython-OS9, on MacPython-OSX \module{posix} is used.
-
-The following functions are available in this module:
-\function{chdir()},
-\function{close()},
-\function{dup()},
-\function{fdopen()},
-\function{getcwd()},
-\function{lseek()},
-\function{listdir()},
-\function{mkdir()},
-\function{open()},
-\function{read()},
-\function{rename()},
-\function{rmdir()},
-\function{stat()},
-\function{sync()},
-\function{unlink()},
-\function{write()},
-as well as the exception \exception{error}. Note that the times
-returned by \function{stat()} are floating-point values, like all time
-values in MacPython-OS9.
 
 \section{\module{macpath} ---
          MacOS path manipulation functions}
@@ -41,9 +8,10 @@ values in MacPython-OS9.
 \modulesynopsis{MacOS path manipulation functions.}
 
 
-This module is the Macintosh implementation of the \module{os.path}
-module.  It is most portably accessed as
-\module{os.path}\refstmodindex{os.path}.  Refer to the
+This module is the Mac OS 9 (and earlier) implementation of the \module{os.path}
+module. It can be used to manipulate old-style Macintosh pathnames on Mac OS
+X (or any other platform).
+Refer to the
 \citetitle[../lib/lib.html]{Python Library Reference} for
 documentation of \module{os.path}.
 
