@@ -209,15 +209,13 @@ complicated to explain to such users, and if they make a mistake, it's
 difficult to provide helpful feedback to them.
 
 PEP 292 adds a \class{Template} class to the \module{string} module
-that uses \samp{\$} to indicate a substitution.  \class{Template} is a
-subclass of the built-in Unicode type, so the result is always a
-Unicode string:
+that uses \samp{\$} to indicate a substitution:
 
 \begin{verbatim}
 >>> import string
 >>> t = string.Template('$page: $title')
 >>> t.substitute({'page':2, 'title': 'The Best of Times'})
-u'2: The Best of Times'
+'2: The Best of Times'
 \end{verbatim}
 
 % $ Terminate $-mode for Emacs
@@ -229,7 +227,7 @@ method that ignores missing keys:
 \begin{verbatim}
 >>> t = string.Template('$page: $title')
 >>> t.safe_substitute({'page':3})
-u'3: $title'
+'3: $title'
 \end{verbatim}
 
 % $ Terminate math-mode for Emacs
