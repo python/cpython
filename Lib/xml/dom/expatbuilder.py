@@ -334,7 +334,7 @@ class ExpatBuilder:
         node = self.document.createComment(data)
         _append_child(self.curNode, node)
         if self._filter and self._filter.acceptNode(node) == FILTER_REJECT:
-            curNode.removeChild(node)
+            self.curNode.removeChild(node)
 
     def start_cdata_section_handler(self):
         self._cdata = True
