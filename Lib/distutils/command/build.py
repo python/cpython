@@ -15,10 +15,6 @@ class Build (Command):
     options = [('basedir=', 'b', "base directory for build library"),
                ('libdir=', 'l', "directory for platform-shared files"),
                ('platdir=', 'p', "directory for platform-specific files"),
-
-               # Flags for 'build_py'
-               ('compile-py', None, "compile .py to .pyc"),
-               ('optimize-py', None, "compile .py to .pyo (optimized)"),
               ]
 
     def set_default_options (self):
@@ -27,9 +23,6 @@ class Build (Command):
         # (unless overridden by the user or client)
         self.libdir = None
         self.platdir = None
-
-        self.compile_py = 1
-        self.optimize_py = 1
 
     def set_final_options (self):
         # 'libdir' and 'platdir' just default to 'lib' and 'plat' under

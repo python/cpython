@@ -43,6 +43,9 @@ class Install (Command):
                ('install-html=', None, "directory for HTML documentation"),
                ('install-info=', None, "directory for GNU info files"),
                
+               # Flags for 'build_py'
+               ('compile-py', None, "compile .py to .pyc"),
+               ('optimize-py', None, "compile .py to .pyo (optimized)"),
               ]
 
     def set_default_options (self):
@@ -73,6 +76,9 @@ class Install (Command):
         self.install_man = None
         self.install_html = None
         self.install_info = None
+
+        self.compile_py = 1
+        self.optimize_py = 1
 
 
     def set_final_options (self):
