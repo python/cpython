@@ -1239,11 +1239,11 @@ comint believe the user typed this string so that
   "Watch output for Python prompt and exec next file waiting in queue.
 This function is appropriate for `comint-output-filter-functions'."
   ;; TBD: this should probably use split-string
-  (pop-to-buffer (current-buffer))
   (when (and (or (string-equal string ">>> ")
 		 (and (>= (length string) 5)
 		      (string-equal (substring string -5) "\n>>> ")))
 	     py-file-queue)
+    (pop-to-buffer (current-buffer))
     (py-safe (delete-file (car py-file-queue)))
     (setq py-file-queue (cdr py-file-queue))
     (if py-file-queue
