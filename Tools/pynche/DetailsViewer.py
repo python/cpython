@@ -85,7 +85,7 @@ class DetailsViewer:
         # color ties
         frame = self.__frame = Frame(root)
         frame.pack(expand=YES, fill=X)
-        self.__l1 = Label(frame, text='Color Ties:')
+        self.__l1 = Label(frame, text='Color Variation Ties:')
         self.__l1.grid(row=0, column=0, columnspan=3, sticky=E)
         self.__rvar = IntVar()
         self.__rvar.set(4)
@@ -146,10 +146,10 @@ class DetailsViewer:
         if tie in (0, 1, 2, 4):
             text = ''
         else:
-            text = '(%s)' % {3: 'Cyan',
-                             5: 'Magenta',
-                             6: 'Yellow',
-                             7: 'Grey'}[tie]
+            text = '(= %s Level)' % {3: 'Cyan',
+                                     5: 'Magenta',
+                                     6: 'Yellow',
+                                     7: 'Grey'}[tie]
         self.__l2.configure(text=text)
 
     def __quit(self, event=None):
