@@ -3,6 +3,19 @@
 import shutil
 import tempfile
 
+from distutils import log
+
+
+class LoggingSilencer(object):
+
+    def setUp(self):
+        super(LoggingSilencer, self).setUp()
+        self.threshold = log.set_threshold(log.FATAL)
+
+    def tearDown(self):
+        log.set_threshold(self.threshold)
+        super(LoggingSilencer, self).tearDown()
+
 
 class TempdirManager(object):
     """Mix-in class that handles temporary directories for test cases.
