@@ -406,13 +406,13 @@ PyErr_Format(PyObject *exception, const char *format, ...)
 				;
 			switch (*f) {
 			case 'c':
-				va_arg(vargs, int);
+				(void) va_arg(vargs, int);
 				/* fall through... */
 			case '%':
 				n++;
 				break;
 			case 'd': case 'i': case 'x':
-				va_arg(vargs, int);
+				(void) va_arg(vargs, int);
 				/* 20 bytes should be enough to hold a 64-bit
 				   integer */
 				n = n + 20;
