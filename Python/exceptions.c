@@ -702,29 +702,35 @@ SyntaxError__init__(PyObject *self, PyObject *args)
     }
     if (lenargs == 2) {
 	PyObject *info = PySequence_GetItem(args, 1);
-	PyObject *filename, *lineno, *offset, *text;
+	PyObject *filename = NULL, *lineno = NULL;
+	PyObject *offset = NULL, *text = NULL;
 	int status = 1;
 
 	if (!info)
 	    goto finally;
 
 	filename = PySequence_GetItem(info, 0);
-	lineno = PySequence_GetItem(info, 1);
-	offset = PySequence_GetItem(info, 2);
-	text = PySequence_GetItem(info, 3);
-
-	Py_DECREF(info);
-
-	if (filename && lineno && offset && text) {
-	    status = PyObject_SetAttrString(self, "filename", filename) ||
-		PyObject_SetAttrString(self, "lineno", lineno) ||
-		PyObject_SetAttrString(self, "offset", offset) ||
-		PyObject_SetAttrString(self, "text", text);
+	if (filename != NULL) {
+	    lineno = PySequence_GetItem(info, 1);
+	    if (lineno != NULL) {
+		offset = PySequence_GetItem(info, 2);
+		if (offset != NULL) {
+		    text = PySequence_GetItem(info, 3);
+		    if (text != NULL) {
+			status =
+			    PyObject_SetAttrString(self, "filename", filename)
+			    || PyObject_SetAttrString(self, "lineno", lineno)
+			    || PyObject_SetAttrString(self, "offset", offset)
+			    || PyObject_SetAttrString(self, "text", text);
+			Py_DECREF(text);
+		    }
+		    Py_DECREF(offset);
+		}
+		Py_DECREF(lineno);
+	    }
+	    Py_DECREF(filename);
 	}
-	Py_XDECREF(filename);
-	Py_XDECREF(lineno);
-	Py_XDECREF(offset);
-	Py_XDECREF(text);
+	Py_DECREF(info);
 
 	if (status)
 	    goto finally;
