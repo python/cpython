@@ -49,7 +49,7 @@ first place (otherwise the \pytype{FSSpec} object for the file itself
 is returned).
 \end{funcdesc}
 
-\begin{funcdesc}{StandardGetFile}{\optional{type, ...}}
+\begin{funcdesc}{StandardGetFile}{\optional{type, \moreargs}}
 Present the user with a standard ``open input file''
 dialog. Optionally, you can pass up to four 4-character file types to limit
 the files the user can choose from. The function returns an \pytype{FSSpec}
@@ -57,12 +57,12 @@ object and a flag indicating that the user completed the dialog
 without cancelling.
 \end{funcdesc}
 
-\begin{funcdesc}{PromptGetFile}{prompt\optional{, type, ...}}
+\begin{funcdesc}{PromptGetFile}{prompt\optional{, type, \moreargs}}
 Similar to \function{StandardGetFile()} but allows you to specify a
 prompt.
 \end{funcdesc}
 
-\begin{funcdesc}{StandardPutFile}{prompt, \optional{default}}
+\begin{funcdesc}{StandardPutFile}{prompt\optional{, default}}
 Present the user with a standard ``open output file''
 dialog. \var{prompt} is the prompt string, and the optional
 \var{default} argument initializes the output file name. The function
@@ -187,7 +187,7 @@ is returned.
 An interface to the \C{} routine \cfunction{GetAliasInfo()}.
 \end{methoddesc}
 
-\begin{methoddesc}[Alias]{Update}{file, \optional{file2}}
+\begin{methoddesc}[Alias]{Update}{file\optional{, file2}}
 Update the alias to point to the \var{file} given. If \var{file2} is
 present a relative alias will be created.
 \end{methoddesc}
