@@ -663,7 +663,7 @@ class HTTP:
 
     _connection_class = HTTPConnection
 
-    def __init__(self, host='', port=None, **x509):
+    def __init__(self, host='', port=None):
         "Provide a default host, since the superclass requires one."
 
         # some joker passed 0 explicitly, meaning default port
@@ -673,18 +673,19 @@ class HTTP:
         # Note that we may pass an empty string as the host; this will throw
         # an error when we attempt to connect. Presumably, the client code
         # will call connect before then, with a proper host.
-        self._conn = self._connection_class(host, port)
-        # set up delegation to flesh out interface
-        self.send = self._conn.send
-        self.putrequest = self._conn.putrequest
-        self.endheaders = self._conn.endheaders
-        self._conn._http_vsn = self._http_vsn
-        self._conn._http_vsn_str = self._http_vsn_str
+        self._setup(self._connection_class(host, port))
 
-        # we never actually use these for anything, but we keep them here for
-        # compatibility with post-1.5.2 CVS.
-        self.key_file = x509.get('key_file')
-        self.cert_file = x509.get('cert_file')
+    def _setup(self, conn):
+        self._conn = conn
+
+        # set up delegation to flesh out interface
+        self.send = conn.send
+        self.putrequest = conn.putrequest
+        self.endheaders = conn.endheaders
+        self.set_debuglevel = conn.set_debuglevel
+
+        conn._http_vsn = self._http_vsn
+        conn._http_vsn_str = self._http_vsn_str
 
         self.file = None
 
@@ -694,9 +695,6 @@ class HTTP:
         if host is not None:
             self._conn._set_hostport(host, port)
         self._conn.connect()
-
-    def set_debuglevel(self, debuglevel):
-        self._conn.set_debuglevel(debuglevel)
 
     def getfile(self):
         "Provide a getfile, since the superclass' does not use this concept."
@@ -754,6 +752,19 @@ if hasattr(socket, 'ssl'):
         """
 
         _connection_class = HTTPSConnection
+
+        def __init__(self, host='', port=None, **x509):
+            # provide a default host, pass the X509 cert info
+
+            # urf. compensate for bad input.
+            if port == 0:
+                port = None
+            self._setup(self._connection_class(host, port, **x509))
+
+            # we never actually use these for anything, but we keep them
+            # here for compatibility with post-1.5.2 CVS.
+            self.key_file = x509.get('key_file')
+            self.cert_file = x509.get('cert_file')
 
 
 class HTTPException(Exception):
