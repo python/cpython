@@ -2,6 +2,8 @@
 
 Implements the Distutils 'build_scripts' command."""
 
+# This module should be kept compatible with Python 1.5.2.
+
 __revision__ = "$Id$"
 
 import sys, os, re

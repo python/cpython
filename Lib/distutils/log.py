@@ -1,5 +1,7 @@
 """A simple log mechanism styled after PEP 282."""
 
+# This module should be kept compatible with Python 1.5.2.
+
 # The class here is styled after PEP 282 so that it could later be
 # replaced with a standard Python logging implementation.
 

@@ -3,10 +3,11 @@
 Contains MSVCCompiler, an implementation of the abstract CCompiler class
 for the Microsoft Visual Studio."""
 
-
 # Written by Perry Stoll
 # hacked by Robin Becker and Thomas Heller to do a better job of
 #   finding DevStudio (through the registry)
+
+# This module should be kept compatible with Python 1.5.2.
 
 __revision__ = "$Id$"
 

@@ -6,6 +6,8 @@ indirectly provides the Distribution and Command classes, although they are
 really defined in distutils.dist and distutils.cmd.
 """
 
+# This module should be kept compatible with Python 1.5.2.
+
 __revision__ = "$Id$"
 
 import sys, os

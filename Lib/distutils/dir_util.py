@@ -2,6 +2,8 @@
 
 Utility functions for manipulating directories and directory trees."""
 
+# This module should be kept compatible with Python 1.5.2.
+
 __revision__ = "$Id$"
 
 import os
