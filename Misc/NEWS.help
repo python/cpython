@@ -11,12 +11,12 @@ snapshot:
 
     http://docutils.sf.net/docutils-snapshot.tgz
 
-Docutils works with Python 2.1 or newer (including 2.3).
+Docutils works with Python 2.2 or newer.
 
 To process NEWS into NEWS.html, first install Docutils, and then run
 this command:
 
-    python .../docutils/tools/html.py NEWS >NEWS.html
+    python .../docutils/tools/rst2html.py NEWS NEWS.html
 
 Here ".../docutils" is the directory into which the above snapshot was
 extracted.  (I hope this recipe will change for the better.)
