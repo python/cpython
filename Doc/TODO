@@ -7,8 +7,13 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
   mentioned in the Extending & Embedding manual, section 1.1; problem
   reported by Clay Spence <cspence@sarnoff.com>.)
 
+* Complete the "Matching vs. Searching" subsection in the re module
+  section.
+
 * Update the pickle documentation to describe all of the current
   behavior; only a subset is described.  __reduce__, etc.
+
+* Update the code module documentation.
 
 * In the indexes, some subitem entries are separated from the item
   entries by column- or page-breaks.  Reported by Lorenzo M. Catucci
