@@ -53,7 +53,8 @@ PERFORMANCE OF THIS SOFTWARE.
    SHORT_EXT	-- short extension for dynamic module, e.g. ".so"
    LONG_EXT	-- long extension, e.g. "module.so"
    hpux		-- HP-UX Dynamic Linking - defined by the compiler
-   __NetBSD__	-- NetBSD shared libraries (not quite SVR4 compatible)
+   __NetBSD__	-- NetBSD shared libraries
+		   (assuming dlerror() was introduced between 1.2 and 1.3)
    __FreeBSD__	-- FreeBSD shared libraries
 
    (The other WITH_* symbols are used only once, to set the
@@ -88,7 +89,11 @@ typedef int (* APIENTRY dl_funcptr)();
 #define LONG_EXT ".dll"
 #endif
 
-#if defined(__NetBSD__)
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+
+#if defined(__NetBSD__) && (NetBSD < 199712)
 #define DYNAMIC_LINK
 #define USE_SHLIB
 
@@ -157,7 +162,7 @@ static void aix_loaderror(char *);
 #ifdef USE_SHLIB
 #include <sys/types.h>
 #include <sys/stat.h>
-#if defined(__NetBSD__)
+#if defined(__NetBSD__) && (NetBSD < 199712)
 #include <nlist.h>
 #include <link.h>
 #else
