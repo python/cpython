@@ -355,7 +355,7 @@ Extension modules
 - Fixed bug #470582: sre module would return a tuple (None, 'a', 'ab')
   when applying the regular expression '^((a)c)?(ab)$' on 'ab'. It now
   returns (None, None, 'ab'), as expected. Also fixed handling of
-  lastindex/lastgroup match attributes in a similar cases. For example,
+  lastindex/lastgroup match attributes in similar cases. For example,
   when running the expression r'(a)(b)?b' over 'ab', lastindex must be
   1, not 2.
 
@@ -557,6 +557,10 @@ Library
 
 - New pdb command `pp' which is like `p' except that it pretty-prints
   the value of its expression argument.
+
+- Now bdist_rpm distutils command understands a verify_script option in
+  the config file, including the contents of the referred filename in
+  the "%verifyscript" section of the rpm spec file.
 
 Tools/Demos
 -----------
