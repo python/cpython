@@ -1,6 +1,8 @@
 #! /usr/bin/env python
 
-# print md5 checksum for files
+"""Python utility to print MD5 checksums of argument files.
+"""
+
 
 bufsize = 8096
 fnfilter = None
@@ -17,22 +19,19 @@ file ...  : files to sum; '-' or no files means stdin
 
 import sys
 import os
+import getopt
 import md5
-import regsub
-
-StringType = type('')
-FileType = type(sys.stdin)
 
 def sum(*files):
     sts = 0
-    if files and type(files[-1]) == FileType:
+    if files and isinstance(files[-1], file):
         out, files = files[-1], files[:-1]
     else:
         out = sys.stdout
-    if len(files) == 1 and type(files[0]) != StringType:
+    if len(files) == 1 and not isinstance(files[0], str):
         files = files[0]
     for f in files:
-        if type(f) == StringType:
+        if isinstance(f, str):
             if f == '-':
                 sts = printsumfp(sys.stdin, '<stdin>', out) or sts
             else:
@@ -41,19 +40,19 @@ def sum(*files):
             sts = sum(f, out) or sts
     return sts
 
-def printsum(file, out = sys.stdout):
+def printsum(filename, out = sys.stdout):
     try:
-        fp = open(file, rmode)
+        fp = open(filename, rmode)
     except IOError, msg:
-        sys.stderr.write('%s: Can\'t open: %s\n' % (file, msg))
+        sys.stderr.write('%s: Can\'t open: %s\n' % (filename, msg))
         return 1
     if fnfilter:
-        file = fnfilter(file)
-    sts = printsumfp(fp, file, out)
+        filename = fnfilter(filename)
+    sts = printsumfp(fp, filename, out)
     fp.close()
     return sts
 
-def printsumfp(fp, file, out = sys.stdout):
+def printsumfp(fp, filename, out = sys.stdout):
     m = md5.new()
     try:
         while 1:
@@ -61,20 +60,13 @@ def printsumfp(fp, file, out = sys.stdout):
             if not data: break
             m.update(data)
     except IOError, msg:
-        sys.stderr.write('%s: I/O error: %s\n' % (file, msg))
+        sys.stderr.write('%s: I/O error: %s\n' % (filename, msg))
         return 1
-    out.write('%s %s\n' % (hexify(m.digest()), file))
+    out.write('%s %s\n' % (m.hexdigest(), filename))
     return 0
-
-def hexify(s):
-    res = ''
-    for c in s:
-        res = res + '%02x' % ord(c)
-    return res
 
 def main(args = sys.argv[1:], out = sys.stdout):
     global fnfilter, rmode, bufsize
-    import getopt
     try:
         opts, args = getopt.getopt(args, 'blts:')
     except getopt.error, msg:
@@ -89,7 +81,8 @@ def main(args = sys.argv[1:], out = sys.stdout):
             rmode = 'r'
         if o == '-s':
             bufsize = int(a)
-    if not args: args = ['-']
+    if not args:
+        args = ['-']
     return sum(args, out)
 
 if __name__ == '__main__' or __name__ == sys.argv[0]:
