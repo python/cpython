@@ -391,7 +391,10 @@ class Thread(_Verbose):
                     self._note("%s.__bootstrap(): normal return", self)
         finally:
             self.__stop()
-            self.__delete()
+            try:
+                self.__delete()
+            except:
+                pass
 
     def __stop(self):
         self.__block.acquire()
