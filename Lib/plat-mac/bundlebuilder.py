@@ -284,6 +284,7 @@ if %(standalone)s:
     os.environ["PYTHONHOME"] = resdir
 os.environ["PYTHONEXECUTABLE"] = executable
 os.environ["DYLD_LIBRARY_PATH"] = libdir
+os.environ["DYLD_FRAMEWORK_PATH"] = libdir
 os.execve(executable, sys.argv, os.environ)
 """
 
@@ -297,6 +298,18 @@ import argvemulator, os
 argvemulator.ArgvCollector().mainloop()
 execfile(os.path.join(os.path.split(__file__)[0], "%(realmainprogram)s"))
 """
+
+#
+# When building a standalone app with Python.framework, we need to copy
+# a subset from Python.framework to the bundle. The following list
+# specifies exactly what items we'll copy.
+#
+PYTHONFRAMEWORKGOODIES = [
+    "Python",  # the Python core library
+    "Resources/English.lproj",
+    "Resources/Info.plist",
+    "Resources/version.plist",
+]
 
 
 class AppBuilder(BundleBuilder):
@@ -331,10 +344,10 @@ class AppBuilder(BundleBuilder):
 
     # If True, build standalone app.
     standalone = 0
-    
+
     # If set, use this for #! lines in stead of sys.executable
     python = None
-    
+
     # If True, add a real main program that emulates sys.argv before calling
     # mainprogram
     argv_emulation = 0
@@ -391,6 +404,9 @@ class AppBuilder(BundleBuilder):
             self.plist.NSMainNibFile = self.nibname
             if not hasattr(self.plist, "NSPrincipalClass"):
                 self.plist.NSPrincipalClass = "NSApplication"
+
+        if self.standalone and "Python.framework" in sys.exec_prefix:
+            self.addPythonFramework()
 
         BundleBuilder.setup(self)
 
@@ -473,6 +489,20 @@ class AppBuilder(BundleBuilder):
 
         if self.missingModules or self.maybeMissingModules:
             self.reportMissing()
+
+    def addPythonFramework(self):
+        # If we're building a standalone app with Python.framework,
+        # include a minimal subset of Python.framework
+        frameworkpath = sys.exec_prefix[:sys.exec_prefix.find(
+            "Python.framework") + len("Python.framework")]
+        version = sys.version[:3]
+        frameworkpath = pathjoin(frameworkpath, "Versions", version)
+        destbase = pathjoin("Contents", "Frameworks", "Python.framework",
+                            "Versions", version)
+        for item in PYTHONFRAMEWORKGOODIES:
+            src = pathjoin(frameworkpath, item)
+            dst = pathjoin(destbase, item)
+            self.files.append((src, dst))
 
     def addPythonModules(self):
         self.message("Adding Python modules", 1)
