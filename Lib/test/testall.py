@@ -19,6 +19,7 @@ tests = ['test_grammar',
 	 'test_nis',
 	 'test_pwd',
 	 'test_rgbimg',
+	 'test_select',
 	 ]
 
 if __name__ == '__main__':
