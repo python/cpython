@@ -120,15 +120,17 @@ def joinfields(words, sep = ' '):
 	return res[len(sep):]
 
 # Find substring, raise exception if not found
-def index(s, sub, i = 0):
-	res = find(s, sub, i)
+def index(s, sub, i = 0, last=None):
+	if last == None: last = len(s)
+	res = find(s, sub, i, last)
 	if res < 0:
 		raise ValueError, 'substring not found in string.index'
 	return res
 
 # Find last substring, raise exception if not found
-def rindex(s, sub, i = 0):
-	res = rfind(s, sub, i)
+def rindex(s, sub, i = 0, last=None):
+	if last == None: last = len(s)
+	res = rfind(s, sub, i, last)
 	if res < 0:
 		raise ValueError, 'substring not found in string.index'
 	return res
@@ -149,20 +151,34 @@ def count(s, sub, i = 0):
 	return r
 
 # Find substring, return -1 if not found
-def find(s, sub, i = 0):
-	if i < 0: i = max(0, i + len(s))
+def find(s, sub, i = 0, last=None):
+	Slen = len(s)  # cache this value, for speed
+	if last == None:
+		last = Slen
+	elif last < 0:
+		last = max(0, last + Slen)
+	elif last > Slen:
+		last = Slen
+	if i < 0: i = max(0, i + Slen)
 	n = len(sub)
-	m = len(s) + 1 - n
+	m = last + 1 - n
 	while i < m:
 		if sub == s[i:i+n]: return i
 		i = i+1
 	return -1
 
 # Find last substring, return -1 if not found
-def rfind(s, sub, i = 0):
-	if i < 0: i = max(0, i + len(s))
+def rfind(s, sub, i = 0, last=None):
+	Slen = len(s)  # cache this value, for speed
+	if last == None:
+		last = Slen
+	elif last < 0:
+		last = max(0, last + Slen)
+	elif last > Slen:
+		last = Slen
+	if i < 0: i = max(0, i + Slen)
 	n = len(sub)
-	m = len(s) + 1 - n
+	m = last + 1 - n
 	r = -1
 	while i < m:
 		if sub == s[i:i+n]: r = i
