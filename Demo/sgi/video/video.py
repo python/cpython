@@ -95,10 +95,9 @@ def main():
 		af = open(audiofilename, 'r')
 		spkr = openspkr()
 		afskip = 0
-		if len(sys.argv) > 3:
-			afskip = eval(sys.argv[3])
-		if afskip > 0:
-			af.seek(afskip)
+		if args[2:]:
+			afskip = eval(args[2])
+		af.seek(afskip)
 	else:
 		af, spkr = None, None
 	foreground()
