@@ -34,8 +34,6 @@ dir() got multiple values for keyword argument 'b'
 3 512 1
 3
 3
-unbound method method() must be called with Foo instance as first argument (got int instance instead)
-unbound method method() must be called with Foo instance as first argument (got int instance instead)
 za () {} -> za() takes exactly 1 argument (0 given)
 za () {'a': 'aa'} -> ok za aa B D E V a
 za () {'d': 'dd'} -> za() got an unexpected keyword argument 'd'
