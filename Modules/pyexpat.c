@@ -1332,24 +1332,36 @@ xmlparse_getattr(xmlparseobject *self, char *name)
         }
     }
 
+#define APPEND(list, str)				\
+	do {						\
+		PyObject *o = PyString_FromString(str);	\
+		if (o != NULL)				\
+			PyList_Append(list, o);		\
+		Py_XDECREF(o);				\
+	} while (0)
+
     if (strcmp(name, "__members__") == 0) {
         int i;
         PyObject *rc = PyList_New(0);
         for (i = 0; handler_info[i].name != NULL; i++) {
-            PyList_Append(rc, get_handler_name(&handler_info[i]));
+            PyObject *o = get_handler_name(&handler_info[i]);
+            if (o != NULL)
+                PyList_Append(rc, o);
+            Py_XDECREF(o);
         }
-        PyList_Append(rc, PyString_FromString("ErrorCode"));
-        PyList_Append(rc, PyString_FromString("ErrorLineNumber"));
-        PyList_Append(rc, PyString_FromString("ErrorColumnNumber"));
-        PyList_Append(rc, PyString_FromString("ErrorByteIndex"));
-        PyList_Append(rc, PyString_FromString("buffer_size"));
-        PyList_Append(rc, PyString_FromString("buffer_text"));
-        PyList_Append(rc, PyString_FromString("buffer_used"));
-        PyList_Append(rc, PyString_FromString("ordered_attributes"));
-        PyList_Append(rc, PyString_FromString("returns_unicode"));
-        PyList_Append(rc, PyString_FromString("specified_attributes"));
-        PyList_Append(rc, PyString_FromString("intern"));
+        APPEND(rc, "ErrorCode");
+        APPEND(rc, "ErrorLineNumber");
+        APPEND(rc, "ErrorColumnNumber");
+        APPEND(rc, "ErrorByteIndex");
+        APPEND(rc, "buffer_size");
+        APPEND(rc, "buffer_text");
+        APPEND(rc, "buffer_used");
+        APPEND(rc, "ordered_attributes");
+        APPEND(rc, "returns_unicode");
+        APPEND(rc, "specified_attributes");
+        APPEND(rc, "intern");
 
+#undef APPEND
         return rc;
     }
     return Py_FindMethod(xmlparse_methods, (PyObject *)self, name);
