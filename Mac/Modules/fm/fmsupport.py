@@ -18,6 +18,13 @@ from macsupport import *
 
 # Create the type objects
 
+class RevVarInputBufferType(VarInputBufferType):
+	def passInput(self, name):
+		return "%s__len__, %s__in__" % (name, name)
+
+TextBuffer = RevVarInputBufferType()
+
+
 includestuff = includestuff + """
 #ifdef WITHOUT_FRAMEWORKS
 #include <Fonts.h>
