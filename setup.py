@@ -345,7 +345,7 @@ class PyBuildExt(build_ext):
             locale_extra_link_args = ['-framework', 'CoreFoundation']
         else:
             locale_extra_link_args = []
-        
+
 
         exts.append( Extension('_locale', ['_localemodule.c'],
                                libraries=locale_libs,

@@ -66,9 +66,9 @@ def seas():
     stdscr.addch(14, 1, ord('N'))
     stdscr.addch(16, 1, ord("'"))
     stdscr.addch(18, 1, ord('S'))
-    
+
     return
-    
+
 def greet():
     stdscr.addch(3, 5, ord('G'))
     stdscr.addch(5, 5, ord('R'))
@@ -300,7 +300,7 @@ def blinkit():
             break
 
         treescrn8.touchwin()
-    
+
     # ALL ON
     treescrn.overlay(treescrn8)
     treescrn8.refresh()
@@ -347,10 +347,10 @@ def reindeer():
             else:
                 dotdeer0.addch(y_pos, x_pos, ord('*'))
                 dotdeer0.refresh()
-		w_del_msg.refresh()
-		dotdeer0.erase()
-		dotdeer0.refresh()
-		w_del_msg.refresh()
+                w_del_msg.refresh()
+                dotdeer0.erase()
+                dotdeer0.refresh()
+                w_del_msg.refresh()
 
     x_pos = 58
 
@@ -360,76 +360,76 @@ def reindeer():
         w_del_msg.refresh()
 
         for looper in range(0, 4):
-	    deer_step(lildeer3, y_pos, x_pos)
-	    deer_step(lildeer2, y_pos, x_pos)
-	    deer_step(lildeer1, y_pos, x_pos)
-	    deer_step(lildeer2, y_pos, x_pos)
-	    deer_step(lildeer3, y_pos, x_pos)
+            deer_step(lildeer3, y_pos, x_pos)
+            deer_step(lildeer2, y_pos, x_pos)
+            deer_step(lildeer1, y_pos, x_pos)
+            deer_step(lildeer2, y_pos, x_pos)
+            deer_step(lildeer3, y_pos, x_pos)
 
-	    lildeer0.touchwin()
-	    lildeer0.refresh()
-	    w_del_msg.refresh()
+            lildeer0.touchwin()
+            lildeer0.refresh()
+            w_del_msg.refresh()
 
-	    x_pos -= 2
+            x_pos -= 2
 
     x_pos = 35
 
     for y_pos in range(5, 10):
 
-	middeer0.touchwin()
-	middeer0.refresh()
-	w_del_msg.refresh()
+        middeer0.touchwin()
+        middeer0.refresh()
+        w_del_msg.refresh()
 
         for looper in range(0, 2):
-	    deer_step(middeer3, y_pos, x_pos)
-	    deer_step(middeer2, y_pos, x_pos)
-	    deer_step(middeer1, y_pos, x_pos)
-	    deer_step(middeer2, y_pos, x_pos)
-	    deer_step(middeer3, y_pos, x_pos)
+            deer_step(middeer3, y_pos, x_pos)
+            deer_step(middeer2, y_pos, x_pos)
+            deer_step(middeer1, y_pos, x_pos)
+            deer_step(middeer2, y_pos, x_pos)
+            deer_step(middeer3, y_pos, x_pos)
 
-	    middeer0.touchwin()
-	    middeer0.refresh()
-	    w_del_msg.refresh()
+            middeer0.touchwin()
+            middeer0.refresh()
+            w_del_msg.refresh()
 
-	    x_pos -= 3
+            x_pos -= 3
 
     look_out(300)
 
     y_pos = 1
 
     for x_pos in range(8, 16):
-	deer_step(bigdeer4, y_pos, x_pos)
-	deer_step(bigdeer3, y_pos, x_pos)
-	deer_step(bigdeer2, y_pos, x_pos)
-	deer_step(bigdeer1, y_pos, x_pos)
-	deer_step(bigdeer2, y_pos, x_pos)
-	deer_step(bigdeer3, y_pos, x_pos)
-	deer_step(bigdeer4, y_pos, x_pos)
-	deer_step(bigdeer0, y_pos, x_pos)
+        deer_step(bigdeer4, y_pos, x_pos)
+        deer_step(bigdeer3, y_pos, x_pos)
+        deer_step(bigdeer2, y_pos, x_pos)
+        deer_step(bigdeer1, y_pos, x_pos)
+        deer_step(bigdeer2, y_pos, x_pos)
+        deer_step(bigdeer3, y_pos, x_pos)
+        deer_step(bigdeer4, y_pos, x_pos)
+        deer_step(bigdeer0, y_pos, x_pos)
 
     x_pos -= 1
 
     for looper in range(0, 6):
-	deer_step(lookdeer4, y_pos, x_pos)
-	deer_step(lookdeer3, y_pos, x_pos)
-	deer_step(lookdeer2, y_pos, x_pos)
-	deer_step(lookdeer1, y_pos, x_pos)
-	deer_step(lookdeer2, y_pos, x_pos)
-	deer_step(lookdeer3, y_pos, x_pos)
-	deer_step(lookdeer4, y_pos, x_pos)
+        deer_step(lookdeer4, y_pos, x_pos)
+        deer_step(lookdeer3, y_pos, x_pos)
+        deer_step(lookdeer2, y_pos, x_pos)
+        deer_step(lookdeer1, y_pos, x_pos)
+        deer_step(lookdeer2, y_pos, x_pos)
+        deer_step(lookdeer3, y_pos, x_pos)
+        deer_step(lookdeer4, y_pos, x_pos)
 
     deer_step(lookdeer0, y_pos, x_pos)
 
     for y_pos in range(y_pos, 10):
         for looper in range(0, 2):
-	    deer_step(bigdeer4, y_pos, x_pos)
-	    deer_step(bigdeer3, y_pos, x_pos)
-	    deer_step(bigdeer2, y_pos, x_pos)
-	    deer_step(bigdeer1, y_pos, x_pos)
-	    deer_step(bigdeer2, y_pos, x_pos)
-	    deer_step(bigdeer3, y_pos, x_pos)
-	    deer_step(bigdeer4, y_pos, x_pos)
-	deer_step(bigdeer0, y_pos, x_pos)
+            deer_step(bigdeer4, y_pos, x_pos)
+            deer_step(bigdeer3, y_pos, x_pos)
+            deer_step(bigdeer2, y_pos, x_pos)
+            deer_step(bigdeer1, y_pos, x_pos)
+            deer_step(bigdeer2, y_pos, x_pos)
+            deer_step(bigdeer3, y_pos, x_pos)
+            deer_step(bigdeer4, y_pos, x_pos)
+        deer_step(bigdeer0, y_pos, x_pos)
 
     y_pos -= 1
 
@@ -439,7 +439,7 @@ def reindeer():
 def main(win):
     global stdscr
     stdscr = win
-    
+
     global my_bg, y_pos, x_pos
     global treescrn, treescrn2, treescrn3, treescrn4
     global treescrn5, treescrn6, treescrn7, treescrn8
@@ -452,7 +452,7 @@ def main(win):
 
     my_bg = curses.COLOR_BLACK
     # curses.curs_set(0)
-    
+
     treescrn = curses.newwin(16, 27, 3, 53)
     treescrn2 = curses.newwin(16, 27, 3, 53)
     treescrn3 = curses.newwin(16, 27, 3, 53)
@@ -461,37 +461,37 @@ def main(win):
     treescrn6 = curses.newwin(16, 27, 3, 53)
     treescrn7 = curses.newwin(16, 27, 3, 53)
     treescrn8 = curses.newwin(16, 27, 3, 53)
-    
+
     dotdeer0 = curses.newwin(3, 71, 0, 8)
-    
+
     stardeer0 = curses.newwin(4, 56, 0, 8)
-    
+
     lildeer0 = curses.newwin(7, 53, 0, 8)
     lildeer1 = curses.newwin(2, 4, 0, 0)
     lildeer2 = curses.newwin(2, 4, 0, 0)
     lildeer3 = curses.newwin(2, 4, 0, 0)
-    
+
     middeer0 = curses.newwin(15, 42, 0, 8)
     middeer1 = curses.newwin(3, 7, 0, 0)
     middeer2 = curses.newwin(3, 7, 0, 0)
     middeer3 = curses.newwin(3, 7, 0, 0)
-    
+
     bigdeer0 = curses.newwin(10, 23, 0, 0)
     bigdeer1 = curses.newwin(10, 23, 0, 0)
     bigdeer2 = curses.newwin(10, 23, 0, 0)
     bigdeer3 = curses.newwin(10, 23, 0, 0)
     bigdeer4 = curses.newwin(10, 23, 0, 0)
-    
+
     lookdeer0 = curses.newwin(10, 25, 0, 0)
     lookdeer1 = curses.newwin(10, 25, 0, 0)
     lookdeer2 = curses.newwin(10, 25, 0, 0)
     lookdeer3 = curses.newwin(10, 25, 0, 0)
     lookdeer4 = curses.newwin(10, 25, 0, 0)
-    
+
     w_holiday = curses.newwin(1, 27, 3, 27)
-    
+
     w_del_msg = curses.newwin(1, 20, 23, 60)
-    
+
     try:
         w_del_msg.addstr(0, 0, "Hit any key to quit")
     except curses.error:
@@ -501,7 +501,7 @@ def main(win):
         w_holiday.addstr(0, 0, "H A P P Y  H O L I D A Y S")
     except curses.error:
         pass
-    
+
     # set up the windows for our various reindeer
     lildeer1.addch(0, 0, ord('V'))
     lildeer1.addch(1, 0, ord('@'))
@@ -511,7 +511,7 @@ def main(win):
         lildeer1.addch(1, 3, ord('~'))
     except curses.error:
         pass
-    
+
     lildeer2.addch(0, 0, ord('V'))
     lildeer2.addch(1, 0, ord('@'))
     lildeer2.addch(1, 1, ord('|'))
@@ -520,16 +520,16 @@ def main(win):
         lildeer2.addch(1, 3, ord('~'))
     except curses.error:
         pass
-    
+
     lildeer3.addch(0, 0, ord('V'))
     lildeer3.addch(1, 0, ord('@'))
     lildeer3.addch(1, 1, ord('>'))
     lildeer3.addch(1, 2, ord('<'))
     try:
-        lildeer2.addch(1, 3, ord('~'))	# XXX
+        lildeer2.addch(1, 3, ord('~'))  # XXX
     except curses.error:
         pass
-    
+
     middeer1.addch(0, 2, ord('y'))
     middeer1.addch(0, 3, ord('y'))
     middeer1.addch(1, 2, ord('0'))
@@ -539,7 +539,7 @@ def main(win):
     middeer1.addch(1, 6, ord('~'))
     middeer1.addch(2, 3, ord('\\'))
     middeer1.addch(2, 5, ord('/'))
-    
+
     middeer2.addch(0, 2, ord('y'))
     middeer2.addch(0, 3, ord('y'))
     middeer2.addch(1, 2, ord('0'))
@@ -549,7 +549,7 @@ def main(win):
     middeer2.addch(1, 6, ord('~'))
     middeer2.addch(2, 3, ord('|'))
     middeer2.addch(2, 5, ord('|'))
-    
+
     middeer3.addch(0, 2, ord('y'))
     middeer3.addch(0, 3, ord('y'))
     middeer3.addch(1, 2, ord('0'))
@@ -577,11 +577,11 @@ def main(win):
     bigdeer1.addch(4, 19, ord('\\'))
     bigdeer1.addch(4, 22, ord('\\'))
     bigdeer1.addstr(5, 7, "^~~~~~~~~//  ~~U")
-    bigdeer1.addstr(6, 7, "( \\_____( /")	# ))
+    bigdeer1.addstr(6, 7, "( \\_____( /")       # ))
     bigdeer1.addstr(7, 8, "( )    /")
     bigdeer1.addstr(8, 9, "\\\\   /")
     bigdeer1.addstr(9, 11, "\\>/>")
-    
+
     bigdeer2.addch(0, 17, ord('\\'))
     bigdeer2.addch(0, 18, ord('/'))
     bigdeer2.addch(0, 19, ord('\\'))
@@ -599,11 +599,11 @@ def main(win):
     bigdeer2.addch(4, 19, ord('\\'))
     bigdeer2.addch(4, 22, ord('\\'))
     bigdeer2.addstr(5, 7, "^~~~~~~~~//  ~~U")
-    bigdeer2.addstr(6, 7, "(( )____( /")	# ))
+    bigdeer2.addstr(6, 7, "(( )____( /")        # ))
     bigdeer2.addstr(7, 7, "( /    |")
     bigdeer2.addstr(8, 8, "\\/    |")
     bigdeer2.addstr(9, 9, "|>   |>")
-    
+
     bigdeer3.addch(0, 17, ord('\\'))
     bigdeer3.addch(0, 18, ord('/'))
     bigdeer3.addch(0, 19, ord('\\'))
@@ -621,11 +621,11 @@ def main(win):
     bigdeer3.addch(4, 19, ord('\\'))
     bigdeer3.addch(4, 22, ord('\\'))
     bigdeer3.addstr(5, 7, "^~~~~~~~~//  ~~U")
-    bigdeer3.addstr(6, 6, "( ()_____( /")	# ))
+    bigdeer3.addstr(6, 6, "( ()_____( /")       # ))
     bigdeer3.addstr(7, 6, "/ /       /")
     bigdeer3.addstr(8, 5, "|/          \\")
     bigdeer3.addstr(9, 5, "/>           \\>")
-    
+
     bigdeer4.addch(0, 17, ord('\\'))
     bigdeer4.addch(0, 18, ord('/'))
     bigdeer4.addch(0, 19, ord('\\'))
@@ -643,51 +643,51 @@ def main(win):
     bigdeer4.addch(4, 19, ord('\\'))
     bigdeer4.addch(4, 22, ord('\\'))
     bigdeer4.addstr(5, 7, "^~~~~~~~~//  ~~U")
-    bigdeer4.addstr(6, 6, "( )______( /")	# )
-    bigdeer4.addstr(7, 5, "(/          \\")	# )
+    bigdeer4.addstr(6, 6, "( )______( /")       # )
+    bigdeer4.addstr(7, 5, "(/          \\")     # )
     bigdeer4.addstr(8, 0, "v___=             ----^")
-    
+
     lookdeer1.addstr(0, 16, "\\/     \\/")
     lookdeer1.addstr(1, 17, "\\Y/ \\Y/")
     lookdeer1.addstr(2, 19, "\\=/")
     lookdeer1.addstr(3, 17, "^\\o o/^")
     lookdeer1.addstr(4, 17, "//( )")
     lookdeer1.addstr(5, 7, "^~~~~~~~~// \\O/")
-    lookdeer1.addstr(6, 7, "( \\_____( /")	# ))
+    lookdeer1.addstr(6, 7, "( \\_____( /")      # ))
     lookdeer1.addstr(7, 8, "( )    /")
     lookdeer1.addstr(8, 9, "\\\\   /")
     lookdeer1.addstr(9, 11, "\\>/>")
-    
+
     lookdeer2.addstr(0, 16, "\\/     \\/")
     lookdeer2.addstr(1, 17, "\\Y/ \\Y/")
     lookdeer2.addstr(2, 19, "\\=/")
     lookdeer2.addstr(3, 17, "^\\o o/^")
     lookdeer2.addstr(4, 17, "//( )")
     lookdeer2.addstr(5, 7, "^~~~~~~~~// \\O/")
-    lookdeer2.addstr(6, 7, "(( )____( /")	# ))
+    lookdeer2.addstr(6, 7, "(( )____( /")       # ))
     lookdeer2.addstr(7, 7, "( /    |")
     lookdeer2.addstr(8, 8, "\\/    |")
     lookdeer2.addstr(9, 9, "|>   |>")
-    
+
     lookdeer3.addstr(0, 16, "\\/     \\/")
     lookdeer3.addstr(1, 17, "\\Y/ \\Y/")
     lookdeer3.addstr(2, 19, "\\=/")
     lookdeer3.addstr(3, 17, "^\\o o/^")
     lookdeer3.addstr(4, 17, "//( )")
     lookdeer3.addstr(5, 7, "^~~~~~~~~// \\O/")
-    lookdeer3.addstr(6, 6, "( ()_____( /")	# ))
+    lookdeer3.addstr(6, 6, "( ()_____( /")      # ))
     lookdeer3.addstr(7, 6, "/ /       /")
     lookdeer3.addstr(8, 5, "|/          \\")
     lookdeer3.addstr(9, 5, "/>           \\>")
-    
+
     lookdeer4.addstr(0, 16, "\\/     \\/")
     lookdeer4.addstr(1, 17, "\\Y/ \\Y/")
     lookdeer4.addstr(2, 19, "\\=/")
     lookdeer4.addstr(3, 17, "^\\o o/^")
     lookdeer4.addstr(4, 17, "//( )")
     lookdeer4.addstr(5, 7, "^~~~~~~~~// \\O/")
-    lookdeer4.addstr(6, 6, "( )______( /")	# )
-    lookdeer4.addstr(7, 5, "(/          \\")	# )
+    lookdeer4.addstr(6, 6, "( )______( /")      # )
+    lookdeer4.addstr(7, 5, "(/          \\")    # )
     lookdeer4.addstr(8, 0, "v___=             ----^")
 
     ###############################################
@@ -780,9 +780,9 @@ def main(win):
 
         # strng1
         treescrn4.addch(3, 13, ord(' '))
-        
+
         # strng2
-        
+
         # strng3
         treescrn4.addch(7, 15, ord(' '))
         treescrn4.addch(8, 11, ord(' '))
@@ -830,67 +830,67 @@ def main(win):
         treescrn.overlay(treescrn6)
 
         # balls
-	treescrn6.addch(6, 7, ord(' '))
-	treescrn6.addch(7, 18, ord(' '))
-	treescrn6.addch(10, 4, ord(' '))
-	treescrn6.addch(11, 23, ord(' '))
+        treescrn6.addch(6, 7, ord(' '))
+        treescrn6.addch(7, 18, ord(' '))
+        treescrn6.addch(10, 4, ord(' '))
+        treescrn6.addch(11, 23, ord(' '))
 
-	# star
-	treescrn6.standout()
-	treescrn6.addch(0, 12, ord('*'))
-	treescrn6.standend()
+        # star
+        treescrn6.standout()
+        treescrn6.addch(0, 12, ord('*'))
+        treescrn6.standend()
 
-	# strng1
+        # strng1
 
-	# strng2
-	treescrn6.addch(5, 11, ord(' '))
+        # strng2
+        treescrn6.addch(5, 11, ord(' '))
 
-	# strng3
-	treescrn6.addch(7, 13, ord(' '))
-	treescrn6.addch(8, 9, ord(' '))
+        # strng3
+        treescrn6.addch(7, 13, ord(' '))
+        treescrn6.addch(8, 9, ord(' '))
 
-	# strng4
-	treescrn6.addch(9, 14, ord(' '))
-	treescrn6.addch(10, 10, ord(' '))
-	treescrn6.addch(11, 6, ord(' '))
+        # strng4
+        treescrn6.addch(9, 14, ord(' '))
+        treescrn6.addch(10, 10, ord(' '))
+        treescrn6.addch(11, 6, ord(' '))
 
-	# strng5
-	treescrn6.addch(11, 16, ord(' '))
-	treescrn6.addch(12, 12, ord(' '))
+        # strng5
+        treescrn6.addch(11, 16, ord(' '))
+        treescrn6.addch(12, 12, ord(' '))
 
-	#  treescrn7
+        #  treescrn7
 
-	treescrn.overlay(treescrn7)
+        treescrn.overlay(treescrn7)
 
-	# balls
-	treescrn7.addch(3, 15, ord(' '))
-	treescrn7.addch(6, 7, ord(' '))
-	treescrn7.addch(7, 18, ord(' '))
-	treescrn7.addch(10, 4, ord(' '))
-	treescrn7.addch(11, 22, ord(' '))
+        # balls
+        treescrn7.addch(3, 15, ord(' '))
+        treescrn7.addch(6, 7, ord(' '))
+        treescrn7.addch(7, 18, ord(' '))
+        treescrn7.addch(10, 4, ord(' '))
+        treescrn7.addch(11, 22, ord(' '))
 
-	# star
-	treescrn7.addch(0, 12, ord('*'))
+        # star
+        treescrn7.addch(0, 12, ord('*'))
 
-	# strng1
-	treescrn7.addch(3, 12, ord(' '))
+        # strng1
+        treescrn7.addch(3, 12, ord(' '))
 
-	# strng2
-	treescrn7.addch(5, 13, ord(' '))
-	treescrn7.addch(6, 9, ord(' '))
+        # strng2
+        treescrn7.addch(5, 13, ord(' '))
+        treescrn7.addch(6, 9, ord(' '))
 
-	# strng3
-	treescrn7.addch(7, 15, ord(' '))
-	treescrn7.addch(8, 11, ord(' '))
+        # strng3
+        treescrn7.addch(7, 15, ord(' '))
+        treescrn7.addch(8, 11, ord(' '))
 
-	# strng4
-	treescrn7.addch(9, 16, ord(' '))
-	treescrn7.addch(10, 12, ord(' '))
-	treescrn7.addch(11, 8, ord(' '))
+        # strng4
+        treescrn7.addch(9, 16, ord(' '))
+        treescrn7.addch(10, 12, ord(' '))
+        treescrn7.addch(11, 8, ord(' '))
 
-	# strng5
-	treescrn7.addch(11, 18, ord(' '))
-	treescrn7.addch(12, 14, ord(' '))
+        # strng5
+        treescrn7.addch(11, 18, ord(' '))
+        treescrn7.addch(12, 14, ord(' '))
 
         look_out(150)
         reindeer()
@@ -902,5 +902,5 @@ def main(win):
         look_out(500)
         for i in range(0, 20):
             blinkit()
-    
+
 curses.wrapper(main)

@@ -22,35 +22,35 @@ FINGER_PORT = 79
 # Output goes directly to stdout (although this can be changed).
 #
 def finger(host, args):
-	s = socket(AF_INET, SOCK_STREAM)
-	s.connect((host, FINGER_PORT))
-	s.send(args + '\n')
-	while 1:
-		buf = s.recv(1024)
-		if not buf: break
-		sys.stdout.write(buf)
-	sys.stdout.flush()
+    s = socket(AF_INET, SOCK_STREAM)
+    s.connect((host, FINGER_PORT))
+    s.send(args + '\n')
+    while 1:
+        buf = s.recv(1024)
+        if not buf: break
+        sys.stdout.write(buf)
+    sys.stdout.flush()
 
 
 # Main function: argument parsing.
 #
 def main():
-	options = ''
-	i = 1
-	while i < len(sys.argv) and sys.argv[i][:1] == '-':
-		options = options + sys.argv[i] + ' '
-		i = i+1
-	args = sys.argv[i:]
-	if not args:
-		args = ['']
-	for arg in args:
-		if '@' in arg:
-			at = string.index(arg, '@')
-			host = arg[at+1:]
-			arg = arg[:at]
-		else:
-			host = ''
-		finger(host, options + arg)
+    options = ''
+    i = 1
+    while i < len(sys.argv) and sys.argv[i][:1] == '-':
+        options = options + sys.argv[i] + ' '
+        i = i+1
+    args = sys.argv[i:]
+    if not args:
+        args = ['']
+    for arg in args:
+        if '@' in arg:
+            at = string.index(arg, '@')
+            host = arg[at+1:]
+            arg = arg[:at]
+        else:
+            host = ''
+        finger(host, options + arg)
 
 
 # Call the main function.

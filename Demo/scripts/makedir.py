@@ -8,13 +8,13 @@
 import sys, os
 
 def main():
-	for p in sys.argv[1:]:
-		makedirs(p)
+    for p in sys.argv[1:]:
+        makedirs(p)
 
 def makedirs(p):
-	if p and not os.path.isdir(p):
-		head, tail = os.path.split(p)
-		makedirs(head)
-		os.mkdir(p, 0777)
+    if p and not os.path.isdir(p):
+        head, tail = os.path.split(p)
+        makedirs(head)
+        os.mkdir(p, 0777)
 
 main()

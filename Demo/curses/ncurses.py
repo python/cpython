@@ -209,7 +209,7 @@ def demo_panels(win):
             w5.addstr(mod[itmp])
             pflush()
             wait_a_while()
-            
+
             saywhat("m5; press any key to continue")
             w4.move(curses.LINES / 6, 1)
             w4.addstr(mod[itmp])
@@ -218,7 +218,7 @@ def demo_panels(win):
             w5.addstr(mod[itmp])
             pflush()
             wait_a_while()
-            
+
         saywhat("m4; press any key to continue")
         p4.move(curses.LINES / 6, (itmp + 1) * curses.COLS / 8)
         pflush()

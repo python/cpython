@@ -2,7 +2,7 @@
 # Piet van Oostrum
 import os
 from socket import *
-FILE = 'blabla'             
+FILE = 'blabla'
 s = socket(AF_UNIX, SOCK_STREAM)
 s.bind(FILE)
 print 'Sock name is: ['+s.getsockname()+']'

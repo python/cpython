@@ -88,7 +88,7 @@ class MetaClass:
             init = lambda: None
         apply(init, args, kw)
         return inst
-    
+
 
 Meta = MetaClass('Meta', (), {})
 
@@ -116,5 +116,3 @@ def _test():
 
 if __name__ == '__main__':
     _test()
-
-    

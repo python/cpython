@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 # script.py -- Make typescript of terminal session.
 # Usage:
-#	-a	Append to typescript.
-#	-p	Use Python as shell.
+#       -a      Append to typescript.
+#       -p      Use Python as shell.
 # Author: Steen Lumholt.
 
 
@@ -10,19 +10,19 @@ import os, time, sys
 import pty
 
 def read(fd):
-	data = os.read(fd, 1024)
-	file.write(data)
-	return data
+    data = os.read(fd, 1024)
+    file.write(data)
+    return data
 
 shell = 'sh'
 filename = 'typescript'
 mode = 'w'
 if os.environ.has_key('SHELL'):
-	shell = os.environ['SHELL']
+    shell = os.environ['SHELL']
 if '-a' in sys.argv:
-	mode = 'a'
+    mode = 'a'
 if '-p' in sys.argv:
-	shell = 'python'
+    shell = 'python'
 
 file = open(filename, mode)
 

@@ -87,7 +87,7 @@ class EiffelMethodWrapper(MetaMethodWrapper):
         if self.post:
             apply(self.post, (Result,) + args, kw)
         return Result
-    
+
 class EiffelHelper(MetaHelper):
     __methodwrapper__ = EiffelMethodWrapper
 

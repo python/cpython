@@ -22,25 +22,25 @@ a write lock is held.
 
 - To set a read lock:
 
-	- acquire the meta-lock
-	- create the file "#cvs.rfl.<pid>"
-	- release the meta-lock
+        - acquire the meta-lock
+        - create the file "#cvs.rfl.<pid>"
+        - release the meta-lock
 
 - To set a write lock:
 
-	- acquire the meta-lock
-	- check that there are no files called "#cvs.rfl.*"
-		- if there are, release the meta-lock, sleep, try again
-	- create the file "#cvs.wfl.<pid>"
+        - acquire the meta-lock
+        - check that there are no files called "#cvs.rfl.*"
+                - if there are, release the meta-lock, sleep, try again
+        - create the file "#cvs.wfl.<pid>"
 
 - To release a write lock:
 
-	- remove the file "#cvs.wfl.<pid>"
-	- rmdir the meta-lock
+        - remove the file "#cvs.wfl.<pid>"
+        - rmdir the meta-lock
 
 - To release a read lock:
 
-	- remove the file "#cvs.rfl.<pid>"
+        - remove the file "#cvs.rfl.<pid>"
 
 
 Additional notes
@@ -93,188 +93,188 @@ CVSWFL = "#cvs.wfl."
 
 class Error:
 
-	def __init__(self, msg):
-		self.msg = msg
+    def __init__(self, msg):
+        self.msg = msg
 
-	def __repr__(self):
-		return repr(self.msg)
+    def __repr__(self):
+        return repr(self.msg)
 
-	def __str__(self):
-		return str(self.msg)
+    def __str__(self):
+        return str(self.msg)
 
 
 class Locked(Error):
-	pass
+    pass
 
 
 class Lock:
 
-	def __init__(self, repository = ".", delay = DELAY):
-		self.repository = repository
-		self.delay = delay
-		self.lockdir = None
-		self.lockfile = None
-		pid = repr(os.getpid())
-		self.cvslck = self.join(CVSLCK)
-		self.cvsrfl = self.join(CVSRFL + pid)
-		self.cvswfl = self.join(CVSWFL + pid)
+    def __init__(self, repository = ".", delay = DELAY):
+        self.repository = repository
+        self.delay = delay
+        self.lockdir = None
+        self.lockfile = None
+        pid = repr(os.getpid())
+        self.cvslck = self.join(CVSLCK)
+        self.cvsrfl = self.join(CVSRFL + pid)
+        self.cvswfl = self.join(CVSWFL + pid)
 
-	def __del__(self):
-		print "__del__"
-		self.unlock()
+    def __del__(self):
+        print "__del__"
+        self.unlock()
 
-	def setlockdir(self):
-		while 1:
-			try:
-				self.lockdir = self.cvslck
-				os.mkdir(self.cvslck, 0777)
-				return
-			except os.error, msg:
-				self.lockdir = None
-				if msg[0] == EEXIST:
-					try:
-						st = os.stat(self.cvslck)
-					except os.error:
-						continue
-					self.sleep(st)
-					continue
-				raise Error("failed to lock %s: %s" % (
-					self.repository, msg))
+    def setlockdir(self):
+        while 1:
+            try:
+                self.lockdir = self.cvslck
+                os.mkdir(self.cvslck, 0777)
+                return
+            except os.error, msg:
+                self.lockdir = None
+                if msg[0] == EEXIST:
+                    try:
+                        st = os.stat(self.cvslck)
+                    except os.error:
+                        continue
+                    self.sleep(st)
+                    continue
+                raise Error("failed to lock %s: %s" % (
+                        self.repository, msg))
 
-	def unlock(self):
-		self.unlockfile()
-		self.unlockdir()
+    def unlock(self):
+        self.unlockfile()
+        self.unlockdir()
 
-	def unlockfile(self):
-		if self.lockfile:
-			print "unlink", self.lockfile
-			try:
-				os.unlink(self.lockfile)
-			except os.error:
-				pass
-			self.lockfile = None
+    def unlockfile(self):
+        if self.lockfile:
+            print "unlink", self.lockfile
+            try:
+                os.unlink(self.lockfile)
+            except os.error:
+                pass
+            self.lockfile = None
 
-	def unlockdir(self):
-		if self.lockdir:
-			print "rmdir", self.lockdir
-			try:
-				os.rmdir(self.lockdir)
-			except os.error:
-				pass
-			self.lockdir = None
+    def unlockdir(self):
+        if self.lockdir:
+            print "rmdir", self.lockdir
+            try:
+                os.rmdir(self.lockdir)
+            except os.error:
+                pass
+            self.lockdir = None
 
-	def sleep(self, st):
-		sleep(st, self.repository, self.delay)
+    def sleep(self, st):
+        sleep(st, self.repository, self.delay)
 
-	def join(self, name):
-		return os.path.join(self.repository, name)
+    def join(self, name):
+        return os.path.join(self.repository, name)
 
 
 def sleep(st, repository, delay):
-	if delay <= 0:
-		raise Locked(st)
-	uid = st[stat.ST_UID]
-	try:
-		pwent = pwd.getpwuid(uid)
-		user = pwent[0]
-	except KeyError:
-		user = "uid %d" % uid
-	print "[%s]" % time.ctime(time.time())[11:19],
-	print "Waiting for %s's lock in" % user, repository
-	time.sleep(delay)
+    if delay <= 0:
+        raise Locked(st)
+    uid = st[stat.ST_UID]
+    try:
+        pwent = pwd.getpwuid(uid)
+        user = pwent[0]
+    except KeyError:
+        user = "uid %d" % uid
+    print "[%s]" % time.ctime(time.time())[11:19],
+    print "Waiting for %s's lock in" % user, repository
+    time.sleep(delay)
 
 
 class ReadLock(Lock):
 
-	def __init__(self, repository, delay = DELAY):
-		Lock.__init__(self, repository, delay)
-		ok = 0
-		try:
-			self.setlockdir()
-			self.lockfile = self.cvsrfl
-			fp = open(self.lockfile, 'w')
-			fp.close()
-			ok = 1
-		finally:
-			if not ok:
-				self.unlockfile()
-			self.unlockdir()
+    def __init__(self, repository, delay = DELAY):
+        Lock.__init__(self, repository, delay)
+        ok = 0
+        try:
+            self.setlockdir()
+            self.lockfile = self.cvsrfl
+            fp = open(self.lockfile, 'w')
+            fp.close()
+            ok = 1
+        finally:
+            if not ok:
+                self.unlockfile()
+            self.unlockdir()
 
 
 class WriteLock(Lock):
 
-	def __init__(self, repository, delay = DELAY):
-		Lock.__init__(self, repository, delay)
-		self.setlockdir()
-		while 1:
-			uid = self.readers_exist()
-			if not uid:
-				break
-			self.unlockdir()
-			self.sleep(uid)
-		self.lockfile = self.cvswfl
-		fp = open(self.lockfile, 'w')
-		fp.close()
+    def __init__(self, repository, delay = DELAY):
+        Lock.__init__(self, repository, delay)
+        self.setlockdir()
+        while 1:
+            uid = self.readers_exist()
+            if not uid:
+                break
+            self.unlockdir()
+            self.sleep(uid)
+        self.lockfile = self.cvswfl
+        fp = open(self.lockfile, 'w')
+        fp.close()
 
-	def readers_exist(self):
-		n = len(CVSRFL)
-		for name in os.listdir(self.repository):
-			if name[:n] == CVSRFL:
-				try:
-					st = os.stat(self.join(name))
-				except os.error:
-					continue
-				return st
-		return None
+    def readers_exist(self):
+        n = len(CVSRFL)
+        for name in os.listdir(self.repository):
+            if name[:n] == CVSRFL:
+                try:
+                    st = os.stat(self.join(name))
+                except os.error:
+                    continue
+                return st
+        return None
 
 
 def MultipleWriteLock(repositories, delay = DELAY):
-	while 1:
-		locks = []
-		for r in repositories:
-			try:
-				locks.append(WriteLock(r, 0))
-			except Locked, instance:
-				del locks
-				break
-		else:
-			break
-		sleep(instance.msg, r, delay)
-	return list
+    while 1:
+        locks = []
+        for r in repositories:
+            try:
+                locks.append(WriteLock(r, 0))
+            except Locked, instance:
+                del locks
+                break
+        else:
+            break
+        sleep(instance.msg, r, delay)
+    return list
 
 
 def test():
-	import sys
-	if sys.argv[1:]:
-		repository = sys.argv[1]
-	else:
-		repository = "."
-	rl = None
-	wl = None
-	try:
-		print "attempting write lock ..."
-		wl = WriteLock(repository)
-		print "got it."
-		wl.unlock()
-		print "attempting read lock ..."
-		rl = ReadLock(repository)
-		print "got it."
-		rl.unlock()
-	finally:
-		print [1]
-		sys.exc_traceback = None
-		print [2]
-		if rl:
-			rl.unlock()
-		print [3]
-		if wl:
-			wl.unlock()
-		print [4]
-		rl = None
-		print [5]
-		wl = None
-		print [6]
+    import sys
+    if sys.argv[1:]:
+        repository = sys.argv[1]
+    else:
+        repository = "."
+    rl = None
+    wl = None
+    try:
+        print "attempting write lock ..."
+        wl = WriteLock(repository)
+        print "got it."
+        wl.unlock()
+        print "attempting read lock ..."
+        rl = ReadLock(repository)
+        print "got it."
+        rl.unlock()
+    finally:
+        print [1]
+        sys.exc_traceback = None
+        print [2]
+        if rl:
+            rl.unlock()
+        print [3]
+        if wl:
+            wl.unlock()
+        print [4]
+        rl = None
+        print [5]
+        wl = None
+        print [6]
 
 
 if __name__ == '__main__':
-	test()
+    test()

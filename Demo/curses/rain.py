@@ -27,18 +27,18 @@ def main(win):
     # Initialize it globally for convenience.
     global stdscr
     stdscr = win
-    
+
     if curses.has_colors():
         bg = curses.COLOR_BLACK
         curses.init_pair(1, curses.COLOR_BLUE, bg)
         curses.init_pair(2, curses.COLOR_CYAN, bg)
-    
+
     curses.nl()
     curses.noecho()
     # XXX curs_set() always returns ERR
     # curses.curs_set(0)
     stdscr.timeout(0)
-    
+
     c = curses.COLS - 4
     r = curses.LINES - 4
     xpos = [0] * c
@@ -46,38 +46,38 @@ def main(win):
     for j in range(4, -1, -1):
         xpos[j] = randrange(0, c) + 2
         ypos[j] = randrange(0, r) + 2
-    
+
     j = 0
     while 1:
         x = randrange(0, c) + 2
         y = randrange(0, r) + 2
-        
+
         stdscr.addch(y, x, ord('.'))
-        
+
         stdscr.addch(ypos[j], xpos[j], ord('o'))
-        
+
         j = next_j(j)
         stdscr.addch(ypos[j], xpos[j], ord('O'))
-        
+
         j = next_j(j)
         stdscr.addch( ypos[j] - 1, xpos[j],     ord('-'))
         stdscr.addstr(ypos[j],     xpos[j] - 1, "|.|")
         stdscr.addch( ypos[j] + 1, xpos[j],     ord('-'))
-        
+
         j = next_j(j)
         stdscr.addch( ypos[j] - 2, xpos[j],     ord('-'))
         stdscr.addstr(ypos[j] - 1, xpos[j] - 1, "/ \\")
         stdscr.addstr(ypos[j],     xpos[j] - 2, "| O |")
         stdscr.addstr(ypos[j] + 1, xpos[j] - 1, "\\ /")
         stdscr.addch( ypos[j] + 2, xpos[j],     ord('-'))
-        
+
         j = next_j(j)
         stdscr.addch( ypos[j] - 2, xpos[j],     ord(' '))
         stdscr.addstr(ypos[j] - 1, xpos[j] - 1, "   ")
         stdscr.addstr(ypos[j],     xpos[j] - 2, "     ")
         stdscr.addstr(ypos[j] + 1, xpos[j] - 1, "   ")
         stdscr.addch( ypos[j] + 2, xpos[j],     ord(' '))
-        
+
         xpos[j] = x
         ypos[j] = y
 
@@ -90,5 +90,5 @@ def main(win):
             stdscr.nodelay(1)
 
         curses.napms(50)
-        
+
 curses.wrapper(main)
