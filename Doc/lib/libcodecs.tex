@@ -544,7 +544,7 @@ exist:
       a 8859 codeset, but replaces control characters with additional
       graphic characters
 \item an IBM EBCDIC code page
-\item an IBM PC code page, which is ASCII compatible
+\item an IBM PC code page, which is \ASCII{} compatible
 \end{itemize}
 
 \begin{longtableiii}{l|l|l}{textrm}{Codec}{Aliases}{Languages}
@@ -807,12 +807,15 @@ listed as operand type in the table.
 \lineiv{hex_codec}
          {hex}
          {byte string}
-         {Convert operand to hexadecimal representation, with two digits per byte}
+         {Convert operand to hexadecimal representation, with two
+          digits per byte}
 
 \lineiv{idna}
          {}
          {Unicode string}
-         {Implements \rfc{3490}. \versionadded{2.3}. See also \module{encodings.idna}}
+         {Implements \rfc{3490}.
+          \versionadded{2.3}.
+          See also \refmodule{encodings.idna}}
 
 \lineiv{mbcs}
          {dbcs}
@@ -827,7 +830,8 @@ listed as operand type in the table.
 \lineiv{punycode}
          {}
          {Unicode string}
-         {Implements \rfc{3492}. \versionadded{2.3}}
+         {Implements \rfc{3492}.
+          \versionadded{2.3}}
 
 \lineiv{quopri_codec}
          {quopri, quoted-printable, quotedprintable}
@@ -837,7 +841,8 @@ listed as operand type in the table.
 \lineiv{raw_unicode_escape}
          {}
          {Unicode string}
-         {Produce a string that is suitable as raw Unicode literal in Python source code}
+         {Produce a string that is suitable as raw Unicode literal in
+          Python source code}
 
 \lineiv{rot_13}
          {rot13}
@@ -847,17 +852,21 @@ listed as operand type in the table.
 \lineiv{string_escape}
          {}
          {byte string}
-         {Produce a string that is suitable as string literal in Python source code}
+         {Produce a string that is suitable as string literal in
+          Python source code}
 
 \lineiv{undefined}
          {}
          {any}
-         {Raise an exception for all conversion. Can be used as the system encoding if no automatic coercion between byte and Unicode strings is desired.}
+         {Raise an exception for all conversion. Can be used as the
+          system encoding if no automatic coercion between byte and
+          Unicode strings is desired.} 
 
 \lineiv{unicode_escape}
          {}
          {Unicode string}
-         {Produce a string that is suitable as Unicode literal in Python source code}
+         {Produce a string that is suitable as Unicode literal in
+          Python source code}
 
 \lineiv{unicode_internal}
          {}
@@ -881,20 +890,24 @@ listed as operand type in the table.
 
 \declaremodule{standard}{encodings.idna}
 \modulesynopsis{Internationalized Domain Names implementation}
-\moduleauthor{Martin v. L\"owis}
+% XXX The next line triggers a formatting bug, so it's commented out
+% until that can be fixed.
+%\moduleauthor{Martin v. L\"owis}
+
+\versionadded{2.3}
 
 This module implements \rfc{3490} (Internationalized Domain Names in
 Applications) and \rfc{3492} (Nameprep: A Stringprep Profile for
 Internationalized Domain Names (IDN)). It builds upon the
-\code{punycode} encoding and \module{stringprep}. \versionadded{2.3}
+\code{punycode} encoding and \module{stringprep}.
 
-These RFCs together define a protocol to support non-ASCII characters
-in domain names. A domain name containing non-ASCII characters (such
+These RFCs together define a protocol to support non-\ASCII{} characters
+in domain names. A domain name containing non-\ASCII{} characters (such
 as ``www.Alliancefran\c{c}aise.nu'') is converted into an
-ASCII-compatible encoding (ACE, such as
+\ASCII-compatible encoding (ACE, such as
 ``www.xn--alliancefranaise-npb.nu''). The ACE form of the domain name
 is then used in all places where arbitrary characters are not allowed
-by the protocol, such as DNS queries, HTTP \code{Host:} fields, and so
+by the protocol, such as DNS queries, HTTP \mailheader{Host} fields, and so
 on. This conversion is carried out in the application; if possible
 invisible to the user: The application should transparently convert
 Unicode domain labels to IDNA on the wire, and convert back ACE labels
@@ -928,7 +941,7 @@ true.
 \end{funcdesc}
 
 \begin{funcdesc}{ToASCCII}{label}
-Convert a label to ASCII, as specified in \rfc{3490}.
+Convert a label to \ASCII, as specified in \rfc{3490}.
 \code{UseSTD3ASCIIRules} is assumed to be false.
 \end{funcdesc}
 
