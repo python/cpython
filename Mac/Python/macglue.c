@@ -92,7 +92,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ** handle them). Note that we don't know who has windows open, so
 ** even handing updates off to SIOUX under MW isn't going to work.
 */
-#define MAINLOOP_EVENTMASK (mDownMask|keyDownMask|osMask)
+#define MAINLOOP_EVENTMASK (mDownMask|keyDownMask|osMask|activMask)
 
 #include <signal.h>
 
@@ -476,6 +476,14 @@ void
 PyMac_HandleEventIntern(evp)
 	EventRecord *evp;
 {
+	if ( evp->what == mouseDown ) {
+		WindowPtr wp;
+		
+		if ( FindWindow(evp->where, &wp) == inSysWindow ) {
+			SystemClick(evp, wp);
+			return;
+		}
+	}
 #ifdef __MWERKS__
 	{
 		int siouxdidit;
@@ -486,15 +494,7 @@ PyMac_HandleEventIntern(evp)
 			return;
 	}
 #else
-	/* Other compilers are just unlucky: we only weed out clicks in other applications */
-	if ( evp->what == mouseDown ) {
-		WindowPtr wp;
-		
-		if ( FindWindow(evp->where, &wp) == inSysWindow ) {
-			SystemClick(evp, wp);
-			return;
-		}
-	}
+	/* Other compilers are just unlucky... */
 #endif /* !__MWERKS__ */
 }
 
@@ -557,6 +557,11 @@ PyMac_DoYield(int maxsleep, int maycallpython)
 	} else {
 		latest_time_ready = LMGetTicks() + maxsleep;
 		while ( maxsleep >= 0 ) {
+			/* XXXX Hack by Jack.
+			** In time.sleep() you can click to another application
+			** once only. If you come back to Python you cannot get away
+			** again.
+			**/
 			gotone = WaitNextEvent(schedparams.process_events, &ev, maxsleep, NULL);	
 			/* Get out quickly if nothing interesting is happening */
 			if ( !gotone || ev.what == nullEvent )
