@@ -60,6 +60,8 @@ Release date: XX-XXX-2003
 
 - SF #659228, fix realpath() not being exported from os.path
 
+- SF #667147, fix crash when printing str subclass.
+
 What's New in Python 2.2.2 (final) ?
 Release date: 14-Oct-2002
 ====================================
