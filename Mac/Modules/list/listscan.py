@@ -71,6 +71,10 @@ class MyScanner(Scanner):
 #			([('unsigned long', '*', '*')],
 #			 [('unsigned_long', '*', '*')]),
 			]
+
+	def writeinitialdefs(self):
+		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
+
 			
 if __name__ == "__main__":
 	main()
