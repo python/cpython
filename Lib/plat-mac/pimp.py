@@ -18,6 +18,7 @@ import urllib
 import urlparse
 import plistlib
 import distutils.util
+import distutils.sysconfig
 import md5
 
 __all__ = ["PimpPreferences", "PimpDatabase", "PimpPackage", "main"]
@@ -33,12 +34,7 @@ PIMP_VERSION="0.1"
 DEFAULT_FLAVORORDER=['source', 'binary']
 DEFAULT_DOWNLOADDIR='/tmp'
 DEFAULT_BUILDDIR='/tmp'
-for _p in sys.path:
-	if _p[-13:] == 'site-packages':
-		DEFAULT_INSTALLDIR=_p
-		break
-else:
-	DEFAULT_INSTALLDIR=sys.prefix # Have to put things somewhere
+DEFAULT_INSTALLDIR=distutils.sysconfig.get_python_lib()
 DEFAULT_PIMPDATABASE="http://www.cwi.nl/~jack/pimp/pimp-%s.plist" % distutils.util.get_platform()
 
 ARCHIVE_FORMATS = [
@@ -419,7 +415,7 @@ class PimpPackage:
 		
 		if not os.path.exists(self.archiveFilename):
 			return 0
-		if not self._dict['MD5Sum']:
+		if not self._dict.get('MD5Sum'):
 			sys.stderr.write("Warning: no MD5Sum for %s\n" % self.fullname())
 			return 1
 		data = open(self.archiveFilename, 'rb').read()
