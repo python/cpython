@@ -46,14 +46,15 @@ class RCS:
     # --- Informational methods about a single file/revision ---
 
     def log(self, name_rev, otherflags = ''):
-	"""Print the full log text for NAME_REV on stdout.
+	"""Return the full log text for NAME_REV as a string.
 
 	Optional OTHERFLAGS are passed to rlog.
 
 	"""
-	name, rev = self.checkfile(name_rev)
-	cmd = "rlog -r%s %s %s" % (rev, name, otherflags)
-	return self._system(cmd)
+	f = self._open(name_rev, 'rlog ' + otherflags)
+	data = f.read()
+	self._closepipe(f)
+	return data
 
     def head(self, name_rev):
 	"""Return the head revision for NAME_REV"""
