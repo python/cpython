@@ -7,6 +7,8 @@
 
 #define UNDEFINED_FUTURE_FEATURE "future feature %.100s is not defined"
 
+#define FUTURE_POSSIBLE(FF) ((FF)->ff_last_lineno == -1)
+
 static int
 future_check_features(PyFutureFeatures *ff, node *n)
 {
@@ -26,6 +28,15 @@ future_check_features(PyFutureFeatures *ff, node *n)
 		}
 	}
 	return 0;
+}
+
+static void
+future_error(node *n, char *filename)
+{
+	PyErr_SetString(PyExc_SyntaxError,
+			"from __future__ imports must occur at the "
+			"beginning of the file");
+	/* XXX set filename and lineno */
 }
 
 /* Relevant portions of the grammar:
@@ -48,50 +59,80 @@ dotted_name: NAME ('.' NAME)*
 */
 
 static int
-future_parse(PyFutureFeatures *ff, node *n)
+future_parse(PyFutureFeatures *ff, node *n, char *filename)
 {
-	int i, r, found;
+	int i, r;
  loop:
 
-/*	fprintf(stderr, "future_parse(%d, %d, %s)\n",
-		TYPE(n), NCH(n), (n == NULL) ? "NULL" : STR(n));
+/*	fprintf(stderr, "future_parse(%d, %d, %s, %d)\n",
+		TYPE(n), NCH(n), (n == NULL) ? "NULL" : STR(n),
+		n->n_lineno);
 */
+
 	switch (TYPE(n)) {
 
 	case file_input:
 		for (i = 0; i < NCH(n); i++) {
 			node *ch = CHILD(n, i);
 			if (TYPE(ch) == stmt) {
-				n = ch;
-				goto loop;
+				r = future_parse(ff, ch, filename);
+				if (!FUTURE_POSSIBLE(ff))
+					return r;
 			}
 		}
 		return 0;
 
 	case simple_stmt:
-		if (NCH(n) == 1) {
+		if (NCH(n) == 2) {
 			REQ(CHILD(n, 0), small_stmt);
 			n = CHILD(n, 0);
 			goto loop;
-		}
-		found = 0;
-		for (i = 0; i < NCH(n); ++i)
-			if (TYPE(CHILD(n, i)) == small_stmt) {
-				r = future_parse(ff, CHILD(n, i));
-				if (r < 1) {
-					ff->ff_last_lineno = n->n_lineno;
-					ff->ff_n_simple_stmt = i;
-					return r;
-				} else
-					found++;
+		} else {
+			/* Deal with the special case of a series of
+			   small statements on a single line.  If a
+			   future statement follows some other
+			   statement, the SyntaxError is raised here.
+			   In all other cases, the symtable pass
+			   raises the exception.
+			*/
+			int found = 0, end_of_future = 0;
+
+			for (i = 0; i < NCH(n); i += 2) {
+				if (TYPE(CHILD(n, i)) == small_stmt) {
+					r = future_parse(ff, CHILD(n, i), 
+							 filename);
+					if (r < 1)
+						end_of_future = 1;
+					else {
+						found = 1;
+						if (end_of_future) {
+							future_error(n, 
+								     filename);
+							return -1;
+						}
+					}
+				}
 			}
-		if (found)
-			return 1;
-		else
-			return 0;
+
+			/* If we found one and only one, then the
+			   current lineno is legal. 
+			*/
+			if (found)
+				ff->ff_last_lineno = n->n_lineno + 1;
+			else
+				ff->ff_last_lineno = n->n_lineno;
+
+			if (end_of_future && found)
+				return 1;
+			else 
+				return 0;
+		}
 	
 	case stmt:
 		if (TYPE(CHILD(n, 0)) == simple_stmt) {
+			n = CHILD(n, 0);
+			goto loop;
+		} else if (TYPE(CHILD(n, 0)) == expr_stmt) {
 			n = CHILD(n, 0);
 			goto loop;
 		} else {
@@ -119,10 +160,42 @@ future_parse(PyFutureFeatures *ff, node *n)
 		return 1;
 	}
 
+	/* The cases below -- all of them! -- are necessary to find
+	   and skip doc strings. */
+	case expr_stmt:
+	case testlist:
+	case test:
+	case and_test:
+	case not_test:
+	case comparison:
+	case expr:
+	case xor_expr:
+	case and_expr:
+	case shift_expr:
+	case arith_expr:
+	case term:
+	case factor:
+	case power:
+		if (NCH(n) == 1) {
+			n = CHILD(n, 0);
+			goto loop;
+		}
+		break;
+
+	case atom:
+		if (TYPE(CHILD(n, 0)) == STRING 
+		    && ff->ff_found_docstring == 0) {
+			ff->ff_found_docstring = 1;
+			return 0;
+		}
+		ff->ff_last_lineno = n->n_lineno;
+		return 0;
+
 	default:
 		ff->ff_last_lineno = n->n_lineno;
 		return 0;
 	}
+	return 0;
 }
 
 PyFutureFeatures *
@@ -133,11 +206,11 @@ PyNode_Future(node *n, char *filename)
 	ff = (PyFutureFeatures *)PyMem_Malloc(sizeof(PyFutureFeatures));
 	if (ff == NULL)
 		return NULL;
-	ff->ff_last_lineno = 0;
-	ff->ff_n_simple_stmt = -1;
+	ff->ff_found_docstring = 0;
+	ff->ff_last_lineno = -1;
 	ff->ff_nested_scopes = 0;
 
-	if (future_parse(ff, n) < 0) {
+	if (future_parse(ff, n, filename) < 0) {
 		PyMem_Free((void *)ff);
 		return NULL;
 	}

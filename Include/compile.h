@@ -51,8 +51,8 @@ DL_IMPORT(int) PyCode_Addr2Line(PyCodeObject *, int);
 /* Future feature support */
 
 typedef struct {
+    int ff_found_docstring;
     int ff_last_lineno;
-    int ff_n_simple_stmt;
     int ff_nested_scopes;
 } PyFutureFeatures;
 
