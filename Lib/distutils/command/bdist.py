@@ -11,13 +11,16 @@ import os, string
 from types import *
 from distutils.core import Command
 from distutils.errors import *
+from distutils.util import get_platform
 
 
 class bdist (Command):
 
     description = "create a built (binary) distribution"
 
-    user_options = [('format=', 'f',
+    user_options = [('bdist-base=', 'b',
+                     "temporary directory for creating built distributions"),
+                    ('format=', 'f',
                      "format for distribution " +
                      "(tar, ztar, gztar, bztar, zip, ... )"),
                    ]
@@ -39,12 +42,21 @@ class bdist (Command):
 
 
     def initialize_options (self):
+        self.bdist_base = None
         self.format = None
 
     # initialize_options()
 
 
     def finalize_options (self):
+        # 'bdist_base' -- parent of per-built-distribution-format
+        # temporary directories (eg. we'll probably have
+        # "build/bdist.<plat>/dumb", "build/bdist.<plat>/rpm", etc.)
+        if self.bdist_base is None:
+            build_base = self.find_peer('build').build_base
+            plat = get_platform()
+            self.bdist_base = os.path.join (build_base, 'bdist.' + plat)
+
         if self.format is None:
             try:
                 self.format = self.default_format[os.name]
@@ -55,7 +67,6 @@ class bdist (Command):
         #elif type (self.format) is StringType:
         #    self.format = string.split (self.format, ',')
             
-
     # finalize_options()
 
 
