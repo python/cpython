@@ -5,12 +5,12 @@ BUGS:
 
 TO DO:
 
+- use platform specific default bindings
+- title and Windows menu should have base filename first
 - restructure state sensitive code to avoid testing flags all the time
 - integrated debugger
-- object browser
+- object browser instead of current stack viewer
 - save some user state (e.g. window and cursor positions, bindings)
-
-- menu bar
 - make backups when saving
 - check file mtimes at various points
 - interface with RCS/CVS/Perforce ???
@@ -21,6 +21,8 @@ TO DO:
   - reindent, reformat text etc.
   - M-[, M-] to move by paragraphs
   - smart stuff with whitespace around Return
+  - filter region?
+  - grep?
 - status bar?
 - better help?
 
@@ -28,10 +30,14 @@ Details:
     
 - when there's a selection, left/right arrow should go to either
   end of the selection
+- ^O should honor autoindent
 
 Structural problems:
 
 - too much knowledge in FileList about EditorWindow (for example)
+- Several occurrences of scrollable listbox with title and certain
+  behavior; should create base class to generalize this
+- class browser could become an outline?
 
 ======================================================================
 
@@ -49,8 +55,6 @@ Comparison to PTUI
 
 - PTUI's framework is better:
   status line
-  menu bar
-  buffer menu
   (not sure if I like the toolbar)
 
 - PTUI's GUI is a tad ugly:
