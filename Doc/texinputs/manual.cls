@@ -13,6 +13,7 @@
 %
 \LoadClass[\py@paper,\py@ptsize,twoside,openright]{report}
 
+\setcounter{secnumdepth}{2}
 
 % Optional packages:
 %
