@@ -46,8 +46,39 @@ documentation and/or software.
 #define S44 21
 
 static void MD5Transform(UINT4[4], unsigned char[64]);
-static void Encode(unsigned char *, UINT4 *, unsigned int);
-static void Decode(UINT4 *, unsigned char *, unsigned int);
+
+
+/* Encodes input (UINT4) into output (unsigned char). Assumes len is
+   a multiple of 4.
+ */
+static void
+Encode(unsigned char *output, UINT4 *input, unsigned int len)
+{
+    unsigned int i, j;
+
+    for (i = 0, j = 0; j < len; i++, j += 4) {
+        output[j] = (unsigned char)(input[i] & 0xff);
+        output[j+1] = (unsigned char)((input[i] >> 8) & 0xff);
+        output[j+2] = (unsigned char)((input[i] >> 16) & 0xff);
+        output[j+3] = (unsigned char)((input[i] >> 24) & 0xff);
+    }
+}
+
+
+/* Decodes input (unsigned char) into output (UINT4). Assumes len is
+   a multiple of 4.
+ */
+static void
+Decode(UINT4 *output, unsigned char *input, unsigned int len)
+{
+    unsigned int i, j;
+
+    for (i = 0, j = 0; j < len; i++, j += 4) {
+        output[i] = ((UINT4)input[j]) | (((UINT4)input[j+1]) << 8) |
+            (((UINT4)input[j+2]) << 16) | (((UINT4)input[j+3]) << 24);
+    }
+}
+
 
 static unsigned char PADDING[64] = {
     0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -255,36 +286,4 @@ MD5Transform(UINT4 state[4], unsigned char block[64])
 
     /* Zeroize sensitive information. */
     memset((POINTER)x, 0, sizeof (x));
-}
-
-
-/* Encodes input (UINT4) into output (unsigned char). Assumes len is
-   a multiple of 4.
- */
-static void
-Encode(unsigned char *output, UINT4 *input, unsigned int len)
-{
-    unsigned int i, j;
-
-    for (i = 0, j = 0; j < len; i++, j += 4) {
-        output[j] = (unsigned char)(input[i] & 0xff);
-        output[j+1] = (unsigned char)((input[i] >> 8) & 0xff);
-        output[j+2] = (unsigned char)((input[i] >> 16) & 0xff);
-        output[j+3] = (unsigned char)((input[i] >> 24) & 0xff);
-    }
-}
-
-
-/* Decodes input (unsigned char) into output (UINT4). Assumes len is
-   a multiple of 4.
- */
-static void
-Decode(UINT4 *output, unsigned char *input, unsigned int len)
-{
-    unsigned int i, j;
-
-    for (i = 0, j = 0; j < len; i++, j += 4) {
-        output[i] = ((UINT4)input[j]) | (((UINT4)input[j+1]) << 8) |
-            (((UINT4)input[j+2]) << 16) | (((UINT4)input[j+3]) << 24);
-    }
 }
