@@ -755,6 +755,21 @@ class BasicUnicodeTest(unittest.TestCase):
                     decodedresult += reader.read()
                 self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
 
+    def test_seek(self):
+        # all codecs should be able to encode these
+        s = u"%s\n%s\n" % (100*u"abc123", 100*u"def456")
+        for encoding in all_unicode_encodings:
+            if encoding == "idna": # FIXME: See SF bug #1163178
+                continue
+            if encoding in broken_unicode_with_streams:
+                continue
+            reader = codecs.getreader(encoding)(StringIO.StringIO(s.encode(encoding)))
+            for t in xrange(5):
+                # Test that calling seek resets the internal codec state and buffers
+                reader.seek(0, 0)
+                line = reader.readline()
+                self.assertEqual(s[:len(line)], line)
+
 class BasicStrTest(unittest.TestCase):
     def test_basics(self):
         s = "abc123"

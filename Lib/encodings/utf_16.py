@@ -31,6 +31,13 @@ class StreamWriter(codecs.StreamWriter):
 
 class StreamReader(codecs.StreamReader):
 
+    def reset(self):
+        codecs.StreamReader.reset(self)
+        try:
+            del self.decode
+        except AttributeError:
+            pass
+
     def decode(self, input, errors='strict'):
         (object, consumed, byteorder) = \
             codecs.utf_16_ex_decode(input, errors, 0, False)
