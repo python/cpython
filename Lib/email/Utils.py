@@ -4,6 +4,7 @@
 """Miscellaneous utilities.
 """
 
+import time
 import re
 
 from rfc822 import unquote, quote, parseaddr
