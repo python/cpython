@@ -174,7 +174,8 @@ class GzipFile:
                     self._read(readsize)
                     readsize = readsize * 2
             except EOFError:
-                pass
+                if size > self.extrasize:
+                    size = self.extrasize
         
         chunk = self.extrabuf[:size]
         self.extrabuf = self.extrabuf[size:]
@@ -184,7 +185,7 @@ class GzipFile:
 
     def _unread(self, buf):
         self.extrabuf = buf + self.extrabuf
-        self.extrasize = len(self.extrabuf)
+        self.extrasize = len(buf) + self.extrasize
 
     def _read(self, size=1024):
         try:
@@ -257,7 +258,12 @@ class GzipFile:
 
     def readlines(self):
         buf = self.read()
-        return string.split(buf, '\n')
+        lines = string.split(buf, '\n')
+        for i in range(len(lines)-1):
+            lines[i] = lines[i] + '\n'
+        if lines and not lines[-1]:
+            del lines[-1]
+        return lines
 
     def writelines(self, L):
         for line in L:
