@@ -2849,15 +2849,7 @@ DBC_set(DBCursorObject* self, PyObject* args, PyObject *kwargs)
                                    data.data, data.size);
             break;
         }
-        if (_DB_get_type(self->mydb) == DB_BTREE) {
-            /* the only time a malloced key is returned is when we
-             * call this on a BTree database because it performs
-             * partial matching and needs to return the real key.
-             * All others leave key untouched [where calling free()
-             * on it would often segfault].
-             */
-            FREE_DBT(key);
-        }
+        FREE_DBT(key);
         FREE_DBT(data);
     }
 
