@@ -326,23 +326,25 @@ def rfind(s, sub, i = 0, last=None):
 	return r
 
 # "Safe" environment for eval()
-safe_env = {"__builtins__": {}}
+_safe_env = {"__builtins__": {}}
 
 # Convert string to float
-re = None
+_re = None
 def atof(str):
 	"""atof(s) -> float
 
 	Return the floating point number represented by the string s.
 
 	"""
-	global re
-	if re is None:
+	global _re
+	if _re is None:
 		# Don't fail if re doesn't exist -- just skip the syntax check
 		try:
 			import re
 		except ImportError:
-			re = 0
+			_re = 0
+		else:
+			_re = re
 	sign = ''
 	s = strip(str)
 	if s and s[0] in '+-':
@@ -351,10 +353,10 @@ def atof(str):
 	if not s:
 		raise ValueError, 'non-float argument to string.atof'
 	while s[0] == '0' and len(s) > 1 and s[1] in digits: s = s[1:]
-	if re and not re.match('[0-9]*(\.[0-9]*)?([eE][-+]?[0-9]+)?$', s):
+	if _re and not _re.match('[0-9]*(\.[0-9]*)?([eE][-+]?[0-9]+)?$', s):
 		raise ValueError, 'non-float argument to string.atof'
 	try:
-		return float(eval(sign + s, safe_env))
+		return float(eval(sign + s, _safe_env))
 	except SyntaxError:
 		raise ValueError, 'non-float argument to string.atof'
 
@@ -384,7 +386,7 @@ def atoi(str, base=10):
 	for c in s:
 		if c not in digits:
 			raise ValueError, 'non-integer argument to string.atoi'
-	return eval(sign + s, safe_env)
+	return eval(sign + s, _safe_env)
 
 # Convert string to long integer
 def atol(str, base=10):
@@ -413,7 +415,7 @@ def atol(str, base=10):
 	for c in s:
 		if c not in digits:
 			raise ValueError, 'non-integer argument to string.atol'
-	return eval(sign + s + 'L', safe_env)
+	return eval(sign + s + 'L', _safe_env)
 
 # Left-justify a string
 def ljust(s, width):
