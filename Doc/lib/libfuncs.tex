@@ -830,7 +830,15 @@ class C(object):
   old version, the old definition remains.  This feature can be used
   to the module's advantage if it maintains a global table or cache of
   objects --- with a \keyword{try} statement it can test for the
-  table's presence and skip its initialization if desired.
+  table's presence and skip its initialization if desired:
+
+\begin{verbatim}
+try:
+    cache
+except NameError:
+    cache = {}
+\end{verbatim}
+
 
   It is legal though generally not very useful to reload built-in or
   dynamically loaded modules, except for \refmodule{sys},
