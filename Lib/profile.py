@@ -244,29 +244,8 @@ class Profile:
 
 
 	def trace_dispatch_call(self, frame, t):
-		fn = `frame.f_code` 
-
-		# The following should be about the best approach, but
-		# we would need a function that maps from id() back to
-		# the actual code object.  
-		#     fn = id(frame.f_code)
-		# Note we would really use our own function, which would
-		# return the code address, *and* bump the ref count.  We
-		# would then fix up the normalize function to do the
-		# actualy repr(fn) call.
-
-		# The following is an interesting alternative
-		# It doesn't do as good a job, and it doesn't run as
-		# fast 'cause repr() is written in C, and this is Python.
-		#fcode = frame.f_code
-		#code = fcode.co_code
-		#if ord(code[0]) == 127: #  == SET_LINENO
-		#	# see "opcode.h" in the Python source
-		#	fn = (fcode.co_filename, ord(code[1]) | \
-		#		  ord(code[2]) << 8, fcode.co_name)
-		#else:
-		#	fn = (fcode.co_filename, 0, fcode.co_name)
-
+		fcode = frame.f_code
+		fn = (fcode.co_filename, fcode.co_firstlineno, fcode.co_name)
 		self.cur = (t, 0, 0, fn, frame, self.cur)
 		if self.timings.has_key(fn):
 			cc, ns, tt, ct, callers = self.timings[fn]
@@ -319,10 +298,10 @@ class Profile:
 			self.co_filename = filename
 			self.co_line = line
 			self.co_name = name
-			self.co_code = '\0'  # anything but 127
+			self.co_firstlineno = 0
 
 		def __repr__(self):
-			return (self.co_filename, self.co_line, self.co_name)
+			return repr((self.co_filename, self.co_line, self.co_name))
 
 	class fake_frame:
 		def __init__(self, code, prior):
