@@ -35,6 +35,8 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 
 * Figure out HTMLHelp generation for the Windows world.
 
+* Straighten out random/whrandom.
+
 
 BEFORE NEXT PYTHON RELEASE, BUT NOT UNTIL THEN:
 
