@@ -34,6 +34,9 @@ extern int rl_bind_key(int, Function *);
 extern int rl_bind_key_in_map(int, Function *, Keymap);
 extern int rl_initialize(void);
 extern int add_history(char *);
+extern int read_history(char *);
+extern int write_history(char *);
+extern int history_truncate_file(char *, int);
 extern Function *rl_event_hook;
 #endif
 
