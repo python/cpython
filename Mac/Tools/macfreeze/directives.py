@@ -8,6 +8,7 @@ import os
 # The directives supported are
 # include - Include a module or file
 # exclude - Exclude a module
+# optional - Include a module if it is found, but don't complain if it isn't
 # path - Add sys.path entries. Relative paths are relative to the source file.
 #
 # See the macfreeze.py main program for a real live example.
