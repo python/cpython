@@ -31,6 +31,8 @@
 # 2001-08-20 fl  Base xmlrpclib.Error on built-in Exception (from Paul Prescod)
 # 2001-09-03 fl  Allow Transport subclass to override getparser
 # 2001-09-10 fl  Lazy import of urllib, cgi, xmllib (20x import speedup)
+# 2001-10-01 fl  Remove containers from memo cache when done with them
+# 2001-10-01 fl  Use faster escape method (80% dumps speedup)
 #
 # Copyright (c) 1999-2001 by Secret Labs AB.
 # Copyright (c) 1999-2001 by Fredrik Lundh.
@@ -70,24 +72,11 @@
 #
 # things to look into before 1.0 final:
 
-# TODO: unicode marshalling -DONE
-# TODO: ascii-compatible encoding support -DONE
-# TODO: safe transport -DONE (but mostly untested)
-# TODO: sgmlop memory leak -DONE
-# TODO: sgmlop xml parsing -DONE
-# TODO: support unicode method names -DONE
-# TODO: update selftest -DONE
-# TODO: add docstrings -DONE
-# TODO: clean up parser encoding (trust the parser) -DONE
-# TODO: expat support -DONE
-# TODO: _xmlrpclib accelerator support -DONE
-# TODO: use smarter/faster escape from effdom
 # TODO: support basic authentication (see robin's patch)
 # TODO: fix host tuple handling in the server constructor
 # TODO: let transport verify schemes
 # TODO: update documentation
 # TODO: authentication plugins
-# TODO: memo problem (see HP's mail)
 
 """
 An XML-RPC client interface for Python.
@@ -134,9 +123,9 @@ Exported functions:
                  name (None if not present).
 """
 
-import re, string, time, operator
+import re, string, sys, time, operator
+
 from types import *
-from cgi import escape as _escape
 
 try:
     unicode
@@ -149,6 +138,11 @@ def _decode(data, encoding, is8bit=re.compile("[\x80-\xff]").search):
         data = unicode(data, encoding)
     return data
 
+def escape(s, replace=string.replace):
+    s = replace(s, "&", "&amp;")
+    s = replace(s, "<", "&lt;")
+    return replace(s, ">", "&gt;",)
+
 if unicode:
     def _stringify(string):
         # convert to 7-bit ascii if possible
@@ -160,7 +154,7 @@ else:
     def _stringify(string):
         return string
 
-__version__ = "1.0b3"
+__version__ = "1.0b4"
 
 # --------------------------------------------------------------------
 # Exceptions
@@ -472,51 +466,53 @@ class Marshaller:
         self.write("<value><double>%s</double></value>\n" % value)
     dispatch[FloatType] = dump_double
 
-    def dump_string(self, value):
-        self.write("<value><string>%s</string></value>\n" % _escape(value))
+    def dump_string(self, value, escape=escape):
+        self.write("<value><string>%s</string></value>\n" % escape(value))
     dispatch[StringType] = dump_string
 
     if unicode:
-        def dump_unicode(self, value):
+        def dump_unicode(self, value, escape=escape):
             value = value.encode(self.encoding)
-            self.write("<value><string>%s</string></value>\n" % _escape(value))
+            self.write("<value><string>%s</string></value>\n" % escape(value))
         dispatch[UnicodeType] = dump_unicode
 
-    def container(self, value):
+    def opencontainer(self, value):
         if value:
             i = id(value)
             if self.memo.has_key(i):
                 raise TypeError, "cannot marshal recursive data structures"
             self.memo[i] = None
 
-    def endcontainer(self, value):
+    def closecontainer(self, value):
         if value:
             del self.memo[id(value)]
 
     def dump_array(self, value):
-        self.container(value)
+        self.opencontainer(value)
         write = self.write
+        dump = self.__dump
         write("<value><array><data>\n")
         for v in value:
-            self.__dump(v)
+            dump(v)
         write("</data></array></value>\n")
-        self.endcontainer(value)
+        self.closecontainer(value)
     dispatch[TupleType] = dump_array
     dispatch[ListType] = dump_array
 
-    def dump_struct(self, value):
-        self.container(value)
+    def dump_struct(self, value, escape=escape):
+        self.opencontainer(value)
         write = self.write
+        dump = self.__dump
         write("<value><struct>\n")
         for k, v in value.items():
             write("<member>\n")
             if type(k) is not StringType:
                 raise TypeError, "dictionary key must be string"
-            write("<name>%s</name>\n" % _escape(k))
-            self.__dump(v)
+            write("<name>%s</name>\n" % escape(k))
+            dump(v)
             write("</member>\n")
         write("</struct></value>\n")
-        self.endcontainer(value)
+        self.closecontainer(value)
     dispatch[DictType] = dump_struct
 
     def dump_instance(self, value):
@@ -577,14 +573,14 @@ class Unmarshaller:
     def data(self, text):
         self._data.append(text)
 
-    def end(self, tag):
+    def end(self, tag, join=string.join):
         # call the appropriate end tag handler
         try:
             f = self.dispatch[tag]
         except KeyError:
             pass # unknown tag ?
         else:
-            return f(self, self._data)
+            return f(self, join(self._data, ""))
 
     #
     # accelerator support
@@ -603,8 +599,7 @@ class Unmarshaller:
 
     dispatch = {}
 
-    def end_boolean(self, data, join=string.join):
-        data = join(data, "")
+    def end_boolean(self, data):
         if data == "0":
             self.append(False)
         elif data == "1":
@@ -614,19 +609,18 @@ class Unmarshaller:
         self._value = 0
     dispatch["boolean"] = end_boolean
 
-    def end_int(self, data, join=string.join):
-        self.append(int(join(data, "")))
+    def end_int(self, data):
+        self.append(int(data))
         self._value = 0
     dispatch["i4"] = end_int
     dispatch["int"] = end_int
 
-    def end_double(self, data, join=string.join):
-        self.append(float(join(data, "")))
+    def end_double(self, data):
+        self.append(float(data))
         self._value = 0
     dispatch["double"] = end_double
 
-    def end_string(self, data, join=string.join):
-        data = join(data, "")
+    def end_string(self, data):
         if self._encoding:
             data = _decode(data, self._encoding)
         self.append(_stringify(data))
@@ -654,16 +648,16 @@ class Unmarshaller:
         self._value = 0
     dispatch["struct"] = end_struct
 
-    def end_base64(self, data, join=string.join):
+    def end_base64(self, data):
         value = Binary()
-        value.decode(join(data, ""))
+        value.decode(data)
         self.append(value)
         self._value = 0
     dispatch["base64"] = end_base64
 
-    def end_dateTime(self, data, join=string.join):
+    def end_dateTime(self, data):
         value = DateTime()
-        value.decode(join(data, ""))
+        value.decode(data)
         self.append(value)
     dispatch["dateTime.iso8601"] = end_dateTime
 
@@ -682,8 +676,7 @@ class Unmarshaller:
         self._type = "fault"
     dispatch["fault"] = end_fault
 
-    def end_methodName(self, data, join=string.join):
-        data = join(data, "")
+    def end_methodName(self, data):
         if self._encoding:
             data = _decode(data, self._encoding)
         self._methodname = data
