@@ -76,7 +76,7 @@ Socket methods:
 #include "mytime.h"
 
 #include <signal.h>
-#ifndef NT
+#ifndef _MSC_VER
 #include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -215,6 +215,7 @@ static PySocketSockObject *
 BUILD_FUNC_DEF_4(PySocketSock_New,int,fd, int,family, int,type, int,proto)
 {
 	PySocketSockObject *s;
+	PySocketSock_Type.ob_type = &PyType_Type;
 	s = PyObject_NEW(PySocketSockObject, &PySocketSock_Type);
 	if (s != NULL) {
 		s->sock_fd = fd;
@@ -501,7 +502,7 @@ BUILD_FUNC_DEF_2(PySocketSock_setblocking,PySocketSockObject*,s,PyObject*,args)
 	if (!PyArg_GetInt(args, &block))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-#ifndef NT
+#ifndef _MSC_VER
 	delay_flag = fcntl (s->sock_fd, F_GETFL, 0);
 	if (block)
 		delay_flag &= (~O_NDELAY);
@@ -967,7 +968,7 @@ BUILD_FUNC_DEF_1(PySocketSock_repr,PySocketSockObject *,s)
 /* Type object for socket objects. */
 
 static PyTypeObject PySocketSock_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(0)	/* Must fill in type value later */
 	0,
 	"socket",
 	sizeof(PySocketSockObject),
@@ -1462,6 +1463,38 @@ initsocket()
 #ifdef	IP_DROP_MEMBERSHIP
 	insint(d, "IP_DROP_MEMBERSHIP", IP_DROP_MEMBERSHIP);
 #endif
+
+#ifdef MS_WIN16
+/* All windows sockets require a successful WSAStartup() before use */
+	{
+		const int opt = SO_SYNCHRONOUS_NONALERT;
+		WSADATA WSAData;
+		int ret;
+		ret = WSAStartup(0x0101, &WSAData);	/* request version 1.1 */
+		switch(ret){
+		case WSASYSNOTREADY:
+			PyErr_SetString(PySocket_Error,
+				"WSAStartup failed: Network not ready\n");
+			break;
+		case WSAVERNOTSUPPORTED:
+		case WSAEINVAL:
+			PyErr_SetString(PySocket_Error,
+				"WSAStartup failed: Requested version not supported");
+			break;
+		case 0:
+			/* Setup sockets in non-overlapped mode by default */
+			if (setsockopt(INVALID_SOCKET,SOL_SOCKET,SO_OPENTYPE,
+			(const char *)&opt,sizeof(opt)) != 0)
+				PyErr_SetString(PySocket_Error,
+					"setsockopt failed in initsocket");
+			break;
+		default:
+			PyErr_SetString(PySocket_Error,
+				"WSAStartup failed");
+			break;
+		}
+	}
+#endif
 }
 
 #ifdef NT
@@ -1483,10 +1516,10 @@ BOOL	WINAPI	DllMain (HANDLE hInst,
 			/*
 			** Setup sockets in non-overlapped mode by default
 			*/
-			if (ok && setsockopt(INVALID_SOCKET,SOL_SOCKET,SO_OPENTYPE,(const char *)&opt,sizeof(opt)) != 0) {
-				wsprintf(buf+strlen(buf),"setsockopt failed (%d)",WSAGetLastError());
-				ok = FALSE;
-			}
+//			if (ok && setsockopt(INVALID_SOCKET,SOL_SOCKET,SO_OPENTYPE,(const char *)&opt,sizeof(opt)) != 0) {
+//				wsprintf(buf+strlen(buf),"setsockopt failed (%d)",WSAGetLastError());
+//				ok = FALSE;
+//			}
 			if (!ok) {
 				MessageBox(NULL,buf,"WinSock Error",MB_OK|MB_SETFOREGROUND);
 				return FALSE;
