@@ -305,6 +305,16 @@ How *do* you spell that odd word, anyways?
                         ['Did you say "supercalifragilisticexpialidocious?"',
                          'How *do* you spell that odd word, anyways?'])
 
+        # SF bug 797650.  Prevent an infinite loop by making sure that at
+        # least one character gets split off on every pass.
+        self.check_wrap('-'*10+'hello', 10,
+                        ['----------',
+                         '               h',
+                         '               e',
+                         '               l',
+                         '               l',
+                         '               o'],
+                        subsequent_indent = ' '*15)
 
     def test_nobreak_long(self):
         # Test with break_long_words disabled

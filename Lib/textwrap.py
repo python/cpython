@@ -168,7 +168,7 @@ class TextWrapper:
         Handle a chunk of text (most likely a word, not whitespace) that
         is too long to fit in any line.
         """
-        space_left = width - cur_len
+        space_left = max(width - cur_len, 1)
 
         # If we're allowed to break long words, then do so: put as much
         # of the next chunk onto the current line as will fit.
