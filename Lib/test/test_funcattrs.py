@@ -156,13 +156,13 @@ else: raise TestFailed
 del another.func_defaults
 
 def foo():
-	pass
+    pass
 
 def bar():
-	pass
+    pass
 
 def temp():
-	print 1
+    print 1
 
 if foo==bar: raise TestFailed
 
@@ -172,4 +172,3 @@ d[foo] = 1
 foo.func_code = temp.func_code
 
 d[foo]
-
