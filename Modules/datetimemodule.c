@@ -1949,6 +1949,7 @@ delta_str(PyDateTime_Delta *self)
 
 /* Pickle support, a simple use of __reduce__. */
 
+/* __getstate__ isn't exposed */
 static PyObject *
 delta_getstate(PyDateTime_Delta *self)
 {
@@ -1979,9 +1980,6 @@ static PyMemberDef delta_members[] = {
 };
 
 static PyMethodDef delta_methods[] = {
-	{"__getstate__", (PyCFunction)delta_getstate, METH_NOARGS,
-	 PyDoc_STR("__getstate__() -> state")},
-
 	{"__reduce__", (PyCFunction)delta_reduce,     METH_NOARGS,
 	 PyDoc_STR("__reduce__() -> (cls, state)")},
 
@@ -2525,6 +2523,7 @@ date_weekday(PyDateTime_Date *self)
 
 /* Pickle support, a simple use of __reduce__. */
 
+/* __getstate__ isn't exposed */
 static PyObject *
 date_getstate(PyDateTime_Date *self)
 {
@@ -2590,9 +2589,6 @@ static PyMethodDef date_methods[] = {
 
 	{"replace",     (PyCFunction)date_replace,      METH_KEYWORDS,
 	 PyDoc_STR("Return date with new specified fields.")},
-
-	{"__getstate__", (PyCFunction)date_getstate,	METH_NOARGS,
-	 PyDoc_STR("__getstate__() -> state")},
 
 	{"__reduce__", (PyCFunction)date_reduce,        METH_NOARGS,
 	 PyDoc_STR("__reduce__() -> (cls, state)")},
@@ -3340,6 +3336,7 @@ time_nonzero(PyDateTime_Time *self)
 /* Let basestate be the non-tzinfo data string.
  * If tzinfo is None, this returns (basestate,), else (basestate, tzinfo).
  * So it's a tuple in any (non-error) case.
+ * __getstate__ isn't exposed.
  */
 static PyObject *
 time_getstate(PyDateTime_Time *self)
@@ -3385,9 +3382,6 @@ static PyMethodDef time_methods[] = {
 
 	{"replace",     (PyCFunction)time_replace,	METH_KEYWORDS,
 	 PyDoc_STR("Return time with new specified fields.")},
-
-	{"__getstate__", (PyCFunction)time_getstate,	METH_NOARGS,
-	 PyDoc_STR("__getstate__() -> state")},
 
 	{"__reduce__", (PyCFunction)time_reduce,        METH_NOARGS,
 	 PyDoc_STR("__reduce__() -> (cls, state)")},
@@ -4340,6 +4334,7 @@ datetime_utctimetuple(PyDateTime_DateTime *self)
 /* Let basestate be the non-tzinfo data string.
  * If tzinfo is None, this returns (basestate,), else (basestate, tzinfo).
  * So it's a tuple in any (non-error) case.
+ * __getstate__ isn't exposed.
  */
 static PyObject *
 datetime_getstate(PyDateTime_DateTime *self)
@@ -4430,9 +4425,6 @@ static PyMethodDef datetime_methods[] = {
 
 	{"astimezone",  (PyCFunction)datetime_astimezone, METH_KEYWORDS,
 	 PyDoc_STR("tz -> convert to local time in new timezone tz\n")},
-
-	{"__getstate__", (PyCFunction)datetime_getstate, METH_NOARGS,
-	 PyDoc_STR("__getstate__() -> state")},
 
 	{"__reduce__", (PyCFunction)datetime_reduce,     METH_NOARGS,
 	 PyDoc_STR("__reduce__() -> (cls, state)")},
@@ -4529,46 +4521,6 @@ initdatetime(void)
 		return;
 	if (PyType_Ready(&PyDateTime_TZInfoType) < 0)
 		return;
-
-	/* Make __getnewargs__ a true alias for __getstate__ */
-	{
-		PyObject *d, *f;
-
-		d = PyDateTime_DateType.tp_dict;
-		f = PyDict_GetItemString(d, "__getstate__");
-		if (f != NULL) {
-			if (PyDict_SetItemString(d, "__getnewargs__", f) < 0)
-				return;
-		}
-
-		d = PyDateTime_DateTimeType.tp_dict;
-		f = PyDict_GetItemString(d, "__getstate__");
-		if (f != NULL) {
-			if (PyDict_SetItemString(d, "__getnewargs__", f) < 0)
-				return;
-		}
-
-		d = PyDateTime_DeltaType.tp_dict;
-		f = PyDict_GetItemString(d, "__getstate__");
-		if (f != NULL) {
-			if (PyDict_SetItemString(d, "__getnewargs__", f) < 0)
-				return;
-		}
-
-		d = PyDateTime_TimeType.tp_dict;
-		f = PyDict_GetItemString(d, "__getstate__");
-		if (f != NULL) {
-			if (PyDict_SetItemString(d, "__getnewargs__", f) < 0)
-				return;
-		}
-
-		d = PyDateTime_TZInfoType.tp_dict;
-		f = PyDict_GetItemString(d, "__getstate__");
-		if (f != NULL) {
-			if (PyDict_SetItemString(d, "__getnewargs__", f) < 0)
-				return;
-		}
-	}
 
 	/* timedelta values */
 	d = PyDateTime_DeltaType.tp_dict;

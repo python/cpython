@@ -278,8 +278,6 @@ class TestTimeDelta(unittest.TestCase):
     def test_pickling(self):
         args = 12, 34, 56
         orig = timedelta(*args)
-        state = orig.__getstate__()
-        self.assertEqual(args, state)
         for pickler, unpickler, proto in pickle_choices:
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
@@ -832,8 +830,6 @@ class TestDate(unittest.TestCase):
     def test_pickling(self):
         args = 6, 7, 23
         orig = self.theclass(*args)
-        state = orig.__getstate__()
-        self.assertEqual(state, ('\x00\x06\x07\x17',), self.theclass)
         for pickler, unpickler, proto in pickle_choices:
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
@@ -1186,8 +1182,6 @@ class TestDateTime(TestDate):
     def test_pickling(self):
         args = 6, 7, 23, 20, 59, 1, 64**2
         orig = self.theclass(*args)
-        state = orig.__getstate__()
-        self.assertEqual(state, ('\x00\x06\x07\x17\x14\x3b\x01\x00\x10\x00',))
         for pickler, unpickler, proto in pickle_choices:
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
@@ -1567,8 +1561,6 @@ class TestTime(unittest.TestCase):
     def test_pickling(self):
         args = 20, 59, 16, 64**2
         orig = self.theclass(*args)
-        state = orig.__getstate__()
-        self.assertEqual(state, ('\x14\x3b\x10\x00\x10\x00',))
         for pickler, unpickler, proto in pickle_choices:
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
@@ -1877,8 +1869,6 @@ class TestTimeTZ(TestTime, TZInfoBase):
         # Try one without a tzinfo.
         args = 20, 59, 16, 64**2
         orig = self.theclass(*args)
-        state = orig.__getstate__()
-        self.assertEqual(state, ('\x14\x3b\x10\x00\x10\x00',))
         for pickler, unpickler, proto in pickle_choices:
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
@@ -2080,8 +2070,6 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
         # Try one without a tzinfo.
         args = 6, 7, 23, 20, 59, 1, 64**2
         orig = self.theclass(*args)
-        state = orig.__getstate__()
-        self.assertEqual(state, ('\x00\x06\x07\x17\x14\x3b\x01\x00\x10\x00',))
         for pickler, unpickler, proto in pickle_choices:
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
