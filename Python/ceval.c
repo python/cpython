@@ -152,6 +152,11 @@ gen_iternext(genobject *gen)
         gen->running = 1;
 	result = eval_frame(f);
         gen->running = 0;
+        /* The connection between this frame and its parent is over now, so
+           must NULL out f_back lest it get decref'ed when gen dies (note
+           that eval_frame sets f->f_back without bumping its refcount:  we
+           never had a fully legit reference to it). */
+	f->f_back = NULL;
         return result;
 }
 
