@@ -14,7 +14,7 @@
 #if defined(PYOS_OS2) || defined(MS_WINDOWS)
 #define PYTHONHOMEHELP "<prefix>\\lib"
 #else
-#define PYTHONHOMEHELP "<prefix>/python2.0"
+#define PYTHONHOMEHELP "<prefix>/pythonX.X"
 #endif
 
 #include "pygetopt.h"
