@@ -447,7 +447,7 @@ try_rich_to_3way_compare(PyObject *v, PyObject *w)
 	for (i = 0; i < 3; i++) {
 		switch (try_rich_compare_bool(v, w, tries[i].op)) {
 		case -1:
-			return -1;
+			return -2;
 		case 1:
 			return tries[i].outcome;
 		}
@@ -585,6 +585,12 @@ default_3way_compare(PyObject *v, PyObject *w)
 
 #define CHECK_TYPES(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_CHECKTYPES)
 
+/* Do a 3-way comparison, by hook or by crook.  Return:
+   -2 for an exception;
+   -1 if v < w;
+    0 if v == w;
+    1 if v > w;
+*/
 static int
 do_cmp(PyObject *v, PyObject *w)
 {
