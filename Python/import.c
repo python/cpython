@@ -1255,7 +1255,7 @@ ensure_fromlist(mod, fromlist, buf, buflen, recursive)
 		Py_DECREF(item);
 	}
 
-	return 1;
+	/* NOTREACHED */
 }
 
 static PyObject *
