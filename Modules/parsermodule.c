@@ -681,7 +681,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
                 PyErr_Format(parser_error,
                              "second item in terminal node must be a string,"
                              " found %s",
-                             ((PyTypeObject*)PyObject_Type(temp))->tp_name);
+                             temp->ob_type->tp_name);
                 Py_DECREF(temp);
                 return 0;
             }
@@ -694,7 +694,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
                         PyErr_Format(parser_error,
                                      "third item in terminal node must be an"
                                      " integer, found %s",
-                                ((PyTypeObject*)PyObject_Type(temp))->tp_name);
+                                     temp->ob_type->tp_name);
                         Py_DECREF(o);
                         Py_DECREF(temp);
                         return 0;
