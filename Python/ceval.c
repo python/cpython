@@ -3554,7 +3554,7 @@ build_class(PyObject *methods, PyObject *bases, PyObject *name)
 	if (PyDict_Check(methods))
 		metaclass = PyDict_GetItemString(methods, "__metaclass__");
 	if (metaclass != NULL)
-		Py_INCREF(methods);
+		Py_INCREF(metaclass);
 	else if (PyTuple_Check(bases) && PyTuple_GET_SIZE(bases) > 0) {
 		base = PyTuple_GET_ITEM(bases, 0);
 		metaclass = PyObject_GetAttrString(base, "__class__");
