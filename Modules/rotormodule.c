@@ -590,7 +590,7 @@ static void encrypt_region(r, region, len)
 	unsigned char *region;
 	int len;
 {
-	RTR_e_region(r,region,len);
+	RTR_e_region(r,region,len,TRUE);
 }
 
 /*(defun decrypt-region (beg end key)
@@ -602,7 +602,7 @@ static void decrypt_region(r, region, len)
 	unsigned char *region;
 	int len;
 {
-	RTR_d_region(r,region,len);
+	RTR_d_region(r,region,len,TRUE);
 }
 
 /* Rotor methods */

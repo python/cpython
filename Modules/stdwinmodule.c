@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -66,7 +66,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 #include "ceval.h"
 
+#ifdef macintosh
+#include ":::src:stdwin:H:stdwin.h"
+#else /* !macintosh */
 #include "stdwin.h"
+#endif /* !macintosh */
 
 #ifdef USE_THREAD
 
@@ -585,8 +589,12 @@ drawing_setfont(self, args)
 				return NULL;
 		}
 	}
-	if (font != NULL)
-		wsetfont(font);
+	if (font != NULL) {
+		if (!wsetfont(font)) {
+			err_setstr(StdwinError, "font not found");
+			return NULL;
+		}
+	}
 	if (size != 0)
 		wsetsize(size);
 	switch (style) {

@@ -25,15 +25,30 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Configurable Python configuration file */
 
 /* These modules are normally always included, but *may* be taken out */
-#define USE_GRP		1	/* Use together with pwd */
 #define USE_MARSHAL	1	/* This is linked anyway */
 #define USE_MATH	1
-#define USE_PWD		1	/* Use together with grp */
+#define USE_STRUCT	1
+#define USE_STROP	1
+#define USE_TIME	1
+
+#ifdef macintosh
+#define USE_AUDIOOP	1
+#define USE_IMAGEOP	1
+#define USE_MAC		1
+#define USE_REGEX	1
+#define USE_ROTOR	1
+#define USE_STDWIN	1	/* You may turn this off */
+#endif
+
+#ifdef unix
+#define USE_GRP		1	/* Use together with pwd */
 #define USE_POSIX	1
+#define USE_PWD		1	/* Use together with grp */
 #define USE_SELECT	1
 #define USE_SOCKET	1
-#define USE_STRUCT	1
-#define USE_TIME	1
+#endif
+
+#include <stdio.h>
 
 #include "PROTO.h"
 #include "mymalloc.h"
@@ -45,18 +60,20 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef __DATE__
 #define DATE __DATE__
 #else
-#define DATE ">= 8 Jan 1993"
+#define DATE ">= 11 Jan 1993"
 #endif
-
-#include <stdio.h>
 
 #ifdef USE_STDWIN
-#include <stdwin.h>
-#endif
+#ifdef macintosh
+#include ":::src:stdwin:H:stdwin.h"
+#else /* !macintosh */
+#include "stdwin.h"
+#endif /* !macintosh */
+#endif /* USE_STDWIN */
 
 char version[80];
 
-char *argv0;
+char *argv0; /* For dynamic loading in import.c */
 
 /*ARGSUSED*/
 void
@@ -69,13 +86,16 @@ initargs(p_argc, p_argv)
 	argv0 = **p_argv;
 
 #ifdef USE_STDWIN
-	wargs(p_argc, p_argv);
+#ifdef THINK_C_3_0
+	wsetstdio(1);
 #endif
+	wargs(p_argc, p_argv);
+#endif /* USE_STDWIN */
 	if (*p_argc < 2 && isatty(0) && isatty(1))
 	{
 		printf("Python %s.\n", version);
 		printf(
-"Copyright 1990, 1991, 1992 Stichting Mathematisch Centrum, Amsterdam\n");
+"Copyright 1990, 1991, 1992, 1993 Stichting Mathematisch Centrum, Amsterdam\n");
 	}
 }
 
@@ -96,14 +116,22 @@ donecalls()
 }
 
 #ifndef PYTHONPATH
+#ifdef macintosh
+/* On the Mac, the search path is a space-separated list of directories */
+#define PYTHONPATH ": :lib :demo"
+#else /* !macintosh */
 #define PYTHONPATH ".:/usr/local/lib/python"
-#endif
+#endif /* !macintosh */
+#endif /* !PYTHONPATH */
 
 extern char *getenv();
 
 char *
 getpythonpath()
 {
+#ifdef macintosh
+	return PYTHONPATH;
+#else /* !macintosh */
 	char *path = getenv("PYTHONPATH");
 	char *defpath = PYTHONPATH;
 	char *buf;
@@ -119,6 +147,7 @@ getpythonpath()
 	strcat(buf, ":");
 	strcat(buf, defpath);
 	return buf;
+#endif /* !macintosh */
 }
 
 
@@ -141,6 +170,9 @@ extern void initaudioop();
 #endif
 #ifdef USE_CD
 extern void initcd();
+#endif
+#ifdef USE_CL
+extern void initcl();
 #endif
 #ifdef USE_DBM
 extern void initdbm();
@@ -165,6 +197,9 @@ extern void initimgfile();
 #endif
 #ifdef USE_JPEG
 extern void initjpeg();
+#endif
+#ifdef USE_MAC
+extern void initmac();
 #endif
 #ifdef USE_MARSHAL
 extern void initmarshal();
@@ -217,9 +252,6 @@ extern void initthread();
 #ifdef USE_SV
 extern void initsv();
 #endif
-#ifdef USE_CL
-extern void initcl();
-#endif
 #ifdef USE_TIME
 extern void inittime();
 #endif
@@ -259,6 +291,10 @@ struct {
 	{"cd",		initcd},
 #endif
 
+#ifdef USE_CL
+	{"cl",		initcl},
+#endif
+
 #ifdef USE_DBM
 	{"dbm",		initdbm},
 #endif
@@ -289,6 +325,10 @@ struct {
 
 #ifdef USE_JPEG
 	{"jpeg",	initjpeg},
+#endif
+
+#ifdef USE_MAC
+	{"mac",	initmac},
 #endif
 
 #ifdef USE_MARSHAL
@@ -353,10 +393,6 @@ struct {
 
 #ifdef USE_SV
 	{"sv",		initsv},
-#endif
-
-#ifdef USE_CL
-	{"cl",		initcl},
 #endif
 
 #ifdef USE_THREAD

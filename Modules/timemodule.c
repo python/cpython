@@ -35,6 +35,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef BSD_TIME
 #define HAVE_GETTIMEOFDAY
+#include "myselect.h" /* Implies <sys/types.h>, <sys/time.h>, <sys/param.h> */
 #endif
 
 #ifdef macintosh
@@ -70,6 +71,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <time.h>
 #endif /* !unix */
 
+/* XXX This is bogus -- times() is defined in posixmodule.c */
 #ifdef DO_TIMES
 #include <sys/times.h>
 #include <sys/param.h>
@@ -215,7 +217,6 @@ time_times(self, args)
 {
 	struct tms t;
 	clock_t c;
-	object *tuple;
 	if (!getnoarg(args))
 		return NULL;
 	errno = 0;
@@ -224,18 +225,11 @@ time_times(self, args)
 		err_errno(IOError);
 		return NULL;
 	}
-	tuple = newtupleobject(4);
-	if (tuple == NULL)
-		return NULL;
-	settupleitem(tuple, 0, newfloatobject((double)t.tms_utime / HZ));
-	settupleitem(tuple, 1, newfloatobject((double)t.tms_stime / HZ));
-	settupleitem(tuple, 2, newfloatobject((double)t.tms_cutime / HZ));
-	settupleitem(tuple, 3, newfloatobject((double)t.tms_cstime / HZ));
-	if (err_occurred()) {
-		DECREF(tuple);
-		return NULL;
-	}
-	return tuple;
+	return mkvalue("dddd",
+		       (double)t.tms_utime / HZ,
+		       (double)t.tms_stime / HZ,
+		       (double)t.tms_cutime / HZ,
+		       (double)t.tms_cstime / HZ);
 }
 
 #endif
@@ -285,7 +279,7 @@ floatsleep(secs)
 {
 	register long deadline;
 	
-	deadline = MacTicks + long(secs * 60.0);
+	deadline = MacTicks + (long)(secs * 60.0);
 	while (MacTicks < deadline) {
 		if (intrcheck())
 			sleep_catcher(SIGINT);
@@ -301,9 +295,9 @@ millitimer()
 #endif /* macintosh */
 
 
-#ifdef BSD_TIME
+#ifdef unix
 
-#include "myselect.h" /* Implies <sys/types.h>, <sys/time.h>, <sys/param.h> */
+#ifdef BSD_TIME
 
 long
 millitimer()
@@ -329,7 +323,17 @@ floatsleep(secs)
 	(void) select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t);
 }
 
-#endif /* BSD_TIME */
+#else /* !BSD_TIME */
+
+floatsleep(secs)
+	double secs;
+{
+	sleep((int)secs);
+}
+
+#endif /* !BSD_TIME */
+
+#endif /* unix */
 
 
 #ifdef TURBO_C /* Maybe also for MS-DOS? */
@@ -338,14 +342,13 @@ floatsleep(secs)
 #define CLOCKS_PER_SEC 55	/* 54.945 msec per tick (18.2 HZ clock) */
 #endif
 
-static
 floatsleep(secs)
 	double secs;
 {
 	delay(long(secs/1000.0));
 }
 
-static long
+long
 millitimer()
 {
 	clock_t ticks;

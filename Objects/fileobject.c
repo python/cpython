@@ -86,7 +86,7 @@ newfileobject(name, mode)
 	f = (fileobject *) newopenfileobject((FILE *)NULL, name, mode, fclose);
 	if (f == NULL)
 		return NULL;
-#ifdef THINK_C
+#ifdef USE_FOPENRF
 	if (*mode == '*') {
 		FILE *fopenRF();
 		f->f_fp = fopenRF(name, mode+1);
@@ -670,7 +670,7 @@ writestring(s, f)
 			err_clear();
 		}
 		else {
-			if (writeobject(v, f, PRINT_RAW) != NULL)
+			if (writeobject(v, f, PRINT_RAW) != 0)
 				err_clear();
 			DECREF(v);
 		}
