@@ -336,6 +336,15 @@ class CodecTest(unittest.TestCase):
     def test_builtin(self):
         self.assertEquals(unicode("python.org", "idna"), u"python.org")
 
+class CodecsModuleTest(unittest.TestCase):
+
+    def test_decode(self):
+        self.assertEquals(codecs.decode('\xe4\xf6\xfc', 'latin-1'),
+                          u'\xe4\xf6\xfc')
+    def test_encode(self):
+        self.assertEquals(codecs.encode(u'\xe4\xf6\xfc', 'latin-1'),
+                          '\xe4\xf6\xfc')
+
 def test_main():
     test_support.run_unittest(
         UTF16Test,
@@ -343,7 +352,8 @@ def test_main():
         RecodingTest,
         PunycodeTest,
         NameprepTest,
-        CodecTest
+        CodecTest,
+        CodecsModuleTest
     )
 
 

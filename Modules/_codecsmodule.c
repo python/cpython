@@ -47,7 +47,7 @@ one argument, the encoding name in all lower case letters, and return\n\
 a tuple of functions (encoder, decoder, stream_reader, stream_writer).");
 
 static
-PyObject *codecregister(PyObject *self, PyObject *args)
+PyObject *codec_register(PyObject *self, PyObject *args)
 {
     PyObject *search_function;
 
@@ -71,7 +71,7 @@ Looks up a codec tuple in the Python codec registry and returns\n\
 a tuple of functions.");
 
 static
-PyObject *codeclookup(PyObject *self, PyObject *args)
+PyObject *codec_lookup(PyObject *self, PyObject *args)
 {
     char *encoding;
 
@@ -79,6 +79,72 @@ PyObject *codeclookup(PyObject *self, PyObject *args)
         goto onError;
 
     return _PyCodec_Lookup(encoding);
+
+ onError:
+    return NULL;
+}
+
+PyDoc_STRVAR(encode__doc__,
+"encode(obj, [encoding[,errors]]) -> object\n\
+\n\
+Encodes obj using the codec registered for encoding. encoding defaults\n\
+to the default encoding. errors may be given to set a different error\n\
+handling scheme. Default is 'strict' meaning that encoding errors raise\n\
+a ValueError. Other possible values are 'ignore', 'replace' and\n\
+'xmlcharrefreplace' as well as any other name registered with\n\
+codecs.register_error that can handle ValueErrors.");
+
+static PyObject *
+codec_encode(PyObject *self, PyObject *args)
+{
+    char *encoding = NULL;
+    char *errors = NULL;
+    PyObject *v;
+    
+    if (!PyArg_ParseTuple(args, "O|ss:encode", &v, &encoding, &errors))
+        return NULL;
+
+    if (encoding == NULL)
+	encoding = PyUnicode_GetDefaultEncoding();
+
+    /* Encode via the codec registry */
+    v = PyCodec_Encode(v, encoding, errors);
+    if (v == NULL)
+        goto onError;
+    return v;
+
+ onError:
+    return NULL;
+}
+
+PyDoc_STRVAR(decode__doc__,
+"decode(obj, [encoding[,errors]]) -> object\n\
+\n\
+Decodes obj using the codec registered for encoding. encoding defaults\n\
+to the default encoding. errors may be given to set a different error\n\
+handling scheme. Default is 'strict' meaning that encoding errors raise\n\
+a ValueError. Other possible values are 'ignore' and 'replace'\n\
+as well as any other name registerd with codecs.register_error that is\n\
+able to handle ValueErrors.");
+
+static PyObject *
+codec_decode(PyObject *self, PyObject *args)
+{
+    char *encoding = NULL;
+    char *errors = NULL;
+    PyObject *v;
+    
+    if (!PyArg_ParseTuple(args, "O|ss:decode", &v, &encoding, &errors))
+        return NULL;
+
+    if (encoding == NULL)
+	encoding = PyUnicode_GetDefaultEncoding();
+
+    /* Decode via the codec registry */
+    v = PyCodec_Decode(v, encoding, errors);
+    if (v == NULL)
+        goto onError;
+    return v;
 
  onError:
     return NULL;
@@ -765,10 +831,12 @@ static PyObject *lookup_error(PyObject *self, PyObject *args)
 /* --- Module API --------------------------------------------------------- */
 
 static PyMethodDef _codecs_functions[] = {
-    {"register",		codecregister,			METH_VARARGS,
+    {"register",		codec_register,			METH_VARARGS,
         register__doc__},
-    {"lookup",			codeclookup, 			METH_VARARGS,
+    {"lookup",			codec_lookup, 			METH_VARARGS,
         lookup__doc__},
+    {"encode",			codec_encode,			METH_VARARGS},
+    {"decode",			codec_decode,			METH_VARARGS},
     {"escape_encode",		escape_encode,			METH_VARARGS},
     {"escape_decode",		escape_decode,			METH_VARARGS},
 #ifdef Py_USING_UNICODE
