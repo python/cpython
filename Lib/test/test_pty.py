@@ -27,11 +27,10 @@ except OSError:
     # " An optional feature could not be imported " ... ?
     raise ImportError, "Pseudo-terminals (seemingly) not functional."
 
-## # Please uncomment these if os.isatty() is added.
-## if not os.isatty(master_fd):
-##     raise TestFailed, "master_fd is not a tty"
-## if not os.isatty(slave_fd):
-##     raise TestFailed, "slave_fd is not a tty"
+if not os.isatty(master_fd):
+    raise TestFailed, "master_fd is not a tty"
+if not os.isatty(slave_fd):
+    raise TestFailed, "slave_fd is not a tty"
 
 debug("Writing to slave_fd")
 os.write(slave_fd, TEST_STRING_1) # should check return value
