@@ -953,11 +953,6 @@ class PyBuildExt(build_ext):
         if platform == 'sunos5':
             include_dirs.append('/usr/openwin/include')
             added_lib_dirs.append('/usr/openwin/lib')
-        elif platform == 'cygwin':
-            # Verify that the pseudo-X headers are installed before proceeding
-            x11_inc = find_file('X11/Xlib.h', [], inc_dirs)
-            if x11_inc is None:
-                return
         elif os.path.exists('/usr/X11R6/include'):
             include_dirs.append('/usr/X11R6/include')
             added_lib_dirs.append('/usr/X11R6/lib')
@@ -968,6 +963,12 @@ class PyBuildExt(build_ext):
             # Assume default location for X11
             include_dirs.append('/usr/X11/include')
             added_lib_dirs.append('/usr/X11/lib')
+
+        # If Cygwin, then verify that X is installed before proceeding
+        if platform == 'cygwin':
+            x11_inc = find_file('X11/Xlib.h', [], include_dirs)
+            if x11_inc is None:
+                return
 
         # Check for BLT extension
         if self.compiler.find_library_file(lib_dirs + added_lib_dirs,
