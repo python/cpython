@@ -1,5 +1,8 @@
 # This module exports classes for the various canvas item types
 
+# NOTE: This module was an experiment and is now obsolete.
+# It's best to use the Tkinter.Canvas class directly.
+
 from Tkinter import Canvas, _cnfmerge, _flatten
 
 
@@ -41,10 +44,10 @@ class CanvasItem:
 	def bbox(self):
 		x1, y1, x2, y2 = self.canvas.bbox(self.id)
 		return (x1, y1), (x2, y2)
-	def bind(self, sequence=None, command=None):
-		return self.canvas.tag_bind(self.id, sequence, command)
-	def unbind(self, sequence):
-		self.canvas.tag_bind(self.id, sequence, '')
+	def bind(self, sequence=None, command=None, add=None):
+		return self.canvas.tag_bind(self.id, sequence, command, add)
+	def unbind(self, sequence, funcid=None):
+		self.canvas.tag_unbind(self.id, sequence, funcid)
 	def config(self, cnf={}, **kw):
 		return self.canvas.itemconfig(self.id, _cnfmerge((cnf, kw)))
 	def coords(self, pts = ()):
@@ -66,11 +69,11 @@ class CanvasItem:
 	def insert(self, beforethis, string):
 		self.canvas.insert(self.id, beforethis, string)
 	def lower(self, belowthis=None):
-		self.canvas.lower(self.id, belowthis)
+		self.canvas.tag_lower(self.id, belowthis)
 	def move(self, xamount, yamount):
 		self.canvas.move(self.id, xamount, yamount)
 	def tkraise(self, abovethis=None):
-		self.canvas.tkraise(self.id, abovethis)
+		self.canvas.tag_raise(self.id, abovethis)
 	raise_ = tkraise # BW compat
 	def scale(self, xorigin, yorigin, xscale, yscale):
 		self.canvas.scale(self.id, xorigin, yorigin, xscale, yscale)
@@ -142,10 +145,10 @@ class Group:
 		self._do('addtag', 'withtag', tagOrId)
 	def bbox(self):
 		return self.canvas._getints(self._do('bbox'))
-	def bind(self, sequence=None, command=None):
-		return self.canvas.tag_bind(self.id, sequence, command)
-	def unbind(self, sequence):
-		self.canvas.tag_bind(self.id, sequence, '')
+	def bind(self, sequence=None, command=None, add=None):
+		return self.canvas.tag_bind(self.id, sequence, command, add)
+	def unbind(self, sequence, funcid=None):
+		self.canvas.tag_unbind(self.id, sequence, funcid)
 	def coords(self, *pts):
 		return self._do('coords', pts)
 	def dchars(self, first, last=None):
@@ -167,11 +170,11 @@ class Group:
 	def config(self, cnf={}, **kw):
 		return self.canvas.itemconfigure(self.tag, _cnfmerge((cnf,kw)))
 	def lower(self, belowThis=None):
-		self._do('lower', belowThis)
+		self._do('tag_lower', belowThis)
 	def move(self, xAmount, yAmount):
 		self._do('move', xAmount, yAmount)
 	def tkraise(self, aboveThis=None):
-		self._do('raise', aboveThis)
+		self._do('tag_raise', aboveThis)
 	lift = tkraise
 	def scale(self, xOrigin, yOrigin, xScale, yScale):
 		self._do('scale', xOrigin, yOrigin, xScale, yScale)
