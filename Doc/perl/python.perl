@@ -213,7 +213,7 @@ sub do_cmd_longprogramopt{
 sub do_cmd_email{
     return use_wrappers(@_[0], '<span class="email">', '</span>'); }
 sub do_cmd_mailheader{
-    return use_wrappers(@_[0], '<tt class="mimeheader">', '</tt>'); }
+    return use_wrappers(@_[0], '<span class="mailheader">', ':</span>'); }
 sub do_cmd_mimetype{
     return use_wrappers(@_[0], '<span class="mimetype">', '</span>'); }
 sub do_cmd_var{

@@ -72,6 +72,7 @@ var                     { font-family: times, serif;
                           font-size: 85%; }
 
 .email                  { font-family: avantgarde, sans-serif; }
+.mailheader             { font-family: avantgarde, sans-serif; }
 .mimetype               { font-family: avantgarde, sans-serif; }
 .newsgroup              { font-family: avantgarde, sans-serif; }
 .url                    { font-family: avantgarde, sans-serif; }
