@@ -166,8 +166,9 @@ tuple representation and converting that to nested lists.
 
 If \code{\var{line_info}} is true, line number information will be
 included for all terminal tokens as a third element of the list
-representing the token.  This information is omitted if the flag is
-false or omitted.
+representing the token.  Note that the line number provided specifies
+the line on which the token \emph{ends\/}.  This information is
+omitted if the flag is false or omitted.
 \end{funcdesc}
 
 \begin{funcdesc}{ast2tuple}{ast\optional{\, line_info\code{ = 0}}}
