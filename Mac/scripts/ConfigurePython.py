@@ -124,7 +124,9 @@ def main():
 		import Dlg
 		rv = Dlg.CautionAlert(ALERT_NOTPYTHONFOLDER, None)
 		if rv == ALERT_NOTPYTHONFOLDER_REMOVE_QUIT:
-			print "TBD: Should remove preferences file"
+			import pythonprefs, preferences
+			prefpathname = pythonprefs.pref_fss.as_pathname()
+			os.remove(prefpathname)
 			sys.exit(0)
 		elif rv == ALERT_NOTPYTHONFOLDER_QUIT:
 			sys.exit(0)
