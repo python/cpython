@@ -1497,7 +1497,7 @@ static PyObject *
 PySocketSock_sendall(PySocketSockObject *s, PyObject *args)
 {
 	char *buf;
-	int len, n, flags = 0, total = 0;
+	int len, n, flags = 0;
 	if (!PyArg_ParseTuple(args, "s#|i:sendall", &buf, &len, &flags))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
@@ -1505,7 +1505,6 @@ PySocketSock_sendall(PySocketSockObject *s, PyObject *args)
 		n = send(s->sock_fd, buf, len, flags);
 		if (n < 0)
 			break;
-		total += n;
 		buf += n;
 		len -= n;
 	} while (len > 0);
