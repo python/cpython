@@ -27,6 +27,41 @@ stringCentralDir = "PK\001\002"   # magic number for central directory
 structFileHeader = "<4s2B4H3l2H"  # 12 items, file header record, 30 bytes
 stringFileHeader = "PK\003\004"   # magic number for file header
 
+# indexes of entries in the central directory structure
+_CD_SIGNATURE = 0
+_CD_CREATE_VERSION = 1
+_CD_CREATE_SYSTEM = 2
+_CD_EXTRACT_VERSION = 3
+_CD_EXTRACT_SYSTEM = 4                  # is this meaningful?
+_CD_FLAG_BITS = 5
+_CD_COMPRESS_TYPE = 6
+_CD_TIME = 7
+_CD_DATE = 8
+_CD_CRC = 9
+_CD_COMPRESSED_SIZE = 10
+_CD_UNCOMPRESSED_SIZE = 11
+_CD_FILENAME_LENGTH = 12
+_CD_EXTRA_FIELD_LENGTH = 13
+_CD_COMMENT_LENGTH = 14
+_CD_DISK_NUMBER_START = 15
+_CD_INTERNAL_FILE_ATTRIBUTES = 16
+_CD_EXTERNAL_FILE_ATTRIBUTES = 17
+_CD_LOCAL_HEADER_OFFSET = 18
+
+# indexes of entries in the local file header structure
+_FH_SIGNATURE = 0
+_FH_EXTRACT_VERSION = 1
+_FH_EXTRACT_SYSTEM = 2                  # is this meaningful?
+_FH_GENERAL_PURPOSE_FLAG_BITS = 3
+_FH_COMPRESSION_METHOD = 4
+_FH_LAST_MOD_TIME = 5
+_FH_LAST_MOD_DATE = 6
+_FH_CRC = 7
+_FH_COMPRESSED_SIZE = 8
+_FH_UNCOMPRESSED_SIZE = 9
+_FH_FILENAME_LENGTH = 10
+_FH_EXTRA_FIELD_LENGTH = 11
+
 
 def is_zipfile(filename):
     """Quickly see if file is a ZIP file by checking the magic number.
@@ -159,14 +194,16 @@ class ZipFile:
             centdir = struct.unpack(structCentralDir, centdir)
             if self.debug > 2:
                 print centdir
-            filename = fp.read(centdir[12])
+            filename = fp.read(centdir[_CD_FILENAME_LENGTH])
             # Create ZipInfo instance to store file information
             x = ZipInfo(filename)
-            x.extra = fp.read(centdir[13])
-            x.comment = fp.read(centdir[14])
-            total = total + centdir[12] + centdir[13] + centdir[14]
-            x.header_offset = centdir[18] + concat
-            x.file_offset = x.header_offset + 30 + centdir[12] + centdir[13]
+            x.extra = fp.read(centdir[_CD_EXTRA_FIELD_LENGTH])
+            x.comment = fp.read(centdir[_CD_COMMENT_LENGTH])
+            total = (total + centdir[_CD_FILENAME_LENGTH]
+                     + centdir[_CD_EXTRA_FIELD_LENGTH]
+                     + centdir[_CD_COMMENT_LENGTH])
+            x.header_offset = centdir[_CD_LOCAL_HEADER_OFFSET] + concat
+            # file_offset must be computed below...
             (x.create_version, x.create_system, x.extract_version, x.reserved,
                 x.flag_bits, x.compress_type, t, d,
                 x.CRC, x.compress_size, x.file_size) = centdir[1:12]
@@ -184,7 +221,14 @@ class ZipFile:
             if fheader[0:4] != stringFileHeader:
                 raise BadZipfile, "Bad magic number for file header"
             fheader = struct.unpack(structFileHeader, fheader)
-            fname = fp.read(fheader[10])
+            # file_offset is computed here, since the extra field for
+            # the central directory and for the local file header
+            # refer to different fields, and they can have different
+            # lengths
+            data.file_offset = (data.header_offset + 30
+                                + fheader[_FH_FILENAME_LENGTH]
+                                + fheader[_FH_EXTRA_FIELD_LENGTH])
+            fname = fp.read(fheader[_FH_FILENAME_LENGTH])
             if fname != data.filename:
                 raise RuntimeError, \
                       'File name in directory "%s" and header "%s" differ.' % (
