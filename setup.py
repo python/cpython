@@ -3,7 +3,7 @@
 
 __version__ = "$Revision$"
 
-import sys, os, getopt, imp
+import sys, os, getopt, imp, re
 from distutils import sysconfig
 from distutils import text_file
 from distutils.errors import *
@@ -444,13 +444,16 @@ class PyBuildExt(build_ext):
         # implementation independent wrapper for these; dumbdbm.py provides
         # similar functionality (but slower of course) implemented in Python.
 
-        # Berkeley DB interface.
+        # Sleepycat Berkeley DB interface.
         #
-        # This requires the Berkeley DB code, see
-        # ftp://ftp.cs.berkeley.edu/pub/4bsd/db.1.85.tar.gz
+        # This requires the Sleepycat DB code, see
+        # http://www.sleepycat.com/ The earliest supported version of
+        # that library is 3.0, the latest supported version is 4.0
+        # (4.1 is specifically not supported, as that changes the
+        # semantics of transactional databases). A list of available
+        # releases can be found at
         #
-        # (See http://pybsddb.sourceforge.net/ for an interface to
-        # Berkeley DB 3.x.)
+        # http://www.sleepycat.com/update/index.html
 
         # when sorted in reverse order, keys for this dict must appear in the
         # order you wish to search - e.g., search for db4 before db3
@@ -458,18 +461,15 @@ class PyBuildExt(build_ext):
             'db4': {'libs': ('db-4.0',),
                     'libdirs': ('/usr/local/BerkeleyDB.4.0/lib',
                                 '/usr/local/lib',
-                                '/usr/lib',
                                 '/opt/sfw',
                                 '/sw/lib',
-                                '/lib',
                                 ),
                     'incdirs': ('/usr/local/BerkeleyDB.4.0/include',
                                 '/usr/local/include/db4',
                                 '/opt/sfw/include/db4',
                                 '/sw/include/db4',
                                 '/usr/include/db4',
-                                ),
-                    'incs': ('db.h',)},
+                                )},
             'db3': {'libs': ('db-3.3', 'db-3.2', 'db-3.1', 'db-3.0'),
                     'libdirs': ('/usr/local/BerkeleyDB.3.3/lib',
                                 '/usr/local/BerkeleyDB.3.2/lib',
@@ -478,8 +478,6 @@ class PyBuildExt(build_ext):
                                 '/usr/local/lib',
                                 '/opt/sfw',
                                 '/sw/lib',
-                                '/usr/lib',
-                                '/lib',
                                 ),
                     'incdirs': ('/usr/local/BerkeleyDB.3.3/include',
                                 '/usr/local/BerkeleyDB.3.2/include',
@@ -489,27 +487,39 @@ class PyBuildExt(build_ext):
                                 '/opt/sfw/include/db3',
                                 '/sw/include/db3',
                                 '/usr/include/db3',
-                                ),
-                    'incs': ('db.h',)},
+                                )},
             }
 
         db_search_order = db_try_this.keys()
         db_search_order.sort()
         db_search_order.reverse()
         
-        find_lib_file = self.compiler.find_library_file
         class found(Exception): pass
         try:
+            # See whether there is a Sleepycat header in the standard
+            # search path.
+            std_dbinc = None
+            for d in inc_dirs:
+                f = os.path.join(d, "db.h")
+                if os.path.exists(f):
+                    f = open(f).read()
+                    m = re.search(r"#define\WDB_VERSION_MAJOR\W([1-9]+)", f)
+                    if m:
+                        std_dbinc = 'db' + m.group(1)
             for dbkey in db_search_order:
                 dbd = db_try_this[dbkey]
                 for dblib in dbd['libs']:
-                    for dbinc in dbd['incs']:
-                        db_incs = find_file(dbinc, [], dbd['incdirs'])
-                        dblib_dir = find_lib_file(dbd['libdirs'], dblib)
-                        if db_incs and dblib_dir:
-                            dblib_dir = os.path.dirname(dblib_dir)
-                            dblibs = [dblib]
-                            raise found
+                    # Prefer version-specific includes over standard
+                    # include locations.
+                    db_incs = find_file('db.h', [], dbd['incdirs'])
+                    dblib_dir = find_library_file(self.compiler,
+                                                  dblib,
+                                                  lib_dirs,
+                                                  list(dbd['libdirs']))
+                    if (db_incs or dbkey == std_dbinc) and \
+                           dblib_dir is not None:
+                        dblibs = [dblib]
+                        raise found
         except found:
             dblibs = [dblib]
             # A default source build puts Berkeley DB in something like
@@ -521,8 +531,8 @@ class PyBuildExt(build_ext):
             # in some unusual system configurations (e.g. the directory is on
             # an NFS server that goes away).
             exts.append(Extension('_bsddb', ['_bsddb.c'],
-                                  library_dirs=[dblib_dir],
-                                  runtime_library_dirs=[dblib_dir],
+                                  library_dirs=dblib_dir,
+                                  runtime_library_dirs=dblib_dir,
                                   include_dirs=db_incs,
                                   libraries=dblibs))
         else:
