@@ -970,7 +970,6 @@ com_factor(c, n)
 	struct compiling *c;
 	node *n;
 {
-	int i;
 	REQ(n, factor);
 	if (TYPE(CHILD(n, 0)) == PLUS) {
 		com_factor(c, CHILD(n, 1));
