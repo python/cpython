@@ -205,26 +205,26 @@ class build_ext (Command):
         """Ensure that the list of extensions (presumably provided as a
            command option 'extensions') is valid, i.e. it is a list of
            2-tuples, where the tuples are (extension_name, build_info_dict).
-           Raise DistutilsValueError if the structure is invalid anywhere;
+           Raise DistutilsSetupError if the structure is invalid anywhere;
            just returns otherwise."""
 
         if type (extensions) is not ListType:
-            raise DistutilsValueError, \
+            raise DistutilsSetupError, \
                   "'ext_modules' option must be a list of tuples"
         
         for ext in extensions:
             if type (ext) is not TupleType and len (ext) != 2:
-                raise DistutilsValueError, \
+                raise DistutilsSetupError, \
                       "each element of 'ext_modules' option must be a 2-tuple"
 
             if not (type (ext[0]) is StringType and
                     extension_name_re.match (ext[0])):
-                raise DistutilsValueError, \
+                raise DistutilsSetupError, \
                       "first element of each tuple in 'ext_modules' " + \
                       "must be the extension name (a string)"
 
             if type (ext[1]) is not DictionaryType:
-                raise DistutilsValueError, \
+                raise DistutilsSetupError, \
                       "second element of each tuple in 'ext_modules' " + \
                       "must be a dictionary (build info)"
 
@@ -274,7 +274,7 @@ class build_ext (Command):
         for (extension_name, build_info) in self.extensions:
             sources = build_info.get ('sources')
             if sources is None or type (sources) not in (ListType, TupleType):
-                raise DistutilsValueError, \
+                raise DistutilsSetupError, \
                       ("in 'ext_modules' option (extension '%s'), " +
                        "'sources' must be present and must be " +
                        "a list of source filenames") % extension_name

@@ -46,15 +46,18 @@ if type (RuntimeError) is types.ClassType:
     class DistutilsFileError (DistutilsError):
         pass
 
-    # DistutilsOptionError is raised anytime an attempt is made to access
-    # (get or set) an option that does not exist for a particular command
-    # (or for the distribution itself).
+    # DistutilsOptionError is raised for syntactic/semantic errors in
+    # command options, such as use of mutually conflicting options, or
+    # inconsistent options, badly-spelled values, etc.  No distinction is
+    # made between option values originating in the setup script, the
+    # command line, config files, or what-have-you.
     class DistutilsOptionError (DistutilsError):
         pass
 
-    # DistutilsValueError is raised anytime an option value (presumably
-    # provided by setup.py) is invalid.
-    class DistutilsValueError (DistutilsError):
+    # DistutilsSetupError is raised for errors that can be definitely
+    # blamed on the setup script, such as invalid keyword arguments to
+    # 'setup()'.
+    class DistutilsSetupError (DistutilsError):
         pass
 
     # DistutilsPlatformError is raised when we find that we don't
@@ -82,7 +85,6 @@ else:
     DistutilsArgError = 'DistutilsArgError'
     DistutilsFileError = 'DistutilsFileError'
     DistutilsOptionError = 'DistutilsOptionError'
-    DistutilsValueError = 'DistutilsValueError'
     DistutilsPlatformError = 'DistutilsPlatformError'
     DistutilsExecError = 'DistutilsExecError'
     DistutilsInternalError = 'DistutilsInternalError'

@@ -40,16 +40,16 @@ def native_path (pathname):
        using the current directory separator.  Needed because filenames in
        the setup script are always supplied in Unix style, and have to be
        converted to the local convention before we can actually use them in
-       the filesystem.  Raises DistutilsValueError if 'pathname' is
+       the filesystem.  Raises ValueError if 'pathname' is
        absolute (starts with '/') or contains local directory separators
        (unless the local separator is '/', of course)."""
 
     if pathname[0] == '/':
-        raise DistutilsValueError, "path '%s' cannot be absolute" % pathname
+        raise ValueError, "path '%s' cannot be absolute" % pathname
     if pathname[-1] == '/':
-        raise DistutilsValueError, "path '%s' cannot end with '/'" % pathname
+        raise ValueError, "path '%s' cannot end with '/'" % pathname
     if os.sep != '/' and os.sep in pathname:
-        raise DistutilsValueError, \
+        raise ValueError, \
               "path '%s' cannot contain '%c' character" % \
               (pathname, os.sep)
 
