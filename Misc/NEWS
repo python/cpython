@@ -1,0 +1,618 @@
+
+
+
+New since 1.5a2
+---------------
+
+The following items are only relevant if you previously used Python
+1.5a2:
+
+- The strftime test should now succeed on Windows and Mac platforms,
+too.  It still fails on some Linux platforms; I believe that this is a
+problem in the C library on those platforms.
+
+
+
+What's new in this release?
+---------------------------
+
+I haven't kept track closely, so here are just a few highlights.  For
+the final release, I will go through all my RCS logs and distill a
+complete list.  Note that the biggest unfinished project is
+documentation.
+
+XXX To be expanded:
+
+- Tools/webchecker
+
+- Lee Busby's SIGFPE mods and modules fpectl, fpetest
+
+- formatter.*Writer.flush
+
+- dis.{cmp_op, hascompare}
+
+- ftplib: FTP.ntransfercmd, Netrc, parse150
+
+- httplib.HTTP_VERSIONS_ACCEPTED
+
+- new module keyword
+
+- imghdr recognizes bmp, png
+
+- mhlib, parsesequence improved
+
+- mimify base64 support
+
+- new.function revived
+
+- popen2.popen3 added
+
+- new module pprint
+
+- cgi.FieldStorage: __len__ added
+
+New exceptions:
+	FloatingPointError
+Deleted exception:
+	ConflictError
+
+>    audioop.ratecv
+
+>     posix.O_APPEND
+>     posix.O_CREAT
+>     posix.O_DSYNC
+>     posix.O_EXCL
+>     posix.O_NDELAY
+>     posix.O_NOCTTY
+>     posix.O_NONBLOCK
+>     posix.O_RDONLY
+>     posix.O_RDWR
+>     posix.O_RSYNC
+>     posix.O_SYNC
+>     posix.O_TRUNC
+>     posix.O_WRONLY
+	posix.O_TEXT
+	posix.O_BINARY
+(also in os, of course)
+
+>     regex.get_syntax
+
+>     socket.getprotobyname
+
+>     strop.replace
+Also string.replace
+
+- Jack's buffer interface!
+	- supported by regex module!
+
+- improved dir() semantics
+
+- posix.error, nt.error renamed to os.error
+
+- rfc822 getdate_tz and parsedate_tz
+
+- shelve.*.sync
+
+- shutil improved interface
+
+- socket.getprotobynameo
+
+- _xdrmodule is gone (in favor of structmodule)
+
+- xdrlib.Unpacker.get_buffer
+
+- much improved structmodule
+
+- Tkinter upgraded (as always)
+
+- new al module for SGI
+
+- file object readinto methods
+
+- tktrace???
+
+Obsolete: cgensupport.[ch] are now in Modules and only linked with glmodule.c.
+
+- much faster file.read() and readlines() on windows
+
+======================================================================
+
+- PyObject_Compare() can now raise an exception.  Check with
+PyErr_Occurred().  The comparison function in an object type may also
+raise an exception.
+
+- The slice interface uses an upper bound of INT_MAX when no explicit
+upper bound is given (e.x. for a[1:]).  It used to ask the object for
+its length and do the calculations.
+
+- I've completed the Grand Renaming, with the help of Roger Masse and
+Barry Warsaw.  Many other unrelated code reorganizations have also
+been carried out.
+
+- As far as I can tell, neither gcc -Wall nor the Microsoft compiler
+emits a single warning any more when compiling Python.
+
+- It's much faster (almost twice for pystone.py -- see Tools/scripts.)
+
+- Unless I hear a lot of protest, private variables with leading
+double underscore are now a permanent feature of the language.  I
+can't label them "experimental" forever.
+
+- New extension modules cStringIO.c and cPickle.c, written by Jim
+Fulton and other folks at Digital Creations.  These are much more
+efficient than their Python counterparts StringIO.py and pickle.py,
+but don't support subclassing.  cPickle.c clocks up to 1000 times
+faster than pickle.py.  The pickle.py module has been updated to make
+it compatible with the new binary format that cPickle.c produces (by
+default it produces the old all-ASCII format compatible with the old
+pickle.py, still much faster than pickle.py; it can read both
+formats).  A new helper module, copy_reg.py, is provided to register
+extensions to the pickling code.  (These are now identical to the
+release 0.3 from Digital Creations.)
+
+- New (still experimental) Perl-style regular expression module,
+re.py, which uses a new interface for matching as well as a new
+syntax; the new interface avoids the thread-unsafety of the regex
+interface.  This comes with a helper extension reopmodule.c and vastly
+rewritten regexpr.c.  Most work on this was done by Jeffrey Ollie, Tim
+Peters, and Andrew Kuchling.  See the documentation libre.tex.  In
+1.5, the old regex module is still fully supported; in the future, it
+will become obsolete.
+
+- New string literal syntax for "raw strings".  Prefixing a string
+literal with the letter r (or R) disables all escape processing in the
+string; for example, r'\n' is a two-character string consisting of a
+backslash followed by the letter n.  This combines with all forms of
+string quotes.  An embedded quote prefixed with a backslash does not
+terminate the string, but the backslash is still included in the
+string; for example, r'\'' is a two-character string consisting of a
+backslash and a quote.  Raw strings are also affectionately known as
+Robin strings, after their inventor, Robin Friedrich.
+
+- New project files for Developer Studio (Visual C++) 5.0 for Windows
+NT (the old VC++ 4.2 Makefile is also still supported, but will
+eventually be withdrawn due to its bulkiness).
+
+- New extension module zlibmodule.c, interfacing to the free zlib
+library (gzip compatible compression).  There's also a module gzip.py
+which provides a higher level interface.  Written by Andrew Kuchling
+and Jeremy Hylton.
+
+- New tool: faqwiz -- the CGI script that is used to maintain the
+Python FAQ (http://grail.cnri.reston.va.us/cgi-bin/faqw.py).  In
+Tools/faqwiz.
+
+- New tool: webchecker -- a simple extensible web robot that, when
+aimed at a web server, checks that server for dead links.  Available
+are a command line utility as well as a Tkinter based GUI version.  In
+Tools/webchecker.  A simplified version of this program is dissected
+in my article in O'Reilly's WWW Journal, the issue on Scripting
+Languages (Vol 2, No 2); Scripting the Web with Python (pp 97-120).
+Includes a parser for robots.txt files by Skip Montanaro.
+
+- New small tools: cvsfiles.py (prints a list of all files under CVS
+in a particular directory tree), treesync.py (a rather Guido-specific
+script to synchronize two source trees, one on Windows NT, the other
+one on Unix under CVS but accessible from the NT box), and logmerge.py
+(sort a collection of RCS or CVS logs by date).  In Tools/scripts.
+
+- The freeze script now also works under Windows (NT).  Another
+feature allows the -p option to be pointed at the Python source tree
+instead of the installation prefix.  This was loosely based on part of
+xfreeze by Sam Rushing and Bill Tutt.
+
+- A new regression test suite is provided, which tests most of the
+standard and built-in modules.  The regression test is run by invoking
+the script Lib/test/regrtest.py.  Barry Warsaw wrote the test harnass;
+he and Roger Masse contributed most of the new tests.
+
+- New standard dialog modules for Tkinter: tkColorChooser.py,
+tkCommonDialog.py, tkMessageBox.py, tkFileDialog.py, tkSimpleDialog.py
+These interface with the new Tk dialog scripts.  Contributed by
+Fredrik Lundh.
+
+- Tkinter.py: when the first Tk object is destroyed, it sets the
+hiddel global _default_root to None, so that when another Tk object is
+created it becomes the new default root.  Other miscellaneous
+changes and fixes.
+
+- Many new pieces of library documentation were contributed, mostly by
+Andrew Kuchling.  Even cmath is now documented!  There's also a
+chapter of the library manual, "libundoc.tex", which provides a
+listing of all undocumented modules, plus their status (e.g. internal,
+obsolete, or in need of documentation).  Also contributions by Sue
+Williams, Skip Montanaro, and some module authors who succumbed to
+pressure to document their own contributed modules :-).  Note that
+printing the documentation now kills fewer trees -- the margins have
+been reduced.
+
+- I have started documenting the Python/C API.  Unfortunately this
+project hasn't been completed yet.  It will be complete before the
+final release of Python 1.5, though.
+
+- The mimify.py module now has documentation, and includes functions
+to handle the funny encoding you sometimes see in mail headers.
+
+- The default module search path is now much saner.  Both on Unix and
+Windows, it is essentially derived from the path to the executable
+($PYTHONHOME can be used to override).  The value of $PYTHONPATH on
+Windows is now inserted in front of the default path, like in Unix
+(instead of overriding the default path).
+
+- Support for Win32S (the 32-bit Windows API under Windows 3.1) is
+basically withdrawn.  If it works for you, you're lucky.
+
+- On Win32 platforms (Windows NT and 95), there's a new extension
+module, msvcrt.c, which provides various low-level operations defined
+in the Microsoft Visual C++ Runtime Library.  These include locking(),
+setmode(), get_osfhandle(), set_osfhandle(), and console I/O functions
+like kbhit(), getch() and putch().
+
+- The way GNU readline is configured is totally different.  The
+--with-readline configure option is gone.  It is now an extension
+module, which may be loaded dynamically.  You must enable it (and
+specify the correct linraries to link with) in the Modules/Setup file.
+Importing the module installs some hooks which enable command line
+editing.  When the interpreter shell is invoked interactively, it
+attempts to import the readline module; when this fails, the default
+input mechanism is used.  The hook variables are PyOS_InputHook and
+PyOS_ReadlineFunctionPointer.  (Code contributed by Lee Busby, with
+ideas from William Magro.)
+
+- New Unix extension module resource.c, by Jeremy Hylton, provides
+access to getrlimit(), getrusage(), setrusage(), getpagesize(), and
+related symbolic constants.
+
+- Support for multiple independent interpreters.  See Doc/api.tex,
+functions Py_NewInterpreter() and Py_EndInterpreter().  Since the
+documentation is incomplete, also see the new Demo/pysvr example
+(which shows how to use these in a threaded application) and the
+source code.
+
+- There is now a Py_Finalize() function which "de-initializes"
+Python.  It is possible to completely restart the interpreter
+repeatedly by calling Py_Finalize() followed by Py_Initialize().  A
+change of functionality in Py_Initialize() means that it is now a
+fatal error to call it while the interpreter is already initialized.
+The old, half-hearted Py_Cleanup() routine is gone.  Use of Py_Exit()
+is deprecated (it is nothing more than Py_Finalize() followed by
+exit()).
+
+- There are no known memory leaks.  While Py_Finalize() doesn't free
+*all* allocated memory (some of it is hard to track down), repeated
+calls to Py_Finalize() and Py_Initialize() do not create unaccessible
+heap blocks.
+
+- New function sys.exc_info() returns the tuple (sys.exc_type,
+sys.exc_value, sys.exc_traceback) in a thread-safe way.
+
+- The semantics of try-except have changed subtly so that calling a
+function in an exception handler that itself raises and catches an
+exception no longer overwrites the sys.exc_* variables.  This also
+alleviates the problem that objects referenced in a stack frame that
+caught an exception are kept alive until another exception is caught
+-- the sys.exc_* variables are restored to their previous value when
+returning from a function that caught an exception.
+
+- There is now explicit per-thread state.  (Inspired by, but not the
+same as, Greg Stein's free threading patches.)
+
+- There is now better support for threading C applications.  There are
+now explicit APIs to manipulate the interpreter lock.  Read the source
+or the Demo/pysvr example; the new functions are
+PyEval_{Acquire,Release}{Lock,Thread}().
+
+- New wrappers around malloc() and friends: Py_Malloc() etc. call
+malloc() and call PyErr_NoMemory() when it fails; PyMem_Malloc() call
+just malloc().  Use of these wrappers could be essential if multiple
+memory allocators exist (e.g. when using certain DLL setups under
+Windows).  (Idea by Jim Fulton.)
+
+- Numerous source cleanups.
+
+- There's a simple assert statement, and a new exception
+AssertionError, and a built-in variable __debug__.  For example,
+``assert foo > 0'' is equivalent to ``if __debug__ and not foo > 0:
+raise AssertionError''.  Sorry, the text of the asserted condition is
+not available; it would be too generate code for this.  However, the
+text is displayed as part of the traceback!  There's also a -O option
+to the interpreter that squeezes SET_LINENO instructions, assert
+statements and ``if __debug__'' code; it uses and produces .pyo files
+instead of .pyc files.  In the future it should be possible to write
+external bytecode optimizers that create better optimized .pyo files.
+
+- New build procedure: a single library, libpython1.5.a, is now built,
+which contains absolutely everything except for a one-line main()
+program (which calls Py_Main(argc, argv) to start the interpreter
+shell).  This makes life much simpler for applications that need to
+embed Python.  The serial number of the build is now included in the
+version string (sys.version).
+
+- New module keyword.py exports knowledge about Python's built-in
+keywords.  (New version by Ka-Ping Yee.)
+
+- New examples (Demo/extend) that show how to use the generic
+extension makefile (Misc/Makefile.pre.in).
+
+- New module pprint.py (with documentation) which supports
+pretty-printing of lists, tuples, & dictionaries recursively.  By Fred
+Drake.
+
+- New module code.py.  The function code.compile_command() can
+determine whether an interactively entered command is complete or not,
+distinguishing incomplete from invalid input.
+
+- Module codehack.py is now completely obsolete.
+
+- Revamped module tokenize.py is much more accurate and has an
+interface that makes it a breeze to write code to colorize Python
+source code.  Contributed by Ka-Ping Yee.
+
+- As always, the Macintosh port was done by Jack Jansen.  See his
+separate announcement for the Mac specific source code and the binary
+distribution(s).
+
+- A set of patches from Lee Busby has been integrated that make it
+possible to catch floating point exceptions.  Use the configure option
+--with-fpectl to enable the patches; the extension modules fpectl and
+fpetest provide control to enable/disable and test the feature,
+respectively.
+
+- New extension puremodule.c, by Barry Warsaw, which interfaces to the
+Purify(TM) C API.  See also the file Misc/PURIFY.README.  It is also
+possible to enable Purify by simply setting the PURIFY Makefile
+variable in the Modules/Setup file.
+
+- The struct extension module has several new features to control byte
+order and word size.  It supports reading and writing IEEE floats even
+on platforms where this is not the native format.
+
+- There is now a library module xdr.py which can read and write the
+XDR data format as used by Sun RPC, for example.  It uses the struct
+module.
+
+- Tools/scripts/h2py.py now supports C++ comments.
+
+- The pystone.py script is upgraded to version 1.1; there was a bug in
+version 1.0 (distributed with Python 1.4) that leaked memory.  Also,
+in 1.1, the LOOPS variable is incremented to 10000.
+
+- New C API PyImport_Import() which uses whatever __import__() hook
+that is installed for the current execution environment.  By Jim
+Fulton.
+
+- The _tkinter.c extension module has been revamped.  It now support
+Tk versions 4.1 through 8.0; support for 4.0 has been dropped.  It
+works well under Windows and Mac (with the latest Tk ports to those
+platforms).  It also supports threading -- it is safe for one
+(Python-created) thread to be blocked in _tkinter.mainloop() while
+other threads modify widgets.  (To make the changes visible, those
+threads must use update_idletasks()method.)  Unfortunately, on Windows
+and Mac, Tk 8.0 no longer supports CreateFileHandler, so
+_tkinter.createfilehandler is not available on those platforms.  I
+will have to rethink how to interface with Tcl's lower-level event
+mechanism, or with its channels (which are like Python's file-like
+objects).
+
+- New "buffer" interface.  Certain objects (e.g. strings, arrays) now
+support the "buffer" protocol.  Buffer objects are acceptable whenever
+formerly a string was required for a write operation; mutable buffer
+objects can be the target of a read operation using the
+f.readinto(buffer).  Contribution bty Jack Jansen.  (Needs
+documentation.)
+
+- In ihooks.py, ModuleLoader.load_module() now closes the file under
+all circumstances.
+
+- The tempfile.py module has a new class, TemporaryFile, which creates
+an open temporary file that will be deleted automatically when
+closed.  This works on Windows and MacOS as well as on Unix.  (Jim
+Fulton.)
+
+- Changes to the cgi.py module: Most imports are now done at the
+top of the module, which provides a speedup when using ni (Jim
+Fulton).  The problem with file upload to a Windows platform is solved
+by using the new tempfile.TemporaryFile class; temporary files are now
+always opened in binary mode (Jim Fulton).  The cgi.escape() function
+now takes an optional flag argument that quotes '"' to '&quot;'.  It
+is now possible to invoke cgi.py from a command line script, to test
+cgi scripts more easily outside an http server.  There's an optional
+limit to the size of uploads to POST (Skip Montanaro).  Added a
+'strict_parsing' option to all parsing functions (Jim Fulton).  The
+function parse_qs() now uses urllib.unquote() on the name as well as
+the value of fields (Clarence Gardner).
+
+- String interning: dictionary lookups are faster when the lookup
+string object is the same object as the key in the dictionary, not
+just a string with the same value.  This is done by having a pool of
+"interned" strings.  Most names generated by the interpreter are now
+automatically interned, and there's a new built-in function intern(s)
+that returns the interned version of a string.  Interned strings are
+not a different object type, and interning is totally optional, but by
+interning most keys a speedup of about 15% was obtained for the
+pystone benchmark.
+
+- httplib.py: the socket object is no longer closed; all HTTP/1.*
+versions are now treated the same; and it is now thread-safe (by not
+using the regex module).
+
+- BaseHTTPModule.py: treat all HTTP/1.* versions the same.
+
+- The popen2.py module is now rewritten using a class, which makes
+access to the standard error stream and the process id of the
+subprocess possible.
+
+- The support for shared libraries under AIX is now simpler and more
+robust.  Thanks to Vladimir Marangozov for revamping his own patches!
+
+- When a module is deleted, its globals are now deleted in two phases.
+In the first phase, all variables whose name begins with exactly one
+underscore are replaced by None; in the second phase, all variables
+are deleted.  This makes it possible to have global objects whose
+destructors depend on other globals.  The deletion order within each
+phase is still random.
+
+- The Modules/makesetup script now reads a file Setup.local as well as
+a file Setup.  Most changes to the Setup script can be done by editing
+Setup.local instead, which makes it easier to carry a particular setup
+over from one release to the next.
+
+- It is no longer an error for a function to be called without a
+global variable __builtins__ -- an empty directory will be provided
+by default.
+
+- Some speedup by using separate free lists for method objects (both
+the C and the Python variety) and for floating point numbers.
+
+- Big speedup by allocating frame objects with a single malloc() call.
+The Python/C API for frames is changed (you shouldn't be using this
+anyway).
+
+- It is now possible for an extension module's init function to fail
+non-fatally, by calling one of the PyErr_* functions and returning.
+
+- The PyInt_AS_LONG() and PyFloat_AS_DOUBLE() macros now cast their
+argument to the proper type, like the similar PyString macros already
+did.  (Suggestion by Marc-Andre Lemburg.)
+
+- The fcntl extension module now exports the needed symbolic
+constants.  (Formerly these were in FCNTL.py which was not available
+or correct for all platforms.)
+
+- Guido's corollary of the Don Beaudry hack: it is now possible to do
+metaprogramming by using an instance as a base class.  Not for the
+faint of heart; and undocumented as yet, but basically if a base class
+is an instance, its class will be instantiated to create the new
+class.  Jim Fulton will love it -- it also works with instances of his
+"extension classes", since it is triggered by the presence of a
+__class__ attribute on the purported base class.
+
+- Plugged the two-byte memory leak in the tokenizer when reading an
+interactive EOF.
+
+- Added timezone support to the rfc822.py module; also added
+recognition of some non-standard date formats, by Lars Wirzenius.
+
+- mhlib.py: various enhancements, including almost compatible parsing
+of message sequence specifiers without invoking a subprocess.  Also
+added a createmessage() method by Lars Wirzenius.
+
+- The StringIO.StringIO class now supports readline(nbytes).  (Lars
+Wirzenius.)
+
+- Dictionary objects have several new methods; clear() and copy() have
+the obvious semantics, while update(d) merges the contents of another
+dictionary d into this one, overriding existing keys.  BTW, the
+dictionary implementation file is now called dictobject.c rather than
+the confusing mappingobject.c.
+
+- UserDict.py supports the new dictionary methods as well.
+
+- The intrinsic function dir() is much smarter; it looks in __dict__,
+__members__ and __methods__.
+
+- The silly -s command line option and the corresponding
+PYTHONSUPPRESS environment variable and the Py_SuppressPrint global
+flag are gone.
+
+- On Windows, -u not only sets the standard I/O streams to unbuffered
+status, but also sets them in binary mode.
+
+- Some of the Py_Get* function, like Py_GetVersion() (but not yet
+Py_GetPath()) are now declared as returning a const char *.  (More
+should follow.)
+
+- Speedup by inlining some common opcodes for common operand types
+(e.g. i+i, i-i, and list[i]).  Fredrik Lundh.
+
+- The extension modules dbm, gdbm and bsddb now check that the
+database is still open before making any new calls.
+
+- Various small fixes to the nntplib.py module that I can't bother to
+document in detail.
+
+- There is a cache for results in urlparse.urlparse(); its size limit
+is set to 20 (not 2000 as it was in earlier alphas).
+
+- Small speedup by reordering the method tables of some common
+objects (e.g. list.append is now first).
+
+- The modules base64.py, uu.py and quopri.py can now be used as simple
+command line utilities.
+
+- The binascii extension module is now hopefully fully debugged.  (XXX
+Oops -- Fredril Lundh promised me a fix that I never received.)
+
+- The mimetools.py module now uses the available Python modules for
+decoding quoted-printable, uuencode and base64 formats, rather than
+creating a subprocess.
+
+- The python debugger (pdb.py, and its base class bdb.py) now support
+conditional breakpoints.  See the docs.
+
+- The configure script now detects whether malloc(0) returns a NULL
+pointer or a valid block (of length zero).  This avoids the nonsense
+of always adding one byte to all malloc() arguments on most platforms.
+
+- Improvements for whrandom.py by Tim Peters: use 32-bit arithmetic to
+speed it up, and replace 0 seed values by 1 to avoid degeneration.
+
+- Fix a bug where multiple anonymous tuple arguments would be mixed up
+when using the debugger or profiler (reported by Just van Rossum).
+The simplest example is ``def f((a,b),(c,d)): print a,b,c,d''; this
+would print the wrong value when run under the debugger or profiler.
+
+- Module ftplib.py: added support for parsing a .netrc file.  Fred
+Drake.
+
+- urllib.py: the ftp cache is now limited to 10 entries.  Added
+quote_plus() method which is like qupte() but also replaces spaces
+with '+', for encoding CGI form arguments.  Catch all errors from the
+ftp module.  HTTP requests now add the Host: header line.  The proxy
+variable names are now mapped to lower case, for Windows.
+
+- The posix module (and hence os.py!) now has doc strings!  Thanks to
+Neil Schemenauer.
+
+- shelve.py: use cPickle and cStringIO when available.
+
+- Various modules now export their type object: socket.SocketType,
+array.ArrayType.
+
+- ntpath.py supports ~ to $HOME expansion in expanduser().
+
+- The pthread support now works on most platforms.
+
+- New variable sys.executable points to the executable file for the
+Python interpreter, if known.
+
+- On Windows, sys.prefix and sys.exec_prefix point to the directory
+where Python is installed, or to the top of the source tree, if it was
+run from there.
+
+- The sort() methods for lists no longer uses the C library qsort(); I
+wrote my own quicksort implementation, with help from Tim Peters.
+This solves a bug in dictionary comparisons on some Solaris versions
+when Python is built with threads, and makes sorting lists even
+faster.
+
+- STDWIN is now officially obsolete.  Support for it will eventually
+be removed from the distribution.
+
+- The configure script is smarter about C compiler options; e.g. with
+gcc it uses -O2 and -g when possible, and on some other platforms it
+uses -Olimit 1500 to avoid a warning from the optimizer about the main
+loop in ceval.c (which has more than 1000 basic blocks).
+
+- Changed the run-time library to check for exceptions after object
+comparisons.  PyObject_Compare() can now return an exception; use
+PyErr_Occurred() to check (there is *no* special return value).
+
+- PyFile_WriteString() and Py_Flushline() now return error indicators
+instead of clearing exceptions.  This fixes an obscure bug where using
+these would clear a pending exception, discovered by Just van Rossum.
+
+- Most problems on 64-bit platforms should now be fixed.  Andrew
+Kuchling helped.  Some uncommon extension modules are still not
+clean (image and audio ops?).
+
