@@ -55,6 +55,8 @@ class bdist (Command):
                        'ztar':  ('bdist_dumb', "compressed tar file"),
                        'tar':   ('bdist_dumb', "tar file"),
                        'zip':   ('bdist_dumb', "ZIP file"),
+                       'wininst': ('bdist_wininst',
+                                   "Windows executable installer"),
                      }
     # establish the preferred order
     format_commands = ['rpm', 'gztar', 'bztar', 'ztar', 'tar', 'zip']
