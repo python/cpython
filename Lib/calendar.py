@@ -151,3 +151,20 @@ def prcal(year):
 					prweek(cal[i], 2)
 				print _spacing,
 			print
+
+# Unrelated but handy function to calculate Unix timestamp from GMT
+EPOCH = 1970
+def timegm(tuple):
+	year, month, day, hour, minute, second = tuple[:6]
+	assert year >= EPOCH
+	assert 1 <= month <= 12
+	days = 365*(year-EPOCH) + leapdays(EPOCH, year)
+	for i in range(1, month):
+		days = days + mdays[i]
+	if month > 2 and isleap(year):
+		days = days + 1
+	days = days + day - 1
+	hours = days*24 + hour
+	minutes = hours*60 + minute
+	seconds = minutes*60 + second
+	return seconds
