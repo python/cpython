@@ -1435,7 +1435,8 @@ err_input(perrdetail *err)
 		msg = "EOL while scanning single-quoted string";
 		break;
 	case E_INTR:
-		PyErr_SetNone(PyExc_KeyboardInterrupt);
+		if (!PyErr_Occurred())
+			PyErr_SetNone(PyExc_KeyboardInterrupt);
 		Py_XDECREF(v);
 		return;
 	case E_NOMEM:

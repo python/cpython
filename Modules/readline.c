@@ -656,6 +656,66 @@ setup_readline(void)
 #endif
 }
 
+/* Wrapper around GNU readline that handles signals differently. */
+
+
+#if defined(HAVE_RL_CALLBACK) && defined(HAVE_SELECT)
+
+static	char *completed_input_string;
+static void
+rlhandler(char *text)
+{
+	completed_input_string = text;
+	rl_callback_handler_remove();
+}
+
+extern PyThreadState* _PyOS_ReadlineTState;
+
+static char *
+readline_until_enter_or_signal(char *prompt, int *signal)
+{
+	char * not_done_reading = "";
+	fd_set selectset;
+
+	*signal = 0;
+#ifdef HAVE_RL_CATCH_SIGNAL
+	rl_catch_signals = 0;
+#endif
+
+	rl_callback_handler_install (prompt, rlhandler);
+	FD_ZERO(&selectset);
+	FD_SET(fileno(rl_instream), &selectset);
+	
+	completed_input_string = not_done_reading;
+
+	while(completed_input_string == not_done_reading) {
+		int has_input;
+
+		has_input = select(fileno(rl_instream) + 1, &selectset,
+				   NULL, NULL, NULL);
+		if(has_input > 0) {
+			rl_callback_read_char();
+		}
+		else if (errno == EINTR) {
+			int s;
+			PyEval_RestoreThread(_PyOS_ReadlineTState);
+			s = PyErr_CheckSignals();
+			PyThreadState_Swap(NULL);	
+			if (s < 0) {
+				rl_free_line_state();
+				rl_cleanup_after_signal();
+				rl_callback_handler_remove();
+				*signal = 1;
+				completed_input_string = NULL;
+			}
+		}
+	}
+
+	return completed_input_string;
+}
+
+
+#else
 
 /* Interrupt handler */
 
@@ -669,14 +729,13 @@ onintr(int sig)
 }
 
 
-/* Wrapper around GNU readline that handles signals differently. */
-
 static char *
-call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
+readline_until_enter_or_signal(char *prompt, int *signal)
 {
-	size_t n;
-	char *p, *q;
 	PyOS_sighandler_t old_inthandler;
+	char *p;
+    
+	*signal = 0;
 
 	old_inthandler = PyOS_setsig(SIGINT, onintr);
 	if (setjmp(jbuf)) {
@@ -685,8 +744,24 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 		sigrelse(SIGINT);
 #endif
 		PyOS_setsig(SIGINT, old_inthandler);
+		*signal = 1;
 		return NULL;
 	}
+	p = readline(prompt);
+	PyOS_setsig(SIGINT, old_inthandler);
+
+    return p;
+}
+#endif /*defined(HAVE_RL_CALLBACK) && defined(HAVE_SELECT) */
+
+
+static char *
+call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
+{
+	size_t n;
+	char *p, *q;
+	int signal;
+
 	rl_event_hook = PyOS_InputHook;
 
 	if (sys_stdin != rl_instream || sys_stdout != rl_outstream) {
@@ -697,16 +772,22 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 #endif
 	}
 
-	p = readline(prompt);
-	PyOS_setsig(SIGINT, old_inthandler);
+	p = readline_until_enter_or_signal(prompt, &signal);
+	
+	/* we got an interrupt signal */
+	if(signal) {
+		return NULL;
+	}
 
-	/* We must return a buffer allocated with PyMem_Malloc. */
+	/* We got an EOF, return a empty string. */
 	if (p == NULL) {
 		p = PyMem_Malloc(1);
 		if (p != NULL)
 			*p = '\0';
 		return p;
 	}
+
+	/* we have a valid line */
 	n = strlen(p);
 	if (n > 0) {
 		char *line;

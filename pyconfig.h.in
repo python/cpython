@@ -359,6 +359,12 @@
 /* Define to 1 if you have the `realpath' function. */
 #undef HAVE_REALPATH
 
+/* Define if you have readline 2.1 */
+#undef HAVE_RL_CALLBACK
+
+/* Define if you can turn off readline's signal handling. */
+#undef HAVE_RL_CATCH_SIGNAL
+
 /* Define if you have readline 2.2 */
 #undef HAVE_RL_COMPLETION_APPEND_CHARACTER
 
