@@ -46,6 +46,8 @@ Extension modules
 - Patch #909007: Enable a bunch of safe bug workarounds in OpenSSL, for
   the sake of compatibility with various broken SSL implementations.
 
+- Patch #945642: Fix non-blocking SSL sockets, which blocked on reads/writes.
+
 Library
 -------
 
