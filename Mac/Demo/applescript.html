@@ -94,7 +94,16 @@ details on how to start the program and talk to it, and a class variable
 <code>_signature</code> which is the default application this class will talk
 to (you can override this in various when you instantiate your class, see
 <code>aetools.py</code> for details).
- <p>
+<p>
+<blockquote>
+Let us do another sidebar. Since MacPython 2.0 this new structure, with packages
+per application and submodules per suite, is used. Older MacPythons had a
+single level of modules, with uncertain semantics. With the new structure
+it is possible for programs to override standard suites, as programs often do.
+It is a good idea to convert your own old programs to the new scheme, but if you
+really want the old standard suites are still available in
+<code>:Mac:Lib:lib-scripting</code>.
+</blockquote>
 
 The <a href="applescript/Disk_Copy/Special_Events.py">Special_Events</a>
 module is a nice example of a suite module.
