@@ -1253,7 +1253,7 @@ owner class.
 
 In general, a descriptor is an object attribute with ``binding behavior'',
 one whose attribute access has been overridden by methods in the descriptor
-protocol:  \method{__get__}, \method{__set__}, and \method{__delete__}.
+protocol:  \method{__get__()}, \method{__set__()}, and \method{__delete__()}.
 If any of those methods are defined for an object, it is said to be a
 descriptor.
 
@@ -1268,7 +1268,7 @@ methods, then Python may override the default behavior and invoke the
 descriptor method instead.  Where this occurs in the precedence chain depends
 on which descriptor methods were defined and how they were called.  Note that
 descriptors are only invoked for new style objects or classes
-(ones that subclass \class{object} or \class{type}).
+(ones that subclass \class{object()} or \class{type()}).
 
 The starting point for descriptor invocation is a binding, \code{a.x}.
 How the arguments are assembled depends on \code{a}:
@@ -1295,18 +1295,132 @@ How the arguments are assembled depends on \code{a}:
 
 For instance bindings, the precedence of descriptor invocation depends
 on the which descriptor methods are defined.  Data descriptors define
-both \method{__get__} and \method{__set__}.  Non-data descriptors have
-just the \method{__get__} method.  Data descriptors always override
+both \method{__get__()} and \method{__set__()}.  Non-data descriptors have
+just the \method{__get__()} method.  Data descriptors always override
 a redefinition in an instance dictionary.  In contrast, non-data
 descriptors can be overridden by instances.
 
-Python methods (including \function{staticmethod} and \function{classmethod})
+Python methods (including \function{staticmethod()} and \function{classmethod()})
 are implemented as non-data descriptors.  Accordingly, instances can
 redefine and override methods.  This allows individual instances to acquire
 behaviors that differ from other instances of the same class.                     
 
-The \function{property} function is implemented as a data descriptor.
-Accordingly, instances cannot override the behavior a property.
+The \function{property()} function is implemented as a data descriptor.
+Accordingly, instances cannot override the behavior of a property.
+
+
+\subsubsection{__slots__\label{slots}}
+
+By default, instances of both old and new-style classes have a dictionary
+for attribute storage.  This wastes space for objects having very few instance
+variables.  The space consumption can become acute when creating large numbers
+of instances.
+
+The default can be overridden by defining \var{__slots__} in a new-style class
+definition.  The \var{__slots__} declaration takes a sequence of instance
+variables and reserves just enough space in each instance to hold a value
+for each variable.  Space is saved because \var{__dict__} is not created for
+each instance.
+    
+\begin{datadesc}{__slots__}
+This class variable can be assigned a string, iterable, or sequence of strings
+with variable names used by instances.  If defined in a new-style class
+definition, \var{__slots__} reserves space for the declared variables
+and prevents the automatic creation of \var{__dict__} and \var{__weakref__}
+for each instance.
+\versionadded{2.2}                     
+\end{datadesc}
+
+\noindent
+Notes on Using \var{__slots__}
+
+\begin{itemize}
+
+\item Without a \var{__dict__} variable, instances cannot be assigned new
+variables not listed in the \var{__slots__} definition.  Attempts to assign
+to an unlisted variable name raises \exception{AttributeError}. If dynamic
+assignment of new variables is desired, then add \code{'__dict__'} to the
+sequence of strings in the \var{__slots__} declaration.                                     
+\versionchanged[Previously, adding \code{'__dict__'} to the \var{__slots__}
+declaration would not enable the assignment of new attributes not
+specifically listed in the sequence of instance variable names]{2.3}                     
+
+\item Without a \var{__weakref__} variable for each instance, classes
+defining \var{__slots__} do not support weak references to its instances.
+If weak reference support is needed, then add \code{'__weakref__'} to the
+sequence of strings in the \var{__slots__} declaration.                    
+\versionchanged[Previously, adding \code{__weakref__} to the \var{__slots__}
+declaration would not enable support for weak references]{2.3}                                            
+
+\item \var{__slots__} are implemented at the class level by creating
+descriptors (\ref{descriptors}) for each variable name.  As a result,
+class attributes cannot be used to set default values for instance
+variables defined by \var{__slots__}; otherwise, the class attribute would
+overwrite the descriptor assignment. 
+
+\item If a class defines a slot also defined in a base class, the instance
+variable defined by the base class slot is inaccessible (except by retrieving
+its descriptor directly from the base class). This renders the meaning of the
+program undefined.  In the future, a check may be added to prevent this.
+
+\item The action of a \var{__slots__} declaration is limited to the class
+where it is defined.  As a result, subclasses will have a \var{__dict__}
+unless they also define  \var{__slots__}.                     
+
+\item \var{__slots__} do not work for classes derived from ``variable-length''
+built-in types such as \class{long}, \class{str} and \class{tuple}. 
+
+\item Any non-string iterable may be assigned \var{__slots__}.
+Mappings may also be used; however, in the future, special meaning may
+be assigned to the values corresponding to each key.                      
+
+\end{itemize}
+
+
+\subsection{Customizing class creation\label{metaclasses}}
+
+By default, new-style classes are constructed using \function{type()}.
+A class definition is read into a separate namespace and the value
+of class name is bound to the result of \code{type(name, bases, dict)}.
+
+When the class definition is read, if \var{__metaclass__} is defined
+then the callable assigned to it will be called instead of \function{type()}.
+The allows classes or functions to be written which monitor or alter the class
+creation process:
+
+\begin{itemize}
+\item Modifying the class dictionary prior to the class being created.
+\item Returning an instance of another class -- essentially performing
+the role of a factory function.
+\end{itemize}
+
+\begin{datadesc}{__metaclass__}
+This variable can be any callable accepting arguments for \code{name},
+\code{bases}, and \code{dict}.  Upon class creation, the callable is
+used instead of the built-in \function{type()}.
+\versionadded{2.2}                     
+\end{datadesc}
+
+The appropriate metaclass is determined by the following precedence rules:
+
+\begin{itemize}
+
+\item If \code{dict['__metaclass__']} exists, it is used.
+
+\item Otherwise, if there is at least one base class, its metaclass is used
+(this looks for a \var{__class__} attribute first and if not found, uses its
+type).
+
+\item Otherwise, if a global variable named __metaclass__ exists, it is used.
+
+\item Otherwise, the old-style, classic metaclass (types.ClassType) is used.
+
+\end{itemize}      
+
+The potential uses for metaclasses are boundless. Some ideas that have
+been explored including logging, interface checking, automatic delegation,
+automatic property creation, proxies, frameworks, and automatic resource
+locking/synchronization.
 
 
 \subsection{Emulating callable objects\label{callable-types}}
