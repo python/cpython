@@ -1,6 +1,5 @@
 
 #include "Python.h"
-/* #include "modsupport.h"		/* For getargs() etc. */
 
 static PyObject *ErrorObject;
 
