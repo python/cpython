@@ -45,6 +45,10 @@ except ImportError:
         RegError = win32api.error
 
     except ImportError:
+        log.info("Warning: Can't read registry to find the "
+                 "necessary compiler setting\n"
+                 "Make sure that Python modules _winreg, "
+                 "win32api or win32con are installed.")
         pass
 
 if _can_read_reg:
@@ -115,12 +119,15 @@ class MacroExpander:
                 break
               
     def load_macros(self, version):
-        vsbase = r"Software\Microsoft\VisualStudio\%s.0" % version
+        vsbase = r"Software\Microsoft\VisualStudio\%0.1f" % version
         self.set_macro("VCInstallDir", vsbase + r"\Setup\VC", "productdir")
         self.set_macro("VSInstallDir", vsbase + r"\Setup\VS", "productdir")
         net = r"Software\Microsoft\.NETFramework"
         self.set_macro("FrameworkDir", net, "installroot")
-        self.set_macro("FrameworkSDKDir", net, "sdkinstallroot")
+        if version > 7.0:
+            self.set_macro("FrameworkSDKDir", net, "sdkinstallrootv1.1")
+        else:
+            self.set_macro("FrameworkSDKDir", net, "sdkinstallroot")
 
         p = r"Software\Microsoft\NET Framework Setup\Product"
         for base in HKEYS:
@@ -150,11 +157,13 @@ def get_build_version():
         return 6
     i = i + len(prefix)
     s, rest = sys.version[i:].split(" ", 1)
-    n = int(s[:-2])
-    if n == 12:
-        return 6
-    elif n == 13:
-        return 7
+    majorVersion = int(s[:-2]) - 6
+    minorVersion = int(s[2:3]) / 10.0
+    # I don't think paths are affected by minor version in version 6
+    if majorVersion == 6:
+        minorVersion = 0
+    if majorVersion >= 6:
+        return majorVersion + minorVersion
     # else we don't know what version of the compiler this is
     return None
     
@@ -192,12 +201,18 @@ class MSVCCompiler (CCompiler) :
     def __init__ (self, verbose=0, dry_run=0, force=0):
         CCompiler.__init__ (self, verbose, dry_run, force)
         self.__version = get_build_version()
-        if self.__version == 7:
+        if self.__version >= 7:
             self.__root = r"Software\Microsoft\VisualStudio"
             self.__macros = MacroExpander(self.__version)
         else:
             self.__root = r"Software\Microsoft\Devstudio"
         self.__paths = self.get_msvc_paths("path")
+
+        if len (self.__paths) == 0:
+            raise DistutilsPlatformError, \
+                  ("Python was built with version %s of Visual Studio, "
+                   "and extensions need to be built with the same "
+                   "version of the compiler, but it isn't installed." % self.__version)
 
         self.cc = self.find_exe("cl.exe")
         self.linker = self.find_exe("link.exe")
@@ -518,9 +533,9 @@ class MSVCCompiler (CCompiler) :
             return []
 
         path = path + " dirs"
-        if self.__version == 7:
-            key = (r"%s\7.0\VC\VC_OBJECTS_PLATFORM_INFO\Win32\Directories"
-                   % (self.__root,))
+        if self.__version >= 7:
+            key = (r"%s\%0.1f\VC\VC_OBJECTS_PLATFORM_INFO\Win32\Directories"
+                   % (self.__root, self.__version))
         else:
             key = (r"%s\6.0\Build System\Components\Platforms"
                    r"\Win32 (%s)\Directories" % (self.__root, platform))
@@ -528,7 +543,7 @@ class MSVCCompiler (CCompiler) :
         for base in HKEYS:
             d = read_values(base, key)
             if d:
-                if self.__version == 7:
+                if self.__version >= 7:
                     return string.split(self.__macros.sub(d[path]), ";")
                 else:
                     return string.split(d[path], ";")
