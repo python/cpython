@@ -33,23 +33,42 @@ def spawn (cmd,
 
     if os.name == 'posix':
         _spawn_posix (cmd, search_path, verbose, dry_run)
-    elif os.name == 'windows':          # ???
-        # XXX should 'args' be cmd[1:] or cmd?
-        # XXX how do we detect failure?
-        # XXX how to do this in pre-1.5.2?
-        # XXX is P_WAIT the correct mode?
-        # XXX how to make Windows search the path?
-        if verbose:
-            print string.join (cmd, ' ')
-        if not dry_run:
-            os.spawnv (os.P_WAIT, cmd[0], cmd[1:])
+    elif os.name in ( 'nt', 'windows' ):          # ???
+        _spawn_nt (cmd, search_path, verbose, dry_run)
     else:
         raise DistutilsPlatformError, \
               "don't know how to spawn programs on platform '%s'" % os.name
 
 # spawn ()
 
+def _spawn_nt ( cmd,
+                search_path=1,
+                verbose=0,
+                dry_run=0):
+    import string
+    executable = cmd[0]
+    if search_path:
+        paths = string.split( os.environ['PATH'], os.pathsep)
+        base,ext = os.path.splitext(executable)
+        if (ext != '.exe'):
+            executable = executable + '.exe'
+        if not os.path.isfile(executable):
+            paths.reverse()         # go over the paths and keep the last one
+            for p in paths:
+                f = os.path.join( p, executable )
+                if os.path.isfile ( f ):
+                    # the file exists, we have a shot at spawn working
+                    executable = f
+    if verbose:
+        print string.join ( [executable] + cmd[1:], ' ')
+    if not dry_run:
+        # spawn for NT requires a full path to the .exe
+        rc = os.spawnv (os.P_WAIT, executable, cmd)
+        if rc != 0:
+            raise DistutilsExecError("command failed: %d" % rc) 
 
+    
+                
 def _spawn_posix (cmd,
                   search_path=1,
                   verbose=0,
