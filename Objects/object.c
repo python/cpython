@@ -220,6 +220,19 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
 	return ret;
 }
 
+/* For debugging convenience.  See Misc/gdbinit for some useful gdb hooks */
+void PyObject_Dump(PyObject* op) 
+{
+	(void)PyObject_Print(op, stderr, 0);
+	fprintf(stderr, "\nrefcounts: %d\n", op->ob_refcnt);
+	fprintf(stderr, "address    : %x\n", op);
+}
+void PyGC_Dump(PyGC_Head* op)
+{
+	PyObject_Dump(PyObject_FROM_GC(op));
+}
+
+
 PyObject *
 PyObject_Repr(PyObject *v)
 {
@@ -1213,13 +1226,24 @@ none_repr(PyObject *op)
 	return PyString_FromString("None");
 }
 
+/* ARGUSED */
+static void
+none_dealloc(PyObject* ignore) 
+{
+	/* This should never get called, but we also don't want to SEGV if
+	 * we accidently decref None out of existance.
+	 */
+	abort();
+}
+
+
 static PyTypeObject PyNothing_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"None",
 	0,
 	0,
-	0,		/*tp_dealloc*/ /*never called*/
+	(destructor)none_dealloc,	     /*tp_dealloc*/ /*never called*/
 	0,		/*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
@@ -1250,7 +1274,7 @@ static PyTypeObject PyNotImplemented_Type = {
 	"NotImplemented",
 	0,
 	0,
-	0,		/*tp_dealloc*/ /*never called*/
+	(destructor)none_dealloc,	     /*tp_dealloc*/ /*never called*/
 	0,		/*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
