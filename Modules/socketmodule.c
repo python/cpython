@@ -51,27 +51,25 @@ Interface:
 Socket methods:
 
 - s.accept() --> new socket object, sockaddr
-- s.setsockopt(level, optname, flag) --> None
+- s.setsockopt(level, optname, flag) --> Py_None
 - s.getsockopt(level, optname) --> flag
-- s.bind(sockaddr) --> None
-- s.connect(sockaddr) --> None
+- s.bind(sockaddr) --> Py_None
+- s.connect(sockaddr) --> Py_None
 - s.getsockname() --> sockaddr
 - s.getpeername() --> sockaddr
-- s.listen(n) --> None
+- s.listen(n) --> Py_None
 - s.makefile(mode) --> file object
 - s.recv(nbytes [,flags]) --> string
 - s.recvfrom(nbytes [,flags]) --> string, sockaddr
 - s.send(string [,flags]) --> nbytes
 - s.sendto(string, [flags,] sockaddr) --> nbytes
-- s.setblocking(1 | 0) --> None
-- s.shutdown(how) --> None
-- s.close() --> None
+- s.setblocking(1 | 0) --> Py_None
+- s.shutdown(how) --> Py_None
+- s.close() --> Py_None
 
 */
 
-#include "allobjects.h"
-#include "modsupport.h"
-#include "ceval.h"
+#include "Python.h"
 
 #include <sys/types.h>
 #include "mytime.h"
@@ -144,28 +142,28 @@ fnname( arg1name, arg2name, arg3name, arg4name )	\
 /* Global variable holding the exception type for errors detected
    by this module (but not argument type or memory errors, etc.). */
 
-static object *SocketError;
+static PyObject *PySocket_Error;
 
 
 /* Convenience function to raise an error according to errno
    and return a NULL pointer from a function. */
 
-static object *
-socket_error()
+static PyObject *
+PySocket_Err()
 {
 #ifdef NT
 	if (WSAGetLastError()) {
-		object *v;
-		v = mkvalue("(is)", WSAGetLastError(), "winsock error");
+		PyObject *v;
+		v = Py_BuildValue("(is)", WSAGetLastError(), "winsock error");
 		if (v != NULL) {
-			err_setval(SocketError, v);
-			DECREF(v);
+			PyErr_SetObject(PySocket_Error, v);
+			Py_DECREF(v);
 		}
 		return NULL;
 	}
 	else
 #endif
-	return err_errno(SocketError);
+	return PyErr_SetFromErrno(PySocket_Error);
 }
 
 
@@ -174,20 +172,20 @@ socket_error()
    arguments properly. */
 
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	int sock_fd;		/* Socket file descriptor */
 	int sock_family;	/* Address family, e.g., AF_INET */
 	int sock_type;		/* Socket type, e.g., SOCK_STREAM */
 	int sock_proto;		/* Protocol type, usually 0 */
-} sockobject;
+} PySocketSockObject;
 
 
 /* A forward reference to the Socktype type object.
    The Socktype variable contains pointers to various functions,
-   some of which call newsocobject(), which uses Socktype, so
+   some of which call newsockobject(), which uses Socktype, so
    there has to be a circular reference. */
 
-staticforward typeobject Socktype;
+staticforward PyTypeObject PySocketSock_Type;
 
 
 /* Create a new socket object.
@@ -195,11 +193,11 @@ staticforward typeobject Socktype;
    If the creation fails, return NULL and set an exception (implicit
    in NEWOBJ()). */
 
-static sockobject *
-BUILD_FUNC_DEF_4(newsockobject, int, fd, int, family, int, type, int, proto)
+static PySocketSockObject *
+BUILD_FUNC_DEF_4(PySocketSock_New, int, fd, int, family, int, type, int, proto)
 {
-	sockobject *s;
-	s = NEWOBJ(sockobject, &Socktype);
+	PySocketSockObject *s;
+	s = PyObject_NEW(PySocketSockObject, &PySocketSock_Type);
 	if (s != NULL) {
 		s->sock_fd = fd;
 		s->sock_family = family;
@@ -239,11 +237,11 @@ BUILD_FUNC_DEF_2(setipaddr, char*, name, struct sockaddr_in *, addr_ret)
 			((long) d3 << 8) | ((long) d4 << 0));
 		return 4;
 	}
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	hp = gethostbyname(name);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (hp == NULL) {
-		err_setstr(SocketError, "host not found");
+		PyErr_SetString(PySocket_Error, "host not found");
 		return -1;
 	}
 	memcpy((char *) &addr_ret->sin_addr, hp->h_addr, hp->h_length);
@@ -255,7 +253,7 @@ BUILD_FUNC_DEF_2(setipaddr, char*, name, struct sockaddr_in *, addr_ret)
    This is always a string of the form 'dd.dd.dd.dd' (with variable
    size numbers). */
 
-static object *
+static PyObject *
 BUILD_FUNC_DEF_1(makeipaddr, struct sockaddr_in *,addr)
 {
 	long x = ntohl(addr->sin_addr.s_addr);
@@ -263,7 +261,7 @@ BUILD_FUNC_DEF_1(makeipaddr, struct sockaddr_in *,addr)
 	sprintf(buf, "%d.%d.%d.%d",
 		(int) (x>>24) & 0xff, (int) (x>>16) & 0xff,
 		(int) (x>> 8) & 0xff, (int) (x>> 0) & 0xff);
-	return newstringobject(buf);
+	return PyString_FromString(buf);
 }
 
 
@@ -273,13 +271,13 @@ BUILD_FUNC_DEF_1(makeipaddr, struct sockaddr_in *,addr)
    to determine what kind of address it really is. */
 
 /*ARGSUSED*/
-static object *
+static PyObject *
 BUILD_FUNC_DEF_2(makesockaddr,struct sockaddr *, addr, int, addrlen)
 {
 	if (addrlen == 0) {
 		/* No address -- may be recvfrom() from known socket */
-		INCREF(None);
-		return None;
+		Py_INCREF(Py_None);
+		return Py_None;
 	}
 
 	switch (addr->sa_family) {
@@ -287,9 +285,9 @@ BUILD_FUNC_DEF_2(makesockaddr,struct sockaddr *, addr, int, addrlen)
 	case AF_INET:
 	{
 		struct sockaddr_in *a = (struct sockaddr_in *) addr;
-		object *addr = makeipaddr(a);
-		object *ret = mkvalue("Oi", addr, ntohs(a->sin_port));
-		XDECREF(addr);
+		PyObject *addr = makeipaddr(a);
+		PyObject *ret = Py_BuildValue("Oi", addr, ntohs(a->sin_port));
+		Py_XDECREF(addr);
 		return ret;
 	}
 
@@ -297,14 +295,14 @@ BUILD_FUNC_DEF_2(makesockaddr,struct sockaddr *, addr, int, addrlen)
 	case AF_UNIX:
 	{
 		struct sockaddr_un *a = (struct sockaddr_un *) addr;
-		return newstringobject(a->sun_path);
+		return PyString_FromString(a->sun_path);
 	}
 #endif /* AF_UNIX */
 
 	/* More cases here... */
 
 	default:
-		err_setstr(SocketError, "return unknown socket address type");
+		PyErr_SetString(PySocket_Error, "return unknown socket address type");
 		return NULL;
 
 	}
@@ -318,7 +316,7 @@ BUILD_FUNC_DEF_2(makesockaddr,struct sockaddr *, addr, int, addrlen)
 
 static int
 BUILD_FUNC_DEF_4(
-getsockaddrarg,sockobject *,s, object *,args, struct sockaddr **,addr_ret, int *,len_ret)
+getsockaddrarg,PySocketSockObject *,s, PyObject *,args, struct sockaddr **,addr_ret, int *,len_ret)
 {
 	switch (s->sock_family) {
 
@@ -328,10 +326,10 @@ getsockaddrarg,sockobject *,s, object *,args, struct sockaddr **,addr_ret, int *
 		static struct sockaddr_un addr;
 		char *path;
 		int len;
-		if (!getargs(args, "s#", &path, &len))
+		if (!PyArg_Parse(args, "s#", &path, &len))
 			return 0;
 		if (len > sizeof addr.sun_path) {
-			err_setstr(SocketError, "AF_UNIX path too long");
+			PyErr_SetString(PySocket_Error, "AF_UNIX path too long");
 			return 0;
 		}
 		addr.sun_family = AF_UNIX;
@@ -347,7 +345,7 @@ getsockaddrarg,sockobject *,s, object *,args, struct sockaddr **,addr_ret, int *
 		static struct sockaddr_in addr;
 		char *host;
 		int port;
-		if (!getargs(args, "(si)", &host, &port))
+		if (!PyArg_Parse(args, "(si)", &host, &port))
 			return 0;
 		if (setipaddr(host, &addr) < 0)
 			return 0;
@@ -361,7 +359,7 @@ getsockaddrarg,sockobject *,s, object *,args, struct sockaddr **,addr_ret, int *
 	/* More cases here... */
 
 	default:
-		err_setstr(SocketError, "getsockaddrarg: bad family");
+		PyErr_SetString(PySocket_Error, "getsockaddrarg: bad family");
 		return 0;
 
 	}
@@ -373,7 +371,7 @@ getsockaddrarg,sockobject *,s, object *,args, struct sockaddr **,addr_ret, int *
    through len_ret. */
 
 static int
-BUILD_FUNC_DEF_2(getsockaddrlen,sockobject *,s, int *,len_ret)
+BUILD_FUNC_DEF_2(getsockaddrlen,PySocketSockObject *,s, int *,len_ret)
 {
 	switch (s->sock_family) {
 
@@ -394,7 +392,7 @@ BUILD_FUNC_DEF_2(getsockaddrlen,sockobject *,s, int *,len_ret)
 	/* More cases here... */
 
 	default:
-		err_setstr(SocketError, "getsockaddrarg: bad family");
+		PyErr_SetString(PySocket_Error, "getsockaddrarg: bad family");
 		return 0;
 
 	}
@@ -403,33 +401,33 @@ BUILD_FUNC_DEF_2(getsockaddrlen,sockobject *,s, int *,len_ret)
 
 /* s.accept() method */
 
-static object *
-BUILD_FUNC_DEF_2(sock_accept,sockobject *,s, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_accept,PySocketSockObject *,s, PyObject *,args)
 {
 	char addrbuf[256];
 	int addrlen, newfd;
-	object *sock, *addr, *res;
-	if (!getnoarg(args))
+	PyObject *sock, *addr, *res;
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	if (!getsockaddrlen(s, &addrlen))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	newfd = accept(s->sock_fd, (struct sockaddr *) addrbuf, &addrlen);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (newfd < 0)
-		return socket_error();
+		return PySocket_Err();
 	/* Create the new object with unspecified family,
 	   to avoid calls to bind() etc. on it. */
-	sock = (object *) newsockobject(newfd,
+	sock = (PyObject *) PySocketSock_New(newfd,
 					s->sock_family,
 					s->sock_type,
 					s->sock_proto);
 	if (sock == NULL)
 		close(newfd);
 	addr = makesockaddr((struct sockaddr *) addrbuf, addrlen);
-	res = mkvalue("OO", sock, addr);
-	XDECREF(sock);
-	XDECREF(addr);
+	res = Py_BuildValue("OO", sock, addr);
+	Py_XDECREF(sock);
+	Py_XDECREF(addr);
 	return res;
 }
 
@@ -438,19 +436,19 @@ BUILD_FUNC_DEF_2(sock_accept,sockobject *,s, object *,args)
 /* s.allowbroadcast() method */
 /* XXX obsolete -- will disappear in next release */
 
-static object *
-BUILD_FUNC_DEF_2(sock_allowbroadcast,sockobject *,s, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_allowbroadcast,PySocketSockObject *,s, PyObject *,args)
 {
 	int flag;
 	int res;
-	if (!getargs(args, "i", &flag))
+	if (!PyArg_Parse(args, "i", &flag))
 		return NULL;
 	res = setsockopt(s->sock_fd, SOL_SOCKET, SO_BROADCAST,
 			 (ANY *)&flag, sizeof flag);
 	if (res < 0)
-		return socket_error();
-	INCREF(None);
-	return None;
+		return PySocket_Err();
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 #endif
 
@@ -459,26 +457,26 @@ BUILD_FUNC_DEF_2(sock_allowbroadcast,sockobject *,s, object *,args)
 
 /* s.setblocking(1 | 0) method */
 
-static object *
-sock_setblocking(s, args)
-	sockobject *s;
-	object *args;
+static PyObject *
+PySocketSock_setblocking(s, args)
+	PySocketSockObject *s;
+	PyObject *args;
 {
 	int block;
 	int delay_flag;
-	if (!getintarg(args, &block))
+	if (!PyArg_GetInt(args, &block))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	delay_flag = fcntl (s->sock_fd, F_GETFL, 0);
 	if (block)
 		delay_flag &= (~O_NDELAY);
 	else
 		delay_flag |= O_NDELAY;
 	fcntl (s->sock_fd, F_SETFL, delay_flag);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 #endif
 
@@ -488,8 +486,8 @@ sock_setblocking(s, args)
    With a string third argument, sets an option from a buffer;
    use optional built-in module 'struct' to encode the string. */
 
-static object *
-BUILD_FUNC_DEF_2(sock_setsockopt,sockobject *,s, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_setsockopt,PySocketSockObject *,s, PyObject *,args)
 {
 	int level;
 	int optname;
@@ -498,20 +496,20 @@ BUILD_FUNC_DEF_2(sock_setsockopt,sockobject *,s, object *,args)
 	int buflen;
 	int flag;
 
-	if (getargs(args, "(iii)", &level, &optname, &flag)) {
+	if (PyArg_Parse(args, "(iii)", &level, &optname, &flag)) {
 		buf = (char *) &flag;
 		buflen = sizeof flag;
 	}
 	else {
-		err_clear();
-		if (!getargs(args, "(iis#)", &level, &optname, &buf, &buflen))
+		PyErr_Clear();
+		if (!PyArg_Parse(args, "(iis#)", &level, &optname, &buf, &buflen))
 			return NULL;
 	}
 	res = setsockopt(s->sock_fd, level, optname, (ANY *)buf, buflen);
 	if (res < 0)
-		return socket_error();
-	INCREF(None);
-	return None;
+		return PySocket_Err();
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 
@@ -520,63 +518,63 @@ BUILD_FUNC_DEF_2(sock_setsockopt,sockobject *,s, object *,args)
    With a third integer argument, retrieves a string buffer of that size;
    use optional built-in module 'struct' to decode the string. */
 
-static object *
-BUILD_FUNC_DEF_2(sock_getsockopt,sockobject *,s, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_getsockopt,PySocketSockObject *,s, PyObject *,args)
 {
 	int level;
 	int optname;
 	int res;
-	object *buf;
+	PyObject *buf;
 	int buflen;
 	int flag;
 
-	if (getargs(args, "(ii)", &level, &optname)) {
+	if (PyArg_Parse(args, "(ii)", &level, &optname)) {
 		int flag = 0;
 		int flagsize = sizeof flag;
 		res = getsockopt(s->sock_fd, level, optname,
 				 (ANY *)&flag, &flagsize);
 		if (res < 0)
-			return socket_error();
-		return newintobject(flag);
+			return PySocket_Err();
+		return PyInt_FromLong(flag);
 	}
-	err_clear();
-	if (!getargs(args, "(iii)", &level, &optname, &buflen))
+	PyErr_Clear();
+	if (!PyArg_Parse(args, "(iii)", &level, &optname, &buflen))
 		return NULL;
 	if (buflen <= 0 || buflen > 1024) {
-		err_setstr(SocketError, "getsockopt buflen out of range");
+		PyErr_SetString(PySocket_Error, "getsockopt buflen out of range");
 		return NULL;
 	}
-	buf = newsizedstringobject((char *)NULL, buflen);
+	buf = PyString_FromStringAndSize((char *)NULL, buflen);
 	if (buf == NULL)
 		return NULL;
 	res = getsockopt(s->sock_fd, level, optname,
 			 (ANY *)getstringvalue(buf), &buflen);
 	if (res < 0) {
-		DECREF(buf);
-		return socket_error();
+		Py_DECREF(buf);
+		return PySocket_Err();
 	}
-	resizestring(&buf, buflen);
+	_PyString_Resize(&buf, buflen);
 	return buf;
 }
 
 
 /* s.bind(sockaddr) method */
 
-static object *
-BUILD_FUNC_DEF_2(sock_bind,sockobject *,s, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_bind,PySocketSockObject *,s, PyObject *,args)
 {
 	struct sockaddr *addr;
 	int addrlen;
 	int res;
 	if (!getsockaddrarg(s, args, &addr, &addrlen))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	res = bind(s->sock_fd, addr, addrlen);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return socket_error();
-	INCREF(None);
-	return None;
+		return PySocket_Err();
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 
@@ -584,67 +582,67 @@ BUILD_FUNC_DEF_2(sock_bind,sockobject *,s, object *,args)
    Set the file descriptor to -1 so operations tried subsequently
    will surely fail. */
 
-static object *
-BUILD_FUNC_DEF_2(sock_close,sockobject *,s, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_close,PySocketSockObject *,s, PyObject *,args)
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	(void) close(s->sock_fd);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	s->sock_fd = -1;
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 
 /* s.connect(sockaddr) method */
 
-static object *
-BUILD_FUNC_DEF_2(sock_connect,sockobject *,s, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_connect,PySocketSockObject *,s, PyObject *,args)
 {
 	struct sockaddr *addr;
 	int addrlen;
 	int res;
 	if (!getsockaddrarg(s, args, &addr, &addrlen))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	res = connect(s->sock_fd, addr, addrlen);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return socket_error();
-	INCREF(None);
-	return None;
+		return PySocket_Err();
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 
 /* s.fileno() method */
 
-static object *
-BUILD_FUNC_DEF_2(sock_fileno,sockobject *,s, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_fileno,PySocketSockObject *,s, PyObject *,args)
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	return newintobject((long) s->sock_fd);
+	return PyInt_FromLong((long) s->sock_fd);
 }
 
 
 /* s.getsockname() method */
 
-static object *
-BUILD_FUNC_DEF_2(sock_getsockname,sockobject *,s, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_getsockname,PySocketSockObject *,s, PyObject *,args)
 {
 	char addrbuf[256];
 	int addrlen, res;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	if (!getsockaddrlen(s, &addrlen))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	res = getsockname(s->sock_fd, (struct sockaddr *) addrbuf, &addrlen);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return socket_error();
+		return PySocket_Err();
 	return makesockaddr((struct sockaddr *) addrbuf, addrlen);
 }
 
@@ -652,20 +650,20 @@ BUILD_FUNC_DEF_2(sock_getsockname,sockobject *,s, object *,args)
 #ifdef HAVE_GETPEERNAME		/* Cray APP doesn't have this :-( */
 /* s.getpeername() method */
 
-static object *
-BUILD_FUNC_DEF_2(sock_getpeername,sockobject *,s, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_getpeername,PySocketSockObject *,s, PyObject *,args)
 {
 	char addrbuf[256];
 	int addrlen, res;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	if (!getsockaddrlen(s, &addrlen))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	res = getpeername(s->sock_fd, (struct sockaddr *) addrbuf, &addrlen);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return socket_error();
+		return PySocket_Err();
 	return makesockaddr((struct sockaddr *) addrbuf, addrlen);
 }
 #endif /* HAVE_GETPEERNAME */
@@ -673,22 +671,22 @@ BUILD_FUNC_DEF_2(sock_getpeername,sockobject *,s, object *,args)
 
 /* s.listen(n) method */
 
-static object *
-BUILD_FUNC_DEF_2(sock_listen,sockobject *,s, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_listen,PySocketSockObject *,s, PyObject *,args)
 {
 	int backlog;
 	int res;
-	if (!getintarg(args, &backlog))
+	if (!PyArg_GetInt(args, &backlog))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	if (backlog < 1)
 		backlog = 1;
 	res = listen(s->sock_fd, backlog);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return socket_error();
-	INCREF(None);
-	return None;
+		return PySocket_Err();
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 #ifndef NO_DUP
@@ -699,44 +697,44 @@ BUILD_FUNC_DEF_2(sock_listen,sockobject *,s, object *,args)
    of each other.)
    The mode argument specifies 'r' or 'w' passed to fdopen(). */
 
-static object *
-BUILD_FUNC_DEF_2(sock_makefile,sockobject *,s, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_makefile,PySocketSockObject *,s, PyObject *,args)
 {
 	extern int fclose PROTO((FILE *));
 	char *mode;
 	int fd;
 	FILE *fp;
-	if (!getargs(args, "s", &mode))
+	if (!PyArg_Parse(args, "s", &mode))
 		return NULL;
 	if ((fd = dup(s->sock_fd)) < 0 ||
 	    (fp = fdopen(fd, mode)) == NULL)
-		return socket_error();
-	return newopenfileobject(fp, "<socket>", mode, fclose);
+		return PySocket_Err();
+	return PyFile_FromFile(fp, "<socket>", mode, fclose);
 }
 #endif /* NO_DUP */
 
 /* s.recv(nbytes [,flags]) method */
 
-static object *
-BUILD_FUNC_DEF_2(sock_recv,sockobject *,s, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_recv,PySocketSockObject *,s, PyObject *,args)
 {
 	int len, n, flags;
-	object *buf;
+	PyObject *buf;
 	flags = 0;
-	if (!getargs(args, "i", &len)) {
-		err_clear();
-		if (!getargs(args, "(ii)", &len, &flags))
+	if (!PyArg_Parse(args, "i", &len)) {
+		PyErr_Clear();
+		if (!PyArg_Parse(args, "(ii)", &len, &flags))
 			return NULL;
 	}
-	buf = newsizedstringobject((char *) 0, len);
+	buf = PyString_FromStringAndSize((char *) 0, len);
 	if (buf == NULL)
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	n = recv(s->sock_fd, getstringvalue(buf), len, flags);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (n < 0)
-		return socket_error();
-	if (resizestring(&buf, n) < 0)
+		return PySocket_Err();
+	if (_PyString_Resize(&buf, n) < 0)
 		return NULL;
 	return buf;
 }
@@ -744,174 +742,174 @@ BUILD_FUNC_DEF_2(sock_recv,sockobject *,s, object *,args)
 
 /* s.recvfrom(nbytes [,flags]) method */
 
-static object *
-BUILD_FUNC_DEF_2(sock_recvfrom,sockobject *,s, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_recvfrom,PySocketSockObject *,s, PyObject *,args)
 {
 	char addrbuf[256];
-	object *buf, *addr, *ret;
+	PyObject *buf, *addr, *ret;
 	int addrlen, len, n, flags;
 	flags = 0;
-	if (!getargs(args, "i", &len)) {
-		err_clear();
-		if (!getargs(args, "(ii)", &len, &flags))
+	if (!PyArg_Parse(args, "i", &len)) {
+		PyErr_Clear();
+		if (!PyArg_Parse(args, "(ii)", &len, &flags))
 		    return NULL;
 	}
 	if (!getsockaddrlen(s, &addrlen))
 		return NULL;
-	buf = newsizedstringobject((char *) 0, len);
+	buf = PyString_FromStringAndSize((char *) 0, len);
 	if (buf == NULL)
 		return NULL;
-	BGN_SAVE
-	n = recvfrom(s->sock_fd, getstringvalue(buf), len, flags,
+	Py_BEGIN_ALLOW_THREADS
+	n = recvfrom(s->sock_fd, PyString_AsString(buf), len, flags,
 #ifndef NT
 		     (ANY *)addrbuf, &addrlen);
 #else
      		     (struct sockaddr *)addrbuf, &addrlen);
 #endif
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (n < 0)
-		return socket_error();
-	if (resizestring(&buf, n) < 0)
+		return PySocket_Err();
+	if (_PyString_Resize(&buf, n) < 0)
 		return NULL;
 	addr = makesockaddr((struct sockaddr *)addrbuf, addrlen);
-	ret = mkvalue("OO", buf, addr);
-	XDECREF(addr);
-	XDECREF(buf);
+	ret = Py_BuildValue("OO", buf, addr);
+	Py_XDECREF(addr);
+	Py_XDECREF(buf);
 	return ret;
 }
 
 
 /* s.send(data [,flags]) method */
 
-static object *
-BUILD_FUNC_DEF_2(sock_send,sockobject *,s, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_send,PySocketSockObject *,s, PyObject *,args)
 {
 	char *buf;
 	int len, n, flags;
 	flags = 0;
-	if (!getargs(args, "s#", &buf, &len)) {
-		err_clear();
-		if (!getargs(args, "(s#i)", &buf, &len, &flags))
+	if (!PyArg_Parse(args, "s#", &buf, &len)) {
+		PyErr_Clear();
+		if (!PyArg_Parse(args, "(s#i)", &buf, &len, &flags))
 			return NULL;
 	}
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	n = send(s->sock_fd, buf, len, flags);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (n < 0)
-		return socket_error();
-	return newintobject((long)n);
+		return PySocket_Err();
+	return PyInt_FromLong((long)n);
 }
 
 
 /* s.sendto(data, [flags,] sockaddr) method */
 
-static object *
-BUILD_FUNC_DEF_2(sock_sendto,sockobject *,s, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_sendto,PySocketSockObject *,s, PyObject *,args)
 {
-	object *addro;
+	PyObject *addro;
 	char *buf;
 	struct sockaddr *addr;
 	int addrlen, len, n, flags;
 	flags = 0;
-	if (!getargs(args, "(s#O)", &buf, &len, &addro)) {
-		err_clear();
-		if (!getargs(args, "(s#iO)", &buf, &len, &flags, &addro))
+	if (!PyArg_Parse(args, "(s#O)", &buf, &len, &addro)) {
+		PyErr_Clear();
+		if (!PyArg_Parse(args, "(s#iO)", &buf, &len, &flags, &addro))
 			return NULL;
 	}
 	if (!getsockaddrarg(s, addro, &addr, &addrlen))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	n = sendto(s->sock_fd, buf, len, flags, addr, addrlen);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (n < 0)
-		return socket_error();
-	return newintobject((long)n);
+		return PySocket_Err();
+	return PyInt_FromLong((long)n);
 }
 
 
 /* s.shutdown(how) method */
 
-static object *
-BUILD_FUNC_DEF_2(sock_shutdown,sockobject *,s, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_shutdown,PySocketSockObject *,s, PyObject *,args)
 {
 	int how;
 	int res;
-	if (!getintarg(args, &how))
+	if (!PyArg_GetInt(args, &how))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	res = shutdown(s->sock_fd, how);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return socket_error();
-	INCREF(None);
-	return None;
+		return PySocket_Err();
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 
 /* List of methods for socket objects */
 
-static struct methodlist sock_methods[] = {
-	{"accept",		(method)sock_accept},
+static PyMethodDef PySocketSock_methods[] = {
+	{"accept",		(PyCFunction)PySocketSock_accept},
 #if 0
-	{"allowbroadcast",	(method)sock_allowbroadcast},
+	{"allowbroadcast",	(PyCFunction)PySocketSock_allowbroadcast},
 #endif
 #ifndef NT
-	{"setblocking",         (method)sock_setblocking},
+	{"setblocking",         (PyCFunction)PySocketSock_setblocking},
 #endif
-	{"setsockopt",		(method)sock_setsockopt},
-	{"getsockopt",		(method)sock_getsockopt},
-	{"bind",		(method)sock_bind},
-	{"close",		(method)sock_close},
-	{"connect",		(method)sock_connect},
-	{"fileno",		(method)sock_fileno},
-	{"getsockname",		(method)sock_getsockname},
+	{"setsockopt",		(PyCFunction)PySocketSock_setsockopt},
+	{"getsockopt",		(PyCFunction)PySocketSock_getsockopt},
+	{"bind",		(PyCFunction)PySocketSock_bind},
+	{"close",		(PyCFunction)PySocketSock_close},
+	{"connect",		(PyCFunction)PySocketSock_connect},
+	{"fileno",		(PyCFunction)PySocketSock_fileno},
+	{"getsockname",		(PyCFunction)PySocketSock_getsockname},
 #ifdef HAVE_GETPEERNAME
-	{"getpeername",		(method)sock_getpeername},
+	{"getpeername",		(PyCFunction)PySocketSock_getpeername},
 #endif
-	{"listen",		(method)sock_listen},
+	{"listen",		(PyCFunction)PySocketSock_listen},
 #ifndef NO_DUP
-	{"makefile",		(method)sock_makefile},
+	{"makefile",		(PyCFunction)PySocketSock_makefile},
 #endif
-	{"recv",		(method)sock_recv},
-	{"recvfrom",		(method)sock_recvfrom},
-	{"send",		(method)sock_send},
-	{"sendto",		(method)sock_sendto},
-	{"shutdown",		(method)sock_shutdown},
+	{"recv",		(PyCFunction)PySocketSock_recv},
+	{"recvfrom",		(PyCFunction)PySocketSock_recvfrom},
+	{"send",		(PyCFunction)PySocketSock_send},
+	{"sendto",		(PyCFunction)PySocketSock_sendto},
+	{"shutdown",		(PyCFunction)PySocketSock_shutdown},
 	{NULL,			NULL}		/* sentinel */
 };
 
 
-/* Deallocate a socket object in response to the last DECREF().
+/* Deallocate a socket object in response to the last Py_DECREF().
    First close the file description. */
 
 static void
-BUILD_FUNC_DEF_1(sock_dealloc, sockobject *,s)
+BUILD_FUNC_DEF_1(PySocketSock_dealloc, PySocketSockObject *,s)
 {
 	(void) close(s->sock_fd);
-	DEL(s);
+	PyMem_DEL(s);
 }
 
 
 /* Return a socket object's named attribute. */
 
-static object *
-BUILD_FUNC_DEF_2(sock_getattr,sockobject *,s, char *,name)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocketSock_getattr,PySocketSockObject *,s, char *,name)
 {
-	return findmethod(sock_methods, (object *) s, name);
+	return Py_FindMethod(PySocketSock_methods, (PyObject *) s, name);
 }
 
 
 /* Type object for socket objects. */
 
-static typeobject Socktype = {
-	OB_HEAD_INIT(&Typetype)
+static PyTypeObject PySocketSock_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"socket",
-	sizeof(sockobject),
+	sizeof(PySocketSockObject),
 	0,
-	(destructor)sock_dealloc, /*tp_dealloc*/
+	(destructor)PySocketSock_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
-	(getattrfunc)sock_getattr, /*tp_getattr*/
+	(getattrfunc)PySocketSock_getattr, /*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
 	0,		/*tp_repr*/
@@ -924,32 +922,32 @@ static typeobject Socktype = {
 /* Python interface to gethostname(). */
 
 /*ARGSUSED*/
-static object *
-BUILD_FUNC_DEF_2(socket_gethostname,object *,self, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocket_gethostname,PyObject *,self, PyObject *,args)
 {
 	char buf[1024];
 	int res;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	res = gethostname(buf, (int) sizeof buf - 1);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return socket_error();
+		return PySocket_Err();
 	buf[sizeof buf - 1] = '\0';
-	return newstringobject(buf);
+	return PyString_FromString(buf);
 }
 
 
 /* Python interface to gethostbyname(name). */
 
 /*ARGSUSED*/
-static object *
-BUILD_FUNC_DEF_2(socket_gethostbyname,object *,self, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocket_gethostbyname,PyObject *,self, PyObject *,args)
 {
 	char *name;
 	struct sockaddr_in addrbuf;
-	if (!getargs(args, "s", &name))
+	if (!PyArg_Parse(args, "s", &name))
 		return NULL;
 	if (setipaddr(name, &addrbuf) < 0)
 		return NULL;
@@ -962,21 +960,21 @@ BUILD_FUNC_DEF_2(socket_gethostbyname,object *,self, object *,args)
    known or not useful (like the list of aliases). */
 
 /*ARGSUSED*/
-static object *
-BUILD_FUNC_DEF_2(socket_getservbyname,object *,self, object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocket_getservbyname,PyObject *,self, PyObject *,args)
 {
 	char *name, *proto;
 	struct servent *sp;
-	if (!getargs(args, "(ss)", &name, &proto))
+	if (!PyArg_Parse(args, "(ss)", &name, &proto))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	sp = getservbyname(name, proto);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (sp == NULL) {
-		err_setstr(SocketError, "service/proto not found");
+		PyErr_SetString(PySocket_Error, "service/proto not found");
 		return NULL;
 	}
-	return newintobject((long) ntohs(sp->s_port));
+	return PyInt_FromLong((long) ntohs(sp->s_port));
 }
 
 
@@ -985,23 +983,23 @@ BUILD_FUNC_DEF_2(socket_getservbyname,object *,self, object *,args)
    Return a new socket object. */
 
 /*ARGSUSED*/
-static object *
-BUILD_FUNC_DEF_2(socket_socket,object *,self,object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocket_socket,PyObject *,self,PyObject *,args)
 {
-	sockobject *s;
+	PySocketSockObject *s;
 	int fd, family, type, proto;
 	proto = 0;
-	if (!getargs(args, "(ii)", &family, &type)) {
-		err_clear();
-		if (!getargs(args, "(iii)", &family, &type, &proto))
+	if (!PyArg_Parse(args, "(ii)", &family, &type)) {
+		PyErr_Clear();
+		if (!PyArg_Parse(args, "(iii)", &family, &type, &proto))
 			return NULL;
 	}
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	fd = socket(family, type, proto);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (fd < 0)
-		return socket_error();
-	s = newsockobject(fd, family, type, proto);
+		return PySocket_Err();
+	s = PySocketSock_New(fd, family, type, proto);
 	/* If the object can't be created, don't forget to close the
 	   file descriptor again! */
 	if (s == NULL)
@@ -1011,7 +1009,7 @@ BUILD_FUNC_DEF_2(socket_socket,object *,self,object *,args)
 #ifdef SIGPIPE      
 	(void) signal(SIGPIPE, SIG_IGN);
 #endif   
-	return (object *) s;
+	return (PyObject *) s;
 }
 
 #ifndef NO_DUP
@@ -1020,40 +1018,40 @@ BUILD_FUNC_DEF_2(socket_socket,object *,self,object *,args)
    Additional arguments as for socket(). */
 
 /*ARGSUSED*/
-static object *
-BUILD_FUNC_DEF_2(socket_fromfd,object *,self,object *,args)
+static PyObject *
+BUILD_FUNC_DEF_2(PySocket_fromfd,PyObject *,self,PyObject *,args)
 {
-	sockobject *s;
+	PySocketSockObject *s;
 	int fd, family, type, proto;
 	proto = 0;
-	if (!getargs(args, "(iii)", &fd, &family, &type)) {
-		err_clear();
-		if (!getargs(args, "(iiii)", &fd, &family, &type, &proto))
+	if (!PyArg_Parse(args, "(iii)", &fd, &family, &type)) {
+		PyErr_Clear();
+		if (!PyArg_Parse(args, "(iiii)", &fd, &family, &type, &proto))
 			return NULL;
 	}
 	/* Dup the fd so it and the socket can be closed independently */
 	fd = dup(fd);
 	if (fd < 0)
-		return socket_error();
-	s = newsockobject(fd, family, type, proto);
+		return PySocket_Err();
+	s = PySocketSock_New(fd, family, type, proto);
 	/* From now on, ignore SIGPIPE and let the error checking
 	   do the work. */
 #ifdef SIGPIPE      
 	(void) signal(SIGPIPE, SIG_IGN);
 #endif   
-	return (object *) s;
+	return (PyObject *) s;
 }
 #endif /* NO_DUP */
 
 /* List of functions exported by this module. */
 
-static struct methodlist socket_methods[] = {
-	{"gethostbyname",	socket_gethostbyname},
-	{"gethostname",		socket_gethostname},
-	{"getservbyname",	socket_getservbyname},
-	{"socket",		socket_socket},
+static PyMethodDef PySocket_methods[] = {
+	{"gethostbyname",	PySocket_gethostbyname},
+	{"gethostname",		PySocket_gethostname},
+	{"getservbyname",	PySocket_getservbyname},
+	{"socket",		PySocket_socket},
 #ifndef NO_DUP
-	{"fromfd",		socket_fromfd},
+	{"fromfd",		PySocket_fromfd},
 #endif
 	{NULL,			NULL}		 /* Sentinel */
 };
@@ -1063,16 +1061,16 @@ static struct methodlist socket_methods[] = {
    For simplicity, errors (which are unlikely anyway) are ignored. */
 
 static void
-BUILD_FUNC_DEF_3(insint,object *,d,char *,name,int,value)
+BUILD_FUNC_DEF_3(insint,PyObject *,d,char *,name,int,value)
 {
-	object *v = newintobject((long) value);
+	PyObject *v = PyInt_FromLong((long) value);
 	if (v == NULL) {
 		/* Don't bother reporting this error */
-		err_clear();
+		PyErr_Clear();
 	}
 	else {
-		dictinsert(d, name, v);
-		DECREF(v);
+		PyDict_SetItemString(d, name, v);
+		Py_DECREF(v);
 	}
 }
 
@@ -1085,12 +1083,13 @@ BUILD_FUNC_DEF_3(insint,object *,d,char *,name,int,value)
 void
 initsocket()
 {
-	object *m, *d;
-	m = initmodule("socket", socket_methods);
-	d = getmoduledict(m);
-	SocketError = newstringobject("socket.error");
-	if (SocketError == NULL || dictinsert(d, "error", SocketError) != 0)
-		fatal("can't define socket.error");
+	PyObject *m, *d;
+	m = Py_InitModule("socket", PySocket_methods);
+	d = PyModule_GetDict(m);
+	PySocket_Error = PyString_FromString("socket.error");
+	if (PySocket_Error == NULL || 
+	    PyDict_SetItemString(d, "error", PySocket_Error) != 0)
+		Py_FatalError("can't define socket.error");
 	insint(d, "AF_INET", AF_INET);
 #ifdef AF_UNIX
 	insint(d, "AF_UNIX", AF_UNIX);
