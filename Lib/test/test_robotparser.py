@@ -30,14 +30,14 @@ tests = unittest.TestSuite()
 
 def RobotTest(index, robots_txt, good_urls, bad_urls,
               agent="test_robotparser"):
-    
-        lines = StringIO.StringIO(robots_txt).readlines()
-        parser = robotparser.RobotFileParser()
-        parser.parse(lines)
-        for url in good_urls:
-            tests.addTest(RobotTestCase(index, parser, url, 1, agent))
-        for url in bad_urls:
-            tests.addTest(RobotTestCase(index, parser, url, 0, agent))
+
+    lines = StringIO.StringIO(robots_txt).readlines()
+    parser = robotparser.RobotFileParser()
+    parser.parse(lines)
+    for url in good_urls:
+        tests.addTest(RobotTestCase(index, parser, url, 1, agent))
+    for url in bad_urls:
+        tests.addTest(RobotTestCase(index, parser, url, 0, agent))
 
 # Examples from http://www.robotstxt.org/wc/norobots.html (fetched 2002)
 
@@ -116,7 +116,7 @@ Disallow: /%7ejoe/index.html
 good = ['/tmp',] # XFAIL: '/a%2fb.html'
 bad = ['/tmp/','/tmp/a.html',
        '/a%3cd.html','/a%3Cd.html',"/a/b.html",
-       '/%7Ejoe/index.html'] 
+       '/%7Ejoe/index.html']
 
 RobotTest(6, doc, good, bad)
 

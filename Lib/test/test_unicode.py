@@ -523,7 +523,7 @@ verify(u'\u6b63\u78ba\u306b\u8a00\u3046\u3068\u7ffb\u8a33\u306f'
        u'\u90e8\u306f\u30c9\u30a4\u30c4\u8a9e\u3067\u3059\u304c'
        u'\u3001\u3042\u3068\u306f\u3067\u305f\u3089\u3081\u3067'
        u'\u3059\u3002\u5b9f\u969b\u306b\u306f\u300cWenn ist das'
-       u' Nunstuck git und'.encode('utf-8') == 
+       u' Nunstuck git und'.encode('utf-8') ==
        '\xe6\xad\xa3\xe7\xa2\xba\xe3\x81\xab\xe8\xa8\x80\xe3\x81'
        '\x86\xe3\x81\xa8\xe7\xbf\xbb\xe8\xa8\xb3\xe3\x81\xaf\xe3'
        '\x81\x95\xe3\x82\x8c\xe3\x81\xa6\xe3\x81\x84\xe3\x81\xbe'

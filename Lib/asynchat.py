@@ -66,10 +66,10 @@ class async_chat (asyncore.dispatcher):
 
     def collect_incoming_data(self, data):
         raise NotImplementedError, "must be implemented in subclass"
-        
+
     def found_terminator(self):
         raise NotImplementedError, "must be implemented in subclass"
-        
+
     def set_terminator (self, term):
         "Set the input delimiter.  Can be a fixed string of any length, an integer, or None"
         self.terminator = term
@@ -291,7 +291,7 @@ class fifo:
 # regex:     14035/s
 
 def find_prefix_at_end (haystack, needle):
-	l = len(needle) - 1
-	while l and not haystack.endswith(needle[:l]):
-		l -= 1
-	return l
+    l = len(needle) - 1
+    while l and not haystack.endswith(needle[:l]):
+        l -= 1
+    return l

@@ -183,7 +183,7 @@ class FileInput:
         if not line:
             raise StopIteration
         return line
-        
+
     def __getitem__(self, i):
         if i != self._lineno:
             raise RuntimeError, "accessing lines out of order"

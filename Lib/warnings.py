@@ -13,7 +13,7 @@ def warn(message, category=None, stacklevel=1):
     """Issue a warning, or maybe ignore it or raise an exception."""
     # Check if message is already a Warning object
     if isinstance(message, Warning):
-       category = message.__class__
+        category = message.__class__
     # Check category argument
     if category is None:
         category = UserWarning
@@ -53,11 +53,11 @@ def warn_explicit(message, category, filename, lineno,
     if registry is None:
         registry = {}
     if isinstance(message, Warning):
-       text = str(message)
-       category = message.__class__
+        text = str(message)
+        category = message.__class__
     else:
-       text = message
-       message = category(message)
+        text = message
+        message = category(message)
     key = (text, category, lineno)
     # Quick test for common case
     if registry.get(key):

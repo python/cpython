@@ -494,7 +494,7 @@ else: raise TestFailed, "{}.pop(k) doesn't raise KeyError when dictionary is emp
 d[1] = 1
 try:
     for i in d:
-      d[i+1] = 1
+        d[i+1] = 1
 except RuntimeError:
     pass
 else:

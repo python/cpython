@@ -60,7 +60,7 @@ class Completer:
 
         readline.set_completer(Completer(my_namespace).complete)
         """
-        
+
         if namespace and not isinstance(namespace, dict):
             raise TypeError,'namespace must be a dictionary'
 
@@ -82,7 +82,7 @@ class Completer:
         """
         if self.use_main_ns:
             self.namespace = __main__.__dict__
-            
+
         if state == 0:
             if "." in text:
                 self.matches = self.attr_matches(text)

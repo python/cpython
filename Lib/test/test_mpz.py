@@ -87,4 +87,3 @@ else: raise TestFailed, 'gcdext(10, 10.) should raise a TypeError'
 try: mpz.mpz(-10).binary()
 except ValueError: pass
 else: raise TestFailed, 'mpz(-10).binary() should raise a ValueError'
-
