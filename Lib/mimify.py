@@ -253,7 +253,7 @@ def mime_encode(line, header):
         line = line[i:]
     return newline + line
 
-mime_header = re.compile('([ \t(]|^)([-a-zA-Z0-9_+]*[\177-\377][-a-zA-Z0-9_+\177-\377]*)([ \t)]|\n)')
+mime_header = re.compile('([ \t(]|^)([-a-zA-Z0-9_+]*[\177-\377][-a-zA-Z0-9_+\177-\377]*)(?=[ \t)]|\n)')
 
 def mime_encode_header(line):
     """Code a single header line as quoted-printable."""
@@ -263,9 +263,9 @@ def mime_encode_header(line):
         res = mime_header.search(line, pos)
         if res is None:
             break
-        newline = '%s%s%s=?%s?Q?%s?=%s' % \
+        newline = '%s%s%s=?%s?Q?%s?=' % \
                   (newline, line[pos:res.start(0)], res.group(1),
-                   CHARSET, mime_encode(res.group(2), 1), res.group(3))
+                   CHARSET, mime_encode(res.group(2), 1))
         pos = res.end(0)
     return newline + line[pos:]
 
