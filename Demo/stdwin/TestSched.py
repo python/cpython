@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # TestSched
 
@@ -8,7 +8,7 @@ import WindowSched
 from Buttons import PushButton
 
 def my_ringer(child):
-	child.id = None
+	child.my_id = None
 	stdwin.fleep()
 
 def my_hook(child):
@@ -16,7 +16,7 @@ def my_hook(child):
 	if child.my_id:
 		WindowSched.cancel(child.my_id)
 	child.my_id = \
-		WindowSched.enter(child.my_number*1000, 0, my_ringer, child)
+		WindowSched.enter(child.my_number*1000, 0, my_ringer, (child,))
 
 def main(n):
 	from CSplit import CSplit
