@@ -1035,15 +1035,15 @@ allcaps8x3(s)
 	char *end = strchr(s, '\0');
 	if (dot != NULL) {
 		if (dot-s > 8)
-			return 1; /* More than 8 before '.' */
+			return 0; /* More than 8 before '.' */
 		if (end-dot > 4)
-			return 1; /* More than 3 after '.' */
+			return 0; /* More than 3 after '.' */
 		end = strchr(dot+1, '.');
 		if (end != NULL)
-			return 1; /* More than one dot  */
+			return 0; /* More than one dot  */
 	}
 	else if (end-s > 8)
-		return 1; /* More than 8 and no dot */
+		return 0; /* More than 8 and no dot */
 	while ((c = *s++)) {
 		if (islower(c))
 			return 0;
