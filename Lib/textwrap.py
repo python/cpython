@@ -12,6 +12,16 @@ __revision__ = "$Id$"
 
 import string, re
 
+# Hardcode the recognized whitespace characters to the US-ASCII
+# whitespace characters.  The main reason for doing this is that in
+# ISO-8859-1, 0xa0 is non-breaking whitespace, so in certain locales
+# that character winds up in string.whitespace.  Respecting
+# string.whitespace in those cases would 1) make textwrap treat 0xa0 the
+# same as any other whitespace char, which is clearly wrong (it's a
+# *non-breaking* space), 2) possibly cause problems with Unicode,
+# since 0xa0 is not in range(128).
+whitespace = '\t\n\x0b\x0c\r '
+
 class TextWrapper:
     """
     Object for wrapping/filling text.  The public interface consists of
@@ -48,12 +58,11 @@ class TextWrapper:
         be broken, and some lines might be longer than 'width'.
     """
 
-    whitespace_trans = string.maketrans(string.whitespace,
-                                        ' ' * len(string.whitespace))
+    whitespace_trans = string.maketrans(whitespace, ' ' * len(whitespace))
 
     unicode_whitespace_trans = {}
     uspace = ord(u' ')
-    for x in map(ord, string.whitespace):
+    for x in map(ord, whitespace):
         unicode_whitespace_trans[x] = uspace
 
     # This funky little regex is just the trick for splitting
