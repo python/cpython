@@ -17,6 +17,7 @@ disguised Unix interface).  Refer to the library manual and\n\
 corresponding Unix manual entries for more information on calls.";
 
 #include "Python.h"
+#include "structseq.h"
 
 #if defined(PYOS_OS2)
 #define  INCL_DOS
@@ -516,42 +517,152 @@ posix_2str(PyObject *args, char *format,
 	return Py_None;
 }
 
+static char stat_result__doc__[] = 
+"stat_result: Result from stat or lstat.\n\n\
+This object may be accessed either as a tuple of\n\
+  (mode,ino,dev,nlink,uid,gid,size,atime,mtime,ctime)\n\
+or via the attributes st_mode, st_ino, st_dev, st_nlink, st_uid, and so on.\n\
+\n\
+Posix/windows: If your platform supports st_blksize, st_blocks, or st_rdev,
+they are available as attributes only.\n\
+\n\
+See os.stat for more information.\n";
+
+static PyStructSequence_Field stat_result_fields[] = {
+	{"st_mode",    "protection bits"},
+	{"st_ino",     "inode"},
+	{"st_dev",     "device"},
+	{"st_nlink",   "number of hard links"},
+	{"st_uid",     "user ID of owner"},
+	{"st_gid",     "group ID of owner"},
+	{"st_size",    "total size, in bytes"},
+	{"st_atime",   "time of last access"},
+	{"st_mtime",   "time of last modification"},
+	{"st_ctime",   "time of last change"},
+#ifdef HAVE_ST_BLKSIZE
+	{"st_blksize", "blocksize for filesystem I/O"},
+#endif
+#ifdef HAVE_ST_BLOCKS
+	{"st_blocks",  "number of blocks allocated"},
+#endif
+#ifdef HAVE_ST_RDEV
+	{"st_rdev",    "device type (if inode device)"},
+#endif
+	{0}
+};
+
+#ifdef HAVE_ST_BLKSIZE
+#define ST_BLKSIZE_IDX 10
+#else
+#define ST_BLKSIZE_IDX 9
+#endif
+
+#ifdef HAVE_ST_BLOCKS
+#define ST_BLOCKS_IDX (ST_BLKSIZE_IDX+1)
+#else
+#define ST_BLOCKS_IDX ST_BLKSIZE_IDX
+#endif
+
+#ifdef HAVE_ST_RDEV
+#define ST_RDEV_IDX (ST_BLOCKS_IDX+1)
+#else
+#define ST_RDEV_IDX ST_BLOCKS_IDX
+#endif
+
+static PyStructSequence_Desc stat_result_desc = {
+	"stat_result", /* name */
+	stat_result__doc__, /* doc */
+	stat_result_fields,
+	10
+};
+
+static char statvfs_result__doc__[] = 
+"statvfs_result: Result from statvfs or fstatvfs.\n\n\
+This object may be accessed either as a tuple of\n\
+  (bsize,frsize,blocks,bfree,bavail,files,ffree,favail,flag,namemax),
+or via the attributes f_bsize, f_frsize, f_blocks, f_bfree, and so on.
+\n\
+See os.statvfs for more information.\n";
+
+static PyStructSequence_Field statvfs_result_fields[] = {
+        {"f_bsize",  },
+        {"f_frsize", },
+        {"f_blocks", },
+        {"f_bfree",  },
+        {"f_bavail", },
+        {"f_files",  },
+        {"f_ffree",  },
+        {"f_favail", },
+        {"f_flag",   },
+        {"f_namemax",},
+        {0}
+};
+
+static PyStructSequence_Desc statvfs_result_desc = {
+	"statvfs_result", /* name */
+	statvfs_result__doc__, /* doc */
+	statvfs_result_fields,
+	10
+};
+
+static PyTypeObject StatResultType;
+static PyTypeObject StatVFSResultType;
+
 /* pack a system stat C structure into the Python stat tuple 
    (used by posix_stat() and posix_fstat()) */
 static PyObject*
 _pystat_fromstructstat(STRUCT_STAT st)
 {
-	PyObject *v = PyTuple_New(10);
+	PyObject *v = PyStructSequence_New(&StatResultType);
 	if (v == NULL)
 		return NULL;
 
-	PyTuple_SetItem(v, 0, PyInt_FromLong((long)st.st_mode));
+        PyStructSequence_SET_ITEM(v, 0, PyInt_FromLong((long)st.st_mode));
 #ifdef HAVE_LARGEFILE_SUPPORT
-	PyTuple_SetItem(v, 1, PyLong_FromLongLong((LONG_LONG)st.st_ino));
+        PyStructSequence_SET_ITEM(v, 1, 
+				  PyLong_FromLongLong((LONG_LONG)st.st_ino));
 #else
-	PyTuple_SetItem(v, 1, PyInt_FromLong((long)st.st_ino));
+        PyStructSequence_SET_ITEM(v, 1, PyInt_FromLong((long)st.st_ino));
 #endif
 #if defined(HAVE_LONG_LONG) && !defined(MS_WINDOWS)
-	PyTuple_SetItem(v, 2, PyLong_FromLongLong((LONG_LONG)st.st_dev));
+        PyStructSequence_SET_ITEM(v, 2, 
+				  PyLong_FromLongLong((LONG_LONG)st.st_dev));
 #else
-	PyTuple_SetItem(v, 2, PyInt_FromLong((long)st.st_dev));
+        PyStructSequence_SET_ITEM(v, 2, PyInt_FromLong((long)st.st_dev));
 #endif
-	PyTuple_SetItem(v, 3, PyInt_FromLong((long)st.st_nlink));
-	PyTuple_SetItem(v, 4, PyInt_FromLong((long)st.st_uid));
-	PyTuple_SetItem(v, 5, PyInt_FromLong((long)st.st_gid));
+        PyStructSequence_SET_ITEM(v, 3, PyInt_FromLong((long)st.st_nlink));
+        PyStructSequence_SET_ITEM(v, 4, PyInt_FromLong((long)st.st_uid));
+        PyStructSequence_SET_ITEM(v, 5, PyInt_FromLong((long)st.st_gid));
 #ifdef HAVE_LARGEFILE_SUPPORT
-	PyTuple_SetItem(v, 6, PyLong_FromLongLong((LONG_LONG)st.st_size));
+        PyStructSequence_SET_ITEM(v, 6, 
+				  PyLong_FromLongLong((LONG_LONG)st.st_size));
 #else
-	PyTuple_SetItem(v, 6, PyInt_FromLong(st.st_size));
+        PyStructSequence_SET_ITEM(v, 6, PyInt_FromLong(st.st_size));
 #endif
 #if SIZEOF_TIME_T > SIZEOF_LONG
-	PyTuple_SetItem(v, 7, PyLong_FromLongLong((LONG_LONG)st.st_atime));
-	PyTuple_SetItem(v, 8, PyLong_FromLongLong((LONG_LONG)st.st_mtime));
-	PyTuple_SetItem(v, 9, PyLong_FromLongLong((LONG_LONG)st.st_ctime));
+        PyStructSequence_SET_ITEM(v, 7, 
+				  PyLong_FromLongLong((LONG_LONG)st.st_atime));
+        PyStructSequence_SET_ITEM(v, 8, 
+				  PyLong_FromLongLong((LONG_LONG)st.st_mtime));
+        PyStructSequence_SET_ITEM(v, 9, 
+				  PyLong_FromLongLong((LONG_LONG)st.st_ctime));
 #else
-	PyTuple_SetItem(v, 7, PyInt_FromLong((long)st.st_atime));
-	PyTuple_SetItem(v, 8, PyInt_FromLong((long)st.st_mtime));
-	PyTuple_SetItem(v, 9, PyInt_FromLong((long)st.st_ctime));
+	PyStructSequence_SET_ITEM(v, 7, PyInt_FromLong((long)st.st_atime));
+        PyStructSequence_SET_ITEM(v, 8, PyInt_FromLong((long)st.st_mtime));
+        PyStructSequence_SET_ITEM(v, 9, PyInt_FromLong((long)st.st_ctime));
+#endif
+
+#ifdef HAVE_ST_BLKSIZE
+	PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX, 
+			 PyInt_FromLong((long)st.st_blksize));
+#endif
+#ifdef HAVE_ST_BLOCKS
+	PyStructSequence_SET_ITEM(v, ST_BLOCKS_IDX, 
+			 PyInt_FromLong((long)st.st_blocks));
+#endif
+#ifdef HAVE_ST_RDEV
+	PyStructSequence_SET_ITEM(v, ST_RDEV_IDX,
+			 PyInt_FromLong((long)st.st_rdev));
 #endif
 
 	if (PyErr_Occurred()) {
@@ -561,7 +672,6 @@ _pystat_fromstructstat(STRUCT_STAT st)
 
 	return v;
 }
-
 
 static PyObject *
 posix_do_stat(PyObject *self, PyObject *args, char *format,
@@ -4173,6 +4283,45 @@ posix_WSTOPSIG(PyObject *self, PyObject *args)
 #endif
 #include <sys/statvfs.h>
 
+static PyObject*
+_pystatvfs_fromstructstatvfs(struct statvfs st) {
+        PyObject *v = PyStructSequence_New(&StatVFSResultType);
+	if (v == NULL)
+		return NULL;
+
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+        PyStructSequence_SET_ITEM(v, 0, PyInt_FromLong((long) st.f_bsize));
+        PyStructSequence_SET_ITEM(v, 1, PyInt_FromLong((long) st.f_frsize));
+        PyStructSequence_SET_ITEM(v, 2, PyInt_FromLong((long) st.f_blocks));
+        PyStructSequence_SET_ITEM(v, 3, PyInt_FromLong((long) st.f_bfree));
+        PyStructSequence_SET_ITEM(v, 4, PyInt_FromLong((long) st.f_bavail));
+        PyStructSequence_SET_ITEM(v, 5, PyInt_FromLong((long) st.f_files));
+        PyStructSequence_SET_ITEM(v, 6, PyInt_FromLong((long) st.f_ffree));
+        PyStructSequence_SET_ITEM(v, 7, PyInt_FromLong((long) st.f_favail));
+        PyStructSequence_SET_ITEM(v, 8, PyInt_FromLong((long) st.f_flag));
+        PyStructSequence_SET_ITEM(v, 9, PyInt_FromLong((long) st.f_namemax));
+#else
+        PyStructSequence_SET_ITEM(v, 0, PyInt_FromLong((long) st.f_bsize));
+        PyStructSequence_SET_ITEM(v, 1, PyInt_FromLong((long) st.f_frsize));
+        PyStructSequence_SET_ITEM(v, 2, 
+			       PyLong_FromLongLong((LONG_LONG) st.f_blocks));
+        PyStructSequence_SET_ITEM(v, 3, 
+			       PyLong_FromLongLong((LONG_LONG) st.f_bfree));
+        PyStructSequence_SET_ITEM(v, 4,
+			       PyLong_FromLongLong((LONG_LONG) st.f_bavail));
+        PyStructSequence_SET_ITEM(v, 5, 
+			       PyLong_FromLongLong((LONG_LONG) st.f_files));
+        PyStructSequence_SET_ITEM(v, 6, 
+			       PyLong_FromLongLong((LONG_LONG) st.f_ffree));
+        PyStructSequence_SET_ITEM(v, 7, 
+			       PyLong_FromLongLong((LONG_LONG) st.f_favail));
+        PyStructSequence_SET_ITEM(v, 8, PyInt_FromLong((long) st.f_flag));
+        PyStructSequence_SET_ITEM(v, 9, PyInt_FromLong((long) st.f_namemax));
+#endif
+
+        return v;
+}
+
 static char posix_fstatvfs__doc__[] =
 "fstatvfs(fd) -> \n\
  (bsize, frsize, blocks, bfree, bavail, files, ffree, favail, flag, namemax)\n\
@@ -4183,6 +4332,7 @@ posix_fstatvfs(PyObject *self, PyObject *args)
 {
 	int fd, res;
 	struct statvfs st;
+
 	if (!PyArg_ParseTuple(args, "i:fstatvfs", &fd))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
@@ -4190,31 +4340,8 @@ posix_fstatvfs(PyObject *self, PyObject *args)
 	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return posix_error();
-#if !defined(HAVE_LARGEFILE_SUPPORT)
-	return Py_BuildValue("(llllllllll)",
-		    (long) st.f_bsize,
-		    (long) st.f_frsize,
-		    (long) st.f_blocks,
-		    (long) st.f_bfree,
-		    (long) st.f_bavail,
-		    (long) st.f_files,
-		    (long) st.f_ffree,
-		    (long) st.f_favail,
-		    (long) st.f_flag,
-		    (long) st.f_namemax);
-#else
-	return Py_BuildValue("(llLLLLLLll)",
-		    (long) st.f_bsize,
-		    (long) st.f_frsize,
-		    (LONG_LONG) st.f_blocks,
-		    (LONG_LONG) st.f_bfree,
-		    (LONG_LONG) st.f_bavail,
-		    (LONG_LONG) st.f_files,
-		    (LONG_LONG) st.f_ffree,
-		    (LONG_LONG) st.f_favail,
-		    (long) st.f_flag,
-		    (long) st.f_namemax);
-#endif
+
+        return _pystatvfs_fromstructstatvfs(st);
 }
 #endif /* HAVE_FSTATVFS */
 
@@ -4240,31 +4367,8 @@ posix_statvfs(PyObject *self, PyObject *args)
 	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return posix_error_with_filename(path);
-#if !defined(HAVE_LARGEFILE_SUPPORT)
-	return Py_BuildValue("(llllllllll)",
-		    (long) st.f_bsize,
-		    (long) st.f_frsize,
-		    (long) st.f_blocks,
-		    (long) st.f_bfree,
-		    (long) st.f_bavail,
-		    (long) st.f_files,
-		    (long) st.f_ffree,
-		    (long) st.f_favail,
-		    (long) st.f_flag,
-		    (long) st.f_namemax);
-#else	/* HAVE_LARGEFILE_SUPPORT */
-	return Py_BuildValue("(llLLLLLLll)",
-		    (long) st.f_bsize,
-		    (long) st.f_frsize,
-		    (LONG_LONG) st.f_blocks,
-		    (LONG_LONG) st.f_bfree,
-		    (LONG_LONG) st.f_bavail,
-		    (LONG_LONG) st.f_files,
-		    (LONG_LONG) st.f_ffree,
-		    (LONG_LONG) st.f_favail,
-		    (long) st.f_flag,
-		    (long) st.f_namemax);
-#endif
+
+        return _pystatvfs_fromstructstatvfs(st);
 }
 #endif /* HAVE_STATVFS */
 
@@ -5825,4 +5929,10 @@ INITFUNC(void)
 	if (posix_putenv_garbage == NULL)
 		posix_putenv_garbage = PyDict_New();
 #endif
+
+	PyStructSequence_InitType(&StatResultType, &stat_result_desc);
+	PyDict_SetItemString(d, "stat_result", (PyObject*) &StatResultType);
+
+	PyStructSequence_InitType(&StatVFSResultType, &statvfs_result_desc);
+	PyDict_SetItemString(d, "statvfs_result", (PyObject*) &StatResultType);
 }
