@@ -19,7 +19,7 @@ future_check_features(PyFutureFeatures *ff, node *n, char *filename)
 
 	REQ(n, import_stmt); /* must by from __future__ import ... */
 
-	for (i = 3; i < NCH(n); ++i) {
+	for (i = 3; i < NCH(n); i += 2) {
 		ch = CHILD(n, i);
 		if (TYPE(ch) == STAR) {
 			PyErr_SetString(PyExc_SyntaxError,
