@@ -95,11 +95,7 @@ signal signalmodule.c		# signal(2)
 
 #gl glmodule.c cgensupport.c -I$(srcdir) -lgl -lX11
 
-# Thread module -- use only if Python has thread support for your OS.
-# Note that you must have configured (and built!) Python with the
-# --with-thread option passed to the configure script for this to work:
-
-#thread threadmodule.c
+# The thread module is now automatically enabled, see Setup.thread.
 
 # Pure module.  Cannot be linked dynamically.
 # -DWITH_QUANTIFY, -DWITH_PURIFY, or -DWITH_ALL_PURE

@@ -1,0 +1,11 @@
+# This file is transmogrified into Setup.thread by config.status.
+
+# Its purpose is to automatically enable the thread module when the
+# --with-thread argument is given to the configure script.
+
+# *NOTE*: if the configure script decides it can't support threads,
+# the thread module will still be enabled and cause compile errors.
+# The solution is not to use --with-thread on platforms that don't
+# support threads.
+
+@USE_THREAD_MODULE@thread threadmodule.c
