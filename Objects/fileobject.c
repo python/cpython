@@ -512,7 +512,7 @@ file_read(f, args)
 	if (!PyArg_ParseTuple(args, "|l", &bytesrequested))
 		return NULL;
 	if (bytesrequested < 0)
-		buffersize = new_buffersize(f, 0);
+		buffersize = new_buffersize(f, (size_t)0);
 	else
 		buffersize = bytesrequested;
 	v = PyString_FromStringAndSize((char *)NULL, buffersize);

@@ -195,7 +195,7 @@ sha_transform(sha_info)
     SHA_INT32 T, A, B, C, D, E, W[80], *WP;
 
     memcpy(W, sha_info->data, sizeof(sha_info->data));
-    longReverse(W, sizeof(sha_info->data), sha_info->Endianness);
+    longReverse(W, (int)sizeof(sha_info->data), sha_info->Endianness);
 
     for (i = 16; i < 80; ++i) {
 	W[i] = W[i-3] ^ W[i-8] ^ W[i-14] ^ W[i-16];

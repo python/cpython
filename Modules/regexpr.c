@@ -811,7 +811,8 @@ static int re_optimize_star_jump(bufp, code)
 	p2 = code;
 	/* p1 points inside loop, p2 points to after loop */
 	if (!re_do_compile_fastmap(bufp->buffer, bufp->used,
-				   p2 - bufp->buffer, &can_be_null, map))
+				   (int)(p2 - bufp->buffer),
+				   &can_be_null, map))
 		goto make_normal_jump;
 	
 	/* If we might introduce a new update point inside the
