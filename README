@@ -559,7 +559,8 @@ Modules/getpath.o.
 	because there are run-time penalties when support for them is
 	compiled in even if you don't use them.)  IMPORTANT: run "make
 	clean" after changing (either enabling or disabling) this
-	option!  Note: for DEC Unix use --with-dec-threads instead.
+	option, or you will get link errors!  Note: for DEC Unix use
+	--with-dec-threads instead.
 
 --with-sgi-dl: On SGI IRIX 4, dynamic loading of extension modules is
 	supported by the "dl" library by Jack Jansen, which is
