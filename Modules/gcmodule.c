@@ -20,8 +20,6 @@
 
 #include "Python.h"
 
-#ifdef WITH_CYCLE_GC
-
 /* Get an object's GC head */
 #define AS_GC(o) ((PyGC_Head *)(o)-1)
 
@@ -941,8 +939,6 @@ void _PyGC_Dump(PyGC_Head *g)
 	_PyObject_Dump(FROM_GC(g));
 }
 
-#endif /* WITH_CYCLE_GC */
-
 /* extension modules might be compiled with GC support so these
    functions must always be available */
 
@@ -967,10 +963,8 @@ _PyObject_GC_Track(PyObject *op)
 void
 PyObject_GC_UnTrack(void *op)
 {
-#ifdef WITH_CYCLE_GC
 	if (IS_TRACKED(op))
 		_PyObject_GC_UNTRACK(op);
-#endif
 }
 
 /* for binary compatibility with 2.2 */
@@ -984,7 +978,6 @@ PyObject *
 _PyObject_GC_Malloc(size_t basicsize)
 {
 	PyObject *op;
-#ifdef WITH_CYCLE_GC
 	PyGC_Head *g = PyObject_MALLOC(sizeof(PyGC_Head) + basicsize);
 	if (g == NULL)
 		return PyErr_NoMemory();
@@ -1000,12 +993,6 @@ _PyObject_GC_Malloc(size_t basicsize)
 		collecting = 0;
 	}
 	op = FROM_GC(g);
-#else
-	op = PyObject_MALLOC(basicsize);
-	if (op == NULL)
-		return PyErr_NoMemory();
-
-#endif
 	return op;
 }
 
@@ -1032,17 +1019,11 @@ PyVarObject *
 _PyObject_GC_Resize(PyVarObject *op, int nitems)
 {
 	const size_t basicsize = _PyObject_VAR_SIZE(op->ob_type, nitems);
-#ifdef WITH_CYCLE_GC
 	PyGC_Head *g = AS_GC(op);
 	g = PyObject_REALLOC(g,  sizeof(PyGC_Head) + basicsize);
 	if (g == NULL)
 		return (PyVarObject *)PyErr_NoMemory();
 	op = (PyVarObject *) FROM_GC(g);
-#else
-	op = PyObject_REALLOC(op, basicsize);
-	if (op == NULL)
-		return (PyVarObject *)PyErr_NoMemory();
-#endif
 	op->ob_size = nitems;
 	return op;
 }
@@ -1050,7 +1031,6 @@ _PyObject_GC_Resize(PyVarObject *op, int nitems)
 void
 PyObject_GC_Del(void *op)
 {
-#ifdef WITH_CYCLE_GC
 	PyGC_Head *g = AS_GC(op);
 	if (IS_TRACKED(op))
 		gc_list_remove(g);
@@ -1058,9 +1038,6 @@ PyObject_GC_Del(void *op)
 		generations[0].count--;
 	}
 	PyObject_FREE(g);
-#else
-	PyObject_FREE(op);
-#endif
 }
 
 /* for binary compatibility with 2.2 */

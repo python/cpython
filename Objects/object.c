@@ -2080,29 +2080,8 @@ PyObject * _PyTrash_delete_later = NULL;
 void
 _PyTrash_deposit_object(PyObject *op)
 {
-#ifndef WITH_CYCLE_GC
-	int typecode;
-
-	if (PyTuple_Check(op))
-		typecode = Py_TRASHCAN_TUPLE;
-	else if (PyList_Check(op))
-		typecode = Py_TRASHCAN_LIST;
-	else if (PyDict_Check(op))
-		typecode = Py_TRASHCAN_DICT;
-	else if (PyFrame_Check(op))
-		typecode = Py_TRASHCAN_FRAME;
-	else if (PyTraceBack_Check(op))
-		typecode = Py_TRASHCAN_TRACEBACK;
-	else /* We have a bug here -- those are the only types in GC */ {
-		Py_FatalError("Type not supported in GC -- internal bug");
-		return; /* pacify compiler -- execution never here */
-	}
-	op->ob_refcnt = typecode;
-	op->ob_type = (PyTypeObject*)_PyTrash_delete_later;
-#else
 	assert (_Py_AS_GC(op)->gc.gc_next == NULL);
 	_Py_AS_GC(op)->gc.gc_prev = (PyGC_Head *)_PyTrash_delete_later;
-#endif
 	_PyTrash_delete_later = op;
 }
 
@@ -2112,30 +2091,8 @@ _PyTrash_destroy_chain(void)
 	while (_PyTrash_delete_later) {
 		PyObject *shredder = _PyTrash_delete_later;
 
-#ifndef WITH_CYCLE_GC
-		_PyTrash_delete_later = (PyObject*) shredder->ob_type;
-
-		switch (shredder->ob_refcnt) {
-		case Py_TRASHCAN_TUPLE:
-			shredder->ob_type = &PyTuple_Type;
-			break;
-		case Py_TRASHCAN_LIST:
-			shredder->ob_type = &PyList_Type;
-			break;
-		case Py_TRASHCAN_DICT:
-			shredder->ob_type = &PyDict_Type;
-			break;
-		case Py_TRASHCAN_FRAME:
-			shredder->ob_type = &PyFrame_Type;
-			break;
-		case Py_TRASHCAN_TRACEBACK:
-			shredder->ob_type = &PyTraceBack_Type;
-			break;
-		}
-#else
 		_PyTrash_delete_later =
 			(PyObject*) _Py_AS_GC(shredder)->gc.gc_prev;
-#endif
 
 		_Py_NewReference(shredder);
 

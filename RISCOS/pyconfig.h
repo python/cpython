@@ -236,9 +236,6 @@
    one supplied by Python itself. (see Include/unicodectype.h). */
 #undef WANT_WCTYPE_FUNCTIONS
 
-/* Define if you want to compile in cycle garbage collection */
-#define WITH_CYCLE_GC 1
-
 /* Define if you want to emulate SGI (IRIX 4) dynamic linking.
    This is rumoured to work on VAX (Ultrix), Sun3 (SunOS 3.4),
    Sequent Symmetry (Dynix), and Atari ST.
