@@ -29,10 +29,10 @@ objects on ``dbm''-style database files.
 
 \strong{Note:} The \code{pickle} module is rather slow.  A
 reimplementation of the same algorithm in C, which is up to 1000 times
-faster, is available as the \code{cPickle} module.  This has the same
-interface except that \code{Pickler} and \code{Unpickler} are factory
-functions, not classes (so they cannot be used as a base class for
-inheritance).
+faster, is available as the \code{cPickle}\refbimodindex{cPickle}
+module.  This has the same interface except that \code{Pickler} and
+\code{Unpickler} are factory functions, not classes (so they cannot be
+used as a base class for inheritance).
 
 Unlike the built-in module \code{marshal}, \code{pickle} handles the
 following correctly:
@@ -50,9 +50,12 @@ following correctly:
 
 The data format used by \code{pickle} is Python-specific.  This has
 the advantage that there are no restrictions imposed by external
-standards such as CORBA (which probably can't represent pointer
-sharing or recursive objects); however it means that non-Python
-programs may not be able to reconstruct pickled Python objects.
+standards such as XDR%
+\index{XDR}
+\index{External Data Representation}
+(which can't represent pointer sharing); however
+it means that non-Python programs may not be able to reconstruct
+pickled Python objects.
 
 By default, the \code{pickle} data format uses a printable \ASCII{}
 representation.  This is slightly more voluminous than a binary
@@ -82,8 +85,8 @@ data stream.  Such objects are referenced by a name, which is an
 arbitrary string of printable \ASCII{} characters.  The resolution of
 such names is not defined by the \code{pickle} module --- the
 persistent object module will have to implement a method
-\code{persistent_load}.  To write references to persistent objects,
-the persistent module must define a method \code{persistent_id} which
+\code{persistent_load()}.  To write references to persistent objects,
+the persistent module must define a method \code{persistent_id()} which
 returns either \code{None} or the persistent ID of the object.
 
 There are some restrictions on the pickling of class instances.
@@ -93,16 +96,16 @@ Furthermore, all its instance variables must be picklable.
 
 \renewcommand{\indexsubitem}{(pickle protocol)}
 
-When a pickled class instance is unpickled, its \code{__init__} method
+When a pickled class instance is unpickled, its \code{__init__()} method
 is normally \emph{not} invoked.  \strong{Note:} This is a deviation
 from previous versions of this module; the change was introduced in
 Python 1.5b2.  The reason for the change is that in many cases it is
 desirable to have a constructor that requires arguments; it is a
-(minor) nuisance to have to provide a \code{__getinitargs__} method.
+(minor) nuisance to have to provide a \code{__getinitargs__()} method.
 
-If it is desirable that the \code{__init__} method be called on
+If it is desirable that the \code{__init__()} method be called on
 unpickling, a class can define a method \code{__getinitargs__()},
-which should return a {\em tuple} containing the arguments to be
+which should return a \emph{tuple} containing the arguments to be
 passed to the class constructor (\code{__init__()}).  This method is
 called at pickle time; the tuple it returns is incorporated in the
 pickle for the instance.
@@ -171,9 +174,9 @@ A shorthand is:
 x = pickle.load(f)
 \end{verbatim}\ecode
 %
-The \code{Pickler} class only calls the method \code{f.write} with a
-string argument.  The \code{Unpickler} calls the methods \code{f.read}
-(with an integer argument) and \code{f.readline} (without argument),
+The \code{Pickler} class only calls the method \code{f.write()} with a
+string argument.  The \code{Unpickler} calls the methods \code{f.read()}
+(with an integer argument) and \code{f.readline()} (without argument),
 both returning a string.  It is explicitly allowed to pass non-file
 objects here, as long as they have the right methods.
 \ttindex{Unpickler}
@@ -213,7 +216,7 @@ the same \code{Pickler} instance.  These must then be matched to the
 same number of calls to the \code{load()} instance of the
 corresponding \code{Unpickler} instance.  If the same object is
 pickled by multiple \code{dump()} calls, the \code{load()} will all
-yield references to the same object.  {\em Warning}: this is intended
+yield references to the same object.  \emph{Warning}: this is intended
 for pickling multiple objects without intervening modifications to the
 objects or their parts.  If you modify an object and then pickle it
 again using the same \code{Pickler} instance, the object is not
@@ -237,7 +240,7 @@ text pickle format is used.
 
 \begin{funcdesc}{load}{file}
 Read a pickled object from the open file object \var{file}.  This is
-equivalent to \code{Unpickler(file).load()}.
+equivalent to \code{Unpickler(\var{file}).load()}.
 \end{funcdesc}
 
 \begin{funcdesc}{dumps}{object\optional{, bin}}
