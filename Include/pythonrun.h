@@ -98,6 +98,12 @@ extern DL_IMPORT(char) *(*PyOS_ReadlineFunctionPointer)(char *);
 DL_IMPORT(int) PyOS_CheckStack(void);
 #endif
 
+/* Signals */
+typedef void (*PyOS_sighandler_t)(int);
+DL_IMPORT(PyOS_sighandler_t) PyOS_getsig(int);
+DL_IMPORT(PyOS_sighandler_t) PyOS_setsig(int, PyOS_sighandler_t);
+
+
 #ifdef __cplusplus
 }
 #endif
