@@ -135,7 +135,7 @@ class Profile:
           non-recursive functions, this is the total execution time from start
           to finish of each invocation of a function, including time spent in
           all subfunctions.
-    [5] = A dictionary indicating for each function name, the number of times
+    [4] = A dictionary indicating for each function name, the number of times
           it was called by us.
     """
 
@@ -202,12 +202,12 @@ class Profile:
         return
 
 
-
-    # Dispatch routine for best timer program (return = scalar integer)
+    # Dispatch routine for best timer program (return = scalar, fastest if
+    # an integer but float works too -- and time.clock() relies on that).
 
     def trace_dispatch_i(self, frame, event, arg):
         timer = self.timer
-        t = timer() - self.t # - 1 # Integer calibration constant
+        t = timer() - self.t # - 1 # calibration constant
         if self.dispatch[event](self, frame,t):
             self.t = timer()
         else:
