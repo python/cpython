@@ -1,5 +1,5 @@
 """
-Package generated from Moes:Applications (Mac OS 9):Internet Explorer 5:Internet Explorer
+Package generated from /Volumes/Sap/Applications (Mac OS 9)/Internet Explorer 5/Internet Explorer
 Resource aete resid 0 
 """
 import aetools
@@ -38,6 +38,29 @@ from Web_Browser_Suite import *
 from URL_Suite import *
 from Microsoft_Internet_Explorer import *
 from Netscape_Suite import *
+def getbaseclasses(v):
+	if hasattr(v, '_superclassnames') and not hasattr(v, '_propdict'):
+		v._propdict = {}
+		v._elemdict = {}
+		for superclass in v._superclassnames:
+			v._propdict.update(getattr(eval(superclass), '_privpropdict', {}))
+			v._elemdict.update(getattr(eval(superclass), '_privelemdict', {}))
+		v._propdict.update(v._privpropdict)
+		v._elemdict.update(v._privelemdict)
+
+import StdSuites
+
+#
+# Set property and element dictionaries now that all classes have been defined
+#
+getbaseclasses(application)
+
+#
+# Indices of types declared in this module
+#
+_classdeclarations = {
+	'capp' : application,
+}
 
 
 class Explorer(Required_Suite_Events,
@@ -48,4 +71,6 @@ class Explorer(Required_Suite_Events,
 		Netscape_Suite_Events,
 		aetools.TalkTo):
 	_signature = 'MSIE'
+
+	_moduleName = 'Explorer'
 

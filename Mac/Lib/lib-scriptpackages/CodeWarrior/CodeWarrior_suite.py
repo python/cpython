@@ -1,7 +1,7 @@
 """Suite CodeWarrior suite: Terms for scripting the CodeWarrior IDE
 Level 0, version 0
 
-Generated from Moes:Applications (Mac OS 9):Metrowerks CodeWarrior 7.0:Metrowerks CodeWarrior:CodeWarrior IDE 4.2.6
+Generated from /Volumes/Sap/Applications (Mac OS 9)/Metrowerks CodeWarrior 7.0/Metrowerks CodeWarrior/CodeWarrior IDE 4.2.5
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -44,12 +44,12 @@ class CodeWarrior_suite_Events:
 			return _arguments['----']
 
 	_argmap_export = {
-		'_in' : 'kfil',
+		'in_' : 'kfil',
 	}
 
 	def export(self, _no_object=None, _attributes={}, **_arguments):
 		"""export: Export the project file as an XML file
-		Keyword argument _in: the XML file in which to export the project
+		Keyword argument in_: the XML file in which to export the project
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'CWIE'
@@ -379,7 +379,7 @@ class linked(aetools.NProperty):
 	which = 'LINK'
 	want = 'bool'
 class link_index(aetools.NProperty):
-	"""link index - the index of the source file in its target’s link order (-1 if source file is not in link order) """
+	"""link index - the index of the source file in its target\xd5s link order (-1 if source file is not in link order) """
 	which = 'LIDX'
 	want = 'long'
 class modified_date(aetools.NProperty):
@@ -407,7 +407,7 @@ class weak_link(aetools.NProperty):
 	which = 'WEAK'
 	want = 'bool'
 class init_before(aetools.NProperty):
-	"""init before - is the ïinitialize before’ flag set for this shared library? """
+	"""init before - is the \xd4initialize before\xd5 flag set for this shared library? """
 	which = 'INIT'
 	want = 'bool'
 class merge_output(aetools.NProperty):
@@ -448,84 +448,100 @@ class ToolServer_worksheet(aetools.ComponentItem):
 	want = 'TOOL'
 
 ToolServer_worksheets = ToolServer_worksheet
-build_progress_document._propdict = {
+import Standard_Suite
+build_progress_document._superclassnames = ['document']
+build_progress_document._privpropdict = {
 	'inherits' : inherits,
 }
-build_progress_document._elemdict = {
+build_progress_document._privelemdict = {
 }
-catalog_document._propdict = {
+catalog_document._superclassnames = ['text_document']
+catalog_document._privpropdict = {
 	'inherits' : inherits,
 }
-catalog_document._elemdict = {
+catalog_document._privelemdict = {
 }
-class_browser._propdict = {
+class_browser._superclassnames = ['text_document']
+class_browser._privpropdict = {
 	'inherits' : inherits,
 }
-class_browser._elemdict = {
+class_browser._privelemdict = {
 }
-class_hierarchy._propdict = {
+class_hierarchy._superclassnames = ['document']
+class_hierarchy._privpropdict = {
 	'inherits' : inherits,
 }
-class_hierarchy._elemdict = {
+class_hierarchy._privelemdict = {
 }
-editor_document._propdict = {
+editor_document._superclassnames = ['text_document']
+editor_document._privpropdict = {
 	'inherits' : inherits,
 }
-editor_document._elemdict = {
+editor_document._privelemdict = {
 }
-file_compare_document._propdict = {
+file_compare_document._superclassnames = ['text_document']
+file_compare_document._privpropdict = {
 	'inherits' : inherits,
 }
-file_compare_document._elemdict = {
+file_compare_document._privelemdict = {
 }
-message_document._propdict = {
+message_document._superclassnames = ['text_document']
+message_document._privpropdict = {
 	'inherits' : inherits,
 }
-message_document._elemdict = {
+message_document._privelemdict = {
 }
-project_document._propdict = {
+project_document._superclassnames = ['document']
+project_document._privpropdict = {
 	'inherits' : inherits,
 	'current_target' : current_target,
 }
-project_document._elemdict = {
+project_document._privelemdict = {
 	'target' : target,
 }
-project_inspector._propdict = {
+project_inspector._superclassnames = ['document']
+project_inspector._privpropdict = {
 	'inherits' : inherits,
 }
-project_inspector._elemdict = {
+project_inspector._privelemdict = {
 }
-single_class_browser._propdict = {
+single_class_browser._superclassnames = ['text_document']
+single_class_browser._privpropdict = {
 	'inherits' : inherits,
 }
-single_class_browser._elemdict = {
+single_class_browser._privelemdict = {
 }
-single_class_hierarchy._propdict = {
+single_class_hierarchy._superclassnames = ['document']
+single_class_hierarchy._privpropdict = {
 	'inherits' : inherits,
 }
-single_class_hierarchy._elemdict = {
+single_class_hierarchy._privelemdict = {
 }
-subtarget._propdict = {
+subtarget._superclassnames = ['target']
+subtarget._privpropdict = {
 	'inherits' : inherits,
 	'target' : target,
 	'link_against_output' : link_against_output,
 }
-subtarget._elemdict = {
+subtarget._privelemdict = {
 }
-symbol_browser._propdict = {
+symbol_browser._superclassnames = ['text_document']
+symbol_browser._privpropdict = {
 	'inherits' : inherits,
 }
-symbol_browser._elemdict = {
+symbol_browser._privelemdict = {
 }
-target._propdict = {
+target._superclassnames = []
+target._privpropdict = {
 	'name' : name,
 	'project_document' : project_document,
 }
-target._elemdict = {
+target._privelemdict = {
 	'target_file' : target_file,
 	'subtarget' : subtarget,
 }
-target_file._propdict = {
+target_file._superclassnames = []
+target_file._privpropdict = {
 	'id' : id,
 	'type' : type,
 	'location' : location,
@@ -543,24 +559,25 @@ target_file._propdict = {
 	'prerequisites' : prerequisites,
 	'dependents' : dependents,
 }
-target_file._elemdict = {
+target_file._privelemdict = {
 }
-import Standard_Suite
-text_document._propdict = {
+text_document._superclassnames = ['document']
+text_document._privpropdict = {
 	'inherits' : inherits,
 	'modified' : modified,
 	'selection' : selection,
 }
-text_document._elemdict = {
+text_document._privelemdict = {
 	'character' : Standard_Suite.character,
 	'insertion_point' : Standard_Suite.insertion_point,
 	'line' : Standard_Suite.line,
 	'text' : Standard_Suite.text,
 }
-ToolServer_worksheet._propdict = {
+ToolServer_worksheet._superclassnames = ['text_document']
+ToolServer_worksheet._privpropdict = {
 	'inherits' : inherits,
 }
-ToolServer_worksheet._elemdict = {
+ToolServer_worksheet._privelemdict = {
 }
 _Enum_Inte = {
 	'never_interact' : 'eNvr',	# never allow user interactions

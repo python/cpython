@@ -1,7 +1,7 @@
 """Suite Obsolete terms: Terms that have been deprecated
 Level 1, version 1
 
-Generated from Moes:Systeemmap:Finder
+Generated from /Volumes/Sap/System Folder/Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -59,7 +59,7 @@ class locked_obsolete(aetools.NProperty):
 	want = 'bool'
 
 class information_window(aetools.ComponentItem):
-	"""information window - An information window (opened by –Get Info”) """
+	"""information window - An information window (opened by \xd2Get Info\xd3) """
 	want = 'iwnd'
 class creation_date_obsolete(aetools.NProperty):
 	"""creation date obsolete - the date on which the item was created (DEPRECATED - for use with scripts compiled before Finder 8.0. Will be removed in the next release) """
@@ -87,7 +87,7 @@ class sharing_window(aetools.NProperty):
 	want = 'obj '
 
 class sharing_window(aetools.ComponentItem):
-	"""sharing window - A sharing window (opened by –Sharingƒ”) """
+	"""sharing window - A sharing window (opened by \xd2Sharing\xc9\xd3) """
 	want = 'swnd'
 class sharable_container(aetools.NProperty):
 	"""sharable container - the sharable container from which the window was opened """
@@ -109,66 +109,77 @@ class status_window(aetools.ComponentItem):
 	want = 'qwnd'
 
 status_windows = status_window
-application._propdict = {
+application._superclassnames = []
+application._privpropdict = {
 	'view_preferences' : view_preferences,
 }
-application._elemdict = {
+application._privelemdict = {
 }
-container._propdict = {
+container._superclassnames = []
+container._privpropdict = {
 	'container_window' : container_window,
 }
-container._elemdict = {
+container._privelemdict = {
 }
-container_window._propdict = {
+container_window._superclassnames = []
+container_window._privpropdict = {
 	'folder_obsolete' : folder_obsolete,
 }
-container_window._elemdict = {
+container_window._privelemdict = {
 }
-control_panel._propdict = {
+control_panel._superclassnames = []
+control_panel._privpropdict = {
 }
-control_panel._elemdict = {
+control_panel._privelemdict = {
 }
-file._propdict = {
+file._superclassnames = []
+file._privpropdict = {
 	'file_type_obsolete' : file_type_obsolete,
 	'locked_obsolete' : locked_obsolete,
 }
-file._elemdict = {
+file._privelemdict = {
 }
-information_window._propdict = {
+information_window._superclassnames = []
+information_window._privpropdict = {
 	'creation_date_obsolete' : creation_date_obsolete,
 	'locked_obsolete' : locked_obsolete,
 	'modification_date_obsolete' : modification_date_obsolete,
 }
-information_window._elemdict = {
+information_window._privelemdict = {
 }
-item._propdict = {
+item._superclassnames = []
+item._privpropdict = {
 	'creation_date_obsolete' : creation_date_obsolete,
 	'folder_obsolete' : folder_obsolete,
 	'modification_date_obsolete' : modification_date_obsolete,
 }
-item._elemdict = {
+item._privelemdict = {
 }
-process._propdict = {
+process._superclassnames = []
+process._privpropdict = {
 	'file_type_obsolete' : file_type_obsolete,
 }
-process._elemdict = {
+process._privelemdict = {
 }
-sharable_container._propdict = {
+sharable_container._superclassnames = []
+sharable_container._privpropdict = {
 	'sharing_window' : sharing_window,
 }
-sharable_container._elemdict = {
+sharable_container._privelemdict = {
 }
-sharing_window._propdict = {
+sharing_window._superclassnames = []
+sharing_window._privpropdict = {
 	'sharable_container' : sharable_container,
 	'item' : item,
 	'container' : container,
 	'folder_obsolete' : folder_obsolete,
 }
-sharing_window._elemdict = {
+sharing_window._privelemdict = {
 }
-status_window._propdict = {
+status_window._superclassnames = []
+status_window._privpropdict = {
 }
-status_window._elemdict = {
+status_window._privelemdict = {
 }
 
 #

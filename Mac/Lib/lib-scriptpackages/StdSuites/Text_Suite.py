@@ -1,7 +1,7 @@
 """Suite Text Suite: A set of basic classes for text processing
 Level 1, version 1
 
-Generated from Moes:Systeemmap:Extensies:AppleScript
+Generated from /Volumes/Sap/System Folder/Extensions/AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -73,7 +73,7 @@ class uniform_styles(aetools.NProperty):
 #        element 'cwor' as ['indx']
 
 class text_flow(aetools.ComponentItem):
-	"""text flow - A contiguous block of text.  Page layout applications call this a •story.Õ """
+	"""text flow - A contiguous block of text.  Page layout applications call this a \xd4story.\xd5 """
 	want = 'cflo'
 class name(aetools.NProperty):
 	"""name - the name """
@@ -101,23 +101,27 @@ class word(aetools.ComponentItem):
 	want = 'cwor'
 
 words = word
-character._propdict = {
+character._superclassnames = ['text']
+character._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 }
-character._elemdict = {
+character._privelemdict = {
 }
-line._propdict = {
+line._superclassnames = ['text']
+line._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'justification' : justification,
 }
-line._elemdict = {
+line._privelemdict = {
 }
-paragraph._propdict = {
+paragraph._superclassnames = ['text']
+paragraph._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 }
-paragraph._elemdict = {
+paragraph._privelemdict = {
 }
-text._propdict = {
+text._superclassnames = []
+text._privpropdict = {
 	'color' : color,
 	'font' : font,
 	'size' : size,
@@ -125,29 +129,32 @@ text._propdict = {
 	'style' : style,
 	'uniform_styles' : uniform_styles,
 }
-text._elemdict = {
+text._privelemdict = {
 	'character' : character,
 	'line' : line,
 	'paragraph' : paragraph,
 	'text' : text,
 	'word' : word,
 }
-text_flow._propdict = {
+text_flow._superclassnames = ['text']
+text_flow._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'name' : name,
 }
-text_flow._elemdict = {
+text_flow._privelemdict = {
 }
-text_style_info._propdict = {
+text_style_info._superclassnames = []
+text_style_info._privpropdict = {
 	'on_styles' : on_styles,
 	'off_styles' : off_styles,
 }
-text_style_info._elemdict = {
+text_style_info._privelemdict = {
 }
-word._propdict = {
+word._superclassnames = ['text']
+word._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 }
-word._elemdict = {
+word._privelemdict = {
 }
 _Enum_just = {
 	'left' : 'left',	# Align with left margin

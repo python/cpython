@@ -1,7 +1,7 @@
 """Suite Metrowerks Shell Suite: Events supported by the Metrowerks Project Shell
 Level 1, version 1
 
-Generated from Moes:Applications (Mac OS 9):Metrowerks CodeWarrior 7.0:Metrowerks CodeWarrior:CodeWarrior IDE 4.2.6
+Generated from /Volumes/Sap/Applications (Mac OS 9)/Metrowerks CodeWarrior 7.0/Metrowerks CodeWarrior/CodeWarrior IDE 4.2.5
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -791,7 +791,7 @@ class Metrowerks_Shell_Suite_Events:
 
 
 class Access_Paths(aetools.ComponentItem):
-	"""Access Paths - Contains the definitions of a project’s access (search) paths. """
+	"""Access Paths - Contains the definitions of a project\xd5s access (search) paths. """
 	want = 'PATH'
 class User_Paths(aetools.NProperty):
 	"""User Paths - To add an access path for the source files. """
@@ -998,7 +998,7 @@ class Launch_Apps_on_Open(aetools.NProperty):
 	which = 'Dg03'
 	want = 'bool'
 class Confirm_Kill(aetools.NProperty):
-	"""Confirm Kill - Confirm the ïkilling’ of the process. """
+	"""Confirm Kill - Confirm the \xd4killing\xd5 of the process. """
 	which = 'Dg04'
 	want = 'bool'
 class Stop_at_Main(aetools.NProperty):
@@ -1010,7 +1010,7 @@ class Select_Stack_Crawl(aetools.NProperty):
 	which = 'Dg06'
 	want = 'bool'
 class Dont_Step_in_Runtime(aetools.NProperty):
-	"""Dont Step in Runtime - Don’t step into runtime code when debugging. """
+	"""Dont Step in Runtime - Don\xd5t step into runtime code when debugging. """
 	which = 'Dg07'
 	want = 'bool'
 class Auto_Target_Libraries(aetools.NProperty):
@@ -1046,7 +1046,7 @@ class Temp_breakpoint_names(aetools.NProperty):
 	which = 'Dt14'
 	want = 'ctxt'
 class Cache_symbolics(aetools.NProperty):
-	"""Cache symbolics - Cache symbolics between runs when executable doesn’t change, else release symbolics files after killing process. """
+	"""Cache symbolics - Cache symbolics between runs when executable doesn\xd5t change, else release symbolics files after killing process. """
 	which = 'Dt15'
 	want = 'bool'
 class Temp_Breakpoint_Type(aetools.NProperty):
@@ -1074,7 +1074,7 @@ class Flash_Delay(aetools.NProperty):
 	which = 'ED01'
 	want = 'long'
 class Dynamic_Scroll(aetools.NProperty):
-	"""Dynamic Scroll - Display a window’s contents as you move the scroll box. """
+	"""Dynamic Scroll - Display a window\xd5s contents as you move the scroll box. """
 	which = 'ED02'
 	want = 'bool'
 class Balance(aetools.NProperty):
@@ -1178,11 +1178,11 @@ class Full_Screen_Zoom(aetools.NProperty):
 	which = 'EX07'
 	want = 'bool'
 class Recent_Editor_Count(aetools.NProperty):
-	"""Recent Editor Count - Maximum number of editor documents to show in the ñOpen Recentî menu """
+	"""Recent Editor Count - Maximum number of editor documents to show in the \xd2Open Recent\xd3 menu """
 	which = 'EX16'
 	want = 'shor'
 class Recent_Project_Count(aetools.NProperty):
-	"""Recent Project Count - Maximum number of project documents to show in the ñOpen Recentî menu """
+	"""Recent Project Count - Maximum number of project documents to show in the \xd2Open Recent\xd3 menu """
 	which = 'EX17'
 	want = 'shor'
 class Use_Editor_Extensions(aetools.NProperty):
@@ -1294,7 +1294,7 @@ class origin(aetools.NProperty):
 	which = 'Orig'
 	want = 'PPrm'
 class root(aetools.NProperty):
-	"""root - Name of the root of the relative path. Pre-defined values are ñAbsoluteî, ñProjectî, ñCodeWarriorî, and  ñSystemî. Anything else is a user-defined root. """
+	"""root - Name of the root of the relative path. Pre-defined values are \xd2Absolute\xd3, \xd2Project\xd3, \xd2CodeWarrior\xd3, and  \xd2System\xd3. Anything else is a user-defined root. """
 	which = 'Root'
 	want = 'TEXT'
 class recursive(aetools.NProperty):
@@ -1330,11 +1330,11 @@ class filetype(aetools.NProperty):
 	which = 'SrcT'
 	want = 'SrcT'
 class codesize(aetools.NProperty):
-	"""codesize - The size of this file’s code. """
+	"""codesize - The size of this file\xd5s code. """
 	which = 'CSiz'
 	want = 'long'
 class datasize(aetools.NProperty):
-	"""datasize - The size of this file’s data. """
+	"""datasize - The size of this file\xd5s data. """
 	which = 'DSiz'
 	want = 'long'
 class up_to_date(aetools.NProperty):
@@ -1467,7 +1467,7 @@ class String_Color(aetools.NProperty):
 	want = 'cRGB'
 
 class Target_Settings(aetools.ComponentItem):
-	"""Target Settings - Contains the definitions of a project’s target. """
+	"""Target Settings - Contains the definitions of a project\xd5s target. """
 	want = 'TARG'
 class Linker(aetools.NProperty):
 	"""Linker - The name of the current linker. """
@@ -1486,11 +1486,11 @@ class Target_Name(aetools.NProperty):
 	which = 'TA10'
 	want = 'TEXT'
 class Output_Directory_Path(aetools.NProperty):
-	"""Output Directory Path - Path to output directory. Usage of this property is deprecated. Use the ñOutput Directory Locationî property instead. """
+	"""Output Directory Path - Path to output directory. Usage of this property is deprecated. Use the \xd2Output Directory Location\xd3 property instead. """
 	which = 'TA11'
 	want = 'TEXT'
 class Output_Directory_Origin(aetools.NProperty):
-	"""Output Directory Origin - Origin of path to output directory. Usage of this property is deprecated. Use the ñOutput Directory Locationî property instead. """
+	"""Output Directory Origin - Origin of path to output directory. Usage of this property is deprecated. Use the \xd2Output Directory Location\xd3 property instead. """
 	which = 'TA12'
 	want = 'PPrm'
 class Output_Directory_Location(aetools.NProperty):
@@ -1554,7 +1554,7 @@ class Local_Path(aetools.NProperty):
 	which = 'VC10'
 	want = 'RlPt'
 
-class _class(aetools.ComponentItem):
+class class_(aetools.ComponentItem):
 	"""class - A class, struct, or record type in the current project. """
 	want = 'Clas'
 class language(aetools.NProperty):
@@ -1585,7 +1585,7 @@ class all_subclasses(aetools.NProperty):
 #        element 'MbFn' as ['indx', 'name']
 #        element 'DtMb' as ['indx', 'name']
 
-classes = _class
+classes = class_
 
 class member_function(aetools.ComponentItem):
 	"""member function - A class member function or method. """
@@ -1626,7 +1626,7 @@ data_members = data_member
 class base_class(aetools.ComponentItem):
 	"""base class - A base class or super class of a class """
 	want = 'BsCl'
-class _class(aetools.NProperty):
+class class_(aetools.NProperty):
 	"""class - The class object corresponding to this base class """
 	which = 'Clas'
 	want = 'obj '
@@ -1637,16 +1637,18 @@ class browser_catalog(aetools.ComponentItem):
 	"""browser catalog - The browser symbol catalog for the current project """
 	want = 'Cata'
 #        element 'Clas' as ['indx', 'name']
-Access_Paths._propdict = {
+Access_Paths._superclassnames = []
+Access_Paths._privpropdict = {
 	'User_Paths' : User_Paths,
 	'System_Paths' : System_Paths,
 	'Always_Full_Search' : Always_Full_Search,
 	'Convert_Paths' : Convert_Paths,
 	'Require_Framework_Includes' : Require_Framework_Includes,
 }
-Access_Paths._elemdict = {
+Access_Paths._privelemdict = {
 }
-Browser_Coloring._propdict = {
+Browser_Coloring._superclassnames = []
+Browser_Coloring._privpropdict = {
 	'Browser_Keywords' : Browser_Keywords,
 	'Classes_Color' : Classes_Color,
 	'Constants_Color' : Constants_Color,
@@ -1658,17 +1660,19 @@ Browser_Coloring._propdict = {
 	'Typedefs_Color' : Typedefs_Color,
 	'Template_Commands_in_Menu' : Template_Commands_in_Menu,
 }
-Browser_Coloring._elemdict = {
+Browser_Coloring._privelemdict = {
 }
-Build_Extras._propdict = {
+Build_Extras._superclassnames = []
+Build_Extras._privpropdict = {
 	'Browser_Active' : Browser_Active,
 	'Modification_Date_Caching' : Modification_Date_Caching,
 	'Dump_Browser_Info' : Dump_Browser_Info,
 	'Cache_Subproject_Data' : Cache_Subproject_Data,
 }
-Build_Extras._elemdict = {
+Build_Extras._privelemdict = {
 }
-Build_Settings._propdict = {
+Build_Settings._superclassnames = []
+Build_Settings._privpropdict = {
 	'Completion_Sound' : Completion_Sound,
 	'Success_Sound' : Success_Sound,
 	'Failure_Sound' : Failure_Sound,
@@ -1677,17 +1681,19 @@ Build_Settings._propdict = {
 	'Include_Cache_Size' : Include_Cache_Size,
 	'Compiler_Thread_Stack_Size' : Compiler_Thread_Stack_Size,
 }
-Build_Settings._elemdict = {
+Build_Settings._privelemdict = {
 }
-Custom_Keywords._propdict = {
+Custom_Keywords._superclassnames = []
+Custom_Keywords._privpropdict = {
 	'Custom_Color_1' : Custom_Color_1,
 	'Custom_Color_2' : Custom_Color_2,
 	'Custom_Color_3' : Custom_Color_3,
 	'Custom_Color_4' : Custom_Color_4,
 }
-Custom_Keywords._elemdict = {
+Custom_Keywords._privelemdict = {
 }
-Debugger_Display._propdict = {
+Debugger_Display._superclassnames = []
+Debugger_Display._privpropdict = {
 	'Show_Variable_Types' : Show_Variable_Types,
 	'Show_Locals' : Show_Locals,
 	'Sort_By_Method' : Sort_By_Method,
@@ -1699,9 +1705,10 @@ Debugger_Display._propdict = {
 	'Default_Array_Size' : Default_Array_Size,
 	'Show_As_Decimal' : Show_As_Decimal,
 }
-Debugger_Display._elemdict = {
+Debugger_Display._privelemdict = {
 }
-Debugger_Global._propdict = {
+Debugger_Global._superclassnames = []
+Debugger_Global._privpropdict = {
 	'Cache_Edited_Files' : Cache_Edited_Files,
 	'File_Cache_Duration' : File_Cache_Duration,
 	'Ignore_Mod_Dates' : Ignore_Mod_Dates,
@@ -1713,9 +1720,10 @@ Debugger_Global._propdict = {
 	'Dont_Step_in_Runtime' : Dont_Step_in_Runtime,
 	'Auto_Target_Libraries' : Auto_Target_Libraries,
 }
-Debugger_Global._elemdict = {
+Debugger_Global._privelemdict = {
 }
-Debugger_Target._propdict = {
+Debugger_Target._superclassnames = []
+Debugger_Target._privpropdict = {
 	'Log_System_Messages' : Log_System_Messages,
 	'Relocated_Executable_Path' : Relocated_Executable_Path,
 	'Update_Data_While_Running' : Update_Data_While_Running,
@@ -1726,15 +1734,17 @@ Debugger_Target._propdict = {
 	'Cache_symbolics' : Cache_symbolics,
 	'Temp_Breakpoint_Type' : Temp_Breakpoint_Type,
 }
-Debugger_Target._elemdict = {
+Debugger_Target._privelemdict = {
 }
-Debugger_Windowing._propdict = {
+Debugger_Windowing._superclassnames = []
+Debugger_Windowing._privpropdict = {
 	'Debugging_Start_Action' : Debugging_Start_Action,
 	'Do_Nothing_To_Projects' : Do_Nothing_To_Projects,
 }
-Debugger_Windowing._elemdict = {
+Debugger_Windowing._privelemdict = {
 }
-Editor._propdict = {
+Editor._superclassnames = []
+Editor._privpropdict = {
 	'Flash_Delay' : Flash_Delay,
 	'Dynamic_Scroll' : Dynamic_Scroll,
 	'Balance' : Balance,
@@ -1751,23 +1761,26 @@ Editor._propdict = {
 	'Background_Color' : Background_Color,
 	'Context_Popup_Delay' : Context_Popup_Delay,
 }
-Editor._elemdict = {
+Editor._privelemdict = {
 }
-Environment_Variable._propdict = {
+Environment_Variable._superclassnames = []
+Environment_Variable._privpropdict = {
 	'name' : name,
 	'value' : value,
 }
-Environment_Variable._elemdict = {
+Environment_Variable._privelemdict = {
 }
-Error_Information._propdict = {
+Error_Information._superclassnames = []
+Error_Information._privpropdict = {
 	'messageKind' : messageKind,
 	'message' : message,
 	'disk_file' : disk_file,
 	'lineNumber' : lineNumber,
 }
-Error_Information._elemdict = {
+Error_Information._privelemdict = {
 }
-Extras._propdict = {
+Extras._superclassnames = []
+Extras._privpropdict = {
 	'Automatic_Toolbar_Help' : Automatic_Toolbar_Help,
 	'External_Reference' : External_Reference,
 	'Full_Screen_Zoom' : Full_Screen_Zoom,
@@ -1778,9 +1791,10 @@ Extras._propdict = {
 	'Use_Script_Menu' : Use_Script_Menu,
 	'Use_ToolServer_Menu' : Use_ToolServer_Menu,
 }
-Extras._elemdict = {
+Extras._privelemdict = {
 }
-File_Mapping._propdict = {
+File_Mapping._superclassnames = []
+File_Mapping._privpropdict = {
 	'File_Type' : File_Type,
 	'Extension' : Extension,
 	'Precompiled' : Precompiled,
@@ -1789,14 +1803,16 @@ File_Mapping._propdict = {
 	'Ignored_by_Make' : Ignored_by_Make,
 	'Compiler' : Compiler,
 }
-File_Mapping._elemdict = {
+File_Mapping._privelemdict = {
 }
-File_Mappings._propdict = {
+File_Mappings._superclassnames = []
+File_Mappings._privpropdict = {
 	'Mappings' : Mappings,
 }
-File_Mappings._elemdict = {
+File_Mappings._privelemdict = {
 }
-Font._propdict = {
+Font._superclassnames = []
+Font._privpropdict = {
 	'Auto_Indent' : Auto_Indent,
 	'Tab_Size' : Tab_Size,
 	'Tab_Indents_Selection' : Tab_Indents_Selection,
@@ -1804,20 +1820,23 @@ Font._propdict = {
 	'Text_Font' : Text_Font,
 	'Text_Size' : Text_Size,
 }
-Font._elemdict = {
+Font._privelemdict = {
 }
-Function_Information._propdict = {
+Function_Information._superclassnames = []
+Function_Information._privpropdict = {
 	'disk_file' : disk_file,
 	'lineNumber' : lineNumber,
 }
-Function_Information._elemdict = {
+Function_Information._privelemdict = {
 }
-Global_Source_Trees._propdict = {
+Global_Source_Trees._superclassnames = []
+Global_Source_Trees._privpropdict = {
 	'Source_Trees' : Source_Trees,
 }
-Global_Source_Trees._elemdict = {
+Global_Source_Trees._privelemdict = {
 }
-Path_Information._propdict = {
+Path_Information._superclassnames = []
+Path_Information._privpropdict = {
 	'name' : name,
 	'format' : format,
 	'origin' : origin,
@@ -1826,15 +1845,17 @@ Path_Information._propdict = {
 	'framework' : framework,
 	'host_flags' : host_flags,
 }
-Path_Information._elemdict = {
+Path_Information._privelemdict = {
 }
-Plugin_Settings._propdict = {
+Plugin_Settings._superclassnames = []
+Plugin_Settings._privpropdict = {
 	'Plugin_Diagnostics_Level' : Plugin_Diagnostics_Level,
 	'Disable_Third_Party_COM_Plugins' : Disable_Third_Party_COM_Plugins,
 }
-Plugin_Settings._elemdict = {
+Plugin_Settings._privelemdict = {
 }
-ProjectFile._propdict = {
+ProjectFile._superclassnames = []
+ProjectFile._privpropdict = {
 	'filetype' : filetype,
 	'name' : name,
 	'disk_file' : disk_file,
@@ -1846,25 +1867,28 @@ ProjectFile._propdict = {
 	'initialize_before' : initialize_before,
 	'includes' : includes,
 }
-ProjectFile._elemdict = {
+ProjectFile._privelemdict = {
 }
-Relative_Path._propdict = {
+Relative_Path._superclassnames = []
+Relative_Path._privpropdict = {
 	'name' : name,
 	'format' : format,
 	'origin' : origin,
 	'root' : root,
 }
-Relative_Path._elemdict = {
+Relative_Path._privelemdict = {
 }
-Runtime_Settings._propdict = {
+Runtime_Settings._superclassnames = []
+Runtime_Settings._privpropdict = {
 	'Host_Application' : Host_Application,
 	'Command_Line_Arguments' : Command_Line_Arguments,
 	'Working_Directory' : Working_Directory,
 	'Environment_Variables' : Environment_Variables,
 }
-Runtime_Settings._elemdict = {
+Runtime_Settings._privelemdict = {
 }
-Segment._propdict = {
+Segment._superclassnames = []
+Segment._privpropdict = {
 	'name' : name,
 	'filecount' : filecount,
 	'seg_2d_preloaded' : seg_2d_preloaded,
@@ -1873,29 +1897,33 @@ Segment._propdict = {
 	'seg_2d_purgeable' : seg_2d_purgeable,
 	'seg_2d_system_heap' : seg_2d_system_heap,
 }
-Segment._elemdict = {
+Segment._privelemdict = {
 }
-Shielded_Folder._propdict = {
+Shielded_Folder._superclassnames = []
+Shielded_Folder._privpropdict = {
 	'Expression_To_Match' : Expression_To_Match,
 	'Skip_Project_Operations' : Skip_Project_Operations,
 	'Skip_Find_And_Compare_Operations' : Skip_Find_And_Compare_Operations,
 }
-Shielded_Folder._elemdict = {
+Shielded_Folder._privelemdict = {
 }
-Shielded_Folders._propdict = {
+Shielded_Folders._superclassnames = []
+Shielded_Folders._privpropdict = {
 	'Shielded_Items' : Shielded_Items,
 }
-Shielded_Folders._elemdict = {
+Shielded_Folders._privelemdict = {
 }
-Source_Tree._propdict = {
+Source_Tree._superclassnames = []
+Source_Tree._privpropdict = {
 	'name' : name,
 	'path' : path,
 	'path_kind' : path_kind,
 	'format' : format,
 }
-Source_Tree._elemdict = {
+Source_Tree._privelemdict = {
 }
-Syntax_Coloring._propdict = {
+Syntax_Coloring._superclassnames = []
+Syntax_Coloring._privpropdict = {
 	'Syntax_Coloring' : Syntax_Coloring,
 	'Comment_Color' : Comment_Color,
 	'Keyword_Color' : Keyword_Color,
@@ -1905,9 +1933,10 @@ Syntax_Coloring._propdict = {
 	'Custom_Color_3' : Custom_Color_3,
 	'Custom_Color_4' : Custom_Color_4,
 }
-Syntax_Coloring._elemdict = {
+Syntax_Coloring._privelemdict = {
 }
-Target_Settings._propdict = {
+Target_Settings._superclassnames = []
+Target_Settings._privpropdict = {
 	'Linker' : Linker,
 	'Pre_Linker' : Pre_Linker,
 	'Post_Linker' : Post_Linker,
@@ -1917,14 +1946,16 @@ Target_Settings._propdict = {
 	'Output_Directory_Location' : Output_Directory_Location,
 	'Use_Relative_Paths' : Use_Relative_Paths,
 }
-Target_Settings._elemdict = {
+Target_Settings._privelemdict = {
 }
-Target_Source_Trees._propdict = {
+Target_Source_Trees._superclassnames = []
+Target_Source_Trees._privpropdict = {
 	'Source_Trees' : Source_Trees,
 }
-Target_Source_Trees._elemdict = {
+Target_Source_Trees._privelemdict = {
 }
-VCS_Setup._propdict = {
+VCS_Setup._superclassnames = []
+VCS_Setup._privpropdict = {
 	'VCS_Active' : VCS_Active,
 	'Use_Global_Settings' : Use_Global_Settings,
 	'Connection_Method' : Connection_Method,
@@ -1937,9 +1968,10 @@ VCS_Setup._propdict = {
 	'Database_Path' : Database_Path,
 	'Local_Path' : Local_Path,
 }
-VCS_Setup._elemdict = {
+VCS_Setup._privelemdict = {
 }
-_class._propdict = {
+class_._superclassnames = []
+class_._privpropdict = {
 	'name' : name,
 	'language' : language,
 	'declaration_file' : declaration_file,
@@ -1948,12 +1980,13 @@ _class._propdict = {
 	'subclasses' : subclasses,
 	'all_subclasses' : all_subclasses,
 }
-_class._elemdict = {
+class_._privelemdict = {
 	'base_class' : base_class,
 	'member_function' : member_function,
 	'data_member' : data_member,
 }
-member_function._propdict = {
+member_function._superclassnames = []
+member_function._privpropdict = {
 	'name' : name,
 	'access' : access,
 	'virtual' : virtual,
@@ -1965,28 +1998,31 @@ member_function._propdict = {
 	'implementation_start_offset' : implementation_start_offset,
 	'implementation_end_offset' : implementation_end_offset,
 }
-member_function._elemdict = {
+member_function._privelemdict = {
 }
-data_member._propdict = {
+data_member._superclassnames = []
+data_member._privpropdict = {
 	'name' : name,
 	'access' : access,
 	'static' : static,
 	'declaration_start_offset' : declaration_start_offset,
 	'declaration_end_offset' : declaration_end_offset,
 }
-data_member._elemdict = {
+data_member._privelemdict = {
 }
-base_class._propdict = {
-	'_class' : _class,
+base_class._superclassnames = []
+base_class._privpropdict = {
+	'class_' : class_,
 	'access' : access,
 	'virtual' : virtual,
 }
-base_class._elemdict = {
+base_class._privelemdict = {
 }
-browser_catalog._propdict = {
+browser_catalog._superclassnames = []
+browser_catalog._privpropdict = {
 }
-browser_catalog._elemdict = {
-	'_class' : _class,
+browser_catalog._privelemdict = {
+	'class_' : class_,
 }
 _Enum_TmpB = {
 	'User_Specified' : 'Usrs',	# Use user specified symbols when setting temporary breakpoints on program launch.
@@ -2023,14 +2059,14 @@ _Enum_SrcT = {
 
 _Enum_PPrm = {
 	'absolute' : 'Abso',	# An absolute path name, including volume name.
-	'project_relative' : 'PRel',	# A path relative to the current project’s folder.
-	'shell_relative' : 'SRel',	# A path relative to the CodeWarrioré folder.
+	'project_relative' : 'PRel',	# A path relative to the current project\xd5s folder.
+	'shell_relative' : 'SRel',	# A path relative to the CodeWarrior\xaa folder.
 	'system_relative' : 'YRel',	# A path relative to the system folder
 	'root_relative' : 'RRel',	# 
 }
 
 _Enum_DbSA = {
-	'No_Action' : 'DSA1',	# Don’t do anything to non-debug windows
+	'No_Action' : 'DSA1',	# Don\xd5t do anything to non-debug windows
 	'Hide_Windows' : 'DSA2',	# Hide non-debugging windows
 	'Collapse_Windows' : 'DSA3',	# Collapse non-debugging windows
 	'Close_Windows' : 'DSA4',	# Close non-debugging windows
@@ -2083,9 +2119,9 @@ _Enum_BXbr = {
 }
 
 _Enum_STKd = {
-	'Absolute_Path' : 'STK0',	# The ñpathî property is an absolute path to the location of the source tree.
-	'Registry_Key' : 'STK1',	# The ñpathî property is the name of a registry key that contains the path to the root.
-	'Environment_Variable' : 'STK2',	# The ñpathî property is the name of an environment variable that contains the path to the root.
+	'Absolute_Path' : 'STK0',	# The \xd2path\xd3 property is an absolute path to the location of the source tree.
+	'Registry_Key' : 'STK1',	# The \xd2path\xd3 property is the name of a registry key that contains the path to the root.
+	'Environment_Variable' : 'STK2',	# The \xd2path\xd3 property is the name of an environment variable that contains the path to the root.
 }
 
 _Enum_PthF = {
@@ -2135,7 +2171,7 @@ _classdeclarations = {
 	'mFNT' : Font,
 	'TSTs' : Target_Source_Trees,
 	'DbDS' : Debugger_Display,
-	'Clas' : _class,
+	'Clas' : class_,
 }
 
 _propdeclarations = {
@@ -2226,7 +2262,7 @@ _propdeclarations = {
 	'ST01' : Source_Trees,
 	'EX30' : Dump_Browser_Info,
 	'EX31' : Cache_Subproject_Data,
-	'Clas' : _class,
+	'Clas' : class_,
 	'DSiz' : datasize,
 	'ED14' : Context_Popup_Delay,
 	'ED15' : Relaxed_C_Popup_Parsing,

@@ -1,7 +1,7 @@
 """Suite Earlier terms: Terms that have been renamed
 Level 1, version 1
 
-Generated from Moes:Systeemmap:Finder
+Generated from /Volumes/Sap/System Folder/Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -24,7 +24,7 @@ class properties(aetools.NProperty):
 	which = 'qpro'
 	want = 'reco'
 class clipboard(aetools.NProperty):
-	"""clipboard - the FinderÕs clipboard window """
+	"""clipboard - the Finder\xd5s clipboard window """
 	which = 'pcli'
 	want = 'obj '
 class largest_free_block(aetools.NProperty):
@@ -32,11 +32,11 @@ class largest_free_block(aetools.NProperty):
 	which = 'mfre'
 	want = 'long'
 class name(aetools.NProperty):
-	"""name - the FinderÕs name """
+	"""name - the Finder\xd5s name """
 	which = 'pnam'
 	want = 'itxt'
 class visible(aetools.NProperty):
-	"""visible - Is the FinderÕs layer visible? """
+	"""visible - Is the Finder\xd5s layer visible? """
 	which = 'pvis'
 	want = 'bool'
 class frontmost(aetools.NProperty):
@@ -48,7 +48,7 @@ class selection(aetools.NProperty):
 	which = 'sele'
 	want = 'obj '
 class insertion_location(aetools.NProperty):
-	"""insertion location - the container in which a new folder would appear if –New Folder” was selected """
+	"""insertion location - the container in which a new folder would appear if \xd2New Folder\xd3 was selected """
 	which = 'pins'
 	want = 'obj '
 class file_sharing(aetools.NProperty):
@@ -68,7 +68,7 @@ class version(aetools.NProperty):
 	which = 'vers'
 	want = 'itxt'
 class about_this_computer(aetools.NProperty):
-	"""about this computer - the –About this Computer” dialog and the list of running processes displayed in it """
+	"""about this computer - the \xd2About this Computer\xd3 dialog and the list of running processes displayed in it """
 	which = 'abbx'
 	want = 'obj '
 class desktop(aetools.NProperty):
@@ -195,7 +195,7 @@ class internet_location(aetools.ComponentItem):
 internet_locations = internet_location
 
 class information_window(aetools.ComponentItem):
-	"""information window - An information window (opened by –Get Info”) """
+	"""information window - An information window (opened by \xd2Get Info\xd3) """
 	want = 'iwnd'
 class comment(aetools.NProperty):
 	"""comment - the comment """
@@ -359,7 +359,7 @@ class protected(aetools.NProperty):
 	want = 'bool'
 
 class trash_2d_object(aetools.ComponentItem):
-	"""trash-object - Trash-object is the class of the –trash” object """
+	"""trash-object - Trash-object is the class of the \xd2trash\xd3 object """
 	want = 'ctrs'
 
 class preferences(aetools.ComponentItem):
@@ -429,7 +429,8 @@ class collapsed(aetools.NProperty):
 	"""collapsed - Is the window collapsed (only applies to open non-pop-up windows)? """
 	which = 'wshd'
 	want = 'bool'
-application._propdict = {
+application._superclassnames = []
+application._privpropdict = {
 	'properties' : properties,
 	'clipboard' : clipboard,
 	'largest_free_block' : largest_free_block,
@@ -446,18 +447,21 @@ application._propdict = {
 	'desktop' : desktop,
 	'Finder_preferences' : Finder_preferences,
 }
-application._elemdict = {
+application._privelemdict = {
 }
-application_file._propdict = {
+import Files_and_suitcases
+application_file._superclassnames = ['file']
+application_file._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'minimum_partition_size' : minimum_partition_size,
 	'partition_size' : partition_size,
 	'suggested_partition_size' : suggested_partition_size,
 	'scriptable' : scriptable,
 }
-application_file._elemdict = {
+application_file._privelemdict = {
 }
-container_window._propdict = {
+container_window._superclassnames = ['window']
+container_window._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'container' : container,
 	'item' : item,
@@ -477,21 +481,25 @@ container_window._propdict = {
 	'show_version' : show_version,
 	'use_relative_dates' : use_relative_dates,
 }
-container_window._elemdict = {
+container_window._privelemdict = {
 }
-accessory_process._propdict = {
+accessory_process._superclassnames = []
+accessory_process._privpropdict = {
 }
-accessory_process._elemdict = {
+accessory_process._privelemdict = {
 }
-accessory_suitcase._propdict = {
+accessory_suitcase._superclassnames = []
+accessory_suitcase._privpropdict = {
 }
-accessory_suitcase._elemdict = {
+accessory_suitcase._privelemdict = {
 }
-internet_location._propdict = {
+internet_location._superclassnames = []
+internet_location._privpropdict = {
 }
-internet_location._elemdict = {
+internet_location._privelemdict = {
 }
-information_window._propdict = {
+information_window._superclassnames = ['window']
+information_window._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'item' : item,
 	'comment' : comment,
@@ -509,9 +517,10 @@ information_window._propdict = {
 	'product_version' : product_version,
 	'version' : version,
 }
-information_window._elemdict = {
+information_window._privelemdict = {
 }
-item._propdict = {
+item._superclassnames = []
+item._privpropdict = {
 	'properties' : properties,
 	'name' : name,
 	'index' : index,
@@ -535,9 +544,10 @@ item._propdict = {
 	'window' : window,
 	'information_window' : information_window,
 }
-item._elemdict = {
+item._privelemdict = {
 }
-process._propdict = {
+process._superclassnames = []
+process._privpropdict = {
 	'properties' : properties,
 	'name' : name,
 	'visible' : visible,
@@ -550,9 +560,11 @@ process._propdict = {
 	'partition_size' : partition_size,
 	'partition_space_used' : partition_space_used,
 }
-process._elemdict = {
+process._privelemdict = {
 }
-sharable_container._propdict = {
+import Containers_and_folders
+sharable_container._superclassnames = ['container']
+sharable_container._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'owner' : owner,
 	'group' : group,
@@ -565,15 +577,17 @@ sharable_container._propdict = {
 	'shared' : shared,
 	'protected' : protected,
 }
-sharable_container._elemdict = {
+sharable_container._privelemdict = {
 }
-trash_2d_object._propdict = {
+trash_2d_object._superclassnames = ['container']
+trash_2d_object._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'warn_before_emptying' : warn_before_emptying,
 }
-trash_2d_object._elemdict = {
+trash_2d_object._privelemdict = {
 }
-preferences._propdict = {
+preferences._superclassnames = []
+preferences._privpropdict = {
 	'window' : window,
 	'calculate_folder_sizes' : calculate_folder_sizes,
 	'delay_before_springing' : delay_before_springing,
@@ -589,9 +603,10 @@ preferences._propdict = {
 	'use_simple_menus' : use_simple_menus,
 	'use_wide_grid' : use_wide_grid,
 }
-preferences._elemdict = {
+preferences._privelemdict = {
 }
-window._propdict = {
+window._superclassnames = []
+window._privpropdict = {
 	'properties' : properties,
 	'position' : position,
 	'bounds' : bounds,
@@ -610,7 +625,7 @@ window._propdict = {
 	'pulled_open' : pulled_open,
 	'collapsed' : collapsed,
 }
-window._elemdict = {
+window._privelemdict = {
 }
 
 #

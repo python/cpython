@@ -1,7 +1,7 @@
 """Suite Table Suite: Classes for manipulating tables
 Level 1, version 1
 
-Generated from Moes:Systeemmap:Extensies:AppleScript
+Generated from /Volumes/Sap/System Folder/Extensions/AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -50,27 +50,31 @@ class table(aetools.ComponentItem):
 	want = 'ctbl'
 
 tables = table
-cell._propdict = {
+cell._superclassnames = []
+cell._privpropdict = {
 	'formula' : formula,
 	'protection' : protection,
 }
-cell._elemdict = {
+cell._privelemdict = {
 }
-column._propdict = {
+column._superclassnames = []
+column._privpropdict = {
 	'name' : name,
 }
-column._elemdict = {
+column._privelemdict = {
 }
-row._propdict = {
+row._superclassnames = []
+row._privpropdict = {
 }
-row._elemdict = {
+row._privelemdict = {
 }
-table._propdict = {
+table._superclassnames = []
+table._privpropdict = {
 }
-table._elemdict = {
+table._privelemdict = {
 }
 _Enum_prtn = {
-	'read_only' : 'nmod',	# Can’t change values or formulas
+	'read_only' : 'nmod',	# Can\xd5t change values or formulas
 	'formulas_protected' : 'fpro',	# Can changes values but not formulas
 	'read_2f_write' : 'modf',	# Can change values and formulas
 }

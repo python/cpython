@@ -1,7 +1,7 @@
 """Suite Text: 
 Level 0, version 0
 
-Generated from Moes:Applications (Mac OS 9):Netscape Communicatoré Folder:Netscape Communicatoré
+Generated from /Volumes/Sap/Applications (Mac OS 9)/Netscape Communicator\xe2\x84\xa2 Folder/Netscape Communicator\xe2\x84\xa2
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -42,7 +42,7 @@ class justbehind(aetools.NProperty):
 #        element 'stys' as ['indx', 'name']
 
 class styleset(aetools.ComponentItem):
-	"""styleset - A style ñsetî that may be used repeatedly in text objects. """
+	"""styleset - A style \xd2set\xd3 that may be used repeatedly in text objects. """
 	want = 'stys'
 class name(aetools.NProperty):
 	"""name - style name """
@@ -70,17 +70,19 @@ class style(aetools.NProperty):
 	want = 'tsty'
 
 stylesets = styleset
-text._propdict = {
+text._superclassnames = []
+text._privpropdict = {
 	'updateLevel' : updateLevel,
 	'beginning' : beginning,
 	'end' : end,
 	'infront' : infront,
 	'justbehind' : justbehind,
 }
-text._elemdict = {
+text._privelemdict = {
 	'styleset' : styleset,
 }
-styleset._propdict = {
+styleset._superclassnames = []
+styleset._privpropdict = {
 	'name' : name,
 	'color' : color,
 	'font' : font,
@@ -88,7 +90,7 @@ styleset._propdict = {
 	'writing_code' : writing_code,
 	'style' : style,
 }
-styleset._elemdict = {
+styleset._privelemdict = {
 }
 
 #

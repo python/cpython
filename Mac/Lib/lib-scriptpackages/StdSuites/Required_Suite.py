@@ -1,7 +1,7 @@
 """Suite Required Suite: Every application supports open, print, run, and quit
 Level 1, version 1
 
-Generated from Moes:Systeemmap:Extensies:AppleScript
+Generated from /Volumes/Sap/System Folder/Extensions/AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 

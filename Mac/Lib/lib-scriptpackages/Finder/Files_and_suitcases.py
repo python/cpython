@@ -1,7 +1,7 @@
 """Suite Files and suitcases: Classes representing files and suitcases
 Level 1, version 1
 
-Generated from Moes:Systeemmap:Finder
+Generated from /Volumes/Sap/System Folder/Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -39,18 +39,18 @@ class stationery(aetools.NProperty):
 	which = 'pspd'
 	want = 'bool'
 class product_version(aetools.NProperty):
-	"""product version - the version of the product (visible at the top of the –Get Info” window) """
+	"""product version - the version of the product (visible at the top of the \xd2Get Info\xd3 window) """
 	which = 'ver2'
 	want = 'itxt'
 class version(aetools.NProperty):
-	"""version - the version of the file (visible at the bottom of the –Get Info” window) """
+	"""version - the version of the file (visible at the bottom of the \xd2Get Info\xd3 window) """
 	which = 'vers'
 	want = 'itxt'
 
 files = file
 
 class alias_file(aetools.ComponentItem):
-	"""alias file - An alias file (created with –Make Alias”) """
+	"""alias file - An alias file (created with \xd2Make Alias\xd3) """
 	want = 'alia'
 class original_item(aetools.NProperty):
 	"""original item - the original item pointed to by the alias """
@@ -155,7 +155,9 @@ class desk_accessory_suitcase(aetools.ComponentItem):
 #        element 'cobj' as ['indx', 'name']
 
 desk_accessory_suitcases = desk_accessory_suitcase
-file._propdict = {
+import Earlier_terms
+file._superclassnames = ['item']
+file._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'file_type' : file_type,
 	'creator_type' : creator_type,
@@ -164,15 +166,17 @@ file._propdict = {
 	'product_version' : product_version,
 	'version' : version,
 }
-file._elemdict = {
+file._privelemdict = {
 }
-alias_file._propdict = {
+alias_file._superclassnames = ['file']
+alias_file._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'original_item' : original_item,
 }
-alias_file._elemdict = {
+alias_file._privelemdict = {
 }
-application_file._propdict = {
+application_file._superclassnames = ['file']
+application_file._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'suggested_size' : suggested_size,
 	'minimum_size' : minimum_size,
@@ -180,62 +184,71 @@ application_file._propdict = {
 	'accepts_high_level_events' : accepts_high_level_events,
 	'has_scripting_terminology' : has_scripting_terminology,
 }
-application_file._elemdict = {
+application_file._privelemdict = {
 }
-document_file._propdict = {
+document_file._superclassnames = ['file']
+document_file._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 }
-document_file._elemdict = {
+document_file._privelemdict = {
 }
-font_file._propdict = {
+font_file._superclassnames = ['file']
+font_file._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 }
-font_file._elemdict = {
+font_file._privelemdict = {
 }
-desk_accessory_file._propdict = {
+desk_accessory_file._superclassnames = ['file']
+desk_accessory_file._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 }
-desk_accessory_file._elemdict = {
+desk_accessory_file._privelemdict = {
 }
-internet_location_file._propdict = {
+internet_location_file._superclassnames = ['file']
+internet_location_file._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'location' : location,
 }
-internet_location_file._elemdict = {
+internet_location_file._privelemdict = {
 }
-sound_file._propdict = {
+sound_file._superclassnames = ['file']
+sound_file._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'sound' : sound,
 }
-sound_file._elemdict = {
+sound_file._privelemdict = {
 }
-clipping._propdict = {
+clipping._superclassnames = ['file']
+clipping._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 }
-clipping._elemdict = {
+clipping._privelemdict = {
 }
-package._propdict = {
+package._superclassnames = ['item']
+package._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 }
-package._elemdict = {
+package._privelemdict = {
 }
-import Earlier_terms
-suitcase._propdict = {
+suitcase._superclassnames = ['file']
+suitcase._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 }
-suitcase._elemdict = {
+suitcase._privelemdict = {
 	'item' : Earlier_terms.item,
 }
-font_suitcase._propdict = {
+font_suitcase._superclassnames = ['suitcase']
+font_suitcase._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 }
-font_suitcase._elemdict = {
+font_suitcase._privelemdict = {
 	'item' : Earlier_terms.item,
 }
-desk_accessory_suitcase._propdict = {
+desk_accessory_suitcase._superclassnames = ['suitcase']
+desk_accessory_suitcase._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 }
-desk_accessory_suitcase._elemdict = {
+desk_accessory_suitcase._privelemdict = {
 	'item' : Earlier_terms.item,
 }
 

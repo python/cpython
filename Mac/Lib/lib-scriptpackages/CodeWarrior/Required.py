@@ -1,7 +1,7 @@
 """Suite Required: Terms that every application should support
 Level 1, version 1
 
-Generated from Moes:Applications (Mac OS 9):Metrowerks CodeWarrior 7.0:Metrowerks CodeWarrior:CodeWarrior IDE 4.2.6
+Generated from /Volumes/Sap/Applications (Mac OS 9)/Metrowerks CodeWarrior 7.0/Metrowerks CodeWarrior/CodeWarrior IDE 4.2.5
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 

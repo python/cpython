@@ -1,7 +1,7 @@
 """Suite Finder Basics: Commonly-used Finder commands and object classes
 Level 1, version 1
 
-Generated from Moes:Systeemmap:Finder
+Generated from /Volumes/Sap/System Folder/Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -145,7 +145,7 @@ class application(aetools.ComponentItem):
 	"""application - The Finder """
 	want = 'capp'
 class clipboard(aetools.NProperty):
-	"""clipboard - the FinderÕs clipboard window """
+	"""clipboard - the Finder\xd5s clipboard window """
 	which = 'pcli'
 	want = 'obj '
 class largest_free_block(aetools.NProperty):
@@ -153,11 +153,11 @@ class largest_free_block(aetools.NProperty):
 	which = 'mfre'
 	want = 'long'
 class name(aetools.NProperty):
-	"""name - the FinderÕs name """
+	"""name - the Finder\xd5s name """
 	which = 'pnam'
 	want = 'itxt'
 class visible(aetools.NProperty):
-	"""visible - Is the FinderÕs layer visible? """
+	"""visible - Is the Finder\xd5s layer visible? """
 	which = 'pvis'
 	want = 'bool'
 class frontmost(aetools.NProperty):
@@ -169,7 +169,7 @@ class selection(aetools.NProperty):
 	which = 'sele'
 	want = 'obj '
 class insertion_location(aetools.NProperty):
-	"""insertion location - the container in which a new folder would appear if –New Folder” was selected """
+	"""insertion location - the container in which a new folder would appear if \xd2New Folder\xd3 was selected """
 	which = 'pins'
 	want = 'obj '
 class file_sharing(aetools.NProperty):
@@ -189,7 +189,7 @@ class version(aetools.NProperty):
 	which = 'vers'
 	want = 'itxt'
 class about_this_computer(aetools.NProperty):
-	"""about this computer - the –About this Computer” dialog and the list of running processes displayed in it """
+	"""about this computer - the \xd2About this Computer\xd3 dialog and the list of running processes displayed in it """
 	which = 'abbx'
 	want = 'obj '
 class desktop(aetools.NProperty):
@@ -240,43 +240,44 @@ class system_folder(aetools.NProperty):
 	which = 'macs'
 	want = 'obj '
 class apple_menu_items_folder(aetools.NProperty):
-	"""apple menu items folder - the special folder named –Apple Menu Items,” the contents of which appear in the Apple menu """
+	"""apple menu items folder - the special folder named \xd2Apple Menu Items,\xd3 the contents of which appear in the Apple menu """
 	which = 'amnu'
 	want = 'obj '
 class control_panels_folder(aetools.NProperty):
-	"""control panels folder - the special folder named –Control Panels” """
+	"""control panels folder - the special folder named \xd2Control Panels\xd3 """
 	which = 'ctrl'
 	want = 'obj '
 class extensions_folder(aetools.NProperty):
-	"""extensions folder - the special folder named –Extensions” """
+	"""extensions folder - the special folder named \xd2Extensions\xd3 """
 	which = 'extn'
 	want = 'obj '
 class fonts_folder(aetools.NProperty):
-	"""fonts folder - the special folder named –Fonts” """
+	"""fonts folder - the special folder named \xd2Fonts\xd3 """
 	which = 'font'
 	want = 'obj '
 class preferences_folder(aetools.NProperty):
-	"""preferences folder - the special folder named –Preferences” """
+	"""preferences folder - the special folder named \xd2Preferences\xd3 """
 	which = 'pref'
 	want = 'obj '
 class shutdown_items_folder(aetools.NProperty):
-	"""shutdown items folder - the special folder named –Shutdown Items” """
+	"""shutdown items folder - the special folder named \xd2Shutdown Items\xd3 """
 	which = 'shdf'
 	want = 'obj '
 class startup_items_folder(aetools.NProperty):
-	"""startup items folder - the special folder named –Startup Items” """
+	"""startup items folder - the special folder named \xd2Startup Items\xd3 """
 	which = 'strt'
 	want = 'obj '
 class temporary_items_folder(aetools.NProperty):
-	"""temporary items folder - the special folder named –Temporary Items” (invisible) """
+	"""temporary items folder - the special folder named \xd2Temporary Items\xd3 (invisible) """
 	which = 'temp'
 	want = 'obj '
+application._superclassnames = []
 import Earlier_terms
 import Containers_and_folders
 import Files_and_suitcases
 import Process_classes
 import Window_classes
-application._propdict = {
+application._privpropdict = {
 	'clipboard' : clipboard,
 	'largest_free_block' : largest_free_block,
 	'name' : name,
@@ -293,7 +294,7 @@ application._propdict = {
 	'execution_state' : execution_state,
 	'Finder_preferences' : Finder_preferences,
 }
-application._elemdict = {
+application._privelemdict = {
 	'item' : Earlier_terms.item,
 	'container' : Containers_and_folders.container,
 	'sharable_container' : Earlier_terms.sharable_container,
@@ -322,7 +323,8 @@ application._elemdict = {
 	'clipping_window' : Window_classes.clipping_window,
 	'content_space' : Window_classes.content_space,
 }
-special_folders._propdict = {
+special_folders._superclassnames = []
+special_folders._privpropdict = {
 	'system_folder' : system_folder,
 	'apple_menu_items_folder' : apple_menu_items_folder,
 	'control_panels_folder' : control_panels_folder,
@@ -333,7 +335,7 @@ special_folders._propdict = {
 	'startup_items_folder' : startup_items_folder,
 	'temporary_items_folder' : temporary_items_folder,
 }
-special_folders._elemdict = {
+special_folders._privelemdict = {
 }
 
 #

@@ -1,7 +1,7 @@
 """Suite Finder items: Commands used with file system items, and basic item definition
 Level 1, version 1
 
-Generated from Moes:Systeemmap:Finder
+Generated from /Volumes/Sap/System Folder/Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -79,7 +79,7 @@ class Finder_items_Events:
 
 	def empty(self, _object=None, _attributes={}, **_arguments):
 		"""empty: Empty the trash
-		Required argument: –empty” and –empty trash” both do the same thing
+		Required argument: \xd2empty\xd3 and \xd2empty trash\xd3 both do the same thing
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'fndr'
@@ -233,7 +233,7 @@ class description(aetools.NProperty):
 	which = 'dscr'
 	want = 'itxt'
 class comment(aetools.NProperty):
-	"""comment - the comment of the item, displayed in the –Get Info” window """
+	"""comment - the comment of the item, displayed in the \xd2Get Info\xd3 window """
 	which = 'comt'
 	want = 'itxt'
 class size(aetools.NProperty):
@@ -274,7 +274,8 @@ class information_window(aetools.NProperty):
 	want = 'obj '
 
 items = item
-item._propdict = {
+item._superclassnames = []
+item._privpropdict = {
 	'name' : name,
 	'index' : index,
 	'id' : id,
@@ -297,7 +298,7 @@ item._propdict = {
 	'window' : window,
 	'information_window' : information_window,
 }
-item._elemdict = {
+item._privelemdict = {
 }
 _Enum_bool = None # XXXX enum bool not found!!
 

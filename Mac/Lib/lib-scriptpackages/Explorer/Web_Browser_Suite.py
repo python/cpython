@@ -1,7 +1,7 @@
 """Suite Web Browser Suite: Class of events supported by Web Browser applications
 Level 1, version 1
 
-Generated from Moes:Applications (Mac OS 9):Internet Explorer 5:Internet Explorer
+Generated from /Volumes/Sap/Applications (Mac OS 9)/Internet Explorer 5/Internet Explorer
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 

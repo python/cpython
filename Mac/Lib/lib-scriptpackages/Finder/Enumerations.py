@@ -1,7 +1,7 @@
 """Suite Enumerations: Enumerations for the Finder
 Level 1, version 1
 
-Generated from Moes:Systeemmap:Finder
+Generated from /Volumes/Sap/System Folder/Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
