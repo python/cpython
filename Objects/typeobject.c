@@ -1657,6 +1657,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 #define COPYNUM(SLOT) COPYSLOT(tp_as_number->SLOT)
 #define COPYSEQ(SLOT) COPYSLOT(tp_as_sequence->SLOT)
 #define COPYMAP(SLOT) COPYSLOT(tp_as_mapping->SLOT)
+#define COPYBUF(SLOT) COPYSLOT(tp_as_buffer->SLOT)
 
 	/* This won't inherit indirect slots (from tp_as_number etc.)
 	   if type doesn't provide the space. */
@@ -1732,6 +1733,16 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		COPYMAP(mp_ass_subscript);
 	}
 
+	if (type->tp_as_buffer != NULL && base->tp_as_buffer != NULL) {
+		basebase = base->tp_base;
+		if (basebase->tp_as_buffer == NULL)
+			basebase = NULL;
+		COPYBUF(bf_getreadbuffer);
+		COPYBUF(bf_getwritebuffer);
+		COPYBUF(bf_getsegcount);
+		COPYBUF(bf_getcharbuffer);
+	}
+
 	basebase = base->tp_base;
 
 	COPYSLOT(tp_dealloc);
@@ -1749,7 +1760,6 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 	/* tp_hash see tp_richcompare */
 	COPYSLOT(tp_call);
 	COPYSLOT(tp_str);
-	COPYSLOT(tp_as_buffer);
 	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_RICHCOMPARE) {
 		if (type->tp_compare == NULL &&
 		    type->tp_richcompare == NULL &&
