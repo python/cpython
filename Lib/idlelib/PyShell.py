@@ -16,7 +16,12 @@ import exceptions
 import linecache
 from code import InteractiveInterpreter
 
-from Tkinter import *
+try:
+    from Tkinter import *
+except ImportError:
+    print>>sys.__stderr__, "** IDLE can't import Tkinter.  " \
+                           "Your Python may not be configured for Tk. **"
+    sys.exit(1)
 import tkMessageBox
 
 from EditorWindow import EditorWindow, fixwordbreaks

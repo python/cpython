@@ -1,3 +1,12 @@
+What's New in IDLE 1.0.3?
+===================================
+
+*Release date: XX-XXX-2004*
+
+- Keybindings with the Shift modifier now work correctly.  So do bindings which
+  use the Space key.  Limit unmodified user keybindings to the function keys.
+  Python Bug 775353, IDLEfork Bugs 755647, 761557
+
 What's New in IDLE 1.0.2?
 ===================================
 

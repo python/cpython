@@ -1,5 +1,5 @@
 """
-dialog for building tkinter accelerator key bindings
+Dialog for building Tkinter accelerator key bindings
 """
 from Tkinter import *
 import tkMessageBox
@@ -49,9 +49,9 @@ class GetKeysDialog(Toplevel):
         frameMain.pack(side=TOP,expand=TRUE,fill=BOTH)
         frameButtons=Frame(self)
         frameButtons.pack(side=BOTTOM,fill=X)
-        self.buttonOk = Button(frameButtons,text='Ok',
-                width=8,command=self.Ok)
-        self.buttonOk.grid(row=0,column=0,padx=5,pady=5)
+        self.buttonOK = Button(frameButtons,text='OK',
+                width=8,command=self.OK)
+        self.buttonOK.grid(row=0,column=0,padx=5,pady=5)
         self.buttonCancel = Button(frameButtons,text='Cancel',
                 width=8,command=self.Cancel)
         self.buttonCancel.grid(row=0,column=1,padx=5,pady=5)
@@ -85,9 +85,13 @@ class GetKeysDialog(Toplevel):
             self.modifier_checkbuttons[modifier] = check
             column += 1
         labelFnAdvice=Label(self.frameControlsBasic,justify=LEFT,
-                text="Select the desired modifier\n"+
-                     "keys above, and final key\n"+
-                     "from the list on the right.")
+                            text=\
+                            "Select the desired modifier keys\n"+
+                            "above, and the final key from the\n"+
+                            "list on the right.\n\n" +
+                            "Use upper case Symbols when using\n" +
+                            "the Shift modifier.  (Letters will be\n" +
+                            "converted automatically.)")
         labelFnAdvice.grid(row=1,column=0,columnspan=4,padx=2,sticky=W)
         self.listKeysFinal=Listbox(self.frameControlsBasic,width=15,height=10,
                 selectmode=SINGLE)
@@ -102,17 +106,19 @@ class GetKeysDialog(Toplevel):
         self.buttonClear.grid(row=2,column=0,columnspan=4)
         labelTitleAdvanced = Label(self.frameKeySeqAdvanced,justify=LEFT,
                 text="Enter new binding(s) for  '"+self.action+"' :\n"+
-                "(will not be checked for validity)")
+                "(These bindings will not be checked for validity!)")
         labelTitleAdvanced.pack(anchor=W)
         self.entryKeysAdvanced=Entry(self.frameKeySeqAdvanced,
                 textvariable=self.keyString)
         self.entryKeysAdvanced.pack(fill=X)
         labelHelpAdvanced=Label(self.frameHelpAdvanced,justify=LEFT,
-            text="Key bindings are specified using tkinter key id's as\n"+
+            text="Key bindings are specified using Tkinter keysyms as\n"+
                  "in these samples: <Control-f>, <Shift-F2>, <F12>,\n"
-                 "<Control-space>, <Meta-less>, <Control-Alt-Shift-x>.\n\n"+
-                 "'Emacs style' multi-keystroke bindings are specified as\n"+
-                 "follows: <Control-x><Control-y> or <Meta-f><Meta-g>.\n\n"+
+                 "<Control-space>, <Meta-less>, <Control-Alt-Shift-X>.\n"
+                 "Upper case is used when the Shift modifier is present!\n\n" +
+                 "'Emacs style' multi-keystroke bindings are specified as\n" +
+                 "follows: <Control-x><Control-y>, where the first key\n" +
+                 "is the 'do-nothing' keybinding.\n\n" +
                  "Multiple separate bindings for one action should be\n"+
                  "separated by a space, eg., <Alt-v> <Meta-v>." )
         labelHelpAdvanced.grid(row=0,column=0,sticky=NSEW)
@@ -149,20 +155,12 @@ class GetKeysDialog(Toplevel):
         self.BuildKeyString()
 
     def BuildKeyString(self):
-        keyList=[]
-        modifiers=self.GetModifiers()
-        finalKey=self.listKeysFinal.get(ANCHOR)
-        if modifiers: modifiers[0]='<'+modifiers[0]
-        keyList=keyList+modifiers
+        keyList = modifiers = self.GetModifiers()
+        finalKey = self.listKeysFinal.get(ANCHOR)
         if finalKey:
-            if (not modifiers) and (finalKey not
-                    in self.alphanumKeys+self.punctuationKeys):
-                finalKey='<'+self.TranslateKey(finalKey)
-            else:
-                finalKey=self.TranslateKey(finalKey)
-            keyList.append(finalKey+'>')
-        keyStr=string.join(keyList,'-')
-        self.keyString.set(keyStr)
+            finalKey = self.TranslateKey(finalKey, modifiers)
+            keyList.append(finalKey)
+        self.keyString.set('<' + string.join(keyList,'-') + '>')
 
     def GetModifiers(self):
         modList = [variable.get() for variable in self.modifier_vars]
@@ -190,9 +188,10 @@ class GetKeysDialog(Toplevel):
                 self.whitespaceKeys+self.editKeys+self.moveKeys)
         self.listKeysFinal.insert(END, *keys)
 
-    def TranslateKey(self,key):
-        #translate from key list value to tkinter key-id
-        translateDict={'~':'asciitilde','!':'exclam','@':'at','#':'numbersign',
+    def TranslateKey(self, key, modifiers):
+        "Translate from keycap symbol to the Tkinter keysym"
+        translateDict = {'Space':'space',
+                '~':'asciitilde','!':'exclam','@':'at','#':'numbersign',
                 '%':'percent','^':'asciicircum','&':'ampersand','*':'asterisk',
                 '(':'parenleft',')':'parenright','_':'underscore','-':'minus',
                 '+':'plus','=':'equal','{':'braceleft','}':'braceright',
@@ -200,14 +199,16 @@ class GetKeysDialog(Toplevel):
                 ':':'colon',',':'comma','.':'period','<':'less','>':'greater',
                 '/':'slash','?':'question','Page Up':'Prior','Page Down':'Next',
                 'Left Arrow':'Left','Right Arrow':'Right','Up Arrow':'Up',
-                'Down Arrow': 'Down'}
+                'Down Arrow': 'Down', 'Tab':'tab'}
         if key in translateDict.keys():
-            key=translateDict[key]
-        key='Key-'+key
+            key = translateDict[key]
+        if 'Shift' in modifiers and key in string.ascii_lowercase:
+            key = key.upper()
+        key = 'Key-' + key
         return key
 
-    def Ok(self, event=None):
-        if self.KeysOk():
+    def OK(self, event=None):
+        if self.KeysOK():
             self.result=self.keyString.get()
             self.destroy()
 
@@ -215,40 +216,39 @@ class GetKeysDialog(Toplevel):
         self.result=''
         self.destroy()
 
-    def KeysOk(self):
-        #simple validity check
-        keysOk=1
-        keys=self.keyString.get()
+    def KeysOK(self):
+        "Validity check on user's keybinding selection"
+        keys = self.keyString.get()
         keys.strip()
-        finalKey=self.listKeysFinal.get(ANCHOR)
-        modifiers=self.GetModifiers()
-        keySequence=keys.split()#make into a key sequence list for overlap check
-        if not keys: #no keys specified
-            tkMessageBox.showerror(title='Key Sequence Error',
-                    message='No keys specified.')
-            keysOk=0
-        elif not keys.endswith('>'): #no final key specified
-            tkMessageBox.showerror(title='Key Sequence Error',
-                    message='No final key specified.')
-            keysOk=0
-        elif (not modifiers) and (finalKey in
-                self.alphanumKeys+self.punctuationKeys):
-            #modifier required
-            tkMessageBox.showerror(title='Key Sequence Error',
-                    message='No modifier key(s) specified.')
-            keysOk=0
-        elif (modifiers==['Shift']) and (finalKey not
-                in self.functionKeys+('Tab',)):
-            #shift alone is only a useful modifier with a function key
-            tkMessageBox.showerror(title='Key Sequence Error',
-                    message='Shift alone is not a useful modifier '+
-                            'when used with this final key key.')
-            keysOk=0
-        elif keySequence in self.currentKeySequences: #keys combo already in use
-            tkMessageBox.showerror(title='Key Sequence Error',
-                    message='This key combination is already in use.')
-            keysOk=0
-        return keysOk
+        finalKey = self.listKeysFinal.get(ANCHOR)
+        modifiers = self.GetModifiers()
+        # create a key sequence list for overlap check:
+        keySequence = keys.split()
+        keysOK = False
+        title = 'Key Sequence Error'
+        if not keys:
+            tkMessageBox.showerror(title=title, parent=self,
+                                   message='No keys specified.')
+        elif not keys.endswith('>'):
+            tkMessageBox.showerror(title=title, parent=self,
+                                   message='Missing the final Key')
+        elif not modifiers and finalKey not in self.functionKeys:
+            tkMessageBox.showerror(title=title, parent=self,
+                                   message='No modifier key(s) specified.')
+        elif (modifiers == ['Shift']) \
+                 and (finalKey not in
+                      self.functionKeys + ('Tab', 'Space')):
+            msg = 'The shift modifier by itself may not be used with' \
+                  ' this key symbol; only with F1-F12, Tab, or Space'
+            tkMessageBox.showerror(title=title, parent=self,
+                                   message=msg)
+        elif keySequence in self.currentKeySequences:
+            msg = 'This key combination is already in use.'
+            tkMessageBox.showerror(title=title, parent=self,
+                                   message=msg)
+        else:
+            keysOK = True
+        return keysOK
 
 if __name__ == '__main__':
     #test the dialog
