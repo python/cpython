@@ -1402,8 +1402,8 @@ PySocketSock_recv(PySocketSockObject *s, PyObject *args)
 		Py_DECREF(buf);
 		return s->errorhandler();
 	}
-	if (n != len && _PyString_Resize(&buf, n) < 0)
-		return NULL;
+	if (n != len)
+		_PyString_Resize(&buf, n);
 	return buf;
 }
 

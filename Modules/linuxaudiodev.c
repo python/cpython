@@ -158,8 +158,7 @@ lad_read(lad_t *self, PyObject *args)
         return NULL;
     }
     self->x_icount += count;
-    if (_PyString_Resize(&rv, count) == -1)
-	return NULL;
+    _PyString_Resize(&rv, count);
     return rv;
 }
 

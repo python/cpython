@@ -331,8 +331,8 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 		Py_DECREF(buf);
 		return PySSL_SetError(self, count);
 	}
-	if (count != len && _PyString_Resize(&buf, count) < 0)
-		return NULL;
+	if (count != len)
+		_PyString_Resize(&buf, count);
 	return buf;
 }
 

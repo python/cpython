@@ -215,10 +215,8 @@ strop_joinfields(PyObject *self, PyObject *args)
 			}
 			slen = PyString_GET_SIZE(item);
 			while (reslen + slen + seplen >= sz) {
-				if (_PyString_Resize(&res, sz * 2)) {
-					Py_DECREF(res);
+				if (_PyString_Resize(&res, sz * 2) < 0)
 					return NULL;
-				}
 				sz *= 2;
 				p = PyString_AsString(res) + reslen;
 			}
@@ -231,10 +229,7 @@ strop_joinfields(PyObject *self, PyObject *args)
 			p += slen;
 			reslen += slen;
 		}
-		if (_PyString_Resize(&res, reslen)) {
-			Py_DECREF(res);
-			res = NULL;
-		}
+		_PyString_Resize(&res, reslen);
 		return res;
 	}
 
@@ -257,8 +252,7 @@ strop_joinfields(PyObject *self, PyObject *args)
 		}
 		slen = PyString_GET_SIZE(item);
 		while (reslen + slen + seplen >= sz) {
-			if (_PyString_Resize(&res, sz * 2)) {
-				Py_DECREF(res);
+			if (_PyString_Resize(&res, sz * 2) < 0) {
 				Py_DECREF(item);
 				return NULL;
 			}
@@ -275,10 +269,7 @@ strop_joinfields(PyObject *self, PyObject *args)
 		reslen += slen;
 		Py_DECREF(item);
 	}
-	if (_PyString_Resize(&res, reslen)) {
-		Py_DECREF(res);
-		res = NULL;
-	}
+	_PyString_Resize(&res, reslen);
 	return res;
 }
 
@@ -989,8 +980,8 @@ strop_translate(PyObject *self, PyObject *args)
 		return input_obj;
 	}
 	/* Fix the size of the resulting string */
-	if (inlen > 0 &&_PyString_Resize(&result, output-output_start))
-		return NULL;
+	if (inlen > 0)
+		_PyString_Resize(&result, output - output_start);
 	return result;
 }
 

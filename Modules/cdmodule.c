@@ -251,8 +251,7 @@ CD_readda(cdplayerobject *self, PyObject *args)
 		return NULL;
 	}
 	if (n < numframes)
-		if (_PyString_Resize(&result, n * sizeof(CDFRAME)))
-			return NULL;
+		_PyString_Resize(&result, n * sizeof(CDFRAME));
 
 	return result;
 }

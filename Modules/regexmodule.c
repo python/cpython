@@ -516,11 +516,8 @@ symcomp(PyObject *pattern, PyObject *gdict)
 		return NULL;
 	}
 	/* _PyString_Resize() decrements npattern on failure */
-	if (_PyString_Resize(&npattern, n - v) == 0)
-		return npattern;
-	else {
-		return NULL;
-	}
+	_PyString_Resize(&npattern, n - v);
+	return npattern;
 
 }
 
