@@ -392,7 +392,7 @@ except AttributeError:
     def setcontext(context):
         """Set this thread's context to context."""
         if context in (DefaultContext, BasicContext, ExtendedContext):
-            context = copy.deepcopy(context)
+            context = context.copy()
             context.clear_flags()
         threading.currentThread().__decimal_context__ = context
 
@@ -413,6 +413,8 @@ except AttributeError:
 else:
 
     local = threading.local()
+    if hasattr(local, '__decimal_context__'):
+        del local.__decimal_context__
 
     def getcontext(_local=local):
         """Returns this thread's context.
@@ -431,7 +433,7 @@ else:
     def setcontext(context, _local=local):
         """Set this thread's context to context."""
         if context in (DefaultContext, BasicContext, ExtendedContext):
-            context = copy.deepcopy(context)
+            context = context.copy()
             context.clear_flags()
         _local.__decimal_context__ = context
 
@@ -642,7 +644,7 @@ class Decimal(object):
         elif self.adjusted < other.adjusted() and other._int[0] != 0:
             return -((-1)**self._sign)
 
-        context = context.copy()
+        context = context._shallow_copy()
         rounding = context._set_rounding(ROUND_UP) #round away from 0
 
         flags = context._ignore_all_flags()
@@ -861,7 +863,7 @@ class Decimal(object):
             return ans
 
         if not round:
-            context = context.copy()
+            context = context._shallow_copy()
             context._set_rounding_decision(NEVER_ROUND)
 
         if self._sign:
@@ -1358,7 +1360,7 @@ class Decimal(object):
 
         # If DivisionImpossible causes an error, do not leave Rounded/Inexact
         # ignored in the calling function.
-        context = context.copy()
+        context = context._shallow_copy()
         flags = context._ignore_flags(Rounded, Inexact)
         #keep DivisionImpossible flags
         (side, r) = self.__divmod__(other, context=context)
@@ -1367,7 +1369,7 @@ class Decimal(object):
             context._regard_flags(*flags)
             return r
 
-        context = context.copy()
+        context = context._shallow_copy()
         rounding = context._set_rounding_decision(NEVER_ROUND)
 
         if other._sign:
@@ -1600,7 +1602,7 @@ class Decimal(object):
         #Now we've got the rounding function
 
         if prec != context.prec:
-            context = context.copy()
+            context = context._shallow_copy()
             context.prec = prec
         ans = this_function(prec, expdiff, context)
         context._raise_error(Rounded)
@@ -1738,7 +1740,7 @@ class Decimal(object):
 
         mul = Decimal(self)
         val = Decimal(1)
-        context = context.copy()
+        context = context._shallow_copy()
         context.prec = firstprec + elength + 1
         rounding = context.rounding
         if n < 0:
@@ -1938,7 +1940,7 @@ class Decimal(object):
         else:
             tmp._exp = 0
 
-        context = context.copy()
+        context = context._shallow_copy()
         flags = context._ignore_all_flags()
         firstprec = context.prec
         context.prec = 3
@@ -2166,9 +2168,16 @@ class Context(object):
         for flag in self.flags:
             self.flags[flag] = 0
 
-    def copy(self):
-        """Returns a copy from self."""
+    def _shallow_copy(self):
+        """Returns a shallow copy from self."""
         nc = Context(self.prec, self.rounding, self.traps, self.flags,
+                         self._rounding_decision, self.Emin, self.Emax,
+                         self.capitals, self._clamp, self._ignored_flags)
+        return nc
+
+    def copy(self):
+        """Returns a deep copy from self."""
+        nc = Context(self.prec, self.rounding, self.traps.copy(), self.flags.copy(),
                          self._rounding_decision, self.Emin, self.Emax,
                          self.capitals, self._clamp, self._ignored_flags)
         return nc
@@ -2233,7 +2242,7 @@ class Context(object):
         Sets the rounding decision, and returns the current (previous)
         rounding decision.  Often used like:
 
-        context = context.copy()
+        context = context._shallow_copy()
         # That so you don't change the calling context
         # if an error occurs in the middle (say DivisionImpossible is raised).
 
