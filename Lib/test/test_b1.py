@@ -181,7 +181,7 @@ def f(): pass
 print 'hex'
 if hex(16) != '0x10': raise TestFailed, 'hex(16)'
 if hex(16L) != '0x10L': raise TestFailed, 'hex(16L)'
-if hex(-16) != '-0x10': raise TestFailed, 'hex(-16)'
+if hex(-16) != '0xfffffff0': raise TestFailed, 'hex(-16)'
 if hex(-16L) != '-0x10L': raise TestFailed, 'hex(-16L)'
 
 print 'id'
