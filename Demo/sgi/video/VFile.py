@@ -32,6 +32,7 @@ def conv_rgb8(rgb,d1,d2):
 # It has the following methods:
 # init(filename)
 # initfp(fp, filename)
+# reopen()
 # rewind()
 # getnextframe()
 # skipnextframe()
@@ -69,6 +70,7 @@ class VinFile:
 		self.skipchrom = 0
 		self.fp = fp
 		self.filename = filename
+		self.quiet = 0
 		#
 		line = self.fp.readline()
 		if line == 'CMIF video 1.0\n':
@@ -170,12 +172,18 @@ class VinFile:
 			  self.c0bits, self.c1bits, self.c2bits, self.offset, \
 			  self.chrompack)
 
-	# rewind() raises Error if the header is bad (which can only
+	# reopen() raises Error if the header is bad (which can only
 	# happen if the file was written to since opened).
 
-	def rewind(self):
+	def reopen(self):
 		self.fp.seek(0)
 		x = self.initfp(self.fp, self.filename)
+
+	def rewind(self):
+		if self.hascache:
+			self.frameno = 0
+		else:
+			self.reopen()
 
 	def position(self):
 		if self.frameno >= len(self.framecache):
@@ -191,7 +199,7 @@ class VinFile:
 		data, chromdata = self.getnextframedata(size, chromsize)
 		return time, data, chromdata
 
-	def getnextframedata(self, (size, chromsize)):
+	def getnextframedata(self, size, chromsize):
 		if self.hascache:
 			self.position()
 		self.frameno = self.frameno + 1
@@ -210,7 +218,7 @@ class VinFile:
 		self.skipnextframedata(size, chromsize)
 		return time
 
-	def skipnextframedata(self, (size, chromsize)):
+	def skipnextframedata(self, size, chromsize):
 		if self.hascache:
 			self.frameno = self.frameno + 1
 			return
@@ -262,7 +270,7 @@ class VinFile:
 		self.showframe(data, chromdata)
 		return time
 
-	def showframe(self, (data, chromdata)):
+	def showframe(self, data, chromdata):
 		w, h, pf = self.width, self.height, self.packfactor
 		if not self.colormapinited:
 			self.initcolormap()
@@ -297,9 +305,11 @@ class VinFile:
 		gl.cmode()
 		gl.gconfig()
 		self.skipchrom = 0
-		sys.stderr.write('Initializing color map...')
+		if not self.quiet:
+			sys.stderr.write('Initializing color map...')
 		self.initcmap()
-		sys.stderr.write(' Done.\n')
+		if not self.quiet:
+			sys.stderr.write(' Done.\n')
 		if self.offset == 0:
 			gl.color(0x800)
 			gl.clear()
@@ -428,6 +438,11 @@ class VoutFile:
 		self.fp.close()
 		x = self.initfp(None, None)
 
+	def getinfo(self):
+		return (self.format, self.width, self.height, self.packfactor,\
+			  self.c0bits, self.c1bits, self.c2bits, self.offset, \
+			  self.chrompack)
+
 	def setinfo(self, values):
 		self.format, self.width, self.height, self.packfactor,\
 			  self.c0bits, self.c1bits, self.c2bits, self.offset, \
@@ -443,7 +458,7 @@ class VoutFile:
 		if self.format == 'rgb':
 			data = ('rgb', 0)
 		elif self.format == 'grey':
-			data = ('grey', 0)
+			data = ('grey', self.c0bits)
 		else:
 			data = (self.format, (self.c0bits, self.c1bits, \
 				  self.c2bits, self.chrompack, self.offset))
