@@ -148,16 +148,16 @@ PyInt_AsLong(register PyObject *op)
 	PyNumberMethods *nb;
 	PyIntObject *io;
 	long val;
-	
+
 	if (op && PyInt_Check(op))
 		return PyInt_AS_LONG((PyIntObject*) op);
-	
+
 	if (op == NULL || (nb = op->ob_type->tp_as_number) == NULL ||
 	    nb->nb_int == NULL) {
 		PyErr_SetString(PyExc_TypeError, "an integer is required");
 		return -1;
 	}
-	
+
 	io = (PyIntObject*) (*nb->nb_int) (op);
 	if (io == NULL)
 		return -1;
@@ -166,10 +166,10 @@ PyInt_AsLong(register PyObject *op)
 				"nb_int should return int object");
 		return -1;
 	}
-	
+
 	val = PyInt_AS_LONG(io);
 	Py_DECREF(io);
-	
+
 	return val;
 }
 
@@ -219,7 +219,7 @@ PyObject *
 PyInt_FromUnicode(Py_UNICODE *s, int length, int base)
 {
 	char buffer[256];
-	
+
 	if (length >= sizeof(buffer)) {
 		PyErr_SetString(PyExc_ValueError,
 				"int() literal too large to convert");
@@ -312,39 +312,38 @@ int_sub(PyIntObject *v, PyIntObject *w)
 }
 
 /*
-Integer overflow checking used to be done using a double, but on 64
-bit machines (where both long and double are 64 bit) this fails
-because the double doesn't have enough precision.  John Tromp suggests
-the following algorithm:
+Integer overflow checking for * is painful:  Python tried a couple ways, but
+they didn't work on all platforms, or failed in endcases (a product of
+-sys.maxint-1 has been a particular pain).
 
-Suppose again we normalize a and b to be nonnegative.
-Let ah and al (bh and bl) be the high and low 32 bits of a (b, resp.).
-Now we test ah and bh against zero and get essentially 3 possible outcomes.
+Here's another way:
 
-1) both ah and bh > 0 : then report overflow
+The native long product x*y is either exactly right or *way* off, being
+just the last n bits of the true product, where n is the number of bits
+in a long (the delivered product is the true product plus i*2**n for
+some integer i).
 
-2) both ah and bh = 0 : then compute a*b and report overflow if it comes out
-                        negative
+The native double product (double)x * (double)y is subject to three
+rounding errors:  on a sizeof(long)==8 box, each cast to double can lose
+info, and even on a sizeof(long)==4 box, the multiplication can lose info.
+But, unlike the native long product, it's not in *range* trouble:  even
+if sizeof(long)==32 (256-bit longs), the product easily fits in the
+dynamic range of a double.  So the leading 50 (or so) bits of the double
+product are correct.
 
-3) ah > 0 and bh = 0  : compute ah*bl and report overflow if it's >= 2^31
-                        compute al*bl and report overflow if it's negative
-                        add (ah*bl)<<32 to al*bl and report overflow if
-                        it's negative
-
-In case of no overflow the result is then negated if necessary.
-
-The majority of cases will be 2), in which case this method is the same as
-what I suggested before. If multiplication is expensive enough, then the
-other method is faster on case 3), but also more work to program, so I
-guess the above is the preferred solution.
-
+We check these two ways against each other, and declare victory if they're
+approximately the same.  Else, because the native long product is the only
+one that can lose catastrophic amounts of information, it's the native long
+product that must have overflowed.
 */
 
 static PyObject *
 int_mul(PyObject *v, PyObject *w)
 {
-	long a, b, ah, bh, x, y;
-	int s = 1;
+	long a, b;
+	long longprod;			/* a*b in native long arithmetic */
+	double doubled_longprod;	/* (double)longprod */
+	double doubleprod;		/* (double)a * (double)b */
 
 	if (!PyInt_Check(v) &&
 	    v->ob_type->tp_as_sequence &&
@@ -363,97 +362,34 @@ int_mul(PyObject *v, PyObject *w)
 
 	CONVERT_TO_LONG(v, a);
 	CONVERT_TO_LONG(w, b);
-	ah = a >> (LONG_BIT/2);
-	bh = b >> (LONG_BIT/2);
+	longprod = a * b;
+	doubleprod = (double)a * (double)b;
+	doubled_longprod = (double)longprod;
 
-	/* Quick test for common case: two small positive ints */
+	/* Fast path for normal case:  small multiplicands, and no info
+	   is lost in either method. */
+	if (doubled_longprod == doubleprod)
+		return PyInt_FromLong(longprod);
 
-	if (ah == 0 && bh == 0) {
-		x = a*b;
-		if (x < 0)
-			goto bad;
-		return PyInt_FromLong(x);
+	/* Somebody somewhere lost info.  Close enough, or way off?  Note
+	   that a != 0 and b != 0 (else doubled_longprod == doubleprod == 0).
+	   The difference either is or isn't significant compared to the
+	   true value (of which doubleprod is a good approximation).
+	*/
+	{
+		const double diff = doubled_longprod - doubleprod;
+		const double absdiff = diff >= 0.0 ? diff : -diff;
+		const double absprod = doubleprod >= 0.0 ? doubleprod :
+							  -doubleprod;
+		/* absdiff/absprod <= 1/32 iff
+		   32 * absdiff <= absprod -- 5 good bits is "close enough" */
+		if (32.0 * absdiff <= absprod)
+			return PyInt_FromLong(longprod);
+		else if (err_ovf("integer multiplication"))
+			return NULL;
+		else
+			return PyLong_Type.tp_as_number->nb_multiply(v, w);
 	}
-
-	/* Arrange that a >= b >= 0 */
-
-	if (a < 0) {
-		a = -a;
-		if (a < 0) {
-			/* Largest negative */
-			if (b == 0 || b == 1) {
-				x = a*b;
-				goto ok;
-			}
-			else
-				goto bad;
-		}
-		s = -s;
-		ah = a >> (LONG_BIT/2);
-	}
-	if (b < 0) {
-		b = -b;
-		if (b < 0) {
-			/* Largest negative */
-			if (a == 0 || (a == 1 && s == 1)) {
-				x = a*b;
-				goto ok;
-			}
-			else
-				goto bad;
-		}
-		s = -s;
-		bh = b >> (LONG_BIT/2);
-	}
-
-	/* 1) both ah and bh > 0 : then report overflow */
-
-	if (ah != 0 && bh != 0)
-		goto bad;
-
-	/* 2) both ah and bh = 0 : then compute a*b and report
-				   overflow if it comes out negative */
-
-	if (ah == 0 && bh == 0) {
-		x = a*b;
-		if (x < 0)
-			goto bad;
-		return PyInt_FromLong(x*s);
-	}
-
-	if (a < b) {
-		/* Swap */
-		x = a;
-		a = b;
-		b = x;
-		ah = bh;
-		/* bh not used beyond this point */
-	}
-
-	/* 3) ah > 0 and bh = 0  : compute ah*bl and report overflow if
-				   it's >= 2^31
-                        compute al*bl and report overflow if it's negative
-                        add (ah*bl)<<32 to al*bl and report overflow if
-                        it's negative
-			(NB b == bl in this case, and we make a = al) */
-
-	y = ah*b;
-	if (y >= (1L << (LONG_BIT/2 - 1)))
-		goto bad;
-	a &= (1L << (LONG_BIT/2)) - 1;
-	x = a*b;
-	if (x < 0)
-		goto bad;
-	x += y << (LONG_BIT/2);
-	if (x < 0)
-		goto bad;
- ok:
-	return PyInt_FromLong(x * s);
-
- bad:
-	if (err_ovf("integer multiplication"))
-		return NULL;
-	return PyLong_Type.tp_as_number->nb_multiply(v, w);
 }
 
 /* Return type of i_divmod */
@@ -468,7 +404,7 @@ i_divmod(register long x, register long y,
          long *p_xdivy, long *p_xmody)
 {
 	long xdivy, xmody;
-	
+
 	if (y == 0) {
 		PyErr_SetString(PyExc_ZeroDivisionError,
 				"integer division or modulo by zero");
@@ -623,7 +559,7 @@ int_pow(PyIntObject *v, PyIntObject *w, PyIntObject *z)
 	ix = 1;
 	while (iw > 0) {
 	 	prev = ix;	/* Save value for overflow check */
-	 	if (iw & 1) {	
+	 	if (iw & 1) {
 		 	ix = ix*temp;
 			if (temp == 0)
 				break; /* Avoid ix / 0 */
@@ -666,7 +602,7 @@ int_pow(PyIntObject *v, PyIntObject *w, PyIntObject *z)
 		}
 	}
 	return PyInt_FromLong(ix);
-}				
+}
 
 static PyObject *
 int_neg(PyIntObject *v)

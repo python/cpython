@@ -71,6 +71,32 @@ if not -24 < -12: raise TestFailed, 'int op'
 xsize, ysize, zsize = 238, 356, 4
 if not (xsize*ysize*zsize == zsize*xsize*ysize == 338912):
     raise TestFailed, 'int mul commutativity'
+# And another.
+m = -sys.maxint - 1
+for divisor in 1, 2, 4, 8, 16, 32:
+    j = m / divisor
+    prod = divisor * j
+    if prod != m:
+        raise TestFailed, "%r * %r == %r != %r" % (divisor, j, prod, m)
+    if type(prod) is not int:
+        raise TestFailed, ("expected type(prod) to be int, not %r" %
+                           type(prod))
+# Check for expected * overflow to long.
+for divisor in 1, 2, 4, 8, 16, 32:
+    j = m / divisor - 1
+    prod = divisor * j
+    if type(prod) is not long:
+        raise TestFailed, ("expected type(%r) to be long, not %r" %
+                           (prod, type(prod)))
+# Check for expected * overflow to long.
+m = sys.maxint
+for divisor in 1, 2, 4, 8, 16, 32:
+    j = m / divisor + 1
+    prod = divisor * j
+    if type(prod) is not long:
+        raise TestFailed, ("expected type(%r) to be long, not %r" %
+                           (prod, type(prod)))
+
 print '6.4.2 Long integers'
 if 12L + 24L != 36L: raise TestFailed, 'long op'
 if 12L + (-24L) != -12L: raise TestFailed, 'long op'
