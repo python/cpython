@@ -170,7 +170,7 @@ class MainListWindow(ListWindow):
 
 	def open(self, id, cb_check, cb_run, cb_add):
 		ListWindow.open(self, id, [])
-		self.wid.SetDialogDefaultItem(ID_INCLUDE)
+		self.wid.SetDialogDefaultItem(MAIN_INCLUDE)
 		self.cb_run = cb_run
 		self.cb_check = cb_check
 		self.cb_add = cb_add
