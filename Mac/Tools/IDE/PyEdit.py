@@ -63,6 +63,7 @@ class Editor(W.Window):
 			text = f.read()
 			f.close()
 			self._creator, filetype = MacOS.GetCreatorAndType(path)
+			self.addrecentfile(path)
 		else:
 			raise IOError, "file '%s' does not exist" % path
 		self.path = path
@@ -399,6 +400,7 @@ class Editor(W.Window):
 			del linecache.cache[self.path]
 		import macostools
 		macostools.touched(self.path)
+		self.addrecentfile(self.path)
 	
 	def can_save(self, menuitem):
 		return self.editgroup.editor.changed or self.editgroup.editor.selchanged
@@ -780,6 +782,10 @@ class Editor(W.Window):
 	
 	def selectline(self, lineno, charoffset = 0):
 		self.editgroup.editor.selectline(lineno - 1, charoffset)
+		
+	def addrecentfile(self, filename):
+		app = W.getapplication()
+		app.addrecentfile(filename)
 
 class _saveoptions:
 	

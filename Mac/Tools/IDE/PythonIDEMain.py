@@ -76,6 +76,8 @@ class PythonIDE(Wapplication.Application):
 		newitem = FrameWork.MenuItem(m, "New", "N", 'new')
 		openitem = FrameWork.MenuItem(m, "Open"+ELIPSES, "O", 'open')
 		openbynameitem = FrameWork.MenuItem(m, "Open File by Name"+ELIPSES, "D", 'openbyname')
+		self.openrecentmenu = FrameWork.SubMenu(m, "Open Recent")
+		self.makeopenrecentmenu()
 		FrameWork.Separator(m)
 		closeitem = FrameWork.MenuItem(m, "Close", "W", 'close')
 		saveitem = FrameWork.MenuItem(m, "Save", "S", 'save')
@@ -278,10 +280,48 @@ class PythonIDE(Wapplication.Application):
 		self._openwindowscheckmark = 0
 		self.checkopenwindowsmenu()
 		
+	def makeopenrecentmenu(self):
+		for i in range(len(self.openrecentmenu.items)):
+			self.openrecentmenu.menu.DeleteMenuItem(1)
+			self.openrecentmenu.items = []
+		prefs = self.getprefs()
+		filelist = prefs.recentfiles
+		if not filelist:
+			self.openrecentmenu.enable(0)
+			return
+		self.openrecentmenu.enable(1)
+		for filename in filelist:
+			item = FrameWork.MenuItem(self.openrecentmenu, filename, None, callback = self.domenu_openrecent)
+		
+	def addrecentfile(self, file):
+		prefs = self.getprefs()
+		filelist = prefs.recentfiles
+		if not filelist:
+			filelist = []
+		
+		if file in filelist:
+			if file == filelist[0]:
+				return
+			filelist.remove(file)
+		filelist.insert(0, file)
+		filelist = filelist[:10]
+		prefs.recentfiles = filelist
+		prefs.save()
+		self.makeopenrecentmenu()
+		
 	def domenu_openwindows(self, id, item, window, event):
 		w = self._openwindows[item]
 		w.ShowWindow()
 		w.SelectWindow()
+	
+	def domenu_openrecent(self, id, item, window, event):
+		prefs = self.getprefs()
+		filelist = prefs.recentfiles
+		if not filelist:
+			filelist = []
+		item = item - 1
+		filename = filelist[item]
+		self.openscript(filename)
 	
 	def domenu_quit(self):
 		self._quit()
