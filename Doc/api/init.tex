@@ -24,7 +24,7 @@
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{Py_InitializeEx}{int initsigs}
-  This function works like \cfunction{Py_Initialize} if
+  This function works like \cfunction{Py_Initialize()} if
   \var{initsigs} is 1. If \var{initsigs} is 0, it skips
   initialization registration of signal handlers, which
   might be useful when Python is embedded. \versionadded{2.4}
@@ -517,20 +517,28 @@ for calling into Python from a C thread is
   This is a common situation (most Python programs do not use
   threads), and the lock operations slow the interpreter down a bit.
   Therefore, the lock is not created initially.  This situation is
-  equivalent to having acquired the lock: when there is only a single
+  equivalent to having acquired the lock:  when there is only a single
   thread, all object accesses are safe.  Therefore, when this function
   initializes the lock, it also acquires it.  Before the Python
   \module{thread}\refbimodindex{thread} module creates a new thread,
   knowing that either it has the lock or the lock hasn't been created
   yet, it calls \cfunction{PyEval_InitThreads()}.  When this call
-  returns, it is guaranteed that the lock has been created and that it
-  has acquired it.
+  returns, it is guaranteed that the lock has been created and that the
+  calling thread has acquired it.
 
   It is \strong{not} safe to call this function when it is unknown
   which thread (if any) currently has the global interpreter lock.
 
   This function is not available when thread support is disabled at
   compile time.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyEval_ThreadsInitialized}{}
+  Returns a non-zero value if \cfunction{PyEval_InitThreads()} has been
+  called.  This function can be called without holding the lock, and
+  therefore can be used to avoid calls to the locking API when running
+  single-threaded.  This function is not available when thread support
+  is disabled at compile time. \versionadded{2.4}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyEval_AcquireLock}{}

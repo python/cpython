@@ -1517,7 +1517,6 @@ Py_FatalError(const char *msg)
 
 #ifdef WITH_THREAD
 #include "pythread.h"
-int _PyThread_Started = 0; /* Set by threadmodule.c and maybe others */
 #endif
 
 #define NEXITFUNCS 32

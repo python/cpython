@@ -980,7 +980,6 @@ EXPORTS
   "Py_UseClassExceptionsFlag"
   "Py_UnicodeFlag"
   "_Py_QnewFlag"
-  "_PyThread_Started"
 
 ; From python24_s.lib(structmember)
   "PyMember_Get"

@@ -203,17 +203,20 @@ PyEval_GetCallStats(PyObject *self)
 #endif
 #include "pythread.h"
 
-extern int _PyThread_Started; /* Flag for Py_Exit */
-
 static PyThread_type_lock interpreter_lock = 0; /* This is the GIL */
 static long main_thread = 0;
+
+int
+PyEval_ThreadsInitialized(void)
+{
+	return interpreter_lock != 0;
+}
 
 void
 PyEval_InitThreads(void)
 {
 	if (interpreter_lock)
 		return;
-	_PyThread_Started = 1;
 	interpreter_lock = PyThread_allocate_lock();
 	PyThread_acquire_lock(interpreter_lock, 1);
 	main_thread = PyThread_get_thread_ident();

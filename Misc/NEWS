@@ -136,6 +136,11 @@ Build
 C API
 -----
 
+- SF patch 1044089:  New function ``PyEval_ThreadsInitialized()`` returns
+  non-zero if PyEval_InitThreads() has been called.
+
+- The undocumented and unused extern int ``_PyThread_Started`` was removed.
+
 - The C API calls ``PyInterpreterState_New()`` and ``PyThreadState_New()``
   are two of the very few advertised as being safe to call without holding
   the GIL.  However, this wasn't true in a debug build, as bug 1041645
