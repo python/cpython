@@ -545,6 +545,9 @@ Library
   library.  It implements a complete file interface, one-shot (de)compression
   functions, and types for sequential (de)compression.
 
+- New pdb command `pp' which is like `p' except that it pretty-prints
+  the value of its expression argument.
+
 Tools/Demos
 -----------
 
