@@ -205,13 +205,14 @@ newcodeobject(argcount, nlocals, stacksize, flags,
 		err_badcall();
 		return NULL;
 	}
-	/* Make sure names and varnames are all strings */
+	/* Make sure names and varnames are all strings, & intern them */
 	for (i = gettuplesize(names); --i >= 0; ) {
 		object *v = gettupleitem(names, i);
 		if (v == NULL || !is_stringobject(v)) {
 			err_badcall();
 			return NULL;
 		}
+		PyString_InternInPlace(&PyTuple_GET_ITEM(names, i));
 	}
 	for (i = gettuplesize(varnames); --i >= 0; ) {
 		object *v = gettupleitem(varnames, i);
@@ -219,6 +220,20 @@ newcodeobject(argcount, nlocals, stacksize, flags,
 			err_badcall();
 			return NULL;
 		}
+		PyString_InternInPlace(&PyTuple_GET_ITEM(varnames, i));
+	}
+	/* Intern selected string constants */
+	for (i = gettuplesize(consts); --i >= 0; ) {
+		object *v = gettupleitem(consts, i);
+		int n;
+		char *p;
+		if (!is_stringobject(v))
+			continue;
+		p = getstringvalue(v);
+		if (strspn(p, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz")
+		    != getstringsize(v))
+			continue;
+		PyString_InternInPlace(&PyTuple_GET_ITEM(consts, i));
 	}
 	co = NEWOBJ(codeobject, &Codetype);
 	if (co != NULL) {
@@ -620,7 +635,7 @@ com_addopnamestr(c, op, name)
 	    com_mangle(c, name, buffer, (int)sizeof(buffer)))
 		name = buffer;
 #endif
-	if (name == NULL || (v = newstringobject(name)) == NULL) {
+	if (name == NULL || (v = PyString_InternFromString(name)) == NULL) {
 		c->c_errors++;
 		i = 255;
 	}
@@ -986,7 +1001,7 @@ com_argument(c, n, pkeywords)
 		com_error(c, SyntaxError, "keyword can't be an expression");
 	}
 	else {
-		object *v = newstringobject(STR(m));
+		object *v = PyString_InternFromString(STR(m));
 		if (v != NULL && *pkeywords == NULL)
 			*pkeywords = newdictobject();
 		if (v == NULL || *pkeywords == NULL)
@@ -1973,7 +1988,7 @@ com_newlocal(c, name)
 	struct compiling *c;
 	char *name;
 {
-	object *nameval = newstringobject(name);
+	object *nameval = PyString_InternFromString(name);
 	int i;
 	if (nameval == NULL) {
 		c->c_errors++;
@@ -2563,7 +2578,7 @@ com_classdef(c, n)
 	object *v;
 	REQ(n, classdef);
 	/* classdef: class NAME ['(' testlist ')'] ':' suite */
-	if ((v = newstringobject(STR(CHILD(n, 1)))) == NULL) {
+	if ((v = PyString_InternFromString(STR(CHILD(n, 1)))) == NULL) {
 		c->c_errors++;
 		return;
 	}
@@ -3186,8 +3201,8 @@ jcompile(n, filename, base)
 		consts = listtuple(sc.c_consts);
 		names = listtuple(sc.c_names);
 		varnames = listtuple(sc.c_varnames);
-		filename = newstringobject(sc.c_filename);
-		name = newstringobject(sc.c_name);
+		filename = PyString_InternFromString(sc.c_filename);
+		name = PyString_InternFromString(sc.c_name);
 		if (!err_occurred())
 			co = newcodeobject(sc.c_argcount,
 					   sc.c_nlocals,
