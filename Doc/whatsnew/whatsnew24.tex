@@ -322,10 +322,11 @@ euc-jisx0213, iso-2022-jp, iso-2022-jp-1, iso-2022-jp-2,
  \item Korean: cp949, euc-kr, johab, iso-2022-kr
 \end{itemize} 
 
-\item There is a new \module{collections} module which currently offers
-   just one new datatype, \class{deque}, which offers high-performance,
-   thread-safe, memory friendly appends and pops on either side of the
-   deque resulting in efficient stacks and queues:
+\item There is a new \module{collections} module for 
+   various specialized collection datatypes.  
+   Currently it contains just one type, \class{deque}, 
+   a double-ended queue that supports efficiently adding and removing
+   elements from either end.
 
 \begin{verbatim}
 >>> from collections import deque
@@ -344,12 +345,12 @@ deque(['f', 'g', 'h', 'i', 'j'])
 True  
 \end{verbatim}
 
-Several modules now take advantage of \class{collections.deque()} for
+Several modules now take advantage of \class{collections.deque} for
 improved performance:  \module{Queue}, \module{mutex}, \module{shlex}
 \module{threading}, and \module{pydoc}.
 
 \item The \module{heapq} module has been converted to C.  The resulting
-   ten-fold improvement in speed makes the module suitable for handling
+   tenfold improvement in speed makes the module suitable for handling
    high volumes of data.
 
 \item The \module{imaplib} module now supports IMAP's THREAD command.
