@@ -83,10 +83,14 @@ class EditorWindow:
     about_title = about_title
     about_text = about_text
 
+    vars = {}
+
     def __init__(self, flist=None, filename=None, key=None, root=None):
         self.flist = flist
         root = root or flist.root
         self.root = root
+        if flist:
+            self.vars = flist.vars
         self.menubar = Menu(root)
         self.top = top = self.Toplevel(root, menu=self.menubar)
         self.vbar = vbar = Scrollbar(top, name='vbar')
@@ -550,15 +554,10 @@ class EditorWindow:
             var.set(value)
     
     def getrawvar(self, name, vartype=None):
-        key = ".VARS."
-        vars = self.menudict.get(key)
-        if not vars and vartype:
-            self.menudict[key] = vars = {}
-        if vars is not None:
-            var = vars.get(name)
-            if not var and vartype:
-                vars[name] = var = vartype(self.text)
-            return var
+        var = self.vars.get(name)
+        if not var and vartype:
+            self.vars[name] = var = vartype(self.text)
+        return var
 
 
 def prepstr(s):

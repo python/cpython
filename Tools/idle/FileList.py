@@ -22,6 +22,7 @@ class FileList:
         self.root = root
         self.dict = {}
         self.inversedict = {}
+        self.vars = {} # For EditorWindow.getrawvar (shared Tcl variables)
 
 
     def goodname(self, filename):
