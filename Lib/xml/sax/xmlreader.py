@@ -2,7 +2,9 @@
 should be based on this code. """
 
 import handler
-from _exceptions import *
+
+from _exceptions import SAXNotSupportedException, SAXNotRecognizedException
+
 
 # ===== XMLREADER =====
 
