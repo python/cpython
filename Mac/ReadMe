@@ -122,7 +122,8 @@ formats is included, but without documentation.  You can find docs at
 ftp://ftp.cwi.nl/pub/jack/python/img (or somewhere around there).
 
 Finally there is a Mac:Contrib folder which contains some contributed
-software, mainly for various AppleScript things.
+software, including a Real Programming Environment and some AppleScript
+related modules.
 
 Upgrading from older Python releases
 ------------------------------------
@@ -133,9 +134,9 @@ that this means you can keep your older version around if you are unsure
 whether to upgrade. The bad news is that your old preference settings
 are lost and you have to set them again.
 
-After you are satisfied that 1.5b2 works as expected you can trash
+After you are satisfied that 1.5.1 works as expected you can trash
 anything in the system folder that has "python" in the name and not
-"1.5b2".
+"1.5.1".
 
 The installer
 -------------
@@ -151,8 +152,7 @@ Fax: 402-477-1395
 Internet: mindvision@mindvision.com
 http://www.mindvision.com
 
-Just van Rossum <just@knoware.nl> created the installer in just a couple
-of days (hours?).
+Just van Rossum <just@letterror.nl> created the installer.
 
 Feedback
 --------
