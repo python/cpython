@@ -158,23 +158,21 @@ Send a \samp{LAST} command.  Return as for \method{stat()}.
 
 \begin{methoddesc}{head}{id}
 Send a \samp{HEAD} command, where \var{id} has the same meaning as for
-\method{stat()}.  Return a pair \code{(\var{response}, \var{list})}
-where \var{list} is a list of the article's headers (an uninterpreted
+\method{stat()}.  Return a tuple
+\code{(\var{response}, \var{number}, \var{id}, \var{list})}
+where the first three are the same as for \method{stat()},
+and \var{list} is a list of the article's headers (an uninterpreted
 list of lines, without trailing newlines).
 \end{methoddesc}
 
 \begin{methoddesc}{body}{id}
 Send a \samp{BODY} command, where \var{id} has the same meaning as for
-\method{stat()}.  Return a pair \code{(\var{response}, \var{list})}
-where \var{list} is a list of the article's body text (an
-uninterpreted list of lines, without trailing newlines).
+\method{stat()}.  Return as for \method{head()}.
 \end{methoddesc}
 
 \begin{methoddesc}{article}{id}
 Send a \samp{ARTICLE} command, where \var{id} has the same meaning as
-for \method{stat()}.  Return a pair \code{(\var{response}, \var{list})}
-where \var{list} is a list of the article's header and body text (an
-uninterpreted list of lines, without trailing newlines).
+for \method{stat()}.  Return as for \method{head()}.
 \end{methoddesc}
 
 \begin{methoddesc}{slave}{}
