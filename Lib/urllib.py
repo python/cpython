@@ -387,7 +387,7 @@ class URLopener:
 				   value in ('a', 'A', 'i', 'I', 'd', 'D'):
 					type = string.upper(value)
                         (fp, retrlen) = self.ftpcache[key].retrfile(file, type)
-                        if retrlen >= 0:
+                        if retrlen is not None and retrlen >= 0:
                             import mimetools, StringIO
                             headers = mimetools.Message(StringIO.StringIO(
                                 'Content-Length: %d\n' % retrlen))
