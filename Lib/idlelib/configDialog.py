@@ -367,9 +367,11 @@ class ConfigDialog(Toplevel):
         self.listExt.bind('<ButtonRelease-1>',self.ExtensionSelected)
         labelExtSetTitle=Label(frameExtSet,text='Settings')
         self.radioEnableExt=Radiobutton(frameExtSet,variable=self.extEnabled,
-            value=1,text="enabled",state=DISABLED)
+            value=1,text="enabled",state=DISABLED,
+            command=self.ExtensionStateToggled)
         self.radioDisableExt=Radiobutton(frameExtSet,variable=self.extEnabled,
-            value=0,text="disabled",state=DISABLED)
+            value=0,text="disabled",state=DISABLED,
+            command=self.ExtensionStateToggled)
         self.buttonExtConfig=Button(frameExtSet,text='Configure',state=DISABLED)
         #widget packing
         #body
@@ -412,60 +414,68 @@ class ConfigDialog(Toplevel):
         self.winWidth.trace_variable('w',self.VarChanged_winWidth)
         self.winHeight.trace_variable('w',self.VarChanged_winHeight)
         self.startupEdit.trace_variable('w',self.VarChanged_startupEdit)
-        self.extEnabled.trace_variable('w',self.VarChanged_extEnabled)
     
     def VarChanged_fontSize(self,*params):
         value=self.fontSize.get()
         self.AddChangedItem('main','EditorWindow','font-size',value)
-        print 'fontSize:',value
         
     def VarChanged_fontName(self,*params):
         value=self.fontName.get()
         self.AddChangedItem('main','EditorWindow','font',value)
-        print 'fontName:',value
 
     def VarChanged_fontBold(self,*params):
         value=self.fontBold.get()
         self.AddChangedItem('main','EditorWindow','font-bold',value)
-        print 'fontBold:',value
 
     def VarChanged_indentBySpaces(self,*params):
         value=self.indentBySpaces.get()
         self.AddChangedItem('main','Indent','use-spaces',value)
-        print 'indentBySpaces:',value
 
     def VarChanged_spaceNum(self,*params):
         value=self.spaceNum.get()
         self.AddChangedItem('main','Indent','num-spaces',value)
-        print 'spaceNum:',value
 
     def VarChanged_tabCols(self,*params):
         value=self.tabCols.get()
         self.AddChangedItem('main','Indent','tab-cols',value)
-        print 'tabCols:',value
 
     def VarChanged_colour(self,*params):
+        value=self.colour.get()
+        theme=self.customTheme.get()
+        element=self.themeElements[self.highlightTarget.get()][0]
+        self.AddChangedItem('highlight',theme,element,value)
         print params
-
+        
     def VarChanged_keyBinding(self,*params):
+        value=self.keyBinding.get()
+        keySet=self.customKeys.get()
+        event=self.listBindings.get(ANCHOR).split()[0]
+        self.AddChangedItem('keys',keySet,event,value)
         print params
 
     def VarChanged_winWidth(self,*params):
-        print params
+        value=self.winWidth.get()
+        self.AddChangedItem('main','EditorWindow','width',value)
 
     def VarChanged_winHeight(self,*params):
-        print params
+        value=self.winHeight.get()
+        self.AddChangedItem('main','EditorWindow','height',value)
 
     def VarChanged_startupEdit(self,*params):
-        print params
+        value=self.startupEdit.get()
+        self.AddChangedItem('main','General','editor-on-startup',value)
 
-    def VarChanged_extEnabled(self,*params):
-        print params
+    def ExtensionStateToggled(self):
+        #callback for the extension enable/disable radio buttons
+        value=self.extEnabled.get()
+        extension=self.listExt.get(ANCHOR)
+        self.AddChangedItem('extensions',extension,'enabled',value)
 
     def AddChangedItem(self,type,section,item,value):
         if not self.changedItems[type].has_key(section):
             self.changedItems[type][section]={}    
         self.changedItems[type][section][item]=value
+        print type,section,item,value
     
     def GetDefaultItems(self):
         dItems={'main':{},'highlight':{},'keys':{},'extensions':{}}
@@ -675,8 +685,12 @@ class ConfigDialog(Toplevel):
         if newKeys.result: #new keys were specified
             self.listBindings.delete(listIndex)
             self.listBindings.insert(listIndex,bindName+' - '+newKeys.result)
+            self.listBindings.select_set(listIndex)
+            self.listBindings.select_anchor(listIndex)
             self.keyBinding.set(newKeys.result)
-        self.listBindings.select_set(listIndex)
+        else:
+            self.listBindings.select_set(listIndex)
+            self.listBindings.select_anchor(listIndex)
 
     def KeyBindingSelected(self,event):
         self.buttonNewKeys.config(state=NORMAL)
