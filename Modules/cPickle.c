@@ -1719,10 +1719,7 @@ save_global(Picklerobject *self, PyObject *args, PyObject *name)
 				  "OSS", args, module, global_name);
 		goto finally;
 	}
-	/* borrowed ref */
-	moddict = PyModule_GetDict(mod);        
-	/* borrowed ref */
-	klass = PyDict_GetItemString(moddict, name_str);        
+	klass = PyObject_GetAttrString(mod, name_str);
 	if (klass == NULL) {
 		cPickle_ErrFormat(PicklingError,
 				  "Can't pickle %s: it's not found as %s.%s",
@@ -1730,11 +1727,13 @@ save_global(Picklerobject *self, PyObject *args, PyObject *name)
 		goto finally;
 	}
 	if (klass != args) {
+		Py_DECREF(klass);
 		cPickle_ErrFormat(PicklingError,
 				  "Can't pickle %s: it's not the same object as %s.%s",
 				  "OSS", args, module, global_name);
 		goto finally;
 	}
+	Py_DECREF(klass);
 
 	if ((*self->write_func)(self, &global, 1) < 0)
 		goto finally;
