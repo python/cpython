@@ -543,7 +543,7 @@ listindex(self, args)
 		if (cmpobject(self->ob_item[i], args) == 0)
 			return newintobject(i);
 	}
-	err_setstr(RuntimeError, "list.index(x): x not in list");
+	err_setstr(ValueError, "list.index(x): x not in list");
 	return NULL;
 }
 
@@ -586,7 +586,7 @@ listremove(self, args)
 		}
 			
 	}
-	err_setstr(RuntimeError, "list.remove(x): x not in list");
+	err_setstr(ValueError, "list.remove(x): x not in list");
 	return NULL;
 }
 

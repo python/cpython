@@ -103,7 +103,7 @@ getmember(addr, mlist, name)
 		}
 	}
 	
-	err_setstr(NameError, name);
+	err_setstr(AttributeError, name);
 	return NULL;
 }
 
@@ -119,7 +119,7 @@ setmember(addr, mlist, name, v)
 	for (l = mlist; l->name != NULL; l++) {
 		if (strcmp(l->name, name) == 0) {
 			if (l->readonly || l->type == T_STRING) {
-				err_setstr(RuntimeError, "readonly attribute");
+				err_setstr(TypeError, "readonly attribute");
 				return -1;
 			}
 			addr += l->offset;
@@ -178,6 +178,6 @@ setmember(addr, mlist, name, v)
 		}
 	}
 	
-	err_setstr(NameError, name);
+	err_setstr(AttributeError, name);
 	return -1;
 }

@@ -68,6 +68,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "stdwin.h"
 
+#define StdwinError RuntimeError /* XXX Change this later */
+
 /* Window and menu object types declared here because of forward references */
 
 typedef struct {
@@ -870,7 +872,7 @@ text_draw(self, args)
 	if (!getrectarg(args, a))
 		return NULL;
 	if (Drawing != NULL) {
-		err_setstr(RuntimeError, "already drawing");
+		err_setstr(StdwinError, "already drawing");
 		return NULL;
 	}
 	/* Clip to text area and ignore if area is empty */
@@ -1029,8 +1031,7 @@ text_settext(self, args)
 		return NULL;
 	size = getstringsize(text);
 	if ((buf = NEW(char, size)) == NULL) {
-		err_set(MemoryError);
-		return NULL;
+		return err_nomem();
 	}
 	memcpy(buf, getstringvalue(text), size);
 	tesetbuf(self->t_text, buf, size); /* Becomes owner of buffer */
@@ -1145,7 +1146,7 @@ newmenuobject(title)
 			break;
 	}
 	if (id >= MAXNMENU) {
-		err_setstr(MemoryError, "creating too many menus");
+		err_setstr(StdwinError, "creating too many menus");
 		return NULL;
 	}
 	menu = wmenucreate(id + IDOFFSET, getstringvalue(title));
@@ -1374,7 +1375,7 @@ window_begindrawing(wp, args)
 	if (!getnoarg(args))
 		return NULL;
 	if (Drawing != NULL) {
-		err_setstr(RuntimeError, "already drawing");
+		err_setstr(StdwinError, "already drawing");
 		return NULL;
 	}
 	dp = NEWOBJ(drawingobject, &Drawingtype);
@@ -1596,7 +1597,7 @@ window_setwincursor(self, args)
 		return NULL;
 	c = wfetchcursor(getstringvalue(str));
 	if (c == NULL) {
-		err_setstr(RuntimeError, "no such cursor");
+		err_setstr(StdwinError, "no such cursor");
 		return NULL;
 	}
 	wsetwincursor(self->w_win, c);
@@ -1710,7 +1711,7 @@ stdwin_open(sw, args)
 			break;
 	}
 	if (tag >= MAXNWIN) {
-		err_setstr(MemoryError, "creating too many windows");
+		err_setstr(StdwinError, "creating too many windows");
 		return NULL;
 	}
 	wp = NEWOBJ(windowobject, &Windowtype);
@@ -1766,7 +1767,7 @@ stdwin_get_poll_event(poll, args)
 	if (!getnoarg(args))
 		return NULL;
 	if (Drawing != NULL) {
-		err_setstr(RuntimeError, "cannot getevent() while drawing");
+		err_setstr(StdwinError, "cannot getevent() while drawing");
 		return NULL;
 	}
  again:

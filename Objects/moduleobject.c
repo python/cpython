@@ -118,7 +118,7 @@ module_getattr(m, name)
 	}
 	res = dictlookup(m->md_dict, name);
 	if (res == NULL)
-		err_setstr(NameError, name);
+		err_setstr(AttributeError, name);
 	else
 		INCREF(res);
 	return res;
@@ -131,7 +131,7 @@ module_setattr(m, name, v)
 	object *v;
 {
 	if (strcmp(name, "__dict__") == 0 || strcmp(name, "__name__") == 0) {
-		err_setstr(NameError, "can't assign to reserved member name");
+		err_setstr(TypeError, "can't assign to reserved member name");
 		return -1;
 	}
 	if (v == NULL)

@@ -180,10 +180,10 @@ err_input(err)
 	case E_OK:
 		break;
 	case E_SYNTAX:
-		err_setstr(RuntimeError, "syntax error");
+		err_setstr(ValueError, "syntax error");
 		break;
 	case E_TOKEN:
-		err_setstr(RuntimeError, "illegal token");
+		err_setstr(ValueError, "illegal token");
 		break;
 	case E_INTR:
 		err_set(KeyboardInterrupt);
@@ -195,7 +195,7 @@ err_input(err)
 		err_set(EOFError);
 		break;
 	default:
-		err_setstr(RuntimeError, "unknown input error");
+		err_setstr(SystemError, "unknown input error");
 		break;
 	}
 }
