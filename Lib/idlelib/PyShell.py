@@ -357,6 +357,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.register("stderr", self.tkconsole.stderr)
         self.rpcclt.register("flist", self.tkconsole.flist)
         self.rpcclt.register("linecache", linecache)
+        self.rpcclt.register("interp", self)
         self.transfer_path()
         self.poll_subprocess()
 
@@ -479,6 +480,19 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def getdebugger(self):
         return self.debugger
+
+    def open_remote_stack_viewer(self):
+        """Initiate the remote stack viewer from a separate thread.
+
+        This method is called from the subprocess, and by returning from this
+        method we allow the subprocess to unblock.  After a bit the shell
+        requests the subprocess to open the remote stack viewer which returns a
+        static object looking at the last exceptiopn.  It is queried through
+        the RPC mechanism.
+
+        """
+        self.tkconsole.text.after(300, self.remote_stack_viewer)
+        return
 
     def remote_stack_viewer(self):
         import RemoteObjectBrowser
