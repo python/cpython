@@ -38,16 +38,20 @@ l = 65536
 f = 3.1415
 d = 3.1415
 
-for format in ('xcbhilfd', 'xcBHILfd', '@xsbhilfd'):
-    s = struct.pack(format, c, b, h, i, l, f, d)
-    cp, bp, hp, ip, lp, fp, dp = struct.unpack(format, s)
-    if (cp <> c or bp <> b or hp <> h or ip <> i or lp <> l or
-	int(100 * fp) <> int(100 * f) or int(100 * dp) <> int(100 * d)):
-	# ^^^ calculate only to two decimal places
-	raise TestFailed, "unpack/pack not transitive (%s, %s)" % (
-	    str(format), str((cp, bp, hp, ip, lp, fp, dp)))
+for prefix in ('', '@', '<', '>', '=', '!'):
+    for format in ('xcbhilfd', 'xcBHILfd'):
+	format = prefix + format
+	if verbose:
+	    print "trying:", format
+	s = struct.pack(format, c, b, h, i, l, f, d)
+	cp, bp, hp, ip, lp, fp, dp = struct.unpack(format, s)
+	if (cp <> c or bp <> b or hp <> h or ip <> i or lp <> l or
+	    int(100 * fp) <> int(100 * f) or int(100 * dp) <> int(100 * d)):
+	    # ^^^ calculate only to two decimal places
+	    raise TestFailed, "unpack/pack not transitive (%s, %s)" % (
+		str(format), str((cp, bp, hp, ip, lp, fp, dp)))
 
-# Test some of the new features
+# Test some of the new features in detail
 
 # (format, argument, big-endian result, little-endian result, asymmetric)
 tests = [
@@ -77,6 +81,12 @@ tests = [
     ('l', -70000000, '\373\323\342\200', '\200\342\323\373', 0),
     ('L', 70000000L, '\004,\035\200', '\200\035,\004', 0),
     ('L', 0x100000000L-70000000, '\373\323\342\200', '\200\342\323\373', 0),
+    ('f', 2.0, '@\000\000\000', '\000\000\000@', 0),
+    ('d', 2.0, '@\000\000\000\000\000\000\000',
+               '\000\000\000\000\000\000\000@', 0),
+    ('f', -2.0, '\300\000\000\000', '\000\000\000\300', 0),
+    ('d', -2.0, '\300\000\000\000\000\000\000\000',
+               '\000\000\000\000\000\000\000\300', 0),
 ]
 
 def badpack(fmt, arg, got, exp):
