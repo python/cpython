@@ -94,8 +94,8 @@ $
 \end{verbatim}
 
 There's no output!  That's normal, and it means all the examples worked.
-Pass \code{-v} to the script, and doctest prints a detailed log of what it's
-trying, and prints a summary at the end:
+Pass \programopt{-v} to the script, and doctest prints a detailed log
+of what it's trying, and prints a summary at the end:
 
 \begin{verbatim}
 $ python example.py -v
@@ -161,24 +161,25 @@ python M.py
 
 This won't display anything unless an example fails, in which case the
 failing example(s) and the cause(s) of the failure(s) are printed to stdout,
-and the final line of output is \code{"Test failed."}.
+and the final line of output is \code{'Test failed.'}.
 
-Run it with the \code{-v} switch instead:
+Run it with the \programopt{-v} switch instead:
 
 \begin{verbatim}
 python M.py -v
 \end{verbatim}
 
-and a detailed report of all examples tried is printed to \var{stdout},
+and a detailed report of all examples tried is printed to \code{stdout},
 along with assorted summaries at the end.
 
 You can force verbose mode by passing \code{verbose=1} to testmod, or
 prohibit it by passing \code{verbose=0}.  In either of those cases,
-\var{sys.argv} is not examined by testmod.
+\code{sys.argv} is not examined by testmod.
 
-In any case, testmod returns a 2-tuple of ints \var{(f, t)}, where \var{f}
-is the number of docstring examples that failed and \var{t} is the total
-number of docstring examples attempted.
+In any case, testmod returns a 2-tuple of ints \code{(\var{f},
+\var{t})}, where \var{f} is the number of docstring examples that
+failed and \var{t} is the total number of docstring examples
+attempted.
 
 \subsection{Which Docstrings Are Examined?}
 
@@ -187,12 +188,12 @@ module docstring, and all function, class and method docstrings are
 searched, with the exception of docstrings attached to objects with private
 names.
 
-In addition, if \var{M.__test__} exists and "is true", it must be a dict,
-and each entry maps a (string) name to a function object, class object, or
-string.  Function and class object docstrings found from \var{M.__test__}
-are searched even if the name is private, and strings are searched directly
-as if they were docstrings.  In output, a key \var{K} in \var{M.__test__}
-appears with name
+In addition, if \code{M.__test__} exists and "is true", it must be a
+dict, and each entry maps a (string) name to a function object, class
+object, or string.  Function and class object docstrings found from
+\code{M.__test__} are searched even if the name is private, and
+strings are searched directly as if they were docstrings.  In output,
+a key \code{K} in \code{M.__test__} appears with name
 
 \begin{verbatim}
       <name of M>.__test__.K
@@ -201,7 +202,7 @@ appears with name
 Any classes found are recursively searched similarly, to test docstrings in
 their contained methods and nested classes.  While private names reached
 from \module{M}'s globals are skipped, all names reached from
-\var{M.__test__} are searched.
+\code{M.__test__} are searched.
 
 \subsection{What's the Execution Context?}
 
@@ -216,7 +217,7 @@ docstrings to use globals inappropriate for them.
 
 You can force use of your own dict as the execution context by passing
 \code{globs=your_dict} to \function{testmod()} instead.  Presumably this
-would be a copy of \var{M.__dict__} merged with the globals from other
+would be a copy of \code{M.__dict__} merged with the globals from other
 imported modules.
 
 \subsection{What About Exceptions?}
@@ -233,19 +234,19 @@ traceback itself.  For example:
 \end{verbatim}
 
 Note that only the exception type and value are compared (specifically,
-only the last line in the traceback).  The various \code{"File"} lines in
+only the last line in the traceback).  The various ``File'' lines in
 between can be left out (unless they add significantly to the documentation
 value of the example).
 
 \subsection{Advanced Usage}
 
 \function{testmod()} actually creates a local instance of class
-\class{doctest.Tester}, runs appropriate methods of that class, and merges
-the results into global \class{Tester} instance \var{doctest.master}.
+\class{Tester}, runs appropriate methods of that class, and merges
+the results into global \class{Tester} instance \code{master}.
 
-You can create your own instances of \class{doctest.Tester}, and so build
-your own policies, or even run methods of \var{doctest.master} directly.
-See \var{doctest.Tester.__doc__} for details.
+You can create your own instances of \class{Tester}, and so build your
+own policies, or even run methods of \code{master} directly.  See
+\code{Tester.__doc__} for details.
 
 
 \subsection{How are Docstring Examples Recognized?}
@@ -275,7 +276,7 @@ the business of guessing what you think a tab means).
 
 Any expected output must immediately follow the final \code{">>>"} or
 \code{"..."} line containing the code, and the expected output (if any)
-extends to the next \code{">>>"} or all-whitespace line.  That's it.
+extends to the next \code{">>>"} or all-whitespace line.
 
 The fine print:
 
@@ -304,13 +305,14 @@ The starting column doesn't matter:
 
 \begin{verbatim}
 >>> assert "Easy!"
-     >>> import math
-            >>> math.floor(1.9)
-            1.0
+>>> import math
+>>> math.floor(1.9)
+1.0
 \end{verbatim}
 
 and as many leading whitespace characters are stripped from the expected
 output as appeared in the initial ">>>" line that triggered it.
+\end{itemize}
 
 \subsection{Warnings}
 
@@ -322,11 +324,12 @@ output as appeared in the initial ">>>" line that triggered it.
 from XYZ import XYZclass
 \end{verbatim}
 
-then \class{XYZclass} is a name in \var{M.__dict__} too, and doctest has no
-way to know that \class{XYZclass} wasn't *defined* in \module{M}.  So it may
-try to execute the examples in \class{XYZclass}'s docstring, and those in
-turn may require a different set of globals to work correctly.  I prefer to
-do \code{import *}- friendly imports, a la
+then \class{XYZclass} is a name in \code{M.__dict__} too, and doctest
+has no way to know that \class{XYZclass} wasn't \emph{defined} in
+\module{M}.  So it may try to execute the examples in
+\class{XYZclass}'s docstring, and those in turn may require a
+different set of globals to work correctly.  I prefer to do
+``\code{import *}''-friendly imports, a la
 
 \begin{verbatim}
 from XYZ import XYZclass as _XYZclass
@@ -400,6 +403,7 @@ often contrive doctest examples to produce numbers of that form:
 
 Simple fractions are also easier for people to understand, and that makes
 for better documentation.
+\end{enumerate}
 
 
 \subsection{Soapbox}
@@ -425,4 +429,4 @@ by and "things change".  I'm still amazed at how often one of my doctest
 examples stops working after a "harmless" change.
 
 For exhaustive testing, or testing boring cases that add no value to the
-docs, define a \var{__test__} dict instead.  That's what it's for.
+docs, define a \code{__test__} dict instead.  That's what it's for.
