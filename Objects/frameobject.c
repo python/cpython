@@ -265,8 +265,6 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 			if (f == NULL)
 				return NULL;
 		}
-		else
-			extras = f->ob_size;
 		_Py_NewReference((PyObject *)f);
 	}
 	if (builtins == NULL) {
@@ -317,10 +315,10 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 	f->f_ncells = ncells;
 	f->f_nfreevars = nfrees;
 
-	while (--extras >= 0)
-		f->f_localsplus[extras] = NULL;
+	extras = f->f_nlocals + ncells + nfrees;
+	memset(f->f_localsplus, 0, extras * sizeof(f->f_localsplus[0]));
 
-	f->f_valuestack = f->f_localsplus + (f->f_nlocals + ncells + nfrees);
+	f->f_valuestack = f->f_localsplus + extras;
 	f->f_stacktop = f->f_valuestack;
 	_PyObject_GC_TRACK(f);
 	return f;
