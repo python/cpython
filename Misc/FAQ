@@ -106,16 +106,17 @@ Here's an overview of the questions per chapter:
   3.10. Q. Other trouble building Python on platform X.
   3.11. Q. How to configure dynamic loading on Linux.
   3.12. Q: I can't get shared modules to work on Linux 2.0 (Slackware96)?
-  3.13. Q. Errors when linking with a shared library containing C++ code.
-  3.14. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
-  3.15. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
-  3.16. Q. Link errors for Tcl/Tk symbols when linking with Tcl/Tk.
-  3.17. Q. I configured and built Python for Tcl/Tk but "import Tkinter"
+  3.13. Q. How to use threads on Linux.
+  3.14. Q. Errors when linking with a shared library containing C++ code.
+  3.15. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
+  3.16. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
+  3.17. Q. Link errors for Tcl/Tk symbols when linking with Tcl/Tk.
+  3.18. Q. I configured and built Python for Tcl/Tk but "import Tkinter"
         fails.
-  3.18. Q. Tk doesn't work right on DEC Alpha.
-  3.19. Q. Several common system calls are missing from the posix module.
-  3.20. Q. ImportError: No module named string, on MS Windows.
-  3.21. Q. Core dump on SGI when using the gl module.
+  3.19. Q. Tk doesn't work right on DEC Alpha.
+  3.20. Q. Several common system calls are missing from the posix module.
+  3.21. Q. ImportError: No module named string, on MS Windows.
+  3.22. Q. Core dump on SGI when using the gl module.
 
  4. Programming in Python
   4.1. Q. Is there a source code level debugger with breakpoints, step,
@@ -788,13 +789,26 @@ so that the following links are setup:
 	/lib/libdl.so -> /lib/libdl.so.1
 	/lib/libdl.so.1 -> /lib/libdl.so.1.7.14
 
-3.13. Q. Errors when linking with a shared library containing C++ code.
+3.13. Q. How to use threads on Linux.
+
+A. [Greg Stein] I built myself a libpthreads.so from the libc.5.3.12
+distribution (the binary distribution doesn't have pthreads in
+it).  Then, I configured Python with --with-threads and then tweaked
+config.h to include a #define _MIT_POSIX_THREADS (or something like
+that, see /usr/include/pthreads.h).  It worked fine at that point.
+
+Note that I couldn't get threading to "operate well" with any of the
+other thread packages.  Prior libc versions didn't integrate well with
+threads, either, so I couldn't use them (e.g. sleep() blocked all
+threads :-( ).
+
+3.14. Q. Errors when linking with a shared library containing C++ code.
 
 A. Link the main Python binary with C++.  Change the definition of
 LINKCC in Modules/Makefile to be your C++ compiler.  You may have to
 edit config.c slightly to make it compilable with C++.
 
-3.14. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
+3.15. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
 
 A. Tkinter.py (note: upper case T) lives in a subdirectory of Lib,
 Lib/tkinter.  If you are using the default module search path, you
@@ -802,7 +816,7 @@ probably didn't enable the line in the Modules/Setup file defining
 TKPATH; if you use the environment variable PYTHONPATH, you'll have to
 add  the proper tkinter subdirectory.
 
-3.15. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
+3.16. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
 
 A. Several things could cause this.  You most likely have a Tk 3.6
 installation that wasn't completely eradicated by the Tk 4.0
@@ -813,7 +827,7 @@ have compiled Python with the old tk.h header file (yes, this actually
 compiles!); you may actually have linked with Tk 3.6 even though Tk
 4.0 is also around.  Similar for Tcl 7.4 vs. Tcl 7.3.
 
-3.16. Q. Link errors for Tcl/Tk symbols when linking with Tcl/Tk.
+3.17. Q. Link errors for Tcl/Tk symbols when linking with Tcl/Tk.
 
 Quite possibly, there's a version mismatch between the Tcl/Tk header
 files (tcl.h and tk.h) and the tck/tk libraries you are using (the
@@ -824,13 +838,13 @@ Setup line for _tkinter in some Python distributions references
 7.4/4.0 by default.  Changing this to 7.5/4.1 should take care of
 this.
 
-3.17. Q. I configured and built Python for Tcl/Tk but "import Tkinter"
+3.18. Q. I configured and built Python for Tcl/Tk but "import Tkinter"
 fails.
 
 A. Most likely, you forgot to enable the line in Setup that says
 "TKPATH=:$(DESTLIB)/tkinter".
 
-3.18. Q. Tk doesn't work right on DEC Alpha.
+3.19. Q. Tk doesn't work right on DEC Alpha.
 
 A. You probably compiled either Tcl, Tk or Python with gcc.  Don't.
 For this platform, which has 64-bit integers, gcc is known to generate
@@ -842,7 +856,7 @@ far as we know, there are no problem with gcc on other platforms --
 the instabilities seem to be restricted to the DEC Alpha.)  See also
 question 3.6.
 
-3.19. Q. Several common system calls are missing from the posix module.
+3.20. Q. Several common system calls are missing from the posix module.
 
 A. Most likely, *all* test compilations run by the configure script
 are failing for some reason or another.  Have a look in config.log to
@@ -850,7 +864,7 @@ see what could be the reason.  A common reason is specifying a
 directory to the --with-readline option that doesn't contain the
 libreadline.a file.
 
-3.20. Q. ImportError: No module named string, on MS Windows.
+3.21. Q. ImportError: No module named string, on MS Windows.
 
 A. Most likely, your PYTHONPATH environment variable should be set to
 something like:
@@ -859,7 +873,7 @@ set PYTHONPATH=c:\python;c:\python\lib;c:\python\scripts
 
 (assuming Python was installed in c:\python)
 
-3.21. Q. Core dump on SGI when using the gl module.
+3.22. Q. Core dump on SGI when using the gl module.
 
 There are conflicts between entry points in the termcap and curses
 libraries and an entry point in the GL library.  There's a hack of a
