@@ -40,19 +40,19 @@ def browser(tb):
 			break
 		cmd = string.strip(line)
 		if cmd:
-			if cmd = 'quit':
+			if cmd == 'quit':
 				break
-			elif cmd = 'list':
+			elif cmd == 'list':
 				browserlist(tb)
-			elif cmd = 'up':
+			elif cmd == 'up':
 				if ptr-1 >= 0: ptr = ptr-1
 				else: print 'Bottom of stack.'
-			elif cmd = 'down':
+			elif cmd == 'down':
 				if ptr+1 < len(tblist): ptr = ptr+1
 				else: print 'Top of stack.'
-			elif cmd = 'locals':
+			elif cmd == 'locals':
 				printsymbols(tb.tb_frame.f_locals)
-			elif cmd = 'globals':
+			elif cmd == 'globals':
 				printsymbols(tb.tb_frame.f_globals)
 			elif cmd in ('?', 'help'):
 				browserhelp()
@@ -65,10 +65,10 @@ def browserlist(tb):
 	last = lineno
 	first = max(1, last-10)
 	for i in range(first, last+1):
-		if i = lineno: prefix = '***' + string.rjust(`i`, 4) + ':'
+		if i == lineno: prefix = '***' + string.rjust(`i`, 4) + ':'
 		else: prefix = string.rjust(`i`, 7) + ':'
 		line = readfileline(filename, i)
-		if line[-1:] = '\n': line = line[:-1]
+		if line[-1:] == '\n': line = line[:-1]
 		print prefix + line
 
 def browserexec(tb, cmd):
@@ -126,24 +126,24 @@ def printsymbols(d):
 		print
 
 def printobject(v, maxlevel):
-	if v = None:
+	if v == None:
 		print 'None',
 	elif type(v) in (type(0), type(0.0)):
 		print v,
-	elif type(v) = type(''):
+	elif type(v) == type(''):
 		if len(v) > 20:
 			print `v[:17] + '...'`,
 		else:
 			print `v`,
-	elif type(v) = type(()):
+	elif type(v) == type(()):
 		print '(',
 		printlist(v, maxlevel)
 		print ')',
-	elif type(v) = type([]):
+	elif type(v) == type([]):
 		print '[',
 		printlist(v, maxlevel)
 		print ']',
-	elif type(v) = type({}):
+	elif type(v) == type({}):
 		print '{',
 		printdict(v, maxlevel)
 		print '}',
@@ -152,7 +152,7 @@ def printobject(v, maxlevel):
 
 def printlist(v, maxlevel):
 	n = len(v)
-	if n = 0: return
+	if n == 0: return
 	if maxlevel <= 0:
 		print '...',
 		return
@@ -164,7 +164,7 @@ def printlist(v, maxlevel):
 def printdict(v, maxlevel):
 	keys = v.keys()
 	n = len(keys)
-	if n = 0: return
+	if n == 0: return
 	if maxlevel <= 0:
 		print '...',
 		return
@@ -187,8 +187,8 @@ def readfileline(filename, lineno):
 	cache_ok = 0
 	if _filecache.has_key(filename):
 		cached_stat, lines = _filecache[filename]
-		if stat[ST_SIZE] = cached_stat[ST_SIZE] and \
-				stat[ST_MTIME] = cached_stat[ST_MTIME]:
+		if stat[ST_SIZE] == cached_stat[ST_SIZE] and \
+				stat[ST_MTIME] == cached_stat[ST_MTIME]:
 			cache_ok = 1
 		else:
 			print 'Stale cache entry for', filename

@@ -10,7 +10,7 @@ import dircache
 
 def action(w, string, i, detail):
 	(h, v), clicks, button, mask = detail
-	if clicks = 2:
+	if clicks == 2:
 		name = path.join(w.name, string)
 		try:
 			w2 = anywin.open(name)

@@ -49,7 +49,7 @@ class scheduler:
 		for i in range(len(q)):
 			qtime, qpri, qact, qarg = q[i]
 			if time < qtime: break
-			if time = qtime and priority < qpri: break
+			if time == qtime and priority < qpri: break
 		else:
 			i = len(q)
 		q.insert(i, event)
@@ -72,7 +72,7 @@ class scheduler:
 	# Check whether the queue is empty.
 	#
 	def empty(self):
-		return len(self.queue) = 0
+		return len(self.queue) == 0
 	#
 	# Run: execute events until the queue is empty.
 	#

@@ -23,7 +23,7 @@ def main():
 		# Strip '-P' from printer names just in case
 		# the user specified it...
 		for i in range(len(printers)):
-			if printers[i][:2] = '-P':
+			if printers[i][:2] == '-P':
 				printers[i] = printers[i][2:]
 	else:
 		if posix.environ.has_key('PRINTER'):
@@ -54,13 +54,13 @@ def makestatus(name, thisuser):
 		if not line: break
 		fields = string.split(line)
 		n = len(fields)
-		if len(fields) >= 6 and fields[n-1] = 'bytes':
+		if len(fields) >= 6 and fields[n-1] == 'bytes':
 			rank = fields[0]
 			user = fields[1]
 			job = fields[2]
 			files = fields[3:-2]
 			bytes = eval(fields[n-2])
-			if user = thisuser:
+			if user == thisuser:
 				userseen = 1
 			elif not userseen:
 				aheadbytes = aheadbytes + bytes
@@ -77,9 +77,9 @@ def makestatus(name, thisuser):
 		else:
 			if fields and fields[0] <> 'Rank':
 				line = string.strip(line)
-				if line = 'no entries':
+				if line == 'no entries':
 					line = name + ': idle'
-				elif line[-22:] = ' is ready and printing':
+				elif line[-22:] == ' is ready and printing':
 					line = name
 				lines.append(line)
 	#
@@ -87,12 +87,12 @@ def makestatus(name, thisuser):
 		line = `(totalbytes+1023)/1024` + ' K'
 		if totaljobs <> len(users):
 			line = line + ' (' + `totaljobs` + ' jobs)'
-		if len(users) = 1:
+		if len(users) == 1:
 			line = line + ' for ' + users.keys()[0]
 		else:
 			line = line + ' for ' + `len(users)` + ' users'
 			if userseen:
-				if aheadjobs = 0:
+				if aheadjobs == 0:
 				  line =  line + ' (' + thisuser + ' first)'
 				else:
 				  line = line + ' (' + `(aheadbytes+1023)/1024`

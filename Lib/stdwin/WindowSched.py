@@ -21,7 +21,7 @@ def delayfunc(msecs):
 	#
 	# Use millisleep for very short delays or if there are no windows
 	#
-	if msecs < 100 or mainloop.countwindows() = 0:
+	if msecs < 100 or mainloop.countwindows() == 0:
 		if msecs > 0:
 			time.millisleep(msecs)
 		return
@@ -46,7 +46,7 @@ cancel = q.cancel
 # Emptiness check must check both queues
 #
 def empty():
-	return q.empty() and mainloop.countwindows() = 0
+	return q.empty() and mainloop.countwindows() == 0
 
 # Run until there is nothing left to do
 #

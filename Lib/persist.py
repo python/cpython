@@ -160,23 +160,23 @@ def dumptype(x, typedict, types, stack):
 	typedict[xrepr] = uid
 	if typeswitch.has_key(xrepr):
 		print FN, '[', `uid`, '] =', typeswitch[xrepr]
-	elif x = type(sys):
+	elif x == type(sys):
 		print 'import sys'
 		print FN, '[', `uid`, '] = type(sys)'
-	elif x = type(sys.stderr):
+	elif x == type(sys.stderr):
 		print 'import sys'
 		print FN, '[', `uid`, '] = type(sys.stderr)'
-	elif x = type(dumptype):
+	elif x == type(dumptype):
 		print 'def some_function(): pass'
 		print FN, '[', `uid`, '] = type(some_function)'
-	elif x = type(some_class):
+	elif x == type(some_class):
 		print 'class some_class(): pass'
 		print FN, '[', `uid`, '] = type(some_class)'
-	elif x = type(some_instance):
+	elif x == type(some_instance):
 		print 'class another_class(): pass'
 		print 'some_instance = another_class()'
 		print FN, '[', `uid`, '] = type(some_instance)'
-	elif x = type(some_instance.method):
+	elif x == type(some_instance.method):
 		print 'class yet_another_class():'
 		print '    def method(): pass'
 		print 'another_instance = yet_another_class()'

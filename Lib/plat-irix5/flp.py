@@ -49,7 +49,7 @@ def parse_forms(filename):
 def _open_formfile(filename):
     if filename[-3:] <> '.fd':
 	filename = filename + '.fd'
-    if filename[0] = '/':
+    if filename[0] == '/':
 	try:
 	    fp = open(filename,'r')
 	except IOError:
@@ -62,7 +62,7 @@ def _open_formfile(filename):
 		break
 	    except IOError:
 		fp = None
-    if fp = None:
+    if fp == None:
 	raise error, 'Cannot find forms file ' + filename
     return fp
 
@@ -77,7 +77,7 @@ def _parse_fd_header(file):
     # Now skip until we know number of forms
     while 1:
 	datum = _parse_1_line(file)
-	if type(datum) = type(()) and datum[0] = 'Numberofforms':
+	if type(datum) == type(()) and datum[0] == 'Numberofforms':
 	    break
     return datum[1]
 #
@@ -89,7 +89,7 @@ def _parse_fd_form(file, name):
     if datum <> FORMLINE:
 	raise error, 'Missing === FORM === line'
     form = _parse_object(file)
-    if form.Name = name or name = None:
+    if form.Name == name or name == None:
 	objs = []
 	for j in range(form.Numberofobjects):
 	    obj = _parse_object(file)
@@ -147,7 +147,7 @@ def _parse_line(line):
     if not a:
 	return line
     name = line[:a[1][1]]
-    if name[0] = 'N':
+    if name[0] == 'N':
 	    name = string.joinfields(string.split(name),'')
 	    name = string.lower(name)
     name = string.upper(name[0]) + name[1:]
@@ -167,7 +167,7 @@ def _readline(file):
 	
 def _parse_1_line(file):
     line = _readline(file)
-    while line = '':
+    while line == '':
 	line = _readline(file)
     return _parse_line(line)
 
@@ -176,7 +176,7 @@ def _skip_object(file):
     while not line in (SPLITLINE, FORMLINE, ENDLINE):
 	pos = file.tell()
 	line = _readline(file)
-    if line = FORMLINE:
+    if line == FORMLINE:
 	file.seek(pos)
 
 def _parse_object(file):
@@ -185,7 +185,7 @@ def _parse_object(file):
 	pos = file.tell()
 	datum = _parse_1_line(file)
 	if datum in (SPLITLINE, FORMLINE, ENDLINE):
-	    if datum = FORMLINE:
+	    if datum == FORMLINE:
 		file.seek(pos)
 	    return obj
 	if type(datum) <> type(()):
@@ -266,27 +266,27 @@ def _create_object(form, odata):
 # Internal crfunc: helper function that returns correct create function
 #
 def _select_crfunc(fm, cl):
-    if cl = FL.BEGIN_GROUP: return fm.bgn_group
-    elif cl = FL.END_GROUP: return fm.end_group
-    elif cl = FL.BITMAP: return fm.add_bitmap
-    elif cl = FL.BOX: return fm.add_box
-    elif cl = FL.BROWSER: return fm.add_browser
-    elif cl = FL.BUTTON: return fm.add_button
-    elif cl = FL.CHART: return fm.add_chart
-    elif cl = FL.CHOICE: return fm.add_choice
-    elif cl = FL.CLOCK: return fm.add_clock
-    elif cl = FL.COUNTER: return fm.add_counter
-    elif cl = FL.DIAL: return fm.add_dial
-    elif cl = FL.FREE: return fm.add_free
-    elif cl = FL.INPUT: return fm.add_input
-    elif cl = FL.LIGHTBUTTON: return fm.add_lightbutton
-    elif cl = FL.MENU: return fm.add_menu
-    elif cl = FL.POSITIONER: return fm.add_positioner
-    elif cl = FL.ROUNDBUTTON: return fm.add_roundbutton
-    elif cl = FL.SLIDER: return fm.add_slider
-    elif cl = FL.VALSLIDER: return fm.add_valslider
-    elif cl = FL.TEXT: return fm.add_text
-    elif cl = FL.TIMER: return fm.add_timer
+    if cl == FL.BEGIN_GROUP: return fm.bgn_group
+    elif cl == FL.END_GROUP: return fm.end_group
+    elif cl == FL.BITMAP: return fm.add_bitmap
+    elif cl == FL.BOX: return fm.add_box
+    elif cl == FL.BROWSER: return fm.add_browser
+    elif cl == FL.BUTTON: return fm.add_button
+    elif cl == FL.CHART: return fm.add_chart
+    elif cl == FL.CHOICE: return fm.add_choice
+    elif cl == FL.CLOCK: return fm.add_clock
+    elif cl == FL.COUNTER: return fm.add_counter
+    elif cl == FL.DIAL: return fm.add_dial
+    elif cl == FL.FREE: return fm.add_free
+    elif cl == FL.INPUT: return fm.add_input
+    elif cl == FL.LIGHTBUTTON: return fm.add_lightbutton
+    elif cl == FL.MENU: return fm.add_menu
+    elif cl == FL.POSITIONER: return fm.add_positioner
+    elif cl == FL.ROUNDBUTTON: return fm.add_roundbutton
+    elif cl == FL.SLIDER: return fm.add_slider
+    elif cl == FL.VALSLIDER: return fm.add_valslider
+    elif cl == FL.TEXT: return fm.add_text
+    elif cl == FL.TIMER: return fm.add_timer
     else:
 	raise error, 'Unknown object type: ' + `cl`
 

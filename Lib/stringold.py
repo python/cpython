@@ -56,7 +56,7 @@ def split(s):
 	i, n = 0, len(s)
 	while i < n:
 		while i < n and s[i] in whitespace: i = i+1
-		if i = n: break
+		if i == n: break
 		j = i
 		while j < n and s[j] not in whitespace: j = j+1
 		res.append(s[i:j])
@@ -71,7 +71,7 @@ def splitfields(s, sep):
 	nsep = len(sep)
 	i = j = 0
 	while j+nsep <= ns:
-		if s[j:j+nsep] = sep:
+		if s[j:j+nsep] == sep:
 			res.append(s[i:j])
 			i = j = j + nsep
 		else:
@@ -98,7 +98,7 @@ index_error = 'substring not found in string.index'
 def index(s, sub):
 	n = len(sub)
 	for i in range(len(s) + 1 - n):
-		if sub = s[i:i+n]: return i
+		if sub == s[i:i+n]: return i
 	raise index_error, (s, sub)
 
 # Convert string to integer
@@ -137,7 +137,7 @@ def center(s, width):
 # Decadent feature: the argument may be a string or a number
 # (Use of this is deprecated; it should be a string as with ljust c.s.)
 def zfill(x, width):
-	if type(x) = type(''): s = x
+	if type(x) == type(''): s = x
 	else: s = `x`
 	n = len(s)
 	if n >= width: return s

@@ -149,26 +149,26 @@ class WindowParent(ManageOneChild):
 	# Only call dispatch once we are realized
 	#
 	def dispatch(self, (type, win, detail)):
-		if type = WE_DRAW:
+		if type == WE_DRAW:
 			d = self.win.begindrawing()
 			self.child.draw(d, detail)
 			del d
 			if self.do_altdraw: self.child.altdraw(detail)
-		elif type = WE_MOUSE_DOWN:
+		elif type == WE_MOUSE_DOWN:
 			if self.do_mouse: self.child.mouse_down(detail)
-		elif type = WE_MOUSE_MOVE:
+		elif type == WE_MOUSE_MOVE:
 			if self.do_mouse: self.child.mouse_move(detail)
-		elif type = WE_MOUSE_UP:
+		elif type == WE_MOUSE_UP:
 			if self.do_mouse: self.child.mouse_up(detail)
 		elif type in (WE_CHAR, WE_COMMAND):
 			if self.do_keybd: self.child.keybd(type, detail)
-		elif type = WE_TIMER:
+		elif type == WE_TIMER:
 			if self.do_timer: self.child.timer()
-		elif type = WE_SIZE:
+		elif type == WE_SIZE:
 			self.fixup()
-		elif type = WE_CLOSE:
+		elif type == WE_CLOSE:
 			self.close_trigger()
-		elif type = WE_MENU:
+		elif type == WE_MENU:
 			self.menu_trigger(detail)
 		if self.pending_destroy:
 			self.destroy()

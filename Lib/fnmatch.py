@@ -5,64 +5,70 @@ def fnmatch(name, pat):
 	# Check for simple case: no special characters
 	#
 	if not ('*' in pat or '?' in pat or '[' in pat):
-		return name = pat
+		return name == pat
 	#
 	# Check for common cases: *suffix and prefix*
 	#
-	if pat[0] = '*':
+	if pat[0] == '*':
 		p1 = pat[1:]
 		if not ('*' in p1 or '?' in p1 or '[' in p1):
 			start = len(name) - len(p1)
-			return start >= 0 and name[start:] = p1
-	elif pat[-1:] = '*':
+			return start >= 0 and name[start:] == p1
+	elif pat[-1:] == '*':
 		p1 = pat[:-1]
 		if not ('*' in p1 or '?' in p1 or '[' in p1):
-			return name[:len(p1)] = p1
+			return name[:len(p1)] == p1
 	#
 	# General case
 	#
 	return fnmatch1(name, pat)
 
 def fnmatch1(name, pat):
-	for i in range(len(pat)):
+	i, n = 0, len(pat)
+	while i < n:
 		c = pat[i]
-		if c = '*':
+		if c == '*':
 			p1 = pat[i+1:]
 			if not ('*' in p1 or '?' in p1 or '[' in p1):
 				start = len(name) - len(p1)
-				return start >= 0 and name[start:] = p1
+				return start >= 0 and name[start:] == p1
 			for i in range(i, len(name) + 1):
 				if fnmatch1(name[i:], p1):
 					return 1
 			return 0
-		elif c = '?':
+		elif c == '?':
 			if len(name) <= i : return 0
-		elif c = '[':
+		elif c == '[':
 			c, rest = name[i], name[i+1:]
 			i, n = i+1, len(pat) - 1
 			match = 0
 			exclude = 0
-			if i < n and pat[i] = '!':
+			if i < n and pat[i] == '!':
 				exclude = 1
 				i = i+1
 			while i < n:
-				if pat[i] = c: match = 1
+				if pat[i] == c: match = 1
 				i = i+1
-				if i >= n or pat[i] = ']':
+				if i >= n or pat[i] == ']':
 					break
-				if pat[i] = '-':
+				if pat[i] == '-':
 					i = i+1
-					if i >= n or pat[i] = ']':
+					if i >= n or pat[i] == ']':
 						break
-					match = (pat[i-2] <= c <= pat[i])
+					if pat[i-2] <= c <= pat[i]:
+						match = 1
 					i = i+1
-			if match = exclude:
+					if i >= n or pat[i] == ']':
+						break
+			if match == exclude:
 				return 0
 			return fnmatch1(rest, pat[i+1:])
 		else:
 			if name[i:i+1] <> c:
 				return 0
-	return 1
+		i = i+1
+	# We don't get here if the pattern contained * or [...]
+	return i >= len(name)
 
 def fnmatchlist(names, pat):
 	res = []

@@ -17,7 +17,7 @@ def primes(min, max):
 	i = 3
 	while i <= max:
 		for p in primes:
-			if i%p = 0 or p*p > i: break
+			if i%p == 0 or p*p > i: break
 		if i%p <> 0:
 			primes.append(i)
 			if i >= min: print i

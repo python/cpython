@@ -43,7 +43,7 @@ class CSplit(Split):
 		# XXX One day Python will have automatic conversions...
 		n = len(self.children)
 		fn = float(n)
-		if n = 0: return
+		if n == 0: return
 		(left, top), (right, bottom) = bounds
 		width, height = right-left, bottom-top
 		child_width, child_height = width*3/(n+4), height*3/(n+4)

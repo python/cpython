@@ -39,9 +39,9 @@ def times(a, b):
 	return res
 
 def power(a, n): # Raise polynomial a to the positive integral power n
-	if n = 0: return [1]
-	if n = 1: return a
-	if n/2*2 = n:
+	if n == 0: return [1]
+	if n == 1: return a
+	if n/2*2 == n:
 		b = power(a, n/2)
 		return times(b, b)
 	return times(power(a, n-1), a)

@@ -50,19 +50,19 @@ def skipfile(file):
 	# Skip executables
 	try:
 		data = open(file, 'r').read(len(EXECMAGIC))
-		if data = EXECMAGIC: return 1
+		if data == EXECMAGIC: return 1
 	except:
 		pass
 	return 0
 
 def badprefix(file):
 	for bad in badprefixes:
-		if file[:len(bad)] = bad: return 1
+		if file[:len(bad)] == bad: return 1
 	return 0
 
 def badsuffix(file):
 	for bad in badsuffixes:
-		if file[-len(bad):] = bad: return 1
+		if file[-len(bad):] == bad: return 1
 	return 0
 
 def go(args):

@@ -164,13 +164,13 @@ def whichcol(w, h): # Return column number (may be >= len(w.data))
 	return len(w.data)
 
 def arrow(w, type):
-	if type = WC_LEFT:
+	if type == WC_LEFT:
 		incr = -1, 0
-	elif type = WC_UP:
+	elif type == WC_UP:
 		incr = 0, -1
-	elif type = WC_RIGHT:
+	elif type == WC_RIGHT:
 		incr = 1, 0
-	elif type = WC_DOWN:
+	elif type == WC_DOWN:
 		incr = 0, 1
 	else:
 		return

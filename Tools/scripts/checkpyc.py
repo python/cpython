@@ -10,9 +10,9 @@ def main():
 	silent = 0
 	verbose = 0
 	if sys.argv[1:]:
-		if sys.argv[1] = '-v':
+		if sys.argv[1] == '-v':
 			verbose = 1
-		elif sys.argv[1] = '-s':
+		elif sys.argv[1] == '-s':
 			silent = 1
 	MAGIC = '\0\0\0\0'
 	try:
@@ -32,7 +32,7 @@ def main():
 			print 'Checking', `dirname`, '...'
 		names.sort()
 		for name in names:
-			if name[-3:] = '.py':
+			if name[-3:] == '.py':
 				name = path.join(dirname, name)
 				try:
 					st = posix.stat(name)
@@ -55,7 +55,7 @@ def main():
 					print `name_c`
 					continue
 				mtime = get_long(mtime_str)
-				if mtime = 0 or mtime = -1:
+				if mtime == 0 or mtime == -1:
 					print 'Bad ".pyc" file', `name_c`
 				elif mtime <> st[ST_MTIME]:
 					print 'Out-of-date ".pyc" file',

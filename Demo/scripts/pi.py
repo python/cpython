@@ -19,7 +19,7 @@ def main():
 		# Print common digits
 		d, d1 = a/b, a1/b1
 		#print a, b, a1, b1
-		while d = d1:
+		while d == d1:
 			# Use write() to avoid spaces between the digits
 			sys.stdout.write(`int(d)`)
 			# Flush so the output is seen immediately

@@ -110,7 +110,7 @@ class LabelAppearance:
 	#
 	def draw(self, (d, area)):
 		area = _rect.intersect(area, self.bounds)
-		if area = _rect.empty:
+		if area == _rect.empty:
 			return
 		d.cliprect(area)
 		self.drawit(d)

@@ -116,7 +116,7 @@ class Split:
 		if not self.keybd_focus:
 			self.set_keybd_focus(self.keybd_interest[0])
 		type, detail = type_detail
-		if type = WE_COMMAND and detail = WC_TAB and \
+		if type == WE_COMMAND and detail == WC_TAB and \
 					len(self.keybd_interest) > 1:
 			self.next_keybd_focus()
 			return
@@ -144,9 +144,9 @@ class Split:
 			self.timer_interest.remove(child)
 		if child in self.altdraw_interest:
 			self.altdraw_interest.remove(child)
-		if child = self.mouse_focus:
+		if child == self.mouse_focus:
 			self.mouse_focus = None
-		if child = self.keybd_focus:
+		if child == self.keybd_focus:
 			self.keybd_focus = None
 	#
 	def need_mouse(self, child):
@@ -154,7 +154,7 @@ class Split:
 			self.mouse_interest.append(child)
 			self.parent.need_mouse(self)
 	def no_mouse(self, child):
-		if child = self.mouse_focus:
+		if child == self.mouse_focus:
 			self.mouse_focus = None
 		if child in self.mouse_interest:
 			self.mouse_interest.remove(child)
@@ -168,7 +168,7 @@ class Split:
 		if not self.keybd_focus:
 			self.set_keybd_focus(child)
 	def no_keybd(self, child):
-		if child = self.keybd_focus:
+		if child == self.keybd_focus:
 			self.keybd_focus = None # Don't call child.deactivate()
 		if child in self.keybd_interest:
 			self.keybd_interest.remove(child)

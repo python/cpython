@@ -175,20 +175,20 @@ def test():
 	winsize = w.getwinsize()
 	while 1:
 		type, window, detail = stdwinq.getevent()
-		if type = WE_CLOSE:
+		if type == WE_CLOSE:
 			break
-		elif type = WE_SIZE:
+		elif type == WE_SIZE:
 			newsize = w.getwinsize()
 			if newsize <> winsize:
 				w.change((0,0), winsize)
 				winsize = newsize
 				w.change((0,0), winsize)
-		elif type = WE_MOUSE_DOWN:
+		elif type == WE_MOUSE_DOWN:
 			stage = (stage + 1) % len(stages)
 			justify, center, title = stages[stage]
 			w.settitle(title)
 			w.change((0, 0), (1000, 1000))
-		elif type = WE_DRAW:
+		elif type == WE_DRAW:
 			width, height = winsize
 			f = formatter().init(w.begindrawing(), 0, 0, width)
 			f.center = center
@@ -198,7 +198,7 @@ def test():
 			for font in font1, font2, font1:
 				f.setfont(font)
 				for word in words:
-					space = 1 + (word[-1:] = '.')
+					space = 1 + (word[-1:] == '.')
 					f.addword(word, space)
 					if center and space > 1:
 						f.flush()

@@ -17,7 +17,7 @@ def visit(pattern, dirname, names):
 		name = path.join(dirname, name)
 		try:
 			linkto = posix.readlink(name)
-			if linkto[:n] = pattern:
+			if linkto[:n] == pattern:
 				print name, '->', linkto
 		except posix.error:
 			pass

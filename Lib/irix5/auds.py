@@ -69,7 +69,7 @@ def stretch(s, a, b):
 			ib = ib+b
 		if i >= m:
 			break
-		if ib = ja:
+		if ib == ja:
 			out.append(y[i])
 		else:
 			out.append((y[i]*(ja-(ib-b)) + y[i-1]*(ib-ja)) / b)

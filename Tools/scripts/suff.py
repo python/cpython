@@ -22,7 +22,7 @@ def main():
 def getsuffix(file):
 	suff = ''
 	for i in range(len(file)):
-		if file[i] = '.':
+		if file[i] == '.':
 			suff = file[i:]
 	return suff
 

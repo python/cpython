@@ -36,22 +36,22 @@ S_IFLNK  = 0120000
 S_IFSOCK = 0140000
 
 def S_ISDIR(mode):
-	return S_IFMT(mode) = S_IFDIR
+	return S_IFMT(mode) == S_IFDIR
 
 def S_ISCHR(mode):
-	return S_IFMT(mode) = S_IFCHR
+	return S_IFMT(mode) == S_IFCHR
 
 def S_ISBLK(mode):
-	return S_IFMT(mode) = S_IFBLK
+	return S_IFMT(mode) == S_IFBLK
 
 def S_ISREG(mode):
-	return S_IFMT(mode) = S_IFREG
+	return S_IFMT(mode) == S_IFREG
 
 def S_ISFIFO(mode):
-	return S_IFMT(mode) = S_IFIFO
+	return S_IFMT(mode) == S_IFIFO
 
 def S_ISLNK(mode):
-	return S_IFMT(mode) = S_IFLNK
+	return S_IFMT(mode) == S_IFLNK
 
 def S_ISSOCK(mode):
-	return S_IFMT(mode) = S_IFSOCK
+	return S_IFMT(mode) == S_IFSOCK

@@ -23,7 +23,7 @@ for prog in sys.argv[1:]:
 				mode = S_IMODE(st[ST_MODE])
 				if mode % 2 or mode/8 % 2 or mode/64 % 2:
 					if ident:
-						if st[:3] = ident:
+						if st[:3] == ident:
 							s = ': same as '
 						else:
 							s = ': also '

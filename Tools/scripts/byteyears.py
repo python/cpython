@@ -17,13 +17,13 @@ except NameError:
 	statfunc = posix.stat
 
 # Parse options
-if sys.argv[1] = '-m':
+if sys.argv[1] == '-m':
 	itime = ST_MTIME
 	del sys.argv[1]
-elif sys.argv[1] = '-c':
+elif sys.argv[1] == '-c':
 	itime = ST_CTIME
 	del sys.argv[1]
-elif sys.argv[1] = '-a':
+elif sys.argv[1] == '-a':
 	itime = ST_CTIME
 	del sys.argv[1]
 else:
