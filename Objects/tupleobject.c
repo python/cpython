@@ -281,6 +281,23 @@ tuplelength(a)
 	return a->ob_size;
 }
 
+static int
+tuplecontains(a, el)
+	PyTupleObject *a;
+	PyObject *el;
+{
+	int i, cmp;
+
+	for (i = 0; i < a->ob_size; ++i) {
+		cmp = PyObject_Compare(el, PyTuple_GET_ITEM(a, i));
+		if (cmp == 0)
+			return 1;
+		if (PyErr_Occurred())
+			return -1;
+	}
+	return 0;
+}
+
 static PyObject *
 tupleitem(a, i)
 	register PyTupleObject *a;
@@ -409,6 +426,7 @@ static PySequenceMethods tuple_as_sequence = {
 	(intintargfunc)tupleslice, /*sq_slice*/
 	0,		/*sq_ass_item*/
 	0,		/*sq_ass_slice*/
+	(objobjproc)tuplecontains, /*sq_contains*/
 };
 
 PyTypeObject PyTuple_Type = {
