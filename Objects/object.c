@@ -225,13 +225,15 @@ void PyObject_Dump(PyObject* op)
 {
 	(void)PyObject_Print(op, stderr, 0);
 	fprintf(stderr, "\nrefcounts: %d\n", op->ob_refcnt);
-	fprintf(stderr, "address    : %x\n", op);
+	fprintf(stderr, "address    : %p\n", op);
 }
+
+#ifdef WITH_CYCLE_GC
 void PyGC_Dump(PyGC_Head* op)
 {
 	PyObject_Dump(PyObject_FROM_GC(op));
 }
-
+#endif /* WITH_CYCLE_GC */
 
 PyObject *
 PyObject_Repr(PyObject *v)
