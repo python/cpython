@@ -19,39 +19,39 @@ This function creates an instance of \class{class} with dictionary
 \var{dict} without calling the \method{__init__()} constructor. Note that
 this means that there are no guarantees that the object will be in a
 consistent state.
-
-Arguments are \emph{not} type-checked, and an incorrectly typed argument
-will result in undefined behaviour.
 \end{funcdesc}
 
 \begin{funcdesc}{instancemethod}{function, instance, class}
 This function will return a method object, bound to \var{instance}, or
-unbound if \var{instance} is \code{None}. It is checked that
-\var{function} is callable, and that \var{instance} is an instance
-object or \code{None}.
+unbound if \var{instance} is \code{None}.  \var{function} must be
+callable, and \var{instance} must be an instance object or
+\code{None}.
 \end{funcdesc}
 
 \begin{funcdesc}{function}{code, globals\optional{, name\optional{argdefs}}}
 Returns a (Python) function with the given code and globals. If
-\var{name} is given, the function will have the given name. If
-\var{argdefs} is given, they will be the function defaults.
+\var{name} is given, it must be a string or \code{None}.  If it is a
+string, the function will have the given name, otherwise the function
+name will be taken from \code{\var{code}.co_name}.  If
+\var{argdefs} is given, it must be a tuple and will be used to the
+determine the default values of parameters.
 \end{funcdesc}
 
 \begin{funcdesc}{code}{argcount, nlocals, stacksize, flags, codestring,
                        constants, names, varnames, filename, name, firstlineno,
                        lnotab}
-This function is an interface to the \cfunction{PyCode_New()} internal
+This function is an interface to the \cfunction{PyCode_New()} C
 function.
 XXX This is still undocumented!!!!!!!!!!!
 \end{funcdesc}
 
 \begin{funcdesc}{module}{name}
 This function returns a new module object with name \var{name}.
-\var{name} should be a string.
+\var{name} must be a string.
 \end{funcdesc}
 
 \begin{funcdesc}{classobj}{name, baseclasses, dict}
 This function returns a new class object, with name \var{name}, derived
 from \var{baseclasses} (which should be a tuple of classes) and with
-namespace \var{dict}. All parameters are type checked.
+namespace \var{dict}.
 \end{funcdesc}
