@@ -74,8 +74,7 @@ class Node:
 	self.cont = ''
 	
     def write (self, *lines):
-	for line in lines:
-	    self.lines.append (line)
+	map(self.lines.append, lines)
 
     def flush (self):
 	fp = open (self.dirname + '/' + makefile(self.name), 'w')
@@ -99,7 +98,7 @@ class Node:
 	length = len (self.lines)
 	self.text = string.joinfields (self.lines, '')
 	self.lines = []
-	self.write ('<BR> <HR>\n')
+	self.write ('<HR>\n')
 	if self.cont != self.next:
 	    self.link('Cont', self.cont)
 	self.link('Next', self.next)
@@ -107,20 +106,19 @@ class Node:
 	self.link('Up', self.up)
 	if self.name <> self.topname:
 	    self.link('Top', self.topname)
-	self.write ('<BR> <HR> <P>\n')
-	links = string.joinfields (self.lines, '')
+	self.write ('<HR>\n')
+	links = string.joinfields(self.lines, '')
 	self.lines = []
 	
-	self.prologue = \
-		      '<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">\n' + \
-		      '<!- Converted with texi2html and Python>\n' + \
-		      '<P>\n<HEAD>\n' + \
-		      '<TITLE>' + self.title + '</TITLE>\n' + \
-		      '</HEAD>\n<BODY>\n<P>\n' + \
-		      links
+	self.prologue = ('<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n'
+			 '<!-- Converted with texi2html and Python -->\n'
+			 '<HEAD>\n'
+			 '  <TITLE>' + self.title + '</TITLE>\n'
+			 '</HEAD><BODY>\n' + \
+			 links)
 	
 	if length > 20:
-	    self.epilogue = links + '</BODY>\n'
+	    self.epilogue = '<P>\n%s</BODY>\n' % links
 	else:
 	    self.epilogue = '</BODY>\n'
 	    
@@ -311,10 +309,10 @@ class TexinfoParser:
 				if nodename[0] == ':': nodename = label
 				else: nodename = line[e:f]
 				punct = line[g:h]
-				self.write('<DT><A HREF="', \
-					makefile(nodename), \
-					'" TYPE=Menu>', nodename, \
-					'</A>', punct, '\n<DD>')
+				self.write('<LI><A HREF="',
+					   makefile(nodename),
+					   '">', nodename,
+					   '</A>', punct, '\n')
 				self.expand(line[end:])
 		else:
 			text = string.joinfields(accu, '')
@@ -577,8 +575,8 @@ class TexinfoParser:
 	def open_dfn(self): self.write('<DFN>')
 	def close_dfn(self): self.write('</DFN>')
 
-	def open_emph(self): self.write('<I>')
-	def close_emph(self): self.write('</I>')
+	def open_emph(self): self.write('<EM>')
+	def close_emph(self): self.write('</EM>')
 
 	open_i = open_emph
 	close_i = close_emph
@@ -599,15 +597,16 @@ class TexinfoParser:
 		# self.savetext = None
 
 	def writefootnotes(self):
-		self.write('<H2>---------- Footnotes ----------</H2>\n')
+		self.write('\n<HR NOSHADE SIZE=1 WIDTH=200>\n'
+			   '<STRONG><EM>Footnotes</EM></STRONG>\n<P>')
 		for id, text in self.footnotes:
 			self.write('<A NAME="footnotetext', id, \
 				'" HREF="#footnoteref', id, '">(', \
 				id, ')</A>\n', text, '<P>\n')
 		self.footnotes = []
 
-	def open_file(self): self.write('<FILE>')
-	def close_file(self): self.write('</FILE>')
+	def open_file(self): self.write('<CODE>')
+	def close_file(self): self.write('</CODE>')
 
 	def open_kbd(self): self.write('<KBD>')
 	def close_kbd(self): self.write('</KBD>')
@@ -836,18 +835,6 @@ class TexinfoParser:
 		if not self.topname: self.topname = name
 		title = name
 		if self.title: title = title + ' -- ' + self.title
-		# No idea what this means, but this is what latex2html writes
-		# self.write('<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">\n')
-		# self.write('<!- Converted with texi2html and Python>\n')
-		# self.write ('<P>\n<HEAD>\n')
-		# self.write('<TITLE>', title, '</TITLE>\n')
-		# self.write ('</HEAD>\n<BODY>\n<P>\n<BR> <HR>\n')
-		# self.link('Next', next)
-		# self.link('Prev', prev)
-		# self.link('Up', up)
-		# if self.nodename <> self.topname:
-		# 	self.link('Top', self.topname)
-		# self.write ('<BR> <HR> <P>\n')
 		self.node = Node (self.dirname, self.nodename, self.topname, \
 				  title, next, prev, up)
 		
@@ -965,14 +952,26 @@ class TexinfoParser:
 	do_summarycontents = do_shortcontents
 
 	def listcontents(self, title, maxlevel):
-		self.write('<H1>', title, '</H1>\n<UL COMPACT>\n')
+		self.write('<H1>', title, '</H1>\n<UL COMPACT PLAIN>\n')
+		prevlevels = [0]
 		for level, title, node in self.contents:
-			if level <= maxlevel:
-				self.write('<LI>', '.   '*level, '<A HREF="', \
-					makefile(node), '">')
-				self.expand(title)
-				self.write('</A> ', node, '\n')
-		self.write('</UL>\n')
+			if level > maxlevel:
+				continue
+			if level > prevlevels[-1]:
+				# can only advance one level at a time
+				self.write('  '*prevlevels[-1], '<UL PLAIN>\n')
+				prevlevels.append(level)
+			elif level < prevlevels[-1]:
+				# might drop back multiple levels
+				while level < prevlevels[-1]:
+					del prevlevels[-1]
+					self.write('  '*prevlevels[-1],
+						   '</UL>\n')
+			self.write('  '*level, '<LI> <A HREF="',
+				   makefile(node), '">')
+			self.expand(title)
+			self.write('</A>\n')
+		self.write('</UL>\n' * len(prevlevels))
 
 	# --- Page lay-out ---
 
@@ -1229,14 +1228,14 @@ class TexinfoParser:
 	# --- Enumerations, displays, quotations ---
 	# XXX Most of these should increase the indentation somehow
 
-	def bgn_quotation(self, args): self.write('<P>')
-	def end_quotation(self): self.write('<P>\n')
+	def bgn_quotation(self, args): self.write('<BLOCKQUOTE>')
+	def end_quotation(self): self.write('</BLOCKQUOTE>\n')
 
 	def bgn_example(self, args):
 		self.nofill = self.nofill + 1
-		self.write('<PRE><CODE>')
+		self.write('<PRE>')
 	def end_example(self):
-		self.write('</CODE></PRE>')
+		self.write('</PRE>')
 		self.nofill = self.nofill - 1
 
 	bgn_lisp = bgn_example # Synonym when contents are executable lisp code
@@ -1248,19 +1247,11 @@ class TexinfoParser:
 	bgn_smalllisp = bgn_lisp # Ditto
 	end_smalllisp = end_lisp
 
-	def bgn_display(self, args):
-		self.nofill = self.nofill + 1
-		self.write('<PRE>\n')
-	def end_display(self):
-		self.write('</PRE>\n')
-		self.nofill = self.nofill - 1
+	bgn_display = bgn_example
+	end_display = end_example
 
-	def bgn_format(self, args):
-		self.nofill = self.nofill + 1
-		self.write('<PRE><CODE>\n')
-	def end_format(self):
-		self.write('</CODE></PRE>\n')
-		self.nofill = self.nofill - 1
+	bgn_format = bgn_display
+	end_format = end_display
 
 	def do_exdent(self, args): self.expand(args + '\n')
 	# XXX Should really mess with indentation
@@ -1279,8 +1270,10 @@ class TexinfoParser:
 		self.write('</ADDRESS>\n')
 		self.nofill = self.nofill - 1
 
-	def bgn_menu(self, args): self.write('<H2>Menu</H2><DL COMPACT>\n')
-	def end_menu(self): self.write('</DL>\n')
+	def bgn_menu(self, args):
+		self.write('<DIR>\n')
+		self.write('  <STRONG><EM>Menu</EM></STRONG><P>\n')
+	def end_menu(self): self.write('</DIR>\n')
 
 	def bgn_cartouche(self, args): pass
 	def end_cartouche(self): pass
@@ -1364,13 +1357,18 @@ class TexinfoParser:
 		del index[:]
 		index1.sort()
 		self.write('<DL COMPACT>\n')
+		prevkey = prevnode = None
 		for sortkey, key, node in index1:
+			if (key, node) == (prevkey, prevnode):
+				continue
 			if self.debugging > 1: print key, ':', node
 			self.write('<DT>')
 			if iscodeindex: key = '@code{' + key + '}'
-			self.expand(key)
+			if key != prevkey:
+				self.expand(key)
 			self.write('<DD><A HREF="', makefile(node), \
 				   '">', node, '</A>\n')
+			prevkey, prevnode = key, node
 		self.write('</DL>\n')
 
 	# --- Final error reports ---
