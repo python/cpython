@@ -640,6 +640,17 @@ separated by a colon.
 'lp'
 \end{verbatim}
 
+Slice indices have useful defaults; an omitted first index defaults to
+zero, an omitted second index defaults to the size of the string being
+sliced.
+
+\begin{verbatim}
+>>> word[:2]    # The first two characters
+'He'
+>>> word[2:]    # All but the first two characters
+'lpA'
+\end{verbatim}
+
 Unlike a C string, Python strings cannot be changed.  Assigning to an 
 indexed position in the string results in an error:
 
@@ -662,17 +673,6 @@ efficient:
 'xelpA'
 >>> 'Splat' + word[4]
 'SplatA'
-\end{verbatim}
-
-Slice indices have useful defaults; an omitted first index defaults to
-zero, an omitted second index defaults to the size of the string being
-sliced.
-
-\begin{verbatim}
->>> word[:2]    # The first two characters
-'He'
->>> word[2:]    # All but the first two characters
-'lpA'
 \end{verbatim}
 
 Here's a useful invariant of slice operations:
