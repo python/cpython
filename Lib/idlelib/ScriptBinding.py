@@ -17,9 +17,6 @@ XXX Redesign this interface (yet again) as follows:
 
 """
 
-import sys
-import os
-import imp
 import tkMessageBox
 
 indent_message = """Error: Inconsistent indentation detected!
@@ -69,15 +66,14 @@ class ScriptBinding:
         try:
             tabnanny.process_tokens(tokenize.generate_tokens(f.readline))
         except tokenize.TokenError, msg:
-            self.errorbox("Token error",
-                          "Token error:\n%s" % str(msg))
-            return 0
+            self.errorbox("Token error", "Token error:\n%s" % msg)
+            return False
         except tabnanny.NannyNag, nag:
             # The error messages from tabnanny are too confusing...
             self.editwin.gotoline(nag.get_lineno())
             self.errorbox("Tab/space error", indent_message)
-            return 0
-        return 1
+            return False
+        return True
 
     def checksyntax(self, filename):
         f = open(filename, 'r')
@@ -103,7 +99,7 @@ class ScriptBinding:
                 self.editwin.gotoline(lineno)
             self.errorbox("Syntax error",
                           "There's an error in your program:\n" + msg)
-        return 1
+        return True
 
     def run_script_event(self, event):
         filename = self.getfilename()
