@@ -78,7 +78,8 @@ class ColorDB:
 	# inefficient!
 	nearest = -1
 	nearest_name = ''
-	for name, (r, g, b, rrggbb) in self.__byname.items():
+	for name, aliases in self.__byrrggbb.values():
+	    r, g, b, rrggbb = self.__byname[name]
 	    rdelta = red - r
 	    gdelta = green - g
 	    bdelta = blue - b
