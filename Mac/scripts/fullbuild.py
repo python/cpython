@@ -9,6 +9,8 @@
 # NOTE: You should proably make a copy of python with which to execute this
 # script, rebuilding running programs does not work...
 
+CARBON_ONLY = 1
+
 MACBUILDNO=":Mac:Include:macbuildno.h"
 
 import os
@@ -24,15 +26,7 @@ import macresource
 import aetools
 from Carbon import AppleEvents
 
-OLDAESUPPORT = 0
-
-if OLDAESUPPORT:
-	from Metrowerks_Shell_Suite import Metrowerks_Shell_Suite
-	from CodeWarrior_suite import CodeWarrior_suite
-	from Metrowerks_Standard_Suite import Metrowerks_Standard_Suite
-	from Required_Suite import Required_Suite
-else:
-	import CodeWarrior
+import CodeWarrior
 
 from Carbon import Res
 from Carbon import Dlg
@@ -74,18 +68,24 @@ I_APPLETS=26
 
 N_BUTTONS=27
 
-if OLDAESUPPORT:
-	class MwShell(Metrowerks_Shell_Suite, CodeWarrior_suite, Metrowerks_Standard_Suite,
-					Required_Suite, aetools.TalkTo):
-		pass
+if CARBON_ONLY:
+	BUTTONS_DISABLE = [
+		I_PPC_EXTLIBS,
+		I_PPC_CORE,
+		I_PPC_PLUGINS,
+		I_PPC_EXTENSIONS,
+		I_INTERPRETER,
+		I_PPC_FULL,
+		I_PPC_SMALL,
+	]
 else:
-	MwShell = CodeWarrior.CodeWarrior
-
+	BUTTONS_DISABLE = []
+	
 RUNNING=[]
 
 def buildmwproject(top, creator, projects):
 	"""Build projects with an MW compiler"""
-	mgr = MwShell(creator, start=1)
+	mgr = CodeWarrior.CodeWarrior(creator, start=1)
 	mgr.send_timeout = AppleEvents.kNoTimeOut
 	
 	failed = []
@@ -177,6 +177,9 @@ def handle_dialog(filename):
 	d.SetDialogDefaultItem(I_OK)
 	d.SetDialogCancelItem(I_CANCEL)
 	results = [0]*N_BUTTONS
+	for n in BUTTONS_DISABLE:
+		ctl = d.GetDialogItemAsControl(n)
+		ctl.HideControl()
 	while 1:
 		n = Dlg.ModalDialog(None)
 		if n == I_OK:

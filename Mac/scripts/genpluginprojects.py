@@ -3,6 +3,8 @@ import sys
 import os
 import string
 
+CARBON_ONLY=1
+
 PYTHONDIR = sys.prefix
 PROJECTDIR = os.path.join(PYTHONDIR, ":Mac:Build")
 MODULEDIRS = [	# Relative to projectdirs
@@ -38,6 +40,8 @@ def genpluginproject(architecture, module,
 		extraexportsymbols=[], outputdir=":::Lib:lib-dynload",
 		libraryflags=None, stdlibraryflags=None, prefixname=None,
 		initialize=None):
+	if CARBON_ONLY and architecture == "ppc":
+		return
 	if architecture == "all":
 		# For the time being we generate two project files. Not as nice as
 		# a single multitarget project, but easier to implement for now.
@@ -82,7 +86,7 @@ def genpluginproject(architecture, module,
 	if prefixname:
 		pass
 	elif architecture == "carbon":
-		prefixname = "mwerks_carbonplugin_config.h"
+		prefixname = "mwerks_shcarbon_pch"
 	else:
 		prefixname = "mwerks_plugin_config.h"
 	dict = {
@@ -112,12 +116,12 @@ def	genallprojects(force=0):
 	genpluginproject("ppc", "pyexpat", 
 		sources=["pyexpat.c", "xmlparse.c", "xmlrole.c", "xmltok.c"],
 		extradirs=[":::Modules:expat"],
-		prefixname="mwerks_pyexpat_config.h"
+		prefixname="mwerks_shared_config.h"
 		)
 	genpluginproject("carbon", "pyexpat", 
 		sources=["pyexpat.c", "xmlparse.c", "xmlrole.c", "xmltok.c"],
 		extradirs=[":::Modules:expat"],
-		prefixname="mwerks_carbonpyexpat_config.h"
+		prefixname="mwerks_shcarbon_config.h"
 		)
 	genpluginproject("all", "zlib", 
 		libraries=["zlib.ppc.Lib"], 
@@ -194,7 +198,7 @@ def	genallprojects(force=0):
 	genpluginproject("ppc", "_Win", libraries=["CarbonAccessors.o", "WindowsLib", "AppearanceLib"],
 			libraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
 	# Carbon Only?
-	genpluginproject("carbon", "_CF", outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "_CF", sources=[":cf:_CFmodule.c", ":cf:pycfbridge.c"], outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_CarbonEvt", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "hfsplus")
 	
