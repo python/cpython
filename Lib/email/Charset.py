@@ -1,6 +1,17 @@
 # Copyright (C) 2001,2002 Python Software Foundation
 # Author: che@debian.org (Ben Gertzfield), barry@zope.com (Barry Warsaw)
 
+# Python 2.3 doesn't come with any Asian codecs by default.  Two packages are
+# currently available and supported as of this writing (30-Dec-2003):
+#
+# CJKCodecs
+# http://cjkpython.i18n.org
+# This package contains Chinese, Japanese, and Korean codecs
+
+# JapaneseCodecs
+# http://www.asahi-net.or.jp/~rd6t-kjym/python
+# Some Japanese users prefer this codec package
+
 from types import UnicodeType
 from email.Encoders import encode_7or8bit
 import email.base64MIME
@@ -88,27 +99,11 @@ ALIASES = {
     'ascii':   'us-ascii',
     }
 
-# Map charsets to their Unicode codec strings.  Note that Python doesn't come
-# with any Asian codecs by default.  Here's where to get them:
-#
-# Japanese -- http://www.asahi-net.or.jp/~rd6t-kjym/python
-# Korean   -- http://sf.net/projects/koco
-# Chinese  -- http://sf.net/projects/python-codecs
-#
-# Note that these codecs have their own lifecycle and may be in varying states
-# of stability and useability.
 
+# Map charsets to their Unicode codec strings.
 CODEC_MAP = {
-    'euc-jp':      'japanese.euc-jp',
-    'iso-2022-jp': 'japanese.iso-2022-jp',
-    'shift_jis':   'japanese.shift_jis',
-    'euc-kr':      'korean.euc-kr',
-    'ks_c_5601-1987': 'korean.cp949',
-    'iso-2022-kr': 'korean.iso-2022-kr',
-    'johab':       'korean.johab',
-    'gb2132':      'eucgb2312_cn',
+    'gb2312':      'eucgb2312_cn',
     'big5':        'big5_tw',
-    'utf-8':       'utf-8',
     # Hack: We don't want *any* conversion for stuff marked us-ascii, as all
     # sorts of garbage might be sent to us in the guise of 7-bit us-ascii.
     # Let that stuff pass through without conversion to/from Unicode.
@@ -220,6 +215,8 @@ class Charset:
         # it.
         henc, benc, conv = CHARSETS.get(self.input_charset,
                                         (SHORTEST, BASE64, None))
+        if not conv:
+            conv = self.input_charset
         # Set the attributes, allowing the arguments to override the default.
         self.header_encoding = henc
         self.body_encoding = benc
@@ -229,7 +226,7 @@ class Charset:
         self.input_codec = CODEC_MAP.get(self.input_charset,
                                          self.input_charset)
         self.output_codec = CODEC_MAP.get(self.output_charset,
-                                            self.input_codec)
+                                            self.output_charset)
 
     def __str__(self):
         return self.input_charset.lower()
