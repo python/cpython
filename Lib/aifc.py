@@ -702,7 +702,7 @@ class Aifc_write:
         if len(self._markers) == 0:
             return None
         return self._markers
-                
+
     def tell(self):
         return self._nframeswritten
 
