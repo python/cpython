@@ -443,7 +443,7 @@ nav_NavGetFile(self, args, kw)
 		return NULL;
 	err = NavGetFile(defaultLocation, &reply, &dialogOptions,
 			eventProc, previewProc, filterProc, typeList, (void *)dict);
-	PyMem_XDEL(defaultLocation);
+	PyMem_DEL(defaultLocation);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
@@ -480,7 +480,7 @@ nav_NavPutFile(self, args, kw)
 		return NULL;
 	err = NavPutFile(defaultLocation, &reply, &dialogOptions,
 			eventProc, fileType, fileCreator, (void *)dict);
-	PyMem_XDEL(defaultLocation);
+	PyMem_DEL(defaultLocation);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
@@ -616,7 +616,7 @@ nav_NavChooseFile(self, args, kw)
 		return NULL;
 	err = NavChooseFile(defaultLocation, &reply, &dialogOptions,
 			eventProc, previewProc, filterProc, typeList, (void *)dict);
-	PyMem_XDEL(defaultLocation);
+	PyMem_DEL(defaultLocation);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
@@ -652,7 +652,7 @@ nav_NavChooseFolder(self, args, kw)
 		return NULL;
 	err = NavChooseFolder(defaultLocation, &reply, &dialogOptions,
 			eventProc, filterProc, (void *)dict);
-	PyMem_XDEL(defaultLocation);
+	PyMem_DEL(defaultLocation);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
@@ -688,7 +688,7 @@ nav_NavChooseVolume(self, args, kw)
 		return NULL;
 	err = NavChooseVolume(defaultLocation, &reply, &dialogOptions,
 			eventProc, filterProc, (void *)dict);
-	PyMem_XDEL(defaultLocation);
+	PyMem_DEL(defaultLocation);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
@@ -724,7 +724,7 @@ nav_NavChooseObject(self, args, kw)
 		return NULL;
 	err = NavChooseObject(defaultLocation, &reply, &dialogOptions,
 			eventProc, filterProc, (void *)dict);
-	PyMem_XDEL(defaultLocation);
+	PyMem_DEL(defaultLocation);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
@@ -758,7 +758,7 @@ nav_NavNewFolder(self, args, kw)
 	if (!filldialogoptions(dict, &defaultLocation, &dialogOptions, &eventProc, NULL, NULL, NULL, NULL, NULL))
 		return NULL;
 	err = NavNewFolder(defaultLocation, &reply, &dialogOptions, eventProc, (void *)dict);
-	PyMem_XDEL(defaultLocation);
+	PyMem_DEL(defaultLocation);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
