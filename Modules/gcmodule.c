@@ -973,32 +973,29 @@ void
 initgc(void)
 {
 	PyObject *m;
-	PyObject *d;
 
 	m = Py_InitModule4("gc",
 			      GcMethods,
 			      gc__doc__,
 			      NULL,
 			      PYTHON_API_VERSION);
-	d = PyModule_GetDict(m);
+
 	if (garbage == NULL) {
 		garbage = PyList_New(0);
+		if (garbage == NULL)
+			return;
 	}
-	PyDict_SetItemString(d, "garbage", garbage);
-	PyDict_SetItemString(d, "DEBUG_STATS",
-			PyInt_FromLong(DEBUG_STATS));
-	PyDict_SetItemString(d, "DEBUG_COLLECTABLE",
-			PyInt_FromLong(DEBUG_COLLECTABLE));
-	PyDict_SetItemString(d, "DEBUG_UNCOLLECTABLE",
-			PyInt_FromLong(DEBUG_UNCOLLECTABLE));
-	PyDict_SetItemString(d, "DEBUG_INSTANCES",
-			PyInt_FromLong(DEBUG_INSTANCES));
-	PyDict_SetItemString(d, "DEBUG_OBJECTS",
-			PyInt_FromLong(DEBUG_OBJECTS));
-	PyDict_SetItemString(d, "DEBUG_SAVEALL",
-			PyInt_FromLong(DEBUG_SAVEALL));
-	PyDict_SetItemString(d, "DEBUG_LEAK",
-			PyInt_FromLong(DEBUG_LEAK));
+	if (PyModule_AddObject(m, "garbage", garbage) < 0)
+		return;
+#define ADD_INT(NAME) if (PyModule_AddIntConstant(m, #NAME, NAME) < 0) return
+	ADD_INT(DEBUG_STATS);
+	ADD_INT(DEBUG_COLLECTABLE);
+	ADD_INT(DEBUG_UNCOLLECTABLE);
+	ADD_INT(DEBUG_INSTANCES);
+	ADD_INT(DEBUG_OBJECTS);
+	ADD_INT(DEBUG_SAVEALL);
+	ADD_INT(DEBUG_LEAK);
+#undef ADD_INT
 }
 
 /* for debugging */
