@@ -68,9 +68,9 @@ The \method{acquire()} method blocks if necessary until it can return
 without making the counter negative.
 \end{funcdesc}
 
-\begin{classdesc}{Thread}{}
+\begin{classdesc*}{Thread}{}
 A class that represents a thread of control.  This class can be safely subclassed in a limited fashion.
-\end{classdesc}
+\end{classdesc*}
 
 Detailed interfaces for the objects are documented below.  
 
@@ -444,7 +444,7 @@ A thread can be flagged as a ``daemon thread''.  The significance
 of this flag is that the entire Python program exits when only
 daemon threads are left.  The initial value is inherited from the
 creating thread.  The flag can be set with the \method{setDaemon()}
-method and retrieved with the \method{getDaemon()} method.
+method and retrieved with the \method{isDaemon()} method.
 
 There is a ``main thread'' object; this corresponds to the
 initial thread of control in the Python program.  It is not a
@@ -465,31 +465,27 @@ threads.
 This constructor should always be called with keyword
 arguments.  Arguments are:
 
-\var{group}
-Should be \code{None}; reserved for future extension when a
-\class{ThreadGroup} class is implemented.
+\var{group} should be \code{None}; reserved for future extension when
+a \class{ThreadGroup} class is implemented.
 
-\var{target}
-Callable object to be invoked by the \method{run()} method.
-Defaults to \code{None}, meaning nothing is called.
+\var{target} is the callable object to be invoked by the
+\method{run()} method.  Defaults to \code{None}, meaning nothing is
+called.
 
-\var{name}
-The thread name.  By default, a unique name is constructed of the form
-``Thread-\var{N}'' where \var{N} is a small decimal number.
+\var{name} is the thread name.  By default, a unique name is
+constructed of the form ``Thread-\var{N}'' where \var{N} is a small
+decimal number.
 
-\var{args}
-Argument tuple for the target invocation.  Defaults to \code{()}.
+\var{args} is the argument tuple for the target invocation.  Defaults
+to \code{()}.
 
-\var{kwargs}
-Keyword argument dictionary for the target invocation.
-Defaults to \code{\{\}}.
+\var{kwargs} is a dictionary of keyword arguments for the target
+invocation.  Defaults to \code{\{\}}.
 
 If the subclass overrides the constructor, it must make sure
 to invoke the base class constructor (\code{Thread.__init__()})
 before doing anything else to the thread.
 \end{classdesc}
-
-
 
 \begin{methoddesc}{start}{}
 Start the thread's activity.
@@ -498,8 +494,6 @@ This must be called at most once per thread object.  It
 arranges for the object's \method{run()} method to be invoked in a
 separate thread of control.
 \end{methoddesc}
-
-
 
 \begin{methoddesc}{run}{}
 Method representing the thread's activity.
@@ -510,7 +504,6 @@ You may override this method in a subclass.  The standard
 arguments taken from the \var{args} and \var{kwargs} arguments,
 respectively.
 \end{methoddesc}
-
 
 \begin{methoddesc}{join}{\optional{timeout}}
 Wait until the thread terminates.
@@ -530,8 +523,6 @@ deadlock.
 It is an error to attempt to \method{join()} a thread before it has
 been started.
 \end{methoddesc}
-
-
 
 \begin{methoddesc}{getName}{}
 Return the thread's name.
@@ -565,4 +556,3 @@ The initial value is inherited from the creating thread.
 The entire Python program exits when no active non-daemon
 threads are left.
 \end{methoddesc}
-
