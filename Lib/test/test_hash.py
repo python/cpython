@@ -9,8 +9,8 @@ import unittest
 class HashEqualityTestCase(unittest.TestCase):
 
     def same_hash(self, *objlist):
-        # hash each object given an raise TestFailed if
-        # the hash values are not all the same
+        # Hash each object given and fail if
+        # the hash values are not all the same.
         hashed = map(hash, objlist)
         for h in hashed[1:]:
             if h != hashed[0]:
