@@ -1145,6 +1145,9 @@ long_lshift(a, b)
 	return (object *) long_znormalize(z);
 }
 
+#define MAX(x, y) ((x) < (y) ? (y) : (x))
+#define MIN(x, y) ((x) > (y) ? (y) : (x))
+
 /* Logical or the absolute values of two long integers.
    The second value is first xor'ed with 'mask'. */
 
@@ -1155,22 +1158,23 @@ x_or(a, b, mask)
 	int mask;
 {
 	int size_a = ZABS(a->ob_size), size_b = ZABS(b->ob_size);
+	int size_max = MAX(size_a, size_b);
+	int size_min = MIN(size_a, size_b);
 	longobject *z;
 	int i;
 	
-	/* Ensure a is the larger of the two: */
-	if (size_a < size_b) {
-		{ longobject *temp = a; a = b; b = temp; }
-		{ int size_temp = size_a; size_a = size_b; size_b = size_temp; }
-	}
-	z = alloclongobject(size_a);
+	z = alloclongobject(size_max);
 	if (z == NULL)
 		return NULL;
-	for (i = 0; i < size_b; ++i) {
+	for (i = 0; i < size_min; ++i) {
 		z->ob_digit[i] = a->ob_digit[i] | (b->ob_digit[i] ^ mask);
 	}
+	/* At most one of the following two loops executes */
 	for (; i < size_a; ++i) {
-		z->ob_digit[i] = a->ob_digit[i] | mask;
+		z->ob_digit[i] = a->ob_digit[i] | (0 ^ mask);
+	}
+	for (; i < size_b; ++i) {
+		z->ob_digit[i] = 0 | (b->ob_digit[i] ^ mask);
 	}
 	return long_znormalize(z);
 }
@@ -1185,22 +1189,23 @@ x_and(a, b, mask)
 	int mask;
 {
 	int size_a = ZABS(a->ob_size), size_b = ZABS(b->ob_size);
+	int size_max = MAX(size_a, size_b);
+	int size_min = MIN(size_a, size_b);
 	longobject *z;
 	int i;
 	
-	/* Ensure a is the larger of the two: */
-	if (size_a < size_b) {
-		{ longobject *temp = a; a = b; b = temp; }
-		{ int size_temp = size_a; size_a = size_b; size_b = size_temp; }
-	}
-	z = alloclongobject(size_a);
+	z = alloclongobject(size_max);
 	if (z == NULL)
 		return NULL;
-	for (i = 0; i < size_b; ++i) {
+	for (i = 0; i < size_min; ++i) {
 		z->ob_digit[i] = a->ob_digit[i] & (b->ob_digit[i] ^ mask);
 	}
+	/* At most one of the following two loops executes */
 	for (; i < size_a; ++i) {
-		z->ob_digit[i] = a->ob_digit[i] & mask;
+		z->ob_digit[i] = a->ob_digit[i] & (0 ^ mask);
+	}
+	for (; i < size_b; ++i) {
+		z->ob_digit[i] = 0 & (b->ob_digit[i] ^ mask);
 	}
 	return long_znormalize(z);
 }
@@ -1208,35 +1213,33 @@ x_and(a, b, mask)
 /* Logical xor the absolute values of two long integers.
    The second value is first xor'ed with 'mask'. */
 
-static longobject *x_and PROTO((longobject *, longobject *, int));
+static longobject *x_xor PROTO((longobject *, longobject *, int));
 static longobject *
 x_xor(a, b, mask)
 	longobject *a, *b;
 	int mask;
 {
 	int size_a = ZABS(a->ob_size), size_b = ZABS(b->ob_size);
+	int size_max = MAX(size_a, size_b);
+	int size_min = MIN(size_a, size_b);
 	longobject *z;
 	int i;
 	
-	/* Ensure a is the larger of the two: */
-	if (size_a < size_b) {
-		{ longobject *temp = a; a = b; b = temp; }
-		{ int size_temp = size_a; size_a = size_b; size_b = size_temp; }
-	}
-	z = alloclongobject(size_a);
+	z = alloclongobject(size_max);
 	if (z == NULL)
 		return NULL;
-	for (i = 0; i < size_b; ++i) {
+	for (i = 0; i < size_min; ++i) {
 		z->ob_digit[i] = a->ob_digit[i] ^ (b->ob_digit[i] ^ mask);
 	}
+	/* At most one of the following two loops executes */
 	for (; i < size_a; ++i) {
-		z->ob_digit[i] = a->ob_digit[i] ^ mask;
+		z->ob_digit[i] = a->ob_digit[i] ^ (0 ^ mask);
+	}
+	for (; i < size_b; ++i) {
+		z->ob_digit[i] = 0 ^ (b->ob_digit[i] ^ mask);
 	}
 	return long_znormalize(z);
 }
-
-#define MAX(x, y) ((x) < (y) ? (y) : (x))
-#define MIN(x, y) ((x) > (y) ? (y) : (x))
 
 static object *
 long_and(a, w)
