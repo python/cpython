@@ -1356,7 +1356,8 @@ static PyMethodDef PySocketSock_methods[] = {
 static void
 BUILD_FUNC_DEF_1(PySocketSock_dealloc,PySocketSockObject *,s)
 {
-	(void) close(s->sock_fd);
+	if (s->sock_fd != -1)
+		(void) close(s->sock_fd);
 	PyMem_DEL(s);
 }
 
