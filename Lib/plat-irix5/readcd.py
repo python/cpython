@@ -166,13 +166,8 @@ class Readcd():
 		return result
 
 	def getstatus(self):
-		if not self.status:
-			status = self.player.getstatus()
-			if status[0] <> CD.NODISC:
-				self.status = status
-		else:
-			status = self.status
-		return status
+		self.status = self.player.getstatus()
+		return self.status
 
 	def play(self):
 		if not self.status:
