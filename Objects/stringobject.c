@@ -33,6 +33,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
+#include "mymath.h"
 #include <ctype.h>
 
 #ifdef COUNT_ALLOCS
@@ -626,8 +627,6 @@ getnextarg(args, arglen, p_argidx)
 #define F_BLANK (1<<2)
 #define F_ALT	(1<<3)
 #define F_ZERO	(1<<4)
-
-extern double fabs Py_PROTO((double));
 
 static int
 formatfloat(buf, flags, prec, type, v)
