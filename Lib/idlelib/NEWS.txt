@@ -1,4 +1,4 @@
-What's New in IDLE 1.0.4rc1?
+What's New in IDLE 1.0.5rc1?
 ============================
 
 *Release date: 26-Jan-2005*
