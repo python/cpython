@@ -606,16 +606,63 @@ PyMarshal_ReadLongFromFile(FILE *fp)
 	return r_long(&rf);
 }
 
+#ifdef HAVE_FSTAT
+/* Return size of file in bytes; < 0 if unknown. */
+static off_t
+getfilesize(FILE *fp)
+{
+	struct stat st;
+	if (fstat(fileno(fp), &st) != 0)
+		return -1;
+	else
+		return st.st_size;
+}
+#endif
+ 
+/* If we can get the size of the file up-front, and it's reasonably small,
+ * read it in one gulp and delegate to ...FromString() instead.  Much quicker
+ * than reading a byte at a time from file; speeds .pyc imports.
+ */
 PyObject *
 PyMarshal_ReadObjectFromFile(FILE *fp)
 {
+/* 75% of 2.1's .pyc files can exploit SMALL_FILE_LIMIT.
+ * REASONABLE_FILE_LIMIT is by defn something big enough for Tkinter.pyc.
+ */
+#define SMALL_FILE_LIMIT (1L << 14)
+#define REASONABLE_FILE_LIMIT (1L << 18)
 	RFILE rf;
+#ifdef HAVE_FSTAT
+	off_t filesize;
+#endif
 	if (PyErr_Occurred()) {
 		fprintf(stderr, "XXX rd_object called with exception set\n");
 		return NULL;
 	}
+#ifdef HAVE_FSTAT
+	filesize = getfilesize(fp);
+	if (filesize > 0) {
+		char buf[SMALL_FILE_LIMIT];
+		char* pBuf = NULL;
+		if (filesize <= SMALL_FILE_LIMIT)
+			pBuf = buf;
+		else if (filesize <= REASONABLE_FILE_LIMIT)
+			pBuf = (char *)PyMem_MALLOC(filesize);
+		if (pBuf != NULL) {
+			PyObject* v;
+			size_t n = fread(pBuf, 1, filesize, fp);
+			v = PyMarshal_ReadObjectFromString(pBuf, n);
+			if (pBuf != buf)
+				PyMem_FREE(pBuf);
+			return v;
+		}
+		
+	}
+#endif
 	rf.fp = fp;
 	return r_object(&rf);
+#undef SMALL_FILE_LIMIT
+#undef REASONABLE_FILE_LIMIT
 }
 
 PyObject *
