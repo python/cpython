@@ -1,8 +1,7 @@
-Subject: HERE IS AIX-NOTES
+Subject: AIX-NOTES FOR 1.4
 From: Manus Hand <Manus.Hand@evolving.com>
 To: Guido van Rossum <guido@CNRI.Reston.VA.US>
-Cc: Vladimir.Marangozov@imag.fr
-Date: Thu, 8 Aug 1996 16:11:10 -0600 (MDT)
+Date: Tue, 22 Oct 1996 16:02:07 -0600 (MDT)
 
 ==============================================================================
                               COMPILER INFORMATION
@@ -89,7 +88,7 @@ demos on threads run okay with cc_r.
 AIX shared library support was added to Python in the 1.4 release by Manus
 Hand (mhand@csn.net) and Vladimir Marangozov (Vladimir.Marangozov@imag.fr).
 
-Python modules may now be built as shared libraries on AIX using the normal 
+Python modules may now be built as shared libraries on AIX using the normal
 process of uncommenting the "*noconfig*" line in Modules/Setup.in before the
 build.  There is one additional step required, and that is to also uncomment
 the line in Modules/Setup.in which reads
@@ -140,5 +139,14 @@ module "spam" to python):
 For more detailed information on the shared library support, examine the
 contents of the "ld_so_aix" and "makexp_aix" scripts or refer to the AIX
 documentation.
+
+NOTE:  If the extension module is written in C++ and contains templates,
+       an alternative to "ld_so_aix" is the /usr/lpp/xlC/bin/makeC++SharedLib
+       script.  Chris Myers (myers@TC.Cornell.EDU) reports that ld_so_aix
+       works well for some C++ (including the C++ that is generated
+       automatically by the Python SWIG package [SWIG can be found at
+       http://www.cs.utah.edu/~beazley/SWIG/swig.html]).  However, it is not
+       known whether makeC++SharedLib can be used as a complete substitute
+       for ld_so_aix.
 
 ==============================================================================
