@@ -103,7 +103,7 @@ class TestTemplate(unittest.TestCase):
             (?P<escaped>@{2})                   |
             @(?P<named>[_a-z][._a-z0-9]*)       |
             @{(?P<braced>[_a-z][._a-z0-9]*)}    |
-            (?P<bogus>@)
+            (?P<invalid>@)
             """
         m = Mapping()
         m.bag = Bag()
