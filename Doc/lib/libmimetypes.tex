@@ -1,0 +1,94 @@
+% This document section was written by Fred L. Drake, Jr.
+% <fdrake@acm.org>, based in part on original docstrings in the
+% mimetypes module.
+
+\section{Standard Module \module{mimetypes}}
+\label{module-mimetypes}
+\stmodindex{mimetypes}
+\indexii{MIME}{content type}
+
+The \module{mimetypes} converts between a filename or URL and the MIME
+type associated with the filename extension.  Conversions are provided 
+from filename to MIME type and from MIME type to filename extension;
+encodings are not supported for the later conversion.
+
+The functions described below provide the primary interface for this
+module.  If the module has not been initialized, they will call the
+\function{init()}.
+
+
+\begin{funcdesc}{guess_type}{filename}
+Guess the type of a file based on its filename or URL, given by
+\var{filename}.
+The return value is a tuple \code{(\var{type}, \var{encoding})} where
+\var{type} is \code{None} if the type can't be guessed (no or unknown
+suffix) or a string of the form \code{'\var{type}/\var{subtype}'},
+usable for a MIME \code{content-type} header\indexii{MIME}{headers}; and 
+encoding is \code{None} for no encoding or the name of the program used
+to encode (e.g. \program{compress} or \program{gzip}).  The encoding
+is suitable for use as a \code{content-encoding} header,
+\emph{not} as a \code{content-transfer-encoding} header.  The mappings
+are table driven.  Encoding suffixes are case sensitive; type suffixes
+are first tried case sensitive, then case insensitive.
+\end{funcdesc}
+
+\begin{funcdesc}{guess_extension}{type}
+Guess the extension for a file based on its MIME type, given by
+\var{type}.
+The return value is a string giving a filename extension, including the
+leading dot (\character{.}).  The extension is not guaranteed to have been
+associated with any particular data stream, but would be mapped to the 
+MIME type \var{type} by \function{guess_type()}.  If no extension can
+be guessed for \var{type}, \code{None} is returned.
+\end{funcdesc}
+
+
+Some additional functions and data items are available for controlling
+the behavior of the module.
+
+
+\begin{funcdesc}{init}{\optional{files}}
+Initialize the internal data structures.  If given, \var{files} must
+be a sequence of file names which should be used to augment the
+default type map.  If omitted, the file names to use are taken from
+\code{knownfiles}.  Each file named in \var{files} or
+\code{knownfiles} takes precedence over those named before it.
+Calling \function{init()} repeatedly is allowed.
+\end{funcdesc}
+
+\begin{funcdesc}{read_mime_types}{filename}
+Load the type map given in the file \var{filename}, if it exists.  The 
+type map is returned as a dictionary mapping filename extensions,
+including the leading dot (\character{.}), to strings of the form
+\code{'\var{type}/\var{subtype}'}.  If the file \var{filename} does
+not exist or cannot be read, \code{None} is returned.
+\end{funcdesc}
+
+
+\begin{datadesc}{inited}
+Flag indicating whether or not the global data structures have been
+initialized.  This is set to true by \function{init()}.
+\end{datadesc}
+
+\begin{datadesc}{knownfiles}
+List of type map file names commonly installed.  These files are
+typically names \file{mime.types} and are installed in different
+locations by different packages.%
+\index{file!mime.types}
+\end{datadesc}
+
+\begin{datadesc}{suffix_map}
+Dictionary mapping suffixes to suffixes.  This is used to allow
+recognition of encoded files for which the encoding and the type are
+indicated by the same extension.  For example, the \file{.tgz}
+extension is mapped to \file{.tar.gz} to allow the encoding and type
+to be recognized separately.
+\end{datadesc}
+
+\begin{datadesc}{encodings_map}
+Dictionary mapping filename extensions to encoding types.
+\end{datadesc}
+
+\begin{datadesc}{types_map}
+Dictionary mapping filename extensions to MIME types.
+\end{datadesc}
