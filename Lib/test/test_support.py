@@ -176,7 +176,7 @@ def run_unittest(testclass):
 # doctest driver.
 
 def run_doctest(module, verbosity=None):
-    """Run doctest on the given module.
+    """Run doctest on the given module.  Return (#failures, #tests).
 
     If optional argument verbosity is not specified (or is None), pass
     test_support's belief about verbosity on to doctest.  Else doctest's
@@ -198,5 +198,6 @@ def run_doctest(module, verbosity=None):
         f, t = doctest.testmod(module, verbose=verbosity)
         if f:
             raise TestFailed("%d of %d doctests failed" % (f, t))
+        return f, t
     finally:
         sys.stdout = save_stdout
