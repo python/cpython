@@ -1,0 +1,79 @@
+BUGS:
+    
+- when there's a selection, typing ^X will delete the selection!
+  (cause: ^X is a binding for cut ;-( )
+
+TO DO:
+
+- restructure state sensitive code to avoid testing flags all the time
+- integrated debugger
+- object browser
+- save some user state (e.g. window and cursor positions, bindings)
+
+- menu bar
+- make backups when saving
+- check file mtimes at various points
+- interface with RCS/CVS/Perforce ???
+- more search options: case [in]sensitive, fwd/back, string/regex
+- global query replace
+- incremental search
+- more emacsisms:
+  - reindent, reformat text etc.
+  - M-[, M-] to move by paragraphs
+  - smart stuff with whitespace around Return
+- status bar?
+- better help?
+
+Details:
+    
+- when there's a selection, left/right arrow should go to either
+  end of the selection
+
+Structural problems:
+
+- too much knowledge in FileList about EditorWindow (for example)
+
+======================================================================
+
+Comparison to PTUI
+------------------
+
+- PTUI's shell is worse:
+  no coloring;
+  no editing of multi-line commands;
+  ^P seems to permanently remove some text from the buffer
+
+- PTUI's undo is worse:
+  no redo;
+  one char at a time
+
+- PTUI's framework is better:
+  status line
+  menu bar
+  buffer menu
+  (not sure if I like the toolbar)
+
+- PTUI's GUI is a tad ugly:
+  I don't like the multiple buffers in one window model
+
+- PTUI's help is better (HTML!)
+
+- PTUI's search/replace is better (more features)
+
+- PTUI's auto indent is better
+  (understands that "if a: # blah, blah" opens a block)
+
+- PTUI's key bindings are a bit weird (DEL to dedent a line!?!?!?)
+
+- PTUI's fontify is faster but synchronous (and still too slow);
+  also doesn't do as good a job if editing affects lines far below
+
+- PTUI has more bells and whistles:
+  open multiple
+  append
+  zap tabs
+  fontify (you could argue it's not needed in my code)
+  comment/uncomment
+  modularize
+  examine
+  go
