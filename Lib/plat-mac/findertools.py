@@ -19,7 +19,8 @@ from Carbon import AppleEvents
 import aetools
 import MacOS
 import sys
-import macfs
+import Carbon.File
+import Carbon.Folder
 import aetypes
 from types import *
 
@@ -40,13 +41,13 @@ def _getfinder():
 def launch(file):
 	"""Open a file thru the finder. Specify file by name or fsspec"""
 	finder = _getfinder()
-	fss = macfs.FSSpec(file)
+	fss = Carbon.File.FSSpec(file)
 	return finder.open(fss)
 	
 def Print(file):
 	"""Print a file thru the finder. Specify file by name or fsspec"""
 	finder = _getfinder()
-	fss = macfs.FSSpec(file)
+	fss = Carbon.File.FSSpec(file)
 	return finder._print(fss)
 	
 def copy(src, dstdir):
@@ -55,10 +56,10 @@ def copy(src, dstdir):
 	if type(src) == type([]):
 		src_fss = []
 		for s in src:
-			src_fss.append(macfs.FSSpec(s))
+			src_fss.append(Carbon.File.FSSpec(s))
 	else:
-		src_fss = macfs.FSSpec(src)
-	dst_fss = macfs.FSSpec(dstdir)
+		src_fss = Carbon.File.FSSpec(src)
+	dst_fss = Carbon.File.FSSpec(dstdir)
 	return finder.duplicate(src_fss, to=dst_fss)
 
 def move(src, dstdir):
@@ -67,10 +68,10 @@ def move(src, dstdir):
 	if type(src) == type([]):
 		src_fss = []
 		for s in src:
-			src_fss.append(macfs.FSSpec(s))
+			src_fss.append(Carbon.File.FSSpec(s))
 	else:
-		src_fss = macfs.FSSpec(src)
-	dst_fss = macfs.FSSpec(dstdir)
+		src_fss = Carbon.File.FSSpec(src)
+	dst_fss = Carbon.File.FSSpec(dstdir)
 	return finder.move(src_fss, to=dst_fss)
 	
 def sleep():
@@ -94,25 +95,25 @@ def restart():
 #
 
 def reveal(file):
-	"""Reveal a file in the finder. Specify file by name or fsspec."""
+	"""Reveal a file in the finder. Specify file by name, fsref or fsspec."""
 	finder = _getfinder()
-	fss = macfs.FSSpec(file)
-	file_alias = fss.NewAlias()
+	fsr = Carbon.File.FSRef(file)
+	file_alias = fsr.FSNewAliasMinimal()
 	return finder.reveal(file_alias)
 	
 def select(file):
-	"""select a file in the finder. Specify file by name or fsspec."""
+	"""select a file in the finder. Specify file by name, fsref or fsspec."""
 	finder = _getfinder()
-	fss = macfs.FSSpec(file)
-	file_alias = fss.NewAlias()
+	fsr = Carbon.File.FSRef(file)
+	file_alias = fsr.FSNewAliasMinimal()
 	return finder.select(file_alias)
 	
 def update(file):
 	"""Update the display of the specified object(s) to match 
-	their on-disk representation. Specify file by name or fsspec."""
+	their on-disk representation. Specify file by name, fsref or fsspec."""
 	finder = _getfinder()
-	fss = macfs.FSSpec(file)
-	file_alias = fss.NewAlias()
+	fsr = Carbon.File.FSRef(file)
+	file_alias = fsr.FSNewAliasMinimal()
 	return finder.update(file_alias)
 
 
@@ -122,9 +123,8 @@ def update(file):
 
 def comment(object, comment=None):
 	"""comment: get or set the Finder-comment of the item, displayed in the 'Get Info' window."""
-	object = macfs.FSSpec(object)
-	fss = macfs.FSSpec(object)
-	object_alias = fss.NewAlias()
+	object = Carbon.File.FSRef(object)
+	object_alias = object.FSNewAliasMonimal()
 	if comment == None:
 		return _getcomment(object_alias)
 	else:
@@ -260,9 +260,8 @@ def _processproperty(processname, property):
 def openwindow(object):
 	"""Open a Finder window for object, Specify object by name or fsspec."""
 	finder = _getfinder()
-	object = macfs.FSSpec(object)
-	fss = macfs.FSSpec(object)
-	object_alias = fss.NewAlias()
+	object = Carbon.File.FSRef(object)
+	object_alias = object.FSNewAliasMinimal()
 	args = {}
 	attrs = {}
 	_code = 'aevt'
@@ -276,8 +275,8 @@ def openwindow(object):
 def closewindow(object):
 	"""Close a Finder window for folder, Specify by path."""
 	finder = _getfinder()
-	fss = macfs.FSSpec(object)
-	object_alias = fss.NewAlias()
+	object = Carbon.File.FSRef(object)
+	object_alias = object.FSNewAliasMinimal()
 	args = {}
 	attrs = {}
 	_code = 'core'
@@ -291,8 +290,8 @@ def closewindow(object):
 def location(object, pos=None):
 	"""Set the position of a Finder window for folder to pos=(w, h). Specify file by name or fsspec.
 	If pos=None, location will return the current position of the object."""
-	fss = macfs.FSSpec(object)
-	object_alias = fss.NewAlias()
+	object = Carbon.File.FSRef(object)
+	object_alias = object.FSNewAliasMinimal()
 	if not pos:
 		return _getlocation(object_alias)
 	return _setlocation(object_alias, pos)
@@ -328,8 +327,8 @@ def _getlocation(object_alias):
 
 def label(object, index=None):
 	"""label: set or get the label of the item. Specify file by name or fsspec."""
-	fss = macfs.FSSpec(object)
-	object_alias = fss.NewAlias()
+	object = Carbon.File.FSRef(object)
+	object_alias = object.FSNewAliasMinimal()
 	if index == None:
 		return _getlabel(object_alias)
 	if index < 0 or index > 7:
@@ -374,8 +373,8 @@ def windowview(folder, view=None):
 	1 = by name
 	2 = by button
 	"""
-	fss = macfs.FSSpec(folder)
-	folder_alias = fss.NewAlias()
+	fsr = Carbon.File.FSRef(folder)
+	folder_alias = fsr.FSNewAliasMinimal()
 	if view == None:
 		return _getwindowview(folder_alias)
 	return _setwindowview(folder_alias, view)
@@ -432,9 +431,9 @@ def windowsize(folder, size=None):
 	If size=None, windowsize will return the current size of the window.
 	Specify file by name or fsspec.
 	"""
-	fss = macfs.FSSpec(folder)
-	folder_alias = fss.NewAlias()
-	openwindow(fss)
+	fsr = Carbon.File.FSRef(folder)
+	folder_alias = fsr.FSNewAliasMinimal()
+	openwindow(fsr)
 	if not size:
 		return _getwindowsize(folder_alias)
 	return _setwindowsize(folder_alias, size)
@@ -480,9 +479,9 @@ def _getwindowsize(folder_alias):
 
 def windowposition(folder, pos=None):
 	"""Set the position of a Finder window for folder to pos=(w, h)."""
-	fss = macfs.FSSpec(folder)
-	folder_alias = fss.NewAlias()
-	openwindow(fss)
+	fsr = Carbon.File.FSRef(folder)
+	folder_alias = fsr.FSNewAliasMinimal()
+	openwindow(fsr)
 	if not pos:
 		return _getwindowposition(folder_alias)
 	if type(pos) == InstanceType:
@@ -532,8 +531,8 @@ def icon(object, icondata=None):
 	icon will return an AE object with binary data for the current icon.
 	If left untouched, this data can be used to paste the icon on another file.
 	Development opportunity: get and set the data as PICT."""
-	fss = macfs.FSSpec(object)
-	object_alias = fss.NewAlias()
+	fsr = Carbon.File.FSRef(object)
+	object_alias = fsr.FSNewAliasMinimal()
 	if icondata == None:
 		return _geticon(object_alias)
 	return _seticon(object_alias, icondata)
@@ -679,8 +678,8 @@ def filesharing():
 	
 def movetotrash(path):
 	"""move the object to the trash"""
-	fss = macfs.FSSpec(path)
-	trashfolder = macfs.FSSpec(macfs.FindFolder(fss.as_tuple()[0], 'trsh', 0) + ("",)).as_pathname()
+	fss = Carbon.File.FSSpec(path)
+	trashfolder = Carbon.Folder.FSFindFolder(fss.as_tuple()[0], 'trsh', 0)
 	move(path, trashfolder)
 
 def emptytrash():
@@ -695,44 +694,44 @@ def emptytrash():
 
 
 def _test():
+	import EasyDialogs
 	print 'Original findertools functionality test...'
 	print 'Testing launch...'
-	fss, ok = macfs.PromptGetFile('File to launch:')
-	if ok:
-		result = launch(fss)
+	pathname = EasyDialogs.AskFileForOpen('File to launch:')
+	if pathname:
+		result = launch(pathname)
 		if result:
 			print 'Result: ', result
 		print 'Press return-',
 		sys.stdin.readline()
 	print 'Testing print...'
-	fss, ok = macfs.PromptGetFile('File to print:')
-	if ok:
-		result = Print(fss)
+	pathname = EasyDialogs.AskFileForOpen('File to print:')
+	if pathname:
+		result = Print(pathname)
 		if result:
 			print 'Result: ', result
 		print 'Press return-',
 		sys.stdin.readline()
 	print 'Testing copy...'
-	fss, ok = macfs.PromptGetFile('File to copy:')
-	if ok:
-		dfss, ok = macfs.GetDirectory()
-		if ok:
-			result = copy(fss, dfss)
+	pathname = EasyDialogs.AskFileForOpen('File to copy:')
+	if pathname:
+		destdir = EasyDialogs.AskFolder('Destination:')
+		if destdir:
+			result = copy(pathname, destdir)
 			if result:
 				print 'Result:', result
 			print 'Press return-',
 			sys.stdin.readline()
 	print 'Testing move...'
-	fss, ok = macfs.PromptGetFile('File to move:')
-	if ok:
-		dfss, ok = macfs.GetDirectory()
-		if ok:
-			result = move(fss, dfss)
+	pathname = EasyDialogs.AskFileForOpen('File to move:')
+	if pathname:
+		destdir = EasyDialogs.AskFolder('Destination:')
+		if destdir:
+			result = move(pathname, destdir)
 			if result:
 				print 'Result:', result
 			print 'Press return-',
 			sys.stdin.readline()
-	import EasyDialogs
 	print 'Testing sleep...'
 	if EasyDialogs.AskYesNoCancel('Sleep?') > 0:
 		result = sleep()
@@ -772,7 +771,7 @@ def _test2():
 
 	# Finder's windows, file location, file attributes
 	open("@findertoolstest", "w")
-	f = macfs.FSSpec("@findertoolstest").as_pathname()
+	f = "@findertoolstest"
 	reveal(f)				# reveal this file in a Finder window
 	select(f)				# select this file
 
