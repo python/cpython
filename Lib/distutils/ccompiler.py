@@ -846,6 +846,7 @@ _default_compilers = (
     # on a cygwin built python we can use gcc like an ordinary UNIXish
     # compiler
     ('cygwin.*', 'unix'),
+    ('os2emx', 'emx'),
 
     # OS name mappings
     ('posix', 'unix'),
@@ -892,6 +893,8 @@ compiler_class = { 'unix':    ('unixccompiler', 'UnixCCompiler',
                                "Borland C++ Compiler"),
                    'mwerks':  ('mwerkscompiler', 'MWerksCompiler',
                                "MetroWerks CodeWarrior"),
+                   'emx':     ('emxccompiler', 'EMXCCompiler',
+                               "EMX port of GNU C Compiler for OS/2"),
                  }
 
 def show_compilers():
