@@ -113,39 +113,48 @@ def contains_metastrings(s) :
 
 
 class bsdTableDB :
-
-    # Save close() from bombing out if __init__() failed
-    db = None
-    env = None
-
-    def __init__(self, filename, dbhome, create=0, truncate=0, mode=0600, recover=0, dbflags=0) :
+    def __init__(self, filename, dbhome, create=0, truncate=0, mode=0600,
+                 recover=0, dbflags=0) :
         """bsdTableDB.open(filename, dbhome, create=0, truncate=0, mode=0600)
         Open database name in the dbhome BerkeleyDB directory.
         Use keyword arguments when calling this constructor.
         """
+        self.db = None
         myflags = DB_THREAD
-        if create :
-            myflags = myflags | DB_CREATE
-        flagsforenv = DB_INIT_MPOOL | DB_INIT_LOCK | DB_INIT_LOG | DB_INIT_TXN | dbflags
-        if recover :
+        if create:
+            myflags |= DB_CREATE
+        flagsforenv = (DB_INIT_MPOOL | DB_INIT_LOCK | DB_INIT_LOG |
+                       DB_INIT_TXN | dbflags)
+        # DB_AUTO_COMMIT isn't a valid flag for env.open()
+        try:
+            dbflags |= DB_AUTO_COMMIT
+        except AttributeError:
+            pass
+        if recover:
             flagsforenv = flagsforenv | DB_RECOVER
         self.env = DBEnv()
-        self.env.set_lk_detect(DB_LOCK_DEFAULT)  # enable auto deadlock avoidance
+        # enable auto deadlock avoidance
+        self.env.set_lk_detect(DB_LOCK_DEFAULT)
         self.env.open(dbhome, myflags | flagsforenv)
-        if truncate :
-            myflags = myflags | DB_TRUNCATE
+        if truncate:
+            myflags |= DB_TRUNCATE
         self.db = DB(self.env)
-        self.db.set_flags(DB_DUP)  # allow duplicate entries [warning: be careful w/ metadata]
-        self.db.open(filename, DB_BTREE, myflags, mode)
-
+        # allow duplicate entries [warning: be careful w/ metadata]
+        self.db.set_flags(DB_DUP)
+        self.db.open(filename, DB_BTREE, dbflags | myflags, mode)
         self.dbfilename = filename
-
         # Initialize the table names list if this is a new database
-        if not self.db.has_key(_table_names_key) :
-            self.db.put(_table_names_key, pickle.dumps([], 1))
-
+        txn = self.env.txn_begin()
+        try:
+            if not self.db.has_key(_table_names_key, txn):
+                self.db.put(_table_names_key, pickle.dumps([], 1), txn=txn)
+        # Yes, bare except
+        except:
+            txn.abort()
+            raise
+        else:
+            txn.commit()
         # TODO verify more of the database's metadata?
-
         self.__tablecolumns = {}
 
     def __del__(self):
@@ -189,7 +198,7 @@ class bsdTableDB :
             cur.close()
 
 
-    def CreateTable(self, table, columns) :
+    def CreateTable(self, table, columns):
         """CreateTable(table, columns) - Create a new table in the database
         raises TableDBError if it already exists or for other DB errors.
         """
@@ -198,14 +207,16 @@ class bsdTableDB :
         try:
             # checking sanity of the table and column names here on
             # table creation will prevent problems elsewhere.
-            if contains_metastrings(table) :
-                raise ValueError, "bad table name: contains reserved metastrings"
+            if contains_metastrings(table):
+                raise ValueError(
+                    "bad table name: contains reserved metastrings")
             for column in columns :
-                if contains_metastrings(column) :
-                    raise ValueError, "bad column name: contains reserved metastrings"
+                if contains_metastrings(column):
+                    raise ValueError(
+                        "bad column name: contains reserved metastrings")
 
             columnlist_key = _columns_key(table)
-            if self.db.has_key(columnlist_key) :
+            if self.db.has_key(columnlist_key):
                 raise TableAlreadyExists, "table already exists"
 
             txn = self.env.txn_begin()
@@ -213,9 +224,11 @@ class bsdTableDB :
             self.db.put(columnlist_key, pickle.dumps(columns, 1), txn=txn)
 
             # add the table name to the tablelist
-            tablelist = pickle.loads(self.db.get(_table_names_key, txn=txn, flags=DB_RMW))
+            tablelist = pickle.loads(self.db.get(_table_names_key, txn=txn,
+                                                 flags=DB_RMW))
             tablelist.append(table)
-            self.db.delete(_table_names_key, txn)  # delete 1st, incase we opened with DB_DUP
+            # delete 1st, in case we opened with DB_DUP
+            self.db.delete(_table_names_key, txn)
             self.db.put(_table_names_key, pickle.dumps(tablelist, 1), txn=txn)
 
             txn.commit()
@@ -228,7 +241,8 @@ class bsdTableDB :
 
 
     def ListTableColumns(self, table):
-        """Return a list of columns in the given table.  [] if the table doesn't exist.
+        """Return a list of columns in the given table.
+        [] if the table doesn't exist.
         """
         assert type(table) == type('')
         if contains_metastrings(table) :
@@ -252,7 +266,9 @@ class bsdTableDB :
             return []
 
     def CreateOrExtendTable(self, table, columns):
-        """CreateOrExtendTable(table, columns) - Create a new table in the database.
+        """CreateOrExtendTable(table, columns)
+
+        - Create a new table in the database.
         If a table of this name already exists, extend it to have any
         additional columns present in the given list as well as
         all of its current columns.
@@ -268,13 +284,16 @@ class bsdTableDB :
                 txn = self.env.txn_begin()
 
                 # load the current column list
-                oldcolumnlist = pickle.loads(self.db.get(columnlist_key, txn=txn, flags=DB_RMW))
-                # create a hash table for fast lookups of column names in the loop below
+                oldcolumnlist = pickle.loads(
+                    self.db.get(columnlist_key, txn=txn, flags=DB_RMW))
+                # create a hash table for fast lookups of column names in the
+                # loop below
                 oldcolumnhash = {}
                 for c in oldcolumnlist:
                     oldcolumnhash[c] = c
 
-                # create a new column list containing both the old and new column names
+                # create a new column list containing both the old and new
+                # column names
                 newcolumnlist = copy.copy(oldcolumnlist)
                 for c in columns:
                     if not oldcolumnhash.has_key(c):
@@ -284,7 +303,9 @@ class bsdTableDB :
                 if newcolumnlist != oldcolumnlist :
                     # delete the old one first since we opened with DB_DUP
                     self.db.delete(columnlist_key, txn)
-                    self.db.put(columnlist_key, pickle.dumps(newcolumnlist, 1), txn=txn)
+                    self.db.put(columnlist_key,
+                                pickle.dumps(newcolumnlist, 1),
+                                txn=txn)
 
                 txn.commit()
                 txn = None
@@ -307,7 +328,7 @@ class bsdTableDB :
             raise TableDBError, "unknown table: " + `table`
         self.__tablecolumns[table] = pickle.loads(tcolpickles)
 
-    def __new_rowid(self, table, txn=None) :
+    def __new_rowid(self, table, txn) :
         """Create a new unique row identifier"""
         unique = 0
         while not unique :
@@ -321,8 +342,9 @@ class bsdTableDB :
 
             # Guarantee uniqueness by adding this key to the database
             try:
-                self.db.put(_rowid_key(table, newid), None, txn=txn, flags=DB_NOOVERWRITE)
-            except DBKeyExistsError:
+                self.db.put(_rowid_key(table, newid), None, txn=txn,
+                            flags=DB_NOOVERWRITE)
+            except DBKeyExistError:
                 pass
             else:
                 unique = 1
@@ -347,9 +369,8 @@ class bsdTableDB :
                     raise TableDBError, "unknown column: "+`column`
 
             # get a unique row identifier for this row
-            rowid = self.__new_rowid(table)
-
             txn = self.env.txn_begin()
+            rowid = self.__new_rowid(table, txn=txn)
 
             # insert the row values into the table database
             for column, dataitem in rowdict.items() :
@@ -360,10 +381,15 @@ class bsdTableDB :
             txn = None
 
         except DBError, dberror:
-            if txn :
+            # WIBNI we could just abort the txn and re-raise the exception?
+            # But no, because TableDBError is not related to DBError via
+            # inheritance, so it would be backwards incompatible.  Do the next
+            # best thing.
+            info = sys.exc_info()
+            if txn:
                 txn.abort()
                 self.db.delete(_rowid_key(table, rowid))
-            raise TableDBError, dberror[1]
+            raise TableDBError, dberror[1], info[2]
 
 
     def Modify(self, table, conditions={}, mappings={}) :
@@ -388,13 +414,21 @@ class bsdTableDB :
                         txn = self.env.txn_begin()
                         # modify the requested column
                         try:
-                            dataitem = self.db.get(_data_key(table, column, rowid), txn)
-                            self.db.delete(_data_key(table, column, rowid), txn)
+                            dataitem = self.db.get(
+                                _data_key(table, column, rowid),
+                                txn)
+                            self.db.delete(
+                                _data_key(table, column, rowid),
+                                txn)
                         except DBNotFoundError:
-                            dataitem = None # XXXXXXX row key somehow didn't exist, assume no error
+                             # XXXXXXX row key somehow didn't exist, assume no
+                             # error
+                            dataitem = None
                         dataitem = mappings[column](dataitem)
                         if dataitem <> None:
-                            self.db.put(_data_key(table, column, rowid), dataitem, txn=txn)
+                            self.db.put(
+                                _data_key(table, column, rowid),
+                                dataitem, txn=txn)
                         txn.commit()
                         txn = None
 
@@ -425,14 +459,17 @@ class bsdTableDB :
                     for column in columns :
                         # delete the data key
                         try:
-                            self.db.delete(_data_key(table, column, rowid), txn)
+                            self.db.delete(_data_key(table, column, rowid),
+                                           txn)
                         except DBNotFoundError:
-                            pass # XXXXXXX column may not exist, assume no error
+                            # XXXXXXX column may not exist, assume no error
+                            pass
 
                     try:
                         self.db.delete(_rowid_key(table, rowid), txn)
                     except DBNotFoundError:
-                        pass # XXXXXXX row key somehow didn't exist, assume no error
+                        # XXXXXXX row key somehow didn't exist, assume no error
+                        pass
                     txn.commit()
                     txn = None
                 except DBError, dberror:
@@ -490,15 +527,18 @@ class bsdTableDB :
 
         rejected_rowids = {} # keys are rowids that do not match
 
-        # attempt to sort the conditions in such a way as to minimize full column lookups
+        # attempt to sort the conditions in such a way as to minimize full
+        # column lookups
         def cmp_conditions(atuple, btuple):
             a = atuple[1]
             b = btuple[1]
             if type(a) == type(b) :
                 if isinstance(a, PrefixCond) and isinstance(b, PrefixCond):
-                    return cmp(len(b.prefix), len(a.prefix))  # longest prefix first
+                    # longest prefix first
+                    return cmp(len(b.prefix), len(a.prefix))
                 if isinstance(a, LikeCond) and isinstance(b, LikeCond):
-                    return cmp(len(b.likestr), len(a.likestr))  # longest likestr first
+                    # longest likestr first
+                    return cmp(len(b.likestr), len(a.likestr))
                 return 0
             if isinstance(a, ExactCond):
                 return -1
@@ -565,7 +605,8 @@ class bsdTableDB :
                     if rowdata.has_key(column) :
                         continue
                     try:
-                        rowdata[column] = self.db.get(_data_key(table, column, rowid))
+                        rowdata[column] = self.db.get(
+                            _data_key(table, column, rowid))
                     except DBError, dberror:
                         if dberror[0] != DB_NOTFOUND :
                             raise
@@ -614,12 +655,15 @@ class bsdTableDB :
             cur.close()
 
             # delete the tablename from the table name list
-            tablelist = pickle.loads(self.db.get(_table_names_key, txn=txn, flags=DB_RMW))
+            tablelist = pickle.loads(
+                self.db.get(_table_names_key, txn=txn, flags=DB_RMW))
             try:
                 tablelist.remove(table)
             except ValueError:
-                pass  # hmm, it wasn't there, oh well, that's what we want.
-            self.db.delete(_table_names_key, txn)  # delete 1st, incase we opened with DB_DUP
+                # hmm, it wasn't there, oh well, that's what we want.
+                pass
+            # delete 1st, incase we opened with DB_DUP
+            self.db.delete(_table_names_key, txn)
             self.db.put(_table_names_key, pickle.dumps(tablelist, 1), txn=txn)
 
             txn.commit()

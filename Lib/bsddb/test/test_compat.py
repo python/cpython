@@ -9,7 +9,7 @@ import bsddb
 import unittest
 import tempfile
 
-from test.test_support import verbose
+from test_all import verbose
 
 
 
@@ -159,9 +159,9 @@ class CompatibilityTestCase(unittest.TestCase):
 #----------------------------------------------------------------------
 
 
-def suite():
+def test_suite():
     return unittest.makeSuite(CompatibilityTestCase)
 
 
 if __name__ == '__main__':
-    unittest.main( defaultTest='suite' )
+    unittest.main(defaultTest='test_suite')

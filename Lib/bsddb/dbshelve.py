@@ -23,8 +23,7 @@
 #
 #------------------------------------------------------------------------
 
-"""
-Manage shelves of pickled objects using bsddb3 database files for the
+"""Manage shelves of pickled objects using bsddb database files for the
 storage.
 """
 
@@ -43,7 +42,7 @@ def open(filename, flags=db.DB_CREATE, mode=0660, filetype=db.DB_HASH,
     shleve.py module.  It can be used like this, where key is a string
     and data is a pickleable object:
 
-        from bsddb3 import dbshelve
+        from bsddb import dbshelve
         db = dbshelve.open(filename)
 
         db[key] = data
@@ -63,7 +62,7 @@ def open(filename, flags=db.DB_CREATE, mode=0660, filetype=db.DB_HASH,
         elif sflag == 'n':
             flags = db.DB_TRUNCATE | db.DB_CREATE
         else:
-            raise error, "flags should be one of 'r', 'w', 'c' or 'n' or use the bsddb3.db.DB_* flags"
+            raise error, "flags should be one of 'r', 'w', 'c' or 'n' or use the bsddb.db.DB_* flags"
 
     d = DBShelf(dbenv)
     d.open(filename, dbname, filetype, flags, mode)
@@ -73,7 +72,7 @@ def open(filename, flags=db.DB_CREATE, mode=0660, filetype=db.DB_HASH,
 
 class DBShelf:
     """
-    A shelf to hold pickled objects, built upon a bsddb3 DB object.  It
+    A shelf to hold pickled objects, built upon a bsddb DB object.  It
     automatically pickles/unpickles data objects going to/from the DB.
     """
     def __init__(self, dbenv=None):
@@ -286,3 +285,6 @@ class DBShelfCursor:
 
 
 #---------------------------------------------------------------------------
+
+
+

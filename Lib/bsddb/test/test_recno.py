@@ -2,14 +2,16 @@
 TestCases for exercising a Recno DB.
 """
 
-import sys, os, string
+import os
+import sys
+import string
 import tempfile
 from pprint import pprint
 import unittest
 
 from bsddb import db
 
-from test.test_support import verbose
+from test_all import verbose
 
 #----------------------------------------------------------------------
 
@@ -165,21 +167,24 @@ class SimpleRecnoTestCase(unittest.TestCase):
 
     def test02_WithSource(self):
         """
-        A Recno file that is given a "backing source file" is essentially a simple ASCII
-        file.  Normally each record is delimited by \n and so is just a line in the file,
-        but you can set a different record delimiter if needed.
+        A Recno file that is given a "backing source file" is essentially a
+        simple ASCII file.  Normally each record is delimited by \n and so is
+        just a line in the file, but you can set a different record delimiter
+        if needed.
         """
-        source = os.path.join(os.path.dirname(sys.argv[0]), 'db_home/test_recno.txt')
+        source = os.path.join(os.path.dirname(sys.argv[0]),
+                              'db_home/test_recno.txt')
         f = open(source, 'w') # create the file
         f.close()
 
         d = db.DB()
-        d.set_re_delim(0x0A)  # This is the default value, just checking if both int
+        # This is the default value, just checking if both int
+        d.set_re_delim(0x0A)
         d.set_re_delim('\n')  # and char can be used...
         d.set_re_source(source)
         d.open(self.filename, db.DB_RECNO, db.DB_CREATE)
 
-        data = string.split("The quick brown fox jumped over the lazy dog")
+        data = "The quick brown fox jumped over the lazy dog".split()
         for datum in data:
             d.append(datum)
         d.sync()
@@ -187,13 +192,13 @@ class SimpleRecnoTestCase(unittest.TestCase):
 
         # get the text from the backing source
         text = open(source, 'r').read()
-        text = string.strip(text)
+        text = text.strip()
         if verbose:
             print text
             print data
-            print string.split(text, '\n')
+            print text.split('\n')
 
-        assert string.split(text, '\n') == data
+        assert text.split('\n') == data
 
         # open as a DB again
         d = db.DB()
@@ -207,12 +212,13 @@ class SimpleRecnoTestCase(unittest.TestCase):
         d.close()
 
         text = open(source, 'r').read()
-        text = string.strip(text)
+        text = text.strip()
         if verbose:
             print text
-            print string.split(text, '\n')
+            print text.split('\n')
 
-        assert string.split(text, '\n') == string.split("The quick reddish-brown fox jumped over the comatose dog")
+        assert text.split('\n') == \
+             "The quick reddish-brown fox jumped over the comatose dog".split()
 
 
     def test03_FixedLength(self):
@@ -248,9 +254,9 @@ class SimpleRecnoTestCase(unittest.TestCase):
 #----------------------------------------------------------------------
 
 
-def suite():
+def test_suite():
     return unittest.makeSuite(SimpleRecnoTestCase)
 
 
 if __name__ == '__main__':
-    unittest.main( defaultTest='suite' )
+    unittest.main(defaultTest='test_suite')

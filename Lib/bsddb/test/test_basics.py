@@ -3,14 +3,20 @@ Basic TestCases for BTree and hash DBs, with and without a DBEnv, with
 various DB flags, etc.
 """
 
-import sys, os, string
+import os
+import sys
+import errno
+import shutil
+import string
 import tempfile
 from pprint import pprint
 import unittest
 
 from bsddb import db
 
-from test.test_support import verbose
+from test_all import verbose
+
+DASH = '-'
 
 
 #----------------------------------------------------------------------
@@ -23,7 +29,8 @@ class VersionTestCase(unittest.TestCase):
             print 'bsddb.db.version(): %s' % (info, )
             print db.DB_VERSION_STRING
             print '-=' * 20
-        assert info == (db.DB_VERSION_MAJOR, db.DB_VERSION_MINOR, db.DB_VERSION_PATCH)
+        assert info == (db.DB_VERSION_MAJOR, db.DB_VERSION_MINOR,
+                        db.DB_VERSION_PATCH)
 
 #----------------------------------------------------------------------
 
@@ -35,19 +42,30 @@ class BasicTestCase(unittest.TestCase):
     dbname       = None
     useEnv       = 0
     envflags     = 0
+    envsetflags  = 0
 
     def setUp(self):
         if self.useEnv:
             homeDir = os.path.join(os.path.dirname(sys.argv[0]), 'db_home')
-            try: os.mkdir(homeDir)
-            except os.error: pass
-            self.env = db.DBEnv()
-            self.env.set_lg_max(1024*1024)
-            self.env.open(homeDir, self.envflags | db.DB_CREATE)
-            tempfile.tempdir = homeDir
-            self.filename = os.path.split(tempfile.mktemp())[1]
-            tempfile.tempdir = None
             self.homeDir = homeDir
+            try:
+                shutil.rmtree(homeDir)
+            except OSError, e:
+                # unix returns ENOENT, windows returns ESRCH
+                if e.errno not in (errno.ENOENT, errno.ESRCH): raise
+            os.mkdir(homeDir)
+            try:
+                self.env = db.DBEnv()
+                self.env.set_lg_max(1024*1024)
+                self.env.set_flags(self.envsetflags, 1)
+                self.env.open(homeDir, self.envflags | db.DB_CREATE)
+                tempfile.tempdir = homeDir
+                self.filename = os.path.split(tempfile.mktemp())[1]
+                tempfile.tempdir = None
+            # Yes, a bare except is intended, since we're re-raising the exc.
+            except:
+                shutil.rmtree(homeDir)
+                raise
         else:
             self.env = None
             self.filename = tempfile.mktemp()
@@ -61,7 +79,8 @@ class BasicTestCase(unittest.TestCase):
         else:
             self.d.open(self.filename,   # try out keyword args
                         mode = self.dbmode,
-                        dbtype = self.dbtype, flags = self.dbopenflags|db.DB_CREATE)
+                        dbtype = self.dbtype,
+                        flags = self.dbopenflags|db.DB_CREATE)
 
         self.populateDB()
 
@@ -70,19 +89,13 @@ class BasicTestCase(unittest.TestCase):
         self.d.close()
         if self.env is not None:
             self.env.close()
-
-            import glob
-            files = glob.glob(os.path.join(self.homeDir, '*'))
-            for file in files:
-                os.remove(file)
-
+            shutil.rmtree(self.homeDir)
             ## Make a new DBEnv to remove the env files from the home dir.
             ## (It can't be done while the env is open, nor after it has been
             ## closed, so we make a new one to do it.)
             #e = db.DBEnv()
             #e.remove(self.homeDir)
             #os.remove(os.path.join(self.homeDir, self.filename))
-
         else:
             os.remove(self.filename)
 
@@ -106,7 +119,7 @@ class BasicTestCase(unittest.TestCase):
 
 
     def makeData(self, key):
-        return string.join([key] * 5, '-')
+        return DASH.join([key] * 5)
 
 
 
@@ -209,7 +222,8 @@ class BasicTestCase(unittest.TestCase):
 
         if verbose:
             print '\n', '-=' * 30
-            print "Running %s.test02_DictionaryMethods..." % self.__class__.__name__
+            print "Running %s.test02_DictionaryMethods..." % \
+                  self.__class__.__name__
 
         for key in ['0002', '0101', '0401', '0701', '0998']:
             data = d[key]
@@ -266,10 +280,14 @@ class BasicTestCase(unittest.TestCase):
     def test03_SimpleCursorStuff(self):
         if verbose:
             print '\n', '-=' * 30
-            print "Running %s.test03_SimpleCursorStuff..." % self.__class__.__name__
+            print "Running %s.test03_SimpleCursorStuff..." % \
+                  self.__class__.__name__
 
-        c = self.d.cursor()
-
+        if self.env and self.dbopenflags & db.DB_AUTO_COMMIT:
+            txn = self.env.txn_begin()
+        else:
+            txn = None
+        c = self.d.cursor(txn=txn)
 
         rec = c.first()
         count = 0
@@ -350,6 +368,8 @@ class BasicTestCase(unittest.TestCase):
 
         c.close()
         c2.close()
+        if txn:
+            txn.commit()
 
         # time to abuse the closed cursors and hope we don't crash
         methods_to_test = {
@@ -367,14 +387,16 @@ class BasicTestCase(unittest.TestCase):
         for method, args in methods_to_test.items():
             try:
                 if verbose:
-                    print "attempting to use a closed cursor's %s method" % method
+                    print "attempting to use a closed cursor's %s method" % \
+                          method
                 # a bug may cause a NULL pointer dereference...
                 apply(getattr(c, method), args)
             except db.DBError, val:
                 assert val[0] == 0
                 if verbose: print val
             else:
-                self.fail("no exception raised when using a buggy cursor's %s method" % method)
+                self.fail("no exception raised when using a buggy cursor's"
+                          "%s method" % method)
 
     #----------------------------------------
 
@@ -382,7 +404,8 @@ class BasicTestCase(unittest.TestCase):
         d = self.d
         if verbose:
             print '\n', '-=' * 30
-            print "Running %s.test04_PartialGetAndPut..." % self.__class__.__name__
+            print "Running %s.test04_PartialGetAndPut..." % \
+                  self.__class__.__name__
 
         key = "partialTest"
         data = "1" * 1000 + "2" * 1000
@@ -393,7 +416,8 @@ class BasicTestCase(unittest.TestCase):
         d.put("partialtest2", ("1" * 30000) + "robin" )
         assert d.get("partialtest2", dlen=5, doff=30000) == "robin"
 
-        # There seems to be a bug in DB here...  Commented out the test for now.
+        # There seems to be a bug in DB here...  Commented out the test for
+        # now.
         ##assert d.get("partialtest2", dlen=5, doff=30010) == ""
 
         if self.dbsetflags != db.DB_DUP:
@@ -423,6 +447,10 @@ class BasicTestCase(unittest.TestCase):
     #----------------------------------------
 
     def test06_Truncate(self):
+        if db.version() < (3,3):
+            # truncate is a feature of BerkeleyDB 3.3 and above
+            return
+
         d = self.d
         if verbose:
             print '\n', '-=' * 30
@@ -472,9 +500,11 @@ class BasicHashWithEnvTestCase(BasicTestCase):
 #----------------------------------------------------------------------
 
 class BasicTransactionTestCase(BasicTestCase):
-    dbopenflags = db.DB_THREAD
+    dbopenflags = db.DB_THREAD | db.DB_AUTO_COMMIT
     useEnv = 1
-    envflags = db.DB_THREAD | db.DB_INIT_MPOOL | db.DB_INIT_LOCK | db.DB_INIT_TXN
+    envflags = (db.DB_THREAD | db.DB_INIT_MPOOL | db.DB_INIT_LOCK |
+                db.DB_INIT_TXN)
+    envsetflags = db.DB_AUTO_COMMIT
 
 
     def tearDown(self):
@@ -557,6 +587,10 @@ class BasicTransactionTestCase(BasicTestCase):
     #----------------------------------------
 
     def test07_TxnTruncate(self):
+        if db.version() < (3,3):
+            # truncate is a feature of BerkeleyDB 3.3 and above
+            return
+
         d = self.d
         if verbose:
             print '\n', '-=' * 30
@@ -624,10 +658,11 @@ class BasicDUPTestCase(BasicTestCase):
         d = self.d
         if verbose:
             print '\n', '-=' * 30
-            print "Running %s.test08_DuplicateKeys..." % self.__class__.__name__
+            print "Running %s.test08_DuplicateKeys..." % \
+                  self.__class__.__name__
 
         d.put("dup0", "before")
-        for x in string.split("The quick brown fox jumped over the lazy dog."):
+        for x in "The quick brown fox jumped over the lazy dog.".split():
             d.put("dup1", x)
         d.put("dup2", "after")
 
@@ -699,11 +734,13 @@ class BasicMultiDBTestCase(BasicTestCase):
             print "Running %s.test09_MultiDB..." % self.__class__.__name__
 
         d2 = db.DB(self.env)
-        d2.open(self.filename, "second", self.dbtype, self.dbopenflags|db.DB_CREATE)
+        d2.open(self.filename, "second", self.dbtype,
+                self.dbopenflags|db.DB_CREATE)
         d3 = db.DB(self.env)
-        d3.open(self.filename, "third", self.otherType(), self.dbopenflags|db.DB_CREATE)
+        d3.open(self.filename, "third", self.otherType(),
+                self.dbopenflags|db.DB_CREATE)
 
-        for x in string.split("The quick brown fox jumped over the lazy dog"):
+        for x in "The quick brown fox jumped over the lazy dog".split():
             d2.put(x, self.makeData(x))
 
         for x in string.letters:
@@ -785,29 +822,29 @@ class HashMultiDBTestCase(BasicMultiDBTestCase):
 #----------------------------------------------------------------------
 #----------------------------------------------------------------------
 
-def suite():
-    theSuite = unittest.TestSuite()
+def test_suite():
+    suite = unittest.TestSuite()
 
-    theSuite.addTest(unittest.makeSuite(VersionTestCase))
-    theSuite.addTest(unittest.makeSuite(BasicBTreeTestCase))
-    theSuite.addTest(unittest.makeSuite(BasicHashTestCase))
-    theSuite.addTest(unittest.makeSuite(BasicBTreeWithThreadFlagTestCase))
-    theSuite.addTest(unittest.makeSuite(BasicHashWithThreadFlagTestCase))
-    theSuite.addTest(unittest.makeSuite(BasicBTreeWithEnvTestCase))
-    theSuite.addTest(unittest.makeSuite(BasicHashWithEnvTestCase))
-    theSuite.addTest(unittest.makeSuite(BTreeTransactionTestCase))
-    theSuite.addTest(unittest.makeSuite(HashTransactionTestCase))
-    theSuite.addTest(unittest.makeSuite(BTreeRecnoTestCase))
-    theSuite.addTest(unittest.makeSuite(BTreeRecnoWithThreadFlagTestCase))
-    theSuite.addTest(unittest.makeSuite(BTreeDUPTestCase))
-    theSuite.addTest(unittest.makeSuite(HashDUPTestCase))
-    theSuite.addTest(unittest.makeSuite(BTreeDUPWithThreadTestCase))
-    theSuite.addTest(unittest.makeSuite(HashDUPWithThreadTestCase))
-    theSuite.addTest(unittest.makeSuite(BTreeMultiDBTestCase))
-    theSuite.addTest(unittest.makeSuite(HashMultiDBTestCase))
+    suite.addTest(unittest.makeSuite(VersionTestCase))
+    suite.addTest(unittest.makeSuite(BasicBTreeTestCase))
+    suite.addTest(unittest.makeSuite(BasicHashTestCase))
+    suite.addTest(unittest.makeSuite(BasicBTreeWithThreadFlagTestCase))
+    suite.addTest(unittest.makeSuite(BasicHashWithThreadFlagTestCase))
+    suite.addTest(unittest.makeSuite(BasicBTreeWithEnvTestCase))
+    suite.addTest(unittest.makeSuite(BasicHashWithEnvTestCase))
+    suite.addTest(unittest.makeSuite(BTreeTransactionTestCase))
+    suite.addTest(unittest.makeSuite(HashTransactionTestCase))
+    suite.addTest(unittest.makeSuite(BTreeRecnoTestCase))
+    suite.addTest(unittest.makeSuite(BTreeRecnoWithThreadFlagTestCase))
+    suite.addTest(unittest.makeSuite(BTreeDUPTestCase))
+    suite.addTest(unittest.makeSuite(HashDUPTestCase))
+    suite.addTest(unittest.makeSuite(BTreeDUPWithThreadTestCase))
+    suite.addTest(unittest.makeSuite(HashDUPWithThreadTestCase))
+    suite.addTest(unittest.makeSuite(BTreeMultiDBTestCase))
+    suite.addTest(unittest.makeSuite(HashMultiDBTestCase))
 
-    return theSuite
+    return suite
 
 
 if __name__ == '__main__':
-    unittest.main( defaultTest='suite' )
+    unittest.main(defaultTest='test_suite')

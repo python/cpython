@@ -14,7 +14,7 @@ except ImportError:
     have_threads = 0
 
 import unittest
-from test.test_support import verbose
+from test_all import verbose
 
 from bsddb import db, dbshelve
 
@@ -70,7 +70,8 @@ musicdata = {
 45: ("Blue Man Group", "Klein Mandelbrot", "New Age"),
 46: ("Kenny G", "Silhouette", "Jazz"),
 47: ("Sade", "Smooth Operator", "Jazz"),
-48: ("David Arkenstone", "Papillon (On The Wings Of The Butterfly)", "New Age"),
+48: ("David Arkenstone", "Papillon (On The Wings Of The Butterfly)",
+     "New Age"),
 49: ("David Arkenstone", "Stepping Stars", "New Age"),
 50: ("David Arkenstone", "Carnation Lily Lily Rose", "New Age"),
 51: ("David Lanz", "Behind The Waterfall", "New Age"),
@@ -109,8 +110,6 @@ class AssociateTestCase(unittest.TestCase):
                 key = "%02d" % key
             d.put(key, string.join(value, '|'))
 
-
-
     def createDB(self):
         self.primary = db.DB(self.env)
         self.primary.open(self.filename, "primary", self.dbtype,
@@ -122,18 +121,18 @@ class AssociateTestCase(unittest.TestCase):
     def getDB(self):
         return self.primary
 
-
-
     def test01_associateWithDB(self):
         if verbose:
             print '\n', '-=' * 30
-            print "Running %s.test01_associateWithDB..." % self.__class__.__name__
+            print "Running %s.test01_associateWithDB..." % \
+                  self.__class__.__name__
 
         self.createDB()
 
         secDB = db.DB(self.env)
         secDB.set_flags(db.DB_DUP)
-        secDB.open(self.filename, "secondary", db.DB_BTREE, db.DB_CREATE | db.DB_THREAD)
+        secDB.open(self.filename, "secondary", db.DB_BTREE,
+                   db.DB_CREATE | db.DB_THREAD)
         self.getDB().associate(secDB, self.getGenre)
 
         self.addDataToDB(self.getDB())
@@ -144,21 +143,21 @@ class AssociateTestCase(unittest.TestCase):
     def test02_associateAfterDB(self):
         if verbose:
             print '\n', '-=' * 30
-            print "Running %s.test02_associateAfterDB..." % self.__class__.__name__
+            print "Running %s.test02_associateAfterDB..." % \
+                  self.__class__.__name__
 
         self.createDB()
         self.addDataToDB(self.getDB())
 
         secDB = db.DB(self.env)
         secDB.set_flags(db.DB_DUP)
-        secDB.open(self.filename, "secondary", db.DB_BTREE, db.DB_CREATE | db.DB_THREAD)
+        secDB.open(self.filename, "secondary", db.DB_BTREE,
+                   db.DB_CREATE | db.DB_THREAD)
 
         # adding the DB_CREATE flag will cause it to index existing records
         self.getDB().associate(secDB, self.getGenre, db.DB_CREATE)
 
         self.finish_test(secDB)
-
-
 
 
     def finish_test(self, secDB):
@@ -190,9 +189,8 @@ class AssociateTestCase(unittest.TestCase):
             if verbose:
                 print rec
             rec = c.next()
-        assert count == len(musicdata)-1   # all items accounted for EXCEPT for 1 with "Blues" genre
-
-
+        # all items accounted for EXCEPT for 1 with "Blues" genre
+        assert count == len(musicdata)-1
 
     def getGenre(self, priKey, priData):
         assert type(priData) == type("")
@@ -299,25 +297,25 @@ class ThreadedAssociateRecnoTestCase(ShelveAssociateTestCase):
 
 #----------------------------------------------------------------------
 
-def suite():
-    theSuite = unittest.TestSuite()
+def test_suite():
+    suite = unittest.TestSuite()
 
     if db.version() >= (3, 3, 11):
-        theSuite.addTest(unittest.makeSuite(AssociateHashTestCase))
-        theSuite.addTest(unittest.makeSuite(AssociateBTreeTestCase))
-        theSuite.addTest(unittest.makeSuite(AssociateRecnoTestCase))
+        suite.addTest(unittest.makeSuite(AssociateHashTestCase))
+        suite.addTest(unittest.makeSuite(AssociateBTreeTestCase))
+        suite.addTest(unittest.makeSuite(AssociateRecnoTestCase))
 
-        theSuite.addTest(unittest.makeSuite(ShelveAssociateHashTestCase))
-        theSuite.addTest(unittest.makeSuite(ShelveAssociateBTreeTestCase))
-        theSuite.addTest(unittest.makeSuite(ShelveAssociateRecnoTestCase))
+        suite.addTest(unittest.makeSuite(ShelveAssociateHashTestCase))
+        suite.addTest(unittest.makeSuite(ShelveAssociateBTreeTestCase))
+        suite.addTest(unittest.makeSuite(ShelveAssociateRecnoTestCase))
 
         if have_threads:
-            theSuite.addTest(unittest.makeSuite(ThreadedAssociateHashTestCase))
-            theSuite.addTest(unittest.makeSuite(ThreadedAssociateBTreeTestCase))
-            theSuite.addTest(unittest.makeSuite(ThreadedAssociateRecnoTestCase))
+            suite.addTest(unittest.makeSuite(ThreadedAssociateHashTestCase))
+            suite.addTest(unittest.makeSuite(ThreadedAssociateBTreeTestCase))
+            suite.addTest(unittest.makeSuite(ThreadedAssociateRecnoTestCase))
 
-    return theSuite
+    return suite
 
 
 if __name__ == '__main__':
-    unittest.main( defaultTest='suite' )
+    unittest.main(defaultTest='test_suite')

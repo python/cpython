@@ -36,18 +36,20 @@ class dbobjTestCase(unittest.TestCase):
                 # call our parent classes put method with an upper case key
                 return apply(dbobj.DB.put, (self, key) + args, kwargs)
         self.env = TestDBEnv()
-        self.env.open(self.db_home, db.DB_CREATE | db.DB_INIT_MPOOL)
+        self.env.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL)
         self.db = TestDB(self.env)
         self.db.open(self.db_name, db.DB_HASH, db.DB_CREATE)
         self.db.put('spam', 'eggs')
-        assert self.db.get('spam') == None, "overridden dbobj.DB.put() method failed [1]"
-        assert self.db.get('SPAM') == 'eggs', "overridden dbobj.DB.put() method failed [2]"
+        assert self.db.get('spam') == None, \
+               "overridden dbobj.DB.put() method failed [1]"
+        assert self.db.get('SPAM') == 'eggs', \
+               "overridden dbobj.DB.put() method failed [2]"
         self.db.close()
         self.env.close()
 
     def test02_dbobj_dict_interface(self):
         self.env = dbobj.DBEnv()
-        self.env.open(self.db_home, db.DB_CREATE | db.DB_INIT_MPOOL)
+        self.env.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL)
         self.db = dbobj.DB(self.env)
         self.db.open(self.db_name+'02', db.DB_HASH, db.DB_CREATE)
         # __setitem__
@@ -64,8 +66,8 @@ class dbobjTestCase(unittest.TestCase):
 
 #----------------------------------------------------------------------
 
-def suite():
+def test_suite():
     return unittest.makeSuite(dbobjTestCase)
 
 if __name__ == '__main__':
-    unittest.main( defaultTest='suite' )
+    unittest.main(defaultTest='test_suite')

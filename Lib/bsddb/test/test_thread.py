@@ -16,10 +16,9 @@ except ImportError:
 
 
 import unittest
-from test.test_support import verbose
+from test_all import verbose
 
 from bsddb import db, dbutils
-
 
 #----------------------------------------------------------------------
 
@@ -80,7 +79,8 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
     def test01_1WriterMultiReaders(self):
         if verbose:
             print '\n', '-=' * 30
-            print "Running %s.test01_1WriterMultiReaders..." % self.__class__.__name__
+            print "Running %s.test01_1WriterMultiReaders..." % \
+                  self.__class__.__name__
 
         threads = []
         for x in range(self.writers):
@@ -112,7 +112,8 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
 
         for x in range(start, stop):
             key = '%04d' % x
-            dbutils.DeadlockWrap(d.put, key, self.makeData(key), max_retries=12)
+            dbutils.DeadlockWrap(d.put, key, self.makeData(key),
+                                 max_retries=12)
             if verbose and x % 100 == 0:
                 print "%s: records %d - %d finished" % (name, start, x)
 
@@ -215,7 +216,8 @@ class SimpleThreadedBase(BaseThreadedTestCase):
         # create a bunch of records
         for x in xrange(start, stop):
             key = '%04d' % x
-            dbutils.DeadlockWrap(d.put, key, self.makeData(key), max_retries=12)
+            dbutils.DeadlockWrap(d.put, key, self.makeData(key),
+                                 max_retries=12)
 
             if verbose and x % 100 == 0:
                 print "%s: records %d - %d finished" % (name, start, x)
@@ -284,7 +286,7 @@ class HashSimpleThreaded(SimpleThreadedBase):
 
 
 class ThreadedTransactionsBase(BaseThreadedTestCase):
-    dbopenflags = db.DB_THREAD
+    dbopenflags = db.DB_THREAD | db.DB_AUTO_COMMIT
     envflags    = (db.DB_THREAD |
                    db.DB_INIT_MPOOL |
                    db.DB_INIT_LOCK |
@@ -306,7 +308,8 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
     def test03_ThreadedTransactions(self):
         if verbose:
             print '\n', '-=' * 30
-            print "Running %s.test03_ThreadedTransactions..." % self.__class__.__name__
+            print "Running %s.test03_ThreadedTransactions..." % \
+                  self.__class__.__name__
 
         threads = []
         for x in range(self.writers):
@@ -430,9 +433,11 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
         while self.doLockDetect:
             time.sleep(0.5)
             try:
-                aborted = self.env.lock_detect(db.DB_LOCK_RANDOM, db.DB_LOCK_CONFLICT)
+                aborted = self.env.lock_detect(
+                    db.DB_LOCK_RANDOM, db.DB_LOCK_CONFLICT)
                 if verbose and aborted:
-                    print "deadlock: Aborted %d deadlocked transaction(s)" % aborted
+                    print "deadlock: Aborted %d deadlocked transaction(s)" \
+                          % aborted
             except db.DBError:
                 pass
 
@@ -467,24 +472,24 @@ class HashThreadedNoWaitTransactions(ThreadedTransactionsBase):
 
 #----------------------------------------------------------------------
 
-def suite():
-    theSuite = unittest.TestSuite()
+def test_suite():
+    suite = unittest.TestSuite()
 
     if have_threads:
-        theSuite.addTest(unittest.makeSuite(BTreeConcurrentDataStore))
-        theSuite.addTest(unittest.makeSuite(HashConcurrentDataStore))
-        theSuite.addTest(unittest.makeSuite(BTreeSimpleThreaded))
-        theSuite.addTest(unittest.makeSuite(HashSimpleThreaded))
-        theSuite.addTest(unittest.makeSuite(BTreeThreadedTransactions))
-        theSuite.addTest(unittest.makeSuite(HashThreadedTransactions))
-        theSuite.addTest(unittest.makeSuite(BTreeThreadedNoWaitTransactions))
-        theSuite.addTest(unittest.makeSuite(HashThreadedNoWaitTransactions))
+        suite.addTest(unittest.makeSuite(BTreeConcurrentDataStore))
+        suite.addTest(unittest.makeSuite(HashConcurrentDataStore))
+        suite.addTest(unittest.makeSuite(BTreeSimpleThreaded))
+        suite.addTest(unittest.makeSuite(HashSimpleThreaded))
+        suite.addTest(unittest.makeSuite(BTreeThreadedTransactions))
+        suite.addTest(unittest.makeSuite(HashThreadedTransactions))
+        suite.addTest(unittest.makeSuite(BTreeThreadedNoWaitTransactions))
+        suite.addTest(unittest.makeSuite(HashThreadedNoWaitTransactions))
 
     else:
         print "Threads not available, skipping thread tests."
 
-    return theSuite
+    return suite
 
 
 if __name__ == '__main__':
-    unittest.main( defaultTest='suite' )
+    unittest.main(defaultTest='test_suite')

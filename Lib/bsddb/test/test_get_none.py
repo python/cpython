@@ -9,7 +9,7 @@ import unittest
 
 from bsddb import db
 
-from test.test_support import verbose
+from test_all import verbose
 
 
 #----------------------------------------------------------------------
@@ -88,9 +88,9 @@ class GetReturnsNoneTestCase(unittest.TestCase):
 
 #----------------------------------------------------------------------
 
-def suite():
+def test_suite():
     return unittest.makeSuite(GetReturnsNoneTestCase)
 
 
 if __name__ == '__main__':
-    unittest.main( defaultTest='suite' )
+    unittest.main(defaultTest='test_suite')

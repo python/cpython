@@ -9,7 +9,7 @@ import unittest
 
 from bsddb import db
 
-from test.test_support import verbose
+from test_all import verbose
 
 
 #----------------------------------------------------------------------
@@ -84,8 +84,8 @@ class SimpleQueueTestCase(unittest.TestCase):
             pprint(d.stat())
 
         assert len(d) == 0, \
-               "if you see this message then you need to rebuild BerkeleyDB 3.1.17 "\
-               "with the patch in patches/qam_stat.diff"
+               "if you see this message then you need to rebuild " \
+               "BerkeleyDB 3.1.17 with the patch in patches/qam_stat.diff"
 
         d.close()
 
@@ -160,9 +160,9 @@ class SimpleQueueTestCase(unittest.TestCase):
 
 #----------------------------------------------------------------------
 
-def suite():
+def test_suite():
     return unittest.makeSuite(SimpleQueueTestCase)
 
 
 if __name__ == '__main__':
-    unittest.main( defaultTest='suite' )
+    unittest.main(defaultTest='test_suite')

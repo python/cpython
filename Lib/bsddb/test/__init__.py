@@ -1,1 +1,0 @@
-# PyBSDDB test suite
