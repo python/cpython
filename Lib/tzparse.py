@@ -3,6 +3,11 @@
 # XXX Unfinished.
 # XXX Only the typical form "XXXhhYYY;ddd/hh,ddd/hh" is currently supported.
 
+import warnings
+warnings.warn(
+    "The tzparse module is obsolete and will disappear in the future",
+    DeprecationWarning)
+
 tzpat = ('^([A-Z][A-Z][A-Z])([-+]?[0-9]+)([A-Z][A-Z][A-Z]);'
           '([0-9]+)/([0-9]+),([0-9]+)/([0-9]+)$')
 
