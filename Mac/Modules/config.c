@@ -142,7 +142,7 @@ getcopyright()
 #ifndef PYTHONPATH
 #ifdef macintosh
 /* Mod by Jack: \n is now separator. */
-#define PYTHONPATH ":\n:Lib\n:Lib:stdwin\n:Lib:test\n:Lib:mac"
+#define PYTHONPATH ":\n:Lib\n:Lib:stdwin\n:Lib:test\n:Lib:mac\n:PackedLib\n:PlugIns"
 #endif /* macintosh */
 #endif /* !PYTHONPATH */
 
@@ -172,10 +172,17 @@ getpythonpath()
 	char *p, *endp;
 	int newlen;
 	extern char *PyMac_GetPythonDir();
-	extern char *PyMac_GetScriptPath();
+#ifndef USE_BUILTIN_PATH
+	extern char *PyMac_GetPythonPath();
+#endif
 	
 	if ( pythonpath ) return pythonpath;
 	curwd = PyMac_GetPythonDir();
+#ifndef USE_BUILTIN_PATH
+	if ( pythonpath = PyMac_GetPythonPath(curwd) )
+		return pythonpath;
+	printf("Warning: No pythonpath resource found, using builtin default\n");
+#endif
 	p = PYTHONPATH;
 	endp = p;
 	pythonpath = malloc(2);
