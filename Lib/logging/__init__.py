@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-#
 # Copyright 2001-2002 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
@@ -15,12 +13,6 @@
 # ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
 # IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-#
-# For the change history, see README.txt in the distribution.
-#
-# This file is part of the Python logging distribution. See
-# http://www.red-dove.com/python_logging.html
-#
 
 """
 Logging package for Python. Based on PEP 282 and comments thereto in
@@ -58,16 +50,11 @@ __date__    = "27 August 2002"
 #
 #_srcfile is used when walking the stack to check when we've got the first
 # caller stack frame.
-#If run as a script, __file__ is not bound.
-#
-if __name__ == "__main__":
-    _srcfile = None
+if string.lower(__file__[-4:]) in ['.pyc', '.pyo']:
+    _srcfile = __file__[:-4] + '.py'
 else:
-    if string.lower(__file__[-4:]) in ['.pyc', '.pyo']:
-        _srcfile = __file__[:-4] + '.py'
-    else:
-        _srcfile = __file__
-    _srcfile = os.path.normcase(_srcfile)
+    _srcfile = __file__
+_srcfile = os.path.normcase(_srcfile)
 
 #
 #_startTime is used as the base when calculating the relative time of events
@@ -1178,6 +1165,3 @@ def shutdown():
     for h in _handlers.keys():
         h.flush()
         h.close()
-
-if __name__ == "__main__":
-    print __doc__
