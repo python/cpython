@@ -63,9 +63,16 @@ def _spawn_nt ( cmd,
         print string.join ( [executable] + cmd[1:], ' ')
     if not dry_run:
         # spawn for NT requires a full path to the .exe
-        rc = os.spawnv (os.P_WAIT, executable, cmd)
+        try:
+            rc = os.spawnv (os.P_WAIT, executable, cmd)
+        except OSError, exc:
+            # this seems to happen when the command isn't found
+            raise DistutilsExecError, \
+                  "command '%s' failed: %s" % (cmd[0], exc[-1])
         if rc != 0:
-            raise DistutilsExecError("command failed: %d" % rc) 
+            # and this reflects the command running but failing
+            raise DistutilsExecError, \
+                  "command '%s' failed with exit status %d" % (cmd[0], rc)
 
     
                 
@@ -103,7 +110,7 @@ def _spawn_posix (cmd,
             (pid, status) = os.waitpid (pid, 0)
             if os.WIFSIGNALED (status):
                 raise DistutilsExecError, \
-                      "command %s terminated by signal %d" % \
+                      "command '%s' terminated by signal %d" % \
                       (cmd[0], os.WTERMSIG (status))
 
             elif os.WIFEXITED (status):
@@ -112,7 +119,7 @@ def _spawn_posix (cmd,
                     return              # hey, it succeeded!
                 else:
                     raise DistutilsExecError, \
-                          "command %s failed with exit status %d" % \
+                          "command '%s' failed with exit status %d" % \
                           (cmd[0], exit_status)
         
             elif os.WIFSTOPPED (status):
@@ -120,6 +127,6 @@ def _spawn_posix (cmd,
 
             else:
                 raise DistutilsExecError, \
-                      "unknown error executing %s: termination status %d" % \
+                      "unknown error executing '%s': termination status %d" % \
                       (cmd[0], status)
 # _spawn_posix ()
