@@ -1620,12 +1620,14 @@ Higher-level operations on pathnames are defined in the
 The constant string used by the operating system to refer to the current
 directory.
 For example: \code{'.'} for \POSIX{} or \code{':'} for the Macintosh.
+Also available via \module{os.path}.
 \end{datadesc}
 
 \begin{datadesc}{pardir}
 The constant string used by the operating system to refer to the parent
 directory.
 For example: \code{'..'} for \POSIX{} or \code{'::'} for the Macintosh.
+Also available via \module{os.path}.
 \end{datadesc}
 
 \begin{datadesc}{sep}
@@ -1634,6 +1636,7 @@ for example, \character{/} for \POSIX{} or \character{:} for the
 Macintosh.  Note that knowing this is not sufficient to be able to
 parse or concatenate pathnames --- use \function{os.path.split()} and
 \function{os.path.join()} --- but it is occasionally useful.
+Also available via \module{os.path}.
 \end{datadesc}
 
 \begin{datadesc}{altsep}
@@ -1641,11 +1644,13 @@ An alternative character used by the operating system to separate pathname
 components, or \code{None} if only one separator character exists.  This is
 set to \character{/} on Windows systems where \code{sep} is a
 backslash.
+Also available via \module{os.path}.
 \end{datadesc}
 
 \begin{datadesc}{extsep}
 The character which separates the base filename from the extension;
 for example, the \character{.} in \file{os.py}.
+Also available via \module{os.path}.
 \versionadded{2.2}
 \end{datadesc}
 
@@ -1653,12 +1658,14 @@ for example, the \character{.} in \file{os.py}.
 The character conventionally used by the operating system to separate
 search patch components (as in \envvar{PATH}), such as \character{:} for
 \POSIX{} or \character{;} for Windows.
+Also available via \module{os.path}.
 \end{datadesc}
 
 \begin{datadesc}{defpath}
 The default search path used by \function{exec*p*()} and
 \function{spawn*p*()} if the environment doesn't have a \code{'PATH'}
 key.
+Also available via \module{os.path}.
 \end{datadesc}
 
 \begin{datadesc}{linesep}

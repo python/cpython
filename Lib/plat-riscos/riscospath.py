@@ -12,6 +12,14 @@ Instead of importing this module directly, import os and refer to this module
 as os.path.
 """
 
+# strings representing various path-related bits and pieces
+curdir = '@'
+pardir = '^'
+extsep = '.'
+sep = '.'
+pathsep = ','
+defpath = '<Run$Dir>'
+altsep = None
 
 # Imports - make an error-generating swi object if the swi module is not
 # available (ie. we are not running on RISC OS Python)
