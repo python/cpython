@@ -26,7 +26,7 @@ sub do_cmd_e{ local($_) = @_; '&#92;' . $_; }
 
 sub do_cmd_optional{
 	local($_) = @_;
-	s/$any_next_pair_pr_rx/<BIG>\[<\/BIG>\2<BIG>\]<\/BIG>/;
+	s/$any_next_pair_pr_rx/<\/VAR><BIG>\[<\/BIG><VAR>\2<\/VAR><BIG>\]<\/BIG><VAR>/;
 	$_;
 }
 
