@@ -100,6 +100,7 @@ class UnixCCompiler (CCompiler):
     def compile (self,
                  sources,
                  output_dir=None,
+                 keep_dir=0,
                  macros=None,
                  include_dirs=None,
                  debug=0,
@@ -134,7 +135,11 @@ class UnixCCompiler (CCompiler):
         # don't have to recompile.  (Simplistic check -- we just compare the
         # source and object file, no deep dependency checking involving
         # header files.  Hmmm.)
-        objects = self.object_filenames (sources, output_dir=output_dir)
+        objects = self.object_filenames (sources,
+                                         output_dir=output_dir,
+                                         keep_dir=keep_dir)
+        all_objects = copy (objects)    # preserve full list to return
+
         if not self.force:
             skipped = newer_pairwise (sources, objects)
             for skipped_pair in skipped:
@@ -169,7 +174,7 @@ class UnixCCompiler (CCompiler):
         # Have to re-fetch list of object filenames, because we want to
         # return *all* of them, including those that weren't recompiled on
         # this call!
-        return self.object_filenames (orig_sources, output_dir=output_dir)
+        return all_objects
 
 
     def _fix_link_args (self, output_dir, libraries, library_dirs):
