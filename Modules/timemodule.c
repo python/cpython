@@ -421,7 +421,10 @@ See the library reference manual for formatting codes.";
 #endif /* HAVE_STRFTIME */
 
 #ifdef HAVE_STRPTIME
-/* extern char *strptime(); /* Enable this if it's not declared in <time.h> */
+
+#if 0
+extern char *strptime(); /* Enable this if it's not declared in <time.h> */
+#endif
 
 static PyObject *
 time_strptime(self, args)
