@@ -30,7 +30,11 @@ import types
 
 __all__ = ["urlopen", "URLopener", "FancyURLopener", "urlretrieve",
            "urlcleanup", "quote", "quote_plus", "unquote", "unquote_plus",
-           "urlencode", "url2pathname", "pathname2url", "splittag"]
+           "urlencode", "url2pathname", "pathname2url", "splittag",
+           "localhost", "thishost", "ftperrors", "basejoin", "unwrap",
+           "splittype", "splithost", "splituser", "splitpasswd", "splitport",
+           "splitnport", "splitquery", "splitattr", "splitvalue",
+           "splitgophertype", "getproxies"]
 
 __version__ = '1.15'    # XXX This version is not always updated :-(
 
