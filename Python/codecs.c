@@ -38,7 +38,7 @@ int import_encodings(void)
     PyObject *mod;
     
     import_encodings_called = 1;
-    mod = PyImport_ImportModule("encodings");
+    mod = PyImport_ImportModuleEx("encodings", NULL, NULL, NULL);
     if (mod == NULL) {
 	if (PyErr_ExceptionMatches(PyExc_ImportError)) {
 	    /* Ignore ImportErrors... this is done so that
