@@ -5,37 +5,95 @@
 # Note that the .dvi files must already be built and TEXINPUTS must include the
 # directory where latex's working files (esp. *.aux) are kept.
 
+PAPER=letter
 TOPDIR=..
+TOOLSDIR=$(TOPDIR)/tools
+PAPERDIR=$(TOPDIR)/paper-$(PAPER)
 
-TEXINPUTS=$(TOPDIR):$(TOPDIR)/texinputs:
+TEXINPUTS=$(TOPDIR)/paper-$(PAPER):$(TOPDIR)/texinputs:
+
+# Where are the various programs?
+PYTHON=		python
+WEBCHECKER=	$(PYTHON) $(TOPDIR)/../Tools/webchecker/webchecker.py
+MKHTML=		PAPER=$(PAPER) $(TOOLSDIR)/mkhtml.sh
+KPSEWHICH=	TEXINPUTS=$(TEXINPUTS) kpsewhich tex
+
+INDEXFILES=api/api.html \
+	ext/ext.html \
+	lib/lib.html \
+	mac/mac.html \
+	ref/ref.html \
+	tut/tut.html
+
+COMMONPERL= $(TOPDIR)/perl/manual.perl \
+	$(TOPDIR)/perl/python.perl
 
 
-SUBMAKE=$(MAKE) srcdir=$(TOPDIR) VPATH=$(TOPDIR) TEXINPUTS=$(TEXINPUTS) \
-	-f ../Makefile
+all:	icons $(INDEXFILES)
+
+.PHONY: api ext lib mac ref tut
+
+api: icons api/api.html
+ext: icons ext/ext.html
+lib: icons lib/lib.html
+mac: icons mac/mac.html
+ref: icons ref/ref.html
+tut: icons tut/tut.html
+
+$(INDEXFILES): $(COMMONPERL)
+
+api/api.html:  $(PAPERDIR)/api.aux
+	$(MKHTML) api $(L2HARGS)
+
+ext/ext.html:  $(PAPERDIR)/ext.aux
+	$(MKHTML) ext $(L2HARGS)
+
+lib/lib.html:  $(PAPERDIR)/lib.aux
+	$(TOOLSDIR)/fix_libaux.sed <`$(KPSEWHICH) lib.aux` >lib1.aux
+	mv lib1.aux `$(KPSEWHICH) lib.aux`
+	$(MKHTML) lib $(L2HARGS)
+
+mac/mac.html:  $(MACFILES)
+	$(TOOLSDIR)/mkhowto.sh --html $(TOPDIR)/mac/mac.tex
+
+ref/ref.html:  $(PAPERDIR)/ref.aux
+	$(MKHTML) ref $(L2HARGS)
+
+tut/tut.html:  $(PAPERDIR)/tut.aux
+	$(MKHTML) tut $(L2HARGS)
 
 
-all:	icons l2h
+$(PAPERDIR)/api.aux: $(APIFILES)
+	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) api.dvi)
 
-l2h:	l2hapi l2hext l2hlib l2hmac l2href l2htut
+$(PAPERDIR)/ext.aux: $(EXTFILES)
+	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) ext.dvi)
 
-l2hapi:	icons
-	$(SUBMAKE) l2hapi
+$(PAPERDIR)/lib.aux: $(LIBFILES)
+	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) lib.dvi)
 
-l2hext:	icons
-	$(SUBMAKE) l2hext
+$(PAPERDIR)/ref.aux: $(REFFILES)
+	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) ref.dvi)
 
-l2hlib:	icons
-	$(SUBMAKE) l2hlib
+$(PAPERDIR)/tut.aux: $(TUTFILES)
+	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) tut.dvi)
 
-l2hmac:	icons
-	$(SUBMAKE) l2hmac
-
-l2href:	icons
-	$(SUBMAKE) l2href
-
-l2htut:	icons
-	$(SUBMAKE) l2htut
-
+# copy the icons/ directory over...
 icons:
-	mkdir icons
+	mkdir icons/
 	cp $(TOPDIR)/icons/*.gif icons/
+
+
+webcheck:
+	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/api/
+	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/ext/
+	$(WEBCHECKER) -m290000 file:`pwd`/$(HTMLDIR)/lib/
+	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/mac/
+	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/ref/
+	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/tut/
+
+clean:
+	rm -rf icons/ @webchecker.pickle
+
+clobber: clean
+	rm -rf api/ ext/ lib/ mac/ ref/ tut/
