@@ -3590,6 +3590,11 @@ Takes a pointer to a tuple object, and returns the size
 of that tuple.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{int}{PyTuple_GET_SIZE}{PyObject *p}
+Return the size of the tuple \var{p}, which must be non-\NULL{} and
+point to a tuple; no error checking is performed.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{PyObject*}{PyTuple_GetItem}{PyObject *p, int pos}
 Returns the object at position \var{pos} in the tuple pointed
 to by \var{p}.  If \var{pos} is out of bounds, returns \NULL{} and
@@ -3780,8 +3785,8 @@ Empties an existing dictionary of all key-value pairs.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDict_Copy}{PyObject *p}
-Returns a new dictionary that contains the same key-value pairs as p.
-Empties an existing dictionary of all key-value pairs.
+Returns a new dictionary that contains the same key-value pairs as
+\var{p}.
 \versionadded{1.6}
 \end{cfuncdesc}
 
