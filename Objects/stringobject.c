@@ -1037,7 +1037,9 @@ static PyBufferProcs string_as_buffer = {
 #define BOTHSTRIP 2
 
 /* Arrays indexed by above */
-static const char *stripname[] = {"lstrip", "rstrip", "strip"};
+static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
+
+#define STRIPNAME(i) (stripformat[i]+3)
 
 
 static PyObject *
@@ -1481,15 +1483,26 @@ do_argstrip(PyStringObject *self, int striptype, PyObject *args)
 {
 	PyObject *sep = NULL;
 
-	if (!PyArg_ParseTuple(args, "|O:[lr]strip", &sep))
+	if (!PyArg_ParseTuple(args, (char *)stripformat[striptype], &sep))
 		return NULL;
 
 	if (sep != NULL && sep != Py_None) {
-		/* XXX What about Unicode? */
-		if (!PyString_Check(sep)) {
+		if (PyString_Check(sep))
+			return do_xstrip(self, striptype, sep);
+		else if (PyUnicode_Check(sep)) {
+			PyObject *uniself = PyUnicode_FromObject((PyObject *)self);
+			PyObject *res;
+			if (uniself==NULL)
+				return NULL;
+			res = _PyUnicode_XStrip((PyUnicodeObject *)uniself,
+				striptype, sep);
+			Py_DECREF(uniself);
+			return res;
+		}
+		else {
 			PyErr_Format(PyExc_TypeError,
-				     "%s arg must be None or string",
-				     stripname[striptype]);
+				     "%s arg must be None, str or unicode",
+				     STRIPNAME(striptype));
 			return NULL;
 		}
 		return do_xstrip(self, striptype, sep);
@@ -1500,11 +1513,12 @@ do_argstrip(PyStringObject *self, int striptype, PyObject *args)
 
 
 static char strip__doc__[] =
-"S.strip([sep]) -> string\n\
+"S.strip([sep]) -> string or unicode\n\
 \n\
 Return a copy of the string S with leading and trailing\n\
 whitespace removed.\n\
-If sep is given and not None, remove characters in sep instead.";
+If sep is given and not None, remove characters in sep instead.\n\
+If sep is unicode, S will be converted to unicode before stripping";
 
 static PyObject *
 string_strip(PyStringObject *self, PyObject *args)
@@ -1517,10 +1531,11 @@ string_strip(PyStringObject *self, PyObject *args)
 
 
 static char lstrip__doc__[] =
-"S.lstrip([sep]) -> string\n\
+"S.lstrip([sep]) -> string or unicode\n\
 \n\
 Return a copy of the string S with leading whitespace removed.\n\
-If sep is given and not None, remove characters in sep instead.";
+If sep is given and not None, remove characters in sep instead.\n\
+If sep is unicode, S will be converted to unicode before stripping";
 
 static PyObject *
 string_lstrip(PyStringObject *self, PyObject *args)
@@ -1533,10 +1548,11 @@ string_lstrip(PyStringObject *self, PyObject *args)
 
 
 static char rstrip__doc__[] =
-"S.rstrip([sep]) -> string\n\
+"S.rstrip([sep]) -> string or unicode\n\
 \n\
 Return a copy of the string S with trailing whitespace removed.\n\
-If sep is given and not None, remove characters in sep instead.";
+If sep is given and not None, remove characters in sep instead.\n\
+If sep is unicode, S will be converted to unicode before stripping";
 
 static PyObject *
 string_rstrip(PyStringObject *self, PyObject *args)
