@@ -25,13 +25,14 @@ static int
 list_resize(PyListObject *self, int newsize)
 {
 	PyObject **items;
-	size_t _new_size;
+	size_t new_allocated;
+	int allocated = self->allocated;
 
 	/* Bypass realloc() when a previous overallocation is large enough
-	   to accommodate the newsize.  If the newsize is 16 smaller than the
-	   current size, then proceed with the realloc() to shrink the list.
+	   to accommodate the newsize.  If the newsize falls lower than half
+	   the allocated size, then proceed with the realloc() to shrink the list.
 	*/
-	if (self->allocated >= newsize && self->ob_size < newsize + 16) {
+	if (allocated >= newsize && newsize >= (allocated >> 1)) {
 		assert(self->ob_item != NULL || newsize == 0);
 		self->ob_size = newsize;
 		return 0;
@@ -44,10 +45,12 @@ list_resize(PyListObject *self, int newsize)
 	 * system realloc().
 	 * The growth pattern is:  0, 4, 8, 16, 25, 35, 46, 58, 72, 88, ...
 	 */
-	_new_size = (newsize >> 3) + (self->ob_size < 8 ? 3 : 6) + newsize;
+	new_allocated = (newsize >> 3) + (newsize < 9 ? 3 : 6) + newsize;
+	if (newsize == 0)
+		new_allocated = 0;
 	items = self->ob_item;
-	if (_new_size <= ((~(size_t)0) / sizeof(PyObject *)))
-		PyMem_RESIZE(items, PyObject *, _new_size);
+	if (new_allocated <= ((~(size_t)0) / sizeof(PyObject *)))
+		PyMem_RESIZE(items, PyObject *, new_allocated);
 	else
 		items = NULL;
 	if (items == NULL) {
@@ -56,7 +59,7 @@ list_resize(PyListObject *self, int newsize)
 	}
 	self->ob_item = items;
 	self->ob_size = newsize;
-	self->allocated = _new_size;
+	self->allocated = new_allocated;
 	return 0;
 }
 
