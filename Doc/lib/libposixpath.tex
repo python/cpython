@@ -1,15 +1,12 @@
-\section{\module{posixpath} ---
-         Common \POSIX{} pathname manipulations.}
-\declaremodule{standard}{posixpath}
+\section{\module{os.path} ---
+         Common pathname manipulations}
+\declaremodule{standard}{os.path}
 
-\modulesynopsis{Common \POSIX{} pathname manipulations.}
+\modulesynopsis{Common pathname manipulations.}
 
-This module implements some useful functions on \POSIX{} pathnames.
-
-\strong{Do not import this module directly.}  Instead, import the
-module \module{os}\refstmodindex{os} and use \code{os.path}.
-
+This module implements some useful functions on pathnames.
 \index{path!operations}
+
 
 \begin{funcdesc}{abspath}{p}
 Return a normalized absolutized version of the pathname \var{p}.  On
@@ -18,24 +15,23 @@ most platforms, this is equivalent to
 \end{funcdesc}
 
 \begin{funcdesc}{basename}{p}
-Return the base name of pathname
-\var{p}.
-This is the second half of the pair returned by
-\code{posixpath.split(\var{p})}.
+Return the base name of pathname \var{p}.  This is the second half of
+the pair returned by \code{split(\var{p})}.
 \end{funcdesc}
 
 \begin{funcdesc}{commonprefix}{list}
 Return the longest string that is a prefix of all strings in
-\var{list}.
-If
-\var{list}
-is empty, return the empty string (\code{''}).
+\var{list}.  If \var{list} is empty, return the empty string
+(\code{''}).
+\end{funcdesc}
+
+\begin{funcdesc}{dirname}{p}
+Return the directory name of pathname \var{p}.  This is the first half
+of the pair returned by \code{split(\var{p})}.
 \end{funcdesc}
 
 \begin{funcdesc}{exists}{p}
-Return true if
-\var{p}
-refers to an existing path.
+Return true if \var{p} refers to an existing path.
 \end{funcdesc}
 
 \begin{funcdesc}{expanduser}{p}
@@ -44,8 +40,9 @@ Return the argument with an initial component of \samp{\~} or
 initial \samp{\~{}} is replaced by the environment variable
 \envvar{HOME}; an initial \samp{\~\var{user}} is looked up in the
 password directory through the built-in module
-\module{pwd}\refbimodindex{pwd}.  If the expansion fails, or if the
-path does not begin with a tilde, the path is returned unchanged.
+\refmodule{pwd}\refbimodindex{pwd}.  If the expansion fails, or if the
+path does not begin with a tilde, the path is returned unchanged.  On
+the Macintosh, this always returns \var{p} unchanged.
 \end{funcdesc}
 
 \begin{funcdesc}{expandvars}{p}
@@ -53,7 +50,7 @@ Return the argument with environment variables expanded.  Substrings
 of the form \samp{\$\var{name}} or \samp{\$\{\var{name}\}} are
 replaced by the value of environment variable \var{name}.  Malformed
 variable names and references to non-existing variables are left
-unchanged.
+unchanged.  On the Macintosh, this always returns \var{p} unchanged.
 \end{funcdesc}
 
 \begin{funcdesc}{getsize}{filename}
@@ -66,16 +63,16 @@ Return the size, in bytes, of \var{filename}.  Raise
 \versionadded{1.5.2}
 Return the time of last modification of \var{filename}.  The return
 value is integer giving the number of seconds since the epoch (see the 
-\module{time} module.  Raise \exception{os.error} if the file does not
-exist or is inaccessible.
+\refmodule{time} module).  Raise \exception{os.error} if the file does
+not exist or is inaccessible.
 \end{funcdesc}
 
 \begin{funcdesc}{getatime}{filename}
 \versionadded{1.5.2}
 Return the time of last access of \var{filename}.  The return
 value is integer giving the number of seconds since the epoch (see the 
-\module{time} module.  Raise \exception{os.error} if the file does not
-exist or is inaccessible.
+\refmodule{time} module).  Raise \exception{os.error} if the file does
+not exist or is inaccessible.
 \end{funcdesc}
 
 \begin{funcdesc}{isabs}{p}
