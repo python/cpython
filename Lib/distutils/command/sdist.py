@@ -332,7 +332,7 @@ class sdist (Command):
                              join_lines=1,
                              lstrip_ws=1,
                              rstrip_ws=1,
-                             collapse_ws=1)
+                             collapse_join=1)
 
         while 1:
             line = template.readline()
