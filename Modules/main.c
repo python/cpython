@@ -5,8 +5,7 @@
 #include "compile.h" /* For CO_FUTURE_DIVISION */
 
 #ifdef __VMS
-extern int PyVMS_init(int* pvi_argc, char*** pvi_argv);
-extern PyObject* pyvms_gr_empty_string;
+#include <unixlib.h>
 #endif
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
@@ -305,7 +304,14 @@ Py_Main(int argc, char **argv)
 	if (command == NULL && filename == NULL && _PyOS_optind < argc &&
 	    strcmp(argv[_PyOS_optind], "-") != 0)
 	{
+#ifdef __VMS
+		filename = decc$translate_vms(argv[_PyOS_optind]);
+		if (filename == (char *)0 || filename == (char *)-1)
+			filename = argv[_PyOS_optind];
+
+#else
 		filename = argv[_PyOS_optind];
+#endif
 		if (filename != NULL) {
 			if ((fp = fopen(filename, "r")) == NULL) {
 				fprintf(stderr, "%s: can't open file '%s'\n",
@@ -370,43 +376,12 @@ Py_Main(int argc, char **argv)
 #endif /* __VMS */
 
 	Py_SetProgramName(argv[0]);
-#ifdef __VMS
-	PyVMS_init(&argc, &argv);
-#endif
 	Py_Initialize();
-
-#ifdef __VMS
-	/* create an empty string object */
-	pyvms_gr_empty_string = Py_BuildValue("s#", Py_None, (unsigned int)0);
-#endif
 
 	if (Py_VerboseFlag ||
 	    (command == NULL && filename == NULL && stdin_is_interactive))
-#ifndef __VMS
 		fprintf(stderr, "Python %s on %s\n%s\n",
 			Py_GetVersion(), Py_GetPlatform(), COPYRIGHT);
-#else
-		fprintf(stderr, "Python %s on %s %s (%s_float)\n%s\n",
-			Py_GetVersion(), Py_GetPlatform(),
-#  ifdef __ALPHA
-			"Alpha",
-#  else
-			"VAX",
-#  endif
-#  if __IEEE_FLOAT
-			"T",
-#  else
-#    if __D_FLOAT
-			"D",
-#    else
-#      if __G_FLOAT
-			"G",
-#      endif /* __G_FLOAT */
-#    endif /* __D_FLOAT */
-#  endif /* __IEEE_FLOAT */
-			COPYRIGHT); /* << @@ defined above in this file */
-/*			Py_GetCopyright()); */
-#endif /* __VMS */
 
 	if (command != NULL) {
 		/* Backup _PyOS_optind and force sys.argv[0] = '-c' */
