@@ -17,6 +17,7 @@ XXX GvR Redesign this interface (yet again) as follows:
 
 """
 
+import os
 import re
 import string
 import tabnanny
@@ -115,7 +116,14 @@ class ScriptBinding:
         text.see(pos)
 
     def run_module_event(self, event):
-        "Check syntax, if ok run the module in the shell top level"
+        """Run the module after setting up the environment.
+
+        First check the syntax.  If OK, make sure the shell is active and
+        then transfer the arguments, set the run environment's working
+        directory to the directory of the module being executed and also
+        add that directory to its sys.path if not already included.
+
+        """
         filename = self.getfilename()
         if not filename:
             return
@@ -127,6 +135,7 @@ class ScriptBinding:
         interp = shell.interp
         if PyShell.use_subprocess:
             shell.restart_shell()
+        dirname = os.path.dirname(filename)
         # XXX Too often this discards arguments the user just set...
         interp.runcommand("""if 1:
             _filename = %s
@@ -135,8 +144,10 @@ class ScriptBinding:
             if (not _sys.argv or
                 _basename(_sys.argv[0]) != _basename(_filename)):
                 _sys.argv = [_filename]
-            del _filename, _sys, _basename
-            \n""" % `filename`)
+            import os as _os
+            _os.chdir(%s)
+            del _filename, _sys, _basename, _os
+            \n""" % (`filename`, `dirname`))
         interp.prepend_syspath(filename)
         interp.runcode(code)
 
