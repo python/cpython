@@ -1069,14 +1069,14 @@ def Time2Internaldate(date_time):
     Return string in form: '"DD-Mmm-YYYY HH:MM:SS +HHMM"'
     """
 
-    if isinstance(date_time, int) or isinstance(date_time, float):
+    if isinstance(date_time, (int, float)):
         tt = time.localtime(date_time)
-    elif isinstance(date_time, tuple) or \
-             isinstance(date_time, time.struct_time):
+    elif isinstance(date_time, (tuple, time.struct_time)):
         tt = date_time
     elif isinstance(date_time, str):
         return date_time        # Assume in correct format
-    else: raise ValueError
+    else:
+        raise ValueError("date_time not of a known type")
 
     dt = time.strftime("%d-%b-%Y %H:%M:%S", tt)
     if dt[0] == '0':
