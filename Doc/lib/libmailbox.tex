@@ -45,7 +45,7 @@ A less-strict version of \class{UnixMailbox}, which considers only the
 ``\var{name} \var{time}'' portion of the From line is ignored, to
 protect against some variations that are observed in practice.  This
 works since lines in the message which begin with \code{'From '} are
-quoted by mail handling software well before delivery.
+quoted by mail handling software at delivery-time.
 \end{classdesc}
 
 \begin{classdesc}{MmdfMailbox}{fp\optional{, factory}}
