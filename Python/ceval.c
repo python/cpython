@@ -799,8 +799,8 @@ eval_code2(co, globals, locals,
 			if (PyInt_Check(v) && PyInt_Check(w)) {
 				/* INLINE: int + int */
 				register long a, b, i;
-				a = ((PyIntObject*) v)->ob_ival;
-				b = ((PyIntObject*) w)->ob_ival;
+				a = PyInt_AS_LONG(v);
+				b = PyInt_AS_LONG(w);
 				i = a + b;
 				if ((i^a) < 0 && (i^b) < 0) {
 					PyErr_SetString(PyExc_OverflowError,
@@ -824,8 +824,8 @@ eval_code2(co, globals, locals,
 			if (PyInt_Check(v) && PyInt_Check(w)) {
 				/* INLINE: int - int */
 				register long a, b, i;
-				a = ((PyIntObject*) v)->ob_ival;
-				b = ((PyIntObject*) w)->ob_ival;
+				a = PyInt_AS_LONG(v);
+				b = PyInt_AS_LONG(w);
 				i = a - b;
 				if ((i^a) < 0 && (i^~b) < 0) {
 					PyErr_SetString(PyExc_OverflowError,
@@ -1390,8 +1390,8 @@ eval_code2(co, globals, locals,
 				/* INLINE: cmp(int, int) */
 				register long a, b;
 				register int res;
-				a = ((PyIntObject*) v)->ob_ival;
-				b = ((PyIntObject*) w)->ob_ival;
+				a = PyInt_AS_LONG(v);
+				b = PyInt_AS_LONG(w);
 				switch (oparg) {
 				case LT: res = a <  b; break;
 				case LE: res = a <= b; break;
