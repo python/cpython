@@ -274,3 +274,17 @@ class C2:
 try: hash(C2())
 except TypeError: pass
 else: raise TestFailed, "hash(C2()) should raise an exception"
+
+
+# Test for SF bug 532646
+
+class A:
+    pass
+A.__call__ = A()
+a = A()
+try:
+    a() # This should not segfault
+except RuntimeError:
+    pass
+else:
+    raise TestFailed, "how could this not have overflowed the stack?"
