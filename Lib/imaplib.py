@@ -222,14 +222,7 @@ class IMAP4:
 
     def send(self, data):
         """Send data to remote."""
-        bytes = len(data)
-        while bytes > 0:
-            sent = self.sock.send(data)
-            if sent == bytes:
-                break   # avoid copy
-            data = data[sent:]
-            bytes = bytes - sent
-
+        self.sock.sendall(data)
 
     def shutdown(self):
         """Close I/O established in "open"."""
