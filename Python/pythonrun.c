@@ -1096,24 +1096,6 @@ err_input(perrdetail *err)
 	w = Py_BuildValue("(sO)", msg, v);
 	PyErr_SetObject(errtype, w);
 	Py_XDECREF(w);
-
-	if (v != NULL) {
-		PyObject *exc, *tb;
-
-		PyErr_Fetch(&errtype, &exc, &tb);
-		PyErr_NormalizeException(&errtype, &exc, &tb);
-		if (PyObject_SetAttrString(exc, "filename",
-					   PyTuple_GET_ITEM(v, 0)))
-			PyErr_Clear();
-		if (PyObject_SetAttrString(exc, "lineno",
-					   PyTuple_GET_ITEM(v, 1)))
-			PyErr_Clear();
-		if (PyObject_SetAttrString(exc, "offset",
-					   PyTuple_GET_ITEM(v, 2)))
-			PyErr_Clear();
-		Py_DECREF(v);
-		PyErr_Restore(errtype, exc, tb);
-	}
 }
 
 /* Print fatal error message and abort */
