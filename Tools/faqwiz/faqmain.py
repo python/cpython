@@ -9,8 +9,6 @@ XXX TO DO
 - next/prev/index links in do_show?
 - should have files containing section headers
 - customize rcs command pathnames
-- recognize urls and email addresses and turn them into <A> tags
-- use cookies to keep Name/email the same
 - explanation of editing somewhere
 - various embellishments, GIFs, crosslinks, hints, etc.
 - create new sections
@@ -582,7 +580,7 @@ class FAQServer:
 		else:
 		    print '<P>'
 	    else:
-		if line == string.lstrip(line):	# I.e., no leading whitespace
+		if line[0] not in string.whitespace:
 		    if pre:
 			print '</PRE>'
 			pre = 0
@@ -590,7 +588,7 @@ class FAQServer:
 		    if not pre:
 			print '<PRE>'
 			pre = 1
-		print cgi.escape(line)
+		print self.translate(line)
 	if pre:
 	    print '</PRE>'
 	    pre = 0
@@ -657,6 +655,38 @@ class FAQServer:
 	</BODY>
 	</HTML>
 	'''
+
+    translate_prog = None
+
+    def translate(self, text):
+	if not self.translate_prog:
+	    import regex
+	    url = '\(http\|ftp\)://[^ \t\r\n]*'
+	    email = '\<[-a-zA-Z0-9._]+@[-a-zA-Z0-9._]+'
+	    self.translate_prog = prog = regex.compile(url + "\|" + email)
+	else:
+	    prog = self.translate_prog
+	i = 0
+	list = []
+	while 1:
+	    j = prog.search(text, i)
+	    if j < 0:
+		break
+	    list.append(cgi.escape(text[i:j]))
+	    i = j
+	    url = prog.group(0)
+	    while url[-1] in ");:,.?":
+		url = url[:-1]
+	    url = cgi.escape(url)
+	    if ':' in url:
+		repl = '<A HREF="%s">%s</A>' % (url, url)
+	    else:
+		repl = '<A HREF="mailto:%s">&lt;%s&gt;</A>' % (url, url)
+	    list.append(repl)
+	    i = i + len(url)
+	j = len(text)
+	list.append(cgi.escape(text[i:j]))
+	return string.join(list, '')
 
 print "Content-type: text/html"
 dt = 0
