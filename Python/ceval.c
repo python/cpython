@@ -1535,7 +1535,8 @@ eval_code2(co, globals, locals,
 					else {
 						err_setstr(TypeError,
 	   "unbound method must be called with class instance 1st argument");
-						return NULL;
+						x = NULL;
+						break;
 					}
 				}
 			}
