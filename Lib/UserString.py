@@ -5,14 +5,14 @@
 Note: string objects have grown methods in Python 1.6
 This module requires Python 1.6 or later.
 """
-from types import StringType, UnicodeType
+from types import StringTypes
 import sys
 
 __all__ = ["UserString","MutableString"]
 
 class UserString:
     def __init__(self, seq):
-        if isinstance(seq, StringType) or isinstance(seq, UnicodeType):
+        if isinstance(seq, StringTypes):
             self.data = seq
         elif isinstance(seq, UserString):
             self.data = seq.data[:]
@@ -43,19 +43,19 @@ class UserString:
     def __add__(self, other):
         if isinstance(other, UserString):
             return self.__class__(self.data + other.data)
-        elif isinstance(other, StringType) or isinstance(other, UnicodeType):
+        elif isinstance(other, StringTypes):
             return self.__class__(self.data + other)
         else:
             return self.__class__(self.data + str(other))
     def __radd__(self, other):
-        if isinstance(other, StringType) or isinstance(other, UnicodeType):
+        if isinstance(other, StringTypes):
             return self.__class__(other + self.data)
         else:
             return self.__class__(str(other) + self.data)
     def __iadd__(self, other):
         if isinstance(other, UserString):
             self.data += other.data
-        elif isinstance(other, StringType) or isinstance(other, UnicodeType):
+        elif isinstance(other, StringTypes):
             self.data += other
         else:
             self.data += str(other)
@@ -159,7 +159,7 @@ class MutableString(UserString):
         start = max(start, 0); end = max(end, 0)
         if isinstance(sub, UserString):
             self.data = self.data[:start]+sub.data+self.data[end:]
-        elif isinstance(sub, StringType) or isinstance(sub, UnicodeType):
+        elif isinstance(sub, StringTypes):
             self.data = self.data[:start]+sub+self.data[end:]
         else:
             self.data =  self.data[:start]+str(sub)+self.data[end:]
