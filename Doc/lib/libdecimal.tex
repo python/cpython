@@ -98,7 +98,7 @@ is set to one, an exception is raised.
            {The General Decimal Arithmetic Specification}.}
 
   \seetext{IEEE standard 854-1987,
-           \citetitle[http://www.cs.berkeley.edu/~ejr/projects/754/private/drafts/854-1987/dir.html]
+           \citetitle[http://www.cs.berkeley.edu/\textasciitilde ejr/projects/754/private/drafts/854-1987/dir.html]
            {Unofficial IEEE 854 Text}.} 
 \end{seealso}
 
@@ -120,24 +120,26 @@ Context(prec=28, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
 >>> getcontext().prec = 7
 \end{verbatim}
 
-Decimal instances can be constructed from integers or strings.  To create a
-Decimal from a \class{float}, first convert it to a string.  This serves as an
-explicit reminder of the details of the conversion (including representation
-error).  Malformed strings signal \constant{ConversionSyntax} and return a
-special kind of Decimal called a \constant{NaN} which stands for ``Not a
-number''. Positive and negative \constant{Infinity} is yet another special
-kind of Decimal.             
+Decimal instances can be constructed from integers, strings or tuples.  To
+create a Decimal from a \class{float}, first convert it to a string.  This
+serves as an explicit reminder of the details of the conversion (including
+representation error).  Malformed strings signal \constant{ConversionSyntax}
+and return a special kind of Decimal called a \constant{NaN} which stands for
+``Not a number''. Positive and negative \constant{Infinity} is yet another
+special kind of Decimal.        
 
 \begin{verbatim}
 >>> Decimal(10)
 Decimal("10")
->>> Decimal('3.14')
+>>> Decimal("3.14")
+Decimal("3.14")
+>>> Decimal((0, (3, 1, 4), -2))
 Decimal("3.14")
 >>> Decimal(str(2.0 ** 0.5))
 Decimal("1.41421356237")
->>> Decimal('Mickey Mouse')
+>>> Decimal("NaN")
 Decimal("NaN")
->>> Decimal('-Infinity')
+>>> Decimal("-Infinity")
 Decimal("-Infinity")
 \end{verbatim}
 
@@ -233,7 +235,6 @@ clear the flags before each set of monitored computations by using the
 
 \begin{verbatim}
 >>> setcontext(ExtendedContext)
->>> getcontext().clear_flags()
 >>> Decimal(355) / Decimal(113)
 Decimal("3.14159292")
 >>> getcontext()
@@ -314,16 +315,16 @@ as other Python numeric types.
   a sign (\constant{0} for positive or \constant{1} for negative),
   a \class{tuple} of digits, and an exponent represented as an integer.
   For example, \samp{Decimal((0, (1, 4, 1, 4), -3))} returns
-  \samp{Decimal("1.414")}.
+  \code{Decimal("1.414")}.
 
   The supplied \var{context} or, if not specified, the current context
-  governs only the handling of mal-formed strings not conforming to the
+  governs only the handling of malformed strings not conforming to the
   numeric string syntax.  If the context traps \constant{ConversionSyntax},
   an exception is raised; otherwise, the constructor returns a new Decimal
   with the value of \constant{NaN}.
 
   The context serves no other purpose.  The number of significant digits
-  recorded is determined solely by the \var{value} and the var{context}
+  recorded is determined solely by the \var{value} and the \var{context}
   precision is not a factor.  For example, \samp{Decimal("3.0000")} records
   all four zeroes even if the context precision is only three.
 
@@ -341,10 +342,10 @@ In addition to the standard numeric properties, decimal floating point objects
 have a number of more specialized methods:
 
 \begin{methoddesc}{adjusted}{}
-  Return the number's adjusted exponent that results from shifting out the
-  coefficients rightmost digits until only the lead digit remains:
-  \code{Decimal("321e+5").adjusted()} returns seven.  Used for determining
-  the place value of the most significant digit.
+  Return the adjusted exponent after shifting out the coefficient's rightmost
+  digits until only the lead digit remains: \code{Decimal("321e+5").adjusted()}
+  returns seven.  Used for determining the place value of the most significant
+  digit.
 \end{methoddesc}
 
 \begin{methoddesc}{as_tuple}{}
@@ -373,11 +374,12 @@ have a number of more specialized methods:
 \end{methoddesc}
 
 \begin{methoddesc}{normalize}{\optional{context}}
-  Normalize the number by striping the rightmost trailing zeroes and
-  converting any result equal to \constant{Decimal("0")} to Decimal("0e0").
-  Used for producing a canonical value for members of an equivalence class.
-  For example, \code{Decimal("32.100")} and \code{Decimal("0.321000e+2")}
-  both normalize to the equivalent value \code{Decimal("32.1")}
+  Normalize the number by stripping the rightmost trailing zeroes and
+  converting any result equal to \constant{Decimal("0")} to
+  \constant{Decimal("0e0")}. Used for producing canonical values for members
+  of an equivalence class. For example, \code{Decimal("32.100")} and
+  \code{Decimal("0.321000e+2")} both normalize to the equivalent value
+  \code{Decimal("32.1")},
 \end{methoddesc}                                              
 
 \begin{methoddesc}{quantize}
@@ -386,7 +388,7 @@ have a number of more specialized methods:
   rounding method in \var{rounding}, then in \var{context}, and then
   in the current context.
 
-  Of \var{watchexp} is set (default), then an error is returned if
+  If \var{watchexp} is set (default), then an error is returned whenever
   the resulting exponent is greater than \member{Emax} or less than
   \member{Etiny}.
 \end{methoddesc} 
@@ -401,7 +403,7 @@ have a number of more specialized methods:
   as \var{self}.
 \end{methoddesc}  
 
-\begin{methoddesc}{same_quantum{other\optional{, context}}}
+\begin{methoddesc}{same_quantum}{other\optional{, context}}
   Test whether self and other have the same exponent or whether both
   are \constant{NaN}.
 \end{methoddesc}
@@ -411,7 +413,7 @@ have a number of more specialized methods:
 \end{methoddesc}                    
  
 \begin{methoddesc}{to_eng_string}{\optional{context}}
-  Convert to engineering-type string.
+  Convert to an engineering-type string.
 
   Engineering notation has an exponent which is a multiple of 3, so there
   are up to 3 digits left of the decimal place.  For example, converts
@@ -419,7 +421,7 @@ have a number of more specialized methods:
 \end{methoddesc}  
 
 \begin{methoddesc}{to_integral}{\optional{rounding\optional{, context}}}                   
-  Rounds to the nearest integer, without signaling \constant{Inexact}
+  Rounds to the nearest integer without signaling \constant{Inexact}
   or \constant{Rounded}.  If given, applies \var{rounding}; otherwise,
   uses the rounding method in either the supplied \var{context} or the
   current context.
@@ -463,6 +465,11 @@ In addition, the module provides three pre-made contexts:
   Specification.  Precision is set to nine.  Rounding is set to
   \constant{ROUND_HALF_EVEN}.  All flags are cleared.  No traps are enabled
   (so that exceptions are not raised during computations).
+
+  Because the trapped are disabled, this context is useful for applications
+  that prefer to have result value of \constant{NaN} or \constant{Infinity}
+  instead of raising exceptions.  This allows an application to complete a
+  run in the presense of conditions that would otherwise halt the program.
 \end{classdesc*}
 
 \begin{classdesc*}{DefaultContext}
@@ -482,7 +489,10 @@ In addition, the module provides three pre-made contexts:
   (with initial release having precision=28, rounding=ROUND_HALF_EVEN,
   cleared flags, and no traps enabled).
 \end{classdesc*}
-                                          
+
+
+In addition to the three supplied contexts, new contexts can be created
+with the \class{Context} constructor.
 
 \begin{classdesc}{Context}{prec=None, rounding=None, trap_enablers=None,
         flags=None, Emin=None, Emax=None, capitals=1}
@@ -491,13 +501,13 @@ In addition, the module provides three pre-made contexts:
   \var{flags} field is not specified or is \constant{None}, all flags are
   cleared.
 
-  The \var{prec} field in an positive integer that sets the precision for
+  The \var{prec} field is a positive integer that sets the precision for
   arithmetic operations in the context.
 
   The \var{rounding} option is one of: \constant{ROUND_CEILING},
-  \constant{ROUND_DOWN}, \constant{ROUND_FLOOR}, \constant{ROUND_HALF_DOWN},
-  \constant{ROUND_HALF_EVEN}, \constant{ROUND_HALF_UP}, or
-  \constant{ROUND_UP}.
+  \constant{ROUND_DOWN}, \constant{ROUND_FLOOR}, \constant{ROUND_HALF_DOWN}
+  (towards zero), \constant{ROUND_HALF_EVEN}, \constant{ROUND_HALF_UP}, or
+  \constant{ROUND_UP} (away from zero).
 
   The \var{trap_enablers} and \var{flags} fields are mappings from signals
   to either \constant{0} or \constant{1}.
@@ -536,15 +546,17 @@ large number of methods for doing arithmetic directly from the context.
   exponont is set to \constant{Etiny}.
 \end{methoddesc} 
 
-The usual approach to working with decimals is to create Decimal
-instances and then apply arithmetic operations which take place
-within the current context for the active thread.  An alternate
-approach is to use a context method to perform a particular
-computation within the given context rather than the current context.
+\begin{methoddesc}{Etop}{}
+  Returns a value equal to \samp{Emax - prec + 1}.
+\end{methoddesc} 
 
-Those methods parallel those for the \class{Decimal} class and are
-only briefed recounted here.
 
+The usual approach to working with decimals is to create \class{Decimal}
+instances and then apply arithmetic operations which take place within the
+current context for the active thread.  An alternate approach is to use
+context methods for calculating within s specific context.  The methods are
+similar to those for the \class{Decimal} class and are only briefly recounted
+here.
 
 \begin{methoddesc}{abs}{x}
   Returns the absolute value of \var{x}.
@@ -570,7 +582,7 @@ only briefed recounted here.
   Return \var{x} divided by \var{y}.
 \end{methoddesc}   
   
-\begin{methoddesc}{divide}{x, y}
+\begin{methoddesc}{divmod}{x, y}
   Divides two numbers and returns the integer part of the result.
 \end{methoddesc} 
 
@@ -589,7 +601,7 @@ only briefed recounted here.
 \end{methoddesc}
 
 \begin{methoddesc}{minus}{x}
-  Minus corresponds to unary prefix minus in Python.
+  Minus corresponds to the unary prefix minus operator in Python.
 \end{methoddesc}
 
 \begin{methoddesc}{multiply}{x, y}
@@ -604,7 +616,7 @@ only briefed recounted here.
 \end{methoddesc}
   
 \begin{methoddesc}{plus}{x}
-  Minus corresponds to unary prefix plus in Python.
+  Minus corresponds to the unary prefix plus operator in Python.
 \end{methoddesc}
 
 \begin{methoddesc}{power}{x, y\optional{, modulo}}
@@ -617,8 +629,8 @@ only briefed recounted here.
   the left-hand operand is inverted (divided into 1) before use.
 
   If the increased precision needed for the intermediate calculations exceeds
-  the capabilities of the implementation then an Invalid operation condition
-  is raised.
+  the capabilities of the implementation then an \constant{InvalidOperation}
+  condition is signaled.
 
   If, when raising to a negative power, an underflow occurs during the
   division into 1, the operation is not halted at that point but continues. 
@@ -665,7 +677,7 @@ only briefed recounted here.
 \end{methoddesc}                    
 
 \begin{methoddesc}{substract}{x, y}
-  Return the difference of \var{x} and \var{y}.
+  Return the difference between \var{x} and \var{y}.
 \end{methoddesc}
  
 \begin{methoddesc}{to_eng_string}{}
@@ -677,12 +689,12 @@ only briefed recounted here.
 \end{methoddesc}  
 
 \begin{methoddesc}{to_integral}{x}                  
-  Rounds to the nearest integer, without signaling \constant{Inexact}
+  Rounds to the nearest integer without signaling \constant{Inexact}
   or \constant{Rounded}.                                        
 \end{methoddesc} 
 
 \begin{methoddesc}{to_sci_string}{}
-  Converts a number to a string, using scientific notation.
+  Converts a number to a string using scientific notation.
 \end{methoddesc} 
 
 
@@ -695,7 +707,7 @@ Each corresponds to one context flag and one context trap enabler.
 
 The context flag is incremented whenever the condition is encountered.
 After the computation, flags may be checked for informational
-purposed (for instance, to determine whether a computation was exact).
+purposes (for instance, to determine whether a computation was exact).
 After checking the flags, be sure to clear all flags before starting
 the next computation.
 
@@ -714,7 +726,7 @@ exception is raised upon encountering the condition.
 \end{classdesc*}
 
 \begin{classdesc*}{ConversionSyntax}
-    Trying to convert a mal-formed string such as:  \code{Decimal('jump')}.
+    Trying to convert a malformed string such as:  \code{Decimal('jump')}.
 
     Decimal converts only strings conforming to the numeric string
     syntax.  If this signal is not trapped, returns \constant{NaN}.
@@ -794,7 +806,7 @@ exception is raised upon encountering the condition.
 
 
 \begin{classdesc*}{Rounded}
-    Rounding occurred though possibly not information was lost.
+    Rounding occurred though possibly no information was lost.
 
     Signaled whenever rounding discards digits; even if those digits are
     zero (such as rounding \constant{5.00} to \constant{5.0}).   If not
@@ -841,9 +853,9 @@ The following table summarizes the hierarchy of signals:
 \subsection{Working with threads \label{decimal-threads}}
 
 The \function{getcontext()} function accesses a different \class{Context}
-object for each thread.  Having separate contexts means that threads may make
-changes (such as \code{getcontext.prec=10}) without interfering with other
-threads and without needing mutexes.
+object for each thread.  Having separate thread contexts means that threads
+may make changes (such as \code{getcontext.prec=10}) without interfering with
+other threads and without needing mutexes.
 
 Likewise, the \function{setcontext()} function automatically assigns its target
 to the current thread.
@@ -859,7 +871,7 @@ This should be done \emph{before} any threads are started so that there won't
 be a race condition with threads calling \function{getcontext()}. For example:
 
 \begin{verbatim}
-# Set application wide defaults for all threads about to be launched
+# Set applicationwide defaults for all threads about to be launched
 DefaultContext.prec=12
 DefaultContext.rounding=ROUND_DOWN
 DefaultContext.trap_enablers=dict.fromkeys(Signals, 0)
@@ -944,7 +956,7 @@ def pi():
         t = (t * n) / d
         c += t
     getcontext().prec -= 2
-    return c + 0
+    return c + 0            # Adding zero causes rounding to the new precision
 
 def exp(x):
     """Return e raised to the power of x.  Result type matches input type.
