@@ -1,9 +1,9 @@
 What's new in this release?
 ===========================
 
-Below is a list of all relevant changes since the release 1.4.  The
-most recent changes (from 1.5a3 to 1.5a4, from 1.5a4 to 1.5b1, and
-from 1.5b1 to 1.5b2) are listed in separate sections at the end.
+Below is a list of all relevant changes since release 1.4.  The
+sections are now in a more useful order: the most recent changes are
+listed first.
 
 A note on attributions: while I have sprinkled some names throughout
 here, I'm grateful to many more people who remain unnamed.  You may
@@ -12,6 +12,1267 @@ credit, let me know and I'll add you to the list!
 
 
 ======================================================================
+
+
+From 1.5 to 1.5.1
+=================
+
+General
+-------
+
+- The documentation is now unbundled.  It has also been extensively
+modified (mostly to implement a new and more uniform formatting
+style).  We figure that most people will prefer to download one of the
+preformatted documentation sets (HTML, PostScript or PDF) and that
+only a minority have a need for the LaTeX or FrameMaker sources.  Of
+course, the unbundled documentation sources still released -- just not
+in the same archive file, and perhaps not on the same date.
+
+- All bugs noted on the errors page (and many unnoted) are fixed.  All
+new bugs take their places.
+
+Syntax change
+-------------
+
+- The raise statement can now be used without arguments, to re-raise 
+a previously set exception.  This should be used after catching an
+exception with an except clause only, either in the except clause or
+later in the same function.
+
+Import and module handling
+--------------------------
+
+- The implementation of import has changed to use a mutex (when
+threading is supported).  This means that when two threads
+simultaneously import the same module, the import statements are
+serialized.  Recursive imports are not affected.
+
+- Rewrote the finalization code almost completely, to be much more
+careful with the order in which modules are destroyed.  Destructors
+pwill now generally be able to reference built-in names such as None
+without trouble.
+
+- On case-insensitive platforms such as Mac and Windows, require the
+case of a module's filename, e.g. "SocketServer.py", to match the case
+of the module name as specified in the import statement.  This is an
+experimental feature -- if it turns out to break in too many
+situations, it will be removed (or disabled by default) in the future.
+On Windows, it can be disabled on a per-case basis by setting the
+environment variable PYTHONCASEOK (to any value).
+
+- The code for figuring out the default path now distinguishes between
+files, modules, executable files, and directories.  When expecting a
+module, we also look for the .pyc or .pyo file.
+
+Parser/tokenizer changes
+------------------------
+
+- The tokenizer can now warn you when your source code mixes tabs and
+spaces for indentation in a manner that depends on the worth of a tab
+in spaces.  Use "python -t" or "python -v" to enable this option.  Use 
+"python -tt" to turn the warnings into errors.
+
+- Return unsigned characters from tok_nextc(), so '\377' isn't
+mistaken for an EOF character.
+
+- Fixed two pernicious bugs in the tokenizer that only affected AIX.
+One was actually a general bug that was triggered by AIX's smaller I/O
+buffer size.  The other was a bug in the AIX optimizer's loop
+unrolling code; swapping two statements made the problem go away.
+
+Tools, demos and miscellaneous files
+------------------------------------
+
+- There's a new version of Misc/python-mode.el (the Emacs mode for
+Python) which is much smarter about guessing the indentation style
+used in a particular file.  Lots of other cool features too!
+
+- There are two new tools in Tools/scripts: tabnanny.py and
+tabpolice.py, implementing two different ways of checking whether a
+file uses indentation in a way that is sensitive to the interpretation
+of a tab.  The preferred module is tabnanny.py (by Tim Peters).
+
+- Some new demo programs:
+
+	Demo/tkinter/guido/paint.py -- Dave Mitchell
+	Demo/sockets/unixserver.py -- Piet van Oostrum
+	
+
+- Much better freeze support.  The freeze script can now freeze
+hierarchical module names (with a corresponding change to import.c),
+and has a few extra options (e.g. to suppress freezing specific
+modules).  It also does much more on Windows NT.
+
+- Version 1.0 of the faq wizard is included (only very small changes
+since version 0.9.0).
+
+- New feature for the ftpmirror script: when removing local files
+(i.e., only when -r is used), do a recursive delete.
+
+Configuring and building Python
+-------------------------------
+
+- Get rid of the check for -linet -- recent Sequent Dynix systems don't
+need this any more and apparently it screws up their configuration.
+
+- Some changes because gcc on SGI doesn't support '-all'.
+
+- Changed the build rules to use $(LIBRARY) instead of
+  -L.. -lpython$(VERSION)
+since the latter trips up the SunOS 4.1.x linker (sigh).
+
+- Fix the bug where the '# dgux is broken' comment in the Makefile
+tripped over Make on some platforms.
+
+- Changes for AIX: install the python.exp file; properly use
+$(srcdir); the makexp_aix script now removes C++ entries of the form
+Class::method.
+
+- Deleted some Makefile targets only used by the (long obsolete)
+gMakefile hacks.
+
+Extension modules
+-----------------
+
+- Performance and threading improvements to the socket and bsddb
+modules, by Christopher Lindblad of Infoseek.
+
+- Added operator.__not__ and operator.not_.
+
+- In the thread module, when a thread exits due to an unhandled
+exception, don't store the exception information in sys.last_*; it
+prevents proper calling of destructors of local variables.
+
+- Fixed a number of small bugs in the cPickle module.
+
+- Changed find() and rfind() in the strop module so that
+find("x","",2) returns -1, matching the implementation in string.py.
+
+- In the time module, be more careful with the result of ctime(), and
+test for HAVE_MKTIME before usinmg mktime().
+
+- Doc strings contributed by Mitch Chapman to the termios, pwd, gdbm
+modules.
+
+- Added the LOG_SYSLOG constant to the syslog module, if defined.
+
+Standard library modules
+------------------------
+
+- All standard library modules have been converted to an indentation
+style using either only tabs or only spaces -- never a mixture -- if
+they weren't already consistent according to tabnanny.
+
+- New standard library modules:
+
+	threading -- GvR and the thread-sig
+		Java style thread objects -- USE THIS!!!
+
+	getpass -- Piers Lauder
+		simple utilities to prompt for a password and to
+		retrieve the current username
+
+	imaplib -- Piers Lauder
+		interface for the IMAP4 protocol
+
+	poplib -- David Ascher, Piers Lauder
+		interface for the POP3 protocol
+
+	smtplib -- Dragon De Monsyne
+		interface for the SMTP protocol
+
+- Some obsolete modules moved to a separate directory (Lib/lib-old)
+which is *not* in the default module search path:
+
+	Para
+	addpack
+	codehack
+	fmt
+	lockfile
+	newdir
+	ni
+	rand
+	tb
+
+- New version of the PCRE code (Perl Compatible Regular Expressions --
+the re module and the supporting pcre extension) by Andrew Kuchling.
+Incompatible new feature in re.sub(): the handling of escapes in the
+replacement string has changed.
+
+- Interface change in copy.py: a __deepcopy__ method is now called
+with the memo dictionary as an argument.
+
+- Feature change in the tokenize module: differentiate between NEWLINE
+token (an official newline) and NL token (a newline that the grammar
+ignores).
+
+- Several bugfixes to the urllib module.  It is now truly thread-safe,
+and several bugs and a portability problem have been fixed.  New
+features, all due to Sjoerd Mullender: When creating a temporary file,
+it gives it an appropriate suffix.  Support the "data:" URL scheme.
+The open() method uses the tempcache.
+
+- New version of the xmllib module (this time with a test suite!) by
+Sjoerd Mullender.
+
+- Added debugging code to the telnetlib module, to be able to trace
+the actual traffic.
+
+- In the rfc822 module, added support for deleting a header (still no
+support for adding headers, though).  Also fixed a bug where an
+illegal address would cause a crash in getrouteaddr(), fixed a
+sign reversal in mktime_tz(), and use the local timezone by default
+(the latter two due to Bill van Melle).
+
+- The normpath() function in the dospath and ntpath modules no longer
+does case normalization -- for that, use the separate function
+normcase() (which always existed); normcase() has been sped up and
+fixed (it was the cause of a crash in Mark Hammond's installer in
+certain locales).
+
+- New command supported by the ftplib module: rmd(); also fixed some
+minor bugs.
+
+- The profile module now uses a different timer function by default -- 
+time.clock() is generally better than os.times().  This makes it work
+better on Windows NT, too.
+
+- The tempfile module now recovers when os.getcwd() raises an
+exception.
+
+- Fixed some bugs in the random module; gauss() was subtly wrong, and
+vonmisesvariate() should return a full circle.  Courtesy Mike Miller,
+Lambert Meertens (gauss()), and Magnus Kessler (vonmisesvariate()).
+
+- Better default seed in the whrandom module, courtesy Andrew Kuchling.
+
+- Fix slow close() in shelve module.
+
+- The Unix mailbox class in the mailbox module is now more robust when
+a line begins with the string "From " but is definitely not the start
+of a new message.  The pattern used can be changed by overriding a
+method or class variable.
+
+- Added a rmtree() function to the copy module.
+
+- Fixed several typos in the pickle module.  Also fixed problems when
+unpickling in restricted execution environments.
+
+- Added docstrings and fixed a typo in the py_compile and compileall
+modules.  At Mark Hammond's repeated request, py_compile now append a
+newline to the source if it needs one.  Both modules support an extra
+parameter to specify the purported source filename (to be used in
+error messages).
+
+- Some performance tweaks by Jeremy Hylton to the gzip module.
+
+- Fixed a bug in the merge order of dictionaries in the ConfigParser
+module.  Courtesy Barry Warsaw.
+
+- In the multifile module, support the optional second parameter to
+seek() when possible.
+
+- Several fixes to the gopherlib module by Lars Marius Garshol.  Also, 
+urlparse now correctly handles Gopher URLs with query strings.
+
+- Fixed a tiny bug in format_exception() in the traceback module.
+Also rewrite tb_lineno() to be compatible with JPython (and not
+disturb the current exception!); by Jim Hugunin.
+
+- The httplib module is more robust when servers send a short response 
+-- courtesy Tim O'Malley.
+
+Tkinter and friends
+-------------------
+
+- Various typos and bugs fixed.
+
+- New module Tkdnd implements a drag-and-drop protocol (within one
+application only).
+
+- The event_*() widget methods have been restructured slightly -- they
+no longer use the default root.
+
+- The interfaces for the bind*() and unbind() widget methods have been
+redesigned; the bind*() methods now return the name of the Tcl command 
+created for the callback, and this can be passed as a optional
+argument to unbind() in order to delete the command (normally, such
+commands are automatically unbound when the widget is destroyed, but
+for some applications this isn't enough).
+
+- Variable objects now have trace methods to interface to Tcl's
+variable tracing facilities.
+
+- Image objects now have an optional keyword argument, 'master', to
+specify a widget (tree) to which they belong.  The image_names() and
+image_types() calls are now also widget methods.
+
+- There's a new global call, Tkinter.NoDefaultRoot(), which disables
+all use of the default root by the Tkinter library.  This is useful to
+debug applications that are in the process of being converted from
+relying on the default root to explicit specification of the root
+widget.
+
+- The 'exit' command is deleted from the Tcl interpreter, since it
+provided a loophole by which one could (accidentally) exit the Python
+interpreter without invoking any cleanup code.
+
+- Tcl_Finalize() is now registered as a Python low-level exit handle,
+so Tcl will be finalized when Python exits.
+
+The Python/C API
+----------------
+
+- New function PyObject_Not(x) calculates (not x) according to Python's 
+standard rules (basically, it negates the outcome PyObject_IsTrue(x).
+
+- New function _PyModule_Clear(), which clears a module's dictionary
+carefully without removing the __builtins__ entry.  This is implied
+when a module object is deallocated (this used to clear the dictionary
+completely).
+
+- New function PyImport_ExecCodeModuleEx(), which extends
+PyImport_ExecCodeModule() by adding an extra parameter to pass it the
+true file.
+
+- New functions Py_GetPythonHome() and Py_SetPythonHome(), intended to
+allow embedded applications to force a different value for PYTHONHOME.
+
+- New global flag Py_FrozenFlag is set when this is a "frozen" Python
+binary; it suppresses warnings about not being able to find the
+standard library directories.
+
+- New global flag Py_TabcheckFlag is incremented by the -t option and
+causes the tokenizer to issue warnings or errors about inconsistent
+mixing of tabs and spaces for indentation.
+
+Miscellaneous minor changes and bug fixes
+-----------------------------------------
+
+- Improved the error message when an attribute of an attribute-less
+object is requested -- include the name of the attribute and the type
+of the object in the message.
+
+- Sped up int(), long(), float() a bit.
+
+- Fixed a bug in list.sort() that would occasionally dump core.
+
+- Fixed a bug in PyNumber_Power() that caused numeric arrays to fail
+when taken tothe real power.
+
+- Fixed a number of bugs in the file reading code, at least one of
+which could cause a core dump on NT, and one of which would
+occasionally cause file.read() to return less than the full contents
+of the file.
+
+- Performance hack by Vladimir Marangozov for stack frame creation.
+
+- Make sure setvbuf() isn't used unless HAVE_SETVBUF is defined.
+
+
+======================================================================
+
+
+From 1.5b2 to 1.5
+=================
+
+- Newly documentated module: BaseHTTPServer.py, thanks to Greg Stein.
+
+- Added doc strings to string.py, stropmodule.c, structmodule.c,
+thanks to Charles Waldman.
+
+- Many nits fixed in the manuals, thanks to Fred Drake and many others
+(especially Rob Hooft and Andrew Kuchling).  The HTML version now uses
+HTML markup instead of inline GIF images for tables; only two images
+are left (for obsure bits of math).  The index of the HTML version has
+also been much improved.  Finally, it is once again possible to
+generate an Emacs info file from the library manual (but I don't
+commit to supporting this in future versions).
+
+- New module: telnetlib.py (a simple telnet client library).
+
+- New tool: Tools/versioncheck/, by Jack Jansen.
+
+- Ported zlibmodule.c and bsddbmodule.c to NT; The project file for MS
+DevStudio 5.0 now includes new subprojects to build the zlib and bsddb
+extension modules.
+
+- Many small changes again to Tkinter.py -- mostly bugfixes and adding
+missing routines.  Thanks to Greg McFarlane for reporting a bunch of
+problems and proofreading my fixes.
+
+- The re module and its documentation are up to date with the latest
+version released to the string-sig (Dec. 22).
+
+- Stop test_grp.py from failing when the /etc/group file is empty
+(yes, this happens!).
+
+- Fix bug in integer conversion (mystrtoul.c) that caused
+4294967296==0 to be true!
+
+- The VC++ 4.2 project file should be complete again.
+
+- In tempfile.py, use a better template on NT, and add a new optional
+argument "suffix" with default "" to specify a specific extension for
+the temporary filename (needed sometimes on NT but perhaps also handy
+elsewhere).
+
+- Fixed some bugs in the FAQ wizard, and converted it to use re
+instead of regex.
+
+- Fixed a mysteriously undetected error in dlmodule.c (it was using a
+totally bogus routine name to raise an exception).
+
+- Fixed bug in import.c which wasn't using the new "dos-8x3" name yet.
+
+- Hopefully harmless changes to the build process to support shared
+libraries on DG/UX.  This adds a target to create
+libpython$(VERSION).so; however this target is *only* for DG/UX.
+
+- Fixed a bug in the new format string error checking in getargs.c.
+
+- A simple fix for infinite recursion when printing __builtins__:
+reset '_' to None before printing and set it to the printed variable
+*after* printing (and only when printing is successful).
+
+- Fixed lib-tk/SimpleDialog.py to keep the dialog visible even if the
+parent window is not (Skip Montanaro).
+
+- Fixed the two most annoying problems with ftp URLs in
+urllib.urlopen(); an empty file now correctly raises an error, and it
+is no longer required to explicitly close the returned "file" object
+before opening another ftp URL to the same host and directory.
+
+
+======================================================================
+
+
+From 1.5b1 to 1.5b2
+===================
+
+- Fixed a bug in cPickle.c that caused it to crash right away because
+the version string had a different format.
+
+- Changes in pickle.py and cPickle.c: when unpickling an instance of a
+class that doesn't define the __getinitargs__() method, the __init__()
+constructor is no longer called.  This makes a much larger group of
+classes picklable by default, but may occasionally change semantics.
+To force calling __init__() on unpickling, define a __getinitargs__()
+method.  Other changes too, in particular cPickle now handles classes
+defined in packages correctly.  The same change applies to copying
+instances with copy.py.  The cPickle.c changes and some pickle.py
+changes are courtesy Jim Fulton.
+
+- Locale support in he "re" (Perl regular expressions) module.  Use 
+the flag re.L (or re.LOCALE) to enable locale-specific matching
+rules for \w and \b.  The in-line syntax for this flag is (?L).
+
+- The built-in function isinstance(x, y) now also succeeds when y is
+a type object and type(x) is y.
+
+- repr() and str() of class and instance objects now reflect the
+package/module in which the class is defined.
+
+- Module "ni" has been removed.  (If you really need it, it's been
+renamed to "ni1".  Let me know if this causes any problems for you.
+Package authors are encouraged to write __init__.py files that
+support both ni and 1.5 package support, so the same version can be
+used with Python 1.4 as well as 1.5.)
+
+- The thread module is now automatically included when threads are
+configured.  (You must remove it from your existing Setup file,
+since it is now in its own Setup.thread file.)
+
+- New command line option "-x" to skip the first line of the script;
+handy to make executable scripts on non-Unix platforms.
+
+- In importdl.c, add the RTLD_GLOBAL to the dlopen() flags.  I
+haven't checked how this affects things, but it should make symbols
+in one shared library available to the next one.
+
+- The Windows installer now installs in the "Program Files" folder on
+the proper volume by default.
+
+- The Windows configuration adds a new main program, "pythonw", and
+registers a new extension, ".pyw" that invokes this.  This is a
+pstandard Python interpreter that does not pop up a console window;
+handy for pure Tkinter applications.  All output to the original
+stdout and stderr is lost; reading from the original stdin yields
+EOF.  Also, both python.exe and pythonw.exe now have a pretty icon
+(a green snake in a box, courtesy Mark Hammond).
+
+- Lots of improvements to emacs-mode.el again.  See Barry's web page:
+http://www.python.org/ftp/emacs/pmdetails.html.
+
+- Lots of improvements and additions to the library reference manual;
+many by Fred Drake.
+
+- Doc strings for the following modules: rfc822.py, posixpath.py,
+ntpath.py, httplib.py.  Thanks to Mitch Chapman and Charles Waldman.
+
+- Some more regression testing.
+
+- An optional 4th (maxsplit) argument to strop.replace().
+
+- Fixed handling of maxsplit in string.splitfields().
+
+- Tweaked os.environ so it can be pickled and copied.
+
+- The portability problems caused by indented preprocessor commands
+and C++ style comments should be gone now.
+
+- In random.py, added Pareto and Weibull distributions.
+
+- The crypt module is now disabled in Modules/Setup.in by default; it
+is rarely needed and causes errors on some systems where users often
+don't know how to deal with those.
+
+- Some improvements to the _tkinter build line suggested by Case Roole.
+
+- A full suite of platform specific files for NetBSD 1.x, submitted by 
+Anders Andersen.
+
+- New Solaris specific header STROPTS.py.
+
+- Moved a confusing occurrence of *shared* from the comments in
+Modules/Setup.in (people would enable this one instead of the real
+one, and get disappointing results).
+
+- Changed the default mode for directories to be group-writable when
+the installation process creates them.
+
+- Check for pthread support in "-l_r" for FreeBSD/NetBSD, and support
+shared libraries for both.
+
+- Support FreeBSD and NetBSD in posixfile.py.
+
+- Support for the "event" command, new in Tk 4.2.  By Case Roole.
+
+- Add Tix_SafeInit() support to tkappinit.c.
+
+- Various bugs fixed in "re.py" and "pcre.c".
+
+- Fixed a bug (broken use of the syntax table) in the old "regexpr.c".
+
+- In frozenmain.c, stdin is made unbuffered too when PYTHONUNBUFFERED
+is set.
+
+- Provide default blocksize for retrbinary in ftplib.py (Skip
+Montanaro).
+
+- In NT, pick the username up from different places in user.py (Jeff
+Bauer).
+
+- Patch to urlparse.urljoin() for ".." and "..#1", Marc Lemburg.
+
+- Many small improvements to Jeff Rush' OS/2 support.
+
+- ospath.py is gone; it's been obsolete for so many years now...
+
+- The reference manual is now set up to prepare better HTML (still
+using webmaker, alas).
+
+- Add special handling to /Tools/freeze for Python modules that are
+imported implicitly by the Python runtime: 'site' and 'exceptions'.
+
+- Tools/faqwiz 0.8.3 -- add an option to suppress URL processing
+inside <PRE>, by "Scott".
+
+- Added ConfigParser.py, a generic parser for sectioned configuration
+files.
+
+- In _localemodule.c, LC_MESSAGES is not always defined; put it
+between #ifdefs.
+
+- Typo in resource.c: RUSAGE_CHILDERN -> RUSAGE_CHILDREN.
+
+- Demo/scripts/newslist.py: Fix the way the version number is gotten
+out of the RCS revision.
+
+- PyArg_Parse[Tuple] now explicitly check for bad characters at the
+end of the format string.
+
+- Revamped PC/example_nt to support VC++ 5.x.
+
+- <listobject>.sort() now uses a modified quicksort by Raymund Galvin,
+after studying the GNU libg++ quicksort.  This should be much faster
+if there are lots of duplicates, and otherwise at least as good.
+
+- Added "uue" as an alias for "uuencode" to mimetools.py.  (Hm, the
+uudecode bug where it complaints about trailing garbage is still there 
+:-( ).
+
+- pickle.py requires integers in text mode to be in decimal notation
+(it used to accept octal and hex, even though it would only generate
+decimal numbers).
+
+- In string.atof(), don't fail when the "re" module is unavailable.
+Plug the ensueing security leak by supplying an empty __builtins__
+directory to eval().
+
+- A bunch of small fixes and improvements to Tkinter.py.
+
+- Fixed a buffer overrun in PC/getpathp.c.
+
+
+======================================================================
+
+
+From 1.5a4 to 1.5b1
+===================
+
+- The Windows NT/95 installer now includes full HTML of all manuals.
+It also has a checkbox that lets you decide whether to install the
+interpreter and library.  The WISE installer script for the installer
+is included in the source tree as PC/python15.wse, and so are the
+icons used for Python files.  The config.c file for the Windows build
+is now complete with the pcre module.
+
+- sys.ps1 and sys.ps2 can now arbitrary objects; their str() is
+evaluated for the prompt.
+
+- The reference manual is brought up to date (more or less -- it still
+needs work, e.g. in the area of package import).
+
+- The icons used by latex2html are now included in the Doc
+subdirectory (mostly so that tarring up the HTML files can be fully
+automated).  A simple index.html is also added to Doc (it only works
+after you have successfully run latex2html).
+
+- For all you would-be proselytizers out there: a new version of
+Misc/BLURB describes Python more concisely, and Misc/comparisons
+compares Python to several other languages.  Misc/BLURB.WINDOWS
+contains a blurb specifically aimed at Windows programmers (by Mark
+Hammond).
+
+- A new version of the Python mode for Emacs is included as
+Misc/python-mode.el.  There are too many new features to list here.
+See http://www.python.org/ftp/emacs/pmdetails.html for more info.
+
+- New module fileinput makes iterating over the lines of a list of
+files easier.  (This still needs some more thinking to make it more
+extensible.)
+
+- There's full OS/2 support, courtesy Jeff Rush.  To build the OS/2
+version, see PC/readme.txt and PC/os2vacpp.  This is for IBM's Visual
+Age C++ compiler.  I expect that Jeff will also provide a binary
+release for this platform.
+
+- On Linux, the configure script now uses '-Xlinker -export-dynamic'
+instead of '-rdynamic' to link the main program so that it exports its
+symbols to shared libraries it loads dynamically.  I hope this doesn't
+break on older Linux versions; it is needed for mklinux and appears to
+work on Linux 2.0.30.
+
+- Some Tkinter resstructuring: the geometry methods that apply to a
+master are now properly usable on toplevel master widgets.  There's a
+new (internal) widget class, BaseWidget.  New, longer "official" names
+for the geometry manager methods have been added,
+e.g. "grid_columnconfigure()" instead of "columnconfigure()".  The old
+shorter names still work, and where there's ambiguity, pack wins over
+place wins over grid.  Also, the bind_class method now returns its
+value.
+
+- New, RFC-822 conformant parsing of email addresses and address lists
+in the rfc822 module, courtesy Ben Escoto.
+
+- New, revamped tkappinit.c with support for popular packages (PIL,
+TIX, BLT, TOGL).  For the last three, you need to execute the Tcl
+command "load {} Tix" (or Blt, or Togl) to gain access to them.
+The Modules/Setup line for the _tkinter module has been rewritten
+using the cool line-breaking feature of most Bourne shells.
+
+- New socket method connect_ex() returns the error code from connect()
+instead of raising an exception on errors; this makes the logic
+required for asynchronous connects simpler and more efficient.
+
+- New "locale" module with (still experimental) interface to the
+standard C library locale interface, courtesy Martin von Loewis.  This
+does not repeat my mistake in 1.5a4 of always calling
+setlocale(LC_ALL, "").  In fact, we've pretty much decided that
+Python's standard numerical formatting operations should always use
+the conventions for the C locale; the locale module contains utility
+functions to format numbers according to the user specified locale.
+(All this is accomplished by an explicit call to setlocale(LC_NUMERIC,
+"C") after locale-changing calls.)  See the library manual. (Alas, the
+promised changes to the "re" module for locale support have not been
+materialized yet.  If you care, volunteer!)
+
+- Memory leak plugged in Py_BuildValue when building a dictionary.
+
+- Shared modules can now live inside packages (hierarchical module
+namespaces).  No changes to the shared module itself are needed.
+
+- Improved policy for __builtins__: this is a module in __main__ and a
+dictionary everywhere else.
+
+- Python no longer catches SIGHUP and SIGTERM by default.  This was
+impossible to get right in the light of thread contexts.  If you want
+your program to clean up when a signal happens, use the signal module
+to set up your own signal handler.
+
+- New Python/C API PyNumber_CoerceEx() does not return an exception
+when no coercion is possible.  This is used to fix a problem where
+comparing incompatible numbers for equality would raise an exception
+rather than return false as in Python 1.4 -- it once again will return
+false.
+
+- The errno module is changed again -- the table of error messages
+(errorstr) is removed.  Instead, you can use os.strerror().  This
+removes redundance and a potential locale dependency.
+
+- New module xmllib, to parse XML files.  By Sjoerd Mullender.
+
+- New C API PyOS_AfterFork() is called after fork() in posixmodule.c.
+It resets the signal module's notion of what the current process ID
+and thread are, so that signal handlers will work after (and across)
+calls to os.fork().
+
+- Fixed most occurrences of fatal errors due to missing thread state.
+
+- For vgrind (a flexible source pretty printer) fans, there's a simple
+Python definition in Misc/vgrindefs, courtesy Neale Pickett.
+
+- Fixed memory leak in exec statement.
+
+- The test.pystone module has a new function, pystones(loops=LOOPS),
+which returns a (benchtime, stones) tuple.  The main() function now
+calls this and prints the report.
+
+- Package directories now *require* the presence of an __init__.py (or
+__init__.pyc) file before they are considered as packages.  This is
+done to prevent accidental subdirectories with common names from
+overriding modules with the same name.
+
+- Fixed some strange exceptions in __del__ methods in library modules
+(e.g. urllib).  This happens because the builtin names are already
+deleted by the time __del__ is called.  The solution (a hack, but it
+works) is to set some instance variables to 0 instead of None.
+
+- The table of built-in module initializers is replaced by a pointer
+variable.  This makes it possible to switch to a different table at
+run time, e.g. when a collection of modules is loaded from a shared
+library.  (No example code of how to do this is given, but it is
+possible.)  The table is still there of course, its name prefixed with
+an underscore and used to initialize the pointer.
+
+- The warning about a thread still having a frame now only happens in
+verbose mode.
+
+- Change the signal finialization so that it also resets the signal
+handlers.  After this has been called, our signal handlers are no
+longer active!
+
+- New version of tokenize.py (by Ka-Ping Yee) recognizes raw string
+literals.  There's now also a test fort this module.
+
+- The copy module now also uses __dict__.update(state) instead of
+going through individual attribute assignments, for class instances
+without a __setstate__ method.
+
+- New module reconvert translates old-style (regex module) regular
+expressions to new-style (re module, Perl-style) regular expressions.
+
+- Most modules that used to use the regex module now use the re
+module.  The grep module has a new pgrep() function which uses
+Perl-style regular expressions.
+
+- The (very old, backwards compatibility) regexp.py module has been
+deleted.
+
+- Restricted execution (rexec): added the pcre module (support for the
+re module) to the list of trusted extension modules.
+
+- New version of Jim Fulton's CObject object type, adds
+PyCObject_FromVoidPtrAndDesc() and PyCObject_GetDesc() APIs.
+
+- Some patches to Lee Busby's fpectl mods that accidentally didn't
+make it into 1.5a4.
+
+- In the string module, add an optional 4th argument to count(),
+matching find() etc.
+
+- Patch for the nntplib module by Charles Waldman to add optional user
+and password arguments to NNTP.__init__(), for nntp servers that need
+them.
+
+- The str() function for class objects now returns
+"modulename.classname" instead of returning the same as repr().
+
+- The parsing of \xXX escapes no longer relies on sscanf().
+
+- The "sharedmodules" subdirectory of the installation is renamed to
+"lib-dynload".  (You may have to edit your Modules/Setup file to fix
+this in an existing installation!)
+
+- Fixed Don Beaudry's mess-up with the OPT test in the configure
+script.  Certain SGI platforms will still issue a warning for each
+compile; there's not much I can do about this since the compiler's
+exit status doesn't indicate that I was using an obsolete option.
+
+- Fixed Barry's mess-up with {}.get(), and added test cases for it.
+
+- Shared libraries didn't quite work under AIX because of the change
+in status of the GNU readline interface.  Fix due to by Vladimir
+Marangozov.
+
+
+======================================================================
+
+
+From 1.5a3 to 1.5a4
+===================
+
+- faqwiz.py: version 0.8; Recognize https:// as URL; <html>...</html>
+feature; better install instructions; removed faqmain.py (which was an
+older version).
+
+- nntplib.py: Fixed some bugs reported by Lars Wirzenius (to Debian)
+about the treatment of lines starting with '.'.  Added a minimal test
+function.
+
+- struct module: ignore most whitespace in format strings.
+
+- urllib.py: close the socket and temp file in URLopener.retrieve() so
+that multiple retrievals using the same connection work.
+
+- All standard exceptions are now classes by default; use -X to make
+them strings (for backward compatibility only).
+
+- There's a new standard exception hierarchy, defined in the standard
+library module exceptions.py (which you never need to import
+explicitly).  See
+http://grail.cnri.reston.va.us/python/essays/stdexceptions.html for
+more info.
+
+- Three new C API functions:
+
+  - int PyErr_GivenExceptionMatches(obj1, obj2)
+
+    Returns 1 if obj1 and obj2 are the same object, or if obj1 is an
+    instance of type obj2, or of a class derived from obj2
+
+  - int PyErr_ExceptionMatches(obj)
+
+    Higher level wrapper around PyErr_GivenExceptionMatches() which uses
+    PyErr_Occurred() as obj1.  This will be the more commonly called
+    function.
+
+  - void PyErr_NormalizeException(typeptr, valptr, tbptr)
+
+    Normalizes exceptions, and places the normalized values in the
+    arguments.  If type is not a class, this does nothing.  If type is a
+    class, then it makes sure that value is an instance of the class by:
+
+    1. if instance is of the type, or a class derived from type, it does
+       nothing.
+
+    2. otherwise it instantiates the class, using the value as an
+       argument.  If value is None, it uses an empty arg tuple, and if
+       the value is a tuple, it uses just that.
+
+- Another new C API function: PyErr_NewException() creates a new
+exception class derived from Exception; when -X is given, it creates a
+new string exception.
+
+- core interpreter: remove the distinction between tuple and list
+unpacking; allow an arbitrary sequence on the right hand side of any
+unpack instruction.  (UNPACK_LIST and UNPACK_TUPLE now do the same
+thing, which should really be called UNPACK_SEQUENCE.)
+
+- classes: Allow assignments to an instance's __dict__ or __class__,
+so you can change ivars (including shared ivars -- shock horror) and
+change classes dynamically.  Also make the check on read-only
+attributes of classes less draconic -- only the specials names
+__dict__, __bases__, __name__ and __{get,set,del}attr__ can't be
+assigned.
+
+- Two new built-in functions: issubclass() and isinstance().  Both
+take classes as their second arguments.  The former takes a class as
+the first argument and returns true iff first is second, or is a
+subclass of second.  The latter takes any object as the first argument
+and returns true iff first is an instance of the second, or any
+subclass of second.
+
+- configure: Added configuration tests for presence of alarm(),
+pause(), and getpwent().
+
+- Doc/Makefile: changed latex2html targets.
+
+- classes: Reverse the search order for the Don Beaudry hook so that
+the first class with an applicable hook wins.  Makes more sense.
+
+- Changed the checks made in Py_Initialize() and Py_Finalize().  It is
+now legal to call these more than once.  The first call to
+Py_Initialize() initializes, the first call to Py_Finalize()
+finalizes.  There's also a new API, Py_IsInitalized() which checks
+whether we are already initialized (in case you want to leave things
+as they were).
+
+- Completely disable the declarations for malloc(), realloc() and
+free().  Any 90's C compiler has these in header files, and the tests
+to decide whether to suppress the declarations kept failing on some
+platforms.
+
+- *Before* (instead of after) signalmodule.o is added, remove both
+intrcheck.o and sigcheck.o.  This should get rid of warnings in ar or
+ld on various systems.
+
+- Added reop to PC/config.c
+
+- configure: Decided to use -Aa -D_HPUX_SOURCE on HP-UX platforms.
+Removed outdated HP-UX comments from README.  Added Cray T3E comments.
+
+- Various renames of statically defined functions that had name
+conflicts on some systems, e.g. strndup (GNU libc), join (Cray),
+roundup (sys/types.h).
+
+- urllib.py: Interpret three slashes in file: URL as local file (for
+Netscape on Windows/Mac).
+
+- copy.py: Make sure the objects returned by __getinitargs__() are
+kept alive (in the memo) to avoid a certain kind of nasty crash.  (Not
+easily reproducable because it requires a later call to
+__getinitargs__() to return a tuple that happens to be allocated at
+the same address.)
+
+- Added definition of AR to toplevel Makefile.  Renamed @buildno temp
+file to buildno1.
+
+- Moved Include/assert.h to Parser/assert.h, which seems to be the
+only place where it's needed.
+
+- Tweaked the dictionary lookup code again for some more speed
+(Vladimir Marangozov).
+
+- NT build: Changed the way python15.lib is included in the other
+projects.  Per Mark Hammond's suggestion, add it to the extra libs in
+Settings instead of to the project's source files.
+
+- regrtest.py: Change default verbosity so that there are only three
+levels left: -q, default and -v.  In default mode, the name of each
+test is now printed.  -v is the same as the old -vv.  -q is more quiet
+than the old default mode.
+
+- Removed the old FAQ from the distribution.  You now have to get it
+from the web!
+
+- Removed the PC/make_nt.in file from the distribution; it is no
+longer needed.
+
+- Changed the build sequence so that shared modules are built last.
+This fixes things for AIX and doesn't hurt elsewhere.
+
+- Improved test for GNU MP v1 in mpzmodule.c
+
+- fileobject.c: ftell() on Linux discards all buffered data; changed
+read() code to use lseek() instead to get the same effect
+
+- configure.in, configure, importdl.c: NeXT sharedlib fixes
+
+- tupleobject.c: PyTuple_SetItem asserts refcnt==1
+
+- resource.c: Different strategy regarding whether to declare
+getrusage() and getpagesize() -- #ifdef doesn't work, Linux has
+conflicting decls in its headers.  Choice: only declare the return
+type, not the argument prototype, and not on Linux.
+
+- importdl.c, configure*: set sharedlib extensions properly for NeXT
+
+- configure*, Makefile.in, Modules/Makefile.pre.in: AIX shared libraries
+fixed; moved addition of PURIFY to LINKCC to configure
+
+- reopmodule.c, regexmodule.c, regexpr.c, zlibmodule.c: needed casts
+added to shup up various compilers.
+
+- _tkinter.c: removed buggy mac #ifndef
+
+- Doc: various Mac documentation changes, added docs for 'ic' module
+
+- PC/make_nt.in: deleted
+
+- test_time.py, test_strftime.py: tweaks to catch %Z (which may return
+"")
+
+- test_rotor.py: print b -> print `b`
+
+- Tkinter.py: (tagOrId) -> (tagOrId,)
+
+- Tkinter.py: the Tk class now also has a configure() method and
+friends (they have been moved to the Misc class to accomplish this).
+
+- dict.get(key[, default]) returns dict[key] if it exists, or default
+if it doesn't.  The default defaults to None.  This is quicker for
+some applications than using either has_key() or try:...except
+KeyError:....
+
+- Tools/webchecker/: some small changes to webchecker.py; added
+websucker.py (a simple web site mirroring script).
+
+- Dictionary objects now have a get() method (also in UserDict.py).
+dict.get(key, default) returns dict[key] if it exists and default
+otherwise; default defaults to None.
+
+- Tools/scripts/logmerge.py: print the author, too.
+
+- Changes to import: support for "import a.b.c" is now built in.  See
+http://grail.cnri.reston.va.us/python/essays/packages.html
+for more info.  Most important deviations from "ni.py": __init__.py is
+executed in the package's namespace instead of as a submodule; and
+there's no support for "__" or "__domain__".  Note that "ni.py" is not
+changed to match this -- it is simply declared obsolete (while at the
+same time, it is documented...:-( ).
+Unfortunately, "ihooks.py" has not been upgraded (but see "knee.py"
+for an example implementation of hierarchical module import written in
+Python).
+
+- More changes to import: the site.py module is now imported by
+default when Python is initialized; use -S to disable it.  The site.py
+module extends the path with several more directories: site-packages
+inside the lib/python1.5/ directory, site-python in the lib/
+directory, and pathnames mentioned in *.pth files found in either of
+those directories.  See
+http://grail.cnri.reston.va.us/python/essays/packages.html
+for more info.
+
+- Changes to standard library subdirectory names: those subdirectories
+that are not packages have been renamed with a hypen in their name,
+e.g. lib-tk, lib-stdwin, plat-win, plat-linux2, plat-sunos5, dos-8x3.
+The test suite is now a package -- to run a test, you must now use
+"import test.test_foo".
+
+- A completely new re.py module is provided (thanks to Andrew
+Kuchling, Tim Peters and Jeffrey Ollie) which uses Philip Hazel's
+"pcre" re compiler and engine.  For a while, the "old" re.py (which
+was new in 1.5a3!) will be kept around as re1.py.  The "old" regex
+module and underlying parser and engine are still present -- while
+regex is now officially obsolete, it will probably take several major
+release cycles before it can be removed.
+
+- The posix module now has a strerror() function which translates an
+error code to a string.
+
+- The emacs.py module (which was long obsolete) has been removed.
+
+- The universal makefile Misc/Makefile.pre.in now features an
+"install" target.  By default, installed shared libraries go into
+$exec_prefix/lib/python$VERSION/site-packages/.
+
+- The install-sh script is installed with the other configuration
+specific files (in the config/ subdirectory).
+
+- It turns out whatsound.py and sndhdr.py were identical modules.
+Since there's also an imghdr.py file, I propose to make sndhdr.py the
+official one.  For compatibility, whatsound.py imports * from
+sndhdr.py.
+
+- Class objects have a new attribute, __module__, giving the name of
+the module in which they were declared.  This is useful for pickle and
+for printing the full name of a class exception.
+
+- Many extension modules no longer issue a fatal error when their
+initialization fails; the importing code now checks whether an error
+occurred during module initialization, and correctly propagates the
+exception to the import statement.
+
+- Most extension modules now raise class-based exceptions (except when
+-X is used).
+
+- Subtle changes to PyEval_{Save,Restore}Thread(): always swap the
+thread state -- just don't manipulate the lock if it isn't there.
+
+- Fixed a bug in Python/getopt.c that made it do the wrong thing when
+an option was a single '-'.  Thanks to Andrew Kuchling.
+
+- New module mimetypes.py will guess a MIME type from a filename's
+extension.
+
+- Windows: the DLL version is now settable via a resource rather than
+being hardcoded.  This can be used for "branding" a binary Python
+distribution.
+
+- urllib.py is now threadsafe -- it now uses re instead of regex, and
+sys.exc_info() instead of sys.exc_{type,value}.
+
+- Many other library modules that used to use
+sys.exc_{type,value,traceback} are now more thread-safe by virtue of
+using sys.exc_info().
+
+- The functions in popen2 have an optional buffer size parameter.
+Also, the command argument can now be either a string (passed to the
+shell) or a list of arguments (passed directly to execv).
+
+
+- Alas, the thread support for _tkinter released with 1.5a3 didn't
+work.  It's been rewritten.  The bad news is that it now requires a
+modified version of a file in the standard Tcl distribution, which you
+must compile with a -I option pointing to the standard Tcl source
+tree.  For this reason, the thread support is disabled by default.
+
+- The errno extension module adds two tables: errorcode maps errno
+numbers to errno names (e.g. EINTR), and errorstr maps them to
+message strings.  (The latter is redundant because the new call
+posix.strerror() now does the same, but alla...)  (Marc-Andre Lemburg)
+
+- The readline extension module now provides some interfaces to
+internal readline routines that make it possible to write a completer
+in Python.  An example completer, rlcompleter.py, is provided.
+
+	When completing a simple identifier, it completes keywords,
+	built-ins and globals in __main__; when completing
+	NAME.NAME..., it evaluates (!) the expression up to the last
+	dot and completes its attributes.
+
+	It's very cool to do "import string" type "string.", hit the
+	completion key (twice), and see the list of names defined by
+	the string module!
+
+	Tip: to use the tab key as the completion key, call
+
+	    readline.parse_and_bind("tab: complete")
+
+- The traceback.py module has a new function tb_lineno() by Marc-Andre
+Lemburg which extracts the line number from the linenumber table in
+the code object.  Apparently the traceback object doesn't contains the
+right linenumber when -O is used.  Rather than guessing whether -O is
+on or off, the module itself uses tb_lineno() unconditionally.
+
+- Fixed Demo/tkinter/matt/canvas-moving-or-creating.py: change bind()
+to tag_bind() so it works again.
+
+- The pystone script is now a standard library module.  Example use:
+"import test.pystone; test.pystone.main()".
+
+- The import of the readline module in interactive mode is now also
+attempted when -i is specified.  (Yes, I know, giving in to Marc-Andre
+Lemburg, who asked for this. :-)
+
+- rfc822.py: Entirely rewritten parseaddr() function by Sjoerd
+Mullender, to be closer to the standard.  This fixes the getaddr()
+method.  Unfortunately, getaddrlist() is as broken as ever, since it
+splits on commas without regard for RFC 822 quoting conventions.
+
+- pprint.py: correctly emit trailing "," in singleton tuples.
+
+- _tkinter.c: export names for its type objects, TkappType and
+TkttType.
+
+- pickle.py: use __module__ when defined; fix a particularly hard to
+reproduce bug that confuses the memo when temporary objects are
+returned by custom pickling interfaces; and a semantic change: when
+unpickling the instance variables of an instance, use
+inst.__dict__.update(value) instead of a for loop with setattr() over
+the value.keys().  This is more consistent (the pickling doesn't use
+getattr() either but pickles inst.__dict__) and avoids problems with
+instances that have a __setattr__ hook.  But it *is* a semantic change
+(because the setattr hook is no longer used).  So beware!
+
+- config.h is now installed (at last) in
+$exec_prefix/include/python1.5/.  For most sites, this means that it
+is actually in $prefix/include/python1.5/, with all the other Python
+include files, since $prefix and $exec_prefix are the same by
+default.
+
+- The imp module now supports parts of the functionality to implement
+import of hierarchical module names.  It now supports find_module()
+and load_module() for all types of modules.  Docstrings have been
+added for those functions in the built-in imp module that are still
+relevant (some old interfaces are obsolete).  For a sample
+implementation of hierarchical module import in Python, see the new
+library module knee.py.
+
+- The % operator on string objects now allows arbitrary nested parens
+in a %(...)X style format.  (Brad Howes)
+
+- Reverse the order in which Setup and Setup.local are passed to the
+makesetup script.  This allows variable definitions in Setup.local to
+override definitions in Setup.  (But you'll still have to edit Setup
+if you want to disable modules that are enabled by default, or if such
+modules need non-standard options.)
+
+- Added PyImport_ImportModuleEx(name, globals, locals, fromlist); this
+is like PyImport_ImporModule(name) but receives the globals and locals
+dict and the fromlist arguments as well.  (The name is a char*; the
+others are PyObject*s).
+
+- The 'p' format in the struct extension module alloded to above is
+new in 1.5a4.
+
+- The types.py module now uses try-except in a few places to make it
+more likely that it can be imported in restricted mode.  Some type
+names are undefined in that case, e.g. CodeType (inaccessible),
+FileType (not always accessible), and TracebackType and FrameType
+(inaccessible).
+
+- In urllib.py: added separate administration of temporary files
+created y URLopener.retrieve() so cleanup() can properly remove them.
+The old code removed everything in tempcache which was a bad idea if
+the user had passed a non-temp file into it.  Also, in basejoin(),
+interpret relative paths starting in "../".  This is necessary if the
+server uses symbolic links.
+
+- The Windows build procedure and project files are now based on
+Microsoft Visual C++ 5.x.  The build now takes place in the PCbuild
+directory.  It is much more robust, and properly builds separate Debug
+and Release versions.  (The installer will be added shortly.)
+
+- Added casts and changed some return types in regexpr.c to avoid
+compiler warnings or errors on some platforms.
+
+- The AIX build tools for shared libraries now supports VPATH.  (Donn
+Cave)
+
+- By default, disable the "portable" multimedia modules audioop,
+imageop, and rgbimg, since they don't work on 64-bit platforms.
+
+- Fixed a nasty bug in cStringIO.c when code was actually using the
+close() method (the destructors would try to free certain fields a
+second time).
+
+- For those who think they need it, there's a "user.py" module.  This
+is *not* imported by default, but can be imported to run user-specific
+setup commands, ~/.pythonrc.py.
+
+- Various speedups suggested by Fredrik Lundh, Marc-Andre Lemburg,
+Vladimir Marangozov, and others.
+
+- Added os.altsep; this is '/' on DOS/Windows, and None on systems
+with a sane filename syntax.
+
+- os.py: Write out the dynamic OS choice, to avoid exec statements.
+Adding support for a new OS is now a bit more work, but I bet that
+'dos' or 'nt' will cover most situations...
+
+- The obsolete exception AccessError is now really gone.
+
+- Tools/faqwiz/: New installation instructions show how to maintain
+multiple FAQs.  Removed bootstrap script from end of faqwiz.py module.
+Added instructions to bootstrap script, too.  Version bumped to 0.8.1.
+Added <html>...</html> feature suggested by Skip Montanaro.  Added
+leading text for Roulette, default to 'Hit Reload ...'.  Fix typo in
+default SRCDIR.
+
+- Documentation for the relatively new modules "keyword" and "symbol"
+has been added (to the end of the section on the parser extension
+module).
+
+- In module bisect.py, but functions have two optional argument 'lo'
+and 'hi' which allow you to specify a subsequence of the array to
+operate on.
+
+- In ftplib.py, changed most methods to return their status (even when
+it is always "200 OK") rather than swallowing it.
+
+- main() now calls setlocale(LC_ALL, ""), if setlocale() and
+<locale.h> are defined.
+
+- Changes to configure.in, the configure script, and both
+Makefile.pre.in files, to support SGI's SGI_ABI platform selection
+environment variable.
+
+
+======================================================================
+
 
 From 1.4 to 1.5a3
 =================
@@ -973,907 +2234,6 @@ Mac
 - As always, the Macintosh port will be done by Jack Jansen.  He will
 make a separate announcement for the Mac specific source code and the
 binary distribution(s) when these are ready.
-
-
-======================================================================
-
-
-From 1.5a3 to 1.5a4
-===================
-
-- faqwiz.py: version 0.8; Recognize https:// as URL; <html>...</html>
-feature; better install instructions; removed faqmain.py (which was an
-older version).
-
-- nntplib.py: Fixed some bugs reported by Lars Wirzenius (to Debian)
-about the treatment of lines starting with '.'.  Added a minimal test
-function.
-
-- struct module: ignore most whitespace in format strings.
-
-- urllib.py: close the socket and temp file in URLopener.retrieve() so
-that multiple retrievals using the same connection work.
-
-- All standard exceptions are now classes by default; use -X to make
-them strings (for backward compatibility only).
-
-- There's a new standard exception hierarchy, defined in the standard
-library module exceptions.py (which you never need to import
-explicitly).  See
-http://grail.cnri.reston.va.us/python/essays/stdexceptions.html for
-more info.
-
-- Three new C API functions:
-
-  - int PyErr_GivenExceptionMatches(obj1, obj2)
-
-    Returns 1 if obj1 and obj2 are the same object, or if obj1 is an
-    instance of type obj2, or of a class derived from obj2
-
-  - int PyErr_ExceptionMatches(obj)
-
-    Higher level wrapper around PyErr_GivenExceptionMatches() which uses
-    PyErr_Occurred() as obj1.  This will be the more commonly called
-    function.
-
-  - void PyErr_NormalizeException(typeptr, valptr, tbptr)
-
-    Normalizes exceptions, and places the normalized values in the
-    arguments.  If type is not a class, this does nothing.  If type is a
-    class, then it makes sure that value is an instance of the class by:
-
-    1. if instance is of the type, or a class derived from type, it does
-       nothing.
-
-    2. otherwise it instantiates the class, using the value as an
-       argument.  If value is None, it uses an empty arg tuple, and if
-       the value is a tuple, it uses just that.
-
-- Another new C API function: PyErr_NewException() creates a new
-exception class derived from Exception; when -X is given, it creates a
-new string exception.
-
-- core interpreter: remove the distinction between tuple and list
-unpacking; allow an arbitrary sequence on the right hand side of any
-unpack instruction.  (UNPACK_LIST and UNPACK_TUPLE now do the same
-thing, which should really be called UNPACK_SEQUENCE.)
-
-- classes: Allow assignments to an instance's __dict__ or __class__,
-so you can change ivars (including shared ivars -- shock horror) and
-change classes dynamically.  Also make the check on read-only
-attributes of classes less draconic -- only the specials names
-__dict__, __bases__, __name__ and __{get,set,del}attr__ can't be
-assigned.
-
-- Two new built-in functions: issubclass() and isinstance().  Both
-take classes as their second arguments.  The former takes a class as
-the first argument and returns true iff first is second, or is a
-subclass of second.  The latter takes any object as the first argument
-and returns true iff first is an instance of the second, or any
-subclass of second.
-
-- configure: Added configuration tests for presence of alarm(),
-pause(), and getpwent().
-
-- Doc/Makefile: changed latex2html targets.
-
-- classes: Reverse the search order for the Don Beaudry hook so that
-the first class with an applicable hook wins.  Makes more sense.
-
-- Changed the checks made in Py_Initialize() and Py_Finalize().  It is
-now legal to call these more than once.  The first call to
-Py_Initialize() initializes, the first call to Py_Finalize()
-finalizes.  There's also a new API, Py_IsInitalized() which checks
-whether we are already initialized (in case you want to leave things
-as they were).
-
-- Completely disable the declarations for malloc(), realloc() and
-free().  Any 90's C compiler has these in header files, and the tests
-to decide whether to suppress the declarations kept failing on some
-platforms.
-
-- *Before* (instead of after) signalmodule.o is added, remove both
-intrcheck.o and sigcheck.o.  This should get rid of warnings in ar or
-ld on various systems.
-
-- Added reop to PC/config.c
-
-- configure: Decided to use -Aa -D_HPUX_SOURCE on HP-UX platforms.
-Removed outdated HP-UX comments from README.  Added Cray T3E comments.
-
-- Various renames of statically defined functions that had name
-conflicts on some systems, e.g. strndup (GNU libc), join (Cray),
-roundup (sys/types.h).
-
-- urllib.py: Interpret three slashes in file: URL as local file (for
-Netscape on Windows/Mac).
-
-- copy.py: Make sure the objects returned by __getinitargs__() are
-kept alive (in the memo) to avoid a certain kind of nasty crash.  (Not
-easily reproducable because it requires a later call to
-__getinitargs__() to return a tuple that happens to be allocated at
-the same address.)
-
-- Added definition of AR to toplevel Makefile.  Renamed @buildno temp
-file to buildno1.
-
-- Moved Include/assert.h to Parser/assert.h, which seems to be the
-only place where it's needed.
-
-- Tweaked the dictionary lookup code again for some more speed
-(Vladimir Marangozov).
-
-- NT build: Changed the way python15.lib is included in the other
-projects.  Per Mark Hammond's suggestion, add it to the extra libs in
-Settings instead of to the project's source files.
-
-- regrtest.py: Change default verbosity so that there are only three
-levels left: -q, default and -v.  In default mode, the name of each
-test is now printed.  -v is the same as the old -vv.  -q is more quiet
-than the old default mode.
-
-- Removed the old FAQ from the distribution.  You now have to get it
-from the web!
-
-- Removed the PC/make_nt.in file from the distribution; it is no
-longer needed.
-
-- Changed the build sequence so that shared modules are built last.
-This fixes things for AIX and doesn't hurt elsewhere.
-
-- Improved test for GNU MP v1 in mpzmodule.c
-
-- fileobject.c: ftell() on Linux discards all buffered data; changed
-read() code to use lseek() instead to get the same effect
-
-- configure.in, configure, importdl.c: NeXT sharedlib fixes
-
-- tupleobject.c: PyTuple_SetItem asserts refcnt==1
-
-- resource.c: Different strategy regarding whether to declare
-getrusage() and getpagesize() -- #ifdef doesn't work, Linux has
-conflicting decls in its headers.  Choice: only declare the return
-type, not the argument prototype, and not on Linux.
-
-- importdl.c, configure*: set sharedlib extensions properly for NeXT
-
-- configure*, Makefile.in, Modules/Makefile.pre.in: AIX shared libraries
-fixed; moved addition of PURIFY to LINKCC to configure
-
-- reopmodule.c, regexmodule.c, regexpr.c, zlibmodule.c: needed casts
-added to shup up various compilers.
-
-- _tkinter.c: removed buggy mac #ifndef
-
-- Doc: various Mac documentation changes, added docs for 'ic' module
-
-- PC/make_nt.in: deleted
-
-- test_time.py, test_strftime.py: tweaks to catch %Z (which may return
-"")
-
-- test_rotor.py: print b -> print `b`
-
-- Tkinter.py: (tagOrId) -> (tagOrId,)
-
-- Tkinter.py: the Tk class now also has a configure() method and
-friends (they have been moved to the Misc class to accomplish this).
-
-- dict.get(key[, default]) returns dict[key] if it exists, or default
-if it doesn't.  The default defaults to None.  This is quicker for
-some applications than using either has_key() or try:...except
-KeyError:....
-
-- Tools/webchecker/: some small changes to webchecker.py; added
-websucker.py (a simple web site mirroring script).
-
-- Dictionary objects now have a get() method (also in UserDict.py).
-dict.get(key, default) returns dict[key] if it exists and default
-otherwise; default defaults to None.
-
-- Tools/scripts/logmerge.py: print the author, too.
-
-- Changes to import: support for "import a.b.c" is now built in.  See
-http://grail.cnri.reston.va.us/python/essays/packages.html
-for more info.  Most important deviations from "ni.py": __init__.py is
-executed in the package's namespace instead of as a submodule; and
-there's no support for "__" or "__domain__".  Note that "ni.py" is not
-changed to match this -- it is simply declared obsolete (while at the
-same time, it is documented...:-( ).
-Unfortunately, "ihooks.py" has not been upgraded (but see "knee.py"
-for an example implementation of hierarchical module import written in
-Python).
-
-- More changes to import: the site.py module is now imported by
-default when Python is initialized; use -S to disable it.  The site.py
-module extends the path with several more directories: site-packages
-inside the lib/python1.5/ directory, site-python in the lib/
-directory, and pathnames mentioned in *.pth files found in either of
-those directories.  See
-http://grail.cnri.reston.va.us/python/essays/packages.html
-for more info.
-
-- Changes to standard library subdirectory names: those subdirectories
-that are not packages have been renamed with a hypen in their name,
-e.g. lib-tk, lib-stdwin, plat-win, plat-linux2, plat-sunos5, dos-8x3.
-The test suite is now a package -- to run a test, you must now use
-"import test.test_foo".
-
-- A completely new re.py module is provided (thanks to Andrew
-Kuchling, Tim Peters and Jeffrey Ollie) which uses Philip Hazel's
-"pcre" re compiler and engine.  For a while, the "old" re.py (which
-was new in 1.5a3!) will be kept around as re1.py.  The "old" regex
-module and underlying parser and engine are still present -- while
-regex is now officially obsolete, it will probably take several major
-release cycles before it can be removed.
-
-- The posix module now has a strerror() function which translates an
-error code to a string.
-
-- The emacs.py module (which was long obsolete) has been removed.
-
-- The universal makefile Misc/Makefile.pre.in now features an
-"install" target.  By default, installed shared libraries go into
-$exec_prefix/lib/python$VERSION/site-packages/.
-
-- The install-sh script is installed with the other configuration
-specific files (in the config/ subdirectory).
-
-- It turns out whatsound.py and sndhdr.py were identical modules.
-Since there's also an imghdr.py file, I propose to make sndhdr.py the
-official one.  For compatibility, whatsound.py imports * from
-sndhdr.py.
-
-- Class objects have a new attribute, __module__, giving the name of
-the module in which they were declared.  This is useful for pickle and
-for printing the full name of a class exception.
-
-- Many extension modules no longer issue a fatal error when their
-initialization fails; the importing code now checks whether an error
-occurred during module initialization, and correctly propagates the
-exception to the import statement.
-
-- Most extension modules now raise class-based exceptions (except when
--X is used).
-
-- Subtle changes to PyEval_{Save,Restore}Thread(): always swap the
-thread state -- just don't manipulate the lock if it isn't there.
-
-- Fixed a bug in Python/getopt.c that made it do the wrong thing when
-an option was a single '-'.  Thanks to Andrew Kuchling.
-
-- New module mimetypes.py will guess a MIME type from a filename's
-extension.
-
-- Windows: the DLL version is now settable via a resource rather than
-being hardcoded.  This can be used for "branding" a binary Python
-distribution.
-
-- urllib.py is now threadsafe -- it now uses re instead of regex, and
-sys.exc_info() instead of sys.exc_{type,value}.
-
-- Many other library modules that used to use
-sys.exc_{type,value,traceback} are now more thread-safe by virtue of
-using sys.exc_info().
-
-- The functions in popen2 have an optional buffer size parameter.
-Also, the command argument can now be either a string (passed to the
-shell) or a list of arguments (passed directly to execv).
-
-
-- Alas, the thread support for _tkinter released with 1.5a3 didn't
-work.  It's been rewritten.  The bad news is that it now requires a
-modified version of a file in the standard Tcl distribution, which you
-must compile with a -I option pointing to the standard Tcl source
-tree.  For this reason, the thread support is disabled by default.
-
-- The errno extension module adds two tables: errorcode maps errno
-numbers to errno names (e.g. EINTR), and errorstr maps them to
-message strings.  (The latter is redundant because the new call
-posix.strerror() now does the same, but alla...)  (Marc-Andre Lemburg)
-
-- The readline extension module now provides some interfaces to
-internal readline routines that make it possible to write a completer
-in Python.  An example completer, rlcompleter.py, is provided.
-
-	When completing a simple identifier, it completes keywords,
-	built-ins and globals in __main__; when completing
-	NAME.NAME..., it evaluates (!) the expression up to the last
-	dot and completes its attributes.
-
-	It's very cool to do "import string" type "string.", hit the
-	completion key (twice), and see the list of names defined by
-	the string module!
-
-	Tip: to use the tab key as the completion key, call
-
-	    readline.parse_and_bind("tab: complete")
-
-- The traceback.py module has a new function tb_lineno() by Marc-Andre
-Lemburg which extracts the line number from the linenumber table in
-the code object.  Apparently the traceback object doesn't contains the
-right linenumber when -O is used.  Rather than guessing whether -O is
-on or off, the module itself uses tb_lineno() unconditionally.
-
-- Fixed Demo/tkinter/matt/canvas-moving-or-creating.py: change bind()
-to tag_bind() so it works again.
-
-- The pystone script is now a standard library module.  Example use:
-"import test.pystone; test.pystone.main()".
-
-- The import of the readline module in interactive mode is now also
-attempted when -i is specified.  (Yes, I know, giving in to Marc-Andre
-Lemburg, who asked for this. :-)
-
-- rfc822.py: Entirely rewritten parseaddr() function by Sjoerd
-Mullender, to be closer to the standard.  This fixes the getaddr()
-method.  Unfortunately, getaddrlist() is as broken as ever, since it
-splits on commas without regard for RFC 822 quoting conventions.
-
-- pprint.py: correctly emit trailing "," in singleton tuples.
-
-- _tkinter.c: export names for its type objects, TkappType and
-TkttType.
-
-- pickle.py: use __module__ when defined; fix a particularly hard to
-reproduce bug that confuses the memo when temporary objects are
-returned by custom pickling interfaces; and a semantic change: when
-unpickling the instance variables of an instance, use
-inst.__dict__.update(value) instead of a for loop with setattr() over
-the value.keys().  This is more consistent (the pickling doesn't use
-getattr() either but pickles inst.__dict__) and avoids problems with
-instances that have a __setattr__ hook.  But it *is* a semantic change
-(because the setattr hook is no longer used).  So beware!
-
-- config.h is now installed (at last) in
-$exec_prefix/include/python1.5/.  For most sites, this means that it
-is actually in $prefix/include/python1.5/, with all the other Python
-include files, since $prefix and $exec_prefix are the same by
-default.
-
-- The imp module now supports parts of the functionality to implement
-import of hierarchical module names.  It now supports find_module()
-and load_module() for all types of modules.  Docstrings have been
-added for those functions in the built-in imp module that are still
-relevant (some old interfaces are obsolete).  For a sample
-implementation of hierarchical module import in Python, see the new
-library module knee.py.
-
-- The % operator on string objects now allows arbitrary nested parens
-in a %(...)X style format.  (Brad Howes)
-
-- Reverse the order in which Setup and Setup.local are passed to the
-makesetup script.  This allows variable definitions in Setup.local to
-override definitions in Setup.  (But you'll still have to edit Setup
-if you want to disable modules that are enabled by default, or if such
-modules need non-standard options.)
-
-- Added PyImport_ImportModuleEx(name, globals, locals, fromlist); this
-is like PyImport_ImporModule(name) but receives the globals and locals
-dict and the fromlist arguments as well.  (The name is a char*; the
-others are PyObject*s).
-
-- The 'p' format in the struct extension module alloded to above is
-new in 1.5a4.
-
-- The types.py module now uses try-except in a few places to make it
-more likely that it can be imported in restricted mode.  Some type
-names are undefined in that case, e.g. CodeType (inaccessible),
-FileType (not always accessible), and TracebackType and FrameType
-(inaccessible).
-
-- In urllib.py: added separate administration of temporary files
-created y URLopener.retrieve() so cleanup() can properly remove them.
-The old code removed everything in tempcache which was a bad idea if
-the user had passed a non-temp file into it.  Also, in basejoin(),
-interpret relative paths starting in "../".  This is necessary if the
-server uses symbolic links.
-
-- The Windows build procedure and project files are now based on
-Microsoft Visual C++ 5.x.  The build now takes place in the PCbuild
-directory.  It is much more robust, and properly builds separate Debug
-and Release versions.  (The installer will be added shortly.)
-
-- Added casts and changed some return types in regexpr.c to avoid
-compiler warnings or errors on some platforms.
-
-- The AIX build tools for shared libraries now supports VPATH.  (Donn
-Cave)
-
-- By default, disable the "portable" multimedia modules audioop,
-imageop, and rgbimg, since they don't work on 64-bit platforms.
-
-- Fixed a nasty bug in cStringIO.c when code was actually using the
-close() method (the destructors would try to free certain fields a
-second time).
-
-- For those who think they need it, there's a "user.py" module.  This
-is *not* imported by default, but can be imported to run user-specific
-setup commands, ~/.pythonrc.py.
-
-- Various speedups suggested by Fredrik Lundh, Marc-Andre Lemburg,
-Vladimir Marangozov, and others.
-
-- Added os.altsep; this is '/' on DOS/Windows, and None on systems
-with a sane filename syntax.
-
-- os.py: Write out the dynamic OS choice, to avoid exec statements.
-Adding support for a new OS is now a bit more work, but I bet that
-'dos' or 'nt' will cover most situations...
-
-- The obsolete exception AccessError is now really gone.
-
-- Tools/faqwiz/: New installation instructions show how to maintain
-multiple FAQs.  Removed bootstrap script from end of faqwiz.py module.
-Added instructions to bootstrap script, too.  Version bumped to 0.8.1.
-Added <html>...</html> feature suggested by Skip Montanaro.  Added
-leading text for Roulette, default to 'Hit Reload ...'.  Fix typo in
-default SRCDIR.
-
-- Documentation for the relatively new modules "keyword" and "symbol"
-has been added (to the end of the section on the parser extension
-module).
-
-- In module bisect.py, but functions have two optional argument 'lo'
-and 'hi' which allow you to specify a subsequence of the array to
-operate on.
-
-- In ftplib.py, changed most methods to return their status (even when
-it is always "200 OK") rather than swallowing it.
-
-- main() now calls setlocale(LC_ALL, ""), if setlocale() and
-<locale.h> are defined.
-
-- Changes to configure.in, the configure script, and both
-Makefile.pre.in files, to support SGI's SGI_ABI platform selection
-environment variable.
-
-
-======================================================================
-
-
-From 1.5a4 to 1.5b1
-===================
-
-- The Windows NT/95 installer now includes full HTML of all manuals.
-It also has a checkbox that lets you decide whether to install the
-interpreter and library.  The WISE installer script for the installer
-is included in the source tree as PC/python15.wse, and so are the
-icons used for Python files.  The config.c file for the Windows build
-is now complete with the pcre module.
-
-- sys.ps1 and sys.ps2 can now arbitrary objects; their str() is
-evaluated for the prompt.
-
-- The reference manual is brought up to date (more or less -- it still
-needs work, e.g. in the area of package import).
-
-- The icons used by latex2html are now included in the Doc
-subdirectory (mostly so that tarring up the HTML files can be fully
-automated).  A simple index.html is also added to Doc (it only works
-after you have successfully run latex2html).
-
-- For all you would-be proselytizers out there: a new version of
-Misc/BLURB describes Python more concisely, and Misc/comparisons
-compares Python to several other languages.  Misc/BLURB.WINDOWS
-contains a blurb specifically aimed at Windows programmers (by Mark
-Hammond).
-
-- A new version of the Python mode for Emacs is included as
-Misc/python-mode.el.  There are too many new features to list here.
-See http://www.python.org/ftp/emacs/pmdetails.html for more info.
-
-- New module fileinput makes iterating over the lines of a list of
-files easier.  (This still needs some more thinking to make it more
-extensible.)
-
-- There's full OS/2 support, courtesy Jeff Rush.  To build the OS/2
-version, see PC/readme.txt and PC/os2vacpp.  This is for IBM's Visual
-Age C++ compiler.  I expect that Jeff will also provide a binary
-release for this platform.
-
-- On Linux, the configure script now uses '-Xlinker -export-dynamic'
-instead of '-rdynamic' to link the main program so that it exports its
-symbols to shared libraries it loads dynamically.  I hope this doesn't
-break on older Linux versions; it is needed for mklinux and appears to
-work on Linux 2.0.30.
-
-- Some Tkinter resstructuring: the geometry methods that apply to a
-master are now properly usable on toplevel master widgets.  There's a
-new (internal) widget class, BaseWidget.  New, longer "official" names
-for the geometry manager methods have been added,
-e.g. "grid_columnconfigure()" instead of "columnconfigure()".  The old
-shorter names still work, and where there's ambiguity, pack wins over
-place wins over grid.  Also, the bind_class method now returns its
-value.
-
-- New, RFC-822 conformant parsing of email addresses and address lists
-in the rfc822 module, courtesy Ben Escoto.
-
-- New, revamped tkappinit.c with support for popular packages (PIL,
-TIX, BLT, TOGL).  For the last three, you need to execute the Tcl
-command "load {} Tix" (or Blt, or Togl) to gain access to them.
-The Modules/Setup line for the _tkinter module has been rewritten
-using the cool line-breaking feature of most Bourne shells.
-
-- New socket method connect_ex() returns the error code from connect()
-instead of raising an exception on errors; this makes the logic
-required for asynchronous connects simpler and more efficient.
-
-- New "locale" module with (still experimental) interface to the
-standard C library locale interface, courtesy Martin von Loewis.  This
-does not repeat my mistake in 1.5a4 of always calling
-setlocale(LC_ALL, "").  In fact, we've pretty much decided that
-Python's standard numerical formatting operations should always use
-the conventions for the C locale; the locale module contains utility
-functions to format numbers according to the user specified locale.
-(All this is accomplished by an explicit call to setlocale(LC_NUMERIC,
-"C") after locale-changing calls.)  See the library manual. (Alas, the
-promised changes to the "re" module for locale support have not been
-materialized yet.  If you care, volunteer!)
-
-- Memory leak plugged in Py_BuildValue when building a dictionary.
-
-- Shared modules can now live inside packages (hierarchical module
-namespaces).  No changes to the shared module itself are needed.
-
-- Improved policy for __builtins__: this is a module in __main__ and a
-dictionary everywhere else.
-
-- Python no longer catches SIGHUP and SIGTERM by default.  This was
-impossible to get right in the light of thread contexts.  If you want
-your program to clean up when a signal happens, use the signal module
-to set up your own signal handler.
-
-- New Python/C API PyNumber_CoerceEx() does not return an exception
-when no coercion is possible.  This is used to fix a problem where
-comparing incompatible numbers for equality would raise an exception
-rather than return false as in Python 1.4 -- it once again will return
-false.
-
-- The errno module is changed again -- the table of error messages
-(errorstr) is removed.  Instead, you can use os.strerror().  This
-removes redundance and a potential locale dependency.
-
-- New module xmllib, to parse XML files.  By Sjoerd Mullender.
-
-- New C API PyOS_AfterFork() is called after fork() in posixmodule.c.
-It resets the signal module's notion of what the current process ID
-and thread are, so that signal handlers will work after (and across)
-calls to os.fork().
-
-- Fixed most occurrences of fatal errors due to missing thread state.
-
-- For vgrind (a flexible source pretty printer) fans, there's a simple
-Python definition in Misc/vgrindefs, courtesy Neale Pickett.
-
-- Fixed memory leak in exec statement.
-
-- The test.pystone module has a new function, pystones(loops=LOOPS),
-which returns a (benchtime, stones) tuple.  The main() function now
-calls this and prints the report.
-
-- Package directories now *require* the presence of an __init__.py (or
-__init__.pyc) file before they are considered as packages.  This is
-done to prevent accidental subdirectories with common names from
-overriding modules with the same name.
-
-- Fixed some strange exceptions in __del__ methods in library modules
-(e.g. urllib).  This happens because the builtin names are already
-deleted by the time __del__ is called.  The solution (a hack, but it
-works) is to set some instance variables to 0 instead of None.
-
-- The table of built-in module initializers is replaced by a pointer
-variable.  This makes it possible to switch to a different table at
-run time, e.g. when a collection of modules is loaded from a shared
-library.  (No example code of how to do this is given, but it is
-possible.)  The table is still there of course, its name prefixed with
-an underscore and used to initialize the pointer.
-
-- The warning about a thread still having a frame now only happens in
-verbose mode.
-
-- Change the signal finialization so that it also resets the signal
-handlers.  After this has been called, our signal handlers are no
-longer active!
-
-- New version of tokenize.py (by Ka-Ping Yee) recognizes raw string
-literals.  There's now also a test fort this module.
-
-- The copy module now also uses __dict__.update(state) instead of
-going through individual attribute assignments, for class instances
-without a __setstate__ method.
-
-- New module reconvert translates old-style (regex module) regular
-expressions to new-style (re module, Perl-style) regular expressions.
-
-- Most modules that used to use the regex module now use the re
-module.  The grep module has a new pgrep() function which uses
-Perl-style regular expressions.
-
-- The (very old, backwards compatibility) regexp.py module has been
-deleted.
-
-- Restricted execution (rexec): added the pcre module (support for the
-re module) to the list of trusted extension modules.
-
-- New version of Jim Fulton's CObject object type, adds
-PyCObject_FromVoidPtrAndDesc() and PyCObject_GetDesc() APIs.
-
-- Some patches to Lee Busby's fpectl mods that accidentally didn't
-make it into 1.5a4.
-
-- In the string module, add an optional 4th argument to count(),
-matching find() etc.
-
-- Patch for the nntplib module by Charles Waldman to add optional user
-and password arguments to NNTP.__init__(), for nntp servers that need
-them.
-
-- The str() function for class objects now returns
-"modulename.classname" instead of returning the same as repr().
-
-- The parsing of \xXX escapes no longer relies on sscanf().
-
-- The "sharedmodules" subdirectory of the installation is renamed to
-"lib-dynload".  (You may have to edit your Modules/Setup file to fix
-this in an existing installation!)
-
-- Fixed Don Beaudry's mess-up with the OPT test in the configure
-script.  Certain SGI platforms will still issue a warning for each
-compile; there's not much I can do about this since the compiler's
-exit status doesn't indicate that I was using an obsolete option.
-
-- Fixed Barry's mess-up with {}.get(), and added test cases for it.
-
-- Shared libraries didn't quite work under AIX because of the change
-in status of the GNU readline interface.  Fix due to by Vladimir
-Marangozov.
-
-
-======================================================================
-
-
-From 1.5b1 to 1.5b2
-===================
-
-- Fixed a bug in cPickle.c that caused it to crash right away because
-the version string had a different format.
-
-- Changes in pickle.py and cPickle.c: when unpickling an instance of a
-class that doesn't define the __getinitargs__() method, the __init__()
-constructor is no longer called.  This makes a much larger group of
-classes picklable by default, but may occasionally change semantics.
-To force calling __init__() on unpickling, define a __getinitargs__()
-method.  Other changes too, in particular cPickle now handles classes
-defined in packages correctly.  The same change applies to copying
-instances with copy.py.  The cPickle.c changes and some pickle.py
-changes are courtesy Jim Fulton.
-
-- Locale support in he "re" (Perl regular expressions) module.  Use 
-the flag re.L (or re.LOCALE) to enable locale-specific matching
-rules for \w and \b.  The in-line syntax for this flag is (?L).
-
-- The built-in function isinstance(x, y) now also succeeds when y is
-a type object and type(x) is y.
-
-- repr() and str() of class and instance objects now reflect the
-package/module in which the class is defined.
-
-- Module "ni" has been removed.  (If you really need it, it's been
-renamed to "ni1".  Let me know if this causes any problems for you.
-Package authors are encouraged to write __init__.py files that
-support both ni and 1.5 package support, so the same version can be
-used with Python 1.4 as well as 1.5.)
-
-- The thread module is now automatically included when threads are
-configured.  (You must remove it from your existing Setup file,
-since it is now in its own Setup.thread file.)
-
-- New command line option "-x" to skip the first line of the script;
-handy to make executable scripts on non-Unix platforms.
-
-- In importdl.c, add the RTLD_GLOBAL to the dlopen() flags.  I
-haven't checked how this affects things, but it should make symbols
-in one shared library available to the next one.
-
-- The Windows installer now installs in the "Program Files" folder on
-the proper volume by default.
-
-- The Windows configuration adds a new main program, "pythonw", and
-registers a new extension, ".pyw" that invokes this.  This is a
-pstandard Python interpreter that does not pop up a console window;
-handy for pure Tkinter applications.  All output to the original
-stdout and stderr is lost; reading from the original stdin yields
-EOF.  Also, both python.exe and pythonw.exe now have a pretty icon
-(a green snake in a box, courtesy Mark Hammond).
-
-- Lots of improvements to emacs-mode.el again.  See Barry's web page:
-http://www.python.org/ftp/emacs/pmdetails.html.
-
-- Lots of improvements and additions to the library reference manual;
-many by Fred Drake.
-
-- Doc strings for the following modules: rfc822.py, posixpath.py,
-ntpath.py, httplib.py.  Thanks to Mitch Chapman and Charles Waldman.
-
-- Some more regression testing.
-
-- An optional 4th (maxsplit) argument to strop.replace().
-
-- Fixed handling of maxsplit in string.splitfields().
-
-- Tweaked os.environ so it can be pickled and copied.
-
-- The portability problems caused by indented preprocessor commands
-and C++ style comments should be gone now.
-
-- In random.py, added Pareto and Weibull distributions.
-
-- The crypt module is now disabled in Modules/Setup.in by default; it
-is rarely needed and causes errors on some systems where users often
-don't know how to deal with those.
-
-- Some improvements to the _tkinter build line suggested by Case Roole.
-
-- A full suite of platform specific files for NetBSD 1.x, submitted by 
-Anders Andersen.
-
-- New Solaris specific header STROPTS.py.
-
-- Moved a confusing occurrence of *shared* from the comments in
-Modules/Setup.in (people would enable this one instead of the real
-one, and get disappointing results).
-
-- Changed the default mode for directories to be group-writable when
-the installation process creates them.
-
-- Check for pthread support in "-l_r" for FreeBSD/NetBSD, and support
-shared libraries for both.
-
-- Support FreeBSD and NetBSD in posixfile.py.
-
-- Support for the "event" command, new in Tk 4.2.  By Case Roole.
-
-- Add Tix_SafeInit() support to tkappinit.c.
-
-- Various bugs fixed in "re.py" and "pcre.c".
-
-- Fixed a bug (broken use of the syntax table) in the old "regexpr.c".
-
-- In frozenmain.c, stdin is made unbuffered too when PYTHONUNBUFFERED
-is set.
-
-- Provide default blocksize for retrbinary in ftplib.py (Skip
-Montanaro).
-
-- In NT, pick the username up from different places in user.py (Jeff
-Bauer).
-
-- Patch to urlparse.urljoin() for ".." and "..#1", Marc Lemburg.
-
-- Many small improvements to Jeff Rush' OS/2 support.
-
-- ospath.py is gone; it's been obsolete for so many years now...
-
-- The reference manual is now set up to prepare better HTML (still
-using webmaker, alas).
-
-- Add special handling to /Tools/freeze for Python modules that are
-imported implicitly by the Python runtime: 'site' and 'exceptions'.
-
-- Tools/faqwiz 0.8.3 -- add an option to suppress URL processing
-inside <PRE>, by "Scott".
-
-- Added ConfigParser.py, a generic parser for sectioned configuration
-files.
-
-- In _localemodule.c, LC_MESSAGES is not always defined; put it
-between #ifdefs.
-
-- Typo in resource.c: RUSAGE_CHILDERN -> RUSAGE_CHILDREN.
-
-- Demo/scripts/newslist.py: Fix the way the version number is gotten
-out of the RCS revision.
-
-- PyArg_Parse[Tuple] now explicitly check for bad characters at the
-end of the format string.
-
-- Revamped PC/example_nt to support VC++ 5.x.
-
-- <listobject>.sort() now uses a modified quicksort by Raymund Galvin,
-after studying the GNU libg++ quicksort.  This should be much faster
-if there are lots of duplicates, and otherwise at least as good.
-
-- Added "uue" as an alias for "uuencode" to mimetools.py.  (Hm, the
-uudecode bug where it complaints about trailing garbage is still there 
-:-( ).
-
-- pickle.py requires integers in text mode to be in decimal notation
-(it used to accept octal and hex, even though it would only generate
-decimal numbers).
-
-- In string.atof(), don't fail when the "re" module is unavailable.
-Plug the ensueing security leak by supplying an empty __builtins__
-directory to eval().
-
-- A bunch of small fixes and improvements to Tkinter.py.
-
-- Fixed a buffer overrun in PC/getpathp.c.
-
-
-======================================================================
-
-
-From 1.5b2 to 1.5
-=================
-
-- Newly documentated module: BaseHTTPServer.py, thanks to Greg Stein.
-
-- Added doc strings to string.py, stropmodule.c, structmodule.c,
-thanks to Charles Waldman.
-
-- Many nits fixed in the manuals, thanks to Fred Drake and many others
-(especially Rob Hooft and Andrew Kuchling).  The HTML version now uses
-HTML markup instead of inline GIF images for tables; only two images
-are left (for obsure bits of math).  The index of the HTML version has
-also been much improved.  Finally, it is once again possible to
-generate an Emacs info file from the library manual (but I don't
-commit to supporting this in future versions).
-
-- New module: telnetlib.py (a simple telnet client library).
-
-- New tool: Tools/versioncheck/, by Jack Jansen.
-
-- Ported zlibmodule.c and bsddbmodule.c to NT; The project file for MS
-DevStudio 5.0 now includes new subprojects to build the zlib and bsddb
-extension modules.
-
-- Many small changes again to Tkinter.py -- mostly bugfixes and adding
-missing routines.  Thanks to Greg McFarlane for reporting a bunch of
-problems and proofreading my fixes.
-
-- The re module and its documentation are up to date with the latest
-version released to the string-sig (Dec. 22).
-
-- Stop test_grp.py from failing when the /etc/group file is empty
-(yes, this happens!).
-
-- Fix bug in integer conversion (mystrtoul.c) that caused
-4294967296==0 to be true!
-
-- The VC++ 4.2 project file should be complete again.
-
-- In tempfile.py, use a better template on NT, and add a new optional
-argument "suffix" with default "" to specify a specific extension for
-the temporary filename (needed sometimes on NT but perhaps also handy
-elsewhere).
-
-- Fixed some bugs in the FAQ wizard, and converted it to use re
-instead of regex.
-
-- Fixed a mysteriously undetected error in dlmodule.c (it was using a
-totally bogus routine name to raise an exception).
-
-- Fixed bug in import.c which wasn't using the new "dos-8x3" name yet.
-
-- Hopefully harmless changes to the build process to support shared
-libraries on DG/UX.  This adds a target to create
-libpython$(VERSION).so; however this target is *only* for DG/UX.
-
-- Fixed a bug in the new format string error checking in getargs.c.
-
-- A simple fix for infinite recursion when printing __builtins__:
-reset '_' to None before printing and set it to the printed variable
-*after* printing (and only when printing is successful).
-
-- Fixed lib-tk/SimpleDialog.py to keep the dialog visible even if the
-parent window is not (Skip Montanaro).
-
-- Fixed the two most annoying problems with ftp URLs in
-urllib.urlopen(); an empty file now correctly raises an error, and it
-is no longer required to explicitly close the returned "file" object
-before opening another ftp URL to the same host and directory.
 
 
 ======================================================================
