@@ -6,6 +6,8 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- Fixed super() to work correctly with class methods.  [SF bug #535444]
+
 - A new built-in type, bool, has been added, as well as built-in
   names for its two values, True and False.  Comparisons and sundry
   other operations that return a truth value have been changed to
@@ -147,6 +149,8 @@ New platforms
 Tests
 
 Windows
+
+- Fixed a bug in urllib's proxy handling in Windows.  [SF bug #503031]
 
 - The installer now installs Start menu shortcuts under (the local
   equivalent of) "All Users" when doing an Admin install.
