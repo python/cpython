@@ -86,7 +86,7 @@ build_dvi() {
     latex $1 || exit $?
     if [ -f $1.idx ] ; then
 	`dirname $0`/fix_hack $1.idx || exit $?
-	makeindex $1.idx || exit $?
+	makeindex -s $TOPDIR/texinputs/myindex.ist $1.idx || exit $?
     fi
     latex $1 || exit $?
 }
@@ -105,7 +105,7 @@ build_pdf() {
     `dirname $0`/toc2bkm.py -c section $FILE || exit $?
     if [ -f $1.idx ] ; then
 	`dirname $0`/fix_hack $1.idx || exit $?
-	makeindex $1.idx || exit $?
+	makeindex -s $TOPDIR/texinputs/myindex.ist $1.idx || exit $?
     fi
     pdflatex $1 || exit $?
 }
