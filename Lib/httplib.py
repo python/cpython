@@ -544,7 +544,7 @@ class HTTPConnection:
             else:
                 raise NotConnected()
 
-        # send the data to the server. if we get a broken pipe, then closesdwu
+        # send the data to the server. if we get a broken pipe, then close
         # the socket. we want to reconnect when somebody tries to send again.
         #
         # NOTE: we DO propagate the error, though, because we cannot simply
@@ -561,14 +561,14 @@ class HTTPConnection:
     def _output(self, s):
         """Add a line of output to the current request buffer.
         
-        Aassumes that the line does *not* end with \r\n.
+        Assumes that the line does *not* end with \\r\\n.
         """
         self._buffer.append(s)
 
     def _send_output(self):
         """Send the currently buffered request and clear the buffer.
 
-        Appends an extra \r\n to the buffer.
+        Appends an extra \\r\\n to the buffer.
         """
         self._buffer.extend(("", ""))
         msg = "\r\n".join(self._buffer)
