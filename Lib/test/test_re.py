@@ -3,7 +3,7 @@ sys.path = ['.'] + sys.path
 
 from test_support import verify, verbose, TestFailed
 import re
-import sys, os, string, traceback
+import sys, os, traceback
 
 # Misc tests from Tim Peters' re.doc
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import sys, string
+import sys
 from test_support import verbose
 import string_tests
 # UserString is a wrapper around the native builtin string type.

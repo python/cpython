@@ -1,4 +1,4 @@
-import pty, os, sys, string
+import pty, os, sys
 from test_support import verbose, TestFailed, TestSkipped
 
 TEST_STRING_1 = "I wish to buy a fish license."
