@@ -956,11 +956,14 @@ class FTPHandler(BaseHandler):
                    value in ('a', 'A', 'i', 'I', 'd', 'D'):
                     type = value.upper()
             fp, retrlen = fw.retrfile(file, type)
+            headers = ""
+            mtype = mimetypes.guess_type(req.get_full_url())[0]
+            if mtype:
+                headers += "Content-Type: %s\n" % mtype
             if retrlen is not None and retrlen >= 0:
-                sf = StringIO('Content-Length: %d\n' % retrlen)
-                headers = mimetools.Message(sf)
-            else:
-                headers = noheaders()
+                headers += "Content-Length: %d\n" % retrlen
+            sf = StringIO(headers)
+            headers = mimetools.Message(sf)
             return addinfourl(fp, headers, req.get_full_url())
         except ftplib.all_errors, msg:
             raise IOError, ('ftp error', msg), sys.exc_info()[2]
