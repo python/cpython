@@ -30,13 +30,16 @@ import string
 
 oops = 'oops'
 
+IDENTSTARTCHARS = string.ascii_letters + '_'
+IDENTCHARS = string.ascii_letters + string.digits + '_'
+
 # Check that string is a legal C identifier
 def checkid(str):
     if not str: return 0
-    if not str[0] in string.letters+'_':
+    if not str[0] in IDENTSTARTCHARS:
         return 0
     for c in str[1:]:
-        if not c in string.letters+string.digits+'_':
+        if not c in IDENTCHARS:
             return 0
     return 1
 
