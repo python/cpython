@@ -9,27 +9,27 @@ import sys, os
 # Open mailbox file.  Exits with exception when this fails.
 
 try:
-	mailbox = os.environ['MAIL']
+    mailbox = os.environ['MAIL']
 except (AttributeError, KeyError):
-	sys.stderr.write('No environment variable $MAIL\n')
-	sys.exit(2)
+    sys.stderr.write('No environment variable $MAIL\n')
+    sys.exit(2)
 
 try:
-	mail = open(mailbox, 'r')
+    mail = open(mailbox)
 except IOError:
-	sys.stderr.write('Cannot open mailbox file: ' + mailbox + '\n')
-	sys.exit(2)
+    sys.exit('Cannot open mailbox file: ' + mailbox)
 
 while 1:
-	line = mail.readline()
-	if not line: break # EOF
-	if line[:5] == 'From ':
-		# Start of message found
-		print line[:-1],
-		while 1:
-			line = mail.readline()
-			if not line: break # EOF
-			if line == '\n': break # Blank line ends headers
-			if line[:8] == 'Subject:':
-				print `line[9:-1]`,
-		print
+    line = mail.readline()
+    if not line:
+        break # EOF
+    if line.startswith('From '):
+        # Start of message found
+        print line[:-1],
+        while 1:
+            line = mail.readline()
+            if not line or line == '\n':
+                break
+            if line.startswith('Subject: '):
+                print `line[9:-1]`,
+        print
