@@ -775,7 +775,7 @@ int_hex(PyIntObject *v)
 	return PyString_FromString(buf);
 }
 
-staticforward PyObject *
+static PyObject *
 int_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 static PyObject *

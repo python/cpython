@@ -2864,7 +2864,7 @@ string_methods[] = {
 	{NULL,     NULL}		     /* sentinel */
 };
 
-staticforward PyObject *
+static PyObject *
 str_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 static PyObject *

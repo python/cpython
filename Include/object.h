@@ -616,28 +616,19 @@ extern DL_IMPORT(PyObject) _Py_NotImplementedStruct; /* Don't use this directly 
 #define Py_GE 5
 
 /*
-A common programming style in Python requires the forward declaration
-of static, initialized structures, e.g. for a type object that is used
-by the functions whose address must be used in the initializer.
-Some compilers (notably SCO ODT 3.0, I seem to remember early AIX as
-well) botch this if you use the static keyword for both declarations
-(they allocate two objects, and use the first, uninitialized one until
-the second declaration is encountered).  Therefore, the forward
-declaration should use the 'forwardstatic' keyword.  This expands to
-static on most systems, but to extern on a few.  The actual storage
-and name will still be static because the second declaration is
-static, so no linker visible symbols will be generated.  (Standard C
-compilers take offense to the extern forward declaration of a static
-object, so I can't just put extern in all cases. :-( )
+Define staticforward and statichere for source compatibility with old
+C extensions.
+
+The staticforward define was needed to support certain broken C
+compilers (notably SCO ODT 3.0, perhaps early AIX as well) botched the
+static keyword when it was used with a forward declaration of a static
+initialized structure.  Standard C allows the forward declaration with
+static, and we've decided to stop catering to broken C compilers.
+(In fact, we expect that the compilers are all fixed eight years later.)
 */
 
-#ifdef BAD_STATIC_FORWARD
-#define staticforward extern
-#define statichere static
-#else /* !BAD_STATIC_FORWARD */
 #define staticforward static
 #define statichere static
-#endif /* !BAD_STATIC_FORWARD */
 
 
 /*

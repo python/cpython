@@ -233,7 +233,7 @@ typedef struct {
 	NavReplyRecord itself;
 } navrrobject;
 
-staticforward PyTypeObject Navrrtype;
+static PyTypeObject Navrrtype;
 
 
 

@@ -330,7 +330,7 @@ sha_final(unsigned char digest[20], SHAobject *sha_info)
  * ------------------------------------------------------------------------
  */
 
-staticforward PyTypeObject SHAtype;
+static PyTypeObject SHAtype;
 
 
 static SHAobject *

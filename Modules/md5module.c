@@ -17,7 +17,7 @@ typedef struct {
         MD5_CTX	md5;		/* the context holder */
 } md5object;
 
-staticforward PyTypeObject MD5type;
+static PyTypeObject MD5type;
 
 #define is_md5object(v)		((v)->ob_type == &MD5type)
 

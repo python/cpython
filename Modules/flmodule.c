@@ -29,7 +29,7 @@ typedef struct {
 	PyObject *ob_callback_arg;
 } genericobject;
 
-staticforward PyTypeObject GenericObjecttype;
+static PyTypeObject GenericObjecttype;
 
 #define is_genericobject(g) ((g)->ob_type == &GenericObjecttype)
 
@@ -1189,7 +1189,7 @@ typedef struct {
 	FL_FORM *ob_form;
 } formobject;
 
-staticforward PyTypeObject Formtype;
+static PyTypeObject Formtype;
 
 #define is_formobject(v) ((v)->ob_type == &Formtype)
 

@@ -24,7 +24,7 @@ typedef struct {
         int num_groups;
 } PcreObject;
 
-staticforward PyTypeObject Pcre_Type;
+static PyTypeObject Pcre_Type;
 
 #define PcreObject_Check(v)	((v)->ob_type == &Pcre_Type)
 #define NORMAL			0
@@ -125,7 +125,7 @@ PyPcre_getattr(PcreObject *self, char *name)
 }
 
 
-staticforward PyTypeObject Pcre_Type = {
+static PyTypeObject Pcre_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
 	"pcre.Pcre",		/*tp_name*/

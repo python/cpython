@@ -5796,7 +5796,7 @@ static PyBufferProcs unicode_as_buffer = {
     (getcharbufferproc) unicode_buffer_getcharbuf,
 };
 
-staticforward PyObject *
+static PyObject *
 unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 static PyObject *

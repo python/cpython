@@ -186,7 +186,7 @@ typedef int (*TclMacConvertEventPtr) (EventRecord *eventPtr);
 void Tcl_MacSetEventProc(TclMacConvertEventPtr procPtr);
 int TkMacConvertEvent(EventRecord *eventPtr);
 
-staticforward int PyMacConvertEvent(EventRecord *eventPtr);
+static int PyMacConvertEvent(EventRecord *eventPtr);
 
 #include <SIOUX.h>
 extern int SIOUXIsAppWindow(WindowPtr);
@@ -199,7 +199,7 @@ extern int SIOUXIsAppWindow(WindowPtr);
 
 /**** Tkapp Object Declaration ****/
 
-staticforward PyTypeObject Tkapp_Type;
+static PyTypeObject Tkapp_Type;
 
 typedef struct {
 	PyObject_HEAD
@@ -1515,7 +1515,7 @@ Tkapp_DeleteFileHandler(PyObject *self, PyObject *args)
 
 /**** Tktt Object (timer token) ****/
 
-staticforward PyTypeObject Tktt_Type;
+static PyTypeObject Tktt_Type;
 
 typedef struct {
 	PyObject_HEAD

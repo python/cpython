@@ -60,7 +60,7 @@ typedef struct {
 	int isclosed;
 } rfobject;
 
-staticforward PyTypeObject Rftype;
+static PyTypeObject Rftype;
 
 
 

@@ -1611,7 +1611,7 @@ dict_tp_clear(PyObject *op)
 }
 
 
-staticforward PyObject *dictiter_new(dictobject *, binaryfunc);
+static PyObject *dictiter_new(dictobject *, binaryfunc);
 
 static PyObject *
 select_key(PyObject *key, PyObject *value)

@@ -111,7 +111,7 @@ extern int _QdRGB_Convert(PyObject *, RGBColorPtr);
 #define QDIsPortBuffered(port) 0
 #endif /* !TARGET_API_MAC_CARBON  */
 
-staticforward PyObject *BMObj_NewCopied(BitMapPtr);
+static PyObject *BMObj_NewCopied(BitMapPtr);
 
 /*
 ** Parse/generate RGB records
@@ -527,7 +527,7 @@ PyTypeObject BitMap_Type = {
 
 /* ------------------ Object type QDGlobalsAccess ------------------- */
 
-staticforward PyTypeObject QDGlobalsAccess_Type;
+static PyTypeObject QDGlobalsAccess_Type;
 
 #define QDGA_Check(x) ((x)->ob_type == &QDGlobalsAccess_Type)
 
@@ -631,7 +631,7 @@ static PyObject *QDGA_getattr(QDGlobalsAccessObject *self, char *name)
 
 #define QDGA_hash NULL
 
-staticforward PyTypeObject QDGlobalsAccess_Type = {
+static PyTypeObject QDGlobalsAccess_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"_Qd.QDGlobalsAccess", /*tp_name*/

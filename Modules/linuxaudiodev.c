@@ -70,7 +70,7 @@ static struct {
 
 static int n_audio_types = sizeof(audio_types) / sizeof(audio_types[0]);
 
-staticforward PyTypeObject Ladtype;
+static PyTypeObject Ladtype;
 
 static PyObject *LinuxAudioError;
 

@@ -55,8 +55,8 @@ static PyThread_type_lock zlib_lock = NULL; /* initialized on module load */
 #define DEFAULTALLOC (16*1024)
 #define PyInit_zlib initzlib
 
-staticforward PyTypeObject Comptype;
-staticforward PyTypeObject Decomptype;
+static PyTypeObject Comptype;
+static PyTypeObject Decomptype;
 
 static PyObject *ZlibError;
 

@@ -61,7 +61,7 @@ typedef struct {
 	ICInstance inst;
 } iciobject;
 
-staticforward PyTypeObject Icitype;
+static PyTypeObject Icitype;
 
 
 

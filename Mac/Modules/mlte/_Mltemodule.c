@@ -27,10 +27,10 @@
 #endif
 
 /* For now we declare them forward here. They'll go to mactoolbox later */
-staticforward PyObject *TXNObj_New(TXNObject);
-staticforward int TXNObj_Convert(PyObject *, TXNObject *);
-staticforward PyObject *TXNFontMenuObj_New(TXNFontMenuObject);
-staticforward int TXNFontMenuObj_Convert(PyObject *, TXNFontMenuObject *);
+static PyObject *TXNObj_New(TXNObject);
+static int TXNObj_Convert(PyObject *, TXNObject *);
+static PyObject *TXNFontMenuObj_New(TXNFontMenuObject);
+static int TXNFontMenuObj_Convert(PyObject *, TXNFontMenuObject *);
 
 // ADD declarations
 #ifdef NOTYET_USE_TOOLBOX_OBJECT_GLUE

@@ -356,7 +356,7 @@ subtype_clear(PyObject *self)
 	return 0;
 }
 
-staticforward PyObject *lookup_maybe(PyObject *, char *, PyObject **);
+static PyObject *lookup_maybe(PyObject *, char *, PyObject **);
 
 static int
 call_finalizer(PyObject *self)
@@ -469,7 +469,7 @@ subtype_dealloc(PyObject *self)
 	}
 }
 
-staticforward PyTypeObject *solid_base(PyTypeObject *type);
+static PyTypeObject *solid_base(PyTypeObject *type);
 
 /* type test with subclassing support */
 
@@ -894,10 +894,10 @@ solid_base(PyTypeObject *type)
 		return base;
 }
 
-staticforward void object_dealloc(PyObject *);
-staticforward int object_init(PyObject *, PyObject *, PyObject *);
-staticforward int update_slot(PyTypeObject *, PyObject *);
-staticforward void fixup_slot_dispatchers(PyTypeObject *);
+static void object_dealloc(PyObject *);
+static int object_init(PyObject *, PyObject *, PyObject *);
+static int update_slot(PyTypeObject *, PyObject *);
+static void fixup_slot_dispatchers(PyTypeObject *);
 
 static PyObject *
 subtype_dict(PyObject *obj, void *context)
@@ -2187,8 +2187,8 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 	}
 }
 
-staticforward int add_operators(PyTypeObject *);
-staticforward int add_subclass(PyTypeObject *base, PyTypeObject *type);
+static int add_operators(PyTypeObject *);
+static int add_subclass(PyTypeObject *base, PyTypeObject *type);
 
 int
 PyType_Ready(PyTypeObject *type)
@@ -3118,7 +3118,7 @@ SLOT1BIN(slot_nb_divide, nb_divide, "__div__", "__rdiv__")
 SLOT1BIN(slot_nb_remainder, nb_remainder, "__mod__", "__rmod__")
 SLOT1BIN(slot_nb_divmod, nb_divmod, "__divmod__", "__rdivmod__")
 
-staticforward PyObject *slot_nb_power(PyObject *, PyObject *, PyObject *);
+static PyObject *slot_nb_power(PyObject *, PyObject *, PyObject *);
 
 SLOT1BINFULL(slot_nb_power_binary, slot_nb_power,
 	     nb_power, "__pow__", "__rpow__")
@@ -4013,8 +4013,8 @@ update_one_slot(PyTypeObject *type, slotdef *p)
 	return p;
 }
 
-staticforward int recurse_down_subclasses(PyTypeObject *type,
-					  slotdef **pp, PyObject *name);
+static int recurse_down_subclasses(PyTypeObject *type, slotdef **pp, 
+				   PyObject *name);
 
 /* In the type, update the slots whose slotdefs are gathered in the pp0 array,
    and then do the same for all this type's subtypes. */

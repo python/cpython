@@ -70,7 +70,7 @@ typedef struct {
 	AliasHandle alias;
 } mfsaobject;
 
-staticforward PyTypeObject Mfsatype;
+static PyTypeObject Mfsatype;
 
 #define is_mfsaobject(v)		((v)->ob_type == &Mfsatype)
 
@@ -82,7 +82,7 @@ typedef struct {
 	FSSpec fsspec;
 } mfssobject;
 
-staticforward PyTypeObject Mfsstype;
+static PyTypeObject Mfsstype;
 
 #define is_mfssobject(v)		((v)->ob_type == &Mfsstype)
 
@@ -94,7 +94,7 @@ typedef struct {
 	FSRef fsref;
 } mfsrobject;
 
-staticforward PyTypeObject Mfsrtype;
+static PyTypeObject Mfsrtype;
 
 #define is_mfsrobject(v)		((v)->ob_type == &Mfsrtype)
 
@@ -107,13 +107,13 @@ typedef struct {
 	FInfo finfo;
 } mfsiobject;
 
-staticforward PyTypeObject Mfsitype;
+static PyTypeObject Mfsitype;
 
 #define is_mfsiobject(v)		((v)->ob_type == &Mfsitype)
 
 
-staticforward mfssobject *newmfssobject(FSSpec *fss); /* Forward */
-staticforward mfsrobject *newmfsrobject(FSRef *fsr); /* Forward */
+static mfssobject *newmfssobject(FSSpec *fss); /* Forward */
+static mfsrobject *newmfsrobject(FSRef *fsr); /* Forward */
 
 /* ---------------------------------------------------------------- */
 

@@ -78,7 +78,7 @@ typedef struct {
 	unsigned char *advances;	     /* [num_rotors] */
 } Rotorobj;
 
-staticforward PyTypeObject Rotor_Type;
+static PyTypeObject Rotor_Type;
 
 #define is_rotor(v)		((v)->ob_type == &Rotor_Type)
 

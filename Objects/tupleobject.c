@@ -479,7 +479,7 @@ tuplerichcompare(PyObject *v, PyObject *w, int op)
 	return PyObject_RichCompare(vt->ob_item[i], wt->ob_item[i], op);
 }
 
-staticforward PyObject *
+static PyObject *
 tuple_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 static PyObject *

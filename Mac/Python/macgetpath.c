@@ -64,7 +64,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <Dialogs.h>
 
 #ifndef USE_BUILTIN_PATH
-staticforward char *PyMac_GetPythonPath();
+static char *PyMac_GetPythonPath();
 #endif
 
 #define PYTHONPATH "\

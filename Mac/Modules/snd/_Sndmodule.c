@@ -62,7 +62,7 @@ static PyObject *Snd_Error;
 
 /* --------------------- Object type SndChannel --------------------- */
 
-staticforward PyTypeObject SndChannel_Type;
+static PyTypeObject SndChannel_Type;
 
 #define SndCh_Check(x) ((x)->ob_type == &SndChannel_Type)
 
@@ -315,7 +315,7 @@ static PyObject *SndCh_getattr(SndChannelObject *self, char *name)
 
 #define SndCh_hash NULL
 
-staticforward PyTypeObject SndChannel_Type = {
+static PyTypeObject SndChannel_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"_Snd.SndChannel", /*tp_name*/
@@ -339,7 +339,7 @@ staticforward PyTypeObject SndChannel_Type = {
 
 /* ------------------------ Object type SPB ------------------------- */
 
-staticforward PyTypeObject SPB_Type;
+static PyTypeObject SPB_Type;
 
 #define SPBObj_Check(x) ((x)->ob_type == &SPB_Type)
 
@@ -443,7 +443,7 @@ static int SPBObj_setattr(SPBObject *self, char *name, PyObject *value)
 
 #define SPBObj_hash NULL
 
-staticforward PyTypeObject SPB_Type = {
+static PyTypeObject SPB_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"_Snd.SPB", /*tp_name*/

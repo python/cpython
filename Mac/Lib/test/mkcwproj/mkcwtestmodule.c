@@ -23,7 +23,7 @@ typedef struct {
 	PyObject	*x_attr;	/* Attributes dictionary */
 } XxoObject;
 
-staticforward PyTypeObject Xxo_Type;
+static PyTypeObject Xxo_Type;
 
 #define XxoObject_Check(v)	((v)->ob_type == &Xxo_Type)
 

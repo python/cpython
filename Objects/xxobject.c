@@ -18,7 +18,7 @@ typedef struct {
 	PyObject	*x_attr;	/* Attributes dictionary */
 } xxobject;
 
-staticforward PyTypeObject Xxtype;
+static PyTypeObject Xxtype;
 
 #define is_xxobject(v)		((v)->ob_type == &Xxtype)
 
