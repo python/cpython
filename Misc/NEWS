@@ -34,6 +34,11 @@ Extension modules
 Library
 -------
 
+- The obsolete FCNTL.py has been deleted.  The builtin fcntl module
+  has been available (on platforms that support fcntl) since Python
+  1.5a3, and all FCNTL.py did is export fcntl's names, after generating
+  a deprecation warning telling you to use fcntl directly.
+
 - Several new unicode codecs are added: big5hkscs, euc_jis_2004,
   iso2022_jp_2004, shift_jis_2004.
 
