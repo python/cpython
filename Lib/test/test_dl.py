@@ -8,6 +8,7 @@ from test_support import verbose
 
 sharedlibs = [
     ('/usr/lib/libc.so', 'getpid'),
+    ('/lib/libc.so.6', 'getpid'),
     ]
 
 for s, func in sharedlibs:
@@ -15,9 +16,9 @@ for s, func in sharedlibs:
         if verbose:
             print 'trying to open:', s,
         l = dl.open(s)
-    except dl.error:
+    except dl.error, err:
         if verbose:
-            print 'failed'
+            print 'failed', repr(str(err))
         pass
     else:
         if verbose:
@@ -28,4 +29,4 @@ for s, func in sharedlibs:
             print 'worked!'
         break
 else:
-    print 'Could not open any shared libraries'
+    raise ImportError, 'Could not open any shared libraries'
