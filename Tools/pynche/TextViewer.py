@@ -106,7 +106,8 @@ and choosing a color.'''))
                 if row==4 and col==1:
                     continue
                 r = Radiobutton(frame, variable=self.__which,
-                                value=(row-2)*2 + col-1)
+                                value=(row-2)*2 + col-1,
+                                command=self.__set_color)
                 r.grid(row=row, column=col)
                 self.__radios.append(r)
         self.__toggletrack()
@@ -135,20 +136,41 @@ and choosing a color.'''))
         for l in self.__labels:
             l.configure(foreground=fg)
 
+    def __set_color(self, event=None):
+        which = self.__which.get()
+        text = self.__text
+        if which == 0:
+            color = text['foreground']
+        elif which == 1:
+            color = text['background']
+        elif which == 2:
+            color = text['selectforeground']
+        elif which == 3:
+            color = text['selectbackground']
+        elif which == 5:
+            color = text['insertbackground']
+        try:
+            red, green, blue = ColorDB.rrggbb_to_triplet(color)
+        except ColorDB.BadColor:
+            # must have been a color name
+            red, green, blue = self.__sb.colordb().find_byname(color)
+        self.__sb.update_views(red, green, blue)
+
     def update_yourself(self, red, green, blue):
         if self.__trackp.get():
             colorname = ColorDB.triplet_to_rrggbb((red, green, blue))
             which = self.__which.get()
+            text = self.__text
             if which == 0:
-                self.__text.configure(foreground=colorname)
+                text.configure(foreground=colorname)
             elif which == 1:
-                self.__text.configure(background=colorname)
+                text.configure(background=colorname)
             elif which == 2:
-                self.__text.configure(selectforeground=colorname)
+                text.configure(selectforeground=colorname)
             elif which == 3:
-                self.__text.configure(selectbackground=colorname)
+                text.configure(selectbackground=colorname)
             elif which == 5:
-                self.__text.configure(insertbackground=colorname)
+                text.configure(insertbackground=colorname)
 
     def save_options(self, optiondb):
         optiondb['TRACKP'] = self.__trackp.get()
