@@ -63,18 +63,18 @@ categorized syntactically as atoms.  The syntax for atoms is:
 \index{name}
 \index{identifier}
 
-An identifier occurring as an atom is a name.  See Section 4.1 for
-documentation of naming and binding.
+An identifier occurring as an atom is a name.  See
+section~\ref{naming} for documentation of naming and binding.
 
 When the name is bound to an object, evaluation of the atom yields
 that object.  When a name is not bound, an attempt to evaluate it
 raises a \exception{NameError} exception.
 \exindex{NameError}
 
-\strong{Private name mangling:}%
+\strong{Private name mangling:}
 \indexii{name}{mangling}%
 \indexii{private}{names}%
-when an identifier that textually occurs in a class definition begins
+When an identifier that textually occurs in a class definition begins
 with two or more underscore characters and does not end in two or more
 underscores, it is considered a \dfn{private name} of that class.
 Private names are transformed to a longer form before code is
