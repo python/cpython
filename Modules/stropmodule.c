@@ -1,0 +1,201 @@
+/***********************************************************
+Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
+Netherlands.
+
+                        All Rights Reserved
+
+Permission to use, copy, modify, and distribute this software and its 
+documentation for any purpose and without fee is hereby granted, 
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in 
+supporting documentation, and that the names of Stichting Mathematisch
+Centrum or CWI not be used in advertising or publicity pertaining to
+distribution of the software without specific, written prior permission.
+
+STICHTING MATHEMATISCH CENTRUM DISCLAIMS ALL WARRANTIES WITH REGARD TO
+THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH CENTRUM BE LIABLE
+FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+******************************************************************/
+
+/* strop module */
+
+#include "allobjects.h"
+#include "modsupport.h"
+
+
+static object *
+strop_split(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	int len, i, j;
+	char *s;
+	char c;
+	object *list, *item;
+
+	if (!getargs(args, "s#", &s, &len))
+		return NULL;
+	list = newlistobject(0);
+	if (list == NULL)
+		return NULL;
+
+	i = 0;
+	while (i < len) {
+		while (i < len &&
+		       ((c = s[i]) == ' ' || c == '\t' || c == '\n')) {
+			i = i+1;
+		}
+		j = i;
+		while (i < len &&
+		       !((c = s[i]) == ' ' || c == '\t' || c == '\n')) {
+			i = i+1;
+		}
+		if (j < i) {
+			item = newsizedstringobject(s+j, (int)(i-j));
+			if (item == NULL || addlistitem(list, item) < 0) {
+				DECREF(list);
+				return NULL;
+			}
+		}
+	}
+
+	return list;
+}
+
+
+static object *
+strop_splitfields(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	int len, n, i, j;
+	char *s, *sub;
+	char c;
+	object *list, *item;
+
+	if (!getargs(args, "(s#s#)", &s, &len, &sub, &n))
+		return NULL;
+	if (n == 0) {
+		err_setstr(ValueError, "empty separator");
+		return NULL;
+	}
+
+	list = newlistobject(0);
+	if (list == NULL)
+		return NULL;
+
+	i = j = 0;
+	while (i+n <= len) {
+		if (s[i] == sub[0] && (n == 1 || strncmp(s+i, sub, n) == 0)) {
+			item = newsizedstringobject(s+j, (int)(i-j));
+			if (item == NULL || addlistitem(list, item) < 0) {
+				DECREF(list);
+				return NULL;
+			}
+			i = j = i + n;
+		}
+		else
+			i++;
+	}
+	item = newsizedstringobject(s+j, (int)(len-j));
+	if (item == NULL || addlistitem(list, item) < 0) {
+		DECREF(list);
+		return NULL;
+	}
+
+	return list;
+}
+
+
+static object *
+strop_index(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	char *s, *sub;
+	int len, n, i;
+
+	if (getargs(args, "(s#s#i)", &s, &len, &sub, &n, &i)) {
+		if (i < 0 || i+n > len) {
+			err_setstr(ValueError, "start offset out of range");
+			return NULL;
+		}
+	}
+	else {
+		err_clear();
+		if (!getargs(args, "(s#s#)", &s, &len, &sub, &n))
+			return NULL;
+		i = 0;
+	}
+
+	if (n == 0)
+		return newintobject((long)i);
+
+	len -= n;
+	for (; i <= len; i++) {
+		if (s[i] == sub[0]) {
+			if (n == 1 || strncmp(s+i, sub, n) == 0)
+				return newintobject((long)i);
+		}
+	}
+
+	err_setstr(ValueError, "substring not found");
+	return NULL;
+}
+
+
+static object *
+strop_strip(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	char *s;
+	int len, i, j;
+	char c;
+
+	if (!getargs(args, "s#", &s, &len))
+		return NULL;
+
+	i = 0;
+	while (i < len && ((c = s[i]) == ' ' || c == '\t' || c == '\n')) {
+		i++;
+	}
+
+	j = len;
+	do {
+		j--;
+	} while (j >= i &&  ((c = s[j]) == ' ' || c == '\t' || c == '\n'));
+	j++;
+
+	if (i == 0 && j == len) {
+		INCREF(args);
+		return args;
+	}
+	else
+		return newsizedstringobject(s+i, j-i);
+}
+
+
+/* List of functions defined in the module */
+
+static struct methodlist strop_methods[] = {
+	{"index",	strop_index},
+	{"split",	strop_split},
+	{"splitfields",	strop_splitfields},
+	{"strip",	strop_strip},
+	{NULL,		NULL}	/* sentinel */
+};
+
+
+/* Initialization function for the module (*must* be called initstrop) */
+
+void
+initstrop()
+{
+	initmodule("strop", strop_methods);
+}
