@@ -17,12 +17,12 @@ from distutils.ccompiler import \
 
 
 def get_devstudio_versions ():
-
     """Get list of devstudio versions from the Windows registry.  Return a
-       list of strings (???) containing version numbers; the list will be
+       list of strings containing version numbers; the list will be
        empty if we were unable to access the registry (eg. couldn't import
        a registry-access module) or the appropriate registry keys weren't
-       found.  (XXX is this correct???)"""
+       found."""
+
     try:
         import win32api
         import win32con
@@ -56,12 +56,15 @@ def get_devstudio_versions ():
 
 
 def get_msvc_paths (path, version='6.0', platform='x86'):
-    """Get a devstudio path (include, lib or path)."""
+    """Get a list of devstudio directories (include, lib or path).  Return
+       a list of strings; will be empty list if unable to access the
+       registry or appropriate registry keys not found."""
+       
     try:
         import win32api
         import win32con
     except ImportError:
-        return None
+        return []
 
     L = []
     if path=='lib':
@@ -96,37 +99,45 @@ def get_msvc_paths (path, version='6.0', platform='x86'):
 # get_msvc_paths()
 
 
-def _find_exe(exe):
-    for v in get_devstudio_versions():
-        for p in get_msvc_paths('path',v):
-            fn = os.path.join(os.path.abspath(p),exe)
-            if os.path.isfile(fn):
-                return fn
+def find_exe (exe, version_number):
+    """Try to find an MSVC executable program 'exe' (from version
+       'version_number' of MSVC) in several places: first, one of the MSVC
+       program search paths from the registry; next, the directories in the
+       PATH environment variable.  If any of those work, return an absolute
+       path that is known to exist.  If none of them work, just return the
+       original program name, 'exe'."""
 
-    #didn't find it; try existing path
-    try:
-        for p in string.split(os.environ['Path'],';'):
-            fn=os.path.join(os.path.abspath(p),exe)
-            if os.path.isfile(fn):
-                return fn
-    # XXX BAD BAD BAD BAD BAD BAD BAD BAD BAD BAD BAD BAD !!!!!!!!!!!!!!!!
-    except:                             # XXX WHAT'S BEING CAUGHT HERE?!?!?
-        pass
-    return exe  #last desperate hope 
+    for p in get_msvc_paths ('path', version_number):
+        fn = os.path.join (os.path.abspath(p), exe)
+        if os.path.isfile(fn):
+            return fn
 
+    # didn't find it; try existing path
+    for p in string.split (os.environ['Path'],';'):
+        fn = os.path.join(os.path.abspath(p),exe)
+        if os.path.isfile(fn):
+            return fn
 
-def _find_SET(n):
-    for v in get_devstudio_versions():
-        p = get_msvc_paths(n,v)
-        if p:
-            return p
-    return []
+    return exe                          # last desperate hope 
 
 
-def _do_SET(n):
-    p = _find_SET(n)
+def _find_SET(name,version_number):
+    """looks up in the registry and returns a list of values suitable for
+       use in a SET command eg SET name=value. Normally the value will be a
+       ';' separated list similar to a path list.
+
+       name is the name of an MSVC path and version_number is a version_number
+       of an MSVC installation."""
+    return get_msvc_paths(name, version_number)
+
+
+def _do_SET(name, version_number):
+    """sets os.environ[name] to an MSVC path type value obtained from
+       _find_SET. This is equivalent to a SET command prior to execution of
+       spawned commands."""
+    p=_find_SET(name, version_number)
     if p:
-        os.environ[n] = string.join(p,';')
+        os.environ[name]=string.join(p,';')
 
 
 class MSVCCompiler (CCompiler) :
@@ -144,21 +155,31 @@ class MSVCCompiler (CCompiler) :
 
         self.add_library_dir( os.path.join( sys.exec_prefix, 'libs' ) )
         
-        self.cc   = _find_exe("cl.exe")
-        self.link = _find_exe("link.exe")
-        _do_SET('lib')
-        _do_SET('include')
-        path=_find_SET('path')
-        try:
-            for p in string.split(os.environ['path'],';'):
-                path.append(p)
-        except KeyError:
-            pass
-        os.environ['path'] = string.join(path,';')
+        vNum = get_devstudio_versions ()
+
+        if vNum:
+            vNum = vNum[0]  # highest version
+
+            self.cc   = _find_exe("cl.exe", vNum)
+            self.link = _find_exe("link.exe", vNum)
+            _do_SET('lib', vNum)
+            _do_SET('include', vNum)
+            path=_find_SET('path', vNum)
+            try:
+                for p in string.split(os.environ['path'],';'):
+                    path.append(p)
+            except KeyError:
+                pass
+            os.environ['path'] = string.join(path,';')
+        else:
+            # devstudio not found in the registry
+            self.cc = "cl.exe"
+            self.link = "link.exe"
+
         self.preprocess_options = None
-        self.compile_options = [ '/nologo', '/Ox', '/MD' ]
+        self.compile_options = [ '/nologo', '/Ox', '/MD', '/W3' ]
         self.compile_options_debug = [
-            '/nologo', '/Od', '/MDd', '/Z7', '/D_DEBUG'
+            '/nologo', '/Od', '/MDd', '/W3', '/Z7', '/D_DEBUG'
             ]
 
         self.ldflags_shared = ['/DLL', '/nologo', '/INCREMENTAL:NO']
