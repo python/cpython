@@ -148,6 +148,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libsocket.tex \
 	lib/libselect.tex \
 	lib/libthread.tex \
+	lib/libdummythread.tex \
 	lib/libunix.tex \
 	lib/libposix.tex \
 	lib/libposixpath.tex \
@@ -272,6 +273,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libcmd.tex \
 	lib/libmultifile.tex \
 	lib/libthreading.tex \
+	lib/libdummythreading.tex \
 	lib/libwebbrowser.tex \
 	lib/internet.tex \
 	lib/netdata.tex \
