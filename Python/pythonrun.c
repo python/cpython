@@ -466,6 +466,19 @@ fatal(msg)
 int threads_started = 0; /* Set by threadmodule.c and maybe others */
 #endif
 
+#define NEXITFUNCS 32
+static void (*exitfuncs[NEXITFUNCS])();
+static int nexitfuncs = 0;
+
+int Py_AtExit(func)
+	void (*func) PROTO((void));
+{
+	if (nexitfuncs >= NEXITFUNCS)
+		return -1;
+	exitfuncs[nexitfuncs++] = func;
+	return 0;
+}
+
 void
 cleanup()
 {
@@ -489,6 +502,9 @@ cleanup()
 	}
 
 	flushline();
+
+	while (nexitfuncs > 0)
+		(*exitfuncs[--nexitfuncs])();
 }
 
 #ifdef COUNT_ALLOCS
