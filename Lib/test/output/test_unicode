@@ -1,4 +1,5 @@
 test_unicode
+* <built-in method join of unicode object at 0x81b3ba0> u' ' <class exceptions.TypeError at 0x80fac4c> u'7 hello 123'
 Testing Unicode comparisons... done.
 Testing Unicode contains method... done.
 Testing Unicode formatting strings... done.
