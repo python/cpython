@@ -1,7 +1,9 @@
-# A CallTip window class for Tkinter/IDLE.
-# After ToolTip.py, which uses ideas gleaned from PySol
+"""A CallTip window class for Tkinter/IDLE.
 
-# Used by the CallTips IDLE extension.
+After ToolTip.py, which uses ideas gleaned from PySol
+Used by the CallTips IDLE extension.
+
+"""
 from Tkinter import *
 
 class CallTip:
@@ -13,13 +15,11 @@ class CallTip:
         self.x = self.y = 0
 
     def showtip(self, text):
-        # SF bug 546078:  IDLE calltips cause application error.
-        # There were crashes on various Windows flavors, and even a
-        # crashing X server on Linux, with very long calltips.
+        " Display text in calltip window"
+        # truncate overly long calltip
         if len(text) >= 79:
             text = text[:75] + ' ...'
         self.text = text
-
         if self.tipwindow or not self.text:
             return
         self.widget.see("insert")
@@ -27,6 +27,10 @@ class CallTip:
         x = x + self.widget.winfo_rootx() + 2
         y = y + cy + self.widget.winfo_rooty()
         self.tipwindow = tw = Toplevel(self.widget)
+        # XXX 12 Dec 2002 KBK The following command has two effects: It removes
+        #     the calltip window border (good) but also causes (at least on
+        #     Linux) the calltip to show as a top level window, burning through
+        #     any other window dragged over it.  Also, shows on all viewports!
         tw.wm_overrideredirect(1)
         tw.wm_geometry("+%d+%d" % (x, y))
         try:
@@ -68,7 +72,7 @@ class container: # Conceptually an editor_window
         text.bind("<<calltip-hide>>", self.calltip_hide)
 
         text.focus_set()
-        # root.mainloop() # not in idle
+        root.mainloop()
 
     def calltip_show(self, event):
         self.calltip.showtip("Hello world")
