@@ -344,6 +344,12 @@ one that can lose catastrophic amounts of information, it's the native long
 product that must have overflowed.
 */
 
+/* Return true if the sq_repeat method should be used */
+#define USE_SQ_REPEAT(o) (!PyInt_Check(o) && \
+			  o->ob_type->tp_as_sequence && \
+			  o->ob_type->tp_as_sequence->sq_repeat && \
+			  (!o->ob_type->tp_as_number || \
+			   !o->ob_type->tp_as_number->nb_multiply))
 static PyObject *
 int_mul(PyObject *v, PyObject *w)
 {
@@ -352,16 +358,12 @@ int_mul(PyObject *v, PyObject *w)
 	double doubled_longprod;	/* (double)longprod */
 	double doubleprod;		/* (double)a * (double)b */
 
-	if (!PyInt_Check(v) &&
-	    v->ob_type->tp_as_sequence &&
-	    v->ob_type->tp_as_sequence->sq_repeat) {
+	if (USE_SQ_REPEAT(v)) {
 		/* sequence * int */
 		a = PyInt_AsLong(w);
 		return (*v->ob_type->tp_as_sequence->sq_repeat)(v, a);
 	}
-	if (!PyInt_Check(w) &&
-	    w->ob_type->tp_as_sequence &&
-	    w->ob_type->tp_as_sequence->sq_repeat) {
+	if (USE_SQ_REPEAT(w)) {
 		/* int * sequence */
 		a = PyInt_AsLong(v);
 		return (*w->ob_type->tp_as_sequence->sq_repeat)(w, a);
