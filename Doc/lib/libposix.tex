@@ -58,6 +58,12 @@ and \var{gid}.
 
 \begin{funcdesc}{close}{fd}
 Close file descriptor \var{fd}.
+
+Note: this function is intended for low-level I/O and must be applied
+to a file descriptor as returned by \code{posix.open()} or
+\code{posix.pipe()}.  To close a ``file object'' returned by the
+built-in function \code{open} or by \code{posix.popen} or
+\code{posix.fdopen}, use its \code{close()} method.
 \end{funcdesc}
 
 \begin{funcdesc}{dup}{fd}
@@ -95,11 +101,10 @@ Note: the standard way to exit is \code{sys.exit(\var{n})}.
 after a \code{fork()}.
 \end{funcdesc}
 
-\begin{funcdesc}{fdopen}{fd\, mode}
-Return an open file object connected to the file descriptor \var{fd},
-open for reading and/or writing according to the \var{mode} string
-(which has the same meaning as the \var{mode} argument to the built-in
-\code{open()} function.
+\begin{funcdesc}{fdopen}{fd\optional{\, mode\optional{\, bufsize}}}
+Return an open file object connected to the file descriptor \var{fd}.
+The \var{mode} and \var{bufsize} arguments have the same meaning as
+the corresponding arguments to the built-in \code{open()} function.
 \end{funcdesc}
 
 \begin{funcdesc}{fork}{}
@@ -187,6 +192,10 @@ Add \var{incr} to the process' ``niceness''.  Return the new niceness.
 Open the file \var{file} and set various flags according to
 \var{flags} and possibly its mode according to \var{mode}.
 Return the file descriptor for the newly opened file.
+
+Note: this function is intended for low-level I/O.  For normal usage,
+use the built-in function \code{open}, which returns a ``file object''
+with \code{read()} and  \code{write()} methods (and many more).
 \end{funcdesc}
 
 \begin{funcdesc}{pipe}{}
@@ -195,16 +204,25 @@ usable for reading and writing, respectively.
 (Not on MS-DOS.)
 \end{funcdesc}
 
-\begin{funcdesc}{popen}{command\, mode}
+\begin{funcdesc}{popen}{command\optional{\, mode\optional{\, bufsize}}}
 Open a pipe to or from \var{command}.  The return value is an open
 file object connected to the pipe, which can be read or written
-depending on whether \var{mode} is \code{'r'} or \code{'w'}.
+depending on whether \var{mode} is \code{'r'} (default) or \code{'w'}.
+The \var{bufsize} argument has the same meaning as the corresponding
+argument to the built-in \code{open()} function.
 (Not on MS-DOS.)
 \end{funcdesc}
 
 \begin{funcdesc}{read}{fd\, n}
 Read at most \var{n} bytes from file descriptor \var{fd}.
 Return a string containing the bytes read.
+
+Note: this function is intended for low-level I/O and must be applied
+to a file descriptor as returned by \code{posix.open()} or
+\code{posix.pipe()}.  To read a ``file object'' returned by the
+built-in function \code{open} or by \code{posix.popen} or
+\code{posix.fdopen}, or \code{sys.stdin}, use its
+\code{read()} or \code{readline()} methods.
 \end{funcdesc}
 
 \begin{funcdesc}{readlink}{path}
@@ -316,4 +334,11 @@ system does not support waitpid(), this always raises
 \begin{funcdesc}{write}{fd\, str}
 Write the string \var{str} to file descriptor \var{fd}.
 Return the number of bytes actually written.
+
+Note: this function is intended for low-level I/O and must be applied
+to a file descriptor as returned by \code{posix.open()} or
+\code{posix.pipe()}.  To write a ``file object'' returned by the
+built-in function \code{open} or by \code{posix.popen} or
+\code{posix.fdopen}, or \code{sys.stdout} or \code{sys.stderr}, use
+its \code{write()} method.
 \end{funcdesc}
