@@ -227,15 +227,22 @@ md5 md5module.c md5c.c
 #timing timingmodule.c
 
 
-# Steen Lumholt's tkinter module.  For use with plain Tk, use the
-# first line.  For use with extended Tk, edit tkappinit.c, add
-# appropriate -DWITH_... and libraries/objects to the second line, and
-# use that.  In all cases also enable the last line (TKPATH).
+# Steen Lumholt's tkinter module.
+#
+# For use with plain Tk, use the first line.
+#
+# For use with extended Tk (i.e. if you have added extra widgets to
+# the Tk library, such as the common "studButton" and "triButton"
+# extensions), edit tkappinit.c, add appropriate -DWITH_... and
+# libraries/objects to the second line, and use that.
+#
+# In all cases also enable the last line (TKPATH).
 
 # *** Use ONE of the following two lines, see previous comments ***
 #tkinter tkintermodule.c -I/usr/local/include -L/usr/local/lib -ltk -ltcl -lX11
 #tkinter tkintermodule.c tkappinit.c -DWITH_APPINIT -I/usr/local/include -L/usr/local/lib -ltk -ltcl -lX11
 
+# *** ALWAYS use this line as well ***
 #TKPATH=:$(DESTLIB)/tkinter
 
 
