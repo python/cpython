@@ -2938,8 +2938,10 @@ scanner_search(ScannerObject* self, PyObject* args)
 }
 
 static PyMethodDef scanner_methods[] = {
-    {"match", (PyCFunction) scanner_match, METH_OLDARGS},
-    {"search", (PyCFunction) scanner_search, METH_OLDARGS},
+    /* FIXME: use METH_OLDARGS instead of 0 or fix to use METH_VARARGS */
+    /*        METH_OLDARGS is not in Python 1.5.2 */
+    {"match", (PyCFunction) scanner_match, 0},
+    {"search", (PyCFunction) scanner_search, 0},
     {NULL, NULL}
 };
 
