@@ -1,0 +1,51 @@
+test_cfgparser
+
+Testing basic accessors...
+['Commented Bar', 'Foo Bar', 'Spacey Bar']
+Commented Bar: ['foo']
+Foo Bar: ['foo']
+Spacey Bar: ['foo']
+'bar'
+'bar'
+'bar'
+__name__ "option" properly hidden by the API.
+
+Testing value interpolation...
+'Foo'
+'something with interpolation (1 step)'
+'something with lots of interpolation (9 steps)'
+'something with lots of interpolation (10 steps)'
+Caught expected InterpolationDepthError :
+Value interpolation too deeply recursive:
+	section: [Foo]
+	option : bar11
+	rawval : something %(with11)s lots of interpolation (11 steps)
+
+
+Testing for parsing errors...
+Caught expected exception: File contains parsing errors: <???>
+	[line  2]: '  extra-spaces: splat\012'
+Caught expected exception: File contains parsing errors: <???>
+	[line  2]: '  extra-spaces= splat\012'
+Caught expected exception: File contains parsing errors: <???>
+	[line  2]: 'option-without-value\012'
+Caught expected exception: File contains parsing errors: <???>
+	[line  2]: ':value-without-option-name\012'
+Caught expected exception: File contains parsing errors: <???>
+	[line  2]: '=value-without-option-name\012'
+Caught expected exception: File contains no section headers.
+file: <???>, line: 1
+'No Section!\012'
+
+Testing query interface...
+[]
+Has section 'Foo'? 0
+Caught expected NoSectionError: No section: Foo
+Caught expected NoSectionError: No section: foo
+Caught expected NoSectionError :
+No section: foo
+Caught expected NoOptionError :
+No option `bar' in section: foo
+
+Testing miscellaneous error conditions...
+Caught expected DuplicateSectionError: Section Foo already exists
