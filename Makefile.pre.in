@@ -54,7 +54,8 @@ MAKESETUP=      $(srcdir)/Modules/makesetup
 
 # Compiler options
 OPT=		@OPT@
-CFLAGS=		$(OPT)
+BASECFLAGS=	@BASECFLAGS@
+CFLAGS=		$(BASECFLAGS) $(OPT)
 CPPFLAGS=	-I. -I$(srcdir)/Include
 LDFLAGS=	@LDFLAGS@
 LDLAST=		@LDLAST@
@@ -843,6 +844,13 @@ idleinstall:
 	--prefix=$(prefix) \
 	--install-scripts=$(BINDIR) \
 	--install-platlib=$(DESTSHARED)
+
+# This installs a few of the useful scripts in Tools/scripts
+scriptsinstall:
+	SRCDIR=$(srcdir) \
+	./$(BUILDPYTHON) $(srcdir)/Tools/scripts/setup.py install \
+	--prefix=$(prefix) \
+	--install-scripts=$(BINDIR)
 
 # Build the toplevel Makefile
 Makefile.pre: Makefile.pre.in config.status

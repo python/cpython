@@ -26,6 +26,24 @@ Tools/Demos
 Build
 -----
 
+- On systems which build using the configure script, compiler flags which
+  used to be lumped together using the OPT flag have been split into two
+  groups, OPT and BASECFLAGS.  OPT is meant to carry just optimization- and
+  debug-related flags like "-g" and "-O3".  BASECFLAGS is meant to carry
+  compiler flags that are required to get a clean compile.  On some
+  platforms (many Linux flavors in particular) BASECFLAGS will be empty by
+  default.  On others, such as Mac OS X and SCO, it will contain required
+  flags.  This change allows people building Python to override OPT without
+  fear of clobbering compiler flags which are required to get a clean build.
+
+- On Darwin/Mac OS X platforms, /sw/lib and /sw/include are added to the
+  relevant search lists in setup.py.  This allows users building Python to
+  take advantage of the many packages available from the fink project
+  <http://fink.sf.net/>.
+
+- A new Makefile target, scriptsinstall, installs a number of useful scripts
+  from the Tools/scripts directory.
+
 C API
 -----
 
