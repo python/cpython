@@ -855,7 +855,11 @@ if test "$with_libdb" = "yes"
 then
     # check for libdb; BSD systems have the DB routines in libc  --tg
     AC_SUBST(HAVE_LIBDB)
-    AC_CHECK_FUNC(dbopen, [HAVE_LIBDB=], AC_CHECK_LIB(db, dbopen, [HAVE_LIBDB=-ldb]))
+    # If dbopen is not in libc, then checking whether it is in libdb
+    # is difficult: db_185.h may #define it as __db185_open
+    # Instead, we just trust it is in libdb; linking will fail if it
+    # is not.
+    AC_CHECK_FUNC(dbopen, [HAVE_LIBDB=], [HAVE_LIBDB=-ldb])
 fi
 
 # Check for --with-wctype-functions
