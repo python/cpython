@@ -1011,7 +1011,6 @@ PyDict_GetItemString(v, key)
 	kv = PyString_FromString(key);
 	if (kv == NULL)
 		return NULL;
-	PyString_InternInPlace(&kv);
 	rv = PyDict_GetItem(v, kv);
 	Py_DECREF(kv);
 	return rv;
@@ -1028,7 +1027,7 @@ PyDict_SetItemString(v, key, item)
 	kv = PyString_FromString(key);
 	if (kv == NULL)
 		return -1;
-	PyString_InternInPlace(&kv);
+	PyString_InternInPlace(&kv); /* XXX Should we really? */
 	err = PyDict_SetItem(v, kv, item);
 	Py_DECREF(kv);
 	return err;
@@ -1044,7 +1043,6 @@ PyDict_DelItemString(v, key)
 	kv = PyString_FromString(key);
 	if (kv == NULL)
 		return -1;
-	PyString_InternInPlace(&kv);
 	err = PyDict_DelItem(v, kv);
 	Py_DECREF(kv);
 	return err;
