@@ -4253,7 +4253,7 @@ string_concatenate(PyObject *v, PyObject *w,
 		}
 	}
 
-	if (v->ob_refcnt == 1) {
+	if (v->ob_refcnt == 1 && !PyString_CHECK_INTERNED(v)) {
 		/* Now we own the last reference to 'v', so we can resize it
 		 * in-place.
 		 */

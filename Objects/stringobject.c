@@ -3513,7 +3513,8 @@ _PyString_Resize(PyObject **pv, int newsize)
 	register PyObject *v;
 	register PyStringObject *sv;
 	v = *pv;
-	if (!PyString_Check(v) || v->ob_refcnt != 1 || newsize < 0) {
+	if (!PyString_Check(v) || v->ob_refcnt != 1 || newsize < 0 ||
+	    PyString_CHECK_INTERNED(v)) {
 		*pv = 0;
 		Py_DECREF(v);
 		PyErr_BadInternalCall();
