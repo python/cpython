@@ -1982,7 +1982,7 @@ void DeleteRegistryKey(char *string)
 		MessageBox(GetFocus(), string, "Could not open key", MB_OK);
 	else {
 		result = RegDeleteKey(hKey, subkeyname);
-		if (result != ERROR_SUCCESS)
+		if (result != ERROR_SUCCESS && result != ERROR_FILE_NOT_FOUND)
 			MessageBox(GetFocus(), string, "Could not delete key", MB_OK);
 		RegCloseKey(hKey);
 	}
@@ -2024,7 +2024,7 @@ void DeleteRegistryValue(char *string)
 		MessageBox(GetFocus(), string, "Could not open key", MB_OK);
 	else {
 		result = RegDeleteValue(hKey, valuename);
-		if (result != ERROR_SUCCESS)
+		if (result != ERROR_SUCCESS && result != ERROR_FILE_NOT_FOUND)
 			MessageBox(GetFocus(), string, "Could not delete value", MB_OK);
 		RegCloseKey(hKey);
 	}
