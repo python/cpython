@@ -98,7 +98,7 @@ profile file was referenced; output format has been improved.
 \end{description}
 
 
-\section{Instant Users Manual}
+\section{Instant Users Manual \label{profile-instant}}
 
 This section is provided for users that ``don't want to read the
 manual.'' It provides a very brief overview, and allows a user to
@@ -111,7 +111,7 @@ would add the following to your module:
 import profile
 profile.run('foo()')
 \end{verbatim}
-%
+
 The above action would cause \samp{foo()} to be run, and a series of
 informative lines (the profile) to be printed.  The above approach is
 most useful when working with the interpreter.  If you would like to
@@ -123,7 +123,7 @@ function:
 import profile
 profile.run('foo()', 'fooprof')
 \end{verbatim}
-%
+
 The file \file{profile.py} can also be invoked as
 a script to profile another script.  For example:
 
@@ -139,7 +139,7 @@ follows:
 import pstats
 p = pstats.Stats('fooprof')
 \end{verbatim}
-%
+
 The class \class{Stats} (the above code just created an instance of
 this class) has a variety of methods for manipulating and printing the
 data that was just read into \samp{p}.  When you ran
@@ -149,7 +149,7 @@ method calls:
 \begin{verbatim}
 p.strip_dirs().sort_stats(-1).print_stats()
 \end{verbatim}
-%
+
 The first method removed the extraneous path from all the module
 names. The second method sorted all the entries according to the
 standard module/line/name string that is printed (this is to comply
@@ -160,7 +160,7 @@ all the statistics.  You might try the following sort calls:
 p.sort_stats('name')
 p.print_stats()
 \end{verbatim}
-%
+
 The first call will actually sort the list by function name, and the
 second call will print out the statistics.  The following are some
 interesting calls to experiment with:
@@ -168,7 +168,7 @@ interesting calls to experiment with:
 \begin{verbatim}
 p.sort_stats('cumulative').print_stats(10)
 \end{verbatim}
-%
+
 This sorts the profile by cumulative time in a function, and then only
 prints the ten most significant lines.  If you want to understand what
 algorithms are taking time, the above line is what you would use.
@@ -179,7 +179,7 @@ taking a lot of time, you would do:
 \begin{verbatim}
 p.sort_stats('time').print_stats(10)
 \end{verbatim}
-%
+
 to sort according to time spent within each function, and then print
 the statistics for the top ten functions.
 
@@ -188,7 +188,7 @@ You might also try:
 \begin{verbatim}
 p.sort_stats('file').print_stats('__init__')
 \end{verbatim}
-%
+
 This will sort all the statistics by file name, and then print out
 statistics for only the class init methods ('cause they are spelled
 with \samp{__init__} in them).  As one final example, you could try:
@@ -196,7 +196,7 @@ with \samp{__init__} in them).  As one final example, you could try:
 \begin{verbatim}
 p.sort_stats('time', 'cum').print_stats(.5, 'init')
 \end{verbatim}
-%
+
 This line sorts statistics with a primary key of time, and a secondary
 key of cumulative time, and then prints out some of the statistics.
 To be specific, the list is first culled down to 50\% (re: \samp{.5})
@@ -219,7 +219,7 @@ manual, or guess what the following functions do:
 p.print_callees()
 p.add('fooprof')
 \end{verbatim}
-%
+
 \section{What Is Deterministic Profiling?}
 \nodename{Deterministic Profiling}
 
@@ -254,9 +254,9 @@ of algorithms to be directly compared to iterative implementations.
 
 
 \section{Reference Manual}
-\declaremodule{standard}{profile}
 
-\modulesynopsis{None}
+\declaremodule{standard}{profile}
+\modulesynopsis{Python profiler}
 
 
 
@@ -338,6 +338,7 @@ Analysis of the profiler data is done using this class from the
 \module{pstats} module:
 
 % now switch modules....
+% (This \stmodindex use may be hard to change ;-( )
 \stmodindex{pstats}
 
 \begin{classdesc}{Stats}{filename\optional{, ...}}
@@ -359,11 +360,11 @@ need to be combined with data in an existing \class{Stats} object, the
 \end{classdesc}
 
 
-\subsection{The \module{Stats} Class}
+\subsection{The \class{Stats} Class \label{profile-stats}}
 
-\setindexsubitem{(Stats method)}
+\class{Stats} objects have the following methods:
 
-\begin{methoddesc}{strip_dirs}{}
+\begin{methoddesc}[Stats]{strip_dirs}{}
 This method for the \class{Stats} class removes all leading path
 information from file names.  It is very useful in reducing the size
 of the printout to fit within (close to) 80 columns.  This method
@@ -377,7 +378,7 @@ statistics for these two entries are accumulated into a single entry.
 \end{methoddesc}
 
 
-\begin{methoddesc}{add}{filename\optional{, ...}}
+\begin{methoddesc}[Stats]{add}{filename\optional{, ...}}
 This method of the \class{Stats} class accumulates additional
 profiling information into the current profiling object.  Its
 arguments should refer to filenames created by the corresponding
@@ -386,7 +387,7 @@ version of \function{profile.run()}.  Statistics for identically named
 single function statistics.
 \end{methoddesc}
 
-\begin{methoddesc}{sort_stats}{key\optional{, ...}}
+\begin{methoddesc}[Stats]{sort_stats}{key\optional{, ...}}
 This method modifies the \class{Stats} object by sorting it according
 to the supplied criteria.  The argument is typically a string
 identifying the basis of a sort (example: \code{'time'} or
@@ -435,7 +436,7 @@ additional arguments will be silently ignored.
 \end{methoddesc}
 
 
-\begin{methoddesc}{reverse_order}{}
+\begin{methoddesc}[Stats]{reverse_order}{}
 This method for the \class{Stats} class reverses the ordering of the basic
 list within the object.  This method is provided primarily for
 compatibility with the old profiler.  Its utility is questionable
@@ -443,7 +444,7 @@ now that ascending vs descending order is properly selected based on
 the sort key of choice.
 \end{methoddesc}
 
-\begin{methoddesc}{print_stats}{restriction\optional{, ...}}
+\begin{methoddesc}[Stats]{print_stats}{restriction\optional{, ...}}
 This method for the \class{Stats} class prints out a report as described
 in the \function{profile.run()} definition.
 
@@ -478,7 +479,7 @@ and then proceed to only print the first 10\% of them.
 \end{methoddesc}
 
 
-\begin{methoddesc}{print_callers}{restrictions\optional{, ...}}
+\begin{methoddesc}[Stats]{print_callers}{restrictions\optional{, ...}}
 This method for the \class{Stats} class prints a list of all functions
 that called each function in the profiled database.  The ordering is
 identical to that provided by \method{print_stats()}, and the definition
@@ -488,14 +489,14 @@ times this specific call was made.  A second non-parenthesized number
 is the cumulative time spent in the function at the right.
 \end{methoddesc}
 
-\begin{methoddesc}{print_callees}{restrictions\optional{, ...}}
+\begin{methoddesc}[Stats]{print_callees}{restrictions\optional{, ...}}
 This method for the \class{Stats} class prints a list of all function
 that were called by the indicated function.  Aside from this reversal
 of direction of calls (re: called vs was called by), the arguments and
 ordering are identical to the \method{print_callers()} method.
 \end{methoddesc}
 
-\begin{methoddesc}{ignore}{}
+\begin{methoddesc}[Stats]{ignore}{}
 \deprecated{1.5.1}{This is not needed in modern versions of
 Python.\footnote{
   This was once necessary, when Python would print any unused expression
@@ -504,7 +505,7 @@ Python.\footnote{
 \end{methoddesc}
 
 
-\section{Limitations}
+\section{Limitations \label{profile-limits}}
 
 There are two fundamental limitations on this profiler.  The first is
 that it relies on the Python interpreter to dispatch \dfn{call},
@@ -539,13 +540,13 @@ this error can be probabilistically (i.e., on the average) removed.
 After the profiler is calibrated, it will be more accurate (in a least
 square sense), but it will sometimes produce negative numbers (when
 call counts are exceptionally low, and the gods of probability work
-against you :-). )  Do \emph{NOT} be alarmed by negative numbers in
+against you :-). )  Do \emph{not} be alarmed by negative numbers in
 the profile.  They should \emph{only} appear if you have calibrated
 your profiler, and the results are actually better than without
 calibration.
 
 
-\section{Calibration}
+\section{Calibration \label{profile-calibration}}
 
 The profiler class has a hard coded constant that is added to each
 event handling time to compensate for the overhead of calling the time
@@ -657,7 +658,7 @@ handles your timer call, along with the appropriate calibration
 constant :-).
 
 
-\subsection{OldProfile Class}
+\subsection{OldProfile Class \label{profile-old}}
 
 The following derived profiler simulates the old style profiler,
 providing errant results on recursive functions. The reason for the
@@ -719,7 +720,7 @@ class OldProfile(Profile):
             self.stats[nor_func] = nc, nc, tt, ct, nor_callers
 \end{verbatim}
 
-\subsection{HotProfile Class}
+\subsection{HotProfile Class \label{profile-HotProfile}}
 
 This profiler is the fastest derived profile example.  It does not
 calculate caller-callee relationships, and does not calculate
