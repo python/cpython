@@ -573,7 +573,7 @@ setipaddr(char* name, struct sockaddr_in * addr_ret)
 static PyObject *
 makeipaddr(struct sockaddr_in *addr)
 {
-	long x = ntohl(addr->sin_addr.s_addr);
+	unsigned long x = ntohl(addr->sin_addr.s_addr);
 	char buf[100];
 	sprintf(buf, "%d.%d.%d.%d",
 		(int) (x>>24) & 0xff, (int) (x>>16) & 0xff,
@@ -2086,13 +2086,13 @@ PySocket_inet_aton(PyObject *self, PyObject *args)
 
 	/* Have to use inet_addr() instead */
 	char *ip_addr;
-	long packed_addr;
+	unsigned long packed_addr;
 
 	if (!PyArg_ParseTuple(args, "s:inet_aton", &ip_addr)) {
 		return NULL;
 	}
 #ifdef USE_GUSI1
-	packed_addr = (long)inet_addr(ip_addr).s_addr;
+	packed_addr = inet_addr(ip_addr).s_addr;
 #else
 	packed_addr = inet_addr(ip_addr);
 #endif
