@@ -17,6 +17,10 @@
 import sre_compile
 import sre_parse
 
+__all__ = ["match","search","sub","subn","split","findall","compile",
+           "purge","template","escape","I","L","M","S","X","U","IGNORECASE",
+           "LOCALE","MULTILINE","DOTALL","VERBOSE","UNICODE","error"]
+
 # flags
 I = IGNORECASE = sre_compile.SRE_FLAG_IGNORECASE # ignore case
 L = LOCALE = sre_compile.SRE_FLAG_LOCALE # assume current 8-bit locale

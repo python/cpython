@@ -194,6 +194,12 @@ SRE_INFO_PREFIX = 1 # has prefix
 SRE_INFO_LITERAL = 2 # entire pattern is literal (given by prefix)
 SRE_INFO_CHARSET = 4 # pattern starts with character from given set
 
+__all__ = locals().keys()
+for _i in range(len(__all__)-1,-1,-1):
+    if __all__[_i][0] == "_":
+        del __all__[_i]
+del _i
+
 if __name__ == "__main__":
     def dump(f, d, prefix):
         items = d.items()

@@ -40,6 +40,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+__all__ = ["Shelf","BsdDbShelf","DbfilenameShelf","open"]
 
 class Shelf:
     """Base class for shelf implementations.

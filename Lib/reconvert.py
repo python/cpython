@@ -63,6 +63,8 @@ XXX To be done...
 import regex
 from regex_syntax import * # RE_*
 
+__all__ = ["convert","quote"]
+
 # Default translation table
 mastertable = {
     r'\<': r'\b',

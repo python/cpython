@@ -76,6 +76,12 @@ used to "move backward in time":
 from math import log as _log, exp as _exp, pi as _pi, e as _e
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 
+__all__ = ["Random","seed","random","uniform","randint","choice",
+           "randrange","shuffle","normalvariate","lognormvariate",
+           "cunifvariate","expovariate","vonmisesvariate","gammavariate",
+           "stdgamma","gauss","betavariate","paretovariate","weibullvariate",
+           "getstate","setstate","jumpahead","whseed"]
+           
 def _verify(name, expected):
     computed = eval(name)
     if abs(computed - expected) > 1e-7:

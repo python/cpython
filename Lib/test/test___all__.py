@@ -2,6 +2,9 @@ from test_support import verify, verbose
 import sys
 
 def check_all(modname):
+    import warnings
+    warnings.filterwarnings("ignore", "", DeprecationWarning, modname)
+
     names = {}
     try:
         exec "import %s" % modname in names
@@ -124,4 +127,30 @@ check_all("pty")
 check_all("py_compile")
 check_all("pyclbr")
 check_all("quopri")
+check_all("random")
+check_all("re")
+check_all("reconvert")
+check_all("regex_syntax")
+check_all("regsub")
+check_all("repr")
+check_all("rexec")
+check_all("rfc822")
+check_all("rlcompleter")
 check_all("robotparser")
+check_all("sched")
+check_all("sgmllib")
+check_all("shelve")
+check_all("shlex")
+check_all("shutil")
+check_all("smtpd")
+check_all("smtplib")
+check_all("sndhdr")
+check_all("socket")
+check_all("sre")
+check_all("sre_compile")
+check_all("sre_constants")
+check_all("sre_parse")
+check_all("stat")
+check_all("stat_cache")
+check_all("statvfs")
+check_all("string")

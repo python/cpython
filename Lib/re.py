@@ -26,7 +26,9 @@ engine = "sre"
 if engine == "sre":
     # New unicode-aware engine
     from sre import *
+    from sre import __all__
 else:
     # Old 1.5.2 engine.  This one supports 8-bit strings only,
     # and will be removed in 2.0 final.
     from pre import *
+    from pre import __all__

@@ -379,3 +379,9 @@ try:
     letters = lowercase + uppercase
 except ImportError:
     pass                                          # Use the original versions
+
+__all__ = locals().keys()
+for _i in range(len(__all__)-1,-1,-1):
+    if __all__[_i][0] == "_":
+        del __all__[_i]
+del _i

@@ -1,5 +1,7 @@
 """Redo the `...` (representation) but with limits on most sizes."""
 
+__all__ = ["Repr","repr"]
+
 class Repr:
     def __init__(self):
         self.maxlevel = 6

@@ -44,6 +44,11 @@ import re
 import rfc822
 import types
 
+__all__ = ["SMTPException","SMTPServerDisconnected","SMTPResponseException",
+           "SMTPSenderRefused","SMTPRecipientsRefused","SMTPDataError",
+           "SMTPConnectError","SMTPHeloError","quoteaddr","quotedata",
+           "SMTP"]
+
 SMTP_PORT = 25
 CRLF="\r\n"
 

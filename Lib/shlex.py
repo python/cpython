@@ -7,6 +7,8 @@
 import os.path
 import sys
 
+__all__ = ["shlex"]
+
 class shlex:
     "A lexical analyzer class for simple shell-like syntaxes."
     def __init__(self, instream=None, infile=None):

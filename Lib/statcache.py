@@ -6,6 +6,9 @@ There are functions to reset the cache or to selectively remove items.
 import os as _os
 from stat import *
 
+__all__ = ["stat","reset","forget","forget_prefix","forget_dir",
+           "forget_except_prefix","isdir"]
+
 # The cache.  Keys are pathnames, values are os.stat outcomes.
 # Remember that multiple threads may be calling this!  So, e.g., that
 # cache.has_key(path) returns 1 doesn't mean the cache will still contain

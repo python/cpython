@@ -42,6 +42,11 @@ from _socket import *
 
 import os, sys
 
+__all__ = ["getfqdn"]
+import _socket
+__all__.extend(os._get_exports_list(_socket))
+del _socket
+
 if (sys.platform.lower().startswith("win")
     or (hasattr(os, 'uname') and os.uname()[0] == "BeOS")):
 
