@@ -13,6 +13,12 @@ Core language, builtins, and interpreter
 - Functions are now compared and hashed by identity, not by value, since
   the func_code attribute is writable.
 
+- Weak references (PEP 205) have been added.  This involves a few
+  changes in the core, an extension module (_weakref), and a Python
+  module (weakref).  The weakref module is the public interface.  It
+  includes support for "explicit" weak references, proxy objects, and
+  mappings with weakly held values.
+
 Standard library
 
 - mailbox.py now has a new class, PortableUnixMailbox which is
