@@ -135,5 +135,14 @@ def run_unittest(testclass):
     suite = unittest.makeSuite(testclass)
     result = runner.run(suite)
     if not result.wasSuccessful():
-        raise TestFailed("errors occurred in %s.%s"
-                         % (testclass.__module__, testclass.__name__))
+        if len(result.errors) == 1 and not result.failures:
+            err = result.errors[0][1]
+        elif len(result.failures) == 1 and not result.errors:
+            err = result.failures[0][1]
+        else:
+            raise TestFailed("errors occurred in %s.%s"
+                             % (testclass.__module__, testclass.__name__))
+        if err[0] is AssertionError:
+            raise TestFailed(str(err[1]))
+        else:
+            raise TestFailed("%s: %s" % err[:2])
