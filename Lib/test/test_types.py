@@ -49,6 +49,38 @@ else: raise TestFailed, 'membership test failed'
 if None is None and [] is not []: pass
 else: raise TestFailed, 'identity test failed'
 
+try: float('')
+except ValueError: pass
+else: raise TestFailed, "float('') didn't raise ValueError"
+
+try: float('5\0')
+except ValueError: pass
+else: raise TestFailed, "float('5\0') didn't raise ValueError"
+
+try: 5.0 / 0.0
+except ZeroDivisionError: pass
+else: raise TestFailed, "5.0 / 0.0 didn't raise ZeroDivisionError"
+
+try: 5.0 // 0.0
+except ZeroDivisionError: pass
+else: raise TestFailed, "5.0 // 0.0 didn't raise ZeroDivisionError"
+
+try: 5.0 % 0.0
+except ZeroDivisionError: pass
+else: raise TestFailed, "5.0 % 0.0 didn't raise ZeroDivisionError"
+
+try: 5 / 0L
+except ZeroDivisionError: pass
+else: raise TestFailed, "5 / 0L didn't raise ZeroDivisionError"
+
+try: 5 // 0L
+except ZeroDivisionError: pass
+else: raise TestFailed, "5 // 0L didn't raise ZeroDivisionError"
+
+try: 5 % 0L
+except ZeroDivisionError: pass
+else: raise TestFailed, "5 % 0L didn't raise ZeroDivisionError"
+
 print '6.4 Numeric types (mostly conversions)'
 if 0 != 0L or 0 != 0.0 or 0L != 0.0: raise TestFailed, 'mixed comparisons'
 if 1 != 1L or 1 != 1.0 or 1L != 1.0: raise TestFailed, 'mixed comparisons'
@@ -116,6 +148,23 @@ if int(long(x)) != x: raise TestFailed, 'long op'
 try: int(long(x)-1L)
 except OverflowError: pass
 else:raise TestFailed, 'long op'
+
+try: 5 << -5
+except ValueError: pass
+else: raise TestFailed, 'int negative shift <<'
+
+try: 5L << -5L
+except ValueError: pass
+else: raise TestFailed, 'long negative shift <<'
+
+try: 5 >> -5
+except ValueError: pass
+else: raise TestFailed, 'int negative shift >>'
+
+try: 5L >> -5L
+except ValueError: pass
+else: raise TestFailed, 'long negative shift >>'
+
 print '6.4.3 Floating point numbers'
 if 12.0 + 24.0 != 36.0: raise TestFailed, 'float op'
 if 12.0 + (-24.0) != -12.0: raise TestFailed, 'float op'
@@ -149,6 +198,14 @@ if 0*(1,2,3) != (): raise TestFailed, 'tuple repetition 0*'
 if min((1,2)) != 1 or max((1,2)) != 2: raise TestFailed, 'min/max tuple'
 if 0 in (0,1,2) and 1 in (0,1,2) and 2 in (0,1,2) and 3 not in (0,1,2): pass
 else: raise TestFailed, 'in/not in tuple'
+try: ()[0]
+except IndexError: pass
+else: raise TestFailed, "tuple index error didn't raise IndexError"
+x = ()
+x += ()
+if x != (): raise TestFailed, 'tuple inplace add from () to () failed'
+x += (1,)
+if x != (1,): raise TestFailed, 'tuple resize from () failed'
 
 print '6.5.3 Lists'
 if len([]) != 0: raise TestFailed, 'len([])'
@@ -174,6 +231,28 @@ a = [1, 2, 3, 4, 5]
 a[1:-1] = a
 if a != [1, 1, 2, 3, 4, 5, 5]:
     raise TestFailed, "list self-slice-assign (center)"
+try: [][0]
+except IndexError: pass
+else: raise TestFailed, "list index error didn't raise IndexError"
+try: [][0] = 5
+except IndexError: pass
+else: raise TestFailed, "list assignment index error didn't raise IndexError"
+try: [].pop()
+except IndexError: pass
+else: raise TestFailed, "empty list.pop() didn't raise IndexError"
+try: [1].pop(5)
+except IndexError: pass
+else: raise TestFailed, "[1].pop(5) didn't raise IndexError"
+try: [][0:1] = 5
+except TypeError: pass
+else: raise TestFailed, "bad list slice assignment didn't raise TypeError"
+try: [].extend(None)
+except TypeError: pass
+else: raise TestFailed, "list.extend(None) didn't raise TypeError"
+a = [1, 2, 3, 4]
+a *= 0
+if a != []:
+    raise TestFailed, "list inplace repeat"
 
 
 print '6.5.3a Additional list operations'
@@ -246,6 +325,8 @@ if a[ 3: pow(2,145L) ] != [3,4]:
 print '6.6 Mappings == Dictionaries'
 d = {}
 if d.keys() != []: raise TestFailed, '{}.keys()'
+if d.values() != []: raise TestFailed, '{}.values()'
+if d.items() != []: raise TestFailed, '{}.items()'
 if d.has_key('a') != 0: raise TestFailed, '{}.has_key(\'a\')'
 if ('a' in d) != 0: raise TestFailed, "'a' in {}"
 if ('a' not in d) != 1: raise TestFailed, "'a' not in {}"
@@ -390,6 +471,20 @@ for copymode in -1, +1:
         if a: raise TestFailed, 'a not empty after popitems: %s' % str(a)
         if b: raise TestFailed, 'b not empty after popitems: %s' % str(b)
 
+d.clear()
+try: d.popitem()
+except KeyError: pass
+else: raise TestFailed, "{}.popitem doesn't raise KeyError"
+
+d[1] = 1
+try:
+    for i in d:
+      d[i+1] = 1
+except RuntimeError:
+    pass
+else:
+    raise TestFailed, "changing dict size during iteration doesn't raise Error"
+
 try: type(1, 2)
 except TypeError: pass
 else: raise TestFailed, 'type(), w/2 args expected TypeError'
@@ -397,3 +492,26 @@ else: raise TestFailed, 'type(), w/2 args expected TypeError'
 try: type(1, 2, 3, 4)
 except TypeError: pass
 else: raise TestFailed, 'type(), w/4 args expected TypeError'
+
+print 'Buffers'
+try: buffer('asdf', -1)
+except ValueError: pass
+else: raise TestFailed, "buffer('asdf', -1) should raise ValueError"
+
+try: buffer(None)
+except TypeError: pass
+else: raise TestFailed, "buffer(None) should raise TypeError"
+
+a = buffer('asdf')
+hash(a)
+b = a * 5
+if a == b:
+    raise TestFailed, 'buffers should not be equal'
+
+try: a[1] = 'g'
+except TypeError: pass
+else: raise TestFailed, "buffer assignment should raise TypeError"
+
+try: a[0:1] = 'g'
+except TypeError: pass
+else: raise TestFailed, "buffer slice assignment should raise TypeError"
