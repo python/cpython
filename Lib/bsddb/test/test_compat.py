@@ -49,6 +49,10 @@ class CompatibilityTestCase(unittest.TestCase):
 
         assert getTest[1] == 'quick', 'data mismatch!'
 
+        rv = f.set_location(3)
+        if rv != (3, 'brown'):
+            self.fail('recno database set_location failed: '+repr(rv))
+
         f[25] = 'twenty-five'
         f.close()
         del f
@@ -83,7 +87,6 @@ class CompatibilityTestCase(unittest.TestCase):
         f.close()
 
 
-
     def do_bthash_test(self, factory, what):
         if verbose:
             print '\nTesting: ', what
@@ -103,13 +106,16 @@ class CompatibilityTestCase(unittest.TestCase):
         f['b'] = 'van'
         f['c'] = 'Rossum'
         f['d'] = 'invented'
+        # 'e' intentionally left out
         f['f'] = 'Python'
         if verbose:
             print '%s %s %s' % (f['a'], f['b'], f['c'])
 
         if verbose:
             print 'key ordering...'
-        f.set_location(f.first()[0])
+        start = f.set_location(f.first()[0])
+        if start != ('0', ''):
+            self.fail("incorrect first() result: "+repr(start))
         while 1:
             try:
                 rec = f.next()
@@ -121,6 +127,20 @@ class CompatibilityTestCase(unittest.TestCase):
                 print rec
 
         assert f.has_key('f'), 'Error, missing key!'
+
+        # test that set_location() returns the next nearest key, value
+        # on btree databases and raises KeyError on others.
+        if factory == btopen:
+            e = f.set_location('e')
+            if e != ('f', 'Python'):
+                self.fail('wrong key,value returned: '+repr(e))
+        else:
+            try:
+                e = f.set_location('e')
+            except KeyError:
+                pass
+            else:
+                self.fail("set_location on non-existant key did not raise KeyError")
 
         f.sync()
         f.close()

@@ -97,7 +97,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.2.4"
+#define PY_BSDDB_VERSION "4.2.5"
 static char *rcs_id = "$Id$";
 
 
@@ -2940,7 +2940,15 @@ DBC_set_range(DBCursorObject* self, PyObject* args, PyObject* kwargs)
                                    data.data, data.size);
             break;
         }
-        FREE_DBT(key);
+        if (_DB_get_type(self->mydb) == DB_BTREE) {
+            /* the only time a malloced key is returned is when we
+             * call this on a BTree database because it performs
+             * partial matching and needs to return the real key.
+             * All others leave key untouched [where calling free()
+             * on it would often segfault].
+             */
+            FREE_DBT(key);
+        }
         FREE_DBT(data);
     }
 
