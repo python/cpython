@@ -721,7 +721,7 @@ struct compiling {
 	PyObject *c_locals;	/* dictionary (value=localID) */
 	PyObject *c_varnames;	/* list (inverse of c_locals) */
 	PyObject *c_freevars;	/* dictionary (value=None) */
-	PyObject *c_cellvars;	/* list */
+	PyObject *c_cellvars;	/* dictionary */
 	int c_nlocals;		/* index of next local */
 	int c_argcount;		/* number of top-level arguments */
 	int c_flags;		/* same as co_flags */
