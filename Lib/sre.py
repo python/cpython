@@ -12,6 +12,7 @@
 #
 
 import sre_compile
+import sre_parse
 
 # flags
 I = IGNORECASE = sre_compile.SRE_FLAG_IGNORECASE
@@ -19,6 +20,13 @@ L = LOCALE = sre_compile.SRE_FLAG_LOCALE
 M = MULTILINE = sre_compile.SRE_FLAG_MULTILINE
 S = DOTALL = sre_compile.SRE_FLAG_DOTALL
 X = VERBOSE = sre_compile.SRE_FLAG_VERBOSE
+
+# sre extensions (may or may not be in 1.6 final)
+T = TEMPLATE = sre_compile.SRE_FLAG_TEMPLATE
+U = UNICODE = sre_compile.SRE_FLAG_UNICODE
+
+# sre exception
+error = sre_parse.error
 
 # --------------------------------------------------------------------
 # public interface
@@ -45,6 +53,9 @@ def findall(pattern, string, maxsplit=0):
 
 def compile(pattern, flags=0):
     return _compile(pattern, flags)
+
+def template(pattern, flags=0):
+    return _compile(pattern, flags|T)
 
 def escape(pattern):
     s = list(pattern)
@@ -83,18 +94,14 @@ def _sub(pattern, template, string, count=0):
     # internal: pattern.sub implementation hook
     return _subn(pattern, template, string, count)[0]
 
-def _expand(match, template):
-    # internal: expand template
-    return template # FIXME
-
 def _subn(pattern, template, string, count=0):
     # internal: pattern.subn implementation hook
     if callable(template):
         filter = template
     else:
-        # FIXME: prepare template
+	template = sre_parse.parse_template(template, pattern)
         def filter(match, template=template):
-            return _expand(match, template)
+            return sre_parse.expand_template(template, match)
     n = i = 0
     s = []
     append = s.append
@@ -108,6 +115,8 @@ def _subn(pattern, template, string, count=0):
             append(string[i:j])
         append(filter(m))
         i = m.end()
+	if i <= j:
+	    break
         n = n + 1
     if i < len(string):
         append(string[i:])
@@ -126,6 +135,8 @@ def _split(pattern, string, maxsplit=0):
         j = m.start()
         append(string[i:j])
         i = m.end()
+	if i <= j:
+	    break
         n = n + 1
     if i < len(string):
         append(string[i:])
