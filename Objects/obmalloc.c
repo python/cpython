@@ -286,7 +286,7 @@ typedef uchar block;
 
 /* Pool for small blocks */
 struct pool_header {
-	union { block *__padding;
+	union { block *_padding;
 		uint count; } ref;	/* number of allocated blocks    */
 	block *freeblock;		/* pool's free list head         */
 	struct pool_header *nextpool;	/* next pool of this size class  */
@@ -310,11 +310,11 @@ typedef struct pool_header *poolp;
 /*
  * This malloc lock
  */
-SIMPLELOCK_DECL(__malloc_lock);
-#define LOCK()		SIMPLELOCK_LOCK(__malloc_lock)
-#define UNLOCK()	SIMPLELOCK_UNLOCK(__malloc_lock)
-#define LOCK_INIT()	SIMPLELOCK_INIT(__malloc_lock)
-#define LOCK_FINI()	SIMPLELOCK_FINI(__malloc_lock)
+SIMPLELOCK_DECL(_malloc_lock);
+#define LOCK()		SIMPLELOCK_LOCK(_malloc_lock)
+#define UNLOCK()	SIMPLELOCK_UNLOCK(_malloc_lock)
+#define LOCK_INIT()	SIMPLELOCK_INIT(_malloc_lock)
+#define LOCK_FINI()	SIMPLELOCK_FINI(_malloc_lock)
 
 /*
  * Pool table -- doubly linked lists of partially used pools
