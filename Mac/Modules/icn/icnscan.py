@@ -39,6 +39,10 @@ class MyScanner(Scanner):
 		return [
 			"GetIconCacheData",
 			"SetIconCacheData",
+			# Constants with funny definitions
+			"kSelectorAllHugeData",
+			"kSelectorAllAvailableData",
+			"svAllAvailableData",
 			]
 
 	def makeblacklisttypes(self):
@@ -51,6 +55,9 @@ class MyScanner(Scanner):
 	def makerepairinstructions(self):
 		return [
 			]
+
+	def writeinitialdefs(self):
+		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
 			
 if __name__ == "__main__":
 	main()

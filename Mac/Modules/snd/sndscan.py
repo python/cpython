@@ -55,6 +55,10 @@ class SoundScanner(Scanner):
 			# And old calls that are no longer supported
 			'SetSoundVol',
 			'GetSoundVol',
+			# Constants with funny definitions
+			'rate48khz',
+			'rate44khz',
+			'kInvalidSource',
 
 			]
 
