@@ -217,6 +217,7 @@ PyMac_GetPythonDir()
     /* First look for an override in the application file */
     UseResFile(PyMac_AppRefNum);
     handle = (AliasHandle)Get1Resource('alis', PYTHONHOMEOVERRIDE_ID);
+    UseResFile(oldrh);
     if ( handle != NULL ) {
     	homerh = PyMac_AppRefNum;
     } else {   
@@ -230,8 +231,8 @@ PyMac_GetPythonDir()
 	    }
 	    homerh = prefrh;
     }
-	/* It exists. Resolve it (possibly updating it) */
-	if ( ResolveAlias(NULL, handle, &dirspec, &modified) != noErr ) {
+    /* It exists. Resolve it (possibly updating it) */
+    if ( ResolveAlias(NULL, handle, &dirspec, &modified) != noErr ) {
     	(void)StopAlert(BADPREFFILE_ID, NULL);
     	diditbefore=1;
     	return ":";
