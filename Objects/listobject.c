@@ -569,6 +569,77 @@ listappend(self, args)
 }
 
 static PyObject *
+listextend(self, args)
+	PyListObject *self;
+	PyObject *args;
+{
+	PyObject *b = NULL, *res = NULL;
+	PyObject **items;
+	int selflen = PyList_GET_SIZE(self);
+	int blen;
+	register int i;
+
+	if (!PyArg_ParseTuple(args, "O", &b))
+		return NULL;
+
+	if (!PyList_Check(b)) {
+		PyErr_SetString(PyExc_TypeError,
+				"list.extend() argument must be a list");
+		return NULL;
+	}
+	if (PyList_GET_SIZE(b) == 0) {
+		/* short circuit when b is empty */
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	if (self == (PyListObject*)b) {
+		/* as in list_ass_slice() we must special case the
+		 * situation: a.extend(a)
+		 *
+		 * XXX: I think this way ought to be faster than using
+		 * list_slice() the way list_ass_slice() does.
+		 */
+		b = PyList_New(selflen);
+		if (!b)
+			return NULL;
+		for (i = 0; i < selflen; i++) {
+			PyObject *o = PyList_GET_ITEM(self, i);
+			Py_INCREF(o);
+			PyList_SET_ITEM(b, i, o);
+		}
+	}
+	else
+		/* we want b to have the same refcount semantics for the
+		 * Py_XDECREF() in the finally clause regardless of which
+		 * branch in the above conditional we took.
+		 */
+		Py_INCREF(b);
+
+	blen = PyList_GET_SIZE(b);
+	/* resize a using idiom */
+	items = self->ob_item;
+	NRESIZE(items, PyObject*, selflen + blen);
+	if (items == NULL ) {
+		PyErr_NoMemory();
+		goto finally;
+	}
+	self->ob_item = items;
+
+	/* populate the end self with b's items */
+	for (i = 0; i < blen; i++) {
+		PyObject *o = PyList_GET_ITEM(b, i);
+		Py_INCREF(o);
+		PyList_SET_ITEM(self, self->ob_size++, o);
+	}
+	res = Py_None;
+	Py_INCREF(res);
+  finally:
+	Py_XDECREF(b);
+	return res;
+}
+
+
+static PyObject *
 listpop(self, args)
 	PyListObject *self;
 	PyObject *args;
@@ -1309,6 +1380,8 @@ listremove(self, args)
 
 static char append_doc[] =
 "L.append(object) -- append object to end";
+static char extend_doc[] =
+"L.extend(list) -- extend list by appending list elements";
 static char insert_doc[] =
 "L.insert(index, object) -- insert object before index";
 static char pop_doc[] =
@@ -1327,6 +1400,7 @@ static char sort_doc[] =
 static PyMethodDef list_methods[] = {
 	{"append",	(PyCFunction)listappend, 0, append_doc},
 	{"insert",	(PyCFunction)listinsert, 0, insert_doc},
+	{"extend",      (PyCFunction)listextend, 1, extend_doc},
 	{"pop",		(PyCFunction)listpop, 1, pop_doc},
 	{"remove",	(PyCFunction)listremove, 0, remove_doc},
 	{"index",	(PyCFunction)listindex, 0, index_doc},
