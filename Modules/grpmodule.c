@@ -36,9 +36,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/types.h>
 #include <grp.h>
 
-#define getintarg(v,a) PyArg_Parse((v),"i",(a))
-#define getstrarg(v,a) PyArg_Parse((v),"s",(a))
-
 static PyObject *mkgrent(p)
 	struct group *p;
 {
@@ -75,7 +72,7 @@ static PyObject *grp_getgrgid(self, args)
 {
 	int gid;
 	struct group *p;
-	if (!getintarg(args, &gid))
+	if (!PyArg_Parse((args),"i",(&gid)))
 		return NULL;
 	if ((p = getgrgid(gid)) == NULL) {
 		PyErr_SetString(PyExc_KeyError, "getgrgid(): gid not found");
@@ -89,7 +86,7 @@ static PyObject *grp_getgrnam(self, args)
 {
 	char *name;
 	struct group *p;
-	if (!getstrarg(args, &name))
+	if (!PyArg_Parse((args),"s",(&name)))
 		return NULL;
 	if ((p = getgrnam(name)) == NULL) {
 		PyErr_SetString(PyExc_KeyError, "getgrnam(): name not found");
