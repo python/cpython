@@ -3,7 +3,7 @@
 # Conversions to/from base64 transport encoding as per RFC-MIME (Dec 1991
 # version).
 
-# Parameters set by RFX-XXXX.
+# Parameters set by RFX-1421.
 #
 # Modified 04-Oct-95 by Jack to use binascii module
 
@@ -66,7 +66,7 @@ def test():
 		if o == '-u': func = decode
 		if o == '-t': test1(); return
 	if args and args[0] != '-':
-		func(open(args[0]), sys.stdout)
+		func(open(args[0], 'rb'), sys.stdout)
 	else:
 		func(sys.stdin, sys.stdout)
 
