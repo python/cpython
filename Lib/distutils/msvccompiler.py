@@ -178,10 +178,14 @@ class MSVCCompiler (CCompiler) :
     # Private class data (need to distinguish C from C++ source for compiler)
     _c_extensions = ['.c']
     _cpp_extensions = ['.cc', '.cpp', '.cxx']
+    _rc_extensions = ['.rc']
+    _mc_extensions = ['.mc']
 
     # Needed for the filename generation methods provided by the
     # base class, CCompiler.
-    src_extensions = _c_extensions + _cpp_extensions
+    src_extensions = (_c_extensions + _cpp_extensions +
+                      _rc_extensions + _mc_extensions)
+    res_extension = '.res'
     obj_extension = '.obj'
     static_lib_extension = '.lib'
     shared_lib_extension = '.dll'
@@ -203,6 +207,8 @@ class MSVCCompiler (CCompiler) :
             self.cc   = find_exe("cl.exe", version)
             self.link = find_exe("link.exe", version)
             self.lib  = find_exe("lib.exe", version)
+            self.rc   = find_exe("rc.exe", version)     # resource compiler
+            self.mc   = find_exe("mc.exe", version)     # message compiler
             set_path_env_var ('lib', version)
             set_path_env_var ('include', version)
             path=get_msvc_paths('path', version)
@@ -217,6 +223,8 @@ class MSVCCompiler (CCompiler) :
             self.cc = "cl.exe"
             self.link = "link.exe"
             self.lib = "lib.exe"
+            self.rc = "rc.exe"
+            self.mc = "mc.exe"
 
         self.preprocess_options = None
         self.compile_options = [ '/nologo', '/Ox', '/MD', '/W3', '/GX' ]
@@ -231,6 +239,37 @@ class MSVCCompiler (CCompiler) :
 
 
     # -- Worker methods ------------------------------------------------
+
+    def object_filenames (self,
+                          source_filenames,
+                          strip_dir=0,
+                          output_dir=''):
+        # Copied from ccompiler.py, extended to return .res as 'object'-file
+        # for .rc input file
+        if output_dir is None: output_dir = ''
+        obj_names = []
+        for src_name in source_filenames:
+            (base, ext) = os.path.splitext (src_name)
+            if ext not in self.src_extensions:
+                # Better to raise an exception instead of silently continuing
+                # and later complain about sources and targets having
+                # different lengths
+                raise CompileError ("Don't know how to compile %s" % src_name)
+            if strip_dir:
+                base = os.path.basename (base)
+            if ext in self._rc_extensions:
+                obj_names.append (os.path.join (output_dir,
+                                                base + self.res_extension))
+            elif ext in self._mc_extensions:
+                obj_names.append (os.path.join (output_dir,
+                                                base + self.res_extension))
+            else:
+                obj_names.append (os.path.join (output_dir,
+                                                base + self.obj_extension))
+        return obj_names
+
+    # object_filenames ()
+
 
     def compile (self,
                  sources,
@@ -263,14 +302,58 @@ class MSVCCompiler (CCompiler) :
             if skip_sources[src]:
                 self.announce ("skipping %s (%s up-to-date)" % (src, obj))
             else:
+                self.mkpath (os.path.dirname (obj))
+
                 if ext in self._c_extensions:
                     input_opt = "/Tc" + src
                 elif ext in self._cpp_extensions:
                     input_opt = "/Tp" + src
+                elif ext in self._rc_extensions:
+                    # compile .RC to .RES file
+                    input_opt = src
+                    output_opt = "/fo" + obj
+                    try:
+                        self.spawn ([self.rc] +
+                                    [output_opt] + [input_opt])
+                    except DistutilsExecError, msg:
+                        raise CompileError, msg
+                    continue
+                elif ext in self._mc_extensions:
+
+                    # Compile .MC to .RC file to .RES file.
+                    #   * '-h dir' specifies the directory for the
+                    #     generated include file
+                    #   * '-r dir' specifies the target directory of the
+                    #     generated RC file and the binary message resource
+                    #     it includes
+                    #
+                    # For now (since there are no options to change this),
+                    # we use the source-directory for the include file and
+                    # the build directory for the RC file and message
+                    # resources. This works at least for win32all.
+
+                    h_dir = os.path.dirname (src)
+                    rc_dir = os.path.dirname (obj)
+                    try:
+                        # first compile .MC to .RC and .H file
+                        self.spawn ([self.mc] +
+                                    ['-h', h_dir, '-r', rc_dir] + [src])
+                        base, _ = os.path.splitext (os.path.basename (src))
+                        rc_file = os.path.join (rc_dir, base + '.rc')
+                        # then compile .RC to .RES file
+                        self.spawn ([self.rc] +
+                                    ["/fo" + obj] + [rc_file])
+
+                    except DistutilsExecError, msg:
+                        raise CompileError, msg
+                    continue
+                else:
+                    # how to handle this file?
+                    raise CompileError (
+                        "Don't know how to compile %s to %s" % \
+                        (src, obj))
 
                 output_opt = "/Fo" + obj
-
-                self.mkpath (os.path.dirname (obj))
                 try:
                     self.spawn ([self.cc] + compile_opts + pp_opts +
                                 [input_opt, output_opt] +
