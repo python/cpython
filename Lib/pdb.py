@@ -903,7 +903,6 @@ mainpyfile = ''
 
 # When invoked as main program, invoke the debugger on a script
 if __name__=='__main__':
-	global mainmodule, mainpyfile
 	if not sys.argv[1:]:
 		print "usage: pdb.py scriptfile [arg] ..."
 		sys.exit(2)
