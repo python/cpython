@@ -92,6 +92,8 @@ Library
 
 - Bug #934282: make pydoc.stripid() be case-insensitive.
 
+- Bug #891637, patch #1005466: fix inspect.getargs() crash on def foo((bar)).
+
 Build
 -----
 
