@@ -6,6 +6,9 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- The UTF-8 codec will now encode and decode Unicode surrogates
+  correctly and without raising exceptions for unpaired ones.
+
 - file.xreadlines() now raises a ValueError if the file is closed:
   Previously, an xreadlines object was returned which would raise
   a ValueError when the xreadlines.next() method was called.
@@ -50,6 +53,9 @@ C API
 
 - Because Python's magic number scheme broke on January 1st, we decided
   to stop Python development.  Thanks for all the fish!
+
+- Some of us don't like fish, so we changed Python's magic number 
+  scheme to a new one. See Python/import.c for details.
 
 New platforms
 
