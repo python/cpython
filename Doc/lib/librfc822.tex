@@ -12,12 +12,24 @@ Note that there's a separate module to read \UNIX{}, MH, and MMDF
 style mailbox files: \module{mailbox}\refstmodindex{mailbox}.
 
 \begin{classdesc}{Message}{file\optional{, seekable}}
-A \class{Message} instance is instantiated with an open file object as
-parameter.  The optional \var{seekable} parameter indicates if the
-file object is seekable; the default value is \code{1} for true.
-Instantiation reads headers from the file up to a blank line and
-stores them in the instance; after instantiation, the file is
-positioned directly after the blank line that terminates the headers.
+A \class{Message} instance is instantiated with an input object as
+parameter.  Message relies only on the input object having a
+\code{readline} method; in particular, ordinary file objects qualify.
+Instantiation reads headers from the input object up to a delimiter
+line (normally a blank line) and stores them in the instance.
+
+If the input object has \code{seek} and \code{tell} methods, the
+last action of the class initialization is to try to seek the object
+to just before the blank line that terminates the headers.
+Otherwise, if the input object has an \code{unread} method, that
+method is used to push back the delimiter line.
+
+The optional \code{seekable} argument is provided as a workaround for
+certain stdio libraries in which tell() discards buffered data before
+discovering that the \code{lseek()} system call doesn't work.  For
+maximum portability, you should set the seekable argument to zero to
+prevent that initial \code{tell} when passing in an unseekable object
+such as a a file object created from a socket object.
 
 Input lines as read from the file may either be terminated by CR-LF or
 by a single linefeed; a terminating CR-LF is replaced by a single
@@ -71,6 +83,18 @@ Seek to the start of the message body.  This only works if the file
 object is seekable.
 \end{methoddesc}
 
+\begin{methoddesc}{islast}{line}
+Return true if the given line is a delimiter on which Message should
+stop.  By default this method just checks that the line is blank, but
+you can override it in a subclass.
+\end{methoddesc}
+
+\begin{methoddesc}{iscomment}{line}
+Return true if the given line should be ignored entirely, just skipped.
+By default this is a stub that always returns false, but you can
+override it in a subclass.
+\end{methoddesc}
+
 \begin{methoddesc}{getallmatchingheaders}{name}
 Return a list of lines consisting of all headers matching
 \var{name}, if any.  Each physical line, whether it is a continuation
@@ -92,9 +116,16 @@ any continuation line(s) were present.  Return \code{None} if there is
 no header matching \var{name}.
 \end{methoddesc}
 
-\begin{methoddesc}{getheader}{name}
+\begin{methoddesc}{getheader}{name\optional{, default}}
 Like \code{getrawheader(\var{name})}, but strip leading and trailing
-whitespace.  Internal whitespace is not stripped.
+whitespace.  Internal whitespace is not stripped.  The optional
+\var{default} argument can be used to specify a different default to
+be returned when there is no header matching \var{name}.
+\end{methoddesc}
+
+\begin{methoddesc}{get}{name\optional{, default}}
+An alias for \code{getheader()}, to make the interface more compatible 
+with regular dictionaries.
 \end{methoddesc}
 
 \begin{methoddesc}{getaddr}{name}
