@@ -138,6 +138,11 @@ class Misc:
 	def tk_strictMotif(self, boolean=None):
 		return self.tk.getboolean(self.tk.call(
 			'set', 'tk_strictMotif', boolean))
+	def tk_bisque(self):
+		self.tk.call('tk_bisque')
+	def tk_setPalette(self, *args, **kw):
+		apply(self.tk.call, 'tk_setPalette',
+		      _flatten(args) + _flatten(kw.items()))
 	def tk_menuBar(self, *args):
 		pass # obsolete since Tk 4.0
 	def wait_variable(self, name='PY_VAR'):
@@ -164,17 +169,22 @@ class Misc:
 	def focus_set(self):
 		self.tk.call('focus', self._w)
 	focus = focus_set # XXX b/w compat?
-	def focus_default_set(self):
-		self.tk.call('focus', 'default', self._w)
-	def focus_default_none(self):
-		self.tk.call('focus', 'default', 'none')
-	focus_default = focus_default_set
-	def focus_none(self):
-		self.tk.call('focus', 'none')
+	def focus_force(self):
+		self.tk.call('focus', '-force', self._w)
 	def focus_get(self):
 		name = self.tk.call('focus')
 		if name == 'none' or not name: return None
 		return self._nametowidget(name)
+	def focus_displayof(self):
+		name = self.tk.call('focus', '-displayof', self._w)
+		if name == 'none' or not name: return None
+		return self._nametowidget(name)
+	def focus_lastfor(self):
+		name = self.tk.call('focus', '-lastfor', self._w)
+		if name == 'none' or not name: return None
+		return self._nametowidget(name)
+	def tk_focusFollowsMouse(self):
+		self.tk.call('tk_focusFollowsMouse')
 	def tk_focusNext(self):
 		name = self.tk.call('tk_focusNext', self._w)
 		if not name: return None
@@ -202,11 +212,18 @@ class Misc:
 		return apply(self.after, ('idle', func) + args)
 	def after_cancel(self, id):
 		self.tk.call('after', 'cancel', id)
-	def bell(self, displayof=None):
-		if displayof:
-			self.tk.call('bell', '-displayof', displayof)
-		else:
-			self.tk.call('bell', '-displayof', self._w)
+	def bell(self, displayof=0):
+		apply(self.tk.call, ('bell',) + self._displayof(displayof))
+	# Clipboard handling:
+	def clipboard_clear(self, **kw):
+		if not kw.has_key('displayof'): kw['displayof'] = self._w
+		apply(self.tk.call,
+		      ('clipboard', 'clear') + self._options(kw))
+	def clipboard_append(self, string, **kw):
+		if not kw.has_key('displayof'): kw['displayof'] = self._w
+		apply(self.tk.call,
+		      ('clipboard', 'append') + self._options(kw)
+		      + ('--', string))
 	# XXX grab current w/o window argument
 	def grab_current(self):
 		name = self.tk.call('grab', 'current', self._w)
@@ -232,19 +249,28 @@ class Misc:
 		return self.tk.call('option', 'get', self._w, name, className)
 	def option_readfile(self, fileName, priority = None):
 		self.tk.call('option', 'readfile', fileName, priority)
-	def selection_clear(self):
-		self.tk.call('selection', 'clear', self._w)
-	def selection_get(self, type=None):
-		return self.tk.call('selection', 'get', type)
-	def selection_handle(self, func, type=None, format=None):
-		name = self._register(func)
-		self.tk.call('selection', 'handle', self._w, 
-			     name, type, format)
-	def selection_own(self, func=None):
-		name = self._register(func)
-		self.tk.call('selection', 'own', self._w, name)
-	def selection_own_get(self):
-		return self._nametowidget(self.tk.call('selection', 'own'))
+	def selection_clear(self, **kw):
+		if not kw.has_key('displayof'): kw['displayof'] = self._w
+		apply(self.tk.call, ('selection', 'clear') + self._options(kw))
+	def selection_get(self, **kw):
+		if not kw.has_key('displayof'): kw['displayof'] = self._w
+		return apply(self.tk.call,
+			     ('selection', 'get') + self._options(kw))
+	def selection_handle(self, command, **kw):
+		name = self._register(command)
+		apply(self.tk.call,
+		      ('selection', 'handle') + self._options(kw)
+		      + (self._w, name))
+	def selection_own(self, **kw):
+		"Become owner of X selection."
+		apply(self.tk.call,
+		      ('selection', 'own') + self._options(kw) + (self._w,))
+	def selection_own_get(self, **kw):
+		"Find owner of X selection."
+		if not kw.has_key('displayof'): kw['displayof'] = self._w
+		return self._nametowidget(
+			apply(self.tk.call,
+			      ('selection', 'own') + self._options(kw)))
 	def send(self, interp, cmd, *args):
 		return apply(self.tk.call, ('send', interp, cmd) + args)
 	def lower(self, belowThis=None):
@@ -254,10 +280,13 @@ class Misc:
 	lift = tkraise
 	def colormodel(self, value=None):
 		return self.tk.call('tk', 'colormodel', self._w, value)
-	def winfo_atom(self, name):
-		return self.tk.getint(self.tk.call('winfo', 'atom', name))
-	def winfo_atomname(self, id):
-		return self.tk.call('winfo', 'atomname', id)
+	def winfo_atom(self, name, displayof=0):
+		args = ('winfo', 'atom') + self._displayof(displayof) + (name,)
+		return self.tk.getint(apply(self.tk.call, args))
+	def winfo_atomname(self, id, displayof=0):
+		args = ('winfo', 'atomname') \
+		       + self._displayof(displayof) + (id,)
+		return apply(self.tk.call, args)
 	def winfo_cells(self):
 		return self.tk.getint(
 			self.tk.call('winfo', 'cells', self._w))
@@ -267,8 +296,13 @@ class Misc:
 				   'winfo', 'children', self._w)))
 	def winfo_class(self):
 		return self.tk.call('winfo', 'class', self._w)
-	def winfo_containing(self, rootX, rootY):
-		return self.tk.call('winfo', 'containing', rootX, rootY)
+	def winfo_colormapfull(self):
+		return self.tk.getboolean(
+			self.tk.call('winfo', 'colormapfull'))
+	def winfo_containing(self, rootX, rootY, displayof=0):
+		args = ('winfo', 'containing') \
+		       + self._displayof(displayof) + (rootX, rootY)
+		return self._nametowidget(apply(self.tk.call, args))
 	def winfo_depth(self):
 		return self.tk.getint(self.tk.call('winfo', 'depth', self._w))
 	def winfo_exists(self):
@@ -285,9 +319,9 @@ class Misc:
 	def winfo_id(self):
 		return self.tk.getint(
 			self.tk.call('winfo', 'id', self._w))
-	def winfo_interps(self):
-		return self.tk.splitlist(
-			self.tk.call('winfo', 'interps'))
+	def winfo_interps(self, displayof=0):
+		args = ('winfo', 'interps') + self._displayof(displayof)
+		return self.tk.splitlist(apply(self.tk.call, args))
 	def winfo_ismapped(self):
 		return self.tk.getint(
 			self.tk.call('winfo', 'ismapped', self._w))
@@ -295,8 +329,10 @@ class Misc:
 		return self.tk.call('winfo', 'name', self._w)
 	def winfo_parent(self):
 		return self.tk.call('winfo', 'parent', self._w)
-	def winfo_pathname(self, id):
-		return self.tk.call('winfo', 'pathname', id)
+	def winfo_pathname(self, id, displayof=0):
+		args = ('winfo', 'pathname') \
+		       + self._displayof(displayof) + (id,)
+		return apply(self.tk.call, args)
 	def winfo_pixels(self, number):
 		return self.tk.getint(
 			self.tk.call('winfo', 'pixels', self._w, number))
@@ -410,6 +446,12 @@ class Misc:
 	def _getboolean(self, string):
 		if string:
 			return self.tk.getboolean(string)
+	def _displayof(self, displayof):
+		if displayof:
+			return ('-displayof', displayof)
+		if displayof is None:
+			return ('-displayof', self._w)
+		return ()
 	def _options(self, cnf, kw = None):
 		if kw:
 			cnf = _cnfmerge((cnf, kw))
@@ -417,10 +459,11 @@ class Misc:
 			cnf = _cnfmerge(cnf)
 		res = ()
 		for k, v in cnf.items():
-			if k[-1] == '_': k = k[:-1]
-			if callable(v):
-				v = self._register(v)
-			res = res + ('-'+k, v)
+			if v is not None:
+				if k[-1] == '_': k = k[:-1]
+				if callable(v):
+					v = self._register(v)
+				res = res + ('-'+k, v)
 		return res
 	def _nametowidget(self, name):
 		w = self
@@ -521,6 +564,9 @@ class Wm:
 				     maxNumer, maxDenom))
 	def client(self, name=None):
 		return self.tk.call('wm', 'client', self._w, name)
+	def colormapwindows(self, *wlist):
+		args = ('wm', 'colormapwindows', self._w) + _flatten(wlist)
+		return map(self._nametowidget, apply(self.tk.call, args))
 	def command(self, value=None):
 		return self.tk.call('wm', 'command', self._w, value)
 	def deiconify(self):
