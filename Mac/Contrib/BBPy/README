@@ -3,6 +3,10 @@ contents of the current window.
 
 version 0.2.3, 18 september 1996
 
+Note by Jack:
+	Also check out the BBPy.lm contributed software, which is a Python language
+	module for BBedit, providing syntax coloring and function/class navigation.
+
 contents:
 -	"Run as Python" -- the extension
 -	PythonSlave.py -- the "slave" script that handles the AppleEvents
