@@ -52,7 +52,7 @@ class CanvasItem:
 		x1, y1, x2, y2 = self.canvas.bbox(self.id)
 		return (x1, y1), (x2, y2)
 	def bind(self, sequence=None, command=None):
-		return self.canvas.bind(self.id, sequence, command)
+		return self.canvas.tag_bind(self.id, sequence, command)
 	def config(self, cnf=None):
 		return self.canvas.itemconfig(self.id, cnf)
 	def coords(self, pts = ()):

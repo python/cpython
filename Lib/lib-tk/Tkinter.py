@@ -951,7 +951,7 @@ class Canvas(Widget):
 	def tag_unbind(self, tagOrId, sequence):
 		self.tk.call(self._w, 'bind', tagOrId, sequence, '')
 	def tag_bind(self, tagOrId, sequence=None, func=None, add=None):
-		return self._bind((self._w, 'tag', 'bind', tagOrId),
+		return self._bind((self._w, 'bind', tagOrId),
 				  sequence, func, add)
 	def canvasx(self, screenx, gridspacing=None):
 		return self.tk.getdouble(self.tk.call(
