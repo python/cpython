@@ -419,6 +419,41 @@ file_read(f, args)
 	return v;
 }
 
+static PyObject *
+file_readinto(f, args)
+	PyFileObject *f;
+	PyObject *args;
+{
+	char *ptr;
+	int ntodo, ndone, nnow;
+	
+	if (f->f_fp == NULL)
+		return err_closed();
+	if (!PyArg_Parse(args, "w#", &ptr, &ntodo))
+		return NULL;
+	ndone = 0;
+	/* 
+	** XXXX Is this correct? Other threads may see partially-completed
+	** reads if they look at the object we're reading into...
+	*/
+	Py_BEGIN_ALLOW_THREADS
+	while(ntodo > 0) {
+		nnow = fread(ptr+ndone, 1, ntodo, f->f_fp);
+		if (nnow < 0 ) {
+			PyErr_SetFromErrno(PyExc_IOError);
+			clearerr(f->f_fp);
+			return NULL;
+		}
+		if (nnow == 0)
+			break;
+		ndone += nnow;
+		ntodo -= nnow;
+	}
+	Py_END_ALLOW_THREADS
+	return PyInt_FromLong(ndone);
+}
+
+
 /* Internal routine to get a line.
    Size argument interpretation:
    > 0: max length;
@@ -688,6 +723,7 @@ static PyMethodDef file_methods[] = {
 	{"tell",	(PyCFunction)file_tell, 0},
 	{"write",	(PyCFunction)file_write, 0},
 	{"writelines",	(PyCFunction)file_writelines, 0},
+	{"readinto",	(PyCFunction)file_readinto, 0},
 	{NULL,		NULL}		/* sentinel */
 };
 

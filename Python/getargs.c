@@ -539,41 +539,81 @@ convertsimple1(arg, p_format, p_va)
 	
 	case 's': /* string */
 		{
-			char **p = va_arg(*p_va, char **);
-			if (PyString_Check(arg))
-				*p = PyString_AsString(arg);
-			else
-				return "string";
-			if (*format == '#') {
+			if (*format == '#') { /* any buffer-like object */
+			        void **p = (void **)va_arg(*p_va, char **);
+			        PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
 				int *q = va_arg(*p_va, int *);
-				*q = PyString_Size(arg);
+				int count;
+
+				if ( pb == NULL ||
+				     pb->bf_getreadbuffer == NULL ||
+				     pb->bf_getsegcount == NULL )
+				  return "read-only buffer";
+				if ( (*pb->bf_getsegcount)(arg, NULL) != 1 )
+				  return "single-segment read-only buffer";
+				if ( (count =
+				      (*pb->bf_getreadbuffer)(arg, 0, p)) < 0 )
+				  return "(unspecified)";
+				*q = count;
 				format++;
+			} else {
+			        char **p = va_arg(*p_va, char **);
+			
+			        if (PyString_Check(arg))
+				  *p = PyString_AsString(arg);
+				else
+				  return "string";
+				if ((int)strlen(*p) != PyString_Size(arg))
+				  return "string without null bytes";
 			}
-			else if ((int)strlen(*p) != PyString_Size(arg))
-				return "string without null bytes";
 			break;
 		}
-	
+
 	case 'z': /* string, may be NULL (None) */
 		{
-			char **p = va_arg(*p_va, char **);
-			if (arg == Py_None)
-				*p = 0;
-			else if (PyString_Check(arg))
-				*p = PyString_AsString(arg);
-			else
-				return "None or string";
-			if (*format == '#') {
+			if (*format == '#') { /* any buffer-like object */
+			        void **p = (void **)va_arg(*p_va, char **);
+			        PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
 				int *q = va_arg(*p_va, int *);
-				if (arg == Py_None)
-					*q = 0;
-				else
-					*q = PyString_Size(arg);
+				int count;
+
+				if (arg == Py_None) {
+				  *p = 0;
+				  *q = 0;
+				} else {
+				  if ( pb == NULL ||
+				       pb->bf_getreadbuffer == NULL ||
+				       pb->bf_getsegcount == NULL )
+				    return "read-only buffer";
+				  if ( (*pb->bf_getsegcount)(arg, NULL) != 1 )
+				  return "single-segment read-only buffer";
+				  if ( (count = (*pb->bf_getreadbuffer)
+					                    (arg, 0, p)) < 0 )
+				    return "(unspecified)";
+				  *q = count;
+				}
 				format++;
+			} else {
+			        char **p = va_arg(*p_va, char **);
+			
+			        if (arg == Py_None)
+				  *p = 0;
+				else if (PyString_Check(arg))
+				  *p = PyString_AsString(arg);
+				else
+				  return "None or string";
+				if (*format == '#') {
+				  int *q = va_arg(*p_va, int *);
+				  if (arg == Py_None)
+				    *q = 0;
+				  else
+				    *q = PyString_Size(arg);
+				  format++;
+				}
+				else if (*p != NULL &&
+					 (int)strlen(*p) != PyString_Size(arg))
+				  return "None or string without null bytes";
 			}
-			else if (*p != NULL &&
-				 (int)strlen(*p) != PyString_Size(arg))
-				return "None or string without null bytes";
 			break;
 		}
 	
@@ -624,6 +664,30 @@ convertsimple1(arg, p_format, p_va)
 			}
 			break;
 		}
+		
+		
+	case 'w': /* memory buffer, read-write access */
+		{
+			void **p = va_arg(*p_va, void **);
+			PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
+			int count;
+			
+			if ( pb == NULL || pb->bf_getwritebuffer == NULL ||
+					pb->bf_getsegcount == NULL )
+				return "read-write buffer";
+			if ( (*pb->bf_getsegcount)(arg, NULL) != 1 )
+				return "single-segment read-write buffer";
+			if ( (count = pb->bf_getwritebuffer(arg, 0, p)) < 0 )
+				return "(unspecified)";
+			if (*format == '#') {
+				int *q = va_arg(*p_va, int *);
+				
+				*q = count;
+				format++;
+			}
+			break;
+		}
+		
 	
 	default:
 		return "impossible<bad format char>";
