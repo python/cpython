@@ -299,7 +299,9 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
 	builder.builddir = destdir
 	builder.name = shortname
 	if rsrcname:
-		builder.resources.append(rsrcname)
+		realrsrcname = macresource.resource_pathname(rsrcname)
+		builder.files.append((realrsrcname, 
+			os.path.join('Contents/Resources', os.path.basename(rsrcname))))
 	for o in others:
 		if type(o) == str:
 			builder.resources.append(o)
