@@ -81,6 +81,10 @@ struct gni_sockinet {
 #define ENI_FAMILY	5
 #define ENI_SALEN	6
 
+/* forward declaration to make gcc happy */
+int getnameinfo Py_PROTO((const struct sockaddr *, size_t, char *, size_t,
+			  char *, size_t, int));
+
 int
 getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
 	const struct sockaddr *sa;

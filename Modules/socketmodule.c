@@ -447,7 +447,11 @@ PyGAI_Err(int error)
 	if (error == EAI_SYSTEM)
 		return PySocket_Err();
 
+#ifdef HAVE_GAI_STRERROR
 	v = Py_BuildValue("(is)", error, gai_strerror(error));
+#else
+	v = Py_BuildValue("(is)", error, "getaddrinfo failed");
+#endif
 	if (v != NULL) {
 		PyErr_SetObject(PyGAI_Error, v);
 		Py_DECREF(v);

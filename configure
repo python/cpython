@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.245 
+# From configure.in Revision: 1.246 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -4570,7 +4570,7 @@ echo "$ac_t""MACHDEP_OBJS" 1>&6
 # checks for library functions
 for ac_func in alarm chown clock confstr ctermid ctermid_r execv \
  flock fork fsync fdatasync fpathconf ftime ftruncate \
- getgroups getlogin getpeername getpid getpwent getwd \
+ gai_strerror getgroups getlogin getpeername getpid getpwent getwd \
  hstrerror inet_pton kill link lstat mkfifo mktime mremap \
  nice pathconf pause plock poll pthread_init \
  putenv readlink \
