@@ -97,7 +97,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.2.8"
+#define PY_BSDDB_VERSION "4.2.9"
 static char *rcs_id = "$Id$";
 
 
@@ -877,7 +877,7 @@ DBEnv_dealloc(DBEnvObject* self)
     }
 #endif
 
-    if (!self->closed) {
+    if (self->db_env) {
         MYDB_BEGIN_ALLOW_THREADS;
         self->db_env->close(self->db_env, 0);
         MYDB_END_ALLOW_THREADS;
