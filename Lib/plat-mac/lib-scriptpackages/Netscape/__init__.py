@@ -1,5 +1,5 @@
 """
-Package generated from /Volumes/Sap/Applications (Mac OS 9)/Netscape Communicator™ Folder/Netscape Communicator™
+Package generated from /Volumes/Moes/Applications (Mac OS 9)/Netscape Communicator™ Folder/Netscape Communicator™
 Resource aete resid 0 
 """
 import aetools
@@ -42,15 +42,18 @@ from WorldWideWeb_suite import *
 from Mozilla_suite import *
 from PowerPlant import *
 from Text import *
+
 def getbaseclasses(v):
-	if hasattr(v, '_superclassnames') and not hasattr(v, '_propdict'):
+	if not getattr(v, '_propdict', None):
 		v._propdict = {}
 		v._elemdict = {}
-		for superclass in v._superclassnames:
-			v._propdict.update(getattr(eval(superclass), '_privpropdict', {}))
-			v._elemdict.update(getattr(eval(superclass), '_privelemdict', {}))
-		v._propdict.update(v._privpropdict)
-		v._elemdict.update(v._privelemdict)
+		for superclassname in getattr(v, '_superclassnames', []):
+			superclass = eval(superclassname)
+			getbaseclasses(superclass)
+			v._propdict.update(getattr(superclass, '_propdict', {}))
+			v._elemdict.update(getattr(superclass, '_elemdict', {}))
+		v._propdict.update(getattr(v, '_privpropdict', {}))
+		v._elemdict.update(getattr(v, '_privelemdict', {}))
 
 import StdSuites
 

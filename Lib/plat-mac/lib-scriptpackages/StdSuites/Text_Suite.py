@@ -1,7 +1,7 @@
 """Suite Text Suite: A set of basic classes for text processing
 Level 1, version 1
 
-Generated from /Volumes/Sap/System Folder/Extensions/AppleScript
+Generated from /Volumes/Moes/Systeemmap/Extensies/AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 

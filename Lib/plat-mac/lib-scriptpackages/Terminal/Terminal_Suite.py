@@ -16,7 +16,7 @@ class Terminal_Suite_Events:
 		"""run: Run the Terminal application
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
-		_code = 'core'
+		_code = 'aevt'
 		_subcode = 'oapp'
 
 		if _arguments: raise TypeError, 'No optional args expected'
@@ -35,7 +35,7 @@ class Terminal_Suite_Events:
 		"""quit: Quit the Terminal application
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
-		_code = 'core'
+		_code = 'aevt'
 		_subcode = 'quit'
 
 		if _arguments: raise TypeError, 'No optional args expected'
@@ -73,18 +73,21 @@ class Terminal_Suite_Events:
 
 	_argmap_do_script = {
 		'with_command' : 'cmnd',
+		'in_' : 'kfil',
 	}
 
-	def do_script(self, _no_object=None, _attributes={}, **_arguments):
+	def do_script(self, _object, _attributes={}, **_arguments):
 		"""do script: Run a UNIX shell script or command
-		Keyword argument with_command: data to be passed to the Terminal application as the command line
+		Required argument: data to be passed to the Terminal application as the command line
+		Keyword argument with_command: data to be passed to the Terminal application as the command line, deprecated, use direct parameter
+		Keyword argument in_: the window in which to execute the command
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'core'
 		_subcode = 'dosc'
 
 		aetools.keysubst(_arguments, self._argmap_do_script)
-		if _no_object != None: raise TypeError, 'No direct arg expected'
+		_arguments['----'] = _object
 
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -122,10 +125,10 @@ class index(aetools.NProperty):
 	"""index - the number of the window """
 	which = 'pidx'
 	want = 'long'
-class visible(aetools.NProperty):
-	"""visible - Is the window visible? """
-	which = 'pvis'
-	want = 'bool'
+class bounds(aetools.NProperty):
+	"""bounds - the boundary rectangle for the window, relative to the upper left corner of the screen """
+	which = 'pbnd'
+	want = 'qdrt'
 class has_close_box(aetools.NProperty):
 	"""has close box - Does the window have a close box? """
 	which = 'hclb'
@@ -138,6 +141,14 @@ class floating(aetools.NProperty):
 	"""floating - Does the window float? """
 	which = 'isfl'
 	want = 'bool'
+class miniaturizable(aetools.NProperty):
+	"""miniaturizable - Is the window miniaturizable? """
+	which = 'ismn'
+	want = 'bool'
+class miniaturized(aetools.NProperty):
+	"""miniaturized - Is the window miniaturized? """
+	which = 'pmnd'
+	want = 'bool'
 class modal(aetools.NProperty):
 	"""modal - Is the window modal? """
 	which = 'pmod'
@@ -145,6 +156,10 @@ class modal(aetools.NProperty):
 class resizable(aetools.NProperty):
 	"""resizable - Is the window resizable? """
 	which = 'prsz'
+	want = 'bool'
+class visible(aetools.NProperty):
+	"""visible - Is the window visible? """
+	which = 'pvis'
 	want = 'bool'
 class zoomable(aetools.NProperty):
 	"""zoomable - Is the window zoomable? """
@@ -154,22 +169,22 @@ class zoomed(aetools.NProperty):
 	"""zoomed - Is the window zoomed? """
 	which = 'pzum'
 	want = 'bool'
-class miniaturizable(aetools.NProperty):
-	"""miniaturizable - Is the window miniaturizable? """
-	which = 'mini'
-	want = 'bool'
-class miniaturized(aetools.NProperty):
-	"""miniaturized - Is the window miniaturized? """
-	which = 'mina'
-	want = 'bool'
 class position(aetools.NProperty):
-	"""position - the upper left coordinates of window """
+	"""position - the upper left coordinates of the window, relative to the upper left corner of the screen """
 	which = 'ppos'
 	want = 'QDpt'
-class bounds(aetools.NProperty):
-	"""bounds - the boundary rectangle for the window """
-	which = 'pbnd'
-	want = 'qdrt'
+class origin(aetools.NProperty):
+	"""origin - the lower left coordinates of the window, relative to the lower left corner of the screen """
+	which = 'pori'
+	want = 'list'
+class size(aetools.NProperty):
+	"""size - the width and height of the window """
+	which = 'psiz'
+	want = 'list'
+class frame(aetools.NProperty):
+	"""frame - the origin and size of the window """
+	which = 'pfra'
+	want = 'list'
 class title_displays_device_name(aetools.NProperty):
 	"""title displays device name - Does the title for the window contain the device name? """
 	which = 'tddn'
@@ -226,31 +241,44 @@ class bold_text_color(aetools.NProperty):
 	"""bold text color - the bold text color for the window """
 	which = 'pbtc'
 	want = 'TEXT'
+class busy(aetools.NProperty):
+	"""busy - Is the window busy running a process? """
+	which = 'busy'
+	want = 'bool'
+class processes(aetools.NProperty):
+	"""processes - a list of the currently running processes """
+	which = 'prcs'
+	want = 'list'
 
 windows = window
-application._propdict = {
+application._superclassnames = []
+application._privpropdict = {
 	'name' : name,
 	'version' : version,
 	'frontmost' : frontmost,
 }
-application._elemdict = {
+application._privelemdict = {
 	'window' : window,
 }
-window._propdict = {
+window._superclassnames = []
+window._privpropdict = {
 	'name' : name,
 	'index' : index,
-	'visible' : visible,
+	'bounds' : bounds,
 	'has_close_box' : has_close_box,
 	'has_title_bar' : has_title_bar,
 	'floating' : floating,
-	'modal' : modal,
-	'resizable' : resizable,
-	'zoomable' : zoomable,
-	'zoomed' : zoomed,
 	'miniaturizable' : miniaturizable,
 	'miniaturized' : miniaturized,
+	'modal' : modal,
+	'resizable' : resizable,
+	'visible' : visible,
+	'zoomable' : zoomable,
+	'zoomed' : zoomed,
 	'position' : position,
-	'bounds' : bounds,
+	'origin' : origin,
+	'size' : size,
+	'frame' : frame,
 	'title_displays_device_name' : title_displays_device_name,
 	'title_displays_shell_path' : title_displays_shell_path,
 	'title_displays_window_size' : title_displays_window_size,
@@ -265,8 +293,11 @@ window._propdict = {
 	'background_color' : background_color,
 	'normal_text_color' : normal_text_color,
 	'bold_text_color' : bold_text_color,
+	'busy' : busy,
+	'processes' : processes,
+	'frontmost' : frontmost,
 }
-window._elemdict = {
+window._privelemdict = {
 }
 
 #
@@ -278,35 +309,40 @@ _classdeclarations = {
 }
 
 _propdeclarations = {
-	'tdfn' : title_displays_file_name,
-	'mini' : miniaturizable,
-	'vers' : version,
-	'pidx' : index,
+	'pori' : origin,
 	'prsz' : resizable,
+	'vers' : version,
+	'prcs' : processes,
+	'pbtc' : bold_text_color,
 	'pbnd' : bounds,
-	'mina' : miniaturized,
-	'pbcl' : background_color,
+	'crow' : number_of_rows,
+	'pcnt' : contents,
 	'tddn' : title_displays_device_name,
 	'iszm' : zoomable,
 	'hclb' : has_close_box,
 	'isfl' : floating,
-	'pcnt' : contents,
+	'busy' : busy,
+	'pfra' : frame,
 	'ppos' : position,
 	'ptxc' : normal_text_color,
+	'tdfn' : title_displays_file_name,
 	'pcuc' : cursor_color,
 	'tdsp' : title_displays_shell_path,
 	'pvis' : visible,
-	'tdct' : title_displays_custom_title,
+	'pidx' : index,
 	'pmod' : modal,
 	'titl' : custom_title,
 	'pisf' : frontmost,
+	'pmnd' : miniaturized,
+	'tdct' : title_displays_custom_title,
 	'hist' : history,
 	'pzum' : zoomed,
-	'crow' : number_of_rows,
+	'ismn' : miniaturizable,
+	'pbcl' : background_color,
 	'pnam' : name,
 	'ccol' : number_of_columns,
 	'tdws' : title_displays_window_size,
-	'pbtc' : bold_text_color,
+	'psiz' : size,
 	'ptit' : has_title_bar,
 }
 

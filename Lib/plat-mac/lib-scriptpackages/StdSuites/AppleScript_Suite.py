@@ -1,7 +1,7 @@
 """Suite AppleScript Suite: Standard terms for AppleScript
 Level 1, version 1
 
-Generated from /Volumes/Sap/System Folder/Extensions/AppleScript
+Generated from /Volumes/Moes/Systeemmap/Extensies/AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 

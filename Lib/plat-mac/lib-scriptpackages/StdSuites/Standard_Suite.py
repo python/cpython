@@ -1,7 +1,7 @@
 """Suite Standard Suite: Common terms for most applications
 Level 1, version 1
 
-Generated from /Volumes/Sap/System Folder/Extensions/AppleScript
+Generated from /Volumes/Moes/Systeemmap/Extensies/AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -125,7 +125,7 @@ class Standard_Suite_Events(builtin_Suite_Events):
 		"""close: Close an object
 		Required argument: the object to close
 		Keyword argument saving: specifies whether changes should be saved before closing
-		Keyword argument saving_in: the file in which to save the object
+		Keyword argument saving_in: the file or alias in which to save the object
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'core'
@@ -304,7 +304,7 @@ class Standard_Suite_Events(builtin_Suite_Events):
 	def save(self, _object, _attributes={}, **_arguments):
 		"""save: Save an object
 		Required argument: the object to save, usually a document or window
-		Keyword argument in_: the file in which to save the object
+		Keyword argument in_: the file or alias in which to save the object
 		Keyword argument as: the file type of the document in which to save the data
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
@@ -485,7 +485,7 @@ class modified(aetools.NProperty):
 documents = document
 
 class file(aetools.ComponentItem):
-	"""file - a file on a disk or server (or a file yet to be created) """
+	"""file - a file on a disk or server """
 	want = 'file'
 class stationery(aetools.NProperty):
 	"""stationery - Is the file a stationery file? """
