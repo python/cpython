@@ -997,28 +997,34 @@ PyFile_WriteObject(v, f, flags)
 	return 0;
 }
 
-void
+int
 PyFile_WriteString(s, f)
 	char *s;
 	PyObject *f;
 {
 	if (f == NULL) {
-		/* Do nothing */
+		/* Should be caused by a pre-existing error */
+		if(!PyErr_Occurred())
+			PyErr_SetString(PyExc_SystemError,
+					"null file for PyFile_WriteString");
+		return -1;
 	}
 	else if (PyFile_Check(f)) {
 		FILE *fp = PyFile_AsFile(f);
-		if (fp != NULL)
-			fputs(s, fp);
+		if (fp == NULL) {
+			err_closed();
+			return -1;
+		}
+		fputs(s, fp);
+		return 0;
 	}
 	else if (!PyErr_Occurred()) {
 		PyObject *v = PyString_FromString(s);
-		if (v == NULL) {
-			PyErr_Clear();
-		}
-		else {
-			if (PyFile_WriteObject(v, f, Py_PRINT_RAW) != 0)
-				PyErr_Clear();
-			Py_DECREF(v);
-		}
+		int err;
+		if (v == NULL)
+			return -1;
+		err = PyFile_WriteObject(v, f, Py_PRINT_RAW);
+		Py_DECREF(v);
+		return err;
 	}
 }
