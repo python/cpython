@@ -403,11 +403,16 @@ def abspath(path):
     """Return the absolute version of a path"""
     try:
         import win32api
-        try:
-            path = win32api.GetFullPathName(path)
-        except win32api.error:
-            pass # Bad path - return unchanged.
     except ImportError:
-        if not isabs(path):
-            path = join(os.getcwd(), path)
+        global abspath
+        def _abspath(path):
+            if not isabs(path):
+                path = join(os.getcwd(), path)
+            return normpath(path)
+        abspath = _abspath
+        return _abspath(path)
+    try:
+        path = win32api.GetFullPathName(path)
+    except win32api.error:
+        pass # Bad path - return unchanged.
     return normpath(path)
