@@ -502,6 +502,7 @@ _expectations = {
         test_al
         test_cd
         test_cl
+        test_curses
         test_dl
         test_gl
         test_imgfile
