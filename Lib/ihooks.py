@@ -133,16 +133,19 @@ class BasicModuleLoader(_Verbose):
 
     def load_module(self, name, stuff):
 	file, filename, (suff, mode, type) = stuff
-	if type == BUILTIN_MODULE:
-	    return imp.init_builtin(name)
-	if type == FROZEN_MODULE:
-	    return imp.init_frozen(name)
-	if type == C_EXTENSION:
-	    return imp.load_dynamic(name, filename, file)
-	if type == PY_SOURCE:
-	    return imp.load_source(name, filename, file)
-	if type == PY_COMPILED:
-	    return imp.load_compiled(name, filename, file)
+	try:
+	    if type == BUILTIN_MODULE:
+		return imp.init_builtin(name)
+	    if type == FROZEN_MODULE:
+		return imp.init_frozen(name)
+	    if type == C_EXTENSION:
+		return imp.load_dynamic(name, filename, file)
+	    if type == PY_SOURCE:
+		return imp.load_source(name, filename, file)
+	    if type == PY_COMPILED:
+		return imp.load_compiled(name, filename, file)
+	finally:
+	    if file: file.close()
 	raise ImportError, "Unrecognized module type (%s) for %s" % \
 			   (`type`, name)
 
