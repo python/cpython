@@ -2280,35 +2280,34 @@ Pickle_getvalue(Picklerobject *self, PyObject *args)
 	l=data->length;
 
 	/* set up an array to hold get/put status */
-	if ((lm=PyDict_Size(self->memo)) < 0) return NULL;
+	lm = PyDict_Size(self->memo);
+	if (lm < 0) return NULL;
 	lm++;
-	if (! (have_get=malloc((lm)*sizeof(char)))) return PyErr_NoMemory();
-	memset(have_get,0,lm);
+	have_get = malloc(lm);
+	if (have_get == NULL) return PyErr_NoMemory();
+	memset(have_get, 0, lm);
 
 	/* Scan for gets. */
-	for (rsize=0, i=l; --i >= 0; ) {
-		k=data->data[i];
+	for (rsize = 0, i = l; --i >= 0; ) {
+		k = data->data[i];
 
-		if (PyString_Check(k)) {
+		if (PyString_Check(k))
 			rsize += PyString_GET_SIZE(k);
-		}
 
 		else if (PyInt_Check(k)) { /* put */
-			ik=PyInt_AS_LONG((PyIntObject*)k);
-			if (ik >= lm || ik==0) {
+			ik = PyInt_AS_LONG((PyIntObject*)k);
+			if (ik >= lm || ik == 0) {
 				PyErr_SetString(PicklingError,
 						"Invalid get data");
 				return NULL;
 			}
-			if (have_get[ik]) { /* with matching get */
-				if (ik < 256) rsize += 2;
-				else rsize+=5;
-			}
+			if (have_get[ik]) /* with matching get */
+				rsize += ik < 256 ? 2 : 5;
 		}
 
 		else if (! (PyTuple_Check(k) &&
 			    PyTuple_GET_SIZE(k) == 2 &&
-			    PyInt_Check((k=PyTuple_GET_ITEM(k,0))))
+			    PyInt_Check((k = PyTuple_GET_ITEM(k, 0))))
 			) {
 			PyErr_SetString(PicklingError,
 					"Unexpected data in internal list");
@@ -2316,36 +2315,37 @@ Pickle_getvalue(Picklerobject *self, PyObject *args)
 		}
 
 		else { /* put */
-			ik=PyInt_AS_LONG((PyIntObject*)k);
-			if (ik >= lm || ik==0) {
+			ik = PyInt_AS_LONG((PyIntObject *)k);
+			if (ik >= lm || ik == 0) {
 				PyErr_SetString(PicklingError,
 						"Invalid get data");
 				return NULL;
 			}
-			have_get[ik]=1;
-			if (ik < 256) rsize += 2;
-			else rsize+=5;
+			have_get[ik] = 1;
+			rsize += ik < 256 ? 2 : 5;
 		}
-
 	}
 
 	/* Now generate the result */
-	if (!( r=PyString_FromStringAndSize(NULL,rsize)))  goto err;
-	s=PyString_AS_STRING((PyStringObject*)r);
+	r = PyString_FromStringAndSize(NULL, rsize);
+	if (r == NULL) goto err;
+	s = PyString_AS_STRING((PyStringObject *)r);
 
-	for (i=0; i<l; i++) {
-		k=data->data[i];
+	for (i = 0; i < l; i++) {
+		k = data->data[i];
 
 		if (PyString_Check(k)) {
-			ssize=PyString_GET_SIZE(k);
+			ssize = PyString_GET_SIZE(k);
 			if (ssize) {
-				p=PyString_AS_STRING((PyStringObject*)k);
-				while (--ssize >= 0) *s++=*p++;
+				p=PyString_AS_STRING((PyStringObject *)k);
+				while (--ssize >= 0)
+					*s++ = *p++;
 			}
 		}
 
 		else if (PyTuple_Check(k)) { /* get */
-			ik=PyInt_AS_LONG((PyIntObject*)PyTuple_GET_ITEM(k,0));
+			ik = PyInt_AS_LONG((PyIntObject *)
+					    PyTuple_GET_ITEM(k, 0));
 			if (ik < 256) {
 				*s++ = BINGET;
 				*s++ = (int)(ik & 0xff);
@@ -2360,7 +2360,7 @@ Pickle_getvalue(Picklerobject *self, PyObject *args)
 		}
 
 		else { /* put */
-			ik=PyInt_AS_LONG((PyIntObject*)k);
+			ik = PyInt_AS_LONG((PyIntObject*)k);
 
 			if (have_get[ik]) { /* with matching get */
 				if (ik < 256) {
@@ -2376,12 +2376,11 @@ Pickle_getvalue(Picklerobject *self, PyObject *args)
 				}
 			}
 		}
-
 	}
 
 	if (clear) {
 		PyDict_Clear(self->memo);
-		Pdata_clear(data,0);
+		Pdata_clear(data, 0);
 	}
 
 	free(have_get);
