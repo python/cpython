@@ -78,6 +78,13 @@ WAVE_FORMAT_PCM = 0x0001
 
 _array_fmts = None, 'b', 'h', None, 'l'
 
+# Determine endian-ness
+import struct
+if struct.pack("h", 1) == "\000\001":
+	big_endian = 1
+else:
+	big_endian = 0
+
 def _read_long(file):
 	x = 0L
 	for i in range(4):
@@ -309,7 +316,8 @@ class Wave_read:
 				nitems = (self._data_chunk.chunksize - self._data_chunk.size_read) / self._sampwidth
 			data.fromfile(self._data_chunk.file, nitems)
 			self._data_chunk.size_read = self._data_chunk.size_read + nitems * self._sampwidth
-			data.byteswap()
+			if big_endian:
+				data.byteswap()
 			data = data.tostring()
 		else:
 			data = self._data_chunk.read(nframes * self._framesize)
@@ -482,7 +490,8 @@ class Wave_write:
 		if self._sampwidth > 1:
 			import array
 			data = array.array(_array_fmts[self._sampwidth], data)
-			data.byteswap()
+			if big_endian:
+				data.byteswap()
 			data.tofile(self._file)
 			self._datawritten = self._datawritten + len(data) * self._sampwidth
 		else:
@@ -542,7 +551,7 @@ class Wave_write:
 			return
 		curpos = self._file.tell()
 		self._file.seek(self._form_length_pos, 0)
-		_write_long(36 + self._datawritten)
+		_write_long(self._file, 36 + self._datawritten)
 		self._file.seek(self._data_length_pos, 0)
 		_write_long(self._file, self._datawritten)
 		self._file.seek(curpos, 0)
