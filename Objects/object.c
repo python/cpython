@@ -517,6 +517,7 @@ object NoObject = {
 
 static object refchain = {&refchain, &refchain};
 
+void
 NEWREF(op)
 	object *op;
 {
@@ -531,6 +532,7 @@ NEWREF(op)
 #endif
 }
 
+void
 UNREF(op)
 	register object *op;
 {
@@ -556,6 +558,7 @@ UNREF(op)
 #endif
 }
 
+void
 DELREF(op)
 	object *op;
 {
@@ -565,6 +568,7 @@ DELREF(op)
 	(*dealloc)(op);
 }
 
+void
 _Py_PrintReferences(fp)
 	FILE *fp;
 {
