@@ -1530,16 +1530,12 @@ class Tk(Misc, Wm):
         dir = {'self': self}
         exec 'from Tkinter import *' in dir
         if os.path.isfile(class_tcl):
-            print 'source', `class_tcl`
             self.tk.call('source', class_tcl)
         if os.path.isfile(class_py):
-            print 'execfile', `class_py`
             execfile(class_py, dir)
         if os.path.isfile(base_tcl):
-            print 'source', `base_tcl`
             self.tk.call('source', base_tcl)
         if os.path.isfile(base_py):
-            print 'execfile', `base_py`
             execfile(base_py, dir)
     def report_callback_exception(self, exc, val, tb):
         """Internal function. It reports exception on sys.stderr."""
