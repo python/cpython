@@ -25,6 +25,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Macintosh Python main program for both applets and interpreter */
 
 #include <Resources.h>
+#include <CodeFragments.h>
 
 #ifdef __CFM68K__
 #pragma lib_export on
@@ -35,9 +36,41 @@ extern void PyMac_InitApplet();
 extern void PyMac_InitApplication();
 #endif /* USE_MAC_APPLET_SUPPORT */
 
+
+/*
+** Alternative initialization entry point for some very special cases.
+** Use this in stead of __initialize in the PEF settings to remember (and
+** re-open as resource file) the application. This is needed if we link against
+** a dynamic library that, in its own __initialize routine, opens a resource
+** file. This would mess up our finding of override preferences.
+** Only set this entrypoint in your apps if you notice sys.path or some such is
+** messed up.
+*/
+static int application_fss_valid;
+static FSSpec application_fss;
+
+OSErr pascal
+__initialize_remember_app_fsspec(CFragInitBlockPtr data)
+{
+	/* Call the MW runtime's initialization routine */
+	__initialize();
+	if ( data == nil ) return noErr;
+	if ( data->fragLocator.where == kDataForkCFragLocator ) {
+		application_fss = *data->fragLocator.u.onDisk.fileSpec;
+		application_fss_valid = 1;
+	} else if ( data->fragLocator.where == kResourceCFragLocator ) {
+		application_fss = *data->fragLocator.u.inSegs.fileSpec;
+		application_fss_valid = 1;
+	}
+	return noErr;
+}
+
 void
 main() {
+	if ( application_fss_valid )
+			(void)FSpOpenResFile(&application_fss, fsRdPerm);
 #ifdef USE_MAC_APPLET_SUPPORT
+	{
         Handle mainpyc;
 
         mainpyc = Get1NamedResource('PYC ', "\p__main__");
@@ -45,6 +78,7 @@ main() {
                 PyMac_InitApplet();
         else
                 PyMac_InitApplication();
+    }
 #else
 	PyMac_InitApplication();
 #endif /* USE_MAC_APPLET_SUPPORT */
