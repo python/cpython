@@ -1,3 +1,30 @@
+Tue May  3 15:21:47 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Misc/python.man: documented -u; undocumented -k
+
+	* Python/{python,frozen}main.c: got rid of -k option; added -u
+	option (unbuffered stdout/stderr); plus environment
+
+	* Python/import.c: Steven Majewski's mods for AIX
+
+	* Lib/lockfile.py: new module to lock files (using fcntl)
+
+	* Objects/fileobject.c, Include/fileobject.h: added setfilebufsize
+	function to set buffer size (call only from C when it's safe!)
+
+	* Python/bltinmodule.c (builtin_open): Added 3rd parameter to give
+	buffer size; default 2nd parameter to "r"
+
+Mon May  2 17:51:23 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/{al,cd,sv}module.c: added (method) casts to methodlist
+	initializers
+
+Thu Apr 28 15:01:50 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/ref2.tex: (section{Line structure}): documented line joining
+	without backslashes inside parens
+
 Wed Apr 27 13:15:42 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Misc/python-mode.el: version 1.09 from Tim (grand new
@@ -34,6 +61,8 @@ Mon Apr 25 11:27:09 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Parser/tokenizer.c: added support for triple-quoted strings and
 	strings continued with backslash
+
+	* Parser/tokenizer.h: moved here from Include
 
 	* Python/compile.c (parsenumber): support triple-quoted strings.
 	Raise SyntaxError, not SystemError for bad number syntax
