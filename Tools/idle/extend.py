@@ -5,5 +5,6 @@ standard = [
     "SearchBinding",
     "AutoIndent",
     "AutoExpand",
+    "FormatParagraph",
     "ZoomHeight",
 ]
