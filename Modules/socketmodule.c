@@ -431,7 +431,7 @@ PyH_Err(int h_error)
 	v = Py_BuildValue("(is)", h_error, "host not found");
 #endif
 	if (v != NULL) {
-		PyErr_SetObject(PyGAI_Error, v);
+		PyErr_SetObject(PyH_Error, v);
 		Py_DECREF(v);
 	}
 
@@ -2915,13 +2915,16 @@ init_socket(void)
 	PySocket_Error = PyErr_NewException("socket.error", NULL, NULL);
 	if (PySocket_Error == NULL)
 		return;
+	PyDict_SetItemString(d, "error", PySocket_Error);
 	PyH_Error = PyErr_NewException("socket.herror", PySocket_Error, NULL);
 	if (PyH_Error == NULL)
 		return;
+	PyDict_SetItemString(d, "herror", PyH_Error);
 	PyGAI_Error = PyErr_NewException("socket.gaierror", PySocket_Error,
 	    NULL);
 	if (PyGAI_Error == NULL)
 		return;
+	PyDict_SetItemString(d, "gaierror", PyGAI_Error);
 #ifdef USE_SSL
 	SSL_load_error_strings();
 	SSLeay_add_ssl_algorithms();
@@ -2934,7 +2937,6 @@ init_socket(void)
 				 (PyObject *)&SSL_Type) != 0)
 		return;
 #endif /* USE_SSL */
-	PyDict_SetItemString(d, "error", PySocket_Error);
 	PySocketSock_Type.ob_type = &PyType_Type;
 	PySocketSock_Type.tp_doc = sockettype_doc;
 	Py_INCREF(&PySocketSock_Type);
