@@ -1,5 +1,21 @@
-How to install Python 2.0 on your Macintosh
--------------------------------------------
+How to install Python 2.1a2 on your Macintosh
+---------------------------------------------
+
+Note that this is really an alpha: it is only lightly tested and contains a lot
+of new code. Moreover, this release is Carbon only, so it will run on MacOS 8.6
+or later and MacOS X. The next alpha will again run in "classic MacOS" (8.0 or
+later).
+
+I'm hoping for a fairly quick alpha cycle, with about 3 distributions in quick
+succession, so please give feedback (to pythonmac-sig@python.org) as soon as
+possible. You should definitely include the full version number of you MacOS
+and the full version string of your MacPython.
+
+Whether PIL, Tk and Numeric work in this release is a complete guess.
+
+You should definitely read the Relnotes file too.
+
+------
 
 If this is your first encounter with Python: you definitely need the
 common user documentation (common to all platforms). You can find this
@@ -17,17 +33,13 @@ Caveats
 This is a final candidate version, so use with caution, and please report
 problems as soon as possible, to pythonmac-sig@python.org.
 
-Aside from the general new Python 2.0 features (compared to 1.5.2, there
-was no 1.6 for the macintosh) like unicode support the main new features
-of this MacPython release is support for multithreading. This has had
-some preliminary testing, but please report any success or failure on
-the mailing list.
+Aside from the general new Python 2.1 features compared to 2.0 the main
+feature of this release is Carbon support.
 
-This installer installs MacPython for PowerPC only, if you really want
-68k support you will have to stay with 1.5.2. Or, if you are willing to
-invest the time and have access to CodeWarrior you are welcome to try
-and build a 68k distribution, most of the projects and sources are
-reasonably up to date (May 2000). Contact me for details.
+This installer installs MacPython for Carbon only. If you have a machine
+running 8.5 or earlier you should wait for the next alfa and sitck with 2.0.
+If you want
+68k support you will have to stay with 1.5.2.
 
 This version of Python expects a recent version of Appearance, so it may
 be that users with pre MacOS 8.5 systems have trouble running it. If
@@ -41,9 +53,7 @@ What to install
 This installer is PPC only: too many new MacOS features are not
 available on 68K, and doing workarounds, even just #ifdeffing in the
 code, is too much work for me right now. If someone wants to revive
-68K-MacPython: please do so. The project files still contain the 68K
-targets (they're simply skipped by the build process) so all that is
-needed is CodeWarrior, a source distribution and commitment.
+68K-MacPython: please do so.
 
 The optional parts in this distribution are
 - TK+PIL: Tkinter and support modules, plus Imaging, the Python image manipulation 
@@ -59,13 +69,11 @@ All these except the DevKit are installed with Easy Install.
 
 After the installer finishes it automatically launches the
 ConfigurePython applet, to finish configuration of your Python.
-If you have previously installed another copy of 2.0 you should manually
-remove your preference file first (but no such action is needed for installing
-beside older MacPythons, and they will live together happily).
 
 Moving your Python installation after installing is generally not a good idea.
 If you have to do this anyway you should remove your preference file, run
-ConfigurePython and remove all .pyc files.
+ConfigurePython and remove all .pyc files. (there's a script zappyc.py that does
+the latter).
 
 If you don't have enough memory: the sizes choosen are somewhat
 arbitrary, and they are as high as they are so that test.autotest runs with fewer
@@ -79,8 +87,9 @@ After installing
 It is probably a good idea to run the automatic tests. Start
 Python and "import test.autotest". 
 
-Three tests will fail on the mac, all with MemoryErrors: test_sha,
-test_longexp and test_zlib. If you increase the PythonInterpreter memory
+Three tests will fail on MacOS9, all with MemoryErrors: test_gzip, test_sha,
+test_longexp and test_zlib (on MacOSX nothing should fail).
+If you increase the PythonInterpreter memory
 partition size they will pass. It will, however, print some messages
 about optional features not supported. You should not worry about these,
 they are modules that are supported by Python on other platforms. Also,
@@ -101,8 +110,8 @@ Uninstalling
 ------------
 
 Two items are installed in the system folder: the interpreter shared
-library "PythonCore 2.0" lives in the Extensions folder and the
-"Python 2.0 Preferences" file in the Python subfolder in the
+libraries PythonCore and PythonCoreCarbon lives in the Extensions folder and the
+"Python 2.1a2 Preferences" file in the Python subfolder in the
 Preferences folder. All the rest of Python lives in the folder you
 installed in.
 
@@ -137,15 +146,15 @@ software.
 Upgrading from older Python releases
 ------------------------------------
 
-Since release 1.4 Python releases are independent of each other, with
+Python releases are independent of each other, with
 separate Preferences files, shared library names, etc. The good news is
 that this means you can keep your older version around if you are unsure
 whether to upgrade. The bad news is that your old preference settings
 are lost and you have to set them again.
 
-After you are satisfied that 2.0 works as expected you can trash
+After you are satisfied that 2.1 works as expected you can trash
 anything in the system folder that has "python" in the name and not
-"2.0".
+"2.1".
 
 The installer
 -------------
@@ -187,11 +196,6 @@ Send bug reports, suggestions, contributions and fanmail to
 <jack@cwi.nl>. However, a better way to discuss MacPython is to join the
 <pythonmac-sig@python.org> mailing list, which is explicitly meant for
 this purpose.
-
-Alternatively, you can try sending to comp.lang.python or
-python-list@cwi.nl, but since I read the newsgroup, not the mailinglist,
-I may miss it there (but other people may know quite a bit more than me
-anyway:-).
 
 Jack Jansen
 Oratrix Development BV

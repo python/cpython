@@ -1,4 +1,4 @@
-Changes in 2.0 since 1.5.2
+Changes in 2.1a2 since 2.0
 --------------------------
 
 These release notes refer to Mac-specific changes only. See NEWS (in the Misc folder)
@@ -8,52 +8,58 @@ Unfortunately I have messed my administration up, so I can't give complete
 Mac-specific release notes for the changes in this release. So, I will
 have to leave it at the highlights:
 
-- 68K support has been dropped, this release is PPC only.
-- Threads support (through standard Python threads module).
-- Tkinter works again! At least: it doesn't immedeately crash in obvious ways.
-- Appearance support through App module and added calls in many other modules.
-  Most dialogs and applets have also been converted to Appearance. There's also a
-  ControlAccessor module that handles [GS]etControlData with their plethora of
-  argument types.
-- Navigation Services support, with macfs StandardFile calls transparently
-  replaced by their NavServices counterparts.
-- Offscreen QuickDraw and GWorld support through Qdoffs module.
-- Drag manager support (Drag module).
-- Much better CGI support and examples, see :Mac:Tools:CGI.
-- Better OSA/AppleEvent support.
-- Up/downcasting of handle-based types is now unified and implemented in the
-  inherting module, e.g.
-  handleobj = ctlobj.as_Resource()
-  ctlobj = Ctl.as_Control(handle)
-- Added macos.FreeMem(), MaxBlock() and CompactMem(), mainly so apps in Python can
-  give low-memory warnings.
-- MediaDescr module parses some QuickTime media descriptions (but definitely not all).
-- A new method EasyDialogs.GetArgv() which makes it easy for the end-user to provide
-  unix-style sys.argv arguments. (new since 2.0b1)
-- There's a new package, mkcwproject, that creates and builds CodeWarrior
-  projects. (new since 2.0b1)
-- The "keep console open" options are now always, never, on error and on
-  unseen output. The latter is the new default. There is also a call
-  MacOS.KeepConsole() which allows programs to override the behaviour, and
-  a call MacOS.OutputSeen() which acknowledges all output until now.
-  (new since 2.0b1)
-- Missing Numeric modules are included. They may not be on sys.path, however. (new since 2.0b1)
-- gdbm works again. (new since 2.0b1)
-- Command-. and threads don't bite each other as badly anymore. (new since 2.0c1)
-- InstallPython will optionally copy PythonCore in stead of creating an alias, when
-  needed. (new since 2.0c1)
-- All bugs reported to the pythonmac-sig in the 2.0c1 period have been fixed.
+- The good news: this release is Carbon-based, so it runs natively on MacOS 8.6 or
+  later and MacOSX.
+- The bad news: this release is Carbon-only. The next alpha release will be both
+  Carbon and classic PPC.
+- Distutils is included and seems to work.
+- There's a new module (package, actually) mkcwproject which builds CodeWarrior
+  projects from simple templates. See Distutils or :Mac:scripts:genpluginprojects.py
+  for examples of use.
+- Windows and Dialogs can now be different beasts, so you may have to call
+  dlg.GetDialogWindow() where you used to be able to call window methods straight
+  on the dialog. This also has consequences for code using FrameWork.DialogWindow.
+  THIS IS AN INCOMPATIBLE CHANGE.
+- ctl.GetControlDataHandle() has been renamed to GetControlData_Handle(), and similarly
+  for the other variants of GetControlData and SetControlData. This was needed
+  because Carbon defines a completely different routine with the name GetControlDataHandle.
+  THIS IS AN INCOMPATIBLE CHANGE.
+- Method mac.xstat() has disappeared. THIS IS AN INCOMPATIBLE CHANGE.
+- Menu.SetPopupData() and GetPopupData() are gone. Use SetPopupMenuHandle() and
+  SetPopupMenuID() (and the getters) in stead. THIS IS AN INCOMPATIBLE CHANGE.
+- Various methods have disappeared when running under Carbon. The script
+  :Mac:scripts:missingcarbonmethods.py can check your sources, but you need unix to run
+  it. Or use it as documentation and search by hand. THIS IS AN INCOMPATIBLE CHANGE.
+- The good news is that "direct access to toolbox structs" still works from Python,
+  so Python programmers have a lot less to fix than C programmers.
+  That's because the lowlevel code simply uses the accessors internally. The accessors
+  are available both in Carbon and Classic MacPython.
+- Scrap under Carbon is, you guessed it, the Carbon Scrap Manager. Some workarounds are
+  provided, though. THIS IS AN INCOMPATIBLE CHANGE.
+- The Internet Config routines that are missing from Carbon have been removed. This
+  is no problem if you use the "ic" module, but may be if you use "icglue" directly.
+  THIS IS AN INCOMPATIBLE CHANGE.
+- Various old toolbox names (CountMItems, EnableItem, etc) have disappeared. Use the
+  new forms (CountMenuItems, EnableMenuItem, etc). THIS IS AN INCOMPATIBLE CHANGE.
+- Waste now uses Waste 2.0.
+- The default memory size for the interpreter has been upped again.
+- The MacOS error messages have been updated to reflect the current state of
+  things. This was long overdue.
+- The crash in BuildApplication has been fixed.
+- struct.pack related problems (in Audio_Mac, for example) have been fixed.
+- (src/dev/cvs only): The project files now use the .mcp extension in stead of .prj.
+  Projects for almost all plugins and the img modules are automatically generated
+  with :Mac:scripts:genpluginprojects.py (also called by fullbuild). The .mcp files
+  are not in the repository, if you don't want to use genpluginprojects you can import
+  the .mcp.xml files in CodeWarrior.
 
 
 What is not in this distribution
 --------------------------------
 
-- The garbage collection mods to 2.0 have not been enabled, mainly due to lack of test-time.
+- The garbage collection mods have not been enabled, mainly due to lack of test-time.
 - Stackless Python/microthreads hasn't been ported to 2.0 yet. If/when it becomes available
   Just will undoubtedly announce it on pythonmac-sig and the MacPython homepage.
-- Carbon support is not in here, but should be happening as soon as GUSI is ready.
-- Distutils is incomplete for the Mac, unfortunately. A newer version should be available
-  soon and will be announced on pythonmac-sig and the MacPython homepage.
 
 Known problems
 --------------
@@ -63,3 +69,6 @@ http://www.cwi.nl/~jack/macpython.html.
 
 - The IDE and Tkinter do not work together. Run tkinter programs under PythonInterpreter.
 - Aliases do not work in sys.path entries.
+- The menu bar isn't always correctly restored before MacPython turns to <<terminated>>.
+- Under Carbon only you may occasionally see a spurious KeyboardInterrupt. I have absolutely
+  no clue as to what is causing this.
