@@ -134,6 +134,13 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("import sys as system, math")
         self.check_suite("import sys, math as my_math")
 
+    def test_pep263(self):
+        self.check_suite("# -*- coding: iso-8859-1 -*-\n"
+                         "pass\n")
+
+    def test_assert(self):
+        self.check_suite("assert alo < ahi and blo < bhi\n")
+
 #
 #  Second, we take *invalid* trees and make sure we get ParserError
 #  rejections for them.
@@ -355,6 +362,16 @@ class IllegalSyntaxTestCase(unittest.TestCase):
          (0, ''))
         self.check_bad_tree(tree, "a $= b")
 
+    def test_malformed_global(self):
+        #doesn't have global keyword in ast
+        tree = (257,
+                (264,
+                 (265,
+                  (266,
+                   (282, (1, 'foo'))), (4, ''))),
+                (4, ''),
+                (0, '')) 
+        self.check_bad_tree(tree, "malformed global ast")
 
 def test_main():
     loader = unittest.TestLoader()
