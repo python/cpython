@@ -220,7 +220,8 @@ class ModuleFinder:
             return m
         if self.badmodules.has_key(fqname):
             self.msgout(3, "import_module -> None")
-            self.badmodules[fqname][parent.__name__] = None
+            if parent:
+                self.badmodules[fqname][parent.__name__] = None
             return None
         try:
             fp, pathname, stuff = self.find_module(partname,
