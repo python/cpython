@@ -111,7 +111,8 @@ class EditorWindow:
             name = string.strip(name)
         if not name:
             name = tkSimpleDialog.askstring("Module",
-                     "Module name:",
+                     "Enter the name of a Python module\n"
+                     "to search on sys.path and open:",
                      parent=self.text)
             if name:
                 name = string.strip(name)
