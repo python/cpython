@@ -449,6 +449,11 @@ will implement.
 
 \subsection{Finalization and De-allocation}
 
+\index{object!deallocation}
+\index{deallocation, object}
+\index{object!finalization}
+\index{finalization, of objects}
+
 \begin{verbatim}
     destructor tp_dealloc;
 \end{verbatim}
@@ -464,6 +469,49 @@ static void
 newdatatype_dealloc(newdatatypeobject * obj)
 {
     free(obj->obj_UnderlyingDatatypePtr);
+    PyObject_DEL(obj);
+}
+\end{verbatim}
+
+One important requirement of the deallocator function is that it
+leaves any pending exceptions alone.  This is important since
+deallocators are frequently called as the interpreter unwinds the
+Python stack; when the stack is unwound due to an exception (rather
+than normal returns), nothing is done to protect the deallocators from
+seeing that an exception has already been set.  Any actions which a
+deallocator performs which may cause additional Python code to be
+executed may detect that an exception has been set.  This can lead to
+misleading errors from the interpreter.  The proper way to protect
+against this is to save a pending exception before performing the
+unsafe action, and restoring it when done.  This can be done using the
+\cfunction{PyErr_Fetch()}\ttindex{PyErr_Fetch()} and
+\cfunction{PyErr_Restore()}\ttindex{PyErr_Restore()} functions:
+
+\begin{verbatim}
+static void
+my_dealloc(PyObject *obj)
+{
+    MyObject *self = (MyObject *) obj;
+    PyObject *cbresult;
+
+    if (self->my_callback != NULL) {
+        PyObject *err_type, *err_value, *err_traceback;
+        int have_error = PyErr_Occurred() ? 1 : 0;
+
+        if (have_error)
+            PyErr_Fetch(&err_type, &err_value, &err_traceback);
+
+        cbresult = PyObject_CallObject(self->my_callback, NULL);
+        if (cbresult == NULL)
+            PyErr_WriteUnraisable();
+        else
+            Py_DECREF(cbresult);
+
+        if (have_error)
+            PyErr_Restore(err_type, err_value, err_traceback);
+
+        Py_DECREF(self->my_callback);
+    }
     PyObject_DEL(obj);
 }
 \end{verbatim}
