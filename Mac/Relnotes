@@ -1,12 +1,10 @@
-Changes in 2.1a2 since 2.0
+Changes in 2.1a3 since 2.0
 --------------------------
 
 These release notes refer to Mac-specific changes only. See NEWS (in the Misc folder)
-for machine-independent changes.
-
-Unfortunately I have messed my administration up, so I can't give complete
-Mac-specific release notes for the changes in this release. So, I will
-have to leave it at the highlights:
+for machine-independent changes. Changes since previous alfa/beta releases for 2.1 are
+marked with [*] and at the bottom of the list. Note that 2.1a3 is a Mac-only release.
+The machine-independent stuff is at a state somewhere between 2.1a2 and 2.1b1.
 
 - The good news: this release is Carbon-based, so it runs natively on MacOS 8.6 or
   later and MacOSX.
@@ -52,6 +50,16 @@ have to leave it at the highlights:
   with :Mac:scripts:genpluginprojects.py (also called by fullbuild). The .mcp files
   are not in the repository, if you don't want to use genpluginprojects you can import
   the .mcp.xml files in CodeWarrior.
+- ConfigurePython has been replace by two applets: ConfigurePythonClassic and
+  ConfigurePythonCarbon. These will select either execution model for machines
+  supporting both, and it will also build all the standard applets. [*]
+- Dlg.ModalDialog() almost invariably crashed. This showed in EasyDialogs, EditPythonPrefs
+  and meny other things. Fixed. [*]
+- Carbon MacPython did not work with CarbonLib 1.1 or later. Fixed. [*]
+- IDE flashed a window and complained about it. Fixed, by getting rid of regex in
+  favor of re. Code not fully tested. [*]
+- IDE could crash on some edit operations due to WEGetUndoInfo(). Fixed. [*]
+- time.time() again returns positive values. [*]
 
 
 What is not in this distribution

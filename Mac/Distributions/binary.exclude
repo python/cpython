@@ -13,6 +13,9 @@
 *.idb
 *.jack
 *.lib
+*.mcp
+*.mcp.exp
+*.mcp.xml
 *.orig
 *.prj
 *.prj.exp
@@ -30,6 +33,3 @@ CVS
 Makefile*
 Setup.in
 [(]*[)]
-*.mcp
-*.mcp.exp
-*.mcp.xml
