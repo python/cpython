@@ -659,15 +659,15 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                 reallink = realname
             title = '<a name="%s"><strong>%s</strong></a> = %s' % (
                 anchor, name, reallink)
-        if inspect.isbuiltin(object) or inspect.ismethoddescriptor(object):
-            argspec = '(...)'
-        else:
+        if inspect.isfunction(object):
             args, varargs, varkw, defaults = inspect.getargspec(object)
             argspec = inspect.formatargspec(
                 args, varargs, varkw, defaults, formatvalue=self.formatvalue)
             if realname == '<lambda>':
                 decl = '<em>lambda</em>'
                 argspec = argspec[1:-1] # remove parentheses
+        else:
+            argspec = '(...)'
 
         decl = title + argspec + (note and self.small(self.grey(
             '<font face="helvetica, arial">%s</font>' % note)))
@@ -916,15 +916,15 @@ class TextDoc(Doc):
                 cl.__dict__[realname] is object):
                 skipdocs = 1
             title = self.bold(name) + ' = ' + realname
-        if inspect.isbuiltin(object) or inspect.ismethoddescriptor(object):
-            argspec = '(...)'
-        else:
+        if inspect.isfunction(object):
             args, varargs, varkw, defaults = inspect.getargspec(object)
             argspec = inspect.formatargspec(
                 args, varargs, varkw, defaults, formatvalue=self.formatvalue)
             if realname == '<lambda>':
                 title = 'lambda'
                 argspec = argspec[1:-1] # remove parentheses
+        else:
+            argspec = '(...)'
         decl = title + argspec + note
 
         if skipdocs:
