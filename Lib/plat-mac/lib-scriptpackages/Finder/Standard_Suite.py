@@ -13,77 +13,6 @@ _code = 'CoRe'
 from StdSuites.Standard_Suite import *
 class Standard_Suite_Events(Standard_Suite_Events):
 
-	_argmap_open = {
-		'using' : 'usin',
-		'with_properties' : 'prdt',
-	}
-
-	def open(self, _object, _attributes={}, **_arguments):
-		"""open: Open the specified object(s)
-		Required argument: list of objects to open
-		Keyword argument using: the application file to open the object with
-		Keyword argument with_properties: the initial values for the properties, to be included with the open command sent to the application that opens the direct object
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'aevt'
-		_subcode = 'odoc'
-
-		aetools.keysubst(_arguments, self._argmap_open)
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	_argmap_print_ = {
-		'with_properties' : 'prdt',
-	}
-
-	def print_(self, _object, _attributes={}, **_arguments):
-		"""print: Print the specified object(s)
-		Required argument: list of objects to print
-		Keyword argument with_properties: optional properties to be included with the print command sent to the application that prints the direct object
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'aevt'
-		_subcode = 'pdoc'
-
-		aetools.keysubst(_arguments, self._argmap_print_)
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def quit(self, _no_object=None, _attributes={}, **_arguments):
-		"""quit: Quit the Finder
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'aevt'
-		_subcode = 'quit'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
 	def close(self, _object, _attributes={}, **_arguments):
 		"""close: Close an object
 		Required argument: the object to close
@@ -287,6 +216,77 @@ class Standard_Suite_Events(Standard_Suite_Events):
 		aetools.enumsubst(_arguments, 'alrp', _Enum_bool)
 		aetools.enumsubst(_arguments, 'mvpl', _Enum_list)
 		aetools.enumsubst(_arguments, 'rout', _Enum_bool)
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	_argmap_open = {
+		'using' : 'usin',
+		'with_properties' : 'prdt',
+	}
+
+	def open(self, _object, _attributes={}, **_arguments):
+		"""open: Open the specified object(s)
+		Required argument: list of objects to open
+		Keyword argument using: the application file to open the object with
+		Keyword argument with_properties: the initial values for the properties, to be included with the open command sent to the application that opens the direct object
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'aevt'
+		_subcode = 'odoc'
+
+		aetools.keysubst(_arguments, self._argmap_open)
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	_argmap_print_ = {
+		'with_properties' : 'prdt',
+	}
+
+	def print_(self, _object, _attributes={}, **_arguments):
+		"""print: Print the specified object(s)
+		Required argument: list of objects to print
+		Keyword argument with_properties: optional properties to be included with the print command sent to the application that prints the direct object
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'aevt'
+		_subcode = 'pdoc'
+
+		aetools.keysubst(_arguments, self._argmap_print_)
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def quit(self, _no_object=None, _attributes={}, **_arguments):
+		"""quit: Quit the Finder
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'aevt'
+		_subcode = 'quit'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)

@@ -294,6 +294,47 @@ class Metrowerks_Shell_Suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
+	def Get_member_function_names(self, _object, _attributes={}, **_arguments):
+		"""Get member function names: Returns a list containing the names of all the member functions of a class object
+		Required argument: must be a class object
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: undocumented, typecode 'list'
+		"""
+		_code = 'MMPR'
+		_subcode = 'MbFN'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def Get_nonsimple_classes(self, _no_object=None, _attributes={}, **_arguments):
+		"""Get nonsimple classes: Returns an alphabetical list of classes with member functions, bases classes, or subclasses
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: undocumented, typecode 'list'
+		"""
+		_code = 'MMPR'
+		_subcode = 'NsCl'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
 	def Goto_Function(self, _object, _attributes={}, **_arguments):
 		"""Goto Function: Goto Specified Function Name
 		Required argument: undocumented, typecode 'TEXT'
@@ -370,6 +411,26 @@ class Metrowerks_Shell_Suite_Events:
 
 		aetools.keysubst(_arguments, self._argmap_Make_Project)
 		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def Open_browser(self, _object, _attributes={}, **_arguments):
+		"""Open browser: Display a class, member function, or data member object in a single class browser window
+		Required argument: an AE object reference
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'MMPR'
+		_subcode = 'Brow'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
 
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -718,67 +779,6 @@ class Metrowerks_Shell_Suite_Events:
 
 		aetools.keysubst(_arguments, self._argmap_Update_Project)
 		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def Open_browser(self, _object, _attributes={}, **_arguments):
-		"""Open browser: Display a class, member function, or data member object in a single class browser window
-		Required argument: an AE object reference
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'MMPR'
-		_subcode = 'Brow'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def Get_nonsimple_classes(self, _no_object=None, _attributes={}, **_arguments):
-		"""Get nonsimple classes: Returns an alphabetical list of classes with member functions, bases classes, or subclasses
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: undocumented, typecode 'list'
-		"""
-		_code = 'MMPR'
-		_subcode = 'NsCl'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def Get_member_function_names(self, _object, _attributes={}, **_arguments):
-		"""Get member function names: Returns a list containing the names of all the member functions of a class object
-		Required argument: must be a class object
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: undocumented, typecode 'list'
-		"""
-		_code = 'MMPR'
-		_subcode = 'MbFN'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
 
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -1554,6 +1554,29 @@ class Local_Path(aetools.NProperty):
 	which = 'VC10'
 	want = 'RlPt'
 
+class base_class(aetools.ComponentItem):
+	"""base class - A base class or super class of a class """
+	want = 'BsCl'
+class class_(aetools.NProperty):
+	"""class - The class object corresponding to this base class """
+	which = 'Clas'
+	want = 'obj '
+class access(aetools.NProperty):
+	"""access -  """
+	which = 'Acce'
+	want = 'Acce'
+class virtual(aetools.NProperty):
+	"""virtual -  """
+	which = 'Virt'
+	want = 'bool'
+
+base_classes = base_class
+
+class browser_catalog(aetools.ComponentItem):
+	"""browser catalog - The browser symbol catalog for the current project """
+	want = 'Cata'
+#        element 'Clas' as ['indx', 'name']
+
 class class_(aetools.ComponentItem):
 	"""class - A class, struct, or record type in the current project. """
 	want = 'Clas'
@@ -1587,21 +1610,19 @@ class all_subclasses(aetools.NProperty):
 
 classes = class_
 
-class member_function(aetools.ComponentItem):
-	"""member function - A class member function or method. """
-	want = 'MbFn'
-class access(aetools.NProperty):
-	"""access -  """
-	which = 'Acce'
-	want = 'Acce'
-class virtual(aetools.NProperty):
-	"""virtual -  """
-	which = 'Virt'
-	want = 'bool'
+class data_member(aetools.ComponentItem):
+	"""data member - A class data member or field """
+	want = 'DtMb'
 class static(aetools.NProperty):
 	"""static -  """
 	which = 'Stat'
 	want = 'bool'
+
+data_members = data_member
+
+class member_function(aetools.ComponentItem):
+	"""member function - A class member function or method. """
+	want = 'MbFn'
 class implementation_file(aetools.NProperty):
 	"""implementation file - Source file containing the member function definition """
 	which = 'DfFl'
@@ -1616,27 +1637,6 @@ class implementation_end_offset(aetools.NProperty):
 	want = 'long'
 
 member_functions = member_function
-
-class data_member(aetools.ComponentItem):
-	"""data member - A class data member or field """
-	want = 'DtMb'
-
-data_members = data_member
-
-class base_class(aetools.ComponentItem):
-	"""base class - A base class or super class of a class """
-	want = 'BsCl'
-class class_(aetools.NProperty):
-	"""class - The class object corresponding to this base class """
-	which = 'Clas'
-	want = 'obj '
-
-base_classes = base_class
-
-class browser_catalog(aetools.ComponentItem):
-	"""browser catalog - The browser symbol catalog for the current project """
-	want = 'Cata'
-#        element 'Clas' as ['indx', 'name']
 Access_Paths._superclassnames = []
 Access_Paths._privpropdict = {
 	'User_Paths' : User_Paths,
@@ -1970,6 +1970,20 @@ VCS_Setup._privpropdict = {
 }
 VCS_Setup._privelemdict = {
 }
+base_class._superclassnames = []
+base_class._privpropdict = {
+	'class_' : class_,
+	'access' : access,
+	'virtual' : virtual,
+}
+base_class._privelemdict = {
+}
+browser_catalog._superclassnames = []
+browser_catalog._privpropdict = {
+}
+browser_catalog._privelemdict = {
+	'class_' : class_,
+}
 class_._superclassnames = []
 class_._privpropdict = {
 	'name' : name,
@@ -1984,6 +1998,16 @@ class_._privelemdict = {
 	'base_class' : base_class,
 	'member_function' : member_function,
 	'data_member' : data_member,
+}
+data_member._superclassnames = []
+data_member._privpropdict = {
+	'name' : name,
+	'access' : access,
+	'static' : static,
+	'declaration_start_offset' : declaration_start_offset,
+	'declaration_end_offset' : declaration_end_offset,
+}
+data_member._privelemdict = {
 }
 member_function._superclassnames = []
 member_function._privpropdict = {
@@ -2000,30 +2024,96 @@ member_function._privpropdict = {
 }
 member_function._privelemdict = {
 }
-data_member._superclassnames = []
-data_member._privpropdict = {
-	'name' : name,
-	'access' : access,
-	'static' : static,
-	'declaration_start_offset' : declaration_start_offset,
-	'declaration_end_offset' : declaration_end_offset,
+_Enum_Acce = {
+	'public' : 'Publ',	# 
+	'protected' : 'Prot',	# 
+	'private' : 'Priv',	# 
 }
-data_member._privelemdict = {
+
+_Enum_BXbr = {
+	'Always_Build' : 'BXb1',	# Always build the target before running.
+	'Ask_Build' : 'BXb2',	# Ask before building the target when running.
+	'Never_Build' : 'BXb3',	# Never before building the target before running.
 }
-base_class._superclassnames = []
-base_class._privpropdict = {
-	'class_' : class_,
-	'access' : access,
-	'virtual' : virtual,
+
+_Enum_DbSA = {
+	'No_Action' : 'DSA1',	# Don\xd5t do anything to non-debug windows
+	'Hide_Windows' : 'DSA2',	# Hide non-debugging windows
+	'Collapse_Windows' : 'DSA3',	# Collapse non-debugging windows
+	'Close_Windows' : 'DSA4',	# Close non-debugging windows
 }
-base_class._privelemdict = {
+
+_Enum_DgBL = {
+	'Always' : 'DgB0',	# Always build before debugging.
+	'Never' : 'DgB1',	# Never build before debugging.
+	'Ask' : 'DgB2',	# Ask about building before debugging.
 }
-browser_catalog._superclassnames = []
-browser_catalog._privpropdict = {
+
+_Enum_ErrT = {
+	'information' : 'ErIn',	# 
+	'compiler_warning' : 'ErCW',	# 
+	'compiler_error' : 'ErCE',	# 
+	'definition' : 'ErDf',	# 
+	'linker_warning' : 'ErLW',	# 
+	'linker_error' : 'ErLE',	# 
+	'find_result' : 'ErFn',	# 
+	'generic_error' : 'ErGn',	# 
 }
-browser_catalog._privelemdict = {
-	'class_' : class_,
+
+_Enum_Inte = {
+	'never_interact' : 'eNvr',	# Never allow user interactions
+	'interact_with_self' : 'eInS',	# Allow user interaction only when an AppleEvent is sent from within CodeWarrior
+	'interact_with_local' : 'eInL',	# Allow user interaction when AppleEvents are sent from applications on the same machine (default)
+	'interact_with_all' : 'eInA',	# Allow user interaction from both local and remote AppleEvents
 }
+
+_Enum_Lang = {
+	'C' : 'LC  ',	# 
+	'C_2b__2b_' : 'LC++',	# 
+	'Pascal' : 'LP  ',	# 
+	'Object_Pascal' : 'LP++',	# 
+	'Java' : 'LJav',	# 
+	'Assembler' : 'LAsm',	# 
+	'Unknown' : 'L?  ',	# 
+}
+
+_Enum_PPrm = {
+	'absolute' : 'Abso',	# An absolute path name, including volume name.
+	'project_relative' : 'PRel',	# A path relative to the current project\xd5s folder.
+	'shell_relative' : 'SRel',	# A path relative to the CodeWarrior\xaa folder.
+	'system_relative' : 'YRel',	# A path relative to the system folder
+	'root_relative' : 'RRel',	# 
+}
+
+_Enum_PXdg = {
+	'Diagnose_None' : 'PXd1',	# No Plugin Diagnostics.
+	'Diagnose_Errors' : 'PXd2',	# Plugin Diagnostics for errors only.
+	'Diagnose_All' : 'PXd3',	# Plugin Diagnostics for everything.
+}
+
+_Enum_PthF = {
+	'Generic_Path' : 'PFGn',	# 
+	'MacOS_Path' : 'PFMc',	# MacOS path using colon as separator
+	'Windows_Path' : 'PFWn',	# Windows path using backslash as separator
+	'Unix_Path' : 'PFUx',	# Unix path using slash as separator
+}
+
+_Enum_RefP = {
+	'Think_Reference' : 'DanR',	# 
+	'QuickView' : 'ALTV',	# 
+}
+
+_Enum_STKd = {
+	'Absolute_Path' : 'STK0',	# The \xd2path\xd3 property is an absolute path to the location of the source tree.
+	'Registry_Key' : 'STK1',	# The \xd2path\xd3 property is the name of a registry key that contains the path to the root.
+	'Environment_Variable' : 'STK2',	# The \xd2path\xd3 property is the name of an environment variable that contains the path to the root.
+}
+
+_Enum_SrcT = {
+	'source' : 'FTxt',	# A source file (.c, .cp, .p, etc).
+	'unknown' : 'FUnk',	# An unknown file type.
+}
+
 _Enum_TmpB = {
 	'User_Specified' : 'Usrs',	# Use user specified symbols when setting temporary breakpoints on program launch.
 	'Default' : 'Dflt',	# Use system default symbols when setting temporary breakpoints on program launch.
@@ -2039,96 +2129,6 @@ _Enum_savo = {
 	'yes' : 'yes ',	# Save changes
 	'no' : 'no  ',	# Do not save changes
 	'ask' : 'ask ',	# Ask the user whether to save
-}
-
-_Enum_ErrT = {
-	'information' : 'ErIn',	# 
-	'compiler_warning' : 'ErCW',	# 
-	'compiler_error' : 'ErCE',	# 
-	'definition' : 'ErDf',	# 
-	'linker_warning' : 'ErLW',	# 
-	'linker_error' : 'ErLE',	# 
-	'find_result' : 'ErFn',	# 
-	'generic_error' : 'ErGn',	# 
-}
-
-_Enum_SrcT = {
-	'source' : 'FTxt',	# A source file (.c, .cp, .p, etc).
-	'unknown' : 'FUnk',	# An unknown file type.
-}
-
-_Enum_PPrm = {
-	'absolute' : 'Abso',	# An absolute path name, including volume name.
-	'project_relative' : 'PRel',	# A path relative to the current project\xd5s folder.
-	'shell_relative' : 'SRel',	# A path relative to the CodeWarrior\xaa folder.
-	'system_relative' : 'YRel',	# A path relative to the system folder
-	'root_relative' : 'RRel',	# 
-}
-
-_Enum_DbSA = {
-	'No_Action' : 'DSA1',	# Don\xd5t do anything to non-debug windows
-	'Hide_Windows' : 'DSA2',	# Hide non-debugging windows
-	'Collapse_Windows' : 'DSA3',	# Collapse non-debugging windows
-	'Close_Windows' : 'DSA4',	# Close non-debugging windows
-}
-
-_Enum_Lang = {
-	'C' : 'LC  ',	# 
-	'C_2b__2b_' : 'LC++',	# 
-	'Pascal' : 'LP  ',	# 
-	'Object_Pascal' : 'LP++',	# 
-	'Java' : 'LJav',	# 
-	'Assembler' : 'LAsm',	# 
-	'Unknown' : 'L?  ',	# 
-}
-
-_Enum_Acce = {
-	'public' : 'Publ',	# 
-	'protected' : 'Prot',	# 
-	'private' : 'Priv',	# 
-}
-
-_Enum_Inte = {
-	'never_interact' : 'eNvr',	# Never allow user interactions
-	'interact_with_self' : 'eInS',	# Allow user interaction only when an AppleEvent is sent from within CodeWarrior
-	'interact_with_local' : 'eInL',	# Allow user interaction when AppleEvents are sent from applications on the same machine (default)
-	'interact_with_all' : 'eInA',	# Allow user interaction from both local and remote AppleEvents
-}
-
-_Enum_DgBL = {
-	'Always' : 'DgB0',	# Always build before debugging.
-	'Never' : 'DgB1',	# Never build before debugging.
-	'Ask' : 'DgB2',	# Ask about building before debugging.
-}
-
-_Enum_RefP = {
-	'Think_Reference' : 'DanR',	# 
-	'QuickView' : 'ALTV',	# 
-}
-
-_Enum_PXdg = {
-	'Diagnose_None' : 'PXd1',	# No Plugin Diagnostics.
-	'Diagnose_Errors' : 'PXd2',	# Plugin Diagnostics for errors only.
-	'Diagnose_All' : 'PXd3',	# Plugin Diagnostics for everything.
-}
-
-_Enum_BXbr = {
-	'Always_Build' : 'BXb1',	# Always build the target before running.
-	'Ask_Build' : 'BXb2',	# Ask before building the target when running.
-	'Never_Build' : 'BXb3',	# Never before building the target before running.
-}
-
-_Enum_STKd = {
-	'Absolute_Path' : 'STK0',	# The \xd2path\xd3 property is an absolute path to the location of the source tree.
-	'Registry_Key' : 'STK1',	# The \xd2path\xd3 property is the name of a registry key that contains the path to the root.
-	'Environment_Variable' : 'STK2',	# The \xd2path\xd3 property is the name of an environment variable that contains the path to the root.
-}
-
-_Enum_PthF = {
-	'Generic_Path' : 'PFGn',	# 
-	'MacOS_Path' : 'PFMc',	# MacOS path using colon as separator
-	'Windows_Path' : 'PFWn',	# Windows path using backslash as separator
-	'Unix_Path' : 'PFUx',	# Unix path using slash as separator
 }
 
 
@@ -2354,17 +2354,17 @@ _compdeclarations = {
 }
 
 _enumdeclarations = {
-	'Lang' : _Enum_Lang,
 	'Inte' : _Enum_Inte,
-	'STKd' : _Enum_STKd,
 	'DgBL' : _Enum_DgBL,
+	'STKd' : _Enum_STKd,
 	'Acce' : _Enum_Acce,
 	'RefP' : _Enum_RefP,
 	'TxtF' : _Enum_TxtF,
-	'DbSA' : _Enum_DbSA,
-	'TmpB' : _Enum_TmpB,
-	'savo' : _Enum_savo,
 	'PthF' : _Enum_PthF,
+	'TmpB' : _Enum_TmpB,
+	'Lang' : _Enum_Lang,
+	'savo' : _Enum_savo,
+	'DbSA' : _Enum_DbSA,
 	'SrcT' : _Enum_SrcT,
 	'PXdg' : _Enum_PXdg,
 	'ErrT' : _Enum_ErrT,

@@ -119,6 +119,12 @@ class update_on_change(aetools.NProperty):
 
 drawing_areas = drawing_area
 
+class graphic_group(aetools.ComponentItem):
+	"""graphic group - Group of graphics """
+	want = 'cpic'
+
+graphic_groups = graphic_group
+
 class graphic_line(aetools.ComponentItem):
 	"""graphic line - A graphic line """
 	want = 'glin'
@@ -173,12 +179,6 @@ class uniform_styles(aetools.NProperty):
 	which = 'ustl'
 	want = 'tsty'
 
-class graphic_group(aetools.ComponentItem):
-	"""graphic group - Group of graphics """
-	want = 'cpic'
-
-graphic_groups = graphic_group
-
 class oval(aetools.ComponentItem):
 	"""oval - An oval """
 	want = 'covl'
@@ -189,13 +189,13 @@ class pixel(aetools.ComponentItem):
 	"""pixel - A pixel """
 	want = 'cpxl'
 
-pixels = pixel
-
 class pixel_map(aetools.ComponentItem):
 	"""pixel map - A pixel map """
 	want = 'cpix'
 
 pixel_maps = pixel_map
+
+pixels = pixel
 
 class polygon(aetools.ComponentItem):
 	"""polygon - A polygon """
@@ -259,6 +259,11 @@ drawing_area._privpropdict = {
 }
 drawing_area._privelemdict = {
 }
+graphic_group._superclassnames = []
+graphic_group._privpropdict = {
+}
+graphic_group._privelemdict = {
+}
 graphic_line._superclassnames = []
 graphic_line._privpropdict = {
 	'start_point' : start_point,
@@ -286,11 +291,6 @@ graphic_text._privpropdict = {
 	'uniform_styles' : uniform_styles,
 }
 graphic_text._privelemdict = {
-}
-graphic_group._superclassnames = []
-graphic_group._privpropdict = {
-}
-graphic_group._privelemdict = {
 }
 oval._superclassnames = []
 oval._privpropdict = {
@@ -326,6 +326,13 @@ rounded_rectangle._privpropdict = {
 }
 rounded_rectangle._privelemdict = {
 }
+_Enum_arro = {
+	'no_arrow' : 'arno',	# No arrow on line
+	'arrow_at_start' : 'arst',	# Arrow at start of line
+	'arrow_at_end' : 'aren',	# Arrow at end of line
+	'arrow_at_both_ends' : 'arbo',	# Arrow at both the start and the end of the line
+}
+
 _Enum_tran = {
 	'copy_pixels' : 'cpy ',	# 
 	'not_copy_pixels' : 'ncpy',	# 
@@ -342,13 +349,6 @@ _Enum_tran = {
 	'ad_max_pixels' : 'admx',	# 
 	'ad_min_pixels' : 'admn',	# 
 	'blend_pixels' : 'blnd',	# 
-}
-
-_Enum_arro = {
-	'no_arrow' : 'arno',	# No arrow on line
-	'arrow_at_start' : 'arst',	# Arrow at start of line
-	'arrow_at_end' : 'aren',	# Arrow at end of line
-	'arrow_at_both_ends' : 'arbo',	# Arrow at both the start and the end of the line
 }
 
 

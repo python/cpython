@@ -43,36 +43,12 @@ class CodeWarrior_suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	_argmap_export = {
-		'in_' : 'kfil',
-	}
-
-	def export(self, _no_object=None, _attributes={}, **_arguments):
-		"""export: Export the project file as an XML file
-		Keyword argument in_: the XML file in which to export the project
+	def build(self, _no_object=None, _attributes={}, **_arguments):
+		"""build: build a project or target (equivalent of the Make menu command)
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'CWIE'
-		_subcode = 'EXPT'
-
-		aetools.keysubst(_arguments, self._argmap_export)
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def update(self, _no_object=None, _attributes={}, **_arguments):
-		"""update: bring a project or target up to date
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'CWIE'
-		_subcode = 'UP2D'
+		_subcode = 'MAKE'
 
 		if _arguments: raise TypeError, 'No optional args expected'
 		if _no_object != None: raise TypeError, 'No direct arg expected'
@@ -146,12 +122,36 @@ class CodeWarrior_suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def build(self, _no_object=None, _attributes={}, **_arguments):
-		"""build: build a project or target (equivalent of the Make menu command)
+	_argmap_export = {
+		'in_' : 'kfil',
+	}
+
+	def export(self, _no_object=None, _attributes={}, **_arguments):
+		"""export: Export the project file as an XML file
+		Keyword argument in_: the XML file in which to export the project
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'CWIE'
-		_subcode = 'MAKE'
+		_subcode = 'EXPT'
+
+		aetools.keysubst(_arguments, self._argmap_export)
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def remove_object_code(self, _no_object=None, _attributes={}, **_arguments):
+		"""remove object code: remove object code from a project or target
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'CWIE'
+		_subcode = 'RMOB'
 
 		if _arguments: raise TypeError, 'No optional args expected'
 		if _no_object != None: raise TypeError, 'No direct arg expected'
@@ -175,25 +175,6 @@ class CodeWarrior_suite_Events:
 
 		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def remove_object_code(self, _no_object=None, _attributes={}, **_arguments):
-		"""remove object code: remove object code from a project or target
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'CWIE'
-		_subcode = 'RMOB'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		if _no_object != None: raise TypeError, 'No direct arg expected'
 
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -243,14 +224,39 @@ class CodeWarrior_suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
+	def update(self, _no_object=None, _attributes={}, **_arguments):
+		"""update: bring a project or target up to date
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'CWIE'
+		_subcode = 'UP2D'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+
+class ToolServer_worksheet(aetools.ComponentItem):
+	"""ToolServer worksheet - a ToolServer worksheet """
+	want = 'TOOL'
+class inherits(aetools.NProperty):
+	"""inherits - all properties and elements of the given class are inherited by this class. """
+	which = 'c@#^'
+	want = 'TXTD'
+
+ToolServer_worksheets = ToolServer_worksheet
 
 class build_progress_document(aetools.ComponentItem):
 	"""build progress document - a build progress document """
 	want = 'PRGS'
-class inherits(aetools.NProperty):
-	"""inherits - all properties and elements of the given class are inherited by this class. """
-	which = 'c@#^'
-	want = 'docu'
 
 build_progress_documents = build_progress_document
 
@@ -266,11 +272,11 @@ class class_browser(aetools.ComponentItem):
 
 class_browsers = class_browser
 
-class class_hierarchy(aetools.ComponentItem):
-	"""class hierarchy - a class hierarchy document """
+class class_hierarchies(aetools.ComponentItem):
+	"""class hierarchies - more than one class hierarchy document """
 	want = 'HIER'
 
-class_hierarchies = class_hierarchy
+class_hierarchy = class_hierarchies
 
 class editor_document(aetools.ComponentItem):
 	"""editor document - an editor document """
@@ -313,11 +319,11 @@ class single_class_browser(aetools.ComponentItem):
 
 single_class_browsers = single_class_browser
 
-class single_class_hierarchy(aetools.ComponentItem):
-	"""single class hierarchy - a single class hierarchy document """
+class single_class_hierarchies(aetools.ComponentItem):
+	"""single class hierarchies - more than one single class hierarchy document """
 	want = '1HIR'
 
-single_class_hierarchies = single_class_hierarchy
+single_class_hierarchy = single_class_hierarchies
 
 class subtarget(aetools.ComponentItem):
 	"""subtarget - a target that is prerequisite for another target """
@@ -352,8 +358,6 @@ class project_document(aetools.NProperty):
 	want = 'PRJD'
 #        element 'SRCF' as ['indx', 'test', 'rang']
 #        element 'SBTG' as ['indx', 'test', 'rang']
-
-targets = target
 
 class target_file(aetools.ComponentItem):
 	"""target file - a source or header file in a target """
@@ -425,6 +429,8 @@ class dependents(aetools.NProperty):
 
 target_files = target_file
 
+targets = target
+
 class text_document(aetools.ComponentItem):
 	"""text document - a document that contains text """
 	want = 'TXTD'
@@ -442,12 +448,12 @@ class selection(aetools.NProperty):
 #        element 'ctxt' as ['rang']
 
 text_documents = text_document
-
-class ToolServer_worksheet(aetools.ComponentItem):
-	"""ToolServer worksheet - a ToolServer worksheet """
-	want = 'TOOL'
-
-ToolServer_worksheets = ToolServer_worksheet
+ToolServer_worksheet._superclassnames = ['text_document']
+ToolServer_worksheet._privpropdict = {
+	'inherits' : inherits,
+}
+ToolServer_worksheet._privelemdict = {
+}
 import Standard_Suite
 build_progress_document._superclassnames = ['document']
 build_progress_document._privpropdict = {
@@ -467,11 +473,10 @@ class_browser._privpropdict = {
 }
 class_browser._privelemdict = {
 }
-class_hierarchy._superclassnames = ['document']
-class_hierarchy._privpropdict = {
-	'inherits' : inherits,
+class_hierarchies._superclassnames = []
+class_hierarchies._privpropdict = {
 }
-class_hierarchy._privelemdict = {
+class_hierarchies._privelemdict = {
 }
 editor_document._superclassnames = ['text_document']
 editor_document._privpropdict = {
@@ -511,11 +516,10 @@ single_class_browser._privpropdict = {
 }
 single_class_browser._privelemdict = {
 }
-single_class_hierarchy._superclassnames = ['document']
-single_class_hierarchy._privpropdict = {
-	'inherits' : inherits,
+single_class_hierarchies._superclassnames = []
+single_class_hierarchies._privpropdict = {
 }
-single_class_hierarchy._privelemdict = {
+single_class_hierarchies._privelemdict = {
 }
 subtarget._superclassnames = ['target']
 subtarget._privpropdict = {
@@ -573,19 +577,6 @@ text_document._privelemdict = {
 	'line' : Standard_Suite.line,
 	'text' : Standard_Suite.text,
 }
-ToolServer_worksheet._superclassnames = ['text_document']
-ToolServer_worksheet._privpropdict = {
-	'inherits' : inherits,
-}
-ToolServer_worksheet._privelemdict = {
-}
-_Enum_Inte = {
-	'never_interact' : 'eNvr',	# never allow user interactions
-	'interact_with_self' : 'eInS',	# allow user interaction only when an AppleEvent is sent from within CodeWarrior
-	'interact_with_local' : 'eInL',	# allow user interaction when AppleEvents are sent from applications on the same machine (default)
-	'interact_with_all' : 'eInA',	# allow user interaction from both local and remote AppleEvents
-}
-
 _Enum_DKND = {
 	'project' : 'PRJD',	# a project document
 	'editor_document' : 'EDIT',	# an editor document
@@ -610,6 +601,13 @@ _Enum_FTYP = {
 	'unknown_file' : 'UNKN',	# unknown file type
 }
 
+_Enum_Inte = {
+	'never_interact' : 'eNvr',	# never allow user interactions
+	'interact_with_self' : 'eInS',	# allow user interaction only when an AppleEvent is sent from within CodeWarrior
+	'interact_with_local' : 'eInL',	# allow user interaction when AppleEvents are sent from applications on the same machine (default)
+	'interact_with_all' : 'eInA',	# allow user interaction from both local and remote AppleEvents
+}
+
 _Enum_PERM = {
 	'read_write' : 'RdWr',	# the file is open with read/write permission
 	'read_only' : 'Read',	# the file is open with read/only permission
@@ -630,18 +628,18 @@ _classdeclarations = {
 	'SYMB' : symbol_browser,
 	'EDIT' : editor_document,
 	'COMP' : file_compare_document,
-	'BROW' : class_browser,
+	'TOOL' : ToolServer_worksheet,
 	'SBTG' : subtarget,
 	'MSSG' : message_document,
 	'INSP' : project_inspector,
 	'TXTD' : text_document,
 	'CTLG' : catalog_document,
-	'HIER' : class_hierarchy,
+	'HIER' : class_hierarchies,
 	'TRGT' : target,
 	'PRGS' : build_progress_document,
 	'SRCF' : target_file,
-	'TOOL' : ToolServer_worksheet,
-	'1HIR' : single_class_hierarchy,
+	'BROW' : class_browser,
+	'1HIR' : single_class_hierarchies,
 }
 
 _propdeclarations = {

@@ -78,32 +78,6 @@ class WorldWideWeb_suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	_argmap_parse_anchor = {
-		'relative_to' : 'RELA',
-	}
-
-	def parse_anchor(self, _object, _attributes={}, **_arguments):
-		"""parse anchor: Resolves the relative URL
-		Required argument: Main URL
-		Keyword argument relative_to: Relative URL
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: Parsed  URL
-		"""
-		_code = 'WWW!'
-		_subcode = 'PRSA'
-
-		aetools.keysubst(_arguments, self._argmap_parse_anchor)
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
 	_argmap_cancel_progress = {
 		'in_window' : 'WIND',
 	}
@@ -150,13 +124,14 @@ class WorldWideWeb_suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def webActivate(self, _object=None, _attributes={}, **_arguments):
-		"""webActivate: Makes Netscape the frontmost application, and selects a given window. This event is here for suite completeness/ cross-platform compatibility only, you should use standard AppleEvents instead.
-		Required argument: window to bring to front
+	def get_window_info(self, _object=None, _attributes={}, **_arguments):
+		"""get window info: Returns the information about the window as a list. Currently the list contains the window title and the URL. You can get the same information using standard Apple Event GetProperty.
+		Required argument: window ID
 		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: undocumented, typecode 'list'
 		"""
 		_code = 'WWW!'
-		_subcode = 'ACTV'
+		_subcode = 'WNFO'
 
 		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
@@ -190,16 +165,21 @@ class WorldWideWeb_suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def get_window_info(self, _object=None, _attributes={}, **_arguments):
-		"""get window info: Returns the information about the window as a list. Currently the list contains the window title and the URL. You can get the same information using standard Apple Event GetProperty.
-		Required argument: window ID
+	_argmap_parse_anchor = {
+		'relative_to' : 'RELA',
+	}
+
+	def parse_anchor(self, _object, _attributes={}, **_arguments):
+		"""parse anchor: Resolves the relative URL
+		Required argument: Main URL
+		Keyword argument relative_to: Relative URL
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: undocumented, typecode 'list'
+		Returns: Parsed  URL
 		"""
 		_code = 'WWW!'
-		_subcode = 'WNFO'
+		_subcode = 'PRSA'
 
-		if _arguments: raise TypeError, 'No optional args expected'
+		aetools.keysubst(_arguments, self._argmap_parse_anchor)
 		_arguments['----'] = _object
 
 
@@ -231,15 +211,21 @@ class WorldWideWeb_suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def unregister_URL_echo(self, _object, _attributes={}, **_arguments):
-		"""unregister URL echo: cancels URL echo
-		Required argument: application signature
+	_argmap_register_protocol = {
+		'for_protocol' : 'PROT',
+	}
+
+	def register_protocol(self, _object=None, _attributes={}, **_arguments):
+		"""register protocol: Registers application as a \xd2handler\xd3 for this protocol with a given prefix. The handler will receive \xd2OpenURL\xd3, or if that fails, \xd2GetURL\xd3 event.
+		Required argument: Application sig
+		Keyword argument for_protocol: protocol prefix: \xd2finger:\xd3, \xd2file\xd3,
 		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: TRUE if registration has been successful
 		"""
 		_code = 'WWW!'
-		_subcode = 'UNRU'
+		_subcode = 'RGPR'
 
-		if _arguments: raise TypeError, 'No optional args expected'
+		aetools.keysubst(_arguments, self._argmap_register_protocol)
 		_arguments['----'] = _object
 
 
@@ -279,21 +265,21 @@ class WorldWideWeb_suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	_argmap_unregister_viewer = {
-		'MIME_type' : 'MIME',
+	_argmap_register_window_close = {
+		'for_window' : 'WIND',
 	}
 
-	def unregister_viewer(self, _object, _attributes={}, **_arguments):
-		"""unregister viewer: Revert to the old way of handling this MIME type
-		Required argument: Application sig
-		Keyword argument MIME_type: MIME type to be unregistered
+	def register_window_close(self, _object=None, _attributes={}, **_arguments):
+		"""register window close: Netscape will notify registered application when this window closes
+		Required argument: Application signature
+		Keyword argument for_window: window ID
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: TRUE if the event was successful
+		Returns: true if successful
 		"""
 		_code = 'WWW!'
-		_subcode = 'UNRV'
+		_subcode = 'RGWC'
 
-		aetools.keysubst(_arguments, self._argmap_unregister_viewer)
+		aetools.keysubst(_arguments, self._argmap_register_window_close)
 		_arguments['----'] = _object
 
 
@@ -305,21 +291,15 @@ class WorldWideWeb_suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	_argmap_register_protocol = {
-		'for_protocol' : 'PROT',
-	}
-
-	def register_protocol(self, _object=None, _attributes={}, **_arguments):
-		"""register protocol: Registers application as a \xd2handler\xd3 for this protocol with a given prefix. The handler will receive \xd2OpenURL\xd3, or if that fails, \xd2GetURL\xd3 event.
-		Required argument: Application sig
-		Keyword argument for_protocol: protocol prefix: \xd2finger:\xd3, \xd2file\xd3,
+	def unregister_URL_echo(self, _object, _attributes={}, **_arguments):
+		"""unregister URL echo: cancels URL echo
+		Required argument: application signature
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: TRUE if registration has been successful
 		"""
 		_code = 'WWW!'
-		_subcode = 'RGPR'
+		_subcode = 'UNRU'
 
-		aetools.keysubst(_arguments, self._argmap_register_protocol)
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
 
@@ -357,21 +337,21 @@ class WorldWideWeb_suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	_argmap_register_window_close = {
-		'for_window' : 'WIND',
+	_argmap_unregister_viewer = {
+		'MIME_type' : 'MIME',
 	}
 
-	def register_window_close(self, _object=None, _attributes={}, **_arguments):
-		"""register window close: Netscape will notify registered application when this window closes
-		Required argument: Application signature
-		Keyword argument for_window: window ID
+	def unregister_viewer(self, _object, _attributes={}, **_arguments):
+		"""unregister viewer: Revert to the old way of handling this MIME type
+		Required argument: Application sig
+		Keyword argument MIME_type: MIME type to be unregistered
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: true if successful
+		Returns: TRUE if the event was successful
 		"""
 		_code = 'WWW!'
-		_subcode = 'RGWC'
+		_subcode = 'UNRV'
 
-		aetools.keysubst(_arguments, self._argmap_register_window_close)
+		aetools.keysubst(_arguments, self._argmap_unregister_viewer)
 		_arguments['----'] = _object
 
 
@@ -398,6 +378,26 @@ class WorldWideWeb_suite_Events:
 		_subcode = 'UNRC'
 
 		aetools.keysubst(_arguments, self._argmap_unregister_window_close)
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def webActivate(self, _object=None, _attributes={}, **_arguments):
+		"""webActivate: Makes Netscape the frontmost application, and selects a given window. This event is here for suite completeness/ cross-platform compatibility only, you should use standard AppleEvents instead.
+		Required argument: window to bring to front
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'WWW!'
+		_subcode = 'ACTV'
+
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
 

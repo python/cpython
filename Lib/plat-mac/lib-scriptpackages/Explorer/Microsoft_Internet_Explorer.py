@@ -33,6 +33,26 @@ class Microsoft_Internet_Explorer_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
+	def PrintBrowserWindow(self, _object=None, _attributes={}, **_arguments):
+		"""PrintBrowserWindow: Print contents of browser window (HTML)
+		Required argument: Window Identifier of the window to print. No value means print the frontmost browser window.
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'misc'
+		_subcode = 'pWND'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
 	_argmap_do_script = {
 		'window' : 'WIND',
 	}
@@ -48,26 +68,6 @@ class Microsoft_Internet_Explorer_Events:
 		_subcode = 'dosc'
 
 		aetools.keysubst(_arguments, self._argmap_do_script)
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def PrintBrowserWindow(self, _object=None, _attributes={}, **_arguments):
-		"""PrintBrowserWindow: Print contents of browser window (HTML)
-		Required argument: Window Identifier of the window to print. No value means print the frontmost browser window.
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'misc'
-		_subcode = 'pWND'
-
-		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
 

@@ -4,51 +4,51 @@ Resource aeut resid 0 Standard Event Suites for English
 """
 import aetools
 Error = aetools.Error
-import AppleScript_Suite
-import Required_Suite
-import Standard_Suite
 import Text_Suite
+import AppleScript_Suite
+import Standard_Suite
+import Macintosh_Connectivity_Clas
 import QuickDraw_Graphics_Suite
 import QuickDraw_Graphics_Suppleme
+import Required_Suite
 import Table_Suite
-import Macintosh_Connectivity_Clas
 import Type_Names_Suite
 
 
 _code_to_module = {
-	'ascr' : AppleScript_Suite,
-	'reqd' : Required_Suite,
-	'core' : Standard_Suite,
 	'TEXT' : Text_Suite,
+	'ascr' : AppleScript_Suite,
+	'core' : Standard_Suite,
+	'macc' : Macintosh_Connectivity_Clas,
 	'qdrw' : QuickDraw_Graphics_Suite,
 	'qdsp' : QuickDraw_Graphics_Suppleme,
+	'reqd' : Required_Suite,
 	'tbls' : Table_Suite,
-	'macc' : Macintosh_Connectivity_Clas,
 	'tpnm' : Type_Names_Suite,
 }
 
 
 
 _code_to_fullname = {
-	'ascr' : ('StdSuites.AppleScript_Suite', 'AppleScript_Suite'),
-	'reqd' : ('StdSuites.Required_Suite', 'Required_Suite'),
-	'core' : ('StdSuites.Standard_Suite', 'Standard_Suite'),
 	'TEXT' : ('StdSuites.Text_Suite', 'Text_Suite'),
+	'ascr' : ('StdSuites.AppleScript_Suite', 'AppleScript_Suite'),
+	'core' : ('StdSuites.Standard_Suite', 'Standard_Suite'),
+	'macc' : ('StdSuites.Macintosh_Connectivity_Clas', 'Macintosh_Connectivity_Clas'),
 	'qdrw' : ('StdSuites.QuickDraw_Graphics_Suite', 'QuickDraw_Graphics_Suite'),
 	'qdsp' : ('StdSuites.QuickDraw_Graphics_Suppleme', 'QuickDraw_Graphics_Suppleme'),
+	'reqd' : ('StdSuites.Required_Suite', 'Required_Suite'),
 	'tbls' : ('StdSuites.Table_Suite', 'Table_Suite'),
-	'macc' : ('StdSuites.Macintosh_Connectivity_Clas', 'Macintosh_Connectivity_Clas'),
 	'tpnm' : ('StdSuites.Type_Names_Suite', 'Type_Names_Suite'),
 }
 
-from AppleScript_Suite import *
-from Required_Suite import *
-from Standard_Suite import *
 from Text_Suite import *
+from AppleScript_Suite import *
+from Standard_Suite import *
+from Macintosh_Connectivity_Clas import *
 from QuickDraw_Graphics_Suite import *
 from QuickDraw_Graphics_Suppleme import *
+from Required_Suite import *
 from Table_Suite import *
-from Macintosh_Connectivity_Clas import *
 from Type_Names_Suite import *
 
 def getbaseclasses(v):
@@ -68,6 +68,91 @@ import StdSuites
 #
 # Set property and element dictionaries now that all classes have been defined
 #
+getbaseclasses(window)
+getbaseclasses(file)
+getbaseclasses(selection_2d_object)
+getbaseclasses(alias)
+getbaseclasses(application)
+getbaseclasses(insertion_point)
+getbaseclasses(document)
+getbaseclasses(small_integer)
+getbaseclasses(RGB16_color)
+getbaseclasses(version)
+getbaseclasses(system_dictionary)
+getbaseclasses(color_table)
+getbaseclasses(fixed_point)
+getbaseclasses(plain_text)
+getbaseclasses(type_element_info)
+getbaseclasses(location_reference)
+getbaseclasses(machine_location)
+getbaseclasses(PostScript_picture)
+getbaseclasses(point)
+getbaseclasses(menu_item)
+getbaseclasses(pixel_map_record)
+getbaseclasses(application_dictionary)
+getbaseclasses(unsigned_integer)
+getbaseclasses(menu)
+getbaseclasses(fixed_rectangle)
+getbaseclasses(long_fixed_rectangle)
+getbaseclasses(type_event_info)
+getbaseclasses(small_real)
+getbaseclasses(type_suite_info)
+getbaseclasses(rotation)
+getbaseclasses(type_parameter_info)
+getbaseclasses(fixed)
+getbaseclasses(scrap_styles)
+getbaseclasses(long_point)
+getbaseclasses(type_class_info)
+getbaseclasses(TIFF_picture)
+getbaseclasses(RGB96_color)
+getbaseclasses(dash_style)
+getbaseclasses(extended_real)
+getbaseclasses(type_property_info)
+getbaseclasses(long_fixed_point)
+getbaseclasses(long_rectangle)
+getbaseclasses(bounding_rectangle)
+getbaseclasses(double_integer)
+getbaseclasses(long_fixed)
+getbaseclasses(null)
+getbaseclasses(target_id)
+getbaseclasses(paragraph)
+getbaseclasses(character)
+getbaseclasses(text_flow)
+getbaseclasses(text_style_info)
+getbaseclasses(line)
+getbaseclasses(word)
+getbaseclasses(text)
+getbaseclasses(graphic_group)
+getbaseclasses(oval)
+getbaseclasses(graphic_text)
+getbaseclasses(graphic_shape)
+getbaseclasses(graphic_line)
+getbaseclasses(graphic_object)
+getbaseclasses(drawing_area)
+getbaseclasses(polygon)
+getbaseclasses(pixel)
+getbaseclasses(rounded_rectangle)
+getbaseclasses(arc)
+getbaseclasses(pixel_map)
+getbaseclasses(rectangle)
+getbaseclasses(graphic_group)
+getbaseclasses(drawing_area)
+getbaseclasses(cell)
+getbaseclasses(column)
+getbaseclasses(table)
+getbaseclasses(row)
+getbaseclasses(AppleTalk_address)
+getbaseclasses(address_specification)
+getbaseclasses(Token_Ring_address)
+getbaseclasses(FireWire_address)
+getbaseclasses(bus_slot)
+getbaseclasses(SCSI_address)
+getbaseclasses(ADB_address)
+getbaseclasses(USB_address)
+getbaseclasses(device_specification)
+getbaseclasses(LocalTalk_address)
+getbaseclasses(IP_address)
+getbaseclasses(Ethernet_address)
 getbaseclasses(July)
 getbaseclasses(May)
 getbaseclasses(string)
@@ -173,96 +258,96 @@ getbaseclasses(Saturday)
 getbaseclasses(September)
 getbaseclasses(file_specification)
 getbaseclasses(text)
-getbaseclasses(window)
-getbaseclasses(file)
-getbaseclasses(selection_2d_object)
-getbaseclasses(alias)
-getbaseclasses(application)
-getbaseclasses(insertion_point)
-getbaseclasses(document)
-getbaseclasses(paragraph)
-getbaseclasses(character)
-getbaseclasses(text_flow)
-getbaseclasses(text_style_info)
-getbaseclasses(line)
-getbaseclasses(word)
-getbaseclasses(text)
-getbaseclasses(graphic_group)
-getbaseclasses(oval)
-getbaseclasses(graphic_text)
-getbaseclasses(graphic_shape)
-getbaseclasses(graphic_line)
-getbaseclasses(graphic_object)
-getbaseclasses(drawing_area)
-getbaseclasses(polygon)
-getbaseclasses(pixel)
-getbaseclasses(rounded_rectangle)
-getbaseclasses(arc)
-getbaseclasses(pixel_map)
-getbaseclasses(rectangle)
-getbaseclasses(graphic_group)
-getbaseclasses(drawing_area)
-getbaseclasses(cell)
-getbaseclasses(column)
-getbaseclasses(table)
-getbaseclasses(row)
-getbaseclasses(AppleTalk_address)
-getbaseclasses(address_specification)
-getbaseclasses(Token_Ring_address)
-getbaseclasses(FireWire_address)
-getbaseclasses(bus_slot)
-getbaseclasses(SCSI_address)
-getbaseclasses(ADB_address)
-getbaseclasses(USB_address)
-getbaseclasses(device_specification)
-getbaseclasses(LocalTalk_address)
-getbaseclasses(IP_address)
-getbaseclasses(Ethernet_address)
-getbaseclasses(small_integer)
-getbaseclasses(RGB16_color)
-getbaseclasses(version)
-getbaseclasses(system_dictionary)
-getbaseclasses(color_table)
-getbaseclasses(fixed_point)
-getbaseclasses(plain_text)
-getbaseclasses(type_element_info)
-getbaseclasses(location_reference)
-getbaseclasses(machine_location)
-getbaseclasses(PostScript_picture)
-getbaseclasses(point)
-getbaseclasses(menu_item)
-getbaseclasses(pixel_map_record)
-getbaseclasses(application_dictionary)
-getbaseclasses(unsigned_integer)
-getbaseclasses(menu)
-getbaseclasses(fixed_rectangle)
-getbaseclasses(long_fixed_rectangle)
-getbaseclasses(type_event_info)
-getbaseclasses(small_real)
-getbaseclasses(type_suite_info)
-getbaseclasses(rotation)
-getbaseclasses(type_parameter_info)
-getbaseclasses(fixed)
-getbaseclasses(scrap_styles)
-getbaseclasses(long_point)
-getbaseclasses(type_class_info)
-getbaseclasses(TIFF_picture)
-getbaseclasses(RGB96_color)
-getbaseclasses(dash_style)
-getbaseclasses(extended_real)
-getbaseclasses(type_property_info)
-getbaseclasses(long_fixed_point)
-getbaseclasses(long_rectangle)
-getbaseclasses(bounding_rectangle)
-getbaseclasses(double_integer)
-getbaseclasses(long_fixed)
-getbaseclasses(null)
-getbaseclasses(target_id)
 
 #
 # Indices of types declared in this module
 #
 _classdeclarations = {
+	'cwin' : window,
+	'file' : file,
+	'csel' : selection_2d_object,
+	'alis' : alias,
+	'capp' : application,
+	'cins' : insertion_point,
+	'docu' : document,
+	'shor' : small_integer,
+	'tr16' : RGB16_color,
+	'vers' : version,
+	'aeut' : system_dictionary,
+	'clrt' : color_table,
+	'fpnt' : fixed_point,
+	'TEXT' : plain_text,
+	'elin' : type_element_info,
+	'insl' : location_reference,
+	'mLoc' : machine_location,
+	'EPS ' : PostScript_picture,
+	'QDpt' : point,
+	'cmen' : menu_item,
+	'tpmm' : pixel_map_record,
+	'aete' : application_dictionary,
+	'magn' : unsigned_integer,
+	'cmnu' : menu,
+	'frct' : fixed_rectangle,
+	'lfrc' : long_fixed_rectangle,
+	'evin' : type_event_info,
+	'sing' : small_real,
+	'suin' : type_suite_info,
+	'trot' : rotation,
+	'pmin' : type_parameter_info,
+	'fixd' : fixed,
+	'styl' : scrap_styles,
+	'lpnt' : long_point,
+	'gcli' : type_class_info,
+	'TIFF' : TIFF_picture,
+	'tr96' : RGB96_color,
+	'tdas' : dash_style,
+	'exte' : extended_real,
+	'pinf' : type_property_info,
+	'lfpt' : long_fixed_point,
+	'lrct' : long_rectangle,
+	'qdrt' : bounding_rectangle,
+	'comp' : double_integer,
+	'lfxd' : long_fixed,
+	'null' : null,
+	'targ' : target_id,
+	'cpar' : paragraph,
+	'cha ' : character,
+	'cflo' : text_flow,
+	'tsty' : text_style_info,
+	'clin' : line,
+	'cwor' : word,
+	'ctxt' : text,
+	'cpic' : graphic_group,
+	'covl' : oval,
+	'cgtx' : graphic_text,
+	'cgsh' : graphic_shape,
+	'glin' : graphic_line,
+	'cgob' : graphic_object,
+	'cdrw' : drawing_area,
+	'cpgn' : polygon,
+	'cpxl' : pixel,
+	'crrc' : rounded_rectangle,
+	'carc' : arc,
+	'cpix' : pixel_map,
+	'crec' : rectangle,
+	'cpic' : graphic_group,
+	'cdrw' : drawing_area,
+	'ccel' : cell,
+	'ccol' : column,
+	'ctbl' : table,
+	'crow' : row,
+	'cat ' : AppleTalk_address,
+	'cadr' : address_specification,
+	'ctok' : Token_Ring_address,
+	'cfw ' : FireWire_address,
+	'cbus' : bus_slot,
+	'cscs' : SCSI_address,
+	'cadb' : ADB_address,
+	'cusb' : USB_address,
+	'cdev' : device_specification,
+	'clt ' : LocalTalk_address,
+	'cip ' : IP_address,
+	'cen ' : Ethernet_address,
 	'jul ' : July,
 	'may ' : May,
 	'TEXT' : string,
@@ -368,102 +453,17 @@ _classdeclarations = {
 	'sep ' : September,
 	'fss ' : file_specification,
 	'ctxt' : text,
-	'cwin' : window,
-	'file' : file,
-	'csel' : selection_2d_object,
-	'alis' : alias,
-	'capp' : application,
-	'cins' : insertion_point,
-	'docu' : document,
-	'cpar' : paragraph,
-	'cha ' : character,
-	'cflo' : text_flow,
-	'tsty' : text_style_info,
-	'clin' : line,
-	'cwor' : word,
-	'ctxt' : text,
-	'cpic' : graphic_group,
-	'covl' : oval,
-	'cgtx' : graphic_text,
-	'cgsh' : graphic_shape,
-	'glin' : graphic_line,
-	'cgob' : graphic_object,
-	'cdrw' : drawing_area,
-	'cpgn' : polygon,
-	'cpxl' : pixel,
-	'crrc' : rounded_rectangle,
-	'carc' : arc,
-	'cpix' : pixel_map,
-	'crec' : rectangle,
-	'cpic' : graphic_group,
-	'cdrw' : drawing_area,
-	'ccel' : cell,
-	'ccol' : column,
-	'ctbl' : table,
-	'crow' : row,
-	'cat ' : AppleTalk_address,
-	'cadr' : address_specification,
-	'ctok' : Token_Ring_address,
-	'cfw ' : FireWire_address,
-	'cbus' : bus_slot,
-	'cscs' : SCSI_address,
-	'cadb' : ADB_address,
-	'cusb' : USB_address,
-	'cdev' : device_specification,
-	'clt ' : LocalTalk_address,
-	'cip ' : IP_address,
-	'cen ' : Ethernet_address,
-	'shor' : small_integer,
-	'tr16' : RGB16_color,
-	'vers' : version,
-	'aeut' : system_dictionary,
-	'clrt' : color_table,
-	'fpnt' : fixed_point,
-	'TEXT' : plain_text,
-	'elin' : type_element_info,
-	'insl' : location_reference,
-	'mLoc' : machine_location,
-	'EPS ' : PostScript_picture,
-	'QDpt' : point,
-	'cmen' : menu_item,
-	'tpmm' : pixel_map_record,
-	'aete' : application_dictionary,
-	'magn' : unsigned_integer,
-	'cmnu' : menu,
-	'frct' : fixed_rectangle,
-	'lfrc' : long_fixed_rectangle,
-	'evin' : type_event_info,
-	'sing' : small_real,
-	'suin' : type_suite_info,
-	'trot' : rotation,
-	'pmin' : type_parameter_info,
-	'fixd' : fixed,
-	'styl' : scrap_styles,
-	'lpnt' : long_point,
-	'gcli' : type_class_info,
-	'TIFF' : TIFF_picture,
-	'tr96' : RGB96_color,
-	'tdas' : dash_style,
-	'exte' : extended_real,
-	'pinf' : type_property_info,
-	'lfpt' : long_fixed_point,
-	'lrct' : long_rectangle,
-	'qdrt' : bounding_rectangle,
-	'comp' : double_integer,
-	'lfxd' : long_fixed,
-	'null' : null,
-	'targ' : target_id,
 }
 
 
-class StdSuites(AppleScript_Suite_Events,
-		Required_Suite_Events,
+class StdSuites(Text_Suite_Events,
+		AppleScript_Suite_Events,
 		Standard_Suite_Events,
-		Text_Suite_Events,
+		Macintosh_Connectivity_Clas_Events,
 		QuickDraw_Graphics_Suite_Events,
 		QuickDraw_Graphics_Suppleme_Events,
+		Required_Suite_Events,
 		Table_Suite_Events,
-		Macintosh_Connectivity_Clas_Events,
 		Type_Names_Suite_Events,
 		aetools.TalkTo):
 	_signature = 'ascr'

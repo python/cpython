@@ -15,6 +15,68 @@ class Type_Definitions_Events:
 	pass
 
 
+class alias_list(aetools.ComponentItem):
+	"""alias list - A list of aliases.  Use \xd4as alias list\xd5 when a list of aliases is needed (instead of a list of file system item references). """
+	want = 'alst'
+
+class icon_family(aetools.ComponentItem):
+	"""icon family - A family of icons """
+	want = 'ifam'
+class large_monochrome_icon_and_mask(aetools.NProperty):
+	"""large monochrome icon and mask - the large black-and-white icon and the mask for large icons """
+	which = 'ICN#'
+	want = 'ICN#'
+class large_8_bit_mask(aetools.NProperty):
+	"""large 8 bit mask - the large 8-bit mask for large 32-bit icons """
+	which = 'l8mk'
+	want = 'l8mk'
+class large_32_bit_icon(aetools.NProperty):
+	"""large 32 bit icon - the large 32-bit color icon """
+	which = 'il32'
+	want = 'il32'
+class large_8_bit_icon(aetools.NProperty):
+	"""large 8 bit icon - the large 8-bit color icon """
+	which = 'icl8'
+	want = 'icl8'
+class large_4_bit_icon(aetools.NProperty):
+	"""large 4 bit icon - the large 4-bit color icon """
+	which = 'icl4'
+	want = 'icl4'
+class small_monochrome_icon_and_mask(aetools.NProperty):
+	"""small monochrome icon and mask - the small black-and-white icon and the mask for small icons """
+	which = 'ics#'
+	want = 'ics#'
+class small_8_bit_mask(aetools.NProperty):
+	"""small 8 bit mask - the small 8-bit mask for small 32-bit icons """
+	which = 'ics8'
+	want = 's8mk'
+class small_32_bit_icon(aetools.NProperty):
+	"""small 32 bit icon - the small 32-bit color icon """
+	which = 'is32'
+	want = 'is32'
+
+small_8_bit_icon = small_8_bit_mask
+class small_4_bit_icon(aetools.NProperty):
+	"""small 4 bit icon - the small 4-bit color icon """
+	which = 'ics4'
+	want = 'ics4'
+
+class label(aetools.ComponentItem):
+	"""label - A Finder label (name and color) """
+	want = 'clbl'
+class name(aetools.NProperty):
+	"""name - the name associated with the label """
+	which = 'pnam'
+	want = 'itxt'
+class index(aetools.NProperty):
+	"""index - the index in the front-to-back ordering within its container """
+	which = 'pidx'
+	want = 'long'
+class color(aetools.NProperty):
+	"""color - the color associated with the label """
+	which = 'colr'
+	want = 'cRGB'
+
 class preferences(aetools.ComponentItem):
 	"""preferences - The Finder Preferences """
 	want = 'cprf'
@@ -103,68 +165,34 @@ class view_font_size(aetools.NProperty):
 	which = 'vfsz'
 	want = 'long'
 #        element 'clbl' as ['indx', 'name']
-
-class label(aetools.ComponentItem):
-	"""label - A Finder label (name and color) """
-	want = 'clbl'
-class name(aetools.NProperty):
-	"""name - the name associated with the label """
-	which = 'pnam'
-	want = 'itxt'
-class index(aetools.NProperty):
-	"""index - the index in the front-to-back ordering within its container """
-	which = 'pidx'
-	want = 'long'
-class color(aetools.NProperty):
-	"""color - the color associated with the label """
-	which = 'colr'
-	want = 'cRGB'
-
-class icon_family(aetools.ComponentItem):
-	"""icon family - A family of icons """
-	want = 'ifam'
-class large_monochrome_icon_and_mask(aetools.NProperty):
-	"""large monochrome icon and mask - the large black-and-white icon and the mask for large icons """
-	which = 'ICN#'
-	want = 'ICN#'
-class large_8_bit_mask(aetools.NProperty):
-	"""large 8 bit mask - the large 8-bit mask for large 32-bit icons """
-	which = 'l8mk'
-	want = 'l8mk'
-class large_32_bit_icon(aetools.NProperty):
-	"""large 32 bit icon - the large 32-bit color icon """
-	which = 'il32'
-	want = 'il32'
-class large_8_bit_icon(aetools.NProperty):
-	"""large 8 bit icon - the large 8-bit color icon """
-	which = 'icl8'
-	want = 'icl8'
-class large_4_bit_icon(aetools.NProperty):
-	"""large 4 bit icon - the large 4-bit color icon """
-	which = 'icl4'
-	want = 'icl4'
-class small_monochrome_icon_and_mask(aetools.NProperty):
-	"""small monochrome icon and mask - the small black-and-white icon and the mask for small icons """
-	which = 'ics#'
-	want = 'ics#'
-class small_8_bit_mask(aetools.NProperty):
-	"""small 8 bit mask - the small 8-bit mask for small 32-bit icons """
-	which = 'ics8'
-	want = 's8mk'
-class small_32_bit_icon(aetools.NProperty):
-	"""small 32 bit icon - the small 32-bit color icon """
-	which = 'is32'
-	want = 'is32'
-
-small_8_bit_icon = small_8_bit_mask
-class small_4_bit_icon(aetools.NProperty):
-	"""small 4 bit icon - the small 4-bit color icon """
-	which = 'ics4'
-	want = 'ics4'
-
-class alias_list(aetools.ComponentItem):
-	"""alias list - A list of aliases.  Use \xd4as alias list\xd5 when a list of aliases is needed (instead of a list of file system item references). """
-	want = 'alst'
+alias_list._superclassnames = []
+alias_list._privpropdict = {
+}
+alias_list._privelemdict = {
+}
+icon_family._superclassnames = []
+icon_family._privpropdict = {
+	'large_monochrome_icon_and_mask' : large_monochrome_icon_and_mask,
+	'large_8_bit_mask' : large_8_bit_mask,
+	'large_32_bit_icon' : large_32_bit_icon,
+	'large_8_bit_icon' : large_8_bit_icon,
+	'large_4_bit_icon' : large_4_bit_icon,
+	'small_monochrome_icon_and_mask' : small_monochrome_icon_and_mask,
+	'small_8_bit_mask' : small_8_bit_mask,
+	'small_32_bit_icon' : small_32_bit_icon,
+	'small_8_bit_icon' : small_8_bit_icon,
+	'small_4_bit_icon' : small_4_bit_icon,
+}
+icon_family._privelemdict = {
+}
+label._superclassnames = []
+label._privpropdict = {
+	'name' : name,
+	'index' : index,
+	'color' : color,
+}
+label._privelemdict = {
+}
 preferences._superclassnames = []
 preferences._privpropdict = {
 	'window' : window,
@@ -192,34 +220,6 @@ preferences._privpropdict = {
 preferences._privelemdict = {
 	'label' : label,
 }
-label._superclassnames = []
-label._privpropdict = {
-	'name' : name,
-	'index' : index,
-	'color' : color,
-}
-label._privelemdict = {
-}
-icon_family._superclassnames = []
-icon_family._privpropdict = {
-	'large_monochrome_icon_and_mask' : large_monochrome_icon_and_mask,
-	'large_8_bit_mask' : large_8_bit_mask,
-	'large_32_bit_icon' : large_32_bit_icon,
-	'large_8_bit_icon' : large_8_bit_icon,
-	'large_4_bit_icon' : large_4_bit_icon,
-	'small_monochrome_icon_and_mask' : small_monochrome_icon_and_mask,
-	'small_8_bit_mask' : small_8_bit_mask,
-	'small_32_bit_icon' : small_32_bit_icon,
-	'small_8_bit_icon' : small_8_bit_icon,
-	'small_4_bit_icon' : small_4_bit_icon,
-}
-icon_family._privelemdict = {
-}
-alias_list._superclassnames = []
-alias_list._privpropdict = {
-}
-alias_list._privelemdict = {
-}
 
 #
 # Indices of types declared in this module
@@ -236,25 +236,25 @@ _propdeclarations = {
 	'ics4' : small_4_bit_icon,
 	'iarr' : spatial_view_arrangement,
 	'barr' : button_view_arrangement,
-	'ics#' : small_monochrome_icon_and_mask,
+	'vfnt' : view_font,
 	'sknd' : shows_kind,
 	'svrs' : shows_version,
 	'colr' : color,
 	'ics8' : small_8_bit_mask,
 	'icl8' : large_8_bit_icon,
-	'sprg' : spring_open_folders,
+	'pidx' : index,
 	'vfsz' : view_font_size,
 	'sfsz' : calculates_folder_sizes,
-	'l8mk' : large_8_bit_mask,
-	'vfnt' : view_font,
+	'ics#' : small_monochrome_icon_and_mask,
 	'urdt' : uses_relative_dates,
+	'bisz' : button_view_icon_size,
 	'usme' : uses_simple_menus,
+	'sprg' : spring_open_folders,
 	'icl4' : large_4_bit_icon,
 	'slbl' : shows_label,
 	'lisz' : list_view_icon_size,
-	'scda' : shows_creation_date,
-	'bisz' : button_view_icon_size,
-	'pidx' : index,
+	'ssiz' : shows_size,
+	'l8mk' : large_8_bit_mask,
 	'scom' : shows_comments,
 	'iisz' : spatial_view_icon_size,
 	'sdat' : shows_modification_date,
@@ -264,7 +264,7 @@ _propdeclarations = {
 	'pnam' : name,
 	'il32' : large_32_bit_icon,
 	'uswg' : uses_wide_grid,
-	'ssiz' : shows_size,
+	'scda' : shows_creation_date,
 }
 
 _compdeclarations = {

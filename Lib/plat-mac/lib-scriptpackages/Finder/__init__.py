@@ -5,28 +5,28 @@ Resource aete resid 0
 import aetools
 Error = aetools.Error
 import Standard_Suite
-import Earlier_terms
-import Finder_Basics
-import Finder_items
 import Containers_and_folders
 import Files_and_suitcases
-import Window_classes
+import Finder_Basics
+import Finder_items
 import Process_classes
+import Window_classes
 import Type_Definitions
+import Earlier_terms
 import Enumerations
 import Obsolete_terms
 
 
 _code_to_module = {
 	'CoRe' : Standard_Suite,
-	'tpnm' : Earlier_terms,
-	'fndr' : Finder_Basics,
-	'fndr' : Finder_items,
 	'fndr' : Containers_and_folders,
 	'fndr' : Files_and_suitcases,
-	'fndr' : Window_classes,
+	'fndr' : Finder_Basics,
+	'fndr' : Finder_items,
 	'fndr' : Process_classes,
+	'fndr' : Window_classes,
 	'tpdf' : Type_Definitions,
+	'tpnm' : Earlier_terms,
 	'tpnm' : Enumerations,
 	'tpnm' : Obsolete_terms,
 }
@@ -35,27 +35,27 @@ _code_to_module = {
 
 _code_to_fullname = {
 	'CoRe' : ('Finder.Standard_Suite', 'Standard_Suite'),
-	'tpnm' : ('Finder.Earlier_terms', 'Earlier_terms'),
-	'fndr' : ('Finder.Finder_Basics', 'Finder_Basics'),
-	'fndr' : ('Finder.Finder_items', 'Finder_items'),
 	'fndr' : ('Finder.Containers_and_folders', 'Containers_and_folders'),
 	'fndr' : ('Finder.Files_and_suitcases', 'Files_and_suitcases'),
-	'fndr' : ('Finder.Window_classes', 'Window_classes'),
+	'fndr' : ('Finder.Finder_Basics', 'Finder_Basics'),
+	'fndr' : ('Finder.Finder_items', 'Finder_items'),
 	'fndr' : ('Finder.Process_classes', 'Process_classes'),
+	'fndr' : ('Finder.Window_classes', 'Window_classes'),
 	'tpdf' : ('Finder.Type_Definitions', 'Type_Definitions'),
+	'tpnm' : ('Finder.Earlier_terms', 'Earlier_terms'),
 	'tpnm' : ('Finder.Enumerations', 'Enumerations'),
 	'tpnm' : ('Finder.Obsolete_terms', 'Obsolete_terms'),
 }
 
 from Standard_Suite import *
-from Earlier_terms import *
-from Finder_Basics import *
-from Finder_items import *
 from Containers_and_folders import *
 from Files_and_suitcases import *
-from Window_classes import *
+from Finder_Basics import *
+from Finder_items import *
 from Process_classes import *
+from Window_classes import *
 from Type_Definitions import *
+from Earlier_terms import *
 from Enumerations import *
 from Obsolete_terms import *
 
@@ -129,9 +129,6 @@ getbaseclasses(StdSuites.Type_Names_Suite.null)
 getbaseclasses(StdSuites.Type_Names_Suite.target_id)
 getbaseclasses(StdSuites.Type_Names_Suite.point)
 getbaseclasses(StdSuites.Type_Names_Suite.bounding_rectangle)
-getbaseclasses(application)
-getbaseclasses(special_folders)
-getbaseclasses(item)
 getbaseclasses(trash_2d_object)
 getbaseclasses(desktop_2d_object)
 getbaseclasses(sharable_container)
@@ -139,6 +136,9 @@ getbaseclasses(sharing_privileges)
 getbaseclasses(disk)
 getbaseclasses(folder)
 getbaseclasses(container)
+getbaseclasses(application)
+getbaseclasses(special_folders)
+getbaseclasses(item)
 getbaseclasses(sound_file)
 getbaseclasses(font_file)
 getbaseclasses(internet_location_file)
@@ -206,17 +206,6 @@ getbaseclasses(StdSuites.Type_Names_Suite.null)
 getbaseclasses(StdSuites.Type_Names_Suite.target_id)
 getbaseclasses(StdSuites.Type_Names_Suite.point)
 getbaseclasses(StdSuites.Type_Names_Suite.bounding_rectangle)
-getbaseclasses(status_window)
-getbaseclasses(application)
-getbaseclasses(sharing_window)
-getbaseclasses(control_panel)
-getbaseclasses(process)
-getbaseclasses(item)
-getbaseclasses(file)
-getbaseclasses(sharable_container)
-getbaseclasses(container_window)
-getbaseclasses(container)
-getbaseclasses(information_window)
 getbaseclasses(StdSuites.Type_Names_Suite.small_integer)
 getbaseclasses(StdSuites.Type_Names_Suite.RGB16_color)
 getbaseclasses(StdSuites.Type_Names_Suite.system_dictionary)
@@ -257,6 +246,17 @@ getbaseclasses(StdSuites.Type_Names_Suite.null)
 getbaseclasses(StdSuites.Type_Names_Suite.target_id)
 getbaseclasses(StdSuites.Type_Names_Suite.point)
 getbaseclasses(StdSuites.Type_Names_Suite.bounding_rectangle)
+getbaseclasses(status_window)
+getbaseclasses(application)
+getbaseclasses(sharing_window)
+getbaseclasses(control_panel)
+getbaseclasses(process)
+getbaseclasses(item)
+getbaseclasses(file)
+getbaseclasses(sharable_container)
+getbaseclasses(container_window)
+getbaseclasses(container)
+getbaseclasses(information_window)
 
 #
 # Indices of types declared in this module
@@ -315,9 +315,6 @@ _classdeclarations = {
 	'targ' : StdSuites.Type_Names_Suite.target_id,
 	'QDpt' : StdSuites.Type_Names_Suite.point,
 	'qdrt' : StdSuites.Type_Names_Suite.bounding_rectangle,
-	'capp' : application,
-	'spfl' : special_folders,
-	'cobj' : item,
 	'ctrs' : trash_2d_object,
 	'cdsk' : desktop_2d_object,
 	'sctr' : sharable_container,
@@ -325,6 +322,9 @@ _classdeclarations = {
 	'cdis' : disk,
 	'cfol' : folder,
 	'ctnr' : container,
+	'capp' : application,
+	'spfl' : special_folders,
+	'cobj' : item,
 	'sndf' : sound_file,
 	'fntf' : font_file,
 	'inlf' : internet_location_file,
@@ -392,17 +392,6 @@ _classdeclarations = {
 	'targ' : StdSuites.Type_Names_Suite.target_id,
 	'QDpt' : StdSuites.Type_Names_Suite.point,
 	'qdrt' : StdSuites.Type_Names_Suite.bounding_rectangle,
-	'qwnd' : status_window,
-	'capp' : application,
-	'swnd' : sharing_window,
-	'ccdv' : control_panel,
-	'prcs' : process,
-	'cobj' : item,
-	'file' : file,
-	'sctr' : sharable_container,
-	'cwnd' : container_window,
-	'ctnr' : container,
-	'iwnd' : information_window,
 	'shor' : StdSuites.Type_Names_Suite.small_integer,
 	'tr16' : StdSuites.Type_Names_Suite.RGB16_color,
 	'aeut' : StdSuites.Type_Names_Suite.system_dictionary,
@@ -443,18 +432,29 @@ _classdeclarations = {
 	'targ' : StdSuites.Type_Names_Suite.target_id,
 	'QDpt' : StdSuites.Type_Names_Suite.point,
 	'qdrt' : StdSuites.Type_Names_Suite.bounding_rectangle,
+	'qwnd' : status_window,
+	'capp' : application,
+	'swnd' : sharing_window,
+	'ccdv' : control_panel,
+	'prcs' : process,
+	'cobj' : item,
+	'file' : file,
+	'sctr' : sharable_container,
+	'cwnd' : container_window,
+	'ctnr' : container,
+	'iwnd' : information_window,
 }
 
 
 class Finder(Standard_Suite_Events,
-		Earlier_terms_Events,
-		Finder_Basics_Events,
-		Finder_items_Events,
 		Containers_and_folders_Events,
 		Files_and_suitcases_Events,
-		Window_classes_Events,
+		Finder_Basics_Events,
+		Finder_items_Events,
 		Process_classes_Events,
+		Window_classes_Events,
 		Type_Definitions_Events,
+		Earlier_terms_Events,
 		Enumerations_Events,
 		Obsolete_terms_Events,
 		aetools.TalkTo):

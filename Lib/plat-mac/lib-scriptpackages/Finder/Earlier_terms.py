@@ -16,6 +16,18 @@ class Earlier_terms_Events(Type_Names_Suite_Events):
 	pass
 
 
+class accessory_process(aetools.ComponentItem):
+	"""accessory process - A process launched from a desk accessory file """
+	want = 'pcda'
+
+accessory_processes = accessory_process
+
+class accessory_suitcase(aetools.ComponentItem):
+	"""accessory suitcase - A desk accessory suitcase """
+	want = 'dsut'
+
+accessory_suitcases = accessory_suitcase
+
 class application(aetools.ComponentItem):
 	"""application - The Finder """
 	want = 'capp'
@@ -176,24 +188,6 @@ class use_relative_dates(aetools.NProperty):
 	which = 'urdt'
 	want = 'bool'
 
-class accessory_process(aetools.ComponentItem):
-	"""accessory process - A process launched from a desk accessory file """
-	want = 'pcda'
-
-accessory_processes = accessory_process
-
-class accessory_suitcase(aetools.ComponentItem):
-	"""accessory suitcase - A desk accessory suitcase """
-	want = 'dsut'
-
-accessory_suitcases = accessory_suitcase
-
-class internet_location(aetools.ComponentItem):
-	"""internet location - An file containing an internet location """
-	want = 'inlf'
-
-internet_locations = internet_location
-
 class information_window(aetools.ComponentItem):
 	"""information window - An information window (opened by \xd2Get Info\xd3) """
 	want = 'iwnd'
@@ -233,6 +227,12 @@ class warn_before_emptying(aetools.NProperty):
 	"""warn before emptying - Display a dialog when emptying the trash (only valid for trash info window)? """
 	which = 'warn'
 	want = 'bool'
+
+class internet_location(aetools.ComponentItem):
+	"""internet location - An file containing an internet location """
+	want = 'inlf'
+
+internet_locations = internet_location
 
 class item(aetools.ComponentItem):
 	"""item - An item """
@@ -289,6 +289,26 @@ class information_window(aetools.NProperty):
 	"""information window - the information window for the item """
 	which = 'iwnd'
 	want = 'obj '
+
+class preferences(aetools.ComponentItem):
+	"""preferences - The Finder Preferences """
+	want = 'cprf'
+class delay_before_springing(aetools.NProperty):
+	"""delay before springing - the delay before springing open a container in ticks (1/60th of a second) (12 is shortest delay, 60 is longest delay) """
+	which = 'dela'
+	want = 'shor'
+class spring_open_folders(aetools.NProperty):
+	"""spring open folders - Spring open folders after the specified delay? """
+	which = 'sprg'
+	want = 'bool'
+class use_simple_menus(aetools.NProperty):
+	"""use simple menus - Use simplified Finder menus? """
+	which = 'usme'
+	want = 'bool'
+class use_wide_grid(aetools.NProperty):
+	"""use wide grid - Space icons on a wide grid? """
+	which = 'uswg'
+	want = 'bool'
 
 class process(aetools.ComponentItem):
 	"""process - A process running on this computer """
@@ -362,26 +382,6 @@ class trash_2d_object(aetools.ComponentItem):
 	"""trash-object - Trash-object is the class of the \xd2trash\xd3 object """
 	want = 'ctrs'
 
-class preferences(aetools.ComponentItem):
-	"""preferences - The Finder Preferences """
-	want = 'cprf'
-class delay_before_springing(aetools.NProperty):
-	"""delay before springing - the delay before springing open a container in ticks (1/60th of a second) (12 is shortest delay, 60 is longest delay) """
-	which = 'dela'
-	want = 'shor'
-class spring_open_folders(aetools.NProperty):
-	"""spring open folders - Spring open folders after the specified delay? """
-	which = 'sprg'
-	want = 'bool'
-class use_simple_menus(aetools.NProperty):
-	"""use simple menus - Use simplified Finder menus? """
-	which = 'usme'
-	want = 'bool'
-class use_wide_grid(aetools.NProperty):
-	"""use wide grid - Space icons on a wide grid? """
-	which = 'uswg'
-	want = 'bool'
-
 class window(aetools.ComponentItem):
 	"""window - A window """
 	want = 'cwin'
@@ -429,6 +429,16 @@ class collapsed(aetools.NProperty):
 	"""collapsed - Is the window collapsed (only applies to open non-pop-up windows)? """
 	which = 'wshd'
 	want = 'bool'
+accessory_process._superclassnames = []
+accessory_process._privpropdict = {
+}
+accessory_process._privelemdict = {
+}
+accessory_suitcase._superclassnames = []
+accessory_suitcase._privpropdict = {
+}
+accessory_suitcase._privelemdict = {
+}
 application._superclassnames = []
 application._privpropdict = {
 	'properties' : properties,
@@ -483,21 +493,6 @@ container_window._privpropdict = {
 }
 container_window._privelemdict = {
 }
-accessory_process._superclassnames = []
-accessory_process._privpropdict = {
-}
-accessory_process._privelemdict = {
-}
-accessory_suitcase._superclassnames = []
-accessory_suitcase._privpropdict = {
-}
-accessory_suitcase._privelemdict = {
-}
-internet_location._superclassnames = []
-internet_location._privpropdict = {
-}
-internet_location._privelemdict = {
-}
 information_window._superclassnames = ['window']
 information_window._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
@@ -518,6 +513,11 @@ information_window._privpropdict = {
 	'version' : version,
 }
 information_window._privelemdict = {
+}
+internet_location._superclassnames = []
+internet_location._privpropdict = {
+}
+internet_location._privelemdict = {
 }
 item._superclassnames = []
 item._privpropdict = {
@@ -545,6 +545,25 @@ item._privpropdict = {
 	'information_window' : information_window,
 }
 item._privelemdict = {
+}
+preferences._superclassnames = []
+preferences._privpropdict = {
+	'window' : window,
+	'calculate_folder_sizes' : calculate_folder_sizes,
+	'delay_before_springing' : delay_before_springing,
+	'show_comments' : show_comments,
+	'show_creation_date' : show_creation_date,
+	'show_kind' : show_kind,
+	'show_label' : show_label,
+	'show_modification_date' : show_modification_date,
+	'show_size' : show_size,
+	'show_version' : show_version,
+	'spring_open_folders' : spring_open_folders,
+	'use_relative_dates' : use_relative_dates,
+	'use_simple_menus' : use_simple_menus,
+	'use_wide_grid' : use_wide_grid,
+}
+preferences._privelemdict = {
 }
 process._superclassnames = []
 process._privpropdict = {
@@ -586,25 +605,6 @@ trash_2d_object._privpropdict = {
 }
 trash_2d_object._privelemdict = {
 }
-preferences._superclassnames = []
-preferences._privpropdict = {
-	'window' : window,
-	'calculate_folder_sizes' : calculate_folder_sizes,
-	'delay_before_springing' : delay_before_springing,
-	'show_comments' : show_comments,
-	'show_creation_date' : show_creation_date,
-	'show_kind' : show_kind,
-	'show_label' : show_label,
-	'show_modification_date' : show_modification_date,
-	'show_size' : show_size,
-	'show_version' : show_version,
-	'spring_open_folders' : spring_open_folders,
-	'use_relative_dates' : use_relative_dates,
-	'use_simple_menus' : use_simple_menus,
-	'use_wide_grid' : use_wide_grid,
-}
-preferences._privelemdict = {
-}
 window._superclassnames = []
 window._privpropdict = {
 	'properties' : properties,
@@ -632,11 +632,11 @@ window._privelemdict = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
+	'ctrs' : trash_2d_object,
 	'dsut' : accessory_suitcase,
 	'cprf' : preferences,
-	'sctr' : sharable_container,
 	'capp' : application,
-	'ctrs' : trash_2d_object,
+	'sctr' : sharable_container,
 	'pcda' : accessory_process,
 	'cwin' : window,
 	'iwnd' : information_window,

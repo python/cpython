@@ -15,83 +15,19 @@ class Window_classes_Events:
 	pass
 
 
-class window(aetools.ComponentItem):
-	"""window - A window """
-	want = 'cwin'
-class position(aetools.NProperty):
-	"""position - the upper left position of the window """
-	which = 'posn'
-	want = 'QDpt'
-class bounds(aetools.NProperty):
-	"""bounds - the boundary rectangle for the window """
-	which = 'pbnd'
-	want = 'qdrt'
-class titled(aetools.NProperty):
-	"""titled - Does the window have a title bar? """
-	which = 'ptit'
-	want = 'bool'
-class name(aetools.NProperty):
-	"""name - the name of the window """
-	which = 'pnam'
-	want = 'itxt'
-class index(aetools.NProperty):
-	"""index - the number of the window in the front-to-back layer ordering """
-	which = 'pidx'
-	want = 'long'
-class closeable(aetools.NProperty):
-	"""closeable - Does the window have a close box? """
-	which = 'hclb'
-	want = 'bool'
-class floating(aetools.NProperty):
-	"""floating - Does the window have a title bar? """
-	which = 'isfl'
-	want = 'bool'
-class modal(aetools.NProperty):
-	"""modal - Is the window modal? """
-	which = 'pmod'
-	want = 'bool'
-class resizable(aetools.NProperty):
-	"""resizable - Is the window resizable? """
-	which = 'prsz'
-	want = 'bool'
-class zoomable(aetools.NProperty):
-	"""zoomable - Is the window zoomable? """
-	which = 'iszm'
-	want = 'bool'
-class zoomed(aetools.NProperty):
-	"""zoomed - Is the window zoomed? """
-	which = 'pzum'
-	want = 'bool'
-class zoomed_full_size(aetools.NProperty):
-	"""zoomed full size - Is the window zoomed to the full size of the screen? (can only be set, not read, and only applies to open non-pop-up windows) """
-	which = 'zumf'
-	want = 'bool'
-class visible(aetools.NProperty):
-	"""visible - Is the window visible (always true for open Finder windows)? """
-	which = 'pvis'
-	want = 'bool'
-class popup(aetools.NProperty):
-	"""popup - Is the window is a pop-up window? (only applies to open container windows in the Finder and can only be set when the Finder is the front application) """
-	which = 'drwr'
-	want = 'bool'
-class pulled_open(aetools.NProperty):
-	"""pulled open - Is the window pulled open (only applies to pop-up windows and can only be set when the Finder is the front application)? """
-	which = 'pull'
-	want = 'bool'
-class collapsed(aetools.NProperty):
-	"""collapsed - Is the window collapsed (only applies to open non-pop-up windows)? """
-	which = 'wshd'
-	want = 'bool'
-
-windows = window
-
-class container_window(aetools.ComponentItem):
-	"""container window - A window that contains items """
-	want = 'cwnd'
+class clipping_window(aetools.ComponentItem):
+	"""clipping window - The window containing a clipping """
+	want = 'lwnd'
 class _3c_Inheritance_3e_(aetools.NProperty):
 	"""<Inheritance> - inherits some of its properties from the window class """
 	which = 'c@#^'
 	want = 'cwin'
+
+clipping_windows = clipping_window
+
+class container_window(aetools.ComponentItem):
+	"""container window - A window that contains items """
+	want = 'cwnd'
 class container(aetools.NProperty):
 	"""container - the container from which the window was opened """
 	which = 'ctnr'
@@ -163,6 +99,12 @@ class uses_relative_dates(aetools.NProperty):
 
 container_windows = container_window
 
+class content_space(aetools.ComponentItem):
+	"""content space - All windows, including the desktop window (\xd2Window\xd3 does not include the desktop window) """
+	want = 'dwnd'
+
+content_spaces = content_space
+
 class information_window(aetools.ComponentItem):
 	"""information window - An information window (opened by \xd2Get Info\xd3) """
 	want = 'iwnd'
@@ -229,47 +171,90 @@ class version(aetools.NProperty):
 
 information_windows = information_window
 
+class preferences_window(aetools.ComponentItem):
+	"""preferences window - The Finder Preferences window """
+	want = 'pwnd'
+
 class view_options_window(aetools.ComponentItem):
 	"""view options window - A View Options window """
 	want = 'vwnd'
 
 view_options_windows = view_options_window
 
-class preferences_window(aetools.ComponentItem):
-	"""preferences window - The Finder Preferences window """
-	want = 'pwnd'
+class window(aetools.ComponentItem):
+	"""window - A window """
+	want = 'cwin'
+class position(aetools.NProperty):
+	"""position - the upper left position of the window """
+	which = 'posn'
+	want = 'QDpt'
+class bounds(aetools.NProperty):
+	"""bounds - the boundary rectangle for the window """
+	which = 'pbnd'
+	want = 'qdrt'
+class titled(aetools.NProperty):
+	"""titled - Does the window have a title bar? """
+	which = 'ptit'
+	want = 'bool'
+class name(aetools.NProperty):
+	"""name - the name of the window """
+	which = 'pnam'
+	want = 'itxt'
+class index(aetools.NProperty):
+	"""index - the number of the window in the front-to-back layer ordering """
+	which = 'pidx'
+	want = 'long'
+class closeable(aetools.NProperty):
+	"""closeable - Does the window have a close box? """
+	which = 'hclb'
+	want = 'bool'
+class floating(aetools.NProperty):
+	"""floating - Does the window have a title bar? """
+	which = 'isfl'
+	want = 'bool'
+class modal(aetools.NProperty):
+	"""modal - Is the window modal? """
+	which = 'pmod'
+	want = 'bool'
+class resizable(aetools.NProperty):
+	"""resizable - Is the window resizable? """
+	which = 'prsz'
+	want = 'bool'
+class zoomable(aetools.NProperty):
+	"""zoomable - Is the window zoomable? """
+	which = 'iszm'
+	want = 'bool'
+class zoomed(aetools.NProperty):
+	"""zoomed - Is the window zoomed? """
+	which = 'pzum'
+	want = 'bool'
+class zoomed_full_size(aetools.NProperty):
+	"""zoomed full size - Is the window zoomed to the full size of the screen? (can only be set, not read, and only applies to open non-pop-up windows) """
+	which = 'zumf'
+	want = 'bool'
+class visible(aetools.NProperty):
+	"""visible - Is the window visible (always true for open Finder windows)? """
+	which = 'pvis'
+	want = 'bool'
+class popup(aetools.NProperty):
+	"""popup - Is the window is a pop-up window? (only applies to open container windows in the Finder and can only be set when the Finder is the front application) """
+	which = 'drwr'
+	want = 'bool'
+class pulled_open(aetools.NProperty):
+	"""pulled open - Is the window pulled open (only applies to pop-up windows and can only be set when the Finder is the front application)? """
+	which = 'pull'
+	want = 'bool'
+class collapsed(aetools.NProperty):
+	"""collapsed - Is the window collapsed (only applies to open non-pop-up windows)? """
+	which = 'wshd'
+	want = 'bool'
 
-class clipping_window(aetools.ComponentItem):
-	"""clipping window - The window containing a clipping """
-	want = 'lwnd'
-
-clipping_windows = clipping_window
-
-class content_space(aetools.ComponentItem):
-	"""content space - All windows, including the desktop window (\xd2Window\xd3 does not include the desktop window) """
-	want = 'dwnd'
-
-content_spaces = content_space
-window._superclassnames = []
-window._privpropdict = {
-	'position' : position,
-	'bounds' : bounds,
-	'titled' : titled,
-	'name' : name,
-	'index' : index,
-	'closeable' : closeable,
-	'floating' : floating,
-	'modal' : modal,
-	'resizable' : resizable,
-	'zoomable' : zoomable,
-	'zoomed' : zoomed,
-	'zoomed_full_size' : zoomed_full_size,
-	'visible' : visible,
-	'popup' : popup,
-	'pulled_open' : pulled_open,
-	'collapsed' : collapsed,
+windows = window
+clipping_window._superclassnames = ['window']
+clipping_window._privpropdict = {
+	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 }
-window._privelemdict = {
+clipping_window._privelemdict = {
 }
 container_window._superclassnames = ['window']
 container_window._privpropdict = {
@@ -294,6 +279,11 @@ container_window._privpropdict = {
 }
 container_window._privelemdict = {
 }
+content_space._superclassnames = []
+content_space._privpropdict = {
+}
+content_space._privelemdict = {
+}
 information_window._superclassnames = ['window']
 information_window._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
@@ -316,13 +306,6 @@ information_window._privpropdict = {
 }
 information_window._privelemdict = {
 }
-view_options_window._superclassnames = ['window']
-view_options_window._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'item' : item,
-}
-view_options_window._privelemdict = {
-}
 preferences_window._superclassnames = ['window']
 preferences_window._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
@@ -330,16 +313,33 @@ preferences_window._privpropdict = {
 }
 preferences_window._privelemdict = {
 }
-clipping_window._superclassnames = ['window']
-clipping_window._privpropdict = {
+view_options_window._superclassnames = ['window']
+view_options_window._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+	'item' : item,
 }
-clipping_window._privelemdict = {
+view_options_window._privelemdict = {
 }
-content_space._superclassnames = []
-content_space._privpropdict = {
+window._superclassnames = []
+window._privpropdict = {
+	'position' : position,
+	'bounds' : bounds,
+	'titled' : titled,
+	'name' : name,
+	'index' : index,
+	'closeable' : closeable,
+	'floating' : floating,
+	'modal' : modal,
+	'resizable' : resizable,
+	'zoomable' : zoomable,
+	'zoomed' : zoomed,
+	'zoomed_full_size' : zoomed_full_size,
+	'visible' : visible,
+	'popup' : popup,
+	'pulled_open' : pulled_open,
+	'collapsed' : collapsed,
 }
-content_space._privelemdict = {
+window._privelemdict = {
 }
 
 #
@@ -347,33 +347,33 @@ content_space._privelemdict = {
 #
 _classdeclarations = {
 	'pwnd' : preferences_window,
-	'vwnd' : view_options_window,
 	'cwin' : window,
+	'vwnd' : view_options_window,
+	'lwnd' : clipping_window,
 	'cwnd' : container_window,
 	'dwnd' : content_space,
 	'iwnd' : information_window,
-	'lwnd' : clipping_window,
 }
 
 _propdeclarations = {
 	'prsz' : resizable,
 	'barr' : button_view_arrangement,
-	'pzum' : zoomed,
+	'pbnd' : bounds,
+	'appt' : preferred_size,
 	'iarr' : spatial_view_arrangement,
 	'hclb' : closeable,
 	'c@#^' : _3c_Inheritance_3e_,
 	'ver2' : product_version,
-	'sfsz' : calculates_folder_sizes,
+	'cuss' : has_custom_view_settings,
 	'sprt' : suggested_size,
 	'zumf' : zoomed_full_size,
 	'urdt' : uses_relative_dates,
 	'panl' : current_panel,
 	'pmod' : modal,
-	'pspd' : stationery,
 	'scom' : shows_comments,
-	'appt' : preferred_size,
+	'pspd' : stationery,
 	'aslk' : locked,
-	'pbnd' : bounds,
+	'pzum' : zoomed,
 	'iimg' : icon,
 	'mprt' : minimum_size,
 	'pnam' : name,
@@ -382,8 +382,9 @@ _propdeclarations = {
 	'cobj' : item,
 	'ptit' : titled,
 	'posn' : position,
-	'cuss' : has_custom_view_settings,
+	'vers' : version,
 	'phys' : physical_size,
+	'pull' : pulled_open,
 	'sknd' : shows_kind,
 	'svrs' : shows_version,
 	'svew' : previous_list_view,
@@ -394,17 +395,16 @@ _propdeclarations = {
 	'ctnr' : container,
 	'wshd' : collapsed,
 	'slbl' : shows_label,
-	'pull' : pulled_open,
+	'warn' : warns_before_emptying,
 	'ptsz' : size,
 	'pvis' : visible,
 	'pidx' : index,
 	'isfl' : floating,
-	'warn' : warns_before_emptying,
 	'drwr' : popup,
 	'sdat' : shows_modification_date,
 	'pvew' : view,
+	'sfsz' : calculates_folder_sizes,
 	'scda' : shows_creation_date,
-	'vers' : version,
 }
 
 _compdeclarations = {

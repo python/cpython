@@ -12,57 +12,16 @@ _code = 'WWW!'
 
 class Web_Browser_Suite_Events:
 
-	_argmap_OpenURL = {
-		'to' : 'INTO',
-		'toWindow' : 'WIND',
-		'Flags' : 'FLGS',
-		'FormData' : 'POST',
-		'MIME_Type' : 'MIME',
-	}
-
-	def OpenURL(self, _object, _attributes={}, **_arguments):
-		"""OpenURL: Retrieves URL off the Web.
-		Required argument: Fully-qualified URL
-		Keyword argument to: Target file for saving downloaded data
-		Keyword argument toWindow: Target window for resource at URL (-1 for top window, 0 for new window)
-		Keyword argument Flags: Valid Flags settings are: 1-Ignore the document cache; 2-Ignore the image cache; 4-Operate in background mode.
-		Keyword argument FormData: data to post
-		Keyword argument MIME_Type: MIME type of data being posted
+	def Activate(self, _object=None, _attributes={}, **_arguments):
+		"""Activate: Activate Internet Explorer and optionally select window designated by Window Identifier.
+		Required argument: Window Identifier
 		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: Window Identifier of window to activate
 		"""
 		_code = 'WWW!'
-		_subcode = 'OURL'
+		_subcode = 'ACTV'
 
-		aetools.keysubst(_arguments, self._argmap_OpenURL)
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	_argmap_ShowFile = {
-		'MIME_Type' : 'MIME',
-		'Window_Identifier' : 'WIND',
-		'URL' : 'URL ',
-	}
-
-	def ShowFile(self, _object, _attributes={}, **_arguments):
-		"""ShowFile: FileSpec containing data of specified MIME type to be rendered in window specified by Window Identifier.
-		Required argument: The file
-		Keyword argument MIME_Type: MIME type
-		Keyword argument Window_Identifier: Identifier of the target window for the URL. (Can use -1 for top window)
-		Keyword argument URL: URL that allows this document to be reloaded.
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'WWW!'
-		_subcode = 'SHWF'
-
-		aetools.keysubst(_arguments, self._argmap_ShowFile)
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
 
@@ -121,14 +80,14 @@ class Web_Browser_Suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def Activate(self, _object=None, _attributes={}, **_arguments):
-		"""Activate: Activate Internet Explorer and optionally select window designated by Window Identifier.
-		Required argument: Window Identifier
+	def GetWindowInfo(self, _object, _attributes={}, **_arguments):
+		"""GetWindowInfo: Returns a window info record (URL/Title) for the specified window.
+		Required argument: Window Identifier of the window
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: Window Identifier of window to activate
+		Returns:   
 		"""
 		_code = 'WWW!'
-		_subcode = 'ACTV'
+		_subcode = 'WNFO'
 
 		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
@@ -162,16 +121,28 @@ class Web_Browser_Suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def GetWindowInfo(self, _object, _attributes={}, **_arguments):
-		"""GetWindowInfo: Returns a window info record (URL/Title) for the specified window.
-		Required argument: Window Identifier of the window
+	_argmap_OpenURL = {
+		'to' : 'INTO',
+		'toWindow' : 'WIND',
+		'Flags' : 'FLGS',
+		'FormData' : 'POST',
+		'MIME_Type' : 'MIME',
+	}
+
+	def OpenURL(self, _object, _attributes={}, **_arguments):
+		"""OpenURL: Retrieves URL off the Web.
+		Required argument: Fully-qualified URL
+		Keyword argument to: Target file for saving downloaded data
+		Keyword argument toWindow: Target window for resource at URL (-1 for top window, 0 for new window)
+		Keyword argument Flags: Valid Flags settings are: 1-Ignore the document cache; 2-Ignore the image cache; 4-Operate in background mode.
+		Keyword argument FormData: data to post
+		Keyword argument MIME_Type: MIME type of data being posted
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns:   
 		"""
 		_code = 'WWW!'
-		_subcode = 'WNFO'
+		_subcode = 'OURL'
 
-		if _arguments: raise TypeError, 'No optional args expected'
+		aetools.keysubst(_arguments, self._argmap_OpenURL)
 		_arguments['----'] = _object
 
 
@@ -198,6 +169,35 @@ class Web_Browser_Suite_Events:
 		_subcode = 'PRSA'
 
 		aetools.keysubst(_arguments, self._argmap_ParseAnchor)
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	_argmap_ShowFile = {
+		'MIME_Type' : 'MIME',
+		'Window_Identifier' : 'WIND',
+		'URL' : 'URL ',
+	}
+
+	def ShowFile(self, _object, _attributes={}, **_arguments):
+		"""ShowFile: FileSpec containing data of specified MIME type to be rendered in window specified by Window Identifier.
+		Required argument: The file
+		Keyword argument MIME_Type: MIME type
+		Keyword argument Window_Identifier: Identifier of the target window for the URL. (Can use -1 for top window)
+		Keyword argument URL: URL that allows this document to be reloaded.
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'WWW!'
+		_subcode = 'SHWF'
+
+		aetools.keysubst(_arguments, self._argmap_ShowFile)
 		_arguments['----'] = _object
 
 
