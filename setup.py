@@ -398,7 +398,7 @@ class PyBuildExt(build_ext):
         # Curses support, requring the System V version of curses, often
         # provided by the ncurses library.
         if platform == 'sunos4':
-            include_dirs += ['/usr/5include']
+            inc_dirs += ['/usr/5include']
             lib_dirs += ['/usr/5lib']
 
         if (self.compiler.find_library_file(lib_dirs, 'ncurses')):
