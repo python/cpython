@@ -19,12 +19,11 @@ this, see the standard library modules
 operations out of which you can build your own
 \function{__import__()} function.
 
-For example, the statement `\code{import} \code{spam}' results in the
+For example, the statement \samp{import spam} results in the
 following call:
 \code{__import__('spam',} \code{globals(),} \code{locals(), [])};
-the statement \code{from} \code{spam.ham import} \code{eggs} results
-in \code{__import__('spam.ham',} \code{globals(),} \code{locals(),}
-\code{['eggs'])}.
+the statement \samp{from spam.ham import eggs} results
+in \samp{__import__('spam.ham', globals(), locals(), ['eggs'])}.
 Note that even though \code{locals()} and \code{['eggs']} are passed
 in as arguments, the \function{__import__()} function does not set the
 local variable named \code{eggs}; this is done by subsequent code that
@@ -695,9 +694,10 @@ to decode UTF-8 in strict mode, meaning that encoding errors raise
 \end{funcdesc}
 
 \begin{funcdesc}{unistr}{object}
-Return a Unicode string containing a nicely printable representation of an
-object.  For Unicode, this returns the Unicode string itself.  For
-all other objects, it tries to convert \code{str(\var{object})] to Unicode.
+Return a Unicode string containing a nicely printable representation
+of an object.  For Unicode, this returns the Unicode string itself.
+For all other objects, it tries to convert \code{str(\var{object})} to
+Unicode.
 \end{funcdesc}
 
 \begin{funcdesc}{vars}{\optional{object}}
