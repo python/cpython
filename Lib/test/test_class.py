@@ -87,9 +87,9 @@ class AllTests:
         return 0
 
 for method in testmeths:
-    exec("""def __%(method)s__(self, *args):
+    exec """def __%(method)s__(self, *args):
                 print "__%(method)s__:", args
-"""%locals(), AllTests.__dict__);
+"""%locals() in AllTests.__dict__
 
 # this also tests __init__ of course.
 testme = AllTests()
