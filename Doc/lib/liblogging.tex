@@ -802,32 +802,36 @@ supplied, the default value of "\%s(message)\\n" is used.
 A Formatter can be initialized with a format string which makes use of
 knowledge of the \class{LogRecord} attributes - such as the default value
 mentioned above making use of the fact that the user's message and
-arguments are pre- formatted into a LogRecord's \var{message}
-attribute. Currently, the useful attributes in a LogRecord are
-described by:
+arguments are pre-formatted into a LogRecord's \var{message}
+attribute.  This format string contains standard python \%-style
+mapping keys. See section \ref{typesseq-strings}, ``String Formatting
+Operations,'' for more information on string formatting.
 
-\%(name)s            Name of the logger (logging channel)
-\%(levelno)s         Numeric logging level for the message (DEBUG, INFO,
-                     WARNING, ERROR, CRITICAL)
-\%(levelname)s       Text logging level for the message ("DEBUG", "INFO",
-                     "WARNING", "ERROR", "CRITICAL")
-\%(pathname)s        Full pathname of the source file where the logging
-                     call was issued (if available)
-\%(filename)s        Filename portion of pathname
-\%(module)s          Module (name portion of filename)
-\%(lineno)d          Source line number where the logging call was issued
-                     (if available)
-\%(created)f         Time when the LogRecord was created (time.time()
-                     return value)
-\%(asctime)s         Textual time when the LogRecord was created
-\%(msecs)d           Millisecond portion of the creation time
-\%(relativeCreated)d Time in milliseconds when the LogRecord was created,
-                     relative to the time the logging module was loaded
-                     (typically at application startup time)
-\%(thread)d          Thread ID (if available)
-\%(process)d         Process ID (if available)
-\%(message)s         The result of msg \% args, computed just as the
-                     record is emitted
+Currently, the useful mapping keys in a LogRecord are:
+
+\begin{tableii}{l|l}{formats}{Format}{Description}
+\lineii{\%(name)s}{Name of the logger (logging channel).}
+\lineii{\%(levelno)s}{Numeric logging level for the message (DEBUG, INFO,
+WARNING, ERROR, CRITICAL).}
+\lineii{\%(levelname)s}{Text logging level for the message ("DEBUG", "INFO",
+"WARNING", "ERROR", "CRITICAL").}
+\lineii{\%(pathname)s}{Full pathname of the source file where the logging
+call was issued (if available).}
+\lineii{\%(filename)s}{Filename portion of pathname.}
+\lineii{\%(module)s}{Module (name portion of filename).}
+\lineii{\%(lineno)d}{Source line number where the logging call was issued
+(if available).}
+\lineii{\%(created)f}{Time when the LogRecord was created (as returned by
+\code{time.time()}).}
+\lineii{\%(asctime)s}{Human-readable time when the LogRecord was created.
+By default this is of the form ``2003-07-08 16:49:45,896'' (the numbers
+after the comma are millisecond portion of the time).}
+\lineii{\%(msecs)d}{Millisecond portion of the time when the LogRecord
+was created.}
+\lineii{\%(thread)d}{Thread ID (if available).}
+\lineii{\%(process)d}{Process ID (if available).}
+\lineii{\%(message)s}{The logged message, computed as  msg \% args.}
+\end{tableii}
 
 \begin{classdesc}{Formatter}{\optional{fmt\optional{, datefmt}}}
 Returns a new instance of the \class{Formatter} class. The
@@ -1124,3 +1128,45 @@ is almost equivalent to specifying the date format string "%Y-%m-%d %H:%M:%S".
 The ISO8601 format also specifies milliseconds, which are appended to the
 result of using the above format string, with a comma separator. An example
 time in ISO8601 format is \code{2003-01-23 00:29:50,411}.
+
+\subsection{Using the logging package}
+
+\subsubsection{Basic example - log to a file}
+
+Here's a simple logging example that just logs to a file. In order,
+it creates a \class{Logger} instance, then a \class{FileHandler}
+and a \class{Formatter}. It attaches the \class{Formatter} to the
+\class{FileHandler}, then the \class{FileHandler} to the \class{Logger}.
+Finally, it sets a debug level for the logger.
+
+\begin{verbatim}
+import logging
+logger = logging.getLogger('myapp')
+hdlr = logging.FileHandler('/var/tmp/myapp.log')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr) 
+logger.setLevel(logging.WARNING)
+\end{verbatim}
+
+We can use this logger object now to write entries to the log file:
+
+\begin{verbatim}
+logger.error('We have a problem')
+logger.info('While this is just chatty')
+\end{verbatim}
+
+If we look in the file that was created, we'll see something like this:
+\begin{verbatim}
+2003-07-08 16:49:45,896 ERROR We have a problem
+\end{verbatim}
+
+The info message was not written to the file - we called the \method{setLevel}
+method to say we only wanted \code{WARNING} or worse, so the info message is 
+discarded.
+
+The timestamp is of the form  
+``year-month-day hour:minutes:seconds,milliseconds.''
+Note that despite the three digits of precision in the milliseconds field,
+not all systems provide time with this much precision.
+
