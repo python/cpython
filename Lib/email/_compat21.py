@@ -63,7 +63,7 @@ def typed_subpart_iterator(msg, maintype='text', subtype=None):
     """
     parts = []
     for subpart in msg.walk():
-        if subpart.get_main_type('text') == maintype:
-            if subtype is None or subpart.get_subtype('plain') == subtype:
+        if subpart.get_content_maintype() == maintype:
+            if subtype is None or subpart.get_content_subtype() == subtype:
                 parts.append(subpart)
     return parts
