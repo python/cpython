@@ -188,6 +188,9 @@ def _optimize_charset(charset, fixup):
                 # XXX: could append to charmap tail
                 return charset # cannot compress
     except IndexError:
+        if sys.maxunicode != 65535:
+            # XXX: big charsets don't work in UCS-4 builds
+            return charset
         # character set contains unicode characters
         return _optimize_unicode(charset, fixup)
     # compress character map
