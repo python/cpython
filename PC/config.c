@@ -79,15 +79,15 @@ struct _inittab _PyImport_Inittab[] = {
         {"math", initmath},
         {"md5", initmd5},
         {"new", initnew},
-        {"nt", initnt},	/* Use the NT os functions, not posix */
+        {"nt", initnt}, /* Use the NT os functions, not posix */
         {"operator", initoperator},
         {"regex", initregex},
         {"rgbimg", initrgbimg},
         {"rotor", initrotor},
         {"signal", initsignal},
 #ifdef USE_SOCKET
-	{"_socket", init_socket},
-	{"select", initselect},
+        {"_socket", init_socket},
+        {"select", initselect},
 #endif
         {"soundex", initsoundex},
         {"strop", initstrop},
@@ -96,8 +96,8 @@ struct _inittab _PyImport_Inittab[] = {
 #ifdef WITH_THREAD
         {"thread", initthread},
 #endif
-		{"cStringIO", initcStringIO},
-		{"cPickle", initcPickle},
+        {"cStringIO", initcStringIO},
+        {"cPickle", initcPickle},
 
 /* -- ADDMODULE MARKER 2 -- */
 
