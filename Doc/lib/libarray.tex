@@ -83,6 +83,14 @@ values, \exception{RuntimeError} is raised.  It is useful when reading
 data from a file written on a machine with a different byte order.
 \end{methoddesc}
 
+\begin{methoddesc}[array]{count}{x}
+Return the number of occurences of \var{x} in the array.
+\end{methoddesc}
+
+\begin{methoddesc}[array]{extend}{a}
+Append array items from \var{a} to the end of the array.
+\end{methoddesc}
+
 \begin{methoddesc}[array]{fromfile}{f, n}
 Read \var{n} items (as machine values) from the file object \var{f}
 and append them to the end of the array.  If less than \var{n} items
@@ -104,9 +112,20 @@ array of machine values (i.e. as if it had been read from a
 file using the \method{fromfile()} method).
 \end{methoddesc}
 
+\begin{methoddesc}[array]{index}{x}
+Return the smallest \var{i} such that \var{i} is the index of
+the first occurence of \var{x} in the array.
+\end{methoddesc}
+
 \begin{methoddesc}[array]{insert}{i, x}
 Insert a new item with value \var{x} in the array before position
 \var{i}.
+\end{methoddesc}
+
+\begin{methoddesc}[array]{pop}{\optional{i}}
+Removes the item with the index \var{i} from the array and returns
+it. The optional argument defaults to \code{-1}, so that by default
+the last item is removed and returned. 
 \end{methoddesc}
 
 \begin{methoddesc}[array]{read}{f, n}
@@ -118,6 +137,10 @@ are available, \exception{EOFError} is raised, but the items that were
 available are still inserted into the array.  \var{f} must be a real
 built-in file object; something else with a \method{read()} method won't
 do.
+\end{methoddesc}
+
+\begin{methoddesc}[array]{remove}{x}
+Remove the first occurence of \var{x} from the array.
 \end{methoddesc}
 
 \begin{methoddesc}[array]{reverse}{}
