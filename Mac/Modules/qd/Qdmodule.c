@@ -40,6 +40,9 @@ extern int GrafObj_Convert(PyObject *, GrafPtr *);
 extern PyObject *BMObj_New(BitMapPtr);
 extern int BMObj_Convert(PyObject *, BitMapPtr *);
 
+extern PyObject *PMObj_New(PixMapHandle);
+extern int PMObj_Convert(PyObject *, PixMapHandle *);
+
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <QuickDraw.h>
@@ -422,6 +425,28 @@ static PyObject *Qd_InitCursor(_self, _args)
 	InitCursor();
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_SetCursor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Cursor *crsr__in__;
+	int crsr__in_len__;
+	if (!PyArg_ParseTuple(_args, "s#",
+	                      (char **)&crsr__in__, &crsr__in_len__))
+		return NULL;
+	if (crsr__in_len__ != sizeof(Cursor))
+	{
+		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(Cursor)");
+		goto crsr__error__;
+	}
+	SetCursor(crsr__in__);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+ crsr__error__: ;
 	return _res;
 }
 
@@ -3131,6 +3156,8 @@ static PyMethodDef Qd_methods[] = {
 	 "(Rect r) -> None"},
 	{"InitCursor", (PyCFunction)Qd_InitCursor, 1,
 	 "() -> None"},
+	{"SetCursor", (PyCFunction)Qd_SetCursor, 1,
+	 "(Cursor crsr) -> None"},
 	{"HideCursor", (PyCFunction)Qd_HideCursor, 1,
 	 "() -> None"},
 	{"ShowCursor", (PyCFunction)Qd_ShowCursor, 1,
@@ -3453,6 +3480,16 @@ void initQd()
 	if (Qd_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Qd_Error) != 0)
 		Py_FatalError("can't initialize Qd.Error");
+
+	{
+		PyObject *o;
+		
+		o = PyString_FromStringAndSize((char *)&qd.arrow, sizeof(qd.arrow));
+		if (o == NULL || PyDict_SetItemString(d, "arrow", o) != 0)
+			Py_FatalError("can't initialize Qd.arrow");
+	}
+
+
 }
 
 /* ========================= End module Qd ========================== */

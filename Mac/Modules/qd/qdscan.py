@@ -87,7 +87,7 @@ class MyScanner(Scanner):
 			'ConstPatternParam',
 			'Pattern_ptr',
 			'Pattern',
-			'Cursor_ptr',
+##			'Cursor_ptr',
 			'DeviceLoopDrawingProcPtr',
 			'DeviceLoopFlags',
 			'FontInfo',
