@@ -1,7 +1,6 @@
 """Mailcap file handling.  See RFC 1524."""
 
 import os
-import string
 
 __all__ = ["getcaps","findmatch"]
 
@@ -37,7 +36,7 @@ def listmailcapfiles():
     # XXX Actually, this is Unix-specific
     if os.environ.has_key('MAILCAPS'):
         str = os.environ['MAILCAPS']
-        mailcaps = string.splitfields(str, ':')
+        mailcaps = str.split(':')
     else:
         if os.environ.has_key('HOME'):
             home = os.environ['HOME']
@@ -65,7 +64,7 @@ def readmailcapfile(fp):
         line = fp.readline()
         if not line: break
         # Ignore comments and blank lines
-        if line[0] == '#' or string.strip(line) == '':
+        if line[0] == '#' or line.strip() == '':
             continue
         nextline = line
         # Join continuation lines
@@ -78,10 +77,10 @@ def readmailcapfile(fp):
         if not (key and fields):
             continue
         # Normalize the key
-        types = string.splitfields(key, '/')
+        types = key.split('/')
         for j in range(len(types)):
-            types[j] = string.strip(types[j])
-        key = string.lower(string.joinfields(types, '/'))
+            types[j] = types[j].strip()
+        key = '/'.join(types).lower()
         # Update the database
         if caps.has_key(key):
             caps[key].append(fields)
@@ -106,13 +105,13 @@ def parseline(line):
     key, view, rest = fields[0], fields[1], fields[2:]
     fields = {'view': view}
     for field in rest:
-        i = string.find(field, '=')
+        i = field.find('=')
         if i < 0:
             fkey = field
             fvalue = ""
         else:
-            fkey = string.strip(field[:i])
-            fvalue = string.strip(field[i+1:])
+            fkey = field[:i].strip()
+            fvalue = field[i+1:].strip()
         if fields.has_key(fkey):
             # Ignore it
             pass
@@ -131,7 +130,7 @@ def parsefield(line, i, n):
             i = i+2
         else:
             i = i+1
-    return string.strip(line[start:i]), i
+    return line[start:i].strip(), i
 
 
 # Part 3: using the database.
@@ -160,7 +159,7 @@ def lookup(caps, MIMEtype, key=None):
     entries = []
     if caps.has_key(MIMEtype):
         entries = entries + caps[MIMEtype]
-    MIMEtypes = string.splitfields(MIMEtype, '/')
+    MIMEtypes = MIMEtype.split('/')
     MIMEtype = MIMEtypes[0] + '/*'
     if caps.has_key(MIMEtype):
         entries = entries + caps[MIMEtype]
@@ -201,10 +200,10 @@ def subst(field, MIMEtype, filename, plist=[]):
     return res
 
 def findparam(name, plist):
-    name = string.lower(name) + '='
+    name = name.lower() + '='
     n = len(name)
     for p in plist:
-        if string.lower(p[:n]) == name:
+        if p[:n].lower() == name:
             return p[n:]
     return ''
 
