@@ -2468,6 +2468,17 @@ int foo(int x, ...) {
 ])
 AC_MSG_RESULT($works)
 
+# check for socketpair
+AC_MSG_CHECKING(for socketpair)
+AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <sys/socket.h>
+], void *x=socketpair,
+  AC_DEFINE(HAVE_SOCKETPAIR, 1, Define if you have the 'socketpair' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+
 # check if sockaddr has sa_len member
 AC_MSG_CHECKING(if sockaddr has sa_len member)
 AC_TRY_COMPILE([#include <sys/types.h>
