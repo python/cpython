@@ -84,7 +84,6 @@ static int slice_index Py_PROTO((PyObject *, int *));
 static PyObject *apply_slice Py_PROTO((PyObject *, PyObject *, PyObject *));
 static int assign_slice Py_PROTO((PyObject *, PyObject *,
 				  PyObject *, PyObject *));
-static int cmp_member Py_PROTO((PyObject *, PyObject *));
 static PyObject *cmp_outcome Py_PROTO((int, PyObject *, PyObject *));
 static int import_from Py_PROTO((PyObject *, PyObject *, PyObject *));
 static PyObject *build_class Py_PROTO((PyObject *, PyObject *, PyObject *));
@@ -2496,7 +2495,7 @@ loop_subscript(v, w)
 {
 	PySequenceMethods *sq = v->ob_type->tp_as_sequence;
 	int i;
-	if (sq == NULL) {
+	if (sq == NULL || sq->sq_item == NULL) {
 		PyErr_SetString(PyExc_TypeError, "loop over non-sequence");
 		return NULL;
 	}
@@ -2559,56 +2558,6 @@ assign_slice(u, v, w, x) /* u[v:w] = x */
 		return PySequence_SetSlice(u, ilow, ihigh, x);
 }
 
-static int
-cmp_member(v, w)
-	PyObject *v, *w;
-{
-	int i, cmp;
-	PyObject *x;
-	PySequenceMethods *sq;
-	/* Special case for char in string */
-	if (PyString_Check(w)) {
-		register char *s, *end;
-		register char c;
-		if (!PyString_Check(v) || PyString_Size(v) != 1) {
-			PyErr_SetString(PyExc_TypeError,
-			    "string member test needs char left operand");
-			return -1;
-		}
-		c = PyString_AsString(v)[0];
-		s = PyString_AsString(w);
-		end = s + PyString_Size(w);
-		while (s < end) {
-			if (c == *s++)
-				return 1;
-		}
-		return 0;
-	}
-	sq = w->ob_type->tp_as_sequence;
-	if (sq == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-			"'in' or 'not in' needs sequence right argument");
-		return -1;
-	}
-	for (i = 0; ; i++) {
-		x = (*sq->sq_item)(w, i);
-		if (x == NULL) {
-			if (PyErr_Occurred() == PyExc_IndexError) {
-				PyErr_Clear();
-				break;
-			}
-			return -1;
-		}
-		cmp = PyObject_Compare(v, x);
-		Py_XDECREF(x);
-		if (cmp == 0)
-			return 1;
-		if (PyErr_Occurred())
-			return -1;
-	}
-	return 0;
-}
-
 static PyObject *
 cmp_outcome(op, v, w)
 	int op;
@@ -2626,7 +2575,7 @@ cmp_outcome(op, v, w)
 		break;
 	case IN:
 	case NOT_IN:
-		res = cmp_member(v, w);
+		res = PySequence_Contains(w, v);
 		if (res < 0)
 			return NULL;
 		if (op == (int) NOT_IN)
