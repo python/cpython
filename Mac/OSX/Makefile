@@ -98,6 +98,11 @@ install_Python: $(PYTHON)
 	$(INSTALL_DATA) $(RESOURCEFILE) $(APPINSTALLDIR)/Contents/Resources/$(RESOURCEFILE)
 	
 install_IDE: $(INSTALLED_PYTHONW)
+	@if $(INSTALLED_PYTHONW) -c "import waste"; then ; else \
+		echo PythonIDE needs the \"waste\" extension module; \
+		echo See Mac/OSX/README for details; \
+		exit 1; \
+	fi
 	$(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
 		--output $(PYTHONAPPSDIR)/PythonIDE.app --noargv \
 		$(srcdir)/Mac/Tools/IDE/PythonIDE.py
