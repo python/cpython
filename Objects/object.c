@@ -8,8 +8,6 @@
 #include "objimpl.h"
 #include "errors.h"
 
-extern object *err_nomem PROTO((void)); /* XXX from modsupport.c */
-
 int StopPrint; /* Flag to indicate printing must be stopped */
 
 /* Object allocation routines used by NEWOBJ and NEWVAROBJ macros */
@@ -175,6 +173,10 @@ NEWREF(op)
 DELREF(op)
 	object *op;
 {
+	if (op->ob_refcnt < 0) {
+		fprintf(stderr, "negative refcnt\n");
+		abort();
+	}
 	op->_ob_next->_ob_prev = op->_ob_prev;
 	op->_ob_prev->_ob_next = op->_ob_next;
 	(*(op)->ob_type->tp_dealloc)(op);
