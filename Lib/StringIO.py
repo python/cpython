@@ -31,6 +31,8 @@ import string
 class StringIO:
 	def __init__(self, buf = ''):
 		self.buf = buf
+		self.len = len(buf)
+		self.buflist = []
 		self.pos = 0
 		self.closed = 0
 		self.softspace = 0
@@ -41,25 +43,34 @@ class StringIO:
 	def isatty(self):
 		return 0
 	def seek(self, pos, mode = 0):
+		if self.buflist:
+			self.buf = self.buf + string.joinfields(self.buflist, '')
+			self.buflist = []
 		if mode == 1:
 			pos = pos + self.pos
 		elif mode == 2:
-			pos = pos + len(self.buf)
+			pos = pos + self.len
 		self.pos = max(0, pos)
 	def tell(self):
 		return self.pos
 	def read(self, n = -1):
+		if self.buflist:
+			self.buf = self.buf + string.joinfields(self.buflist, '')
+			self.buflist = []
 		if n < 0:
-			newpos = len(self.buf)
+			newpos = self.len
 		else:
-			newpos = min(self.pos+n, len(self.buf))
+			newpos = min(self.pos+n, self.len)
 		r = self.buf[self.pos:newpos]
 		self.pos = newpos
 		return r
 	def readline(self):
+		if self.buflist:
+			self.buf = self.buf + string.joinfields(self.buflist, '')
+			self.buflist = []
 		i = string.find(self.buf, '\n', self.pos)
 		if i < 0:
-			newpos = len(self.buf)
+			newpos = self.len
 		else:
 			newpos = i+1
 		r = self.buf[self.pos:newpos]
@@ -74,16 +85,28 @@ class StringIO:
 		return lines
 	def write(self, s):
 		if not s: return
-		if self.pos > len(self.buf):
-			self.buf = self.buf + '\0'*(self.pos - len(self.buf))
+		if self.pos > self.len:
+			self.buflist.append('\0'*(self.pos - self.len))
+			self.len = self.pos
 		newpos = self.pos + len(s)
-		self.buf = self.buf[:self.pos] + s + self.buf[newpos:]
+		if self.pos < self.len:
+			if self.buflist:
+				self.buf = self.buf + string.joinfields(self.buflist, '')
+				self.buflist = []
+			self.buflist = [self.buf[:self.pos], s, self.buf[newpos:]]
+			self.buf = ''
+		else:
+			self.buflist.append(s)
+			self.len = newpos
 		self.pos = newpos
 	def writelines(self, list):
 		self.write(string.joinfields(list, ''))
 	def flush(self):
 		pass
 	def getvalue(self):
+		if self.buflist:
+			self.buf = self.buf + string.joinfields(self.buflist, '')
+			self.buflist = []
 		return self.buf
 
 
