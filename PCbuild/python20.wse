@@ -915,118 +915,96 @@ item: Add Text to INSTALL.LOG
   Text=File Tree: %MAINDIR%\Lib\*.*
 end
 item: Edit Registry
-  Total Keys=1
   Key=.py
   New Value=Python.File
 end
 item: Edit Registry
-  Total Keys=1
   Key=.py
   New Value=text/plain
   Value Name=Content Type
 end
 item: Edit Registry
-  Total Keys=1
   Key=Python.File
   New Value=Python File
 end
 item: Edit Registry
-  Total Keys=1
   Key=Python.File\shell\open\command
   New Value=%MAINDIR%\python.exe "%%1" %%*
 end
 item: Edit Registry
-  Total Keys=1
   Key=Python.File\DefaultIcon
   New Value=%MAINDIR%\Py.ico
 end
 item: Edit Registry
-  Total Keys=1
   Key=.pyw
   New Value=Python.NoConFile
 end
 item: Edit Registry
-  Total Keys=1
   Key=.pyw
   New Value=text/plain
   Value Name=Content Type
 end
 item: Edit Registry
-  Total Keys=1
   Key=Python.NoConFile
   New Value=Python File (no console)
 end
 item: Edit Registry
-  Total Keys=1
   Key=Python.NoConFile\shell\open\command
   New Value=%MAINDIR%\pythonw.exe "%%1" %%*
 end
 item: Edit Registry
-  Total Keys=1
   Key=Python.NoConFile\DefaultIcon
   New Value=%MAINDIR%\Py.ico
 end
 item: Edit Registry
-  Total Keys=1
   Key=.pyc
   New Value=Python.CompiledFile
 end
 item: Edit Registry
-  Total Keys=1
   Key=.pyo
   New Value=Python.CompiledFile
 end
 item: Edit Registry
-  Total Keys=1
   Key=Python.CompiledFile
   New Value=Compiled Python File
 end
 item: Edit Registry
-  Total Keys=1
   Key=Python.CompiledFile\shell\open\command
   New Value=%MAINDIR%\python.exe "%%1" %%*
 end
 item: Edit Registry
-  Total Keys=1
   Key=Python.CompiledFile\DefaultIcon
   New Value=%MAINDIR%\pyc.ico
 end
 item: Edit Registry
-  Total Keys=1
   Key=Software\Python\PythonCore\CurrentVersion
   Root=130
 end
 item: Edit Registry
-  Total Keys=1
   Key=Software\Python\PythonCore\%PY_VERSION%\InstallPath
   New Value=%MAINDIR%
   Root=2
 end
 item: Edit Registry
-  Total Keys=1
   Key=Software\Python\PythonCore\%PY_VERSION%\InstallPath\InstallGroup
   New Value=%GROUP%
   Root=2
 end
 item: Edit Registry
-  Total Keys=1
   Key=Software\Python\PythonCore\%PY_VERSION%\PythonPath
   New Value=%MAINDIR%\Lib\plat-win;%MAINDIR%\Lib;%MAINDIR%\DLLs;%MAINDIR%\Lib\lib-tk
   Root=2
 end
 item: Edit Registry
-  Total Keys=1
   Key=Software\Python\PythonCore\%PY_VERSION%\Dll
   New Value=%_SYSDEST_%\Python20.dll
   Root=2
 end
 item: Edit Registry
-  Total Keys=1
   Key=Software\Python\PythonCore\%PY_VERSION%\Modules
   Root=2
 end
 item: Edit Registry
-  Total Keys=1
   Key=Software\Microsoft\Windows\CurrentVersion\App Paths\Python.exe
   New Value=%MAINDIR%\Python.exe
   Root=2
@@ -1039,7 +1017,6 @@ item: If/While Statement
   Flags=00001010
 end
 item: Edit Registry
-  Total Keys=1
   Key=Software\Python\PythonCore\%PY_VERSION%\Help\Main Python Documentation
   New Value=%MAINDIR%\Doc\index.html
   Root=2
