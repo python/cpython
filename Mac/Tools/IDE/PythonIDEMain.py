@@ -463,7 +463,3 @@ class PythonIDE(Wapplication.Application):
 			except (ImportError, MacOS.Error), arg:
 				pass # W.Message("Cannot register Python Documentation: %s" % str(arg))
 		return has_help, has_doc
-	
-
-PythonIDE()
-

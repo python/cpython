@@ -48,4 +48,5 @@ def init():
 init()
 del init
 
-import PythonIDEMain
+import PythonIDEMain as _PythonIDEMain
+_PythonIDEMain.PythonIDE()
