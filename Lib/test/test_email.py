@@ -937,6 +937,9 @@ class TestMiscellaneous(unittest.TestCase):
                 toff = time.timezone
             self.assertEqual(offset, toff)
 
+    def test_parsedate(self):
+        self.assertEqual(Utils.parsedate(''), None)
+
 
 
 # Test the iterator/generators
