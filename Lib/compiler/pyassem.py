@@ -1,40 +1,127 @@
-"""Assembler for Python bytecode
+"""A flow graph representation for Python bytecode"""
 
-The new module is used to create the code object.  The following
-attribute definitions are included from the reference manual:
-
-co_name gives the function name
-co_argcount is the number of positional arguments (including
-    arguments with default values) 
-co_nlocals is the number of local variables used by the function
-    (including arguments)  
-co_varnames is a tuple containing the names of the local variables
-    (starting with the argument names) 
-co_code is a string representing the sequence of bytecode instructions 
-co_consts is a tuple containing the literals used by the bytecode
-co_names is a tuple containing the names used by the bytecode
-co_filename is the filename from which the code was compiled
-co_firstlineno is the first line number of the function
-co_lnotab is a string encoding the mapping from byte code offsets
-    to line numbers.  see LineAddrTable below.
-co_stacksize is the required stack size (including local variables)
-co_flags is an integer encoding a number of flags for the
-    interpreter.  There are four flags:
-    CO_OPTIMIZED -- uses load fast
-    CO_NEWLOCALS -- everything?
-    CO_VARARGS -- use *args
-    CO_VARKEYWORDS -- uses **args
-
-If a code object represents a function, the first item in co_consts is
-the documentation string of the function, or None if undefined.
-"""
-
-import sys
 import dis
 import new
 import string
+import types
 
-import misc
+from compiler import misc
+
+class FlowGraph:
+    def __init__(self):
+	self.current = self.entry = Block()
+	self.exit = Block("exit")
+	self.blocks = misc.Set()
+	self.blocks.add(self.entry)
+	self.blocks.add(self.exit)
+
+    def startBlock(self, block):
+	self.current = block
+
+    def nextBlock(self, block=None):
+	if block is None:
+	    block = self.newBlock()
+	# XXX think we need to specify when there is implicit transfer
+	# from one block to the next
+	#
+	# I think this strategy works: each block has a child
+	# designated as "next" which is returned as the last of the
+	# children.  because the nodes in a graph are emitted in
+	# reverse post order, the "next" block will always be emitted
+	# immediately after its parent.
+	# Worry: maintaining this invariant could be tricky
+	self.current.addNext(block)
+	self.startBlock(block)
+
+    def newBlock(self):
+	b = Block()
+	self.blocks.add(b)
+	return b
+
+    def startExitBlock(self):
+	self.startBlock(self.exit)
+
+    def emit(self, *inst):
+	# XXX should jump instructions implicitly call nextBlock?
+	if inst[0] == 'RETURN_VALUE':
+	    self.current.addOutEdge(self.exit)
+	self.current.emit(inst)
+
+    def getBlocks(self):
+	"""Return the blocks in reverse postorder
+
+	i.e. each node appears before all of its successors
+	"""
+	# XXX make sure every node that doesn't have an explicit next
+	# is set so that next points to exit
+	for b in self.blocks.elements():
+	    if b is self.exit:
+		continue
+	    if not b.next:
+		b.addNext(self.exit)
+	order = dfs_postorder(self.entry, {})
+	order.reverse()
+	# hack alert
+	if not self.exit in order:
+	    order.append(self.exit)
+	return order
+
+def dfs_postorder(b, seen):
+    """Depth-first search of tree rooted at b, return in postorder"""
+    order = []
+    seen[b] = b
+    for c in b.children():
+	if seen.has_key(c):
+	    continue
+	order = order + dfs_postorder(c, seen)
+    order.append(b)
+    return order
+
+class Block:
+    _count = 0
+
+    def __init__(self, label=''):
+	self.insts = []
+	self.inEdges = misc.Set()
+	self.outEdges = misc.Set()
+	self.label = label
+	self.bid = Block._count
+	self.next = []
+	Block._count = Block._count + 1
+
+    def __repr__(self):
+	if self.label:
+	    return "<block %s id=%d len=%d>" % (self.label, self.bid,
+						len(self.insts)) 
+	else:
+	    return "<block id=%d len=%d>" % (self.bid, len(self.insts))
+
+    def __str__(self):
+	insts = map(str, self.insts)
+	return "<block %s %d:\n%s>" % (self.label, self.bid,
+				       string.join(insts, '\n')) 
+
+    def emit(self, inst):
+	op = inst[0]
+	if op[:4] == 'JUMP':
+	    self.outEdges.add(inst[1])
+	self.insts.append(inst)
+
+    def getInstructions(self):
+	return self.insts
+
+    def addInEdge(self, block):
+	self.inEdges.add(block)
+
+    def addOutEdge(self, block):
+	self.outEdges.add(block)
+
+    def addNext(self, block):
+	self.next.append(block)
+	assert len(self.next) == 1, map(str, self.next)
+
+    def children(self):
+	return self.outEdges.elements() + self.next
 
 # flags for code objects
 CO_OPTIMIZED = 0x0001
@@ -42,224 +129,128 @@ CO_NEWLOCALS = 0x0002
 CO_VARARGS = 0x0004
 CO_VARKEYWORDS = 0x0008
 
-class TupleArg:
-    def __init__(self, count, names):
-        self.count = count
-        self.names = names
-    def __repr__(self):
-        return "TupleArg(%s, %s)" % (self.count, self.names)
-    def getName(self):
-        return ".nested%d" % self.count
+# the FlowGraph is transformed in place; it exists in one of these states
+RAW = "RAW"
+FLAT = "FLAT"
+CONV = "CONV"
+DONE = "DONE"
 
-class PyAssembler:
-    """Creates Python code objects
-    """
+class PyFlowGraph(FlowGraph):
+    super_init = FlowGraph.__init__
 
-    # XXX this class needs to major refactoring
-
-    def __init__(self, args=(), name='?', filename='<?>',
-                 docstring=None):
-        # XXX why is the default value for flags 3?
-        self.insts = []
-        # used by makeCodeObject
-        self._getArgCount(args)
-        self.code = ''
-        self.consts = [docstring]
-        self.filename = filename
-        self.flags = CO_NEWLOCALS
-        self.name = name
-        self.names = []
+    def __init__(self, name, filename, args=(), optimized=0):
+	self.super_init()
+	self.name = name
+	self.filename = filename
+	self.docstring = None
+	self.args = args # XXX
+	self.argcount = getArgCount(args)
+	if optimized:
+	    self.flags = CO_OPTIMIZED | CO_NEWLOCALS 
+	else:
+	    self.flags = 0
+	self.firstlineno = None
+	self.consts = []
+	self.names = []
         self.varnames = list(args) or []
         for i in range(len(self.varnames)):
             var = self.varnames[i]
             if isinstance(var, TupleArg):
                 self.varnames[i] = var.getName()
-        # lnotab support
-        self.firstlineno = 0
-        self.lastlineno = 0
-        self.last_addr = 0
-        self.lnotab = ''
+        self.stage = RAW
 
-    def _getArgCount(self, args):
-        self.argcount = len(args)
-        if args:
-            for arg in args:
-                if isinstance(arg, TupleArg):
-                    numNames = len(misc.flatten(arg.names))
-                    self.argcount = self.argcount - numNames 
+    def setDocstring(self, doc):
+        self.docstring = doc
+        self.consts.insert(0, doc)
 
-    def __repr__(self):
-        return "<bytecode: %d instrs>" % len(self.insts)
+    def setFlag(self, flag):
+	self.flags = self.flags | flag
+	if flag == CO_VARARGS:
+	    self.argcount = self.argcount - 1
 
-    def setFlags(self, val):
-        """XXX for module's function"""
-        self.flags = val
+    def getCode(self):
+	"""Get a Python code object"""
+	if self.stage == RAW:
+            self.flattenGraph()
+        if self.stage == FLAT:
+            self.convertArgs()
+        if self.stage == CONV:
+            self.makeByteCode()
+        if self.stage == DONE:
+            return self.newCodeObject()
+        raise RuntimeError, "inconsistent PyFlowGraph state"
 
-    def setOptimized(self):
-        self.flags = self.flags | CO_OPTIMIZED
-
-    def setVarArgs(self):
-        if not self.flags & CO_VARARGS:
-            self.flags = self.flags | CO_VARARGS
-            self.argcount = self.argcount - 1
-
-    def setKWArgs(self):
-        self.flags = self.flags | CO_VARKEYWORDS
-
-    def getCurInst(self):
-        return len(self.insts)
-
-    def getNextInst(self):
-        return len(self.insts) + 1
-
-    def dump(self, io=sys.stdout):
-        i = 0
-        for inst in self.insts:
-            if inst[0] == 'SET_LINENO':
-                io.write("\n")
-            io.write("    %3d " % i)
-            if len(inst) == 1:
-                io.write("%s\n" % inst)
-            else:
-                io.write("%-15.15s\t%s\n" % inst)
-            i = i + 1
-
-    def makeCodeObject(self):
-        """Make a Python code object
-
-        This creates a Python code object using the new module.  This
-        seems simpler than reverse-engineering the way marshal dumps
-        code objects into .pyc files.  One of the key difficulties is
-        figuring out how to layout references to code objects that
-        appear on the VM stack; e.g.
-          3 SET_LINENO          1
-          6 LOAD_CONST          0 (<code object fact at 8115878 [...]
-          9 MAKE_FUNCTION       0
-         12 STORE_NAME          0 (fact)
-        """
-        
-        self._findOffsets()
-        lnotab = LineAddrTable()
+    def dump(self, io=None):
+        if io:
+            save = sys.stdout
+            sys.stdout = io
+        pc = 0
         for t in self.insts:
             opname = t[0]
+            if opname == "SET_LINENO":
+                print
             if len(t) == 1:
-                lnotab.addCode(self.opnum[opname])
-            elif len(t) == 2:
-                if opname == 'SET_LINENO':
-		    oparg = t[1]
-                    lnotab.nextLine(oparg)
-		else:
-		    oparg = self._convertArg(opname, t[1])
-                try:
-                    hi, lo = divmod(oparg, 256)
-                except TypeError:
-                    raise TypeError, "untranslated arg: %s, %s" % (opname, oparg)
-                lnotab.addCode(self.opnum[opname], lo, hi)
-                
-        # why is a module a special case?
-        if self.flags == 0:
-            nlocals = 0
-        else:
-            nlocals = len(self.varnames)
-        # XXX danger! can't pass through here twice
-        if self.flags & CO_VARKEYWORDS:
-            self.argcount = self.argcount - 1
-        stacksize = findDepth(self.insts)
-        try:
-            co = new.code(self.argcount, nlocals, stacksize,
-                          self.flags, lnotab.getCode(), self._getConsts(),
-                          tuple(self.names), tuple(self.varnames),
-                          self.filename, self.name, self.firstlineno,
-                          lnotab.getTable())
-        except SystemError, err:
-            print err
-            print repr(self.argcount)
-            print repr(nlocals)
-            print repr(stacksize)
-            print repr(self.flags)
-            print repr(lnotab.getCode())
-            print repr(self._getConsts())
-            print repr(self.names)
-            print repr(self.varnames)
-            print repr(self.filename)
-            print repr(self.name)
-            print repr(self.firstlineno)
-            print repr(lnotab.getTable())
-            raise
-        return co
-
-    def _getConsts(self):
-        """Return a tuple for the const slot of a code object
-
-        Converts PythonVMCode objects to code objects
-        """
-        l = []
-        for elt in self.consts:
-            # XXX might be clearer to just as isinstance(CodeGen)
-            if hasattr(elt, 'asConst'):
-                l.append(elt.asConst())
+                print "\t", "%3d" % pc, opname
+                pc = pc + 1
             else:
-                l.append(elt)
-        return tuple(l)
+                print "\t", "%3d" % pc, opname, t[1]
+                pc = pc + 3
+        if io:
+            sys.stdout = save
 
-    def _findOffsets(self):
-        """Find offsets for use in resolving StackRefs"""
-        self.offsets = []
-        cur = 0
-        for t in self.insts:
-            self.offsets.append(cur)
-            l = len(t)
-            if l == 1:
-                cur = cur + 1
-            elif l == 2:
-                cur = cur + 3
-                arg = t[1]
-                # XXX this is a total hack: for a reference used
-                # multiple times, we create a list of offsets and
-                # expect that we when we pass through the code again
-                # to actually generate the offsets, we'll pass in the
-                # same order.
-                if isinstance(arg, StackRef):
-                    try:
-                        arg.__offset.append(cur)
-                    except AttributeError:
-                        arg.__offset = [cur]
+    def flattenGraph(self):
+	"""Arrange the blocks in order and resolve jumps"""
+	assert self.stage == RAW
+	self.insts = insts = []
+	pc = 0
+	begin = {}
+	end = {}
+	for b in self.getBlocks():
+	    begin[b] = pc
+	    for inst in b.getInstructions():
+		insts.append(inst)
+		if len(inst) == 1:
+		    pc = pc + 1
+		else:
+		    # arg takes 2 bytes
+		    pc = pc + 3
+	    end[b] = pc
+	pc = 0
+	for i in range(len(insts)):
+	    inst = insts[i]
+	    if len(inst) == 1:
+                pc = pc + 1
+            else:
+                pc = pc + 3
+	    opname = inst[0]
+	    if self.hasjrel.has_elt(opname):
+                oparg = inst[1]
+                offset = begin[oparg] - pc
+                insts[i] = opname, offset
+            elif self.hasjabs.has_elt(opname):
+                insts[i] = opname, begin[inst[1]]
+	self.stacksize = findDepth(self.insts)
+	self.stage = FLAT
 
-    def _convertArg(self, op, arg):
-        """Convert the string representation of an arg to a number
+    hasjrel = misc.Set()
+    for i in dis.hasjrel:
+        hasjrel.add(dis.opname[i])
+    hasjabs = misc.Set()
+    for i in dis.hasjabs:
+        hasjabs.add(dis.opname[i])
 
-        The specific handling depends on the opcode.
-
-        XXX This first implementation isn't going to be very
-        efficient. 
-        """
-        if op == 'SET_LINENO':
-            return arg
-        if op == 'LOAD_CONST':
-            return self._lookupName(arg, self.consts)
-        if op in self.localOps:
-            # make sure it's in self.names, but use the bytecode offset
-            self._lookupName(arg, self.names)
-            return self._lookupName(arg, self.varnames)
-        if op in self.globalOps:
-            return self._lookupName(arg, self.names)
-        if op in self.nameOps:
-            return self._lookupName(arg, self.names)
-        if op == 'COMPARE_OP':
-            return self.cmp_op.index(arg)
-        if self.hasjrel.has_elt(op):
-            offset = arg.__offset[0]
-            del arg.__offset[0]
-            return self.offsets[arg.resolve()] - offset
-        if self.hasjabs.has_elt(op):
-            return self.offsets[arg.resolve()]
-        return arg
-
-    nameOps = ('STORE_NAME', 'IMPORT_NAME', 'IMPORT_FROM',
-               'STORE_ATTR', 'LOAD_ATTR', 'LOAD_NAME', 'DELETE_NAME',
-               'DELETE_ATTR')
-    localOps = ('LOAD_FAST', 'STORE_FAST', 'DELETE_FAST')
-    globalOps = ('LOAD_GLOBAL', 'STORE_GLOBAL', 'DELETE_GLOBAL')
+    def convertArgs(self):
+        """Convert arguments from symbolic to concrete form"""
+        assert self.stage == FLAT
+        for i in range(len(self.insts)):
+            t = self.insts[i]
+            if len(t) == 2:
+                opname = t[0]
+                oparg = t[1]
+                conv = self._converters.get(opname, None)
+                if conv:
+                    self.insts[i] = opname, conv(self, oparg)
+        self.stage = CONV
 
     def _lookupName(self, name, list):
         """Return index of name in list, appending if necessary"""
@@ -276,32 +267,124 @@ class PyAssembler:
         list.append(name)
         return end
 
-    # Convert some stuff from the dis module for local use
-    
-    cmp_op = list(dis.cmp_op)
-    hasjrel = misc.Set()
-    for i in dis.hasjrel:
-        hasjrel.add(dis.opname[i])
-    hasjabs = misc.Set()
-    for i in dis.hasjabs:
-        hasjabs.add(dis.opname[i])
-    
+    _converters = {}
+    def _convert_LOAD_CONST(self, arg):
+        return self._lookupName(arg, self.consts)
+
+    def _convert_LOAD_FAST(self, arg):
+        self._lookupName(arg, self.names)
+        return self._lookupName(arg, self.varnames)
+    _convert_STORE_FAST = _convert_LOAD_FAST
+    _convert_DELETE_FAST = _convert_LOAD_FAST
+
+    def _convert_NAME(self, arg):
+        return self._lookupName(arg, self.names)
+    _convert_LOAD_NAME = _convert_NAME
+    _convert_STORE_NAME = _convert_NAME
+    _convert_DELETE_NAME = _convert_NAME
+    _convert_IMPORT_NAME = _convert_NAME
+    _convert_IMPORT_FROM = _convert_NAME
+    _convert_STORE_ATTR = _convert_NAME
+    _convert_LOAD_ATTR = _convert_NAME
+    _convert_DELETE_ATTR = _convert_NAME
+    _convert_LOAD_GLOBAL = _convert_NAME
+    _convert_STORE_GLOBAL = _convert_NAME
+    _convert_DELETE_GLOBAL = _convert_NAME
+
+    _cmp = list(dis.cmp_op)
+    def _convert_COMPARE_OP(self, arg):
+	return self._cmp.index(arg)
+
+    # similarly for other opcodes...
+
+    for name, obj in locals().items():
+        if name[:9] == "_convert_":
+            opname = name[9:]
+            _converters[opname] = obj            
+    del name, obj, opname
+
+    def makeByteCode(self):
+        assert self.stage == CONV
+        self.lnotab = lnotab = LineAddrTable()
+        for t in self.insts:
+            opname = t[0]
+            if len(t) == 1:
+                lnotab.addCode(self.opnum[opname])
+            else:
+                oparg = t[1]
+                if opname == "SET_LINENO":
+                    lnotab.nextLine(oparg)
+                    if self.firstlineno is None:
+                        self.firstlineno = oparg
+                hi, lo = twobyte(oparg)
+		try:
+		    lnotab.addCode(self.opnum[opname], lo, hi)
+		except ValueError:
+		    print opname, oparg
+		    print self.opnum[opname], lo, hi
+		    raise
+        self.stage = DONE
+
     opnum = {}
     for num in range(len(dis.opname)):
         opnum[dis.opname[num]] = num
+    del num
 
-    # this version of emit + arbitrary hooks might work, but it's damn
-    # messy.
+    def newCodeObject(self):
+        assert self.stage == DONE
+        if self.flags == 0:
+            nlocals = 0
+        else:
+            nlocals = len(self.varnames)
+        argcount = self.argcount
+        if self.flags & CO_VARKEYWORDS:
+            argcount = argcount - 1
+        return new.code(argcount, nlocals, self.stacksize, self.flags,
+                        self.lnotab.getCode(), self.getConsts(),
+                        tuple(self.names), tuple(self.varnames),
+                        self.filename, self.name, self.firstlineno,
+                        self.lnotab.getTable())
 
-    def emit(self, *args):
-        self._emitDispatch(args[0], args[1:])
-        self.insts.append(args)
+    def getConsts(self):
+        """Return a tuple for the const slot of the code object
 
-    def _emitDispatch(self, type, args):
-        for func in self._emit_hooks.get(type, []):
-            func(self, args)
+        Must convert references to code (MAKE_FUNCTION) to code
+        objects recursively.
+        """
+        l = []
+        for elt in self.consts:
+            if isinstance(elt, PyFlowGraph):
+                elt = elt.getCode()
+            l.append(elt)
+        return tuple(l)
+	    
+def isJump(opname):
+    if opname[:4] == 'JUMP':
+	return 1
 
-    _emit_hooks = {}
+class TupleArg:
+    """Helper for marking func defs with nested tuples in arglist"""
+    def __init__(self, count, names):
+        self.count = count
+        self.names = names
+    def __repr__(self):
+        return "TupleArg(%s, %s)" % (self.count, self.names)
+    def getName(self):
+        return ".nested%d" % self.count
+
+def getArgCount(args):
+    argcount = len(args)
+    if args:
+	for arg in args:
+	    if isinstance(arg, TupleArg):
+		numNames = len(misc.flatten(arg.names))
+		argcount = argcount - numNames
+    return argcount
+
+def twobyte(val):
+    """Convert an int argument into high and low bytes"""
+    assert type(val) == types.IntType
+    return divmod(val, 256)
 
 class LineAddrTable:
     """lnotab
@@ -361,34 +444,9 @@ class LineAddrTable:
     def getTable(self):
         return string.join(map(chr, self.lnotab), '')
     
-class StackRef:
-    """Manage stack locations for jumps, loops, etc."""
-    count = 0
-
-    def __init__(self, id=None, val=None):
-        if id is None:
-            id = StackRef.count
-            StackRef.count = StackRef.count + 1
-        self.id = id
-        self.val = val
-
-    def __repr__(self):
-        if self.val:
-            return "StackRef(val=%d)" % self.val
-        else:
-            return "StackRef(id=%d)" % self.id
-
-    def bind(self, inst):
-        self.val = inst
-
-    def resolve(self):
-        if self.val is None:
-            print "UNRESOLVE REF", self
-            return 0
-        return self.val
-
 class StackDepthTracker:
-    # XXX need to keep track of stack depth on jumps
+    # XXX 1. need to keep track of stack depth on jumps
+    # XXX 2. at least partly as a result, this code is broken
 
     def findDepth(self, insts):
         depth = 0
