@@ -36,7 +36,9 @@
 
 #include "PROTO.h"
 #include "object.h"
+#include "intobject.h"
 #include "stringobject.h"
+#include "tupleobject.h"
 #include "errors.h"
 
 /* Last exception stored by err_setval() */
