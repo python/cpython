@@ -76,8 +76,8 @@ typedef struct {
     void* mark[SRE_MARK_SIZE];
     /* dynamically allocated stuff */
     char* data_stack;
-    int data_stack_size;
-    int data_stack_base;
+    unsigned int data_stack_size;
+    unsigned int data_stack_base;
     /* current repeat context */
     SRE_REPEAT *repeat;
     /* hooks */
