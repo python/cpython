@@ -369,9 +369,6 @@ class FancyGetopt:
                 else:
                     lines.append ("  --%-*s  " % (max_opt, long))
 
-                for l in text[1:]:
-                    lines.append (big_indent + l)
-
             # Case 2: we have a short option, so we have to include it
             # just after the long option
             else:
@@ -381,6 +378,9 @@ class FancyGetopt:
                                   (max_opt, opt_names, text[0]))
                 else:
                     lines.append ("  --%-*s" % opt_names)
+
+            for l in text[1:]:
+                lines.append (big_indent + l)
 
         # for self.option_table
 
