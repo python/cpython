@@ -92,14 +92,23 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	OBJS=
 	LIBS=
 	RULES=
+	LOCALLIBS=
+	BASELIBS=
 	while read line
 	do
 		# Output DEFS in reverse order so first definition overrides
 		case $line in
 		*=*)	DEFS="$line$NL$DEFS"; continue;;
-		'<noobjects>')	noobjects=yes; continue;; 
+		'<noobjects>')
+			case $noobjects in
+			yes)	;;
+			*)	LOCALLIBS=$LIBS; LIBS=;;
+			esac
+			noobjects=yes;
+			continue;; 
 		esac
 		objs=
+		srcs=
 		cpps=
 		set $line
 		for arg
@@ -109,6 +118,9 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			-[A-Zl]*)	LIBS="$LIBS $arg";;
 			*.a)		LIBS="$LIBS $arg";;
 			*.o)		objs="$objs $arg";;
+			*.[cC])		srcs="$srcs $arg";;
+			*.cc)		srcs="$srcs $arg";;
+			*.c++)		srcs="$srcs $arg";;
 			*.*)		echo 1>&2 "bad word $arg in $line"
 					exit 1;;
 			[a-zA-Z_]*)	MODS="$MODS $arg";;
@@ -129,7 +141,30 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		  RULES="$RULES$obj: $src; \$(CC) \$(CFLAGS) $cpps -c $src$NL"
 		done
 		OBJS="$OBJS $objs"
+		for src in $srcs
+		do
+		  case $src in
+		  *.c)   obj=`basename $src .c`.o; cc='$(CC)';;
+		  *.cc)  obj=`basename $src .cc`.o; cc='$(CCC)';;
+		  *.c++) obj=`basename $src .c++`.o; cc='$(CCC)';;
+		  *.C)   obj=`basename $src .C`.o; cc='$(CCC)';;
+		  *)     continue;;
+		  esac
+		  case $src in
+		  glmodule.c) ;;
+		  *) src='$(srcdir)/'$src;;
+		  esac
+		  RULES="$RULES$obj: $src; $cc \$(CFLAGS) $cpps -c $src$NL"
+		done
 	done
+
+	case $noobjects in
+	yes)	BASELIBS=$LIBS;;
+	*)	LOCALLIBS=$LIBS;;
+	esac
+	LIBS='$(LOCALMODLIBS) $(BASEMODLIBS)'
+	DEFS="BASEMODLIBS=$BASELIBS$NL$DEFS"
+	DEFS="LOCALMODLIBS=$LOCALLIBS$NL$DEFS"
 
 	EXTDECLS=
 	INITBITS=
