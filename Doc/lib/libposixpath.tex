@@ -43,6 +43,15 @@ half of the pair returned by \code{split(\var{path})}.
 
 \begin{funcdesc}{exists}{path}
 Return \code{True} if \var{path} refers to an existing path.
+Returns \code{False} for broken symbolic links.
+\end{funcdesc}
+
+\begin{funcdesc}{lexists}{path}
+Return \code{True} if \var{path} refers to an existing path.
+Returns \code{True} for broken symbolic links.  
+Equivalent to \function{exists()} on platforms lacking
+\function{os.lstat()}.
+\versionadded{2.4}
 \end{funcdesc}
 
 \begin{funcdesc}{expanduser}{path}

@@ -249,7 +249,6 @@ def islink(path):
 
 
 # Does a path exist?
-# This is false for dangling symbolic links.
 
 def exists(path):
     """Test whether a path exists"""
@@ -258,6 +257,8 @@ def exists(path):
     except os.error:
         return False
     return True
+
+lexists = exists
 
 
 # Is a path a dos directory?

@@ -174,6 +174,17 @@ def exists(path):
     return True
 
 
+# Being true for dangling symbolic links is also useful.
+
+def lexists(path):
+    """Test whether a path exists.  Returns True for broken symbolic links"""
+    try:
+        st = os.lstat(path)
+    except os.error:
+        return False
+    return True
+
+
 # Is a path a directory?
 # This follows symbolic links, so both islink() and isdir() can be true
 # for the same path.
