@@ -204,16 +204,8 @@ installer (with Installer Vise Lite), and Jack worked from there.
 Thanks!
 -------
 
-Thanks go to the whole Python community with Guido in the lead, of
-course. Mac-specific thanks go to the pythonmac-sig, Just van Rossum,
-Corran Webster, Tony Ingraldi, Erik van Blokland, Bill Bedford, Chris
-Stern, Gordon Worley, Oliver Steele, M. Papillon, Steven Majewski, David
-Goodger, Chris Barker, Luc Lefebvre, Tattoo Mabonzo K., Russell Finn,
-Tom Bridgman, Russel Owen, Pascal Oberndoerfer, Dean Draayer,
-Alexandre Parenteau, Donovan Preston, Daniel Brotsky, Jason Harper,
-Nitin Ganatra, Jacob Kaplan-Moss, Michael J. Barber, Tom Loredo,
-Christopher Smith,
-and all the other people who provided feedback, code or both!
+As of Python 2.3 the MacPython thanks list has been merged into the
+general acknowledgements, see :Misc:ACKS.
 
 MacPython includes waste, a TextEdit replacement which is (c) 1998
 Marco Piovanelli.
