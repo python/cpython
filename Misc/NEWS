@@ -26,6 +26,8 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 - In Lib/locale.py, setlocale emulation, use != and not is not to compare
   strings
 
+- #409651 - in Lib/fnmatch.py, make \ in a character group work
+
 
 What's New in Python 2.0?
 =========================
