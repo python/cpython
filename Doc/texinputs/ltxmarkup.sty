@@ -1,0 +1,24 @@
+% Created by Fred L. Drake, Jr. <fdrake@acm.org>, as part of the
+% Python Documentation Project.
+%
+% Define some simple markup for the LaTeX command documentation:
+
+\ProvidesPackage{ltxmarkup}
+\RequirePackage{python}      % fulllineitems environment
+
+\newenvironment{envdesc}[2]{
+  \begin{fulllineitems}
+    \item[\code{\e begin\{{\bfseries #1}\}#2}]
+    %\item[\code{\e end\{{\bfseries #1}\}}]
+    \index{#1 environment@\idxcode{#1} environment}
+    \index{environments!#1@\idxcode{#1}}
+}{\end{fulllineitems}}
+
+\newenvironment{macrodesc}[2]{
+  \begin{fulllineitems}
+    \item[\code{\e\bfseries#1}#2]
+    \index{#1@\idxcode{\e #1}}
+}{\end{fulllineitems}}
+
+\newcommand{\env}[1]{\code{#1}}
+\newcommand{\macro}[1]{\code{\e#1}}
