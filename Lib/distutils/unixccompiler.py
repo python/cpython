@@ -53,6 +53,8 @@ class UnixCCompiler (CCompiler):
     # are specified via {add,set}_include_dirs(), and there's no way to
     # distinguish them.  This might be a bug.
 
+    compiler_type = 'unix'
+
     _obj_ext = '.o'
     _exe_ext = ''
     _shared_lib_ext = SO
@@ -89,7 +91,9 @@ class UnixCCompiler (CCompiler):
                  sources,
                  output_dir=None,
                  macros=None,
-                 includes=None):
+                 includes=None,
+                 extra_preargs=None,
+                 extra_postargs=None):
 
         if output_dir is None:
             output_dir = self.output_dir
@@ -130,6 +134,10 @@ class UnixCCompiler (CCompiler):
             cc_args = ['-c'] + pp_opts + \
                       self.ccflags + self.ccflags_shared + \
                       sources
+            if extra_preargs:
+                cc_args[:0] = extra_preargs
+            if extra_postargs:
+                cc_args.extend (extra_postargs)
             self.spawn ([self.cc] + cc_args)
         
 
@@ -164,7 +172,8 @@ class UnixCCompiler (CCompiler):
                          output_dir=None,
                          libraries=None,
                          library_dirs=None,
-                         build_info=None):
+                         extra_preargs=None,
+                         extra_postargs=None):
         # XXX should we sanity check the library name? (eg. no
         # slashes)
         self.link_shared_object (
@@ -173,7 +182,8 @@ class UnixCCompiler (CCompiler):
             output_dir,
             libraries,
             library_dirs,
-            build_info)
+            extra_preargs,
+            extra_postargs)
         
 
     def link_shared_object (self,
@@ -182,7 +192,8 @@ class UnixCCompiler (CCompiler):
                             output_dir=None,
                             libraries=None,
                             library_dirs=None,
-                            build_info=None):
+                            extra_preargs=None,
+                            extra_postargs=None):
 
         if output_dir is None:
             output_dir = self.output_dir
@@ -190,12 +201,10 @@ class UnixCCompiler (CCompiler):
             libraries = []
         if library_dirs is None:
             library_dirs = []
-        if build_info is None:
-            build_info = {}
         
-        lib_opts = gen_lib_options (self.libraries + libraries,
-                                    self.library_dirs + library_dirs,
-                                    "-l%s", "-L%s")
+        lib_opts = gen_lib_options (self.library_dirs + library_dirs,
+                                    self.libraries + libraries,
+                                    "-L%s", "-l%s")
         if output_dir is not None:
             output_filename = os.path.join (output_dir, output_filename)
 
@@ -215,7 +224,10 @@ class UnixCCompiler (CCompiler):
         if newer:
             ld_args = self.ldflags_shared + lib_opts + \
                       objects + ['-o', output_filename]
-
+            if extra_preargs:
+                ld_args[:0] = extra_preargs
+            if extra_postargs:
+                ld_args.extend (extra_postargs)
             self.spawn ([self.ld_shared] + ld_args)
         else:
             self.announce ("skipping %s (up-to-date)" % output_filename)
