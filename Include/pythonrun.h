@@ -79,35 +79,35 @@ DL_IMPORT(void) Py_Exit(int);
 DL_IMPORT(int) Py_FdIsInteractive(FILE *, char *);
 
 /* In getpath.c */
-DL_IMPORT(char *) Py_GetProgramFullPath(void);
-DL_IMPORT(char *) Py_GetPrefix(void);
-DL_IMPORT(char *) Py_GetExecPrefix(void);
-DL_IMPORT(char *) Py_GetPath(void);
+PyAPI_FUNC(char *) Py_GetProgramFullPath(void);
+PyAPI_FUNC(char *) Py_GetPrefix(void);
+PyAPI_FUNC(char *) Py_GetExecPrefix(void);
+PyAPI_FUNC(char *) Py_GetPath(void);
 
 /* In their own files */
-DL_IMPORT(const char *) Py_GetVersion(void);
-DL_IMPORT(const char *) Py_GetPlatform(void);
-DL_IMPORT(const char *) Py_GetCopyright(void);
-DL_IMPORT(const char *) Py_GetCompiler(void);
-DL_IMPORT(const char *) Py_GetBuildInfo(void);
+PyAPI_FUNC(const char *) Py_GetVersion(void);
+PyAPI_FUNC(const char *) Py_GetPlatform(void);
+PyAPI_FUNC(const char *) Py_GetCopyright(void);
+PyAPI_FUNC(const char *) Py_GetCompiler(void);
+PyAPI_FUNC(const char *) Py_GetBuildInfo(void);
 
 /* Internal -- various one-time initializations */
 DL_IMPORT(PyObject *) _PyBuiltin_Init(void);
 DL_IMPORT(PyObject *) _PySys_Init(void);
 DL_IMPORT(void) _PyImport_Init(void);
-DL_IMPORT(void) _PyExc_Init(void);
+PyAPI_FUNC(void) _PyExc_Init(void);
 
 /* Various internal finalizers */
-DL_IMPORT(void) _PyExc_Fini(void);
-DL_IMPORT(void) _PyImport_Fini(void);
-DL_IMPORT(void) PyMethod_Fini(void);
-DL_IMPORT(void) PyFrame_Fini(void);
-DL_IMPORT(void) PyCFunction_Fini(void);
-DL_IMPORT(void) PyTuple_Fini(void);
-DL_IMPORT(void) PyString_Fini(void);
-DL_IMPORT(void) PyInt_Fini(void);
-DL_IMPORT(void) PyFloat_Fini(void);
-DL_IMPORT(void) PyOS_FiniInterrupts(void);
+PyAPI_FUNC(void) _PyExc_Fini(void);
+PyAPI_FUNC(void) _PyImport_Fini(void);
+PyAPI_FUNC(void) PyMethod_Fini(void);
+PyAPI_FUNC(void) PyFrame_Fini(void);
+PyAPI_FUNC(void) PyCFunction_Fini(void);
+PyAPI_FUNC(void) PyTuple_Fini(void);
+PyAPI_FUNC(void) PyString_Fini(void);
+PyAPI_FUNC(void) PyInt_Fini(void);
+PyAPI_FUNC(void) PyFloat_Fini(void);
+PyAPI_FUNC(void) PyOS_FiniInterrupts(void);
 
 /* Stuff with no proper home (yet) */
 DL_IMPORT(char *) PyOS_Readline(char *);

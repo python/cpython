@@ -405,14 +405,14 @@ and both these use __declspec()
 #	if defined(HAVE_DECLSPEC_DLL)
 #		ifdef Py_BUILD_CORE
 #			define PyAPI_FUNC(RTYPE) __declspec(dllexport) RTYPE
-#			define PyAPI_DATA(RTYPE) __declspec(dllexport) RTYPE
+#			define PyAPI_DATA(RTYPE) extern __declspec(dllexport) RTYPE
 			/* module init functions inside the core need no external linkage */
 #			define PyMODINIT_FUNC void
 #		else /* Py_BUILD_CORE */
 			/* Building an extension module, or an embedded situation */
 			/* public Python functions and data are imported */
 #			define PyAPI_FUNC(RTYPE) __declspec(dllimport) RTYPE
-#			define PyAPI_DATA(RTYPE) __declspec(dllimport) RTYPE
+#			define PyAPI_DATA(RTYPE) extern __declspec(dllimport) RTYPE
 			/* module init functions outside the core must be exported */
 #			if defined(__cplusplus)
 #				define PyMODINIT_FUNC extern "C" __declspec(dllexport) void
@@ -428,7 +428,7 @@ and both these use __declspec()
 #	define PyAPI_FUNC(RTYPE) RTYPE
 #endif
 #ifndef PyAPI_DATA
-#	define PyAPI_DATA(RTYPE) RTYPE
+#	define PyAPI_DATA(RTYPE) extern RTYPE
 #endif
 #ifndef PyMODINIT_FUNC
 #	if defined(__cplusplus)
