@@ -19,7 +19,7 @@ class UserList:
 	def __setitem__(self, i, item): self.data[i] = item
 	def __delitem__(self, i): del self.data[i]
 	def __getslice__(self, i, j):
-		userlist = UserList()
+		userlist = self.__class__()
 		userlist.data[:] = self.data[i:j]
 		return userlist
 	def __setslice__(self, i, j, list):

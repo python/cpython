@@ -12,9 +12,11 @@ tricky uses of IOError may break, but the most common uses should work.
 
 Here is a rundown of the class hierarchy.  You can change this by editing this
 file, but it isn't recommended.  The class names described here are expected
-to be found by the bltinmodule.c file.
+to be found by the bltinmodule.c file.  If you add classes here, you must
+modify bltinmodule.c or the exceptions won't be available in the __builtin__
+module, nor will they be accessible from C.
 
-The classes with a `*' are new as of Python 1.5.  They are defined as tuples
+The classes with a `*' are new since Python 1.5.  They are defined as tuples
 containing the derived exceptions when string-based exceptions are used.  If
 you define your own class based exceptions, they should be derived from
 Exception.
@@ -33,6 +35,9 @@ Exception(*)
       |
       +-- EOFError
       +-- RuntimeError
+      |    |
+      |    +-- NotImplementedError(*)
+      |
       +-- NameError
       +-- AttributeError
       +-- SyntaxError
@@ -128,6 +133,9 @@ class OSError(EnvironmentError):
     pass
 
 class RuntimeError(StandardError):
+    pass
+
+class NotImplementedError(RuntimeError):
     pass
 
 class SystemError(StandardError):

@@ -64,7 +64,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_error(403, "Directory listing not supported")
             return None
         try:
-            f = open(path)
+            f = open(path, 'rb')
         except IOError:
             self.send_error(404, "File not found")
             return None
@@ -148,7 +148,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 
 def test(HandlerClass = SimpleHTTPRequestHandler,
-         ServerClass = SocketServer.TCPServer):
+         ServerClass = BaseHTTPServer.HTTPServer):
     BaseHTTPServer.test(HandlerClass, ServerClass)
 
 

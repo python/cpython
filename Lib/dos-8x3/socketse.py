@@ -273,18 +273,6 @@ class UDPServer(TCPServer):
         pass
 
 
-if hasattr(socket, 'AF_UNIX'):
-
-    class UnixStreamServer(TCPServer):
-
-        address_family = socket.AF_UNIX
-
-
-    class UnixDatagramServer(UDPServer):
-
-        address_family = socket.AF_UNIX
-
-
 class ForkingMixIn:
 
     """Mix-in class to handle each request in a new process."""
@@ -339,6 +327,17 @@ class ForkingTCPServer(ForkingMixIn, TCPServer): pass
 class ThreadingUDPServer(ThreadingMixIn, UDPServer): pass
 class ThreadingTCPServer(ThreadingMixIn, TCPServer): pass
 
+if hasattr(socket, 'AF_UNIX'):
+
+    class UnixStreamServer(TCPServer):
+        address_family = socket.AF_UNIX
+
+    class UnixDatagramServer(UDPServer):
+        address_family = socket.AF_UNIX
+
+    class ThreadingUnixStreamServer(ThreadingMixIn, UnixStreamServer): pass
+
+    class ThreadingUnixDatagramServer(ThreadingMixIn, UnixDatagramServer): pass
 
 class BaseRequestHandler:
 
@@ -351,7 +350,7 @@ class BaseRequestHandler:
     defines a handle() method.
 
     The handle() method can find the request as self.request, the
-    client address as self.client_request, and the server (in case it
+    client address as self.client_address, and the server (in case it
     needs access to per-server information) as self.server.  Since a
     separate instance is created for each request, the handle() method
     can define arbitrary other instance variariables.
