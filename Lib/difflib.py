@@ -705,7 +705,7 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
             result.append((s.ratio(), x))
 
     # Move the best scorers to head of list
-    result = heapq.nlargest(result, n)
+    result = heapq.nlargest(n, result)
     # Strip scores for the best n matches
     return [x for score, x in result]
 
