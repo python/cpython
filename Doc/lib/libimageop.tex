@@ -86,3 +86,15 @@ Convert a 4-bit greyscale image to an 8-bit greyscale image.
 \begin{funcdesc}{grey22grey}{image, width, height}
 Convert a 2-bit greyscale image to an 8-bit greyscale image.
 \end{funcdesc}
+
+\begin{datadesc}{backward_compatible}
+If set to 0, the functions in this module use a non-backward
+compatible way of representing multi-byte pixels on little-endian
+systems.  The SGI for which this module was originally written is a
+big-endian system, so setting this variable will have no effect.
+However, the code wasn't originally intended to run on anything else,
+so it made assumptions about byte order which are not universal.
+Setting this variable to 0 will cause the byte order to be reversed on
+little-endian systems, so that it then is the same as on big-endian
+systems.
+\end{datadesc}

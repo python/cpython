@@ -24,7 +24,54 @@ typedef unsigned long Py_UInt32;
 #define LONGP(cp, xmax, x, y) ((Py_Int32 *)(cp+4*(y*xmax+x)))
 
 static PyObject *ImageopError;
- 
+static PyObject *ImageopDict;
+
+/* If this function returns true (the default if anything goes wrong), we're
+   behaving in a backward-compatible way with respect to how multi-byte pixels
+   are stored in the strings.  The code in this module was originally written
+   for an SGI which is a big-endian system, and so the old code assumed that
+   4-byte integers hold the R, G, and B values in a particular order.
+   However, on little-endian systems the order is reversed, and so not
+   actually compatible with what gl.lrectwrite and imgfile expect.
+   (gl.lrectwrite and imgfile are also SGI-specific, however, it is
+   conceivable that the data handled here comes from or goes to an SGI or that
+   it is otherwise used in the expectation that the byte order in the strings
+   is as specified.)
+
+   The function returns the value of the module variable
+   "backward_compatible", or 1 if the variable does not exist or is not an
+   int.
+ */
+
+static int
+imageop_backward_compatible(void)
+{
+	static PyObject *bcos;
+	PyObject *bco;
+	long rc;
+
+	if (ImageopDict == NULL) /* "cannot happen" */
+		return 1;
+	if (bcos == NULL) {
+		/* cache string object for future use */
+		bcos = PyString_FromString("backward_compatible");
+		if (bcos == NULL)
+			return 1;
+	}
+	bco = PyDict_GetItem(ImageopDict, bcos);
+	if (bco == NULL)
+		return 1;
+	if (!PyInt_Check(bco))
+		return 1;
+	rc = PyInt_AsLong(bco);
+	if (PyErr_Occurred()) {
+		/* not an integer, or too large, or something */
+		PyErr_Clear();
+		rc = 1;
+	}
+	return rc != 0;		/* convert to values 0, 1 */
+}
+
 static PyObject *
 imageop_crop(PyObject *self, PyObject *args)
 {
@@ -497,11 +544,11 @@ static PyObject *
 imageop_rgb2rgb8(PyObject *self, PyObject *args)
 {
 	int x, y, len, nlen;
-	Py_UInt32 *cp;
+	unsigned char *cp;
 	unsigned char *ncp;
 	PyObject *rv;
 	int i, r, g, b;
-	Py_UInt32 value, nvalue;
+	int backward_compatible = imageop_backward_compatible();
     
 	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
@@ -519,18 +566,19 @@ imageop_rgb2rgb8(PyObject *self, PyObject *args)
 
 	for ( i=0; i < nlen; i++ ) {
 		/* Bits in source: aaaaaaaa BBbbbbbb GGGggggg RRRrrrrr */
-		value = *cp++;
-#if 0
-		r = (value >>  5) & 7;
-		g = (value >> 13) & 7;
-		b = (value >> 22) & 3;
-#else
-		r = (int) ((value & 0xff) / 255. * 7. + .5);
-		g = (int) (((value >> 8) & 0xff) / 255. * 7. + .5);
-		b = (int) (((value >> 16) & 0xff) / 255. * 3. + .5);
-#endif
-		nvalue = (r<<5) | (b<<3) | g;
-		*ncp++ = (unsigned char)nvalue;
+		if (backward_compatible) {
+			Py_UInt32 value = * (Py_UInt32 *) cp;
+			cp += 4;
+			r = (int) ((value & 0xff) / 255. * 7. + .5);
+			g = (int) (((value >> 8) & 0xff) / 255. * 7. + .5);
+			b = (int) (((value >> 16) & 0xff) / 255. * 3. + .5);
+		} else {
+			cp++;		/* skip alpha channel */
+			b = (int) (*cp++ / 255. * 3. + .5);
+			g = (int) (*cp++ / 255. * 7. + .5);
+			r = (int) (*cp++ / 255. * 7. + .5);
+		}
+		*ncp++ = (unsigned char)((r<<5) | (b<<3) | g);
 	}
 	return rv;
 }
@@ -540,10 +588,11 @@ imageop_rgb82rgb(PyObject *self, PyObject *args)
 {
 	int x, y, len, nlen;
 	unsigned char *cp;
-	Py_UInt32 *ncp;
+	unsigned char *ncp;
 	PyObject *rv;
 	int i, r, g, b;
-	Py_UInt32 value, nvalue;
+	unsigned char value;
+	int backward_compatible = imageop_backward_compatible();
     
 	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
@@ -557,7 +606,7 @@ imageop_rgb82rgb(PyObject *self, PyObject *args)
 	rv = PyString_FromStringAndSize(NULL, nlen*4);
 	if ( rv == 0 )
 		return 0;
-	ncp = (Py_UInt32 *)PyString_AsString(rv);
+	ncp = (unsigned char *)PyString_AsString(rv);
 
 	for ( i=0; i < nlen; i++ ) {
 		/* Bits in source: RRRBBGGG
@@ -570,8 +619,16 @@ imageop_rgb82rgb(PyObject *self, PyObject *args)
 		r = (r<<5) | (r<<3) | (r>>1);
 		g = (g<<5) | (g<<3) | (g>>1);
 		b = (b<<6) | (b<<4) | (b<<2) | b;
-		nvalue = r | (g<<8) | (b<<16);
-		*ncp++ = nvalue;
+		if (backward_compatible) {
+			Py_UInt32 nvalue = r | (g<<8) | (b<<16);
+			* (Py_UInt32 *) ncp = nvalue;
+			ncp += 4;
+		} else {
+			*ncp++ = 0;
+			*ncp++ = b;
+			*ncp++ = g;
+			*ncp++ = r;
+		}
 	}
 	return rv;
 }
@@ -580,11 +637,12 @@ static PyObject *
 imageop_rgb2grey(PyObject *self, PyObject *args)
 {
 	int x, y, len, nlen;
-	Py_UInt32 *cp;
+	unsigned char *cp;
 	unsigned char *ncp;
 	PyObject *rv;
 	int i, r, g, b;
-	Py_UInt32 value, nvalue;
+	int nvalue;
+	int backward_compatible = imageop_backward_compatible();
     
 	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
@@ -601,10 +659,18 @@ imageop_rgb2grey(PyObject *self, PyObject *args)
 	ncp = (unsigned char *)PyString_AsString(rv);
 
 	for ( i=0; i < nlen; i++ ) {
-		value = *cp++;
-		r = (value      ) & 0xff;
-		g = (value >>  8) & 0xff;
-		b = (value >> 16) & 0xff;
+		if (backward_compatible) {
+			Py_UInt32 value = * (Py_UInt32 *) cp;
+			cp += 4;
+			r = (int) ((value & 0xff) / 255. * 7. + .5);
+			g = (int) (((value >> 8) & 0xff) / 255. * 7. + .5);
+			b = (int) (((value >> 16) & 0xff) / 255. * 3. + .5);
+		} else {
+			cp++;		/* skip alpha channel */
+			b = *cp++;
+			g = *cp++;
+			r = *cp++;
+		}
 		nvalue = (int)(0.30*r + 0.59*g + 0.11*b);
 		if ( nvalue > 255 ) nvalue = 255;
 		*ncp++ = (unsigned char)nvalue;
@@ -617,10 +683,11 @@ imageop_grey2rgb(PyObject *self, PyObject *args)
 {
 	int x, y, len, nlen;
 	unsigned char *cp;
-	Py_UInt32 *ncp;
+	unsigned char *ncp;
 	PyObject *rv;
 	int i;
-	Py_UInt32 value;
+	unsigned char value;
+	int backward_compatible = imageop_backward_compatible();
     
 	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
@@ -634,11 +701,19 @@ imageop_grey2rgb(PyObject *self, PyObject *args)
 	rv = PyString_FromStringAndSize(NULL, nlen*4);
 	if ( rv == 0 )
 		return 0;
-	ncp = (Py_UInt32 *)PyString_AsString(rv);
+	ncp = (unsigned char *)PyString_AsString(rv);
 
 	for ( i=0; i < nlen; i++ ) {
 		value = *cp++;
-		*ncp++ = value | (value << 8 ) | (value << 16);
+		if (backward_compatible) {
+			* (Py_UInt32 *) ncp = (Py_UInt32) value | ((Py_UInt32) value << 8 ) | ((Py_UInt32) value << 16);
+			ncp += 4;
+		} else {
+			*ncp++ = 0;
+			*ncp++ = value;
+			*ncp++ = value;
+			*ncp++ = value;
+		}
 	}
 	return rv;
 }
@@ -699,10 +774,10 @@ static PyMethodDef imageop_methods[] = {
 PyMODINIT_FUNC
 initimageop(void)
 {
-	PyObject *m, *d;
+	PyObject *m;
 	m = Py_InitModule("imageop", imageop_methods);
-	d = PyModule_GetDict(m);
+	ImageopDict = PyModule_GetDict(m);
 	ImageopError = PyErr_NewException("imageop.error", NULL, NULL);
 	if (ImageopError != NULL)
-		PyDict_SetItemString(d, "error", ImageopError);
+		PyDict_SetItemString(ImageopDict, "error", ImageopError);
 }
