@@ -421,6 +421,59 @@ int_or(v, w)
 	return newintobject(a | b);
 }
 
+static object *
+int_int(v)
+	object *v;
+{
+	INCREF(v);
+	return v;
+}
+
+static object *
+int_long(v)
+	object *v;
+{
+	long x = getintvalue(v);
+	return newlongobject(x);
+}
+
+static object *
+int_float(v)
+	object *v;
+{
+	long x = getintvalue(v);
+	return newfloatobject((double)x);
+}
+
+static object *
+int_oct(v)
+	object *v;
+{
+	char buf[20];
+	long x = getintvalue(v);
+	if (x == 0)
+		strcpy(buf, "0");
+	else if (x > 0)
+		sprintf(buf, "0%lo", x);
+	else
+		sprintf(buf, "-0%lo", -x);
+	return newstringobject(buf);
+}
+
+static object *
+int_hex(v)
+	object *v;
+{
+	char buf[20];
+	long x = getintvalue(v);
+	if (x >= 0)
+		sprintf(buf, "0x%lx", x);
+	else
+		sprintf(buf, "-0x%lx", -x);
+	return newstringobject(buf);
+}
+
+
 static number_methods int_as_number = {
 	int_add,	/*nb_add*/
 	int_sub,	/*nb_subtract*/
@@ -439,6 +492,12 @@ static number_methods int_as_number = {
 	int_and,	/*nb_and*/
 	int_xor,	/*nb_xor*/
 	int_or,		/*nb_or*/
+	0,		/*nb_coerce*/
+	int_int,	/*nb_int*/
+	int_long,	/*nb_long*/
+	int_float,	/*nb_float*/
+	int_oct,	/*nb_oct*/
+	int_hex,	/*nb_hex*/
 };
 
 typeobject Inttype = {

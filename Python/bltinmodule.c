@@ -253,25 +253,15 @@ builtin_float(self, v)
 	object *self;
 	object *v;
 {
-	if (v == NULL) {
-		/* */
+	number_methods *nb;
+	
+	if (v == NULL || (nb = v->ob_type->tp_as_number) == NULL ||
+	    nb->nb_float == NULL) {
+		err_setstr(TypeError,
+			   "float() argument can't be converted to float");
+		return NULL;
 	}
-	else if (is_intobject(v)) {
-		long x = getintvalue(v);
-		return newfloatobject((double)x);
-	}
-	else if (is_longobject(v)) {
-		return newfloatobject(dgetlongvalue(v));
-	}
-	else if (is_floatobject(v)) {
-		INCREF(v);
-		return v;
-	}
-	else if (is_instanceobject(v)) {
-		return instance_convert(v, "__float__");
-	}
-	err_setstr(TypeError, "float() argument must be int, long or float");
-	return NULL;
+	return (*nb->nb_float)(v);
 }
 
 static object *
@@ -307,22 +297,15 @@ builtin_hex(self, v)
 	object *self;
 	object *v;
 {
-	if (v != NULL) {
-		if (is_intobject(v)) {
-			char buf[20];
-			long x = getintvalue(v);
-			if (x >= 0)
-				sprintf(buf, "0x%lx", x);
-			else
-				sprintf(buf, "-0x%lx", -x);
-			return newstringobject(buf);
-		}
-		if (is_longobject(v)) {
-			return long_format(v, 16);
-		}
+	number_methods *nb;
+	
+	if (v == NULL || (nb = v->ob_type->tp_as_number) == NULL ||
+	    nb->nb_hex == NULL) {
+		err_setstr(TypeError,
+			   "hex() argument can't be converted to hex");
+		return NULL;
 	}
-	err_setstr(TypeError, "hex() requires int/long argument");
-	return NULL;
+	return (*nb->nb_hex)(v);
 }
 
 static object *
@@ -354,30 +337,15 @@ builtin_int(self, v)
 	object *self;
 	object *v;
 {
-	if (v == NULL) {
-		/* */
+	number_methods *nb;
+	
+	if (v == NULL || (nb = v->ob_type->tp_as_number) == NULL ||
+	    nb->nb_int == NULL) {
+		err_setstr(TypeError,
+			   "int() argument can't be converted to int");
+		return NULL;
 	}
-	else if (is_intobject(v)) {
-		INCREF(v);
-		return v;
-	}
-	else if (is_longobject(v)) {
-		long x;
-		x = getlongvalue(v);
-		if (err_occurred())
-			return NULL;
-		return newintobject(x);
-	}
-	else if (is_floatobject(v)) {
-		double x = getfloatvalue(v);
-		/* XXX should check for overflow */
-		return newintobject((long)x);
-	}
-	else if (is_instanceobject(v)) {
-		return instance_convert(v, "__int__");
-	}
-	err_setstr(TypeError, "int() argument must be int, long or float");
-	return NULL;
+	return (*nb->nb_int)(v);
 }
 
 static object *
@@ -413,25 +381,15 @@ builtin_long(self, v)
 	object *self;
 	object *v;
 {
-	if (v == NULL) {
-		/* */
+	number_methods *nb;
+	
+	if (v == NULL || (nb = v->ob_type->tp_as_number) == NULL ||
+	    nb->nb_long == NULL) {
+		err_setstr(TypeError,
+			   "long() argument can't be converted to long");
+		return NULL;
 	}
-	else if (is_intobject(v)) {
-		return newlongobject(getintvalue(v));
-	}
-	else if (is_longobject(v)) {
-		INCREF(v);
-		return v;
-	}
-	else if (is_floatobject(v)) {
-		double x = getfloatvalue(v);
-		return dnewlongobject(x);
-	}
-	else if (is_instanceobject(v)) {
-		return instance_convert(v, "__long__");
-	}
-	err_setstr(TypeError, "long() argument must be int, long or float");
-	return NULL;
+	return (*nb->nb_long)(v);
 }
 
 static object *
@@ -491,24 +449,15 @@ builtin_oct(self, v)
 	object *self;
 	object *v;
 {
-	if (v != NULL) {
-		if (is_intobject(v)) {
-			char buf[20];
-			long x = getintvalue(v);
-			if (x == 0)
-				strcpy(buf, "0");
-			else if (x > 0)
-				sprintf(buf, "0%lo", x);
-			else
-				sprintf(buf, "-0%lo", -x);
-			return newstringobject(buf);
-		}
-		if (is_longobject(v)) {
-			return long_format(v, 8);
-		}
+	number_methods *nb;
+	
+	if (v == NULL || (nb = v->ob_type->tp_as_number) == NULL ||
+	    nb->nb_oct == NULL) {
+		err_setstr(TypeError,
+			   "oct() argument can't be converted to oct");
+		return NULL;
 	}
-	err_setstr(TypeError, "oct() requires int/long argument");
-	return NULL;
+	return (*nb->nb_oct)(v);
 }
 
 static object *

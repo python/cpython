@@ -714,6 +714,12 @@ instance_coerce(pv, pw)
 	return 0;
 }
 
+UNARY(instance_int, "__int__")
+UNARY(instance_long, "__long__")
+UNARY(instance_float, "__float__")
+UNARY(instance_oct, "__oct__")
+UNARY(instance_hex, "__hex__")
+
 static number_methods instance_as_number = {
 	instance_add,		/*nb_add*/
 	instance_sub,		/*nb_subtract*/
@@ -733,6 +739,11 @@ static number_methods instance_as_number = {
 	instance_xor,		/*nb_xor*/
 	instance_or,		/*nb_or*/
 	instance_coerce,	/*nb_coerce*/
+	instance_int,		/*nb_int*/
+	instance_long,		/*nb_long*/
+	instance_float,		/*nb_float*/
+	instance_oct,		/*nb_oct*/
+	instance_hex,		/*nb_hex*/
 };
 
 typeobject Instancetype = {
