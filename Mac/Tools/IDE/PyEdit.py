@@ -110,14 +110,9 @@ class Editor(W.Window):
 		self._buf = ""  # for write method
 		self.debugging = 0
 		self.profiling = 0
-		if self.settings.has_key("run_as_main"):
-			self.run_as_main = self.settings["run_as_main"]
-		else:
-			self.run_as_main = 0
-		if self.settings.has_key("run_with_interpreter"):
-			self.run_with_interpreter = self.settings["run_with_interpreter"]
-		else:
-			self.run_with_interpreter = 0
+		self.run_as_main = self.settings.get("run_as_main", 0)
+		self.run_with_interpreter = self.settings.get("run_with_interpreter", 0)
+		self.run_with_cl_interpreter = self.settings.get("run_with_cl_interpreter", 0)
 		self._threadstate = (0, 0)
 		self._thread = None
 	
@@ -161,6 +156,7 @@ class Editor(W.Window):
 		self.settings["tabsize"] = self.editgroup.editor.gettabsettings()
 		self.settings["run_as_main"] = self.run_as_main
 		self.settings["run_with_interpreter"] = self.run_with_interpreter
+		self.settings["run_with_cl_interpreter"] = self.run_with_cl_interpreter
 	
 	def get(self):
 		return self.editgroup.editor.get()
@@ -230,8 +226,9 @@ class Editor(W.Window):
 				("Save options\xc9", self.domenu_options),
 				'-',
 				('\0' + chr(self.run_as_main) + 'Run as __main__', self.domenu_toggle_run_as_main), 
-				#('\0' + chr(self.run_with_interpreter) + 'Run with Interpreter', self.domenu_toggle_run_with_interpreter), 
-				#'-',
+				#('\0' + chr(self.run_with_interpreter) + 'Run with Interpreter', self.domenu_dtoggle_run_with_interpreter), 
+				('\0' + chr(self.run_with_cl_interpreter) + 'Run with commandline Python', self.domenu_toggle_run_with_cl_interpreter), 
+				'-',
 				('Modularize', self.domenu_modularize),
 				('Browse namespace\xc9', self.domenu_browsenamespace), 
 				'-']
@@ -250,11 +247,19 @@ class Editor(W.Window):
 	def domenu_toggle_run_as_main(self):
 		self.run_as_main = not self.run_as_main
 		self.run_with_interpreter = 0
+		self.run_with_cl_interpreter = 0
 		self.editgroup.editor.selectionchanged()
 	
-	def domenu_toggle_run_with_interpreter(self):
+	def XXdomenu_toggle_run_with_interpreter(self):
 		self.run_with_interpreter = not self.run_with_interpreter
 		self.run_as_main = 0
+		self.run_with_cl_interpreter = 0
+		self.editgroup.editor.selectionchanged()
+	
+	def domenu_toggle_run_with_cl_interpreter(self):
+		self.run_with_cl_interpreter = not self.run_with_cl_interpreter
+		self.run_as_main = 0
+		self.run_with_interpreter = 0
 		self.editgroup.editor.selectionchanged()
 	
 	def showbreakpoints(self, onoff):
@@ -514,6 +519,26 @@ class Editor(W.Window):
 			if not self.path:
 				raise W.AlertError, "Can't run unsaved file"
 			self._run_with_interpreter()
+		elif self.run_with_cl_interpreter:
+			# Until universal newline support
+			if self._eoln != '\n':
+				import EasyDialogs
+				ok = EasyDialogs.AskYesNoCancel('Warning: "%s" does not have Unix line-endings'
+					% self.title, 1, yes='OK', no='')
+				if not ok:
+					return
+			if self.editgroup.editor.changed:
+				import EasyDialogs
+				import Qd; Qd.InitCursor()
+				save = EasyDialogs.AskYesNoCancel('Save "%s" before running?' % self.title, 1)
+				if save > 0:
+					if self.domenu_save():
+						return
+				elif save < 0:
+					return
+			if not self.path:
+				raise W.AlertError, "Can't run unsaved file"
+			self._run_with_cl_interpreter()
 		else:
 			pytext = self.editgroup.editor.get()
 			globals, file, modname = self.getenvironment()
@@ -525,6 +550,23 @@ class Editor(W.Window):
 			raise W.AlertError, "Can't find interpreter"
 		import findertools
 		XXX
+
+	def _run_with_cl_interpreter(self):
+		import Terminal
+		interp_path = os.path.join(sys.exec_prefix, "bin", "python")
+		file_path = self.path
+		if not os.path.exists(interp_path):
+			# This "can happen" if we are running IDE under MacPython. Try
+			# the standard location.
+			interp_path = "/Library/Frameworks/Python.framework/Versions/2.3/bin/python"
+			try:
+				fsr = macfs.FSRef(interp_path)
+			except macfs.Error:
+				raise W.AlertError, "Can't find command-line Python"
+			file_path = macfs.FSRef(macfs.FSSpec(self.path)).as_pathname()
+		cmd = '"%s" "%s" ; exit' % (interp_path, file_path)
+		t = Terminal.Terminal()
+		t.do_script(with_command=cmd)
 	
 	def runselection(self):
 		if self._threadstate == (0, 0):
@@ -537,7 +579,7 @@ class Editor(W.Window):
 			self.setthreadstate((1, 1))
 	
 	def _runselection(self):
-		if self.run_with_interpreter:
+		if self.run_with_interpreter or self.run_with_cl_interpreter:
 			raise W.AlertError, "Can't run selection with Interpreter"
 		globals, file, modname = self.getenvironment()
 		locals = globals
