@@ -5,6 +5,8 @@ import os
 import rfc822
 import tempfile
 
+__all__ = ["Message","choose_boundary","encode","decode","copyliteral",
+           "copybinary"]
 
 class Message(rfc822.Message):
     """A derived class of rfc822.Message that knows about MIME headers and

@@ -29,6 +29,8 @@ QUOTE = '> '            # string replies are quoted with
 
 import re, string
 
+__all__ = ["mimify","unmimify","mime_encode_header","mime_decode_header"]
+
 qp = re.compile('^content-transfer-encoding:\\s*quoted-printable', re.I)
 base64_re = re.compile('^content-transfer-encoding:\\s*base64', re.I)
 mp = re.compile('^content-type:.*multipart/.*boundary="?([^;"\n]*)', re.I|re.S)

@@ -27,6 +27,8 @@ import string
 import posixpath
 import urllib
 
+__all__ = ["guess_type","guess_extension","read_mime_types","init"]
+
 knownfiles = [
     "/usr/local/etc/httpd/conf/mime.types",
     "/usr/local/lib/netscape/mime.types",
