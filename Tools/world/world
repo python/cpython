@@ -133,7 +133,7 @@ while ($addr = shift @ARGV) {
 
     if ($nameorg{$_}) {
 	# its one of the `special' USA organizational domains
-	print "$addr is a USA $nameorg{$_} organization\n";
+	print "$addr is from a USA $nameorg{$_} organization\n";
     }
     elsif ($country{$_}) {
 	# its a country code
