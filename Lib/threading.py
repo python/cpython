@@ -52,6 +52,18 @@ else:
         def _note(self, *args):
             pass
 
+# Support for profile and trace hooks
+
+_profile_hook = None
+_trace_hook = None
+
+def setprofile(func):
+    global _profile_hook
+    _profile_hook = func
+    
+def settrace(func):
+    global _trace_hook
+    _trace_hook = func
 
 # Synchronization classes
 
@@ -408,6 +420,14 @@ class Thread(_Verbose):
             _active_limbo_lock.release()
             if __debug__:
                 self._note("%s.__bootstrap(): thread started", self)
+
+            if _trace_hook:
+                self._note("%s.__bootstrap(): registering trace hook", self)
+                _sys.settrace(_trace_hook)
+            if _profile_hook:
+                self._note("%s.__bootstrap(): registering profile hook", self)
+                _sys.setprofile(_profile_hook)
+                
             try:
                 self.run()
             except SystemExit:

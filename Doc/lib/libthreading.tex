@@ -90,6 +90,20 @@ subclassed in a limited fashion.
 A thread that executes a function after a specified interval has passed.
 \end{classdesc*}
 
+\begin{funcdesc}{settrace}{func}
+Set a trace function \index{trace function} for all threads started
+from the \module{threading} module.  The \var{func} will be passed to 
+\cfuntion{sys.settrace} for each thread, before its \method{run}
+method is called.
+\end{funcdesc}
+
+\begin{funcdesc}{setprofile}{func}
+Set a profile function \index{profile function} for all threads started
+from the \module{threading} module.  The \var{func} will be passed to 
+\cfuntion{sys.setprofile} for each thread, before its \method{run}
+method is called.
+\end{funcdesc}
+
 Detailed interfaces for the objects are documented below.  
 
 The design of this module is loosely based on Java's threading model.
