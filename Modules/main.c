@@ -4,7 +4,7 @@
 #include "osdefs.h"
 #include "compile.h" /* For CO_FUTURE_DIVISION */
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) || defined(__CYGWIN__)
 #include <fcntl.h>
 #endif
 
@@ -304,7 +304,7 @@ Py_Main(int argc, char **argv)
 	stdin_is_interactive = Py_FdIsInteractive(stdin, (char *)0);
 
 	if (unbuffered) {
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) || defined(__CYGWIN__)
 		_setmode(fileno(stdin), O_BINARY);
 		_setmode(fileno(stdout), O_BINARY);
 #endif
