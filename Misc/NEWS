@@ -4,6 +4,15 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.3.3c2?
+=============================
+
+Core and builtins
+-----------------
+
+- Removed PendingDeprecationWarning from apply().  apply() remains
+  deprecated, but the nuissance warning will not be issued.
+
 What's New in Python 2.3.3c1?
 =============================
 
