@@ -55,6 +55,12 @@ _PyBuffer_FromMemory(base, ptr, size, readonly)
 {
 	PyBufferObject * b;
 
+	if ( size < 0 ) {
+		PyErr_SetString(PyExc_ValueError,
+				"size must be zero or positive");
+		return NULL;
+	}
+
 	b = PyObject_NEW(PyBufferObject, &PyBuffer_Type);
 	if ( b == NULL )
 		return NULL;
@@ -83,6 +89,12 @@ _PyBuffer_FromObject(base, offset, size, proc, readonly)
 	void *p;
 	int count;
 
+	if ( offset < 0 ) {
+		PyErr_SetString(PyExc_ValueError,
+				"offset must be zero or positive");
+		return NULL;
+	}
+
 	if ( (*pb->bf_getsegcount)(base, NULL) != 1 )
 	{
 		PyErr_SetString(PyExc_TypeError, "single-segment buffer object expected");
@@ -92,7 +104,7 @@ _PyBuffer_FromObject(base, offset, size, proc, readonly)
 		return NULL;
 
 	/* apply constraints to the start/end */
-	if ( size == Py_END_OF_BUFFER )
+	if ( size == Py_END_OF_BUFFER || size < 0 )
 		size = count;
 	if ( offset > count )
 		offset = count;
