@@ -413,12 +413,10 @@ GLHACK=-Dclear=__GLclear
 
 # Historical Berkeley DB 1.85
 #
-# This requires the Berkeley DB code, see
-# ftp://ftp.cs.berkeley.edu/pub/4bsd/db.1.85.tar.gz
-#
-# This module is deprecated; the historical BSDDB library has bugs
-# that can cause data corruption. If you can, use the Sleepycat library
-# instead.
+# This module is deprecated; the 1.85 version of the Berkeley DB library has
+# bugs that can cause data corruption. If you can, use later versions of the
+# library instead, available from <http://www.sleepycat.com/>.
+
 #DB=/depot/sundry/src/berkeley-db/db.1.85
 #DBPORT=$(DB)/PORT/irix.5.3
 #bsddb185 bsddbmodule.c -I$(DBPORT)/include -I$(DBPORT) $(DBPORT)/libdb.a
