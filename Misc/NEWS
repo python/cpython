@@ -22,6 +22,7 @@ Core
     map()
     max()
     min()
+    reduce()
 
 
 What's New in Python 2.1 (final)?

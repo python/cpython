@@ -1851,26 +1851,25 @@ is printed without a trailing newline before reading.";
 static PyObject *
 builtin_reduce(PyObject *self, PyObject *args)
 {
-	PyObject *seq, *func, *result = NULL;
-	PySequenceMethods *sqf;
-	register int i;
+	PyObject *seq, *func, *result = NULL, *it;
 
 	if (!PyArg_ParseTuple(args, "OO|O:reduce", &func, &seq, &result))
 		return NULL;
 	if (result != NULL)
 		Py_INCREF(result);
 
-	sqf = seq->ob_type->tp_as_sequence;
-	if (sqf == NULL || sqf->sq_item == NULL) {
+	it = PyObject_GetIter(seq);
+	if (it == NULL) {
 		PyErr_SetString(PyExc_TypeError,
-		    "reduce() arg 2 must be a sequence");
+		    "reduce() arg 2 must support iteration");
+		Py_XDECREF(result);
 		return NULL;
 	}
 
 	if ((args = PyTuple_New(2)) == NULL)
 		goto Fail;
 
-	for (i = 0; ; ++i) {
+	for (;;) {
 		PyObject *op2;
 
 		if (args->ob_refcnt > 1) {
@@ -1879,12 +1878,18 @@ builtin_reduce(PyObject *self, PyObject *args)
 				goto Fail;
 		}
 
-		if ((op2 = (*sqf->sq_item)(seq, i)) == NULL) {
-			if (PyErr_ExceptionMatches(PyExc_IndexError)) {
-				PyErr_Clear();
-				break;
+		op2 = PyIter_Next(it);
+		if (op2 == NULL) {
+			/* StopIteration is *implied* by a NULL return from
+			 * PyIter_Next() if PyErr_Occurred() is false.
+			 */
+			if (PyErr_Occurred()) {
+				if (PyErr_ExceptionMatches(PyExc_StopIteration))
+					PyErr_Clear();
+				else
+					goto Fail;
 			}
-			goto Fail;
+			break;
 		}
 
 		if (result == NULL)
@@ -1903,11 +1908,13 @@ builtin_reduce(PyObject *self, PyObject *args)
 		PyErr_SetString(PyExc_TypeError,
 			   "reduce() of empty sequence with no initial value");
 
+	Py_DECREF(it);
 	return result;
 
 Fail:
 	Py_XDECREF(args);
 	Py_XDECREF(result);
+	Py_DECREF(it);
 	return NULL;
 }
 
