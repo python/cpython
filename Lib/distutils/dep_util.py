@@ -93,23 +93,3 @@ def newer_group (sources, target, missing='error'):
         return 0
 
 # newer_group ()
-
-
-# XXX this isn't used anywhere, and worse, it has the same name as a method
-# in Command with subtly different semantics.  (This one just has one
-# source -> one dest; that one has many sources -> one dest.)  Nuke it?
-def make_file (src, dst, func, args,
-               verbose=0, update_message=None, noupdate_message=None):
-    """Makes 'dst' from 'src' (both filenames) by calling 'func' with
-    'args', but only if it needs to: i.e. if 'dst' does not exist or 'src'
-    is newer than 'dst'.
-    """
-    if newer(src, dst):
-        if verbose and update_message:
-            print update_message
-        apply(func, args)
-    else:
-        if verbose and noupdate_message:
-            print noupdate_message
-
-# make_file ()
