@@ -49,6 +49,8 @@ Py_FrozenMain(argc, argv)
 	int inspect = 0;
 	int unbuffered = 0;
 
+	Py_FrozenFlag = 1; /* Suppress errors from getpath.c */
+
 	if ((p = getenv("PYTHONINSPECT")) && *p != '\0')
 		inspect = 1;
 	if ((p = getenv("PYTHONUNBUFFERED")) && *p != '\0')
