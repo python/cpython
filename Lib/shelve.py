@@ -28,8 +28,17 @@ Dependent on the implementation, closing a persistent dictionary may
 or may not be necessary to flush changes to disk.
 """
 
-import pickle
-import StringIO
+# Try using cPickle and cStringIO if available.
+
+try:
+    from cPickle import Pickler, Unpickler
+except ImportError:
+    from pickle import Pickler, Unpickler
+
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 
 class Shelf:
@@ -52,12 +61,12 @@ class Shelf:
 		return self.dict.has_key(key)
 	
 	def __getitem__(self, key):
-		f = StringIO.StringIO(self.dict[key])
-		return pickle.Unpickler(f).load()
+		f = StringIO(self.dict[key])
+		return Unpickler(f).load()
 	
 	def __setitem__(self, key, value):
-		f = StringIO.StringIO()
-		p = pickle.Pickler(f)
+		f = StringIO()
+		p = Pickler(f)
 		p.dump(value)
 		self.dict[key] = f.getvalue()
 	
@@ -80,11 +89,12 @@ class Shelf:
 class BsdDbShelf(Shelf):
 	"""Shelf implementation using the "BSD" db interface.
 
-	The actual database is opened using one of thethe "bsddb" modules
-	"open" routines (i.e. bsddb.hashopen, bsddb.btopen or bsddb.rnopen.)
+	This adds methods first(), next(), previous(), last() and
+	set_location() that have no counterpart in [g]dbm databases.
 
-	This class is initialized with the the database object
-	returned from one of the bsddb open functions.
+	The actual database must be opened using one of the "bsddb"
+	modules "open" routines (i.e. bsddb.hashopen, bsddb.btopen or
+	bsddb.rnopen) and passed to the constructor.
 
 	See the module's __doc__ string for an overview of the interface.
 	"""
@@ -94,28 +104,28 @@ class BsdDbShelf(Shelf):
 
 	def set_location(self, key):
 	     (key, value) = self.dict.set_location(key)
-	     f = StringIO.StringIO(value)
-	     return (key, pickle.Unpickler(f).load())
+	     f = StringIO(value)
+	     return (key, Unpickler(f).load())
 
 	def next(self):
 	     (key, value) = self.dict.next()
-	     f = StringIO.StringIO(value)
-	     return (key, pickle.Unpickler(f).load())
+	     f = StringIO(value)
+	     return (key, Unpickler(f).load())
 
 	def previous(self):
 	     (key, value) = self.dict.previous()
-	     f = StringIO.StringIO(value)
-	     return (key, pickle.Unpickler(f).load())
+	     f = StringIO(value)
+	     return (key, Unpickler(f).load())
 
 	def first(self):
 	     (key, value) = self.dict.first()
-	     f = StringIO.StringIO(value)
-	     return (key, pickle.Unpickler(f).load())
+	     f = StringIO(value)
+	     return (key, Unpickler(f).load())
 
 	def last(self):
 	     (key, value) = self.dict.last()
-	     f = StringIO.StringIO(value)
-	     return (key, pickle.Unpickler(f).load())
+	     f = StringIO(value)
+	     return (key, Unpickler(f).load())
 
 
 class DbfilenameShelf(Shelf):
