@@ -82,8 +82,9 @@ static int debug;
  */
 
 /* Special gc_refs values. */
-#define GC_REACHABLE  -123
-#define GC_TENTATIVELY_UNREACHABLE -42
+#define GC_UNTRACKED			_PyGC_REFS_UNTRACKED
+#define GC_REACHABLE			_PyGC_REFS_REACHABLE
+#define GC_TENTATIVELY_UNREACHABLE	_PyGC_REFS_TENTATIVELY_UNREACHABLE
 
 #define IS_REACHABLE(o) ((AS_GC(o))->gc.gc_refs == GC_REACHABLE)
 #define IS_TENTATIVELY_UNREACHABLE(o) ( \
@@ -179,8 +180,10 @@ static void
 update_refs(PyGC_Head *containers)
 {
 	PyGC_Head *gc = containers->gc.gc_next;
-	for (; gc != containers; gc = gc->gc.gc_next)
+	for (; gc != containers; gc = gc->gc.gc_next) {
+		assert(gc->gc.gc_refs == GC_REACHABLE);
 		gc->gc.gc_refs = FROM_GC(gc)->ob_refcnt;
+	}
 }
 
 /* A traversal callback for subtract_refs. */
@@ -222,7 +225,7 @@ subtract_refs(PyGC_Head *containers)
 static int
 visit_reachable(PyObject *op, PyGC_Head *reachable)
 {
-	if (PyObject_IS_GC(op) && IS_TRACKED(op)) {
+	if (PyObject_IS_GC(op)) {
 		PyGC_Head *gc = AS_GC(op);
 		const int gc_refs = gc->gc.gc_refs;
 
@@ -250,8 +253,14 @@ visit_reachable(PyObject *op, PyGC_Head *reachable)
 		 * list, and move_unreachable will eventually get to it.
 		 * If gc_refs == GC_REACHABLE, it's either in some other
 		 * generation so we don't care about it, or move_unreachable
-		 * already dealt with it.
+		 * already deat with it.
+		 * If gc_refs == GC_UNTRACKED, it must be ignored.
 		 */
+		 else {
+		 	assert(gc_refs > 0
+		 	       || gc_refs == GC_REACHABLE
+		 	       || gc_refs == GC_UNTRACKED);
+		 }
 	}
 	return 0;
 }
@@ -352,7 +361,7 @@ static int
 visit_move(PyObject *op, PyGC_Head *tolist)
 {
 	if (PyObject_IS_GC(op)) {
-		if (IS_TRACKED(op) && IS_TENTATIVELY_UNREACHABLE(op)) {
+		if (IS_TENTATIVELY_UNREACHABLE(op)) {
 			PyGC_Head *gc = AS_GC(op);
 			gc_list_remove(gc);
 			gc_list_append(gc, tolist);
@@ -966,6 +975,7 @@ _PyObject_GC_Malloc(size_t basicsize)
 	if (g == NULL)
 		return PyErr_NoMemory();
 	g->gc.gc_next = NULL;
+	g->gc.gc_refs = GC_UNTRACKED;
 	generations[0].count++; /* number of allocated GC objects */
  	if (generations[0].count > generations[0].threshold &&
  	    enabled &&
