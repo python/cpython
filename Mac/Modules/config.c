@@ -108,6 +108,7 @@ extern void initMenu();
 extern void initQd();
 extern void initRes();
 extern void initSnd();
+extern void initSndihooks();
 extern void initScrap();
 extern void initTE();
 extern void initWin();
@@ -215,6 +216,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"List", initList},
 	{"Qd", initQd},
 	{"Snd", initSnd},
+	{"Sndihooks", initSndihooks},
 	{"Scrap", initScrap},
 	{"TE", initTE},
 	{"Win", initWin},
