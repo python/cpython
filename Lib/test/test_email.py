@@ -13,10 +13,10 @@ import email
 from email.Parser import Parser
 from email.Generator import Generator, DecodedGenerator
 from email.Message import Message
-from email.Text import Text
-from email.Image import Image
+from email.MIMEText import MIMEText
+from email.MIMEImage import MIMEImage
 from email.MIMEBase import MIMEBase
-from email.MessageRFC822 import MessageRFC822
+from email.MIMEMessage import MIMEMessage
 from email import Utils
 from email import Errors
 from email import Encoders
@@ -41,10 +41,10 @@ class TestEmailBase(unittest.TestCase):
     def _msgobj(self, filename):
         fp = openfile(filename)
         try:
-            msgobj = email.message_from_file(fp)
+            msg = email.message_from_file(fp)
         finally:
             fp.close()
-        return msgobj
+        return msg
 
 
 
@@ -53,96 +53,89 @@ class TestMessageAPI(TestEmailBase):
     def test_get_charsets(self):
         eq = self.assertEqual
         
-        msgobj = self._msgobj('msg_08.txt')
-        charsets = msgobj.get_charsets()
-        eq(charsets, ['us-ascii', 'iso-8859-1', 'iso-8859-2', 'koi8-r'])
+        msg = self._msgobj('msg_08.txt')
+        charsets = msg.get_charsets()
+        eq(charsets, [None, 'us-ascii', 'iso-8859-1', 'iso-8859-2', 'koi8-r'])
 
-        msgobj = self._msgobj('msg_09.txt')
-        charsets = msgobj.get_charsets('dingbat')
-        eq(charsets, ['us-ascii', 'iso-8859-1', 'dingbat', 'koi8-r'])
+        msg = self._msgobj('msg_09.txt')
+        charsets = msg.get_charsets('dingbat')
+        eq(charsets, ['dingbat', 'us-ascii', 'iso-8859-1', 'dingbat',
+                      'koi8-r'])
 
-        msgobj = self._msgobj('msg_12.txt')
-        charsets = msgobj.get_charsets()
-        eq(charsets, ['us-ascii', 'iso-8859-1', 'iso-8859-2', 'iso-8859-3',
-                      'us-ascii', 'koi8-r'])
+        msg = self._msgobj('msg_12.txt')
+        charsets = msg.get_charsets()
+        eq(charsets, [None, 'us-ascii', 'iso-8859-1', None, 'iso-8859-2',
+                      'iso-8859-3', 'us-ascii', 'koi8-r'])
 
     def test_get_filename(self):
         eq = self.assertEqual
 
-        msgobj = self._msgobj('msg_04.txt')
-        filenames = [p.get_filename() for p in msgobj.get_payload()]
+        msg = self._msgobj('msg_04.txt')
+        filenames = [p.get_filename() for p in msg.get_payload()]
         eq(filenames, ['msg.txt', 'msg.txt'])
 
-        msgobj = self._msgobj('msg_07.txt')
-        subpart = msgobj.get_payload(1)
+        msg = self._msgobj('msg_07.txt')
+        subpart = msg.get_payload(1)
         eq(subpart.get_filename(), 'dingusfish.gif')
 
     def test_get_boundary(self):
         eq = self.assertEqual
-        msgobj = self._msgobj('msg_07.txt')
+        msg = self._msgobj('msg_07.txt')
         # No quotes!
-        eq(msgobj.get_boundary(), 'BOUNDARY')
+        eq(msg.get_boundary(), 'BOUNDARY')
 
     def test_set_boundary(self):
         eq = self.assertEqual
         # This one has no existing boundary parameter, but the Content-Type:
         # header appears fifth.
-        msgobj = self._msgobj('msg_01.txt')
-        msgobj.set_boundary('BOUNDARY')
-        header, value = msgobj.items()[4]
+        msg = self._msgobj('msg_01.txt')
+        msg.set_boundary('BOUNDARY')
+        header, value = msg.items()[4]
         eq(header.lower(), 'content-type')
         eq(value, 'text/plain; charset=us-ascii; boundary="BOUNDARY"')
         # This one has a Content-Type: header, with a boundary, stuck in the
         # middle of its headers.  Make sure the order is preserved; it should
         # be fifth.
-        msgobj = self._msgobj('msg_04.txt')
-        msgobj.set_boundary('BOUNDARY')
-        header, value = msgobj.items()[4]
+        msg = self._msgobj('msg_04.txt')
+        msg.set_boundary('BOUNDARY')
+        header, value = msg.items()[4]
         eq(header.lower(), 'content-type')
         eq(value, 'multipart/mixed; boundary="BOUNDARY"')
         # And this one has no Content-Type: header at all.
-        msgobj = self._msgobj('msg_03.txt')
+        msg = self._msgobj('msg_03.txt')
         self.assertRaises(Errors.HeaderParseError,
-                          msgobj.set_boundary, 'BOUNDARY')
+                          msg.set_boundary, 'BOUNDARY')
 
     def test_get_decoded_payload(self):
         eq = self.assertEqual
-        msgobj = self._msgobj('msg_10.txt')
+        msg = self._msgobj('msg_10.txt')
         # The outer message is a multipart
-        eq(msgobj.get_payload(decode=1), None)
+        eq(msg.get_payload(decode=1), None)
         # Subpart 1 is 7bit encoded
-        eq(msgobj.get_payload(0).get_payload(decode=1),
+        eq(msg.get_payload(0).get_payload(decode=1),
            'This is a 7bit encoded message.\n')
         # Subpart 2 is quopri
-        eq(msgobj.get_payload(1).get_payload(decode=1),
+        eq(msg.get_payload(1).get_payload(decode=1),
            '\xa1This is a Quoted Printable encoded message!\n')
         # Subpart 3 is base64
-        eq(msgobj.get_payload(2).get_payload(decode=1),
+        eq(msg.get_payload(2).get_payload(decode=1),
            'This is a Base64 encoded message.')
         # Subpart 4 has no Content-Transfer-Encoding: header.
-        eq(msgobj.get_payload(3).get_payload(decode=1),
+        eq(msg.get_payload(3).get_payload(decode=1),
            'This has no Content-Transfer-Encoding: header.\n')
 
     def test_decoded_generator(self):
         eq = self.assertEqual
-        msgobj = self._msgobj('msg_07.txt')
+        msg = self._msgobj('msg_07.txt')
+        fp = openfile('msg_17.txt')
+        try:
+            text = fp.read()
+        finally:
+            fp.close()
         s = StringIO()
         g = DecodedGenerator(s)
-        g(msgobj)
-        eq(s.getvalue(), '''\
-MIME-Version: 1.0
-From: Barry <barry@digicool.com>
-To: Dingus Lovers <cravindogs@cravindogs.com>
-Subject: Here is your dingus fish
-Date: Fri, 20 Apr 2001 19:35:02 -0400
-Content-Type: multipart/mixed; boundary="BOUNDARY"
-
-Hi there,
-
-This is the dingus fish.
-
-[Non-text (image/gif) part of message omitted, filename dingusfish.gif]
-''')        
+        g(msg)
+        eq(s.getvalue(), text)
 
     def test__contains__(self):
         msg = Message()
@@ -158,47 +151,70 @@ This is the dingus fish.
 
     def test_as_string(self):
         eq = self.assertEqual
-        msgobj = self._msgobj('msg_01.txt')
+        msg = self._msgobj('msg_01.txt')
         fp = openfile('msg_01.txt')
         try:
             text = fp.read()
         finally:
             fp.close()
-        eq(text, msgobj.as_string())
-        fullrepr = str(msgobj)
+        eq(text, msg.as_string())
+        fullrepr = str(msg)
         lines = fullrepr.split('\n')
         self.failUnless(lines[0].startswith('From '))
         eq(text, NL.join(lines[1:]))
 
     def test_bad_param(self):
-        msg = email.message_from_string("""\
-From: foo
-Content-Type: blarg; baz; boo
-
-""")
+        msg = email.message_from_string("Content-Type: blarg; baz; boo\n")
         self.assertEqual(msg.get_param('baz'), '')
 
     def test_missing_filename(self):
-        msg = email.message_from_string("""\
-From: foo
-
-""")
+        msg = email.message_from_string("From: foo\n")
         self.assertEqual(msg.get_filename(), None)
 
     def test_bogus_filename(self):
-        msg = email.message_from_string("""\
-From: foo
-Content-Disposition: blarg; filename
-
-""")
+        msg = email.message_from_string(
+        "Content-Disposition: blarg; filename\n")
         self.assertEqual(msg.get_filename(), '')
         
     def test_missing_boundary(self):
-        msg = email.message_from_string("""\
-From: foo
-
-""")
+        msg = email.message_from_string("From: foo\n")
         self.assertEqual(msg.get_boundary(), None)
+
+    def test_get_params(self):
+        eq = self.assertEqual
+        msg = email.message_from_string(
+            'X-Header: foo=one; bar=two; baz=three\n')
+        eq(msg.get_params(header='x-header'),
+           [('foo', 'one'), ('bar', 'two'), ('baz', 'three')])
+        msg = email.message_from_string(
+            'X-Header: foo; bar=one; baz=two\n')
+        eq(msg.get_params(header='x-header'),
+           [('foo', ''), ('bar', 'one'), ('baz', 'two')])
+        eq(msg.get_params(), None)
+        msg = email.message_from_string(
+            'X-Header: foo; bar="one"; baz=two\n')
+        eq(msg.get_params(header='x-header'),
+           [('foo', ''), ('bar', 'one'), ('baz', 'two')])
+
+    def test_get_param(self):
+        eq = self.assertEqual
+        msg = email.message_from_string(
+            "X-Header: foo=one; bar=two; baz=three\n")
+        eq(msg.get_param('bar', header='x-header'), 'two')
+        eq(msg.get_param('quuz', header='x-header'), None)
+        eq(msg.get_param('quuz'), None)
+        msg = email.message_from_string(
+            'X-Header: foo; bar="one"; baz=two\n')
+        eq(msg.get_param('foo', header='x-header'), '')
+        eq(msg.get_param('bar', header='x-header'), 'one')
+        eq(msg.get_param('baz', header='x-header'), 'two')
+
+    def test_has_key(self):
+        msg = email.message_from_string('Header: exists')
+        self.failUnless(msg.has_key('header'))
+        self.failUnless(msg.has_key('Header'))
+        self.failUnless(msg.has_key('HEADER'))
+        self.failIf(msg.has_key('headeri'))
 
 
 
@@ -206,34 +222,34 @@ From: foo
 class TestEncoders(unittest.TestCase):
     def test_encode_noop(self):
         eq = self.assertEqual
-        msg = Text('hello world', _encoder=Encoders.encode_noop)
+        msg = MIMEText('hello world', _encoder=Encoders.encode_noop)
         eq(msg.get_payload(), 'hello world\n')
         eq(msg['content-transfer-encoding'], None)
 
     def test_encode_7bit(self):
         eq = self.assertEqual
-        msg = Text('hello world', _encoder=Encoders.encode_7or8bit)
+        msg = MIMEText('hello world', _encoder=Encoders.encode_7or8bit)
         eq(msg.get_payload(), 'hello world\n')
         eq(msg['content-transfer-encoding'], '7bit')
-        msg = Text('hello \x7f world', _encoder=Encoders.encode_7or8bit)
+        msg = MIMEText('hello \x7f world', _encoder=Encoders.encode_7or8bit)
         eq(msg.get_payload(), 'hello \x7f world\n')
         eq(msg['content-transfer-encoding'], '7bit')
 
     def test_encode_8bit(self):
         eq = self.assertEqual
-        msg = Text('hello \x80 world', _encoder=Encoders.encode_7or8bit)
+        msg = MIMEText('hello \x80 world', _encoder=Encoders.encode_7or8bit)
         eq(msg.get_payload(), 'hello \x80 world\n')
         eq(msg['content-transfer-encoding'], '8bit')
 
     def test_encode_base64(self):
         eq = self.assertEqual
-        msg = Text('hello world', _encoder=Encoders.encode_base64)
+        msg = MIMEText('hello world', _encoder=Encoders.encode_base64)
         eq(msg.get_payload(), 'aGVsbG8gd29ybGQK\n')
         eq(msg['content-transfer-encoding'], 'base64')
 
     def test_encode_quoted_printable(self):
         eq = self.assertEqual
-        msg = Text('hello world', _encoder=Encoders.encode_quopri)
+        msg = MIMEText('hello world', _encoder=Encoders.encode_quopri)
         eq(msg.get_payload(), 'hello=20world\n')
         eq(msg['content-transfer-encoding'], 'quoted-printable')
 
@@ -241,7 +257,7 @@ class TestEncoders(unittest.TestCase):
 
 class TestLongHeaders(unittest.TestCase):
     def test_header_splitter(self):
-        msg = Text('')
+        msg = MIMEText('')
         # It'd be great if we could use add_header() here, but that doesn't
         # guarantee an order of the parameters.
         msg['X-Foobar-Spoink-Defrobnit'] = (
@@ -294,15 +310,15 @@ Blah blah blah
 
 
 
-# Test the basic Image class
-class TestImage(unittest.TestCase):
+# Test the basic MIMEImage class
+class TestMIMEImage(unittest.TestCase):
     def setUp(self):
         fp = openfile('PyBanner048.gif')
         try:
             self._imgdata = fp.read()
         finally:
             fp.close()
-        self._im = Image(self._imgdata)
+        self._im = MIMEImage(self._imgdata)
 
     def test_guess_minor_type(self):
         self.assertEqual(self._im.get_type(), 'image/gif')
@@ -312,7 +328,7 @@ class TestImage(unittest.TestCase):
         self.assertEqual(base64.decodestring(payload), self._imgdata)
 
     def checkSetMinor(self):
-        im = Image(self._imgdata, 'fish')
+        im = MIMEImage(self._imgdata, 'fish')
         self.assertEqual(im.get_type(), 'image/fish')
 
     def test_custom_encoder(self):
@@ -321,7 +337,7 @@ class TestImage(unittest.TestCase):
             orig = msg.get_payload()
             msg.set_payload(0)
             msg['Content-Transfer-Encoding'] = 'broken64'
-        im = Image(self._imgdata, _encoder=encoder)
+        im = MIMEImage(self._imgdata, _encoder=encoder)
         eq(im.get_payload(), 0)
         eq(im['content-transfer-encoding'], 'broken64')
 
@@ -333,11 +349,12 @@ class TestImage(unittest.TestCase):
         eq(self._im['content-disposition'],
            'attachment; filename="dingusfish.gif"')
         eq(self._im.get_params(header='content-disposition'),
-           ['filename="dingusfish.gif"'])
+           [('attachment', ''), ('filename', 'dingusfish.gif')])
         eq(self._im.get_param('filename', header='content-disposition'),
            'dingusfish.gif')
         missing = []
-        unless(self._im.get_param('attachment', missing,
+        eq(self._im.get_param('attachment', header='content-disposition'), '')
+        unless(self._im.get_param('foo', failobj=missing,
                                   header='content-disposition') is missing)
         # Try some missing stuff
         unless(self._im.get_param('foobar', missing) is missing)
@@ -346,10 +363,10 @@ class TestImage(unittest.TestCase):
 
 
 
-# Test the basic Text class
-class TestText(unittest.TestCase):
+# Test the basic MIMEText class
+class TestMIMEText(unittest.TestCase):
     def setUp(self):
-        self._msg = Text('hello there')
+        self._msg = MIMEText('hello there')
 
     def test_types(self):
         eq = self.assertEqual
@@ -376,10 +393,10 @@ class TestMultipartMixed(unittest.TestCase):
             fp.close()
 
         container = MIMEBase('multipart', 'mixed', boundary='BOUNDARY')
-        image = Image(data, name='dingusfish.gif')
+        image = MIMEImage(data, name='dingusfish.gif')
         image.add_header('content-disposition', 'attachment',
                          filename='dingusfish.gif')
-        intro = Text('''\
+        intro = MIMEText('''\
 Hi there,
 
 This is the dingus fish.
@@ -481,21 +498,21 @@ class TestRFC2047(unittest.TestCase):
 
 
 
-class TestMessageRFC822(unittest.TestCase):
+class TestMIMEMessage(TestEmailBase):
     def setUp(self):
         fp = openfile('msg_11.txt')
         self._text = fp.read()
         fp.close()
 
     def test_type_error(self):
-        self.assertRaises(TypeError, MessageRFC822, 'a plain string')
+        self.assertRaises(TypeError, MIMEMessage, 'a plain string')
 
     def test_valid_argument(self):
         eq = self.assertEqual
         subject = 'A sub-message'
         m = Message()
         m['Subject'] = subject
-        r = MessageRFC822(m)
+        r = MIMEMessage(m)
         eq(r.get_type(), 'message/rfc822')
         self.failUnless(r.get_payload() is m)
         eq(r.get_payload()['subject'], subject)
@@ -505,12 +522,85 @@ class TestMessageRFC822(unittest.TestCase):
         m = Message()
         m['Subject'] = 'An enclosed message'
         m.add_payload('Here is the body of the message.\n')
-        r = MessageRFC822(m)
+        r = MIMEMessage(m)
         r['Subject'] = 'The enclosing message'
         s = StringIO()
         g = Generator(s)
         g(r)
-        self.assertEqual(s.getvalue(), self._text)
+        self.assertEqual(s.getvalue(), """\
+Content-Type: message/rfc822
+MIME-Version: 1.0
+Subject: The enclosing message
+
+Subject: An enclosed message
+
+Here is the body of the message.
+""")
+
+    def test_parse_message_rfc822(self):
+        eq = self.assertEqual
+        msg = self._msgobj('msg_11.txt')
+        eq(msg.get_type(), 'message/rfc822')
+        eq(len(msg.get_payload()), 1)
+        submsg = msg.get_payload()
+        self.failUnless(isinstance(submsg, Message))
+        eq(submsg['subject'], 'An enclosed message')
+        eq(submsg.get_payload(), 'Here is the body of the message.\n')
+
+    def test_dsn(self):
+        eq = self.assertEqual
+        unless = self.failUnless
+        # msg 16 is a Delivery Status Notification, see RFC XXXX
+        msg = self._msgobj('msg_16.txt')
+        eq(msg.get_type(), 'multipart/report')
+        unless(msg.is_multipart())
+        eq(len(msg.get_payload()), 3)
+        # Subpart 1 is a text/plain, human readable section
+        subpart = msg.get_payload(0)
+        eq(subpart.get_type(), 'text/plain')
+        eq(subpart.get_payload(), """\
+This report relates to a message you sent with the following header fields:
+
+  Message-id: <002001c144a6$8752e060$56104586@oxy.edu>
+  Date: Sun, 23 Sep 2001 20:10:55 -0700
+  From: "Ian T. Henry" <henryi@oxy.edu>
+  To: SoCal Raves <scr@socal-raves.org>
+  Subject: [scr] yeah for Ians!!
+
+Your message cannot be delivered to the following recipients:
+
+  Recipient address: jangel1@cougar.noc.ucla.edu
+  Reason: recipient reached disk quota
+
+""")
+        # Subpart 2 contains the machine parsable DSN information.  It
+        # consists of two blocks of headers, represented by two nested Message
+        # objects.
+        subpart = msg.get_payload(1)
+        eq(subpart.get_type(), 'message/delivery-status')
+        eq(len(subpart.get_payload()), 2)
+        # message/delivery-status should treat each block as a bunch of
+        # headers, i.e. a bunch of Message objects.
+        dsn1 = subpart.get_payload(0)
+        unless(isinstance(dsn1, Message))
+        eq(dsn1['original-envelope-id'], '0GK500B4HD0888@cougar.noc.ucla.edu')
+        eq(dsn1.get_param('dns', header='reporting-mta'), '')
+        # Try a missing one <wink>
+        eq(dsn1.get_param('nsd', header='reporting-mta'), None)
+        dsn2 = subpart.get_payload(1)
+        unless(isinstance(dsn2, Message))
+        eq(dsn2['action'], 'failed')
+        eq(dsn2.get_params(header='original-recipient'),
+           [('rfc822', ''), ('jangel1@cougar.noc.ucla.edu', '')])
+        eq(dsn2.get_param('rfc822', header='final-recipient'), '')
+        # Subpart 3 is the original message
+        subpart = msg.get_payload(2)
+        eq(subpart.get_type(), 'message/rfc822')
+        subsubpart = subpart.get_payload()
+        unless(isinstance(subsubpart, Message))
+        eq(subsubpart.get_type(), 'text/plain')
+        eq(subsubpart['message-id'],
+           '<002001c144a6$8752e060$56104586@oxy.edu>')
 
 
 
@@ -521,8 +611,8 @@ class TestIdempotent(unittest.TestCase):
             data = fp.read()
         finally:
             fp.close()
-        msgobj = email.message_from_string(data)
-        return msgobj, data
+        msg = email.message_from_string(data)
+        return msg, data
 
     def _idempotent(self, msg, text):
         eq = self.assertEquals
@@ -537,7 +627,7 @@ class TestIdempotent(unittest.TestCase):
         eq(msg.get_type(), 'text/plain')
         eq(msg.get_main_type(), 'text')
         eq(msg.get_subtype(), 'plain')
-        eq(msg.get_params(), ['charset=us-ascii'])
+        eq(msg.get_params()[1], ('charset', 'us-ascii'))
         eq(msg.get_param('charset'), 'us-ascii')
         eq(msg.preamble, None)
         eq(msg.epilogue, None)
@@ -566,6 +656,10 @@ class TestIdempotent(unittest.TestCase):
     def test_multipart_report(self):
         msg, text = self._msgobj('msg_05.txt')
         self._idempotent(msg, text)
+
+    def test_dsn(self):
+        msg, text = self._msgobj('msg_16.txt')
+        self._idempotent(msg, text)
         
     def test_content_type(self):
         eq = self.assertEquals
@@ -574,11 +668,10 @@ class TestIdempotent(unittest.TestCase):
         eq(msg.get_type(), 'multipart/report')
         # Test the Content-Type: parameters
         params = {}
-        for p in msg.get_params():
-            pk, pv = p.split('=', 1)
+        for pk, pv in msg.get_params():
             params[pk] = pv
         eq(params['report-type'], 'delivery-status')
-        eq(params['boundary'], '"D1690A7AC1.996856090/mail.example.com"')
+        eq(params['boundary'], 'D1690A7AC1.996856090/mail.example.com')
         eq(msg.preamble, 'This is a MIME-encapsulated message.\n\n')
         eq(msg.epilogue, '\n\n')
         eq(len(msg.get_payload()), 3)
@@ -777,12 +870,12 @@ def suite():
     suite.addTest(unittest.makeSuite(TestEncoders))
     suite.addTest(unittest.makeSuite(TestLongHeaders))
     suite.addTest(unittest.makeSuite(TestFromMangling))
-    suite.addTest(unittest.makeSuite(TestImage))
-    suite.addTest(unittest.makeSuite(TestText))
+    suite.addTest(unittest.makeSuite(TestMIMEImage))
+    suite.addTest(unittest.makeSuite(TestMIMEText))
     suite.addTest(unittest.makeSuite(TestMultipartMixed))
     suite.addTest(unittest.makeSuite(TestNonConformant))
     suite.addTest(unittest.makeSuite(TestRFC2047))
-    suite.addTest(unittest.makeSuite(TestMessageRFC822))
+    suite.addTest(unittest.makeSuite(TestMIMEMessage))
     suite.addTest(unittest.makeSuite(TestIdempotent))
     suite.addTest(unittest.makeSuite(TestMiscellaneous))
     suite.addTest(unittest.makeSuite(TestIterators))
