@@ -128,6 +128,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
     cmdtuples = []
     arg = path
     try:
+        func = os.listdir # Make sure it isn't unset
         _build_cmdtuple(path, cmdtuples)
         for func, arg in cmdtuples:
             func(arg)
