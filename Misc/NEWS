@@ -10,6 +10,9 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #802188: Report characters after line continuation character 
+  ('\') with a specific error message.
+
 - Bug #723201: Raise a TypeError for passing bad objects to 'L' format.
 
 - Bug #1124295: the __name__ attribute of file objects was
