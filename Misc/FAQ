@@ -1,7 +1,3 @@
-NOTE -- THIS FAQ HAS NOT BEEN UPDATED TO REFLECT RELEASE 1.1 YET.  FOR
-1.1 RELATED PROBLEMS PLEASE WATCH THE NEWSGROUP / MAILING LIST OR
-CHECK THE FTP SITE.
-
 Subject: FAQ: Python -- an object-oriented language
 Newsgroups: comp.lang.python,comp.answers,news.answers
 Followup-to: comp.lang.python
@@ -10,43 +6,44 @@ Reply-to: guido@cwi.nl (Guido van Rossum)
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
-Version: 1.16
-Last-modified: 11 November 1994
+Version: 1.18
+Last-modified: 2 January 1995
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
 the answer to question 1.1 for a short overview).
 
-Copyright 1993, 1994 Guido van Rossum.  Unchanged electronic
+Copyright 1993-1995 Guido van Rossum.  Unchanged electronic
 redistribution of this FAQ is allowed.  Printed redistribution only
 with permission of the author.  No warranties.
 
 Author's address:
-	Guido van Rossum
-	CWI, dept. CST
-	Kruislaan 413
-	P.O. Box 94079
-	1090 GB  Amsterdam
-	The Netherlands
-Email:	guido@cwi.nl
+        Guido van Rossum
+        CWI, dept. CST
+        Kruislaan 413
+        P.O. Box 94079
+        1090 GB  Amsterdam
+        The Netherlands
+Email:  guido@cwi.nl
 
 The latest version of this FAQ is available by anonymous ftp from
-ftp.cwi.nl [192.16.191.128] in the directory /pub/python, with
-filename python-FAQ.  It will also be posted regularly to the
-newsgroups comp.answers and comp.lang.python.
+<URL:ftp://ftp.cwi.nl/pub/python/python-FAQ>.  It will also be posted
+regularly to the newsgroups comp.answers <URL:news:comp.answers> and
+comp.lang.python <URL:news:comp.lang.python>.
 
-Many FAQs, including this one, are available by anonymous ftp from
-rtfm.mit.edu [18.181.0.24] in the directory pub/usenet/news.answers.  
-The name under which a FAQ is archived appears in the Archive-name line 
-at the top of the article.  This FAQ is archived as python-faq/part1.
+Many FAQs, including this one, are available by anonymous ftp
+<URL:ftp://rtfm.mit.edu/pub/usenet/news.answers/>.  The name under
+which a FAQ is archived appears in the Archive-name line at the top of
+the article.  This FAQ is archived as python-faq/part1
+<URL:ftp://rtfm.mit.edu/pub/usenet/news.answers/python-faq/part1>.
 
 There's a mail server on that machine which will send you files from
 the archive by e-mail if you have no ftp access.  You send a e-mail
-message to mail-server@rtfm.mit.edu containing the single word help in
-the message body to receive instructions.
+message to <mail-server@rtfm.mit.edu> containing the single word help
+in the message body to receive instructions.
 
 Skip Montanaro <skip@automatrix.com> maintains an HTML version of this
-FAQ.  The URL is <http://www.automatrix.com/~skip/python-faq.html>.
+FAQ, <URL:http://www.automatrix.com/~skip/python-faq.html>.
 
 This FAQ is divided in the following chapters:
 
@@ -71,11 +68,13 @@ Here's an overview of the questions per chapter:
   1.4. Q. How do I get documentation on Python?
   1.5. Q. Are there other ftp sites that mirror the Python distribution?
   1.6. Q. Is there a newsgroup or mailing list devoted to Python?
-  1.7. Q. Is there a book on Python, or will there be one out soon?
-  1.8. Q. Are there any published articles about Python that I can quote?
-  1.9. Q. How does the Python version numbering scheme work?
-  1.10. Q. Are there other ftp sites that carry Python related material?
-  1.11. Q. Are there copyright restrictions on the use of Python?
+  1.7. Q. Is there a WWW page devoted to Python?
+  1.8. Q. Is there a book on Python, or will there be one out soon?
+  1.9. Q. Are there any published articles about Python that I can quote?
+  1.10. Q. Are there short introductory papers or talks on Python?
+  1.11. Q. How does the Python version numbering scheme work?
+  1.12. Q. Are there other ftp sites that carry Python related material?
+  1.13. Q. Are there copyright restrictions on the use of Python?
 
  2. Python in the real world
   2.1. Q. How many people are using Python?
@@ -124,11 +123,11 @@ Here's an overview of the questions per chapter:
        again (into the same Python process), the changes don't seem to take
        place.  What is going on?
   4.9. Q. How do I find the current module name?
-  4.10. Q. I have a module in which I want to execute some extra code when it
-        is run as a script.  How do I find out whether I am running as a
-        script?
-  4.11. Q. I try to run a program from the Demo directory but it fails with
-        ImportError: No module named ...; what gives?
+  4.10. Q. I have a module in which I want to execute some extra code
+        when it is run as a script.  How do I find out whether I am running as
+        a script?
+  4.11. Q. I try to run a program from the Demo directory but it fails
+        with ImportError: No module named ...; what gives?
   4.12. Q. I have successfully built Python with STDWIN but it can't
         find some modules (e.g. stdwinevents).
   4.13. Q. What GUI toolkits exist for Python?
@@ -137,16 +136,16 @@ Here's an overview of the questions per chapter:
   4.16. Q. Is there an equivalent of C's "?:" ternary operator?
   4.17. Q. My class defines __del__ but it is not called when I delete the
         object.
-  4.18. Q. How do I change the shell environment for programs called using
-        os.popen() or os.system()?  Changing os.environ doesn't work.
+  4.18. Q. How do I change the shell environment for programs called
+        using os.popen() or os.system()?  Changing os.environ doesn't work.
   4.19. Q. What is a class?
   4.20. Q. What is a method?
   4.21. Q. What is self?
   4.22. Q. What is a unbound method?
-  4.23. Q. How do I call a method defined in a base class from a derived class
-        that overrides it?
-  4.24. Q. How do I call a method from a base class without using the name of
-        the base class?
+  4.23. Q. How do I call a method defined in a base class from a derived
+        class that overrides it?
+  4.24. Q. How do I call a method from a base class without using the
+        name of the base class?
   4.25. Q. How can I organize my code to make it easier to change the base
         class?
   4.26. Q. How can I find the methods or attributes of an object?
@@ -227,8 +226,8 @@ remarkable power with very clear syntax.  It has interfaces to many
 system calls and libraries, as well as to various window systems, and
 is extensible in C or C++.  It is also usable as an extension language
 for applications that need a programmable interface.  Finally, Python
-is portable: it runs on many brands of UNIX, on the Mac, and on
-MS-DOS.
+is portable: it runs on many brands of UNIX, on the Mac, and on PCs
+under MS-DOS, Windows, Windows NT, and OS/2.
 
 To find out more, the best thing to do is to start reading the
 tutorial from the documentation set (see a few questions further
@@ -243,26 +242,33 @@ that I needed a name that was short, unique, and slightly mysterious.
 And I happened to be reading some scripts from the series at the
 time...  So then I decided to call my language Python.  But Python is
 not a joke.  And don't you associate it with dangerous reptiles
-either!
+either!  (If you need an icon, use an image of the 16-ton weight from
+the TV series or of a can of SPAM :-)
 
 1.3. Q. How do I obtain a copy of the Python source?
 
-A. The latest Python source distribution is always available by
-anonymous ftp from ftp.cwi.nl [192.16.191.128] in the directory
-/pub/python, with filename python<version>.tar.gz.  (Old versions may
-have an extension of .Z, indicating use of "compress" compression.)
-It is a gzip'ed tar file containing the complete C source, LaTeX
-documentation, Python library modules, example programs, and several
-useful pieces of freely distributable software.  This will compile and
-run out of the box on most UNIX platforms.  (See section 7 for
-non-UNIX information.)
+A. The latest complete Python source distribution is always available
+by anonymous ftp, e.g.
+<URL:ftp://ftp.cwi.nl/pub/python/python1.1.tar.gz>.  It is a gzipped
+tar file containing the complete C source, LaTeX documentation, Python
+library modules, example programs, and several useful pieces of freely
+distributable software.  This will compile and run out of the box on
+most UNIX platforms.  (See section 7 for non-UNIX information.)
+
+Occasionally a set of patches is issued which has to be applied using
+the patch program.  These patches are placed in the same directory,
+e.g. <URL:ftp://ftp.cwi.nl/pub/python/patch1.1.1>.
+
+An index of said ftp directory can be found in the file INDEX.  An
+HTML version of the index can be found in the file index.html,
+<URL:ftp://ftp.cwi.nl/pub/python/index.html>.
 
 1.4. Q. How do I get documentation on Python?
 
 A. The latest Python documentation set is always available by
-anonymous ftp from ftp.cwi.nl [192.16.191.128] in the directory
-/pub/python, with filename pythondoc-ps<version>.tar.gz.  It is a
-gzip'ed tar file containing PostScript files of the reference manual,
+anonymous ftp, e.g.
+<URL:ftp://ftp.cwi.nl/pub/python/pythondoc-ps1.1.tar.gz>.  It is a
+gzipped tar file containing PostScript files of the reference manual,
 the library manual, and the tutorial.  Note that the library manual is
 the most important one of the set, as much of Python's power stems
 from the standard or built-in types, functions and modules, all of
@@ -271,46 +277,50 @@ Python is in the file nluug-paper.ps.
 
 1.5. Q. Are there other ftp sites that mirror the Python distribution?
 
-A. The following sites keep mirrors of the Python distribution:
+A. The following anonymous ftp sites keep mirrors of the Python
+distribution:
 
-Site			IP address 	Directory
+        <URL:ftp://gatekeeper.dec.com/pub/plan/python/>
+        <URL:ftp://ftp.uu.net/languages/python/>
+        <URL:ftp://ftp.wustl.edu/graphics/graphics/sgi-stuff/python/>
+        <URL:ftp://ftp.funet.fi/pub/languages/python/>
+        <URL:ftp://ftp.sunet.se/pub/lang/python/>
+        <URL:ftp://unix.hensa.ac.uk/uunet/languages/python/>
+        <URL:ftp://ftp.sterlng.com/programming/languages/python/>
+        <URL:ftp://ftp.ibp.fr/pub/python/>
 
-gatekeeper.dec.com	16.1.0.2	/pub/plan/python
-ftp.uu.net		192.48.96.9	/languages/python
-ftp.wustl.edu		128.252.135.4	/graphics/graphics/sgi-stuff/python
-ftp.funet.fi		128.214.6.100	/pub/languages/python
-ftp.fu-berlin.de	130.133.1.18	/unix/languages/python (*python* only)
-ftp.sunet.se		130.238.127.3	/pub/lang/python
-unix.hensa.ac.uk	129.12.43.16	/uunet/languages/python
-ftp.sterlng.com         192.124.9.3     /programming/languages/python
-
-Or try archie on e.g. "python1." to locate the nearest copy of that
-version...
+Or try archie on the string "python".
 
 1.6. Q. Is there a newsgroup or mailing list devoted to Python?
 
-A. There is a newsgroup, comp.lang.python, and a mailing list.  The
-newsgroup and mailing list are gatewayed into each other -- if you can
-read news it's unnecessary to subscribe to the mailing list.  Send
-e-mail to python-list-request@cwi.nl to (un)subscribe to the mailing
-list.  Once you're on, send e-mail tp python-list@cwi.nl to send mail
-to the entire mailing list and newsgroup.  Hypermail archives of
+A. There is a newsgroup, comp.lang.python <URL:news:comp.lang.python>,
+and a mailing list.  The newsgroup and mailing list are gatewayed into
+each other -- if you can read news it's unnecessary to subscribe to
+the mailing list.  Send e-mail to <python-list-request@cwi.nl> to
+(un)subscribe to the mailing list
+<URL:mailto:python-list-request@cwi.nl>.  Hypermail archives of
 (nearly) everything posted to the mailing list (and thus the
-newsgroup) are available -- the URL for the complete set of archives
-is <http://www.cwi.nl/~guido/hypermail/index.html>.  The raw archives
-are also available by ftp from ftp.cwi.nl in /pub/python (and most
-mirrors), files mail*.gz.  The uncompressed versions of these files
-can be read with the standard UNIX Mail program ("Mail -f file") or
-with nn ("nn file").  To read them using MH, you could use "inc -file
-file".
+newsgroup) are available on our WWW server,
+<URL:http://www.cwi.nl/~guido/hypermail/index.html>.  The raw archives
+are also available by ftp, e.g.
+<URL:ftp://ftp.cwi.nl/pub/python/mailinglist.gz>.  The uncompressed
+versions of these files can be read with the standard UNIX Mail
+program ("Mail -f file") or with nn ("nn file").  To read them using
+MH, you could use "inc -file file".
 
-1.7. Q. Is there a book on Python, or will there be one out soon?
+1.7. Q. Is there a WWW page devoted to Python?
+
+A. The official Python home page is
+<URL:http://www.cwi.nl/~guido/Python.html>.  Michael McLay at NIST
+maintains a Python page at <URL:http://www.eeel.nist.gov/python/>.
+
+1.8. Q. Is there a book on Python, or will there be one out soon?
 
 A. I am writing one.  Addison-Wesley is interested.  Optimistically,
-it will be published by mid-1995.  Other authors are also working on
-books...  (Do you guys want your name mentioned here?)
+it will be ready for the press by mid-1995.  Mark Lutz is working on
+one too -- more details as they emerge.
 
-1.8. Q. Are there any published articles about Python that I can quote?
+1.9. Q. Are there any published articles about Python that I can quote?
 
 A. So far the only refereed and published article that describes
 Python in some detail is:
@@ -322,18 +332,24 @@ Python in some detail is:
 LaTeX source for this paper is available as part of the Python source
 distribution.
 
-A more recent high-level description of Python is:
+1.10. Q. Are there short introductory papers or talks on Python?
+
+A. A recent high-level description of Python is:
 
     Guido van Rossum, "An Introduction to Python for UNIX/C
     Programmers", in the proceedings of the NLUUG najaarsconferentie
     1993 (dutch UNIX users group meeting November 1993).
-    
-PostScript for this paper and for the slides used for the accompanying
-presentation can be found in the ftp directory mentioned a few
-questions earlier, with filenames nluug-paper.ps and nluug-slides.ps,
-respectively.
 
-1.9. Q. How does the Python version numbering scheme work?
+PostScript for this paper and for the slides used for the accompanying
+presentation is available by ftp as
+<URL:ftp://ftp.cwi.nl/pub/python/nluug-paper.ps> and
+<URL:ftp://ftp.cwi.nl/pub/python/nluug-slides.ps>, respectively.
+
+Slides for a talk on Python that I gave at the Usenix Symposium on
+Very High Level Languages in Santa Fe, NM, USA in October 1995 are
+available as <URL:ftp://ftp.cwi.nl/pub/python/vhll-slides.ps>.
+
+1.11. Q. How does the Python version numbering scheme work?
 
 A. Python versions are numbered A.B.C.  A is the major version number
 -- it is only incremented for major changes in functionality or source
@@ -343,23 +359,31 @@ incremented for each new release.  Note that in the past, patches have
 added significant changes; in fact the changeover from 0.9.9 to 1.0.0
 was the first time that either A or B changed!
 
-1.10. Q. Are there other ftp sites that carry Python related material?
+1.12. Q. Are there other ftp sites that carry Python related material?
 
-A. An interesting ftp site for Python users is ftp.markv.com
-(192.122.251.1); the directory pub/python contains a growing
-collection of interesting Python scripts.  To submit a script for
-inclusion, place it together with a readme file (with extension
-.readme) in the publicly writable directory /incoming/python.  This
-service is maintained by Lance Ellinghouse <lance@markv.com>.
+A. An interesting ftp site for Python users is ftp.markv.com; the
+directory pub/python contains a growing collection of interesting
+Python scripts <URL:ftp://ftp.markv.com/pub/python/>.  To submit a
+script for inclusion, place it together with a readme file (with
+extension .readme) in the publicly writable directory
+/incoming/python.  This service is maintained by Lance Ellinghaus
+<lance@markv.com>.  (I've heard complaints about this service not
+being very responsive -- try at your own risk.)
 
-1.11. Q. Are there copyright restrictions on the use of Python?
+1.13. Q. Are there copyright restrictions on the use of Python?
 
 A. Hardly.  You can do anything you want with the source, as long as
-you leave the copyrights in, display those copyrights in any
-documentation about Python that you produce, don't use the author's
-institute's name in publicity without prior written permission, and
-don't hold them responsible for anything (read the actual copyright
-for a precise legal wording).
+you leave the copyrights in, and display those copyrights in any
+documentation about Python that you produce.  Also, don't use the
+author's institute's name in publicity without prior written
+permission, and don't hold them responsible for anything (read the
+actual copyright for a precise legal wording).
+
+In particular, if you honor the copyright rules, it's OK to use Python
+for commercial use, to sell copies of Python in source or binary form,
+or to sell products that enhance Python or incorporate Python (or part
+of it) in some form.  I would still like to know about all commercial
+use of Python!
 
 
 2. Python in the real world
@@ -386,6 +410,9 @@ smaller programs.
 The University of Virginia uses Python to control a virtual reality
 engine.  Contact: Matt Conway <conway@virginia.edu>.
 
+The ILU project at Xerox PARC can generate Python glue for ILU
+interfaces.  See <URL:ftp://ftp.parc.xerox.com/pub/ilu/ilu.html>.
+
 If you have done a significant project in Python that you'd like to be
 included in the list above, send me email!
 
@@ -398,11 +425,16 @@ The furthest is Sunrise Software, who already have a product out using
 Python -- they use Python for a GUI management application and an SNMP
 network management application.  Contact: <info@sunrise.com>.
 
-Infoseek is using Python to implement their commercial WWW information
-retrieval service.  Contact: <info@infoseek.com>.
+Infoseek uses Python to implement their commercial WWW information
+retrieval service <URL:http://www.infoseek.com/>.  Contact:
+<info@infoseek.com>.
 
 Michael Powers of daVinci Time & Space is "writing tons-o-python for
 interactive television entertainment."  Contact: <powers@dvts.com>.
+
+Paul Everitt of Connecting Minds is planning a Lotus Notes gateway.
+Contact: <Paul.Everitt@cminds.com>.  Or see their WWW server
+<URL:http://www.cminds.com/>.
 
 Individuals at many other companies are using Python for
 internal development (witness their contributions to the Python
@@ -419,36 +451,55 @@ If you'd like to be included in the list above, send me email!
 
 A. Very stable.  While the current version number would suggest it is
 in the early stages of development, in fact new, stable releases
-(numbered 0.9.x and 1.0.x) have been coming out roughly every 3 to 6
-months for the past four years.
+(numbered 0.9.x through 1.1.x) have been coming out roughly every 3 to
+6 months for the past four years.
 
 2.5. Q. When will the next version be released?
 
-A. I am planning to release 1.1 before October 15.  It will contain
-tons of changes, including (again) improved portability, especially
-better support for DOS, Windows, Windows NT an the Macintosh.  A few
-modules will have been converted to the new naming scheme.  A working
-signal module will be present.
+A. I am planning to release 1.2 in January 1995.  It will contain
+hooks into the implementation of the import command, a (still limited)
+form of persistent objects, and the usual complement of bug fixes
+(including many fixed memory leaks and thread problems).
 
 2.6. Q. What new developments are expected for Python in the future?
 
-A.  A proposal is being worked out to change the semantics of operator
-overloading (__add__, __mul__ etc.) to make them more useful for
-implementing types that don't resemble numbers.  Additions will be
-__call__ (to call an instance as if it were a function) and __eq__,
-_lt__ etc. (to override individual comparisons).  A (new) pthreads
-interface has been submitted which will be integrated in the next
-release.  The X11/Motif interface will be improved.  There are ideas
-about built-in help using strings placed into function objects, and
-possibly a switch statement.
-
-There will be better ports to the Mac, DOS, Windows, Windows NT, and
+A. There will be better ports to the Mac, DOS, Windows, Windows NT, and
 OS/2.  The Windows ports will support dynamically loaded modules using
 DLLs.
 
 Also planned is improved support for embedding Python in other
 applications, e.g. by renaming most global symbols to have a "Py"
 prefix and providing more documentation and threading support.
+
+Some proposals were discussed at the recent Python workshop:
+
+        - persistent objects
+
+        - safe execution of untrusted Python code
+
+        - extensions to the import statement for managing packages
+        (groups of related modules)
+
+        - automatic generation of C/C++ interface glue
+
+        - interfaces to OMG IDL (== Interface Definition Language by
+        the Object Management Group)
+
+        - a portable GUI API (Graphical User Interface Application
+        Programmers Interface)
+
+        - module customization tools
+
+        - standardized documentation strings on module, class and
+        function objects
+
+        - the formation of a Python Steering Committee
+
+        - another Python Workshop
+
+For more info, have a look at the WWW page for the last Python
+Workshop <URL:http://www.eeel.nist.gov/python/workshop11-94/>.
+
 
 2.7. Q. Is it reasonable to propose incompatible changes to Python?
 
@@ -470,7 +521,9 @@ interested in the output).  The standard modules whose name begins
 with "test" together comprise the test.  The test set doesn't test
 *all* features of Python but it goes a long way to confirm that a new
 port is actually working.  The Makefile contains an entry "make test"
-which runs the autotest module.
+which runs the autotest module.  NOTE: if "make test" fails, run the
+tests manually ("import testall") to see what goes wrong before
+reporting the error.
 
 3.2. Q. When running the test set, I get complaints about floating point
 operations, but when playing with floating point operations I cannot
@@ -483,16 +536,16 @@ offending floating point tests and execute similar tests manually.
 
 3.3. Q. Link errors building Python with STDWIN 0.9.8. on SGI IRIX.
 
-A. Get STDWIN 0.9.9 from ftp://ftp.cwi.nl/pub/stdwin/stdwin0.9.9.tar.gz.
+A. Get STDWIN 0.9.9 <URL:ftp://ftp.cwi.nl/pub/stdwin/stdwin0.9.9.tar.gz>.
 
 3.4. Q. Link errors building Python with STDWIN 0.9.9.
 
-A. Probably routines liek 'tereate', 'tenew' etc.  The STDWIN 0.9.9
+A. Probably routines like 'tereate', 'tenew' etc.  The STDWIN 0.9.9
 distribution requires that you add TWO libraries from stdwin to the
 line for stdwin in the Setupfile.  Use something like this (all on one
 line!):
 
-stdwin stdwinmodule.c -I$(STDWIN)/H $(STDWIN)/Packs/textedit/libtextedit.a $(STDWIN)/Ports/x11/libstdwin.a -lX11
+        stdwin stdwinmodule.c -I$(STDWIN)/H $(STDWIN)/Packs/textedit/libtextedit.a $(STDWIN)/Ports/x11/libstdwin.a -lX11
 
 3.5. Q. Link errors after rerunning the configure script.
 
@@ -508,11 +561,14 @@ V getopt and other getopt implementations, doesn't consider a
 non-option to be the end of the option list.  A quick (and compatible)
 fix for scripts is to add "--" to the interpreter, like this:
 
-	#! /usr/local/bin/python --
+        #! /usr/local/bin/python --
 
 You can also use this interactively:
 
-	python -- script.py [options]
+        python -- script.py [options]
+
+Note that a working getopt implementation is provided in the Python
+distribution (in Python/getopt.c) but not automatically used.
 
 3.7. Q. When building on the SGI, make tries to run python to create
 glmodule.c, but python hasn't been built or installed yet.
@@ -548,10 +604,10 @@ interface: this gives you line editing and command history when
 calling python interactively. You need to configure build the GNU
 readline library before running the configure script. Its sources are
 no longer distributed with Python; you can ftp them from any GNU
-mirror site, or from its home site:
-ftp://slc2.ins.cwru.edu/pub/dist/readline-2.0.tar.gz (or a higher
-version number -- using version 1.x is not recommended). Pass the
-Python configure script the option --with-readline=DIRECTORY where
+mirror site, or from its home site
+<URL:ftp://slc2.ins.cwru.edu/pub/dist/readline-2.0.tar.gz> (or a
+higher version number -- using version 1.x is not recommended). Pass
+the Python configure script the option --with-readline=DIRECTORY where
 DIRECTORY is the absolute pathname of the directory where you've built
 the readline library. Some hints on building and using the readline
 library:
@@ -559,9 +615,9 @@ library:
 - On SGI IRIX 5, you may have to add the following
 to rldefs.h:
 
-#ifndef sigmask
-#define sigmask(sig) (1L << ((sig)-1))
-#endif
+        #ifndef sigmask
+        #define sigmask(sig) (1L << ((sig)-1))
+        #endif
 
 - On most systems, you will have to add #include "rldefs.h" to the
 top of several source files, and if you use the VPATH feature, you
@@ -577,15 +633,29 @@ stdwin.h file (in the STDWIN distribution, subdirectory H). The
 GL conflict has been solved in the Python configure script by a
 hack that forces use of the static version of the termcap library.
 
-- Check the newsgroup gnu.bash.bugs for specific problems with the
-readline library (I don't get this group here but I've been told
-that it is the place for readline bugs.)
+- Check the newsgroup gnu.bash.bugs <URL:news:gnu.bash.bugs> for
+specific problems with the readline library (I don't get this group
+here but I've been told that it is the place for readline bugs.)
 
 3.11. Q. Trouble building Python on Linux.
 
-A. There shouldn't be any -- I've seen several complaints but more
-reports on successful "out-of-the-box" ports on Linux.  The standard
-configure script runs just fine on Linux.
+A. (Adapted from Bennet Todd:)
+
+It seems to work for some people but not for others.
+
+This might depend on which Linux release you're using.  Older Linux
+releases had (understandably) fewer gracious hack to improve Unix
+compatibility; really old Linux was Posix 1003.1 compatible, without
+nearly as much Unix compatibility as one might have wished.  Current
+releases of Linux build most current free software, either BSD or
+System V, with little or no trouble.
+
+Besides that, there are quite a few different releases currently,
+including MCC, Slackware, SLS, and Debian, and probably more.  The
+differences between their compilation environments are far smaller
+than they used to be, but they're still updated with different
+frequencies.  It's likely that the current Slackware works fine, as it
+currently seems to be the most popular.  But that's just a guess.
 
 3.12. Q. Trouble with prototypes on Ultrix.
 
@@ -598,22 +668,27 @@ A. The problem seems to be that that the NeXT posix library and the
 NeXT dynamic loading library are incompatible.  Mike Carlton reports
 that the following worked for him (from a clean 1.1 distribution):
 
-	1) ./configure
-	2) edited config.status and changed 
-		OPT='-O'
-	   to
-		OPT='-posix -O'
-	3) edited Python/import.c and commented out the section
-		#if defined(NeXT) || defined(WITH_RLD) 
-		#define DYNAMIC_LINK
-		#define USE_RLD
-		#endif
-	   this disables dynamic loading
-	4) make
+        1) ./configure
+        2) edited config.status and changed 
+                OPT='-O'
+           to
+                OPT='-posix -O'
+        3) edited Python/import.c and commented out the section
+                #if defined(NeXT) || defined(WITH_RLD) 
+                #define DYNAMIC_LINK
+                #define USE_RLD
+                #endif
+           this disables dynamic loading
+        4) make
 
 3.14. Q. Other trouble building Python on platform X.
 
-A. Please email the details to <guido@cwi.nl> and I'll look into it.
+A. Please email me the details <URL:mailto:guido@cwi.nl> and I'll look
+into it.  Please provide as many details as possible.  In particular,
+if you don't tell me what type of computer and what operating system
+(and version) you are using it will be difficult for me to figure out
+what is the matter.  If you get a specific error message, please email
+it to me too.
 
 
 4. Programming in Python
@@ -634,34 +709,36 @@ Can I use a built-in type as base class?)
 A. No, but you can easily create a Python class which serves as a
 wrapper around a built-in object, e.g. (for dictionaries):
 
-	# A user-defined class behaving almost identical
-	# to a built-in dictionary.
-	class UserDict:
-		def __init__(self): self.data = {}
-		def __repr__(self): return repr(self.data)
-		def __cmp__(self, dict):
-			if type(dict) == type(self.data):
-				return cmp(self.data, dict)
-			else:
-				return cmp(self.data, dict.data)
-		def __len__(self): return len(self.data)
-		def __getitem__(self, key): return self.data[key]
-		def __setitem__(self, key, item): self.data[key] = item
-		def __delitem__(self, key): del self.data[key]
-		def keys(self): return self.data.keys()
-		def items(self): return self.data.items()
-		def values(self): return self.data.values()
-		def has_key(self, key): return self.data.has_key(key)
+        # A user-defined class behaving almost identical
+        # to a built-in dictionary.
+        class UserDict:
+                def __init__(self): self.data = {}
+                def __repr__(self): return repr(self.data)
+                def __cmp__(self, dict):
+                        if type(dict) == type(self.data):
+                                return cmp(self.data, dict)
+                        else:
+                                return cmp(self.data, dict.data)
+                def __len__(self): return len(self.data)
+                def __getitem__(self, key): return self.data[key]
+                def __setitem__(self, key, item): self.data[key] = item
+                def __delitem__(self, key): del self.data[key]
+                def keys(self): return self.data.keys()
+                def items(self): return self.data.items()
+                def values(self): return self.data.values()
+                def has_key(self, key): return self.data.has_key(key)
 
 4.3. Q. Is there a curses/termcap package for Python?
 
-A. Yes -- Lance Ellinghouse has written a module that interfaces to
+A. Yes -- Lance Ellinghaus has written a module that interfaces to
 System V's "ncurses".  If you know a little curses and some Python,
-it's straightforward to use.
+it's straightforward to use.  It is part of the standard Python
+distribution, but not configured by default -- you must enable it by
+editing Modules/Setup.  It requires a System V curses implementation.
 
 You could also consider using the "alfa" (== character cell) version
-of STDWIN.  (STDWIN == Standard Windows, a portable windowing system
-interface by the same author, URL: "ftp://ftp.cwi.nl/pub/stdwin".)  This
+of STDWIN.  (Standard Window System Interface, a portable windowing
+system interface by myself <URL:ftp://ftp.cwi.nl/pub/stdwin/>.)  This
 will also prepare your program for porting to windowing environments
 such as X11 or the Macintosh.
 
@@ -681,63 +758,74 @@ create a function that needs to access some data which you have
 available locally, create a new class to hold the data and return a
 method of an instance of that class, e.g.:
 
-	class MultiplierClass:
-		def __init__(self, factor):
-			self.factor = factor
-		def multiplier(self, argument):
-			return argument * self.factor
+        class MultiplierClass:
+            def __init__(self, factor):
+                self.factor = factor
+            def multiplier(self, argument):
+                return argument * self.factor
 
-	def generate_multiplier(factor):
-		return MultiplierClass(factor).multiplier
+        def generate_multiplier(factor):
+            return MultiplierClass(factor).multiplier
 
-	twice = generate_multiplier(2)
-	print twice(10)
-	# Output: 20
+        twice = generate_multiplier(2)
+        print twice(10)
+        # Output: 20
+
+An alternative solution uses default arguments, e.g.:
+
+        def generate_multiplier(factor):
+            def multiplier(arg, fact = factor):
+                return arg*fact
+            return multiplier
+
+        twice = generate_multiplier(2)
+        print twice(10)
+        # Output: 20
 
 4.6. Q. How do I iterate over a sequence in reverse order?
 
 A. If it is a list, the fastest solution is
 
-	list.reverse()
-	try:
-		for x in list:
-			"do something with x"
-	finally:
-		list.reverse()
+        list.reverse()
+        try:
+                for x in list:
+                        "do something with x"
+        finally:
+                list.reverse()
 
 This has the disadvantage that while you are in the loop, the list
 is temporarily reversed.  If you don't like this, you can make a copy.
 This appears expensive but is actually faster than other solutions:
 
-	rev = list[:]
-	rev.reverse()
-	for x in rev:
-		<do something with x>
+        rev = list[:]
+        rev.reverse()
+        for x in rev:
+                <do something with x>
 
 If it isn't a list, a more general but slower solution is:
 
-	i = len(list)
-	while i > 0:
-		i = i-1
-		x = list[i]
-		<do something with x>
+        i = len(list)
+        while i > 0:
+                i = i-1
+                x = list[i]
+                <do something with x>
 
 A more elegant solution, is to define a class which acts as a sequence
 and yields the elements in reverse order (solution due to Steve
 Majewski):
 
-	class Rev:
-		def __init__(self, seq):
-			self.forw = seq
-		def __len__(self):
-			return len(self.forw)
-		def __getitem__(self, i):
-			return self.forw[-(i + 1)]
+        class Rev:
+                def __init__(self, seq):
+                        self.forw = seq
+                def __len__(self):
+                        return len(self.forw)
+                def __getitem__(self, i):
+                        return self.forw[-(i + 1)]
 
 You can now simply write:
 
-	for x in Rev(list):
-		<do something with x>
+        for x in Rev(list):
+                <do something with x>
 
 Unfortunately, this solution is slowest of all, due to the method
 call overhead...
@@ -761,19 +849,19 @@ magnitude).
 again (into the same Python process), the changes don't seem to take
 place.  What is going on?
 
-A. For efficiency reasons, Python only reads the module file on the
-first time a module is imported (otherwise a program consisting of
-many modules, each of which imports the same basic module, would read
-the basic module over and over again).  To force a changed module
-being read again, do this:
+A. For reasons of efficiency as well as consistency, Python only reads
+the module file on the first time a module is imported (otherwise a
+program consisting of many modules, each of which imports the same
+basic module, would read the basic module over and over again).  To
+force a changed module being read again, do this:
 
-	import modname
-	reload(modname)
+        import modname
+        reload(modname)
 
 Warning: this technique is not 100% fool-proof.  In particular,
 modules containing statements like
 
-	from modname import some_objects
+        from modname import some_objects
 
 will continue to work with the old version of the imported objects.
 
@@ -783,34 +871,41 @@ A. A module can find out its own module name by looking at the
 (predefined) global variable __name__.  If this has the value
 '__main__' you are running as a script.  
 
-4.10. Q. I have a module in which I want to execute some extra code when it
-is run as a script.  How do I find out whether I am running as a
-script?
+4.10. Q. I have a module in which I want to execute some extra code
+when it is run as a script.  How do I find out whether I am running as
+a script?
 
 A. See the previous question.  E.g. if you put the following on the
 last line of your module, main() is called only when your module is
 running as a script:
 
-	if __name__ == '__main__': main()
+        if __name__ == '__main__': main()
 
-4.11. Q. I try to run a program from the Demo directory but it fails with
-ImportError: No module named ...; what gives?
+4.11. Q. I try to run a program from the Demo directory but it fails
+with ImportError: No module named ...; what gives?
 
 A. This is probably an optional module (written in C!) which hasn't
 been configured on your system.  This especially happens with modules
-like "stdwin", "gl", "Xt" or "Xm".  For STDWIN and many other modules,
-see Modules/Setup.in for info on how to add these modules to your
-Python, if it is possible at all.  Sometimes you will have to ftp and
-build another package first (e.g. STDWIN).  Sometimes the module only
-works on specific platforms (e.g. gl only works on SGI machines).
+like "Tkinter", "stdwin", "gl", "Xt" or "Xm".  For Tkinter, STDWIN and
+many other modules, see Modules/Setup.in for info on how to add these
+modules to your Python, if it is possible at all.  Sometimes you will
+have to ftp and build another package first (e.g. STDWIN).  Sometimes
+the module only works on specific platforms (e.g. gl only works on SGI
+machines).
+
+NOTE: if the complaint is about "Tkinter" (upper case T) and you have
+already configured module "tkinter" (lower case t), the solution is
+*not* to rename tkinter to Tkinter or vice versa.  There is probably
+something wring with your module search path.  Check out the value of
+sys.path.
 
 For X-related modules (Xt and Xm) you will have to do more work: they
 are currently not part of the standard Python distribution.  You will
-have to ftp the file "extensions.tar.gz" file from a Python ftp
-repository (e.g. ftp.cwi.nl) and follow the instructions there.  Note:
-the X related modules are still somewhat flakey, so don't try this
-unless you alread know a bit or two about building X applications on
-your platform.
+have to ftp the Extensions tar file, e.g.
+<URL:ftp://ftp.cwi.nl/pub/python/extensions.tar.gz> and follow the
+instructions there.  Note: the X related modules are still somewhat
+flakey, so don't try this unless you alread know a bit or two about
+building X applications on your platform.
 
 See also the next question.
 
@@ -828,79 +923,92 @@ STDWIN-related lines so it's easy to miss it.
 A. Depending on what platform(s) you are aiming at, there are several.
 
 - There's a neat object-oriented interface to the Tcl/Tk widget set,
-called Tkinter.  You can ftp it from ftp.cwi.nl as
-pub/python/tkinter.tar.gz.  This is probably the easiest to install
-and use, and the most complete widget set.
+called Tkinter.  As of python 1.1, it is part of the standard Python
+distribution -- all you need to do is enable it in Modules/Setup
+(provided you have already installed Tk and Tcl).  This is probably
+the easiest to install and use, and the most complete widget set.  It
+is also very likely that in the future the standard Python GUI API
+will be based on or at least look very much like the Tkinter
+interface.  For more info about Tk, including pointers to the source,
+see John Ousterhout's home page
+<URL:http://playground.Sun.COM:80/~ouster/>.
 
 - The standard Python distribution comes with an interface to STDWIN,
-a platform-independent low-level windowing interface (you have to ftp
-the source for STDWIN separately, e.g. from ftp.cwi.nl in pub/stdwin
-or gatekeeper.dec.com in pub/misc/stdwin).  STDWIN runs under X11 or
-the Mac; a Windows port has been attempted but I can't seem to get it
-working.  Note that STDWIN is really not powerful enough to implement
-a modern GUI (no widgets, etc.) and that I don't have the time to
-maintain or extend it, so you may be better off using Tkinter or the
-Motif interface, unless you require portability to the Mac (which is
-also offered by SUIT, by the way -- see below).
+a platform-independent low-level windowing interface.  You have to ftp
+the source for STDWIN separately,
+e.g. <URL:ftp://ftp.cwi.nl/pub/stdwin/> or gatekeeper.dec.com in
+pub/misc/stdwin <URL:ftp://gatekeeper.dec.com/pub/misc/stdwin/>.
+STDWIN runs under X11 or the Mac; a Windows port has been attempted
+but I can't seem to get it working.  Note that STDWIN is really not
+powerful enough to implement a modern GUI (no widgets, etc.) and that
+I don't have the time to maintain or extend it, so you may be better
+off using Tkinter or the Motif interface, unless you require
+portability to the Mac (which is also offered by SUIT, by the way --
+see below).
 
 - For SGI IRIX only, there's an interface to the complete GL (Graphics
 Library -- low level but very good 3D capabilities) as well as to
 FORMS (a buttons-and-sliders-etc package built on top of GL by Mark
-Overmars -- ftp'able from ftp.cs.ruu.nl in pub/SGI/FORMS).
+Overmars -- ftp'able from <URL:ftp://ftp.cs.ruu.nl/pub/SGI/FORMS/>).
 
 - There's an interface to X11, including the Athena and Motif widget
 sets (and a few individual widgets, like Mosaic's HTML widget and
 SGI's GL widget) in the Extensions set, which is separately ftp'able
-from ftp.cwi.nl as pub/python/extensions.tar.gz.
+<URL:ftp://ftp.cwi.nl/pub/python/extensions.tar.gz>.
 
 - There's an interface to SUIT, the U of Virginia's Simple User
-Interface Toolkit; it can be ftp'ed from uvacs.cs.virginia.edu as
-pub/suit/python/SUIT_python.tar.Z.  A PC binary of Python 1.0.2
-compiled with DJGPP and with SUIT support built-in has been made
-available by Antonio Costa on ftp site asterix.inescn.pt, directory
-pub/PC/python, file pyt102su.exe (a self-extracting archive).
+Interface Toolkit; it can be ftp'ed from
+<URL:ftp://uvacs.cs.virginia.edu/pub/suit/python/SUIT_python.tar.Z>.
+A PC binary of Python 1.0.2 compiled with DJGPP and with SUIT support
+built-in has been made available by Antonio Costa
+<URL:ftp://asterix.inescn.pt/pub/PC/python/pyt102su.exe> (a
+self-extracting archive).  Note that the UVa people themselves have
+expressed doubts about SUIT, and are planning to build a Python GUI
+API based upon Tk (though not necessarily on Tkinter); see
+<URL:http://server.cs.virginia.edu/~tnb2d/IT/IT.html>.
 
 - There's an interface to WAFE, a Tcl interface to the X11 Motif and
-Athena widget sets.  Last I heard about it it was included in the
-WAFE 1.0 prerelease, ftp'able from ftp.wu-wien.ac.at as
-pub/src/X11/wafe/wafe-1.0.tar.gz-prerelease.
+Athena widget sets.  Last I heard about it it was included in the WAFE
+1.0 prerelease
+<URL:ftp://ftp.wu-wien.ac.at/pub/src/X11/wafe/wafe-1.0.tar.gz-prerelease>.
 
 4.14. Q. Are there any interfaces to database packages in Python?
 
 A. There's an interface to SYBASE by John Redford
 <jredford@lehman.com>.
 
-There's also an interface to metalbase by Lance Ellinghouse
-<lance@markv.com>.
+There's also an interface to metalbase by Lance Ellinghaus
+<lance@markv.com>; it is part of the separate Extensions distribution
+<URL:ftp://ftp.cwi.nl/pub/python/extensions.tar.gz>.
 
 Anthony Baxter <anthony.baxter@aaii.oz.au> has written an interface to
-mSQL (mini-SQL).  Ftp it from ftp.cwi.nl:/pub/python/PymSQL.tar.gz.
+mSQL (mini-SQL).  <URL:ftp://ftp.cwi.nl/pub/python/PymSQL.tar.gz>.
 
 4.15. Q. Is it possible to write obfuscated one-liners in Python?
 
 A. Yes.  See the following three examples, due to Ulf Bartelt:
 
-# Primes < 1000
-print filter(None,map(lambda y:y*reduce(lambda x,y:x*y!=0,\
-map(lambda x,y=y:y%x,range(2,int(pow(y,0.5)+1))),1),range(2,1000)))
+        # Primes < 1000
+        print filter(None,map(lambda y:y*reduce(lambda x,y:x*y!=0,
+        map(lambda x,y=y:y%x,range(2,int(pow(y,0.5)+1))),1),range(2,1000)))
 
-# First 10 Fibonacci numbers
-print map(lambda x,f=lambda x,f:(x<=1) or (f(x-1,f)+f(x-2,f)): f(x,f),\
-range(10))
+        # First 10 Fibonacci numbers
+        print map(lambda x,f=lambda x,f:(x<=1) or (f(x-1,f)+f(x-2,f)): f(x,f),
+        range(10))
 
-# Mandelbrot set
-print (lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,\
-Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,Sy=Sy,L=lambda yc,Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,i=IM,\
-Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,\
-i=i,Sx=Sx,F=lambda xc,yc,x,y,k,f=lambda xc,yc,x,y,k,f:(k<=0)or (x*x+y*y\
->=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,x,y,k,f):chr(\
-64+F(Ru+x*(Ro-Ru)/Sx,yc,0,0,i)),range(Sx))):L(Iu+y*(Io-Iu)/Sy),range(Sy\
-))))(-2.1, 0.7, -1.2, 1.2, 30, 80, 24)
-#    \___ ___/  \___ ___/  |   |   |__ lines on screen
-#        V          V      |   |______ columns on screen
-#        |          |      |__________ maximum of "iterations"
-#        |          |_________________ range on y axis
-#        |____________________________ range on x axis
+        # Mandelbrot set
+        print (lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,
+        Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,Sy=Sy,L=lambda yc,Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,i=IM,
+        Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,
+        i=i,Sx=Sx,F=lambda xc,yc,x,y,k,f=lambda xc,yc,x,y,k,f:(k<=0)or (x*x+y*y
+        >=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,x,y,k,f):chr(
+        64+F(Ru+x*(Ro-Ru)/Sx,yc,0,0,i)),range(Sx))):L(Iu+y*(Io-Iu)/Sy),range(Sy
+        ))))(-2.1, 0.7, -1.2, 1.2, 30, 80, 24)
+        #    \___ ___/  \___ ___/  |   |   |__ lines on screen
+        #        V          V      |   |______ columns on screen
+        #        |          |      |__________ maximum of "iterations"
+        #        |          |_________________ range on y axis
+        #        |____________________________ range on x axis
 
 Don't try this at home, kids!
 
@@ -951,12 +1059,17 @@ but if your Python has been configured to support threads, it is not
 called (because other threads may still be active).  You can define
 your own cleanup function using sys.exitfunc (see question 4.4).
 
-4.18. Q. How do I change the shell environment for programs called using
-os.popen() or os.system()?  Changing os.environ doesn't work.
+- Finally, there are some obscure bugs if your __del__ method does
+complicated things such as updating dictionaries or lists or
+references globals.  I hope to have fixed these in release 1.2.
+
+4.18. Q. How do I change the shell environment for programs called
+using os.popen() or os.system()?  Changing os.environ doesn't work.
 
 A. Modifying the environment passed to subshells was left out of the
 interpreter because there seemed to be no well-established portable
-way to do it.
+way to do it (in particular, some systems, have putenv(), others have
+setenv(), and some have none at all).
 
 However if all you want is to pass environment variables to the
 commands run by os.system() or os.popen(), there's a simple solution:
@@ -964,15 +1077,15 @@ prefix the command string with a couple of variable assignments and
 export statements. I guess the following would be universal for popen
 (untested):
 
-import os
-from commands import mkarg # nifty routine to add shell quoting
-def epopen(cmd, mode, env = {}):
-	# env is a dictionary of environment variables
-	prefix = ''
-	for key, value in env.values():
-		prefix = prefix + '%s=%s\n' % (key, mkarg(value))
-		prefix = prefix + 'export %s\n' % key
-	return os.popen(prefix + cmd, mode)
+        import os
+        from commands import mkarg # nifty routine to add shell quoting
+        def epopen(cmd, mode, env = {}):
+                # env is a dictionary of environment variables
+                prefix = ''
+                for key, value in env.values():
+                        prefix = prefix + '%s=%s\n' % (key, mkarg(value))
+                        prefix = prefix + 'export %s\n' % key
+                return os.popen(prefix + cmd, mode)
 
 4.19. Q. What is a class?
 
@@ -1007,16 +1120,16 @@ argument (a derived class is also OK).  Calling an unbound method
 doesn't "magically" derive the first argument from the context -- you
 have to provide it explicitly.
 
-4.23. Q. How do I call a method defined in a base class from a derived class
-that overrides it?
+4.23. Q. How do I call a method defined in a base class from a derived
+class that overrides it?
 
 A. If your class definition starts with "class Derived(Base): ..."
 then you can call method meth defined in Base (or one of Base's base
 classes) as Base.meth(self, arguments...).  Here, Base.meth is an
 unbound method (see previous question).
 
-4.24. Q. How do I call a method from a base class without using the name of
-the base class?
+4.24. Q. How do I call a method from a base class without using the
+name of the base class?
 
 A. DON'T DO THIS.  REALLY.  I MEAN IT.  It appears that you could call
 self.__class__.__bases__[0].meth(self, arguments...) but this fails when
@@ -1037,9 +1150,9 @@ class to use.  Example:
 
 BaseAlias = <real base class>
 class Derived(BaseAlias):
-	def meth(self):
-		BaseAlias.meth(self)
-		...
+        def meth(self):
+                BaseAlias.meth(self)
+                ...
 
 4.26. Q. How can I find the methods or attributes of an object?
 
@@ -1093,9 +1206,8 @@ flags for your platform.  A new version will be released with Python
 4.29. Q. Is there a special lib for writing CGI scripts in Python?
 
 A. There's documentation and code for a cgi.py module by Michael McLay
-<mclay@eeel.nist.gov> available from:
-
-	http://www.eeel.nist.gov/python/
+<mclay@eeel.nist.gov> available from
+<URL:http://www.eeel.nist.gov/python/>
 
 (For the curious: CGI or Common Gateway Interface is the protocol
 between HTTP servers (WWW servers) and programs/scripts they run to
@@ -1108,13 +1220,14 @@ A. The standard library has a module urllib, which can retrieve most
 commonly used URL types (file, ftp, http, gopher).
 
 The Demo2/www directory (Demo2 has to be retrieved separately from the
-Python ftp sites) contains some (really old) code to parse HTML and to
-display it.
+Python ftp sites <URL:ftp://ftp.cwi.nl/pub/python/demo2.tar.gz>)
+contains some (really old) code to parse HTML and to display it.
 
 Steve Miale <smiale@cs.indiana.edu> has written a modular WWW browser
 called Dancer.  An alpha version can be FTP'ed from
-ftp.cs.indiana.edu:/pub/smiale/dancer.tar.gz.  (There are a few
-articles about Dancer in the (hyper)mail archive.)
+<URL:ftp://ftp.cs.indiana.edu/pub/smiale/dancer.tar.gz>.  (There are a
+few articles about Dancer in the (hyper)mail archive
+<URL:http://www.cwi.nl/~guido/hypermail/python-1994q3/index.html>.)
 
 
 5. Extending Python
@@ -1181,26 +1294,26 @@ A. Here's a function (untested) that might become part of the next
 release in some form.  It uses <stdarg.h> to allow passing the
 argument list on to vmkvalue():
 
-object *call_method(object *inst, char *methodname, char *format, ...)
-{
-	object *method;
-	object *args;
-	object *result;
-	va_list va;
-	method = getattr(inst, methodname);
-	if (method == NULL) return NULL;
-	va_start(va, format);
-	args = vmkvalue(format, va);
-	va_end(va);
-	if (args == NULL) {
-		DECREF(method);
-		return NULL;
-	}
-	result = call_object(method, args);
-	DECREF(method);
-	DECREF(args);
-	return result;
-}
+        object *call_method(object *inst, char *methodname, char *format, ...)
+        {
+                object *method;
+                object *args;
+                object *result;
+                va_list va;
+                method = getattr(inst, methodname);
+                if (method == NULL) return NULL;
+                va_start(va, format);
+                args = vmkvalue(format, va);
+                va_end(va);
+                if (args == NULL) {
+                        DECREF(method);
+                        return NULL;
+                }
+                result = call_object(method, args);
+                DECREF(method);
+                DECREF(args);
+                return result;
+        }
 
 This works for any instance that has methods -- whether built-in or
 user-defined.  You are responsible for eventually DECREF'ing the
@@ -1209,13 +1322,13 @@ return value.
 To call, e.g., a file object's "seek" method with arguments 10, 0
 (assuming the file object pointer is "f"):
 
-res = call_method(f, "seek", "(OO)", 10, 0);
-if (res == NULL) {
-	... an exception occurred ...
-}
-else {
-	DECREF(res);
-}
+        res = call_method(f, "seek", "(OO)", 10, 0);
+        if (res == NULL) {
+                ... an exception occurred ...
+        }
+        else {
+                DECREF(res);
+        }
 
 Note that since call_object() *always* wants a tuple for the argument
 list, to call a function without arguments, pass "()" for the format,
@@ -1242,7 +1355,7 @@ Then, the output will go wherever your write() method sends it.
 
 A. You can get a pointer to the module object as follows:
 
-	module = import_module("<modulename>");
+        module = import_module("<modulename>");
 
 If the module hasn't been imported yet (i.e. it is not yet present in
 sys.modules), this initializes the module; otherwise it simply returns
@@ -1253,7 +1366,7 @@ initialized and is stored in sys.modules.
 You can then access the module's attributes (i.e. any name defined in
 the module) as follows:
 
-	attr = getattr(module, "<attrname>");
+        attr = getattr(module, "<attrname>");
 
 Calling setattr(), to assign to variables in the module, also works.
 
@@ -1280,20 +1393,8 @@ disk.)
 A. Hmm, hmm.  Basically for the same reasons as why there is no
 generic copying operation.
 
-However, since there is a real desire to have persistent operations,
-I'm thinking of extending the marshal module to support object sharing
-(and hence recursive objects) and to extend the list of supported
-types considerably.  For user-defined classes, hooks with __*__ names
-will allow the class to modify the way their instances are dumped and
-loaded.  Built-in types (including those defined by new extensions)
-may also define dump/load hooks.  There are several problems still to
-solve, e.g. how do you reliably find the class of which an object is
-an instance at load time -- assuming the class itself is loaded from
-some module, and not part of the dumped data.  It is also necessary to
-separate the functionality of converting a set of objects into a byte
-stream from which they can be reloaded, from the ability to save these
-byte streams as files and being able to reference an object by a
-persistent global name.
+A partial solution will appear in release 1.2.  This will also provide
+a partial solution to the problem of a generic copying operation.
 
 6.3. Q. Why isn't there a switch or case statement in Python?
 
@@ -1313,10 +1414,10 @@ Some arguments for it:
 between grouping perceived by the parser and the human reader.  I
 remember long ago seeing a C fragment like this:
 
-	if (x <= y)
-		x++;
-		y--;
-	z++;
+        if (x <= y)
+                x++;
+                y--;
+        z++;
 
 and staring a long time at it wondering why y was being decremented
 even for x > y...  (And I wasn't a C newbie then either.)
@@ -1485,9 +1586,10 @@ surely hit upon it sooner or later.
 
 7.1. Q. Is there a Mac version of Python?
 
-A. Yes.  It is on most ftp sites carrying Python as python.sea.hqx --
-this is a self-extracting archive containing the application binary as
-well as the Lib modules.
+A. Yes.  It is on most ftp sites carrying Python as python.sea.hqx,
+e.g. <URL:ftp://ftp.cwi.nl/pub/python/python_1.1.sea.hqx> -- this is a
+self-extracting archive containing the application binary as well as
+the Lib modules.
 
 7.2. Q. Is there a DOS version of Python?
 
@@ -1500,9 +1602,9 @@ fairly large programs.  32python.exe is distributed as a tar file
 containing the required DOS extended and 387 emulator.  Both are on
 most ftp sites carrying Python.
 
-The file dosbuild.tar.gz on the standard ftp sites
-(e.g. ftp.cwi.nl:/pub/python/) contains rudimentary Makefiles and
-instructions.
+The file dosbuild.tar.gz on the standard ftp sites contains
+rudimentary Makefiles and instructions
+<URL:ftp://ftp.cwi.nl/pub/python/dosbuild.tar.gz>.
 
 7.3. Q. Is there a Windows version of Python?
 
@@ -1520,22 +1622,15 @@ it).  See the next question.
 
 7.4. Q. Is there a Windows NT version of Python?
 
-A. Yes.  Use ntpython.exe.  This is for Intel CPUs.  If you want a
-Windows user interface, use qwpython.exe.
+A. Yes.  Mark Hammond <MHammond@cmutual.com.au> has built a full NT
+port.  This supports using DLLs for dynamic loading of Python modules,
+and includes an interface to the Microsoft Foundation Classes and a
+Python programming environment using it that's written mostly in
+Python.  See <URL:ftp://ftp.cwi.nl/pub/python/nt/> -- most mirrors
+will also have this.
 
-Mark Hammond <MHammond@cmutual.com.au> is building a better NT port.
-This supports using DLLs for dynamic loading of Python modules, and
-includes an interface to the Microsoft Foundation Classes and a Python
-programming environment using it that's written mostly in Python.  A
-prerelease (source and binaries) can be ftp'ed from
-ftp.cwi.nl:/pub/python/nt/ -- most mirrors will also have this.  A
-thread module is also planned but currently low on Mark's list of
-priorities.
-
-To build Python for the Windows NT on the DEC Alpha AXP, retrieve a
-zipfile with Makefiles for NT from the following URL:
-"ftp://ftp.ksc.nasa.gov/pub.win3.private.proto/python-make.zip".  This
-was contributed by Sam Rushing <rushing@squirl.oau.org>.
+Sam Rushing <rushing@squirl.oau.org> once announced he knows how to
+build Python for the Windows NT on the DEC Alpha AXP.
 
 Note that currently there is no unified compilation environment for
 all NT platforms -- hopefully Microsoft will fix this with the release
@@ -1543,9 +1638,10 @@ of Visual C++ 2.0.
 
 7.5. Q. Is there an OS/2 version of Python?
 
-A. Yes.  You can ftp it (from ftp.cwi.nl in pub/python, or from the
-mirror sites) as pyth_os2.zip.  This contains both an executable and
-Makefiles for those fortunate enough to have a C compiler.
+A. Yes.  You can ftp it from the usual places as pyth_os2.zip, e.g.
+<URL:ftp://ftp.cwi.nl/pub/python/pyth_os2.zip>.  This contains both an
+executable and Makefiles for those fortunate enough to have a C
+compiler.
 
 7.6. Q. Is there a VMS version of Python?
 
@@ -1561,10 +1657,6 @@ platforms?
 
 A. Basically, the same story as for VMS...  (Info as of 23 September
 1994.)
-
-For ports of Windows NT to non-Intel platforms, the normal NT port
-should work except you may have to use a different Makefile.
-(Unconfirmed suggestions from the Python list.)
 
 7.8. Q. Where are the source or Makefiles for the non-UNIX versions?
 
@@ -1588,7 +1680,8 @@ integrate all changes needed to get it to compile on a particular
 platform back into the standard sources, so porting of the next
 version to the various non-UNIX platforms should be easy.
 
-(*) For the Macintosh, that volunteer is me.
+(*) For the Macintosh, that volunteer is me, with help from Jack
+Jansen <jack@cwi.nl>.
 
 7.10. Q. I have the PC version but it appears to be only a binary.
 Where's the library?
@@ -1597,21 +1690,22 @@ A. You still need to copy the files from the distribution directory
 "python/Lib" to your system.  If you don't have the full distribution,
 you can get the file pythonlib<version>.tar.gz from most ftp sites
 carrying Python; this is a subset of the distribution containing just
-those file.
+those file, e.g.
+<URL:ftp://ftp.cwi.nl/pub/python/pythonlib1.1.tar.gz>.
 
 Once you have installed the library, you need to point sys.path to it.
 Assuming the library is in C:\misc\python\lib, the following commands
 will point your Python interpreter to it (note the doubled backslashes
 -- you can also use single forward slashes instead):
 
-	>>> import sys
-	>>> sys.path.insert(0, 'C:\\misc\\python\\lib')
-	>>>
+        >>> import sys
+        >>> sys.path.insert(0, 'C:\\misc\\python\\lib')
+        >>>
 
 For a more permanent effect, set the environment variable PYTHONPATH,
 as follows (talking to a DOS prompt):
 
-	C> SET PYTHONPATH=C:\misc\python\lib
+        C> SET PYTHONPATH=C:\misc\python\lib
 
 7.11. Q. Where's the documentation for the Mac or PC version?
 
