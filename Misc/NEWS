@@ -331,6 +331,11 @@ Library
 
 Tools/Demos
 
+- IDLE supports now encoding declarations (PEP 263); it can also deal
+  with legacy 8-bit files if they use the locale's encoding. It allows
+  non-ASCII strings in the interactive shell and executes them in the
+  locale's encoding.
+
 - freeze.py now produces binaries which can import shared modules,
   unlike before when this failed due to missing symbol exports in
   the generated binary.
