@@ -81,6 +81,14 @@ initimport()
 		fatal("duplicate initimport() call");
 	if ((import_modules = newdictobject()) == NULL)
 		fatal("no mem for dictionary of modules");
+	if (Py_OptimizeFlag) {
+		/* Replace ".pyc" with ".pyo" in import_filetab */
+		struct filedescr *p;
+		for (p = import_filetab; p->suffix != NULL; p++) {
+			if (strcmp(p->suffix, ".pyc") == 0)
+				p->suffix = ".pyo";
+		}
+	}
 }
 
 
@@ -202,7 +210,7 @@ make_compiled_pathname(pathname, buf, buflen)
 	if (len+2 > buflen)
 		return NULL;
 	strcpy(buf, pathname);
-	strcpy(buf+len, "c");
+	strcpy(buf+len, Py_OptimizeFlag ? "o" : "c");
 
 	return buf;
 }
