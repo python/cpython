@@ -671,6 +671,7 @@ BUILD_FUNC_DEF_2(PySocketSock_getsockname,PySocketSockObject *,s, PyObject *,arg
 		return NULL;
 	if (!getsockaddrlen(s, &addrlen))
 		return NULL;
+	memset(addrbuf, 0, addrlen);
 	Py_BEGIN_ALLOW_THREADS
 	res = getsockname(s->sock_fd, (struct sockaddr *) addrbuf, &addrlen);
 	Py_END_ALLOW_THREADS
