@@ -392,7 +392,7 @@ _PyImport_FixupExtension(char *name, char *filename)
 	dict = PyModule_GetDict(mod);
 	if (dict == NULL)
 		return NULL;
-	copy = PyObject_CallMethod(dict, "copy", "");
+	copy = PyDict_Copy(dict);
 	if (copy == NULL)
 		return NULL;
 	PyDict_SetItemString(extensions, filename, copy);
@@ -403,7 +403,7 @@ _PyImport_FixupExtension(char *name, char *filename)
 PyObject *
 _PyImport_FindExtension(char *name, char *filename)
 {
-	PyObject *dict, *mod, *mdict, *result;
+	PyObject *dict, *mod, *mdict;
 	if (extensions == NULL)
 		return NULL;
 	dict = PyDict_GetItemString(extensions, filename);
@@ -415,10 +415,8 @@ _PyImport_FindExtension(char *name, char *filename)
 	mdict = PyModule_GetDict(mod);
 	if (mdict == NULL)
 		return NULL;
-	result = PyObject_CallMethod(mdict, "update", "O", dict);
-	if (result == NULL)
+	if (PyDict_Update(mdict, dict))
 		return NULL;
-	Py_DECREF(result);
 	if (Py_VerboseFlag)
 		PySys_WriteStderr("import %s # previously loaded (%s)\n",
 			name, filename);
