@@ -121,10 +121,45 @@ children of that node.
 Write XML to the writer object.  The writer should have a
 \method{write()} method which matches that of the file object
 interface.
+
+\versionadded[To support pretty output, new keyword parameters indent,
+addindent, and newl have been added]{2.1}
+
+\versionadded[For the \class{Document} node, an additional keyword
+argument encoding can be used to specify the encoding field of the XML
+header]{2.3}
+
 \end{methoddesc}
 
-\begin{methoddesc}{toxml}{}
+\begin{methoddesc}{toxml}{\optional{encoding}}
 Return the XML that the DOM represents as a string.
+
+\versionadded[the \var{encoding} argument]{2.3}
+
+With no argument, the XML header does not specify an encoding, and the
+result is Unicode string if the default encoding cannot represent all
+characters in the document. Encoding this string in an encoding other
+than UTF-8 is likely incorrect, since UTF-8 is the default encoding of
+XML.
+
+With an explicit \var{encoding} argument, the result is a byte string
+in the specified encoding. It is recommended that this argument is
+always specified. To avoid UnicodeError exceptions in case of
+unrepresentable text data, the encoding argument should be specified
+as "utf-8".
+
+\end{methoddesc}
+
+\begin{methoddesc}{toprettyxml}{\optional{indent\optional{, newl}}}
+
+Return a pretty-printed version of the document. \var{indent} specifies
+the indentation string and defaults to a tabulator; \var{newl} specifies
+the string emitted at the end of each line and defaults to \\n.
+
+\versionadded{2.1}
+
+\versionadded[the encoding argument; see \method{toxml}]{2.3}
+
 \end{methoddesc}
 
 The following standard DOM methods have special considerations with

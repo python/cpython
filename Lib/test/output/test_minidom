@@ -98,6 +98,9 @@ Passed assertion: len(Node.allnodes) == 0
 Passed Test
 Test Succeeded testElementReprAndStr
 Passed assertion: len(Node.allnodes) == 0
+Passed testEncodings - encoding EURO SIGN
+Test Succeeded testEncodings
+Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testFirstChild
 Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testGetAttrLength
