@@ -27,6 +27,14 @@ argument is omitted in which case the output filename is read from the
 binhex file.
 \end{funcdesc}
 
+The following exception is also defined:
+
+\begin{excdesc}{Error}
+Exception raised when something can't be encoded using the binhex
+format (for example, a filename is too long to fit in the filename
+field), or when input is not properly encoded binhex data.
+\end{excdesc}
+
 
 \begin{seealso}
   \seemodule{binascii}{Support module containing \ASCII-to-binary
