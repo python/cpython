@@ -1,4 +1,6 @@
 import string
+import md5
+from sys import argv
 
 def MDPrint(str):
     outstr = ''
@@ -20,8 +22,6 @@ def makestr(start, end):
     return result
 
 
-from md5 import md5
-
 def MDTimeTrial():
     TEST_BLOCK_SIZE = 1000
     TEST_BLOCKS = 10000
@@ -42,7 +42,7 @@ def MDTimeTrial():
     print 'MD5 time trial. Processing', TEST_BYTES, 'characters...'
     t1 = time()
 
-    mdContext = md5()
+    mdContext = md5.new()
 
     for i in range(TEST_BLOCKS):
         mdContext.update(data)
@@ -57,13 +57,13 @@ def MDTimeTrial():
 
 
 def MDString(str):
-    MDPrint(md5(str).digest())
+    MDPrint(md5.new(str).digest())
     print '"' + str + '"'
 
 
 def MDFile(filename):
     f = open(filename, 'rb');
-    mdContext = md5()
+    mdContext = md5.new()
 
     while 1:
         data = f.read(1024)
@@ -78,7 +78,7 @@ def MDFile(filename):
 import sys
 
 def MDFilter():
-    mdContext = md5()
+    mdContext = md5.new()
 
     while 1:
         data = sys.stdin.read(16)
@@ -105,8 +105,6 @@ def MDTestSuite():
     # Contents of file foo are "abc"
     MDFile('foo')
 
-
-from sys import argv
 
 # I don't wanna use getopt(), since I want to use the same i/f...
 def main():
