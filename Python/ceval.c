@@ -873,6 +873,9 @@ eval_frame(PyFrameObject *f)
 
 		/* case STOP_CODE: this is an error! */
 
+		case NOP:
+			goto fast_next_opcode;
+
 		case LOAD_FAST:
 			x = GETLOCAL(oparg);
 			if (x != NULL) {

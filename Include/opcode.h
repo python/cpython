@@ -14,6 +14,8 @@ extern "C" {
 #define DUP_TOP		4
 #define ROT_FOUR	5
 
+#define NOP		9
+
 #define UNARY_POSITIVE	10
 #define UNARY_NEGATIVE	11
 #define UNARY_NOT	12

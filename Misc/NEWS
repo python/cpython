@@ -294,6 +294,13 @@ Core and builtins
   value, but according to PEP 237 it really needs to be 1 now.  This
   will be backported to Python 2.2.3 a well.  (SF #660455)
 
+- Added several bytecode optimizations.  Provides speed-ups to
+  inverted in/is tests, inverted jumps, while 1 loops, and jumps to
+  unconditional jumps.
+
+- Added a new opcode, NOP, which is used in some of the bytecode
+  transformations.
+
 - int(s, base) sometimes sign-folds hex and oct constants; it only
   does this when base is 0 and s.strip() starts with a '0'.  When the
   sign is actually folded, as in int("0xffffffff", 0) on a 32-bit
