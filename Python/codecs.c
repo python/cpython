@@ -804,7 +804,7 @@ static int _PyCodecRegistry_Init(void)
 
     PyInterpreterState *interp = PyThreadState_GET()->interp;
     PyObject *mod;
-    int i;
+    unsigned i;
 
     if (interp->codec_search_path != NULL)
 	return 0;
