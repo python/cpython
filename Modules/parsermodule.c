@@ -954,6 +954,13 @@ validate_ntype(node *n, int t)
 }
 
 
+/*  Verifies that the number of child nodes is exactly 'num', raising
+ *  an exception if it isn't.  The exception message does not indicate
+ *  the exact number of nodes, allowing this to be used to raise the
+ *  "right" exception when the wrong number of nodes is present in a
+ *  specific variant of a statement's syntax.  This is commonly used
+ *  in that fashion.
+ */
 static int
 validate_numnodes(node *n, int num, const char *const name)
 {
@@ -2094,13 +2101,83 @@ validate_lambdef(node *tree)
 
 /*  arglist:
  *
- *  argument (',' argument)* [',']
+ *  (argument ',')* (argument* [','] | '*' test [',' '**' test] | '**' test)
  */
 static int
 validate_arglist(node *tree)
 {
-    return (validate_repeating_list(tree, arglist,
-                                    validate_argument, "arglist"));
+    int nch = NCH(tree);
+    int i, ok;
+    node *last;
+
+    if (nch <= 0)
+        /* raise the right error from having an invalid number of children */
+        return validate_numnodes(tree, nch + 1, "arglist");
+
+    last = CHILD(tree, nch - 1);
+    if (TYPE(last) == test) {
+        /* Extended call syntax introduced in Python 1.6 has been used;
+         * validate and strip that off and continue;
+         * adjust nch to perform the cut, and ensure resulting nch is even
+         * (validation of the first part doesn't require that).
+         */
+        if (nch < 2) {
+            validate_numnodes(tree, nch + 1, "arglist");
+            return 0;
+        }
+        ok = validate_test(last);
+        if (ok) {
+            node *prev = CHILD(tree, nch - 2);
+            /* next must be '*' or '**' */
+            if (validate_doublestar(prev)) {
+                nch -= 2;
+                if (nch >= 3) {
+                    /* may include:  '*' test ',' */
+                    last = CHILD(tree, nch - 1);
+                    prev = CHILD(tree, nch - 2);
+                    if (TYPE(prev) == test) {
+                        ok = validate_comma(last)
+                             && validate_test(prev)
+                             && validate_star(CHILD(tree, nch - 3));
+                        if (ok)
+                            nch -= 3;
+                    }
+                    /* otherwise, nothing special */
+                }
+            }
+            else {
+                /* must be only:  '*' test */
+                PyErr_Clear();
+                ok = validate_star(prev);
+                nch -= 2;
+            }
+            if (ok && is_odd(nch)) {
+                /* Illegal number of nodes before extended call syntax;
+                 * validation of the "normal" arguments does not require
+                 * a trailing comma, but requiring an even number of
+                 * children will effect the same requirement.
+                 */
+                return validate_numnodes(tree, nch + 1, "arglist");
+            }
+        }
+    }
+    /* what remains must be:  (argument ",")* [argument [","]] */
+    i = 0;
+    while (ok && nch - i >= 2) {
+        ok = validate_argument(CHILD(tree, i))
+             && validate_comma(CHILD(tree, i + 1));
+        i += 2;
+    }
+    if (ok && i < nch) {
+        ok = validate_comma(CHILD(tree, i));
+        ++i;
+    }
+    if (i != nch) {
+        /* internal error! */
+        ok = 0;
+        err_string("arglist: internal error; nch != i");
+    }
+    return (ok);
 }
 
 
