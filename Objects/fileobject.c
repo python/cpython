@@ -695,7 +695,7 @@ file_readlines(f, args)
 		Py_END_ALLOW_THREADS
 		if (nread == 0) {
 			sizehint = 0;
-			if (nread == 0)
+			if (!ferror(f->f_fp))
 				break;
 			PyErr_SetFromErrno(PyExc_IOError);
 			clearerr(f->f_fp);
