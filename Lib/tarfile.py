@@ -1654,8 +1654,6 @@ class TarFile(object):
            or longlink member.
         """
         buf = ""
-        name = None
-        linkname = None
         count = tarinfo.size
         while count > 0:
             block = self.fileobj.read(BLOCKSIZE)
