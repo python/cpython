@@ -65,7 +65,7 @@ RELEASE=1.6a2
 # These must be declared phony since there
 # are directories with matching names:
 .PHONY: api doc ext lib mac ref tut
-.PHONY: html info
+.PHONY: html info longhtml
 
 
 # Main target
@@ -196,6 +196,9 @@ htmlref:
 htmltut:
 	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile tut)
 
+longhtml:
+	(cd longhtml; $(MAKE) PAPER=$(PAPER))
+
 
 # webchecker needs an extra flag to process the huge index from the libref
 webcheck:
@@ -260,6 +263,11 @@ html-$(RELEASE).zip:	html
 	(cd $(HTMLDIR); \
 		zip -q -9 ../$@ *index.html ???/*.css ???/*.html */*.gif)
 
+longhtml-$(RELEASE).zip:	longhtml
+	rm -f $@
+	(cd longhtml; \
+		zip -q -9 ../$@ */*.css */*.html */*.gif)
+
 # convenience targets:
 
 tarhtml:	html-$(RELEASE).tgz
@@ -271,11 +279,12 @@ tarlatex:	latex-$(RELEASE).tgz
 tarballs:	tarpdf tarps tarhtml
 
 ziphtml:	html-$(RELEASE).zip
+ziplonghtml:	longhtml-$(RELEASE).zip
 zipps:		postscript-$(PAPER)-$(RELEASE).zip
 zippdf:		pdf-$(PAPER)-$(RELEASE).zip
 ziplatex:	latex-$(RELEASE).zip
 
-zips:		zippdf zipps ziphtml
+zips:		zippdf zipps ziphtml ziplonghtml
 
 bziphtml:	html-$(RELEASE).tar.bz2
 bzipinfo:	info-$(RELEASE).tar.bz2
@@ -296,6 +305,7 @@ distfiles:	tarballs zips bzips
 # - useful results: .dvi, .pdf, .ps, .texi, .info
 clean:
 	(cd paper-$(PAPER); $(MAKE) clean)
+	(cd longhtml; $(MAKE) clean)
 	(cd $(HTMLDIR); $(MAKE) clean)
 	(cd $(INFODIR); $(MAKE) clean)
 
@@ -310,6 +320,7 @@ clobber:
 	rm -f latex-$(RELEASE).tgz html-$(RELEASE).zip
 	rm -f pdf-$(RELEASE).zip postscript-$(RELEASE).zip
 	(cd paper-$(PAPER); $(MAKE) clobber)
+	(cd longhtml; $(MAKE) clobber)
 	(cd $(HTMLDIR); $(MAKE) clobber)
 	(cd $(INFODIR); $(MAKE) clobber)
 
