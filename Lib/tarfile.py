@@ -1294,6 +1294,10 @@ class TarFile(object):
         else:
             tarinfo = self.getmember(member)
 
+        # Prepare the link target for makelink().
+        if tarinfo.islnk():
+            tarinfo._link_target = os.path.join(path, tarinfo.linkname)
+
         try:
             self._extract_member(tarinfo, os.path.join(path, tarinfo.name))
         except EnvironmentError, e:
@@ -1466,7 +1470,8 @@ class TarFile(object):
             if tarinfo.issym():
                 os.symlink(linkpath, targetpath)
             else:
-                os.link(linkpath, targetpath)
+                # See extract().
+                os.link(tarinfo._link_target, targetpath)
         except AttributeError:
             if tarinfo.issym():
                 linkpath = os.path.join(os.path.dirname(tarinfo.name),
