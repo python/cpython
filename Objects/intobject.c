@@ -7,6 +7,7 @@
 #include "intobject.h"
 #include "stringobject.h"
 #include "objimpl.h"
+#include "errors.h"
 
 /* Standard Booleans */
 intobject FalseObject = {
@@ -18,6 +19,20 @@ intobject TrueObject = {
 	1
 };
 
+static object *
+err_ovf()
+{
+	err_setstr(RuntimeError, "integer overflow");
+	return NULL;
+}
+
+static object *
+err_zdiv()
+{
+	err_setstr(RuntimeError, "division by zero");
+	return NULL;
+}
+
 object *
 newintobject(ival)
 	long ival;
@@ -25,7 +40,7 @@ newintobject(ival)
 	/* For efficiency, this code is copied from newobject() */
 	register intobject *op = (intobject *) malloc(sizeof(intobject));
 	if (op == NULL) {
-		errno = ENOMEM;
+		err_nomem();
 	}
 	else {
 		NEWREF(op);
@@ -40,7 +55,7 @@ getintvalue(op)
 	register object *op;
 {
 	if (!is_intobject(op)) {
-		errno = EBADF;
+		err_badarg();
 		return -1;
 	}
 	else
@@ -83,16 +98,14 @@ intadd(v, w)
 {
 	register long a, b, x;
 	if (!is_intobject(w)) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 	a = v->ob_ival;
 	b = ((intobject *)w) -> ob_ival;
 	x = a + b;
-	if ((x^a) < 0 && (x^b) < 0) {
-		errno = ERANGE;
-		return NULL;
-	}
+	if ((x^a) < 0 && (x^b) < 0)
+		return err_ovf();
 	return newintobject(x);
 }
 
@@ -103,16 +116,14 @@ intsub(v, w)
 {
 	register long a, b, x;
 	if (!is_intobject(w)) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 	a = v->ob_ival;
 	b = ((intobject *)w) -> ob_ival;
 	x = a - b;
-	if ((x^a) < 0 && (x^~b) < 0) {
-		errno = ERANGE;
-		return NULL;
-	}
+	if ((x^a) < 0 && (x^~b) < 0)
+		return err_ovf();
 	return newintobject(x);
 }
 
@@ -124,16 +135,14 @@ intmul(v, w)
 	register long a, b;
 	double x;
 	if (!is_intobject(w)) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 	a = v->ob_ival;
 	b = ((intobject *)w) -> ob_ival;
 	x = (double)a * (double)b;
-	if (x > 0x7fffffff || x < (double) (long) 0x80000000) {
-		errno = ERANGE;
-		return NULL;
-	}
+	if (x > 0x7fffffff || x < (double) (long) 0x80000000)
+		return err_ovf();
 	return newintobject(a * b);
 }
 
@@ -143,13 +152,11 @@ intdiv(v, w)
 	register object *w;
 {
 	if (!is_intobject(w)) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
-	if (((intobject *)w) -> ob_ival == 0) {
-		errno = EDOM;
-		return NULL;
-	}
+	if (((intobject *)w) -> ob_ival == 0)
+		err_zdiv();
 	return newintobject(v->ob_ival / ((intobject *)w) -> ob_ival);
 }
 
@@ -159,13 +166,11 @@ intrem(v, w)
 	register object *w;
 {
 	if (!is_intobject(w)) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
-	if (((intobject *)w) -> ob_ival == 0) {
-		errno = EDOM;
-		return NULL;
-	}
+	if (((intobject *)w) -> ob_ival == 0)
+		err_zdiv();
 	return newintobject(v->ob_ival % ((intobject *)w) -> ob_ival);
 }
 
@@ -177,7 +182,7 @@ intpow(v, w)
 	register long iv, iw, ix;
 	register int neg;
 	if (!is_intobject(w)) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 	iv = v->ob_ival;
@@ -189,10 +194,8 @@ intpow(v, w)
 	for (; iw > 0; iw--)
 		ix = ix * iv;
 	if (neg) {
-		if (ix == 0) {
-			errno = EDOM;
-			return NULL;
-		}
+		if (ix == 0)
+			err_zdiv();
 		ix = 1/ix;
 	}
 	/* XXX How to check for overflow? */
@@ -206,10 +209,8 @@ intneg(v)
 	register long a, x;
 	a = v->ob_ival;
 	x = -a;
-	if (a < 0 && x < 0) {
-		errno = ERANGE;
-		return NULL;
-	}
+	if (a < 0 && x < 0)
+		return err_ovf();
 	return newintobject(x);
 }
 
