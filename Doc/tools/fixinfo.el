@@ -4,10 +4,8 @@
 		  "\\1python-\\2.info")
   (replace-string "@node Front Matter\n@chapter Abstract\n"
 		  "@node Abstract\n@section Abstract\n")
-  (progn
-    (mark-whole-buffer)
-    (texinfo-master-menu 'update-all-nodes)
-    )
+  (mark-whole-buffer)
+  (texinfo-master-menu 'update-all-nodes)
   (save-buffer)
   )	;; fix-python-texinfo
 
