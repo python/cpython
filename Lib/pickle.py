@@ -562,7 +562,7 @@ def whichmodule(func, funcname):
     Return a module name.
     If the function cannot be found, return __main__.
     """
-    if classmap.has_key(classmap):
+    if classmap.has_key(func):
         return classmap[func]
 
     for name, module in sys.modules.items():
