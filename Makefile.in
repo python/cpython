@@ -145,15 +145,25 @@ DIST=		$(DISTFILES) $(DISTDIRS)
 all:		python
 
 # Build the interpreter
-python:		Makefiles
-		@for i in $(SUBDIRS); do \
-			(echo Making in subdirectory $$i; cd $$i; \
-			 $(MAKE) OPT="$(OPT)" \
-				 VERSION="$(VERSION)" \
-			         prefix="$(prefix)" \
-				 exec_prefix="$(exec_prefix)" \
-				 all); \
-		done
+python:		$(SUBDIRS)
+
+$(SUBDIRS):	Makefiles
+
+Parser:
+		cd Parser ; $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
+			prefix="$(prefix)" exec_prefix="$(exec_prefix)" all
+
+Python:
+		cd Python ; $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
+			prefix="$(prefix)" exec_prefix="$(exec_prefix)" all
+
+Objects:
+		cd Objects ; $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
+			prefix="$(prefix)" exec_prefix="$(exec_prefix)" all
+
+Modules: Parser Python Objects
+		cd Modules ; $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
+			prefix="$(prefix)" exec_prefix="$(exec_prefix)" all
 
 # Test the interpreter (twice, once without .pyc files, once with)
 TESTPATH=	$(srcdir)/Lib:$(srcdir)/Lib/$(MACHDEP):$(srcdir)/Lib/test:./Modules
