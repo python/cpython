@@ -21,6 +21,7 @@ class ObjectDefinition(GeneratorGroup):
 		self.typename = name + '_Type'
 		self.argref = ""	# set to "*" if arg to <type>_New should be pointer
 		self.static = "static " # set to "" to make <type>_New and <type>_Convert public
+		self.basechain = "NULL" # set to &<basetype>_chain to chain methods
 
 	def add(self, g):
 		g.setselftype(self.objecttype, self.itselftype)
@@ -38,18 +39,15 @@ class ObjectDefinition(GeneratorGroup):
 		sf = self.static and "staticforward "
 		Output("%sPyTypeObject %s;", sf, self.typename)
 		Output()
-
 		Output("#define %s_Check(x) ((x)->ob_type == &%s)",
 		       self.prefix, self.typename)
 		Output()
-
 		Output("typedef struct %s {", self.objecttype)
 		IndentLevel()
 		Output("PyObject_HEAD")
 		self.outputStructMembers()
 		DedentLevel()
 		Output("} %s;", self.objecttype)
-		Output()
 
 		self.outputNew()
 		
@@ -58,6 +56,10 @@ class ObjectDefinition(GeneratorGroup):
 		self.outputDealloc()
 
 		GeneratorGroup.generate(self)
+
+		Output()
+		Output("%sPyMethodChain %s_chain = { %s_methods, %s };",
+		        self.static,    self.prefix, self.prefix, self.basechain)
 
 		self.outputGetattr()
 
@@ -71,6 +73,7 @@ class ObjectDefinition(GeneratorGroup):
 		Output("%s ob_itself;", self.itselftype)
 
 	def outputNew(self):
+		Output()
 		Output("%sPyObject *%s_New(itself)", self.static, self.prefix)
 		IndentLevel()
 		Output("const %s %sitself;", self.itselftype, self.argref)
@@ -83,7 +86,6 @@ class ObjectDefinition(GeneratorGroup):
 		self.outputInitStructMembers()
 		Output("return (PyObject *)it;")
 		OutRbrace()
-		Output()
 
 	def outputInitStructMembers(self):
 		Output("it->ob_itself = %sitself;", self.argref)
@@ -112,6 +114,7 @@ class ObjectDefinition(GeneratorGroup):
 		"Override this method to apply additional conversions"
 
 	def outputDealloc(self):
+		Output()
 		Output("static void %s_dealloc(self)", self.prefix)
 		IndentLevel()
 		Output("%s *self;", self.objecttype)
@@ -120,7 +123,6 @@ class ObjectDefinition(GeneratorGroup):
 		self.outputCleanupStructMembers()
 		Output("PyMem_DEL(self);")
 		OutRbrace()
-		Output()
 
 	def outputCleanupStructMembers(self):
 		self.outputFreeIt("self->ob_itself")
@@ -129,6 +131,7 @@ class ObjectDefinition(GeneratorGroup):
 		Output("/* Cleanup of %s goes here */", name)
 
 	def outputGetattr(self):
+		Output()
 		Output("static PyObject *%s_getattr(self, name)", self.prefix)
 		IndentLevel()
 		Output("%s *self;", self.objecttype)
@@ -137,20 +140,21 @@ class ObjectDefinition(GeneratorGroup):
 		OutLbrace()
 		self.outputGetattrBody()
 		OutRbrace()
-		Output()
 
 	def outputGetattrBody(self):
 		self.outputGetattrHook()
-		Output("return Py_FindMethod(%s_methods, (PyObject *)self, name);", self.prefix)
+		Output("return Py_FindMethodInChain(&%s_chain, (PyObject *)self, name);",
+		       self.prefix)
 
 	def outputGetattrHook(self):
 		pass
 
 	def outputSetattr(self):
-		Output("#define %s_setattr NULL", self.prefix)
 		Output()
+		Output("#define %s_setattr NULL", self.prefix)
 
 	def outputTypeObject(self):
+		Output()
 		Output("%sPyTypeObject %s = {", self.static, self.typename)
 		IndentLevel()
 		Output("PyObject_HEAD_INIT(&PyType_Type)")
@@ -168,7 +172,10 @@ class ObjectDefinition(GeneratorGroup):
 
 
 class GlobalObjectDefinition(ObjectDefinition):
-	"Same as ObjectDefinition but exports its New and Create methods"
+	"""Like ObjectDefinition but exports some parts.
+	
+	XXX Should also somehow generate a .h file for them.
+	"""
 
 	def __init__(self, name, prefix = None, itselftype = None):
 		ObjectDefinition.__init__(self, name, prefix or name, itselftype or name)

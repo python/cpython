@@ -37,6 +37,8 @@ ControlHandle = OpaqueByValueType("ControlHandle", "CtlObj")
 # Windows and Dialogs
 WindowPtr = OpaqueByValueType("WindowPtr", "WinObj")
 DialogPtr = OpaqueByValueType("DialogPtr", "DlgObj")
+ExistingWindowPtr = OpaqueByValueType("WindowPtr", "WinObj_WhichWindow", "BUG")
+ExistingDialogPtr = OpaqueByValueType("DialogPtr", "WinObj_WhichWindow", "BUG")
 
 # NULL pointer passed in as optional storage -- not present in Python version
 NullStorage = FakeType("(void *)0")
@@ -98,6 +100,8 @@ extern int MenuObj_Convert(PyObject *, MenuHandle *);
 
 extern PyObject *CtlObj_New(ControlHandle);
 extern int CtlObj_Convert(PyObject *, ControlHandle *);
+
+extern PyObject *WinObj_WhichWindow(WindowPtr);
 """
 
 # Stuff added just before the module's init function
