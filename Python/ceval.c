@@ -782,7 +782,6 @@ eval_code(co, globals, locals, owner, arg)
 				u = w;
 				w = gettupleitem(u, 0);
 				INCREF(w);
-				INCREF(w);
 				DECREF(u);
 			}
 			if (is_stringobject(w)) {
@@ -2657,6 +2656,7 @@ exec_statement(prog, globals, locals)
 {
 	char *s;
 	int n;
+	object *v;
 
 	if (is_tupleobject(prog) && globals == None && locals == None &&
 	    ((n = gettuplesize(prog)) == 2 || n == 3)) {
@@ -2705,7 +2705,8 @@ exec_statement(prog, globals, locals)
 		err_setstr(ValueError, "embedded '\\0' in exec string");
 		return -1;
 	}
-	if (run_string(s, file_input, globals, locals) == NULL)
+	if ((v = run_string(s, file_input, globals, locals)) == NULL)
 		return -1;
+	DECREF(v);
 	return 0;
 }
