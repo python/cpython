@@ -1,4 +1,11 @@
-"""Generate ast module from specification"""
+"""Generate ast module from specification
+
+This script generates the ast module from a simple specification,
+which makes it easy to accomodate changes in the grammar.  This
+approach would be quite reasonable if the grammar changed often.
+Instead, it is rather complex to generate the appropriate code.  And
+the Node interface has changed more often than the grammar.
+"""
 
 import fileinput
 import getopt
@@ -24,7 +31,13 @@ def strip_default(arg):
     i = arg.find('=')
     if i == -1:
         return arg
-    return arg[:i].strip()
+    t = arg[:i].strip()
+    return t
+
+P_NODE = 1
+P_OTHER = 2
+P_NESTED = 3
+P_NONE = 4
 
 class NodeInfo:
     """Each instance describes a specific AST node"""
@@ -32,9 +45,8 @@ class NodeInfo:
         self.name = name
         self.args = args.strip()
         self.argnames = self.get_argnames()
+        self.argprops = self.get_argprops()
         self.nargs = len(self.argnames)
-        self.children = COMMA.join(["self.%s" % c
-                                    for c in self.argnames])
         self.init = []
 
     def get_argnames(self):
@@ -47,12 +59,48 @@ class NodeInfo:
         return [strip_default(arg.strip())
                 for arg in args.split(',') if arg]
 
+    def get_argprops(self):
+        """Each argument can have a property like '*' or '!'
+
+        XXX This method modifies the argnames in place!
+        """
+        d = {}
+        hardest_arg = P_NODE
+        for i in range(len(self.argnames)):
+            arg = self.argnames[i]
+            if arg.endswith('*'):
+                arg = self.argnames[i] = arg[:-1]
+                d[arg] = P_OTHER
+                hardest_arg = P_OTHER
+            elif arg.endswith('!'):
+                arg = self.argnames[i] = arg[:-1]
+                d[arg] = P_NESTED
+                hardest_arg = P_NESTED
+            elif arg.endswith('&'):
+                arg = self.argnames[i] = arg[:-1]
+                d[arg] = P_NONE
+                hardest_arg = P_NONE
+            else:
+                d[arg] = P_NODE
+        self.hardest_arg = hardest_arg
+
+        if hardest_arg > P_NODE:
+            self.args = self.args.replace('*', '')
+            self.args = self.args.replace('!', '')
+            self.args = self.args.replace('&', '')
+        
+        return d
+
     def gen_source(self):
         buf = StringIO()
         print >> buf, "class %s(Node):" % self.name
         print >> buf, '    nodes["%s"] = "%s"' % (self.name.lower(), self.name)
         self._gen_init(buf)
+        print >> buf
         self._gen_getChildren(buf)
+        print >> buf
+        self._gen_getChildNodes(buf)
+        print >> buf
         self._gen_repr(buf)
         buf.seek(0, 0)
         return buf.read()
@@ -68,14 +116,57 @@ class NodeInfo:
             print >> buf, "".join(["    " + line for line in self.init])
 
     def _gen_getChildren(self, buf):
-        print >> buf, "    def _getChildren(self):"
-        if self.argnames:
-            if self.nargs == 1:
-                print >> buf, "        return %s," % self.children
-            else:
-                print >> buf, "        return %s" % self.children
-        else:
+        print >> buf, "    def getChildren(self):"
+        if len(self.argnames) == 0:
             print >> buf, "        return ()"
+        else:
+            if self.hardest_arg < P_NESTED:
+                clist = COMMA.join(["self.%s" % c
+                                    for c in self.argnames])
+                if self.nargs == 1:
+                    print >> buf, "        return %s," % clist
+                else:
+                    print >> buf, "        return %s" % clist
+            else:
+                print >> buf, "        children = []"
+                template = "        children.%s(%sself.%s%s)"
+                for name in self.argnames:
+                    if self.argprops[name] == P_NESTED:
+                        print >> buf, template % ("extend", "flatten(",
+                                                  name, ")")
+                    else:
+                        print >> buf, template % ("append", "", name, "")
+                print >> buf, "        return tuple(children)"
+
+    def _gen_getChildNodes(self, buf):
+        print >> buf, "    def getChildNodes(self):"
+        if len(self.argnames) == 0:
+            print >> buf, "        return ()"
+        else:
+            if self.hardest_arg < P_NESTED:
+                clist = ["self.%s" % c
+                         for c in self.argnames
+                         if self.argprops[c] == P_NODE]
+                if len(clist) == 0:
+                    print >> buf, "        return ()"
+                elif len(clist) == 1:
+                    print >> buf, "        return %s," % clist[0]
+                else:
+                    print >> buf, "        return %s" % COMMA.join(clist)
+            else:
+                print >> buf, "        nodes = []"
+                template = "        nodes.%s(%sself.%s%s)"
+                for name in self.argnames:
+                    if self.argprops[name] == P_NONE:
+                        tmp = ("        if self.%s is not None:" 
+                               "            nodes.append(self.%s)")
+                        print >> buf, tmp % (name, name)
+                    elif self.argprops[name] == P_NESTED:
+                        print >> buf, template % ("extend", "flatten_nodes(",
+                                                  name, ")")
+                    elif self.argprops[name] == P_NODE:
+                        print >> buf, template % ("append", "", name, "")
+                print >> buf, "        return tuple(nodes)"
 
     def _gen_repr(self, buf):
         print >> buf, "    def __repr__(self):"
@@ -98,6 +189,8 @@ def parse_spec(file):
     classes = {}
     cur = None
     for line in fileinput.input(file):
+        if line.strip().startswith('#'):
+            continue
         mo = rx_init.search(line)
         if mo is None:
             if cur is None:
@@ -149,6 +242,9 @@ def flatten(list):
             l.append(elt)
     return l
 
+def flatten_nodes(list):
+    return [n for n in flatten(list) if isinstance(n, Node)]
+
 def asList(nodes):
     l = []
     for item in nodes:
@@ -164,21 +260,19 @@ def asList(nodes):
 
 nodes = {}
 
-class Node:
-    lineno = None
+class Node: # an abstract base class
+    lineno = None # provide a lineno for nodes that don't have one
     def getType(self):
-        pass
+        pass # implemented by subclass
     def getChildren(self):
-        # XXX It would be better to generate flat values to begin with
-        return flatten(self._getChildren())
+        pass # implemented by subclasses
     def asList(self):
         return tuple(asList(self.getChildren()))
     def getChildNodes(self):
-        return [n for n in self.getChildren() if isinstance(n, Node)]
+        pass # implemented by subclasses
 
 class EmptyNode(Node):
-    def __init__(self):
-        self.lineno = None
+    pass
 
 ### EPILOGUE
 klasses = globals()
