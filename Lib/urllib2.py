@@ -170,12 +170,6 @@ class HTTPError(URLError, addinfourl):
     def __str__(self):
         return 'HTTP Error %s: %s' % (self.code, self.msg)
 
-    def __del__(self):
-        # XXX is this safe? what if user catches exception, then
-        # extracts fp and discards exception?
-        if self.fp:
-            self.fp.close()
-
 class GopherError(URLError):
     pass
 
@@ -307,13 +301,9 @@ class OpenerDirector:
             bisect.insort(self.handlers, handler)
             handler.add_parent(self)
 
-    def __del__(self):
-        self.close()
-
     def close(self):
-        for handler in self.handlers:
-            handler.close()
-        self.handlers = []
+        # Only exists for backwards compatibility.
+        pass
 
     def _call_chain(self, chain, kind, meth_name, *args):
         # XXX raise an exception if no one else should try to handle
@@ -436,7 +426,8 @@ class BaseHandler:
         self.parent = parent
         
     def close(self):
-        self.parent = None
+        # Only exists for backwards compatibility
+        pass
         
     def __lt__(self, other):
         if not hasattr(other, "handler_order"):
