@@ -31,7 +31,7 @@ class MyScanner(Scanner):
 		if arglist:
 			t, n, m = arglist[-1]
 			# This is non-functional today
-			if t == OBJECT and m == "InMode":
+			if t in ('ListHandle', 'ListRef') and m == "InMode":
 				classname = "Method"
 				listname = "methods"
 		return classname, listname

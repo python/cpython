@@ -250,7 +250,7 @@ CGPathDrawingMode = int
 CGContextRef = OpaqueByValueType("CGContextRef", "CGContextRefObj")
 
 
-class MyObjectDefinition(GlobalObjectDefinition):
+class MyObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
 	def outputStructMembers(self):
 		ObjectDefinition.outputStructMembers(self)
 	def outputCleanupStructMembers(self):

@@ -31,11 +31,11 @@ initstuff = """
 
 module = MacModule('_IBCarbon', 'IBCarbon', includestuff, finalstuff, initstuff)
 
-class CFReleaserObject(GlobalObjectDefinition):
+class CFReleaserObject(PEP252Mixin, GlobalObjectDefinition):
 	def outputFreeIt(self, name):
 		Output("CFRelease(%s);" % name)
 
-class CFNibDesc(GlobalObjectDefinition):
+class CFNibDesc(PEP252Mixin, GlobalObjectDefinition):
 	def outputFreeIt(self, name):
 		Output("DisposeNibReference(%s);" % name)
 

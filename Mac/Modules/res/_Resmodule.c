@@ -551,53 +551,60 @@ static PyMethodDef ResObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain ResObj_chain = { ResObj_methods, NULL };
-
-static PyObject *ResObj_getattr(ResourceObject *self, char *name)
+static PyObject *ResObj_get_data(ResourceObject *self, void *closure)
 {
 
-	if (strcmp(name, "size") == 0)
-		return PyInt_FromLong(GetHandleSize(self->ob_itself));
-	if (strcmp(name, "data") == 0) {
-		PyObject *res;
-		char state;
-		state = HGetState(self->ob_itself);
-		HLock(self->ob_itself);
-		res = PyString_FromStringAndSize(
-			*self->ob_itself,
-			GetHandleSize(self->ob_itself));
-		HUnlock(self->ob_itself);
-		HSetState(self->ob_itself, state);
-		return res;
-	}
-	if (strcmp(name, "__members__") == 0)
-		return Py_BuildValue("[ss]", "data", "size");
+			PyObject *res;
+			char state;
 
-	return Py_FindMethodInChain(&ResObj_chain, (PyObject *)self, name);
+			state = HGetState(self->ob_itself);
+			HLock(self->ob_itself);
+			res = PyString_FromStringAndSize(
+				*self->ob_itself,
+				GetHandleSize(self->ob_itself));
+			HUnlock(self->ob_itself);
+			HSetState(self->ob_itself, state);
+			return res;
+			
 }
 
-static int
-ResObj_setattr(ResourceObject *self, char *name, PyObject *value)
+static int ResObj_set_data(ResourceObject *self, PyObject *v, void *closure)
 {
-	char *data;
-	long size;
-	
-	if (strcmp(name, "data") != 0 || value == NULL )
-		return -1;
-	if ( !PyString_Check(value) )
-		return -1;
-	size = PyString_Size(value);
-	data = PyString_AsString(value);
-	/* XXXX Do I need the GetState/SetState calls? */
-	SetHandleSize(self->ob_itself, size);
-	if ( MemError())
-		return -1;
-	HLock(self->ob_itself);
-	memcpy((char *)*self->ob_itself, data, size);
-	HUnlock(self->ob_itself);
-	/* XXXX Should I do the Changed call immedeately? */
+
+			char *data;
+			long size;
+		
+			if ( v == NULL )
+				return -1;
+			if ( !PyString_Check(v) )
+				return -1;
+			size = PyString_Size(v);
+			data = PyString_AsString(v);
+			/* XXXX Do I need the GetState/SetState calls? */
+			SetHandleSize(self->ob_itself, size);
+			if ( MemError())
+				return -1;
+			HLock(self->ob_itself);
+			memcpy((char *)*self->ob_itself, data, size);
+			HUnlock(self->ob_itself);
+			/* XXXX Should I do the Changed call immedeately? */
+			return 0;
+			
 	return 0;
 }
+
+static PyObject *ResObj_get_size(ResourceObject *self, void *closure)
+{
+	return PyInt_FromLong(GetHandleSize(self->ob_itself));
+}
+
+#define ResObj_set_size NULL
+
+static PyGetSetDef ResObj_getsetlist[] = {
+	{"data", (getter)ResObj_get_data, (setter)ResObj_set_data, "The resource data"},
+	{"size", (getter)ResObj_get_size, (setter)ResObj_set_size, "The length of the resource data"},
+	{NULL, NULL, NULL, NULL},
+};
 
 
 #define ResObj_compare NULL
@@ -615,14 +622,31 @@ PyTypeObject Resource_Type = {
 	/* methods */
 	(destructor) ResObj_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) ResObj_getattr, /*tp_getattr*/
-	(setattrfunc) ResObj_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) ResObj_compare, /*tp_compare*/
 	(reprfunc) ResObj_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) ResObj_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	ResObj_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	ResObj_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* -------------------- End object type Resource -------------------- */

@@ -100,51 +100,49 @@ initstuff = initstuff + """
 
 module = MacModule('_Res', 'Res', includestuff, finalstuff, initstuff)
 
-getattrHookCode = """
-if (strcmp(name, "size") == 0)
-	return PyInt_FromLong(GetHandleSize(self->ob_itself));
-if (strcmp(name, "data") == 0) {
-	PyObject *res;
-	char state;
-	state = HGetState(self->ob_itself);
-	HLock(self->ob_itself);
-	res = PyString_FromStringAndSize(
-		*self->ob_itself,
-		GetHandleSize(self->ob_itself));
-	HUnlock(self->ob_itself);
-	HSetState(self->ob_itself, state);
-	return res;
-}
-if (strcmp(name, "__members__") == 0)
-	return Py_BuildValue("[ss]", "data", "size");
-"""
+class ResDefinition(PEP252Mixin, GlobalObjectDefinition):
+	getsetlist = [
+		('data',
+		"""
+		PyObject *res;
+		char state;
 
-setattrCode = """
-static int
-ResObj_setattr(ResourceObject *self, char *name, PyObject *value)
-{
-	char *data;
-	long size;
+		state = HGetState(self->ob_itself);
+		HLock(self->ob_itself);
+		res = PyString_FromStringAndSize(
+			*self->ob_itself,
+			GetHandleSize(self->ob_itself));
+		HUnlock(self->ob_itself);
+		HSetState(self->ob_itself, state);
+		return res;
+		""",
+		"""
+		char *data;
+		long size;
 	
-	if (strcmp(name, "data") != 0 || value == NULL )
-		return -1;
-	if ( !PyString_Check(value) )
-		return -1;
-	size = PyString_Size(value);
-	data = PyString_AsString(value);
-	/* XXXX Do I need the GetState/SetState calls? */
-	SetHandleSize(self->ob_itself, size);
-	if ( MemError())
-		return -1;
-	HLock(self->ob_itself);
-	memcpy((char *)*self->ob_itself, data, size);
-	HUnlock(self->ob_itself);
-	/* XXXX Should I do the Changed call immedeately? */
-	return 0;
-}
-"""
-
-class ResDefinition(GlobalObjectDefinition):
+		if ( v == NULL )
+			return -1;
+		if ( !PyString_Check(v) )
+			return -1;
+		size = PyString_Size(v);
+		data = PyString_AsString(v);
+		/* XXXX Do I need the GetState/SetState calls? */
+		SetHandleSize(self->ob_itself, size);
+		if ( MemError())
+			return -1;
+		HLock(self->ob_itself);
+		memcpy((char *)*self->ob_itself, data, size);
+		HUnlock(self->ob_itself);
+		/* XXXX Should I do the Changed call immedeately? */
+		return 0;
+		""",
+		'The resource data'
+		), (
+		'size',
+		'return PyInt_FromLong(GetHandleSize(self->ob_itself));',
+		None,
+		'The length of the resource data'
+		)]
 
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
@@ -162,12 +160,6 @@ class ResDefinition(GlobalObjectDefinition):
 		OutRbrace()
 		Output("PyErr_Clear();")
 		OutRbrace()
-
-	def outputGetattrHook(self):
-		Output(getattrHookCode)
-		
-	def outputSetattr(self):
-		Output(setattrCode)
 
 	def outputStructMembers(self):
 		GlobalObjectDefinition.outputStructMembers(self)

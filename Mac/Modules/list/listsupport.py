@@ -137,41 +137,23 @@ class ListMethodGenerator(MethodGenerator):
 		FunctionGenerator.parseArgumentList(self, args)
 		self.argumentList.append(self.itself)
 
-getattrHookCode = """{
-	if ( strcmp(name, "listFlags") == 0 )
-		return Py_BuildValue("l", (long)GetListFlags(self->ob_itself) & 0xff);
-	if ( strcmp(name, "selFlags") == 0 )
-		return Py_BuildValue("l", (long)GetListSelectionFlags(self->ob_itself) & 0xff);
-	if ( strcmp(name, "cellSize") == 0 )
-		return Py_BuildValue("O&", PyMac_BuildPoint, (*self->ob_itself)->cellSize);
-}"""
-
-setattrCode = """
-static int
-ListObj_setattr(ListObject *self, char *name, PyObject *value)
-{
-	long intval;
-	int err = 0;
-	
-	if ( value == NULL ) {
-		PyErr_SetString(PyExc_AttributeError, "Cannot delete attribute");
-		return -1;
-	}
-	if (strcmp(name, "listFlags") == 0 )
-		err = PyArg_Parse(value, "B", &(*self->ob_itself)->listFlags);
-	else if (strcmp(name, "selFlags") == 0 )
-		err = PyArg_Parse(value, "B", &(*self->ob_itself)->selFlags);
-	else if (strcmp(name, "cellSize") == 0 )
-		err = PyArg_Parse(value, "O&", PyMac_GetPoint, &(*self->ob_itself)->cellSize);
-	else
-		PyErr_SetString(PyExc_AttributeError, "No such attribute");
-	if (err) return 0;
-	else return -1;
-}
-"""
-
-
-class MyObjectDefinition(GlobalObjectDefinition):
+class MyObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+	getsetlist = [(
+		'listFlags',
+		'return Py_BuildValue("l", (long)GetListFlags(self->ob_itself) & 0xff);',
+		'if (!PyArg_Parse(v, "B", &(*self->ob_itself)->listFlags)) return -1;',
+		None,
+		), (
+		'selFlags',
+		'return Py_BuildValue("l", (long)GetListSelectionFlags(self->ob_itself) & 0xff);',
+		'if (!PyArg_Parse(v, "B", &(*self->ob_itself)->selFlags)) return -1;',
+		None,
+		), (
+		'cellSize',
+		'return Py_BuildValue("O&", PyMac_BuildPoint, (*self->ob_itself)->cellSize);',
+		'if (!PyArg_Parse(v, "O&", PyMac_GetPoint, &(*self->ob_itself)->cellSize)) return -1;',
+		None
+		)]
 
 	def outputStructMembers(self):
 		ObjectDefinition.outputStructMembers(self)
@@ -200,12 +182,6 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		Output("#endif");
 		Output("SetListRefCon(self->ob_itself, (long)0);")
 		Output("if (self->ob_must_be_disposed && %s) LDispose(%s);", itselfname, itselfname)
-		
-	def outputGetattrHook(self):
-		Output(getattrHookCode)
-		
-	def outputSetattr(self):
-		Output(setattrCode)
 		
 # From here on it's basically all boiler plate...
 

@@ -136,11 +136,11 @@ execfile("mltetypetest.py")
 
 # Our (opaque) objects
 
-class TXNObjDefinition(GlobalObjectDefinition):
+class TXNObjDefinition(PEP252Mixin, GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
 
-class TXNFontMenuObjDefinition(GlobalObjectDefinition):
+class TXNFontMenuObjDefinition(PEP252Mixin, GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
 

@@ -205,166 +205,910 @@ static void GrafObj_dealloc(GrafPortObject *self)
 	PyObject_Del(self);
 }
 
+static PyObject *GrafObj_MacSetPort(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+#ifndef MacSetPort
+	PyMac_PRECHECK(MacSetPort);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	MacSetPort(_self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *GrafObj_IsValidPort(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+#ifndef IsValidPort
+	PyMac_PRECHECK(IsValidPort);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = IsValidPort(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+#endif
+
+static PyObject *GrafObj_GetPortPixMap(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	PixMapHandle _rv;
+#ifndef GetPortPixMap
+	PyMac_PRECHECK(GetPortPixMap);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetPortPixMap(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortBitMapForCopyBits(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	const BitMap * _rv;
+#ifndef GetPortBitMapForCopyBits
+	PyMac_PRECHECK(GetPortBitMapForCopyBits);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetPortBitMapForCopyBits(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     BMObj_New, _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortBounds(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Rect rect;
+#ifndef GetPortBounds
+	PyMac_PRECHECK(GetPortBounds);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetPortBounds(_self->ob_itself,
+	              &rect);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &rect);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortForeColor(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	RGBColor foreColor;
+#ifndef GetPortForeColor
+	PyMac_PRECHECK(GetPortForeColor);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetPortForeColor(_self->ob_itself,
+	                 &foreColor);
+	_res = Py_BuildValue("O&",
+	                     QdRGB_New, &foreColor);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortBackColor(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	RGBColor backColor;
+#ifndef GetPortBackColor
+	PyMac_PRECHECK(GetPortBackColor);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetPortBackColor(_self->ob_itself,
+	                 &backColor);
+	_res = Py_BuildValue("O&",
+	                     QdRGB_New, &backColor);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortOpColor(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	RGBColor opColor;
+#ifndef GetPortOpColor
+	PyMac_PRECHECK(GetPortOpColor);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetPortOpColor(_self->ob_itself,
+	               &opColor);
+	_res = Py_BuildValue("O&",
+	                     QdRGB_New, &opColor);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortHiliteColor(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	RGBColor hiliteColor;
+#ifndef GetPortHiliteColor
+	PyMac_PRECHECK(GetPortHiliteColor);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetPortHiliteColor(_self->ob_itself,
+	                   &hiliteColor);
+	_res = Py_BuildValue("O&",
+	                     QdRGB_New, &hiliteColor);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortTextFont(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	short _rv;
+#ifndef GetPortTextFont
+	PyMac_PRECHECK(GetPortTextFont);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetPortTextFont(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortTextFace(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Style _rv;
+#ifndef GetPortTextFace
+	PyMac_PRECHECK(GetPortTextFace);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetPortTextFace(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortTextMode(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	short _rv;
+#ifndef GetPortTextMode
+	PyMac_PRECHECK(GetPortTextMode);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetPortTextMode(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortTextSize(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	short _rv;
+#ifndef GetPortTextSize
+	PyMac_PRECHECK(GetPortTextSize);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetPortTextSize(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortChExtra(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	short _rv;
+#ifndef GetPortChExtra
+	PyMac_PRECHECK(GetPortChExtra);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetPortChExtra(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortFracHPenLocation(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	short _rv;
+#ifndef GetPortFracHPenLocation
+	PyMac_PRECHECK(GetPortFracHPenLocation);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetPortFracHPenLocation(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortSpExtra(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Fixed _rv;
+#ifndef GetPortSpExtra
+	PyMac_PRECHECK(GetPortSpExtra);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetPortSpExtra(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildFixed, _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortPenVisibility(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	short _rv;
+#ifndef GetPortPenVisibility
+	PyMac_PRECHECK(GetPortPenVisibility);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetPortPenVisibility(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortVisibleRegion(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	RgnHandle _rv;
+	RgnHandle visRgn;
+#ifndef GetPortVisibleRegion
+	PyMac_PRECHECK(GetPortVisibleRegion);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &visRgn))
+		return NULL;
+	_rv = GetPortVisibleRegion(_self->ob_itself,
+	                           visRgn);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortClipRegion(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	RgnHandle _rv;
+	RgnHandle clipRgn;
+#ifndef GetPortClipRegion
+	PyMac_PRECHECK(GetPortClipRegion);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &clipRgn))
+		return NULL;
+	_rv = GetPortClipRegion(_self->ob_itself,
+	                        clipRgn);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortBackPixPat(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	PixPatHandle _rv;
+	PixPatHandle backPattern;
+#ifndef GetPortBackPixPat
+	PyMac_PRECHECK(GetPortBackPixPat);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &backPattern))
+		return NULL;
+	_rv = GetPortBackPixPat(_self->ob_itself,
+	                        backPattern);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortPenPixPat(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	PixPatHandle _rv;
+	PixPatHandle penPattern;
+#ifndef GetPortPenPixPat
+	PyMac_PRECHECK(GetPortPenPixPat);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &penPattern))
+		return NULL;
+	_rv = GetPortPenPixPat(_self->ob_itself,
+	                       penPattern);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortFillPixPat(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	PixPatHandle _rv;
+	PixPatHandle fillPattern;
+#ifndef GetPortFillPixPat
+	PyMac_PRECHECK(GetPortFillPixPat);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &fillPattern))
+		return NULL;
+	_rv = GetPortFillPixPat(_self->ob_itself,
+	                        fillPattern);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortPenSize(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Point penSize;
+#ifndef GetPortPenSize
+	PyMac_PRECHECK(GetPortPenSize);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetPoint, &penSize))
+		return NULL;
+	GetPortPenSize(_self->ob_itself,
+	               &penSize);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildPoint, penSize);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortPenMode(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	SInt32 _rv;
+#ifndef GetPortPenMode
+	PyMac_PRECHECK(GetPortPenMode);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetPortPenMode(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_GetPortPenLocation(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Point penLocation;
+#ifndef GetPortPenLocation
+	PyMac_PRECHECK(GetPortPenLocation);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetPoint, &penLocation))
+		return NULL;
+	GetPortPenLocation(_self->ob_itself,
+	                   &penLocation);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildPoint, penLocation);
+	return _res;
+}
+
+static PyObject *GrafObj_IsPortRegionBeingDefined(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+#ifndef IsPortRegionBeingDefined
+	PyMac_PRECHECK(IsPortRegionBeingDefined);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = IsPortRegionBeingDefined(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_IsPortPictureBeingDefined(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+#ifndef IsPortPictureBeingDefined
+	PyMac_PRECHECK(IsPortPictureBeingDefined);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = IsPortPictureBeingDefined(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *GrafObj_IsPortPolyBeingDefined(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+#ifndef IsPortPolyBeingDefined
+	PyMac_PRECHECK(IsPortPolyBeingDefined);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = IsPortPolyBeingDefined(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *GrafObj_IsPortOffscreen(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+#ifndef IsPortOffscreen
+	PyMac_PRECHECK(IsPortOffscreen);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = IsPortOffscreen(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *GrafObj_IsPortColor(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+#ifndef IsPortColor
+	PyMac_PRECHECK(IsPortColor);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = IsPortColor(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+#endif
+
+static PyObject *GrafObj_SetPortBounds(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Rect rect;
+#ifndef SetPortBounds
+	PyMac_PRECHECK(SetPortBounds);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetRect, &rect))
+		return NULL;
+	SetPortBounds(_self->ob_itself,
+	              &rect);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *GrafObj_SetPortOpColor(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	RGBColor opColor;
+#ifndef SetPortOpColor
+	PyMac_PRECHECK(SetPortOpColor);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      QdRGB_Convert, &opColor))
+		return NULL;
+	SetPortOpColor(_self->ob_itself,
+	               &opColor);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *GrafObj_SetPortVisibleRegion(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	RgnHandle visRgn;
+#ifndef SetPortVisibleRegion
+	PyMac_PRECHECK(SetPortVisibleRegion);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &visRgn))
+		return NULL;
+	SetPortVisibleRegion(_self->ob_itself,
+	                     visRgn);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *GrafObj_SetPortClipRegion(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	RgnHandle clipRgn;
+#ifndef SetPortClipRegion
+	PyMac_PRECHECK(SetPortClipRegion);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &clipRgn))
+		return NULL;
+	SetPortClipRegion(_self->ob_itself,
+	                  clipRgn);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *GrafObj_SetPortPenPixPat(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	PixPatHandle penPattern;
+#ifndef SetPortPenPixPat
+	PyMac_PRECHECK(SetPortPenPixPat);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &penPattern))
+		return NULL;
+	SetPortPenPixPat(_self->ob_itself,
+	                 penPattern);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *GrafObj_SetPortFillPixPat(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	PixPatHandle penPattern;
+#ifndef SetPortFillPixPat
+	PyMac_PRECHECK(SetPortFillPixPat);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &penPattern))
+		return NULL;
+	SetPortFillPixPat(_self->ob_itself,
+	                  penPattern);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *GrafObj_SetPortBackPixPat(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	PixPatHandle backPattern;
+#ifndef SetPortBackPixPat
+	PyMac_PRECHECK(SetPortBackPixPat);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &backPattern))
+		return NULL;
+	SetPortBackPixPat(_self->ob_itself,
+	                  backPattern);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *GrafObj_SetPortPenSize(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Point penSize;
+#ifndef SetPortPenSize
+	PyMac_PRECHECK(SetPortPenSize);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetPoint, &penSize))
+		return NULL;
+	SetPortPenSize(_self->ob_itself,
+	               penSize);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *GrafObj_SetPortPenMode(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	SInt32 penMode;
+#ifndef SetPortPenMode
+	PyMac_PRECHECK(SetPortPenMode);
+#endif
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &penMode))
+		return NULL;
+	SetPortPenMode(_self->ob_itself,
+	               penMode);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *GrafObj_SetPortFracHPenLocation(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	short pnLocHFrac;
+#ifndef SetPortFracHPenLocation
+	PyMac_PRECHECK(SetPortFracHPenLocation);
+#endif
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &pnLocHFrac))
+		return NULL;
+	SetPortFracHPenLocation(_self->ob_itself,
+	                        pnLocHFrac);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *GrafObj_DisposePort(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+#ifndef DisposePort
+	PyMac_PRECHECK(DisposePort);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	DisposePort(_self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+static PyObject *GrafObj_QDIsPortBuffered(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+#ifndef QDIsPortBuffered
+	PyMac_PRECHECK(QDIsPortBuffered);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = QDIsPortBuffered(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_QDIsPortBufferDirty(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+#ifndef QDIsPortBufferDirty
+	PyMac_PRECHECK(QDIsPortBufferDirty);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = QDIsPortBufferDirty(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *GrafObj_QDFlushPortBuffer(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	RgnHandle region;
+#ifndef QDFlushPortBuffer
+	PyMac_PRECHECK(QDFlushPortBuffer);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      OptResObj_Convert, &region))
+		return NULL;
+	QDFlushPortBuffer(_self->ob_itself,
+	                  region);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *GrafObj_QDGetDirtyRegion(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	RgnHandle rgn;
+#ifndef QDGetDirtyRegion
+	PyMac_PRECHECK(QDGetDirtyRegion);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &rgn))
+		return NULL;
+	_err = QDGetDirtyRegion(_self->ob_itself,
+	                        rgn);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *GrafObj_QDSetDirtyRegion(GrafPortObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	RgnHandle rgn;
+#ifndef QDSetDirtyRegion
+	PyMac_PRECHECK(QDSetDirtyRegion);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &rgn))
+		return NULL;
+	_err = QDSetDirtyRegion(_self->ob_itself,
+	                        rgn);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
 static PyMethodDef GrafObj_methods[] = {
+	{"MacSetPort", (PyCFunction)GrafObj_MacSetPort, 1,
+	 PyDoc_STR("() -> None")},
+
+#if TARGET_API_MAC_CARBON
+	{"IsValidPort", (PyCFunction)GrafObj_IsValidPort, 1,
+	 PyDoc_STR("() -> (Boolean _rv)")},
+#endif
+	{"GetPortPixMap", (PyCFunction)GrafObj_GetPortPixMap, 1,
+	 PyDoc_STR("() -> (PixMapHandle _rv)")},
+	{"GetPortBitMapForCopyBits", (PyCFunction)GrafObj_GetPortBitMapForCopyBits, 1,
+	 PyDoc_STR("() -> (const BitMap * _rv)")},
+	{"GetPortBounds", (PyCFunction)GrafObj_GetPortBounds, 1,
+	 PyDoc_STR("() -> (Rect rect)")},
+	{"GetPortForeColor", (PyCFunction)GrafObj_GetPortForeColor, 1,
+	 PyDoc_STR("() -> (RGBColor foreColor)")},
+	{"GetPortBackColor", (PyCFunction)GrafObj_GetPortBackColor, 1,
+	 PyDoc_STR("() -> (RGBColor backColor)")},
+	{"GetPortOpColor", (PyCFunction)GrafObj_GetPortOpColor, 1,
+	 PyDoc_STR("() -> (RGBColor opColor)")},
+	{"GetPortHiliteColor", (PyCFunction)GrafObj_GetPortHiliteColor, 1,
+	 PyDoc_STR("() -> (RGBColor hiliteColor)")},
+	{"GetPortTextFont", (PyCFunction)GrafObj_GetPortTextFont, 1,
+	 PyDoc_STR("() -> (short _rv)")},
+	{"GetPortTextFace", (PyCFunction)GrafObj_GetPortTextFace, 1,
+	 PyDoc_STR("() -> (Style _rv)")},
+	{"GetPortTextMode", (PyCFunction)GrafObj_GetPortTextMode, 1,
+	 PyDoc_STR("() -> (short _rv)")},
+	{"GetPortTextSize", (PyCFunction)GrafObj_GetPortTextSize, 1,
+	 PyDoc_STR("() -> (short _rv)")},
+	{"GetPortChExtra", (PyCFunction)GrafObj_GetPortChExtra, 1,
+	 PyDoc_STR("() -> (short _rv)")},
+	{"GetPortFracHPenLocation", (PyCFunction)GrafObj_GetPortFracHPenLocation, 1,
+	 PyDoc_STR("() -> (short _rv)")},
+	{"GetPortSpExtra", (PyCFunction)GrafObj_GetPortSpExtra, 1,
+	 PyDoc_STR("() -> (Fixed _rv)")},
+	{"GetPortPenVisibility", (PyCFunction)GrafObj_GetPortPenVisibility, 1,
+	 PyDoc_STR("() -> (short _rv)")},
+	{"GetPortVisibleRegion", (PyCFunction)GrafObj_GetPortVisibleRegion, 1,
+	 PyDoc_STR("(RgnHandle visRgn) -> (RgnHandle _rv)")},
+	{"GetPortClipRegion", (PyCFunction)GrafObj_GetPortClipRegion, 1,
+	 PyDoc_STR("(RgnHandle clipRgn) -> (RgnHandle _rv)")},
+	{"GetPortBackPixPat", (PyCFunction)GrafObj_GetPortBackPixPat, 1,
+	 PyDoc_STR("(PixPatHandle backPattern) -> (PixPatHandle _rv)")},
+	{"GetPortPenPixPat", (PyCFunction)GrafObj_GetPortPenPixPat, 1,
+	 PyDoc_STR("(PixPatHandle penPattern) -> (PixPatHandle _rv)")},
+	{"GetPortFillPixPat", (PyCFunction)GrafObj_GetPortFillPixPat, 1,
+	 PyDoc_STR("(PixPatHandle fillPattern) -> (PixPatHandle _rv)")},
+	{"GetPortPenSize", (PyCFunction)GrafObj_GetPortPenSize, 1,
+	 PyDoc_STR("(Point penSize) -> (Point penSize)")},
+	{"GetPortPenMode", (PyCFunction)GrafObj_GetPortPenMode, 1,
+	 PyDoc_STR("() -> (SInt32 _rv)")},
+	{"GetPortPenLocation", (PyCFunction)GrafObj_GetPortPenLocation, 1,
+	 PyDoc_STR("(Point penLocation) -> (Point penLocation)")},
+	{"IsPortRegionBeingDefined", (PyCFunction)GrafObj_IsPortRegionBeingDefined, 1,
+	 PyDoc_STR("() -> (Boolean _rv)")},
+	{"IsPortPictureBeingDefined", (PyCFunction)GrafObj_IsPortPictureBeingDefined, 1,
+	 PyDoc_STR("() -> (Boolean _rv)")},
+
+#if TARGET_API_MAC_CARBON
+	{"IsPortPolyBeingDefined", (PyCFunction)GrafObj_IsPortPolyBeingDefined, 1,
+	 PyDoc_STR("() -> (Boolean _rv)")},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"IsPortOffscreen", (PyCFunction)GrafObj_IsPortOffscreen, 1,
+	 PyDoc_STR("() -> (Boolean _rv)")},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"IsPortColor", (PyCFunction)GrafObj_IsPortColor, 1,
+	 PyDoc_STR("() -> (Boolean _rv)")},
+#endif
+	{"SetPortBounds", (PyCFunction)GrafObj_SetPortBounds, 1,
+	 PyDoc_STR("(Rect rect) -> None")},
+	{"SetPortOpColor", (PyCFunction)GrafObj_SetPortOpColor, 1,
+	 PyDoc_STR("(RGBColor opColor) -> None")},
+	{"SetPortVisibleRegion", (PyCFunction)GrafObj_SetPortVisibleRegion, 1,
+	 PyDoc_STR("(RgnHandle visRgn) -> None")},
+	{"SetPortClipRegion", (PyCFunction)GrafObj_SetPortClipRegion, 1,
+	 PyDoc_STR("(RgnHandle clipRgn) -> None")},
+	{"SetPortPenPixPat", (PyCFunction)GrafObj_SetPortPenPixPat, 1,
+	 PyDoc_STR("(PixPatHandle penPattern) -> None")},
+	{"SetPortFillPixPat", (PyCFunction)GrafObj_SetPortFillPixPat, 1,
+	 PyDoc_STR("(PixPatHandle penPattern) -> None")},
+	{"SetPortBackPixPat", (PyCFunction)GrafObj_SetPortBackPixPat, 1,
+	 PyDoc_STR("(PixPatHandle backPattern) -> None")},
+	{"SetPortPenSize", (PyCFunction)GrafObj_SetPortPenSize, 1,
+	 PyDoc_STR("(Point penSize) -> None")},
+	{"SetPortPenMode", (PyCFunction)GrafObj_SetPortPenMode, 1,
+	 PyDoc_STR("(SInt32 penMode) -> None")},
+	{"SetPortFracHPenLocation", (PyCFunction)GrafObj_SetPortFracHPenLocation, 1,
+	 PyDoc_STR("(short pnLocHFrac) -> None")},
+
+#if TARGET_API_MAC_CARBON
+	{"DisposePort", (PyCFunction)GrafObj_DisposePort, 1,
+	 PyDoc_STR("() -> None")},
+#endif
+	{"QDIsPortBuffered", (PyCFunction)GrafObj_QDIsPortBuffered, 1,
+	 PyDoc_STR("() -> (Boolean _rv)")},
+	{"QDIsPortBufferDirty", (PyCFunction)GrafObj_QDIsPortBufferDirty, 1,
+	 PyDoc_STR("() -> (Boolean _rv)")},
+	{"QDFlushPortBuffer", (PyCFunction)GrafObj_QDFlushPortBuffer, 1,
+	 PyDoc_STR("(RgnHandle region) -> None")},
+
+#if TARGET_API_MAC_CARBON
+	{"QDGetDirtyRegion", (PyCFunction)GrafObj_QDGetDirtyRegion, 1,
+	 PyDoc_STR("(RgnHandle rgn) -> None")},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"QDSetDirtyRegion", (PyCFunction)GrafObj_QDSetDirtyRegion, 1,
+	 PyDoc_STR("(RgnHandle rgn) -> None")},
+#endif
 	{NULL, NULL, 0}
 };
 
-PyMethodChain GrafObj_chain = { GrafObj_methods, NULL };
-
-static PyObject *GrafObj_getattr(GrafPortObject *self, char *name)
+static PyObject *GrafObj_get_visRgn(GrafPortObject *self, void *closure)
 {
-#if !ACCESSOR_CALLS_ARE_FUNCTIONS
-
-			{	CGrafPtr itself_color = (CGrafPtr)self->ob_itself;
+	RgnHandle h=NewRgn(); /* XXXX wrong dispose routine */
+			return Py_BuildValue("O&", ResObj_New, (Handle)GetPortVisibleRegion(self->ob_itself, h));
 			
-				if ( strcmp(name, "data") == 0 )
-					return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(GrafPort));
-					
-				if ( (itself_color->portVersion&0xc000) == 0xc000 ) {
-					/* Color-only attributes */
-				
-					if ( strcmp(name, "portBits") == 0 )
-						/* XXXX Do we need HLock() stuff here?? */
-						return BMObj_New((BitMapPtr)*itself_color->portPixMap);
-					if ( strcmp(name, "grafVars") == 0 )
-						return Py_BuildValue("O&", ResObj_New, (Handle)itself_color->visRgn);
-					if ( strcmp(name, "chExtra") == 0 )
-						return Py_BuildValue("h", itself_color->chExtra);
-					if ( strcmp(name, "pnLocHFrac") == 0 )
-						return Py_BuildValue("h", itself_color->pnLocHFrac);
-					if ( strcmp(name, "bkPixPat") == 0 )
-						return Py_BuildValue("O&", ResObj_New, (Handle)itself_color->bkPixPat);
-					if ( strcmp(name, "rgbFgColor") == 0 )
-						return Py_BuildValue("O&", QdRGB_New, &itself_color->rgbFgColor);
-					if ( strcmp(name, "rgbBkColor") == 0 )
-						return Py_BuildValue("O&", QdRGB_New, &itself_color->rgbBkColor);
-					if ( strcmp(name, "pnPixPat") == 0 )
-						return Py_BuildValue("O&", ResObj_New, (Handle)itself_color->pnPixPat);
-					if ( strcmp(name, "fillPixPat") == 0 )
-						return Py_BuildValue("O&", ResObj_New, (Handle)itself_color->fillPixPat);
-				} else {
-					/* Mono-only attributes */
-					if ( strcmp(name, "portBits") == 0 )
-						return BMObj_New(&self->ob_itself->portBits);
-					if ( strcmp(name, "bkPat") == 0 )
-						return Py_BuildValue("s#", (char *)&self->ob_itself->bkPat, sizeof(Pattern));
-					if ( strcmp(name, "fillPat") == 0 )
-						return Py_BuildValue("s#", (char *)&self->ob_itself->fillPat, sizeof(Pattern));
-					if ( strcmp(name, "pnPat") == 0 )
-						return Py_BuildValue("s#", (char *)&self->ob_itself->pnPat, sizeof(Pattern));
-				}
-				/*
-				** Accessible for both color/mono windows.
-				** portVersion is really color-only, but we put it here
-				** for convenience
-				*/
-				if ( strcmp(name, "portVersion") == 0 )
-					return Py_BuildValue("h", itself_color->portVersion);
-				if ( strcmp(name, "device") == 0 )
-					return PyInt_FromLong((long)self->ob_itself->device);
-				if ( strcmp(name, "portRect") == 0 )
-					return Py_BuildValue("O&", PyMac_BuildRect, &self->ob_itself->portRect);
-				if ( strcmp(name, "visRgn") == 0 )
-					return Py_BuildValue("O&", ResObj_New, (Handle)self->ob_itself->visRgn);
-				if ( strcmp(name, "clipRgn") == 0 )
-					return Py_BuildValue("O&", ResObj_New, (Handle)self->ob_itself->clipRgn);
-				if ( strcmp(name, "pnLoc") == 0 )
-					return Py_BuildValue("O&", PyMac_BuildPoint, self->ob_itself->pnLoc);
-				if ( strcmp(name, "pnSize") == 0 )
-					return Py_BuildValue("O&", PyMac_BuildPoint, self->ob_itself->pnSize);
-				if ( strcmp(name, "pnMode") == 0 )
-					return Py_BuildValue("h", self->ob_itself->pnMode);
-				if ( strcmp(name, "pnVis") == 0 )
-					return Py_BuildValue("h", self->ob_itself->pnVis);
-				if ( strcmp(name, "txFont") == 0 )
-					return Py_BuildValue("h", self->ob_itself->txFont);
-				if ( strcmp(name, "txFace") == 0 )
-					return Py_BuildValue("h", (short)self->ob_itself->txFace);
-				if ( strcmp(name, "txMode") == 0 )
-					return Py_BuildValue("h", self->ob_itself->txMode);
-				if ( strcmp(name, "txSize") == 0 )
-					return Py_BuildValue("h", self->ob_itself->txSize);
-				if ( strcmp(name, "spExtra") == 0 )
-					return Py_BuildValue("O&", PyMac_BuildFixed, self->ob_itself->spExtra);
-				/* XXXX Add more, as needed */
-				/* This one is so we can compare grafports: */
-				if ( strcmp(name, "_id") == 0 )
-					return Py_BuildValue("l", (long)self->ob_itself);
-			}
-#else
-
-			{	CGrafPtr itself_color = (CGrafPtr)self->ob_itself;
-				if ( strcmp(name, "portBits") == 0 )
-					return BMObj_New((BitMapPtr)GetPortBitMapForCopyBits(itself_color));
-				if ( strcmp(name, "chExtra") == 0 )
-					return Py_BuildValue("h", GetPortChExtra(itself_color));
-				if ( strcmp(name, "pnLocHFrac") == 0 )
-					return Py_BuildValue("h", GetPortFracHPenLocation(itself_color));
-				if ( strcmp(name, "bkPixPat") == 0 ) {
-					PixPatHandle h=0;
-					return Py_BuildValue("O&", ResObj_New, (Handle)GetPortBackPixPat(itself_color, h));
-				}
-				if ( strcmp(name, "rgbFgColor") == 0 ) {
-					RGBColor c;
-					return Py_BuildValue("O&", QdRGB_New, GetPortForeColor(itself_color, &c));
-				}
-				if ( strcmp(name, "rgbBkColor") == 0 ) {
-					RGBColor c;
-					return Py_BuildValue("O&", QdRGB_New, GetPortBackColor(itself_color, &c));
-				}
-				if ( strcmp(name, "pnPixPat") == 0 ) {
-					PixPatHandle h=NewPixPat(); /* XXXX wrong dispose routine */
-					
-					return Py_BuildValue("O&", ResObj_New, (Handle)GetPortPenPixPat(itself_color, h));
-				}
-				if ( strcmp(name, "fillPixPat") == 0 ) {
-					PixPatHandle h=NewPixPat(); /* XXXX wrong dispose routine */
-					return Py_BuildValue("O&", ResObj_New, (Handle)GetPortFillPixPat(itself_color, h));
-				}
-				if ( strcmp(name, "portRect") == 0 ) {
-					Rect r;
-					return Py_BuildValue("O&", PyMac_BuildRect, GetPortBounds(itself_color, &r));
-				}
-				if ( strcmp(name, "visRgn") == 0 ) {
-					RgnHandle h=NewRgn(); /* XXXX wrong dispose routine */
-					return Py_BuildValue("O&", ResObj_New, (Handle)GetPortVisibleRegion(itself_color, h));
-				}
-				if ( strcmp(name, "clipRgn") == 0 ) {
-					RgnHandle h=NewRgn(); /* XXXX wrong dispose routine */
-					return Py_BuildValue("O&", ResObj_New, (Handle)GetPortClipRegion(itself_color, h));
-				}
-				if ( strcmp(name, "pnLoc") == 0 ) {
-					Point p;
-					return Py_BuildValue("O&", PyMac_BuildPoint, *GetPortPenLocation(itself_color, &p));
-				}
-				if ( strcmp(name, "pnSize") == 0 ) {
-					Point p;
-					return Py_BuildValue("O&", PyMac_BuildPoint, *GetPortPenSize(itself_color, &p));
-				}
-				if ( strcmp(name, "pnMode") == 0 )
-					return Py_BuildValue("h", GetPortPenMode(itself_color));
-				if ( strcmp(name, "pnVis") == 0 )
-					return Py_BuildValue("h", GetPortPenVisibility(itself_color));
-				if ( strcmp(name, "txFont") == 0 )
-					return Py_BuildValue("h", GetPortTextFont(itself_color));
-				if ( strcmp(name, "txFace") == 0 )
-					return Py_BuildValue("h", (short)GetPortTextFace(itself_color));
-				if ( strcmp(name, "txMode") == 0 )
-					return Py_BuildValue("h", GetPortTextMode(itself_color));
-				if ( strcmp(name, "txSize") == 0 )
-					return Py_BuildValue("h", GetPortTextSize(itself_color));
-				if ( strcmp(name, "spExtra") == 0 )
-					return Py_BuildValue("O&", PyMac_BuildFixed, GetPortSpExtra(itself_color));
-				/* XXXX Add more, as needed */
-				/* This one is so we can compare grafports: */
-				if ( strcmp(name, "_id") == 0 )
-					return Py_BuildValue("l", (long)self->ob_itself);
-			}
-#endif
-	return Py_FindMethodInChain(&GrafObj_chain, (PyObject *)self, name);
 }
 
-#define GrafObj_setattr NULL
+#define GrafObj_set_visRgn NULL
+
+static PyObject *GrafObj_get_clipRgn(GrafPortObject *self, void *closure)
+{
+	RgnHandle h=NewRgn(); /* XXXX wrong dispose routine */
+			return Py_BuildValue("O&", ResObj_New, (Handle)GetPortClipRegion(self->ob_itself, h));
+			
+}
+
+#define GrafObj_set_clipRgn NULL
+
+static PyGetSetDef GrafObj_getsetlist[] = {
+	{"visRgn", (getter)GrafObj_get_visRgn, (setter)GrafObj_set_visRgn, "Convenience attribute: return a copy of the visible region"},
+	{"clipRgn", (getter)GrafObj_get_clipRgn, (setter)GrafObj_set_clipRgn, "Convenience attribute: return a copy of the clipping region"},
+	{NULL, NULL, NULL, NULL},
+};
+
 
 #define GrafObj_compare NULL
 
@@ -381,14 +1125,31 @@ PyTypeObject GrafPort_Type = {
 	/* methods */
 	(destructor) GrafObj_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) GrafObj_getattr, /*tp_getattr*/
-	(setattrfunc) GrafObj_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) GrafObj_compare, /*tp_compare*/
 	(reprfunc) GrafObj_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) GrafObj_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	GrafObj_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	GrafObj_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* -------------------- End object type GrafPort -------------------- */
@@ -476,26 +1237,50 @@ static PyMethodDef BMObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain BMObj_chain = { BMObj_methods, NULL };
-
-static PyObject *BMObj_getattr(BitMapObject *self, char *name)
+static PyObject *BMObj_get_baseAddr(BitMapObject *self, void *closure)
 {
-	if ( strcmp(name, "baseAddr") == 0 )
-				return PyInt_FromLong((long)self->ob_itself->baseAddr);
-			if ( strcmp(name, "rowBytes") == 0 )
-				return PyInt_FromLong((long)self->ob_itself->rowBytes);
-			if ( strcmp(name, "bounds") == 0 )
-				return Py_BuildValue("O&", PyMac_BuildRect, &self->ob_itself->bounds);
-			/* XXXX Add more, as needed */
-			if ( strcmp(name, "bitmap_data") == 0 )
-				return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(BitMap));
-			if ( strcmp(name, "pixmap_data") == 0 )
-				return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(PixMap));
-			
-	return Py_FindMethodInChain(&BMObj_chain, (PyObject *)self, name);
+	return PyInt_FromLong((long)self->ob_itself->baseAddr);
 }
 
-#define BMObj_setattr NULL
+#define BMObj_set_baseAddr NULL
+
+static PyObject *BMObj_get_rowBytes(BitMapObject *self, void *closure)
+{
+	return PyInt_FromLong((long)self->ob_itself->rowBytes);
+}
+
+#define BMObj_set_rowBytes NULL
+
+static PyObject *BMObj_get_bounds(BitMapObject *self, void *closure)
+{
+	return Py_BuildValue("O&", PyMac_BuildRect, &self->ob_itself->bounds);
+}
+
+#define BMObj_set_bounds NULL
+
+static PyObject *BMObj_get_bitmap_data(BitMapObject *self, void *closure)
+{
+	return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(BitMap));
+}
+
+#define BMObj_set_bitmap_data NULL
+
+static PyObject *BMObj_get_pixmap_data(BitMapObject *self, void *closure)
+{
+	return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(PixMap));
+}
+
+#define BMObj_set_pixmap_data NULL
+
+static PyGetSetDef BMObj_getsetlist[] = {
+	{"baseAddr", (getter)BMObj_get_baseAddr, (setter)BMObj_set_baseAddr, NULL},
+	{"rowBytes", (getter)BMObj_get_rowBytes, (setter)BMObj_set_rowBytes, NULL},
+	{"bounds", (getter)BMObj_get_bounds, (setter)BMObj_set_bounds, NULL},
+	{"bitmap_data", (getter)BMObj_get_bitmap_data, (setter)BMObj_set_bitmap_data, NULL},
+	{"pixmap_data", (getter)BMObj_get_pixmap_data, (setter)BMObj_set_pixmap_data, NULL},
+	{NULL, NULL, NULL, NULL},
+};
+
 
 #define BMObj_compare NULL
 
@@ -512,162 +1297,35 @@ PyTypeObject BitMap_Type = {
 	/* methods */
 	(destructor) BMObj_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) BMObj_getattr, /*tp_getattr*/
-	(setattrfunc) BMObj_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) BMObj_compare, /*tp_compare*/
 	(reprfunc) BMObj_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) BMObj_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	BMObj_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	BMObj_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* --------------------- End object type BitMap --------------------- */
 
-
-/* ------------------ Object type QDGlobalsAccess ------------------- */
-
-static PyTypeObject QDGlobalsAccess_Type;
-
-#define QDGA_Check(x) ((x)->ob_type == &QDGlobalsAccess_Type)
-
-typedef struct QDGlobalsAccessObject {
-	PyObject_HEAD
-} QDGlobalsAccessObject;
-
-static PyObject *QDGA_New(void)
-{
-	QDGlobalsAccessObject *it;
-	it = PyObject_NEW(QDGlobalsAccessObject, &QDGlobalsAccess_Type);
-	if (it == NULL) return NULL;
-	return (PyObject *)it;
-}
-
-static void QDGA_dealloc(QDGlobalsAccessObject *self)
-{
-	PyObject_Del(self);
-}
-
-static PyMethodDef QDGA_methods[] = {
-	{NULL, NULL, 0}
-};
-
-static PyMethodChain QDGA_chain = { QDGA_methods, NULL };
-
-static PyObject *QDGA_getattr(QDGlobalsAccessObject *self, char *name)
-{
-#if !ACCESSOR_CALLS_ARE_FUNCTIONS
-
-		if ( strcmp(name, "arrow") == 0 )
-			return PyString_FromStringAndSize((char *)&qd.arrow, sizeof(qd.arrow));
-		if ( strcmp(name, "black") == 0 ) 
-			return PyString_FromStringAndSize((char *)&qd.black, sizeof(qd.black));
-		if ( strcmp(name, "white") == 0 ) 
-			return PyString_FromStringAndSize((char *)&qd.white, sizeof(qd.white));
-		if ( strcmp(name, "gray") == 0 ) 
-			return PyString_FromStringAndSize((char *)&qd.gray, sizeof(qd.gray));
-		if ( strcmp(name, "ltGray") == 0 ) 
-			return PyString_FromStringAndSize((char *)&qd.ltGray, sizeof(qd.ltGray));
-		if ( strcmp(name, "dkGray") == 0 ) 
-			return PyString_FromStringAndSize((char *)&qd.dkGray, sizeof(qd.dkGray));
-		if ( strcmp(name, "screenBits") == 0 ) 
-			return BMObj_New(&qd.screenBits);
-		if ( strcmp(name, "thePort") == 0 ) 
-			return GrafObj_New(qd.thePort);
-		if ( strcmp(name, "randSeed") == 0 ) 
-			return Py_BuildValue("l", &qd.randSeed);
-			
-#else
-
-		if ( strcmp(name, "arrow") == 0 ) {
-			Cursor rv;
-			GetQDGlobalsArrow(&rv);
-			return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
-		}
-		if ( strcmp(name, "black") == 0 ) {
-			Pattern rv;
-			GetQDGlobalsBlack(&rv);
-			return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
-		}
-		if ( strcmp(name, "white") == 0 )  {
-			Pattern rv;
-			GetQDGlobalsWhite(&rv);
-			return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
-		}
-		if ( strcmp(name, "gray") == 0 )  {
-			Pattern rv;
-			GetQDGlobalsGray(&rv);
-			return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
-		}
-		if ( strcmp(name, "ltGray") == 0 )  {
-			Pattern rv;
-			GetQDGlobalsLightGray(&rv);
-			return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
-		}
-		if ( strcmp(name, "dkGray") == 0 )  {
-			Pattern rv;
-			GetQDGlobalsDarkGray(&rv);
-			return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
-		}
-		if ( strcmp(name, "screenBits") == 0 ) {
-			BitMap rv;
-			GetQDGlobalsScreenBits(&rv);
-			return BMObj_NewCopied(&rv);
-		}
-		if ( strcmp(name, "thePort") == 0 ) 
-			return GrafObj_New(GetQDGlobalsThePort());
-		if ( strcmp(name, "randSeed") == 0 ) 
-			return Py_BuildValue("l", GetQDGlobalsRandomSeed());
-			
-#endif
-	return Py_FindMethodInChain(&QDGA_chain, (PyObject *)self, name);
-}
-
-#define QDGA_setattr NULL
-
-#define QDGA_compare NULL
-
-#define QDGA_repr NULL
-
-#define QDGA_hash NULL
-
-static PyTypeObject QDGlobalsAccess_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
-	"_Qd.QDGlobalsAccess", /*tp_name*/
-	sizeof(QDGlobalsAccessObject), /*tp_basicsize*/
-	0, /*tp_itemsize*/
-	/* methods */
-	(destructor) QDGA_dealloc, /*tp_dealloc*/
-	0, /*tp_print*/
-	(getattrfunc) QDGA_getattr, /*tp_getattr*/
-	(setattrfunc) QDGA_setattr, /*tp_setattr*/
-	(cmpfunc) QDGA_compare, /*tp_compare*/
-	(reprfunc) QDGA_repr, /*tp_repr*/
-	(PyNumberMethods *)0, /* tp_as_number */
-	(PySequenceMethods *)0, /* tp_as_sequence */
-	(PyMappingMethods *)0, /* tp_as_mapping */
-	(hashfunc) QDGA_hash, /*tp_hash*/
-};
-
-/* ---------------- End object type QDGlobalsAccess ----------------- */
-
-
-static PyObject *Qd_MacSetPort(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	GrafPtr port;
-#ifndef MacSetPort
-	PyMac_PRECHECK(MacSetPort);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	MacSetPort(port);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
 
 static PyObject *Qd_GetPort(PyObject *_self, PyObject *_args)
 {
@@ -4068,725 +4726,6 @@ static PyObject *Qd_AngleFromSlope(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if TARGET_API_MAC_CARBON
-
-static PyObject *Qd_IsValidPort(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	CGrafPtr port;
-#ifndef IsValidPort
-	PyMac_PRECHECK(IsValidPort);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = IsValidPort(port);
-	_res = Py_BuildValue("b",
-	                     _rv);
-	return _res;
-}
-#endif
-
-static PyObject *Qd_GetPortPixMap(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	PixMapHandle _rv;
-	CGrafPtr port;
-#ifndef GetPortPixMap
-	PyMac_PRECHECK(GetPortPixMap);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = GetPortPixMap(port);
-	_res = Py_BuildValue("O&",
-	                     ResObj_New, _rv);
-	return _res;
-}
-
-static PyObject *Qd_GetPortBitMapForCopyBits(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	const BitMap * _rv;
-	CGrafPtr port;
-#ifndef GetPortBitMapForCopyBits
-	PyMac_PRECHECK(GetPortBitMapForCopyBits);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = GetPortBitMapForCopyBits(port);
-	_res = Py_BuildValue("O&",
-	                     BMObj_New, _rv);
-	return _res;
-}
-
-static PyObject *Qd_GetPortBounds(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	Rect rect;
-#ifndef GetPortBounds
-	PyMac_PRECHECK(GetPortBounds);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	GetPortBounds(port,
-	              &rect);
-	_res = Py_BuildValue("O&",
-	                     PyMac_BuildRect, &rect);
-	return _res;
-}
-
-static PyObject *Qd_GetPortForeColor(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	RGBColor foreColor;
-#ifndef GetPortForeColor
-	PyMac_PRECHECK(GetPortForeColor);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	GetPortForeColor(port,
-	                 &foreColor);
-	_res = Py_BuildValue("O&",
-	                     QdRGB_New, &foreColor);
-	return _res;
-}
-
-static PyObject *Qd_GetPortBackColor(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	RGBColor backColor;
-#ifndef GetPortBackColor
-	PyMac_PRECHECK(GetPortBackColor);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	GetPortBackColor(port,
-	                 &backColor);
-	_res = Py_BuildValue("O&",
-	                     QdRGB_New, &backColor);
-	return _res;
-}
-
-static PyObject *Qd_GetPortOpColor(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	RGBColor opColor;
-#ifndef GetPortOpColor
-	PyMac_PRECHECK(GetPortOpColor);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	GetPortOpColor(port,
-	               &opColor);
-	_res = Py_BuildValue("O&",
-	                     QdRGB_New, &opColor);
-	return _res;
-}
-
-static PyObject *Qd_GetPortHiliteColor(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	RGBColor hiliteColor;
-#ifndef GetPortHiliteColor
-	PyMac_PRECHECK(GetPortHiliteColor);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	GetPortHiliteColor(port,
-	                   &hiliteColor);
-	_res = Py_BuildValue("O&",
-	                     QdRGB_New, &hiliteColor);
-	return _res;
-}
-
-static PyObject *Qd_GetPortTextFont(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	short _rv;
-	CGrafPtr port;
-#ifndef GetPortTextFont
-	PyMac_PRECHECK(GetPortTextFont);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = GetPortTextFont(port);
-	_res = Py_BuildValue("h",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qd_GetPortTextFace(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	Style _rv;
-	CGrafPtr port;
-#ifndef GetPortTextFace
-	PyMac_PRECHECK(GetPortTextFace);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = GetPortTextFace(port);
-	_res = Py_BuildValue("b",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qd_GetPortTextMode(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	short _rv;
-	CGrafPtr port;
-#ifndef GetPortTextMode
-	PyMac_PRECHECK(GetPortTextMode);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = GetPortTextMode(port);
-	_res = Py_BuildValue("h",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qd_GetPortTextSize(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	short _rv;
-	CGrafPtr port;
-#ifndef GetPortTextSize
-	PyMac_PRECHECK(GetPortTextSize);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = GetPortTextSize(port);
-	_res = Py_BuildValue("h",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qd_GetPortChExtra(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	short _rv;
-	CGrafPtr port;
-#ifndef GetPortChExtra
-	PyMac_PRECHECK(GetPortChExtra);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = GetPortChExtra(port);
-	_res = Py_BuildValue("h",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qd_GetPortFracHPenLocation(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	short _rv;
-	CGrafPtr port;
-#ifndef GetPortFracHPenLocation
-	PyMac_PRECHECK(GetPortFracHPenLocation);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = GetPortFracHPenLocation(port);
-	_res = Py_BuildValue("h",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qd_GetPortSpExtra(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	Fixed _rv;
-	CGrafPtr port;
-#ifndef GetPortSpExtra
-	PyMac_PRECHECK(GetPortSpExtra);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = GetPortSpExtra(port);
-	_res = Py_BuildValue("O&",
-	                     PyMac_BuildFixed, _rv);
-	return _res;
-}
-
-static PyObject *Qd_GetPortPenVisibility(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	short _rv;
-	CGrafPtr port;
-#ifndef GetPortPenVisibility
-	PyMac_PRECHECK(GetPortPenVisibility);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = GetPortPenVisibility(port);
-	_res = Py_BuildValue("h",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qd_GetPortVisibleRegion(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	RgnHandle _rv;
-	CGrafPtr port;
-	RgnHandle visRgn;
-#ifndef GetPortVisibleRegion
-	PyMac_PRECHECK(GetPortVisibleRegion);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      ResObj_Convert, &visRgn))
-		return NULL;
-	_rv = GetPortVisibleRegion(port,
-	                           visRgn);
-	_res = Py_BuildValue("O&",
-	                     ResObj_New, _rv);
-	return _res;
-}
-
-static PyObject *Qd_GetPortClipRegion(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	RgnHandle _rv;
-	CGrafPtr port;
-	RgnHandle clipRgn;
-#ifndef GetPortClipRegion
-	PyMac_PRECHECK(GetPortClipRegion);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      ResObj_Convert, &clipRgn))
-		return NULL;
-	_rv = GetPortClipRegion(port,
-	                        clipRgn);
-	_res = Py_BuildValue("O&",
-	                     ResObj_New, _rv);
-	return _res;
-}
-
-static PyObject *Qd_GetPortBackPixPat(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	PixPatHandle _rv;
-	CGrafPtr port;
-	PixPatHandle backPattern;
-#ifndef GetPortBackPixPat
-	PyMac_PRECHECK(GetPortBackPixPat);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      ResObj_Convert, &backPattern))
-		return NULL;
-	_rv = GetPortBackPixPat(port,
-	                        backPattern);
-	_res = Py_BuildValue("O&",
-	                     ResObj_New, _rv);
-	return _res;
-}
-
-static PyObject *Qd_GetPortPenPixPat(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	PixPatHandle _rv;
-	CGrafPtr port;
-	PixPatHandle penPattern;
-#ifndef GetPortPenPixPat
-	PyMac_PRECHECK(GetPortPenPixPat);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      ResObj_Convert, &penPattern))
-		return NULL;
-	_rv = GetPortPenPixPat(port,
-	                       penPattern);
-	_res = Py_BuildValue("O&",
-	                     ResObj_New, _rv);
-	return _res;
-}
-
-static PyObject *Qd_GetPortFillPixPat(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	PixPatHandle _rv;
-	CGrafPtr port;
-	PixPatHandle fillPattern;
-#ifndef GetPortFillPixPat
-	PyMac_PRECHECK(GetPortFillPixPat);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      ResObj_Convert, &fillPattern))
-		return NULL;
-	_rv = GetPortFillPixPat(port,
-	                        fillPattern);
-	_res = Py_BuildValue("O&",
-	                     ResObj_New, _rv);
-	return _res;
-}
-
-static PyObject *Qd_GetPortPenSize(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	Point penSize;
-#ifndef GetPortPenSize
-	PyMac_PRECHECK(GetPortPenSize);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      PyMac_GetPoint, &penSize))
-		return NULL;
-	GetPortPenSize(port,
-	               &penSize);
-	_res = Py_BuildValue("O&",
-	                     PyMac_BuildPoint, penSize);
-	return _res;
-}
-
-static PyObject *Qd_GetPortPenMode(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	SInt32 _rv;
-	CGrafPtr port;
-#ifndef GetPortPenMode
-	PyMac_PRECHECK(GetPortPenMode);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = GetPortPenMode(port);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qd_GetPortPenLocation(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	Point penLocation;
-#ifndef GetPortPenLocation
-	PyMac_PRECHECK(GetPortPenLocation);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      PyMac_GetPoint, &penLocation))
-		return NULL;
-	GetPortPenLocation(port,
-	                   &penLocation);
-	_res = Py_BuildValue("O&",
-	                     PyMac_BuildPoint, penLocation);
-	return _res;
-}
-
-static PyObject *Qd_IsPortRegionBeingDefined(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	CGrafPtr port;
-#ifndef IsPortRegionBeingDefined
-	PyMac_PRECHECK(IsPortRegionBeingDefined);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = IsPortRegionBeingDefined(port);
-	_res = Py_BuildValue("b",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qd_IsPortPictureBeingDefined(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	CGrafPtr port;
-#ifndef IsPortPictureBeingDefined
-	PyMac_PRECHECK(IsPortPictureBeingDefined);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = IsPortPictureBeingDefined(port);
-	_res = Py_BuildValue("b",
-	                     _rv);
-	return _res;
-}
-
-#if TARGET_API_MAC_CARBON
-
-static PyObject *Qd_IsPortPolyBeingDefined(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	CGrafPtr port;
-#ifndef IsPortPolyBeingDefined
-	PyMac_PRECHECK(IsPortPolyBeingDefined);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = IsPortPolyBeingDefined(port);
-	_res = Py_BuildValue("b",
-	                     _rv);
-	return _res;
-}
-#endif
-
-#if TARGET_API_MAC_CARBON
-
-static PyObject *Qd_IsPortOffscreen(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	CGrafPtr port;
-#ifndef IsPortOffscreen
-	PyMac_PRECHECK(IsPortOffscreen);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = IsPortOffscreen(port);
-	_res = Py_BuildValue("b",
-	                     _rv);
-	return _res;
-}
-#endif
-
-#if TARGET_API_MAC_CARBON
-
-static PyObject *Qd_IsPortColor(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	CGrafPtr port;
-#ifndef IsPortColor
-	PyMac_PRECHECK(IsPortColor);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = IsPortColor(port);
-	_res = Py_BuildValue("b",
-	                     _rv);
-	return _res;
-}
-#endif
-
-static PyObject *Qd_SetPortBounds(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	Rect rect;
-#ifndef SetPortBounds
-	PyMac_PRECHECK(SetPortBounds);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      PyMac_GetRect, &rect))
-		return NULL;
-	SetPortBounds(port,
-	              &rect);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_SetPortOpColor(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	RGBColor opColor;
-#ifndef SetPortOpColor
-	PyMac_PRECHECK(SetPortOpColor);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      QdRGB_Convert, &opColor))
-		return NULL;
-	SetPortOpColor(port,
-	               &opColor);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_SetPortVisibleRegion(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	RgnHandle visRgn;
-#ifndef SetPortVisibleRegion
-	PyMac_PRECHECK(SetPortVisibleRegion);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      ResObj_Convert, &visRgn))
-		return NULL;
-	SetPortVisibleRegion(port,
-	                     visRgn);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_SetPortClipRegion(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	RgnHandle clipRgn;
-#ifndef SetPortClipRegion
-	PyMac_PRECHECK(SetPortClipRegion);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      ResObj_Convert, &clipRgn))
-		return NULL;
-	SetPortClipRegion(port,
-	                  clipRgn);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_SetPortPenPixPat(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	PixPatHandle penPattern;
-#ifndef SetPortPenPixPat
-	PyMac_PRECHECK(SetPortPenPixPat);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      ResObj_Convert, &penPattern))
-		return NULL;
-	SetPortPenPixPat(port,
-	                 penPattern);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_SetPortFillPixPat(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	PixPatHandle penPattern;
-#ifndef SetPortFillPixPat
-	PyMac_PRECHECK(SetPortFillPixPat);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      ResObj_Convert, &penPattern))
-		return NULL;
-	SetPortFillPixPat(port,
-	                  penPattern);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_SetPortBackPixPat(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	PixPatHandle backPattern;
-#ifndef SetPortBackPixPat
-	PyMac_PRECHECK(SetPortBackPixPat);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      ResObj_Convert, &backPattern))
-		return NULL;
-	SetPortBackPixPat(port,
-	                  backPattern);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_SetPortPenSize(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	Point penSize;
-#ifndef SetPortPenSize
-	PyMac_PRECHECK(SetPortPenSize);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      PyMac_GetPoint, &penSize))
-		return NULL;
-	SetPortPenSize(port,
-	               penSize);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_SetPortPenMode(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	SInt32 penMode;
-#ifndef SetPortPenMode
-	PyMac_PRECHECK(SetPortPenMode);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&l",
-	                      GrafObj_Convert, &port,
-	                      &penMode))
-		return NULL;
-	SetPortPenMode(port,
-	               penMode);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_SetPortFracHPenLocation(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	short pnLocHFrac;
-#ifndef SetPortFracHPenLocation
-	PyMac_PRECHECK(SetPortFracHPenLocation);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&h",
-	                      GrafObj_Convert, &port,
-	                      &pnLocHFrac))
-		return NULL;
-	SetPortFracHPenLocation(port,
-	                        pnLocHFrac);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
 static PyObject *Qd_GetPixBounds(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -5054,25 +4993,6 @@ static PyObject *Qd_CreateNewPort(PyObject *_self, PyObject *_args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Qd_DisposePort(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-#ifndef DisposePort
-	PyMac_PRECHECK(DisposePort);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	DisposePort(port);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
-#if TARGET_API_MAC_CARBON
-
 static PyObject *Qd_SetQDError(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -5084,107 +5004,6 @@ static PyObject *Qd_SetQDError(PyObject *_self, PyObject *_args)
 	                      &err))
 		return NULL;
 	SetQDError(err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
-static PyObject *Qd_QDIsPortBuffered(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	CGrafPtr port;
-#ifndef QDIsPortBuffered
-	PyMac_PRECHECK(QDIsPortBuffered);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = QDIsPortBuffered(port);
-	_res = Py_BuildValue("b",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qd_QDIsPortBufferDirty(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	CGrafPtr port;
-#ifndef QDIsPortBufferDirty
-	PyMac_PRECHECK(QDIsPortBufferDirty);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &port))
-		return NULL;
-	_rv = QDIsPortBufferDirty(port);
-	_res = Py_BuildValue("b",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qd_QDFlushPortBuffer(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CGrafPtr port;
-	RgnHandle region;
-#ifndef QDFlushPortBuffer
-	PyMac_PRECHECK(QDFlushPortBuffer);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      OptResObj_Convert, &region))
-		return NULL;
-	QDFlushPortBuffer(port,
-	                  region);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-#if TARGET_API_MAC_CARBON
-
-static PyObject *Qd_QDGetDirtyRegion(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSStatus _err;
-	CGrafPtr port;
-	RgnHandle rgn;
-#ifndef QDGetDirtyRegion
-	PyMac_PRECHECK(QDGetDirtyRegion);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      ResObj_Convert, &rgn))
-		return NULL;
-	_err = QDGetDirtyRegion(port,
-	                        rgn);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
-#if TARGET_API_MAC_CARBON
-
-static PyObject *Qd_QDSetDirtyRegion(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSStatus _err;
-	CGrafPtr port;
-	RgnHandle rgn;
-#ifndef QDSetDirtyRegion
-	PyMac_PRECHECK(QDSetDirtyRegion);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      GrafObj_Convert, &port,
-	                      ResObj_Convert, &rgn))
-		return NULL;
-	_err = QDSetDirtyRegion(port,
-	                        rgn);
-	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -6461,8 +6280,6 @@ static PyObject *Qd_RawBitMap(PyObject *_self, PyObject *_args)
 }
 
 static PyMethodDef Qd_methods[] = {
-	{"MacSetPort", (PyCFunction)Qd_MacSetPort, 1,
-	 PyDoc_STR("(GrafPtr port) -> None")},
 	{"GetPort", (PyCFunction)Qd_GetPort, 1,
 	 PyDoc_STR("() -> (GrafPtr port)")},
 	{"GrafDevice", (PyCFunction)Qd_GrafDevice, 1,
@@ -6826,96 +6643,6 @@ static PyMethodDef Qd_methods[] = {
 	 PyDoc_STR("(short angle) -> (Fixed _rv)")},
 	{"AngleFromSlope", (PyCFunction)Qd_AngleFromSlope, 1,
 	 PyDoc_STR("(Fixed slope) -> (short _rv)")},
-
-#if TARGET_API_MAC_CARBON
-	{"IsValidPort", (PyCFunction)Qd_IsValidPort, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (Boolean _rv)")},
-#endif
-	{"GetPortPixMap", (PyCFunction)Qd_GetPortPixMap, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (PixMapHandle _rv)")},
-	{"GetPortBitMapForCopyBits", (PyCFunction)Qd_GetPortBitMapForCopyBits, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (const BitMap * _rv)")},
-	{"GetPortBounds", (PyCFunction)Qd_GetPortBounds, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (Rect rect)")},
-	{"GetPortForeColor", (PyCFunction)Qd_GetPortForeColor, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (RGBColor foreColor)")},
-	{"GetPortBackColor", (PyCFunction)Qd_GetPortBackColor, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (RGBColor backColor)")},
-	{"GetPortOpColor", (PyCFunction)Qd_GetPortOpColor, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (RGBColor opColor)")},
-	{"GetPortHiliteColor", (PyCFunction)Qd_GetPortHiliteColor, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (RGBColor hiliteColor)")},
-	{"GetPortTextFont", (PyCFunction)Qd_GetPortTextFont, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (short _rv)")},
-	{"GetPortTextFace", (PyCFunction)Qd_GetPortTextFace, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (Style _rv)")},
-	{"GetPortTextMode", (PyCFunction)Qd_GetPortTextMode, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (short _rv)")},
-	{"GetPortTextSize", (PyCFunction)Qd_GetPortTextSize, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (short _rv)")},
-	{"GetPortChExtra", (PyCFunction)Qd_GetPortChExtra, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (short _rv)")},
-	{"GetPortFracHPenLocation", (PyCFunction)Qd_GetPortFracHPenLocation, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (short _rv)")},
-	{"GetPortSpExtra", (PyCFunction)Qd_GetPortSpExtra, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (Fixed _rv)")},
-	{"GetPortPenVisibility", (PyCFunction)Qd_GetPortPenVisibility, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (short _rv)")},
-	{"GetPortVisibleRegion", (PyCFunction)Qd_GetPortVisibleRegion, 1,
-	 PyDoc_STR("(CGrafPtr port, RgnHandle visRgn) -> (RgnHandle _rv)")},
-	{"GetPortClipRegion", (PyCFunction)Qd_GetPortClipRegion, 1,
-	 PyDoc_STR("(CGrafPtr port, RgnHandle clipRgn) -> (RgnHandle _rv)")},
-	{"GetPortBackPixPat", (PyCFunction)Qd_GetPortBackPixPat, 1,
-	 PyDoc_STR("(CGrafPtr port, PixPatHandle backPattern) -> (PixPatHandle _rv)")},
-	{"GetPortPenPixPat", (PyCFunction)Qd_GetPortPenPixPat, 1,
-	 PyDoc_STR("(CGrafPtr port, PixPatHandle penPattern) -> (PixPatHandle _rv)")},
-	{"GetPortFillPixPat", (PyCFunction)Qd_GetPortFillPixPat, 1,
-	 PyDoc_STR("(CGrafPtr port, PixPatHandle fillPattern) -> (PixPatHandle _rv)")},
-	{"GetPortPenSize", (PyCFunction)Qd_GetPortPenSize, 1,
-	 PyDoc_STR("(CGrafPtr port, Point penSize) -> (Point penSize)")},
-	{"GetPortPenMode", (PyCFunction)Qd_GetPortPenMode, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (SInt32 _rv)")},
-	{"GetPortPenLocation", (PyCFunction)Qd_GetPortPenLocation, 1,
-	 PyDoc_STR("(CGrafPtr port, Point penLocation) -> (Point penLocation)")},
-	{"IsPortRegionBeingDefined", (PyCFunction)Qd_IsPortRegionBeingDefined, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (Boolean _rv)")},
-	{"IsPortPictureBeingDefined", (PyCFunction)Qd_IsPortPictureBeingDefined, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (Boolean _rv)")},
-
-#if TARGET_API_MAC_CARBON
-	{"IsPortPolyBeingDefined", (PyCFunction)Qd_IsPortPolyBeingDefined, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (Boolean _rv)")},
-#endif
-
-#if TARGET_API_MAC_CARBON
-	{"IsPortOffscreen", (PyCFunction)Qd_IsPortOffscreen, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (Boolean _rv)")},
-#endif
-
-#if TARGET_API_MAC_CARBON
-	{"IsPortColor", (PyCFunction)Qd_IsPortColor, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (Boolean _rv)")},
-#endif
-	{"SetPortBounds", (PyCFunction)Qd_SetPortBounds, 1,
-	 PyDoc_STR("(CGrafPtr port, Rect rect) -> None")},
-	{"SetPortOpColor", (PyCFunction)Qd_SetPortOpColor, 1,
-	 PyDoc_STR("(CGrafPtr port, RGBColor opColor) -> None")},
-	{"SetPortVisibleRegion", (PyCFunction)Qd_SetPortVisibleRegion, 1,
-	 PyDoc_STR("(CGrafPtr port, RgnHandle visRgn) -> None")},
-	{"SetPortClipRegion", (PyCFunction)Qd_SetPortClipRegion, 1,
-	 PyDoc_STR("(CGrafPtr port, RgnHandle clipRgn) -> None")},
-	{"SetPortPenPixPat", (PyCFunction)Qd_SetPortPenPixPat, 1,
-	 PyDoc_STR("(CGrafPtr port, PixPatHandle penPattern) -> None")},
-	{"SetPortFillPixPat", (PyCFunction)Qd_SetPortFillPixPat, 1,
-	 PyDoc_STR("(CGrafPtr port, PixPatHandle penPattern) -> None")},
-	{"SetPortBackPixPat", (PyCFunction)Qd_SetPortBackPixPat, 1,
-	 PyDoc_STR("(CGrafPtr port, PixPatHandle backPattern) -> None")},
-	{"SetPortPenSize", (PyCFunction)Qd_SetPortPenSize, 1,
-	 PyDoc_STR("(CGrafPtr port, Point penSize) -> None")},
-	{"SetPortPenMode", (PyCFunction)Qd_SetPortPenMode, 1,
-	 PyDoc_STR("(CGrafPtr port, SInt32 penMode) -> None")},
-	{"SetPortFracHPenLocation", (PyCFunction)Qd_SetPortFracHPenLocation, 1,
-	 PyDoc_STR("(CGrafPtr port, short pnLocHFrac) -> None")},
 	{"GetPixBounds", (PyCFunction)Qd_GetPixBounds, 1,
 	 PyDoc_STR("(PixMapHandle pixMap) -> (Rect bounds)")},
 	{"GetPixDepth", (PyCFunction)Qd_GetPixDepth, 1,
@@ -6956,29 +6683,8 @@ static PyMethodDef Qd_methods[] = {
 #endif
 
 #if TARGET_API_MAC_CARBON
-	{"DisposePort", (PyCFunction)Qd_DisposePort, 1,
-	 PyDoc_STR("(CGrafPtr port) -> None")},
-#endif
-
-#if TARGET_API_MAC_CARBON
 	{"SetQDError", (PyCFunction)Qd_SetQDError, 1,
 	 PyDoc_STR("(OSErr err) -> None")},
-#endif
-	{"QDIsPortBuffered", (PyCFunction)Qd_QDIsPortBuffered, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (Boolean _rv)")},
-	{"QDIsPortBufferDirty", (PyCFunction)Qd_QDIsPortBufferDirty, 1,
-	 PyDoc_STR("(CGrafPtr port) -> (Boolean _rv)")},
-	{"QDFlushPortBuffer", (PyCFunction)Qd_QDFlushPortBuffer, 1,
-	 PyDoc_STR("(CGrafPtr port, RgnHandle region) -> None")},
-
-#if TARGET_API_MAC_CARBON
-	{"QDGetDirtyRegion", (PyCFunction)Qd_QDGetDirtyRegion, 1,
-	 PyDoc_STR("(CGrafPtr port, RgnHandle rgn) -> None")},
-#endif
-
-#if TARGET_API_MAC_CARBON
-	{"QDSetDirtyRegion", (PyCFunction)Qd_QDSetDirtyRegion, 1,
-	 PyDoc_STR("(CGrafPtr port, RgnHandle rgn) -> None")},
 #endif
 	{"LMGetScrVRes", (PyCFunction)Qd_LMGetScrVRes, 1,
 	 PyDoc_STR("() -> (SInt16 _rv)")},
@@ -7172,20 +6878,6 @@ void init_Qd(void)
 	Py_INCREF(&BitMap_Type);
 	if (PyDict_SetItemString(d, "BitMapType", (PyObject *)&BitMap_Type) != 0)
 		Py_FatalError("can't initialize BitMapType");
-	QDGlobalsAccess_Type.ob_type = &PyType_Type;
-	Py_INCREF(&QDGlobalsAccess_Type);
-	if (PyDict_SetItemString(d, "QDGlobalsAccessType", (PyObject *)&QDGlobalsAccess_Type) != 0)
-		Py_FatalError("can't initialize QDGlobalsAccessType");
-
-	{
-		PyObject *o;
-	 	
-		o = QDGA_New();
-		if (o == NULL || PyDict_SetItemString(d, "qd", o) != 0)
-			return;
-	}
-
-
 }
 
 /* ========================= End module _Qd ========================= */

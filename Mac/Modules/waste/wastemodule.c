@@ -384,14 +384,7 @@ static PyMethodDef WEOObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain WEOObj_chain = { WEOObj_methods, NULL };
-
-static PyObject *WEOObj_getattr(WEOObject *self, char *name)
-{
-	return Py_FindMethodInChain(&WEOObj_chain, (PyObject *)self, name);
-}
-
-#define WEOObj_setattr NULL
+#define WEOObj_getsetlist NULL
 
 #define WEOObj_compare NULL
 
@@ -408,14 +401,31 @@ PyTypeObject WEO_Type = {
 	/* methods */
 	(destructor) WEOObj_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) WEOObj_getattr, /*tp_getattr*/
-	(setattrfunc) WEOObj_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) WEOObj_compare, /*tp_compare*/
 	(reprfunc) WEOObj_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) WEOObj_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	WEOObj_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	WEOObj_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* ---------------------- End object type WEO ----------------------- */
@@ -2096,14 +2106,7 @@ static PyMethodDef wasteObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain wasteObj_chain = { wasteObj_methods, NULL };
-
-static PyObject *wasteObj_getattr(wasteObject *self, char *name)
-{
-	return Py_FindMethodInChain(&wasteObj_chain, (PyObject *)self, name);
-}
-
-#define wasteObj_setattr NULL
+#define wasteObj_getsetlist NULL
 
 #define wasteObj_compare NULL
 
@@ -2120,14 +2123,31 @@ PyTypeObject waste_Type = {
 	/* methods */
 	(destructor) wasteObj_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) wasteObj_getattr, /*tp_getattr*/
-	(setattrfunc) wasteObj_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) wasteObj_compare, /*tp_compare*/
 	(reprfunc) wasteObj_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) wasteObj_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	wasteObj_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	wasteObj_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* --------------------- End object type waste ---------------------- */

@@ -490,7 +490,7 @@ PyMac_INIT_TOOLBOX_OBJECT_NEW(ControlHandle, CtlObj_New);
 PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ControlHandle, CtlObj_Convert);
 """
 
-class MyObjectDefinition(ObjectIdentityMixin, GlobalObjectDefinition):
+class MyObjectDefinition(PEP252Mixin, ObjectIdentityMixin, GlobalObjectDefinition):
 	def outputStructMembers(self):
 		GlobalObjectDefinition.outputStructMembers(self)
 		Output("PyObject *ob_callbackdict;")

@@ -408,14 +408,7 @@ static PyMethodDef EventRef_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain EventRef_chain = { EventRef_methods, NULL };
-
-static PyObject *EventRef_getattr(EventRefObject *self, char *name)
-{
-	return Py_FindMethodInChain(&EventRef_chain, (PyObject *)self, name);
-}
-
-#define EventRef_setattr NULL
+#define EventRef_getsetlist NULL
 
 #define EventRef_compare NULL
 
@@ -432,14 +425,31 @@ PyTypeObject EventRef_Type = {
 	/* methods */
 	(destructor) EventRef_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) EventRef_getattr, /*tp_getattr*/
-	(setattrfunc) EventRef_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) EventRef_compare, /*tp_compare*/
 	(reprfunc) EventRef_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) EventRef_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	EventRef_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	EventRef_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* -------------------- End object type EventRef -------------------- */
@@ -591,14 +601,7 @@ static PyMethodDef EventQueueRef_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain EventQueueRef_chain = { EventQueueRef_methods, NULL };
-
-static PyObject *EventQueueRef_getattr(EventQueueRefObject *self, char *name)
-{
-	return Py_FindMethodInChain(&EventQueueRef_chain, (PyObject *)self, name);
-}
-
-#define EventQueueRef_setattr NULL
+#define EventQueueRef_getsetlist NULL
 
 #define EventQueueRef_compare NULL
 
@@ -615,14 +618,31 @@ PyTypeObject EventQueueRef_Type = {
 	/* methods */
 	(destructor) EventQueueRef_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) EventQueueRef_getattr, /*tp_getattr*/
-	(setattrfunc) EventQueueRef_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) EventQueueRef_compare, /*tp_compare*/
 	(reprfunc) EventQueueRef_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) EventQueueRef_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	EventQueueRef_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	EventQueueRef_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* ----------------- End object type EventQueueRef ------------------ */
@@ -683,14 +703,7 @@ static PyMethodDef EventLoopRef_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain EventLoopRef_chain = { EventLoopRef_methods, NULL };
-
-static PyObject *EventLoopRef_getattr(EventLoopRefObject *self, char *name)
-{
-	return Py_FindMethodInChain(&EventLoopRef_chain, (PyObject *)self, name);
-}
-
-#define EventLoopRef_setattr NULL
+#define EventLoopRef_getsetlist NULL
 
 #define EventLoopRef_compare NULL
 
@@ -707,14 +720,31 @@ PyTypeObject EventLoopRef_Type = {
 	/* methods */
 	(destructor) EventLoopRef_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) EventLoopRef_getattr, /*tp_getattr*/
-	(setattrfunc) EventLoopRef_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) EventLoopRef_compare, /*tp_compare*/
 	(reprfunc) EventLoopRef_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) EventLoopRef_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	EventLoopRef_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	EventLoopRef_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* ------------------ End object type EventLoopRef ------------------ */
@@ -793,14 +823,7 @@ static PyMethodDef EventLoopTimerRef_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain EventLoopTimerRef_chain = { EventLoopTimerRef_methods, NULL };
-
-static PyObject *EventLoopTimerRef_getattr(EventLoopTimerRefObject *self, char *name)
-{
-	return Py_FindMethodInChain(&EventLoopTimerRef_chain, (PyObject *)self, name);
-}
-
-#define EventLoopTimerRef_setattr NULL
+#define EventLoopTimerRef_getsetlist NULL
 
 #define EventLoopTimerRef_compare NULL
 
@@ -817,14 +840,31 @@ PyTypeObject EventLoopTimerRef_Type = {
 	/* methods */
 	(destructor) EventLoopTimerRef_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) EventLoopTimerRef_getattr, /*tp_getattr*/
-	(setattrfunc) EventLoopTimerRef_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) EventLoopTimerRef_compare, /*tp_compare*/
 	(reprfunc) EventLoopTimerRef_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) EventLoopTimerRef_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	EventLoopTimerRef_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	EventLoopTimerRef_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* --------------- End object type EventLoopTimerRef ---------------- */
@@ -948,14 +988,7 @@ static PyMethodDef EventHandlerRef_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain EventHandlerRef_chain = { EventHandlerRef_methods, NULL };
-
-static PyObject *EventHandlerRef_getattr(EventHandlerRefObject *self, char *name)
-{
-	return Py_FindMethodInChain(&EventHandlerRef_chain, (PyObject *)self, name);
-}
-
-#define EventHandlerRef_setattr NULL
+#define EventHandlerRef_getsetlist NULL
 
 #define EventHandlerRef_compare NULL
 
@@ -972,14 +1005,31 @@ PyTypeObject EventHandlerRef_Type = {
 	/* methods */
 	(destructor) EventHandlerRef_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) EventHandlerRef_getattr, /*tp_getattr*/
-	(setattrfunc) EventHandlerRef_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) EventHandlerRef_compare, /*tp_compare*/
 	(reprfunc) EventHandlerRef_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) EventHandlerRef_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	EventHandlerRef_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	EventHandlerRef_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* ---------------- End object type EventHandlerRef ----------------- */
@@ -1043,14 +1093,7 @@ static PyMethodDef EventHandlerCallRef_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain EventHandlerCallRef_chain = { EventHandlerCallRef_methods, NULL };
-
-static PyObject *EventHandlerCallRef_getattr(EventHandlerCallRefObject *self, char *name)
-{
-	return Py_FindMethodInChain(&EventHandlerCallRef_chain, (PyObject *)self, name);
-}
-
-#define EventHandlerCallRef_setattr NULL
+#define EventHandlerCallRef_getsetlist NULL
 
 #define EventHandlerCallRef_compare NULL
 
@@ -1067,14 +1110,31 @@ PyTypeObject EventHandlerCallRef_Type = {
 	/* methods */
 	(destructor) EventHandlerCallRef_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) EventHandlerCallRef_getattr, /*tp_getattr*/
-	(setattrfunc) EventHandlerCallRef_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) EventHandlerCallRef_compare, /*tp_compare*/
 	(reprfunc) EventHandlerCallRef_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) EventHandlerCallRef_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	EventHandlerCallRef_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	EventHandlerCallRef_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* -------------- End object type EventHandlerCallRef --------------- */
@@ -1160,14 +1220,7 @@ static PyMethodDef EventTargetRef_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain EventTargetRef_chain = { EventTargetRef_methods, NULL };
-
-static PyObject *EventTargetRef_getattr(EventTargetRefObject *self, char *name)
-{
-	return Py_FindMethodInChain(&EventTargetRef_chain, (PyObject *)self, name);
-}
-
-#define EventTargetRef_setattr NULL
+#define EventTargetRef_getsetlist NULL
 
 #define EventTargetRef_compare NULL
 
@@ -1184,14 +1237,31 @@ PyTypeObject EventTargetRef_Type = {
 	/* methods */
 	(destructor) EventTargetRef_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) EventTargetRef_getattr, /*tp_getattr*/
-	(setattrfunc) EventTargetRef_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) EventTargetRef_compare, /*tp_compare*/
 	(reprfunc) EventTargetRef_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) EventTargetRef_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	EventTargetRef_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	EventTargetRef_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* ----------------- End object type EventTargetRef ----------------- */
@@ -1252,14 +1322,7 @@ static PyMethodDef EventHotKeyRef_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain EventHotKeyRef_chain = { EventHotKeyRef_methods, NULL };
-
-static PyObject *EventHotKeyRef_getattr(EventHotKeyRefObject *self, char *name)
-{
-	return Py_FindMethodInChain(&EventHotKeyRef_chain, (PyObject *)self, name);
-}
-
-#define EventHotKeyRef_setattr NULL
+#define EventHotKeyRef_getsetlist NULL
 
 #define EventHotKeyRef_compare NULL
 
@@ -1276,14 +1339,31 @@ PyTypeObject EventHotKeyRef_Type = {
 	/* methods */
 	(destructor) EventHotKeyRef_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) EventHotKeyRef_getattr, /*tp_getattr*/
-	(setattrfunc) EventHotKeyRef_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) EventHotKeyRef_compare, /*tp_compare*/
 	(reprfunc) EventHotKeyRef_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) EventHotKeyRef_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	EventHotKeyRef_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	EventHotKeyRef_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* ----------------- End object type EventHotKeyRef ----------------- */

@@ -300,14 +300,8 @@ static PyMethodDef SndCh_methods[] = {
 	{NULL, NULL, 0}
 };
 
-static PyMethodChain SndCh_chain = { SndCh_methods, NULL };
+#define SndCh_getsetlist NULL
 
-static PyObject *SndCh_getattr(SndChannelObject *self, char *name)
-{
-	return Py_FindMethodInChain(&SndCh_chain, (PyObject *)self, name);
-}
-
-#define SndCh_setattr NULL
 
 #define SndCh_compare NULL
 
@@ -324,14 +318,31 @@ static PyTypeObject SndChannel_Type = {
 	/* methods */
 	(destructor) SndCh_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) SndCh_getattr, /*tp_getattr*/
-	(setattrfunc) SndCh_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) SndCh_compare, /*tp_compare*/
 	(reprfunc) SndCh_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) SndCh_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	SndCh_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	SndCh_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* ------------------- End object type SndChannel ------------------- */
@@ -391,51 +402,65 @@ static PyMethodDef SPBObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-static PyMethodChain SPBObj_chain = { SPBObj_methods, NULL };
-
-static PyObject *SPBObj_getattr(SPBObject *self, char *name)
+static PyObject *SPBObj_get_inRefNum(SPBObject *self, void *closure)
 {
-
-				if (strcmp(name, "inRefNum") == 0)
-					return Py_BuildValue("l", self->ob_spb.inRefNum);
-				else if (strcmp(name, "count") == 0)
-					return Py_BuildValue("l", self->ob_spb.count);
-				else if (strcmp(name, "milliseconds") == 0)
-					return Py_BuildValue("l", self->ob_spb.milliseconds);
-				else if (strcmp(name, "error") == 0)
-					return Py_BuildValue("h", self->ob_spb.error);
-	return Py_FindMethodInChain(&SPBObj_chain, (PyObject *)self, name);
+	return Py_BuildValue("l", self->ob_spb.inRefNum);
 }
 
-static int SPBObj_setattr(SPBObject *self, char *name, PyObject *value)
+static int SPBObj_set_inRefNum(SPBObject *self, PyObject *v, void *closure)
 {
-
-		int rv = 0;
-		
-		if (strcmp(name, "inRefNum") == 0)
-			rv = PyArg_Parse(value, "l", &self->ob_spb.inRefNum);
-		else if (strcmp(name, "count") == 0)
-			rv = PyArg_Parse(value, "l", &self->ob_spb.count);
-		else if (strcmp(name, "milliseconds") == 0)
-			rv = PyArg_Parse(value, "l", &self->ob_spb.milliseconds);
-		else if (strcmp(name, "buffer") == 0)
-			rv = PyArg_Parse(value, "w#", &self->ob_spb.bufferPtr, &self->ob_spb.bufferLength);
-		else if (strcmp(name, "completionRoutine") == 0) {
-			self->ob_spb.completionRoutine = NewSICompletionUPP(SPB_completion);
-			self->ob_completion = value;
-			Py_INCREF(value);
-			rv = 1;
-#if !TARGET_API_MAC_CARBON
-		} else if (strcmp(name, "interruptRoutine") == 0) {
-			self->ob_spb.completionRoutine = NewSIInterruptUPP(SPB_interrupt);
-			self->ob_interrupt = value;
-			Py_INCREF(value);
-			rv = 1;
-#endif
-		}
-		if ( rv ) return 0;
-		else return -1;
+	return -1 + PyArg_Parse(v, "l", &self->ob_spb.inRefNum);
+	return 0;
 }
+
+static PyObject *SPBObj_get_count(SPBObject *self, void *closure)
+{
+	return Py_BuildValue("l", self->ob_spb.count);
+}
+
+static int SPBObj_set_count(SPBObject *self, PyObject *v, void *closure)
+{
+	return -1 + PyArg_Parse(v, "l", &self->ob_spb.count);
+	return 0;
+}
+
+static PyObject *SPBObj_get_milliseconds(SPBObject *self, void *closure)
+{
+	return Py_BuildValue("l", self->ob_spb.milliseconds);
+}
+
+static int SPBObj_set_milliseconds(SPBObject *self, PyObject *v, void *closure)
+{
+	return -1 + PyArg_Parse(v, "l", &self->ob_spb.milliseconds);
+	return 0;
+}
+
+static PyObject *SPBObj_get_error(SPBObject *self, void *closure)
+{
+	return Py_BuildValue("h", self->ob_spb.error);
+}
+
+#define SPBObj_set_error NULL
+
+#define SPBObj_get_completionRoutine NULL
+
+static int SPBObj_set_completionRoutine(SPBObject *self, PyObject *v, void *closure)
+{
+	self->ob_spb.completionRoutine = NewSICompletionUPP(SPB_completion);
+			self->ob_completion = v;
+			Py_INCREF(v);
+			return 0;
+	return 0;
+}
+
+static PyGetSetDef SPBObj_getsetlist[] = {
+	{"inRefNum", (getter)SPBObj_get_inRefNum, (setter)SPBObj_set_inRefNum, NULL},
+	{"count", (getter)SPBObj_get_count, (setter)SPBObj_set_count, NULL},
+	{"milliseconds", (getter)SPBObj_get_milliseconds, (setter)SPBObj_set_milliseconds, NULL},
+	{"error", (getter)SPBObj_get_error, (setter)SPBObj_set_error, NULL},
+	{"completionRoutine", (getter)SPBObj_get_completionRoutine, (setter)SPBObj_set_completionRoutine, NULL},
+};
+
 
 #define SPBObj_compare NULL
 
@@ -452,14 +477,31 @@ static PyTypeObject SPB_Type = {
 	/* methods */
 	(destructor) SPBObj_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) SPBObj_getattr, /*tp_getattr*/
-	(setattrfunc) SPBObj_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) SPBObj_compare, /*tp_compare*/
 	(reprfunc) SPBObj_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) SPBObj_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	SPBObj_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	SPBObj_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* ---------------------- End object type SPB ----------------------- */

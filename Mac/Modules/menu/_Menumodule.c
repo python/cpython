@@ -3000,14 +3000,7 @@ static PyMethodDef MenuObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain MenuObj_chain = { MenuObj_methods, NULL };
-
-static PyObject *MenuObj_getattr(MenuObject *self, char *name)
-{
-	return Py_FindMethodInChain(&MenuObj_chain, (PyObject *)self, name);
-}
-
-#define MenuObj_setattr NULL
+#define MenuObj_getsetlist NULL
 
 #define MenuObj_compare NULL
 
@@ -3024,14 +3017,31 @@ PyTypeObject Menu_Type = {
 	/* methods */
 	(destructor) MenuObj_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) MenuObj_getattr, /*tp_getattr*/
-	(setattrfunc) MenuObj_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) MenuObj_compare, /*tp_compare*/
 	(reprfunc) MenuObj_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) MenuObj_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	MenuObj_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	MenuObj_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* ---------------------- End object type Menu ---------------------- */
