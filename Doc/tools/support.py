@@ -20,7 +20,9 @@ class Options:
 
         # content components
         "address=", "iconserver=", "favicon=",
-        "title=", "uplink=", "uptitle="]
+        "title=", "uplink=", "uptitle=",
+        "image-type=",
+        ]
 
     outputfile = "-"
     columns = 1
@@ -51,7 +53,7 @@ class Options:
         self.args = []
         self.variables = {"address": "",
                           "iconserver": "icons",
-                          "imgtype": "gif",
+                          "imgtype": "png",
                           "title": "Global Module Index",
                           }
 
@@ -93,6 +95,8 @@ class Options:
                 self.variables["iconserver"] = val.strip() or "."
             elif opt == "--favicon":
                 self.favicon = val.strip()
+            elif opt == "--image-type":
+                self.variables["imgtype"] = val.strip()
             else:
                 self.handle_option(opt, val)
         if self.uplink and self.uptitle:
