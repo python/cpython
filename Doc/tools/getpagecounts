@@ -1,0 +1,23 @@
+#! /bin/sh
+#  -*- Ksh -*-
+#
+# Generate a page count report of the PostScript version of the manuals.
+
+cd `dirname $0`/..
+
+PAPER=${PAPER:-letter}
+
+
+cat <<EOF
+This is the PostScript version of the standard Python documentation.
+If you plan to print this, be aware that some of the documents are
+long.  These files have the following page counts:
+
+EOF
+
+
+for PART in api ext lib mac ref tut ; do
+    FILE=paper-$PAPER/$PART.ps
+    PAGECOUNT=`grep '^%%Page:' $FILE | wc -l | cut -f 1 | tr -d ' 	'`
+    echo "	$PART.ps -- $PAGECOUNT pages"
+done
