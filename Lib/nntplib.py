@@ -5,10 +5,10 @@
 # Example:
 #
 # >>> from nntplib import NNTP
-# >>> s = NNTP('charon')
-# >>> resp, count, first, last, name = s.group('nlnet.misc')
+# >>> s = NNTP('news')
+# >>> resp, count, first, last, name = s.group('comp.lang.python')
 # >>> print 'Group', name, 'has', count, 'articles, range', first, 'to', last
-# Group nlnet.misc has 525 articles, range 6960 to 7485
+# Group comp.lang.python has 51 articles, range 5770 to 5821
 # >>> resp, subs = s.xhdr('subject', first + '-' + last)
 # >>> resp = s.quit()
 # >>>
@@ -25,6 +25,8 @@
 # Note that all arguments and return values representing article numbers
 # are strings, not numbers, since they are rarely used for calculations.
 
+# (xover, xgtitle, xpath, date methods by Kevan Heydon)
+
 
 # Imports
 import regex
@@ -38,6 +40,7 @@ error_reply = 'nntplib.error_reply'	# unexpected [123]xx reply
 error_temp = 'nntplib.error_temp'	# 4xx errors
 error_perm = 'nntplib.error_perm'	# 5xx errors
 error_proto = 'nntplib.error_proto'	# response does not begin with [1-5]
+error_data = 'nntplib.error_data'	# error in response data
 
 
 # Standard port used by NNTP servers
@@ -45,7 +48,7 @@ NNTP_PORT = 119
 
 
 # Response numbers that are followed by additional text (e.g. article)
-LONGRESP = ['100', '215', '220', '221', '222', '230', '231']
+LONGRESP = ['100', '215', '220', '221', '222', '224', '230', '231', '282']
 
 
 # Line terminators (we always output CRLF, but accept any of CRLF, CR, LF)
@@ -307,6 +310,86 @@ class NNTP:
 			if n < len(line) and line[n] == ' ': n = n+1
 			lines[i] = (nr, line[n:])
 		return resp, lines
+
+	# Process an XOVER command (optional server extension) Arguments:
+	# - start: start of range
+	# - end: end of range
+	# Returns:
+	# - resp: server response if succesful
+	# - list: list of (art-nr, subject, poster, date, id, refrences, size, lines)
+
+	def xover(self,start,end):
+		resp, lines = self.longcmd('XOVER ' + start + '-' + end)
+		xover_lines = []
+		for line in lines:
+			elem = string.splitfields(line,"\t")
+			try:
+				xover_lines.append(elem[0],
+						   elem[1],
+						   elem[2],
+						   elem[3],
+						   elem[4],
+						   elem[5:-2],
+						   elem[-2],
+						   elem[-1])
+			except IndexError:
+				raise error_data,line
+		return resp,xover_lines
+
+	# Process an XGTITLE command (optional server extension) Arguments:
+	# - group: group name wildcard (i.e. news.*)
+	# Returns:
+	# - resp: server response if succesful
+	# - list: list of (name,title) strings
+
+	def xgtitle(self, group):
+		line_pat = regex.compile("^\([^ \t]+\)[ \t]+\(.*\)$")
+		resp, raw_lines = self.longcmd('XGTITLE ' + group)
+		lines = []
+		for raw_line in raw_lines:
+			if line_pat.search(string.strip(raw_line)) == 0:
+				lines.append(line_pat.group(1),
+					     line_pat.group(2))
+
+		return resp, lines
+
+	# Process an XPATH command (optional server extension) Arguments:
+	# - id: Message id of article
+	# Returns:
+	# resp: server response if succesful
+	# path: directory path to article
+
+	def xpath(self,id):
+		resp = self.shortcmd("XPATH " + id)
+		if resp[:3] <> '223':
+			raise error_reply, resp
+		try:
+			[resp_num, path] = string.split(resp)
+		except ValueError:
+			raise error_reply, resp
+		else:
+			return resp, path
+
+	# Process the DATE command. Arguments:
+	# None
+	# Returns:
+	# resp: server response if succesful
+	# date: Date suitable for newnews/newgroups commands etc.
+	# time: Time suitable for newnews/newgroups commands etc.
+
+	def date (self):
+		resp = self.shortcmd("DATE")
+		if resp[:3] <> '111':
+			raise error_reply, resp
+		elem = string.split(resp)
+		if len(elem) != 2:
+			raise error_data, resp
+		date = elem[1][2:8]
+		time = elem[1][-6:]
+		if len(date) != 6 or len(time) != 6:
+			raise error_data, resp
+		return resp, date, time
+
 
 	# Process a POST command.  Arguments:
 	# - f: file containing the article
