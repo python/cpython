@@ -1512,14 +1512,6 @@ item: Get Registry Key Value
   Value Name=Common Programs
   Flags=00000100
 end
-item: Set Variable
-  Variable=CGROUP_SAVE
-  Value=%GROUP%
-end
-item: Set Variable
-  Variable=GROUP
-  Value=%GROUPDIR%\%GROUP%
-end
 item: Else Statement
 end
 item: Remark
@@ -1556,13 +1548,30 @@ item: End Block
 end
 item: Remark
 end
+item: Set Variable
+  Variable=CGROUP_SAVE
+  Value=%GROUP%
+end
 item: If/While Statement
   Variable=TASKS
   Value=B
-  Flags=00000011
+  Flags=00000010
+end
+item: If/While Statement
+  Variable=DOADMIN
+  Value=1
 end
 item: Set Variable
   Variable=GROUP
+  Value=%CGROUPDIR%\%GROUP%
+end
+item: Else Statement
+end
+item: Set Variable
+  Variable=GROUP
+  Value=%GROUPDIR%\%GROUP%
+end
+item: End Block
 end
 item: End Block
 end
