@@ -1,4 +1,4 @@
-# regression test for SAX 2.0
+# regression test for SAX 2.0            -*- coding: iso-8859-1 -*-
 # $Id$
 
 from xml.sax import make_parser, ContentHandler, \
