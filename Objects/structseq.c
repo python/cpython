@@ -188,6 +188,27 @@ structseq_richcompare(PyObject *obj, PyObject *o2, int op)
 	return result;
 }
 
+static PyObject *
+structseq_reduce(PyStructSequence* self)
+{
+	PyObject* tup;
+	long n_fields;
+	int i;
+	
+	n_fields = REAL_SIZE(self);
+	tup = PyTuple_New(n_fields);
+	if (!tup) {
+		return NULL;
+	}
+
+	for (i = 0; i < n_fields; i++) {
+		Py_INCREF(self->ob_item[i]);
+		PyTuple_SET_ITEM(tup, i, self->ob_item[i]);
+	}
+	
+	return Py_BuildValue("(O(O))", self->ob_type, tup);
+}
+
 static PySequenceMethods structseq_as_sequence = {
 	(inquiry)structseq_length,
 	(binaryfunc)structseq_concat,           /* sq_concat */
@@ -197,6 +218,12 @@ static PySequenceMethods structseq_as_sequence = {
 	0,					/* sq_ass_item */
 	0,					/* sq_ass_slice */
 	(objobjproc)structseq_contains,	        /* sq_contains */
+};
+
+static PyMethodDef structseq_methods[] = {
+	{"__reduce__", (PyCFunction)structseq_reduce, 
+	 METH_NOARGS, NULL},
+	{NULL, NULL}
 };
 
 static PyTypeObject _struct_sequence_template = {
@@ -228,7 +255,7 @@ static PyTypeObject _struct_sequence_template = {
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
-	0,	             			/* tp_methods */
+	structseq_methods,      		/* tp_methods */
         NULL,			             	/* tp_members */
 	0,			          	/* tp_getset */
 	0,					/* tp_base */
@@ -282,4 +309,6 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 		       PyInt_FromLong((long) desc->n_in_sequence));
 	PyDict_SetItemString(dict, real_length_key, 
 		       PyInt_FromLong((long) n_members));
+	PyDict_SetItemString(dict, "__safe_for_unpickling__", 
+		       PyInt_FromLong(1));
 }
