@@ -1,38 +1,80 @@
 # Generate the Python "info" documentation.
 
-# These is only used for .info generation:
-EMACS=		emacs
-MAKEINFO=	makeinfo
-PYTHON=		python
-PARTPARSE=	$(PYTHON) ../tools/partparse.py
+PAPER=letter
+TOPDIR=..
+TOOLSDIR=$(TOPDIR)/tools
+PAPERDIR=$(TOPDIR)/paper-$(PAPER)
+HTMLDIR=$(TOPDIR)/html
+
+MKINFO=$(TOOLSDIR)/mkinfo
+SCRIPTS=$(TOOLSDIR)/html2texi.pl $(TOOLSDIR)/checkargs.pm $(TOOLSDIR)/mkinfo
+
+all:	python-api.info python-ext.info python-lib.info \
+	python-mac.info python-ref.info python-tut.info
 
 
-all:	python-lib.info
+python-api.info:	$(HTMLDIR)/api/api.html $(SCRIPTS)
+	$(MKINFO) $<
 
+python-ext.info:	$(HTMLDIR)/ext/ext.html $(SCRIPTS)
+	$(MKINFO) $<
 
-.PRECIOUS:	python-lib.texi
+python-lib.info:	$(HTMLDIR)/lib/lib.html $(SCRIPTS)
+	$(MKINFO) $<
 
-# The sed script in this target fixes a really nasty little condition in
-# libcgi.tex where \e has to be used in a group to get the right behavior,
-# and makeinfo can't handle a group without a leading @command.  But at
-# least the info file gets generated.
+python-mac.info:	$(HTMLDIR)/mac/mac.html $(SCRIPTS)
+	$(MKINFO) $<
 
-lib1.texi: $(LIBFILES) texipre.dat texipost.dat ../tools/partparse.py
-	$(PARTPARSE) -o $@ `../tools/whichlibs`
-	sed 's/"{\\}n{\\}n/"\\n\\n/' $@ >temp.texi
-	mv temp.texi $@
+python-ref.info:	$(HTMLDIR)/ref/ref.html $(SCRIPTS)
+	$(MKINFO) $<
 
-python-lib.texi: lib1.texi ../tools/fix.el
-	cp lib1.texi temp.texi
-	$(EMACS) -batch -l ../tools/fix.el -f save-buffer -kill
-	mv temp.texi $@
+python-tut.info:	$(HTMLDIR)/tut/tut.html $(SCRIPTS)
+	$(MKINFO) $<
 
-python-lib.info: python-lib.texi
-	$(MAKEINFO) --footnote-style end --fill-column 72 \
-		    --paragraph-indent 0 $<
 
 clean:
-	rm -f *~ *.texi
+	rm -f *.texi~ *.texi
 
 clobber: clean
-	rm -f *.texi python-???.info python-???.info-[0-9]*
+	rm -f *.texi python-*.info python-*.info-[0-9]*
+
+
+# The HTML files are dependent on the .aux files, which are dependent on the
+# LaTeX source documents.  This makes sure we can build info files from a
+# "clean" tree:
+
+$(HTMLDIR)/api/api.html:  $(PAPERDIR)/api.aux $(BUILDINDEX)
+	(cd $(TOPDIR); $(MAKE) htmlapi)
+
+$(HTMLDIR)/ext/ext.html:  $(PAPERDIR)/ext.aux
+	(cd $(TOPDIR); $(MAKE) htmlext)
+
+$(HTMLDIR)/lib/lib.html:  $(PAPERDIR)/lib.aux $(BUILDINDEX)
+	(cd $(TOPDIR); $(MAKE) htmllib)
+
+$(HTMLDIR)/mac/mac.html:  $(MACFILES) $(BUILDINDEX)
+	(cd $(TOPDIR); $(MAKE) htmlmac)
+
+$(HTMLDIR)/ref/ref.html:  $(PAPERDIR)/ref.aux $(BUILDINDEX)
+	(cd $(TOPDIR); $(MAKE) htmlref)
+
+$(HTMLDIR)/tut/tut.html:  $(PAPERDIR)/tut.aux
+	(cd $(TOPDIR); $(MAKE) htmltut)
+
+
+include ../Makefile.deps
+
+$(PAPERDIR)/api.aux: $(APIFILES)
+	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) api.dvi)
+
+$(PAPERDIR)/ext.aux: $(EXTFILES)
+	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) ext.dvi)
+
+$(PAPERDIR)/lib.aux: $(LIBFILES)
+	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) lib.dvi)
+
+$(PAPERDIR)/ref.aux: $(REFFILES)
+	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) ref.dvi)
+
+$(PAPERDIR)/tut.aux: $(TUTFILES)
+	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) tut.dvi)
