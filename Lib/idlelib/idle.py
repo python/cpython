@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 try:
     import idlelib.PyShell
 except ImportError:
