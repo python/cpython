@@ -340,7 +340,7 @@ def reformat_filter(input = sys.stdin, output = sys.stdout,
 		    stepsize = STEPSIZE, tabsize = TABSIZE):
 	pi = PythonIndenter(input, output, stepsize, tabsize)
 	pi.reformat()
-# end def reformat
+# end def reformat_filter
 
 class StringReader:
 	def __init__(self, buf):
