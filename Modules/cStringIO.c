@@ -460,20 +460,23 @@ static char O_writelines__doc__[] =
 static PyObject *
 O_writelines(Oobject *self, PyObject *args) {
         PyObject *tmp = 0;
-        static PyObject *string_joinfields = 0;
+	static PyObject *joiner = NULL;
 
         UNLESS (PyArg_ParseTuple(args, "O:writelines", &args)) return NULL;
 
-        if (!string_joinfields) {
-                UNLESS (tmp = PyImport_ImportModule("string")) return NULL;
-                string_joinfields=PyObject_GetAttrString(tmp, "joinfields");
-                Py_DECREF(tmp);
-                UNLESS (string_joinfields) return NULL;
-        }
+	if (!joiner) {
+		PyObject *empty_string = PyString_FromString("");
+		if (empty_string == NULL)
+			return NULL;
+		joiner = PyObject_GetAttrString(empty_string, "join");
+		Py_DECREF(empty_string);
+		if (joiner == NULL)
+			return NULL;
+	}
 
         if (PyObject_Size(args) < 0) return NULL;
 
-        tmp = PyObject_CallFunction(string_joinfields, "Os", args, "");
+        tmp = PyObject_CallFunction(joiner, "O", args);
         UNLESS (tmp) return NULL;
 
         args = Py_BuildValue("(O)", tmp);
