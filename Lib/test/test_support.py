@@ -102,12 +102,9 @@ def check_syntax(statement):
 import unittest
 
 
-class BasicTestRunner(unittest.VerboseTextTestRunner):
-    def __init__(self, stream=sys.stderr):
-        unittest.VerboseTextTestRunner.__init__(self, stream, descriptions=0)
-
+class BasicTestRunner:
     def run(self, test):
-        result = unittest._VerboseTextTestResult(self.stream, descriptions=0)
+        result = unittest.TestResult()
         test(result)
         return result
 
@@ -115,13 +112,12 @@ class BasicTestRunner(unittest.VerboseTextTestRunner):
 def run_unittest(testclass):
     """Run tests from a unittest.TestCase-derived class."""
     if verbose:
-        f = sys.stdout
+        runner = unittest.TextTestRunner(sys.stdout, descriptions=0)
     else:
-        import StringIO
-        f = StringIO.StringIO()
+        runner = BasicTestRunner()
 
     suite = unittest.makeSuite(testclass)
-    result = BasicTestRunner(stream=f).run(suite)
-    if result.errors or result.failures:
+    result = runner.run(suite)
+    if not result.wasSuccessful():
         raise TestFailed("errors occurred in %s.%s"
                          % (testclass.__module__, testclass.__name__))
