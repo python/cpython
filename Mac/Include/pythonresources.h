@@ -41,24 +41,26 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ** shared ppc python, in the core dynamic library)
 */
 
+#define BASE_ID 228
+
 /* The alert for "No Python directory, where is it?" (OBSOLETE) */
-#define NOPYTHON_ALERT	228
+#define NOPYTHON_ALERT	BASE_ID+0
 #define YES_ITEM		1
 #define NO_ITEM			2
 #define CURWD_ITEM		3
 
 /* The alert for "this is an applet template" */
-#define NOPYC_ALERT		229
+#define NOPYC_ALERT		BASE_ID+1
 
 /* The dialog for our GetDirectory and PromptGetFile call */
-#define GETDIR_ID 		230		/* Resource ID for our "get directory" */
-#define GETFILEPROMPT_ID 232	/* Resource id for prompted get file */
-#define PROMPT_ITEM		10		/* The prompt, at the top */
-#define SELECTCUR_ITEM	11	/* "Select current directory" button */
+#define GETDIR_ID 		BASE_ID+2		/* Resource ID for our "get directory" */
+#define GETFILEPROMPT_ID BASE_ID+4		/* Resource id for prompted get file */
+#define PROMPT_ITEM		10				/* The prompt, at the top */
+#define SELECTCUR_ITEM	11				/* "Select current directory" button */
 
 
 /* The dialog for interactive options */
-#define OPT_DIALOG		231		/* Resource ID for dialog */
+#define OPT_DIALOG		BASE_ID+3		/* Resource ID for dialog */
 #define OPT_OK			1
 #define OPT_CANCEL		2
 #define OPT_INSPECT		3
@@ -74,21 +76,21 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define OPT_HELP	16
 
 /* Dialog for 'No preferences directory' */
-#define NOPREFDIR_ID	233
+#define NOPREFDIR_ID	BASE_ID+5
 
 /* Dialog for 'Bad or outdated preferences' */
-#define BADPREFERENCES_ID	234
+#define BADPREFERENCES_ID	BASE_ID+6
 #define BADPREF_DELETE		1
 #define BADPREF_CONTINUE	2
 #define BADPREF_QUIT		3
 /* Dialog for 'Bad preference file' */
-#define BADPREFFILE_ID	235
+#define BADPREFFILE_ID	BASE_ID+7
 
 /* About box */
-#define ABOUT_ID		236
+#define ABOUT_ID		BASE_ID+8
 
 /* No preferences file name resource */
-#define NOPREFNAME_ID	237
+#define NOPREFNAME_ID	BASE_ID+9
 
 /* EditPythonPrefs range. Needed here to forestall conflicts with applets */
 #define EDITPYTHONPREFS_MIN	508

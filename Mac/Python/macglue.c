@@ -155,6 +155,11 @@ static int upp_inited = 0;
 */
 static PyObject *python_event_handler;
 
+/*
+** Set to true if we're appearance-compliant
+*/
+int PyMac_AppearanceCompliant;
+
 #ifdef USE_GUSI
 /*
 ** GUSI (1.6.0 and earlier, at the least) do not set the MacOS idea of
