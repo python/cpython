@@ -751,8 +751,9 @@ static typeobject Texttype = {
 
 /* Menu objects */
 
-#define MAXNMENU 50
-static menuobject *menulist[MAXNMENU]; /* Slot 0 unused */
+#define IDOFFSET 10		/* Menu IDs we use start here */
+#define MAXNMENU 20		/* Max #menus we allow */
+static menuobject *menulist[MAXNMENU];
 
 static menuobject *
 newmenuobject(title)
@@ -761,19 +762,19 @@ newmenuobject(title)
 	int id;
 	MENU *menu;
 	menuobject *mp;
-	for (id = 1; id < MAXNMENU; id++) {
+	for (id = 0; id < MAXNMENU; id++) {
 		if (menulist[id] == NULL)
 			break;
 	}
 	if (id >= MAXNMENU)
 		return (menuobject *) err_nomem();
-	menu = wmenucreate(id, getstringvalue(title));
+	menu = wmenucreate(id + IDOFFSET, getstringvalue(title));
 	if (menu == NULL)
 		return (menuobject *) err_nomem();
 	mp = NEWOBJ(menuobject, &Menutype);
 	if (mp != NULL) {
 		mp->m_menu = menu;
-		mp->m_id = id;
+		mp->m_id = id + IDOFFSET;
 		mp->m_attr = NULL;
 		menulist[id] = mp;
 	}
@@ -789,8 +790,8 @@ menu_dealloc(mp)
 	menuobject *mp;
 {
 	
-	int id = mp->m_id;
-	if (id >= 0 && id < MAXNMENU) {
+	int id = mp->m_id - IDOFFSET;
+	if (id >= 0 && id < MAXNMENU && menulist[id] == mp) {
 		menulist[id] = NULL;
 	}
 	wmenudelete(mp->m_menu);
@@ -1373,9 +1374,9 @@ stdwin_get_poll_event(poll, args)
 				e.u.where.mask);
 		break;
 	case WE_MENU:
-		if (e.u.m.id >= 0 && e.u.m.id < MAXNMENU &&
-					menulist[e.u.m.id] != NULL)
-			w = (object *)menulist[e.u.m.id];
+		if (e.u.m.id >= IDOFFSET && e.u.m.id < IDOFFSET+MAXNMENU &&
+				menulist[e.u.m.id - IDOFFSET] != NULL)
+			w = (object *)menulist[e.u.m.id - IDOFFSET];
 		else
 			w = None;
 		w = makemenu(w, e.u.m.item);
@@ -1663,5 +1664,10 @@ static struct methodlist stdwin_methods[] = {
 void
 initstdwin()
 {
+	static int inited;
+	if (!inited) {
+		winit();
+		inited = 1;
+	}
 	initmodule("stdwin", stdwin_methods);
 }
