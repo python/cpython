@@ -25,6 +25,7 @@ from types import *
 import AE
 import AppleEvents
 import MacOS
+import sys
 
 from aetypes import *
 from aepack import pack, unpack, coerce, AEDescType
@@ -66,7 +67,7 @@ def unpackevent(ae):
 		try:
 			desc = ae.AEGetAttributeDesc(key, '****')
 		except (AE.Error, MacOS.Error), msg:
-			if msg[0] != -1701:
+			if msg[0] != -1701 and msg[0] != -1704:
 				raise sys.exc_type, sys.exc_value
 			continue
 		attributes[key] = unpack(desc)
@@ -122,7 +123,7 @@ def decodeerror(arguments):
 class TalkTo:
 	"""An AE connection to an application"""
 	
-	def __init__(self, signature, start=0):
+	def __init__(self, signature, start=0, timeout=0):
 		"""Create a communication channel with a particular application.
 		
 		Addressing the application is done by specifying either a
@@ -141,17 +142,17 @@ class TalkTo:
 			raise TypeError, "signature should be 4-char string or AEDesc"
 		self.send_flags = AppleEvents.kAEWaitReply
 		self.send_priority = AppleEvents.kAENormalPriority
-		self.send_timeout = AppleEvents.kAEDefaultTimeout
+		if timeout:
+			self.send_timeout = timeout
+		else:
+			self.send_timeout = AppleEvents.kAEDefaultTimeout
 		if start:
 			self.start()
 		
 	def start(self):
 		"""Start the application, if it is not running yet"""
-		import findertools
-		import macfs
-		
-		fss = macfs.FindApplication(self.target_signature)
-		findertools.launch(fss)
+		self.send_flags = AppleEvents.kAENoReply
+		_launch(self.target_signature)
 			
 	def newevent(self, code, subcode, parameters = {}, attributes = {}):
 		"""Create a complete structure for an apple event"""
@@ -201,13 +202,52 @@ class TalkTo:
 
 		if _arguments.has_key('----'):
 			return _arguments['----']
+
+# Tiny Finder class, for local use only
+
+class _miniFinder(TalkTo):
+	def open(self, _object, _attributes={}, **_arguments):
+		"""open: Open the specified object(s)
+		Required argument: list of objects to open
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'aevt'
+		_subcode = 'odoc'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+#pass
 	
+_finder = _miniFinder('MACS')
+
+def _launch(appfile):
+	"""Open a file thru the finder. Specify file by name or fsspec"""
+	_finder.open(_application_file(('ID  ', appfile)))
+
+
+class _application_file(ComponentItem):
+	"""application file - An application's file on disk"""
+	want = 'appf'
+	
+_application_file._propdict = {
+}
+_application_file._elemdict = {
+}
 	
 # Test program
 # XXXX Should test more, really...
 
 def test():
-	target = AE.AECreateDesc('sign', 'KAHL')
+	target = AE.AECreateDesc('sign', 'quil')
 	ae = AE.AECreateAppleEvent('aevt', 'oapp', target, -1, 0)
 	print unpackevent(ae)
 	raw_input(":")
@@ -222,3 +262,4 @@ def test():
 
 if __name__ == '__main__':
 	test()
+	sys.exit(1)
