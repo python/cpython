@@ -1,0 +1,385 @@
+------------------------------------------------------------------------
+-- decimal32.decTest -- decimal four-byte format testcases            --
+-- Copyright (c) IBM Corporation, 2000, 2003.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.39
+
+-- This set of tests is for the four-byte concrete representation.
+-- Its characteristics are:
+--
+--  1 bit  sign
+--  5 bits combination field
+--  6 bits exponent continuation
+-- 20 bits coefficient continuation
+--
+-- Total exponent length 8 bits
+-- Total coefficient length 24 bits (7 digits)
+--
+-- Elimit =  191 (maximum encoded exponent)
+-- Emax   =   96 (largest exponent value)
+-- Emin   =  -95 (smallest exponent value)
+-- bias   =  101 (subtracted from encoded exponent) = -Etiny
+
+extended:    1
+precision:   7
+rounding:    half_up
+maxExponent: 96
+minExponent: -95
+
+-- General testcases
+-- (mostly derived from the Strawman 4 document and examples)
+decd001 apply   #A23003D0          -> -7.50
+decd002 apply   -7.50              -> #A23003D0
+
+-- Normality
+decd010 apply   1234567            -> #2654d2e7
+decd011 apply   1234567.0          -> #2654d2e7 Rounded
+decd012 apply   1234567.1          -> #2654d2e7 Rounded Inexact
+decd013 apply  -1234567            -> #a654d2e7
+decd014 apply  -1234567.0          -> #a654d2e7 Rounded
+decd015 apply  -1234567.1          -> #a654d2e7 Rounded Inexact
+
+
+-- Nmax and similar
+decd022 apply   9.999999E+96            -> #77f3fcff
+decd023 apply   #77f3fcff               -> 9.999999E+96
+decd024 apply   1.234567E+96            -> #47f4d2e7
+decd025 apply   #47f4d2e7               -> 1.234567E+96
+-- fold-downs (more below)
+decd030 apply   1.23E+96                -> #47f4c000 Clamped
+decd031 apply   #47f4c000               -> 1.230000E+96
+decd032 apply   1E+96                   -> #47f00000 Clamped
+decd033 apply   #47f00000               -> 1.000000E+96
+
+-- overflows
+maxExponent: 999   -- set high so conversion causes the overflow
+minExponent: -999
+decd040 apply   10E+96                  -> #78000000 Overflow Rounded Inexact
+decd041 apply   1.000000E+97            -> #78000000 Overflow Rounded Inexact
+maxExponent: 96
+minExponent: -95
+
+decd051 apply   12345                   -> #225049c5
+decd052 apply   #225049c5               -> 12345
+decd053 apply   1234                    -> #22500534
+decd054 apply   #22500534               -> 1234
+decd055 apply   123                     -> #225000a3
+decd056 apply   #225000a3               -> 123
+decd057 apply   12                      -> #22500012
+decd058 apply   #22500012               -> 12
+decd059 apply   1                       -> #22500001
+decd060 apply   #22500001               -> 1
+decd061 apply   1.23                    -> #223000a3
+decd062 apply   #223000a3               -> 1.23
+decd063 apply   123.45                  -> #223049c5
+decd064 apply   #223049c5               -> 123.45
+
+-- Nmin and below
+decd071 apply   1E-95                   -> #00600001
+decd072 apply   #00600001               -> 1E-95
+decd073 apply   1.000000E-95            -> #04000000
+decd074 apply   #04000000               -> 1.000000E-95
+decd075 apply   1.000001E-95            -> #04000001
+decd076 apply   #04000001               -> 1.000001E-95
+
+decd077 apply   0.100000E-95            -> #00020000     Subnormal
+decd07x apply   1.00000E-96             -> 1.00000E-96   Subnormal
+decd078 apply   #00020000               -> 1.00000E-96   Subnormal
+decd079 apply   0.000010E-95            -> #00000010     Subnormal
+decd080 apply   #00000010               -> 1.0E-100      Subnormal
+decd081 apply   0.000001E-95            -> #00000001     Subnormal
+decd082 apply   #00000001               -> 1E-101        Subnormal
+decd083 apply   1e-101                  -> #00000001     Subnormal
+decd084 apply   #00000001               -> 1E-101        Subnormal
+decd08x apply   1e-101                  -> 1E-101        Subnormal
+
+-- underflows
+decd090 apply   1e-101                  -> #00000001  Subnormal
+decd091 apply   1.9e-101                -> #00000002  Subnormal Underflow Inexact Rounded
+decd092 apply   1.1e-101                -> #00000001  Subnormal Underflow Inexact Rounded
+decd093 apply   1.001e-101              -> #00000001  Subnormal Underflow Inexact Rounded
+decd094 apply   1.000001e-101           -> #00000001  Subnormal Underflow Inexact Rounded
+decd095 apply   1.0000001e-101          -> #00000001  Subnormal Underflow Inexact Rounded
+decd096 apply   0.1e-101                -> #00000000  Subnormal Underflow Inexact Rounded
+decd097 apply   0.001e-101              -> #00000000  Subnormal Underflow Inexact Rounded
+decd098 apply   0.000001e-101           -> #00000000  Subnormal Underflow Inexact Rounded
+decd099 apply   0.0000001e-101          -> #00000000  Subnormal Underflow Inexact Rounded
+
+-- same again, negatives --
+
+-- Nmax and similar
+decd122 apply  -9.999999E+96            -> #f7f3fcff
+decd123 apply   #f7f3fcff               -> -9.999999E+96
+decd124 apply  -1.234567E+96            -> #c7f4d2e7
+decd125 apply   #c7f4d2e7               -> -1.234567E+96
+-- fold-downs (more below)
+decd130 apply  -1.23E+96                -> #c7f4c000 Clamped
+decd131 apply   #c7f4c000               -> -1.230000E+96
+decd132 apply  -1E+96                   -> #c7f00000 Clamped
+decd133 apply   #c7f00000               -> -1.000000E+96
+
+-- overflows
+maxExponent: 999   -- set high so conversion causes the overflow
+minExponent: -999
+decd140 apply  -10E+96                  -> #f8000000 Overflow Rounded Inexact
+decd141 apply  -1.000000E+97            -> #f8000000 Overflow Rounded Inexact
+maxExponent: 96
+minExponent: -95
+
+decd151 apply  -12345                   -> #a25049c5
+decd152 apply   #a25049c5               -> -12345
+decd153 apply  -1234                    -> #a2500534
+decd154 apply   #a2500534               -> -1234
+decd155 apply  -123                     -> #a25000a3
+decd156 apply   #a25000a3               -> -123
+decd157 apply  -12                      -> #a2500012
+decd158 apply   #a2500012               -> -12
+decd159 apply  -1                       -> #a2500001
+decd160 apply   #a2500001               -> -1
+decd161 apply  -1.23                    -> #a23000a3
+decd162 apply   #a23000a3               -> -1.23
+decd163 apply  -123.45                  -> #a23049c5
+decd164 apply   #a23049c5               -> -123.45
+
+-- Nmin and below
+decd171 apply  -1E-95                   -> #80600001
+decd172 apply   #80600001               -> -1E-95
+decd173 apply  -1.000000E-95            -> #84000000
+decd174 apply   #84000000               -> -1.000000E-95
+decd175 apply  -1.000001E-95            -> #84000001
+decd176 apply   #84000001               -> -1.000001E-95
+
+decd177 apply  -0.100000E-95            -> #80020000     Subnormal
+decd178 apply   #80020000               -> -1.00000E-96  Subnormal
+decd179 apply  -0.000010E-95            -> #80000010     Subnormal
+decd180 apply   #80000010               -> -1.0E-100     Subnormal
+decd181 apply  -0.000001E-95            -> #80000001     Subnormal
+decd182 apply   #80000001               -> -1E-101       Subnormal
+decd183 apply  -1e-101                  -> #80000001     Subnormal
+decd184 apply   #80000001               -> -1E-101       Subnormal
+
+-- underflows
+decd190 apply  -1e-101                  -> #80000001  Subnormal
+decd191 apply  -1.9e-101                -> #80000002  Subnormal Underflow Inexact Rounded
+decd192 apply  -1.1e-101                -> #80000001  Subnormal Underflow Inexact Rounded
+decd193 apply  -1.001e-101              -> #80000001  Subnormal Underflow Inexact Rounded
+decd194 apply  -1.000001e-101           -> #80000001  Subnormal Underflow Inexact Rounded
+decd195 apply  -1.0000001e-101          -> #80000001  Subnormal Underflow Inexact Rounded
+decd196 apply  -0.1e-101                -> #80000000  Subnormal Underflow Inexact Rounded
+decd197 apply  -0.001e-101              -> #80000000  Subnormal Underflow Inexact Rounded
+decd198 apply  -0.000001e-101           -> #80000000  Subnormal Underflow Inexact Rounded
+decd199 apply  -0.0000001e-101          -> #80000000  Subnormal Underflow Inexact Rounded
+
+-- zeros
+decd400 apply   0E-400                  -> #00000000  Clamped
+decd401 apply   0E-101                  -> #00000000
+decd402 apply   #00000000               -> 0E-101
+decd403 apply   0.000000E-95            -> #00000000
+decd404 apply   #00000000               -> 0E-101
+decd405 apply   0E-2                    -> #22300000
+decd406 apply   #22300000               -> 0.00
+decd407 apply   0                       -> #22500000
+decd408 apply   #22500000               -> 0
+decd409 apply   0E+3                    -> #22800000
+decd410 apply   #22800000               -> 0E+3
+decd411 apply   0E+90                   -> #43f00000
+decd412 apply   #43f00000               -> 0E+90
+-- clamped zeros...
+decd413 apply   0E+91                   -> #43f00000  Clamped
+decd414 apply   #43f00000               -> 0E+90
+decd415 apply   0E+96                   -> #43f00000  Clamped
+decd416 apply   #43f00000               -> 0E+90
+decd417 apply   0E+400                  -> #43f00000  Clamped
+decd418 apply   #43f00000               -> 0E+90
+
+-- negative zeros
+decd420 apply   -0E-400                 -> #80000000  Clamped
+decd421 apply   -0E-101                 -> #80000000
+decd422 apply   #80000000               -> -0E-101
+decd423 apply   -0.000000E-95           -> #80000000
+decd424 apply   #80000000               -> -0E-101
+decd425 apply   -0E-2                   -> #a2300000
+decd426 apply   #a2300000               -> -0.00
+decd427 apply   -0                      -> #a2500000
+decd428 apply   #a2500000               -> -0
+decd429 apply   -0E+3                   -> #a2800000
+decd430 apply   #a2800000               -> -0E+3
+decd431 apply   -0E+90                  -> #c3f00000
+decd432 apply   #c3f00000               -> -0E+90
+-- clamped zeros...
+decd433 apply   -0E+91                  -> #c3f00000  Clamped
+decd434 apply   #c3f00000               -> -0E+90
+decd435 apply   -0E+96                  -> #c3f00000  Clamped
+decd436 apply   #c3f00000               -> -0E+90
+decd437 apply   -0E+400                 -> #c3f00000  Clamped
+decd438 apply   #c3f00000               -> -0E+90
+
+-- Specials
+decd500 apply   Infinity  -> #78000000
+decd501 apply   #78787878 -> #78000000
+decd502 apply   #78000000 -> Infinity
+decd503 apply   #79797979 -> #78000000
+decd504 apply   #79000000 -> Infinity
+decd505 apply   #7a7a7a7a -> #78000000
+decd506 apply   #7a000000 -> Infinity
+decd507 apply   #7b7b7b7b -> #78000000
+decd508 apply   #7b000000 -> Infinity
+decd509 apply   #7c7c7c7c -> #7c0c7c7c
+
+decd510 apply   NaN       -> #7c000000
+decd511 apply   #7c000000 -> NaN
+decd512 apply   #7d7d7d7d -> #7c0d7d7d
+decd513 apply   #7d000000 -> NaN
+decd514 apply   #7e7e7e7e -> #7e0e7c7e
+decd515 apply   #7e000000 -> sNaN
+decd516 apply   #7f7f7f7f -> #7e0f7c7f
+decd517 apply   #7f000000 -> sNaN
+decd518 apply   #7fffffff -> sNaN999999
+decd519 apply   #7fffffff -> #7e03fcff
+
+decd520 apply   -Infinity -> #f8000000
+decd521 apply   #f8787878 -> #f8000000
+decd522 apply   #f8000000 -> -Infinity
+decd523 apply   #f9797979 -> #f8000000
+decd524 apply   #f9000000 -> -Infinity
+decd525 apply   #fa7a7a7a -> #f8000000
+decd526 apply   #fa000000 -> -Infinity
+decd527 apply   #fb7b7b7b -> #f8000000
+decd528 apply   #fb000000 -> -Infinity
+
+decd529 apply   -NaN      -> #fc000000
+decd530 apply   #fc7c7c7c -> #fc0c7c7c
+decd531 apply   #fc000000 -> -NaN
+decd532 apply   #fd7d7d7d -> #fc0d7d7d
+decd533 apply   #fd000000 -> -NaN
+decd534 apply   #fe7e7e7e -> #fe0e7c7e
+decd535 apply   #fe000000 -> -sNaN
+decd536 apply   #ff7f7f7f -> #fe0f7c7f
+decd537 apply   #ff000000 -> -sNaN
+decd538 apply   #ffffffff -> -sNaN999999
+decd539 apply   #ffffffff -> #fe03fcff
+
+-- diagnostic NaNs
+decd540 apply   NaN       -> #7c000000
+decd541 apply   NaN0      -> #7c000000
+decd542 apply   NaN1      -> #7c000001
+decd543 apply   NaN12     -> #7c000012
+decd544 apply   NaN79     -> #7c000079
+decd545 apply   NaN12345   -> #7c0049c5
+decd546 apply   NaN123456  -> #7c028e56
+decd547 apply   NaN799799  -> #7c0f7fdf
+decd548 apply   NaN999999  -> #7c03fcff
+decd549 apply   NaN1234567 -> #7c000000  -- too many digits
+
+
+-- fold-down full sequence
+decd601 apply   1E+96                   -> #47f00000 Clamped
+decd602 apply   #47f00000               -> 1.000000E+96
+decd603 apply   1E+95                   -> #43f20000 Clamped
+decd604 apply   #43f20000               -> 1.00000E+95
+decd605 apply   1E+94                   -> #43f04000 Clamped
+decd606 apply   #43f04000               -> 1.0000E+94
+decd607 apply   1E+93                   -> #43f00400 Clamped
+decd608 apply   #43f00400               -> 1.000E+93
+decd609 apply   1E+92                   -> #43f00080 Clamped
+decd610 apply   #43f00080               -> 1.00E+92
+decd611 apply   1E+91                   -> #43f00010 Clamped
+decd612 apply   #43f00010               -> 1.0E+91
+decd613 apply   1E+90                   -> #43f00001
+decd614 apply   #43f00001               -> 1E+90
+
+
+-- Selected DPD codes
+decd700 apply   #22500000       -> 0
+decd701 apply   #22500009       -> 9
+decd702 apply   #22500010       -> 10
+decd703 apply   #22500019       -> 19
+decd704 apply   #22500020       -> 20
+decd705 apply   #22500029       -> 29
+decd706 apply   #22500030       -> 30
+decd707 apply   #22500039       -> 39
+decd708 apply   #22500040       -> 40
+decd709 apply   #22500049       -> 49
+decd710 apply   #22500050       -> 50
+decd711 apply   #22500059       -> 59
+decd712 apply   #22500060       -> 60
+decd713 apply   #22500069       -> 69
+decd714 apply   #22500070       -> 70
+decd715 apply   #22500071       -> 71
+decd716 apply   #22500072       -> 72
+decd717 apply   #22500073       -> 73
+decd718 apply   #22500074       -> 74
+decd719 apply   #22500075       -> 75
+decd720 apply   #22500076       -> 76
+decd721 apply   #22500077       -> 77
+decd722 apply   #22500078       -> 78
+decd723 apply   #22500079       -> 79
+
+decd730 apply   #2250029e       -> 994
+decd731 apply   #2250029f       -> 995
+decd732 apply   #225002a0       -> 520
+decd733 apply   #225002a1       -> 521
+
+-- DPD: one of each of the huffman groups
+decd740 apply   #225003f7       -> 777
+decd741 apply   #225003f8       -> 778
+decd742 apply   #225003eb       -> 787
+decd743 apply   #2250037d       -> 877
+decd744 apply   #2250039f       -> 997
+decd745 apply   #225003bf       -> 979
+decd746 apply   #225003df       -> 799
+decd747 apply   #2250006e       -> 888
+
+
+-- DPD all-highs cases (includes the 24 redundant codes)
+decd750 apply   #2250006e       -> 888
+decd751 apply   #2250016e       -> 888
+decd752 apply   #2250026e       -> 888
+decd753 apply   #2250036e       -> 888
+decd754 apply   #2250006f       -> 889
+decd755 apply   #2250016f       -> 889
+decd756 apply   #2250026f       -> 889
+decd757 apply   #2250036f       -> 889
+
+decd760 apply   #2250007e       -> 898
+decd761 apply   #2250017e       -> 898
+decd762 apply   #2250027e       -> 898
+decd763 apply   #2250037e       -> 898
+decd764 apply   #2250007f       -> 899
+decd765 apply   #2250017f       -> 899
+decd766 apply   #2250027f       -> 899
+decd767 apply   #2250037f       -> 899
+
+decd770 apply   #225000ee       -> 988
+decd771 apply   #225001ee       -> 988
+decd772 apply   #225002ee       -> 988
+decd773 apply   #225003ee       -> 988
+decd774 apply   #225000ef       -> 989
+decd775 apply   #225001ef       -> 989
+decd776 apply   #225002ef       -> 989
+decd777 apply   #225003ef       -> 989
+
+decd780 apply   #225000fe       -> 998
+decd781 apply   #225001fe       -> 998
+decd782 apply   #225002fe       -> 998
+decd783 apply   #225003fe       -> 998
+decd784 apply   #225000ff       -> 999
+decd785 apply   #225001ff       -> 999
+decd786 apply   #225002ff       -> 999
+decd787 apply   #225003ff       -> 999
+

@@ -17,7 +17,7 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.28
+version: 2.39
 
 -- This set of tests is for the eight-byte concrete representation.
 -- Its characteristics are:
@@ -234,6 +234,7 @@ dece451 apply   -0E+500                 -> #c3fc000000000000  Clamped
 dece452 apply   #c3fc000000000000       -> -0E+369
 
 -- Specials
+dece500 apply   Infinity          -> #7800000000000000
 dece501 apply   #7878787878787878 -> #7800000000000000
 dece502 apply   #7800000000000000 -> Infinity
 dece503 apply   #7979797979797979 -> #7800000000000000
@@ -242,15 +243,20 @@ dece505 apply   #7a7a7a7a7a7a7a7a -> #7800000000000000
 dece506 apply   #7a00000000000000 -> Infinity
 dece507 apply   #7b7b7b7b7b7b7b7b -> #7800000000000000
 dece508 apply   #7b00000000000000 -> Infinity
-dece509 apply   #7c7c7c7c7c7c7c7c -> #7dffffffffffffff
-dece510 apply   #7c00000000000000 -> NaN
-dece511 apply   #7d7d7d7d7d7d7d7d -> #7dffffffffffffff
-dece512 apply   #7d00000000000000 -> NaN
-dece513 apply   #7e7e7e7e7e7e7e7e -> #7fffffffffffffff
-dece514 apply   #7e00000000000000 -> sNaN
-dece515 apply   #7f7f7f7f7f7f7f7f -> #7fffffffffffffff
-dece516 apply   #7f00000000000000 -> sNaN
 
+dece509 apply   NaN               -> #7c00000000000000
+dece510 apply   #7c7c7c7c7c7c7c7c -> #7c007c7c7c7c7c7c
+dece511 apply   #7c00000000000000 -> NaN
+dece512 apply   #7d7d7d7d7d7d7d7d -> #7c017d7d7d7d7d7d
+dece513 apply   #7d00000000000000 -> NaN
+dece514 apply   #7e7e7e7e7e7e7e7e -> #7e007e7e7e7e7c7e
+dece515 apply   #7e00000000000000 -> sNaN
+dece516 apply   #7f7f7f7f7f7f7f7f -> #7e007f7f7f7f7c7f
+dece517 apply   #7f00000000000000 -> sNaN
+dece518 apply   #7fffffffffffffff -> sNaN999999999999999
+dece519 apply   #7fffffffffffffff -> #7e00ff3fcff3fcff
+
+dece520 apply   -Infinity         -> #f800000000000000
 dece521 apply   #f878787878787878 -> #f800000000000000
 dece522 apply   #f800000000000000 -> -Infinity
 dece523 apply   #f979797979797979 -> #f800000000000000
@@ -259,14 +265,31 @@ dece525 apply   #fa7a7a7a7a7a7a7a -> #f800000000000000
 dece526 apply   #fa00000000000000 -> -Infinity
 dece527 apply   #fb7b7b7b7b7b7b7b -> #f800000000000000
 dece528 apply   #fb00000000000000 -> -Infinity
-dece529 apply   #fc7c7c7c7c7c7c7c -> #7dffffffffffffff
-dece530 apply   #fc00000000000000 -> NaN
-dece531 apply   #fd7d7d7d7d7d7d7d -> #7dffffffffffffff
-dece532 apply   #fd00000000000000 -> NaN
-dece533 apply   #fe7e7e7e7e7e7e7e -> #7fffffffffffffff
-dece534 apply   #fe00000000000000 -> sNaN
-dece535 apply   #ff7f7f7f7f7f7f7f -> #7fffffffffffffff
-dece536 apply   #ff00000000000000 -> sNaN
+
+dece529 apply   -NaN              -> #fc00000000000000
+dece530 apply   #fc7c7c7c7c7c7c7c -> #fc007c7c7c7c7c7c
+dece531 apply   #fc00000000000000 -> -NaN
+dece532 apply   #fd7d7d7d7d7d7d7d -> #fc017d7d7d7d7d7d
+dece533 apply   #fd00000000000000 -> -NaN
+dece534 apply   #fe7e7e7e7e7e7e7e -> #fe007e7e7e7e7c7e
+dece535 apply   #fe00000000000000 -> -sNaN
+dece536 apply   #ff7f7f7f7f7f7f7f -> #fe007f7f7f7f7c7f
+dece537 apply   #ff00000000000000 -> -sNaN
+dece538 apply   #ffffffffffffffff -> -sNaN999999999999999
+dece539 apply   #ffffffffffffffff -> #fe00ff3fcff3fcff
+
+-- diagnostic NaNs
+dece540 apply   NaN                 -> #7c00000000000000
+dece541 apply   NaN0                -> #7c00000000000000
+dece542 apply   NaN1                -> #7c00000000000001
+dece543 apply   NaN12               -> #7c00000000000012
+dece544 apply   NaN79               -> #7c00000000000079
+dece545 apply   NaN12345            -> #7c000000000049c5
+dece546 apply   NaN123456           -> #7c00000000028e56
+dece547 apply   NaN799799           -> #7c000000000f7fdf
+dece548 apply   NaN799799799799799  -> #7c03dff7fdff7fdf
+dece549 apply   NaN999999999999999  -> #7c00ff3fcff3fcff
+dece550 apply   NaN1234567890123456 -> #7c00000000000000  -- too many digits
 
 -- fold-down full sequence
 dece601 apply   1E+384                  -> #47fc000000000000 Clamped

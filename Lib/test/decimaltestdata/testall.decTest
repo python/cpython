@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- testall.decTest -- run all general decimal arithmetic testcases    --
--- Copyright (c) IBM Corporation, 1981, 2003.  All rights reserved.   --
+-- Copyright (c) IBM Corporation, 1981, 2004.  All rights reserved.   --
 ------------------------------------------------------------------------
 -- Please see the document "General Decimal Arithmetic Testcases"     --
 -- at http://www2.hursley.ibm.com/decimal for the description of      --
@@ -17,7 +17,7 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.35
+version: 2.39
 
 -- core tests (using Extended: 1) --------------------------------------
 dectest: base
@@ -54,5 +54,5 @@ dectest: decimal128
 
 
 -- General 31->33-digit boundary tests
-dectest: randomBound32
+dectest: randombound32
 
