@@ -368,3 +368,28 @@ for args in [("bB", 1),
              ("qQ", 8)]:
     t = IntTester(*args)
     t.run()
+
+
+###########################################################################
+# The p ("Pascal string") code.
+
+def test_p_code():
+    for code, input, expected, expectedback in [
+            ('p','abc', '\x00', ''),
+            ('1p', 'abc', '\x00', ''),
+            ('2p', 'abc', '\x01a', 'a'),
+            ('3p', 'abc', '\x02ab', 'ab'),
+            ('4p', 'abc', '\x03abc', 'abc'),
+            ('5p', 'abc', '\x03abc\x00', 'abc'),
+            ('6p', 'abc', '\x03abc\x00\x00', 'abc'),
+            ('1000p', 'x'*1000, '\xff' + 'x'*999, 'x'*255)]:
+        got = struct.pack(code, input)
+        if got != expected:
+            raise TestFailed("pack(%r, %r) == %r but expected %r" %
+                             (code, input, got, expected))
+        (got,) = struct.unpack(code, got)
+        if got != expectedback:
+            raise TestFailed("unpack(%r, %r) == %r but expected %r" %
+                             (code, input, got, expectedback))
+
+test_p_code()

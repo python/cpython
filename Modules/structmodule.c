@@ -1360,6 +1360,8 @@ struct_pack(PyObject *self, PyObject *args)
 				if (n < num)
 					/* no real need, just to be nice */
 					memset(res+1+n, '\0', num-n);
+				if (n > 255)
+					n = 255;
 				*res++ = n; /* store the length byte */
 				res += num;
 				break;
