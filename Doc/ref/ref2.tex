@@ -237,13 +237,18 @@ lexical definitions:
 \index{identifier}
 \index{name}
 
-\begin{verbatim}
-identifier:     (letter|"_") (letter|digit|"_")*
-letter:         lowercase | uppercase
-lowercase:      "a"..."z"
-uppercase:      "A"..."Z"
-digit:          "0"..."9"
-\end{verbatim}
+\begin{productionlist}
+  \production{identifier}
+             {(\token{letter}|"_") (\token{letter} | \token{digit} | "_")*}
+  \production{letter}
+             {\token{lowercase} | \token{uppercase}}
+  \production{lowercase}
+             {"a"..."z"}
+  \production{uppercase}
+             {"A"..."Z"}
+  \production{digit}
+             {"0"..."9"}
+\end{productionlist}
 
 Identifiers are unlimited in length.  Case is significant.
 
@@ -303,17 +308,27 @@ Literals are notations for constant values of some built-in types.
 String literals are described by the following lexical definitions:
 \index{string literal}
 
-\begin{verbatim}
-stringliteral:   shortstring | longstring
-shortstring:     "'" shortstringitem* "'" | '"' shortstringitem* '"'
-longstring:      "'''" longstringitem* "'''" | '"""' longstringitem* '"""'
-shortstringitem: shortstringchar | escapeseq
-longstringitem:  longstringchar | escapeseq
-shortstringchar: <any ASCII character except "\" or newline or the quote>
-longstringchar:  <any ASCII character except "\">
-escapeseq:       "\" <any ASCII character>
-\end{verbatim}
 \index{ASCII@\ASCII{}}
+\begin{productionlist}
+  \production{stringliteral}
+             {\token{shortstring} | \token{longstring}}
+  \production{shortstring}
+             {"'" \token{shortstringitem}* "'"
+              | '"' \token{shortstringitem}* '"'}
+  \production{longstring}
+             {"'''" \token{longstringitem}* "'''"
+              | '"""' \token{longstringitem}* '"""'}
+  \production{shortstringitem}
+             {\token{shortstringchar} | \token{escapeseq}}
+  \production{longstringitem}
+             {\token{longstringchar} | \token{escapeseq}}
+  \production{shortstringchar}
+             {<any ASCII character except "\e" or newline or the quote>}
+  \production{longstringchar}
+             {<any ASCII character except "\e">}
+  \production{escapeseq}
+             {"\e" <any ASCII character>}
+\end{productionlist}
 
 \index{triple-quoted string}
 \index{Unicode Consortium}
@@ -452,16 +467,24 @@ Note that numeric literals do not include a sign; a phrase like
 Integer and long integer literals are described by the following
 lexical definitions:
 
-\begin{verbatim}
-longinteger:    integer ("l"|"L")
-integer:        decimalinteger | octinteger | hexinteger
-decimalinteger: nonzerodigit digit* | "0"
-octinteger:     "0" octdigit+
-hexinteger:     "0" ("x"|"X") hexdigit+
-nonzerodigit:   "1"..."9"
-octdigit:       "0"..."7"
-hexdigit:        digit|"a"..."f"|"A"..."F"
-\end{verbatim}
+\begin{productionlist}
+  \production{longinteger}
+             {\token{integer} ("l" | "L")}
+  \production{integer}
+             {\token{decimalinteger} | \token{octinteger} | \token{hexinteger}}
+  \production{decimalinteger}
+             {\token{nonzerodigit} \token{digit}* | "0"}
+  \production{octinteger}
+             {"0" \token{octdigit}+}
+  \production{hexinteger}
+             {"0" ("x" | "X") \token{hexdigit}+}
+  \production{nonzerodigit}
+             {"1"..."9"}
+  \production{octdigit}
+             {"0"..."7"}
+  \production{hexdigit}
+             {\token{digit} | "a"..."f" | "A"..."F"}
+\end{productionlist}
 
 Although both lower case `l' and upper case `L' are allowed as suffix
 for long integers, it is strongly recommended to always use `L', since
@@ -487,14 +510,21 @@ Some examples of plain and long integer literals:
 Floating point literals are described by the following lexical
 definitions:
 
-\begin{verbatim}
-floatnumber:    pointfloat | exponentfloat
-pointfloat:     [intpart] fraction | intpart "."
-exponentfloat:  (nonzerodigit digit* | pointfloat) exponent
-intpart:        nonzerodigit digit* | "0"
-fraction:       "." digit+
-exponent:       ("e"|"E") ["+"|"-"] digit+
-\end{verbatim}
+\begin{productionlist}
+  \production{floatnumber}
+             {\token{pointfloat} | \token{exponentfloat}}
+  \production{pointfloat}
+             {[\token{intpart}] \token{fraction} | \token{intpart} "."}
+  \production{exponentfloat}
+             {(\token{nonzerodigit} \token{digit}* | \token{pointfloat})
+              \token{exponent}}
+  \production{intpart}
+             {\token{nonzerodigit} \token{digit}* | "0"}
+  \production{fraction}
+             {"." \token{digit}+}
+  \production{exponent}
+             {("e" | "E") ["+" | "-"] \token{digit}+}
+\end{productionlist}
 
 Note that the integer part of a floating point number cannot look like
 an octal integer, though the exponent may look like an octal literal
@@ -517,9 +547,9 @@ Note that numeric literals do not include a sign; a phrase like
 
 Imaginary literals are described by the following lexical definitions:
 
-\begin{verbatim}
-imagnumber:     (floatnumber | intpart) ("j"|"J")
-\end{verbatim}
+\begin{productionlist}
+  \production{imagnumber}{(\token{floatnumber} | \token{intpart}) ("j" | "J")}
+\end{productionlist}
 
 An imaginary literal yields a complex number with a real part of
 0.0.  Complex numbers are represented as a pair of floating point

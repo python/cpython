@@ -40,13 +40,18 @@ if x < y < z: print x; print y; print z
 
 Summarizing:
 
-\begin{verbatim}
-compound_stmt:  if_stmt | while_stmt | for_stmt
-              | try_stmt | funcdef | classdef
-suite:          stmt_list NEWLINE | NEWLINE INDENT statement+ DEDENT
-statement:      stmt_list NEWLINE | compound_stmt
-stmt_list:      simple_stmt (";" simple_stmt)* [";"]
-\end{verbatim}
+\begin{productionlist}
+  \production{compound_stmt}
+             {\token{if_stmt} | \token{while_stmt} | \token{for_stmt}
+              | \token{try_stmt} | \token{funcdef} | \token{classdef}}
+  \production{suite}
+             {\token{stmt_list} NEWLINE
+              | NEWLINE INDENT \token{statement}+ DEDENT}
+  \production{statement}
+             {\token{stmt_list} NEWLINE | \token{compound_stmt}}
+  \production{stmt_list}
+             {\token{simple_stmt} (";" \token{simple_stmt})* [";"]}
+\end{productionlist}
 
 Note that statements always end in a
 \code{NEWLINE}\index{NEWLINE token} possibly followed by a
@@ -66,11 +71,12 @@ each clause on a separate line for clarity.
 
 The \keyword{if} statement is used for conditional execution:
 
-\begin{verbatim}
-if_stmt:        "if" expression ":" suite
-               ("elif" expression ":" suite)*
-               ["else" ":" suite]
-\end{verbatim}
+\begin{productionlist}
+  \production{if_stmt}
+             {"if" \token{expression} ":" \token{suite}
+              ( "elif" \token{expression} ":" \token{suite} )*
+              ["else" ":" \token{suite}]}
+\end{productionlist}
 
 It selects exactly one of the suites by evaluating the expressions one
 by one until one is found to be true (see section \ref{Booleans} for
@@ -89,10 +95,11 @@ present, is executed.
 The \keyword{while} statement is used for repeated execution as long
 as an expression is true:
 
-\begin{verbatim}
-while_stmt:     "while" expression ":" suite
-               ["else" ":" suite]
-\end{verbatim}
+\begin{productionlist}
+  \production{while_stmt}
+             {"while" \token{expression} ":" \token{suite}
+               ["else" ":" \token{suite}]}
+\end{productionlist}
 
 This repeatedly tests the expression and, if it is true, executes the
 first suite; if the expression is false (which may be the first time it
@@ -116,10 +123,12 @@ The \keyword{for} statement is used to iterate over the elements of a
 sequence (such as a string, tuple or list) or other iterable object:
 \obindex{sequence}
 
-\begin{verbatim}
-for_stmt:       "for" target_list "in" expression_list ":" suite
-               ["else" ":" suite]
-\end{verbatim}
+\begin{productionlist}
+  \production{for_stmt}
+             {"for" \token{target_list} "in" \token{expression_list}
+              ":" \token{suite}
+              ["else" ":" \token{suite}]}
+\end{productionlist}
 
 The expression list is evaluated once; it should yield a sequence.  The
 suite is then executed once for each item in the sequence, in the
@@ -179,14 +188,18 @@ for x in a[:]:
 The \keyword{try} statement specifies exception handlers and/or cleanup
 code for a group of statements:
 
-\begin{verbatim}
-try_stmt:       try_exc_stmt | try_fin_stmt
-try_exc_stmt:   "try" ":" suite
-               ("except" [expression ["," target]] ":" suite)+
-               ["else" ":" suite]
-try_fin_stmt:   "try" ":" suite
-                "finally" ":" suite
-\end{verbatim}
+\begin{productionlist}
+  \production{try_stmt}
+             {\token{try_exc_stmt} | \token{try_fin_stmt}}
+  \production{try_exc_stmt}
+             {"try" ":" \token{suite}
+              ("except" [\token{expression} ["," \token{target}]] ":"
+              \token{suite})+
+              ["else" ":" \token{suite}]}
+  \production{try_fin_stmt}
+             {"try" ":" \token{suite}
+              "finally" ":" \token{suite}}
+\end{productionlist}
 
 There are two forms of \keyword{try} statement:
 \keyword{try}...\keyword{except} and
@@ -291,16 +304,24 @@ section \ref{types}):
 \obindex{user-defined function}
 \obindex{function}
 
-\begin{verbatim}
-funcdef:        "def" funcname "(" [parameter_list] ")" ":" suite
-parameter_list: (defparameter ",")* ("*" identifier [, "**" identifier] 
-                                    | "**" identifier 
-                                    | defparameter [","])
-defparameter:   parameter ["=" expression]
-sublist:        parameter ("," parameter)* [","]
-parameter:      identifier | "(" sublist ")"
-funcname:       identifier
-\end{verbatim}
+\begin{productionlist}
+  \production{funcdef}
+             {"def" \token{funcname} "(" [\token{parameter_list}] ")"
+              ":" \token{suite}}
+  \production{parameter_list}
+             {(\token{defparameter} ",")*
+              ("*" \token{identifier} [, "**" \token{identifier}]
+               | "**" \token{identifier}
+               | \token{defparameter} [","])}
+  \production{defparameter}
+             {\token{parameter} ["=" \token{expression}]}
+  \production{sublist}
+             {\token{parameter} ("," \token{parameter})* [","]}
+  \production{parameter}
+             {\token{identifier} | "(" \token{sublist} ")"}
+  \production{funcname}
+             {\token{identifier}}
+\end{productionlist}
 
 A function definition is an executable statement.  Its execution binds
 the function name in the current local namespace to a function object
@@ -376,11 +397,15 @@ description of the new semantics.
 A class definition defines a class object (see section \ref{types}):
 \obindex{class}
 
-\begin{verbatim}
-classdef:       "class" classname [inheritance] ":" suite
-inheritance:    "(" [expression_list] ")"
-classname:      identifier
-\end{verbatim}
+\begin{productionlist}
+  \production{classdef}
+             {"class" \token{classname} [\token{inheritance}] ":"
+              \token{suite}}
+  \production{inheritance}
+             {"(" [\token{expression_list}] ")"}
+  \production{classname}
+             {\token{identifier}}
+\end{productionlist}
 
 A class definition is an executable statement.  It first evaluates the
 inheritance list, if present.  Each item in the inheritance list
