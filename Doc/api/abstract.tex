@@ -999,7 +999,7 @@ else {
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyObject_AsReadBuffer}{PyObject *obj,
-                                              const char **buffer,
+                                              const void **buffer,
                                               int *buffer_len}
   Returns a pointer to a read-only memory location containing
   arbitrary data.  The \var{obj} argument must support the
@@ -1017,7 +1017,7 @@ else {
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyObject_AsWriteBuffer}{PyObject *obj,
-                                               char **buffer,
+                                               void **buffer,
                                                int *buffer_len}
   Returns a pointer to a writeable memory location.  The \var{obj}
   argument must support the single-segment, character buffer
