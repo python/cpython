@@ -159,7 +159,8 @@ Tests
 Windows
 -------
 
-TBD
+- New function winsound.MessageBeep() wraps the Win32 API
+  MessageBeep().
 
 Mac
 ---
