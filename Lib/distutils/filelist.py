@@ -16,6 +16,7 @@ import fnmatch
 from types import *
 from glob import glob
 from distutils.util import convert_path
+from distutils.errors import DistutilsTemplateError, DistutilsInternalError
 
 class FileList:
 
@@ -64,126 +65,119 @@ class FileList:
             print msg
 
     
-    def process_line (self, line):    
-
+    def _parse_template_line (self, line):
         words = string.split (line)
         action = words[0]
 
-        # First, check that the right number of words are present
-        # for the given action (which is the first word)
-        if action in ('include','exclude',
-                      'global-include','global-exclude'):
+        patterns = dir = dir_pattern = None
+
+        if action in ('include', 'exclude',
+                      'global-include', 'global-exclude'):
             if len (words) < 2:
-                self.warn \
-                    ("invalid template line: " +
-                     "'%s' expects <pattern1> <pattern2> ..." %
-                     action)
-                return
+                raise DistutilsTemplateError, \
+                      "'%s' expects <pattern1> <pattern2> ..." % action
 
-            pattern_list = map(convert_path, words[1:])
+            patterns = map(convert_path, words[1:])
 
-        elif action in ('recursive-include','recursive-exclude'):
+        elif action in ('recursive-include', 'recursive-exclude'):
             if len (words) < 3:
-                self.warn \
-                    ("invalid template line: " +
-                     "'%s' expects <dir> <pattern1> <pattern2> ..." %
-                     action)
-                return
+                raise DistutilsTemplateError, \
+                      "'%s' expects <dir> <pattern1> <pattern2> ..." % action
 
             dir = convert_path(words[1])
-            pattern_list = map (convert_path, words[2:])
+            patterns = map(convert_path, words[2:])
 
-        elif action in ('graft','prune'):
+        elif action in ('graft', 'prune'):
             if len (words) != 2:
-                self.warn \
-                    ("invalid template line: " +
-                     "'%s' expects a single <dir_pattern>" %
-                     action)
-                return
+                raise DistutilsTemplateError, \
+                     "'%s' expects a single <dir_pattern>" % action
 
-            dir_pattern = convert_path (words[1])
+            dir_pattern = convert_path(words[1])
 
         else:
-            self.warn ("invalid template line: " +
-                           "unknown action '%s'" % action)
-            return
+            raise DistutilsTemplateError, "unknown action '%s'" % action
+
+        return (action, pattern, dir, dir_pattern)
+
+    # _parse_template_line ()
+    
+
+    def process_template_line (self, line):    
+
+        # Parse the line: split it up, make sure the right number of words
+        # are there, and return the relevant words.  'action' is always
+        # defined: it's the first word of the line.  Which of the other
+        # three are defined depends on the action; it'll be either
+        # patterns, (dir and patterns), or (dir_pattern).
+        (action, patterns, dir, dir_pattern) = self._parse_template_line(line)
 
         # OK, now we know that the action is valid and we have the
         # right number of words on the line for that action -- so we
-        # can proceed with minimal error-checking.  Also, we have
-        # defined either (pattern), (dir and pattern), or
-        # (dir_pattern) -- so we don't have to spend any time
-        # digging stuff up out of 'words'.
-
+        # can proceed with minimal error-checking.
         if action == 'include':
-            self.debug_print("include " + string.join(pattern_list))
-            for pattern in pattern_list:
+            self.debug_print("include " + string.join(patterns))
+            for pattern in patterns:
                 if not self.select_pattern (pattern, anchor=1):
-                    self.warn ("no files found matching '%s'" %
-                                   pattern)
+                    self.warn("no files found matching '%s'" % pattern)
 
         elif action == 'exclude':
-            self.debug_print("exclude " + string.join(pattern_list))
-            for pattern in pattern_list:
+            self.debug_print("exclude " + string.join(patterns))
+            for pattern in patterns:
                 if not self.exclude_pattern (pattern, anchor=1):
-                    self.warn (
+                    self.warn(
                         "no previously-included files found matching '%s'"%
                         pattern)
 
         elif action == 'global-include':
-            self.debug_print("global-include " + string.join(pattern_list))
-            for pattern in pattern_list:
+            self.debug_print("global-include " + string.join(patterns))
+            for pattern in patterns:
                 if not self.select_pattern (pattern, anchor=0):
                     self.warn (("no files found matching '%s' " +
-                                    "anywhere in distribution") %
-                                   pattern)
+                                "anywhere in distribution") %
+                               pattern)
 
         elif action == 'global-exclude':
-            self.debug_print("global-exclude " + string.join(pattern_list))
-            for pattern in pattern_list:
+            self.debug_print("global-exclude " + string.join(patterns))
+            for pattern in patterns:
                 if not self.exclude_pattern (pattern, anchor=0):
-                    self.warn \
-                        (("no previously-included files matching '%s' " +
-                          "found anywhere in distribution") %
-                         pattern)
+                    self.warn(("no previously-included files matching '%s' " +
+                               "found anywhere in distribution") %
+                              pattern)
 
         elif action == 'recursive-include':
             self.debug_print("recursive-include %s %s" %
-                             (dir, string.join(pattern_list)))
-            for pattern in pattern_list:
+                             (dir, string.join(patterns)))
+            for pattern in patterns:
                 if not self.select_pattern (pattern, prefix=dir):
                     self.warn (("no files found matching '%s' " +
-                                    "under directory '%s'") %
-                                   (pattern, dir))
+                                "under directory '%s'") %
+                               (pattern, dir))
 
         elif action == 'recursive-exclude':
             self.debug_print("recursive-exclude %s %s" %
-                             (dir, string.join(pattern_list)))
-            for pattern in pattern_list:
+                             (dir, string.join(patterns)))
+            for pattern in patterns:
                 if not self.exclude_pattern(pattern, prefix=dir):
-                    self.warn \
-                        (("no previously-included files matching '%s' " +
-                          "found under directory '%s'") %
-                         (pattern, dir))
+                    self.warn(("no previously-included files matching '%s' " +
+                               "found under directory '%s'") %
+                              (pattern, dir))
 
         elif action == 'graft':
             self.debug_print("graft " + dir_pattern)
             if not self.select_pattern(None, prefix=dir_pattern):
-                self.warn ("no directories found matching '%s'" %
-                               dir_pattern)
+                self.warn ("no directories found matching '%s'" % dir_pattern)
 
         elif action == 'prune':
             self.debug_print("prune " + dir_pattern)
             if not self.exclude_pattern(None, prefix=dir_pattern):
-                self.warn \
-                    (("no previously-included directories found " +
-                      "matching '%s'") %
-                     dir_pattern)
+                self.warn(("no previously-included directories found " +
+                           "matching '%s'") %
+                          dir_pattern)
         else:
-            raise RuntimeError, \
+            raise DistutilsInternalError, \
                   "this cannot happen: invalid action '%s'" % action
 
-    # process_line ()
+    # process_template_line ()
 
 
     def select_pattern (self, pattern,
