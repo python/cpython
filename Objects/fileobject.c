@@ -244,7 +244,7 @@ file_close(PyFileObject *f, PyObject *args)
 /* a portable fseek() function
    return 0 on success, non-zero on failure (with errno set) */
 int
-#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8 
+#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8
 _portable_fseek(FILE *fp, fpos_t offset, int whence)
 #else
 _portable_fseek(FILE *fp, off_t offset, int whence)
@@ -256,7 +256,7 @@ _portable_fseek(FILE *fp, off_t offset, int whence)
 	return fseek64(fp, offset, whence);
 #elif defined(__BEOS__)
 	return _fseek(fp, offset, whence);
-#elif defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_FPOS_T >= 8 
+#elif defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_FPOS_T >= 8
 	/* lacking a 64-bit capable fseek() (as Win64 does) use a 64-bit capable
 		fsetpos() and tell() to implement fseek()*/
 	fpos_t pos;
@@ -287,7 +287,7 @@ _portable_fseek(FILE *fp, off_t offset, int whence)
 /* a portable ftell() function
    Return -1 on failure with errno set appropriately, current file
    position on success */
-#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8 
+#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8
 fpos_t
 #else
 off_t
@@ -314,13 +314,13 @@ file_seek(PyFileObject *f, PyObject *args)
 {
 	int whence;
 	int ret;
-#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8 
+#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8
 	fpos_t offset, pos;
 #else
 	off_t offset;
 #endif /* !MS_WIN64 */
 	PyObject *offobj;
-	
+
 	if (f->f_fp == NULL)
 		return err_closed();
 	whence = 0;
@@ -334,7 +334,7 @@ file_seek(PyFileObject *f, PyObject *args)
 #endif
 	if (PyErr_Occurred())
 		return NULL;
-	
+
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
 	ret = _portable_fseek(f->f_fp, offset, whence);
@@ -355,13 +355,13 @@ static PyObject *
 file_truncate(PyFileObject *f, PyObject *args)
 {
 	int ret;
-#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8 
+#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8
 	fpos_t newsize;
 #else
 	off_t newsize;
 #endif
 	PyObject *newsizeobj;
-	
+
 	if (f->f_fp == NULL)
 		return err_closed();
 	newsizeobj = NULL;
@@ -416,7 +416,7 @@ file_truncate(PyFileObject *f, PyObject *args)
 	Py_END_ALLOW_THREADS
 	if (ret != 0) goto onioerror;
 #endif /* !MS_WIN32 */
-	
+
 	Py_INCREF(Py_None);
 	return Py_None;
 
@@ -430,7 +430,7 @@ onioerror:
 static PyObject *
 file_tell(PyFileObject *f, PyObject *args)
 {
-#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8 
+#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8
 	fpos_t pos;
 #else
 	off_t pos;
@@ -470,7 +470,7 @@ static PyObject *
 file_flush(PyFileObject *f, PyObject *args)
 {
 	int res;
-	
+
 	if (f->f_fp == NULL)
 		return err_closed();
 	if (!PyArg_NoArgs(args))
@@ -559,7 +559,7 @@ file_read(PyFileObject *f, PyObject *args)
 	long bytesrequested = -1;
 	size_t bytesread, buffersize, chunksize;
 	PyObject *v;
-	
+
 	if (f->f_fp == NULL)
 		return err_closed();
 	if (!PyArg_ParseTuple(args, "|l:read", &bytesrequested))
@@ -610,7 +610,7 @@ file_readinto(PyFileObject *f, PyObject *args)
 {
 	char *ptr;
 	size_t ntodo, ndone, nnow;
-	
+
 	if (f->f_fp == NULL)
 		return err_closed();
 	if (!PyArg_Parse(args, "w#", &ptr, &ntodo))
@@ -634,6 +634,170 @@ file_readinto(PyFileObject *f, PyObject *args)
 	return PyInt_FromLong((long)ndone);
 }
 
+/**************************************************************************
+Win32 MS routine to get next line.
+
+Under MSVC 6:
+
++ MS threadsafe getc is very slow (multiple layers of function calls
+  before+after each character, to lock+unlock the stream).
++ The stream-locking functions are MS-internal -- can't access them
+  from user code.
++ There's nothing Tim could find in the MS C or platform SDK libraries
+  that can worm around this.
++ MS fgets locks/unlocks only once per line; it's the only hook we have.
+
+So we use fgets for speed(!), despite that it's painful.
+
+MS realloc is also slow.
+
+In the usual case, we have one pleasantly small line already sitting in a
+stdio buffer, and we optimize heavily for that case.
+
+CAUTION:  This routine cheats, relying on how MSVC 6 works internally.
+They seem to be relatively safe cheats, but we should expect this code
+to break someday.
+**************************************************************************/
+
+/* if Win32 and MS's compiler */
+#if defined(MS_WIN32) && defined(_MSC_VER)
+#define USE_MS_GETLINE_HACK
+#endif
+
+#ifdef USE_MS_GETLINE_HACK
+static PyObject*
+ms_getline_hack(FILE *fp)
+{
+#define INITBUFSIZE 100
+#define INCBUFSIZE 1000
+	PyObject* v;	/* the string object result */
+	size_t total_v_size;  /* total # chars in v's buffer */
+	char* pvfree;	/* address of next free slot */
+	char* pvend;    /* address one beyond last free slot */
+	char* p;	/* temp */
+
+	if (fp->_cnt > 0) { /* HACK: "_cnt" isn't advertised */
+		/* optimize for normal case:  something sitting in the
+		 * buffer ready to go; avoid thread fiddling & realloc
+		 * if possible
+		 */
+		char msbuf[INITBUFSIZE];
+		memset(msbuf, '\n', INITBUFSIZE);
+		p = fgets(msbuf, INITBUFSIZE, fp);
+		/* since we didn't lock the file, there's no guarantee
+		 * anything was still in the buffer
+		 */
+		if (p == NULL) {
+			clearerr(fp);
+			if (PyErr_CheckSignals())
+				return NULL;
+			v = PyString_FromStringAndSize("", 0);
+			return v;
+		}
+		/* fgets read *something* */
+		p = memchr(msbuf, '\n', INITBUFSIZE);
+		if (p != NULL) {
+			/* Did the \n come from fgets or from us?
+			 * Since fgets stops at the first \n, and then
+			 * writes \0, if it's from fgets a \0 must be next.
+			 * But if that's so, it could not have come from us,
+			 * since the \n's we filled the buffer with have only
+			 * more \n's to the right.
+			 */
+			pvend = msbuf + INITBUFSIZE;
+			if (p+1 < pvend && *(p+1) == '\0') {
+				/* it's from fgets:  we win! */
+				v = PyString_FromStringAndSize(msbuf,
+					p - msbuf + 1);
+				return v;
+			}
+			/* Must be from us:  fgets didn't fill the buffer
+			 * and didn't find a newline, so it must be the
+			 * last and newline-free line of the file.
+			 */
+			assert(p > msbuf && *(p-1) == '\0');
+			v = PyString_FromStringAndSize(msbuf, p - msbuf - 1);
+			return v;
+		}
+		/* yuck:  fgets overwrote all the newlines, i.e. the entire
+		 * buffer.  So this line isn't over yet, or maybe it is but
+		 * we're exactly at EOF; in either case, we're tired <wink>.
+		 */
+		assert(msbuf[INITBUFSIZE-1] == '\0');
+		total_v_size = INITBUFSIZE + INCBUFSIZE;
+		v = PyString_FromStringAndSize((char*)NULL,
+			(int)total_v_size);
+		if (v == NULL)
+			return v;
+		/* copy over everything except the last null byte */
+		memcpy(BUF(v), msbuf, INITBUFSIZE-1);
+		pvfree = BUF(v) + INITBUFSIZE - 1;
+	}
+	else {
+		/* The stream isn't ready or isn't buffered. */
+		v = PyString_FromStringAndSize((char*)NULL, INITBUFSIZE);
+		if (v == NULL)
+			return v;
+		total_v_size = INITBUFSIZE;
+		pvfree = BUF(v);
+	}
+
+	/* Keep reading stuff into v; if it ever ends successfully, break
+	 * after setting p one beyond the end of the line.
+	 */
+	for (;;) {
+		size_t nfree;
+
+		Py_BEGIN_ALLOW_THREADS
+		pvend = BUF(v) + total_v_size;
+		nfree = pvend - pvfree;
+		memset(pvfree, '\n', nfree);
+		p = fgets(pvfree, nfree, fp);
+		Py_END_ALLOW_THREADS
+
+		if (p == NULL) {
+			clearerr(fp);
+			if (PyErr_CheckSignals()) {
+				Py_DECREF(v);
+				return NULL;
+			}
+			p = pvfree;
+			break;
+		}
+		/* See the "normal case" comments above for details. */
+		p = memchr(pvfree, '\n', nfree);
+		if (p != NULL) {
+			if (p+1 < pvend && *(p+1) == '\0') {
+				/* \n came from fgets */
+				++p;
+				break;
+			}
+			/* \n came from us; last line of file, no newline */
+			assert(p > pvfree && *(p-1) == '\0');
+			--p;
+			break;
+		}
+		/* expand buffer and try again */
+		assert(*(pvend-1) == '\0');
+		total_v_size += INCBUFSIZE;
+		if (total_v_size > INT_MAX) {
+			PyErr_SetString(PyExc_OverflowError,
+			    "line is longer than a Python string can hold");
+			Py_DECREF(v);
+			return NULL;
+		}
+		if (_PyString_Resize(&v, (int)total_v_size) < 0)
+			return NULL;
+		/* overwrite the trailing null byte */
+		pvfree = BUF(v) + (total_v_size - INCBUFSIZE - 1);
+	}
+	if (BUF(v) + total_v_size != p)
+		_PyString_Resize(&v, p - BUF(v));
+	return v;
+#undef INITBUFSIZE
+#undef INCBUFSIZE
+}
+#endif	/* ifdef USE_MS_GETLINE_HACK */
 
 /* Internal routine to get a line.
    Size argument interpretation:
@@ -661,6 +825,10 @@ get_line(PyFileObject *f, int n)
 	size_t n1, n2;
 	PyObject *v;
 
+#ifdef USE_MS_GETLINE_HACK
+	if (n == 0)
+		return ms_getline_hack(fp);
+#endif
 	n2 = n > 0 ? n : 100;
 	v = PyString_FromStringAndSize((char *)NULL, n2);
 	if (v == NULL)
@@ -695,6 +863,7 @@ get_line(PyFileObject *f, int n)
 		if (n2 > INT_MAX) {
 			PyErr_SetString(PyExc_OverflowError,
 			    "line is longer than a Python string can hold");
+			Py_DECREF(v);
 			return NULL;
 		}
 		if (_PyString_Resize(&v, n2) < 0)
@@ -999,7 +1168,7 @@ file_writelines(PyFileObject *f, PyObject *args)
 			if (!PyString_Check(v)) {
 			    	const char *buffer;
 			    	int len;
-				if (((f->f_binary && 
+				if (((f->f_binary &&
 				      PyObject_AsReadBuffer(v,
 					      (const void**)&buffer,
 							    &len)) ||
@@ -1255,7 +1424,7 @@ int PyObject_AsFileDescriptor(PyObject *o)
 		Py_DECREF(meth);
 		if (fno == NULL)
 			return -1;
-		
+
 		if (PyInt_Check(fno)) {
 			fd = PyInt_AsLong(fno);
 			Py_DECREF(fno);
