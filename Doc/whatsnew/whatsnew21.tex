@@ -231,8 +231,8 @@ return any Python object.
 There are also corresponding changes of interest to C programmers;
 there's a new slot \code{tp_richcmp} in type objects and an API for
 performing a given rich comparison.  I won't cover the C API here, but
-will refer you to PEP 207, or the documentation for Python's C API,
-for the full list of related functions.
+will refer you to PEP 207, or to 2.1's C API documentation, for the
+full list of related functions.
 
 \begin{seealso}
 
@@ -604,6 +604,16 @@ up 57 patches applied, and 86 bugs fixed; both figures are likely to
 be underestimates.  Some of the more notable changes are:
 
 \begin{itemize}
+
+
+\item A specialized object allocator is now optionally available, that
+should be faster than the system \function{malloc()} and have less
+memory overhead.  The allocator uses C's \function{malloc()} function
+to get large pools of memory, and then fulfills smaller memory
+requests from these pools.  It can be enabled by providing the
+"--with-pymalloc" option to the \filename{configure} script; see
+\filename{Objects/obmalloc.c} for the implementation details.
+Contributed by Vladimir Marangozov.
 
 \item The speed of line-oriented file I/O has been improved because
 people often complain about its lack of speed, and because it's often
