@@ -117,13 +117,15 @@ object_sitemap = '''\
 # Note that "and", "or", "not" and "near" are operators in the search
 # language, so no point indexing them even if we wanted to.
 stop_list = '''
-a  an  and
-is
-near
-not
-of
-or
-the
+a  and  are  as  at
+be  but  by
+for
+if  in  into  is  it
+near  no  not
+of  on  or
+such
+that  the  their  then  there  these  they  this  to
+was  will  with
 '''
 
 # s is a string or None.  If None or empty, return None.  Else tack '.html'
