@@ -12,7 +12,9 @@ def need(restype, resid, filename=None, modname=None):
 	are required parameters, and identify the resource for which to test. If it
 	is available we are done. If it is not available we look for a file filename
 	(default: modname with .rsrc appended) either in the same folder as
-	where modname was loaded from, or otherwise across sys.path."""
+	where modname was loaded from, or otherwise across sys.path.
+	
+	Returns the refno of the resource file opened (or None)"""
 
 	if modname is None and filename is None:
 		raise ArgumentError, "Either filename or modname argument (or both) must be given"
@@ -23,14 +25,14 @@ def need(restype, resid, filename=None, modname=None):
 		except Res.Error:
 			pass
 		else:
-			return
+			return None
 	else:
 		try:
 			h = Res.GetNamedResource(restype, resid)
 		except Res.Error:
 			pass
 		else:
-			return
+			return None
 			
 	# Construct a filename if we don't have one
 	if not filename:
@@ -59,10 +61,11 @@ def need(restype, resid, filename=None, modname=None):
 	else:
 		raise ResourceFileNotFoundError, filename
 	
-	Res.FSpOpenResFile(pathname, 1)
+	refno = Res.FSpOpenResFile(pathname, 1)
 	
 	# And check that the resource exists now
 	if type(resid) is type(1):
 		h = Res.GetResource(restype, resid)
 	else:
 		h = Res.GetNamedResource(restype, resid)
+	return refno
