@@ -97,7 +97,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.2.9"
+#define PY_BSDDB_VERSION "4.3.0"
 static char *rcs_id = "$Id$";
 
 
@@ -176,13 +176,16 @@ static PyObject* DBIncompleteError;     /* DB_INCOMPLETE */
 static PyObject* DBInvalidArgError;     /* EINVAL */
 static PyObject* DBAccessError;         /* EACCES */
 static PyObject* DBNoSpaceError;        /* ENOSPC */
-static PyObject* DBNoMemoryError;       /* ENOMEM */
+static PyObject* DBNoMemoryError;       /* DB_BUFFER_SMALL (ENOMEM when < 4.3) */
 static PyObject* DBAgainError;          /* EAGAIN */
 static PyObject* DBBusyError;           /* EBUSY  */
 static PyObject* DBFileExistsError;     /* EEXIST */
 static PyObject* DBNoSuchFileError;     /* ENOENT */
 static PyObject* DBPermissionsError;    /* EPERM  */
 
+#if (DBVER < 43)
+#define	DB_BUFFER_SMALL		ENOMEM
+#endif
 
 
 /* --------------------------------------------------------------------- */
@@ -462,13 +465,35 @@ static int add_partial_dbt(DBT* d, int dlen, int doff) {
     return 1;
 }
 
+/* a safe strcpy() without the zeroing behaviour and semantics of strncpy. */
+/* TODO: make this use the native libc strlcpy() when available (BSD)      */
+unsigned int our_strlcpy(char* dest, const char* src, unsigned int n)
+{
+    unsigned int srclen, copylen;
+
+    srclen = strlen(src);
+    if (n <= 0)
+	return srclen;
+    copylen = (srclen > n-1) ? n-1 : srclen;
+    /* populate dest[0] thru dest[copylen-1] */
+    memcpy(dest, src, copylen);
+    /* guarantee null termination */
+    dest[copylen] = 0;
+
+    return srclen;
+}
 
 /* Callback used to save away more information about errors from the DB
  * library. */
 static char _db_errmsg[1024];
+#if (DBVER <= 42)
 static void _db_errorCallback(const char* prefix, char* msg)
+#else
+static void _db_errorCallback(const DB_ENV *db_env,
+	const char* prefix, const char* msg)
+#endif
 {
-    strcpy(_db_errmsg, msg);
+    our_strlcpy(_db_errmsg, msg, sizeof(_db_errmsg));
 }
 
 
@@ -486,7 +511,7 @@ static int makeDBError(int err)
 #if (DBVER < 41)
         case DB_INCOMPLETE:
 #if INCOMPLETE_IS_WARNING
-            strcpy(errTxt, db_strerror(err));
+            our_strlcpy(errTxt, db_strerror(err), sizeof(errTxt));
             if (_db_errmsg[0]) {
                 strcat(errTxt, " -- ");
                 strcat(errTxt, _db_errmsg);
@@ -520,11 +545,15 @@ static int makeDBError(int err)
         case DB_PAGE_NOTFOUND:      errObj = DBPageNotFoundError;   break;
         case DB_SECONDARY_BAD:      errObj = DBSecondaryBadError;   break;
 #endif
+        case DB_BUFFER_SMALL:       errObj = DBNoMemoryError;       break;
 
+#if (DBVER >= 43)
+	/* ENOMEM and DB_BUFFER_SMALL were one and the same until 4.3 */
+	case ENOMEM:  errObj = PyExc_MemoryError;   break;
+#endif
         case EINVAL:  errObj = DBInvalidArgError;   break;
         case EACCES:  errObj = DBAccessError;       break;
         case ENOSPC:  errObj = DBNoSpaceError;      break;
-        case ENOMEM:  errObj = DBNoMemoryError;     break;
         case EAGAIN:  errObj = DBAgainError;        break;
         case EBUSY :  errObj = DBBusyError;         break;
         case EEXIST:  errObj = DBFileExistsError;   break;
@@ -535,8 +564,7 @@ static int makeDBError(int err)
     }
 
     if (errObj != NULL) {
-        /* FIXME this needs proper bounds checking on errTxt */
-        strcpy(errTxt, db_strerror(err));
+        our_strlcpy(errTxt, db_strerror(err), sizeof(errTxt));
         if (_db_errmsg[0]) {
             strcat(errTxt, " -- ");
             strcat(errTxt, _db_errmsg);
@@ -1533,14 +1561,14 @@ DB_get_size(DBObject* self, PyObject* args, PyObject* kwargs)
     }
     CLEAR_DBT(data);
 
-    /* We don't allocate any memory, forcing a ENOMEM error and thus
-       getting the record size. */
+    /* We don't allocate any memory, forcing a DB_BUFFER_SMALL error and
+       thus getting the record size. */
     data.flags = DB_DBT_USERMEM;
     data.ulen = 0;
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->db->get(self->db, txn, &key, &data, flags);
     MYDB_END_ALLOW_THREADS;
-    if (err == ENOMEM) {
+    if (err == DB_BUFFER_SMALL) {
         retval = PyInt_FromLong((long)data.size);
         err = 0;
     }
@@ -2133,19 +2161,35 @@ DB_set_q_extentsize(DBObject* self, PyObject* args)
 #endif
 
 static PyObject*
-DB_stat(DBObject* self, PyObject* args)
+DB_stat(DBObject* self, PyObject* args, PyObject* kwargs)
 {
     int err, flags = 0, type;
     void* sp;
     PyObject* d;
+#if (DBVER >= 43)
+    PyObject* txnobj = NULL;
+    DB_TXN *txn = NULL;
+    char* kwnames[] = { "txn", "flags", NULL };
+#else
+    char* kwnames[] = { "flags", NULL };
+#endif
 
-
-    if (!PyArg_ParseTuple(args, "|i:stat", &flags))
+#if (DBVER >= 43)
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iO:stat", kwnames,
+                                     &flags, &txnobj))
         return NULL;
+    if (!checkTxnObj(txnobj, &txn))
+        return NULL;
+#else
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i:stat", kwnames, &flags))
+        return NULL;
+#endif
     CHECK_DB_NOT_CLOSED(self);
 
     MYDB_BEGIN_ALLOW_THREADS;
-#if (DBVER >= 33)
+#if (DBVER >= 43)
+    err = self->db->stat(self->db, txn, &sp, flags);
+#elif (DBVER >= 33)
     err = self->db->stat(self->db, &sp, flags);
 #else
     err = self->db->stat(self->db, &sp, NULL, flags);
@@ -2407,7 +2451,9 @@ int DB_length(DBObject* self)
     }
 
     MYDB_BEGIN_ALLOW_THREADS;
-#if (DBVER >= 33)
+#if (DBVER >= 43)
+    err = self->db->stat(self->db, /*txnid*/ NULL, &sp, flags);
+#elif (DBVER >= 33)
     err = self->db->stat(self->db, &sp, flags);
 #else
     err = self->db->stat(self->db, &sp, NULL, flags);
@@ -2525,7 +2571,7 @@ DB_has_key(DBObject* self, PyObject* args)
         return NULL;
     }
 
-    /* This causes ENOMEM to be returned when the db has the key because
+    /* This causes DB_BUFFER_SMALL to be returned when the db has the key because
        it has a record but can't allocate a buffer for the data.  This saves
        having to deal with data we won't be using.
      */
@@ -2536,7 +2582,7 @@ DB_has_key(DBObject* self, PyObject* args)
     err = self->db->get(self->db, txn, &key, &data, 0);
     MYDB_END_ALLOW_THREADS;
     FREE_DBT(key);
-    return PyInt_FromLong((err == ENOMEM) || (err == 0));
+    return PyInt_FromLong((err == DB_BUFFER_SMALL) || (err == 0));
 }
 
 
@@ -3281,15 +3327,15 @@ DBC_get_current_size(DBCursorObject* self, PyObject* args)
     CLEAR_DBT(key);
     CLEAR_DBT(data);
 
-    /* We don't allocate any memory, forcing a ENOMEM error and thus
+    /* We don't allocate any memory, forcing a DB_BUFFER_SMALL error and thus
        getting the record size. */
     data.flags = DB_DBT_USERMEM;
     data.ulen = 0;
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->dbc->c_get(self->dbc, &key, &data, flags);
     MYDB_END_ALLOW_THREADS;
-    if (err == ENOMEM || !err) {
-        /* ENOMEM means positive size, !err means zero length value */
+    if (err == DB_BUFFER_SMALL || !err) {
+        /* DB_BUFFER_SMALL means positive size, !err means zero length value */
         retval = PyInt_FromLong((long)data.size);
         err = 0;
     }
@@ -4364,7 +4410,7 @@ static PyMethodDef DB_methods[] = {
 #if (DBVER >= 32)
     {"set_q_extentsize",(PyCFunction)DB_set_q_extentsize,METH_VARARGS},
 #endif
-    {"stat",            (PyCFunction)DB_stat,           METH_VARARGS},
+    {"stat",            (PyCFunction)DB_stat,           METH_VARARGS|METH_KEYWORDS},
     {"sync",            (PyCFunction)DB_sync,           METH_VARARGS},
 #if (DBVER >= 33)
     {"truncate",        (PyCFunction)DB_truncate,       METH_VARARGS|METH_KEYWORDS},
@@ -4903,7 +4949,9 @@ DL_EXPORT(void) init_bsddb(void)
 
 #if (DBVER >= 33)
     ADD_INT(d, DB_LSTAT_ABORTED);
+#if (DBVER < 43)
     ADD_INT(d, DB_LSTAT_ERR);
+#endif
     ADD_INT(d, DB_LSTAT_FREE);
     ADD_INT(d, DB_LSTAT_HELD);
 #if (DBVER == 33)
@@ -5027,6 +5075,11 @@ DL_EXPORT(void) init_bsddb(void)
     ADD_INT(d, DB_INIT_REP);
     ADD_INT(d, DB_ENCRYPT);
     ADD_INT(d, DB_CHKSUM);
+#endif
+
+#if (DBVER >= 43)
+    ADD_INT(d, DB_LOG_INMEMORY);
+    ADD_INT(d, DB_BUFFER_SMALL);
 #endif
 
 #if (DBVER >= 41)
