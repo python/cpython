@@ -214,7 +214,7 @@ $(OUT)%$O: %.c
 	@echo Creating .DEF file: $@
 	@echo NAME $(notdir $*) $(EXETYPE.$(notdir $*).exe) >$@
 	@echo DESCRIPTION $(DQUOTE)$(DESCRIPTION.$(notdir $*).exe)$(DQUOTE) >>$@
-	@echo STACKSIZE 1048576 >>$@
+	@echo STACKSIZE 1572864 >>$@
 
 # Output file names
 PYTHON_VER=	2.3
