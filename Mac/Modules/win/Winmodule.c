@@ -9,6 +9,12 @@
 #include "pymactoolbox.h"
 
 #include <Windows.h>
+/* Function to dispose a window, with a "normal" calling sequence */
+static void
+PyMac_AutoDisposeWindow(WindowPtr w)
+{
+	DisposeWindow(w);
+}
 
 static PyObject *Win_Error;
 
@@ -21,6 +27,7 @@ PyTypeObject Window_Type;
 typedef struct WindowObject {
 	PyObject_HEAD
 	WindowPtr ob_itself;
+	void (*ob_freeit)(WindowPtr ptr);
 } WindowObject;
 
 PyObject *WinObj_New(itself)
@@ -32,6 +39,7 @@ PyObject *WinObj_New(itself)
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	SetWRefCon(itself, (long)it);
+	it->ob_freeit = PyMac_AutoDisposeWindow;
 	return (PyObject *)it;
 }
 WinObj_Convert(v, p_itself)
@@ -60,7 +68,12 @@ WinObj_Convert(v, p_itself)
 static void WinObj_dealloc(self)
 	WindowObject *self;
 {
-	DisposeWindow(self->ob_itself);
+	if (self->ob_itself) SetWRefCon(self->ob_itself, 0);
+	if (self->ob_freeit && self->ob_itself)
+	{
+		self->ob_freeit(self->ob_itself);
+	}
+	self->ob_itself = NULL;
 	PyMem_DEL(self);
 }
 
@@ -2079,7 +2092,7 @@ static PyObject *Win_FrontNonFloatingWindow(_self, _args)
 		return NULL;
 	_rv = FrontNonFloatingWindow();
 	_res = Py_BuildValue("O&",
-	                     WinObj_New, _rv);
+	                     WinObj_WhichWindow, _rv);
 	return _res;
 }
 
@@ -2492,15 +2505,18 @@ WinObj_WhichWindow(w)
 {
 	PyObject *it;
 	
-	/* XXX What if we find a stdwin window or a window belonging
-	       to some other package? */
-	if (w == NULL)
-		it = NULL;
-	else
-		it = (PyObject *) GetWRefCon(w);
-	if (it == NULL || ((WindowObject *)it)->ob_itself != w)
+	if (w == NULL) {
 		it = Py_None;
-	Py_INCREF(it);
+		Py_INCREF(it);
+	} else {
+		it = (PyObject *) GetWRefCon(w);
+		if (it == NULL || ((WindowObject *)it)->ob_itself != w) {
+			it = WinObj_New(w);
+			((WindowObject *)it)->ob_freeit = NULL;
+		} else {
+			Py_INCREF(it);
+		}
+	}
 	return it;
 }
 
