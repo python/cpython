@@ -34,3 +34,19 @@ out2_2 = "abc?def"
 
 verify(urllib.quote(in2) == out2_1, "urllib.quote problem 4")
 verify(urllib.quote(in2, '?') == out2_2, "urllib.quote problem 5")
+
+in3 = {"p1":"v1","p2":"v2"}
+exp3_1 = "p2=v2&p1=v1"
+exp3_2 = "p1=v1&p2=v2"
+act3 = urllib.urlencode(in3)
+verify(act3==exp3_1 or act3==exp3_2, "urllib.urlencode problem 1")
+
+in4 = {"p1":["v1","v2"]}
+exp4 = "p1=v1&p1=v2"
+act4 = urllib.urlencode(in4,doseq=1)
+verify(act4==exp4, "urllib.urlencode problem 2")
+
+in5 = in4
+exp5 = "p1=%5B%27v1%27%2C+%27v2%27%5D"
+act5 = urllib.urlencode(in5)
+verify(act5==exp5, "urllib.urlencode problem 3")
