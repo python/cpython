@@ -110,6 +110,13 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 - #128475 - pythonrun.c - In Py_Finalize, don't reset initialized flag
             until after the exit funcs have run
 
+- #128713 - mmapmodule.c -  type(mmap_object) blew up on Linux.
+
+- mmap on windows creates a mapping without a name when tagname isn't
+  specified
+
+- #117745 - UserString.py - Fix two typos in __imul__.
+
 What's New in Python 2.0?
 =========================
 

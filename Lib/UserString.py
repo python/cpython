@@ -61,8 +61,8 @@ class UserString:
     def __mul__(self, n):
         return self.__class__(self.data*n)
     __rmul__ = __mul__
-    def __imull__(self, n):
-        self.data += n
+    def __imul__(self, n):
+        self.data *= n
         return self
 
     # the following methods are defined in alphabetical order:
