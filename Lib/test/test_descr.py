@@ -3237,6 +3237,16 @@ def slottrash():
         o = trash(o)
     del o
 
+def slotmultipleinheritance():
+    # SF bug 575229, multiple inheritance w/ slots dumps core
+    class A(object):
+        __slots__=()
+    class B(object):
+        pass
+    class C(A,B) :
+        __slots__=()
+    C().x=2
+
 def testrmul():
     # SF patch 592646
     if verbose:
@@ -3344,6 +3354,7 @@ def test_main():
     slices()
     subtype_resurrection()
     slottrash()
+    slotmultipleinheritance()
     testrmul()
     if verbose: print "All OK"
 
