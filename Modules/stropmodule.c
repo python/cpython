@@ -1091,6 +1091,10 @@ strop_replace(self, args)
 			      &str, &len, &pat, &pat_len, &sub, &sub_len,
 			      &count))
 		return NULL;
+	if (pat_len <= 0) {
+		PyErr_SetString(PyExc_ValueError, "empty pattern string");
+		return NULL;
+	}
 	new_s = mymemreplace(str,len,pat,pat_len,sub,sub_len,count,&out_len);
 	if (new_s == NULL) {
 		PyErr_NoMemory();
