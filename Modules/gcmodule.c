@@ -74,17 +74,20 @@ static int debug;
 
 /* When a collection begins, gc_refs is set to ob_refcnt for, and only for,
  * the objects in the generation being collected, called the "young"
- * generation at that point.  As collection proceeds, when it's determined
- * that one of these can't be collected (e.g., because it's reachable from
- * outside, or has a __del__ method), the object is moved out of young, and
- * gc_refs is set to a negative value.  The latter is so we can distinguish
- * collection candidates from non-candidates just by looking at the object.
+ * generation at that point.  As collection proceeds, the gc_refs members
+ * of young objects are set to GC_REACHABLE when it becomes known that they're
+ * uncollectable, and to GC_TENTATIVELY_UNREACHABLE when the evidence
+ * suggests they are collectable (this can't be known for certain until all
+ * of the young generation is scanned).
  */
-/* Special gc_refs value, although any negative value means "moved". */
-#define GC_MOVED  -123
 
-/* True iff an object is still a candidate for collection. */
-#define STILL_A_CANDIDATE(o) ((AS_GC(o))->gc.gc_refs >= 0)
+/* Special gc_refs values. */
+#define GC_REACHABLE  -123
+#define GC_TENTATIVELY_UNREACHABLE -42
+
+#define IS_REACHABLE(o) ((AS_GC(o))->gc.gc_refs == GC_REACHABLE)
+#define IS_TENTATIVELY_UNREACHABLE(o) ( \
+	(AS_GC(o))->gc.gc_refs == GC_TENTATIVELY_UNREACHABLE)
 
 /* list of uncollectable objects */
 static PyObject *garbage;
@@ -168,41 +171,40 @@ gc_list_size(PyGC_Head *list)
 /*** end of list stuff ***/
 
 
-
-/* Set all gc_refs = ob_refcnt.  After this, STILL_A_CANDIDATE(o) is true
- * for all objects in containers, and false for all tracked gc objects not
- * in containers (although see the comment in visit_decref).
+/* Set all gc_refs = ob_refcnt.  After this, gc_refs is > 0 for all objects
+ * in containers, and is GC_REACHABLE for all tracked gc objects not in
+ * containers.
  */
 static void
 update_refs(PyGC_Head *containers)
 {
 	PyGC_Head *gc = containers->gc.gc_next;
-	for (; gc != containers; gc=gc->gc.gc_next) {
+	for (; gc != containers; gc = gc->gc.gc_next)
 		gc->gc.gc_refs = FROM_GC(gc)->ob_refcnt;
-	}
 }
 
+/* A traversal callback for subtract_refs. */
 static int
 visit_decref(PyObject *op, void *data)
 {
-        /* There's no point to decrementing gc_refs unless
-         * STILL_A_CANDIDATE(op) is true.  It would take extra cycles to
-         * check that, though.  If STILL_A_CANDIDATE(op) is false,
-         * decrementing gc_refs almost always makes it "even more negative",
-         * so doesn't change that STILL_A_CANDIDATE is false, and no harm is
-         * done.  However, it's possible that, after many collections, this
-         * could underflow gc_refs in a long-lived old object.  In that case,
-         * visit_move() may move the old object back to the generation
-         * getting collected.  That would be a waste of time, but wouldn't
-         * cause an error.
-         */
         assert(op != NULL);
-	if (PyObject_IS_GC(op))
-	        AS_GC(op)->gc.gc_refs--;
+	if (PyObject_IS_GC(op)) {
+		PyGC_Head *gc = AS_GC(op);
+		/* We're only interested in gc_refs for objects in the
+		 * generation being collected, which can be recognized
+		 * because only they have positive gc_refs.
+		 */
+		if (gc->gc.gc_refs > 0)
+			gc->gc.gc_refs--;
+	}
 	return 0;
 }
 
-/* Subtract internal references from gc_refs */
+/* Subtract internal references from gc_refs.  After this, gc_refs is >= 0
+ * for all objects in containers, and is GC_REACHABLE for all tracked gc
+ * objects not in containers.  The ones with gc_refs > 0 are directly
+ * reachable from outside containers, and so can't be collected.
+ */
 static void
 subtract_refs(PyGC_Head *containers)
 {
@@ -216,52 +218,100 @@ subtract_refs(PyGC_Head *containers)
 	}
 }
 
-/* Move objects with gc_refs > 0 to roots list.  They can't be collected. */
-static void
-move_roots(PyGC_Head *containers, PyGC_Head *roots)
-{
-	PyGC_Head *next;
-	PyGC_Head *gc = containers->gc.gc_next;
-	while (gc != containers) {
-		next = gc->gc.gc_next;
-		if (gc->gc.gc_refs > 0) {
-			gc_list_remove(gc);
-			gc_list_append(gc, roots);
-			gc->gc.gc_refs = GC_MOVED;
-		}
-		gc = next;
-	}
-}
-
+/* A traversal callback for move_unreachable. */
 static int
-visit_move(PyObject *op, PyGC_Head *tolist)
+visit_reachable(PyObject *op, PyGC_Head *reachable)
 {
-	if (PyObject_IS_GC(op)) {
-		if (IS_TRACKED(op) && STILL_A_CANDIDATE(op)) {
-			PyGC_Head *gc = AS_GC(op);
-			gc_list_remove(gc);
-			gc_list_append(gc, tolist);
-			gc->gc.gc_refs = GC_MOVED;
+	if (PyObject_IS_GC(op) && IS_TRACKED(op)) {
+		PyGC_Head *gc = AS_GC(op);
+		const int gc_refs = gc->gc.gc_refs;
+
+		if (gc_refs == 0) {
+			/* This is in move_unreachable's 'young' list, but
+			 * the traversal hasn't yet gotten to it.  All
+			 * we need to do is tell move_unreachable that it's
+			 * reachable.
+			 */
+			gc->gc.gc_refs = 1;
 		}
+		else if (gc_refs == GC_TENTATIVELY_UNREACHABLE) {
+			/* This had gc_refs = 0 when move_unreachable got
+			 * to it, but turns out it's reachable after all.
+			 * Move it back to move_unreachable's 'young' list,
+			 * and move_unreachable will eventually get to it
+			 * again.
+			 */
+			gc_list_remove(gc);
+			gc_list_append(gc, reachable);
+			gc->gc.gc_refs = 1;
+		}
+		/* Else there's nothing to do.
+		 * If gc_refs > 0, it must be in move_unreachable's 'young'
+		 * list, and move_unreachable will eventually get to it.
+		 * If gc_refs == GC_REACHABLE, it's either in some other
+		 * generation so we don't care about it, or move_unreachable
+		 * already dealt with it.
+		 */
 	}
 	return 0;
 }
 
-/* Move candidates referenced from reachable to reachable set (they're no
- * longer candidates).
+/* Move the unreachable objects from young to unreachable.  After this,
+ * all objects in young have gc_refs = GC_REACHABLE, and all objects in
+ * unreachable have gc_refs = GC_TENTATIVELY_UNREACHABLE.  All tracked
+ * gc objects not in young or unreachable still have gc_refs = GC_REACHABLE.
+ * All objects in young after this are directly or indirectly reachable
+ * from outside the original young; and all objects in unreachable are
+ * not.
  */
 static void
-move_root_reachable(PyGC_Head *reachable)
+move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 {
-	traverseproc traverse;
-	PyGC_Head *gc = reachable->gc.gc_next;
-	for (; gc != reachable; gc=gc->gc.gc_next) {
-		/* careful, reachable list is growing here */
-		PyObject *op = FROM_GC(gc);
-		traverse = op->ob_type->tp_traverse;
-		(void) traverse(op,
-			       (visitproc)visit_move,
-			       (void *)reachable);
+	PyGC_Head *gc = young->gc.gc_next;
+
+	/* Invariants:  all objects "to the left" of us in young have gc_refs
+	 * = GC_REACHABLE, and are indeed reachable (directly or indirectly)
+	 * from outside the young list as it was at entry.  All other objects
+	 * from the original young "to the left" of us are in unreachable now,
+	 * and have gc_refs = GC_TENTATIVELY_UNREACHABLE.  All objects to the
+	 * left of us in 'young' now have been scanned, and no objects here
+	 * or to the right have been scanned yet.
+	 */
+
+	while (gc != young) {
+		PyGC_Head *next;
+
+		if (gc->gc.gc_refs == 0) {
+			/* This *may* be unreachable.  To make progress,
+			 * assume it is.  gc isn't directly reachable from
+			 * any object we've already traversed, but may be
+			 * reachable from an object we haven't gotten to yet.
+			 * visit_reachable will eventually move gc back into
+			 * young if that's so, and we'll see it again.
+			 */
+			next = gc->gc.gc_next;
+			gc_list_remove(gc);
+			gc_list_append(gc, unreachable);
+			gc->gc.gc_refs = GC_TENTATIVELY_UNREACHABLE;
+		}
+		else {
+			/* gc is definitely reachable from outside the
+			 * original 'young'.  Mark it as such, and traverse
+			 * its pointers to find any other objects that may
+			 * be directly reachable from it.  Note that the
+			 * call to tp_traverse may append objects to young,
+			 * so we have to wait until it returns to determine
+			 * the next object to visit.
+			 */
+			PyObject *op = FROM_GC(gc);
+			traverseproc traverse = op->ob_type->tp_traverse;
+			gc->gc.gc_refs = GC_REACHABLE;
+			(void) traverse(op,
+			       		(visitproc)visit_reachable,
+			    		(void *)young);
+			next = gc->gc.gc_next;
+		}
+		gc = next;
 	}
 }
 
@@ -292,12 +342,29 @@ move_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
 		if (has_finalizer(op)) {
 			gc_list_remove(gc);
 			gc_list_append(gc, finalizers);
-			gc->gc.gc_refs = GC_MOVED;
+			gc->gc.gc_refs = GC_REACHABLE;
 		}
 	}
 }
 
-/* Move objects referenced from roots to roots */
+/* A traversal callback for move_finalizer_reachable. */
+static int
+visit_move(PyObject *op, PyGC_Head *tolist)
+{
+	if (PyObject_IS_GC(op)) {
+		if (IS_TRACKED(op) && IS_TENTATIVELY_UNREACHABLE(op)) {
+			PyGC_Head *gc = AS_GC(op);
+			gc_list_remove(gc);
+			gc_list_append(gc, tolist);
+			gc->gc.gc_refs = GC_REACHABLE;
+		}
+	}
+	return 0;
+}
+
+/* Move objects that are reachable from finalizers, from the unreachable set
+ * into the finalizers set.
+ */
 static void
 move_finalizer_reachable(PyGC_Head *finalizers)
 {
@@ -353,11 +420,12 @@ handle_finalizers(PyGC_Head *finalizers, PyGC_Head *old)
 			/* If SAVEALL is not set then just append objects with
 			 * finalizers to the list of garbage.  All objects in
 			 * the finalizers list are reachable from those
-			 * objects. */
+			 * objects.
+			 */
 			PyList_Append(garbage, op);
 		}
 		/* object is now reachable again */
-		assert(!STILL_A_CANDIDATE(op));
+		assert(IS_REACHABLE(op));
 		gc_list_remove(gc);
 		gc_list_append(gc, old);
 	}
@@ -365,7 +433,8 @@ handle_finalizers(PyGC_Head *finalizers, PyGC_Head *old)
 
 /* Break reference cycles by clearing the containers involved.	This is
  * tricky business as the lists can be changing and we don't know which
- * objects may be freed.  It is possible I screwed something up here. */
+ * objects may be freed.  It is possible I screwed something up here.
+ */
 static void
 delete_garbage(PyGC_Head *unreachable, PyGC_Head *old)
 {
@@ -375,7 +444,7 @@ delete_garbage(PyGC_Head *unreachable, PyGC_Head *old)
 		PyGC_Head *gc = unreachable->gc.gc_next;
 		PyObject *op = FROM_GC(gc);
 
-		assert(STILL_A_CANDIDATE(op));
+		assert(IS_TENTATIVELY_UNREACHABLE(op));
 		if (debug & DEBUG_SAVEALL) {
 			PyList_Append(garbage, op);
 		}
@@ -390,7 +459,7 @@ delete_garbage(PyGC_Head *unreachable, PyGC_Head *old)
 			/* object is still alive, move it, it may die later */
 			gc_list_remove(gc);
 			gc_list_append(gc, old);
-			gc->gc.gc_refs = GC_MOVED;
+			gc->gc.gc_refs = GC_REACHABLE;
 		}
 	}
 }
@@ -401,11 +470,10 @@ static long
 collect(int generation)
 {
 	int i;
-	long n = 0;
-	long m = 0;
+	long m = 0;	/* # objects collected */
+	long n = 0;	/* # unreachable objects that couldn't be collected */
 	PyGC_Head *young; /* the generation we are examining */
 	PyGC_Head *old; /* next older generation */
-	PyGC_Head reachable;
 	PyGC_Head unreachable;
 	PyGC_Head finalizers;
 	PyGC_Head *gc;
@@ -433,38 +501,37 @@ collect(int generation)
 
 	/* handy references */
 	young = GEN_HEAD(generation);
-	if (generation < NUM_GENERATIONS-1) {
+	if (generation < NUM_GENERATIONS-1)
 		old = GEN_HEAD(generation+1);
-	} else {
-		old = GEN_HEAD(NUM_GENERATIONS-1);
-	}
+	else
+		old = young;
 
 	/* Using ob_refcnt and gc_refs, calculate which objects in the
 	 * container set are reachable from outside the set (ie. have a
 	 * refcount greater than 0 when all the references within the
-	 * set are taken into account */
+	 * set are taken into account
+	 */
 	update_refs(young);
 	subtract_refs(young);
 
-	/* Move everything reachable from outside the set into the
-	 * reachable set (ie. gc_refs > 0).  Next, move everything
-	 * reachable from objects in the reachable set. */
-	gc_list_init(&reachable);
-	move_roots(young, &reachable);
-	move_root_reachable(&reachable);
-
-	/* move unreachable objects to a temporary list, new objects can be
-	 * allocated after this point */
+	/* Leave everything reachable from outside young in young, and move
+	 * everything else (in young) to unreachable.
+	 * NOTE:  This used to move the reachable objects into a reachable
+	 * set instead.  But most things usually turn out to be reachable,
+	 * so it's more efficient to move the unreachable things.
+	 */
 	gc_list_init(&unreachable);
-	gc_list_move(young, &unreachable);
+	move_unreachable(young, &unreachable);
 
-	/* move reachable objects to next generation */
-	gc_list_merge(&reachable, old);
+	/* Move reachable objects to next generation. */
+	if (young != old)
+		gc_list_merge(young, old);
 
-	/* Move objects reachable from finalizers, we can't safely delete
-	 * them.  Python programmers should take care not to create such
-	 * things.  For Python finalizers means instance objects with
-	 * __del__ methods. */
+	/* All objects in unreachable are trash, but objects reachable from
+	 * finalizers can't safely be deleted.  Python programmers should take
+	 * care not to create such things.  For Python, finalizers means
+	 * instance objects with __del__ methods.
+	 */
 	gc_list_init(&finalizers);
 	move_finalizers(&unreachable, &finalizers);
 	move_finalizer_reachable(&finalizers);
@@ -478,7 +545,7 @@ collect(int generation)
 			debug_cycle("collectable", FROM_GC(gc));
 		}
 	}
-	/* call tp_clear on objects in the collectable set.  This will cause
+	/* Call tp_clear on objects in the collectable set.  This will cause
 	 * the reference cycles to be broken. It may also cause some objects in
 	 * finalizers to be freed */
 	delete_garbage(&unreachable, old);
