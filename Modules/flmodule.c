@@ -370,8 +370,8 @@ static PyObject *
 generic_repr(genericobject *g)
 {
 	char buf[100];
-	sprintf(buf, "<FORMS_object at %p, objclass=%d>",
-		g, g->ob_generic->objclass);
+	PyOS_snprintf(buf, sizeof(buf), "<FORMS_object at %p, objclass=%d>",
+		      g, g->ob_generic->objclass);
 	return PyString_FromString(buf);
 }
 
@@ -1580,8 +1580,8 @@ static PyObject *
 form_repr(formobject *f)
 {
 	char buf[100];
-	sprintf(buf, "<FORMS_form at %p, window=%ld>",
-		f, f->ob_form->window);
+	PyOS_snprintf(buf, sizeof(buf), "<FORMS_form at %p, window=%ld>",
+		      f, f->ob_form->window);
 	return PyString_FromString(buf);
 }
 

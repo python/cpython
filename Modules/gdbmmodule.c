@@ -477,7 +477,8 @@ dbmopen(PyObject *self, PyObject *args)
                 break;
 #endif
             default:
-                sprintf(buf, "Flag '%c' is not supported.", *flags);
+                PyOS_snprintf(buf, sizeof(buf), "Flag '%c' is not supported.",
+                	      *flags);
                 PyErr_SetString(DbmError, buf);
                 return NULL;
         }
