@@ -201,6 +201,11 @@ class dispatcher:
     addr = None
 
     def __init__(self, sock=None, map=None):
+        if map is None:
+            self._map = socket_map
+        else:
+            self._map = map
+
         if sock:
             self.set_socket(sock, map)
             # I think it should inherit this anyway
@@ -232,13 +237,13 @@ class dispatcher:
     def add_channel(self, map=None):
         #self.log_info('adding channel %s' % self)
         if map is None:
-            map = socket_map
+            map = self._map
         map[self._fileno] = self
 
     def del_channel(self, map=None):
         fd = self._fileno
         if map is None:
-            map = socket_map
+            map = self._map
         if map.has_key(fd):
             #self.log_info('closing channel %d:%s' % (fd, self))
             del map[fd]
