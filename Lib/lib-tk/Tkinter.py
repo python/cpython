@@ -91,7 +91,7 @@ try: _cnfmerge = _tkinter._cnfmerge
 except AttributeError: pass
 
 class Event:
-        """Container for the properties of an event.
+	"""Container for the properties of an event.
 
 	Instances of this type are generated if one of the following events occurs:
 		
@@ -677,12 +677,12 @@ class Misc:
 		return getint(
 			self.tk.call('winfo', 'pointerx', self._w))
 	def winfo_pointerxy(self):
-		"""Return a tupel of x and y coordinates of the pointer on the root window."""
+		"""Return a tuple of x and y coordinates of the pointer on the root window."""
 		return self._getints(
 			self.tk.call('winfo', 'pointerxy', self._w))
 	def winfo_pointery(self):
 		"""Return the y coordinate of the pointer on the root window."""
- 		return getint(
+		return getint(
 			self.tk.call('winfo', 'pointery', self._w))
 	def winfo_reqheight(self):
 		"""Return requested height of this widget."""
@@ -693,7 +693,7 @@ class Misc:
 		return getint(
 			self.tk.call('winfo', 'reqwidth', self._w))
 	def winfo_rgb(self, color):
-		"""Return tupel of decimal values for red, green, blue for
+		"""Return tuple of decimal values for red, green, blue for
 		COLOR in this widget."""
 		return self._getints(
 			self.tk.call('winfo', 'rgb', self._w, color))
