@@ -1540,11 +1540,11 @@ DB_join(DBObject* self, PyObject* args)
     free(cursors);
     RETURN_IF_ERR();
 
-    // FIXME: this is a buggy interface.  The returned cursor
-    // contains internal references to the passed in cursors
-    // but does not hold python references to them or prevent
-    // them from being closed prematurely.  This can cause
-    // python to crash when things are done in the wrong order.
+    /* FIXME: this is a buggy interface.  The returned cursor
+       contains internal references to the passed in cursors
+       but does not hold python references to them or prevent
+       them from being closed prematurely.  This can cause
+       python to crash when things are done in the wrong order. */
     return (PyObject*) newDBCursorObject(dbc, self);
 }
 
@@ -2942,7 +2942,7 @@ _DBC_get_set_both(DBCursorObject* self, PyObject* keyobj, PyObject* dataobj,
     DBT key, data;
     PyObject* retval;
 
-    // the caller did this:  CHECK_CURSOR_NOT_CLOSED(self);
+    /* the caller did this:  CHECK_CURSOR_NOT_CLOSED(self); */
     if (!make_key_dbt(self->mydb, keyobj, &key, NULL))
         return NULL;
     if (!make_dbt(dataobj, &data))
@@ -2990,7 +2990,7 @@ DBC_get_both(DBCursorObject* self, PyObject* args)
     if (!PyArg_ParseTuple(args, "OO|i:get_both", &keyobj, &dataobj, &flags))
         return NULL;
 
-    // if the cursor is closed, self->mydb may be invalid
+    /* if the cursor is closed, self->mydb may be invalid */
     CHECK_CURSOR_NOT_CLOSED(self);
 
     return _DBC_get_set_both(self, keyobj, dataobj, flags,
@@ -3006,7 +3006,7 @@ DBC_set_both(DBCursorObject* self, PyObject* args)
     if (!PyArg_ParseTuple(args, "OO|i:set_both", &keyobj, &dataobj, &flags))
         return NULL;
 
-    // if the cursor is closed, self->mydb may be invalid
+    /* if the cursor is closed, self->mydb may be invalid */
     CHECK_CURSOR_NOT_CLOSED(self);
 
     return _DBC_get_set_both(self, keyobj, dataobj, flags,
