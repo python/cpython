@@ -17,6 +17,7 @@ VERSION=	@VERSION@
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 
+@SET_CCC@
 CC=		@CC@
 RANLIB=		@RANLIB@
 AR=		@AR@
@@ -24,6 +25,7 @@ AR=		@AR@
 OPT=		@OPT@
 LDFLAGS=	@LDFLAGS@
 LDLAST=		@LDLAST@
+SGI_ABI=	@SGI_ABI@
 
 DEFS=		@DEFS@
 LIBS=		@LIBS@
