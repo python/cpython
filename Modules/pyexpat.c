@@ -109,6 +109,7 @@ set_error_attr(PyObject *err, char *name, int value)
         Py_DECREF(v);
         return 0;
     }
+    Py_DECREF(v);
     return 1;
 }
 
@@ -135,6 +136,7 @@ set_error(xmlparseobject *self, enum XML_Error code)
           && set_error_attr(err, "lineno", lineno)) {
         PyErr_SetObject(ErrorObject, err);
     }
+    Py_DECREF(err);
     return NULL;
 }
 
@@ -748,7 +750,7 @@ my_ElementDeclHandler(void *userData,
             flag_error(self);
             goto finally;
         }
-        args = Py_BuildValue("NN", string_intern(self, name), modelobj);
+        args = Py_BuildValue("NN", nameobj, modelobj);
         if (args == NULL) {
             Py_DECREF(modelobj);
             flag_error(self);
