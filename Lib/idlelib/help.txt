@@ -1,4 +1,4 @@
-[See end for ** TIPS on using IDLE]
+[See the end of this file for ** TIPS ** on using IDLE !!]
 
 Click on the dotted line at the top of a menu to "tear it off": a
 separate window containing the menu is created.
@@ -79,7 +79,8 @@ Options Menu:
 
 	Configure IDLE -- Open a configuration dialog.  Fonts, indentation,
 	                  keybindings, and color themes may be altered.
-                          Startup preferences may be set.
+                          Startup Preferences may be set, and Additional Help
+			  Souces can be specified.
 	---
 	Revert to Default Settings -- Restore original settings
 
@@ -94,15 +95,32 @@ Windows Menu:
 
 Help Menu:
 
-        IDLE Help -- Display this file
-	Python Documentation -- Access local Python documentation, if
-                                installed.  Otherwise access python.org.
+	About IDLE  -- Version, copyright, license, credits
 	IDLE Readme -- Background discussion and change details
 	---
-	About IDLE --- Version, copyright, license, credits
+	IDLE Help   -- Display this file
+	Python Docs -- Access local Python documentation, if
+		       installed.  Otherwise, access www.python.org.
+	---
+	(Additional Help Sources)
 
-** TIPS
-========
+
+** TIPS **
+==========
+
+Additional Help Sources:
+
+	Windows users can Google on pythlp.chm and zopeshelf.chm to access help
+	files in the Windows help format.  The Additional Help Sources feature
+	of the configuration GUI supports .chm, along with any other filetypes
+	supported by your browser.  Supply a Menu Item title, and enter the
+	location in the Help File Path slot of the New Help Source dialog.  Use
+	http:// and/or www. to identify external URLs, or download the file and
+	browse for its path on your machine using the Browse button.
+
+	All users can access the extensive sources of help, including
+	tutorials, available at www.python.org/doc.  Selected URLs can be added
+	or removed from the Help menu at any time.
 
 Basic editing and navigation:
 
