@@ -1694,6 +1694,29 @@ def inherits():
         except:
             pass
 
+def keywords():
+    if verbose:
+        print "Testing keyword args to basic type constructors ..."
+    verify(int(x=1) == 1)
+    verify(float(x=2) == 2.0)
+    verify(long(x=3) == 3L)
+    verify(complex(imag=42, real=666) == complex(666, 42))
+    verify(str(object=500) == '500')
+    verify(unicode(string='abc', errors='strict') == u'abc')
+    verify(tuple(sequence=range(3)) == (0, 1, 2))
+    verify(list(sequence=(0, 1, 2)) == range(3))
+    verify(dictionary(mapping={1: 2}) == {1: 2})
+
+    for constructor in (int, float, long, complex, str, unicode,
+                        tuple, list, dictionary, file):
+        try:
+            constructor(bogus_keyword_arg=1)
+        except TypeError:
+            pass
+        else:
+            raise TestFailed("expected TypeError from bogus keyword "
+                             "argument to %r" % constructor)
+            
 def all():
     lists()
     dicts()
@@ -1728,6 +1751,7 @@ def all():
     properties()
     supers()
     inherits()
+    keywords()
 
 all()
 
