@@ -103,6 +103,14 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	BASELIBS=
 	while read line
 	do
+		# to handle backslashes for sh's that don't automatically
+		# continue a read when the last char is a backslash
+		while echo $line | grep '\\$' > /dev/null
+		do
+			read extraline
+			line=`echo $line| sed s/.$//`$extraline
+		done
+
 		# Output DEFS in reverse order so first definition overrides
 		case $line in
 		*=*)	DEFS="$line$NL$DEFS"; continue;;
