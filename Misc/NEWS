@@ -83,6 +83,12 @@ IDLE
 - Bug #782510: The idna codec would fail to support names with a
   trailing full-stop.
 
+Tools/Demos
+-----------
+
+- Pynche was fixed to not crash when there is no ~/.pynche file and no
+  -d option was given.
+
 Build
 -----
 
