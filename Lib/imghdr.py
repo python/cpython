@@ -14,7 +14,7 @@ def what(file, h=None):
             location = file.tell()
             h = file.read(32)
             file.seek(location)
-            f = None    
+            f = None
     else:
         f = None
     try:
@@ -103,7 +103,7 @@ tests.append(test_jpeg)
 def test_bmp(h, f):
     if h[:2] == 'BM':
         return 'bmp'
-        
+
 tests.append(test_bmp)
 
 def test_png(h, f):

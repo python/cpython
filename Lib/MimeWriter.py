@@ -30,7 +30,7 @@ class MimeWriter:
     amounts of buffer space, so you have to write the parts in the
     order they should occur on the output file.  It does buffer the
     headers you add, allowing you to rearrange their order.
-    
+
     General usage is:
 
     f = <open the output file>

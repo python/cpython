@@ -411,7 +411,7 @@ def test(args = None):
 
     if f is not sys.stdin:
         f.close()
-    
+
     if silent:
         f = formatter.NullFormatter()
     else:
