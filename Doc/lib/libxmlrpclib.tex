@@ -264,6 +264,30 @@ Convert any Python value to one of the XML-RPC Boolean constants,
 Trivially convert any Python string to a \class{Binary} object.
 \end{funcdesc}
 
+\begin{funcdesc}{dumps}{params\optional{, methodname\optional{, 
+	                methodresponse\optional{, encoding\optional{,
+	                allow_none}}}}}
+
+Convert \var{params} into an XML-RPC request.
+or into a response if \var{methodresponse} is true.
+\var{params} can be either a tuple of arguments or an instance of the 
+\exception{Fault} exception class.  If \var{methodresponse} is true,
+only a single value can be returned, meaning that \var{params} must be of length 1.
+\var{encoding}, if supplied, is the encoding to use in the generated
+XML; the default is UTF-8.  Python's \constant{None} value cannot be
+used in standard XML-RPC; to allow using it via an extension, 
+provide a true value for \var{allow_none}.
+\end{funcdesc}
+
+\begin{funcdesc}{loads}{data}
+Convert an XML-RPC request or response into Python objects, a
+\code{(\var{params}, \var{methodname})}.  \var{params} is a tuple of argument; \var{methodname}
+is a string, or \code{None} if no method name is present in the packet.
+If the XML-RPC packet represents a fault condition, this
+function will raise a \exception{Fault} exception.
+\end{funcdesc}
+
+
 
 \subsection{Example of Client Usage \label{xmlrpc-client-example}}
 
