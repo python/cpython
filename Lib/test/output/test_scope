@@ -15,3 +15,5 @@ test_scope
 14. complex definitions
 15. scope of global statements
 16. check leaks
+17. class and global
+18. verify that locals() works

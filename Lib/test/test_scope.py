@@ -405,3 +405,33 @@ for i in range(100):
     f1()
 
 verify(Foo.count == 0)
+
+print "17. class and global"
+
+def test(x):
+    class Foo:
+        global x
+        def __call__(self, y):
+            return x + y
+    return Foo()
+
+x = 0
+verify(test(6)(2) == 8)
+x = -1
+verify(test(3)(2) == 5)
+
+print "18. verify that locals() works"
+
+def f(x):
+    def g(y):
+        def h(z):
+            return y + z
+        w = x + y
+        y += 3
+        return locals()
+    return g
+
+d = f(2)(4)
+verify(d.has_key('h'))
+del d['h']
+verify(d == {'x': 2, 'y': 7, 'w': 6})
