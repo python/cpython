@@ -267,8 +267,7 @@ output.
 
 Typing the interrupt character (usually Control-C or DEL) to the
 primary or secondary prompt cancels the input and returns to the
-primary prompt.%
-\footnote{
+primary prompt.\footnote{
         A problem with the GNU Readline package may prevent this.
 }
 Typing an interrupt while a command is executing raises the
@@ -1060,8 +1059,7 @@ they may be referenced.
 
 The actual parameters (arguments) to a function call are introduced in
 the local symbol table of the called function when it is called; thus,
-arguments are passed using \emph{call by value}.%
-\footnote{
+arguments are passed using \emph{call by value}.\footnote{
          Actually, \emph{call by object reference} would be a better
          description, since if a mutable object is passed, the caller
          will see any changes the callee makes to it (e.g., items
@@ -1730,8 +1728,7 @@ Note that comparing objects of different types is legal.  The outcome
 is deterministic but arbitrary: the types are ordered by their name.
 Thus, a list is always smaller than a string, a string is always
 smaller than a tuple, etc.  Mixed numeric types are compared according
-to their numeric value, so 0 equals 0.0, etc.%
-\footnote{
+to their numeric value, so 0 equals 0.0, etc.\footnote{
         The rules for comparing objects of different types should
         not be relied upon; they may change in a future version of
         the language.
@@ -1822,8 +1819,7 @@ definitions.
 These statements are intended to initialize the module.
 They are executed only the
 \emph{first}
-time the module is imported somewhere.%
-\footnote{
+time the module is imported somewhere.\footnote{
         In fact function definitions are also `statements' that are
         `executed'; the execution enters the function name in the
         module's global symbol table.
@@ -2938,8 +2934,8 @@ names in modules are attribute references: in the expression
 \code{modname.funcname}, \code{modname} is a module object and
 \code{funcname} is an attribute of it.  In this case there happens to
 be a straightforward mapping between the module's attributes and the
-global names defined in the module: they share the same name space!%
-\footnote{
+global names defined in the module: they share the same name
+space!\footnote{
         Except for one thing.  Module objects have a secret read-only
         attribute called \code{__dict__} which returns the dictionary
         used to implement the module's name space; the name
