@@ -283,10 +283,10 @@ paper-$(PAPER)/tut.pdf: $(TUTFILES)
 	cd paper-$(PAPER) && $(MKPDF) ../tut/tut.tex
 
 # What's New in Python X.Y
-paper-$(PAPER)/$(WHATSNEW).dvi:
+paper-$(PAPER)/$(WHATSNEW).dvi: whatsnew/$(WHATSNEW).tex
 	cd paper-$(PAPER) && $(MKDVI) ../whatsnew/$(WHATSNEW).tex
 
-paper-$(PAPER)/$(WHATSNEW).pdf:
+paper-$(PAPER)/$(WHATSNEW).pdf: whatsnew/$(WHATSNEW).tex
 	cd paper-$(PAPER) && $(MKPDF) ../whatsnew/$(WHATSNEW).tex
 
 # The remaining part of the Makefile is concerned with various
