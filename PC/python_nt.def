@@ -1,4 +1,5 @@
 EXPORTS
+	PyBuffer_Type DATA
 	PyCFunction_Type DATA
 	PyCObject_Type DATA
 	PyClass_Type DATA
@@ -78,6 +79,11 @@ EXPORTS
 	PyArg_ParseTuple
 	PyArg_ParseTupleAndKeywords
 	PyArg_VaParse
+	PyBuffer_FromMemory
+	PyBuffer_FromObject
+	PyBuffer_FromReadWriteMemory
+	PyBuffer_FromReadWriteObject
+	PyBuffer_New
 	PyCFunction_Fini
 	PyCFunction_GetFlags
 	PyCFunction_GetFunction
