@@ -5,13 +5,19 @@
 # Recognize sound headers #
 #-------------------------#
 
-def what(filename):
-	f = open(filename, 'r')
-	h = f.read(32)
-	for tf in tests:
-		res = tf(h, f)
-		if res:
-			return res
+def what(filename, h=None):
+	if not h:
+		f = open(filename, 'r')
+		h = f.read(32)
+	else:
+		f = None
+	try:
+		for tf in tests:
+			res = tf(h, f)
+			if res:
+				return res
+	finally:
+		if f: f.close()
 	return None
 
 
