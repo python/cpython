@@ -97,84 +97,102 @@ or
 the
 '''
 
-# Library Doc list of tuples:
+# s is a string or None.  If None or empty, return None.  Else tack '.html'
+# on to the end, unless it's already there.
+def addhtml(s):
+    if s:
+        if not s.endswith('.html'):
+            s += '.html'
+    return s
+
+# Convenience class to hold info about "a book" in HTMLHelp terms == a doc
+# directory in Python terms.
+class Book:
+    def __init__(self, directory, title, firstpage,
+                 contentpage=None, indexpage=None):
+        self.directory   = directory
+        self.title       = title
+        self.firstpage   = addhtml(firstpage)
+        self.contentpage = addhtml(contentpage)
+        self.indexpage   = addhtml(indexpage)
+
+# Library Doc list of books:
 # each 'book' : (Dir, Title, First page, Content page, Index page)
-#
 supported_libraries = {
     '2.2':  ### Beta!!!  fix for actual release
     [
-        ('.', 'Global Module Index', 'modindex.html', None, None),
-        ('whatsnew', "What's New", 'index.html', 'contents.html', None),
-        ('tut','Tutorial','tut.html','node2.html',None),
-        ('lib','Library Reference','lib.html','contents.html','genindex.html'),
-        ('ref','Language Reference','ref.html','contents.html','genindex.html'),
-        ('mac','Macintosh Reference','mac.html','contents.html','genindex.html'),
-        ('ext','Extending and Embedding','ext.html','contents.html',None),
-        ('api','Python/C API','api.html','contents.html','genindex.html'),
-        ('doc','Documenting Python','doc.html','contents.html',None),
-        ('inst','Installing Python Modules', 'inst.html', 'index.html', None),
-        ('dist','Distributing Python Modules', 'dist.html', 'index.html', None),
+        Book('.', 'Global Module Index', 'modindex'),
+        Book('whatsnew', "What's New", 'index', 'contents'),
+        Book('tut','Tutorial','tut','node2'),
+        Book('lib','Library Reference','lib','contents','genindex'),
+        Book('ref','Language Reference','ref','contents','genindex'),
+        Book('mac','Macintosh Reference','mac','contents','genindex'),
+        Book('ext','Extending and Embedding','ext','contents'),
+        Book('api','Python/C API','api','contents','genindex'),
+        Book('doc','Documenting Python','doc','contents'),
+        Book('inst','Installing Python Modules', 'inst', 'index'),
+        Book('dist','Distributing Python Modules', 'dist', 'index'),
     ],
 
     '2.1.1':
     [
-        ('.', 'Global Module Index', 'modindex.html', None, None),
-        ('tut','Tutorial','tut.html','node2.html',None),
-        ('lib','Library Reference','lib.html','contents.html','genindex.html'),
-        ('ref','Language Reference','ref.html','contents.html','genindex.html'),
-        ('mac','Macintosh Reference','mac.html','contents.html','genindex.html'),
-        ('ext','Extending and Embedding','ext.html','contents.html',None),
-        ('api','Python/C API','api.html','contents.html','genindex.html'),
-        ('doc','Documenting Python','doc.html','contents.html',None),
-        ('inst','Installing Python Modules', 'inst.html', 'index.html', None),
-        ('dist','Distributing Python Modules', 'dist.html', 'index.html', None),
+        Book('.', 'Global Module Index', 'modindex'),
+        Book('tut','Tutorial','tut','node2'),
+        Book('lib','Library Reference','lib','contents','genindex'),
+        Book('ref','Language Reference','ref','contents','genindex'),
+        Book('mac','Macintosh Reference','mac','contents','genindex'),
+        Book('ext','Extending and Embedding','ext','contents'),
+        Book('api','Python/C API','api','contents','genindex'),
+        Book('doc','Documenting Python','doc','contents'),
+        Book('inst','Installing Python Modules', 'inst', 'index'),
+        Book('dist','Distributing Python Modules', 'dist', 'index'),
     ],
 
     '2.0.0':
     [
-        ('.', 'Global Module Index', 'modindex.html', None, None),
-        ('tut','Tutorial','tut.html','node2.html',None),
-        ('lib','Library Reference','lib.html','contents.html','genindex.html'),
-        ('ref','Language Reference','ref.html','contents.html','genindex.html'),
-        ('mac','Macintosh Reference','mac.html','contents.html','genindex.html'),
-        ('ext','Extending and Embedding','ext.html','contents.html',None),
-        ('api','Python/C API','api.html','contents.html','genindex.html'),
-        ('doc','Documenting Python','doc.html','contents.html',None),
-        ('inst','Installing Python Modules', 'inst.html', 'contents.html', None),
-        ('dist','Distributing Python Modules', 'dist.html', 'contents.html', None),
+        Book('.', 'Global Module Index', 'modindex'),
+        Book('tut','Tutorial','tut','node2'),
+        Book('lib','Library Reference','lib','contents','genindex'),
+        Book('ref','Language Reference','ref','contents','genindex'),
+        Book('mac','Macintosh Reference','mac','contents','genindex'),
+        Book('ext','Extending and Embedding','ext','contents'),
+        Book('api','Python/C API','api','contents','genindex'),
+        Book('doc','Documenting Python','doc','contents'),
+        Book('inst','Installing Python Modules', 'inst', 'contents'),
+        Book('dist','Distributing Python Modules', 'dist', 'contents'),
     ],
 
     # <dnagata@creo.com> Apr 17/99: library for 1.5.2 version:
     # <hernan.foffani@iname.com> May 01/99: library for 1.5.2 (04/30/99):
     '1.5.2':
     [
-        ('tut','Tutorial','tut.html','node2.html',None),
-        ('lib','Library Reference','lib.html','contents.html','genindex.html'),
-        ('ref','Language Reference','ref.html','contents.html','genindex.html'),
-        ('mac','Macintosh Reference','mac.html','contents.html','genindex.html'),
-        ('ext','Extending and Embedding','ext.html','contents.html',None),
-        ('api','Python/C API','api.html','contents.html','genindex.html'),
-        ('doc','Documenting Python','doc.html','contents.html',None)
+        Book('tut','Tutorial','tut','node2'),
+        Book('lib','Library Reference','lib','contents','genindex'),
+        Book('ref','Language Reference','ref','contents','genindex'),
+        Book('mac','Macintosh Reference','mac','contents','genindex'),
+        Book('ext','Extending and Embedding','ext','contents'),
+        Book('api','Python/C API','api','contents','genindex'),
+        Book('doc','Documenting Python','doc','contents')
     ],
 
     # library for 1.5.1 version:
     '1.5.1':
     [
-        ('tut','Tutorial','tut.html','contents.html',None),
-        ('lib','Library Reference','lib.html','contents.html','genindex.html'),
-        ('ref','Language Reference','ref-1.html','ref-2.html','ref-11.html'),
-        ('ext','Extending and Embedding','ext.html','contents.html',None),
-        ('api','Python/C API','api.html','contents.html','genindex.html')
+        Book('tut','Tutorial','tut','contents'),
+        Book('lib','Library Reference','lib','contents','genindex'),
+        Book('ref','Language Reference','ref-1','ref-2','ref-11'),
+        Book('ext','Extending and Embedding','ext','contents'),
+        Book('api','Python/C API','api','contents','genindex')
     ],
 
     # library for 1.5 version:
     '1.5':
     [
-        ('tut','Tutorial','tut.html','node1.html',None),
-        ('lib','Library Reference','lib.html','node1.html','node268.html'),
-        ('ref','Language Reference','ref-1.html','ref-2.html','ref-11.html'),
-        ('ext','Extending and Embedding','ext.html','node1.html',None),
-        ('api','Python/C API','api.html','node1.html','node48.html')
+        Book('tut','Tutorial','tut','node1'),
+        Book('lib','Library Reference','lib','node1','node268'),
+        Book('ref','Language Reference','ref-1','ref-2','ref-11'),
+        Book('ext','Extending and Embedding','ext','node1'),
+        Book('api','Python/C API','api','node1','node48')
     ]
 }
 
@@ -263,42 +281,45 @@ class TocHlpHtmlParser(HelpHtmlParser):
         self.ft.write("\t" * self.indent + "<LI>")
 
 
-def index(path, archivo, output):
+def index(path, indexpage, output):
     f = formatter.AbstractFormatter(AlmostNullWriter())
     parser = IdxHlpHtmlParser(f)
     parser.path = path
     parser.ft = output
-    fil = path + '/' + archivo
-    parser.feed(open(fil).read())
+    f = open(path + '/' + indexpage)
+    parser.feed(f.read())
     parser.close()
+    f.close()
 
 
-def content(path, archivo, output):
+def content(path, contentpage, output):
     f = formatter.AbstractFormatter(AlmostNullWriter())
     parser = TocHlpHtmlParser(f)
     parser.path = path
     parser.ft = output
-    fil = path + '/' + archivo
-    parser.feed(open(fil).read())
+    f = open(path + '/' + contentpage)
+    parser.feed(f.read())
     parser.close()
+    f.close()
 
 
 def do_index(library, output):
     output.write('<UL>\n')
     for book in library:
-        print '\t', book[2]
-        if book[4]:
-            index(book[0], book[4], output)
+        print '\t', book.title, '-', book.indexpage
+        if book.indexpage:
+            index(book.directory, book.indexpage, output)
     output.write('</UL>\n')
 
 
 def do_content(library, version, output):
     output.write(contents_header % version)
     for book in library:
-        print '\t', book[2]
-        output.write(object_sitemap % (book[0]+"/"+book[2], book[1]))
-        if book[3]:
-            content(book[0], book[3], output)
+        print '\t', book.title, '-', book.firstpage
+        output.write(object_sitemap % (book.directory + "/" + book.firstpage,
+                                       book.title))
+        if book.contentpage:
+            content(book.directory, book.contentpage, output)
     output.write(contents_footer)
 
 # Fill in the [FILES] section of the project (.hhp) file.
@@ -307,7 +328,7 @@ def do_content(library, version, output):
 def do_project(library, output, arch, version):
     output.write(project_template % locals())
     for book in library:
-        directory = book[0]
+        directory = book.directory
         path = directory + '\\%s\n'
         for page in os.listdir(directory):
             if page.endswith('.html') or page.endswith('.css'):
@@ -353,7 +374,7 @@ def do_it(args = None):
     if not version:
         usage()
 
-    library = supported_libraries[ version ]
+    library = supported_libraries[version]
 
     if not (('-p','') in optlist):
         fname = arch + '.stp'
