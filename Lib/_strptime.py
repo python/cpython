@@ -2,7 +2,7 @@
 
 CLASSES:
     LocaleTime -- Discovers and/or stores locale-specific time information
-    TimeRE -- Creates regexes for pattern matching string of text containing 
+    TimeRE -- Creates regexes for pattern matching string of text containing
                 time information as is returned by time.strftime()
 
 FUNCTIONS:
@@ -10,7 +10,7 @@ FUNCTIONS:
                     year
     gregorian -- Calculates the Gregorian date based on the Julian day and
                     year
-    julianday -- Calculates the Julian day since the first of the year based 
+    julianday -- Calculates the Julian day since the first of the year based
                     on the Gregorian date
     dayofweek -- Calculates the day of the week from the Gregorian date.
     strptime -- Calculates the time struct represented by the passed-in string
@@ -40,23 +40,23 @@ class LocaleTime(object):
                 store the values have mangled names):
         f_weekday -- full weekday names (7-item list)
         a_weekday -- abbreviated weekday names (7-item list)
-        f_month -- full weekday names (14-item list; dummy value in [0], which 
+        f_month -- full weekday names (14-item list; dummy value in [0], which
                     is added by code)
-        a_month -- abbreviated weekday names (13-item list, dummy value in 
+        a_month -- abbreviated weekday names (13-item list, dummy value in
                     [0], which is added by code)
         am_pm -- AM/PM representation (2-item list)
         LC_date_time -- format string for date/time representation (string)
         LC_date -- format string for date representation (string)
         LC_time -- format string for time representation (string)
-        timezone -- daylight- and non-daylight-savings timezone representation 
-                    (3-item list; code tacks on blank item at end for 
+        timezone -- daylight- and non-daylight-savings timezone representation
+                    (3-item list; code tacks on blank item at end for
                     possible lack of timezone such as UTC)
         lang -- Language used by instance (string)
-    
+
     """
 
-    def __init__(self, f_weekday=None, a_weekday=None, f_month=None, 
-    a_month=None, am_pm=None, LC_date_time=None, LC_time=None, LC_date=None, 
+    def __init__(self, f_weekday=None, a_weekday=None, f_month=None,
+    a_month=None, am_pm=None, LC_date_time=None, LC_time=None, LC_date=None,
     timezone=None, lang=None):
         """Optionally set attributes with passed-in values."""
         if f_weekday is None: self.__f_weekday = None
@@ -117,9 +117,9 @@ class LocaleTime(object):
         if not self.__a_weekday: self.__calc_weekday()
         return self.__a_weekday
 
-    f_weekday = property(__get_f_weekday, __set_nothing, 
+    f_weekday = property(__get_f_weekday, __set_nothing,
                         doc="Full weekday names")
-    a_weekday = property(__get_a_weekday, __set_nothing, 
+    a_weekday = property(__get_a_weekday, __set_nothing,
                         doc="Abbreviated weekday names")
 
     def __get_f_month(self):
@@ -187,7 +187,7 @@ class LocaleTime(object):
         f_weekday = [calendar.day_name[i] for i in range(7)]
         if not self.__a_weekday: self.__a_weekday = a_weekday
         if not self.__f_weekday: self.__f_weekday = f_weekday
-        
+
     def __calc_month(self):
         """Set self.__f_month and self.__a_month using the calendar module."""
         a_month = [calendar.month_abbr[i] for i in range(13)]
@@ -197,11 +197,11 @@ class LocaleTime(object):
 
     def __calc_am_pm(self):
         """Set self.__am_pm by using time.strftime().
-        
-        The magic date (2002, 3, 17, hour, 44, 44, 2, 76, 0) is not really 
-        that magical; just happened to have used it everywhere else where a 
+
+        The magic date (2002, 3, 17, hour, 44, 44, 2, 76, 0) is not really
+        that magical; just happened to have used it everywhere else where a
         static date was needed.
-        
+
         """
         am_pm = []
         for hour in (01,22):
@@ -211,10 +211,10 @@ class LocaleTime(object):
 
     def __calc_date_time(self):
         """Set self.__date_time, self.__date, & self.__time by using time.strftime().
-        
-        Use (1999,3,17,22,44,55,2,76,0) for magic date because the amount of 
-        overloaded numbers is minimized.  The order in which searches for 
-        values within the format string is very important; it eliminates 
+
+        Use (1999,3,17,22,44,55,2,76,0) for magic date because the amount of
+        overloaded numbers is minimized.  The order in which searches for
+        values within the format string is very important; it eliminates
         possible ambiguity for what something represents.
 
         """
@@ -255,17 +255,17 @@ class LocaleTime(object):
 
     def __calc_timezone(self):
         """Set self.__timezone by using time.tzname.
-        
-        Empty string used for matching when timezone is not used/needed such 
+
+        Empty string used for matching when timezone is not used/needed such
         as with UTC.
 
         """
         self.__timezone = self.__pad(time.tzname, 0)
 
     def __calc_lang(self):
-        """Set self.lang by using locale.getlocale() or 
+        """Set self.lang by using locale.getlocale() or
         locale.getdefaultlocale().
-        
+
         """
         current_lang = locale.getlocale(locale.LC_TIME)[0]
         if current_lang: self.__lang = current_lang
@@ -277,7 +277,7 @@ class TimeRE(dict):
     def __init__(self, locale_time=LocaleTime()):
         """Initialize instance with non-locale regexes and store LocaleTime object."""
         super(TimeRE,self).__init__({
-            'd': r"(?P<d>3[0-1]|[0-2]\d|\d| \d)",  #The " \d" option is 
+            'd': r"(?P<d>3[0-1]|[0-2]\d|\d| \d)",  #The " \d" option is
                                                          #to make %c from ANSI
                                                          #C work
             'H': r"(?P<H>2[0-3]|[0-1]\d|\d)",
@@ -299,16 +299,16 @@ class TimeRE(dict):
             return super(TimeRE,self).__getitem__(fetch)
         except KeyError:
             if fetch == 'A':
-                self[fetch] = self.__seqToRE(self.locale_time.f_weekday, 
+                self[fetch] = self.__seqToRE(self.locale_time.f_weekday,
                                                 fetch)
             elif fetch == 'a':
-                self[fetch] = self.__seqToRE(self.locale_time.a_weekday, 
+                self[fetch] = self.__seqToRE(self.locale_time.a_weekday,
                                                 fetch)
             elif fetch == 'B':
-                self[fetch] = self.__seqToRE(self.locale_time.f_month[1:], 
+                self[fetch] = self.__seqToRE(self.locale_time.f_month[1:],
                                                 fetch)
             elif fetch == 'b':
-                self[fetch] = self.__seqToRE(self.locale_time.a_month[1:], 
+                self[fetch] = self.__seqToRE(self.locale_time.a_month[1:],
                                                 fetch)
             elif fetch == 'c':
                 self[fetch] = self.pattern(self.locale_time.LC_date_time)
@@ -319,28 +319,28 @@ class TimeRE(dict):
             elif fetch == 'X':
                 self[fetch] = self.pattern(self.locale_time.LC_time)
             elif fetch == 'Z':
-                self[fetch] = self.__seqToRE(self.locale_time.timezone, 
+                self[fetch] = self.__seqToRE(self.locale_time.timezone,
                                                 fetch)
             elif fetch == '%':
                 return '%'
             return super(TimeRE,self).__getitem__(fetch)
-        
+
     def __seqToRE(self, to_convert, directive):
         """Convert a list to a regex string for matching directive."""
         def sorter(a, b):
             """Sort based on length.
-            
+
             Done in case for some strange reason that names in the locale only
             differ by a suffix and thus want the name with the suffix to match
             first.
-            
+
             """
             try: a_length = len(a)
             except TypeError: a_length = 0
             try: b_length = len(b)
             except TypeError: b_length = 0
             return cmp(b_length, a_length)
-        
+
         to_convert = to_convert[:]  #Don't want to change value in-place.
         to_convert.sort(sorter)
         regex = '(?P<%s>' % directive
@@ -357,7 +357,7 @@ class TimeRE(dict):
             format = format.replace(whitespace, r'\s*')
         while format.find('%') != -1:
             directive_index = format.index('%')+1
-            processed_format = "%s%s%s" % (processed_format, 
+            processed_format = "%s%s%s" % (processed_format,
                                 format[:directive_index-1],
                                 self[format[directive_index]])
             format = format[directive_index+1:]
@@ -371,12 +371,12 @@ class TimeRE(dict):
 
 def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Convert data_string to a time struct based on the format string or re object; will return an re object for format if data_string is False.
-    
-    The object passed in for format may either be a re object compiled by 
-    strptime() or a format string.  If False is passed in for data_string 
-    then an re object for format will be returned.  The re object 
+
+    The object passed in for format may either be a re object compiled by
+    strptime() or a format string.  If False is passed in for data_string
+    then an re object for format will be returned.  The re object
     must be used with the same language as used to compile the re object.
-    
+
     """
     locale_time = LocaleTime()
     if isinstance(format, type(re_compile(''))):

@@ -41,7 +41,7 @@ for name in anydbm._names:
         mod = __import__(name)
     except ImportError:
         continue
-    
+
     def test_whichdb_name(self,name=name,mod=mod):
         """Check whether whichdb correctly guesses module name
         for databases opened with module mod.
@@ -60,4 +60,3 @@ def test_main():
 
 if __name__ == "__main__":
     test_main()
-
