@@ -49,6 +49,7 @@ height= 30
 font= courier
 font-size= 12
 font-bold= 0
+encoding=none
 
 [Indent]
 use-spaces= 1
