@@ -130,13 +130,13 @@ static PyObject *IBNibRefObj_SetMenuBarFromNib(IBNibRefObject *_self, PyObject *
 
 static PyMethodDef IBNibRefObj_methods[] = {
 	{"CreateWindowFromNib", (PyCFunction)IBNibRefObj_CreateWindowFromNib, 1,
-	 "(CFStringRef inName) -> (WindowPtr outWindow)"},
+	 PyDoc_STR("(CFStringRef inName) -> (WindowPtr outWindow)")},
 	{"CreateMenuFromNib", (PyCFunction)IBNibRefObj_CreateMenuFromNib, 1,
-	 "(CFStringRef inName) -> (MenuHandle outMenuRef)"},
+	 PyDoc_STR("(CFStringRef inName) -> (MenuHandle outMenuRef)")},
 	{"CreateMenuBarFromNib", (PyCFunction)IBNibRefObj_CreateMenuBarFromNib, 1,
-	 "(CFStringRef inName) -> (Handle outMenuBar)"},
+	 PyDoc_STR("(CFStringRef inName) -> (Handle outMenuBar)")},
 	{"SetMenuBarFromNib", (PyCFunction)IBNibRefObj_SetMenuBarFromNib, 1,
-	 "(CFStringRef inName) -> None"},
+	 PyDoc_STR("(CFStringRef inName) -> None")},
 	{NULL, NULL, 0}
 };
 
@@ -196,7 +196,7 @@ static PyObject *IBCarbon_CreateNibReference(PyObject *_self, PyObject *_args)
 
 static PyMethodDef IBCarbon_methods[] = {
 	{"CreateNibReference", (PyCFunction)IBCarbon_CreateNibReference, 1,
-	 "(CFStringRef inNibName) -> (IBNibRef outNibRef)"},
+	 PyDoc_STR("(CFStringRef inNibName) -> (IBNibRef outNibRef)")},
 	{NULL, NULL, 0}
 };
 
