@@ -75,10 +75,10 @@ else:
 # in Timer.__init__() depend on setup being indented 4 spaces and stmt
 # being indented 8 spaces.
 template = """
-def inner(_seq, _timer):
+def inner(_it, _timer):
     %(setup)s
     _t0 = _timer()
-    for _i in _seq:
+    for _i in _it:
         %(stmt)s
     _t1 = _timer()
     return _t1 - _t0
@@ -151,10 +151,10 @@ class Timer:
         the timer function to be used are passed to the constructor.
         """
         if itertools:
-            seq = itertools.repeat(None, number)
+            it = itertools.repeat(None, number)
         else:
-            seq = [None] * number
-        return self.inner(seq, self.timer)
+            it = [None] * number
+        return self.inner(it, self.timer)
 
     def repeat(self, repeat=default_repeat, number=default_number):
         """Call timer() a few times.
