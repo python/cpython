@@ -1,111 +1,146 @@
-/* newmodule.c */
+/***********************************************************
+Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
+
+                        All Rights Reserved
+
+Permission to use, copy, modify, and distribute this software and its 
+documentation for any purpose and without fee is hereby granted, 
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in 
+supporting documentation, and that the names of Stichting Mathematisch
+Centrum or CWI not be used in advertising or publicity pertaining to
+distribution of the software without specific, written prior permission.
+
+STICHTING MATHEMATISCH CENTRUM DISCLAIMS ALL WARRANTIES WITH REGARD TO
+THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH CENTRUM BE LIABLE
+FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+******************************************************************/
+
+/* Module new -- create new objects of various types */
+
 #include "allobjects.h"
 #include "compile.h"
 #include "modsupport.h"
 
+static char new_im_doc[] =
+"Create a instance method object from (FUNCTION, INSTANCE, CLASS).";
 
-object*
+static object *
 new_instancemethod(unused, args)
-    object* unused;
-    object* args;
+	object* unused;
+	object* args;
 {
-    object* func;
-    object* self;
-    object* classObj;
-  
-    if (!getargs(args, "(OOO)", &func, &self, &classObj)) {
-	return NULL;
-    } else if (!is_funcobject(func) || !is_instanceobject(self) || !is_classobject(classObj)) {
-	err_setstr(TypeError, "expected a function, instance and classobject as args");
-	return NULL;
-    }
-    return newinstancemethodobject(func, self, classObj);
-}
-    
+	object* func;
+	object* self;
+	object* classObj;
 
-object*
+	if (!newgetargs(args, "O!O!O!",
+			&Functype, &func,
+			&Instancetype, &self,
+			&Classtype, &classObj))
+		return NULL;
+	return newinstancemethodobject(func, self, classObj);
+}
+
+static char new_function_doc[] =
+"Create a function object from (CODE, GLOBALS, [NAME, ARGCOUNT, ARGDEFS]).";
+
+static object *
 new_function(unused, args)
-    object* unused;
-    object* args;
+	object* unused;
+	object* args;
 {
-    object* code;
-    object* globals;
-    object* name;
-    object* newfunc;
-    object* argcount;
-    object* argdefs;
-  
-    if (!getargs(args, "(OOOOO)", &code, &globals, &name, &argcount, &argdefs)) {
-	return NULL;
-    } else if (!is_codeobject(code) || !is_mappingobject(globals) || !is_stringobject(name) || !is_intobject(argcount) || !is_tupleobject(argdefs)) {
-	err_setstr(TypeError, "expected a code object, a dict for globals, a string name, an integer default argument count and a tuple of default argument definitions.");
-	return NULL;
-    }
+	object* code;
+	object* globals;
+	object* name = None;
+	int argcount = -1;
+	object* argdefs = None;
+	funcobject* newfunc;
 
-    newfunc = newfuncobject(code, globals);
+	if (!newgetargs(args, "O!O!|SiO!",
+			&Codetype, &code,
+			&Mappingtype, &globals,
+			&name,
+			&argcount,
+			&Tupletype, &argdefs))
+		return NULL;
 
-    ((funcobject *)newfunc)->func_name = name;
-    XINCREF( name );
-    XDECREF( ((codeobject*)(((funcobject *)(newfunc))->func_code))->co_name );
+	newfunc = (funcobject *)newfuncobject(code, globals);
+	if (newfunc == NULL)
+		return NULL;
 
-    ((funcobject *)newfunc)->func_argcount = getintvalue(argcount);
-    ((funcobject *)newfunc)->func_argdefs  = argdefs;
-    XINCREF( argdefs );
+	if (name != None) {
+		XINCREF(name);
+		XDECREF(newfunc->func_name);
+		newfunc->func_name = name;
+	}
+	newfunc->func_argcount = argcount;
+	if (argdefs != NULL) {
+		XINCREF(argdefs);
+		XDECREF(newfunc->func_argdefs);
+		newfunc->func_argdefs  = argdefs;
+	}
 
-    return newfunc;
+	return (object *)newfunc;
 }
-    
 
-object*
+static char new_code_doc[] =
+"Create a code object from (CODESTRING, CONSTANTS, NAMES, FILENAME, NAME).";
+
+static object *
 new_code(unused, args)
-    object* unused;
-    object* args;
+	object* unused;
+	object* args;
 {
-    object* code;
-    object* consts;
-    object* names;
-    object* filename;
-    object* name;
+	object* code;
+	object* consts;
+	object* names;
+	object* filename;
+	object* name;
   
-    if (!getargs(args, "(OOOOO)", &code, &consts, &names, &filename, &name)) {
-	return NULL;
-    } else if (!is_stringobject(code) || !is_listobject(consts) ||
-	       !is_listobject(names) || !is_stringobject(filename) ||
-	       !is_stringobject(name)) {
-	err_setstr(TypeError,
-"expected a string of compiled code, a list of constants, \
-a list of names used, a string filename, and a string name as args");
-	return NULL;
-    }
-    return (object *)newcodeobject(code, consts, names, filename, name);
+	if (!newgetargs(args, "SO!O!SS",
+			&code, &Tupletype, &consts, &Tupletype, &names,
+			&filename, &name))
+		return NULL;
+	return (object *)newcodeobject(code, consts, names, filename, name);
 }
-    
 
-object*
+static char new_module_doc[] =
+"Create a module object from (NAME).";
+
+static object *
 new_module(unused, args)
-    object* unused;
-    object* args;
+	object* unused;
+	object* args;
 {
-    object* name;
+	char *name;
   
-    if (!getargs(args, "S", &name)) {
-	err_setstr(TypeError, "expected a string name as args");
-	return NULL;
-    }
-    return newmoduleobject(getstringvalue(name));
+	if (!newgetargs(args, "s", &name))
+		return NULL;
+	return newmoduleobject(name);
 }
-    
 
 static struct methodlist new_methods[] = {
-    { "instancemethod", new_instancemethod },
-    { "function",       new_function },
-    { "code",           new_code },
-    { "module",         new_module },
-    {NULL,		NULL}		/* sentinel */
+	{"instancemethod",	new_instancemethod,	1, new_im_doc},
+	{"function",		new_function,		1, new_function_doc},
+	{"code",		new_code,		1, new_code_doc},
+	{"module",		new_module,		1, new_module_doc},
+	{NULL,			NULL}		/* sentinel */
 };
+
+char new_doc[] =
+"Functions to create new objects used by the interpreter.\n\
+\n\
+You need to know a great deal about the interpreter to use this!";
 
 void
 initnew()
 {
-    initmodule("new", new_methods);
+	initmodule3("new", new_methods, new_doc, (object *)NULL);
 }
