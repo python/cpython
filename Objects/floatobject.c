@@ -553,8 +553,12 @@ float_neg(PyFloatObject *v)
 static PyObject *
 float_pos(PyFloatObject *v)
 {
-	Py_INCREF(v);
-	return (PyObject *)v;
+	if (PyFloat_CheckExact(v)) {
+		Py_INCREF(v);
+		return (PyObject *)v;
+	}
+	else
+		return PyFloat_FromDouble(v->ob_fval);
 }
 
 static PyObject *
