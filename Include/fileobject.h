@@ -31,3 +31,4 @@ extern typeobject Filetype;
 extern object *newfileobject PROTO((char *, char *));
 extern object *newopenfileobject PROTO((FILE *, char *, char *));
 extern FILE *getfilefile PROTO((object *));
+extern object *filegetline PROTO((object *, int));
