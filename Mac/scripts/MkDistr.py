@@ -264,7 +264,7 @@ class Main:
 				print i
 			print '==== Fix and retry ===='
 			return
-		destprefix = os.path.join(sys.prefix, ':Mac:Distributions:vise')
+		destprefix = os.path.join(sys.prefix, ':Mac:Distributions:(vise)')
 		destprefix = os.path.join(destprefix, '%s Distribution'%self.typedist)
 		if not self.rundir(':', destprefix, 0):
 			return
