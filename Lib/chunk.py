@@ -61,6 +61,7 @@ class Chunk:
             self.chunksize = struct.unpack('>l', file.read(4))[0]
         except struct.error:
             raise EOFError
+        self.chunksize = self.chunksize - 8 # subtract header
         self.size_read = 0
         self.offset = self.file.tell()
 
