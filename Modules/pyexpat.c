@@ -1080,9 +1080,9 @@ init_template_buffer(void)
     int i;
     for (i=0;i<256;i++) {
 	template_buffer[i]=i;
-    };
+    }
     template_buffer[256]=0;
-};
+}
 
 int 
 PyUnknownEncodingHandler(void *encodingHandlerData, 
@@ -1097,7 +1097,7 @@ XML_Encoding * info)
     
     if (_u_string==NULL) {
 	return result;
-    };
+    }
     
     for (i=0; i<256; i++) {
 	Py_UNICODE c = _u_string->str[i] ; // Stupid to access directly, but fast
@@ -1105,8 +1105,8 @@ XML_Encoding * info)
 	    info->map[i] = -1;
 	} else {
 	    info->map[i] = c;
-	};
-    };
+	}
+    }
     
     info->data = NULL;
     info->convert = NULL;
