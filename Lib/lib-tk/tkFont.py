@@ -91,7 +91,6 @@ class Font:
                 raise Tkinter._tkinter.TclError, "named font %s does not already exist" % (self.name,)
             # if font config info supplied, apply it
             if font:
-                print "font=%r" % font
                 root.tk.call("font", "configure", self.name, *font)
         else:
             # create new font (raises TclError if the font exists)
