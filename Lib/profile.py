@@ -1,3 +1,4 @@
+#! /usr/local/bin/python
 #
 # Class for profiling python code. rev 1.0  6/2/94
 #
@@ -612,3 +613,21 @@ class HotProfile(Profile):
 #****************************************************************************
 def Stats(*args):
 	print 'Report generating functions are in the "pstats" module\a'
+
+
+# When invoked as main program, invoke the profiler on a script
+if __name__ == '__main__':
+	import sys
+	import os
+	if not sys.argv[1:]:
+		print "usage: profile.py scriptfile [arg] ..."
+		sys.exit(2)
+
+	filename = sys.argv[1]	# Get script filename
+
+	del sys.argv[0]		# Hide "profile.py" from argument list
+
+	# Insert script directory in front of module search path
+	sys.path.insert(0, os.path.dirname(filename))
+
+	run('execfile(' + `filename` + ')')
