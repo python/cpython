@@ -104,7 +104,8 @@ Syntax colors:
 
 	The coloring is applied in a background "thread", so you may
 	occasionally see uncolorized text.  To change the color
-	scheme, edit the ColorPrefs class in IdlePrefs.py.
+	scheme, edit the [Colors] section in config.txt (or add a
+	[Colors] section to ~/.idle).
 
     Python syntax colors:
 
