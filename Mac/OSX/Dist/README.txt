@@ -47,3 +47,31 @@ Also, check out Stephan Deibels http://pythonology.org/market contact list
 
 After all this is done you may also need to update the Package Manager
 database for the new distribution. A description of this remains TBD.
+
+Building a MacPython Panther Additions distribution
+===================================================
+
+*warning*: this section has not been debugged yet.
+
+Note that this procedure is completely independent from building a minor
+Python release: a minor Python release will be called something like
+2.3.3, a new release of the MacPython Panther additions will be called
+something like "third build of MacPython 2.3 additions for Panther".
+This is because the additions will not include the 2.3.3 fixes: the Python
+core installation is in ``/System`` and cannot be touched.
+
+If you have made changes to PythonIDE or Package Manager that you want
+to include in the additions distribution you need to include the changed
+source files in the ``Resources`` folder of the ``.app`` bundle, where they
+will override the source files installed into the Python framework installed
+by Apple. You can do this in ``../Makefile.panther``, see how ``PythonIDEMain.py``
+is included in the IDE for an example. It is not pretty but it works.
+
+Next, make sure your ``/Library/Python/2.3`` directory, which is where
+``site-packages`` points, is empty. Having ``_tkinter`` in there will
+erronously include IDLE in the installer.
+
+Now, edit ``resources.panther`` and ``build.panther``. See above for what to
+change.
+
+There is probably more to come here.
