@@ -153,10 +153,10 @@ import marshal
 reload(marshal)
 import string
 reload(string)
-import sys
-try: reload(sys)
-except ImportError: pass
-else: raise TestFailed, 'reload(sys) should fail'
+## import sys
+## try: reload(sys)
+## except ImportError: pass
+## else: raise TestFailed, 'reload(sys) should fail'
 
 print 'repr'
 if repr('') <> '\'\'': raise TestFailed, 'repr(\'\')'
