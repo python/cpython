@@ -188,6 +188,7 @@ class Command:
         """
         if self.verbose >= level:
             print msg
+            sys.stdout.flush()
 
     def debug_print (self, msg):
         """Print 'msg' to stdout if the global DEBUG (taken from the
@@ -196,6 +197,7 @@ class Command:
         from distutils.core import DEBUG
         if DEBUG:
             print msg
+            sys.stdout.flush()
         
 
 
