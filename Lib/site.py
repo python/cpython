@@ -77,16 +77,16 @@ del m
 # This ensures that the initial path provided by the interpreter contains
 # only absolute pathnames, even if we're running from the build directory.
 L = []
-dirs_in_sys_path = {}
+_dirs_in_sys_path = {}
 for dir in sys.path:
     # Filter out paths that don't exist, but leave in the empty string
     # since it's a special case.
     if dir and not os.path.isdir(dir):
         continue
     dir, dircase = makepath(dir)
-    if not dirs_in_sys_path.has_key(dircase):
+    if not _dirs_in_sys_path.has_key(dircase):
         L.append(dir)
-        dirs_in_sys_path[dircase] = 1
+        _dirs_in_sys_path[dircase] = 1
 sys.path[:] = L
 del dir, L
 
@@ -99,9 +99,24 @@ if os.name == "posix" and os.path.basename(sys.path[-1]) == "Modules":
     sys.path.append(s)
     del get_platform, s
 
+def _init_pathinfo():
+    global _dirs_in_sys_path
+    _dirs_in_sys_path = d = {}
+    for dir in sys.path:
+        if dir and not os.path.isdir(dir):
+            continue
+        dir, dircase = makepath(dir)
+        d[dircase] = 1
+
 def addsitedir(sitedir):
+    global _dirs_in_sys_path
+    if _dirs_in_sys_path is None:
+        _init_pathinfo()
+        reset = 1
+    else:
+        reset = 0
     sitedir, sitedircase = makepath(sitedir)
-    if not dirs_in_sys_path.has_key(sitedircase):
+    if not _dirs_in_sys_path.has_key(sitedircase):
         sys.path.append(sitedir)        # Add path component
     try:
         names = os.listdir(sitedir)
@@ -111,8 +126,16 @@ def addsitedir(sitedir):
     for name in names:
         if name[-4:] == endsep + "pth":
             addpackage(sitedir, name)
+    if reset:
+        _dirs_in_sys_path = None
 
 def addpackage(sitedir, name):
+    global _dirs_in_sys_path
+    if _dirs_in_sys_path is None:
+        _init_pathinfo()
+        reset = 1
+    else:
+        reset = 0
     fullname = os.path.join(sitedir, name)
     try:
         f = open(fullname)
@@ -130,9 +153,11 @@ def addpackage(sitedir, name):
         if dir[-1] == '\n':
             dir = dir[:-1]
         dir, dircase = makepath(sitedir, dir)
-        if not dirs_in_sys_path.has_key(dircase) and os.path.exists(dir):
+        if not _dirs_in_sys_path.has_key(dircase) and os.path.exists(dir):
             sys.path.append(dir)
-            dirs_in_sys_path[dircase] = 1
+            _dirs_in_sys_path[dircase] = 1
+    if reset:
+        _dirs_in_sys_path = None
 
 prefixes = [sys.prefix]
 if sys.exec_prefix != sys.prefix:
@@ -150,6 +175,8 @@ for prefix in prefixes:
         for sitedir in sitedirs:
             if os.path.isdir(sitedir):
                 addsitedir(sitedir)
+
+_dirs_in_sys_path = None
 
 
 # Define new built-ins 'quit' and 'exit'.
