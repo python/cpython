@@ -13,7 +13,7 @@ Core and builtins
 -----------------
 
 - It is now possible to import from zipfiles containing additional
-  data bytes before the zip compatible archive. Zipfiles containing a
+  data bytes before the zip compatible archive.  Zipfiles containing a
   comment at the end are still unsupported.
 
 Extension modules
@@ -28,14 +28,29 @@ Extension modules
   caused an instance of the bound .read() method to be leaked on every
   call.
 
+- Fixed some leaks in the locale module.
+
 Library
 -------
+
+- Lib/encodings/rot_13.py when used as a script, now more properly
+  uses the first Python interpreter on your path.
+
+- Removed caching of TimeRE (and thus LocaleTime) in _strptime.py to
+  fix a locale related bug in the test suite.  Although another patch
+  was needed to actually fix the problem, the cache code was not
+  restored.
 
 Tools/Demos
 -----------
 
+- Calltips patches in IDLE.
+
 Build
 -----
+
+- For MacOSX, added -mno-fused-madd to BASECFLAGS to fix test_coercion
+  on Panther (OSX 10.3).
 
 C API
 -----
@@ -46,8 +61,17 @@ Windows
 - The tempfile module could do insane imports on Windows if PYTHONCASEOK
   was set, making temp file creation impossible.  Repaired.
 
+- Add a patch to workaround pthread_sigmask() bugs in Cygwin.
+
 Mac
 ---
+
+- Various fixes to pimp.
+
+- Scripts runs with pythonw no longer had full window manager access.
+
+- Don't force boot-disk-only install, for reasons unknown it causes
+  more problems than it solves.
 
 
 What's New in Python 2.3 release candidate 1?
