@@ -22,7 +22,7 @@ pardir = '..'
 extsep = '.'
 sep = '\\'
 pathsep = ';'
-altsep = None
+altsep = '/'
 defpath = '.;C:\\bin'
 if 'ce' in sys.builtin_module_names:
     defpath = '\\Windows'
