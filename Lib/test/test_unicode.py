@@ -79,8 +79,14 @@ class UnicodeTest(unittest.TestCase):
         self.checkmethod('count', 'aaa', 0, u'b')
         self.checkmethod('count', u'aaa', 3, 'a')
         self.checkmethod('count', u'aaa', 0, 'b')
+        self.checkmethod('count', u'aaa', 0, 'b')
+        self.checkmethod('count', u'aaa', 1, 'a', -1)
+        self.checkmethod('count', u'aaa', 3, 'a', -10)
+        self.checkmethod('count', u'aaa', 2, 'a', 0, -1)
+        self.checkmethod('count', u'aaa', 0, 'a', 0, -10)
 
         self.assertRaises(TypeError, u'hello'.count)
+        self.assertRaises(TypeError, u'hello'.count, 42)
 
     def test_title(self):
         self.checkmethod('title', u' hello ', u' Hello ')
