@@ -283,7 +283,7 @@ def prepare_input_source(source, base = ""):
 
     if source.getByteStream() is None:
         sysid = source.getSystemId()
-        basehead = os.path.split(os.path.normpath(base))[0]
+        basehead = os.path.dirname(os.path.normpath(base))
         sysidfilename = os.path.join(basehead, sysid)
         if os.path.isfile(sysidfilename):
             source.setSystemId(sysidfilename)
