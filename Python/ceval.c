@@ -2928,13 +2928,10 @@ PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 
 	if (current_frame != NULL) {
 		const int codeflags = current_frame->f_code->co_flags;
-		if (codeflags & CO_NESTED) {
+		const int compilerflags = codeflags & PyCF_MASK;
+		if (compilerflags) {
 			result = 1;
-			cf->cf_flags |= CO_NESTED;
-		}
-		if (codeflags & CO_GENERATOR_ALLOWED) {
-			result = 1;
-			cf->cf_flags |= CO_GENERATOR_ALLOWED;
+			cf->cf_flags |= compilerflags;
 		}
 	}
 	return result;
