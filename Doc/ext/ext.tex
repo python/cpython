@@ -1303,9 +1303,10 @@ contain the options \samp{-I\$(PYTHONTOP) -I\$(PYTHONTOP)/Include}.
 
 \subsection{Shared Libraries}
 
-You must link the \samp{.o} file to produce a shared library.  This is
-done using a special invocation of the \UNIX{} loader/linker, {\em
-ld}(1).  Unfortunately the invocation differs slightly per system.
+You must link the \file{.o} file to produce a shared library.  This is 
+done using a special invocation of the \UNIX{} loader/linker,
+\emph{ld}(1).  Unfortunately the invocation differs slightly per
+system.
 
 On SunOS 4, use
 \bcode\begin{verbatim}
@@ -1336,7 +1337,7 @@ along the Python module search path.
 
 \subsection{SGI IRIX 4 Dynamic Loading}
 
-{\bf IMPORTANT:} You must compile your extension module with the
+\strong{IMPORTANT:} You must compile your extension module with the
 additional \C{} flag \samp{-G0} (or \samp{-G 0}).  This instruct the
 assembler to generate position-independent code.
 
