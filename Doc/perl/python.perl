@@ -107,6 +107,14 @@ sub do_cmd_var{ &use_italics(@_); }
 sub do_cmd_dfn{ &use_italics(@_); }	# make an index entry?
 sub do_cmd_emph{ &use_italics(@_); }
 
+sub do_cmd_newsgroup{
+    local($_) = @_;
+    s/$next_pair_pr_rx//o;
+    my $newsgroup = $2;
+    my $stuff = "<a href=\"news:$newsgroup\"><font face=sans-serif>"
+      . "$newsgroup</font></a>";
+    $stuff . $_;
+}
 
 sub do_cmd_envvar{
     local($_) = @_;
