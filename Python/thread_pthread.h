@@ -3,11 +3,11 @@
 
 #include <stdlib.h>
 #include <string.h>
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(HAVE_PTHREAD_DESTRUCTOR)
 #define destructor xxdestructor
 #endif
 #include <pthread.h>
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(HAVE_PTHREAD_DESTRUCTOR)
 #undef destructor
 #endif
 #include <signal.h>

@@ -304,6 +304,9 @@
 /* Define if you have GNU PTH threads. */
 #undef HAVE_PTH
 
+/* Defined for Solaris 2.6 bug in pthread header. */
+#undef HAVE_PTHREAD_DESTRUCTOR
+
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
 
