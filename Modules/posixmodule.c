@@ -2726,13 +2726,13 @@ static int _PyPclose(FILE *file)
 		 * an exception.  Just die.
 		 */
 		 Py_FatalError("unable to allocate interpreter state "
-		 	       " when closing popen object.");
+		 	       "when closing popen object.");
 		 return -1;  /* unreachable */
 	}
 	pThreadState = PyThreadState_New(pInterpreterState);
 	if (!pThreadState) {
 		 Py_FatalError("unable to allocate thread state "
-		 	       " when closing popen object.");
+		 	       "when closing popen object.");
 		 return -1;  /* unreachable */
 	}
 	/* Grab the global lock.  Note that this will deadlock if the
@@ -2802,9 +2802,9 @@ static int _PyPclose(FILE *file)
 #ifdef WITH_THREAD
 	/* Tear down the thread & interpreter states.
 	 * Note that interpreter state clear & delete functions automatically
-	 * call the thread & clear functions, and * indeed insist on doing
-	 * that themselves.  The lock must be held during the clear, but need
-	 * not be held during the delete.
+	 * call the thread clear & delete functions, and indeed insist on
+	 * doing that themselves.  The lock must be held during the clear, but
+	 * need not be held during the delete.
 	 */
 	PyInterpreterState_Clear(pInterpreterState);
 	PyEval_ReleaseThread(pThreadState);
@@ -2813,7 +2813,8 @@ static int _PyPclose(FILE *file)
 
 	return result;
 }
-#else
+
+#else /* which OS? */
 static PyObject *
 posix_popen(PyObject *self, PyObject *args)
 {
