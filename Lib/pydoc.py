@@ -2167,7 +2167,7 @@ def cli():
                 print value
 
     except (getopt.error, BadUsage):
-        cmd = sys.argv[0]
+        cmd = os.path.basename(sys.argv[0])
         print """pydoc - the Python documentation tool
 
 %s <name> ...
