@@ -65,6 +65,9 @@ _FH_UNCOMPRESSED_SIZE = 9
 _FH_FILENAME_LENGTH = 10
 _FH_EXTRA_FIELD_LENGTH = 11
 
+# Used to compare file passed to ZipFile
+_STRING_TYPES = (type('s'), type(u's'))
+
 
 def is_zipfile(filename):
     """Quickly see if file is a ZIP file by checking the magic number.
@@ -128,11 +131,19 @@ class ZipInfo:
 
 
 class ZipFile:
-    """Class with methods to open, read, write, close, list zip files."""
+    """ Class with methods to open, read, write, close, list zip files. 
+     
+    z = ZipFile(file, mode="r", compression=ZIP_STORED)
+     
+    file: Either the path to the file, or a file-like object.
+          If it is a path, the file will be opened and closed by ZipFile.
+    mode: The mode can be either read "r", write "w" or append "a".
+    compression: ZIP_STORED (no compression) or ZIP_DEFLATED (requires zlib).
+    """
 
     fp = None                   # Set here since __del__ checks it
 
-    def __init__(self, filename, mode="r", compression=ZIP_STORED):
+    def __init__(self, file, mode="r", compression=ZIP_STORED):
         """Open the ZIP file with mode read "r", write "w" or append "a"."""
         if compression == ZIP_STORED:
             pass
@@ -146,15 +157,25 @@ class ZipFile:
         self.NameToInfo = {}    # Find file info given name
         self.filelist = []      # List of ZipInfo instances for archive
         self.compression = compression  # Method of compression
-        self.filename = filename
         self.mode = key = mode[0]
+        
+        # Check if we were passed a file-like object
+        if type(file) in _STRING_TYPES:
+            self._filePassed = 0
+            self.filename = file
+            modeDict = {'r' : 'rb', 'w': 'wb', 'a' : 'r+b'}
+            self.fp = open(file, modeDict[mode])
+        else:
+            self._filePassed = 1
+            self.fp = file
+            self.filename = getattr(file, 'name', None)
+        
         if key == 'r':
-            self.fp = open(filename, "rb")
             self._GetContents()
         elif key == 'w':
-            self.fp = open(filename, "wb")
+            pass
         elif key == 'a':
-            fp = self.fp = open(filename, "r+b")
+            fp = self.fp
             fp.seek(-22, 2)             # Seek to end-of-file record
             endrec = fp.read()
             if endrec[0:4] == stringEndArchive and \
@@ -401,7 +422,7 @@ class ZipFile:
 
     def __del__(self):
         """Call the "close()" method in case the user forgot."""
-        if self.fp:
+        if self.fp and not self._filePassed:
             self.fp.close()
             self.fp = None
 
@@ -433,7 +454,9 @@ class ZipFile:
             endrec = struct.pack(structEndArchive, stringEndArchive,
                      0, 0, count, count, pos2 - pos1, pos1, 0)
             self.fp.write(endrec)
-        self.fp.close()
+        self.fp.flush()
+        if not self._filePassed:
+            self.fp.close()
         self.fp = None
 
 
