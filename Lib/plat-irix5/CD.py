@@ -14,7 +14,8 @@ CATALOG		= 5
 IDENT		= 6
 CONTROL		= 7
 
-##CDDA_DATASIZE	= 2352
+CDDA_DATASIZE	= 2352
+
 ##CDDA_SUBCODESIZE	= (sizeof(struct subcodeQ))
 ##CDDA_BLOCKSIZE	= (sizeof(struct cdframe))
 ##CDDA_NUMSAMPLES	= (CDDA_DATASIZE/2)
