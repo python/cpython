@@ -596,9 +596,11 @@ listextend_internal(PyListObject *self, PyObject *b)
 	int blen;
 	register int i;
 
-	if (PyObject_Size(b) == 0)
+	if (PyObject_Size(b) == 0) {
 		/* short circuit when b is empty */
+		Py_DECREF(b);
 		return 0;
+	}
 
 	if (self == (PyListObject*)b) {
 		/* as in list_ass_slice() we must special case the
