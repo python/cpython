@@ -132,6 +132,7 @@ class URLopener:
 	def open_http(self, url):
 		import httplib
 		host, selector = splithost(url)
+		if not host: raise IOError, ('http error', 'no host given')
 		h = httplib.HTTP(host)
 		h.putrequest('GET', selector)
 		for args in self.addheaders: apply(h.putheader, args)
@@ -143,6 +144,7 @@ class URLopener:
 	def open_gopher(self, url):
 		import gopherlib
 		host, selector = splithost(url)
+		if not host: raise IOError, ('gopher error', 'no host given')
 		type, selector = splitgophertype(selector)
 		selector, query = splitquery(selector)
 		if query: fp = gopherlib.send_query(selector, query, host)
