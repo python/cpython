@@ -49,8 +49,10 @@ class ListedToplevel(Toplevel):
 
     def wakeup(self):
         try:
-            self.tkraise()
-            self.wm_deiconify()
+            if self.wm_state() == "iconic":
+                self.wm_deiconify()
+            else:
+                self.tkraise()
             self.focus_set()
         except TclError:
             # This can happen when the window menu was torn off.
