@@ -12,6 +12,9 @@ What's New in Python 2.3 beta 2?
 Core and builtins
 -----------------
 
+- The softspace attribute of file objects became read-only by oversight.
+  It's writable again.
+
 Extension modules
 -----------------
 

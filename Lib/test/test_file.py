@@ -5,6 +5,26 @@ from array import array
 from test.test_support import verify, TESTFN, TestFailed
 from UserList import UserList
 
+# verify expected attributes exist
+f = file(TESTFN, 'w')
+softspace = f.softspace
+f.name     # merely shouldn't blow up
+f.mode     # ditto
+f.closed   # ditto
+
+# verify softspace is writable
+f.softspace = softspace    # merely shouldn't blow up
+
+# verify the others aren't
+for attr in 'name', 'mode', 'closed':
+    try:
+        setattr(f, attr, 'oops')
+    except TypeError:
+        pass
+    else:
+        raise TestFailed('expected TypeError setting file attr %r' % attr)
+f.close()
+
 # verify writelines with instance sequence
 l = UserList(['1', '2'])
 f = open(TESTFN, 'wb')
