@@ -2,9 +2,6 @@
 \usepackage[T1]{fontenc}
 
 % Things to do:
-% Add a section on file I/O
-% Write a chapter entitled ``Some Useful Modules''
-%  --re, math+cmath
 % Should really move the Python startup file info to an appendix
 
 \title{Python Tutorial}
@@ -4397,7 +4394,7 @@ operating system:
 
 \begin{verbatim}
 >>> import os
->>> os.system('copy /data/mydata.fil /backup/mydata.fil')
+>>> os.system('time 0:02')
 0
 >>> os.getcwd()      # Return the current working directory
 'C:\\Python24'
@@ -4484,9 +4481,7 @@ The most direct way to terminate a script is to use \samp{sys.exit()}.
 
 The \ulink{\module{re}}{../lib/module-re.html}
 module provides regular expression tools for advanced string processing.
-When only simple capabilities are needed, string methods are preferred
-because they are easier to read and debug.  However, for more
-sophisticated applications, regular expressions can provide succinct,
+For complex matching and manipulation, regular expressions offer succinct,
 optimized solutions:
 
 \begin{verbatim}
@@ -4497,6 +4492,13 @@ optimized solutions:
 'cat in the hat'
 \end{verbatim}
 
+When only simple capabilities are needed, string methods are preferred
+because they are easier to read and debug:
+
+\begin{verbatim}
+>>> 'tea for too'.replace('too', 'two')
+'tea for two'
+\end{verbatim}
 
 \section{Mathematics\label{mathematics}}
 
