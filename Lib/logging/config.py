@@ -1,4 +1,4 @@
-# Copyright 2001-2004 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2005 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -27,7 +27,13 @@ Copyright (C) 2001-2004 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, logging, logging.handlers, string, thread, threading, socket, struct, os
+import sys, logging, logging.handlers, string, socket, struct, os, traceback
+
+try:
+    import thread
+    import threading
+except ImportError:
+    thread = None
 
 from SocketServer import ThreadingTCPServer, StreamRequestHandler
 
@@ -189,7 +195,6 @@ def fileConfig(fname, defaults=None):
             for log in existing:
                 root.manager.loggerDict[log].disabled = 1
         except:
-            import traceback
             ei = sys.exc_info()
             traceback.print_exception(ei[0], ei[1], ei[2], None, sys.stderr)
             del ei
