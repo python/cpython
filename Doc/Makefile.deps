@@ -114,6 +114,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libdifflib.tex \
 	lib/libdoctest.tex \
 	lib/libunittest.tex \
+	lib/libtest.tex \
 	lib/libtypes.tex \
 	lib/libtraceback.tex \
 	lib/libpickle.tex \
