@@ -274,6 +274,9 @@ extern DL_IMPORT(int) PyUnicode_GetSize(
     PyObject *unicode	 	/* Unicode object */
     );
 
+/* Get the maximum ordinal for a Unicode character. */
+extern DL_IMPORT(Py_UNICODE) PyUnicode_GetMax(void);
+
 /* Resize an already allocated Unicode object to the new size length.
 
    *unicode is modified to point to the new (resized) object and 0

@@ -533,6 +533,7 @@ exc_traceback -- traceback of exception currently being handled\n\
 Static objects:\n\
 \n\
 maxint -- the largest supported integer (the smallest is -maxint-1)\n\
+maxunicode -- the largest supported character\n\
 builtin_module_names -- tuple of module names built into this intepreter\n\
 version -- the version of this interpreter as a string\n\
 version_info -- version information as a tuple\n\
@@ -642,6 +643,9 @@ _PySys_Init(void)
 	Py_XDECREF(v);
 	PyDict_SetItemString(sysdict, "maxint",
 			     v = PyInt_FromLong(PyInt_GetMax()));
+	Py_XDECREF(v);
+	PyDict_SetItemString(sysdict, "maxunicode",
+			     v = PyInt_FromLong(PyUnicode_GetMax()));
 	Py_XDECREF(v);
 	PyDict_SetItemString(sysdict, "builtin_module_names",
 		   v = list_builtin_module_names());
