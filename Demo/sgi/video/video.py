@@ -40,6 +40,9 @@ def openvideo(name):
     x = eval(line[:-1])
     if len(x) == 3: w, h, pf = x
     else: w, h = x; pf = 2
+    if pf and w/pf % 4 <> 0:
+        sys.stderr.write( \
+	'warning: stride not a multiple of 4 -- may not work on Indigo XS\n')
     return f, w, h, pf, colorinfo
 
 def loadframe(f,w,h,pf,af,spkr, (ybits,ibits,qbits,chrompack),mf):
@@ -66,11 +69,11 @@ def loadframe(f,w,h,pf,af,spkr, (ybits,ibits,qbits,chrompack),mf):
 	ch = (h+chrompack-1)/chrompack
 	chromdata = f.read(2*cw*ch)
 	rectzoom(pf*chrompack*mf,pf*chrompack*mf)
-	pixmode(5,16)
+	pixmode(PM_SIZE,16)
 	writemask(0x7ff - ((1<<ybits)-1))
 	lrectwrite(0,0,cw-1,ch-1,chromdata)
 	writemask((1<<ybits)-1)
-	pixmode(5,8)
+	pixmode(PM_SIZE,8)
     if pf:
     	rectzoom(pf*mf, pf*mf)
     elif mf <> 1:
@@ -166,7 +169,7 @@ def main():
 	    color(2048)
 	    clear()
 	    writemask(2047)
-	    pixmode(5,8)	# 8 bit pixels
+	    pixmode(PM_SIZE,8)	# 8 bit pixels
 	qdevice(ESCKEY)
 	qdevice(WINSHUT)
 	qdevice(WINQUIT)
