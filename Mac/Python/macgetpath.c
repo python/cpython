@@ -71,29 +71,29 @@ getpreffilefss(FSSpec *fssp)
 	static int diditbefore=0;
 	static int rv = 1;
 	static FSSpec fss;
-    short prefdirRefNum;
-    long prefdirDirID;
-    Handle namehandle;
-    
-    if ( !diditbefore ) {
-	    if ( FindFolder(kOnSystemDisk, 'pref', kDontCreateFolder, &prefdirRefNum,
-	    				&prefdirDirID) != noErr ) {
-	    	/* Something wrong with preferences folder */
-	    	(void)StopAlert(NOPREFDIR_ID, NULL);
-	    	exit(1);
-	    }
-	    
-	    if ( (namehandle=GetNamedResource('STR ', PREFFILENAME_NAME)) == NULL ) {
-	    	(void)StopAlert(NOPREFNAME_ID, NULL);
-	    	exit(1);
-	    }
-	    
-	    HLock(namehandle);
-	    if ( **namehandle == '\0' ) {
-	    	/* Empty string means don't use preferences file */
-	    	rv = 0;
-	    } else {
-	    	/* There is a filename, construct the fsspec */
+	short prefdirRefNum;
+	long prefdirDirID;
+	Handle namehandle;
+	
+	if ( !diditbefore ) {
+		if ( FindFolder(kOnSystemDisk, 'pref', kDontCreateFolder, &prefdirRefNum,
+						&prefdirDirID) != noErr ) {
+			/* Something wrong with preferences folder */
+			(void)StopAlert(NOPREFDIR_ID, NULL);
+			exit(1);
+		}
+		
+		if ( (namehandle=GetNamedResource('STR ', PREFFILENAME_NAME)) == NULL ) {
+			(void)StopAlert(NOPREFNAME_ID, NULL);
+			exit(1);
+		}
+		
+		HLock(namehandle);
+		if ( **namehandle == '\0' ) {
+			/* Empty string means don't use preferences file */
+			rv = 0;
+		} else {
+			/* There is a filename, construct the fsspec */
 			(void)FSMakeFSSpec(prefdirRefNum, prefdirDirID, (unsigned char *)*namehandle, &fss);
 		}
 		HUnlock(namehandle);
@@ -165,10 +165,10 @@ Py_GetPath()
 static short
 PyMac_OpenPrefFile()
 {
-    AliasHandle handle;
-    FSSpec dirspec;
-    short prefrh;
-    OSErr err;
+	AliasHandle handle;
+	FSSpec dirspec;
+	short prefrh;
+	OSErr err;
 
 	if ( !getpreffilefss(&dirspec))
 		return -1;
@@ -196,8 +196,8 @@ PyMac_OpenPrefFile()
 			printf("Cannot make alias to application directory, error %d\n", err);
 			exit(1);
 		}
-    	AddResource((Handle)handle, 'alis', PYTHONHOME_ID, "\p");
-    	UpdateResFile(prefrh);
+		AddResource((Handle)handle, 'alis', PYTHONHOME_ID, "\p");
+		UpdateResFile(prefrh);
 
 	} else {
 		UseResFile(prefrh);
@@ -212,50 +212,50 @@ char *
 PyMac_GetPythonDir()
 {
 	static int diditbefore = 0;
-    static char name[256] = {':', '\0'};
-    AliasHandle handle;
-    FSSpec dirspec;
-    Boolean modified = 0;
-    short oldrh, prefrh = -1, homerh;
-    
-    if ( diditbefore )
-    	return name;
-    	
-    oldrh = CurResFile();
+	static char name[256] = {':', '\0'};
+	AliasHandle handle;
+	FSSpec dirspec;
+	Boolean modified = 0;
+	short oldrh, prefrh = -1, homerh;
+	
+	if ( diditbefore )
+		return name;
+		
+	oldrh = CurResFile();
 
-    /* First look for an override in the application file */
-    UseResFile(PyMac_AppRefNum);
-    handle = (AliasHandle)Get1Resource('alis', PYTHONHOMEOVERRIDE_ID);
-    UseResFile(oldrh);
-    if ( handle != NULL ) {
-    	homerh = PyMac_AppRefNum;
-    } else {   
-	    /* Try to open preferences file in the preferences folder. */
-	    prefrh = PyMac_OpenPrefFile();
-	    handle = (AliasHandle)Get1Resource('alis', PYTHONHOME_ID);
-	    if ( handle == NULL ) {
-	    	/* (void)StopAlert(BADPREFFILE_ID, NULL); */
-	    	diditbefore=1;
-	    	return ":";
-	    }
-	    homerh = prefrh;
-    }
-    /* It exists. Resolve it (possibly updating it) */
-    if ( ResolveAlias(NULL, handle, &dirspec, &modified) != noErr ) {
-    	(void)StopAlert(BADPREFFILE_ID, NULL);
-    	diditbefore=1;
-    	return ":";
-    }
-    if ( modified ) {
+	/* First look for an override in the application file */
+	UseResFile(PyMac_AppRefNum);
+	handle = (AliasHandle)Get1Resource('alis', PYTHONHOMEOVERRIDE_ID);
+	UseResFile(oldrh);
+	if ( handle != NULL ) {
+		homerh = PyMac_AppRefNum;
+	} else {   
+		/* Try to open preferences file in the preferences folder. */
+		prefrh = PyMac_OpenPrefFile();
+		handle = (AliasHandle)Get1Resource('alis', PYTHONHOME_ID);
+		if ( handle == NULL ) {
+			/* (void)StopAlert(BADPREFFILE_ID, NULL); */
+			diditbefore=1;
+			return ":";
+		}
+		homerh = prefrh;
+	}
+	/* It exists. Resolve it (possibly updating it) */
+	if ( ResolveAlias(NULL, handle, &dirspec, &modified) != noErr ) {
+		(void)StopAlert(BADPREFFILE_ID, NULL);
+		diditbefore=1;
+		return ":";
+	}
+	if ( modified ) {
    		ChangedResource((Handle)handle);
-    	UpdateResFile(homerh);
-    }
-    if ( prefrh != -1 ) CloseResFile(prefrh);
-    UseResFile(oldrh);
+		UpdateResFile(homerh);
+	}
+	if ( prefrh != -1 ) CloseResFile(prefrh);
+	UseResFile(oldrh);
 
    	if ( PyMac_GetFullPath(&dirspec, name) == 0 ) {
    		strcat(name, ":");
-    } else {
+	} else {
  		/* If all fails, we return the current directory */
    		printf("Python home dir exists but I cannot find the pathname!!\n");
 		name[0] = 0;
@@ -269,88 +269,88 @@ PyMac_GetPythonDir()
 char *
 PyMac_GetPythonPath()
 {
-    short oldrh, prefrh = -1;
-    char *rv;
-    int i, newlen;
-    Str255 pathitem;
-    int resource_id;
-    OSErr err;
-    Handle h;
-    
-    oldrh = CurResFile();
-    /*
-    ** This is a bit tricky. We check here whether the application file
-    ** contains an override. This is to forestall us finding another STR# resource
-    ** with "our" id and using that for path initialization
-    */
-    UseResFile(PyMac_AppRefNum);
-    SetResLoad(0);
-    if ( (h=Get1Resource('STR#', PYTHONPATHOVERRIDE_ID)) ) {
-    	ReleaseResource(h);
-    	resource_id = PYTHONPATHOVERRIDE_ID;
-    } else {
-    	resource_id = PYTHONPATH_ID;
-    }
-    SetResLoad(1);
-    UseResFile(oldrh);
-    
-    /* Open the preferences file only if there is no override */
-    if ( resource_id != PYTHONPATHOVERRIDE_ID )
-	    prefrh = PyMac_OpenPrefFile();
-    /* At this point, we may or may not have the preferences file open, and it
-    ** may or may not contain a sys.path STR# resource. We don't care, if it doesn't
-    ** exist we use the one from the application (the default).
-    ** We put an initial '\n' in front of the path that we don't return to the caller
-    */
-    if( (rv = malloc(2)) == NULL )
-    	goto out;
-    strcpy(rv, "\n");
+	short oldrh, prefrh = -1;
+	char *rv;
+	int i, newlen;
+	Str255 pathitem;
+	int resource_id;
+	OSErr err;
+	Handle h;
+	
+	oldrh = CurResFile();
+	/*
+	** This is a bit tricky. We check here whether the application file
+	** contains an override. This is to forestall us finding another STR# resource
+	** with "our" id and using that for path initialization
+	*/
+	UseResFile(PyMac_AppRefNum);
+	SetResLoad(0);
+	if ( (h=Get1Resource('STR#', PYTHONPATHOVERRIDE_ID)) ) {
+		ReleaseResource(h);
+		resource_id = PYTHONPATHOVERRIDE_ID;
+	} else {
+		resource_id = PYTHONPATH_ID;
+	}
+	SetResLoad(1);
+	UseResFile(oldrh);
+	
+	/* Open the preferences file only if there is no override */
+	if ( resource_id != PYTHONPATHOVERRIDE_ID )
+		prefrh = PyMac_OpenPrefFile();
+	/* At this point, we may or may not have the preferences file open, and it
+	** may or may not contain a sys.path STR# resource. We don't care, if it doesn't
+	** exist we use the one from the application (the default).
+	** We put an initial '\n' in front of the path that we don't return to the caller
+	*/
+	if( (rv = malloc(2)) == NULL )
+		goto out;
+	strcpy(rv, "\n");
 
-    for(i=1; ; i++) {
-    	GetIndString(pathitem, resource_id, i);
-    	if( pathitem[0] == 0 )
-    		break;
-    	if ( pathitem[0] >= 9 && strncmp((char *)pathitem+1, "$(PYTHON)", 9) == 0 ) {
-    		/* We have to put the directory in place */
-    		char *dir = PyMac_GetPythonDir();
-    		
-    		newlen = strlen(rv) + strlen(dir) + (pathitem[0]-9) + 2;
-    		if( (rv=realloc(rv, newlen)) == NULL)
-    			goto out;
-    		strcat(rv, dir);
-    		/* Skip a colon at the beginning of the item */
-    		if ( pathitem[0] > 9 && pathitem[1+9] == ':' ) {
+	for(i=1; ; i++) {
+		GetIndString(pathitem, resource_id, i);
+		if( pathitem[0] == 0 )
+			break;
+		if ( pathitem[0] >= 9 && strncmp((char *)pathitem+1, "$(PYTHON)", 9) == 0 ) {
+			/* We have to put the directory in place */
+			char *dir = PyMac_GetPythonDir();
+			
+			newlen = strlen(rv) + strlen(dir) + (pathitem[0]-9) + 2;
+			if( (rv=realloc(rv, newlen)) == NULL)
+				goto out;
+			strcat(rv, dir);
+			/* Skip a colon at the beginning of the item */
+			if ( pathitem[0] > 9 && pathitem[1+9] == ':' ) {
 				memcpy(rv+strlen(rv), pathitem+1+10, pathitem[0]-10);
 				newlen--;
 			} else {
 				memcpy(rv+strlen(rv), pathitem+1+9, pathitem[0]-9);
 			}
-    		rv[newlen-2] = '\n';
-    		rv[newlen-1] = 0;
-    	} else if ( pathitem[0] >= 14 && strncmp((char *)pathitem+1, "$(APPLICATION)", 14) == 0 ) {
-    		/* This is the application itself */
+			rv[newlen-2] = '\n';
+			rv[newlen-1] = 0;
+		} else if ( pathitem[0] >= 14 && strncmp((char *)pathitem+1, "$(APPLICATION)", 14) == 0 ) {
+			/* This is the application itself */
 			
-    		if ( (err=PyMac_init_process_location()) != 0 ) {
+			if ( (err=PyMac_init_process_location()) != 0 ) {
 				printf("Cannot get  application location, error %d\n", err);
 				exit(1);
 			}
 
 			newlen = strlen(rv) + strlen(PyMac_ApplicationPath) + 2;
-    		if( (rv=realloc(rv, newlen)) == NULL)
-    			goto out;
-    		strcpy(rv+strlen(rv), PyMac_ApplicationPath);
-    		rv[newlen-2] = '\n';
-    		rv[newlen-1] = 0;
+			if( (rv=realloc(rv, newlen)) == NULL)
+				goto out;
+			strcpy(rv+strlen(rv), PyMac_ApplicationPath);
+			rv[newlen-2] = '\n';
+			rv[newlen-1] = 0;
 
-    	} else {
-    		/* Use as-is */
-    		newlen = strlen(rv) + (pathitem[0]) + 2;
-    		if( (rv=realloc(rv, newlen)) == NULL)
-    			goto out;
-    		memcpy(rv+strlen(rv), pathitem+1, pathitem[0]);
-    		rv[newlen-2] = '\n';
-    		rv[newlen-1] = 0;
-    	}
+		} else {
+			/* Use as-is */
+			newlen = strlen(rv) + (pathitem[0]) + 2;
+			if( (rv=realloc(rv, newlen)) == NULL)
+				goto out;
+			memcpy(rv+strlen(rv), pathitem+1, pathitem[0]);
+			rv[newlen-2] = '\n';
+			rv[newlen-1] = 0;
+		}
 	}
 	if( strlen(rv) == 1) {
 		free(rv);
@@ -377,44 +377,44 @@ PyMac_PreferenceOptions(PyMac_PrefRecord *pr)
 	int action;
 	
 	
-    oldrh = CurResFile();
-    
-    /* Attempt to load overrides from application */
-    UseResFile(PyMac_AppRefNum);
-    handle = Get1Resource('Popt', PYTHONOPTIONSOVERRIDE_ID);
-    UseResFile(oldrh);
-    
-    /* Otherwise get options from prefs file or any other open resource file */
-    if ( handle == NULL ) {
-	    prefrh = PyMac_OpenPrefFile();
-	    handle = GetResource('Popt', PYTHONOPTIONS_ID);
+	oldrh = CurResFile();
+	
+	/* Attempt to load overrides from application */
+	UseResFile(PyMac_AppRefNum);
+	handle = Get1Resource('Popt', PYTHONOPTIONSOVERRIDE_ID);
+	UseResFile(oldrh);
+	
+	/* Otherwise get options from prefs file or any other open resource file */
+	if ( handle == NULL ) {
+		prefrh = PyMac_OpenPrefFile();
+		handle = GetResource('Popt', PYTHONOPTIONS_ID);
 	}
-    if ( handle == NULL ) {
-    	return;
-    }
-    HLock(handle);
-    size = GetHandleSize(handle);
-    p = (PyMac_PrefRecord *)*handle;
-    if ( p->version == POPT_VERSION_CURRENT && size == sizeof(PyMac_PrefRecord) ) {
-    	*pr = *p;
-    } else {
-	action = CautionAlert(BADPREFERENCES_ID, NULL);
-	if ( action == BADPREF_DELETE ) {
-		OSErr err;
-		
-		RemoveResource(handle);
-		if ( (err=ResError()) ) printf("RemoveResource: %d\n", err);
-		if ( prefrh != -1 ) {
-			UpdateResFile(prefrh);
-			if ( (err=ResError()) ) printf("UpdateResFile: %d\n", err);
-		}
-	} else if ( action == BADPREF_QUIT )
-		exit(1);
-    }    
-    HUnlock(handle);
+	if ( handle == NULL ) {
+		return;
+	}
+	HLock(handle);
+	size = GetHandleSize(handle);
+	p = (PyMac_PrefRecord *)*handle;
+	if ( p->version == POPT_VERSION_CURRENT && size == sizeof(PyMac_PrefRecord) ) {
+		*pr = *p;
+	} else {
+		action = CautionAlert(BADPREFERENCES_ID, NULL);
+		if ( action == BADPREF_DELETE ) {
+			OSErr err;
+			
+			RemoveResource(handle);
+			if ( (err=ResError()) ) printf("RemoveResource: %d\n", err);
+			if ( prefrh != -1 ) {
+				UpdateResFile(prefrh);
+				if ( (err=ResError()) ) printf("UpdateResFile: %d\n", err);
+			}
+		} else if ( action == BADPREF_QUIT )
+			exit(1);
+	}
+	HUnlock(handle);
 
    	if ( prefrh != -1) CloseResFile(prefrh);
-    UseResFile(oldrh);
+	UseResFile(oldrh);
 }
 
 #ifdef USE_GUSI
@@ -438,6 +438,6 @@ PyMac_SetGUSIOptions()
 	}
 	if ( h ) GUSILoadConfiguration(h);
    	if ( prefrh != -1) CloseResFile(prefrh);
-    UseResFile(oldrh);
+	UseResFile(oldrh);
 }
 #endif /* USE_GUSI */	
