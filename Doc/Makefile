@@ -41,13 +41,14 @@ qua:
 	latex qua
 	dvips qua >qua.ps
 
-lib.texi: lib1.tex lib2.tex lib3.tex lib4.tex lib5.tex texipre.dat texipost.dat
+lib.texi: lib1.tex lib2.tex lib3.tex lib4.tex lib5.tex \
+	texipre.dat texipost.dat partparse.py
 	python partparse.py -o @lib.texi lib[1-5].tex
 	mv @lib.texi lib.texi
 
 .PRECIOUS:	lib.texi
 
-python-lib.info: lib.texi
+python-lib.info: lib.texi fix.el
 	emacs -batch -l fix.el -f save-buffer -kill
 	makeinfo +footnote-style end +fill-column 72 +paragraph-indent 0 \
 	         lib.texi
