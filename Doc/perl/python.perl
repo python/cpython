@@ -2022,9 +2022,12 @@ sub do_env_alltt{
 	$_ = &translate_environments($_);
 	$_ = &translate_commands($_) if (/\\/);
 
-	# preserve space-runs, using &nbsp;
-	while (s/(\S) ( +)/$1$2;SPMnbsp;/g){};
-	s/(<BR>) /$1;SPMnbsp;/g;
+        # remove spurious <BR> someone sticks in; not sure where they
+        # actually come from
+        # XXX the replacement space is there to accomodate something
+        # broken that inserts a space in front of the first line of
+        # the environment
+        s/<BR>/ /gi;
 
 	$_ = join('', $closures, $alltt_start, $local_reopens
 		, $_
