@@ -194,6 +194,5 @@ err_errno(exc)
 void
 err_badcall()
 {
-	fatal("err_badcall() called");
 	err_setstr(SystemError, "bad argument to internal function");
 }
