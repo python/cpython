@@ -226,11 +226,8 @@ PyUnicodeObject *_PyUnicode_New(int length)
 static
 void unicode_dealloc(register PyUnicodeObject *unicode)
 {
-    if (!PyUnicode_CheckExact(unicode)) {
-	unicode->ob_type->tp_free((PyObject *)unicode);
-	return;
-    }
-    if (unicode_freelist_size < MAX_UNICODE_FREELIST_SIZE) {
+    if (PyUnicode_CheckExact(unicode) &&
+	unicode_freelist_size < MAX_UNICODE_FREELIST_SIZE) {
         /* Keep-Alive optimization */
 	if (unicode->length >= KEEPALIVE_SIZE_LIMIT) {
 	    PyMem_DEL(unicode->str);
@@ -249,7 +246,7 @@ void unicode_dealloc(register PyUnicodeObject *unicode)
     else {
 	PyMem_DEL(unicode->str);
 	Py_XDECREF(unicode->defenc);
-	PyObject_DEL(unicode);
+	unicode->ob_type->tp_free((PyObject *)unicode);
     }
 }
 
