@@ -107,24 +107,24 @@ typeobject Classtype = {
 };
 
 
-/* We're not done yet: next, we define class member objects... */
+/* We're not done yet: next, we define instance objects... */
 
 typedef struct {
 	OB_HEAD
 	classobject	*cm_class;	/* The class object */
 	object		*cm_attr;	/* A dictionary */
-} classmemberobject;
+} instanceobject;
 
 object *
-newclassmemberobject(class)
+newinstanceobject(class)
 	register object *class;
 {
-	register classmemberobject *cm;
+	register instanceobject *cm;
 	if (!is_classobject(class)) {
 		err_badcall();
 		return NULL;
 	}
-	cm = NEWOBJ(classmemberobject, &Classmembertype);
+	cm = NEWOBJ(instanceobject, &Instancetype);
 	if (cm == NULL)
 		return NULL;
 	INCREF(class);
@@ -137,11 +137,11 @@ newclassmemberobject(class)
 	return (object *)cm;
 }
 
-/* Class member methods */
+/* Instance methods */
 
 static void
-classmember_dealloc(cm)
-	register classmemberobject *cm;
+instance_dealloc(cm)
+	register instanceobject *cm;
 {
 	DECREF(cm->cm_class);
 	if (cm->cm_attr != NULL)
@@ -150,8 +150,8 @@ classmember_dealloc(cm)
 }
 
 static object *
-classmember_getattr(cm, name)
-	register classmemberobject *cm;
+instance_getattr(cm, name)
+	register instanceobject *cm;
 	register char *name;
 {
 	register object *v = dictlookup(cm->cm_attr, name);
@@ -173,8 +173,8 @@ classmember_getattr(cm, name)
 }
 
 static int
-classmember_setattr(cm, name, v)
-	classmemberobject *cm;
+instance_setattr(cm, name, v)
+	instanceobject *cm;
 	char *name;
 	object *v;
 {
@@ -184,16 +184,16 @@ classmember_setattr(cm, name, v)
 		return dictinsert(cm->cm_attr, name, v);
 }
 
-typeobject Classmembertype = {
+typeobject Instancetype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
-	"class member",
-	sizeof(classmemberobject),
+	"instance",
+	sizeof(instanceobject),
 	0,
-	classmember_dealloc,	/*tp_dealloc*/
+	instance_dealloc,	/*tp_dealloc*/
 	0,			/*tp_print*/
-	classmember_getattr,	/*tp_getattr*/
-	classmember_setattr,	/*tp_setattr*/
+	instance_getattr,	/*tp_getattr*/
+	instance_setattr,	/*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
 	0,			/*tp_as_number*/
@@ -203,7 +203,7 @@ typeobject Classmembertype = {
 
 
 /* And finally, here are class method objects */
-/* (Really methods of class members) */
+/* (Really methods of instances) */
 
 typedef struct {
 	OB_HEAD
