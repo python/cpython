@@ -199,6 +199,10 @@ extern const char *PyWin_DLLVersionString;
    Ex family of functions so it also works with Windows CE.
 
    Returns NULL, or a pointer that should be freed.
+
+   XXX - this code is pretty strange, as it used to also
+   work on Win16, where the buffer sizes werent available
+   in advance.  It could be simplied now Win16/Win32s is dead!
 */
 
 static char *
@@ -279,6 +283,7 @@ getpythonregpath(HKEY keyBase, int skipcore)
 		}
 		RegCloseKey(subKey);
 	}
+	/* original datasize from RegQueryInfo doesn't include the \0 */
 	dataBuf = malloc((dataSize+1) * sizeof(TCHAR));
 	if (dataBuf) {
 		TCHAR *szCur = dataBuf;
@@ -299,8 +304,11 @@ getpythonregpath(HKEY keyBase, int skipcore)
 		if (skipcore)
 			*szCur = '\0';
 		else {
-			*(szCur++) = _T(';');
-			dataSize--;
+			/* If we have no values, we dont need a ';' */
+			if (numKeys) {
+				*(szCur++) = _T(';');
+				dataSize--;
+			}
 			/* Now append the core path entries - 
 			   this will include the NULL 
 			*/
