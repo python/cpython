@@ -1532,7 +1532,7 @@ static object *
 invert(v)
 	object *v;
 {
-	object * (*f) FPROTO((object *, object *));
+	object * (*f) FPROTO((object *));
 	if (v->ob_type->tp_as_number != NULL &&
 		(f = v->ob_type->tp_as_number->nb_invert) != NULL)
 		return (*f)(v);
