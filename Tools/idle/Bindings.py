@@ -16,6 +16,7 @@ menudefs = [
    ('_Open...', '<<open-window-from-file>>'),
    ('Open _module...', '<<open-module>>'),
    ('Class _browser', '<<open-class-browser>>'),
+   ('_Path browser', '<<open-path-browser>>'),
    ('Python shell', '<<open-python-shell>>'),
    None,
    ('_Save', '<<save-window>>'),

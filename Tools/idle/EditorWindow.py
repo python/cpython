@@ -19,6 +19,8 @@ import WindowList
 #$ win <Alt-c>
 #$ unix <Control-x><Control-b>
 
+#$ event <<open-path-browser>>
+
 #$ event <<close-window>>
 #$ unix <Control-x><Control-0>
 #$ unix <Control-x><Key-0>
@@ -118,6 +120,7 @@ class EditorWindow:
             text.bind("<<open-new-window>>", self.flist.new_callback)
             text.bind("<<close-all-windows>>", self.flist.close_all_callback)
             text.bind("<<open-class-browser>>", self.open_class_browser)
+            text.bind("<<open-path-browser>>", self.open_path_browser)
 
         vbar['command'] = text.yview
         vbar.pack(side=RIGHT, fill=Y)
@@ -312,6 +315,10 @@ class EditorWindow:
         import ClassBrowser
         ClassBrowser.ClassBrowser(self.flist, base, [head])
         self.text["cursor"] = save_cursor
+    
+    def open_path_browser(self, event=None):
+        import PathBrowser
+        PathBrowser.PathBrowser(self.flist)
 
     def gotoline(self, lineno):
         if lineno is not None and lineno > 0:
