@@ -12,25 +12,6 @@ extern double modf (double, double *);
 #endif /* __STDC__ */
 #endif /* _MSC_VER */
 
-
-#ifdef i860
-/* Cray APP has bogus definition of HUGE_VAL in <math.h> */
-#undef HUGE_VAL
-#endif
-
-/* RED_FLAG 12-Oct-2000 Tim
- * What CHECK does if errno == 0 and x is a NaN is a platform-dependent crap
- * shoot.  Most (but not all!) platforms will end up setting errno to ERANGE
- * then, but EDOM is probably better.
- */
-#ifdef HUGE_VAL
-#define CHECK(x) if (errno != 0) ; \
-	else if (-HUGE_VAL <= (x) && (x) <= HUGE_VAL) ; \
-	else errno = ERANGE
-#else
-#define CHECK(x) /* Don't know how to check */
-#endif
-
 #ifdef SCO_ATAN2_BUG
 /*
  * UnixWare 7+ is known to have a bug in atan2 that will return PI instead
@@ -38,7 +19,7 @@ extern double modf (double, double *);
  */
 static double atan2_sco(double x, double y)
 {
-	if (x == 0.0)
+ 	if (x == 0.0)
 		return (double)0.0;
 	return atan2(x, y);
 }
@@ -58,14 +39,17 @@ is_error(double x)
 	assert(errno);	/* non-zero errno is a precondition for calling */
 	if (errno == EDOM)
 		PyErr_SetString(PyExc_ValueError, "math domain error");
+
 	else if (errno == ERANGE) {
 		/* ANSI C generally requires libm functions to set ERANGE
 		 * on overflow, but also generally *allows* them to set
 		 * ERANGE on underflow too.  There's no consistency about
-		 * the latter across platforms.  Here we suppress the
-		 * underflow errors (libm functions should return a zero
-		 * on underflow, and +- HUGE_VAL on overflow, so testing
-		 * the result for zero suffices to distinguish the cases).
+		 * the latter across platforms.
+		 * Alas, C99 never requires that errno be set.
+		 * Here we suppress the underflow errors (libm functions
+		 * should return a zero on underflow, and +- HUGE_VAL on
+		 * overflow, so testing the result for zero suffices to
+		 * distinguish the cases).
 		 */
 		if (x)
 			PyErr_SetString(PyExc_OverflowError,
@@ -89,7 +73,7 @@ math_1(PyObject *args, double (*func) (double), char *argsfmt)
 	PyFPE_START_PROTECT("in math_1", return 0)
 	x = (*func)(x);
 	PyFPE_END_PROTECT(x)
-	CHECK(x);
+	Py_SET_ERANGE_IF_OVERFLOW(x);
 	if (errno && is_error(x))
 		return NULL;
 	else
@@ -106,7 +90,7 @@ math_2(PyObject *args, double (*func) (double, double), char *argsfmt)
 	PyFPE_START_PROTECT("in math_2", return 0)
 	x = (*func)(x, y);
 	PyFPE_END_PROTECT(x)
-	CHECK(x);
+	Py_SET_ERANGE_IF_OVERFLOW(x);
 	if (errno && is_error(x))
 		return NULL;
 	else
@@ -180,7 +164,7 @@ math_frexp(PyObject *self, PyObject *args)
 		return NULL;
 	errno = 0;
 	x = frexp(x, &i);
-	CHECK(x);
+	Py_SET_ERANGE_IF_OVERFLOW(x);
 	if (errno && is_error(x))
 		return NULL;
 	else
@@ -205,7 +189,7 @@ math_ldexp(PyObject *self, PyObject *args)
 	PyFPE_START_PROTECT("ldexp", return 0)
 	x = ldexp(x, exp);
 	PyFPE_END_PROTECT(x)
-	CHECK(x);
+	Py_SET_ERANGE_IF_OVERFLOW(x);
 	if (errno && is_error(x))
 		return NULL;
 	else
@@ -231,7 +215,7 @@ math_modf(PyObject *self, PyObject *args)
 #else
 	x = modf(x, &y);
 #endif
-	CHECK(x);
+	Py_SET_ERANGE_IF_OVERFLOW(x);
 	if (errno && is_error(x))
 		return NULL;
 	else
