@@ -1093,7 +1093,7 @@ def getsets():
 ##    verify(not hasattr(a, "x"))
 
 def supers():
-    if verify: print "Testing super..."
+    if verbose: print "Testing super..."
 
     class A(object):
         def meth(self, a):
