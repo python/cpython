@@ -45,6 +45,7 @@ GDHandle = OpaqueByValueType("GDHandle", "ResObj")
 CGrafPtr = OpaqueByValueType("CGrafPtr", "GrafObj")
 GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
 BitMap_ptr = OpaqueByValueType("BitMapPtr", "BMObj")
+const_BitMap_ptr = OpaqueByValueType("const BitMap *", "BMObj")
 BitMap = OpaqueType("BitMap", "BMObj")
 RGBColor = OpaqueType('RGBColor', 'QdRGB')
 RGBColor_ptr = RGBColor
@@ -284,10 +285,8 @@ class MyGRObjectDefinition(GlobalObjectDefinition):
 		Output("#else")
 		Output("""
 		{	CGrafPtr itself_color = (CGrafPtr)self->ob_itself;
-			/*
 			if ( strcmp(name, "portBits") == 0 )
-				return BMObj_New((BitMapPtr)GetPortPixMap(itself_color));
-			*/
+				return BMObj_New((BitMapPtr)GetPortBitMapForCopyBits(itself_color));
 			if ( strcmp(name, "chExtra") == 0 )
 				return Py_BuildValue("h", GetPortChExtra(itself_color));
 			if ( strcmp(name, "pnLocHFrac") == 0 )
@@ -305,12 +304,12 @@ class MyGRObjectDefinition(GlobalObjectDefinition):
 				return Py_BuildValue("O&", QdRGB_New, GetPortBackColor(itself_color, &c));
 			}
 			if ( strcmp(name, "pnPixPat") == 0 ) {
-				PixPatHandle h=0;
+				PixPatHandle h=NewPixPat(); /* XXXX wrong dispose routine */
 				
 				return Py_BuildValue("O&", ResObj_New, (Handle)GetPortPenPixPat(itself_color, h));
 			}
 			if ( strcmp(name, "fillPixPat") == 0 ) {
-				PixPatHandle h=0;
+				PixPatHandle h=NewPixPat(); /* XXXX wrong dispose routine */
 				return Py_BuildValue("O&", ResObj_New, (Handle)GetPortFillPixPat(itself_color, h));
 			}
 			if ( strcmp(name, "portRect") == 0 ) {
@@ -318,11 +317,11 @@ class MyGRObjectDefinition(GlobalObjectDefinition):
 				return Py_BuildValue("O&", PyMac_BuildRect, GetPortBounds(itself_color, &r));
 			}
 			if ( strcmp(name, "visRgn") == 0 ) {
-				RgnHandle h=0;
+				RgnHandle h=NewRgn(); /* XXXX wrong dispose routine */
 				return Py_BuildValue("O&", ResObj_New, (Handle)GetPortVisibleRegion(itself_color, h));
 			}
 			if ( strcmp(name, "clipRgn") == 0 ) {
-				RgnHandle h=0;
+				RgnHandle h=NewRgn(); /* XXXX wrong dispose routine */
 				return Py_BuildValue("O&", ResObj_New, (Handle)GetPortClipRegion(itself_color, h));
 			}
 			if ( strcmp(name, "pnLoc") == 0 ) {

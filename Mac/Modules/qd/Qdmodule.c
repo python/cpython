@@ -255,10 +255,8 @@ static PyObject *GrafObj_getattr(self, name)
 #else
 
 			{	CGrafPtr itself_color = (CGrafPtr)self->ob_itself;
-				/*
 				if ( strcmp(name, "portBits") == 0 )
-					return BMObj_New((BitMapPtr)GetPortPixMap(itself_color));
-				*/
+					return BMObj_New((BitMapPtr)GetPortBitMapForCopyBits(itself_color));
 				if ( strcmp(name, "chExtra") == 0 )
 					return Py_BuildValue("h", GetPortChExtra(itself_color));
 				if ( strcmp(name, "pnLocHFrac") == 0 )
@@ -276,12 +274,12 @@ static PyObject *GrafObj_getattr(self, name)
 					return Py_BuildValue("O&", QdRGB_New, GetPortBackColor(itself_color, &c));
 				}
 				if ( strcmp(name, "pnPixPat") == 0 ) {
-					PixPatHandle h=0;
+					PixPatHandle h=NewPixPat(); /* XXXX wrong dispose routine */
 					
 					return Py_BuildValue("O&", ResObj_New, (Handle)GetPortPenPixPat(itself_color, h));
 				}
 				if ( strcmp(name, "fillPixPat") == 0 ) {
-					PixPatHandle h=0;
+					PixPatHandle h=NewPixPat(); /* XXXX wrong dispose routine */
 					return Py_BuildValue("O&", ResObj_New, (Handle)GetPortFillPixPat(itself_color, h));
 				}
 				if ( strcmp(name, "portRect") == 0 ) {
@@ -289,11 +287,11 @@ static PyObject *GrafObj_getattr(self, name)
 					return Py_BuildValue("O&", PyMac_BuildRect, GetPortBounds(itself_color, &r));
 				}
 				if ( strcmp(name, "visRgn") == 0 ) {
-					RgnHandle h=0;
+					RgnHandle h=NewRgn(); /* XXXX wrong dispose routine */
 					return Py_BuildValue("O&", ResObj_New, (Handle)GetPortVisibleRegion(itself_color, h));
 				}
 				if ( strcmp(name, "clipRgn") == 0 ) {
-					RgnHandle h=0;
+					RgnHandle h=NewRgn(); /* XXXX wrong dispose routine */
 					return Py_BuildValue("O&", ResObj_New, (Handle)GetPortClipRegion(itself_color, h));
 				}
 				if ( strcmp(name, "pnLoc") == 0 ) {
@@ -3858,6 +3856,22 @@ static PyObject *Qd_GetPortPixMap(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_GetPortBitMapForCopyBits(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	const BitMap * _rv;
+	CGrafPtr port;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      GrafObj_Convert, &port))
+		return NULL;
+	_rv = GetPortBitMapForCopyBits(port);
+	_res = Py_BuildValue("O&",
+	                     BMObj_New, _rv);
+	return _res;
+}
+
 static PyObject *Qd_GetPortBounds(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -5931,6 +5945,8 @@ static PyMethodDef Qd_methods[] = {
 	 "(Fixed slope) -> (short _rv)"},
 	{"GetPortPixMap", (PyCFunction)Qd_GetPortPixMap, 1,
 	 "(CGrafPtr port) -> (PixMapHandle _rv)"},
+	{"GetPortBitMapForCopyBits", (PyCFunction)Qd_GetPortBitMapForCopyBits, 1,
+	 "(CGrafPtr port) -> (const BitMap * _rv)"},
 	{"GetPortBounds", (PyCFunction)Qd_GetPortBounds, 1,
 	 "(CGrafPtr port) -> (Rect rect)"},
 	{"GetPortForeColor", (PyCFunction)Qd_GetPortForeColor, 1,
