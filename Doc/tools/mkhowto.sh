@@ -62,6 +62,7 @@ MAX_LINK_DEPTH=3
 MAX_SPLIT_DEPTH=8
 
 build_html() {
+    TEXFILE=`kpsewhich $1.tex`
     if [ "$ADDRESS" ] ; then
 	latex2html -init_file $L2H_INIT_FILE \
 	 -address "$ADDRESS" \
@@ -70,10 +71,10 @@ build_html() {
     else
 	latex2html -init_file $L2H_INIT_FILE \
 	 -link $MAX_LINK_DEPTH -split $MAX_SPLIT_DEPTH \
-	 $1 || exit $?
+	 -dir $1 $TEXFILE || exit $?
     fi
     if [ "$MAX_SPLIT_DEPTH" -ne 1 ] ; then
-	(cd $FILE; $MYDIR/node2label.pl *.html) || exit $?
+	(cd $1; $MYDIR/node2label.pl *.html) || exit $?
     fi
 }
 
@@ -126,7 +127,7 @@ cleanup() {
     rm -f $1.aux $1.log $1.out $1.toc $1.bkm $1.idx $1.ilg $1.ind
     rm -f mod$1.idx mod$1.ilg mod$1.ind
     if [ ! "$BUILD_DVI" ] ; then
-	rm -f $FILE.dvi
+	rm -f $1.dvi
     fi
 }
 
@@ -213,7 +214,7 @@ if [ "$QUIET" ] ; then
 fi
 
 for FILE in $@ ; do
-    FILE=${FILE%.tex}
+    FILE=`basename ${FILE%.tex}`
     if [ "$BUILD_DVI" -o "$BUILD_PS" ] ; then
 	build_dvi $FILE 2>&1 | tee -a $LOGFILE
     fi
