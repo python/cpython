@@ -13,46 +13,35 @@ instances, recursive data types, and objects containing lots of shared
 sub-objects.  The keys are ordinary strings.
 \refstmodindex{pickle}
 
-To summarize the interface (\code{key} is a string, \code{data} is an
-arbitrary object):
+\begin{funcdesc}{open}{filename\optional{,flag='c'\optional{,binary=\code{False}}}}
+Open a persistent dictionary.  By default, the underlying database file is
+opened for reading and writing.  The optional \var{flag} pararameter, if set
+to \code{'r'}, can be used to force the file to be opened in read-only mode.
+By default, ASCII pickles are used to serialize values.  If the optional
+{}\var{binary} parameter is set to \var{True}, binary pickles will be used
+instead.
+\end{funcdesc}
 
-\begin{verbatim}
-import shelve
+Shelve objects support all methods supported by dictionaries.  This eases
+the transition from dictionary based scripts to those requiring persistent
+storage.
 
-d = shelve.open(filename) # open -- file may get suffix added by low-level
-                          # library
-
-d[key] = data   # store data at key (overwrites old data if
-                # using an existing key)
-data = d[key]   # retrieve data at key (raise KeyError if no
-                # such key)
-del d[key]      # delete data stored at key (raises KeyError
-                # if no such key)
-flag = d.has_key(key)   # true if the key exists
-list = d.keys() # a list of all existing keys (slow!)
-
-d.close()       # close it
-\end{verbatim}
-
-In addition to the above, shelve supports all methods that are
-supported by dictionaries.  This eases the transition from dictionary
-based scripts to those requiring persistent storage.
-
-Restrictions:
+\subsection{Restrictions}
 
 \begin{itemize}
 
 \item
 The choice of which database package will be used
-(such as \refmodule{dbm} or \refmodule{gdbm}) depends on which interface
-is available.  Therefore it is not safe to open the database directly
-using \refmodule{dbm}.  The database is also (unfortunately) subject
+(such as \refmodule{dbm}, \refmodule{gdbm} or \refmodule{bsddb}) depends on
+which interface is available.  Therefore it is not safe to open the database
+directly using \refmodule{dbm}.  The database is also (unfortunately) subject
 to the limitations of \refmodule{dbm}, if it is used --- this means
 that (the pickled representation of) the objects stored in the
 database should be fairly small, and in rare cases key collisions may
 cause the database to refuse updates.
 \refbimodindex{dbm}
 \refbimodindex{gdbm}
+\refbimodindex{bsddb}
 
 \item
 Depending on the implementation, closing a persistent dictionary may
@@ -92,9 +81,34 @@ class.
 A subclass of \class{Shelf} which accepts a \var{filename} instead of a dict-like
 object.  The underlying file will be opened using \function{anydbm.open}.
 By default, the file will be created and opened for both read and write.
+The optional \var{flag} parameter has the same interpretation as for the
+\function{open} function.
 The optional \var{binary} parameter has the same interpretation as for the
 \class{Shelf} class.
 \end{classdesc}
+
+\subsection{Example}
+
+To summarize the interface (\code{key} is a string, \code{data} is an
+arbitrary object):
+
+\begin{verbatim}
+import shelve
+
+d = shelve.open(filename) # open -- file may get suffix added by low-level
+                          # library
+
+d[key] = data   # store data at key (overwrites old data if
+                # using an existing key)
+data = d[key]   # retrieve data at key (raise KeyError if no
+                # such key)
+del d[key]      # delete data stored at key (raises KeyError
+                # if no such key)
+flag = d.has_key(key)   # true if the key exists
+list = d.keys() # a list of all existing keys (slow!)
+
+d.close()       # close it
+\end{verbatim}
 
 \begin{seealso}
   \seemodule{anydbm}{Generic interface to \code{dbm}-style databases.}
