@@ -1959,7 +1959,10 @@ class Tributton(Button):
 
 def _test():
 	root = Tk()
-	label = Label(root, text="Proof-of-existence test for Tk")
+	text = "This is Tcl/Tk version %s" % TclVersion
+	if TclVersion >= 8.1:
+		text = text + u"\nThis should be a cedilla: \347"
+	label = Label(root, text=text)
 	label.pack()
 	test = Button(root, text="Click me!",
 		      command=lambda root=root: root.test.configure(
