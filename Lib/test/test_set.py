@@ -35,6 +35,8 @@ class TestJointOps(unittest.TestCase):
         for c in self.letters:
             self.assertEqual(c in self.s, c in self.d)
         self.assertRaises(TypeError, self.s.__contains__, [[]])
+        s = self.thetype([frozenset(self.letters)])
+        self.assert_(self.thetype(self.letters) in s)
 
     def test_copy(self):
         dup = self.s.copy()
