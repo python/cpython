@@ -297,6 +297,11 @@ is not technically an error.
   details about the type mismatch.
 \end{excdesc}
 
+\begin{excdesc}{UnicodeError}
+  Raised when a Unicode-related encoding or decoding error occurs.  It
+  is a subclass of \exception{ValueError}.
+\end{excdesc}
+
 \begin{excdesc}{ValueError}
   Raised when a built-in operation or function receives an argument
   that has the right type but an inappropriate value, and the
