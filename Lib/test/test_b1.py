@@ -235,6 +235,46 @@ if int(3.9) <> 3: raise TestFailed, 'int(3.9)'
 if int(-3.9) <> -3: raise TestFailed, 'int(-3.9)'
 if int(3.5) <> 3: raise TestFailed, 'int(3.5)'
 if int(-3.5) <> -3: raise TestFailed, 'int(-3.5)'
+# Test conversion fron strings and various anomalies
+L = [
+    ('0', 0),
+    ('1', 1),
+    ('9', 9),
+    ('10', 10),
+    ('99', 99),
+    ('100', 100),
+    ('314', 314),
+    (' 314', 314),
+    ('314 ', 314),
+    ('  \t\t  314  \t\t  ', 314),
+    (`sys.maxint`, sys.maxint),
+    ('', ValueError),
+    (' ', ValueError),
+    ('  \t\t  ', ValueError),
+]
+for s, v in L:
+    for sign in "", "+", "-":
+	for prefix in "", " ", "\t", "  \t\t  ":
+	    ss = prefix + sign + s
+	    vv = v
+	    if sign == "-" and v is not ValueError:
+		vv = -v
+	    try:
+		if int(ss) != vv:
+		    raise TestFailed, "int(%s)" % `ss`
+	    except v:
+		pass
+	    except ValueError, e:
+		raise TestFailed, "int(%s) raised ValueError: %s" % (`ss`, e)
+s = `-1-sys.maxint`
+if int(s)+1 != -sys.maxint:
+    raise TestFailed, "int(%s)" % `s`
+try:
+    int(s[1:])
+except ValueError:
+    pass
+else:
+    raise TestFailed, "int(%s)" % `s[1:]` + " should raise ValueError"
 
 print 'isinstance'
 class C:
@@ -290,6 +330,25 @@ if long(3.9) <> 3L: raise TestFailed, 'long(3.9)'
 if long(-3.9) <> -3L: raise TestFailed, 'long(-3.9)'
 if long(3.5) <> 3L: raise TestFailed, 'long(3.5)'
 if long(-3.5) <> -3L: raise TestFailed, 'long(-3.5)'
+# Check conversions from string (same test set as for int(), and then some)
+LL = [
+    ('1' + '0'*20, 10L**20),
+    ('1' + '0'*100, 10L**100),
+]
+for s, v in L + LL:
+    for sign in "", "+", "-":
+	for prefix in "", " ", "\t", "  \t\t  ":
+	    ss = prefix + sign + s
+	    vv = v
+	    if sign == "-" and v is not ValueError:
+		vv = -v
+	    try:
+		if long(ss) != long(vv):
+		    raise TestFailed, "int(%s)" % `ss`
+	    except v:
+		pass
+	    except ValueError, e:
+		raise TestFailed, "int(%s) raised ValueError: %s" % (`ss`, e)
 
 print 'map'
 if map(None, 'hello world') <> ['h','e','l','l','o',' ','w','o','r','l','d']:
