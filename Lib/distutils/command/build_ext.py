@@ -394,7 +394,7 @@ class build_ext (Command):
             #     elegant, but people seem to expect it and I
             #     guess it's useful)
             # The environment variable should take precedence, and
-            # any sensible compiler will give precendence to later
+            # any sensible compiler will give precedence to later
             # command line args.  Hence we combine them in order:
             extra_args = ext.extra_compile_args or []
 

@@ -55,7 +55,7 @@ class Command:
         # commands fallback on the Distribution's behaviour.  None means
         # "not defined, check self.distribution's copy", while 0 or 1 mean
         # false and true (duh).  Note that this means figuring out the real
-        # value of each flag is a touch complicatd -- hence "self.verbose"
+        # value of each flag is a touch complicated -- hence "self.verbose"
         # (etc.) will be handled by __getattr__, below.
         self._verbose = None
         self._dry_run = None

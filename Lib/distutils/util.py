@@ -105,7 +105,7 @@ def check_environ ():
        guarantee that users can use in config files, command-line
        options, etc.  Currently this includes:
          HOME - user's home directory (Unix only)
-         PLAT - desription of the current platform, including hardware
+         PLAT - description of the current platform, including hardware
                 and OS (see 'get_platform()')
     """
 
@@ -125,7 +125,7 @@ def check_environ ():
 
 def subst_vars (str, local_vars):
     """Perform shell/Perl-style variable substitution on 'string'.
-       Every occurence of '$' followed by a name, or a name enclosed in
+       Every occurrence of '$' followed by a name, or a name enclosed in
        braces, is considered a variable.  Every variable is substituted by
        the value found in the 'local_vars' dictionary, or in 'os.environ'
        if it's not in 'local_vars'.  'os.environ' is first checked/
