@@ -11,23 +11,23 @@
 import sys
 
 def main():
-	k, a, b, a1, b1 = 2L, 4L, 1L, 12L, 4L
-	while 1:
-		# Next approximation
-		p, q, k = k*k, 2L*k+1L, k+1L
-		a, b, a1, b1 = a1, b1, p*a+q*a1, p*b+q*b1
-		# Print common digits
-		d, d1 = a/b, a1/b1
-		while d == d1:
-			output(d)
-			a, a1 = 10L*(a%b), 10L*(a1%b1)
-			d, d1 = a/b, a1/b1
+    k, a, b, a1, b1 = 2L, 4L, 1L, 12L, 4L
+    while 1:
+        # Next approximation
+        p, q, k = k*k, 2L*k+1L, k+1L
+        a, b, a1, b1 = a1, b1, p*a+q*a1, p*b+q*b1
+        # Print common digits
+        d, d1 = a/b, a1/b1
+        while d == d1:
+            output(d)
+            a, a1 = 10L*(a%b), 10L*(a1%b1)
+            d, d1 = a/b, a1/b1
 
 def output(d):
-	# Use write() to avoid spaces between the digits
-	# Use int(d) to avoid a trailing L after each digit
-	sys.stdout.write(`int(d)`)
-	# Flush so the output is seen immediately
-	sys.stdout.flush()
+    # Use write() to avoid spaces between the digits
+    # Use str() to avoid the 'L'
+    sys.stdout.write(str(d))
+    # Flush so the output is seen immediately
+    sys.stdout.flush()
 
 main()
