@@ -12,6 +12,9 @@ What's New in Python 2.4 alpha 2?
 Core and builtins
 -----------------
 
+- Patch #550732: Add PyArg_VaParseTupleAndKeywords().  Analogous to
+PyArg_VaParse().  Both are now documented.  Thanks Greg Chapman.
+
 - Allow string and unicode return types from .encode()/.decode()
   methods on string and unicode objects. Added unicode.decode()
   which was missing for no apparent reason.
