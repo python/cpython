@@ -414,9 +414,9 @@ Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
 ############################################################################
 # Header files
 
-$(LIBRARY_OBJS) $(MAINOBJ): \
-		config.h \
+PYTHON_HEADERS= \
 		Include/Python.h \
+		config.h \
 		Include/patchlevel.h \
 		Include/pyport.h \
 		Include/pymem.h \
@@ -453,6 +453,8 @@ $(LIBRARY_OBJS) $(MAINOBJ): \
 		Include/import.h \
 		Include/abstract.h \
 		Include/pyfpe.h
+
+$(LIBRARY_OBJS) $(MODOBJS) $(MAINOBJ): $(PYTHON_HEADERS)
 
 
 ######################################################################
