@@ -18,7 +18,6 @@ http://starship.python.net/crew/amk/python/writing/new-python/.
 What's new in 2.0 beta 2 (since beta 1)?
 ========================================
 
-
 Core language, builtins, and interpreter
 
 - Add support for unbounded ints in %d,i,u,x,X,o formats; for example
@@ -26,6 +25,19 @@ Core language, builtins, and interpreter
 
 - Add -h and -V command line options to print the usage message and
   Python version number and exit immediately.
+
+- eval() and exec accept Unicode objects as code parameters.
+
+- getattr() and setattr() now also accept Unicode objects for the
+  attribute name, which are converted to strings using the default
+  encoding before lookup.
+
+- Multiplication on string and Unicode now does proper bounds
+  checking; e.g. 'a' * 65536 * 65536 will raise ValueError, "repeated
+  string is too long."
+
+- Better error message when continue is found in try statement in a
+  loop. 
 
 
 Standard library and extensions
@@ -69,6 +81,11 @@ Standard library and extensions
 
 - mailbox: Mailbox class conforms better to qmail specifications.
 
+- marshal: When reading a short, sign-extend on platforms where shorts
+  are bigger than 16 bits.  When reading a long, repair the unportable
+  sign extension that was being done for 64-bit machines.  (It assumed
+  that signed right shift sign-extends.)
+
 - operator: Add contains(), invert(), __invert__() as aliases for
   __contains__(), inv(), and __inv__() respectively.
 
@@ -91,7 +108,7 @@ Standard library and extensions
 - py_compile: support CR+LF line terminators in source file.
 
 - readline: Does not immediately exit when ^C is hit when readline and
-  threads are configured.  Adds defintion of rl_library_version.  (The
+  threads are configured.  Adds definition of rl_library_version.  (The
   latter addition requires GNU readline 2.2 or later.)
 
 - rfc822: Domain literals returned by AddrlistClass method
@@ -150,7 +167,7 @@ C API
   PyModule_AddObject(), PyModule_AddIntConstant(), and
   PyModule_AddStringConstant().
 
-- Cleaned up definition of NULL in C source code; all defintions were
+- Cleaned up definition of NULL in C source code; all definitions were
   removed and add #error to Python.h if NULL isn't defined after
   #include of stdio.h.
 
@@ -166,9 +183,27 @@ C API
   internal data buffer and size of a string object -- or the default
   encoded version of a Unicode object.
 
+- PyString_Size() and PyString_AsString() accept Unicode objects.
+
 - The standard header <limits.h> is now included by Python.h (if it
   exists).  INT_MAX and LONG_MAX will always be defined, even if
   <limits.h> is not available.
+
+- PyFloat_FromString takes a second argument, pend, that was
+  effectively useless.  It is now officially useless but preserved for
+  backwards compatibility.  If the pend argument is not NULL, *pend is
+  set to NULL.
+
+- PyObject_GetAttr() and PyObject_SetAttr() now accept Unicode objects
+  for the attribute name.  See note on getattr() above.
+
+- A few bug fixes to argument processing for Unicode.
+  PyArg_ParseTupleAndKeywords() now accepts "es#" and "es".
+  PyArg_Parse() special cases "s#" for Unicode objects; it returns a
+  pointer to the default encoded string data instead of to the raw
+  UTF-16. 
+
+- Py_BuildValue accepts B format (for bgen-generated code).
 
 
 Internals
@@ -176,29 +211,58 @@ Internals
 - On Unix, fix code for finding Python installation directory so that
   it works when argv[0] is a relative path.
 
-- Added a true unicode_internal_encode() function and fixed the
+- Added a true tnicode_internal_encode() function and fixed the
   unicode_internal_decode function() to support Unicode objects directly
   rather than by generating a copy of the object.
 
 - Several of the internal Unicode tables are much smaller now, and
   the source code should be much friendlier to weaker compilers.
 
+- Fixed GC bug that caused some instances to be removed from the
+  container set while they were still live.
+
+- Fixed refcount problem in instance deallocation that only occurred
+  when Py_REF_DEBUG was defined and Py_TRACE_REFS was not.
+
+- In the garbage collector: No longer sets an object's type slot to
+  NULL.  Fix bug in collection of tuples.  
+
+- On Windows, getpythonregpath is now protected against null data in
+  registry key.
+
+- On Unix, create .pyc/.pyo files with O_EXCL flag to avoid a race
+  condition. 
+
 
 Build and platform-specific issues
 
 - Better support of GNU Pth via --with-pth configure option.
 
-- Fix linker problems on Reliant UNIX.
+- Python/C API now properly exposed to dynamically-loaded extension
+  modules on Reliant UNIX.
 
 - Changes for the benefit of SunOS 4.1.4 (really!).  mmapmodule.c:
   Don't define MS_SYNC to be zero when it is undefined.  Added missing
   prototypes in posixmodule.c.
 
-- Improved support for HP-UX build -- threads should now be correctly
+- Improved support for HP-UX build.  Threads should now be correctly
   configured (on HP-UX 10.20 and 11.00).
 
-- Python/C API now properly exposed to dynamically-loaded extension
-  modules on Reliant UNIX.
+- Fix largefile support on older NetBSD systems and OpenBSD by adding
+  define for TELL64.
+
+
+Tools and other miscellany
+
+- ftpmirror: Call to main() is wrapped in if __name__ == "__main__".
+
+- freeze: The modulefinder now works with 2.0 opcodes.
+
+- IDLE: 
+  Move hackery of sys.argv until after the Tk instance has been
+  created, which allows the application-specific Tkinter
+  initialization to be executed if present; also pass an explicit
+  className parameter to the Tk() constructor.
 
 
 What's new in 2.0 beta 1?
