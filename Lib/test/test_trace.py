@@ -165,6 +165,27 @@ tightloop_example.events = [(0, 'call'),
                             (7, 'line'),
                             (7, 'return')]
 
+def tighterloop_example():
+    items = range(1, 4)
+    try:
+        i = 0
+        while 1: i = items[i]
+    except IndexError:
+        pass
+
+tighterloop_example.events = [(0, 'call'),
+                            (1, 'line'),
+                            (2, 'line'),
+                            (3, 'line'),
+                            (4, 'line'),
+                            (4, 'line'),
+                            (4, 'line'),
+                            (4, 'line'),
+                            (4, 'exception'),
+                            (5, 'line'),
+                            (6, 'line'),
+                            (6, 'return')]
+
 class Tracer:
     def __init__(self):
         self.events = []
@@ -220,6 +241,8 @@ class TraceTestCase(unittest.TestCase):
         self.run_test(ireturn_example)
     def test_11_tightloop(self):
         self.run_test(tightloop_example)
+    def test_12_tighterloop(self):
+        self.run_test(tighterloop_example)
 
 class RaisingTraceFuncTestCase(unittest.TestCase):
     def trace(self, frame, event, arg):
