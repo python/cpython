@@ -2498,11 +2498,11 @@ static SSLObject *
 newSSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 {
 	SSLObject *self;
-	PyObject *error = NULL;
+	char *errstr = NULL;
 
 	self = PyObject_New(SSLObject, &SSL_Type); /* Create new object */
 	if (self == NULL){
-		error =  PyString_FromString("newSSLObject error");
+		errstr = "newSSLObject error";
 		goto fail;
 	}
 	memset(self->server, '\0', sizeof(char) * 256);
@@ -2514,28 +2514,25 @@ newSSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 
 	self->ctx = SSL_CTX_new(SSLv23_method()); /* Set up context */
 	if (self->ctx == NULL) {
-		error = PyString_FromString("SSL_CTX_new error");
+		errstr = "SSL_CTX_new error";
 		goto fail;
 	}
 
 	if ((key_file && !cert_file) || (!key_file && cert_file)) {
-		error = PyString_FromString(
-			"Both the key & certificate files must be specified");
+		errstr = "Both the key & certificate files must be specified";
 		goto fail;
 	}
 
 	if (key_file && cert_file) {
 		if (SSL_CTX_use_PrivateKey_file(self->ctx, key_file,
 						SSL_FILETYPE_PEM) < 1) {
-			error = PyString_FromString(
-				"SSL_CTX_use_PrivateKey_file error");
+			errstr = "SSL_CTX_use_PrivateKey_file error";
 			goto fail;
 		}
 
 		if (SSL_CTX_use_certificate_chain_file(self->ctx,
 						       cert_file) < 1) {
-			error = PyString_FromString(
-				"SSL_CTX_use_certificate_chain_file error");
+			errstr = "SSL_CTX_use_certificate_chain_file error";
 			goto fail;
 		}
 	}
@@ -2549,7 +2546,7 @@ newSSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 	/* Actually negotiate SSL connection */
 	/* XXX If SSL_connect() returns 0, it's also a failure. */
 	if ((SSL_connect(self->ssl)) == -1) {
-		error = PyString_FromString("SSL_connect error");
+		errstr = "SSL_connect error";
 		goto fail;
 	}
 	self->ssl->debug = 1;
@@ -2564,10 +2561,8 @@ newSSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 	Py_INCREF(self->Socket);
 	return self;
  fail:
-	if (error) {
-		PyErr_SetObject(SSLErrorObject, error);
-		Py_DECREF(error);
-	}
+	if (errstr)
+		PyErr_SetString(SSLErrorObject, errstr);
 	Py_DECREF(self);
 	return NULL;
 }
