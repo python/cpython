@@ -267,12 +267,12 @@ class SimpleThreadedBase(BaseThreadedTestCase):
         for loop in range(5):
             c = d.cursor()
             count = 0
-            rec = c.first()
+            rec = dbutils.DeadlockWrap(c.first)
             while rec:
                 count += 1
                 key, data = rec
                 self.assertEqual(self.makeData(key), data)
-                rec = c.next()
+                rec = dbutils.DeadlockWrap(c.next)
             if verbose:
                 print "%s: found %d records" % (name, count)
             c.close()
