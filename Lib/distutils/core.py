@@ -24,9 +24,10 @@ from distutils import util
 # to look for a Python module named after the command.
 command_re = re.compile (r'^[a-zA-Z]([a-zA-Z0-9_]*)$')
 
-# Defining this as a global is probably inadequate -- what about
-# listing the available options (or even commands, which can vary
-# quite late as well)
+# This is a barebones help message generated displayed when the user
+# runs the setup script with no arguments at all.  More useful help
+# is generated with various --help options: global help, list commands,
+# and per-command help.
 usage = """\
 usage: %s [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]
    or: %s --help
@@ -50,22 +51,22 @@ def setup (**attrs):
        Distribution instance.
 
        The 'cmdclass' argument, if supplied, is a dictionary mapping
-       command names to command classes.  Each command encountered on the
-       command line will be turned into a command class, which is in turn
-       instantiated; any class found in 'cmdclass' is used in place of the
-       default, which is (for command 'foo_bar') class 'FooBar' in module
-       'distutils.command.foo_bar'.  The command object must provide an
-       'options' attribute which is a list of option specifiers for
-       'distutils.fancy_getopt'.  Any command-line options between the
-       current and the next command are used to set attributes in the
-       current command object.
+       command names to command classes.  Each command encountered on
+       the command line will be turned into a command class, which is in
+       turn instantiated; any class found in 'cmdclass' is used in place
+       of the default, which is (for command 'foo_bar') class 'foo_bar'
+       in module 'distutils.command.foo_bar'.  The command class must
+       provide a 'user_options' attribute which is a list of option
+       specifiers for 'distutils.fancy_getopt'.  Any command-line
+       options between the current and the next command are used to set
+       attributes of the current command object.
 
-       When the entire command-line has been successfully parsed, calls the
-       'run' method on each command object in turn.  This method will be
-       driven entirely by the Distribution object (which each command
-       object has a reference to, thanks to its constructor), and the
-       command-specific options that became attributes of each command
-       object."""
+       When the entire command-line has been successfully parsed, calls
+       the 'run()' method on each command object in turn.  This method
+       will be driven entirely by the Distribution object (which each
+       command object has a reference to, thanks to its constructor),
+       and the command-specific options that became attributes of each
+       command object."""
 
     # Determine the distribution class -- either caller-supplied or
     # our Distribution (see below).
@@ -313,11 +314,11 @@ class Distribution:
 
             # Also make sure that the command object provides a list of its
             # known options
-            if not (hasattr (cmd_obj, 'options') and
-                    type (cmd_obj.options) is ListType):
+            if not (hasattr (cmd_obj, 'user_options') and
+                    type (cmd_obj.user_options) is ListType):
                 raise DistutilsClassError, \
-                      ("command class %s must provide an 'options' attribute "+
-                       "(a list of tuples)") % \
+                      ("command class %s must provide " +
+                       "'user_options' attribute (a list of tuples)") % \
                       cmd_obj.__class__
 
             # Poof! like magic, all commands support the global
@@ -327,14 +328,14 @@ class Distribution:
                 negative_opt = copy (negative_opt)
                 negative_opt.update (cmd_obj.negative_opt)
 
-            options = self.global_options + cmd_obj.options
+            options = self.global_options + cmd_obj.user_options
             args = fancy_getopt (options, negative_opt,
                                  cmd_obj, args[1:])
             if cmd_obj.help:
                 print_help (self.global_options,
                             header="Global options:")
                 print
-                print_help (cmd_obj.options,
+                print_help (cmd_obj.user_options,
                             header="Options for '%s' command:" % command)
                 print
                 print usage
@@ -357,7 +358,7 @@ class Distribution:
 
             for command in self.commands:
                 klass = self.find_command_class (command)
-                print_help (klass.options,
+                print_help (klass.user_options,
                             header="Options for '%s' command:" % command)
                 print
 
