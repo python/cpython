@@ -1,7 +1,5 @@
 \documentclass{howto}
 
-% XXX difflib.py, doctest.py added
-
 % $Id$
 
 \title{What's New in Python 2.1}
@@ -95,16 +93,39 @@ variable within a function that contains further function definitions.
 This seems rather unlikely though, since such code would have been
 pretty confusing to read in the first place.
 
-One side effect of the change is that the statement from \code{from
-\var{module} import *} has been made illegal inside a function scope.
-The Python reference manual has said all along that \code{from
-\var{module} import *} is only legal at the top level of a module, but
-the CPython interpreter has never enforced this before; it will be
-enforced in 2.1, though it's not yet clear if it will be a syntax
-error or just a warning.  In the alpha 2 release, it triggers a
-\exception{SyntaxError} exception, but this check might be made more
-lenient in following releases.
-% XXX update the previous sentence for 2.1final
+One side effect of the change is that the \code{from \var{module}
+import *} and \keyword{exec} statements have been made illegal inside
+a function scope under certain conditions.  The Python reference
+manual has said all along that \code{from \var{module} import *} is
+only legal at the top level of a module, but the CPython interpreter
+has never enforced this before.  As part of the implementation of
+nested scopes, the compiler which turns Python source into bytecodes
+has to generate different code to access variables in a containing
+scope.  \code{from \var{module} import *} and \keyword{exec} make it
+impossible for the compiler to figure this out, because they add names
+to the local namespace that are unknowable at compile time.
+Therefore, if a function contains function definitions or
+\keyword{lambda} expressions with free variables, the compiler will
+flag this by raising a \exception{SyntaxError} exception.
+
+To make the preceding explanation a bit clearer, here's an example:
+
+\begin{verbatim}
+x = 1
+def f():
+    # The next line is a syntax error
+    exec 'x=2'  
+    def g():
+        return x
+\end{verbatim}
+
+Line 4 containing the \keyword{exec} statement is a syntax error,
+since \keyword{exec} would define a new local variable named \samp{x}
+whose value should be accessed by \function{g()}.  
+
+This shouldn't be much of a limitation, since \keyword{exec} is rarely
+used in most Python code (and when it is used, it's often a sign of a
+poor design anyway).
 
 \begin{seealso}
 
@@ -350,22 +371,88 @@ and implemented by A.M. Kuchling.}
 \end{seealso}
 
 %======================================================================
-\section{Weak References}
+\section{PEP 205: Weak References}
 
-Weak references are a minor but useful new data type in the Python
-programmer's toolbox.  Storing a reference to an object (say, in a
-dictionary or a list) has the side effect of keeping that object alive
-forever.  There are a few specific cases where this behaviour is
-undesirable, object caches being the most common one, and another
-being circular references in data structures such as trees.
+Weak references, available through the \module{weakref} module, are a
+minor but useful new data type in the Python programmer's toolbox.
 
-For example, a tree might be implemented as a set of \class{Node}
-instances where each instances contains a list of its children.  If
-you need to be able to determine the parent of a given \class{Node},
-an obvious solution would be to have each instance have a reference to
-its parent.  This creates lots of circular references.
+Storing a reference to an object (say, in a dictionary or a list) has
+the side effect of keeping that object alive forever.  There are a few
+specific cases where this behaviour is undesirable, object caches
+being the most common one, and another being circular references in
+data structures such as trees.
 
-XXX finish the rest of this section
+For example, consider a memoizing function that caches the results of
+another function \function{f(\var{x})} by storing the function's
+argument and its result in a dictionary:
+
+\begin{verbatim}
+_cache = {}
+def memoize(x):
+    if _cache.has_key(x):
+        return _cache[x]
+
+    retval = f(x)
+
+    # Cache the returned object
+    _cache[x] = retval
+
+    return retval
+\end{verbatim}
+
+This version works for simple things such as integers, but it has a
+side effect; the \code{_cache} dictionary holds a reference to the
+return values, so they'll never be deallocated until the Python
+process exits and cleans up This isn't very noticeable for integers,
+but if \function{f()} returns an object, or a data structure that
+takes up a lot of memory, this can be a problem.
+
+Weak references provide a way to implement a cache that won't keep
+objects alive beyond their time.  If an object is only accessible
+through weak references, the object will be deallocated and the weak
+references will now indicate that the object it referred to no longer
+exists.  A weak reference to an object \var{obj} is created by calling
+\code{wr = weakref.ref(\var{obj})}.  The object being referred to is
+returned by calling the weak reference as if it were a function:
+\code{wr()}.  It will return the referenced object, or \code{None} if
+the object no longer exists. 
+
+This makes it possible to write a \function{memoize()} function whose
+cache doesn't keep objects alive, by storing weak references in the
+cache.
+
+\begin{verbatim}
+_cache = {}
+def memoize(x):
+    if _cache.has_key(x):
+        obj = _cache[x]()
+        # If weak reference object still exists,
+        # return it
+        if obj is not None: return obj
+ 
+    retval = f(x)
+
+    # Cache a weak reference
+    _cache[x] = weakref.ref(retval)
+
+    return retval
+\end{verbatim}
+
+The \module{weakref} module also allows creating proxy objects which
+behave like weak references --- an object referenced only by proxy
+objects is deallocated -- but instead of requiring an explicit call to
+retrieve the object, the proxy transparently forwards all operations
+to the object as long as the object still exists.  If the object is
+deallocated, attempting to use a proxy will cause a
+\exception{weakref.ReferenceError} exception to be raised.
+
+\begin{verbatim}
+proxy = weakref.proxy(obj)
+proxy.attr   # Equivalent to obj.attr
+proxy.meth() # Equivalent to obj.meth()
+del obj
+proxy.attr   # raises weakref.ReferenceError
+\end{verbatim}
 
 \begin{seealso}
 
@@ -442,6 +529,17 @@ operations will now be processed at the C level.}
 
 \begin{itemize}
 
+\item The \module{doctest} module provides a testing framework based
+on running embedded examples in docstrings and comparing the results
+against the expected output.  Contributed by Tim Peters.
+
+\item The \module{difflib} module contains a class,
+\class{SequenceMatcher}, which compares two sequences and computes the
+changes required to transform one sequence into the other.  For
+example, this module can be used to write a tool similar to the Unix
+\program{diff} program, and in fact the sample program
+\file{Tools/scripts/ndiff.py} demonstrates how to write such a script.  
+
 \item \module{curses.panel}, a wrapper for the panel library, part of
 ncurses and of SYSV curses, was contributed by Thomas Gellekum.  The
 panel library provides windows with the additional feature of depth.
@@ -481,6 +579,18 @@ unsuitable for your application or network setup, call
 
 \item Support for raw socket access has been added to the
 \module{socket} module, contributed by Grant Edwards.
+
+\item A new implementation-dependent function, \function{sys._getframe(\optional{depth})},
+has been added to return a given frame object from the current call stack.
+\function{sys._getframe()} returns the frame at the top of the call stack; 
+if the optional integer argument \var{depth} is supplied, the function returns the frame
+that is \var{depth} calls below the top of the stack.  For example, \code{sys._getframe(1)}
+returns the caller's frame object.
+
+This function is only present in CPython, not in Jython or the .NET
+implementation.  Use it for debugging, and resist the temptation to
+put it into production code.
+
 
 
 \end{itemize}
@@ -558,6 +668,12 @@ implemented this new formatting.
 \item Syntax errors detected at compile-time can now raise exceptions
 containing the filename and line number of the error, a pleasant side
 effect of the compiler reorganization done by Jeremy Hylton.
+
+\item C extensions which import other modules have been changed to use
+\function{PyImport_ImportModule()}, which means that they will use any
+import hooks that have been installed.  This is also encouraged for
+third-party extensions that need to import some other module from C
+code.  
 
 \item The size of the Unicode character database was shrunk by another
 340K thanks to Fredrik Lundh.
