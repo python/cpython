@@ -41,6 +41,7 @@ void printtraceback PROTO((object *));
 void flushline PROTO((void));
 
 int Py_AddPendingCall PROTO((int (*func) PROTO((ANY *)), ANY *arg));
+int Py_MakePendingCalls PROTO((void));
 
 
 /* Interface for threads.
