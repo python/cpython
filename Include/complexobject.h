@@ -20,12 +20,12 @@ typedef struct {
 #define c_quot _Py_c_quot
 #define c_pow _Py_c_pow
 
-extern Py_complex c_sum();
-extern Py_complex c_diff();
-extern Py_complex c_neg();
-extern Py_complex c_prod();
-extern Py_complex c_quot();
-extern Py_complex c_pow();
+extern Py_complex c_sum Py_PROTO((Py_complex, Py_complex));
+extern Py_complex c_diff Py_PROTO((Py_complex, Py_complex));
+extern Py_complex c_neg Py_PROTO((Py_complex));
+extern Py_complex c_prod Py_PROTO((Py_complex, Py_complex));
+extern Py_complex c_quot Py_PROTO((Py_complex, Py_complex));
+extern Py_complex c_pow Py_PROTO((Py_complex, Py_complex));
 
 
 /* Complex object interface */
