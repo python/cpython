@@ -1040,6 +1040,13 @@ extern DL_IMPORT(int) PyUnicode_Contains(
     PyObject *element		/* Element string */
     );
 
+/* Externally visible for str.strip(unicode) */
+extern DL_IMPORT(PyObject *) _PyUnicode_XStrip(
+    PyUnicodeObject *self,
+    int striptype,
+    PyObject *sepobj
+    );
+
 /* === Characters Type APIs =============================================== */
 
 /* These should not be used directly. Use the Py_UNICODE_IS* and

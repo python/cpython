@@ -3504,35 +3504,6 @@ PyObject *split(PyUnicodeObject *self,
 }
 
 static 
-PyObject *strip(PyUnicodeObject *self,
-		int left,
-		int right)
-{
-    Py_UNICODE *p = self->str;
-    int start = 0;
-    int end = self->length;
-
-    if (left)
-        while (start < end && Py_UNICODE_ISSPACE(p[start]))
-            start++;
-
-    if (right)
-        while (end > start && Py_UNICODE_ISSPACE(p[end-1]))
-            end--;
-
-    if (start == 0 && end == self->length && PyUnicode_CheckExact(self)) {
-        /* couldn't strip anything off, return original string */
-        Py_INCREF(self);
-        return (PyObject*) self;
-    }
-
-    return (PyObject*) PyUnicode_FromUnicode(
-        self->str + start,
-        end - start
-        );
-}
-
-static 
 PyObject *replace(PyUnicodeObject *self,
 		  PyUnicodeObject *str1,
 		  PyUnicodeObject *str2,
@@ -4464,16 +4435,172 @@ unicode_lower(PyUnicodeObject *self)
     return fixup(self, fixlower);
 }
 
-static char lstrip__doc__[] =
-"S.lstrip() -> unicode\n\
-\n\
-Return a copy of the string S with leading whitespace removed.";
+#define LEFTSTRIP 0
+#define RIGHTSTRIP 1
+#define BOTHSTRIP 2
+
+/* Arrays indexed by above */
+static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
+
+#define STRIPNAME(i) (stripformat[i]+3)
+
+static const Py_UNICODE *
+unicode_memchr(const Py_UNICODE *s, Py_UNICODE c, size_t n)
+{
+	int i;
+	for (i = 0; i<n; ++i)
+		if (s[i]==c)
+			return s+i;
+	return NULL;
+}
+
+/* externally visible for str.strip(unicode) */
+PyObject *
+_PyUnicode_XStrip(PyUnicodeObject *self, int striptype, PyObject *sepobj)
+{
+	Py_UNICODE *s = PyUnicode_AS_UNICODE(self);
+	int len = PyUnicode_GET_SIZE(self);
+	Py_UNICODE *sep = PyUnicode_AS_UNICODE(sepobj);
+	int seplen = PyUnicode_GET_SIZE(sepobj);
+	int i, j;
+
+	i = 0;
+	if (striptype != RIGHTSTRIP) {
+		while (i < len && unicode_memchr(sep, s[i], seplen)) {
+			i++;
+		}
+	}
+
+	j = len;
+	if (striptype != LEFTSTRIP) {
+		do {
+			j--;
+		} while (j >= i && unicode_memchr(sep, s[j], seplen));
+		j++;
+	}
+
+	if (i == 0 && j == len && PyUnicode_CheckExact(self)) {
+		Py_INCREF(self);
+		return (PyObject*)self;
+	}
+	else
+		return PyUnicode_FromUnicode(s+i, j-i);
+}
+
 
 static PyObject *
-unicode_lstrip(PyUnicodeObject *self)
+do_strip(PyUnicodeObject *self, int striptype)
 {
-    return strip(self, 1, 0);
+	Py_UNICODE *s = PyUnicode_AS_UNICODE(self);
+	int len = PyUnicode_GET_SIZE(self), i, j;
+
+	i = 0;
+	if (striptype != RIGHTSTRIP) {
+		while (i < len && Py_UNICODE_ISSPACE(s[i])) {
+			i++;
+		}
+	}
+
+	j = len;
+	if (striptype != LEFTSTRIP) {
+		do {
+			j--;
+		} while (j >= i && Py_UNICODE_ISSPACE(s[j]));
+		j++;
+	}
+
+	if (i == 0 && j == len && PyUnicode_CheckExact(self)) {
+		Py_INCREF(self);
+		return (PyObject*)self;
+	}
+	else
+		return PyUnicode_FromUnicode(s+i, j-i);
 }
+
+
+static PyObject *
+do_argstrip(PyUnicodeObject *self, int striptype, PyObject *args)
+{
+	PyObject *sep = NULL;
+
+	if (!PyArg_ParseTuple(args, (char *)stripformat[striptype], &sep))
+		return NULL;
+
+	if (sep != NULL && sep != Py_None) {
+		if (PyUnicode_Check(sep))
+			return _PyUnicode_XStrip(self, striptype, sep);
+		else if (PyString_Check(sep)) {
+			PyObject *res;
+			sep = PyUnicode_FromObject(sep);
+			if (sep==NULL)
+				return NULL;
+			res = _PyUnicode_XStrip(self, striptype, sep);
+			Py_DECREF(sep);
+			return res;
+		}
+		else {
+			PyErr_Format(PyExc_TypeError,
+				     "%s arg must be None, unicode or str",
+				     STRIPNAME(striptype));
+			return NULL;
+		}
+	}
+
+	return do_strip(self, striptype);
+}
+
+
+static char strip__doc__[] =
+"S.strip([sep]) -> unicode\n\
+\n\
+Return a copy of the string S with leading and trailing\n\
+whitespace removed.\n\
+If sep is given and not None, remove characters in sep instead.\n\
+If sep is a str, it will be converted to unicode before stripping";
+
+static PyObject *
+unicode_strip(PyUnicodeObject *self, PyObject *args)
+{
+	if (PyTuple_GET_SIZE(args) == 0)
+		return do_strip(self, BOTHSTRIP); /* Common case */
+	else
+		return do_argstrip(self, BOTHSTRIP, args);
+}
+
+
+static char lstrip__doc__[] =
+"S.lstrip([sep]) -> unicode\n\
+\n\
+Return a copy of the string S with leading whitespace removed.\n\
+If sep is given and not None, remove characters in sep instead.\n\
+If sep is a str, it will be converted to unicode before stripping";
+
+static PyObject *
+unicode_lstrip(PyUnicodeObject *self, PyObject *args)
+{
+	if (PyTuple_GET_SIZE(args) == 0)
+		return do_strip(self, LEFTSTRIP); /* Common case */
+	else
+		return do_argstrip(self, LEFTSTRIP, args);
+}
+
+
+static char rstrip__doc__[] =
+"S.rstrip([sep]) -> unicode\n\
+\n\
+Return a copy of the string S with trailing whitespace removed.\n\
+If sep is given and not None, remove characters in sep instead.\n\
+If sep is a str, it will be converted to unicode before stripping";
+
+static PyObject *
+unicode_rstrip(PyUnicodeObject *self, PyObject *args)
+{
+	if (PyTuple_GET_SIZE(args) == 0)
+		return do_strip(self, RIGHTSTRIP); /* Common case */
+	else
+		return do_argstrip(self, RIGHTSTRIP, args);
+}
+
 
 static PyObject*
 unicode_repeat(PyUnicodeObject *str, int len)
@@ -4677,17 +4804,6 @@ unicode_rjust(PyUnicodeObject *self, PyObject *args)
     return (PyObject*) pad(self, width - self->length, 0, ' ');
 }
 
-static char rstrip__doc__[] =
-"S.rstrip() -> unicode\n\
-\n\
-Return a copy of the string S with trailing whitespace removed.";
-
-static PyObject *
-unicode_rstrip(PyUnicodeObject *self)
-{
-    return strip(self, 0, 1);
-}
-
 static PyObject*
 unicode_slice(PyUnicodeObject *self, int start, int end)
 {
@@ -4781,17 +4897,6 @@ static
 PyObject *unicode_str(PyUnicodeObject *self)
 {
     return PyUnicode_AsEncodedString((PyObject *)self, NULL, NULL);
-}
-
-static char strip__doc__[] =
-"S.strip() -> unicode\n\
-\n\
-Return a copy of S with leading and trailing whitespace removed.";
-
-static PyObject *
-unicode_strip(PyUnicodeObject *self)
-{
-    return strip(self, 1, 1);
 }
 
 static char swapcase__doc__[] =
@@ -4966,14 +5071,14 @@ static PyMethodDef unicode_methods[] = {
     {"index", (PyCFunction) unicode_index, METH_VARARGS, index__doc__},
     {"ljust", (PyCFunction) unicode_ljust, METH_VARARGS, ljust__doc__},
     {"lower", (PyCFunction) unicode_lower, METH_NOARGS, lower__doc__},
-    {"lstrip", (PyCFunction) unicode_lstrip, METH_NOARGS, lstrip__doc__},
+    {"lstrip", (PyCFunction) unicode_lstrip, METH_VARARGS, lstrip__doc__},
 /*  {"maketrans", (PyCFunction) unicode_maketrans, METH_VARARGS, maketrans__doc__}, */
     {"rfind", (PyCFunction) unicode_rfind, METH_VARARGS, rfind__doc__},
     {"rindex", (PyCFunction) unicode_rindex, METH_VARARGS, rindex__doc__},
     {"rjust", (PyCFunction) unicode_rjust, METH_VARARGS, rjust__doc__},
-    {"rstrip", (PyCFunction) unicode_rstrip, METH_NOARGS, rstrip__doc__},
+    {"rstrip", (PyCFunction) unicode_rstrip, METH_VARARGS, rstrip__doc__},
     {"splitlines", (PyCFunction) unicode_splitlines, METH_VARARGS, splitlines__doc__},
-    {"strip", (PyCFunction) unicode_strip, METH_NOARGS, strip__doc__},
+    {"strip", (PyCFunction) unicode_strip, METH_VARARGS, strip__doc__},
     {"swapcase", (PyCFunction) unicode_swapcase, METH_NOARGS, swapcase__doc__},
     {"translate", (PyCFunction) unicode_translate, METH_O, translate__doc__},
     {"upper", (PyCFunction) unicode_upper, METH_NOARGS, upper__doc__},

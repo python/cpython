@@ -169,6 +169,24 @@ test('lstrip', u'   hello   ', u'hello   ')
 test('rstrip', u'   hello   ', u'   hello')
 test('strip', u'hello', u'hello')
 
+# strip/lstrip/rstrip with None arg
+test('strip', u'   hello   ', u'hello', None)
+test('lstrip', u'   hello   ', u'hello   ', None)
+test('rstrip', u'   hello   ', u'   hello', None)
+test('strip', u'hello', u'hello', None)
+
+# strip/lstrip/rstrip with unicode arg
+test('strip', u'xyzzyhelloxyzzy', u'hello', u'xyz')
+test('lstrip', u'xyzzyhelloxyzzy', u'helloxyzzy', u'xyz')
+test('rstrip', u'xyzzyhelloxyzzy', u'xyzzyhello', u'xyz')
+test('strip', u'hello', u'hello', u'xyz')
+
+# strip/lstrip/rstrip with str arg
+test('strip', u'xyzzyhelloxyzzy', u'hello', 'xyz')
+test('lstrip', u'xyzzyhelloxyzzy', u'helloxyzzy', 'xyz')
+test('rstrip', u'xyzzyhelloxyzzy', u'xyzzyhello', 'xyz')
+test('strip', u'hello', u'hello', 'xyz')
+
 test('swapcase', u'HeLLo cOmpUteRs', u'hEllO CoMPuTErS')
 
 if 0:
