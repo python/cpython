@@ -20,8 +20,7 @@ __revision__ = "$Id$"
 import string, re, os
 from types import *
 from copy import copy
-from distutils.sysconfig import \
-     CC, CCSHARED, CFLAGS, OPT, LDSHARED, LDFLAGS, RANLIB, AR, SO
+from distutils import sysconfig
 from distutils.ccompiler import CCompiler, gen_preprocess_options, gen_lib_options
 
 # XXX Things not currently handled:
@@ -59,14 +58,15 @@ class UnixCCompiler (CCompiler):
     src_extensions = [".c",".C",".cc",".cxx",".cpp"]
     obj_extension = ".o"
     static_lib_extension = ".a"
-    shared_lib_extension = ".so"
+    shared_lib_extension = sysconfig.SO
     static_lib_format = shared_lib_format = "lib%s%s"
 
     # Command to create a static library: seems to be pretty consistent
     # across the major Unices.  Might have to move down into the
     # constructor if we need platform-specific guesswork.
-    archiver = "ar"
+    archiver = sysconfig.AR
     archiver_options = "-cr"
+    ranlib = sysconfig.RANLIB
 
 
     def __init__ (self,
@@ -90,11 +90,11 @@ class UnixCCompiler (CCompiler):
         # UnixCCompiler!
 
         (self.cc, self.ccflags) = \
-            _split_command (CC + ' ' + OPT)
-        self.ccflags_shared = string.split (CCSHARED)
+            _split_command (sysconfig.CC + ' ' + sysconfig.OPT)
+        self.ccflags_shared = string.split (sysconfig.CCSHARED)
 
         (self.ld_shared, self.ldflags_shared) = \
-            _split_command (LDSHARED)
+            _split_command (sysconfig.LDSHARED)
 
         self.ld_exec = self.cc
 
@@ -157,6 +157,12 @@ class UnixCCompiler (CCompiler):
                          self.archiver_options,
                          output_filename] +
                         objects + self.objects)
+
+            # Not many Unices required ranlib anymore -- SunOS 4.x is,
+            # I think the only major Unix that does.  Probably should
+            # have some platform intelligence here to skip ranlib if
+            # it's not needed.
+            self.spawn ([self.ranlib, output_filename])
         else:
             self.announce ("skipping %s (up-to-date)" % output_filename)
 
