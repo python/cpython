@@ -124,5 +124,5 @@ codecs.register(search_function)
 # Register iconv_codec lookup function if available
 try:
     import iconv_codec
-except ImportError:
+except (ImportError, RuntimeError):
     pass
