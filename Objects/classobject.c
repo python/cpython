@@ -1805,6 +1805,7 @@ PyMethod_New(PyObject *func, PyObject *self, PyObject *class)
 		if (im == NULL)
 			return NULL;
 	}
+	im->im_weakreflist = NULL;
 	Py_INCREF(func);
 	im->im_func = func;
 	Py_XINCREF(self);
@@ -1902,6 +1903,7 @@ instancemethod_getattro(register PyMethodObject *im, PyObject *name)
 static void
 instancemethod_dealloc(register PyMethodObject *im)
 {
+	PyObject_ClearWeakRefs((PyObject *)im);
 	PyObject_GC_Fini(im);
 	Py_DECREF(im->im_func);
 	Py_XDECREF(im->im_self);
@@ -2019,9 +2021,12 @@ PyTypeObject PyMethod_Type = {
 	(getattrofunc)instancemethod_getattro,	/* tp_getattro */
 	(setattrofunc)instancemethod_setattro,	/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC | Py_TPFLAGS_HAVE_WEAKREFS,
 	0,					/* tp_doc */
 	(traverseproc)instancemethod_traverse,	/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+ 	offsetof(PyMethodObject, im_weakreflist) /* tp_weaklistoffset */
 };
 
 /* Clear out the free list */

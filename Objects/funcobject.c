@@ -13,6 +13,7 @@ PyFunction_New(PyObject *code, PyObject *globals)
 	if (op != NULL) {
 		PyObject *doc;
 		PyObject *consts;
+		op->func_weakreflist = NULL;
 		Py_INCREF(code);
 		op->func_code = code;
 		Py_INCREF(globals);
@@ -245,6 +246,7 @@ func_setattro(PyFunctionObject *op, PyObject *name, PyObject *value)
 static void
 func_dealloc(PyFunctionObject *op)
 {
+	PyObject_ClearWeakRefs((PyObject *) op);
 	PyObject_GC_Fini(op);
 	Py_DECREF(op->func_code);
 	Py_DECREF(op->func_globals);
@@ -327,13 +329,16 @@ PyTypeObject PyFunction_Type = {
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
-	0, /*tp_hash*/
+	0,		/*tp_hash*/
 	0,		/*tp_call*/
 	0,		/*tp_str*/
 	(getattrofunc)func_getattro,	     /*tp_getattro*/
 	(setattrofunc)func_setattro,	     /*tp_setattro*/
 	0,		/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC, /*tp_flags*/
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC | Py_TPFLAGS_HAVE_WEAKREFS,
 	0,		/* tp_doc */
 	(traverseproc)func_traverse,	/* tp_traverse */
+	0,		/* tp_clear */
+	0,		/* tp_richcompare */
+	offsetof(PyFunctionObject, func_weakreflist), /* tp_weaklistoffset */
 };
