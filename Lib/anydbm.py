@@ -42,11 +42,8 @@ only if it doesn't exist; and 'n' always creates a new database.
 
 """
 
-try:
-    class error(Exception):
-        pass
-except (NameError, TypeError):
-    error = "anydbm.error"
+class error(Exception):
+    pass
 
 _names = ['dbhash', 'gdbm', 'dbm', 'dumbdbm']
 _errors = [error]
