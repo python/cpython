@@ -13,6 +13,13 @@ cd `dirname $0`/..
 srcdir=`pwd`
 cd $WORKDIR
 
+use_logical_names=true
+
+if [ "$1" = "--numeric" ] ; then
+    use_logical_names=''
+    shift 1
+fi
+
 part=$1; shift 1
 
 TEXINPUTS=$srcdir/$part:$TEXINPUTS
@@ -35,6 +42,10 @@ latex2html \
 echo "cp $srcdir/html/style.css $part/$part.css"
 cp $srcdir/html/style.css $part/$part.css || exit $?
 
-echo "(cd $part; $srcdir/tools/node2label.pl \*.html)"
-cd $part
-$srcdir/tools/node2label.pl *.html || exit $?
+if [ "$use_logical_names" ] ; then
+    echo "(cd $part; $srcdir/tools/node2label.pl \*.html)"
+    cd $part
+    $srcdir/tools/node2label.pl *.html || exit $?
+else
+    echo "Skipping use of logical file names due to --numeric."
+fi
