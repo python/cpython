@@ -437,8 +437,7 @@ class PyBuildExt(build_ext):
         # Berkeley DB 3.x.)
 
         # when sorted in reverse order, keys for this dict must appear in the
-        # order you wish to search - e.g., search for db3 before db2, db2
-        # before db1
+        # order you wish to search - e.g., search for db4 before db3
         db_try_this = {
             'db4': {'libs': ('db-4.3', 'db-4.2', 'db-4.1', 'db-4.0'),
                     'libdirs': ('/usr/local/BerkeleyDB.4.3/lib',
@@ -460,7 +459,7 @@ class PyBuildExt(build_ext):
                                 '/sw/include/db4',
                                 '/usr/include/db4',
                                 ),
-                    'incs': ('db_185.h',)},
+                    'incs': ('db.h',)},
             'db3': {'libs': ('db-3.3', 'db-3.2', 'db-3.1', 'db-3.0'),
                     'libdirs': ('/usr/local/BerkeleyDB.3.3/lib',
                                 '/usr/local/BerkeleyDB.3.2/lib',
@@ -481,35 +480,9 @@ class PyBuildExt(build_ext):
                                 '/sw/include/db3',
                                 '/usr/include/db3',
                                 ),
-                    'incs': ('db_185.h',)},
-            'db2': {'libs': ('db2',),
-                    'libdirs': ('/usr/local/lib',
-                                '/sw/lib',
-                                '/usr/lib',
-                                '/lib'),
-                    'incdirs': ('/usr/local/include/db2',
-                                '/sw/include/db2',
-                                '/usr/include/db2'),
-                    'incs': ('db_185.h',)},
-            # if you are willing to risk hash db file corruption you can
-            # uncomment the lines below for db1.  Note that this will affect
-            # not only the bsddb module, but the dbhash and anydbm modules
-            # as well.  YOU HAVE BEEN WARNED!!!
-            ##'db1': {'libs': ('db1', 'db'),
-            ##        'libdirs': ('/usr/local/lib',
-            ##                    '/sw/lib',
-            ##                    '/usr/lib',
-            ##                    '/lib'),
-            ##        'incdirs': ('/usr/local/include/db1',
-            ##                    '/usr/local/include',
-            ##                    '/usr/include/db1',
-            ##                    '/usr/include'),
-            ##        'incs': ('db.h',)},
+                    'incs': ('db.h',)},
             }
 
-        # override this list to affect the library version search order
-        # for example, if you want to force version 2 to be used:
-        #   db_search_order = ["db2"]
         db_search_order = db_try_this.keys()
         db_search_order.sort()
         db_search_order.reverse()
@@ -537,19 +510,11 @@ class PyBuildExt(build_ext):
             # is usually correct and most trouble free, but may cause problems
             # in some unusual system configurations (e.g. the directory is on
             # an NFS server that goes away).
-            if dbinc == 'db_185.h':
-                exts.append(Extension('bsddb', ['bsddbmodule.c'],
-                                      library_dirs=[dblib_dir],
-                                      runtime_library_dirs=[dblib_dir],
-                                      include_dirs=db_incs,
-                                      define_macros=[('HAVE_DB_185_H',1)],
-                                      libraries=dblibs))
-            else:
-                exts.append(Extension('bsddb', ['bsddbmodule.c'],
-                                      library_dirs=[dblib_dir],
-                                      runtime_library_dirs=[dblib_dir],
-                                      include_dirs=db_incs,
-                                      libraries=dblibs))
+            exts.append(Extension('_bsddb', ['_bsddb.c'],
+                                  library_dirs=[dblib_dir],
+                                  runtime_library_dirs=[dblib_dir],
+                                  include_dirs=db_incs,
+                                  libraries=dblibs))
         else:
             db_incs = None
             dblibs = []
