@@ -37,11 +37,50 @@ Used in:  Py_SAFE_DOWNCAST
 #include <stdlib.h>
 #endif
 
+#include <math.h> /* Moved here from the math section, before extern "C" */
+
+/********************************************
+ * WRAPPER FOR <time.h> and/or <sys/time.h> *
+ ********************************************/
+
+#ifdef TIME_WITH_SYS_TIME
+#include <sys/time.h>
+#include <time.h>
+#else /* !TIME_WITH_SYS_TIME */
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif /* !HAVE_SYS_TIME_H */
+#endif /* !TIME_WITH_SYS_TIME */
+
+
+/******************************
+ * WRAPPER FOR <sys/select.h> *
+ ******************************/
+
+/* NB caller must include <sys/types.h> */
+
+#ifdef HAVE_SYS_SELECT_H
+
+#include <sys/select.h>
+
+#else /* !HAVE_SYS_SELECT_H */
+
+#ifdef USE_GUSI1
+/* If we don't have sys/select the definition may be in unistd.h */
+#include <GUSI.h>
+#endif
+
+#endif /* !HAVE_SYS_SELECT_H */
+
+
 #ifdef __cplusplus
 /* Move this down here since some C++ #include's don't like to be included
    inside an extern "C" */
 extern "C" {
 #endif
+
 
 /* Py_ARITHMETIC_RIGHT_SHIFT
  * C doesn't define whether a right-shift of a signed integer sign-extends
@@ -83,7 +122,6 @@ extern "C" {
 #else
 #define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
 #endif
-
 
 
 /**************************************************************************
@@ -165,8 +203,6 @@ extern double hypot(double, double);
 #endif
 #endif
 
-#include <math.h>
-
 #ifndef HAVE_HYPOT
 #ifdef __MWERKS__
 #undef hypot
@@ -241,41 +277,6 @@ extern double hypot(double, double);
 #endif
 
 
-/********************************************
- * WRAPPER FOR <time.h> and/or <sys/time.h> *
- ********************************************/
-
-#ifdef TIME_WITH_SYS_TIME
-#include <sys/time.h>
-#include <time.h>
-#else /* !TIME_WITH_SYS_TIME */
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#else /* !HAVE_SYS_TIME_H */
-#include <time.h>
-#endif /* !HAVE_SYS_TIME_H */
-#endif /* !TIME_WITH_SYS_TIME */
-
-
-/******************************
- * WRAPPER FOR <sys/select.h> *
- ******************************/
-
-/* NB caller must include <sys/types.h> */
-
-#ifdef HAVE_SYS_SELECT_H
-
-#include <sys/select.h>
-
-#else /* !HAVE_SYS_SELECT_H */
-
-#ifdef USE_GUSI1
-/* If we don't have sys/select the definition may be in unistd.h */
-#include <GUSI.h>
-#endif
-
-#endif /* !HAVE_SYS_SELECT_H */
-
 /* If the fd manipulation macros aren't defined,
    here is a set that should do the job */
 
@@ -306,6 +307,7 @@ typedef	struct fd_set {
 #endif /* FD_SET */
 
 #endif /* fd manipulation macros */
+
 
 #ifdef __cplusplus
 }
