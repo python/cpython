@@ -5,7 +5,13 @@
 import string
 import reop
 
-error = 're error'
+# reop.error and re.error should be the same, since exceptions can be
+# raised from  either module.
+error = reop.error # 're error'
+
+from reop import NORMAL, CHARCLASS, REPLACEMENT
+from reop import CHAR, MEMORY_REFERENCE, SYNTAX, NOT_SYNTAX, SET
+from reop import WORD_BOUNDARY, NOT_WORD_BOUNDARY, BEGINNING_OF_BUFFER, END_OF_BUFFER
 
 # compilation flags
 
@@ -622,9 +628,9 @@ def build_fastmap(code, pos=0):
 #
 #
 
-[NORMAL, CHARCLASS, REPLACEMENT] = range(3)
-[CHAR, MEMORY_REFERENCE, SYNTAX, NOT_SYNTAX, SET, WORD_BOUNDARY,
- NOT_WORD_BOUNDARY, BEGINNING_OF_BUFFER, END_OF_BUFFER] = range(9)
+#[NORMAL, CHARCLASS, REPLACEMENT] = range(3)
+#[CHAR, MEMORY_REFERENCE, SYNTAX, NOT_SYNTAX, SET, WORD_BOUNDARY,
+# NOT_WORD_BOUNDARY, BEGINNING_OF_BUFFER, END_OF_BUFFER] = range(9)
 
 def expand_escape(pattern, index, context=NORMAL):
     if index >= len(pattern):
@@ -636,6 +642,9 @@ def expand_escape(pattern, index, context=NORMAL):
     elif pattern[index] == 'n':
 	return CHAR, chr(10), index + 1
     
+    elif pattern[index] == 'v':
+	return CHAR, chr(11), index + 1
+    
     elif pattern[index] == 'r':
 	return CHAR, chr(13), index + 1
     
@@ -645,20 +654,9 @@ def expand_escape(pattern, index, context=NORMAL):
     elif pattern[index] == 'a':
 	return CHAR, chr(7), index + 1
     
-    elif pattern[index] == 'e':
-	return CHAR, chr(27), index + 1
-    
-    elif pattern[index] == 'c':
-	if index + 1 >= len(pattern):
-	    raise error, '\\c must be followed by another character'
-	elif pattern[index + 1] in 'abcdefghijklmnopqrstuvwxyz':
-	    return CHAR, chr(ord(pattern[index + 1]) - ord('a') + 1), index + 2
-	else:
-	    return CHAR, chr(ord(pattern[index + 1]) ^ 64), index + 2
-	
     elif pattern[index] == 'x':
 	# CAUTION: this is the Python rule, not the Perl rule!
-	end = index
+	end = index + 1  # Skip over the 'x' character
 	while (end < len(pattern)) and (pattern[end] in string.hexdigits):
 	    end = end + 1
 	if end == index:
@@ -666,7 +664,7 @@ def expand_escape(pattern, index, context=NORMAL):
 	# let Python evaluate it, so we don't incorrectly 2nd-guess
 	# what it's doing (and Python in turn passes it on to sscanf,
 	# so that *it* doesn't incorrectly 2nd-guess what C does!)
-	char = eval ('"' + pattern[index-2:end] + '"')
+	char = eval ('"' + pattern[index-1:end] + '"')
 	assert len(char) == 1
 	return CHAR, char, end
 
@@ -690,12 +688,12 @@ def expand_escape(pattern, index, context=NORMAL):
 	    
     elif pattern[index] == 'Z':
 	if context != NORMAL:
-	    return 'Z', index + 1
+	    return CHAR, 'Z', index + 1
 	else:
 	    return END_OF_BUFFER, '', index + 1
 	    
     elif pattern[index] in 'GluLUQE':
-	raise error, ('\\' + ch + ' is not allowed')
+	raise error, ('\\' + pattern[index] + ' is not allowed')
     
     elif pattern[index] == 'w':
 	if context == NORMAL:
@@ -1488,3 +1486,8 @@ def compile(pattern, flags=0):
 	label = label + 1
     code.append(End())
     return RegexObject(pattern, flags, code, register, groupindex)
+
+# Replace expand_escape and _expand functions with their C equivalents.
+# If you suspect bugs in the C versions, comment out the next two lines
+expand_escape = reop.expand_escape
+_expand  = reop._expand
