@@ -181,6 +181,16 @@ calls to \function{putenv()} don't update \code{os.environ}, so it is
 actually preferable to assign to items of \code{os.environ}.  
 \end{funcdesc}
 
+\begin{funcdesc}{setegid}{egid}
+Set the current process's effective group id.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{seteuid}{euid}
+Set the current process's effective user id.
+Availability: \UNIX{}.
+\end{funcdesc}
+
 \begin{funcdesc}{setgid}{gid}
 Set the current process' group id.
 Availability: \UNIX{}.
@@ -196,6 +206,16 @@ Availability: \UNIX{}.
 \begin{funcdesc}{setpgid}{pid, pgrp}
 Calls the system call \cfunction{setpgid()}.  See the \UNIX{} manual
 for the semantics.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{setreuid}{ruid, euid}
+Set the current process's real and effective user ids.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{setregid}{rgid, egid}
+Set the current process's real and effective group ids.
 Availability: \UNIX{}.
 \end{funcdesc}
 
