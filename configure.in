@@ -609,11 +609,7 @@ then
 	DYNIX/ptx*) LDSHARED="ld -G";;
         Darwin/*|next/*) 
 		if test "$ns_dyld"
-		then 
-		  if test "$ac_sys_system" = Darwin
-		  then LDSHARED='$(CC) $(LDFLAGS) -bundle -undefined suppress'
-		  else LDSHARED='$(CC) $(LDFLAGS) -bundle -prebind'
-		  fi
+		then LDSHARED='$(CC) $(LDFLAGS) -bundle -undefined suppress'
 		else LDSHARED='$(CC) $(CFLAGS) -nostdlib -r';
 		fi
 	if test "$with_next_framework" ; then
@@ -686,7 +682,7 @@ then
 	# crt1.o) gets erroneously defined as common, which breaks dynamic
 	# loading of any modules which reference it in System.framework
 	next/4*|next/5*) LINKFORSHARED="-u __dummy -framework System" ;;
-	Darwin/*) LINKFORSHARED="-framework System" ;;
+	Darwin/*) LINKFORSHARED="-u __dummy -framework System -framework Foundation" ;;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
 	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
 	FreeBSD*|NetBSD*) 
