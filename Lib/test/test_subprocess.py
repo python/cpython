@@ -248,6 +248,29 @@ class ProcessTestCase(unittest.TestCase):
                          env=newenv)
         self.assertEqual(p.stdout.read(), "orange")
 
+    def test_communicate_stdin(self):
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys; sys.exit(sys.stdin.read() == "pear")'],
+                             stdin=subprocess.PIPE)
+        p.communicate("pear")
+        self.assertEqual(p.returncode, 1)
+
+    def test_communicate_stdout(self):
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys; sys.stdout.write("pineapple")'],
+                             stdout=subprocess.PIPE)
+        (stdout, stderr) = p.communicate()
+        self.assertEqual(stdout, "pineapple")
+        self.assertEqual(stderr, None)
+
+    def test_communicate_stderr(self):
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys; sys.stderr.write("pineapple")'],
+                             stderr=subprocess.PIPE)
+        (stdout, stderr) = p.communicate()
+        self.assertEqual(stdout, None)
+        self.assertEqual(stderr, "pineapple")
+
     def test_communicate(self):
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys,os;' \
