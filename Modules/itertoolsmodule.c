@@ -2051,6 +2051,12 @@ count_next(countobject *lz)
 	return PyInt_FromLong(lz->cnt++);
 }
 
+static PyObject *
+count_repr(countobject *lz)
+{
+	return PyString_FromFormat("count(%d)", lz->cnt);
+}
+
 PyDoc_STRVAR(count_doc,
 "count([firstval]) --> count object\n\
 \n\
@@ -2069,7 +2075,7 @@ static PyTypeObject count_type = {
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
 	0,				/* tp_compare */
-	0,				/* tp_repr */
+	(reprfunc)count_repr,		/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
 	0,				/* tp_as_mapping */
@@ -2355,6 +2361,25 @@ repeat_next(repeatobject *ro)
 	return ro->element;
 }
 
+static PyObject *
+repeat_repr(repeatobject *ro)
+{
+	PyObject *result, *objrepr;
+
+	objrepr = PyObject_Repr(ro->element);
+	if (objrepr == NULL)
+		return NULL;
+
+	if (ro->cnt == -1)
+		result = PyString_FromFormat("repeat(%s)",
+			PyString_AS_STRING(objrepr));
+	else
+		result = PyString_FromFormat("repeat(%s, %d)",
+			PyString_AS_STRING(objrepr), ro->cnt);
+	Py_DECREF(objrepr);
+	return result;
+}	
+
 static int
 repeat_len(repeatobject *ro)
 {
@@ -2385,7 +2410,7 @@ static PyTypeObject repeat_type = {
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
 	0,				/* tp_compare */
-	0,				/* tp_repr */
+	(reprfunc)repeat_repr,		/* tp_repr */
 	0,				/* tp_as_number */
 	&repeat_as_sequence,		/* tp_as_sequence */
 	0,				/* tp_as_mapping */
