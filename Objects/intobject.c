@@ -328,6 +328,13 @@ int_abs(v)
 		return int_neg(v);
 }
 
+static int
+int_nonzero(v)
+	intobject *v;
+{
+	return v->ob_ival != 0;
+}
+
 static number_methods int_as_number = {
 	int_add,	/*nb_add*/
 	int_sub,	/*nb_subtract*/
@@ -339,6 +346,7 @@ static number_methods int_as_number = {
 	int_neg,	/*nb_negative*/
 	int_pos,	/*nb_positive*/
 	int_abs,	/*nb_absolute*/
+	int_nonzero,	/*nb_nonzero*/
 };
 
 typeobject Inttype = {
