@@ -280,7 +280,8 @@ mainprogram = os.path.join(resdir, "%(mainprogram)s")
 
 sys.argv.insert(1, mainprogram)
 os.environ["PYTHONPATH"] = resdir
-os.environ["PYTHONHOME"] = resdir
+if %(standalone)s:
+	os.environ["PYTHONHOME"] = resdir
 os.environ["PYTHONEXECUTABLE"] = executable
 os.environ["DYLD_LIBRARY_PATH"] = libdir
 os.execve(executable, sys.argv, os.environ)
@@ -445,6 +446,7 @@ class AppBuilder(BundleBuilder):
 				hashbang = sys.executable
 				while os.path.islink(hashbang):
 					hashbang = os.readlink(hashbang)
+			standalone = self.standalone
 			open(bootstrappath, "w").write(BOOTSTRAP_SCRIPT % locals())
 			os.chmod(bootstrappath, 0775)
 
