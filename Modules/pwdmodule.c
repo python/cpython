@@ -27,8 +27,7 @@ exception is raised if the entry asked for cannot be found.";
 
       
 static PyObject *
-mkpwent(p)
-	struct passwd *p;
+mkpwent(struct passwd *p)
 {
 #ifdef __BEOS__
 	/* For faking the GECOS field. - [cjh] */
@@ -66,9 +65,7 @@ Return the password database entry for the given numeric user ID.\n\
 See pwd.__doc__ for more on password database entries.";
 
 static PyObject *
-pwd_getpwuid(self, args)
-	PyObject *self;
-	PyObject *args;
+pwd_getpwuid(PyObject *self, PyObject *args)
 {
 	int uid;
 	struct passwd *p;
@@ -87,9 +84,7 @@ Return the password database entry for the given user name.\n\
 See pwd.__doc__ for more on password database entries.";
 
 static PyObject *
-pwd_getpwnam(self, args)
-	PyObject *self;
-	PyObject *args;
+pwd_getpwnam(PyObject *self, PyObject *args)
 {
 	char *name;
 	struct passwd *p;
@@ -110,9 +105,7 @@ in arbitrary order.\n\
 See pwd.__doc__ for more on password database entries.";
 
 static PyObject *
-pwd_getpwall(self, args)
-	PyObject *self;
-	PyObject *args;
+pwd_getpwall(PyObject *self, PyObject *args)
 {
 	PyObject *d;
 	struct passwd *p;
