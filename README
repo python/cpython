@@ -519,9 +519,8 @@ yourself (configure will never overwrite it).  Never edit Setup.dist
 -- always edit Setup or Setup.local (see below).  Read the comments in
 the file for information on what kind of edits are allowed.  When you
 have edited Setup in the Modules directory, the interpreter will
-automatically be rebuilt the next time you run make in the toplevel
-directory.  (When working inside the Modules directory, use "make
-Makefile; make".)
+automatically be rebuilt the next time you run make (in the toplevel
+directory).
 
 Many useful modules can be built on any Unix system, but some optional
 modules can't be reliably autodetected.  Often the quickest way to
