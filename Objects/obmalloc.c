@@ -349,7 +349,7 @@ static void (*free_hook)(void *) = NULL;
  */
 
 void *
-_PyCore_ObjectMalloc(size_t nbytes)
+_PyMalloc_Malloc(size_t nbytes)
 {
 	block *bp;
 	poolp pool;
@@ -479,7 +479,7 @@ _PyCore_ObjectMalloc(size_t nbytes)
 		 * With malloc, we can't avoid loosing one page address space
 		 * per arena due to the required alignment on page boundaries.
 		 */
-		bp = (block *)PyCore_MALLOC(ARENA_SIZE + SYSTEM_PAGE_SIZE);
+		bp = (block *)PyMem_MALLOC(ARENA_SIZE + SYSTEM_PAGE_SIZE);
 		if (bp == NULL) {
 			UNLOCK();
 			goto redirect;
@@ -510,13 +510,13 @@ _PyCore_ObjectMalloc(size_t nbytes)
 	 * last chance to serve the request) or when the max memory limit
 	 * has been reached.
 	 */
-	return (void *)PyCore_MALLOC(nbytes);
+	return (void *)PyMem_MALLOC(nbytes);
 }
 
 /* free */
 
 void
-_PyCore_ObjectFree(void *p)
+_PyMalloc_Free(void *p)
 {
 	poolp pool;
 	poolp next, prev;
@@ -536,7 +536,7 @@ _PyCore_ObjectFree(void *p)
 	offset = (off_t )p & POOL_SIZE_MASK;
 	pool = (poolp )((block *)p - offset);
 	if (pool->pooladdr != pool || pool->magic != (uint )POOL_MAGIC) {
-		PyCore_FREE(p);
+		PyMem_FREE(p);
 		return;
 	}
 
@@ -595,7 +595,7 @@ _PyCore_ObjectFree(void *p)
 /* realloc */
 
 void *
-_PyCore_ObjectRealloc(void *p, size_t nbytes)
+_PyMalloc_Realloc(void *p, size_t nbytes)
 {
 	block *bp;
 	poolp pool;
@@ -607,7 +607,7 @@ _PyCore_ObjectRealloc(void *p, size_t nbytes)
 #endif
 
 	if (p == NULL)
-		return _PyCore_ObjectMalloc(nbytes);
+		return _PyMalloc_Malloc(nbytes);
 
 	/* realloc(p, 0) on big blocks is redirected. */
 	pool = (poolp )((block *)p - ((off_t )p & POOL_SIZE_MASK));
@@ -618,7 +618,7 @@ _PyCore_ObjectRealloc(void *p, size_t nbytes)
 			size = nbytes;
 			goto malloc_copy_free;
 		}
-		bp = (block *)PyCore_REALLOC(p, nbytes);
+		bp = (block *)PyMem_REALLOC(p, nbytes);
 	}
 	else {
 		/* We're in charge of this block */
@@ -627,7 +627,7 @@ _PyCore_ObjectRealloc(void *p, size_t nbytes)
 			/* Don't bother if a smaller size was requested
 			   except for realloc(p, 0) == free(p), ret NULL */
 			if (nbytes == 0) {
-				_PyCore_ObjectFree(p);
+				_PyMalloc_Free(p);
 				bp = NULL;
 			}
 			else
@@ -637,10 +637,10 @@ _PyCore_ObjectRealloc(void *p, size_t nbytes)
 
 		malloc_copy_free:
 
-			bp = (block *)_PyCore_ObjectMalloc(nbytes);
+			bp = (block *)_PyMalloc_Malloc(nbytes);
 			if (bp != NULL) {
 				memcpy(bp, p, size);
-				_PyCore_ObjectFree(p);
+				_PyMalloc_Free(p);
 			}
 		}
 	}
@@ -651,7 +651,7 @@ _PyCore_ObjectRealloc(void *p, size_t nbytes)
 
 /* -- unused --
 void *
-_PyCore_ObjectCalloc(size_t nbel, size_t elsz)
+_PyMalloc_Calloc(size_t nbel, size_t elsz)
 {
         void *p;
 	size_t nbytes;
@@ -662,7 +662,7 @@ _PyCore_ObjectCalloc(size_t nbel, size_t elsz)
 #endif
 
 	nbytes = nbel * elsz;
-	p = _PyCore_ObjectMalloc(nbytes);
+	p = _PyMalloc_Malloc(nbytes);
 	if (p != NULL)
 		memset(p, 0, nbytes);
 	return p;
@@ -678,10 +678,10 @@ _PyCore_ObjectCalloc(size_t nbel, size_t elsz)
 #ifdef WITH_MALLOC_HOOKS
 
 void
-_PyCore_ObjectMalloc_SetHooks( void *(*malloc_func)(size_t),
-			       void *(*calloc_func)(size_t, size_t),
-			       void *(*realloc_func)(void *, size_t),
-			       void (*free_func)(void *) )
+_PyMalloc_SetHooks( void *(*malloc_func)(size_t),
+		    void *(*calloc_func)(size_t, size_t),
+		    void *(*realloc_func)(void *, size_t),
+		    void (*free_func)(void *) )
 {
 	LOCK();
 	malloc_hook = malloc_func;
@@ -692,10 +692,10 @@ _PyCore_ObjectMalloc_SetHooks( void *(*malloc_func)(size_t),
 }
 
 void
-_PyCore_ObjectMalloc_FetchHooks( void *(**malloc_funcp)(size_t),
-				 void *(**calloc_funcp)(size_t, size_t),
-				 void *(**realloc_funcp)(void *, size_t),
-				 void (**free_funcp)(void *) )
+_PyMalloc_FetchHooks( void *(**malloc_funcp)(size_t),
+		      void *(**calloc_funcp)(size_t, size_t),
+		      void *(**realloc_funcp)(void *, size_t),
+		      void (**free_funcp)(void *) )
 {
 	LOCK();
 	*malloc_funcp = malloc_hook;

@@ -10,26 +10,6 @@
 extern "C" {
 #endif
 
-/*
- * Core memory allocator
- * =====================
- */
-
-/* To make sure the interpreter is user-malloc friendly, all memory
-   APIs are implemented on top of this one.
-
-   The PyCore_* macros can be defined to make the interpreter use a
-   custom allocator. Note that they are for internal use only. Both
-   the core and extension modules should use the PyMem_* API. */
-
-#ifndef PyCore_MALLOC
-#undef PyCore_REALLOC
-#undef PyCore_FREE
-#define PyCore_MALLOC(n)      malloc(n)
-#define PyCore_REALLOC(p, n)  realloc((p), (n))
-#define PyCore_FREE(p)        free(p)
-#endif
-
 /* BEWARE:
 
    Each interface exports both functions and macros. Extension modules
@@ -51,9 +31,12 @@ extern "C" {
  * ====================
  */
 
+/* To make sure the interpreter is user-malloc friendly, all memory
+   APIs are implemented on top of this one. */
+
 /* Functions */
 
-/* Function wrappers around PyCore_MALLOC and friends; useful if you
+/* Function wrappers around PyMem_MALLOC and friends; useful if you
    need to be sure that you are using the same memory allocator as
    Python.  Note that the wrappers make sure that allocating 0 bytes
    returns a non-NULL pointer, even if the underlying malloc
@@ -66,10 +49,12 @@ extern DL_IMPORT(void) PyMem_Free(void *);
 /* Starting from Python 1.6, the wrappers Py_{Malloc,Realloc,Free} are
    no longer supported. They used to call PyErr_NoMemory() on failure. */
 
-/* Macros */
-#define PyMem_MALLOC(n)         PyCore_MALLOC(n)
-#define PyMem_REALLOC(p, n)     PyCore_REALLOC((void *)(p), (n))
-#define PyMem_FREE(p)           PyCore_FREE((void *)(p))
+/* Macros (override these if you want to a different malloc */
+#ifndef PyMem_MALLOC
+#define PyMem_MALLOC(n)         malloc(n)
+#define PyMem_REALLOC(p, n)     realloc((void *)(p), (n))
+#define PyMem_FREE(p)           free((void *)(p))
+#endif
 
 /*
  * Type-oriented memory interface
@@ -103,6 +88,22 @@ extern DL_IMPORT(void) PyMem_Free(void *);
 /* PyMem_XDEL is deprecated. To avoid the call when p is NULL,
    it is recommended to write the test explicitly in the code.
    Note that according to ANSI C, free(NULL) has no effect. */
+
+	
+/* pymalloc (private to the interpreter) */
+#ifdef WITH_PYMALLOC
+void *_PyMalloc_Malloc(size_t nbytes);
+void *_PyMalloc_Realloc(void *p, size_t nbytes);
+void _PyMalloc_Free(void *p);
+#define _PyMalloc_MALLOC _PyMalloc_Malloc
+#define _PyMalloc_REALLOC _PyMalloc_Realloc
+#define _PyMalloc_FREE _PyMalloc_Free
+#else
+#define _PyMalloc_MALLOC PyMem_MALLOC
+#define _PyMalloc_REALLOC PyMem_REALLOC
+#define _PyMalloc_FREE PyMem_FREE
+#endif
+
 
 #ifdef __cplusplus
 }
