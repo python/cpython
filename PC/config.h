@@ -176,6 +176,8 @@ typedef int pid_t;
 #define HAVE_LONG_LONG 1
 #define LONG_LONG __int64
 
+#undef HAVE_HYPOT
+
 #else /* !_WIN32 */
 #error "Only Win32 and later are supported"
 #endif /* !_WIN32 */
