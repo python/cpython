@@ -64,7 +64,6 @@ MYDIR="`pwd`"
 cd ..
 
 # now in .../Doc/
-make --no-print-directory || exit $?
 make --no-print-directory bziphtml || exit $?
 RELEASE=`grep '^RELEASE=' Makefile | sed 's|RELEASE=||'`
 PACKAGE="html-$RELEASE.tar.bz2"
