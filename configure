@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.82 
+# From configure.in Revision: 1.83 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.12 
@@ -1843,7 +1843,7 @@ then
 	next/*) LDSHARED='$(CC) $(CFLAGS) -nostdlib -r';;
 	Linux*) LDSHARED="gcc -shared";;
 	dgux*) LDSHARED="ld -G";;
-	FreeBSD*|NetBSD*) LDSHARED="ld -Bshareable";;
+	FreeBSD*|NetBSD*|OpenBSD*) LDSHARED="ld -Bshareable";;
 	SCO_SV*) LDSHARED="cc -G -KPIC -Ki486 -belf -Wl,-Bexport";;
 	*)	LDSHARED="ld";;
 	esac
@@ -1861,7 +1861,7 @@ then
 		 else CCSHARED="+z";
 		 fi;;
 	Linux*) CCSHARED="-fpic";;
-	FreeBSD*|NetBSD*) CCSHARED="-fpic";;
+	FreeBSD*|NetBSD*|OpenBSD*) CCSHARED="-fpic";;
 	SCO_SV*) CCSHARED="-KPIC -dy -Bdynamic";;
 	IRIX*/6*)  case $CC in
 		   *gcc*) CCSHARED="-shared";;
