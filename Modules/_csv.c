@@ -238,7 +238,8 @@ _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
 			PyErr_Format(PyExc_TypeError, 
 				     "\"%s\" must be an string", name);
 			return -1;
-		} else {
+		}
+		else {
 			Py_XDECREF(*target);
 			Py_INCREF(src);
 			*target = src;
@@ -1025,7 +1026,8 @@ join_append_data(WriterObj *self, char *field, int quote_empty,
 			PyErr_Format(error_obj,
                                      "single empty field record must be quoted");
 			return -1;
-		} else
+		}
+		else
 			*quoted = 1;
 	}
 
