@@ -156,12 +156,12 @@ Socket methods:
 #endif
 
 #ifdef USE_SSL
-#include "rsa.h"
-#include "crypto.h"
-#include "x509.h"
-#include "pem.h"
-#include "ssl.h"
-#include "err.h"
+#include "openssl/rsa.h"
+#include "openssl/crypto.h"
+#include "openssl/x509.h"
+#include "openssl/pem.h"
+#include "openssl/ssl.h"
+#include "openssl/err.h"
 #endif /* USE_SSL */
 
 #if defined(MS_WINDOWS) || defined(__BEOS__)
@@ -898,14 +898,15 @@ pair (host, port); the host must refer to the local host.";
 static PyObject *
 PySocketSock_close(PySocketSockObject *s, PyObject *args)
 {
+	SOCKET_T fd;
 	if (!PyArg_ParseTuple(args, ":close"))
 		return NULL;
-	if (s->sock_fd != -1) {
+	if ((fd = s->sock_fd) != -1) {
+		s->sock_fd = -1;
 		Py_BEGIN_ALLOW_THREADS
-		(void) SOCKETCLOSE(s->sock_fd);
+		(void) SOCKETCLOSE(fd);
 		Py_END_ALLOW_THREADS
 	}
-	s->sock_fd = -1;
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -2132,7 +2133,7 @@ static PyObject *SSL_SSLwrite(SSLObject *self, PyObject *args)
 	char *data;
 	size_t len = 0;
   
-	if (!PyArg_ParseTuple(args, "s|i:write", &data, &len))
+	if (!PyArg_ParseTuple(args, "s#|i:write", &data, &len))
 		return NULL;
   
 	if (!len)
