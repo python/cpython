@@ -389,9 +389,10 @@ sub do_cmd_citetitle{
     my $icon = get_link_icon($url);
     my $repl = '';
     if ($url) {
+        my $titletext = strip_html_markup("$title");
         $repl = ("<em class=\"citetitle\"><a\n"
                  . " href=\"$url\"\n"
-                 . " title=\"$title\"\n"
+                 . " title=\"$titletext\"\n"
                  . " >$title$icon</a></em>");
     }
     else {
