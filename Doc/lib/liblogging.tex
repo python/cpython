@@ -470,6 +470,27 @@ to \function{basicConfig()} using the \var{stream} keyword argument. Note
 that if both \var{stream} and \var{filename} keyword arguments are passed,
 the \var{stream} argument is ignored.
 
+Of course, you can put variable information in your output. To do this,
+simply have the message be a format string and pass in additional arguments
+containing the variable information, as in the following example:
+
+\begin{verbatim}
+import logging
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%a, %d %b %Y %H:%M:%S',
+                    filename='/temp/myapp.log',
+                    filemode='w')
+logging.error('Pack my box with %d dozen %s', 12, 'liquor jugs')
+\end{verbatim}
+
+which would result in
+
+\begin{verbatim}
+Wed, 21 Jul 2004 15:35:16 ERROR    Pack my box with 12 dozen liquor jugs
+\end{verbatim}
+
 \subsection{Handler Objects}
 
 Handlers have the following attributes and methods. Note that
