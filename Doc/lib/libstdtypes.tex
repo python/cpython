@@ -930,11 +930,11 @@ arbitrary objects):
   \lineiii{\var{a}.items()}
           {a copy of \var{a}'s list of (\var{key}, \var{value}) pairs}
           {(3)}
-  \lineiii{\var{a}.keys()}{a copy of \var{a}'s list of keys}{(2)}
+  \lineiii{\var{a}.keys()}{a copy of \var{a}'s list of keys}{(3)}
   \lineiii{\var{a}.update(\var{b})}
           {\code{for k in \var{b}.keys(): \var{a}[k] = \var{b}[k]}}
           {(4)}
-  \lineiii{\var{a}.values()}{a copy of \var{a}'s list of values}{(2)}
+  \lineiii{\var{a}.values()}{a copy of \var{a}'s list of values}{(3)}
   \lineiii{\var{a}.get(\var{k}\optional{, \var{x}})}
           {\code{\var{a}[\var{k}]} if \code{\var{k} in \var{a}},
            else \var{x}}
@@ -969,8 +969,8 @@ in the map.
 \method{keys()} and \method{values()} are called with no intervening
 modifications to the dictionary, the two lists will directly
 correspond.  This allows the creation of \code{(\var{value},
-\var{key})} pairs using \function{map()}: \samp{pairs = map(None,
-\var{a}.values(), \var{a}.keys())}.
+\var{key})} pairs using \function{zip()}: \samp{pairs =
+zip(\var{a}.values(), \var{a}.keys())}.
 
 \item[(4)] \var{b} must be of the same type as \var{a}.
 
