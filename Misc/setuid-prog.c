@@ -50,11 +50,15 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <string.h>
 
 /* CONFIGURATION SECTION */
 
 #ifndef FULL_PATH	/* so that this can be specified from the Makefile */
-#define FULL_PATH	"/full/path/of/script"
+/* Uncomment out the following line:
+#define FULL_PATH	"/full/path/of/script" 
+* Then comment out the #error line. */
+#error "Must define SCRIPTPATH in the Makefile"
 #endif
 #ifndef UMASK
 #define UMASK		077
@@ -133,9 +137,8 @@ main(int argc, char **argv)
 	if (FULL_PATH[0] != '/') {
 		fprintf(stderr, "%s: %s is not a full path name\n", argv[0],
 			FULL_PATH);
-		fprintf(stderr, "Tell this program's maintainer that s\\he ");
-		fprintf(stderr, "fouled up some simple rules\n");
-		fprintf(stderr, "pretty badly.\n");
+		fprintf(stderr, "You can only use this wrapper if you\n");
+		fprintf(stderr, "compile it with an absolute path.\n");
 		exit(1);
 	}
 
@@ -151,9 +154,8 @@ main(int argc, char **argv)
 	if (statb.st_uid != 0 && statb.st_uid != euid) {
 		fprintf(stderr, "%s: %s has the wrong owner\n", argv[0],
 			FULL_PATH);
-		fprintf(stderr, "Tell this program's maintainer that the ");
-		fprintf(stderr, "script should be owned by him/herself or the\n");
-		fprintf(stderr, "superuser.\n");
+		fprintf(stderr, "The script should be owned by root,\n");
+		fprintf(stderr, "and shouldn't be writeable by anyone.\n");
 		exit(1);
 	}
 
