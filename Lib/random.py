@@ -49,8 +49,7 @@ __all__ = ["Random","seed","random","uniform","randint","choice","sample",
            "randrange","shuffle","normalvariate","lognormvariate",
            "expovariate","vonmisesvariate","gammavariate",
            "gauss","betavariate","paretovariate","weibullvariate",
-           "getstate","setstate","jumpahead", "WichmannHill", "getrandbits",
-           "Random"]
+           "getstate","setstate","jumpahead", "WichmannHill", "getrandbits"]
 
 NV_MAGICCONST = 4 * _exp(-0.5)/_sqrt(2.0)
 TWOPI = 2.0*_pi
