@@ -8,6 +8,7 @@ import select
 import time
 import thread, threading
 import Queue
+import sys
 
 PORT = 50007
 HOST = 'localhost'
@@ -606,7 +607,8 @@ def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(GeneralModuleTests))
     suite.addTest(unittest.makeSuite(BasicTCPTest))
-    suite.addTest(unittest.makeSuite(BasicUDPTest))
+    if sys.platform != 'mac':
+        suite.addTest(unittest.makeSuite(BasicUDPTest))
     suite.addTest(unittest.makeSuite(NonBlockingTCPTests))
     suite.addTest(unittest.makeSuite(FileObjectClassTestCase))
     suite.addTest(unittest.makeSuite(UnbufferedFileObjectClassTestCase))
