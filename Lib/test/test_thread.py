@@ -2,13 +2,10 @@
 
 # Create a bunch of threads, let each do some work, wait until all are done
 
+from test_support import verbose
 import whrandom
 import thread
 import time
-
-verbose = 0
-if __name__ == '__main__':
-    verbose = 1
 
 mutex = thread.allocate_lock()
 whmutex = thread.allocate_lock() # for calls to whrandom
