@@ -1123,17 +1123,19 @@ PyLong_FromString(char *str, char **pend, int base)
 PyObject *
 PyLong_FromUnicode(Py_UNICODE *u, int length, int base)
 {
-	char buffer[256];
+	PyObject *result;
+	char *buffer = PyMem_MALLOC(length+1);
 
-	if (length >= sizeof(buffer)) {
-		PyErr_SetString(PyExc_ValueError,
-				"long() literal too large to convert");
+	if (buffer == NULL)
+		return NULL;
+
+	if (PyUnicode_EncodeDecimal(u, length, buffer, NULL)) {
+		PyMem_FREE(buffer);
 		return NULL;
 	}
-	if (PyUnicode_EncodeDecimal(u, length, buffer, NULL))
-		return NULL;
-
-	return PyLong_FromString(buffer, NULL, base);
+	result = PyLong_FromString(buffer, NULL, base);
+	PyMem_FREE(buffer);
+	return result;
 }
 #endif
 
