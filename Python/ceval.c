@@ -300,7 +300,7 @@ Py_MakePendingCalls(void)
 
 /* The interpreter's recursion limit */
 
-static int recursion_limit = 2500;
+static int recursion_limit = 1000;
 
 int Py_GetRecursionLimit()
 {
