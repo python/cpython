@@ -5057,21 +5057,21 @@ want to run a full list sort:
 \end{verbatim}
 
 
-\section{Tools for Working with Decimal Floating Point\label{decimal-fp}}
+\section{Decimal Floating Point Arithmetic\label{decimal-fp}}
 
-The \module{decimal} module, offers a \class{Decimal} data type for
+The \module{decimal} module offers a \class{Decimal} datatype for
 decimal floating point arithmetic.  Compared to the built-in \class{float}
-type implemented with binary floating point, the new class is especially
-useful for financial applications and other uses which require exact
+implementation of binary floating point, the new class is especially
+helpful for financial applications and other uses which require exact
 decimal representation, control over precision, control over rounding
 to meet legal or regulatory requirements, tracking of significant
 decimal places, or for applications where the user expects the results
-to match hand calculations done as taught in school.
+to match hand calculations as taught in school.
 
-For example, calculating a 5% tax on a 70 cent phone charge gives
-different results in decimal floating point and binary floating point
-with the difference being significant when rounding to the nearest
-cent:
+For example, calculating a 5\%{} tax on a 70 cent phone charge gives
+different results in decimal floating point and binary floating point.
+The difference becomes significant if the results are rounded to the
+nearest cent:
 
 \begin{verbatim}
 >>> from decimal import *       
