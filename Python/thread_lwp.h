@@ -147,34 +147,3 @@ void PyThread_release_lock(PyThread_type_lock lock)
 	cv_broadcast(((struct lock *) lock)->lock_condvar);
 	mon_exit(((struct lock *) lock)->lock_monitor);
 }
-
-/*
- * Semaphore support.
- */
-PyThread_type_sema PyThread_allocate_sema(int value)
-{
-	PyThread_type_sema sema = 0;
-	dprintf(("PyThread_allocate_sema called\n"));
-	if (!initialized)
-		PyThread_init_thread();
-
-	dprintf(("PyThread_allocate_sema() -> %p\n",  sema));
-	return (PyThread_type_sema) sema;
-}
-
-void PyThread_free_sema(PyThread_type_sema sema)
-{
-	dprintf(("PyThread_free_sema(%p) called\n",  sema));
-}
-
-int PyThread_down_sema(PyThread_type_sema sema, int waitflag)
-{
-	dprintf(("PyThread_down_sema(%p, %d) called\n",  sema, waitflag));
-	dprintf(("PyThread_down_sema(%p) return\n",  sema));
-	return -1;
-}
-
-void PyThread_up_sema(PyThread_type_sema sema)
-{
-	dprintf(("PyThread_up_sema(%p)\n",  sema));
-}
