@@ -10,6 +10,15 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 * Complete the "Matching vs. Searching" subsection in the re module
   section.
 
+* The "Very High Level Interface" in the API document has been
+  requested; I guess it wouldn't hurt to fill in a bit there.  Request 
+  by Albert Hofkamp <a.hofkamp@wtb.tue.nl>.
+
+* In the extensions manual, more information is needed about building
+  dynamically linked extensions in C++.  Specifically, the extensions
+  must be linked against the C++ libraries (and possibly runtime).
+  Also noted by Albert Hofkamp <a.hofkamp@wtb.tue.nl>.
+
 * Update the pickle documentation to describe all of the current
   behavior; only a subset is described.  __reduce__, etc.
 
