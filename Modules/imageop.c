@@ -124,6 +124,64 @@ imageop_scale(self, args)
     return rv;
 }
 
+/* Note: this routine can use a bit of optimizing */
+
+static object *
+imageop_tovideo(self, args)
+    object *self;
+    object *args;
+{
+    int maxx, maxy, x, y, len;
+    int i;
+    unsigned char *cp, *ncp, cdata;
+    int width;
+    object *rv;
+   
+    
+    if ( !getargs(args, "(s#iii)", &cp, &len, &width, &maxx, &maxy) )
+      return 0;
+
+    if ( width != 1 && width != 4 ) {
+	err_setstr(ImageopError, "Size should be 1 or 4");
+	return 0;
+    }
+    if ( maxx*maxy*width != len ) {
+	err_setstr(ImageopError, "String has incorrect length");
+	return 0;
+    }
+    
+    rv = newsizedstringobject(NULL, len);
+    if ( rv == 0 )
+      return 0;
+    ncp = (unsigned char *)getstringvalue(rv);
+
+    if ( width == 1 ) {
+	bcopy(cp, ncp, maxx);		/* Copy first line */
+	ncp += maxx;
+	for (y=1; y<maxy; y++) {	/* Interpolate other lines */
+	    for(x=0; x<maxx; x++) {
+		i = y*maxx + x;
+		*ncp++ = (cp[i] + cp[i-maxx]) >> 1;
+	    }
+	}
+    } else {
+	bcopy(cp, ncp, maxx*4);		/* Copy first line */
+	ncp += maxx*4;
+	for (y=1; y<maxy; y++) {	/* Interpolate other lines */
+	    for(x=0; x<maxx; x++) {
+		i = (y*maxx + x)*4 + 1;
+		*ncp++ = 0;	/* Skip alfa comp */
+		*ncp++ = (cp[i] + cp[i-4*maxx]) >> 1;
+		i++;
+		*ncp++ = (cp[i] + cp[i-4*maxx]) >> 1;
+		i++;
+		*ncp++ = (cp[i] + cp[i-4*maxx]) >> 1;
+	    }
+	}
+    }
+    return rv;
+}
+
 static object *
 imageop_grey2mono(self, args)
     object *self;
@@ -501,6 +559,7 @@ static struct methodlist imageop_methods[] = {
     { "mono2grey",	imageop_mono2grey },
     { "grey22grey",	imageop_grey22grey },
     { "grey42grey",	imageop_grey42grey },
+    { "tovideo",	imageop_tovideo },
     { 0,          0 }
 };
 
