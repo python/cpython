@@ -9,7 +9,6 @@ extern "C" {
 extern DL_IMPORT(PyObject) _Py_EllipsisObject; /* Don't use this directly */
 
 #define Py_Ellipsis (&_Py_EllipsisObject)
-#define Py_Ellipses Py_Ellipsis /* For bad spellers like me :-( */
 
 /* Slice object interface */
 
