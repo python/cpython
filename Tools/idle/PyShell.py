@@ -429,10 +429,13 @@ class PyShell(OutputWindow):
     def short_title(self):
         return self.shell_title
 
+    COPYRIGHT = \
+              'Type "copyright", "credits" or "license" for more information.'
+
     def begin(self):
         self.resetoutput()
         self.write("Python %s on %s\n%s\nIDLE %s -- press F1 for help\n" %
-                   (sys.version, sys.platform, sys.copyright,
+                   (sys.version, sys.platform, self.COPYRIGHT,
                     idlever.IDLE_VERSION))
         try:
             sys.ps1
