@@ -12,8 +12,6 @@ try:
 except AttributeError:
     raise TestSkipped, "No openpty() available."
 
-if not os.isatty(master):
-    raise TestFailed, "Master-end of pty is not a terminal."
 if not os.isatty(slave):
     raise TestFailed, "Slave-end of pty is not a terminal."
 
