@@ -201,7 +201,7 @@ search_for_prefix(argv0_path, home)
 	char *argv0_path;
 	char *home;
 {
-	int i, n;
+	int n;
 	char *vpath;
 
 	/* Check to see if argv[0] is in the build directory */
@@ -271,7 +271,7 @@ search_for_exec_prefix(argv0_path, home)
 	char *argv0_path;
 	char *home;
 {
-	int i, n;
+	int n;
 
 	/* Check to see if argv[0] is in the build directory */
 	strcpy(exec_prefix, argv0_path);
