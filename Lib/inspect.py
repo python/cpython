@@ -366,12 +366,12 @@ def getmodule(object):
     except TypeError:
         return None
     if file in modulesbyfile:
-        return sys.modules[modulesbyfile[file]]
+        return sys.modules.get(modulesbyfile[file])
     for module in sys.modules.values():
         if hasattr(module, '__file__'):
             modulesbyfile[getabsfile(module)] = module.__name__
     if file in modulesbyfile:
-        return sys.modules[modulesbyfile[file]]
+        return sys.modules.get(modulesbyfile[file])
     main = sys.modules['__main__']
     if hasattr(main, object.__name__):
         mainobject = getattr(main, object.__name__)
