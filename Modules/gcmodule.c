@@ -355,7 +355,7 @@ delete_garbage(PyGC_Head *unreachable, PyGC_Head *old)
 		else {
 			if ((clear = op->ob_type->tp_clear) != NULL) {
 				Py_INCREF(op);
-				clear((PyObject *)op);
+				clear(op);
 				Py_DECREF(op);
 			}
 		}
@@ -879,7 +879,7 @@ _PyObject_GC_Malloc(size_t basicsize)
 #ifdef WITH_CYCLE_GC
 	PyGC_Head *g = PyObject_MALLOC(sizeof(PyGC_Head) + basicsize);
 	if (g == NULL)
-		return (PyObject *)PyErr_NoMemory();
+		return PyErr_NoMemory();
 	g->gc.gc_next = NULL;
 	generations[0].count++; /* number of allocated GC objects */
  	if (generations[0].count > generations[0].threshold &&
@@ -895,7 +895,7 @@ _PyObject_GC_Malloc(size_t basicsize)
 #else
 	op = PyObject_MALLOC(basicsize);
 	if (op == NULL)
-		return (PyObject *)PyErr_NoMemory();
+		return PyErr_NoMemory();
 
 #endif
 	return op;
