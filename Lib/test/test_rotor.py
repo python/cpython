@@ -21,5 +21,8 @@ print B1
 if B1 <> B:
     print 'decryptmore failed'
 
-r.setkey()
+try:
+    r.setkey()
+except TypeError:
+    pass
 r.setkey('you guessed it!')
