@@ -888,18 +888,35 @@
 
 
 
+% This version is being checked in for the historical record; it shows
+% how I've managed to get some aspects of this to work.  It will not
+% be used in practice, so a subsequent revision will change things
+% again.  This version has problems, but shows how to do something
+% that proved more tedious than I'd expected, so I don't want to lose
+% the example completely.
+%
 \newcommand{\grammartoken}[1]{\texttt{#1}}
 \newenvironment{productionlist}[1][\py@badkey]{
   \def\optional##1{{\Large[}##1{\Large]}}
   \def\production##1##2{\code{##1}&::=&\code{##2}\\}
-  \def\orgroup##1{{\def\or{\textbar\ }##1}}
+  \def\orgroup##1{{\def\oritem{\textbar\ }##1}}
+  \def\orgroup*##1{{
+      \def\oritem{\\ \textbar&}
+      % This uses math mode's ``negative thin space'' to avoid a weird
+      % indentation that I've not been able to figure out, but
+      % probably relates to nesting tabular environments.
+      $\!\!\!\!\!\!\!\!\!\!$%
+      \begin{tabular}[t]{ll}
+        \ & ##1
+      \end{tabular}
+    }}
   \def\token##1{##1}
   \let\grammartoken=\token
-  \begin{center}
-    \begin{tabular}{lcl}
+  \parindent=2em
+  \indent
+  \begin{tabular}{lcl}
 }{%
-    \end{tabular}
-  \end{center}
+  \end{tabular}
 }
 
 \newcommand{\note}[1]{\strong{Note:} #1}
