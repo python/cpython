@@ -72,6 +72,23 @@ code_dealloc(co)
 	DEL(co);
 }
 
+static object *
+code_repr(co)
+	codeobject *co;
+{
+	char buf[500];
+	int lineno = -1;
+	char *p = GETSTRINGVALUE(co->co_code);
+	char *filename = "???";
+	if (*p == SET_LINENO)
+		lineno = (p[1] & 0xff) | ((p[2] & 0xff) << 8);
+	if (co->co_filename && is_stringobject(co->co_filename))
+		filename = getstringvalue(co->co_filename);
+	sprintf(buf, "<code object at %lx, file \"%.400s\", line %d>",
+		(long)co, filename, lineno);
+	return newstringobject(buf);
+}
+
 typeobject Codetype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
@@ -83,7 +100,7 @@ typeobject Codetype = {
 	code_getattr,	/*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
-	0,		/*tp_repr*/
+	code_repr,	/*tp_repr*/
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
