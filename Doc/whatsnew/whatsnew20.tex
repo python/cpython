@@ -156,8 +156,8 @@ type implementation by Fredrik Lundh.  A detailed explanation of the
 interface is in the file \file{Misc/unicode.txt} in the Python source
 distribution; it's also available on the Web at
 \url{http://starship.python.net/crew/lemburg/unicode-proposal.txt}.
-This article will simply cover the most significant points from the
-full interface.
+This article will simply cover the most significant points about the Unicode 
+interfaces.
 
 In Python source code, Unicode strings are written as
 \code{u"string"}.  Arbitrary Unicode characters can be written using a
@@ -615,12 +615,12 @@ b.append(b)
 \end{verbatim}
 
 The comparison \code{a==b} returns true, because the two recursive
-data structures are isomorphic. \footnote{See the thread ``trashcan
+data structures are isomorphic. See the thread ``trashcan
 and PR\#7'' in the April 2000 archives of the python-dev mailing list
 for the discussion leading up to this implementation, and some useful
 relevant links.
-%http://www.python.org/pipermail/python-dev/2000-April/004834.html
-}
+% Starting URL:
+% http://www.python.org/pipermail/python-dev/2000-April/004834.html
 
 Work has been done on porting Python to 64-bit Windows on the Itanium
 processor, mostly by Trent Mick of ActiveState.  (Confusingly,
@@ -950,7 +950,6 @@ expat_extension = Extension('xml.parsers.pyexpat',
        )
 setup (name = "PyXML", version = "0.5.4", 
        ext_modules =[ expat_extension ] )
-	        
 \end{verbatim}
 
 The Distutils can also take care of creating source and binary
@@ -966,10 +965,165 @@ development.
 All this is documented in a new manual, \textit{Distributing Python
 Modules}, that joins the basic set of Python documentation.
 
-% ======================================================================
-%\section{New XML Code}
+======================================================================
+\section{XML Modules}
 
-%XXX write this section...
+Python 1.5.2 included a simple XML parser in the form of the
+\module{xmllib} module, contributed by Sjoerd Mullender.  Since
+1.5.2's release, two different interfaces for processing XML have
+become common: SAX2 (version 2 of the Simple API for XML) provides an
+event-driven interface with some similarities to \module{xmllib}, and
+the DOM (Document Object Model) provides a tree-based interface,
+transforming an XML document into a tree of nodes that can be
+traversed and modified.  Python 2.0 includes a SAX2 interface and a
+stripped-down DOM interface as part of the \module{xml} package.
+Here we will give a brief overview of these new interfaces; consult
+the Python documentation or the source code for complete details.
+The Python XML SIG is also working on improved documentation.
+
+\subsection{SAX2 Support}
+
+SAX defines an event-driven interface for parsing XML.  To use SAX,
+you must write a SAX handler class.  Handler classes inherit from
+various classes provided by SAX, and override various methods that
+will then be called by the XML parser.  For example, the
+\method{startElement} and \method{endElement} methods are called for
+every starting and end tag encountered by the parser, the
+\method{characters()} method is called for every chunk of character
+data, and so forth.
+
+The advantage of the event-driven approach is that that the whole
+document doesn't have to be resident in memory at any one time, which
+matters if you are processing really huge documents.  However, writing
+the SAX handler class can get very complicated if you're trying to
+modify the document structure in some elaborate way.
+
+For example, this little example program defines a handler that prints
+a message for every starting and ending tag, and then parses the file
+\file{hamlet.xml} using it:
+
+\begin{verbatim}
+from xml import sax
+
+class SimpleHandler(sax.ContentHandler):
+    def startElement(self, name, attrs):
+        print 'Start of element:', name, attrs.keys()
+
+    def endElement(self, name):
+        print 'End of element:', name
+
+# Create a parser object
+parser = sax.make_parser()
+
+# Tell it what handler to use
+handler = SimpleHandler()
+parser.setContentHandler( handler )
+
+# Parse a file!
+parser.parse( 'hamlet.xml' )
+\end{verbatim}
+
+For more information, consult the Python documentation, or the XML
+HOWTO at \url{http://www.python.org/doc/howto/xml/}.
+
+\subsection{DOM Support}
+
+The Document Object Model is a tree-based representation for an XML
+document.  A top-level \class{Document} instance is the root of the
+tree, and has a single child which is the top-level \class{Element}
+instance. This \class{Element} has children nodes representing
+character data and any sub-elements, which may have further children
+of their own, and so forth.  Using the DOM you can traverse the
+resulting tree any way you like, access element and attribute values,
+insert and delete nodes, and convert the tree back into XML.
+
+The DOM is useful for modifying XML documents, because you can create
+a DOM tree, modify it by adding new nodes or rearranging subtrees, and
+then produce a new XML document as output.  You can also construct a
+DOM tree manually and convert it to XML, which can be a more flexible
+way of producing XML output than simply writing
+\code{<tag1>}...\code{</tag1>} to a file.
+
+The DOM implementation included with Python lives in the
+\module{xml.dom.minidom} module.  It's a lightweight implementation of
+the Level 1 DOM with support for XML namespaces.  The 
+\function{parse()} and \function{parseString()} convenience
+functions are provided for generating a DOM tree:
+
+\begin{verbatim}
+from xml.dom import minidom
+doc = minidom.parse('hamlet.xml')
+\end{verbatim}
+
+\code{doc} is a \class{Document} instance.  \class{Document}, like all
+the other DOM classes such as \class{Element} and \class{Text}, is a
+subclass of the \class{Node} base class.  All the nodes in a DOM tree
+therefore support certain common methods, such as \method{toxml()}
+which returns a string containing the XML representation of the node
+and its children.  Each class also has special methods of its own; for
+example, \class{Element} and \class{Document} instances have a method
+to find all child elements with a given tag name.  Continuing from the
+previous 2-line example:
+
+\begin{verbatim}
+perslist = doc.getElementsByTagName( 'PERSONA' )
+print perslist[0].toxml()
+print perslist[1].toxml()
+\end{verbatim}
+
+For the \textit{Hamlet} XML file, the above few lines output:
+
+\begin{verbatim}
+<PERSONA>CLAUDIUS, king of Denmark. </PERSONA>
+<PERSONA>HAMLET, son to the late, and nephew to the present king.</PERSONA>
+\end{verbatim}
+
+The root element of the document is available as
+\code{doc.documentElement}, and its children can be easily modified
+by deleting, adding, or removing nodes:
+
+\begin{verbatim}
+root = doc.documentElement
+
+# Remove the first child
+root.removeChild( root.childNodes[0] )
+
+# Move the new first child to the end
+root.appendChild( root.childNodes[0] )
+
+# Insert the new first child (originally,
+# the third child) before the 20th child.
+root.insertBefore( root.childNodes[0], root.childNodes[20] )
+\end{verbatim}
+
+Again, I will refer you to the Python documentation for a complete
+listing of the different \class{Node} classes and their various methods.
+
+\subsection{Relationship to PyXML}
+
+The XML Special Interest Group has been working on XML-related Python
+code for a while.  Its code distribution, called PyXML, is available
+from the SIG's Web pages at \url{http://www.python.org/sigs/xml-sig/}.
+The PyXML distribution also used the package name \samp{xml}.  If
+you've written programs that used PyXML, you're probably wondering
+about its compatibility with the 2.0 \module{xml} package.
+
+The answer is that Python 2.0's \module{xml} package isn't compatible
+with PyXML, but can be made compatible by installing a recent version
+PyXML.  Many applications can get by with the XML support that is
+included with Python 2.0, but more complicated applications will
+require that the full PyXML package will be installed.  When
+installed, PyXML versions 0.6.0 or greater will replace the
+\module{xml} package shipped with Python, and will be a strict
+superset of the standard package, adding a bunch of additional
+features.  Some of the additional features in PyXML include:
+
+\begin{itemize}
+\item 4DOM, a full DOM implementation
+from FourThought LLC.
+\item The xmlproc validating parser, written by Lars Marius Garshol.
+\item The \module{sgmlop} parser accelerator module, written by Fredrik Lundh.
+\end{itemize}
 
 % ======================================================================
 \section{Module changes}
@@ -981,6 +1135,8 @@ standard library; some of the affected modules include
 \module{aifc}, \module{chunk, wave}, \module{random}, \module{shelve},
 and \module{nntplib}.  Consult the CVS logs for the exact
 patch-by-patch details.  
+
+% XXX gettext support
 
 Brian Gallew contributed OpenSSL support for the \module{socket}
 module.  OpenSSL is an implementation of the Secure Socket Layer,
