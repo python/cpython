@@ -150,7 +150,7 @@ class _Database:
     def __del__(self):
         if self._index is not None:
             self._commit()
-  
+
 
 
 def open(file, flag=None, mode=0666):

@@ -76,7 +76,7 @@ class TestStringIO(TestGenericStringIO):
         # The StringIO module also supports concatenating Unicode
         # snippets to larger Unicode strings. This is tested by this
         # method. Note that cStringIO does not support this extension.
-        
+
         f = self.MODULE.StringIO()
         f.write(self._line[:6])
         f.seek(3)
