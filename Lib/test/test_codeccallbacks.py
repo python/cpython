@@ -213,10 +213,10 @@ class CodecCallbackTest(unittest.TestCase):
         for uni in [ s*l for s in (u"x", u"\u3042", u"a\xe4") ]:
             for enc in ("ascii", "latin-1", "iso-8859-1", "iso-8859-15", "utf-8", "utf-7", "utf-16"):
                 for err in errors:
-                   try:
-                       uni.encode(enc, err)
-                   except UnicodeError:
-                       pass
+                    try:
+                        uni.encode(enc, err)
+                    except UnicodeError:
+                        pass
 
     def check_exceptionobjectargs(self, exctype, args, msg):
         # Test UnicodeError subclasses: construction, attribute assignment and __str__ conversion
@@ -229,7 +229,7 @@ class CodecCallbackTest(unittest.TestCase):
         for i in xrange(len(args)):
             for wrongarg in wrongargs:
                 if type(wrongarg) is type(args[i]):
-                   continue
+                    continue
                 # build argument array
                 callargs = []
                 for j in xrange(len(args)):

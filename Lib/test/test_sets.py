@@ -446,10 +446,10 @@ class TestSubsetEmptyNonEmpty(TestSubsets):
 #------------------------------------------------------------------------------
 
 class TestSubsetPartial(TestSubsets):
-   left  = Set([1])
-   right = Set([1, 2])
-   name  = "one a non-empty proper subset of other"
-   cases = "!=", "<", "<="
+    left  = Set([1])
+    right = Set([1, 2])
+    name  = "one a non-empty proper subset of other"
+    cases = "!=", "<", "<="
 
 #------------------------------------------------------------------------------
 

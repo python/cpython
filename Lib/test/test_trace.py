@@ -107,7 +107,7 @@ def _settrace_and_return(tracefunc):
     sys._getframe().f_back.f_trace = tracefunc
 def settrace_and_return(tracefunc):
     _settrace_and_return(tracefunc)
-    
+
 settrace_and_return.events = [(1, 'return')]
 
 def _settrace_and_raise(tracefunc):
@@ -119,7 +119,7 @@ def settrace_and_raise(tracefunc):
         _settrace_and_raise(tracefunc)
     except RuntimeError, exc:
         pass
-    
+
 settrace_and_raise.events = [(2, 'exception'),
                              (3, 'line'),
                              (4, 'line'),
@@ -134,14 +134,14 @@ class Tracer:
 
 class TraceTestCase(unittest.TestCase):
     def compare_events(self, line_offset, events, expected_events):
-        events = [(l - line_offset, e) for (l, e) in events]        
+        events = [(l - line_offset, e) for (l, e) in events]
         if events != expected_events:
             self.fail(
                 "events did not match expectation:\n" +
                 "\n".join(difflib.ndiff(map(str, expected_events),
                                         map(str, events))))
-        
-    
+
+
     def run_test(self, func):
         tracer = Tracer()
         sys.settrace(tracer.trace)
@@ -156,7 +156,7 @@ class TraceTestCase(unittest.TestCase):
         sys.settrace(None)
         self.compare_events(func.func_code.co_firstlineno,
                             tracer.events, func.events)
-    
+
     def test_1_basic(self):
         self.run_test(basic)
     def test_2_arigo(self):
@@ -185,7 +185,7 @@ class RaisingTraceFuncTestCase(unittest.TestCase):
             raise ValueError # just something that isn't RuntimeError
         else:
             return self.trace
-    
+
     def f(self):
         """The function to trace; raises an exception if that's the case
         we're testing, so that the 'exception' trace event fires."""
@@ -194,7 +194,7 @@ class RaisingTraceFuncTestCase(unittest.TestCase):
             y = 1/x
         else:
             return 1
-    
+
     def run_test_for_event(self, event):
         """Tests that an exception raised in response to the given event is
         handled OK."""
@@ -210,7 +210,7 @@ class RaisingTraceFuncTestCase(unittest.TestCase):
                     self.fail("exception not thrown!")
         except RuntimeError:
             self.fail("recursion counter not reset")
-    
+
     # Test the handling of exceptions raised by each kind of trace event.
     def test_call(self):
         self.run_test_for_event('call')
