@@ -249,6 +249,17 @@ class Checker:
         self.errors = {}
         self.urlopener = MyURLopener()
         self.changed = 0
+        
+    def note(self, level, format, *args):
+        if self.verbose > level:
+            if args:
+                format = format%args
+            self.message(format)
+    
+    def message(self, format, *args):
+        if args:
+            format = format%args
+        print format 
 
     def __getstate__(self):
         return (self.roots, self.todo, self.done, self.bad, self.round)
@@ -280,23 +291,18 @@ class Checker:
         if self.robots.has_key(root): return
         url = urlparse.urljoin(root, "/robots.txt")
         self.robots[root] = rp = robotparser.RobotFileParser()
-        if self.verbose > 2:
-            print "Parsing", url
-            rp.debug = self.verbose > 3
+        self.note(2, "Parsing %s", url)
+        rp.debug = self.verbose > 3
         rp.set_url(url)
         try:
             rp.read()
         except IOError, msg:
-            if self.verbose > 1:
-                print "I/O error parsing", url, ":", msg
+            self.note(1, "I/O error parsing %s: %s", url, msg)
 
     def run(self):
         while self.todo:
             self.round = self.round + 1
-            if self.verbose > 0:
-                print
-                print "Round %d (%s)" % (self.round, self.status())
-                print 
+            self.note(0, "\nRound %d (%s)\n", self.round, self.status())
             urls = self.todo.keys()
             urls.sort()
             del urls[self.roundsize:]
@@ -310,40 +316,37 @@ class Checker:
             len(self.bad))
 
     def report(self):
-        print
-        if not self.todo: print "Final",
-        else: print "Interim",
-        print "Report (%s)" % self.status()
+        self.message("")
+        if not self.todo: s = "Final"
+        else: s = "Interim"
+        self.message("%s Report (%s)", s, self.status())
         self.report_errors()
 
     def report_errors(self):
         if not self.bad:
-            print
-            print "No errors"
+            self.message("\nNo errors")
             return
-        print
-        print "Error Report:"
+        self.message("\nError Report:")
         sources = self.errors.keys()
         sources.sort()
         for source in sources:
             triples = self.errors[source]
-            print
+            self.message("")
             if len(triples) > 1:
-                print len(triples), "Errors in", source
+                self.message("%d Errors in %s", len(triples), source)
             else:
-                print "Error in", source
+                self.message("Error in %s", source)
             for url, rawlink, msg in triples:
-                print "  HREF", url,
-                if rawlink != url: print "(%s)" % rawlink,
-                print
-                print "   msg", msg
+                if rawlink != url: s = " (%s)" % rawlink
+                else: s = ""
+                self.message("  HREF %s%s\n    msg %s", url, s, msg)
 
     def dopage(self, url):
         if self.verbose > 1:
             if self.verbose > 2:
                 self.show("Check ", url, "  from", self.todo[url])
             else:
-                print "Check ", url
+                self.message("Check %s", url)
         page = self.getpage(url)
         if page:
             for info in page.getlinkinfos():
@@ -360,18 +363,15 @@ class Checker:
 
     def newdonelink(self, url, origin):
         self.done[url].append(origin)
-        if self.verbose > 3:
-            print "  Done link", url
+        self.note(3, "  Done link %s", url)
 
     def newtodolink(self, url, origin):
         if self.todo.has_key(url):
             self.todo[url].append(origin)
-            if self.verbose > 3:
-                print "  Seen todo link", url
+            self.note(3, "  Seen todo link %s", url)
         else:
             self.todo[url] = [origin]
-            if self.verbose > 3:
-                print "  New todo link", url
+            self.note(3, "  New todo link %s", url)
 
     def markdone(self, url):
         self.done[url] = self.todo[url]
@@ -381,18 +381,21 @@ class Checker:
     def inroots(self, url):
         for root in self.roots:
             if url[:len(root)] == root:
-                root = urlparse.urljoin(root, "/")
-                return self.robots[root].can_fetch(AGENTNAME, url)
+                return self.isallowed(root, url)
         return 0
+    
+    def isallowed(self, root, url):
+        root = urlparse.urljoin(root, "/")
+        return self.robots[root].can_fetch(AGENTNAME, url)
 
     def getpage(self, url):
         if url[:7] == 'mailto:' or url[:5] == 'news:':
-            if self.verbose > 1: print " Not checking mailto/news URL"
+            self.note(1, " Not checking mailto/news URL")
             return None
         isint = self.inroots(url)
         if not isint:
             if not self.checkext:
-                if self.verbose > 1: print " Not checking ext link"
+                self.note(1, " Not checking ext link")
                 return None
             f = self.openpage(url)
             if f:
@@ -400,11 +403,10 @@ class Checker:
             return None
         text, nurl = self.readhtml(url)
         if nurl != url:
-            if self.verbose > 1:
-                print " Redirected to", nurl
+            self.note(1, " Redirected to %s", nurl)
             url = nurl
         if text:
-            return Page(text, url, verbose=self.verbose, maxpage=self.maxpage)
+            return Page(text, url, maxpage=self.maxpage, checker=self)
 
     def readhtml(self, url):
         text = None
@@ -429,8 +431,7 @@ class Checker:
             return self.urlopener.open(url)
         except IOError, msg:
             msg = self.sanitize(msg)
-            if self.verbose > 0:
-                print "Error ", msg
+            self.note(0, "Error %s", msg)
             if self.verbose > 0:
                 self.show(" HREF ", url, "  from", self.todo[url])
             self.setbad(url, msg)
@@ -446,21 +447,18 @@ class Checker:
         if ctype == 'text/html':
             return 1
         else:
-            if self.verbose > 1:
-                print " Not HTML, mime type", ctype
+            self.note(1, " Not HTML, mime type %s", ctype)
             return 0
 
     def setgood(self, url):
         if self.bad.has_key(url):
             del self.bad[url]
             self.changed = 1
-            if self.verbose > 0:
-                print "(Clear previously seen error)"
+            self.note(0, "(Clear previously seen error)")
 
     def setbad(self, url, msg):
         if self.bad.has_key(url) and self.bad[url] == msg:
-            if self.verbose > 0:
-                print "(Seen this error before)"
+            self.note(0, "(Seen this error before)")
             return
         self.bad[url] = msg
         self.changed = 1
@@ -485,15 +483,15 @@ class Checker:
     # changed into methods so they can be overridden in subclasses.
 
     def show(self, p1, link, p2, origins):
-        print p1, link
+        self.message("%s %s", p1, link)
         i = 0
         for source, rawlink in origins:
             i = i+1
             if i == 2:
                 p2 = ' '*len(p2)
-            print p2, source,
-            if rawlink != link: print "(%s)" % rawlink,
-            print
+            if rawlink != link: s = " (%s)" % rawlink
+            else: s = ""
+            self.message("%s %s%s", p2, source, s)
 
     def sanitize(self, msg):
         if isinstance(IOError, ClassType) and isinstance(msg, IOError):
@@ -521,16 +519,11 @@ class Checker:
 
     def save_pickle(self, dumpfile=DUMPFILE):
         if not self.changed:
-            if self.verbose > 0:
-                print
-                print "No need to save checkpoint"
+            self.note(0, "\nNo need to save checkpoint")
         elif not dumpfile:
-            if self.verbose > 0:
-                print "No dumpfile, won't save checkpoint"
+            self.note(0, "No dumpfile, won't save checkpoint")
         else:
-            if self.verbose > 0:
-                print
-                print "Saving checkpoint to %s ..." % dumpfile
+            self.note(0, "\nSaving checkpoint to %s ...", dumpfile)
             newfile = dumpfile + ".new"
             f = open(newfile, "wb")
             pickle.dump(self, f)
@@ -540,29 +533,26 @@ class Checker:
             except os.error:
                 pass
             os.rename(newfile, dumpfile)
-            if self.verbose > 0:
-                print "Done."
+            self.note(0, "Done.")
             return 1
 
 
 class Page:
 
-    def __init__(self, text, url, verbose=VERBOSE, maxpage=MAXPAGE):
+    def __init__(self, text, url, verbose=VERBOSE, maxpage=MAXPAGE, checker=None):
         self.text = text
         self.url = url
         self.verbose = verbose
         self.maxpage = maxpage
+        self.checker = checker
 
     def getlinkinfos(self):
         size = len(self.text)
         if size > self.maxpage:
-            if self.verbose > 0:
-                print "Skip huge file", self.url
-                print "  (%.0f Kbytes)" % (size*0.001)
+            self.note(0, "Skip huge file %s (%.0f Kbytes)", self.url, (size*0.001))
             return []
-        if self.verbose > 2:
-            print "  Parsing", self.url, "(%d bytes)" % size
-        parser = MyHTMLParser(verbose=self.verbose)
+        self.checker.note(2, "  Parsing %s (%d bytes)", self.url, size)
+        parser = MyHTMLParser(verbose=self.verbose, checker=self.checker)
         parser.feed(self.text)
         parser.close()
         rawlinks = parser.getlinks()
@@ -631,10 +621,11 @@ class MyURLopener(urllib.FancyURLopener):
 
 class MyHTMLParser(sgmllib.SGMLParser):
 
-    def __init__(self, verbose=VERBOSE):
+    def __init__(self, verbose=VERBOSE, checker=None):
+        self.myverbose = verbose # now unused
+        self.checker = checker
         self.base = None
         self.links = {}
-        self.myverbose = verbose
         sgmllib.SGMLParser.__init__(self)
 
     def start_a(self, attributes):
@@ -662,8 +653,8 @@ class MyHTMLParser(sgmllib.SGMLParser):
             if name == 'href':
                 if value: value = string.strip(value)
                 if value:
-                    if self.myverbose > 1:
-                        print "  Base", value
+                    if self.checker:
+                        self.checker.note(1, "  Base %s", value)
                     self.base = value
 
     def getlinks(self):

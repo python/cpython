@@ -76,7 +76,7 @@ class Sucker(webchecker.Checker):
         f = open(path, "wb")
         f.write(text)
         f.close()
-        print "saved", path
+        self.message("saved %s", path)
 
     def savefilename(self, url):
         type, rest = urllib.splittype(url)
