@@ -2,7 +2,7 @@
 
 ----------------------------------------------------------------------
 
-New in IDLE 0.5 (2/14/2000)
+New in IDLE 0.5 (2/15/2000)
 -------------------------
 
 Tons of stuff, much of it contributed by Tim Peters and Mark Hammond:
