@@ -803,13 +803,15 @@ typedef enum {
  * the "naivety" typedef for details.  If the type is aware, *offset is set
  * to minutes east of UTC (as returned by the tzinfo.utcoffset() method).
  * If the type is offset-naive (or unknown, or error), *offset is set to 0.
+ * tzinfoarg is the argument to pass to the tzinfo.utcoffset() method.
  */
 static naivety
-classify_utcoffset(PyObject *op, int *offset)
+classify_utcoffset(PyObject *op, PyObject *tzinfoarg, int *offset)
 {
 	int none;
 	PyObject *tzinfo;
 
+	assert(tzinfoarg != NULL);
 	*offset = 0;
 	tzinfo = get_tzinfo_member(op);	/* NULL means no tzinfo, not error */
 	if (tzinfo == Py_None)
@@ -819,9 +821,7 @@ classify_utcoffset(PyObject *op, int *offset)
 		return (PyTime_Check(op) || PyDate_Check(op)) ?
 		       OFFSET_NAIVE : OFFSET_UNKNOWN;
 	}
-	*offset = call_utcoffset(tzinfo,
-				 PyTimeTZ_Check(op) ? Py_None : op,
-				 &none);
+	*offset = call_utcoffset(tzinfo, tzinfoarg, &none);
 	if (*offset == -1 && PyErr_Occurred())
 		return OFFSET_ERROR;
 	return none ? OFFSET_NAIVE : OFFSET_AWARE;
@@ -838,17 +838,19 @@ classify_utcoffset(PyObject *op, int *offset)
  */
 static int
 classify_two_utcoffsets(PyObject *o1, int *offset1, naivety *n1,
-			PyObject *o2, int *offset2, naivety *n2)
+			PyObject *tzinfoarg1,
+			PyObject *o2, int *offset2, naivety *n2,
+			PyObject *tzinfoarg2)
 {
 	if (get_tzinfo_member(o1) == get_tzinfo_member(o2)) {
 		*offset1 = *offset2 = 0;
 		*n1 = *n2 = OFFSET_NAIVE;
 	}
 	else {
-		*n1 = classify_utcoffset(o1, offset1);
+		*n1 = classify_utcoffset(o1, tzinfoarg1, offset1);
 		if (*n1 == OFFSET_ERROR)
 			return -1;
-		*n2 = classify_utcoffset(o2, offset2);
+		*n2 = classify_utcoffset(o2, tzinfoarg2, offset2);
 		if (*n2 == OFFSET_ERROR)
 			return -1;
 	}
@@ -3177,7 +3179,9 @@ datetime_richcompare(PyDateTime_DateTime *self, PyObject *other, int op)
 	}
 
 	if (classify_two_utcoffsets((PyObject *)self, &offset1, &n1,
-				     other, &offset2, &n2) < 0)
+				    (PyObject *)self,
+				     other, &offset2, &n2,
+				     other) < 0)
 		return NULL;
 	assert(n1 != OFFSET_UNKNOWN && n2 != OFFSET_UNKNOWN);
  	/* If they're both naive, or both aware and have the same offsets,
@@ -3231,7 +3235,8 @@ datetime_hash(PyDateTime_DateTime *self)
 		int offset;
 		PyObject *temp;
 
-		n = classify_utcoffset((PyObject *)self, &offset);
+		n = classify_utcoffset((PyObject *)self, (PyObject *)self,
+				       &offset);
 		assert(n != OFFSET_UNKNOWN);
 		if (n == OFFSET_ERROR)
 			return -1;
@@ -3690,8 +3695,8 @@ time_richcompare(PyDateTime_Time *self, PyObject *other, int op)
 			     other->ob_type->tp_name);
 		return NULL;
 	}
-	if (classify_two_utcoffsets((PyObject *)self, &offset1, &n1,
-				     other, &offset2, &n2) < 0)
+	if (classify_two_utcoffsets((PyObject *)self, &offset1, &n1, Py_None,
+				     other, &offset2, &n2, Py_None) < 0)
 		return NULL;
 	assert(n1 != OFFSET_UNKNOWN && n2 != OFFSET_UNKNOWN);
 	/* If they're both naive, or both aware and have the same offsets,
@@ -3739,7 +3744,7 @@ time_hash(PyDateTime_Time *self)
 		int offset;
 		PyObject *temp;
 
-		n = classify_utcoffset((PyObject *)self, &offset);
+		n = classify_utcoffset((PyObject *)self, Py_None, &offset);
 		assert(n != OFFSET_UNKNOWN);
 		if (n == OFFSET_ERROR)
 			return -1;
@@ -4628,8 +4633,9 @@ datetimetz_subtract(PyObject *left, PyObject *right)
 			int offset1, offset2;
 			PyDateTime_Delta *delta;
 
-			if (classify_two_utcoffsets(left, &offset1, &n1,
-						    right, &offset2, &n2) < 0)
+			if (classify_two_utcoffsets(left, &offset1, &n1, left,
+						    right, &offset2, &n2,
+						    right) < 0)
 				return NULL;
 			assert(n1 != OFFSET_UNKNOWN && n2 != OFFSET_UNKNOWN);
 			if (n1 != n2) {
