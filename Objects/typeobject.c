@@ -299,7 +299,6 @@ subtype_dealloc(PyObject *self)
 	}
 }
 
-staticforward void override_slots(PyTypeObject *type, PyObject *dict);
 staticforward PyTypeObject *solid_base(PyTypeObject *type);
 
 typedef struct {
@@ -677,6 +676,8 @@ solid_base(PyTypeObject *type)
 
 staticforward void object_dealloc(PyObject *);
 staticforward int object_init(PyObject *, PyObject *, PyObject *);
+staticforward int update_slot(PyTypeObject *, PyObject *, PyObject *);
+staticforward void fixup_slot_dispatchers(PyTypeObject *);
 
 static PyObject *
 subtype_dict(PyObject *obj, void *context)
@@ -1011,9 +1012,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		return NULL;
 	}
 
-	/* Override slots that deserve it */
-	if (!PyType_HasFeature(type, Py_TPFLAGS_DYNAMICTYPE))
-		override_slots(type, type->tp_defined);
+	/* Put the proper slots in place */
+	fixup_slot_dispatchers(type);
 
 	return (PyObject *)type;
 }
@@ -1104,9 +1104,12 @@ type_getattro(PyTypeObject *type, PyObject *name)
 static int
 type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
 {
-	if (type->tp_flags & Py_TPFLAGS_DYNAMICTYPE)
-		return PyObject_GenericSetAttr((PyObject *)type, name, value);
-	PyErr_SetString(PyExc_TypeError, "can't set type attributes");
+	if (type->tp_flags & Py_TPFLAGS_DYNAMICTYPE) {
+		if (PyObject_GenericSetAttr((PyObject *)type, name, value) < 0)
+			return -1;
+		return update_slot(type, name, value);
+	}
+	PyErr_SetString(PyExc_TypeError, "can't set static type attributes");
 	return -1;
 }
 
@@ -1857,11 +1860,7 @@ PyType_Ready(PyTypeObject *type)
 		inherit_special(type, type->tp_base);
 
 	/* Initialize tp_dict properly */
-	if (PyType_HasFeature(type, Py_TPFLAGS_DYNAMICTYPE)) {
-		/* For a dynamic type, all slots are overridden */
-		override_slots(type, NULL);
-	}
-	else {
+	if (!PyType_HasFeature(type, Py_TPFLAGS_DYNAMICTYPE)) {
 		/* For a static type, tp_dict is the consolidation
 		   of the tp_defined of its bases in MRO. */
 		Py_DECREF(type->tp_dict);
@@ -1878,6 +1877,18 @@ PyType_Ready(PyTypeObject *type)
 			x = base->tp_defined;
 			if (x != NULL && PyDict_Merge(type->tp_dict, x, 0) < 0)
 				goto error;
+			inherit_slots(type, base);
+		}
+	}
+	else {
+		/* For a dynamic type, we simply inherit the base slots. */
+		bases = type->tp_mro;
+		assert(bases != NULL);
+		assert(PyTuple_Check(bases));
+		n = PyTuple_GET_SIZE(bases);
+		for (i = 1; i < n; i++) {
+			base = (PyTypeObject *)PyTuple_GET_ITEM(bases, i);
+			assert(PyType_Check(base));
 			inherit_slots(type, base);
 		}
 	}
@@ -1987,7 +1998,7 @@ wrap_binaryfunc_l(PyObject *self, PyObject *args, void *wrapped)
 	if (!PyArg_ParseTuple(args, "O", &other))
 		return NULL;
 	if (!(self->ob_type->tp_flags & Py_TPFLAGS_CHECKTYPES) &&
-	    self->ob_type != other->ob_type) {
+	    !PyType_IsSubtype(other->ob_type, self->ob_type)) {
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}
@@ -2003,7 +2014,7 @@ wrap_binaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
 	if (!PyArg_ParseTuple(args, "O", &other))
 		return NULL;
 	if (!(self->ob_type->tp_flags & Py_TPFLAGS_CHECKTYPES) &&
-	    self->ob_type != other->ob_type) {
+	    !PyType_IsSubtype(other->ob_type, self->ob_type)) {
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}
@@ -2332,9 +2343,26 @@ wrap_intintobjargproc(PyObject *self, PyObject *args, void *wrapped)
 	return Py_None;
 }
 
+static PyObject *
+wrap_delslice(PyObject *self, PyObject *args, void *wrapped)
+{
+	intintobjargproc func = (intintobjargproc)wrapped;
+	int i, j, res;
+
+	if (!PyArg_ParseTuple(args, "ii", &i, &j))
+		return NULL;
+	res = (*func)(self, i, j, NULL);
+	if (res == -1 && PyErr_Occurred())
+		return NULL;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static struct wrapperbase tab_setslice[] = {
 	{"__setslice__", (wrapperfunc)wrap_intintobjargproc,
 	 "x.__setslice__(i, j, y) <==> x[i:j]=y"},
+	{"__delslice__", (wrapperfunc)wrap_delslice,
+	 "x.__delslice__(i, j) <==> del x[i:j]"},
 	{0}
 };
 
@@ -2609,7 +2637,7 @@ static struct wrapperbase tab_descr_get[] = {
 };
 
 static PyObject *
-wrap_descrsetfunc(PyObject *self, PyObject *args, void *wrapped)
+wrap_descr_set(PyObject *self, PyObject *args, void *wrapped)
 {
 	descrsetfunc func = (descrsetfunc)wrapped;
 	PyObject *obj, *value;
@@ -2625,7 +2653,7 @@ wrap_descrsetfunc(PyObject *self, PyObject *args, void *wrapped)
 }
 
 static struct wrapperbase tab_descr_set[] = {
-	{"__set__", (wrapperfunc)wrap_descrsetfunc,
+	{"__set__", (wrapperfunc)wrap_descr_set,
 	 "descr.__set__(obj, value)"},
 	{0}
 };
@@ -3638,133 +3666,266 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return x;
 }
 
-/* This is called at the very end of type_new() (even after
-   PyType_Ready()) to complete the initialization of dynamic types.
-   The dict argument is the dictionary argument passed to type_new(),
-   which is the local namespace of the class statement, in other
-   words, it contains the methods.  For each special method (like
-   __repr__) defined in the dictionary, the corresponding function
-   slot in the type object (like tp_repr) is set to a special function
-   whose name is 'slot_' followed by the slot name and whose signature
-   is whatever is required for that slot.  These slot functions look
-   up the corresponding method in the type's dictionary and call it.
-   The slot functions have to take care of the various peculiarities
-   of the mapping between slots and special methods, such as mapping
-   one slot to multiple methods (tp_richcompare <--> __le__, __lt__
-   etc.)  or mapping multiple slots to a single method (sq_item,
-   mp_subscript <--> __getitem__). */
+
+/* Table mapping __foo__ names to tp_foo offsets and slot_tp_foo wrapper
+   functions.  The offsets here are relative to the 'etype' structure, which
+   incorporates the additional structures used for numbers, sequences and
+   mappings.  Note that multiple names may map to the same slot (e.g. __eq__,
+   __ne__ etc. all map to tp_richcompare) and one name may map to multiple
+   slots (e.g. __str__ affects tp_str as well as tp_repr). */
+
+typedef struct {
+	char *name;
+	int offset;
+	void *function;
+	wrapperfunc wrapper;
+} slotdef;
+
+#undef TPSLOT
+#undef ETSLOT
+#undef SQSLOT
+#undef MPSLOT
+#undef NBSLOT
+#undef BINSLOT
+#undef RBINSLOT
+
+#define TPSLOT(NAME, SLOT, FUNCTION, WRAPPER) \
+	{NAME, offsetof(PyTypeObject, SLOT), FUNCTION, WRAPPER}
+#define ETSLOT(NAME, SLOT, FUNCTION, WRAPPER) \
+	{NAME, offsetof(etype, SLOT), FUNCTION, WRAPPER}
+#define SQSLOT(NAME, SLOT, FUNCTION, WRAPPER) \
+	ETSLOT(NAME, as_sequence.SLOT, FUNCTION, WRAPPER)
+#define MPSLOT(NAME, SLOT, FUNCTION, WRAPPER) \
+	ETSLOT(NAME, as_mapping.SLOT, FUNCTION, WRAPPER)
+#define NBSLOT(NAME, SLOT, FUNCTION, WRAPPER) \
+	ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER)
+#define BINSLOT(NAME, SLOT, FUNCTION) \
+	ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_l)
+#define RBINSLOT(NAME, SLOT, FUNCTION) \
+	ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_r)
+
+static slotdef slotdefs[] = {
+	SQSLOT("__len__", sq_length, slot_sq_length, wrap_inquiry),
+	SQSLOT("__add__", sq_concat, slot_sq_concat, wrap_binaryfunc),
+	SQSLOT("__mul__", sq_repeat, slot_sq_repeat, wrap_intargfunc),
+	SQSLOT("__rmul__", sq_repeat, slot_sq_repeat, wrap_intargfunc),
+	SQSLOT("__getitem__", sq_item, slot_sq_item, wrap_sq_item),
+	SQSLOT("__getslice__", sq_slice, slot_sq_slice, wrap_intintargfunc),
+	SQSLOT("__setitem__", sq_ass_item, slot_sq_ass_item, wrap_sq_setitem),
+	SQSLOT("__delitem__", sq_ass_item, slot_sq_ass_item, wrap_sq_delitem),
+	SQSLOT("__setslice__", sq_ass_slice, slot_sq_ass_slice,
+	       wrap_intintobjargproc),
+	SQSLOT("__delslice__", sq_ass_slice, slot_sq_ass_slice, wrap_delslice),
+	SQSLOT("__contains__", sq_contains, slot_sq_contains, wrap_objobjproc),
+	SQSLOT("__iadd__", sq_inplace_concat, slot_sq_inplace_concat,
+	       wrap_binaryfunc),
+	SQSLOT("__imul__", sq_inplace_repeat, slot_sq_inplace_repeat,
+	       wrap_intargfunc),
+
+	MPSLOT("__len__", mp_length, slot_mp_length, wrap_inquiry),
+	MPSLOT("__getitem__", mp_subscript, slot_mp_subscript, wrap_sq_item),
+	MPSLOT("__setitem__", mp_ass_subscript, slot_mp_ass_subscript,
+	       wrap_objobjargproc),
+	MPSLOT("__delitem__", mp_ass_subscript, slot_mp_ass_subscript,
+	       wrap_delitem),
+
+	BINSLOT("__add__", nb_add, slot_nb_add),
+	RBINSLOT("__radd__", nb_add, slot_nb_add),
+	BINSLOT("__sub__", nb_subtract, slot_nb_subtract),
+	RBINSLOT("__rsub__", nb_subtract, slot_nb_subtract),
+	BINSLOT("__mul__", nb_multiply, slot_nb_multiply),
+	RBINSLOT("__rmul__", nb_multiply, slot_nb_multiply),
+	BINSLOT("__div__", nb_divide, slot_nb_divide),
+	RBINSLOT("__rdiv__", nb_divide, slot_nb_divide),
+	BINSLOT("__mod__", nb_remainder, slot_nb_remainder),
+	RBINSLOT("__rmod__", nb_remainder, slot_nb_remainder),
+	BINSLOT("__divmod__", nb_divmod, slot_nb_divmod),
+	RBINSLOT("__rdivmod__", nb_divmod, slot_nb_divmod),
+	NBSLOT("__pow__", nb_power, slot_nb_power, wrap_ternaryfunc),
+	NBSLOT("__rpow__", nb_power, slot_nb_power, wrap_ternaryfunc_r),
+	NBSLOT("__neg__", nb_negative, slot_nb_negative, wrap_unaryfunc),
+	NBSLOT("__pos__", nb_positive, slot_nb_positive, wrap_unaryfunc),
+	NBSLOT("__abs__", nb_absolute, slot_nb_absolute, wrap_unaryfunc),
+	NBSLOT("__nonzero__", nb_nonzero, slot_nb_nonzero, wrap_unaryfunc),
+	NBSLOT("__invert__", nb_invert, slot_nb_invert, wrap_unaryfunc),
+	BINSLOT("__lshift__", nb_lshift, slot_nb_lshift),
+	RBINSLOT("__rlshift__", nb_lshift, slot_nb_lshift),
+	BINSLOT("__rshift__", nb_rshift, slot_nb_rshift),
+	RBINSLOT("__rrshift__", nb_rshift, slot_nb_rshift),
+	BINSLOT("__and__", nb_and, slot_nb_and),
+	RBINSLOT("__rand__", nb_and, slot_nb_and),
+	BINSLOT("__xor__", nb_xor, slot_nb_xor),
+	RBINSLOT("__rxor__", nb_xor, slot_nb_xor),
+	BINSLOT("__or__", nb_or, slot_nb_or),
+	RBINSLOT("__ror__", nb_or, slot_nb_or),
+	NBSLOT("__coerce__", nb_coerce, slot_nb_coerce, wrap_coercefunc),
+	NBSLOT("__int__", nb_int, slot_nb_int, wrap_unaryfunc),
+	NBSLOT("__long__", nb_long, slot_nb_long, wrap_unaryfunc),
+	NBSLOT("__float__", nb_float, slot_nb_float, wrap_unaryfunc),
+	NBSLOT("__oct__", nb_oct, slot_nb_oct, wrap_unaryfunc),
+	NBSLOT("__hex__", nb_hex, slot_nb_hex, wrap_unaryfunc),
+	NBSLOT("__iadd__", nb_inplace_add, slot_nb_inplace_add,
+	       wrap_binaryfunc),
+	NBSLOT("__isub__", nb_inplace_subtract, slot_nb_inplace_subtract,
+	       wrap_binaryfunc),
+	NBSLOT("__imul__", nb_inplace_multiply, slot_nb_inplace_multiply,
+	       wrap_binaryfunc),
+	NBSLOT("__idiv__", nb_inplace_divide, slot_nb_inplace_divide,
+	       wrap_binaryfunc),
+	NBSLOT("__imod__", nb_inplace_remainder, slot_nb_inplace_remainder,
+	       wrap_binaryfunc),
+	NBSLOT("__ipow__", nb_inplace_power, slot_nb_inplace_power,
+	       wrap_ternaryfunc),
+	NBSLOT("__ilshift__", nb_inplace_lshift, slot_nb_inplace_lshift,
+	       wrap_binaryfunc),
+	NBSLOT("__irshift__", nb_inplace_rshift, slot_nb_inplace_rshift,
+	       wrap_binaryfunc),
+	NBSLOT("__iand__", nb_inplace_and, slot_nb_inplace_and,
+	       wrap_binaryfunc),
+	NBSLOT("__ixor__", nb_inplace_xor, slot_nb_inplace_xor,
+	       wrap_binaryfunc),
+	NBSLOT("__ior__", nb_inplace_or, slot_nb_inplace_or,
+	       wrap_binaryfunc),
+	BINSLOT("__floordiv__", nb_floor_divide, slot_nb_floor_divide),
+	RBINSLOT("__rfloordiv__", nb_floor_divide, slot_nb_floor_divide),
+	BINSLOT("__truediv__", nb_true_divide, slot_nb_true_divide),
+	RBINSLOT("__rtruediv__", nb_true_divide, slot_nb_true_divide),
+	NBSLOT("__ifloordiv__", nb_inplace_floor_divide,
+	       slot_nb_inplace_floor_divide, wrap_binaryfunc),
+	NBSLOT("__itruediv__", nb_inplace_true_divide,
+	       slot_nb_inplace_true_divide, wrap_binaryfunc),
+
+	TPSLOT("__str__", tp_str, slot_tp_str, wrap_unaryfunc),
+	TPSLOT("__str__", tp_print, NULL, NULL),
+	TPSLOT("__repr__", tp_repr, slot_tp_repr, wrap_unaryfunc),
+	TPSLOT("__repr__", tp_print, NULL, NULL),
+	TPSLOT("__cmp__", tp_compare, _PyObject_SlotCompare, wrap_cmpfunc),
+	TPSLOT("__hash__", tp_hash, slot_tp_hash, wrap_hashfunc),
+	TPSLOT("__call__", tp_call, slot_tp_call, wrap_call),
+	TPSLOT("__getattribute__", tp_getattro, slot_tp_getattro,
+	       wrap_binaryfunc),
+	TPSLOT("__getattribute__", tp_getattr, NULL, NULL),
+	TPSLOT("__getattr__", tp_getattro, slot_tp_getattr_hook, NULL),
+	TPSLOT("__getattr__", tp_getattr, NULL, NULL),
+	TPSLOT("__setattr__", tp_setattro, slot_tp_setattro, wrap_setattr),
+	TPSLOT("__setattr__", tp_setattr, NULL, NULL),
+	TPSLOT("__delattr__", tp_setattro, slot_tp_setattro, wrap_delattr),
+	TPSLOT("__delattr__", tp_setattr, NULL, NULL),
+	TPSLOT("__lt__", tp_richcompare, slot_tp_richcompare, richcmp_lt),
+	TPSLOT("__le__", tp_richcompare, slot_tp_richcompare, richcmp_le),
+	TPSLOT("__eq__", tp_richcompare, slot_tp_richcompare, richcmp_eq),
+	TPSLOT("__ne__", tp_richcompare, slot_tp_richcompare, richcmp_ne),
+	TPSLOT("__gt__", tp_richcompare, slot_tp_richcompare, richcmp_gt),
+	TPSLOT("__ge__", tp_richcompare, slot_tp_richcompare, richcmp_ge),
+	TPSLOT("__iter__", tp_iter, slot_tp_iter, wrap_unaryfunc),
+	TPSLOT("next", tp_iternext, slot_tp_iternext, wrap_next),
+	TPSLOT("__get__", tp_descr_get, slot_tp_descr_get, wrap_descr_get),
+	TPSLOT("__set__", tp_descr_set, slot_tp_descr_set, wrap_descr_set),
+	TPSLOT("__init__", tp_init, slot_tp_init, wrap_init),
+	TPSLOT("__new__", tp_new, slot_tp_new, NULL),
+	{NULL}
+};
+
+static int
+update_slot(PyTypeObject *type, PyObject *name, PyObject *value)
+{
+	char *s;
+	int n;
+	slotdef *p;
+	void **ptr;
+
+	assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
+	if (value == NULL)
+		return 0; /* Can't unset a slot */
+	s = PyString_AsString(name);
+	n = PyString_Size(name);
+	if (s == NULL || n < 0) {
+		/* Shouldn't happen, but can't be bothered */
+		PyErr_Clear();
+		return 0;
+	}
+	if (!(s[0] == '_' && s[1] == '_' && s[n-1] == '_' && s[n-2] == '_'))
+		return 0;
+	for (p = slotdefs; p->name; p++) {
+		if (!strcmp(p->name, s)) {
+			ptr = (void **) ((char *)type + p->offset);
+			*ptr = p->function;
+		}
+	}
+	return 0;
+}
+
+static void **
+slotptr(PyTypeObject *type, int offset)
+{
+	char *ptr;
+
+	assert(offset >= 0);
+	assert(offset < offsetof(etype, as_buffer));
+	if (offset >= offsetof(etype, as_mapping)) {
+		ptr = (void *)type->tp_as_mapping;
+		offset -= offsetof(etype, as_mapping);
+	}
+	else if (offset >= offsetof(etype, as_sequence)) {
+		ptr = (void *)type->tp_as_sequence;
+		offset -= offsetof(etype, as_sequence);
+	}
+	else if (offset >= offsetof(etype, as_number)) {
+		ptr = (void *)type->tp_as_number;
+		offset -= offsetof(etype, as_number);
+	}
+	else {
+		ptr = (void *)type;
+	}
+	if (ptr != NULL)
+		ptr += offset;
+	return (void **)ptr;
+}
 
 static void
-override_slots(PyTypeObject *type, PyObject *dict)
+fixup_slot_dispatchers(PyTypeObject *type)
 {
-	PySequenceMethods *sq = type->tp_as_sequence;
-	PyMappingMethods *mp = type->tp_as_mapping;
-	PyNumberMethods *nb = type->tp_as_number;
+	slotdef *p;
+	PyObject *mro, *descr;
+	PyTypeObject *base;
+	PyWrapperDescrObject *d;
+	int i, n;
+	void **ptr;
 
-#define SQSLOT(OPNAME, SLOTNAME, FUNCNAME) \
-	if (dict == NULL || PyDict_GetItemString(dict, OPNAME)) { \
-		sq->SLOTNAME = FUNCNAME; \
+	for (p = slotdefs; p->name; p++) {
+		ptr = slotptr(type, p->offset);
+		if (ptr)
+			*ptr = NULL;
 	}
-
-#define MPSLOT(OPNAME, SLOTNAME, FUNCNAME) \
-	if (dict == NULL || PyDict_GetItemString(dict, OPNAME)) { \
-		mp->SLOTNAME = FUNCNAME; \
+	mro = type->tp_mro;
+	assert(PyTuple_Check(mro));
+	n = PyTuple_GET_SIZE(mro);
+	for (p = slotdefs; p->name; p++) {
+		for (i = 0; i < n; i++) {
+			base = (PyTypeObject *)PyTuple_GET_ITEM(mro, i);
+			assert(PyType_Check(base));
+			descr = PyDict_GetItemString(
+				base->tp_defined, p->name);
+			if (descr == NULL)
+				continue;
+			ptr = slotptr(type, p->offset);
+			if (ptr == NULL)
+				continue;
+			if (descr->ob_type == &PyWrapperDescr_Type) {
+				d = (PyWrapperDescrObject *)descr;
+				if (d->d_base->wrapper == p->wrapper) {
+					if (*ptr == NULL) {
+						*ptr = d->d_wrapped;
+						continue;
+					}
+					if (p->wrapper == wrap_binaryfunc_r)
+						continue;
+				}
+			}
+			*ptr = p->function;
+			break;
+		}
 	}
-
-#define NBSLOT(OPNAME, SLOTNAME, FUNCNAME) \
-	if (dict == NULL || PyDict_GetItemString(dict, OPNAME)) { \
-		nb->SLOTNAME = FUNCNAME; \
-	}
-
-#define TPSLOT(OPNAME, SLOTNAME, FUNCNAME) \
-	if (dict == NULL || PyDict_GetItemString(dict, OPNAME)) { \
-		type->SLOTNAME = FUNCNAME; \
-	}
-
-	SQSLOT("__len__", sq_length, slot_sq_length);
-	SQSLOT("__add__", sq_concat, slot_sq_concat);
-	SQSLOT("__mul__", sq_repeat, slot_sq_repeat);
-	SQSLOT("__getitem__", sq_item, slot_sq_item);
-	SQSLOT("__getslice__", sq_slice, slot_sq_slice);
-	SQSLOT("__setitem__", sq_ass_item, slot_sq_ass_item);
-	SQSLOT("__delitem__", sq_ass_item, slot_sq_ass_item);
-	SQSLOT("__setslice__", sq_ass_slice, slot_sq_ass_slice);
-	SQSLOT("__delslice__", sq_ass_slice, slot_sq_ass_slice);
-	SQSLOT("__contains__", sq_contains, slot_sq_contains);
-	SQSLOT("__iadd__", sq_inplace_concat, slot_sq_inplace_concat);
-	SQSLOT("__imul__", sq_inplace_repeat, slot_sq_inplace_repeat);
-
-	MPSLOT("__len__", mp_length, slot_mp_length);
-	MPSLOT("__getitem__", mp_subscript, slot_mp_subscript);
-	MPSLOT("__setitem__", mp_ass_subscript, slot_mp_ass_subscript);
-	MPSLOT("__delitem__", mp_ass_subscript, slot_mp_ass_subscript);
-
-	NBSLOT("__add__", nb_add, slot_nb_add);
-	NBSLOT("__sub__", nb_subtract, slot_nb_subtract);
-	NBSLOT("__mul__", nb_multiply, slot_nb_multiply);
-	NBSLOT("__div__", nb_divide, slot_nb_divide);
-	NBSLOT("__mod__", nb_remainder, slot_nb_remainder);
-	NBSLOT("__divmod__", nb_divmod, slot_nb_divmod);
-	NBSLOT("__pow__", nb_power, slot_nb_power);
-	NBSLOT("__neg__", nb_negative, slot_nb_negative);
-	NBSLOT("__pos__", nb_positive, slot_nb_positive);
-	NBSLOT("__abs__", nb_absolute, slot_nb_absolute);
-	NBSLOT("__nonzero__", nb_nonzero, slot_nb_nonzero);
-	NBSLOT("__invert__", nb_invert, slot_nb_invert);
-	NBSLOT("__lshift__", nb_lshift, slot_nb_lshift);
-	NBSLOT("__rshift__", nb_rshift, slot_nb_rshift);
-	NBSLOT("__and__", nb_and, slot_nb_and);
-	NBSLOT("__xor__", nb_xor, slot_nb_xor);
-	NBSLOT("__or__", nb_or, slot_nb_or);
-	NBSLOT("__coerce__", nb_coerce, slot_nb_coerce);
-	NBSLOT("__int__", nb_int, slot_nb_int);
-	NBSLOT("__long__", nb_long, slot_nb_long);
-	NBSLOT("__float__", nb_float, slot_nb_float);
-	NBSLOT("__oct__", nb_oct, slot_nb_oct);
-	NBSLOT("__hex__", nb_hex, slot_nb_hex);
-	NBSLOT("__iadd__", nb_inplace_add, slot_nb_inplace_add);
-	NBSLOT("__isub__", nb_inplace_subtract, slot_nb_inplace_subtract);
-	NBSLOT("__imul__", nb_inplace_multiply, slot_nb_inplace_multiply);
-	NBSLOT("__idiv__", nb_inplace_divide, slot_nb_inplace_divide);
-	NBSLOT("__imod__", nb_inplace_remainder, slot_nb_inplace_remainder);
-	NBSLOT("__ipow__", nb_inplace_power, slot_nb_inplace_power);
-	NBSLOT("__ilshift__", nb_inplace_lshift, slot_nb_inplace_lshift);
-	NBSLOT("__irshift__", nb_inplace_rshift, slot_nb_inplace_rshift);
-	NBSLOT("__iand__", nb_inplace_and, slot_nb_inplace_and);
-	NBSLOT("__ixor__", nb_inplace_xor, slot_nb_inplace_xor);
-	NBSLOT("__ior__", nb_inplace_or, slot_nb_inplace_or);
-	NBSLOT("__floordiv__", nb_floor_divide, slot_nb_floor_divide);
-	NBSLOT("__truediv__", nb_true_divide, slot_nb_true_divide);
-	NBSLOT("__ifloordiv__", nb_inplace_floor_divide,
-	       slot_nb_inplace_floor_divide);
-	NBSLOT("__itruediv__", nb_inplace_true_divide,
-	       slot_nb_inplace_true_divide);
-
-	if (dict == NULL ||
-	    PyDict_GetItemString(dict, "__str__") ||
-	    PyDict_GetItemString(dict, "__repr__"))
-		type->tp_print = NULL;
-
-	TPSLOT("__cmp__", tp_compare, _PyObject_SlotCompare);
-	TPSLOT("__repr__", tp_repr, slot_tp_repr);
-	TPSLOT("__hash__", tp_hash, slot_tp_hash);
-	TPSLOT("__call__", tp_call, slot_tp_call);
-	TPSLOT("__str__", tp_str, slot_tp_str);
-	TPSLOT("__getattribute__", tp_getattro, slot_tp_getattro);
-	TPSLOT("__getattr__", tp_getattro, slot_tp_getattr_hook);
-	TPSLOT("__setattr__", tp_setattro, slot_tp_setattro);
-	TPSLOT("__lt__", tp_richcompare, slot_tp_richcompare);
-	TPSLOT("__le__", tp_richcompare, slot_tp_richcompare);
-	TPSLOT("__eq__", tp_richcompare, slot_tp_richcompare);
-	TPSLOT("__ne__", tp_richcompare, slot_tp_richcompare);
-	TPSLOT("__gt__", tp_richcompare, slot_tp_richcompare);
-	TPSLOT("__ge__", tp_richcompare, slot_tp_richcompare);
-	TPSLOT("__iter__", tp_iter, slot_tp_iter);
-	TPSLOT("next", tp_iternext, slot_tp_iternext);
-	TPSLOT("__get__", tp_descr_get, slot_tp_descr_get);
-	TPSLOT("__set__", tp_descr_set, slot_tp_descr_set);
-	TPSLOT("__init__", tp_init, slot_tp_init);
-	TPSLOT("__new__", tp_new, slot_tp_new);
 }
 
 
