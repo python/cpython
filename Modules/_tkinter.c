@@ -261,13 +261,20 @@ Split (self, list)
     v = PyString_FromString ("");
   else if (argc == 1)
     v = PyString_FromString (argv[0]);
-  else
+  else if ((v = PyTuple_New (argc)) != NULL)
     {
       int i;
+      PyObject *w;
 
-      v = PyTuple_New (argc);
-      for (i = 0; i < argc; i++)
-	PyTuple_SetItem (v, i, Split (self, argv[i]));
+      for (i = 0; i < argc; i++) {
+	if ((w = Split (self, argv[i])) == NULL)
+	  {
+	    Py_DECREF(v);
+	    v = NULL;
+	    break;
+	  }
+	PyTuple_SetItem (v, i, w);
+      }
     }
 
   ckfree (FREECAST argv);
