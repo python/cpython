@@ -2,29 +2,28 @@
 \label{module-gdbm}
 \bimodindex{gdbm}
 
-This module is quite similar to the \code{dbm} module, but uses {\sc gdbm}
+This module is quite similar to the \code{dbm} module, but uses \code{gdbm}
 instead to provide some additional functionality.  Please note that
-the file formats created by {\sc gdbm} and dbm are incompatible.
+the file formats created by \code{gdbm} and \code{dbm} are incompatible.
 \bimodindex{dbm}
 
 The \code{gdbm} module provides an interface to the GNU DBM
-library.  {\sc gdbm} objects behave like mappings
+library.  \code{gdbm} objects behave like mappings
 (dictionaries), except that keys and values are always strings.
-Printing a {\sc gdbm} object doesn't print the keys and values, and the
+Printing a \code{gdbm} object doesn't print the keys and values, and the
 \code{items()} and \code{values()} methods are not supported.
 
 The module defines the following constant and functions:
 
-\renewcommand{\indexsubitem}{(in module dbm)}
+\renewcommand{\indexsubitem}{(in module gdbm)}
 \begin{excdesc}{error}
-Raised on dbm-specific errors, such as I/O errors. \code{KeyError} is
+Raised on \code{gdbm}-specific errors, such as I/O errors. \code{KeyError} is
 raised for general mapping errors like specifying an incorrect key.
 \end{excdesc}
 
 \begin{funcdesc}{open}{filename\, \optional{flag\, \optional{mode}}}
-Open a dbm database and return a dbm object.  The \var{filename}
-argument is the name of the database file (without the \file{.dir} or
-\file{.pag} extensions).
+Open a \code{gdbm} database and return a \code{gdbm} object.  The
+\var{filename} argument is the name of the database file.
 
 The optional \var{flag} argument can be
 \code{'r'} (to open an existing database for reading only --- default),
@@ -44,12 +43,12 @@ only when the database has to be created.  It defaults to octal
 \code{0666}.
 \end{funcdesc}
 
-In addition to the dictionary-like methods, {\sc gdbm} objects have the
+In addition to the dictionary-like methods, \code{gdbm} objects have the
 following methods:
 
 \begin{funcdesc}{firstkey}{}
 It's possible to loop over every key in the database using this method
-and the \code{nextkey()} method.  The traversal is ordered by {\sc gdbm}'s
+and the \code{nextkey()} method.  The traversal is ordered by \code{gdbm}'s
 internal hash values, and won't be sorted by the key values.  This
 method returns the starting key.
 \end{funcdesc}
@@ -68,8 +67,8 @@ while k!=None:
 
 \begin{funcdesc}{reorganize}{}
 If you have carried out a lot of deletions and would like to shrink
-the space used by the {\sc gdbm} file, this routine will reorganize the
-database.  {\sc gdbm} will not shorten the length of a database file except
+the space used by the \code{gdbm} file, this routine will reorganize the
+database.  \code{gdbm} will not shorten the length of a database file except
 by using this reorganization; otherwise, deleted file space will be
 kept and reused as new (key,value) pairs are added.
 \end{funcdesc}
