@@ -16,7 +16,7 @@ class Set:
         return len(self.elts)
     def add(self, elt):
         self.elts[elt] = elt
-    def items(self):
+    def elements(self):
         return self.elts.keys()
     def has_elt(self, elt):
         return self.elts.has_key(elt)
