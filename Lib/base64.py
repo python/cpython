@@ -1,9 +1,6 @@
 #! /usr/bin/env python
 
-# Conversions to/from base64 transport encoding as per RFC-MIME (Dec 1991
-# version).
-
-# Parameters set by RFC-1421.
+# Conversions to/from base64 transport encoding as per RFC-1521.
 #
 # Modified 04-Oct-95 by Jack to use binascii module
 
