@@ -2,6 +2,7 @@ import time
 import string
 import zlib
 import StringIO
+import __builtin__
 
 # implements a python function that reads and writes a gzipped file
 # the user of the file doesn't have to worry about the compression,
@@ -38,23 +39,31 @@ def read32(input):
     v = v + (ord(buf[3]) << 24)
     return v
 
-written = []
-
-_py_open = open
-
-def open(filename, mode, compresslevel=9):
+def open(filename, mode="r", compresslevel=9):
     return GzipFile(filename, mode, compresslevel)
 
 class GzipFile:
 
-    def __init__(self, filename, mode='r', compresslevel=9):
-	if mode == 'r' or mode == 'rb':
+    myfileobj = None
+
+    def __init__(self, filename=None, mode=None, 
+		 compresslevel=9, fileobj=None):
+	if fileobj is None:
+	    fileobj = self.myfileobj = __builtin__.open(filename, mode or 'r')
+        if filename is None:
+	    if hasattr(fileobj, 'name'): filename = fileobj.name
+	    else: filename = 'GzippedFile'
+        if mode is None:
+	    if hasattr(fileobj, 'mode'): mode = fileobj.mode
+	    else: mode = 'r'
+
+	if mode[0:1] == 'r':
 	    self.mode = READ
 	    self._init_read()
 	    self.filename = filename
 	    self.decompress = zlib.decompressobj(-zlib.MAX_WBITS)
 
-	elif mode == 'w' or mode == 'wb':
+	elif mode[0:1] == 'w':
 	    self.mode = WRITE
 	    self._init_write(filename)
 	    self.compress = zlib.compressobj(compresslevel,
@@ -65,7 +74,7 @@ class GzipFile:
 	else:
 	    raise ValueError, "Mode " + mode + " not supported"
 
-	self.fileobj = _py_open(self.filename,mode)
+	self.fileobj = fileobj
 
 	if self.mode == WRITE:
 	    self._write_gzip_header()
@@ -134,6 +143,8 @@ class GzipFile:
 
 
     def write(self,data):
+	if self.fileobj is None:
+	    raise ValueError, "write() on closed GzipFile object"
 	if len(data) > 0:
 	    self.size = self.size + len(data)
 	    self.crc = zlib.crc32(data, self.crc)
@@ -143,7 +154,7 @@ class GzipFile:
 	self.write(string.join(lines))
 
     def read(self,size=None):
-	if self.extrasize <= 0 and self.fileobj.closed:
+	if self.extrasize <= 0 and self.fileobj is None:
 	    return ''
 	
 	if not size:
@@ -173,7 +184,7 @@ class GzipFile:
 	    uncompress = self.decompress.flush()
 	    if uncompress == "":
 		self._read_eof()
-		self.fileobj.close()
+		self.fileobj = None
 		raise EOFError, 'Reached EOF'
 	else:
 	    uncompress = self.decompress.decompress(buf)
@@ -201,9 +212,12 @@ class GzipFile:
 	    self.fileobj.write(self.compress.flush())
 	    write32(self.fileobj, self.crc)
 	    write32(self.fileobj, self.size)
-	    self.fileobj.close()
+	    self.fileobj = None
 	elif self.mode == READ:
-	    self.fileobj.close()
+	    self.fileobj = None
+	if self.myfileobj:
+	    self.myfileobj.close()
+	    self.myfileobj = None
 
     def flush(self):
 	self.fileobj.flush()
@@ -218,47 +232,22 @@ class GzipFile:
 	return 0
 
     def readline(self):
-	# should I bother with this
-	raise RuntimeError, "not implemented"
+	# XXX This function isn't implemented in a very efficient way
+	line=""
+	while 1:
+	    c = self.read(1)
+	    line = line + c
+	    if c=='\n' or c=="": break
+	return line
 
     def readlines(self):
-	# should I bother with this
-	raise RuntimeError, "not implemented"
+	L=[]
+	line = self.readline()
+	while line!="":
+	    L.append(line)
+	    line = self.readline()
+	return L
 
-    
-class StringIOgz(GzipFile):
-
-    """A StringIO substitute that reads/writes gzipped buffers."""
-
-    def __init__(self, buf=None, filename="StringIOgz"):
-	"""Read/write mode depends on first argument.
-
-	If __init__ is passed a buffer, it will treat that as the
-	gzipped data and set up the StringIO for reading. Without the
-	initial argument, it will assume a new file for writing.
-
-	The filename argument is written in the header of buffers
-	opened for writing. Not sure that this is useful, but the
-	GzipFile code expects *some* filename."""
-
-	if buf:
-	    self.mode = READ
-	    self._init_read()
-	    self.filename = filename
-	    self.decompress = zlib.decompressobj(-zlib.MAX_WBITS)
-	    self.fileobj = StringIO.StringIO(buf)
-	else:
-	    self.mode = WRITE
-	    self._init_write(filename)
-	    self.compress = zlib.compressobj(compresslevel,
-					     zlib.DEFLATED, 
-					     -zlib.MAX_WBITS,
-					     zlib.DEF_MEM_LEVEL,
-					     0)
-	    self.fileobj = StringIO.StringIO()
-
-	if self.mode == WRITE:
-	    self._write_gzip_header()
-	elif self.mode == READ:
-	    self._read_gzip_header()
-
+    def writelines(self, L):
+	for line in L:
+	    self.write(line)
