@@ -6,9 +6,6 @@
 # brought up to date by running "make Makefile".  (The makesetup also
 # creates config.c from config.c.in in the source directory.)
 
-# Interpreter version number, for library destination pathnames
-VERSION=	1.5
-
 # === Variables set by makesetup ===
 
 MODOBJS=	_MODOBJS_
@@ -16,6 +13,7 @@ MODLIBS=	_MODLIBS_
 
 # === Variables set by configure ===
 
+VERSION=	@VERSION@
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 
@@ -92,51 +90,51 @@ MAKESETUP=	$(srcdir)/makesetup
 
 # === Fixed definitions ===
 
-OBJS=		$(MODOBJS)
+FIXOBJS=	config.o getpath.o main.o getbuildinfo.o
+OBJS=		$(MODOBJS) $(FIXOBJS)
 
-# XXX Should getpath.o (and may be others) be added to OBJS?
-
-ADDOBJS=	main.o config.o getpath.o getbuildinfo.o
-
-LIB=		libModules.a
-
-MYLIBS=		$(LIB) \
-		../Python/libPython.a \
-		../Objects/libObjects.a \
-		../Parser/libParser.a
+MAINOBJ=	python.o
 
 SYSLIBS=	$(LIBM) $(LIBC)
 
+LIBRARY=	../libpython$(VERSION).a
 
 # === Rules ===
 
-all:		$(LIB) ../python sharedmods
+all:		$(OBJS) sharedmods
 
+# Targets for Jim Fulton's extension Makefiles -- are these still needed?
 asharedmodule:	$(ASHAREDMODULE)$(SO)
 
 $(ASHAREDMODULE)$(SO): $(ASHAREDMODULESOBS)
 	$(LDSHARED) $(LDFLAGS) -o $(ASHAREDMODULE)$(SO) $(ASHAREDMODULESOBS) \
 	$(ASHAREDMODULESEXTRA)
 
-$(LIB):		$& $(OBJS) Makefile
-		-rm -f $(LIB)
-		$(AR) cr $(LIB) $(OBJS)
-		$(RANLIB) $(LIB)
-
-../python:	$(MYLIBS) $(ADDOBJS) Makefile buildno
+# This target is used by the master Makefile to add the objects to the library.
+# To deal with the conflict between signalmodule.o and sigcheck.o,
+# we remove the latter if we have the former.
+add2lib:	$(OBJS) buildno
 		expr `cat buildno` + 1 >@buildno
 		mv @buildno buildno
-		$(CC) -c $(CFLAGS) -DBUILD=`cat buildno` $(srcdir)/getbuildinfo.c
-		$(AR) r $(LIB) getbuildinfo.o
-		$(LINKCC) $(LDFLAGS) $(OPT) $(LINKFORSHARED) $(ADDOBJS) \
-		  $(MYLIBS) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python $(LDLAST)
+		$(CC) -c $(CFLAGS) -DBUILD=`cat buildno` \
+		      $(srcdir)/getbuildinfo.c
+		$(AR) cr $(LIBRARY) $(OBJS)
+		-if ar x $(LIBRARY) signalmodule.o 2>/dev/null; \
+		then ar d $(LIBRARY) sigcheck.o 2>/dev/null; true; \
+		else true; fi
+		touch add2lib
+
+# This target is used by the master Makefile to link the final binary.
+link:		$(MAINOBJ)
+		$(LINKCC) $(LDFLAGS) $(OPT) $(LINKFORSHARED) $(MAINOBJ) \
+		  $(LIBRARY) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python $(LDLAST)
 		mv python ../python
 
 buildno:
 		echo 0 >buildno
 
 clean:
-		-rm -f *.o python core *~ [@,#]* *.old *.orig *.rej
+		-rm -f *.o python core *~ [@,#]* *.old *.orig *.rej add2lib
 
 clobber:	clean
 		-rm -f *.a tags TAGS config.c glmodule.c Makefile.pre
@@ -150,7 +148,11 @@ getpath.o:	getpath.c Makefile
 		      -DVPATH='"$(VPATH)"' \
 		      $(srcdir)/getpath.c
 
+# When the configuration changes, we remove the library, so that it
+# gets remade from scratch; this ensures to remove modules that are no
+# longer pertinent (but that were in a previous configuration).
 config.c Makefile: Makefile.pre config.c.in $(MAKESETUP) Setup Setup.local
+		-rm -f $(LIBRARY)
 		$(SHELL) $(MAKESETUP) Setup Setup.local
 
 Setup:

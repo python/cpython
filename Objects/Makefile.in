@@ -4,6 +4,8 @@
 
 # === Variables set by config.stat ===
 
+VERSION=	@VERSION@
+
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 
@@ -44,20 +46,19 @@ SRCS=		abstract.c \
 		sliceobject.c stringobject.c \
 		tupleobject.c typeobject.c
 
-LIB=		libObjects.a
-
+LIBRARY=	../libpython$(VERSION).a
 
 # === Rules ===
 
-all:		$(LIB)
+all:		$(OBJS)
 
-$(LIB):		$& $(OBJS)
-		-rm -f $(LIB)
-		$(AR) cr $(LIB) $(OBJS)
-		$(RANLIB) $(LIB)
+# This target is used by the master Makefile to add the objects to the library
+add2lib:	$(OBJS)
+		$(AR) cr $(LIBRARY) $(OBJS)
+		touch add2lib
 
 clean:
-		-rm -f *.o core *~ [@,#]* *.old *.orig *.rej
+		-rm -f *.o core *~ [@,#]* *.old *.orig *.rej add2lib
 
 clobber:	clean
 		-rm -f *.a tags TAGS

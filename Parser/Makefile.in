@@ -4,6 +4,8 @@
 
 # === Variables set by config.stat ===
 
+VERSION=	@VERSION@
+
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 
@@ -26,35 +28,38 @@ SHELL=		/bin/sh
 
 # === Fixed definitions ===
 
-PARSEROBJS=	acceler.o grammar1.o \
-		intrcheck.o listnode.o myreadline.o node.o parser.o \
+POBJS=		acceler.o grammar1.o \
+		listnode.o node.o parser.o \
 		parsetok.o tokenizer.o bitset.o \
 		firstsets.o grammar.o metagrammar.o pgen.o \
 		printgrammar.o
 
-PGENOBJS=	pgenmain.o
+OBJS=		$(POBJS) intrcheck.o myreadline.o
 
-OBJS=		$(PGENOBJS) $(PARSEROBJS)
+PGENMAIN=	pgenmain.o
+
+PGENOBJS=	$(PGENMAIN) $(POBJS)
+
+DOBJS=		$(PGENMAIN) $(OBJS)
 
 PGEN=		pgen
 
-LIB=		libParser.a
-
+LIBRARY=	../libpython$(VERSION).a
 
 # === Rules ===
 
-all:		$(LIB) $(PGEN)
+all:		$(PGEN) $(OBJS)
 
-$(LIB):		$& $(PARSEROBJS)
-		-rm -f $(LIB)
-		$(AR) cr $(LIB) $(PARSEROBJS)
-		$(RANLIB) $(LIB)
+# This target is used by the master Makefile to add the objects to the library
+add2lib:	$(OBJS)
+		$(AR) cr $(LIBRARY) $(OBJS)
+		touch add2lib
 
-$(PGEN):	$(PGENOBJS) $(LIB)
-		$(CC) $(OPT) $(PGENOBJS) $(LIB) -o $(PGEN)
+$(PGEN):	$(PGENOBJS)
+		$(CC) $(OPT) $(PGENOBJS) -o $(PGEN)
 
 clean:
-		-rm -f *.o core *~ [@,#]* *.old *.orig *.rej
+		-rm -f *.o core *~ [@,#]* *.old *.orig *.rej add2lib
 
 clobber:	clean
 		-rm -f $(PGEN) *.a tags TAGS
@@ -64,7 +69,7 @@ Makefile:	$(srcdir)/Makefile.in ../config.status
 		$(SHELL) config.status)
 
 depend:
-		$(MKDEP) $(CFLAGS) `echo $(OBJS) | tr ' ' '\012' | \
+		$(MKDEP) $(CFLAGS) `echo $(DOBJS) | tr ' ' '\012' | \
 					sed 's|\(.*\)\.o|$(srcdir)/\1.c|'`
 
 .PRECIOUS:	Makefile
