@@ -46,6 +46,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 static object *modules;
 
+/* Forward */
+static int init_builtin PROTO((char *));
+
 /* Initialization */
 
 void
