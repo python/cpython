@@ -696,8 +696,8 @@ _PyTuple_Resize(PyObject **pv, int newsize)
 	_Py_NewReference((PyObject *) sv);
 	/* Zero out items added by growing */
 	if (newsize > oldsize)
-		memset(sv->ob_item, 0,
-			sizeof(*sv->ob_item) * (newsize - oldsize));
+		memset(&sv->ob_item[oldsize], 0,
+		       sizeof(*sv->ob_item) * (newsize - oldsize));
 	*pv = (PyObject *) sv;
 	_PyObject_GC_TRACK(sv);
 	return 0;
