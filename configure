@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.53 
+# From configure.in Revision: 1.54 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.12 
@@ -3666,6 +3666,59 @@ fi
 echo "$ac_t""$ac_cv_func_getopt" 1>&6
 test $ac_cv_func_getopt = no && LIBOBJS="$LIBOBJS getopt.o"
 
+# check whether malloc(0) returns NULL or not
+
+echo $ac_n "checking what malloc(0) returns""... $ac_c" 1>&6
+echo "configure:3673: checking what malloc(0) returns" >&5
+if eval "test \"`echo '$''{'ac_cv_malloc_zero'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  if test "$cross_compiling" = yes; then
+    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+else
+  cat > conftest.$ac_ext <<EOF
+#line 3681 "configure"
+#include "confdefs.h"
+#include <stdio.h>
+#ifdef HAVE_STDLIB
+#include <stdlib.h>
+#else
+char *malloc(), *realloc();
+int *free();
+#endif
+main() {
+	char *p;
+	p = malloc(0);
+	if (p == NULL) exit(1);
+	p = realloc(p, 0);
+	if (p == NULL) exit(1);
+	free(p);
+	exit(0);
+}
+EOF
+if { (eval echo configure:3700: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
+then
+  ac_cv_malloc_zero=nonnull
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  ac_cv_malloc_zero=null
+fi
+rm -fr conftest*
+fi
+
+fi
+
+echo "$ac_t""$ac_cv_malloc_zero" 1>&6
+if test "$ac_cv_malloc_zero" = null
+then
+  cat >> confdefs.h <<\EOF
+#define MALLOC_ZERO_RETURNS_NULL 1
+EOF
+
+fi
+
 # generate output files
 trap '' 1 2 15
 cat > confcache <<\EOF
@@ -3820,6 +3873,7 @@ s%@LIBOBJS@%$LIBOBJS%g
 s%@WANT_SIGFPE_HANDLER@%$WANT_SIGFPE_HANDLER%g
 s%@LIBM@%$LIBM%g
 s%@LIBC@%$LIBC%g
+s%@MALLOC_ZERO_RETURNS_NULL@%$MALLOC_ZERO_RETURNS_NULL%g
 
 CEOF
 EOF
