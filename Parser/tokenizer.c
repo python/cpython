@@ -756,9 +756,7 @@ PyTokenizer_Get(register struct tok_state *tok, char **p_start,
 			if (c == 'l' || c == 'L')
 				c = tok_nextc(tok);
 			else {
-				/* Accept floating point numbers.
-				   XXX This accepts incomplete things like
-				   XXX 12e or 1e+; worry run-time */
+				/* Accept floating point numbers. */
 				if (c == '.') {
 		fraction:
 					/* Fraction */
@@ -771,9 +769,14 @@ PyTokenizer_Get(register struct tok_state *tok, char **p_start,
 					c = tok_nextc(tok);
 					if (c == '+' || c == '-')
 						c = tok_nextc(tok);
-					while (isdigit(c)) {
-						c = tok_nextc(tok);
+					if (!isdigit(c)) {
+						tok->done = E_TOKEN;
+						tok_backup(tok, c);
+						return ERRORTOKEN;
 					}
+					do {
+						c = tok_nextc(tok);
+					} while (isdigit(c));
 				}
 #ifndef WITHOUT_COMPLEX
 				if (c == 'j' || c == 'J')

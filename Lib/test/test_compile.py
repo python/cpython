@@ -50,3 +50,18 @@ try:
     raise TestFailed, "non-default args after default"
 except SyntaxError:
     pass
+
+if verbose:
+    print "testing bad float literals"
+
+def expect_error(s):
+    try:
+        eval(s)
+        raise TestFailed("%r accepted" % s)
+    except SyntaxError:
+        pass
+
+expect_error("2e")
+expect_error("2.0e+")
+expect_error("1e-")
+expect_error("3-4e/21")
