@@ -1,4 +1,4 @@
-\documentclass{howto}
+\documentclass{manual}
 \usepackage{distutils}
 
 % $Id$
@@ -40,7 +40,7 @@
 %end{latexonly}
 
 
-\section{Introduction}
+\chapter{An Introduction to Distutils}
 \label{intro}
 
 This document covers using the Distutils to distribute your Python
@@ -76,7 +76,7 @@ Python module distributions in the most natural way for their platform,
 without having to run a single setup script or compile a line of code.
 
 
-\subsection{A Simple Example}
+\section{A Simple Example}
 \label{simple-example}
 
 The setup script is usually quite simple, although since it's written
@@ -178,7 +178,7 @@ python setup.py bdist --help-formats
 \end{verbatim}
 
 
-\subsection{General Python terminology}
+\section{General Python terminology}
 \label{python-terms}
 
 If you're reading this document, you probably have a good idea of what
@@ -217,7 +217,7 @@ following glossary of common Python terms:
 \end{description}
 
 
-\subsection{Distutils-specific terminology}
+\section{Distutils-specific terminology}
 \label{distutils-term}
 
 The following terms apply more specifically to the domain of
@@ -245,7 +245,7 @@ distributing Python modules using the Distutils:
 \end{description}
 
 
-\section{Writing the Setup Script}
+\chapter{Writing the Setup Script}
 \label{setup-script}
 
 The setup script is the centre of all activity in building,
@@ -812,7 +812,7 @@ variable can be set to anything except an empty string, and distutils
 will now print detailed information what it is doing, and prints the
 full traceback in case an exception occurs.
 
-\section{Writing the Setup Configuration File}
+\chapter{Writing the Setup Configuration File}
 \label{setup-config}
 
 Often, it's not possible to write down everything needed to build a
@@ -949,7 +949,7 @@ whitespace-separated string split across multiple lines for readability.
 \end{seealso}
 
 
-\section{Creating a Source Distribution}
+\chapter{Creating a Source Distribution}
 \label{source-dist}
 
 As shown in section~\ref{simple-example}, you use the
@@ -1142,7 +1142,7 @@ python setup.py sdist --manifest-only
 \programopt{-f} for \longprogramopt{force-manifest}.
 
 
-\section{Creating Built Distributions}
+\chapter{Creating Built Distributions}
 \label{built-dist}
 
 A ``built distribution'' is what you're probably used to thinking of
@@ -1531,7 +1531,7 @@ additional built-in functions in the installation script.
   documentation for the \class{IShellLink} interface.
 \end{funcdesc}
 
-\section{Registering with the Package Index}
+\chapter{Registering with the Package Index}
 \label{package-index}
 
 The Python Package Index (PyPI) holds meta-data describing distributions
@@ -1584,10 +1584,10 @@ through the web interface.
 
 
 
-\section{Examples}
+\chapter{Examples}
 \label{examples}
   
-\subsection{Pure Python distribution (by module)}
+\section{Pure Python distribution (by module)}
 \label{pure-mod}
 
 If you're just distributing a couple of modules, especially if they
@@ -1638,7 +1638,7 @@ enough modules to do that, it's probably easier to specify modules by
 package rather than listing them individually.
 
 
-\subsection{Pure Python distribution (by package)}
+\section{Pure Python distribution (by package)}
 \label{pure-pkg}
 
 If you have more than a couple of modules to distribute, especially if
@@ -1760,7 +1760,7 @@ setup(name = "foobar", version = "1.0",
 directory.)
 
 
-\subsection{Single extension module}
+\section{Single extension module}
 \label{single-ext}
 
 Extension modules are specified using the \option{ext\_modules} option.
@@ -1793,29 +1793,29 @@ setup(name = "foobar", version = "1.0",
 \end{verbatim}
 
 
-%\subsection{Multiple extension modules}
+%\section{Multiple extension modules}
 %\label{multiple-ext}
 
 
-%\subsection{Putting it all together}
+%\section{Putting it all together}
 
 
-%\section{Extending the Distutils}
+%\chapter{Extending the Distutils}
 %\label{extending}
 
 
-%\subsection{Extending existing commands}
+%\section{Extending existing commands}
 %\label{extend-existing}
 
 
-%\subsection{Writing new commands}
+%\section{Writing new commands}
 %\label{new-commands}
 
 %\XXX{Would an uninstall command be a good example here?}
 
 
 
-\section{Reference}
+\chapter{Command Reference}
 \label{reference}
 
 
@@ -1835,7 +1835,7 @@ setup(name = "foobar", version = "1.0",
 %\label{build-clib-cmd}
 
 
-\subsection{Installing modules: the \protect\command{install} command family}
+\section{Installing modules: the \protect\command{install} command family}
 \label{install-cmd}
 
 The install command ensures that the build commands have been run and then
@@ -1846,11 +1846,11 @@ runs the subcommands \command{install\_lib},
 %\subsubsection{\protect\command{install\_lib}}
 %\label{install-lib-cmd}
 
-\subsubsection{\protect\command{install\_data}}
+\subsection{\protect\command{install\_data}}
 \label{install-data-cmd}
 This command installs all data files provided with the distribution.
 
-\subsubsection{\protect\command{install\_scripts}}
+\subsection{\protect\command{install\_scripts}}
 \label{install-scripts-cmd}
 This command installs all (Python) scripts in the distribution.
 
@@ -1859,7 +1859,7 @@ This command installs all (Python) scripts in the distribution.
 %\label{clean-cmd}
 
 
-\subsection{Creating a source distribution: the
+\section{Creating a source distribution: the
             \protect\command{sdist} command}
 \label{sdist-cmd}
 
@@ -1898,18 +1898,18 @@ anything except backslash or colon; on Mac OS anything except colon.
 \XXX{Windows and Mac OS support not there yet}
 
 
-%\subsection{Creating a built distribution: the
+%\section{Creating a built distribution: the
 %  \protect\command{bdist} command family}
 %\label{bdist-cmds}
 
 
-%\subsubsection{\protect\command{bdist}}
+%\subsection{\protect\command{bdist}}
 
-%\subsubsection{\protect\command{bdist\_dumb}}
+%\subsection{\protect\command{bdist\_dumb}}
 
-%\subsubsection{\protect\command{bdist\_rpm}}
+%\subsection{\protect\command{bdist\_rpm}}
 
-%\subsubsection{\protect\command{bdist\_wininst}}
+%\subsection{\protect\command{bdist\_wininst}}
 
 
 \input{sysconfig}
