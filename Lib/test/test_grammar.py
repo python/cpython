@@ -349,6 +349,25 @@ print 'continue_stmt' # 'continue'
 i = 1
 while i: i = 0; continue
 
+msg = ""
+while not msg:
+    msg = "continue + try/except ok"
+    try:
+        continue
+        msg = "continue failed to continue inside try"
+    except:
+        msg = "continue inside try called except block"
+print msg
+
+msg = ""
+while not msg:
+    msg = "finally block not called"
+    try:
+        continue
+    finally:
+        msg = "continue + try/finally ok"
+print msg
+    
 print 'return_stmt' # 'return' [testlist]
 def g1(): return
 def g2(): return 1

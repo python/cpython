@@ -260,17 +260,19 @@ The \keyword{try}...\keyword{finally} form specifies a `cleanup' handler.  The
 \keyword{try} clause, the exception is temporarily saved, the
 \keyword{finally} clause is executed, and then the saved exception is
 re-raised.  If the \keyword{finally} clause raises another exception or
-executes a \keyword{return}, \keyword{break} or \keyword{continue} statement,
-the saved exception is lost.  The exception information is not
-available to the program during execution of the \keyword{finally}
-clause.
+executes a \keyword{return} or \keyword{break} statement, the saved
+exception is lost.  A \keyword{continue} statement is illegal in the
+\keyword{finally} clause.  (The reason is a problem with the current
+implementation -- thsi restriction may be lifted in the future).  The
+exception information is not available to the program during execution of
+the \keyword{finally} clause.
 \kwindex{finally}
 
-When a \keyword{return} or \keyword{break} statement is executed in the
-\keyword{try} suite of a \keyword{try}...\keyword{finally} statement, the
-\keyword{finally} clause is also executed `on the way out.'  A
-\keyword{continue} statement is illegal in the \keyword{try} clause.  (The
-reason is a problem with the current implementation --- this
+When a \keyword{return}, \keyword{break} or \keyword{continue} statement is
+executed in the \keyword{try} suite of a \keyword{try}...\keyword{finally}
+statement, the \keyword{finally} clause is also executed `on the way out.' A
+\keyword{continue} statement is illegal in the \keyword{finally} clause.
+(The reason is a problem with the current implementation --- this
 restriction may be lifted in the future).
 \stindex{return}
 \stindex{break}
