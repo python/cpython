@@ -88,6 +88,18 @@ def urljoin(base, url, allow_framents = 1):
 		  urlparse(base, '', allow_framents)
 	scheme, netloc, path, params, query, fragment = \
 		urlparse(url, bscheme, allow_framents)
+	# XXX Unofficial hack: default netloc to bnetloc even if
+	# schemes differ
+	if scheme != bscheme and not netloc and \
+	   scheme in uses_relative and bscheme in uses_relative and \
+	   scheme in uses_netloc and bscheme in uses_netloc:
+	   netloc = bnetloc
+	   # Strip the port number
+	   i = string.find(netloc, '@')
+	   if i < 0: i = 0
+	   i = string.find(netloc, ':', i)
+	   if i >= 0:
+		   netloc = netloc[:i]
 	if scheme != bscheme or scheme not in uses_relative:
 		return urlunparse((scheme, netloc, path,
 				   params, query, fragment))
