@@ -1,6 +1,7 @@
 import unittest
 from test import test_support
 from itertools import *
+import sys
 
 class TestBasicOps(unittest.TestCase):
     def test_count(self):
@@ -47,6 +48,7 @@ class TestBasicOps(unittest.TestCase):
         import operator
         self.assertEqual(list(starmap(operator.pow, zip(range(3), range(1,7)))),
                          [0**1, 1**2, 2**3])
+        self.assertRaises(TypeError, list, starmap(operator.pow, [[4,5]]))
 
     def test_islice(self):
         for args in [          # islice(args) should agree with range(args)
@@ -71,6 +73,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(ValueError, islice, xrange(10), 1, -5, -1)
         self.assertRaises(ValueError, islice, xrange(10), 1, 10, -1)
         self.assertRaises(ValueError, islice, xrange(10), 1, 10, 0)
+        self.assertEqual(len(list(islice(count(), 1, 10, sys.maxint))), 1)
 
     def test_takewhile(self):
         data = [1, 3, 5, 20, 2, 4, 6, 8]

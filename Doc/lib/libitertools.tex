@@ -82,6 +82,10 @@ by functions or loops that truncate the stream.
              yield cnt
              cnt += 1
   \end{verbatim}
+
+  Note, \function{count()} does not check for overflow and will return
+  negative numbers after exceeding \code{sys.maxint}.  This behavior
+  may change in the future.
 \end{funcdesc}
 
 \begin{funcdesc}{dropwhile}{predicate, iterable}

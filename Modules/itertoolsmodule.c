@@ -403,6 +403,7 @@ static PyObject *
 islice_next(isliceobject *lz)
 {
 	PyObject *item;
+	long oldnext;
 
 	while (lz->cnt < lz->next) {
 		item = PyIter_Next(lz->it);
@@ -417,7 +418,10 @@ islice_next(isliceobject *lz)
 	if (item == NULL)
 		return NULL;
 	lz->cnt++;
+	oldnext = lz->next;
 	lz->next += lz->step;
+	if (lz->next < oldnext)	/* Check for overflow */
+		lz->next = lz->stop;
 	return item;
 }
 
@@ -558,6 +562,12 @@ starmap_next(starmapobject *lz)
 	args = PyIter_Next(lz->it);
 	if (args == NULL)
 		return NULL;
+	if (!PyTuple_CheckExact(args)) {
+		Py_DECREF(args);
+		PyErr_SetString(PyExc_TypeError,
+				"iterator must return a tuple");
+		return NULL;
+	}
 	result = PyObject_Call(lz->func, args, NULL);
 	Py_DECREF(args);
 	return result;
@@ -719,6 +729,31 @@ imap_traverse(imapobject *lz, visitproc visit, void *arg)
 	return 0;
 }
 
+/*	
+imap() is an iterator version of __builtins__.map() except that it does
+not have the None fill-in feature.  That was intentionally left out for
+the following reasons:
+
+  1) Itertools are designed to be easily combined and chained together.
+     Having all tools stop with the shortest input is a unifying principle
+     that makes it easier to combine finite iterators (supplying data) with
+     infinite iterators like count() and repeat() (for supplying sequential
+     or constant arguments to a function).
+
+  2) In typical use cases for combining itertools, having one finite data 
+     supplier run out before another is likely to be an error condition which
+     should not pass silently by automatically supplying None.
+
+  3) The use cases for automatic None fill-in are rare -- not many functions
+     do something useful when a parameter suddenly switches type and becomes
+     None.  
+
+  4) If a need does arise, it can be met by __builtins__.map() or by 
+     writing a generator.
+
+  5) Similar toolsets in Haskell and SML do not have automatic None fill-in.
+*/
+
 static PyObject *
 imap_next(imapobject *lz)
 {
@@ -742,6 +777,11 @@ imap_next(imapobject *lz)
 		}
 		return argtuple;
 	} else {
+		if (argtuple->ob_refcnt > 1) {
+			argtuple = PyTuple_New(numargs);
+			if (argtuple == NULL)
+				return NULL;
+		}
 		for (i=0 ; i<numargs ; i++) {
 			val = PyIter_Next(PyTuple_GET_ITEM(lz->iters, i));
 			if (val == NULL)
@@ -837,7 +877,7 @@ times_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	if (cnt < 0) {
 		PyErr_SetString(PyExc_ValueError,
-		   "count for imap() cannot be negative.");
+		   "count for times() cannot be negative.");
 		return NULL;
 	}
 
@@ -858,6 +898,14 @@ times_dealloc(timesobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->obj);
 	lz->ob_type->tp_free(lz);
+}
+
+static int
+times_traverse(timesobject *lz, visitproc visit, void *arg)
+{
+	if (lz->obj)
+		return visit(lz->obj, arg);
+	return 0;
 }
 
 static PyObject *
@@ -911,7 +959,7 @@ PyTypeObject times_type = {
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,	/* tp_flags */
 	times_doc,			 /* tp_doc */
-	0,				/* tp_traverse */
+	(traverseproc)times_traverse,	/* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
@@ -1191,6 +1239,7 @@ typedef struct {
 	PyObject_HEAD
 	long	tuplesize;
 	PyObject *ittuple;		/* tuple of iterators */
+	PyObject *result;
 } izipobject;
 
 PyTypeObject izip_type;
@@ -1201,6 +1250,7 @@ izip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	izipobject *lz;
 	int i;
 	PyObject *ittuple;  /* tuple of iterators */
+	PyObject *result;
 	int tuplesize = PySequence_Length(args);
 
 	if (tuplesize < 1) {
@@ -1230,14 +1280,27 @@ izip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		PyTuple_SET_ITEM(ittuple, i, it);
 	}
 
+	/* create a result holder */
+	result = PyTuple_New(tuplesize);
+	if (result == NULL) {
+		Py_DECREF(ittuple);
+		return NULL;
+	}
+	for (i=0 ; i < tuplesize ; i++) {
+		Py_INCREF(Py_None);
+		PyTuple_SET_ITEM(result, i, Py_None);
+	}
+
 	/* create izipobject structure */
 	lz = (izipobject *)type->tp_alloc(type, 0);
 	if (lz == NULL) {
 		Py_DECREF(ittuple);
+		Py_DECREF(result);
 		return NULL;
 	}
 	lz->ittuple = ittuple;
 	lz->tuplesize = tuplesize;
+	lz->result = result;
 
 	return (PyObject *)lz;
 }
@@ -1247,6 +1310,7 @@ izip_dealloc(izipobject *lz)
 {
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->ittuple);
+	Py_XDECREF(lz->result);
 	lz->ob_type->tp_free(lz);
 }
 
@@ -1263,13 +1327,27 @@ izip_next(izipobject *lz)
 {
 	int i;
 	long tuplesize = lz->tuplesize;
-	PyObject *result;
+	PyObject *result = lz->result;
 	PyObject *it;
 	PyObject *item;
 
-	result = PyTuple_New(tuplesize);
-	if (result == NULL)
-		return NULL;
+	assert(result->ob_refcnt >= 1);
+	if (result->ob_refcnt == 1) {
+		for (i=0 ; i < tuplesize ; i++) {
+			Py_DECREF(PyTuple_GET_ITEM(result, i));
+			PyTuple_SET_ITEM(result, i, NULL);
+		}
+		Py_INCREF(result);
+	} else {
+		Py_DECREF(result);
+		result = PyTuple_New(tuplesize);
+		if (result == NULL)
+			return NULL;
+		Py_INCREF(result);
+		lz->result = result;
+	}
+	assert(lz->result == result);
+	assert(result->ob_refcnt == 2);
 
 	for (i=0 ; i < tuplesize ; i++) {
 		it = PyTuple_GET_ITEM(lz->ittuple, i);
