@@ -26,6 +26,10 @@ class Misc:
 		self.tk.call('tkwait', 'variable', name)
 	def setvar(self, name='VAR', value='1'):
 		self.tk.setvar(name, value)
+	def getvar(self, name='VAR'):
+		return self.tk.getvar(name)
+	def getint(self, s):
+		return self.tk.getint(s)
 	def focus(self):
 		self.tk.call('focus', self._w)
 	def focus_default(self):
@@ -62,6 +66,11 @@ class Misc:
 	#	self.tk.call('selection', 'own', self._w)
 	def send(self, interp, cmd, *args): #XXX
 		return apply(self.tk.call, ('send', interp, cmd) + args)
+	def lower(self, belowThis=None):
+		self.tk.call('lift', self._w, belowThis)
+	def tkraise(self, aboveThis=None):
+		self.tk.call('raise', self._w, aboveThis)
+	lift = tkraise
 	def colormodel(self, value=None):
 		return self.tk.call('tk', 'colormodel', self._w, value)
 	def winfo_atom(self, name):
@@ -581,6 +590,7 @@ class Canvas(Widget):
 		return self._do('postscript', self._options(cnf))
 	def tkraise(self, *args):
 		self._do('raise', args)
+	lift = tkraise
 	def scale(self, *args):
 		self._do('scale', args)
 	def scan_mark(self, x, y):
