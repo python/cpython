@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=5.0
-  Title=Python 2.0 beta 1
+  Title=Python 2.0 beta 2
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -64,7 +64,7 @@ item: End Block
 end
 item: Set Variable
   Variable=APPTITLE
-  Value=Python 2.0 beta 1
+  Value=Python 2.0 beta 2
 end
 item: Set Variable
   Variable=GROUP
@@ -659,6 +659,9 @@ item: Install File
   Destination=%MAINDIR%\NEWS.txt
   Flags=0000000000000010
 end
+item: Remark
+  Text=*** Executables ***
+end
 item: Install File
   Source=%_SRC_%\PCbuild\python.exe
   Destination=%MAINDIR%\python.exe
@@ -674,11 +677,152 @@ item: Install File
   Destination=%MAINDIR%\w9xpopen.exe
   Flags=0000000000000010
 end
+item: Remark
+  Text=*** Extension module DLLs (.pyd); keep in synch with libs directory next ***
+end
 item: Install File
-  Source=%_SRC_%\pcbuild\*.pyd
-  Destination=%MAINDIR%\DLLs
+  Source=%_SRC_%\PCbuild\_winreg.pyd
+  Destination=%MAINDIR%\DLLs\_winreg.pyd
   Description=Extension modules
   Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\_sre.pyd
+  Destination=%MAINDIR%\DLLs\_sre.pyd
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\_tkinter.pyd
+  Destination=%MAINDIR%\DLLs\_tkinter.pyd
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\_socket.pyd
+  Destination=%MAINDIR%\DLLs\_socket.pyd
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\bsddb.pyd
+  Destination=%MAINDIR%\DLLs\bsddb.pyd
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\mmap.pyd
+  Destination=%MAINDIR%\DLLs\mmap.pyd
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\parser.pyd
+  Destination=%MAINDIR%\DLLs\parser.pyd
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\pyexpat.pyd
+  Destination=%MAINDIR%\DLLs\pyexpat.pyd
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\select.pyd
+  Destination=%MAINDIR%\DLLs\select.pyd
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\ucnhash.pyd
+  Destination=%MAINDIR%\DLLs\ucnhash.pyd
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\unicodedata.pyd
+  Destination=%MAINDIR%\DLLs\unicodedata.pyd
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\winsound.pyd
+  Destination=%MAINDIR%\DLLs\winsound.pyd
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\zlib.pyd
+  Destination=%MAINDIR%\DLLs\zlib.pyd
+  Flags=0000000000000010
+end
+item: Remark
+  Text=*** Link libraries (.lib); keep in synch with DLLs above, except that the Python lib lives here ***
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\_winreg.lib
+  Destination=%MAINDIR%\libs\_winreg.lib
+  Description=Link library files
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\_sre.lib
+  Destination=%MAINDIR%\libs\_sre.lib
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\_tkinter.lib
+  Destination=%MAINDIR%\libs\_tkinter.lib
+  Description=Extension modules
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\_socket.lib
+  Destination=%MAINDIR%\libs\_socket.lib
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\bsddb.lib
+  Destination=%MAINDIR%\libs\bsddb.lib
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\mmap.lib
+  Destination=%MAINDIR%\libs\mmap.lib
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\parser.lib
+  Destination=%MAINDIR%\libs\parser.lib
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\pyexpat.lib
+  Destination=%MAINDIR%\libs\pyexpat.lib
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\select.lib
+  Destination=%MAINDIR%\libs\select.lib
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\ucnhash.lib
+  Destination=%MAINDIR%\libs\ucnhash.lib
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\unicodedata.lib
+  Destination=%MAINDIR%\libs\unicodedata.lib
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\winsound.lib
+  Destination=%MAINDIR%\libs\winsound.lib
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\zlib.lib
+  Destination=%MAINDIR%\libs\zlib.lib
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\python20.lib
+  Destination=%MAINDIR%\libs\python20.lib
+  Flags=0000000000000010
+end
+item: Remark
+  Text=*** More DLLs ***
 end
 item: Install File
   Source=%_SRC_%\..\expat\bin\xmlparse.dll
@@ -691,6 +835,9 @@ item: Install File
   Destination=%MAINDIR%\DLLs\xmltok.dll
   Description=Expat library
   Flags=0000000000000010
+end
+item: Remark
+  Text=*** Main Python DLL ***
 end
 item: Install File
   Source=%_SRC_%\pcbuild\python20.dll
@@ -708,6 +855,12 @@ item: Install File
   Destination=%MAINDIR%\Lib
   Description=Library Modules
   Flags=0000000000000010
+end
+item: Remark
+  Text=***  Libraries (Lib/) ***
+end
+item: Remark
+  Text=plat-win became empty!
 end
 remarked item: Install File
   Source=%_SRC_%\Lib\plat-win\*.py
@@ -745,11 +898,8 @@ item: Install File
   Description=Obsolete modules
   Flags=0000000000000010
 end
-item: Install File
-  Source=%_SRC_%\pcbuild\*.lib
-  Destination=%MAINDIR%\libs
-  Description=Link library files
-  Flags=0000000000000010
+item: Remark
+  Text=*** Other ***
 end
 item: Install File
   Source=%_SRC_%\Include\*.h
