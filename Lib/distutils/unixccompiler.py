@@ -106,6 +106,8 @@ class UnixCCompiler (CCompiler):
                  extra_preargs=None,
                  extra_postargs=None):
 
+        if type (output_dir) not in (StringType, NoneType):
+            raise TypeError, "'output_dir' must be a string or None"
         if output_dir is None:
             output_dir = self.output_dir
         if macros is None:
@@ -205,6 +207,8 @@ class UnixCCompiler (CCompiler):
                   "'objects' must be a list or tuple of strings"
         objects = list (objects)
             
+        if type (output_dir) not in (StringType, NoneType):
+            raise TypeError, "'output_dir' must be a string or None"
         if output_dir is None:
             output_dir = self.output_dir
 
@@ -270,6 +274,8 @@ class UnixCCompiler (CCompiler):
         lib_opts = gen_lib_options (self,
                                     self.library_dirs + library_dirs,
                                     self.libraries + libraries)
+        if type (output_dir) not in (StringType, NoneType):
+            raise TypeError, "'output_dir' must be a string or None"
         if output_dir is not None:
             output_filename = os.path.join (output_dir, output_filename)
 
