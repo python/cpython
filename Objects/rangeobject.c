@@ -237,6 +237,23 @@ range_getattr(r, name)
 	return Py_FindMethod(range_methods, (PyObject *) r, name);
 }
 
+static int
+range_contains(r, obj)
+	rangeobject * r;
+	PyObject * obj;
+{
+	long num = PyInt_AsLong(obj);
+	
+	if (num < 0 && PyErr_Occurred())
+		return -1;
+	
+	if (num < r->start || (num - r->start) % r->step)
+		return 0;
+	if (num > (r->start + (r->len * r->step)))
+		return 0;
+	return 1;
+}
+
 static PySequenceMethods range_as_sequence = {
 	(inquiry)range_length, /*sq_length*/
 	(binaryfunc)range_concat, /*sq_concat*/
@@ -245,6 +262,7 @@ static PySequenceMethods range_as_sequence = {
 	(intintargfunc)range_slice, /*sq_slice*/
 	0,		/*sq_ass_item*/
 	0,		/*sq_ass_slice*/
+	(objobjproc)range_contains, /*sq_contains*/
 };
 
 PyTypeObject PyRange_Type = {
@@ -262,4 +280,11 @@ PyTypeObject PyRange_Type = {
 	0,			/*tp_as_number*/
 	&range_as_sequence,	/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
+	0,			/*tp_hash*/
+	0,			/*tp_call*/
+	0,			/*tp_str*/
+	0,			/*tp_getattro*/
+	0,			/*tp_setattro*/
+	0,			/*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT,	/*tp_flags*/
 };
