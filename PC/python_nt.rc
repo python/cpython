@@ -15,7 +15,7 @@
 #define MS_DLL_ID "2.3"
 
 #ifndef PYTHON_DLL_NAME
-#define PYTHON_DLL_NAME "python22.dll"
+#define PYTHON_DLL_NAME "python23.dll"
 #endif
 
 /* Nothing below this should need to be changed except for copyright
