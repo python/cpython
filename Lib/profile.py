@@ -36,20 +36,29 @@ class Profile:
 				self.profiling = 1
 			t = os.times()
 			t = t[0] + t[1]
-			lineno = codehack.getlineno(frame.f_code)
-			filename = frame.f_code.co_filename
-			key = filename + ':' + `lineno` + '(' + funcname + ')'
+			if frame.f_locals.has_key('__key'):
+				key = frame.f_locals['__key']
+			else:
+				lineno = codehack.getlineno(frame.f_code)
+				filename = frame.f_code.co_filename
+				key = filename + ':' + `lineno` + '(' + funcname + ')'
+				frame.f_locals['__key'] = key
 			self.call_level = depth(frame)
 			self.cur_frame = frame
 			pframe = frame.f_back
 			if self.debug:
 				s0 = 'call: ' + key + ' depth: ' + `self.call_level` + ' time: ' + `t`
 			if pframe:
-				pkey = pframe.f_code.co_filename + ':' + \
-					  `codehack.getlineno(pframe.f_code)` \
-					  + '(' + \
-					  codehack.getcodename(pframe.f_code) \
-					  + ')'
+				if pframe.f_locals.has_key('__key'):
+					pkey = pframe.f_locals['__key']
+				else:
+					pkey = pframe.f_code.co_filename + \
+						  ':' + \
+						  `codehack.getlineno(pframe.f_code)` \
+						  + '(' + \
+						  codehack.getcodename(pframe.f_code) \
+						  + ')'
+					pframe.f_locals['__key'] = pkey
 				if self.debug:
 					s1 = 'parent: ' + pkey
 				if pframe.f_locals.has_key('__start_time'):
@@ -121,17 +130,25 @@ class Profile:
 	def handle_return(self, pframe, frame, s0):
 		t = os.times()
 		t = t[0] + t[1]
-		funcname = codehack.getcodename(frame.f_code)
-		lineno = codehack.getlineno(frame.f_code)
-		filename = frame.f_code.co_filename
-		key = filename + ':' + `lineno` + '(' + funcname + ')'
-		if self.debug:
-			s0 = s0 + key + ' depth: ' + `self.call_level` + ' time: ' + `t`
-		if pframe:
+		if frame.f_locals.has_key('__key'):
+			key = frame.f_locals['__key']
+		else:
 			funcname = codehack.getcodename(frame.f_code)
 			lineno = codehack.getlineno(frame.f_code)
 			filename = frame.f_code.co_filename
-			pkey = filename + ':' + `lineno` + '(' + funcname + ')'
+			key = filename + ':' + `lineno` + '(' + funcname + ')'
+			frame.f_locals['__key'] = key
+		if self.debug:
+			s0 = s0 + key + ' depth: ' + `self.call_level` + ' time: ' + `t`
+		if pframe:
+			if pframe.f_locals.has_key('__key'):
+				pkey = pframe.f_locals['__key']
+			else:
+				funcname = codehack.getcodename(frame.f_code)
+				lineno = codehack.getlineno(frame.f_code)
+				filename = frame.f_code.co_filename
+				pkey = filename + ':' + `lineno` + '(' + funcname + ')'
+				pframe.f_locals['__key'] = pkey
 			if self.debug:
 				s1 = 'parent: '+pkey
 			if pframe.f_locals.has_key('__start_time') and \
