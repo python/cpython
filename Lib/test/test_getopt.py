@@ -16,6 +16,10 @@ def expectException(teststr, expected, failure=AssertionError):
     else:
         raise failure
 
+old_posixly_correct = os.environ.get("POSIXLY_CORRECT")
+if old_posixly_correct is not None:
+    del os.environ["POSIXLY_CORRECT"]
+
 if verbose:
     print 'Running tests on getopt.short_has_arg'
 verify(getopt.short_has_arg('a', 'a:'))
@@ -124,7 +128,12 @@ os.environ["POSIXLY_CORRECT"] = "1"
 opts, args = getopt.gnu_getopt(cmdline, 'ab:', ['alpha', 'beta='])
 verify(opts == [('-a', '')])
 verify(args == ['arg1', '-b', '1', '--alpha', '--beta=2'])
-del os.environ["POSIXLY_CORRECT"] 
+
+
+if old_posixly_correct is None:
+    del os.environ["POSIXLY_CORRECT"]
+else:
+    os.environ["POSIXLY_CORRECT"] = old_posixly_correct
 
 #------------------------------------------------------------------------------
 
