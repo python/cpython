@@ -409,7 +409,7 @@ leftmost such \character{\#} through the end of the line are ignored.
   \var{string}, use \method{search()} instead.
 \end{funcdesc}
 
-\begin{funcdesc}{split}{pattern, string, \optional{, maxsplit\code{ = 0}}}
+\begin{funcdesc}{split}{pattern, string\optional{, maxsplit\code{ = 0}}}
   Split \var{string} by the occurrences of \var{pattern}.  If
   capturing parentheses are used in \var{pattern}, then the text of all
   groups in the pattern are also returned as part of the resulting list.
@@ -510,8 +510,8 @@ Perform the same operation as \function{sub()}, but return a tuple
 Compiled regular expression objects support the following methods and
 attributes:
 
-\begin{methoddesc}[RegexObject]{search}{string\optional{, pos}\optional{,
-                                        endpos}}
+\begin{methoddesc}[RegexObject]{search}{string\optional{, pos\optional{,
+                                        endpos}}}
   Scan through \var{string} looking for a location where this regular
   expression produces a match, and return a
   corresponding \class{MatchObject} instance.  Return \code{None} if no
@@ -522,8 +522,8 @@ attributes:
   meaning as for the \method{match()} method.
 \end{methoddesc}
 
-\begin{methoddesc}[RegexObject]{match}{string\optional{, pos}\optional{,
-                                       endpos}}
+\begin{methoddesc}[RegexObject]{match}{string\optional{, pos\optional{,
+                                       endpos}}}
   If zero or more characters at the beginning of \var{string} match
   this regular expression, return a corresponding
   \class{MatchObject} instance.  Return \code{None} if the string does not
@@ -546,7 +546,7 @@ attributes:
   searched for a match.
 \end{methoddesc}
 
-\begin{methoddesc}[RegexObject]{split}{string, \optional{,
+\begin{methoddesc}[RegexObject]{split}{string\optional{,
                                        maxsplit\code{ = 0}}}
 Identical to the \function{split()} function, using the compiled pattern.
 \end{methoddesc}
@@ -585,7 +585,7 @@ The pattern string from which the regex object was compiled.
 
 \class{MatchObject} instances support the following methods and attributes:
 
-\begin{methoddesc}[MatchObject]{group}{\optional{group1, group2, ...}}
+\begin{methoddesc}[MatchObject]{group}{\optional{group1, \moreargs}}
 Returns one or more subgroups of the match.  If there is a single
 argument, the result is a single string; if there are
 multiple arguments, the result is a tuple with one item per argument.
@@ -597,7 +597,7 @@ the string matching the the corresponding parenthesized group.  If a
 group number is negative or larger than the number of groups defined
 in the pattern, an \exception{IndexError} exception is raised.
 If a group is contained in a part of the pattern that did not match,
-the corresponding result is \code{None}.  If a group is contained in a 
+the corresponding result is \code{-1}.  If a group is contained in a 
 part of the pattern that matched multiple times, the last match is
 returned.
 
@@ -638,7 +638,7 @@ used for groups that did not participate in the match; it defaults to
 Return the indices of the start and end of the substring
 matched by \var{group}; \var{group} defaults to zero (meaning the whole
 matched substring).
-Return \code{None} if \var{group} exists but
+Return \code{-1} if \var{group} exists but
 did not contribute to the match.  For a match object
 \var{m}, and a group \var{g} that did contribute to the match, the
 substring matched by group \var{g} (equivalent to
@@ -661,7 +661,7 @@ an \exception{IndexError} exception.
 For \class{MatchObject} \var{m}, return the 2-tuple
 \code{(\var{m}.start(\var{group}), \var{m}.end(\var{group}))}.
 Note that if \var{group} did not contribute to the match, this is
-\code{(None, None)}.  Again, \var{group} defaults to zero.
+\code{(-1, -1)}.  Again, \var{group} defaults to zero.
 \end{methoddesc}
 
 \begin{memberdesc}[MatchObject]{pos}
