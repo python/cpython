@@ -4,6 +4,43 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.3 final?
+===============================
+
+*Release date: 29-Jul-2003*
+
+Core and builtins
+-----------------
+
+Extension modules
+-----------------
+
+Library
+-------
+
+IDLE
+----
+
+- IDLE displays a new message upon startup:  some "personal firewall"
+  kinds of programs (for example, ZoneAlarm) open a dialog of their
+  own when any program opens a socket.  IDLE does use sockets, talking
+  on the computer's internal loopback interface.  This connection is not
+  visible on any external interface and no data is sent to or received
+  from the Internet.  So, if you get such a dialog when opening IDLE,
+  asking whether to let pythonw.exe talk to address 127.0.0.1, say yes,
+  and rest assured no communication external to your machine is taking
+  place.  If you don't allow it, IDLE won't be able to start.
+
+Build
+-----
+
+C API
+-----
+
+Windows
+-------
+
+
 What's New in Python 2.3 release candidate 2?
 =============================================
 
@@ -43,16 +80,6 @@ Library
 
 IDLE
 ----
-
-- IDLE displays a new message upon startup:  some "personal firewall"
-  kinds of programs (for example, ZoneAlarm) open a dialog of their
-  own when any program opens a socket.  IDLE does use sockets, talking
-  on the computer's internal loopback interface.  This connection is not
-  visible on any external interface and no data is sent to or received
-  from the Internet.  So, if you get such a dialog when opening IDLE,
-  asking whether to let pythonw.exe talk to address 127.0.0.1, say yes,
-  and rest assured no communication external to your machine is taking
-  place.  If you don't allow it, IDLE won't be able to start.
 
 - Calltips patches.
 
