@@ -2,6 +2,33 @@
 
 ----------------------------------------------------------------------
 
+New in IDLE 0.5 (2/14/2000)
+-------------------------
+
+Tons of stuff, much of it contributed by Tim Peters and Mark Hammond:
+
+- Format paragraph now recognizes Python block comments and reformats
+them correctly (MH)
+
+- New version of pyclbr.py parses top-level functions and understands
+much more of Python's syntax; this is reflected in the class and path
+browsers (TP)
+
+- Much better auto-indent; knows how to indent the insides of
+multi-line statements (TP)
+
+- Call tip window pops up when you type the name of a known function
+followed by an open parenthesis (MH)
+
+- Comment out region now inserts ## to make it stand out more (TP)
+
+- New path and class browsers based on a tree widget that looks
+familiar to Windows users
+
+- Reworked script running commands to be more intuitive
+
+- XXX much more?!
+
 New in IDLE 0.4 (4/7/99)
 ------------------------
 
