@@ -3025,10 +3025,11 @@ static int
 slot_sq_contains(PyObject *self, PyObject *value)
 {
 	PyObject *func, *res, *args;
+	int result = -1;
+
 	static PyObject *contains_str;
 
 	func = lookup_maybe(self, "__contains__", &contains_str);
-
 	if (func != NULL) {
 		args = Py_BuildValue("(O)", value);
 		if (args == NULL)
@@ -3038,16 +3039,16 @@ slot_sq_contains(PyObject *self, PyObject *value)
 			Py_DECREF(args);
 		}
 		Py_DECREF(func);
-		if (res == NULL)
-			return -1;
-		return PyObject_IsTrue(res);
+		if (res != NULL) {
+			result = PyObject_IsTrue(res);
+			Py_DECREF(res);
+		}
 	}
-	else if (PyErr_Occurred())
-		return -1;
-	else {
-		return _PySequence_IterSearch(self, value,
-					      PY_ITERSEARCH_CONTAINS);
+	else if (! PyErr_Occurred()) {
+		result = _PySequence_IterSearch(self, value,
+						 PY_ITERSEARCH_CONTAINS);
 	}
+	return result;
 }
 
 SLOT1(slot_sq_inplace_concat, "__iadd__", PyObject *, "O")
