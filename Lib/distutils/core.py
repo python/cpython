@@ -84,7 +84,7 @@ def setup (**attrs):
 
     # Determine the distribution class -- either caller-supplied or
     # our Distribution (see below).
-    klass = attrs.get ('distclass')
+    klass = attrs.get('distclass')
     if klass:
         del attrs['distclass']
     else:
@@ -98,7 +98,7 @@ def setup (**attrs):
     # Create the Distribution instance, using the remaining arguments
     # (ie. everything except distclass) to initialize it
     try:
-        _setup_distribution = dist = klass (attrs)
+        _setup_distribution = dist = klass(attrs)
     except DistutilsSetupError, msg:
         raise SystemExit, "error in setup script: %s" % msg
 
@@ -135,7 +135,7 @@ def setup (**attrs):
     # And finally, run all the commands found on the command line.
     if ok:
         try:
-            dist.run_commands ()
+            dist.run_commands()
         except KeyboardInterrupt:
             raise SystemExit, "interrupted"
         except (IOError, os.error), exc:

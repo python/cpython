@@ -88,16 +88,16 @@ def change_root (new_root, pathname):
     two, which is tricky on DOS/Windows and Mac OS.
     """
     if os.name == 'posix':
-        if not os.path.isabs (pathname):
-            return os.path.join (new_root, pathname)
+        if not os.path.isabs(pathname):
+            return os.path.join(new_root, pathname)
         else:
-            return os.path.join (new_root, pathname[1:])
+            return os.path.join(new_root, pathname[1:])
 
     elif os.name == 'nt':
-        (drive, path) = os.path.splitdrive (pathname)
+        (drive, path) = os.path.splitdrive(pathname)
         if path[0] == '\\':
             path = path[1:]
-        return os.path.join (new_root, path)
+        return os.path.join(new_root, path)
 
     elif os.name == 'mac':
         if not os.path.isabs(pathname):
@@ -129,10 +129,10 @@ def check_environ ():
 
     if os.name == 'posix' and not os.environ.has_key('HOME'):
         import pwd
-        os.environ['HOME'] = pwd.getpwuid (os.getuid())[5]
+        os.environ['HOME'] = pwd.getpwuid(os.getuid())[5]
 
     if not os.environ.has_key('PLAT'):
-        os.environ['PLAT'] = get_platform ()
+        os.environ['PLAT'] = get_platform()
 
     _environ_checked = 1
 
@@ -147,15 +147,15 @@ def subst_vars (str, local_vars):
        '_check_environ()'.  Raise ValueError for any variables not found in
        either 'local_vars' or 'os.environ'."""
 
-    check_environ ()
+    check_environ()
     def _subst (match, local_vars=local_vars):
         var_name = match.group(1)
-        if local_vars.has_key (var_name):
-            return str (local_vars[var_name])
+        if local_vars.has_key(var_name):
+            return str(local_vars[var_name])
         else:
             return os.environ[var_name]
 
-    return re.sub (r'\$([a-zA-Z_][a-zA-Z_0-9]*)', _subst, str)
+    return re.sub(r'\$([a-zA-Z_][a-zA-Z_0-9]*)', _subst, str)
 
 # subst_vars ()
 
@@ -169,7 +169,7 @@ def grok_environment_error (exc, prefix="error: "):
     prefixed with 'prefix'.
     """
     # check for Python 1.5.2-style {IO,OS}Error exception objects
-    if hasattr (exc, 'filename') and hasattr (exc, 'strerror'):
+    if hasattr(exc, 'filename') and hasattr(exc, 'strerror'):
         if exc.filename:
             error = prefix + "%s: %s" % (exc.filename, exc.strerror)
         else:
