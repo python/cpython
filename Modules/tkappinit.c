@@ -21,12 +21,12 @@ Tcl_AppInit(interp)
 {
 	Tk_Window main;
 
-	main = Tk_MainWindow(interp);
-
 	if (Tcl_Init (interp) == TCL_ERROR)
 		return TCL_ERROR;
 	if (Tk_Init (interp) == TCL_ERROR)
 		return TCL_ERROR;
+
+	main = Tk_MainWindow(interp);
 
 #ifdef WITH_MOREBUTTONS
 	{
