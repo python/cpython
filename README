@@ -203,6 +203,9 @@ DEC Unix: When enabling threads, use --with-dec-threads, not
 	reported for GCC 2.7.2.3 on selectmodule.c.  Manually compile
 	the affected file without optimization to solve the problem.
 
+DEC Ultrix: compile with GCC to avoid bugs in the native compiler,
+	and pass SHELL=/bin/sh5 to Make when installing.
+
 AIX:	A complete overhaul of the shared library support is now in
 	place.  See Misc/AIX-NOTES for some notes on how it's done.
 	(The optimizer bug reported at this place in previous releases
