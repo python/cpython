@@ -164,14 +164,71 @@ reduce(dir)
 		--i;
 	dir[i] = '\0';
 }
-	
+
+
+#ifndef S_ISREG
+#define S_ISREG(x) (((x) & S_IFMT) == S_IFREG)
+#endif
+
+#ifndef S_ISDIR
+#define S_ISDIR(x) (((x) & S_IFMT) == S_IFDIR)
+#endif
 
 static int
-exists(filename)
+isfile(filename)		/* Is file, not directory */
 	char *filename;
 {
 	struct stat buf;
-	return stat(filename, &buf) == 0;
+	if (stat(filename, &buf) != 0)
+		return 0;
+	if (!S_ISREG(buf.st_mode))
+		return 0;
+	return 1;
+}
+
+
+static int
+ismodule(filename)		/* Is module -- check for .pyc/.pyo too */
+	char *filename;
+{
+	if (isfile(filename))
+		return 1;
+
+	/* Check for the compiled version of prefix. */
+	if (strlen(filename) < MAXPATHLEN) {
+		strcat(filename, Py_OptimizeFlag ? "o" : "c");
+		if (isfile(filename))
+			return 1;
+	}
+	return 0;
+}
+
+
+static int
+isxfile(filename)		/* Is executable file */
+	char *filename;
+{
+	struct stat buf;
+	if (stat(filename, &buf) != 0)
+		return 0;
+	if (!S_ISREG(buf.st_mode))
+		return 0;
+	if ((buf.st_mode & 0111) == 0)
+		return 0;
+	return 1;
+}
+
+
+static int
+isdir(filename)			/* Is directory */
+	char *filename;
+{
+	struct stat buf;
+	if (stat(filename, &buf) != 0)
+		return 0;
+	if (!S_ISDIR(buf.st_mode))
+		return 0;
+	return 1;
 }
 
 
@@ -207,7 +264,7 @@ search_for_prefix(argv0_path, home)
 	/* Check to see if argv[0] is in the build directory */
 	strcpy(prefix, argv0_path);
 	joinpath(prefix, "Modules/Setup");
-	if (exists(prefix)) {
+	if (isfile(prefix)) {
 		/* Check VPATH to see if argv0_path is in the build directory.
 		 * Complication: the VPATH passed in is relative to the
 		 * Modules build directory and points to the Modules source
@@ -225,7 +282,7 @@ search_for_prefix(argv0_path, home)
 		reduce(prefix);
 		joinpath(prefix, "Lib");
 		joinpath(prefix, LANDMARK);
-		if (exists(prefix))
+		if (ismodule(prefix))
 			return -1;
 	}
 
@@ -238,7 +295,7 @@ search_for_prefix(argv0_path, home)
 			*delim = '\0';
 		joinpath(prefix, lib_python);
 		joinpath(prefix, LANDMARK);
-		if (exists(prefix))
+		if (ismodule(prefix))
 			return 1;
 	}
 
@@ -248,7 +305,7 @@ search_for_prefix(argv0_path, home)
 		n = strlen(prefix);
 		joinpath(prefix, lib_python);
 		joinpath(prefix, LANDMARK);
-		if (exists(prefix))
+		if (ismodule(prefix))
 			return 1;
 		prefix[n] = '\0';
 		reduce(prefix);
@@ -258,7 +315,7 @@ search_for_prefix(argv0_path, home)
 	strcpy(prefix, PREFIX);
 	joinpath(prefix, lib_python);
 	joinpath(prefix, LANDMARK);
-	if (exists(prefix))
+	if (ismodule(prefix))
 		return 1;
 
 	/* Fail */
@@ -276,7 +333,7 @@ search_for_exec_prefix(argv0_path, home)
 	/* Check to see if argv[0] is in the build directory */
 	strcpy(exec_prefix, argv0_path);
 	joinpath(exec_prefix, "Modules/Setup");
-	if (exists(exec_prefix)) {
+	if (isfile(exec_prefix)) {
 		reduce(exec_prefix);
 		return -1;
 	}
@@ -291,7 +348,7 @@ search_for_exec_prefix(argv0_path, home)
 			strcpy(exec_prefix, home);
 		joinpath(exec_prefix, lib_python);
 		joinpath(exec_prefix, "lib-dynload");
-		if (exists(exec_prefix))
+		if (isdir(exec_prefix))
 			return 1;
 	}
 
@@ -301,7 +358,7 @@ search_for_exec_prefix(argv0_path, home)
 		n = strlen(exec_prefix);
 		joinpath(exec_prefix, lib_python);
 		joinpath(exec_prefix, "lib-dynload");
-		if (exists(exec_prefix))
+		if (isdir(exec_prefix))
 			return 1;
 		exec_prefix[n] = '\0';
 		reduce(exec_prefix);
@@ -311,7 +368,7 @@ search_for_exec_prefix(argv0_path, home)
 	strcpy(exec_prefix, EXEC_PREFIX);
 	joinpath(exec_prefix, lib_python);
 	joinpath(exec_prefix, "lib-dynload");
-	if (exists(exec_prefix))
+	if (isdir(exec_prefix))
 		return 1;
 
 	/* Fail */
@@ -361,7 +418,7 @@ calculate_path()
 				strcpy(progpath, path);
 
 			joinpath(progpath, prog);
-			if (exists(progpath))
+			if (isxfile(progpath))
 				break;
 
 			if (!delim) {
