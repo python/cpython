@@ -77,6 +77,6 @@ def mkarg(x):
     for c in x:
 	if c in '\\$"`':
 	    s = s + '\\'
-	    s = s + c
+	s = s + c
     s = s + '"'
     return s
