@@ -1,5 +1,6 @@
-#!/usr/bin/python
-"""SMTP/ESMTP client class.
+#! /usr/bin/env python
+
+'''SMTP/ESMTP client class.
 
 Author: The Dragon De Monsyne <dragondm@integral.org>
 ESMTP support, test code and doc fixes added by
@@ -14,7 +15,7 @@ This should follow RFC 821 (SMTP) and RFC 1869 (ESMTP).
 Notes:
 
 Please remember, when doing ESMTP, that the names of the SMTP service
-extensions are NOT the same thing as the option keyords for the RCPT
+extensions are NOT the same thing as the option keywords for the RCPT
 and MAIL commands!
 
 Example:
@@ -37,7 +38,7 @@ End of HELP info
 (250, "Somebody OverHere <somebody@here.my.org>")
 >>> s.quit()
 
-"""
+'''
 
 import socket
 import string, re
@@ -102,8 +103,8 @@ class SMTP:
                 dictionary. 
 
         For method docs, see each method's docstrings. In general, there is 
-            a method of the same name to preform each SMTP comand, and there 
-            is a method called 'sendmail' that will do an entiere mail 
+            a method of the same name to perform each SMTP command, and there 
+            is a method called 'sendmail' that will do an entire mail 
             transaction."""
 
     debuglevel = 0
@@ -135,9 +136,9 @@ class SMTP:
     def connect(self, host='localhost', port = 0):
         """Connect to a host on a given port.
 
-        If the hostname ends with a colon (`:') followed by a number,
-        and there is no port specified,  that suffix will be stripped 
-        off and the number interpreted as the port number to use.
+        If the hostname ends with a colon (`:') followed by a number, and
+        there is no port specified, that suffix will be stripped off and the
+        number interpreted as the port number to use.
 
         Note:  This method is automatically invoked by __init__,
         if a host is specified during instantiation.
@@ -257,23 +258,23 @@ class SMTP:
         return self.esmtp_features.has_key(string.lower(opt))
 
     def help(self, args=''):
-        """ SMTP 'help' command. Returns help text from server """
+        """SMTP 'help' command. Returns help text from server."""
         self.putcmd("help", args)
         (code,msg)=self.getreply()
         return msg
 
     def rset(self):
-        """ SMTP 'rset' command. Resets session. """
+        """SMTP 'rset' command. Resets session."""
         code=self.docmd("rset")
         return code
 
     def noop(self):
-        """ SMTP 'noop' command. Doesn't do anything :> """
+        """SMTP 'noop' command. Doesn't do anything :>"""
         code=self.docmd("noop")
         return code
 
     def mail(self,sender,options=[]):
-        """ SMTP 'mail' command. Begins mail xfer session. """
+        """SMTP 'mail' command. Begins mail xfer session."""
         optionlist = ''
         if options and self.does_esmtp:
             optionlist = string.join(options, ' ')
@@ -281,7 +282,7 @@ class SMTP:
         return self.getreply()
 
     def rcpt(self,recip,options=[]):
-        """ SMTP 'rcpt' command. Indicates 1 recipient for this mail. """
+        """SMTP 'rcpt' command. Indicates 1 recipient for this mail."""
         optionlist = ''
         if options and self.does_esmtp:
             optionlist = string.join(options, ' ')
@@ -289,8 +290,9 @@ class SMTP:
         return self.getreply()
 
     def data(self,msg):
-        """ SMTP 'DATA' command. Sends message data to server. 
-            Automatically quotes lines beginning with a period per rfc821. """
+        """SMTP 'DATA' command. Sends message data to server. 
+        Automatically quotes lines beginning with a period per rfc821.
+        """
         self.putcmd("data")
         (code,repl)=self.getreply()
         if self.debuglevel >0 : print "data:", (code,repl)
@@ -303,45 +305,44 @@ class SMTP:
             if self.debuglevel >0 : print "data:", (code,msg)
             return code
 
-    def vrfy(self, address):
-        return self.verify(address)
-
     def verify(self, address):
-        """ SMTP 'verify' command. Checks for address validity. """
+        """SMTP 'verify' command. Checks for address validity."""
         self.putcmd("vrfy", quoteaddr(address))
         return self.getreply()
+    # a.k.a.
+    vrfy=verify
 
     def expn(self, address):
-        """ SMTP 'verify' command. Checks for address validity. """
+        """SMTP 'verify' command. Checks for address validity."""
         self.putcmd("expn", quoteaddr(address))
         return self.getreply()
 
-
-#some useful methods
+    # some useful methods
     def sendmail(self, from_addr, to_addrs, msg, mail_options=[],
                  rcpt_options=[]): 
-        """ This command performs an entire mail transaction. 
-            The arguments are: 
-               - from_addr : The address sending this mail.
-               - to_addrs :  a list of addresses to send this mail to
-                         (a string will be treated as a list with 1 address)
-               - msg : the message to send. 
-               - mail_options : list of ESMTP options (such as 8bitmime)
-                                for the mail command
-               - rcpt_options : List of ESMTP options (such as DSN commands)
-                               for all the rcpt commands
-        If there has been no previous EHLO or HELO command this session,
-        this method tries ESMTP EHLO first. If the server does ESMTP, message
-        size and each of the specified options will be passed to it.  
-        If EHLO fails, HELO will be tried and ESMTP options suppressed.
+        """This command performs an entire mail transaction. 
 
-        This method will return normally if the mail is accepted for at least 
-        one recipient. Otherwise it will throw an exception (either
-        SMTPSenderRefused, SMTPRecipientsRefused, or SMTPDataError)
-        That is, if this method does not throw an exception, then someone 
-        should get your mail.  If this method does not throw an exception,
-        it returns a dictionary, with one entry for each recipient that was 
-        refused. 
+        The arguments are: 
+            - from_addr    : The address sending this mail.
+            - to_addrs     : A list of addresses to send this mail to.  A bare
+                             string will be treated as a list with 1 address.
+            - msg          : The message to send. 
+            - mail_options : List of ESMTP options (such as 8bitmime) for the
+                             mail command.
+            - rcpt_options : List of ESMTP options (such as DSN commands) for
+                             all the rcpt commands.
+
+        If there has been no previous EHLO or HELO command this session, this
+        method tries ESMTP EHLO first.  If the server does ESMTP, message size
+        and each of the specified options will be passed to it.  If EHLO
+        fails, HELO will be tried and ESMTP options suppressed.
+
+        This method will return normally if the mail is accepted for at least
+        one recipient.  Otherwise it will throw an exception (either
+        SMTPSenderRefused, SMTPRecipientsRefused, or SMTPDataError) That is,
+        if this method does not throw an exception, then someone should get
+        your mail.  If this method does not throw an exception, it returns a
+        dictionary, with one entry for each recipient that was refused.
 
         Example:
       
@@ -357,11 +358,12 @@ class SMTP:
          { "three@three.org" : ( 550 ,"User unknown" ) }
          >>> s.quit()
         
-         In the above example, the message was accepted for delivery to 
-         three of the four addresses, and one was rejected, with the error
-         code 550. If all addresses are accepted, then the method
-         will return an empty dictionary.  
-         """
+        In the above example, the message was accepted for delivery to three
+        of the four addresses, and one was rejected, with the error code
+        550. If all addresses are accepted, then the method will return an
+        empty dictionary.
+
+        """
         if not self.helo_resp and not self.ehlo_resp:
             if self.ehlo() >= 400:
                 self.helo()
@@ -411,6 +413,7 @@ class SMTP:
         """Terminate the SMTP session."""
         self.docmd("quit")
         self.close()
+
 
 # Test the sendmail method, which tests most of the others.
 # Note: This always sends to localhost.
