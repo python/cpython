@@ -585,7 +585,8 @@ conv_content_model(XML_Content * const model,
     int i;
 
     if (children != NULL) {
-        for (i = 0; i < model->numchildren; ++i) {
+        assert(model->numchildren < INT_MAX);
+        for (i = 0; i < (int)model->numchildren; ++i) {
             PyObject *child = conv_content_model(&model->children[i],
                                                  conv_string);
             if (child == NULL) {
