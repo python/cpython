@@ -770,7 +770,7 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 */
 
 PyObject *_PyUnicode_AsUTF8String(PyObject *unicode,
-		      const char *errors)
+				  const char *errors)
 {
     PyObject *v = ((PyUnicodeObject *)unicode)->utf8str;
 
@@ -1063,7 +1063,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
     end = s + size;
     while (s < end) {
         unsigned char c;
-        unsigned int x;
+        unsigned long x;
         int i;
 
         /* Non-escape characters are interpreted as Unicode ordinals */
@@ -1372,7 +1372,7 @@ PyObject *PyUnicode_DecodeRawUnicodeEscape(const char *s,
     end = s + size;
     while (s < end) {
 	unsigned char c;
-	unsigned int x;
+	unsigned long x;
 	int i;
 
 	/* Non-escape characters are interpreted as Unicode ordinals */
@@ -1852,7 +1852,7 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 
 	/* Apply mapping */
 	if (PyInt_Check(x)) {
-	    int value = PyInt_AS_LONG(x);
+	    long value = PyInt_AS_LONG(x);
 	    if (value < 0 || value > 65535) {
 		PyErr_SetString(PyExc_TypeError,
 				"character mapping must be in range(65536)");
@@ -1971,7 +1971,7 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
 
 	/* Apply mapping */
 	if (PyInt_Check(x)) {
-	    int value = PyInt_AS_LONG(x);
+	    long value = PyInt_AS_LONG(x);
 	    if (value < 0 || value > 255) {
 		PyErr_SetString(PyExc_TypeError,
 				"character mapping must be in range(256)");
@@ -3070,7 +3070,7 @@ unicode_compare(PyUnicodeObject *str1, PyUnicodeObject *str2)
     
     while (len1 > 0 && len2 > 0) {
 	unsigned short c1, c2; /* 16 bits */
-	int diff; /* 32 bits */
+	long diff; /* >=32 bits */
 
         c1 = *s1++;
         c2 = *s2++;
@@ -3080,7 +3080,7 @@ unicode_compare(PyUnicodeObject *str1, PyUnicodeObject *str2)
             c2 += utf16Fixup[c2>>11];
         
         /* now c1 and c2 are in UTF-32-compatible order */
-        diff = (int)c1 - (int)c2;
+        diff = (long)c1 - (long)c2;
         if (diff)
             return (diff < 0) ? -1 : (diff != 0);
         len1--; len2--;
