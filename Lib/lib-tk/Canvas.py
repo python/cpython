@@ -141,7 +141,7 @@ class Group:
 	def addtag_withtag(self, tagOrId):
 		self._do('addtag', 'withtag', tagOrId)
 	def bbox(self):
-		return self._getints(self._do('bbox'))
+		return self.canvas._getints(self._do('bbox'))
 	def bind(self, sequence=None, command=None):
 		return self.canvas.tag_bind(self.id, sequence, command)
 	def unbind(self, sequence):
