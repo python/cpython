@@ -18,9 +18,6 @@ static char *which_dbm = "ndbm";
 #else
 static char *which_dbm = "GNU gdbm";  /* EMX port of GDBM */
 #endif
-#elif defined(HAVE_DB1_NDBM_H)
-#include <db1/ndbm.h>
-static char *which_dbm = "BSD db";
 #elif defined(HAVE_GDBM_NDBM_H)
 #include <gdbm/ndbm.h>
 static char *which_dbm = "GNU gdbm";

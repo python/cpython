@@ -276,6 +276,11 @@ Build
 - The tools used to build the documentation now work under Cygwin as
   well as Unix.
 
+- The bsddb and dbm module builds have been changed to try and avoid version
+  skew problems and disable linkage with Berkeley DB 1.85 unless the
+  installer knows what s/he's doing.  See the section on building these
+  modules in the README file for details.
+
 C API
 
 - Added new macro PySequence_ITEM(o, i) that directly calls
