@@ -316,22 +316,6 @@ ac_ext=c
 ac_cpp='${CPP} $CFLAGS'
 ac_compile='${CC-cc} $CFLAGS $LDFLAGS conftest.${ac_ext} -o conftest $LIBS >/dev/null 2>&1'
 
-if test -z "$prefix"
-then
-  test -n "$silent" || echo "checking for python to derive installation directory prefix"
-  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS="$IFS:"
-  for ac_dir in $PATH; do
-    test -z "$ac_dir" && ac_dir=.
-    if test $ac_dir != . && test -f $ac_dir/python; then
-      # Not all systems have dirname.
-      prefix=`echo $ac_dir|sed 's%/[^/][^/]*$%%'`
-      break
-    fi
-  done
-  IFS="$ac_save_ifs"
-  test -n "$verbose" && echo "	chose installation directory prefix ${prefix}"
-fi
-
 # Don't suppress compiler output when --verbose is specified
 test -n "$verbose" &&
 	ac_compile=`echo "$ac_compile" | sed "s|>/dev/null 2>&1||"`
