@@ -340,7 +340,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
                                                     + ", retrying..."
         else:
             display_port_binding_error()
-            return
+            sys.exit()
         # Accept the connection from the Python execution server
         self.rpcclt.accept()
         self.rpcclt.register("stdin", self.tkconsole)
