@@ -148,8 +148,7 @@ def addpackage(sitedir, name):
         if dir.startswith("import"):
             exec dir
             continue
-        if dir[-1] == '\n':
-            dir = dir[:-1]
+        dir = dir.rstrip()
         dir, dircase = makepath(sitedir, dir)
         if not dircase in _dirs_in_sys_path and os.path.exists(dir):
             sys.path.append(dir)
