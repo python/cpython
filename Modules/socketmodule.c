@@ -1622,27 +1622,27 @@ of the socket (flag == 1), or both ends (flag == 2).";
 /* List of methods for socket objects */
 
 static PyMethodDef PySocketSock_methods[] = {
-	{"accept",	(PyNoArgsFunction)PySocketSock_accept, METH_NOARGS,
+	{"accept",	(PyCFunction)PySocketSock_accept, METH_NOARGS,
 			accept_doc},
 	{"bind",	(PyCFunction)PySocketSock_bind, METH_O,
 			bind_doc},
-	{"close",	(PyNoArgsFunction)PySocketSock_close, METH_NOARGS,
+	{"close",	(PyCFunction)PySocketSock_close, METH_NOARGS,
 			close_doc},
 	{"connect",	(PyCFunction)PySocketSock_connect, METH_O,
 			connect_doc},
 	{"connect_ex",	(PyCFunction)PySocketSock_connect_ex, METH_O,
 			connect_ex_doc},
 #ifndef NO_DUP
-	{"dup",		(PyNoArgsFunction)PySocketSock_dup, METH_NOARGS,
+	{"dup",		(PyCFunction)PySocketSock_dup, METH_NOARGS,
 			dup_doc},
 #endif
-	{"fileno",	(PyNoArgsFunction)PySocketSock_fileno, METH_NOARGS,
+	{"fileno",	(PyCFunction)PySocketSock_fileno, METH_NOARGS,
 			fileno_doc},
 #ifdef HAVE_GETPEERNAME
-	{"getpeername",	(PyNoArgsFunction)PySocketSock_getpeername, 
+	{"getpeername",	(PyCFunction)PySocketSock_getpeername, 
 	                METH_NOARGS, getpeername_doc},
 #endif
-	{"getsockname",	(PyNoArgsFunction)PySocketSock_getsockname,
+	{"getsockname",	(PyCFunction)PySocketSock_getsockname,
 	                METH_NOARGS, getsockname_doc},
 	{"getsockopt",	(PyCFunction)PySocketSock_getsockopt, METH_VARARGS,
 			getsockopt_doc},
@@ -2733,8 +2733,8 @@ static PyMethodDef PySSLMethods[] = {
 	          PySSL_SSLwrite_doc},
 	{"read", (PyCFunction)PySSL_SSLread, 1,
 	          PySSL_SSLread_doc},
-	{"server", (PyNoArgsFunction)PySSL_server, METH_NOARGS},
-	{"issuer", (PyNoArgsFunction)PySSL_issuer, METH_NOARGS},
+	{"server", (PyCFunction)PySSL_server, METH_NOARGS},
+	{"issuer", (PyCFunction)PySSL_issuer, METH_NOARGS},
 	{NULL, NULL}
 };
 
