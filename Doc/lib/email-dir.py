@@ -33,6 +33,7 @@ import mimetypes
 from email import Encoders
 from email.Message import Message
 from email.MIMEAudio import MIMEAudio
+from email.MIMEBase import MIMEBase
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEImage import MIMEImage
 from email.MIMEText import MIMEText
