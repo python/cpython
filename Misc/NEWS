@@ -1,4 +1,4 @@
-What's New in Python 2.0b1?
+What's New in Python 2.0b2?
 ===========================
 
 Below is a list of all relevant changes since release 1.6.  Older
@@ -13,6 +13,170 @@ http://starship.python.net/crew/amk/python/writing/new-python/.
 --Guido van Rossum (home page: http://www.pythonlabs.com/~guido/)
 
 ======================================================================
+
+
+What's new in 2.0 beta 2 (since beta 1)?
+========================================
+
+Core language, builtins, and interpreter
+
+- Add support for unbounded ints in %d,i,y,x,X,o formats for string
+  inter
+
+- Add -h and -V flags to print the usage message and Python version
+  number and exit immediately.polation.  
+
+Standard library and extensions
+
+- array: reverse method of array now works.  buffer_info now does
+  argument checking; it still takes no arguments.
+
+- asyncore/asynchat: included most recent version from Sam Rushing
+
+- cgi: accept & or ; as separate characters when parsing form data
+
+- CGIHTTPServer: now works on Windows (and perhaps even Mac).
+
+- ConfigParser: When reading the file, options spelled in upper case
+  letters are now accessible.
+
+- copy: Copy Unicode objects atomically.
+
+- cPickle: fails gracefully when copy_reg can't be imported
+
+- cStringIO: implemented readlines method.
+
+- dbm: Add set and setdefault methods to dbm object.  Add constant
+  library to module that names the library used.  Better doc strings
+  and argument checking.  Uses configure to determine which ndbm.h
+  file to include; Berkeley DB's nbdm is now an option.
+
+- distutils: Update to version 0.9.3.
+
+- dl: Add several dl.RTLD_ constants.
+
+- fpectl: Now supported on FreeBSD.
+
+- gc: Add DEBUG_SAVEALL option.  When enabled all garbage objects
+  found by the collector will be saved in gc.garbage.  This is useful
+  for debugging a program that creates reference cycles.
+
+- httplib: Three changes.  Restore support for set_debuglevel feature
+  of HTTP class.  Do not close socket on zero-length response.  Do not
+  crash when server sends invalid content-length header.
+
+- mailbox: XXX conformance to maildir specification ???
+
+- operator: Add contains, invert, __invert__ as aliases for
+  __contains__, inv, and __inv__ respectively.
+
+- os: Add support for popen2 and popen3 on all platforms where fork
+  exists.  
+
+- os: (Windows only) Add startfile function athat exposes part of
+  Win32 ShellExecute functionality.
+
+- os.path: (NT, DOS) Treat trailing colon correctly in os.path.join.
+  os.path.join("a:", "b") yields "a:b".
+
+- pickle: Now raises ValueError when an invalid pickle that contains
+  a non-string repr where a string repr was expected.  This behavior
+  matches cPickle.
+
+- posixfile: XXX remove __del__ method ???
+
+- py_compile: support \r in source file
+
+- readline: Does not immediately exit when ^C is hit when readline and
+  threads are configured.  Adds defintion of rl_library_version.
+
+- rfc822: Domain literals returned by AddrlistClass method
+  getdomainliteral are now properly wrapped in brackets.
+
+- site: sys.setdefaultencoding() should only be called in case the
+  standard default encoding ("ascii") is changed. This safes quite a
+  few cycles during startup since the first call to
+  setdefaultencoding() will initialize the codec registry and the
+  encodings package.
+
+- socket: Support for size hint in readlines method of object returned
+  by makefile.
+
+- sre: Added experimental expand method to match objects.  Does not
+  user buffer interface on Unicode strings.  Does not hang if group id
+  is followed by whitespace.
+
+- StringIO: size hint in readlines is now supported as documented. 
+
+- struct: Check ranges for bytes and shorts.
+
+- urllib: Improved handling of win32 proxy settings. Fixed quote and
+  quote_plus functions so that the always encode a comma ','.
+
+- Tkinter: Image objects are now guaranteed to have unique ids.  Set
+  event.delta to zero if Tk version doesn't support mousewheel.
+  Removed some debugging prints.
+
+- UserList: now implements __contains__.
+
+- webbrower: On Windows, use os.startfile instead of os.popen, which
+  works around a bug in certain versions of Norton AntiVirus that
+  leads directly to a Blue Screen.
+
+- xml: New version detection code allows PyXML to override standard
+  XML package if PyXML version is greater than 0.6.1.
+
+- xml.dom: XXX
+
+- xml.sax: XXX
+
+- XXX pyexpat: XXX
+
+C API
+
+- Add three new convenience functions for module initialization --
+  PyModule_AddObject(), PyModule_AddIntConstant(), and
+  PyModule_AddStringConstant().
+
+- Cleaned up definition of NULL in C source code; all defintions were
+  removed and add #error to Python.h if NULL isn't defined after
+  #include of stdio.h.
+
+- Py_PROTO macros that were removed in 2.0b1 have been restored for
+  backwards compatibility (at the source level) with old extensions.
+
+- XXX PyOS_sighandler_t, PyOS_getsig, PyOS_setsig
+
+- Add PyString_AsStringAndSize call that provides access to the
+  internal data buffer and size of a string object -- or the default
+  encoded version of a Unicode object.
+
+Internals
+
+- On Unix, fix code for finding Python installation directory so that
+  it works when argv[0] is a relative path.
+
+- Added a true unicode_internal_encode function and fixed the
+  unicode_internal_decode function to support Unicode objects directly
+  rather than by generating a copy of the object.
+
+- XXX Unicode database compression
+
+Build and platform-specific issues
+
+- Better support of GNU Pth via --with-pth configure option.
+
+- Fix linker problems on Reliant UNIX
+
+- Changes for the benefit of SunOS 4.1.4 (really!).  mmapmodule.c:
+  Don't define MS_SYNC to be zero when it is undefined.  Added missing
+  prototypes in posixmodule.c.
+
+- Improved support for HP-UX build
+
+
+What's new in 2.0 beta 1?
+=========================
 
 Source Incompatibilities
 ------------------------
