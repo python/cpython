@@ -333,7 +333,7 @@ It should return the next possible completion starting with 'text'.\
 ";
 
 static PyObject *
-get_completer(PyObject *self, PyObject *args)
+get_completer(PyObject *self, PyObject *noargs)
 {
 	if (completer == NULL) {
 		Py_INCREF(Py_None);
@@ -402,7 +402,7 @@ static struct PyMethodDef readline_methods[] =
  	{"get_history_length", get_history_length, 
 	 METH_VARARGS, get_history_length_doc},
 	{"set_completer", set_completer, METH_VARARGS, doc_set_completer},
-	{"get_completer", get_completer, METH_VARARGS, doc_get_completer},
+	{"get_completer", get_completer, METH_NOARGS, doc_get_completer},
 	{"get_begidx", get_begidx, METH_OLDARGS, doc_get_begidx},
 	{"get_endidx", get_endidx, METH_OLDARGS, doc_get_endidx},
 
