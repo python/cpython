@@ -44,9 +44,12 @@ class SoundScanner(Scanner):
 			'GetSoundPreference',
 			'SetSoundPreference',
 			'GetCompressionInfo',
-			# And 3.1 calls, ditto...
+			# Calls with void_ptr arguments (to be done).
 			'SndGetInfo',
 			'SndSetInfo',
+			# And old calls that are no longer supported
+			'SetSoundVol',
+			'GetSoundVol',
 
 			]
 
