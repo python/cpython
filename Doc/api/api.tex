@@ -3293,7 +3293,7 @@ Inserts \var{value} into the dictionary with a key of \var{key}.
 raised.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyDict_SetItemString}{PyDictObject *p,
+\begin{cfuncdesc}{int}{PyDict_SetItemString}{PyObject *p,
             char *key,
             PyObject *val}
 Inserts \var{value} into the dictionary using \var{key}
@@ -3348,9 +3348,27 @@ Returns the number of items in the dictionary.  This is equivalent to
 \samp{len(\var{p})} on a dictionary.\bifuncindex{len}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyDict_Next}{PyDictObject *p, int *ppos,
+\begin{cfuncdesc}{int}{PyDict_Next}{PyObject *p, int *ppos,
                                     PyObject **pkey, PyObject **pvalue}
+Iterate over all key-value pairs in the dictionary \var{p}.  The
+\ctype{int} referred to by \var{ppos} must be initialized to \code{0}
+prior to the first call to this function to start the iteration; the
+function returns true for each pair in the dictionary, and false once
+all pairs have been reported.  The parameters \var{pkey} and
+\var{pvalue} should either point to \ctype{PyObject*} variables that
+will be filled in with each key and value, respectively, or may be
+\NULL.  The dictionary \var{p} must not be mutated during iteration.
+For example:
 
+\begin{verbatim}
+PyObject *key, *value;
+int pos = 0;
+
+while (PyDict_Next(self->dict, &pos, &key, &value)) {
+    /* do something interesting with the values... */
+    ...
+}
+\end{verbatim}
 \end{cfuncdesc}
 
 
