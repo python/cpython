@@ -390,7 +390,9 @@ class PyBuildExt(build_ext):
         # Berkeley DB 3.x.)
 
         dblib = []
-        if self.compiler.find_library_file(lib_dirs, 'db-3.1'):
+        if self.compiler.find_library_file(lib_dirs, 'db-3.2'):
+            dblib = ['db-3.2']
+        elif self.compiler.find_library_file(lib_dirs, 'db-3.1'):
             dblib = ['db-3.1']
         elif self.compiler.find_library_file(lib_dirs, 'db3'):
             dblib = ['db3']
