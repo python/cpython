@@ -263,9 +263,7 @@ of all the files and subdirs in directory "d".
     except os.error:
         return
     func(arg, top, names)
-    exceptions = ('.', '..')
     for name in names:
-        if name not in exceptions:
             name = join(top, name)
             st = os.lstat(name)
             if stat.S_ISDIR(st[stat.ST_MODE]):
