@@ -119,9 +119,7 @@ void PyMac_InitApplet(void);
 
 /* from macgetargv: */
 OSErr PyMac_init_process_location(void);
-#ifndef HAVE_STRDUP
 char *	strdup(const char *str);
-#endif
 
 #ifdef USE_GUSI2
 /* from pyGUSISIOUX.cp */
