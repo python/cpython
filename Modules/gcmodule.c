@@ -857,12 +857,11 @@ gc_get_referrers(PyObject *self, PyObject *args)
 	return result;
 }
 
+/* Append obj to list; return true if error (out of memory), false if OK. */
 static int
 referrentsvisit(PyObject *obj, PyObject *list)
 {
-	if (PyList_Append(list, obj) < 0)
-		return 1;
-	return 0;
+	return PyList_Append(list, obj) < 0;
 }
 
 PyDoc_STRVAR(gc_get_referrents__doc__,
@@ -874,13 +873,23 @@ gc_get_referrents(PyObject *self, PyObject *args)
 {
 	int i;
 	PyObject *result = PyList_New(0);
+
+	if (result == NULL)
+		return NULL;
+
 	for (i = 0; i < PyTuple_GET_SIZE(args); i++) {
+		traverseproc traverse;
 		PyObject *obj = PyTuple_GET_ITEM(args, i);
-		traverseproc traverse = obj->ob_type->tp_traverse;
-		if (!traverse)
+
+		if (! PyObject_IS_GC(obj))
 			continue;
-		if (traverse(obj, (visitproc)referrentsvisit, result))
+		traverse = obj->ob_type->tp_traverse;
+		if (! traverse)
+			continue;
+		if (traverse(obj, (visitproc)referrentsvisit, result)) {
+			Py_DECREF(result);
 			return NULL;
+		}
 	}
 	return result;
 }
