@@ -50,22 +50,20 @@ print "done."
 
 # strict error testing:
 print "Testing unicode character name expansion strict error handling....",
-k_cchMaxUnicodeName = 83
-
-s = "\N{" + "1" * (k_cchMaxUnicodeName + 2) + "}"
-try:
-    unicode(s, 'unicode-escape', 'strict')
-except UnicodeError:
-    pass
-else:
-    raise AssertionError, "failed to raise an exception when presented " \
-                          "with a UCN > k_cchMaxUnicodeName"
 try:
     unicode("\N{blah}", 'unicode-escape', 'strict')
 except UnicodeError:
     pass
 else:
     raise AssertionError, "failed to raise an exception when given a bogus character name"
+
+try:
+    unicode("\N{" + "x" * 100000 + "}", 'unicode-escape', 'strict')
+except UnicodeError:
+    pass
+else:
+    raise AssertionError, "failed to raise an exception when given a very " \
+                          "long bogus character name"
 
 try:
     unicode("\N{SPACE", 'unicode-escape', 'strict')

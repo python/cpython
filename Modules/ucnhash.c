@@ -1,4 +1,12 @@
+#include "Python.h"
 #include "ucnhash.h"
+
+/* Modified for Python 2.1 by Fredrik Lundh (fredrik@pythonware.com) */
+
+typedef struct {
+    const char* pszUCN;
+    Py_UCS4 value;
+}_Py_UnicodeCharacterName;   
 
 /*
  * The hash is produced using the algorithm described in
@@ -14,10 +22,10 @@
  * Generated on: Fri Jul 14 08:00:58 2000
  */
 
+#define cKeys 10538
 #define k_cHashElements 18836
 #define k_cchMaxKey  83
 #define k_cKeys  10538
-
 
 staticforward const unsigned short G[k_cHashElements]; 
 staticforward const _Py_UnicodeCharacterName aucn[k_cKeys];   
@@ -34,8 +42,7 @@ static long f1(const char *key, unsigned int cch)
     while (--len >= 0)
     {   
         /* (1000003 * x) ^ toupper(*(p++)) 
-         * translated to handle > 32 bit longs 
-         */
+         * translated to handle > 32 bit longs */
         x = (0xf4243 * x);
         x = x & 0xFFFFFFFF;
         x = x ^ toupper(*(p++));
@@ -98,110 +105,96 @@ static long f2(const char *key, unsigned int cch)
 }
 
     
-static unsigned long hash(const char *key, unsigned int cch)
+static unsigned long
+hash(const char *key, unsigned int cch)
 {
     return ((unsigned long)(G[ f1(key, cch) ]) + (unsigned long)(G[ f2(key, cch) ]) ) % k_cHashElements;
 }
 
-const void *getValue(unsigned long iKey)
+const _Py_UnicodeCharacterName *
+getValue(unsigned long iKey)
 {
-    return &aucn[iKey];
+    return (_Py_UnicodeCharacterName *) &aucn[iKey];
 }
 
-/* Helper for adding objects to dictionaries. Check for errors with
-   PyErr_Occurred() */
-static 
-void insobj(PyObject *dict,
-     char *name,
-     PyObject *v)
+static int
+mystrnicmp(const char *s1, const char *s2, size_t count)
 {
-    PyDict_SetItemString(dict, name, v);
-    Py_XDECREF(v);
+    char c1, c2;
+    
+    if (count) {
+        do {
+           c1 = tolower(*(s1++));
+           c2 = tolower(*(s2++));
+        } while (--count && c1 == c2);
+        return c1 - c2;
+    }
+
+    return 0;
 }
 
-static const _Py_UCNHashAPI hashAPI = 
+/* bindings for the new API */
+
+static int
+ucnhash_getname(Py_UCS4 code, char* buffer, int buflen)
 {
-    k_cKeys,
-    k_cchMaxKey,
-    &hash,
-    &getValue,
+    return 0;
+}
+
+static int
+ucnhash_getcode(const char* name, int namelen, Py_UCS4* code)
+{
+    unsigned long j;
+
+    j = hash(name, namelen);
+
+    if (j > cKeys || mystrnicmp(name, getValue(j)->pszUCN, namelen) != 0)
+        return 0;
+
+    *code = getValue(j)->value;
+
+    return 1;
+}
+
+static const _PyUnicode_Name_CAPI hashAPI = 
+{
+    sizeof(_PyUnicode_Name_CAPI),
+    ucnhash_getname,
+    ucnhash_getcode
 };
 
 static  
-PyMethodDef Module_methods[] =
+PyMethodDef ucnhash_methods[] =
 {   
     {NULL, NULL},
 };
 
-static char *Module_docstring = "ucnhash hash function module";
-
-/* Error reporting for module init functions */
-
-#define Py_ReportModuleInitError(modname) {			\
-    PyObject *exc_type, *exc_value, *exc_tb;			\
-    PyObject *str_type, *str_value;				\
-								\
-    /* Fetch error objects and convert them to strings */	\
-    PyErr_Fetch(&exc_type, &exc_value, &exc_tb);		\
-    if (exc_type && exc_value) {				\
-	    str_type = PyObject_Str(exc_type);			\
-	    str_value = PyObject_Str(exc_value);			\
-    }								\
-    else {							\
-	   str_type = NULL;					\
-	   str_value = NULL;					\
-    }								\
-    /* Try to format a more informative error message using the	\
-       original error */					\
-    if (str_type && str_value &&				\
-	    PyString_Check(str_type) && PyString_Check(str_value))	\
-	    PyErr_Format(						\
-   		    PyExc_ImportError,				\
-		    "initialization of module "modname" failed "	\
-		    "(%s:%s)",					\
-		PyString_AS_STRING(str_type),			\
-		PyString_AS_STRING(str_value));			\
-    else							\
-	    PyErr_SetString(					\
-		    PyExc_ImportError,				\
-		    "initialization of module "modname" failed");	\
-    Py_XDECREF(str_type);					\
-    Py_XDECREF(str_value);					\
-    Py_XDECREF(exc_type);					\
-    Py_XDECREF(exc_value);					\
-    Py_XDECREF(exc_tb);						\
-}
+static char *ucnhash_docstring = "ucnhash hash function module";
 
 
 /* Create PyMethodObjects and register them in the module's dict */
 DL_EXPORT(void) 
 initucnhash(void)
 {
-    PyObject *module, *moddict;
-    /* Create module */
-    module = Py_InitModule4("ucnhash", /* Module name */
-             Module_methods, /* Method list */
-             Module_docstring, /* Module doc-string */
-             (PyObject *)NULL, /* always pass this as *self */
-             PYTHON_API_VERSION); /* API Version */
-    if (module == NULL)
-        goto onError;
-    /* Add some constants to the module's dict */
-    moddict = PyModule_GetDict(module);
-    if (moddict == NULL)
-        goto onError;
+    PyObject *m, *d, *v;
+
+    m = Py_InitModule4(
+        "ucnhash", /* Module name */
+        ucnhash_methods, /* Method list */
+        ucnhash_docstring, /* Module doc-string */
+        (PyObject *)NULL, /* always pass this as *self */
+        PYTHON_API_VERSION); /* API Version */
+    if (!m)
+        return;
+
+    d = PyModule_GetDict(m);
+    if (!d)
+        return;
 
     /* Export C API */
-    insobj(
-        moddict,
-        "ucnhashAPI",
-        PyCObject_FromVoidPtr((void *)&hashAPI, NULL));
-    
-onError:
-    /* Check for errors and report them */
-    if (PyErr_Occurred())
-        Py_ReportModuleInitError("ucnhash");
-    return;
+    v = PyCObject_FromVoidPtr((void *) &hashAPI, NULL);
+    PyDict_SetItemString(d, "Unicode_Names_CAPI", v);
+    Py_XDECREF(v);
 }
 
 static const unsigned short G[] = 
