@@ -2721,7 +2721,6 @@ PyObject *PyUnicode_Join(PyObject *separator,
     PyUnicodeObject *res = NULL;
     int reslen = 0;
     Py_UNICODE *p;
-    int seqlen = 0;
     int sz = 100;
     int i;
     PyObject *it;
