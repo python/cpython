@@ -283,6 +283,7 @@ class bdist_wininst (Command):
         else:
             installer_name = os.path.join(self.dist_dir,
                                           "%s.win32.exe" % fullname)
+        return installer_name
     # get_installer_filename()
 
     def get_exe_bytes (self):
