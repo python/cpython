@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.288.6.6 
+# From configure.in Revision: 1.288.6.7 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -1996,7 +1996,7 @@ fi
 # some of the headers (Redhat 6 if kernel headers don't match glibc
 # headers). Thus, disable warnings. This can go away if autoconf 2.50
 # is used, since it considers the gcc status to determine errors.
-if test $GCC == yes
+if test $GCC = yes
 then
    CPPFLAGS_save=$CPPFLAGS
    CPPFLAGS="$CPPFLAGS -w"
@@ -2049,7 +2049,7 @@ fi
 done
 
 
-if test $GCC == yes
+if test $GCC = yes
 then
    CPPFLAGS=$CPPFLAGS_save
 fi
