@@ -38,6 +38,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef __MWERKS__
 #include <SIOUX.h>
+#define USE_SIOUX
 #endif
 
 #ifdef THINK_C
@@ -114,7 +115,7 @@ PyMac_InitApplet()
 #ifdef USE_MAC_SHARED_LIBRARY
 	PyMac_AddLibResources();
 #endif
-#ifdef __MWERKS__
+#ifdef USE_SIOUX
 	SIOUXSettings.asktosaveonclose = 0;
 	SIOUXSettings.showstatusline = 0;
 	SIOUXSettings.tabspaces = 4;
@@ -141,7 +142,7 @@ PyMac_InitApplication()
 #ifdef USE_MAC_SHARED_LIBRARY
 	PyMac_AddLibResources();
 #endif
-#ifdef __MWERKS__
+#ifdef USE_SIOUX
 	SIOUXSettings.asktosaveonclose = 0;
 	SIOUXSettings.showstatusline = 0;
 	SIOUXSettings.tabspaces = 4;
@@ -305,9 +306,12 @@ PyMac_Exit(status)
 	else
 		keep = keep_normal;
 		
-#ifdef __MWERKS__
-	if (keep)
-		printf("\n[Terminated]\n");
+#ifdef USE_SIOUX
+	if (keep) {
+		SIOUXSettings.standalone = 1;
+		SIOUXSettings.autocloseonquit = 0;
+		SIOUXSetTitle("\p«terminated»");
+	}
 	else
 		SIOUXSettings.autocloseonquit = 1;
 #endif
