@@ -669,12 +669,12 @@ Emacs mode
 There's an excellent Emacs editing mode for Python code; see the file
 Misc/python-mode.el.  Originally written by the famous Tim Peters, it
 is now maintained by the equally famous Barry Warsaw
-<bwarsaw@cnri.reston.va.us>.  The latest version is online at
-ftp://ftp.python.org/pub/emacs/python-mode.el.  As you might expect of
-Barry (and even if you don't know what the heck I'm talking about :-),
-a configuration file for his cc-mode.el which selects the style used
-throughout most Python C source files is also provided; see the file
-Misc/ccpy-style.el.
+<bwarsaw@cnri.reston.va.us>.  The latest version, along with various
+other contributed Python-related Emacs goodies, is online at
+<http://www.python.org/emacs/python-mode>.  And if you are planning to
+edit the Python C code, please pick up the latest version of CC Mode
+<http://www.python.org/emacs/cc-mode>; it contains a "python" style
+used throughout most of the Python C source files.
 
 
 Web site
