@@ -50,7 +50,6 @@ xreadlines(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "O:xreadlines", &file))
 		return NULL;
 	ret = newreadlinesobject(file);
-	Py_XINCREF(ret);
 	return (PyObject*)ret;
 }
 
