@@ -460,6 +460,7 @@ def main():
 	if len(argv) >= 2 and argv[1][:1] == '-':
 		flags = argv[1]
 		del argv[1]
+	stdwin.setdefscrollbars(0, 1)
 	m = mainmenu() # Create menu earlier than windows
 	if len(argv) == 2: # 1 argument
 		w = anyopen(argv[1])
