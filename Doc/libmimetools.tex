@@ -30,18 +30,18 @@ object \var{input} and write the decoded data to open file object
 \code{'base64'}, \code{'quoted-printable'} and \code{'uuencode'}.
 \end{funcdesc}
 
-\begin{funcdesc}{encode}{input\, output\, encoding}
+\begin{funcdesc}{encode}{input, output, encoding}
 Read data from open file object \var{input} and write it encoded using
 the allowed MIME \var{encoding} to open file object \var{output}.
 Valid values for \var{encoding} are the same as for \method{decode()}.
 \end{funcdesc}
 
-\begin{funcdesc}{copyliteral}{input\, output}
+\begin{funcdesc}{copyliteral}{input, output}
 Read lines until \EOF{} from open file \var{input} and write them to
 open file \var{output}.
 \end{funcdesc}
 
-\begin{funcdesc}{copybinary}{input\, output}
+\begin{funcdesc}{copybinary}{input, output}
 Read blocks until \EOF{} from open file \var{input} and write them to
 open file \var{output}.  The block size is currently fixed at 8192.
 \end{funcdesc}

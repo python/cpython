@@ -12,7 +12,7 @@ the exception \code{amoeba.error = 'amoeba.error'}.
 The module \code{amoeba} defines the following items:
 
 \setindexsubitem{(in module amoeba)}
-\begin{funcdesc}{name_append}{path\, cap}
+\begin{funcdesc}{name_append}{path, cap}
 Stores a capability in the Amoeba directory tree.
 Arguments are the pathname (a string) and the capability (a capability
 object as returned by
@@ -32,7 +32,7 @@ Returns a
 object, to which various interesting operations apply, described below.
 \end{funcdesc}
 
-\begin{funcdesc}{name_replace}{path\, cap}
+\begin{funcdesc}{name_replace}{path, cap}
 Replaces a capability in the Amoeba directory tree.
 Arguments are the pathname and the new capability.
 (This differs from
@@ -91,7 +91,7 @@ The following methods are defined for capability objects.
 Returns a list of the names of the entries in an Amoeba directory.
 \end{funcdesc}
 
-\begin{funcdesc}{b_read}{offset\, maxsize}
+\begin{funcdesc}{b_read}{offset, maxsize}
 Reads (at most)
 \var{maxsize}
 bytes from a bullet file at offset

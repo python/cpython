@@ -124,7 +124,7 @@ The \module{signal} module defines the following functions:
   \UNIX{} man page \manpage{signal}{2}.)
 \end{funcdesc}
 
-\begin{funcdesc}{signal}{signalnum\, handler}
+\begin{funcdesc}{signal}{signalnum, handler}
   Set the handler for signal \var{signalnum} to the function
   \var{handler}.  \var{handler} can be any callable Python object, or
   one of the special values \constant{signal.SIG_IGN} or

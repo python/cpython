@@ -534,9 +534,9 @@ dictionary entry.
 \indexii{dictionary}{type}
 
 Dictionaries are created by placing a comma-separated list of
-\code{\var{key}:\,\var{value}} pairs within braces, for example:
-\code{\{'jack':\,4098, 'sjoerd':\,4127\}} or
-\code{\{4098:\,'jack', 4127:\,'sjoerd'\}}.
+\code{\var{key}: \var{value}} pairs within braces, for example:
+\code{\{'jack': 4098, 'sjoerd': 4127\}} or
+\code{\{4098: 'jack', 4127: 'sjoerd'\}}.
 
 The following operations are defined on mappings (where \var{a} is a
 mapping, \var{k} is a key and \var{x} is an arbitrary object):
@@ -767,7 +767,7 @@ descriptors, e.g. module \code{fcntl} or \code{os.read()} and friends.
   internal buffer size) are read.
 \end{funcdesc}
 
-\begin{funcdesc}{seek}{offset\, whence}
+\begin{funcdesc}{seek}{offset, whence}
   Set the file's current position, like \code{stdio}'s \code{fseek()}.
   The \var{whence} argument is optional and defaults to \code{0}
   (absolute file positioning); other values are \code{1} (seek

@@ -11,7 +11,7 @@ class that is also named \code{whrandom}.  Instances of the
 Chooses a random element from the non-empty sequence \var{seq} and returns it.
 \end{funcdesc}
 
-\begin{funcdesc}{randint}{a\, b}
+\begin{funcdesc}{randint}{a, b}
 Returns a random integer \var{N} such that \code{\var{a}<=\var{N}<=\var{b}}.
 \end{funcdesc}
 
@@ -19,7 +19,7 @@ Returns a random integer \var{N} such that \code{\var{a}<=\var{N}<=\var{b}}.
 Returns the next random floating point number in the range [0.0 ... 1.0).
 \end{funcdesc}
 
-\begin{funcdesc}{seed}{x\, y\, z}
+\begin{funcdesc}{seed}{x, y, z}
 Initializes the random number generator from the integers
 \var{x},
 \var{y}
@@ -29,7 +29,7 @@ When the module is first imported, the random number is initialized
 using values derived from the current time.
 \end{funcdesc}
 
-\begin{funcdesc}{uniform}{a\, b}
+\begin{funcdesc}{uniform}{a, b}
 Returns a random real number \var{N} such that \code{\var{a}<=\var{N}<\var{b}}.
 \end{funcdesc}
 

@@ -80,7 +80,7 @@ different device than \var{p}, or whether \file{\var{p}/..} and
 detect mount points for all \UNIX{} and \POSIX{} variants.
 \end{funcdesc}
 
-\begin{funcdesc}{join}{p\optional{\, q\optional{\, ...}}}
+\begin{funcdesc}{join}{p\optional{, q\optional{, ...}}}
 Joins one or more path components intelligently.  If any component is
 an absolute path, all previous components are thrown away, and joining
 continues.  The return value is the concatenation of \var{p}, and
@@ -103,7 +103,7 @@ case (use \function{normcase()} for that).  On Windows, it does
 converts forward slashes to backward slashes.
 \end{funcdesc}
 
-\begin{funcdesc}{samefile}{p\, q}
+\begin{funcdesc}{samefile}{p, q}
 Return true if both pathname arguments refer to the same file or
 directory (as indicated by device number and i-node number).
 Raise an exception if a \function{os.stat()} call on either pathname
@@ -130,7 +130,7 @@ and \var{ext} is empty or begins with a period and contains
 at most one period.
 \end{funcdesc}
 
-\begin{funcdesc}{walk}{p\, visit\, arg}
+\begin{funcdesc}{walk}{p, visit, arg}
 Calls the function \var{visit} with arguments
 \code{(\var{arg}, \var{dirname}, \var{names})} for each directory in the
 directory tree rooted at \var{p} (including \var{p} itself, if it is a

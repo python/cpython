@@ -9,7 +9,7 @@ The \code{macostools} module defines the following functions:
 
 \setindexsubitem{(in module macostools)}
 
-\begin{funcdesc}{copy}{src\, dst\optional{\, createpath, copytimes}}
+\begin{funcdesc}{copy}{src, dst\optional{, createpath, copytimes}}
 Copy file \var{src} to \var{dst}. The files can be specified as
 pathnames or \code{FSSpec} objects. If \var{createpath} is non-zero
 \var{dst} must be a pathname and the folders leading to the
@@ -22,13 +22,13 @@ If the source is an alias the original to which the alias points is
 copied, not the aliasfile.
 \end{funcdesc}
 
-\begin{funcdesc}{copytree}{src\, dst}
+\begin{funcdesc}{copytree}{src, dst}
 Recursively copy a file tree from \var{src} to \var{dst}, creating
 folders as needed. \var{Src} and \var{dst} should be specified as
 pathnames.
 \end{funcdesc}
 
-\begin{funcdesc}{mkalias}{src\, dst}
+\begin{funcdesc}{mkalias}{src, dst}
 Create a finder alias \var{dst} pointing to \var{src}. Both may be
 specified as pathnames or \var{FSSpec} objects.
 \end{funcdesc}

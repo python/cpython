@@ -157,7 +157,7 @@ followed by text composed using the \member{error_message_format}
 class variable.
 \end{funcdesc}
 
-\begin{funcdesc}{send_response}{code\optional{\, message}}
+\begin{funcdesc}{send_response}{code\optional{, message}}
 Sends a response header and logs the accepted request. The HTTP
 response line is sent, followed by \emph{Server} and \emph{Date}
 headers. The values for these two headers are picked up from the
@@ -165,7 +165,7 @@ headers. The values for these two headers are picked up from the
 respectively.
 \end{funcdesc}
 
-\begin{funcdesc}{send_header}{keyword\, value}
+\begin{funcdesc}{send_header}{keyword, value}
 Writes a specific MIME header to the output stream. \var{keyword}
 should specify the header keyword, with \var{value} specifying
 its value.
@@ -176,7 +176,7 @@ Sends a blank line, indicating the end of the MIME headers in
 the response.
 \end{funcdesc}
 
-\begin{funcdesc}{log_request}{\optional{code\optional{\, size}}}
+\begin{funcdesc}{log_request}{\optional{code\optional{, size}}}
 Logs an accepted (successful) request. \var{code} should specify
 the numeric HTTP code associated with the response. If a size of
 the response is available, then it should be passed as the

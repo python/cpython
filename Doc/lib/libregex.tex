@@ -192,21 +192,21 @@ The module defines these functions, and an exception:
 
 \setindexsubitem{(in module regex)}
 
-\begin{funcdesc}{match}{pattern\, string}
+\begin{funcdesc}{match}{pattern, string}
   Return how many characters at the beginning of \var{string} match
   the regular expression \var{pattern}.  Return \code{-1} if the
   string does not match the pattern (this is different from a
   zero-length match!).
 \end{funcdesc}
 
-\begin{funcdesc}{search}{pattern\, string}
+\begin{funcdesc}{search}{pattern, string}
   Return the first position in \var{string} that matches the regular
   expression \var{pattern}.  Return \code{-1} if no position in the string
   matches the pattern (this is different from a zero-length match
   anywhere!).
 \end{funcdesc}
 
-\begin{funcdesc}{compile}{pattern\optional{\, translate}}
+\begin{funcdesc}{compile}{pattern\optional{, translate}}
   Compile a regular expression pattern into a regular expression
   object, which can be used for matching using its \code{match()} and
   \code{search()} methods, described below.  The optional argument
@@ -252,7 +252,7 @@ expressions.)
   Returns the current value of the syntax flags as an integer.
 \end{funcdesc}
 
-\begin{funcdesc}{symcomp}{pattern\optional{\, translate}}
+\begin{funcdesc}{symcomp}{pattern\optional{, translate}}
 This is like \code{compile()}, but supports symbolic group names: if a
 parenthesis-enclosed group begins with a group name in angular
 brackets, e.g. \code{'\e(<id>[a-z][a-z0-9]*\e)'}, the group can
@@ -279,7 +279,7 @@ equivalents.
 Compiled regular expression objects support these methods:
 
 \setindexsubitem{(regex method)}
-\begin{funcdesc}{match}{string\optional{\, pos}}
+\begin{funcdesc}{match}{string\optional{, pos}}
   Return how many characters at the beginning of \var{string} match
   the compiled regular expression.  Return \code{-1} if the string
   does not match the pattern (this is different from a zero-length
@@ -293,7 +293,7 @@ Compiled regular expression objects support these methods:
   is to start.
 \end{funcdesc}
 
-\begin{funcdesc}{search}{string\optional{\, pos}}
+\begin{funcdesc}{search}{string\optional{, pos}}
   Return the first position in \var{string} that matches the regular
   expression \code{pattern}.  Return \code{-1} if no position in the
   string matches the pattern (this is different from a zero-length
@@ -303,7 +303,7 @@ Compiled regular expression objects support these methods:
   \code{match()} method.
 \end{funcdesc}
 
-\begin{funcdesc}{group}{index\, index\, ...}
+\begin{funcdesc}{group}{index, index, ...}
 This method is only valid when the last call to the \code{match()}
 or \code{search()} method found a match.  It returns one or more
 groups of the match.  If there is a single \var{index} argument,

@@ -35,7 +35,7 @@ See also built-in module \module{struct}\refbimodindex{struct}.
 
 The module defines the following function:
 
-\begin{funcdesc}{array}{typecode\optional{\, initializer}}
+\begin{funcdesc}{array}{typecode\optional{, initializer}}
 Return a new array whose items are restricted by \var{typecode}, and
 initialized from the optional \var{initializer} value, which must be a
 list or a string.  The list or string is passed to the new array's
@@ -77,7 +77,7 @@ integer values.  It is useful when reading data from a file written
 on a machine with a different byte order.
 \end{funcdesc}
 
-\begin{funcdesc}{fromfile}{f\, n}
+\begin{funcdesc}{fromfile}{f, n}
 Read \var{n} items (as machine values) from the file object \var{f}
 and append them to the end of the array.  If less than \var{n} items
 are available, \exception{EOFError} is raised, but the items that were
@@ -98,12 +98,12 @@ array of machine values (i.e. as if it had been read from a
 file using the \method{fromfile()} method).
 \end{funcdesc}
 
-\begin{funcdesc}{insert}{i\, x}
+\begin{funcdesc}{insert}{i, x}
 Insert a new item with value \var{x} in the array before position
 \var{i}.
 \end{funcdesc}
 
-\begin{funcdesc}{read}{f\, n}
+\begin{funcdesc}{read}{f, n}
 \deprecated {1.5.1}
   {Use the \method{fromfile()} method.}
 Read \var{n} items (as machine values) from the file object \var{f}

@@ -79,11 +79,11 @@ It defines the following functions and constants:
 Change the current working directory to \var{path}.
 \end{funcdesc}
 
-\begin{funcdesc}{chmod}{path\, mode}
+\begin{funcdesc}{chmod}{path, mode}
 Change the mode of \var{path} to the numeric \var{mode}.
 \end{funcdesc}
 
-\begin{funcdesc}{chown}{path\, uid, gid}
+\begin{funcdesc}{chown}{path, uid, gid}
 Change the owner and group id of \var{path} to the numeric \var{uid}
 and \var{gid}.
 (Not on MS-DOS.)
@@ -103,19 +103,19 @@ built-in function \function{open()} or by \function{popen()} or
 Return a duplicate of file descriptor \var{fd}.
 \end{funcdesc}
 
-\begin{funcdesc}{dup2}{fd\, fd2}
+\begin{funcdesc}{dup2}{fd, fd2}
 Duplicate file descriptor \var{fd} to \var{fd2}, closing the latter
 first if necessary.
 \end{funcdesc}
 
-\begin{funcdesc}{execv}{path\, args}
+\begin{funcdesc}{execv}{path, args}
 Execute the executable \var{path} with argument list \var{args},
 replacing the current process (i.e., the Python interpreter).
 The argument list may be a tuple or list of strings.
 (Not on MS-DOS.)
 \end{funcdesc}
 
-\begin{funcdesc}{execve}{path\, args\, env}
+\begin{funcdesc}{execve}{path, args, env}
 Execute the executable \var{path} with argument list \var{args},
 and environment \var{env},
 replacing the current process (i.e., the Python interpreter).
@@ -134,7 +134,7 @@ Note: the standard way to exit is \code{sys.exit(\var{n})}.
 after a \function{fork()}.
 \end{funcdesc}
 
-\begin{funcdesc}{fdopen}{fd\optional{\, mode\optional{\, bufsize}}}
+\begin{funcdesc}{fdopen}{fd\optional{, mode\optional{, bufsize}}}
 Return an open file object connected to the file descriptor \var{fd}.
 The \var{mode} and \var{bufsize} arguments have the same meaning as
 the corresponding arguments to the built-in \function{open()} function.
@@ -150,7 +150,7 @@ process id in the parent.
 Return status for file descriptor \var{fd}, like \function{stat()}.
 \end{funcdesc}
 
-\begin{funcdesc}{ftruncate}{fd\, length}
+\begin{funcdesc}{ftruncate}{fd, length}
 Truncate the file corresponding to file descriptor \var{fd}, 
 so that it is at most \var{length} bytes in size.
 \end{funcdesc}
@@ -194,12 +194,12 @@ Return the current process' user id.
 (Not on MS-DOS.)
 \end{funcdesc}
 
-\begin{funcdesc}{kill}{pid\, sig}
+\begin{funcdesc}{kill}{pid, sig}
 Kill the process \var{pid} with signal \var{sig}.
 (Not on MS-DOS.)
 \end{funcdesc}
 
-\begin{funcdesc}{link}{src\, dst}
+\begin{funcdesc}{link}{src, dst}
 Create a hard link pointing to \var{src} named \var{dst}.
 (Not on MS-DOS.)
 \end{funcdesc}
@@ -211,7 +211,7 @@ entries \code{'.'} and \code{'..'} even if they are present in the
 directory.
 \end{funcdesc}
 
-\begin{funcdesc}{lseek}{fd\, pos\, how}
+\begin{funcdesc}{lseek}{fd, pos, how}
 Set the current position of file descriptor \var{fd} to position
 \var{pos}, modified by \var{how}: \code{0} to set the position
 relative to the beginning of the file; \code{1} to set it relative to
@@ -224,7 +224,7 @@ Like \function{stat()}, but do not follow symbolic links.  (On systems
 without symbolic links, this is identical to \function{stat()}.)
 \end{funcdesc}
 
-\begin{funcdesc}{mkfifo}{path\optional{\, mode}}
+\begin{funcdesc}{mkfifo}{path\optional{, mode}}
 Create a FIFO (a \POSIX{} named pipe) named \var{path} with numeric mode
 \var{mode}.  The default \var{mode} is \code{0666} (octal).  The current
 umask value is first masked out from the mode.
@@ -238,7 +238,7 @@ the client opens it for writing.  Note that \function{mkfifo()}
 doesn't open the FIFO --- it just creates the rendezvous point.
 \end{funcdesc}
 
-\begin{funcdesc}{mkdir}{path\optional{\, mode}}
+\begin{funcdesc}{mkdir}{path\optional{, mode}}
 Create a directory named \var{path} with numeric mode \var{mode}.
 The default \var{mode} is \code{0777} (octal).  On some systems,
 \var{mode} is ignored.  Where it is used, the current umask value is
@@ -250,7 +250,7 @@ Add \var{increment} to the process' ``niceness''.  Return the new
 niceness.  (Not on MS-DOS.)
 \end{funcdesc}
 
-\begin{funcdesc}{open}{file\, flags\optional{\, mode}}
+\begin{funcdesc}{open}{file, flags\optional{, mode}}
 Open the file \var{file} and set various flags according to
 \var{flags} and possibly its mode according to \var{mode}.
 The default \var{mode} is \code{0777} (octal), and the current umask
@@ -279,7 +279,7 @@ Lock program segments into memory.  The value of \var{op}
 (Not on MS-DOS.)
 \end{funcdesc}
 
-\begin{funcdesc}{popen}{command\optional{\, mode\optional{\, bufsize}}}
+\begin{funcdesc}{popen}{command\optional{, mode\optional{, bufsize}}}
 Open a pipe to or from \var{command}.  The return value is an open
 file object connected to the pipe, which can be read or written
 depending on whether \var{mode} is \code{'r'} (default) or \code{'w'}.
@@ -291,7 +291,7 @@ object.
 (Not on MS-DOS.)
 \end{funcdesc}
 
-\begin{funcdesc}{putenv}{varname\, value}
+\begin{funcdesc}{putenv}{varname, value}
 \index{environment variables!setting}
 Set the environment variable named \var{varname} to the string
 \var{value}.  Such changes to the environment affect subprocesses
@@ -309,7 +309,7 @@ actually preferable to assign to items of \code{os.environ}.
 Return the error message corresponding to the error code in \var{code}.
 \end{funcdesc}
 
-\begin{funcdesc}{read}{fd\, n}
+\begin{funcdesc}{read}{fd, n}
 Read at most \var{n} bytes from file descriptor \var{fd}.
 Return a string containing the bytes read.
 
@@ -333,7 +333,7 @@ directory.  This is identical to the \function{unlink()} function
 documented below.
 \end{funcdesc}
 
-\begin{funcdesc}{rename}{src\, dst}
+\begin{funcdesc}{rename}{src, dst}
 Rename the file or directory \var{src} to \var{dst}.
 \end{funcdesc}
 
@@ -353,7 +353,7 @@ Calls the system call \cfunction{setpgrp()} or \cfunction{setpgrp(0,
 (Not on MS-DOS.)
 \end{funcdesc}
 
-\begin{funcdesc}{setpgid}{pid\, pgrp}
+\begin{funcdesc}{setpgid}{pid, pgrp}
 Calls the system call \cfunction{setpgid()}.  See the \UNIX{} manual
 for the semantics.
 (Not on MS-DOS.)
@@ -393,7 +393,7 @@ functions and constants that are useful for extracting information
 from a stat structure.
 \end{funcdesc}
 
-\begin{funcdesc}{symlink}{src\, dst}
+\begin{funcdesc}{symlink}{src, dst}
 Create a symbolic link pointing to \var{src} named \var{dst}.  (On
 systems without symbolic links, this always raises \exception{error}.)
 \end{funcdesc}
@@ -413,7 +413,7 @@ Return the process group associated with the terminal given by
 (Not on MS-DOS.)
 \end{funcdesc}
 
-\begin{funcdesc}{tcsetpgrp}{fd\, pg}
+\begin{funcdesc}{tcsetpgrp}{fd, pg}
 Set the process group associated with the terminal given by
 \var{fd} (an open file descriptor as returned by \function{open()})
 to \var{pg}.
@@ -453,7 +453,7 @@ Remove the file \var{path}.  This is the same function as \code{remove};
 the \code{unlink} name is its traditional \UNIX{} name.
 \end{funcdesc}
 
-\begin{funcdesc}{utime}{path\, {\rm (}atime, mtime{\rm )}}
+\begin{funcdesc}{utime}{path, {\rm (}atime, mtime{\rm )}}
 Set the access and modified time of the file to the given values.
 (The second argument is a tuple of two items.)
 \end{funcdesc}
@@ -466,7 +466,7 @@ exit status (if the signal number is zero); the high bit of the low
 byte is set if a core file was produced.  (Not on MS-DOS.)
 \end{funcdesc}
 
-\begin{funcdesc}{waitpid}{pid\, options}
+\begin{funcdesc}{waitpid}{pid, options}
 Wait for completion of a child process given by proces id, and return
 a tuple containing its pid and exit status indication (encoded as for
 \function{wait()}).  The semantics of the call are affected by the
@@ -476,7 +476,7 @@ normal operation.  (If the system does not support
 MS-DOS.)
 \end{funcdesc}
 
-\begin{funcdesc}{write}{fd\, str}
+\begin{funcdesc}{write}{fd, str}
 Write the string \var{str} to file descriptor \var{fd}.
 Return the number of bytes actually written.
 

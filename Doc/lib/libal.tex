@@ -27,7 +27,7 @@ The module defines the following functions:
 
 \setindexsubitem{(in module al)}
 
-\begin{funcdesc}{openport}{name\, direction\optional{\, config}}
+\begin{funcdesc}{openport}{name, direction\optional{, config}}
 The name and direction arguments are strings.  The optional config
 argument is a configuration object as returned by
 \code{al.newconfig()}.  The return value is an \dfn{port object};
@@ -44,12 +44,12 @@ The device argument is an integer.  The return value is a list of
 integers containing the data returned by ALqueryparams().
 \end{funcdesc}
 
-\begin{funcdesc}{getparams}{device\, list}
+\begin{funcdesc}{getparams}{device, list}
 The device argument is an integer.  The list argument is a list such
 as returned by \code{queryparams}; it is modified in place (!).
 \end{funcdesc}
 
-\begin{funcdesc}{setparams}{device\, list}
+\begin{funcdesc}{setparams}{device, list}
 The device argument is an integer.  The list argument is a list such
 as returned by \code{al.queryparams}.
 \end{funcdesc}

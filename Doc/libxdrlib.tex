@@ -96,7 +96,7 @@ the individual item.  At the end of the list, an unsigned integer
 \code{0} is packed.
 \end{funcdesc}
 
-\begin{funcdesc}{pack_farray}{n\, array\, pack_item}
+\begin{funcdesc}{pack_farray}{n, array, pack_item}
 Packs a fixed length list (\var{array}) of homogeneous items.  \var{n}
 is the length of the list; it is \emph{not} packed into the buffer,
 but a \exception{ValueError} exception is raised if
@@ -104,7 +104,7 @@ but a \exception{ValueError} exception is raised if
 \var{pack_item} is the function used to pack each element.
 \end{funcdesc}
 
-\begin{funcdesc}{pack_array}{list\, pack_item}
+\begin{funcdesc}{pack_array}{list, pack_item}
 Packs a variable length \var{list} of homogeneous items.  First, the
 length of the list is packed as an unsigned integer, then each element
 is packed as in \method{pack_farray()} above.
@@ -192,7 +192,7 @@ then the item is unpacked and appended to the list.  A flag of
 function that is called to unpack the items.
 \end{funcdesc}
 
-\begin{funcdesc}{unpack_farray}{n\, unpack_item}
+\begin{funcdesc}{unpack_farray}{n, unpack_item}
 Unpacks and returns (as a list) a fixed length array of homogeneous
 items.  \var{n} is number of list elements to expect in the buffer.
 As above, \var{unpack_item} is the function used to unpack each element.

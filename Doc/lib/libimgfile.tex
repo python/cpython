@@ -30,7 +30,7 @@ the string. This format is suitable to pass to \code{gl.lrectwrite},
 for instance.
 \end{funcdesc}
 
-\begin{funcdesc}{readscaled}{file\, x\, y\, filter\optional{\, blur}}
+\begin{funcdesc}{readscaled}{file, x, y, filter\optional{, blur}}
 This function is identical to read but it returns an image that is
 scaled to the given \var{x} and \var{y} sizes. If the \var{filter} and
 \var{blur} parameters are omitted scaling is done by
@@ -55,7 +55,7 @@ compatible with SGI GL) or from top to bottom(flag is one,
 compatible with X).  The default is zero.
 \end{funcdesc}
 
-\begin{funcdesc}{write}{file\, data\, x\, y\, z}
+\begin{funcdesc}{write}{file, data, x, y, z}
 This function writes the RGB or greyscale data in \var{data} to image
 file \var{file}. \var{x} and \var{y} give the size of the image,
 \var{z} is 1 for 1 byte greyscale images or 3 for RGB images (which are

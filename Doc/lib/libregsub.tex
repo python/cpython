@@ -20,7 +20,7 @@ conversion help, see the URL
 
 \setindexsubitem{(in module regsub)}
 
-\begin{funcdesc}{sub}{pat\, repl\, str}
+\begin{funcdesc}{sub}{pat, repl, str}
 Replace the first occurrence of pattern \var{pat} in string
 \var{str} by replacement \var{repl}.  If the pattern isn't found,
 the string is returned unchanged.  The pattern may be a string or an
@@ -28,7 +28,7 @@ already compiled pattern.  The replacement may contain references
 \samp{\e \var{digit}} to subpatterns and escaped backslashes.
 \end{funcdesc}
 
-\begin{funcdesc}{gsub}{pat\, repl\, str}
+\begin{funcdesc}{gsub}{pat, repl, str}
 Replace all (non-overlapping) occurrences of pattern \var{pat} in
 string \var{str} by replacement \var{repl}.  The same rules as for
 \code{sub()} apply.  Empty matches for the pattern are replaced only
@@ -36,7 +36,7 @@ when not adjacent to a previous match, so e.g.
 \code{gsub('', '-', 'abc')} returns \code{'-a-b-c-'}.
 \end{funcdesc}
 
-\begin{funcdesc}{split}{str\, pat\optional{\, maxsplit}}
+\begin{funcdesc}{split}{str, pat\optional{, maxsplit}}
 Split the string \var{str} in fields separated by delimiters matching
 the pattern \var{pat}, and return a list containing the fields.  Only
 non-empty matches for the pattern are considered, so e.g.
@@ -47,7 +47,7 @@ occur, and the remainder of the string is returned as the final
 element of the list.
 \end{funcdesc}
 
-\begin{funcdesc}{splitx}{str\, pat\optional{\, maxsplit}}
+\begin{funcdesc}{splitx}{str, pat\optional{, maxsplit}}
 Split the string \var{str} in fields separated by delimiters matching
 the pattern \var{pat}, and return a list containing the fields as well
 as the separators.  For example, \code{splitx('a:::b', ':*')} returns
@@ -55,7 +55,7 @@ as the separators.  For example, \code{splitx('a:::b', ':*')} returns
 as \code{split}.
 \end{funcdesc}
 
-\begin{funcdesc}{capwords}{s\optional{\, pat}}
+\begin{funcdesc}{capwords}{s\optional{, pat}}
 Capitalize words separated by optional pattern \var{pat}.  The default
 pattern uses any characters except letters, digits and underscores as
 word delimiters.  Capitalization is done by changing the first

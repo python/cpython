@@ -36,14 +36,14 @@ provide its own windows, etc.
 
 \setindexsubitem{(AEServer method)}
 
-\begin{funcdesc}{installaehandler}{classe\, type\, callback}
+\begin{funcdesc}{installaehandler}{classe, type, callback}
 Installs an AppleEvent handler. \code{Classe} and \code{type} are the
 four-char OSA Class and Type designators, \code{'****'} wildcards are
 allowed. When a matching AppleEvent is received the parameters are
 decoded and your callback is invoked.
 \end{funcdesc}
 
-\begin{funcdesc}{callback}{_object\, **kwargs}
+\begin{funcdesc}{callback}{_object, **kwargs}
 Your callback is called with the OSA Direct Object as first positional
 parameter. The other parameters are passed as keyword arguments, with
 the 4-char designator as name. Three extra keyword parameters are

@@ -13,7 +13,7 @@ are many such characters, as when sending a graphics file.
 
 \setindexsubitem{(in module quopri)}
 
-\begin{funcdesc}{decode}{input\, output}
+\begin{funcdesc}{decode}{input, output}
 Decode the contents of the \var{input} file and write the resulting
 decoded binary data to the \var{output} file.
 \var{input} and \var{output} must either be file objects or objects that
@@ -21,7 +21,7 @@ mimic the file object interface. \var{input} will be read until
 \code{\var{input}.read()} returns an empty string.
 \end{funcdesc}
 
-\begin{funcdesc}{encode}{input\, output\, quotetabs}
+\begin{funcdesc}{encode}{input, output, quotetabs}
 Encode the contents of the \var{input} file and write the resulting
 quoted-printable data to the \var{output} file.
 \var{input} and \var{output} must either be file objects or objects that

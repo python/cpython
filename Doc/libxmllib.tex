@@ -78,7 +78,7 @@ The base implementation simply calls \var{method} with \var{attributes}
 as the only argument.
 \end{funcdesc}
 
-\begin{funcdesc}{handle_endtag}{tag\, method}
+\begin{funcdesc}{handle_endtag}{tag, method}
 This method is called to handle endtags for which an
 \code{end_\var{tag}()} method has been defined.  The \var{tag}
 argument is the name of the tag, and the
@@ -170,7 +170,7 @@ raise a \exception{RuntimeError} without first calling
 \method{syntax_error()}.
 \end{funcdesc}
 
-\begin{funcdesc}{unknown_starttag}{tag\, attributes}
+\begin{funcdesc}{unknown_starttag}{tag, attributes}
 This method is called to process an unknown start tag.  It is intended
 to be overridden by a derived class; the base class implementation
 does nothing.

@@ -13,7 +13,7 @@ corresponding string, as would be printed by the C function
 \code{perror()}.
 \end{excdesc}
 
-\begin{funcdesc}{select}{iwtd\, owtd\, ewtd\optional{\, timeout}}
+\begin{funcdesc}{select}{iwtd, owtd, ewtd\optional{, timeout}}
 This is a straightforward interface to the \UNIX{} \code{select()}
 system call.  The first three arguments are lists of `waitable
 objects': either integers representing \UNIX{} file descriptors or

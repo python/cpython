@@ -34,7 +34,7 @@ Bits in the status as returned by \var{Status}.
 Return 1 if the communication toolbox is available, zero otherwise.
 \end{funcdesc}
 
-\begin{funcdesc}{CMNew}{name\, sizes}
+\begin{funcdesc}{CMNew}{name, sizes}
 Create a connection object using the connection tool named
 \var{name}. \var{sizes} is a 6-tuple given buffer sizes for data in,
 data out, control in, control out, attention in and attention out.
@@ -77,21 +77,21 @@ Accept (when \var{yesno} is non-zero) or reject an incoming call after
 \var{Listen} returned.
 \end{funcdesc}
 
-\begin{funcdesc}{Close}{timeout\, now}
+\begin{funcdesc}{Close}{timeout, now}
 Close a connection. When \var{now} is zero, the close is orderly
 (i.e.\ outstanding output is flushed, etc.)\ with a timeout of
 \var{timeout} seconds. When \var{now} is non-zero the close is
 immediate, discarding output.
 \end{funcdesc}
 
-\begin{funcdesc}{Read}{len\, chan\, timeout}
+\begin{funcdesc}{Read}{len, chan, timeout}
 Read \var{len} bytes, or until \var{timeout} seconds have passed, from
 the channel \var{chan} (which is one of \var{cmData}, \var{cmCntl} or
 \var{cmAttn}). Return a 2-tuple:\ the data read and the end-of-message
 flag.
 \end{funcdesc}
 
-\begin{funcdesc}{Write}{buf\, chan\, timeout\, eom}
+\begin{funcdesc}{Write}{buf, chan, timeout, eom}
 Write \var{buf} to channel \var{chan}, aborting after \var{timeout}
 seconds. When \var{eom} has the value \var{cmFlagsEOM} an
 end-of-message indicator will be written after the data (if this

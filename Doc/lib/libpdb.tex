@@ -69,7 +69,7 @@ NameError: spam
 The module defines the following functions; each enters the debugger
 in a slightly different way:
 
-\begin{funcdesc}{run}{statement\optional{\, globals\optional{\, locals}}}
+\begin{funcdesc}{run}{statement\optional{, globals\optional{, locals}}}
 Execute the \var{statement} (given as a string) under debugger
 control.  The debugger prompt appears before any code is executed; you
 can set breakpoints and type \code{continue}, or you can step through
@@ -81,14 +81,14 @@ the explanation of the \code{exec} statement or the \code{eval()}
 built-in function.)
 \end{funcdesc}
 
-\begin{funcdesc}{runeval}{expression\optional{\, globals\optional{\, locals}}}
+\begin{funcdesc}{runeval}{expression\optional{, globals\optional{, locals}}}
 Evaluate the \var{expression} (given as a a string) under debugger
 control.  When \code{runeval()} returns, it returns the value of the
 expression.  Otherwise this function is similar to
 \code{run()}.
 \end{funcdesc}
 
-\begin{funcdesc}{runcall}{function\optional{\, argument\, ...}}
+\begin{funcdesc}{runcall}{function\optional{, argument, ...}}
 Call the \var{function} (a function or method object, not a string)
 with the given arguments.  When \code{runcall()} returns, it returns
 whatever the function call returned.  The debugger prompt appears as
