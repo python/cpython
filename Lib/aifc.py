@@ -133,6 +133,7 @@
 # changed by calling aiff() or aifc() before the first writeframes or
 # writeframesraw.
 
+import struct
 import __builtin__
 try:
 	import CL
@@ -147,35 +148,22 @@ _skiplist = 'COMT', 'INST', 'MIDI', 'AESD', \
 	  'APPL', 'NAME', 'AUTH', '(c) ', 'ANNO'
 
 def _read_long(file):
-	x = 0L
-	for i in range(4):
-		byte = file.read(1)
-		if byte == '':
-			raise EOFError
-		x = x*256 + ord(byte)
-	if x >= 0x80000000L:
-		x = x - 0x100000000L
-	return int(x)
+	try:
+		return struct.unpack('>l', file.read(4))[0]
+	except struct.error:
+		raise EOFError
 
 def _read_ulong(file):
-	x = 0L
-	for i in range(4):
-		byte = file.read(1)
-		if byte == '':
-			raise EOFError
-		x = x*256 + ord(byte)
-	return x
+	try:
+		return struct.unpack('>L', file.read(4))[0]
+	except struct.error:
+		raise EOFError
 
 def _read_short(file):
-	x = 0
-	for i in range(2):
-		byte = file.read(1)
-		if byte == '':
-			raise EOFError
-		x = x*256 + ord(byte)
-	if x >= 0x8000:
-		x = x - 0x10000
-	return x
+	try:
+		return struct.unpack('>h', file.read(2))[0]
+	except struct.error:
+		raise EOFError
 
 def _read_string(file):
 	length = ord(file.read(1))
@@ -208,20 +196,12 @@ def _read_float(f): # 10 bytes
 	return sign * f
 
 def _write_short(f, x):
-	d, m = divmod(x, 256)
-	f.write(chr(d))
-	f.write(chr(m))
+	f.write(struct.pack('>h', x))
 
 def _write_long(f, x):
-	if x < 0:
-		x = x + 0x100000000L
-	data = []
-	for i in range(4):
-		d, m = divmod(x, 256)
-		data.insert(0, m)
-		x = d
-	for i in range(4):
-		f.write(chr(int(data[i])))
+	if x >= 1L<<31:
+		x = x - (1L<<32)
+	f.write(struct.pack('>l', x))
 
 def _write_string(f, s):
 	f.write(chr(len(s)))
@@ -1013,3 +993,30 @@ def open(f, mode):
 		raise Error, "mode must be 'r' or 'w'"
 
 openfp = open # B/W compatibility
+
+if __name__ == '__main__':
+	import sys
+	if not sys.argv[1:]:
+		sys.argv.append('/usr/demos/data/audio/bach.aiff')
+	fn = sys.argv[1]
+	f = open(fn, 'r')
+	print "Reading", fn
+	print "nchannels =", f.getnchannels()
+	print "nframes   =", f.getnframes()
+	print "sampwidth =", f.getsampwidth()
+	print "framerate =", f.getframerate()
+	print "comptype  =", f.getcomptype()
+	print "compname  =", f.getcompname()
+	if sys.argv[2:]:
+		gn = sys.argv[2]
+		print "Writing", gn
+		g = open(gn, 'w')
+		g.setparams(f.getparams())
+		while 1:
+			data = f.readframes(1024)
+			if not data:
+				break
+			g.writeframes(data)
+		g.close()
+		f.close()
+		print "Done."
