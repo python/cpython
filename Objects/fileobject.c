@@ -809,7 +809,7 @@ file_read(PyFileObject *f, PyObject *args)
 			if (_PyString_Resize(&v, buffersize) < 0)
 				return NULL;
 		} else {
-			assert(bytesread == bytesrequested);
+			/* Got what was requested. */
 			break;
 		}
 	}
