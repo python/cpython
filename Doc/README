@@ -66,18 +66,9 @@ databases at:
 Other suggestions or questions should be sent to the Python
 Documentation Team:
 
-	python-docs@python.org
+	docs@python.org
 
 Thanks!
-
-
-What happened to the Macintosh chapter of the Python Library Reference?
------------------------------------------------------------------------
-
-The directory mac/ contains the LaTeX sources for the "Macintosh
-Library Modules" manual; this is built using the standard build
-targets, so check the proper output directory for your chosen format
-and paper size.
 
 
 What tools do I need?
