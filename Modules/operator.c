@@ -256,6 +256,7 @@ spam2(ge,__ge__, "ge(a, b) -- Same as a>=b.")
 
 typedef struct {
 	PyObject_HEAD
+	int nitems;
 	PyObject *item;
 } itemgetterobject;
 
@@ -266,9 +267,14 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	itemgetterobject *ig;
 	PyObject *item;
+	int nitems;
 
-	if (!PyArg_UnpackTuple(args, "itemgetter", 1, 1, &item))
-		return NULL;
+	nitems = PyTuple_GET_SIZE(args);
+	if (nitems <= 1) {
+		if (!PyArg_UnpackTuple(args, "itemgetter", 1, 1, &item))
+			return NULL;
+	} else 
+		item = args;
 
 	/* create itemgetterobject structure */
 	ig = PyObject_GC_New(itemgetterobject, &itemgetter_type);
@@ -277,6 +283,7 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	
 	Py_INCREF(item);
 	ig->item = item;
+	ig->nitems = nitems;
 
 	PyObject_GC_Track(ig);
 	return (PyObject *)ig;
@@ -301,18 +308,40 @@ itemgetter_traverse(itemgetterobject *ig, visitproc visit, void *arg)
 static PyObject *
 itemgetter_call(itemgetterobject *ig, PyObject *args, PyObject *kw)
 {
-	PyObject * obj;
+	PyObject *obj, *result;
+	int i, nitems=ig->nitems;
 
 	if (!PyArg_UnpackTuple(args, "itemgetter", 1, 1, &obj))
 		return NULL;
-	return PyObject_GetItem(obj, ig->item);
+	if (nitems == 1)
+		return PyObject_GetItem(obj, ig->item);
+
+	assert(PyTuple_Check(ig->item));
+	assert(PyTuple_GET_SIZE(ig->item) == nitems);
+
+	result = PyTuple_New(nitems);
+	if (result == NULL)
+		return NULL;
+
+	for (i=0 ; i < nitems ; i++) {
+		PyObject *item, *val;
+		item = PyTuple_GET_ITEM(ig->item, i);
+		val = PyObject_GetItem(obj, item);
+		if (val == NULL) {
+			Py_DECREF(result);
+			return NULL;
+		}
+		PyTuple_SET_ITEM(result, i, val);
+	}
+	return result;
 }
 
 PyDoc_STRVAR(itemgetter_doc,
-"itemgetter(item) --> itemgetter object\n\
+"itemgetter(item, ...) --> itemgetter object\n\
 \n\
-Return a callable object that fetches the given item from its operand.\n\
-After, f=itemgetter(2), the call f(b) returns b[2].");
+Return a callable object that fetches the given item(s) from its operand.\n\
+After, f=itemgetter(2), the call f(r) returns r[2].\n\
+After, g=itemgetter(2,5,3), the call g(r) returns (r[2], r[5], r[3])");
 
 static PyTypeObject itemgetter_type = {
 	PyObject_HEAD_INIT(NULL)
@@ -363,6 +392,7 @@ static PyTypeObject itemgetter_type = {
 
 typedef struct {
 	PyObject_HEAD
+	int nattrs;
 	PyObject *attr;
 } attrgetterobject;
 
@@ -373,9 +403,14 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	attrgetterobject *ag;
 	PyObject *attr;
+	int nattrs;
 
-	if (!PyArg_UnpackTuple(args, "attrgetter", 1, 1, &attr))
-		return NULL;
+	nattrs = PyTuple_GET_SIZE(args);
+	if (nattrs <= 1) {
+		if (!PyArg_UnpackTuple(args, "attrgetter", 1, 1, &attr))
+			return NULL;
+	} else 
+		attr = args;
 
 	/* create attrgetterobject structure */
 	ag = PyObject_GC_New(attrgetterobject, &attrgetter_type);
@@ -384,6 +419,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	
 	Py_INCREF(attr);
 	ag->attr = attr;
+	ag->nattrs = nattrs;
 
 	PyObject_GC_Track(ag);
 	return (PyObject *)ag;
@@ -408,18 +444,40 @@ attrgetter_traverse(attrgetterobject *ag, visitproc visit, void *arg)
 static PyObject *
 attrgetter_call(attrgetterobject *ag, PyObject *args, PyObject *kw)
 {
-	PyObject * obj;
+	PyObject *obj, *result;
+	int i, nattrs=ag->nattrs;
 
 	if (!PyArg_UnpackTuple(args, "attrgetter", 1, 1, &obj))
 		return NULL;
-	return PyObject_GetAttr(obj, ag->attr);
+	if (ag->nattrs == 1)
+		return PyObject_GetAttr(obj, ag->attr);
+
+	assert(PyTuple_Check(ag->attr));
+	assert(PyTuple_GET_SIZE(ag->attr) == nattrs);
+
+	result = PyTuple_New(nattrs);
+	if (result == NULL)
+		return NULL;
+
+	for (i=0 ; i < nattrs ; i++) {
+		PyObject *attr, *val;
+		attr = PyTuple_GET_ITEM(ag->attr, i);
+		val = PyObject_GetAttr(obj, attr);
+		if (val == NULL) {
+			Py_DECREF(result);
+			return NULL;
+		}
+		PyTuple_SET_ITEM(result, i, val);
+	}
+	return result;
 }
 
 PyDoc_STRVAR(attrgetter_doc,
-"attrgetter(attr) --> attrgetter object\n\
+"attrgetter(attr, ...) --> attrgetter object\n\
 \n\
-Return a callable object that fetches the given attribute from its operand.\n\
-After, f=attrgetter('name'), the call f(b) returns b.name.");
+Return a callable object that fetches the given attribute(s) from its operand.\n\
+After, f=attrgetter('name'), the call f(r) returns r.name.\n\
+After, g=attrgetter('name', 'date'), the call g(r) returns (r.name, r.date).");
 
 static PyTypeObject attrgetter_type = {
 	PyObject_HEAD_INIT(NULL)
