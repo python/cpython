@@ -208,7 +208,7 @@ def _compile(code, pattern, flags):
             else:
                 emit(OPCODES[op])
             emit(av-1)
-        elif op is MARK:
+        elif op in (MARK, INDEX):
             emit(OPCODES[op])
             emit(av)
         else:
