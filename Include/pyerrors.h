@@ -92,6 +92,7 @@ extern DL_IMPORT(void) _PyErr_BadInternalCall(char *filename, int lineno);
 /* Function to create a new exception */
 DL_IMPORT(PyObject *) PyErr_NewException(char *name, PyObject *base,
                                          PyObject *dict);
+extern DL_IMPORT(void) PyErr_WriteUnraisable(PyObject *);
 
 /* In sigcheck.c or signalmodule.c */
 extern DL_IMPORT(int) PyErr_CheckSignals(void);

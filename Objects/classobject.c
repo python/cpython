@@ -519,26 +519,7 @@ instance_dealloc(register PyInstanceObject *inst)
 	if ((del = instance_getattr2(inst, delstr)) != NULL) {
 		PyObject *res = PyEval_CallObject(del, (PyObject *)NULL);
 		if (res == NULL) {
-			PyObject *f, *t, *v, *tb;
- 			PyErr_Fetch(&t, &v, &tb);
-			f = PySys_GetObject("stderr");
-			if (f != NULL) {
-				PyFile_WriteString("Exception ", f);
-				if (t) {
-					PyFile_WriteObject(t, f, Py_PRINT_RAW);
-					if (v && v != Py_None) {
-						PyFile_WriteString(": ", f);
-						PyFile_WriteObject(v, f, 0);
-					}
-				}
-				PyFile_WriteString(" in ", f);
-				PyFile_WriteObject(del, f, 0);
-				PyFile_WriteString(" ignored\n", f);
-				PyErr_Clear(); /* Just in case */
-			}
-			Py_XDECREF(t);
-			Py_XDECREF(v);
-			Py_XDECREF(tb);
+			PyErr_WriteUnraisable(del);
 		}
 		else
 			Py_DECREF(res);

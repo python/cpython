@@ -57,11 +57,13 @@ static int allocated;
 				DEBUG_UNCOLLECTABLE | \
 				DEBUG_INSTANCES | \
 				DEBUG_OBJECTS
-static int debug = 0;
+static int debug;
 
 /* list of uncollectable objects */
 static PyObject *garbage;
 
+/* Python string to use if unhandled exception occurs */
+static PyObject *gc_str;
 
 /*** list functions ***/
 
@@ -435,6 +437,10 @@ collect(PyGC_Head *young, PyGC_Head *old)
 	 * this if they insist on creating this type of structure. */
 	handle_finalizers(&finalizers, old);
 
+	if (PyErr_Occurred()) {
+		PyErr_WriteUnraisable(gc_str);
+		Py_FatalError("unexpected exception during garbage collection");
+	}
 	allocated = 0;
 	return n+m;
 }
@@ -698,6 +704,9 @@ initgc(void)
 	d = PyModule_GetDict(m);
 	if (garbage == NULL) {
 		garbage = PyList_New(0);
+	}
+	if (gc_str == NULL) {
+		gc_str = PyString_FromString("garbage collection");
 	}
 	PyDict_SetItemString(d, "garbage", garbage);
 	PyDict_SetItemString(d, "DEBUG_STATS",
