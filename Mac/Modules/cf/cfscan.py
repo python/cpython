@@ -15,6 +15,7 @@ OBJECTS = ("CFTypeRef",
 		"CFDictionaryRef", "CFMutableDictionaryRef",
 		"CFStringRef", "CFMutableStringRef",
 		"CFURLRef",
+##		"CFPropertyListRef",
 		)
 # ADD object typenames here
 
@@ -31,7 +32,7 @@ def main():
 ##		"CFNumber.h",
 ##		"CFPlugIn.h",
 ##		"CFPreferences.h",
-##		"CFPropertyList.h",
+		"CFPropertyList.h",
 ##		"CFSet.h",
 		"CFString.h",
 ##		"CFStringEncodingExt.h",
@@ -130,6 +131,9 @@ class MyScanner(Scanner_OSX):
 			([("CFURLRef", "baseURL", "InMode")],
 			 [("OptionalCFURLRef", "*", "*")]),
 			 
+			# We handle CFPropertyListRef objects as plain CFTypeRef
+			([("CFPropertyListRef", "*", "*")],
+			 [("CFTypeRef", "*", "*")]),
 			]
 			
 if __name__ == "__main__":
