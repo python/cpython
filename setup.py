@@ -165,7 +165,7 @@ class PyBuildExt(build_ext):
             self.build_lib,
             self.get_ext_filename(self.get_ext_fullname(ext.name)))
         try:
-                        imp.load_dynamic(ext.name, ext_filename)
+            imp.load_dynamic(ext.name, ext_filename)
         except ImportError, why:
             if 1:
                 self.announce('*** WARNING: renaming "%s" since importing it'
