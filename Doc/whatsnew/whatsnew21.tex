@@ -66,6 +66,12 @@ regular Python dictionary; you can't be tricky and set it to a
 \class{UserDict} instance, a DBM file, or any other random mapping
 object.
 
+\begin{seealso}
+
+\seepep{232}{Function Attributes}{Written and implemented by Barry Warsaw.}
+
+\end{seealso}
+
 % ======================================================================
 \section{PEP 207: Rich Comparisons}
 
@@ -267,7 +273,7 @@ Python, allowing them more flexibility in writing extension types that
 support numeric operations.
 
 Extension types can now set the type flag
-\code{Py_TPFLAGS_NEWSTYLENUMBER} in their \code{PyTypeObject}
+\code{Py_TPFLAGS_CHECKTYPES} in their \code{PyTypeObject}
 structure to indicate that they support the new coercion model.  In
 such extension types, the numeric slot functions can no longer assume
 that they'll be passed two arguments of the same type; instead they
@@ -277,7 +283,11 @@ can't handle, it can indicate the failure by returning a reference to
 the \code{Py_NotImplemented} singleton value.  The numeric functions
 of the other type will then be tried, and perhaps they can handle the
 operation; if the other type also returns \code{Py_NotImplemented},
-then a \exception{TypeError} will be raised.
+then a \exception{TypeError} will be raised.  Numeric methods written
+in Python can also return \code{Py_NotImplemented}, causing the
+interpreter to act as if the method did not exist (perhaps raising a
+\exception{TypeError}, perhaps trying another object's numeric
+methods).
 
 \begin{seealso}
 
@@ -306,14 +316,16 @@ file objects has therefore been rewritten to be much faster.  The
 exact amount of the speedup will vary from platform to platform
 depending on how slow the C library's \function{getc()} was, but is
 around 66\%, and potentially much faster on some particular operating
-systems.
+systems.  Tim Peters did much of the benchmarking and coding for this
+change, motivated by a discussion in comp.lang.python.
 
 A new module and method for file objects was also added, contributed
 by Jeff Epler. The new method, \method{xreadlines()}, is similar to
 the existing \function{xrange()} built-in.  \function{xreadlines()}
 returns an opaque sequence object that only supports being iterated
-over, reading a line on every iteration but not reading the entire file into memory as
-the existing \method{readline()} method.  You'd use it like this:
+over, reading a line on every iteration but not reading the entire
+file into memory as the existing \method{readline()} method.  You'd
+use it like this:
 
 \begin{verbatim}
 for line in sys.stdin.xreadlines():
@@ -321,7 +333,8 @@ for line in sys.stdin.xreadlines():
     ...
 \end{verbatim}
 
-For a fuller discussion of the line I/O changes, see the python-dev summary for January 1-15, 2001.
+For a fuller discussion of the line I/O changes, see the python-dev
+summary for January 1-15, 2001.  
  
 \item \module{curses.panel}, a wrapper for the panel library, part of
 ncurses and of SYSV curses, was contributed by Thomas Gellekum.  The
@@ -356,6 +369,19 @@ and few people complain, but if passive mode is unsuitable for your
 application or network setup, call
 \method{set_pasv(0)} on FTP objects to disable passive mode.  
 
+\item Various functions in the \module{time} module, such as
+\function{asctime()} and \function{localtime()},
+require a floating point argument containing the time in seconds since
+the epoch.  The most common use of these functions is to work with the
+current time, so the floating point argument has been made optional;
+when a value isn't provided, the current time will be used.  For
+example, log file entries usually need a string containing the current
+time; in Python 2.1, \code{time.asctime()} can be used, instead of the
+lengthier \code{time.asctime(time.localtime(time.time()))} that was
+previously required.
+ 
+This change was proposed and implemented by Thomas Wouters.
+
 \end{itemize}
 
 And there's the usual list of bugfixes, minor memory leaks, docstring
@@ -367,6 +393,7 @@ CVS logs for the full details if you want them.
 \section{Acknowledgements}
 
 The author would like to thank the following people for offering
-suggestions on various drafts of this article: no one yet!
+suggestions on various drafts of this article: Neil Schemenauer,
+Thomas Wouters.
 
 \end{document}
