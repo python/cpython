@@ -50,18 +50,17 @@ typedef struct _frame {
 	PyObject *f_builtins;	/* builtin symbol table (PyDictObject) */
 	PyObject *f_globals;	/* global symbol table (PyDictObject) */
 	PyObject *f_locals;	/* local symbol table (PyDictObject) */
-	PyObject *f_owner;	/* owner (e.g. class or module) or NULL */
-	PyObject *f_fastlocals;	/* fast local variables (PyListObject) */
-	PyObject **f_valuestack;	/* malloc'ed array */
-	PyTryBlock *f_blockstack;	/* malloc'ed array */
-	int f_nvalues;		/* size of f_valuestack */
-	int f_nblocks;		/* size of f_blockstack */
-	int f_iblock;		/* index in f_blockstack */
+	PyObject **f_valuestack; /* points after the last local */
+	PyObject *f_trace;	/* Trace function */
 	int f_lasti;		/* Last instruction if called */
 	int f_lineno;		/* Current line number */
 	int f_restricted;	/* Flag set if restricted operations
 				   in this scope */
-	PyObject *f_trace;	/* Trace function */
+	int f_iblock;		/* index in f_blockstack */
+	PyTryBlock f_blockstack[CO_MAXBLOCKS]; /* for try and loop blocks */
+	int f_nlocals;		/* number of locals */
+	int f_stacksize;	/* size of value stack */
+	PyObject *f_localsplus[1]; /* locals+stack, dynamically sized */
 } PyFrameObject;
 
 
@@ -73,7 +72,7 @@ extern DL_IMPORT(PyTypeObject) PyFrame_Type;
 
 PyFrameObject * PyFrame_New
 	Py_PROTO((PyFrameObject *, PyCodeObject *,
-		  PyObject *, PyObject *, PyObject *, int, int));
+		  PyObject *, PyObject *));
 
 
 /* The rest of the interface is specific for frame objects */
