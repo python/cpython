@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991 by Stichting Mathematisch Centrum, Amsterdam, The
+Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
 Netherlands.
 
                         All Rights Reserved
@@ -1106,7 +1106,6 @@ eval_code(co, globals, locals, arg)
 						sysset("exc_traceback", v);
 						sysset("exc_value", val);
 						sysset("exc_type", exc);
-						err_clear();
 					}
 					PUSH(v);
 					PUSH(val);
@@ -1192,21 +1191,19 @@ call_exc_trace(p_trace, p_newtrace, f)
 	err_get(&type, &value);
 	traceback = tb_fetch();
 	arg = newtupleobject(3);
-	if (arg == NULL) {
-		err = -1;
+	if (arg == NULL)
 		goto cleanup;
-	}
 	settupleitem(arg, 0, type);
 	settupleitem(arg, 1, value);
 	settupleitem(arg, 2, traceback);
 	err = call_trace(p_trace, p_newtrace, f, "exception", arg);
-	XDECREF(arg);
- cleanup:
 	if (!err) {
+ cleanup:
 		/* Restore original exception */
 		err_setval(type, value);
 		tb_store(traceback);
 	}
+	XDECREF(arg);
 }
 
 static int
@@ -1254,12 +1251,13 @@ call_trace(p_trace, p_newtrace, f, msg, arg)
 	if (res == NULL) {
 		/* The trace proc raised an exception */
 		tb_here(f);
-		XDECREF(*p_trace);
+		DECREF(*p_trace);
 		*p_trace = NULL;
 		if (p_newtrace) {
 			XDECREF(*p_newtrace);
 			*p_newtrace = NULL;
 		}
+		return -1;
 	}
 	else {
 		if (p_newtrace) {
@@ -1272,11 +1270,8 @@ call_trace(p_trace, p_newtrace, f, msg, arg)
 			}
 		}
 		DECREF(res);
-	}
-	if (res == NULL)
-		return -1;
-	else
 		return 0;
+	}
 }
 
 object *
