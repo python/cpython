@@ -78,7 +78,7 @@ Py_InitModule4(char *name, PyMethodDef *methods, char *doc,
 	if (doc != NULL) {
 		v = PyString_FromString(doc);
 		if (v == NULL || PyDict_SetItemString(d, "__doc__", v) != 0) {
-			Py_DECREF(v);
+			Py_XDECREF(v);
 			return NULL;
 		}
 		Py_DECREF(v);
