@@ -37,12 +37,6 @@ class CodecCallbackTest(unittest.TestCase):
     def test_xmlcharnamereplace(self):
         # This time use a named character entity for unencodable
         # characters, if one is available.
-        names = {}
-        for (key, value) in htmlentitydefs.entitydefs.items():
-            if len(value)==1:
-                names[unicode(value, "latin-1")] = unicode(key, "latin-1")
-            else:
-                names[unichr(int(value[2:-1]))] = unicode(key, "latin-1")
 
         def xmlcharnamereplace(exc):
             if not isinstance(exc, UnicodeEncodeError):
@@ -50,7 +44,7 @@ class CodecCallbackTest(unittest.TestCase):
             l = []
             for c in exc.object[exc.start:exc.end]:
                 try:
-                    l.append(u"&%s;" % names[c])
+                    l.append(u"&%s;" % htmlentitydefs.codepoint2name[ord(c)])
                 except KeyError:
                     l.append(u"&#%d;" % ord(c))
             return (u"".join(l), exc.end)
