@@ -28,7 +28,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* "allobjects.c" -- Source for precompiled header "allobjects.h" */
+/* Include nearly all Python header files */
 
 /* Some systems (well, NT anyway!) require special declarations for
  data items imported from dynamic modules.  Note that this defn is
@@ -45,10 +45,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
-
-#ifdef THINK_C
-#define macintosh
 #endif
 
 #include <stdio.h>
