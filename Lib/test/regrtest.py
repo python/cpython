@@ -464,21 +464,10 @@ def printlist(x, width=70, indent=4):
     begin each line.
     """
 
-    line = ' ' * indent
-    for one in map(str, x):
-        w = len(line) + len(one)
-        if line[-1:] == ' ':
-            pad = ''
-        else:
-            pad = ' '
-            w += 1
-        if w > width:
-            print line
-            line = ' ' * indent + one
-        else:
-            line += pad + one
-    if len(line) > indent:
-        print line
+    from textwrap import fill
+    blanks = ' ' * indent
+    print fill(' '.join(map(str, x)), width,
+               initial_indent=blanks, subsequent_indent=blanks)
 
 class _Set:
     def __init__(self, seq=[]):
@@ -723,27 +712,27 @@ _expectations = {
         """,
     'atheos':
 	"""
-	test_al 
-	test_cd 
-	test_cl 
-	test_curses 
-	test_dl 
+	test_al
+	test_cd
+	test_cl
+	test_curses
+	test_dl
 	test_email_codecs
-	test_gdbm 
-	test_gl 
-	test_imgfile 
-	test_largefile 
+	test_gdbm
+	test_gl
+	test_imgfile
+	test_largefile
 	test_linuxaudiodev
-	test_locale 
+	test_locale
 	test_mhlib
-	test_mmap 
-	test_mpz 
-	test_nis 
+	test_mmap
+	test_mpz
+	test_nis
 	test_poll
 	test_popen2
 	test_resource
-	test_socket_ssl 
-	test_socketserver 
+	test_socket_ssl
+	test_socketserver
 	test_sunaudiodev
 	test_unicode_file
 	test_winreg
