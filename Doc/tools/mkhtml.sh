@@ -16,7 +16,7 @@ cd $WORKDIR
 use_logical_names=true
 
 if [ "$1" = "--numeric" ] ; then
-    use_logical_names=''
+    use_logical_names=false
     shift 1
 fi
 
@@ -34,7 +34,7 @@ echo "latex2html -init_file $srcdir/perl/l2hinit.perl -dir $part" \
 latex2html \
  -no_auto_link \
  -init_file $srcdir/perl/l2hinit.perl \
- -address '<hr>Send comments on this document to <a href="mailto:python-docs@python.org">python-docs@python.org</a>.' \
+ -address '<hr>See <i><a href="about.html">About this document...</a></i> for information on suggesting changes.' \
  -dir $part \
  ${1:+$@} \
  $srcdir/$part/$part.tex || exit $?
@@ -45,7 +45,7 @@ cp $part/$part.html $part/index.html
 echo "cp $srcdir/html/style.css $part/$part.css"
 cp $srcdir/html/style.css $part/$part.css || exit $?
 
-if [ "$use_logical_names" ] ; then
+if $use_logical_names ; then
     echo "(cd $part; $srcdir/tools/node2label.pl \*.html)"
     cd $part
     $srcdir/tools/node2label.pl *.html || exit $?
