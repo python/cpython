@@ -344,7 +344,7 @@ class ConfigParser:
         if self.__defaults:
             fp.write("[DEFAULT]\n")
             for (key, value) in self.__defaults.items():
-                fp.write("%s = %s\n" % (key, value))
+                fp.write("%s = %s\n" % (key, str(value).replace('\n', '\n\t')))
             fp.write("\n")
         for section in self.sections():
             fp.write("[" + section + "]\n")
@@ -352,7 +352,7 @@ class ConfigParser:
             for (key, value) in sectdict.items():
                 if key == "__name__":
                     continue
-                fp.write("%s = %s\n" % (key, value))
+                fp.write("%s = %s\n" % (key, str(value).replace('\n', '\n\t')))
             fp.write("\n")
 
     def remove_option(self, section, option):
