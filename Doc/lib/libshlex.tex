@@ -27,8 +27,8 @@ The \module{shlex} module defines the following functions:
 
 \begin{funcdesc}{split}{s\optional{, posix=\code{True}\optional{,
 			spaces=\code{True}}}}
-Split the string \var{s} using shell-like syntax. If \code{posix} is
-\code{True}, operate in posix mode. If \code{spaces} is \code{True}, it
+Split the string \var{s} using shell-like syntax. If \var{posix} is
+\code{True}, operate in \POSIX{} mode. If \var{spaces} is \code{True}, it
 will only split words in whitespaces (setting the
 \member{whitespace_split} member of the \class{shlex} instance).
 \versionadded{2.3}
@@ -48,11 +48,11 @@ taken from \code{sys.stdin}.  The second optional argument is a filename
 string, which sets the initial value of the \member{infile} member.  If
 the \var{instream} argument is omitted or equal to \code{sys.stdin},
 this second argument defaults to ``stdin''.  The \var{posix} argument
-was introduced in Python 2.3, and defines the operational mode. When
+was introduced in Python 2.3, and defines the operational mode.  When
 \var{posix} is not true (default), the \class{shlex} instance will
-operate in compatibility mode. When operating in posix mode,
-\class{shlex} will try to be as close as possible to the posix shell
-parsing rules. See~\ref{shlex-objects}.
+operate in compatibility mode.  When operating in \POSIX{} mode,
+\class{shlex} will try to be as close as possible to the \POSIX{} shell
+parsing rules.  See~\ref{shlex-objects}.
 \end{classdesc}
 
 \subsection{shlex Objects \label{shlex-objects}}
@@ -63,8 +63,8 @@ A \class{shlex} instance has the following methods:
 Return a token.  If tokens have been stacked using
 \method{push_token()}, pop a token off the stack.  Otherwise, read one
 from the input stream.  If reading encounters an immediate
-end-of-file, \member{self.eof} is returned (the empty string (\code{""})
-in non-posix mode, and \code{None} in posix mode).
+end-of-file, \member{self.eof} is returned (the empty string (\code{''})
+in non-\POSIX{} mode, and \code{None} in \POSIX{} mode).
 \end{methoddesc}
 
 \begin{methoddesc}{push_token}{str}
@@ -158,7 +158,7 @@ carriage-return.
 
 \begin{memberdesc}{escape}
 Characters that will be considered as escape. This will be only used
-in posix mode, and includes just \character{\textbackslash} by default.
+in \POSIX{} mode, and includes just \character{\textbackslash} by default.
 \versionadded{2.3}
 \end{memberdesc}
 
@@ -171,8 +171,8 @@ quote types protect each other as in the shell.)  By default, includes
 
 \begin{memberdesc}{escapedquotes}
 Characters in \member{quotes} that will interpret escape characters
-defined in \member{escape}. This is only used in posix mode, and includes
-just \character{"} by default.
+defined in \member{escape}.  This is only used in \POSIX{} mode, and
+includes just \character{"} by default.
 \versionadded{2.3}
 \end{memberdesc}
 
@@ -223,15 +223,15 @@ exceptions.
 
 \begin{memberdesc}{eof}
 Token used to determine end of file. This will be set to the empty
-string (\code{""}), in non-posix mode, and to \code{None} in posix
-mode.
+string (\code{''}), in non-\POSIX{} mode, and to \code{None} in
+\POSIX{} mode.
 \versionadded{2.3}
 \end{memberdesc}
 
 \subsection{Parsing Rules\label{shlex-parsing-rules}}
 
-When operating in non-posix mode, \class{shlex} with try to obey to the
-following rules.
+When operating in non-\POSIX{} mode, \class{shlex} will try to obey to
+the following rules.
 
 \begin{itemize}
 \item Quote characters are not recognized within words
@@ -246,11 +246,11 @@ following rules.
       declared to be a word character, whitespace, or a quote will be
       returned as a single-character token. If it is \code{True},
       \class{shlex} will only split words in whitespaces;
-\item EOF is signaled with an empty string (\code{""});
+\item EOF is signaled with an empty string (\code{''});
 \item It's not possible to parse empty strings, even if quoted.
 \end{itemize}
 
-When operating in posix mode, \class{shlex} will try to obey to the
+When operating in \POSIX{} mode, \class{shlex} will try to obey to the
 following parsing rules.
 
 \begin{itemize}
@@ -270,6 +270,6 @@ following parsing rules.
       or the escape character itself. Otherwise the escape character
       will be considered a normal character.
 \item EOF is signaled with a \code{None} value;
-\item Quoted empty strings (\code{""}) are allowed;
+\item Quoted empty strings (\code{''}) are allowed;
 \end{itemize}
 
