@@ -1233,22 +1233,24 @@ object is created instead, and passed to \method{__getitem__()} instead.
 Called to implement assignment to \code{\var{self}[\var{i}:\var{j}]}.
 Same notes for \var{i} and \var{j} as for \method{__getslice__()}.
 
-This method is deprecated. If no \method{__setslice__()} is found, a slice
-object is created instead, and passed to \method{__setitem__()} instead.
+This method is deprecated. If no \method{__setslice__()} is found, a
+slice object is created instead, and passed to \method{__setitem__()}
+instead.
 \end{methoddesc}
 
 \begin{methoddesc}[sequence object]{__delslice__}{self, i, j}
 Called to implement deletion of \code{\var{self}[\var{i}:\var{j}]}.
 Same notes for \var{i} and \var{j} as for \method{__getslice__()}.
-This method is deprecated. If no \method{__delslice__()} is found, a slice
-object is created instead, and passed to \method{__delitem__()} instead.
+This method is deprecated. If no \method{__delslice__()} is found, a
+slice object is created instead, and passed to \method{__delitem__()}
+instead.
 \end{methoddesc}
 
-Notice that these methods are only invoked when a single slice with a single
-colon is used, and the slice method is available.  For slice operations
-involving extended slice notation, or in absence of the slice methods,
-\method{__getitem__()}, \method{__setitem__()} or \method{__delitem__()} is
-called with a slice object as argument.
+Notice that these methods are only invoked when a single slice with a
+single colon is used, and the slice method is available.  For slice
+operations involving extended slice notation, or in absence of the
+slice methods, \method{__getitem__()}, \method{__setitem__()} or
+\method{__delitem__()} is called with a slice object as argument.
 
 The following example demonstrate how to make your program or module
 compatible with earlier versions of Python (assuming that methods
@@ -1326,10 +1328,10 @@ These functions are
 called to implement the binary arithmetic operations (\code{+},
 \code{-}, \code{*}, \code{/}, \code{\%},
 \function{divmod()}\bifuncindex{divmod},
-\function{pow()}\bifuncindex{pow}, \code{**}, \code{<<}, \code{>>},
-\code{\&}, \code{\^}, \code{|}).  For instance, to evaluate the
-expression \var{x}\code{+}\var{y}, where \var{x} is an instance of a
-class that has an \method{__add__()} method,
+\function{pow()}\bifuncindex{pow}, \code{**}, \code{<}\code{<},
+\code{>}\code{>}, \code{\&}, \code{\^}, \code{|}).  For instance, to
+evaluate the expression \var{x}\code{+}\var{y}, where \var{x} is an
+instance of a class that has an \method{__add__()} method,
 \code{\var{x}.__add__(\var{y})} is called.  Note that
 \method{__pow__()} should be defined to accept an optional third
 argument if the ternary version of the built-in
@@ -1352,14 +1354,15 @@ These functions are
 called to implement the binary arithmetic operations (\code{+},
 \code{-}, \code{*}, \code{/}, \code{\%},
 \function{divmod()}\bifuncindex{divmod},
-\function{pow()}\bifuncindex{pow}, \code{**}, \code{<<}, \code{>>},
-\code{\&}, \code{\^}, \code{|}) with reflected (swapped) operands.  These
-functions are only called if the left operand does not support the
-corresponding operation.  For instance, to evaluate the expression
-\var{x}\code{-}\var{y}, where \var{y} is an instance of a class that
-has an \method{__rsub__()} method, \code{\var{y}.__rsub__(\var{x})} is
-called.  Note that ternary \function{pow()}\bifuncindex{pow} will not
-try calling \method{__rpow__()} (the coercion rules would become too
+\function{pow()}\bifuncindex{pow}, \code{**}, \code{<}\code{<},
+\code{>}\code{>}, \code{\&}, \code{\^}, \code{|}) with reflected
+(swapped) operands.  These functions are only called if the left
+operand does not support the corresponding operation.  For instance,
+to evaluate the expression \var{x}\code{-}\var{y}, where \var{y} is an
+instance of a class that has an \method{__rsub__()} method,
+\code{\var{y}.__rsub__(\var{x})} is called.  Note that ternary
+\function{pow()}\bifuncindex{pow} will not try calling
+\method{__rpow__()} (the coercion rules would become too
 complicated).
 \end{methoddesc}
 
@@ -1374,27 +1377,28 @@ complicated).
 \methodline[numeric object]{__iand__}{self, other}
 \methodline[numeric object]{__ixor__}{self, other}
 \methodline[numeric object]{__ior__}{self, other}
-These methods are called to implement the augmented arithmetic operations
-(\code{+=}, \code{-=}, \code{*=}, \code{/=}, \code{\%=}, \code{**=},
-\code{<<=}, \code{>>=}, \code{\&=}, \code{\^=}, \code{|=}).  These methods
-should attempt to do the operation in-place (modifying \var{self}) and
-return the result (which could be, but does not have to be, \var{self}).  If
-a specific method is not defined, the augmented operation falls back to the
-normal methods.  For instance, to evaluate the expression
-\var{x}\code{+=}\var{y}, where \var{x} is an instance of a class that has an
-\method{__iadd__()} method, \code{\var{x}.__iadd__(\var{y})} is called.  If
-\var{x} is an instance of a class that does not define a \method{__iadd()}
-method, \code{\var{x}.__add__(\var{y})} and \code{\var{y}.__radd__(\var{x})}
-are considered, as with the evaluation of \var{x}\code{+}\var{y}.
-
+These methods are called to implement the augmented arithmetic
+operations (\code{+=}, \code{-=}, \code{*=}, \code{/=}, \code{\%=},
+\code{**=}, \code{<}\code{<=}, \code{>}\code{>=}, \code{\&=},
+\code{\^=}, \code{|=}).  These methods should attempt to do the
+operation in-place (modifying \var{self}) and return the result (which
+could be, but does not have to be, \var{self}).  If a specific method
+is not defined, the augmented operation falls back to the normal
+methods.  For instance, to evaluate the expression
+\var{x}\code{+=}\var{y}, where \var{x} is an instance of a class that
+has an \method{__iadd__()} method, \code{\var{x}.__iadd__(\var{y})} is
+called.  If \var{x} is an instance of a class that does not define a
+\method{__iadd()} method, \code{\var{x}.__add__(\var{y})} and
+\code{\var{y}.__radd__(\var{x})} are considered, as with the
+evaluation of \var{x}\code{+}\var{y}.
 \end{methoddesc}
 
 \begin{methoddesc}[numeric object]{__neg__}{self}
 \methodline[numeric object]{__pos__}{self}
 \methodline[numeric object]{__abs__}{self}
 \methodline[numeric object]{__invert__}{self}
-Called to implement the unary arithmetic operations (\code{-}, \code{+},
-\function{abs()}\bifuncindex{abs} and \code{\~{}}).
+Called to implement the unary arithmetic operations (\code{-},
+\code{+}, \function{abs()}\bifuncindex{abs} and \code{\~{}}).
 \end{methoddesc}
 
 \begin{methoddesc}[numeric object]{__complex__}{self}
@@ -1427,17 +1431,17 @@ the other type here).
 \end{methoddesc}
 
 \strong{Coercion rules}: to evaluate \var{x} \var{op} \var{y}, the
-following steps are taken (where \method{__op__()} and
-\method{__rop__()} are the method names corresponding to \var{op},
-e.g., if var{op} is `\code{+}', \method{__add__()} and
+following steps are taken (where \method{__\var{op}__()} and
+\method{__r\var{op}__()} are the method names corresponding to
+\var{op}, e.g., if \var{op} is `\code{+}', \method{__add__()} and
 \method{__radd__()} are used).  If an exception occurs at any point,
 the evaluation is abandoned and exception handling takes over.
 
 \begin{itemize}
 
-\item[0.] If \var{x} is a string object and op is the modulo operator (\%),
-the string formatting operation is invoked and the remaining steps are
-skipped.
+\item[0.] If \var{x} is a string object and \var{op} is the modulo
+        operator (\%), the string formatting operation is invoked and
+        the remaining steps are skipped.
 
 \item[1.] If \var{x} is a class instance:
 
@@ -1451,8 +1455,8 @@ skipped.
         \item[1b.] If neither \var{x} nor \var{y} is a class instance
         after coercion, go to step 3.
 
-        \item[1c.] If \var{x} has a method \method{__op__()}, return
-        \code{\var{x}.__op__(\var{y})}; otherwise, restore \var{x} and
+        \item[1c.] If \var{x} has a method \method{__\var{op}__()}, return
+        \code{\var{x}.__\var{op}__(\var{y})}; otherwise, restore \var{x} and
         \var{y} to their value before step 1a.
 
         \end{itemize}
@@ -1469,9 +1473,9 @@ skipped.
         \item[2b.] If neither \var{x} nor \var{y} is a class instance
         after coercion, go to step 3.
 
-        \item[2b.] If \var{y} has a method \method{__rop__()}, return
-        \code{\var{y}.__rop__(\var{x})}; otherwise, restore \var{x}
-        and \var{y} to their value before step 2a.
+        \item[2b.] If \var{y} has a method \method{__r\var{op}__()},
+        return \code{\var{y}.__r\var{op}__(\var{x})}; otherwise,
+        restore \var{x} and \var{y} to their value before step 2a.
 
         \end{itemize}
 
@@ -1480,11 +1484,12 @@ instance.
 
         \begin{itemize}
 
-        \item[3a.] If op is `\code{+}' and \var{x} is a sequence,
-        sequence concatenation is invoked.
+        \item[3a.] If \var{op} is `\code{+}' and \var{x} is a
+        sequence, sequence concatenation is invoked.
 
-        \item[3b.] If op is `\code{*}' and one operand is a sequence
-        and the other an integer, sequence repetition is invoked.
+        \item[3b.] If \var{op} is `\code{*}' and one operand is a
+        sequence and the other an integer, sequence repetition is
+        invoked.
 
         \item[3c.] Otherwise, both operands must be numbers; they are
         coerced to a common type if possible, and the numeric
