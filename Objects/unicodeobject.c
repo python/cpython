@@ -3045,22 +3045,45 @@ unicode_center(PyUnicodeObject *self, PyObject *args)
     return (PyObject*) pad(self, left, marg - left, ' ');
 }
 
+/* speedy UTF-16 code point order comparison */
+/* gleaned from: */
+/* http://www-4.ibm.com/software/developer/library/utf16.html?dwzone=unicode */
+
+static unsigned short utf16Fixup[32] =
+{
+    0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0x2000, 0xf800, 0xf800, 0xf800, 0xf800
+};
+
 static int
 unicode_compare(PyUnicodeObject *str1, PyUnicodeObject *str2)
 {
     int len1, len2;
+
     Py_UNICODE *s1 = str1->str;
     Py_UNICODE *s2 = str2->str;
 
     len1 = str1->length;
     len2 = str2->length;
-
+    
     while (len1 > 0 && len2 > 0) {
-        int cmp = (*s1++) - (*s2++);
-        if (cmp)
-            /* This should make Christian happy! */
-            return (cmp < 0) ? -1 : (cmp != 0);
-        len1--, len2--;
+	unsigned short c1, c2; /* 16 bits */
+	int diff; /* 32 bits */
+
+        c1 = *s1++;
+        c2 = *s2++;
+	if (c1 > (1<<11) * 26)
+	    c1 += utf16Fixup[c1>>11];
+	if (c2 > (1<<11) * 26)
+            c2 += utf16Fixup[c2>>11];
+        
+        /* now c1 and c2 are in UTF-32-compatible order */
+        diff = (int)c1 - (int)c2;
+        if (diff)
+            return (diff < 0) ? -1 : (diff != 0);
+        len1--; len2--;
     }
 
     return (len1 < len2) ? -1 : (len1 != len2);
