@@ -101,6 +101,9 @@ _tkinter
 
     XXX Some tests failed in "nmake -f makefile.vc test".
     XXX all.tcl:  Total 10480   Passed 9743    Skipped 719     Failed 18
+    XXX
+    XXX That was on Win98SE.  On Win2K:
+    XXX all.tcl   Total 10480   Passed 9781    Skipped 698     Failed  1
 
     Build Tk
     --------
