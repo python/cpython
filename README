@@ -288,7 +288,7 @@ AIX:	A complete overhaul of the shared library support is now in
 	place.  See Misc/AIX-NOTES for some notes on how it's done.
 	(The optimizer bug reported at this place in previous releases
 	has been worked around by a minimal code change.) If you get
-	errors about ptread_* functions, during compile or during
+	errors about pthread_* functions, during compile or during
 	testing, try setting CC to a thread-safe (reentrant) compiler,
 	like "cc_r".  For full C++ module support, set CC="xlC_r" (or
 	CC="xlC" without thread support).
