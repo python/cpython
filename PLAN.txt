@@ -4,16 +4,6 @@ Project: core implementation
 Still to do
 -----------
 
-More performance work -- one particular test, test_descr.inherits(),
-is still about 50% slower with dynamic classes. :-(  The approach of
-choice would be:
-
-    Add a list of weak refs to derived classes to each dynamic
-    class, and trap setattr+delattr on the base class so that they
-    update the tp_XXX slot in each derived class when the base class
-    __XXX__ gets set or deleted.  More work, but more gain (zero waste
-    in slot_tp_XXX when __XXX__ is not overridden).
-
 Add __del__ handlers?
 
 Allow assignment to __bases__ and __dict__?
@@ -34,6 +24,17 @@ implemented.
 
 Done (mostly)
 -------------
+
+More performance work -- one particular test, test_descr.inherits(),
+is still about 50% slower with dynamic classes. :-(  The approach of
+choice would be:
+
+    Add a list of weak refs to derived classes to each dynamic
+    class, and trap setattr+delattr on the base class so that they
+    update the tp_XXX slot in each derived class when the base class
+    __XXX__ gets set or deleted.  More work, but more gain (zero waste
+    in slot_tp_XXX when __XXX__ is not overridden).
+*** That's done now, with great success. ***
 
 Make __dynamic__ the default.  *** done (but more performance work
 needs to be done). ***
