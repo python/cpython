@@ -42,8 +42,7 @@ extern int verbose; /* Defined in pythonrun.c */
    _AIX		-- AIX style dynamic linking
    NT		-- NT style dynamic linking (using DLLs)
    _DL_FUNCPTR_DEFINED	-- if the typedef dl_funcptr has been defined
-   WITH_MAC_DL	-- Mac dynamic linking (highly experimental)
-   USE_MAC_SHARED_LIBRARY -- Another mac dynamic linking method
+   USE_MAC_SHARED_LIBRARY -- Mac CFM shared libraries
    SHORT_EXT	-- short extension for dynamic module, e.g. ".so"
    LONG_EXT	-- long extension, e.g. "module.so"
    hpux		-- HP-UX Dynamic Linking - defined by the compiler
@@ -95,14 +94,14 @@ typedef FARPROC dl_funcptr;
 #define USE_DL
 #endif
 
-#ifdef WITH_MAC_DL
-#define DYNAMIC_LINK
+#ifdef __CFM68K__
+#define USE_MAC_SHARED_LIBRARY
 #endif
 
 #ifdef USE_MAC_SHARED_LIBRARY
 #define DYNAMIC_LINK
-#define SHORT_EXT ".shlb"
-#define LONG_EXT "module.shlb"
+#define SHORT_EXT ".slb"
+#define LONG_EXT "module.slb"
 #ifndef _DL_FUNCPTR_DEFINED
 typedef void (*dl_funcptr)();
 #endif
@@ -144,12 +143,12 @@ typedef void (*dl_funcptr)();
 #include "dl.h"
 #endif
 
-#ifdef WITH_MAC_DL
-#include "dynamic_load.h"
-#endif
-
 #ifdef USE_MAC_SHARED_LIBRARY
 #include <CodeFragments.h>
+#ifdef __SC__ /* Really just an older version of Universal Headers */
+#define CFragConnectionID ConnectionID
+#define kLoadCFrag 0x01
+#endif
 #include <Files.h>
 #include "macdefs.h"
 #include "macglue.h"
@@ -180,7 +179,7 @@ extern char *getprogramname();
 
 #endif /* DYNAMIC_LINK */
 
-/* Max length of module suffix searched for -- accommodates "module.shlb" */
+/* Max length of module suffix searched for -- accommodates "module.slb" */
 #ifndef MAXSUFFIXSIZE
 #define MAXSUFFIXSIZE 12
 #endif
@@ -213,29 +212,23 @@ load_dynamic_module(name, pathname)
 	char funcname[258];
 	dl_funcptr p = NULL;
 	sprintf(funcname, FUNCNAME_PATTERN, name);
-#ifdef WITH_MAC_DL
-	{
-		object *v = dynamic_load(pathname);
-		if (v == NULL)
-			return NULL;
-	}
-#else /* !WITH_MAC_DL */
 #ifdef USE_MAC_SHARED_LIBRARY
-	/* Another way to do dynloading on the mac, use CFM */
+	/* Dynamic loading of CFM shared libraries on the Mac */
 	{
 		FSSpec libspec;
 		CFragConnectionID connID;
-	    Ptr mainAddr;
-	    Str255 errMessage;
-	    OSErr err;
+		Ptr mainAddr;
+		Str255 errMessage;
+		OSErr err;
 		
 		(void)FSMakeFSSpec(0, 0, Pstring(pathname), &libspec);
-		err = GetDiskFragment(&libspec, 0, 0, Pstring(name), kLoadCFrag, &connID, &mainAddr,
-						errMessage);
+		err = GetDiskFragment(&libspec, 0, 0, Pstring(name),
+				      kLoadCFrag, &connID, &mainAddr,
+				      errMessage);
 		if ( err ) {
 			char buf[512];
 			
-			sprintf(buf, "%#s: %s", errMessage, macstrerror(err)); 
+			sprintf(buf, "%#s: %s", errMessage, PyMac_StrError(err));
 			err_setstr(ImportError, buf);
 			return NULL;
 		}
@@ -355,7 +348,6 @@ load_dynamic_module(name, pathname)
 	}
 	(*p)();
 
-#endif /* !WITH_MAC_DL */
 	m = dictlookup(import_modules, name);
 	if (m == NULL) {
 		if (err_occurred() == NULL)
