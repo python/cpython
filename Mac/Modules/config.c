@@ -136,10 +136,7 @@ extern void initwaste();
 extern void PyMarshal_Init();
 extern void initimp();
 
-struct {
-	char *name;
-	void (*initfunc)();
-} inittab[] = {
+struct _inittab inittab[] = {
 
 	{"array", initarray},
 #ifndef SYMANTEC__CFM68K__
