@@ -224,7 +224,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                     daysToWait = (6 - self.dayOfWeek) + day
                     self.rolloverAt += (daysToWait * (60 * 60 * 24))
 
-        print "Will rollover at %d, %d seconds from now" % (self.rolloverAt, self.rolloverAt - currentTime)
+        #print "Will rollover at %d, %d seconds from now" % (self.rolloverAt, self.rolloverAt - currentTime)
 
     def shouldRollover(self, record):
         """
@@ -236,7 +236,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         t = int(time.time())
         if t >= self.rolloverAt:
             return 1
-        print "No need to rollover: %d, %d" % (t, self.rolloverAt)
+        #print "No need to rollover: %d, %d" % (t, self.rolloverAt)
         return 0
 
     def doRollover(self):
@@ -259,8 +259,9 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
             # find the oldest log file and delete it
             s = glob.glob(self.baseFilename + ".20*")
             if len(s) > self.backupCount:
+                s.sort()
                 os.remove(s[0])
-        print "%s -> %s" % (self.baseFilename, dfn)
+        #print "%s -> %s" % (self.baseFilename, dfn)
         self.stream = open(self.baseFilename, "w")
         self.rolloverAt = int(time.time()) + self.interval
 
