@@ -1315,5 +1315,10 @@ static PyMethodDef a_methods[] = {
 void
 initarray()
 {
-	Py_InitModule("array", a_methods);
+	PyObject *m, *d;
+	m = Py_InitModule("array", a_methods);
+	d = PyModule_GetDict(m);
+	if (PyDict_SetItemString(d, "array_type",
+				 (PyObject *)&Arraytype) != 0)
+		Py_FatalError("can't define array.array_type");
 }
