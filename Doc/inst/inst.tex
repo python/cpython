@@ -119,7 +119,7 @@ python setup.py install
 \end{verbatim}
 
 If all these things are true, then you already know how to build and
-install the modules you've just downloaded: run the command above.
+install the modules you've just downloaded:  Run the command above.
 Unless you need to install things in a non-standard way or customize the
 build process, you don't really need this manual.  Or rather, the above
 command is everything you need to get out of this manual.
@@ -193,7 +193,7 @@ run.  If you prefer to work incrementally---especially useful if you
 want to customize the build process, or if things are going wrong---you
 can use the setup script to do one thing at a time.  This is
 particularly helpful when the build and install will be done by
-different users---e.g., you might want to build a module distribution
+different users---for example, you might want to build a module distribution
 and hand it off to a system administrator for installation (or do it
 yourself, with super-user privileges).
 
@@ -600,7 +600,7 @@ python setup.py install --install-purelib=Site --install-platlib=Site
 
 The specified installation directories are relative to \filevar{prefix}.
 Of course, you also have to ensure that these directories are in
-Python's module search path, e.g. by putting a \file{.pth} file in
+Python's module search path, such as by putting a \file{.pth} file in
 \filevar{prefix}.
 
 % \XXX should have a section describing \file{.pth} files and
@@ -720,7 +720,7 @@ On Windows, the configuration files are:
 \begin{tableiii}{l|l|c}{textrm}
   {Type of file}{Location and filename}{Notes}
   \lineiii{system}{\filenq{\filevar{prefix}\textbackslash{}Lib\textbackslash{}distutils\textbackslash{}distutils.cfg}}{(4)}
-  \lineiii{personal}{\filenq{\%HOME\textbackslash{}pydistutils.cfg}}{(5)}
+  \lineiii{personal}{\filenq{\%HOME\%\textbackslash{}pydistutils.cfg}}{(5)}
   \lineiii{local}{\filenq{setup.cfg}}{(3)}
 \end{tableiii}
 
@@ -743,7 +743,8 @@ And on Mac OS, they are:
   1.5.2.
 \item[(2)] On \UNIX, if the \envvar{HOME} environment variable is not
   defined, the user's home directory will be determined with the
-  \function{getpwuid()} function from the standard \module{pwd} module.
+  \function{getpwuid()} function from the standard
+  \ulink{\module{pwd}}{../lib/module-pwd.html} module.
 \item[(3)] I.e., in the current directory (usually the location of the
   setup script).
 \item[(4)] (See also note (1).)  Under Python 1.6 and later, Python's
@@ -860,29 +861,32 @@ A \file{Setup} file, if present, is parsed in order to get a list of
 extensions to build.  Each line in a \file{Setup} describes a single
 module.  Lines have the following structure:
 
-\begin{verbatim}
- <module> ... [<sourcefile> ...] [<cpparg> ...] [<library> ...]
-\end{verbatim}
+\begin{alltt}
+\var{module} ... [\var{sourcefile} ...] [\var{cpparg} ...] [\var{library} ...]
+\end{alltt}
 
 Let's examine each of the fields in turn.
 
 \begin{itemize}
 
 \item \var{module} is the name of the extension module to be built,
-and should be a valid Python identifier.  You can't just change this
-in order to rename a module (edits to the source code would also be
-needed), so this should be left alone.
+      and should be a valid Python identifier.  You can't just change
+      this in order to rename a module (edits to the source code would
+      also be needed), so this should be left alone.
 
 \item \var{sourcefile} is anything that's likely to be a source code
-file, at least judging by the filename.  Filenames ending in .c are
-assumed to be written in C, filenames ending in .C, .cc, .c++ are
-assumed to be \Cpp, and filenames ending in .m or .mm are assumed to
-be in Objective C.
+      file, at least judging by the filename.  Filenames ending in
+      \file{.c} are assumed to be written in C, filenames ending in
+      \file{.C}, \file{.cc}, and \file{.c++} are assumed to be
+      \Cpp, and filenames ending in \file{.m} or \file{.mm} are
+      assumed to be in Objective C.
 
 \item \var{cpparg} is an argument for the C preprocessor, 
-and is anything starting with -I, -D, -U or -C .
+      and is anything starting with \programopt{-I}, \programopt{-D},
+      \programopt{-U} or \programopt{-C}.
 
-\item <library> is anything ending in .a or beginning with -l or -L.
+\item \var{library} is anything ending in \file{.a} or beginning with
+      \programopt{-l} or \programopt{-L}.
 \end{itemize}
 
 If a particular platform requires a special library on your platform,
@@ -894,27 +898,28 @@ foo foomodule.c
 \end{verbatim}
 
 must be linked with the math library \file{libm.a} on your platform,
-simply add \samp{-lm} to the line:
+simply add \programopt{-lm} to the line:
 
 \begin{verbatim}
 foo foomodule.c -lm
 \end{verbatim}
 
 Arbitrary switches intended for the compiler or the linker can be
-supplied with the \code{-Xcompiler \var{arg}} and \code{-Xlinker
-\var{arg}} options:
+supplied with the \programopt{-Xcompiler} \var{arg} and
+\programopt{-Xlinker} \var{arg} options:
 
 \begin{verbatim}
 foo foomodule.c -Xcompiler -o32 -Xlinker -shared -lm
 \end{verbatim}
 
-The next option after \code{-Xcompiler} and \code{-Xlinker} will be
-appended to the proper command line, so in the above example the
-compiler will be passed the \samp{-o32} option, and the linker will be
-passed \samp{-shared}.  If a compiler option requires an argument,
-you'll have to supply multiple \code{-Xcompiler} options; for example,
-to pass \code{-x c++} the \file{Setup} file would have to contain
-\code{-Xcompiler -x -Xcompiler c++}.  
+The next option after \programopt{-Xcompiler} and
+\programopt{-Xlinker} will be appended to the proper command line, so
+in the above example the compiler will be passed the \programopt{-o32}
+option, and the linker will be passed \programopt{-shared}.  If a
+compiler option requires an argument, you'll have to supply multiple
+\programopt{-Xcompiler} options; for example, to pass \code{-x c++} the
+\file{Setup} file would have to contain
+\code{-Xcompiler -x -Xcompiler c++}.
 
 Compiler flags can also be supplied through setting the
 \envvar{CFLAGS} environment variable.  If set, the contents of
