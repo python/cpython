@@ -403,7 +403,7 @@ staticforward PyTypeObject QDGlobalsAccess_Type = {
 /* ---------------- End object type QDGlobalsAccess ----------------- */
 
 
-static PyObject *Qd_SetPort(_self, _args)
+static PyObject *Qd_MacSetPort(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -412,7 +412,7 @@ static PyObject *Qd_SetPort(_self, _args)
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      GrafObj_Convert, &port))
 		return NULL;
-	SetPort(port);
+	MacSetPort(port);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -596,7 +596,7 @@ static PyObject *Qd_InitCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetCursor(_self, _args)
+static PyObject *Qd_MacSetCursor(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -611,7 +611,7 @@ static PyObject *Qd_SetCursor(_self, _args)
 		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(Cursor)");
 		goto crsr__error__;
 	}
-	SetCursor(crsr__in__);
+	MacSetCursor(crsr__in__);
 	Py_INCREF(Py_None);
 	_res = Py_None;
  crsr__error__: ;
@@ -631,14 +631,14 @@ static PyObject *Qd_HideCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_ShowCursor(_self, _args)
+static PyObject *Qd_MacShowCursor(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	ShowCursor();
+	MacShowCursor();
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -838,7 +838,7 @@ static PyObject *Qd_Move(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_LineTo(_self, _args)
+static PyObject *Qd_MacLineTo(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -849,8 +849,8 @@ static PyObject *Qd_LineTo(_self, _args)
 	                      &h,
 	                      &v))
 		return NULL;
-	LineTo(h,
-	       v);
+	MacLineTo(h,
+	          v);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -919,7 +919,7 @@ static PyObject *Qd_ColorBit(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetRect(_self, _args)
+static PyObject *Qd_MacSetRect(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -935,17 +935,17 @@ static PyObject *Qd_SetRect(_self, _args)
 	                      &right,
 	                      &bottom))
 		return NULL;
-	SetRect(&r,
-	        left,
-	        top,
-	        right,
-	        bottom);
+	MacSetRect(&r,
+	           left,
+	           top,
+	           right,
+	           bottom);
 	_res = Py_BuildValue("O&",
 	                     PyMac_BuildRect, &r);
 	return _res;
 }
 
-static PyObject *Qd_OffsetRect(_self, _args)
+static PyObject *Qd_MacOffsetRect(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -958,15 +958,15 @@ static PyObject *Qd_OffsetRect(_self, _args)
 	                      &dh,
 	                      &dv))
 		return NULL;
-	OffsetRect(&r,
-	           dh,
-	           dv);
+	MacOffsetRect(&r,
+	              dh,
+	              dv);
 	_res = Py_BuildValue("O&",
 	                     PyMac_BuildRect, &r);
 	return _res;
 }
 
-static PyObject *Qd_InsetRect(_self, _args)
+static PyObject *Qd_MacInsetRect(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -979,9 +979,9 @@ static PyObject *Qd_InsetRect(_self, _args)
 	                      &dh,
 	                      &dv))
 		return NULL;
-	InsetRect(&r,
-	          dh,
-	          dv);
+	MacInsetRect(&r,
+	             dh,
+	             dv);
 	_res = Py_BuildValue("O&",
 	                     PyMac_BuildRect, &r);
 	return _res;
@@ -1009,7 +1009,7 @@ static PyObject *Qd_SectRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_UnionRect(_self, _args)
+static PyObject *Qd_MacUnionRect(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1021,15 +1021,15 @@ static PyObject *Qd_UnionRect(_self, _args)
 	                      PyMac_GetRect, &src1,
 	                      PyMac_GetRect, &src2))
 		return NULL;
-	UnionRect(&src1,
-	          &src2,
-	          &dstRect);
+	MacUnionRect(&src1,
+	             &src2,
+	             &dstRect);
 	_res = Py_BuildValue("O&",
 	                     PyMac_BuildRect, &dstRect);
 	return _res;
 }
 
-static PyObject *Qd_EqualRect(_self, _args)
+static PyObject *Qd_MacEqualRect(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1041,8 +1041,8 @@ static PyObject *Qd_EqualRect(_self, _args)
 	                      PyMac_GetRect, &rect1,
 	                      PyMac_GetRect, &rect2))
 		return NULL;
-	_rv = EqualRect(&rect1,
-	                &rect2);
+	_rv = MacEqualRect(&rect1,
+	                   &rect2);
 	_res = Py_BuildValue("b",
 	                     _rv);
 	return _res;
@@ -1064,7 +1064,7 @@ static PyObject *Qd_EmptyRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FrameRect(_self, _args)
+static PyObject *Qd_MacFrameRect(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1073,7 +1073,7 @@ static PyObject *Qd_FrameRect(_self, _args)
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetRect, &r))
 		return NULL;
-	FrameRect(&r);
+	MacFrameRect(&r);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1109,7 +1109,7 @@ static PyObject *Qd_EraseRect(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_InvertRect(_self, _args)
+static PyObject *Qd_MacInvertRect(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1118,13 +1118,13 @@ static PyObject *Qd_InvertRect(_self, _args)
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetRect, &r))
 		return NULL;
-	InvertRect(&r);
+	MacInvertRect(&r);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *Qd_FillRect(_self, _args)
+static PyObject *Qd_MacFillRect(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1141,8 +1141,8 @@ static PyObject *Qd_FillRect(_self, _args)
 		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(Pattern)");
 		goto pat__error__;
 	}
-	FillRect(&r,
-	         pat__in__);
+	MacFillRect(&r,
+	            pat__in__);
 	Py_INCREF(Py_None);
 	_res = Py_None;
  pat__error__: ;
@@ -1541,7 +1541,7 @@ static PyObject *Qd_DisposeRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_CopyRgn(_self, _args)
+static PyObject *Qd_MacCopyRgn(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1552,8 +1552,8 @@ static PyObject *Qd_CopyRgn(_self, _args)
 	                      ResObj_Convert, &srcRgn,
 	                      ResObj_Convert, &dstRgn))
 		return NULL;
-	CopyRgn(srcRgn,
-	        dstRgn);
+	MacCopyRgn(srcRgn,
+	           dstRgn);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1574,7 +1574,7 @@ static PyObject *Qd_SetEmptyRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_SetRectRgn(_self, _args)
+static PyObject *Qd_MacSetRectRgn(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1591,11 +1591,11 @@ static PyObject *Qd_SetRectRgn(_self, _args)
 	                      &right,
 	                      &bottom))
 		return NULL;
-	SetRectRgn(rgn,
-	           left,
-	           top,
-	           right,
-	           bottom);
+	MacSetRectRgn(rgn,
+	              left,
+	              top,
+	              right,
+	              bottom);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1619,7 +1619,7 @@ static PyObject *Qd_RectRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_OffsetRgn(_self, _args)
+static PyObject *Qd_MacOffsetRgn(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1632,9 +1632,9 @@ static PyObject *Qd_OffsetRgn(_self, _args)
 	                      &dh,
 	                      &dv))
 		return NULL;
-	OffsetRgn(rgn,
-	          dh,
-	          dv);
+	MacOffsetRgn(rgn,
+	             dh,
+	             dv);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1682,7 +1682,7 @@ static PyObject *Qd_SectRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_UnionRgn(_self, _args)
+static PyObject *Qd_MacUnionRgn(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1695,9 +1695,9 @@ static PyObject *Qd_UnionRgn(_self, _args)
 	                      ResObj_Convert, &srcRgnB,
 	                      ResObj_Convert, &dstRgn))
 		return NULL;
-	UnionRgn(srcRgnA,
-	         srcRgnB,
-	         dstRgn);
+	MacUnionRgn(srcRgnA,
+	            srcRgnB,
+	            dstRgn);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1724,7 +1724,7 @@ static PyObject *Qd_DiffRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_XorRgn(_self, _args)
+static PyObject *Qd_MacXorRgn(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1737,9 +1737,9 @@ static PyObject *Qd_XorRgn(_self, _args)
 	                      ResObj_Convert, &srcRgnB,
 	                      ResObj_Convert, &dstRgn))
 		return NULL;
-	XorRgn(srcRgnA,
-	       srcRgnB,
-	       dstRgn);
+	MacXorRgn(srcRgnA,
+	          srcRgnB,
+	          dstRgn);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1764,7 +1764,7 @@ static PyObject *Qd_RectInRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_EqualRgn(_self, _args)
+static PyObject *Qd_MacEqualRgn(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1776,8 +1776,8 @@ static PyObject *Qd_EqualRgn(_self, _args)
 	                      ResObj_Convert, &rgnA,
 	                      ResObj_Convert, &rgnB))
 		return NULL;
-	_rv = EqualRgn(rgnA,
-	               rgnB);
+	_rv = MacEqualRgn(rgnA,
+	                  rgnB);
 	_res = Py_BuildValue("b",
 	                     _rv);
 	return _res;
@@ -1799,7 +1799,7 @@ static PyObject *Qd_EmptyRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_FrameRgn(_self, _args)
+static PyObject *Qd_MacFrameRgn(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1808,13 +1808,13 @@ static PyObject *Qd_FrameRgn(_self, _args)
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &rgn))
 		return NULL;
-	FrameRgn(rgn);
+	MacFrameRgn(rgn);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *Qd_PaintRgn(_self, _args)
+static PyObject *Qd_MacPaintRgn(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1823,7 +1823,7 @@ static PyObject *Qd_PaintRgn(_self, _args)
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &rgn))
 		return NULL;
-	PaintRgn(rgn);
+	MacPaintRgn(rgn);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1844,7 +1844,7 @@ static PyObject *Qd_EraseRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_InvertRgn(_self, _args)
+static PyObject *Qd_MacInvertRgn(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1853,13 +1853,13 @@ static PyObject *Qd_InvertRgn(_self, _args)
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &rgn))
 		return NULL;
-	InvertRgn(rgn);
+	MacInvertRgn(rgn);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *Qd_FillRgn(_self, _args)
+static PyObject *Qd_MacFillRgn(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1876,8 +1876,8 @@ static PyObject *Qd_FillRgn(_self, _args)
 		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(Pattern)");
 		goto pat__error__;
 	}
-	FillRgn(rgn,
-	        pat__in__);
+	MacFillRgn(rgn,
+	           pat__in__);
 	Py_INCREF(Py_None);
 	_res = Py_None;
  pat__error__: ;
@@ -2263,7 +2263,7 @@ static PyObject *Qd_Random(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetPixel(_self, _args)
+static PyObject *Qd_MacGetPixel(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -2275,8 +2275,8 @@ static PyObject *Qd_GetPixel(_self, _args)
 	                      &h,
 	                      &v))
 		return NULL;
-	_rv = GetPixel(h,
-	               v);
+	_rv = MacGetPixel(h,
+	                  v);
 	_res = Py_BuildValue("b",
 	                     _rv);
 	return _res;
@@ -2451,7 +2451,7 @@ static PyObject *Qd_EqualPt(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_PtInRect(_self, _args)
+static PyObject *Qd_MacPtInRect(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -2463,8 +2463,8 @@ static PyObject *Qd_PtInRect(_self, _args)
 	                      PyMac_GetPoint, &pt,
 	                      PyMac_GetRect, &r))
 		return NULL;
-	_rv = PtInRect(pt,
-	               &r);
+	_rv = MacPtInRect(pt,
+	                  &r);
 	_res = Py_BuildValue("b",
 	                     _rv);
 	return _res;
@@ -3479,7 +3479,7 @@ static PyObject *Qd_GetPattern(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_GetCursor(_self, _args)
+static PyObject *Qd_MacGetCursor(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -3489,7 +3489,7 @@ static PyObject *Qd_GetCursor(_self, _args)
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &cursorID))
 		return NULL;
-	_rv = GetCursor(cursorID);
+	_rv = MacGetCursor(cursorID);
 	_res = Py_BuildValue("O&",
 	                     ResObj_New, _rv);
 	return _res;
@@ -3723,7 +3723,7 @@ static PyObject *Qd_DrawString(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_DrawText(_self, _args)
+static PyObject *Qd_MacDrawText(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -3738,9 +3738,9 @@ static PyObject *Qd_DrawText(_self, _args)
 	                      &firstByte,
 	                      &byteCount))
 		return NULL;
-	DrawText(textBuf__in__,
-	         firstByte,
-	         byteCount);
+	MacDrawText(textBuf__in__,
+	            firstByte,
+	            byteCount);
 	Py_INCREF(Py_None);
 	_res = Py_None;
  textBuf__error__: ;
@@ -3891,7 +3891,7 @@ static PyObject *Qd_RawBitMap(_self, _args)
 }
 
 static PyMethodDef Qd_methods[] = {
-	{"SetPort", (PyCFunction)Qd_SetPort, 1,
+	{"MacSetPort", (PyCFunction)Qd_MacSetPort, 1,
 	 "(GrafPtr port) -> None"},
 	{"GetPort", (PyCFunction)Qd_GetPort, 1,
 	 "() -> (GrafPtr port)"},
@@ -3915,11 +3915,11 @@ static PyMethodDef Qd_methods[] = {
 	 "(Pattern pat) -> None"},
 	{"InitCursor", (PyCFunction)Qd_InitCursor, 1,
 	 "() -> None"},
-	{"SetCursor", (PyCFunction)Qd_SetCursor, 1,
+	{"MacSetCursor", (PyCFunction)Qd_MacSetCursor, 1,
 	 "(Cursor crsr) -> None"},
 	{"HideCursor", (PyCFunction)Qd_HideCursor, 1,
 	 "() -> None"},
-	{"ShowCursor", (PyCFunction)Qd_ShowCursor, 1,
+	{"MacShowCursor", (PyCFunction)Qd_MacShowCursor, 1,
 	 "() -> None"},
 	{"ObscureCursor", (PyCFunction)Qd_ObscureCursor, 1,
 	 "() -> None"},
@@ -3945,7 +3945,7 @@ static PyMethodDef Qd_methods[] = {
 	 "(short h, short v) -> None"},
 	{"Move", (PyCFunction)Qd_Move, 1,
 	 "(short dh, short dv) -> None"},
-	{"LineTo", (PyCFunction)Qd_LineTo, 1,
+	{"MacLineTo", (PyCFunction)Qd_MacLineTo, 1,
 	 "(short h, short v) -> None"},
 	{"Line", (PyCFunction)Qd_Line, 1,
 	 "(short dh, short dv) -> None"},
@@ -3955,29 +3955,29 @@ static PyMethodDef Qd_methods[] = {
 	 "(long color) -> None"},
 	{"ColorBit", (PyCFunction)Qd_ColorBit, 1,
 	 "(short whichBit) -> None"},
-	{"SetRect", (PyCFunction)Qd_SetRect, 1,
+	{"MacSetRect", (PyCFunction)Qd_MacSetRect, 1,
 	 "(short left, short top, short right, short bottom) -> (Rect r)"},
-	{"OffsetRect", (PyCFunction)Qd_OffsetRect, 1,
+	{"MacOffsetRect", (PyCFunction)Qd_MacOffsetRect, 1,
 	 "(Rect r, short dh, short dv) -> (Rect r)"},
-	{"InsetRect", (PyCFunction)Qd_InsetRect, 1,
+	{"MacInsetRect", (PyCFunction)Qd_MacInsetRect, 1,
 	 "(Rect r, short dh, short dv) -> (Rect r)"},
 	{"SectRect", (PyCFunction)Qd_SectRect, 1,
 	 "(Rect src1, Rect src2) -> (Boolean _rv, Rect dstRect)"},
-	{"UnionRect", (PyCFunction)Qd_UnionRect, 1,
+	{"MacUnionRect", (PyCFunction)Qd_MacUnionRect, 1,
 	 "(Rect src1, Rect src2) -> (Rect dstRect)"},
-	{"EqualRect", (PyCFunction)Qd_EqualRect, 1,
+	{"MacEqualRect", (PyCFunction)Qd_MacEqualRect, 1,
 	 "(Rect rect1, Rect rect2) -> (Boolean _rv)"},
 	{"EmptyRect", (PyCFunction)Qd_EmptyRect, 1,
 	 "(Rect r) -> (Boolean _rv)"},
-	{"FrameRect", (PyCFunction)Qd_FrameRect, 1,
+	{"MacFrameRect", (PyCFunction)Qd_MacFrameRect, 1,
 	 "(Rect r) -> None"},
 	{"PaintRect", (PyCFunction)Qd_PaintRect, 1,
 	 "(Rect r) -> None"},
 	{"EraseRect", (PyCFunction)Qd_EraseRect, 1,
 	 "(Rect r) -> None"},
-	{"InvertRect", (PyCFunction)Qd_InvertRect, 1,
+	{"MacInvertRect", (PyCFunction)Qd_MacInvertRect, 1,
 	 "(Rect r) -> None"},
-	{"FillRect", (PyCFunction)Qd_FillRect, 1,
+	{"MacFillRect", (PyCFunction)Qd_MacFillRect, 1,
 	 "(Rect r, Pattern pat) -> None"},
 	{"FrameOval", (PyCFunction)Qd_FrameOval, 1,
 	 "(Rect r) -> None"},
@@ -4019,41 +4019,41 @@ static PyMethodDef Qd_methods[] = {
 	 "(RgnHandle region, BitMapPtr bMap) -> None"},
 	{"DisposeRgn", (PyCFunction)Qd_DisposeRgn, 1,
 	 "(RgnHandle rgn) -> None"},
-	{"CopyRgn", (PyCFunction)Qd_CopyRgn, 1,
+	{"MacCopyRgn", (PyCFunction)Qd_MacCopyRgn, 1,
 	 "(RgnHandle srcRgn, RgnHandle dstRgn) -> None"},
 	{"SetEmptyRgn", (PyCFunction)Qd_SetEmptyRgn, 1,
 	 "(RgnHandle rgn) -> None"},
-	{"SetRectRgn", (PyCFunction)Qd_SetRectRgn, 1,
+	{"MacSetRectRgn", (PyCFunction)Qd_MacSetRectRgn, 1,
 	 "(RgnHandle rgn, short left, short top, short right, short bottom) -> None"},
 	{"RectRgn", (PyCFunction)Qd_RectRgn, 1,
 	 "(RgnHandle rgn, Rect r) -> None"},
-	{"OffsetRgn", (PyCFunction)Qd_OffsetRgn, 1,
+	{"MacOffsetRgn", (PyCFunction)Qd_MacOffsetRgn, 1,
 	 "(RgnHandle rgn, short dh, short dv) -> None"},
 	{"InsetRgn", (PyCFunction)Qd_InsetRgn, 1,
 	 "(RgnHandle rgn, short dh, short dv) -> None"},
 	{"SectRgn", (PyCFunction)Qd_SectRgn, 1,
 	 "(RgnHandle srcRgnA, RgnHandle srcRgnB, RgnHandle dstRgn) -> None"},
-	{"UnionRgn", (PyCFunction)Qd_UnionRgn, 1,
+	{"MacUnionRgn", (PyCFunction)Qd_MacUnionRgn, 1,
 	 "(RgnHandle srcRgnA, RgnHandle srcRgnB, RgnHandle dstRgn) -> None"},
 	{"DiffRgn", (PyCFunction)Qd_DiffRgn, 1,
 	 "(RgnHandle srcRgnA, RgnHandle srcRgnB, RgnHandle dstRgn) -> None"},
-	{"XorRgn", (PyCFunction)Qd_XorRgn, 1,
+	{"MacXorRgn", (PyCFunction)Qd_MacXorRgn, 1,
 	 "(RgnHandle srcRgnA, RgnHandle srcRgnB, RgnHandle dstRgn) -> None"},
 	{"RectInRgn", (PyCFunction)Qd_RectInRgn, 1,
 	 "(Rect r, RgnHandle rgn) -> (Boolean _rv)"},
-	{"EqualRgn", (PyCFunction)Qd_EqualRgn, 1,
+	{"MacEqualRgn", (PyCFunction)Qd_MacEqualRgn, 1,
 	 "(RgnHandle rgnA, RgnHandle rgnB) -> (Boolean _rv)"},
 	{"EmptyRgn", (PyCFunction)Qd_EmptyRgn, 1,
 	 "(RgnHandle rgn) -> (Boolean _rv)"},
-	{"FrameRgn", (PyCFunction)Qd_FrameRgn, 1,
+	{"MacFrameRgn", (PyCFunction)Qd_MacFrameRgn, 1,
 	 "(RgnHandle rgn) -> None"},
-	{"PaintRgn", (PyCFunction)Qd_PaintRgn, 1,
+	{"MacPaintRgn", (PyCFunction)Qd_MacPaintRgn, 1,
 	 "(RgnHandle rgn) -> None"},
 	{"EraseRgn", (PyCFunction)Qd_EraseRgn, 1,
 	 "(RgnHandle rgn) -> None"},
-	{"InvertRgn", (PyCFunction)Qd_InvertRgn, 1,
+	{"MacInvertRgn", (PyCFunction)Qd_MacInvertRgn, 1,
 	 "(RgnHandle rgn) -> None"},
-	{"FillRgn", (PyCFunction)Qd_FillRgn, 1,
+	{"MacFillRgn", (PyCFunction)Qd_MacFillRgn, 1,
 	 "(RgnHandle rgn, Pattern pat) -> None"},
 	{"ScrollRect", (PyCFunction)Qd_ScrollRect, 1,
 	 "(Rect r, short dh, short dv, RgnHandle updateRgn) -> None"},
@@ -4097,7 +4097,7 @@ static PyMethodDef Qd_methods[] = {
 	 "(Point pt) -> (Point pt)"},
 	{"Random", (PyCFunction)Qd_Random, 1,
 	 "() -> (short _rv)"},
-	{"GetPixel", (PyCFunction)Qd_GetPixel, 1,
+	{"MacGetPixel", (PyCFunction)Qd_MacGetPixel, 1,
 	 "(short h, short v) -> (Boolean _rv)"},
 	{"ScalePt", (PyCFunction)Qd_ScalePt, 1,
 	 "(Point pt, Rect srcRect, Rect dstRect) -> (Point pt)"},
@@ -4115,7 +4115,7 @@ static PyMethodDef Qd_methods[] = {
 	 "(Point src, Point dst) -> (Point dst)"},
 	{"EqualPt", (PyCFunction)Qd_EqualPt, 1,
 	 "(Point pt1, Point pt2) -> (Boolean _rv)"},
-	{"PtInRect", (PyCFunction)Qd_PtInRect, 1,
+	{"MacPtInRect", (PyCFunction)Qd_MacPtInRect, 1,
 	 "(Point pt, Rect r) -> (Boolean _rv)"},
 	{"Pt2Rect", (PyCFunction)Qd_Pt2Rect, 1,
 	 "(Point pt1, Point pt2) -> (Rect dstRect)"},
@@ -4235,7 +4235,7 @@ static PyMethodDef Qd_methods[] = {
 	 "(BitMapPtr srcBits, BitMapPtr maskBits, BitMapPtr dstBits, Rect srcRect, Rect maskRect, Rect dstRect, short mode, RgnHandle maskRgn) -> None"},
 	{"GetPattern", (PyCFunction)Qd_GetPattern, 1,
 	 "(short patternID) -> (PatHandle _rv)"},
-	{"GetCursor", (PyCFunction)Qd_GetCursor, 1,
+	{"MacGetCursor", (PyCFunction)Qd_MacGetCursor, 1,
 	 "(short cursorID) -> (CursHandle _rv)"},
 	{"GetPicture", (PyCFunction)Qd_GetPicture, 1,
 	 "(short pictureID) -> (PicHandle _rv)"},
@@ -4265,7 +4265,7 @@ static PyMethodDef Qd_methods[] = {
 	 "(CharParameter ch) -> None"},
 	{"DrawString", (PyCFunction)Qd_DrawString, 1,
 	 "(Str255 s) -> None"},
-	{"DrawText", (PyCFunction)Qd_DrawText, 1,
+	{"MacDrawText", (PyCFunction)Qd_MacDrawText, 1,
 	 "(Buffer textBuf, short firstByte, short byteCount) -> None"},
 	{"CharWidth", (PyCFunction)Qd_CharWidth, 1,
 	 "(CharParameter ch) -> (short _rv)"},

@@ -108,14 +108,14 @@ static PyObject *ResObj_HomeResFile(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_LoadResource(_self, _args)
+static PyObject *ResObj_MacLoadResource(_self, _args)
 	ResourceObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	LoadResource(_self->ob_itself);
+	MacLoadResource(_self->ob_itself);
 	{
 		OSErr _err = ResError();
 		if (_err != noErr) return PyMac_Error(_err);
@@ -437,7 +437,7 @@ static PyObject *ResObj_as_Menu(_self, _args)
 static PyMethodDef ResObj_methods[] = {
 	{"HomeResFile", (PyCFunction)ResObj_HomeResFile, 1,
 	 "() -> (short _rv)"},
-	{"LoadResource", (PyCFunction)ResObj_LoadResource, 1,
+	{"MacLoadResource", (PyCFunction)ResObj_MacLoadResource, 1,
 	 "() -> None"},
 	{"ReleaseResource", (PyCFunction)ResObj_ReleaseResource, 1,
 	 "() -> None"},

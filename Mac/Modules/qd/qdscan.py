@@ -75,6 +75,18 @@ class MyScanner(Scanner):
 			'CloseCPort',
 			'BitMapToRegionGlue',
 			'StdOpcode', 	# XXXX Missing from library...
+			# The following are for non-macos use:
+			'LockPortBits',
+			'UnlockPortBits',
+			'UpdatePort',
+			'GetPortNativeWindow',
+			'GetNativeWindowPort',
+			'NativeRegionToMacRegion',
+			'MacRegionToNativeRegion',
+			'GetPortHWND',
+			'GetHWNDPort',
+			'GetPICTFromDIB',
+			
 
 			]
 

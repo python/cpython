@@ -49,11 +49,16 @@ class MyScanner(Scanner):
 			'CouldDialog',
 			'FreeDialog',
 			'GetStdFilterProc',
+			'GetDialogParent',
+			# Can't find these in the CW Pro 3 libraries
+			'SetDialogMovableModal',
+			'GetDialogControlNotificationProc',
 			]
 
 	def makeblacklisttypes(self):
 		return [
 			"AlertStdAlertParamPtr",	# Too much work, for now
+			"QTModelessCallbackProcPtr",
 			]
 
 	def makerepairinstructions(self):
