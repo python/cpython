@@ -70,12 +70,9 @@ menudefs = [
    ]),
  ('options', [
    ('_Configure IDLE...', '<<open-config-dialog>>'),
-##   None,
-##   ('Revert to _Default Settings', '<<revert-all-settings>>'),
    ]),
  ('help', [
    ('_About IDLE', '<<about-idle>>'),
-   ('IDLE _Readme', '<<view-readme>>'),
    None,
    ('_IDLE Help', '<<help>>'),
    ('Python _Docs', '<<python-docs>>'),
