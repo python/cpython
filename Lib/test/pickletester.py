@@ -806,6 +806,11 @@ class AbstractPickleModuleTests(unittest.TestCase):
         finally:
             os.remove(TESTFN)
 
+    def test_highest_protocol(self):
+        # Of course this needs to be changed when HIGHEST_PROTOCOL changes.
+        self.assertEqual(self.module.HIGHEST_PROTOCOL, 2)
+
+
 class AbstractPersistentPicklerTests(unittest.TestCase):
 
     # This class defines persistent_id() and persistent_load()
