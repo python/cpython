@@ -1,3 +1,57 @@
+What's New in Python 2.1.4?
+Release date: XX-XXX-2003
+===========================
+
+- Some documentation fixes.
+
+- SF #577530, #533625: security fixes for rexec.py.  I still wouldn't
+  trust it as the only line of defense between a machine and the
+  Internet!
+
+- SF #590294, #601077: os._execvpe security fix (plus fix for the fix).
+
+- Link errno extension statically.
+
+- Backported various httplib.py fixes.
+
+- Backported various SSL fixes.
+
+- Fix posixpath.py so that when stat() fails with EOVERFLOW (meaning a
+  file larger than 2 GB in a build that doesn't support LFS), this is
+  correctly taken as an indication of the file's existence.
+
+- SF #523473: raise exceptions on error conditions.
+
+- SF #561858: avoid assertion when writing code objects with stacksize
+  >= 2**16.
+
+- SF #210682: fixed an old bug that caused bdb to be unable to
+  continue in the bottom frame, after a breakpoint was set
+
+- Fix rfc822.py to support dots in the "real name" part of email
+  addresses, per RFC 2822.
+
+- Repaired widespread misuse of _PyString_Resize.
+
+- SF #544473: use try/finally to ensire all Queue locks remain stable.
+
+- Fixed two obscure bugs in nested scopes.
+
+- Changes to the configure script to avoid problems with binutils 2.12.
+
+- SF #543318: fix bogus initialization in DatagramRequestHandler.setup().
+
+- SF #541730: provisional fix to IDLE for losing data when attempting
+  to save a file containing non-ASCII characters.  The fix consists of
+  raising an exception *before* overwriting the file rather than
+  after.  You still can't save files with non-ASCII characters (this
+  is fixed in Python 2.2).
+
+- Sometimes the uninstall executable (UNWISE.EXE) vanishes.  One cause
+  of that has been fixed in the installer (disabled Wise's "delete in-
+  use files" uninstall option).
+
+
 What's New in Python 2.1.3?
 Release date: 08-April-2002
 ===========================
@@ -26,10 +80,6 @@ Library
   Python now ships with zlib-1.1.4.
 
 Windows
-
-- Sometimes the uninstall executable (UNWISE.EXE) vanishes.  One cause
-  of that has been fixed in the installer (disabled Wise's "delete in-
-  use files" uninstall option).
 
 - The installer now installs Start menu shortcuts under (the local
   equivalent of) "All Users" when doing an Admin install.
