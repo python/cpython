@@ -35,7 +35,8 @@ def genpluginproject(architecture, module,
 		project=None, projectdir=None,
 		sources=[], sourcedirs=[],
 		libraries=[], extradirs=[],
-		extraexportsymbols=[], outputdir=":::Lib:lib-dynload"):
+		extraexportsymbols=[], outputdir=":::Lib:lib-dynload",
+		libraryflags=None, stdlibraryflags=None):
 	if architecture == "all":
 		# For the time being we generate two project files. Not as nice as
 		# a single multitarget project, but easier to implement for now.
@@ -90,6 +91,10 @@ def genpluginproject(architecture, module,
 		"mac_dllname" : dllname,
 		"prefixname" : prefixname,
 	}
+	if libraryflags:
+		dict['libraryflags'] = libraryflags
+	if stdlibraryflags:
+		dict['stdlibraryflags'] = stdlibraryflags
 	mkcwproject.mkproject(os.path.join(projectdir, project), module, dict, 
 			force=FORCEREBUILD, templatename=templatename)
 
@@ -124,10 +129,10 @@ def	genallprojects(force=0):
 	genpluginproject("carbon", "_Cm", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Ctl", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Ctl", libraries=["ControlsLib", "AppearanceLib"], 
-			outputdir="::Lib:Carbon")
+			libraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Dlg", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Dlg", libraries=["DialogsLib", "AppearanceLib"],
-			outputdir="::Lib:Carbon")
+			libraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Drag", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Drag", libraries=["DragLib"], outputdir="::Lib:Carbon")
 	genpluginproject("all", "_Evt", outputdir="::Lib:Carbon")
@@ -138,7 +143,7 @@ def	genallprojects(force=0):
 	genpluginproject("all", "_List", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Menu", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Menu", libraries=["MenusLib", "ContextualMenu", "AppearanceLib"],
-			outputdir="::Lib:Carbon")
+			libraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
 	genpluginproject("all", "_Qd", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Qt", libraries=["QuickTimeLib"], outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Qt", outputdir="::Lib:Carbon")
@@ -153,8 +158,8 @@ def	genallprojects(force=0):
 	genpluginproject("ppc", "_Mlte", libraries=["Textension"], outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Mlte", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Win", outputdir="::Lib:Carbon")
-	genpluginproject("ppc", "_Win", libraries=["WindowsLib", "AppearanceLib"],
-			outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "_Win", libraries=["CarbonAccessors.o", "WindowsLib", "AppearanceLib"],
+			libraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
 	# Carbon Only?
 	genpluginproject("carbon", "_CF", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "hfsplus")

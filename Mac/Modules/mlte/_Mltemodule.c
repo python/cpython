@@ -5,12 +5,8 @@
 
 
 
-#ifdef _WIN32
-#include "pywintoolbox.h"
-#else
 #include "macglue.h"
 #include "pymactoolbox.h"
-#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -131,7 +127,9 @@ static void TXNObj_dealloc(TXNObjectObject *self)
 static PyObject *TXNObj_TXNDeleteObject(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TXNDeleteObject
 	PyMac_PRECHECK(TXNDeleteObject);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TXNDeleteObject(_self->ob_itself);
@@ -146,7 +144,9 @@ static PyObject *TXNObj_TXNResizeFrame(TXNObjectObject *_self, PyObject *_args)
 	UInt32 iWidth;
 	UInt32 iHeight;
 	TXNFrameID iTXNFrameID;
+#ifndef TXNResizeFrame
 	PyMac_PRECHECK(TXNResizeFrame);
+#endif
 	if (!PyArg_ParseTuple(_args, "lll",
 	                      &iWidth,
 	                      &iHeight,
@@ -169,7 +169,9 @@ static PyObject *TXNObj_TXNSetFrameBounds(TXNObjectObject *_self, PyObject *_arg
 	SInt32 iBottom;
 	SInt32 iRight;
 	TXNFrameID iTXNFrameID;
+#ifndef TXNSetFrameBounds
 	PyMac_PRECHECK(TXNSetFrameBounds);
+#endif
 	if (!PyArg_ParseTuple(_args, "lllll",
 	                      &iTop,
 	                      &iLeft,
@@ -192,7 +194,9 @@ static PyObject *TXNObj_TXNKeyDown(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	EventRecord iEvent;
+#ifndef TXNKeyDown
 	PyMac_PRECHECK(TXNKeyDown);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetEventRecord, &iEvent))
 		return NULL;
@@ -207,7 +211,9 @@ static PyObject *TXNObj_TXNAdjustCursor(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle ioCursorRgn;
+#ifndef TXNAdjustCursor
 	PyMac_PRECHECK(TXNAdjustCursor);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      OptResObj_Convert, &ioCursorRgn))
 		return NULL;
@@ -222,7 +228,9 @@ static PyObject *TXNObj_TXNClick(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	EventRecord iEvent;
+#ifndef TXNClick
 	PyMac_PRECHECK(TXNClick);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetEventRecord, &iEvent))
 		return NULL;
@@ -240,7 +248,9 @@ static PyObject *TXNObj_TXNTSMCheck(TXNObjectObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Boolean _rv;
 	EventRecord iEvent;
+#ifndef TXNTSMCheck
 	PyMac_PRECHECK(TXNTSMCheck);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetEventRecord, &iEvent))
 		return NULL;
@@ -255,7 +265,9 @@ static PyObject *TXNObj_TXNTSMCheck(TXNObjectObject *_self, PyObject *_args)
 static PyObject *TXNObj_TXNSelectAll(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TXNSelectAll
 	PyMac_PRECHECK(TXNSelectAll);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TXNSelectAll(_self->ob_itself);
@@ -268,7 +280,9 @@ static PyObject *TXNObj_TXNFocus(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean iBecomingFocused;
+#ifndef TXNFocus
 	PyMac_PRECHECK(TXNFocus);
+#endif
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &iBecomingFocused))
 		return NULL;
@@ -282,7 +296,9 @@ static PyObject *TXNObj_TXNFocus(TXNObjectObject *_self, PyObject *_args)
 static PyObject *TXNObj_TXNUpdate(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TXNUpdate
 	PyMac_PRECHECK(TXNUpdate);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TXNUpdate(_self->ob_itself);
@@ -295,7 +311,9 @@ static PyObject *TXNObj_TXNDraw(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GWorldPtr iDrawPort;
+#ifndef TXNDraw
 	PyMac_PRECHECK(TXNDraw);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      OptGWorldObj_Convert, &iDrawPort))
 		return NULL;
@@ -309,7 +327,9 @@ static PyObject *TXNObj_TXNDraw(TXNObjectObject *_self, PyObject *_args)
 static PyObject *TXNObj_TXNForceUpdate(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TXNForceUpdate
 	PyMac_PRECHECK(TXNForceUpdate);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TXNForceUpdate(_self->ob_itself);
@@ -322,7 +342,9 @@ static PyObject *TXNObj_TXNGetSleepTicks(TXNObjectObject *_self, PyObject *_args
 {
 	PyObject *_res = NULL;
 	UInt32 _rv;
+#ifndef TXNGetSleepTicks
 	PyMac_PRECHECK(TXNGetSleepTicks);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TXNGetSleepTicks(_self->ob_itself);
@@ -334,7 +356,9 @@ static PyObject *TXNObj_TXNGetSleepTicks(TXNObjectObject *_self, PyObject *_args
 static PyObject *TXNObj_TXNIdle(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TXNIdle
 	PyMac_PRECHECK(TXNIdle);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TXNIdle(_self->ob_itself);
@@ -347,7 +371,9 @@ static PyObject *TXNObj_TXNGrowWindow(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	EventRecord iEvent;
+#ifndef TXNGrowWindow
 	PyMac_PRECHECK(TXNGrowWindow);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetEventRecord, &iEvent))
 		return NULL;
@@ -362,7 +388,9 @@ static PyObject *TXNObj_TXNZoomWindow(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short iPart;
+#ifndef TXNZoomWindow
 	PyMac_PRECHECK(TXNZoomWindow);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &iPart))
 		return NULL;
@@ -378,7 +406,9 @@ static PyObject *TXNObj_TXNCanUndo(TXNObjectObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Boolean _rv;
 	TXNActionKey oTXNActionKey;
+#ifndef TXNCanUndo
 	PyMac_PRECHECK(TXNCanUndo);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TXNCanUndo(_self->ob_itself,
@@ -392,7 +422,9 @@ static PyObject *TXNObj_TXNCanUndo(TXNObjectObject *_self, PyObject *_args)
 static PyObject *TXNObj_TXNUndo(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TXNUndo
 	PyMac_PRECHECK(TXNUndo);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TXNUndo(_self->ob_itself);
@@ -406,7 +438,9 @@ static PyObject *TXNObj_TXNCanRedo(TXNObjectObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Boolean _rv;
 	TXNActionKey oTXNActionKey;
+#ifndef TXNCanRedo
 	PyMac_PRECHECK(TXNCanRedo);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TXNCanRedo(_self->ob_itself,
@@ -420,7 +454,9 @@ static PyObject *TXNObj_TXNCanRedo(TXNObjectObject *_self, PyObject *_args)
 static PyObject *TXNObj_TXNRedo(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TXNRedo
 	PyMac_PRECHECK(TXNRedo);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TXNRedo(_self->ob_itself);
@@ -433,7 +469,9 @@ static PyObject *TXNObj_TXNCut(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
+#ifndef TXNCut
 	PyMac_PRECHECK(TXNCut);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = TXNCut(_self->ob_itself);
@@ -447,7 +485,9 @@ static PyObject *TXNObj_TXNCopy(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
+#ifndef TXNCopy
 	PyMac_PRECHECK(TXNCopy);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = TXNCopy(_self->ob_itself);
@@ -461,7 +501,9 @@ static PyObject *TXNObj_TXNPaste(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
+#ifndef TXNPaste
 	PyMac_PRECHECK(TXNPaste);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = TXNPaste(_self->ob_itself);
@@ -475,7 +517,9 @@ static PyObject *TXNObj_TXNClear(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
+#ifndef TXNClear
 	PyMac_PRECHECK(TXNClear);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = TXNClear(_self->ob_itself);
@@ -490,7 +534,9 @@ static PyObject *TXNObj_TXNGetSelection(TXNObjectObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	TXNOffset oStartOffset;
 	TXNOffset oEndOffset;
+#ifndef TXNGetSelection
 	PyMac_PRECHECK(TXNGetSelection);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TXNGetSelection(_self->ob_itself,
@@ -506,7 +552,9 @@ static PyObject *TXNObj_TXNShowSelection(TXNObjectObject *_self, PyObject *_args
 {
 	PyObject *_res = NULL;
 	Boolean iShowEnd;
+#ifndef TXNShowSelection
 	PyMac_PRECHECK(TXNShowSelection);
+#endif
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &iShowEnd))
 		return NULL;
@@ -521,7 +569,9 @@ static PyObject *TXNObj_TXNIsSelectionEmpty(TXNObjectObject *_self, PyObject *_a
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef TXNIsSelectionEmpty
 	PyMac_PRECHECK(TXNIsSelectionEmpty);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TXNIsSelectionEmpty(_self->ob_itself);
@@ -536,7 +586,9 @@ static PyObject *TXNObj_TXNSetSelection(TXNObjectObject *_self, PyObject *_args)
 	OSStatus _err;
 	TXNOffset iStartOffset;
 	TXNOffset iEndOffset;
+#ifndef TXNSetSelection
 	PyMac_PRECHECK(TXNSetSelection);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &iStartOffset,
 	                      &iEndOffset))
@@ -557,7 +609,9 @@ static PyObject *TXNObj_TXNCountRunsInRange(TXNObjectObject *_self, PyObject *_a
 	UInt32 iStartOffset;
 	UInt32 iEndOffset;
 	ItemCount oRunCount;
+#ifndef TXNCountRunsInRange
 	PyMac_PRECHECK(TXNCountRunsInRange);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &iStartOffset,
 	                      &iEndOffset))
@@ -576,7 +630,9 @@ static PyObject *TXNObj_TXNDataSize(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ByteCount _rv;
+#ifndef TXNDataSize
 	PyMac_PRECHECK(TXNDataSize);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TXNDataSize(_self->ob_itself);
@@ -592,7 +648,9 @@ static PyObject *TXNObj_TXNGetData(TXNObjectObject *_self, PyObject *_args)
 	TXNOffset iStartOffset;
 	TXNOffset iEndOffset;
 	Handle oDataHandle;
+#ifndef TXNGetData
 	PyMac_PRECHECK(TXNGetData);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &iStartOffset,
 	                      &iEndOffset))
@@ -615,7 +673,9 @@ static PyObject *TXNObj_TXNGetDataEncoded(TXNObjectObject *_self, PyObject *_arg
 	TXNOffset iEndOffset;
 	Handle oDataHandle;
 	TXNDataType iEncoding;
+#ifndef TXNGetDataEncoded
 	PyMac_PRECHECK(TXNGetDataEncoded);
+#endif
 	if (!PyArg_ParseTuple(_args, "llO&",
 	                      &iStartOffset,
 	                      &iEndOffset,
@@ -641,7 +701,9 @@ static PyObject *TXNObj_TXNSetDataFromFile(TXNObjectObject *_self, PyObject *_ar
 	ByteCount iFileLength;
 	TXNOffset iStartOffset;
 	TXNOffset iEndOffset;
+#ifndef TXNSetDataFromFile
 	PyMac_PRECHECK(TXNSetDataFromFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "hO&lll",
 	                      &iFileRefNum,
 	                      PyMac_GetOSType, &iFileType,
@@ -671,7 +733,9 @@ static PyObject *TXNObj_TXNSetData(TXNObjectObject *_self, PyObject *_args)
 	int iDataPtr__in_len__;
 	TXNOffset iStartOffset;
 	TXNOffset iEndOffset;
+#ifndef TXNSetData
 	PyMac_PRECHECK(TXNSetData);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&s#ll",
 	                      PyMac_GetOSType, &iDataType,
 	                      &iDataPtr__in__, &iDataPtr__in_len__,
@@ -694,7 +758,9 @@ static PyObject *TXNObj_TXNGetChangeCount(TXNObjectObject *_self, PyObject *_arg
 {
 	PyObject *_res = NULL;
 	ItemCount _rv;
+#ifndef TXNGetChangeCount
 	PyMac_PRECHECK(TXNGetChangeCount);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TXNGetChangeCount(_self->ob_itself);
@@ -713,7 +779,9 @@ static PyObject *TXNObj_TXNSave(TXNObjectObject *_self, PyObject *_args)
 	FSSpec iFileSpecification;
 	SInt16 iDataReference;
 	SInt16 iResourceReference;
+#ifndef TXNSave
 	PyMac_PRECHECK(TXNSave);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&lO&hh",
 	                      PyMac_GetOSType, &iType,
 	                      PyMac_GetOSType, &iResType,
@@ -739,7 +807,9 @@ static PyObject *TXNObj_TXNRevert(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
+#ifndef TXNRevert
 	PyMac_PRECHECK(TXNRevert);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = TXNRevert(_self->ob_itself);
@@ -753,7 +823,9 @@ static PyObject *TXNObj_TXNPageSetup(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
+#ifndef TXNPageSetup
 	PyMac_PRECHECK(TXNPageSetup);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = TXNPageSetup(_self->ob_itself);
@@ -767,7 +839,9 @@ static PyObject *TXNObj_TXNPrint(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
+#ifndef TXNPrint
 	PyMac_PRECHECK(TXNPrint);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = TXNPrint(_self->ob_itself);
@@ -781,7 +855,9 @@ static PyObject *TXNObj_TXNGetViewRect(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect oViewRect;
+#ifndef TXNGetViewRect
 	PyMac_PRECHECK(TXNGetViewRect);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TXNGetViewRect(_self->ob_itself,
@@ -797,7 +873,9 @@ static PyObject *TXNObj_TXNAttachObjectToWindow(TXNObjectObject *_self, PyObject
 	OSStatus _err;
 	GWorldPtr iWindow;
 	Boolean iIsActualWindow;
+#ifndef TXNAttachObjectToWindow
 	PyMac_PRECHECK(TXNAttachObjectToWindow);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&b",
 	                      GWorldObj_Convert, &iWindow,
 	                      &iIsActualWindow))
@@ -815,7 +893,9 @@ static PyObject *TXNObj_TXNIsObjectAttachedToWindow(TXNObjectObject *_self, PyOb
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef TXNIsObjectAttachedToWindow
 	PyMac_PRECHECK(TXNIsObjectAttachedToWindow);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TXNIsObjectAttachedToWindow(_self->ob_itself);
@@ -833,7 +913,9 @@ static PyObject *TXNObj_TXNDragTracker(TXNObjectObject *_self, PyObject *_args)
 	WindowPtr iWindow;
 	DragReference iDragReference;
 	Boolean iDifferentObjectSameWindow;
+#ifndef TXNDragTracker
 	PyMac_PRECHECK(TXNDragTracker);
+#endif
 	if (!PyArg_ParseTuple(_args, "lhO&O&b",
 	                      &iTXNFrameID,
 	                      &iMessage,
@@ -861,7 +943,9 @@ static PyObject *TXNObj_TXNDragReceiver(TXNObjectObject *_self, PyObject *_args)
 	WindowPtr iWindow;
 	DragReference iDragReference;
 	Boolean iDifferentObjectSameWindow;
+#ifndef TXNDragReceiver
 	PyMac_PRECHECK(TXNDragReceiver);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&O&b",
 	                      &iTXNFrameID,
 	                      WinObj_Convert, &iWindow,
@@ -885,7 +969,9 @@ static PyObject *TXNObj_TXNActivate(TXNObjectObject *_self, PyObject *_args)
 	OSStatus _err;
 	TXNFrameID iTXNFrameID;
 	TXNScrollBarState iActiveState;
+#ifndef TXNActivate
 	PyMac_PRECHECK(TXNActivate);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &iTXNFrameID,
 	                      &iActiveState))
@@ -906,7 +992,9 @@ static PyObject *TXNObj_TXNDoFontMenuSelection(TXNObjectObject *_self, PyObject 
 	TXNFontMenuObject iTXNFontMenuObject;
 	SInt16 iMenuID;
 	SInt16 iMenuItem;
+#ifndef TXNDoFontMenuSelection
 	PyMac_PRECHECK(TXNDoFontMenuSelection);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&hh",
 	                      TXNFontMenuObj_Convert, &iTXNFontMenuObject,
 	                      &iMenuID,
@@ -927,7 +1015,9 @@ static PyObject *TXNObj_TXNPrepareFontMenu(TXNObjectObject *_self, PyObject *_ar
 	PyObject *_res = NULL;
 	OSStatus _err;
 	TXNFontMenuObject iTXNFontMenuObject;
+#ifndef TXNPrepareFontMenu
 	PyMac_PRECHECK(TXNPrepareFontMenu);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      TXNFontMenuObj_Convert, &iTXNFontMenuObject))
 		return NULL;
@@ -1056,7 +1146,7 @@ static PyObject *TXNObj_getattr(TXNObjectObject *self, char *name)
 #define TXNObj_hash NULL
 
 PyTypeObject TXNObject_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"TXNObject", /*tp_name*/
 	sizeof(TXNObjectObject), /*tp_basicsize*/
@@ -1119,7 +1209,9 @@ static PyObject *TXNFontMenuObj_TXNGetFontMenuHandle(TXNFontMenuObjectObject *_s
 	PyObject *_res = NULL;
 	OSStatus _err;
 	MenuHandle oFontMenuHandle;
+#ifndef TXNGetFontMenuHandle
 	PyMac_PRECHECK(TXNGetFontMenuHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = TXNGetFontMenuHandle(_self->ob_itself,
@@ -1134,7 +1226,9 @@ static PyObject *TXNFontMenuObj_TXNDisposeFontMenuObject(TXNFontMenuObjectObject
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
+#ifndef TXNDisposeFontMenuObject
 	PyMac_PRECHECK(TXNDisposeFontMenuObject);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = TXNDisposeFontMenuObject(_self->ob_itself);
@@ -1168,7 +1262,7 @@ static PyObject *TXNFontMenuObj_getattr(TXNFontMenuObjectObject *self, char *nam
 #define TXNFontMenuObj_hash NULL
 
 PyTypeObject TXNFontMenuObject_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"TXNFontMenuObject", /*tp_name*/
 	sizeof(TXNFontMenuObjectObject), /*tp_basicsize*/
@@ -1202,7 +1296,9 @@ static PyObject *Mlte_TXNNewObject(PyObject *_self, PyObject *_args)
 	TXNPermanentTextEncodingType iPermanentEncoding;
 	TXNObject oTXNObject;
 	TXNFrameID oTXNFrameID;
+#ifndef TXNNewObject
 	PyMac_PRECHECK(TXNNewObject);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&llO&l",
 	                      OptFSSpecPtr_Convert, &iFileSpec,
 	                      WinObj_Convert, &iWindow,
@@ -1232,7 +1328,9 @@ static PyObject *Mlte_TXNNewObject(PyObject *_self, PyObject *_args)
 static PyObject *Mlte_TXNTerminateTextension(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TXNTerminateTextension
 	PyMac_PRECHECK(TXNTerminateTextension);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TXNTerminateTextension();
@@ -1245,7 +1343,9 @@ static PyObject *Mlte_TXNIsScrapPastable(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef TXNIsScrapPastable
 	PyMac_PRECHECK(TXNIsScrapPastable);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TXNIsScrapPastable();
@@ -1258,7 +1358,9 @@ static PyObject *Mlte_TXNConvertToPublicScrap(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
+#ifndef TXNConvertToPublicScrap
 	PyMac_PRECHECK(TXNConvertToPublicScrap);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = TXNConvertToPublicScrap();
@@ -1272,7 +1374,9 @@ static PyObject *Mlte_TXNConvertFromPublicScrap(PyObject *_self, PyObject *_args
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
+#ifndef TXNConvertFromPublicScrap
 	PyMac_PRECHECK(TXNConvertFromPublicScrap);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = TXNConvertFromPublicScrap();
@@ -1290,7 +1394,9 @@ static PyObject *Mlte_TXNNewFontMenuObject(PyObject *_self, PyObject *_args)
 	SInt16 iMenuID;
 	SInt16 iStartHierMenuID;
 	TXNFontMenuObject oTXNFontMenuObject;
+#ifndef TXNNewFontMenuObject
 	PyMac_PRECHECK(TXNNewFontMenuObject);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&hh",
 	                      MenuObj_Convert, &iFontMenuHandle,
 	                      &iMenuID,
@@ -1311,7 +1417,9 @@ static PyObject *Mlte_TXNVersionInformation(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	TXNVersionValue _rv;
 	TXNFeatureBits oFeatureFlags;
+#ifndef TXNVersionInformation
 	PyMac_PRECHECK(TXNVersionInformation);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TXNVersionInformation(&oFeatureFlags);

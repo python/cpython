@@ -1,4 +1,4 @@
-How to install Python 2.2b1 on your Macintosh
+How to install Python 2.2b2 on your Macintosh
 ---------------------------------------------
 
 This is a MacPython that can run on classic MacOS (from 8.1
@@ -128,10 +128,11 @@ After installing
 It is probably a good idea to run the automatic tests. Start
 Python and "import test.regrtest ; test.regrtest.main()". 
 
+test_frozen will fail in MacPython because of different handling on
+frozen modules. This should not be a problem in normal use.
+
 test_time will fail because MacPython accepts bogus values for
 mktime(), this will be fixed later (it is not a very serious problem).
-
-test_descrtut will fail because of a problem with the test itself.
 
 Three tests will fail on MacOS9 with MemoryErrors:
 test_longexp, test_sha and test_zlib (on MacOSX these should pass).
@@ -160,7 +161,7 @@ Uninstalling
 
 Two items are installed in the system folder: the interpreter shared
 libraries PythonCore and PythonCoreCarbon lives in the Extensions
-folder and the "Python 2.2b1 Preferences" file in the Python subfolder
+folder and the "Python 2.2b2 Preferences" file in the Python subfolder
 in the Preferences folder. All the rest of Python lives in the folder
 you installed in.
 
@@ -210,9 +211,9 @@ this means you can keep your older version around if you are unsure
 whether to upgrade. The bad news is that your old preference settings
 are lost and you have to set them again.
 
-After you are satisfied that 2.2b1 works as expected you can trash
+After you are satisfied that 2.2b2 works as expected you can trash
 anything in the system folder that has "python" in the name and not
-"2.2b1".
+"2.2b2".
 
 The ConfigurePython... applets will try to detect incompatible
 preferences files and offer to remove them. This means that re-running

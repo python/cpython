@@ -313,6 +313,7 @@ PyNumber_Or
 PyNumber_Check
 PyObject_AsWriteBuffer
 PyObject_AsReadBuffer
+PyObject_CheckReadBuffer
 PyObject_AsCharBuffer
 PyObject_DelItem
 PyObject_SetItem
@@ -1152,6 +1153,7 @@ __vt__18GUSIContextFactory		# GUSIContextFactory::__vt
 __vt__11GUSIContext		# GUSIContext::__vt
 sError__11GUSIContext		# GUSIContext::sError
 sHasThreading__11GUSIContext		# GUSIContext::sHasThreading
+sCreatingCurrentContext__11GUSIContext		# GUSIContext::sCreatingCurrentContext
 sCurrentContext__11GUSIContext		# GUSIContext::sCurrentContext
 sContexts__11GUSIContext		# GUSIContext::sContexts
 sInstance__11GUSIProcess		# GUSIProcess::sInstance
@@ -1186,9 +1188,10 @@ CreateContext__18GUSIContextFactoryFUl		# GUSIContextFactory::CreateContext(unsi
 CreateContext__18GUSIContextFactoryFPFPv_PvPvlUlPPvPUl		# GUSIContextFactory::CreateContext(void* (*)(void*),void*,long,unsigned long,void**,unsigned long*)
 __dt__18GUSIContextFactoryFv		# GUSIContextFactory::~GUSIContextFactory()
 __ct__18GUSIContextFactoryFv		# GUSIContextFactory::GUSIContextFactory()
-__dt__Q23std68auto_ptr<18GUSIContextFactory,Q23std29_Single<18GUSIContextFactory>>Fv		# std::auto_ptr<GUSIContextFactory, std::_Single<GUSIContextFactory>>::~auto_ptr()
+DeleteInstance__18GUSIContextFactoryFv		# GUSIContextFactory::DeleteInstance()
 SetInstance__18GUSIContextFactoryFP18GUSIContextFactory		# GUSIContextFactory::SetInstance(GUSIContextFactory*)
 Instance__18GUSIContextFactoryFv		# GUSIContextFactory::Instance()
+GUSISetupContextFactory
 GUSINewThread
 Wakeup__11GUSIProcessFv		# GUSIProcess::Wakeup()
 Wakeup__11GUSIContextFv		# GUSIContext::Wakeup()
@@ -1237,6 +1240,9 @@ __dt__19GUSIDescriptorTableFv		# GUSIDescriptorTable::~GUSIDescriptorTable()
 CloseAllDescriptors__19GUSIDescriptorTableFv		# GUSIDescriptorTable::CloseAllDescriptors()
 SetInstance__19GUSIDescriptorTableFP19GUSIDescriptorTable		# GUSIDescriptorTable::SetInstance(GUSIDescriptorTable*)
 Instance__19GUSIDescriptorTableFv		# GUSIDescriptorTable::Instance()
+GUSISetupDescriptorTable
+__ct__10GUSIDeviceFv		# GUSIDevice::GUSIDevice()
+__ct__14GUSINullDeviceFv		# GUSINullDevice::GUSINullDevice()
 Instance__14GUSINullDeviceFv		# GUSINullDevice::Instance()
 GUSIDefaultSetupConsole
 GUSISetupConsole
@@ -1366,6 +1372,7 @@ __ct__12GUSIFileSpecFRC6FSSpecb		# GUSIFileSpec::GUSIFileSpec(const FSSpec&,bool
 __ct__12GUSIFileSpecFRC12GUSIFileSpec		# GUSIFileSpec::GUSIFileSpec(const GUSIFileSpec&)
 CScratch__12GUSIFileSpecFb		# GUSIFileSpec::CScratch(bool)
 ReadHex__FPCciPc		# ReadHex(const char*,int,char*)
+GUSIFSXGetVolInfo__FP31GUSIIOPBWrapper<12XVolumeParam>		# GUSIFSXGetVolInfo(GUSIIOPBWrapper<XVolumeParam>*)
 GUSIFSMoveRename
 GUSIFSCatMove
 GUSIFSCatMove__FPC6FSSpecl		# GUSIFSCatMove(const FSSpec*,long)
@@ -1593,66 +1600,6 @@ open__14GUSINullDeviceFv		# GUSINullDevice::open()
 open__14GUSINullDeviceFR13GUSIFileTokeni		# GUSINullDevice::open(GUSIFileToken&,int)
 Want__14GUSINullDeviceFR13GUSIFileToken		# GUSINullDevice::Want(GUSIFileToken&)
 GUSIwithNullSockets
-__vt__13GUSIScatterer		# GUSIScatterer::__vt
-__vt__20GUSIOTDatagramSocket		# GUSIOTDatagramSocket::__vt
-__vt__18GUSIOTStreamSocket		# GUSIOTStreamSocket::__vt
-__vt__12GUSIOTSocket		# GUSIOTSocket::__vt
-__vt__14GUSIOTStrategy		# GUSIOTStrategy::__vt
-__vt__21GUSIOTDatagramFactory		# GUSIOTDatagramFactory::__vt
-__vt__13GUSIOTFactory		# GUSIOTFactory::__vt
-__vt__19GUSIOTStreamFactory		# GUSIOTStreamFactory::__vt
-sOK__13GUSIOTFactory		# GUSIOTFactory::sOK
-__dt__19GUSIOTStreamFactoryFv		# GUSIOTStreamFactory::~GUSIOTStreamFactory()
-__dt__13GUSIOTFactoryFv		# GUSIOTFactory::~GUSIOTFactory()
-__dt__21GUSIOTDatagramFactoryFv		# GUSIOTDatagramFactory::~GUSIOTDatagramFactory()
-select__20GUSIOTDatagramSocketFPbPbPb		# GUSIOTDatagramSocket::select(bool*,bool*,bool*)
-__dt__Q23std80auto_ptr<24GUSIOTAddr<9TUnitData,5>,Q23std35_Single<24GUSIOTAddr<9TUnitData,5>>>Fv		# std::auto_ptr<GUSIOTAddr<TUnitData, 5>, std::_Single<GUSIOTAddr<TUnitData, 5>>>::~auto_ptr()
-sendto__20GUSIOTDatagramSocketFRC12GUSIGathereriPCvUi		# GUSIOTDatagramSocket::sendto(const GUSIGatherer&,int,const void*,unsigned int)
-__dt__13GUSIScattererFv		# GUSIScatterer::~GUSIScatterer()
-recvfrom__20GUSIOTDatagramSocketFRC13GUSIScattereriPvPUi		# GUSIOTDatagramSocket::recvfrom(const GUSIScatterer&,int,void*,unsigned int*)
-connect__20GUSIOTDatagramSocketFPvUi		# GUSIOTDatagramSocket::connect(void*,unsigned int)
-getpeername__20GUSIOTDatagramSocketFPvPUi		# GUSIOTDatagramSocket::getpeername(void*,unsigned int*)
-BindIfUnbound__20GUSIOTDatagramSocketFv		# GUSIOTDatagramSocket::BindIfUnbound()
-__dt__20GUSIOTDatagramSocketFv		# GUSIOTDatagramSocket::~GUSIOTDatagramSocket()
-Clone__20GUSIOTDatagramSocketFv		# GUSIOTDatagramSocket::Clone()
-__ct__20GUSIOTDatagramSocketFP14GUSIOTStrategy		# GUSIOTDatagramSocket::GUSIOTDatagramSocket(GUSIOTStrategy*)
-shutdown__18GUSIOTStreamSocketFi		# GUSIOTStreamSocket::shutdown(int)
-select__18GUSIOTStreamSocketFPbPbPb		# GUSIOTStreamSocket::select(bool*,bool*,bool*)
-sendto__18GUSIOTStreamSocketFRC12GUSIGathereriPCvUi		# GUSIOTStreamSocket::sendto(const GUSIGatherer&,int,const void*,unsigned int)
-__dt__Q210GUSISocket17AddContextInScopeFv		# GUSISocket::AddContextInScope::~AddContextInScope()
-recvfrom__18GUSIOTStreamSocketFRC13GUSIScattereriPvPUi		# GUSIOTStreamSocket::recvfrom(const GUSIScatterer&,int,void*,unsigned int*)
-connect__18GUSIOTStreamSocketFPvUi		# GUSIOTStreamSocket::connect(void*,unsigned int)
-accept__18GUSIOTStreamSocketFPvPUi		# GUSIOTStreamSocket::accept(void*,unsigned int*)
-getpeername__18GUSIOTStreamSocketFPvPUi		# GUSIOTStreamSocket::getpeername(void*,unsigned int*)
-listen__18GUSIOTStreamSocketFi		# GUSIOTStreamSocket::listen(int)
-MopupEvents__18GUSIOTStreamSocketFv		# GUSIOTStreamSocket::MopupEvents()
-Close__18GUSIOTStreamSocketFUl		# GUSIOTStreamSocket::Close(unsigned long)
-__dt__18GUSIOTStreamSocketFv		# GUSIOTStreamSocket::~GUSIOTStreamSocket()
-close__18GUSIOTStreamSocketFv		# GUSIOTStreamSocket::close()
-Clone__18GUSIOTStreamSocketFv		# GUSIOTStreamSocket::Clone()
-__ct__18GUSIOTStreamSocketFP14GUSIOTStrategy		# GUSIOTStreamSocket::GUSIOTStreamSocket(GUSIOTStrategy*)
-Supports__12GUSIOTSocketFQ210GUSISocket12ConfigOption		# GUSIOTSocket::Supports(GUSISocket::ConfigOption)
-setsockopt__12GUSIOTSocketFiiPvUi		# GUSIOTSocket::setsockopt(int,int,void*,unsigned int)
-getsockopt__12GUSIOTSocketFiiPvPUi		# GUSIOTSocket::getsockopt(int,int,void*,unsigned int*)
-ioctl__12GUSIOTSocketFUiPc		# GUSIOTSocket::ioctl(unsigned int,char*)
-fcntl__12GUSIOTSocketFiPc		# GUSIOTSocket::fcntl(int,char*)
-shutdown__12GUSIOTSocketFi		# GUSIOTSocket::shutdown(int)
-getsockname__12GUSIOTSocketFPvPUi		# GUSIOTSocket::getsockname(void*,unsigned int*)
-Unbind__12GUSIOTSocketFv		# GUSIOTSocket::Unbind()
-BindToAddress__12GUSIOTSocketFP20GUSIOTAddr<5TBind,1>		# GUSIOTSocket::BindToAddress(GUSIOTAddr<TBind, 1>*)
-bind__12GUSIOTSocketFPvUi		# GUSIOTSocket::bind(void*,unsigned int)
-__dt__12GUSIOTSocketFv		# GUSIOTSocket::~GUSIOTSocket()
-close__12GUSIOTSocketFv		# GUSIOTSocket::close()
-__ct__12GUSIOTSocketFP14GUSIOTStrategy		# GUSIOTSocket::GUSIOTSocket(GUSIOTStrategy*)
-__dt__Q212GUSIOTSocket4LockFv		# GUSIOTSocket::Lock::~Lock()
-MopupEvents__12GUSIOTSocketFv		# GUSIOTSocket::MopupEvents()
-CopyAddress__14GUSIOTStrategyFRC7TNetbufR7TNetbuf		# GUSIOTStrategy::CopyAddress(const TNetbuf&,TNetbuf&)
-__dt__14GUSIOTStrategyFv		# GUSIOTStrategy::~GUSIOTStrategy()
-CreateConfiguration__14GUSIOTStrategyFv		# GUSIOTStrategy::CreateConfiguration()
-socket__21GUSIOTDatagramFactoryFiii		# GUSIOTDatagramFactory::socket(int,int,int)
-socket__19GUSIOTStreamFactoryFiii		# GUSIOTStreamFactory::socket(int,int,int)
-Initialize__13GUSIOTFactoryFv		# GUSIOTFactory::Initialize()
-GUSIOTNotify
 __vt__15GUSIOTUdpSocket		# GUSIOTUdpSocket::__vt
 __vt__17GUSIOTUdpStrategy		# GUSIOTUdpStrategy::__vt
 __vt__15GUSIOTTcpSocket		# GUSIOTTcpSocket::__vt
@@ -1660,6 +1607,7 @@ __vt__17GUSIOTTcpStrategy		# GUSIOTTcpStrategy::__vt
 __vt__18GUSIOTInetStrategy		# GUSIOTInetStrategy::__vt
 __vt__16GUSIOTUdpFactory		# GUSIOTUdpFactory::__vt
 __vt__16GUSIOTTcpFactory		# GUSIOTTcpFactory::__vt
+__vt__13GUSIOTFactory		# GUSIOTFactory::__vt
 sInstance__16GUSIOTUdpFactory		# GUSIOTUdpFactory::sInstance
 sInstance__16GUSIOTTcpFactory		# GUSIOTTcpFactory::sInstance
 __dt__16GUSIOTTcpFactoryFv		# GUSIOTTcpFactory::~GUSIOTTcpFactory()
@@ -1688,10 +1636,13 @@ UnpackAddress__18GUSIOTInetStrategyFRC7TNetbufPvPUi		# GUSIOTInetStrategy::Unpac
 PackAddress__18GUSIOTInetStrategyFPCvUiR7TNetbufb		# GUSIOTInetStrategy::PackAddress(const void*,unsigned int,TNetbuf&,bool)
 socket__16GUSIOTUdpFactoryFiii		# GUSIOTUdpFactory::socket(int,int,int)
 Strategy__16GUSIOTUdpFactoryFiii		# GUSIOTUdpFactory::Strategy(int,int,int)
+__dt__21GUSIOTDatagramFactoryFv		# GUSIOTDatagramFactory::~GUSIOTDatagramFactory()
 Instance__16GUSIOTUdpFactoryFv		# GUSIOTUdpFactory::Instance()
 socket__16GUSIOTTcpFactoryFiii		# GUSIOTTcpFactory::socket(int,int,int)
 __dt__18GUSIOTInetStrategyFv		# GUSIOTInetStrategy::~GUSIOTInetStrategy()
 Strategy__16GUSIOTTcpFactoryFiii		# GUSIOTTcpFactory::Strategy(int,int,int)
+__dt__13GUSIOTFactoryFv		# GUSIOTFactory::~GUSIOTFactory()
+__dt__19GUSIOTStreamFactoryFv		# GUSIOTStreamFactory::~GUSIOTStreamFactory()
 Instance__16GUSIOTTcpFactoryFv		# GUSIOTTcpFactory::Instance()
 __vt__11GUSIOTNetDB		# GUSIOTNetDB::__vt
 __dt__11GUSIOTNetDBFv		# GUSIOTNetDB::~GUSIOTNetDB()
@@ -1720,8 +1671,9 @@ socketpair__15GUSIPipeFactoryFiiiPP10GUSISocket		# GUSIPipeFactory::socketpair(i
 socket__15GUSIPipeFactoryFiii		# GUSIPipeFactory::socket(int,int,int)
 GUSIwithLocalSockets
 __vt__12GUSIGatherer		# GUSIGatherer::__vt
+__vt__13GUSIScatterer		# GUSIScatterer::__vt
 get__40GUSISpecificData<Q23std2tm,&.GUSIKillTM>FP17GUSISpecificTable		# GUSISpecificData<std::tm, &.GUSIKillTM>::get(GUSISpecificTable*)
-faccess__FPCcPUiPv		# faccess(const char*,unsigned int*,void*)
+faccess
 fsetfileinfo
 fgetfileinfo
 getservent
@@ -1804,6 +1756,7 @@ dup
 fcntl
 __dt__12GUSIGathererFv		# GUSIGatherer::~GUSIGatherer()
 write
+__dt__13GUSIScattererFv		# GUSIScatterer::~GUSIScatterer()
 read
 close
 fsync
@@ -1833,10 +1786,10 @@ listen__13GUSIPPCSocketFi		# GUSIPPCSocket::listen(int)
 connect__13GUSIPPCSocketFPvUi		# GUSIPPCSocket::connect(void*,unsigned int)
 bind__13GUSIPPCSocketFPvUi		# GUSIPPCSocket::bind(void*,unsigned int)
 __ct__13GUSIPPCSocketFv		# GUSIPPCSocket::GUSIPPCSocket()
-GUSIPPCDone__FP16PPCParamBlockRec		# GUSIPPCDone(PPCParamBlockRec*)
-GUSIPPCListenDone__FP16PPCParamBlockRec		# GUSIPPCListenDone(PPCParamBlockRec*)
-GUSIPPCRecvDone__FP16PPCParamBlockRec		# GUSIPPCRecvDone(PPCParamBlockRec*)
-GUSIPPCSendDone__FP16PPCParamBlockRec		# GUSIPPCSendDone(PPCParamBlockRec*)
+GUSIPPCDone
+GUSIPPCListenDone
+GUSIPPCRecvDone
+GUSIPPCSendDone
 SetupListener__13GUSIPPCSocketFRQ213GUSIPPCSocket8Listener		# GUSIPPCSocket::SetupListener(GUSIPPCSocket::Listener&)
 socket__14GUSIPPCFactoryFiii		# GUSIPPCFactory::socket(int,int,int)
 GUSIwithPPCSockets
@@ -2003,6 +1956,61 @@ GetBlocked__14GUSISigContextCFv		# GUSISigContext::GetBlocked() const
 CantBlock__14GUSISigContextFv		# GUSISigContext::CantBlock()
 __dt__14GUSISigContextFv		# GUSISigContext::~GUSISigContext()
 __ct__14GUSISigContextFPC14GUSISigContext		# GUSISigContext::GUSISigContext(const GUSISigContext*)
+__vt__20GUSIOTDatagramSocket		# GUSIOTDatagramSocket::__vt
+__vt__18GUSIOTStreamSocket		# GUSIOTStreamSocket::__vt
+__vt__12GUSIOTSocket		# GUSIOTSocket::__vt
+__vt__14GUSIOTStrategy		# GUSIOTStrategy::__vt
+__vt__21GUSIOTDatagramFactory		# GUSIOTDatagramFactory::__vt
+__vt__19GUSIOTStreamFactory		# GUSIOTStreamFactory::__vt
+sOK__13GUSIOTFactory		# GUSIOTFactory::sOK
+select__20GUSIOTDatagramSocketFPbPbPb		# GUSIOTDatagramSocket::select(bool*,bool*,bool*)
+__dt__Q23std80auto_ptr<24GUSIOTAddr<9TUnitData,5>,Q23std35_Single<24GUSIOTAddr<9TUnitData,5>>>Fv		# std::auto_ptr<GUSIOTAddr<TUnitData, 5>, std::_Single<GUSIOTAddr<TUnitData, 5>>>::~auto_ptr()
+sendto__20GUSIOTDatagramSocketFRC12GUSIGathereriPCvUi		# GUSIOTDatagramSocket::sendto(const GUSIGatherer&,int,const void*,unsigned int)
+recvfrom__20GUSIOTDatagramSocketFRC13GUSIScattereriPvPUi		# GUSIOTDatagramSocket::recvfrom(const GUSIScatterer&,int,void*,unsigned int*)
+connect__20GUSIOTDatagramSocketFPvUi		# GUSIOTDatagramSocket::connect(void*,unsigned int)
+getpeername__20GUSIOTDatagramSocketFPvPUi		# GUSIOTDatagramSocket::getpeername(void*,unsigned int*)
+BindIfUnbound__20GUSIOTDatagramSocketFv		# GUSIOTDatagramSocket::BindIfUnbound()
+__dt__20GUSIOTDatagramSocketFv		# GUSIOTDatagramSocket::~GUSIOTDatagramSocket()
+Clone__20GUSIOTDatagramSocketFv		# GUSIOTDatagramSocket::Clone()
+__ct__20GUSIOTDatagramSocketFP14GUSIOTStrategy		# GUSIOTDatagramSocket::GUSIOTDatagramSocket(GUSIOTStrategy*)
+shutdown__18GUSIOTStreamSocketFi		# GUSIOTStreamSocket::shutdown(int)
+select__18GUSIOTStreamSocketFPbPbPb		# GUSIOTStreamSocket::select(bool*,bool*,bool*)
+sendto__18GUSIOTStreamSocketFRC12GUSIGathereriPCvUi		# GUSIOTStreamSocket::sendto(const GUSIGatherer&,int,const void*,unsigned int)
+__dt__Q210GUSISocket17AddContextInScopeFv		# GUSISocket::AddContextInScope::~AddContextInScope()
+recvfrom__18GUSIOTStreamSocketFRC13GUSIScattereriPvPUi		# GUSIOTStreamSocket::recvfrom(const GUSIScatterer&,int,void*,unsigned int*)
+connect__18GUSIOTStreamSocketFPvUi		# GUSIOTStreamSocket::connect(void*,unsigned int)
+accept__18GUSIOTStreamSocketFPvPUi		# GUSIOTStreamSocket::accept(void*,unsigned int*)
+getpeername__18GUSIOTStreamSocketFPvPUi		# GUSIOTStreamSocket::getpeername(void*,unsigned int*)
+listen__18GUSIOTStreamSocketFi		# GUSIOTStreamSocket::listen(int)
+MopupEvents__18GUSIOTStreamSocketFv		# GUSIOTStreamSocket::MopupEvents()
+Close__18GUSIOTStreamSocketFUl		# GUSIOTStreamSocket::Close(unsigned long)
+__dt__18GUSIOTStreamSocketFv		# GUSIOTStreamSocket::~GUSIOTStreamSocket()
+close__18GUSIOTStreamSocketFv		# GUSIOTStreamSocket::close()
+Clone__18GUSIOTStreamSocketFv		# GUSIOTStreamSocket::Clone()
+__ct__18GUSIOTStreamSocketFP14GUSIOTStrategy		# GUSIOTStreamSocket::GUSIOTStreamSocket(GUSIOTStrategy*)
+Supports__12GUSIOTSocketFQ210GUSISocket12ConfigOption		# GUSIOTSocket::Supports(GUSISocket::ConfigOption)
+setsockopt__12GUSIOTSocketFiiPvUi		# GUSIOTSocket::setsockopt(int,int,void*,unsigned int)
+getsockopt__12GUSIOTSocketFiiPvPUi		# GUSIOTSocket::getsockopt(int,int,void*,unsigned int*)
+pre_select__12GUSIOTSocketFbbb		# GUSIOTSocket::pre_select(bool,bool,bool)
+ioctl__12GUSIOTSocketFUiPc		# GUSIOTSocket::ioctl(unsigned int,char*)
+fcntl__12GUSIOTSocketFiPc		# GUSIOTSocket::fcntl(int,char*)
+shutdown__12GUSIOTSocketFi		# GUSIOTSocket::shutdown(int)
+getsockname__12GUSIOTSocketFPvPUi		# GUSIOTSocket::getsockname(void*,unsigned int*)
+Unbind__12GUSIOTSocketFv		# GUSIOTSocket::Unbind()
+BindToAddress__12GUSIOTSocketFP20GUSIOTAddr<5TBind,1>		# GUSIOTSocket::BindToAddress(GUSIOTAddr<TBind, 1>*)
+bind__12GUSIOTSocketFPvUi		# GUSIOTSocket::bind(void*,unsigned int)
+__dt__12GUSIOTSocketFv		# GUSIOTSocket::~GUSIOTSocket()
+close__12GUSIOTSocketFv		# GUSIOTSocket::close()
+__ct__12GUSIOTSocketFP14GUSIOTStrategy		# GUSIOTSocket::GUSIOTSocket(GUSIOTStrategy*)
+__dt__Q212GUSIOTSocket4LockFv		# GUSIOTSocket::Lock::~Lock()
+MopupEvents__12GUSIOTSocketFv		# GUSIOTSocket::MopupEvents()
+CopyAddress__14GUSIOTStrategyFRC7TNetbufR7TNetbuf		# GUSIOTStrategy::CopyAddress(const TNetbuf&,TNetbuf&)
+__dt__14GUSIOTStrategyFv		# GUSIOTStrategy::~GUSIOTStrategy()
+CreateConfiguration__14GUSIOTStrategyFv		# GUSIOTStrategy::CreateConfiguration()
+socket__21GUSIOTDatagramFactoryFiii		# GUSIOTDatagramFactory::socket(int,int,int)
+socket__19GUSIOTStreamFactoryFiii		# GUSIOTStreamFactory::socket(int,int,int)
+Initialize__13GUSIOTFactoryFv		# GUSIOTFactory::Initialize()
+GUSIOTNotify
 atan
 atan2
 memmove
@@ -2106,6 +2114,7 @@ set_new_handler__3stdFPFv_v		# std::set_new_handler(void (*)(void))
 __throw_bad_alloc__3stdFv		# std::__throw_bad_alloc()
 __dt__Q23std9bad_allocFv		# std::bad_alloc::~bad_alloc()
 qd
+exit
 __console_exit
 __stdio_exit
 __aborting

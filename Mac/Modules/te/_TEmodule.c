@@ -5,12 +5,8 @@
 
 
 
-#ifdef _WIN32
-#include "pywintoolbox.h"
-#else
 #include "macglue.h"
 #include "pymactoolbox.h"
-#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -793,7 +789,7 @@ static PyObject *TEObj_getattr(TEObject *self, char *name)
 #define TEObj_hash NULL
 
 PyTypeObject TE_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"TE", /*tp_name*/
 	sizeof(TEObject), /*tp_basicsize*/

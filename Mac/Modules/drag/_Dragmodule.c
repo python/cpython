@@ -5,12 +5,8 @@
 
 
 
-#ifdef _WIN32
-#include "pywintoolbox.h"
-#else
 #include "macglue.h"
 #include "pymactoolbox.h"
-#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -675,7 +671,7 @@ static PyObject *DragObj_getattr(DragObjObject *self, char *name)
 #define DragObj_hash NULL
 
 PyTypeObject DragObj_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"DragObj", /*tp_name*/
 	sizeof(DragObjObject), /*tp_basicsize*/

@@ -5,12 +5,8 @@
 
 
 
-#ifdef _WIN32
-#include "pywintoolbox.h"
-#else
 #include "macglue.h"
 #include "pymactoolbox.h"
-#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -550,7 +546,7 @@ ResObj_setattr(ResourceObject *self, char *name, PyObject *value)
 #define ResObj_hash NULL
 
 PyTypeObject Resource_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"Resource", /*tp_name*/
 	sizeof(ResourceObject), /*tp_basicsize*/

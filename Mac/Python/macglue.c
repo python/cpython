@@ -505,8 +505,7 @@ scan_event_queue(force)
 		if (q->evtQWhat == keyDown &&
 				(char)q->evtQMessage == '.' &&
 				(q->evtQModifiers & cmdKey) != 0) {
-			if ( flush )
-				FlushEvents(keyDownMask, 0);
+			FlushEvents(keyDownMask, 0);
 			interrupted = 1;
 			break;
 		}
@@ -517,8 +516,6 @@ scan_event_queue(force)
 int
 PyErr_CheckSignals()
 {
-	int xxx, xxx_old;
-	
 	if (schedparams.enabled) {
 		if ( interrupted || (unsigned long)LMGetTicks() > schedparams.next_check ) {
 			scan_event_queue(0);
@@ -529,8 +526,6 @@ PyErr_CheckSignals()
 			}
 			if ( PyMac_Yield() < 0)
 				return -1;
-			xxx = LMGetTicks();
-			xxx_old = schedparams.next_check;
 			schedparams.next_check = (unsigned long)LMGetTicks()
 					 + schedparams.check_interval;
 		}
@@ -734,7 +729,7 @@ PyMac_InitMenuBar()
 	*/
 	if ( (sioux_mbar=GetMenuBar()) == NULL )  {
 #else
-	{
+	if ( (sioux_mbar=GetMenuBar()) == NULL || GetMenuHandle(SIOUX_APPLEID) == NULL)  {
 #endif
 		/* Sioux menu not installed yet. Do so */
 		SIOUXSetupMenus();

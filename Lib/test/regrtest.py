@@ -524,6 +524,7 @@ _expectations = {
         test_cl
         test_commands
         test_crypt
+        test_curses
         test_dbm
         test_dl
         test_fcntl

@@ -157,7 +157,9 @@ class WeakLinkMixIn:
 	"Mix-in to test the function actually exists (!= NULL) before calling"
 	
 	def precheck(self):
+		Output('#ifndef %s', self.name)
 		Output('PyMac_PRECHECK(%s);', self.name)
+		Output('#endif')
 
 class WeakLinkFunctionGenerator(WeakLinkMixIn, FunctionGenerator): pass
 class WeakLinkMethodGenerator(WeakLinkMixIn, MethodGenerator): pass
