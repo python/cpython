@@ -120,6 +120,9 @@ class bdist_rpm (Command):
         ('verify-script=', None,
          "Specify a script for the VERIFY phase of the RPM build"),
 
+        # Allow a packager to explicitly force an architecture
+        ('force-arch=', None,
+         "Force an architecture onto the RPM build process"),
        ]
 
     boolean_options = ['keep-temp', 'use-rpm-opt-flags', 'rpm3-mode']
@@ -169,6 +172,8 @@ class bdist_rpm (Command):
         self.keep_temp = 0
         self.use_rpm_opt_flags = 1
         self.rpm3_mode = 1
+
+        self.force_arch = None
 
     # initialize_options()
 
@@ -250,6 +255,7 @@ class bdist_rpm (Command):
         self.ensure_string_list('build_requires')
         self.ensure_string_list('obsoletes')
 
+        self.ensure_string('force_arch')
     # finalize_package_data ()
 
 
@@ -389,9 +395,12 @@ class bdist_rpm (Command):
             'BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot',
             'Prefix: %{_prefix}', ])
 
-        # noarch if no extension modules
-        if not self.distribution.has_ext_modules():
-            spec_file.append('BuildArchitectures: noarch')
+        if not self.force_arch:
+            # noarch if no extension modules
+            if not self.distribution.has_ext_modules():
+                spec_file.append('BuildArch: noarch')
+        else:
+            spec_file.append( 'BuildArch: %s' % self.force_arch )
 
         for field in ('Vendor',
                       'Packager',
