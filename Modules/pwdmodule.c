@@ -120,12 +120,10 @@ in arbitrary order.\n\
 See pwd.__doc__ for more on password database entries.";
 
 static PyObject *
-pwd_getpwall(PyObject *self, PyObject *args)
+pwd_getpwall(PyObject *self)
 {
 	PyObject *d;
 	struct passwd *p;
-	if (!PyArg_NoArgs(args))
-		return NULL;
 	if ((d = PyList_New(0)) == NULL)
 		return NULL;
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
@@ -151,7 +149,7 @@ static PyMethodDef pwd_methods[] = {
 	{"getpwuid",	pwd_getpwuid, METH_OLDARGS, pwd_getpwuid__doc__},
 	{"getpwnam",	pwd_getpwnam, METH_OLDARGS, pwd_getpwnam__doc__},
 #ifdef HAVE_GETPWENT
-	{"getpwall",	pwd_getpwall, METH_OLDARGS, pwd_getpwall__doc__},
+	{"getpwall",	pwd_getpwall, METH_NOARGS,  pwd_getpwall__doc__},
 #endif
 	{NULL,		NULL}		/* sentinel */
 };
