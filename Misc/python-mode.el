@@ -1198,7 +1198,6 @@ filter."
    (apply 'make-comint py-which-bufname py-which-shell nil py-which-args))
   (make-local-variable 'comint-prompt-regexp)
   (setq comint-prompt-regexp "^>>> \\|^[.][.][.] \\|^(pdb) ")
-  (make-local-variable 'comint-output-filter-functions)
   (add-hook 'comint-output-filter-functions 'py-comint-output-filter-function)
   (set-syntax-table py-mode-syntax-table)
   ;; set up keybindings for this subshell
