@@ -184,9 +184,8 @@ class Profile:
                 # the timer() result contains two values in all
                 # cases.
                 import operator
-                def get_time_timer(timer=timer,
-                                   reduce=reduce, reducer=operator.add):
-                    return reduce(reducer, timer(), 0)
+                def get_time_timer(timer=timer, sum=sum):
+                    return sum(timer())
                 self.get_time = get_time_timer
         self.t = self.get_time()
         self.simulate_call('profiler')
