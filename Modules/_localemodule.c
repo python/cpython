@@ -9,14 +9,14 @@ This software comes with no warranty. Use at your own risk.
 
 ******************************************************************/
 
+#include "Python.h"
+
 #include <stdio.h>
 #include <errno.h>
 #include <locale.h>
 #include <string.h>
 #include <limits.h>
 #include <ctype.h>
-
-#include "Python.h"
 
 #if defined(MS_WIN32)
 #define WINDOWS_LEAN_AND_MEAN
