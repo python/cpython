@@ -61,6 +61,7 @@ class BuildExt (Command):
 
 
     def set_default_options (self):
+        self.extensions = None
         self.dir = None
         self.include_dirs = None
         self.define = None
@@ -90,10 +91,14 @@ class BuildExt (Command):
     def run (self):
 
         self.set_final_options ()
-        (extensions, package) = \
-            self.distribution.get_options ('ext_modules', 'package')
 
-        # 'extensions', as supplied by setup.py, is a list of 2-tuples.
+        # XXX we should care about the package we compile extensions
+        # into! 
+
+        #(extensions, package) = \
+        #    self.distribution.get_options ('ext_modules', 'package')
+
+        # 'self.extensions', as supplied by setup.py, is a list of 2-tuples.
         # Each tuple is simple:
         #    (ext_name, build_info)
         # build_info is a dictionary containing everything specific to
@@ -101,13 +106,16 @@ class BuildExt (Command):
         # should be handled by general distutils options passed from
         # setup.py down to right here, but that's not taken care of yet.)
 
+        if not self.extensions:
+            return
 
-        # First, sanity-check the 'extensions' list
-        self.check_extensions_list (extensions)
+        # First, sanity-check the 'self.extensions' list
+        self.check_extensions_list (self.extensions)
 
         # Setup the CCompiler object that we'll use to do all the
         # compiling and linking
-        self.compiler = new_compiler (verbose=self.distribution.verbose,
+        self.compiler = new_compiler (plat=os.environ.get ('PLAT'),
+                                      verbose=self.distribution.verbose,
                                       dry_run=self.distribution.dry_run)
         if self.include_dirs is not None:
             self.compiler.set_include_dirs (self.include_dirs)
@@ -128,7 +136,7 @@ class BuildExt (Command):
             self.compiler.set_link_objects (self.link_objects)
                                       
         # Now the real loop over extensions
-        self.build_extensions (extensions)
+        self.build_extensions (self.extensions)
 
             
 

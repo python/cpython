@@ -20,10 +20,14 @@ class BuildPy (Command):
 
     def set_default_options (self):
         self.dir = None
+        self.modules = None
+        self.package = None
 
     def set_final_options (self):
         self.set_undefined_options ('build',
                                     ('libdir', 'dir'))
+        if self.package is None:
+            self.package = ''
 
 
     def run (self):
@@ -43,10 +47,6 @@ class BuildPy (Command):
 
         self.set_final_options ()
 
-        (modules, package) = \
-            self.distribution.get_options ('py_modules', 'package')
-        package = package or ''
-
         infiles = []
         outfiles = []
         missing = []
@@ -56,20 +56,20 @@ class BuildPy (Command):
         # input files.
 
         # it's ok not to have *any* py files, right?
-        if not modules:
+        if not self.modules:
             return
         
         # XXX we should allow for wildcards, so eg. the Distutils setup.py
         # file would just have to say
         #   py_modules = ['distutils.*', 'distutils.command.*']
         # without having to list each one explicitly.
-        for m in modules:
+        for m in self.modules:
             fn = apply (os.path.join, tuple (string.split (m, '.'))) + '.py'
             if not os.path.exists (fn):
                 missing.append (fn)
             else:
                 infiles.append (fn)
-                outfiles.append (os.path.join (self.dir, package, fn))
+                outfiles.append (os.path.join (self.dir, self.package, fn))
 
         # Blow up if any input files were not found.
         if missing:
