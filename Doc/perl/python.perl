@@ -1871,7 +1871,7 @@ sub process_python_state(){
 
 sub do_env_seealso{
     return ("<div class=\"seealso\">\n  "
-            . "<p class=\"heading\"><b>See Also:</b></p>\n"
+            . "<p class=\"heading\">See Also:</p>\n"
             . $_[0]
             . '</div>');
 }
