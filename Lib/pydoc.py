@@ -991,29 +991,55 @@ class TextDoc(Doc):
         contents = doc and [doc + '\n'] or []
         push = contents.append
 
+        # Cute little class to pump out a horizontal rule between sections.
+        class HorizontalRule:
+            def __init__(self):
+                self.needone = 0
+            def maybe(self):
+                if self.needone:
+                    push('-' * 70)
+                self.needone = 1
+        hr = HorizontalRule()
+
         def spill(msg, attrs, predicate):
             ok, attrs = _split_list(attrs, predicate)
             if ok:
+                hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
                     push(self.document(getattr(object, name),
                                        name, mod, object))
             return attrs
 
-        # pydoc can't make any reasonable sense of properties on its own,
-        # and it doesn't appear that the getter, setter and del'er methods
-        # are discoverable.  For now, just pump out their names.
         def spillproperties(msg, attrs, predicate):
             ok, attrs = _split_list(attrs, predicate)
             if ok:
+                hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
-                    push(name + '\n')
+                    push(name)
+                    need_blank_after_doc = 0
+                    doc = getdoc(value) or ''
+                    if doc:
+                        push(self.indent(doc))
+                        need_blank_after_doc = 1
+                    for attr, tag in [("fset", " setter"),
+                                      ("fget", " getter"),
+                                      ("fdel", " deleter")]:
+                        func = getattr(value, attr)
+                        if func is not None:
+                            if need_blank_after_doc:
+                                push('')
+                                need_blank_after_doc = 0
+                            base = self.docother(func, name + tag, mod, 70)
+                            push(self.indent(base))
+                    push('')
             return attrs
 
         def spilldata(msg, attrs, predicate):
             ok, attrs = _split_list(attrs, predicate)
             if ok:
+                hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
                     doc = getattr(value, "__doc__", None)
@@ -1040,15 +1066,15 @@ class TextDoc(Doc):
             attrs.sort(lambda t1, t2: cmp(t1[0], t2[0]))
 
             # Pump out the attrs, segregated by kind.
-            attrs = spill("* Methods %s:\n" % tag, attrs,
+            attrs = spill("Methods %s:\n" % tag, attrs,
                           lambda t: t[1] == 'method')
-            attrs = spill("* Class methods %s:\n" % tag, attrs,
+            attrs = spill("Class methods %s:\n" % tag, attrs,
                           lambda t: t[1] == 'class method')
-            attrs = spill("* Static methods %s:\n" % tag, attrs,
+            attrs = spill("Static methods %s:\n" % tag, attrs,
                           lambda t: t[1] == 'static method')
-            attrs = spillproperties("* Properties %s:\n" % tag, attrs,
+            attrs = spillproperties("Properties %s:\n" % tag, attrs,
                                     lambda t: t[1] == 'property')
-            attrs = spilldata("* Data %s:\n" % tag, attrs,
+            attrs = spilldata("Data %s:\n" % tag, attrs,
                               lambda t: t[1] == 'data')
             assert attrs == []
 
