@@ -4710,7 +4710,7 @@ void _PyUnicode_Init()
 
     /* Init the implementation */
     unicode_empty = _PyUnicode_New(0);
-    strcpy(unicode_default_encoding, "utf-8");
+    strcpy(unicode_default_encoding, "ascii");
 }
 
 /* Finalize the Unicode implementation */
