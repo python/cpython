@@ -45,7 +45,7 @@ Data members:
 #include "osdefs.h"
 
 object *sys_trace, *sys_profile;
-int sys_checkinterval;
+int sys_checkinterval = 10;
 
 static object *sysdict;
 
