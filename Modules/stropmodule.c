@@ -196,7 +196,7 @@ strop_joinfields(self, args)
 
 
 static object *
-strop_index(self, args)
+strop_find(self, args)
 	object *self; /* Not used */
 	object *args;
 {
@@ -227,13 +227,12 @@ strop_index(self, args)
 		    (n == 1 || strncmp(&s[i+1], &sub[1], n-1) == 0))
 			return newintobject((long)i);
 
-	err_setstr(ValueError, "substring not found");
-	return NULL;
+	return newintobject(-1L);
 }
 
 
 static object *
-strop_rindex(self, args)
+strop_rfind(self, args)
 	object *self; /* Not used */
 	object *args;
 {
@@ -263,8 +262,7 @@ strop_rindex(self, args)
 		    (n == 1 || strncmp(&s[j+1], &sub[1], n-1) == 0))
 			return newintobject((long)j);
 
-	err_setstr(ValueError, "substring not found");
-	return NULL;
+	return newintobject(-1L);
 }
 
 
@@ -512,10 +510,10 @@ static struct methodlist strop_methods[] = {
 	{"atof",	strop_atof},
 	{"atoi",	strop_atoi},
 	{"atol",	strop_atol},
-	{"index",	strop_index},
+	{"find",	strop_find},
 	{"joinfields",	strop_joinfields},
 	{"lower",	strop_lower},
-	{"rindex",	strop_rindex},
+	{"rfind",	strop_rfind},
 	{"split",	strop_split},
 	{"splitfields",	strop_splitfields},
 	{"strip",	strop_strip},
