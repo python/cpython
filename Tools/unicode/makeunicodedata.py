@@ -1,14 +1,19 @@
 #
-# makeunidb.py -- generate a compact version of the unicode property
-# database (unicodedatabase.h)
+# generate a compact version of the unicode property database
+#
+# history:
+# 2000-09-24 fl   created (based on bits and pieces from unidb)
+# 2000-09-25 fl   merged tim's splitbin fixes, separate decomposition table
+#
+# written by Fredrik Lundh (fredrik@pythonware.com), September 2000
 #
 
 import sys
 
 SCRIPT = sys.argv[0]
-VERSION = "1.0"
+VERSION = "1.1"
 
-UNICODE_DATA = "c:/pythonware/modules/unidb/etc/UnicodeData-Latest.txt"
+UNICODE_DATA = "../UnicodeData-Latest.txt"
 
 CATEGORY_NAMES = [ "Cn", "Lu", "Ll", "Lt", "Mn", "Mc", "Me", "Nd",
     "Nl", "No", "Zs", "Zl", "Zp", "Cc", "Cf", "Cs", "Co", "Cn", "Lm",
@@ -24,13 +29,12 @@ def maketable():
     unicode = UnicodeData(UNICODE_DATA)
 
     # extract unicode properties
-    dummy = (0, 0, 0, 0, "NULL")
+    dummy = (0, 0, 0, 0)
     table = [dummy]
     cache = {0: dummy}
     index = [0] * len(unicode.chars)
 
-    DECOMPOSITION = [""]
-
+    # 1) database properties
     for char in unicode.chars:
         record = unicode.table[char]
         if record:
@@ -39,12 +43,8 @@ def maketable():
             combining = int(record[3])
             bidirectional = BIDIRECTIONAL_NAMES.index(record[4])
             mirrored = record[9] == "Y"
-            if record[5]:
-                decomposition = '"%s"' % record[5]
-            else:
-                decomposition = "NULL"
             item = (
-                category, combining, bidirectional, mirrored, decomposition
+                category, combining, bidirectional, mirrored
                 )
             # add entry to index and item tables
             i = cache.get(item)
@@ -53,8 +53,26 @@ def maketable():
                 table.append(item)
             index[char] = i
 
-    # FIXME: we really should compress the decomposition stuff
-    # (see the unidb utilities for one way to do this)
+    # 2) decomposition data
+
+    # FIXME: <fl> using the encoding stuff from unidb would save
+    # another 50k or so, but I'll leave that for 2.1...
+
+    decomp_data = [""]
+    decomp_index = [0] * len(unicode.chars)
+
+    for char in unicode.chars:
+        record = unicode.table[char]
+        if record:
+            if record[5]:
+                try:
+                    i = decomp_data.index(record[5])
+                except ValueError:
+                    i = len(decomp_data)
+                    decomp_data.append(record[5])
+            else:
+                i = 0
+            decomp_index[char] = i
 
     FILE = "unicodedata_db.h"
 
@@ -65,7 +83,7 @@ def maketable():
     print "/* a list of unique database records */"
     print "const _PyUnicode_DatabaseRecord _PyUnicode_Database_Records[] = {"
     for item in table:
-        print "    {%d, %d, %d, %d, %s}," % item
+        print "    {%d, %d, %d, %d}," % item
     print "};"
     print
 
@@ -82,6 +100,12 @@ def maketable():
     print "    NULL"
     print "};"
 
+    print "static const char *decomp_data[] = {"
+    for name in decomp_data:
+        print "    \"%s\"," % name
+    print "    NULL"
+    print "};"
+
     # split index table
     index1, index2, shift = splitbins(index)
 
@@ -89,6 +113,14 @@ def maketable():
     print "#define SHIFT", shift
     Array("index1", index1).dump(sys.stdout)
     Array("index2", index2).dump(sys.stdout)
+
+    # split index table
+    index1, index2, shift = splitbins(decomp_index)
+
+    print "/* same, for the decomposition data */"
+    print "#define DECOMP_SHIFT", shift
+    Array("decomp_index1", index1).dump(sys.stdout)
+    Array("decomp_index2", index2).dump(sys.stdout)
 
     sys.stdout = sys.__stdout__
 

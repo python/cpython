@@ -4,16 +4,15 @@
 
    Data was extracted from the Unicode 3.0 UnicodeData.txt file.
 
-Written by Marc-Andre Lemburg (mal@lemburg.com).
+   Written by Marc-Andre Lemburg (mal@lemburg.com).
+   Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
 
-Copyright (c) Corporation for National Research Initiatives.
+   Copyright (c) Corporation for National Research Initiatives.
 
    ------------------------------------------------------------------------ */
 
 #include "Python.h"
 #include "unicodedatabase.h"
-
-#define unicode_db _PyUnicode_Database_GetRecord
 
 /* --- Module API --------------------------------------------------------- */
 
@@ -134,15 +133,9 @@ unicodedata_category(PyObject *self,
 			"need a single Unicode character as parameter");
 	goto onError;
     }
-    index = (int)unicode_db((int)*PyUnicode_AS_UNICODE(v))->category;
-    if (index < 0 || 
-	index > sizeof(_PyUnicode_CategoryNames) / 
-	        sizeof(_PyUnicode_CategoryNames[0])) {
-	PyErr_Format(PyExc_SystemError,
-		     "category index out of range: %i",
-		     index);
-	goto onError;
-    }
+    index = (int) _PyUnicode_Database_GetRecord(
+        (int) *PyUnicode_AS_UNICODE(v)
+        )->category;
     return PyString_FromString(_PyUnicode_CategoryNames[index]);
     
  onError:
@@ -164,15 +157,9 @@ unicodedata_bidirectional(PyObject *self,
 			"need a single Unicode character as parameter");
 	goto onError;
     }
-    index = (int)unicode_db((int)*PyUnicode_AS_UNICODE(v))->bidirectional;
-    if (index < 0 || 
-	index > sizeof(_PyUnicode_CategoryNames) / 
-	        sizeof(_PyUnicode_CategoryNames[0])) {
-	PyErr_Format(PyExc_SystemError,
-		     "bidirectional index out of range: %i",
-		     index);
-	goto onError;
-    }
+    index = (int) _PyUnicode_Database_GetRecord(
+        (int) *PyUnicode_AS_UNICODE(v)
+        )->bidirectional;
     return PyString_FromString(_PyUnicode_BidirectionalNames[index]);
     
  onError:
@@ -194,7 +181,9 @@ unicodedata_combining(PyObject *self,
 			"need a single Unicode character as parameter");
 	goto onError;
     }
-    value = (int)unicode_db((int)*PyUnicode_AS_UNICODE(v))->combining;
+    value = (int) _PyUnicode_Database_GetRecord(
+        (int) *PyUnicode_AS_UNICODE(v)
+        )->combining;
     return PyInt_FromLong(value);
     
  onError:
@@ -216,7 +205,9 @@ unicodedata_mirrored(PyObject *self,
 			"need a single Unicode character as parameter");
 	goto onError;
     }
-    value = (int)unicode_db((int)*PyUnicode_AS_UNICODE(v))->mirrored;
+    value = (int) _PyUnicode_Database_GetRecord(
+        (int) *PyUnicode_AS_UNICODE(v)
+        )->mirrored;
     return PyInt_FromLong(value);
     
  onError:
@@ -238,10 +229,9 @@ unicodedata_decomposition(PyObject *self,
 			"need a single Unicode character as parameter");
 	goto onError;
     }
-    value = unicode_db((int)*PyUnicode_AS_UNICODE(v))->decomposition;
-    if (value == NULL)
-	return PyString_FromString("");
-    else
+    value = _PyUnicode_Database_GetDecomposition(
+        (int) *PyUnicode_AS_UNICODE(v)
+        );
 	return PyString_FromString(value);
     
  onError:
