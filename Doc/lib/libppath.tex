@@ -5,10 +5,9 @@
 This module implements some useful functions on \POSIX{} pathnames.
 
 \strong{Do not import this module directly.}  Instead, import the
-module \code{os} and use \code{os.path}.
+module \module{os} and use \code{os.path}.
 \refstmodindex{os}
 
-\setindexsubitem{(in module posixpath)}
 
 \begin{funcdesc}{basename}{p}
 Return the base name of pathname
@@ -36,9 +35,9 @@ Return the argument with an initial component of \samp{\~} or
 \samp{\~\var{user}} replaced by that \var{user}'s home directory.  An
 initial \samp{\~{}} is replaced by the environment variable \code{\${}HOME};
 an initial \samp{\~\var{user}} is looked up in the password directory through
-the built-in module \code{pwd}.  If the expansion fails, or if the
-path does not begin with a tilde, the path is returned unchanged.
-\refbimodindex{pwd}
+the built-in module \module{pwd}\refbimodindex{pwd}.  If the expansion
+fails, or if the path does not begin with a tilde, the path is
+returned unchanged.
 \end{funcdesc}
 
 \begin{funcdesc}{expandvars}{p}
@@ -55,14 +54,14 @@ Return true if \var{p} is an absolute pathname (begins with a slash).
 
 \begin{funcdesc}{isfile}{p}
 Return true if \var{p} is an existing regular file.  This follows
-symbolic links, so both \code{islink()} and \code{isfile()} can be
-true for the same path.
+symbolic links, so both \function{islink()} and \function{isfile()}
+can be true for the same path.
 \end{funcdesc}
 
 \begin{funcdesc}{isdir}{p}
 Return true if \var{p} is an existing directory.  This follows
-symbolic links, so both \code{islink()} and \code{isdir()} can be true
-for the same path.
+symbolic links, so both \function{islink()} and \function{isdir()} can
+be true for the same path.
 \end{funcdesc}
 
 \begin{funcdesc}{islink}{p}
@@ -100,14 +99,15 @@ slashes.
 Normalize a pathname.  This collapses redundant separators and
 up-level references, e.g. \code{A//B}, \code{A/./B} and
 \code{A/foo/../B} all become \code{A/B}.  It does not normalize the
-case (use \code{normcase()} for that).  On Windows, it does converts
-forward slashes to backward slashes.
+case (use \function{normcase()} for that).  On Windows, it does
+converts forward slashes to backward slashes.
 \end{funcdesc}
 
 \begin{funcdesc}{samefile}{p\, q}
-Return true if both pathname arguments refer to the same file or directory
-(as indicated by device number and i-node number).
-Raise an exception if a \code{stat()} call on either pathname fails.
+Return true if both pathname arguments refer to the same file or
+directory (as indicated by device number and i-node number).
+Raise an exception if a \function{os.stat()} call on either pathname
+fails.
 \end{funcdesc}
 
 \begin{funcdesc}{split}{p}
@@ -136,10 +136,10 @@ Calls the function \var{visit} with arguments
 directory tree rooted at \var{p} (including \var{p} itself, if it is a
 directory).  The argument \var{dirname} specifies the visited directory,
 the argument \var{names} lists the files in the directory (gotten from
-\code{posix.listdir(\var{dirname})}).
+\code{os.listdir(\var{dirname})}).
 The \var{visit} function may modify \var{names} to
 influence the set of directories visited below \var{dirname}, e.g., to
 avoid visiting certain parts of the tree.  (The object referred to by
-\var{names} must be modified in place, using \code{del} or slice
+\var{names} must be modified in place, using \keyword{del} or slice
 assignment.)
 \end{funcdesc}
