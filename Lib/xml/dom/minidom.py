@@ -619,10 +619,7 @@ class CharacterData(Node):
             raise TypeError, "node contents must be a string"
         Node.__init__(self)
         self.data = self.nodeValue = data
-
-    def __getattr__(self, name):
-        if name == "length":
-            return len(self.data)
+        self.length = len(data)
 
     def __repr__(self):
         if len(self.data) > 10:
@@ -644,6 +641,7 @@ class CharacterData(Node):
     def appendData(self, arg):
         self.data = self.data + arg
         self.nodeValue = self.data
+        self.length = len(self.data)
 
     def insertData(self, offset, arg):
         if offset < 0:
@@ -654,6 +652,7 @@ class CharacterData(Node):
             self.data = "%s%s%s" % (
                 self.data[:offset], arg, self.data[offset:])
             self.nodeValue = self.data
+            self.length = len(self.data)
 
     def deleteData(self, offset, count):
         if offset < 0:
@@ -665,6 +664,7 @@ class CharacterData(Node):
         if count:
             self.data = self.data[:offset] + self.data[offset+count:]
             self.nodeValue = self.data
+            self.length = len(self.data)
 
     def replaceData(self, offset, count, arg):
         if offset < 0:
@@ -677,6 +677,7 @@ class CharacterData(Node):
             self.data = "%s%s%s" % (
                 self.data[:offset], arg, self.data[offset+count:])
             self.nodeValue = self.data
+            self.length = len(self.data)
 
 class Text(CharacterData):
     nodeType = Node.TEXT_NODE
@@ -695,6 +696,8 @@ class Text(CharacterData):
             else:
                 self.parentNode.insertBefore(newText, next)
         self.data = self.data[:offset]
+        self.nodeValue = self.data
+        self.length = len(self.data)
         return newText
 
     def writexml(self, writer, indent="", addindent="", newl=""):
