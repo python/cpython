@@ -138,6 +138,8 @@ struct structmodule.c	# binary structure packing/unpacking
 time timemodule.c # -lm # time operations and variables
 operator operator.c	# operator.add() and similar goodies
 
+#_locale _localemodule.c  # access to ISO C locale support
+
 
 # Modules with some UNIX dependencies -- on by default:
 # (If you have a really backward UNIX, select and socket may not be
