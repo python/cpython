@@ -632,11 +632,11 @@ _daynames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 # instead of timezone names.
 
 _timezones = {'UT':0, 'UTC':0, 'GMT':0, 'Z':0, 
-              'AST': -400, 'ADT': -300,  # Atlantic standard
+              'AST': -400, 'ADT': -300,  # Atlantic (used in Canada)
               'EST': -500, 'EDT': -400,  # Eastern
-              'CST': -600, 'CDT':-500,   # Centreal
-              'MST':-700, 'MDT':-600,    # Mountain
-              'PST':-800, 'PDT':-700     # Pacific
+              'CST': -600, 'CDT': -500,  # Central
+              'MST': -700, 'MDT': -600,  # Mountain
+              'PST': -800, 'PDT': -700   # Pacific
               }    
 
 
@@ -713,14 +713,7 @@ def parsedate(data):
 
 
 def mktime_tz(data):
-    """Turn a 10-tuple as returned by parsedate_tz() into a UTC timestamp.
-    
-    Minor glitch: this first interprets the first 8 elements as a
-    local time and then compensates for the timezone difference;
-    this may yield a slight error around daylight savings time
-    switch dates.  Not enough to worry about for common use.
-    
-    """
+    """Turn a 10-tuple as returned by parsedate_tz() into a UTC timestamp."""
     if data[9] is None:
         # No zone info, so localtime is better assumption than GMT
         return time.mktime(data[:8] + (-1,))
