@@ -142,7 +142,8 @@ class GetKeysDialog(Toplevel):
         if modifiers: modifiers[0]='<'+modifiers[0]
         keyList=keyList+modifiers
         if finalKey: 
-            if (not modifiers) and (finalKey in self.functionKeys):
+            if (not modifiers) and (finalKey not 
+                    in self.alphanumKeys+self.punctuationKeys):
                 finalKey='<'+self.TranslateKey(finalKey)
             else:
                 finalKey=self.TranslateKey(finalKey)
@@ -225,16 +226,18 @@ class GetKeysDialog(Toplevel):
             tkMessageBox.showerror(title='Key Sequence Error',
                     message='No final key specified.')
             keysOk=0
-        elif (not modifiers) and (finalKey not in self.functionKeys):
-            #modifier required if not a function key
+        elif (not modifiers) and (finalKey in 
+                self.alphanumKeys+self.punctuationKeys):
+            #modifier required
             tkMessageBox.showerror(title='Key Sequence Error',
                     message='No modifier key(s) specified.')
             keysOk=0
-        elif (modifiers==['Shift']) and (finalKey not in self.functionKeys):
+        elif (modifiers==['Shift']) and (finalKey not 
+                in self.functionKeys+('Tab',)):
             #shift alone is only a useful modifier with a function key
             tkMessageBox.showerror(title='Key Sequence Error',
-                    message='Shift alone is only a useful modifier '+
-                            'when used with a function key.')
+                    message='Shift alone is not a useful modifier '+
+                            'when used with this final key key.')
             keysOk=0
         elif keySequence in self.currentKeySequences: #keys combo already in use
             tkMessageBox.showerror(title='Key Sequence Error',

@@ -463,7 +463,10 @@ class ConfigDialog(Toplevel):
     def VarChanged_themeIsBuiltin(self,*params):
         value=self.themeIsBuiltin.get()
         self.AddChangedItem('main','Theme','default',value)
-        self.PaintThemeSample()
+        if value:
+            self.VarChanged_builtinTheme()
+        else:
+            self.VarChanged_customTheme()
 
     def VarChanged_highlightTarget(self,*params):
         self.SetHighlightTarget()
@@ -495,9 +498,9 @@ class ConfigDialog(Toplevel):
         value=self.keysAreBuiltin.get() 
         self.AddChangedItem('main','Keys','default',value)
         if value: 
-            self.LoadKeysList(self.builtinKeys.get())
+            self.VarChanged_builtinKeys()
         else:
-            self.LoadKeysList(self.customKeys.get())
+            self.VarChanged_customKeys()
 
     def VarChanged_winWidth(self,*params):
         value=self.winWidth.get()
@@ -936,24 +939,31 @@ class ConfigDialog(Toplevel):
             type='bool',default=1))
         ##currently set theme
         currentOption=idleConf.CurrentTheme()
+        print 'current option',currentOption
         ##load available theme option menus
         if self.themeIsBuiltin.get(): #default theme selected
+            print 'builtin theme'
             itemList=idleConf.GetSectionList('default','highlight')
             itemList.sort()
+            print 'builtin items:',itemList
             self.optMenuThemeBuiltin.SetMenu(itemList,currentOption)
             itemList=idleConf.GetSectionList('user','highlight')
             itemList.sort()
+            print 'user items:',itemList
             if not itemList:
                 self.radioThemeCustom.config(state=DISABLED)
                 self.customTheme.set('- no custom themes -')    
             else:
                 self.optMenuThemeCustom.SetMenu(itemList,itemList[0])
         else: #user theme selected
+            print 'user theme'
             itemList=idleConf.GetSectionList('user','highlight')
             itemList.sort()
+            print 'user items:',itemList
             self.optMenuThemeCustom.SetMenu(itemList,currentOption)
             itemList=idleConf.GetSectionList('default','highlight')
             itemList.sort()
+            print 'builtin items:',itemList
             self.optMenuThemeBuiltin.SetMenu(itemList,itemList[0])
         self.SetThemeType()
         ##load theme element option menu
@@ -1112,4 +1122,5 @@ if __name__ == '__main__':
     root=Tk()
     Button(root,text='Dialog',
             command=lambda:ConfigDialog(root,'Settings')).pack()
+    root.instanceDict={}
     root.mainloop()
