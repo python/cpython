@@ -65,3 +65,14 @@
 
 /* The alis resource for locating the python home directory */
 #define PYTHONHOME_ID 128
+
+/* The Python options resource and offset of its members */
+#define PYTHONOPTIONS_ID 128
+#define POPT_INSPECT	0
+#define POPT_VERBOSE	1
+#define POPT_SUPPRESS	2
+#define POPT_UNBUFFERED	3
+#define POPT_DEBUGGING	4
+#define POPT_KEEPNORM	5
+#define POPT_KEEPERR	6
+ 

@@ -178,6 +178,12 @@ PyMac_InteractiveOptions(int *inspect, int *verbose, int *suppress_print,
 	DialogPtr dialog;
 	Rect rect;
 	
+	/* Default-defaults: */
+	*keep_error = 1;
+	/* Get default settings from our preference file */
+	PyMac_PreferenceOptions(&inspect, &Py_VerboseFlag, &Py_SuppressPrintingFlag,
+			&unbuffered, &Py_DebugFlag, &keep_normal, &keep_error);
+	/* If option is pressed override these */
 	GetKeys(rmap);
 	map = (unsigned char *)rmap;
 	if ( ( map[0x3a>>3] & (1<<(0x3a&7)) ) == 0 )	/* option key is 3a */
@@ -189,9 +195,20 @@ PyMac_InteractiveOptions(int *inspect, int *verbose, int *suppress_print,
 		return;
 	}
 	
-	/* Set keep-open-on-error */
-	GetDialogItem(dialog, OPT_KEEPERROR, &type, (Handle *)&handle, &rect);
-	SetCtlValue(handle, *keep_error);
+	/* Set default values */
+#define SET_OPT_ITEM(num, var) \
+		GetDialogItem(dialog, (num), &type, (Handle *)&handle, &rect); \
+		SetCtlValue(handle, (short)*(var));
+
+	SET_OPT_ITEM(OPT_INSPECT, inspect);
+	SET_OPT_ITEM(OPT_VERBOSE, verbose);
+	SET_OPT_ITEM(OPT_SUPPRESS, suppress_print);
+	SET_OPT_ITEM(OPT_UNBUFFERED, unbuffered);
+	SET_OPT_ITEM(OPT_DEBUGGING, debugging);
+	SET_OPT_ITEM(OPT_KEEPNORMAL, keep_normal);
+	SET_OPT_ITEM(OPT_KEEPERROR, keep_error);
+
+#undef SET_OPT_ITEM
 	
 	while (1) {
 		handle = NULL;
@@ -310,7 +327,7 @@ PyMac_Exit(status)
 	if (keep) {
 		SIOUXSettings.standalone = 1;
 		SIOUXSettings.autocloseonquit = 0;
-		SIOUXSetTitle("\pÇterminatedÈ");
+		SIOUXSetTitle("\p«terminated»");
 	}
 	else
 		SIOUXSettings.autocloseonquit = 1;

@@ -263,3 +263,37 @@ out:
 }
 #endif /* !USE_BUILTIN_PATH */
 
+void
+PyMac_PreferenceOptions(int *inspect, int *verbose, int *suppress_print, 
+						 int *unbuffered, int *debugging, int *keep_normal,
+						 int *keep_error)
+{
+	short oldrh, prefrh;
+	Handle handle;
+	int size;
+	char *p;
+	
+	
+    oldrh = CurResFile();
+    prefrh = PyMac_OpenPrefFile();
+    handle = GetResource('Popt', PYTHONOPTIONS_ID);
+    if ( handle == NULL ) {
+    	return;
+    }
+    HLock(handle);
+    size = GetHandleSize(handle);
+    p = (char *)*handle;
+    
+    if ( size > POPT_INSPECT ) *inspect = p[POPT_INSPECT];
+    if ( size > POPT_VERBOSE ) *verbose = p[POPT_VERBOSE];
+    if ( size > POPT_SUPPRESS ) *suppress_print = p[POPT_SUPPRESS];
+    if ( size > POPT_UNBUFFERED ) *unbuffered = p[POPT_UNBUFFERED];
+    if ( size > POPT_DEBUGGING ) *debugging = p[POPT_DEBUGGING];
+    if ( size > POPT_KEEPNORM ) *keep_normal = p[POPT_KEEPNORM];
+    if ( size > POPT_KEEPERR ) *keep_error = p[POPT_KEEPERR];
+    
+    HUnlock(handle);
+
+   	CloseResFile(prefrh);
+    UseResFile(oldrh);
+}
