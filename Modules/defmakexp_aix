@@ -9,8 +9,8 @@
 #		for AIX platforms which has to be included in the Modules
 #		directory of the python source tree.
 #		It contains all	global symbols defined in the following files:
-#			a) main.o config.o getpath.o
-#			b) libModules.a libPython.a libObjects.a libParser.a
+#			a) python.o
+#			b) ../libpython1.5.a
 #
 #		The script should be run after a new unpack, configure & make
 #		of the python release, without any options nor changes to
@@ -41,15 +41,15 @@ fi
 #
 # Variables
 #
+VERSION=1.5
 ROOTDIR=$1
 MODSDIR=$ROOTDIR/Modules
 PYTHDIR=$ROOTDIR/Python
 OBJSDIR=$ROOTDIR/Objects
 PARSDIR=$ROOTDIR/Parser
 
-OBJFILES="$MODSDIR/main.o $MODSDIR/config.o $MODSDIR/getpath.o"
-LIBFILES="$MODSDIR/libModules.a $OBJSDIR/libObjects.a $PARSDIR/libParser.a"
-LIBFILES="$LIBFILES $PYTHDIR/libPython.a"
+OBJFILES="$MODSDIR/python.o"
+LIBFILES="$ROOTDIR/libpython$(VERSION).a"
 ALLFILES="$OBJFILES $LIBFILES"
 
 #
