@@ -6,17 +6,21 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#if defined(__NetBSD__) && (NetBSD < 199712)
+
+#if defined(__NetBSD__)
+#include <sys/param.h>
+#if (NetBSD < 199712)
 #include <nlist.h>
 #include <link.h>
 #define dlerror() "error in dynamic linking"
-#else
+#endif
+#endif /* NetBSD */
+
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #endif
-#endif
 
-#ifdef __OpenBSD__
+#if (defined(__OpenBSD__) || defined(__NetBSD__)) && !defined(__ELF__)
 #define LEAD_UNDERSCORE "_"
 #else
 #define LEAD_UNDERSCORE ""
