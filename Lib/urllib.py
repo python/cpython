@@ -440,6 +440,7 @@ class URLopener:
 
     def open_ftp(self, url):
         """Use FTP protocol."""
+        import mimetypes, mimetools, StringIO
         host, path = splithost(url)
         if not host: raise IOError, ('ftp error', 'no host given')
         host, port = splitport(host)
@@ -482,12 +483,13 @@ class URLopener:
                    value in ('a', 'A', 'i', 'I', 'd', 'D'):
                     type = value.upper()
             (fp, retrlen) = self.ftpcache[key].retrfile(file, type)
+            mtype = mimetypes.guess_type("ftp:" + url)[0]
+            headers = ""
+            if mtype:
+                headers += "Content-Type: %s\n" % mtype
             if retrlen is not None and retrlen >= 0:
-                import mimetools, StringIO
-                headers = mimetools.Message(StringIO.StringIO(
-                    'Content-Length: %d\n' % retrlen))
-            else:
-                headers = noheaders()
+                headers += "Content-Length: %d\n" % retrlen
+            headers = mimetools.Message(StringIO.StringIO(headers))
             return addinfourl(fp, headers, "ftp:" + url)
         except ftperrors(), msg:
             raise IOError, ('ftp error', msg), sys.exc_info()[2]
