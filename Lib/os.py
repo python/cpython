@@ -601,7 +601,10 @@ def _pickle_stat_result(sr):
     (type, args) = sr.__reduce__()
     return (_make_stat_result, args)
 
-_copy_reg.pickle(stat_result, _pickle_stat_result,_make_stat_result)
+try:
+    _copy_reg.pickle(stat_result, _pickle_stat_result, _make_stat_result)
+except NameError: # stat_result may not exist
+    pass
 
 def _make_statvfs_result(tup, dict):
     return statvfs_result(tup, dict)
@@ -610,4 +613,8 @@ def _pickle_statvfs_result(sr):
     (type, args) = sr.__reduce__()
     return (_make_statvfs_result, args)
 
-_copy_reg.pickle(statvfs_result, _pickle_statvfs_result,_make_statvfs_result)
+try:
+    _copy_reg.pickle(statvfs_result, _pickle_statvfs_result,
+                     _make_statvfs_result)
+except NameError: # statvfs_result may not exist
+    pass
