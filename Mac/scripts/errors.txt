@@ -1,0 +1,1789 @@
+-32768	svTempDisable	svTempDisable
+-32640	svDisabled	Reserve range -32640 to -32768 for Apple temp disables.
+-32615	fontNotOutlineErr	bitmap font passed to routine that does outlines only
+-30788	kURL68kNotSupportedError	kURL68kNotSupportedError
+-30787	kURLAccessNotAvailableError	kURLAccessNotAvailableError
+-30786	kURLInvalidConfigurationError	kURLInvalidConfigurationError
+-30785	kURLExtensionFailureError	kURLExtensionFailureError
+-30783	kURLFileEmptyError	kURLFileEmptyError
+-30781	kURLInvalidCallError	kURLInvalidCallError
+-30780	kURLUnsettablePropertyError	kURLUnsettablePropertyError
+-30779	kURLPropertyBufferTooSmallError	kURLPropertyBufferTooSmallError
+-30778	kURLUnknownPropertyError	kURLUnknownPropertyError
+-30777	kURLPropertyNotYetKnownError	kURLPropertyNotYetKnownError
+-30776	kURLAuthenticationError	kURLAuthenticationError
+-30775	kURLServerBusyError	kURLServerBusyError
+-30774	kURLUnsupportedSchemeError	kURLUnsupportedSchemeError
+-30773	kURLInvalidURLError	kURLInvalidURLError
+-30772	kURLDestinationExistsError	kURLDestinationExistsError
+-30771	kURLProgressAlreadyDisplayedError	kURLProgressAlreadyDisplayedError
+-30770	kURLInvalidURLReferenceError	kURLInvalidURLReferenceError
+-30599	controlHandleInvalidErr	controlHandleInvalidErr
+-30597	controlInvalidDataVersionErr	controlInvalidDataVersionErr
+-30596	errItemNotControl	errItemNotControl
+-30595	errCantEmbedRoot	errCantEmbedRoot
+-30594	errCantEmbedIntoSelf	errCantEmbedIntoSelf
+-30593	errWindowRegionCodeInvalid	errWindowRegionCodeInvalid
+-30592	errControlHiddenOrDisabled	errControlHiddenOrDisabled
+-30591	errDataSizeMismatch	errDataSizeMismatch
+-30590	errControlIsNotEmbedder	errControlIsNotEmbedder
+-30589	errControlsAlreadyExist	errControlsAlreadyExist
+-30588	errInvalidPartCode	errInvalidPartCode
+-30587	errRootAlreadyExists	errRootAlreadyExists
+-30586	errNoRootControl	errNoRootControl
+-30585	errCouldntSetFocus	errCouldntSetFocus
+-30584	errUnknownControl	errUnknownControl
+-30583	errWindowDoesntSupportFocus	errWindowDoesntSupportFocus
+-30582	errControlDoesntSupportFocus	errControlDoesntSupportFocus
+-30581	errDataNotSupported	errDataNotSupported
+-30580	errMessageNotSupported	errMessageNotSupported
+-30567	themeMonitorDepthNotSupportedErr	theme not supported at monitor depth
+-30566	themeScriptFontNotFoundErr	theme font requested for uninstalled script system
+-30565	themeBadCursorIndexErr	themeBadCursorIndexErr
+-30564	themeHasNoAccentsErr	themeHasNoAccentsErr
+-30563	themeBadTextColorErr	themeBadTextColorErr
+-30562	themeProcessNotRegisteredErr	themeProcessNotRegisteredErr
+-30561	themeProcessRegisteredErr	themeProcessRegisteredErr
+-30560	themeInvalidBrushErr	pattern index invalid
+-30555	qtvrUninitialized	qtvrUninitialized
+-30554	qtvrLibraryLoadErr	qtvrLibraryLoadErr
+-30553	streamingNodeNotReadyErr	streamingNodeNotReadyErr
+-30552	noMemoryNodeFailedInitialize	noMemoryNodeFailedInitialize
+-30551	invalidHotSpotIDErr	invalidHotSpotIDErr
+-30550	invalidNodeFormatErr	invalidNodeFormatErr
+-30549	limitReachedErr	limitReachedErr
+-30548	settingNotSupportedByNodeErr	settingNotSupportedByNodeErr
+-30547	propertyNotSupportedByNodeErr	propertyNotSupportedByNodeErr
+-30546	timeNotInViewErr	timeNotInViewErr
+-30545	invalidViewStateErr	invalidViewStateErr
+-30544	invalidNodeIDErr	invalidNodeIDErr
+-30543	selectorNotSupportedByNodeErr	selectorNotSupportedByNodeErr
+-30542	callNotSupportedByNodeErr	callNotSupportedByNodeErr
+-30541	constraintReachedErr	constraintReachedErr
+-30540	notAQTVRMovieErr	notAQTVRMovieErr
+-30532	kFBCnoSuchHit	kFBCnoSuchHit
+-30531	kFBCbadSearchSession	kFBCbadSearchSession
+-30530	kFBCindexDiskIOFailed	kFBCindexDiskIOFailed
+-30529	kFBCsummarizationCanceled	kFBCsummarizationCanceled
+-30528	kFBCbadIndexFileVersion	kFBCbadIndexFileVersion
+-30527	kFBCanalysisNotAvailable	kFBCanalysisNotAvailable
+-30526	kFBCillegalSessionChange	tried to add/remove vols to a session
+-30525	kFBCsomeFilesNotIndexed	kFBCsomeFilesNotIndexed
+-30524	kFBCsearchFailed	kFBCsearchFailed
+-30523	kFBCindexNotAvailable	kFBCindexNotAvailable
+-30522	kFBCindexFileDestroyed	kFBCindexFileDestroyed
+-30521	kFBCaccessCanceled	kFBCaccessCanceled
+-30520	kFBCindexingCanceled	kFBCindexingCanceled
+-30519	kFBCnoSearchSession	kFBCnoSearchSession
+-30518	kFBCindexNotFound	kFBCindexNotFound
+-30517	kFBCflushFailed	kFBCflushFailed
+-30516	kFBCaddDocFailed	kFBCaddDocFailed
+-30515	kFBCaccessorStoreFailed	kFBCaccessorStoreFailed
+-30514	kFBCindexCreationFailed	couldn't create index
+-30513	kFBCmergingFailed	couldn't merge index files
+-30512	kFBCtokenizationFailed	couldn't read from document or query
+-30511	kFBCmoveFailed	V-Twin exception caught
+-30510	kFBCdeletionFailed	V-Twin exception caught
+-30509	kFBCcommitFailed	V-Twin exception caught
+-30508	kFBCindexingFailed	V-Twin exception caught
+-30507	kFBCvalidationFailed	V-Twin exception caught
+-30506	kFBCcompactionFailed	V-Twin exception caught
+-30505	kFBCbadIndexFile	bad FSSpec, or bad data in file
+-30504	kFBCfileNotIndexed	kFBCfileNotIndexed
+-30503	kFBCbadParam	kFBCbadParam
+-30502	kFBCallocFailed	probably low memory
+-30501	kFBCnoIndexesFound	kFBCnoIndexesFound
+-30500	kFBCvTwinExceptionErr	no telling what it was
+-30450	kDSpStereoContextErr	kDSpStereoContextErr
+-30449	kDSpInternalErr	kDSpInternalErr
+-30448	kDSpConfirmSwitchWarning	kDSpConfirmSwitchWarning
+-30447	kDSpFrameRateNotReadyErr	kDSpFrameRateNotReadyErr
+-30446	kDSpContextNotFoundErr	kDSpContextNotFoundErr
+-30445	kDSpContextNotReservedErr	kDSpContextNotReservedErr
+-30444	kDSpContextAlreadyReservedErr	kDSpContextAlreadyReservedErr
+-30443	kDSpInvalidAttributesErr	kDSpInvalidAttributesErr
+-30442	kDSpInvalidContextErr	kDSpInvalidContextErr
+-30441	kDSpSystemSWTooOldErr	kDSpSystemSWTooOldErr
+-30440	kDSpNotInitializedErr	kDSpNotInitializedErr
+-30429	kISpListBusyErr	kISpListBusyErr
+-30428	kISpDeviceActiveErr	kISpDeviceActiveErr
+-30427	kISpSystemActiveErr	kISpSystemActiveErr
+-30426	kISpDeviceInactiveErr	kISpDeviceInactiveErr
+-30425	kISpSystemInactiveErr	kISpSystemInactiveErr
+-30424	kISpElementNotInListErr	kISpElementNotInListErr
+-30423	kISpElementInListErr	kISpElementInListErr
+-30422	kISpBufferToSmallErr	kISpBufferToSmallErr
+-30421	kISpSystemListErr	kISpSystemListErr
+-30420	kISpInternalErr	kISpInternalErr
+-30399	kNSpJoinFailedErr	kNSpJoinFailedErr
+-30398	kNSpCantBlockErr	kNSpCantBlockErr
+-30397	kNSpMessageTooBigErr	kNSpMessageTooBigErr
+-30396	kNSpSendFailedErr	kNSpSendFailedErr
+-30395	kNSpConnectFailedErr	kNSpConnectFailedErr
+-30394	kNSpGameTerminatedErr	kNSpGameTerminatedErr
+-30393	kNSpTimeoutErr	kNSpTimeoutErr
+-30392	kNSpInvalidProtocolListErr	kNSpInvalidProtocolListErr
+-30391	kNSpInvalidProtocolRefErr	kNSpInvalidProtocolRefErr
+-30390	kNSpInvalidDefinitionErr	kNSpInvalidDefinitionErr
+-30389	kNSpAddPlayerFailedErr	kNSpAddPlayerFailedErr
+-30388	kNSpCreateGroupFailedErr	kNSpCreateGroupFailedErr
+-30387	kNSpNoHostVolunteersErr	kNSpNoHostVolunteersErr
+-30386	kNSpNoGroupsErr	kNSpNoGroupsErr
+-30385	kNSpNoPlayersErr	kNSpNoPlayersErr
+-30384	kNSpInvalidGroupIDErr	kNSpInvalidGroupIDErr
+-30383	kNSpInvalidPlayerIDErr	kNSpInvalidPlayerIDErr
+-30382	kNSpNameRequiredErr	kNSpNameRequiredErr
+-30381	kNSpFeatureNotImplementedErr	kNSpFeatureNotImplementedErr
+-30380	kNSpAddressInUseErr	kNSpAddressInUseErr
+-30379	kNSpRemovePlayerFailedErr	kNSpRemovePlayerFailedErr
+-30378	kNSpFreeQExhaustedErr	kNSpFreeQExhaustedErr
+-30377	kNSpInvalidAddressErr	kNSpInvalidAddressErr
+-30376	kNSpNotAdvertisingErr	kNSpNotAdvertisingErr
+-30374	kNSpAlreadyAdvertisingErr	kNSpAlreadyAdvertisingErr
+-30373	kNSpMemAllocationErr	kNSpMemAllocationErr
+-30371	kNSpOTVersionTooOldErr	kNSpOTVersionTooOldErr
+-30370	kNSpOTNotPresentErr	kNSpOTNotPresentErr
+-30369	kNSpInvalidParameterErr	kNSpInvalidParameterErr
+-30367	kNSpInvalidGameRefErr	kNSpInvalidGameRefErr
+-30366	kNSpProtocolNotAvailableErr	kNSpProtocolNotAvailableErr
+-30365	kNSpHostFailedErr	kNSpHostFailedErr
+-30364	kNSpPipeFullErr	kNSpPipeFullErr
+-30362	kNSpTopologyNotSupportedErr	kNSpTopologyNotSupportedErr
+-30361	kNSpAlreadyInitializedErr	kNSpAlreadyInitializedErr
+-30360	kNSpInitializationFailedErr	kNSpInitializationFailedErr
+-30344	kSSpScaleToZeroErr	kSSpScaleToZeroErr
+-30343	kSSpParallelUpVectorErr	kSSpParallelUpVectorErr
+-30342	kSSpCantInstallErr	kSSpCantInstallErr
+-30341	kSSpVersionErr	kSSpVersionErr
+-30340	kSSpInternalErr	kSSpInternalErr
+-30049	kALMInternalErr	kALMInternalErr
+-30048	kALMGroupNotFoundErr	kALMGroupNotFoundErr
+-30047	kALMNoSuchModuleErr	kALMNoSuchModuleErr
+-30046	kALMModuleCommunicationErr	kALMModuleCommunicationErr
+-30045	kALMDuplicateModuleErr	kALMDuplicateModuleErr
+-30044	kALMInstallationErr	kALMInstallationErr
+-30043	kALMDeferSwitchErr	kALMDeferSwitchErr
+-30042	kALMRebootFlagsLevelErr	kALMRebootFlagsLevelErr
+-30029	kLocalesDefaultDisplayStatus	Requested display locale unavailable, used default
+-30002	kLocalesTableFormatErr	kLocalesTableFormatErr
+-30001	kLocalesBufferTooSmallErr	kLocalesBufferTooSmallErr
+-29589	kFNSNameNotFoundErr	The name with the requested paramters was not found
+-29587	kFNSBadFlattenedSizeErr	flattened size didn't match input or was too small
+-29586	kFNSInsufficientDataErr	insufficient data for the operation
+-29585	kFNSMismatchErr	reference didn't match or wasn't found in profile
+-29584	kFNSDuplicateReferenceErr	the ref. being added is already in the profile
+-29583	kFNSBadProfileVersionErr	profile version is out of known range
+-29582	kFNSInvalidProfileErr	profile is NULL or otherwise bad
+-29581	kFNSBadReferenceVersionErr	ref. version is out of known range
+-29580	kFNSInvalidReferenceErr	ref. was NULL or otherwise bad
+-29507	kCollateInvalidCollationRef	kCollateInvalidCollationRef
+-29506	kCollateBufferTooSmall	kCollateBufferTooSmall
+-29505	kCollateInvalidChar	kCollateInvalidChar
+-29504	kCollatePatternNotFoundErr	kCollatePatternNotFoundErr
+-29503	kCollateUnicodeConvertFailedErr	kCollateUnicodeConvertFailedErr
+-29502	kCollateMissingUnicodeTableErr	kCollateMissingUnicodeTableErr
+-29501	kCollateInvalidOptions	kCollateInvalidOptions
+-29500	kCollateAttributesNotFoundErr	kCollateAttributesNotFoundErr
+-29299	kMPInvalidIDErr	kMPInvalidIDErr
+-29298	kMPInsufficientResourcesErr	kMPInsufficientResourcesErr
+-29297	kMPTaskAbortedErr	kMPTaskAbortedErr
+-29296	kMPTimeoutErr	kMPTimeoutErr
+-29295	kMPDeletedErr	kMPDeletedErr
+-29293	kMPBlueBlockingErr	kMPBlueBlockingErr
+-29292	kMPTaskStoppedErr	A convention used with MPThrowException.
+-29291	kMPTaskBlockedErr	kMPTaskBlockedErr
+-29290	kMPTaskCreatedErr	kMPTaskCreatedErr
+-29289	kMPProcessTerminatedErr	kMPProcessTerminatedErr
+-29288	kMPProcessCreatedErr	kMPProcessCreatedErr
+-29276	kMPPrivilegedErr	kMPPrivilegedErr
+-29275	kMPIterationEndErr	kMPIterationEndErr
+-25341	kUCTextBreakLocatorMissingType	Unicode text break error
+-25340	kUCOutputBufferTooSmall	Output buffer too small for Unicode string result
+-25318	errKCCreateChainFailed	errKCCreateChainFailed
+-25317	errKCDataNotModifiable	errKCDataNotModifiable
+-25316	errKCDataNotAvailable	errKCDataNotAvailable
+-25315	errKCInteractionRequired	errKCInteractionRequired
+-25314	errKCNoPolicyModule	errKCNoPolicyModule
+-25313	errKCNoCertificateModule	errKCNoCertificateModule
+-25312	errKCNoStorageModule	errKCNoStorageModule
+-25311	errKCKeySizeNotAllowed	errKCKeySizeNotAllowed
+-25310	errKCWrongKCVersion	errKCWrongKCVersion
+-25309	errKCReadOnlyAttr	errKCReadOnlyAttr
+-25308	errKCInteractionNotAllowed	errKCInteractionNotAllowed
+-25307	errKCNoDefaultKeychain	errKCNoDefaultKeychain
+-25306	errKCNoSuchClass	errKCNoSuchClass
+-25305	errKCInvalidSearchRef	errKCInvalidSearchRef
+-25304	errKCInvalidItemRef	errKCInvalidItemRef
+-25303	errKCNoSuchAttr	errKCNoSuchAttr
+-25302	errKCDataTooLarge	errKCDataTooLarge
+-25301	errKCBufferTooSmall	errKCBufferTooSmall
+-25300	errKCItemNotFound	errKCItemNotFound
+-25299	errKCDuplicateItem	errKCDuplicateItem
+-25298	errKCInvalidCallback	errKCInvalidCallback
+-25297	errKCDuplicateCallback	errKCDuplicateCallback
+-25296	errKCDuplicateKeychain	errKCDuplicateKeychain
+-25295	errKCInvalidKeychain	errKCInvalidKeychain
+-25294	errKCNoSuchKeychain	errKCNoSuchKeychain
+-25293	errKCAuthFailed	errKCAuthFailed
+-25292	errKCReadOnly	errKCReadOnly
+-25291	errKCNotAvailable	errKCNotAvailable
+-25280	printerStatusOpCodeNotSupportedErr	printerStatusOpCodeNotSupportedErr
+-22016	kTXNATSUIIsNotInstalledErr	kTXNATSUIIsNotInstalledErr
+-22015	kTXNDataTypeNotAllowedErr	kTXNDataTypeNotAllowedErr
+-22014	kTXNCopyNotAllowedInEchoModeErr	kTXNCopyNotAllowedInEchoModeErr
+-22013	kTXNCannotTurnTSMOffWhenUsingUnicodeErr	kTXNCannotTurnTSMOffWhenUsingUnicodeErr
+-22012	kTXNAlreadyInitializedErr	kTXNAlreadyInitializedErr
+-22011	kTXNInvalidRunIndex	kTXNInvalidRunIndex
+-22010	kTXNSomeOrAllTagsInvalidForRunErr	kTXNSomeOrAllTagsInvalidForRunErr
+-22009	kTXNAttributeTagInvalidForRunErr	dataValue is set to this per invalid tag
+-22008	kTXNNoMatchErr	kTXNNoMatchErr
+-22007	kTXNRunIndexOutofBoundsErr	kTXNRunIndexOutofBoundsErr
+-22006	kTXNCannotSetAutoIndentErr	kTXNCannotSetAutoIndentErr
+-22005	kTXNBadDefaultFileTypeWarning	kTXNBadDefaultFileTypeWarning
+-22004	kTXNUserCanceledOperationErr	kTXNUserCanceledOperationErr
+-22003	kTXNIllegalToCrossDataBoundariesErr	kTXNIllegalToCrossDataBoundariesErr
+-22002	kTXNInvalidFrameIDErr	kTXNInvalidFrameIDErr
+-22001	kTXNCannotAddFrameErr	kTXNCannotAddFrameErr
+-22000	kTXNEndIterationErr	kTXNEndIterationErr
+-20002	invalidIndexErr	The recordIndex parameter is not valid.
+-20001	recordDataTooBigErr	The record data is bigger than buffer size (1024 bytes).
+-20000	unknownInsertModeErr	There is no such an insert mode.
+-13950	kHIDBaseError	kHIDBaseError
+-13949	kHIDNullStateErr	kHIDNullStateErr
+-13948	kHIDBufferTooSmallErr	kHIDBufferTooSmallErr
+-13947	kHIDValueOutOfRangeErr	kHIDValueOutOfRangeErr
+-13946	kHIDUsageNotFoundErr	kHIDUsageNotFoundErr
+-13945	kHIDNotValueArrayErr	kHIDNotValueArrayErr
+-13944	kHIDInvalidPreparsedDataErr	kHIDInvalidPreparsedDataErr
+-13943	kHIDIncompatibleReportErr	kHIDIncompatibleReportErr
+-13942	kHIDBadLogPhysValuesErr	kHIDBadLogPhysValuesErr
+-13941	kHIDInvalidReportTypeErr	kHIDInvalidReportTypeErr
+-13940	kHIDInvalidReportLengthErr	kHIDInvalidReportLengthErr
+-13939	kHIDNullPointerErr	kHIDNullPointerErr
+-13938	kHIDBadParameterErr	kHIDBadParameterErr
+-13937	kHIDNotEnoughMemoryErr	kHIDNotEnoughMemoryErr
+-13936	kHIDEndOfDescriptorErr	kHIDEndOfDescriptorErr
+-13935	kHIDUsagePageZeroErr	kHIDUsagePageZeroErr
+-13934	kHIDBadLogicalMinimumErr	kHIDBadLogicalMinimumErr
+-13933	kHIDBadLogicalMaximumErr	kHIDBadLogicalMaximumErr
+-13932	kHIDInvertedLogicalRangeErr	kHIDInvertedLogicalRangeErr
+-13931	kHIDInvertedPhysicalRangeErr	kHIDInvertedPhysicalRangeErr
+-13930	kHIDUnmatchedUsageRangeErr	kHIDUnmatchedUsageRangeErr
+-13929	kHIDInvertedUsageRangeErr	kHIDInvertedUsageRangeErr
+-13928	kHIDUnmatchedStringRangeErr	kHIDUnmatchedStringRangeErr
+-13927	kHIDUnmatchedDesignatorRangeErr	kHIDUnmatchedDesignatorRangeErr
+-13926	kHIDReportSizeZeroErr	kHIDReportSizeZeroErr
+-13925	kHIDReportCountZeroErr	kHIDReportCountZeroErr
+-13924	kHIDReportIDZeroErr	kHIDReportIDZeroErr
+-13923	kHIDInvalidRangePageErr	kHIDInvalidRangePageErr
+-13910	kHIDDeviceNotReady	The device is still initializing, try again later
+-13909	kHIDVersionIncompatibleErr	kHIDVersionIncompatibleErr
+-13887	debuggingNoMatchErr	debugging component or option not found at this index
+-13886	debuggingNoCallbackErr	debugging component has no callback
+-13885	debuggingInvalidNameErr	componentName or optionName is invalid (NULL)
+-13884	debuggingInvalidOptionErr	optionSelectorNum is not registered
+-13883	debuggingInvalidSignatureErr	componentSignature not registered
+-13882	debuggingDuplicateOptionErr	optionSelectorNum already registered
+-13881	debuggingDuplicateSignatureErr	componentSignature already registered
+-13880	debuggingExecutionContextErr	routine cannot be called at this time
+-13020	kNoSuchPowerSource	kNoSuchPowerSource
+-13014	kProcessorTempRoutineRequiresMPLib2	kProcessorTempRoutineRequiresMPLib2
+-13013	kCantReportProcessorTemperatureErr	kCantReportProcessorTemperatureErr
+-13010	kPowerMgtRequestDenied	kPowerMgtRequestDenied
+-13009	kPowerMgtMessageNotHandled	kPowerMgtMessageNotHandled
+-13008	kPowerHandlerNotFoundForProcErr	kPowerHandlerNotFoundForProcErr
+-13007	kPowerHandlerNotFoundForDeviceErr	kPowerHandlerNotFoundForDeviceErr
+-13006	kPowerHandlerExistsForDeviceErr	kPowerHandlerExistsForDeviceErr
+-13005	pmRecvEndErr	during receive, pmgr did not finish hs configured for this connection
+-13004	pmRecvStartErr	during receive, pmgr did not start hs
+-13003	pmSendEndErr	during send, pmgr did not finish hs
+-13002	pmSendStartErr	during send, pmgr did not start hs
+-13001	pmReplyTOErr	Timed out waiting for reply
+-13000	pmBusyErr	Power Mgr never ready to start handshake
+-11005	pictureDataErr	the picture data was invalid
+-11004	colorsRequestedErr	the number of colors requested was illegal
+-11003	cantLoadPickMethodErr	unable to load the custom pick proc
+-11002	pictInfoVerbErr	the passed verb was invalid
+-11001	pictInfoIDErr	the internal consistancy check for the PictInfoID is wrong
+-11000	pictInfoVersionErr	wrong version of the PictInfo structure
+-10116	telNotEnoughdspBW	not enough real-time for allocation
+-10115	telBadSampleRate	incompatible sample rate
+-10114	telBadSWErr	Software not installed properly
+-10113	telDetAlreadyOn	detection is already turned on
+-10112	telAutoAnsNotOn	autoAnswer in not turned on
+-10111	telValidateFailed	telValidate failed
+-10110	telBadProcID	invalid procID
+-10109	telDeviceNotFound	device not found
+-10108	telBadCodeResource	code resource not found
+-10107	telInitFailed	initialization failed
+-10106	telNoCommFolder	Communications/Extensions Ä not found
+-10103	telUnknownErr	unable to set config
+-10102	telNoSuchTool	unable to find tool with name specified
+-10091	telBadFunction	bad msgCode specified
+-10090	telPBErr	parameter block error, bad format
+-10082	telCANotDeflectable	CA not "deflectable"
+-10081	telCANotRejectable	CA not "rejectable"
+-10080	telCANotAcceptable	CA not "acceptable"
+-10072	telTermNotOpen	terminal not opened via TELOpenTerm
+-10071	telStillNeeded	terminal driver still needed by someone else
+-10070	telAlreadyOpen	terminal already open
+-10064	telNoCallbackRef	no call back reference was specified, but is required
+-10063	telDisplayModeNotSupp	display mode not supported by tool
+-10062	telBadDisplayMode	bad display mode specified
+-10061	telFwdTypeNotSupp	forward type not supported by tool
+-10060	telDNTypeNotSupp	DN type not supported by tool
+-10059	telBadRate	bad rate specified
+-10058	telBadBearerType	bad bearerType specified
+-10057	telBadSelect	unable to select or deselect DN
+-10056	telBadParkID	bad park id specified
+-10055	telBadPickupGroupID	bad pickup group ID specified
+-10054	telBadFwdType	bad fwdType specified
+-10053	telBadFeatureID	bad feature ID specified
+-10052	telBadIntercomID	bad intercom ID specified
+-10051	telBadPageID	bad page ID specified
+-10050	telBadDNType	DN type invalid
+-10047	telConfLimitExceeded	attempt to exceed switch conference limits
+-10046	telCBErr	call back feature not set previously
+-10045	telTransferRej	transfer request rejected
+-10044	telTransferErr	transfer not prepared
+-10043	telConfRej	conference request was rejected
+-10042	telConfErr	conference was not prepared
+-10041	telConfNoLimit	no limit was specified but required
+-10040	telConfLimitErr	limit specified is too high for this configuration
+-10033	telFeatNotSupp	feature program call not supported by this tool
+-10032	telFeatActive	feature already active
+-10031	telFeatNotAvail	feature subscribed but not available
+-10030	telFeatNotSub	feature not subscribed
+-10025	errAEPropertiesClash	illegal combination of properties settings for Set Data, make new, or duplicate
+-10024	errAECantPutThatThere	in make new, duplicate, etc. class can't be an element of container
+-10023	errAENotAnEnumMember	enumerated value in SetData is not allowed for this property
+-10022	telIntExtNotSupp	internal external type not supported by this tool
+-10021	telBadIntExt	bad internal external error
+-10020	telStateNotSupp	device state not supported by tool
+-10019	telBadStateErr	bad device state specified
+-10018	telIndexNotSupp	index not supported by this tool
+-10017	telBadIndex	bad index specified
+-10016	telAPattNotSupp	alerting pattern not supported by tool
+-10015	telBadAPattErr	bad alerting pattern specified
+-10014	telVTypeNotSupp	volume type not supported by this tool
+-10013	telBadVTypeErr	bad volume type error
+-10012	telBadLevelErr	bad volume level setting
+-10011	telHTypeNotSupp	hook type not supported by this tool
+-10010	telBadHTypeErr	bad hook type specified
+-10009	errAECantSupplyType	errAECantSupplyType
+-10008	telNoOpenErr	unable to open terminal
+-10007	telNoMemErr	no memory to allocate handle
+-10006	errOSACantAssign	Signaled when an object cannot be set in a container.
+-10005	telBadProcErr	bad msgProc specified
+-10004	telBadHandErr	bad handle specified
+-10003	OSAIllegalAssign	Signaled when an object can never be set in a container
+-10002	telBadDNErr	TELDNHandle not found or invalid
+-10001	telBadTermErr	invalid TELHandle or handle not found
+-10000	errAEEventFailed	errAEEventFailed
+-9999	cannotMoveAttachedController	cannotMoveAttachedController
+-9998	controllerHasFixedHeight	controllerHasFixedHeight
+-9997	cannotSetWidthOfAttachedController	cannotSetWidthOfAttachedController
+-9996	controllerBoundsNotExact	controllerBoundsNotExact
+-9995	editingNotAllowed	editingNotAllowed
+-9994	badControllerHeight	badControllerHeight
+-9408	deviceCantMeetRequest	deviceCantMeetRequest
+-9407	seqGrabInfoNotAvailable	seqGrabInfoNotAvailable
+-9406	badSGChannel	badSGChannel
+-9405	couldntGetRequiredComponent	couldntGetRequiredComponent
+-9404	notEnoughDiskSpaceToGrab	notEnoughDiskSpaceToGrab
+-9403	notEnoughMemoryToGrab	notEnoughMemoryToGrab
+-9402	cantDoThatInCurrentMode	cantDoThatInCurrentMode
+-9401	grabTimeComplete	grabTimeComplete
+-9400	noDeviceForChannel	noDeviceForChannel
+-9109	kNoCardBusCISErr	No valid CIS exists for this CardBus card
+-9108	kNotZVCapableErr	This socket does not support Zoomed Video
+-9107	kCardPowerOffErr	Power to the card has been turned off
+-9106	kAttemptDupCardEntryErr	The Enabler was asked to create a duplicate card entry
+-9105	kAlreadySavedStateErr	The state has been saved on previous call
+-9104	kTooManyIOWindowsErr	device requested more than one I/O window
+-9103	kNotReadyErr	PC Card failed to go ready
+-9102	kClientRequestDenied	CS Clients should return this code inorder to
+-9101	kNoCompatibleNameErr	There is no compatible driver name for this device
+-9100	kNoEnablerForCardErr	No Enablers were found that can support the card
+-9099	kNoCardEnablersFoundErr	No Enablers were found
+-9098	kUnsupportedCardErr	Card not supported by generic enabler
+-9097	kNoClientTableErr	The client table has not be initialized yet
+-9096	kNoMoreInterruptSlotsErr	All internal Interrupt slots are in use
+-9095	kNoMoreTimerClientsErr	All timer callbacks are in use
+-9094	kNoIOWindowRequestedErr	Request I/O window before calling configuration
+-9093	kBadCustomIFIDErr	Custom interface ID is invalid
+-9092	kBadTupleDataErr	Data in tuple is invalid
+-9091	kInvalidCSClientErr	Card Services ClientID is not registered
+-9090	kUnsupportedVsErr	Unsupported Voltage Sense
+-9089	kInvalidDeviceNumber	kInvalidDeviceNumber
+-9088	kPostCardEventErr	_PCCSLPostCardEvent failed and dropped an event
+-9087	kCantConfigureCardErr	kCantConfigureCardErr
+-9086	kPassCallToChainErr	kPassCallToChainErr
+-9085	kCardBusCardErr	kCardBusCardErr
+-9084	k16BitCardErr	k16BitCardErr
+-9083	kBadDeviceErr	kBadDeviceErr
+-9082	kBadLinkErr	kBadLinkErr
+-9081	kInvalidRegEntryErr	kInvalidRegEntryErr
+-9080	kNoCardSevicesSocketsErr	kNoCardSevicesSocketsErr
+-9079	kOutOfResourceErr	Card Services has exhausted the resource
+-9078	kNoMoreItemsErr	there are no more of the requested item
+-9077	kInUseErr	requested resource is being used by a client
+-9076	kConfigurationLockedErr	a configuration has already been locked
+-9075	kWriteProtectedErr	media is write-protected
+-9074	kBusyErr	unable to process request at this time - try later
+-9073	kUnsupportedModeErr	mode is not supported
+-9072	kUnsupportedFunctionErr	function is not supported by this implementation
+-9071	kNoCardErr	no PC card in the socket
+-9070	kGeneralFailureErr	an undefined error has occurred
+-9069	kWriteFailureErr	unable to complete write request
+-9068	kReadFailureErr	unable to complete read request
+-9067	kBadSpeedErr	specified speed is unavailable
+-9066	kBadCISErr	CIS on card is invalid
+-9065	kBadHandleErr	clientHandle is invalid
+-9064	kBadArgsErr	values in argument packet are invalid
+-9063	kBadArgLengthErr	ArgLength argument is invalid
+-9062	kBadWindowErr	specified window is invalid
+-9061	kBadVppErr	specified Vpp1 or Vpp2 power level index is invalid
+-9060	kBadVccErr	specified Vcc power level index is invalid
+-9059	kBadTypeErr	specified window or interface type is invalid
+-9058	kBadSocketErr	specified logical or physical socket number is invalid
+-9057	kBadSizeErr	specified size is invalid
+-9056	kBadPageErr	specified page is invalid
+-9055	kBadOffsetErr	specified PC card memory array offset is invalid
+-9054	kBadIRQErr	specified IRQ level is invalid
+-9053	kBadEDCErr	specified EDC generator specified is invalid
+-9052	kBadBaseErr	specified base system memory address is invalid
+-9051	kBadAttributeErr	specified attributes field value is invalid
+-9050	kBadAdapterErr	invalid adapter number
+-8992	codecOffscreenFailedPleaseRetryErr	codecOffscreenFailedPleaseRetryErr
+-8991	lockPortBitsWrongGDeviceErr	lockPortBitsWrongGDeviceErr
+-8990	directXObjectAlreadyExists	directXObjectAlreadyExists
+-8989	codecDroppedFrameErr	returned from ImageCodecDrawBand
+-8988	codecOffscreenFailedErr	codecOffscreenFailedErr
+-8987	codecNeedAccessKeyErr	codec needs password in order to decompress
+-8986	codecParameterDialogConfirm	codecParameterDialogConfirm
+-8985	lockPortBitsSurfaceLostErr	lockPortBitsSurfaceLostErr
+-8984	lockPortBitsBadPortErr	lockPortBitsBadPortErr
+-8983	lockPortBitsWindowClippedErr	lockPortBitsWindowClippedErr
+-8982	lockPortBitsWindowResizedErr	lockPortBitsWindowResizedErr
+-8981	lockPortBitsWindowMovedErr	lockPortBitsWindowMovedErr
+-8980	lockPortBitsBadSurfaceErr	lockPortBitsBadSurfaceErr
+-8979	codecNeedToFlushChainErr	codecNeedToFlushChainErr
+-8978	codecDisabledErr	codec disabled itself -- pass codecFlagReenable to reset
+-8977	codecNoMemoryPleaseWaitErr	codecNoMemoryPleaseWaitErr
+-8976	codecNothingToBlitErr	codecNothingToBlitErr
+-8975	codecCantQueueErr	codecCantQueueErr
+-8974	codecCantWhenErr	codecCantWhenErr
+-8973	codecOpenErr	codecOpenErr
+-8972	codecConditionErr	codecConditionErr
+-8971	codecExtensionNotFoundErr	codecExtensionNotFoundErr
+-8970	codecDataVersErr	codecDataVersErr
+-8969	codecBadDataErr	codecBadDataErr
+-8968	codecWouldOffscreenErr	codecWouldOffscreenErr
+-8967	codecAbortErr	codecAbortErr
+-8966	codecSpoolErr	codecSpoolErr
+-8965	codecImageBufErr	codecImageBufErr
+-8964	codecScreenBufErr	codecScreenBufErr
+-8963	codecSizeErr	codecSizeErr
+-8962	codecUnimpErr	codecUnimpErr
+-8961	noCodecErr	noCodecErr
+-8960	codecErr	codecErr
+-8852	kIllegalClockValueErr	kIllegalClockValueErr
+-8851	kUTCOverflowErr	kUTCOverflowErr
+-8850	kUTCUnderflowErr	kUTCUnderflowErr
+-8809	kATSULastErr	The last ATSUI error code.
+-8808	kATSULineBreakInWord	This is not an error code but is returned by ATSUBreakLine to
+-8807	kATSUCoordinateOverflowErr	Used to indicate the coordinates provided to an ATSUI routine caused
+-8806	kATSUNoFontScalerAvailableErr	Used when no font scaler is available for the font passed
+-8805	kATSUNoFontCmapAvailableErr	Used when no CMAP table can be accessed or synthesized for the
+-8804	kATSULowLevelErr	Used when an error was encountered within the low level ATS
+-8803	kATSUQuickDrawTextErr	Used when QuickDraw Text encounters an error rendering or measuring
+-8802	kATSUNoStyleRunsAssignedErr	Used when an attempt was made to measure, highlight or draw
+-8801	kATSUNotSetErr	Used when the client attempts to retrieve an attribute,
+-8800	kATSUInvalidCacheErr	Used when an attempt was made to read in style data
+-8799	kATSUInvalidAttributeTagErr	Used when an attempt was made to use a tag value that
+-8798	kATSUInvalidAttributeSizeErr	Used when an attempt was made to use an attribute with a
+-8797	kATSUInvalidAttributeValueErr	Used when an attempt was made to use an attribute with
+-8796	kATSUInvalidFontErr	Used when an attempt was made to use an invalid font ID.
+-8795	kATSUNoCorrespondingFontErr	This value is retrned by font ID conversion
+-8794	kATSUFontsNotMatched	This value is returned by ATSUMatchFontsToText()
+-8793	kATSUFontsMatched	This is not an error code but is returned by
+-8792	kATSUInvalidTextRangeErr	An attempt was made to extract information
+-8791	kATSUInvalidStyleErr	An attempt was made to use a ATSUStyle which
+-8790	kATSUInvalidTextLayoutErr	An attempt was made to use a ATSUTextLayout
+-8785	kTECOutputBufferFullStatus	output buffer has no room for conversion of next input text element (partial conversion)
+-8784	kTECNeedFlushStatus	kTECNeedFlushStatus
+-8783	kTECUsedFallbacksStatus	kTECUsedFallbacksStatus
+-8771	kTECItemUnavailableErr	item (e.g. name) not available for specified region (& encoding if relevant)
+-8770	kTECGlobalsUnavailableErr	globals have already been deallocated (premature TERM)
+-8769	unicodeChecksumErr	unicodeChecksumErr
+-8768	unicodeNoTableErr	unicodeNoTableErr
+-8767	unicodeVariantErr	unicodeVariantErr
+-8766	unicodeFallbacksErr	unicodeFallbacksErr
+-8765	unicodePartConvertErr	unicodePartConvertErr
+-8764	unicodeBufErr	unicodeBufErr
+-8763	unicodeCharErr	unicodeCharErr
+-8762	unicodeElementErr	unicodeElementErr
+-8761	unicodeNotFoundErr	unicodeNotFoundErr
+-8760	unicodeTableFormatErr	unicodeTableFormatErr
+-8759	unicodeDirectionErr	unicodeDirectionErr
+-8758	unicodeContextualErr	unicodeContextualErr
+-8757	unicodeTextEncodingDataErr	unicodeTextEncodingDataErr
+-8756	kTECDirectionErr	direction stack overflow, etc.
+-8755	kTECIncompleteElementErr	text element may be incomplete or is too long for internal buffers
+-8754	kTECUnmappableElementErr	kTECUnmappableElementErr
+-8753	kTECPartialCharErr	input buffer ends in the middle of a multibyte character, conversion stopped
+-8752	kTECBadTextRunErr	kTECBadTextRunErr
+-8751	kTECArrayFullErr	supplied name buffer or TextRun, TextEncoding, or UnicodeMapping array is too small
+-8750	kTECBufferBelowMinimumSizeErr	output buffer too small to allow processing of first input text element
+-8749	kTECNoConversionPathErr	kTECNoConversionPathErr
+-8748	kTECCorruptConverterErr	invalid converter object reference
+-8747	kTECTableFormatErr	kTECTableFormatErr
+-8746	kTECTableChecksumErr	kTECTableChecksumErr
+-8745	kTECMissingTableErr	kTECMissingTableErr
+-8740	kTextUndefinedElementErr	text conversion errors
+-8739	kTextMalformedInputErr	in DBCS, for example, high byte followed by invalid low byte
+-8738	kTextUnsupportedEncodingErr	specified encoding not supported for this operation
+-7127	dcmBufferOverflowErr	data is larger than buffer size
+-7126	dcmIterationCompleteErr	no more item in iterator
+-7124	dcmBadFeatureErr	invalid AccessMethod feature
+-7122	dcmNoAccessMethodErr	no such AccessMethod
+-7121	dcmProtectedErr	need keyword to use dictionary
+-7119	dcmBadPropertyErr	no such property exist
+-7118	dcmBadFindMethodErr	no such find method supported
+-7117	dcmBadDataSizeErr	too big data size
+-7116	dcmTooManyKeyErr	too many key field
+-7115	dcmBadKeyErr	bad key information
+-7113	dcmNoFieldErr	no such field exist
+-7112	dcmBadFieldTypeErr	no such field type supported
+-7111	dcmBadFieldInfoErr	incomplete information
+-7110	dcmNecessaryFieldErr	lack required/identify field
+-7109	dcmDupRecordErr	same record already exist
+-7108	dcmNoRecordErr	no such record
+-7107	dcmBlockFullErr	dictionary block full
+-7105	dcmDictionaryBusyErr	dictionary is busy
+-7104	dcmDictionaryNotOpenErr	dictionary not opened
+-7103	dcmPermissionErr	invalid permission
+-7102	dcmBadDictionaryErr	invalid dictionary
+-7101	dcmNotDictionaryErr	not dictionary
+-7100	dcmParamErr	bad parameter
+-7000	laEngineNotFoundErr	can't find the engine
+-6999	laPropertyErr	Error in properties
+-6998	kUSBUnknownDeviceErr	device ref not recognised
+-6997	laPropertyIsReadOnlyErr	the property is read only
+-6996	laPropertyUnknownErr	the property is unknown to this environment
+-6995	laPropertyValueErr	Invalid property value
+-6994	laDictionaryTooManyErr	too many dictionaries
+-6993	laDictionaryUnknownErr	can't use this dictionary with this environment
+-6992	laDictionaryNotOpenedErr	the dictionary is not opened
+-6991	laTextOverFlowErr	text is too long
+-6990	laFailAnalysisErr	analysis failed
+-6989	laNoMoreMorphemeErr	nothing to read
+-6988	laInvalidPathErr	path is not correct
+-6987	kUSBNotHandled	Notification was not handled   (same as NotFound)
+-6986	laEnvironmentNotFoundErr	can't fint the specified environment
+-6985	laEnvironmentBusyErr	specified environment is used
+-6984	laTooSmallBufferErr	output buffer is too small to store any result
+-6983	kUSBFlagsError	Unused flags not zeroed
+-6982	kUSBAbortedError	Pipe aborted
+-6981	kUSBNoBandwidthError	Not enough bandwidth available
+-6980	kUSBPipeIdleError	Pipe is Idle, it will not accept transactions
+-6979	kUSBPipeStalledError	Pipe has stalled, error needs to be cleared
+-6978	kUSBUnknownInterfaceErr	Interface ref not recognised
+-6977	kUSBDeviceBusy	Device is already being configured
+-6976	kUSBDevicePowerProblem	Device has a power problem
+-6975	kUSBInvalidBuffer	bad buffer, usually nil
+-6974	kUSBDeviceSuspended	Device is suspended
+-6973	kUSBDeviceNotSuspended	device is not suspended for resume
+-6972	kUSBDeviceDisconnected	Disconnected during suspend or reset
+-6971	kUSBTimedOut	Transaction timed out.
+-6970	kUSBQueueAborted	Pipe zero stall cleared.
+-6969	kUSBPortDisabled	The port you are attached to is disabled, use USBDeviceReset.
+-6950	kUSBBadDispatchTable	Improper driver dispatch table
+-6949	kUSBUnknownNotification	Notification type not defined
+-6948	kUSBQueueFull	Internal queue maxxed
+-6916	kUSBLinkErr	kUSBLinkErr
+-6915	kUSBCRCErr	Pipe stall, bad CRC
+-6914	kUSBBitstufErr	Pipe stall, bitstuffing
+-6913	kUSBDataToggleErr	Pipe stall, Bad data toggle
+-6912	kUSBEndpointStallErr	Device didn't understand
+-6911	kUSBNotRespondingErr	Pipe stall, No device, device hung
+-6910	kUSBPIDCheckErr	Pipe stall, PID CRC error
+-6909	kUSBWrongPIDErr	Pipe stall, Bad or wrong PID
+-6908	kUSBOverRunErr	Packet too large or more data than buffer
+-6907	kUSBUnderRunErr	Less data than buffer
+-6906	kUSBRes1Err	kUSBRes1Err
+-6905	kUSBRes2Err	kUSBRes2Err
+-6904	kUSBBufOvrRunErr	Host hardware failure on data in, PCI busy?
+-6903	kUSBBufUnderRunErr	Host hardware failure on data out, PCI busy?
+-6902	kUSBNotSent1Err	Transaction not sent
+-6901	kUSBNotSent2Err	Transaction not sent
+-6232	kDMFoundErr	Did not proceed because we found an item
+-6231	kDMMainDisplayCannotMoveErr	Trying to move main display (or a display mirrored to it)
+-6230	kDMDisplayAlreadyInstalledErr	Attempt to add an already installed display.
+-6229	kDMDisplayNotFoundErr	Could not find item (will someday remove).
+-6228	kDMDriverNotDisplayMgrAwareErr	Video Driver does not support display manager.
+-6227	kDMSWNotInitializedErr	Required software not initialized (eg windowmanager or display mgr).
+-6226	kSysSWTooOld	Missing critical pieces of System Software.
+-6225	kDMMirroringNotOn	Returned by all calls that need mirroring to be on to do their thing.
+-6224	kDMCantBlock	Mirroring is already on, can’t Block now (call DMUnMirror() first).
+-6223	kDMMirroringBlocked	DMBlockMirroring() has been called.
+-6222	kDMWrongNumberOfDisplays	Can only handle 2 displays for now.
+-6221	kDMMirroringOnAlready	Returned by all calls that need mirroring to be off to do their thing.
+-6220	kDMGenErr	Unexpected Error
+-6150	kQTSSUnknownErr	kQTSSUnknownErr
+-5753	collectionVersionErr	collectionVersionErr
+-5752	collectionIndexRangeErr	collectionIndexRangeErr
+-5751	collectionItemNotFoundErr	collectionItemNotFoundErr
+-5750	collectionItemLockedErr	collectionItemLockedErr
+-5699	kNavMissingKindStringErr	kNavMissingKindStringErr
+-5698	kNavInvalidCustomControlMessageErr	kNavInvalidCustomControlMessageErr
+-5697	kNavCustomControlMessageFailedErr	kNavCustomControlMessageFailedErr
+-5696	kNavInvalidSystemConfigErr	kNavInvalidSystemConfigErr
+-5640	dialogNoTimeoutErr	dialogNoTimeoutErr
+-5623	menuInvalidErr	menu is invalid
+-5622	menuItemNotFoundErr	specified menu item wasn't found
+-5621	menuUsesSystemDefErr	GetMenuDefinition failed because the menu uses the system MDEF
+-5620	menuNotFoundErr	specified menu or menu ID wasn't found
+-5610	errWindowNotFound	returned from FindWindowOfClass
+-5609	errFloatingWindowsNotInitialized	called HideFloatingWindows or ShowFloatingWindows without calling InitFloatingWindows
+-5608	errWindowsAlreadyInitialized	tried to call InitFloatingWindows twice, or called InitWindows and then floating windows
+-5607	errUserWantsToDragWindow	if returned from TrackWindowProxyDrag, you should call DragWindow on the window
+-5606	errCorruptWindowDescription	tried to load a corrupt window description (size or version fields incorrect)
+-5605	errUnrecognizedWindowClass	tried to create a window with a bad WindowClass
+-5604	errWindowPropertyNotFound	tried to get a nonexistent property
+-5603	errInvalidWindowProperty	tried to access a property tag with private creator
+-5602	errWindowDoesNotHaveProxy	tried to do something requiring a proxy to a window which doesn’t have a proxy
+-5601	errUnsupportedWindowAttributesForClass	tried to create a window with WindowAttributes not supported by the WindowClass
+-5600	errInvalidWindowPtr	tried to pass a bad WindowRef argument
+-5553	gestaltLocationErr	gestalt function ptr wasn't in sysheap
+-5552	gestaltDupSelectorErr	tried to add an entry that already existed
+-5551	gestaltUndefSelectorErr	undefined selector was passed to Gestalt
+-5550	gestaltUnknownErr	value returned if Gestalt doesn't know the answer
+-5502	envVersTooBig	Version bigger than call can handle
+-5501	envBadVers	Version non-positive
+-5500	envNotPresent	returned by glue.
+-5421	qtsAddressBusyErr	qtsAddressBusyErr
+-5420	qtsConnectionFailedErr	qtsConnectionFailedErr
+-5408	qtsTimeoutErr	qtsTimeoutErr
+-5407	qtsUnknownValueErr	qtsUnknownValueErr
+-5406	qtsTooMuchDataErr	qtsTooMuchDataErr
+-5405	qtsUnsupportedFeatureErr	qtsUnsupportedFeatureErr
+-5404	qtsUnsupportedRateErr	qtsUnsupportedRateErr
+-5403	qtsUnsupportedDataTypeErr	qtsUnsupportedDataTypeErr
+-5402	qtsBadDataErr	something is wrong with the data
+-5401	qtsBadStateErr	qtsBadStateErr
+-5400	qtsBadSelectorErr	qtsBadSelectorErr
+-5388	errIAEndOfTextRun	errIAEndOfTextRun
+-5387	errIATextExtractionErr	errIATextExtractionErr
+-5386	errIAInvalidDocument	errIAInvalidDocument
+-5385	errIACanceled	errIACanceled
+-5384	errIABufferTooSmall	errIABufferTooSmall
+-5383	errIANoMoreItems	errIANoMoreItems
+-5382	errIAParamErr	errIAParamErr
+-5381	errIAAllocationErr	errIAAllocationErr
+-5380	errIAUnknownErr	errIAUnknownErr
+-5362	hrUnableToResizeHandleErr	hrUnableToResizeHandleErr
+-5361	hrMiscellaneousExceptionErr	hrMiscellaneousExceptionErr
+-5360	hrHTMLRenderingLibNotInstalledErr	hrHTMLRenderingLibNotInstalledErr
+-5253	errCannotUndo	errCannotUndo
+-5252	errNonContiuousAttribute	errNonContiuousAttribute
+-5251	errUnknownElement	errUnknownElement
+-5250	errReadOnlyText	errReadOnlyText
+-5249	errEmptyScrap	errEmptyScrap
+-5248	errNoHiliteText	errNoHiliteText
+-5247	errOffsetNotOnElementBounday	errOffsetNotOnElementBounday
+-5246	errInvalidRange	errInvalidRange
+-5245	errIteratorReachedEnd	errIteratorReachedEnd
+-5244	errEngineNotFound	errEngineNotFound
+-5243	errAlreadyInImagingMode	errAlreadyInImagingMode
+-5242	errNotInImagingMode	errNotInImagingMode
+-5241	errMarginWilllNotFit	errMarginWilllNotFit
+-5240	errUnknownAttributeTag	errUnknownAttributeTag
+-5063	afpSameNodeErr	An Attempt was made to connect to a file server running on the same machine
+-5062	afpAlreadyMounted	The volume is already mounted
+-5061	afpCantMountMoreSrvre	The Maximum number of server connections has been reached
+-5060	afpBadDirIDType	afpBadDirIDType
+-5048	afpCallNotAllowed	The server knows what you wanted to do, but won't let you do it just now
+-5047	afpAlreadyLoggedInErr	User has been authenticated but is already logged in from another machine (and that's not allowed on this server)
+-5046	afpPwdPolicyErr	Password does not conform to servers password policy
+-5045	afpPwdNeedsChangeErr	The password needs to be changed
+-5044	afpInsideTrashErr	The folder being shared is inside the trash folder OR the shared folder is being moved into the trash folder
+-5043	afpInsideSharedErr	The folder being shared is inside a shared folder OR the folder contains a shared folder and is being moved into a shared folder
+-5042	afpPwdExpiredErr	The password being used is too old: this requires the user to change the password before log-in can continue
+-5041	afpPwdTooShortErr	The password being set is too short: there is a minimum length that must be met or exceeded
+-5040	afpPwdSameErr	Someone tried to change their password to the same password on a mantadory password change
+-5039	afpBadIDErr	afpBadIDErr
+-5038	afpSameObjectErr	afpSameObjectErr
+-5037	afpCatalogChanged	afpCatalogChanged
+-5036	afpDiffVolErr	afpDiffVolErr
+-5035	afpIDExists	afpIDExists
+-5034	afpIDNotFound	afpIDNotFound
+-5033	afpContainsSharedErr	the folder being shared contains a shared folder
+-5032	afpObjectLocked	Object is M/R/D/W inhibited
+-5031	afpVolLocked	Volume is Read-Only
+-5030	afpIconTypeError	Icon size specified different from existing icon size
+-5029	afpDirNotFound	Unknown directory specified
+-5028	afpCantRename	AFPRename cannot rename volume
+-5027	afpServerGoingDown	Server is shutting down
+-5026	afpTooManyFilesOpen	Maximum open file count reached
+-5025	afpObjectTypeErr	File/Directory specified where Directory/File expected
+-5024	afpCallNotSupported	Unsupported AFP call was made
+-5023	afpUserNotAuth	No AFPLogin call has successfully been made for this session
+-5022	afpSessClosed	Session closed
+-5021	afpRangeOverlap	Some or all of range already locked by same user
+-5020	afpRangeNotLocked	Tried to unlock range that was not locked by user
+-5019	afpParmErr	A specified parameter was out of allowable range
+-5018	afpObjectNotFound	Specified file or directory does not exist
+-5017	afpObjectExists	Specified destination file or directory already exists
+-5016	afpNoServer	Server not responding
+-5015	afpNoMoreLocks	Maximum lock limit reached
+-5014	afpMiscErr	Unexpected error encountered during execution
+-5013	afpLockErr	Some or all of requested range is locked by another user
+-5012	afpItemNotFound	Unknown UserName/UserID or missing comment/APPL entry
+-5011	afpFlatVol	Cannot create directory on specified volume
+-5010	afpFileBusy	Cannot delete an open file
+-5009	afpEofError	Read beyond logical end-of-file
+-5008	afpDiskFull	Insufficient free space on volume for operation
+-5007	afpDirNotEmpty	Cannot delete non-empty directory
+-5006	afpDenyConflict	Specified open/deny modes conflict with current open modes
+-5005	afpCantMove	Move destination is offspring of source, or root was specified
+-5004	afpBitmapErr	Bitmap contained bits undefined for call
+-5003	afpBadVersNum	Unknown AFP protocol version number specified
+-5002	afpBadUAM	Unknown user authentication method specified
+-5001	afpAuthContinue	Further information required to complete AFPLogin call
+-5000	afpAccessDenied	Insufficient access privileges for operation
+-4999	illegalScrapFlavorSizeErr	illegalScrapFlavorSizeErr
+-4998	illegalScrapFlavorTypeErr	illegalScrapFlavorTypeErr
+-4997	illegalScrapFlavorFlagsErr	illegalScrapFlavorFlagsErr
+-4996	scrapFlavorSizeMismatchErr	scrapFlavorSizeMismatchErr
+-4995	scrapFlavorFlagsMismatchErr	scrapFlavorFlagsMismatchErr
+-4994	nilScrapFlavorDataErr	nilScrapFlavorDataErr
+-4993	noScrapPromiseKeeperErr	noScrapPromiseKeeperErr
+-4992	scrapPromiseNotKeptErr	scrapPromiseNotKeptErr
+-4991	processStateIncorrectErr	processStateIncorrectErr
+-4990	badScrapRefErr	badScrapRefErr
+-4989	duplicateScrapFlavorErr	duplicateScrapFlavorErr
+-4988	internalScrapErr	internalScrapErr
+-4960	coreFoundationUnknownErr	coreFoundationUnknownErr
+-4276	badRoutingSizeErr	badRoutingSizeErr
+-4275	routingNotFoundErr	routingNotFoundErr
+-4274	duplicateRoutingErr	duplicateRoutingErr
+-4273	invalidFolderTypeErr	invalidFolderTypeErr
+-4272	noMoreFolderDescErr	noMoreFolderDescErr
+-4271	duplicateFolderDescErr	duplicateFolderDescErr
+-4270	badFolderDescErr	badFolderDescErr
+-4217	cmCantGamutCheckError	Gammut checking not supported by this ColorWorld
+-4216	cmNamedColorNotFound	NamedColor not found
+-4215	cmCantCopyModifiedV1Profile	Illegal to copy version 1 profiles that have been modified
+-4214	cmRangeOverFlow	Color conversion warning that some output color values over/underflowed and were clipped
+-4213	cmInvalidProfileComment	Bad Profile comment during drawpicture
+-4212	cmNoGDevicesError	Begin/End Matching -- no gdevices available
+-4211	cmInvalidDstMap	Destination pix/bit map was invalid
+-4210	cmInvalidSrcMap	Source pix/bit map was invalid
+-4209	cmInvalidColorSpace	Profile colorspace does not match bitmap type
+-4208	cmErrIncompatibleProfile	Other ColorSync Errors
+-4207	cmSearchError	cmSearchError
+-4206	cmInvalidSearch	Bad Search Handle
+-4205	cmInvalidProfileLocation	Operation not supported for this profile location
+-4204	cmInvalidProfile	A Profile must contain a 'cs1 ' tag to be valid
+-4203	cmFatalProfileErr	cmFatalProfileErr
+-4202	cmCantDeleteElement	cmCantDeleteElement
+-4201	cmIndexRangeErr	Tag index out of range
+-4200	kNSLInitializationFailed	UNABLE TO INITIALIZE THE MANAGER!!!!! DO NOT CONTINUE!!!!
+-4199	kNSLNotInitialized	kNSLNotInitialized
+-4198	kNSLInsufficientSysVer	kNSLInsufficientSysVer
+-4197	kNSLInsufficientOTVer	kNSLInsufficientOTVer
+-4196	kNSLNoElementsInList	kNSLNoElementsInList
+-4195	kNSLBadReferenceErr	kNSLBadReferenceErr
+-4194	kNSLBadServiceTypeErr	kNSLBadServiceTypeErr
+-4193	kNSLBadDataTypeErr	kNSLBadDataTypeErr
+-4192	kNSLBadNetConnection	kNSLBadNetConnection
+-4191	kNSLNoSupportForService	kNSLNoSupportForService
+-4190	kNSLInvalidPluginSpec	kNSLInvalidPluginSpec
+-4189	kNSLRequestBufferAlreadyInList	kNSLRequestBufferAlreadyInList
+-4188	kNSLNoContextAvailable	(ContinueLookup function ptr invalid)
+-4187	kNSLBufferTooSmallForData	(Client buffer too small for data from plugin)
+-4186	kNSLCannotContinueLookup	(Can't continue lookup; error or bad state)
+-4185	kNSLBadClientInfoPtr	(nil ClientAsyncInfoPtr; no reference available)
+-4184	kNSLNullListPtr	(client is trying to add items to a nil list)
+-4183	kNSLBadProtocolTypeErr	(client is trying to add a null protocol type)
+-4182	kNSLPluginLoadFailed	(manager unable to load one of the plugins)
+-4181	kNSLNoPluginsFound	(manager didn't find any valid plugins to load)
+-4180	kNSLSearchAlreadyInProgress	(you can only have one ongoing search per clientRef)
+-4179	kNSLNoPluginsForSearch	(no plugins will respond to search request; bad protocol(s)?)
+-4178	kNSLNullNeighborhoodPtr	(client passed a null neighborhood ptr)
+-4177	kNSLSomePluginsFailedToLoad	(one or more plugins failed to load, but at least one did load; this error isn't fatal)
+-4176	kNSLErrNullPtrError	kNSLErrNullPtrError
+-4175	kNSLNotImplementedYet	kNSLNotImplementedYet
+-4174	kNSLUILibraryNotAvailable	The NSL UI Library needs to be in the Extensions Folder
+-4173	kNSLNoCarbonLib	kNSLNoCarbonLib
+-4172	kNSLBadURLSyntax	URL contains illegal characters
+-4171	kNSLSchedulerError	A custom thread routine encountered an error
+-4170	kNSL68kContextNotSupported	no 68k allowed
+-4009	noHelpForItem	noHelpForItem
+-4008	badProfileError	badProfileError
+-4007	colorSyncNotInstalled	colorSyncNotInstalled
+-4006	pickerCantLive	pickerCantLive
+-4005	cantLoadPackage	cantLoadPackage
+-4004	cantCreatePickerWindow	cantCreatePickerWindow
+-4003	cantLoadPicker	cantLoadPicker
+-4002	pickerResourceError	pickerResourceError
+-4001	requiredFlagsDontMatch	requiredFlagsDontMatch
+-4000	firstPickerError	firstPickerError
+-3285	kOTPortLostConnection	
+-3284	kOTUserRequestedErr	
+-3283	kOTConfigurationChangedErr	
+-3282	kOTBadConfigurationErr	
+-3281	kOTPortWasEjectedErr	
+-3280	kOTPortHasDiedErr	
+-3279	kOTClientNotInittedErr	
+-3278	kENOMSGErr	
+-3277	kESRCHErr	
+-3276	kEINPROGRESSErr	
+-3275	kENODATAErr	
+-3274	kENOSTRErr	
+-3273	kECANCELErr	
+-3272	kEBADMSGErr	
+-3271	kENOSRErr	
+-3270	kETIMEErr	
+-3269	kEPROTOErr	ÇÇÇ fill out missing codes ÇÇÇ
+-3264	kEHOSTUNREACHErr	No route to host
+-3263	kEHOSTDOWNErr	Host is down
+-3260	kECONNREFUSEDErr	Connection refused
+-3259	kETIMEDOUTErr	Connection timed out
+-3258	kETOOMANYREFSErr	Too many references: can't splice
+-3257	kESHUTDOWNErr	Can't send after socket shutdown
+-3256	kENOTCONNErr	Socket is not connected
+-3255	kEISCONNErr	Socket is already connected
+-3254	kENOBUFSErr	No buffer space available
+-3253	kECONNRESETErr	Connection reset by peer
+-3252	kECONNABORTEDErr	Software caused connection abort
+-3251	kENETRESETErr	Network dropped connection on reset
+-3250	kENETUNREACHErr	Network is unreachable
+-3249	kENETDOWNErr	Network is down
+-3248	kEADDRNOTAVAILErr	Can't assign requested address
+-3247	kEADDRINUSEErr	Address already in use
+-3244	kEOPNOTSUPPErr	Operation not supported on socket
+-3243	kESOCKTNOSUPPORTErr	Socket type not supported
+-3242	kEPROTONOSUPPORTErr	Protocol not supported
+-3241	kENOPROTOOPTErr	Protocol not available
+-3240	kEPROTOTYPEErr	Protocol wrong type for socket
+-3239	kEMSGSIZEErr	Message too long
+-3238	kEDESTADDRREQErr	Destination address required
+-3237	kENOTSOCKErr	Socket operation on non-socket
+-3236	kEALREADYErr	
+-3234	kEWOULDBLOCKErr	Call would block, so was aborted
+-3233	kERANGEErr	Message size too large for STREAM
+-3231	kEPIPEErr	Broken pipe
+-3224	kENOTTYErr	Not a character device
+-3221	kEINVALErr	Invalid argument
+-3218	kENODEVErr	No such device
+-3216	kOTDuplicateFoundErr	OT generic duplicate found error
+-3215	kEBUSYErr	Device or resource busy
+-3213	kEFAULTErr	Bad address
+-3212	kEACCESErr	Permission denied
+-3211	kOTOutOfMemoryErr	OT ran out of memory, may be a temporary
+-3210	kEAGAINErr	Try operation again later
+-3208	kEBADFErr	Bad file number
+-3205	kENXIOErr	No such device or address
+-3204	kEIOErr	I/O error
+-3203	kEINTRErr	Interrupted system service
+-3202	kENORSRCErr	No such resource
+-3201	kOTNotFoundErr	OT generic not found error
+-3200	kEPERMErr	Permission denied
+-3180	kOTCanceledErr	XTI2OSStatus(TCANCELED) The command was cancelled
+-3179	kOTBadSyncErr	XTI2OSStatus(TBADSYNC) A synchronous call at interrupt time
+-3178	kOTProtocolErr	XTI2OSStatus(TPROTO) An unspecified provider error occurred
+-3177	kOTQFullErr	XTI2OSStatus(TQFULL)
+-3176	kOTResAddressErr	XTI2OSStatus(TRESADDR)
+-3175	kOTResQLenErr	XTI2OSStatus(TRESQLEN)
+-3174	kOTProviderMismatchErr	XTI2OSStatus(TPROVMISMATCH) Tried to accept on incompatible endpoint
+-3173	kOTIndOutErr	XTI2OSStatus(TINDOUT) Accept failed because of pending listen
+-3172	kOTAddressBusyErr	XTI2OSStatus(TADDRBUSY) Address requested is already in use
+-3171	kOTBadQLenErr	XTI2OSStatus(TBADQLEN) A Bind to an in-use addr with qlen > 0
+-3170	kOTBadNameErr	XTI2OSStatus(TBADNAME) A bad endpoint name was supplied
+-3169	kOTNoStructureTypeErr	XTI2OSStatus(TNOSTRUCTYPE) Bad structure type requested for OTAlloc
+-3168	kOTStateChangeErr	XTI2OSStatus(TSTATECHNG) State is changing - try again later
+-3167	kOTNotSupportedErr	XTI2OSStatus(TNOTSUPPORT) Command is not supported
+-3166	kOTNoReleaseErr	XTI2OSStatus(TNOREL) No orderly release indication available
+-3165	kOTBadFlagErr	XTI2OSStatus(TBADFLAG) A Bad flag value was supplied
+-3164	kOTNoUDErrErr	XTI2OSStatus(TNOUDERR) No Unit Data Error indication available
+-3163	kOTNoDisconnectErr	XTI2OSStatus(TNODIS) No disconnect indication available
+-3162	kOTNoDataErr	XTI2OSStatus(TNODATA) No data available for reading
+-3161	kOTFlowErr	XTI2OSStatus(TFLOW) Provider is flow-controlled
+-3160	kOTBufferOverflowErr	XTI2OSStatus(TBUFOVFLW) Passed buffer not big enough
+-3159	kOTBadDataErr	XTI2OSStatus(TBADDATA) An illegal amount of data was specified
+-3158	kOTLookErr	XTI2OSStatus(TLOOK) An event occurred - call Look()
+-3157	kOTSysErrorErr	XTI2OSStatus(TSYSERR) A system error occurred
+-3156	kOTBadSequenceErr	XTI2OSStatus(TBADSEQ) Sequence specified does not exist
+-3155	kOTOutStateErr	XTI2OSStatus(TOUTSTATE) Call issued in wrong state
+-3154	kOTNoAddressErr	XTI2OSStatus(TNOADDR) No address was specified
+-3153	kOTBadReferenceErr	XTI2OSStatus(TBADF) Bad provider reference
+-3152	kOTAccessErr	XTI2OSStatus(TACCES) Missing access permission
+-3151	kOTBadOptionErr	XTI2OSStatus(TBADOPT) A Bad option was specified
+-3150	kOTBadAddressErr	XTI2OSStatus(TBADADDR) A Bad address was specified
+-3109	sktClosedErr	sktClosedErr
+-3108	recNotFnd	recNotFnd
+-3107	atpBadRsp	atpBadRsp
+-3106	atpLenErr	atpLenErr
+-3105	readQErr	readQErr
+-3104	extractErr	extractErr
+-3103	ckSumErr	ckSumErr
+-3102	noMPPErr	noMPPErr
+-3101	buf2SmallErr	buf2SmallErr
+-3032	noPrefAppErr	noPrefAppErr
+-3031	badTranslationSpecErr	badTranslationSpecErr
+-3030	noTranslationPathErr	noTranslationPathErr
+-3026	couldNotParseSourceFileErr	Source document does not contain source type
+-3025	invalidTranslationPathErr	Source type to destination type not a valid path
+-3004	unresolvedComponentDLLErr	unresolvedComponentDLLErr
+-3003	componentDontRegister	componentDontRegister
+-3002	componentNotCaptured	componentNotCaptured
+-3001	validInstancesExist	validInstancesExist
+-3000	invalidComponentID	invalidComponentID
+-2899	cfragLastErrCode	The last value in the range of CFM errors.
+-2831	cfragOutputLengthErr	An output parameter is too small to hold the value.
+-2830	cfragAbortClosureErr	Used by notification handlers to abort a closure.
+-2829	cfragClosureIDErr	The closure ID was not valid.
+-2828	cfragContainerIDErr	The fragment container ID was not valid.
+-2827	cfragNoRegistrationErr	The registration name was not found.
+-2826	cfragNotClosureErr	The closure ID was actually a connection ID.
+-2825	cfragFileSizeErr	A file was too large to be mapped.
+-2824	cfragFragmentUsageErr	A semantic error in usage of the fragment.
+-2823	cfragArchitectureErr	A fragment has an unacceptable architecture.
+-2822	cfragNoApplicationErr	No application member found in the cfrg resource.
+-2821	cfragInitFunctionErr	A fragment's initialization routine returned an error.
+-2820	cfragFragmentCorruptErr	A fragment's container was corrupt (known format).
+-2819	cfragCFMInternalErr	An internal inconstistancy has been detected.
+-2818	cfragCFMStartupErr	Internal error during CFM initialization.
+-2817	cfragLibConnErr	
+-2816	cfragInitAtBootErr	A boot library has an initialization function.  (System 7 only)
+-2815	cfragInitLoopErr	Circularity in required initialization order.
+-2814	cfragImportTooNewErr	An import library was too new for a client.
+-2813	cfragImportTooOldErr	An import library was too old for a client.
+-2812	cfragInitOrderErr	
+-2811	cfragNoIDsErr	No more CFM IDs for contexts, connections, etc.
+-2810	cfragNoClientMemErr	Out of memory for fragment mapping or section instances.
+-2809	cfragNoPrivateMemErr	Out of memory for internal bookkeeping.
+-2808	cfragNoPositionErr	The registration insertion point was not found.
+-2807	cfragUnresolvedErr	A fragment had "hard" unresolved imports.
+-2806	cfragFragmentFormatErr	A fragment's container format is unknown.
+-2805	cfragDupRegistrationErr	The registration name was already in use.
+-2804	cfragNoLibraryErr	The named library was not found.
+-2803	cfragNoSectionErr	The specified section was not found.
+-2802	cfragNoSymbolErr	The specified symbol was not found.
+-2801	cfragConnectionIDErr	The connection ID was not valid.
+-2800	cfragFirstErrCode	The first value in the range of CFM errors.
+-2780	errASInconsistentNames	English errors:
+-2763	errASNoResultReturned	The range -2780 thru -2799 is reserved for dialect specific error codes. (Error codes from different dialects may overlap.)
+-2762	errASParameterNotForEvent	errASParameterNotForEvent
+-2761	errASIllegalFormalParameter	errASIllegalFormalParameter
+-2760	errASTerminologyNestingTooDeep	errASTerminologyNestingTooDeep
+-2755	OSAControlFlowError	Signaled when illegal control flow occurs in an application (no catcher for throw, non-lexical loop exit, etc.)
+-2754	OSAInconsistentDeclarations	Signaled when a variable is declared inconsistently in the same scope, such as both local and global
+-2753	OSAUndefinedVariable	Signaled when a variable is accessed that has no value
+-2752	OSADuplicateHandler	Signaled when more than one handler is defined with the same name in a scope where the language doesn't allow it
+-2751	OSADuplicateProperty	Signaled when a formal parameter, local variable, or instance variable is specified more than once.
+-2750	OSADuplicateParameter	Signaled when a formal parameter, local variable, or instance variable is specified more than once
+-2742	OSATokenTooLong	Signaled when a name or number is too long to be parsed
+-2741	OSASyntaxTypeError	Signaled when another form of syntax was expected. (e.g. "expected a <type> but found <this>")
+-2740	OSASyntaxError	Signaled when a syntax error occurs. (e.g. "Syntax error" or "<this> can't go after <that>")
+-2721	errASCantCompareMoreThan32k	Parser/Compiler errors:
+-2720	errASCantConsiderAndIgnore	errASCantConsiderAndIgnore
+-2710	errOSACantCreate	errOSACantCreate
+-2709	errOSACantGetTerminology	errOSACantGetTerminology
+-2708	errOSADataBlockTooLarge	Signaled when an intrinsic limitation is exceeded for the size of a value or data structure.
+-2707	errOSAInternalTableOverflow	Signaled when a runtime internal data structure overflows
+-2706	errOSAStackOverflow	Signaled when the runtime stack overflows
+-2705	errOSACorruptTerminology	Signaled when an application's terminology resource is not readable
+-2704	errOSAAppNotHighLevelEventAware	Signaled when an application can't respond to AppleEvents
+-2703	errOSACantLaunch	Signaled when application can't be launched or when it is remote and program linking is not enabled
+-2702	errOSANumericOverflow	Signaled when integer or real value is too large to be represented
+-2701	errOSADivideByZero	Signaled when there is an attempt to divide by zero
+-2700	errOSAGeneralError	Signaled by user scripts or applications when no actual error code is to be returned.
+-2582	noIconDataAvailableErr	The necessary icon data is not available
+-2581	noSuchIconErr	The requested icon could not be found
+-2580	invalidIconRefErr	The icon ref is not valid
+-2557	nrCallNotSupported	This call is not available or supported on this machine
+-2556	nrTransactionAborted	transaction was aborted
+-2555	nrExitedIteratorScope	outer scope of iterator was exited
+-2554	nrIterationDone	iteration operation is done
+-2553	nrPropertyAlreadyExists	property already exists
+-2552	nrInvalidEntryIterationOp	invalid entry iteration operation
+-2551	nrPathBufferTooSmall	buffer for path is too small
+-2550	nrPathNotFound	a path component lookup failed
+-2549	nrResultCodeBase	nrResultCodeBase
+-2548	nrOverrunErr	nrOverrunErr
+-2547	nrNotModifiedErr	nrNotModifiedErr
+-2546	nrTypeMismatchErr	nrTypeMismatchErr
+-2545	nrPowerSwitchAbortErr	nrPowerSwitchAbortErr
+-2544	nrPowerErr	nrPowerErr
+-2543	nrDataTruncatedErr	nrDataTruncatedErr
+-2542	nrNotSlotDeviceErr	nrNotSlotDeviceErr
+-2541	nrNameErr	nrNameErr
+-2540	nrNotCreatedErr	nrNotCreatedErr
+-2539	nrNotFoundErr	nrNotFoundErr
+-2538	nrInvalidNodeErr	nrInvalidNodeErr
+-2537	nrNotEnoughMemoryErr	nrNotEnoughMemoryErr
+-2536	nrLockedErr	nrLockedErr
+-2526	mmInternalError	mmInternalError
+-2524	tsmDefaultIsNotInputMethodErr	Current Input source is KCHR or uchr, not Input Method  (GetDefaultInputMethod)
+-2523	tsmNoStem	No stem exists for the token
+-2522	tsmNoMoreTokens	No more tokens are available for the source text
+-2521	tsmNoHandler	No Callback Handler exists for callback
+-2520	tsmInvalidContext	Invalid TSMContext specified in call
+-2519	tsmUnknownErr	any other errors
+-2518	tsmUnsupportedTypeErr	unSupported interface type error
+-2517	tsmScriptHasNoIMErr	script has no imput method or is using old IM
+-2516	tsmInputMethodIsOldErr	returned by GetDefaultInputMethod
+-2515	tsmComponentAlreadyOpenErr	text service already opened for the document
+-2514	tsmTSNotOpenErr	text service is not open
+-2513	tsmTSHasNoMenuErr	the text service has no menu
+-2512	tsmUseInputWindowErr	not TSM aware because we are using input window
+-2511	tsmDocumentOpenErr	there are open documents
+-2510	tsmTextServiceNotFoundErr	no text service found
+-2509	tsmCantOpenComponentErr	can’t open the component
+-2508	tsmNoOpenTSErr	no open text service
+-2507	tsmDocNotActiveErr	document is NOT active
+-2506	tsmTSMDocBusyErr	document is still active
+-2505	tsmInvalidDocIDErr	invalid TSM documentation id
+-2504	tsmNeverRegisteredErr	app never registered error (not TSM aware)
+-2503	tsmAlreadyRegisteredErr	want to register again error
+-2502	tsmNotAnAppErr	not an application error
+-2501	tsmInputMethodNotFoundErr	tsmInputMethodNotFoundErr
+-2500	tsmUnsupScriptLanguageErr	tsmUnsupScriptLanguageErr
+-2499	kernelUnrecoverableErr	kernelUnrecoverableErr
+-2422	kernelReturnValueErr	kernelReturnValueErr
+-2421	kernelAlreadyFreeErr	kernelAlreadyFreeErr
+-2419	kernelIDErr	kernelIDErr
+-2418	kernelExceptionErr	kernelExceptionErr
+-2417	kernelTerminatedErr	kernelTerminatedErr
+-2416	kernelInUseErr	kernelInUseErr
+-2415	kernelTimeoutErr	kernelTimeoutErr
+-2414	kernelAsyncReceiveLimitErr	kernelAsyncReceiveLimitErr
+-2413	kernelAsyncSendLimitErr	kernelAsyncSendLimitErr
+-2412	kernelAttributeErr	kernelAttributeErr
+-2411	kernelExecutionLevelErr	kernelExecutionLevelErr
+-2410	kernelDeletePermissionErr	kernelDeletePermissionErr
+-2409	kernelExecutePermissionErr	kernelExecutePermissionErr
+-2408	kernelReadPermissionErr	kernelReadPermissionErr
+-2407	kernelWritePermissionErr	kernelWritePermissionErr
+-2406	kernelObjectExistsErr	kernelObjectExistsErr
+-2405	kernelUnsupportedErr	kernelUnsupportedErr
+-2404	kernelPrivilegeErr	kernelPrivilegeErr
+-2403	kernelOptionsErr	kernelOptionsErr
+-2402	kernelCanceledErr	kernelCanceledErr
+-2401	kernelIncompleteErr	kernelIncompleteErr
+-2209	badCallOrderErr	Usually due to a status call being called prior to being setup first
+-2208	noDMAErr	Can’t do DMA digitizing (i.e. can't go to requested dest
+-2207	badDepthErr	Can’t digitize into this depth
+-2206	notExactSizeErr	Can’t do exact size requested
+-2205	noMoreKeyColorsErr	all key indexes in use
+-2204	notExactMatrixErr	warning of bad matrix, digitizer did its best
+-2203	matrixErr	bad matrix, digitizer did nothing
+-2202	qtParamErr	bad input parameter (out of range, etc)
+-2201	digiUnimpErr	feature unimplemented
+-2157	qtActionNotHandledErr	qtActionNotHandledErr
+-2149	notEnoughDataErr	notEnoughDataErr
+-2148	urlDataHFTPURLErr	urlDataHFTPURLErr
+-2147	urlDataHFTPServerDisconnectedErr	urlDataHFTPServerDisconnectedErr
+-2146	urlDataHFTPNoPasswordErr	urlDataHFTPNoPasswordErr
+-2145	urlDataHFTPNeedPasswordErr	urlDataHFTPNeedPasswordErr
+-2144	urlDataHFTPBadNameListErr	urlDataHFTPBadNameListErr
+-2143	urlDataHFTPNoNetDriverErr	urlDataHFTPNoNetDriverErr
+-2142	urlDataHFTPFilenameErr	urlDataHFTPFilenameErr
+-2141	urlDataHFTPPermissionsErr	urlDataHFTPPermissionsErr
+-2140	urlDataHFTPQuotaErr	urlDataHFTPQuotaErr
+-2139	urlDataHFTPNoDirectoryErr	urlDataHFTPNoDirectoryErr
+-2138	urlDataHFTPDataConnectionErr	urlDataHFTPDataConnectionErr
+-2137	urlDataHFTPServerErr	urlDataHFTPServerErr
+-2136	urlDataHFTPBadPasswordErr	urlDataHFTPBadPasswordErr
+-2135	urlDataHFTPBadUserErr	urlDataHFTPBadUserErr
+-2134	urlDataHFTPShutdownErr	urlDataHFTPShutdownErr
+-2133	urlDataHFTPProtocolErr	urlDataHFTPProtocolErr
+-2132	urlDataHHTTPRedirectErr	urlDataHHTTPRedirectErr
+-2131	urlDataHHTTPURLErr	urlDataHHTTPURLErr
+-2130	urlDataHHTTPNoNetDriverErr	urlDataHHTTPNoNetDriverErr
+-2129	urlDataHHTTPProtocolErr	urlDataHHTTPProtocolErr
+-2127	qtNetworkAlreadyAllocatedErr	qtNetworkAlreadyAllocatedErr
+-2126	notAllowedToSaveMovieErr	notAllowedToSaveMovieErr
+-2125	fileOffsetTooBigErr	fileOffsetTooBigErr
+-2124	ASDEntryNotFoundErr	ASDEntryNotFoundErr
+-2123	ASDBadForkErr	ASDBadForkErr
+-2122	ASDBadHeaderErr	ASDBadHeaderErr
+-2121	AAPNotFoundErr	AAPNotFoundErr
+-2120	AAPNotCreatedErr	AAPNotCreatedErr
+-2119	qfcbNotCreatedErr	qfcbNotCreatedErr
+-2118	qfcbNotFoundErr	qfcbNotFoundErr
+-2117	wackBadMetaDataErr	wackBadMetaDataErr
+-2116	wackForkNotFoundErr	wackForkNotFoundErr
+-2115	wackBadFileErr	wackBadFileErr
+-2114	unknownFormatErr	unknownFormatErr
+-2113	pathNotVerifiedErr	pathNotVerifiedErr
+-2112	noPathMappingErr	noPathMappingErr
+-2111	emptyPathErr	emptyPathErr
+-2110	pathTooLongErr	pathTooLongErr
+-2109	cannotBeLeafAtomErr	cannotBeLeafAtomErr
+-2108	invalidAtomTypeErr	invalidAtomTypeErr
+-2107	invalidAtomContainerErr	invalidAtomContainerErr
+-2106	invalidAtomErr	invalidAtomErr
+-2105	duplicateAtomTypeAndIDErr	duplicateAtomTypeAndIDErr
+-2104	atomIndexInvalidErr	atomIndexInvalidErr
+-2103	atomsNotOfSameTypeErr	atomsNotOfSameTypeErr
+-2102	notLeafAtomErr	notLeafAtomErr
+-2101	cannotFindAtomErr	cannotFindAtomErr
+-2097	unsupportedProcessorErr	unsupportedProcessorErr
+-2096	unsupportedOSErr	unsupportedOSErr
+-2095	qtmlUninitialized	qtmlUninitialized
+-2094	qtmlDllEntryNotFoundErr	Windows specific errors (when qtml is loading)
+-2093	qtmlDllLoadErr	Windows specific errors (when qtml is loading)
+-2092	componentDllEntryNotFoundErr	Windows specific errors (when component is loading)
+-2091	componentDllLoadErr	Windows specific errors (when component is loading)
+-2090	videoOutputInUseErr	videoOutputInUseErr
+-2089	noExportProcAvailableErr	noExportProcAvailableErr
+-2087	tuneParseOSErr	tuneParseOSErr
+-2086	tunePlayerFullOSErr	tunePlayerFullOSErr
+-2085	noteChannelNotAllocatedOSErr	noteChannelNotAllocatedOSErr
+-2084	illegalNoteChannelOSErr	illegalNoteChannelOSErr
+-2083	synthesizerOSErr	synthesizerOSErr
+-2082	synthesizerNotRespondingOSErr	synthesizerNotRespondingOSErr
+-2081	midiManagerAbsentOSErr	midiManagerAbsentOSErr
+-2080	illegalControllerOSErr	illegalControllerOSErr
+-2079	illegalInstrumentOSErr	illegalInstrumentOSErr
+-2078	illegalKnobValueOSErr	illegalKnobValueOSErr
+-2077	illegalKnobOSErr	illegalKnobOSErr
+-2076	illegalChannelOSErr	illegalChannelOSErr
+-2075	illegalPartOSErr	illegalPartOSErr
+-2074	illegalVoiceAllocationOSErr	illegalVoiceAllocationOSErr
+-2073	cantReceiveFromSynthesizerOSErr	cantReceiveFromSynthesizerOSErr
+-2072	cantSendToSynthesizerOSErr	cantSendToSynthesizerOSErr
+-2071	notImplementedMusicOSErr	notImplementedMusicOSErr
+-2070	internalComponentErr	internalComponentErr
+-2069	invalidSpriteIDErr	invalidSpriteIDErr
+-2068	invalidImageIndexErr	invalidImageIndexErr
+-2067	invalidSpriteIndexErr	invalidSpriteIndexErr
+-2066	gWorldsNotSameDepthAndSizeErr	gWorldsNotSameDepthAndSizeErr
+-2065	invalidSpritePropertyErr	invalidSpritePropertyErr
+-2064	invalidSpriteWorldPropertyErr	invalidSpriteWorldPropertyErr
+-2063	missingRequiredParameterErr	missingRequiredParameterErr
+-2062	movieTextNotFoundErr	movieTextNotFoundErr
+-2061	sourceNotFoundErr	sourceNotFoundErr
+-2060	noSourceTreeFoundErr	noSourceTreeFoundErr
+-2059	samplesAlreadyInMediaErr	samplesAlreadyInMediaErr
+-2058	auxiliaryExportDataUnavailable	auxiliaryExportDataUnavailable
+-2057	unsupportedAuxiliaryImportData	unsupportedAuxiliaryImportData
+-2056	soundSupportNotAvailableErr	QT for Windows error
+-2055	noSoundTrackInMovieErr	QT for Windows error
+-2054	noVideoTrackInMovieErr	QT for Windows error
+-2053	featureUnsupported	featureUnsupported
+-2052	couldNotUseAnExistingSample	couldNotUseAnExistingSample
+-2051	noDefaultDataRef	noDefaultDataRef
+-2050	badDataRefIndex	badDataRefIndex
+-2049	invalidDataRefContainer	invalidDataRefContainer
+-2048	noMovieFound	noMovieFound
+-2047	dataNoDataRef	dataNoDataRef
+-2046	endOfDataReached	endOfDataReached
+-2045	dataAlreadyClosed	dataAlreadyClosed
+-2044	dataAlreadyOpenForWrite	dataAlreadyOpenForWrite
+-2043	dataNotOpenForWrite	dataNotOpenForWrite
+-2042	dataNotOpenForRead	dataNotOpenForRead
+-2041	invalidSampleDescription	invalidSampleDescription
+-2040	invalidChunkCache	invalidChunkCache
+-2039	invalidSampleDescIndex	invalidSampleDescIndex
+-2038	invalidChunkNum	invalidChunkNum
+-2037	invalidSampleNum	invalidSampleNum
+-2036	invalidRect	invalidRect
+-2035	cantEnableTrack	cantEnableTrack
+-2034	internalQuickTimeError	internalQuickTimeError
+-2033	badEditIndex	badEditIndex
+-2032	timeNotInMedia	timeNotInMedia
+-2031	timeNotInTrack	timeNotInTrack
+-2030	trackNotInMovie	trackNotInMovie
+-2029	trackIDNotFound	trackIDNotFound
+-2028	badTrackIndex	badTrackIndex
+-2027	maxSizeToGrowTooSmall	maxSizeToGrowTooSmall
+-2026	userDataItemNotFound	userDataItemNotFound
+-2025	staleEditState	staleEditState
+-2024	nonMatchingEditState	nonMatchingEditState
+-2023	invalidEditState	invalidEditState
+-2022	cantCreateSingleForkFile	happens when file already exists
+-2021	wfFileNotFound	wfFileNotFound
+-2020	movieToolboxUninitialized	movieToolboxUninitialized
+-2019	progressProcAborted	progressProcAborted
+-2018	mediaTypesDontMatch	mediaTypesDontMatch
+-2017	badEditList	badEditList
+-2016	cantPutPublicMovieAtom	cantPutPublicMovieAtom
+-2015	invalidTime	invalidTime
+-2014	invalidDuration	invalidDuration
+-2013	invalidHandler	invalidHandler
+-2012	invalidDataRef	invalidDataRef
+-2011	invalidSampleTable	invalidSampleTable
+-2010	invalidMovie	invalidMovie
+-2009	invalidTrack	invalidTrack
+-2008	invalidMedia	invalidMedia
+-2007	noDataHandler	noDataHandler
+-2006	noMediaHandler	noMediaHandler
+-2005	badComponentType	badComponentType
+-2004	cantOpenHandler	cantOpenHandler
+-2003	cantFindHandler	cantFindHandler
+-2002	badPublicMovieAtom	badPublicMovieAtom
+-2001	badImageDescription	badImageDescription
+-2000	couldNotResolveDataRef	couldNotResolveDataRef
+-1861	badImageErr	bad translucent image PixMap
+-1860	badImageRgnErr	bad translucent image region
+-1859	noSuitableDisplaysErr	no displays support translucency
+-1858	unsupportedForPlatformErr	call is for PowerPC only
+-1857	dragNotAcceptedErr	drag was not accepted by receiver
+-1856	handlerNotFoundErr	handler not found
+-1855	duplicateHandlerErr	handler already exists
+-1854	cantGetFlavorErr	error while trying to get flavor data
+-1853	duplicateFlavorErr	flavor type already exists
+-1852	badDragFlavorErr	unknown flavor type
+-1851	badDragItemErr	unknown drag item reference
+-1850	badDragRefErr	unknown drag reference
+-1813	errEndOfBody	errEndOfBody
+-1812	errEndOfDocument	errEndOfDocument
+-1811	errTopOfBody	errTopOfBody
+-1810	errTopOfDocument	errTopOfDocument
+-1801	errOffsetIsOutsideOfView	errOffsetIsOutsideOfView
+-1800	errOffsetInvalid	errOffsetInvalid
+-1762	errOSACantOpenComponent	Can't connect to scripting system with that ID
+-1761	errOSAComponentMismatch	Parameters are from 2 different components
+-1759	errOSADataFormatTooNew	errOSADataFormatTooNew
+-1758	errOSADataFormatObsolete	errOSADataFormatObsolete
+-1757	errOSANoSuchDialect	errOSANoSuchDialect
+-1756	errOSASourceNotAvailable	errOSASourceNotAvailable
+-1754	errOSABadSelector	errOSABadSelector
+-1753	errOSAScriptError	errOSAScriptError
+-1752	errOSABadStorageType	errOSABadStorageType
+-1751	errOSAInvalidID	errOSAInvalidID
+-1750	errOSASystemError	errOSASystemError
+-1739	errAEDescIsNull	attempting to perform an invalid operation on a null descriptor
+-1738	errAEStreamAlreadyConverted	attempt to convert a stream that has already been converted
+-1737	errAEStreamBadNesting	nesting violation while streaming
+-1736	errAEDuplicateHandler	attempt to install handler in table for identical class and id (1.1 or greater)
+-1735	errAEEventFiltered	event has been filtered, and should not be propogated (1.1 or greater)
+-1734	errAEReceiveEscapeCurrent	break out of only lowest level of AEReceive (1.1 or greater)
+-1733	errAEReceiveTerminate	break out of all levels of AEReceive to the topmost (1.1 or greater)
+-1732	errAERecordingIsAlreadyOn	available only in version 1.0.1 or greater
+-1731	errAEUnknownObjectType	available only in version 1.0.1 or greater
+-1730	errAEEmptyListContainer	Attempt to pass empty list as container to accessor
+-1729	errAENegativeCount	CountProc returned negative value
+-1728	errAENoSuchObject	e.g.,: specifier asked for the 3rd, but there are only 2. Basically, this indicates a run-time resolution error.
+-1727	errAENotAnObjSpec	Param to AEResolve not of type 'obj '
+-1726	errAEBadTestKey	Test is neither typeLogicalDescriptor nor typeCompDescriptor
+-1725	errAENoSuchLogical	Something other than AND, OR, or NOT
+-1723	errAEAccessorNotFound	Accessor proc matching wantClass and containerType or wildcards not found
+-1721	errAEWrongNumberArgs	Logical op kAENOT used with other than 1 term
+-1720	errAEImpossibleRange	A range like 3rd to 2nd, or 1st to all.
+-1719	errAEIllegalIndex	index is out of range in a put operation
+-1718	errAEReplyNotArrived	the contents of the reply you are accessing have not arrived yet
+-1717	errAEHandlerNotFound	no handler in the dispatch tables fits the parameters to AEGetEventHandler or AEGetCoercionHandler
+-1716	errAEUnknownAddressType	the target address type is not known
+-1715	errAEParamMissed	a required parameter was not accessed
+-1714	errAENotASpecialFunction	there is no special function for/with this keyword
+-1713	errAENoUserInteraction	no user interaction is allowed
+-1712	errAETimeout	the AppleEvent timed out
+-1711	errAEWaitCanceled	in AESend, the user cancelled out of wait loop for reply or receipt
+-1710	errAEUnknownSendMode	mode wasn't NoReply, WaitReply, or QueueReply or Interaction level is unknown
+-1709	errAEReplyNotValid	AEResetTimer was passed an invalid reply parameter
+-1708	errAEEventNotHandled	the AppleEvent was not handled by any handler
+-1707	errAENotAppleEvent	the event is not in AppleEvent format
+-1706	errAENewerVersion	need newer version of the AppleEvent manager
+-1705	errAEBadListItem	the specified list item does not exist
+-1704	errAENotAEDesc	errAENotAEDesc
+-1703	errAEWrongDataType	errAEWrongDataType
+-1702	errAECorruptData	errAECorruptData
+-1701	errAEDescNotFound	errAEDescNotFound
+-1700	errAECoercionFail	bad parameter data or unable to coerce the data supplied
+-1424	errFSIteratorNotSupported	The iterator's flags or container are not supported by this call
+-1423	errFSIteratorNotFound	Passed FSIterator is not an open iterator
+-1422	errFSBadIteratorFlags	Flags passed to FSOpenIterator are bad
+-1421	errFSForkExists	Named fork already exists.
+-1420	errFSRefsDifferent	FSCompareFSRefs; refs are for different objects
+-1419	errFSBadSearchParams	Something wrong with CatalogSearch searchParams
+-1418	errFSBadItemCount	maximumItems was zero
+-1417	errFSNoMoreItems	Iteration ran out of items to return
+-1413	errFSBadAllocFlags	Invalid bits set in allocationFlags
+-1412	errFSBadPosMode	Newline bits set in positionMode
+-1411	errFSMissingName	A Unicode name parameter was NULL or nameLength parameter was zero
+-1410	errFSNameTooLong	File/fork name is too long to create/rename
+-1409	errFSForkNotFound	Named fork does not exist
+-1407	errFSNotAFolder	Expected a folder, got a file
+-1406	errFSMissingCatInfo	A CatalogInfo parameter was NULL
+-1405	errFSBadInfoBitmap	A CatalogInfoBitmap or VolumeInfoBitmap has reserved or invalid bits set
+-1404	errFSBadForkRef	A ForkRefNum parameter was bad
+-1403	errFSBadBuffer	A buffer parameter was bad
+-1402	errFSBadForkName	Fork name parameter is bad
+-1401	errFSBadFSRef	FSRef parameter is bad
+-1400	errFSUnknownCall	selector is not recognized by this filesystem
+-1327	badFCBErr	FCBRecPtr is not valid
+-1311	volVMBusyErr	can't eject because volume is in use by VM
+-1310	fsDataTooBigErr	file or volume is too big for system
+-1309	fileBoundsErr	file's EOF, offset, mark or size is too big
+-1308	notARemountErr	when _Mount allows only remounts and doesn't get one
+-1307	badFidErr	file id is dangling or doesn't match with the file number
+-1306	sameFileErr	can't exchange a file with itself
+-1305	desktopDamagedErr	desktop database files are corrupted
+-1304	catChangedErr	the catalog has been modified
+-1303	diffVolErr	files on different volumes
+-1302	notAFileErr	directory specified
+-1301	fidExists	file id already exists
+-1300	fidNotFound	no file thread exists.
+-1280	errRefNum	bad connection refNum
+-1279	errAborted	control call was aborted
+-1278	errState	bad connection state for this operation
+-1277	errOpening	open connection request failed
+-1276	errAttention	attention message too long
+-1275	errFwdReset	read terminated by forward reset
+-1274	errDSPQueueSize	DSP Read/Write Queue Too small
+-1273	errOpenDenied	open connection request was denied
+-1105	reqAborted	reqAborted
+-1104	noDataArea	noDataArea
+-1103	noSendResp	noSendResp
+-1102	cbNotFound	cbNotFound
+-1101	noRelErr	noRelErr
+-1100	badBuffNum	badBuffNum
+-1099	badATPSkt	badATPSkt
+-1098	tooManySkts	tooManySkts
+-1097	tooManyReqs	tooManyReqs
+-1096	reqFailed	reqFailed
+-1075	aspNoAck	No ack on attention request (server err)
+-1074	aspTooMany	Too many clients (server error)
+-1073	aspSizeErr	Command block too big
+-1072	aspSessClosed	Session closed
+-1071	aspServerBusy	Server cannot open another session
+-1070	aspParamErr	Parameter error
+-1069	aspNoServers	No servers at that address
+-1068	aspNoMoreSess	No more sessions on server
+-1067	aspBufTooSmall	Buffer too small
+-1066	aspBadVersNum	Server cannot support this ASP version
+-1029	nbpNISErr	Error trying to open the NIS
+-1028	nbpNotFound	Name not found on remove
+-1027	nbpDuplicate	Duplicate name exists already
+-1026	nbpConfDiff	Name confirmed at different socket
+-1025	nbpNoConfirm	nbpNoConfirm
+-1024	nbpBuffOvr	Buffer overflow in LookupName
+-1000	noMaskFoundErr	Icon Utilties Error
+-985	kFMFontContainerAccessErr	kFMFontContainerAccessErr
+-984	kFMFontTableAccessErr	kFMFontTableAccessErr
+-983	kFMIterationScopeModifiedErr	kFMIterationScopeModifiedErr
+-982	kFMInvalidFontErr	kFMInvalidFontErr
+-981	kFMInvalidFontFamilyErr	kFMInvalidFontFamilyErr
+-980	kFMIterationCompleted	kFMIterationCompleted
+-932	guestNotAllowedErr	destination port requires authentication
+-931	badLocNameErr	location name malformed
+-930	badServiceMethodErr	illegal service type, or not supported
+-928	noUserRecErr	Invalid user reference number
+-927	authFailErr	unable to authenticate user at destination
+-926	noInformErr	PPCStart failed because destination did not have inform pending
+-925	networkErr	An error has occurred in the network, not too likely
+-924	noUserRefErr	unable to create a new userRefNum
+-923	notLoggedInErr	The default userRefNum does not yet exist
+-922	noDefaultUserErr	user hasn't typed in owners name in Network Setup Control Pannel
+-919	badPortNameErr	PPCPortRec malformed
+-917	sessClosedErr	session was closed
+-916	portClosedErr	port was closed
+-915	noResponseErr	unable to contact destination
+-914	noToolboxNameErr	A system resource is missing, not too likely
+-913	noMachineNameErr	user hasn't named his Macintosh in the Network Setup Control Panel
+-912	userRejectErr	Destination rejected the session request
+-911	noUserNameErr	user name unknown on destination machine
+-910	portNameExistsErr	port is already open (perhaps in another app)
+-909	badReqErr	bad parameter or invalid state for operation
+-908	noSessionErr	Invalid session reference number
+-907	sessTableErr	Out of session tables, try again later
+-906	destPortErr	Port does not exist at destination
+-905	localOnlyErr	Network activity is currently disabled
+-904	noGlobalsErr	The system is hosed, better re-boot
+-903	noPortErr	Unable to open port or bad portRefNum.  If you're calling
+-902	nameTypeErr	Invalid or inappropriate locationKindSelector in locationName
+-900	notInitErr	PPCToolBox not initialized
+-876	appVersionTooOld	The application's creator and version are incompatible with the current version of Mac OS.
+-875	wrongApplicationPlatform	The application could not launch because the required platform is not available
+-863	hmCloseViewActive	Returned from HMRemoveBalloon if CloseView was active
+-862	hmNoBalloonUp	Returned from HMRemoveBalloon if no balloon was visible when call was made
+-861	hmOperationUnsupported	Returned from HMShowBalloon call if bad method passed to routine
+-859	hmUnknownHelpType	Returned if help msg record contained a bad type
+-858	hmWrongVersion	Returned if help mgr resource was the wrong version
+-857	hmSkippedBalloon	Returned from calls if helpmsg specified a skip balloon
+-855	hmHelpManagerNotInited	Returned from HMGetHelpMenuHandle if help menu not setup
+-854	hmSameAsLastBalloon	Returned from HMShowMenuBalloon if menu & item is same as last time
+-853	hmBalloonAborted	Returned if mouse was moving or mouse wasn't in window port rect
+-850	hmHelpDisabled	Show Balloons mode was off, call to routine ignored
+-813	rcDBPackNotInited	attempt to call other routine before InitDBPack
+-812	rcDBWrongVersion	incompatible versions
+-811	rcDBNoHandler	no app handler for specified data type
+-810	rcDBBadAsyncPB	tried to kill a bad pb
+-809	rcDBAsyncNotSupp	ddev does not support async calls
+-808	rcDBBadDDEV	bad ddev specified on DBInit
+-807	rcDBBadSessNum	bad session number for DBGetConnInfo
+-806	rcDBBadSessID	rcDBBadSessID
+-805	rcDBExec	rcDBExec
+-804	rcDBBreak	rcDBBreak
+-803	rcDBBadType	rcDBBadType
+-802	rcDBError	rcDBError
+-801	rcDBValue	rcDBValue
+-800	rcDBNull	rcDBNull
+-626	noMMUErr	no MMU present
+-625	cannotDeferErr	unable to defer additional functions
+-624	interruptsMaskedErr	don’t call with interrupts masked
+-623	notLockedErr	specified range of memory is not locked
+-622	cannotMakeContiguousErr	cannot make specified range contiguous
+-621	notHeldErr	specified range of memory is not held
+-620	notEnoughMemoryErr	insufficient physical memory
+-619	threadProtocolErr	threadProtocolErr
+-618	threadNotFoundErr	threadNotFoundErr
+-617	threadTooManyReqsErr	threadTooManyReqsErr
+-610	noUserInteractionAllowed	no user interaction allowed
+-609	connectionInvalid	connectionInvalid
+-608	noOutstandingHLE	noOutstandingHLE
+-607	bufferIsSmall	error returns from Post and Accept
+-606	appIsDaemon	app is BG-only, and launch flags disallow this
+-605	appMemFullErr	application SIZE not big enough for launch
+-604	hardwareConfigErr	hardware configuration not correct for call
+-603	protocolErr	app made module calls in improper order
+-602	appModeErr	memory mode is 32-bit, but app not 32-bit clean
+-601	memFragErr	not enough room to launch app w/special requirements
+-600	procNotFound	no eligible process with specified descriptor
+-503	driverHardwareGoneErr	disk driver's hardware was disconnected
+-502	hwParamErr	bad selector for _HWPriv
+-501	teScrapSizeErr	scrap item too big for text edit record
+-500	rgnTooBigErr	rgnTooBigErr
+-492	exUserBreak	user debugger break; execute debugger commands on stack
+-491	strUserBreak	user debugger break; display string on stack
+-490	userBreak	user debugger break
+-463	notThePublisherWrn	not the first registered publisher for that container
+-462	containerAlreadyOpenWrn	container already opened by this section
+-461	containerNotFoundWrn	could not find editionContainer at this time
+-460	multiplePublisherWrn	A Publisher is already registered for that container
+-454	badSubPartErr	can not use sub parts in this release
+-453	badEditionFileErr	edition file is corrupt
+-452	notRegisteredSectionErr	not a registered SectionRecord
+-451	badSectionErr	not a valid SectionRecord
+-450	editionMgrInitErr	edition manager not inited by this app
+-438	fsmUnknownFSMMessageErr	unknown message passed to FSM
+-437	fsmNoAlternateStackErr	no alternate stack for HFS CI
+-436	fsmBadFSDVersionErr	FSM version incompatible with FSD
+-435	fsmDuplicateFSIDErr	FSID already exists on InstallFS
+-434	fsmBadFSDLenErr	FSD size incompatible with current FSM vers
+-433	fsmBadFFSNameErr	Name length not 1 <= length <= 31
+-432	fsmBusyFFSErr	File system is busy, cannot be removed
+-431	fsmFFSNotFoundErr	Foreign File system does not exist - new Pack2 could return this error too
+-417	btKeyAttrErr	There is no such a key attribute.
+-416	btKeyLenErr	Maximum key length is too long or equal to zero.
+-415	btRecNotFnd	Record cannot be found.
+-414	btDupRecErr	Record already exists.
+-413	btNoSpace	Can't allocate disk space.
+-410	notBTree	The file is not a dictionary.
+-400	gcrOnMFMErr	gcr format on high density media error
+-360	slotNumErr	invalid slot # error
+-351	smRecNotFnd	Record not found in the SRT.
+-350	smSRTOvrFlErr	SRT over flow.
+-349	smNoGoodOpens	No opens were successfull in the loop.
+-348	smOffsetErr	Offset was too big (temporary error
+-347	smByteLanesErr	NumByteLanes was determined to be zero.
+-346	smBadsPtrErr	Bad pointer was passed to sCalcsPointer
+-345	smsGetDrvrErr	Error occurred during _sGetDriver.
+-344	smNoMoresRsrcs	No more sResources
+-343	smDisDrvrNamErr	Error occurred during _sDisDrvrName.
+-342	smGetDrvrNamErr	Error occurred during _sGetDrvrName.
+-341	smCkStatusErr	Status of slot = fail.
+-340	smBlkMoveErr	_BlockMove error
+-339	smNewPErr	_NewPtr error
+-338	smSelOOBErr	Selector out of bounds error
+-337	smSlotOOBErr	Slot out of bounds error
+-336	smNilsBlockErr	Nil sBlock error (Dont allocate and try to use a nil sBlock)
+-335	smsPointerNil	LPointer is nil From sOffsetData. If this error occurs; check sInfo rec for more information.
+-334	smCPUErr	Code revision is wrong
+-333	smCodeRevErr	Code revision is wrong
+-332	smReservedErr	Reserved field not zero
+-331	smBadsList	Bad sList: Id1 < Id2 < Id3 ...format is not followed.
+-330	smBadRefId	Reference Id not found in List
+-320	smBusErrTO	BusError time out.
+-319	smBadBoardId	BoardId was wrong; re-init the PRAM record.
+-318	smReservedSlot	slot is reserved, VM should not use this address space.
+-317	smInitTblVErr	An error occurred while trying to initialize the Slot Resource Table.
+-316	smInitStatVErr	The InitStatusV field was negative after primary or secondary init.
+-315	smNoBoardId	No Board Id.
+-314	smGetPRErr	Error occurred during _sGetPRAMRec (See SIMStatus).
+-313	smNoBoardSRsrc	No Board sResource.
+-312	smDisposePErr	_DisposePointer error
+-311	smFHBlkDispErr	Error occurred during _sDisposePtr (Dispose of FHeader block).
+-310	smFHBlockRdErr	Error occurred during _sGetFHeader.
+-309	smBLFieldBad	ByteLanes field was bad.
+-308	smUnExBusErr	Unexpected BusError
+-307	smResrvErr	Fatal reserved error. Resreved field <> 0.
+-306	smNosInfoArray	No sInfoArray. Memory Mgr error.
+-305	smDisabledSlot	This slot is disabled (-305 use to be smLWTstBad)
+-304	smNoDir	Directory offset is Nil
+-303	smRevisionErr	Wrong revison level
+-302	smFormatErr	FHeader Format is not Apple's
+-301	smCRCFail	CRC check failed for declaration data
+-300	smEmptySlot	No card in slot
+-299	nmTypErr	Notification Manager:wrong queue type
+-293	smPriInitErr	Error; Cards could not be initialized.
+-292	smPRAMInitErr	Error; Slot Resource Table could not be initialized.
+-291	smSRTInitErr	Error; Slot Resource Table could not be initialized.
+-290	smSDMInitErr	Error; SDM could not be initialized.
+-261	midiInvalidCmdErr	command not supported for port type
+-260	midiDupIDErr	duplicate client ID
+-259	midiNameLenErr	name supplied is longer than 31 characters
+-258	midiWriteErr	MIDIWritePacket couldn't write to all connected ports
+-257	midiNoConErr	no connection exists between specified ports
+-256	midiVConnectRmvd	pending virtual connection removed
+-255	midiVConnectMade	pending virtual connection resolved
+-254	midiVConnectErr	pending virtual connection created
+-253	midiTooManyConsErr	too many connections made
+-252	midiTooManyPortsErr	too many ports already installed in the system
+-251	midiNoPortErr	no port with that ID found
+-250	midiNoClientErr	no client with that ID found
+-247	badInputText	badInputText
+-246	badDictFormat	badDictFormat
+-245	incompatibleVoice	incompatibleVoice
+-244	voiceNotFound	voiceNotFound
+-243	bufTooSmall	bufTooSmall
+-242	synthNotReady	synthNotReady
+-241	synthOpenFailed	synthOpenFailed
+-240	noSynthFound	noSynthFound
+-232	siUnknownQuality	invalid quality selector (returned by driver)
+-231	siUnknownInfoType	invalid info type selector (returned by driver)
+-230	siInputDeviceErr	input device hardware failure
+-229	siBadRefNum	invalid input device reference number
+-228	siBadDeviceName	input device could not be opened
+-227	siDeviceBusyErr	input device already in use
+-226	siInvalidSampleSize	invalid sample size
+-225	siInvalidSampleRate	invalid sample rate
+-224	siHardDriveTooSlow	hard drive too slow to record to disk
+-223	siInvalidCompression	invalid compression type
+-222	siNoBufferSpecified	returned by synchronous SPBRecord if nil buffer passed
+-221	siBadSoundInDevice	invalid index passed to SoundInGetIndexedDevice
+-220	siNoSoundInHardware	no Sound Input hardware
+-213	siVBRCompressionNotSupported	vbr audio compression not supported for this operation
+-212	noMoreRealTime	not enough CPU cycles left to add another task
+-211	channelNotBusy	channelNotBusy
+-210	buffersTooSmall	can not operate in the memory allowed
+-209	channelBusy	the Channel is being used for a PFD already
+-208	badFileFormat	was not type AIFF or was of bad format,corrupt
+-207	notEnoughBufferSpace	could not allocate enough memory
+-206	badFormat	Sound Manager Error Returns
+-205	badChannel	Sound Manager Error Returns
+-204	resProblem	Sound Manager Error Returns
+-203	queueFull	Sound Manager Error Returns
+-201	notEnoughHardwareErr	Sound Manager Error Returns
+-200	noHardwareErr	Sound Manager Error Returns
+-199	mapReadErr	map inconsistent with operation
+-198	resAttrErr	attribute inconsistent with operation
+-197	rmvRefFailed	RmveReference failed
+-196	rmvResFailed	RmveResource failed
+-195	addRefFailed	AddReference failed
+-194	addResFailed	AddResource failed
+-193	resFNotFound	Resource file not found
+-192	resNotFound	Resource not found
+-190	inputOutOfBounds	Offset of Count out of bounds
+-189	writingPastEnd	Writing past end of file
+-188	resourceInMemory	Resource already in memory
+-186	CantDecompress	resource bent ("the bends") - can't decompress a compressed resource
+-185	badExtResource	extended resource has a bad format.
+-182	cmNoCurrentProfile	Responder error
+-181	cmUnsupportedDataType	Responder error
+-180	cmCantDeleteProfile	Responder error
+-179	cmCantXYZ	CMM cant handle XYZ space
+-178	cmCantConcatenateError	Profile can't be concatenated
+-177	cmProfilesIdentical	Profiles the same
+-176	cmProfileNotFound	Responder error
+-175	cmMethodNotFound	CMM not present
+-171	cmMethodError	cmMethodError
+-170	cmProfileError	cmProfileError
+-157	cDepthErr	invalid pixel depth
+-156	cResErr	invalid resolution for MakeITable
+-155	cDevErr	invalid type of graphics device
+-154	cProtectErr	colorTable entry protection violation
+-153	cRangeErr	range error on colorTable request
+-152	cNoMemErr	failed to allocate memory for structure
+-151	cTempMemErr	failed to allocate memory for temporary structures
+-150	cMatchErr	Color2Index failed to find an index
+-149	insufficientStackErr	insufficientStackErr
+-148	pixMapTooDeepErr	pixMapTooDeepErr
+-147	rgnOverflowErr	rgnOverflowErr
+-145	noMemForPictPlaybackErr	noMemForPictPlaybackErr
+-128	userCanceledErr	userCanceledErr
+-127	hMenuFindErr	could not find HMenu's parent in MenuKey (wrong error code - obsolete)
+-126	mBarNFnd	system error code for MBDF not found
+-125	updPixMemErr	insufficient memory to update a pixmap
+-124	volGoneErr	Server volume has been disconnected.
+-123	wrgVolTypErr	Wrong volume type error [operation not supported for MFS]
+-122	badMovErr	Move into offspring error
+-121	tmwdoErr	No free WDCB available
+-120	dirNFErr	Directory not found
+-117	memLockedErr	trying to move a locked block (MoveHHi)
+-116	memSCErr	Size Check failed
+-115	memBCErr	Block Check failed
+-114	memPCErr	Pointer Check failed
+-113	memAZErr	Address in zone check failed
+-112	memPurErr	trying to purge a locked or non-purgeable block
+-111	memWZErr	WhichZone failed (applied to free block)
+-110	memAdrErr	address was odd; or out of range
+-109	nilHandleErr	Master Pointer was NIL in HandleZone or other
+-108	memFullErr	Not enough room in heap zone
+-102	noTypeErr	No object of that type in scrap
+-100	noScrapErr	No scrap exists error
+-99	memROZWarn	soft error in ROZ
+-98	portNotCf	driver Open error code (parameter RAM not configured for this connection)
+-97	portInUse	driver Open error code (port is in use)
+-96	portNotPwr	serial port not currently powered
+-95	excessCollsns	excessive collisions on write
+-94	lapProtErr	error in attaching/detaching protocol
+-93	noBridgeErr	no network bridge for non-local send
+-92	eLenErr	Length error ddpLenErr
+-91	eMultiErr	Multicast address error ddpSktErr
+-90	breakRecd	Break received (SCC)
+-89	rcvrErr	SCC receiver error (framing; parity; OR)
+-88	prInitErr	InitUtil found the parameter ram uninitialized
+-87	prWrErr	parameter ram written didn't read-verify
+-86	clkWrErr	time written did not verify
+-85	clkRdErr	unable to read same clock value twice
+-84	verErr	track failed to verify
+-83	fmt2Err	can't get enough sync
+-82	fmt1Err	can't find sector 0 after track format
+-81	sectNFErr	sector number never found on a track
+-80	seekErr	track number wrong on address mark
+-79	spdAdjErr	unable to correctly adjust disk speed
+-78	twoSideErr	tried to read 2nd side on a 1-sided drive
+-77	initIWMErr	unable to initialize IWM
+-76	tk0BadErr	track 0 detect doesn't change
+-75	cantStepErr	step handshake failed
+-74	wrUnderrun	write underrun occurred
+-73	badDBtSlp	bad data mark bit slip nibbles
+-72	badDCksum	bad data mark checksum
+-71	noDtaMkErr	couldn't find a data mark header
+-70	badBtSlpErr	bad addr mark bit slip nibbles
+-69	badCksmErr	addr mark checksum didn't check
+-68	dataVerErr	read verify compare failed
+-67	noAdrMkErr	couldn't find valid addr mark
+-66	noNybErr	couldn't find 5 nybbles in 200 tries
+-65	offLinErr	r/w requested for an off-line drive
+-64	fontDecError	error during font declaration
+-61	wrPermErr	write permissions error
+-60	badMDBErr	bad master directory block
+-59	fsRnErr	file system internal error:during rename the old entry was deleted but could not be restored.
+-58	extFSErr	volume in question belongs to an external fs
+-57	noMacDskErr	not a mac diskette (sig bytes are wrong)
+-56	nsDrvErr	no such drive (tried to mount a bad drive num)
+-55	volOnLinErr	drive volume already on-line at MountVol
+-54	permErr	permissions error (on file open)
+-53	volOffLinErr	volume not on line error (was Ejected)
+-52	gfpErr	get file position error
+-51	rfNumErr	refnum error
+-50	paramErr	error in user parameter list
+-49	opWrErr	file already open with with write permission
+-48	dupFNErr	duplicate filename (rename)
+-47	fBsyErr	File is busy (delete)
+-46	vLckdErr	volume is locked
+-45	fLckdErr	file is locked
+-44	wPrErr	diskette is write protected.
+-43	fnfErr	File not found
+-42	tmfoErr	too many files open
+-41	mFulErr	memory full (open) or file won't fit (load)
+-40	posErr	tried to position to before start of file (r/w)
+-39	eofErr	End of file
+-38	fnOpnErr	File not open
+-37	bdNamErr	there may be no bad names in the final system!
+-36	ioErr	I/O error (bummers)
+-35	nsvErr	no such volume
+-34	dskFulErr	disk full
+-33	dirFulErr	Directory full
+-30	dceExtErr	dce extension error
+-29	unitTblFullErr	unit table has no more entries
+-28	notOpenErr	Couldn't rd/wr/ctl/sts cause driver not opened
+-27	iIOAbortErr	IO abort error (Printing Manager)
+-26	dInstErr	DrvrInstall couldn't find driver in resources
+-25	dRemovErr	tried to remove an open driver
+-24	closErr	I/O System Errors
+-23	openErr	I/O System Errors
+-22	unitEmptyErr	I/O System Errors
+-21	badUnitErr	I/O System Errors
+-20	writErr	I/O System Errors
+-19	readErr	I/O System Errors
+-18	statusErr	I/O System Errors
+-17	controlErr	I/O System Errors
+-13	dsExtensionsDisabled	say ñExtensions Disabledî
+-12	dsHD20Installed	say ñHD20 Startupî
+-11	dsDisassemblerInstalled	say ñDisassembler Installedî
+-10	dsMacsBugInstalled	say ñMacsBug Installedî
+-8	seNoDB	no debugger installed to handle debugger command
+-5	SlpTypeErr	invalid queue element
+-4	unimpErr	unimplemented core routine
+-3	corErr	core routine number out of range
+-2	dsNoExtsDisassembler	not a SysErr, just a placeholder
+-1	qErr	queue element not found during deletion
+0	tsmComponentNoErr	component result = no error
+1	EPERM	Operation not permitted
+2	ENOENT	No such file or directory
+3	ESRCH	No such process
+4	EINTR	Interrupted system call
+5	EIO	Input/output error
+6	ENXIO	Device not configured
+7	E2BIG	Argument list too long
+8	ENOEXEC	Exec format error
+9	EBADF	Bad file descriptor
+10	ECHILD	No child processes
+11	EDEADLK	Resource deadlock avoided
+12	ENOMEM	Cannot allocate memory
+13	EACCES	Permission denied
+14	EFAULT	Bad address
+15	ECANCELED	Operation cancelled
+16	EBUSY	Device busy
+17	EEXIST	File exists
+18	EXDEV	Cross-device link
+19	ENODEV	Operation not supported by device
+20	ENOTDIR	Not a directory
+21	EISDIR	Is a directory
+22	EINVAL	Invalid argument
+23	ENFILE	Too many open files in system
+24	EMFILE	Too many open files
+25	ENOTTY	Inappropriate ioctl for device
+27	EFBIG	File too large
+28	ENOSPC	No space left on device
+29	ESPIPE	Illegal seek
+30	EROFS	Read-only file system
+31	EMLINK	Too many links
+32	EPIPE	Broken pipe
+33	EDOM	Numerical argument out of domain
+34	ERANGE	Result too large
+35	EAGAIN	Resource temporarily unavailable
+36	EINPROGRESS	Operation now in progress
+37	EALREADY	Operation already in progress
+38	ENOTSOCK	Socket operation on non-socket
+39	EDESTADDRREQ	Destination address required
+40	EMSGSIZE	Message too long
+41	EPROTOTYPE	Protocol wrong type for socket
+42	ENOPROTOOPT	Protocol not available
+43	EPROTONOSUPPORT	Protocol not supported
+44	ESOCKTNOSUPPORT	Socket type not supported
+45	EOPNOTSUPP	Operation not supported
+46	EPFNOSUPPORT	Protocol family not supported
+47	EAFNOSUPPORT	Address family not supported by protocol family
+48	EADDRINUSE	Address already in use
+49	EADDRNOTAVAIL	Can't assign requested address
+50	ENETDOWN	Network is down
+51	ENETUNREACH	Network is unreachable
+52	ENETRESET	Network dropped connection on reset
+53	ECONNABORTED	Software caused connection abort
+54	ECONNRESET	Connection reset by peer
+55	ENOBUFS	No buffer space available
+56	EISCONN	Socket is already connected
+57	ENOTCONN	Socket is not connected
+58	ESHUTDOWN	Can't send after socket shutdown
+59	ETOOMANYREFS	Too many references: can't splice
+60	ETIMEDOUT	Operation timed out
+61	ECONNREFUSED	Connection refused
+62	ELOOP	Too many levels of symbolic links
+63	ENAMETOOLONG	File name too long
+64	EHOSTDOWN	Host is down
+65	EHOSTUNREACH	No route to host
+66	ENOTEMPTY	Directory not empty
+67	ELOOK	Internal mapping for kOTLookErr, don't return to client
+77	ENOLCK	No locks available
+78	ENOSYS	Function not implemented

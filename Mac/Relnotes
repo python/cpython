@@ -1,0 +1,104 @@
+Changes in 2.1 since 2.0
+--------------------------
+
+These release notes refer to Mac-specific changes only. See NEWS (in the Misc folder)
+for machine-independent changes. Changes since 2.1b2 are
+marked with [*] and at the bottom of the list.
+
+- This release is optionally Carbon-based, so it runs natively on MacOS 8.1 or
+  later and MacOSX. (Note that on MacOSX MacPython will run as a normal Mac application,
+  if you want to run Python from the BSD commandline get a unix-Python distribution
+  from www.python.org). 
+- Alternatively there is a classic PPC interpreter as well. There are two reasons you
+  might want to use this: (a) you have a pre-MacOS9 system and don't want to install
+  CarbonLib, or (b) you need Tkinter, for which no Carbon version is available yet.
+- Distutils is included and seems to work. On 8.1 you may want to get Apple's
+  CarbonLib installer even if you plan to run classic, it contains the newer Appearance 
+  Mgr which Python needs (according to rumour).
+- There's a new module (package, actually) mkcwproject which builds CodeWarrior
+  projects from simple templates. See Distutils or :Mac:scripts:genpluginprojects.py
+  for examples of use.
+- The Numerical extension has moved to :Lib:site-python from :Extensions. As Numerical
+  is now distutils-based you can easily install newer versions when they become
+  available.
+- The Help and ctb modules are not available under Carbon because that functionality is
+  not in Carbon.
+- Windows and Dialogs can now be different beasts, so you may have to call
+  dlg.GetDialogWindow() where you used to be able to call window methods straight
+  on the dialog. This also has consequences for code using FrameWork.DialogWindow.
+  THIS IS AN INCOMPATIBLE CHANGE.
+- ctl.GetControlDataHandle() has been renamed to GetControlData_Handle(), and similarly
+  for the other variants of GetControlData and SetControlData. This was needed
+  because Carbon defines a completely different routine with the name GetControlDataHandle.
+  THIS IS AN INCOMPATIBLE CHANGE.
+- Method mac.xstat() has disappeared. THIS IS AN INCOMPATIBLE CHANGE.
+- Menu.SetPopupData() and GetPopupData() are gone. Use SetPopupMenuHandle() and
+  SetPopupMenuID() (and the getters) in stead. THIS IS AN INCOMPATIBLE CHANGE.
+- Various methods have disappeared when running under Carbon. The script
+  :Mac:scripts:missingcarbonmethods.py can check your sources, but you need unix to run
+  it. Or use it as documentation and search by hand. THIS IS AN INCOMPATIBLE CHANGE.
+- The good news is that "direct access to toolbox structs" still works from Python,
+  so Python programmers have a lot less to fix than C programmers.
+  That's because the lowlevel code simply uses the accessors internally. The accessors
+  are available both in Carbon and Classic MacPython.
+- Scrap under Carbon is, you guessed it, the Carbon Scrap Manager. Some workarounds are
+  provided, though. THIS IS AN INCOMPATIBLE CHANGE.
+- The Internet Config routines that are missing from Carbon have been removed. This
+  is no problem if you use the "ic" module, but may be if you use "icglue" directly.
+  THIS IS AN INCOMPATIBLE CHANGE.
+- Various old toolbox names (CountMItems, EnableItem, etc) have disappeared. Use the
+  new forms (CountMenuItems, EnableMenuItem, etc). THIS IS AN INCOMPATIBLE CHANGE.
+- Waste now uses Waste 2.0.
+- The default memory size for the interpreter has been upped again.
+- The MacOS error messages have been updated to reflect the current state of
+  things. This was long overdue.
+- The crash in BuildApplication has been fixed.
+- struct.pack related problems (in Audio_Mac, for example) have been fixed.
+- (src/dev/cvs only): The project files now use the .mcp extension in stead of .prj.
+  Projects for almost all plugins and the img modules are automatically generated
+  with :Mac:scripts:genpluginprojects.py (also called by fullbuild). The .mcp files
+  are not in the repository, if you don't want to use genpluginprojects you can import
+  the .mcp.xml files in CodeWarrior.
+- ConfigurePython has been replace by two applets: ConfigurePythonClassic and
+  ConfigurePythonCarbon. These will select either execution model for machines
+  supporting both, and it will also build all the standard applets.
+- PythonInterpreterCarbon and PythonInterpreterClassic are now files of type "Atmp", not
+  "APPL", so there should not be any confusion as to what the real application is
+  (PythonInterpreter).
+- A BBEdit language module by Chris Stern is included in the :Mac:Contrib folder.
+- The ConfigurePython applets will now detect if the preference file refers to a different
+  folder than where they live. They offer to remove the preference file in this case.
+- Import case-check was broken in 2.1b1, this is fixed.
+- A side-effect of the previous fix is that getpass works again.
+- BuildApplication was broken under Carbon. Fixed.
+- Morefindertools functionality integrated into findertools. [*]
+- ped.py from Mac:Demo crashed, this has been fixed by making Win.WhichWindow more robust. [*]
+- Tkinter mainloop is now a little less aggressive in eating events. [*]
+- The Python console window is raised to the front when input is read. This fixes a hang
+  (for Carbon only) when crashing with a modal dialog open. [*]
+- The menu bar is (again) restored when Python is terminating. [*]
+
+
+What is not in this distribution
+--------------------------------
+
+- The garbage collection mods have not been enabled, mainly due to lack of test-time.
+- Stackless Python/microthreads hasn't been ported to 2.1 yet. If/when it becomes available
+  Just will undoubtedly announce it on pythonmac-sig and the MacPython homepage.
+
+Known problems
+--------------
+
+This list is probably incomplete, more problems may be listed on the MacPython homepage,
+http://www.cwi.nl/~jack/macpython.html.
+
+- Tkinter does not work under Carbon.
+- The IDE and Tkinter do not work together. Run tkinter programs under PythonInterpreter.
+- Tkinter file events do not work, unless you have opened the file through Tcl (but then
+  you cannot access it from Python).
+- Aliases may not work in sys.path entries.
+- Under Carbon on OS9 only you may occasionally see a spurious KeyboardInterrupt. I have absolutely
+  no clue as to what is causing this.
+- PythonInterpreter used interactively will eat a lot of processor cycles. You should use
+  PythonIDE for interactive work and PythonInterpreter for scripts only. This is especially
+  true under OSX.

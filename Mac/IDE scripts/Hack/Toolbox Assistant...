@@ -1,0 +1,45 @@
+import aetools
+import Standard_Suite
+import Required_Suite
+import MacOS
+import W
+
+
+class Toolbox(aetools.TalkTo, Standard_Suite.Standard_Suite):
+	
+	def LookupTopic(self, _object, _attributes={}, **_arguments):
+		_code = 'DanR'
+		_subcode = 'REF '
+
+		_arguments['----'] = _object
+		
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
+	
+
+class ToolboxAssi:
+	
+	def __init__(self):
+		self.talker = None
+		self.w = W.Window((200, 100), "Toolbox Assistant")
+		self.w.button = W.Button((-94, -32, 80, 16), "Lookup", self.lookup)
+		self.w.prompt = W.TextBox((10, 8, -10, 15), "Enter topic:")
+		self.w.edit = W.EditText((10, 24, -10, 20))
+		self.w.setdefaultbutton(self.w.button)
+		self.w.open()
+	
+	def lookup(self):
+		if self.talker is None:
+			try:
+				self.talker = Toolbox('ALTV', start = 1)
+			except:
+				raise W.AlertError, "CanÕt find –Toolbox Assistant”"
+		lookup = self.w.edit.get()
+		try:
+			self.talker.LookupTopic(lookup)
+		except MacOS.Error, detail:
+			W.Message("Requested topic not found.\r(%d)" % detail[0])
+
+t = ToolboxAssi()

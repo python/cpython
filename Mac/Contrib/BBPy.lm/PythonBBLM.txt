@@ -1,0 +1,12 @@
+This is the Python Language Module for BBEdit.
+
+This software is a plugin to  Bare Bones Software's BBEdit 6.0.2 (or more), designed to make editing & browsing Python Language files easer.
+
+It parses any file ending in .py (or extentions of your choice.) providing BBEdit with the information BBEdit needs to provide services for python files similar to those it provides for 'C'. Namely: syntax coloring and populating BBEdit's '€' popup menu with file's functions and classes.
+
+This Plug-in needs to be placed in your :BBEdit 6.0:BBEdit Support:Language Modules: folder.
+
+If you wish, I have no objections to redistributing it in whole or in part, modify it, or beating small fury animals to death with rolled up printouts of the source code.
+
+Christopher Stern
+cistern@earthlink.net
