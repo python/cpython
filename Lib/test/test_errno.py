@@ -2,10 +2,12 @@
 """Test the errno module
    Roger E. Masse
 """
-try:
-    import errno
-except ImportError:
-    raise SystemExit
+verbose = 0
+if __name__ == '__main__':
+    verbose = 1
+    
+
+import errno
 
 errors = ['E2BIG', 'EACCES', 'EADDRINUSE', 'EADDRNOTAVAIL', 'EADV',
 	  'EAFNOSUPPORT', 'EAGAIN', 'EALREADY', 'EBADE', 'EBADF',
@@ -41,4 +43,5 @@ errors = ['E2BIG', 'EACCES', 'EADDRINUSE', 'EADDRNOTAVAIL', 'EADV',
 #
 for error in errors:
     a = getattr(errno, error)
-    # print a
+    if verbose:
+	print '%s: %d' % (error, a)
