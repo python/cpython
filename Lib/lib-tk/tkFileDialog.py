@@ -5,7 +5,8 @@
 # tk common file dialogues
 #
 # this module provides interfaces to the native file dialogues
-# available in Tk 4.2 and newer.
+# available in Tk 4.2 and newer, and the directory dialogue available
+# in Tk 8.3 and newer.
 #
 # written by Fredrik Lundh, May 1997.
 #
@@ -27,6 +28,12 @@
 # - parent: which window to place the dialog on top of
 #
 # - title: dialog title
+#
+# options for the directory chooser:
+#
+# - initialdir, parent, title: see above
+#
+# - mustexist: if true, user must pick an existing directory
 #
 
 from tkCommonDialog import Dialog
@@ -64,10 +71,19 @@ class SaveAs(_Dialog):
 
     command = "tk_getSaveFile"
 
-class Directory(_Dialog):
+
+# the directory dialog has its own _fix routines.
+class Directory(Dialog):
     "Ask for a directory"
 
     command = "tk_chooseDirectory"
+
+    def _fixresult(self, widget, result):
+        if result:
+            # keep directory until next time
+            self.options["initialdir"] = result
+        self.directory = result # compatibility
+        return result
 
 #
 # convenience stuff
