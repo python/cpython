@@ -514,7 +514,7 @@ Tkapp_New(screenName, baseName, className, interactive)
 	ckfree(argv0);
 
 	if (Tcl_AppInit(v->interp) != TCL_OK)
-		return (TkappObject *)Tkinter_Error(v);
+		return (TkappObject *)Tkinter_Error((PyObject *)v);
 
 	EnableEventHook();
 
