@@ -14,8 +14,8 @@ from formatter import AS_IS
 
 class HTMLParser(SGMLParser):
 
-    def __init__(self, formatter):
-        SGMLParser.__init__(self)
+    def __init__(self, formatter, verbose=0):
+        SGMLParser.__init__(self, verbose)
         self.formatter = formatter
         self.savedata = None
         self.isindex = 0
@@ -66,7 +66,7 @@ class HTMLParser(SGMLParser):
 
     # --- Hook for images; should probably be overridden
 
-    def handle_image(self, src, alt):
+    def handle_image(self, src, alt, *args):
         self.handle_data(alt)
 
     # --------- Top level elememts
@@ -348,6 +348,8 @@ class HTMLParser(SGMLParser):
         alt = '(image)'
         ismap = ''
         src = ''
+	width = 0
+	height = 0
         for attrname, value in attrs:
             if attrname == 'align':
                 align = value
@@ -357,7 +359,13 @@ class HTMLParser(SGMLParser):
                 ismap = value
             if attrname == 'src':
                 src = value
-        self.handle_image(src, alt)
+	    if attrname == 'width':
+		try: width = string.atoi(value)
+		except: pass
+	    if attrname == 'height':
+		try: height = string.atoi(value)
+		except: pass
+        self.handle_image(src, alt, ismap, align, width, height)
 
     # --- Really Old Unofficial Deprecated Stuff
 
