@@ -188,7 +188,7 @@ def gen_schema(destpath, schemapath):
         f.write("),\n")
     f.write("]\n\n")
 
-    f.close()    
+    f.close()
 
 def gen_sequence(destpath, msipath):
     dir = os.path.dirname(destpath)
@@ -525,7 +525,7 @@ class Directory:
         # constants.msidbFileAttributesVital
         # Compressed omitted, since it is the database default
         # could add r/o, system, hidden
-        attributes = 512 
+        attributes = 512
         add_data(self.db, "File",
                         [(logical, self.component, full, filesize, version,
                          language, attributes, sequence)])
@@ -624,7 +624,7 @@ class Dialog:
 
     def bitmap(self, name, x, y, w, h, text):
         return self.control(name, "Bitmap", x, y, w, h, 1, None, text, None, None)
-        
+
     def line(self, name, x, y, w, h):
         return self.control(name, "Line", x, y, w, h, 1, None, None, None, None)
 

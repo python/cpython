@@ -1005,4 +1005,3 @@ _Validation_records = [
 (u'Verb',u'Verb',u'N',None, None, None, None, u'Text',None, u'The verb for the command.',),
 (u'Verb',u'Command',u'Y',None, None, None, None, u'Formatted',None, u'The command text.',),
 ]
-
