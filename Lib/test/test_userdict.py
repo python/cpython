@@ -139,6 +139,9 @@ class UserDictTest(unittest.TestCase):
         t = UserDict.UserDict(x=42)
         self.assertEqual(t.pop("x"), 42)
         self.assertRaises(KeyError, t.pop, "x")
+        self.assertEqual(t.pop("x", 1), 1)
+        t["x"] = 42
+        self.assertEqual(t.pop("x", 1), 42)
 
         # Test popitem
         t = UserDict.UserDict(x=42)
@@ -242,6 +245,9 @@ class UserDictMixinTest(unittest.TestCase):
         self.assertEqual(s.pop(10), 'ten')
         self.assert_(10 not in s)
         s[10] = 'ten'
+        self.assertEqual(s.pop("x", 1), 1)
+        s["x"] = 42
+        self.assertEqual(s.pop("x", 1), 42)
 
         # popitem
         k, v = s.popitem()

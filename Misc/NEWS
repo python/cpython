@@ -12,6 +12,12 @@ What's New in Python 2.3 beta 1?
 Core and builtins
 -----------------
 
+- dict.pop now takes an optional argument specifying a default
+  value to return if the key is not in the dict.  If a default is not
+  given and the key is not found, a KeyError will still be raised.
+  Parallel changes were made to UserDict.UserDict and UserDict.DictMixin.
+  [SF patch #693753] (contributed by Michael Stone.)
+
 - sys.getfilesystemencoding() was added to expose
   Py_FileSystemDefaultEncoding.
 
