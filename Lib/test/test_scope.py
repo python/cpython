@@ -1,5 +1,8 @@
 from test.test_support import verify, TestFailed, check_syntax
 
+import warnings
+warnings.filterwarnings("ignore", "import *")
+
 print "1. simple nesting"
 
 def make_adder(x):
@@ -227,6 +230,7 @@ def f():
 
 # and verify a few cases that should work
 
+exec """
 def noproblem1():
     from string import *
     f = lambda x:x
@@ -241,6 +245,7 @@ def noproblem3():
     def f(x):
         global y
         y = x
+"""
 
 print "12. lambdas"
 
@@ -478,3 +483,5 @@ except TypeError:
     pass
 else:
     print "eval() should have failed, because code contained free vars"
+
+warnings.resetwarnings()
