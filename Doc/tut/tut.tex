@@ -175,7 +175,7 @@ lives is an installation option, other places are possible; check with
 your local Python guru or system administrator.  (E.g.,
 \file{/usr/local/python} is a popular alternative location.)
 
-Typing an \EOF{} character (\kbd{Control-D} on \UNIX,
+Typing an end-of-file character (\kbd{Control-D} on \UNIX,
 \kbd{Control-Z} on DOS or Windows) at the primary prompt causes the
 interpreter to exit with a zero exit status.  If that doesn't work,
 you can exit the interpreter by typing the following commands:
@@ -211,9 +211,9 @@ Note that there is a difference between \samp{python file} and
 program, such as calls to \code{input()} and \code{raw_input()}, are
 satisfied from \emph{file}.  Since this file has already been read
 until the end by the parser before the program starts executing, the
-program will encounter EOF immediately.  In the former case (which is
-usually what you want) they are satisfied from whatever file or device
-is connected to standard input of the Python interpreter.
+program will encounter end-of-file immediately.  In the former case
+(which is usually what you want) they are satisfied from whatever file
+or device is connected to standard input of the Python interpreter.
 
 When a script file is used, it is sometimes useful to be able to run
 the script and enter interactive mode afterwards.  This can be done by
