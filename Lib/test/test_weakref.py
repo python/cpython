@@ -74,8 +74,7 @@ class ReferencesTestCase(TestBase):
                      "callback not called the right number of times")
 
     def test_multiple_selfref_callbacks(self):
-        """Make sure all references are invalidated before callbacks
-        are called."""
+        # Make sure all references are invalidated before callbacks are called
         #
         # What's important here is that we're using the first
         # reference in the callback invoked on the second reference
@@ -262,7 +261,7 @@ class ReferencesTestCase(TestBase):
         self.assert_(1.0 + p == 3.0)  # this used to SEGV
 
     def test_callbacks_protected(self):
-        """Callbacks protected from already-set exceptions?"""
+        # Callbacks protected from already-set exceptions?
         # Regression test for SF bug #478534.
         class BogusError(Exception):
             pass
@@ -520,10 +519,9 @@ class MappingTestCase(TestBase):
 
 
 def test_main():
-    loader = unittest.TestLoader()
     suite = unittest.TestSuite()
-    suite.addTest(loader.loadTestsFromTestCase(ReferencesTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(MappingTestCase))
+    suite.addTest(unittest.makeSuite(ReferencesTestCase))
+    suite.addTest(unittest.makeSuite(MappingTestCase))
     test_support.run_suite(suite)
 
 
