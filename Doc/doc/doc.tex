@@ -420,7 +420,9 @@ distribution, to create or maintain whole documents or sections.
 
     \begin{macrodesc}{e}{}
       Produces a backslash.  This is convenient in \macro{code} and
-      similar macros.
+      similar macros, and is only defined there.  The create a
+      backslash in ordinary text (such as the contents of the
+      \macro{file} macro), use the standard \macro{textbackslash} macro.
     \end{macrodesc}
 
     \begin{macrodesc}{email}{\p{address}}
@@ -491,7 +493,8 @@ distribution, to create or maintain whole documents or sections.
     \end{macrodesc}
 
     \begin{macrodesc}{module}{\p{name}}
-       The name of a module; a dotted name may be used.
+       The name of a module; a dotted name may be used.  This should
+       also be used for package names.
     \end{macrodesc}
 
     \begin{macrodesc}{newsgroup}{\p{name}}
@@ -665,6 +668,12 @@ distribution, to create or maintain whole documents or sections.
     environment.  These are supported for \var{cols} values of
     \code{ii}, \code{iii}, and \code{iv}.  These environments are all
     built on top of the \env{tabular} environment.
+
+    Note that all tables in the standard Python documentation use
+    vertical lines between columns, and this must be specified in the
+    markup for each table.  A general border around the outside of the
+    table is not used, but would be the responsibility of the
+    processor.
 
     \begin{envdesc}{tableii}{\p{colspec}\p{col1font}\p{heading1}\p{heading2}}
       Create a two-column table using the \LaTeX{} column specifier
