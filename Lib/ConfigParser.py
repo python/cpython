@@ -387,7 +387,7 @@ class ConfigParser:
     # of \w, _ is allowed in section header names.
     SECTCRE = re.compile(
         r'\['                                 # [
-        r'(?P<header>[-\w_.*,(){} ]+)'        # a lot of stuff found by IvL
+        r'(?P<header>[^]]+)'                  # very permissive!
         r'\]'                                 # ]
         )
     OPTCRE = re.compile(
