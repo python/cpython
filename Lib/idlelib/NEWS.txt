@@ -7,15 +7,24 @@ What's New in IDLEfork 0.9b1?
 
 *Release date: XX-XXX-2003*
 
+- Allow IDLE to run when not installed and cwd is not the IDLE directory
+  SF Patch 686254 "Run IDLEfork from any directory without set-up" - Raphael
+
+- When a module is run from an EditorWindow: if its directory is not in
+  sys.path, prepend it.  This allows the module to import other modules in
+  the same directory.  Do the same for a script run from the command line.
+
 - Interrupt the subprocess if it is running when the user attempts to 
   restart the shell, run a module, or exit.
 
 - Improved exception reporting when running commands or scripts from the
   command line.
 
+- Added a -n command line switch to start IDLE without the subprocess.
+  Removed the Shell menu when running in that mode.  Updated help messages.
+
 - Added a comment to the shell startup header to indicate when IDLE is not
-  using the subprocess.  (For now, set PyShell.use_subprocess to False to run
-  in this mode.)
+  using the subprocess.
 
 - Restore the ability to run without the subprocess.  This can be important for
   some platforms or configurations.  (Running without the subprocess allows the
