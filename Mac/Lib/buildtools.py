@@ -322,7 +322,16 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
         <string>%s</string>
         <key>NSPrincipalClass</key>
         <string>NSApplication</string>""" % nibname
-
+			elif o[-6:] == '.lproj':
+				files = os.listdir(o)
+				for f in files:
+					if f[-4:] == '.nib':
+						nibname = os.path.split(f)[1][:-4]
+						cocoainfo = """
+        <key>NSMainNibFile</key>
+        <string>%s</string>
+        <key>NSPrincipalClass</key>
+        <string>NSApplication</string>""" % nibname
 
 		plistname = os.path.join(template, 'Contents', 'Resources', 'Applet-Info.plist')
 		plistdata = open(plistname).read()
