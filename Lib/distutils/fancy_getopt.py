@@ -64,7 +64,7 @@ class FancyGetopt:
         # table (ie. those 3-tuples).
         self.option_index = {}
         if self.option_table:
-            self.build_index()
+            self._build_index()
 
         # 'negative_alias' keeps track of options that are the boolean
         # opposite of some other option
@@ -88,9 +88,13 @@ class FancyGetopt:
     # __init__ ()
     
 
-    def build_index (self):
+    def _build_index (self):
         for option in self.option_table:
             self.option_index[option[0]] = option
+
+    def set_option_table (self, option_table):
+        self.option_table = option_table
+        self._build_index()
 
     def add_option (self, long_option, short_option=None, help_string=None):
         if self.option_index.has_key(long_option):
@@ -190,7 +194,6 @@ class FancyGetopt:
 
 
     def getopt (self, args=None, object=None):
-
         """Parse the command-line options in 'args' and store the results
         as attributes of 'object'.  If 'args' is None or not supplied, uses
         'sys.argv[1:]'.  If 'object' is None or not supplied, creates a new
@@ -253,15 +256,107 @@ class FancyGetopt:
     # getopt()
 
 
-    def get_option_order ():
+    def get_option_order (self):
         """Returns the list of (option, value) tuples processed by the
-        previous run of 'fancy_getopt()'.  Raises RuntimeError if
-        'fancy_getopt()' hasn't been called yet."""
+        previous run of 'getopt()'.  Raises RuntimeError if
+        'getopt()' hasn't been called yet."""
 
         if self.option_order is None:
-            raise RuntimeError, "'fancy_getopt()' hasn't been called yet"
+            raise RuntimeError, "'getopt()' hasn't been called yet"
         else:
             return self.option_order
+
+
+    def generate_help (header=None):
+        """Generate help text (a list of strings, one per suggested line of
+        output) from the option table for this FancyGetopt object."""
+
+        # Blithely assume the option table is good: probably wouldn't call
+        # 'generate_help()' unless you've already called 'getopt()'.
+
+        # First pass: determine maximum length of long option names
+        max_opt = 0
+        for option in self.option_table:
+            long = option[0]
+            short = option[1]
+            l = len (long)
+            if long[-1] == '=':
+                l = l - 1
+            if short is not None:
+                l = l + 5                   # " (-x)" where short == 'x'
+            if l > max_opt:
+                max_opt = l
+
+        opt_width = max_opt + 2 + 2 + 2     # room for indent + dashes + gutter
+
+        # Typical help block looks like this:
+        #   --foo       controls foonabulation
+        # Help block for longest option looks like this:
+        #   --flimflam  set the flim-flam level
+        # and with wrapped text:
+        #   --flimflam  set the flim-flam level (must be between
+        #               0 and 100, except on Tuesdays)
+        # Options with short names will have the short name shown (but
+        # it doesn't contribute to max_opt):
+        #   --foo (-f)  controls foonabulation
+        # If adding the short option would make the left column too wide,
+        # we push the explanation off to the next line
+        #   --flimflam (-l)
+        #               set the flim-flam level
+        # Important parameters:
+        #   - 2 spaces before option block start lines
+        #   - 2 dashes for each long option name
+        #   - min. 2 spaces between option and explanation (gutter)
+        #   - 5 characters (incl. space) for short option name
+
+        # Now generate lines of help text.  (If 80 columns were good enough
+        # for Jesus, then 78 columns are good enough for me!)
+        line_width = 78
+        text_width = line_width - opt_width
+        big_indent = ' ' * opt_width
+        if header:
+            lines = [header]
+        else:
+            lines = ['Option summary:']
+
+        for (long,short,help) in self.option_table:
+
+            text = wrap_text (help, text_width)
+            if long[-1] == '=':
+                long = long[0:-1]
+
+            # Case 1: no short option at all (makes life easy)
+            if short is None:
+                if text:
+                    lines.append ("  --%-*s  %s" % (max_opt, long, text[0]))
+                else:
+                    lines.append ("  --%-*s  " % (max_opt, long))
+
+                for l in text[1:]:
+                    lines.append (big_indent + l)
+
+            # Case 2: we have a short option, so we have to include it
+            # just after the long option
+            else:
+                opt_names = "%s (-%s)" % (long, short)
+                if text:
+                    lines.append ("  --%-*s  %s" %
+                                  (max_opt, opt_names, text[0]))
+                else:
+                    lines.append ("  --%-*s" % opt_names)
+
+        # for self.option_table
+
+        return lines
+
+    # generate_help ()
+
+    def print_help (self, file=None, header=None):
+        if file is None:
+            file = sys.stdout
+        for line in self.generate_help (header):
+            file.write (line + "\n")
+    # print_help ()
 
 # class FancyGetopt
 
@@ -329,98 +424,6 @@ def wrap_text (text, width):
 
 # wrap_text ()
         
-
-def generate_help (options, header=None):
-    """Generate help text (a list of strings, one per suggested line of
-       output) from an option table."""
-
-    # Blithely assume the option table is good: probably wouldn't call
-    # 'generate_help()' unless you've already called 'fancy_getopt()'.
-
-    # First pass: determine maximum length of long option names
-    max_opt = 0
-    for option in options:
-        long = option[0]
-        short = option[1]
-        l = len (long)
-        if long[-1] == '=':
-            l = l - 1
-        if short is not None:
-            l = l + 5                   # " (-x)" where short == 'x'
-        if l > max_opt:
-            max_opt = l
-            
-    opt_width = max_opt + 2 + 2 + 2     # room for indent + dashes + gutter
-
-    # Typical help block looks like this:
-    #   --foo       controls foonabulation
-    # Help block for longest option looks like this:
-    #   --flimflam  set the flim-flam level
-    # and with wrapped text:
-    #   --flimflam  set the flim-flam level (must be between
-    #               0 and 100, except on Tuesdays)
-    # Options with short names will have the short name shown (but
-    # it doesn't contribute to max_opt):
-    #   --foo (-f)  controls foonabulation
-    # If adding the short option would make the left column too wide,
-    # we push the explanation off to the next line
-    #   --flimflam (-l)
-    #               set the flim-flam level
-    # Important parameters:
-    #   - 2 spaces before option block start lines
-    #   - 2 dashes for each long option name
-    #   - min. 2 spaces between option and explanation (gutter)
-    #   - 5 characters (incl. space) for short option name
-
-    # Now generate lines of help text.
-    line_width = 78                     # if 80 columns were good enough for
-    text_width = line_width - opt_width # Jesus, then 78 are good enough for me
-    big_indent = ' ' * opt_width
-    if header:
-        lines = [header]
-    else:
-        lines = ['Option summary:']
-
-    for (long,short,help) in options:
-       
-        text = wrap_text (help, text_width)
-        if long[-1] == '=':
-            long = long[0:-1]
-
-        # Case 1: no short option at all (makes life easy)
-        if short is None:
-            if text:
-                lines.append ("  --%-*s  %s" % (max_opt, long, text[0]))
-            else:
-                lines.append ("  --%-*s  " % (max_opt, long))
-
-            for l in text[1:]:
-                lines.append (big_indent + l)
-
-        # Case 2: we have a short option, so we have to include it
-        # just after the long option
-        else:
-            opt_names = "%s (-%s)" % (long, short)
-            if text:
-                lines.append ("  --%-*s  %s" %
-                              (max_opt, opt_names, text[0]))
-            else:
-                lines.append ("  --%-*s" % opt_names)
-
-    # for loop over options
-
-    return lines
-
-# generate_help ()
-
-
-def print_help (options, file=None, header=None):
-    if file is None:
-        file = sys.stdout
-    for line in generate_help (options, header):
-        file.write (line + "\n")
-# print_help ()
-
 
 class OptionDummy:
     """Dummy class just used as a place to hold command-line option
