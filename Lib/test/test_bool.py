@@ -1,6 +1,7 @@
 # Test properties of bool promised by PEP 285
 
 from test_support import verbose, TestFailed, TESTFN, vereq
+import os
 
 def veris(a, b):
     if a is not b:
@@ -24,6 +25,23 @@ except TypeError:
     pass
 else:
     raise TestFailed, "should not be able to create new bool instances"
+
+# checking tp_print slot
+fo = open(TESTFN, "wb")
+print >> fo, False, True
+fo.close()
+fo = open(TESTFN, "rb")
+vereq(fo.read(), 'False True\n')
+fo.close()
+os.remove(TESTFN)
+
+# checking repr and str
+vereq(str(False), 'False')
+vereq(str(True), 'True')
+vereq(repr(False), 'False')
+vereq(repr(True), 'True')
+vereq(eval(repr(False)), False)
+vereq(eval(repr(True)), True)
 
 vereq(int(False), 0)
 verisnot(int(False), False)
@@ -185,7 +203,6 @@ f = file(TESTFN, "w")
 veris(f.closed, False)
 f.close()
 veris(f.closed, True)
-import os
 os.remove(TESTFN)
 
 import operator
