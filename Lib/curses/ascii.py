@@ -1,5 +1,5 @@
 #
-# ascii.py -- constants and memembership tests for ASCII characters
+# ascii.py -- constants and membership tests for ASCII characters
 #
 
 NUL	= 0x00	# ^@
