@@ -1,9 +1,9 @@
 # Combine a real-time scheduling queue and stdwin event handling.
 # Uses the millisecond timer.
 
-import stdwin
+import stdwin, stdwinq
 from stdwinevents import WE_TIMER
-import WindowParent
+import mainloop
 import sched
 import time
 
@@ -14,26 +14,26 @@ def delayfunc(msecs):
 	#
 	# Check for immediate stdwin event
 	#
-	event = stdwin.pollevent()
+	event = stdwinq.pollevent()
 	if event:
-		WindowParent.Dispatch(event)
+		mainloop.dispatch(event)
 		return
 	#
 	# Use millisleep for very short delays or if there are no windows
 	#
-	if msecs < 100 or WindowParent.CountWindows() = 0:
+	if msecs < 100 or mainloop.countwindows() = 0:
 		if msecs > 0:
 			time.millisleep(msecs)
 		return
 	#
 	# Post a timer event on an arbitrary window and wait for it
 	#
-	window = WindowParent.AnyWindow()
+	window = mainloop.anywindow()
 	window.settimer(msecs/100)
-	event = stdwin.getevent()
+	event = stdwinq.getevent()
 	window.settimer(0)
 	if event[0] <> WE_TIMER:
-		WindowParent.Dispatch(event)
+		mainloop.dispatch(event)
 
 q = sched.scheduler().init(time.millitimer, delayfunc)
 
@@ -46,13 +46,13 @@ cancel = q.cancel
 # Emptiness check must check both queues
 #
 def empty():
-	return q.empty() and WindowParent.CountWindows() = 0
+	return q.empty() and mainloop.countwindows() = 0
 
 # Run until there is nothing left to do
 #
 def run():
 	while not empty():
 		if q.empty():
-			WindowParent.Dispatch(stdwin.getevent())
+			mainloop.dispatch(stdwinq.getevent())
 		else:
 			q.run()
