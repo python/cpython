@@ -1891,8 +1891,11 @@ com_factor(struct compiling *c, node *n)
 	   negative in the 0th position. 
 	 */
 	if ((childtype == PLUS || childtype == MINUS || childtype == TILDE)
+	    && NCH(n) == 2
 	    && TYPE(CHILD(n, 1)) == factor
+ 	    && NCH(CHILD(n, 1)) == 1
 	    && TYPE(CHILD(CHILD(n, 1), 0)) == power
+ 	    && NCH(CHILD(CHILD(n, 1), 0)) == 1
 	    && TYPE(CHILD(CHILD(CHILD(n, 1), 0), 0)) == atom
 	    && TYPE(CHILD(CHILD(CHILD(CHILD(n, 1), 0), 0), 0)) == NUMBER) {
 		node *constant = CHILD(CHILD(CHILD(n, 1), 0), 0);
