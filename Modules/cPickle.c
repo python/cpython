@@ -1946,7 +1946,7 @@ save_global(Picklerobject *self, PyObject *args, PyObject *name)
 		 * so generate an EXT opcode.
 		 */
 		PyObject *py_code;	/* extension code as Python object */
-		long code;		/* extensoin code as C value */
+		long code;		/* extension code as C value */
 		char c_str[5];
 		int n;
 
@@ -5280,6 +5280,11 @@ init_stuff(PyObject *module_dict)
 	two_tuple = PyTuple_New(2);
 	if (two_tuple == NULL)
 		return -1;
+	/* We use this temp container with no regard to refcounts, or to
+	 * keeping containees alive.  Exempt from GC, because we don't
+	 * want anything looking at two_tuple() by magic.
+	 */
+	PyObject_GC_UnTrack(two_tuple);
 
 	/* Ugh */
 	if (!( t=PyImport_ImportModule("__builtin__")))  return -1;

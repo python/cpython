@@ -1,32 +1,12 @@
 import copy_reg
 import unittest
-from test import test_support
 
+from test import test_support
+from test.pickletester import ExtensionSaver
 
 class C:
     pass
 
-
-class ExtensionSaver:
-    # Remember current registration for code (if any), and remove it (if
-    # there is one).
-    def __init__(self, code):
-        self.code = code
-        if code in copy_reg._inverted_registry:
-            self.pair = copy_reg._inverted_registry[code]
-            copy_reg.remove_extension(self.pair[0], self.pair[1], code)
-        else:
-            self.pair = None
-
-    # Restore previous registration for code.
-    def restore(self):
-        code = self.code
-        curpair = copy_reg._inverted_registry.get(code)
-        if curpair is not None:
-            copy_reg.remove_extension(curpair[0], curpair[1], code)
-        pair = self.pair
-        if pair is not None:
-            copy_reg.add_extension(pair[0], pair[1], code)
 
 class CopyRegTestCase(unittest.TestCase):
 
