@@ -401,10 +401,10 @@ on Windows.
 
 The GC changes resulted in creation of two new slots on object,
 tp_traverse and tp_clear.  The augmented assignment changes result in
-the createion of a new slot for each in-place operator.
+the creation of a new slot for each in-place operator.
 
 The GC API creates new requirements for container types implemented in
-C extesion modules.  See Include/objimpl.h for details.
+C extension modules.  See Include/objimpl.h for details.
 
 PyErr_Format has been updated to automatically calculate the size of
 the buffer needed to hold the formatted result string.  This change
@@ -434,7 +434,7 @@ Administrator privileges are no longer required to install Python
 on Windows NT or Windows 2000.  If you have administrator privileges,
 Python's registry info will be written under HKEY_LOCAL_MACHINE.
 Otherwise the installer backs off to writing Python's registry info
-under HKEY_CURRENT_USER.  The latter is sufficent for all "normal"
+under HKEY_CURRENT_USER.  The latter is sufficient for all "normal"
 uses of Python, but will prevent some advanced uses from working
 (for example, running a Python script as an NT service, or possibly
 from CGI).
