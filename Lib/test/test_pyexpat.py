@@ -326,3 +326,42 @@ except RuntimeError, e:
         print "Expected RuntimeError for element 'a'; found %r" % e.args[0]
 else:
     print "Expected RuntimeError for 'a'"
+
+# Test Current* members:
+class PositionTest:
+
+    def __init__(self, expected_list, parser):
+        self.parser = parser
+        self.parser.StartElementHandler = self.StartElementHandler
+        self.parser.EndElementHandler = self.EndElementHandler
+        self.expected_list = expected_list
+        self.upto = 0
+
+    def StartElementHandler(self, name, attrs):
+        self.check_pos('s')
+
+    def EndElementHandler(self, name):
+        self.check_pos('e')
+
+    def check_pos(self, event):
+        pos = (event,
+               self.parser.CurrentByteIndex,
+               self.parser.CurrentLineNumber,
+               self.parser.CurrentColumnNumber)
+        require(self.upto < len(self.expected_list),
+                'too many parser events')
+        expected = self.expected_list[self.upto]
+        require(pos == expected,
+                'expected position %s, got %s' % (expected, pos))
+        self.upto += 1
+
+
+parser = expat.ParserCreate()
+handler = PositionTest([('s', 0, 1, 0), ('s', 5, 2, 1), ('s', 11, 3, 2),
+                        ('e', 15, 3, 6), ('e', 17, 4, 1), ('e', 22, 5, 0)],
+                       parser)
+parser.Parse('''<a>
+ <b>
+  <c/>
+ </b>
+</a>''', 1)

@@ -1455,6 +1455,17 @@ xmlparse_getattr(xmlparseobject *self, char *name)
             return PyInt_FromLong((long)
                                   XML_GetErrorByteIndex(self->itself));
     }
+    if (name[0] == 'C') {
+        if (strcmp(name, "CurrentLineNumber") == 0)
+            return PyInt_FromLong((long)
+                                  XML_GetCurrentLineNumber(self->itself));
+        if (strcmp(name, "CurrentColumnNumber") == 0)
+            return PyInt_FromLong((long)
+                                  XML_GetCurrentColumnNumber(self->itself));
+        if (strcmp(name, "CurrentByteIndex") == 0)
+            return PyInt_FromLong((long)
+                                  XML_GetCurrentByteIndex(self->itself));
+    }
     if (name[0] == 'b') {
         if (strcmp(name, "buffer_size") == 0)
             return PyInt_FromLong((long) self->buffer_size);
@@ -1503,6 +1514,9 @@ xmlparse_getattr(xmlparseobject *self, char *name)
         APPEND(rc, "ErrorLineNumber");
         APPEND(rc, "ErrorColumnNumber");
         APPEND(rc, "ErrorByteIndex");
+        APPEND(rc, "CurrentLineNumber");
+        APPEND(rc, "CurrentColumnNumber");
+        APPEND(rc, "CurrentByteIndex");
         APPEND(rc, "buffer_size");
         APPEND(rc, "buffer_text");
         APPEND(rc, "buffer_used");
