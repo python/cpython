@@ -168,7 +168,8 @@ parsetok(tok, g, start, err_ret)
 			int len = tok->inp - tok->buf;
 			err_ret->text = malloc(len + 1);
 			if (err_ret->text != NULL) {
-				strncpy(err_ret->text, tok->buf, len+1);
+				if (len > 0)
+					strncpy(err_ret->text, tok->buf, len);
 				err_ret->text[len] = '\0';
 			}
 		}
