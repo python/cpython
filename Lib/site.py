@@ -73,16 +73,11 @@ del m
 # only absolute pathnames, even if we're running from the build directory.
 L = []
 _dirs_in_sys_path = {}
+dir = dircase = None  # sys.path may be empty at this point
 for dir in sys.path:
-    # Filter out paths that don't exist, but leave in the empty string
-    # since it's a special case. We also need to special-case the Mac,
-    # as file names are allowed on sys.path there.
-    if sys.platform != 'mac':
-        if dir and not os.path.isdir(dir):
-            continue
-    else:
-        if dir and not os.path.exists(dir):
-            continue
+    # Filter out duplicate paths (on case-insensitive file systems also
+    # if they only differ in case); turn relative paths into absolute
+    # paths.
     dir, dircase = makepath(dir)
     if not dircase in _dirs_in_sys_path:
         L.append(dir)

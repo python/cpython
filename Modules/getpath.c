@@ -365,6 +365,7 @@ calculate_path(void)
     char *path = getenv("PATH");
     char *prog = Py_GetProgramName();
     char argv0_path[MAXPATHLEN+1];
+    char zip_path[MAXPATHLEN+1];
     int pfound, efound; /* 1 if found; -1 if found build directory */
     char *buf;
     size_t bufsz;
@@ -483,6 +484,18 @@ calculate_path(void)
     else
         reduce(prefix);
 
+    strncpy(zip_path, prefix, MAXPATHLEN);
+    if (pfound > 0) { /* Use the reduced prefix returned by Py_GetPrefix() */
+        reduce(zip_path);
+        reduce(zip_path);
+    }
+    else
+        strncpy(zip_path, PREFIX, MAXPATHLEN);
+    joinpath(zip_path, "lib/python00.zip");
+    bufsz = strlen(zip_path);	/* Replace "00" with version */
+    zip_path[bufsz - 6] = VERSION[0];
+    zip_path[bufsz - 5] = VERSION[2];
+
     if (!(efound = search_for_exec_prefix(argv0_path, home))) {
         if (!Py_FrozenFlag)
             fprintf(stderr,
@@ -521,6 +534,7 @@ calculate_path(void)
         defpath = delim + 1;
     }
 
+    bufsz += strlen(zip_path) + 1;
     bufsz += strlen(exec_prefix) + 1;
 
     /* This is the only malloc call in this file */
@@ -540,6 +554,10 @@ calculate_path(void)
         }
         else
             buf[0] = '\0';
+
+        /* Next is the default zip path */
+        strcat(buf, zip_path);
+        strcat(buf, delimiter);
 
         /* Next goes merge of compile-time $PYTHONPATH with
          * dynamically located prefix.
