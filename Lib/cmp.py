@@ -26,7 +26,7 @@ def cmp(f1, f2): # Compare two files, use the cache if possible.
 		# types or sizes differ -- report different
 		return 0
 	# same type and size -- look in the cache
-	key = f1 + ' ' + f2
+	key = (f1, f2)
 	try:
 		cs1, cs2, outcome = cache[key]
 		# cache hit
