@@ -1934,7 +1934,7 @@ import_from(locals, v, name)
 		x = dict2lookup(w, name);
 		if (x == NULL) {
 			char buf[250];
-			sprintf(buf, "cannot import name %s",
+			sprintf(buf, "cannot import name %.230s",
 				getstringvalue(name));
 			err_setstr(ImportError, buf);
 			return -1;
