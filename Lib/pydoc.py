@@ -1919,6 +1919,7 @@ def gui():
             self.expanded = 0
             self.window.wm_geometry('%dx%d' % (self.minwidth, self.minheight))
             self.window.wm_minsize(self.minwidth, self.minheight)
+            self.window.tk.willdispatch()
 
             import threading
             threading.Thread(

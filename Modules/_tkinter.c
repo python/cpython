@@ -310,6 +310,24 @@ Sleep(int milli)
 #endif /* MS_WINDOWS */
 #endif /* WITH_THREAD */
 
+/* Wait up to 1s for the mainloop to come up. */
+
+static int
+WaitForMainloop(TkappObject* self)
+{
+	int i;
+	for (i = 0; i < 10; i++) {
+		if (self->dispatching)
+			return 1;
+		Py_BEGIN_ALLOW_THREADS
+		Sleep(100);
+		Py_END_ALLOW_THREADS
+	}
+	if (self->dispatching)
+		return 1;
+	PyErr_SetString(PyExc_RuntimeError, "main thread is not in main loop");
+	return 0;
+}
 
 
 static char *
@@ -1138,11 +1156,8 @@ Tkapp_Call(PyObject *_self, PyObject *args)
 		   marshal the parameters to the interpreter thread. */
 		Tkapp_CallEvent *ev;
 		PyObject *exc_type, *exc_value, *exc_tb;
-		if (!self->dispatching) {
-			PyErr_SetString(PyExc_RuntimeError,
-					"main thread is not in main loop");
+		if (!WaitForMainloop(self))
 			return NULL;
-		}
 		ev = (Tkapp_CallEvent*)ckalloc(sizeof(Tkapp_CallEvent));
 		ev->ev.proc = (Tcl_EventProc*)Tkapp_CallProc;
 		ev->self = self;
@@ -1427,11 +1442,8 @@ var_invoke(PyObject *_self, char* arg1, char* arg2, char* arg3, int flags,
 		   the call to the interpreter thread, then wait for
 		   completion. */
 
-		if (!self->dispatching) {
-			PyErr_SetString(PyExc_RuntimeError, 
-					"main thread is not in main loop");
+		if (!WaitForMainloop(self))
 			return NULL;
-		}
 		ev->cond = NULL;
 		ev->ev.proc = (Tcl_EventProc*)var_proc;
 		Tkapp_ThreadSend(self, (Tcl_Event*)ev, &ev->cond, &var_mutex);
@@ -1943,11 +1955,8 @@ Tkapp_CreateCommand(PyObject *_self, PyObject *args)
 	}
 
 	if (self->threaded && self->thread_id != Tcl_GetCurrentThread() &&
-	    !self->dispatching) {
-		PyErr_SetString(PyExc_RuntimeError, 
-				"main thread is not in main loop");
+	    !WaitForMainloop(self))
 		return NULL;
-	}
 
 	data = PyMem_NEW(PythonCmd_ClientData, 1);
 	if (!data)
@@ -2423,12 +2432,22 @@ Tkapp_WantObjects(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
+static PyObject *
+Tkapp_WillDispatch(PyObject *self, PyObject *args)
+{
+
+	((TkappObject*)self)->dispatching = 1;
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
 
 
 /**** Tkapp Method List ****/
 
 static PyMethodDef Tkapp_methods[] =
 {
+	{"willdispatch",       Tkapp_WillDispatch, METH_NOARGS},
 	{"wantobjects",	       Tkapp_WantObjects, METH_VARARGS},
 	{"call", 	       Tkapp_Call, METH_OLDARGS},
 	{"globalcall", 	       Tkapp_GlobalCall, METH_OLDARGS},
