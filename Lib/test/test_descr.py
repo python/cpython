@@ -2702,7 +2702,15 @@ def strops():
     vereq('%c' % 5, '\x05')
     vereq('%c' % '5', '5')
 
-
+def deepcopyrecursive():
+    if verbose: print "Testing deepcopy of recursive objects..."
+    class Node:
+        pass
+    a = Node()
+    b = Node()
+    a.b = b
+    b.a = a
+    z = deepcopy(a) # This blew up before
 
 
 def test_main():
@@ -2759,6 +2767,7 @@ def test_main():
     delhook()
     hashinherit()
     strops()
+    deepcopyrecursive()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
