@@ -31,22 +31,24 @@ class WikiPage:
             line = line.rstrip()
             if not line:
                 print "<p>"
-                continue
-            words = re.split('(\W+)', line)
-            for i in range(len(words)):
-                word = words[i]
-                if self.iswikiword(word):
-                    if os.path.isfile(self.mkfile(word)):
-                        word = self.mklink("view", word, word)
-                    else:
-                        word = self.mklink("new", word, word + "*")
-                else:
-                    word = escape(word)
-                words[i] = word
-            print "".join(words)
+            else:
+                print self.formatline(line)
         print "<hr>"
         print "<p>", self.mklink("edit", self.name, "Edit this page") + ";"
         print self.mklink("view", "FrontPage", "go to front page") + "."
+
+    def formatline(self, line):
+        words = []
+        for word in re.split('(\W+)', line):
+            if self.iswikiword(word):
+                if os.path.isfile(self.mkfile(word)):
+                    word = self.mklink("view", word, word)
+                else:
+                    word = self.mklink("new", word, word + "*")
+            else:
+                word = escape(word)
+            words.append(word)
+        return "".join(words)
 
     def cmd_edit(self, form, label="Change"):
         print "<h1>", label, self.name, "</h1>"
