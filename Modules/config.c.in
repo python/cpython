@@ -82,6 +82,8 @@ char version[80];
 
 char *argv0; /* For dynamic loading in import.c */
 
+extern char verbose;
+
 /*ARGSUSED*/
 void
 initargs(p_argc, p_argv)
@@ -98,7 +100,11 @@ initargs(p_argc, p_argv)
 #endif
 	wargs(p_argc, p_argv);
 #endif /* USE_STDWIN */
-	if (*p_argc < 2 && isatty(0) && isatty(1))
+#ifdef USE_FROZEN
+	if (verbose)
+#else
+	if (verbose || *p_argc < 2 && isatty(0) && isatty(1))
+#endif
 	{
 		printf("Python %s.\n", version);
 		printf(
@@ -448,3 +454,15 @@ struct {
 
 	{0,		0}		/* Sentinel */
 };
+
+#ifdef USE_FROZEN
+#include "frozen.c"
+#else
+struct frozen {
+	char *name;
+	char *code;
+	int size;
+} frozen_modules[] = {
+	{0, 0, 0}
+};
+#endif

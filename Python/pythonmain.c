@@ -34,6 +34,8 @@ extern int optind;
 extern char *optarg;
 extern int getopt PROTO((int, char **, char *));
 
+extern char *getenv();
+
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -43,10 +45,17 @@ main(argc, argv)
 	char *command = NULL;
 	char *filename = NULL;
 	FILE *fp = stdin;
+	char *p;
+	int inspect = 0;
+
+	if ((p = getenv("PYTHONDEBUG")) && *p != '\0')
+		debugging = 1;
+	if ((p = getenv("PYTHONVERBOSE")) && *p != '\0')
+		verbose = 1;
 	
 	initargs(&argc, &argv); /* Defined in config*.c */
 
-	while ((c = getopt(argc, argv, "c:dv")) != EOF) {
+	while ((c = getopt(argc, argv, "c:div")) != EOF) {
 		if (c == 'c') {
 			/* -c is the last option; following arguments
 			   that look like options are left for the
@@ -62,6 +71,10 @@ main(argc, argv)
 
 		case 'd':
 			debugging++;
+			break;
+
+		case 'i':
+			inspect++;
 			break;
 
 		case 'v':
@@ -117,6 +130,10 @@ main(argc, argv)
 		}
 		sts = run(fp, filename == NULL ? "<stdin>" : filename) != 0;
 	}
+
+	if (inspect && isatty((int)fileno(stdin)) &&
+	    (filename != NULL || command != NULL))
+		sts = run(stdin, "<stdin>") != 0;
 
 	goaway(sts);
 	/*NOTREACHED*/

@@ -22,13 +22,36 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* Interface for marshal.c */
+/* Python interpreter main program for frozen scripts */
 
-void wr_long PROTO((long, FILE *));
-void wr_short PROTO((int, FILE *));
-void wr_object PROTO((object *, FILE *));
+#include "allobjects.h"
 
-long rd_long PROTO((FILE *));
-int rd_short PROTO((FILE *));
-object *rd_object PROTO((FILE *));
-object *rds_object PROTO((char *, int));
+extern char *getenv();
+
+extern int debugging;
+extern int verbose;
+
+main(argc, argv)
+	int argc;
+	char **argv;
+{
+	char *p;
+	int n;
+	if ((p = getenv("PYTHONDEBUG")) && *p != '\0')
+		debugging = 1;
+	if ((p = getenv("PYTHONVERBOSE")) && *p != '\0')
+		verbose = 1;
+	initargs(&argc, &argv); /* Defined in config*.c */
+	initall();
+	setpythonargv(argc, argv);
+	n = init_frozen("__main__");
+	if (n == 0)
+		fatal("__main__ not frozen");
+	if (n < 0) {
+		print_error();
+		goaway(1);
+	}
+	else
+		goaway(0);
+	/*NOTREACHED*/
+}

@@ -225,7 +225,8 @@ wr_object(x, fp)
 typedef WFILE RFILE; /* Same struct with different invariants */
 
 #define r_byte(p) ((p)->fp ? getc((p)->fp) \
-			  : ((p)->ptr != (p)->end) ? *(p)->ptr++ : EOF)
+			  : ((p)->ptr != (p)->end) ? \
+		   	    (unsigned char)*(p)->ptr++ : EOF)
 
 static int
 r_string(s, n, p)
@@ -422,6 +423,19 @@ rd_object(fp)
 {
 	RFILE rf;
 	rf.fp = fp;
+	return r_object(&rf);
+}
+
+object *
+rds_object(str, len)
+	char *str;
+	int len;
+{
+	RFILE rf;
+	rf.fp = NULL;
+	rf.str = NULL;
+	rf.ptr = str;
+	rf.end = str + len;
 	return r_object(&rf);
 }
 
