@@ -802,7 +802,7 @@ def encode_digest(digest):
 class AbstractHTTPHandler(BaseHandler):
 
     # XXX Should rewrite do_open() to use the new httplib interface,
-    # would would be a little simpler.
+    # would be a little simpler.
 
     def do_open(self, http_class, req):
         host = req.get_host()

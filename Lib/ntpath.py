@@ -301,7 +301,7 @@ def ismount(path):
 # For each directory under top (including top itself, but excluding
 # '.' and '..'), func(arg, dirname, filenames) is called, where
 # dirname is the name of the directory and filenames is the list
-# files files (and subdirectories etc.) in the directory.
+# of files (and subdirectories etc.) in the directory.
 # The func may modify the filenames list, to implement a filter,
 # or to impose a different order of visiting.
 

@@ -607,7 +607,7 @@ class MatchObject:
         whole match is returned). If a groupN argument is zero, the
         corresponding return value is the entire matching string; if
         it is in the inclusive range [1..99], it is the string
-        matching the the corresponding parenthesized group. If a group
+        matching the corresponding parenthesized group. If a group
         number is negative or larger than the number of groups defined
         in the pattern, an IndexError exception is raised. If a group
         is contained in a part of the pattern that did not match, the

@@ -76,7 +76,7 @@ a dictionary.
 Notice that the printable representation of a Cookie is the
 appropriate format for a Set-Cookie: header.  This is the
 default behavior.  You can change the header and printed
-attributes by using the the .output() function
+attributes by using the .output() function
 
    >>> C = Cookie.SmartCookie()
    >>> C["rocky"] = "road"

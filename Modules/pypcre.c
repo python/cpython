@@ -573,7 +573,7 @@ restrictions:
 
 /* #define DEBUG */
 
-/* Use a macro for debugging printing, 'cause that eliminates the the use
+/* Use a macro for debugging printing, 'cause that eliminates the use
 of #ifdef inline, and there are *still* stupid compilers about that don't like
 indented pre-processor statements. I suppose it's only been 10 years... */
 

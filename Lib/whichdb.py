@@ -51,7 +51,7 @@ def whichdb(filename):
         except (IOError, _dbmerror):
             pass
 
-    # Check for dumbdbm next -- this has a .dir and and a .dat file
+    # Check for dumbdbm next -- this has a .dir and a .dat file
     try:
         # First check for presence of files
         os.stat(filename + os.extsep + "dat")

@@ -339,7 +339,7 @@ supplied criteria.  The argument is typically a string identifying the
 basis of a sort (example: "time" or "name").
 
 When more than one key is provided, then additional keys are used as
-secondary criteria when the there is equality in all keys selected
+secondary criteria when there is equality in all keys selected
 before them.  For example, sort_stats('name', 'file') will sort all
 the entries according to their function name, and resolve all ties
 (identical function names) by sorting by file name.
@@ -464,7 +464,7 @@ The second limitation has to do with accuracy of timing information.
 There is a fundamental problem with deterministic profilers involving
 accuracy.  The most obvious restriction is that the underlying "clock"
 is only ticking at a rate (typically) of about .001 seconds.  Hence no
-measurements will be more accurate that that underlying clock.  If
+measurements will be more accurate than that underlying clock.  If
 enough measurements are taken, then the "error" will tend to average
 out. Unfortunately, removing this first error induces a second source
 of error...
