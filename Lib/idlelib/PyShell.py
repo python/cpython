@@ -134,23 +134,27 @@ class PyShellFileList(FileList):
 class ModifiedColorDelegator(ColorDelegator):
 
     # Colorizer for the shell window itself
+    
+    def __init__(self):
+        ColorDelegator.__init__(self)
+        self.LoadTagDefs()
 
     def recolorize_main(self):
         self.tag_remove("TODO", "1.0", "iomark")
         self.tag_add("SYNC", "1.0", "iomark")
         ColorDelegator.recolorize_main(self)
-
-    tagdefs = ColorDelegator.tagdefs.copy()
-    theme = idleConf.GetOption('main','Theme','name')
-
-    tagdefs.update({
-        "stdin": {'background':None,'foreground':None},
-        "stdout": idleConf.GetHighlight(theme, "stdout"),
-        "stderr": idleConf.GetHighlight(theme, "stderr"),
-        "console": idleConf.GetHighlight(theme, "console"),
-        "ERROR": idleConf.GetHighlight(theme, "error"),
-        None: idleConf.GetHighlight(theme, "normal"),
-    })
+    
+    def LoadTagDefs(self):
+        ColorDelegator.LoadTagDefs(self)
+        theme = idleConf.GetOption('main','Theme','name')
+        self.tagdefs.update({
+            "stdin": {'background':None,'foreground':None},
+            "stdout": idleConf.GetHighlight(theme, "stdout"),
+            "stderr": idleConf.GetHighlight(theme, "stderr"),
+            "console": idleConf.GetHighlight(theme, "console"),
+            "ERROR": idleConf.GetHighlight(theme, "error"),
+            None: idleConf.GetHighlight(theme, "normal"),
+        })
 
 class ModifiedUndoDelegator(UndoDelegator):
 

@@ -37,6 +37,7 @@ class ColorDelegator(Delegator):
         self.prog = prog
         self.idprog = idprog
         self.asprog = asprog
+        self.LoadTagDefs()
 
     def setdelegate(self, delegate):
         if self.delegate is not None:
@@ -52,21 +53,21 @@ class ColorDelegator(Delegator):
             if cnf:
                 apply(self.tag_configure, (tag,), cnf)
         self.tag_raise('sel')
-
-    theme = idleConf.GetOption('main','Theme','name')
-
-    tagdefs = {
-        "COMMENT": idleConf.GetHighlight(theme, "comment"),
-        "KEYWORD": idleConf.GetHighlight(theme, "keyword"),
-        "STRING": idleConf.GetHighlight(theme, "string"),
-        "DEFINITION": idleConf.GetHighlight(theme, "definition"),
-        "SYNC": {'background':None,'foreground':None},
-        "TODO": {'background':None,'foreground':None},
-        "BREAK": idleConf.GetHighlight(theme, "break"),
-        # The following is used by ReplaceDialog:
-        "hit": idleConf.GetHighlight(theme, "hit"),
-        }
     
+    def LoadTagDefs(self):
+        theme = idleConf.GetOption('main','Theme','name')
+        self.tagdefs = {
+            "COMMENT": idleConf.GetHighlight(theme, "comment"),
+            "KEYWORD": idleConf.GetHighlight(theme, "keyword"),
+            "STRING": idleConf.GetHighlight(theme, "string"),
+            "DEFINITION": idleConf.GetHighlight(theme, "definition"),
+            "SYNC": {'background':None,'foreground':None},
+            "TODO": {'background':None,'foreground':None},
+            "BREAK": idleConf.GetHighlight(theme, "break"),
+            # The following is used by ReplaceDialog:
+            "hit": idleConf.GetHighlight(theme, "hit"),
+            }
+        
     if DEBUG: print 'tagdefs',tagdefs
 
     def insert(self, index, chars, tags=None):
