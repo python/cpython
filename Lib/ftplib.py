@@ -565,6 +565,8 @@ class Netrc:
 
 	See the netrc(4) man page for information on the file format.
 
+	WARNING: This class is obsolete -- use module netrc instead.
+
 	"""
 	__defuser = None
 	__defpasswd = None
