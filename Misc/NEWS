@@ -6,6 +6,12 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- A new warning PendingDeprecationWarning was added to provide
+  direction on features which are in the process of being deprecated.
+  The warning will not be printed by default.  To see the pending
+  deprecations, use -Walways::PendingDeprecationWarning::
+  as a command line option or warnings.filterwarnings() in code.
+
 - A new type object, 'string', is added.  This is a common base type
   for 'str' and 'unicode', and can be used instead of
   types.StringTypes, e.g. to test whether something is "a string":

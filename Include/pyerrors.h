@@ -66,6 +66,7 @@ extern DL_IMPORT(PyObject *) PyExc_MemoryErrorInst;
 extern DL_IMPORT(PyObject *) PyExc_Warning;
 extern DL_IMPORT(PyObject *) PyExc_UserWarning;
 extern DL_IMPORT(PyObject *) PyExc_DeprecationWarning;
+extern DL_IMPORT(PyObject *) PyExc_PendingDeprecationWarning;
 extern DL_IMPORT(PyObject *) PyExc_SyntaxWarning;
 extern DL_IMPORT(PyObject *) PyExc_OverflowWarning;
 extern DL_IMPORT(PyObject *) PyExc_RuntimeWarning;
