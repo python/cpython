@@ -188,8 +188,13 @@ class PyBuildExt(build_ext):
                 # distutils.command.build_ext.build_extension().  The
                 # _built_objects attribute is stored there strictly for
                 # use here.
-                for filename in self._built_objects:
-                    os.remove(filename)
+                # If there is a failure, _built_objects may not be there,
+                # so catch the AttributeError and move on.
+                try:
+                    for filename in self._built_objects:
+                        os.remove(filename)
+                except AttributeError:
+                    self.announce('unable to remove files (ignored)')
             else:
                 self.announce('*** WARNING: importing extension "%s" '
                               'failed: %s' % (ext.name, why))
@@ -605,7 +610,7 @@ class PyBuildExt(build_ext):
             # procedure triggers on.
             frameworkdir = sysconfig.get_config_var('PYTHONFRAMEWORKDIR')
             exts.append( Extension('gestalt', ['gestaltmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                    	extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('MacOS', ['macosmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('icglue', ['icgluemodule.c'],
