@@ -1,11 +1,12 @@
 import pprint
+import test.test_support
 import unittest
-from test import test_support
 
 try:
     uni = unicode
 except NameError:
-    def uni(x):return x
+    def uni(x):
+        return x
 
 
 class QueryTestCase(unittest.TestCase):
@@ -18,11 +19,18 @@ class QueryTestCase(unittest.TestCase):
     def test_basic(self):
         # Verify .isrecursive() and .isreadable() w/o recursion
         verify = self.assert_
+        pp = pprint.PrettyPrinter()
         for safe in (2, 2.0, 2j, "abc", [3], (2,2), {3: 3}, uni("yaddayadda"),
                      self.a, self.b):
+            # module-level convenience functions
             verify(not pprint.isrecursive(safe),
                    "expected not isrecursive for " + `safe`)
             verify(pprint.isreadable(safe),
+                   "expected isreadable for " + `safe`)
+            # PrettyPrinter methods
+            verify(not pp.isrecursive(safe),
+                   "expected not isrecursive for " + `safe`)
+            verify(pp.isreadable(safe),
                    "expected isreadable for " + `safe`)
 
     def test_knotted(self):
@@ -34,10 +42,13 @@ class QueryTestCase(unittest.TestCase):
         self.d[0] = self.d[1] = self.d[2] = self.d
 
         verify = self.assert_
+        pp = pprint.PrettyPrinter()
 
         for icky in self.a, self.b, self.d, (self.d, self.d):
             verify(pprint.isrecursive(icky), "expected isrecursive")
             verify(not pprint.isreadable(icky),  "expected not isreadable")
+            verify(pp.isrecursive(icky), "expected isrecursive")
+            verify(not pp.isreadable(icky),  "expected not isreadable")
 
         # Break the cycles.
         self.d.clear()
@@ -45,18 +56,31 @@ class QueryTestCase(unittest.TestCase):
         del self.b[:]
 
         for safe in self.a, self.b, self.d, (self.d, self.d):
+            # module-level convenience functions
             verify(not pprint.isrecursive(safe),
                    "expected not isrecursive for " + `safe`)
             verify(pprint.isreadable(safe),
+                   "expected isreadable for " + `safe`)
+            # PrettyPrinter methods
+            verify(not pp.isrecursive(safe),
+                   "expected not isrecursive for " + `safe`)
+            verify(pp.isreadable(safe),
                    "expected isreadable for " + `safe`)
 
     def test_unreadable(self):
         # Not recursive but not readable anyway
         verify = self.assert_
+        pp = pprint.PrettyPrinter()
         for unreadable in type(3), pprint, pprint.isrecursive:
+            # module-level convenience functions
             verify(not pprint.isrecursive(unreadable),
                    "expected not isrecursive for " + `unreadable`)
             verify(not pprint.isreadable(unreadable),
+                   "expected not isreadable for " + `unreadable`)
+            # PrettyPrinter methods
+            verify(not pp.isrecursive(unreadable),
+                   "expected not isrecursive for " + `unreadable`)
+            verify(not pp.isreadable(unreadable),
                    "expected not isreadable for " + `unreadable`)
 
     def test_same_as_repr(self):
@@ -118,7 +142,7 @@ class DottedPrettyPrinter(pprint.PrettyPrinter):
 
 
 def test_main():
-    test_support.run_unittest(QueryTestCase)
+    test.test_support.run_unittest(QueryTestCase)
 
 
 if __name__ == "__main__":
