@@ -17,7 +17,12 @@
 
 
 #ifdef WITHOUT_FRAMEWORKS
-#include <CoreFoundation.h>
+#include <CFBase.h>
+#include <CFArray.h>
+#include <CFData.h>
+#include <CFDictionary.h>
+#include <CFString.h>
+#include <CFURL.h>
 #else
 #include <CoreFoundation.h>
 #endif
@@ -27,6 +32,8 @@ staticforward PyObject *CFTypeRefObj_New(CFTypeRef);
 staticforward int CFTypeRefObj_Convert(PyObject *, CFTypeRef *);
 staticforward PyObject *CFStringRefObj_New(CFStringRef);
 staticforward int CFStringRefObj_Convert(PyObject *, CFStringRef *);
+staticforward PyObject *CFURLRefObj_New(CFURLRef);
+staticforward int CFURLRefObj_Convert(PyObject *, CFURLRef *);
 
 staticforward int CFURLRefObj_Convert(PyObject *, CFURLRef *);
 
@@ -342,6 +349,19 @@ static void CFArrayRefObj_dealloc(CFArrayRefObject *self)
 	PyMem_DEL(self);
 }
 
+static PyObject *CFArrayRefObj_CFArrayCreateCopy(CFArrayRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFArrayRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFArrayCreateCopy((CFAllocatorRef)NULL,
+	                        _self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFArrayRefObj_New, _rv);
+	return _res;
+}
+
 static PyObject *CFArrayRefObj_CFArrayGetCount(CFArrayRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -355,9 +375,29 @@ static PyObject *CFArrayRefObj_CFArrayGetCount(CFArrayRefObject *_self, PyObject
 	return _res;
 }
 
+static PyObject *CFArrayRefObj_CFStringCreateByCombiningStrings(CFArrayRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	CFStringRef separatorString;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CFStringRefObj_Convert, &separatorString))
+		return NULL;
+	_rv = CFStringCreateByCombiningStrings((CFAllocatorRef)NULL,
+	                                       _self->ob_itself,
+	                                       separatorString);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
 static PyMethodDef CFArrayRefObj_methods[] = {
+	{"CFArrayCreateCopy", (PyCFunction)CFArrayRefObj_CFArrayCreateCopy, 1,
+	 "() -> (CFArrayRef _rv)"},
 	{"CFArrayGetCount", (PyCFunction)CFArrayRefObj_CFArrayGetCount, 1,
 	 "() -> (CFIndex _rv)"},
+	{"CFStringCreateByCombiningStrings", (PyCFunction)CFArrayRefObj_CFStringCreateByCombiningStrings, 1,
+	 "(CFStringRef separatorString) -> (CFStringRef _rv)"},
 	{NULL, NULL, 0}
 };
 
@@ -612,6 +652,19 @@ static void CFDictionaryRefObj_dealloc(CFDictionaryRefObject *self)
 	PyMem_DEL(self);
 }
 
+static PyObject *CFDictionaryRefObj_CFDictionaryCreateCopy(CFDictionaryRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFDictionaryRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFDictionaryCreateCopy((CFAllocatorRef)NULL,
+	                             _self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFDictionaryRefObj_New, _rv);
+	return _res;
+}
+
 static PyObject *CFDictionaryRefObj_CFDictionaryGetCount(CFDictionaryRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -626,6 +679,8 @@ static PyObject *CFDictionaryRefObj_CFDictionaryGetCount(CFDictionaryRefObject *
 }
 
 static PyMethodDef CFDictionaryRefObj_methods[] = {
+	{"CFDictionaryCreateCopy", (PyCFunction)CFDictionaryRefObj_CFDictionaryCreateCopy, 1,
+	 "() -> (CFDictionaryRef _rv)"},
 	{"CFDictionaryGetCount", (PyCFunction)CFDictionaryRefObj_CFDictionaryGetCount, 1,
 	 "() -> (CFIndex _rv)"},
 	{NULL, NULL, 0}
@@ -845,6 +900,19 @@ static void CFDataRefObj_dealloc(CFDataRefObject *self)
 	PyMem_DEL(self);
 }
 
+static PyObject *CFDataRefObj_CFDataCreateCopy(CFDataRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFDataRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFDataCreateCopy((CFAllocatorRef)NULL,
+	                       _self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFDataRefObj_New, _rv);
+	return _res;
+}
+
 static PyObject *CFDataRefObj_CFDataGetLength(CFDataRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -858,9 +926,29 @@ static PyObject *CFDataRefObj_CFDataGetLength(CFDataRefObject *_self, PyObject *
 	return _res;
 }
 
+static PyObject *CFDataRefObj_CFStringCreateFromExternalRepresentation(CFDataRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	CFStringEncoding encoding;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &encoding))
+		return NULL;
+	_rv = CFStringCreateFromExternalRepresentation((CFAllocatorRef)NULL,
+	                                               _self->ob_itself,
+	                                               encoding);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
 static PyMethodDef CFDataRefObj_methods[] = {
+	{"CFDataCreateCopy", (PyCFunction)CFDataRefObj_CFDataCreateCopy, 1,
+	 "() -> (CFDataRef _rv)"},
 	{"CFDataGetLength", (PyCFunction)CFDataRefObj_CFDataGetLength, 1,
 	 "() -> (CFIndex _rv)"},
+	{"CFStringCreateFromExternalRepresentation", (PyCFunction)CFDataRefObj_CFStringCreateFromExternalRepresentation, 1,
+	 "(CFStringEncoding encoding) -> (CFStringRef _rv)"},
 	{NULL, NULL, 0}
 };
 
@@ -1173,6 +1261,35 @@ static void CFStringRefObj_dealloc(CFStringRefObject *self)
 	PyMem_DEL(self);
 }
 
+static PyObject *CFStringRefObj_CFStringCreateWithSubstring(CFStringRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	CFRange range;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CFRange_Convert, &range))
+		return NULL;
+	_rv = CFStringCreateWithSubstring((CFAllocatorRef)NULL,
+	                                  _self->ob_itself,
+	                                  range);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFStringRefObj_CFStringCreateCopy(CFStringRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFStringCreateCopy((CFAllocatorRef)NULL,
+	                         _self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
 static PyObject *CFStringRefObj_CFStringGetLength(CFStringRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1217,6 +1334,25 @@ static PyObject *CFStringRefObj_CFStringGetBytes(CFStringRefObject *_self, PyObj
 	                     _rv,
 	                     buffer,
 	                     usedBufLen);
+	return _res;
+}
+
+static PyObject *CFStringRefObj_CFStringCreateExternalRepresentation(CFStringRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFDataRef _rv;
+	CFStringEncoding encoding;
+	UInt8 lossByte;
+	if (!PyArg_ParseTuple(_args, "lb",
+	                      &encoding,
+	                      &lossByte))
+		return NULL;
+	_rv = CFStringCreateExternalRepresentation((CFAllocatorRef)NULL,
+	                                           _self->ob_itself,
+	                                           encoding,
+	                                           lossByte);
+	_res = Py_BuildValue("O&",
+	                     CFDataRefObj_New, _rv);
 	return _res;
 }
 
@@ -1312,6 +1448,28 @@ static PyObject *CFStringRefObj_CFStringFindWithOptions(CFStringRefObject *_self
 	return _res;
 }
 
+static PyObject *CFStringRefObj_CFStringCreateArrayWithFindResults(CFStringRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFArrayRef _rv;
+	CFStringRef stringToFind;
+	CFRange rangeToSearch;
+	CFOptionFlags compareOptions;
+	if (!PyArg_ParseTuple(_args, "O&O&l",
+	                      CFStringRefObj_Convert, &stringToFind,
+	                      CFRange_Convert, &rangeToSearch,
+	                      &compareOptions))
+		return NULL;
+	_rv = CFStringCreateArrayWithFindResults((CFAllocatorRef)NULL,
+	                                         _self->ob_itself,
+	                                         stringToFind,
+	                                         rangeToSearch,
+	                                         compareOptions);
+	_res = Py_BuildValue("O&",
+	                     CFArrayRefObj_New, _rv);
+	return _res;
+}
+
 static PyObject *CFStringRefObj_CFStringFind(CFStringRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1386,6 +1544,22 @@ static PyObject *CFStringRefObj_CFStringGetLineBounds(CFStringRefObject *_self, 
 	return _res;
 }
 
+static PyObject *CFStringRefObj_CFStringCreateArrayBySeparatingStrings(CFStringRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFArrayRef _rv;
+	CFStringRef separatorString;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CFStringRefObj_Convert, &separatorString))
+		return NULL;
+	_rv = CFStringCreateArrayBySeparatingStrings((CFAllocatorRef)NULL,
+	                                             _self->ob_itself,
+	                                             separatorString);
+	_res = Py_BuildValue("O&",
+	                     CFArrayRefObj_New, _rv);
+	return _res;
+}
+
 static PyObject *CFStringRefObj_CFStringGetIntValue(CFStringRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1437,6 +1611,57 @@ static PyObject *CFStringRefObj_CFShowStr(CFStringRefObject *_self, PyObject *_a
 	return _res;
 }
 
+static PyObject *CFStringRefObj_CFURLCreateWithString(CFStringRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFURLRef _rv;
+	CFURLRef baseURL;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      OptionalCFURLRefObj_Convert, &baseURL))
+		return NULL;
+	_rv = CFURLCreateWithString((CFAllocatorRef)NULL,
+	                            _self->ob_itself,
+	                            baseURL);
+	_res = Py_BuildValue("O&",
+	                     CFURLRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFStringRefObj_CFURLCreateWithFileSystemPath(CFStringRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFURLRef _rv;
+	CFURLPathStyle pathStyle;
+	Boolean isDirectory;
+	if (!PyArg_ParseTuple(_args, "ll",
+	                      &pathStyle,
+	                      &isDirectory))
+		return NULL;
+	_rv = CFURLCreateWithFileSystemPath((CFAllocatorRef)NULL,
+	                                    _self->ob_itself,
+	                                    pathStyle,
+	                                    isDirectory);
+	_res = Py_BuildValue("O&",
+	                     CFURLRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFStringRefObj_CFURLCreateStringByReplacingPercentEscapes(CFStringRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	CFStringRef charactersToLeaveEscaped;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CFStringRefObj_Convert, &charactersToLeaveEscaped))
+		return NULL;
+	_rv = CFURLCreateStringByReplacingPercentEscapes((CFAllocatorRef)NULL,
+	                                                 _self->ob_itself,
+	                                                 charactersToLeaveEscaped);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
 static PyObject *CFStringRefObj_CFStringGetString(CFStringRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1475,10 +1700,16 @@ static PyObject *CFStringRefObj_CFStringGetUnicode(CFStringRefObject *_self, PyO
 }
 
 static PyMethodDef CFStringRefObj_methods[] = {
+	{"CFStringCreateWithSubstring", (PyCFunction)CFStringRefObj_CFStringCreateWithSubstring, 1,
+	 "(CFRange range) -> (CFStringRef _rv)"},
+	{"CFStringCreateCopy", (PyCFunction)CFStringRefObj_CFStringCreateCopy, 1,
+	 "() -> (CFStringRef _rv)"},
 	{"CFStringGetLength", (PyCFunction)CFStringRefObj_CFStringGetLength, 1,
 	 "() -> (CFIndex _rv)"},
 	{"CFStringGetBytes", (PyCFunction)CFStringRefObj_CFStringGetBytes, 1,
 	 "(CFRange range, CFStringEncoding encoding, UInt8 lossByte, Boolean isExternalRepresentation, CFIndex maxBufLen) -> (CFIndex _rv, UInt8 buffer, CFIndex usedBufLen)"},
+	{"CFStringCreateExternalRepresentation", (PyCFunction)CFStringRefObj_CFStringCreateExternalRepresentation, 1,
+	 "(CFStringEncoding encoding, UInt8 lossByte) -> (CFDataRef _rv)"},
 	{"CFStringGetSmallestEncoding", (PyCFunction)CFStringRefObj_CFStringGetSmallestEncoding, 1,
 	 "() -> (CFStringEncoding _rv)"},
 	{"CFStringGetFastestEncoding", (PyCFunction)CFStringRefObj_CFStringGetFastestEncoding, 1,
@@ -1489,6 +1720,8 @@ static PyMethodDef CFStringRefObj_methods[] = {
 	 "(CFStringRef string2, CFOptionFlags compareOptions) -> (CFComparisonResult _rv)"},
 	{"CFStringFindWithOptions", (PyCFunction)CFStringRefObj_CFStringFindWithOptions, 1,
 	 "(CFStringRef stringToFind, CFRange rangeToSearch, CFOptionFlags searchOptions) -> (Boolean _rv, CFRange result)"},
+	{"CFStringCreateArrayWithFindResults", (PyCFunction)CFStringRefObj_CFStringCreateArrayWithFindResults, 1,
+	 "(CFStringRef stringToFind, CFRange rangeToSearch, CFOptionFlags compareOptions) -> (CFArrayRef _rv)"},
 	{"CFStringFind", (PyCFunction)CFStringRefObj_CFStringFind, 1,
 	 "(CFStringRef stringToFind, CFOptionFlags compareOptions) -> (CFRange _rv)"},
 	{"CFStringHasPrefix", (PyCFunction)CFStringRefObj_CFStringHasPrefix, 1,
@@ -1497,6 +1730,8 @@ static PyMethodDef CFStringRefObj_methods[] = {
 	 "(CFStringRef suffix) -> (Boolean _rv)"},
 	{"CFStringGetLineBounds", (PyCFunction)CFStringRefObj_CFStringGetLineBounds, 1,
 	 "(CFRange range) -> (CFIndex lineBeginIndex, CFIndex lineEndIndex, CFIndex contentsEndIndex)"},
+	{"CFStringCreateArrayBySeparatingStrings", (PyCFunction)CFStringRefObj_CFStringCreateArrayBySeparatingStrings, 1,
+	 "(CFStringRef separatorString) -> (CFArrayRef _rv)"},
 	{"CFStringGetIntValue", (PyCFunction)CFStringRefObj_CFStringGetIntValue, 1,
 	 "() -> (SInt32 _rv)"},
 	{"CFStringGetDoubleValue", (PyCFunction)CFStringRefObj_CFStringGetDoubleValue, 1,
@@ -1505,6 +1740,12 @@ static PyMethodDef CFStringRefObj_methods[] = {
 	 "() -> (CFStringEncoding _rv)"},
 	{"CFShowStr", (PyCFunction)CFStringRefObj_CFShowStr, 1,
 	 "() -> None"},
+	{"CFURLCreateWithString", (PyCFunction)CFStringRefObj_CFURLCreateWithString, 1,
+	 "(CFURLRef baseURL) -> (CFURLRef _rv)"},
+	{"CFURLCreateWithFileSystemPath", (PyCFunction)CFStringRefObj_CFURLCreateWithFileSystemPath, 1,
+	 "(CFURLPathStyle pathStyle, Boolean isDirectory) -> (CFURLRef _rv)"},
+	{"CFURLCreateStringByReplacingPercentEscapes", (PyCFunction)CFStringRefObj_CFURLCreateStringByReplacingPercentEscapes, 1,
+	 "(CFStringRef charactersToLeaveEscaped) -> (CFStringRef _rv)"},
 	{"CFStringGetString", (PyCFunction)CFStringRefObj_CFStringGetString, 1,
 	 "() -> (string _rv)"},
 	{"CFStringGetUnicode", (PyCFunction)CFStringRefObj_CFStringGetUnicode, 1,
@@ -1897,6 +2138,25 @@ static void CFURLRefObj_dealloc(CFURLRefObject *self)
 	PyMem_DEL(self);
 }
 
+static PyObject *CFURLRefObj_CFURLCreateData(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFDataRef _rv;
+	CFStringEncoding encoding;
+	Boolean escapeWhitespace;
+	if (!PyArg_ParseTuple(_args, "ll",
+	                      &encoding,
+	                      &escapeWhitespace))
+		return NULL;
+	_rv = CFURLCreateData((CFAllocatorRef)NULL,
+	                      _self->ob_itself,
+	                      encoding,
+	                      escapeWhitespace);
+	_res = Py_BuildValue("O&",
+	                     CFDataRefObj_New, _rv);
+	return _res;
+}
+
 static PyObject *CFURLRefObj_CFURLCopyAbsoluteURL(CFURLRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -2115,6 +2375,8 @@ static PyObject *CFURLRefObj_CFURLCopyFragment(CFURLRefObject *_self, PyObject *
 }
 
 static PyMethodDef CFURLRefObj_methods[] = {
+	{"CFURLCreateData", (PyCFunction)CFURLRefObj_CFURLCreateData, 1,
+	 "(CFStringEncoding encoding, Boolean escapeWhitespace) -> (CFDataRef _rv)"},
 	{"CFURLCopyAbsoluteURL", (PyCFunction)CFURLRefObj_CFURLCopyAbsoluteURL, 1,
 	 "() -> (CFURLRef _rv)"},
 	{"CFURLGetString", (PyCFunction)CFURLRefObj_CFURLGetString, 1,
@@ -2262,22 +2524,6 @@ static PyObject *CF_CFArrayGetTypeID(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-static PyObject *CF_CFArrayCreateCopy(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CFArrayRef _rv;
-	CFArrayRef srcArray;
-	PyMac_PRECHECK(CFArrayCreateCopy);
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CFArrayRefObj_Convert, &srcArray))
-		return NULL;
-	_rv = CFArrayCreateCopy((CFAllocatorRef)NULL,
-	                        srcArray);
-	_res = Py_BuildValue("O&",
-	                     CFArrayRefObj_New, _rv);
-	return _res;
-}
-
 static PyObject *CF_CFArrayCreateMutable(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -2368,22 +2614,6 @@ static PyObject *CF_CFDataCreateWithBytesNoCopy(PyObject *_self, PyObject *_args
 	return _res;
 }
 
-static PyObject *CF_CFDataCreateCopy(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CFDataRef _rv;
-	CFDataRef data;
-	PyMac_PRECHECK(CFDataCreateCopy);
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CFDataRefObj_Convert, &data))
-		return NULL;
-	_rv = CFDataCreateCopy((CFAllocatorRef)NULL,
-	                       data);
-	_res = Py_BuildValue("O&",
-	                     CFDataRefObj_New, _rv);
-	return _res;
-}
-
 static PyObject *CF_CFDataCreateMutable(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -2429,22 +2659,6 @@ static PyObject *CF_CFDictionaryGetTypeID(PyObject *_self, PyObject *_args)
 	_rv = CFDictionaryGetTypeID();
 	_res = Py_BuildValue("l",
 	                     _rv);
-	return _res;
-}
-
-static PyObject *CF_CFDictionaryCreateCopy(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CFDictionaryRef _rv;
-	CFDictionaryRef dict;
-	PyMac_PRECHECK(CFDictionaryCreateCopy);
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CFDictionaryRefObj_Convert, &dict))
-		return NULL;
-	_rv = CFDictionaryCreateCopy((CFAllocatorRef)NULL,
-	                             dict);
-	_res = Py_BuildValue("O&",
-	                     CFDictionaryRefObj_New, _rv);
 	return _res;
 }
 
@@ -2576,41 +2790,6 @@ static PyObject *CF_CFStringCreateWithCStringNoCopy(PyObject *_self, PyObject *_
 	return _res;
 }
 
-static PyObject *CF_CFStringCreateWithSubstring(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CFStringRef _rv;
-	CFStringRef str;
-	CFRange range;
-	PyMac_PRECHECK(CFStringCreateWithSubstring);
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CFStringRefObj_Convert, &str,
-	                      CFRange_Convert, &range))
-		return NULL;
-	_rv = CFStringCreateWithSubstring((CFAllocatorRef)NULL,
-	                                  str,
-	                                  range);
-	_res = Py_BuildValue("O&",
-	                     CFStringRefObj_New, _rv);
-	return _res;
-}
-
-static PyObject *CF_CFStringCreateCopy(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CFStringRef _rv;
-	CFStringRef theString;
-	PyMac_PRECHECK(CFStringCreateCopy);
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CFStringRefObj_Convert, &theString))
-		return NULL;
-	_rv = CFStringCreateCopy((CFAllocatorRef)NULL,
-	                         theString);
-	_res = Py_BuildValue("O&",
-	                     CFStringRefObj_New, _rv);
-	return _res;
-}
-
 static PyObject *CF_CFStringCreateMutable(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -2672,47 +2851,6 @@ static PyObject *CF_CFStringCreateWithBytes(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-static PyObject *CF_CFStringCreateFromExternalRepresentation(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CFStringRef _rv;
-	CFDataRef data;
-	CFStringEncoding encoding;
-	PyMac_PRECHECK(CFStringCreateFromExternalRepresentation);
-	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CFDataRefObj_Convert, &data,
-	                      &encoding))
-		return NULL;
-	_rv = CFStringCreateFromExternalRepresentation((CFAllocatorRef)NULL,
-	                                               data,
-	                                               encoding);
-	_res = Py_BuildValue("O&",
-	                     CFStringRefObj_New, _rv);
-	return _res;
-}
-
-static PyObject *CF_CFStringCreateExternalRepresentation(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CFDataRef _rv;
-	CFStringRef theString;
-	CFStringEncoding encoding;
-	UInt8 lossByte;
-	PyMac_PRECHECK(CFStringCreateExternalRepresentation);
-	if (!PyArg_ParseTuple(_args, "O&lb",
-	                      CFStringRefObj_Convert, &theString,
-	                      &encoding,
-	                      &lossByte))
-		return NULL;
-	_rv = CFStringCreateExternalRepresentation((CFAllocatorRef)NULL,
-	                                           theString,
-	                                           encoding,
-	                                           lossByte);
-	_res = Py_BuildValue("O&",
-	                     CFDataRefObj_New, _rv);
-	return _res;
-}
-
 static PyObject *CF_CFStringGetSystemEncoding(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -2741,69 +2879,6 @@ static PyObject *CF_CFStringGetMaximumSizeForEncoding(PyObject *_self, PyObject 
 	                                        encoding);
 	_res = Py_BuildValue("l",
 	                     _rv);
-	return _res;
-}
-
-static PyObject *CF_CFStringCreateArrayWithFindResults(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CFArrayRef _rv;
-	CFStringRef theString;
-	CFStringRef stringToFind;
-	CFRange rangeToSearch;
-	CFOptionFlags compareOptions;
-	PyMac_PRECHECK(CFStringCreateArrayWithFindResults);
-	if (!PyArg_ParseTuple(_args, "O&O&O&l",
-	                      CFStringRefObj_Convert, &theString,
-	                      CFStringRefObj_Convert, &stringToFind,
-	                      CFRange_Convert, &rangeToSearch,
-	                      &compareOptions))
-		return NULL;
-	_rv = CFStringCreateArrayWithFindResults((CFAllocatorRef)NULL,
-	                                         theString,
-	                                         stringToFind,
-	                                         rangeToSearch,
-	                                         compareOptions);
-	_res = Py_BuildValue("O&",
-	                     CFArrayRefObj_New, _rv);
-	return _res;
-}
-
-static PyObject *CF_CFStringCreateByCombiningStrings(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CFStringRef _rv;
-	CFArrayRef theArray;
-	CFStringRef separatorString;
-	PyMac_PRECHECK(CFStringCreateByCombiningStrings);
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CFArrayRefObj_Convert, &theArray,
-	                      CFStringRefObj_Convert, &separatorString))
-		return NULL;
-	_rv = CFStringCreateByCombiningStrings((CFAllocatorRef)NULL,
-	                                       theArray,
-	                                       separatorString);
-	_res = Py_BuildValue("O&",
-	                     CFStringRefObj_New, _rv);
-	return _res;
-}
-
-static PyObject *CF_CFStringCreateArrayBySeparatingStrings(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CFArrayRef _rv;
-	CFStringRef theString;
-	CFStringRef separatorString;
-	PyMac_PRECHECK(CFStringCreateArrayBySeparatingStrings);
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CFStringRefObj_Convert, &theString,
-	                      CFStringRefObj_Convert, &separatorString))
-		return NULL;
-	_rv = CFStringCreateArrayBySeparatingStrings((CFAllocatorRef)NULL,
-	                                             theString,
-	                                             separatorString);
-	_res = Py_BuildValue("O&",
-	                     CFArrayRefObj_New, _rv);
 	return _res;
 }
 
@@ -2966,110 +3041,6 @@ static PyObject *CF_CFURLCreateWithBytes(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-static PyObject *CF_CFURLCreateData(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CFDataRef _rv;
-	CFURLRef url;
-	CFStringEncoding encoding;
-	Boolean escapeWhitespace;
-	PyMac_PRECHECK(CFURLCreateData);
-	if (!PyArg_ParseTuple(_args, "O&ll",
-	                      CFURLRefObj_Convert, &url,
-	                      &encoding,
-	                      &escapeWhitespace))
-		return NULL;
-	_rv = CFURLCreateData((CFAllocatorRef)NULL,
-	                      url,
-	                      encoding,
-	                      escapeWhitespace);
-	_res = Py_BuildValue("O&",
-	                     CFDataRefObj_New, _rv);
-	return _res;
-}
-
-static PyObject *CF_CFURLCreateWithString(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CFURLRef _rv;
-	CFStringRef URLString;
-	CFURLRef baseURL;
-	PyMac_PRECHECK(CFURLCreateWithString);
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CFStringRefObj_Convert, &URLString,
-	                      OptionalCFURLRefObj_Convert, &baseURL))
-		return NULL;
-	_rv = CFURLCreateWithString((CFAllocatorRef)NULL,
-	                            URLString,
-	                            baseURL);
-	_res = Py_BuildValue("O&",
-	                     CFURLRefObj_New, _rv);
-	return _res;
-}
-
-static PyObject *CF_CFURLCreateWithFileSystemPath(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CFURLRef _rv;
-	CFStringRef filePath;
-	CFURLPathStyle pathStyle;
-	Boolean isDirectory;
-	PyMac_PRECHECK(CFURLCreateWithFileSystemPath);
-	if (!PyArg_ParseTuple(_args, "O&ll",
-	                      CFStringRefObj_Convert, &filePath,
-	                      &pathStyle,
-	                      &isDirectory))
-		return NULL;
-	_rv = CFURLCreateWithFileSystemPath((CFAllocatorRef)NULL,
-	                                    filePath,
-	                                    pathStyle,
-	                                    isDirectory);
-	_res = Py_BuildValue("O&",
-	                     CFURLRefObj_New, _rv);
-	return _res;
-}
-
-static PyObject *CF_CFURLCreateStringWithFileSystemPath(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CFStringRef _rv;
-	CFURLRef anURL;
-	CFURLPathStyle pathStyle;
-	Boolean resolveAgainstBase;
-	PyMac_PRECHECK(CFURLCreateStringWithFileSystemPath);
-	if (!PyArg_ParseTuple(_args, "O&ll",
-	                      CFURLRefObj_Convert, &anURL,
-	                      &pathStyle,
-	                      &resolveAgainstBase))
-		return NULL;
-	_rv = CFURLCreateStringWithFileSystemPath((CFAllocatorRef)NULL,
-	                                          anURL,
-	                                          pathStyle,
-	                                          resolveAgainstBase);
-	_res = Py_BuildValue("O&",
-	                     CFStringRefObj_New, _rv);
-	return _res;
-}
-
-static PyObject *CF_CFURLCreateStringByReplacingPercentEscapes(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	CFStringRef _rv;
-	CFStringRef originalString;
-	CFStringRef charactersToLeaveEscaped;
-	PyMac_PRECHECK(CFURLCreateStringByReplacingPercentEscapes);
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CFStringRefObj_Convert, &originalString,
-	                      CFStringRefObj_Convert, &charactersToLeaveEscaped))
-		return NULL;
-	_rv = CFURLCreateStringByReplacingPercentEscapes((CFAllocatorRef)NULL,
-	                                                 originalString,
-	                                                 charactersToLeaveEscaped);
-	_res = Py_BuildValue("O&",
-	                     CFStringRefObj_New, _rv);
-	return _res;
-}
-
 static PyMethodDef CF_methods[] = {
 	{"CFAllocatorGetTypeID", (PyCFunction)CF_CFAllocatorGetTypeID, 1,
 	 "() -> (CFTypeID _rv)"},
@@ -3079,8 +3050,6 @@ static PyMethodDef CF_methods[] = {
 	 "(CFTypeID theType) -> (CFStringRef _rv)"},
 	{"CFArrayGetTypeID", (PyCFunction)CF_CFArrayGetTypeID, 1,
 	 "() -> (CFTypeID _rv)"},
-	{"CFArrayCreateCopy", (PyCFunction)CF_CFArrayCreateCopy, 1,
-	 "(CFArrayRef srcArray) -> (CFArrayRef _rv)"},
 	{"CFArrayCreateMutable", (PyCFunction)CF_CFArrayCreateMutable, 1,
 	 "(CFIndex capacity) -> (CFMutableArrayRef _rv)"},
 	{"CFArrayCreateMutableCopy", (PyCFunction)CF_CFArrayCreateMutableCopy, 1,
@@ -3091,16 +3060,12 @@ static PyMethodDef CF_methods[] = {
 	 "(Buffer bytes) -> (CFDataRef _rv)"},
 	{"CFDataCreateWithBytesNoCopy", (PyCFunction)CF_CFDataCreateWithBytesNoCopy, 1,
 	 "(Buffer bytes) -> (CFDataRef _rv)"},
-	{"CFDataCreateCopy", (PyCFunction)CF_CFDataCreateCopy, 1,
-	 "(CFDataRef data) -> (CFDataRef _rv)"},
 	{"CFDataCreateMutable", (PyCFunction)CF_CFDataCreateMutable, 1,
 	 "(CFIndex capacity) -> (CFMutableDataRef _rv)"},
 	{"CFDataCreateMutableCopy", (PyCFunction)CF_CFDataCreateMutableCopy, 1,
 	 "(CFIndex capacity, CFDataRef data) -> (CFMutableDataRef _rv)"},
 	{"CFDictionaryGetTypeID", (PyCFunction)CF_CFDictionaryGetTypeID, 1,
 	 "() -> (CFTypeID _rv)"},
-	{"CFDictionaryCreateCopy", (PyCFunction)CF_CFDictionaryCreateCopy, 1,
-	 "(CFDictionaryRef dict) -> (CFDictionaryRef _rv)"},
 	{"CFDictionaryCreateMutable", (PyCFunction)CF_CFDictionaryCreateMutable, 1,
 	 "(CFIndex capacity) -> (CFMutableDictionaryRef _rv)"},
 	{"CFDictionaryCreateMutableCopy", (PyCFunction)CF_CFDictionaryCreateMutableCopy, 1,
@@ -3115,30 +3080,16 @@ static PyMethodDef CF_methods[] = {
 	 "(StringPtr pStr, CFStringEncoding encoding) -> (CFStringRef _rv)"},
 	{"CFStringCreateWithCStringNoCopy", (PyCFunction)CF_CFStringCreateWithCStringNoCopy, 1,
 	 "(char* cStr, CFStringEncoding encoding) -> (CFStringRef _rv)"},
-	{"CFStringCreateWithSubstring", (PyCFunction)CF_CFStringCreateWithSubstring, 1,
-	 "(CFStringRef str, CFRange range) -> (CFStringRef _rv)"},
-	{"CFStringCreateCopy", (PyCFunction)CF_CFStringCreateCopy, 1,
-	 "(CFStringRef theString) -> (CFStringRef _rv)"},
 	{"CFStringCreateMutable", (PyCFunction)CF_CFStringCreateMutable, 1,
 	 "(CFIndex maxLength) -> (CFMutableStringRef _rv)"},
 	{"CFStringCreateMutableCopy", (PyCFunction)CF_CFStringCreateMutableCopy, 1,
 	 "(CFIndex maxLength, CFStringRef theString) -> (CFMutableStringRef _rv)"},
 	{"CFStringCreateWithBytes", (PyCFunction)CF_CFStringCreateWithBytes, 1,
 	 "(Buffer bytes, CFStringEncoding encoding, Boolean isExternalRepresentation) -> (CFStringRef _rv)"},
-	{"CFStringCreateFromExternalRepresentation", (PyCFunction)CF_CFStringCreateFromExternalRepresentation, 1,
-	 "(CFDataRef data, CFStringEncoding encoding) -> (CFStringRef _rv)"},
-	{"CFStringCreateExternalRepresentation", (PyCFunction)CF_CFStringCreateExternalRepresentation, 1,
-	 "(CFStringRef theString, CFStringEncoding encoding, UInt8 lossByte) -> (CFDataRef _rv)"},
 	{"CFStringGetSystemEncoding", (PyCFunction)CF_CFStringGetSystemEncoding, 1,
 	 "() -> (CFStringEncoding _rv)"},
 	{"CFStringGetMaximumSizeForEncoding", (PyCFunction)CF_CFStringGetMaximumSizeForEncoding, 1,
 	 "(CFIndex length, CFStringEncoding encoding) -> (CFIndex _rv)"},
-	{"CFStringCreateArrayWithFindResults", (PyCFunction)CF_CFStringCreateArrayWithFindResults, 1,
-	 "(CFStringRef theString, CFStringRef stringToFind, CFRange rangeToSearch, CFOptionFlags compareOptions) -> (CFArrayRef _rv)"},
-	{"CFStringCreateByCombiningStrings", (PyCFunction)CF_CFStringCreateByCombiningStrings, 1,
-	 "(CFArrayRef theArray, CFStringRef separatorString) -> (CFStringRef _rv)"},
-	{"CFStringCreateArrayBySeparatingStrings", (PyCFunction)CF_CFStringCreateArrayBySeparatingStrings, 1,
-	 "(CFStringRef theString, CFStringRef separatorString) -> (CFArrayRef _rv)"},
 	{"CFStringIsEncodingAvailable", (PyCFunction)CF_CFStringIsEncodingAvailable, 1,
 	 "(CFStringEncoding encoding) -> (Boolean _rv)"},
 	{"CFStringGetNameOfEncoding", (PyCFunction)CF_CFStringGetNameOfEncoding, 1,
@@ -3159,16 +3110,6 @@ static PyMethodDef CF_methods[] = {
 	 "() -> (CFTypeID _rv)"},
 	{"CFURLCreateWithBytes", (PyCFunction)CF_CFURLCreateWithBytes, 1,
 	 "(Buffer URLBytes, CFStringEncoding encoding, CFURLRef baseURL) -> (CFURLRef _rv)"},
-	{"CFURLCreateData", (PyCFunction)CF_CFURLCreateData, 1,
-	 "(CFURLRef url, CFStringEncoding encoding, Boolean escapeWhitespace) -> (CFDataRef _rv)"},
-	{"CFURLCreateWithString", (PyCFunction)CF_CFURLCreateWithString, 1,
-	 "(CFStringRef URLString, CFURLRef baseURL) -> (CFURLRef _rv)"},
-	{"CFURLCreateWithFileSystemPath", (PyCFunction)CF_CFURLCreateWithFileSystemPath, 1,
-	 "(CFStringRef filePath, CFURLPathStyle pathStyle, Boolean isDirectory) -> (CFURLRef _rv)"},
-	{"CFURLCreateStringWithFileSystemPath", (PyCFunction)CF_CFURLCreateStringWithFileSystemPath, 1,
-	 "(CFURLRef anURL, CFURLPathStyle pathStyle, Boolean resolveAgainstBase) -> (CFStringRef _rv)"},
-	{"CFURLCreateStringByReplacingPercentEscapes", (PyCFunction)CF_CFURLCreateStringByReplacingPercentEscapes, 1,
-	 "(CFStringRef originalString, CFStringRef charactersToLeaveEscaped) -> (CFStringRef _rv)"},
 	{NULL, NULL, 0}
 };
 

@@ -58,6 +58,12 @@ class MyScanner(Scanner_OSX):
 			if t in OBJECTS and m == "InMode":
 				classname = "Method"
 				listname = t + "_methods"
+			# Special case for the silly first AllocatorRef argument
+			if t == 'CFAllocatorRef' and m == 'InMode' and len(arglist) > 1:
+				t, n, m = arglist[1]
+				if t in OBJECTS and m == "InMode":
+					classname = "MethodSkipArg1"
+					listname = t + "_methods"
 		return classname, listname
 
 	def writeinitialdefs(self):
@@ -85,9 +91,7 @@ class MyScanner(Scanner_OSX):
 			"CFStringGetCharactersPtr",
 			"CFStringGetCString", 
 			"CFStringGetCharacters",
-			# OSX only, to be done
-##			"CFURLCreateWithFileSystemPath",
-##			"CFURLCreateStringWithFileSystemPath",
+			"CFURLCreateStringWithFileSystemPath", # Gone in later releases
 			]
 
 	def makegreylist(self):
