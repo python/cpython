@@ -2883,12 +2883,11 @@ call_method(PyObject *func, PyObject *arg, PyObject *kw)
 				return NULL;
 		}
 		if (!ok) {
-			PyObject* fn = ((PyFunctionObject*) func)->func_name;
+			char* fn = get_func_name(func);
 			PyErr_Format(PyExc_TypeError,
 				     "unbound method %s%smust be "
 				     "called with instance as first argument",
-				     fn ? PyString_AsString(fn) : "",
-				     fn ? "() " : "");
+				     fn ? fn : "", fn ? "() " : "");
 			return NULL;
 		}
 		Py_INCREF(arg);
