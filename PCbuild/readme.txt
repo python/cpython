@@ -88,6 +88,34 @@ zlib
     zlib-1.1.4\ when you do a clean, so if you want to rebuild zlib.lib
     you need to clean up zlib-1.1.4\ by hand.
 
+bz2
+    Python wrapper for the libbz2 compression library.  Homepage
+        http://sources.redhat.com/bzip2/
+    Download the source tarball, bzip2-1.0.2.tar.gz.
+    Unpack into dist\bzip2-1.0.2.  WARNING:  If you using WinZip, you
+    must disable its "TAR file smart CR/LF conversion" feature (under
+    Options -> Configuration -> Miscellaneous -> Other) for the duration.
+    Don't bother trying to use libbz2.dsp with MSVC.  After 10 minutes
+    of fiddling, I couldn't get it to work.  Perhaps it works with
+    MSVC 5 (I used MSVC 6).  It's better to run the by-hand makefile
+    anyway, because it runs a  helpful test step at the end.
+    cd into dist\bzip2-1.0.2, and run
+        nmake -f makefile.msc
+    [Note that if you're running Win9X, you'll need to run vcvars32.bat
+     before running nmake (this batch file is in your MSVC installation).
+     TODO:  make this work like zlib (in particular, MSVC runs the prelink
+     step in an enviroment that already has the correct envars set up).
+    ]
+    The make step should yield any warnings or errors, and should end
+    by displaying 6 blocks each terminated with
+        FC: no differences encountered
+    If FC finds differences, see the warning abou WinZip above (when I
+    first tried it, sample3.ref failed due to CRLF conversion).
+    All of this managed to build bzip2-1.0.2\libbz2.lib, which the Python
+    project links in.
+
+
+
 bsddb
     Python wrapper for the BSD database 1.85.  Requires db.1.85.win32.zip,
     from the "bsd db" link at
