@@ -305,8 +305,11 @@ class Scrollbar(ControlWidget):
 			self._control.HiliteControl(part)
 			self._hit(part)
 			oldpart = part
-			import time
-			time.sleep(0.3)
+			# slight delay before scrolling at top speed...
+			now = Evt.TickCount()
+			while Evt.StillDown():
+				if (Evt.TickCount() - now) > 18: # 0.3 seconds
+					break
 			while Evt.StillDown():
 				part = self._control.TestControl(point)
 				if part == oldpart:
