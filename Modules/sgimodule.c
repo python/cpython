@@ -92,4 +92,5 @@ initsgi()
 	initmodule("sgi", sgi_methods);
 }
 
-static int dummy; /* $%#@!& dl wants at least a byte of bss */
+int _Py_sgi_dummy; /* $%#@!& dl wants at least a byte of bss */
+/* And gcc -Wall doesn't like unused static variables :-( */
