@@ -1,6 +1,7 @@
 import os
 import marshal
 import stat
+import string
 import struct
 import types
 from cStringIO import StringIO
@@ -44,7 +45,7 @@ class Module:
         f.write(self.getPycHeader())
         marshal.dump(self.code, f)
 
-    MAGIC = (50811 | (ord('\r')<<16) | (ord('\n')<<24))
+    MAGIC = (50823 | (ord('\r')<<16) | (ord('\n')<<24))
 
     def getPycHeader(self):
         # compile.c uses marshal to write a long directly, with
@@ -420,18 +421,31 @@ class CodeGenerator:
 
     def visitImport(self, node):
         self.set_lineno(node)
-        for name in node.names:
+        for name, alias in node.names:
+            self.emit('LOAD_CONST', None)
             self.emit('IMPORT_NAME', name)
-            self.storeName(name)
+            self._resolveDots(name)
+            self.storeName(alias or name)
 
     def visitFrom(self, node):
         self.set_lineno(node)
+        fromlist = map(lambda (name, alias): name, node.names)
+        self.emit('LOAD_CONST', tuple(fromlist))
         self.emit('IMPORT_NAME', node.modname)
-        for name in node.names:
+        for name, alias in node.names:
             if name == '*':
                 self.namespace = 0
             self.emit('IMPORT_FROM', name)
+            self._resolveDots(name)
+            self.storeName(alias or name)
         self.emit('POP_TOP')
+
+    def _resolveDots(self, name):
+        elts = string.split(name, ".")
+        if len(elts) == 1:
+            return
+        for elt in elts[1:]:
+            self.emit('LOAD_ATTR', elt)
 
     def visitGetattr(self, node):
         self.visit(node.expr)
@@ -787,12 +801,12 @@ class LocalNameFinder:
         pass
 
     def visitImport(self, node):
-        for name in node.names:
-            self.names.add(name)
+        for name, alias in node.names:
+            self.names.add(alias or name)
 
     def visitFrom(self, node):
-        for name in node.names:
-            self.names.add(name)
+        for name, alias in node.names:
+            self.names.add(alias or name)
 
     def visitClass(self, node):
         self.names.add(node.name)
