@@ -30,38 +30,6 @@
  * SUCH DAMAGE.
  */
 
-/*
- *
- * File: $Id$
- *
- * Author: George V. Neville-Neil
- *
- * Update History: $Log$
- * Update History: Revision 2.2  1994/01/14 16:55:47  guido
- * Update History: Make more robust against Minix and Mac
- * Update History:
- * Revision 2.1  1994/01/02  23:22:19  guido
- * Added George Neville-Neil's timing module
- *
- * Revision 1.1  93/12/28  13:14:19  gnn
- * Initial revision
- * 
- * Revision 1.1  93/12/23  18:59:10  gnn
- * Initial revision
- * 
- * Revision 1.3  93/07/22  15:57:39  15:57:39  gnn (George Neville-Neil)
- * Added copyright message.
- * 
- * Revision 1.2  1993/07/22  12:12:34  gnn
- * Latest macros.  They now evaluate to rvalues.
- *
- * Revision 1.1  93/07/19  16:56:18  16:56:18  gnn (George Neville-Neil)
- * Initial revision
- * 
- *
- *
- */
-
 #ifndef _TIMING_H_
 #define _TIMING_H_
 
