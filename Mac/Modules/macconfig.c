@@ -100,6 +100,7 @@ extern void initmactcp();
 #define USE_CORE_TOOLBOX
 #endif
 extern void initAE();
+extern void initApp();
 extern void initEvt();
 extern void initFm();
 extern void initHelp();
@@ -221,6 +222,7 @@ struct _inittab _PyImport_Inittab[] = {
 #endif
 #ifdef USE_TOOLBOX
 	{"AE", initAE},
+	{"App", initApp},
 	{"Evt", initEvt},
 	{"Fm", initFm},
 	{"Help", initHelp},
