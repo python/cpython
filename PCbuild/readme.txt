@@ -182,6 +182,11 @@ _bsddb
     dist\db-4.2.52.NC directory - this directory should be renamed to
     dist\db-4.2.52 before use.
 
+    As of 11-Apr-2004, you also need to download and manually apply two
+    patches before proceeding (and the sleepycat download page tells you
+    about this).  Cygwin patch worked for me.  cd to dist\db-4.2.52 and
+    use "patch -p0 < patchfile" once for each downloaded patchfile.
+
     Open
         dist\db-4.2.52\docs\index.html
 
@@ -243,9 +248,9 @@ _ssl
         http://www.openssl.org
 
     You (probably) don't want the "engine" code.  For example, get
-        openssl-0.9.7c.tar.gz
+        openssl-0.9.7d.tar.gz
     not
-        openssl-engine-0.9.7c.tar.gz
+        openssl-engine-0.9.7d.tar.gz
 
     Unpack into the "dist" directory, retaining the folder name from
     the archive - for example, the latest stable OpenSSL will install as
