@@ -22,8 +22,8 @@ Type: buildall<ENTER>
 
 Configuration:
 --------------
-The files "Makefile", "config.h", "Modules:config.c" and
-"Modules:Makefile" are normally configured and/or generated 
+The files "Makefile", "config.h", "Mac:config.c" and
+"Modules:Makefile" are normally configured and/or generated
 automagically under Unix.
 
 Macintosh programmers will have to be content with editing
@@ -52,8 +52,8 @@ Additional notes by Guido for Python 1.1:
 
 I have tried this with MPW 3.2 and tweaked Richards Makefiles and
 buildall script slightly to work with Python 1.1.  The same configure
-file now works for THINK C 6.0 and MPW 3.2.  It is essential that
-'MPW' is defined when compiling with MPW; for both compilers,
+file now works for THINK C 6.0 (or 7.0) and MPW 3.2.  It is essential
+that 'MPW' is defined when compiling with MPW; for both compilers,
 'HAVE_CONFIG_H' should also be defined.  For MPW, the buildall script
 takes care of this.
 
@@ -61,8 +61,9 @@ I moved some files around or renamed them and modified the Makefiles
 accordingly.  All Mac specific files are now in the Mac subdirectory,
 especially config.c, config.h, macmodule.c, and (new) macmain.c.
 
-I wouldn't bother with the Grammar subdirectory or the Parser generator
-(Pgen) -- the needed Pgen output files are part of the distribution.
+I wouldn't bother with the Grammar subdirectory or the Parser
+generator (Pgen) -- the needed Pgen output files are part of the
+distribution.
 
 If the buildall script stops at a compilation error you are usually
 left in one of the subordinate directories.
@@ -78,29 +79,29 @@ Modules and finally the python rot directory, execute the two command
 Or you could execute
 
 	make
-	
+
 have a look at its output and execute selected commands from it.
 
 The buildall script executes
 
 	Directory {Python}
-	
-which normally prints the current directory, because {Python}
-is not defined.  If it is set to the python root directory,
-you could place buildall somewhere in your command search path and
-execute it from anywhere.
 
-If you are mixing THINK C and MPW, you may experience weird errors
-in correct modules.  These disappear when you throw away the
+which normally prints the current directory, because {Python} is not
+defined.  If it is set to the python root directory, you could place
+buildall somewhere in your command search path and execute it from
+anywhere.
+
+If you are mixing THINK C and MPW, you may experience weird errors in
+previously correct modules.  These disappear when you throw away the
 module's .pyc file.  The errors usually have to do with string
 literals containing '\n' or '\r'.  The reason is an incompatibility
 between their handling of '\n' and '\r' -- in MPW C, '\n' actually is
 ASCII CR while '\r' is ASCII LF, which is the reverse situation from
 any other ASCII based C implementation.  This behaviour is inherited
-by Python compiled with MPW C.  This is normally not a problem,
-but *binary* files written by one system will be mis-interpreted
-by the other, and this is what happens to the .pyc files.  There is no
-easy way to fix this in the source.  (This is a real shame, since the
-format of .pyc files was carefully designed to be independent of
-byte order and integer size -- deviations in the ASCII character codes
-were never anticipated.)
+by Python compiled with MPW C.  This is normally not a problem, but
+*binary* files written by one system will be mis-interpreted by the
+other, and this is what happens to the .pyc files.  There is no easy
+way to fix this in the source.  (This is a real shame, since the
+format of .pyc files was carefully designed to be independent of byte
+order and integer size -- deviations in the ASCII character codes were
+never anticipated.)
