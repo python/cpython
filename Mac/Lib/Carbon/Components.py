@@ -3,7 +3,7 @@
 def FOUR_CHAR_CODE(x): return x
 kAppleManufacturer = FOUR_CHAR_CODE('appl')
 kComponentResourceType = FOUR_CHAR_CODE('thng')
-kComponentAliasResourceType = FOUR_CHAR_CODE('thga')        
+kComponentAliasResourceType = FOUR_CHAR_CODE('thga') 
 kAnyComponentType = 0
 kAnyComponentSubType = 0
 kAnyComponentManufacturer = 0
@@ -19,7 +19,7 @@ kComponentTargetSelect = -6
 kComponentUnregisterSelect = -7
 kComponentGetMPWorkFunctionSelect = -8
 kComponentExecuteWiredActionSelect = -9
-kComponentGetPublicResourceSelect = -10                     
+kComponentGetPublicResourceSelect = -10 
 componentDoAutoVersion = (1 << 0)
 componentWantsUnregister = (1 << 1)
 componentAutoVersionIncludeFlags = (1 << 2)

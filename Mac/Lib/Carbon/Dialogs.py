@@ -1,4 +1,4 @@
-# Generated from 'Moes:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Dialogs.h'
+# Generated from 'Dialogs.h'
 
 def FOUR_CHAR_CODE(x): return x
 kControlDialogItem = 4
@@ -45,7 +45,7 @@ kAlertCautionAlert = 2
 kAlertPlainAlert = 3
 kAlertDefaultOKText = -1
 kAlertDefaultCancelText = -1
-kAlertDefaultOtherText = -1                            
+kAlertDefaultOtherText = -1    
 kAlertStdAlertOKButton = 1
 kAlertStdAlertCancelButton = 2
 kAlertStdAlertOtherButton = 3
@@ -70,3 +70,7 @@ kDialogFontUseAllMask = 0x00FF
 kDialogFontAddFontSizeMask = 0x0100
 kDialogFontUseFontNameMask = 0x0200
 kDialogFontAddToMetaFontMask = 0x0400
+kDialogFontUseThemeFontIDMask = 0x0080
+kHICommandOther = FOUR_CHAR_CODE('othr') 
+kStdCFStringAlertVersionOne = 1     
+kStdAlertDoNotDisposeSheet = 1 << 0 
