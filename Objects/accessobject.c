@@ -99,6 +99,15 @@ setaccessowner(op, class)
 	ap->ac_class = class;
 }
 
+int
+hasaccessvalue(op)
+	object *op;
+{	
+	if (!is_accessobject(op))
+		return 0;
+	return ((accessobject *)op)->ac_value != NULL;
+}
+
 object *
 getaccessvalue(op, class)
 	object *op;
@@ -268,7 +277,9 @@ access_repr(ap)
 	char buf[300];
 	classobject *class = (classobject *)ap->ac_class;
 	typeobject *type = ap->ac_type;
-	sprintf(buf, "<access object, class %.100s, type %.100s, mode 0%o>",
+	sprintf(buf,
+	"<access object, value 0x%lx, class %.100s, type %.100s, mode %04o>",
+		(long)(ap->ac_value),
 		class ? getstringvalue(class->cl_name) : "-",
 		type ? type->tp_name : "-",
 		ap->ac_mode);

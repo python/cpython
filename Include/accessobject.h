@@ -50,5 +50,6 @@ int setaccessvalue PROTO((object *, object *, object *));
 
 void setaccessowner PROTO((object *, object *));
 object *cloneaccessobject PROTO((object *));
+int hasaccessvalue PROTO((object *));
 
 extern typeobject Anynumbertype, Anysequencetype, Anymappingtype;
