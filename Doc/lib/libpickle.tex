@@ -164,6 +164,7 @@ following constant:
 \begin{datadesc}{HIGHEST_PROTOCOL}
 The highest protocol version available.  This value can be passed
 as a \var{protocol} value.
+\versionadded{2.3}
 \end{datadesc}
 
 The \module{pickle} module provides the
@@ -253,14 +254,13 @@ including (but not necessarily limited to) \exception{AttributeError},
 \exception{EOFError}, \exception{ImportError}, and \exception{IndexError}.
 \end{excdesc}
 
-The \module{pickle} module also exports two callables\footnote{In the
+The \module{pickle} module also exports two callables,\footnote{In the
 \module{pickle} module these callables are classes, which you could
-subclass to customize the behavior.  However, in the \module{cPickle}
-modules these callables are factory functions and so cannot be
-subclassed.  One of the common reasons to subclass is to control what
-objects can actually be unpickled.  See section~\ref{pickle-sub} for
-more details.}, \class{Pickler} and
-\class{Unpickler}:
+subclass to customize the behavior.  However, in the
+\refmodule{cPickle} module these callables are factory functions and
+so cannot be subclassed.  One common reason to subclass is to control
+what objects can actually be unpickled.  See section~\ref{pickle-sub}
+for more details.} \class{Pickler} and \class{Unpickler}:
 
 \begin{classdesc}{Pickler}{file\optional{, protocol\optional{, bin}}}
 This takes a file-like object to which it will write a pickle data
