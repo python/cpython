@@ -623,6 +623,48 @@ PyErr_Warn(PyObject *category, char *message)
 	}
 }
 
+
+/* Warning with explicit origin */
+int
+PyErr_WarnExplicit(PyObject *category, char *message,
+		   char *filename, int lineno,
+		   char *module, PyObject *registry)
+{
+	PyObject *mod, *dict, *func = NULL;
+
+	mod = PyImport_ImportModule("warnings");
+	if (mod != NULL) {
+		dict = PyModule_GetDict(mod);
+		func = PyDict_GetItemString(dict, "warn_explicit");
+		Py_DECREF(mod);
+	}
+	if (func == NULL) {
+		PySys_WriteStderr("warning: %s\n", message);
+		return 0;
+	}
+	else {
+		PyObject *args, *res;
+
+		if (category == NULL)
+			category = PyExc_RuntimeWarning;
+		if (registry == NULL)
+			registry = Py_None;
+		args = Py_BuildValue("(sOsizO)", message, category,
+				     filename, lineno, module, registry);
+		if (args == NULL)
+			return -1;
+		res = PyEval_CallObject(func, args);
+		Py_DECREF(args);
+		if (res == NULL)
+			return -1;
+		Py_DECREF(res);
+		return 0;
+	}
+}
+
+
+/* XXX There's a comment missing here */
+
 void
 PyErr_SyntaxLocation(char *filename, int lineno)
 {
