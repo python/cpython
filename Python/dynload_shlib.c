@@ -57,11 +57,12 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 
 	if (strchr(pathname, '/') == NULL) {
 		/* Prefix bare filename with "./" */
-		sprintf(pathbuf, "./%-.255s", pathname);
+		PyOS_snprintf(pathbuf, sizeof(pathbuf), "./%-.255s", pathname);
 		pathname = pathbuf;
 	}
 
-	sprintf(funcname, LEAD_UNDERSCORE "init%.200s", shortname);
+	PyOS_snprintf(funcname, sizeof(funcname), 
+		      LEAD_UNDERSCORE "init%.200s", shortname);
 
 	if (fp != NULL) {
 		int i;

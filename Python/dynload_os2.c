@@ -31,14 +31,14 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 
 	if (rc != NO_ERROR) {
 		char errBuf[256];
-		sprintf(errBuf,
-			"DLL load failed, rc = %d: %.200s",
-			rc, failreason);
+		PyOS_snprintf(errBuf, sizeof(errBuf),
+			      "DLL load failed, rc = %d: %.200s",
+			      rc, failreason);
 		PyErr_SetString(PyExc_ImportError, errBuf);
 		return NULL;
 	}
 
-	sprintf(funcname, "init%.200s", shortname);
+	PyOS_snprintf(funcname, sizeof(funcname), "init%.200s", shortname);
 	rc = DosQueryProcAddr(hDLL, 0L, funcname, &p);
 	if (rc != NO_ERROR)
 		p = NULL; /* Signify Failure to Acquire Entrypoint */

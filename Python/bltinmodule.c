@@ -779,7 +779,7 @@ builtin_map(PyObject *self, PyObject *args)
 			static char errmsg[] =
 			    "argument %d to map() must support iteration";
 			char errbuf[sizeof(errmsg) + 25];
-			sprintf(errbuf, errmsg, i+2);
+			PyOS_snprintf(errbuf, sizeof(errbuf), errmsg, i+2);
 			PyErr_SetString(PyExc_TypeError, errbuf);
 			goto Fail_2;
 		}

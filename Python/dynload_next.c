@@ -44,7 +44,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 	dl_funcptr p = NULL;
 	char funcname[258];
 
-	sprintf(funcname, "_init%.200s", shortname);
+	PyOS_snprintf(funcname, sizeof(funcname), "_init%.200s", shortname);
 
 #ifdef USE_RLD
 	{

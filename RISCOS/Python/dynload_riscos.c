@@ -55,10 +55,9 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 	void (*init_function)(void);
 
 	err = dlk_load_no_init(pathname, &init_function);
-	if (err)
-	{
-	  sprintf(errstr, "dlk failure %d", err);
-	  PyErr_SetString(PyExc_ImportError, errstr);
+	if (err) {
+	    PyOS_snprintf(errstr, sizeof(errstr), "dlk failure %d", err);
+	    PyErr_SetString(PyExc_ImportError, errstr);
 	}
 	return init_function;
 }

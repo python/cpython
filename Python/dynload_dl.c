@@ -21,6 +21,6 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 {
 	char funcname[258];
 
-	sprintf(funcname, "init%.200s", shortname);
+	PyOS_snprintf(funcname, sizeof(funcname), "init%.200s", shortname);
 	return dl_loadmod(Py_GetProgramName(), pathname, funcname);
 }

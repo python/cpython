@@ -933,7 +933,7 @@ void PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 				else
 					PyFile_WriteString(filename, f);
 				PyFile_WriteString("\", line ", f);
-				sprintf(buf, "%d", lineno);
+				PyOS_snprintf(buf, sizeof(buf), "%d", lineno);
 				PyFile_WriteString(buf, f);
 				PyFile_WriteString("\n", f);
 				if (text != NULL)
