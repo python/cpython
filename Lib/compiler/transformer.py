@@ -172,7 +172,7 @@ class Transformer:
     def eval_input(self, nodelist):
         # from the built-in function input()
         ### is this sufficient?
-        return self.com_node(nodelist[0])
+        return Expression(self.com_node(nodelist[0]))
 
     def funcdef(self, nodelist):
         # funcdef: 'def' NAME parameters ':' suite

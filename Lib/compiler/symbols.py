@@ -206,6 +206,8 @@ class SymbolVisitor:
         scope = self.module = self.scopes[node] = ModuleScope()
         self.visit(node.node, scope)
 
+    visitExpression = visitModule
+
     def visitFunction(self, node, parent):
         parent.add_def(node.name)
         for n in node.defaults:

@@ -34,6 +34,7 @@ EXCEPT = 2
 TRY_FINALLY = 3
 END_FINALLY = 4
 
+# XXX this doesn't seem to be used
 class BlockStack(misc.Stack):
     __super_init = misc.Stack.__init__
 
@@ -349,6 +350,13 @@ class CodeGenerator:
         self.locals.push(lnf.getLocals())
         self.visit(node.node)
         self.emit('LOAD_CONST', None)
+        self.emit('RETURN_VALUE')
+
+    def visitExpression(self, node):
+        self.set_lineno(node)
+        self.scopes = self.parseSymbols(node)
+        self.scope = self.scopes[node]
+        self.visit(node.node)
         self.emit('RETURN_VALUE')
 
     def visitFunction(self, node):
@@ -1158,9 +1166,7 @@ class ExpressionCodeGenerator(NestedScopeMixin, CodeGenerator):
     def __init__(self, tree):
         self.graph = pyassem.PyFlowGraph("<expression>", tree.filename)
         self.__super_init()
-        self.set_lineno(tree)
         walk(tree, self)
-        self.emit('RETURN_VALUE')
 
     def get_module(self):
         return self
@@ -1181,6 +1187,7 @@ class InteractiveCodeGenerator(NestedScopeMixin, CodeGenerator):
 
     def get_module(self):
         return self
+    
     def visitDiscard(self, node):
         # XXX Discard means it's an expression.  Perhaps this is a bad
         # name.
@@ -1299,7 +1306,6 @@ class ClassCodeGenerator(NestedScopeMixin, AbstractClassCode, CodeGenerator):
         self.__super_init(klass, scopes, module)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
-##        self.graph.setFlag(CO_NESTED)
 
 def generateArgList(arglist):
     """Generate an arg list marking TupleArgs"""

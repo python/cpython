@@ -321,7 +321,9 @@ typedef struct Picklerobject {
     PyObject *fast_memo;
 } Picklerobject;
 
-#define FAST_LIMIT 2000
+#ifndef PY_CPICKLE_FAST_LIMIT
+#define PY_CPICKLE_FAST_LIMIT 50
+#endif
 
 staticforward PyTypeObject Picklertype;
 
@@ -891,7 +893,7 @@ static int
 fast_save_enter(Picklerobject *self, PyObject *obj)
 {
     /* if fast_container < 0, we're doing an error exit. */
-    if (++self->fast_container >= FAST_LIMIT) {
+    if (++self->fast_container >= PY_CPICKLE_FAST_LIMIT) {
 	PyObject *key = NULL;
 	if (self->fast_memo == NULL) {
 	    self->fast_memo = PyDict_New();
@@ -921,7 +923,7 @@ fast_save_enter(Picklerobject *self, PyObject *obj)
 int 
 fast_save_leave(Picklerobject *self, PyObject *obj)
 {
-    if (self->fast_container-- >= FAST_LIMIT) {
+    if (self->fast_container-- >= PY_CPICKLE_FAST_LIMIT) {
 	PyObject *key = PyLong_FromVoidPtr(obj);
 	if (key == NULL)
 	    return 0;

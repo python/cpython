@@ -4,11 +4,37 @@ Release date: 21-Dec-2001
 
 Type/class unification and new-style classes
 
+- pickle.py, cPickle: allow pickling instances of new-style classes
+  with a custom metaclass.
+
 Core and builtins
+
+- weakref proxy object: when comparing, unwrap both arguments if both
+  are proxies.
 
 Extension modules
 
+- binascii.b2a_base64(): fix a potential buffer overrun when encoding
+  very short strings.
+
+- cPickle: the obscure "fast" mode was suspected of causing stack
+  overflows on the Mac.  Hopefully fixed this by setting the recursion
+  limit much smaller.  If the limit is too low (it only affects
+  performance), you can change it by defining PY_CPICKLE_FAST_LIMIT
+  when compiling cPickle.c (or in pyconfig.h).
+
 Library
+
+- dumbdbm.py: fixed a dumb old bug (the file didn't get synched at
+  close or delete time).
+
+- rfc822.py: fixed a bug where the address '<>' was converted to None
+  instead of an empty string (also fixes the email.Utils module).
+
+- xmlrpclib.py: version 1.0.0; uses precision for doubles.
+
+- test suite: the pickle and cPickle tests were not executing any code
+  when run from the standard regresssion test.
 
 Tools/Demos
 
@@ -22,7 +48,22 @@ Tests
 
 Windows
 
+- distutils package: fixed broken Windows installers (bdist_wininst).
+
+- tempfile.py: prevent mysterious warnings when TemporaryFileWrapper
+  instances are deleted at process exit time.
+
+- socket.py: prevent mysterious warnings when socket instances are
+  deleted at process exit time.
+
+- posixmodule.c: fix a Windows crash with stat() of a filename ending
+  in backslash.
+
 Mac
+
+- The Carbon toolbox modules have been upgraded to Universal Headers
+  3.4, and experimental CoreGraphics and CarbonEvents modules have
+  been added.  All only for framework-enabled MacOSX.
 
 
 What's New in Python 2.2c1?
