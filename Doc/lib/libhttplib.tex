@@ -174,11 +174,16 @@ Send data to the server.  This should be used directly only after the
 \method{getreply()} has been called.
 \end{methoddesc}
 
-\begin{methoddesc}{putrequest}{request, selector}
+\begin{methoddesc}{putrequest}{request, selector\optional{,
+skip\_host\optional{, skip_accept_encoding}}}
 This should be the first call after the connection to the server has
 been made.  It sends a line to the server consisting of the
 \var{request} string, the \var{selector} string, and the HTTP version
-(\code{HTTP/1.1}).
+(\code{HTTP/1.1}).  To disable automatic sending of \code{Host:} or
+\code{Accept-Encoding:} headers (for example to accept additional
+content encodings), specify \var{skip_host} or \var{skip_accept_encoding}
+with non-False values.
+\versionchanged[\var{skip_accept_encoding} argument added]{2.4}
 \end{methoddesc}
 
 \begin{methoddesc}{putheader}{header, argument\optional{, ...}}
