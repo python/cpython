@@ -956,7 +956,7 @@ fi
 # checks for library functions
 AC_CHECK_FUNCS(alarm chown clock confstr ctermid ctermid_r execv \
  flock fork fsync fdatasync fpathconf ftime ftruncate \
- getgroups getlogin getpeername getpid getpwent getwd \
+ getgroups getline getlogin getpeername getpid getpwent getwd \
  kill link lstat mkfifo mktime mremap \
  nice pathconf pause plock poll pthread_init \
  putenv readlink \
