@@ -97,7 +97,7 @@ stringobject.o: stringobject.c
 tupleobject.o: tupleobject.c
 typeobject.o: typeobject.c
 unicodeobject.o: unicodeobject.c
-unicodectype.o: unicodectype.c
+unicodectype.o: unicodectype.c unicodetype_db.h
 
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
