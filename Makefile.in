@@ -234,7 +234,7 @@ Modules:	Parser Python Objects
 # Test the interpreter (twice, once without .pyc files, once with)
 TESTOPTS=	
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
-TESTPYTHON=	./python$(EXE)
+TESTPYTHON=	./python$(EXE) -tt
 test:		all
 		-rm -f $(srcdir)/Lib/test/*.py[co]
 		-PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
@@ -346,7 +346,7 @@ libinstall:	python $(srcdir)/Lib/$(PLATDIR)
 			done; \
 		done
 		PYTHONPATH=$(LIBDEST) \
-			./python$(EXE) $(LIBDEST)/compileall.py $(LIBDEST)
+			./python$(EXE) -t $(LIBDEST)/compileall.py $(LIBDEST)
 		PYTHONPATH=$(LIBDEST) \
 			./python$(EXE) -O $(LIBDEST)/compileall.py $(LIBDEST)
 
