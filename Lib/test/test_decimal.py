@@ -279,11 +279,7 @@ class DecimalTest(unittest.TestCase):
         return
 
     def getexceptions(self):
-        L = []
-        for exception in Signals:
-            if self.context.flags[exception]:
-                L.append(exception)
-        return L
+        return [e for e in Signals if self.context.flags[e]]
 
     def change_precision(self, prec):
         self.context.prec = prec
@@ -296,84 +292,23 @@ class DecimalTest(unittest.TestCase):
     def change_clamp(self, clamp):
         self.context._clamp = clamp
 
-    def test_abs(self):
-        self.eval_file(dir + 'abs' + '.decTest')
+# Dynamically build custom test definition for each file in the test
+# directory and add the definitions to the DecimalTest class.  This
+# procedure insures that new files do not get skipped.
+for filename in os.listdir(dir):
+    if '.decTest' not in filename:
+        continue
+    ## XXX buildout to include integer and trim
+    if 'integer' in filename or 'trim' in filename:
+        continue
+    head, tail = filename.split('.')
+    tester = lambda self, f=filename: self.eval_file(dir + f)
+    setattr(DecimalTest, 'test_' + head, tester)
+    del filename, head, tail, tester
 
-    def test_add(self):
-        self.eval_file(dir + 'add' + '.decTest')
-
-    def test_base(self):
-        self.eval_file(dir + 'base' + '.decTest')
-
-    def test_clamp(self):
-        self.eval_file(dir + 'clamp' + '.decTest')
-
-    def test_compare(self):
-        self.eval_file(dir + 'compare' + '.decTest')
-
-    def test_divide(self):
-        self.eval_file(dir + 'divide' + '.decTest')
-
-    def test_divideint(self):
-        self.eval_file(dir + 'divideint' + '.decTest')
-
-    def test_inexact(self):
-        self.eval_file(dir + 'inexact' + '.decTest')
-
-    def test_max(self):
-        self.eval_file(dir + 'max' + '.decTest')
-
-    def test_min(self):
-        self.eval_file(dir + 'min' + '.decTest')
-
-    def test_minus(self):
-        self.eval_file(dir + 'minus' + '.decTest')
-
-    def test_multiply(self):
-        self.eval_file(dir+'multiply'+'.decTest')
-
-    def test_normalize(self):
-        self.eval_file(dir + 'normalize' + '.decTest')
-
-    def test_plus(self):
-        self.eval_file(dir + 'plus' + '.decTest')
-
-    def test_power(self):
-        self.eval_file(dir + 'power' + '.decTest')
-
-    def test_quantize(self):
-        self.eval_file(dir + 'quantize' + '.decTest')
-
-    def test_randomBound32(self):
-        self.eval_file(dir + 'randomBound32' + '.decTest')
-
-    def test_randoms(self):
-        self.eval_file(dir + 'randoms' + '.decTest')
-
-    def test_remainder(self):
-        self.eval_file(dir + 'remainder' + '.decTest')
-
-    def test_remainderNear(self):
-        self.eval_file(dir + 'remainderNear' + '.decTest')
-
-    def test_rounding(self):
-        self.eval_file(dir + 'rounding' + '.decTest')
-
-    def test_samequantum(self):
-        self.eval_file(dir + 'samequantum' + '.decTest')
-
-    def test_squareroot(self):
-        self.eval_file(dir + 'squareroot' + '.decTest')
-
-    def test_subtract(self):
-        self.eval_file(dir + 'subtract' + '.decTest')
-
-    def test_tointegral(self):
-        self.eval_file(dir + 'tointegral' + '.decTest')
 
 
 # The following classes test the behaviour of Decimal according to PEP 327
-
 
 class DecimalExplicitConstructionTest(unittest.TestCase):
     '''Unit tests for Explicit Construction cases of Decimal.'''
@@ -403,7 +338,6 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         self.assertEqual(str(d), '0')
 
     def test_explicit_from_string(self):
-        '''Explicit construction with string.'''
 
         #empty
         self.assertEqual(str(Decimal('')), 'NaN')
@@ -815,7 +749,6 @@ class DecimalUsabilityTest(unittest.TestCase):
     '''Unit tests for Usability cases of Decimal.'''
 
     def test_comparison_operators(self):
-        '''Testing ==, !=, <, >, <=, >=, cmp.'''
 
         da = Decimal('23.42')
         db = Decimal('23.42')
