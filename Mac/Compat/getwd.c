@@ -32,8 +32,7 @@
 #define ROOTID 2 /* Root directory ID */
 
 char *
-getwd(cwd)
-	char *cwd;
+getwd(char *cwd)
 {
 	/* Universal parameter block. */
 	union {

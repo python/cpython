@@ -53,15 +53,16 @@ static int applocation_inited;
 /* Duplicate a string to the heap. We also export this since it isn't standard
 ** and others use it
 */
-
+#ifndef HAVE_STRDUP
 char *
-strdup(char *src)
+strdup(const char *src)
 {
 	char *dst = malloc(strlen(src) + 1);
 	if (dst)
 		strcpy(dst, src);
 	return dst;
 }
+#endif
 
 /* Initialize FSSpec and full name of current application */
 

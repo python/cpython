@@ -32,6 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 /* Return a string representing the compiler name */
 
 #include "config.h"
+#include "Python.h"
 
 #ifdef __MWERKS__
 #ifdef USE_GUSI1
@@ -75,8 +76,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #endif
 #endif
 
-char *
-Py_GetCompiler()
+const char *
+Py_GetCompiler(void)
 {
 	return COMPILER;
 }

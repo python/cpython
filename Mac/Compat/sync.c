@@ -6,7 +6,7 @@
 #include "macdefs.h"
 
 int
-sync()
+sync(void)
 {
 	if (FlushVol((StringPtr)0, 0) == noErr)
 		return 0;

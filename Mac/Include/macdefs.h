@@ -15,8 +15,10 @@
 #endif
 
 /* We may be able to use a std routine in think, don't know */
-unsigned char *Pstring(char *);
-
+extern unsigned char *Pstring(char *);
+extern char *getbootvol(void);
+extern char *getwd(char *);
+extern int sync(void);
 
 /* Universal constants: */
 #define MAXPATH 256

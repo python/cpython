@@ -5,7 +5,7 @@
 #include "macdefs.h"
 
 char *
-getbootvol()
+getbootvol(void)
 {
 	short vrefnum;
 	static unsigned char name[32];

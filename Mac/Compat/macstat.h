@@ -27,6 +27,7 @@ struct macstat {
 #define S_IWRITE   0200
 #define S_IEXEC    0100
 
+extern int macstat(char *, struct macstat *);
 /* To stop inclusion of MWerks header: */
 #ifndef _STAT
 #define _STAT

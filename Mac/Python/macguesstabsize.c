@@ -37,7 +37,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 
 /* Interface used by parsetok.c */
-
+#error
 guesstabsize(path)
 	char *path;
 {

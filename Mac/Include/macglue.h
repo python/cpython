@@ -81,6 +81,7 @@ void PyMac_GetSchedParams(PyMacSchedParams *);	/* Get schedulers params */
 void PyMac_SetSchedParams(PyMacSchedParams *);	/* Set schedulers params */
 PyObject *PyErr_Mac(PyObject *, int);		/* Exception with a mac error */
 PyObject *PyMac_Error(OSErr);			/* Uses PyMac_GetOSErrException */
+int PyOS_CheckStack(void);		/* Check that we aren't overflowing our stack */
 int PyMac_DoYield(int, int);	/* Yield cpu. First arg is maxtime, second ok to call python */
 int PyMac_HandleEvent(EventRecord *);	/* Handle one event, possibly in Python */
 void PyMac_HandleEventIntern(EventRecord *); /* Handle one event internal only */
@@ -133,8 +134,22 @@ short PyMac_OpenPrefFile(void);			/* From macgetpath.c, open and return preferen
 
 /* From macfiletype.c: */
 
-long getfiletype(char *);			/* Get file type */
-int setfiletype(char *, long, long);		/* Set file creator and type */
+long PyMac_getfiletype(char *);			/* Get file type */
+int PyMac_setfiletype(char *, long, long);		/* Set file creator and type */
+
+/* from macmain.c: */
+void PyMac_Exit(int);
+void PyMac_InitApplication(void);
+#ifdef USE_MAC_APPLET_SUPPORT
+void PyMac_InitApplet(void);
+#endif
+
+/* from macgetargv: */
+OSErr PyMac_init_process_location(void);
+#ifndef HAVE_STRDUP
+char *	strdup(const char *str);
+#endif
+
 #ifdef __cplusplus
 	}
 #endif

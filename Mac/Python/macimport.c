@@ -413,7 +413,9 @@ PyMac_FindModuleExtension(char *buf, size_t *lenp, char *module)
 	unsigned char fnbuf[64];
 	int modnamelen = strlen(module);
 	FSSpec fss;
+#ifdef USE_GUSI1
 	FInfo finfo;
+#endif
 	short refnum;
 	long dirid;
 	

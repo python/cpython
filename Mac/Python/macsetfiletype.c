@@ -34,10 +34,12 @@ PERFORMANCE OF THIS SOFTWARE.
  *
  */
  
+#include "Python.h"
+#include "macglue.h"
 #include "macdefs.h"
 
 int
-setfiletype(name, creator, type)
+PyMac_setfiletype(name, creator, type)
 char *name;
 long creator, type;
 {
@@ -56,7 +58,7 @@ long creator, type;
 }
 
 long
-getfiletype(name)
+PyMac_getfiletype(name)
 char *name;
 {
 	FInfo info;

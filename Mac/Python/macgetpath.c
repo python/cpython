@@ -33,6 +33,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "osdefs.h"
 #include "macglue.h"
 #include "pythonresources.h"
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 
 /* Return the initial python search path.  This is called once from
@@ -56,6 +59,10 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef USE_GUSI1
 #include <GUSI.h>
+#endif
+
+#ifndef USE_BUILTIN_PATH
+staticforward char *PyMac_GetPythonPath();
 #endif
 
 #define PYTHONPATH "\
@@ -143,9 +150,6 @@ Py_GetPath()
 	char *p, *endp;
 	int newlen;
 	char *curwd;
-#ifndef USE_BUILTIN_PATH
-	staticforward char *PyMac_GetPythonPath();
-#endif
 	
 	if ( pythonpath ) return pythonpath;
 #ifndef USE_BUILTIN_PATH
@@ -294,7 +298,7 @@ PyMac_GetPythonDir()
 
 #ifndef USE_BUILTIN_PATH
 char *
-PyMac_GetPythonPath()
+PyMac_GetPythonPath(void)
 {
 	short oldrh, prefrh = -1;
 	char *rv;
