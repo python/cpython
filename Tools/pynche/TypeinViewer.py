@@ -6,11 +6,11 @@ class TypeinViewer:
     def __init__(self, switchboard, parent=None):
         # non-gui ivars
         self.__sb = switchboard
-        self.__hexp = 0
-        self.__update_while_typing = 0
+        self.__hexp = BooleanVar()
+        self.__uwtyping = BooleanVar()
         # create the gui
-        self.__frame = Frame(parent)
-        self.__frame.pack()
+        self.__frame = Frame(parent, relief=GROOVE, borderwidth=2)
+        self.__frame.pack(side=RIGHT)
         # Red
         self.__xl = Label(self.__frame, text='Red:')
         self.__xl.grid(row=0, column=0, sticky=E)
@@ -31,6 +31,16 @@ class TypeinViewer:
         self.__z = Entry(self.__frame, width=4)
         self.__z.grid(row=2, column=1)
         self.__z.bindtags(self.__z.bindtags() + ('Normalize', 'Update'))
+        # Update while typing?
+        self.__uwt = Checkbutton(self.__frame,
+                                 text='Update while typing',
+                                 variable=self.__uwtyping)
+        self.__uwt.grid(row=3, column=0, columnspan=2, sticky=W)
+        # Hex/Dec
+        self.__hex = Checkbutton(self.__frame,
+                                 text='Hexadecimal',
+                                 variable=self.__hexp)
+        self.__hex.grid(row=4, column=0, columnspan=2, sticky=W)
 
     def __normalize(self, event=None):
         ew = event.widget
@@ -39,7 +49,7 @@ class TypeinViewer:
             contents = '0'
         # figure out what the contents value is in the current base
         try:
-            if self.__hexp:
+            if self.__hexp.get():
                 v = string.atoi(contents, 16)
             else:
                 v = string.atoi(contents)
@@ -49,7 +59,7 @@ class TypeinViewer:
         if v is None or v < 0 or v > 255:
             contents = contents[:-1]
             ew.bell()
-        elif self.__hexp:
+        elif self.__hexp.get():
             contents = hex(v)
         else:
             contents = int(v)
@@ -57,14 +67,14 @@ class TypeinViewer:
         ew.insert(0, contents)
 
     def __maybeupdate(self, event=None):
-        if self.__update_while_typing or event.keysym in ('Return', 'Tab'):
+        if self.__uwtyping.get() or event.keysym in ('Return', 'Tab'):
             self.__update(event)
 
     def __update(self, event=None):
         redstr = self.__x.get()
         greenstr = self.__y.get()
         bluestr = self.__z.get()
-        if self.__hexp:
+        if self.__hexp.get():
             red = string.atoi(redstr, 16)
             green = string.atoi(greenstr, 16)
             blue = string.atoi(bluestr, 16)
@@ -73,7 +83,7 @@ class TypeinViewer:
         self.__sb.update_views(red, green, blue)
 
     def update_yourself(self, red, green, blue):
-        if self.__hexp:
+        if self.__hexp.get():
             redstr, greenstr, bluestr = map(hex, (red, green, blue))
         else:
             redstr, greenstr, bluestr = map(int, (red, green, blue))
