@@ -31,6 +31,9 @@ char *macstrerror(int);				/* strerror with mac errors */
 extern PyObject *PyMac_OSErrException;		/* Exception for OSErr */
 PyObject *PyMac_GetOSErrException(void);	/* Initialize & return it */
 
+int PyMac_Idle Py_PROTO((void));			/* Idle routine */
+void PyMac_Yield Py_PROTO((void));			/* optional idle routine for mainloop */
+void PyMac_SetYield Py_PROTO((long, long, long, long));	/* Set timeouts */
 PyObject *PyErr_Mac(PyObject *, int);		/* Exception with a mac error */
 PyObject *PyMac_Error(OSErr);			/* Uses PyMac_GetOSErrException */ 
 
