@@ -15,6 +15,6 @@ typedef struct _Py_UCNHashAPI
 typedef struct 
 {
     const char *pszUCN;
-    unsigned int uiValue;
+    Py_UCS4 value;
 } _Py_UnicodeCharacterName;
 
