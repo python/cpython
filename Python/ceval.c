@@ -2176,6 +2176,7 @@ prtrace(v, str)
 	if (PyObject_Print(v, stdout, 0) != 0)
 		PyErr_Clear(); /* Don't know what else to do */
 	printf("\n");
+	return 1;
 }
 #endif
 
