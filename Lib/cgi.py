@@ -919,16 +919,19 @@ class FieldStorage:
                 self.list.append(MiniFieldStorage(key, value))
         self.skip_lines()
 
+    FieldStorageClass = None
+
     def read_multi(self, environ, keep_blank_values, strict_parsing):
         """Internal: read a part that is itself multipart."""
         self.list = []
-        part = self.__class__(self.fp, {}, self.innerboundary,
-                              environ, keep_blank_values, strict_parsing)
+        klass = self.FieldStorageClass or self.__class__
+        part = klass(self.fp, {}, self.innerboundary,
+                     environ, keep_blank_values, strict_parsing)
         # Throw first part away
         while not part.done:
             headers = rfc822.Message(self.fp)
-            part = self.__class__(self.fp, headers, self.innerboundary,
-                                  environ, keep_blank_values, strict_parsing)
+            part = klass(self.fp, headers, self.innerboundary,
+                         environ, keep_blank_values, strict_parsing)
             self.list.append(part)
         self.skip_lines()
 
