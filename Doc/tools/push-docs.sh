@@ -61,6 +61,10 @@ while [ "$#" -gt 0 ] ; do
           EXPLANATION="`cat $2`"
           shift 2
           ;;
+      --)
+          shift 1
+          break
+          ;;
       -*)
           echo "Unknown option: $1" >&2
           exit 2
