@@ -29,19 +29,8 @@ class Cmp:
     def __cmp__(self, other):
         return cmp(self.arg, other)
 
-class RCmp:
-    def __init__(self,arg):
-        self.arg = arg
 
-    def __repr__(self):
-        return '<RCmp %s>' % self.arg
-
-    def __rcmp__(self, other):
-        return cmp(other, self.arg)
- 
-
-candidates = [2, 2.0, 2L, 2+0j, [1], (3,), None, Empty(), Coerce(2),
-                Cmp(2.0), RCmp(2L)]
+candidates = [2, 2.0, 2L, 2+0j, [1], (3,), None, Empty(), Coerce(2), Cmp(2.0)]
 
 def test():
     for a in candidates:
