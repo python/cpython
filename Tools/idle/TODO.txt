@@ -2,7 +2,6 @@
 TO DO:
 
 - "GO" command
-- "Modularize" command
 - command expansion from keywords, module contents, other buffers, etc.
 - "Recent documents" menu item
 - more emacsisms:
@@ -13,7 +12,6 @@ TO DO:
   - filter region?
   - incremental search?
   - ^K should cut to buffer
-  - command to fill text paragraphs
 - restructure state sensitive code to avoid testing flags all the time
 - finish debugger
 - object browser instead of current stack viewer
@@ -81,12 +79,9 @@ Comparison to PTUI
 + PTUI's auto indent is better
   (understands that "if a: # blah, blah" opens a block)
 
-+ IDLE requires 4x backspace to dedent a line
-
 + PTUI has more bells and whistles:
   open multiple
   append
-  modularize
   examine
   go
 
@@ -114,6 +109,9 @@ Comparison to PTUI
   - expand word
   - regular expression search
   - search files (grep)
+  - (un)tabify
+  - center
+  - zoom height
 
 ======================================================================
 
