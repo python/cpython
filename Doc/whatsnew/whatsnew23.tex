@@ -1,9 +1,6 @@
 \documentclass{howto}
 % $Id$
 
-% TODO:
-%   Go through and get the contributor's name for all the various changes
-
 \title{What's New in Python 2.3}
 \release{0.03}
 \author{A.M. Kuchling}
@@ -15,12 +12,9 @@
 
 % Optik (or whatever it gets called)
 %
-% Bug #580462: changes to GC API
-%
-% heapq module
-%
 % MacOS framework-related changes (section of its own, probably)
 %
+% New sorting code
 
 %\section{Introduction \label{intro}}
 
@@ -186,6 +180,37 @@ in a data structure.
 \seepep{255}{Simple Generators}{Written by Neil Schemenauer, Tim
 Peters, Magnus Lie Hetland.  Implemented mostly by Neil Schemenauer
 and Tim Peters, with other fixes from the Python Labs crew.}
+
+\end{seealso}
+
+
+%======================================================================
+\section{PEP 263: \label{section-encodings}}
+
+Python source files can now be declared as being in different
+character set encodings.  Encodings are declared by including a
+specially formatted comment in the first or second line of the source
+file.  For example, a UTF-8 file can be declared with:
+
+\begin{verbatim}
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+\end{verbatim}
+
+Without such an encoding declaration, the default encoding used is
+ISO-8859-1, also known as Latin1.  
+
+The encoding declaration only affects Unicode string literals; the
+text in the source code will be converted to Unicode using the
+specified encoding.  Note that Python identifiers are still restricted
+to ASCII characters, so you can't have variable names that use
+characters outside of the usual alphanumerics.
+
+\begin{seealso}
+
+\seepep{263}{Defining Python Source Code Encodings}{Written by
+Marc-Andr\'e Lemburg and Martin von L\"owis; implemented by Martin von
+L\"owis.}
 
 \end{seealso}
 
@@ -558,6 +583,10 @@ code that doesn't execute any assertions.
    either kind of string.  It's a completely abstract type, so you
    can't create \class{basestring} instances.
 
+\item The \method{sort()} method of list objects has been extensively
+rewritten by Tim Peters, and the implementation is significantly
+faster.
+
 \item Most type objects are now callable, so you can use them
 to create new objects such as functions, classes, and modules.  (This
 means that the \module{new} module can be deprecated in a future
@@ -675,6 +704,52 @@ now return enhanced tuples:
 ('amk', 500)
 \end{verbatim}
 
+\item The new \module{heapq} module contains an implementation of a
+heap queue algorithm.  A heap is an array-like data structure that
+keeps items in a sorted order such that, for every index k, heap[k] <=
+heap[2*k+1] and heap[k] <= heap[2*k+2].  This makes it quick to remove
+the smallest item, and inserting a new item while maintaining the heap
+property is O(lg~n).  (See
+\url{http://www.nist.gov/dads/HTML/priorityque.html} for more
+information about the priority queue data structure.)
+
+The Python \module{heapq} module provides \function{heappush()} and
+\function{heappop()} functions for adding and removing items while
+maintaining the heap property on top of some other mutable Python
+sequence type.  For example:
+
+\begin{verbatim}
+>>> import heapq
+>>> heap = []
+>>> for item in [3, 7, 5, 11, 1]:
+...    heapq.heappush(heap, item)
+...
+>>> heap
+[1, 3, 5, 11, 7]
+>>> heapq.heappop(heap)
+1
+>>> heapq.heappop(heap)
+3
+>>> heap
+[5, 7, 11]
+>>>
+>>> heapq.heappush(heap, 5)
+>>> heap = []
+>>> for item in [3, 7, 5, 11, 1]:
+...    heapq.heappush(heap, item)
+...
+>>> heap
+[1, 3, 5, 11, 7]
+>>> heapq.heappop(heap)
+1
+>>> heapq.heappop(heap)
+3
+>>> heap
+[5, 7, 11]
+>>>
+\end{verbatim}
+
+(Contributed by Kevin O'Connor.)
 
 \item Two new functions in the \module{math} module, 
 \function{degrees(\var{rads})} and \function{radians(\var{degs})},
@@ -979,12 +1054,18 @@ as well as \UNIX.
 
 
 %======================================================================
+\section{Porting to Python 2.3}
+
+XXX write this
+
+
+%======================================================================
 \section{Acknowledgements \label{acks}}
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Michael Chermside, Scott David Daniels, Fred~L. Drake, Jr.,
 Michael Hudson, Detlef Lannert, Martin von L\"owis, Andrew MacIntyre,
-Gustavo Niemeyer, Neal Norwitz.
+Gustavo Niemeyer, Neal Norwitz, Jason Tishler.
 
 \end{document}
