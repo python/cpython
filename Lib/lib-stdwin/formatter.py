@@ -20,7 +20,7 @@ class formatter():
 		self.v = top		# Top of current line
 		self.center = 0
 		self.justify = 1
-		self.setfont('')	# Current font
+		self.setfont('')	# Default font
 		self._reset()		# Prepare for new line
 		return self
 	#
@@ -122,10 +122,14 @@ class formatter():
 	# Vertical space is expressed in fractions of the current
 	# font's line height.
 	#
-	def vspace(self, dy):
+	def vspace(self, lines):
+		self.vspacepixels(int(lines * self.d.lineheight()))
+	#
+	# Add vertical space given in pixels.
+	#
+	def vspacepixels(self, dv):
 		self.flush()
-		dy = int(float(dy) * float(self.d.lineheight()))
-		self.v = self.v + dy
+		self.v = self.v + dv
 	#
 	# Set temporary (hanging) indent, for paragraph start.
 	# First flush.
@@ -149,7 +153,7 @@ class formatter():
 # Test procedure
 #
 def test():
-	import stdwin
+	import stdwin, stdwinq
 	from stdwinevents import *
 	try:
 		import mac
@@ -170,7 +174,7 @@ def test():
 	w = stdwin.open(title)
 	winsize = w.getwinsize()
 	while 1:
-		type, window, detail = stdwin.getevent()
+		type, window, detail = stdwinq.getevent()
 		if type = WE_CLOSE:
 			break
 		elif type = WE_SIZE:
