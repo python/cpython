@@ -147,7 +147,7 @@ Issue a warning, or maybe ignore it or raise an exception.  The
 \var{category} argument, if given, must be a warning category class
 (see above); it defaults to \exception{UserWarning}.  Alternatively
 \var{message} can be a \exception{Warning} instance, in which case
-\var{category} will be ignore and \code{message.__class__} will be used.
+\var{category} will be ignored and \code{message.__class__} will be used.
 In this case the message text will be \code{str(message)}. This function
 raises an exception if the particular warning issued is changed
 into an error by the warnings filter see above.  The \var{stacklevel}
