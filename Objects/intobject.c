@@ -130,6 +130,13 @@ int_dealloc(PyIntObject *v)
 		v->ob_type->tp_free((PyObject *)v);
 }
 
+static void
+int_free(PyIntObject *v)
+{
+	v->ob_type = (struct _typeobject *)free_list;
+	free_list = v;
+}
+
 long
 PyInt_AsLong(register PyObject *op)
 {
@@ -905,6 +912,7 @@ PyTypeObject PyInt_Type = {
 	0,					/* tp_init */
 	0,					/* tp_alloc */
 	int_new,				/* tp_new */
+	(freefunc)int_free,           		/* tp_free */
 };
 
 void
