@@ -123,7 +123,7 @@ getlongarg(v, a)
 }
 
 int
-getlonglongargs(v, a, b)
+getlonglongarg(v, a, b)
 	object *v;
 	long *a, *b;
 {
@@ -135,7 +135,25 @@ getlonglongargs(v, a, b)
 }
 
 int
-getlonglongobjectargs(v, a, b, c)
+getlongobjectarg(v, a, b)
+	object *v;
+	long *a;
+	object **b;
+{
+	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
+		return err_badarg();
+	}
+	if (getlongarg(gettupleitem(v, 0), a)) {
+		*b = gettupleitem(v, 1);
+		return 1;
+	}
+	else {
+		return err_badarg();
+	}
+}
+
+int
+getlonglongobjectarg(v, a, b, c)
 	object *v;
 	long *a, *b;
 	object **c;
