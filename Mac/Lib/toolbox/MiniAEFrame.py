@@ -128,9 +128,16 @@ class AEServer:
 		if _parameters.has_key('----'):
 			_object = _parameters['----']
 			del _parameters['----']
-			rv = apply(_function, (_object,), _parameters)
+			print 'XXX', (_function, (_object,), _parameters)
+			try:
+				rv = apply(_function, (_object,), _parameters)
+			except TypeError, name:
+				raise TypeError, ('AppleEvent handler misses formal keyword argument', _function, name)
 		else:
-			rv = apply(_function, (), _parameters)
+			try:
+				rv = apply(_function, (), _parameters)
+			except TypeError, name:
+				raise TypeError, ('AppleEvent handler misses formal keyword argument', _function, name)
 		
 		if rv == None:
 			aetools.packevent(_reply, {})
