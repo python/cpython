@@ -754,6 +754,7 @@
 \newcommand{\NULL}{\constant{NULL}}
 \newcommand{\infinity}{\ensuremath{\infty}}
 \newcommand{\plusminus}{\ensuremath{\pm}}
+\newcommand{\menuselection}[1]{{\def\sub{ \ensuremath{>} }#1}}
 
 % Also for consistency: spell Python "Python", not "python"!
 
@@ -857,11 +858,25 @@
 \newcommand{\programopt}[1]{\strong{#1}}
 % Note that \longprogramopt provides the '--'!
 \newcommand{\longprogramopt}[1]{\strong{-{}-#1}}
+% \ulink{link text}{URL}
+\newcommand{\ulink}[2]{#1}
 
 % cited titles:  \citetitle{Title of Work}
 %       online:  \citetitle[url-to-resource]{Title of Work}
 \newcommand{\citetitle}[2][URL]{\emph{#2}}
 
+
+\newenvironment{productionlist}[1][\py@badkey]{
+  \def\optional##1{{\Large[}##1{\Large]}}
+  \def\production##1##2{\code{##1}&::=&\code{##2}\\}
+  \def\orgroup##1{{\def\or{\textbar\ }##1}}
+  \def\token##1{##1}
+  \begin{center}
+    \begin{tabular}{lcl}
+}{%
+    \end{tabular}
+  \end{center}
+}
 
 % Deprecation stuff.
 % Should be extended to allow an index / list of deprecated stuff.  But
