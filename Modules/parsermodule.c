@@ -670,7 +670,7 @@ parser_tuple2ast(self, args)
 	ok = (temp != NULL) && PyInt_Check(temp);
 	if (ok)
 	    /* this is used after the initial checks: */
-	    start_sym = PyInt_AsLong(temp);
+	    start_sym = PyInt_AS_LONG(temp);
 	Py_XDECREF(temp);
     }
     if (ok) {
@@ -810,7 +810,7 @@ build_node_children(tuple, root, line_num)
 	    else {
 		ok = PyInt_Check(temp);
 		if (ok)
-		    type = PyInt_AsLong(temp);
+		    type = PyInt_AS_LONG(temp);
 		Py_DECREF(temp);
 	    }
 	}
