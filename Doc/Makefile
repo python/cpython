@@ -67,7 +67,7 @@ TOOLSDIR=	tools
 
 # This is the *documentation* release, and is used to construct the file
 # names of the downloadable tarballs.
-RELEASE=2.2a1
+RELEASE=2.2a2
 
 PYTHON=	   python
 DVIPS=	   dvips -N0 -t $(PAPER)
@@ -117,6 +117,8 @@ INDEXFILES=html/api/api.html \
 	html/tut/tut.html \
 	html/inst/inst.html \
 	html/dist/dist.html
+
+ALLHTMLFILES=$(INDEXFILES) html/index.html html/modindex.html html/acks.html
 
 COMMONPERL= perl/manual.perl perl/python.perl perl/l2hinit.perl
 
@@ -259,7 +261,7 @@ html/modindex.html: html/lib/lib.html html/mac/mac.html
 		--output modindex.html --address $(PYTHONDOCS) \
 		lib/modindex.html mac/modindex.html
 
-html:	$(INDEXFILES) html/index.html html/modindex.html html/acks.html
+html:	$(ALLHTMLFILES)
 
 api html/api/api.html: $(APIFILES)
 	$(MKHTML) --dir html/api api/api.tex
@@ -293,7 +295,7 @@ dist html/dist/dist.html: $(DISTFILES) perl/distutils.perl
 WEBCHECKER=$(PYTHON) ../Tools/webchecker/webchecker.py
 HTMLBASE=  file:`pwd`/html
 
-webcheck: html
+webcheck: $(ALLHTMLFILES)
 	$(WEBCHECKER) $(HTMLBASE)/api/
 	$(WEBCHECKER) $(HTMLBASE)/doc/
 	$(WEBCHECKER) $(HTMLBASE)/ext/
@@ -304,7 +306,7 @@ webcheck: html
 	$(WEBCHECKER) $(HTMLBASE)/dist/
 	$(WEBCHECKER) $(HTMLBASE)/inst/
 
-fastwebcheck: html
+fastwebcheck: $(ALLHTMLFILES)
 	$(WEBCHECKER) -x $(HTMLBASE)/api/
 	$(WEBCHECKER) -x $(HTMLBASE)/doc/
 	$(WEBCHECKER) -x $(HTMLBASE)/ext/
@@ -318,7 +320,7 @@ fastwebcheck: html
 
 # Release packaging targets:
 
-paper-$(PAPER)/README: ps $(TOOLSDIR)/getpagecounts
+paper-$(PAPER)/README: $(PSFILES) $(TOOLSDIR)/getpagecounts
 	cd paper-$(PAPER) && ../$(TOOLSDIR)/getpagecounts >../$@
 
 info-$(RELEASE).tgz: info
@@ -339,23 +341,29 @@ latex-$(RELEASE).zip:
 	rm -f $@
 	$(PYTHON) $(TOOLSDIR)/mksourcepkg --zip $(RELEASE)
 
-pdf-$(PAPER)-$(RELEASE).tgz: pdf
-	cd paper-$(PAPER) && tar cf - *.pdf | gzip -9 >$@
+pdf-$(PAPER)-$(RELEASE).tar: $(PDFFILES)
+	cd paper-$(PAPER) && tar cf ../$@ *.pdf
 
-pdf-$(PAPER)-$(RELEASE).tar.bz2: pdf
-	cd paper-$(PAPER) && tar cf - *.pdf | bzip2 -9 >$@
+pdf-$(PAPER)-$(RELEASE).tgz: pdf-$(PAPER)-$(RELEASE).tar
+	gzip -9 <$? >$@
+
+pdf-$(PAPER)-$(RELEASE).tar.bz2: pdf-$(PAPER)-$(RELEASE).tar
+	bzip2 -9 <$? >$@
 
 pdf-$(PAPER)-$(RELEASE).zip: pdf
 	rm -f $@
 	cd paper-$(PAPER) && zip -q -9 ../$@ *.pdf
 
-postscript-$(PAPER)-$(RELEASE).tar.bz2: ps paper-$(PAPER)/README
-	cd paper-$(PAPER) && tar cf - *.ps README | bzip2 -9 >$@
+postscript-$(PAPER)-$(RELEASE).tar: $(PSFILES) paper-$(PAPER)/README
+	cd paper-$(PAPER) && tar cf ../$@ *.ps README
 
-postscript-$(PAPER)-$(RELEASE).tgz: ps paper-$(PAPER)/README
-	cd paper-$(PAPER) && tar cf - *.ps README | gzip -9 >$@
+postscript-$(PAPER)-$(RELEASE).tar.bz2: postscript-$(PAPER)-$(RELEASE).tar
+	bzip2 -9 <$< >$@
 
-postscript-$(PAPER)-$(RELEASE).zip: ps paper-$(PAPER)/README
+postscript-$(PAPER)-$(RELEASE).tgz: postscript-$(PAPER)-$(RELEASE).tar
+	gzip -9 <$< >$@
+
+postscript-$(PAPER)-$(RELEASE).zip: $(PSFILES) paper-$(PAPER)/README
 	rm -f $@
 	cd paper-$(PAPER) && zip -q -9 ../$@ *.ps README
 
@@ -365,12 +373,12 @@ html-$(RELEASE).tar:	html
 					      */*.gif */*.txt
 
 html-$(RELEASE).tgz:	html-$(RELEASE).tar
-	gzip -9 <html-$(RELEASE).tar >$@
+	gzip -9 <$? >$@
 
 html-$(RELEASE).tar.bz2: html-$(RELEASE).tar
-	bzip2 -9 <html-$(RELEASE).tar >$@
+	bzip2 -9 <$? >$@
 
-html-$(RELEASE).zip:	html
+html-$(RELEASE).zip:	$(ALLHTMLFILES)
 	rm -f $@
 	cd $(HTMLDIR) && \
 		zip -q -9 ../$@ *.html */*.css */*.html */*.gif */*.txt
@@ -406,7 +414,10 @@ distps:		tarps bzipps zipps
 distpdf:	tarpdf bzippdf zippdf
 distlatex:	tarlatex bziplatex ziplatex
 
-distfiles:	tarballs zips bzips
+paperdist:	distpdf distps
+edist:		disthtml
+
+distfiles:	paperdist edist
 	$(TOOLSDIR)/mksourcepkg --all $(RELEASE)
 
 
