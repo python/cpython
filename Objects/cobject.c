@@ -57,13 +57,6 @@ PyCObject_FromVoidPtr(cobj, destr)
 	return (PyObject *)self;
 }
 
-void *
-PyCObject_AsVoidPtr(self)
-	PyObject *self;
-{
-        return ((PyCObject *)self)->cobject;
-}
-
 static void
 PyCObject_dealloc(self)
 	PyCObject *self;
@@ -105,3 +98,21 @@ PyTypeObject PyCObject_Type = {
 	0L,0L,0L,0L,
 	PyCObject_Type__doc__ /* Documentation string */
 };
+
+void *
+PyCObject_AsVoidPtr(self)
+	PyObject *self;
+{
+        if(self)
+	  {
+	    if(self->ob_type == &PyCObject_Type)
+	      return ((PyCObject *)self)->cobject;
+	    PyErr_SetString(PyExc_TypeError,
+			    "PyCObject_AsVoidPtr with non-C-object");
+	  }
+	if(! PyErr_Occurred())
+	    PyErr_SetString(
+               PyExc_TypeError,
+	       "PyCObject_AsVoidPtr called with null pointer");
+	return NULL;
+}
