@@ -1,5 +1,5 @@
 \section{\module{marshal} ---
-         Alternate Python object serialization}
+         Internal Python object serialization}
 
 \declaremodule{builtin}{marshal}
 \modulesynopsis{Convert Python objects to streams of bytes and back
@@ -23,7 +23,13 @@ This is not a general ``persistence'' module.  For general persistence
 and transfer of Python objects through RPC calls, see the modules
 \refmodule{pickle} and \refmodule{shelve}.  The \module{marshal} module exists
 mainly to support reading and writing the ``pseudo-compiled'' code for
-Python modules of \file{.pyc} files.
+Python modules of \file{.pyc} files.  Therefore, the Python
+maintainers reserve the right to modify the marshal format in backward
+incompatible ways should the need arise.  If you're serializing and
+de-serializing Python objects, use the \module{pickle} module.  There
+may also be unknown security problems with
+\module{marshal}\footnote{As opposed to the known security issues in
+the \module{pickle} module!}.
 \refstmodindex{pickle}
 \refstmodindex{shelve}
 \obindex{code}
