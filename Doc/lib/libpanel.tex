@@ -25,12 +25,11 @@ that accompanies the Panel Library and creates the described panels.
 It returns a list of panel objects.
 \end{funcdesc}
 
-\strong{Warning:}
-the Python interpreter will dump core if you don't create a GL window
-before calling
+\warning{The Python interpreter will dump core if you don't create a
+GL window before calling
 \code{panel.mkpanel()}
 or
-\code{panel.defpanellist()}.
+\code{panel.defpanellist()}.}
 
 \section{\module{panelparser} ---
          None}
@@ -69,9 +68,7 @@ which transparently exports most functions from
 but redefines
 \code{pnl.dopanel()}.
 
-\strong{Warning:}
-the Python interpreter will dump core if you don't create a GL window
-before calling
-\code{pnl.mkpanel()}.
+\warning{The Python interpreter will dump core if you don't create a
+GL window before calling \code{pnl.mkpanel()}.}
 
 The module is too large to document here in its entirety.

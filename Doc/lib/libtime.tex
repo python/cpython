@@ -120,8 +120,9 @@ is defined.  This is negative if the local DST timezone is east of UTC
 Convert a tuple representing a time as returned by \function{gmtime()}
 or \function{localtime()} to a 24-character string of the following form:
 \code{'Sun Jun 20 23:21:05 1993'}.  If \var{tuple} is not provided, the
-current time as returned by \function{localtime()} is used.  Note: unlike
-the C function of the same name, there is no trailing newline.
+current time as returned by \function{localtime()} is used.
+\note{Unlike the C function of the same name, there is no trailing
+newline.}
 \versionchanged[Allowed \var{tuple} to be omitted]{2.1}
 \end{funcdesc}
 
@@ -276,10 +277,10 @@ provided as part of the input string are filled in with default
 values; the specific values are platform-dependent as the XPG standard
 does not provide sufficient information to constrain the result.
 
-\strong{Note:} This function relies entirely on the underlying
+\note{This function relies entirely on the underlying
 platform's C library for the date parsing, and some of these libraries
 are buggy.  There's nothing to be done about this short of a new,
-portable implementation of \cfunction{strptime()}.
+portable implementation of \cfunction{strptime()}.}
 
 Availability: Most modern \UNIX{} systems.
 \end{funcdesc}

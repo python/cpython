@@ -72,9 +72,9 @@ The module defines these functions:
   \exception{TypeError}.  The file must be an open file object opened
   in binary mode (\code{'rb'} or \code{'r+b'}).
 
-  \strong{Warning:} If an object containing an unsupported type was
+  \warning{If an object containing an unsupported type was
   marshalled with \function{dump()}, \function{load()} will substitute
-  \code{None} for the unmarshallable type.
+  \code{None} for the unmarshallable type.}
 \end{funcdesc}
 
 \begin{funcdesc}{dumps}{value}

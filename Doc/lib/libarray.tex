@@ -77,12 +77,12 @@ addresses, such as certain \cfunction{ioctl()} operations.  The
 returned numbers are valid as long as the array exists and no
 length-changing operations are applied to it.
 
-\strong{Note:}  When using array objects from code written in C or
+\note{When using array objects from code written in C or
 \Cpp{} (the only way to effectively make use of this information), it
 makes more sense to use the buffer interface supported by array
 objects.  This method is maintained for backward compatibility and
 should be avoided in new code.  The buffer interface is documented in
-the \citetitle[../api/newTypes.html]{Python/C API Reference Manual}.
+the \citetitle[../api/newTypes.html]{Python/C API Reference Manual}.}
 \end{methoddesc}
 
 \begin{methoddesc}[array]{byteswap}{}

@@ -58,10 +58,10 @@ returned by \function{socket.socket()},%
 You may also define a \dfn{wrapper} class yourself, as long as it has
 an appropriate \method{fileno()} method (that really returns a file
 descriptor, not just a random integer).
-\strong{Note:}\index{WinSock}  File objects on Windows are not
-acceptable, but sockets are.  On Windows, the underlying
-\cfunction{select()} function is provided by the WinSock library, and
-does not handle file desciptors that don't originate from WinSock.
+\note{File objects on Windows are not acceptable, but sockets
+are.\index{WinSock}  On Windows, the underlying \cfunction{select()}
+function is provided by the WinSock library, and does not handle file
+desciptors that don't originate from WinSock.}
 \end{funcdesc}
 
 \subsection{Polling Objects

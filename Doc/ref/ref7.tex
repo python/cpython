@@ -161,7 +161,7 @@ e.g., \code{range(3)} returns the list \code{[0, 1, 2]}.
 \bifuncindex{range}
 \indexii{Pascal}{language}
 
-\strong{Warning:} There is a subtlety when the sequence is being modified
+\warning{There is a subtlety when the sequence is being modified
 by the loop (this can only occur for mutable sequences, i.e. lists).
 An internal counter is used to keep track of which item is used next,
 and this is incremented on each iteration.  When this counter has
@@ -174,7 +174,7 @@ current item will be treated again the next time through the loop.
 This can lead to nasty bugs that can be avoided by making a temporary
 copy using a slice of the whole sequence, e.g.,
 \index{loop!over mutable sequence}
-\index{mutable sequence!loop over}
+\index{mutable sequence!loop over}}
 
 \begin{verbatim}
 for x in a[:]:

@@ -935,7 +935,7 @@ situation can only be remedied by explicitly breaking the cycles; the
 latter two situations can be resolved by storing None in
 \code{sys.exc_traceback} or \code{sys.last_traceback}.
 
-\strong{Warning:} due to the precarious circumstances under which
+\warning{Due to the precarious circumstances under which
 \method{__del__()} methods are invoked, exceptions that occur during their
 execution are ignored, and a warning is printed to \code{sys.stderr}
 instead.  Also, when \method{__del__()} is invoked is response to a module
@@ -947,7 +947,7 @@ guarantees that globals whose name begins with a single underscore are
 deleted from their module before other globals are deleted; if no
 other references to such globals exist, this may help in assuring that
 imported modules are still available at the time when the
-\method{__del__()} method is called. 
+\method{__del__()} method is called.}
 \end{methoddesc}
 
 \begin{methoddesc}[object]{__repr__}{self}
@@ -1198,9 +1198,9 @@ If \var{key} is of an inappropriate type, \exception{TypeError} may be
 raised; if of a value outside the set of indexes for the sequence
 (after any special interpretation of negative values),
 \exception{IndexError} should be raised.
-\strong{Note:}  \keyword{for} loops expect that an
+\note{\keyword{for} loops expect that an
 \exception{IndexError} will be raised for illegal indexes to allow
-proper detection of the end of the sequence.
+proper detection of the end of the sequence.}
 \end{methoddesc}
 
 \begin{methoddesc}[container object]{__setitem__}{self, key, value}

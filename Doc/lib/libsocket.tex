@@ -271,7 +271,7 @@ the name of a PEM formatted file that contains your private
 key. \var{certfile} is a PEM formatted certificate chain file. On
 success, a new \class{SSLObject} is returned.
 
-\strong{Warning:} This does not do any certificate verification!
+\warning{This does not do any certificate verification!}
 \end{funcdesc}
 
 \begin{funcdesc}{fromfd}{fd, family, type\optional{, proto}}
@@ -373,10 +373,10 @@ to the socket on the other end of the connection.
 \begin{methoddesc}[socket]{bind}{address}
 Bind the socket to \var{address}.  The socket must not already be bound.
 (The format of \var{address} depends on the address family --- see
-above.)  \strong{Note:}  This method has historically accepted a pair
+above.)  \note{This method has historically accepted a pair
 of parameters for \constant{AF_INET} addresses instead of only a
 tuple.  This was never intentional and is no longer be available in
-Python 2.0.
+Python 2.0.}
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{close}{}
@@ -388,10 +388,10 @@ Sockets are automatically closed when they are garbage-collected.
 \begin{methoddesc}[socket]{connect}{address}
 Connect to a remote socket at \var{address}.
 (The format of \var{address} depends on the address family --- see
-above.)  \strong{Note:}  This method has historically accepted a pair
+above.)  \note{This method has historically accepted a pair
 of parameters for \constant{AF_INET} addresses instead of only a
 tuple.  This was never intentional and is no longer available in
-Python 2.0 and later.
+Python 2.0 and later.}
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{connect_ex}{address}
@@ -401,10 +401,10 @@ instead of raising an exception for errors returned by the C-level
 can still raise exceptions).  The error indicator is \code{0} if the
 operation succeeded, otherwise the value of the \cdata{errno}
 variable.  This is useful, e.g., for asynchronous connects.
-\strong{Note:}  This method has historically accepted a pair of
+\note{This method has historically accepted a pair of
 parameters for \constant{AF_INET} addresses instead of only a tuple.
 This was never intentional and is no longer be available in Python
-2.0 and later.
+2.0 and later.}
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{fileno}{}

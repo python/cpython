@@ -274,11 +274,11 @@ This is especially useful for DOM implementations which use any sort
 of proxy architecture (because more than one object can refer to the
 same node).
 
-\strong{Note:}  This is based on a proposed DOM Level 3 API which is
+\note{This is based on a proposed DOM Level 3 API which is
 still in the ``working draft'' stage, but this particular interface
 appears uncontroversial.  Changes from the W3C will not necessarily
 affect this method in the Python DOM interface (though any new W3C
-API for this would also be supported).
+API for this would also be supported).}
 \end{methoddesc}
 
 \begin{methoddesc}[Node]{appendChild}{newChild}
@@ -619,12 +619,12 @@ child nodes.
 The content of the text node as a string.
 \end{memberdesc}
 
-\strong{Note:}  The use of a \class{CDATASection} node does not
+\note{The use of a \class{CDATASection} node does not
 indicate that the node represents a complete CDATA marked section,
 only that the content of the node was part of a CDATA section.  A
 single CDATA section may be represented by more than one node in the
 document tree.  There is no way to determine whether two adjacent
-\class{CDATASection} nodes represent different CDATA marked sections.
+\class{CDATASection} nodes represent different CDATA marked sections.}
 
 
 \subsubsection{ProcessingInstruction Objects \label{dom-pi-objects}}

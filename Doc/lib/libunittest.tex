@@ -345,9 +345,9 @@ testcase = unittest.FunctionTestCase(testSomething,
                                      tearDown=deleteSomethingDB)
 \end{verbatim}
 
-\strong{Note:}  PyUnit supports the use of \exception{AssertionError}
+\note{PyUnit supports the use of \exception{AssertionError}
 as an indicator of test failure, but does not recommend it.  Future
-versions may treat \exception{AssertionError} differently.
+versions may treat \exception{AssertionError} differently.}
 
 
 \subsection{Classes and functions
@@ -708,12 +708,12 @@ configurable properties.
   \class{TestCase} and creates an instance of the class for each test
   method defined for the class.
 
-  \strong{Warning:}  While using a hierarchy of
+  \warning{While using a hierarchy of
   \class{Testcase}-derived classes can be convenient in sharing
   fixtures and helper functions, defining test methods on base classes
   that are not intended to be instantiated directly does not play well
   with this method.  Doing so, however, can be useful when the
-  fixtures are different and defined in subclasses.
+  fixtures are different and defined in subclasses.}
 \end{methoddesc}
 
 \begin{methoddesc}[TestLoader]{loadTestsFromName}{name\optional{, module}}

@@ -13,9 +13,9 @@ as it uses \function{statcache.stat()} instead of \function{os.stat()}
 (see the \refmodule{statcache} module for information on the
 difference).
 
-\strong{Note:}  Using the \refmodule{statcache} module to provide
+\note{Using the \refmodule{statcache} module to provide
 \function{stat()} information results in trashing the cache
 invalidation mechanism: results are not as reliable.  To ensure
 ``current'' results, use \function{cmp.cmp()} instead of the version
 defined in this module, or use \function{statcache.forget()} to
-invalidate the appropriate entries.
+invalidate the appropriate entries.}

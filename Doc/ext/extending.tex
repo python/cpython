@@ -384,7 +384,7 @@ int main(int argc, char **argv)
 An example may be found in the file \file{Demo/embed/demo.c} in the
 Python source distribution.
 
-\strong{Note:}  Removing entries from \code{sys.modules} or importing
+\note{Removing entries from \code{sys.modules} or importing
 compiled modules into multiple interpreters within a process (or
 following a \cfunction{fork()} without an intervening
 \cfunction{exec()}) can create problems for some extension modules.
@@ -394,7 +394,7 @@ Note also that the \function{reload()} function can be used with
 extension modules, and will call the module initialization function
 (\cfunction{initspam()} in the example), but will not load the module
 again if it was loaded from a dynamically loadable object file
-(\file{.so} on \UNIX, \file{.dll} on Windows).
+(\file{.so} on \UNIX, \file{.dll} on Windows).}
 
 A more substantial example module is included in the Python source
 distribution as \file{Modules/xxmodule.c}.  This file may be used as a 
@@ -828,11 +828,11 @@ format units in \var{items}.  The C arguments must correspond to the
 individual format units in \var{items}.  Format units for sequences
 may be nested.
 
-\strong{Note:} Prior to Python version 1.5.2, this format specifier
+\note{Prior to Python version 1.5.2, this format specifier
 only accepted a tuple containing the individual parameters, not an
 arbitrary sequence.  Code which previously caused
 \exception{TypeError} to be raised here may now proceed without an
-exception.  This is not expected to be a problem for existing code.
+exception.  This is not expected to be a problem for existing code.}
 
 \end{description}
 
@@ -950,9 +950,9 @@ with the type information from \var{format} from left to right.  On
 success, \cfunction{PyArg_ParseTupleAndKeywords()} returns true,
 otherwise it returns false and raises an appropriate exception.
 
-\strong{Note:}  Nested tuples cannot be parsed when using keyword
+\note{Nested tuples cannot be parsed when using keyword
 arguments!  Keyword parameters passed in which are not present in the
-\var{kwlist} will cause \exception{TypeError} to be raised.
+\var{kwlist} will cause \exception{TypeError} to be raised.}
 
 Here is an example module which uses keywords, based on an example by
 Geoff Philbrick (\email{philbrick@hks.com}):%

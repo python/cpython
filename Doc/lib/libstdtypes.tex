@@ -1215,8 +1215,8 @@ Files have the following methods:
 
 \begin{methoddesc}[file]{isatty}{}
   Return true if the file is connected to a tty(-like) device, else
-  false.  \strong{Note:} If a file-like object is not associated
-  with a real file, this method should \emph{not} be implemented.
+  false.  \note{If a file-like object is not associated
+  with a real file, this method should \emph{not} be implemented.}
 \end{methoddesc}
 
 \begin{methoddesc}[file]{fileno}{}
@@ -1227,9 +1227,9 @@ Files have the following methods:
   operating system.  This can be useful for other, lower level
   interfaces that use file descriptors, such as the
   \refmodule{fcntl}\refbimodindex{fcntl} module or
-  \function{os.read()} and friends.  \strong{Note:} File-like objects
+  \function{os.read()} and friends.  \note{File-like objects
   which do not have a real file descriptor should \emph{not} provide
-  this method!
+  this method!}
 \end{methoddesc}
 
 \begin{methoddesc}[file]{read}{\optional{size}}
@@ -1258,9 +1258,9 @@ Files have the following methods:
   non-negative, it is a maximum byte count (including the trailing
   newline) and an incomplete line may be returned.
   An empty string is returned when \EOF{} is hit
-  immediately.  Note: Unlike \code{stdio}'s \cfunction{fgets()}, the
+  immediately.  \note{Unlike \code{stdio}'s \cfunction{fgets()}, the
   returned string contains null characters (\code{'\e 0'}) if they
-  occurred in the input.
+  occurred in the input.}
 \end{methoddesc}
 
 \begin{methoddesc}[file]{readlines}{\optional{sizehint}}
@@ -1307,7 +1307,7 @@ Files have the following methods:
 \end{methoddesc}
 
 \begin{methoddesc}[file]{write}{str}
-  Write a string to the file.  There is no return value.  Note: Due to
+  Write a string to the file.  There is no return value.  Due to
   buffering, the string may not actually show up in the file until
   the \method{flush()} or \method{close()} method is called.
 \end{methoddesc}
@@ -1359,9 +1359,9 @@ zero.  This will be automatic for most classes implemented in Python
 (care may be needed for objects that override attribute access); types
 implemented in C will have to provide a writable
 \member{softspace} attribute.
-\strong{Note:}  This attribute is not used to control the
+\note{This attribute is not used to control the
 \keyword{print} statement, but to allow the implementation of
-\keyword{print} to keep track of its internal state.
+\keyword{print} to keep track of its internal state.}
 \end{memberdesc}
 
 

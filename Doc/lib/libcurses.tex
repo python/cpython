@@ -49,9 +49,9 @@ The module \module{curses} defines the following exception:
 Exception raised when a curses library function returns an error.
 \end{excdesc}
 
-\strong{Note:} Whenever \var{x} or \var{y} arguments to a function
+\note{Whenever \var{x} or \var{y} arguments to a function
 or a method are optional, they default to the current cursor location.
-Whenever \var{attr} is optional, it defaults to \constant{A_NORMAL}.
+Whenever \var{attr} is optional, it defaults to \constant{A_NORMAL}.}
 
 The module \module{curses} defines the following functions:
 
@@ -516,8 +516,8 @@ characters are left as they are.
 
 \begin{funcdesc}{ungetch}{ch}
 Push \var{ch} so the next \method{getch()} will return it.
-\strong{Note:} only one \var{ch} can be pushed before \method{getch()}
-is called.
+\note{Only one \var{ch} can be pushed before \method{getch()}
+is called.}
 \end{funcdesc}
 
 \begin{funcdesc}{ungetmouse}{id, x, y, z, bstate}
@@ -542,10 +542,10 @@ Window objects, as returned by \function{initscr()} and
 following methods:
 
 \begin{methoddesc}{addch}{\optional{y, x,} ch\optional{, attr}}
-\strong{Note:} A \emph{character} means a C character (an
+\note{A \emph{character} means a C character (an
 \ASCII{} code), rather then a Python character (a string of length 1).
 (This note is true whenever the documentation mentions a character.)
-The builtin \function{ord()} is handy for conveying strings to codes.
+The builtin \function{ord()} is handy for conveying strings to codes.}
 
 Paint character \var{ch} at \code{(\var{y}, \var{x})} with attributes
 \var{attr}, overwriting any character previously painter at that
@@ -614,9 +614,9 @@ below for more details.  The characters must be specified as integers;
 using one-character strings will cause \exception{TypeError} to be
 raised.
 
-\strong{Note:} A \code{0} value for any parameter will cause the
+\note{A \code{0} value for any parameter will cause the
 default character to be used for that parameter.  Keyword parameters
-can \emph{not} be used.  The defaults are listed in this table:
+can \emph{not} be used.  The defaults are listed in this table:}
 
 \begin{tableiii}{l|l|l}{var}{Parameter}{Description}{Default value}
   \lineiii{ls}{Left side}{\constant{ACS_VLINE}}
@@ -1182,8 +1182,8 @@ These are inherited from the VT100 terminal, and will generally be
 available on software emulations such as X terminals.  When there
 is no graphic available, curses falls back on a crude printable ASCII
 approximation.
-\strong{Note:} These are available only after \function{initscr()} has 
-been called.
+\note{These are available only after \function{initscr()} has 
+been called.}
 
 \begin{longtableii}{l|l}{code}{ACS code}{Meaning}
   \lineii{ACS_BBSS}{alternate name for upper right corner}
