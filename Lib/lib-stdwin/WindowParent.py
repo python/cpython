@@ -2,16 +2,15 @@
 # It is the root of the tree.
 # It should have exactly one child when realized.
 #
-# There is also some support for a standard main loop here.
+# There is also an alternative interface to "mainloop" here.
 
 import stdwin
 from stdwinevents import *
+import mainloop
 
 from TransParent import ManageOneChild
 
 Error = 'WindowParent.Error'	# Exception
-
-WindowList = []			# List containing all windows
 
 class WindowParent() = ManageOneChild():
 	#
@@ -19,6 +18,7 @@ class WindowParent() = ManageOneChild():
 		self.title = title
 		self.size = size		# (width, height)
 		self._reset()
+		self.close_hook = WindowParent.delayed_destroy
 		return self
 	#
 	def _reset(self):
@@ -31,10 +31,10 @@ class WindowParent() = ManageOneChild():
 		self.do_altdraw = 0
 		self.pending_destroy = 0
 		self.close_hook = None
+		self.menu_hook = None
 	#
 	def destroy(self):
-		if self.win in WindowList:
-			WindowList.remove(self.win)
+		mainloop.unregister(self.win)
 		if self.child: self.child.destroy()
 		self._reset()
 	#
@@ -47,11 +47,19 @@ class WindowParent() = ManageOneChild():
 	def close_trigger(self):
 		if self.close_hook: self.close_hook(self)
 	#
+	def menu_trigger(self, (menu, item)):
+		if self.menu_hook:
+			self.menu_hook(self, menu, item)
+	#
 	def need_mouse(self, child): self.do_mouse = 1
 	def no_mouse(self, child): self.do_mouse = 0
 	#
-	def need_keybd(self, child): self.do_keybd = 1
-	def no_keybd(self, child): self.do_keybd = 0
+	def need_keybd(self, child):
+		self.do_keybd = 1
+		self.child.activate()
+	def no_keybd(self, child):
+		self.do_keybd = 0
+		self.child.deactivate()
 	#
 	def need_timer(self, child): self.do_timer = 1
 	def no_timer(self, child): self.do_timer = 0
@@ -64,28 +72,46 @@ class WindowParent() = ManageOneChild():
 			raise Error, 'realize(): called twice'
 		if not self.child:
 			raise Error, 'realize(): no child'
-		size = self.child.minsize(self.beginmeasuring())
-		self.size = max(self.size[0], size[0]), \
-					max(self.size[1], size[1])
-		# XXX Don't... stdwin.setdefscrollbars(0, 0)
-		stdwin.setdefwinsize(self.size)
+		# Compute suggested size
+		self.size = self.child.getminsize(self.beginmeasuring(), \
+						  self.size)
+		save_defsize = stdwin.getdefwinsize()
+		scrwidth, scrheight = stdwin.getscrsize()
+		width, height = self.size
+		if width > scrwidth:
+			width = scrwidth * 2/3
+		if height > scrheight:
+			height = scrheight * 2/3
+		stdwin.setdefwinsize(width, height)
+		self.hbar, self.vbar = stdwin.getdefscrollbars()
 		self.win = stdwin.open(self.title)
+		stdwin.setdefwinsize(save_defsize)
 		self.win.setdocsize(self.size)
 		if self.itimer:
 			self.win.settimer(self.itimer)
-		bounds = (0, 0), self.win.getwinsize()
-		self.child.setbounds(bounds)
+		width, height = self.win.getwinsize()
+		if self.hbar:
+			width = self.size[0]
+		if self.vbar:
+			height = self.size[1]
+		self.child.setbounds((0, 0), (width, height))
 		self.child.realize()
 		self.win.dispatch = self.dispatch
-		WindowList.append(self.win)
+		mainloop.register(self.win)
 	#
 	def fixup(self):
-		self.size = self.child.minsize(self.beginmeasuring())
+		# XXX This could share code with realize() above
+		self.size = self.child.getminsize(self.beginmeasuring(), \
+					          self.win.getwinsize())
 		self.win.setdocsize(self.size)
-		bounds = (0, 0), self.win.getwinsize()
-		self.child.setbounds(bounds)
+		width, height = self.win.getwinsize()
+		if self.hbar:
+			width = self.size[0]
+		if self.vbar:
+			height = self.size[1]
+		self.child.setbounds((0, 0), (width, height))
 		# Force a redraw of the entire window:
-		self.win.change((0, 0), (10000, 10000))
+		self.win.change((0, 0), self.size)
 	#
 	def beginmeasuring(self):
 		# Return something with which a child can measure text
@@ -142,28 +168,22 @@ class WindowParent() = ManageOneChild():
 			self.fixup()
 		elif type = WE_CLOSE:
 			self.close_trigger()
+		elif type = WE_MENU:
+			self.menu_trigger(detail)
 		if self.pending_destroy:
 			self.destroy()
 	#
 
 def MainLoop():
-	while WindowList:
-		Dispatch(stdwin.getevent())
+	mainloop.mainloop()
 
 def Dispatch(event):
-	window = event[1]
-	if window in WindowList:
-		window.dispatch(event)
-	else:
-		stdwin.fleep()
+	mainloop.dispatch(event)
 
 # Interface used by WindowSched:
 
 def CountWindows():
-	return len(WindowList)
+	return mainloop.countwindows()
 
 def AnyWindow():
-	if not WindowList:
-		return None
-	else:
-		return WindowList[0]
+	return mainloop.anywindow()
