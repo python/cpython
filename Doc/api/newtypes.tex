@@ -678,9 +678,15 @@ PyMappingMethods *tp_as_mapping;
   \member{tp_setattr} and \member{tp_setattro} are both \NULL.
 \end{cmemberdesc}
 
-PyBufferProcs *tp_as_buffer;
+\begin{cmemberdesc}{PyTypeObject}{PyBufferProcs*}{tp_as_buffer}
+  Pointer to an additional structure contains fields relevant only to
+  objects which implement the buffer interface.  These fields are
+  documented in ``Buffer Object Structures'' (section
+  \ref{buffer-structs}).
 
-    XXX
+  The \member{tp_as_buffer} field is not inherited, but the contained
+  fields are inherited individually.
+\end{cmemberdesc}
 
 \begin{cmemberdesc}{PyTypeObject}{long}{tp_flags}
   This field is a bit mask of various flags.  Some flags indicate
