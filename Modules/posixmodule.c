@@ -72,18 +72,10 @@ static object *PosixError; /* Exception posix.error */
 
 /* Set a POSIX-specific error from errno, and return NULL */
 
-static object *
+extern object *
 posix_error()
 {
-	object *v = newtupleobject(2);
-	if (v != NULL) {
-		settupleitem(v, 0, newintobject((long)errno));
-		settupleitem(v, 1, newstringobject(strerror(errno)));
-	}
-	err_setval(PosixError, v);
-	if (v != NULL)
-		DECREF(v);
-	return NULL;
+	return err_errno(PosixError);
 }
 
 
