@@ -1033,9 +1033,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	int min, max;
 	char *formatsave;
 	int i, len, nargs, nkeywords;
-	char *msg, *ks, **p;
-	int pos, match, converted;
-	PyObject *key, *value;
+	char *msg, **p;
 
 	assert(args != NULL && PyTuple_Check(args));
 	assert(keywords == NULL || PyDict_Check(keywords));
@@ -1150,7 +1148,8 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 		PyErr_SetString(PyExc_TypeError, message);
 		return 0;
 	}
-	
+
+	/* convert the positional arguments */
 	for (i = 0; i < nargs; i++) {
 		if (*format == '|')
 			format++;
@@ -1162,13 +1161,12 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 		}
 	}
 
-	/* handle no keyword parameters in call  */	
+	/* handle no keyword parameters in call */	
 	if (nkeywords == 0)
 		return 1; 
 
 	/* convert the keyword arguments; this uses the format 
 	   string where it was left after processing args */
-	converted = 0;
 	for (i = nargs; i < max; i++) {
 		PyObject *item;
 		if (*format == '|')
@@ -1182,7 +1180,9 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 				seterror(i+1, msg, levels, fname, message);
 				return 0;
 			}
-			converted++;
+			--nkeywords;
+			if (nkeywords == 0)
+				break;
 		}
 		else if (PyErr_Occurred())
 			return 0;
@@ -1196,11 +1196,12 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	}
 
 	/* make sure there are no extraneous keyword arguments */
-	pos = 0;
-	if (converted < nkeywords) {
+	if (nkeywords > 0) {
+		PyObject *key, *value;
+		int pos = 0;
 		while (PyDict_Next(keywords, &pos, &key, &value)) {
-			match = 0;
-			ks = PyString_AsString(key);
+			int match = 0;
+			char *ks = PyString_AsString(key);
 			for (i = 0; i < max; i++) {
 				if (!strcmp(ks, kwlist[i])) {
 					match = 1;
@@ -1208,15 +1209,15 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 				}
 			}
 			if (!match) {
-				sprintf(msgbuf,
-			"%s is an invalid keyword argument for this function",
-					ks);
-				PyErr_SetString(PyExc_TypeError, msgbuf);
+				PyErr_Format(PyExc_TypeError,
+					     "'%s' is an invalid keyword "
+					     "argument for this function",
+					     ks);
 				return 0;
 			}
 		}
 	}
-	
+
 	return 1;
 }
 
