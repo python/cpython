@@ -60,17 +60,20 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <errno.h>
 
-#ifndef NT
+#ifdef __CFM68K__
+#pragma lib_export on
+#endif
+
 #ifdef macintosh
-/*
-** For the mac, there's a function macstrerror in macosmodule.c. We can't
-** call it strerror(), though, since that is already defined (for Think C)
-** in ANSI
+/* Replace strerror with a Mac specific routine.
+   XXX PROBLEM: some positive errors have a meaning for MacOS,
+   but some library routines set Unix error numbers...
 */
 #undef strerror
-#define strerror macstrerror
-#include "macdefs.h"    /* For CW to find EINTR */
-#endif /* !macintosh */
+#define strerror PyMac_StrError
+#endif /* macintosh */
+
+#ifndef NT
 extern char *strerror PROTO((int));
 #endif /* !NT */
 
@@ -175,8 +178,10 @@ err_errno(exc)
 {
 	object *v;
 	int i = errno;
+#ifdef EINTR
 	if (i == EINTR && sigcheck())
 		return NULL;
+#endif
 	v = mkvalue("(is)", i, strerror(i));
 	if (v != NULL) {
 		err_setval(exc, v);
