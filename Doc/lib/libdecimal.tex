@@ -179,7 +179,7 @@ Decimal("19.29")
 '1.34'
 >>> float(a)
 1.3400000000000001
->>> round(a, 1)
+>>> round(a, 1)     # round() first converts to binary floating point
 1.3
 >>> int(a)
 1
@@ -217,9 +217,6 @@ because many of the traps are enabled:
 
 \begin{verbatim}
 >>> myothercontext = Context(prec=60, rounding=ROUND_HALF_DOWN)
->>> myothercontext
-Context(prec=60, rounding=ROUND_HALF_DOWN, Emin=-999999999, Emax=999999999,
-        capitals=1, flags=[], traps=[])
 >>> setcontext(myothercontext)
 >>> Decimal(1) / Decimal(7)
 Decimal("0.142857142857142857142857142857142857142857142857142857142857")
@@ -855,10 +852,13 @@ started so that there won't be a race condition between threads calling
 
 \begin{verbatim}
 # Set applicationwide defaults for all threads about to be launched
-DefaultContext = Context(prec=12, rounding=ROUND_DOWN, traps=[InvalidOperation])
+DefaultContext.prec = 12
+DefaultContext.rounding = ROUND_DOWN
+DefaultContext.traps = ExtendedContext.traps.copy()
+DefaultContext.traps[InvalidOperation] = 1
 setcontext(DefaultContext)
 
-# Afterward, the threads can be started
+# Afterwards, the threads can be started
 t1.start()
 t2.start()
 t3.start()
