@@ -90,6 +90,17 @@ Point_ptr = OpaqueType("Point", "PyMac_BuildPoint", "PyMac_GetPoint")
 EventRecord = OpaqueType("EventRecord", "PyMac_BuildEventRecord", "PyMac_GetEventRecord")
 EventRecord_ptr = EventRecord
 
+# CoreFoundation datatypes
+CFTypeRef = OpaqueByValueType("CFTypeRef", "CFTypeRefObj")
+CFStringRef = OpaqueByValueType("CFStringRef", "CFStringRefObj")
+CFMutableStringRef = OpaqueByValueType("CFMutableStringRef", "CFMutableStringRefObj")
+CFArrayRef = OpaqueByValueType("CFArrayRef", "CFArrayRefObj")
+CFMutableArrayRef = OpaqueByValueType("CFMutableArrayRef", "CFMutableArrayRefObj")
+CFDictionaryRef = OpaqueByValueType("CFDictionaryRef", "CFDictionaryRefObj")
+CFMutableDictionaryRef = OpaqueByValueType("CFMutableDictionaryRef", "CFMutableDictionaryRefObj")
+CFURLRef = OpaqueByValueType("CFURLRef", "CFURLRefObj")
+OptionalCFURLRef = OpaqueByValueType("CFURLRef", "OptionalCFURLRefObj")
+
 # OSErr is special because it is turned into an exception
 # (Could do this with less code using a variant of mkvalue("O&")?)
 class OSErrType(Type):

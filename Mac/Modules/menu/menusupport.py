@@ -36,7 +36,6 @@ MenuItemAttributes = Type("MenuItemAttributes", "l")
 unsigned_char = Type('unsigned char', 'b')
 FMFontFamily = Type("FMFontFamily", "h")
 FMFontStyle = Type("FMFontStyle", "h")
-CFStringRef = OpaqueByValueType("CFStringRef", "CFStringRefObj")
 UniChar = Type("UniChar", "h")
 
 includestuff = includestuff + """
