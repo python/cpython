@@ -60,7 +60,7 @@ INVALID_ACCESS_ERR             = 15
 class DOMException(Exception):
     """Abstract base class for DOM exceptions.
     Exceptions with specific codes are specializations of this class."""
-    
+
     def __init__(self, *args, **kw):
         if self.__class__ is DOMException:
             raise RuntimeError(

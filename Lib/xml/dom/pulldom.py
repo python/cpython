@@ -36,7 +36,7 @@ class PullDOM(xml.sax.ContentHandler):
 
     def pop(self):
         result = self.elementStack[-1]
-        del self.elementStack[-1] 
+        del self.elementStack[-1]
         return result
 
     def setDocumentLocator(self, locator):
