@@ -19,4 +19,8 @@
 /* #define MAC_TCL		/* This *must* be on if USE_TK is on */
 #define USE_MAC_SHARED_LIBRARY		/* Enable code to add shared-library resources */
 #define USE_MAC_APPLET_SUPPORT		/* Enable code to run a PYC resource */
+#define USE_MAC_DYNAMIC_LOADING		/* Enable dynamically loaded modules */
 /* #define USE_MALLOC_DEBUG			/* Enable range checking and other malloc debugging */
+#ifdef __powerc
+#define USE_CACHE_ALIGNED 8		/* Align on 32-byte boundaries for 604 */
+#endif
