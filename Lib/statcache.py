@@ -3,11 +3,11 @@
 # Maintain a cache of file stats.
 # There are functions to reset the cache or to selectively remove items.
 
-import posix
+import os
 from stat import *
 
 # The cache.
-# Keys are pathnames, values are `posix.stat' outcomes.
+# Keys are pathnames, values are `os.stat' outcomes.
 #
 cache = {}
 
@@ -17,7 +17,7 @@ cache = {}
 def stat(path):
 	if cache.has_key(path):
 		return cache[path]
-	cache[path] = ret = posix.stat(path)
+	cache[path] = ret = os.stat(path)
 	return ret
 
 
@@ -81,6 +81,6 @@ def forget_except_prefix(prefix):
 def isdir(path):
 	try:
 		st = stat(path)
-	except posix.error:
+	except os.error:
 		return 0
 	return S_ISDIR(st[ST_MODE])

@@ -32,16 +32,16 @@ defaultfile = 'wsrestore.py'
 
 def save():
 	import __main__
-	import posix
+	import os
 	# XXX On SYSV, if len(defaultfile) >= 14, this is wrong!
 	backup = defaultfile + '~'
 	try:
-		posix.unlink(backup)
-	except posix.error:
+		os.unlink(backup)
+	except os.error:
 		pass
 	try:
-		posix.rename(defaultfile, backup)
-	except posix.error:
+		os.rename(defaultfile, backup)
+	except os.error:
 		pass
 	fp = open(defaultfile, 'w')
 	writedict(__main__.__dict__, fp)

@@ -4,7 +4,7 @@
 # Jack Jansen, December 1991
 #
 import string
-import path
+import os
 import sys
 import FL
 
@@ -106,11 +106,11 @@ def wrlong(fp, x):
     fp.write(chr(a) + chr(b) + chr(c) + chr(d))
 
 def getmtime(filename):
-    import posix
+    import os
     from stat import ST_MTIME
     try:
-	return posix.stat(filename)[ST_MTIME]
-    except posix.error:
+	return os.stat(filename)[ST_MTIME]
+    except os.error:
 	return None
 
 #
@@ -157,7 +157,7 @@ def _open_formfile2(filename):
 	    fp = None
     else:
 	for pc in sys.path:
-	    pn = path.join(pc, filename)
+	    pn = os.path.join(pc, filename)
 	    try:
 		fp = open(pn, 'r')
 		filename = pn

@@ -3,11 +3,11 @@
 
 import dirwin
 import filewin
-import path
+import os
 
 def open(name):
 	print 'opening', name, '...'
-	if path.isdir(name):
+	if os.path.isdir(name):
 		w = dirwin.open(name)
 	else:
 		w = filewin.open(name)

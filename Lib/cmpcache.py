@@ -9,7 +9,7 @@
 #	- We keep a cache of outcomes of earlier comparisons
 #	- We don't fork a process to run 'cmp' but read the files ourselves
 
-import posix
+import os
 from stat import *
 import statcache
 
@@ -20,7 +20,7 @@ cache = {}
 
 
 # Compare two files, use the cache if possible.
-# May raise posix.error if a stat or open of either fails.
+# May raise os.error if a stat or open of either fails.
 #
 def cmp(f1, f2):
 	# Return 1 for identical files, 0 for different.

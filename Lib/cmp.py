@@ -8,14 +8,14 @@
 #	- We keep a cache of outcomes of earlier comparisons
 #	- We don't fork a process to run 'cmp' but read the files ourselves
 
-import posix
+import os
 
 cache = {}
 
 def cmp(f1, f2): # Compare two files, use the cache if possible.
 	# Return 1 for identical files, 0 for different.
 	# Raise exceptions if either file could not be statted, read, etc.
-	s1, s2 = sig(posix.stat(f1)), sig(posix.stat(f2))
+	s1, s2 = sig(os.stat(f1)), sig(os.stat(f2))
 	if s1[0] <> 8 or s2[0] <> 8:
 		# Either is a not a plain file -- always report as different
 		return 0
