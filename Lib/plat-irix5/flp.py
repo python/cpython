@@ -23,22 +23,12 @@ error = 'flp.error'
 #
 def parse_form(filename, formname):
     forms = checkcache(filename)
-    if forms != None:
-	if forms.has_key(formname):
-	    return forms[formname]
-    else:
-	forms = {}
-    fp = _open_formfile(filename)
-    nforms = _parse_fd_header(fp)
-    for i in range(nforms):
-	form = _parse_fd_form(fp, formname)
-	if form <> None:
-	    break
+    if forms is None:
+	forms = parse_forms(filename)
+    if forms.has_key(formname):
+	return forms[formname]
     else:
 	raise error, 'No such form in fd file'
-    forms[formname] = form
-    writecache(filename, forms)
-    return form
 
 #
 # Externally visible function. Load all forms.
