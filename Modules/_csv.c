@@ -717,7 +717,7 @@ parse_process_char(ReaderObj *self, char c)
 		else {
 			/* illegal */
 			self->had_parse_error = 1;
-			PyErr_Format(error_obj, "%c expected after %c", 
+			PyErr_Format(error_obj, "'%c' expected after '%c'", 
 					dialect->delimiter, 
                                         dialect->quotechar);
 			return -1;
@@ -1354,7 +1354,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
         self->writeline = PyObject_GetAttrString(output_file, "write");
         if (self->writeline == NULL || !PyCallable_Check(self->writeline)) {
                 PyErr_SetString(PyExc_TypeError,
-                                "argument 1 must be an instance with a write method");
+                                "argument 1 must have a \"write\" method");
                 Py_DECREF(self);
                 return NULL;
         }
