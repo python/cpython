@@ -29,4 +29,8 @@ print 'test_types'
 unload('test_types')
 import test_types
 
+print 'test_math'
+unload('test_math')
+import test_math
+
 print 'Passed all tests.'
