@@ -257,6 +257,30 @@ static PyMethodDef fcntl_methods[] = {
 
 /* Module initialisation */
 
+static int
+ins(d, symbol, value)
+        PyObject* d;
+        char* symbol;
+        long value;
+{
+        PyObject* v = PyInt_FromLong(value);
+        if (!v || PyDict_SetItemString(d, symbol, v) < 0)
+                return -1;
+
+        Py_DECREF(v);
+        return 0;
+}
+
+static int
+all_ins(d)
+        PyObject* d;
+{
+        if (ins(d, "LOCK_SH", (long)LOCK_SH)) return -1;
+        if (ins(d, "LOCK_EX", (long)LOCK_EX)) return -1;
+        if (ins(d, "LOCK_NB", (long)LOCK_NB)) return -1;
+        if (ins(d, "LOCK_UN", (long)LOCK_UN)) return -1;
+}
+
 void
 initfcntl()
 {
@@ -267,6 +291,7 @@ initfcntl()
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
+	all_ins(d);
 
 	/* Check for errors */
 	if (PyErr_Occurred())
