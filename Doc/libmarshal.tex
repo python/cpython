@@ -1,7 +1,7 @@
 \section{Built-in Module \sectcode{marshal}}
 \label{module-marshal}
-
 \bimodindex{marshal}
+
 This module contains functions that can read and write Python
 values in a binary format.  The format is specific to Python, but
 independent of machine architecture issues (e.g., you can write a
@@ -54,16 +54,14 @@ operating on strings.
 
 The module defines these functions:
 
-\setindexsubitem{(in module marshal)}
-
-\begin{funcdesc}{dump}{value\, file}
+\begin{funcdesc}{dump}{value, file}
   Write the value on the open file.  The value must be a supported
   type.  The file must be an open file object such as
   \code{sys.stdout} or returned by \function{open()} or
   \function{posix.popen()}.
 
   If the value has (or contains an object that has) an unsupported type,
-  a \exception{ValueError} exception is raised -- but garbage data
+  a \exception{ValueError} exception is raised --- but garbage data
   will also be written to the file.  The object will not be properly
   read back by \function{load()}.
 \end{funcdesc}
@@ -73,8 +71,8 @@ The module defines these functions:
   is read, raise \exception{EOFError}, \exception{ValueError} or
   \exception{TypeError}.  The file must be an open file object.
 
-  Warning: If an object containing an unsupported type was marshalled
-  with \function{dump()}, \function{load()} will substitute
+  \strong{Warning:} If an object containing an unsupported type was
+  marshalled with \function{dump()}, \function{load()} will substitute
   \code{None} for the unmarshallable type.
 \end{funcdesc}
 
