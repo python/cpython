@@ -203,12 +203,16 @@ class Tk(Tkinter.Tk, tixCommand):
             self.tk.eval('global auto_path; lappend auto_path {%s}' % tixlib)
             self.tk.eval('global tcl_pkgPath; lappend tcl_pkgPath {%s}' % tixlib)
         # Load Tix - this should work dynamically or statically
-        # If it's static, lib/tix8.1/pkgIndex.tcl should have
+        # If it's static, tcl/tix8.1/pkgIndex.tcl should have
         #               'load {} Tix'
-        # If it's dynamic under Unix, lib/tix8.1/pkgIndex.tcl should have
+        # If it's dynamic under Unix, tcl/tix8.1/pkgIndex.tcl should have
         #               'load libtix8.1.8.3.so Tix'
         self.tk.eval('package require Tix')
 
+    def destroy(self):
+        # For safety, remove an delete_window binding before destroy
+        self.protocol("WM_DELETE_WINDOW", "")
+        Tkinter.Tk.destroy(self)
 
 # The Tix 'tixForm' geometry manager
 class Form:
@@ -1669,16 +1673,20 @@ class _dummyTList(TList, TixSubWidget):
 
 class _dummyComboBox(ComboBox, TixSubWidget):
     def __init__(self, master, name, destroy_physically=1):
-        TixSubWidget.__init__(self, master, name, destroy_physically)
+        TixSubWidget.__init__(self, master, name, ['fancy',destroy_physically])
+        self.subwidget_list['label'] = _dummyLabel(self, 'label')
         self.subwidget_list['entry'] = _dummyEntry(self, 'entry')
         self.subwidget_list['arrow'] = _dummyButton(self, 'arrow')
-        # I'm not sure about this destroy_physically=0 in all cases;
-        # it may depend on if -dropdown is true; I've added as a trial
+
         self.subwidget_list['slistbox'] = _dummyScrolledListBox(self,
-                                                                'slistbox',
-                                                                destroy_physically=0)
-        self.subwidget_list['listbox'] = _dummyListbox(self, 'listbox',
-                                                       destroy_physically=0)
+                                                                'slistbox')
+        try:
+            self.subwidget_list['tick'] = _dummyButton(self, 'tick')
+            #cross Button : present if created with the fancy option
+            self.subwidget_list['cross'] = _dummyButton(self, 'cross')
+        except TypeError:
+            # unavailable when -fancy not specified
+            pass
 
 class _dummyDirList(DirList, TixSubWidget):
     def __init__(self, master, name, destroy_physically=1):
@@ -1738,9 +1746,11 @@ class _dummyPanedWindow(PanedWindow, TixSubWidget):
 ### Utility Routines ###
 ########################
 
-# Returns the qualified path name for the widget. Normally used to set
-# default options for subwidgets. See tixwidgets.py
+#mike Should tixDestroy be exposed as a wrapper? - but not for widgets.
+
 def OptionName(widget):
+    '''Returns the qualified path name for the widget. Normally used to set
+    default options for subwidgets. See tixwidgets.py'''
     return widget.tk.call('tixOptionName', widget._w)
 
 # Called with a dictionary argument of the form
@@ -1766,6 +1776,38 @@ class CObjView(TixWidget):
     # FIXME: It should inherit -superclass tixScrolledWidget
     pass
 
+class Grid(TixWidget):
+    '''The Tix Grid command creates a new window  and makes it into a
+    tixGrid widget. Additional options, may be specified on the command
+    line or in the option database to configure aspects such as its cursor
+    and relief.
+
+    A Grid widget displays its contents in a two dimensional grid of cells.
+    Each cell may contain one Tix display item, which may be in text,
+    graphics or other formats. See the DisplayStyle class for more information
+    about Tix display items. Individual cells, or groups of cells, can be
+    formatted with a wide range of attributes, such as its color, relief and
+    border.
+
+    Subwidgets - None'''
+    pass
+
+    # def anchor option ?args ...?
+    # def bdtype
+    # def delete dim from ?to?
+    # def edit apply
+    # def edit set x y
+    # def entrycget x y option
+    # def entryconfigure x y ?option? ?value option value ...?
+    # def format
+    # def index
+    # def move dim from to offset
+    # def set x y ?-itemtype type? ?option value...?
+    # def size dim index ?option value ...?
+    # def unset x y
+    # def xview
+    # def yview
+    
 class ScrolledGrid(TixWidget):
     '''Scrolled Grid widgets'''
 

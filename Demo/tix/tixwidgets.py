@@ -560,6 +560,9 @@ def MkSWindow(w):
     top.pack(expand=1, fill=Tix.BOTH)
     bot.pack(fill=Tix.BOTH)
 
+    win.bind('<Map>', func=lambda arg=0, rh=rh, win=win:
+	     win.tk.call('tixDoWhenIdle', str(rh), 'attachwidget', str(win)))
+
 def SWindow_reset(rh, win):
     win.place(x=30, y=150, width=190, height=120)
     win.update()
@@ -575,8 +578,18 @@ def MkSText(w):
 		      text='The Tix ScrolledWindow widget allows you to scroll any kind of Tk widget. It is more versatile than a scrolled canvas widget.')
 
     win = Tix.ScrolledText(top, scrollbar='auto')
-#    win.text['wrap'] = 'none'
-    win.text.insert(Tix.END, 'This is a text widget embedded in a scrolled window. Although the original Tix demo does not have any text here, I decided to put in some so that you can see the effect of scrollbars etc.')
+    win.text['wrap'] = 'none'
+    win.text.insert(Tix.END, '''When -scrollbar is set to "auto", the
+scrollbars are shown only when needed. 
+Additional modifiers can be used to force a
+scrollbar to be shown or hidden. For example, 
+"auto -y" means the horizontal scrollbar 
+should be shown when needed but the vertical 
+scrollbar should always be hidden;
+"auto +x" means the vertical scrollbar
+should be shown when needed but the horizontal 
+scrollbar should always be shown, and so on.'''
+)
     win.place(x=30, y=150, width=190, height=100)
 
     rh = Tix.ResizeHandle(top, bg='black',
