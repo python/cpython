@@ -147,7 +147,7 @@ are already familiar with how the Python library is laid out on their
 platform, and know where to copy various files in order for Python to
 find them.  This document makes no such assumptions, and explains how
 the Python library is laid out on three major platforms (\UNIX, Windows,
-and MacOS), so that you can understand what happens when the Distutils
+and Mac OS), so that you can understand what happens when the Distutils
 do their job \emph{and} know how to install modules manually when the
 module author fails to provide a setup script.
 
@@ -177,7 +177,7 @@ python setup.py install
 
 On \UNIX, you'd run this command from a shell prompt; on Windows, you
 have to open a command prompt window (``DOS box'') and do it there; on
-MacOS, things are a tad more complicated (see below).
+Mac OS, things are a tad more complicated (see below).
 
 
 \subsection{Platform variations}
@@ -208,7 +208,7 @@ cd c:\Temp\foo-1.0
 python setup.py install
 \end{verbatim}
 
-On MacOS, you have to go through a bit more effort to supply
+On Mac OS, you have to go through a bit more effort to supply
 command-line arguments to the setup script:
 \begin{itemize}
 \item hit option-double-click on the script's icon (or option-drop it
@@ -317,7 +317,7 @@ If you don't choose an installation directory---i.e., if you just run
 \code{setup.py install}---then the \command{install} command installs to
 the standard location for third-party Python modules.  This location
 varies by platform and by how you built/installed Python itself.  On
-\UNIX{} and MacOS, it also depends on whether the module distribution
+\UNIX{} and Mac OS, it also depends on whether the module distribution
 being installed is pure Python or contains extensions (``non-pure''):
 \begin{tableiv}{l|l|l|c}{textrm}%
   {Platform}{Standard installation location}{Default value}{Notes}
@@ -333,11 +333,11 @@ being installed is pure Python or contains extensions (``non-pure''):
           {\filenq{\filevar{prefix}}}
           {\filenq{C:\textbackslash{}Python}}
           {(2)}
-  \lineiv{MacOS (pure)}
+  \lineiv{Mac OS (pure)}
           {\filenq{\filevar{prefix}:Lib:site-packages}}
           {\filenq{Python:Lib:site-packages}}
           {}
-  \lineiv{MacOS (non-pure)}
+  \lineiv{Mac OS (non-pure)}
           {\filenq{\filevar{prefix}:Lib:site-packages}}
           {\filenq{Python:Lib:site-packages}}
           {}
@@ -357,13 +357,13 @@ being installed is pure Python or contains extensions (``non-pure''):
 
 \filevar{prefix} and \filevar{exec-prefix} stand for the directories
 that Python is installed to, and where it finds its libraries at
-run-time.  They are always the same under Windows and MacOS, and very
+run-time.  They are always the same under Windows and Mac OS, and very
 often the same under \UNIX.  You can find out what your Python
 installation uses for \filevar{prefix} and \filevar{exec-prefix} by
 running Python in interactive mode and typing a few simple commands.
 Under \UNIX, just type \code{python} at the shell prompt.  Under
 Windows, choose \menuselection{Start \sub Programs \sub Python
-2.1 \sub Python (command line)}.  Under MacOS, \XXX{???}.
+2.1 \sub Python (command line)}.  Under Mac OS, \XXX{???}.
 Once the interpreter is started, you type Python code at the
 prompt.  For example, on my Linux system, I type the three Python
 statements shown below, and get the output as shown, to find out my
@@ -435,8 +435,7 @@ build.  Things to talk about:
 \subsubsection{Borland C++}
 
 This subsection describes the necessary steps to use Distutils with the 
-Borland \Cpp{} compiler version 5.5.\footnote{Check
-\url{http://www.borland.com/bcppbuilder/freecompiler/} for download}
+Borland \Cpp{} compiler version 5.5.
 %Should we mention that users have to create cfg-files for the compiler
 %see also http://community.borland.com/article/0,1410,21205,00.html 
 
@@ -478,7 +477,17 @@ If you want to use the Borland \Cpp{} compiler as default, you should
 consider to write it in your personal or system-wide configuration
 file for Distutils (see section~\ref{config-files}.)
  
-\XXX{One place to look: \url{http://www.cyberus.ca/~g_will/pyExtenDL.shtml}}
+\begin{seealso}
+  \seetitle[http://www.borland.com/bcppbuilder/freecompiler/]
+    {\Cpp{}Builder Compiler}
+    {Information about the free \Cpp{} compiler from Borland,
+     including links to the download pages.}
+
+  \seetitle[http://www.cyberus.ca/~g_will/pyExtenDL.shtml]
+    {Creating Python Extensions Using Borland's Free Compiler}
+    {Document describing how to use Borland's free command-line C++
+     compiler to build Python.}
+\end{seealso}
 
 
 \subsubsection{GNU C / Cygwin / MinGW32}
@@ -487,7 +496,7 @@ This section describes the necessary steps to use Distutils with the
 GNU C/\Cpp{} compilers in their Cygwin and MinGW32
 distributions.\footnote{Check
 \url{http://sources.redhat.com/cygwin/} and
-\url{http://www.mingw.org} for more information}
+\url{http://www.mingw.org/} for more information}
 
 \XXX{For a Python which was built with Cygwin, all should work without 
 any of these following steps.}
@@ -511,6 +520,7 @@ Then you can create from these information an import library for gcc.
 \begin{verbatim}
 dlltool --dllname python20.dll --def python20.def --output-lib libpython20.a
 \end{verbatim}
+
 The resulting library has to be placed in the same directory as 
 \file{python20.lib}. (Should be the \file{libs} directory under your
 Python installation directory.)
@@ -526,8 +536,9 @@ To let Distutils compile your extension with Cygwin you now have to type
 python setup.py build --compiler=cygwin
 \end{verbatim}
 
-and for Cygwin in no-cygwin mode\footnote{Then you have no POSIX emulation
-available, but you also don't need \file{cygwin1.dll}.} or for MinGW32 type
+and for Cygwin in no-cygwin mode\footnote{Then you have no
+\POSIX{} emulation available, but you also don't need
+\file{cygwin1.dll}.} or for MinGW32 type:
  
 \begin{verbatim}
 python setup.py build --compiler=mingw32
@@ -537,10 +548,17 @@ If you want to use any of these options/compilers as default, you should
 consider to write it in your personal or system-wide configuration file
 for Distutils (see section~\ref{config-files}.)
 
-\XXX{One place to look: \url{http://www.zope.org/Members/als/tips/win32_mingw_modules}}
+\begin{seealso}
+  \seetitle[http://www.zope.org/Members/als/tips/win32_mingw_modules]
+    {Building Python modules on MS Windows platform with MinGW32}
+    {Information about building the required libraries for the MinGW32
+     environment.}
 
-\XXX{For converted import libraries in cygwin/mingw32 and bcpp format,
-see \url{ftp://pyopengl.sourceforge.net/pub/pyopengl/win32-stuff/}.}
+  \seeurl{http://pyopengl.sourceforge.net/ftp/win32-stuff/}
+    {Converted import libraries in Cygwin/MinGW32 and Borland format,
+     and a script to create the registry entries needed for Distutils
+     to locate the built Python.}
+\end{seealso}
 
 
 \section{Alternate Installation}
@@ -569,7 +587,7 @@ of the following sections applies to you.
 
 Under \UNIX, there are two ways to perform an alternate installation.
 The ``prefix scheme'' is similar to how alternate installation works
-under Windows and MacOS, but is not necessarily the most useful way to
+under Windows and Mac OS, but is not necessarily the most useful way to
 maintain a personal Python library.  Hence, we document the more
 convenient and commonly useful ``home scheme'' first.
 
@@ -696,10 +714,10 @@ Files are installed as follows:
               {prefix}{\textbackslash{}Data}
 
 
-\subsection{Alternate installation: MacOS}
+\subsection{Alternate installation: Mac OS}
 \label{alt-install-macos}
 
-Like Windows, MacOS has no notion of home directories (or even of
+Like Windows, Mac OS has no notion of home directories (or even of
 users), and a fairly simple standard Python installation.  Thus, only a
 \longprogramopt{prefix} option is needed.  It defines the installation
 base, and files are installed under it as follows:
@@ -772,7 +790,7 @@ python setup.py install --install-purelib=Site --install-platlib=Site
 The specified installation directories are relative to \filevar{prefix}.
 Of course, you also have to ensure that these directories are in
 Python's module search path, e.g. by putting a \file{.pth} file in
-\filevar{prefix} (\XXX{should have a section describing .pth files and
+\filevar{prefix} (\XXX{should have a section describing \file{.pth} files and
   cross-ref it here}).
 
 If you want to define an entire installation scheme, you just have to
@@ -852,10 +870,10 @@ that have such a notion---but the Distutils additionally define a few
 extra variables that may not be in your environment, such as
 \code{\$PLAT}.  (And of course, you can only use the configuration
 variables supplied by the Distutils on systems that don't have
-environment variables, such as MacOS (\XXX{true?}).)  See
+environment variables, such as Mac OS (\XXX{true?}).)  See
 section~\ref{config-files} for details.
 
-\XXX{need some Windows and MacOS examples---when would custom
+\XXX{need some Windows and Mac OS examples---when would custom
   installation schemes be needed on those platforms?}
 
 
@@ -893,7 +911,7 @@ On Windows, the configuration files are:
   \lineiii{local}{\filenq{setup.cfg}}{(3)}
 \end{tableiii}
 
-And on MacOS, they are:
+And on Mac OS, they are:
 \begin{tableiii}{l|l|c}{textrm}
   {Type of file}{Location and filename}{Notes}
   \lineiii{system}{\filenq{\filevar{prefix}:Lib:distutils:pydistutils.cfg}}{(6)}
@@ -932,7 +950,7 @@ And on MacOS, they are:
 \item[(6)] (See also notes (1) and (4).)  The default installation
   prefix is just \file{Python:}, so under Python 1.6 and later this is
   normally\file{Python:Lib:distutils:pydistutils.cfg}.  (The Distutils
-  don't work very well with Python 1.5.2 under MacOS.  \XXX{true?})
+  don't work very well with Python 1.5.2 under Mac OS.  \XXX{true?})
 \end{description}
 
 
