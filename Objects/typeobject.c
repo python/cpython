@@ -2445,7 +2445,7 @@ wrap_init(PyObject *self, PyObject *args, void *wrapped)
 static struct wrapperbase tab_init[] = {
 	{"__init__", (wrapperfunc)wrap_init,
 	 "x.__init__(...) initializes x; "
-	 "see x.__type__.__doc__ for signature"},
+	 "see x.__class__.__doc__ for signature"},
 	{0}
 };
 
