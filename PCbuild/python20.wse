@@ -238,6 +238,9 @@ end
 item: Remark
 end
 item: Remark
+  Text=March thru the user GUI.
+end
+item: Remark
   Text=COMPONENTS values:
 end
 item: Remark
@@ -790,13 +793,13 @@ end
 item: Include Script
   Pathname=%_WISE_%\INCLUDE\uninstal.wse
 end
+item: Remark
+  Text=Note from Tim: these seeming no-ops actually convert to short filenames.
+end
 item: Set Variable
   Variable=COMMON
   Value=%COMMON%
   Flags=00010100
-end
-item: Remark
-  Text=Note from Tim: this seeming no-op on MAINDIR actually converts it to a short filename.
 end
 item: Set Variable
   Variable=MAINDIR
@@ -875,10 +878,21 @@ item: Set Variable
 end
 item: Else Statement
 end
+item: Remark
+  Text=Note from Tim:  the Wizard left this block empty!
+end
+item: Remark
+  Text=Perhaps it's only relevant on Windows 3.1.
+end
 item: End Block
 end
 item: Remark
   Text=END WIZARD STUFF -----------------------------------------------------------------------------------------------------------------------------
+end
+item: Remark
+end
+item: Remark
+  Text=Long section to install files.
 end
 item: Remark
 end
@@ -1654,31 +1668,33 @@ end
 item: Remark
 end
 item: Remark
-  Text=Populate Start Menu
+  Text=Well, *this* is cryptic!  It's setting up the app publisher and URL entries for Win2K add/remove.
 end
-item: Get Registry Key Value
-  Variable=GROUPDIR
-  Key=Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders
-  Value Name=Common Programs
-  Flags=00000100
-end
-item: If/While Statement
-  Variable=GROUPDIR
-end
-item: Get Registry Key Value
-  Variable=GROUPDIR
-  Key=Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders
-  Default=%WIN%\Start Menu\Programs
-  Value Name=Programs
-  Flags=00000010
-end
-item: End Block
-end
-item: Set Variable
-  Variable=GROUP
-  Value=%GROUPDIR%\%GROUP%
+item: Edit Registry
+  Total Keys=3
+  item: Key
+    Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
+    New Value=http://www.python.org/
+    Value Name=HelpLink
+    Root=2
+  end
+  item: Key
+    Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
+    New Value=PythonLabs at Zope Corporation
+    Value Name=Publisher
+    Root=2
+  end
+  item: Key
+    Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
+    New Value=http://www.python.org/
+    Value Name=URLInfoAbout
+    Root=2
+  end
 end
 item: Remark
+end
+item: Remark
+  Text=Populate Start Menu
 end
 item: If/While Statement
   Variable=COMPONENTS
@@ -1734,38 +1750,14 @@ item: End Block
 end
 item: End Block
 end
+item: Remark
+end
 item: Create Shortcut
   Source=%MAINDIR%\unwise.exe
   Destination=%GROUP%\Uninstall Python.lnk
   Working Directory=%MAINDIR%
   Key Type=1536
   Flags=00000001
-end
-item: Remark
-end
-item: Remark
-  Text=Well, *this* is cryptic!  It's setting up the app publisher and URL entries for Win2K add/remove.
-end
-item: Edit Registry
-  Total Keys=3
-  item: Key
-    Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
-    New Value=http://www.python.org/
-    Value Name=HelpLink
-    Root=2
-  end
-  item: Key
-    Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
-    New Value=PythonLabs at Zope Corporation
-    Value Name=Publisher
-    Root=2
-  end
-  item: Key
-    Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
-    New Value=http://www.python.org/
-    Value Name=URLInfoAbout
-    Root=2
-  end
 end
 item: Remark
 end
