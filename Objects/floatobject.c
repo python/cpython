@@ -182,7 +182,9 @@ PyFloat_FromString(PyObject *v, char **pend)
 	 * whether strtod sets errno on underflow is not defined, so we can't
 	 * key off errno.
          */
+	PyFPE_START_PROTECT("strtod", return NULL)
 	x = strtod(s, (char **)&end);
+	PyFPE_END_PROTECT(x)
 	errno = 0;
 	/* Believe it or not, Solaris 2.6 can move end *beyond* the null
 	   byte at the end of the string, when the input is inf(inity). */
@@ -210,7 +212,9 @@ PyFloat_FromString(PyObject *v, char **pend)
 	if (x == 0.0) {
 		/* See above -- may have been strtod being anal
 		   about denorms. */
+		PyFPE_START_PROTECT("atof", return NULL)
 		x = atof(s);
+		PyFPE_END_PROTECT(x)
 		errno = 0;    /* whether atof ever set errno is undefined */
 	}
 	return PyFloat_FromDouble(x);
