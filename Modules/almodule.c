@@ -43,165 +43,161 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #endif
 
-#include "allobjects.h"
-#include "import.h"
-#include "modsupport.h"
-#include "structmember.h"
-#include "ceval.h"
-
+#include "Python.h"
 
 /* Config objects */
 
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	ALconfig ob_config;
 } configobject;
 
-staticforward typeobject Configtype;
+staticforward PyTypeObject Configtype;
 
 #define is_configobject(v) ((v)->ob_type == &Configtype)
 
 /* Forward */
-static int getconfigarg PROTO((object *, ALconfig *));
-static int getstrstrconfigarg PROTO((object *, char **, char **, ALconfig *));
+static int getconfigarg Py_PROTO((PyObject *, ALconfig *));
+static int getstrstrconfigarg Py_PROTO((PyObject *, char **, char **,
+					ALconfig *));
 
-static object *
+static PyObject *
 setConfig (self, args, func)
 	configobject *self;
-	object *args;
+	PyObject *args;
 	void (*func)(ALconfig, long);
 {
 	long par;
 
-	if (!getlongarg (args, &par)) return NULL;
+	if (!PyArg_Parse (args, "l", &par)) return NULL;
 
 	(*func) (self-> ob_config, par);
 
-	INCREF (None);
-	return None;
+	Py_INCREF (Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 getConfig (self, args, func)
 	configobject *self;
-	object *args;
+	PyObject *args;
 	long (*func)(ALconfig);
 {	
 	long par;
 
-	if (!getnoarg (args)) return NULL;
+	if (!PyArg_NoArgs (args)) return NULL;
 	
 	par = (*func) (self-> ob_config);
 
-	return newintobject (par);
+	return PyInt_FromLong (par);
 }
 
-static object *
+static PyObject *
 al_setqueuesize (self, args)
 	configobject *self;
-	object *args;
+	PyObject *args;
 {
 	return (setConfig (self, args, ALsetqueuesize));
 }
 
-static object *
+static PyObject *
 al_getqueuesize (self, args)
 	configobject *self;
-	object *args;
+	PyObject *args;
 {
 	return (getConfig (self, args, ALgetqueuesize));
 }
 
-static object *
+static PyObject *
 al_setwidth (self, args)
 	configobject *self;
-	object *args;
+	PyObject *args;
 {
 	return (setConfig (self, args, ALsetwidth));
 }
 
-static object *
+static PyObject *
 al_getwidth (self, args)
 	configobject *self;
-	object *args;
+	PyObject *args;
 {
 	return (getConfig (self, args, ALgetwidth));	
 }
 
-static object *
+static PyObject *
 al_getchannels (self, args)
 	configobject *self;
-	object *args;
+	PyObject *args;
 {
 	return (getConfig (self, args, ALgetchannels));	
 }
 
-static object *
+static PyObject *
 al_setchannels (self, args)
 	configobject *self;
-	object *args;
+	PyObject *args;
 {
 	return (setConfig (self, args, ALsetchannels));
 }
 
 #ifdef AL_405
 
-static object *
+static PyObject *
 al_getsampfmt (self, args)
 	configobject *self;
-	object *args;
+	PyObject *args;
 {
 	return (getConfig (self, args, ALgetsampfmt));	
 }
 
-static object *
+static PyObject *
 al_setsampfmt (self, args)
 	configobject *self;
-	object *args;
+	PyObject *args;
 {
 	return (setConfig (self, args, ALsetsampfmt));
 }
 
-static object *
+static PyObject *
 al_getfloatmax(self, args)
 	configobject *self;
-	object *args;
+	PyObject *args;
 {
 	double arg;
 
-	if ( !getnoarg(args) )
+	if ( !PyArg_NoArgs(args) )
 	  return 0;
 	arg = ALgetfloatmax(self->ob_config);
-	return newfloatobject(arg);
+	return PyFloat_FromDouble(arg);
 }
 
-static object *
+static PyObject *
 al_setfloatmax(self, args)
 	configobject *self;
-	object *args;
+	PyObject *args;
 {
 	double arg;
 
-	if ( !getargs(args, "d", &arg) )
+	if ( !PyArg_Parse(args, "d", &arg) )
 	  return 0;
 	ALsetfloatmax(self->ob_config, arg);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 #endif /* AL_405 */
 	
-static struct methodlist config_methods[] = {
-	{"getqueuesize",	(method)al_getqueuesize},
-	{"setqueuesize",	(method)al_setqueuesize},
-	{"getwidth",		(method)al_getwidth},
-	{"setwidth",		(method)al_setwidth},
-	{"getchannels",		(method)al_getchannels},
-	{"setchannels",		(method)al_setchannels},
+static PyMethodDef config_methods[] = {
+	{"getqueuesize",	(PyCFunction)al_getqueuesize},
+	{"setqueuesize",	(PyCFunction)al_setqueuesize},
+	{"getwidth",		(PyCFunction)al_getwidth},
+	{"setwidth",		(PyCFunction)al_setwidth},
+	{"getchannels",		(PyCFunction)al_getchannels},
+	{"setchannels",		(PyCFunction)al_setchannels},
 #ifdef AL_405
-	{"getsampfmt",		(method)al_getsampfmt},
-	{"setsampfmt",		(method)al_setsampfmt},
-	{"getfloatmax",		(method)al_getfloatmax},
-	{"setfloatmax",		(method)al_setfloatmax},
+	{"getsampfmt",		(PyCFunction)al_getsampfmt},
+	{"setsampfmt",		(PyCFunction)al_setsampfmt},
+	{"getfloatmax",		(PyCFunction)al_getfloatmax},
+	{"setfloatmax",		(PyCFunction)al_setfloatmax},
 #endif /* AL_405 */
 	{NULL,			NULL}		/* sentinel */
 };
@@ -211,19 +207,19 @@ config_dealloc(self)
 	configobject *self;
 {
 	ALfreeconfig(self->ob_config);
-	DEL(self);
+	PyMem_DEL(self);
 }
 
-static object *
+static PyObject *
 config_getattr(self, name)
 	configobject *self;
 	char *name;
 {
-	return findmethod(config_methods, (object *)self, name);
+	return Py_FindMethod(config_methods, (PyObject *)self, name);
 }
 
-static typeobject Configtype = {
-	OB_HEAD_INIT(&Typetype)
+static PyTypeObject Configtype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
 	"config",		/*tp_name*/
 	sizeof(configobject),	/*tp_size*/
@@ -237,36 +233,36 @@ static typeobject Configtype = {
 	0,			/*tp_repr*/
 };
 
-static object *
+static PyObject *
 newconfigobject(config)
 	ALconfig config;
 {
 	configobject *p;
 	
-	p = NEWOBJ(configobject, &Configtype);
+	p = PyObject_NEW(configobject, &Configtype);
 	if (p == NULL)
 		return NULL;
 	p->ob_config = config;
-	return (object *)p;
+	return (PyObject *)p;
 }
 
 /* Port objects */
 
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	ALport ob_port;
 } portobject;
 
-staticforward typeobject Porttype;
+staticforward PyTypeObject Porttype;
 
 #define is_portobject(v) ((v)->ob_type == &Porttype)
 
-static object *
+static PyObject *
 al_closeport (self, args)
 	portobject *self;
-	object *args;
+	PyObject *args;
 {
-	if (!getnoarg (args)) return NULL;
+	if (!PyArg_NoArgs (args)) return NULL;
 
 	if (self->ob_port != NULL) {
 		ALcloseport (self-> ob_port);
@@ -274,67 +270,68 @@ al_closeport (self, args)
 		/* XXX Using a closed port may dump core! */
 	}
 
-	INCREF (None);
-	return None;
+	Py_INCREF (Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 al_getfd (self, args)
 	portobject *self;
-	object *args;
+	PyObject *args;
 {
 	int fd;
 
-	if (!getnoarg (args)) return NULL;
+	if (!PyArg_NoArgs (args)) return NULL;
 
 	fd = ALgetfd (self-> ob_port);
 
-	return newintobject (fd);
+	return PyInt_FromLong (fd);
 }
 
-static object *
+static PyObject *
 al_getfilled (self, args)
 	portobject *self;
-	object *args;
+	PyObject *args;
 {
 	long count;
 
-	if (!getnoarg (args)) return NULL;
+	if (!PyArg_NoArgs (args)) return NULL;
 	
 	count = ALgetfilled (self-> ob_port);
 
-	return newintobject (count);
+	return PyInt_FromLong (count);
 }
 
-static object *
+static PyObject *
 al_getfillable (self, args)
 	portobject *self;
-	object *args;
+	PyObject *args;
 {
 	long count;
 
-	if (!getnoarg (args)) return NULL;
+	if (!PyArg_NoArgs (args)) return NULL;
 	
 	count = ALgetfillable (self-> ob_port);
 
-	return newintobject (count);
+	return PyInt_FromLong (count);
 }
 
-static object *
+static PyObject *
 al_readsamps (self, args)
 	portobject *self;
-	object *args;
+	PyObject *args;
 {
 	long count;
-	object *v;
+	PyObject *v;
 	ALconfig c;
 	int width;
 
-	if (!getlongarg (args, &count)) return NULL;
+	if (!PyArg_Parse (args, "l", &count)) return NULL;
 
 	if (count <= 0)
 	{
-		err_setstr (RuntimeError, "al.readsamps : arg <= 0");
+		PyErr_SetString (PyExc_RuntimeError,
+				 "al.readsamps : arg <= 0");
 		return NULL;
 	}
 
@@ -351,26 +348,26 @@ al_readsamps (self, args)
 	width = ALgetwidth(c);
 #endif /* AL_405 */
 	ALfreeconfig(c);
-	v = newsizedstringobject ((char *)NULL, width * count);
+	v = PyString_FromStringAndSize ((char *)NULL, width * count);
 	if (v == NULL) return NULL;
 
-	BGN_SAVE
-	ALreadsamps (self-> ob_port, (void *) getstringvalue(v), count);
-	END_SAVE
+	Py_BEGIN_ALLOW_THREADS
+	ALreadsamps (self-> ob_port, (void *) PyString_AsString(v), count);
+	Py_END_ALLOW_THREADS
 
 	return (v);
 }
 
-static object *
+static PyObject *
 al_writesamps (self, args)
 	portobject *self;
-	object *args;
+	PyObject *args;
 {
 	char *buf;
 	int size, width;
 	ALconfig c;
 
-	if (!getargs (args, "s#", &buf, &size)) return NULL;
+	if (!PyArg_Parse (args, "s#", &buf, &size)) return NULL;
 
 	c = ALgetconfig(self->ob_port);
 #ifdef AL_405
@@ -385,47 +382,47 @@ al_writesamps (self, args)
 	width = ALgetwidth(c);
 #endif /* AL_405 */
 	ALfreeconfig(c);
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	ALwritesamps (self-> ob_port, (void *) buf, (long) size / width);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 
-	INCREF (None);
-	return None;
+	Py_INCREF (Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 al_getfillpoint (self, args)
 	portobject *self;
-	object *args;
+	PyObject *args;
 {
 	long count;
 
-	if (!getnoarg (args)) return NULL;
+	if (!PyArg_NoArgs (args)) return NULL;
 	
 	count = ALgetfillpoint (self-> ob_port);
 
-	return newintobject (count);
+	return PyInt_FromLong (count);
 }
 
-static object *
+static PyObject *
 al_setfillpoint (self, args)
 	portobject *self;
-	object *args;
+	PyObject *args;
 {
 	long count;
 
-	if (!getlongarg (args, &count)) return NULL;
+	if (!PyArg_Parse (args, "l", &count)) return NULL;
 	
 	ALsetfillpoint (self-> ob_port, count);
 
-	INCREF (None);
-	return (None);
+	Py_INCREF (Py_None);
+	return (Py_None);
 }
 
-static object *
+static PyObject *
 al_setconfig (self, args)
 	portobject *self;
-	object *args;
+	PyObject *args;
 {
 	ALconfig config;
 
@@ -433,18 +430,18 @@ al_setconfig (self, args)
 	
 	ALsetconfig (self-> ob_port, config);
 
-	INCREF (None);
-	return (None);
+	Py_INCREF (Py_None);
+	return (Py_None);
 }
 
-static object *
+static PyObject *
 al_getconfig (self, args)
 	portobject *self;
-	object *args;
+	PyObject *args;
 {
 	ALconfig config;
 
-	if (!getnoarg (args)) return NULL;
+	if (!PyArg_NoArgs (args)) return NULL;
 	
 	config = ALgetconfig (self-> ob_port);
 
@@ -452,62 +449,62 @@ al_getconfig (self, args)
 }
 
 #ifdef AL_405
-static object *
+static PyObject *
 al_getstatus (self, args)
 	portobject *self;
-	object *args;
+	PyObject *args;
 {
-	object *list, *v;
+	PyObject *list, *v;
 	long *PVbuffer;
 	long length;
 	int i;
 	
-	if (!getargs(args, "O", &list))
+	if (!PyArg_Parse(args, "O", &list))
 		return NULL;
-	if (!is_listobject(list)) {
-		err_badarg();
+	if (!PyList_Check(list)) {
+		PyErr_BadArgument();
 		return NULL;
 	}
-	length = getlistsize(list);
-	PVbuffer = NEW(long, length);
+	length = PyList_Size(list);
+	PVbuffer = PyMem_NEW(long, length);
 	if (PVbuffer == NULL)
-		return err_nomem();
+		return PyErr_NoMemory();
 	for (i = 0; i < length; i++) {
-		v = getlistitem(list, i);
-		if (!is_intobject(v)) {
-			DEL(PVbuffer);
-			err_badarg();
+		v = PyList_GetItem(list, i);
+		if (!PyInt_Check(v)) {
+			PyMem_DEL(PVbuffer);
+			PyErr_BadArgument();
 			return NULL;
 		}
-		PVbuffer[i] = getintvalue(v);
+		PVbuffer[i] = PyInt_AsLong(v);
 	}
 
 	ALgetstatus(self->ob_port, PVbuffer, length);
 
 	for (i = 0; i < length; i++)
-	  setlistitem(list, i, newintobject(PVbuffer[i]));
+	  PyList_SetItem(list, i, PyInt_FromLong(PVbuffer[i]));
 
-	DEL(PVbuffer);
+	PyMem_DEL(PVbuffer);
 
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 #endif /* AL_405 */
 
-static struct methodlist port_methods[] = {
-	{"closeport",		(method)al_closeport},
-	{"getfd",		(method)al_getfd},
-        {"fileno",		(method)al_getfd},
-	{"getfilled",		(method)al_getfilled},
-	{"getfillable",		(method)al_getfillable},
-	{"readsamps",		(method)al_readsamps},
-	{"writesamps",		(method)al_writesamps},
-	{"setfillpoint",	(method)al_setfillpoint},
-	{"getfillpoint",	(method)al_getfillpoint},
-	{"setconfig",		(method)al_setconfig},
-	{"getconfig",		(method)al_getconfig},
+static PyMethodDef port_methods[] = {
+	{"closeport",		(PyCFunction)al_closeport},
+	{"getfd",		(PyCFunction)al_getfd},
+        {"fileno",		(PyCFunction)al_getfd},
+	{"getfilled",		(PyCFunction)al_getfilled},
+	{"getfillable",		(PyCFunction)al_getfillable},
+	{"readsamps",		(PyCFunction)al_readsamps},
+	{"writesamps",		(PyCFunction)al_writesamps},
+	{"setfillpoint",	(PyCFunction)al_setfillpoint},
+	{"getfillpoint",	(PyCFunction)al_getfillpoint},
+	{"setconfig",		(PyCFunction)al_setconfig},
+	{"getconfig",		(PyCFunction)al_getconfig},
 #ifdef AL_405
-	{"getstatus",		(method)al_getstatus},
+	{"getstatus",		(PyCFunction)al_getstatus},
 #endif /* AL_405 */	    
 	{NULL,			NULL}		/* sentinel */
 };
@@ -518,19 +515,19 @@ port_dealloc(p)
 {
 	if (p->ob_port != NULL)
 		ALcloseport(p->ob_port);
-	DEL(p);
+	PyMem_DEL(p);
 }
 
-static object *
+static PyObject *
 port_getattr(p, name)
 	portobject *p;
 	char *name;
 {
-	return findmethod(port_methods, (object *)p, name);
+	return Py_FindMethod(port_methods, (PyObject *)p, name);
 }
 
-static typeobject Porttype = {
-	OB_HEAD_INIT(&Typetype)
+static PyTypeObject Porttype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
 	"port",			/*tp_name*/
 	sizeof(portobject),	/*tp_size*/
@@ -544,37 +541,37 @@ static typeobject Porttype = {
 	0,			/*tp_repr*/
 };
 
-static object *
+static PyObject *
 newportobject(port)
 	ALport port;
 {
 	portobject *p;
 	
-	p = NEWOBJ(portobject, &Porttype);
+	p = PyObject_NEW(portobject, &Porttype);
 	if (p == NULL)
 		return NULL;
 	p->ob_port = port;
-	return (object *)p;
+	return (PyObject *)p;
 }
 
 /* the module al */
 
-static object *
+static PyObject *
 al_openport (self, args)
-	object *self, *args;
+	PyObject *self, *args;
 {
 	char *name, *dir;
 	ALport port;
 	ALconfig config = NULL;
 	int size;
 
-	if (args == NULL || !is_tupleobject(args)) {
-		err_badarg ();
+	if (args == NULL || !PyTuple_Check(args)) {
+		PyErr_BadArgument ();
 		return NULL;
 	}
-	size = gettuplesize(args);
+	size = PyTuple_Size(args);
 	if (size == 2) {
-		if (!getargs (args, "(ss)", &name, &dir))
+		if (!PyArg_Parse (args, "(ss)", &name, &dir))
 			return NULL;
 	}
 	else if (size == 3) {
@@ -582,188 +579,189 @@ al_openport (self, args)
 			return NULL;
 	}
 	else {
-		err_badarg ();
+		PyErr_BadArgument ();
 		return NULL;
 	}
 
 	port = ALopenport(name, dir, config);
 
 	if (port == NULL) {
-		err_errno(RuntimeError);
+		PyErr_SetFromErrno(PyExc_RuntimeError);
 		return NULL;
 	}
 
 	return newportobject (port);
 }
 
-static object *
+static PyObject *
 al_newconfig (self, args)
-	object *self, *args;
+	PyObject *self, *args;
 {
 	ALconfig config;
 
-	if (!getnoarg (args)) return NULL;
+	if (!PyArg_NoArgs (args)) return NULL;
 
 	config = ALnewconfig ();
 	if (config == NULL) {
-		err_errno(RuntimeError);
+		PyErr_SetFromErrno(PyExc_RuntimeError);
 		return NULL;
 	}
 
 	return newconfigobject (config);
 }
 
-static object *
+static PyObject *
 al_queryparams(self, args)
-	object *self, *args;
+	PyObject *self, *args;
 {
 	long device;
 	long length;
 	long *PVbuffer;
 	long PVdummy[2];
-	object *v;
+	PyObject *v;
 
-	if (!getlongarg (args, &device))
+	if (!PyArg_Parse (args, "l", &device))
 		return NULL;
 	length = ALqueryparams(device, PVdummy, 2L);
-	PVbuffer = NEW(long, length);
+	PVbuffer = PyMem_NEW(long, length);
 	if (PVbuffer == NULL)
-		return err_nomem();
+		return PyErr_NoMemory();
 	(void) ALqueryparams(device, PVbuffer, length);
-	v = newlistobject((int)length);
+	v = PyList_New((int)length);
 	if (v != NULL) {
 		int i;
 		for (i = 0; i < length; i++)
-			setlistitem(v, i, newintobject(PVbuffer[i]));
+			PyList_SetItem(v, i, PyInt_FromLong(PVbuffer[i]));
 	}
-	DEL(PVbuffer);
+	PyMem_DEL(PVbuffer);
 	return v;
 }
 
-static object *
+static PyObject *
 doParams(args, func, modified)
-	object *args;
+	PyObject *args;
 	void (*func)(long, long *, long);
 	int modified;
 {
 	long device;
-	object *list, *v;
+	PyObject *list, *v;
 	long *PVbuffer;
 	long length;
 	int i;
 	
-	if (!getargs(args, "(lO)", &device, &list))
+	if (!PyArg_Parse(args, "(lO)", &device, &list))
 		return NULL;
-	if (!is_listobject(list)) {
-		err_badarg();
+	if (!PyList_Check(list)) {
+		PyErr_BadArgument();
 		return NULL;
 	}
-	length = getlistsize(list);
-	PVbuffer = NEW(long, length);
+	length = PyList_Size(list);
+	PVbuffer = PyMem_NEW(long, length);
 	if (PVbuffer == NULL)
-		return err_nomem();
+		return PyErr_NoMemory();
 	for (i = 0; i < length; i++) {
-		v = getlistitem(list, i);
-		if (!is_intobject(v)) {
-			DEL(PVbuffer);
-			err_badarg();
+		v = PyList_GetItem(list, i);
+		if (!PyInt_Check(v)) {
+			PyMem_DEL(PVbuffer);
+			PyErr_BadArgument();
 			return NULL;
 		}
-		PVbuffer[i] = getintvalue(v);
+		PVbuffer[i] = PyInt_AsLong(v);
 	}
 
 	(*func)(device, PVbuffer, length);
 
 	if (modified) {
 		for (i = 0; i < length; i++)
-			setlistitem(list, i, newintobject(PVbuffer[i]));
+			PyList_SetItem(list, i, PyInt_FromLong(PVbuffer[i]));
 	}
 
-	DEL(PVbuffer);
+	PyMem_DEL(PVbuffer);
 
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 al_getparams(self, args)
-	object *self, *args;
+	PyObject *self, *args;
 {
 	return doParams(args, ALgetparams, 1);
 }
 
-static object *
+static PyObject *
 al_setparams(self, args)
-	object *self, *args;
+	PyObject *self, *args;
 {
 	return doParams(args, ALsetparams, 0);
 }
 
-static object *
+static PyObject *
 al_getname(self, args)
-	object *self, *args;
+	PyObject *self, *args;
 {
 	long device, descriptor;
 	char *name;
-	if (!getargs(args, "(ll)", &device, &descriptor))
+	if (!PyArg_Parse(args, "(ll)", &device, &descriptor))
 		return NULL;
 	name = ALgetname(device, descriptor);
 	if (name == NULL) {
-		err_setstr(ValueError, "al.getname: bad descriptor");
+		PyErr_SetString(PyExc_ValueError,
+				"al.getname: bad descriptor");
 		return NULL;
 	}
-	return newstringobject(name);
+	return PyString_FromString(name);
 }
 
-static object *
+static PyObject *
 al_getdefault(self, args)
-	object *self, *args;
+	PyObject *self, *args;
 {
 	long device, descriptor, value;
-	if (!getargs(args, "(ll)", &device, &descriptor))
+	if (!PyArg_Parse(args, "(ll)", &device, &descriptor))
 		return NULL;
 	value = ALgetdefault(device, descriptor);
-	return newlongobject(value);
+	return PyLong_FromLong(value);
 }
 
-static object *
+static PyObject *
 al_getminmax(self, args)
-	object *self, *args;
+	PyObject *self, *args;
 {
 	long device, descriptor, min, max;
-	if (!getargs(args, "(ll)", &device, &descriptor))
+	if (!PyArg_Parse(args, "(ll)", &device, &descriptor))
 		return NULL;
 	min = -1;
 	max = -1;
 	ALgetminmax(device, descriptor, &min, &max);
-	return mkvalue("ll", min, max);
+	return Py_BuildValue("ll", min, max);
 }
 
-static struct methodlist al_methods[] = {
-	{"openport",		(method)al_openport},
-	{"newconfig",		(method)al_newconfig},
-	{"queryparams",		(method)al_queryparams},
-	{"getparams",		(method)al_getparams},
-	{"setparams",		(method)al_setparams},
-	{"getname",		(method)al_getname},
-	{"getdefault",		(method)al_getdefault},
-	{"getminmax",		(method)al_getminmax},
+static PyMethodDef al_methods[] = {
+	{"openport",		(PyCFunction)al_openport},
+	{"newconfig",		(PyCFunction)al_newconfig},
+	{"queryparams",		(PyCFunction)al_queryparams},
+	{"getparams",		(PyCFunction)al_getparams},
+	{"setparams",		(PyCFunction)al_setparams},
+	{"getname",		(PyCFunction)al_getname},
+	{"getdefault",		(PyCFunction)al_getdefault},
+	{"getminmax",		(PyCFunction)al_getminmax},
 	{NULL,			NULL}		/* sentinel */
 };
 
 void
 inital()
 {
-	initmodule("al", al_methods);
+	Py_InitModule("al", al_methods);
 }
 
 static int
 getconfigarg(o, conf)
-	object *o;
+	PyObject *o;
 	ALconfig *conf;
 {
 	if (o == NULL || !is_configobject(o))
-		return err_badarg ();
+		return PyErr_BadArgument ();
 	
 	*conf = ((configobject *) o) -> ob_config;
 	
@@ -772,11 +770,22 @@ getconfigarg(o, conf)
 
 static int
 getstrstrconfigarg(v, a, b, c)
-	object *v;
+	PyObject *v;
 	char **a;
 	char **b;
 	ALconfig *c;
 {
-	object *o;
-	return getargs(v, "(ssO)", a, b, &o) && getconfigarg(o, c);
+	PyObject *o;
+	return PyArg_Parse(v, "(ssO)", a, b, &o) && getconfigarg(o, c);
 }
+
+
+
+
+
+
+
+
+
+
+
