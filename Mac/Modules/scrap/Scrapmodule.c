@@ -97,7 +97,6 @@ static PyObject *Scrap_GetScrap(_self, _args)
 }
 #endif
 
-#if !TARGET_API_MAC_CARBON
 
 static PyObject *Scrap_ZeroScrap(_self, _args)
 	PyObject *_self;
@@ -107,15 +106,22 @@ static PyObject *Scrap_ZeroScrap(_self, _args)
 	OSStatus _err;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
+#if TARGET_API_MAC_CARBON
+	{
+		ScrapRef scrap;
+		
+		_err = ClearCurrentScrap();
+		if (_err != noErr) return PyMac_Error(_err);
+		_err = GetCurrentScrap(&scrap);
+	}
+#else
 	_err = ZeroScrap();
+#endif
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
-#endif
-
-#if !TARGET_API_MAC_CARBON
 
 static PyObject *Scrap_PutScrap(_self, _args)
 	PyObject *_self;
@@ -128,22 +134,31 @@ static PyObject *Scrap_PutScrap(_self, _args)
 	char *sourceBuffer__in__;
 	int sourceBuffer__len__;
 	int sourceBuffer__in_len__;
+#if TARGET_API_MAC_CARBON
+	ScrapRef scrap;
+#endif
+
 	if (!PyArg_ParseTuple(_args, "O&s#",
 	                      PyMac_GetOSType, &flavorType,
 	                      &sourceBuffer__in__, &sourceBuffer__in_len__))
 		return NULL;
 	sourceBufferByteCount = sourceBuffer__in_len__;
 	sourceBuffer__len__ = sourceBuffer__in_len__;
+#if TARGET_API_MAC_CARBON
+	_err = GetCurrentScrap(&scrap);
+	if (_err != noErr) return PyMac_Error(_err);
+	_err = PutScrapFlavor(scrap, flavorType, 0, sourceBufferByteCount, sourceBuffer__in__);
+#else
 	_err = PutScrap(sourceBufferByteCount,
 	                flavorType,
 	                sourceBuffer__in__);
+#endif
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
  sourceBuffer__error__: ;
 	return _res;
 }
-#endif
 
 #if TARGET_API_MAC_CARBON
 
@@ -197,15 +212,11 @@ static PyMethodDef Scrap_methods[] = {
 	 "(Handle destination, ScrapFlavorType flavorType) -> (long _rv, SInt32 offset)"},
 #endif
 
-#if !TARGET_API_MAC_CARBON
 	{"ZeroScrap", (PyCFunction)Scrap_ZeroScrap, 1,
 	 "() -> None"},
-#endif
 
-#if !TARGET_API_MAC_CARBON
 	{"PutScrap", (PyCFunction)Scrap_PutScrap, 1,
-	 "(SInt32 sourceBufferByteCount, ScrapFlavorType flavorType, Buffer sourceBuffer) -> None"},
-#endif
+	 "(ScrapFlavorType flavorType, Buffer sourceBuffer) -> None"},
 
 #if TARGET_API_MAC_CARBON
 	{"ClearCurrentScrap", (PyCFunction)Scrap_ClearCurrentScrap, 1,
