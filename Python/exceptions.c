@@ -775,18 +775,20 @@ SyntaxError__str__(PyObject *self, PyObject *args)
 	int have_lineno = 0;
 	char *buffer = NULL;
 
-	if (filename = PyObject_GetAttrString(self, "filename"))
+	if ((filename = PyObject_GetAttrString(self, "filename")) != NULL)
 	    have_filename = PyString_Check(filename);
 	else
 	    PyErr_Clear();
-	if (lineno = PyObject_GetAttrString(self, "lineno"))
+
+	if ((lineno = PyObject_GetAttrString(self, "lineno")) != NULL)
 	    have_lineno = PyInt_Check(lineno);
 	else
 	    PyErr_Clear();
 
 	if (have_filename || have_lineno) {
-	    int bufsize = (PyString_GET_SIZE(str) + 64 +
-			   PyString_GET_SIZE(filename));
+	    int bufsize = PyString_GET_SIZE(str) + 64;
+	    if (have_filename)
+		bufsize += PyString_GET_SIZE(filename);
 
 	    buffer = PyMem_Malloc(bufsize);
 	    if (buffer != NULL) {
@@ -803,7 +805,10 @@ SyntaxError__str__(PyObject *self, PyObject *args)
 		    sprintf(buffer, "%s (line %d)",
 			    PyString_AS_STRING(str),
 			    PyInt_AsLong(lineno));
+
 		result = PyString_FromString(buffer);
+		PyMem_FREE(buffer);
+
 		if (result == NULL)
 		    result = str;
 		else
