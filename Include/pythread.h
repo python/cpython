@@ -19,6 +19,24 @@ typedef void *type_sema;
 extern "C" {
 #endif
 
+/* Macros defining new names for all these symbols */
+#define init_thread PyThread_init_thread
+#define start_new_thread PyThread_start_new_thread
+#define exit_thread PyThread_exit_thread
+#define _exit_thread PyThread__exit_thread
+#define get_thread_ident PyThread_get_thread_ident
+#define allocate_lock PyThread_allocate_lock
+#define free_lock PyThread_free_lock
+#define acquire_lock PyThread_acquire_lock
+#define release_lock PyThread_release_lock
+#define allocate_sema PyThread_allocate_sema
+#define free_sema PyThread_free_sema
+#define down_sema PyThread_down_sema
+#define up_sema PyThread_up_sema
+#define exit_prog PyThread_exit_prog
+#define _exit_prog PyThread__exit_prog
+
+
 void init_thread Py_PROTO((void));
 int start_new_thread Py_PROTO((void (*)(void *), void *));
 void exit_thread Py_PROTO((void));
