@@ -1828,6 +1828,99 @@ This \UNIX\ is also followed by a space.
     PostScript versions of the formatted documentation.
 
 
+\section{Including Graphics \label{graphics}}
+
+  The standard documentation included with Python makes no use of
+  diagrams or images; this is intentional.  The outside tools used to
+  format the documentation have not always been suited to working with
+  graphics.  As the tools have evolved and been improved by their
+  maintainers, support for graphics has improved.
+
+  The internal tools, starting with the \program{mkhowto} script, do
+  not provide any direct support for graphics.  However,
+  \program{mkhowto} will not interfere with graphics support in the
+  external tools.
+
+  Experience using graphics together with these tools and the
+  \code{howto} and \code{manual} document classes is not extensive,
+  but has been known to work.  The basic approach is this:
+
+  \begin{enumerate}
+    \item Create the image or graphic using your favorite
+          application.
+
+    \item Convert the image to a format supported by the conversion to
+          your desired output format.  If you want to generate HTML or
+          PostScript, you can convert the image or graphic to
+          encapsulated PostScript (a \file{.eps} file); \LaTeX2HTML
+          can convert that to a \file{.gif} file; it may be possible
+          to provide a \file{.gif} file directly.  If you want to
+          generate PDF, you need to provide an ``encapsulated'' PDF
+          file.  This can be generated from encapsulated PostScript
+          using the \program{epstopdf} tool provided with the te\TeX{}
+          distribution on Linux and \UNIX.
+
+    \item In your document, add this line to ``import'' the general
+          graphics support package \code{graphicx}:
+
+\begin{verbatim}
+\usepackage{graphicx}
+\end{verbatim}
+
+    \item Where you want to include your graphic or image, include
+          markup similar to this:
+
+\begin{verbatim}
+\begin{figure}
+  \centering
+  \includegraphics[width=5in]{myimage}
+  \caption{Description of my image}
+\end{figure}
+\end{verbatim}
+
+          In particular, note for the \macro{includegraphics} macro
+          that no file extension is provided.  If you're only
+          interested in one target format, you can include the
+          extension of the appropriate input file, but to allow
+          support for multiple formats, omitting the extension makes
+          life easier.
+
+    \item Run \program{mkhowto} normally.
+  \end{enumerate}
+
+  If you're working on systems which support some sort of
+  \program{make} facility, you can use that to ensure the intermediate
+  graphic formats are kept up to date.  This example shows a
+  \file{Makefile} used to format a document containing a diagram
+  created using the \program{dia} application:
+
+\begin{verbatim}
+default: pdf
+all:     html pdf ps
+
+html:   mydoc/mydoc.html
+pdf:    mydoc.pdf
+ps:     mydoc.ps
+
+mydoc/mydoc.html:  mydoc.tex mygraphic.eps
+        mkhowto --html $<
+
+mydoc.pdf:  mydoc.tex mygraphic.pdf
+        mkhowto --pdf $<
+
+mydoc.ps:   mydoc.tex mygraphic.eps
+        mkhowto --postscript $<
+
+.SUFFIXES: .dia .eps .pdf
+
+.dia.eps:
+        dia --nosplash --export $@ $<
+
+.eps.pdf:
+        epstopdf $<
+\end{verbatim} % $ <-- bow to font-lock
+
+
 \section{Future Directions \label{futures}}
 
   The history of the Python documentation is full of changes, most of
