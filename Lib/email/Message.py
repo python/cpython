@@ -672,7 +672,7 @@ class Message:
         if not self.has_key(header):
             return
         new_ctype = ''
-        for p, v in self.get_params(header, unquote=requote):
+        for p, v in self.get_params(header=header, unquote=requote):
             if p.lower() <> param.lower():
                 if not new_ctype:
                     new_ctype = _formatparam(p, v, requote)
@@ -708,7 +708,7 @@ class Message:
         if not self.has_key(header):
             self[header] = type
             return
-        params = self.get_params(header, unquote=requote)
+        params = self.get_params(header=header, unquote=requote)
         del self[header]
         self[header] = type
         # Skip the first param; it's the old type.
