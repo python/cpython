@@ -24,7 +24,9 @@ This class provides the following interface methods and instance variables:
 A mapping of element names to mappings.  The latter mapping maps
 attribute names that are valid for the element to the default value of 
 the attribute, or if there is no default to \code{None}.  The default
-value is the empty dictionary.
+value is the empty dictionary.  This variable is meant to be
+overridden, not extended since the default is shared by all instances
+of \class{XMLParser}.
 \end{memberdesc}
 
 \begin{memberdesc}{elements} 
@@ -32,7 +34,9 @@ A mapping of element names to tuples.  The tuples contain a function
 for handling the start and end tag respectively of the element, or
 \code{None} if the method \method{unknown_starttag()} or
 \method{unknown_endtag()} is to be called.  The default value is the
-empty dictionary.
+empty dictionary.  This variable is meant to be overridden, not
+extended since the default is shared by all instances of
+\class{XMLParser}.
 \end{memberdesc}
 
 \begin{memberdesc}{entitydefs}
