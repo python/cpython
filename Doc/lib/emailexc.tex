@@ -21,7 +21,7 @@ a message, this class is derived from \exception{MessageParseError}.
 It can be raised from the \method{Parser.parse()} or
 \method{Parser.parsestr()} methods.
 
-Situations where it can be raised include finding a \emph{Unix-From}
+Situations where it can be raised include finding an envelope
 header after the first \rfc{2822} header of the message, finding a
 continuation line before the first \rfc{2822} header is found, or finding
 a line in the headers which is neither a header or a continuation
@@ -35,7 +35,8 @@ It can be raised from the \method{Parser.parse()} or
 \method{Parser.parsestr()} methods.
 
 Situations where it can be raised include not being able to find the
-starting or terminating boundary in a \mimetype{multipart/*} message.
+starting or terminating boundary in a \mimetype{multipart/*} message
+when strict parsing is used.
 \end{excclassdesc}
 
 \begin{excclassdesc}{MultipartConversionError}{}
@@ -45,4 +46,9 @@ message's \mailheader{Content-Type} main type is not either
 \mimetype{multipart} or missing.  \exception{MultipartConversionError}
 multiply inherits from \exception{MessageError} and the built-in
 \exception{TypeError}.
+
+Since \method{Message.add_payload()} is deprecated, this exception is
+rarely raised in practice.  However the exception may also be raised
+if the \method{attach()} method is called on an instance of a class
+derived from \class{MIMENonMultipart} (e.g. \class{MIMEImage}).
 \end{excclassdesc}

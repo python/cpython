@@ -1,0 +1,409 @@
+\declaremodule{standard}{email.Header}
+\modulesynopsis{Representing non-ASCII headers}
+
+\rfc{2822} is the base standard that describes the format of email
+messages.  It derives from the older \rfc{822} standard which came
+into widespread at a time when most email was composed of \ASCII{}
+characters only.  \rfc{2822} is a specification written assuming email
+contains only 7-bit \ASCII{} characters.
+
+Of course, as email has been deployed worldwide, it has become
+internationalized, such that language specific character sets can now
+be used in email messages.  The base standard still requires email
+messages to be transfered using only 7-bit \ASCII{} characters, so a
+slew of RFCs have been written describing how to encode email
+containing non-\ASCII{} characters into \rfc{2822}-compliant format.
+These RFCs include \rfc{2045}, \rfc{2046}, \rfc{2047}, and \rfc{2231}.
+The \module{email} package supports these standards in its
+\module{email.Header} and \module{email.Charset} modules.
+
+If you want to include non-\ASCII{} characters in your email headers,
+say in the \mailheader{Subject} or \mailheader{To} fields, you should
+use the \class{Header} class (in module \module{email.Header} and
+assign the field in the \class{Message} object to an instance of
+\class{Header} instead of using a string for the header value.  For
+example:
+
+\begin{verbatim}
+>>> from email.Message import Message
+>>> from email.Header import Header
+>>> msg = Message()
+>>> h = Header('p\xf6stal', 'iso-8859-1')
+>>> msg['Subject'] = h
+>>> print msg.as_string()
+Subject: =?iso-8859-1?q?p=F6stal?=
+
+
+\end{verbatim}
+
+Notice here how we wanted the \mailheader{Subject} field to contain a
+non-\ASCII{} character?  We did this by creating a \class{Header}
+instance and passing in the character set that the byte string was
+encoded in.  When the subsequent \class{Message} instance was
+flattened, the \mailheader{Subject} field was properly \rfc{2047}
+encoded.  MIME-aware mail readers would show this header using the
+embedded ISO-8859-1 character.
+
+\versionadded{2.2.2}
+
+Here is the \class{Header} class description:
+
+\begin{classdesc}{Header}{\optional{s\optional{, charset\optional{,
+    maxlinelen\optional{, header_name\optional{, continuation_ws}}}}}}
+Create a MIME-compliant header that can contain many character sets.
+
+Optional \var{s} is the initial header value.  If \code{None} (the
+default), the initial header value is not set.  You can later append
+to the header with \method{append()} method calls.  \var{s} may be a
+byte string or a Unicode string, but see the \method{append()}
+documentation for semantics.
+
+Optional \var{charset} serves two purposes: it has the same meaning as
+the \var{charset} argument to the \method{append()} method.  It also
+sets the default character set for all subsequent \method{append()}
+calls that omit the \var{charset} argument.  If \var{charset} is not
+provided in the constructor (the default), the \code{us-ascii}
+character set is used both as \var{s}'s initial charset and as the
+default for subsequent \method{append()} calls.
+
+The maximum line length can be specified explicit via
+\var{maxlinelen}.  For splitting the first line to a shorter value (to
+account for the field header which isn't included in \var{s},
+e.g. \mailheader{Subject}) pass in the name of the field in
+\var{header_name}.  The default \var{maxlinelen} is 76, and the
+default value for \var{header_name} is \code{None}, meaning it is not
+taken into account for the first line of a long, split header.
+
+Optional \var{continuation_ws} must be RFC 2822 compliant folding
+whitespace, and is usually either a space or a hard tab character.
+This character will be prepended to continuation lines.
+\end{classdesc}
+
+\begin{methoddesc}[Header]{append}{s\optional{, charset}}
+Append the string \var{s} to the MIME header.
+
+Optional \var{charset}, if given, should be a \class{Charset} instance
+(see \refmodule{email.Charset}) or the name of a character set, which
+will be converted to a \class{Charset} instance.  A value of
+\code{None} (the default) means that the \var{charset} given in the
+constructor is used.
+
+\var{s} may be a byte string or a Unicode string.  If it is a byte
+string (i.e. \code{isinstance(s, StringType)} is true), then
+\var{charset} is the encoding of that byte string, and a
+\exception{UnicodeError} will be raised if the string cannot be
+decoded with that character set.
+
+If \var{s} is a Unicode string, then \var{charset} is a hint
+specifying the character set of the characters in the string.  In this
+case, when producing an \rfc{2822}-compliant header using \rfc{2047}
+rules, the Unicode string will be encoded using the following charsets
+in order: \code{us-ascii}, the \var{charset} hint, \code{utf-8}.  The
+first character set to not provoke a \exception{UnicodeError} is used.
+\end{methoddesc}
+
+\begin{methoddesc}[Header]{encode}{}
+Encode a message header into an RFC-compliant format, possibly
+wrapping long lines and encapsulating non-\ASCII{} parts in base64 or
+quoted-printable encodings.
+\end{methoddesc}
+
+The \class{Header} class also provides a number of methods to support
+standard operators and built-in functions.
+
+\begin{methoddesc}[Header]{__str__}{}
+A synonym for \method{Header.encode()}.  Useful for
+\code{str(aHeader)} calls.
+\end{methoddesc}
+
+\begin{methoddesc}[Header]{__unicode__}{}
+A helper for the built-in \function{unicode()} function.  Returns the
+header as a Unicode string.
+\end{methoddesc}
+
+\begin{methoddesc}[Header]{__eq__}{other}
+This method allows you to compare two \class{Header} instances for equality.
+\end{methoddesc}
+
+\begin{methoddesc}[Header]{__ne__}{other}
+This method allows you to compare two \class{Header} instances for inequality.
+\end{methoddesc}
+
+The \module{email.Header} module also provides the following
+convenient functions.
+
+\begin{funcdesc}{decode_header}{header}
+Decode a message header value without converting the character set.
+The header value is in \var{header}.
+
+This function returns a list of \code{(decoded_string, charset)} pairs
+containing each of the decoded parts of the header.  \var{charset} is
+\code{None} for non-encoded parts of the header, otherwise a lower
+case string containing the name of the character set specified in the
+encoded string.
+
+Here's an example:
+
+\begin{verbatim}
+>>> from email.Header import decode_header
+>>> decode_header('=?iso-8859-1?q?p=F6stal?=')
+[('p\\xf6stal', 'iso-8859-1')]
+\end{verbatim}
+\end{funcdesc}
+
+\begin{funcdesc}{make_header}{decoded_seq\optional{, maxlinelen\optional{,
+    header_name\optional{, continuation_ws}}}}
+Create a \class{Header} instance from a sequence of pairs as returned
+by \function{decode_header()}.
+
+\function{decode_header()} takes a header value string and returns a
+sequence of pairs of the format \code{(decoded_string, charset)} where
+\var{charset} is the name of the character set.
+
+This function takes one of those sequence of pairs and returns a
+\class{Header} instance.  Optional \var{maxlinelen},
+\var{header_name}, and \var{continuation_ws} are as in the
+\class{Header} constructor.
+\end{funcdesc}
+
+\declaremodule{standard}{email.Charset}
+\modulesynopsis{Character Sets}
+
+This module provides a class \class{Charset} for representing
+character sets and character set conversions in email messages, as
+well as a character set registry and several convenience methods for
+manipulating this registry.  Instances of \class{Charset} are used in
+several other modules within the \module{email} package.
+
+\versionadded{2.2.2}
+
+\begin{classdesc}{Charset}{\optional{input_charset}}
+Map character sets to their email properties.
+
+This class provides information about the requirements imposed on
+email for a specific character set.  It also provides convenience
+routines for converting between character sets, given the availability
+of the applicable codecs.  Given a character set, it will do its best
+to provide information on how to use that character set in an email
+message in an RFC-compliant way.
+
+Certain character sets must be encoded with quoted-printable or base64
+when used in email headers or bodies.  Certain character sets must be
+converted outright, and are not allowed in email.
+
+Optional \var{input_charset} is as described below.  After being alias
+normalized it is also used as a lookup into the registry of character
+sets to find out the header encoding, body encoding, and output
+conversion codec to be used for the character set.  For example, if
+\var{input_charset} is \code{iso-8859-1}, then headers and bodies will
+be encoded using quoted-printable and no output conversion codec is
+necessary.  If \var{input_charset} is \code{euc-jp}, then headers will
+be encoded with base64, bodies will not be encoded, but output text
+will be converted from the \code{euc-jp} character set to the
+\code{iso-2022-jp} character set.
+\end{classdesc}
+
+\class{Charset} instances have the following data attributes:
+
+\begin{datadesc}{input_charset}
+The initial character set specified.  Common aliases are converted to
+their \emph{official} email names (e.g. \code{latin_1} is converted to
+\code{iso-8859-1}).  Defaults to 7-bit \code{us-ascii}.
+\end{datadesc}
+
+\begin{datadesc}{header_encoding}
+If the character set must be encoded before it can be used in an
+email header, this attribute will be set to \code{Charset.QP} (for
+quoted-printable), \code{Charset.BASE64} (for base64 encoding), or
+\code{Charset.SHORTEST} for the shortest of QP or BASE64 encoding.
+Otherwise, it will be \code{None}.
+\end{datadesc}
+
+\begin{datadesc}{body_encoding}
+Same as \var{header_encoding}, but describes the encoding for the
+mail message's body, which indeed may be different than the header
+encoding.  \code{Charset.SHORTEST} is not allowed for
+\var{body_encoding}.
+\end{datadesc}
+
+\begin{datadesc}{output_charset}
+Some character sets must be converted before the can be used in
+email headers or bodies.  If the \var{input_charset} is one of
+them, this attribute will contain the name of the character set
+output will be converted to.  Otherwise, it will be \code{None}.
+\end{datadesc}
+
+\begin{datadesc}{input_codec}
+The name of the Python codec used to convert the \var{input_charset} to
+Unicode.  If no conversion codec is necessary, this attribute will be
+\code{None}.
+\end{datadesc}
+
+\begin{datadesc}{output_codec}
+The name of the Python codec used to convert Unicode to the
+\var{output_charset}.  If no conversion codec is necessary, this
+attribute will have the same value as the \var{input_codec}.
+\end{datadesc}
+
+\class{Charset} instances also have the following methods:
+
+\begin{methoddesc}[Charset]{get_body_encoding}{}
+Return the content transfer encoding used for body encoding.
+
+This is either the string \samp{quoted-printable} or \samp{base64}
+depending on the encoding used, or it is a function, in which case you
+should call the function with a single argument, the Message object
+being encoded.  The function should then set the
+\mailheader{Content-Transfer-Encoding} header itself to whatever is
+appropriate.
+
+Returns the string \samp{quoted-printable} if
+\var{body_encoding} is \code{QP}, returns the string
+\samp{base64} if \var{body_encoding} is \code{BASE64}, and returns the
+string \samp{7bit} otherwise.
+\end{methoddesc}
+
+\begin{methoddesc}{convert}{s}
+Convert the string \var{s} from the \var{input_codec} to the
+\var{output_codec}.
+\end{methoddesc}
+
+\begin{methoddesc}{to_splittable}{s}
+Convert a possibly multibyte string to a safely splittable format.
+\var{s} is the string to split.
+
+Uses the \var{input_codec} to try and convert the string to Unicode,
+so it can be safely split on character boundaries (even for multibyte
+characters).
+
+Returns the string as-is if it isn't known how to convert \var{s} to
+Unicode with the \var{input_charset}.
+
+Characters that could not be converted to Unicode will be replaced
+with the Unicode replacement character \character{U+FFFD}.
+\end{methoddesc}
+
+\begin{methoddesc}{from_splittable}{ustr\optional{, to_output}}
+Convert a splittable string back into an encoded string.  \var{ustr}
+is a Unicode string to ``unsplit''.
+
+This method uses the proper codec to try and convert the string from
+Unicode back into an encoded format.  Return the string as-is if it is
+not Unicode, or if it could not be converted from Unicode.
+
+Characters that could not be converted from Unicode will be replaced
+with an appropriate character (usually \character{?}).
+
+If \var{to_output} is \code{True} (the default), uses
+\var{output_codec} to convert to an 
+encoded format.  If \var{to_output} is \code{False}, it uses
+\var{input_codec}.
+\end{methoddesc}
+
+\begin{methoddesc}{get_output_charset}{}
+Return the output character set.
+
+This is the \var{output_charset} attribute if that is not \code{None},
+otherwise it is \var{input_charset}.
+\end{methoddesc}
+
+\begin{methoddesc}{encoded_header_len}{}
+Return the length of the encoded header string, properly calculating
+for quoted-printable or base64 encoding.
+\end{methoddesc}
+
+\begin{methoddesc}{header_encode}{s\optional{, convert}}
+Header-encode the string \var{s}.
+
+If \var{convert} is \code{True}, the string will be converted from the
+input charset to the output charset automatically.  This is not useful
+for multibyte character sets, which have line length issues (multibyte
+characters must be split on a character, not a byte boundary); use the
+higher-level \class{Header} class to deal with these issues (see
+\refmodule{email.Header}).  \var{convert} defaults to \code{False}.
+
+The type of encoding (base64 or quoted-printable) will be based on
+the \var{header_encoding} attribute.
+\end{methoddesc}
+
+\begin{methoddesc}{body_encode}{s\optional{, convert}}
+Body-encode the string \var{s}.
+
+If \var{convert} is \code{True} (the default), the string will be
+converted from the input charset to output charset automatically.
+Unlike \method{header_encode()}, there are no issues with byte
+boundaries and multibyte charsets in email bodies, so this is usually
+pretty safe.
+
+The type of encoding (base64 or quoted-printable) will be based on
+the \var{body_encoding} attribute.
+\end{methoddesc}
+
+The \class{Charset} class also provides a number of methods to support
+standard operations and built-in functions.
+
+\begin{methoddesc}[Charset]{__str__}{}
+Returns \var{input_charset} as a string coerced to lower case.
+\end{methoddesc}
+
+\begin{methoddesc}[Charset]{__eq__}{other}
+This method allows you to compare two \class{Charset} instances for equality.
+\end{methoddesc}
+
+\begin{methoddesc}[Header]{__ne__}{other}
+This method allows you to compare two \class{Charset} instances for inequality.
+\end{methoddesc}
+
+The \module{email.Charset} module also provides the following
+functions for adding new entries to the global character set, alias,
+and codec registries:
+
+\begin{funcdesc}{add_charset}{charset\optional{, header_enc\optional{,
+    body_enc\optional{, output_charset}}}}
+Add character properties to the global registry.
+
+\var{charset} is the input character set, and must be the canonical
+name of a character set.
+
+Optional \var{header_enc} and \var{body_enc} is either
+\code{Charset.QP} for quoted-printable, \code{Charset.BASE64} for
+base64 encoding, \code{Charset.SHORTEST} for the shortest of qp or
+base64 encoding, or \code{None} for no encoding.  \code{SHORTEST} is
+only valid for \var{header_enc}.  It describes how message headers and
+message bodies in the input charset are to be encoded.  Default is no
+encoding.
+
+Optional \var{output_charset} is the character set that the output
+should be in.  Conversions will proceed from input charset, to
+Unicode, to the output charset when the method
+\method{Charset.convert()} is called.  The default is to output in the
+same character set as the input.
+
+Both \var{input_charset} and \var{output_charset} must have Unicode
+codec entries in the module's character set-to-codec mapping; use
+\function{add_codec(charset, codecname)} to add codecs the module does
+not know about.  See the \refmodule{codecs} module's documentation for
+more information.
+
+The global character set registry is kept in the module global
+dictionary \code{CHARSETS}.
+\end{funcdesc}
+
+\begin{funcdesc}{add_alias}{alias, canonical}
+Add a character set alias.  \var{alias} is the alias name,
+e.g. \code{latin-1}.  \var{canonical} is the character set's canonical
+name, e.g. \code{iso-8859-1}.
+
+The global charset alias registry is kept in the module global
+dictionary \code{ALIASES}.
+\end{funcdesc}
+
+\begin{funcdesc}{add_codec}{charset, codecname}
+Add a codec that map characters in the given character set to and from
+Unicode.
+
+\var{charset} is the canonical name of a character set.
+\var{codecname} is the name of a Python codec, as appropriate for the
+second argument to the \function{unicode()} built-in, or to the
+\method{encode()} method of a Unicode string.
+\end{funcdesc}

@@ -12,12 +12,12 @@ values where the field name and value are separated by a colon.  The
 colon is not part of either the field name or the field value.
 
 Headers are stored and returned in case-preserving form but are
-matched case-insensitively.  There may also be a single
-\emph{Unix-From} header, also known as the envelope header or the
+matched case-insensitively.  There may also be a single envelope
+header, also known as the \emph{Unix-From} header or the
 \code{From_} header.  The payload is either a string in the case of
-simple message objects, a list of \class{Message} objects for
-multipart MIME documents, or a single \class{Message} instance for
-\mimetype{message/rfc822} type objects.
+simple message objects or a list of \class{Message} objects for
+MIME container documents (e.g. \mimetype{multipart/*} and
+\mimetype{message/rfc822}).
 
 \class{Message} objects provide a mapping style interface for
 accessing the message headers, and an explicit interface for accessing
@@ -35,82 +35,96 @@ The constructor takes no arguments.
 \begin{methoddesc}[Message]{as_string}{\optional{unixfrom}}
 Return the entire formatted message as a string.  Optional
 \var{unixfrom}, when true, specifies to include the \emph{Unix-From}
-envelope header; it defaults to 0.
+envelope header; it defaults to \code{False}.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{__str__}{}
-Equivalent to \method{aMessage.as_string(unixfrom=1)}.
+Equivalent to \method{aMessage.as_string(unixfrom=True)}.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{is_multipart}{}
-Return 1 if the message's payload is a list of sub-\class{Message}
-objects, otherwise return 0.  When \method{is_multipart()} returns 0,
-the payload should either be a string object, or a single
-\class{Message} instance.
+Return \code{True} if the message's payload is a list of
+sub-\class{Message} objects, otherwise return \code{False}.  When
+\method{is_multipart()} returns False, the payload should be a string
+object.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{set_unixfrom}{unixfrom}
-Set the \emph{Unix-From} (a.k.a envelope header or \code{From_}
-header) to \var{unixfrom}, which should be a string.
+Set the message's envelope header to \var{unixfrom}, which should be a string.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{get_unixfrom}{}
-Return the \emph{Unix-From} header.  Defaults to \code{None} if the
-\emph{Unix-From} header was never set.
-\end{methoddesc}
-
-\begin{methoddesc}[Message]{add_payload}{payload}
-Add \var{payload} to the message object's existing payload.  If, prior
-to calling this method, the object's payload was \code{None}
-(i.e. never before set), then after this method is called, the payload
-will be the argument \var{payload}.
-
-If the object's payload was already a list
-(i.e. \method{is_multipart()} returns 1), then \var{payload} is
-appended to the end of the existing payload list.
-
-For any other type of existing payload, \method{add_payload()} will
-transform the new payload into a list consisting of the old payload
-and \var{payload}, but only if the document is already a MIME
-multipart document.  This condition is satisfied if the message's
-\mailheader{Content-Type} header's main type is either
-\mimetype{multipart}, or there is no \mailheader{Content-Type}
-header.  In any other situation,
-\exception{MultipartConversionError} is raised.
+Return the message's envelope header.  Defaults to \code{None} if the
+envelope header was never set.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{attach}{payload}
-Synonymous with \method{add_payload()}.
+Add the given payload to the current payload, which must be
+\code{None} or a list of \class{Message} objects before the call.
+After the call, the payload will always be a list of \class{Message}
+objects.  If you want to set the payload to a scalar object (e.g. a
+string), use \method{set_payload()} instead.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{get_payload}{\optional{i\optional{, decode}}}
-Return the current payload, which will be a list of \class{Message}
-objects when \method{is_multipart()} returns 1, or a scalar (either a
-string or a single \class{Message} instance) when
-\method{is_multipart()} returns 0.
+Return a reference the current payload, which will be a list of
+\class{Message} objects when \method{is_multipart()} is \code{True}, or a
+string when \method{is_multipart()} is \code{False}.  If the
+payload is a list and you mutate the list object, you modify the
+message's payload in place.
 
-With optional \var{i}, \method{get_payload()} will return the
+With optional argument \var{i}, \method{get_payload()} will return the
 \var{i}-th element of the payload, counting from zero, if
-\method{is_multipart()} returns 1.  An \exception{IndexError} will be raised
-if \var{i} is less than 0 or greater than or equal to the number of
-items in the payload.  If the payload is scalar
-(i.e. \method{is_multipart()} returns 0) and \var{i} is given, a
+\method{is_multipart()} is \code{True}.  An \exception{IndexError}
+will be raised if \var{i} is less than 0 or greater than or equal to
+the number of items in the payload.  If the payload is a string
+(i.e. \method{is_multipart()} is \code{False}) and \var{i} is given, a
 \exception{TypeError} is raised.
 
 Optional \var{decode} is a flag indicating whether the payload should be
 decoded or not, according to the \mailheader{Content-Transfer-Encoding} header.
-When true and the message is not a multipart, the payload will be
+When \code{True} and the message is not a multipart, the payload will be
 decoded if this header's value is \samp{quoted-printable} or
 \samp{base64}.  If some other encoding is used, or
 \mailheader{Content-Transfer-Encoding} header is
 missing, the payload is returned as-is (undecoded).  If the message is
-a multipart and the \var{decode} flag is true, then \code{None} is
-returned.
+a multipart and the \var{decode} flag is \code{True}, then \code{None} is
+returned.  The default for \var{decode} is \code{False}.
 \end{methoddesc}
 
-\begin{methoddesc}[Message]{set_payload}{payload}
+\begin{methoddesc}[Message]{set_payload}{payload\optional{, charset}}
 Set the entire message object's payload to \var{payload}.  It is the
-client's responsibility to ensure the payload invariants.
+client's responsibility to ensure the payload invariants.  Optional
+\var{charset} sets the message's default character set (see
+\method{set_charset()} for details.
+
+\versionchanged[\var{charset} argument added]{2.2.2}
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{set_charset}{charset}
+Set the character set of the payload to \var{charset}, which can
+either be a \class{Charset} instance (see \refmodule{email.Charset}, a
+string naming a character set,
+or \code{None}.  If it is a string, it will be converted to a
+\class{Charset} instance.  If \var{charset} is \code{None}, the
+\code{charset} parameter will be removed from the
+\mailheader{Content-Type} header. Anything else will generate a
+\exception{TypeError}.
+
+The message will be assumed to be of type \mimetype{text/*} encoded with
+\code{charset.input_charset}.  It will be converted to
+\code{charset.output_charset}
+and encoded properly, if needed, when generating the plain text
+representation of the message.  MIME headers
+(\mailheader{MIME-Version}, \mailheader{Content-Type},
+\mailheader{Content-Transfer-Encoding}) will be added as needed.
+
+\versionadded{2.2.2}
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{get_charset}{}
+Return the \class{Charset} instance associated with the message's payload.
+\versionadded{2.2.2}
 \end{methoddesc}
 
 The following methods implement a mapping-like interface for accessing
@@ -123,8 +137,8 @@ in dictionaries there is no guaranteed order to the keys returned by
 order.  These semantic differences are intentional and are biased
 toward maximal convenience.
 
-Note that in all cases, any optional \emph{Unix-From} header the message
-may have is not included in the mapping interface.
+Note that in all cases, any envelope header present in the message is
+not included in the mapping interface.
 
 \begin{methoddesc}[Message]{__len__}{}
 Return the total number of headers, including duplicates.
@@ -177,32 +191,32 @@ present in the headers.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{has_key}{name}
-Return 1 if the message contains a header field named \var{name},
-otherwise return 0.
+Return true if the message contains a header field named \var{name},
+otherwise return false.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{keys}{}
 Return a list of all the message's header field names.  These keys
-will be sorted in the order in which they were added to the message
-via \method{__setitem__()}, and may contain duplicates.  Any fields
-deleted and then subsequently re-added are always appended to the end
-of the header list.
+will be sorted in the order in which they appeared in the original
+message, or were added to the message and may contain
+duplicates.  Any fields deleted and then subsequently re-added are
+always appended to the end of the header list.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{values}{}
 Return a list of all the message's field values.  These will be sorted
-in the order in which they were added to the message via
-\method{__setitem__()}, and may contain duplicates.  Any fields
-deleted and then subsequently re-added are always appended to the end
-of the header list.
+in the order in which they appeared in the original message, or were
+added to the message, and may contain
+duplicates.  Any fields deleted and then subsequently re-added are
+always appended to the end of the header list.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{items}{}
-Return a list of 2-tuples containing all the message's field headers and
-values.  These will be sorted in the order in which they were added to
-the message via \method{__setitem__()}, and may contain duplicates.
-Any fields deleted and then subsequently re-added are always appended
-to the end of the header list.
+Return a list of 2-tuples containing all the message's field headers
+and values.  These will be sorted in the order in which they appeared
+in the original message, or were added to the message, and may contain
+duplicates.  Any fields deleted and then subsequently re-added are
+always appended to the end of the header list.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{get}{name\optional{, failobj}}
@@ -215,10 +229,9 @@ Here are some additional useful methods:
 
 \begin{methoddesc}[Message]{get_all}{name\optional{, failobj}}
 Return a list of all the values for the field named \var{name}.  These
-will be sorted in the order in which they were added to the message
-via \method{__setitem__()}.  Any fields
-deleted and then subsequently re-added are always appended to the end
-of the list.
+will be sorted in the order in which they appeared in the original
+message, or were added to the message.  Any fields deleted and then
+subsequently re-added are always appended to the end of the list.
 
 If there are no such named headers in the message, \var{failobj} is
 returned (defaults to \code{None}).
@@ -227,8 +240,8 @@ returned (defaults to \code{None}).
 \begin{methoddesc}[Message]{add_header}{_name, _value, **_params}
 Extended header setting.  This method is similar to
 \method{__setitem__()} except that additional header parameters can be
-provided as keyword arguments.  \var{_name} is the header to set and
-\var{_value} is the \emph{primary} value for the header.
+provided as keyword arguments.  \var{_name} is the header field to add
+and \var{_value} is the \emph{primary} value for the header.
 
 For each item in the keyword argument dictionary \var{_params}, the
 key is taken as the parameter name, with underscores converted to
@@ -249,43 +262,84 @@ Content-Disposition: attachment; filename="bud.gif"
 \end{verbatim}
 \end{methoddesc}
 
-\begin{methoddesc}[Message]{get_type}{\optional{failobj}}
-Return the message's content type, as a string of the form
-\mimetype{maintype/subtype} as taken from the
+\begin{methoddesc}[Message]{replace_header}{_name, _value}
+Replace a header.  Replace the first header found in the message that
+matches \var{_name}, retaining header order and field name case.  If
+no matching header was found, a \exception{KeyError} is raised.
+
+\versionadded{2.2.2}
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{get_content_type}{}
+Return the message's content type.  The returned string is coerced to
+lower case of the form \mimetype{maintype/subtype}.  If there was no
+\mailheader{Content-Type} header in the message the default type as
+given by \method{get_default_type()} will be returned.  Since
+according to \rfc{2045}, messages always have a default type,
+\method{get_content_type()} will always return a value.
+
+\rfc{2045} defines a message's default type to be
+\mimetype{text/plain} unless it appears inside a
+\mimetype{multipart/digest} container, in which case it would be
+\mimetype{message/rfc822}.  If the \mailheader{Content-Type} header
+has an invalid type specification, \rfc{2045} mandates that the
+default type be \mimetype{text/plain}.
+
+\versionadded{2.2.2}
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{get_content_maintype}{}
+Return the message's main content type.  This is the
+\mimetype{maintype} part of the string returned by
+\method{get_content_type()}.
+
+\versionadded{2.2.2}
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{get_content_subtype}{}
+Return the message's sub-content type.  This is the \mimetype{subtype}
+part of the string returned by \method{get_content_type()}.
+
+\versionadded{2.2.2}
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{get_default_type}{}
+Return the default content type.  Most messages have a default content
+type of \mimetype{text/plain}, except for messages that are subparts
+of \mimetype{multipart/digest} containers.  Such subparts have a
+default content type of \mimetype{message/rfc822}.
+
+\versionadded{2.2.2}
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{set_default_type}{ctype}
+Set the default content type.  \var{ctype} should either be
+\mimetype{text/plain} or \mimetype{message/rfc822}, although this is
+not enforced.  The default content type is not stored in the
 \mailheader{Content-Type} header.
-The returned string is coerced to lowercase.
 
-If there is no \mailheader{Content-Type} header in the message,
-\var{failobj} is returned (defaults to \code{None}).
+\versionadded{2.2.2}
 \end{methoddesc}
 
-\begin{methoddesc}[Message]{get_main_type}{\optional{failobj}}
-Return the message's \emph{main} content type.  This essentially returns the
-\var{maintype} part of the string returned by \method{get_type()}, with the
-same semantics for \var{failobj}.
-\end{methoddesc}
-
-\begin{methoddesc}[Message]{get_subtype}{\optional{failobj}}
-Return the message's sub-content type.  This essentially returns the
-\var{subtype} part of the string returned by \method{get_type()}, with the
-same semantics for \var{failobj}.
-\end{methoddesc}
-
-\begin{methoddesc}[Message]{get_params}{\optional{failobj\optional{, header}}}
+\begin{methoddesc}[Message]{get_params}{\optional{failobj\optional{,
+    header\optional{, unquote}}}}
 Return the message's \mailheader{Content-Type} parameters, as a list.  The
 elements of the returned list are 2-tuples of key/value pairs, as
 split on the \character{=} sign.  The left hand side of the
 \character{=} is the key, while the right hand side is the value.  If
 there is no \character{=} sign in the parameter the value is the empty
-string.  The value is always unquoted with \method{Utils.unquote()}.
+string, otherwise the value is as described in \method{get_param()} and is
+unquoted if optional \var{unquote} is \code{True} (the default).
 
 Optional \var{failobj} is the object to return if there is no
 \mailheader{Content-Type} header.  Optional \var{header} is the header to
 search instead of \mailheader{Content-Type}.
+
+\versionchanged[\var{unquote} argument added]{2.2.2}
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{get_param}{param\optional{,
-    failobj\optional{, header}}}
+    failobj\optional{, header\optional{, unquote}}}}
 Return the value of the \mailheader{Content-Type} header's parameter
 \var{param} as a string.  If the message has no \mailheader{Content-Type}
 header or if there is no such parameter, then \var{failobj} is
@@ -293,20 +347,80 @@ returned (defaults to \code{None}).
 
 Optional \var{header} if given, specifies the message header to use
 instead of \mailheader{Content-Type}.
+
+Parameter keys are always compared case insensitively.  The return
+value can either be a string, or a 3-tuple if the parameter was
+\rfc{2231} encoded.  When it's a 3-tuple, the elements of the value are of
+the form \samp{(CHARSET, LANGUAGE, VALUE)}, where \var{LANGUAGE} may
+be the empty string.  Your application should be prepared to deal with
+3-tuple return values, which it can convert the parameter to a Unicode
+string like so:
+
+\begin{verbatim}
+param = msg.get_param('foo')
+if isinstance(param, tuple):
+    param = unicode(param[2], param[0])
+\end{verbatim}
+
+In any case, the parameter value (either the returned string, or the
+\var{VALUE} item in the 3-tuple) is always unquoted, unless
+\var{unquote} is set to \code{False}.
+
+\versionchanged[\var{unquote} argument added, and 3-tuple return value
+possible]{2.2.2}
 \end{methoddesc}
 
-\begin{methoddesc}[Message]{get_charsets}{\optional{failobj}}
-Return a list containing the character set names in the message.  If
-the message is a \mimetype{multipart}, then the list will contain one
-element for each subpart in the payload, otherwise, it will be a list
-of length 1.
+\begin{methoddesc}[Message]{set_param}{param, value\optional{,
+    header\optional{, requote\optional{, charset\optional{, language}}}}}
 
-Each item in the list will be a string which is the value of the
-\code{charset} parameter in the \mailheader{Content-Type} header for the
-represented subpart.  However, if the subpart has no
-\mailheader{Content-Type} header, no \code{charset} parameter, or is not of
-the \mimetype{text} main MIME type, then that item in the returned list
-will be \var{failobj}.
+Set a parameter in the \mailheader{Content-Type} header.  If the
+parameter already exists in the header, its value will be replaced
+with \var{value}.  If the \mailheader{Content-Type} header as not yet
+been defined for this message, it will be set to \mimetype{text/plain}
+and the new parameter value will be appended as per \rfc{2045}.
+
+Optional \var{header} specifies an alternative header to
+\mailheader{Content-Type}, and all parameters will be quoted as
+necessary unless optional \var{requote} is \code{False} (the default
+is \code{True}).
+
+If optional \var{charset} is specified, the parameter will be encoded
+according to \rfc{2231}. Optional \var{language} specifies the RFC
+2231 language, defaulting to the empty string.  Both \var{charset} and
+\var{language} should be strings.
+
+\versionadded{2.2.2}
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{del_param}{param\optional{, header\optional{,
+    requote}}}
+Remove the given parameter completely from the
+\mailheader{Content-Type} header.  The header will be re-written in
+place without the parameter or its value.  All values will be quoted
+as necessary unless \var{requote} is \code{False} (the default is
+\code{True}).  Optional \var{header} specifies an alterative to
+\mailheader{Content-Type}.
+
+\versionadded{2.2.2}
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{set_type}{type\optional{, header}\optional{,
+    requote}}
+Set the main type and subtype for the \mailheader{Content-Type}
+header. \var{type} must be a string in the form
+\mimetype{maintype/subtype}, otherwise a \exception{ValueError} is
+raised.
+
+This method replaces the \mailheader{Content-Type} header, keeping all
+the parameters in place.  If \var{requote} is \code{False}, this
+leaves the existing header's quoting as is, otherwise the parameters
+will be quoted (the default).
+
+An alternative header can be specified in the \var{header} argument.
+When the \mailheader{Content-Type} header is set, we'll always also
+add a \mailheader{MIME-Version} header.
+
+\versionadded{2.2.2}
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{get_filename}{\optional{failobj}}
@@ -338,6 +452,32 @@ via \method{add_header()}, because \method{set_boundary()} preserves the
 order of the \mailheader{Content-Type} header in the list of headers.
 However, it does \emph{not} preserve any continuation lines which may
 have been present in the original \mailheader{Content-Type} header.
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{get_content_charset}{\optional{failobj}}
+Return the \code{charset} parameter of the \mailheader{Content-Type}
+header.  If there is no \mailheader{Content-Type} header, or if that
+header has no \code{charset} parameter, \var{failobj} is returned.
+
+Note that this method differs from \method{get_charset} which returns
+the \class{Charset} instance for the default encoding of the message
+body.
+
+\versionadded{2.2.2}
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{get_charsets}{\optional{failobj}}
+Return a list containing the character set names in the message.  If
+the message is a \mimetype{multipart}, then the list will contain one
+element for each subpart in the payload, otherwise, it will be a list
+of length 1.
+
+Each item in the list will be a string which is the value of the
+\code{charset} parameter in the \mailheader{Content-Type} header for the
+represented subpart.  However, if the subpart has no
+\mailheader{Content-Type} header, no \code{charset} parameter, or is not of
+the \mimetype{text} main MIME type, then that item in the returned list
+will be \var{failobj}.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{walk}{}
@@ -380,7 +520,8 @@ the headers but before the first boundary string, it assigns this text
 to the message's \var{preamble} attribute.  When the \class{Generator}
 is writing out the plain text representation of a MIME message, and it
 finds the message has a \var{preamble} attribute, it will write this
-text in the area between the headers and the first boundary.
+text in the area between the headers and the first boundary.  See
+\refmodule{email.Parser} and \refmodule{email.Generator} for details.
 
 Note that if the message object has no preamble, the
 \var{preamble} attribute will be \code{None}.
@@ -401,3 +542,59 @@ practical sense.  The upshot is that if you want to ensure that a
 newline get printed after your closing \mimetype{multipart} boundary,
 set the \var{epilogue} to the empty string.
 \end{datadesc}
+
+\subsubsection{Deprecated methods}
+
+The following methods are deprecated in \module{email} version 2.
+They are documented here for completeness.
+
+\begin{methoddesc}[Message]{add_payload}{payload}
+Add \var{payload} to the message object's existing payload.  If, prior
+to calling this method, the object's payload was \code{None}
+(i.e. never before set), then after this method is called, the payload
+will be the argument \var{payload}.
+
+If the object's payload was already a list
+(i.e. \method{is_multipart()} returns 1), then \var{payload} is
+appended to the end of the existing payload list.
+
+For any other type of existing payload, \method{add_payload()} will
+transform the new payload into a list consisting of the old payload
+and \var{payload}, but only if the document is already a MIME
+multipart document.  This condition is satisfied if the message's
+\mailheader{Content-Type} header's main type is either
+\mimetype{multipart}, or there is no \mailheader{Content-Type}
+header.  In any other situation,
+\exception{MultipartConversionError} is raised.
+
+\deprecated{2.2.2}{Use the \method{attach()} method instead.}
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{get_type}{\optional{failobj}}
+Return the message's content type, as a string of the form
+\mimetype{maintype/subtype} as taken from the
+\mailheader{Content-Type} header.
+The returned string is coerced to lowercase.
+
+If there is no \mailheader{Content-Type} header in the message,
+\var{failobj} is returned (defaults to \code{None}).
+
+\deprecated{2.2.2}{Use the \method{get_content_type()} method instead.}
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{get_main_type}{\optional{failobj}}
+Return the message's \emph{main} content type.  This essentially returns the
+\var{maintype} part of the string returned by \method{get_type()}, with the
+same semantics for \var{failobj}.
+
+\deprecated{2.2.2}{Use the \method{get_content_maintype()} method instead.}
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{get_subtype}{\optional{failobj}}
+Return the message's sub-content type.  This essentially returns the
+\var{subtype} part of the string returned by \method{get_type()}, with the
+same semantics for \var{failobj}.
+
+\deprecated{2.2.2}{Use the \method{get_content_subtype()} method instead.}
+\end{methoddesc}
+
