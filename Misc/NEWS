@@ -183,6 +183,13 @@ Core language, builtins, and interpreter
   complex numbers except for equality, I hope that this doesn't break
   too much code.
 
+- The outcome of comparing non-numeric objects of differerent types is
+  not defined by the language, other than that it's arbitrary but
+  consistent (see the Reference Manual).  An implementation detail changed
+  in 2.1a1 such that None now compares less than any other object.  Code
+  relying on this new behavior (like code that relied on the previous
+  behavior) does so at its own risk.
+
 - Functions and methods now support getting and setting arbitrarily
   named attributes (PEP 232).  Functions have a new __dict__
   (a.k.a. func_dict) which hold the function attributes.  Methods get
