@@ -106,9 +106,11 @@ extern void initimgcolormap();
 extern void initimgformat();
 extern void initimggif();
 extern void initimgjpeg();
+extern void initimgpbm();
 extern void initimgppm();
 extern void initimgpgm();
 extern void initimgtiff();
+extern void initimgsgi();
 extern void initimgop();
 #endif
 
@@ -178,9 +180,11 @@ struct {
 	{"imgformat",	initimgformat},
 	{"imggif",	initimggif},
 	{"imgjpeg",	initimgjpeg},
+	{"imgpbm",	initimgpbm},
 	{"imgppm",	initimgppm},
 	{"imgpgm",	initimgpgm},
 	{"imgtiff",	initimgtiff},
+	{"imgsgi",	initimgsgi},
 	{"imgop",	initimgop},
 #endif
 
