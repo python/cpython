@@ -71,9 +71,12 @@ static PyObject *
 QtTimeRecord_New(itself)
 	TimeRecord *itself;
 {
-
-	return Py_BuildValue("O&lO&", PyMac_Buildwide, &itself->value, itself->scale, 
+	if (itself->base)
+		return Py_BuildValue("O&lO&", PyMac_Buildwide, &itself->value, itself->scale, 
 			TimeBaseObj_New, itself->base);
+	else
+		return  Py_BuildValue("O&lO", PyMac_Buildwide, &itself->value, itself->scale, 
+			Py_None);
 }
 
 static int
@@ -81,10 +84,15 @@ QtTimeRecord_Convert(v, p_itself)
 	PyObject *v;
 	TimeRecord *p_itself;
 {
-	
-	if( !PyArg_ParseTuple(v, "O&lO&", PyMac_Getwide, &p_itself->value, &p_itself->scale,
-			TimeBaseObj_Convert, &p_itself->base) )
+	PyObject *base = NULL;
+	if( !PyArg_ParseTuple(v, "O&l|O", PyMac_Getwide, &p_itself->value, &p_itself->scale,
+			&base) )
 		return 0;
+	if ( base == NULL || base == Py_None )
+		p_itself->base = NULL;
+	else
+		if ( !TimeBaseObj_Convert(base, &p_itself->base) )
+			return 0;
 	return 1;
 }
 
