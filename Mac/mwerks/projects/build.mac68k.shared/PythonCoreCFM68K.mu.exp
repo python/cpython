@@ -941,7 +941,7 @@ free
 malloc
 calloc
 PyMac_AddLibResources
-PythonCore_init
+__initialize_with_resources
 Py_GetExecPrefix
 Py_GetPrefix
 Py_GetArgcArgv
