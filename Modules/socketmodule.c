@@ -1403,8 +1403,6 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyname_ex,PyObject *,self, PyObject *,args)
 	struct hostent *h;
 	struct sockaddr_in addr;
 	PyObject *addr_list = (PyObject *)NULL;
-	char **pch;
-	PyObject *tmp;
 #ifdef HAVE_GETHOSTBYNAME_R
 	struct hostent hp_allocated;
 	char buf[16384];
@@ -1447,11 +1445,9 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyaddr,PyObject *,self, PyObject *, args)
         struct sockaddr_in addr;
 	char *ip_num;
 	struct hostent *h;
-	char **pch;
 	PyObject *rtn_tuple = (PyObject *)NULL;
 	PyObject *name_list = (PyObject *)NULL;
 	PyObject *addr_list = (PyObject *)NULL;
-	PyObject *tmp;
 #ifdef HAVE_GETHOSTBYNAME_R
 	struct hostent hp_allocated;
 	char buf[16384];
