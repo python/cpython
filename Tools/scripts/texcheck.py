@@ -22,10 +22,6 @@ Options:
     -v:         Verbose.  Shows current delimiter and unclosed delimiters.
 """
 
-# Todo:
-#   Add tableiii/lineiii cross-checking
-#   Add braces matching
-
 import re
 import sets
 import sys
@@ -53,7 +49,8 @@ cmdstr = r"""
     \textbackslash \mimetype \mailheader \seepep \textunderscore
     \longprogramopt \infinity \plusminus \shortversion \version
     \refmodindex \seerfc \makeindex \makemodindex \renewcommand
-    \indexname \appendix
+    \indexname \appendix \protect \indexiv \mbox \textasciitilde
+    \platform \seeurl \leftmargin \labelwidth \localmoduletable
 """
 
 def matchclose(c_lineno, c_symbol, openers, pairmap):
@@ -68,7 +65,7 @@ def matchclose(c_lineno, c_symbol, openers, pairmap):
     raise Exception, msg
 
 def checkit(source, opts, morecmds=[]):
-    """Check the LaTex formatting in a sequence of lines.
+    """Check the LaTeX formatting in a sequence of lines.
 
     Opts is a mapping of options to option values if any:
         -m          munge parenthesis and brackets
@@ -77,7 +74,7 @@ def checkit(source, opts, morecmds=[]):
         -v          verbose listing on delimiters
         -s lineno:  linenumber to start scan (default is 1).
 
-    Morecmds is a sequence of LaTex commands (without backslashes) that
+    Morecmds is a sequence of LaTeX commands (without backslashes) that
     are to be considered valid in the scan.
     """
 
@@ -96,6 +93,12 @@ def checkit(source, opts, morecmds=[]):
     openpunct = sets.Set('([')  # Set of valid openers
 
     delimiters = re.compile(r'\\(begin|end){([_a-zA-Z]+)}|([()\[\]])')
+
+    tablestart = re.compile(r'\\begin{(?:long)?table([iv]+)}')
+    tableline = re.compile(r'\\line([iv]+){')
+    tableend = re.compile(r'\\end{(?:long)?table([iv]+)}')
+    tablelevel = ''
+    tablestartline = 0
 
     startline = int(opts.get('-s', '1'))
     lineno = 0
@@ -134,8 +137,19 @@ def checkit(source, opts, morecmds=[]):
             if '-v' in opts:
                 print '   --> ', openers
 
+        # Check table levels (make sure lineii only inside lineiii)
+        m = tablestart.search(line)
+        if m:
+            tablelevel = m.group(1)
+            tablestartline = lineno
+        m = tableline.search(line)
+        if m and m.group(1) != tablelevel:
+            print r'Warning, \line%s on line %d does not match \table%s on line %d' % (m.group(1), lineno, tablelevel, tablestartline)
+        if tableend.search(line):
+            tablelevel = ''
+
     for lineno, symbol in openers:
-        print "Unmatched open delimiter '%s' on line %d", (symbol, lineno)
+        print "Unmatched open delimiter '%s' on line %d" % (symbol, lineno)
     print 'Done checking %d lines.' % (lineno,)
     return 0
 
