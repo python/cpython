@@ -13,6 +13,7 @@ tut:
 ref:
 	touch ref.ind
 	latex ref
+	./fix_hack ref.idx
 	makeindex ref
 	latex ref
 	dvips ref >ref.ps
@@ -38,7 +39,7 @@ libinfo:
 	sh fix.sh
 
 clean:
-	rm -f @* *~ *.aux *.idx *.ilg *.ind *.log *.toc *.blg *.bbl
+	rm -f @* *~ *.aux *.idx *.ilg *.ind *.log *.toc *.blg *.bbl *.pyc
 	# Sources: .tex, .bib, .sty
 	# Useful results: .dvi, .ps
 
