@@ -201,10 +201,17 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 	do_q = do_quit
 	
 	def do_args(self, arg):
-		if self.curframe.f_locals.has_key('__args__'):
-			print `self.curframe.f_locals['__args__']`
-		else:
-			print '*** No arguments?!'
+		f = self.curframe
+		co = f.f_code
+		dict = f.f_locals
+		n = co.co_argcount
+		if co.co_flags & 4: n = n+1
+		if co.co_flags & 8: n = n+1
+		for i in range(n):
+			name = co.co_varnames[i]
+			print name, '=',
+			if dict.has_key(name): print dict[name]
+			else: print "*** undefined ***"
 	do_a = do_args
 	
 	def do_retval(self, arg):
@@ -432,7 +439,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
 	def help_a(self):
 		print """a(rgs)
-	Print the argument list of the current function."""
+	Print the arguments of the current function."""
 
 	def help_p(self):
 		print """p expression
