@@ -1,35 +1,28 @@
 #! /usr/local/bin/python
 
-# "Freeze" a Python script into a binary.
-# Usage: see variable usage_msg below (before the imports!)
+"""Freeze a Python script into a binary.
 
-# HINTS:
-# - Edit the lines marked XXX below to localize.
-# - Make sure the #! line above matches the localizations.
-# - You must have done "make inclinstall libainstall" in the Python
-#   build directory.
-# - The script name should end in ".py".
-# - The script should not use dynamically loaded modules
-#   (*.so on most systems).
+usage: freeze [options...] script.py [module]...
 
+Options:
 
-# Usage message
-
-usage_msg = """
-usage: freeze [-p prefix] [-P exec_prefix] [-e extension] script.py [module]...
-
--p prefix:    This is the prefix used when you ran
-              'Make inclinstall libainstall' in the Python build directory.
+-p prefix:    This is the prefix used when you ran ``name install''
+              in the Python build directory.
               (If you never ran this, freeze won't work.)
-              The default is /usr/local.
+              The default is whatever sys.prefix evaluates to.
 
 -P exec_prefix: Like -p but this is the 'exec_prefix', used to
-		install objects etc.  The default is the value for -p.
+		install objects etc.  The default is whatever sys.exec_prefix
+		evaluates to, or the -p argument if given.
 
 -e extension: A directory containing additional .o files that
               may be used to resolve modules.  This directory
               should also have a Setup file describing the .o files.
               More than one -e option may be given.
+
+-o dir:       Directory where the output files are created; default '.'.
+
+Arguments:
 
 script.py:    The Python script to be executed by the resulting binary.
 	      It *must* end with a .py suffix!
@@ -43,20 +36,9 @@ NOTES:
 In order to use freeze successfully, you must have built Python and
 installed it ("make install").
 
-The -p and -P options passed into the freeze script must correspond to
-the --prefix and --exec-prefix options passed into Python's configure
-script.
+The script should not use modules provided only as shared libraries;
+if it does, the resulting binary is not self-contained.
 """
-
-
-# XXX Change the following line to point to your Tools/freeze directory
-PACK = '/home/guido/python/src/Tools/freeze'
-
-# XXX Change the following line to point to your install prefix
-PREFIX = '/usr/local'
-
-# XXX Change the following line to point to your install exec_prefix
-EXEC_PREFIX = None			# If None, use -p option for default
 
 
 # Import standard modules
@@ -67,16 +49,6 @@ import os
 import string
 import sys
 import addpack
-
-
-# Set the directory to look for the freeze-private modules
-
-dir = os.path.dirname(sys.argv[0])
-if dir:
-	pack = dir
-else:
-	pack = PACK
-addpack.addpack(pack)
 
 
 # Import the freeze-private modules
@@ -93,10 +65,11 @@ import parsesetup
 
 def main():
 	# overridable context
-	prefix = PREFIX			# settable with -p option
+	prefix = None			# settable with -p option
 	exec_prefix = None		# settable with -P option
 	extensions = []
 	path = sys.path
+	odir = ''
 
 	# output files
 	frozen_c = 'frozen.c'
@@ -106,7 +79,7 @@ def main():
 
 	# parse command line
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'e:p:P:')
+		opts, args = getopt.getopt(sys.argv[1:], 'e:o:p:P:')
 	except getopt.error, msg:
 		usage('getopt error: ' + str(msg))
 
@@ -114,20 +87,26 @@ def main():
 	for o, a in opts:
 		if o == '-e':
 			extensions.append(a)
+		if o == '-o':
+			odir = a
 		if o == '-p':
 			prefix = a
 		if o == '-P':
 			exec_prefix = a
 	
-	# default exec_prefix
-	if exec_prefix is None:
-		exec_prefix = EXEC_PREFIX
-		if exec_prefix is None:
+	# default prefix and exec_prefix
+	if not exec_prefix:
+		if prefix:
 			exec_prefix = prefix
+		else:
+			exec_prefix = sys.exec_prefix
+	if not prefix:
+		prefix = sys.prefix
 
 	# locations derived from options
-	binlib = os.path.join(exec_prefix, 'lib/python1.4/config')
-	incldir = os.path.join(prefix, 'include/python1.4')
+	version = sys.version[:3]
+	binlib = os.path.join(exec_prefix, 'lib/python%s/config' % version)
+	incldir = os.path.join(prefix, 'include/python%s' % version)
 	config_c_in = os.path.join(binlib, 'config.c.in')
 	frozenmain_c = os.path.join(binlib, 'frozenmain.c')
 	getpath_c = os.path.join(binlib, 'getpath.c')
@@ -181,6 +160,22 @@ def main():
 			target = base
 		else:
 			target = base + '.bin'
+	
+	# handle -o option
+	base_frozen_c = frozen_c
+	base_config_c = config_c
+	base_target = target
+	if odir and not os.path.isdir(odir):
+		try:
+			os.mkdir(odir)
+			print "Created output directory", odir
+		except os.error, msg:
+			usage('%s: mkdir failed (%s)' % (odir, str(msg)))
+	if odir:
+		frozen_c = os.path.join(odir, frozen_c)
+		config_c = os.path.join(odir, config_c)
+		target = os.path.join(odir, target)
+		makefile = os.path.join(odir,makefile)
 
 	# Actual work starts here...
 
@@ -260,7 +255,7 @@ def main():
 		somevars[key] = makevars[key]
 
 	somevars['CFLAGS'] = string.join(cflags) # override
-	files = ['$(OPT)', '$(LDFLAGS)', config_c, frozen_c] + \
+	files = ['$(OPT)', '$(LDFLAGS)', base_config_c, base_frozen_c] + \
 		supp_sources +  addfiles + libs + \
 		['$(MODLIBS)', '$(LIBS)', '$(SYSLIBS)']
 
@@ -271,7 +266,7 @@ def main():
 		backup = None
 	outfp = open(makefile, 'w')
 	try:
-		makemakefile.makemakefile(outfp, somevars, files, target)
+		makemakefile.makemakefile(outfp, somevars, files, base_target)
 	finally:
 		outfp.close()
 	if backup:
@@ -284,13 +279,17 @@ def main():
 
 	# Done!
 
-	print 'Now run make to build the target:', target
+	if odir:
+		print 'Now run make in', odir,
+		print 'to build the target:', base_target
+	else:
+		print 'Now run make to build the target:', base_target
 
 
 # Print usage message and exit
 
 def usage(msg = None):
-	sys.stderr.write(usage_msg)
+	sys.stderr.write(__doc__)
 	# Put the error last since the usage message scrolls off the screen
 	if msg:
 		sys.stderr.write('\nError: ' + str(msg) + '\n')
