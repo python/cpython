@@ -24,18 +24,32 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <Types.h>
 #include <Files.h>
+#include <Events.h>
 
-char *macstrerror Py_PROTO((int));			/* strerror with mac errors */
+char *macstrerror(int);				/* strerror with mac errors */
 
-PyObject *PyErr_Mac Py_PROTO((PyObject *, int));	/* Exception with a mac error */
+extern PyObject *PyMac_OSErrException;		/* Exception for OSErr */
+PyObject *PyMac_GetOSErrException(void);	/* Initialize & return it */
 
-int PyMac_Idle Py_PROTO((void));			/* Idle routine */
+PyObject *PyErr_Mac(PyObject *, int);		/* Exception with a mac error */
+PyObject *PyMac_Error(OSErr);			/* Uses PyMac_GetOSErrException */ 
 
-int PyMac_GetOSType Py_PROTO((PyObject *, OSType *));	/* argument parser for OSType */
-PyObject *PyMac_BuildOSType Py_PROTO((OSType));		/* Convert OSType to PyObject */
+int PyMac_Idle(void);				/* Idle routine */
 
-int PyMac_GetStr255 Py_PROTO((PyObject *, Str255));	/* argument parser for Str255 */
-PyObject *PyMac_BuildStr255 Py_PROTO((Str255));		/* Convert Str255 to PyObject */
+int PyMac_GetOSType(PyObject *, OSType *);	/* argument parser for OSType */
+PyObject *PyMac_BuildOSType(OSType);		/* Convert OSType to PyObject */
 
-int PyMac_GetFSSpec Py_PROTO((PyObject *, FSSpec *));	/* argument parser for FSSpec */
-PyObject *PyMac_BuildFSSpec Py_PROTO((FSSpec *));	/* Convert FSSpec to PyObject */
+int PyMac_GetStr255(PyObject *, Str255);	/* argument parser for Str255 */
+PyObject *PyMac_BuildStr255(Str255);		/* Convert Str255 to PyObject */
+
+int PyMac_GetFSSpec(PyObject *, FSSpec *);	/* argument parser for FSSpec */
+PyObject *PyMac_BuildFSSpec(FSSpec *);		/* Convert FSSpec to PyObject */
+
+int PyMac_GetRect(PyObject *, Rect *);		/* argument parser for Rect */
+PyObject *PyMac_BuildRect(Rect *);		/* Convert Rect to PyObject */
+
+int PyMac_GetPoint(PyObject *, Point *);	/* argument parser for Point */
+PyObject *PyMac_BuildPoint(Point);		/* Convert Point to PyObject */
+
+int PyMac_GetEventRecord(PyObject *, EventRecord *); /* argument parser for EventRecord */
+PyObject *PyMac_BuildEventRecord(EventRecord *); /* Convert EventRecord to PyObject */
