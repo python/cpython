@@ -195,13 +195,19 @@ else: pass
 
 print 'try_stmt' # 'try' ':' suite (except_clause ':' suite)+ | 'try' ':' suite 'finally' ':' suite
 ### except_clause: 'except' [expr [',' expr]]
-try: 1/0
-except ZeroDivisionError: pass
+try:
+	1/0
+except ZeroDivisionError:
+	pass
 try: 1/0
 except EOFError: pass
 except TypeError, msg: pass
 except RuntimeError, msg: pass
 except: pass
+try: 1/0
+except (EOFError, TypeError, ZeroDivisionError): pass
+try: 1/0
+except (EOFError, TypeError, ZeroDivisionError), msg: pass
 try: pass
 finally: pass
 
@@ -246,7 +252,7 @@ if 1 is 1: pass
 if 1 is not 1: pass
 if 1 in (): pass
 if 1 not in (): pass
-if 1 < 1 > 1 == 1 >= 1 <= 1 <> 1 in 1 not in 1 is 1 is not 1: pass
+if 1 < 1 > 1 == 1 >= 1 <= 1 <> 1 != 1 in 1 not in 1 is 1 is not 1: pass
 
 print 'binary mask ops'
 x = 1 & 1
@@ -280,6 +286,29 @@ x = -1*1/1 + 1*1 - ---1*1
 print 'selectors'
 ### trailer: '(' [testlist] ')' | '[' subscript ']' | '.' NAME
 ### subscript: expr | [expr] ':' [expr]
+f1()
+f2(1)
+f2(1,)
+f3(1, 2)
+f3(1, 2,)
+f4(1, (2, (3, 4)))
+v0()
+v0(1)
+v0(1,)
+v0(1,2)
+v0(1,2,3,4,5,6,7,8,9,0)
+v1(1)
+v1(1,)
+v1(1,2)
+v1(1,2,3)
+v1(1,2,3,4,5,6,7,8,9,0)
+v2(1,2)
+v2(1,2,3)
+v2(1,2,3,4)
+v2(1,2,3,4,5,6,7,8,9,0)
+v3(1,(2,3))
+v3(1,(2,3),4)
+v3(1,(2,3),4,5,6,7,8,9,0)
 import sys, time
 c = sys.path[0]
 x = time.time()
@@ -327,9 +356,7 @@ x = 123
 ### testlist: test (',' test)* [',']
 # These have been exercised enough above
 
-print 'classdef' # 'class' NAME parameters ['=' baselist] ':' suite
-### baselist: atom arguments (',' atom arguments)*
-### arguments: '(' [testlist] ')'
+print 'classdef' # 'class' NAME ['(' testlist ')'] ':' suite
 class B: pass
 class C1(B): pass
 class C2(B): pass

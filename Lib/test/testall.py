@@ -25,4 +25,8 @@ print 'test_exceptions'
 unload('test_exceptions')
 import test_exceptions
 
+print 'test_types'
+unload('test_types')
+import test_types
+
 print 'Passed all tests.'

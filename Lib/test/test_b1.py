@@ -36,6 +36,16 @@ if chr(32) <> ' ': raise TestFailed, 'chr(32)'
 if chr(65) <> 'A': raise TestFailed, 'chr(65)'
 if chr(97) <> 'a': raise TestFailed, 'chr(97)'
 
+print 'cmp'
+if cmp(-1, 1) <> -1: raise TestFailed, 'cmp(-1, 1)'
+if cmp(1, -1) <> 1: raise TestFailed, 'cmp(1, -1)'
+if cmp(1, 1) <> 0: raise TestFailed, 'cmp(1, 1)'
+
+print 'coerce'
+if coerce(1, 1.1) <> (1.0, 1.1): raise TestFailed, 'coerce(1, 1.1)'
+if coerce(1, 1L) <> (1L, 1L): raise TestFailed, 'coerce(1, 1L)'
+if coerce(1L, 1.1) <> (1.0, 1.1): raise TestFailed, 'coerce(1L, 1.1)'
+
 print 'dir'
 x = 1
 if 'x' not in dir(): raise TestFailed, 'dir()'
@@ -65,11 +75,24 @@ if divmod(-3.25, -1.0) <> (3.0, -0.25): raise TestFailed, 'divmod(-3.25, -1.0)'
 
 print 'eval'
 if eval('1+1') <> 2: raise TestFailed, 'eval(\'1+1\')'
+if eval(' 1+1\n') <> 2: raise TestFailed, 'eval(\' 1+1\\n\')'
 
 print 'exec'
 z = 0
 exec('z=1+1\n')
 if z <> 2: raise TestFailed, 'exec(\'z=1+1\'\\n)'
+z = 0
+exec('z=1+1')
+if z <> 2: raise TestFailed, 'exec(\'z=1+1\')'
+
+print 'execfile'
+z = 0
+f = open(TESTFN, 'w')
+f.write('z = z+1\n')
+f.write('z = z*2\n')
+f.close()
+execfile(TESTFN)
+unlink(TESTFN)
 
 print 'float'
 if float(3.14) <> 3.14: raise TestFailed, 'float(3.14)'
