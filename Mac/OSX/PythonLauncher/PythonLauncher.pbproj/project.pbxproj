@@ -229,6 +229,7 @@
 				F58D4A3A02F1F94B01000102,
 				F58D4A3B02F1F94B01000102,
 				F58D4A3C02F1F94B01000102,
+				F5449B4B02FB3F7E01000102,
 				2A37F4B9FDCFA73011CA2CEA,
 				2A37F4B6FDCFA73011CA2CEA,
 				2A37F4B4FDCFA73011CA2CEA,
@@ -347,6 +348,8 @@
 			<array>
 				<string>pyw</string>
 			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>PythonWSource.icns</string>
 			<key>CFBundleTypeName</key>
 			<string>Python GUI Script</string>
 			<key>CFBundleTypeRole</key>
@@ -424,6 +427,7 @@
 				F58D4A3E02F1F94B01000102,
 				F58D4A3F02F1F94B01000102,
 				F5A4C13F02F203F701000102,
+				F5449B4C02FB3F7E01000102,
 			);
 			isa = PBXResourcesBuildPhase;
 		};
@@ -520,6 +524,17 @@
 		};
 		F52A90D002EB5C6A01000102 = {
 			fileRef = F52A90CE02EB5C6A01000102;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5449B4B02FB3F7E01000102 = {
+			isa = PBXFileReference;
+			path = PythonWSource.icns;
+			refType = 4;
+		};
+		F5449B4C02FB3F7E01000102 = {
+			fileRef = F5449B4B02FB3F7E01000102;
 			isa = PBXBuildFile;
 			settings = {
 			};
