@@ -384,7 +384,7 @@ PyObject *PyErr_SetFromWindowsErrWithFilename(
 	else
 		v = Py_BuildValue("(is)", err, s);
 	if (v != NULL) {
-		PyErr_SetObject(PyExc_EnvironmentError, v);
+		PyErr_SetObject(PyExc_WindowsError, v);
 		Py_DECREF(v);
 	}
 	LocalFree(s);
