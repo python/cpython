@@ -559,7 +559,7 @@ poll_getattr(pollObject *self, char *name)
 	return Py_FindMethod(poll_methods, (PyObject *)self, name);
 }
 
-statichere PyTypeObject poll_Type = {
+static PyTypeObject poll_Type = {
 	/* The ob_type field must be initialized in the module init function
 	 * to be portable to Windows without using C++. */
 	PyObject_HEAD_INIT(NULL)

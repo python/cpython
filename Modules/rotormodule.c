@@ -575,7 +575,7 @@ rotorobj_getattr(Rotorobj *s, char *name)
 }
 
 
-statichere PyTypeObject Rotor_Type = {
+static PyTypeObject Rotor_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/*ob_size*/
 	"rotor.rotor",			/*tp_name*/

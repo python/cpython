@@ -187,7 +187,7 @@ update() -- updates the current digest with an additional string\n\
 digest() -- return the current digest value\n\
 copy() -- return a copy of the current md5 object");
 
-statichere PyTypeObject MD5type = {
+static PyTypeObject MD5type = {
 	PyObject_HEAD_INIT(NULL)
 	0,			  /*ob_size*/
 	"md5.md5",		  /*tp_name*/

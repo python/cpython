@@ -785,7 +785,7 @@ static PyMethodDef zlib_methods[] =
     {NULL, NULL}
 };
 
-statichere PyTypeObject Comptype = {
+static PyTypeObject Comptype = {
     PyObject_HEAD_INIT(0)
     0,
     "zlib.Compress",
@@ -802,7 +802,7 @@ statichere PyTypeObject Comptype = {
     0,                              /*tp_as_mapping*/
 };
 
-statichere PyTypeObject Decomptype = {
+static PyTypeObject Decomptype = {
     PyObject_HEAD_INIT(0)
     0,
     "zlib.Decompress",

@@ -93,7 +93,7 @@ Xxo_setattr(XxoObject *self, char *name, PyObject *v)
 		return PyDict_SetItemString(self->x_attr, name, v);
 }
 
-statichere PyTypeObject Xxo_Type = {
+static PyTypeObject Xxo_Type = {
 	/* The ob_type field must be initialized in the module init function
 	 * to be portable to Windows without using C++. */
 	PyObject_HEAD_INIT(NULL)

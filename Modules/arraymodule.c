@@ -1858,7 +1858,7 @@ typecode -- the typecode character used to create the array\n\
 itemsize -- the length in bytes of one array item\n\
 ");
 
-statichere PyTypeObject Arraytype = {
+static PyTypeObject Arraytype = {
 	PyObject_HEAD_INIT(NULL)
 	0,
 	"array.array",
