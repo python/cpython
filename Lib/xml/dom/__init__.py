@@ -37,3 +37,71 @@ class Node:
     DOCUMENT_TYPE_NODE          = 10
     DOCUMENT_FRAGMENT_NODE      = 11
     NOTATION_NODE               = 12
+
+#ExceptionCode
+INDEX_SIZE_ERR                 = 1
+DOMSTRING_SIZE_ERR             = 2
+HIERARCHY_REQUEST_ERR          = 3
+WRONG_DOCUMENT_ERR             = 4
+INVALID_CHARACTER_ERR          = 5
+NO_DATA_ALLOWED_ERR            = 6
+NO_MODIFICATION_ALLOWED_ERR    = 7
+NOT_FOUND_ERR                  = 8
+NOT_SUPPORTED_ERR              = 9
+INUSE_ATTRIBUTE_ERR            = 10
+INVALID_STATE_ERR              = 11
+SYNTAX_ERR                     = 12
+INVALID_MODIFICATION_ERR       = 13
+NAMESPACE_ERR                  = 14
+INVALID_ACCESS_ERR             = 15
+
+class DOMException(Exception):
+    """Abstract base class for DOM exceptions.
+    Exceptions with specific codes are specializations of this class."""
+    
+    pass
+
+class IndexSizeErr(DOMException):
+    code = INDEX_SIZE_ERR
+
+class DomstringSizeErr(DOMException):
+    code = DOMSTRING_SIZE_ERR
+
+class HierarchyRequestErr(DOMException):
+    code = HIERARCHY_REQUEST_ERR
+
+class WrongDocumentErr(DOMException):
+    code = WRONG_DOCUMENT_ERR
+
+class InvalidCharacterErr(DOMException):
+    code = INVALID_CHARACTER_ERR
+
+class NoDataAllowedErr(DOMException):
+    code = NO_DATA_ALLOWED_ERR
+
+class NoModificationAllowedErr(DOMException):
+    code = NO_MODIFICATION_ALLOWED_ERR
+
+class NotFoundErr(DOMException):
+    code = NOT_FOUND_ERR
+
+class NotSupportedErr(DOMException):
+    code = NOT_SUPPORTED_ERR
+
+class InuseAttributeErr(DOMException):
+    code = INUSE_ATTRIBUTE_ERR
+
+class InvalidStateErr(DOMException):
+    code = INVALID_STATE_ERR
+
+class SyntaxErr(DOMException):
+    code = SYNTAX_ERR
+
+class InvalidModificationErr(DOMException):
+    code = INVALID_MODIFICATION_ERR
+
+class NamespaceErr(DOMException):
+    code = NAMESPACE_ERR
+
+class InvalidAccessErr(DOMException):
+    code = INVALID_ACCESS_ERR
