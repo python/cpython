@@ -580,8 +580,11 @@ do_cmp(PyObject *v, PyObject *w)
 	cmpfunc f;
 
 	if (v->ob_type == w->ob_type
-	    && (f = v->ob_type->tp_compare) != NULL)
-		return (*f)(v, w);
+	    && (f = v->ob_type->tp_compare) != NULL) {
+		c = (*f)(v, w);
+		if (c != 2 || !PyInstance_Check(v))
+			return c;
+	}
 	c = try_rich_to_3way_compare(v, w);
 	if (c < 2)
 		return c;
