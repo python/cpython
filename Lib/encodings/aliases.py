@@ -26,6 +26,7 @@ aliases = {
     # ascii codec
     '646'                : 'ascii',
     'ansi_x3.4_1968'     : 'ascii',
+    'ansi_x3_4_1968'     : 'ascii', # some email headers use this non-standard name
     'ansi_x3.4_1986'     : 'ascii',
     'cp367'              : 'ascii',
     'csascii'            : 'ascii',
