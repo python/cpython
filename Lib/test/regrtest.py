@@ -878,6 +878,34 @@ _expectations = {
         test_winreg
         test_winsound
         """,
+    'os2emx':
+        """
+        test_al
+        test_audioop
+        test_bsddb3
+        test_cd
+        test_cl
+        test_commands
+        test_curses
+        test_dl
+        test_email_codecs
+        test_gl
+        test_imgfile
+        test_largefile
+        test_linuxaudiodev
+        test_mhlib
+        test_mmap
+        test_nis
+        test_openpty
+        test_ossaudiodev
+        test_pty
+        test_resource
+        test_signal
+        test_sunaudiodev
+        test_unicode_file
+        test_winreg
+        test_winsound
+        """,
 }
 
 class _ExpectedSkips:
