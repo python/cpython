@@ -78,6 +78,7 @@ __wcstoul
 watof
 wcstod
 __wcstold
+fwide
 fgetws
 fputws
 ungetwc
@@ -228,6 +229,7 @@ __end_critical_region
 __begin_critical_region
 __kill_critical_regions
 __init_critical_regions
+clrscr
 __close_console
 __write_console
 __read_console
@@ -306,6 +308,7 @@ SIOUXDoEditCut
 SIOUXDoSaveText
 SIOUXUpdateMenuItems
 SIOUXSetupMenus
+SIOUXclrscr
 getch
 kbhit
 SIOUXSetTitle
@@ -1046,8 +1049,7 @@ getwd
 getbootvol
 sync
 macstat
-PyMac_Getwide
-PyMac_Buildwide
+main
 PyMac_AddLibResources
 __initialize_with_resources
 getfiletype
@@ -1061,6 +1063,8 @@ PyMac_InitApplication
 PyMac_Initialize
 PyMac_InitApplet
 guesstabsize
+PyMac_Buildwide
+PyMac_Getwide
 PyMac_BuildFixed
 PyMac_GetFixed
 PyMac_BuildEventRecord
@@ -1077,9 +1081,6 @@ PyMac_BuildOSType
 PyMac_GetOSType
 PyMac_PromptGetFile
 PyMac_GetDirectory
-PyMac_FindModuleExtension
-PyMac_LoadResourceModule
-PyMac_FindResourceModule
 SIOUXDoAboutBox
 PyMac_RestoreMenuBar
 PyMac_InitMenuBar
@@ -1237,8 +1238,8 @@ PyLong_FromUnsignedLong
 PyLong_FromLong
 _PyLong_New
 PyList_AsTuple
-PyList_Sort
 PyList_Reverse
+PyList_Sort
 PyList_SetSlice
 PyList_GetSlice
 PyList_Append
@@ -1313,17 +1314,18 @@ PyInstance_DoBinOp
 PyInstance_New
 PyClass_IsSubclass
 PyClass_New
-PyMapping_SetItemString
-PyMapping_GetItemString
 PyObject_CallMethod
 PyObject_CallFunction
 PyObject_CallObject
 PyMapping_HasKey
 PyMapping_HasKeyString
+PyMapping_SetItemString
+PyMapping_GetItemString
 PyMapping_Length
 PyMapping_Check
 PySequence_Index
 PySequence_In
+PySequence_Contains
 PySequence_Count
 PySequence_List
 PySequence_Tuple
@@ -1365,6 +1367,8 @@ PyObject_Type
 PyObject_Cmp
 PyTraceBack_Print
 PyTraceBack_Here
+PySys_WriteStderr
+PySys_WriteStdout
 PySys_SetArgv
 PySys_SetPath
 _PySys_Init
@@ -1422,6 +1426,8 @@ PyMarshal_ReadLongFromFile
 PyMarshal_WriteObjectToFile
 PyMarshal_WriteLongToFile
 _PyImport_LoadDynamicModule
+PyImport_AppendInittab
+PyImport_ExtendInittab
 initimp
 setint
 PyImport_Import
@@ -1451,6 +1457,7 @@ PyErr_NewException
 PyErr_Format
 PyErr_BadInternalCall
 PyErr_SetFromErrno
+PyErr_SetFromErrnoWithFilename
 PyErr_NoMemory
 PyErr_BadArgument
 PyErr_Clear
@@ -1495,6 +1502,11 @@ _PyBuiltin_Fini_2
 _PyBuiltin_Fini_1
 _PyBuiltin_Init_2
 _PyBuiltin_Init_1
+PyMac_FindModuleExtension
+PyMac_LoadResourceModule
+PyMac_LoadCodeResourceModule
+PyMac_FindCodeResourceModule
+PyMac_FindResourceModule
 hypot
 initcStringIO
 initcPickle
@@ -1537,10 +1549,6 @@ __double_max
 __double_min
 __float_huge
 __float_nan
-__float_tiny
-__float_epsilon
-__float_max
-__float_min
 __temp_file_mode
 __upper_map
 __lower_map
@@ -1617,7 +1625,6 @@ __vt__15AppleTalkSocket		# AppleTalkSocket::__vt
 __vt__10ADSPSocket		# ADSPSocket::__vt
 __vt__21AppleTalkSocketDomain		# AppleTalkSocketDomain::__vt
 uADSPCompletion
-PyAST_Type
 new_doc
 _PyParser_TokenNames
 PyType_Type
@@ -1741,7 +1748,9 @@ PyExc_AssertionError
 PyExc_AttributeError
 PyExc_EOFError
 PyExc_FloatingPointError
+PyExc_EnvironmentError
 PyExc_IOError
+PyExc_OSError
 PyExc_ImportError
 PyExc_IndexError
 PyExc_KeyError
