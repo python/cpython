@@ -26,7 +26,7 @@ del thread
 
 # Debug support (adapted from ihooks.py)
 
-_VERBOSE = 0 # XXX Bool or int?
+_VERBOSE = False
 
 if __debug__:
 
