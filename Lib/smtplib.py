@@ -187,21 +187,30 @@ class SMTP:
 
           - server response string corresponding to response code (multiline
             responses are converted to a single, multiline string).
+
+        Raises SMTPServerDisconnected if end-of-file is reached.
         """
         resp=[]
-        self.file = self.sock.makefile('rb')
+	if self.file is None:
+	    self.file = self.sock.makefile('rb')
         while 1:
             line = self.file.readline()
+	    if line == '':
+		self.close()
+		raise SMTPServerDisconnected("Connection unexpectedly closed")
             if self.debuglevel > 0: print 'reply:', `line`
             resp.append(string.strip(line[4:]))
             code=line[:3]
-            #check if multiline resp
+	    # Check that the error code is syntactically correct.
+	    # Don't attempt to read a continuation line if it is broken.
+	    try:
+		errcode = string.atoi(code)
+	    except ValueError:
+		errcode = -1
+		break
+            # Check if multiline response.
             if line[3:4]!="-":
                 break
-        try:
-            errcode = string.atoi(code)
-        except(ValueError):
-            errcode = -1
 
         errmsg = string.join(resp,"\n")
         if self.debuglevel > 0: 
