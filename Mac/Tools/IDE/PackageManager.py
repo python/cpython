@@ -421,6 +421,11 @@ class PackageBrowser(PimpInterface):
 		
 	def showmessages(self, messages):
 		if messages:
+			# To be on the safe side we always show the hidden packages,
+			# they may be referred to in the error messages.
+			if not self.w.hidden_button.get():
+				self.w.hidden_button.set(1)
+				self.updatestatus()
 			if type(messages) == list:
 				messages = '\n'.join(messages)
 			if self.w.verbose_button.get():
