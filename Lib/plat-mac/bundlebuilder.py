@@ -83,7 +83,7 @@ class BundleBuilder(Defaults):
 	              CFBundleInfoDictionaryVersion = "6.0")
 
 	# The type of the bundle.
-	type = "APPL"
+	type = "BNDL"
 	# The creator code of the bundle.
 	creator = None
 
@@ -96,9 +96,6 @@ class BundleBuilder(Defaults):
 
 	# Directory where the bundle will be assembled.
 	builddir = "build"
-
-	# platform, name of the subfolder of Contents that contains the executable.
-	platform = "MacOS"
 
 	# Make symlinks instead copying files. This is handy during debugging, but
 	# makes the bundle non-distributable.
@@ -115,7 +112,6 @@ class BundleBuilder(Defaults):
 		bundleextension = ext
 		# misc (derived) attributes
 		self.bundlepath = pathjoin(self.builddir, self.name + bundleextension)
-		self.execdir = pathjoin("Contents", self.platform)
 
 		plist = self.plist
 		plist.CFBundleName = self.name
@@ -294,6 +290,12 @@ execfile(os.path.join(os.path.split(__file__)[0], "%(realmainprogram)s"))
 
 class AppBuilder(BundleBuilder):
 
+	# Override type of the bundle.
+	type = "BNDL"
+
+	# platform, name of the subfolder of Contents that contains the executable.
+	platform = "MacOS"
+
 	# A Python main program. If this argument is given, the main
 	# executable in the bundle will be a small wrapper that invokes
 	# the main program. (XXX Discuss why.)
@@ -354,6 +356,8 @@ class AppBuilder(BundleBuilder):
 		if self.mainprogram is None and self.executable is None:
 			raise BundleBuilderError, ("must specify either or both of "
 					"'executable' and 'mainprogram'")
+
+		self.execdir = pathjoin("Contents", self.platform)
 
 		if self.name is not None:
 			pass
