@@ -17,9 +17,14 @@
 import sre_compile
 import sre_parse
 
-__all__ = ["match","search","sub","subn","split","findall","compile",
-           "purge","template","escape","I","L","M","S","X","U","IGNORECASE",
-           "LOCALE","MULTILINE","DOTALL","VERBOSE","UNICODE","error"]
+# public symbols
+__all__ = [ "match", "search", "sub", "subn", "split", "findall",
+    "compile", "purge", "template", "escape", "I", "L", "M", "S", "X",
+    "U", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
+    "UNICODE", "error" ]
+
+# this module works under 1.5.2 and later.  don't use string methods
+import string
 
 # flags
 I = IGNORECASE = sre_compile.SRE_FLAG_IGNORECASE # ignore case
@@ -88,7 +93,6 @@ def purge():
 
 def template(pattern, flags=0):
     "Compile a template pattern, returning a pattern object"
-
     return _compile(pattern, flags|T)
 
 def escape(pattern):
@@ -111,7 +115,7 @@ _MAXCACHE = 100
 
 def _join(seq, sep):
     # internal: join into string having the same type as sep
-    return sep[:0].join(seq)
+    return string.join(seq, sep[:0])
 
 def _compile(*key):
     # internal: compile pattern
