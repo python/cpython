@@ -431,4 +431,45 @@ class TestCase(unittest.TestCase):
         d = {"one": 1, "two": 2, "three": 3}
         self.assertEqual(reduce(add, d), "".join(d.keys()))
 
+    def test_unicode_join_endcase(self):
+
+        # This class inserts a Unicode object into its argument's natural
+        # iteration, in the 3rd position.
+        class OhPhooey:
+            def __init__(self, seq):
+                self.it = iter(seq)
+                self.i = 0
+
+            def __iter__(self):
+                return self
+
+            def next(self):
+                i = self.i
+                self.i = i+1
+                if i == 2:
+                    return u"fooled you!"
+                return self.it.next()
+
+        f = open(TESTFN, "w")
+        try:
+            f.write("a\n" + "b\n" + "c\n")
+        finally:
+            f.close()
+
+        f = open(TESTFN, "r")
+        # Nasty:  string.join(s) can't know whether unicode.join() is needed
+        # until it's seen all of s's elements.  But in this case, f's
+        # iterator cannot be restarted.  So what we're testing here is
+        # whether string.join() can manage to remember everything it's seen
+        # and pass that on to unicode.join().
+        try:
+            got = " - ".join(OhPhooey(f))
+            self.assertEqual(got, u"a\n - b\n - fooled you! - c\n")
+        finally:
+            f.close()
+            try:
+                unlink(TESTFN)
+            except OSError:
+                pass
+
 run_unittest(TestCase)

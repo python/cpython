@@ -2724,10 +2724,11 @@ PyObject *PyUnicode_Join(PyObject *separator,
     int seqlen = 0;
     int sz = 100;
     int i;
+    PyObject *it;
 
-    seqlen = PySequence_Size(seq);
-    if (seqlen < 0 && PyErr_Occurred())
-	return NULL;
+    it = PyObject_GetIter(seq);
+    if (it == NULL)
+        return NULL;
 
     if (separator == NULL) {
 	Py_UNICODE blank = ' ';
@@ -2737,7 +2738,7 @@ PyObject *PyUnicode_Join(PyObject *separator,
     else {
 	separator = PyUnicode_FromObject(separator);
 	if (separator == NULL)
-	    return NULL;
+	    goto onError;
 	sep = PyUnicode_AS_UNICODE(separator);
 	seplen = PyUnicode_GET_SIZE(separator);
     }
@@ -2748,13 +2749,14 @@ PyObject *PyUnicode_Join(PyObject *separator,
     p = PyUnicode_AS_UNICODE(res);
     reslen = 0;
 
-    for (i = 0; i < seqlen; i++) {
+    for (i = 0; ; ++i) {
 	int itemlen;
-	PyObject *item;
-
-	item = PySequence_GetItem(seq, i);
-	if (item == NULL)
-	    goto onError;
+	PyObject *item = PyIter_Next(it);
+	if (item == NULL) {
+	    if (PyErr_Occurred())
+		goto onError;
+	    break;
+	}
 	if (!PyUnicode_Check(item)) {
 	    PyObject *v;
 	    v = PyUnicode_FromObject(item);
@@ -2784,11 +2786,13 @@ PyObject *PyUnicode_Join(PyObject *separator,
 	goto onError;
 
     Py_XDECREF(separator);
+    Py_DECREF(it);
     return (PyObject *)res;
 
  onError:
     Py_XDECREF(separator);
-    Py_DECREF(res);
+    Py_XDECREF(res);
+    Py_DECREF(it);
     return NULL;
 }
 
