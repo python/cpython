@@ -22,7 +22,7 @@ DisableProgramGroupPage=yes
 
 SourceDir=.
 OutputDir=.
-OutputBaseFilename=Python-Debug-2.3.3
+OutputBaseFilename=Python-Debug-2.3.4
 DefaultDirName={reg:HKLM\SOFTWARE\Python\PythonCore\2.3\InstallPath,|}
 
 [Code]
