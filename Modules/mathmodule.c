@@ -43,7 +43,7 @@ extern double modf PROTO((double, double *));
 #endif /* _MSC_VER */
 
 
-#if defined(HAVE_HYPOT) && !defined(NeXT)
+#if defined(HAVE_HYPOT)
 extern double hypot PROTO((double, double));
 #else
 double hypot(x,y)
