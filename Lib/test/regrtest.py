@@ -55,7 +55,6 @@ import getopt
 import traceback
 import random
 import StringIO
-import warnings
 
 import test_support
 
@@ -323,7 +322,6 @@ def runtest(test, generate, verbose, quiet, testdir = None):
                 indirect_test()
         finally:
             sys.stdout = save_stdout
-            warnings.resetwarnings()
     except (ImportError, test_support.TestSkipped), msg:
         if not quiet:
             print "test", test, "skipped --", msg
