@@ -119,16 +119,13 @@ Kalle Svensson.}
 %======================================================================
 \section{PEP 289: Generator Expressions}
 
-The iterator feature introduced in Python 2.2 makes it easier to write
-programs that loop through large data sets without having the entire
-data set in memory at one time.  Programmers can use iterators and the
-\module{itertools} module to write code in a fairly functional style.
-
-% XXX avoid metaphor
-List comprehensions have been the fly in the ointment because they
-produce a Python list object containing all of the items, unavoidably
-pulling them all into memory.  When trying to write a
-functionally-styled program, it would be natural to write something
+The iterator feature introduced in Python 2.2 and the
+\module{itertools} module make it easier to write programs that loop
+through large data sets without having the entire data set in memory
+at one time.  List comprehensions don't fit into this picture very
+well because they produce a Python list object containing all of the
+items, unavoidably pulling them all into memory.  When trying to write
+a functionally-styled program, it would be natural to write something
 like:
 
 \begin{verbatim}
@@ -148,7 +145,8 @@ for link in get_all_links():
 
 The first form is more concise and perhaps more readable, but if
 you're dealing with a large number of link objects the second form
-would have to be used.
+would have to be used to avoid having all link objects in memory at
+the same time.
 
 Generator expressions work similarly to list comprehensions but don't
 materialize the entire list; instead they create a generator that will
