@@ -376,6 +376,9 @@ class Telnet:
 
     def interact(self):
         """Interaction function, emulates a very dumb telnet client."""
+        if sys.platform == "win32":
+            self.mt_interact()
+            return
         while 1:
             rfd, wfd, xfd = select.select([self, sys.stdin], [], [])
             if self in rfd:
@@ -392,6 +395,29 @@ class Telnet:
                 if not line:
                     break
                 self.write(line)
+
+    def mt_interact(self):
+        """Multithreaded version of interact()."""
+        import thread
+        thread.start_new_thread(self.listener, ())
+        while 1:
+            line = sys.stdin.readline()
+            if not line:
+                break
+            self.write(line)
+
+    def listener(self):
+        """Helper for mt_interact() -- this executes in the other thread."""
+        while 1:
+            try:
+                data = self.read_eager()
+            except EOFError:
+                print '*** Connection closed by remote host ***'
+                return
+            if data:
+                sys.stdout.write(data)
+            else:
+                sys.stdout.flush()
 
     def expect(self, list, timeout=None):
         """Read until one from a list of a regular expressions matches.
