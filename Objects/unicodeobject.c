@@ -4793,7 +4793,6 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    int flags = 0;
 	    int width = -1;
 	    int prec = -1;
-	    int size = 0;
 	    Py_UNICODE c = '\0';
 	    Py_UNICODE fill;
 	    PyObject *v = NULL;
@@ -4931,7 +4930,6 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    } /* prec */
 	    if (fmtcnt >= 0) {
 		if (c == 'h' || c == 'l' || c == 'L') {
-		    size = c;
 		    if (--fmtcnt >= 0)
 			c = *fmt++;
 		}
