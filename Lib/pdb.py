@@ -993,8 +993,8 @@ def runctx(statement, globals, locals):
     # B/W compatibility
     run(statement, globals, locals)
 
-def runcall(*args):
-    return Pdb().runcall(*args)
+def runcall(*args, **kwds):
+    return Pdb().runcall(*args, **kwds)
 
 def set_trace():
     Pdb().set_trace()

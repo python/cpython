@@ -45,6 +45,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1052503 pdb.runcall() was not passing along keyword arguments.
+
 - Bug #902037: XML.sax.saxutils.prepare_input_source() now combines relative
   paths with a base path before checking os.path.isfile().
 
