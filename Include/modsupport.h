@@ -51,9 +51,22 @@ extern object *mkvalue();
 extern int vgetargs PROTO((object *, char *, va_list));
 extern object *vmkvalue PROTO((char *, va_list));
 
-extern object *initmodule PROTO((char *, struct methodlist *));
-extern object *initmodule3 PROTO((char *, struct methodlist *,
-				  char *, object *));
+#define PYTHON_API_VERSION 1001
+/* The API version is maintained (independently from the Python version)
+   so we can detect mismatches between the interpreter and dynamically
+   loaded modules.
+
+   Please add a line or two to the top of this log for each API
+   version change:
+
+   9-Jan-1995	GvR	Initial version (incompatible with older API)
+*/
+
+extern object *initmodule4 PROTO((char *, struct methodlist *,
+				  char *, object *, int));
+#define initmodule(name, methods) \
+	initmodule4(name, methods, (char *)NULL, (object *)NULL, \
+		    PYTHON_API_VERSION)
 
 /* The following are obsolete -- use getargs directly! */
 #define getnoarg(v) getargs(v, "")

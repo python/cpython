@@ -33,20 +33,32 @@ typedef extended va_double;
 typedef double va_double;
 #endif
 
-/* initmodule3() has two additional parameters:
-   - doc is the documentation string;
-   - passthrough is passed as self to functions defined in the module.
+/* initmodule4() parameters:
+   - name is the module name
+   - methods is the list of top-level functions
+   - doc is the documentation string
+   - passthrough is passed as self to functions defined in the module
+   - api_version is the value of PYTHON_API_VERSION at the time the
+     module was compiled
 */
 
+static char api_version_warning[] =
+"WARNING: Python C API version mismatch for module %s:\n\
+  This Python has API version %d, module %s has version %s.\n";
+
 object *
-initmodule3(name, methods, doc, passthrough)
+initmodule4(name, methods, doc, passthrough, module_api_version)
 	char *name;
 	struct methodlist *methods;
 	char *doc;
 	object *passthrough;
+	int module_api_version;
 {
 	object *m, *d, *v;
 	struct methodlist *ml;
+	if (module_api_version != PYTHON_API_VERSION)
+		fprintf(stderr, api_version_warning,
+			name, PYTHON_API_VERSION, name, module_api_version);
 	if ((m = add_module(name)) == NULL) {
 		fprintf(stderr, "initializing module: %s\n", name);
 		fatal("can't create a module");
@@ -67,16 +79,6 @@ initmodule3(name, methods, doc, passthrough)
 		DECREF(v);
 	}
 	return m;
-}
-
-/* The standard initmodule() passes NULL for 'self' */
-
-object *
-initmodule(name, methods)
-	char *name;
-	struct methodlist *methods;
-{
-	return initmodule3(name, methods, (char *)NULL, (object *)NULL);
 }
 
 
