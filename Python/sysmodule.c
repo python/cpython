@@ -408,21 +408,27 @@ _PySys_Init()
 	PyDict_SetItemString(sysdict, "hexversion",
 			     v = PyInt_FromLong(PY_VERSION_HEX));
 	Py_XDECREF(v);
+	/*
+	 * These release level checks are mutually exclusive and cover
+	 * the field, so don't get too fancy with the pre-processor!
+	 */
+#if PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_ALPHA
+	v = PyString_FromString("alpha");
+#endif
+#if PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_BETA
+	v = PyString_FromString("beta");
+#endif
+#if PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_GAMMA
+	v = PyString_FromString("candidate");
+#endif
 #if PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_FINAL
-	v = PyString_FromStringAndSize(NULL, 0);
-#else
-	{
-	    char buff[3];
-	    buff[0] = PY_RELEASE_LEVEL - PY_RELEASE_LEVEL_ALPHA + 'a';
-	    buff[1] = PY_RELEASE_SERIAL + '0';
-	    buff[2] = '\0';
-	    v = PyString_FromString(buff);
-	}
-#endif /* PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_FINAL */
+	v = PyString_FromString("final");
+#endif
 	PyDict_SetItemString(sysdict, "version_info",
-			     v = Py_BuildValue("iiiN", PY_MAJOR_VERSION,
+			     v = Py_BuildValue("iiiNi", PY_MAJOR_VERSION,
 					       PY_MINOR_VERSION,
-					       PY_MICRO_VERSION, v));
+					       PY_MICRO_VERSION, v,
+					       PY_RELEASE_SERIAL));
 	Py_XDECREF(v);
 	PyDict_SetItemString(sysdict, "copyright",
 			     v = PyString_FromString(Py_GetCopyright()));
