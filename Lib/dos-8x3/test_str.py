@@ -1,185 +1,134 @@
+#! /usr/bin/env python
+
+# Sanity checker for time.strftime
+
+import time, calendar, sys, string, os, re
 from test_support import verbose
-import string, sys
 
-# XXX: kludge... short circuit if strings don't have methods
-try:
-    ''.join
-except AttributeError:
-    raise ImportError
+def main():
+    global verbose
+    now = time.time()
+    strftest(now)
+    verbose = 0
+    # Try a bunch of dates and times,  chosen to vary through time of
+    # day and daylight saving time
+    for j in range(-5, 5):
+        for i in range(25):
+            strftest(now + (i + j*100)*23*3603)
 
-def test(name, input, output, *args):
+def strftest(now):
     if verbose:
-        print 'string.%s%s =? %s... ' % (name, (input,) + args, output),
+        print "strftime test for", time.ctime(now)
+    nowsecs = str(long(now))[:-1]
+    gmt = time.gmtime(now)
+    now = time.localtime(now)
+
+    if now[3] < 12: ampm='AM'
+    else: ampm='PM'
+
+    jan1 = time.localtime(time.mktime((now[0], 1, 1) + (0,)*6))
+
     try:
-        # Prefer string methods over string module functions
+        if now[8]: tz = time.tzname[1]
+        else: tz = time.tzname[0]
+    except AttributeError:
+        tz = ''
+
+    if now[3] > 12: clock12 = now[3] - 12
+    elif now[3] > 0: clock12 = now[3]
+    else: clock12 = 12
+
+    expectations = (
+        ('%a', calendar.day_abbr[now[6]], 'abbreviated weekday name'),
+        ('%A', calendar.day_name[now[6]], 'full weekday name'),
+        ('%b', calendar.month_abbr[now[1]], 'abbreviated month name'),
+        ('%B', calendar.month_name[now[1]], 'full month name'),
+        # %c see below
+        ('%d', '%02d' % now[2], 'day of month as number (00-31)'),
+        ('%H', '%02d' % now[3], 'hour (00-23)'),
+        ('%I', '%02d' % clock12, 'hour (01-12)'),
+        ('%j', '%03d' % now[7], 'julian day (001-366)'),
+        ('%m', '%02d' % now[1], 'month as number (01-12)'),
+        ('%M', '%02d' % now[4], 'minute, (00-59)'),
+        ('%p', ampm, 'AM or PM as appropriate'),
+        ('%S', '%02d' % now[5], 'seconds of current time (00-60)'),
+        ('%U', '%02d' % ((now[7] + jan1[6])/7),
+         'week number of the year (Sun 1st)'),
+        ('%w', '0?%d' % ((1+now[6]) % 7), 'weekday as a number (Sun 1st)'),
+        ('%W', '%02d' % ((now[7] + (jan1[6] - 1)%7)/7),
+         'week number of the year (Mon 1st)'),
+        # %x see below
+        ('%X', '%02d:%02d:%02d' % (now[3], now[4], now[5]), '%H:%M:%S'),
+        ('%y', '%02d' % (now[0]%100), 'year without century'),
+        ('%Y', '%d' % now[0], 'year with century'),
+        # %Z see below
+        ('%%', '%', 'single percent sign'),
+        )
+
+    nonstandard_expectations = (
+        # These are standard but don't have predictable output
+        ('%c', fixasctime(time.asctime(now)), 'near-asctime() format'),
+        ('%x', '%02d/%02d/%02d' % (now[1], now[2], (now[0]%100)),
+         '%m/%d/%y %H:%M:%S'),
+        ('%Z', '%s' % tz, 'time zone name'),
+
+        # These are some platform specific extensions
+        ('%D', '%02d/%02d/%02d' % (now[1], now[2], (now[0]%100)), 'mm/dd/yy'),
+        ('%e', '%2d' % now[2], 'day of month as number, blank padded ( 0-31)'),
+        ('%h', calendar.month_abbr[now[1]], 'abbreviated month name'),
+        ('%k', '%2d' % now[3], 'hour, blank padded ( 0-23)'),
+        ('%n', '\n', 'newline character'),
+        ('%r', '%02d:%02d:%02d %s' % (clock12, now[4], now[5], ampm),
+         '%I:%M:%S %p'),
+        ('%R', '%02d:%02d' % (now[3], now[4]), '%H:%M'),
+        ('%s', nowsecs, 'seconds since the Epoch in UCT'),
+        ('%t', '\t', 'tab character'),
+        ('%T', '%02d:%02d:%02d' % (now[3], now[4], now[5]), '%H:%M:%S'),
+        ('%3y', '%03d' % (now[0]%100),
+         'year without century rendered using fieldwidth'),
+        )
+
+    if verbose:
+        print "Strftime test, platform: %s, Python version: %s" % \
+              (sys.platform, string.split(sys.version)[0])
+
+    for e in expectations:
         try:
-            f = getattr(input, name)
-            value = apply(f, args)
-        except AttributeError:
-            f = getattr(string, name)
-            value = apply(f, (input,) + args)
-    except:
-         value = sys.exc_type
-    if value != output:
-        if verbose:
-            print 'no'
-        print f, `input`, `output`, `value`
-    else:
-        if verbose:
-            print 'yes'
+            result = time.strftime(e[0], now)
+        except ValueError, error:
+            print "Standard '%s' format gave error:" % e[0], error
+            continue
+        if re.match(e[1], result): continue
+        if not result or result[0] == '%':
+            print "Does not support standard '%s' format (%s)" % (e[0], e[2])
+        else:
+            print "Conflict for %s (%s):" % (e[0], e[2])
+            print "  Expected %s, but got %s" % (e[1], result)
 
-test('atoi', " 1 ", 1)
-test('atoi', " 1x", ValueError)
-test('atoi', " x1 ", ValueError)
-test('atol', "  1  ", 1L)
-test('atol', "  1x ", ValueError)
-test('atol', "  x1 ", ValueError)
-test('atof', "  1  ", 1.0)
-test('atof', "  1x ", ValueError)
-test('atof', "  x1 ", ValueError)
+    for e in nonstandard_expectations:
+        try:
+            result = time.strftime(e[0], now)
+        except ValueError, result:
+            if verbose:
+                print "Error for nonstandard '%s' format (%s): %s" % \
+                      (e[0], e[2], str(result))
+            continue
+        if re.match(e[1], result):
+            if verbose:
+                print "Supports nonstandard '%s' format (%s)" % (e[0], e[2])
+        elif not result or result[0] == '%':
+            if verbose:
+                print "Does not appear to support '%s' format (%s)" % (e[0],
+                                                                       e[2])
+        else:
+            if verbose:
+                print "Conflict for nonstandard '%s' format (%s):" % (e[0],
+                                                                      e[2])
+                print "  Expected %s, but got %s" % (e[1], result)
 
-test('capitalize', ' hello ', ' hello ')
-test('capitalize', 'hello ', 'Hello ')
-test('find', 'abcdefghiabc', 0, 'abc')
-test('find', 'abcdefghiabc', 9, 'abc', 1)
-test('find', 'abcdefghiabc', -1, 'def', 4)
-test('rfind', 'abcdefghiabc', 9, 'abc')
-test('lower', 'HeLLo', 'hello')
-test('lower', 'hello', 'hello')
-test('upper', 'HeLLo', 'HELLO')
-test('upper', 'HELLO', 'HELLO')
+def fixasctime(s):
+    if s[8] == ' ':
+        s = s[:8] + '0' + s[9:]
+    return s
 
-test('title', ' hello ', ' Hello ')
-test('title', 'hello ', 'Hello ')
-test('title', "fOrMaT thIs aS titLe String", 'Format This As Title String')
-test('title', "fOrMaT,thIs-aS*titLe;String", 'Format,This-As*Title;String')
-test('title', "getInt", 'Getint')
-
-test('expandtabs', 'abc\rab\tdef\ng\thi', 'abc\rab      def\ng       hi')
-test('expandtabs', 'abc\rab\tdef\ng\thi', 'abc\rab      def\ng       hi', 8)
-test('expandtabs', 'abc\rab\tdef\ng\thi', 'abc\rab  def\ng   hi', 4)
-test('expandtabs', 'abc\r\nab\tdef\ng\thi', 'abc\r\nab  def\ng   hi', 4)
-
-test('islower', 'a', 1)
-test('islower', 'A', 0)
-test('islower', '\n', 0)
-test('islower', 'abc', 1)
-test('islower', 'aBc', 0)
-test('islower', 'abc\n', 1)
-
-test('isupper', 'a', 0)
-test('isupper', 'A', 1)
-test('isupper', '\n', 0)
-test('isupper', 'ABC', 1)
-test('isupper', 'AbC', 0)
-test('isupper', 'ABC\n', 1)
-
-test('istitle', 'a', 0)
-test('istitle', 'A', 1)
-test('istitle', '\n', 0)
-test('istitle', 'A Titlecased Line', 1)
-test('istitle', 'A\nTitlecased Line', 1)
-test('istitle', 'A Titlecased, Line', 1)
-test('istitle', 'Not a capitalized String', 0)
-test('istitle', 'Not\ta Titlecase String', 0)
-test('istitle', 'Not--a Titlecase String', 0)
-
-test('splitlines', "abc\ndef\n\rghi", ['abc', 'def', '', 'ghi'])
-test('splitlines', "abc\ndef\n\r\nghi", ['abc', 'def', '', 'ghi'])
-test('splitlines', "abc\ndef\r\nghi", ['abc', 'def', 'ghi'])
-test('splitlines', "abc\ndef\r\nghi\n", ['abc', 'def', 'ghi'])
-test('splitlines', "abc\ndef\r\nghi\n\r", ['abc', 'def', 'ghi', ''])
-test('splitlines', "\nabc\ndef\r\nghi\n\r", ['', 'abc', 'def', 'ghi', ''])
-test('splitlines', "\nabc\ndef\r\nghi\n\r", ['\n', 'abc\n', 'def\r\n', 'ghi\n', '\r'], 1)
-
-transtable = '\000\001\002\003\004\005\006\007\010\011\012\013\014\015\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037 !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`xyzdefghijklmnopqrstuvwxyz{|}~\177\200\201\202\203\204\205\206\207\210\211\212\213\214\215\216\217\220\221\222\223\224\225\226\227\230\231\232\233\234\235\236\237\240\241\242\243\244\245\246\247\250\251\252\253\254\255\256\257\260\261\262\263\264\265\266\267\270\271\272\273\274\275\276\277\300\301\302\303\304\305\306\307\310\311\312\313\314\315\316\317\320\321\322\323\324\325\326\327\330\331\332\333\334\335\336\337\340\341\342\343\344\345\346\347\350\351\352\353\354\355\356\357\360\361\362\363\364\365\366\367\370\371\372\373\374\375\376\377'
-
-test('maketrans', 'abc', transtable, 'xyz')
-test('maketrans', 'abc', ValueError, 'xyzq')
-
-test('split', 'this is the split function',
-     ['this', 'is', 'the', 'split', 'function'])
-test('split', 'a|b|c|d', ['a', 'b', 'c', 'd'], '|')
-test('split', 'a|b|c|d', ['a', 'b', 'c|d'], '|', 2)
-test('split', 'a b c d', ['a', 'b c d'], None, 1)
-test('split', 'a b c d', ['a', 'b', 'c d'], None, 2)
-test('split', 'a b c d', ['a', 'b', 'c', 'd'], None, 3)
-test('split', 'a b c d', ['a', 'b', 'c', 'd'], None, 4)
-test('split', 'a b c d', ['a b c d'], None, 0)
-test('split', 'a  b  c  d', ['a', 'b', 'c  d'], None, 2)
-test('split', 'a b c d ', ['a', 'b', 'c', 'd'])
-
-# join now works with any sequence type
-class Sequence:
-    def __init__(self): self.seq = 'wxyz'
-    def __len__(self): return len(self.seq)
-    def __getitem__(self, i): return self.seq[i]
-
-test('join', ['a', 'b', 'c', 'd'], 'a b c d')
-test('join', ('a', 'b', 'c', 'd'), 'abcd', '')
-test('join', Sequence(), 'w x y z')
-test('join', 7, TypeError)
-
-class BadSeq(Sequence):
-    def __init__(self): self.seq = [7, 'hello', 123L]
-
-test('join', BadSeq(), TypeError)
-
-# try a few long ones
-print string.join(['x' * 100] * 100, ':')
-print string.join(('x' * 100,) * 100, ':')
-
-test('strip', '   hello   ', 'hello')
-test('lstrip', '   hello   ', 'hello   ')
-test('rstrip', '   hello   ', '   hello')
-test('strip', 'hello', 'hello')
-
-test('swapcase', 'HeLLo cOmpUteRs', 'hEllO CoMPuTErS')
-test('translate', 'xyzabcdef', 'xyzxyz', transtable, 'def')
-
-table = string.maketrans('a', 'A')
-test('translate', 'abc', 'Abc', table)
-test('translate', 'xyz', 'xyz', table)
-
-test('replace', 'one!two!three!', 'one@two!three!', '!', '@', 1)
-test('replace', 'one!two!three!', 'onetwothree', '!', '')
-test('replace', 'one!two!three!', 'one@two@three!', '!', '@', 2)
-test('replace', 'one!two!three!', 'one@two@three@', '!', '@', 3)
-test('replace', 'one!two!three!', 'one@two@three@', '!', '@', 4)
-test('replace', 'one!two!three!', 'one!two!three!', '!', '@', 0)
-test('replace', 'one!two!three!', 'one@two@three@', '!', '@')
-test('replace', 'one!two!three!', 'one!two!three!', 'x', '@')
-test('replace', 'one!two!three!', 'one!two!three!', 'x', '@', 2)
-
-test('startswith', 'hello', 1, 'he')
-test('startswith', 'hello', 1, 'hello')
-test('startswith', 'hello', 0, 'hello world')
-test('startswith', 'hello', 1, '')
-test('startswith', 'hello', 0, 'ello')
-test('startswith', 'hello', 1, 'ello', 1)
-test('startswith', 'hello', 1, 'o', 4)
-test('startswith', 'hello', 0, 'o', 5)
-test('startswith', 'hello', 1, '', 5)
-test('startswith', 'hello', 0, 'lo', 6)
-test('startswith', 'helloworld', 1, 'lowo', 3)
-test('startswith', 'helloworld', 1, 'lowo', 3, 7)
-test('startswith', 'helloworld', 0, 'lowo', 3, 6)
-
-test('endswith', 'hello', 1, 'lo')
-test('endswith', 'hello', 0, 'he')
-test('endswith', 'hello', 1, '')
-test('endswith', 'hello', 0, 'hello world')
-test('endswith', 'helloworld', 0, 'worl')
-test('endswith', 'helloworld', 1, 'worl', 3, 9)
-test('endswith', 'helloworld', 1, 'world', 3, 12)
-test('endswith', 'helloworld', 1, 'lowo', 1, 7)
-test('endswith', 'helloworld', 1, 'lowo', 2, 7)
-test('endswith', 'helloworld', 1, 'lowo', 3, 7)
-test('endswith', 'helloworld', 0, 'lowo', 4, 7)
-test('endswith', 'helloworld', 0, 'lowo', 3, 8)
-test('endswith', 'ab', 0, 'ab', 0, 1)
-test('endswith', 'ab', 0, 'ab', 0, 0)
-
-string.whitespace
-string.lowercase
-string.uppercase
+main()

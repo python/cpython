@@ -50,9 +50,20 @@ class UserString:
             return self.__class__(other + self.data)
         else:
             return self.__class__(str(other) + self.data)
+    def __iadd__(self, other):
+        if isinstance(other, UserString):
+            self.data += other.data
+        elif isinstance(other, StringType) or isinstance(other, UnicodeType):
+            self.data += other
+        else:
+            self.data += str(other)
+        return self
     def __mul__(self, n):
         return self.__class__(self.data*n)
     __rmul__ = __mul__
+    def __imull__(self, n):
+        self.data += n
+        return self
 
     # the following methods are defined in alphabetical order:
     def capitalize(self): return self.__class__(self.data.capitalize())
@@ -75,6 +86,8 @@ class UserString:
         return self.data.find(sub, start, end)
     def index(self, sub, start=0, end=sys.maxint): 
         return self.data.index(sub, start, end)
+    def isalpha(self): return self.data.isalpha()
+    def isalnum(self): return self.data.isalnum()
     def isdecimal(self): return self.data.isdecimal()
     def isdigit(self): return self.data.isdigit()
     def islower(self): return self.data.islower()
@@ -102,8 +115,8 @@ class UserString:
     def strip(self): return self.__class__(self.data.strip())
     def swapcase(self): return self.__class__(self.data.swapcase())
     def title(self): return self.__class__(self.data.title())
-    def translate(self, table, deletechars=""): 
-        return self.__class__(self.data.translate(table, deletechars))
+    def translate(self, *args): 
+        return self.__class__(self.data.translate(*args))
     def upper(self): return self.__class__(self.data.upper())
 
 class MutableString(UserString):

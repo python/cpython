@@ -260,6 +260,50 @@ print
 print 0 or 1, 0 or 1,
 print 0 or 1
 
+print 'extended print_stmt' # 'print' '>>' test ','
+import sys
+print >> sys.stdout, 1, 2, 3
+print >> sys.stdout, 1, 2, 3,
+print >> sys.stdout
+print >> sys.stdout, 0 or 1, 0 or 1,
+print >> sys.stdout, 0 or 1
+
+# test print >> None
+class Gulp:
+	def write(self, msg): pass
+
+def driver():
+	oldstdout = sys.stdout
+	sys.stdout = Gulp()
+	try:
+		tellme(Gulp())
+		tellme()
+	finally:
+		sys.stdout = oldstdout
+
+# we should see this once
+def tellme(file=sys.stdout):
+	print >> file, 'hello world'
+
+driver()
+
+# we should not see this at all
+def tellme(file=None):
+	print >> file, 'goodbye universe'
+
+driver()
+
+# syntax errors
+def check_syntax(statement):
+	try:
+		compile(statement, '<string>', 'exec')
+	except SyntaxError:
+		pass
+	else:
+		print 'Missing SyntaxError: "%s"' % statement
+check_syntax('print ,')
+check_syntax('print >> x,')
+
 print 'del_stmt' # 'del' exprlist
 del abc
 del x, y, (z, xyz)
@@ -542,3 +586,49 @@ class C:
 	def meth1(self): pass
 	def meth2(self, arg): pass
 	def meth3(self, a1, a2): pass
+
+# list comprehension tests
+nums = [1, 2, 3, 4, 5]
+strs = ["Apple", "Banana", "Coconut"]
+spcs = ["  Apple", " Banana ", "Coco  nut  "]
+
+print [s.strip() for s in spcs]
+print [3 * x for x in nums]
+print [x for x in nums if x > 2]
+print [(i, s) for i in nums for s in strs]
+print [(i, s) for i in nums for s in [f for f in strs if "n" in f]]
+try:
+    eval("[i, s for i in nums for s in strs]")
+    print "FAIL: should have raised a SyntaxError!"
+except SyntaxError:
+    print "good: got a SyntaxError as expected"
+
+try:
+    eval("[x if y]")
+    print "FAIL: should have raised a SyntaxError!"
+except SyntaxError:
+        print "good: got a SyntaxError as expected"
+
+suppliers = [
+  (1, "Boeing"),
+  (2, "Ford"),
+  (3, "Macdonalds")
+]
+
+parts = [
+  (10, "Airliner"),
+  (20, "Engine"),
+  (30, "Cheeseburger")
+]
+
+suppart = [
+  (1, 10), (1, 20), (2, 20), (3, 30)
+]
+
+print [
+  (sname, pname)
+    for (sno, sname) in suppliers
+      for (pno, pname) in parts
+        for (sp_sno, sp_pno) in suppart
+          if sno == sp_sno and pno == sp_pno
+]

@@ -34,3 +34,7 @@ class UserDict:
                 self.data[k] = v
     def get(self, key, failobj=None):
         return self.data.get(key, failobj)
+    def setdefault(self, key, failobj=None):
+        if not self.data.has_key(key):
+            self.data[key] = failobj
+        return self.data[key]

@@ -253,3 +253,15 @@ if d.get('c') != None: raise TestFailed, 'missing dict get, no 2nd arg'
 if d.get('c', 3) != 3: raise TestFailed, 'missing dict get, w/ 2nd arg'
 if d.get('a') != 1: raise TestFailed, 'present dict get, no 2nd arg'
 if d.get('a', 3) != 1: raise TestFailed, 'present dict get, w/ 2nd arg'
+# dict.setdefault()
+d = {}
+if d.setdefault('key0') <> None:
+	raise TestFailed, 'missing {} setdefault, no 2nd arg'
+if d.setdefault('key0') <> None:
+	raise TestFailed, 'present {} setdefault, no 2nd arg'
+d.setdefault('key', []).append(3)
+if d['key'][0] <> 3:
+	raise TestFailed, 'missing {} setdefault, w/ 2nd arg'
+d.setdefault('key', []).append(4)
+if len(d['key']) <> 2:
+	raise TestFailed, 'present {} setdefault, w/ 2nd arg'

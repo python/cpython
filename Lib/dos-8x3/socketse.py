@@ -412,10 +412,20 @@ class StreamRequestHandler(BaseRequestHandler):
 
     """Define self.rfile and self.wfile for stream sockets."""
 
+    # Default buffer sizes for rfile, wfile.
+    # We default rfile to buffered because otherwise it could be
+    # really slow for large data (a getc() call per byte); we make
+    # wfile unbuffered because (a) often after a write() we want to
+    # read and we need to flush the line; (b) big writes to unbuffered
+    # files are typically optimized by stdio even when big reads
+    # aren't.
+    rbufsize = -1
+    wbufsize = 0
+
     def setup(self):
         self.connection = self.request
-        self.rfile = self.connection.makefile('rb', 0)
-        self.wfile = self.connection.makefile('wb', 0)
+        self.rfile = self.connection.makefile('rb', self.rbufsize)
+        self.wfile = self.connection.makefile('wb', self.wbufsize)
 
     def finish(self):
         self.wfile.flush()

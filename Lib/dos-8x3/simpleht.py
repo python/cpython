@@ -15,6 +15,7 @@ import posixpath
 import BaseHTTPServer
 import urllib
 import cgi
+import shutil
 from StringIO import StringIO
 
 
@@ -151,12 +152,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         to copy binary data as well.
 
         """
-
-        BLOCKSIZE = 8192
-        while 1:
-            data = source.read(BLOCKSIZE)
-            if not data: break
-            outputfile.write(data)
+        shutil.copyfileobj(source, outputfile)
 
     def guess_type(self, path):
         """Guess the type of a file.

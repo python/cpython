@@ -17,7 +17,7 @@ if verbose:
     print 'Status from fnctl with O_NONBLOCK: ', rv
     
 if sys.platform in ('netbsd1',
-                    'freebsd2', 'freebsd3',
+                    'freebsd2', 'freebsd3', 'freebsd4', 'freebsd5',
                     'bsdos2', 'bsdos3', 'bsdos4',
                     'openbsd', 'openbsd2'):
     lockdata = struct.pack('lxxxxlxxxxlhh', 0, 0, 0, FCNTL.F_WRLCK, 0)
