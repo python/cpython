@@ -1504,9 +1504,26 @@ wrap_intobjargproc(PyObject *self, PyObject *args, void *wrapped)
 	return Py_None;
 }
 
+static PyObject *
+wrap_delitem_int(PyObject *self, PyObject *args, void *wrapped)
+{
+	intobjargproc func = (intobjargproc)wrapped;
+	int i, res;
+
+	if (!PyArg_ParseTuple(args, "i", &i))
+		return NULL;
+	res = (*func)(self, i, NULL);
+	if (res == -1 && PyErr_Occurred())
+		return NULL;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static struct wrapperbase tab_setitem_int[] = {
 	{"__setitem__", (wrapperfunc)wrap_intobjargproc,
 	 "x.__setitem__(i, y) <==> x[i]=y"},
+	{"__delitem__", (wrapperfunc)wrap_delitem_int,
+	 "x.__delitem__(y) <==> del x[y]"},
 	{0}
 };
 
@@ -1570,9 +1587,27 @@ wrap_objobjargproc(PyObject *self, PyObject *args, void *wrapped)
 	return Py_None;
 }
 
+static PyObject *
+wrap_delitem(PyObject *self, PyObject *args, void *wrapped)
+{
+	objobjargproc func = (objobjargproc)wrapped;
+	int res;
+	PyObject *key;
+
+	if (!PyArg_ParseTuple(args, "O", &key))
+		return NULL;
+	res = (*func)(self, key, NULL);
+	if (res == -1 && PyErr_Occurred())
+		return NULL;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static struct wrapperbase tab_setitem[] = {
 	{"__setitem__", (wrapperfunc)wrap_objobjargproc,
 	 "x.__setitem__(y, z) <==> x[y]=z"},
+	{"__delitem__", (wrapperfunc)wrap_delitem,
+	 "x.__delitem__(y) <==> del x[y]"},
 	{0}
 };
 
