@@ -1227,10 +1227,9 @@ It is possible to write extension modules in \Cpp{}.  Some restrictions
 apply.  If the main program (the Python interpreter) is compiled and
 linked by the \C{} compiler, global or static objects with constructors
 cannot be used.  This is not a problem if the main program is linked
-by the \Cpp{} compiler.  All functions that will be called directly or
-indirectly (i.e. via function pointers) by the Python interpreter will
-have to be declared using \code{extern "C"}; this applies to all
-``methods'' as well as to the module's initialization function.
+by the \Cpp{} compiler.  Functions that will be called by the
+Python interpreter (in particular, module initalization functions)
+have to be declared using \code{extern "C"}.
 It is unnecessary to enclose the Python header files in
 \code{extern "C" \{...\}} --- they use this form already if the symbol
 \samp{__cplusplus} is defined (all recent \Cpp{} compilers define this
