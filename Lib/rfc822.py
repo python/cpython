@@ -222,7 +222,7 @@ class Message:
         data in RFC 2822-like formats that support embedded comments or
         free-text data.
         """
-        return None
+        return False
 
     def getallmatchingheaders(self, name):
         """Find all header lines matching a given header name.

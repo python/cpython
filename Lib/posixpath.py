@@ -158,7 +158,7 @@ def islink(path):
     try:
         st = os.lstat(path)
     except (os.error, AttributeError):
-        return 0
+        return False
     return stat.S_ISLNK(st[stat.ST_MODE])
 
 
@@ -183,7 +183,7 @@ def isdir(path):
     try:
         st = os.stat(path)
     except os.error:
-        return 0
+        return False
     return stat.S_ISDIR(st[stat.ST_MODE])
 
 
@@ -196,7 +196,7 @@ def isfile(path):
     try:
         st = os.stat(path)
     except os.error:
-        return 0
+        return False
     return stat.S_ISREG(st[stat.ST_MODE])
 
 
@@ -335,7 +335,7 @@ def expandvars(path):
         import re
         _varprog = re.compile(r'\$(\w+|\{[^}]*\})')
     i = 0
-    while 1:
+    while True:
         m = _varprog.search(path, i)
         if not m:
             break

@@ -307,7 +307,7 @@ def executable(path):
     try:
         st = os.stat(path)
     except os.error:
-        return 0
+        return False
     return st[0] & 0111 != 0
 
 

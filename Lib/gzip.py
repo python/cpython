@@ -47,7 +47,7 @@ class GzipFile:
         if mode[0:1] == 'r':
             self.mode = READ
             # Set flag indicating start of a new member
-            self._new_member = 1
+            self._new_member = True
             self.extrabuf = ""
             self.extrasize = 0
             self.filename = filename
@@ -120,12 +120,12 @@ class GzipFile:
             self.fileobj.read(xlen)
         if flag & FNAME:
             # Read and discard a null-terminated string containing the filename
-            while (1):
+            while True:
                 s=self.fileobj.read(1)
                 if not s or s=='\000': break
         if flag & FCOMMENT:
             # Read and discard a null-terminated string containing a comment
-            while (1):
+            while True:
                 s=self.fileobj.read(1)
                 if not s or s=='\000': break
         if flag & FHCRC:
@@ -156,7 +156,7 @@ class GzipFile:
         readsize = 1024
         if size < 0:        # get the whole thing
             try:
-                while 1:
+                while True:
                     self._read(readsize)
                     readsize = readsize * 2
             except EOFError:
@@ -201,7 +201,7 @@ class GzipFile:
             self._init_read()
             self._read_gzip_header()
             self.decompress = zlib.decompressobj(-zlib.MAX_WBITS)
-            self._new_member = 0
+            self._new_member = False
 
         # Read a chunk of data from the file
         buf = self.fileobj.read(size)
@@ -229,7 +229,7 @@ class GzipFile:
             # Check the CRC and file size, and set the flag so we read
             # a new member on the next call
             self._read_eof()
-            self._new_member = 1
+            self._new_member = True
 
     def _add_read_data(self, data):
         self.crc = zlib.crc32(data, self.crc)
@@ -275,7 +275,7 @@ class GzipFile:
         self.fileobj.flush()
 
     def isatty(self):
-        return 0
+        return False
 
     def tell(self):
         return self.offset
@@ -286,7 +286,7 @@ class GzipFile:
         if self.mode != READ:
             raise IOError("Can't rewind in write mode")
         self.fileobj.seek(0)
-        self._new_member = 1
+        self._new_member = True
         self.extrabuf = ""
         self.extrasize = 0
         self.offset = 0
@@ -311,7 +311,7 @@ class GzipFile:
         if size < 0: size = sys.maxint
         bufs = []
         readsize = min(100, size)    # Read from the file in small chunks
-        while 1:
+        while True:
             if size == 0:
                 return "".join(bufs) # Return resulting line
 
@@ -342,7 +342,7 @@ class GzipFile:
         while sizehint > 0:
             line = self.readline()
             if line == "": break
-            L.append( line )
+            L.append(line)
             sizehint = sizehint - len(line)
 
         return L
@@ -390,7 +390,7 @@ def _test():
             else:
                 f = __builtin__.open(arg, "rb")
                 g = open(arg + ".gz", "wb")
-        while 1:
+        while True:
             chunk = f.read(1024)
             if not chunk:
                 break

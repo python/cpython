@@ -221,11 +221,11 @@ def isdigit(char):
 def isname(name):
     # check that group name is a valid string
     if not isident(name[0]):
-        return 0
+        return False
     for char in name:
         if not isident(char) and not isdigit(char):
-            return 0
-    return 1
+            return False
+    return True
 
 def _group(escape, groups):
     # check if the escape string represents a valid group
