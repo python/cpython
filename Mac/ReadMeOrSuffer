@@ -16,7 +16,7 @@ you have!
 
 If this is your first encounter with python: you definitely need the common
 user documentation (common to all platforms). You can find this (in various
-forms) on www.python.com and ftp.python.com.
+forms) on www.python.org and ftp.python.org.
 
 If you have a pre-system 7 macintosh: sorry, this release will not work
 on your system. Too many sys7 features are used to make a sys6 python
@@ -48,10 +48,13 @@ PowerPC Macintosh instructions
    file (after asking you if that's ok with you).
    
 4. To make sure any applets you create can find the common interpreter code
-   you should make an alias to PythonCore and drop it in your Extensions
-   folder (I think the name should still be PythonCore). Alternatively, drop
-   the file itself on the System folder and it will find its own way.
-   
+   you should move PythonCore to the Extensions folder (drop it on the
+   System Folder and it will find its own way). Alternatively, you can
+   make an alias called "PythonCore" in the Extensions folder and
+   point it to the real PythonCore. You may want to start PythonPPC
+   again at this point to check that you actually put the extension in
+   the right place.
+
 5. You're all set now. Continue with the common instructions.
 
 68K Macintosh instructions
