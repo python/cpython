@@ -1,5 +1,5 @@
-Python main documentation -- in LaTeX
--------------------------------------
+Python standard documentation -- in LaTeX
+-----------------------------------------
 
 This directory contains the LaTeX sources to the Python documentation
 and tools required to support the formatting process.  The documents
@@ -9,12 +9,13 @@ If you don't have LaTeX, or if you'd rather not format the
 documentation yourself, you can ftp a tar file containing HTML, PDF,
 or PostScript versions of all documents.  Additional formats may be
 available.  These should be in the same place where you fetched the
-main Python distribution (try <http://www.python.org> or
-<ftp://ftp.python.org>).
+main Python distribution (try <http://www.python.org/> or
+<ftp://ftp.python.org/pub/python/>).
 
 The following are the LaTeX source files:
 
 	api/*.tex	Python/C API Reference Manual
+	doc/*.tex	Documenting Python
 	ext/*.tex	Extending and Embedding the Python Interpreter
 	lib/*.tex	Python Library Reference
 	mac/*.tex	Macintosh Library Modules
@@ -30,15 +31,20 @@ macro definitions useful in documenting Python, and set some style
 parameters.
 
 There's a Makefile to call LaTeX and the other utilities in the right
-order and the right number of times.  This will produce DVI files for
-each document made; to preview them, use xdvi.  PostScript is produced
-by the same Makefile target that produces the DVI files.  This uses
-the dvips tool.  Printing depends on local conventions; at our site,
-we use lpr.  For example:
+order and the right number of times.  By default, it will build the
+HTML version of the documnetation, but DVI, PDF, and PostScript can
+also be made.  To view the generated HTML, point your favorite browser
+at the top-level index (html/index.html) after running "make".
 
-	make lib	# create lib.dvi and lib.ps
-	xdvi lib	# preview lib.dvi
-	lpr lib.ps	# print on default printer
+The Makefile can also produce DVI files for each document made; to
+preview them, use xdvi.  PostScript is produced by the same Makefile
+target that produces the DVI files.  This uses the dvips tool.
+Printing depends on local conventions; at our site, we use lpr.  For
+example:
+
+	make paper-letter/lib.ps	# create lib.dvi and lib.ps
+	xdvi paper-letter/lib.dvi	# preview lib.dvi
+	lpr paper-letter/lib.ps		# print on default printer
 
 
 What if I find a bug?
@@ -138,11 +144,12 @@ To create HTML files:
 	- Perl 5.004_04 or newer.  Find the software at
 	  <http://language.perl.com/info/software.html>.
 
-	- LaTeX2HTML 99.2b8.  Older versions are not supported; each
-	  version changes enough that supporting multiple versions is not 
-	  likely to work.  Many older versions don't work with Perl
-	  5.6 as well.  This also screws up code fragments.  ;-(
-	  Releases are available at: <http://www.latex2html.org/>.
+	- LaTeX2HTML 99.2b8 or newer.  Older versions are not
+	  supported; each version changes enough that supporting
+	  multiple versions is not likely to work.  Many older
+	  versions don't work with Perl 5.6 as well.  This also screws
+	  up code fragments.  ;-(  Releases are available at:
+	  <http://www.latex2html.org/>.
 
 
 What if Times fonts are not available?
@@ -161,9 +168,9 @@ style file.
 What if I want to use A4 paper?
 -------------------------------
 
-Instead of building the PostScript by giving the command "make", give
-the command "make PAPER=a4 ps"; the output will be produced in the
-paper-a4/ subdirectory.  (You can use "make PAPER=a4 pdf" if you'd
+Instead of building the PostScript by giving the command "make ps",
+give the command "make PAPER=a4 ps"; the output will be produced in
+the paper-a4/ subdirectory.  (You can use "make PAPER=a4 pdf" if you'd
 rather have PDF output.)
 
 
@@ -171,8 +178,8 @@ Making HTML files
 -----------------
 
 The LaTeX documents can be converted to HTML using Nikos Drakos'
-LaTeX2HTML converter.  See the Makefile; after some twiddling, "make
-html" should do the trick.
+LaTeX2HTML converter.  See the Makefile; after some twiddling, "make"
+should do the trick.
 
 
 What else is in here?
@@ -194,6 +201,10 @@ manual document class.  Create the documentation for a new module by
 copying the template to lib<mymodule>.tex and editing according to the 
 instructions in the comments.
 
+Documentation on the authoring Python documentation, including
+information about both style and markup, is available in the
+"Documenting Python" manual.
+
 
 Copyright notice
 ================
@@ -202,7 +213,7 @@ The Python source is copyrighted, but you can freely use and copy it
 as long as you don't change or remove the copyright notice:
 
 ----------------------------------------------------------------------
-Copyright (c) 2000, 2001 Guido van Rossum.
+Copyright (c) 2000, 2001 Python Software Foundation.
 All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.
@@ -214,6 +225,6 @@ All rights reserved.
 Copyright (c) 1991-1995 Stichting Mathematisch Centrum.
 All rights reserved.
 
-See the file "LICENSE" for information on usage and
+See the file "texinputs/license.tex" for information on usage and
 redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 ----------------------------------------------------------------------
