@@ -176,7 +176,7 @@ def mirrorsubdir(f, localdir):
 		except os.error:
 			pass
 		try:
-			fp = open(tempname, 'w')
+			fp = open(tempname, 'wb')
 		except IOError, msg:
 			print "Can't create %s: %s" % (tempname, str(msg))
 			continue
