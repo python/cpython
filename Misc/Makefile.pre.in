@@ -255,6 +255,7 @@ sedscript:	$(MAKEFILE)
 	 -e '/^LINKCC=/s/^LINKCC=[ 	]*\(.*\)/s%@LINKCC[@]%\1%/p' \
 	 -e '/^OPT=/s/^OPT=[ 	]*\(.*\)/s%@OPT[@]%\1%/p' \
 	 -e '/^LDFLAGS=/s/^LDFLAGS=[ 	]*\(.*\)/s%@LDFLAGS[@]%\1%/p' \
+	 -e '/^LDLAST=/s/^LDLAST=[      ]*\(.*\)/s%@LDLAST[@]%\1%/p' \
 	 -e '/^DEFS=/s/^DEFS=[ 	]*\(.*\)/s%@DEFS[@]%\1%/p' \
 	 -e '/^LIBS=/s/^LIBS=[ 	]*\(.*\)/s%@LIBS[@]%\1%/p' \
 	 -e '/^LIBM=/s/^LIBM=[ 	]*\(.*\)/s%@LIBM[@]%\1%/p' \
