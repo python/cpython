@@ -145,8 +145,12 @@ class Node(_Node):
             oldChild.parentNode = None
         newChild.nextSibling = oldChild.nextSibling
         newChild.previousSibling = oldChild.previousSibling
-        oldChild.newChild = None
+        oldChild.nextSibling = None
         oldChild.previousSibling = None
+        if newChild.previousSibling:
+            newChild.previousSibling.nextSibling = newChild
+        if newChild.nextSibling:
+            newChild.nextSibling.previousSibling = newChild
         return oldChild
 
     def removeChild(self, oldChild):
@@ -463,6 +467,12 @@ class Element(Node):
         del self._attrs[node.name]
         del self._attrsNS[(node.namespaceURI, node.localName)]
 
+    def hasAttribute(self, name):
+        return self._attrs.has_key(name)
+                     
+    def hasAttributeNS(self, namespaceURI, localName):
+        return self._attrsNS.has_key((namespaceURI, localName))    
+        
     def getElementsByTagName(self, name):
         return _getElementsByTagNameHelper(self, name, [])
 
