@@ -53,7 +53,7 @@ class PyncheWidget(Pmw.MegaWidget):
     def set_color(self, obj, rgbtuple):
 	print 'setting color to:', rgbtuple
 	nearest = self.__colordb.nearest(rgbtuple)
-	red, green, blue, rrggbb = self.__colordb.find_byname(nearest)
+	red, green, blue = self.__colordb.find_byname(nearest)
 	# for an exact match, use the color name
 	if (red, green, blue) == rgbtuple:
 	    self.__selected.configure(color=nearest)
