@@ -2312,10 +2312,27 @@ class DocFileCase(DocTestCase):
                 )
 
 def DocFileTest(path, package=None, globs=None, **options):
-    package = _normalize_module(package)
     name = path.split('/')[-1]
-    dir = os.path.split(package.__file__)[0]
-    path = os.path.join(dir, *(path.split('/')))
+
+    # Interpret relative paths as relative to the given package's
+    # directory (or the current module, if no package is specified).
+    if not os.path.isabs(path):
+        package = _normalize_module(package)
+        if hasattr(package, '__file__'):
+            # A normal package/module.
+            dir = os.path.split(package.__file__)[0]
+            path = os.path.join(dir, *(path.split('/')))
+        elif package.__name__ == '__main__':
+            # An interactive session.
+            if sys.argv[0] != '':
+                dir = os.path.split(sys.argv[0])[0]
+                path = os.path.join(dir, *(path.split('/')))
+        else:
+            # A module w/o __file__ (this includes builtins)
+            raise ValueError("Can't resolve paths relative to " +
+                             "the module %s (it has" % package +
+                             "no __file__)")
+
     doc = open(path).read()
 
     if globs is None:
