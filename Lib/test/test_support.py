@@ -157,14 +157,13 @@ class BasicTestRunner:
         return result
 
 
-def run_unittest(testclass):
+def run_suite(suite):
     """Run tests from a unittest.TestCase-derived class."""
     if verbose:
         runner = unittest.TextTestRunner(sys.stdout, verbosity=2)
     else:
         runner = BasicTestRunner()
 
-    suite = unittest.makeSuite(testclass)
     result = runner.run(suite)
     if not result.wasSuccessful():
         if len(result.errors) == 1 and not result.failures:
@@ -175,6 +174,12 @@ def run_unittest(testclass):
             raise TestFailed("errors occurred in %s.%s"
                              % (testclass.__module__, testclass.__name__))
         raise TestFailed(err)
+
+
+def run_unittest(testclass):
+    """Run tests from a unittest.TestCase-derived class."""
+    run_suite(unittest.makeSuite(testclass))
+
 
 #=======================================================================
 # doctest driver.
