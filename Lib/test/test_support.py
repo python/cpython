@@ -90,6 +90,14 @@ def verify(condition, reason='test failed'):
     if not condition:
         raise TestFailed(reason)
 
+def sortdict(dict):
+    "Like repr(dict), but in sorted order."
+    items = dict.items()
+    items.sort()
+    reprpairs = ["%r: %r" % pair for pair in items]
+    withcommas = ", ".join(reprpairs)
+    return "{%s}" % withcommas
+
 def check_syntax(statement):
     try:
         compile(statement, '<string>', 'exec')

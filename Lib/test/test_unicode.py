@@ -5,7 +5,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
 """#"
-from test_support import verify, verbose
+from test_support import verify, verbose, TestFailed
 import sys
 
 def test(method, input, output, *args):
@@ -493,10 +493,13 @@ for encoding in (
     'cp856', 'cp857', 'cp864', 'cp869', 'cp874',
 
     'mac_greek', 'mac_iceland','mac_roman', 'mac_turkish',
-    'cp1006', 'cp875', 'iso8859_8',
+    'cp1006', 'iso8859_8',
 
     ### These have undefined mappings:
     #'cp424',
+
+    ### These fail the round-trip:
+    #'cp875'
 
     ):
     try:

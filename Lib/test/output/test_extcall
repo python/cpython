@@ -40,7 +40,7 @@ za () {} -> za() takes exactly 1 argument (0 given)
 za () {'a': 'aa'} -> ok za aa B D E V a
 za () {'d': 'dd'} -> za() got an unexpected keyword argument 'd'
 za () {'a': 'aa', 'd': 'dd'} -> za() got an unexpected keyword argument 'd'
-za () {'a': 'aa', 'b': 'bb', 'd': 'dd', 'e': 'ee'} -> za() got an unexpected keyword argument 'd'
+za () {'a': 'aa', 'b': 'bb', 'd': 'dd', 'e': 'ee'} -> za() got an unexpected keyword argument 'b'
 za (1, 2) {} -> za() takes exactly 1 argument (2 given)
 za (1, 2) {'a': 'aa'} -> za() takes exactly 1 non-keyword argument (2 given)
 za (1, 2) {'d': 'dd'} -> za() takes exactly 1 non-keyword argument (2 given)
@@ -59,8 +59,8 @@ zade () {'a': 'aa', 'b': 'bb', 'd': 'dd', 'e': 'ee'} -> zade() got an unexpected
 zade (1, 2) {} -> ok zade 1 B 2 e V e
 zade (1, 2) {'a': 'aa'} -> zade() got multiple values for keyword argument 'a'
 zade (1, 2) {'d': 'dd'} -> zade() got multiple values for keyword argument 'd'
-zade (1, 2) {'a': 'aa', 'd': 'dd'} -> zade() got multiple values for keyword argument 'd'
-zade (1, 2) {'a': 'aa', 'b': 'bb', 'd': 'dd', 'e': 'ee'} -> zade() got multiple values for keyword argument 'd'
+zade (1, 2) {'a': 'aa', 'd': 'dd'} -> zade() got multiple values for keyword argument 'a'
+zade (1, 2) {'a': 'aa', 'b': 'bb', 'd': 'dd', 'e': 'ee'} -> zade() got multiple values for keyword argument 'a'
 zade (1, 2, 3, 4, 5) {} -> zade() takes at most 3 arguments (5 given)
 zade (1, 2, 3, 4, 5) {'a': 'aa'} -> zade() takes at most 3 non-keyword arguments (5 given)
 zade (1, 2, 3, 4, 5) {'d': 'dd'} -> zade() takes at most 3 non-keyword arguments (5 given)
@@ -75,7 +75,7 @@ zabk (1, 2) {} -> ok zabk 1 2 D E V {}
 zabk (1, 2) {'a': 'aa'} -> zabk() got multiple values for keyword argument 'a'
 zabk (1, 2) {'d': 'dd'} -> ok zabk 1 2 D E V {'d': 'dd'}
 zabk (1, 2) {'a': 'aa', 'd': 'dd'} -> zabk() got multiple values for keyword argument 'a'
-zabk (1, 2) {'a': 'aa', 'b': 'bb', 'd': 'dd', 'e': 'ee'} -> zabk() got multiple values for keyword argument 'b'
+zabk (1, 2) {'a': 'aa', 'b': 'bb', 'd': 'dd', 'e': 'ee'} -> zabk() got multiple values for keyword argument 'a'
 zabk (1, 2, 3, 4, 5) {} -> zabk() takes exactly 2 arguments (5 given)
 zabk (1, 2, 3, 4, 5) {'a': 'aa'} -> zabk() takes exactly 2 non-keyword arguments (5 given)
 zabk (1, 2, 3, 4, 5) {'d': 'dd'} -> zabk() takes exactly 2 non-keyword arguments (5 given)
@@ -90,12 +90,12 @@ zabdv (1, 2) {} -> ok zabdv 1 2 d E () e
 zabdv (1, 2) {'a': 'aa'} -> zabdv() got multiple values for keyword argument 'a'
 zabdv (1, 2) {'d': 'dd'} -> ok zabdv 1 2 dd E () d
 zabdv (1, 2) {'a': 'aa', 'd': 'dd'} -> zabdv() got multiple values for keyword argument 'a'
-zabdv (1, 2) {'a': 'aa', 'b': 'bb', 'd': 'dd', 'e': 'ee'} -> zabdv() got an unexpected keyword argument 'e'
+zabdv (1, 2) {'a': 'aa', 'b': 'bb', 'd': 'dd', 'e': 'ee'} -> zabdv() got multiple values for keyword argument 'a'
 zabdv (1, 2, 3, 4, 5) {} -> ok zabdv 1 2 3 E (4, 5) e
 zabdv (1, 2, 3, 4, 5) {'a': 'aa'} -> zabdv() got multiple values for keyword argument 'a'
 zabdv (1, 2, 3, 4, 5) {'d': 'dd'} -> zabdv() got multiple values for keyword argument 'd'
-zabdv (1, 2, 3, 4, 5) {'a': 'aa', 'd': 'dd'} -> zabdv() got multiple values for keyword argument 'd'
-zabdv (1, 2, 3, 4, 5) {'a': 'aa', 'b': 'bb', 'd': 'dd', 'e': 'ee'} -> zabdv() got multiple values for keyword argument 'd'
+zabdv (1, 2, 3, 4, 5) {'a': 'aa', 'd': 'dd'} -> zabdv() got multiple values for keyword argument 'a'
+zabdv (1, 2, 3, 4, 5) {'a': 'aa', 'b': 'bb', 'd': 'dd', 'e': 'ee'} -> zabdv() got multiple values for keyword argument 'a'
 zabdevk () {} -> zabdevk() takes at least 2 arguments (0 given)
 zabdevk () {'a': 'aa'} -> zabdevk() takes at least 2 non-keyword arguments (1 given)
 zabdevk () {'d': 'dd'} -> zabdevk() takes at least 2 non-keyword arguments (0 given)
@@ -105,9 +105,9 @@ zabdevk (1, 2) {} -> ok zabdevk 1 2 d e () {}
 zabdevk (1, 2) {'a': 'aa'} -> zabdevk() got multiple values for keyword argument 'a'
 zabdevk (1, 2) {'d': 'dd'} -> ok zabdevk 1 2 dd e () {}
 zabdevk (1, 2) {'a': 'aa', 'd': 'dd'} -> zabdevk() got multiple values for keyword argument 'a'
-zabdevk (1, 2) {'a': 'aa', 'b': 'bb', 'd': 'dd', 'e': 'ee'} -> zabdevk() got multiple values for keyword argument 'b'
+zabdevk (1, 2) {'a': 'aa', 'b': 'bb', 'd': 'dd', 'e': 'ee'} -> zabdevk() got multiple values for keyword argument 'a'
 zabdevk (1, 2, 3, 4, 5) {} -> ok zabdevk 1 2 3 4 (5,) {}
 zabdevk (1, 2, 3, 4, 5) {'a': 'aa'} -> zabdevk() got multiple values for keyword argument 'a'
 zabdevk (1, 2, 3, 4, 5) {'d': 'dd'} -> zabdevk() got multiple values for keyword argument 'd'
-zabdevk (1, 2, 3, 4, 5) {'a': 'aa', 'd': 'dd'} -> zabdevk() got multiple values for keyword argument 'd'
-zabdevk (1, 2, 3, 4, 5) {'a': 'aa', 'b': 'bb', 'd': 'dd', 'e': 'ee'} -> zabdevk() got multiple values for keyword argument 'd'
+zabdevk (1, 2, 3, 4, 5) {'a': 'aa', 'd': 'dd'} -> zabdevk() got multiple values for keyword argument 'a'
+zabdevk (1, 2, 3, 4, 5) {'a': 'aa', 'b': 'bb', 'd': 'dd', 'e': 'ee'} -> zabdevk() got multiple values for keyword argument 'a'
