@@ -4,7 +4,7 @@
 """A package for parsing, handling, and generating email messages.
 """
 
-__version__ = '2.1'
+__version__ = '2.2'
 
 __all__ = ['Charset',
            'Encoders',
@@ -32,8 +32,8 @@ __all__ = ['Charset',
 from email.Parser import Parser as _Parser
 from email.Message import Message as _Message
 
-def message_from_string(s, _class=_Message):
-    return _Parser(_class).parsestr(s)
+def message_from_string(s, _class=_Message, strict=1):
+    return _Parser(_class, strict=strict).parsestr(s)
 
-def message_from_file(fp, _class=_Message):
-    return _Parser(_class).parse(fp)
+def message_from_file(fp, _class=_Message, strict=1):
+    return _Parser(_class, strict=strict).parse(fp)
