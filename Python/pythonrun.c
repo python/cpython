@@ -49,8 +49,6 @@ int _Py_AskYesNo(char *prompt);
 
 extern void _PyUnicode_Init(void);
 extern void _PyUnicode_Fini(void);
-extern void _PyCodecRegistry_Init(void);
-extern void _PyCodecRegistry_Fini(void);
 
 int Py_DebugFlag; /* Needed by parser.c */
 int Py_VerboseFlag; /* Needed by import.c */
@@ -132,9 +130,6 @@ Py_Initialize(void)
 	interp->modules = PyDict_New();
 	if (interp->modules == NULL)
 		Py_FatalError("Py_Initialize: can't make modules dictionary");
-
-	/* Init codec registry */
-	_PyCodecRegistry_Init();
 
 #ifdef Py_USING_UNICODE
 	/* Init Unicode implementation; relies on the codec registry */
@@ -218,9 +213,6 @@ Py_Finalize(void)
 
 	/* Disable signal handling */
 	PyOS_FiniInterrupts();
-
-	/* Cleanup Codec registry */
-	_PyCodecRegistry_Fini();
 
 	/* Destroy all modules */
 	PyImport_Cleanup();

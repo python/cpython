@@ -27,6 +27,9 @@ typedef struct _is {
     int dlopenflags;
 #endif
 
+    PyObject *codec_search_path;
+    PyObject *codec_search_cache;
+
 } PyInterpreterState;
 
 

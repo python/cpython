@@ -2,6 +2,10 @@ What's New in Python 2.2.3 ?
 Release date: XX-XXX-2003
 ============================
 
+- SF #710576: Backport of fix for #663074, to implement per-interpreter
+  codecs registries. This adds new members at the end of
+  PyInterpreterState.
+
 - SF #705836: The platform-independent routines for packing floats in
   IEEE formats (struct.pack's <f, >f, <d, and >d codes; pickle and
   cPickle's protocol 1 pickling of floats) ignored that rounding can
