@@ -19,6 +19,9 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 */
 
 #include "Python.h"
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
 
 int (*PyOS_InputHook)() = NULL;
 

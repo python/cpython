@@ -23,6 +23,9 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
 
 /* Forward */
 static PyObject *filterstring Py_PROTO((PyObject *, PyObject *));

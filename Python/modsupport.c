@@ -11,6 +11,9 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 /* Module support implementation */
 
 #include "Python.h"
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
 
 #ifdef MPW /* MPW pushes 'extended' for float and double types with varargs */
 typedef extended va_double;
