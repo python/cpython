@@ -1,7 +1,6 @@
 """An FTP client class and some helper functions.
 
-Based on RFC 959: File Transfer Protocol
-(FTP), by J. Postel and J. Reynolds
+Based on RFC 959: File Transfer Protocol (FTP), by J. Postel and J. Reynolds
 
 Example:
 
@@ -235,7 +234,9 @@ class FTP:
 		return self.voidresp()
 
 	def sendport(self, host, port):
-		'''Send a PORT command with the current host and the given port number.'''
+		'''Send a PORT command with the current host and the given
+		port number.
+		'''
 		hbytes = string.splitfields(host, '.')
 		pbytes = [`port/256`, `port%256`]
 		bytes = hbytes + pbytes
@@ -253,25 +254,35 @@ class FTP:
 		resp = self.sendport(host, port)
 		return sock
 
-	def ntransfercmd(self, cmd):
-		'''Initiate a transfer over the data connection.
-		If the transfer is active, send a port command and
-		the transfer command, and accept the connection.
-		If the server is passive, send a pasv command, connect
-		to it, and start the transfer command.
-		Either way, return the socket for the connection and
-		the expected size of the transfer.  The expected size
-		may be None if it could not be determined.'''
+	def ntransfercmd(self, cmd, rest=None):
+		"""Initiate a transfer over the data connection.
+
+		If the transfer is active, send a port command and the
+		transfer command, and accept the connection.  If the server is
+		passive, send a pasv command, connect to it, and start the
+		transfer command.  Either way, return the socket for the
+		connection and the expected size of the transfer.  The
+		expected size may be None if it could not be determined.
+
+		Optional `rest' argument can be a string that is sent as the
+		argument to a RESTART command.  This is essentially a server
+		marker used to tell the server to skip over any data up to the
+		given marker.
+		"""
 		size = None
 		if self.passiveserver:
 			host, port = parse227(self.sendcmd('PASV'))
-			conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			conn=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			conn.connect((host, port))
+			if rest is not None:
+				self.sendcmd("REST %s" % rest)
 			resp = self.sendcmd(cmd)
 			if resp[0] <> '1':
 				raise error_reply, resp
 		else:
 			sock = self.makeport()
+			if rest is not None:
+				self.sendcmd("REST %s" % rest)
 			resp = self.sendcmd(cmd)
 			if resp[0] <> '1':
 				raise error_reply, resp
@@ -281,10 +292,9 @@ class FTP:
 			size = parse150(resp)
 		return conn, size
 
-	def transfercmd(self, cmd):
-		'''Initiate a transfer over the data connection.  Returns
-		the socket for the connection.  See also ntransfercmd().'''
-		return self.ntransfercmd(cmd)[0]
+	def transfercmd(self, cmd, rest=None):
+		"""Like nstransfercmd() but returns only the socket."""
+		return self.ntransfercmd(cmd, rest)[0]
 
 	def login(self, user = '', passwd = '', acct = ''):
 		'''Login, default anonymous.'''
@@ -312,13 +322,18 @@ class FTP:
 			raise error_reply, resp
 		return resp
 
-	def retrbinary(self, cmd, callback, blocksize=8192):
-		'''Retrieve data in binary mode.
-		The argument is a RETR command.
-		The callback function is called for each block.
-		This creates a new port for you'''
+	def retrbinary(self, cmd, callback, blocksize=8192, rest=None):
+		"""Retrieve data in binary mode.
+		
+		`cmd' is a RETR command.  `callback' is a callback function is
+		called for each block.  No more than `blocksize' number of
+		bytes will be read from the socket.  Optional `rest' is passed
+		to transfercmd().
+
+		A new port is created for you.  Return the response code.
+		"""
 		self.voidcmd('TYPE I')
-		conn = self.transfercmd(cmd)
+		conn = self.transfercmd(cmd, rest)
 		while 1:
 			data = conn.recv(blocksize)
 			if not data:
