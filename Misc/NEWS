@@ -87,6 +87,15 @@ Extension modules
 
 Library
 
+- New distutils commands for building packagers were added to
+  support pkgtool on Solaris and swinstall on HP-UX.
+
+- distutils now has a new abstract binary packager base class
+  command/bdist_packager, which simplifies writing packagers.
+  This will hopefully provide the missing bits to encourage
+  people to submit more packagers, e.g. for Debian, FreeBSD
+  and other systems.
+
 - The UTF-16, -LE and -BE now raise a NotImplementedError
   for all calls to .readline(). Previously, they used to just
   produce garbage or fail with an encoding error -- UTF-16 is
