@@ -148,6 +148,7 @@ static PyInterpreterState* _db_interpreterState = NULL;
 /* Exceptions */
 
 static PyObject* DBError;               /* Base class, all others derive from this */
+static PyObject* DBCursorClosedError;   /* raised when trying to use a closed cursor object */
 static PyObject* DBKeyEmptyError;       /* DB_KEYEMPTY */
 static PyObject* DBKeyExistError;       /* DB_KEYEXIST */
 static PyObject* DBLockDeadlockError;   /* DB_LOCK_DEADLOCK */
@@ -258,27 +259,23 @@ staticforward PyTypeObject DB_Type, DBCursor_Type, DBEnv_Type, DBTxn_Type, DBLoc
 
 #define RETURN_NONE()  Py_INCREF(Py_None); return Py_None;
 
-#define CHECK_DB_NOT_CLOSED(dbobj)                              \
-    if (dbobj->db == NULL) {                                    \
-        PyErr_SetObject(DBError, Py_BuildValue("(is)", 0,       \
-                                "DB object has been closed"));  \
-        return NULL;                                            \
+#define _CHECK_OBJECT_NOT_CLOSED(nonNull, pyErrObj, name) \
+    if ((nonNull) == NULL) {          \
+        PyObject *errTuple = NULL;    \
+        errTuple = Py_BuildValue("(is)", 0, #name " object has been closed"); \
+        PyErr_SetObject((pyErrObj), errTuple);  \
+	Py_DECREF(errTuple);          \
+        return NULL;                  \
     }
 
-#define CHECK_ENV_NOT_CLOSED(env)                               \
-    if (env->db_env == NULL) {                                  \
-        PyErr_SetObject(DBError, Py_BuildValue("(is)", 0,       \
-                                 "DBEnv object has been closed"));\
-        return NULL;                                            \
-    }
+#define CHECK_DB_NOT_CLOSED(dbobj) \
+        _CHECK_OBJECT_NOT_CLOSED(dbobj->db, DBError, DB)
+
+#define CHECK_ENV_NOT_CLOSED(env) \
+        _CHECK_OBJECT_NOT_CLOSED(env->db_env, DBError, DBEnv)
 
 #define CHECK_CURSOR_NOT_CLOSED(curs) \
-    if (curs->dbc == NULL) {                                  \
-        PyErr_SetObject(DBError, Py_BuildValue("(is)", 0,       \
-                                 "DBCursor object has been closed"));\
-        return NULL;                                            \
-    }
-
+        _CHECK_OBJECT_NOT_CLOSED(curs->dbc, DBCursorClosedError, DBCursor)
 
 
 #define CHECK_DBFLAG(mydb, flag)    (((mydb)->flags & (flag)) || \
@@ -4717,6 +4714,7 @@ DL_EXPORT(void) init_bsddb(void)
 #if !INCOMPLETE_IS_WARNING
     MAKE_EX(DBIncompleteError);
 #endif
+    MAKE_EX(DBCursorClosedError);
     MAKE_EX(DBKeyEmptyError);
     MAKE_EX(DBKeyExistError);
     MAKE_EX(DBLockDeadlockError);
