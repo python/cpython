@@ -49,6 +49,7 @@ extern object *IndexError;
 extern object *ValueError;
 extern object *KeyError;
 extern object *OverflowError;
+extern object *SyntaxError;
 
 /* Convenience functions */
 
