@@ -109,10 +109,9 @@ def main():
 	incldir = os.path.join(prefix, 'include/python%s' % version)
 	config_c_in = os.path.join(binlib, 'config.c.in')
 	frozenmain_c = os.path.join(binlib, 'frozenmain.c')
-	getpath_c = os.path.join(binlib, 'getpath.c')
-	supp_sources = [frozenmain_c, getpath_c]
+	supp_sources = []
 	makefile_in = os.path.join(binlib, 'Makefile')
-	defines = ['-DPYTHONPATH=\\"$(PYTHONPATH)\\"']
+	defines = []
 	includes = ['-I' + incldir, '-I' + binlib]
 
 	# sanity check of directories and files
@@ -243,11 +242,7 @@ def main():
 			os.rename(backup, config_c)
 
 	cflags = defines + includes + ['$(OPT)']
-	libs = []
-	for n in 'Modules', 'Python', 'Objects', 'Parser':
-		n = 'lib%s.a' % n
-		n = os.path.join(binlib, n)
-		libs.append(n)
+	libs = [os.path.join(binlib, 'libpython$(VERSION).a')]
 
 	makevars = parsesetup.getmakevars(makefile_in)
 	somevars = {}
@@ -280,10 +275,10 @@ def main():
 	# Done!
 
 	if odir:
-		print 'Now run make in', odir,
+		print 'Now run "make" in', odir,
 		print 'to build the target:', base_target
 	else:
-		print 'Now run make to build the target:', base_target
+		print 'Now run "make" to build the target:', base_target
 
 
 # Print usage message and exit
