@@ -466,9 +466,11 @@ one argument, return the smallest of the arguments.
 \end{funcdesc}
 
 \begin{funcdesc}{ord}{c}
-  Return the \ASCII{} value of a string of one character.  E.g.,
-  \code{ord('a')} returns the integer \code{97}.  This is the inverse of
-  \function{chr()}.
+  Return the \ASCII{} value of a string of one character or a Unicode
+  character.  E.g., \code{ord('a')} returns the integer \code{97},
+  \code{ord(u'\\u2020')} returns \code{8224}.  This is the inverse of
+  \function{chr()} for strings and of \function{unichr()} for Unicode
+  characters.
 \end{funcdesc}
 
 \begin{funcdesc}{pow}{x, y\optional{, z}}
@@ -658,6 +660,21 @@ For instance:
 >>> import types
 >>> if type(x) == types.StringType: print "It's a string"
 \end{verbatim}
+\end{funcdesc}
+
+\begin{funcdesc}{unichr}{i}
+Return the Unicode string of one character whose Unicode code is the
+integer \var{i}, e.g., \code{unichr(97)} returns the string
+\code{u'a'}.  This is the inverse of \function{ord()} for Unicode
+strings.  The argument must be in the range [0..65535], inclusive.
+\exception{ValueError} is raised otherwise.
+\end{funcdesc}
+
+\begin{funcdesc}{unicode}{string\optional{, encoding='utf-8'\optional{, errors='strict'}}}
+Decodes \var{string} using the codec for \var{encoding}.  Error
+handling is done according to \var{errors}.  The default behavior is
+to decode UTF-8 in strict mode, meaning that encoding errors raise
+\exception{ValueError}.
 \end{funcdesc}
 
 \begin{funcdesc}{vars}{\optional{object}}
