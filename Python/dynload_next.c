@@ -110,7 +110,5 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 	}
 #endif
 	p = (dl_funcptr)NSAddressOfSymbol(theSym);
-}
-
 	return p;
 }
