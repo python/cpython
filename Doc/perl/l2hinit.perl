@@ -77,6 +77,12 @@ else {
 $mytexinputs .= "$myrootdir${dd}texinputs";
 
 
+# Change this variable to change the text added in "About this document...";
+# this should be an absolute pathname to get it right.
+#
+$ABOUT_FILE = "$myrootdir${dd}html${dd}stdabout.dat";
+
+
 sub custom_driver_hook{
     #
     # This adds the directory of the main input file to $TEXINPUTS; it
@@ -143,8 +149,9 @@ adjust_icon_information();
 sub make_nav_sectref{
     my($label,$title) = @_;
     if ($title) {
+        $title =~ s/<A/<A class=sectref/;
 	return ("<b class=navlabel>$label:</b> "
-		. "<span class=sectref>$title</span>\n");
+		. "$title\n");
     }
     return '';
 }
@@ -408,11 +415,12 @@ sub do_cmd_textohtmlinfopage {
 	}
     }
     $_ = (($INFO == 1)
-      ? join('', $close_all
-	, "<strong>$t_title</strong>$the_version\n"
-	, `cat $myrootdir${dd}html${dd}about.dat`
-	, $open_all, $_)
-      : join('', $close_all, $INFO,"\n", $open_all, $_));
+          ? join('',
+                 $close_all,
+                 "<strong>$t_title</strong>$the_version\n",
+                 `cat $ABOUT_FILE`,
+                 $open_all, $_)
+          : join('', $close_all, $INFO,"\n", $open_all, $_));
     $_;
 }
 
