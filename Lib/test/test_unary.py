@@ -27,10 +27,11 @@ class UnaryOpTestCase(unittest.TestCase):
         self.assert_(--2 == 2)
         self.assert_(-2L == 0 - 2L)
 
-    def test_overflow(self):
-        self.assertRaises(OverflowError, eval, "+" + ("9" * 32))
-        self.assertRaises(OverflowError, eval, "-" + ("9" * 32))
-        self.assertRaises(OverflowError, eval, "~" + ("9" * 32))
+    def test_no_overflow(self):
+        nines = "9" * 32
+        self.assert_(eval("+" + nines) == eval("+" + nines + "L"))
+        self.assert_(eval("-" + nines) == eval("-" + nines + "L"))
+        self.assert_(eval("~" + nines) == eval("~" + nines + "L"))
 
     def test_bad_types(self):
         for op in '+', '-', '~':
