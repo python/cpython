@@ -29,13 +29,9 @@ EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 
 argv0_path = os.path.dirname(os.path.abspath(sys.executable))
 landmark = os.path.join(argv0_path, "Modules", "Setup")
-if not os.path.isfile(landmark):
-    python_build = 0
-elif os.path.isfile(os.path.join(argv0_path, "Lib", "os.py")):
-    python_build = 1
-else:
-    python_build = os.path.isfile(os.path.join(os.path.dirname(argv0_path),
-                                               "Lib", "os.py"))
+
+python_build = os.path.isfile(landmark)
+
 del argv0_path, landmark
 
 
