@@ -349,6 +349,9 @@ class Job:
         # build the command line and run LaTeX2HTML:
         if not os.path.isdir(builddir):
             os.mkdir(builddir)
+        else:
+            for fname in glob.glob(os.path.join(builddir, "*.html")):
+                os.unlink(fname)
         args = [LATEX2HTML_BINARY,
                 "-init_file", self.l2h_aux_init_file,
                 "-dir", builddir,
