@@ -144,6 +144,9 @@ extern DL_IMPORT(void) PyEval_ReleaseThread Py_PROTO((PyThreadState *tstate));
 
 #endif /* !WITH_THREAD */
 
+extern DL_IMPORT(int) _PyEval_SliceIndex Py_PROTO((PyObject *, int *));
+
+
 #ifdef __cplusplus
 }
 #endif
