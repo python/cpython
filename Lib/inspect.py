@@ -27,7 +27,7 @@ Here are some of the useful functions provided by this module:
 __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __date__ = '1 Jan 2001'
 
-import sys, os, types, string, re, dis, imp, tokenize
+import sys, os, types, string, re, dis, imp, tokenize, linecache
 
 # ----------------------------------------------------------- type-checking
 def ismodule(object):
@@ -381,12 +381,10 @@ def findsource(object):
     or code object.  The source code is returned as a list of all the lines
     in the file and the line number indexes a line in that list.  An IOError
     is raised if the source code cannot be retrieved."""
-    try:
-        file = open(getsourcefile(object))
-    except (TypeError, IOError):
+    file = getsourcefile(object) or getfile(object)
+    lines = linecache.getlines(file)
+    if not lines:
         raise IOError, 'could not get source code'
-    lines = file.readlines()
-    file.close()
 
     if ismodule(object):
         return lines, 0
@@ -706,7 +704,7 @@ def getframeinfo(frame, context=1):
     if not isframe(frame):
         raise TypeError, 'arg is not a frame or traceback object'
 
-    filename = getsourcefile(frame)
+    filename = getsourcefile(frame) or getfile(frame)
     lineno = getlineno(frame)
     if context > 0:
         start = lineno - 1 - context//2
