@@ -361,6 +361,7 @@ libainstall:	all
 		$(INSTALL_DATA) Modules/Setup $(LIBPL)/Setup
 		$(INSTALL_DATA) Modules/Setup.local $(LIBPL)/Setup.local
 		$(INSTALL_PROGRAM) $(srcdir)/Modules/makesetup $(LIBPL)/makesetup
+		$(INSTALL_PROGRAM) $(srcdir)/install-sh $(LIBPL)/install-sh
 
 # Install the dynamically loadable modules
 # This goes into $(exec_prefix)
