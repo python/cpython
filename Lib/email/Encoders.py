@@ -1,4 +1,4 @@
-# Copyright (C) 2001 Python Software Foundation
+# Copyright (C) 2001,2002 Python Software Foundation
 # Author: barry@zope.com (Barry Warsaw)
 
 """Module containing encoding functions for Image.Image and Text.Text.
@@ -11,7 +11,9 @@ from quopri import encodestring as _encodestring
 
 # Helpers
 def _qencode(s):
-    return _encodestring(s, quotetabs=1)
+    enc = _encodestring(s, quotetabs=1)
+    # Must encode spaces, which quopri.encodestring() doesn't do
+    return enc.replace(' ', '=20')
 
 
 def _bencode(s):
@@ -54,6 +56,10 @@ def encode_quopri(msg):
 def encode_7or8bit(msg):
     """Set the Content-Transfer-Encoding: header to 7bit or 8bit."""
     orig = msg.get_payload()
+    if orig is None:
+        # There's no payload.  For backwards compatibility we use 7bit
+        msg['Content-Transfer-Encoding'] = '7bit'
+        return
     # We play a trick to make this go fast.  If encoding to ASCII succeeds, we
     # know the data must be 7bit, otherwise treat it as 8bit.
     try:

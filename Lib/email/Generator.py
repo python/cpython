@@ -1,4 +1,4 @@
-# Copyright (C) 2001 Python Software Foundation
+# Copyright (C) 2001,2002 Python Software Foundation
 # Author: barry@zope.com (Barry Warsaw)
 
 """Classes to generate plain text from a message object tree.
@@ -166,30 +166,33 @@ class Generator:
             return text
         rtn = []
         for line in text.split('\n'):
+            splitline = []
             # Short lines can remain unchanged
             if len(line.replace('\t', SPACE8)) <= maxheaderlen:
-                rtn.append(line)
-                SEMINLTAB.join(rtn)
+                splitline.append(line)
+                rtn.append(SEMINLTAB.join(splitline))
             else:
-                oldlen = len(text)
+                oldlen = len(line)
                 # Try to break the line on semicolons, but if that doesn't
                 # work, try to split on folding whitespace.
-                while len(text) > maxheaderlen:
-                    i = text.rfind(';', 0, maxheaderlen)
+                while len(line) > maxheaderlen:
+                    i = line.rfind(';', 0, maxheaderlen)
                     if i < 0:
                         break
-                    rtn.append(text[:i])
-                    text = text[i+1:].lstrip()
-                if len(text) <> oldlen:
+                    splitline.append(line[:i])
+                    line = line[i+1:].lstrip()
+                if len(line) <> oldlen:
                     # Splitting on semis worked
-                    rtn.append(text)
-                    return SEMINLTAB.join(rtn)
+                    splitline.append(line)
+                    rtn.append(SEMINLTAB.join(splitline))
+                    continue
                 # Splitting on semis didn't help, so try to split on
                 # whitespace.
-                parts = re.split(r'(\s+)', text)
+                parts = re.split(r'(\s+)', line)
                 # Watch out though for "Header: longnonsplittableline"
                 if parts[0].endswith(':') and len(parts) == 3:
-                    return text
+                    rtn.append(line)
+                    continue
                 first = parts.pop(0)
                 sublines = [first]
                 acc = len(first)
@@ -203,13 +206,14 @@ class Generator:
                     else:
                         # Split it here, but don't forget to ignore the
                         # next whitespace-only part
-                        rtn.append(EMPTYSTRING.join(sublines))
+                        splitline.append(EMPTYSTRING.join(sublines))
                         del parts[0]
                         first = parts.pop(0)
                         sublines = [first]
                         acc = len(first)
-                rtn.append(EMPTYSTRING.join(sublines))
-                return NLTAB.join(rtn)
+                splitline.append(EMPTYSTRING.join(sublines))
+                rtn.append(NLTAB.join(splitline))
+        return NL.join(rtn)
 
     #
     # Handlers for writing types and subtypes
@@ -219,6 +223,9 @@ class Generator:
         payload = msg.get_payload()
         if payload is None:
             return
+        cset = msg.get_charset()
+        if cset is not None:
+            payload = cset.body_encode(payload)
         if not isinstance(payload, StringType):
             raise TypeError, 'string payload expected: %s' % type(payload)
         if self._mangle_from_:
@@ -233,7 +240,18 @@ class Generator:
         # together, and then make sure that the boundary we've chosen isn't
         # present in the payload.
         msgtexts = []
-        for part in msg.get_payload():
+        subparts = msg.get_payload()
+        if subparts is None:
+            # Nothing has every been attached
+            boundary = msg.get_boundary(failobj=_make_boundary())
+            print >> self._fp, '--' + boundary
+            print >> self._fp, '\n'
+            print >> self._fp, '--' + boundary + '--'
+            return
+        elif not isinstance(subparts, ListType):
+            # Scalar payload
+            subparts = [subparts]
+        for part in subparts:
             s = StringIO()
             g = self.__class__(s, self._mangle_from_, self.__maxheaderlen)
             g(part, unixfrom=0)
@@ -365,7 +383,7 @@ class DecodedGenerator(Generator):
 
 
 # Helper
-def _make_boundary(self, text=None):
+def _make_boundary(text=None):
     # Craft a random boundary.  If text is given, ensure that the chosen
     # boundary doesn't appear in the text.
     boundary = ('=' * 15) + repr(random.random()).split('.')[1] + '=='
