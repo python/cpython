@@ -43,27 +43,50 @@ class Debugger(bdb.Bdb):
         self.root = root = pyshell.root
         self.top = top = Toplevel(root)
         top.wm_protocol("WM_DELETE_WINDOW", self.close)
+        #
         self.bframe = bframe = Frame(top)
         self.bframe.pack(anchor="w")
         self.buttons = bl = []
+        #
         self.bcont = b = Button(bframe, text="Go", command=self.cont)
         bl.append(b)
-        self.bstep = b = Button(bframe, text="Step into", command=self.step)
+        self.bstep = b = Button(bframe, text="Into", command=self.step)
         bl.append(b)
-        self.bnext = b = Button(bframe, text="Step over", command=self.next)
+        self.bnext = b = Button(bframe, text="Over", command=self.next)
         bl.append(b)
-        self.bret = b = Button(bframe, text="Step out", command=self.ret)
+        self.bret = b = Button(bframe, text="Out", command=self.ret)
         bl.append(b)
+        #
         for b in bl:
             b.configure(state="disabled")
             b.pack(side="left")
+        #
+        self.cframe = cframe = Frame(bframe)
+        self.cframe.pack(side="left")
+        #
+        self.vstack = BooleanVar(top)
+        self.bstack = Checkbutton(cframe,
+            text="Stack", command=self.show_stack, variable=self.vstack)
+        self.bstack.grid(row=0, column=0)
+        self.vsource = BooleanVar(top)
+        self.bsource = Checkbutton(cframe,
+            text="Source", command=self.show_source, variable=self.vsource)
+        self.bsource.grid(row=0, column=0)
+        self.vlocals = BooleanVar(top)
+        self.blocals = Checkbutton(cframe,
+            text="Locals", command=self.show_locals, variable=self.vlocals)
+        self.blocals.grid(row=1, column=0)
+        self.vglobals = BooleanVar(top)
+        self.bglobals = Checkbutton(cframe,
+            text="Globals", command=self.show_globals, variable=self.vglobals)
+        self.bglobals.grid(row=1, column=1)
+        #
         self.status = Label(top, anchor="w")
         self.status.pack(anchor="w")
         self.error = Label(top, anchor="w")
         self.error.pack(anchor="w")
     
     def interaction(self, frame, info=None):
-        self.top.pack_propagate(0)
         self.frame = frame
         code = frame.f_code
         file = code.co_filename
@@ -86,11 +109,14 @@ class Debugger(bdb.Bdb):
                     pass
         else:
             m1 = ""
+            tb = None
         self.error.configure(text=m1)
-        if file[:1] + file[-1:] != "<>" and os.path.exists(file):
-            edit = self.flist.open(file)
-            if edit:
-                edit.gotoline(lineno)
+        sv = self.stackviewer
+        if sv:
+            stack, i = self.get_stack(self.frame, tb)
+            sv.load_stack(stack, i)
+        if self.vsource.get():
+            self.sync_source_line()
         for b in self.buttons:
             b.configure(state="normal")
         self.top.tkraise()
@@ -100,6 +126,18 @@ class Debugger(bdb.Bdb):
         self.status.configure(text="")
         self.error.configure(text="")
         self.frame = None
+    
+    def sync_source_line(self):
+        frame = self.frame
+        if not frame:
+            return
+        code = frame.f_code
+        file = code.co_filename
+        lineno = frame.f_lineno
+        if file[:1] + file[-1:] != "<>" and os.path.exists(file):
+            edit = self.flist.open(file)
+            if edit:
+                edit.gotoline(lineno)
     
     def cont(self):
         self.set_continue()
@@ -116,3 +154,30 @@ class Debugger(bdb.Bdb):
     def ret(self):
         self.set_return(self.frame)
         self.root.quit()
+
+    stackviewer = None
+
+    def show_stack(self):
+        if not self.stackviewer and self.vstack.get():
+            import StackViewer
+            self.stackviewer = sv = StackViewer.StackViewer(
+                self.top, self.flist, self)
+            if self.frame:
+        else:
+            sv = self.stackviewer
+            if sv and not self.vstack.get():
+                self.stackviewer = None
+                sv.close()
+    
+    def show_source(self):
+        if self.vsource.get():
+            self.sync_source_line()
+
+    def show_frame(self, (frame, lineno)):
+        print frame, lineno
+
+    def show_locals(self):
+        pass
+    
+    def show_globals(self):
+        pass

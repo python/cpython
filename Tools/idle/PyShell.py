@@ -3,6 +3,7 @@
 import os
 import sys
 import string
+import getopt
 import re
 
 import linecache
@@ -552,8 +553,8 @@ class PyShell(PyShellEditorWindow):
                 "(sys.last_traceback is not defined)",
                 master=self.text)
             return
-        from StackViewer import StackViewer
-        sv = StackViewer(self.root, self.flist)
+        from StackViewer import StackBrowser
+        sv = StackBrowser(self.root, self.flist)
 
     def showprompt(self):
         self.resetoutput()
@@ -599,17 +600,28 @@ class PseudoFile:
 
 
 def main():
+    debug = 0
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "d")
+    except getopt.error, msg:
+        sys.stderr.write("Error: %s\n" % str(msg))
+        sys.exit(2)
+    for o, a in opts:
+        if o == "-d":
+            debug = 1
     global flist, root
     root = Tk()
     fixwordbreaks(root)
     root.withdraw()
     flist = PyShellFileList(root)
-    if sys.argv[1:]:
+    if args:
         for filename in sys.argv[1:]:
             flist.open(filename)
     t = PyShell(flist)
     flist.pyshell = t
     t.begin()
+    if debug:
+        t.open_debugger()
     root.mainloop()
 
 if __name__ == "__main__":
