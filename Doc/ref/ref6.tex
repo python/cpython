@@ -482,6 +482,16 @@ difficulty is that there's no guarantee the generator will ever be
 resumed, hence no guarantee that the \keyword{finally} block will ever
 get executed.
 
+\note{In Python 2.2, the \keyword{yield} statement is only allowed
+when the \code{generators} feature has been enabled.  It will always
+be enabled in Python 2.3.  This \code{__future__} import statment can
+be used to enable the feature:}
+
+\begin{verbatim}
+from __future__ import generators
+\end{verbatim}
+
+
 \begin{seealso}
   \seepep{0255}{Simple Generators}
          {The proposal for adding generators and the \keyword{yield}
