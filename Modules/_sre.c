@@ -64,37 +64,6 @@ static char copyright[] =
 /* -------------------------------------------------------------------- */
 /* optional features */
 
-/* prevent run-away recursion (bad patterns on long strings) */
-
-#if !defined(USE_STACKCHECK)
-#if defined(MS_WIN64) || defined(__LP64__) || defined(_LP64)
-/* require smaller recursion limit for a number of 64-bit platforms:
-   Win64 (MS_WIN64), Linux64 (__LP64__), Monterey (64-bit AIX) (_LP64) */
-/* FIXME: maybe the limit should be 40000 / sizeof(void*) ? */
-#define USE_RECURSION_LIMIT 7500
-#else
-
-#if defined(__GNUC__) && defined(WITH_THREAD) && defined(__FreeBSD__)
-/* the pthreads library on FreeBSD has a fixed 1MB stack size for the
- * initial (or "primary") thread, which is insufficient for the default
- * recursion limit.  gcc 3.x at the default optimisation
- * level (-O3) uses stack space more aggressively than gcc 2.95.
- */
-#if (__GNUC__ > 2)
-#define USE_RECURSION_LIMIT 6500
-#else
-#define USE_RECURSION_LIMIT 7500
-#endif
-
-#else
-#define USE_RECURSION_LIMIT 10000
-#endif
-#endif
-#endif
-
-/* enables usage of recursive scheme */
-#undef USE_RECURSION
-
 /* enables fast searching */
 #define USE_FAST_SEARCH
 
@@ -536,10 +505,10 @@ SRE_CHARSET(SRE_CODE* set, SRE_CODE ch)
     }
 }
 
-LOCAL(int) SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level);
+LOCAL(int) SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern);
 
 LOCAL(int)
-SRE_COUNT(SRE_STATE* state, SRE_CODE* pattern, int maxcount, int level)
+SRE_COUNT(SRE_STATE* state, SRE_CODE* pattern, int maxcount)
 {
     SRE_CODE chr;
     SRE_CHAR* ptr = state->ptr;
@@ -609,7 +578,7 @@ SRE_COUNT(SRE_STATE* state, SRE_CODE* pattern, int maxcount, int level)
         /* repeated single character pattern */
         TRACE(("|%p|%p|COUNT SUBPATTERN\n", pattern, ptr));
         while ((SRE_CHAR*) state->ptr < end) {
-            i = SRE_MATCH(state, pattern, level);
+            i = SRE_MATCH(state, pattern);
             if (i < 0)
                 return i;
             if (!i)
@@ -827,7 +796,7 @@ typedef struct {
 /* check if string matches the given pattern.  returns <0 for
    error, 0 for failure, and 1 for success */
 LOCAL(int)
-SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
+SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 {
     SRE_CHAR* end = state->end;
     int alloc_pos, ctx_pos = -1;
@@ -837,17 +806,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
     SRE_MATCH_CONTEXT* ctx;
     SRE_MATCH_CONTEXT* nextctx;
 
-    TRACE(("|%p|%p|ENTER %d\n", pattern, state->ptr, level));
-
-#if defined(USE_STACKCHECK)
-    if (level % 10 == 0 && PyOS_CheckStack())
-        return SRE_ERROR_RECURSION_LIMIT;
-#endif
-
-#if defined(USE_RECURSION_LIMIT)
-    if (level > USE_RECURSION_LIMIT)
-        return SRE_ERROR_RECURSION_LIMIT;
-#endif
+    TRACE(("|%p|%p|ENTER\n", pattern, state->ptr));
 
     DATA_ALLOC(SRE_MATCH_CONTEXT, ctx);
     ctx->last_ctx_pos = -1;
@@ -1029,11 +988,7 @@ entrance:
                      !SRE_CHARSET(ctx->pattern + 3, (SRE_CODE) *ctx->ptr)))
                     continue;
                 state->ptr = ctx->ptr;
-#ifdef USE_RECURSION
-                ret = SRE_MATCH(state, ctx->pattern+1, level+1);
-#else
                 DO_JUMP(JUMP_BRANCH, jump_branch, ctx->pattern+1);
-#endif
                 if (ret) {
                     if (ctx->u.rep)
                         MARK_POP_DISCARD(ctx->lastmark);
@@ -1066,8 +1021,7 @@ entrance:
 
             state->ptr = ctx->ptr;
 
-            ctx->count = SRE_COUNT(state, ctx->pattern+3, ctx->pattern[2],
-                                   level+1);
+            ctx->count = SRE_COUNT(state, ctx->pattern+3, ctx->pattern[2]);
             RETURN_ON_ERROR(ctx->count);
 
             ctx->ptr += ctx->count;
@@ -1101,13 +1055,8 @@ entrance:
                     if (ctx->count < (int) ctx->pattern[1])
                         break;
                     state->ptr = ctx->ptr;
-#ifdef USE_RECURSION
-                    ret = SRE_MATCH(state, ctx->pattern+ctx->pattern[0],
-                                    level+1);
-#else
                     DO_JUMP(JUMP_REPEAT_ONE_1, jump_repeat_one_1,
                             ctx->pattern+ctx->pattern[0]);
-#endif
                     if (ret) {
                         RETURN_ON_ERROR(ret);
                         RETURN_SUCCESS;
@@ -1123,13 +1072,8 @@ entrance:
                 /* general case */
                 while (ctx->count >= (int) ctx->pattern[1]) {
                     state->ptr = ctx->ptr;
-#ifdef USE_RECURSION
-                    ret = SRE_MATCH(state, ctx->pattern+ctx->pattern[0],
-                                    level+1);
-#else
                     DO_JUMP(JUMP_REPEAT_ONE_2, jump_repeat_one_2,
                             ctx->pattern+ctx->pattern[0]);
-#endif
                     if (ret) {
                         RETURN_ON_ERROR(ret);
                         RETURN_SUCCESS;
@@ -1164,7 +1108,7 @@ entrance:
             else {
                 /* count using pattern min as the maximum */
                 ctx->count = SRE_COUNT(state, ctx->pattern+3,
-                                       ctx->pattern[1], level+1);
+                                       ctx->pattern[1]);
                 RETURN_ON_ERROR(ctx->count);
                 if (ctx->count < (int) ctx->pattern[1])
                     /* didn't match minimum number of times */ 
@@ -1184,19 +1128,14 @@ entrance:
                 while ((int)ctx->pattern[2] == 65535
                        || ctx->count <= (int)ctx->pattern[2]) {
                     state->ptr = ctx->ptr;
-#ifdef USE_RECURSION
-                    ret = SRE_MATCH(state, ctx->pattern+ctx->pattern[0],
-                                    level+1);
-#else
                     DO_JUMP(JUMP_MIN_REPEAT_ONE,jump_min_repeat_one,
                             ctx->pattern+ctx->pattern[0]);
-#endif
                     if (ret) {
                         RETURN_ON_ERROR(ret);
                         RETURN_SUCCESS;
                     }
                     state->ptr = ctx->ptr;
-                    ret = SRE_COUNT(state, ctx->pattern+3, 1, level+1);
+                    ret = SRE_COUNT(state, ctx->pattern+3, 1);
                     RETURN_ON_ERROR(ret);
                     if (ret == 0)
                         break;
@@ -1224,11 +1163,7 @@ entrance:
             state->repeat = ctx->u.rep;
 
             state->ptr = ctx->ptr;
-#ifdef USE_RECURSION
-            ret = SRE_MATCH(state, ctx->pattern+ctx->pattern[0], level+1);
-#else
             DO_JUMP(JUMP_REPEAT, jump_repeat, ctx->pattern+ctx->pattern[0]);
-#endif
             state->repeat = ctx->u.rep->prev;
             free(ctx->u.rep);
 
@@ -1259,13 +1194,8 @@ entrance:
             if (ctx->count < ctx->u.rep->pattern[1]) {
                 /* not enough matches */
                 ctx->u.rep->count = ctx->count;
-#ifdef USE_RECURSION
-                /* RECURSIVE */
-                ret = SRE_MATCH(state, ctx->u.rep->pattern+3, level+1);
-#else
                 DO_JUMP(JUMP_MAX_UNTIL_1, jump_max_until_1,
                         ctx->u.rep->pattern+3);
-#endif
                 if (ret) {
                     RETURN_ON_ERROR(ret);
                     RETURN_SUCCESS;
@@ -1286,13 +1216,8 @@ entrance:
                 /* zero-width match protection */
                 DATA_PUSH(&ctx->u.rep->last_ptr);
                 ctx->u.rep->last_ptr = state->ptr;
-#ifdef USE_RECURSION
-                /* RECURSIVE */
-                ret = SRE_MATCH(state, ctx->u.rep->pattern+3, level+1);
-#else
                 DO_JUMP(JUMP_MAX_UNTIL_2, jump_max_until_2,
                         ctx->u.rep->pattern+3);
-#endif
                 DATA_POP(&ctx->u.rep->last_ptr);
                 if (ret) {
                     MARK_POP_DISCARD(ctx->lastmark);
@@ -1308,11 +1233,7 @@ entrance:
             /* cannot match more repeated items here.  make sure the
                tail matches */
             state->repeat = ctx->u.rep->prev;
-#ifdef USE_RECURSION
-            ret = SRE_MATCH(state, ctx->pattern, level+1);
-#else
             DO_JUMP(JUMP_MAX_UNTIL_3, jump_max_until_3, ctx->pattern);
-#endif
             RETURN_ON_SUCCESS(ret);
             state->repeat = ctx->u.rep;
             state->ptr = ctx->ptr;
@@ -1336,13 +1257,8 @@ entrance:
             if (ctx->count < ctx->u.rep->pattern[1]) {
                 /* not enough matches */
                 ctx->u.rep->count = ctx->count;
-#ifdef USE_RECURSION
-                /* RECURSIVE */
-                ret = SRE_MATCH(state, ctx->u.rep->pattern+3, level+1);
-#else
                 DO_JUMP(JUMP_MIN_UNTIL_1, jump_min_until_1,
                         ctx->u.rep->pattern+3);
-#endif
                 if (ret) {
                     RETURN_ON_ERROR(ret);
                     RETURN_SUCCESS;
@@ -1356,11 +1272,7 @@ entrance:
 
             /* see if the tail matches */
             state->repeat = ctx->u.rep->prev;
-#ifdef USE_RECURSION
-            ret = SRE_MATCH(state, ctx->pattern, level+1);
-#else
             DO_JUMP(JUMP_MIN_UNTIL_2, jump_min_until_2, ctx->pattern);
-#endif
             if (ret) {
                 RETURN_ON_ERROR(ret);
                 RETURN_SUCCESS;
@@ -1376,13 +1288,8 @@ entrance:
                 RETURN_FAILURE;
 
             ctx->u.rep->count = ctx->count;
-#ifdef USE_RECURSION
-            /* RECURSIVE */
-            ret = SRE_MATCH(state, ctx->u.rep->pattern+3, level+1);
-#else
             DO_JUMP(JUMP_MIN_UNTIL_3,jump_min_until_3,
                     ctx->u.rep->pattern+3);
-#endif
             if (ret) {
                 RETURN_ON_ERROR(ret);
                 RETURN_SUCCESS;
@@ -1470,11 +1377,7 @@ entrance:
             state->ptr = ctx->ptr - ctx->pattern[1];
             if (state->ptr < state->beginning)
                 RETURN_FAILURE;
-#ifdef USE_RECURSION
-            ret = SRE_MATCH(state, ctx->pattern+2, level+1);
-#else
             DO_JUMP(JUMP_ASSERT, jump_assert, ctx->pattern+2);
-#endif
             RETURN_ON_FAILURE(ret);
             ctx->pattern += ctx->pattern[0];
             break;
@@ -1486,11 +1389,7 @@ entrance:
                    ctx->ptr, ctx->pattern[1]));
             state->ptr = ctx->ptr - ctx->pattern[1];
             if (state->ptr >= state->beginning) {
-#ifdef USE_RECURSION
-                ret = SRE_MATCH(state, ctx->pattern+2, level+1);
-#else
                 DO_JUMP(JUMP_ASSERT_NOT, jump_assert_not, ctx->pattern+2);
-#endif
                 if (ret) {
                     RETURN_ON_ERROR(ret);
                     RETURN_FAILURE;
@@ -1519,7 +1418,6 @@ exit:
         return ret;
     DATA_LOOKUP_AT(SRE_MATCH_CONTEXT, ctx, ctx_pos);
 
-#ifndef USE_RECURSION
     switch (jump) {
         case JUMP_MAX_UNTIL_2:
             TRACE(("|%p|%p|JUMP_MAX_UNTIL_2\n", ctx->pattern, ctx->ptr));
@@ -1564,7 +1462,6 @@ exit:
             TRACE(("|%p|%p|RETURN %d\n", ctx->pattern, ctx->ptr, ret));
             break;
     }
-#endif
 
     return ret; /* should never get here */
 }
@@ -1635,7 +1532,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
                         state->ptr = ptr + 1 - prefix_len + prefix_skip;
                         if (flags & SRE_INFO_LITERAL)
                             return 1; /* we got all of it */
-                        status = SRE_MATCH(state, pattern + 2*prefix_skip, 1);
+                        status = SRE_MATCH(state, pattern + 2*prefix_skip);
                         if (status != 0)
                             return status;
                         /* close but no cigar -- try again */
@@ -1666,7 +1563,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
             state->ptr = ++ptr;
             if (flags & SRE_INFO_LITERAL)
                 return 1; /* we got all of it */
-            status = SRE_MATCH(state, pattern + 2, 1);
+            status = SRE_MATCH(state, pattern + 2);
             if (status != 0)
                 break;
         }
@@ -1681,7 +1578,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
             TRACE(("|%p|%p|SEARCH CHARSET\n", pattern, ptr));
             state->start = ptr;
             state->ptr = ptr;
-            status = SRE_MATCH(state, pattern, 1);
+            status = SRE_MATCH(state, pattern);
             if (status != 0)
                 break;
             ptr++;
@@ -1691,7 +1588,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
         while (ptr <= end) {
             TRACE(("|%p|%p|SEARCH\n", pattern, ptr));
             state->start = state->ptr = ptr++;
-            status = SRE_MATCH(state, pattern, 1);
+            status = SRE_MATCH(state, pattern);
             if (status != 0)
                 break;
         }
@@ -2114,10 +2011,10 @@ pattern_match(PatternObject* self, PyObject* args, PyObject* kw)
     TRACE(("|%p|%p|MATCH\n", PatternObject_GetCode(self), state.ptr));
 
     if (state.charsize == 1) {
-        status = sre_match(&state, PatternObject_GetCode(self), 1);
+        status = sre_match(&state, PatternObject_GetCode(self));
     } else {
 #if defined(HAVE_UNICODE)
-        status = sre_umatch(&state, PatternObject_GetCode(self), 1);
+        status = sre_umatch(&state, PatternObject_GetCode(self));
 #endif
     }
 
@@ -3311,10 +3208,10 @@ scanner_match(ScannerObject* self, PyObject* args)
     state->ptr = state->start;
 
     if (state->charsize == 1) {
-        status = sre_match(state, PatternObject_GetCode(self->pattern), 1);
+        status = sre_match(state, PatternObject_GetCode(self->pattern));
     } else {
 #if defined(HAVE_UNICODE)
-        status = sre_umatch(state, PatternObject_GetCode(self->pattern), 1);
+        status = sre_umatch(state, PatternObject_GetCode(self->pattern));
 #endif
     }
 
