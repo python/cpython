@@ -174,3 +174,28 @@ testboth("%o", 042, "42")
 # testboth("%o", -042, "37777777736") # Alas, that's specific to 32-bit machines
 testboth("%o", 042L, "42")
 testboth("%o", -042L, "-42")
+
+# Test exception for unknown format characters
+if verbose:
+    print 'Testing exceptions'
+
+def test_exc(formatstr, args, exception, excmsg):
+    try:
+        testformat(formatstr, args)
+    except exception, exc:
+        if str(exc) == excmsg:
+            if verbose: 
+                print "yes"
+        else:
+            if verbose: print 'no'
+            print 'Unexpected ', exception, ':', repr(str(exc))
+    except:
+        if verbose: print 'no'
+        print 'Unexpected exception'
+        raise
+
+test_exc('abc %a', 1, ValueError,
+         "unsupported format character 'a' (0x61) at index 5")
+test_exc(u'abc %\u3000', 1, ValueError,
+         "unsupported format character '\000' (0x3000) at index 5")
+
