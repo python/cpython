@@ -324,13 +324,14 @@ class Displayer(VideoParams):
 			gl.RGBcolor(200, 200, 200) # XXX rather light grey
 			gl.clear()
 			return
-		if self.format == 'rgb8' and is_entry_indigo():
-			gl.RGBmode()
-			gl.gconfig()
-			gl.RGBcolor(200, 200, 200) # XXX rather light grey
-			gl.clear()
-			gl.pixmode(GL.PM_SIZE, 8)
-			return
+## XXX Unfortunately this doesn't work on IRIX 4.0.1...
+##		if self.format == 'rgb8' and is_entry_indigo():
+##			gl.RGBmode()
+##			gl.gconfig()
+##			gl.RGBcolor(200, 200, 200) # XXX rather light grey
+##			gl.clear()
+##			gl.pixmode(GL.PM_SIZE, 8)
+##			return
 		gl.cmode()
 		gl.gconfig()
 		self.skipchrom = 0
@@ -756,7 +757,7 @@ class BasicVinFile(VideoParams):
 		self.framecount = self.framecount + 1
 
 
-# Derived class implementing random access
+# Derived class implementing random access and index cached in the file
 
 class RandomVinFile(BasicVinFile):
 
@@ -767,12 +768,58 @@ class RandomVinFile(BasicVinFile):
 
 	def warmcache(self):
 		if len(self.index) == 0:
-			self.rewind()
-			while 1:
-				try: dummy = self.skipnextframe()
-				except EOFError: break
+			try:
+				self.readcache()
+			except Error:
+				self.buildcache()
 		else:
 			print '[RandomVinFile.warmcache(): too late]'
+			self.rewind()
+
+	def buildcache(self):
+		self.index = []
+		self.rewind()
+		while 1:
+			try: dummy = self.skipnextframe()
+			except EOFError: break
+		self.rewind()
+
+	def writecache(self):
+		# Raises IOerror if the file is not seekable & writable!
+		import marshal
+		if len(self.index) == 0:
+			self.buildcache()
+			if len(self.index) == 0:
+				raise Error, self.filename + ': No frames'
+		self.fp.seek(0, 2)
+		self.fp.write('\n/////CMIF/////\n')
+		pos = self.fp.tell()
+		data = `pos`
+		data = '\n-*-*-CMIF-*-*-\n' + data + ' '*(15-len(data)) + '\n'
+		try:
+			marshal.dump(self.index, self.fp)
+			self.fp.write(data)
+			self.fp.flush()
+		finally:
+			self.rewind()
+
+	def readcache(self):
+		# Raises Error if there is no cache in the file
+		import marshal
+		if len(self.index) <> 0:
+			raise CallError
+		self.fp.seek(-32, 2)
+		data = self.fp.read()
+		if data[:16] <> '\n-*-*-CMIF-*-*-\n' or data[-1:] <> '\n':
+			self.rewind()
+			raise Error, self.filename + ': No cache'
+		pos = eval(data[16:-1])
+		self.fp.seek(pos)
+		try:
+			self.index = marshal.load(self.fp)
+		except TypeError:
+			self.rewind()
+			raise Error, self.filename + ': Bad cache'
 		self.rewind()
 
 	def getnextframeheader(self):

@@ -54,7 +54,7 @@ def main():
 
 def process(filename):
 	try:
-		vin = VFile.VinFile().init(filename)
+		vin = VFile.RandomVinFile().init(filename)
 	except IOError, msg:
 		sys.stderr.write(filename + ': I/O error: ' + `msg` + '\n')
 		return 1
@@ -71,6 +71,12 @@ def process(filename):
 		vin.close()
 		return
 
+	try:
+		vin.readcache()
+		print '[Using cached index]'
+	except VFile.Error:
+		print '[Constructing index on the fly]'
+
 	if not short:
 		if delta:
 			print 'Frame time deltas:',
@@ -83,11 +89,12 @@ def process(filename):
 	datasize = 0
 	while 1:
 		try:
-			t, data, cdata = vin.getnextframe()
+			t, ds, cs = vin.getnextframeheader()
+			vin.skipnextframedata(ds, cs)
 		except EOFError:
 			break
-		datasize = datasize + len(data)
-		if cdata: datasize = datasize + len(cdata)
+		datasize = datasize + ds
+		if cs: datasize = datasize + cs
 		if not short:
 			if n%8 == 0:
 				sys.stdout.write('\n')
