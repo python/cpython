@@ -2010,6 +2010,14 @@ def test_DocFileSuite():
        modified the test globals.  The test globals are
        automatically cleared for us after a test.
 
+       Tests in a file run using `DocFileSuite` can also access the
+       `__file__` global, which is set to the name of the file
+       containing the tests:
+
+         >>> suite = doctest.DocFileSuite('test_doctest3.txt')
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=1 errors=0 failures=0>
+
        """
 
 def test_trailing_space_in_test():
