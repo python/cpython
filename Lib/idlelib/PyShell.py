@@ -10,7 +10,6 @@ import socket
 import time
 import traceback
 import types
-import warnings
 import exceptions
 
 import linecache
@@ -31,9 +30,6 @@ import rpc
 import RemoteDebugger
 
 IDENTCHARS = string.ascii_letters + string.digits + "_"
-
-# XX hardwire this for now, remove later  KBK 09Jun02
-use_subprocess = 1 # Set to 1 to spawn subprocess for command execution
 
 # Change warnings module to write to sys.__stderr__
 try:
@@ -71,10 +67,9 @@ linecache.checkcache = extended_linecache_checkcache
 class PyShellEditorWindow(EditorWindow):
     "Regular text edit window when a shell is present"
 
-    # XXX KBK 19Oct02 Breakpoints are currently removed if module is
-    # changed or closed.  Future plans include saving breakpoints in a
-    # project file and possibly preserving breakpoints by changing their
-    # line numbers as a module is modified.
+    # XXX KBK 10Dec02 Breakpoints are currently removed if module is modified.
+    # In the future, it may be possible to preserve breakpoints by changing
+    # their line numbers as a module is modified.
 
     def __init__(self, *args):
         self.breakpoints = []
@@ -317,6 +312,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.register("stdout", self.tkconsole.stdout)
         self.rpcclt.register("stderr", self.tkconsole.stderr)
         self.rpcclt.register("flist", self.tkconsole.flist)
+        self.transfer_path()
         self.poll_subprocess()
 
     def restart_subprocess(self):
@@ -328,11 +324,19 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.close()
         self.spawn_subprocess()
         self.rpcclt.accept()
+        self.transfer_path()
         # restart remote debugger
         if debug:
             gui = RemoteDebugger.restart_subprocess_debugger(self.rpcclt)
             # reload remote debugger breakpoints for all PyShellEditWindows
             debug.load_breakpoints()
+
+    def transfer_path(self):
+        self.runcommand("""if 1:
+        import sys as _sys
+        _sys.path = %s
+        del _sys
+        \n""" % `sys.path`)
 
     active_seq = None
 
@@ -586,7 +590,7 @@ class PyShell(OutputWindow):
     ColorDelegator = ModifiedColorDelegator
     UndoDelegator = ModifiedUndoDelegator
 
-    # Override menus: Run and Format not desired in shell; add Debug
+    # Override menus
     menu_specs = [
         ("file", "_File"),
         ("edit", "_Edit"),
@@ -1008,107 +1012,167 @@ class PseudoFile:
 
 
 usage_msg = """\
-usage: idle.py [-c command] [-d] [-i] [-r script] [-s] [-t title] [arg] ...
 
-idle file(s)    (without options) edit the file(s)
+USAGE: idle  [-deis] [-t title] [file]*             
+       idle  [-ds] [-t title] (-c cmd | -r file) [arg]*
+       idle  [-ds] [-t title] - [arg]*
+       
+  -h         print this help message and exit
 
--c cmd     run the command in a shell
--d         enable the debugger
--e         edit mode; arguments are files to be edited
--i         open an interactive shell
--i file(s) open a shell and also an editor window for each file
--r
--s         run $IDLESTARTUP or $PYTHONSTARTUP before anything else
--t title   set title of shell window
+The following options will override the IDLE 'settings' configuration:
 
-Remaining arguments are applied to the command (-c) or script (-r).
+  -e         open an edit window
+  -i         open a shell window
+
+The following options imply -i and will open a shell:
+
+  -c cmd     run the command in a shell, or
+  -r file    run script from file
+
+  -d         enable the debugger
+  -s         run $IDLESTARTUP or $PYTHONSTARTUP before anything else
+  -t title   set title of shell window
+
+A default edit window will be bypassed when -c, -r, or - are used.
+
+[arg]* are passed to the command (-c) or script (-r) in sys.argv[1:].
+
+Examples:
+
+idle
+        Open an edit window or shell depending on IDLE's configuration.
+
+idle foo.py foobar.py
+        Edit the files, also open a shell if configured to start with shell.
+
+idle -est "Baz" foo.py
+        Run $IDLESTARTUP or $PYTHONSTARTUP, edit foo.py, and open a shell
+        window with the title "Baz".
+
+idle -c "import sys; print sys.argv" "foo"
+        Open a shell window and run the command, passing "-c" in sys.argv[0]
+        and "foo" in sys.argv[1].
+
+idle -d -s -r foo.py "Hello World"
+        Open a shell window, run a startup script, enable the debugger, and
+        run foo.py, passing "foo.py" in sys.argv[0] and "Hello World" in
+        sys.argv[1].
+
+echo "import sys; print sys.argv" | idle - "foobar"
+        Open a shell window, run the script piped in, passing '' in sys.argv[0]
+        and "foobar" in sys.argv[1].
 """
 
 def main():
-    cmd = None
-    edit = 0
-    debug = 0
-    script = None
-    startup = 0
+    global flist, root, use_subprocess
 
+    enable_shell = False
+    enable_edit = False
+    debug = False
+    cmd = None
+    script = None
+    startup = False
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "c:deir:st:")
+        opts, args = getopt.getopt(sys.argv[1:], "c:deihr:st:")
     except getopt.error, msg:
         sys.stderr.write("Error: %s\n" % str(msg))
         sys.stderr.write(usage_msg)
         sys.exit(2)
-
     for o, a in opts:
         if o == '-c':
             cmd = a
+            enable_shell = True
         if o == '-d':
-            debug = 1
+            debug = True
+            enable_shell = True
         if o == '-e':
-            edit = 1
+            enable_edit = True
+        if o == '-h':
+            sys.stdout.write(usage_msg)
+            sys.exit()
+        if o == '-i':
+            enable_shell = True
         if o == '-r':
             script = a
+            if os.path.isfile(script):
+                pass
+            else:
+                print "No script file: ", script
+                sys.exit()
+            enable_shell = True
         if o == '-s':
-            startup = 1
+            startup = True
+            enable_shell = True
         if o == '-t':
             PyShell.shell_title = a
+            enable_shell = True
+    if args and args[0] == '-':
+        cmd = sys.stdin.read()
+        enable_shell = True
+        
+    use_subprocess = True
 
-    if args and args[0] != "-": edit = 1
-
+    # process sys.argv and sys.path:
     for i in range(len(sys.path)):
         sys.path[i] = os.path.abspath(sys.path[i])
-
-    pathx = []
-    if edit:
+    if args and args[0] == '-':
+        sys.argv = [''] + args[1:]
+    elif cmd:
+        sys.argv = ['-c'] + args
+    elif script:
+        sys.argv = [script] + args
+    elif args:
+        enable_edit = True
+        pathx = []
         for filename in args:
             pathx.append(os.path.dirname(filename))
-    elif args and args[0] != "-":
-        pathx.append(os.path.dirname(args[0]))
-    else:
-        pathx.append(os.curdir)
-    for dir in pathx:
-        dir = os.path.abspath(dir)
-        if not dir in sys.path:
-            sys.path.insert(0, dir)
-
-    global flist, root
+        for dir in pathx:
+            dir = os.path.abspath(dir)
+            if not dir in sys.path:
+                sys.path.insert(0, dir)
+    # check the IDLE settings configuration (but command line overrides)
+    edit_start = idleConf.GetOption('main', 'General',
+                                    'editor-on-startup', type='bool') 
+    enable_edit = enable_edit or edit_start
+    enable_shell = enable_shell or not edit_start  
+    # start editor and/or shell windows:
     root = Tk(className="Idle")
     fixwordbreaks(root)
     root.withdraw()
     flist = PyShellFileList(root)
-
-    if edit:
-        for filename in args:
-            flist.open(filename)
-        if not args:
-            flist.new()
-    else:
-        if cmd:
-            sys.argv = ["-c"] + args
-        else:
-            sys.argv = args or [""]
-
-    shell = PyShell(flist)
-    interp = shell.interp
-    flist.pyshell = shell
-
+    if enable_edit:
+        if not (cmd or script):
+            for filename in args:
+                flist.open(filename)
+            if not args:
+                flist.new()
+        if enable_shell:
+            flist.open_shell()
+    elif enable_shell:
+        flist.pyshell = PyShell(flist)
+        flist.pyshell.begin()
+    shell = flist.pyshell
+    # handle remaining options:
+    if debug:
+        shell.open_debugger()
     if startup:
         filename = os.environ.get("IDLESTARTUP") or \
                    os.environ.get("PYTHONSTARTUP")
         if filename and os.path.isfile(filename):
-            interp.execfile(filename)
-
-    if debug:
-        shell.open_debugger()
-    if cmd:
-        interp.execsource(cmd)
-    elif script:
-        if os.path.isfile(script):
-            interp.execfile(script)
-        else:
-            print "No script file: ", script
-    shell.begin()
+            shell.interp.execfile(filename)
+    if cmd or script:
+        shell.interp.runcommand("""if 1:
+            import sys as _sys
+            _sys.argv = %s
+            del _sys
+            \n""" % `sys.argv`)
+        if cmd:
+            shell.interp.execsource(cmd)
+        elif script:
+            shell.interp.execfile(script)
     root.mainloop()
     root.destroy()
+
 
 def display_port_binding_error():
     print """\
