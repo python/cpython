@@ -12,11 +12,10 @@ try:
 except AttributeError:
     raise ImportError, "No openpty() available."
 
-## # Please uncomment these if os.isatty() is added.
-## if not os.isatty(master):
-##     raise TestFailed, "Master-end of pty is not a terminal."
-## if not os.isatty(slave):
-##     raise TestFailed, "Slave-end of pty is not a terminal."
+if not os.isatty(master):
+    raise TestFailed, "Master-end of pty is not a terminal."
+if not os.isatty(slave):
+    raise TestFailed, "Slave-end of pty is not a terminal."
 
 os.write(slave, 'Ping!')
 print os.read(master, 1024)
