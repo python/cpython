@@ -290,6 +290,30 @@ class CCompiler:
         pass
     
 
+    # XXX passing in 'build_info' here is a kludge to deal with the
+    # oddities of one particular compiler (Visual C++).  For some reason,
+    # it needs to be told about ".def" files, and currently the
+    # 'build_info' hash allows this through a 'def_file' element.  The link
+    # methods for VC++ look for 'def_file' and transform it into the
+    # appropriate command-line options.  The current code is objectionable
+    # for a number of reasons: 1) if the link methods take 'build_info',
+    # why bother passing in libraries, library_dirs, etc.? 2) if the link
+    # methods do it, why not the compile methods? 3) build_info is part of
+    # the interface between setup.py and the 'build_ext' command -- it
+    # should stop there and not be propagated down into the compiler
+    # classes! and 4) I don't like elevating a platform- and
+    # compiler-specific oddity to "first-class" status in 'build_info' (oh
+    # well, at least it's not being reified in the compiler classes -- that
+    # would be really gross).
+    #
+    # Possible solutions:
+    #   - just pass build_info to all the compile/link methods, 
+    #     never mind all those other parameters and screw the
+    #     integrity of the interfaces
+    #   - add a mechanism for passing platform-specific and/or
+    #     compiler-specific compiler/linker options from setup.py
+    #     straight through to the appropriate compiler class
+
     def link_shared_lib (self,
                          objects,
                          output_libname,
@@ -367,9 +391,81 @@ def new_compiler (plat=None,
     if plat == 'posix':
         from unixccompiler import UnixCCompiler
         return UnixCCompiler (verbose, dry_run)
-    elif plat in  ['nt', 'win95' ]:
+    elif plat == 'nt':
         from msvccompiler import MSVCCompiler
         return MSVCCompiler ( verbose, dry_run )
     else:
         raise DistutilsPlatformError, \
               "don't know how to compile C/C++ code on platform %s" % plat
+
+
+def gen_preprocess_options (macros, includes):
+    """Generate C pre-processor options (-D, -U, -I) as used by at
+       least two types of compilers: the typical Unix compiler and Visual
+       C++.  'macros' is the usual thing, a list of 1- or 2-tuples, where
+       (name,) means undefine (-U) macro 'name', and (name,value) means
+       define (-D) macro 'name' to 'value'.  'includes' is just a list of
+       directory names to be added to the header file search path (-I).
+       Returns a list of command-line options suitable for either
+       Unix compilers or Visual C++."""
+    
+    # XXX it would be nice (mainly aesthetic, and so we don't generate
+    # stupid-looking command lines) to go over 'macros' and eliminate
+    # redundant definitions/undefinitions (ie. ensure that only the
+    # latest mention of a particular macro winds up on the command
+    # line).  I don't think it's essential, though, since most (all?)
+    # Unix C compilers only pay attention to the latest -D or -U
+    # mention of a macro on their command line.  Similar situation for
+    # 'includes'.  I'm punting on both for now.  Anyways, weeding out
+    # redundancies like this should probably be the province of
+    # CCompiler, since the data structures used are inherited from it
+    # and therefore common to all CCompiler classes.
+
+    pp_opts = []
+    for macro in macros:
+        if len (macro) == 1:        # undefine this macro
+            pp_opts.append ("-U%s" % macro[0])
+        elif len (macro) == 2:
+            if macro[1] is None:    # define with no explicit value
+                pp_opts.append ("-D%s" % macro[0])
+            else:
+                # XXX *don't* need to be clever about quoting the
+                # macro value here, because we're going to avoid the
+                # shell at all costs when we spawn the command!
+                pp_opts.append ("-D%s=%s" % macro)
+
+    for dir in includes:
+        pp_opts.append ("-I%s" % dir)
+
+    return pp_opts
+
+# gen_preprocess_options ()
+
+
+def gen_lib_options (libraries, library_dirs, lib_format, dir_format):
+    """Generate linker options for searching library directories and
+       linking with specific libraries.  'libraries' and 'library_dirs'
+       are, respectively, lists of library names (not filenames!) and
+       search directories.  'lib_format' is a format string with exactly
+       one "%s", into which will be plugged each library name in turn;
+       'dir_format' is similar, but directory names will be plugged into
+       it.  Returns a list of command-line options suitable for use with
+       some compiler (depending on the two format strings passed in)."""
+
+    lib_opts = []
+
+    for dir in library_dirs:
+        lib_opts.append (dir_format % dir)
+
+    # XXX it's important that we *not* remove redundant library mentions!
+    # sometimes you really do have to say "-lfoo -lbar -lfoo" in order to
+    # resolve all symbols.  I just hope we never have to say "-lfoo obj.o
+    # -lbar" to get things to work -- that's certainly a possibility, but a
+    # pretty nasty way to arrange your C code.
+
+    for lib in libraries:
+        lib_opts.append (lib_format % lib)
+
+    return lib_opts
+
+# _gen_lib_options ()
