@@ -559,9 +559,9 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      PyObject *PyNumber_And Py_PROTO((PyObject *o1, PyObject *o2));
 
        /*
-	 Returns the result of "anding" o2 and o2 on success and NULL
-	 on failure. This is the equivalent of the Python
-	 expression: o1 and o2.
+	 Returns the result of bitwise and of o1 and o2 on success, or
+	 NULL on failure. This is the equivalent of the Python
+	 expression: o1&o2.
 
 
        */
@@ -579,9 +579,9 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      PyObject *PyNumber_Or Py_PROTO((PyObject *o1, PyObject *o2));
 
        /*
-	 Returns the result or o1 and o2 on success, or NULL on
-	 failure.  This is the equivalent of the Python expression: 
-	 o1 or o2.
+	 Returns the result of bitwise or or o1 and o2 on success, or
+	 NULL on failure.  This is the equivalent of the Python
+	 expression: o1|o2.
 
        */
 
