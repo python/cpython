@@ -130,8 +130,14 @@ def formatdate(timeval=None, localtime=0):
             offset = time.altzone
         else:
             offset = time.timezone
-        hours, minutes = divmod(offset, -3600)
-        zone = '%+03d%02d' % (hours, minutes / -60)
+        hours, minutes = divmod(abs(offset), 3600)
+        # Remember offset is in seconds west of UTC, but the timezone is in
+        # minutes east of UTC, so the signs differ.
+        if offset > 0:
+            sign = '-'
+        else:
+            sign = '+'
+        zone = '%s%02d%02d' % (sign, hours, minutes / 60)
     else:
         now = time.gmtime(timeval)
         # Timezone offset is always -0000
