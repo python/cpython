@@ -1175,6 +1175,51 @@ def slots():
     new_objects = len(gc.get_objects())
     vereq(orig_objects, new_objects)
 
+def slotspecials():
+    if verbose: print "Testing __dict__ and __weakref__ in __slots__..."
+
+    class D(object):
+        __slots__ = ["__dict__"]
+    a = D()
+    verify(hasattr(a, "__dict__"))
+    verify(not hasattr(a, "__weakref__"))
+    a.foo = 42
+    vereq(a.__dict__, {"foo": 42})
+
+    class W(object):
+        __slots__ = ["__weakref__"]
+    a = W()
+    verify(hasattr(a, "__weakref__"))
+    verify(not hasattr(a, "__dict__"))
+    try:
+        a.foo = 42
+    except AttributeError:
+        pass
+    else:
+        raise TestFailed, "shouldn't be allowed to set a.foo"
+
+    class C1(W, D):
+        __slots__ = []
+    a = C1()
+    verify(hasattr(a, "__dict__"))
+    verify(hasattr(a, "__weakref__"))
+    a.foo = 42
+    vereq(a.__dict__, {"foo": 42})
+
+    class C2(D, W):
+        __slots__ = []
+    a = C2()
+    verify(hasattr(a, "__dict__"))
+    verify(hasattr(a, "__weakref__"))
+    a.foo = 42
+    vereq(a.__dict__, {"foo": 42})
+
+    class C3(C1, C2):
+        __slots__ = []
+
+    class C4(C2, C1):
+        __slots__ = []
+
 def dynamics():
     if verbose: print "Testing class attribute propagation..."
     class D(object):
@@ -3245,7 +3290,10 @@ def slotmultipleinheritance():
         pass
     class C(A,B) :
         __slots__=()
-    C().x=2
+    vereq(C.__basicsize__, B.__basicsize__)
+    verify(hasattr(C, '__dict__'))
+    verify(hasattr(C, '__weakref__'))
+    C().x = 2
 
 def testrmul():
     # SF patch 592646
@@ -3304,6 +3352,7 @@ def test_main():
     diamond()
     objects()
     slots()
+    slotspecials()
     dynamics()
     errors()
     classmethods()
