@@ -63,6 +63,7 @@ extern void initcPickle();
 extern void initpcre();
 #ifdef WIN32
 extern void initmsvcrt();
+extern void init_locale();
 #endif
 
 /* -- ADDMODULE MARKER 1 -- */
@@ -105,6 +106,7 @@ struct _inittab _PyImport_Inittab[] = {
         {"pcre", initpcre},
 #ifdef WIN32
 	{"msvcrt", initmsvcrt},
+	{"_locale", init_locale},
 #endif
 
 /* -- ADDMODULE MARKER 2 -- */
