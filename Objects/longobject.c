@@ -694,7 +694,11 @@ PyLong_AsLongLong(PyObject *vv)
 			(PyLongObject *)vv, (unsigned char *)&bytes,
 			SIZEOF_LONG_LONG, IS_LITTLE_ENDIAN, 1);
 
-	return res < 0 ? (LONG_LONG)res : bytes;
+	/* Plan 9 can't handle LONG_LONG in ? : expressions */
+	if (res < 0)
+		return (LONG_LONG)res;
+	else
+		return bytes;
 }
 
 /* Get a C unsigned LONG_LONG int from a long int object.
@@ -716,7 +720,11 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
 			(PyLongObject *)vv, (unsigned char *)&bytes,
 			SIZEOF_LONG_LONG, IS_LITTLE_ENDIAN, 0);
 
-	return res < 0 ? (unsigned LONG_LONG)res : bytes;
+	/* Plan 9 can't handle LONG_LONG in ? : expressions */
+	if (res < 0)
+		return (unsigned LONG_LONG)res;
+	else
+		return bytes;
 }
 
 #undef IS_LITTLE_ENDIAN
