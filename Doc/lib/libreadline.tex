@@ -55,10 +55,13 @@ file size.
 \end{funcdesc}
 
 \begin{funcdesc}{set_completer}{\optional{function}}
-Set or remove the completer function.  The completer function is
-called as \code{\var{function}(\var{text}, \var{state})},
-\code{for i in [0, 1, 2, ...]} until it returns a non-string.
-It should return the next possible completion starting with \var{text}.
+Set or remove the completer function.  If \var{function} is specified,
+it will be used as the new completer function; if omitted or
+\code{None}, any completer function already installed is removed.  The
+completer function is called as \code{\var{function}(\var{text},
+\var{state})}, for \var{state} in \code{0}, \code{1}, \code{2}, ...,
+until it returns a non-string value.  It should return the next
+possible completion starting with \var{text}.
 \end{funcdesc}
 
 \begin{funcdesc}{get_begidx}{}
