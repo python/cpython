@@ -33,8 +33,20 @@ if os.name == 'mac':
 		if tp and tp <> 'file':
 			raise RuntimeError, 'Cannot convert non-local URL to pathname'
 		components = string.split(pathname, '/')
-		if '..' in components or '.' in components or '' in components[1:-1]:
-			raise RuntimeError, 'Cannot convert URL containing ., .. or // to pathname'
+		i = 0
+		while i < len(components):
+			if components[i] == '.':
+				del components[i]
+			elif components[i] == '..' and i > 0 and \
+						  components[i-1] not in ('', '..'):
+				del components[i-1:i+1]
+				i = i-1
+			elif components[i] == '' and i > 0 and components[i-1] <> '':
+				del components[i]
+			else:
+				i = i+1
+		if not components or '..' in components or '.' in components or '' in components[1:-1]:
+			raise RuntimeError, 'Cannot normalize URL containing ., .. or // to pathname'
 		if not components[0]:
 			# Absolute unix path, don't start with colon
 			return string.join(components[1:], ':')
@@ -475,7 +487,7 @@ class ftpwrapper:
 			if file: cmd = 'LIST ' + file
 			else: cmd = 'LIST'
 			conn = self.ftp.transfercmd(cmd)
-		return addclosehook(conn.makefile('r'), self.ftp.voidresp)
+		return addclosehook(conn.makefile('rb'), self.ftp.voidresp)
 
 # Base class for addinfo and addclosehook
 class addbase:
