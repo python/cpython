@@ -381,8 +381,8 @@ standard, family-specific string representation (for example, '7.10.0.5' or
 Supported values for address_family are currently \constant{AF_INET}
 and \constant{AF_INET6}. 
 
-\function{inet_pton()} is useful when a library or network protocol calls for
-an object of type \ctype{struct in_addr} (similar to \function{inet_aton()})
+\function{inet_ntop()} is useful when a library or network protocol returns
+an object of type \ctype{struct in_addr} (similar to \function{inet_ntoa()})
 or \ctype{struct in6_addr}.
 
 If the string passed to this function is not the correct length for the
