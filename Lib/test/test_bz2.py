@@ -34,7 +34,7 @@ class BZ2FileTest(BaseTest):
 			os.unlink(self.filename)
 	
 	def createTempFile(self, crlf=0):
-		f = open(self.filename, "w")
+		f = open(self.filename, "wb")
 		if crlf:
 			data = self.DATA_CRLF
 		else:
