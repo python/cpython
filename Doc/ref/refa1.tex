@@ -145,9 +145,108 @@ Instances of class \class{_Feature} have two corresponding methods,
 
 No feature description will ever be deleted from \module{__future__}.
 
-
 \section{Nested scopes \label{nested-scopes}}
-
 \indexii{nested}{scopes}
 
-Nested scopes are left as an exercise for the reader.
+This section defines the new scoping semantics that will be introduced
+in Python 2.2.  They are available in Python 2.1 by using the future
+statement \samp{nested_scopes}.  This section begins with a bit of
+terminology. 
+
+\subsection{Definitions and rules \label{defintions}}
+
+\dfn{Names} refer to objects.  Names are introduced by name binding
+operations.  Each occurrence of a name in the program text refers to
+the binding of that name established in the innermost function block
+containing the use.
+
+A \dfn{block} is a pice of Python program text that can is executed as
+a unit.  The following are blocks: a module, a function body, and a
+class defintion.
+
+A \dfn{scope} defines the visibility of a name within a block.  If a
+local variable is defined in a block, it's scope includes that block.
+If the definition occurs in a function block, the scope extends to any
+blocks contained within the defining one, unless a contained block
+introduces a different binding for the name.  The scope of names
+defined in a class block is limited to the class block; it does not
+extend to the code blocks of methods.
+
+When a name is used in a code block, it is resolved using the nearest
+enclosing scope.  The set of all such scopes visible to a code block
+is called the block's \dfn{environment}.  
+
+If a name is bound in a block, it is a local variable of that block.
+If a name is bound at the module level, it is a global variable.  (The
+ariables of the module code block are local and global.)  If a
+variable is used in a code block but not defined there, it is a
+\dfn{free variable}.
+
+The name binding operations are assignment, class and function
+definition, import statements, for statements, and except statements.
+Each assignment or import statement occurs within a block defined by a
+class or function definition or at the module level (the top-level
+code block).
+
+If a name binding operation occurs anywhere within a code block, all
+uses of the name within the block are treated as references to the
+current block.  This can lead to errors when a name is used within a
+block before it is bound.
+
+The previous rule is a subtle.  Python lacks declarations and allows
+name binding operations to occur anywhere within a code block.  The
+local variables of a code block can be determined by scanning the
+entire text of the block for name binding operations.
+
+If the global statement occurs within a block, all uses of the name
+specified in the statement refer to the binding of that name in the
+top-level namespace.  Names are resolved in the top-level namespace by
+searching the global namespace, i.e. the namespace of the module
+containing the code block, and the builtin namespace, the namespace of
+the module \module{__builtin__}.  The global namespace is searched
+first.  If the name is not found there, the builtin namespace is
+searched.  The global statement must precede all uses of the name.
+
+The global statement has the same scope as a name binding operation
+in the same block.  If the nearest enclosing scope for a free variable
+contains a global statement, the free variable is treated as a global.
+
+A class definition is an executable statement that may use and define
+names.  These references follow the normal rules for name resolution.
+The namespace of the class definition becomes the attribute dictionary
+of the class.  Names defined at the class scope are not visible in
+methods. 
+
+\subsection{Interaction with dynamic features \label{dynamic-features}}
+
+There are several cases where Python statements are illegal when
+used in conjunction with nested scopes that contain free
+variables.
+
+If a variable is referenced in an enclosing scope, it is illegal
+to delete the name.  An error will be reported at compile time.
+
+If the wild card form of import --- \samp{import *} --- is used in a
+function and the function contains or is a nested block with free
+variables, the compiler will raise a SyntaxError.
+
+If exec is used in a function and the function contains or is a nested
+block with free variables, the compiler will raise a SyntaxError
+unless the exec explicitly specifies the local namespace for the exec.
+(In other words, "exec obj" would be illegal, but "exec obj in ns"
+would be legal.)
+
+The builtin functions \function{eval()} and \function{input()} can not
+access free variables unless the variables are also referenced by the
+program text of the block that contains the call to \function{eval()}
+or \function{input()}.
+
+\emph{Compatibility note}: The compiler for Python 2.1 will issue
+warnings for uses of nested functions that will behave differently
+with nested scopes.  The warnings will not be issued if nested scopes
+are enabled via a future statement.  If a name bound in a function
+scope and the function contains a nested function scope that uses the
+name, the compiler will issue a warning.  The name resolution rules
+will result in different bindings under Python 2.1 than under Python
+2.2.  The warning indicates that the program may not run correctly
+with all versions of Python.

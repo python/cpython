@@ -416,15 +416,20 @@ the compiled function body; \member{func_globals} is (a reference to)
 the dictionary that holds the function's global variables --- it
 defines the global namespace of the module in which the function was
 defined; \member{func_dict} or \member{__dict__} contains the
-namespace supporting arbitrary function attributes.
+namespace supporting arbitrary function attributes;
+\member{func_closure} is \code{None} or a tuple of cells that contain
+binding for the function's free variables.
 
-Of these, \member{func_code}, \member{func_defaults},
+Of these, \member{func_code}, \member{func_defaults}, \member{func_closure},
 \member{func_doc}/\member{__doc__}, and
 \member{func_dict}/\member{__dict__} may be writable; the
-others can never be changed.
-Additional information about a function's definition can be
-retrieved from its code object; see the description of internal types
-below.
+others can never be changed.  Additional information about a
+function's definition can be retrieved from its code object; see the
+description of internal types below.
+
+In Python 2.1, the \member{func_closure} slot is always \code{None}
+unless nested scopes are enabled.  (See the appendix.)
+
 \withsubitem{(function attribute)}{
   \ttindex{func_doc}
   \ttindex{__doc__}
@@ -714,8 +719,11 @@ name; \member{co_argcount} is the number of positional arguments
 (including arguments with default values); \member{co_nlocals} is the
 number of local variables used by the function (including arguments);
 \member{co_varnames} is a tuple containing the names of the local
-variables (starting with the argument names); \member{co_code} is a
-string representing the sequence of bytecode instructions;
+variables (starting with the argument names); \member{co_cellvars} is
+a tuple containing the names of local variables that are referenced by
+nested functions; \member{co_freevars} is a tuple containing the names
+of local variables that are neither local nor global; \member{co_code}
+is a string representing the sequence of bytecode instructions;
 \member{co_consts} is a tuple containing the literals used by the
 bytecode; \member{co_names} is a tuple containing the names used by
 the bytecode; \member{co_filename} is the filename from which the code
@@ -725,6 +733,11 @@ byte code offsets to line numbers (for details see the source code of
 the interpreter); \member{co_stacksize} is the required stack size
 (including local variables); \member{co_flags} is an integer encoding
 a number of flags for the interpreter.
+
+The \member{co_cellvars} and \member{co_freevars} are present in
+Python 2.1 when nested scopes are not enabled, but the code itself
+does not use or create cells.
+
 \withsubitem{(code object attribute)}{
   \ttindex{co_argcount}
   \ttindex{co_code}
@@ -737,16 +750,20 @@ a number of flags for the interpreter.
   \ttindex{co_names}
   \ttindex{co_nlocals}
   \ttindex{co_stacksize}
-  \ttindex{co_varnames}}
+  \ttindex{co_varnames}
+  \ttindex{co_cellvars}
+  \ttindex{co_freevars}}
 
 The following flag bits are defined for \member{co_flags}: bit
 \code{0x04} is set if the function uses the \samp{*arguments} syntax
 to accept an arbitrary number of positional arguments; bit
 \code{0x08} is set if the function uses the \samp{**keywords} syntax
 to accept arbitrary keyword arguments; other bits are used internally
-or reserved for future use.  If\index{documentation string} a code
-object represents a function, the first item in \member{co_consts} is
-the documentation string of the function, or \code{None} if undefined.
+or reserved for future use; bit \code{0x10} is set if the function was
+compiled with nested scopes enabled.  If\index{documentation string} a
+code object represents a function, the first item in
+\member{co_consts} is the documentation string of the function, or
+\code{None} if undefined.
 
 \item[Frame objects]
 Frame objects represent execution frames.  They may occur in traceback
