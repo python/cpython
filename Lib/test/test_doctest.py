@@ -623,8 +623,10 @@ replaced with any other string:
     >>> doctest.DocTestRunner(verbose=False).run(test)
     (0, 2)
 
-An example may generate output before it raises an exception; if it
-does, then the output must match the expected output:
+An example may not generate output before it raises an exception; if
+it does, then the traceback message will not be recognized as
+signaling an expected exception, so the example will be reported as an
+unexpected exception:
 
     >>> def f(x):
     ...     '''
@@ -636,7 +638,15 @@ does, then the output must match the expected output:
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
-    (0, 2)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    Line 3, in f
+    Failed example:
+        print 'pre-exception output', x/0
+    Exception raised:
+        ...
+        ZeroDivisionError: integer division or modulo by zero
+    (1, 2)
 
 Exception messages may contain newlines:
 
