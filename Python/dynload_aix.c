@@ -146,7 +146,7 @@ aix_loaderror(const char *pathname)
 #define LOAD_ERRTAB_LEN	(sizeof(load_errtab)/sizeof(load_errtab[0]))
 #define ERRBUF_APPEND(s) strncat(errbuf, s, sizeof(errbuf)-strlen(errbuf)-1)
 
-	sprintf(errbuf, "from module %.200s ", pathname);
+	PyOS_snprintf(errbuf, sizeof(errbuf), "from module %.200s ", pathname);
 
 	if (!loadquery(L_GETMESSAGES, &message[0], sizeof(message))) {
 		ERRBUF_APPEND(strerror(errno));
