@@ -241,7 +241,7 @@ module \code{math} for well-defined conversions.
 \bifuncindex{floor}
 \bifuncindex{ceil}
 \indexii{numeric}{conversions}
-\stmodindex{math}
+\refbimodindex{math}
 \indexii{\C{}}{language}
 
 \item[(3)]
@@ -416,9 +416,9 @@ In this case no * specifiers may occur in a format (since they
 require a sequential parameter list).
 
 Additional string operations are defined in standard module
-\code{string} and in built-in module \code{regex}.
-\index{string}
-\index{regex}
+\code{string} and in built-in module \code{re}.
+\refstmodindex{string}
+\refbimodindex{re}
 
 \subsubsection{Mutable Sequence Types}
 
@@ -645,7 +645,7 @@ accessed by the built-in function \code{type()}.  There are no special
 operations on types.  The standard module \code{types} defines names
 for all standard built-in types.
 \bifuncindex{type}
-\stmodindex{types}
+\refstmodindex{types}
 
 Types are written like this: \code{<type 'int'>}.
 
@@ -694,7 +694,8 @@ Files have the following methods:
 Return the integer ``file descriptor'' that is used by the underlying
 implementation to request I/O operations from the operating system.
 This can be useful for other, lower level interfaces that use file
-descriptors, e.g. module \code{fcntl} or \code{os.read} and friends.
+descriptors, e.g. module \code{fcntl} or \code{os.read()} and friends.
+\refbimodindex{fcntl}
 \end{funcdesc}
 
 \begin{funcdesc}{read}{\optional{size}}
