@@ -76,8 +76,7 @@ typedef struct {
 } PyFileObject;
 
 FILE *
-PyFile_AsFile(f)
-	PyObject *f;
+PyFile_AsFile(PyObject *f)
 {
 	if (f == NULL || !PyFile_Check(f))
 		return NULL;
@@ -86,8 +85,7 @@ PyFile_AsFile(f)
 }
 
 PyObject *
-PyFile_Name(f)
-	PyObject *f;
+PyFile_Name(PyObject *f)
 {
 	if (f == NULL || !PyFile_Check(f))
 		return NULL;
@@ -96,11 +94,7 @@ PyFile_Name(f)
 }
 
 PyObject *
-PyFile_FromFile(fp, name, mode, close)
-	FILE *fp;
-	char *name;
-	char *mode;
-	int (*close)(FILE *);
+PyFile_FromFile(FILE *fp, char *name, char *mode, int (*close)(FILE *))
 {
 	PyFileObject *f = PyObject_NEW(PyFileObject, &PyFile_Type);
 	if (f == NULL)
@@ -123,8 +117,7 @@ PyFile_FromFile(fp, name, mode, close)
 }
 
 PyObject *
-PyFile_FromString(name, mode)
-	char *name, *mode;
+PyFile_FromString(char *name, char *mode)
 {
 	extern int fclose(FILE *);
 	PyFileObject *f;
@@ -160,9 +153,7 @@ PyFile_FromString(name, mode)
 }
 
 void
-PyFile_SetBufSize(f, bufsize)
-	PyObject *f;
-	int bufsize;
+PyFile_SetBufSize(PyObject *f, int bufsize)
 {
 	if (bufsize >= 0) {
 #ifdef HAVE_SETVBUF
@@ -188,7 +179,7 @@ PyFile_SetBufSize(f, bufsize)
 }
 
 static PyObject *
-err_closed()
+err_closed(void)
 {
 	PyErr_SetString(PyExc_ValueError, "I/O operation on closed file");
 	return NULL;
@@ -197,8 +188,7 @@ err_closed()
 /* Methods */
 
 static void
-file_dealloc(f)
-	PyFileObject *f;
+file_dealloc(PyFileObject *f)
 {
 	if (f->f_fp != NULL && f->f_close != NULL) {
 		Py_BEGIN_ALLOW_THREADS
@@ -215,8 +205,7 @@ file_dealloc(f)
 }
 
 static PyObject *
-file_repr(f)
-	PyFileObject *f;
+file_repr(PyFileObject *f)
 {
 	char buf[300];
 	sprintf(buf, "<%s file '%.256s', mode '%.10s' at %p>",
@@ -228,9 +217,7 @@ file_repr(f)
 }
 
 static PyObject *
-file_close(f, args)
-	PyFileObject *f;
-	PyObject *args;
+file_close(PyFileObject *f, PyObject *args)
 {
 	int sts = 0;
 	if (!PyArg_NoArgs(args))
@@ -253,9 +240,7 @@ file_close(f, args)
 }
 
 static PyObject *
-file_seek(f, args)
-	PyFileObject *f;
-	PyObject *args;
+file_seek(PyFileObject *f, PyObject *args)
 {
 	int whence;
 	int ret;
@@ -296,9 +281,7 @@ file_seek(f, args)
 
 #ifdef HAVE_FTRUNCATE
 static PyObject *
-file_truncate(f, args)
-	PyFileObject *f;
-	PyObject *args;
+file_truncate(PyFileObject *f, PyObject *args)
 {
 	int ret;
 	off_t newsize;
@@ -358,9 +341,7 @@ file_truncate(f, args)
 #endif /* HAVE_FTRUNCATE */
 
 static PyObject *
-file_tell(f, args)
-	PyFileObject *f;
-	PyObject *args;
+file_tell(PyFileObject *f, PyObject *args)
 {
 	off_t offset;
 	if (f->f_fp == NULL)
@@ -390,9 +371,7 @@ file_tell(f, args)
 }
 
 static PyObject *
-file_fileno(f, args)
-	PyFileObject *f;
-	PyObject *args;
+file_fileno(PyFileObject *f, PyObject *args)
 {
 	if (f->f_fp == NULL)
 		return err_closed();
@@ -402,9 +381,7 @@ file_fileno(f, args)
 }
 
 static PyObject *
-file_flush(f, args)
-	PyFileObject *f;
-	PyObject *args;
+file_flush(PyFileObject *f, PyObject *args)
 {
 	int res;
 	
@@ -426,9 +403,7 @@ file_flush(f, args)
 }
 
 static PyObject *
-file_isatty(f, args)
-	PyFileObject *f;
-	PyObject *args;
+file_isatty(PyFileObject *f, PyObject *args)
 {
 	long res;
 	if (f->f_fp == NULL)
@@ -455,9 +430,7 @@ file_isatty(f, args)
 #endif
 
 static size_t
-new_buffersize(f, currentsize)
-	PyFileObject *f;
-	size_t currentsize;
+new_buffersize(PyFileObject *f, size_t currentsize)
 {
 #ifdef HAVE_FSTAT
 	long pos, end;
@@ -495,9 +468,7 @@ new_buffersize(f, currentsize)
 }
 
 static PyObject *
-file_read(f, args)
-	PyFileObject *f;
-	PyObject *args;
+file_read(PyFileObject *f, PyObject *args)
 {
 	long bytesrequested = -1;
 	size_t bytesread, buffersize, chunksize;
@@ -544,9 +515,7 @@ file_read(f, args)
 }
 
 static PyObject *
-file_readinto(f, args)
-	PyFileObject *f;
-	PyObject *args;
+file_readinto(PyFileObject *f, PyObject *args)
 {
 	char *ptr;
 	int ntodo, ndone, nnow;
@@ -583,9 +552,7 @@ file_readinto(f, args)
 */
 
 static PyObject *
-get_line(f, n)
-	PyFileObject *f;
-	int n;
+get_line(PyFileObject *f, int n)
 {
 	register FILE *fp;
 	register int c;
@@ -648,9 +615,7 @@ get_line(f, n)
 /* External C interface */
 
 PyObject *
-PyFile_GetLine(f, n)
-	PyObject *f;
-	int n;
+PyFile_GetLine(PyObject *f, int n)
 {
 	if (f == NULL) {
 		PyErr_BadInternalCall();
@@ -711,9 +676,7 @@ PyFile_GetLine(f, n)
 /* Python method */
 
 static PyObject *
-file_readline(f, args)
-	PyFileObject *f;
-	PyObject *args;
+file_readline(PyFileObject *f, PyObject *args)
 {
 	int n = -1;
 
@@ -729,9 +692,7 @@ file_readline(f, args)
 }
 
 static PyObject *
-file_readlines(f, args)
-	PyFileObject *f;
-	PyObject *args;
+file_readlines(PyFileObject *f, PyObject *args)
 {
 	long sizehint = 0;
 	PyObject *list;
@@ -842,9 +803,7 @@ file_readlines(f, args)
 }
 
 static PyObject *
-file_write(f, args)
-	PyFileObject *f;
-	PyObject *args;
+file_write(PyFileObject *f, PyObject *args)
 {
 	char *s;
 	int n, n2;
@@ -867,9 +826,7 @@ file_write(f, args)
 }
 
 static PyObject *
-file_writelines(f, args)
-	PyFileObject *f;
-	PyObject *args;
+file_writelines(PyFileObject *f, PyObject *args)
 {
 #define CHUNKSIZE 1000
 	PyObject *list, *line;
@@ -992,9 +949,7 @@ static struct memberlist file_memberlist[] = {
 };
 
 static PyObject *
-file_getattr(f, name)
-	PyFileObject *f;
-	char *name;
+file_getattr(PyFileObject *f, char *name)
 {
 	PyObject *res;
 
@@ -1008,10 +963,7 @@ file_getattr(f, name)
 }
 
 static int
-file_setattr(f, name, v)
-	PyFileObject *f;
-	char *name;
-	PyObject *v;
+file_setattr(PyFileObject *f, char *name, PyObject *v)
 {
 	if (v == NULL) {
 		PyErr_SetString(PyExc_AttributeError,
@@ -1038,9 +990,7 @@ PyTypeObject PyFile_Type = {
 /* Interface for the 'soft space' between print items. */
 
 int
-PyFile_SoftSpace(f, newflag)
-	PyObject *f;
-	int newflag;
+PyFile_SoftSpace(PyObject *f, int newflag)
 {
 	int oldflag = 0;
 	if (f == NULL) {
@@ -1075,10 +1025,7 @@ PyFile_SoftSpace(f, newflag)
 /* Interfaces to write objects/strings to file-like objects */
 
 int
-PyFile_WriteObject(v, f, flags)
-	PyObject *v;
-	PyObject *f;
-	int flags;
+PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 {
 	PyObject *writer, *value, *args, *result;
 	if (f == NULL) {
@@ -1121,13 +1068,11 @@ PyFile_WriteObject(v, f, flags)
 }
 
 int
-PyFile_WriteString(s, f)
-	char *s;
-	PyObject *f;
+PyFile_WriteString(char *s, PyObject *f)
 {
 	if (f == NULL) {
 		/* Should be caused by a pre-existing error */
-		if(!PyErr_Occurred())
+		if (!PyErr_Occurred())
 			PyErr_SetString(PyExc_SystemError,
 					"null file for PyFile_WriteString");
 		return -1;
