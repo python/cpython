@@ -1171,61 +1171,64 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 {
     PyObject *v;
     char *p;
-    char *q;
-    Py_UCS4 ch2;
-    unsigned int cbAllocated = 3 * size;
+    unsigned int cbAllocated = 2 * size;
     unsigned int cbWritten = 0;
     int i = 0;
 
-    v = PyString_FromStringAndSize(NULL, cbAllocated);
+    v = PyString_FromStringAndSize(NULL, cbAllocated + 4);
     if (v == NULL)
         return NULL;
     if (size == 0)
         return v;
 
-    p = q = PyString_AS_STRING(v);
+    p = PyString_AS_STRING(v);
     while (i < size) {
         Py_UCS4 ch = s[i++];
+
         if (ch < 0x80) {
             *p++ = (char) ch;
             cbWritten++;
         }
+
         else if (ch < 0x0800) {
             *p++ = 0xc0 | (ch >> 6);
             *p++ = 0x80 | (ch & 0x3f);
             cbWritten += 2;
         }
-        else if (ch < 0x10000) {
-            /* Check for high surrogate */
-            if (0xD800 <= ch && ch <= 0xDBFF) {
-                if (i != size) {
-                    ch2 = s[i];
-                    if (0xDC00 <= ch2 && ch2 <= 0xDFFF) {
                         
-                        if (cbWritten >= (cbAllocated - 4)) {
-			    /* Provide enough room for some more
-			       surrogates */
-			    cbAllocated += 4*10;
-                            if (_PyString_Resize(&v, cbAllocated))
+        else {
+	    
+	    /* Assure that we have enough room for high order Unicode
+	       ordinals */
+	    if (cbWritten >= cbAllocated) {
+		cbAllocated += 4 * 10;
+		if (_PyString_Resize(&v, cbAllocated + 4))
 				goto onError;
+		p = PyString_AS_STRING(v) + cbWritten;
                         }
 
-                        /* combine the two values */
+	    if (ch < 0x10000) {
+		/* Check for high surrogate */
+		if (0xD800 <= ch && ch <= 0xDBFF && i != size) {
+		    Py_UCS4 ch2 = s[i];
+		    /* Check for low surrogate */
+		    if (0xDC00 <= ch2 && ch2 <= 0xDFFF) {
                         ch = ((ch - 0xD800)<<10 | (ch2-0xDC00))+0x10000;
-                    
                         *p++ = (char)((ch >> 18) | 0xf0);
                         *p++ = (char)(0x80 | ((ch >> 12) & 0x3f));
+			*p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+			*p++ = (char)(0x80 | (ch & 0x3f));
                         i++;
                         cbWritten += 4;
+			continue;
                     }
+		    /* Fall through: handles isolated high surrogates */
                 }
-            }
-            else {
                 *p++ = (char)(0xe0 | (ch >> 12));
-                cbWritten += 3;
-            }
             *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
             *p++ = (char)(0x80 | (ch & 0x3f));
+		cbWritten += 3;
+    
         } else {
             *p++ = 0xf0 | (ch>>18);
             *p++ = 0x80 | ((ch>>12) & 0x3f);
@@ -1234,8 +1237,9 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
             cbWritten += 4;
 	}
     }
+    }
     *p = '\0';
-    if (_PyString_Resize(&v, p - q))
+    if (_PyString_Resize(&v, cbWritten))
 	goto onError;
     return v;
 
