@@ -30,6 +30,19 @@ includestuff = includestuff + """
 """
 
 finalstuff = finalstuff + """
+
+/* Alternative version of ResObj_New, which returns None for null argument */
+PyObject *ResObj_OptNew(itself)
+	Handle itself;
+{
+	ResourceObject *it;
+	if (itself == NULL) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	return ResObj_New(itself);
+}
+
 """
 
 initstuff = initstuff + """
