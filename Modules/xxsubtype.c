@@ -63,7 +63,7 @@ static struct getsetlist spamlist_getsets[] = {
 static PyTypeObject spamlist_type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
-	"spamlist",
+	"xxsubtype.spamlist",
 	sizeof(spamlistobject),
 	0,
 	0,					/* tp_dealloc */
@@ -156,7 +156,7 @@ static struct memberlist spamdict_members[] = {
 static PyTypeObject spamdict_type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
-	"spamdict",
+	"xxsubtype.spamdict",
 	sizeof(spamdictobject),
 	0,
 	0,					/* tp_dealloc */
