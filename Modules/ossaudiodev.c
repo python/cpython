@@ -29,19 +29,18 @@
 #define O_WRONLY 01
 #endif
 
-
 #include <sys/ioctl.h>
+#include <sys/soundcard.h>
+
 #if defined(linux)
-#include <linux/soundcard.h>
 
 typedef unsigned long uint32_t;
 
 #elif defined(__FreeBSD__)
-#include <machine/soundcard.h>
 
-#ifndef SNDCTL_DSP_CHANNELS
-#define SNDCTL_DSP_CHANNELS SOUND_PCM_WRITE_CHANNELS
-#endif
+# ifndef SNDCTL_DSP_CHANNELS
+#  define SNDCTL_DSP_CHANNELS SOUND_PCM_WRITE_CHANNELS
+# endif
 
 #endif
 
@@ -169,11 +168,11 @@ oss_dealloc(oss_audio_t *self)
 static oss_mixer_t *
 newossmixerobject(PyObject *arg)
 {
-    char *basedev = NULL, *mode = NULL;
-    int fd, imode;
+    char *basedev = NULL;
+    int fd;
     oss_mixer_t *self;
     
-    if (!PyArg_ParseTuple(arg, "|ss", &basedev, &mode)) {
+    if (!PyArg_ParseTuple(arg, "|s", &basedev)) {
         return NULL;
     }
     
@@ -183,22 +182,11 @@ newossmixerobject(PyObject *arg)
             basedev = "/dev/mixer";
     }
 
-    if (mode == NULL || strcmp(mode, "r") == 0)
-        imode = O_RDONLY;
-    else if (strcmp(mode, "w") == 0)
-        imode = O_WRONLY;
-    else if (strcmp(mode, "rw") == 0)
-        imode = O_RDWR;
-    else {
-        PyErr_SetString(OSSAudioError, "mode must be 'r', 'w', or 'rw'");
-        return NULL;
-    }
-
-    if ((fd = open(basedev, imode)) == -1) {
+    if ((fd = open(basedev, O_RDWR)) == -1) {
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, basedev);
         return NULL;
     }
-    
+
     if ((self = PyObject_New(oss_mixer_t, &OSSMixerType)) == NULL) {
         close(fd);
         return NULL;
