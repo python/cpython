@@ -493,41 +493,38 @@ class Thread(_Verbose):
         self.__block.release()
 
     def __delete(self):
-        """Remove the current thread from the dict of currently running
-        threads.
+        "Remove current thread from the dict of currently running threads."
 
-        Must take care to not raise an exception if dummy_thread is being used
-        (and thus this module is being used as an instance of dummy_threading).
-        Since dummy_thread.get_ident() always returns -1 since there is only one
-        thread if dummy_thread is being used.  This means that if any Thread
-        instances are created they will overwrite any other threads registered.
+        # Notes about running with dummy_thread:
+        #
+        # Must take care to not raise an exception if dummy_thread is being
+        # used (and thus this module is being used as an instance of
+        # dummy_threading).  dummy_thread.get_ident() always returns -1 since
+        # there is only one thread if dummy_thread is being used.  Thus
+        # len(_active) is always <= 1 here, and any Thread instance created
+        # overwrites the (if any) thread currently registered in _active.
+        #
+        # An instance of _MainThread is always created by 'threading'.  This
+        # gets overwritten the instant an instance of Thread is created; both
+        # threads return -1 from dummy_thread.get_ident() and thus have the
+        # same key in the dict.  So when the _MainThread instance created by
+        # 'threading' tries to clean itself up when atexit calls this method
+        # it gets a KeyError if another Thread instance was created.
+        #
+        # This all means that KeyError from trying to delete something from
+        # _active if dummy_threading is being used is a red herring.  But
+        # since it isn't if dummy_threading is *not* being used then don't
+        # hide the exception.
 
-        This is an issue with this method, though, since an instance of
-        _MainThread is always created by 'threading'.  This gets overwritten the
-        instant an instance of Thread is created; both threads will have -1 as
-        their value from dummy_thread.get_ident() and thus have the same key in
-        the dict.  This means that when the _MainThread instance created by
-        'threading' tries to clean itself up when atexit calls this method it
-        gets a key error if another Thread instance was created since that
-        removed the only thing with the key of -1.
-
-        This all means that KeyError from trying to delete something from
-        _active if dummy_threading is being used is a red herring.  But since
-        it isn't if dummy_threading is *not* being used then don't hide the
-        exception.  Also don't need to worry about issues from interpreter
-        shutdown and sys not being defined because the call is protected by a
-        blanket try/except block where that could be a problem.
-
-        """
         _active_limbo_lock.acquire()
-        if _sys.modules.has_key('dummy_threading'):
+        try:
             try:
                 del _active[_get_ident()]
             except KeyError:
-                pass
-        else:
-            del _active[_get_ident()]
-        _active_limbo_lock.release()
+                if 'dummy_threading' not in _sys.modules:
+                    raise
+        finally:
+            _active_limbo_lock.release()
 
     def join(self, timeout=None):
         assert self.__initialized, "Thread.__init__() not called"
