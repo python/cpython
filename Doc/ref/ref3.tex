@@ -503,6 +503,18 @@ user-defined functions which are attributes of a class instance are
 not converted to bound methods; this \emph{only} happens when the
 function is an attribute of the class.
 
+\item[Generator functions\index{generator!function}\index{generator!iterator}]
+A function or method which uses the \keyword{yield} statement (see
+section~\ref{yield}, ``The \keyword{yield} statement'') is called a
+\dfn{generator function}.  Such a function, when called, always
+returns an iterator object which can be used to execute the body of
+the function:  calling the iterator's \method{next()} method will
+cause the function to execute until it provides a value using the
+\keyword{yield} statement.  When the function executes a
+\keyword{return} statement or falls off the end, a
+\exception{StopIteration} exception is raised and the iterator will
+have reached the end of the set of values to be returned.
+
 \item[Built-in functions]
 A built-in function object is a wrapper around a \C{} function.  Examples
 of built-in functions are \function{len()} and \function{math.sin()}
@@ -524,7 +536,7 @@ argument.  An example of a built-in method is
 \code{\var{list}.append()}, assuming
 \var{list} is a list object.
 In this case, the special read-only attribute \member{__self__} is set
-to the object denoted by \code{list}.
+to the object denoted by \var{list}.
 \obindex{built-in method}
 \obindex{method}
 \indexii{built-in}{method}

@@ -15,6 +15,7 @@ by semicolons.  The syntax for simple statements is:
               | \token{del_stmt}
               | \token{print_stmt}
               | \token{return_stmt}
+              | \token{yield_stmt}
               | \token{raise_stmt}
               | \token{break_stmt}
               | \token{continue_stmt}
@@ -435,6 +436,57 @@ When \keyword{return} passes control out of a \keyword{try} statement
 with a \keyword{finally} clause, that \keyword{finally} clause is executed
 before really leaving the function.
 \kwindex{finally}
+
+In a generator function, the \keyword{return} statement is not allowed
+to include an \grammartoken{expression_list}.  In that context, a bare
+\keyword{return} indicates that the generator is done and will cause
+\exception{StopIteration} to be raised.
+
+
+\section{The \keyword{yield} statement \label{yield}}
+\stindex{yield}
+
+\begin{productionlist}
+  \production{yield_stmt}
+             {"yield" \token{expression_list}}
+\end{productionlist}
+
+\index{generator!function}
+\index{generator!iterator}
+\index{function!generator}
+\exindex{StopIteration}
+
+The \keyword{yield} statement is only used when defining a generator
+function, and is only used in the body of the generator function.
+Using a \keyword{yield} statement in a function definition is
+sufficient to cause that definition to create a generator function
+instead of a normal function.
+
+When a generator function is called, it returns an iterator known as a
+generator iterator, or more commonly, a generator.  The body of the
+generator function is executed by calling the generator's
+\method{next()} method repeatedly until it raises an exception.
+
+When a \keyword{yield} statement is executed, the state of the
+generator is frozen and the value of \grammartoken{expression_list} is
+returned to \method{next()}'s caller.  By ``frozen'' we mean that all
+local state is retained, including the current bindings of local
+variables, the instruction pointer, and the internal evaluation stack:
+enough information is saved so that the next time \method{next()} is
+invoked, the function can proceed exactly as if the \keyword{yield}
+statement were just another external call.
+
+One restriction in the use of the \keyword{yield} statement is is that
+is is not allowed in the try clause of a \keyword{try}
+...\ \keyword{finally} construct.  The difficulty is that there's no
+guarantee the generator will ever be resumed, hence no guarantee that
+the \keyword{finally} block will ever get executed.
+
+\begin{seealso}
+  \seepep{0255}{Simple Generators}
+         {The proposal for adding generators and the \keyword{yield}
+          statement to Python.}
+\end{seealso}
 
 
 \section{The \keyword{raise} statement \label{raise}}
