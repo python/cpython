@@ -76,8 +76,8 @@ getfuncglobals(op)
 #define OFF(x) offsetof(funcobject, x)
 
 static struct memberlist func_memberlist[] = {
-	{"func_code",	T_OBJECT,	OFF(func_code)},
-	{"func_globals",T_OBJECT,	OFF(func_globals)},
+	{"func_code",	T_OBJECT,	OFF(func_code),		READONLY},
+	{"func_globals",T_OBJECT,	OFF(func_globals),	READONLY},
 	{NULL}	/* Sentinel */
 };
 
