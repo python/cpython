@@ -52,10 +52,20 @@ if type (RuntimeError) is types.ClassType:
     class DistutilsOptionError (DistutilsError):
         pass
 
+    # DistutilsValueError is raised anytime an option value (presumably
+    # provided by setup.py) is invalid.
+    class DistutilsValueError (DistutilsError):
+        pass
+
     # DistutilsPlatformError is raised when we find that we don't
     # know how to do something on the current platform (but we do
     # know how to do it on some platform).
     class DistutilsPlatformError (DistutilsError):
+        pass
+
+    # DistutilsExecError is raised if there are any problems executing
+    # an external program
+    class DistutilsExecError (DistutilsError):
         pass
 
 # String-based exceptions
@@ -67,6 +77,8 @@ else:
     DistutilsArgError = 'DistutilsArgError'
     DistutilsFileError = 'DistutilsFileError'
     DistutilsOptionError = 'DistutilsOptionError'
+    DistutilsValueError = 'DistutilsValueError'
     DistutilsPlatformError = 'DistutilsPlatformError'
-
+    DistutilsExecError = 'DistutilsExecError'
+    
 del types
