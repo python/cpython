@@ -46,7 +46,7 @@ window.et3 = W.EditText((130, 80, -10, 40), "two?")
 window.button = W.Button((-70, 10, 60, 16), "Close", callback)
 
 # a checkbox
-window.ch = W.CheckBox((10, 130, 160, 16), "Check (command §)", checkcallback)
+window.ch = W.CheckBox((10, 130, 160, 16), "Check (command \xa4)", checkcallback)
 
 # set of radio buttons (should become easier/nicer)
 thebuttons = []
@@ -65,7 +65,7 @@ window.hbar = W.Scrollbar((-1, -15, -14, 16), scrollcallback, max = 100)
 window.static = W.TextBox((10, 260, 110, 16), "Schtatic")
 
 # bind some keystrokes to functions
-window.bind('cmd§', window.ch.push)
+window.bind('cmd\xa4', window.ch.push)
 window.bind('cmd1', window.r1.push)
 window.bind('cmd2', window.r2.push)
 window.bind('cmd3', window.r3.push)
