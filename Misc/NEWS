@@ -17,6 +17,10 @@ Extension modules
 - Bug #807314: Properly raise an exception if non-existent Tcl
   variable is accessed.
 
+- Bug #811028: ncurses.h breakage on FreeBSD/MacOS X
+
+- Bug #814613: INET_ADDRSTRLEN fix needed for all compilers on SGI
+
 What's New in Python 2.3.2 (final)?
 ===================================
 
