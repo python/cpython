@@ -65,7 +65,7 @@ done
 
 # Set default libdir and config if not set by command line
 # (Not all systems have dirname)
-case $srcdir in
+case $libdir in
 '')	case $0 in
 	*/*)	libdir=`echo $0 | sed 's,/[^/]*$,,'`;;
 	*)	libdir=.;;
