@@ -508,6 +508,7 @@ _expectations = {
     'win32':
         """
         test_al
+        test_bsddb3
         test_cd
         test_cl
         test_commands
