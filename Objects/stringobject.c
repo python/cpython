@@ -333,11 +333,6 @@ PyString_AsString(register PyObject *op)
 	return ((PyStringObject *)op) -> ob_sval;
 }
 
-/* Internal API needed by PyString_AsStringAndSize(): */
-extern
-PyObject *_PyUnicode_AsDefaultEncodedString(PyObject *unicode,
-					    const char *errors);
-
 int
 PyString_AsStringAndSize(register PyObject *obj,
 			 register char **s,

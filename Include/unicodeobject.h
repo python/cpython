@@ -386,6 +386,23 @@ extern DL_IMPORT(int) PyUnicode_AsWideChar(
 
 /* --- Manage the default encoding ---------------------------------------- */
 
+/* Return a Python string holding the default encoded value of the
+   Unicode object. 
+
+   The resulting string is cached in the Unicode object for subsequent
+   usage by this function. The cached version is needed to implement
+   the character buffer interface and will live (at least) as long as
+   the Unicode object itself.
+
+   The refcount of the string is *not* incremented.
+
+   *** Exported for internal use by the interpreter only !!! ***
+
+*/
+
+extern DL_IMPORT(PyObject *) _PyUnicode_AsDefaultEncodedString(
+    PyObject *, const char *);
+
 /* Returns the currently active default encoding.
 
    The default encoding is currently implemented as run-time settable

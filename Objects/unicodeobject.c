@@ -566,20 +566,6 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
     return NULL;
 }
 
-/* Return a Python string holding the default encoded value of the
-   Unicode object. 
-
-   The resulting string is cached in the Unicode object for subsequent
-   usage by this function. The cached version is needed to implement
-   the character buffer interface and will live (at least) as long as
-   the Unicode object itself.
-
-   The refcount of the string is *not* incremented.
-
-   *** Exported for internal use by the interpreter only !!! ***
-
-*/
-
 PyObject *_PyUnicode_AsDefaultEncodedString(PyObject *unicode,
 					    const char *errors)
 {
