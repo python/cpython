@@ -58,10 +58,8 @@ class StandardError:
     def __str__(self):
         if self.args == None:
             return ''
-        elif type(self.args) == type(''):
-            return self.args
-        else:
-            return `self.args`
+	else:
+	    return str(self.args)
 
     def __getitem__(self, i):
 	if type(self.args) == type(()):
@@ -72,12 +70,17 @@ class StandardError:
 	    raise IndexError
 
 class SyntaxError(StandardError):
-    def __init__(self, msg, info):
+    filename = lineno = offset = text = None
+    def __init__(self, msg, info=None):
         self.msg = msg
-        self.filename, self.lineno, self.offset, self.text = info
-
+	if info:
+	    self.args = msg
+	else:
+	    self.args = (msg, info)
+	if info:
+	    self.filename, self.lineno, self.offset, self.text = info
     def __str__(self):
-        return msg
+        return str(self.msg)
 
 
 class IOError(StandardError):
