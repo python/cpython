@@ -8,19 +8,20 @@ additional facilities.
 
 Command line options:
 
--v: verbose   -- run tests in verbose mode with output to stdout
--q: quiet     -- don't print anything except if a test fails
--g: generate  -- write the output file for a test instead of comparing it
--x: exclude   -- arguments are tests to *exclude*
--s: single    -- run only a single test (see below)
--r: random    -- randomize test execution order
--f: fromfile  -- read names of tests to run from a file (see below)
--l: findleaks -- if GC is available detect tests that leak memory
--u: use       -- specify which special resource intensive tests to run
--h: help      -- print this text and exit
--t: threshold -- call gc.set_threshold(N)
--T: coverage  -- turn on code coverage using the trace module
--L: runleaks  -- run the leaks(1) command just before exit
+-v: verbose    -- run tests in verbose mode with output to stdout
+-q: quiet      -- don't print anything except if a test fails
+-g: generate   -- write the output file for a test instead of comparing it
+-x: exclude    -- arguments are tests to *exclude*
+-s: single     -- run only a single test (see below)
+-r: random     -- randomize test execution order
+-f: fromfile   -- read names of tests to run from a file (see below)
+-l: findleaks  -- if GC is available detect tests that leak memory
+-u: use        -- specify which special resource intensive tests to run
+-h: help       -- print this text and exit
+-t: threshold  -- call gc.set_threshold(N)
+-T: coverage   -- turn on code coverage using the trace module
+-L: runleaks   -- run the leaks(1) command just before exit
+-R: huntrleaks -- search for reference leaks (needs debug build, v. slow)
 
 If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
@@ -46,6 +47,14 @@ whittling down failures involving interactions among tests.
 -L causes the leaks(1) command to be run just before exit if it exists.
 leaks(1) is available on Mac OS X and presumably on some other
 FreeBSD-derived systems.
+
+-R runs each test several times and examines sys.gettotalrefcount() to
+see if the test appears to be leaking references.  The argument should
+be of the form stab:run:fname where 'stab' is the number of times the
+test is run to let gettotalrefcount settle down, 'run' is the number
+of times further it is run and 'fname' is the name of the file the
+reports are written to.  These parameters all have defaults (5, 4 and
+"reflog.txt" respectively), so the minimal invocation is '-R ::'.
 
 -u is used to specify which special resource intensive tests to run,
 such as those requiring large file support or network connectivity.
@@ -84,6 +93,7 @@ import sys
 import getopt
 import random
 import warnings
+import sre
 import cStringIO
 import traceback
 
@@ -127,7 +137,8 @@ def usage(code, msg=''):
 
 def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
          exclude=False, single=False, randomize=False, fromfile=None,
-         findleaks=False, use_resources=None, trace=False, runleaks=False):
+         findleaks=False, use_resources=None, trace=False, runleaks=False,
+         huntrleaks=False):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -152,11 +163,11 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
 
     test_support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrf:lu:t:TL',
+        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrf:lu:t:TLR:',
                                    ['help', 'verbose', 'quiet', 'generate',
                                     'exclude', 'single', 'random', 'fromfile',
                                     'findleaks', 'use=', 'threshold=', 'trace',
-                                    'runleaks'
+                                    'runleaks', 'huntrleaks='
                                     ])
     except getopt.error, msg:
         usage(2, msg)
@@ -191,6 +202,21 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
             gc.set_threshold(int(a))
         elif o in ('-T', '--coverage'):
             trace = True
+        elif o in ('-R', '--huntrleaks'):
+            huntrleaks = a.split(':')
+            if len(huntrleaks) != 3:
+                print a, huntrleaks
+                usage(2, '-R takes three colon-separated arguments')
+            if len(huntrleaks[0]) == 0:
+                huntrleaks[0] = 5
+            else:
+                huntrleaks[0] = int(huntrleaks[0])
+            if len(huntrleaks[1]) == 0:
+                huntrleaks[1] = 4
+            else:
+                huntrleaks[1] = int(huntrleaks[1])
+            if len(huntrleaks[2]) == 0:
+                huntrleaks[2] = "reflog.txt"
         elif o in ('-u', '--use'):
             u = [x.lower() for x in a.split(',')]
             for r in u:
@@ -288,7 +314,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
             tracer.runctx('runtest(test, generate, verbose, quiet, testdir)',
                           globals=globals(), locals=vars())
         else:
-            ok = runtest(test, generate, verbose, quiet, testdir)
+            ok = runtest(test, generate, verbose, quiet, testdir, huntrleaks)
             if ok > 0:
                 good.append(test)
             elif ok == 0:
@@ -397,7 +423,7 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     tests.sort()
     return stdtests + tests
 
-def runtest(test, generate, verbose, quiet, testdir=None):
+def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
     """Run a single test.
     test -- the name of the test
     generate -- if true, generate output, instead of running the test
@@ -415,6 +441,8 @@ def runtest(test, generate, verbose, quiet, testdir=None):
         cfp = None
     else:
         cfp = cStringIO.StringIO()
+    if huntrleaks:
+        refrep = open(huntrleaks[2], "a")
     try:
         save_stdout = sys.stdout
         try:
@@ -435,6 +463,50 @@ def runtest(test, generate, verbose, quiet, testdir=None):
             indirect_test = getattr(the_module, "test_main", None)
             if indirect_test is not None:
                 indirect_test()
+            if huntrleaks:
+                # This code *is* hackish and inelegant, yes.
+                # But it seems to do the job.
+                import copy_reg
+                fs = warnings.filters[:]
+                ps = copy_reg.dispatch_table.copy()
+                pic = sys.path_importer_cache.copy()
+                import gc
+                def cleanup():
+                    import _strptime, urlparse, warnings, dircache
+                    from distutils.dir_util import _path_created
+                    _path_created.clear()
+                    warnings.filters[:] = fs
+                    gc.collect()
+                    sre.purge()
+                    _strptime._regex_cache.clear()
+                    urlparse.clear_cache()
+                    copy_reg.dispatch_table.clear()
+                    copy_reg.dispatch_table.update(ps)
+                    sys.path_importer_cache.clear()
+                    sys.path_importer_cache.update(pic)
+                    dircache.reset()
+                if indirect_test:
+                    def run_the_test():
+                        indirect_test()
+                else:
+                    def run_the_test():
+                        reload(the_module)
+                deltas = []
+                repcount = huntrleaks[0] + huntrleaks[1]
+                print >> sys.stderr, "beginning", repcount, "repetitions"
+                print >> sys.stderr, \
+                      ("1234567890"*(repcount//10 + 1))[:repcount]
+                for i in range(repcount):
+                    rc = sys.gettotalrefcount()
+                    run_the_test()
+                    sys.stderr.write('.')
+                    cleanup()
+                    deltas.append(sys.gettotalrefcount() - rc - 2)
+                print >>sys.stderr
+                if max(map(abs, deltas[-huntrleaks[1]:])) > 0:
+                    print >>refrep, test, 'leaked', \
+                          deltas[-huntrleaks[1]:], 'references'
+                # The end of the huntrleaks hackishness.
         finally:
             sys.stdout = save_stdout
     except test_support.ResourceDenied, msg:
@@ -486,7 +558,7 @@ def runtest(test, generate, verbose, quiet, testdir=None):
             fp.close()
         else:
             expected = test + "\n"
-        if output == expected:
+        if output == expected or huntrleaks:
             return 1
         print "test", test, "produced unexpected output:"
         sys.stdout.flush()
