@@ -1577,9 +1577,9 @@ type_subclasses(PyTypeObject *type, PyObject *args_ignored)
 
 static PyMethodDef type_methods[] = {
 	{"mro", (PyCFunction)mro_external, METH_NOARGS,
-	 "mro() -> list\nreturn a type's method resolution order"},
+	 PyDoc_STR("mro() -> list\nreturn a type's method resolution order")},
 	{"__subclasses__", (PyCFunction)type_subclasses, METH_NOARGS,
-	 "__subclasses__() -> list of immediate subclasses"},
+	 PyDoc_STR("__subclasses__() -> list of immediate subclasses")},
 	{0}
 };
 
@@ -1903,7 +1903,8 @@ object_reduce(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef object_methods[] = {
-	{"__reduce__", object_reduce, METH_NOARGS, "helper for pickle"},
+	{"__reduce__", object_reduce, METH_NOARGS, 
+	 PyDoc_STR("helper for pickle")},
 	{0}
 };
 
@@ -1929,7 +1930,7 @@ PyTypeObject PyBaseObject_Type = {
 	PyObject_GenericSetAttr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-	"The most base type",			/* tp_doc */
+	PyDoc_STR("The most base type"),	/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
@@ -2976,7 +2977,8 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
 
 static struct PyMethodDef tp_new_methoddef[] = {
 	{"__new__", (PyCFunction)tp_new_wrapper, METH_KEYWORDS,
-	 "T.__new__(S, ...) -> a new object with type S, a subtype of T"},
+	 PyDoc_STR("T.__new__(S, ...) -> "
+	 	   "a new object with type S, a subtype of T")},
 	{0}
 };
 
