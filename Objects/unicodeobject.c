@@ -132,7 +132,7 @@ int unicode_resize(register PyUnicodeObject *unicode,
        instead ! */
     if (unicode == unicode_empty || 
 	(unicode->length == 1 && 
-	 unicode->str[0] < 256 &&
+	 unicode->str[0] < 256U &&
 	 unicode_latin1[unicode->str[0]] == unicode)) {
         PyErr_SetString(PyExc_SystemError,
                         "can't resize shared unicode objects");
@@ -211,6 +211,7 @@ PyUnicodeObject *_PyUnicode_New(int length)
 	PyErr_NoMemory();
 	goto onError;
     }
+    unicode->str[0] = 0;
     unicode->str[length] = 0;
     unicode->length = length;
     unicode->hash = -1;
