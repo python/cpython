@@ -18,7 +18,7 @@ Public functions:       Internaldate2tuple
 # IMAP4_SSL contributed by Tino Lange <Tino.Lange@isg.de> March 2002.
 # GET/SETQUOTA contributed by Andreas Zeidler <az@kreativkombinat.de> June 2002.
 
-__version__ = "2.52"
+__version__ = "2.53"
 
 import binascii, re, socket, time, random, sys
 
@@ -1056,11 +1056,17 @@ class IMAP4_SSL(IMAP4):
 
     def read(self, size):
         """Read 'size' bytes from remote."""
-        return self.sslobj.read(size)
+        # sslobj.read() sometimes returns < size bytes
+        data = self.sslobj.read(size)
+        while len(data) < size:
+                data += self.sslobj.read(len(data)-size)
+
+        return data
 
 
     def readline(self):
         """Read line from remote."""
+        # NB: socket.ssl needs a "readline" method, or perhaps a "makefile" method.
         line = ""
         while 1:
             char = self.sslobj.read(1)
@@ -1070,7 +1076,14 @@ class IMAP4_SSL(IMAP4):
 
     def send(self, data):
         """Send data to remote."""
-        self.sslobj.write(data)
+        # NB: socket.ssl needs a "sendall" method to match socket objects.
+        bytes = len(data)
+        while bytes > 0:
+            sent = self.sslobj.write(data)
+            if sent == bytes:
+                break    # avoid copy
+            data = data[sent:]
+            bytes = bytes - sent
 
 
     def shutdown(self):
