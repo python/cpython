@@ -71,6 +71,13 @@ future_parse(PyFutureFeatures *ff, node *n, char *filename)
 
 	switch (TYPE(n)) {
 
+	case single_input:
+		if (TYPE(CHILD(n, 0)) == simple_stmt) {
+			n = CHILD(n, 0);
+			goto loop;
+		}
+		return 0;
+
 	case file_input:
 		for (i = 0; i < NCH(n); i++) {
 			node *ch = CHILD(n, i);
@@ -157,6 +164,7 @@ future_parse(PyFutureFeatures *ff, node *n, char *filename)
 			return 0;
 		if (future_check_features(ff, n) < 0)
 			return -1;
+		ff->ff_last_lineno = n->n_lineno + 1;
 		return 1;
 	}
 
