@@ -27,7 +27,7 @@ Here are some of the useful functions provided by this module:
 __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __date__ = '1 Jan 2001'
 
-import sys, types, string, dis, imp, tokenize
+import sys, os, types, string, dis, imp, tokenize
 
 # ----------------------------------------------------------- type-checking
 def ismodule(object):
@@ -199,14 +199,15 @@ def getmodule(object):
     if isclass(object):
         return sys.modules.get(object.__module__)
     try:
-        file = getsourcefile(object)
+        file = os.path.abspath(getsourcefile(object))
     except TypeError:
         return None
     if modulesbyfile.has_key(file):
         return sys.modules[modulesbyfile[file]]
     for module in sys.modules.values():
         if hasattr(module, '__file__'):
-            modulesbyfile[getsourcefile(module)] = module.__name__
+            modulesbyfile[
+                os.path.abspath(getsourcefile(module))] = module.__name__
     if modulesbyfile.has_key(file):
         return sys.modules[modulesbyfile[file]]
     main = sys.modules['__main__']
