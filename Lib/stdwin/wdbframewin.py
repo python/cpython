@@ -100,7 +100,10 @@ class FrameWindow(basewin.BaseWindow):
 				value = eval(expr, globals, locals)
 				output = repr.repr(value)
 			except:
-				output = sys.exc_type + ': ' + `sys.exc_value`
+				if type(sys.exc_type) == type(''):
+					exc_type_name = sys.exc_type
+				else: exc_type_name = sys.exc_type.__name__
+				output = exc_type_name + ': ' + `sys.exc_value`
 		self.displaylist[1] = output
 		lh = stdwin.lineheight()
 		r = (-10, 0), (30000, 2*lh)

@@ -75,7 +75,10 @@ class Wdb(bdb.Bdb, basewin.BaseWindow): # Window debugger
 		# This function is called if an exception occurs,
 		# but only if we are to stop at or just below this level
 		frame.f_locals['__exception__'] = exc_type, exc_value
-		self.settitle(exc_type + ': ' + repr.repr(exc_value))
+		if type(exc_type) == type(''):
+			exc_type_name = exc_type
+		else: exc_type_name = exc_type.__name__
+		self.settitle(exc_type_name + ': ' + repr.repr(exc_value))
 		stdwin.fleep()
 		self.interaction(frame, exc_traceback)
 		if not self.closed:
@@ -271,19 +274,23 @@ class Wdb(bdb.Bdb, basewin.BaseWindow): # Window debugger
 
 # Simplified interface
 
-def run(statement):
+def run(statement, globals=None, locals=None):
 	x = Wdb()
-	try: x.run(statement)
+	try: x.run(statement, globals, locals)
+	finally: x.close()
+
+def runeval(expression, globals=None, locals=None):
+	x = Wdb()
+	try: return x.runeval(expression, globals, locals)
 	finally: x.close()
 
 def runctx(statement, globals, locals):
-	x = Wdb()
-	try: x.runctx(statement, globals, locals)
-	finally: x.close()
+	# B/W compatibility
+	run(statement, globals, locals)
 
 def runcall(*args):
 	x = Wdb()
-	try: apply(x.runcall, args)
+	try: return apply(x.runcall, args)
 	finally: x.close()
 
 def set_trace():
