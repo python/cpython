@@ -537,17 +537,15 @@ _Py_CheckRecursiveCall(char *where)
 }
 
 /* Status code for main loop (reason for stack unwind) */
-enum why_code {
-		WHY_NOT,	/* No error */
-		WHY_EXCEPTION,	/* Exception occurred */
-		WHY_RERAISE,	/* Exception re-raised by 'finally' */
-		WHY_RETURN,	/* 'return' statement */
-		WHY_BREAK,	/* 'break' statement */
-		WHY_CONTINUE,	/* 'continue' statement */
-		WHY_YIELD	/* 'yield' operator */
-};
+#define WHY_NOT			0x0001
+#define WHY_EXCEPTION		0x0002
+#define WHY_RERAISE		0x0004
+#define WHY_RETURN		0x0008
+#define WHY_BREAK		0x0010
+#define WHY_CONTINUE		0x0020
+#define WHY_YIELD		0x0040
 
-static enum why_code do_raise(PyObject *, PyObject *, PyObject *);
+static int do_raise(PyObject *, PyObject *, PyObject *);
 static int unpack_iterable(PyObject *, int, PyObject **);
 
 /* for manipulating the thread switch and periodic "stuff" - used to be
@@ -580,7 +578,7 @@ eval_frame(PyFrameObject *f)
 	register unsigned char *next_instr;
 	register int opcode=0;	/* Current opcode */
 	register int oparg=0;	/* Current opcode argument, if any */
-	register enum why_code why; /* Reason for block stack unwind */
+	register int why;	/* Reason for block stack unwind */
 	register int err;	/* Error status -- nonzero if error */
 	register PyObject *x;	/* Result object -- NULL if error */
 	register PyObject *v;	/* Temporary objects popped off stack */
@@ -1652,10 +1650,9 @@ eval_frame(PyFrameObject *f)
 		case END_FINALLY:
 			v = POP();
 			if (PyInt_Check(v)) {
-				why = (enum why_code) PyInt_AS_LONG(v);
+				why = (int) PyInt_AS_LONG(v);
 				assert(why != WHY_YIELD);
-				if (why == WHY_RETURN ||
-				    why == WHY_CONTINUE)
+				if (why & (WHY_RETURN | WHY_CONTINUE))
 					retval = POP();
 			}
 			else if (PyString_Check(v) || PyClass_Check(v)) {
@@ -2288,7 +2285,7 @@ eval_frame(PyFrameObject *f)
 
 		/* Double-check exception status */
 
-		if (why == WHY_EXCEPTION || why == WHY_RERAISE) {
+		if (why & (WHY_EXCEPTION | WHY_RERAISE)) {
 			if (!PyErr_Occurred()) {
 				PyErr_SetString(PyExc_SystemError,
 					"error return without exception set");
@@ -2379,8 +2376,7 @@ fast_block_end:
 					PUSH(exc);
 				}
 				else {
-					if (why == WHY_RETURN ||
-					    why == WHY_CONTINUE)
+					if (why & (WHY_RETURN | WHY_CONTINUE))
 						PUSH(retval);
 					v = PyInt_FromLong((long)why);
 					PUSH(v);
@@ -2411,7 +2407,7 @@ fast_block_end:
 fast_yield:
 	if (tstate->use_tracing) {
 		if (tstate->c_tracefunc
-		    && (why == WHY_RETURN || why == WHY_YIELD)) {
+		    && (why & (WHY_RETURN | WHY_YIELD))) {
 			if (call_trace(tstate->c_tracefunc,
 				       tstate->c_traceobj, f,
 				       PyTrace_RETURN, retval)) {
@@ -2838,7 +2834,7 @@ reset_exc_info(PyThreadState *tstate)
 
 /* Logic for the raise statement (too complicated for inlining).
    This *consumes* a reference count to each of its arguments. */
-static enum why_code
+static int
 do_raise(PyObject *type, PyObject *value, PyObject *tb)
 {
 	if (type == NULL) {
