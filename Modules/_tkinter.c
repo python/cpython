@@ -21,6 +21,24 @@ extern int tk_NumMainWindows;
 extern struct { Tk_Window win; } *tkMainWindowList;
 #endif
 
+#ifdef macintosh
+
+/*
+** Additional cruft needed by Tcl/Tk on the Mac.
+** Unfortunately this changes with each beta.
+** This is for beta 2 of Tcl 7.5 and Tk 4.1.
+*/
+
+#include <Events.h> /* For EventRecord */
+
+typedef int (*TclMacConvertEventPtr) Py_PROTO((EventRecord *eventPtr));
+void TclMacSetEventProc Py_PROTO((TclMacConvertEventPtr procPtr));
+int TkMacConvertEvent Py_PROTO((EventRecord *eventPtr));
+
+staticforward int PyMacConvertEvent Py_PROTO((EventRecord *eventPtr));
+
+#endif /* macintosh */
+
 /**** Tkapp Object Declaration ****/
 
 staticforward PyTypeObject Tkapp_Type;
@@ -205,6 +223,9 @@ int
 Tcl_AppInit (interp)
      Tcl_Interp *interp;
 {
+  Tk_Window main;
+
+  main = Tk_MainWindow(interp);
   if (Tcl_Init (interp) == TCL_ERROR) {
     fprintf(stderr, "Tcl_Init error: %s\n", interp->result);
     return TCL_ERROR;
@@ -1272,22 +1293,23 @@ init_tkinter ()
       if (Py_AtExit (Tkinter_Cleanup) != 0)
 	fprintf(stderr,
 		"Tkinter: warning: cleanup procedure not registered\n");
-#ifdef __MWERKS__
-//	  PyTk_InitGUSI();
-#endif
     }
 
   if (PyErr_Occurred ())
     Py_FatalError ("can't initialize module _tkinter");
 #ifdef macintosh
+  TclMacSetEventProc(PyMacConvertEvent);
+#if GENERATINGCFM
   mac_addlibresources();
-#endif
+#endif /* GENERATINGCFM */
+#endif /* macintosh */
 }
+
 
 #ifdef macintosh
 
 /*
-** Three functions that anyone who embeds Tcl/Tk on the Mac must export.
+** Anyone who embeds Tcl/Tk on the Mac must define panic().
 */
 
 void
@@ -1305,20 +1327,20 @@ panic(char * format, ...)
     Py_FatalError("Tcl/Tk panic");
 }
 
-#include <Events.h>
+/*
+** Pass events to SIOUX before passing them to Tk.
+*/
 
-int
-TclMacConvertEvent(eventPtr)
+static int
+PyMacConvertEvent(eventPtr)
     EventRecord *eventPtr;
 {
-    return TkMacConvertEvent(eventPtr);
+  if (SIOUXHandleOneEvent(eventPtr))
+    return 0; /* Nothing happened to the Tcl event queue */
+  return TkMacConvertEvent(eventPtr);
 }
 
-int
-TclGeneratePollingEvents()
-{
-    return TkGeneratePollingEvents();
-}
+#if GENERATINGCFM
 
 /*
 ** Additional Mac specific code for dealing with shared libraries.
@@ -1362,5 +1384,5 @@ mac_addlibresources()
 	(void)FSpOpenResFile(&library_fss, fsRdPerm);
 }
 
-
-#endif
+#endif /* GENERATINGCFM */
+#endif /* macintosh */
