@@ -586,7 +586,7 @@ PyThread_type_lock gethostbyname_lock;
    an error occurred; then an exception is raised. */
 
 static int
-setipaddr(char *name, struct sockaddr *addr_ret, int af)
+setipaddr(char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int af)
 {
 	struct addrinfo hints, *res;
 	int error;
@@ -624,7 +624,9 @@ setipaddr(char *name, struct sockaddr *addr_ret, int af)
 				"wildcard resolved to multiple address");
 			return -1;
 		}
-		memcpy(addr_ret, res->ai_addr, res->ai_addrlen);
+		if (res->ai_addrlen < addr_ret_size)
+			addr_ret_size = res->ai_addrlen;
+		memcpy(addr_ret, res->ai_addr, addr_ret_size);
 		freeaddrinfo(res);
 		return siz;
 	}
@@ -659,7 +661,9 @@ setipaddr(char *name, struct sockaddr *addr_ret, int af)
 		set_gaierror(error);
 		return -1;
 	}
-	memcpy((char *) addr_ret, res->ai_addr, res->ai_addrlen);
+	if (res->ai_addrlen < addr_ret_size)
+		addr_ret_size = res->ai_addrlen;
+	memcpy((char *) addr_ret, res->ai_addr, addr_ret_size);
 	freeaddrinfo(res);
 	switch (addr_ret->sa_family) {
 	case AF_INET:
@@ -843,7 +847,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		}
 		if (!PyArg_ParseTuple(args, "si:getsockaddrarg", &host, &port))
 			return 0;
-		if (setipaddr(host, (struct sockaddr *)addr, AF_INET) < 0)
+		if (setipaddr(host, (struct sockaddr *)addr, sizeof(*addr),  AF_INET) < 0)
 			return 0;
 		addr->sin_family = AF_INET;
 		addr->sin_port = htons((short)port);
@@ -864,7 +868,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 				      &scope_id)) {
 			return 0;
 		}
-		if (setipaddr(host, (struct sockaddr *)addr, AF_INET6) < 0)
+		if (setipaddr(host, (struct sockaddr *)addr,  sizeof(*addr), AF_INET6) < 0)
 			return 0;
 		addr->sin6_family = s->sock_family;
 		addr->sin6_port = htons((short)port);
@@ -2046,7 +2050,7 @@ socket_gethostbyname(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "s:gethostbyname", &name))
 		return NULL;
-	if (setipaddr(name, (struct sockaddr *)&addrbuf, AF_INET) < 0)
+	if (setipaddr(name, (struct sockaddr *)&addrbuf,  sizeof(addrbuf), AF_INET) < 0)
 		return NULL;
 	return makeipaddr((struct sockaddr *)&addrbuf,
 		sizeof(struct sockaddr_in));
@@ -2219,7 +2223,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "s:gethostbyname_ex", &name))
 		return NULL;
-	if (setipaddr(name, (struct sockaddr *)&addr, PF_INET) < 0)
+	if (setipaddr(name, (struct sockaddr *)&addr, sizeof(addr), PF_INET) < 0)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
@@ -2295,7 +2299,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s:gethostbyaddr", &ip_num))
 		return NULL;
 	af = PF_UNSPEC;
-	if (setipaddr(ip_num, sa, af) < 0)
+	if (setipaddr(ip_num, sa, sizeof(addr), af) < 0)
 		return NULL;
 	af = sa->sa_family;
 	ap = NULL;
