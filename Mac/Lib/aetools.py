@@ -157,14 +157,18 @@ class TalkTo:
 		else:
 			self.send_timeout = AppleEvents.kAEDefaultTimeout
 		if start:
-			self.start()
+			self._start()
 		
-	def start(self):
+	def _start(self):
 		"""Start the application, if it is not running yet"""
 		try:
 			self.send('ascr', 'noop')
 		except AE.Error:
 			_launch(self.target_signature)
+			
+	def start(self):
+		"""Deprecated, used _start()"""
+		self._start()
 			
 	def newevent(self, code, subcode, parameters = {}, attributes = {}):
 		"""Create a complete structure for an apple event"""
