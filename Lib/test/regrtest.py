@@ -495,6 +495,11 @@ def printlist(x, width=70, indent=4):
 
 # Map sys.platform to a string containing the basenames of tests
 # expected to be skipped on that platform.
+#
+# Special cases:
+#     test_pep277
+#         The _ExpectedSkips constructor adds this to the set of expected
+#         skips if not os.path.supports_unicode_filenames.
 
 _expectations = {
     'win32':
@@ -543,7 +548,6 @@ _expectations = {
         test_largefile
         test_nis
         test_ntpath
-        test_pep277
         test_socket_ssl
         test_socketserver
         test_sunaudiodev
@@ -819,10 +823,13 @@ _expectations = {
 
 class _ExpectedSkips:
     def __init__(self):
+        import os.path
         self.valid = False
         if sys.platform in _expectations:
             s = _expectations[sys.platform]
             self.expected = Set(s.split())
+            if not os.path.supports_unicode_filenames:
+                self.expected.add('test_pep277')
             self.valid = True
 
     def isvalid(self):
