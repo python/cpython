@@ -307,7 +307,7 @@ tut.pdf: tut/tut.tex
 # The remaining part of the Makefile is concerned with various
 # conversions, as described above.  See also the README file.
 
-.PHONY: html info
+.PHONY: html l2h info
 
 info:
 	(cd $(INFODIR); $(MAKE))
