@@ -862,8 +862,13 @@ PyMac_FindModuleExtension(char *buf, int *lenp, char *module)
 	if ( !_PyImport_Filetab[0].suffix )
 		return 0;
 		
+#if 0
+	/* Pre 1.5a4 */
 	strcpy(buf+*lenp, module);
 	strcpy(buf+*lenp+modnamelen, _PyImport_Filetab[0].suffix);
+#else
+	strcpy(buf+*lenp, _PyImport_Filetab[0].suffix);
+#endif
 	if ( FSMakeFSSpec(0, 0, Pstring(buf), &fss) == noErr )
 		return _PyImport_Filetab;
 	/*
@@ -887,7 +892,11 @@ PyMac_FindModuleExtension(char *buf, int *lenp, char *module)
 			fprintf(stderr, "# trying %s%s\n", buf, fdp->suffix);
 		if ( FSMakeFSSpec(refnum, dirid, fnbuf, &fss) == noErr ) {
 			/* Found it. */
+#if 0
 			strcpy(buf+*lenp+modnamelen, fdp->suffix);
+#else
+			strcpy(buf+*lenp+modnamelen, fdp->suffix);
+#endif
 			*lenp = strlen(buf);
 			return fdp;
 		}
