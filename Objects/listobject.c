@@ -468,6 +468,8 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 			/* Special case "a[i:j] = a" -- copy b first */
 			int ret;
 			v = list_slice(b, 0, n);
+			if (v == NULL)
+				return -1;
 			ret = list_ass_slice(a, ilow, ihigh, v);
 			Py_DECREF(v);
 			return ret;
@@ -489,8 +491,13 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		ihigh = a->ob_size;
 	item = a->ob_item;
 	d = n - (ihigh-ilow);
-	if (ihigh > ilow)
+	if (ihigh > ilow) {
 		p = recycle = PyMem_NEW(PyObject *, (ihigh-ilow));
+		if (recycle == NULL) {
+			PyErr_NoMemory();
+			return -1;
+		}
+	}
 	else
 		p = recycle = NULL;
 	if (d <= 0) { /* Delete -d items; recycle ihigh-ilow items */

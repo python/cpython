@@ -4381,16 +4381,23 @@ symtable_cellvar_offsets(PyObject **cellvars, int argcount,
 					return -1;
 				PyList_SET_ITEM(list, 0, v);
 				Py_INCREF(v);
-			} else
-				PyList_Insert(list, 0, v);
+			} else {
+				if (PyList_Insert(list, 0, v) < 0) {
+					Py_DECREF(list);
+					return -1;
+				}
+			}
 		}
 	}
-	if (list == NULL || PyList_GET_SIZE(list) == 0)
-		return 0;
+	if (list == NULL)	/* There used to be a check here for the size of */
+		return 0;		/* the list being 0, which would have leaked the */
+						/* list if that condition was ever possible. JRH */
 	/* There are cellvars that are also arguments.  Create a dict
 	   to replace cellvars and put the args at the front.
 	*/
 	d = PyDict_New();
+	if (d == NULL)
+		return -1;
 	for (i = PyList_GET_SIZE(list); --i >= 0; ) {
 		v = PyInt_FromLong(i);
 		if (v == NULL) 
@@ -4405,6 +4412,8 @@ symtable_cellvar_offsets(PyObject **cellvars, int argcount,
 	Py_DECREF(list);
 	while (PyDict_Next(*cellvars, &pos, &v, &w)) {
 		w = PyInt_FromLong(i++);  /* don't care about the old key */
+		if (w == NULL)
+			goto fail;
 		if (PyDict_SetItem(d, v, w) < 0) {
 			Py_DECREF(w);
 			goto fail;
@@ -4559,6 +4568,8 @@ symtable_load_symbols(struct compiling *c)
 
 	for (i = 0; i < si.si_nlocals; ++i) {
 		v = PyInt_FromLong(i);
+		if (v == NULL)
+			goto fail;
 		if (PyDict_SetItem(c->c_locals, 
 				   PyList_GET_ITEM(varnames, i), v) < 0)
 			goto fail;
@@ -4631,6 +4642,8 @@ symtable_load_symbols(struct compiling *c)
  					goto fail;
  				if (st->st_nscopes != 1) {
  					v = PyInt_FromLong(flags);
+					if (v == NULL)
+						goto fail;
  					if (PyDict_SetItem(st->st_global, 
  							   name, v)) 
  						goto fail;
@@ -4667,6 +4680,7 @@ symtable_init()
 	st->st_pass = 1;
 
 	st->st_filename = NULL;
+	st->st_symbols = NULL;
 	if ((st->st_stack = PyList_New(0)) == NULL)
 		goto fail;
 	if ((st->st_symbols = PyDict_New()) == NULL)
@@ -4719,8 +4733,14 @@ symtable_update_free_vars(struct symtable *st)
 		int pos = 0;
 
 		if (list)
-			PyList_SetSlice(list, 0, 
-					((PyVarObject*)list)->ob_size, 0);
+			if (PyList_SetSlice(list, 0, 
+					((PyVarObject*)list)->ob_size, 0) < 0)
+				return -1;
+			/* Yes, the above call CAN fail, even though it's reducing
+			   the size of the list.  The current implementation will
+			   allocate temp memory equal to the size of the list: this
+			   is avoidable in this specific case, but probably not
+			   worth the effort of special-casing it. - JRH */
 		child = (PySymtableEntryObject *)
 			PyList_GET_ITEM(ste->ste_children, i);
 		while (PyDict_Next(child->ste_symbols, &pos, &name, &o)) {
@@ -4870,13 +4890,19 @@ symtable_enter_scope(struct symtable *st, char *name, int type,
 	if (st->st_cur) {
 		prev = st->st_cur;
 		if (PyList_Append(st->st_stack, (PyObject *)st->st_cur) < 0) {
-			Py_DECREF(st->st_cur);
+			/* Py_DECREF(st->st_cur); */
+			/* I believe the previous line would lead to a
+			   double-DECREF when st is disposed - JRH */
 			st->st_errors++;
 			return;
 		}
 	}
 	st->st_cur = (PySymtableEntryObject *)
 		PySymtableEntry_New(st, name, type, lineno);
+	if (st->st_cur == NULL) {
+		st->st_errors++;
+		return;
+	}
 	if (strcmp(name, TOP) == 0)
 		st->st_global = st->st_cur->ste_symbols;
 	if (prev && st->st_pass == 1) {
@@ -4945,6 +4971,8 @@ symtable_add_def_o(struct symtable *st, PyObject *dict,
 	} else
 	    val = flag;
 	o = PyInt_FromLong(val);
+	if (o == NULL)
+		return -1;
 	if (PyDict_SetItem(dict, name, o) < 0) {
 		Py_DECREF(o);
 		return -1;
@@ -4963,6 +4991,8 @@ symtable_add_def_o(struct symtable *st, PyObject *dict,
 		} else
 			val = flag;
 		o = PyInt_FromLong(val);
+		if (o == NULL)
+			return -1;
 		if (PyDict_SetItem(st->st_global, name, o) < 0) {
 			Py_DECREF(o);
 			return -1;
