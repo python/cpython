@@ -4356,7 +4356,7 @@ as interactive aids for working with large modules like \module{os}:
 \begin{verbatim}
 >>> import os
 >>> dir(os)
-<returns a listi of all module functions>
+<returns a list of all module functions>
 >>> help(os)
 <returns an extensive manual page created from the module's docstrings>
 \end{verbatim}
@@ -4558,7 +4558,6 @@ quickly demonstrates that the traditional approach is faster:
 
 \begin{verbatim}
 >>> from timeit import Timer
->>> dir(Timer)
 >>> Timer('t=a; a=b; b=t', 'a=1; b=2').timeit()
 0.60864915603680925
 >>> Timer('a,b = b,a', 'a=1; b=2').timeit()
