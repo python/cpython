@@ -301,11 +301,14 @@ counting, or identifying duplicate elements:
 
 \begin{verbatim}
 >>> word = 'abracadabra'
->>> [k for k, g in groupby(list.sorted(word))]
+>>> word = list.sorted(word)   # Turn string into sorted list of letters
+>>> word 
+['a', 'a', 'a', 'a', 'a', 'b', 'b', 'c', 'd', 'r', 'r']
+>>> [k for k, g in groupby(word)]   # List the various group keys
 ['a', 'b', 'c', 'd', 'r']
->>> [(k, len(list(g))) for k, g in groupby(list.sorted(word))]
+>>> [(k, len(list(g))) for k, g in groupby(word)] # List key and group length
 [('a', 5), ('b', 2), ('c', 1), ('d', 1), ('r', 2)]
->>> [k for k, g in groupby(list.sorted(word)) if len(list(g)) > 1]
+>>> [k for k, g in groupby(word) if len(list(g)) > 1] # All groups of size >1
 ['a', 'b', 'r']
 \end{verbatim}
 
