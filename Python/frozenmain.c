@@ -37,7 +37,8 @@ main(argc, argv)
 	char **argv;
 {
 	char *p;
-	int n, inspect, sts;
+	int n, sts;
+	int inspect = 0;
 
 	if ((p = getenv("PYTHONDEBUG")) && *p != '\0')
 		debugging = 1;
