@@ -286,10 +286,8 @@ unlock_import(void)
 #endif
 
 static PyObject *
-imp_lock_held(PyObject *self, PyObject *args)
+imp_lock_held(PyObject *self, PyObject *noargs)
 {
-	if (!PyArg_ParseTuple(args, ":lock_held"))
-		return NULL;
 #ifdef WITH_THREAD
 	return PyBool_FromLong(import_lock_thread != -1);
 #else
@@ -298,10 +296,8 @@ imp_lock_held(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-imp_acquire_lock(PyObject *self, PyObject *args)
+imp_acquire_lock(PyObject *self, PyObject *noargs)
 {
-	if (!PyArg_ParseTuple(args, ":acquire_lock"))
-		return NULL;
 #ifdef WITH_THREAD
 	lock_import();
 #endif
@@ -310,10 +306,8 @@ imp_acquire_lock(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-imp_release_lock(PyObject *self, PyObject *args)
+imp_release_lock(PyObject *self, PyObject *noargs)
 {
-	if (!PyArg_ParseTuple(args, ":release_lock"))
-		return NULL;
 #ifdef WITH_THREAD
 	if (unlock_import() < 0) {
 		PyErr_SetString(PyExc_RuntimeError,
@@ -2428,12 +2422,10 @@ PyImport_Import(PyObject *module_name)
 */
 
 static PyObject *
-imp_get_magic(PyObject *self, PyObject *args)
+imp_get_magic(PyObject *self, PyObject *noargs)
 {
 	char buf[4];
 
-	if (!PyArg_ParseTuple(args, ":get_magic"))
-		return NULL;
 	buf[0] = (char) ((pyc_magic >>  0) & 0xff);
 	buf[1] = (char) ((pyc_magic >>  8) & 0xff);
 	buf[2] = (char) ((pyc_magic >> 16) & 0xff);
@@ -2443,13 +2435,11 @@ imp_get_magic(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-imp_get_suffixes(PyObject *self, PyObject *args)
+imp_get_suffixes(PyObject *self, PyObject *noargs)
 {
 	PyObject *list;
 	struct filedescr *fdp;
 
-	if (!PyArg_ParseTuple(args, ":get_suffixes"))
-		return NULL;
 	list = PyList_New(0);
 	if (list == NULL)
 		return NULL;
@@ -2791,14 +2781,14 @@ Release the interpreter's import lock.\n\
 On platforms without threads, this function does nothing.");
 
 static PyMethodDef imp_methods[] = {
-	{"find_module",		imp_find_module, METH_VARARGS, doc_find_module},
-	{"get_magic",		imp_get_magic,	 METH_VARARGS, doc_get_magic},
-	{"get_suffixes",	imp_get_suffixes, METH_VARARGS, doc_get_suffixes},
-	{"load_module",		imp_load_module, METH_VARARGS, doc_load_module},
-	{"new_module",		imp_new_module,	 METH_VARARGS, doc_new_module},
-	{"lock_held",		imp_lock_held,	 METH_VARARGS, doc_lock_held},
-	{"acquire_lock",    imp_acquire_lock, METH_VARARGS, doc_acquire_lock},
-	{"release_lock",    imp_release_lock, METH_VARARGS, doc_release_lock},
+	{"find_module",	 imp_find_module,  METH_VARARGS, doc_find_module},
+	{"get_magic",	 imp_get_magic,	   METH_NOARGS,  doc_get_magic},
+	{"get_suffixes", imp_get_suffixes, METH_NOARGS,  doc_get_suffixes},
+	{"load_module",	 imp_load_module,  METH_VARARGS, doc_load_module},
+	{"new_module",	 imp_new_module,   METH_VARARGS, doc_new_module},
+	{"lock_held",	 imp_lock_held,	   METH_NOARGS,  doc_lock_held},
+	{"acquire_lock", imp_acquire_lock, METH_NOARGS,  doc_acquire_lock},
+	{"release_lock", imp_release_lock, METH_NOARGS,  doc_release_lock},
 	/* The rest are obsolete */
 	{"get_frozen_object",	imp_get_frozen_object,	METH_VARARGS},
 	{"init_builtin",	imp_init_builtin,	METH_VARARGS},
