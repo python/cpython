@@ -198,12 +198,28 @@ Py_Finalize()
 	/* Destroy all modules */
 	PyImport_Cleanup();
 
+	/* Destroy the database used by _PyImport_{Fixup,Find}Extension */
+	_PyImport_Fini();
+
+	/* Debugging stuff */
+#ifdef COUNT_ALLOCS
+	dump_counts();
+#endif
+
+#ifdef Py_REF_DEBUG
+	fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
+#endif
+
+#ifdef Py_TRACE_REFS
+	if (_Py_AskYesNo("Print left references?")) {
+		_Py_PrintReferences(stderr);
+	}
+#endif /* Py_TRACE_REFS */
+
 	/* Delete current thread */
 	PyInterpreterState_Clear(interp);
 	PyThreadState_Swap(NULL);
 	PyInterpreterState_Delete(interp);
-
-	_PyImport_Fini();
 
 	/* Now we decref the exception classes.  After this point nothing
 	   can raise an exception.  That's okay, because each Fini() method
@@ -229,18 +245,7 @@ Py_Finalize()
 
 	call_ll_exitfuncs();
 
-#ifdef COUNT_ALLOCS
-	dump_counts();
-#endif
-
-#ifdef Py_REF_DEBUG
-	fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
-#endif
-
 #ifdef Py_TRACE_REFS
-	if (_Py_AskYesNo("Print left references?")) {
-		_Py_PrintReferences(stderr);
-	}
 	_Py_ResetReferences();
 #endif /* Py_TRACE_REFS */
 }
