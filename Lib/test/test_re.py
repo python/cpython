@@ -28,6 +28,10 @@ try:
 except:
     raise TestFailed, "re.search"
 
+# Try nasty case that overflows the straightforward recursive
+# implementation of repeated groups.
+assert re.match('(x)*', 50000*'x').span() == (0, 50000)
+
 if verbose:
     print 'Running tests on re.sub'
 
