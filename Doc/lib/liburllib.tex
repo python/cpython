@@ -205,7 +205,9 @@ actually retrieve a resource at an \file{https:} URL.
 handling for the following HTTP response codes: 301, 302 or 401.  For
 301 and 302 response codes, the \code{location} header is used to
 fetch the actual URL.  For 401 response codes (authentication
-required), basic HTTP authentication is performed.
+required), basic HTTP authentication is performed.  For 301 and 302 response
+codes, recursion is bounded by the value of the \var{maxtries} attribute,
+which defaults 10.
 
 The parameters to the constructor are the same as those for
 \class{URLopener}.
