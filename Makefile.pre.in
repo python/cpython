@@ -43,6 +43,7 @@ LN=		@LN@
 # Portable install script (configure doesn't always guess right)
 INSTALL=	@INSTALL@
 INSTALL_PROGRAM=@INSTALL_PROGRAM@
+INSTALL_SCRIPT= @INSTALL_SCRIPT@
 INSTALL_DATA=	@INSTALL_DATA@
 # Shared libraries must be installed with executable mode on some systems;
 # rather than figuring out exactly which, we always give them executable mode.
@@ -579,8 +580,8 @@ libinstall:	$(PYTHON) $(srcdir)/Lib/$(PLATDIR)
 	@for i in $(srcdir)/Lib/*.py $(srcdir)/Lib/*.doc; \
 	do \
 		if test -x $$i; then \
-			$(INSTALL_PROGRAM) $$i $(LIBDEST); \
-			echo $(INSTALL_PROGRAM) $$i $(LIBDEST); \
+			$(INSTALL_SCRIPT) $$i $(LIBDEST); \
+			echo $(INSTALL_SCRIPT) $$i $(LIBDEST); \
 		else \
 			$(INSTALL_DATA) $$i $(LIBDEST); \
 			echo $(INSTALL_DATA) $$i $(LIBDEST); \
@@ -601,8 +602,8 @@ libinstall:	$(PYTHON) $(srcdir)/Lib/$(PLATDIR)
 			*) \
 				if test -d $$i; then continue; fi; \
 				if test -x $$i; then \
-				    echo $(INSTALL_PROGRAM) $$i $$b; \
-				    $(INSTALL_PROGRAM) $$i $$b; \
+				    echo $(INSTALL_SCRIPT) $$i $$b; \
+				    $(INSTALL_SCRIPT) $$i $$b; \
 				else \
 				    echo $(INSTALL_DATA) $$i $$b; \
 				    $(INSTALL_DATA) $$i $$b; \
@@ -666,8 +667,8 @@ libainstall:	all
 	$(INSTALL_DATA) Modules/Setup $(LIBPL)/Setup
 	$(INSTALL_DATA) Modules/Setup.local $(LIBPL)/Setup.local
 	$(INSTALL_DATA) Modules/Setup.config $(LIBPL)/Setup.config
-	$(INSTALL_PROGRAM) $(srcdir)/Modules/makesetup $(LIBPL)/makesetup
-	$(INSTALL_PROGRAM) $(srcdir)/install-sh $(LIBPL)/install-sh
+	$(INSTALL_SCRIPT) $(srcdir)/Modules/makesetup $(LIBPL)/makesetup
+	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(LIBPL)/install-sh
 	$(INSTALL_DATA) $(srcdir)/Misc/Makefile.pre.in $(LIBPL)/Makefile.pre.in
 	@if [ -s Modules/python.exp -a \
 		"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \
@@ -675,10 +676,10 @@ libainstall:	all
 		$(INSTALL_DATA) Modules/python.exp		\
 				$(LIBPL)/python.exp;		\
 		echo; echo "$(LIBPL)/python.exp";		\
-		$(INSTALL_PROGRAM) $(srcdir)/Modules/makexp_aix	\
+		$(INSTALL_SCRIPT) $(srcdir)/Modules/makexp_aix	\
 				$(LIBPL)/makexp_aix;		\
 		echo "$(LIBPL)/makexp_aix";			\
-		$(INSTALL_PROGRAM) $(srcdir)/Modules/ld_so_aix	\
+		$(INSTALL_SCRIPT) $(srcdir)/Modules/ld_so_aix	\
 				$(LIBPL)/ld_so_aix;		\
 		echo "$(LIBPL)/ld_so_aix";			\
 		echo; echo "See Misc/AIX-NOTES for details.";	\
@@ -688,9 +689,9 @@ libainstall:	all
 		echo; echo "Installing support files for building shared extension modules on BeOS:"; \
 		$(INSTALL_DATA) Misc/BeOS-NOTES $(LIBPL)/README;	\
 		echo; echo "$(LIBPL)/README";			\
-		$(INSTALL_PROGRAM) Modules/ar_beos $(LIBPL)/ar_beos; \
+		$(INSTALL_SCRIPT) Modules/ar_beos $(LIBPL)/ar_beos; \
 		echo "$(LIBPL)/ar_beos";			\
-		$(INSTALL_PROGRAM) Modules/ld_so_beos $(LIBPL)/ld_so_beos; \
+		$(INSTALL_SCRIPT) Modules/ld_so_beos $(LIBPL)/ld_so_beos; \
 		echo "$(LIBPL)/ld_so_beos";			\
 		echo; echo "See Misc/BeOS-NOTES for details.";	\
 		;; \
