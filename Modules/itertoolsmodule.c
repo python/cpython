@@ -113,12 +113,12 @@ ii_traverse(iiobject *ii, visitproc visit, void *arg)
 	return 0;
 }
 
-PyDoc_STRVAR(ii_doc, "Independent iterators linked to a tee() object.");
+PyDoc_STRVAR(ii_doc, "Independent iterator created by tee(iterable).");
 
 static PyTypeObject ii_type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
-	"itertools.independent_iterator",	/* tp_name */
+	"itertools.tee_iterator",		/* tp_name */
 	sizeof(iiobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */
@@ -173,7 +173,7 @@ tee_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	outbasket = PyList_New(0);
 	if (outbasket == NULL) goto fail;
 
-	to = (teeobject *)type->tp_alloc(type, 0);
+	to = PyObject_GC_New(teeobject, &tee_type);
 	if (to == NULL)  goto fail;
 
 	to->it = it;
@@ -181,6 +181,7 @@ tee_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	to->outbasket = outbasket;
 	to->save_mode = 1;
 	to->num_seen = 0;
+	PyObject_GC_Track(to);
 
 	/* create independent iterators */
 	result = PyTuple_New(2);
@@ -212,7 +213,7 @@ tee_dealloc(teeobject *to)
 	Py_XDECREF(to->inbasket);
 	Py_XDECREF(to->outbasket);
 	Py_XDECREF(to->it);
-	to->ob_type->tp_free(to);
+	PyObject_GC_Del(to);
 }
 
 static int
@@ -241,7 +242,7 @@ tee_traverse(teeobject *to, visitproc visit, void *arg)
 PyDoc_STRVAR(tee_doc,
 "tee(iterable) --> (it1, it2)\n\
 \n\
-Split the iterable into to independent iterables.");
+Split the iterable into two independent iterables.");
 
 static PyTypeObject tee_type = {
 	PyObject_HEAD_INIT(NULL)
@@ -262,11 +263,10 @@ static PyTypeObject tee_type = {
 	0,				/* tp_hash */
 	0,				/* tp_call */
 	0,				/* tp_str */
-	PyObject_GenericGetAttr,	/* tp_getattro */
+	0,				/* tp_getattro */
 	0,				/* tp_setattro */
 	0,				/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-		Py_TPFLAGS_BASETYPE,	/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,	/* tp_flags */
 	tee_doc,			/* tp_doc */
 	(traverseproc)tee_traverse,	/* tp_traverse */
 	0,				/* tp_clear */
@@ -285,7 +285,6 @@ static PyTypeObject tee_type = {
 	0,				/* tp_init */
 	0,				/* tp_alloc */
 	tee_new,			/* tp_new */
-	PyObject_GC_Del,		/* tp_free */
 };
 
 /* cycle object **********************************************************/
@@ -2092,6 +2091,7 @@ islice(seq, [start,] stop [, step]) --> elements from\n\
        seq[start:stop:step]\n\
 imap(fun, p, q, ...) --> fun(p0, q0), fun(p1, q1), ...\n\
 starmap(fun, seq) --> fun(*seq[0]), fun(*seq[1]), ...\n\
+tee(it) --> (it1, it2) splits one iterator into two \n\
 chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ... \n\
 takewhile(pred, seq) --> seq[0], seq[1], until pred fails\n\
 dropwhile(pred, seq) --> seq[n], seq[n+1], starting when pred fails\n\

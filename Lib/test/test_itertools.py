@@ -243,6 +243,18 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, tee, 3)
         self.assertRaises(TypeError, tee, [1,2], 'x')
 
+        try:
+            class A(tee): pass
+        except TypeError:
+            pass
+        else:
+            self.fail("tee constructor should not be subclassable")
+
+        # tee_iterator should not be instantiable
+        a, b = tee(xrange(10))
+        self.assertRaises(TypeError, type(a))
+        self.assert_(a is iter(a))  # tee_iterator should support __iter__
+
     def test_StopIteration(self):
         self.assertRaises(StopIteration, izip().next)
 
