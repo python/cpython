@@ -2139,8 +2139,9 @@ com_argdefs(c, n)
 		nargs++;
 		i++;
 		if (i >= nch)
-			break;
-		t = TYPE(CHILD(n, i));
+			t = RPAR; /* Anything except EQUAL or COMMA */
+		else
+			t = TYPE(CHILD(n, i));
 		if (t == EQUAL) {
 			i++;
 			ndefs++;
