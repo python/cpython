@@ -55,22 +55,6 @@ def basic(src):
            'this line is much, much longer than my editor\nlikes it.')
 
 
-def write(src):
-    print "Testing writing of files..."
-    cf = ConfigParser.ConfigParser()
-    sio = StringIO.StringIO(src)
-    cf.readfp(sio)
-    output = StringIO.StringIO()
-    cf.write(output)
-    verify(output, """[DEFAULT]
-foo = another very
-        long line
-
-[Long Line]
-foo = this line is much, much longer than my editor
-        likes it.
-""")
-
 def case_sensitivity():
     print "Testing case sensitivity..."
     cf = ConfigParser.ConfigParser()
@@ -137,6 +121,20 @@ def interpolation(src):
     verify(cf.get("Foo", "bar10")
            == "something with lots of interpolation (10 steps)")
     expect_get_error(cf, ConfigParser.InterpolationDepthError, "Foo", "bar11")
+
+    # Now make sure we don't interpolate if we use RawConfigParser:
+    cf = ConfigParser.RawConfigParser({"getname": "%(__name__)s"})
+    sio = StringIO.StringIO(src)
+    cf.readfp(sio)
+    verify(cf.get("Foo", "getname") == "%(__name__)s")
+    verify(cf.get("Foo", "bar")
+           == "something %(with1)s interpolation (1 step)")
+    verify(cf.get("Foo", "bar9")
+           == "something %(with9)s lots of interpolation (9 steps)")
+    verify(cf.get("Foo", "bar10")
+           == "something %(with10)s lots of interpolation (10 steps)")
+    verify(cf.get("Foo", "bar11")
+           == "something %(with11)s lots of interpolation (11 steps)")
 
 
 def parse_errors():
@@ -210,6 +208,27 @@ def expect_parse_error(exctype, src):
         pass
     else:
         raise TestFailed("Failed to catch expected " + exctype.__name__)
+
+
+# The long string literals present in the rest of the file screw up
+# font-lock in Emacs/XEmacs, so this stuff needs to stay near the end
+# of this file.
+
+def write(src):
+    print "Testing writing of files..."
+    cf = ConfigParser.ConfigParser()
+    sio = StringIO.StringIO(src)
+    cf.readfp(sio)
+    output = StringIO.StringIO()
+    cf.write(output)
+    verify(output, """[DEFAULT]
+foo = another very
+        long line
+
+[Long Line]
+foo = this line is much, much longer than my editor
+        likes it.
+""")
 
 
 basic(r"""
