@@ -116,6 +116,7 @@ class Netscape:
         cmd = "%s %s -remote '%s' >/dev/null 2>&1" % (self.name,
                                                       raise_opt,
                                                       action)
+        print cmd
         rc = os.system(cmd)
         if rc:
             import time
@@ -297,6 +298,15 @@ else:
     # so don't mess with the default!
     _tryorder = ("internet-config")
     register("internet-config", InternetConfig)
+
+#
+# Platform support for OS/2
+#
+
+if sys.platform[:3] == "os2" and _iscommand("netscape.exe"):
+    _tryorder = ("os2netscape",)
+    register("os2netscape", None,
+             GenericBrowser("start netscape.exe %s"))
 
 # OK, now that we know what the default preference orders for each
 # platform are, allow user to override them with the BROWSER variable.

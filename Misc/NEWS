@@ -12,6 +12,8 @@ Extension modules
 
 Library
 
+- webbrowser defaults to netscape.exe on OS/2 now.
+
 Tools/Demos
 
 Build
