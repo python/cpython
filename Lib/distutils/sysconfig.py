@@ -14,7 +14,6 @@ __revision__ = "$Id$"
 
 import os
 import re
-import string
 import sys
 
 from errors import DistutilsPlatformError
@@ -213,7 +212,7 @@ def parse_config_h(fp, g=None):
         m = define_rx.match(line)
         if m:
             n, v = m.group(1, 2)
-            try: v = string.atoi(v)
+            try: v = int(v)
             except ValueError: pass
             g[n] = v
         else:
@@ -251,11 +250,11 @@ def parse_makefile(fn, g=None):
         m = _variable_rx.match(line)
         if m:
             n, v = m.group(1, 2)
-            v = string.strip(v)
+            v = v.strip()
             if "$" in v:
                 notdone[n] = v
             else:
-                try: v = string.atoi(v)
+                try: v = int(v)
                 except ValueError: pass
                 done[n] = v
 
@@ -272,9 +271,9 @@ def parse_makefile(fn, g=None):
                     if "$" in after:
                         notdone[name] = value
                     else:
-                        try: value = string.atoi(value)
+                        try: value = int(value)
                         except ValueError:
-                            done[name] = string.strip(value)
+                            done[name] = value.strip()
                         else:
                             done[name] = value
                         del notdone[name]
@@ -288,9 +287,9 @@ def parse_makefile(fn, g=None):
                     if "$" in after:
                         notdone[name] = value
                     else:
-                        try: value = string.atoi(value)
+                        try: value = int(value)
                         except ValueError:
-                            done[name] = string.strip(value)
+                            done[name] = value.strip()
                         else:
                             done[name] = value
                         del notdone[name]
@@ -369,8 +368,9 @@ def _init_posix():
             # relative to the srcdir, which after installation no longer makes
             # sense.
             python_lib = get_python_lib(standard_lib=1)
-            linkerscript_name = os.path.basename(string.split(g['LDSHARED'])[0])
-            linkerscript = os.path.join(python_lib, 'config', linkerscript_name)
+            linkerscript_name = os.path.basename(g['LDSHARED'].split()[0])
+            linkerscript = os.path.join(python_lib, 'config',
+                                        linkerscript_name)
 
             # XXX this isn't the right place to do this: adding the Python
             # library to the link, if needed, should be in the "build_ext"
