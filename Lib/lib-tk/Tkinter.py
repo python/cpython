@@ -2910,6 +2910,7 @@ class OptionMenu(Menubutton):
 
 class Image:
     """Base class for images."""
+    _last_id = 0
     def __init__(self, imgtype, name=None, cnf={}, master=None, **kw):
         self.name = None
         if not master:
@@ -2918,7 +2919,8 @@ class Image:
                 raise RuntimeError, 'Too early to create image'
         self.tk = master.tk
         if not name:
-            name = `id(self)`
+            Image._last_id += 1
+            name = "pyimage" +`Image._last_id` # tk itself would use image<x>
             # The following is needed for systems where id(x)
             # can return a negative number, such as Linux/m68k:
             if name[0] == '-': name = '_' + name[1:]
