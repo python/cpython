@@ -1,7 +1,12 @@
 #! /usr/bin/env perl
 
+# On Cygwin, we actually have to generate a temporary file when doing
+# the inplace edit, or we'll get permission errors.  Not sure who's
+# bug this is, except that it isn't ours.  To deal with this, we
+# generate backups during the edit phase and remove them at the end.
+#
 use English;
-$INPLACE_EDIT = '';
+$INPLACE_EDIT = '.bak';
 
 # read the labels, then reverse the mappings
 require "labels.pl";
@@ -59,4 +64,8 @@ while (<>) {
 
 foreach $oldname (keys %newnames) {
   rename($oldname, $newnames{$oldname});
+}
+
+foreach $filename (glob('*.bak')) {
+  unlink($filename);
 }
