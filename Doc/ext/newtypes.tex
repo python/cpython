@@ -239,8 +239,8 @@ This adds the type to the module dictionary.  This allows us to create
 \class{Noddy} instances by calling the \class{Noddy} class:
 
 \begin{verbatim}
-import noddy
-mynoddy = noddy.Noddy()
+>>> import noddy
+>>> mynoddy = noddy.Noddy()
 \end{verbatim}
 
 That's it!  All that remains is to build it; put the above code in a
@@ -382,7 +382,7 @@ make sure that the initial values of the members \member{first} and
 \member{last} are not \NULL. If we didn't care whether the initial
 values were \NULL, we could have used \cfunction{PyType_GenericNew()} as
 our new method, as we did before.  \cfunction{PyType_GenericNew()}
-initializes all of the instance variable members to NULLs.
+initializes all of the instance variable members to \NULL.
 
 The new method is a static method that is passed the type being
 instantiated and any arguments passed when the type was called,
@@ -407,14 +407,13 @@ from other Python-defined classes may not work correctly.
 (Specifically, you may not be able to create instances of
 such subclasses without getting a \exception{TypeError}.)}
 
-
 We provide an initialization function:
 
 \begin{verbatim}
 static int
 Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *first=NULL, *last=NULL;
+    PyObject *first=NULL, *last=NULL, *tmp;
 
     static char *kwlist[] = {"first", "last", "number", NULL};
 
@@ -424,15 +423,17 @@ Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
         return -1; 
 
     if (first) {
-        Py_XDECREF(self->first);
+        tmp = self->first;
         Py_INCREF(first);
         self->first = first;
+        Py_XDECREF(tmp);
     }
 
     if (last) {
-        Py_XDECREF(self->last);
+        tmp = self->last;
         Py_INCREF(last);
         self->last = last;
+        Py_XDECREF(tmp);
     }
 
     return 0;
@@ -452,6 +453,44 @@ initializer is called.  The initializer isn't called when unpickling
 objects and it can be overridden.  Our initializer accepts arguments
 to provide initial values for our instance. Initializers always accept
 positional and keyword arguments.
+
+Initializers can be called multiple times.  Anyone can call the
+\method{__init__()} method on our objects.  For this reason, we have
+to be extra careful when assigning the new values.  We might be
+tempted, for example to assign the \member{first} member like this:
+
+\begin{verbatim}
+    if (first) {
+        Py_XDECREF(self->first);
+        Py_INCREF(first);
+        self->first = first;
+    }
+\end{verbatim}
+
+But this would be risky.  Our type doesn't restrict the type of the
+\member{first} member, so it could be any kind of object.  It could
+have a destructor that causes code to be executed that tries to
+access the \member{first} member.  To be paranoid and protect
+ourselves against this possibility, we almost always reassign members
+before decrementing their reference counts.  When don't we have to do
+this?
+\begin{itemize}
+\item when we absolutely know that the reference count is greater than
+  1
+\item when we know that deallocation of the object\footnote{This is
+  true when we know that the object is a basic type, like a string or
+  a float} will not cause any
+  calls back into our type's code
+\item when decrementing a reference count in a \member{tp_dealloc}
+  handler when garbage-collections is not supported\footnote{We relied
+  on this in the \member{tp_dealloc} handler in this example, because
+  our type doesn't support garbage collection. Even if a type supports
+  garbage collection, there are calls that can be made to ``untrack''
+  the object from garbage collection, however, these calls are
+  advanced and not covered here.}
+\item 
+\end{itemize}
+
 
 We want to want to expose our instance variables as attributes. There
 are a number of ways to do that. The simplest way is to define member
@@ -682,6 +721,45 @@ static PyMemberDef Noddy_members[] = {
 };
 \end{verbatim}
 
+We also need to update the \member{tp_init} handler to only allow
+strings\footnote{We now know that the first and last members are strings,
+so perhaps we could be less careful about decrementing their
+reference counts, however, we accept instances of string subclasses.
+Even though deallocating normal strings won't call back into our
+objects, we can't guarantee that deallocating an instance of a string
+subclass won't. call back into out objects.} to be passed:
+
+\begin{verbatim}
+static int
+Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *first=NULL, *last=NULL, *tmp;
+
+    static char *kwlist[] = {"first", "last", "number", NULL};
+
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|SSi", kwlist, 
+                                      &first, &last, 
+                                      &self->number))
+        return -1; 
+
+    if (first) {
+        tmp = self->first;
+        Py_INCREF(first);
+        self->first = first;
+        Py_DECREF(tmp);
+    }
+
+    if (last) {
+        tmp = self->last;
+        Py_INCREF(last);
+        self->last = last;
+        Py_DECREF(tmp);
+    }
+
+    return 0;
+}
+\end{verbatim}
+
 With these changes, we can assure that the \member{first} and
 \member{last} members are never NULL so we can remove checks for \NULL
 values in almost all cases. This means that most of the
@@ -713,8 +791,10 @@ eventually figure out that the list is garbage and free it.
 
 In the second version of the \class{Noddy} example, we allowed any
 kind of object to be stored in the \member{first} or \member{last}
-attributes. This means that \class{Noddy} objects can participate in
-cycles:
+attributes\footnote{Even in the third version, we aren't guaranteed to
+avoid cycles.  Instances of string subclasses are allowed and string
+subclasses could allow cycles even if normal strings don't.}. This
+means that \class{Noddy} objects can participate in cycles:
 
 \begin{verbatim}
 >>> import noddy2
@@ -737,10 +817,18 @@ could participate in cycles:
 static int
 Noddy_traverse(Noddy *self, visitproc visit, void *arg)
 {
-    if (self->first && visit(self->first, arg) < 0)
-        return -1;
-    if (self->last && visit(self->last, arg) < 0)
-        return -1;
+    int vret;
+
+    if (self->first) {
+        vret = visit(self->first, arg);
+        if (vret != 0)
+            return vret;
+    }
+    if (self->last) {
+        vret = visit(self->last, arg);
+        if (vret != 0)
+            return vret;
+    }
 
     return 0;
 }
@@ -749,7 +837,24 @@ Noddy_traverse(Noddy *self, visitproc visit, void *arg)
 For each subobject that can participate in cycles, we need to call the
 \cfunction{visit()} function, which is passed to the traversal method.
 The \cfunction{visit()} function takes as arguments the subobject and
-the extra argument \var{arg} passed to the traversal method.
+the extra argument \var{arg} passed to the traversal method.  It
+returns an integer value that must be returned if it is non-zero.  
+
+
+Python 2.4 and higher provide a \cfunction{Py_VISIT()} that automates
+calling visit functions.  With \cfunction{Py_VISIT()}, the
+\cfunction{Noddy_traverse()} can be simplified:
+
+
+\begin{verbatim}
+static int
+Noddy_traverse(Noddy *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->first);
+    Py_VISIT(self->last);
+    return 0;
+}
+\end{verbatim}
 
 We also need to provide a method for clearing any subobjects that can
 participate in cycles.  We implement the method and reimplement the
@@ -759,10 +864,15 @@ deallocator to use it:
 static int 
 Noddy_clear(Noddy *self)
 {
-    Py_XDECREF(self->first);
+    PyObject *tmp;
+
+    tmp = self->first;
     self->first = NULL;
-    Py_XDECREF(self->last);
+    Py_XDECREF(tmp);
+
+    tmp = self->last;
     self->last = NULL;
+    Py_XDECREF(tmp);
 
     return 0;
 }
@@ -772,6 +882,33 @@ Noddy_dealloc(Noddy* self)
 {
     Noddy_clear(self);
     self->ob_type->tp_free((PyObject*)self);
+}
+\end{verbatim}
+
+Notice the use of a temporary variable in \cfunction{Noddy_clear()}.
+We use the temporary variable so that we can set each member to \NULL
+before decrementing it's reference count.  We do this because, as was
+discussed earlier, if the reference count drops to zero, we might
+cause code to run that calls back into the object.  In addition,
+because we now support garbage collection, we also have to worry about
+code being run that triggers garbage collection.  If garbage
+collection is run, our \member{tp_traverse} handler could get called.
+We can't take a chance of having \cfunction{Noddy_traverse()} called
+when a member's reference count has dropped to zero and it's value
+hasn't been set to \NULL.
+
+Python 2.4 and higher provide a \cfunction{Py_CLEAR()} that automates
+the careful decrementing of reference counts.  With
+\cfunction{Py_CLEAR()}, the \cfunction{Noddy_clear()} function can be
+simplified:
+
+\begin{verbatim}
+static int 
+Noddy_clear(Noddy *self)
+{
+    Py_CLEAR(self->first);
+    Py_CLEAR(self->last);
+    return 0;
 }
 \end{verbatim}
 
@@ -806,7 +943,7 @@ As you probably expect by now, we're going to go over this and give
 more information about the various handlers.  We won't go in the order
 they are defined in the structure, because there is a lot of
 historical baggage that impacts the ordering of the fields; be sure
-your type initializaion keeps the fields in the right order!  It's
+your type initialization keeps the fields in the right order!  It's
 often easiest to find an example that includes all the fields you need
 (even if they're initialized to \code{0}) and then change the values
 to suit your new type.
@@ -824,7 +961,7 @@ Try to choose something that will be helpful in such a situation!
 \end{verbatim}
 
 These fields tell the runtime how much memory to allocate when new
-objects of this type are created.  Python has some builtin support
+objects of this type are created.  Python has some built-in support
 for variable length structures (think: strings, lists) which is where
 the \member{tp_itemsize} field comes in.  This will be dealt with
 later.
@@ -835,7 +972,7 @@ later.
 
 Here you can put a string (or its address) that you want returned when
 the Python script references \code{obj.__doc__} to retrieve the
-docstring.
+doc string.
    
 Now we come to the basic type methods---the ones most extension types
 will implement.
@@ -915,7 +1052,7 @@ my_dealloc(PyObject *obj)
 
 In Python, there are three ways to generate a textual representation
 of an object: the \function{repr()}\bifuncindex{repr} function (or
-equivalent backtick syntax), the \function{str()}\bifuncindex{str}
+equivalent back-tick syntax), the \function{str()}\bifuncindex{str}
 function, and the \keyword{print} statement.  For most objects, the
 \keyword{print} statement is equivalent to the \function{str()}
 function, but it is possible to special-case printing to a
@@ -983,7 +1120,7 @@ interpreting escape sequences.
 The print function receives a file object as an argument. You will
 likely want to write to that file object.
 
-Here is a sampe print function:
+Here is a sample print function:
 
 \begin{verbatim}
 static int
@@ -1138,10 +1275,10 @@ they may be combined using bitwise-OR.
 
 An interesting advantage of using the \member{tp_members} table to
 build descriptors that are used at runtime is that any attribute
-defined this way can have an associated docstring simply by providing
+defined this way can have an associated doc string simply by providing
 the text in the table.  An application can use the introspection API
 to retrieve the descriptor from the class object, and get the
-docstring using its \member{__doc__} attribute.
+doc string using its \member{__doc__} attribute.
 
 As with the \member{tp_methods} table, a sentinel entry with a
 \member{name} value of \NULL{} is required.  
@@ -1286,7 +1423,7 @@ referenced by the type object.  For newer protocols there are
 additional slots in the main type object, with a flag bit being set to
 indicate that the slots are present and should be checked by the
 interpreter.  (The flag bit does not indicate that the slot values are
-non-\NULL. The flag may be set to indicate the presense of a slot,
+non-\NULL. The flag may be set to indicate the presence of a slot,
 but a slot may still be unfilled.)
 
 \begin{verbatim}
@@ -1309,7 +1446,7 @@ directory of the Python source distribution.
 \end{verbatim}
 
 This function, if you choose to provide it, should return a hash
-number for an instance of your datatype. Here is a moderately
+number for an instance of your data type. Here is a moderately
 pointless example:
 
 \begin{verbatim}
@@ -1327,8 +1464,8 @@ newdatatype_hash(newdatatypeobject *obj)
     ternaryfunc tp_call;
 \end{verbatim}
 
-This function is called when an instance of your datatype is "called",
-for example, if \code{obj1} is an instance of your datatype and the Python
+This function is called when an instance of your data type is "called",
+for example, if \code{obj1} is an instance of your data type and the Python
 script contains \code{obj1('hello')}, the \member{tp_call} handler is
 invoked.
 
@@ -1336,7 +1473,7 @@ This function takes three arguments:
 
 \begin{enumerate}
   \item
-    \var{arg1} is the instance of the datatype which is the subject of
+    \var{arg1} is the instance of the data type which is the subject of
     the call. If the call is \code{obj1('hello')}, then \var{arg1} is
     \code{obj1}.
 
@@ -1430,7 +1567,7 @@ Python include directory that comes with the source distribution of
 Python.
 
 In order to learn how to implement any specific method for your new
-datatype, do the following: Download and unpack the Python source
+data type, do the following: Download and unpack the Python source
 distribution.  Go the \file{Objects} directory, then search the
 C source files for \code{tp_} plus the function you want (for
 example, \code{tp_print} or \code{tp_compare}).  You will find

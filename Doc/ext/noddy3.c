@@ -46,25 +46,27 @@ Noddy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *first=NULL, *last=NULL;
+    PyObject *first=NULL, *last=NULL, *tmp;
 
     static char *kwlist[] = {"first", "last", "number", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|OOi", kwlist, 
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|SSi", kwlist, 
                                       &first, &last, 
                                       &self->number))
         return -1; 
 
     if (first) {
-        Py_DECREF(self->first);
+        tmp = self->first;
         Py_INCREF(first);
         self->first = first;
+        Py_DECREF(tmp);
     }
 
     if (last) {
-        Py_DECREF(self->last);
+        tmp = self->last;
         Py_INCREF(last);
         self->last = last;
+        Py_DECREF(tmp);
     }
 
     return 0;
