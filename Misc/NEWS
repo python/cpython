@@ -24,6 +24,9 @@ Extension modules
 Library
 -------
 
+- SF bug 763023: fix uncaught ZeroDivisionError in difflib ratio methods
+  when there are no lines.
+
 Tools/Demos
 -----------
 
