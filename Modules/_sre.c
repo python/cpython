@@ -1698,10 +1698,10 @@ pattern_findall(PatternObject* self, PyObject* args)
                 break;
             }
 
-            if (PyList_Append(list, item) < 0) {
-                Py_DECREF(item);
+	    status = PyList_Append(list, item);
+	    Py_DECREF(item);
+            if (status < 0)
                 goto error;
-            }
 
             if (state.ptr == state.start)
                 state.start = (void*) ((char*) state.ptr + state.charsize);
