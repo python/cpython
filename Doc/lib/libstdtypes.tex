@@ -567,9 +567,11 @@ Decodes the string using the codec registered for \var{encoding}.
 \var{encoding} defaults to the default string encoding.  \var{errors}
 may be given to set a different error handling scheme.  The default is
 \code{'strict'}, meaning that encoding errors raise
-\exception{ValueError}.  Other possible values are \code{'ignore'} and
-\code{'replace'}.
+\exception{UnicodeError}.  Other possible values are \code{'ignore'},
+\code{'replace'} and any other name registered via
+\function{codecs.register_error}.
 \versionadded{2.2}
+\versionchanged[Support for other error handling schemes added]{2.3}
 \end{methoddesc}
 
 \begin{methoddesc}[string]{encode}{\optional{encoding\optional{,errors}}}
@@ -577,10 +579,13 @@ Return an encoded version of the string.  Default encoding is the current
 default string encoding.  \var{errors} may be given to set a different
 error handling scheme.  The default for \var{errors} is
 \code{'strict'}, meaning that encoding errors raise a
-\exception{ValueError}.  Other possible values are \code{'ignore'} and
-\code{'replace'}.  For a list of possible encodings, see
-section~\ref{standard-encodings}.
+\exception{UnicodeError}.  Other possible values are \code{'ignore'},
+\code{'replace'}, \code{'xmlcharrefreplace'}, \code{'backslashreplace'}
+and any other name registered via \function{codecs.register_error}.
+For a list of possible encodings, see section~\ref{standard-encodings}.
 \versionadded{2.0}
+\versionchanged[Support for \code{'xmlcharrefreplace'} and
+\code{'backslashreplace'} and other error handling schemes added]{2.3}
 \end{methoddesc}
 
 \begin{methoddesc}[string]{endswith}{suffix\optional{, start\optional{, end}}}
