@@ -1779,7 +1779,8 @@ PyDoc_STRVAR(values__doc__,
 "D.values() -> list of D's values");
 
 PyDoc_STRVAR(update__doc__,
-"D.update(E) -> None.  Update D from E: for k in E.keys(): D[k] = E[k]");
+"D.update(E, **F) -> None.  Update D from E and F: for k in E: D[k] = E[k]\n\
+(if E has keys else: for (k, v) in E: D[k] = v) then: for k in F: D[k] = F[k]");
 
 PyDoc_STRVAR(fromkeys__doc__,
 "dict.fromkeys(S[,v]) -> New dict with keys from S and values equal to v.\n\
