@@ -65,6 +65,8 @@ class Debugger(bdb.Bdb):
         bl.append(b)
         self.bret = b = Button(bframe, text="Out", command=self.ret)
         bl.append(b)
+        self.bret = b = Button(bframe, text="Quit", command=self.quit)
+        bl.append(b)
         #
         for b in bl:
             b.configure(state="disabled")
@@ -198,6 +200,10 @@ class Debugger(bdb.Bdb):
 
     def ret(self):
         self.set_return(self.frame)
+        self.root.quit()
+
+    def quit(self):
+        self.set_quit()
         self.root.quit()
 
     stackviewer = None
