@@ -250,7 +250,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def showtraceback(self):
         # Extend base class method to reset output properly
-        text = self.tkconsole.text
         self.tkconsole.resetoutput()
         self.checklinecache()
         InteractiveInterpreter.showtraceback(self)
