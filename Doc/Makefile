@@ -224,7 +224,7 @@ lib.texi: lib1.texi fix.el
 	mv temp.texi $@
 
 python-lib.info: lib.texi
-	-$(MAKEINFO) --footnote-style end --fill-column 72 \
+	$(MAKEINFO) --footnote-style end --fill-column 72 \
 		     --paragraph-indent 0 $<
 
 # this is needed to prevent a second set of info files from being generated,
