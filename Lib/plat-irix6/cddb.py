@@ -189,7 +189,7 @@ class Cddb:
 		prevpref = None
 		for i in range(1, len(self.track)):
 			if self.trackartist[i]:
-				f.write('track%r.artist:\t%s\n' % (i, self.trackartist[i])
+				f.write('track%r.artist:\t%s\n' % (i, self.trackartist[i]))
 			track = self.track[i]
 			try:
 				off = track.index(',')

@@ -82,7 +82,7 @@ class Cdplayer:
 		new.write(self.id + '.title:\t' + self.title + '\n')
 		new.write(self.id + '.artist:\t' + self.artist + '\n')
 		for i in range(1, len(self.track)):
-			new.write('%s.track.%r:\t%s\n' % (self.id, i, self.track[i])
+			new.write('%s.track.%r:\t%s\n' % (self.id, i, self.track[i]))
 		old.close()
 		new.close()
 		posix.rename(filename + '.new', filename)
