@@ -165,7 +165,8 @@ static PyObject *msvcrt_ungetch(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "c:ungetch", &ch))
 		return NULL;
 
-	_ungetch(ch);
+	if (_ungetch(ch) == EOF)
+		return PyErr_SetFromErrno(PyExc_IOError);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
