@@ -86,14 +86,14 @@ class C:
 
 
 def test_2():
-        d = globals().copy()
-        def testfunc():
-            global x
-            x = 1
-        d['testfunc'] = testfunc
-        profile.runctx("testfunc()", d, d, TESTFN)
-        vereq (x, 1)
-        os.unlink (TESTFN)
+    d = globals().copy()
+    def testfunc():
+        global x
+        x = 1
+    d['testfunc'] = testfunc
+    profile.runctx("testfunc()", d, d, TESTFN)
+    vereq (x, 1)
+    os.unlink (TESTFN)
 
 if __name__ == "__main__":
     test_main()

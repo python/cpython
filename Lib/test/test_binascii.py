@@ -101,7 +101,7 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(binascii.a2b_uu("\xff"), "\x00"*31)
         self.assertRaises(binascii.Error, binascii.a2b_uu, "\xff\x00")
         self.assertRaises(binascii.Error, binascii.a2b_uu, "!!!!")
-        
+
         self.assertRaises(binascii.Error, binascii.b2a_uu, 46*"!")
 
     def test_crc32(self):

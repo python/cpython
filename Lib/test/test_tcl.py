@@ -85,7 +85,7 @@ class TclTest(unittest.TestCase):
     def testUnsetVarException(self):
         tcl = self.interp
         self.assertRaises(TclError,tcl.unsetvar,'a')
-        
+
     def testEvalFile(self):
         tcl = self.interp
         filename = "testEvalFile.tcl"

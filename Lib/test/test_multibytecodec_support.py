@@ -167,7 +167,7 @@ class TestBase_Mapping(unittest.TestCase):
             parent = os.path.join(os.pardir, self.mapfilename)
             if not os.path.exists(parent):
                 format = '%s not found, download from %s'
-                raise test_support.TestSkipped(format % 
+                raise test_support.TestSkipped(format %
                         (self.mapfilename, self.mapfileurl))
             else:
                 self.mapfilename = parent

@@ -38,4 +38,3 @@ else:
     diff = difflib.context_diff(fromlines, tolines, fromfile, tofile, fromdate, todate, n=n)
 
 sys.stdout.writelines(diff)
-

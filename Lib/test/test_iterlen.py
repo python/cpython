@@ -52,13 +52,13 @@ n = 10
 class TestInvariantWithoutMutations(unittest.TestCase):
 
     def test_invariant(self):
-            it = self.it
-            for i in reversed(xrange(1, n+1)):
-                self.assertEqual(len(it), i)
-                it.next()
-            self.assertEqual(len(it), 0)
-            self.assertRaises(StopIteration, it.next)
-            self.assertEqual(len(it), 0)
+        it = self.it
+        for i in reversed(xrange(1, n+1)):
+            self.assertEqual(len(it), i)
+            it.next()
+        self.assertEqual(len(it), 0)
+        self.assertRaises(StopIteration, it.next)
+        self.assertEqual(len(it), 0)
 
 class TestTemporarilyImmutable(TestInvariantWithoutMutations):
 
