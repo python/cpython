@@ -317,7 +317,7 @@ builtin_complex(self, args)
 		static object *complexstr;
 		object *f;
 		if (complexstr == NULL) {
-			complexstr = newstringobject("__complex__");
+			complexstr = PyString_InternFromString("__complex__");
 			if (complexstr == NULL)
 				return NULL;
 		}
