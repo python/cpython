@@ -36,7 +36,7 @@ def join(a, *p):
     for b in p:
         if isabs(b):
             path = b
-        elif path == '' or path[-1:] in '/\\':
+        elif path == '' or path[-1:] in '/\\:':
             path = path + b
         else:
             path = path + os.sep + b
