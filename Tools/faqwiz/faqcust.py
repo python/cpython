@@ -16,8 +16,8 @@ EPILOGUE = '''
 <A HREF="%(FAQCGI)s?req=home">%(FAQNAME)s Wizard %(WIZVERSION)s</A> /
 Feedback to <A HREF="mailto:%(OWNEREMAIL)s">%(OWNERNAME)s</A>
 <P><A HREF="http://www.python.org/"><IMG
-SRC="http://www.python.org/pics/PythonPowered1.gif" 
-ALIGN=top WIDTH=100 HEIGHT=40 ALT="Python Powered" BORDER=0></A><BR>
+SRC="http://www.python.org/pics/PythonPowered.gif" 
+ALIGN=top WIDTH=110 HEIGHT=44 ALT="Python Powered" BORDER=0></A><BR>
 </BODY>
 </HTML>
 '''
