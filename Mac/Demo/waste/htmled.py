@@ -47,7 +47,7 @@ class WasteWindow(ScrolledWindow):
 		self.path = path
 		self.name = name
 		r = windowbounds(400, 400)
-		w = Win.NewWindow(r, name, 1, 0, -1, 1, 0x55555555)
+		w = Win.NewWindow(r, name, 1, 0, -1, 1, 0)
 		self.wid = w
 		vr = LEFTMARGIN, 0, r[2]-r[0]-15, r[3]-r[1]-15
 		dr = (0, 0, vr[2], 0)
