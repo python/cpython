@@ -223,7 +223,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 if interp.lower().endswith("w.exe"):
                     # On Windows, use python.exe, not python.exe
                     interp = interp[:-5] = interp[-4:]
-                cmdline = "%s %s" % (interp, cmdline)
+                cmdline = "%s -u %s" % (interp, cmdline)
             if '=' not in query and '"' not in query:
                 cmdline = '%s "%s"' % (cmdline, query)
             self.log_error("command: %s", cmdline)
@@ -231,7 +231,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 nbytes = int(length)
             except:
                 nbytes = 0
-            fi, fo = os.popen2(cmdline)
+            fi, fo = os.popen2(cmdline, 'b')
             if self.command.lower() == "post" and nbytes > 0:
                 data = self.rfile.read(nbytes)
                 fi.write(data)
