@@ -334,6 +334,7 @@ class ConfigDialog(Toplevel):
         self.winWidth=StringVar(self)
         self.winHeight=StringVar(self)
         self.startupEdit=IntVar(self)
+        self.autoSave=IntVar(self)
         self.encoding=StringVar(self)
         self.userHelpBrowser=BooleanVar(self)
         self.helpBrowser=StringVar(self)
@@ -342,16 +343,24 @@ class ConfigDialog(Toplevel):
         frame=self.tabPages.pages['General']['page']
         #body section frames
         frameRun=Frame(frame,borderwidth=2,relief=GROOVE)
+        frameSave=Frame(frame,borderwidth=2,relief=GROOVE)
         frameWinSize=Frame(frame,borderwidth=2,relief=GROOVE)
         frameEncoding=Frame(frame,borderwidth=2,relief=GROOVE)
         frameHelp=Frame(frame,borderwidth=2,relief=GROOVE)
         #frameRun
         labelRunTitle=Label(frameRun,text='Startup Preferences')
-        labelRunChoiceTitle=Label(frameRun,text='On Startup : ')
+        labelRunChoiceTitle=Label(frameRun,text='At Startup')
         radioStartupEdit=Radiobutton(frameRun,variable=self.startupEdit,
             value=1,command=self.SetKeysType,text="Open Edit Window")
         radioStartupShell=Radiobutton(frameRun,variable=self.startupEdit,
             value=0,command=self.SetKeysType,text='Open Shell Window')
+        #frameSave
+        labelSaveTitle=Label(frameSave,text='Autosave Preference')
+        labelRunSaveTitle=Label(frameSave,text='At Start of Run (F5)  ')
+        radioSaveAsk=Radiobutton(frameSave,variable=self.autoSave,
+            value=0,command=self.SetKeysType,text="Prompt to Save")
+        radioSaveAuto=Radiobutton(frameSave,variable=self.autoSave,
+            value=1,command=self.SetKeysType,text='No Prompt')
         #frameWinSize
         labelWinSizeTitle=Label(frameWinSize,text='Initial Window Size'+
                 '  (in characters)')
@@ -370,7 +379,7 @@ class ConfigDialog(Toplevel):
         radioEncNone=Radiobutton(frameEncoding,variable=self.encoding,
             value="none",text="None")
         #frameHelp
-        labelHelpTitle=Label(frameHelp,text='Help Options')
+        ##labelHelpTitle=Label(frameHelp,text='Help Options')
         frameHelpList=Frame(frameHelp)
         frameHelpListButtons=Frame(frameHelpList)
         labelHelpListTitle=Label(frameHelpList,text='Additional Help Sources:')
@@ -396,14 +405,20 @@ class ConfigDialog(Toplevel):
         #widget packing
         #body
         frameRun.pack(side=TOP,padx=5,pady=5,fill=X)
+        frameSave.pack(side=TOP,padx=5,pady=5,fill=X)
         frameWinSize.pack(side=TOP,padx=5,pady=5,fill=X)
-	frameEncoding.pack(side=TOP,padx=5,pady=5,fill=X)
+        frameEncoding.pack(side=TOP,padx=5,pady=5,fill=X)
         frameHelp.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
         #frameRun
         labelRunTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         labelRunChoiceTitle.pack(side=LEFT,anchor=W,padx=5,pady=5)
-        radioStartupEdit.pack(side=LEFT,anchor=W,padx=5,pady=5)
-        radioStartupShell.pack(side=LEFT,anchor=W,padx=5,pady=5)
+        radioStartupShell.pack(side=RIGHT,anchor=W,padx=5,pady=5)
+        radioStartupEdit.pack(side=RIGHT,anchor=W,padx=5,pady=5)
+        #frameSave
+        labelSaveTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
+        labelRunSaveTitle.pack(side=LEFT,anchor=W,padx=5,pady=5)
+        radioSaveAuto.pack(side=RIGHT,anchor=W,padx=5,pady=5)
+        radioSaveAsk.pack(side=RIGHT,anchor=W,padx=5,pady=5)
         #frameWinSize
         labelWinSizeTitle.pack(side=LEFT,anchor=W,padx=5,pady=5)
         entryWinHeight.pack(side=RIGHT,anchor=E,padx=10,pady=5)
@@ -416,7 +431,7 @@ class ConfigDialog(Toplevel):
         radioEncUTF8.pack(side=RIGHT,anchor=E,pady=5)
         radioEncLocale.pack(side=RIGHT,anchor=E,pady=5)
         #frameHelp
-        labelHelpTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
+        ##labelHelpTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         frameHelpListButtons.pack(side=RIGHT,padx=5,pady=5,fill=Y)
         frameHelpList.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
         labelHelpListTitle.pack(side=TOP,anchor=W)
@@ -448,6 +463,7 @@ class ConfigDialog(Toplevel):
         self.winWidth.trace_variable('w',self.VarChanged_winWidth)
         self.winHeight.trace_variable('w',self.VarChanged_winHeight)
         self.startupEdit.trace_variable('w',self.VarChanged_startupEdit)
+        self.autoSave.trace_variable('w',self.VarChanged_autoSave)
         self.encoding.trace_variable('w',self.VarChanged_encoding)
 
     def VarChanged_fontSize(self,*params):
@@ -541,6 +557,10 @@ class ConfigDialog(Toplevel):
     def VarChanged_startupEdit(self,*params):
         value=self.startupEdit.get()
         self.AddChangedItem('main','General','editor-on-startup',value)
+
+    def VarChanged_autoSave(self,*params):
+        value=self.autoSave.get()
+        self.AddChangedItem('main','General','autosave',value)
 
     def VarChanged_encoding(self,*params):
         value=self.encoding.get()
@@ -1038,11 +1058,15 @@ class ConfigDialog(Toplevel):
         #startup state
         self.startupEdit.set(idleConf.GetOption('main','General',
                 'editor-on-startup',default=1,type='bool'))
+        #autosave state
+        self.autoSave.set(idleConf.GetOption('main', 'General', 'autosave',
+                                             default=0, type='bool'))
         #initial window size
         self.winWidth.set(idleConf.GetOption('main','EditorWindow','width'))
         self.winHeight.set(idleConf.GetOption('main','EditorWindow','height'))
         # default source encoding
-        self.encoding.set(idleConf.GetOption('main','EditorWindow','encoding'))
+        self.encoding.set(idleConf.GetOption('main', 'EditorWindow',
+                                             'encoding', default='none'))
         # additional help sources
         self.userHelpList = idleConf.GetAllExtraHelpSourcesList()
         for helpItem in self.userHelpList:

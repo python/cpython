@@ -40,6 +40,7 @@
 
 [General]
 editor-on-startup= 0
+autosave= 0
 print-command-posix=lpr %s
 print-command-win=start /min notepad /p %s
 
@@ -49,7 +50,7 @@ height= 30
 font= courier
 font-size= 12
 font-bold= 0
-encoding=none
+encoding= none
 
 [Indent]
 use-spaces= 1
