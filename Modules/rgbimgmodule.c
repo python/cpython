@@ -119,9 +119,7 @@ static int reverse_order;
  *
  */
 static void 
-addlongimgtag(dptr, xsize, ysize)
-	Py_UInt32 *dptr;
-	int xsize, ysize;
+addlongimgtag(Py_UInt32 *dptr, int xsize, int ysize)
 {
 	dptr = dptr + (xsize * ysize);
 	dptr[0] = 0x12345678;
@@ -137,8 +135,7 @@ addlongimgtag(dptr, xsize, ysize)
  *
  */
 static unsigned short
-getshort(inf)
-	FILE *inf;
+getshort(FILE *inf)
 {
 	unsigned char buf[2];
 
@@ -147,8 +144,7 @@ getshort(inf)
 }
 
 static Py_UInt32
-getlong(inf)
-	FILE *inf;
+getlong(FILE *inf)
 {
 	unsigned char buf[4];
 
@@ -157,9 +153,7 @@ getlong(inf)
 }
 
 static void
-putshort(outf, val)
-	FILE *outf;
-	unsigned short val;
+putshort(FILE *outf, unsigned short val)
 {
 	unsigned char buf[2];
 
@@ -169,9 +163,7 @@ putshort(outf, val)
 }
 
 static int
-putlong(outf, val)
-	FILE *outf;
-	Py_UInt32 val;
+putlong(FILE *outf, Py_UInt32 val)
 {
 	unsigned char buf[4];
 
@@ -183,9 +175,7 @@ putlong(outf, val)
 }
 
 static void
-readheader(inf, image)
-	FILE *inf;
-	IMAGE *image;
+readheader(FILE *inf, IMAGE *image)
 {
 	memset(image ,0, sizeof(IMAGE));
 	image->imagic = getshort(inf);
@@ -197,9 +187,7 @@ readheader(inf, image)
 }
 
 static int
-writeheader(outf, image)
-	FILE *outf;
-	IMAGE *image;
+writeheader(FILE *outf, IMAGE *image)
 {
 	IMAGE t;
 
@@ -219,10 +207,7 @@ writeheader(outf, image)
 }
 
 static int
-writetab(outf, tab, len)
-	FILE *outf;
-	/*unsigned*/ Py_Int32 *tab;
-	int len;
+writetab(FILE *outf, /*unsigned*/ Py_Int32 *tab, int len)
 {
 	int r = 0;
 
@@ -234,10 +219,7 @@ writetab(outf, tab, len)
 }
 
 static void
-readtab(inf, tab, len)
-	FILE *inf;
-	/*unsigned*/ Py_Int32 *tab;
-	int len;
+readtab(FILE *inf, /*unsigned*/ Py_Int32 *tab, int len)
 {
 	while(len) {
 		*tab++ = getlong(inf);
@@ -251,8 +233,7 @@ readtab(inf, tab, len)
  *
  */
 static PyObject *
-sizeofimage(self, args)
-	PyObject *self, *args;
+sizeofimage(PyObject *self, PyObject *args)
 {
 	char *name;
 	IMAGE image;
@@ -283,8 +264,7 @@ sizeofimage(self, args)
  *
  */
 static PyObject *
-longimagedata(self, args)
-	PyObject *self, *args;
+longimagedata(PyObject *self, PyObject *args)
 {
 	char *name;
 	unsigned char *base, *lptr;
@@ -465,9 +445,7 @@ longimagedata(self, args)
 /* static utility functions for longimagedata */
 
 static void
-interleaverow(lptr, cptr, z, n)
-	unsigned char *lptr, *cptr;
-	int z, n;
+interleaverow(unsigned char *lptr, unsigned char *cptr, int z, int n)
 {
 	lptr += z;
 	while (n--) {
@@ -477,9 +455,7 @@ interleaverow(lptr, cptr, z, n)
 }
 
 static void
-copybw(lptr, n)
-	Py_Int32 *lptr;
-	int n;
+copybw(Py_Int32 *lptr, int n)
 {
 	while (n >= 8) {
 		lptr[0] = 0xff000000 + (0x010101 * (lptr[0] & 0xff));
@@ -500,8 +476,7 @@ copybw(lptr, n)
 }
 
 static void
-setalpha(lptr, n)
-	unsigned char *lptr;
+setalpha(unsigned char *lptr, int n)
 {
 	while (n >= 8) {
 		lptr[0 * 4] = 0xff;
@@ -522,9 +497,7 @@ setalpha(lptr, n)
 }
 
 static void
-expandrow(optr, iptr, z)
-	unsigned char *optr, *iptr;
-	int z;
+expandrow(unsigned char *optr, unsigned char *iptr, int z)
 {
 	unsigned char pixel, count;
 
@@ -586,8 +559,7 @@ expandrow(optr, iptr, z)
  *
  */
 static PyObject *
-longstoimage(self, args)
-	PyObject *self, *args;
+longstoimage(PyObject *self, PyObject *args)
 {
 	unsigned char *lptr;
 	char *name;
@@ -687,9 +659,7 @@ longstoimage(self, args)
 /* static utility functions for longstoimage */
 
 static void
-lumrow(rgbptr, lumptr, n)
-	unsigned char *rgbptr, *lumptr;
-	int n;
+lumrow(unsigned char *rgbptr, unsigned char *lumptr, int n)
 {
 	lumptr += CHANOFFSET(0);
 	while (n--) {
@@ -702,9 +672,7 @@ lumrow(rgbptr, lumptr, n)
 }
 
 static int
-compressrow(lbuf, rlebuf, z, cnt)
-	unsigned char *lbuf, *rlebuf;
-	int z, cnt;
+compressrow(unsigned char *lbuf, unsigned char *rlebuf, int z, int cnt)
 {
 	unsigned char *iptr, *ibufend, *sptr, *optr;
 	short todo, cc;							
@@ -765,9 +733,7 @@ compressrow(lbuf, rlebuf, z, cnt)
 }
 
 static PyObject *
-ttob(self, args)
-	PyObject *self;
-	PyObject *args;
+ttob(PyObject *self, PyObject *args)
 {
 	int order, oldorder;
 
