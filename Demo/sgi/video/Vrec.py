@@ -378,12 +378,12 @@ AQSIZE = 8000 # XXX should be a user option
 def initaudio(filename, stop, done):
 	import thread, aifc
 	afile = aifc.open(filename, 'w')
-	afile.nchannels = AL.MONO
-	afile.sampwidth = AL.SAMPLE_8
+	afile.setnchannels(AL.MONO)
+	afile.setsampwidth(AL.SAMPLE_8)
 	params = [AL.INPUT_RATE, 0]
 	al.getparams(AL.DEFAULT_DEVICE, params)
 	print 'audio sampling rate =', params[1]
-	afile.samprate = params[1]
+	afile.setframerate(params[1])
 	c = al.newconfig()
 	c.setchannels(AL.MONO)
 	c.setqueuesize(AQSIZE)
@@ -394,16 +394,12 @@ def initaudio(filename, stop, done):
 
 # Thread to record audio samples
 
-# XXX should use writesampsraw for efficiency, but then destroy doesn't
-# XXX seem to set the #samples in the header correctly
-
 def audiorecord(afile, aport, stop, done):
 	while not stop:
 		data = aport.readsamps(AQSIZE/2)
-##		afile.writesampsraw(data)
-		afile.writesamps(data)
+		afile.writesampsraw(data)
 		del data
-	afile.destroy()
+	afile.close()
 	print 'Done writing audio'
 	done.release_lock()
 
