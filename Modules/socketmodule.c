@@ -373,7 +373,7 @@ getsockaddrarg,PySocketSockObject *,s, PyObject *,args, struct sockaddr **,addr_
 		memcpy(addr->sun_path, path, len);
 		addr->sun_path[len] = 0;
 		*addr_ret = (struct sockaddr *) addr;
-		*len_ret = len + sizeof addr->sun_family;
+		*len_ret = len + sizeof(*addr) - sizeof(addr->sun_path);
 		return 1;
 	}
 #endif /* AF_UNIX */
