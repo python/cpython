@@ -177,7 +177,8 @@ class WriteTest(BaseTest):
     def setUp(self):
         mode = self.mode + self.sep + self.comp
         self.src = tarfile.open(tarname(self.comp), 'r')
-        self.dst = tarfile.open(tmpname(), mode)
+        self.dstname = tmpname()
+        self.dst = tarfile.open(self.dstname, mode)
 
     def tearDown(self):
         self.src.close()
@@ -190,6 +191,11 @@ class WriteTest(BaseTest):
     def test_nonposix(self):
         self.dst.posix = 0
         self._test()
+
+    def test_small(self):
+        self.dst.add(os.path.join(os.path.dirname(__file__),"cfgparser.1"))
+        self.dst.close()
+        self.assertNotEqual(os.stat(self.dstname).st_size, 0)
 
     def _test(self):
         for tarinfo in self.src:
