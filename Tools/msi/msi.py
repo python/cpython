@@ -122,6 +122,20 @@ if major+minor <= "23":
     'parser.pyd',
     ])
 
+# Well-known component UUIDs
+# These are needed for SharedDLLs reference counter; if
+# a different UUID was used for each incarnation of, say,
+# python24.dll, an upgrade would set the reference counter
+# from 1 to 2 (due to what I consider a bug in MSI)
+# Using the same UUID is fine since these files are versioned,
+# so Installer will always keep the newest version.
+msvcr71_uuid = "{8666C8DD-D0B4-4B42-928E-A69E32FA5D4D}"
+pythondll_uuid = {
+    "24":"{9B81E618-2301-4035-AC77-75D9ABEB7301}",
+    "25":"{2e41b118-38bd-4c1b-a840-6977efd1b911}"
+    } [major+minor]
+    
+
 # Build the mingw import library, libpythonXY.a
 # This requires 'nm' and 'dlltool' executables on your PATH
 def build_mingw_lib(lib_file, def_file, dll_file, mingw_lib):
@@ -220,6 +234,7 @@ def build_database():
     # accordingly.
     add_data(db, "Property", [("UpgradeCode", uc),
                               ("WhichUsers", "ALL"),
+                              ("ProductLine", "Python%s%s" % (major, minor)),
                              ])
     db.Commit()
     return db
@@ -378,6 +393,7 @@ def add_ui(db):
              [("DlgFont8", "Tahoma", 9, None, 0),
               ("DlgFontBold8", "Tahoma", 8, None, 1), #bold
               ("VerdanaBold10", "Verdana", 10, None, 1),
+              ("VerdanaRed9", "Verdana", 9, 255, 0),
              ])
 
     compileargs = r"-Wi [TARGETDIR]Lib\compileall.py -f -x badsyntax [TARGETDIR]Lib"
@@ -566,6 +582,9 @@ def add_ui(db):
     seldlg = PyDialog(db, "SelectDirectoryDlg", x, y, w, h, modal, title,
                     "Next", "Next", "Cancel")
     seldlg.title("Select Destination Directory")
+    c = seldlg.text("Existing", 135, 25, 235, 30, 0x30003,
+                    "{\VerdanaRed9}This update will replace your existing [ProductLine] installation.")
+    c.condition("Hide", 'REMOVEOLDVERSION="" and REMOVEOLDSNAPSHOT=""')
     seldlg.text("Description", 135, 50, 220, 40, 0x30003,
                "Please select a directory for the [ProductName] files.")
 
@@ -865,7 +884,7 @@ def add_files(db):
     dlldir = PyDirectory(db, cab, root, srcdir, "DLLDIR", ".")
     pydll = "python%s%s.dll" % (major, minor)
     pydllsrc = srcdir + "/PCBuild/" + pydll
-    dlldir.start_component("DLLDIR", flags = 8, keyfile = pydll)
+    dlldir.start_component("DLLDIR", flags = 8, keyfile = pydll, uuid = pythondll_uuid)
     installer = msilib.MakeInstaller()
     pyversion = installer.FileVersion(pydllsrc, 0)
     if not snapshot:
@@ -877,7 +896,7 @@ def add_files(db):
                     language=installer.FileVersion(pydllsrc, 1))
     # XXX determine dependencies
     version, lang = extract_msvcr71()
-    dlldir.start_component("msvcr71", flags=8, keyfile="msvcr71.dll")
+    dlldir.start_component("msvcr71", flags=8, keyfile="msvcr71.dll", uuid=msvcr71_uuid)
     dlldir.add_file("msvcr71.dll", src=os.path.abspath("msvcr71.dll"),
                     version=version, language=lang)
     tmpfiles.append("msvcr71.dll")
@@ -988,7 +1007,7 @@ def add_files(db):
     lib.add_file('python%s%s.lib' % (major, minor))
     # Add the mingw-format library
     if have_mingw:
-	lib.add_file('libpython%s%s.a' % (major, minor))
+        lib.add_file('libpython%s%s.a' % (major, minor))
     if have_tcl:
         # Add Tcl/Tk
         tcldirs = [(root, '../tcltk/lib', 'tcl')]
@@ -1047,6 +1066,8 @@ def add_registry(db):
              # msidbComponentAttributesRegistryKeyPath = 4
              [("REGISTRY", msilib.gen_uuid(), "TARGETDIR", 4, None,
                "InstallPath"),
+              ("REGISTRY.doc", msilib.gen_uuid(), "TARGETDIR", 4, None,
+               "Documentation"),
               ("REGISTRY.def", msilib.gen_uuid(), "TARGETDIR", 4,
                None, None)] + tcldata)
     # See "FeatureComponents Table".
@@ -1062,6 +1083,7 @@ def add_registry(db):
         tcldata = [(tcltk.id, "pythonw.exe")]
     add_data(db, "FeatureComponents",
              [(default_feature.id, "REGISTRY"),
+              (htmlfiles.id, "REGISTRY.doc"),
               (ext_feature.id, "REGISTRY.def")] +
               tcldata
               )
@@ -1130,7 +1152,7 @@ def add_registry(db):
               ("PythonPath", -1, prefix+r"\PythonPath", "",
                r"[TARGETDIR]Lib;[TARGETDIR]DLLs;[TARGETDIR]Lib\lib-tk", "REGISTRY"),
               ("Documentation", -1, prefix+r"\Help\Main Python Documentation", "",
-               r"[TARGETDIR]Doc\Python%s%s.chm" % (major, minor), "REGISTRY"),
+               r"[TARGETDIR]Doc\Python%s%s.chm" % (major, minor), "REGISTRY.doc"),
               ("Modules", -1, prefix+r"\Modules", "+", None, "REGISTRY"),
               ("AppPaths", -1, r"Software\Microsoft\Windows\CurrentVersion\App Paths\Python.exe",
                "", r"[TARGETDIR]Python.exe", "REGISTRY.def")
@@ -1154,9 +1176,14 @@ def add_registry(db):
              [# Advertised shortcuts: targets are features, not files
               ("Python", "MenuDir", "PYTHON|Python (command line)", "python.exe",
                default_feature.id, None, None, None, "python_icon.exe", 2, None, "TARGETDIR"),
-              ("Manual", "MenuDir", "MANUAL|Python Manuals", "documentation",
-               htmlfiles.id, None, None, None, None, None, None, None),
+              # Advertising the Manual breaks on (some?) Win98, and the shortcut lacks an
+              # icon first.
+              #("Manual", "MenuDir", "MANUAL|Python Manuals", "documentation",
+              # htmlfiles.id, None, None, None, None, None, None, None),
               ## Non-advertised shortcuts: must be associated with a registry component
+              ("Manual", "MenuDir", "MANUAL|Python Manuals", "REGISTRY.doc",
+               "[#Python%s%s.chm]" % (major,minor), None,
+               None, None, None, None, None, None),
               ("Uninstall", "MenuDir", "UNINST|Uninstall Python", "REGISTRY",
                SystemFolderName+"msiexec",  "/x%s" % product_code,
                None, None, None, None, None, None),
