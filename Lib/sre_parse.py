@@ -62,14 +62,20 @@ class Pattern:
     # master pattern object.  keeps track of global attributes
     def __init__(self):
         self.flags = 0
+        self.open = []
         self.groups = 1
         self.groupdict = {}
-    def getgroup(self, name=None):
+    def opengroup(self, name=None):
         gid = self.groups
         self.groups = gid + 1
         if name:
             self.groupdict[name] = gid
+        self.open.append(gid)
         return gid
+    def closegroup(self, gid):
+        self.open.remove(gid)
+    def checkgroup(self, gid):
+        return gid < self.groups and gid not in self.open
 
 class SubPattern:
     # a subpattern, in intermediate form
@@ -278,6 +284,8 @@ def _escape(source, escape, state):
             # got at least one decimal digit; this is a group reference
             group = _group(escape, state.groups)
             if group:
+                if not state.checkgroup(group):
+                    raise error, "cannot refer to open group"
                 return GROUPREF, group
             raise ValueError
         if len(escape) == 2:
@@ -547,10 +555,12 @@ def _parse(source, state):
                     # anonymous group
                     group = None
                 else:
-                    group = state.getgroup(name)
+                    group = state.opengroup(name)
                 p = _parse_sub(source, state)
                 if not source.match(")"):
                     raise error, "unbalanced parenthesis"
+                if group is not None:
+                    state.closegroup(group)
                 subpattern.append((SUBPATTERN, (group, p)))
             else:
                 while 1:

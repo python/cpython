@@ -167,6 +167,9 @@ test(r"""sre.findall(r"(:)(:*)", "a:b::c:::d")""",
      [(":", ""), (":", ":"), (":", "::")])
 test(r"""sre.findall(r"(a)|(b)", "abc")""", [("a", ""), ("", "b")])
 
+# bug 117612
+test(r"""sre.findall(r"(a|(b))", "aba")""", [("a", ""),("b", "b"),("a", "")])
+
 if verbose:
     print "Running tests on sre.match"
 
