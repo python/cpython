@@ -93,7 +93,7 @@
 /* 40 = 4.0, 33 = 3.3; this will break if the second number is > 9 */
 #define DBVER (DB_VERSION_MAJOR * 10 + DB_VERSION_MINOR)
 
-#define PY_BSDDB_VERSION "4.2.0"
+#define PY_BSDDB_VERSION "4.2.1"
 static char *rcs_id = "$Id$";
 
 
