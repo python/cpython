@@ -2390,7 +2390,7 @@ add_operators(PyTypeObject *type)
 static PyObject * \
 FUNCNAME(PyObject *self) \
 { \
-	static PyObject cache_str; \
+	static PyObject *cache_str; \
 	return call_method(self, OPSTR, &cache_str, ""); \
 }
 
