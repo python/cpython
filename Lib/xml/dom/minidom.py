@@ -6,6 +6,10 @@ import types
 """
 minidom.py -- a lightweight DOM implementation based on SAX.
 
+parse( "foo.xml" )
+
+parseString( "<foo><bar/></foo>" )
+
 Todo:
 =====
  * convenience methods for getting elements and text.
@@ -440,7 +444,10 @@ def _doparse( func, args, kwargs ):
     return rootNode
 
 def parse( *args, **kwargs ):
+    "Parse a file into a DOM by filename or file object"
     return _doparse( pulldom.parse, args, kwargs )
 
 def parseString( *args, **kwargs ):
+    "Parse a file into a DOM from a string"
     return _doparse( pulldom.parseString, args, kwargs )
+
