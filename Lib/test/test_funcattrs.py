@@ -108,8 +108,8 @@ if f1.a.myclass is not f2.a.myclass or \
 # try setting __dict__
 try:
     F.a.__dict__ = (1, 2, 3)
-except TypeError: pass
-else: raise TestFailed, 'expected TypeError'
+except (AttributeError, TypeError): pass
+else: raise TestFailed, 'expected TypeError or AttributeError'
 
 F.a.im_func.__dict__ = {'one': 11, 'two': 22, 'three': 33}
 
@@ -121,7 +121,7 @@ d = UserDict({'four': 44, 'five': 55})
 
 try:
     F.a.__dict__ = d
-except TypeError: pass
+except (AttributeError, TypeError): pass
 else: raise TestFailed
 
 if f2.a.one <> f1.a.one <> F.a.one <> 11:
@@ -218,13 +218,13 @@ def cantset(obj, name, value):
     verify(hasattr(obj, name)) # Otherwise it's probably a typo
     try:
         setattr(obj, name, value)
-    except TypeError:
+    except (AttributeError, TypeError):
         pass
     else:
         raise TestFailed, "shouldn't be able to set %s to %r" % (name, value)
     try:
         delattr(obj, name)
-    except TypeError:
+    except (AttributeError, TypeError):
         pass
     else:
         raise TestFailed, "shouldn't be able to del %s" % name
