@@ -132,7 +132,7 @@ class PimpTarUnpacker(PimpUnpacker):
         if skip:
             names = [member.name for member in skip if member.name[-1] != '/']
             if names:
-	            return "Not all files were unpacked: %s" % " ".join(names)
+                return "Not all files were unpacked: %s" % " ".join(names)
         
 ARCHIVE_FORMATS = [
     (".tar.Z", PimpTarUnpacker, None),
@@ -468,6 +468,11 @@ class PimpPackage:
         
         rv = []
         if not self._dict.get('Download-URL'):
+            # For pseudo-packages that are already installed we don't
+            # return an error message
+            status, _  = self.installed()
+            if status == "yes":
+                return []
             return [(None, 
                 "%s: This package cannot be installed automatically (no Download-URL field)" %
                     self.fullname())]
