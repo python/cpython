@@ -70,7 +70,7 @@ def emit(format, *args, **kw):
 
 translate_prog = None
 
-def translate(text):
+def translate(text, pre=0):
     global translate_prog
     if not translate_prog:
 	url = '\(http\|ftp\|https\)://[^ \t\r\n]*'
@@ -90,10 +90,13 @@ def translate(text):
 	while url[-1] in ');:,.?\'"':
 	    url = url[:-1]
 	url = escape(url)
-	if ':' in url:
-	    repl = '<A HREF="%s">%s</A>' % (url, url)
+	if not pre or (pre and PROCESS_PREFORMAT):
+	    if ':' in url:
+		repl = '<A HREF="%s">%s</A>' % (url, url)
+	    else:
+		repl = '<A HREF="mailto:%s">&lt;%s&gt;</A>' % (url, url)
 	else:
-	    repl = '<A HREF="mailto:%s">&lt;%s&gt;</A>' % (url, url)
+	    repl = url
 	list.append(repl)
 	i = i + len(url)
     j = len(text)
@@ -292,7 +295,7 @@ class FaqEntry:
 			print '<PRE>'
 			pre = 1
 		if '/' in line or '@' in line:
-		    line = translate(line)
+		    line = translate(line, pre)
 		elif '<' in line or '&' in line:
 		    line = escape(line)
  		if not pre and '*' in line:
