@@ -34,7 +34,8 @@ class LogReader:
         self._funcmap = {}
 
         self._info = {}
-        self._nextitem = _hotshot.logreader(logfn).next
+        self._reader = _hotshot.logreader(logfn)
+        self._nextitem = self._reader.next
         self._stack = []
 
     # Iteration support:
@@ -47,6 +48,7 @@ class LogReader:
             what, tdelta, fileno, lineno = self._nextitem()
         except TypeError:
             # logreader().next() returns None at the end
+            self._reader.close()
             raise StopIteration()
         if what == WHAT_DEFINE_FILE:
             self._filemap[fileno] = tdelta
