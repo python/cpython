@@ -86,7 +86,7 @@ class SMTPSenderRefused(SMTPResponseException):
         self.sender = sender
         self.args = (code, msg, sender)
 
-class SMTPRecipientsRefused(SMTPResponseException):
+class SMTPRecipientsRefused(SMTPException):
     """All recipient  addresses refused.
     The errors for each recipient are accessable thru the attribute
     'recipients', which is a dictionary of exactly the same sort as 
@@ -371,8 +371,11 @@ class SMTP:
         if code <> 354:
             raise SMTPDataError(code,repl)
         else:
-            self.send(quotedata(msg))
-            self.send("%s.%s" % (CRLF, CRLF))
+            q = quotedata(msg)
+            if q[-2:] != CRLF:
+                q = q + CRLF
+            q = q + "." + CRLF
+            self.send(q)
             (code,msg)=self.getreply()
             if self.debuglevel >0 : print "data:", (code,msg)
             return (code,msg)
