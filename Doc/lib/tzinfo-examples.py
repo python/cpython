@@ -117,7 +117,7 @@ class USTimeZone(tzinfo):
         if dt is None or dt.tzinfo is None:
             # An exception may be sensible here, in one or both cases.
             # It depends on how you want to treat them.  The astimezone()
-            # implementation always passes a datetimetz with
+            # implementation always passes a datetime with
             # dt.tzinfo == self.
             return ZERO
         assert dt.tzinfo is self
