@@ -610,7 +610,7 @@ class Widget(Misc, Pack, Place):
 		apply(self.tk.call, (widgetName, self._w) + extra)
 		Widget.config(self, cnf)
 	def config(self, cnf=None):
-+ 		cnf = _cnfmerge(cnf)
+		cnf = _cnfmerge(cnf)
 		if cnf is None:
 			cnf = {}
 			for x in self.tk.split(
@@ -1076,8 +1076,7 @@ class Text(Widget):
 		      (self._w, 'tag', 'configure', tagName) 
 		      + self._options(cnf))
 	def tag_delete(self, *tagNames):
-		apply(self.tk.call, (self._w, 'tag', 'delete') 
-		      + tagNames)
+		apply(self.tk.call, (self._w, 'tag', 'delete') + tagNames)
 	def tag_lower(self, tagName, belowThis=None):
 		self.tk.call(self._w, 'tag', 'lower', 
 			     tagName, belowThis)
