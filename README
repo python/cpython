@@ -399,6 +399,43 @@ Mac OS X: You need to add the "-traditional-cpp" option to the
         the test_largefile test is only expected to work on a Unix UFS
         filesystem (how to check for this on Mac OS X?).
 
+Cygwin: Cygwin Python builds OOTB when configured as follows:
+
+            configure --with-threads=no
+        
+        assuming Cygwin 1.1.8-2 and gcc 2.95.3-1 or later.  At the time
+        of this writing, Cygwin pthread support is being significantly
+        enhanced.  Hopefully, there will be a Cygwin Python with thread
+        support soon.
+
+        Cygwin Python supports the building of shared extensions via the
+        traditional Misc/Makefile.pre.in and the newer distutils methods.
+        
+        On NT/2000, the following regression tests fail:
+
+            test_poll (hang)
+            test_strftime
+        
+        Due to the test_poll hang on NT/2000, one should run the
+        regression test using the following:
+
+            PYTHONPATH= ./python.exe -tt ./Lib/test/regrtest.py -l -x test_poll
+        
+        On 9X/Me, in addition the above NT/2000 failures, it has been
+        reported that the following regression tests also fail:
+
+            test_pwd
+            test_select (hang)
+            test_socket
+
+        Due to the test_poll and test_select hang on 9X/Me, one should
+        run the regression test using the following:
+
+            PYTHONPATH= ./python.exe -tt ./Lib/test/regrtest.py -l -x test_poll -x test_select
+
+        Help trying to track down the root causes for these known problems
+        will be greatly appreciated.
+        
 
 Configuring threads
 -------------------
