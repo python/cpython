@@ -18,8 +18,14 @@ Extension modules
 Library
 -------
 
+- Bug #781065 was fixed: test_normalization is updated to the current
+  URL of the Unicode 3.2 normalization file.
+
 IDLE
 ----
+
+- Bug #774680 was fixed: IDLE now does not fail to save the file anymore
+  if the Tk buffer is not a Unicode string, yet eol_convention is.
 
 Build
 -----
