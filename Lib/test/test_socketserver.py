@@ -3,9 +3,9 @@
 # XXX This must be run manually -- somehow the I/O redirection of the
 # regression test breaks the test.
 
-from test_support import verbose, verify, TESTFN
+from test_support import verbose, verify, TESTFN, TestSkipped
 if not verbose:
-    raise ImportError, "test_socketserver can only be run manually"
+    raise TestSkipped, "test_socketserver can only be run manually"
 
 from SocketServer import *
 import socket
