@@ -2,7 +2,9 @@
 
 from compiler import ast
 from compiler.consts import SC_LOCAL, SC_GLOBAL, SC_FREE, SC_CELL, SC_UNKNOWN
+from compiler.misc import mangle
 import types
+
 
 import sys
 
@@ -36,13 +38,7 @@ class Scope:
     def mangle(self, name):
         if self.klass is None:
             return name
-        if not name.startswith('__'):
-            return name
-        if len(name) + 2 >= MANGLE_LEN:
-            return name
-        if name.endswith('__'):
-            return name
-        return "_%s%s" % (self.klass, name)
+        return mangle(name, self.klass)
 
     def add_def(self, name):
         self.defs[self.mangle(name)] = 1

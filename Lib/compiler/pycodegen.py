@@ -117,9 +117,6 @@ def is_constant_false(node):
             return 1
     return 0
 
-def mangle(name):
-    return name
-
 class CodeGenerator:
     """Defines basic code generator for Python bytecode
 
@@ -136,6 +133,7 @@ class CodeGenerator:
 
     optimized = 0 # is namespace access optimized?
     __initialized = None
+    class_name = None # provide default for instance variable
 
     def __init__(self, filename):
         if self.__initialized is None:
@@ -175,6 +173,12 @@ class CodeGenerator:
         """Return a code object"""
         return self.graph.getCode()
 
+    def mangle(self, name):
+        if self.class_name is not None:
+            return misc.mangle(name, self.class_name)
+        else:
+            return name
+
     # Next five methods handle name access
 
     def isLocalName(self, name):
@@ -190,6 +194,7 @@ class CodeGenerator:
         self._nameOp('DELETE', name)
 
     def _nameOp(self, prefix, name):
+        name = self.mangle(name)
         if not self.optimized:
             self.emit(prefix + '_NAME', name)
             return
@@ -258,7 +263,8 @@ class CodeGenerator:
         self._visitFuncOrLambda(node, isLambda=1)
 
     def _visitFuncOrLambda(self, node, isLambda=0):
-        gen = self.FunctionGen(node, self.filename, self.scopes, isLambda)
+        gen = self.FunctionGen(node, self.filename, self.scopes, isLambda,
+                               self.class_name)
         walk(node.code, gen)
         gen.finish()
         self.set_lineno(node)
@@ -645,7 +651,7 @@ class CodeGenerator:
 
     def visitGetattr(self, node):
         self.visit(node.expr)
-        self.emit('LOAD_ATTR', node.attrname)
+        self.emit('LOAD_ATTR', self.mangle(node.attrname))
 
     # next five implement assignments
 
@@ -671,9 +677,9 @@ class CodeGenerator:
     def visitAssAttr(self, node):
         self.visit(node.expr)
         if node.flags == 'OP_ASSIGN':
-            self.emit('STORE_ATTR', node.attrname)
+            self.emit('STORE_ATTR', self.mangle(node.attrname))
         elif node.flags == 'OP_DELETE':
-            self.emit('DELETE_ATTR', node.attrname)
+            self.emit('DELETE_ATTR', self.mangle(node.attrname))
         else:
             print "warning: unexpected flags:", node.flags
             print node
@@ -728,10 +734,10 @@ class CodeGenerator:
         if mode == "load":
             self.visit(node.expr)
             self.emit('DUP_TOP')
-            self.emit('LOAD_ATTR', node.attrname)
+            self.emit('LOAD_ATTR', self.mangle(node.attrname))
         elif mode == "store":
             self.emit('ROT_TWO')
-            self.emit('STORE_ATTR', node.attrname)
+            self.emit('STORE_ATTR', self.mangle(node.attrname))
 
     def visitAugSlice(self, node, mode):
         if mode == "load":
@@ -987,6 +993,7 @@ class NestedScopeCodeGenerator(CodeGenerator):
         self.__super_visitModule(node)
 
     def _nameOp(self, prefix, name):
+        name = self.mangle(name)
         scope = self.scope.check_name(name)
         if scope == SC_LOCAL:
             if not self.optimized:
@@ -1002,7 +1009,8 @@ class NestedScopeCodeGenerator(CodeGenerator):
                   (name, scope)
 
     def _visitFuncOrLambda(self, node, isLambda=0):
-        gen = self.FunctionGen(node, self.filename, self.scopes, isLambda)
+        gen = self.FunctionGen(node, self.filename, self.scopes, isLambda,
+                               self.class_name)
         walk(node.code, gen)
         gen.finish()
         self.set_lineno(node)
@@ -1079,7 +1087,8 @@ class AbstractFunctionCode:
     optimized = 1
     lambdaCount = 0
 
-    def __init__(self, func, filename, scopes, isLambda):
+    def __init__(self, func, filename, scopes, isLambda, class_name):
+        self.class_name = class_name
         if isLambda:
             klass = FunctionCodeGenerator
             name = "<lambda.%d>" % klass.lambdaCount
@@ -1142,10 +1151,10 @@ class NestedFunctionCodeGenerator(AbstractFunctionCode,
     super_init = NestedScopeCodeGenerator.__init__ # call be other init
     __super_init = AbstractFunctionCode.__init__
 
-    def __init__(self, func, filename, scopes, isLambda):
+    def __init__(self, func, filename, scopes, isLambda, class_name):
         self.scopes = scopes
         self.scope = scopes[func]
-        self.__super_init(func, filename, scopes, isLambda)
+        self.__super_init(func, filename, scopes, isLambda, class_name)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
 ##        self.graph.setFlag(CO_NESTED)
@@ -1153,6 +1162,7 @@ class NestedFunctionCodeGenerator(AbstractFunctionCode,
 class AbstractClassCode:
 
     def __init__(self, klass, filename, scopes):
+        self.class_name = klass.name
         self.graph = pyassem.PyFlowGraph(klass.name, filename,
                                            optimized=0)
         self.super_init(filename)
@@ -1163,6 +1173,7 @@ class AbstractClassCode:
             self.setDocstring(klass.doc)
 
     def _nameOp(self, prefix, name):
+        name = self.mangle(name)
         # Class namespaces are always unoptimized
         self.emit(prefix + '_NAME', name)
 
