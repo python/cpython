@@ -100,9 +100,12 @@ func_repr(op)
 	funcobject *op;
 {
 	char buf[140];
-	sprintf(buf, "<function %.100s at %lx>",
-		getstringvalue(op->func_name),
-		(long)op);
+	if (op->func_name == None)
+		sprintf(buf, "<anonymous function at %lx>", (long)op);
+	else
+		sprintf(buf, "<function %.100s at %lx>",
+			getstringvalue(op->func_name),
+			(long)op);
 	return newstringobject(buf);
 }
 
