@@ -28,6 +28,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <Memory.h>
 #include <Files.h>
+#include <Folders.h>
 #include <StandardFile.h>
 #include <Aliases.h>
 
@@ -567,6 +568,28 @@ mfs_GetDirectory(self, args)
 	return mkvalue("(Oi)", newmfssobject(&fsdir), ok);
 }
 
+static object *
+mfs_FindFolder(self, args)
+	object *self;	/* Not used */
+	object *args;
+{
+	OSErr err;
+	short where;
+	OSType which;
+	int create;
+	short refnum;
+	long dirid;
+		
+	if (!newgetargs(args, "hO&i", &where, PyMac_GetOSType, &which, &create) )
+		return NULL;
+	err = FindFolder(where, which, (Boolean)create, &refnum, &dirid);
+	if ( err ) {
+		PyErr_Mac(ErrorObject, err);
+		return NULL;
+	}
+	return mkvalue("(ii)", refnum, dirid);
+}
+
 /* List of methods defined in the module */
 
 static struct methodlist mfs_methods[] = {
@@ -577,6 +600,7 @@ static struct methodlist mfs_methods[] = {
 	{"FSSpec",				mfs_FSSpec,				1},
 	{"RawFSSpec",			mfs_RawFSSpec,			1},
 	{"RawAlias",			mfs_RawAlias,			1},
+	{"FindFolder",			mfs_FindFolder,			1},
  
 	{NULL,		NULL}		/* sentinel */
 };
