@@ -78,6 +78,16 @@ def ismethoddescriptor(object):
             and not isfunction(object)
             and not isclass(object))
 
+def isdatadescriptor(object):
+    """Return true if the object is a data descriptor.
+
+    Data descriptors have both a __get__ and a __set__ attribute.  Examples are
+    properties (defined in Python) and getsets and members (defined in C).
+    Typically, data descriptors will also have __name__ and __doc__ attributes
+    (properties, getsets, and members have both of these attributes), but this
+    is not guaranteed."""
+    return (hasattr(object, "__set__") and hasattr(object, "__get__"))
+
 def isfunction(object):
     """Return true if the object is a user-defined function.
 
