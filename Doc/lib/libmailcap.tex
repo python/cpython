@@ -25,7 +25,7 @@ most \UNIX{} systems.
                             filename\optional{, plist}}}}
 Return a 2-tuple; the first element is a string containing the command
 line to be executed
-(which can be passed to \code{os.system()}), and the second element is
+(which can be passed to \function{os.system()}), and the second element is
 the mailcap entry for a given MIME type.  If no matching MIME
 type can be found, \code{(None, None)} is returned.
 
@@ -44,25 +44,25 @@ usually you'll override it by specifying a filename.
 
 \var{plist} can be a list containing named parameters; the default
 value is simply an empty list.  Each entry in the list must be a
-string containing the parameter name, an equals sign (\code{=}), and the
-parameter's value.  Mailcap entries can contain 
+string containing the parameter name, an equals sign (\character{=}),
+and the parameter's value.  Mailcap entries can contain 
 named parameters like \code{\%\{foo\}}, which will be replaced by the
 value of the parameter named 'foo'.  For example, if the command line
 \samp{showpartial \%\{id\}\ \%\{number\}\ \%\{total\}}
 was in a mailcap file, and \var{plist} was set to \code{['id=1',
 'number=2', 'total=3']}, the resulting command line would be 
-\code{"showpartial 1 2 3"}.  
+\code{'showpartial 1 2 3'}.  
 
-In a mailcap file, the "test" field can optionally be specified to
-test some external condition (e.g., the machine architecture, or the
+In a mailcap file, the ``test'' field can optionally be specified to
+test some external condition (such as the machine architecture, or the
 window system in use) to determine whether or not the mailcap line
-applies.  \code{findmatch()} will automatically check such conditions
-and skip the entry if the check fails.
+applies.  \function{findmatch()} will automatically check such
+conditions and skip the entry if the check fails.
 \end{funcdesc}
 
 \begin{funcdesc}{getcaps}{}
 Returns a dictionary mapping MIME types to a list of mailcap file
-entries. This dictionary must be passed to the \code{findmatch()}
+entries. This dictionary must be passed to the \function{findmatch()}
 function.  An entry is stored as a list of dictionaries, but it
 shouldn't be necessary to know the details of this representation.
 
