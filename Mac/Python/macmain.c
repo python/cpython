@@ -58,10 +58,10 @@ extern char *Py_GetVersion Py_PROTO((void));
 extern char *Py_GetCopyright Py_PROTO((void));
 
 
-/* For getprogramname(); set by main() */
+/* For Py_GetProgramName(); set by main() */
 static char *argv0;
 
-/* For getargcargv(); set by main() */
+/* For Py_GetArgcArgv(); set by main() */
 static char **orig_argv;
 static int  orig_argc;
 
@@ -316,9 +316,9 @@ Py_Main(argc, argv)
 	PyMac_InteractiveOptions(&inspect, &Py_VerboseFlag, &Py_SuppressPrintingFlag,
 			&unbuffered, &Py_DebugFlag, &keep_normal, &keep_error, &argc, &argv);
 
-	orig_argc = argc;	/* For getargcargv() */
+	orig_argc = argc;	/* For Py_GetArgcArgv() */
 	orig_argv = argv;
-	argv0 = argv[0];	/* For getprogramname() */
+	argv0 = argv[0];	/* For Py_GetProgramName() */
 
 	if (unbuffered) {
 #ifndef MPW
@@ -403,7 +403,7 @@ PyMac_Exit(status)
 /* Return the program name -- some code out there needs this. */
 
 char *
-getprogramname()
+Py_GetProgramName()
 {
 	return argv0;
 }
@@ -413,10 +413,24 @@ getprogramname()
    This is rare, but it is needed by the secureware extension. */
 
 void
-getargcargv(argc,argv)
+Py_GetArgcArgv(argc,argv)
 	int *argc;
 	char ***argv;
 {
 	*argc = orig_argc;
 	*argv = orig_argv;
+}
+
+/* More cruft that shouldn't really be here, used in sysmodule.c */
+
+char *
+Py_GetPrefix()
+{
+	return "";
+}
+
+char *
+Py_GetExecPrefix()
+{
+	return "";
 }
