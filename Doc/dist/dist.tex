@@ -2134,9 +2134,9 @@ This is useful if you need to find out the distribution meta-data
 the contents of the config files or command-line.
 
 \var{script_name} is a file that will be run with \function{execfile()}
-\var{sys.argv[0]} will be replaced with \var{script} for the duration of the
+\code{sys.argv[0]} will be replaced with \var{script} for the duration of the
 call.  \var{script_args} is a list of strings; if supplied,
-\var{sys.argv[1:]} will be replaced by \var{script_args} for the duration 
+\code{sys.argv[1:]} will be replaced by \var{script_args} for the duration 
 of the call.
 
 \var{stop_after} tells \function{setup()} when to stop processing; possible 
@@ -2257,22 +2257,24 @@ with some compiler (depending on the two format strings passed in).
 \end{funcdesc}
     
 \begin{funcdesc}{gen_preprocess_options}{macros, include_dirs}
-Generate C pre-processor options (-D, -U, -I) as used by at least
+Generate C pre-processor options (\programopt{-D}, \programopt{-U},
+\programopt{-I}) as used by at least
 two types of compilers: the typical \UNIX{} compiler and Visual \Cpp.
-\var{macros} is the usual thing, a list of 1- or 2-tuples, where \var{(name,)}
-means undefine (-U) macro \var{name}, and \var{(name,value)} means define (-D)
-macro \var{name} to \var{value}.  \var{include_dirs} is just a list of directory
-names to be added to the header file search path (-I).  Returns a list
-of command-line options suitable for either \UNIX{} compilers or Visual
-\Cpp.
+\var{macros} is the usual thing, a list of 1- or 2-tuples, where
+\code{(\var{name},)} means undefine (\programopt{-U}) macro \var{name},
+and \code{(\var{name}, \var{value})} means define (\programopt{-D})
+macro \var{name} to \var{value}.  \var{include_dirs} is just a list of
+directory names to be added to the header file search path (\programopt{-I}).
+Returns a list of command-line options suitable for either \UNIX{} compilers
+or Visual \Cpp.
 \end{funcdesc}
 
 \begin{funcdesc}{get_default_compiler}{osname, platform}
 Determine the default compiler to use for the given platform.
     
-\var{osname} should be one of the standard Python OS names (i.e. the
-ones returned by \var{os.name}) and \var{platform} the common value
-returned by \var{sys.platform} for the platform in question.
+\var{osname} should be one of the standard Python OS names (i.e.\ the
+ones returned by \code{os.name}) and \var{platform} the common value
+returned by \code{sys.platform} for the platform in question.
     
 The default values are \code{os.name} and \code{sys.platform} in case the
 parameters are not given.
@@ -2504,7 +2506,8 @@ normally compiles to \file{foo/bar.o} (for a \UNIX{} implementation); if
 \file{build/foo/bar.o}.
 
 \var{macros}, if given, must be a list of macro definitions.  A macro
-definition is either a \var{(name, value)} 2-tuple or a \var{(name,)} 1-tuple.
+definition is either a \code{(\var{name}, \var{value})} 2-tuple or a
+\code{(\var{name},)} 1-tuple.
 The former defines a macro; if the value is \code{None}, the macro is
 defined without an explicit value.  The 1-tuple case undefines a
 macro.  Later definitions/redefinitions/undefinitions take
@@ -2517,7 +2520,7 @@ compilation only.
 \var{debug} is a boolean; if true, the compiler will be instructed to
 output debug symbols in (or alongside) the object file(s).
 
-\var{extra_preargs} and \var{extra_postargs} are implementation- dependent.
+\var{extra_preargs} and \var{extra_postargs} are implementation-dependent.
 On platforms that have the notion of a command-line (e.g. \UNIX,
 DOS/Windows), they are most likely lists of strings: extra
 command-line arguments to prepend/append to the compiler command
@@ -2791,8 +2794,8 @@ to the current directory.  Returns the name of the archive file.
 \end{funcdesc}
 
 \begin{funcdesc}{make_tarball}{base_name, base_dir\optional{, compress=\code{'gzip'}, verbose=\code{0}, dry_run=\code{0}}}'Create an (optional compressed) archive as a tar file from all files in and under \var{base_dir}. \var{compress} must be \code{'gzip'} (the default), 
-\code{'compress'}, \code{'bzip2'}, or \code{None}.  Both \code{'tar'}
-and the compression utility named by \var{'compress'} must be on the 
+\code{'compress'}, \code{'bzip2'}, or \code{None}.  Both \program{tar}
+and the compression utility named by \var{compress} must be on the 
 default program search path, so this is probably \UNIX-specific.  The 
 output tar file will be named \file{\var{base_dir}.tar}, possibly plus
 the appropriate compression extension (\file{.gz}, \file{.bz2} or
@@ -2881,7 +2884,7 @@ are as for \function{mkpath()}.
 Copy an entire directory tree \var{src} to a new location \var{dst}.  Both
 \var{src} and \var{dst} must be directory names.  If \var{src} is not a
 directory, raise \exception{DistutilsFileError}.  If \var{dst} does 
-not exist, it is created with \var{mkpath()}.  The end result of the 
+not exist, it is created with \function{mkpath()}.  The end result of the 
 copy is that every file in \var{src} is copied to \var{dst}, and 
 directories under \var{src} are recursively copied to \var{dst}.  
 Return the list of files that were copied or might have been copied,
@@ -2901,7 +2904,7 @@ destination of the symlink will be copied.  \var{update} and
 
 \begin{funcdesc}{remove_tree}{directory\optional{verbose=\code{0}, dry_run=\code{0}}}
 Recursively remove \var{directory} and all files and directories underneath
-it. Any errors are ignored (apart from being reported to \code{stdout} if 
+it. Any errors are ignored (apart from being reported to \code{sys.stdout} if
 \var{verbose} is true).
 \end{funcdesc}
 
@@ -2929,7 +2932,7 @@ symbolic links (using \function{os.symlink}) instead of copying: set it
 to \code{'hard'} or \code{'sym'}; if it is \code{None} (the default),
 files are copied. Don't set \var{link} on systems that don't support
 it: \function{copy_file()} doesn't check if hard or symbolic linking is
-available.  It uses \var{_copy_file_contents()} to copy file contents.
+available.  It uses \function{_copy_file_contents()} to copy file contents.
 
 Return a tuple \samp{(dest_name, copied)}: \var{dest_name} is the actual 
 name of the output file, and \var{copied} is true if the file was copied 
@@ -3294,11 +3297,11 @@ or both. \exception{RuntimeError} is raised if both are \code{None}.
 something that provides \method{readline()} and \method{close()} 
 methods).  It is recommended that you supply at least \var{filename}, 
 so that \class{TextFile} can include it in warning messages.  If 
-\var{file} is not supplied, TextFile creates its own using the 
-\var{open()} builtin.
+\var{file} is not supplied, \class{TextFile} creates its own using the 
+\function{open()} built-in function.
 
 The options are all boolean, and affect the values returned by
-\var{readline()}
+\method{readline()}
 
 \begin{tableiii}{c|l|l}{option name}{option name}{description}{default}
 \lineiii{strip_comments}{
