@@ -244,6 +244,31 @@ def test_both():
         except OSError:
             pass
 
+    # Do a tougher .find() test.  SF bug 515943 pointed out that, in 2.2,
+    # searching for data with embedded \0 bytes didn't work.
+    f = open(TESTFN, 'w+')
+
+    try:    # unlink TESTFN no matter what
+        data = 'aabaac\x00deef\x00\x00aa\x00'
+        n = len(data)
+        f.write(data)
+        m = mmap.mmap(f.fileno(), n)
+        f.close()
+
+        for start in range(n+1):
+            for finish in range(start, n+1):
+                slice = data[start : finish]
+                vereq(m.find(slice), data.find(slice))
+                vereq(m.find(slice + 'x'), -1)
+
+    finally:
+        try:
+            os.unlink(TESTFN)
+        except OSError:
+            pass
+
+
+
     print ' Test passed'
 
 test_both()
