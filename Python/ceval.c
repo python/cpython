@@ -482,6 +482,11 @@ eval_code2(co, globals, locals,
 			PyObject *keyword = kws[2*i];
 			PyObject *value = kws[2*i + 1];
 			int j;
+			if (keyword == NULL || !PyString_Check(keyword)) {
+				PyErr_SetString(PyExc_TypeError,
+						"keywords must be strings");
+				goto fail;
+			}
 			/* XXX slow -- speed up using dictionary? */
 			for (j = 0; j < co->co_argcount; j++) {
 				PyObject *nm = PyTuple_GET_ITEM(
