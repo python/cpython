@@ -461,14 +461,15 @@ _PySys_Init(void)
 		/* Assumes that longs are at least 2 bytes long.
 		   Should be safe! */
 		unsigned long number = 1;
+		char *value;
 
 		s = (char *) &number;
 		if (s[0] == 0)
-			PyDict_SetItemString(sysdict, "byte_order",
-					     PyString_FromString("big"));
+			value = "big";
 		else
-			PyDict_SetItemString(sysdict, "byte_order",
-					     PyString_FromString("little"));
+			value = "little";
+		PyDict_SetItemString(sysdict, "byteorder",
+				     PyString_FromString(value));
 	}
 #ifdef MS_COREDLL
 	PyDict_SetItemString(sysdict, "dllhandle",
