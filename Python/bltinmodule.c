@@ -568,6 +568,8 @@ builtin_execfile(PyObject *self, PyObject *args)
 	PyObject *res;
 	FILE* fp;
 	PyCompilerFlags cf;
+	int exists;
+	struct stat s;
 
 	if (!PyArg_ParseTuple(args, "s|O!O!:execfile",
 			&filename,
@@ -586,10 +588,27 @@ builtin_execfile(PyObject *self, PyObject *args)
 					 PyEval_GetBuiltins()) != 0)
 			return NULL;
 	}
-	Py_BEGIN_ALLOW_THREADS
-	fp = fopen(filename, "r");
-	Py_END_ALLOW_THREADS
-	if (fp == NULL) {
+
+	exists = 0;
+	/* Test for existence or directory. */
+	if (!stat(filename, &s)) {
+		if (S_ISDIR(s.st_mode))
+			errno = EISDIR;
+		else
+			exists = 1;
+	}
+
+        if (exists) {
+		Py_BEGIN_ALLOW_THREADS
+		fp = fopen(filename, "r");
+		Py_END_ALLOW_THREADS
+
+		if (fp == NULL) {
+			exists = 0;
+		}
+        }
+
+	if (!exists) {
 		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
