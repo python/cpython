@@ -1840,9 +1840,3 @@ def _test():
 
 if __name__ == '__main__':
 	_test()
-
-
-# Emacs cruft
-# Local Variables:
-# py-indent-offset: 8
-# End:
