@@ -225,25 +225,21 @@ exception, and the exception occurs in the try clause of the inner
 handler, the outer handler will not handle the exception.)
 
 Before an except clause's suite is executed, details about the
-exception are assigned to three variables in the \module{sys} module:
-\code{sys.exc_type} receives the object identifying the exception;
-\code{sys.exc_value} receives the exception's parameter;
-\code{sys.exc_traceback} receives a traceback object (see section
-\ref{traceback}) identifying the point in the program where the
-exception occurred.
+exception are assigned to three variables in the
+\module{sys}\refbimodindex{sys} module: \code{sys.exc_type} receives
+the object identifying the exception; \code{sys.exc_value} receives
+the exception's parameter; \code{sys.exc_traceback} receives a
+traceback object\obindex{traceback} (see section \ref{traceback})
+identifying the point in the program where the exception occurred.
 These details are also available through the \function{sys.exc_info()}
-function, which returns a tuple \code{(exc_type,} \code{exc_value,}
-\code{exc_traceback)}.  Use of the corresponding variables is
+function, which returns a tuple \code{(\var{exc_type}, \var{exc_value},
+\var{exc_traceback})}.  Use of the corresponding variables is
 deprecated in favor of this function, since their use is unsafe in a
 threaded program.  As of Python 1.5, the variables are restored to
 their previous values (before the call) when returning from a function
 that handled an exception.
-\refbimodindex{sys}
-\withsubitem{(in module sys)}{%
-  \ttindex{exc_type}%
-  \ttindex{exc_value}%
-  \ttindex{exc_traceback}}
-\obindex{traceback}
+\withsubitem{(in module sys)}{\ttindex{exc_type}
+  \ttindex{exc_value}\ttindex{exc_traceback}}
 
 The optional \keyword{else} clause is executed when no exception occurs
 in the \keyword{try} clause.  Exceptions in the \keyword{else} clause are
