@@ -77,6 +77,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         self._lex_handler_prop = None
         self._parsing = 0
         self._entity_stack = []
+        self._ns_stack = []
 
     # XMLReader methods
 
@@ -227,17 +228,23 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             pair = tuple(pair)
 
         newattrs = {}
+        qnames = {}
         for (aname, value) in attrs.items():
             apair = string.split(aname)
             if len(apair) == 1:
                 apair = (None, aname)
+                qname = aname
             else:
                 apair = tuple(apair)
+                # XXX need to guess the prefix
+                prefix = self._ns_stack[-1][apair[0]][-1]
+                qname = "%s:%s" % (prefix, apair[1])
 
             newattrs[apair] = value
+            qnames[apair] = qname
 
         self._cont_handler.startElementNS(pair, None,
-                                          AttributesNSImpl(newattrs, {}))
+                                          AttributesNSImpl(newattrs, qnames))
 
     def end_element_ns(self, name):
         pair = string.split(name)
@@ -257,9 +264,19 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         self._cont_handler.characters(data)
 
     def start_namespace_decl(self, prefix, uri):
+        if self._ns_stack:
+            d = self._ns_stack.copy()
+            if d.has_key(uri):
+                L = d[uri][:]
+                d[uri] = L
+                L.append(prefix)
+        else:
+            d = {uri: [prefix]}
+        self._ns_stack.append(d)
         self._cont_handler.startPrefixMapping(prefix, uri)
 
     def end_namespace_decl(self, prefix):
+        del self._ns_stack[-1]
         self._cont_handler.endPrefixMapping(prefix)
 
     def unparsed_entity_decl(self, name, base, sysid, pubid, notation_name):
