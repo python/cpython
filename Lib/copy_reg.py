@@ -81,6 +81,8 @@ def _reduce(self):
 extension_registry = {}                 # key -> code
 inverted_registry = {}                  # code -> key
 extension_cache = {}                    # code -> object
+# Don't ever rebind those names:  cPickle grabs a reference to them when
+# it's initialized, and won't see a rebinding.
 
 def add_extension(module, name, code):
     """Register an extension code."""

@@ -95,9 +95,19 @@ static PyObject *UnpickleableError;
 static PyObject *UnpicklingError;
 static PyObject *BadPickleGet;
 
-
-static PyObject *dispatch_table;
+/* As the name says, an empty tuple. */
 static PyObject *empty_tuple;
+
+/* copy_reg.dispatch_table, {type_object: pickling_function} */
+static PyObject *dispatch_table;
+
+/* For EXT[124] opcodes. */
+/* copy_reg.extension_registry, {(module_name, function_name): code} */
+static PyObject *extension_registry;
+/* copy_reg.inverted_registry, {code: (module_name, function_name)} */
+static PyObject *inverted_registry;
+/* copy_reg.extension_cache, {code: object} */
+static PyObject *extension_cache;
 
 static PyObject *__class___str, *__getinitargs___str, *__dict___str,
   *__getstate___str, *__setstate___str, *__name___str, *__reduce___str,
@@ -2592,15 +2602,17 @@ newPicklerobject(PyObject *file, int proto)
 
 	if (PyEval_GetRestricted()) {
 		/* Restricted execution, get private tables */
-		PyObject *m;
+		PyObject *m = PyImport_Import(copy_reg_str);
 
-		if (!( m=PyImport_Import(copy_reg_str)))  goto err;
-		self->dispatch_table=PyObject_GetAttr(m, dispatch_table_str);
+		if (m == NULL)
+			goto err;
+		self->dispatch_table = PyObject_GetAttr(m, dispatch_table_str);
 		Py_DECREF(m);
-		if (!( self->dispatch_table ))  goto err;
+		if (self->dispatch_table == NULL)
+			goto err;
 	}
 	else {
-		self->dispatch_table=dispatch_table;
+		self->dispatch_table = dispatch_table;
 		Py_INCREF(dispatch_table);
 	}
 
@@ -5077,8 +5089,19 @@ init_stuff(PyObject *module_dict)
 	/* This is special because we want to use a different
 	   one in restricted mode. */
 	dispatch_table = PyObject_GetAttr(copy_reg, dispatch_table_str);
-	if (!dispatch_table)
-		return -1;
+	if (!dispatch_table) return -1;
+
+	extension_registry = PyObject_GetAttrString(copy_reg,
+				"extension_registry");
+	if (!extension_registry) return -1;
+
+	inverted_registry = PyObject_GetAttrString(copy_reg,
+				"inverted_registry");
+	if (!inverted_registry) return -1;
+
+	extension_cache = PyObject_GetAttrString(copy_reg,
+				"extension_cache");
+	if (!extension_cache) return -1;
 
 	Py_DECREF(copy_reg);
 
@@ -5168,7 +5191,7 @@ initcPickle(void)
 {
 	PyObject *m, *d, *di, *v, *k;
 	int i;
-	char *rev="1.71";
+	char *rev = "1.71";	/* XXX when does this change? */
 	PyObject *format_version;
 	PyObject *compatible_formats;
 
@@ -5177,9 +5200,9 @@ initcPickle(void)
 	PdataType.ob_type = &PyType_Type;
 
 	/* Initialize some pieces. We need to do this before module creation,
-	   so we're forced to use a temporary dictionary. :(
-	*/
-	di=PyDict_New();
+	 * so we're forced to use a temporary dictionary. :(
+	 */
+	di = PyDict_New();
 	if (!di) return;
 	if (init_stuff(di) < 0) return;
 
@@ -5190,7 +5213,8 @@ initcPickle(void)
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
-	PyDict_SetItemString(d,"__version__", v = PyString_FromString(rev));
+	v = PyString_FromString(rev);
+	PyDict_SetItemString(d, "__version__", v);
 	Py_XDECREF(v);
 
 	/* Copy data from di. Waaa. */
@@ -5202,9 +5226,16 @@ initcPickle(void)
 	}
 	Py_DECREF(di);
 
-	format_version = PyString_FromString("1.3");
-	compatible_formats = Py_BuildValue("[sss]", "1.0", "1.1", "1.2");
-
+	/* These are purely informational; no code uses them. */
+	/* File format version we write. */
+	format_version = PyString_FromString("2.0");
+	/* Format versions we can read. */
+	compatible_formats = Py_BuildValue("[sssss]",
+		"1.0",	/* Original protocol 0 */
+		"1.1",	/* Protocol 0 + INST */
+		"1.2",	/* Original protocol 1 */
+		"1.3",	/* Protocol 1 + BINFLOAT */
+		"2.0");	/* Oritinal potocol 2 */
 	PyDict_SetItemString(d, "format_version", format_version);
 	PyDict_SetItemString(d, "compatible_formats", compatible_formats);
 	Py_XDECREF(format_version);
