@@ -3,6 +3,15 @@ What's New in Python 2.1 alpha 507?
 
 Core language, builtins, and interpreter
 
+- An optional object allocator has been included.  This allocator is
+  optimized for Python objects and should be faster and use less memory
+  than the standard system allocator.  It is not enabled by default
+  because of possible thread safety problems.  The allocator is only
+  protected by the Python interpreter lock and it is possible that some
+  extension modules require a thread safe allocator.  The object
+  allocator can be enabled by providing the "--with-pymalloc" option to
+  configure.
+
 Standard library
 
 - pyexpat now detects the expat version if expat.h defines it. A

@@ -76,6 +76,13 @@ recommended to use PyObject_{New, NewVar, Del}. */
    memory management purposes exclusively. Both the core and extension
    modules should use the PyObject_* API. */
 
+#ifdef WITH_PYMALLOC
+#define PyCore_OBJECT_MALLOC_FUNC    _PyCore_ObjectMalloc
+#define PyCore_OBJECT_REALLOC_FUNC   _PyCore_ObjectRealloc
+#define PyCore_OBJECT_FREE_FUNC      _PyCore_ObjectFree
+#define NEED_TO_DECLARE_OBJECT_MALLOC_AND_FRIEND
+#endif /* !WITH_PYMALLOC */
+
 #ifndef PyCore_OBJECT_MALLOC_FUNC
 #undef PyCore_OBJECT_REALLOC_FUNC
 #undef PyCore_OBJECT_FREE_FUNC

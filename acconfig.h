@@ -175,6 +175,9 @@
 /* Define if you want to use ndbm. */
 #undef WITH_LIBNDBM
 
+/* Define if you want to compile in Python-specific mallocs */
+#undef WITH_PYMALLOC
+
 /* Define if you want to produce an OpenStep/Rhapsody framework
    (shared library plus accessory files). */
 #undef WITH_NEXT_FRAMEWORK
