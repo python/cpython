@@ -2,7 +2,6 @@
 \usepackage{distutils}
 
 % TODO:
-%   Move 'Tips and Tricks' to be the last section
 %   Fill in XXX comments
 
 \title{Installing Python Modules}
@@ -371,232 +370,6 @@ section~\ref{custom-install} on custom installations.
              {\filevar{#7}\filenq{#8}}
              {\longprogramopt{install-data}}
    \end{tableiii}}
-
-
-\section{Building Extensions: Tips and Tricks}
-\label{building-ext}
-
-Whenever possible, the Distutils try to use the configuration
-information made available by the Python interpreter used to run the
-\file{setup.py} script.  For example, the same compiler and linker
-flags used to compile Python will also be used for compiling
-extensions.  Usually this will work well, but in complicated
-situations this might be inappropriate.  This section discusses how to
-override the usual Distutils behaviour.
-
-\subsection{Tweaking compiler/linker flags}
-\label{tweak-flags}
-
-Compiling a Python extension written in C or \Cpp will sometimes
-require specifying custom flags for the compiler and linker in order
-to use a particular library or produce a special kind of object code.
-This is especially true if the extension hasn't been tested on your 
-platform, or if you're trying to cross-compile Python.
-
-In the most general case, the extension author might have foreseen
-that compiling the extensions would be complicated, and provided a
-\file{Setup} file for you to edit.  This will likely only be done if
-the module distribution contains many separate extension modules, or
-if they often require elaborate sets of compiler flags in order to work.
-
-A \file{Setup} file, if present, is parsed in order to get a list of
-extensions to build.  Each line in a \file{Setup} describes a single
-module.  Lines have the following structure:
-
-\begin{verbatim}
- <module> ... [<sourcefile> ...] [<cpparg> ...] [<library> ...]
-\end{verbatim}
-
-Let's examine each of the fields in turn.
-
-\begin{itemize}
-
-\item \var{module} is the name of the extension module to be built,
-and should be a valid Python identifier.  You can't just change this
-in order to rename a module (edits to the source code would also be
-needed), so this should be left alone.
-
-\item \var{sourcefile} is anything that's likely to be a source code
-file, at least judging by the filename.  Filenames ending in .c are
-assumed to be written in C, filenames ending in .C, .cc, .c++ are
-assumed to be \Cpp, and filenames ending in .m or .mm are assumed to
-be in Objective C.
-
-\item \var{cpparg} is an argument for the C preprocessor, 
-and is anything starting with -I, -D, -U or -C .
-
-\item <library> is anything ending in .a or beginning with -l or -L.
-\end{itemize}
-
-If a particular platform requires a special library on your platform,
-you can add it by editing the \file{Setup} file and running
-\code{python setup.py build}.  For example, if the module defined by the line
-
-\begin{verbatim}
-foo foomodule.c
-\end{verbatim}
-
-must be linked with the math library \file{libm.a} on your platform,
-simply add \samp{-lm} to the line:
-
-\begin{verbatim}
-foo foomodule.c -lm
-\end{verbatim}
-
-Arbitrary switches intended for the compiler or the linker can be
-supplied with the \code{-Xcompiler \var{arg}} and \code{-Xlinker
-\var{arg}} options:
-
-\begin{verbatim}
-foo foomodule.c -Xcompiler -o32 -Xlinker -shared -lm
-\end{verbatim}
-
-The next option after \code{-Xcompiler} and \code{-Xlinker} will be
-appended to the proper command line, so in the above example the
-compiler will be passed the \samp{-o32} option, and the linker will be
-passed \samp{-shared}.  If a compiler option requires an argument,
-you'll have to supply multiple \code{-Xcompiler} options; for example,
-to pass \code{-x c++} the \file{Setup} file would have to contain
-\code{-Xcompiler -x -Xcompiler c++}.  
-
-Compiler flags can also be supplied through setting the
-\envvar{CFLAGS} environment variable.  If set, the contents of
-\envvar{CFLAGS} will be added to the compiler flags specified in the 
-\file{Setup} file.
-
-
-\subsection{Using non-Microsoft compilers on Windows \label{non-ms-compilers}}
-\sectionauthor{Rene Liebscher}{R.Liebscher@gmx.de}
-
-\subsubsection{Borland C++}
-
-This subsection describes the necessary steps to use Distutils with the 
-Borland \Cpp{} compiler version 5.5.
-%Should we mention that users have to create cfg-files for the compiler?
-%see also http://community.borland.com/article/0,1410,21205,00.html 
-
-First you have to know that Borland's object file format (OMF) is
-different from the format used by the Python version you can download
-from the Python or ActiveState Web site.  (Python is built with
-Microsoft Visual \Cpp, which uses COFF as the object file format.)
-For this reason you have to convert Python's library
-\file{python20.lib} into the Borland format.  You can do this as
-follows:
-
-\begin{verbatim}
-coff2omf python20.lib python20_bcpp.lib
-\end{verbatim}
-
-The \file{coff2omf} program comes with the Borland compiler.  The file
-\file{python20.lib} is in the \file{Libs} directory of your Python
-installation.  If your extension uses other libraries (zlib,...) you
-have to convert them too.
-
-The converted files have to reside in the same directories as the
-normal libraries.
-
-How does Distutils manage to use these libraries with their changed
-names?  If the extension needs a library (eg. \file{foo}) Distutils
-checks first if it finds a library with suffix \file{_bcpp}
-(eg. \file{foo_bcpp.lib}) and then uses this library.  In the case it
-doesn't find such a special library it uses the default name
-(\file{foo.lib}.)\footnote{This also means you could replace all
-existing COFF-libraries with OMF-libraries of the same name.}
-
-To let Distutils compile your extension with Borland \Cpp{} you now have
-to type:
-
-\begin{verbatim}
-python setup.py build --compiler=bcpp
-\end{verbatim}
-
-If you want to use the Borland \Cpp{} compiler as the default, you
-could specify this in your personal or system-wide configuration file
-for Distutils (see section~\ref{config-files}.)
- 
-\begin{seealso}
-  \seetitle[http://www.borland.com/bcppbuilder/freecompiler/]
-    {\Cpp{}Builder Compiler}
-    {Information about the free \Cpp{} compiler from Borland,
-     including links to the download pages.}
-
-  \seetitle[http://www.cyberus.ca/~g_will/pyExtenDL.shtml]
-    {Creating Python Extensions Using Borland's Free Compiler}
-    {Document describing how to use Borland's free command-line C++
-     compiler to build Python.}
-\end{seealso}
-
-
-\subsubsection{GNU C / Cygwin / MinGW32}
-
-This section describes the necessary steps to use Distutils with the
-GNU C/\Cpp{} compilers in their Cygwin and MinGW32
-distributions.\footnote{Check
-\url{http://sources.redhat.com/cygwin/} and
-\url{http://www.mingw.org/} for more information}
-
-\XXX{For a Python which was built with Cygwin, all should work without 
-any of these following steps.}
-
-These compilers also require some special libraries.
-This task is more complex than for Borland's \Cpp, because there is no
-program to convert the library.
-% I don't understand what the next line means. --amk
-% (inclusive the references on data structures.)
- 
-First you have to create a list of symbols which the Python DLL exports.
-(You can find a good program for this task at 
-\url{http://starship.python.net/crew/kernr/mingw32/Notes.html}, see at 
-PExports 0.42h there.)
-
-\begin{verbatim}
-pexports python20.dll >python20.def
-\end{verbatim}
-
-Then you can create from these information an import library for gcc.
- 
-\begin{verbatim}
-dlltool --dllname python20.dll --def python20.def --output-lib libpython20.a
-\end{verbatim}
-
-The resulting library has to be placed in the same directory as 
-\file{python20.lib}. (Should be the \file{libs} directory under your
-Python installation directory.)
-
-If your extension uses other libraries (zlib,...) you might 
-have to convert them too.
-The converted files have to reside in the same directories as the normal
-libraries do.
-
-To let Distutils compile your extension with Cygwin you now have to type
-
-\begin{verbatim}
-python setup.py build --compiler=cygwin
-\end{verbatim}
-
-and for Cygwin in no-cygwin mode\footnote{Then you have no
-\POSIX{} emulation available, but you also don't need
-\file{cygwin1.dll}.} or for MinGW32 type:
- 
-\begin{verbatim}
-python setup.py build --compiler=mingw32
-\end{verbatim}
-
-If you want to use any of these options/compilers as default, you should
-consider to write it in your personal or system-wide configuration file
-for Distutils (see section~\ref{config-files}.)
-
-\begin{seealso}
-  \seetitle[http://www.zope.org/Members/als/tips/win32_mingw_modules]
-    {Building Python modules on MS Windows platform with MinGW32}
-    {Information about building the required libraries for the MinGW32
-     environment.}
-
-  \seeurl{http://pyopengl.sourceforge.net/ftp/win32-stuff/}
-    {Converted import libraries in Cygwin/MinGW32 and Borland format,
-     and a script to create the registry entries needed for Distutils
-     to locate the built Python.}
-\end{seealso}
 
 
 \section{Alternate Installation}
@@ -1058,5 +831,232 @@ python setup.py --help
 
 See also the ``Reference'' section of the ``Distributing Python
 Modules'' manual.
+
+\section{Building Extensions: Tips and Tricks}
+\label{building-ext}
+
+Whenever possible, the Distutils try to use the configuration
+information made available by the Python interpreter used to run the
+\file{setup.py} script.  For example, the same compiler and linker
+flags used to compile Python will also be used for compiling
+extensions.  Usually this will work well, but in complicated
+situations this might be inappropriate.  This section discusses how to
+override the usual Distutils behaviour.
+
+\subsection{Tweaking compiler/linker flags}
+\label{tweak-flags}
+
+Compiling a Python extension written in C or \Cpp will sometimes
+require specifying custom flags for the compiler and linker in order
+to use a particular library or produce a special kind of object code.
+This is especially true if the extension hasn't been tested on your 
+platform, or if you're trying to cross-compile Python.
+
+In the most general case, the extension author might have foreseen
+that compiling the extensions would be complicated, and provided a
+\file{Setup} file for you to edit.  This will likely only be done if
+the module distribution contains many separate extension modules, or
+if they often require elaborate sets of compiler flags in order to work.
+
+A \file{Setup} file, if present, is parsed in order to get a list of
+extensions to build.  Each line in a \file{Setup} describes a single
+module.  Lines have the following structure:
+
+\begin{verbatim}
+ <module> ... [<sourcefile> ...] [<cpparg> ...] [<library> ...]
+\end{verbatim}
+
+Let's examine each of the fields in turn.
+
+\begin{itemize}
+
+\item \var{module} is the name of the extension module to be built,
+and should be a valid Python identifier.  You can't just change this
+in order to rename a module (edits to the source code would also be
+needed), so this should be left alone.
+
+\item \var{sourcefile} is anything that's likely to be a source code
+file, at least judging by the filename.  Filenames ending in .c are
+assumed to be written in C, filenames ending in .C, .cc, .c++ are
+assumed to be \Cpp, and filenames ending in .m or .mm are assumed to
+be in Objective C.
+
+\item \var{cpparg} is an argument for the C preprocessor, 
+and is anything starting with -I, -D, -U or -C .
+
+\item <library> is anything ending in .a or beginning with -l or -L.
+\end{itemize}
+
+If a particular platform requires a special library on your platform,
+you can add it by editing the \file{Setup} file and running
+\code{python setup.py build}.  For example, if the module defined by the line
+
+\begin{verbatim}
+foo foomodule.c
+\end{verbatim}
+
+must be linked with the math library \file{libm.a} on your platform,
+simply add \samp{-lm} to the line:
+
+\begin{verbatim}
+foo foomodule.c -lm
+\end{verbatim}
+
+Arbitrary switches intended for the compiler or the linker can be
+supplied with the \code{-Xcompiler \var{arg}} and \code{-Xlinker
+\var{arg}} options:
+
+\begin{verbatim}
+foo foomodule.c -Xcompiler -o32 -Xlinker -shared -lm
+\end{verbatim}
+
+The next option after \code{-Xcompiler} and \code{-Xlinker} will be
+appended to the proper command line, so in the above example the
+compiler will be passed the \samp{-o32} option, and the linker will be
+passed \samp{-shared}.  If a compiler option requires an argument,
+you'll have to supply multiple \code{-Xcompiler} options; for example,
+to pass \code{-x c++} the \file{Setup} file would have to contain
+\code{-Xcompiler -x -Xcompiler c++}.  
+
+Compiler flags can also be supplied through setting the
+\envvar{CFLAGS} environment variable.  If set, the contents of
+\envvar{CFLAGS} will be added to the compiler flags specified in the 
+\file{Setup} file.
+
+
+\subsection{Using non-Microsoft compilers on Windows \label{non-ms-compilers}}
+\sectionauthor{Rene Liebscher}{R.Liebscher@gmx.de}
+
+\subsubsection{Borland C++}
+
+This subsection describes the necessary steps to use Distutils with the 
+Borland \Cpp{} compiler version 5.5.
+%Should we mention that users have to create cfg-files for the compiler?
+%see also http://community.borland.com/article/0,1410,21205,00.html 
+
+First you have to know that Borland's object file format (OMF) is
+different from the format used by the Python version you can download
+from the Python or ActiveState Web site.  (Python is built with
+Microsoft Visual \Cpp, which uses COFF as the object file format.)
+For this reason you have to convert Python's library
+\file{python20.lib} into the Borland format.  You can do this as
+follows:
+
+\begin{verbatim}
+coff2omf python20.lib python20_bcpp.lib
+\end{verbatim}
+
+The \file{coff2omf} program comes with the Borland compiler.  The file
+\file{python20.lib} is in the \file{Libs} directory of your Python
+installation.  If your extension uses other libraries (zlib,...) you
+have to convert them too.
+
+The converted files have to reside in the same directories as the
+normal libraries.
+
+How does Distutils manage to use these libraries with their changed
+names?  If the extension needs a library (eg. \file{foo}) Distutils
+checks first if it finds a library with suffix \file{_bcpp}
+(eg. \file{foo_bcpp.lib}) and then uses this library.  In the case it
+doesn't find such a special library it uses the default name
+(\file{foo.lib}.)\footnote{This also means you could replace all
+existing COFF-libraries with OMF-libraries of the same name.}
+
+To let Distutils compile your extension with Borland \Cpp{} you now have
+to type:
+
+\begin{verbatim}
+python setup.py build --compiler=bcpp
+\end{verbatim}
+
+If you want to use the Borland \Cpp{} compiler as the default, you
+could specify this in your personal or system-wide configuration file
+for Distutils (see section~\ref{config-files}.)
+ 
+\begin{seealso}
+  \seetitle[http://www.borland.com/bcppbuilder/freecompiler/]
+    {\Cpp{}Builder Compiler}
+    {Information about the free \Cpp{} compiler from Borland,
+     including links to the download pages.}
+
+  \seetitle[http://www.cyberus.ca/~g_will/pyExtenDL.shtml]
+    {Creating Python Extensions Using Borland's Free Compiler}
+    {Document describing how to use Borland's free command-line C++
+     compiler to build Python.}
+\end{seealso}
+
+
+\subsubsection{GNU C / Cygwin / MinGW32}
+
+This section describes the necessary steps to use Distutils with the
+GNU C/\Cpp{} compilers in their Cygwin and MinGW32
+distributions.\footnote{Check
+\url{http://sources.redhat.com/cygwin/} and
+\url{http://www.mingw.org/} for more information}
+
+\XXX{For a Python which was built with Cygwin, all should work without 
+any of these following steps.}
+
+These compilers also require some special libraries.
+This task is more complex than for Borland's \Cpp, because there is no
+program to convert the library.
+% I don't understand what the next line means. --amk
+% (inclusive the references on data structures.)
+ 
+First you have to create a list of symbols which the Python DLL exports.
+(You can find a good program for this task at 
+\url{http://starship.python.net/crew/kernr/mingw32/Notes.html}, see at 
+PExports 0.42h there.)
+
+\begin{verbatim}
+pexports python20.dll >python20.def
+\end{verbatim}
+
+Then you can create from these information an import library for gcc.
+ 
+\begin{verbatim}
+dlltool --dllname python20.dll --def python20.def --output-lib libpython20.a
+\end{verbatim}
+
+The resulting library has to be placed in the same directory as 
+\file{python20.lib}. (Should be the \file{libs} directory under your
+Python installation directory.)
+
+If your extension uses other libraries (zlib,...) you might 
+have to convert them too.
+The converted files have to reside in the same directories as the normal
+libraries do.
+
+To let Distutils compile your extension with Cygwin you now have to type
+
+\begin{verbatim}
+python setup.py build --compiler=cygwin
+\end{verbatim}
+
+and for Cygwin in no-cygwin mode\footnote{Then you have no
+\POSIX{} emulation available, but you also don't need
+\file{cygwin1.dll}.} or for MinGW32 type:
+ 
+\begin{verbatim}
+python setup.py build --compiler=mingw32
+\end{verbatim}
+
+If you want to use any of these options/compilers as default, you should
+consider to write it in your personal or system-wide configuration file
+for Distutils (see section~\ref{config-files}.)
+
+\begin{seealso}
+  \seetitle[http://www.zope.org/Members/als/tips/win32_mingw_modules]
+    {Building Python modules on MS Windows platform with MinGW32}
+    {Information about building the required libraries for the MinGW32
+     environment.}
+
+  \seeurl{http://pyopengl.sourceforge.net/ftp/win32-stuff/}
+    {Converted import libraries in Cygwin/MinGW32 and Borland format,
+     and a script to create the registry entries needed for Distutils
+     to locate the built Python.}
+\end{seealso}
+
+
 
 \end{document}
