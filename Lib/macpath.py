@@ -212,3 +212,10 @@ def walk(top, func, arg):
 		name = join(top, name)
 		if isdir(name):
 			walk(name, func, arg)
+
+
+# Return an absolute path.
+def abspath(path):
+    if not isabs(path):
+        path = join(os.getcwd(), path)
+    return normpath(path)
