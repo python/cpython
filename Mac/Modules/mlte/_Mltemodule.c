@@ -241,7 +241,7 @@ static PyObject *TXNObj_TXNClick(TXNObjectObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if !TARGET_API_MAC_OSX
+#if 0
 
 static PyObject *TXNObj_TXNTSMCheck(TXNObjectObject *_self, PyObject *_args)
 {
@@ -1043,7 +1043,7 @@ static PyMethodDef TXNObj_methods[] = {
 	{"TXNClick", (PyCFunction)TXNObj_TXNClick, 1,
 	 "(EventRecord iEvent) -> None"},
 
-#if !TARGET_API_MAC_OSX
+#if 0
 	{"TXNTSMCheck", (PyCFunction)TXNObj_TXNTSMCheck, 1,
 	 "(EventRecord iEvent) -> (Boolean _rv)"},
 #endif

@@ -876,23 +876,6 @@ static PyObject *DlgObj_GetDialogPort(DialogObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *DlgObj_SetGrafPortOfDialog(DialogObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-#ifndef SetGrafPortOfDialog
-	PyMac_PRECHECK(SetGrafPortOfDialog);
-#endif
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	SetGrafPortOfDialog(_self->ob_itself);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
 static PyMethodDef DlgObj_methods[] = {
 	{"DrawDialog", (PyCFunction)DlgObj_DrawDialog, 1,
 	 "() -> None"},
@@ -975,10 +958,6 @@ static PyMethodDef DlgObj_methods[] = {
 	{"GetDialogPort", (PyCFunction)DlgObj_GetDialogPort, 1,
 	 "() -> (CGrafPtr _rv)"},
 
-#if !TARGET_API_MAC_CARBON
-	{"SetGrafPortOfDialog", (PyCFunction)DlgObj_SetGrafPortOfDialog, 1,
-	 "() -> None"},
-#endif
 	{NULL, NULL, 0}
 };
 
