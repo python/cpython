@@ -1977,6 +1977,59 @@ sub do_env_alltt{
     $_;
 }
 
+# List of all filenames produced ny do_cmd_verbatiminput()
+%VerbatimFiles = ();
+@VerbatimOutputs = ();
+
+sub get_verbatim_output_name($){
+    my $file = @_[0];
+    #
+    # Re-write the source filename to always use a .txt extension
+    # so that Web servers will present it as text/plain.  This is
+    # needed since there is no other even moderately reliable way
+    # to get the right Content-Type header on text files for
+    # servers which we can't configure (like python.org mirrors).
+    #
+    if (defined $VerbatimFiles{$file}) {
+        # We've seen this one before; re-use the same output file.
+        return $VerbatimFiles{$file};
+    }
+    use File::Basename;
+    my $srcname, $srcdir, $srcext;
+    ($srcname, $srcdir, $srcext) = fileparse($file, '\..*');
+    $filename = "$srcname.txt";
+    #
+    # We need to determine if our default filename is already
+    # being used, and find a new one it it is.  If the name is in
+    # used, this algorithm will first attempt to include the
+    # source extension as part of the name, and if that is also in
+    # use (if the same file is included multiple times, or if
+    # another source file has that as the base name), a counter is
+    # used instead.
+    #
+    my $found = 1;
+  FIND:
+    while ($found) {
+        foreach $fn (@VerbatimOutputs) {
+            if ($fn eq $filename) {
+                if ($found == 1) {
+                    $srcext =~ s/^[.]//;  # Remove '.' from extension
+                    $filename = "$srcname-$srcext.txt";
+                }
+                else {
+                    $filename = "$srcname-$found.txt";
+                }
+                ++$found;
+                next FIND;
+            }
+        }
+        $found = 0;
+    }
+    push @VerbatimOutputs, $filename;
+    $VerbatimFiles{$file} = $filename;
+    return $filename;
+}
+
 sub do_cmd_verbatiminput{
     local($_) = @_;
     my $fname = next_argument();
@@ -1988,16 +2041,15 @@ sub do_cmd_verbatiminput{
         $file = "$texpath$dd$fname";
         last if ($found = (-f $file));
     }
-    my $srcname;
+    my $filename = '';
     my $text;
     if ($found) {
         open(MYFILE, "<$file") || die "\n$!\n";
         read(MYFILE, $text, 1024*1024);
         close(MYFILE);
-        use File::Basename;
-        my $srcdir, $srcext;
-        ($srcname, $srcdir, $srcext) = fileparse($file, '\..*');
-        open(MYFILE, ">$srcname.txt");
+        $filename = get_verbatim_output_name($file);
+        # Now that we have a filename, write it out.
+        open(MYFILE, ">$filename");
         print MYFILE $text;
         close(MYFILE);
         #
@@ -2023,13 +2075,19 @@ sub do_cmd_verbatiminput{
         $text =~ s/\\/\&\#92;/g;
     }
     else {
-        $text = '<b>Could not locate requested file <i>$fname</i>!</b>\n';
+        return '<b>Could not locate requested file <i>$fname</i>!</b>\n';
+    }
+    my $note = 'Download as text.';
+    if ($file ne $filename) {
+        $note = ('Download as text (original file name: <span class="file">'
+                 . $fname
+                 . '</span>).');
     }
     return ("<div class=\"verbatim\">\n<pre>"
             . $text
             . "</pre>\n<div class=\"footer\">\n"
-            . "<a href=\"$srcname.txt\" type=\"text/plain\""
-            . ">Download as text.</a>"
+            . "<a href=\"$filename\" type=\"text/plain\""
+            . ">$note</a>"
             . "\n</div></div>"
             . $_);
 }
