@@ -56,7 +56,8 @@ class install_lib (Command):
         outfiles = self.install()
 
         # (Optionally) compile .py to .pyc
-        self.bytecompile(outfiles)
+        if outfiles is not None:
+            self.bytecompile(outfiles)
 
     # run ()
 
