@@ -14,6 +14,8 @@ import os
 import sys
 import getopt
 import tokenize
+if not hasattr(tokenize, 'NL'):
+    raise ValueError("tokenize.NL doesn't exist -- tokenize module too old")
 
 __all__ = ["check"]
 
@@ -243,15 +245,11 @@ def format_witnesses(w):
         prefix = prefix + "s"
     return prefix + " " + string.join(firsts, ', ')
 
-# Need Guido's enhancement
-assert hasattr(tokenize, 'NL'), "tokenize module too old"
-
-def process_tokens(tokens,
-                   INDENT=tokenize.INDENT,
-                   DEDENT=tokenize.DEDENT,
-                   NEWLINE=tokenize.NEWLINE,
-                   JUNK=(tokenize.COMMENT, tokenize.NL)):
-
+def process_tokens(tokens):
+    INDENT = tokenize.INDENT
+    DEDENT = tokenize.DEDENT
+    NEWLINE = tokenize.NEWLINE
+    JUNK = tokenize.COMMENT, tokenize.NL
     indents = [Whitespace("")]
     check_equal = 0
 
