@@ -25,18 +25,25 @@ February = 2
 mdays = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
 class _localized_name:
-    def __init__(self, format):
+    def __init__(self, format, len):
         self.format = format
+        self.len = len
     def __getitem__(self, item):
+        if item > self.len-1 or item < -self.len:
+            raise IndexError
+        if item < 0:
+            item += self.len
         return strftime(self.format, (item,)*9).capitalize()
+    def __len__(self):
+        return self.len
 
 # Full and abbreviated names of weekdays
-day_name = _localized_name('%A')
-day_abbr = _localized_name('%a')
+day_name = _localized_name('%A', 7)
+day_abbr = _localized_name('%a', 7)
 
 # Full and abbreviated names of months (1-based arrays!!!)
-month_name = _localized_name('%B')
-month_abbr = _localized_name('%b')
+month_name = _localized_name('%B', 12)
+month_abbr = _localized_name('%b', 12)
 
 # Constants for weekdays
 (MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY) = range(7)
