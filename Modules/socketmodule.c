@@ -153,6 +153,18 @@ static object *SocketError;
 static object *
 socket_error()
 {
+#ifdef NT
+	if (WSAGetLastError()) {
+		object *v;
+		v = mkvalue("(is)", WSAGetLastError(), "winsock error");
+		if (v != NULL) {
+			err_setval(SocketError, v);
+			DECREF(v);
+		}
+		return NULL;
+	}
+	else
+#endif
 	return err_errno(SocketError);
 }
 

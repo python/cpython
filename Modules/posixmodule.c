@@ -76,6 +76,11 @@ extern int symlink();
 #include <utime.h>
 #endif /* HAVE_UTIME_H */
 
+#ifdef HAVE_SYS_UTIME_H
+#include <sys/utime.h>
+#define HAVE_UTIME_H /* pretend we do for the rest of this file */
+#endif /* HAVE_SYS_UTIME_H */
+
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>
 #endif /* HAVE_SYS_TIMES_H */
@@ -1010,6 +1015,26 @@ posix_times(self, args)
 		       (double)t.tms_cstime / HZ);
 }
 #endif /* HAVE_TIMES */
+#ifdef NT
+#define HAVE_TIMES	/* so the method table will pick it up */
+static object *
+posix_times(self, args)
+	object *self;
+	object *args;
+{
+	FILETIME create, exit, kernel, user;
+	HANDLE hProc;
+	if (!getnoarg(args))
+		return NULL;
+	hProc = GetCurrentProcess();
+	GetProcessTimes(hProc,&create, &exit, &kernel, &user);
+	return mkvalue("dddd",
+		       (double)(kernel.dwHighDateTime*2E32+kernel.dwLowDateTime) / 2E6,
+		       (double)(user.dwHighDateTime*2E32+user.dwLowDateTime) / 2E6,
+		       (double)0,
+		       (double)0);
+}
+#endif /* NT */
 
 #ifdef HAVE_SETSID
 static object *
