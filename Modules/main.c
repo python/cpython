@@ -229,6 +229,14 @@ Py_Main(argc, argv)
 					fclose(fp);
 				}
 			}
+			if (isatty(fileno(stdin))) {
+				PyObject *v;
+				v = PyImport_ImportModule("readline");
+				if (v == NULL)
+					PyErr_Clear();
+				else
+					Py_DECREF(v);
+			}
 		}
 		sts = PyRun_AnyFile(
 			fp,
