@@ -16,7 +16,7 @@ NL = '\n'
 
 
 class Parser:
-    def __init__(self, _class=Message.Message, strict=1):
+    def __init__(self, _class=Message.Message, strict=0):
         """Parser of RFC 2822 and MIME email messages.
 
         Creates an in-memory object tree representing the email message, which
@@ -36,7 +36,7 @@ class Parser:
         more forgiving in parsing of ill-formatted MIME documents.  When
         non-strict mode is used, the parser will try to make up for missing or
         erroneous boundaries and other peculiarities seen in the wild.
-        Defaults to strict parsing.
+        Default is non-strict parsing.
         """
         self._class = _class
         self._strict = strict
