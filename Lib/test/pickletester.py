@@ -283,10 +283,10 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_short_tuples(self):
         a = ()
-        b = (12,)
-        c = (6, 6)
-        d = (4, 4, 4)
-        e = (3, 3, 3, 3)
+        b = (1,)
+        c = (1, 2)
+        d = (1, 2, 3)
+        e = (1, 2, 3, 4)
         for proto in 0, 1, 2:
             for x in a, b, c, d, e:
                 s = self.dumps(x, proto)
