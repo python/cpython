@@ -279,8 +279,8 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		selstart, selend = min(oldselstart, oldselend), max(oldselstart, oldselend)
 		if selstart <> selend and chr(self.ted.WEGetChar(selend-1)) == '\r':
 			selend = selend - 1
-		newselstart, dummy = self.ted.WEFindLine(selstart, 0)
-		dummy, newselend = self.ted.WEFindLine(selend, 0)
+		newselstart, dummy = self.ted.WEFindLine(selstart, 1)
+		dummy, newselend = self.ted.WEFindLine(selend, 1)
 		if oldselstart <> newselstart or  oldselend <> newselend:
 			self.ted.WESetSelection(newselstart, newselend)
 			self.updatescrollbars()
@@ -608,8 +608,9 @@ class TextEditor(EditText):
 
 
 import re
-commentPat = re.compile("[ \t]*\(#\)")
-indentPat = re.compile("\t*")
+commentPat = re.compile("[ \t]*(#)")
+indentPat = re.compile("[ \t]*")
+
 
 class PyEditor(TextEditor):
 	
