@@ -1117,7 +1117,7 @@ class AbstractFunctionCode:
             if type(elt) == types.TupleType:
                 self.unpackSequence(elt)
             else:
-                self.emit('STORE_FAST', elt)
+                self._nameOp('STORE', elt)
 
     unpackTuple = unpackSequence
 
@@ -1153,6 +1153,7 @@ class AbstractClassCode:
             self.setDocstring(klass.doc)
 
     def _nameOp(self, prefix, name):
+        # Class namespaces are always unoptimized
         self.emit(prefix + '_NAME', name)
 
     def finish(self):
