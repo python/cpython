@@ -68,7 +68,7 @@ static int call_trace
 	PROTO((object **, object **, frameobject *, char *, object *));
 static object *add PROTO((object *, object *));
 static object *sub PROTO((object *, object *));
-static object *pow PROTO((object *, object *));
+static object *powerop PROTO((object *, object *));
 static object *mul PROTO((object *, object *));
 static object *divide PROTO((object *, object *));
 static object *mod PROTO((object *, object *));
@@ -665,7 +665,7 @@ eval_code2(co, globals, locals,
 		case BINARY_POWER:
 			w = POP();
 			v = POP();
-			x = pow(v, w);
+			x = powerop(v, w);
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
@@ -2201,11 +2201,11 @@ mod(v, w)
 }
 
 static object *
-pow(v, w)
+powerop(v, w)
 	object *v, *w;
 {
 	object *res;
-	BINOP("__pow__", "__rpow__", pow);
+	BINOP("__pow__", "__rpow__", powerop);
 	if (v->ob_type->tp_as_number == NULL ||
 	    w->ob_type->tp_as_number == NULL) {
 		err_setstr(TypeError, "pow() requires numeric arguments");
