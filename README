@@ -13,7 +13,7 @@ changes in Misc/NEWS.  That's still not complete, but it's getting
 there...  I'm working my way through a year of change logs to extract
 meaningful descriptions of all but the most insignificant changes.
 
-Here are the most importand changes since 1.5a2:
+Here are the most important changes since 1.5a2:
 
   - The new "re" module is here (still very experimental).  This is a
   new regular expression package that uses Perl syntax and solves some
