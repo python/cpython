@@ -617,6 +617,52 @@ strop_capitalize(self, args)
 }
 
 
+static char count__doc__[] =
+"count(s, sub[, start[, end]]) -> int\n\
+\n\
+Return the number of occurrences of substring sub in string\n\
+s[start:end].  Optional arguments start and end are\n\
+interpreted as in slice notation.";
+
+static PyObject *
+strop_count(self, args)
+	PyObject *self;	/* Not used */
+	PyObject *args;
+{
+	char *s, *sub;
+	int len, n, j;
+	int i = 0, last = INT_MAX;
+	int m, r;
+
+	if (!PyArg_ParseTuple(args, "s#s#|ii", &s, &len, &sub, &n, &i, &last))
+		return NULL;
+	if (last > len)
+		last = len;
+	if (last < 0)
+		last += len;
+	if (last < 0)
+		last = 0;
+	if (i < 0)
+		i += len;
+	if (i < 0)
+		i = 0;
+	m = last + 1 - n;
+	if (n == 0)
+		return PyInt_FromLong((long) (m-i));
+
+	r = 0;
+	while (i < m) {
+		if (!memcmp(s+i, sub, n)) {
+			r++;
+			i += n;
+		} else {
+			i++;
+		}
+	}
+	return PyInt_FromLong((long) r);
+}
+
+
 static char swapcase__doc__[] =
 "swapcase(s) -> string\n\
 \n\
@@ -1122,6 +1168,7 @@ strop_methods[] = {
 	{"atoi",	strop_atoi, 1, atoi__doc__},
 	{"atol",	strop_atol, 1, atol__doc__},
 	{"capitalize",	strop_capitalize, 0, capitalize__doc__},
+	{"count",	strop_count, 1, count__doc__},
 	{"find",	strop_find, 1, find__doc__},
 	{"join",	strop_joinfields, 1, joinfields__doc__},
 	{"joinfields",	strop_joinfields, 1, joinfields__doc__},
