@@ -793,6 +793,9 @@ _PySys_Init(void)
 					       PY_MICRO_VERSION, s,
 					       PY_RELEASE_SERIAL));
 	Py_XDECREF(v);
+	PyDict_SetItemString(sysdict, "api_version",
+			     v = PyInt_FromLong(PYTHON_API_VERSION));
+	Py_XDECREF(v);
 	PyDict_SetItemString(sysdict, "copyright",
 			     v = PyString_FromString(Py_GetCopyright()));
 	Py_XDECREF(v);
