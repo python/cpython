@@ -4,7 +4,7 @@
 # Short Instructions
 # ------------------
 
-# 1. Build and install Python (1.4 or newer).
+# 1. Build and install Python (1.5 or newer).
 # 2. "make -f Makefile.pre.in boot"
 # 3. "make"
 # You should now have a shared library.
@@ -12,8 +12,9 @@
 # Long Instructions
 # -----------------
 
-# Build *and install* the basic Python 1.4 distribution.  See the
-# Python README for instructions.
+# Build *and install* the basic Python 1.5 distribution.  See the
+# Python README for instructions.  (This version of Makefile.pre.in
+# only withs with Python 1.5, alpha 3 or newer.)
 
 # Create a file Setup.in for your extension.  This file follows the
 # format of the Modules/Setup.in file; see the instructions there.
@@ -46,7 +47,7 @@
 # config.c, incorporating the values for sys.prefix, sys.exec_prefix
 # and sys.version from the installed Python binary.  For this to work,
 # the python binary must be on your path.  If this fails, try
-#   make -f Makefile.pre.in Makefile VERSION=1.4 installdir=<prefix>
+#   make -f Makefile.pre.in Makefile VERSION=1.5 installdir=<prefix>
 # where <prefix> is the prefix used to install Python for installdir
 # (and possibly similar for exec_installdir=<exec_prefix>).
 
@@ -151,10 +152,7 @@ LIBP=		$(exec_installdir)/lib/python$(VERSION)
 
 LIBPL=		$(LIBP)/config
 
-PYTHONLIBS=	$(LIBPL)/libModules.a \
-		$(LIBPL)/libPython.a \
-		$(LIBPL)/libObjects.a \
-		$(LIBPL)/libParser.a
+PYTHONLIBS=	$(LIBPL)/libpython$(VERSION).a
 
 MAKESETUP=	$(LIBPL)/makesetup
 MAKEFILE=	$(LIBPL)/Makefile
@@ -164,7 +162,7 @@ SETUP=		$(LIBPL)/Setup
 
 SYSLIBS=	$(LIBM) $(LIBC)
 
-ADDOBJS=	$(LIBPL)/main.o getpath.o config.o
+ADDOBJS=	$(LIBPL)/python.o config.o
 
 # === Fixed rules ===
 
@@ -179,23 +177,16 @@ sharedmods:	$(SHAREDMODS)
 
 # Build a static Python binary containing our extension modules
 static:		$(TARGET)
-$(TARGET):	$(ADDOBJS) lib.a $(PYTHONLIBS) Makefile $(BASELIB) buildno
-		expr `cat buildno` + 1 >@buildno
-		mv @buildno buildno
-		$(CC) -c $(CFLAGS) -DBUILD=`cat buildno` $(LIBPL)/getbuildinfo.c
-		$(CC) $(LDFLAGS) $(ADDOBJS) getbuildinfo.o lib.a $(PYTHONLIBS) \
+$(TARGET):	$(ADDOBJS) lib.a $(PYTHONLIBS) Makefile $(BASELIB)
+		$(CC) $(LDFLAGS) $(ADDOBJS) lib.a $(PYTHONLIBS) \
 		 $(LINKPATH) $(BASELIB) $(MODLIBS) $(LIBS) $(SYSLIBS) \
 		 -o $(TARGET)
-
-buildno:
-		echo 0 >buildno
 
 # Build the library containing our extension modules
 lib.a:		$(MODOBJS)
 		-rm -f lib.a
 		ar cr lib.a $(MODOBJS)
-		-$(RANLIB) lib.a || \
-		echo "don't worry if ranlib fails -- probably SYSV or equiv"
+		-$(RANLIB) lib.a 
 
 # This runs makesetup *twice* to use the BASESETUP definition from Setup
 config.c Makefile:	Makefile.pre Setup $(BASESETUP) $(MAKESETUP)
@@ -211,10 +202,6 @@ do-it-again:
 # Make config.o from the config.c created by makesetup
 config.o:	config.c
 		$(CC) $(CFLAGS) -c config.c
-
-# Make our own private getpath.o from the installed source and our PYTHONPATH
-getpath.o:	$(LIBPL)/getpath.c Makefile
-	$(CC) $(CFLAGS) -DPYTHONPATH=\"$(PYTHONPATH)\" -c $(LIBPL)/getpath.c
 
 # Setup is copied from Setup.in *only* if it doesn't yet exist
 Setup:
