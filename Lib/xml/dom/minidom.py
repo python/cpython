@@ -87,11 +87,11 @@ class Node(_Node):
         return writer.getvalue()
 
     def toprettyxml(self, indent="\t", newl="\n"):
-      # indent = the indentation string to prepend, per level
-      # newl = the newline string to append
-      writer = _get_StringIO()
-      self.writexml(writer, "", indent, newl)
-      return writer.getvalue()
+        # indent = the indentation string to prepend, per level
+        # newl = the newline string to append
+        writer = _get_StringIO()
+        self.writexml(writer, "", indent, newl)
+        return writer.getvalue()
 
     def hasChildNodes(self):
         if self.childNodes:
@@ -794,6 +794,7 @@ class Document(Node):
     def createAttribute(self, qName):
         a = Attr(qName)
         a.ownerDocument = self
+        a.value = ""
         return a
 
     def createElementNS(self, namespaceURI, qualifiedName):
@@ -806,6 +807,7 @@ class Document(Node):
         prefix, localName = _nssplit(qualifiedName)
         a = Attr(qualifiedName, namespaceURI, localName, prefix)
         a.ownerDocument = self
+        a.value = ""
         return a
 
     def getElementsByTagNameNS(self, namespaceURI, localName):
