@@ -36,6 +36,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Events.h>
 #else
 #include <Carbon/Carbon.h>
+#include <ApplicationServices/ApplicationServices.h>
 #endif
 
 static PyObject *MacOS_Error; /* Exception MacOS.Error */
@@ -521,6 +522,47 @@ MacOS_SysBeep(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
+static char WMAvailable_doc[] = 
+	"True if this process can interact with the display."
+	"Will foreground the application on the first call as a side-effect."
+	;
+
+static PyObject *
+MacOS_WMAvailable(PyObject *self, PyObject *args)
+{
+	static PyObject *rv = NULL;
+	
+	if (!PyArg_ParseTuple(args, ""))
+		return NULL;
+	if (!rv) {
+#if TARGET_API_MAC_OSX
+		ProcessSerialNumber psn;
+		
+		/*
+		** This is a fairly innocuous call to make if we don't have a window
+		** manager, or if we have no permission to talk to it. It will print
+		** a message on stderr, but at least it won't abort the process.
+		** It appears the function caches the result itself, and it's cheap, so
+		** no need for us to cache.
+		*/
+		if (CGMainDisplayID() == 0) {
+			rv = Py_False;
+		} else {
+			if (GetCurrentProcess(&psn) < 0 ||
+				SetFrontProcess(&psn) < 0) {
+				rv = Py_False;
+			} else {
+				rv = Py_True;
+			}
+		}
+#else
+		rv = Py_True;
+#endif
+	}
+	Py_INCREF(rv);
+	return rv;
+}
+
 static char GetTicks_doc[] = "Return number of ticks since bootup";
 
 static PyObject *
@@ -672,6 +714,7 @@ static PyMethodDef MacOS_Methods[] = {
 	{"DebugStr",			MacOS_DebugStr,		1,	DebugStr_doc},
 	{"GetTicks",			MacOS_GetTicks,		1,	GetTicks_doc},
 	{"SysBeep",			MacOS_SysBeep,		1,	SysBeep_doc},
+	{"WMAvailable",			MacOS_WMAvailable,		1,	WMAvailable_doc},
 #if !TARGET_API_MAC_OSX
 	{"FreeMem",			MacOS_FreeMem,		1,	FreeMem_doc},
 	{"MaxBlock",		MacOS_MaxBlock,		1,	MaxBlock_doc},
