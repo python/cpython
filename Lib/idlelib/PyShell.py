@@ -886,7 +886,7 @@ class PyShell(OutputWindow):
             self.text.insert("insert", "\n")
             self.text.see("insert")
         else:
-            self.auto_indent(event)
+            self.newline_and_indent_event(event)
         return "break"
 
     def enter_callback(self, event):
@@ -918,6 +918,11 @@ class PyShell(OutputWindow):
             # No stdin mark -- just get the current line
             self.recall(self.text.get("insert linestart", "insert lineend"))
             return "break"
+        # If we're between the beginning of the line and the iomark, i.e.
+        # in the prompt area, complain.
+        if self.text.compare("insert", "<", "iomark"):
+            self.text.bell()
+            return "break"
         # If we're in the current input and there's only whitespace
         # beyond the cursor, erase that whitespace first
         s = self.text.get("insert", "end-1c")
@@ -926,7 +931,7 @@ class PyShell(OutputWindow):
         # If we're in the current input before its last line,
         # insert a newline right at the insert point
         if self.text.compare("insert", "<", "end-1c linestart"):
-            self.auto_indent(event)
+            self.newline_and_indent_event(event)
             return "break"
         # We're in the last line; append a newline and submit it
         self.text.mark_set("insert", "end-1c")
@@ -934,7 +939,7 @@ class PyShell(OutputWindow):
             self.text.insert("insert", "\n")
             self.text.see("insert")
         else:
-            self.auto_indent(event)
+            self.newline_and_indent_event(event)
         self.text.tag_add("stdin", "iomark", "end-1c")
         self.text.update_idletasks()
         if self.reading:

@@ -1085,8 +1085,6 @@ class EditorWindow:
             text.see("insert")
             text.undo_block_stop()
 
-    auto_indent = newline_and_indent_event
-
     # Our editwin provides a is_char_in_string function that works
     # with a Tk text index, but PyParse only knows about offsets into
     # a string. This builds a function for PyParse that accepts an
