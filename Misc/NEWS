@@ -45,9 +45,17 @@ Library
   custom metaclasses the same way it treats instances of type 'type'
   [SF patch 560794].
 
+Build
+
+- A bug was fixed that could cause COUNT_ALLOCS builds to segfault, or
+  get into infinite loops, when a new-style class got garbage-collected.
+  Unfortunately, to avoid this, the way COUNT_ALLOCS works requires
+  that new-style classes be immortal in COUNT_ALLOCS builds.  Note that
+  COUNT_ALLOCS is not enabled by default, in either release or debug
+  builds, and that new-style classes are immortal only in COUNT_ALLOCS
+  builds.  SourceForge bug 578752.
 
 C API
-
 
 Windows
 
