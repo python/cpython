@@ -72,6 +72,7 @@
     \py@OldContentsline{#1}{\py@linkToName{page\my@pageno}{#2}}{#3}%
   }
   \AtEndDocument{
+    \def\_{\string_}
     \InputIfFileExists{\jobname.bkm}{\pdfcatalog{/PageMode /UseOutlines}}{}
   }
   \newcommand{\py@target}[1]{%
