@@ -27,7 +27,7 @@ import Res
 import Qd
 import List
 import sys
-from Types import *
+from types import *
 from QuickDraw import *
 import string
 import time
