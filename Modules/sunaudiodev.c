@@ -103,6 +103,7 @@ newsadobject(PyObject *args)
 	}
 	if (fd < 0) {
 		PyErr_SetFromErrnoWithFilename(SunAudioError, opendev);
+		PyMem_DEL(ctldev);
 		return NULL;
 	}
 	PyMem_DEL(ctldev);
