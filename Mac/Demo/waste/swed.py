@@ -319,6 +319,7 @@ class Wed(Application):
 		self.num = 0
 		self.active = None
 		self.updatemenubar()
+		waste.STDObjectHandlers()
 		
 	def makeusermenus(self):
 		self.filemenu = m = Menu(self.menubar, "File")
