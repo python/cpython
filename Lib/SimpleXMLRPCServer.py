@@ -266,7 +266,7 @@ class SimpleXMLRPCDispatcher:
     def system_methodSignature(self, method_name):
         """system.methodSignature('add') => [double, int, int]
 
-        Returns a list describing the signiture of the method. In the
+        Returns a list describing the signature of the method. In the
         above example, the add method takes two integers as arguments
         and returns a double result.
 
