@@ -1,0 +1,69 @@
+\section{\module{SimpleXMLRPCServer} ---
+         Basic XML-RPC server}
+
+\declaremodule{standard}{SimpleXMLRPCServer}
+\moduleauthor{Brian Quinlan}{brianq@activestate.com}
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+
+
+The \module{SimpleXMLRPCServer} module provides a basic server
+framework for XML-RPC servers written in Python.  The server object is
+based on the \code{\refmodule{SocketServer}.TCPServer} class,
+and the request handler is based on the
+\code{\refmodule{BaseHTTPServer}.BaseHTTPRequestHandler} class.
+
+
+\begin{classdesc}{SimpleXMLRPCServer}{addr\optional{,
+                                      requestHandler\optional{, logRequests}}}
+  Create a new server instance.  The \var{requestHandler} parameter
+  should be a factory for request handler instances; it defaults to
+  \class{SimpleXMLRPCRequestHandler}.  The \var{addr} and
+  \var{requestHandler} parameters are passed to the
+  \class{\refmodule{SocketServer}.TCPServer} constructor.  If
+  \var{logRequests} is true (the default), requests will be logged;
+  setting this parameter to false will turn off logging.  This class
+  provides methods for registration of functions that can be called by
+  the XML-RPC protocol.
+\end{classdesc}
+
+
+\begin{classdesc}{SimpleXMLRPCRequestHandler}{}
+  Create a new request handler instance.  This request handler
+  supports \code{POST} requests and modifies logging so that the
+  \var{logRequests} parameter to the \class{SimpleXMLRPCServer}
+  constructor parameter is honored.
+\end{classdesc}
+
+
+\subsection{SimpleXMLRPCServer Objects \label{simple-xmlrpc-servers}}
+
+The \class{SimpleXMLRPCServer} class provides two methods that an
+application can use to register functions that can be called via the
+XML-RPC protocol via the request handler.
+
+\begin{methoddesc}[SimpleXMLRPCServer]{register_function}{function\optional{,
+                                                          name}}
+  Register a function that can respond to XML-RPC requests.  The
+  function must be callable with a single parameter which will be the
+  return value of \function{\refmodule{xmlrpclib}.loads()} when called
+  with the payload of the request.  If \var{name} is given, it will be
+  the method name associated with \var{function}, otherwise
+  \code{\var{function}.__name__} will be used.  \var{name} can be
+  either a normal or Unicode string, and may contain characters not
+  legal in Python identifiers, including the period character.
+\end{methoddesc}
+
+\begin{methoddesc}[SimpleXMLRPCServer]{register_instance}{instance}
+  Register an object which is used to expose method names which have
+  not been registered using \method{register_function()}.  If
+  \var{instance} contains a \method{_dispatch()} method, it is called
+  with the requested method name and the parameters from the request;
+  the return value is returned to the client as the result.  If
+  \var{instance} does not have a \method{_dispatch()} method, it is
+  searched for an attribute matching the name of the requested method;
+  if the requested method name contains periods, each component of the
+  method name is searched for individually, with the effect that a
+  simple hierarchical search is performed.  The value found from this
+  search is then called with the parameters from the request, and the
+  return value is passed back to the client.
+\end{methoddesc}
