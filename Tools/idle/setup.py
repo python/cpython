@@ -26,7 +26,7 @@ idlelib = "idlelib"
 
 # the normal build_py would not incorporate the .txt files
 txt_files = ['config-unix.txt','config-win.txt','config.txt', 'help.txt']
-Icons = glob.glob1("Icons","*.gif")
+Icons = glob.glob1(os.path.join(package_dir,"Icons"),"*.gif")
 class idle_build_py(build_py):
     def get_plain_outfile(self, build_dir, package, file):
         # like get_module_outfile, but does not append .py
@@ -48,7 +48,7 @@ class idle_build_py(build_py):
                                              [idlelib,"Icons"], name)
             dir = os.path.dirname(outfile)
             self.mkpath(dir)
-            self.copy_file(os.path.join("Icons",name),
+            self.copy_file(os.path.join(package_dir, "Icons", name),
                            outfile, preserve_mode = 0)
 
     def get_source_files(self):
