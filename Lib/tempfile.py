@@ -250,7 +250,7 @@ def gettempdir():
     _once('tempdir', _get_default_tempdir)
     return tempdir
 
-def mkstemp(suffix="", prefix=template, dir=gettempdir(), binary=1):
+def mkstemp(suffix="", prefix=template, dir=gettempdir(), binary=True):
     """mkstemp([suffix, [prefix, [dir, [binary]]]])
     User-callable function to create and return a unique temporary
     file.  The return value is a pair (fd, name) where fd is the
