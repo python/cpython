@@ -265,6 +265,11 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(islice(xrange(10), 2, None)), range(2, 10))
         self.assertEqual(list(islice(xrange(10), 1, None, 2)), range(1, 10, 2))
 
+        # Test number of items consumed     SF #1171417
+        it = iter(range(10))
+        self.assertEqual(list(islice(it, 3)), range(3))
+        self.assertEqual(list(it), range(3, 10))
+
         # Test invalid arguments
         self.assertRaises(TypeError, islice, xrange(10))
         self.assertRaises(TypeError, islice, xrange(10), 1, 2, 3, 4)
