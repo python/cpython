@@ -1,3 +1,20 @@
+What's New in Python 2.2a2?
+===========================
+
+Tests
+
+- Several new tests in the standard test suite, with special thanks to
+  Nick Mathewson.
+
+Core
+
+Library
+
+New platforms
+
+C API
+
+
 What's New in Python 2.2a1?
 ===========================
 
