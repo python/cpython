@@ -578,11 +578,6 @@ class AbstractBasicAuthHandler:
             password_mgr = HTTPPasswordMgr()
         self.passwd = password_mgr
         self.add_password = self.passwd.add_password
-        self.__current_realm = None
-        # if __current_realm is not None, then the server must have
-        # refused our name/password and is asking for authorization
-        # again.  must be careful to set it to None on successful
-        # return.
 
     def http_error_auth_reqed(self, authreq, host, req, headers):
         # XXX could be multiple headers
@@ -595,26 +590,20 @@ class AbstractBasicAuthHandler:
                     return self.retry_http_basic_auth(host, req, realm)
 
     def retry_http_basic_auth(self, host, req, realm):
-        if self.__current_realm is None:
-            self.__current_realm = realm
-        else:
-            self.__current_realm = realm
-            return None
         user,pw = self.passwd.find_user_password(realm, host)
         if pw:
             raw = "%s:%s" % (user, pw)
-            auth = base64.encodestring(raw).strip()
-            req.add_header(self.header, 'Basic %s' % auth)
-            resp = self.parent.open(req)
-            self.__current_realm = None
-            return resp
+            auth = 'Basic %s' % base64.encodestring(raw).strip()
+            if req.headers.get(self.auth_header, None) == auth:
+                return None
+            req.add_header(self.auth_header, auth)
+            return self.parent.open(req)
         else:
-            self.__current_realm = None
             return None
 
 class HTTPBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
-    header = 'Authorization'
+    auth_header = 'Authorization'
 
     def http_error_401(self, req, fp, code, msg, headers):
         host = urlparse.urlparse(req.get_full_url())[1]
@@ -624,7 +613,7 @@ class HTTPBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
 class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
-    header = 'Proxy-Authorization'
+    auth_header = 'Proxy-Authorization'
 
     def http_error_407(self, req, fp, code, msg, headers):
         host = req.get_host()
@@ -639,10 +628,9 @@ class AbstractDigestAuthHandler:
             passwd = HTTPPasswordMgr()
         self.passwd = passwd
         self.add_password = self.passwd.add_password
-        self.__current_realm = None
 
     def http_error_auth_reqed(self, authreq, host, req, headers):
-        authreq = headers.get(self.header, None)
+        authreq = headers.get(self.auth_header, None)
         if authreq:
             kind = authreq.split()[0]
             if kind == 'Digest':
@@ -653,9 +641,11 @@ class AbstractDigestAuthHandler:
         chal = parse_keqv_list(parse_http_list(challenge))
         auth = self.get_authorization(req, chal)
         if auth:
-            req.add_header(self.header, 'Digest %s' % auth)
+            auth_val = 'Digest %s' % auth
+            if req.headers.get(self.auth_header, None) == auth_val:
+                return None
+            req.add_header(self.auth_header, auth_val)
             resp = self.parent.open(req)
-            self.__current_realm = None
             return resp
 
     def get_authorization(self, req, chal):
@@ -667,12 +657,6 @@ class AbstractDigestAuthHandler:
             # supposed to be optional
             opaque = chal.get('opaque', None)
         except KeyError:
-            return None
-
-        if self.__current_realm is None:
-            self.__current_realm = realm
-        else:
-            self.__current_realm = realm
             return None
 
         H, KD = self.get_algorithm_impls(algorithm)
