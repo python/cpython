@@ -20,7 +20,6 @@ HYPE		More hype about Python
 Makefile	Used for administrative chores like cleaning up
 Makefile.pre.in	Generic Makefile template for building extensions
 NEWS		News for this release
-NEXT-NOTES	Porting notes for NeXT
 PURIFY.README	Information for Purify users
 Porting		Mini-FAQ on porting to new platforms
 README		The file you're reading now
