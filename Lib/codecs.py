@@ -521,9 +521,6 @@ def EncodedFile(file, data_encoding, file_encoding=None, errors='strict'):
         to 'strict' which causes ValueErrors to be raised in case an
         encoding error occurs.
 
-        data_encoding and file_encoding are added to the wrapped file
-        object as attributes .data_encoding and .file_encoding resp.
-
         The returned wrapped file object provides two extra attributes
         .data_encoding and .file_encoding which reflect the given
         parameters of the same name. The attributes can be used for
