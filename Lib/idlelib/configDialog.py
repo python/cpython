@@ -334,6 +334,7 @@ class ConfigDialog(Toplevel):
         self.winWidth=StringVar(self)
         self.winHeight=StringVar(self)
         self.startupEdit=IntVar(self)
+        self.encoding=StringVar(self)
         self.userHelpBrowser=BooleanVar(self)
         self.helpBrowser=StringVar(self)
         #widget creation
@@ -342,6 +343,7 @@ class ConfigDialog(Toplevel):
         #body section frames
         frameRun=Frame(frame,borderwidth=2,relief=GROOVE)
         frameWinSize=Frame(frame,borderwidth=2,relief=GROOVE)
+        frameEncoding=Frame(frame,borderwidth=2,relief=GROOVE)
         frameHelp=Frame(frame,borderwidth=2,relief=GROOVE)
         #frameRun
         labelRunTitle=Label(frameRun,text='Startup Preferences')
@@ -359,6 +361,14 @@ class ConfigDialog(Toplevel):
         labelWinHeightTitle=Label(frameWinSize,text='Height')
         entryWinHeight=Entry(frameWinSize,textvariable=self.winHeight,
                 width=3)
+        #frameEncoding
+        labelEncodingTitle=Label(frameEncoding,text="Default Source Encoding")
+        radioEncLocale=Radiobutton(frameEncoding,variable=self.encoding,
+            value="locale",text="Locale-defined")
+        radioEncUTF8=Radiobutton(frameEncoding,variable=self.encoding,
+            value="utf-8",text="UTF-8")
+        radioEncNone=Radiobutton(frameEncoding,variable=self.encoding,
+            value="none",text="None")
         #frameHelp
         labelHelpTitle=Label(frameHelp,text='Help Options')
         frameHelpList=Frame(frameHelp)
@@ -387,6 +397,7 @@ class ConfigDialog(Toplevel):
         #body
         frameRun.pack(side=TOP,padx=5,pady=5,fill=X)
         frameWinSize.pack(side=TOP,padx=5,pady=5,fill=X)
+	frameEncoding.pack(side=TOP,padx=5,pady=5,fill=X)
         frameHelp.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
         #frameRun
         labelRunTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
@@ -399,6 +410,11 @@ class ConfigDialog(Toplevel):
         labelWinHeightTitle.pack(side=RIGHT,anchor=E,pady=5)
         entryWinWidth.pack(side=RIGHT,anchor=E,padx=10,pady=5)
         labelWinWidthTitle.pack(side=RIGHT,anchor=E,pady=5)
+        #frameEncoding
+        labelEncodingTitle.pack(side=LEFT,anchor=W,padx=5,pady=5)
+        radioEncNone.pack(side=RIGHT,anchor=E,pady=5)
+        radioEncUTF8.pack(side=RIGHT,anchor=E,pady=5)
+        radioEncLocale.pack(side=RIGHT,anchor=E,pady=5)
         #frameHelp
         labelHelpTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         frameHelpListButtons.pack(side=RIGHT,padx=5,pady=5,fill=Y)
@@ -432,6 +448,7 @@ class ConfigDialog(Toplevel):
         self.winWidth.trace_variable('w',self.VarChanged_winWidth)
         self.winHeight.trace_variable('w',self.VarChanged_winHeight)
         self.startupEdit.trace_variable('w',self.VarChanged_startupEdit)
+        self.encoding.trace_variable('w',self.VarChanged_encoding)
 
     def VarChanged_fontSize(self,*params):
         value=self.fontSize.get()
@@ -524,6 +541,10 @@ class ConfigDialog(Toplevel):
     def VarChanged_startupEdit(self,*params):
         value=self.startupEdit.get()
         self.AddChangedItem('main','General','editor-on-startup',value)
+
+    def VarChanged_encoding(self,*params):
+        value=self.encoding.get()
+        self.AddChangedItem('main','EditorWindow','encoding',value)
 
     def ResetChangedItems(self):
         #When any config item is changed in this dialog, an entry
@@ -1020,6 +1041,8 @@ class ConfigDialog(Toplevel):
         #initial window size
         self.winWidth.set(idleConf.GetOption('main','EditorWindow','width'))
         self.winHeight.set(idleConf.GetOption('main','EditorWindow','height'))
+        # default source encoding
+        self.encoding.set(idleConf.GetOption('main','EditorWindow','encoding'))
         # additional help sources
         self.userHelpList = idleConf.GetAllExtraHelpSourcesList()
         for helpItem in self.userHelpList:
