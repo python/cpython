@@ -95,6 +95,13 @@ sublistsize = 4
 # That should be all.                                                 #
 #######################################################################
 
+for dir in os.curdir, os.environ['HOME']:
+	rcfile = os.path.join(dir, '.newslistrc.py')
+	if os.path.exists(rcfile):
+		print rcfile
+		execfile(rcfile)
+		break
+
 from nntplib import NNTP
 from stat import *
 
