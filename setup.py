@@ -71,7 +71,7 @@ def find_module_file(module, dirlist):
     if len(list) > 1:
         self.announce("WARNING: multiple copies of %s found"%module)
     return os.path.join(list[0], module)
-    
+
 class PyBuildExt(build_ext):
 
     def build_extensions(self):
@@ -93,10 +93,10 @@ class PyBuildExt(build_ext):
         srcdir, tail = os.path.split(moddir)
         srcdir = os.path.normpath(srcdir)
         moddir = os.path.normpath(moddir)
-        
+
         moddirlist = [moddir]
         incdirlist = ['./Include']
-        
+
         # Platform-dependent module source and include directories
         platform = self.get_platform()
         if platform == 'darwin':
@@ -122,7 +122,7 @@ class PyBuildExt(build_ext):
                 self.extensions.remove(ext)
 
         # Parse Modules/Setup to figure out which modules are turned
-        # on in the file. 
+        # on in the file.
         input = text_file.TextFile('Modules/Setup', join_lines=1)
         remove_modules = []
         while 1:
@@ -131,11 +131,11 @@ class PyBuildExt(build_ext):
             line = line.split()
             remove_modules.append( line[0] )
         input.close()
-        
+
         for ext in self.extensions[:]:
             if ext.name in remove_modules:
                 self.extensions.remove(ext)
-        
+
         # When you run "make CC=altcc" or something similar, you really want
         # those environment variables passed into the setup.py phase.  Here's
         # a small set of useful ones.
@@ -164,10 +164,10 @@ class PyBuildExt(build_ext):
         # Workaround for Mac OS X: The Carbon-based modules cannot be
         # reliably imported into a command-line Python
         if 'Carbon' in ext.extra_link_args:
-        	self.announce(
-                    'WARNING: skipping import check for Carbon-based "%s"' %
-                    ext.name)
-        	return
+            self.announce(
+                'WARNING: skipping import check for Carbon-based "%s"' %
+                ext.name)
+            return
         try:
             __import__(ext.name)
         except ImportError:
@@ -217,16 +217,16 @@ class PyBuildExt(build_ext):
         # if a file is found in one of those directories, it can
         # be assumed that no additional -I,-L directives are needed.
         lib_dirs = self.compiler.library_dirs + ['/lib', '/usr/lib']
-        inc_dirs = self.compiler.include_dirs + ['/usr/include'] 
+        inc_dirs = self.compiler.include_dirs + ['/usr/include']
         exts = []
 
         platform = self.get_platform()
-        
+
         # Check for MacOS X, which doesn't need libm.a at all
         math_libs = ['m']
         if platform in ['darwin', 'beos']:
             math_libs = []
-        
+
         # XXX Omitted modules: gl, pure, dl, SGI-specific modules
 
         #
@@ -423,7 +423,7 @@ class PyBuildExt(build_ext):
             dblib = ['db1']
         elif self.compiler.find_library_file(lib_dirs, 'db'):
             dblib = ['db']
-        
+
         db185_incs = find_file('db_185.h', inc_dirs,
                                ['/usr/include/db3', '/usr/include/db2'])
         db_inc = find_file('db.h', inc_dirs, ['/usr/include/db1'])
@@ -484,8 +484,8 @@ class PyBuildExt(build_ext):
                                    libraries = curses_libs) )
         elif (self.compiler.find_library_file(lib_dirs, 'curses')
               and platform != 'darwin'):
-        	# OSX has an old Berkeley curses, not good enough for
-        	# the _curses module.
+                # OSX has an old Berkeley curses, not good enough for
+                # the _curses module.
             if (self.compiler.find_library_file(lib_dirs, 'terminfo')):
                 curses_libs = ['curses', 'terminfo']
             else:
@@ -577,11 +577,11 @@ class PyBuildExt(build_ext):
                                    define_macros = expat_defs,
                                    libraries = ['expat']) )
 
-	# Dynamic loading module
+        # Dynamic loading module
         dl_inc = find_file('dlfcn.h', [], inc_dirs)
         if dl_inc is not None:
-		exts.append( Extension('dl', ['dlmodule.c']) )
-		
+            exts.append( Extension('dl', ['dlmodule.c']) )
+
         # Platform-specific libraries
         if platform == 'linux2':
             # Linux-specific modules
@@ -590,7 +590,7 @@ class PyBuildExt(build_ext):
         if platform == 'sunos5':
             # SunOS specific modules
             exts.append( Extension('sunaudiodev', ['sunaudiodev.c']) )
-        
+
         if platform == 'darwin':
             # Mac OS X specific modules. These are ported over from MacPython
             # and still experimental. Some (such as gestalt or icglue) are
@@ -603,60 +603,60 @@ class PyBuildExt(build_ext):
             frameworkdir = sysconfig.get_config_var('PYTHONFRAMEWORKDIR')
             exts.append( Extension('gestalt', ['gestaltmodule.c']) )
             exts.append( Extension('MacOS', ['macosmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('icglue', ['icgluemodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('macfs',
                                    ['macfsmodule.c',
                                     '../Python/getapplbycreator.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('_CF', ['cf/_CFmodule.c']) )
             exts.append( Extension('_Res', ['res/_Resmodule.c']) )
             exts.append( Extension('_Snd', ['snd/_Sndmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
             if frameworkdir:
                 exts.append( Extension('Nav', ['Nav.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_AE', ['ae/_AEmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_App', ['app/_Appmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_CarbonEvt', ['carbonevt/_CarbonEvtmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_CG', ['cg/_CGmodule.c'],
-            		extra_link_args=['-framework', 'ApplicationServices',
+                        extra_link_args=['-framework', 'ApplicationServices',
                                          '-framework', 'Carbon']) )
                 exts.append( Extension('_Cm', ['cm/_Cmmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Ctl', ['ctl/_Ctlmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Dlg', ['dlg/_Dlgmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Drag', ['drag/_Dragmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Evt', ['evt/_Evtmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Fm', ['fm/_Fmmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Icn', ['icn/_Icnmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_List', ['list/_Listmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Menu', ['menu/_Menumodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Mlte', ['mlte/_Mltemodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Qd', ['qd/_Qdmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Qdoffs', ['qdoffs/_Qdoffsmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Qt', ['qt/_Qtmodule.c'],
                         extra_link_args=['-framework', 'QuickTime',
                                          '-framework', 'Carbon']) )
                 exts.append( Extension('_Scrap', ['scrap/_Scrapmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_TE', ['te/_TEmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
                 # As there is no standardized place (yet) to put user-installed
                 # Mac libraries on OSX you should put a symlink to your Waste
                 # installation in the same folder as your python source tree.
@@ -665,7 +665,7 @@ class PyBuildExt(build_ext):
                 waste_libs = find_library_file(self.compiler, "WASTE", [],
                         ["../waste/Static Libraries"])
                 if waste_incs != None and waste_libs != None:
-                    exts.append( Extension('waste', 
+                    exts.append( Extension('waste',
                                    ['waste/wastemodule.c',
                                     'Mac/Wastemods/WEObjectHandlers.c',
                                     'Mac/Wastemods/WETabHooks.c',
@@ -677,8 +677,8 @@ class PyBuildExt(build_ext):
                                    extra_link_args = ['-framework', 'Carbon'],
                     ) )
                 exts.append( Extension('_Win', ['win/_Winmodule.c'],
-            		extra_link_args=['-framework', 'Carbon']) )
-            
+                        extra_link_args=['-framework', 'Carbon']) )
+
         self.extensions.extend(exts)
 
         # Call the method for detecting whether _tkinter can be compiled
@@ -687,18 +687,18 @@ class PyBuildExt(build_ext):
 
     def detect_tkinter(self, inc_dirs, lib_dirs):
         # The _tkinter module.
-        
+
         # Assume we haven't found any of the libraries or include files
         # The versions with dots are used on Unix, and the versions without
         # dots on Windows, for detection by cygwin.
         tcllib = tklib = tcl_includes = tk_includes = None
         for version in ['8.4', '84', '8.3', '83', '8.2',
                         '82', '8.1', '81', '8.0', '80']:
-             tklib = self.compiler.find_library_file(lib_dirs,
-                                                     'tk' + version )
-             tcllib = self.compiler.find_library_file(lib_dirs,
-                                                      'tcl' + version )
-             if tklib and tcllib:
+            tklib = self.compiler.find_library_file(lib_dirs,
+                                                    'tk' + version )
+            tcllib = self.compiler.find_library_file(lib_dirs,
+                                                     'tcl' + version )
+            if tklib and tcllib:
                 # Exit the loop when we've found the Tcl/Tk libraries
                 break
 
@@ -787,7 +787,7 @@ class PyBuildInstall(install):
     def initialize_options (self):
         install.initialize_options(self)
         self.warn_dir=0
-    
+
 def main():
     # turn off warnings when deprecated modules are imported
     import warnings
