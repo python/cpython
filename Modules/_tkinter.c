@@ -2573,13 +2573,11 @@ static PyObject	*
 Tkapp_TkInit(PyObject *self, PyObject *args)
 {
 	Tcl_Interp *interp = Tkapp_Interp(self);
-	Tk_Window main;
+	Tk_Window main_window;
 	const char * _tk_exists = NULL;
 	PyObject *res =	NULL;
 	int err;
-	main = Tk_MainWindow(interp);
-	if (!PyArg_ParseTuple(args, ":loadtk"))
-		return NULL;
+	main_window = Tk_MainWindow(interp);
 
 	/* We want to guard against calling Tk_Init() multiple times */
 	CHECK_TCL_APPARTMENT;
@@ -2671,7 +2669,7 @@ static PyMethodDef Tkapp_methods[] =
 	{"dooneevent", 	       Tkapp_DoOneEvent, METH_VARARGS},
 	{"quit", 	       Tkapp_Quit, METH_VARARGS},
 	{"interpaddr",         Tkapp_InterpAddr, METH_VARARGS},
-	{"loadtk",	       Tkapp_TkInit, METH_VARARGS},
+	{"loadtk",	       Tkapp_TkInit, METH_NOARGS},
 	{NULL, 		       NULL}
 };
 
