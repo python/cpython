@@ -4,39 +4,34 @@
 
 #  Is the resulting package and the installed binary named "python" or
 #  "python2"?
-#WARNING: Commenting out doesn't work.  Last line is what's used.
-%define config_binsuffix none
-%define config_binsuffix 2
+# Valid values: [none/2/2.2]
+%define config_binsuffix 2.2.2b1
 
 #  Build tkinter?  "auto" enables it if /usr/bin/wish exists.
-#WARNING: Commenting out doesn't work.  Last line is what's used.
-%define config_tkinter no
-%define config_tkinter yes
+# Valid values: [no/yes/auto]
 %define config_tkinter auto
 
 #  Use pymalloc?  The last line (commented or not) determines wether
 #  pymalloc is used.
-#WARNING: Commenting out doesn't work.  Last line is what's used.
-%define config_pymalloc yes
+# Valid values: [no/yes]
 %define config_pymalloc no
 
 #  Enable IPV6?
-#WARNING: Commenting out doesn't work.  Last line is what's used.
-%define config_ipv6 yes
-%define config_ipv6 no
+# Valid values: [no/yes/auto]
+%define config_ipv6 auto
 
 #################################
 #  End of user-modifiable configs
 #################################
 
 %define name python
-%define version 2.2.1
+%define version 2.2.2b1
 %define release 1
 %define __prefix /usr
 %define libvers %(echo "%{version}" | awk -F. '{ printf "%s.%s", $1, $2 }')
 
 #  kludge to get around rpm <percent>define weirdness
-%define ipv6 %(if [ "%{config_ipv6}" = yes ]; then echo --enable-ipv6; else echo --disable-ipv6; fi)
+%define ipv6 %(if [ "%{config_ipv6}" = yes ]; then echo --enable-ipv6; else if [ "%{config_ipv6}" == auto ]; then echo; else echo --disable-ipv6; fi; fi)
 %define pymalloc %(if [ "%{config_pymalloc}" = yes ]; then echo --with-pymalloc; else echo --without-pymalloc; fi)
 %define binsuffix %(if [ "%{config_binsuffix}" = none ]; then echo ; else echo "%{config_binsuffix}"; fi)
 %define include_tkinter %(if [ \\( "%{config_tkinter}" = auto -a -f /usr/bin/wish \\) -o "%{config_tkinter}" = yes ]; then echo 1; else echo 0; fi)
@@ -127,7 +122,19 @@ formats.
 %endif
 
 %changelog
-* Tue Mar 26 2002 Sean Reifschneider <jafo-rpms@tummy.com>
+* Sun Oct 06 2002 Sean Reifschneider <jafo-rpms@tummy.com>
+[Release 2.2.2b1-1]
+- Updated for the 2.2.2b1 release.
+- Changing ipv6 settings to include "auto" which will let configure
+      figure it out.  (suggested by Martin v. Loewis)
+- Changing the settable flags at the top of this file.
+      (suggested by Martin v. Loewis)
+
+[Release 2.2.1-2]
+- Enabled IPV6 by default.  (Suggested by Pekka Pessi)
+- Set up to install python2 and python2.2 when using the suffix.
+- Added Makefile.pre.in to -devel.
+
 [Release 2.2.1c2-1]
 - Updated to 2.2.1c2.
 - Changed build pre-req for db to use file instead of package.
@@ -218,6 +225,9 @@ echo 'install_dir='"${RPM_BUILD_ROOT}/usr/bin" >>setup.cfg
 mkdir -p $RPM_BUILD_ROOT%{__prefix}/lib/python%{libvers}/lib-dynload
 make prefix=$RPM_BUILD_ROOT%{__prefix} install
 
+#  copy over Makefile.pre.in
+cp Makefile.pre.in Makefile.pre $RPM_BUILD_ROOT%{__prefix}/lib/python%{libvers}/config/
+
 #  REPLACE PATH IN PYDOC
 if [ ! -z "%{binsuffix}" ]
 then
@@ -234,7 +244,8 @@ fi
 #  add the binsuffix
 if [ ! -z "%{binsuffix}" ]
 then
-   ( cd $RPM_BUILD_ROOT%{__prefix}/bin; rm -f python[0-9a-zA-Z]*;
+   ( cd $RPM_BUILD_ROOT%{__prefix}/bin;
+         rm -f python"%{binsuffix}";
          mv -f python python"%{binsuffix}" )
    ( cd $RPM_BUILD_ROOT%{__prefix}/man/man1; mv python.1 python%{binsuffix}.1 )
    ( cd $RPM_BUILD_ROOT%{__prefix}/bin; mv -f pydoc pydoc"%{binsuffix}" )
