@@ -300,9 +300,11 @@ PyObject_Compare(v, w)
 	if ((tp = v->ob_type) != w->ob_type) {
 		if (tp->tp_as_number != NULL &&
 				w->ob_type->tp_as_number != NULL) {
-			if (PyNumber_Coerce(&v, &w) != 0)
+			int err;
+			err = PyNumber_CoerceEx(&v, &w);
+			if (err < 0)
 				return -1;
-			else {
+			else if (err == 0) {
 				int cmp = (*v->ob_type->tp_compare)(v, w);
 				Py_DECREF(v);
 				Py_DECREF(w);
@@ -472,7 +474,7 @@ PyObject_IsTrue(v)
 */
 
 int
-PyNumber_Coerce(pv, pw)
+PyNumber_CoerceEx(pv, pw)
 	PyObject **pv, **pw;
 {
 	register PyObject *v = *pv;
@@ -494,6 +496,16 @@ PyNumber_Coerce(pv, pw)
 		if (res <= 0)
 			return res;
 	}
+	return 1;
+}
+
+int
+PyNumber_Coerce(pv, pw)
+	PyObject **pv, **pw;
+{
+	int err = PyNumber_CoerceEx(pv, pw);
+	if (err <= 0)
+		return err;
 	PyErr_SetString(PyExc_TypeError, "number coercion failed");
 	return -1;
 }
