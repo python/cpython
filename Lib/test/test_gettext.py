@@ -152,8 +152,8 @@ finally:
 
 '''
 # Dummy translation for Python's test_gettext.py module.
-# Copyright (C) 2000 BeOpen.com
-# Barry Warsaw <bwarsaw@beopen.com>, 2000.
+# Copyright (C) 2001 Python Software Foundation
+# Barry Warsaw <barry@python.org>, 2000.
 #
 msgid ""
 msgstr ""
