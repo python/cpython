@@ -3,7 +3,7 @@
 \bimodindex{posix}
 
 This module provides access to operating system functionality that is
-standardized by the C Standard and the POSIX standard (a thinly disguised
+standardized by the C Standard and the \POSIX{} standard (a thinly disguised
 \UNIX{} interface).
 
 \strong{Do not import this module directly.}  Instead, import the
@@ -19,7 +19,7 @@ when an entry is \code{os.environ} is changed.
 \refstmodindex{os}
 
 The descriptions below are very terse; refer to the corresponding
-\UNIX{} manual (or POSIX documentation) entry for more information.
+\UNIX{} manual (or \POSIX{} documentation) entry for more information.
 Arguments called \var{path} refer to a pathname given as a string.
 
 Errors are reported as exceptions; the usual exceptions are given
@@ -52,8 +52,8 @@ a mapping object that behaves almost like a dictionary but invokes
 
 \renewcommand{\indexsubitem}{(exception in module posix)}
 \begin{excdesc}{error}
-This exception is raised when a POSIX function returns a
-POSIX-related error (e.g., not for illegal argument types).  Its
+This exception is raised when a \POSIX{} function returns a
+\POSIX{}-related error (e.g., not for illegal argument types).  Its
 string value is \code{'posix.error'}.  The accompanying value is a
 pair containing the numeric error code from \code{errno} and the
 corresponding string, as would be printed by the C function
@@ -214,7 +214,7 @@ without symbolic links, this is identical to \code{posix.stat()}.)
 \end{funcdesc}
 
 \begin{funcdesc}{mkfifo}{path\optional{\, mode}}
-Create a FIFO (a POSIX named pipe) named \var{path} with numeric mode
+Create a FIFO (a \POSIX{} named pipe) named \var{path} with numeric mode
 \var{mode}.  The default \var{mode} is 0666 (octal).  The current
 umask value is first masked out from the mode.
 (Not on MS-DOS.)
