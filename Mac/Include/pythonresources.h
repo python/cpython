@@ -59,6 +59,10 @@
 /* About box */
 #define ABOUT_ID		136
 
+/* EditPythonPrefs range. Needed here to forestall conflicts with applets */
+#define EDITPYTHONPREFS_MIN	500
+#define EDITPYTHONPREFS_MAX 511
+
 /*
 ** The following are valid both in the binary (or shared library)
 ** and in the Preferences file.
