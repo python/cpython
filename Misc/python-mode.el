@@ -1016,7 +1016,7 @@ Electric behavior is inhibited inside a string or comment."
 	    (set-buffer curbuf)
 	    (if file-finished
 		(progn
-		  (py-delete-file-silently (car py-file-queue))
+		  (py-safe (delete-file (car py-file-queue)))
 		  (setq py-file-queue (cdr py-file-queue))
 		  (if py-file-queue
 		      (py-execute-file pyproc (car py-file-queue)))))
