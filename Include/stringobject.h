@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+#include <stdarg.h>
+
 /*
 Type PyStringObject represents a character string.  An extra zero byte is
 reserved at the end to ensure it is zero-terminated, but a size is
@@ -53,6 +55,8 @@ extern DL_IMPORT(PyTypeObject) PyString_Type;
 
 extern DL_IMPORT(PyObject *) PyString_FromStringAndSize(const char *, int);
 extern DL_IMPORT(PyObject *) PyString_FromString(const char *);
+extern DL_IMPORT(PyObject *) PyString_FromFormatV(const char*, va_list);
+extern DL_IMPORT(PyObject *) PyString_FromFormat(const char*, ...);
 extern DL_IMPORT(int) PyString_Size(PyObject *);
 extern DL_IMPORT(char *) PyString_AsString(PyObject *);
 extern DL_IMPORT(void) PyString_Concat(PyObject **, PyObject *);
