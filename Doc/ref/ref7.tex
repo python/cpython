@@ -304,8 +304,7 @@ executed only when the function is called.
 
 When one or more top-level parameters have the form \var{parameter}
 \code{=} \var{expression}, the function is said to have ``default
-parameter values.''  \strong{Default parameter values are evaluated
-when the function definition is executed.}  For a parameter with a
+parameter values.''  For a parameter with a
 default value, the corresponding argument may be omitted from a call,
 in which case the parameter's default value is substituted.  If a
 parameter has a default value, all following parameters must also have
@@ -314,6 +313,25 @@ expressed by the grammar.%
 \footnote{Currently this is not checked; instead,
 \code{def f(a=1, b)} is interpreted as \code{def f(a=1, b=None)}.}
 \indexiii{default}{parameter}{value}
+
+\strong{Default parameter values are evaluated when the function
+definition is executed.}  This means that the expression is evaluated
+once, when the function is defined, and that that same
+``pre-computed'' value is used for each call.  This is especially
+important to understand when a default parameter is a mutable object,
+such as a list or a dictionary: if the function modifies the object
+(e.g. by appending an item to a list), the default value is in effect
+modified.  This is generally not what was intended.  A way around this 
+is to use \code{None} as the default, and explicitly test for it in
+the body of the function, e.g.:
+
+\begin{verbatim}
+def whats_on_the_telly(penguin=None):
+    if penguin is None:
+        penguin = []
+    penguin.append("property of the zoo")
+    return penguin
+\end{verbatim}
 
 Function call semantics are described in more detail in section
 \ref{calls}. 
