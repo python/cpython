@@ -47,7 +47,7 @@ class FormatParagraph:
             lines = map(lambda st, l=len(comment_header): st[l:], lines)
             data = "\n".join(lines)
             # Reformat to maxformatwidth chars or a 20 char width, whichever is greater.
-            format_width = max(maxformatwidth, len(comment_header), 20)
+            format_width = max(maxformatwidth - len(comment_header), 20)
             newdata = reformat_paragraph(data, format_width)
             # re-split and re-insert the comment header.
             newdata = newdata.split("\n")
