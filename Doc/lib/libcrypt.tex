@@ -2,7 +2,7 @@
 \label{module-crypt}
 \bimodindex{crypt}
 
-This module implements an interface to the crypt(\strong{3}) routine,
+This module implements an interface to the \manpage{crypt}{3} routine,
 which is a one-way hash function based upon a modified DES algorithm;
 see the \UNIX{} man page for further details.  Possible uses include
 allowing Python scripts to accept typed passwords from the user, or
@@ -13,10 +13,10 @@ attempting to crack \UNIX{} passwords with a dictionary.
 \begin{funcdesc}{crypt}{word\, salt} 
 \var{word} will usually be a user's password.  \var{salt} is a
 2-character string which will be used to select one of 4096 variations
-of DES.  The characters in \var{salt} must be either \code{.},
-\code{/}, or an alphanumeric character.  Returns the hashed password
-as a string, which will be composed of characters from the same
-alphabet as the salt.
+of DES\indexii{cipher}{DES}.  The characters in \var{salt} must be
+either \code{.}, \code{/}, or an alphanumeric character.  Returns the
+hashed password as a string, which will be composed of characters from
+the same alphabet as the salt.
 \end{funcdesc}
 
 The module and documentation were written by Steve Majewski.
