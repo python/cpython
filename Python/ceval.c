@@ -365,7 +365,7 @@ eval_code2(co, globals, locals,
 	register PyFrameObject *f; /* Current frame */
 	register PyObject **fastlocals;
 	PyObject *retval = NULL;	/* Return value */
-	PyThreadState *tstate = PyThreadState_Get();
+	PyThreadState *tstate = PyThreadState_GET();
 	unsigned char *first_instr;
 #ifdef LLTRACE
 	int lltrace;

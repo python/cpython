@@ -55,7 +55,7 @@ PyErr_Restore(type, value, traceback)
 	PyObject *value;
 	PyObject *traceback;
 {
-	PyThreadState *tstate = PyThreadState_Get();
+	PyThreadState *tstate = PyThreadState_GET();
 	PyObject *oldtype, *oldvalue, *oldtraceback;
 
 	if (traceback != NULL && !PyTraceBack_Check(traceback)) {
