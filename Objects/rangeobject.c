@@ -65,21 +65,19 @@ range_repr(rangeobject *r)
 	char buf2[80];
 
 	if (r->start == 0 && r->step == 1) {
-		snprintf(buf1, sizeof(buf1), "xrange(%ld)",
-			 r->start + r->len * r->step);
+		sprintf(buf1, "xrange(%ld)", r->start + r->len * r->step);
 	}
 	else {
 		char *fmt = "xrange(%ld, %ld, %ld)";
 		if (r->step == 1)
 			fmt = "xrange(%ld, %ld)";
-		snprintf(buf1, sizeof(buf1), fmt,
-			 r->start,
-			 r->start + r->len * r->step,
-			 r->step);
+		sprintf(buf1, fmt,
+			r->start,
+			r->start + r->len * r->step,
+			r->step);
 	}
 	if (r->reps != 1) {
-		snprintf(buf2, sizeof(buf2),
-			 "(%s * %d)", buf1, r->reps);
+		sprintf(buf2, "(%s * %d)", buf1, r->reps);
 	}
 	return PyString_FromString(r->reps == 1 ? buf1 : buf2);
 }
