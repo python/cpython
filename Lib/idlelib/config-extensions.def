@@ -31,7 +31,7 @@ zoom-height=<Alt-Key-2>
 [ScriptBinding]
 enable=1
 [ScriptBinding_cfgBindings]
-run-script=<Key-F5>
+run-module=<Key-F5>
 check-module=<Alt-Key-x>
 
 [CallTips]

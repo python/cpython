@@ -5,84 +5,91 @@ separate window containing the menu is created.
 
 File Menu:
 
-	New Window -- create a new editing window
-	Open... -- open an existing file
-	Recent Files... -- open a list of recent files
-	Open Module... -- open an existing module (searches sys.path)
-	Class Browser -- show classes and methods in current file
-	Path Browser -- show sys.path directories, modules, classes
-			and methods
+	New Window       -- Create a new editing window
+	Open...          -- Open an existing file
+	Recent Files...  -- Open a list of recent files
+	Open Module...   -- Open an existing module (searches sys.path)
+	Class Browser    -- Show classes and methods in current file
+	Path Browser     -- Show sys.path directories, modules, classes
+                            and methods
 	---
-	Save -- save current window to the associated file (unsaved
-		windows have a * before and after the window title)
+	Save             -- Save current window to the associated file (unsaved
+		            windows have a * before and after the window title)
 
-	Save As... -- save current window to new file, which becomes
-		      the associated file
-	Save Copy As... -- save current window to different file
-		           without changing the associated file
+	Save As...       -- Save current window to new file, which becomes
+		            the associated file
+	Save Copy As...  -- Save current window to different file
+		            without changing the associated file
 	---
-	Print Window -- print the current window
+	Print Window     -- Print the current window
 	---
-	Close -- close current window (asks to save if unsaved)
-	Exit -- close all windows and quit IDLE (asks to save if unsaved)
+	Close            -- Close current window (asks to save if unsaved)
+	Exit             -- Close all windows, quit (asks to save if unsaved)
 
 Edit Menu:
 
-	Undo -- Undo last change to current window (max 1000 changes)
-	Redo -- Redo last undone change to current window
+	Undo             -- Undo last change to current window
+                            (A maximum of 1000 changes may be undone)
+	Redo             -- Redo last undone change to current window
 	---
-	Cut -- Copy selection into system-wide clipboard; then delete selection
-	Copy -- Copy selection into system-wide clipboard
-	Paste -- Insert system-wide clipboard into window
-	Select All -- Select the entire contents of the edit buffer
+	Cut              -- Copy a selection into system-wide clipboard,
+                            then delete the selection
+	Copy             -- Copy selection into system-wide clipboard
+	Paste            -- Insert system-wide clipboard into window
+	Select All       -- Select the entire contents of the edit buffer
 	---
-	Find... -- Open a search dialog box with many options
-	Find Again -- Repeat last search
-	Find Selection -- Search for the string in the selection
+	Find...          -- Open a search dialog box with many options
+	Find Again       -- Repeat last search
+	Find Selection   -- Search for the string in the selection
 	Find in Files... -- Open a search dialog box for searching files
-	Replace... -- Open a search-and-replace dialog box
-	Go to Line -- Ask for a line number and show that line
-	Expand Word -- Expand the word you have typed to match another
-		       word in the same buffer; repeat to get a different
-		       expansion
+	Replace...       -- Open a search-and-replace dialog box
+	Go to Line       -- Ask for a line number and show that line
+	Expand Word      -- Expand the word you have typed to match another
+		            word in the same buffer; repeat to get a
+                            different expansion
 
 Format Menu (only in Edit window):
 
-	Indent Region -- Shift selected lines right 4 spaces
-	Dedent Region -- Shift selected lines left 4 spaces
-	Comment Out Region -- Insert ## in front of selected lines
-	Uncomment Region -- Remove leading # or ## from selected lines
-	Tabify Region -- Turns *leading* stretches of spaces into tabs
-	Untabify Region -- Turn *all* tabs into the right number of spaces
+	Indent Region       -- Shift selected lines right 4 spaces
+	Dedent Region       -- Shift selected lines left 4 spaces
+	Comment Out Region  -- Insert ## in front of selected lines
+	Uncomment Region    -- Remove leading # or ## from selected lines
+	Tabify Region       -- Turns *leading* stretches of spaces into tabs
+	Untabify Region     -- Turn *all* tabs into the right number of spaces
 	New Indent Width... -- Open dialog to change indent width
-	Format Paragraph -- Reformat the current blank-line-separated paragraph
+	Format Paragraph    -- Reformat the current blank-line-separated
+                               paragraph
 
 Run Menu (only in Edit window):
 
 	Python Shell -- Open or wake up the Python shell window
 	---
 	Check Module -- Run a syntax check on the module
-	Run Script -- Execute the current file in the __main__ namespace
+	Run Module   -- Execute the current file in the __main__ namespace
 
 Shell Menu (only in Shell window):
 
 	View Last Restart -- Scroll the shell window to the last restart
-	Restart Shell -- Restart the interpreter with a fresh environment
-        ---
-	Go to File/Line -- look around the insert point for a filename
-		           and linenumber, open the file, and show the line
+	Restart Shell     -- Restart the interpreter with a fresh environment
+
+Debug Menu (only in Shell window):
+
+	Go to File/Line   -- look around the insert point for a filename
+		             and linenumber, open the file, and show the line
 	Debugger (toggle) -- Run commands in the shell under the debugger
-	Stack Viewer -- show the stack traceback of the last exception
+	Stack Viewer      -- Show the stack traceback of the last exception
 	Auto-open Stack Viewer (toggle) -- Open stack viewer on traceback
 
 Options Menu:
 
 	Configure IDLE -- Open a configuration dialog.  Fonts, indentation,
-	                  keybindings, and color themes may be altered.
+                          keybindings, and color themes may be altered.
                           Startup Preferences may be set, and Additional Help
-			  Souces can be specified.
+                          Souces can be specified.
 	---
-	Revert to Default Settings -- Restore original settings
+	Revert to Default Settings -- Restore original settings.  Not
+	                              currently implemented - simply delete
+                                      your .idlerc file.
 
 Windows Menu:
 
@@ -102,7 +109,7 @@ Help Menu:
 	Python Docs -- Access local Python documentation, if
 		       installed.  Otherwise, access www.python.org.
 	---
-	(Additional Help Sources)
+	(Additional Help Sources may be added here)
 
 
 ** TIPS **
@@ -120,7 +127,7 @@ Additional Help Sources:
 
 	All users can access the extensive sources of help, including
 	tutorials, available at www.python.org/doc.  Selected URLs can be added
-	or removed from the Help menu at any time.
+	or removed from the Help menu at any time using Configure IDLE.
 
 Basic editing and navigation:
 
@@ -138,7 +145,10 @@ Automatic indentation:
 	certain keywords (break, return etc.) the next line is
 	dedented.  In leading indentation, Backspace deletes up to 4
 	spaces if they are there.  Tab inserts spaces (in the
-	Python Shell window one tab), number depends on Indent Width
+	Python Shell window one tab), number depends on Indent Width.
+	(N.B. Currently tabs are restricted to four spaces due to Tcl/Tk
+	issues.)
+
         See also the indent/dedent region commands in the edit menu.
 
 Python Shell window:
@@ -153,7 +163,7 @@ Python Shell window:
 	Return while on any previous command retrieves that command
 	Alt-/ (Expand word) is also useful here
 
-Syntax colors:
+    Syntax colors:
 
 	The coloring is applied in a background "thread", so you may
 	occasionally see uncolorized text.  To change the color
