@@ -26,7 +26,7 @@ releases have also been GPL-compatible; the table below summarizes
 the various releases.
 
     Release         Derived     Year        Owner       GPL-
-		    from                                compatible? (1)
+                    from                                compatible? (1)
 
     0.9.0 thru 1.2              1991-1995   CWI         yes
     1.3 thru 1.5.2  1.2         1995-1999   CNRI        yes
