@@ -101,8 +101,7 @@ Set([1, 2, 5, 6])
 \end{verbatim}
 
 There are also \method{issubset()} and \method{issuperset()} methods
-for checking whether one set is a strict subset or superset of
-another:
+for checking whether one set is a subset or superset of another:
 
 \begin{verbatim}
 >>> S1 = sets.Set([1,2,3])
@@ -543,7 +542,7 @@ A Boolean type was added to Python 2.3.  Two new constants were added
 to the \module{__builtin__} module, \constant{True} and
 \constant{False}.  (\constant{True} and
 \constant{False} constants were added to the built-ins
-in Python 2.2.2, but the 2.2.2 versions simply have integer values of
+in Python 2.2.1, but the 2.2.1 versions simply have integer values of
 1 and 0 and aren't a different type.)
 
 The type object for this new type is named
@@ -1484,7 +1483,7 @@ in, Guido van~Rossum rewrote parts of it.  (This is a good example of
 a collaborative development process in action.)
 
 \item On Windows, the \module{socket} module now ships with Secure 
-Sockets Library (SSL) support.
+Sockets Layer (SSL) support.
 
 \item The value of the C \constant{PYTHON_API_VERSION} macro is now exposed
 at the Python level as \code{sys.api_version}.
@@ -1659,6 +1658,8 @@ Any breakage caused by this change should be reported as a bug.
 
 %======================================================================
 \subsection{Date/Time Type}
+
+% XXX This is out-of-date already: timetz and so on have gone away.
 
 Date and time types suitable for expressing timestamps were added as
 the \module{datetime} module.  The types don't support different
