@@ -12,7 +12,7 @@ Some general rules for working with signals and their handlers:
 
 \item
 A handler for a particular signal, once set, remains installed until
-it is explicitly reset (i.e. Python emulates the BSD style interface
+it is explicitly reset (Python emulates the BSD style interface
 regardless of the underlying implementation), with the exception of
 the handler for \constant{SIGCHLD}, which follows the underlying
 implementation.
@@ -25,8 +25,8 @@ sections (since this is not supported by all \UNIX{} flavors).
 Although Python signal handlers are called asynchronously as far as
 the Python user is concerned, they can only occur between the
 ``atomic'' instructions of the Python interpreter.  This means that
-signals arriving during long calculations implemented purely in \C{}
-(e.g.\ regular expression matches on large bodies of text) may be
+signals arriving during long calculations implemented purely in C
+(such as regular expression matches on large bodies of text) may be
 delayed for an arbitrary amount of time.
 
 \item
@@ -97,7 +97,7 @@ The \module{signal} module defines the following functions:
 \begin{funcdesc}{alarm}{time}
   If \var{time} is non-zero, this function requests that a
   \constant{SIGALRM} signal be sent to the process in \var{time} seconds.
-  Any previously scheduled alarm is canceled (i.e.\ only one alarm can
+  Any previously scheduled alarm is canceled (only one alarm can
   be scheduled at any time).  The returned value is then the number of
   seconds before any previously set alarm was to have been delivered.
   If \var{time} is zero, no alarm id scheduled, and any scheduled

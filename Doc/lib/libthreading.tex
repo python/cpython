@@ -150,10 +150,11 @@ state, no thread owns it.
 
 To lock the lock, a thread calls its \method{acquire()} method; this
 returns once the thread owns the lock.  To unlock the lock, a
-thread calls its \method{release()} method.  \method{acquire()}/\method{release()} call pairs
-may be nested; only the final \method{release()} (i.e. the \method{release()} of the
-outermost pair) resets the lock to unlocked and allows another
-thread blocked in \method{acquire()} to proceed.
+thread calls its \method{release()} method.
+\method{acquire()}/\method{release()} call pairs may be nested; only
+the final \method{release()} (the \method{release()} of the outermost
+pair) resets the lock to unlocked and allows another thread blocked in
+\method{acquire()} to proceed.
 
 \begin{methoddesc}{acquire}{\optional{blocking\code{ = 1}}}
 Acquire a lock, blocking or non-blocking.
@@ -453,7 +454,7 @@ daemon thread.
 There is the possibility that ``dummy thread objects'' are
 created.  These are thread objects corresponding to ``alien
 threads''.  These are threads of control started outside the
-threading module, e.g. directly from C code.  Dummy thread objects
+threading module, such as directly from C code.  Dummy thread objects
 have limited functionality; they are always considered alive,
 active, and daemonic, and cannot be \method{join()}ed.  They are never 
 deleted, since it is impossible to detect the termination of alien

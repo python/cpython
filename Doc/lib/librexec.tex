@@ -32,7 +32,8 @@ the file system itself.  Rather, it calls methods of an \class{RHooks}
 instance that was passed to or created by its constructor.  (Actually,
 the \class{RExec} object doesn't make these calls --- they are made by
 a module loader object that's part of the \class{RExec} object.  This
-allows another level of flexibility, e.g. using packages.)
+allows another level of flexibility, which can be useful when changing
+the mechanics of \keyword{import} within the restricted environment.)
 
 By providing an alternate \class{RHooks} object, we can control the
 file system accesses made to import a module, without changing the
@@ -135,7 +136,7 @@ Reload the module object \var{module}, re-parsing and re-initializing it.
 \end{methoddesc}
 
 \begin{methoddesc}{r_unload}{module}
-Unload the module object \var{module} (i.e., remove it from the
+Unload the module object \var{module} (remove it from the
 restricted environment's \code{sys.modules} dictionary).
 \end{methoddesc}
 

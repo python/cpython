@@ -13,7 +13,7 @@ This module searches for an OS dependent built-in module like
 \module{mac} or \refmodule{posix} and exports the same functions and data
 as found there.  The design of all Python's built-in OS dependent
 modules is such that as long as the same functionality is available,
-it uses the same interface; e.g., the function
+it uses the same interface; for example, the function
 \code{os.stat(\var{path})} returns stat information about \var{path} in
 the same format (which happens to have originated with the
 \POSIX{} interface).
@@ -42,9 +42,9 @@ directly from the \module{os} module.
 
 
 \begin{excdesc}{error}
-This exception is raised when a function returns a
-system-related error (e.g., not for illegal argument types).  This is
-also known as the built-in exception \exception{OSError}.  The
+This exception is raised when a function returns a system-related
+error (not for illegal argument types or other incidental errors).
+This is also known as the built-in exception \exception{OSError}.  The
 accompanying value is a pair containing the numeric error code from
 \cdata{errno} and the corresponding string, as would be printed by the
 C function \cfunction{perror()}.  See the module
@@ -55,7 +55,7 @@ When exceptions are classes, this exception carries two attributes,
 \member{errno} and \member{strerror}.  The first holds the value of
 the C \cdata{errno} variable, and the latter holds the corresponding
 error message from \cfunction{strerror()}.  For exceptions that
-involve a file system path (e.g. \function{chdir()} or
+involve a file system path (such as \function{chdir()} or
 \function{unlink()}), the exception instance will contain a third
 attribute, \member{filename}, which is the file name passed to the
 function.
@@ -72,10 +72,11 @@ have currently been registered: \code{'posix'}, \code{'nt'},
 
 \begin{datadesc}{path}
 The corresponding OS dependent standard module for pathname
-operations, e.g., \module{posixpath} or \module{macpath}.  Thus, given
-the proper imports, \code{os.path.split(\var{file})} is equivalent to but
-more portable than \code{posixpath.split(\var{file})}.  Note that this 
-is also a valid module: it may be imported directly as
+operations, such as \module{posixpath} or \module{macpath}.  Thus,
+given the proper imports, \code{os.path.split(\var{file})} is
+equivalent to but more portable than
+\code{posixpath.split(\var{file})}.  Note that this is also an
+importable module: it may be imported directly as
 \refmodule{os.path}.
 \end{datadesc}
 
@@ -858,15 +859,15 @@ Availability: \UNIX{}, Windows.
 
 \begin{funcdesc}{execv}{path, args}
 Execute the executable \var{path} with argument list \var{args},
-replacing the current process (i.e., the Python interpreter).
+replacing the current process (the Python interpreter).
 The argument list may be a tuple or list of strings.
 Availability: \UNIX{}, Windows.
 \end{funcdesc}
 
 \begin{funcdesc}{execve}{path, args, env}
 Execute the executable \var{path} with argument list \var{args},
-and environment \var{env},
-replacing the current process (i.e., the Python interpreter).
+and environment \var{env}, replacing the current process (the Python
+interpreter).
 The argument list may be a tuple or list of strings.
 The environment must be a dictionary mapping strings to strings.
 Availability: \UNIX{}, Windows.
@@ -1150,20 +1151,20 @@ Higher-level operations on pathnames are defined in the
 
 
 \begin{datadesc}{curdir}
-The constant string used by the OS to refer to the current directory,
-e.g.\ \code{'.'} for \POSIX{} or \code{':'} for the Macintosh.
+The constant string used by the OS to refer to the current directory.
+For example: \code{'.'} for \POSIX{} or \code{':'} for the Macintosh.
 \end{datadesc}
 
 \begin{datadesc}{pardir}
-The constant string used by the OS to refer to the parent directory,
-e.g.\ \code{'..'} for \POSIX{} or \code{'::'} for the Macintosh.
+The constant string used by the OS to refer to the parent directory.
+For example: \code{'..'} for \POSIX{} or \code{'::'} for the Macintosh.
 \end{datadesc}
 
 \begin{datadesc}{sep}
 The character used by the OS to separate pathname components,
-e.g.\ \character{/} for \POSIX{} or \character{:} for the Macintosh.
-Note that knowing this is not sufficient to be able to parse or
-concatenate pathnames --- use \function{os.path.split()} and
+for example, \character{/} for \POSIX{} or \character{:} for the
+Macintosh.  Note that knowing this is not sufficient to be able to
+parse or concatenate pathnames --- use \function{os.path.split()} and
 \function{os.path.join()} --- but it is occasionally useful.
 \end{datadesc}
 
@@ -1175,7 +1176,7 @@ or \code{None} if only one separator character exists.  This is set to
 
 \begin{datadesc}{pathsep}
 The character conventionally used by the OS to separate search patch
-components (as in \envvar{PATH}), e.g.\ \character{:} for \POSIX{} or
+components (as in \envvar{PATH}), such as \character{:} for \POSIX{} or
 \character{;} for DOS and Windows.
 \end{datadesc}
 
@@ -1186,7 +1187,7 @@ doesn't have a \code{'PATH'} key.
 
 \begin{datadesc}{linesep}
 The string used to separate (or, rather, terminate) lines on the
-current platform.  This may be a single character,
-e.g.\ \code{'\e n'} for \POSIX{} or \code{'\e r'} for MacOS, or multiple
-characters, e.g.\ \code{'\e r\e n'} for MS-DOS and MS Windows.
+current platform.  This may be a single character, such as \code{'\e
+n'} for \POSIX{} or \code{'\e r'} for MacOS, or multiple characters,
+for example, \code{'\e r\e n'} for MS-DOS and MS Windows.
 \end{datadesc}
