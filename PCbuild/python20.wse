@@ -1929,6 +1929,12 @@ item: Install File
   Description=email test data
   Flags=0000000000000010
 end
+item: Install File
+  Source=..\lib\email\test\data\*.au
+  Destination=%MAINDIR%\Lib\email\test\data
+  Description=email test data
+  Flags=0000000000000010
+end
 item: Remark
 end
 item: Install File
