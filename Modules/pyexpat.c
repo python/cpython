@@ -73,7 +73,7 @@ typedef struct {
                                    if false, UTF-8 strings are returned */
     int ordered_attributes;     /* Return attributes as a list. */
     int specified_attributes;   /* Report only specified attributes. */
-    PyObject *(*conv_attrs)(XML_Char **);
+    int in_callback;            /* Is a callback active? */
     PyObject **handlers;
 } xmlparseobject;
 
@@ -91,24 +91,42 @@ struct HandlerInfo {
 
 staticforward struct HandlerInfo handler_info[64];
 
+/* Set an integer attribute on the error object; return true on success,
+ * false on an exception.
+ */
+static int
+set_error_attr(PyObject *err, char *name, int value)
+{
+    PyObject *v = PyInt_FromLong(value);
 
+    if (v != NULL && PyObject_SetAttrString(err, name, v) == -1) {
+        Py_DECREF(v);
+        return 0;
+    }
+    return 1;
+}
+
+/* Build and set an Expat exception, including positioning
+ * information.  Always returns NULL.
+ */
 static PyObject *
 set_error(xmlparseobject *self)
 {
     PyObject *err;
     char buffer[256];
     XML_Parser parser = self->itself;
+    int lineno = XML_GetErrorLineNumber(parser);
+    int column = XML_GetErrorColumnNumber(parser);
+    enum XML_Error code = XML_GetErrorCode(parser);
 
     sprintf(buffer, "%.200s: line %i, column %i",
-            XML_ErrorString(XML_GetErrorCode(parser)),
-            XML_GetErrorLineNumber(parser),
-            XML_GetErrorColumnNumber(parser));
+            XML_ErrorString(code), lineno, column);
     err = PyObject_CallFunction(ErrorObject, "s", buffer);
-    if (err != NULL) {
-        PyObject *code = PyInt_FromLong(XML_GetErrorCode(parser));
-
-        if (code != NULL && PyObject_SetAttrString(err, "code", code) != -1)
-            PyErr_SetObject(ErrorObject, err);
+    if (  err != NULL
+          && set_error_attr(err, "code", code)
+          && set_error_attr(err, "offset", column)
+          && set_error_attr(err, "lineno", lineno)) {
+        PyErr_SetObject(ErrorObject, err);
     }
     return NULL;
 }
@@ -276,79 +294,81 @@ flag_error(xmlparseobject *self)
 static PyCodeObject*
 getcode(enum HandlerTypes slot, char* func_name, int lineno)
 {
-	PyObject *code = NULL;
-	PyObject *name = NULL;
-	PyObject *nulltuple = NULL;
-	PyObject *filename = NULL;
-	if (handler_info[slot].tb_code == NULL) {
-		code = PyString_FromString("");
-		if (code == NULL)
-			goto failed;
-		name = PyString_FromString(func_name);
-		if (name == NULL)
-			goto failed;
-		nulltuple = PyTuple_New(0);
-		if (nulltuple == NULL)
-			goto failed;
-		filename = PyString_FromString(__FILE__);
-		handler_info[slot].tb_code = PyCode_New(
-			0,		/* argcount */
-			0,		/* nlocals */
-			0,		/* stacksize */
-			0,		/* flags */
-			code,		/* code */
-			nulltuple,	/* consts */
-			nulltuple,	/* names */
-			nulltuple,	/* varnames */
+    PyObject *code = NULL;
+    PyObject *name = NULL;
+    PyObject *nulltuple = NULL;
+    PyObject *filename = NULL;
+
+    if (handler_info[slot].tb_code == NULL) {
+        code = PyString_FromString("");
+        if (code == NULL)
+            goto failed;
+        name = PyString_FromString(func_name);
+        if (name == NULL)
+            goto failed;
+        nulltuple = PyTuple_New(0);
+        if (nulltuple == NULL)
+            goto failed;
+        filename = PyString_FromString(__FILE__);
+        handler_info[slot].tb_code =
+            PyCode_New(0,		/* argcount */
+                       0,		/* nlocals */
+                       0,		/* stacksize */
+                       0,		/* flags */
+                       code,		/* code */
+                       nulltuple,	/* consts */
+                       nulltuple,	/* names */
+                       nulltuple,	/* varnames */
 #if PYTHON_API_VERSION >= 1010
-			nulltuple,	/* freevars */
-			nulltuple,	/* cellvars */
+                       nulltuple,	/* freevars */
+                       nulltuple,	/* cellvars */
 #endif
-			filename,	/* filename */
-			name,		/* name */
-			lineno,		/* firstlineno */
-			code		/* lnotab */
-			);
-		if (handler_info[slot].tb_code == NULL)
-			goto failed;
-		Py_DECREF(code);
-		Py_DECREF(nulltuple);
-		Py_DECREF(filename);
-		Py_DECREF(name);
-	}
-	return handler_info[slot].tb_code;
-  failed:
-	Py_XDECREF(code);
-	Py_XDECREF(name);
-	return NULL;
+                       filename,	/* filename */
+                       name,		/* name */
+                       lineno,		/* firstlineno */
+                       code		/* lnotab */
+                       );
+        if (handler_info[slot].tb_code == NULL)
+            goto failed;
+        Py_DECREF(code);
+        Py_DECREF(nulltuple);
+        Py_DECREF(filename);
+        Py_DECREF(name);
+    }
+    return handler_info[slot].tb_code;
+ failed:
+    Py_XDECREF(code);
+    Py_XDECREF(name);
+    return NULL;
 }
 
 static PyObject*
 call_with_frame(PyCodeObject *c, PyObject* func, PyObject* args)
 {
-	PyThreadState *tstate = PyThreadState_GET();
-	PyFrameObject *f;
-	PyObject *res;
-	if (c == NULL)
-		return NULL;
-	f = PyFrame_New(
-			tstate,			/*back*/
-			c,			/*code*/
-			tstate->frame->f_globals,	/*globals*/
-			NULL			/*locals*/
+    PyThreadState *tstate = PyThreadState_GET();
+    PyFrameObject *f;
+    PyObject *res;
+
+    if (c == NULL)
+        return NULL;
+    f = PyFrame_New(
+                    tstate,			/*back*/
+                    c,				/*code*/
+                    tstate->frame->f_globals,	/*globals*/
+                    NULL			/*locals*/
 #if PYTHON_API_VERSION >= 1010
-			,NULL			/*closure*/
+                    ,NULL			/*closure*/
 #endif
-		);
-	if (f == NULL)
-		return NULL;
-	tstate->frame = f;
-	res = PyEval_CallObject(func, args);
-	if (res == NULL && tstate->curexc_traceback == NULL)
-		PyTraceBack_Here(f);
-	tstate->frame = f->f_back;
-	Py_DECREF(f);
-	return res;
+                    );
+    if (f == NULL)
+        return NULL;
+    tstate->frame = f;
+    res = PyEval_CallObject(func, args);
+    if (res == NULL && tstate->curexc_traceback == NULL)
+        PyTraceBack_Here(f);
+    tstate->frame = f->f_back;
+    Py_DECREF(f);
+    return res;
 }
 
 #if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6
@@ -426,13 +446,15 @@ my_StartElementHandler(void *userData,
             return;
         }
         /* Container is now a borrowed reference; ignore it. */
-	rv = call_with_frame(getcode(StartElement, "StartElement", __LINE__),
+        self->in_callback = 1;
+        rv = call_with_frame(getcode(StartElement, "StartElement", __LINE__),
                              self->handlers[StartElement], args);
-	Py_DECREF(args);
+        self->in_callback = 0;
+        Py_DECREF(args);
         if (rv == NULL) {
             flag_error(self);
             return;
-	}
+        }
         Py_DECREF(rv);
     }
 }
@@ -451,8 +473,10 @@ my_##NAME##Handler PARAMS {\
         args = Py_BuildValue PARAM_FORMAT ;\
         if (!args) \
             return RETURN; \
+        self->in_callback = 1; \
         rv = call_with_frame(getcode(NAME,#NAME,__LINE__), \
                              self->handlers[NAME], args); \
+        self->in_callback = 0; \
         Py_DECREF(args); \
         if (rv == NULL) { \
             flag_error(self); \
@@ -910,6 +934,40 @@ xmlparse_GetBase(xmlparseobject *self, PyObject *args)
     return Py_BuildValue("z", XML_GetBase(self->itself));
 }
 
+#if EXPAT_VERSION >= 0x015f00
+static char xmlparse_GetInputContext__doc__[] =
+"GetInputContext() -> string\n\
+Return the untranslated text of the input that caused the current event.\n\
+If the event was generated by a large amount of text (such as a start tag\n\
+for an element with many attributes), not all of the text may be available.";
+
+static PyObject *
+xmlparse_GetInputContext(xmlparseobject *self, PyObject *args)
+{
+    PyObject *result = NULL;
+
+    if (PyArg_ParseTuple(args, ":GetInputContext")) {
+        if (self->in_callback) {
+            int offset, size;
+            const char *buffer
+                = XML_GetInputContext(self->itself, &offset, &size);
+
+            if (buffer != NULL)
+                result = PyString_FromStringAndSize(buffer + offset, size);
+            else {
+                result = Py_None;
+                Py_INCREF(result);
+            }
+        }
+        else {
+            result = Py_None;
+            Py_INCREF(result);
+        }
+    }
+    return result;
+}
+#endif
+
 static char xmlparse_ExternalEntityParserCreate__doc__[] = 
 "ExternalEntityParserCreate(context[, encoding])\n\
 Create a parser for parsing an external entity based on the\n\
@@ -940,7 +998,7 @@ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
     new_parser->returns_unicode = self->returns_unicode;
     new_parser->ordered_attributes = self->ordered_attributes;
     new_parser->specified_attributes = self->specified_attributes;
-    new_parser->conv_attrs = self->conv_attrs;
+    new_parser->in_callback = 0;
     new_parser->itself = XML_ExternalEntityParserCreate(self->itself, context,
 							encoding);
     new_parser->handlers = 0;
@@ -987,12 +1045,12 @@ XML_PARAM_ENTITY_PARSING_ALWAYS. Returns true if setting the flag\n\
 was successful.";
 
 static PyObject*
-xmlparse_SetParamEntityParsing(PyObject *p, PyObject* args)
+xmlparse_SetParamEntityParsing(xmlparseobject *p, PyObject* args)
 {
     int flag;
     if (!PyArg_ParseTuple(args, "i", &flag))
         return NULL;
-    flag = XML_SetParamEntityParsing(((xmlparseobject*)p)->itself, flag);
+    flag = XML_SetParamEntityParsing(p->itself, flag);
     return PyInt_FromLong(flag);
 }
 
@@ -1000,18 +1058,22 @@ xmlparse_SetParamEntityParsing(PyObject *p, PyObject* args)
 
 static struct PyMethodDef xmlparse_methods[] = {
     {"Parse",	  (PyCFunction)xmlparse_Parse,
-	 	  METH_VARARGS,	xmlparse_Parse__doc__},
+		  METH_VARARGS,	xmlparse_Parse__doc__},
     {"ParseFile", (PyCFunction)xmlparse_ParseFile,
-	 	  METH_VARARGS,	xmlparse_ParseFile__doc__},
+		  METH_VARARGS,	xmlparse_ParseFile__doc__},
     {"SetBase",   (PyCFunction)xmlparse_SetBase,
-	 	  METH_VARARGS,      xmlparse_SetBase__doc__},
+		  METH_VARARGS,      xmlparse_SetBase__doc__},
     {"GetBase",   (PyCFunction)xmlparse_GetBase,
-	 	  METH_VARARGS,      xmlparse_GetBase__doc__},
+		  METH_VARARGS,      xmlparse_GetBase__doc__},
     {"ExternalEntityParserCreate", (PyCFunction)xmlparse_ExternalEntityParserCreate,
 	 	  METH_VARARGS,      xmlparse_ExternalEntityParserCreate__doc__},
 #if EXPAT_VERSION >= 0x010200
-    {"SetParamEntityParsing", xmlparse_SetParamEntityParsing,
-     METH_VARARGS, xmlparse_SetParamEntityParsing__doc__},
+    {"SetParamEntityParsing", (PyCFunction)xmlparse_SetParamEntityParsing,
+		  METH_VARARGS, xmlparse_SetParamEntityParsing__doc__},
+#endif
+#if EXPAT_VERSION >= 0x015f00
+    {"GetInputContext", (PyCFunction)xmlparse_GetInputContext,
+		  METH_VARARGS, xmlparse_GetInputContext__doc__},
 #endif
 	{NULL,		NULL}		/* sentinel */
 };
@@ -1096,6 +1158,7 @@ newxmlparseobject(char *encoding, char *namespace_separator)
 #endif
     self->ordered_attributes = 0;
     self->specified_attributes = 0;
+    self->in_callback = 0;
     self->handlers = NULL;
     if (namespace_separator) {
         self->itself = XML_ParserCreateNS(encoding, *namespace_separator);
@@ -1443,10 +1506,16 @@ initpyexpat(void)
                        pyexpat_module_documentation);
 
     /* Add some symbolic constants to the module */
-    if (ErrorObject == NULL)
-        ErrorObject = PyErr_NewException("xml.parsers.expat.error",
+    if (ErrorObject == NULL) {
+        ErrorObject = PyErr_NewException("xml.parsers.expat.ExpatError",
                                          NULL, NULL);
+        if (ErrorObject == NULL)
+            return;
+    }
+    Py_INCREF(ErrorObject);
     PyModule_AddObject(m, "error", ErrorObject);
+    Py_INCREF(ErrorObject);
+    PyModule_AddObject(m, "ExpatError", ErrorObject);
     Py_INCREF(&Xmlparsetype);
     PyModule_AddObject(m, "XMLParserType", (PyObject *) &Xmlparsetype);
 
