@@ -523,6 +523,7 @@ builtin_eval(PyObject *self, PyObject *args)
 	PyObject *cmd;
 	PyObject *globals = Py_None, *locals = Py_None;
 	char *str;
+	PyCompilerFlags cf;
 
 	if (!PyArg_ParseTuple(args, "O|O!O!:eval",
 			&cmd,
@@ -536,11 +537,13 @@ builtin_eval(PyObject *self, PyObject *args)
 	}
 	else if (locals == Py_None)
 		locals = globals;
+
 	if (PyDict_GetItemString(globals, "__builtins__") == NULL) {
 		if (PyDict_SetItemString(globals, "__builtins__",
 					 PyEval_GetBuiltins()) != 0)
 			return NULL;
 	}
+
 	if (PyCode_Check(cmd)) {
 		if (PyTuple_GET_SIZE(((PyCodeObject *)cmd)->co_freevars) > 0) {
 			PyErr_SetString(PyExc_TypeError,
@@ -549,6 +552,7 @@ builtin_eval(PyObject *self, PyObject *args)
 		}
 		return PyEval_EvalCode((PyCodeObject *) cmd, globals, locals);
 	}
+
 	if (!PyString_Check(cmd) &&
 	    !PyUnicode_Check(cmd)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -559,7 +563,10 @@ builtin_eval(PyObject *self, PyObject *args)
 		return NULL;
 	while (*str == ' ' || *str == '\t')
 		str++;
-	return PyRun_String(str, Py_eval_input, globals, locals);
+
+	cf.cf_flags = 0;
+	(void)PyEval_MergeCompilerFlags(&cf);
+	return PyRun_StringFlags(str, Py_eval_input, globals, locals, &cf);
 }
 
 static char eval_doc[] =
