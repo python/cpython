@@ -848,7 +848,7 @@ instance_traverse(PyInstanceObject *o, visitproc visit, void *arg)
 	return 0;
 }
 
-static PyObject *getitemstr, *setitemstr, *delitemstr, *lenstr;
+static PyObject *getitemstr, *setitemstr, *delitemstr, *lenstr, *iterstr;
 
 static int
 instance_length(PyInstanceObject *inst)
@@ -1712,6 +1712,32 @@ instance_richcompare(PyObject *v, PyObject *w, int op)
 }
 
 
+/* Get the iterator */
+static PyObject *
+instance_getiter(PyInstanceObject *self)
+{
+	PyObject *func;
+
+	if (iterstr == NULL)
+		iterstr = PyString_InternFromString("__iter__");
+	if (getitemstr == NULL)
+		getitemstr = PyString_InternFromString("__getitem__");
+
+	if ((func = instance_getattr(self, iterstr)) != NULL) {
+		PyObject *res = PyEval_CallObject(func, (PyObject *)NULL);
+		Py_DECREF(func);
+		return res;
+	}
+	PyErr_Clear();
+	if ((func = instance_getattr(self, getitemstr)) == NULL) {
+		PyErr_SetString(PyExc_TypeError, "iter() of non-sequence");
+		return NULL;
+	}
+	Py_DECREF(func);
+	return PyIter_New((PyObject *)self);
+}
+
+
 static PyNumberMethods instance_as_number = {
 	(binaryfunc)instance_add,		/* nb_add */
 	(binaryfunc)instance_sub,		/* nb_subtract */
@@ -1775,7 +1801,8 @@ PyTypeObject PyInstance_Type = {
 	(traverseproc)instance_traverse,	/* tp_traverse */
 	0,					/* tp_clear */
 	instance_richcompare,			/* tp_richcompare */
- 	offsetof(PyInstanceObject, in_weakreflist) /* tp_weaklistoffset */
+ 	offsetof(PyInstanceObject, in_weakreflist), /* tp_weaklistoffset */
+	(getiterfunc)instance_getiter,		/* tp_iter */
 };
 
 

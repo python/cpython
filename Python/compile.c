@@ -1232,21 +1232,15 @@ parsestrplus(node *n)
 static void
 com_list_for(struct compiling *c, node *n, node *e, char *t)
 {
-	PyObject *v;
 	int anchor = 0;
 	int save_begin = c->c_begin;
 
 	/* list_iter: for v in expr [list_iter] */
 	com_node(c, CHILD(n, 3)); /* expr */
-	v = PyInt_FromLong(0L);
-	if (v == NULL)
-		c->c_errors++;
-	com_addoparg(c, LOAD_CONST, com_addconst(c, v));
-	com_push(c, 1);
-	Py_XDECREF(v);
+	com_addbyte(c, GET_ITER);
 	c->c_begin = c->c_nexti;
 	com_addoparg(c, SET_LINENO, n->n_lineno);
-	com_addfwref(c, FOR_LOOP, &anchor);
+	com_addfwref(c, FOR_ITER, &anchor);
 	com_push(c, 1);
 	com_assign(c, CHILD(n, 1), OP_ASSIGN, NULL);
 	c->c_loops++;
@@ -1255,7 +1249,7 @@ com_list_for(struct compiling *c, node *n, node *e, char *t)
 	com_addoparg(c, JUMP_ABSOLUTE, c->c_begin);
 	c->c_begin = save_begin;
 	com_backpatch(c, anchor);
-	com_pop(c, 2); /* FOR_LOOP has popped these */
+	com_pop(c, 1); /* FOR_ITER has popped this */
 }  
 
 static void
@@ -2873,7 +2867,6 @@ com_while_stmt(struct compiling *c, node *n)
 static void
 com_for_stmt(struct compiling *c, node *n)
 {
-	PyObject *v;
 	int break_anchor = 0;
 	int anchor = 0;
 	int save_begin = c->c_begin;
@@ -2882,15 +2875,10 @@ com_for_stmt(struct compiling *c, node *n)
 	com_addfwref(c, SETUP_LOOP, &break_anchor);
 	block_push(c, SETUP_LOOP);
 	com_node(c, CHILD(n, 3));
-	v = PyInt_FromLong(0L);
-	if (v == NULL)
-		c->c_errors++;
-	com_addoparg(c, LOAD_CONST, com_addconst(c, v));
-	com_push(c, 1);
-	Py_XDECREF(v);
+	com_addbyte(c, GET_ITER);
 	c->c_begin = c->c_nexti;
 	com_addoparg(c, SET_LINENO, n->n_lineno);
-	com_addfwref(c, FOR_LOOP, &anchor);
+	com_addfwref(c, FOR_ITER, &anchor);
 	com_push(c, 1);
 	com_assign(c, CHILD(n, 1), OP_ASSIGN, NULL);
 	c->c_loops++;
@@ -2899,7 +2887,7 @@ com_for_stmt(struct compiling *c, node *n)
 	com_addoparg(c, JUMP_ABSOLUTE, c->c_begin);
 	c->c_begin = save_begin;
 	com_backpatch(c, anchor);
-	com_pop(c, 2); /* FOR_LOOP has popped these */
+	com_pop(c, 1); /* FOR_ITER has popped this */
 	com_addbyte(c, POP_BLOCK);
 	block_pop(c, SETUP_LOOP);
 	if (NCH(n) > 8)

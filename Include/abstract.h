@@ -470,6 +470,11 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
+     DL_IMPORT(PyObject *) PyObject_GetIter(PyObject *);
+     /* Takes an object and returns an iterator for it.
+        This is typically a new iterator but if the argument
+	is an iterator, this returns itself. */
+
 /*  Number Protocol:*/
 
      DL_IMPORT(int) PyNumber_Check(PyObject *o);

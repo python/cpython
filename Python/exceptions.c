@@ -52,6 +52,7 @@ recommended that user defined class based exceptions be derived from the\n\
 Exception\n\
  |\n\
  +-- SystemExit\n\
+ +-- StopIteration\n\
  +-- StandardError\n\
  |    |\n\
  |    +-- KeyboardInterrupt\n\
@@ -368,6 +369,9 @@ StandardError__doc__[] = "Base class for all standard Python exceptions.";
 
 static char
 TypeError__doc__[] = "Inappropriate argument type.";
+
+static char
+StopIteration__doc__[] = "Signal the end from iterator.next().";
 
 
 
@@ -924,6 +928,7 @@ static PyMethodDef functions[] = {
 /* Global C API defined exceptions */
 
 PyObject *PyExc_Exception;
+PyObject *PyExc_StopIteration;
 PyObject *PyExc_StandardError;
 PyObject *PyExc_ArithmeticError;
 PyObject *PyExc_LookupError;
@@ -985,6 +990,8 @@ static struct {
   * The first three classes MUST appear in exactly this order
   */
  {"Exception", &PyExc_Exception},
+ {"StopIteration", &PyExc_StopIteration, &PyExc_Exception,
+  StopIteration__doc__},
  {"StandardError", &PyExc_StandardError, &PyExc_Exception,
   StandardError__doc__},
  {"TypeError", &PyExc_TypeError, 0, TypeError__doc__},

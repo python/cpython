@@ -3232,6 +3232,8 @@ PyString_Fini(void)
 void _Py_ReleaseInternedStrings(void)
 {
 	if (interned) {
+		fprintf(stderr, "releasing interned strings\n");
+		PyDict_Clear(interned);
 		Py_DECREF(interned);
 		interned = NULL;
 	}
