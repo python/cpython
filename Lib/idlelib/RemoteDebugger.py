@@ -300,7 +300,7 @@ class IdbProxy:
 
     def run(self, cmd, locals):
         # Ignores locals on purpose!
-        seq = self.conn.asynccall(self.oid, "run", (cmd,), {})
+        seq = self.conn.asyncqueue(self.oid, "run", (cmd,), {})
         self.shell.interp.active_seq = seq
 
     def get_stack(self, frame, tbid):

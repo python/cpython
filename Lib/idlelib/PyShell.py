@@ -368,6 +368,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         debug = self.getdebugger()
         if debug:
             try:
+                # Only close subprocess debugger, don't unregister gui_adap!
                 RemoteDebugger.close_subprocess_debugger(self.rpcclt)
             except:
                 pass
@@ -387,6 +388,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         console.text.mark_gravity("restart", "left")
         # restart subprocess debugger
         if debug:
+            # Restarted debugger connects to current instance of debug GUI
             gui = RemoteDebugger.restart_subprocess_debugger(self.rpcclt)
             # reload remote debugger breakpoints for all PyShellEditWindows
             debug.load_breakpoints()
