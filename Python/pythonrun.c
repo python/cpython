@@ -270,12 +270,6 @@ Py_Finalize(void)
 	fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
 #endif
 
-#ifdef Py_TRACE_REFS
-	if (Py_GETENV("PYTHONDUMPREFS")) {
-		_Py_PrintReferences(stderr);
-	}
-#endif /* Py_TRACE_REFS */
-
 	/* Now we decref the exception classes.  After this point nothing
 	   can raise an exception.  That's okay, because each Fini() method
 	   below has been checked to make sure no exceptions are ever
@@ -283,11 +277,22 @@ Py_Finalize(void)
 	*/
 	_PyExc_Fini();
 
-	/* Delete current thread */
+	/* Clear interpreter state */
 	PyInterpreterState_Clear(interp);
+
+#ifdef Py_TRACE_REFS
+	/* Dump references -- this may implicitly need the thread state,
+	   so this is the last possible place where we can do this. */
+	if (Py_GETENV("PYTHONDUMPREFS")) {
+		_Py_PrintReferences(stderr);
+	}
+#endif /* Py_TRACE_REFS */
+
+	/* Delete current thread */
 	PyThreadState_Swap(NULL);
 	PyInterpreterState_Delete(interp);
 
+	/* Sundry finalizers */
 	PyMethod_Fini();
 	PyFrame_Fini();
 	PyCFunction_Fini();
