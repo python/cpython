@@ -72,9 +72,12 @@ def setup (**attrs):
     # (ie. everything except distclass) to initialize it
     dist = klass (attrs)
 
-    # Get it to parse the command line; any command-line errors are
-    # the end-users fault, so turn them into SystemExit to suppress
-    # tracebacks.
+    # If we had a config file, this is where we would parse it: override
+    # the client-supplied command options, but be overridden by the
+    # command line.
+
+    # Parse the command line; any command-line errors are the end-users
+    # fault, so turn them into SystemExit to suppress tracebacks.
     try:
         dist.parse_command_line (sys.argv[1:])
     except DistutilsArgError, msg:
@@ -111,6 +114,18 @@ class Distribution:
                       ('dry-run', 'n', "don't actually do anything"),
                      ]
 
+    # 'alias_options' map distribution options to command options -- the
+    # idea is that the most common, essential options can be directly
+    # specified as Distribution attributes, and the rest can go in the
+    # 'options' dictionary.  These aliases are for those common, essential
+    # options.
+    alias_options = { 'py_modules': ('build_py', 'modules'),
+                      'ext_modules': ('build_ext', 'modules'),
+                      'package': [('build_py', 'package',),
+                                  ('build_ext', 'package')],
+
+                    }
+
 
     # -- Creation/initialization methods -------------------------------
     
@@ -129,11 +144,13 @@ class Distribution:
         self.verbose = 0
         self.dry_run = 0
 
-        # And for all other attributes (stuff that might be passed in
-        # from setup.py, rather than from the end-user)
+        # And the "distribution meta-data" options -- these can only
+        # come from setup.py (the caller), not the command line
+        # (or a hypothetical config file)..
         self.name = None
         self.version = None
         self.author = None
+        self.url = None
         self.licence = None
         self.description = None
 
@@ -143,18 +160,14 @@ class Distribution:
         # for the client to override command classes
         self.cmdclass = {}
 
-        # The rest of these are really the business of various commands,
-        # rather than of the Distribution itself.  However, they have
-        # to be here as a conduit to the relevant command class.        
-        self.py_modules = None
-        self.ext_modules = None
-        self.package = None
-
-        # Now we'll use the attrs dictionary to possibly override
-        # any or all of these distribution options
-        if attrs:
-            for k in attrs.keys():
-                setattr (self, k, attrs[k])
+        # These options are really the business of various commands, rather
+        # than of the Distribution itself.  We provide aliases for them in
+        # Distribution as a convenience to the developer.
+        # dictionary.        
+        # XXX not needed anymore! (I think...)
+        #self.py_modules = None
+        #self.ext_modules = None
+        #self.package = None
 
         # And now initialize bookkeeping stuff that can't be supplied by
         # the caller at all.  'command_obj' maps command names to
@@ -173,6 +186,49 @@ class Distribution:
         # the command is succesfully run.  Thus it's probably best to use
         # '.get()' rather than a straight lookup.
         self.have_run = {}
+
+        # Now we'll use the attrs dictionary (from the client) to possibly
+        # override any or all of these distribution options
+        if attrs:
+
+            # Pull out the set of command options and work on them
+            # specifically.  Note that this order guarantees that aliased
+            # command options will override any supplied redundantly
+            # through the general options dictionary.
+            options = attrs.get ('options')
+            if options:
+                del attrs['options']
+                for (command, cmd_options) in options.items():
+                    cmd_obj = self.find_command_obj (command)
+                    for (key, val) in cmd_options.items():
+                        cmd_obj.set_option (key, val)
+                # loop over commands
+            # if any command options                        
+
+            # Now work on the rest of the attributes.  Note that some of
+            # these may be aliases for command options, so we might go
+            # through some of the above again.
+            for (key,val) in attrs.items():
+                alias = self.alias_options.get (key)
+                if alias:
+                    if type (alias) is ListType:
+                        for (command, cmd_option) in alias:
+                            cmd_obj = self.find_command_obj (command)
+                            cmd_obj.set_option (cmd_option, val)
+                    elif type (alias) is TupleType:
+                        (command, cmd_option) = alias
+                        cmd_obj = self.find_command_obj (command)
+                        cmd_obj.set_option (cmd_option, val)
+                    else:
+                        raise RuntimeError, \
+                              ("oops! bad alias option for '%s': " +
+                               "must be tuple or list of tuples") % key
+                    
+                elif hasattr (self, key):
+                    setattr (self, key, val)
+                else:
+                    raise DistutilsOptionError, \
+                          "invalid distribution option '%s'" % key
 
     # __init__ ()
 
@@ -213,10 +269,10 @@ class Distribution:
                 raise SystemExit, "invalid command name '%s'" % command
             self.commands.append (command)
 
-            # Have to instantiate the command class now, so we have a
-            # way to get its valid options and somewhere to put the
-            # results of parsing its share of the command-line
-            cmd_obj = self.create_command_obj (command)
+            # Make sure we have a command object to put the options into
+            # (this either pulls it out of a cache of command objects,
+            # or finds and instantiates the command class).
+            cmd_obj = self.find_command_obj (command)
 
             # Require that the command class be derived from Command --
             # that way, we can be sure that we at least have the 'run'
@@ -226,8 +282,15 @@ class Distribution:
                       "command class %s must subclass Command" % \
                       cmd_obj.__class__
 
-            # XXX this assumes that cmd_obj provides an 'options'
-            # attribute, but we're not enforcing that anywhere!
+            # Also make sure that the command object provides a list of its
+            # known options
+            if not (hasattr (cmd_obj, 'options') and
+                    type (cmd_obj.options) is ListType):
+                raise DistutilsClasserror, \
+                      ("command class %s must provide an 'options' attribute "+
+                       "(a list of tuples)") % \
+                      cmd_obj.__class__
+
             args = fancy_getopt (cmd_obj.options, cmd_obj, args[1:])
             self.command_obj[command] = cmd_obj
             self.have_run[command] = 0
@@ -375,6 +438,11 @@ class Distribution:
            'command' doesn't even have a command object yet, create one.
            Then invoke 'run()' on that command object (or an existing
            one)."""
+
+        # XXX currently, this is the only place where we invoke a
+        # command object's 'run()' method -- so it might make sense to
+        # put the 'set_final_options()' call here, too, instead of
+        # requiring every command's 'run()' to call it first.        
 
         # Already been here, done that? then return silently.
         if self.have_run.get (command):
@@ -530,7 +598,7 @@ class Command:
         except AttributeError:
             raise DistutilsOptionError, \
                   "command %s: no such option %s" % \
-                  (self.command_name(), option)
+                  (self.get_command_name(), option)
 
 
     def get_options (self, *options):
@@ -545,7 +613,7 @@ class Command:
         except AttributeError, name:
             raise DistutilsOptionError, \
                   "command %s: no such option %s" % \
-                  (self.command_name(), name)
+                  (self.get_command_name(), name)
             
         return tuple (values)
     
@@ -557,7 +625,7 @@ class Command:
         if not hasattr (self, option):
             raise DistutilsOptionError, \
                   "command %s: no such option %s" % \
-                  (self.command_name(), option)
+                  (self.get_command_name(), option)
         if value is not None:
             setattr (self, option, value)
 
@@ -572,6 +640,20 @@ class Command:
 
 
     # -- Convenience methods for commands ------------------------------
+
+    def get_command_name (self):
+        if hasattr (self, 'command_name'):
+            return self.command_name
+        else:
+            class_name = self.__class__.__name__
+
+            # The re.split here returs empty strings delimited by the
+            # words we're actually interested in -- e.g.  "FooBarBaz"
+            # splits to ['', 'Foo', '', 'Bar', '', 'Baz', ''].  Hence
+            # the 'filter' to strip out the empties.            
+            words = filter (None, re.split (r'([A-Z][a-z]+)', class_name))
+            return string.join (map (string.lower, words), "_")
+
 
     def set_undefined_options (self, src_cmd, *option_pairs):
         """Set the values of any "undefined" options from corresponding
