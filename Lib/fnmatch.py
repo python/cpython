@@ -12,7 +12,7 @@ corresponding to PATTERN.  (It does not compile it.)
 
 import re
 
-__all__ = ["fnmatch","fnmatchcase","translate"]
+__all__ = ["filter", "fnmatch","fnmatchcase","translate"]
 
 _cache = {}
 
