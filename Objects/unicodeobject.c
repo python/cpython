@@ -1171,7 +1171,6 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 {
     PyObject *v;
     char *p;
-    char *q;
     Py_UCS4 ch2;
     unsigned int cbAllocated = 3 * size;
     unsigned int cbWritten = 0;
@@ -1183,7 +1182,7 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
     if (size == 0)
         return v;
 
-    p = q = PyString_AS_STRING(v);
+    p = PyString_AS_STRING(v);
     while (i < size) {
         Py_UCS4 ch = s[i++];
         if (ch < 0x80) {
@@ -1208,6 +1207,7 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 			    cbAllocated += 4*10;
                             if (_PyString_Resize(&v, cbAllocated))
 				goto onError;
+			    p = PyString_AS_STRING(v) + cbWritten;
                         }
 
                         /* combine the two values */
@@ -1227,6 +1227,13 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
             *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
             *p++ = (char)(0x80 | (ch & 0x3f));
         } else {
+	    if (cbWritten >= (cbAllocated - 4)) {
+		    /* Provide enough room for some more large characters. */
+		    cbAllocated += 4*10;
+		    if (_PyString_Resize(&v, cbAllocated))
+			    goto onError;
+		    p = PyString_AS_STRING(v) + cbWritten;
+	    }
             *p++ = 0xf0 | (ch>>18);
             *p++ = 0x80 | ((ch>>12) & 0x3f);
             *p++ = 0x80 | ((ch>>6) & 0x3f);
@@ -1235,7 +1242,7 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 	}
     }
     *p = '\0';
-    if (_PyString_Resize(&v, p - q))
+    if (_PyString_Resize(&v, cbWritten))
 	goto onError;
     return v;
 
