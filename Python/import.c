@@ -321,7 +321,7 @@ imp_release_lock(PyObject *self, PyObject *noargs)
 PyObject *
 PyImport_GetModuleDict(void)
 {
-	PyInterpreterState *interp = PyThreadState_Get()->interp;
+	PyInterpreterState *interp = PyThreadState_GET()->interp;
 	if (interp->modules == NULL)
 		Py_FatalError("PyImport_GetModuleDict: no module dictionary!");
 	return interp->modules;
@@ -353,7 +353,7 @@ PyImport_Cleanup(void)
 	int pos, ndone;
 	char *name;
 	PyObject *key, *value, *dict;
-	PyInterpreterState *interp = PyThreadState_Get()->interp;
+	PyInterpreterState *interp = PyThreadState_GET()->interp;
 	PyObject *modules = interp->modules;
 
 	if (modules == NULL)

@@ -28,7 +28,7 @@ static int _PyCodecRegistry_Init(void); /* Forward */
 
 int PyCodec_Register(PyObject *search_function)
 {
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
 	goto onError;
     if (search_function == NULL) {
@@ -103,7 +103,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
 	goto onError;
     }
 
-    interp = PyThreadState_Get()->interp;
+    interp = PyThreadState_GET()->interp;
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
 	goto onError;
 
@@ -395,7 +395,7 @@ PyObject *PyCodec_Decode(PyObject *object,
    Return 0 on success, -1 on error */
 int PyCodec_RegisterError(const char *name, PyObject *error)
 {
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
 	return -1;
     if (!PyCallable_Check(error)) {
@@ -413,7 +413,7 @@ PyObject *PyCodec_LookupError(const char *name)
 {
     PyObject *handler = NULL;
 
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
 	return NULL;
 
@@ -802,7 +802,7 @@ static int _PyCodecRegistry_Init(void)
 #endif
     };
 
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
     PyObject *mod;
     int i;
 

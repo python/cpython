@@ -316,7 +316,7 @@ Py_Finalize(void)
 	initialized = 0;
 
 	/* Get current thread state and interpreter pointer */
-	tstate = PyThreadState_Get();
+	tstate = PyThreadState_GET();
 	interp = tstate->interp;
 
 	/* Disable signal handling */
@@ -529,7 +529,7 @@ Py_EndInterpreter(PyThreadState *tstate)
 {
 	PyInterpreterState *interp = tstate->interp;
 
-	if (tstate != PyThreadState_Get())
+	if (tstate != PyThreadState_GET())
 		Py_FatalError("Py_EndInterpreter: thread is not current");
 	if (tstate->frame != NULL)
 		Py_FatalError("Py_EndInterpreter: thread still has a frame");
@@ -1461,7 +1461,7 @@ err_input(perrdetail *err)
 		msg = "too many levels of indentation";
 		break;
 	case E_DECODE: {	/* XXX */
-		PyThreadState* tstate = PyThreadState_Get();
+		PyThreadState* tstate = PyThreadState_GET();
 		PyObject* value = tstate->curexc_value;
 		if (value != NULL) {
 			u = PyObject_Repr(value);

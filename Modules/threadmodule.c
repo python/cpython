@@ -233,7 +233,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 	boot = PyMem_NEW(struct bootstate, 1);
 	if (boot == NULL)
 		return PyErr_NoMemory();
-	boot->interp = PyThreadState_Get()->interp;
+	boot->interp = PyThreadState_GET()->interp;
 	boot->func = func;
 	boot->args = args;
 	boot->keyw = keyw;
