@@ -398,6 +398,49 @@ PyObject_SetAttrString(v, name, w)
 	}
 }
 
+PyObject *
+PyObject_GetAttr(v, name)
+	PyObject *v;
+	PyObject *name;
+{
+	if (v->ob_type->tp_getattro != NULL)
+		return (*v->ob_type->tp_getattro)(v, name);
+	else
+		return PyObject_GetAttrString(v, PyString_AsString(name));
+}
+
+int
+PyObject_HasAttr(v, name)
+	PyObject *v;
+	PyObject *name;
+{
+	PyObject *res = PyObject_GetAttr(v, name);
+	if (res != NULL) {
+		Py_DECREF(res);
+		return 1;
+	}
+	PyErr_Clear();
+	return 0;
+}
+
+int
+PyObject_SetAttr(v, name, value)
+	PyObject *v;
+	PyObject *name;
+	PyObject *value;
+{
+	int err;
+	Py_INCREF(name);
+	PyString_InternInPlace(&name);
+	if (v->ob_type->tp_setattro != NULL)
+		err = (*v->ob_type->tp_setattro)(v, name, value);
+	else
+		err = PyObject_SetAttrString(
+			v, PyString_AsString(name), value);
+	Py_DECREF(name);
+	return err;
+}
+
 /* Test a value used as condition, e.g., in a for or if statement.
    Return -1 if an error occurred */
 
