@@ -75,7 +75,7 @@ Python API is incorporated in a C source file by including the header
 \code{"Python.h"}.
 
 The compilation of an extension module depends on its intended use as
-well as on your system setup; details are given in a later section.
+well as on your system setup; details are given in later chapters.
 
 
 \section{A Simple Example
@@ -95,7 +95,7 @@ as follows:
 >>> status = spam.system("ls -l")
 \end{verbatim}
 
-Begin by creating a file \file{spammodule.c}.  (In general, if a
+Begin by creating a file \file{spammodule.c}.  (Historically, if a
 module is called \samp{spam}, the C file containing its implementation
 is called \file{spammodule.c}; if the module name is very long, like
 \samp{spammify}, the module name can be just \file{spammify.c}.)
@@ -103,7 +103,7 @@ is called \file{spammodule.c}; if the module name is very long, like
 The first line of our file can be:
 
 \begin{verbatim}
-#include "Python.h"
+#include <Python.h>
 \end{verbatim}
 
 which pulls in the Python API (you can add a comment describing the
@@ -163,7 +163,7 @@ store the converted values.  More about this later.
 the right type and its components have been stored in the variables
 whose addresses are passed.  It returns false (zero) if an invalid
 argument list was passed.  In the latter case it also raises an
-appropriate exception by so the calling function can return
+appropriate exception so the calling function can return
 \NULL{} immediately (as we saw in the example).
 
 
@@ -197,7 +197,7 @@ exception.
 
 Another useful function is \cfunction{PyErr_SetFromErrno()}, which only
 takes an exception argument and constructs the associated value by
-inspection of the (\UNIX{}) global variable \cdata{errno}.  The most
+inspection of the global variable \cdata{errno}.  The most
 general function is \cfunction{PyErr_SetObject()}, which takes two object
 arguments, the exception and its associated value.  You don't need to
 \cfunction{Py_INCREF()} the objects passed to any of these functions.
@@ -233,12 +233,12 @@ want to pass the error on to the interpreter but wants to handle it
 completely by itself (e.g.\ by trying something else or pretending
 nothing happened).
 
-Note that a failing \cfunction{malloc()} call must be turned into an
+Every failing \cfunction{malloc()} call must be turned into an
 exception --- the direct caller of \cfunction{malloc()} (or
 \cfunction{realloc()}) must call \cfunction{PyErr_NoMemory()} and
 return a failure indicator itself.  All the object-creating functions
-(\cfunction{PyInt_FromLong()} etc.) already do this, so only if you
-call \cfunction{malloc()} directly this note is of importance.
+(for example, \cfunction{PyInt_FromLong()}) already do this, so this
+note is only relevant to those who call \cfunction{malloc()} directly.
 
 Also note that, with the important exception of
 \cfunction{PyArg_ParseTuple()} and friends, functions that return an
@@ -398,7 +398,8 @@ initspam()
 \end{verbatim}
 
 When the Python program imports module \module{spam} for the first
-time, \cfunction{initspam()} is called.  It calls
+time, \cfunction{initspam()} is called. (See below for comments about
+embedding Python.)  It calls
 \cfunction{Py_InitModule()}, which creates a ``module object'' (which
 is inserted in the dictionary \code{sys.modules} under the key
 \code{"spam"}), and inserts built-in function objects into the newly
@@ -409,12 +410,45 @@ that it creates (which is unused here).  It aborts with a fatal error
 if the module could not be initialized satisfactorily, so the caller
 doesn't need to check for errors.
 
+When embedding Python, the \cfunction{initspam()} function is not
+called automatically unless there's an entry in the
+\cdata{_PyImport_Inittab} table.  The easiest way to handle this is to 
+statically initialize your statically-linked modules by directly
+calling \cfunction{initspam()} after the call to
+\cfunction{Py_Initialize()} or \cfunction{PyMac_Initialize()}:
+
+\begin{verbatim}
+int main(int argc, char **argv)
+{
+    /* Pass argv[0] to the Python interpreter */
+    Py_SetProgramName(argv[0]);
+
+    /* Initialize the Python interpreter.  Required. */
+    Py_Initialize();
+
+    /* Add a static module */
+    initspam();
+\end{verbatim}
+
+And example may be found in the file \file{Demo/embed/demo.c} in the
+Python source distribution.
+
 \strong{Note:}  Removing entries from \code{sys.modules} or importing
 compiled modules into multiple interpreters within a process (or
 following a \cfunction{fork()} without an intervening
 \cfunction{exec()}) can create problems for some extension modules.
 Extension module authors should exercise caution when initializing
 internal data structures.
+
+A more substantial example module is included in the Python source
+distribution as \file{Modules/xxmodule.c}.  This file may be used as a 
+template or simply read as an example.  The \program{modulator.py}
+script included in the source distribution or Windows install provides 
+a simple graphical user interface for declaring the functions and
+objects which a module should implement, and can generate a template
+which can be filled in.  The script lives in the
+\file{Tools/modulator/} directory; see the \file{README} file there
+for more information.
 
 
 \section{Compilation and Linkage
@@ -423,8 +457,10 @@ internal data structures.
 There are two more things to do before you can use your new extension:
 compiling and linking it with the Python system.  If you use dynamic
 loading, the details depend on the style of dynamic loading your
-system uses; see the chapter ``Dynamic Loading'' for more information
-about this.
+system uses; see the chapters about building extension modules on
+\UNIX{} (chapter \ref{building-on-unix}) and Windows (chapter
+\ref{building-on-windows}) for more information about this.
+% XXX Add information about MacOS  
 
 If you can't use dynamic loading, or if you want to make your module a
 permanent part of the Python interpreter, you will have to change the
@@ -480,8 +516,8 @@ definition:
 static PyObject *my_callback = NULL;
 
 static PyObject *
-my_set_callback(dummy, arg)
-    PyObject *dummy, *arg;
+my_set_callback(dummy, args)
+    PyObject *dummy, *args;
 {
     PyObject *result = NULL;
     PyObject *temp;
@@ -629,6 +665,10 @@ format unit; and the entry in [square] brackets is the type of the C
 variable(s) whose address should be passed.  (Use the \samp{\&}
 operator to pass a variable's address.)
 
+Note that any Python object references which are provided to the
+caller are \emph{borrowed} references; do not decrement their
+reference count!
+
 \begin{description}
 
 \item[\samp{s} (string) {[char *]}]
@@ -687,8 +727,8 @@ Store a Python object in a C object pointer.  This is similar to
 \samp{O}, but takes two C arguments: the first is the address of a
 Python type object, the second is the address of the C variable (of
 type \ctype{PyObject *}) into which the object pointer is stored.
-If the Python object does not have the required type, a
-\exception{TypeError} exception is raised.
+If the Python object does not have the required type,
+\exception{TypeError} is raised.
 
 \item[\samp{O\&} (object) {[\var{converter}, \var{anything}]}]
 Convert a Python object to a C variable through a \var{converter}
@@ -708,8 +748,8 @@ should raise an exception.
 
 \item[\samp{S} (string) {[PyStringObject *]}]
 Like \samp{O} but requires that the Python object is a string object.
-Raises a \exception{TypeError} exception if the object is not a string
-object.  The C variable may also be declared as \ctype{PyObject *}.
+Raises \exception{TypeError} if the object is not a string object.
+The C variable may also be declared as \ctype{PyObject *}.
 
 \item[\samp{t\#} (read-only character buffer) {[char *, int]}]
 Like \samp{s\#}, but accepts any object which implements the read-only 
@@ -740,7 +780,7 @@ may be nested.
 
 \strong{Note:} Prior to Python version 1.5.2, this format specifier
 only accepted a tuple containing the individual parameters, not an
-arbitrary sequence.  Code which previously caused a
+arbitrary sequence.  Code which previously caused
 \exception{TypeError} to be raised here may now proceed without an
 exception.  This is not expected to be a problem for existing code.
 
@@ -1612,7 +1652,7 @@ comment lines that start with \character{\#}.
 
 A module description line includes a module name, source files,
 options, variable references, and other input files, such
-as libraries or object files.  Consider a simple example::
+as libraries or object files.  Consider a simple example:
 
 \begin{verbatim}
 ExtensionClass ExtensionClass.c
@@ -1767,7 +1807,7 @@ This chapter briefly explains how to create a Windows extension module
 for Python using Microsoft Visual \Cpp{}, and follows with more
 detailed background information on how it works.  The explanatory
 material is useful for both the Windows programmer learning to build
-Python extensions and the \UNIX{} programming interested in producing
+Python extensions and the \UNIX{} programmer interested in producing
 software which can be successfully built on both \UNIX{} and Windows.
 
 
@@ -1787,13 +1827,13 @@ Copy the \file{config.h} from the \file{PC/} directory into the
 \file{include/} directory created by the installer.
 
 Create a \file{Setup} file for your extension module, as described in
-Chapter \ref{building-on-unix}.
+chapter \ref{building-on-unix}.
 
 Get David Ascher's \file{compile.py} script from
 \url{http://starship.python.net/crew/da/compile/}.  Run the script to
 create Microsoft Visual \Cpp{} project files.
 
-Open the DSW file in V\Cpp{} and select \strong{Build}.
+Open the DSW file in Visual \Cpp{} and select \strong{Build}.
 
 If your module creates a new type, you may have trouble with this line:
 
@@ -1827,7 +1867,7 @@ do this.
 loading of code.  Before you try to build a module that can be
 dynamically loaded, be aware of how your system works.
 
-In \UNIX{}, a shared object (.so) file contains code to be used by the
+In \UNIX{}, a shared object (\file{.so}) file contains code to be used by the
 program, and also the names of functions and data that it expects to
 find in the program.  When the file is joined to the program, all
 references to those functions and data in the file's code are changed
@@ -1925,7 +1965,8 @@ interpreter to run some Python code.
 So if you are embedding Python, you are providing your own main
 program.  One of the things this main program has to do is initialize
 the Python interpreter.  At the very least, you have to call the
-function \cfunction{Py_Initialize()}.  There are optional calls to
+function \cfunction{Py_Initialize()} (on MacOS, call
+\cfunction{PyMac_Initialize()} instead).  There are optional calls to
 pass command line arguments to Python.  Then later you can call the
 interpreter from any part of the application.
 
