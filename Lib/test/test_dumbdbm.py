@@ -9,8 +9,16 @@ import unittest
 import dumbdbm
 import tempfile
 
+_fname = tempfile.mktemp()
+
+def _delete_files():
+    for ext in [".dir", ".dat", ".bak"]:
+        try:
+            os.unlink(_fname + ext)
+        except OSError:
+            pass
+
 class DumbDBMTestCase(unittest.TestCase):
-    _fname = tempfile.mktemp()
     _dict = {'0': '',
              'a': 'Python:',
              'b': 'Programming',
@@ -26,11 +34,8 @@ class DumbDBMTestCase(unittest.TestCase):
         self._dkeys.sort()
 
     def test_dumbdbm_creation(self):
-        for ext in [".dir", ".dat", ".bak"]:
-            try: os.unlink(self._fname+ext)
-            except OSError: pass
-
-        f = dumbdbm.open(self._fname, 'c')
+        _delete_files()
+        f = dumbdbm.open(_fname, 'c')
         self.assertEqual(f.keys(), [])
         for key in self._dict:
             f[key] = self._dict[key]
@@ -38,18 +43,18 @@ class DumbDBMTestCase(unittest.TestCase):
         f.close()
 
     def test_dumbdbm_modification(self):
-        f = dumbdbm.open(self._fname, 'w')
+        f = dumbdbm.open(_fname, 'w')
         self._dict['g'] = f['g'] = "indented"
         self.read_helper(f)
         f.close()
 
     def test_dumbdbm_read(self):
-        f = dumbdbm.open(self._fname, 'r')
+        f = dumbdbm.open(_fname, 'r')
         self.read_helper(f)
         f.close()
 
     def test_dumbdbm_keys(self):
-        f = dumbdbm.open(self._fname)
+        f = dumbdbm.open(_fname)
         keys = self.keys_helper(f)
         f.close()
 
@@ -65,8 +70,10 @@ class DumbDBMTestCase(unittest.TestCase):
         return keys
 
 def test_main():
-    test_support.run_unittest(DumbDBMTestCase)
-
+    try:
+        test_support.run_unittest(DumbDBMTestCase)
+    finally:
+        _delete_files()
 
 if __name__ == "__main__":
     test_main()
