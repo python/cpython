@@ -5,14 +5,10 @@ import thread
 import signal
 import os
 import sys
-from test import test_support, TestSkipped
+from test.test_support import run_unittest, TestSkipped
 
 if sys.platform[:3] in ('win', 'os2') or sys.platform=='riscos':
     raise TestSkipped, "Can't test signal on %s" % sys.platform
-
-signal_blackboard = { signal.SIGUSR1 : {'tripped': 0, 'tripped_by': 0 },
-                      signal.SIGUSR2 : {'tripped': 0, 'tripped_by': 0 },
-                      signal.SIGALRM : {'tripped': 0, 'tripped_by': 0 } }
 
 process_pid = os.getpid()
 signalled_all=thread.allocate_lock()
@@ -65,15 +61,22 @@ class ThreadSignals(unittest.TestCase):
         self.assertEqual( signal_blackboard[signal.SIGUSR2]['tripped'], 1)
         self.assertEqual( signal_blackboard[signal.SIGUSR2]['tripped_by'],
                            thread.get_ident())
+        signalled_all.release()
 
     def spawnSignallingThread(self):
         thread.start_new_thread(send_signals, ())
 
 
 def test_main():
+    global signal_blackboard
+    
+    signal_blackboard = { signal.SIGUSR1 : {'tripped': 0, 'tripped_by': 0 },
+                          signal.SIGUSR2 : {'tripped': 0, 'tripped_by': 0 },
+                          signal.SIGALRM : {'tripped': 0, 'tripped_by': 0 } }
+
     oldsigs = registerSignals((handle_signals, handle_signals, handle_signals))
     try:
-        test_support.run_unittest(ThreadSignals)
+        run_unittest(ThreadSignals)
     finally:
         registerSignals(oldsigs)
 
