@@ -472,6 +472,11 @@ class Editor(W.Window):
 			pass
 		template = buildtools.findtemplate()
 		buildtools.process(template, filename, destname, rsrcname=rsrcname, progress=None)
+		try:
+			os.remove(filename)
+			os.rmdir(tmpdir)
+		except os.error:
+			pass
 	
 	def domenu_gotoline(self, *args):
 		self.linefield.selectall()
