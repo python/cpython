@@ -515,9 +515,19 @@ posix_getpid(self, args)
 	object *self;
 	object *args;
 {
-	if (!getnoarg())
+	if (!getnoarg(args))
 		return NULL;
 	return newintobject((long)getpid());
+}
+
+static object *
+posix_getpgrp(self, args)
+	object *self;
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+	return newintobject((long)getpgrp());
 }
 
 static object *
@@ -525,7 +535,7 @@ posix_getppid(self, args)
 	object *self;
 	object *args;
 {
-	if (!getnoarg())
+	if (!getnoarg(args))
 		return NULL;
 	return newintobject((long)getppid());
 }
@@ -662,6 +672,7 @@ static struct methodlist posix_methods[] = {
 	{"exec",	posix_exec},
 	{"fork",	posix_fork},
 	{"getpid",	posix_getpid},
+	{"getpgrp",	posix_getpgrp},
 	{"getppid",	posix_getppid},
 	{"kill",	posix_kill},
 	{"popen",	posix_popen},
