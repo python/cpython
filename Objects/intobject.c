@@ -434,8 +434,14 @@ i_divmod(x, y, p_xdivy, p_xmody)
 		return -1;
 	}
 	if (yi < 0) {
-		if (xi < 0)
+		if (xi < 0) {
+			if (yi == -1 && -xi < 0) {
+				/* most negative / -1 */
+				err_ovf("integer division");
+				return -1;
+			}
 			xdivy = -xi / -yi;
+		}
 		else
 			xdivy = - (xi / -yi);
 	}
