@@ -10,6 +10,9 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1074011: closing sys.std{in,out,err} now causes a flush() and 
+  an ferror() call.
+
 - min() and max() now support key= arguments with the same meaning as in
   list.sort().
 
