@@ -935,8 +935,10 @@ class C:
 \begin{funcdesc}{super}{type\optional{object-or-type}}
   Return the superclass of \var{type}.  If the second argument is omitted
   the super object returned is unbound.  If the second argument is an
-  object, isinstance(obj, type) must be true.  If the second argument is a
-  type, issubclass(type2, type) must be true.
+  object, \code{isinstance(\var{obj}, \var{type})} must be true.  If
+  the second argument is a type, \code{issubclass(\var{type2},
+  \var{type})} must be true.
+  \function{super()} only works for new-style classes.
 
   A typical use for calling a cooperative superclass method is:
 \begin{verbatim}
