@@ -2218,7 +2218,7 @@ static PyObject *SSL_SSLwrite(SSLObject *self, PyObject *args)
 	char *data;
 	size_t len = 0;
   
-	if (!PyArg_ParseTuple(args, "s|i:write", &data, &len))
+	if (!PyArg_ParseTuple(args, "s#|i:write", &data, &len))
 		return NULL;
   
 	if (!len)
