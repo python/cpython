@@ -73,7 +73,6 @@ static void initsigs Py_PROTO((void));
 
 int Py_DebugFlag; /* Needed by parser.c */
 int Py_VerboseFlag; /* Needed by import.c */
-int Py_SuppressPrintingFlag; /* Needed by ceval.c */
 int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
 
 /* Initialize the current interpreter; pass in the Python path. */
@@ -107,11 +106,20 @@ Py_Initialize()
 {
 	PyThreadState *tstate;
 	PyInterpreterState *interp;
+	char *p;
+	
 	if (PyThreadState_Get())
 		return;
+
+	if ((p = getenv("PYTHONDEBUG")) && *p != '\0')
+		Py_DebugFlag = 1;
+	if ((p = getenv("PYTHONVERBOSE")) && *p != '\0')
+		Py_VerboseFlag = 1;
+
 	interp = PyInterpreterState_New();
 	if (interp == NULL)
 		Py_FatalError("PyInterpreterState_New() failed");
+
 	tstate = PyThreadState_New(interp);
 	if (tstate == NULL)
 		Py_FatalError("PyThreadState_New() failed");
@@ -120,6 +128,23 @@ Py_Initialize()
 	Py_Setup();
 
 	PySys_SetPath(Py_GetPath());
+	/* XXX Who should set the path -- Setup or Initialize? */
+}
+
+static char *progname = "python";
+
+void
+Py_SetProgramName(pn)
+	char *pn;
+{
+	if (pn && *pn)
+		progname = pn;
+}
+
+char *
+Py_GetProgramName()
+{
+	return progname;
 }
 
 /*
