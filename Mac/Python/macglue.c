@@ -232,6 +232,66 @@ char *PyMac_getscript()
     }
 }
 
+/* Given an FSSpec, return the FSSpec of the parent folder */
+
+static OSErr
+get_folder_parent (FSSpec * fss, FSSpec * parent)
+{
+	CInfoPBRec rec;
+	short err;
+
+        * parent = * fss;
+        rec.hFileInfo.ioNamePtr = parent->name;
+        rec.hFileInfo.ioVRefNum = parent->vRefNum;
+        rec.hFileInfo.ioDirID = parent->parID;
+		rec.hFileInfo.ioFDirIndex = -1;
+        rec.hFileInfo.ioFVersNum = 0;
+        if (err = PBGetCatInfoSync (& rec))
+        	return err;
+        parent->parID = rec.dirInfo.ioDrParID;
+/*	parent->name[0] = 0; */
+        return 0;
+}
+
+/* Given an FSSpec return a full, colon-separated pathname */
+
+OSErr
+PyMac_GetFullPath (FSSpec *fss, char *buf)
+{
+	short err;
+	FSSpec fss_parent, fss_current;
+	char tmpbuf[1024];
+	int plen;
+
+	fss_current = *fss;
+	plen = fss_current.name[0];
+	memcpy(buf, &fss_current.name[1], plen);
+	buf[plen] = 0;
+	/* Special case for disk names */
+	if ( fss_current.parID <= 1 ) {
+		buf[plen++] = ':';
+		buf[plen] = 0;
+		return 0;
+	}
+	while (fss_current.parID > 1) {
+    		/* Get parent folder name */
+                if (err = get_folder_parent(&fss_current, &fss_parent))
+             		return err;
+                fss_current = fss_parent;
+                /* Prepend path component just found to buf */
+    			plen = fss_current.name[0];
+    			if (strlen(buf) + plen + 1 > 1024) {
+    				/* Oops... Not enough space (shouldn't happen) */
+    				*buf = 0;
+    				return -1;
+    			}
+    			memcpy(tmpbuf, &fss_current.name[1], plen);
+    			tmpbuf[plen] = ':';
+    			strcpy(&tmpbuf[plen+1], buf);
+    			strcpy(buf, tmpbuf);
+        }
+        return 0;
+}
 
 #ifdef USE_GUSI1
 /*
