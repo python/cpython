@@ -7,11 +7,15 @@ EXPORTS
 	_Py_NoneStruct DATA
 	_Py_TrueStruct DATA
 	Py_DebugFlag DATA
+	Py_NoSiteFlag DATA
+	Py_UseClassExceptionsFlag DATA
 	_PyParser_Grammar DATA
 	_PyThread_Started DATA
 	_PyParser_TokenNames DATA
 	Py_VerboseFlag DATA
-	PyExc_AccessError DATA
+	PyExc_StandardError DATA
+	PyExc_NumberError DATA
+	PyExc_LookupError DATA
 	PyExc_AttributeError DATA
 	PyExc_EOFError DATA
 	PyExc_FloatingPointError DATA
