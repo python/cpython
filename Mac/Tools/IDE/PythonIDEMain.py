@@ -14,6 +14,14 @@ if MacOS.runtimemodel == 'macho':
 else:
 	ELIPSES = '\xc9'
 
+def runningOnOSX():
+	from gestalt import gestalt
+	gestaltMenuMgrAquaLayoutBit = 1  # menus have the Aqua 1.0 layout
+	gestaltMenuMgrAquaLayoutMask = (1L << gestaltMenuMgrAquaLayoutBit)
+	value = gestalt("menu") & gestaltMenuMgrAquaLayoutMask
+	return not not value
+
+
 class PythonIDE(Wapplication.Application):
 	
 	def __init__(self):
@@ -62,8 +70,11 @@ class PythonIDE(Wapplication.Application):
 		saveasitem = FrameWork.MenuItem(m, "Save as"+ELIPSES, None, 'save_as')
 		FrameWork.Separator(m)
 		saveasappletitem = FrameWork.MenuItem(m, "Save as Applet"+ELIPSES, None, 'save_as_applet')
-		FrameWork.Separator(m)
-		quititem = FrameWork.MenuItem(m, "Quit", "Q", 'quit')
+		if not runningOnOSX():
+			# On OSX there's a special "magic" quit menu, so we shouldn't add
+			# it to the File menu.
+			FrameWork.Separator(m)
+			quititem = FrameWork.MenuItem(m, "Quit", "Q", 'quit')
 		
 		m = Wapplication.Menu(self.menubar, "Edit")
 		undoitem = FrameWork.MenuItem(m, "Undo", 'Z', "undo")
