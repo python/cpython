@@ -33,7 +33,7 @@ for feature in features:
     verify(type(major) is IntType, "optional major isn't int")
     verify(type(minor) is IntType, "optional minor isn't int")
     verify(type(micro) is IntType, "optional micro isn't int")
-    verify(type(level) is StringType, "optional level isn't string")
+    verify(isinstance(level, basestring), "optional level isn't string")
     verify(level in GOOD_SERIALS,
            "optional level string has unknown value")
     verify(type(serial) is IntType, "optional serial isn't int")
@@ -46,7 +46,7 @@ for feature in features:
         verify(type(major) is IntType, "mandatory major isn't int")
         verify(type(minor) is IntType, "mandatory minor isn't int")
         verify(type(micro) is IntType, "mandatory micro isn't int")
-        verify(type(level) is StringType, "mandatory level isn't string")
+        verify(isinstance(level, basestring), "mandatory level isn't string")
         verify(level in GOOD_SERIALS,
                "mandatory serial string has unknown value")
         verify(type(serial) is IntType, "mandatory serial isn't int")
