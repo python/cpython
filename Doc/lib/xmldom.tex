@@ -146,6 +146,7 @@ types are on the \class{Node} object: \constant{DOCUMENT_NODE},
 \constant{ENTITY_NODE}, \constant{PROCESSING_INSTRUCTION_NODE},
 \constant{COMMENT_NODE}, \constant{DOCUMENT_NODE},
 \constant{DOCUMENT_TYPE_NODE}, \constant{NOTATION_NODE}.
+This is a read-only attribute.
 \end{memberdesc}
 
 \begin{memberdesc}[Node]{parentNode}
@@ -154,11 +155,13 @@ The value is always a \class{Node} object or \code{None}.  For
 \class{Element} nodes, this will be the parent element, except for the
 root element, in which case it will be the \class{Document} object.
 For \class{Attr} nodes, this is always \code{None}.
+This is a read-only attribute.
 \end{memberdesc}
 
 \begin{memberdesc}[Node]{attributes}
 An \class{AttributeList} of attribute objects.  Only elements have
 actual values for this; others provide \code{None} for this attribute.
+This is a read-only attribute.
 \end{memberdesc}
 
 \begin{memberdesc}[Node]{previousSibling}
@@ -168,59 +171,78 @@ instance the element with an end-tag that comes just before the
 up of more than just elements so the previous sibling could be text, a
 comment, or something else.  If this node is the first child of the
 parent, this attribute will be \code{None}.
+This is a read-only attribute.
 \end{memberdesc}
 
 \begin{memberdesc}[Node]{nextSibling}
 The node that immediately follows this one with the same parent.  See
 also \member{previousSibling}.  If this is the last child of the
 parent, this attribute will be \code{None}.
+This is a read-only attribute.
 \end{memberdesc}
 
 \begin{memberdesc}[Node]{childNodes}
 A list of nodes contained within this node.
+This is a read-only attribute.
 \end{memberdesc}
 
 \begin{memberdesc}[Node]{firstChild}
 The first child of the node, if there are any, or \code{None}.
+This is a read-only attribute.
 \end{memberdesc}
 
 \begin{memberdesc}[Node]{lastChild}
 The last child of the node, if there are any, or \code{None}.
+This is a read-only attribute.
 \end{memberdesc}
 
-\begin{memberdesc}[Element]{namespaceURI}
+\begin{memberdesc}[Node]{localName}
+The part of the \member{tagName} following the colon if there is one,
+else the entire \member{tagName}.  The value is a string.
+\end{memberdesc}
+
+\begin{memberdesc}[Node]{prefix}
+The part of the \member{tagName} preceding the colon if there is one,
+else the empty string.  The value is a string, or \code{None}
+\end{memberdesc}
+
+\begin{memberdesc}[Node]{namespaceURI}
 The namespace associated with the element name.  This will be a
-string.
+string or \code{None}.  This is a read-only attribute.
 \end{memberdesc}
 
 \begin{memberdesc}[Node]{nodeName}
-Has a different meaning for each node type.  See the DOM specification
-for details.  You can always get the information you would get here
-from another property such as the \member{tagName} property for
-elements or the \member{name} property for attributes.  For all node
-types, the value of this attribute will be either a string or
-\code{None}.
+This has a different meaning for each node type; see the DOM
+specification for details.  You can always get the information you
+would get here from another property such as the \member{tagName}
+property for elements or the \member{name} property for attributes.
+For all node types, the value of this attribute will be either a
+string or \code{None}.  This is a read-only attribute.
 \end{memberdesc}
 
 \begin{memberdesc}[Node]{nodeValue}
-Has a different meaning for each node type.  See the DOM specification
-for details.  The situation is similar to that with \member{nodeName}.
+This has a different meaning for each node type; see the DOM
+specification for details.  The situation is similar to that with
+\member{nodeName}.  The value is a string or \code{None}.
 \end{memberdesc}
+
+\begin{methoddesc}[Node]{hasAttributes}{}
+Returns true if the node has any attributes.
+\end{methoddesc}
 
 \begin{methoddesc}[Node]{hasChildNodes}{}
 Returns true if the node has any child nodes.
 \end{methoddesc}
 
+\begin{methoddesc}[Node]{appendChild}{newChild}
+Add a new child node to this node at the end of the list of children,
+returning \var{newChild}.
+\end{methoddesc}
+
 \begin{methoddesc}[Node]{insertBefore}{newChild, refChild}
 Insert a new child node before an existing child.  It must be the case
 that \var{refChild} is a child of this node; if not,
-\exception{ValueError} is raised.
-\end{methoddesc}
-
-\begin{methoddesc}[Node]{replaceChild}{newChild, oldChild}
-Replace an existing node with a new node. It must be the case that 
-\var{oldChild} is a child of this node; if not,
-\exception{ValueError} is raised.
+\exception{ValueError} is raised.  \var{newChild} is returned.
 \end{methoddesc}
 
 \begin{methoddesc}[Node]{removeChild}{oldChild}
@@ -230,9 +252,10 @@ success.  If \var{oldChild} will not be used further, its
 \method{unlink()} method should be called.
 \end{methoddesc}
 
-\begin{methoddesc}[Node]{appendChild}{newChild}
-Add a new child node to this node at the end of the list of children,
-returning \var{newChild}.
+\begin{methoddesc}[Node]{replaceChild}{newChild, oldChild}
+Replace an existing node with a new node. It must be the case that 
+\var{oldChild} is a child of this node; if not,
+\exception{ValueError} is raised.
 \end{methoddesc}
 
 \begin{methoddesc}[Node]{normalize}{}
@@ -410,55 +433,72 @@ The element type name.  In a namespace-using document it may have
 colons in it.  The value is a string.
 \end{memberdesc}
 
-\begin{memberdesc}[Element]{localName}
-The part of the \member{tagName} following the colon if there is one,
-else the entire \member{tagName}.  The value is a string.
-\end{memberdesc}
-
-\begin{memberdesc}[Element]{prefix}
-The part of the \member{tagName} preceding the colon if there is one,
-else the empty string.  The value is a string, or \code{None}
-\end{memberdesc}
-
-\begin{methoddesc}[Element]{getAttribute}{attname}
-Return an attribute value as a string.
-\end{methoddesc}
-
-\begin{methoddesc}[Element]{getAttributeNode}{attrname}
-Return the \class{Attr} node for the attribute named by \var{attrname}
-\end{methoddesc}
-
-\begin{methoddesc}[Element]{setAttribute}{attname, value}
-Set an attribute value from a string.
-\end{methoddesc}
-
-\begin{methoddesc}[Element]{removeAttribute}{attname}
-Remove an attribute by name.
-\end{methoddesc}
-
-\begin{methoddesc}[Element]{getAttributeNS}{namespaceURI, localName}
-Return an attribute value as a string, given a \var{namespaceURI} and
-\var{localName}.  Note that a localname is the part of a prefixed
-attribute name after the colon (if there is one).
-\end{methoddesc}
-
-\begin{methoddesc}[Element]{setAttributeNS}{namespaceURI, qname, value}
-Set an attribute value from a string, given a \var{namespaceURI} and a
-\var{qname}.  Note that a qname is the whole attribute name.  This is
-different than above.
-\end{methoddesc}
-
-\begin{methoddesc}[Element]{removeAttributeNS}{namespaceURI, localName}
-Remove an attribute by name.  Note that it uses a localName, not a
-qname.
-\end{methoddesc}
-
 \begin{methoddesc}[Element]{getElementsByTagName}{tagName}
 Same as equivalent method in the \class{Document} class.
 \end{methoddesc}
 
 \begin{methoddesc}[Element]{getElementsByTagNameNS}{tagName}
 Same as equivalent method in the \class{Document} class.
+\end{methoddesc}
+
+\begin{methoddesc}[Element]{getAttribute}{attname}
+Return an attribute value as a string.
+\end{methoddesc}
+
+\begin{methoddesc}[Element]{getAttributeNode}{attrname}
+Return the \class{Attr} node for the attribute named by
+\var{attrname}.
+\end{methoddesc}
+
+\begin{methoddesc}[Element]{getAttributeNS}{namespaceURI, localName}
+Return an attribute value as a string, given a \var{namespaceURI} and
+\var{localName}.
+\end{methoddesc}
+
+\begin{methoddesc}[Element]{getAttributeNodeNS}{namespaceURI, localName}
+Return an attribute value as a node, given a \var{namespaceURI} and
+\var{localName}.
+\end{methoddesc}
+
+\begin{methoddesc}[Element]{removeAttribute}{attname}
+Remove an attribute by name.  No exception is raised if there is no
+matching attribute.
+\end{methoddesc}
+
+\begin{methoddesc}[Element]{removeAttributeNode}{oldAttr}
+Remove and return \var{oldAttr} from the attribute list, if present.
+If \var{oldAttr} is not present, \exception{NotFoundErr} is raised.
+\end{methoddesc}
+
+\begin{methoddesc}[Element]{removeAttributeNS}{namespaceURI, localName}
+Remove an attribute by name.  Note that it uses a localName, not a
+qname.  No exception is raised if there is no matching attribute.
+\end{methoddesc}
+
+\begin{methoddesc}[Element]{setAttribute}{attname, value}
+Set an attribute value from a string.
+\end{methoddesc}
+
+\begin{methoddesc}[Element]{setAttributeNode}{newAttr}
+Add a new attibute node to the element, replacing an existing
+attribute if necessary if the \member{name} attribute matches.  If a
+replacement occurs, the old attribute node will be returned.  If
+\var{newAttr} is already in use, \exception{InuseAttributeErr} will be
+raised.
+\end{methoddesc}
+
+\begin{methoddesc}[Element]{setAttributeNodeNS}{newAttr}
+Add a new attibute node to the element, replacing an existing
+attribute if necessary if the \member{namespaceURI} and
+\member{localName} attributes match.  If a replacement occurs, the old
+attribute node will be returned.  If \var{newAttr} is already in use,
+\exception{InuseAttributeErr} will be raised.
+\end{methoddesc}
+
+\begin{methoddesc}[Element]{setAttributeNS}{namespaceURI, qname, value}
+Set an attribute value from a string, given a \var{namespaceURI} and a
+\var{qname}.  Note that a qname is the whole attribute name.  This is
+different than above.
 \end{methoddesc}
 
 
@@ -474,16 +514,12 @@ in it.
 
 \begin{memberdesc}[Attr]{localName}
 The part of the name following the colon if there is one, else the
-entire name.
+entire name.  This is a read-only attribute.
 \end{memberdesc}
 
 \begin{memberdesc}[Attr]{prefix}
 The part of the name preceding the colon if there is one, else the
 empty string.
-\end{memberdesc}
-
-\begin{memberdesc}[Attr]{namespaceURI}
-The namespace associated with the attribute name.
 \end{memberdesc}
 
 
@@ -510,31 +546,46 @@ behavior.  You can use them or you can use the standardized
 \subsubsection{Comment Objects \label{dom-comment-objects}}
 
 \class{Comment} represents a comment in the XML document.  It is a
-subclass of \class{Node}.
+subclass of \class{Node}, but cannot have child nodes.
 
 \begin{memberdesc}[Comment]{data}
-The content of the comment.
+The content of the comment as a string.  The attribute contains all
+characters between the leading \code{<!-}\code{-} and trailing
+\code{-}\code{->}, but does not include them.
 \end{memberdesc}
 
 
-\subsubsection{Text Objects \label{dom-text-objects}}
+\subsubsection{Text and CDATASection Objects \label{dom-text-objects}}
 
-The \class{Text} interface represents text in the XML document.  It
-inherits from \class{Node}.
+The \class{Text} interface represents text in the XML document.  If
+the parser and DOM implementation support the DOM's XML extension,
+portions of the text enclosed in CDATA marked sections are stored in
+\class{CDATASection} objects.  These two interfaces are identical, but
+provide different values for the \member{nodeType} attribute.
+
+These interfaces extend the \class{Node} interface.  They cannot have
+child nodes.
 
 \begin{memberdesc}[Text]{data}
-The content of the text node.
+The content of the text node as a string.
 \end{memberdesc}
+
+\strong{Note:}  The use of a \class{CDATASection} node does not
+indicate that the node represents a complete CDATA marked section,
+only that the content of the node was part of a CDATA section.  A
+single CDATA section may be represented by more than one node in the
+document tree.  There is no way to determine whether two adjacent
+\class{CDATASection} nodes represent different CDATA marked sections.
 
 
 \subsubsection{ProcessingInstruction Objects \label{dom-pi-objects}}
 
 Represents a processing instruction in the XML document; this inherits
-from the \class{Node} interface.
+from the \class{Node} interface and cannot have child nodes.
 
 \begin{memberdesc}[ProcessingInstruction]{target}
 The content of the processing instruction up to the first whitespace
-character.
+character.  This is a read-only attribute.
 \end{memberdesc}
 
 \begin{memberdesc}[ProcessingInstruction]{data}
