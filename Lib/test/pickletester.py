@@ -293,6 +293,13 @@ class AbstractPickleTests(unittest.TestCase):
                 y = self.loads(s)
                 self.assertEqual(x, y, (proto, x, s, y))
 
+    def test_singletons(self):
+        for proto in 0, 1, 2:
+            for x in None, False, True:
+                s = self.dumps(x, proto)
+                y = self.loads(s)
+                self.assert_(x is y, (proto, x, s, y))
+
 class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_dump_closed_file(self):
