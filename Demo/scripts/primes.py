@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # Print prime numbers in a given range
 

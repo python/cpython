@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # Read #define's from stdin and translate to Python code on stdout.
 # Very primitive: non-#define's are ignored, no check for valid Python
