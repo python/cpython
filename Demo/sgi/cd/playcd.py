@@ -52,10 +52,10 @@ def prstatus(status):
 def main():
 	import sys, readcd, al, AL, CD, cdplayer
 	verbose = 0
-	r = readcd.Readcd().init()
+	r = readcd.Readcd()
 	prstatus(r.getstatus())
 	prtrackinfo(r.gettrackinfo())
-	cdinfo = cdplayer.Cdplayer().init(r.gettrackinfo())
+	cdinfo = cdplayer.Cdplayer(r.gettrackinfo())
 	if cdinfo.title <> '':
 		print 'Title: "' + cdinfo.title + '"'
 	if cdinfo.artist <> '':

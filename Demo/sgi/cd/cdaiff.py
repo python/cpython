@@ -17,7 +17,7 @@ def main():
 	a.setsampwidth(AL.SAMPLE_16)
 	a.setnchannels(AL.STEREO)
 	a.setframerate(AL.RATE_44100)
-	r = readcd.Readcd().init()
+	r = readcd.Readcd()
 	for arg in sys.argv[2:]:
 		x = eval(arg)
 		try:
