@@ -437,14 +437,6 @@ class install (Command):
         if self.path_file:
             self.create_path_file ()
 
-        normalized_path = map (os.path.normpath, sys.path)
-        if (not (self.path_file and self.install_path_file) and
-            os.path.normpath (self.install_lib) not in normalized_path):
-            self.warn (("modules installed to '%s', which is not in " +
-                        "Python's module search path (sys.path) -- " +
-                        "you'll have to change the search path yourself") %
-                       self.install_lib)
-
         # write list of installed files, if requested.
         if self.record:
             outputs = self.get_outputs()
@@ -459,7 +451,15 @@ class install (Command):
                     outputs[counter] = outputs[counter][root_len:]
             self.execute(write_file,
                          ("INSTALLED_FILES", outputs),
-                         "Writing list of installed files")
+                         "writing list of installed files")
+
+        normalized_path = map (os.path.normpath, sys.path)
+        if (not (self.path_file and self.install_path_file) and
+            os.path.normpath (self.install_lib) not in normalized_path):
+            self.warn (("modules installed to '%s', which is not in " +
+                        "Python's module search path (sys.path) -- " +
+                        "you'll have to change the search path yourself") %
+                       self.install_lib)
 
     # run ()
 
