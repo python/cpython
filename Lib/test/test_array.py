@@ -3,7 +3,7 @@
    Roger E. Masse
 """
 import array
-from test_support import verbose, TESTFN, unlink, TestFailed
+from test_support import verify, verbose, TESTFN, unlink, TestFailed
 
 def main():
 

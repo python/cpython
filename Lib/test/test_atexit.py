@@ -1,5 +1,5 @@
 # Test the exit module
-from test_support import verbose
+from test_support import verify, verbose
 import atexit
 
 def handler1():

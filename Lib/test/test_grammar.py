@@ -83,18 +83,18 @@ x = 3.1e4
 
 print '1.1.3 String literals'
 
-##def assert(s):
+##def verify(s):
 ##      if not s: raise TestFailed, 'see traceback'
 
-x = ''; y = ""; assert(len(x) == 0 and x == y)
-x = '\''; y = "'"; assert(len(x) == 1 and x == y and ord(x) == 39)
-x = '"'; y = "\""; assert(len(x) == 1 and x == y and ord(x) == 34)
+x = ''; y = ""; verify(len(x) == 0 and x == y)
+x = '\''; y = "'"; verify(len(x) == 1 and x == y and ord(x) == 39)
+x = '"'; y = "\""; verify(len(x) == 1 and x == y and ord(x) == 34)
 x = "doesn't \"shrink\" does it"
 y = 'doesn\'t "shrink" does it'
-assert(len(x) == 24 and x == y)
+verify(len(x) == 24 and x == y)
 x = "does \"shrink\" doesn't it"
 y = 'does "shrink" doesn\'t it'
-assert(len(x) == 24 and x == y)
+verify(len(x) == 24 and x == y)
 x = """
 The "quick"
 brown fox
@@ -102,25 +102,25 @@ jumps over
 the 'lazy' dog.
 """
 y = '\nThe "quick"\nbrown fox\njumps over\nthe \'lazy\' dog.\n'
-assert(x == y)
+verify(x == y)
 y = '''
 The "quick"
 brown fox
 jumps over
 the 'lazy' dog.
-'''; assert(x == y)
+'''; verify(x == y)
 y = "\n\
 The \"quick\"\n\
 brown fox\n\
 jumps over\n\
 the 'lazy' dog.\n\
-"; assert(x == y)
+"; verify(x == y)
 y = '\n\
 The \"quick\"\n\
 brown fox\n\
 jumps over\n\
 the \'lazy\' dog.\n\
-'; assert(x == y)
+'; verify(x == y)
 
 
 print '1.2 Grammar'

@@ -1,5 +1,5 @@
 # Testing select module
-from test_support import verbose
+from test_support import verify, verbose
 import select
 import os
 

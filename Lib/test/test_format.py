@@ -1,4 +1,4 @@
-from test_support import verbose
+from test_support import verify, verbose
 import string, sys
 
 # test string formatting operator (I am not sure if this is being tested

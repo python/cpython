@@ -1,6 +1,6 @@
 import os
 
-from test_support import TESTFN
+from test_support import verify, TESTFN
 from UserList import UserList
 
 # verify writelines with instance sequence
@@ -11,7 +11,7 @@ f.close()
 f = open(TESTFN, 'rb')
 buf = f.read()
 f.close()
-assert buf == '12'
+verify(buf == '12')
 
 # verify writelines with integers
 f = open(TESTFN, 'wb')

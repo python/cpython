@@ -1,3 +1,4 @@
+from test_support import verify
 import mmap
 import string, os, re, sys
 
@@ -21,15 +22,15 @@ def test_both():
 
     print type(m)  # SF bug 128713:  segfaulted on Linux
     print '  Position of foo:', string.find(m, 'foo') / float(PAGESIZE), 'pages'
-    assert string.find(m, 'foo') == PAGESIZE
+    verify(string.find(m, 'foo') == PAGESIZE)
 
     print '  Length of file:', len(m) / float(PAGESIZE), 'pages'
-    assert len(m) == 2*PAGESIZE
+    verify(len(m) == 2*PAGESIZE)
 
     print '  Contents of byte 0:', repr(m[0])
-    assert m[0] == '\0'
+    verify(m[0] == '\0')
     print '  Contents of first 3 bytes:', repr(m[0:3])
-    assert m[0:3] == '\0\0\0'
+    verify(m[0:3] == '\0\0\0')
 
     # Modify the file's content
     print "\n  Modifying file's content..."
@@ -38,11 +39,11 @@ def test_both():
 
     # Check that the modification worked
     print '  Contents of byte 0:', repr(m[0])
-    assert m[0] == '3'
+    verify(m[0] == '3')
     print '  Contents of first 3 bytes:', repr(m[0:3])
-    assert m[0:3] == '3\0\0'
+    verify(m[0:3] == '3\0\0')
     print '  Contents of second page:',  repr(m[PAGESIZE-1 : PAGESIZE + 7])
-    assert m[PAGESIZE-1 : PAGESIZE + 7] == '\0foobar\0'
+    verify(m[PAGESIZE-1 : PAGESIZE + 7] == '\0foobar\0')
 
     m.flush()
 
@@ -57,19 +58,19 @@ def test_both():
         print '  Regex match on mmap (page start, length of match):',
         print start / float(PAGESIZE), length
 
-        assert start == PAGESIZE
-        assert end == PAGESIZE + 6
+        verify(start == PAGESIZE)
+        verify(end == PAGESIZE + 6)
 
     # test seeking around (try to overflow the seek implementation)
     m.seek(0,0)
     print '  Seek to zeroth byte'
-    assert m.tell() == 0
+    verify(m.tell() == 0)
     m.seek(42,1)
     print '  Seek to 42nd byte'
-    assert m.tell() == 42
+    verify(m.tell() == 42)
     m.seek(0,2)
     print '  Seek to last byte'
-    assert m.tell() == len(m)
+    verify(m.tell() == len(m))
 
     print '  Try to seek to negative position...'
     try:
@@ -77,7 +78,7 @@ def test_both():
     except ValueError:
         pass
     else:
-        assert 0, 'expected a ValueError but did not get it'
+        verify(0, 'expected a ValueError but did not get it')
 
     print '  Try to seek beyond end of mmap...'
     try:
@@ -85,7 +86,7 @@ def test_both():
     except ValueError:
         pass
     else:
-        assert 0, 'expected a ValueError but did not get it'
+        verify(0, 'expected a ValueError but did not get it')
 
     print '  Try to seek to negative position...'
     try:
@@ -93,7 +94,7 @@ def test_both():
     except ValueError:
         pass
     else:
-        assert 0, 'expected a ValueError but did not get it'
+        verify(0, 'expected a ValueError but did not get it')
 
     # Try resizing map
     print '  Attempting resize()'
@@ -106,14 +107,15 @@ def test_both():
         pass
     else:
         # resize() is supported
-        assert len(m) == 512, "len(m) is %d, but expecting 512" % (len(m),)
+        verify(len(m) == 512,
+                "len(m) is %d, but expecting 512" % (len(m),) )
         # Check that we can no longer seek beyond the new size.
         try:
             m.seek(513,0)
         except ValueError:
             pass
         else:
-            assert 0, 'Could seek beyond the new size'
+            verify(0, 'Could seek beyond the new size')
 
     m.close()
     os.unlink("foo")

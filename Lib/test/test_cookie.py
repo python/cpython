@@ -16,15 +16,15 @@ for data, dict in cases:
     print str(C)
     for k, v in dict.items():
         print ' ', k, repr( C[k].value ), repr(v)
-        assert C[k].value == v
+        verify(C[k].value == v)
         print C[k]
 
 C = Cookie.SimpleCookie()
 C.load('Customer="WILE_E_COYOTE"; Version=1; Path=/acme')
 
-assert C['Customer'].value == 'WILE_E_COYOTE'
-assert C['Customer']['version'] == '1'
-assert C['Customer']['path'] == '/acme'
+verify(C['Customer'].value == 'WILE_E_COYOTE')
+verify(C['Customer']['version'] == '1')
+verify(C['Customer']['path'] == '/acme')
 
 print C.output(['path'])
 print C.js_output()
@@ -33,6 +33,6 @@ print C.js_output(['path'])
 # Try cookie with quoted meta-data
 C = Cookie.SimpleCookie()
 C.load('Customer="WILE_E_COYOTE"; Version="1"; Path="/acme"')
-assert C['Customer'].value == 'WILE_E_COYOTE'
-assert C['Customer']['version'] == '1'
-assert C['Customer']['path'] == '/acme'
+verify(C['Customer'].value == 'WILE_E_COYOTE')
+verify(C['Customer']['version'] == '1')
+verify(C['Customer']['path'] == '/acme')

@@ -2,7 +2,7 @@
 
 # Create a bunch of threads, let each do some work, wait until all are done
 
-from test_support import verbose
+from test_support import verify, verbose
 import random
 import thread
 import time

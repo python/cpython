@@ -5,6 +5,8 @@ Written by Bill Tutt.
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
 """#"
+from test_support import verify, verbose
+
 print 'Testing General Unicode Character Name, and case insensitivity...',
 
 # General and case insensitivity test:
@@ -34,15 +36,15 @@ s = u"\N{LATIN CAPITAL LETTER T}" \
     u"\N{LATIN SMALL LETTER E}" \
     u"\N{LATIN SMALL LETTER P}" \
     u"\N{FULL STOP}"
-assert s == u"The rEd fOx ate the sheep.", s
+verify(s == u"The rEd fOx ate the sheep.", s)
 print "done."
 
 # misc. symbol testing
 print "Testing misc. symbols for unicode character name expansion....",
-assert u"\N{PILCROW SIGN}" == u"\u00b6"
-assert u"\N{REPLACEMENT CHARACTER}" == u"\uFFFD"
-assert u"\N{HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK}" == u"\uFF9F"
-assert u"\N{FULLWIDTH LATIN SMALL LETTER A}" == u"\uFF41"
+verify(u"\N{PILCROW SIGN}" == u"\u00b6")
+verify(u"\N{REPLACEMENT CHARACTER}" == u"\uFFFD")
+verify(u"\N{HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK}" == u"\uFF9F")
+verify(u"\N{FULLWIDTH LATIN SMALL LETTER A}" == u"\uFF41")
 print "done."
 
 

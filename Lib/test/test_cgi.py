@@ -1,3 +1,4 @@
+from test_support import verify, verbose
 import cgi
 import os
 import sys
@@ -117,9 +118,9 @@ def main():
         # Test basic parsing
         print repr(orig)
         d = do_test(orig, "GET")
-        assert d == expect, "Error parsing %s" % repr(orig)
+        verify(d == expect, "Error parsing %s" % repr(orig))
         d = do_test(orig, "POST")
-        assert d == expect, "Error parsing %s" % repr(orig)
+        verify(d == expect, "Error parsing %s" % repr(orig))
 
         env = {'QUERY_STRING': orig}
         fcd = cgi.FormContentDict(env)
@@ -127,21 +128,21 @@ def main():
         fs = cgi.FieldStorage(environ=env)
         if type(expect) == type({}):
             # test dict interface
-            assert len(expect) == len(fcd)
-            assert norm(expect.keys()) == norm(fcd.keys())
-            assert norm(expect.values()) == norm(fcd.values())
-            assert norm(expect.items()) == norm(fcd.items())
-            assert fcd.get("nonexistent field", "default") == "default"
-            assert len(sd) == len(fs)
-            assert norm(sd.keys()) == norm(fs.keys())
-            assert fs.getvalue("nonexistent field", "default") == "default"
+            verify(len(expect) == len(fcd))
+            verify(norm(expect.keys()) == norm(fcd.keys()))
+            verify(norm(expect.values()) == norm(fcd.values()))
+            verify(norm(expect.items()) == norm(fcd.items()))
+            verify(fcd.get("nonexistent field", "default") == "default")
+            verify(len(sd) == len(fs))
+            verify(norm(sd.keys()) == norm(fs.keys()))
+            verify(fs.getvalue("nonexistent field", "default") == "default")
             # test individual fields
             for key in expect.keys():
                 expect_val = expect[key]
-                assert fcd.has_key(key)
-                assert norm(fcd[key]) == norm(expect[key])
-                assert fcd.get(key, "default") == fcd[key]
-                assert fs.has_key(key)
+                verify(fcd.has_key(key))
+                verify(norm(fcd[key]) == norm(expect[key]))
+                verify(fcd.get(key, "default") == fcd[key])
+                verify(fs.has_key(key))
                 if len(expect_val) > 1:
                     single_value = 0
                 else:
@@ -149,28 +150,28 @@ def main():
                 try:
                     val = sd[key]
                 except IndexError:
-                    assert not single_value
-                    assert fs.getvalue(key) == expect_val
+                    verify(not single_value)
+                    verify(fs.getvalue(key) == expect_val)
                 else:
-                    assert single_value
-                    assert val == expect_val[0]
-                    assert fs.getvalue(key) == expect_val[0]
-                assert norm(sd.getlist(key)) == norm(expect_val)
+                    verify(single_value)
+                    verify(val == expect_val[0])
+                    verify(fs.getvalue(key) == expect_val[0])
+                verify(norm(sd.getlist(key)) == norm(expect_val))
                 if single_value:
-                    assert norm(sd.values()) == \
-                           first_elts(norm(expect.values()))
-                    assert norm(sd.items()) == \
-                           first_second_elts(norm(expect.items()))
+                    verify(norm(sd.values()) == \
+                           first_elts(norm(expect.values())))
+                    verify(norm(sd.items()) == \
+                           first_second_elts(norm(expect.items())))
 
     # Test the weird FormContentDict classes
     env = {'QUERY_STRING': "x=1&y=2.0&z=2-3.%2b0&1=1abc"}
     expect = {'x': 1, 'y': 2.0, 'z': '2-3.+0', '1': '1abc'}
     d = cgi.InterpFormContentDict(env)
     for k, v in expect.items():
-        assert d[k] == v
+        verify(d[k] == v)
     for k, v in d.items():
-        assert expect[k] == v
-    assert norm(expect.values()) == norm(d.values())
+        verify(expect[k] == v)
+    verify(norm(expect.values()) == norm(d.values()))
 
     print "Testing log"
     cgi.initlog()

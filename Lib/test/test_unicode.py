@@ -4,8 +4,8 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
-"""
-from test_support import verbose
+"""#"
+from test_support import verify, verbose
 import sys
 
 def test(method, input, output, *args):
@@ -173,15 +173,15 @@ if 0:
 
 # Comparisons:
 print 'Testing Unicode comparisons...',
-assert u'abc' == 'abc'
-assert 'abc' == u'abc'
-assert u'abc' == u'abc'
-assert u'abcd' > 'abc'
-assert 'abcd' > u'abc'
-assert u'abcd' > u'abc'
-assert u'abc' < 'abcd'
-assert 'abc' < u'abcd'
-assert u'abc' < u'abcd'
+verify(u'abc' == 'abc')
+verify('abc' == u'abc')
+verify(u'abc' == u'abc')
+verify(u'abcd' > 'abc')
+verify('abcd' > u'abc')
+verify(u'abcd' > u'abc')
+verify(u'abc' < 'abcd')
+verify('abc' < u'abcd')
+verify(u'abc' < u'abcd')
 print 'done.'
 
 if 0:
@@ -189,13 +189,13 @@ if 0:
 
     print 'Testing UTF-16 code point order comparisons...',
     #No surrogates, no fixup required.
-    assert u'\u0061' < u'\u20ac'
+    verify(u'\u0061' < u'\u20ac')
     # Non surrogate below surrogate value, no fixup required
-    assert u'\u0061' < u'\ud800\udc02'
+    verify(u'\u0061' < u'\ud800\udc02')
 
     # Non surrogate above surrogate value, fixup required
     def test_lecmp(s, s2):
-        assert s <  s2 , "comparison failed on %s < %s" % (s, s2)
+      verify(s <  s2 , "comparison failed on %s < %s" % (s, s2))
 
     def test_fixup(s):
         s2 = u'\ud800\udc01'
@@ -235,7 +235,7 @@ if 0:
     test_fixup(u'\uff61')
 
     # Surrogates on both sides, no fixup required
-    assert u'\ud800\udc02' < u'\ud84d\udc56'
+    verify(u'\ud800\udc02' < u'\ud84d\udc56')
     print 'done.'
 
 test('ljust', u'abc',  u'abc       ', 10)
@@ -306,78 +306,78 @@ test('translate', u"abababc", u'iiix', {ord('a'):None, ord('b'):ord('i'), ord('c
 
 # Contains:
 print 'Testing Unicode contains method...',
-assert ('a' in u'abdb') == 1
-assert ('a' in u'bdab') == 1
-assert ('a' in u'bdaba') == 1
-assert ('a' in u'bdba') == 1
-assert ('a' in u'bdba') == 1
-assert (u'a' in u'bdba') == 1
-assert (u'a' in u'bdb') == 0
-assert (u'a' in 'bdb') == 0
-assert (u'a' in 'bdba') == 1
-assert (u'a' in ('a',1,None)) == 1
-assert (u'a' in (1,None,'a')) == 1
-assert (u'a' in (1,None,u'a')) == 1
-assert ('a' in ('a',1,None)) == 1
-assert ('a' in (1,None,'a')) == 1
-assert ('a' in (1,None,u'a')) == 1
-assert ('a' in ('x',1,u'y')) == 0
-assert ('a' in ('x',1,None)) == 0
+verify(('a' in u'abdb') == 1)
+verify(('a' in u'bdab') == 1)
+verify(('a' in u'bdaba') == 1)
+verify(('a' in u'bdba') == 1)
+verify(('a' in u'bdba') == 1)
+verify((u'a' in u'bdba') == 1)
+verify((u'a' in u'bdb') == 0)
+verify((u'a' in 'bdb') == 0)
+verify((u'a' in 'bdba') == 1)
+verify((u'a' in ('a',1,None)) == 1)
+verify((u'a' in (1,None,'a')) == 1)
+verify((u'a' in (1,None,u'a')) == 1)
+verify(('a' in ('a',1,None)) == 1)
+verify(('a' in (1,None,'a')) == 1)
+verify(('a' in (1,None,u'a')) == 1)
+verify(('a' in ('x',1,u'y')) == 0)
+verify(('a' in ('x',1,None)) == 0)
 print 'done.'
 
 # Formatting:
 print 'Testing Unicode formatting strings...',
-assert u"%s, %s" % (u"abc", "abc") == u'abc, abc'
-assert u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", 1, 2, 3) == u'abc, abc, 1, 2.000000,  3.00'
-assert u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", 1, -2, 3) == u'abc, abc, 1, -2.000000,  3.00'
-assert u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", -1, -2, 3.5) == u'abc, abc, -1, -2.000000,  3.50'
-assert u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", -1, -2, 3.57) == u'abc, abc, -1, -2.000000,  3.57'
-assert u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", -1, -2, 1003.57) == u'abc, abc, -1, -2.000000, 1003.57'
-assert u"%c" % (u"a",) == u'a'
-assert u"%c" % ("a",) == u'a'
-assert u"%c" % (34,) == u'"'
-assert u"%c" % (36,) == u'$'
+verify(u"%s, %s" % (u"abc", "abc") == u'abc, abc')
+verify(u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", 1, 2, 3) == u'abc, abc, 1, 2.000000,  3.00')
+verify(u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", 1, -2, 3) == u'abc, abc, 1, -2.000000,  3.00')
+verify(u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", -1, -2, 3.5) == u'abc, abc, -1, -2.000000,  3.50')
+verify(u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", -1, -2, 3.57) == u'abc, abc, -1, -2.000000,  3.57')
+verify(u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", -1, -2, 1003.57) == u'abc, abc, -1, -2.000000, 1003.57')
+verify(u"%c" % (u"a",) == u'a')
+verify(u"%c" % ("a",) == u'a')
+verify(u"%c" % (34,) == u'"')
+verify(u"%c" % (36,) == u'$')
 value = u"%r, %r" % (u"abc", "abc")
 if value != u"u'abc', 'abc'":
     print '*** formatting failed for "%s"' % 'u"%r, %r" % (u"abc", "abc")'
 
-assert u"%(x)s, %(y)s" % {'x':u"abc", 'y':"def"} == u'abc, def'
+verify(u"%(x)s, %(y)s" % {'x':u"abc", 'y':"def"} == u'abc, def')
 try:
     value = u"%(x)s, %(ä)s" % {'x':u"abc", u'ä'.encode('utf-8'):"def"}
 except KeyError:
     print '*** formatting failed for "%s"' % "u'abc, def'"
 else:
-    assert value == u'abc, def'
+    verify(value == u'abc, def')
 
 # formatting jobs delegated from the string implementation:
-assert '...%(foo)s...' % {'foo':u"abc"} == u'...abc...'
-assert '...%(foo)s...' % {'foo':"abc"} == '...abc...'
-assert '...%(foo)s...' % {u'foo':"abc"} == '...abc...'
-assert '...%(foo)s...' % {u'foo':u"abc"} == u'...abc...'
-assert '...%(foo)s...' % {u'foo':u"abc",'def':123} ==  u'...abc...'
-assert '...%(foo)s...' % {u'foo':u"abc",u'def':123} == u'...abc...'
-assert '...%s...%s...%s...%s...' % (1,2,3,u"abc") == u'...1...2...3...abc...'
-assert '...%%...%%s...%s...%s...%s...%s...' % (1,2,3,u"abc") == u'...%...%s...1...2...3...abc...'
-assert '...%s...' % u"abc" == u'...abc...'
+verify('...%(foo)s...' % {'foo':u"abc"} == u'...abc...')
+verify('...%(foo)s...' % {'foo':"abc"} == '...abc...')
+verify('...%(foo)s...' % {u'foo':"abc"} == '...abc...')
+verify('...%(foo)s...' % {u'foo':u"abc"} == u'...abc...')
+verify('...%(foo)s...' % {u'foo':u"abc",'def':123} ==  u'...abc...')
+verify('...%(foo)s...' % {u'foo':u"abc",u'def':123} == u'...abc...')
+verify('...%s...%s...%s...%s...' % (1,2,3,u"abc") == u'...1...2...3...abc...')
+verify('...%%...%%s...%s...%s...%s...%s...' % (1,2,3,u"abc") == u'...%...%s...1...2...3...abc...')
+verify('...%s...' % u"abc" == u'...abc...')
 print 'done.'
 
 # Test builtin codecs
 print 'Testing builtin codecs...',
 
 # UTF-8 specific encoding tests:
-assert u'\u20ac'.encode('utf-8') == \
-       ''.join((chr(0xe2), chr(0x82), chr(0xac)))
-assert u'\ud800\udc02'.encode('utf-8') == \
-       ''.join((chr(0xf0), chr(0x90), chr(0x80), chr(0x82)))
-assert u'\ud84d\udc56'.encode('utf-8') == \
-       ''.join((chr(0xf0), chr(0xa3), chr(0x91), chr(0x96)))
+verify(u'\u20ac'.encode('utf-8') == \
+       ''.join((chr(0xe2), chr(0x82), chr(0xac))) )
+verify(u'\ud800\udc02'.encode('utf-8') == \
+       ''.join((chr(0xf0), chr(0x90), chr(0x80), chr(0x82))) )
+verify(u'\ud84d\udc56'.encode('utf-8') == \
+       ''.join((chr(0xf0), chr(0xa3), chr(0x91), chr(0x96))) )
 # UTF-8 specific decoding tests
-assert unicode(''.join((chr(0xf0), chr(0xa3), chr(0x91), chr(0x96))),
-               'utf-8') == u'\ud84d\udc56'
-assert unicode(''.join((chr(0xf0), chr(0x90), chr(0x80), chr(0x82))),
-               'utf-8') == u'\ud800\udc02'
-assert unicode(''.join((chr(0xe2), chr(0x82), chr(0xac))),
-               'utf-8') == u'\u20ac'
+verify(unicode(''.join((chr(0xf0), chr(0xa3), chr(0x91), chr(0x96))), 
+               'utf-8') == u'\ud84d\udc56' )
+verify(unicode(''.join((chr(0xf0), chr(0x90), chr(0x80), chr(0x82))), 
+               'utf-8') == u'\ud800\udc02' )
+verify(unicode(''.join((chr(0xe2), chr(0x82), chr(0xac))), 
+               'utf-8') == u'\u20ac' )
 
 # Other possible utf-8 test cases:
 # * strict decoding testing for all of the
@@ -385,10 +385,10 @@ assert unicode(''.join((chr(0xe2), chr(0x82), chr(0xac))),
 
 
 
-assert unicode('hello','ascii') == u'hello'
-assert unicode('hello','utf-8') == u'hello'
-assert unicode('hello','utf8') == u'hello'
-assert unicode('hello','latin-1') == u'hello'
+verify(unicode('hello','ascii') == u'hello')
+verify(unicode('hello','utf-8') == u'hello')
+verify(unicode('hello','utf8') == u'hello')
+verify(unicode('hello','latin-1') == u'hello')
 
 class String:
     x = ''
@@ -398,12 +398,12 @@ class String:
 o = String()
 
 o.x = 'abc'
-assert unicode(o) == u'abc'
-assert str(o) == 'abc'
+verify(unicode(o) == u'abc')
+verify(str(o) == 'abc')
 
 o.x = u'abc'
-assert unicode(o) == u'abc'
-assert str(o) == 'abc'
+verify(unicode(o) == u'abc')
+verify(str(o) == 'abc')
 
 try:
     u'Andr\202 x'.encode('ascii')
@@ -412,8 +412,8 @@ except ValueError:
     pass
 else:
     raise AssertionError, "u'Andr\202'.encode('ascii') failed to raise an exception"
-assert u'Andr\202 x'.encode('ascii','ignore') == "Andr x"
-assert u'Andr\202 x'.encode('ascii','replace') == "Andr? x"
+verify(u'Andr\202 x'.encode('ascii','ignore') == "Andr x")
+verify(u'Andr\202 x'.encode('ascii','replace') == "Andr? x")
 
 try:
     unicode('Andr\202 x','ascii')
@@ -422,27 +422,27 @@ except ValueError:
     pass
 else:
     raise AssertionError, "unicode('Andr\202') failed to raise an exception"
-assert unicode('Andr\202 x','ascii','ignore') == u"Andr x"
-assert unicode('Andr\202 x','ascii','replace') == u'Andr\uFFFD x'
+verify(unicode('Andr\202 x','ascii','ignore') == u"Andr x")
+verify(unicode('Andr\202 x','ascii','replace') == u'Andr\uFFFD x')
 
-assert u'hello'.encode('ascii') == 'hello'
-assert u'hello'.encode('utf-8') == 'hello'
-assert u'hello'.encode('utf8') == 'hello'
-assert u'hello'.encode('utf-16-le') == 'h\000e\000l\000l\000o\000'
-assert u'hello'.encode('utf-16-be') == '\000h\000e\000l\000l\000o'
-assert u'hello'.encode('latin-1') == 'hello'
+verify(u'hello'.encode('ascii') == 'hello')
+verify(u'hello'.encode('utf-8') == 'hello')
+verify(u'hello'.encode('utf8') == 'hello')
+verify(u'hello'.encode('utf-16-le') == 'h\000e\000l\000l\000o\000')
+verify(u'hello'.encode('utf-16-be') == '\000h\000e\000l\000l\000o')
+verify(u'hello'.encode('latin-1') == 'hello')
 
 u = u''.join(map(unichr, range(1024)))
 for encoding in ('utf-8', 'utf-16', 'utf-16-le', 'utf-16-be',
                  'raw_unicode_escape', 'unicode_escape', 'unicode_internal'):
-    assert unicode(u.encode(encoding),encoding) == u
+    verify(unicode(u.encode(encoding),encoding) == u)
 
 u = u''.join(map(unichr, range(256)))
 for encoding in (
     'latin-1',
     ):
     try:
-        assert unicode(u.encode(encoding),encoding) == u
+        verify(unicode(u.encode(encoding),encoding) == u)
     except AssertionError:
         print '*** codec "%s" failed round-trip' % encoding
     except ValueError,why:
@@ -453,7 +453,7 @@ for encoding in (
     'ascii',
     ):
     try:
-        assert unicode(u.encode(encoding),encoding) == u
+        verify(unicode(u.encode(encoding),encoding) == u)
     except AssertionError:
         print '*** codec "%s" failed round-trip' % encoding
     except ValueError,why:
@@ -487,7 +487,7 @@ for encoding in (
 
     ):
     try:
-        assert unicode(s,encoding).encode(encoding) == s
+        verify(unicode(s,encoding).encode(encoding) == s)
     except AssertionError:
         print '*** codec "%s" failed round-trip' % encoding
     except ValueError,why:
@@ -517,7 +517,7 @@ for encoding in (
 
     ):
     try:
-        assert unicode(s,encoding).encode(encoding) == s
+        verify(unicode(s,encoding).encode(encoding) == s)
     except AssertionError:
         print '*** codec "%s" failed round-trip' % encoding
     except ValueError,why:
@@ -526,9 +526,9 @@ for encoding in (
 print 'done.'
 
 print 'Testing Unicode string concatenation...',
-assert (u"abc" u"def") == u"abcdef"
-assert ("abc" u"def") == u"abcdef"
-assert (u"abc" "def") == u"abcdef"
-assert (u"abc" u"def" "ghi") == u"abcdefghi"
-assert ("abc" "def" u"ghi") == u"abcdefghi"
+verify((u"abc" u"def") == u"abcdef")
+verify(("abc" u"def") == u"abcdef")
+verify((u"abc" "def") == u"abcdef")
+verify((u"abc" u"def" "ghi") == u"abcdefghi")
+verify(("abc" "def" u"ghi") == u"abcdefghi")
 print 'done.'

@@ -1,4 +1,5 @@
 # Minimal test of the quote function
+from test_support import verify, verbose
 import urllib
 
 chars = 'abcdefghijklmnopqrstuvwxyz'\
@@ -11,20 +12,20 @@ chars = 'abcdefghijklmnopqrstuvwxyz'\
 expected = 'abcdefghijklmnopqrstuvwxyz%df%e0%e1%e2%e3%e4%e5%e6%e7%e8%e9%ea%eb%ec%ed%ee%ef%f0%f1%f2%f3%f4%f5%f6%f8%f9%fa%fb%fc%fd%fe%ffABCDEFGHIJKLMNOPQRSTUVWXYZ%c0%c1%c2%c3%c4%c5%c6%c7%c8%c9%ca%cb%cc%cd%ce%cf%d0%d1%d2%d3%d4%d5%d6%d8%d9%da%db%dc%dd%de'
 
 test = urllib.quote(chars)
-assert test == expected, "urllib.quote problem"
+verify(test == expected, "urllib.quote problem")
 test2 = urllib.unquote(expected)
-assert test2 == chars
+verify(test2 == chars)
 
 in1 = "abc/def"
 out1_1 = "abc/def"
 out1_2 = "abc%2fdef"
 
-assert urllib.quote(in1) == out1_1, "urllib.quote problem"
-assert urllib.quote(in1, '') == out1_2, "urllib.quote problem"
+verify(urllib.quote(in1) == out1_1, "urllib.quote problem")
+verify(urllib.quote(in1, '') == out1_2, "urllib.quote problem")
 
 in2 = "abc?def"
 out2_1 = "abc%3fdef"
 out2_2 = "abc?def"
 
-assert urllib.quote(in2) == out2_1, "urllib.quote problem"
-assert urllib.quote(in2, '?') == out2_2, "urllib.quote problem"
+verify(urllib.quote(in2) == out2_1, "urllib.quote problem")
+verify(urllib.quote(in2, '?') == out2_2, "urllib.quote problem")

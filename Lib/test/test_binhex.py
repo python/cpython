@@ -6,7 +6,7 @@
 """
 import binhex
 import tempfile
-from test_support import verbose, TestSkipped
+from test_support import verify, verbose, TestSkipped
 
 def test():
 

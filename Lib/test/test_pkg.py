@@ -3,7 +3,7 @@
 import sys, os, string, tempfile, traceback
 from os import mkdir, rmdir             # Can't test if these fail
 del mkdir, rmdir
-from test_support import verbose, TestFailed
+from test_support import verify, verbose, TestFailed
 
 # Helpers to create and destroy hierarchies.
 
@@ -188,16 +188,16 @@ print dir()
 t7, sub, subsub = None, None, None
 import t7 as tas
 print dir(tas)
-assert not t7
+verify(not t7)
 from t7 import sub as subpar
 print dir(subpar)
-assert not t7 and not sub
+verify(not t7 and not sub)
 from t7.sub import subsub as subsubsub
 print dir(subsubsub)
-assert not t7 and not sub and not subsub
+verify(not t7 and not sub and not subsub)
 from t7.sub.subsub import spam as ham
 print "t7.sub.subsub.spam =", ham
-assert not t7 and not sub and not subsub
+verify(not t7 and not sub and not subsub)
 """),
 
 ]

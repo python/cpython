@@ -3,7 +3,7 @@
 # Sanity checker for time.strftime
 
 import time, calendar, sys, string, os, re
-from test_support import verbose
+from test_support import verify, verbose
 
 def main():
     global verbose

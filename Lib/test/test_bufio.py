@@ -13,7 +13,7 @@ from test_support import TestFailed, TESTFN
 def drive_one(pattern, length):
     q, r = divmod(length, len(pattern))
     teststring = pattern * q + pattern[:r]
-    assert len(teststring) == length
+    verify(len(teststring) == length)
     try_one(teststring)
     try_one(teststring + "x")
     try_one(teststring[:-1])

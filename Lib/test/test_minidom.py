@@ -7,7 +7,7 @@ import xml.parsers.expat
 import os.path
 import sys
 import traceback
-from test_support import verbose
+from test_support import verify, verbose
 
 if __name__ == "__main__":
     base = sys.argv[0]

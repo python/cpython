@@ -3,7 +3,7 @@
 
 import getopt
 from getopt import GetoptError
-from test_support import verbose
+from test_support import verify, verbose
 
 def expectException(teststr, expected, failure=AssertionError):
     """Executes a statement passed in teststr, and raises an exception
@@ -17,22 +17,22 @@ def expectException(teststr, expected, failure=AssertionError):
 
 if verbose:
     print 'Running tests on getopt.short_has_arg'
-assert getopt.short_has_arg('a', 'a:')
-assert not getopt.short_has_arg('a', 'a')
+verify(getopt.short_has_arg('a', 'a:'))
+verify(not getopt.short_has_arg('a', 'a'))
 expectException("tmp = getopt.short_has_arg('a', 'b')", GetoptError)
 expectException("tmp = getopt.short_has_arg('a', '')", GetoptError)
 
 if verbose:
     print 'Running tests on getopt.long_has_args'
 has_arg, option = getopt.long_has_args('abc', ['abc='])
-assert has_arg
-assert option == 'abc'
+verify(has_arg)
+verify(option == 'abc')
 has_arg, option = getopt.long_has_args('abc', ['abc'])
-assert not has_arg
-assert option == 'abc'
+verify(not has_arg)
+verify(option == 'abc')
 has_arg, option = getopt.long_has_args('abc', ['abcd'])
-assert not has_arg
-assert option == 'abcd'
+verify(not has_arg)
+verify(option == 'abcd')
 expectException("has_arg, option = getopt.long_has_args('abc', ['def'])",
                 GetoptError)
 expectException("has_arg, option = getopt.long_has_args('abc', [])",
@@ -44,20 +44,20 @@ expectException("has_arg, option = " + \
 if verbose:
     print 'Running tests on getopt.do_shorts'
 opts, args = getopt.do_shorts([], 'a', 'a', [])
-assert opts == [('-a', '')]
-assert args == []
+verify(opts == [('-a', '')])
+verify(args == [])
 opts, args = getopt.do_shorts([], 'a1', 'a:', [])
-assert opts == [('-a', '1')]
-assert args == []
+verify(opts == [('-a', '1')])
+verify(args == [])
 #opts, args = getopt.do_shorts([], 'a=1', 'a:', [])
-#assert opts == [('-a', '1')]
-#assert args == []
+#verify(opts == [('-a', '1')])
+#verify(args == [])
 opts, args = getopt.do_shorts([], 'a', 'a:', ['1'])
-assert opts == [('-a', '1')]
-assert args == []
+verify(opts == [('-a', '1')])
+verify(args == [])
 opts, args = getopt.do_shorts([], 'a', 'a:', ['1', '2'])
-assert opts == [('-a', '1')]
-assert args == ['2']
+verify(opts == [('-a', '1')])
+verify(args == ['2'])
 expectException("opts, args = getopt.do_shorts([], 'a1', 'a', [])",
                 GetoptError)
 expectException("opts, args = getopt.do_shorts([], 'a', 'a:', [])",
@@ -66,23 +66,23 @@ expectException("opts, args = getopt.do_shorts([], 'a', 'a:', [])",
 if verbose:
     print 'Running tests on getopt.do_longs'
 opts, args = getopt.do_longs([], 'abc', ['abc'], [])
-assert opts == [('--abc', '')]
-assert args == []
+verify(opts == [('--abc', '')])
+verify(args == [])
 opts, args = getopt.do_longs([], 'abc=1', ['abc='], [])
-assert opts == [('--abc', '1')]
-assert args == []
+verify(opts == [('--abc', '1')])
+verify(args == [])
 opts, args = getopt.do_longs([], 'abc=1', ['abcd='], [])
-assert opts == [('--abcd', '1')]
-assert args == []
+verify(opts == [('--abcd', '1')])
+verify(args == [])
 opts, args = getopt.do_longs([], 'abc', ['ab', 'abc', 'abcd'], [])
-assert opts == [('--abc', '')]
-assert args == []
+verify(opts == [('--abc', '')])
+verify(args == [])
 # Much like the preceding, except with a non-alpha character ("-") in
 # option name that precedes "="; failed in
 # http://sourceforge.net/bugs/?func=detailbug&bug_id=126863&group_id=5470
 opts, args = getopt.do_longs([], 'foo=42', ['foo-bar', 'foo=',], [])
-assert opts == [('--foo', '42')]
-assert args == []
+verify(opts == [('--foo', '42')])
+verify(args == [])
 expectException("opts, args = getopt.do_longs([], 'abc=1', ['abc'], [])",
                 GetoptError)
 expectException("opts, args = getopt.do_longs([], 'abc', ['abc='], [])",
@@ -96,11 +96,11 @@ cmdline = ['-a', '1', '-b', '--alpha=2', '--beta', '-a', '3', '-a', '',
 if verbose:
     print 'Running tests on getopt.getopt'
 opts, args = getopt.getopt(cmdline, 'a:b', ['alpha=', 'beta'])
-assert opts == [('-a', '1'), ('-b', ''), ('--alpha', '2'), ('--beta', ''),
-                ('-a', '3'), ('-a', ''), ('--beta', '')]
+verify(opts == [('-a', '1'), ('-b', ''), ('--alpha', '2'), ('--beta', ''),
+                ('-a', '3'), ('-a', ''), ('--beta', '')] )
 # Note ambiguity of ('-b', '') and ('-a', '') above. This must be
 # accounted for in the code that calls getopt().
-assert args == ['arg1', 'arg2']
+verify(args == ['arg1', 'arg2'])
 
 expectException(
     "opts, args = getopt.getopt(cmdline, 'a:b', ['alpha', 'beta'])",

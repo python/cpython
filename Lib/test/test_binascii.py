@@ -1,6 +1,6 @@
 """Test the binascii C module."""
 
-from test_support import verbose
+from test_support import verify, verbose
 import binascii
 
 # Show module doc string
@@ -42,7 +42,7 @@ res = ""
 for line in lines:
     b = binascii.a2b_base64(line)
     res = res + b
-assert res == testdata
+verify(res == testdata)
 
 # Test base64 with random invalid characters sprinkled throughout
 # (This requires a new version of binascii.)
@@ -67,7 +67,7 @@ res = ""
 for line in map(addnoise, lines):
     b = binascii.a2b_base64(line)
     res = res + b
-assert res == testdata
+verify(res == testdata)
 
 # Test uu
 print "uu test"
@@ -82,7 +82,7 @@ res = ""
 for line in lines:
     b = binascii.a2b_uu(line)
     res = res + b
-assert res == testdata
+verify(res == testdata)
 
 # Test crc32()
 crc = binascii.crc32("Test the CRC-32 of")

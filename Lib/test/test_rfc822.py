@@ -1,4 +1,4 @@
-from test_support import verbose
+from test_support import verify, verbose
 import rfc822, sys
 try:
     from cStringIO import StringIO

@@ -5,7 +5,7 @@
 
 import gdbm
 from gdbm import error
-from test_support import verbose, TestFailed
+from test_support import verify, verbose, TestFailed
 
 filename= '/tmp/delete_me'
 
