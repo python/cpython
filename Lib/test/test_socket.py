@@ -381,8 +381,6 @@ class BasicTCPTest(SocketConnectedTest):
     def testRecvFrom(self):
         """Testing large recvfrom() over TCP."""
         msg, addr = self.cli_conn.recvfrom(1024)
-        hostname, port = addr
-        ##self.assertEqual(hostname, socket.gethostbyname('localhost'))
         self.assertEqual(msg, MSG)
 
     def _testRecvFrom(self):
@@ -393,8 +391,6 @@ class BasicTCPTest(SocketConnectedTest):
         seg1, addr = self.cli_conn.recvfrom(len(MSG)-3)
         seg2, addr = self.cli_conn.recvfrom(1024)
         msg = seg1 + seg2
-        hostname, port = addr
-        ##self.assertEqual(hostname, socket.gethostbyname('localhost'))
         self.assertEqual(msg, MSG)
 
     def _testOverFlowRecvFrom(self):
@@ -451,8 +447,6 @@ class BasicUDPTest(ThreadedUDPSocketTest):
     def testRecvFrom(self):
         """Testing recvfrom() over UDP."""
         msg, addr = self.serv.recvfrom(len(MSG))
-        hostname, port = addr
-        ##self.assertEqual(hostname, socket.gethostbyname('localhost'))
         self.assertEqual(msg, MSG)
 
     def _testRecvFrom(self):
