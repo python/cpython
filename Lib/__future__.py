@@ -2,11 +2,7 @@
 
 Each line is of the form:
 
-    FeatureName = ReleaseInfo
-
-ReleaseInfo is a pair of the form:
-
-    (OptionalRelease, MandatoryRelease)
+    FeatureName = "_Feature(" OptionalRelease "," MandatoryRelease) ")"
 
 where, normally, OptionalRelease < MandatoryRelease, and both are 5-tuples
 of the same form as sys.version_info:
@@ -38,7 +34,36 @@ to use the feature in question, but may continue to use such imports.
 MandatoryRelease may also be None, meaning that a planned feature got
 dropped.
 
-No line is ever to be deleted from this file.
+Instances of class _Feature have two corresponding methods,
+.getOptionalRelease() and .getMandatoryRelease().
+
+No feature line is ever to be deleted from this file.
 """
 
-nested_scopes = (2, 1, 0, "beta", 1), (2, 2, 0, "final", 0)
+class _Feature:
+    def __init__(self, optionalRelease, mandatoryRelease):
+        self.optional = optionalRelease
+        self.mandatory = mandatoryRelease
+
+    def getOptionalRelease(self):
+        """Return first release in which this feature was recognized.
+
+        This is a 5-tuple, of the same form as sys.version_info.
+        """
+
+        return self.optional
+
+    def getMandatoryRelease(self):
+        """Return release in which this feature will become mandatory.
+
+        This is a 5-tuple, of the same form as sys.version_info, or, if
+        the feature was dropped, is None.
+        """
+
+        return self.mandatory
+
+    def __repr__(self):
+        return "Feature(" + `self.getOptionalRelease()` + ", " + \
+                            `self.getMandatoryRelease()` + ")"
+
+nested_scopes = _Feature((2, 1, 0, "beta", 1), (2, 2, 0, "final", 0))
