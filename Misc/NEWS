@@ -61,6 +61,10 @@ Extension modules
 
 - Bug #814613: INET_ADDRSTRLEN fix needed for all compilers on SGI
 
+- Implemented non-recursive SRE matching scheme (#757624).
+
+- Implemented (?(id/name)yes|no) support in SRE (#572936).
+
 Library
 -------
 

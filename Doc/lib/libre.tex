@@ -297,6 +297,15 @@ assertions, the contained pattern must only match strings of some
 fixed length.  Patterns which start with negative lookbehind
 assertions may match at the beginning of the string being searched.
 
+\item[\code{(?(\var{id/name})yes-pattern|no-pattern)}] Will try to match
+with \regexp{yes-pattern} if the group with given \var{id} or \var{name}
+exists, and with \regexp{no-pattern} if it doesn't. \regexp{|no-pattern}
+is optional and can be omitted. For example, 
+\regexp{(<)?(\e w+@\e w+(?:\e .\e w+)+)(?(1)>)} is a poor email matching
+pattern, which will match with \code{'<user@host.com>'} as well as
+\code{'user@host.com'}, but not with \code{'<user@host.com'}.
+\versionadded{2.3}
+
 \end{list}
 
 The special sequences consist of \character{\e} and a character from the

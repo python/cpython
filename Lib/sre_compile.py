@@ -145,6 +145,19 @@ def _compile(code, pattern, flags):
             else:
                 emit(OPCODES[op])
             emit(av-1)
+        elif op is GROUPREF_EXISTS:
+            emit(OPCODES[op])
+            emit((av[0]-1)*2)
+            skipyes = len(code); emit(0)
+            _compile(code, av[1], flags)
+            if av[2]:
+                emit(OPCODES[JUMP])
+                skipno = len(code); emit(0)
+                code[skipyes] = len(code) - skipyes + 1
+                _compile(code, av[2], flags)
+                code[skipno] = len(code) - skipno
+            else:
+                code[skipyes] = len(code) - skipyes + 1
         else:
             raise ValueError, ("unsupported operand type", op)
 

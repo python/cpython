@@ -364,6 +364,20 @@ def _parse_sub(source, state, nested=1):
     subpattern.append((BRANCH, (None, items)))
     return subpattern
 
+def _parse_sub_cond(source, state, condgroup):
+    item_yes = _parse(source, state) 
+    if source.match("|"):
+        item_no = _parse(source, state) 
+        if source.match("|"):
+            raise error, "conditional backref with more than two branches"
+    else:
+        item_no = None
+    if source.next and not source.match(")", 0):
+        raise error, "pattern not properly closed"
+    subpattern = SubPattern(state)
+    subpattern.append((GROUPREF_EXISTS, (condgroup, item_yes, item_no)))
+    return subpattern
+
 def _parse(source, state):
     # parse a simple pattern
 
@@ -499,6 +513,7 @@ def _parse(source, state):
         elif this == "(":
             group = 1
             name = None
+            condgroup = None
             if source.match("?"):
                 group = 0
                 # options
@@ -568,6 +583,26 @@ def _parse(source, state):
                     else:
                         subpattern.append((ASSERT_NOT, (dir, p)))
                     continue
+                elif source.match("("):
+                    # conditional backreference group
+                    condname = ""
+                    while 1:
+                        char = source.get()
+                        if char is None:
+                            raise error, "unterminated name"
+                        if char == ")":
+                            break
+                        condname = condname + char
+                    group = 2
+                    if isname(condname):
+                        condgroup = state.groupdict.get(condname)
+                        if condgroup is None:
+                            raise error, "unknown group name"
+                    else:
+                        try:
+                            condgroup = atoi(condname)
+                        except ValueError:
+                            raise error, "bad character in group name"
                 else:
                     # flags
                     if not source.next in FLAGS:
@@ -581,7 +616,10 @@ def _parse(source, state):
                     group = None
                 else:
                     group = state.opengroup(name)
-                p = _parse_sub(source, state)
+                if condgroup:
+                    p = _parse_sub_cond(source, state, condgroup)
+                else:
+                    p = _parse_sub(source, state)
                 if not source.match(")"):
                     raise error, "unbalanced parenthesis"
                 if group is not None:
