@@ -40,7 +40,8 @@ class Node:
             index=repr( id( self ))+repr( self.__class__ )
             Node.allnodes[index]=repr( self.__dict__ )
             if Node.debug==None:
-                Node.debug=open( "debug4.out", "w" )
+                Node.debug=StringIO()
+		#open( "debug4.out", "w" )
             Node.debug.write( "create %s\n"%index )
 
     def __getattr__( self, key ):
@@ -216,13 +217,24 @@ dictionary"""
 
     #FIXME: is it appropriate to return .value?
     def __getitem__( self, attname_or_tuple ):
-        if type( attname_or_tuple ) == type( () ):
+        if type( attname_or_tuple ) == types.TupleType:
             return self._attrsNS[attname_or_tuple]
         else:
             return self._attrs[attname_or_tuple]
 
-    def __setitem__( self, attname ):
-        raise TypeError, "object does not support item assignment"
+    # same as set
+    def __setitem__( self, attname, value ):
+        if type( value ) == types.StringType:
+            node=Attr( attname )
+            node.value=value
+        else:
+            assert isinstance( value, Attr ) or type( value )==types.StringType
+            node=value
+	old=self._attrs.get( attname, None)
+        if old:
+            old.unlink()
+        self._attrs[node.name]=node
+        self._attrsNS[(node.namespaceURI,node.localName)]=node
 
     def __delitem__( self, attname_or_tuple ):
         node=self[attname_or_tuple]
