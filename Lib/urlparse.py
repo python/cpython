@@ -114,7 +114,7 @@ def urlunparse((scheme, netloc, url, params, query, fragment)):
 	originally had redundant delimiters, e.g. a ? with an empty query
 	(the draft states that these are equivalent)."""
 	if netloc or (scheme in uses_netloc and url[:2] == '//'):
-		if url[:1] != '/': url = '/' + url
+		if url and url[:1] != '/': url = '/' + url
 		url = '//' + (netloc or '') + url
 	if scheme:
 		url = scheme + ':' + url
@@ -131,13 +131,14 @@ def urljoin(base, url, allow_fragments = 1):
 	interpretation of the latter."""
 	if not base:
 		return url
+	if not url:
+		return base
 	bscheme, bnetloc, bpath, bparams, bquery, bfragment = \
 		urlparse(base, '', allow_fragments)
 	scheme, netloc, path, params, query, fragment = \
 		urlparse(url, bscheme, allow_fragments)
 	if scheme != bscheme or scheme not in uses_relative:
-		return urlunparse((scheme, netloc, path,
-				   params, query, fragment))
+		return url
 	if scheme in uses_netloc:
 		if netloc:
 			return urlunparse((scheme, netloc, path,
@@ -147,8 +148,12 @@ def urljoin(base, url, allow_fragments = 1):
 		return urlunparse((scheme, netloc, path,
 				   params, query, fragment))
 	if not path:
+		if not params:
+			params = bparams
+			if not query:
+				query = bquery
 		return urlunparse((scheme, netloc, bpath,
-				   params, query or bquery, fragment))
+				   params, query, fragment))
 	segments = bpath.split('/')[:-1] + path.split('/')
 	# XXX The stuff below is bogus in various ways...
 	if segments[-1] == '.':
@@ -159,13 +164,14 @@ def urljoin(base, url, allow_fragments = 1):
 		i = 1
 		n = len(segments) - 1
 		while i < n:
-			if segments[i] == '..' and segments[i-1]:
+			if (segments[i] == '..'
+			    and segments[i-1] not in ('', '..')):
 				del segments[i-1:i+1]
 				break
 			i = i+1
 		else:
 			break
-	if len(segments) == 2 and segments[1] == '..' and segments[0] == '':
+	if segments == ['', '..']:
 		segments[-1] = ''
 	elif len(segments) >= 2 and segments[-1] == '..':
 		segments[-2:] = ['']
