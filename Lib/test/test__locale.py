@@ -1,6 +1,8 @@
-from test.test_support import verbose, TestSkipped
-from _locale import setlocale, LC_NUMERIC, RADIXCHAR, THOUSEP, nl_langinfo
-from _locale import localeconv, Error
+from test.test_support import verbose, TestSkipped, run_unittest
+from _locale import (setlocale, LC_NUMERIC, RADIXCHAR, THOUSEP, nl_langinfo,
+                    localeconv, Error)
+from locale import getlocale
+import unittest
 
 candidate_locales = ['es_UY', 'fr_FR', 'fi_FI', 'es_CO', 'pt_PT', 'it_IT',
     'et_EE', 'es_PY', 'no_NO', 'nl_NL', 'lv_LV', 'el_GR', 'be_BY', 'fr_BE',
@@ -13,26 +15,32 @@ candidate_locales = ['es_UY', 'fr_FR', 'fi_FI', 'es_CO', 'pt_PT', 'it_IT',
     'eu_ES', 'vi_VN', 'af_ZA', 'nb_NO', 'en_DK', 'tg_TJ',
     'es_ES.ISO8859-1', 'fr_FR.ISO8859-15', 'ru_RU.KOI8-R', 'ko_KR.eucKR']
 
-oldlocale = setlocale(LC_NUMERIC)
-try:
-    saw_locale = 0
-    for loc in candidate_locales:
-        try:
-            setlocale(LC_NUMERIC, loc)
-        except Error:
-            continue
-        if verbose:
-            print "locale %r" % loc
-        saw_locale = 1
-        nl_radixchar = nl_langinfo(RADIXCHAR)
-        li_radixchar = localeconv()['decimal_point']
-        if nl_radixchar != li_radixchar:
-            print "%r != %r" % (nl_radixchar, li_radixchar)
-        nl_radixchar = nl_langinfo(THOUSEP)
-        li_radixchar = localeconv()['thousands_sep']
-        if nl_radixchar != li_radixchar:
-            print "%r != %r" % (nl_radixchar, li_radixchar)
-    if not saw_locale:
-        raise ImportError, "None of the listed locales found"
-finally:
-    setlocale(LC_NUMERIC, oldlocale)
+class _LocaleTests(unittest.TestCase):
+
+    def setUp(self):
+        self.oldlocale = setlocale(LC_NUMERIC)
+
+    def tearDown(self):
+        setlocale(LC_NUMERIC, self.oldlocale)
+
+    def test_lc_numeric(self):
+        for loc in candidate_locales:
+            try:
+                setlocale(LC_NUMERIC, loc)
+            except Error:
+                continue
+            for li, lc in ((RADIXCHAR, "decimal_point"),
+                            (THOUSEP, "thousands_sep")):
+                nl_radixchar = nl_langinfo(li)
+                li_radixchar = localeconv()[lc]
+                self.assertEquals(nl_radixchar, li_radixchar,
+                                    "%r != %r (%s); "
+                                    "supposed to be %s, set to %s" %
+                                        (nl_radixchar, li_radixchar, lc,
+                                         loc, getlocale(LC_NUMERIC)[0]))
+
+def test_main():
+    run_unittest(_LocaleTests)
+
+if __name__ == '__main__':
+    test_main()
