@@ -490,6 +490,7 @@ al_getstatus (self, args)
 
 static struct methodlist port_methods[] = {
 	{"closeport",		al_closeport},
+	{"close",		al_closeport},
 	{"getfd",		al_getfd},
         {"fileno",		al_getfd},
 	{"getfilled",		al_getfilled},
