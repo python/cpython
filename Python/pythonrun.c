@@ -1201,6 +1201,7 @@ err_input(perrdetail *err)
 		break;
 	}
 	w = Py_BuildValue("(sO)", msg, v);
+	Py_XDECREF(v);
 	PyErr_SetObject(errtype, w);
 	Py_XDECREF(w);
 }
