@@ -45,6 +45,9 @@ typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
 #define PyTrace_EXCEPTION 1
 #define PyTrace_LINE 2
 #define PyTrace_RETURN 3
+#define PyTrace_C_CALL 4
+#define PyTrace_C_EXCEPTION 5
+#define PyTrace_C_RETURN 6
 
 typedef struct _ts {
 

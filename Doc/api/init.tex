@@ -726,16 +726,21 @@ previous versions.
   The first parameter is the object passed to the registration
   function as \var{obj}, \var{frame} is the frame object to which the
   event pertains, \var{what} is one of the constants
-  \constant{PyTrace_CALL}, \constant{PyTrace_EXCEPT},
-  \constant{PyTrace_LINE} or \constant{PyTrace_RETURN}, and \var{arg}
+  \constant{PyTrace_CALL}, \constant{PyTrace_EXCEPTION},
+  \constant{PyTrace_LINE}, \constant{PyTrace_RETURN},
+  \constant{PyTrace_C_CALL}, \constant{PyTrace_C_EXCEPTION},
+  or \constant{PyTrace_C_RETURN}, and \var{arg}
   depends on the value of \var{what}:
 
   \begin{tableii}{l|l}{constant}{Value of \var{what}}{Meaning of \var{arg}}
     \lineii{PyTrace_CALL}{Always \NULL.}
-    \lineii{PyTrace_EXCEPT}{Exception information as returned by
+    \lineii{PyTrace_EXCEPTION}{Exception information as returned by
                             \function{sys.exc_info()}.}
     \lineii{PyTrace_LINE}{Always \NULL.}
     \lineii{PyTrace_RETURN}{Value being returned to the caller.}
+    \lineii{PyTrace_C_CALL}{Name of function being called.}
+    \lineii{PyTrace_C_EXCEPTION}{Always \NULL.}
+    \lineii{PyTrace_C_RETURN}{Always \NULL.}
   \end{tableii}
 \end{ctypedesc}
 
@@ -747,7 +752,7 @@ previous versions.
   control transfer to the Python bytecode in the corresponding frame.
 \end{cvardesc}
 
-\begin{cvardesc}{int}{PyTrace_EXCEPT}
+\begin{cvardesc}{int}{PyTrace_EXCEPTION}
   The value of the \var{what} parameter to a \ctype{Py_tracefunc}
   function when an exception has been raised.  The callback function
   is called with this value for \var{what} when after any bytecode is
@@ -768,6 +773,21 @@ previous versions.
 \begin{cvardesc}{int}{PyTrace_RETURN}
   The value for the \var{what} parameter to \ctype{Py_tracefunc}
   functions when a call is returning without propagating an exception.
+\end{cvardesc}
+
+\begin{cvardesc}{int}{PyTrace_C_CALL}
+  The value for the \var{what} parameter to \ctype{Py_tracefunc}
+  functions when a C function is about to be called.
+\end{cvardesc}
+
+\begin{cvardesc}{int}{PyTrace_C_EXCEPTION}
+  The value for the \var{what} parameter to \ctype{Py_tracefunc}
+  functions when a C function has thrown an exception.
+\end{cvardesc}
+
+\begin{cvardesc}{int}{PyTrace_C_RETURN}
+  The value for the \var{what} parameter to \ctype{Py_tracefunc}
+  functions when a C function has returned.
 \end{cvardesc}
 
 \begin{cfuncdesc}{void}{PyEval_SetProfile}{Py_tracefunc func, PyObject *obj}

@@ -52,6 +52,12 @@ class Bdb:
             return self.dispatch_return(frame, arg)
         if event == 'exception':
             return self.dispatch_exception(frame, arg)
+        if event == 'c_call':
+            return self.trace_dispatch
+        if event == 'c_exception':
+            return self.trace_dispatch
+        if event == 'c_return':
+            return self.trace_dispatch
         print 'bdb.Bdb.dispatch: unknown debugging event:', repr(event)
         return self.trace_dispatch
 
