@@ -6,6 +6,10 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- The assert statement no longer tests __debug__ at runtime.  This means
+  that assert statements cannot be disabled by assigning a false value
+  to __debug__.
+
 - A method zfill() was added to str and unicode, that fills a numeric
   string to the left with zeros.  For example,
   "+123".zfill(6) -> "+00123".
