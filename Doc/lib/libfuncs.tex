@@ -123,7 +123,6 @@ def my_import(name):
 \end{funcdesc}
 
 \begin{funcdesc}{classmethod}{function}
-  \label{classmethod}
   Return a class method for \var{function}.
 
   A class method receives the class as implicit first argument,
@@ -143,7 +142,7 @@ class C:
   object is passed as the implied first argument.
 
   Class methods are different than C++ or Java static methods.
-  If you want those, see \ref{staticmethod}.
+  If you want those, see \function{staticmethod} in this section.
   \versionadded{2.2}
 \end{funcdesc}
 
@@ -902,7 +901,6 @@ class C(object):
 \end{funcdesc}
 
 \begin{funcdesc}{staticmethod}{function}
-  \label{staticmethod}
   Return a static method for \var{function}.
 
   A static method does not receive an implicit first argument.
@@ -919,7 +917,7 @@ class C:
   for its class.
 
   Static methods in Python are similar to those found in Java or C++.
-  For a more advanced concept, see \ref{classmethod}.
+  For a more advanced concept, see \function{classmethod} in this section.
   \versionadded{2.2}
 \end{funcdesc}
 
