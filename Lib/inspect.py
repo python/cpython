@@ -553,7 +553,7 @@ def getsource(object):
 def walktree(classes, children, parent):
     """Recursive helper function for getclasstree()."""
     results = []
-    classes.sort(lambda a, b: cmp(a.__name__, b.__name__))
+    classes.sort(key=lambda c: c.__name__)
     for c in classes:
         results.append((c, c.__bases__))
         if c in children:

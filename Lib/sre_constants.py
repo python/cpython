@@ -219,7 +219,7 @@ if __name__ == "__main__":
     import string
     def dump(f, d, prefix):
         items = d.items()
-        items.sort(lambda a, b: cmp(a[1], b[1]))
+        items.sort(key=lambda a: a[1])
         for k, v in items:
             f.write("#define %s_%s %s\n" % (prefix, string.upper(k), v))
     f = open("sre_constants.h", "w")

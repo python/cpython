@@ -52,7 +52,7 @@ class LocaleTime(object):
 
     def __init__(self):
         """Set all attributes.
-        
+
         Order of methods called matters for dependency reasons.
 
         The locale language is set at the offset and then checked again before
@@ -68,7 +68,7 @@ class LocaleTime(object):
         Only other possible issue is if someone changed the timezone and did
         not call tz.tzset .  That is an issue for the programmer, though,
         since changing the timezone is worthless without that call.
-        
+
         """
         self.lang = _getlang()
         self.__calc_weekday()
@@ -155,7 +155,7 @@ class LocaleTime(object):
             date_time[offset] = current_format.replace('11', U_W)
         self.LC_date_time = date_time[0]
         self.LC_date = date_time[1]
-        self.LC_time = date_time[2] 
+        self.LC_time = date_time[2]
 
     def __calc_timezone(self):
         # Set self.timezone by using time.tzname.
@@ -178,9 +178,9 @@ class TimeRE(dict):
 
     def __init__(self, locale_time=None):
         """Create keys/values.
-        
+
         Order of execution is important for dependency reasons.
-        
+
         """
         if locale_time:
             self.locale_time = locale_time
@@ -219,22 +219,20 @@ class TimeRE(dict):
 
     def __seqToRE(self, to_convert, directive):
         """Convert a list to a regex string for matching a directive.
-        
+
         Want possible matching values to be from longest to shortest.  This
         prevents the possibility of a match occuring for a value that also
         a substring of a larger value that should have matched (e.g., 'abc'
         matching when 'abcdef' should have been the match).
-        
+
         """
         for value in to_convert:
             if value != '':
                 break
         else:
             return ''
-        to_sort = [(len(item), item) for item in to_convert]
-        to_sort.sort()
-        to_sort.reverse()
-        to_convert = [item for length, item in to_sort]
+        to_convert = to_convert[:]
+        to_convert.sort(key=len, reverse=True)
         regex = '|'.join(to_convert)
         regex = '(?P<%s>%s' % (directive, regex)
         return '%s)' % regex
