@@ -141,9 +141,6 @@ class build_ext (Command):
         if not self.extensions:
             return
 
-        # First, sanity-check the 'self.extensions' list
-        self.check_extensions_list (self.extensions)
-
         # Simplify the following logic (eg. don't have to worry about
         # appending to None)
         if self.libraries is None:
@@ -156,7 +153,7 @@ class build_ext (Command):
         # If we were asked to build any C/C++ libraries, make sure that the
         # directory where we put them is in the library search path for
         # linking extensions.
-        if self.distribution.libraries:
+        if self.distribution.has_c_libraries():
             build_clib = self.find_peer ('build_clib')
             self.libraries.extend (build_clib.get_library_names() or [])
             self.library_dirs.append (build_clib.build_clib)
@@ -190,9 +187,10 @@ class build_ext (Command):
             self.compiler.set_link_objects (self.link_objects)
 
         # Now actually compile and link everything.
-        self.build_extensions (self.extensions)
+        self.build_extensions ()
 
-            
+    # run ()
+
 
     def check_extensions_list (self, extensions):
         """Ensure that the list of extensions (presumably provided as a
@@ -239,9 +237,32 @@ class build_ext (Command):
         return filenames
 
 
+    def get_outputs (self):
+
+        # Sanity check the 'extensions' list -- can't assume this is being
+        # done in the same run as a 'build_extensions()' call (in fact, we
+        # can probably assume that it *isn't*!).
+        self.check_extensions_list (self.extensions)
+
+        # And build the list of output (built) filenames.  Note that this
+        # ignores the 'inplace' flag, and assumes everything goes in the
+        # "build" tree.
+        outputs = []
+        for (extension_name, build_info) in self.extensions:
+            fullname = self.get_ext_fullname (extension_name)
+            outputs.append (os.path.join (self.build_lib,
+                                          self.get_ext_filename(fullname)))
+        return outputs
+
+    # get_outputs ()
+
+
     def build_extensions (self, extensions):
 
-        for (extension_name, build_info) in extensions:
+        # First, sanity-check the 'extensions' list
+        self.check_extensions_list (self.extensions)
+
+        for (extension_name, build_info) in self.extensions:
             sources = build_info.get ('sources')
             if sources is None or type (sources) not in (ListType, TupleType):
                 raise DistutilsValueError, \
@@ -290,7 +311,7 @@ class build_ext (Command):
                 else:
                     modname = string.split (extension_name, '.')[-1]
                     extra_args.append('/export:init%s'%modname)
-            # end if MSVC
+            # if MSVC
 
             fullname = self.get_ext_fullname (extension_name)
             if self.inplace:
