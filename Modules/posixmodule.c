@@ -7239,9 +7239,8 @@ static HCRYPTPROV hCryptProv = 0;
 static PyObject*
 win32_urandom(PyObject *self, PyObject *args)
 {
-	int howMany = 0;
-	unsigned char* bytes = NULL;
-	PyObject* returnVal = NULL;
+	int howMany;
+	PyObject* result;
 
 	/* Read arguments */
 	if (! PyArg_ParseTuple(args, "i:urandom", &howMany))
@@ -7282,21 +7281,16 @@ win32_urandom(PyObject *self, PyObject *args)
 	}
 
 	/* Allocate bytes */
-	bytes = (unsigned char*)PyMem_Malloc(howMany);
-	if (bytes == NULL)
-		return PyErr_NoMemory();
-
-	/* Get random data */
-	if (! pCryptGenRandom(hCryptProv, howMany, bytes)) {
-		PyMem_Free(bytes);
-		return win32_error("CryptGenRandom", NULL);
+	result = PyString_FromStringAndSize(NULL, howMany);
+	if (result != NULL) {
+		/* Get random data */
+		if (! pCryptGenRandom(hCryptProv, howMany, (unsigned char*)
+				      PyString_AS_STRING(result))) {
+			Py_DECREF(result);
+			return win32_error("CryptGenRandom", NULL);
+		}
 	}
-
-	/* Build return value */
-	returnVal = PyString_FromStringAndSize(bytes, howMany);
-	PyMem_Free(bytes);
-
-	return returnVal;
+	return result;
 }
 #endif
 
