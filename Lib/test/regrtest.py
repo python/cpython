@@ -177,6 +177,9 @@ class Compare:
             raise test_support.TestFailed, \
                     'Writing: '+`data`+', expected: '+`expected`
 
+    def writelines(self, listoflines):
+        map(self.write, listoflines)
+
     def flush(self):
         pass
 
