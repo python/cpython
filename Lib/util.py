@@ -2,7 +2,7 @@
 
 # NB: These are now built-in functions, but this module is provided
 # for compatibility.  Don't use in new programs unless you need backward
-# compatibility (with old interpreters).
+# compatibility (i.e. need to run with old interpreters).
 
 
 # Remove an item from a list.
