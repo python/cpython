@@ -16,7 +16,8 @@ class TestShutil(unittest.TestCase):
         filename = tempfile.mktemp()
         self.assertRaises(OSError, shutil.rmtree, filename)
 
-    if hasattr(os, 'chmod') and sys.platform[:6] != 'cygwin':
+    if (hasattr(os, 'chmod') and sys.platform[:6] != 'cygwin'
+        and os.getenv('USER') != 'root'):
         def test_on_error(self):
             self.errorState = 0
             os.mkdir(TESTFN)
