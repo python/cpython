@@ -179,7 +179,7 @@ errno errnomodule.c	# posix (UNIX) errno values
 #STDWIN=/ufs/guido/src/stdwin
 
 # Uncomment these lines:
-#STDWINPATH=:stdwin
+#STDWINPATH=:lib-stdwin
 #LIBTEXTEDIT=$(STDWIN)/$(MACHDEP)/Packs/textedit/libtextedit.a
 #LIBX11STDWIN=$(STDWIN)/$(MACHDEP)/Ports/x11/libstdwin.a
 #stdwin stdwinmodule.c -I$(STDWIN)/H $(LIBTEXTEDIT) $(LIBX11STDWIN) -lX11
@@ -263,7 +263,7 @@ md5 md5module.c md5c.c
 # Change the -l arguments to use Tcl 7.4 and Tk 4.0!
 
 # *** ALWAYS enable this line:
-#TKPATH=:tkinter
+#TKPATH=:lib-tk
 
 # *** Enable *one* of the following lines:
 # For Solaris:
