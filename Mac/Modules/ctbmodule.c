@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
-Amsterdam, The Netherlands.
+Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
 
                         All Rights Reserved
 
@@ -27,15 +27,15 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 
 #include "allobjects.h"
-#include "modsupport.h"		/* For getargs() etc. */
 
-#include <stdio.h>
+#include "macglue.h"
+
 #include <CommResources.h>
 #include <Connections.h>
 #include <ToolUtils.h>
 #include <OSUtils.h>
-/* #include <pascal.h> */
-#ifndef __MWERKS__
+
+#ifndef HAVE_UNIVERSAL_HEADERS
 #define ConnectionCompletionUPP ProcPtr
 #define ConnectionChooseIdleUPP ProcPtr
 #define NewConnectionCompletionProc(x) (x)
@@ -445,7 +445,7 @@ ctbcm_setattr(self, name, v)
 	return 0;
 }
 
-static typeobject ctbcmtype = {
+statichere typeobject ctbcmtype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"ctbcm",			/*tp_name*/
