@@ -73,14 +73,14 @@ NOTES on format codes.
 XXX much more is needed here
 
 Integer types
-BININT1		8-bit unsigned integer; followed by 1 byte.
+BININT1         8-bit unsigned integer; followed by 1 byte.
 BININT2         16-bit unsigned integer; followed by 2 bytes, little-endian.
-BININT		32-bit signed integer; followed by 4 bytes, little-endian.
-INT		Integer; natural decimal string conversion, then newline.
+BININT          32-bit signed integer; followed by 4 bytes, little-endian.
+INT             Integer; natural decimal string conversion, then newline.
                 CAUTION:  INT-reading code can't assume that what follows
                 fits in a Python int, because the size of Python ints varies
                 across platforms.
-LONG		Long (unbounded) integer; repr(i), then newline.
+LONG            Long (unbounded) integer; repr(i), then newline.
 -------------------------------------------------------------------------- */
 
 #define MARK        '('
@@ -931,7 +931,7 @@ save_int(Picklerobject *self, PyObject *args) {
             return -1;
     }
     else {
-    	/* Binary pickle and l fits in a signed 4-byte int. */
+        /* Binary pickle and l fits in a signed 4-byte int. */
         c_str[1] = (int)( l        & 0xff);
         c_str[2] = (int)((l >> 8)  & 0xff);
         c_str[3] = (int)((l >> 16) & 0xff);
