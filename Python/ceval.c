@@ -47,7 +47,7 @@ static int call_trace(Py_tracefunc, PyObject *, PyFrameObject *,
 static void call_trace_protected(Py_tracefunc, PyObject *,
 				 PyFrameObject *, int);
 static void call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
-static int maybe_call_line_trace(Py_tracefunc, PyObject *, 
+static int maybe_call_line_trace(Py_tracefunc, PyObject *,
 				  PyFrameObject *, int *, int *, int *);
 
 static PyObject *apply_slice(PyObject *, PyObject *, PyObject *);
@@ -123,7 +123,7 @@ static int pcall[PCALL_NUM];
 PyObject *
 PyEval_GetCallStats(PyObject *self)
 {
-	return Py_BuildValue("iiiiiiiiii", 
+	return Py_BuildValue("iiiiiiiiii",
 			     pcall[0], pcall[1], pcall[2], pcall[3],
 			     pcall[4], pcall[5], pcall[6], pcall[7],
 			     pcall[8], pcall[9]);
@@ -147,7 +147,7 @@ typedef struct {
 
 	PyFrameObject *gi_frame;
 
-	/* True if generator is being executed. */ 
+	/* True if generator is being executed. */
 	int gi_running;
 
 	/* List of weak reference. */
@@ -593,11 +593,11 @@ eval_frame(PyFrameObject *f)
 	PyThreadState *tstate = PyThreadState_GET();
 	PyCodeObject *co;
 
-	/* when tracing we set things up so that 
+	/* when tracing we set things up so that
 
                not (instr_lb <= current_bytecode_offset < instr_ub)
 
-	   is true when the line being executed has changed.  The 
+	   is true when the line being executed has changed.  The
            initial values are such as to make this false the first
            time it is tested. */
 	int instr_ub = -1, instr_lb = 0, instr_prev = -1;
@@ -644,8 +644,8 @@ eval_frame(PyFrameObject *f)
 	A successful prediction saves a trip through the eval-loop including
 	its two unpredictable branches, the HASARG test and the switch-case.
 
-        If collecting opcode statistics, turn off prediction so that 
-	statistics are accurately maintained (the predictions bypass 
+        If collecting opcode statistics, turn off prediction so that
+	statistics are accurately maintained (the predictions bypass
 	the opcode frequency counter updates).
 */
 
@@ -841,7 +841,7 @@ eval_frame(PyFrameObject *f)
 			/* see maybe_call_line_trace
 			   for expository comments */
 			f->f_stacktop = stack_pointer;
-			
+
 			err = maybe_call_line_trace(tstate->c_tracefunc,
 						    tstate->c_traceobj,
 						    f, &instr_lb, &instr_ub,
@@ -1539,7 +1539,7 @@ eval_frame(PyFrameObject *f)
 				    !isspace(Py_CHARMASK(s[len-1])) ||
 				    s[len-1] == ' ')
 					PyFile_SoftSpace(w, 1);
-			    } 
+			    }
 #ifdef Py_USING_UNICODE
 			    else if (PyUnicode_Check(v)) {
 				Py_UNICODE *s = PyUnicode_AS_UNICODE(v);
@@ -1653,8 +1653,8 @@ eval_frame(PyFrameObject *f)
 			v = POP();
 			if (PyInt_Check(v)) {
 				why = (enum why_code) PyInt_AS_LONG(v);
+				assert(why != WHY_YIELD);
 				if (why == WHY_RETURN ||
-				    why == WHY_YIELD ||
 				    why == WHY_CONTINUE)
 					retval = POP();
 			}
@@ -2325,9 +2325,10 @@ eval_frame(PyFrameObject *f)
 		/* Unwind stacks if a (pseudo) exception occurred */
 
 fast_block_end:
-		while (why != WHY_NOT && why != WHY_YIELD && f->f_iblock > 0) {
+		while (why != WHY_NOT && f->f_iblock > 0) {
 			PyTryBlock *b = PyFrame_BlockPop(f);
 
+			assert(why != WHY_YIELD);
 			if (b->b_type == SETUP_LOOP && why == WHY_CONTINUE) {
 				/* For a continue inside a try block,
 				   don't pop the block for the loop. */
@@ -2397,15 +2398,14 @@ fast_block_end:
 
 	} /* main loop */
 
-	if (why != WHY_YIELD) {
-		/* Pop remaining stack entries -- but when yielding */
-		while (!EMPTY()) {
-			v = POP();
-			Py_XDECREF(v);
-		}
+	assert(why != WHY_YIELD);
+	/* Pop remaining stack entries. */
+	while (!EMPTY()) {
+		v = POP();
+		Py_XDECREF(v);
 	}
 
-	if (why != WHY_RETURN && why != WHY_YIELD)
+	if (why != WHY_RETURN)
 		retval = NULL;
 
 fast_yield:
@@ -2461,7 +2461,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	PyObject *x, *u;
 
 	if (globals == NULL) {
-		PyErr_SetString(PyExc_SystemError, 
+		PyErr_SetString(PyExc_SystemError,
 				"PyEval_EvalCodeEx: NULL globals");
 		return NULL;
 	}
@@ -3083,12 +3083,12 @@ _PyEval_CallTracing(PyObject *func, PyObject *args)
 }
 
 static int
-maybe_call_line_trace(Py_tracefunc func, PyObject *obj, 
+maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
 		      PyFrameObject *frame, int *instr_lb, int *instr_ub,
 		      int *instr_prev)
 {
 	/* The theory of SET_LINENO-less tracing.
-	   
+
 	   In a nutshell, we use the co_lnotab field of the code object
 	   to tell when execution has moved onto a different line.
 
@@ -3117,17 +3117,17 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
 
 	   2           0 LOAD_FAST                0 (a)
 		       3 JUMP_IF_FALSE            9 (to 15)
-		       6 POP_TOP             
+		       6 POP_TOP
 
 	   3           7 LOAD_CONST               1 (1)
-		      10 PRINT_ITEM          
-		      11 PRINT_NEWLINE       
+		      10 PRINT_ITEM
+		      11 PRINT_NEWLINE
 		      12 JUMP_FORWARD             6 (to 21)
-		 >>   15 POP_TOP             
+		 >>   15 POP_TOP
 
 	   5          16 LOAD_CONST               2 (2)
-		      19 PRINT_ITEM          
-		      20 PRINT_NEWLINE       
+		      19 PRINT_ITEM
+		      20 PRINT_NEWLINE
 		 >>   21 LOAD_CONST               0 (None)
 		      24 RETURN_VALUE
 
@@ -3193,7 +3193,7 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
 
 		if (addr == frame->f_lasti) {
 			frame->f_lineno = line;
-			result = call_trace(func, obj, frame, 
+			result = call_trace(func, obj, frame,
 					    PyTrace_LINE, Py_None);
 		}
 
@@ -3211,7 +3211,7 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
 	}
 	else if (frame->f_lasti <= *instr_prev) {
 		/* jumping back in the same line forces a trace event */
-		result = call_trace(func, obj, frame, 
+		result = call_trace(func, obj, frame,
 				    PyTrace_LINE, Py_None);
 	}
 	*instr_prev = frame->f_lasti;
@@ -3412,14 +3412,14 @@ static void
 err_args(PyObject *func, int flags, int nargs)
 {
 	if (flags & METH_NOARGS)
-		PyErr_Format(PyExc_TypeError, 
+		PyErr_Format(PyExc_TypeError,
 			     "%.200s() takes no arguments (%d given)",
-			     ((PyCFunctionObject *)func)->m_ml->ml_name, 
+			     ((PyCFunctionObject *)func)->m_ml->ml_name,
 			     nargs);
 	else
-		PyErr_Format(PyExc_TypeError, 
+		PyErr_Format(PyExc_TypeError,
 			     "%.200s() takes exactly one argument (%d given)",
-			     ((PyCFunctionObject *)func)->m_ml->ml_name, 
+			     ((PyCFunctionObject *)func)->m_ml->ml_name,
 			     nargs);
 }
 
@@ -3505,8 +3505,8 @@ call_function(PyObject ***pp_stack, int oparg)
 			BEGIN_C_TRACE
 			x = PyCFunction_Call(func, callargs, NULL);
 			END_C_TRACE
-			Py_XDECREF(callargs); 
-		} 
+			Py_XDECREF(callargs);
+		}
 	} else {
 		if (PyMethod_Check(func) && PyMethod_GET_SELF(func) != NULL) {
 			/* optimize access to bound methods */
@@ -3524,11 +3524,11 @@ call_function(PyObject ***pp_stack, int oparg)
 			Py_INCREF(func);
 		if (PyFunction_Check(func))
 			x = fast_function(func, pp_stack, n, na, nk);
-		else 
+		else
 			x = do_call(func, pp_stack, na, nk);
 		Py_DECREF(func);
 	}
-	
+
 	/* What does this do? */
 	while ((*pp_stack) > pfunc) {
 		w = EXT_POP(*pp_stack);
@@ -3822,7 +3822,7 @@ _PyEval_SliceIndex(PyObject *v, int *pi)
 
 				/* It's an overflow error, so we need to
 				   check the sign of the long integer,
-				   set the value to INT_MAX or -INT_MAX, 
+				   set the value to INT_MAX or -INT_MAX,
 				   and clear the error. */
 
 				/* Create a long integer with a value of 0 */
@@ -4114,10 +4114,10 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 		cf.cf_flags = 0;
 		if (PyEval_MergeCompilerFlags(&cf))
 			v = PyRun_FileFlags(fp, name, Py_file_input, globals,
-					    locals, &cf); 
+					    locals, &cf);
 		else
 			v = PyRun_File(fp, name, Py_file_input, globals,
-				       locals); 
+				       locals);
 	}
 	else {
 		PyObject *tmp = NULL;
@@ -4136,7 +4136,7 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 		if (PyString_AsStringAndSize(prog, &str, NULL))
 			return -1;
 		if (PyEval_MergeCompilerFlags(&cf))
-			v = PyRun_StringFlags(str, Py_file_input, globals, 
+			v = PyRun_StringFlags(str, Py_file_input, globals,
 					      locals, &cf);
 		else
 			v = PyRun_String(str, Py_file_input, globals, locals);
