@@ -549,6 +549,10 @@ PyInstance_New(PyObject *klass, PyObject *arg, PyObject *kw)
 		initstr = PyString_InternFromString("__init__");
 	init = instance_getattr2(inst, initstr);
 	if (init == NULL) {
+		if (PyErr_Occurred()) {
+			Py_DECREF(inst);
+			return NULL;
+		}
 		if ((arg != NULL && (!PyTuple_Check(arg) ||
 				     PyTuple_Size(arg) != 0))
 		    || (kw != NULL && (!PyDict_Check(kw) ||
@@ -694,7 +698,7 @@ instance_getattr1(register PyInstanceObject *inst, PyObject *name)
 		}
 	}
 	v = instance_getattr2(inst, name);
-	if (v == NULL) {
+	if (v == NULL && !PyErr_Occurred()) {
 		PyErr_Format(PyExc_AttributeError,
 			     "%.50s instance has no attribute '%.400s'",
 			     PyString_AS_STRING(inst->in_class->cl_name), sname);
@@ -1809,25 +1813,20 @@ half_richcompare(PyObject *v, PyObject *w, int op)
 	/* If the instance doesn't define an __getattr__ method, use
 	   instance_getattr2 directly because it will not set an
 	   exception on failure. */
-	if (((PyInstanceObject *)v)->in_class->cl_getattr == NULL) {
+	if (((PyInstanceObject *)v)->in_class->cl_getattr == NULL)
 		method = instance_getattr2((PyInstanceObject *)v,
 					   name_op[op]);
-		if (method == NULL) {
-			assert(!PyErr_Occurred());
-			res = Py_NotImplemented;
-			Py_INCREF(res);
-			return res;
-		}
-	} else {
+	else
 		method = PyObject_GetAttr(v, name_op[op]);
-		if (method == NULL) {
+	if (method == NULL) {
+		if (PyErr_Occurred()) {
 			if (!PyErr_ExceptionMatches(PyExc_AttributeError))
 				return NULL;
 			PyErr_Clear();
-			res = Py_NotImplemented;
-			Py_INCREF(res);
-			return res;
 		}
+		res = Py_NotImplemented;
+		Py_INCREF(res);
+		return res;
 	}
 
 	args = Py_BuildValue("(O)", w);
