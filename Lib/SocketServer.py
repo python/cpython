@@ -173,7 +173,7 @@ class BaseServer:
 
     - address_family
     - socket_type
-    - reuse_address
+    - allow_reuse_address
 
     Instance variables:
 
@@ -304,7 +304,7 @@ class TCPServer(BaseServer):
     - address_family
     - socket_type
     - request_queue_size (only for stream sockets)
-    - reuse_address
+    - allow_reuse_address
 
     Instance variables:
 
