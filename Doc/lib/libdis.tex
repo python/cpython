@@ -480,9 +480,9 @@ in \code{cmp_op[\var{opname}]}.
 
 \begin{opcodedesc}{IMPORT_NAME}{namei}
 Imports the module \code{co_names[\var{namei}]}.  The module object is
-pushed onto the stack.  The current name space is not affected: for a
+pushed onto the stack.  The current namespace is not affected: for a
 proper import statement, a subsequent \code{STORE_FAST} instruction
-modifies the name space.
+modifies the namespace.
 \end{opcodedesc}
 
 \begin{opcodedesc}{IMPORT_FROM}{namei}
