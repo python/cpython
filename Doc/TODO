@@ -1,0 +1,9 @@
+PYTHON DOCUMENTATION TO-DO LIST
+===============================
+
+
+* array module:  methods read(), reverse(), write() of the array object.
+
+* Fix partparse.py again, or toss it into the abyss.
+
+* Figure out ligature issues for PDF on Macs.
