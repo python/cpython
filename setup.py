@@ -361,10 +361,13 @@ class PyBuildExt(build_ext):
 
         if (ssl_incs is not None and
             ssl_libs is not None):
+            rtlibs = None
+            if platform.startswith('sunos'):
+                rtlibs = ssl_libs
             exts.append( Extension('_socket', ['socketmodule.c'],
                                    include_dirs = ssl_incs,
                                    library_dirs = ssl_libs,
-                                   runtime_library_dirs = ssl_libs,
+                                   runtime_library_dirs = rtlibs,
                                    libraries = ['ssl', 'crypto'],
                                    define_macros = [('USE_SSL',1)] ) )
         else:
