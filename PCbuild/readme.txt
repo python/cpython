@@ -4,19 +4,19 @@ This directory is used to build Python for Win32 platforms, e.g. Windows
 95, 98 and NT.  It requires Microsoft Visual C++ 6.x or 5.x.
 (For other Windows platforms and compilers, see ../PC/readme.txt.)
 
-Unlike older versions, there's no longer a need to copy the project files
-from a subdirectory of PC/ to the PCbuild directory -- they come in PCbuild.
-
 All you need to do is open the workspace "pcbuild.dsw" in MSVC++, select
 the Debug or Release setting (using Build -> Set Active Configuration...),
 and build the projects.
 
-The proper order to build subprojects is:
+The proper order to build subprojects:
 
 1) pythoncore (this builds the main Python DLL and library files,
-               python21.{dll, lib})
+               python21.{dll, lib} in Release mode)
+              NOTE:  in previous releases, this subproject was
+              named after the release number, e.g. python20.
 
-2) python   (this builds the main Python executable, python.exe)
+2) python (this builds the main Python executable,
+           python.exe in Release mode)
 
 3) the other subprojects, as desired or needed (note:  you probably don't
    want to build most of the other subprojects, unless you're building an
@@ -29,7 +29,7 @@ their name:  python21_d.dll, python_d.exe, parser_d.pyd, and so on.
 SUBPROJECTS
 -----------
 These subprojects should build out of the box.  Subprojects other than the
-main ones (python21, python, pythonw) generally build a DLL (renamed to
+main ones (pythoncore, python, pythonw) generally build a DLL (renamed to
 .pyd) from a specific module so that users don't have to load the code
 supporting that module unless they import the module.
 
