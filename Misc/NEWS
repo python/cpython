@@ -18,7 +18,7 @@ Core and builtins
   codeop.py depends on this behavior, so a compilation flag had to be
   invented that causes the tokenizer to revert to the old behavior;
   this required extra changes to 2 .h files, 2 .c files, and 2 .py
-  files.
+  files.  (Fixes SF bug #501622.)
 
 - If a new-style class defines neither __new__ nor __init__, its
   constructor would ignore all arguments.  This is changed now: the
