@@ -11,13 +11,12 @@ directories, with various optional time/correctness trade-offs.
 
 The \module{filecmp} module defines the following functions:
 
-\begin{funcdesc}{cmp}{f1, f2\optional{, shallow\optional{, use_statcache}}}
+\begin{funcdesc}{cmp}{f1, f2\optional{, shallow}}
 Compare the files named \var{f1} and \var{f2}, returning \code{True} if
 they seem equal, \code{False} otherwise.
 
 Unless \var{shallow} is given and is false, files with identical
 \function{os.stat()} signatures are taken to be equal.
-\versionchanged[\var{use_statcache} is obsolete and ignored.]{2.3}
 
 Files that were compared using this function will not be compared again
 unless their \function{os.stat()} signature changes.
@@ -27,7 +26,7 @@ portability and efficiency.
 \end{funcdesc}
 
 \begin{funcdesc}{cmpfiles}{dir1, dir2, common\optional{,
-                           shallow\optional{, use_statcache}}}
+                           shallow}}
 Returns three lists of file names: \var{match}, \var{mismatch},
 \var{errors}.  \var{match} contains the list of files match in both
 directories, \var{mismatch} includes the names of those that don't,
@@ -37,8 +36,8 @@ lack permission to read them or many other reasons, but always that
 the comparison could not be done for some reason.
 
 The \var{common} parameter is a list of file names found in both directories.
-The \var{shallow} and \var{use_statcache} parameters have the same
-meanings and default values as for \function{filecmp.cmp()}.
+The \var{shallow} parameter has the same
+meaning and default value as for \function{filecmp.cmp()}.
 \end{funcdesc}
 
 Example:
