@@ -136,7 +136,7 @@ parsetok(tok, g, start, err_ret)
 	for (;;) {
 		char *a, *b;
 		int type;
-		int len;
+		size_t len;
 		char *str;
 
 		type = PyTokenizer_Get(tok, &a, &b);
@@ -184,7 +184,7 @@ parsetok(tok, g, start, err_ret)
 		err_ret->lineno = tok->lineno;
 		err_ret->offset = tok->cur - tok->buf;
 		if (tok->buf != NULL) {
-			int len = tok->inp - tok->buf;
+			size_t len = tok->inp - tok->buf;
 			err_ret->text = PyMem_NEW(char, len + 1);
 			if (err_ret->text != NULL) {
 				if (len > 0)
