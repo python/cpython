@@ -867,7 +867,8 @@ class Tk(Misc, Wm):
 			import sys, os
 			baseName = os.path.basename(sys.argv[0])
 			baseName, ext = os.path.splitext(baseName)
-			if ext not in ('.py', 'pyc'): baseName = baseName + ext
+			if ext not in ('.py', '.pyc', '.pyo'):
+				baseName = baseName + ext
 		self.tk = _tkinter.create(screenName, baseName, className)
 		if _MacOS:
 			# Disable event scanning except for Command-Period
