@@ -1134,11 +1134,10 @@ class DefaultCookiePolicy(CookiePolicy):
         # having to load lots of MSIE cookie files unless necessary.
         req_host, erhn = eff_request_host(request)
         if not req_host.startswith("."):
-            dotted_req_host = "."+req_host
+            req_host = "."+req_host
         if not erhn.startswith("."):
-            dotted_erhn = "."+erhn
-        if not (dotted_req_host.endswith(domain) or
-                dotted_erhn.endswith(domain)):
+            erhn = "."+erhn
+        if not (req_host.endswith(domain) or erhn.endswith(domain)):
             #debug("   request domain %s does not match cookie domain %s",
             #      req_host, domain)
             return False

@@ -51,6 +51,8 @@ Extension Modules
 Library
 -------
 
+- Fixed bug in a NameError bug in cookielib.  Patch #1116583.
+
 - Applied a security fix to SimpleXMLRPCserver (PSF-2005-001).  This
   disables recursive traversal through instance attributes, which can
   be exploited in various ways.
