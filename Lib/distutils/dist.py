@@ -294,15 +294,16 @@ class Distribution:
     def parse_config_files (self, filenames=None):
 
         from ConfigParser import ConfigParser
+        from distutils.core import DEBUG
 
         if filenames is None:
             filenames = self.find_config_files()
 
-        print "Distribution.parse_config_files():"
+        if DEBUG: print "Distribution.parse_config_files():"
 
         parser = ConfigParser()
         for filename in filenames:
-            print "  reading", filename
+            if DEBUG: print "  reading", filename
             parser.read(filename)
             for section in parser.sections():
                 options = parser.options(section)
@@ -370,7 +371,6 @@ class Distribution:
         # latter, we omit the display-only options and show help for
         # each command listed on the command line.
         if self.help:
-            print "showing 'global' help; commands=", self.commands
             self._show_help(parser,
                             display_options=len(self.commands) == 0,
                             commands=self.commands)
@@ -440,7 +440,6 @@ class Distribution:
         parser.set_negative_aliases (negative_opt)
         (args, opts) = parser.getopt (args[1:])
         if hasattr(opts, 'help') and opts.help:
-            print "showing help for command", cmd_class
             self._show_help(parser, display_options=0, commands=[cmd_class])
             return
 
@@ -643,10 +642,12 @@ class Distribution:
         object for 'command' is in the cache, then we either create and
         return it (if 'create' is true) or return None.
         """
+        from distutils.core import DEBUG
         cmd_obj = self.command_obj.get(command)
         if not cmd_obj and create:
-            print "Distribution.get_command_obj(): " \
-                  "creating '%s' command object" % command
+            if DEBUG:
+                print "Distribution.get_command_obj(): " \
+                      "creating '%s' command object" % command
 
             klass = self.get_command_class(command)
             cmd_obj = self.command_obj[command] = klass(self)
