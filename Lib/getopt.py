@@ -9,7 +9,7 @@ provides two functions and an exception:
 
 getopt() -- Parse command line options
 gnu_getopt() -- Like getopt(), but allow option and non-option arguments
-to be intermixed. 
+to be intermixed.
 GetoptError -- exception (class) raised with 'opt' attribute, which is the
 option involved with the exception.
 """
@@ -103,7 +103,7 @@ def gnu_getopt(args, shortopts, longopts = []):
     If the first character of the option string is `+', or if the
     environment variable POSIXLY_CORRECT is set, then option
     processing stops as soon as a non-option argument is encountered.
-    
+
     """
 
     opts = []

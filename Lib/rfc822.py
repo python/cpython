@@ -443,7 +443,7 @@ class Message:
 
     def __contains__(self, name):
         """Determine whether a message contains the named header."""
-        return name.lower() in self.dict        
+        return name.lower() in self.dict
 
     def keys(self):
         """Get all of a message's header field names."""

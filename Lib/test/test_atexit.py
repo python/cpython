@@ -38,7 +38,7 @@ def direct():
 import sys
 sys.exitfunc = direct
 
-# Make sure atexit doesn't drop 
+# Make sure atexit doesn't drop
 def indirect():
     print "indirect exit"
 

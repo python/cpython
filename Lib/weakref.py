@@ -191,7 +191,7 @@ class WeakKeyDictionary(UserDict.UserDict):
         except TypeError:
             return 0
         return wr in self.data
-    
+
     def items(self):
         L = []
         for key, value in self.data.items():
