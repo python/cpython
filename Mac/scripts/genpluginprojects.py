@@ -113,6 +113,7 @@ def	genallprojects(force=0):
 	genpluginproject("all", "_testcapi")
 	genpluginproject("all", "xx")
 	genpluginproject("all", "xxsubtype", sources=["xxsubtype.c"])
+	genpluginproject("all", "_hotshot", sources=["_hotshot.c"])
 	
 	# bgen-generated Toolbox modules
 	genpluginproject("carbon", "_AE", outputdir="::Lib:Carbon")
