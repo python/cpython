@@ -45,6 +45,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1110478: Revert os.environ.update to do putenv again.
+
 - Bug #1103844: fix distutils.install.dump_dirs() with negated options.
 
 - os.{SEEK_SET, SEEK_CUR, SEEK_END} have been added for convenience.

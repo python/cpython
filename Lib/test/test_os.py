@@ -226,6 +226,13 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         os.environ.clear()
         os.environ.update(self.__save)
 
+    # Bug 1110478
+    def test_update(self):
+        if os.path.exists("/bin/sh"):
+            os.environ.update(HELLO="World")
+            value = os.popen("/bin/sh -c 'echo $HELLO'").read().strip()
+            self.assertEquals(value, "World")
+
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
 
