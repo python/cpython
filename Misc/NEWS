@@ -39,6 +39,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- Bug #852314: Fix return type of tkFileDialog.askdirectory on Unix.
+
 - Bug #834676: Fix crashes when normalizing Hangul syllables.
 
 - Bug #703198: Ignore "b" and "t" in os.popen on Unix.
