@@ -567,10 +567,11 @@ posix_do_stat(self, args, format, statfunc)
 	}
 
 	if ((pathlen > 0) && (path[pathlen-1] == '\\' || path[pathlen-1] == '/')) {
-		/* exception for drive root */
-		if (!((pathlen == 3) &&
+		/* exception for specific or current drive root */
+		if (!((pathlen == 1) ||
+		      ((pathlen == 3) &&
 		      (path[1] == ':') &&
-		      (path[2] == '\\' || path[2] == '/')))
+		      (path[2] == '\\' || path[2] == '/'))))
 		{
 			strncpy(pathcopy, path, pathlen);
 			pathcopy[pathlen-1] = '\0'; /* nuke the trailing backslash */
