@@ -557,7 +557,7 @@ listinsert(self, args)
 {
 	int i;
 	PyObject *v;
-	if (!PyArg_Parse(args, "(iO)", &i, &v))
+	if (!PyArg_ParseTuple(args, "iO", &i, &v))
 		return NULL;
 	return ins(self, i, v);
 }
@@ -568,7 +568,7 @@ listappend(self, args)
 	PyObject *args;
 {
 	PyObject *v;
-	if (!PyArg_Parse(args, "O", &v))
+	if (!PyArg_ParseTuple(args, "O", &v))
 		return NULL;
 	return ins(self, (int) self->ob_size, v);
 }
@@ -1216,12 +1216,17 @@ samplesortslice(lo, hi, compare)
 staticforward PyTypeObject immutable_list_type;
 
 static PyObject *
-listsort(self, compare)
+listsort(self, args)
 	PyListObject *self;
-	PyObject *compare;
+	PyObject *args;
 {
 	int err;
+	PyObject *compare = NULL;
 
+	if (args != NULL) {
+		if (!PyArg_ParseTuple(args, "|O", &compare))
+			return NULL;
+	}
 	self->ob_type = &immutable_list_type;
 	err = samplesortslice(self->ob_item,
 			      self->ob_item + self->ob_size,
@@ -1256,10 +1261,8 @@ listreverse(self, args)
 	register PyObject **p, **q;
 	register PyObject *tmp;
 	
-	if (args != NULL) {
-		PyErr_BadArgument();
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
-	}
 
 	if (self->ob_size > 1) {
 		for (p = self->ob_item, q = self->ob_item + self->ob_size - 1;
@@ -1321,13 +1324,12 @@ listindex(self, args)
 	PyObject *args;
 {
 	int i;
-	
-	if (args == NULL) {
-		PyErr_BadArgument();
+	PyObject *v;
+
+	if (!PyArg_ParseTuple(args, "O", &v))
 		return NULL;
-	}
 	for (i = 0; i < self->ob_size; i++) {
-		if (PyObject_Compare(self->ob_item[i], args) == 0)
+		if (PyObject_Compare(self->ob_item[i], v) == 0)
 			return PyInt_FromLong((long)i);
 		if (PyErr_Occurred())
 			return NULL;
@@ -1343,14 +1345,12 @@ listcount(self, args)
 {
 	int count = 0;
 	int i;
-	
-	if (args == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-				"list.count(x): argument missing");
+	PyObject *v;
+
+	if (!PyArg_ParseTuple(args, "O", &v))
 		return NULL;
-	}
 	for (i = 0; i < self->ob_size; i++) {
-		if (PyObject_Compare(self->ob_item[i], args) == 0)
+		if (PyObject_Compare(self->ob_item[i], v) == 0)
 			count++;
 		if (PyErr_Occurred())
 			return NULL;
@@ -1364,13 +1364,12 @@ listremove(self, args)
 	PyObject *args;
 {
 	int i;
-	
-	if (args == NULL) {
-		PyErr_BadArgument();
+	PyObject *v;
+
+	if (!PyArg_ParseTuple(args, "O", &v))
 		return NULL;
-	}
 	for (i = 0; i < self->ob_size; i++) {
-		if (PyObject_Compare(self->ob_item[i], args) == 0) {
+		if (PyObject_Compare(self->ob_item[i], v) == 0) {
 			if (list_ass_slice(self, i, i+1,
 					   (PyObject *)NULL) != 0)
 				return NULL;
@@ -1404,15 +1403,15 @@ static char sort_doc[] =
 "L.sort([cmpfunc]) -- sort *IN PLACE*; if given, cmpfunc(x, y) -> -1, 0, 1";
 
 static PyMethodDef list_methods[] = {
-	{"append",	(PyCFunction)listappend, 0, append_doc},
-	{"insert",	(PyCFunction)listinsert, 0, insert_doc},
+	{"append",	(PyCFunction)listappend, 1, append_doc},
+	{"insert",	(PyCFunction)listinsert, 1, insert_doc},
 	{"extend",      (PyCFunction)listextend, 1, extend_doc},
 	{"pop",		(PyCFunction)listpop, 1, pop_doc},
-	{"remove",	(PyCFunction)listremove, 0, remove_doc},
-	{"index",	(PyCFunction)listindex, 0, index_doc},
-	{"count",	(PyCFunction)listcount, 0, count_doc},
-	{"reverse",	(PyCFunction)listreverse, 0, reverse_doc},
-	{"sort",	(PyCFunction)listsort, 0, sort_doc},
+	{"remove",	(PyCFunction)listremove, 1, remove_doc},
+	{"index",	(PyCFunction)listindex, 1, index_doc},
+	{"count",	(PyCFunction)listcount, 1, count_doc},
+	{"reverse",	(PyCFunction)listreverse, 1, reverse_doc},
+	{"sort",	(PyCFunction)listsort, 1, sort_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
