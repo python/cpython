@@ -130,20 +130,6 @@ Socket methods:
 #include <os2.h>
 #endif
 
-#ifdef RISCOS
-#define NO_DUP
-#undef off_t
-#undef uid_t
-#undef gid_t
-#undef errno
-#include <signal.h>
-#include "socklib.h"
-#include "inetlib.h"
-#include "netdb.h"
-#include "unixlib.h"
-#include "netinet/in.h"
-#include "sys/ioctl.h"
-#else /*RISCOS*/
 
 #include <sys/types.h>
 
@@ -165,13 +151,18 @@ Socket methods:
 #endif
 #endif
 
+#ifndef RISCOS
 #include <fcntl.h>
+#else
+#include <sys/fcntl.h>
+#define NO_DUP
+int h_errno; /* not used */
+#endif
 #else
 #include <winsock.h>
 #include <fcntl.h>
 #endif
 
-#endif /*RISCOS*/
 
 #ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
@@ -1804,7 +1795,11 @@ gethost_common(struct hostent *h, struct sockaddr *addr, int alen, int af)
 
 	if (h == NULL) {
 		/* Let's get real error message to return */
+#ifndef RISCOS
 		PyH_Err(h_errno);
+#else
+		PyErr_SetString(PySocket_Error, "host not found");
+#endif
 		return NULL;
 	}
 	if (h->h_addrtype != af) {

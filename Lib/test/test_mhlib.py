@@ -12,8 +12,8 @@ import os, StringIO
 import sys
 import mhlib
 
-if sys.platform.startswith("win"):
-    raise TestSkipped("test_mhlib skipped on Windows -- "
+if sys.platform.startswith("win") or sys.platform=="riscos":
+    raise TestSkipped("test_mhlib skipped on %s -- "%sys.platform +
                       "too many Unix assumptions")
 
 _mhroot = TESTFN+"_MH"

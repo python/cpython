@@ -156,7 +156,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
             pass
     for i in range(len(args)):
         # Strip trailing ".py" from arguments
-        if args[i][-3:] == '.py':
+        if args[i][-3:] == os.extsep+'py':
             args[i] = args[i][:-3]
     stdtests = STDTESTS[:]
     nottests = NOTTESTS[:]
@@ -272,7 +272,7 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     names = os.listdir(testdir)
     tests = []
     for name in names:
-        if name[:5] == "test_" and name[-3:] == ".py":
+        if name[:5] == "test_" and name[-3:] == os.extsep+"py":
             modname = name[:-3]
             if modname not in stdtests and modname not in nottests:
                 tests.append(modname)
@@ -572,6 +572,48 @@ _expectations = {
         test_socketserver
         test_sunaudiodev
         test_sundry
+        test_unicode_file
+        test_winreg
+        test_winsound
+        """,
+    'riscos':
+        """
+        test_al
+        test_asynchat
+        test_bsddb
+        test_cd
+        test_cl
+        test_commands
+        test_crypt
+        test_dbm
+        test_dl
+        test_fcntl
+        test_fork1
+        test_gdbm
+        test_gl
+        test_grp
+        test_imgfile
+        test_largefile
+        test_linuxaudiodev
+        test_locale
+        test_mmap
+        test_nis
+        test_ntpath
+        test_openpty
+        test_poll
+        test_popen2
+        test_pty
+        test_pwd
+        test_socket_ssl
+        test_socketserver
+        test_strop
+        test_sunaudiodev
+        test_sundry
+        test_thread
+        test_threaded_import
+        test_threadedtempfile
+        test_threading
+        test_timing
         test_unicode_file
         test_winreg
         test_winsound

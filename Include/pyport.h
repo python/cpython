@@ -153,6 +153,10 @@ typedef LONG_LONG		Py_intptr_t;
 #define HAVE_FSTAT
 #endif
 
+#ifdef RISCOS
+#include <sys/types.h>
+#endif
+
 #ifndef DONT_HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #elif defined(HAVE_STAT_H)

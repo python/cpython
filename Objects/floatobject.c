@@ -610,6 +610,13 @@ float_int(PyObject *v)
 	long aslong;		/* (long)wholepart */
 
 	(void)modf(x, &wholepart);
+#ifdef RISCOS
+	/* conversion from floating to integral type would raise exception */
+	if (wholepart>LONG_MAX || wholepart<LONG_MIN) {
+		PyErr_SetString(PyExc_OverflowError, "float too large to convert");
+		return NULL;
+	}
+#endif
 	/* doubles may have more bits than longs, or vice versa; and casting
 	   to long may yield gibberish in either case.  What really matters
 	   is whether converting back to double again reproduces what we

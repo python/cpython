@@ -103,8 +103,10 @@ def join(a, *p):
     j= a
     for b in p:
         (fs, drive, path)= _split(b)
-        if fs!='' or drive!='' or path[:1] in _roots:
+        if j=='' or fs!='' or drive!='' or path[:1] in _roots:
             j= b
+        elif j[-1]==':':
+            j= j+b
         else:
             j= j+'.'+b
     return j

@@ -6,15 +6,26 @@ import string
 import urllib
 import os
 
-def url2pathname(pathname):
-    "Convert /-delimited pathname to mac pathname"
-    #
-    # XXXX The .. handling should be fixed...
-    #
-    tp = urllib.splittype(pathname)[0]
+__all__ = ["url2pathname","pathname2url"]
+
+__slash_dot = string.maketrans("/.", "./")
+
+def url2pathname(url):
+    "Convert URL to a RISC OS path."
+    tp = urllib.splittype(url)[0]
     if tp and tp <> 'file':
         raise RuntimeError, 'Cannot convert non-local URL to pathname'
-    components = string.split(pathname, '/')
+    # Turn starting /// into /, an empty hostname means current host
+    if url[:3] == '///':
+        url = url[2:]
+    elif url[:2] == '//':
+        raise RuntimeError, 'Cannot convert non-local URL to pathname'
+    components = string.split(url, '/')
+    if not components[0]:
+        if '$' in components:
+            del components[0]
+        else:
+             components[0] = '$'
     # Remove . and embedded ..
     i = 0
     while i < len(components):
@@ -23,59 +34,35 @@ def url2pathname(pathname):
         elif components[i] == '..' and i > 0 and \
                                   components[i-1] not in ('', '..'):
             del components[i-1:i+1]
-            i = i-1
+            i -= 1
+        elif components[i] == '..':
+            components[i] = '^'
+            i += 1
         elif components[i] == '' and i > 0 and components[i-1] <> '':
             del components[i]
         else:
-            if components[i]<>'..' and string.find(components[i], '.')<>-1 :
-                components[i] = string.join(string.split(components[i],'.'),'/')
-            i = i+1
-    if not components[0]:
-        # Absolute unix path, don't start with colon
-        return string.join(components[1:], '.')
-    else:
-        # relative unix path, start with colon. First replace
-        # leading .. by empty strings (giving ::file)
-        i = 0
-        while i < len(components) and components[i] == '..':
-            components[i] = '^'
-            i = i + 1
-        return string.join(components, '.')
+            i += 1
+    components = map(lambda x: urllib.unquote(x).translate(__slash_dot), components)
+    return '.'.join(components)
 
 def pathname2url(pathname):
-    "convert mac pathname to /-delimited pathname"
-    if '/' in pathname:
-        raise RuntimeError, "Cannot convert pathname containing slashes"
-    components = string.split(pathname, ':')
-    # Replace empty string ('::') by .. (will result in '/../' later)
-    for i in range(1, len(components)):
-        if components[i] == '':
-            components[i] = '..'
-    # Truncate names longer than 31 bytes
-    components = map(lambda x: x[:31], components)
-
-    if os.path.isabs(pathname):
-        return '/' + string.join(components, '/')
-    else:
-        return string.join(components, '/')
+    "Convert a RISC OS path name to a file url."
+    return urllib.quote('///' + pathname.translate(__slash_dot), "/$:")
 
 def test():
     for url in ["index.html",
                 "/SCSI::SCSI4/$/Anwendung/Comm/Apps/!Fresco/Welcome",
+                "/SCSI::SCSI4/$/Anwendung/Comm/Apps/../!Fresco/Welcome",
                 "../index.html",
                 "bar/index.html",
                 "/foo/bar/index.html",
                 "/foo/bar/",
                 "/"]:
         print `url`, '->', `url2pathname(url)`
-    for path in ["drive:",
-                 "drive:dir:",
-                 "drive:dir:file",
-                 "drive:file",
-                 "file",
-                 ":file",
-                 ":dir:",
-                 ":dir:file"]:
+    print "*******************************************************"
+    for path in ["SCSI::SCSI4.$.Anwendung",
+                 "PythonApp:Lib",
+                 "PythonApp:Lib.rourl2path/py"]:
         print `path`, '->', `pathname2url(path)`
 
 if __name__ == '__main__':

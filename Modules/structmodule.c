@@ -53,19 +53,19 @@ static PyObject *StructError;
 #endif
 #endif /* __MWERKS__ */
 
-typedef struct { char c; short x; } s_short;
-typedef struct { char c; int x; } s_int;
-typedef struct { char c; long x; } s_long;
-typedef struct { char c; float x; } s_float;
-typedef struct { char c; double x; } s_double;
-typedef struct { char c; void *x; } s_void_p;
+typedef struct { char c; short x; } st_short;
+typedef struct { char c; int x; } st_int;
+typedef struct { char c; long x; } st_long;
+typedef struct { char c; float x; } st_float;
+typedef struct { char c; double x; } st_double;
+typedef struct { char c; void *x; } st_void_p;
 
-#define SHORT_ALIGN (sizeof(s_short) - sizeof(short))
-#define INT_ALIGN (sizeof(s_int) - sizeof(int))
-#define LONG_ALIGN (sizeof(s_long) - sizeof(long))
-#define FLOAT_ALIGN (sizeof(s_float) - sizeof(float))
-#define DOUBLE_ALIGN (sizeof(s_double) - sizeof(double))
-#define VOID_P_ALIGN (sizeof(s_void_p) - sizeof(void *))
+#define SHORT_ALIGN (sizeof(st_short) - sizeof(short))
+#define INT_ALIGN (sizeof(st_int) - sizeof(int))
+#define LONG_ALIGN (sizeof(st_long) - sizeof(long))
+#define FLOAT_ALIGN (sizeof(st_float) - sizeof(float))
+#define DOUBLE_ALIGN (sizeof(st_double) - sizeof(double))
+#define VOID_P_ALIGN (sizeof(st_void_p) - sizeof(void *))
 
 /* We can't support q and Q in native mode unless the compiler does;
    in std mode, they're 8 bytes on all platforms. */

@@ -4,8 +4,8 @@ import signal
 import os
 import sys
 
-if sys.platform[:3] in ('win', 'os2'):
-    raise TestSkipped, "Can't test signal on %s" % sys.platform[:3]
+if sys.platform[:3] in ('win', 'os2') or sys.platform=='riscos':
+    raise TestSkipped, "Can't test signal on %s" % sys.platform
 
 if verbose:
     x = '-x'

@@ -18,11 +18,11 @@ import double_const  # don't blink -- that *was* the test
 
 def test_with_extension(ext): # ext normally ".py"; perhaps ".pyw"
     source = TESTFN + ext
-    pyo = TESTFN + ".pyo"
+    pyo = TESTFN + os.extsep + "pyo"
     if sys.platform.startswith('java'):
         pyc = TESTFN + "$py.class"
     else:
-        pyc = TESTFN + ".pyc"
+        pyc = TESTFN + os.extsep + "pyc"
 
     f = open(source, "w")
     print >> f, "# This tests Python's ability to import a", ext, "file."
@@ -63,7 +63,7 @@ def test_with_extension(ext): # ext normally ".py"; perhaps ".pyw"
 
 sys.path.insert(0, os.curdir)
 try:
-    test_with_extension(".py")
+    test_with_extension(os.extsep + "py")
     if sys.platform.startswith("win"):
         for ext in ".PY", ".Py", ".pY", ".pyw", ".PYW", ".pYw":
             test_with_extension(ext)

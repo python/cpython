@@ -2,11 +2,6 @@
 
 import os
 
-if os.sep==".":
-    endsep = "/"
-else:
-    endsep = "."
-
 def whichdb(filename):
     """Guess which db package to use to open a db file.
 
@@ -24,9 +19,9 @@ def whichdb(filename):
 
     # Check for dbm first -- this has a .pag and a .dir file
     try:
-        f = open(filename + endsep + "pag", "rb")
+        f = open(filename + os.extsep + "pag", "rb")
         f.close()
-        f = open(filename + endsep + "dir", "rb")
+        f = open(filename + os.extsep + "dir", "rb")
         f.close()
         return "dbm"
     except IOError:
@@ -34,9 +29,9 @@ def whichdb(filename):
 
     # Check for dumbdbm next -- this has a .dir and and a .dat file
     try:
-        f = open(filename + endsep + "dat", "rb")
+        f = open(filename + os.extsep + "dat", "rb")
         f.close()
-        f = open(filename + endsep + "dir", "rb")
+        f = open(filename + os.extsep + "dir", "rb")
         try:
             if f.read(1) in ["'", '"']:
                 return "dumbdbm"
