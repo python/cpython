@@ -114,6 +114,15 @@ _tkinter
         all.tcl:        Total   8420    Passed  6826    Skipped 1581    Failed  13
         Sourced 91 Test Files.
         Files with failing tests: canvImg.test scrollbar.test textWind.test winWm.test
+        
+   Built Tix
+   ---------
+   Download from http://prdownloads.sourceforge.net/tix/tix-8.1.4.tar.gz
+   cd dist\tix-8.1.4
+   [cygwin]patch -p1 < ..\..\python\PC\tix.diff
+   cd win
+   nmake -f makefile.vc
+   nmake -f makefile.vc install
 
 zlib
     Python wrapper for the zlib compression library.  Get the source code
