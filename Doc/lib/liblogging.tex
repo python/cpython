@@ -77,6 +77,10 @@ streams (file-like objects).
 \item \class{FileHandler} instances send error messages to disk
 files.
 
+\item \class{BaseRotatingHandler} is tha base class for handlers that
+rotate log files at a certain point. It is not meant to be  instantiated
+directly. Instead, use RotatingFileHandler or TimedRotatingFileHandler.
+
 \item \class{RotatingFileHandler} instances send error messages to disk
 files, with support for maximum log file sizes and log file rotation.
 
@@ -890,8 +894,7 @@ Does a rollover, as described above.
 \end{methoddesc}
 
 \begin{methoddesc}{emit}{record}
-Outputs the record to the file, catering for rollover as described
-in \method{setRollover()}.
+Outputs the record to the file, catering for rollover as described previously.
 \end{methoddesc}
 
 \subsubsection{TimedRotatingFileHandler}
