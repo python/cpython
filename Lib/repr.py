@@ -60,7 +60,7 @@ class Repr:
 			key = keys[i]
 			s = s + self.repr1(key, level-1)
 			s = s + ': ' + self.repr1(x[key], level-1)
-		if n > self.maxlist: s = s + ', ...'
+		if n > self.maxdict: s = s + ', ...'
 		return '{' + s + '}'
 	def repr_string(self, x, level):
 		s = `x[:self.maxstring]`
