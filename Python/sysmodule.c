@@ -44,140 +44,137 @@ Data members:
 - ps1, ps2: optional primary and secondary prompts (strings)
 */
 
-#include "allobjects.h"
+#include "Python.h"
 
-#include "sysmodule.h"
-#include "import.h"
-#include "modsupport.h"
 #include "osdefs.h"
 
-object *sys_trace, *sys_profile;
-int sys_checkinterval = 10;
+PyObject *_PySys_TraceFunc, *_PySys_ProfileFunc;
+int _PySys_CheckInterval = 10;
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
-static object *sysdict;
+static PyObject *sysdict;
 
 #ifdef MS_COREDLL
 extern void *PyWin_DLLhModule;
 #endif
 
-object *
-sysget(name)
+PyObject *
+PySys_GetObject(name)
 	char *name;
 {
-	return dictlookup(sysdict, name);
+	return PyDict_GetItemString(sysdict, name);
 }
 
 FILE *
-sysgetfile(name, def)
+PySys_GetFile(name, def)
 	char *name;
 	FILE *def;
 {
 	FILE *fp = NULL;
-	object *v = sysget(name);
-	if (v != NULL && is_fileobject(v))
-		fp = getfilefile(v);
+	PyObject *v = PySys_GetObject(name);
+	if (v != NULL && PyFile_Check(v))
+		fp = PyFile_AsFile(v);
 	if (fp == NULL)
 		fp = def;
 	return fp;
 }
 
 int
-sysset(name, v)
+PySys_SetObject(name, v)
 	char *name;
-	object *v;
+	PyObject *v;
 {
 	if (v == NULL) {
-		if (dictlookup(sysdict, name) == NULL)
+		if (PyDict_GetItemString(sysdict, name) == NULL)
 			return 0;
 		else
-			return dictremove(sysdict, name);
+			return PyDict_DelItemString(sysdict, name);
 	}
 	else
-		return dictinsert(sysdict, name, v);
+		return PyDict_SetItemString(sysdict, name, v);
 }
 
-static object *
+static PyObject *
 sys_exit(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	/* Raise SystemExit so callers may catch it or clean up. */
-	err_setval(SystemExit, args);
+	PyErr_SetObject(PyExc_SystemExit, args);
 	return NULL;
 }
 
-static object *
+static PyObject *
 sys_settrace(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	if (args == None)
+	if (args == Py_None)
 		args = NULL;
 	else
-		XINCREF(args);
-	XDECREF(sys_trace);
-	sys_trace = args;
-	INCREF(None);
-	return None;
+		Py_XINCREF(args);
+	Py_XDECREF(_PySys_TraceFunc);
+	_PySys_TraceFunc = args;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 sys_setprofile(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	if (args == None)
+	if (args == Py_None)
 		args = NULL;
 	else
-		XINCREF(args);
-	XDECREF(sys_profile);
-	sys_profile = args;
-	INCREF(None);
-	return None;
+		Py_XINCREF(args);
+	Py_XDECREF(_PySys_ProfileFunc);
+	_PySys_ProfileFunc = args;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 sys_setcheckinterval(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	if (!newgetargs(args, "i", &sys_checkinterval))
+	if (!PyArg_ParseTuple(args, "i", &_PySys_CheckInterval))
 		return NULL;
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 #ifdef USE_MALLOPT
 /* Link with -lmalloc (or -lmpc) on an SGI */
 #include <malloc.h>
 
-static object *
+static PyObject *
 sys_mdebug(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int flag;
-	if (!getargs(args, "i", &flag))
+	if (!PyArg_Parse(args, "i", &flag))
 		return NULL;
 	mallopt(M_DEBUG, flag);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 #endif /* USE_MALLOPT */
 
-static object *
+static PyObject *
 sys_getrefcount(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *arg;
-	if (!getargs(args, "O", &arg))
+	PyObject *arg;
+	if (!PyArg_Parse(args, "O", &arg))
 		return NULL;
-	return newintobject((long) arg->ob_refcnt);
+	return PyInt_FromLong((long) arg->ob_refcnt);
 }
 
 #ifdef COUNT_ALLOCS
@@ -203,7 +200,7 @@ extern PyObject *_Py_GetObjects Py_PROTO((PyObject *, PyObject *));
 extern PyObject *_Py_GetDXProfile Py_PROTO((PyObject *,  PyObject *));
 #endif
 
-static struct methodlist sys_methods[] = {
+static PyMethodDef sys_methods[] = {
 	/* Might as well keep this in alphabetic order */
 	{"exit",	sys_exit, 0},
 #ifdef COUNT_ALLOCS
@@ -225,93 +222,100 @@ static struct methodlist sys_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-static object *sysin, *sysout, *syserr;
+static PyObject *sysin, *sysout, *syserr;
 
-static object *
+static PyObject *
 list_builtin_module_names()
 {
-	object *list = newlistobject(0);
+	PyObject *list = PyList_New(0);
 	int i;
 	if (list == NULL)
 		return NULL;
 	for (i = 0; inittab[i].name != NULL; i++) {
-		object *name = newstringobject(inittab[i].name);
+		PyObject *name = PyString_FromString(inittab[i].name);
 		if (name == NULL)
 			break;
-		addlistitem(list, name);
-		DECREF(name);
+		PyList_Append(list, name);
+		Py_DECREF(name);
 	}
-	if (sortlist(list) != 0) {
-		DECREF(list);
+	if (PyList_Sort(list) != 0) {
+		Py_DECREF(list);
 		list = NULL;
 	}
 	if (list) {
-		object *v = listtuple(list);
-		DECREF(list);
+		PyObject *v = PyList_AsTuple(list);
+		Py_DECREF(list);
 		list = v;
 	}
 	return list;
 }
 
 void
-initsys()
+PySys_Init()
 {
-	extern long getmaxint PROTO((void));
-	extern char *getversion PROTO((void));
-	extern char *getcopyright PROTO((void));
-	extern char *getplatform PROTO((void));
-	extern char *Py_GetPrefix PROTO((void));
-	extern char *Py_GetExecPrefix PROTO((void));
-	extern int fclose PROTO((FILE *));
-	object *m = initmodule("sys", sys_methods);
-	object *v;
-	sysdict = getmoduledict(m);
-	INCREF(sysdict);
+	extern long PyInt_GetMax Py_PROTO((void));
+	extern char *Py_GetVersion Py_PROTO((void));
+	extern char *Py_GetCopyright Py_PROTO((void));
+	extern char *Py_GetPlatform Py_PROTO((void));
+	extern char *Py_GetPrefix Py_PROTO((void));
+	extern char *Py_GetExecPrefix Py_PROTO((void));
+	extern int fclose Py_PROTO((FILE *));
+	PyObject *m = Py_InitModule("sys", sys_methods);
+	PyObject *v;
+	sysdict = PyModule_GetDict(m);
+	Py_INCREF(sysdict);
 	/* NB keep an extra ref to the std files to avoid closing them
 	   when the user deletes them */
-	sysin = newopenfileobject(stdin, "<stdin>", "r", fclose);
-	sysout = newopenfileobject(stdout, "<stdout>", "w", fclose);
-	syserr = newopenfileobject(stderr, "<stderr>", "w", fclose);
-	if (err_occurred())
-		fatal("can't initialize sys.std{in,out,err}");
-	dictinsert(sysdict, "stdin", sysin);
-	dictinsert(sysdict, "stdout", sysout);
-	dictinsert(sysdict, "stderr", syserr);
-	dictinsert(sysdict, "version", v = newstringobject(getversion()));
-	XDECREF(v);
-	dictinsert(sysdict, "copyright", v = newstringobject(getcopyright()));
-	XDECREF(v);
-	dictinsert(sysdict, "platform", v = newstringobject(getplatform()));
-	XDECREF(v);
-	dictinsert(sysdict, "prefix", v = newstringobject(Py_GetPrefix()));
-	XDECREF(v);
-	dictinsert(sysdict, "exec_prefix",
-		   v = newstringobject(Py_GetExecPrefix()));
-	XDECREF(v);
-	dictinsert(sysdict, "maxint", v = newintobject(getmaxint()));
-	XDECREF(v);
-	dictinsert(sysdict, "modules", get_modules());
-	dictinsert(sysdict, "builtin_module_names",
+	sysin = PyFile_FromFile(stdin, "<stdin>", "r", fclose);
+	sysout = PyFile_FromFile(stdout, "<stdout>", "w", fclose);
+	syserr = PyFile_FromFile(stderr, "<stderr>", "w", fclose);
+	if (PyErr_Occurred())
+		Py_FatalError("can't initialize sys.std{in,out,err}");
+	PyDict_SetItemString(sysdict, "stdin", sysin);
+	PyDict_SetItemString(sysdict, "stdout", sysout);
+	PyDict_SetItemString(sysdict, "stderr", syserr);
+	PyDict_SetItemString(sysdict, "version",
+			     v = PyString_FromString(Py_GetVersion()));
+	Py_XDECREF(v);
+	PyDict_SetItemString(sysdict, "copyright",
+			     v = PyString_FromString(Py_GetCopyright()));
+	Py_XDECREF(v);
+	PyDict_SetItemString(sysdict, "platform",
+			     v = PyString_FromString(Py_GetPlatform()));
+	Py_XDECREF(v);
+	PyDict_SetItemString(sysdict, "prefix",
+			     v = PyString_FromString(Py_GetPrefix()));
+	Py_XDECREF(v);
+	PyDict_SetItemString(sysdict, "exec_prefix",
+		   v = PyString_FromString(Py_GetExecPrefix()));
+	Py_XDECREF(v);
+	PyDict_SetItemString(sysdict, "maxint",
+			     v = PyInt_FromLong(PyInt_GetMax()));
+	Py_XDECREF(v);
+	PyDict_SetItemString(sysdict, "modules", PyImport_GetModuleDict());
+	PyDict_SetItemString(sysdict, "builtin_module_names",
 		   v = list_builtin_module_names());
-	XDECREF(v);
+	Py_XDECREF(v);
 #ifdef MS_COREDLL
-	dictinsert(sysdict, "dllhandle", v = newintobject((int)PyWin_DLLhModule));
-	XDECREF(v);
-	dictinsert(sysdict, "winver", v = newstringobject(MS_DLL_ID));
-	XDECREF(v);
+	PyDict_SetItemString(sysdict, "dllhandle",
+			     v = PyInt_FromLong((int)PyWin_DLLhModule));
+	Py_XDECREF(v);
+	PyDict_SetItemString(sysdict, "winver",
+			     v = PyString_FromString(MS_DLL_ID));
+	Py_XDECREF(v);
 #endif
-	if (err_occurred())
-		fatal("can't insert sys.* objects in sys dict");
+	if (PyErr_Occurred())
+		Py_FatalError("can't insert sys.* objects in sys dict");
 }
 
-static object *
+static PyObject *
 makepathobject(path, delim)
 	char *path;
 	int delim;
 {
 	int i, n;
 	char *p;
-	object *v, *w;
+	PyObject *v, *w;
 	
 	n = 1;
 	p = path;
@@ -319,19 +323,19 @@ makepathobject(path, delim)
 		n++;
 		p++;
 	}
-	v = newlistobject(n);
+	v = PyList_New(n);
 	if (v == NULL)
 		return NULL;
 	for (i = 0; ; i++) {
 		p = strchr(path, delim);
 		if (p == NULL)
 			p = strchr(path, '\0'); /* End of string */
-		w = newsizedstringobject(path, (int) (p - path));
+		w = PyString_FromStringAndSize(path, (int) (p - path));
 		if (w == NULL) {
-			DECREF(v);
+			Py_DECREF(v);
 			return NULL;
 		}
-		setlistitem(v, i, w);
+		PyList_SetItem(v, i, w);
 		if (*p == '\0')
 			break;
 		path = p+1;
@@ -340,61 +344,61 @@ makepathobject(path, delim)
 }
 
 void
-setpythonpath(path)
+PySys_SetPath(path)
 	char *path;
 {
-	object *v;
+	PyObject *v;
 	if ((v = makepathobject(path, DELIM)) == NULL)
-		fatal("can't create sys.path");
-	if (sysset("path", v) != 0)
-		fatal("can't assign sys.path");
-	DECREF(v);
+		Py_FatalError("can't create sys.path");
+	if (PySys_SetObject("path", v) != 0)
+		Py_FatalError("can't assign sys.path");
+	Py_DECREF(v);
 }
 
-static object *
+static PyObject *
 makeargvobject(argc, argv)
 	int argc;
 	char **argv;
 {
-	object *av;
+	PyObject *av;
 	if (argc <= 0 || argv == NULL) {
 		/* Ensure at least one (empty) argument is seen */
 		static char *empty_argv[1] = {""};
 		argv = empty_argv;
 		argc = 1;
 	}
-	av = newlistobject(argc);
+	av = PyList_New(argc);
 	if (av != NULL) {
 		int i;
 		for (i = 0; i < argc; i++) {
-			object *v = newstringobject(argv[i]);
+			PyObject *v = PyString_FromString(argv[i]);
 			if (v == NULL) {
-				DECREF(av);
+				Py_DECREF(av);
 				av = NULL;
 				break;
 			}
-			setlistitem(av, i, v);
+			PyList_SetItem(av, i, v);
 		}
 	}
 	return av;
 }
 
 void
-setpythonargv(argc, argv)
+PySys_SetArgv(argc, argv)
 	int argc;
 	char **argv;
 {
-	object *av = makeargvobject(argc, argv);
-	object *path = sysget("path");
+	PyObject *av = makeargvobject(argc, argv);
+	PyObject *path = PySys_GetObject("path");
 	if (av == NULL)
-		fatal("no mem for sys.argv");
-	if (sysset("argv", av) != 0)
-		fatal("can't assign sys.argv");
+		Py_FatalError("no mem for sys.argv");
+	if (PySys_SetObject("argv", av) != 0)
+		Py_FatalError("can't assign sys.argv");
 	if (path != NULL) {
 		char *argv0 = argv[0];
 		char *p = NULL;
 		int n = 0;
-		object *a;
+		PyObject *a;
 #ifdef HAVE_READLINK
 		char link[MAXPATHLEN+1];
 		char argv0copy[2*MAXPATHLEN+1];
@@ -448,12 +452,12 @@ setpythonargv(argc, argv)
 #endif /* Unix */
 		}
 #endif /* All others */
-		a = newsizedstringobject(argv0, n);
+		a = PyString_FromStringAndSize(argv0, n);
 		if (a == NULL)
-			fatal("no mem for sys.path insertion");
-		if (inslistitem(path, 0, a) < 0)
-			fatal("sys.path.insert(0) failed");
-		DECREF(a);
+			Py_FatalError("no mem for sys.path insertion");
+		if (PyList_Insert(path, 0, a) < 0)
+			Py_FatalError("sys.path.insert(0) failed");
+		Py_DECREF(a);
 	}
-	DECREF(av);
+	Py_DECREF(av);
 }
