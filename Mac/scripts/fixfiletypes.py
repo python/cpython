@@ -19,7 +19,9 @@ list = [
 	('.as', 'ToyS', 'TEXT'),
 	('.hqx', 'BnHq', 'TEXT'),
 	('.cmif', 'CMIF', 'TEXT'),
-	('.cmc', 'CMIF', 'CMC ')
+	('.cmc', 'CMIF', 'CMC '),
+	('.aiff', 'SCPL', 'AIFF'),
+	('.mpg', 'mMPG', 'MPEG'),
 ]
 
 def walktree(name, change):
