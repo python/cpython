@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991 by Stichting Mathematisch Centrum, Amsterdam, The
+Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
 Netherlands.
 
                         All Rights Reserved
@@ -61,14 +61,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #else /* !unix */
 #include <time.h>
 #endif /* !unix */
-
-#ifdef sgi
-#define DO_TIMES
-#endif
-
-#ifdef sun
-#define DO_TIMES
-#endif
 
 #ifdef DO_TIMES
 #include <sys/times.h>
