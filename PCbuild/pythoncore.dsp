@@ -1587,6 +1587,21 @@ SOURCE=..\Modules\structmodule.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\Objects\structseq.c
+
+!IF  "$(CFG)" == "pythoncore - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "pythoncore - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "pythoncore - Win32 Alpha Debug"
+
+!ELSEIF  "$(CFG)" == "pythoncore - Win32 Alpha Release"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\Python\symtable.c
 
 !IF  "$(CFG)" == "pythoncore - Win32 Release"
