@@ -308,8 +308,9 @@ def execvpe(file, args, env):
 
 __all__.extend(["execl","execle","execlp","execlpe","execvp","execvpe"])
 
-_notfound = None
 def _execvpe(file, args, env=None):
+    from errno import ENOENT, ENOTDIR
+
     if env is not None:
         func = execve
         argrest = (args, env)
@@ -317,7 +318,7 @@ def _execvpe(file, args, env=None):
         func = execv
         argrest = (args,)
         env = environ
-    global _notfound
+
     head, tail = path.split(file)
     if head:
         apply(func, (file,) + argrest)
@@ -327,30 +328,14 @@ def _execvpe(file, args, env=None):
     else:
         envpath = defpath
     PATH = envpath.split(pathsep)
-    if not _notfound:
-        if sys.platform[:4] == 'beos':
-            #  Process handling (fork, wait) under BeOS (up to 5.0)
-            #  doesn't interoperate reliably with the thread interlocking
-            #  that happens during an import.  The actual error we need
-            #  is the same on BeOS for posix.open() et al., ENOENT.
-            try: unlink('/_#.# ## #.#')
-            except error, _notfound: pass
-        else:
-            import tempfile
-            t = tempfile.mktemp()
-            # Exec a file that is guaranteed not to exist
-            try: execv(t, ('blah',))
-            except error, _notfound: pass
-    exc, arg = error, _notfound
     for dir in PATH:
         fullname = path.join(dir, file)
         try:
             apply(func, (fullname,) + argrest)
         except error, (errno, msg):
-            if errno != arg[0]:
-                exc, arg = error, (errno, msg)
-    raise exc, arg
-
+            if errno != ENOENT and errno != ENOTDIR:
+                raise
+    raise error, (errno, msg)
 
 # Change environ to automatically call putenv() if it exists
 try:
