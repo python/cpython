@@ -89,12 +89,14 @@ getpythonregpath(HKEY keyBase, BOOL bWin32s)
 			if (rc) break;
 			rc = RegQueryValue(newKey, keyBuf, dataBuf+off, &reqdSize);
 			if (rc) break;
-			adjust = strlen(dataBuf+off);
-			dataSize -= adjust;
-			off += adjust;
-			dataBuf[off++] = ';';
-			dataBuf[off] = '\0';
-			dataSize--;
+			if (reqdSize>1) { // If Nothing, or only '\0' copied.
+				adjust = strlen(dataBuf+off);
+				dataSize -= adjust;
+				off += adjust;
+				dataBuf[off++] = ';';
+				dataBuf[off] = '\0';
+				dataSize--;
+			}
 		}
 		/* Additionally, win32s doesnt work as expected, so
 		   the specific strlen() is required for 3.1. */
