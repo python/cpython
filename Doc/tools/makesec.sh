@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Simple little checker for individual libref manual sections
 #
@@ -126,4 +126,4 @@ $converter lib
 $viewer lib.pdf
 
 rm -f $tmpf howto.cls pypaper.sty *.idx *.syn
-rm -f lib.{aux,log}
+rm -f lib.aux lib.log
