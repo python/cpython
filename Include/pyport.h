@@ -28,10 +28,53 @@ Used in:  Py_ARITHMETIC_RIGHT_SHIFT
 Py_DEBUG
 Meaning:  Extra checks compiled in for debug mode.
 Used in:  Py_SAFE_DOWNCAST
+
+HAVE_UINTPTR_T
+Meaning:  The C9X type uintptr_t is supported by the compiler
+Used in:  Py_uintptr_t
+
+HAVE_LONG_LONG
+Meaning:  The compiler supports the C type "long long"
+Used in:  LONG_LONG
+
 **************************************************************************/
 
 
 #define ANY void /* For API compatibility only. Obsolete, do not use. */
+
+/* typedefs for some C9X-defined synonyms for integral types.
+ *
+ * The names in Python are exactly the same as the C9X names, except with a
+ * Py_ prefix.  Until C9X is universally implemented, this is the only way
+ * to ensure that Python gets reliable names that don't conflict with names
+ * in non-Python code that are playing their own tricks to define the C9X
+ * names.
+ *
+ * NOTE: don't go nuts here!  Python has no use for *most* of the C9X
+ * integral synonyms.  Only define the ones we actually need.
+ */
+
+#ifdef HAVE_LONG_LONG
+#ifndef LONG_LONG
+#define LONG_LONG long long
+#endif
+#endif /* HAVE_LONG_LONG */
+
+/* uintptr_t is the C9X name for an unsigned integral type such that a
+ * legitimate void* can be cast to uintptr_t and then back to void* again
+ * without loss of information.
+ */
+#ifdef HAVE_UINTPTR_T
+typedef uintptr_t Py_uintptr_t;
+#elif SIZEOF_VOID_P <= SIZEOF_INT
+typedef unsigned int Py_uintptr_t;
+#elif SIZEOF_VOID_P <= SIZEOF_LONG
+typedef unsigned long Py_uintptr_t;
+#elif defined(HAVE_LONG_LONG) && (SIZEOF_VOID_P <= SIZEOF_LONG_LONG)
+typedef unsigned LONG_LONG Py_uintptr_t;
+#else
+#   error "Python needs a typedef for Py_uintptr_t in pyport.h."
+#endif /* HAVE_UINTPTR_T */
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
