@@ -37,24 +37,29 @@ s = u"\N{LATIN CAPITAL LETTER T}" \
     u"\N{LATIN SMALL LETTER P}" \
     u"\N{FULL STOP}"
 verify(s == u"The rEd fOx ate the sheep.", s)
+print "done."
 
 import ucnhash
 
-# minimal sanity check
+print "Testing name to code mapping....",
 for char in "SPAM":
     name = "LATIN SMALL LETTER %s" % char
     code = ucnhash.getcode(name)
     verify(ucnhash.getname(code) == name)
+print "done."
 
-# loop over all characters in the database
+print "Testing code to name mapping for all characters....",
+count = 0
 for code in range(65536):
     try:
         name = ucnhash.getname(code)
         verify(ucnhash.getcode(name) == code)
+        count += 1
     except ValueError:
         pass
-
 print "done."
+
+print "Found", count, "characters in the unicode name database"
 
 # misc. symbol testing
 print "Testing misc. symbols for unicode character name expansion....",
