@@ -77,7 +77,7 @@ the language, see the @cite{Python Tutorial}.  The @cite{Python
 Reference Manual} gives a more formal definition of the language.
 (These manuals are not yet available in INFO or Texinfo format.)
 
-This version corresponds to Python version 1.2.
+This version corresponds to Python version 1.2 (4 April 1995).
 
 @end ifinfo
 

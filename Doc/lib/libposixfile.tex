@@ -63,11 +63,12 @@ The posixfile object defines the following additional methods:
  manual page on your system.
 \end{funcdesc}
 
-\begin{funcdesc}{flags}{fmt}
+\begin{funcdesc}{flags}{\optional{flags}}
  Set the specified flags for the file that the file object is referring
  to.  The new flags are ORed with the old flags, unless specified
  otherwise.  The format is explained below in a table.  Without
- arguments a string indicating the current flags is returned (this is
+ the \var{flags} argument
+ a string indicating the current flags is returned (this is
  the same as the '?' modifier).  For more information about the flags
  refer to the fcntl manual page on your system.
 \end{funcdesc}

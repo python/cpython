@@ -58,7 +58,7 @@ another thread is created.
 Lock objects have the following methods:
 
 \renewcommand{\indexsubitem}{(lock method)}
-\begin{funcdesc}{acquire}{waitflag}
+\begin{funcdesc}{acquire}{\optional{waitflag}}
 Without the optional argument, this method acquires the lock
 unconditionally, if necessary waiting until it is released by another
 thread (only one thread at a time can acquire a lock --- that's their

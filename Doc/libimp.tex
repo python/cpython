@@ -142,7 +142,7 @@ def __import__(name, globals=None, locals=None, fromlist=None):
         return sys.modules[name]
 
     # If any of the following calls raises an exception,
-    # there's a problem we con't handle -- let the caller handle it.
+    # there's a problem we can't handle -- let the caller handle it.
 
     # See if it's a built-in module.
     m = imp.init_builtin(name)
