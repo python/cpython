@@ -18,14 +18,15 @@ class TEWindow(ScrolledWindow):
 	def open(self, path, name, data):
 		self.path = path
 		self.name = name
-		r = (40, 40, 400, 300)
+		r = windowbounds(400, 400)
 		w = Win.NewWindow(r, name, 1, 0, -1, 1, 0x55555555)
 		self.wid = w
-		r2 = (0, 0, 345, 245)
+		vr = 0, 0, r[2]-r[0]-15, r[3]-r[1]-15
+		dr = (0, 0, vr[2], 0)
 		Qd.SetPort(w)
 		Qd.TextFont(4)
 		Qd.TextSize(9)
-		self.ted = TE.TENew(r2, r2)
+		self.ted = TE.TENew(dr, vr)
 		self.ted.TEAutoView(1)
 		self.ted.TESetText(data)
 		w.DrawGrowIcon()
@@ -44,7 +45,7 @@ class TEWindow(ScrolledWindow):
 		vx = self.scalebarvalue(dr[0], dr[2]-dr[0], vr[0], vr[2])
 		vy = self.scalebarvalue(dr[1], dr[1]+height, vr[1], vr[3])
 		print dr, vr, height, vx, vy
-		return vx, vy
+		return None, vy
 		
 	def scrollbar_callback(self, which, what, value):
 		if which == 'y':
@@ -67,18 +68,7 @@ class TEWindow(ScrolledWindow):
 			self.ted.TEPinScroll(0, delta)
 			print 'SCROLL Y', delta
 		else:
-			if what == 'set':
-				return # XXXX
-			if what == '-':
-				delta = self.ted.viewRect[2]/10
-			elif what == '--':
-				delta = self.ted.viewRect[2]/2
-			elif what == '+':
-				delta = +self.ted.viewRect[2]/10
-			elif what == '++':
-				delta = +self.ted.viewRect[2]/2
-			self.ted.TEPinScroll(delta, 0)
-
+			pass # No horizontal scrolling
 		
 	def do_activate(self, onoff, evt):
 		print "ACTIVATE", onoff
@@ -337,8 +327,8 @@ class Ped(Application):
 	#	
 
 	def idle(self, *args):
-		for l in self._windows.values():
-			l.do_idle()
+		if self.active:
+			self.active.do_idle()
 
 def main():
 	App = Ped()
