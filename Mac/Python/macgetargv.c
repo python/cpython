@@ -295,16 +295,19 @@ event_loop()
 /* Get the argv vector, return argc */
 
 int
-PyMac_GetArgv(pargv)
+PyMac_GetArgv(pargv, noevents)
 	char ***pargv;
+	int noevents;
 {
 	
 	arg_count = 0;
 	arg_vector[arg_count++] = strdup(get_application_name());
 	
-	set_ae_handlers();
-	event_loop();
-	reset_ae_handlers();
+	if( !noevents ) {
+		set_ae_handlers();
+		event_loop();
+		reset_ae_handlers();
+	}
 	
 	arg_vector[arg_count] = NULL;
 	

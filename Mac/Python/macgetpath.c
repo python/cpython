@@ -310,9 +310,7 @@ out:
 #endif /* !USE_BUILTIN_PATH */
 
 void
-PyMac_PreferenceOptions(int *inspect, int *verbose, int *suppress_print, 
-						 int *unbuffered, int *debugging, int *keep_normal,
-						 int *keep_error)
+PyMac_PreferenceOptions(PyMac_PrefRecord *pr)
 {
 	short oldrh, prefrh = -1;
 	Handle handle;
@@ -339,14 +337,15 @@ PyMac_PreferenceOptions(int *inspect, int *verbose, int *suppress_print,
     size = GetHandleSize(handle);
     p = (char *)*handle;
     
-    if ( size > POPT_INSPECT ) *inspect = p[POPT_INSPECT];
-    if ( size > POPT_VERBOSE ) *verbose = p[POPT_VERBOSE];
-    if ( size > POPT_SUPPRESS ) *suppress_print = p[POPT_SUPPRESS];
-    if ( size > POPT_UNBUFFERED ) *unbuffered = p[POPT_UNBUFFERED];
-    if ( size > POPT_DEBUGGING ) *debugging = p[POPT_DEBUGGING];
-    if ( size > POPT_KEEPNORM ) *keep_normal = p[POPT_KEEPNORM];
-    if ( size > POPT_KEEPERR ) *keep_error = p[POPT_KEEPERR];
-    /* The rest are not implemented yet */
+    if ( size > POPT_INSPECT ) pr->inspect = p[POPT_INSPECT];
+    if ( size > POPT_VERBOSE ) pr->verbose = p[POPT_VERBOSE];
+    if ( size > POPT_SUPPRESS ) pr->suppress_print = p[POPT_SUPPRESS];
+    if ( size > POPT_UNBUFFERED ) pr->unbuffered = p[POPT_UNBUFFERED];
+    if ( size > POPT_DEBUGGING ) pr->debugging = p[POPT_DEBUGGING];
+    if ( size > POPT_KEEPNORM ) pr->keep_normal = p[POPT_KEEPNORM];
+    if ( size > POPT_KEEPERR ) pr->keep_error = p[POPT_KEEPERR];
+    if ( size > POPT_NOINTOPT ) pr->nointopt = p[POPT_NOINTOPT];
+    if ( size > POPT_NOARGS ) pr->noargs = p[POPT_NOARGS];
     
     HUnlock(handle);
 

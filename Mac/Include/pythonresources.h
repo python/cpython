@@ -95,13 +95,23 @@
 #define POPT_NOINTOPT	7	/* Not settable interactively */
 #define POPT_NOARGS		8	/* Not settable interactively */
 
+typedef struct PyMac_PrefRecord {
+	unsigned char	inspect;
+	unsigned char	verbose;
+	unsigned char	suppress_print;
+	unsigned char	unbuffered;
+	unsigned char	debugging;
+	unsigned char	keep_normal;
+	unsigned char	keep_error;
+	unsigned char	nointopt;
+	unsigned char	noargs;
+} PyMac_PrefRecord;
+
 /* The GUSI options resources */
 #define GUSIOPTIONS_ID	10240
 #define GUSIOPTIONSOVERRIDE_ID 10241
 
 /* From macgetpath.c: */
-void PyMac_PreferenceOptions Py_PROTO((int *inspect, int *verbose, int *suppress_print, 
-						 int *unbuffered, int *debugging, int *keep_normal,
-						 int *keep_error));
+void PyMac_PreferenceOptions Py_PROTO((PyMac_PrefRecord *));
 
  

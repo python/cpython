@@ -60,16 +60,15 @@ extern char *Py_GetVersion Py_PROTO((void));
 extern char *Py_GetCopyright Py_PROTO((void));
 
 
-/* For Py_GetProgramName(); set by main() */
-static char *argv0;
+/* #define OBSOLETE_ARGCARGV 1		/* I think this is not needed anymore... */
 
+#ifdef OBSOLETE_ARGCARGV
 /* For Py_GetArgcArgv(); set by main() */
 static char **orig_argv;
 static int  orig_argc;
+#endif
 
-/* Flags indicating whether stdio window should stay open on termination */
-static int keep_normal;
-static int keep_error = 1;
+PyMac_PrefRecord options;
 
 static void Py_Main Py_PROTO((int, char **)); /* Forward */
 void PyMac_Exit Py_PROTO((int)); /* Forward */
@@ -93,10 +92,108 @@ init_mac_world()
 #endif
 }
 
-/* Initialization code shared by interpreter and applets */
-
+/*
+** PyMac_InteractiveOptions - Allow user to set options if option key is pressed
+*/
 static void
-init_common()
+PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
+{
+	KeyMap rmap;
+	unsigned char *map;
+	short item, type;
+	ControlHandle handle;
+	DialogPtr dialog;
+	Rect rect;
+	int old_argc = *argcp;
+	int i;
+
+	/*
+	** If the preferences disallows interactive options we return,
+	** similarly of <option> isn't pressed.
+	*/
+	if (p->nointopt) return;
+	
+	GetKeys(rmap);
+	map = (unsigned char *)rmap;
+	if ( ( map[0x3a>>3] & (1<<(0x3a&7)) ) == 0 )	/* option key is 3a */
+		return;
+
+	dialog = GetNewDialog(OPT_DIALOG, NULL, (WindowPtr)-1);
+	if ( dialog == NULL ) {
+		printf("Option dialog not found - cannot set options\n");
+		return;
+	}
+	SetDialogDefaultItem(dialog, OPT_OK);
+	SetDialogCancelItem(dialog, OPT_CANCEL);
+	
+	/* Set default values */
+#define SET_OPT_ITEM(num, var) \
+		GetDialogItem(dialog, (num), &type, (Handle *)&handle, &rect); \
+		SetCtlValue(handle, (short)p->var);
+
+	SET_OPT_ITEM(OPT_INSPECT, inspect);
+	SET_OPT_ITEM(OPT_VERBOSE, verbose);
+	SET_OPT_ITEM(OPT_SUPPRESS, suppress_print);
+	SET_OPT_ITEM(OPT_UNBUFFERED, unbuffered);
+	SET_OPT_ITEM(OPT_DEBUGGING, debugging);
+	SET_OPT_ITEM(OPT_KEEPNORMAL, keep_normal);
+	SET_OPT_ITEM(OPT_KEEPERROR, keep_error);
+	/* The rest are not settable interactively */
+
+#undef SET_OPT_ITEM
+	
+	while (1) {
+		handle = NULL;
+		ModalDialog(NULL, &item);
+		if ( item == OPT_OK )
+			break;
+		if ( item == OPT_CANCEL ) {
+			DisposDialog(dialog);
+			exit(0);
+		}
+		if ( item == OPT_CMDLINE ) {
+			int new_argc, newer_argc;
+			char **new_argv, **newer_argv;
+			
+			new_argc = ccommand(&new_argv);
+			newer_argc = (new_argc-1) + old_argc;
+			newer_argv = malloc((newer_argc+1)*sizeof(char *));
+			if( !newer_argv )
+				Py_FatalError("Cannot malloc argv\n");
+			for(i=0; i<old_argc; i++)
+				newer_argv[i] = (*argvp)[i];
+			for(i=old_argc; i<=newer_argc; i++) /* Copy the NULL too */
+				newer_argv[i] = new_argv[i-old_argc+1];
+			*argvp = newer_argv;
+			*argcp = newer_argc;
+			
+			/* XXXX Is it not safe to use free() here, apparently */
+		}
+#define OPT_ITEM(num, var) \
+		if ( item == (num) ) { \
+			p->var = !p->var; \
+			GetDialogItem(dialog, (num), &type, (Handle *)&handle, &rect); \
+			SetCtlValue(handle, (short)p->var); \
+		}
+		
+		OPT_ITEM(OPT_INSPECT, inspect);
+		OPT_ITEM(OPT_VERBOSE, verbose);
+		OPT_ITEM(OPT_SUPPRESS, suppress_print);
+		OPT_ITEM(OPT_UNBUFFERED, unbuffered);
+		OPT_ITEM(OPT_DEBUGGING, debugging);
+		OPT_ITEM(OPT_KEEPNORMAL, keep_normal);
+		OPT_ITEM(OPT_KEEPERROR, keep_error);
+		
+#undef OPT_ITEM
+	}
+	DisposDialog(dialog);
+}
+
+/*
+** Initialization code, shared by interpreter and applets
+*/
+static void
+init_common(int *argcp, char ***argvp)
 {
 	/* Remember resource fork refnum, for later */
 	PyMac_AppRefNum = CurResFile();
@@ -123,8 +220,48 @@ init_common()
 	SIOUXSettings.tabspaces = 4;
 #endif
 
+	/* Get options from preference file (or from applet resource fork) */
+	options.keep_error = 1;		/* default-default */
+	PyMac_PreferenceOptions(&options);
+	
+	/* Create argc/argv. Do it before we go into the options event loop. */
+	*argcp = PyMac_GetArgv(argvp, options.noargs);
+	
+	/* Do interactive option setting, if allowed and <option> depressed */
+	PyMac_InteractiveOptions(&options, argcp, argvp);
+	
+	/* Copy selected options to where the machine-independent stuff wants it */
+	Py_VerboseFlag = options.verbose;
+	Py_SuppressPrintingFlag = options.suppress_print;
+	Py_DebugFlag = options.debugging;
+	if ( options.noargs )
+		PyMac_DoYieldEnabled = 0;
+
+	/* Set buffering */
+	if (options.unbuffered) {
+#ifndef MPW
+		setbuf(stdout, (char *)NULL);
+		setbuf(stderr, (char *)NULL);
+#else
+		/* On MPW (3.2) unbuffered seems to hang */
+		setvbuf(stdout, (char *)NULL, _IOLBF, BUFSIZ);
+		setvbuf(stderr, (char *)NULL, _IOLBF, BUFSIZ);
+#endif
+	}
 }
 
+/*
+** Inspection mode after script/applet termination
+*/
+static int
+run_inspect()
+{
+	int sts = 0;
+	
+	if (options.inspect && isatty((int)fileno(stdin)))
+		sts = PyRun_AnyFile(stdin, "<stdin>") != 0;
+	return sts;
+}
 
 #ifdef USE_MAC_APPLET_SUPPORT
 /* Applet support */
@@ -170,11 +307,15 @@ PyMac_InitApplet()
 	char **argv;
 	int err;
 
-	init_common();
-	argc = PyMac_GetArgv(&argv);
+	init_common(&argc, &argv);
+	
 	Py_Initialize();
 	PySys_SetArgv(argc, argv);
+	
 	err = run_main_resource();
+	
+	err = (run_inspect() || err);
+	
 	fflush(stderr);
 	fflush(stdout);
 	PyMac_Exit(err);
@@ -190,8 +331,8 @@ PyMac_InitApplication()
 	int argc;
 	char **argv;
 	
-	init_common();
-	argc = PyMac_GetArgv(&argv);
+	init_common(&argc, &argv);
+	
 	if ( argc > 1 ) {
 		/* We're running a script. Attempt to change current directory */
 		char curwd[256], *endp;
@@ -211,103 +352,6 @@ PyMac_InitApplication()
 	Py_Main(argc, argv);
 }
 
-/*
-** PyMac_InteractiveOptions - Allow user to set options if option key is pressed
-*/
-void
-PyMac_InteractiveOptions(int *inspect, int *verbose, int *suppress_print, 
-						 int *unbuffered, int *debugging, int *keep_normal,
-						 int *keep_error, int *argcp, char ***argvp)
-{
-	KeyMap rmap;
-	unsigned char *map;
-	short item, type;
-	ControlHandle handle;
-	DialogPtr dialog;
-	Rect rect;
-	int old_argc = *argcp;
-	int i;
-	
-	/* Default-defaults: */
-	*keep_error = 1;
-	/* Get default settings from our preference file */
-	PyMac_PreferenceOptions(inspect, verbose, suppress_print,
-			unbuffered, debugging, keep_normal, keep_error);
-	/* If option is pressed override these */
-	GetKeys(rmap);
-	map = (unsigned char *)rmap;
-	if ( ( map[0x3a>>3] & (1<<(0x3a&7)) ) == 0 )	/* option key is 3a */
-		return;
-
-	dialog = GetNewDialog(OPT_DIALOG, NULL, (WindowPtr)-1);
-	if ( dialog == NULL ) {
-		printf("Option dialog not found - cannot set options\n");
-		return;
-	}
-	SetDialogDefaultItem(dialog, OPT_OK);
-	SetDialogCancelItem(dialog, OPT_CANCEL);
-	
-	/* Set default values */
-#define SET_OPT_ITEM(num, var) \
-		GetDialogItem(dialog, (num), &type, (Handle *)&handle, &rect); \
-		SetCtlValue(handle, (short)*(var));
-
-	SET_OPT_ITEM(OPT_INSPECT, inspect);
-	SET_OPT_ITEM(OPT_VERBOSE, verbose);
-	SET_OPT_ITEM(OPT_SUPPRESS, suppress_print);
-	SET_OPT_ITEM(OPT_UNBUFFERED, unbuffered);
-	SET_OPT_ITEM(OPT_DEBUGGING, debugging);
-	SET_OPT_ITEM(OPT_KEEPNORMAL, keep_normal);
-	SET_OPT_ITEM(OPT_KEEPERROR, keep_error);
-
-#undef SET_OPT_ITEM
-	
-	while (1) {
-		handle = NULL;
-		ModalDialog(NULL, &item);
-		if ( item == OPT_OK )
-			break;
-		if ( item == OPT_CANCEL ) {
-			DisposDialog(dialog);
-			exit(0);
-		}
-		if ( item == OPT_CMDLINE ) {
-			int new_argc, newer_argc;
-			char **new_argv, **newer_argv;
-			
-			new_argc = ccommand(&new_argv);
-			newer_argc = (new_argc-1) + old_argc;
-			newer_argv = malloc((newer_argc+1)*sizeof(char *));
-			if( !newer_argv )
-				Py_FatalError("Cannot malloc argv\n");
-			for(i=0; i<old_argc; i++)
-				newer_argv[i] = (*argvp)[i];
-			for(i=old_argc; i<=newer_argc; i++) /* Copy the NULL too */
-				newer_argv[i] = new_argv[i-old_argc+1];
-			*argvp = newer_argv;
-			*argcp = newer_argc;
-			
-			/* XXXX Is it not safe to use free() here, apparently */
-		}
-#define OPT_ITEM(num, var) \
-		if ( item == (num) ) { \
-			*(var) = !*(var); \
-			GetDialogItem(dialog, (num), &type, (Handle *)&handle, &rect); \
-			SetCtlValue(handle, (short)*(var)); \
-		}
-		
-		OPT_ITEM(OPT_INSPECT, inspect);
-		OPT_ITEM(OPT_VERBOSE, verbose);
-		OPT_ITEM(OPT_SUPPRESS, suppress_print);
-		OPT_ITEM(OPT_UNBUFFERED, unbuffered);
-		OPT_ITEM(OPT_DEBUGGING, debugging);
-		OPT_ITEM(OPT_KEEPNORMAL, keep_normal);
-		OPT_ITEM(OPT_KEEPERROR, keep_error);
-		
-#undef OPT_ITEM
-	}
-	DisposDialog(dialog);
-}
 /* Main program */
 
 static void
@@ -319,27 +363,11 @@ Py_Main(argc, argv)
 	char *command = NULL;
 	char *filename = NULL;
 	FILE *fp = stdin;
-	int inspect = 0;
-	int unbuffered = 0;
 
-	PyMac_InteractiveOptions(&inspect, &Py_VerboseFlag, &Py_SuppressPrintingFlag,
-			&unbuffered, &Py_DebugFlag, &keep_normal, &keep_error, &argc, &argv);
-
+#ifdef OBSOLETE_ARGCARGV
 	orig_argc = argc;	/* For Py_GetArgcArgv() */
 	orig_argv = argv;
-	argv0 = argv[0];	/* For Py_GetProgramName() */
-
-	if (unbuffered) {
-#ifndef MPW
-		setbuf(stdout, (char *)NULL);
-		setbuf(stderr, (char *)NULL);
-#else
-		/* On MPW (3.2) unbuffered seems to hang */
-		setvbuf(stdout, (char *)NULL, _IOLBF, BUFSIZ);
-		setvbuf(stderr, (char *)NULL, _IOLBF, BUFSIZ);
 #endif
-	}
-
 	filename = argv[1];
 
 	if (Py_VerboseFlag ||
@@ -355,10 +383,7 @@ Py_Main(argc, argv)
 		}
 	}
 	
-	/*
-	** For reasons I don't fully understand we cannot insert our
-	** menu earlier. Leave it here, we hope to be rid of Sioux soon anyway.
-	*/
+	/* We initialize the menubar here, hoping SIOUX is initialized by now */
 	PyMac_InitMenuBar();
 	
 	Py_Initialize();
@@ -377,10 +402,9 @@ Py_Main(argc, argv)
 			fp, filename == NULL ? "<stdin>" : filename) != 0;
 	if (filename != NULL)
 		fclose(fp);
-
-	if (inspect && isatty((int)fileno(stdin)) &&
-	    (filename != NULL || command != NULL))
-		sts = PyRun_AnyFile(stdin, "<stdin>") != 0;
+		
+	if ( filename != NULL || command != NULL )
+		sts = (run_inspect() || sts);
 
 	Py_Exit(sts);
 	/*NOTREACHED*/
@@ -396,9 +420,9 @@ PyMac_Exit(status)
 	int keep;
 	
 	if ( status )
-		keep = keep_error;
+		keep = options.keep_error;
 	else
-		keep = keep_normal;
+		keep = options.keep_normal;
 		
 #ifdef USE_SIOUX
 	if (keep) {
@@ -423,12 +447,13 @@ PyMac_Exit(status)
 	exit(status);
 }
 
+#ifdef OBSOLETE_ARGCARGV
 /* Return the program name -- some code out there needs this. */
 
 char *
 Py_GetProgramName()
 {
-	return argv0;
+	return orig_argv[0];
 }
 
 
@@ -443,6 +468,7 @@ Py_GetArgcArgv(argc,argv)
 	*argc = orig_argc;
 	*argv = orig_argv;
 }
+#endif /* OBSOLETE_ARGCARGV */
 
 /* More cruft that shouldn't really be here, used in sysmodule.c */
 
