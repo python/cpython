@@ -44,12 +44,11 @@ unsupported functions:
 	mcprint mvaddchnstr mvaddchstr mvchgat mvcur mvinchnstr
 	mvinchstr mvinnstr mmvwaddchnstr mvwaddchstr mvwchgat
 	mvwgetnstr mvwinchnstr mvwinchstr mvwinnstr napms newterm
-	overlay overwrite resetty resizeterm restartterm ripoffline
-	savetty scr_dump scr_init scr_restore scr_set scrl set_curterm
-	set_term setterm setupterm tgetent tgetflag tgetnum tgetstr
-	tgoto timeout tputs typeahead use_default_colors vidattr
-	vidputs waddchnstr waddchstr wchgat wcolor_set winchnstr
-	winchstr winnstr wmouse_trafo wredrawln wscrl wtimeout
+	overlay overwrite resizeterm restartterm ripoffline scr_dump
+	scr_init scr_restore scr_set scrl set_curterm set_term setterm
+	tgetent tgetflag tgetnum tgetstr tgoto timeout tputs
+	use_default_colors vidattr vidputs waddchnstr waddchstr wchgat
+	wcolor_set winchnstr winchstr winnstr wmouse_trafo wscrl
 
 Low-priority: 
 	slk_attr slk_attr_off slk_attr_on slk_attr_set slk_attroff
@@ -77,11 +76,12 @@ char *PyCursesVersion = "1.6";
 #include <curses.h>
 #endif
 
+/*  These prototypes are in <term.h>, but including this header 
+    #defines many common symbols (such as "lines") which breaks the 
+    curses module in other ways.  So the code will just specify 
+    explicit prototypes here. */
+extern int setupterm(char *,int,int *);
 #ifdef sgi
-/*  This prototype is in <term.h>, but including this header #defines
-    many common symbols (such as "lines") which breaks the curses
-    module in other ways.  So the code will just specify an explicit
-    prototype here. */
 extern char *tigetstr(char *);
 #endif
 
@@ -98,6 +98,9 @@ static PyObject *PyCursesError;
 static char *catchall_ERR  = "curses function returned ERR";
 static char *catchall_NULL = "curses function returned NULL";
 
+/* Tells whether setupterm() has been called to initialise terminfo.  */
+static int initialised_setupterm = FALSE;
+
 /* Tells whether initscr() has been called to initialise curses.  */
 static int initialised = FALSE;
 
@@ -107,6 +110,12 @@ static int initialisedcolors = FALSE;
 /* Utility Macros */
 #define ARG_COUNT(X) \
 	(((X) == NULL) ? 0 : (PyTuple_Check(X) ? PyTuple_Size(X) : 1))
+
+#define PyCursesSetupTermCalled \
+  if (initialised_setupterm != TRUE) { \
+                  PyErr_SetString(PyCursesError, \
+                                  "must call (at least) setupterm() first"); \
+                  return NULL; }
 
 #define PyCursesInitialised \
   if (initialised != TRUE) { \
@@ -1702,7 +1711,7 @@ PyCurses_InitScr(PyObject *self, PyObject *args)
     return NULL;
   }
 
-  initialised = TRUE;
+  initialised = initialised_setupterm = TRUE;
 
 /* This was moved from initcurses() because it core dumped on SGI,
    where they're not defined until you've called initscr() */
@@ -1780,6 +1789,57 @@ PyCurses_InitScr(PyObject *self, PyObject *args)
   return (PyObject *)PyCursesWindow_New(win);
 }
 
+static PyObject *
+PyCurses_setupterm(PyObject* self, PyObject *args, PyObject* keywds)
+{
+	int fd = -1;
+	int err;
+	char* termstr = NULL;
+
+	static char *kwlist[] = {"term", "fd", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(
+		args,keywds,"|zi:setupterm",kwlist,&termstr,&fd)) {
+		return NULL;
+	}
+	
+	if (fd == -1) {
+		PyObject* sys_stdout;
+
+		sys_stdout = PySys_GetObject("stdout");
+
+		if (sys_stdout == NULL) {
+			PyErr_SetString(
+				PyCursesError,
+				"lost sys.stdout");
+			return NULL;
+		}
+
+		fd = PyObject_AsFileDescriptor(sys_stdout);
+
+		if (fd == -1) {
+			return NULL;
+		}
+	}
+
+	if (setupterm(termstr,fd,&err) == ERR) {
+		char* s = "setupterm: unknown error";
+		
+		if (err == 0) {
+			s = "setupterm: could not find terminal";
+		} else if (err == -1) {
+			s = "setupterm: could not find terminfo database";
+		}
+
+		PyErr_SetString(PyCursesError,s);
+		return NULL;
+	}
+
+	initialised_setupterm = TRUE;
+
+	Py_INCREF(Py_None);
+	return Py_None;	
+}
 
 static PyObject *
 PyCurses_IntrFlush(PyObject *self, PyObject *args)
@@ -2057,7 +2117,7 @@ PyCurses_tigetflag(PyObject *self, PyObject *args)
 {
 	char *capname;
 
-	PyCursesInitialised;
+	PyCursesSetupTermCalled;
 		
 	if (!PyArg_ParseTuple(args, "z", &capname))
 		return NULL;
@@ -2070,7 +2130,7 @@ PyCurses_tigetnum(PyObject *self, PyObject *args)
 {
 	char *capname;
 
-	PyCursesInitialised;
+	PyCursesSetupTermCalled;
 		
 	if (!PyArg_ParseTuple(args, "z", &capname))
 		return NULL;
@@ -2083,7 +2143,7 @@ PyCurses_tigetstr(PyObject *self, PyObject *args)
 {
 	char *capname;
 
-	PyCursesInitialised;
+	PyCursesSetupTermCalled;
 		
 	if (!PyArg_ParseTuple(args, "z", &capname))
 		return NULL;
@@ -2103,7 +2163,7 @@ PyCurses_tparm(PyObject *self, PyObject *args)
 	char* result = NULL;
 	int i1,i2,i3,i4,i5,i6,i7,i8,i9;
 
-	PyCursesInitialised;
+	PyCursesSetupTermCalled;
 
 	if (!PyArg_ParseTuple(args, "s|iiiiiiiii:tparm", 
 			      &fmt, &i1, &i2, &i3, &i4, 
@@ -2290,6 +2350,7 @@ static PyMethodDef PyCurses_methods[] = {
   {"resetty",             (PyCFunction)PyCurses_resetty},
   {"savetty",             (PyCFunction)PyCurses_savetty},
   {"setsyx",              (PyCFunction)PyCurses_setsyx},
+  {"setupterm",           (PyCFunction)PyCurses_setupterm, METH_VARARGS|METH_KEYWORDS},
   {"start_color",         (PyCFunction)PyCurses_Start_Color},
   {"termattrs",           (PyCFunction)PyCurses_termattrs},
   {"termname",            (PyCFunction)PyCurses_termname},
