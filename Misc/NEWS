@@ -312,6 +312,11 @@ Core and builtins
 Extension modules
 -----------------
 
+- _tkinter now returns Tcl objects, instead of strings. Objects which
+  have Python equivalents are converted to Python objects, other objects
+  are wrapped. This can be configured through the wantobjects method,
+  or Tkinter.want_objects.
+
 - The PyBSDDB wrapper around the Sleepycat Berkely DB library has been
   added as the package bsddb. The traditional bsddb module is still
   available in source code, but not built automatically anymore, and
