@@ -109,7 +109,7 @@ static PyMethodDef xreadlines_methods[] = {
 	{NULL, NULL}
 };
 
-void
+DL_EXPORT(void)
 initxreadlines(void)
 {
 	PyObject *m;
