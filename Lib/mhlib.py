@@ -601,6 +601,32 @@ class Folder:
 		except os.error:
 		    pass
 
+    # Create a message, with text from the open file txt.
+    def createmessage(self, n, txt):
+	path = self.getmessagefilename(n)
+	backuppath = self.getmessagefilename(',%d' % n)
+	try:
+	    os.rename(path, backuppath)
+	except os.error:
+	    pass
+	ok = 0
+	BUFSIZE = 16*1024
+	try:
+	    f = open(path, "w")
+	    while 1:
+		buf = txt.read(BUFSIZE)
+		if not buf:
+		    break
+		f.write(buf)
+	    f.close()
+	    ok = 1
+	finally:
+	    if not ok:
+		try:
+		    os.unlink(path)
+		except os.error:
+		    pass
+
     # Remove one or more messages from all sequeuces (including last)
     # -- but not from 'cur'!!!
     def removefromallsequences(self, list):
