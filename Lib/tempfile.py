@@ -131,14 +131,16 @@ class TemporaryFileWrapper:
     def __init__(self, file, path):
         self.file = file
         self.path = path
+        self.close_called = 0
 
     def close(self):
-        self.file.close()
-        os.unlink(self.path)
+        if not self.close_called:
+            self.close_called = 1
+            self.file.close()
+            os.unlink(self.path)
 
     def __del__(self):
-        try: self.close()
-        except: pass
+        self.close()
 
     def __getattr__(self, name):
         file = self.__dict__['file']
