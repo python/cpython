@@ -3,6 +3,7 @@
 import unittest
 import random
 import time
+from math import log, exp, sqrt, pi
 from test import test_support
 
 class TestBasicOps(unittest.TestCase):
@@ -182,6 +183,18 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         seed = (1L << (10000 * 8)) - 1  # about 10K bytes
         self.gen.seed(seed)
 
+_gammacoeff = (0.9999999999995183, 676.5203681218835, -1259.139216722289,
+              771.3234287757674,  -176.6150291498386, 12.50734324009056,
+              -0.1385710331296526, 0.9934937113930748e-05, 0.1659470187408462e-06)
+
+def gamma(z, cof=_gammacoeff, g=7):
+    z -= 1.0
+    sum = cof[0]
+    for i in xrange(1,len(cof)):
+        sum += cof[i] / (z+i)
+    z += 0.5
+    return (z+g)**z / exp(z+g) * sqrt(2*pi) * sum
+
 class TestDistributions(unittest.TestCase):
     def test_zeroinputs(self):
         # Verify that distributions can handle a series of zero inputs'
@@ -199,6 +212,34 @@ class TestDistributions(unittest.TestCase):
         g.random = x[:].pop; g.gammavariate(1.0, 1.0)
         g.random = x[:].pop; g.gammavariate(200.0, 1.0)
         g.random = x[:].pop; g.betavariate(3.0, 3.0)
+
+    def test_avg_std(self):
+        # Use integration to test distribution average and standard deviation.
+        # Only works for distributions which do not consume variates in pairs
+        g = random.Random()
+        N = 5000
+        x = [i/float(N) for i in xrange(1,N)]
+        for variate, args, mu, sigmasqrd in [
+                (g.uniform, (1.0,10.0), (10.0+1.0)/2, (10.0-1.0)**2/12),
+                (g.expovariate, (1.5,), 1/1.5, 1/1.5**2),
+                (g.paretovariate, (5.0,), 5.0/(5.0-1),
+                                  5.0/((5.0-1)**2*(5.0-2))),
+                (g.weibullvariate, (1.0, 3.0), gamma(1+1/3.0),
+                                  gamma(1+2/3.0)-gamma(1+1/3.0)**2) ]:
+            g.random = x[:].pop
+            y = []
+            for i in xrange(len(x)):
+                try:
+                    y.append(variate(*args))
+                except IndexError:
+                    pass
+            s1 = s2 = 0
+            for e in y:
+                s1 += e
+                s2 += (e - mu) ** 2
+            N = len(y)
+            self.assertAlmostEqual(s1/N, mu, 2)
+            self.assertAlmostEqual(s2/(N-1), sigmasqrd, 2)
 
 class TestModule(unittest.TestCase):
     def testMagicConstants(self):
