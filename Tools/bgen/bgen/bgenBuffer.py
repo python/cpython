@@ -159,7 +159,13 @@ class VarInputBufferType(FixedInputBufferType):
 	
 	def passInput(self, name):
 		return "%s__in__, %s__len__" % (name, name)
-
+		
+class ReverseInputBufferMixin:
+	""" Mixin for input buffers that are passed as (size, buffer) """
+	
+	def passInput(self, name):
+		return "%s__len__, %s__in__" % (name, name)
+		
 class OptionalVarInputBufferType(OptionalInputBufferMixIn, VarInputBufferType):
 	pass
 	
