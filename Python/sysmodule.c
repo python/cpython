@@ -64,6 +64,8 @@ PySys_GetObject(name)
 {
 	PyThreadState *tstate = PyThreadState_Get();
 	PyObject *sd = tstate->interp->sysdict;
+	if (sd == NULL)
+		return NULL;
 	return PyDict_GetItemString(sd, name);
 }
 
