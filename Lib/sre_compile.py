@@ -61,9 +61,9 @@ def _compile(code, pattern, flags):
 	elif op is CATEGORY:
 	    emit(OPCODES[op])
 	    if flags & SRE_FLAG_LOCALE:
-		emit(CH_LOCALE[CHCODES[av]])
+		emit(CHCODES[CH_LOCALE[av]])
 	    elif flags & SRE_FLAG_UNICODE:
-		emit(CH_UNICODE[CHCODES[av]])
+		emit(CHCODES[CH_UNICODE[av]])
 	    else:
 		emit(CHCODES[av])
 	elif op is GROUP:
@@ -92,9 +92,9 @@ def _compile(code, pattern, flags):
 		    emit(fixup(av[1]))
 		elif op is CATEGORY:
 		    if flags & SRE_FLAG_LOCALE:
-			emit(CH_LOCALE[CHCODES[av]])
+			emit(CHCODES[CH_LOCALE[av]])
 		    elif flags & SRE_FLAG_UNICODE:
-			emit(CH_UNICODE[CHCODES[av]])
+			emit(CHCODES[CH_UNICODE[av]])
 		    else:
 			emit(CHCODES[av])
 		else:
