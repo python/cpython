@@ -15,6 +15,12 @@
 #include <Lists.h>
 #include <Movies.h>
 #include <Errors.h>
+#include <CFBase.h>
+#include <CFArray.h>
+#include <CFData.h>
+#include <CFDictionary.h>
+#include <CFString.h>
+#include <CFURL.h>
 #else
 #include <Carbon/Carbon.h>
 #include <QuickTime/QuickTime.h>
@@ -167,6 +173,24 @@ extern PyObject *WinObj_New(WindowPtr);
 extern int WinObj_Convert(PyObject *, WindowPtr *);
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
+/* CF exports */
+extern PyObject *CFTypeRefObj_New(CFTypeRef);
+extern int CFTypeRefObj_Convert(PyObject *, CFTypeRef *);
+extern PyObject *CFStringRefObj_New(CFStringRef);
+extern int CFStringRefObj_Convert(PyObject *, CFStringRef *);
+extern PyObject *CFMutableStringRefObj_New(CFMutableStringRef);
+extern int CFMutableStringRefObj_Convert(PyObject *, CFMutableStringRef *);
+extern PyObject *CFArrayRefObj_New(CFArrayRef);
+extern int CFArrayRefObj_Convert(PyObject *, CFArrayRef *);
+extern PyObject *CFMutableArrayRefObj_New(CFMutableArrayRef);
+extern int CFMutableArrayRefObj_Convert(PyObject *, CFMutableArrayRef *);
+extern PyObject *CFDictionaryRefObj_New(CFDictionaryRef);
+extern int CFDictionaryRefObj_Convert(PyObject *, CFDictionaryRef *);
+extern PyObject *CFMutableDictionaryRefObj_New(CFMutableDictionaryRef);
+extern int CFMutableDictionaryRefObj_Convert(PyObject *, CFMutableDictionaryRef *);
+extern PyObject *CFURLRefObj_New(CFURLRef);
+extern int CFURLRefObj_Convert(PyObject *, CFURLRef *);
+extern int OptionalCFURLRefObj_Convert(PyObject *, CFURLRef *);
 
 #ifdef __cplusplus
 	}

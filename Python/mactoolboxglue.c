@@ -459,4 +459,26 @@ GLUE_NEW(WindowPtr, WinObj_New, "Carbon.Win")
 GLUE_CONVERT(WindowPtr, WinObj_Convert, "Carbon.Win")
 GLUE_NEW(WindowPtr, WinObj_WhichWindow, "Carbon.Win")
 
+GLUE_CONVERT(CFTypeRef, CFTypeRefObj_Convert, "Carbon.CF")
+GLUE_NEW(CFTypeRef, CFTypeRefObj_New, "Carbon.CF")
+
+GLUE_CONVERT(CFStringRef, CFStringRefObj_Convert, "Carbon.CF")
+GLUE_NEW(CFStringRef, CFStringRefObj_New, "Carbon.CF")
+GLUE_CONVERT(CFMutableStringRef, CFMutableStringRefObj_Convert, "Carbon.CF")
+GLUE_NEW(CFMutableStringRef, CFMutableStringRefObj_New, "Carbon.CF")
+
+GLUE_CONVERT(CFArrayRef, CFArrayRefObj_Convert, "Carbon.CF")
+GLUE_NEW(CFArrayRef, CFArrayRefObj_New, "Carbon.CF")
+GLUE_CONVERT(CFMutableArrayRef, CFMutableArrayRefObj_Convert, "Carbon.CF")
+GLUE_NEW(CFMutableArrayRef, CFMutableArrayRefObj_New, "Carbon.CF")
+
+GLUE_CONVERT(CFDictionaryRef, CFDictionaryRefObj_Convert, "Carbon.CF")
+GLUE_NEW(CFDictionaryRef, CFDictionaryRefObj_New, "Carbon.CF")
+GLUE_CONVERT(CFMutableDictionaryRef, CFMutableDictionaryRefObj_Convert, "Carbon.CF")
+GLUE_NEW(CFMutableDictionaryRef, CFMutableDictionaryRefObj_New, "Carbon.CF")
+
+GLUE_CONVERT(CFURLRef, CFURLRefObj_Convert, "Carbon.CF")
+GLUE_CONVERT(CFURLRef, OptionalCFURLRefObj_Convert, "Carbon.CF")
+GLUE_NEW(CFURLRef, CFURLRefObj_New, "Carbon.CF")
+
 #endif /* USE_TOOLBOX_OBJECT_GLUE */
