@@ -115,15 +115,11 @@ class PrettyPrinter:
         return sio.getvalue()
 
     def isrecursive(self, object):
-        self.__recursive = 0
-        self.__repr(object, {}, 0)
-        return self.__recursive
+        return self.format(object, {}, 0)[2]
 
     def isreadable(self, object):
-        self.__recursive = 0
-        self.__readable = 1
-        self.__repr(object, {}, 0)
-        return self.__readable and not self.__recursive
+        s, readable, recursive = self.format(object, {}, 0)
+        return readable and not recursive
 
     def __format(self, object, stream, indent, allowance, context, level):
         level = level + 1
@@ -196,13 +192,21 @@ class PrettyPrinter:
         write(rep)
 
     def __repr(self, object, context, level):
-        repr, readable, recursive = _safe_repr(object, context,
-                                               self.__depth, level)
+        repr, readable, recursive = self.format(object, context.copy(),
+                                                self.__depth, level)
         if not readable:
             self.__readable = 0
         if recursive:
             self.__recursive = 1
         return repr
+
+    def format(self, object, context, maxlevels, level):
+        """Format object for a specific context, returning a string
+        and flags indicating whether the representation is 'readable'
+        and whether the object represents a recursive construct.
+        """
+        return _safe_repr(object, context, maxlevels, level)
+
 
 # Return triple (repr_string, isreadable, isrecursive).
 
