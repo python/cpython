@@ -4,7 +4,7 @@
 
 from xml.sax.saxutils import XMLGenerator, escape, XMLFilterBase
 from xml.sax.expatreader import create_parser
-from xml.sax.xmlreader import AttributesImpl, AttributesNSImpl
+from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from xml.sax.handler import ContentHandler
 from cStringIO import StringIO
 from test_support import verbose, TestFailed
@@ -238,6 +238,42 @@ def test_expat_nsattrs_wattr():
            attrs.getValue((ns_uri, "attr")) == "val" and \
            attrs[(ns_uri, "attr")] == "val"
 
+# ===== InputSource support
+
+xml_test_out = open("test.xml.out").read()
+
+def test_expat_inpsource_filename():
+    parser = create_parser()
+    result = StringIO()
+    xmlgen = XMLGenerator(result)
+
+    parser.setContentHandler(xmlgen)
+    parser.parse("test.xml")
+
+    return result.getvalue() == xml_test_out
+
+def test_expat_inpsource_sysid():
+    parser = create_parser()
+    result = StringIO()
+    xmlgen = XMLGenerator(result)
+
+    parser.setContentHandler(xmlgen)
+    parser.parse(InputSource("test.xml"))
+
+    return result.getvalue() == xml_test_out
+
+def test_expat_inpsource_stream():
+    parser = create_parser()
+    result = StringIO()
+    xmlgen = XMLGenerator(result)
+
+    parser.setContentHandler(xmlgen)
+    inpsrc = InputSource()
+    inpsrc.setByteStream(open("test.xml"))
+    parser.parse(inpsrc)
+
+    return result.getvalue() == xml_test_out
+
 # ===========================================================================
 #
 #   xmlreader tests
@@ -383,6 +419,18 @@ def test_nsattrs_wattr():
 
 # ===== Main program
 
+def make_test_output():
+    parser = create_parser()
+    result = StringIO()
+    xmlgen = XMLGenerator(result)
+
+    parser.setContentHandler(xmlgen)
+    parser.parse("test.xml")
+
+    outf = open("test.xml.out", "w")
+    outf.write(result.getvalue())
+    outf.close()
+
 items = locals().items()
 items.sort()
 for (name, value) in items:
@@ -392,3 +440,5 @@ for (name, value) in items:
 print "%d tests, %d failures" % (tests, fails)
 if fails != 0:
     raise TestFailed, "%d of %d tests failed" % (fails, tests)
+
+make_test_output()
