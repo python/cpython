@@ -6,6 +6,7 @@ import handler
 # ===== XMLREADER =====
 
 class XMLReader:
+    
     def __init__(self):
         self._cont_handler = handler.ContentHandler()
         #self._dtd_handler = handler.DTDHandler()
@@ -73,7 +74,8 @@ class XMLReader:
         "Sets the value of a SAX2 property."
         raise SAXNotRecognizedException("Property '%s' not recognized" % name)
 
- 
+import saxutils
+    
 class IncrementalParser(XMLReader):
     """This interface adds three extra methods to the XMLReader
     interface that allow XML parsers to support incremental
@@ -98,23 +100,17 @@ class IncrementalParser(XMLReader):
         self._bufsize = bufsize
         XMLReader.__init__(self)
 
-    def _parseOpenFile(self, source):
-        buffer = source.read(self._bufsize)
+    def parse(self, source):
+        source = saxutils.prepare_input_source(source)
+            
+        self.prepareParser(source)
+        file = source.getByteStream()
+        buffer = file.read(self._bufsize)
         while buffer != "":
             self.feed(buffer)
-            buffer = source.read(self._bufsize)
-        self.close()
+            buffer = file.read(self._bufsize)
+            
         self.reset()
-
-    def parse(self, source):
-        if hasattr(source, "read"):
-            self._parseOpenFile(source)
-        else:
-            #FIXME: how to recognize if it is a URL instead of filename?
-            self.prepareParser(source)
-            file = open(source)
-            self._parseOpenFile(file)
-            file.close()
 
     def feed(self, data):        
         """This method gives the raw XML data in the data parameter to
@@ -174,6 +170,95 @@ class Locator:
         "Return the system identifier for the current event."
         return None
 
+# ===== INPUTSOURCE =====
+
+class InputSource:
+    """Encapsulation of the information needed by the XMLReader to
+    read entities.
+
+    This class may include information about the public identifier,
+    system identifier, byte stream (possibly with character encoding
+    information) and/or the character stream of an entity.
+
+    Applications will create objects of this class for use in the
+    XMLReader.parse method and for returning from
+    EntityResolver.resolveEntity.
+
+    An InputSource belongs to the application, the XMLReader is not
+    allowed to modify InputSource objects passed to it from the
+    application, although it may make copies and modify those."""
+
+    def __init__(self, system_id = None):
+        self.__system_id = system_id
+        self.__public_id = None
+        self.__encoding  = None
+        self.__bytefile  = None
+        self.__charfile  = None
+
+    def setPublicId(self, public_id):
+        "Sets the public identifier of this InputSource."
+        self.__public_id = public_id
+
+    def getPublicId(self):
+        "Returns the public identifier of this InputSource."
+        return self.__public_id
+
+    def setSystemId(self, system_id):
+        "Sets the system identifier of this InputSource."
+        self.__system_id = system_id
+
+    def getSystemId(self):
+        "Returns the system identifier of this InputSource."
+        return self.__system_id
+
+    def setEncoding(self, encoding):
+        """Sets the character encoding of this InputSource.
+
+        The encoding must be a string acceptable for an XML encoding
+        declaration (see section 4.3.3 of the XML recommendation).
+
+        The encoding attribute of the InputSource is ignored if the
+        InputSource also contains a character stream."""
+        self.__encoding = encoding
+
+    def getEncoding(self):
+        "Get the character encoding of this InputSource."
+        return self.__encoding
+
+    def setByteStream(self, bytefile):
+        """Set the byte stream (a Python file-like object which does
+        not perform byte-to-character conversion) for this input
+        source.
+        
+        The SAX parser will ignore this if there is also a character
+        stream specified, but it will use a byte stream in preference
+        to opening a URI connection itself.
+
+        If the application knows the character encoding of the byte
+        stream, it should set it with the setEncoding method."""
+        self.__bytefile = bytefile
+
+    def getByteStream(self):
+        """Get the byte stream for this input source.
+        
+        The getEncoding method will return the character encoding for
+        this byte stream, or None if unknown."""        
+        return self.__bytefile
+        
+    def setCharacterStream(self, charfile):
+        """Set the character stream for this input source. (The stream
+        must be a Python 1.6 Unicode-wrapped file-like that performs
+        conversion to Unicode strings.)
+        
+        If there is a character stream specified, the SAX parser will
+        ignore any byte stream and will not attempt to open a URI
+        connection to the system identifier."""
+        self.__charfile = charfile
+
+    def getCharacterStream(self):
+        "Get the character stream for this input source."
+        return self.__charfile
+    
 # ===== ATTRIBUTESIMPL =====
 
 class AttributesImpl:

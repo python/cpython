@@ -21,16 +21,17 @@ expatreader -- Driver that allows use of the Expat parser with the
 
 """
 
+from xmlreader import InputSource
 from handler import ContentHandler, ErrorHandler
 from _exceptions import SAXException, SAXNotRecognizedException, \
                         SAXParseException, SAXNotSupportedException
 
 
-def parse(filename_or_stream, handler, errorHandler=ErrorHandler()):
+def parse(source, handler, errorHandler=ErrorHandler()):
     parser = ExpatParser()
     parser.setContentHandler(handler)
     parser.setErrorHandler(errorHandler)
-    parser.parse(filename_or_stream)
+    parser.parse(source)
 
 def parseString(string, handler, errorHandler=ErrorHandler()):
     try:
@@ -43,7 +44,10 @@ def parseString(string, handler, errorHandler=ErrorHandler()):
     parser = ExpatParser()
     parser.setContentHandler(handler)
     parser.setErrorHandler(errorHandler)
-    parser.parse(StringIO(string))
+
+    inpsrc = InputSource()
+    inpsrc.setByteStream(StringIO(string))
+    parser.parse(inpsrc)
 
 # this is the parser list used by the make_parser function if no
 # alternatives are given as parameters to the function

@@ -18,7 +18,7 @@ version = "0.20"
 
 from xml.sax._exceptions import *
 from xml.parsers import expat
-from xml.sax import xmlreader
+from xml.sax import xmlreader, saxutils
 
 AttributesImpl = xmlreader.AttributesImpl
 AttributesNSImpl = xmlreader.AttributesNSImpl
@@ -37,28 +37,24 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
 
     # XMLReader methods
 
-    def parse(self, stream_or_string):
+    def parse(self, source):
         "Parse an XML document from a URL."
-        if type(stream_or_string) is type(""):
-            stream = open(stream_or_string)
-        else:
-            stream = stream_or_string
- 
+        source = saxutils.prepare_input_source(source)
+
+        self._source = source
         self.reset()
         self._cont_handler.setDocumentLocator(self)
         try:
-            xmlreader.IncrementalParser.parse(self, stream)
+            xmlreader.IncrementalParser.parse(self, source)
         except expat.error:
             error_code = self._parser.ErrorCode
             raise SAXParseException(expat.ErrorString(error_code), None, self)
             
             self._cont_handler.endDocument()
 
-    def prepareParser(self, filename=None):
-        self._source = filename
-        
-        if self._source != None:
-            self._parser.SetBase(self._source)
+    def prepareParser(self, source):
+        if source.getSystemId() != None:
+            self._parser.SetBase(source.getSystemId())
         
     def getFeature(self, name):
         if name == feature_namespaces:
