@@ -1,0 +1,68 @@
+\section{Built-in module \sectcode{urlparse}}
+\stmodindex{urlparse}
+\index{WWW}
+\indexii{World-Wide}{Web}
+\index{URL}
+\indexii{URL}{parsing}
+\indexii{relative}{URL}
+
+This module defines a standard interface to break URL strings up in
+components (addessing scheme, network location, path etc.), to combine
+the components back into a URL string, and to convert a ``relative
+URL'' to an absolute URL given a ``base URL''.
+
+The module has been designed to match the current Internet draft on
+Relative Uniform Resource Locators (and discovered a bug in an earlier
+draft!).
+
+It defines the following functions:
+
+\begin{funcdesc}{urlparse}{urlstring\optional{\,
+default_scheme\optional{\, allow_fragments}}}
+Parse a URL into 6 components, returning a 6-tuple: (addressing
+scheme, network location, path, parameters, query, fragment
+identifier).  This corresponds to the general structure of a URL:
+\code{\var{scheme}://\var{netloc}/\var{path};\var{parameters}?\var{query}\#\var{fragment}}.
+Each tuple item is a string, possibly empty.
+The components are not broken up in smaller parts (e.g. the network
+location is a single string), and \% escapes are not expanded.
+The delimiters as shown above are not part of the tuple items, {\em
+except} for a leading slash in the \var{path} component, which is
+kept if present.
+
+Example:
+\code{urlparse('http://www.cwi.nl:80/\%7eguido/Python.html')}
+yields the tuple
+\code{('http', 'www.cwi.nl:80', '/\%e7guido/Python.html', '', '', '')}.
+
+If the \var{default_scheme} argument is specified, it gives the
+default addressing scheme, to be used only if the URL string does not
+specify one.  The default value for this argument is the empty string.
+
+If the \var{allow_fragments} argument is zero, fragment identifiers
+are not allowed, even if the URL's addressing scheme normally does
+support them.  The default value for this argument is \code{1}.
+\end{funcdesc}
+
+\begin{funcdesc}{urlunparse}{tuple}
+Construct a URL string from a tuple as returned by \code{urlparse}.
+This may result in a slightly different, but equivalent URL, if the
+URL that was parsed originally had redundant delimiters, e.g. a ? with
+an empty query (the draft states that these are equivalent).
+\end{funcdesc}
+
+\begin{funcdesc}{urljoin}{base\, url\optional{\, allow_fragments}}
+Construct a full (``absolute'') URL by combining a ``base URL''
+(\var{base}) with a ``relative URL'' (\var{url}).  Informally, this
+uses components of the base URL, in particular the addressing scheme,
+the network location and (part of) the path, to provide missing
+components in the relative URL.
+
+Example:
+\code{urljoin('http://www.cwi.nl/\%7eguido/Python.html',}
+\code{'FAQ.html')} yields the string
+\code{'http://www.cwi.nl/\%7eguido/FAQ.html'}.
+
+The \var{allow_fragments} argument has the same meaning as for
+\code{urlparse}.
+\end{funcdesc}
