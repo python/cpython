@@ -6,6 +6,7 @@ x *= 2
 x **= 2
 x -= 8
 x /= 2
+x //= 1
 x %= 12
 x &= 2
 x |= 5
@@ -19,6 +20,7 @@ x[0] *= 2
 x[0] **= 2
 x[0] -= 8
 x[0] /= 2
+x[0] //= 2
 x[0] %= 12
 x[0] &= 2
 x[0] |= 5
@@ -32,6 +34,7 @@ x[0] *= 2
 x[0] **= 2
 x[0] -= 8
 x[0] /= 2
+x[0] //= 1
 x[0] %= 12
 x[0] &= 2
 x[0] |= 5
@@ -128,6 +131,23 @@ class testall:
         print "__idiv__ called"
         return self
 
+    def __floordiv__(self, val):
+        print "__floordiv__ called"
+        return self
+    def __ifloordiv__(self, val):
+        print "__ifloordiv__ called"
+        return self
+    def __rfloordiv__(self, val):
+        print "__rfloordiv__ called"
+        return self
+
+    def __truediv__(self, val):
+        print "__truediv__ called"
+        return self
+    def __itruediv__(self, val):
+        print "__itruediv__ called"
+        return self
+
     def __mod__(self, val):
         print "__mod__ called"
     def __rmod__(self, val):
@@ -200,6 +220,10 @@ x *= 1
 x / 1
 1 / x
 x /= 1
+
+x // 1
+1 // x
+x //= 1
 
 x % 1
 1 % x
