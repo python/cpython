@@ -1,11 +1,12 @@
 #!/home/bernie/src/python23/dist/src/python
 
 import unittest
+import test_support
 
 import time
 import socket
 
-class creationTestCase(unittest.TestCase):
+class CreationTestCase(unittest.TestCase):
     """Test Case for socket.gettimeout() and socket.settimeout()"""
     def setUp(self):
         self.__s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -15,17 +16,17 @@ class creationTestCase(unittest.TestCase):
 
     def testObjectCreation(self):
         "Test Socket creation"
-        self.assertEqual(self.__s.gettimeout(), None, 
+        self.assertEqual(self.__s.gettimeout(), None,
             "Timeout socket not default to disable (None)")
 
     def testFloatReturnValue(self):
         "Test return value of getter/setter"
         self.__s.settimeout(7.345)
-        self.assertEqual(self.__s.gettimeout(), 7.345, 
+        self.assertEqual(self.__s.gettimeout(), 7.345,
             "settimeout() and gettimeout() return different result")
 
         self.__s.settimeout(3)
-        self.assertEqual(self.__s.gettimeout(), 3, 
+        self.assertEqual(self.__s.gettimeout(), 3,
             "settimeout() and gettimeout() return different result")
 
     def testReturnType(self):
@@ -39,7 +40,7 @@ class creationTestCase(unittest.TestCase):
             "return type of gettimeout() is not FloatType")
 
 
-class timeoutTestCase(unittest.TestCase):
+class TimeoutTestCase(unittest.TestCase):
     """Test Case for socket.socket() timeout functions"""
     def setUp(self):
         self.__s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -76,7 +77,7 @@ class timeoutTestCase(unittest.TestCase):
 
         _delta = abs(_t1 - _t2)
         self.assert_(_delta < _timeout + 0.5,
-                "timeout (%f) is 0.5 seconds more than required (%f)" 
+                "timeout (%f) is 0.5 seconds more than required (%f)"
                 %(_delta, _timeout))
 
     def testAcceptTimeout(self):
@@ -92,7 +93,7 @@ class timeoutTestCase(unittest.TestCase):
 
         _delta = abs(_t1 - _t2)
         self.assert_(_delta < _timeout + 0.5,
-                "timeout (%f) is 0.5 seconds more than required (%f)" 
+                "timeout (%f) is 0.5 seconds more than required (%f)"
                 %(_delta, _timeout))
 
     def testRecvfromTimeout(self):
@@ -108,7 +109,7 @@ class timeoutTestCase(unittest.TestCase):
 
         _delta = abs(_t1 - _t2)
         self.assert_(_delta < _timeout + 0.5,
-                "timeout (%f) is 0.5 seconds more than required (%f)" 
+                "timeout (%f) is 0.5 seconds more than required (%f)"
                 %(_delta, _timeout))
 
     def testSend(self):
@@ -127,10 +128,11 @@ class timeoutTestCase(unittest.TestCase):
         pass
 
 
-def suite():
+def test_main():
     suite = unittest.TestSuite()
-
-    return suite
+    suite.addTest(unittest.makeSuite(CreationTestCase))
+    suite.addTest(unittest.makeSuite(TimeoutTestCase))
+    test_support.run_suite(suite)
 
 if __name__ == "__main__":
-    unittest.main()
+    test_main()
