@@ -52,8 +52,9 @@ class TextWrapper:
                                         ' ' * len(string.whitespace))
 
     unicode_whitespace_trans = {}
-    for c in string.whitespace:
-        unicode_whitespace_trans[ord(unicode(c))] = ord(u' ')
+    uspace = ord(u' ')
+    for x in map(ord, string.whitespace):
+        unicode_whitespace_trans[x] = uspace
 
     # This funky little regex is just the trick for splitting
     # text up into word-wrappable chunks.  E.g.
