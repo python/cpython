@@ -34,6 +34,10 @@
     <attribute name="name"/>
     <attribute name="email"/>
     </macro>
+  <macro name="citetitle">
+    <attribute name="href" optional="yes"/>
+    <content/>
+    </macro>
   <macro name="rfc">
     <attribute name="num"/>
     </macro>
@@ -559,10 +563,13 @@
   <macro name="program">
     <content/>
     </macro>
+  <macro name="programopt">
+    <content/>
+    </macro>
   <macro name="regexp">
     <content/>
     </macro>
-  <macro name="var">
+  <macro name="var" outputname="varname">
     <content/>
     </macro>
   <macro name="email">
