@@ -106,6 +106,31 @@ Dlg_PassFilterProc(PyObject *callback)
 	return &Dlg_UnivFilterProc;
 }
 
+static PyObject *Dlg_UserItemProc_callback = NULL;
+
+static pascal void Dlg_UnivUserItemProc(DialogPtr dialog,
+                                         short item)
+{
+	PyObject *args, *res;
+
+	if (Dlg_UserItemProc_callback == NULL)
+		return; /* Default behavior */
+	Dlg_FilterProc_callback = NULL; /* We'll restore it when call successful */
+	args = Py_BuildValue("O&h", WinObj_WhichWindow, dialog, item);
+	if (args == NULL)
+		res = NULL;
+	else {
+		res = PyEval_CallObject(Dlg_UserItemProc_callback, args);
+		Py_DECREF(args);
+	}
+	if (res == NULL) {
+		fprintf(stderr, "Exception in Dialog UserItem proc\n");
+		PyErr_Print();
+	}
+	Py_XDECREF(res);
+	return;
+}
+
 extern PyMethodChain WinObj_chain;
 
 static PyObject *Dlg_Error;
@@ -1087,6 +1112,37 @@ static PyObject *Dlg_NewFeaturesDialog(_self, _args)
 	return _res;
 }
 
+static PyObject *Dlg_SetUserItemHandler(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+		PyObject *new = NULL;
+		
+		
+		if (!PyArg_ParseTuple(_args, "|O", &new))
+			return NULL;
+
+		if (Dlg_UserItemProc_callback && new && new != Py_None) {
+			PyErr_SetString(Dlg_Error, "Another UserItemProc is already installed");
+			return NULL;
+		}
+		
+		if (new == Py_None) {
+			new = NULL;
+			_res = Py_None;
+			Py_INCREF(Py_None);
+		} else {
+			Py_INCREF(new);
+			_res = Py_BuildValue("O&", ResObj_New, (Handle)NewUserItemProc(Dlg_UnivUserItemProc));
+		}
+		
+		Dlg_UserItemProc_callback = new;
+		return _res;
+
+}
+
 static PyMethodDef Dlg_methods[] = {
 	{"NewDialog", (PyCFunction)Dlg_NewDialog, 1,
 	 "(Rect boundsRect, Str255 title, Boolean visible, SInt16 procID, WindowPtr behind, Boolean goAwayFlag, SInt32 refCon, Handle items) -> (DialogPtr _rv)"},
@@ -1122,6 +1178,8 @@ static PyMethodDef Dlg_methods[] = {
 	 "() -> None"},
 	{"NewFeaturesDialog", (PyCFunction)Dlg_NewFeaturesDialog, 1,
 	 "(Rect inBoundsRect, Str255 inTitle, Boolean inIsVisible, SInt16 inProcID, WindowPtr inBehind, Boolean inGoAwayFlag, SInt32 inRefCon, Handle inItemListHandle, UInt32 inFlags) -> (DialogPtr _rv)"},
+	{"SetUserItemHandler", (PyCFunction)Dlg_SetUserItemHandler, 1,
+	 NULL},
 	{NULL, NULL, 0}
 };
 

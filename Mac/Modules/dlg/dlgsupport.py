@@ -92,6 +92,31 @@ Dlg_PassFilterProc(PyObject *callback)
 	return &Dlg_UnivFilterProc;
 }
 
+static PyObject *Dlg_UserItemProc_callback = NULL;
+
+static pascal void Dlg_UnivUserItemProc(DialogPtr dialog,
+                                         short item)
+{
+	PyObject *args, *res;
+
+	if (Dlg_UserItemProc_callback == NULL)
+		return; /* Default behavior */
+	Dlg_FilterProc_callback = NULL; /* We'll restore it when call successful */
+	args = Py_BuildValue("O&h", WinObj_WhichWindow, dialog, item);
+	if (args == NULL)
+		res = NULL;
+	else {
+		res = PyEval_CallObject(Dlg_UserItemProc_callback, args);
+		Py_DECREF(args);
+	}
+	if (res == NULL) {
+		fprintf(stderr, "Exception in Dialog UserItem proc\\n");
+		PyErr_Print();
+	}
+	Py_XDECREF(res);
+	return;
+}
+
 extern PyMethodChain WinObj_chain;
 """
 
@@ -144,6 +169,33 @@ f = Method(SInt16, 'GetDialogKeyboardFocusItem', (DialogRef, 'dialog', InMode))
 object.add(f)
 f = Method(void, 'SetGrafPortOfDialog', (DialogRef, 'dialog', InMode))
 object.add(f)
+
+setuseritembody = """
+	PyObject *new = NULL;
+	
+	
+	if (!PyArg_ParseTuple(_args, "|O", &new))
+		return NULL;
+
+	if (Dlg_UserItemProc_callback && new && new != Py_None) {
+		PyErr_SetString(Dlg_Error, "Another UserItemProc is already installed");
+		return NULL;
+	}
+	
+	if (new == Py_None) {
+		new = NULL;
+		_res = Py_None;
+		Py_INCREF(Py_None);
+	} else {
+		Py_INCREF(new);
+		_res = Py_BuildValue("O&", ResObj_New, (Handle)NewUserItemProc(Dlg_UnivUserItemProc));
+	}
+	
+	Dlg_UserItemProc_callback = new;
+	return _res;
+"""
+f = ManualGenerator("SetUserItemHandler", setuseritembody)
+module.add(f)
 
 # generate output
 SetOutputFileName('Dlgmodule.c')
