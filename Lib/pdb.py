@@ -151,7 +151,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def precmd(self, line):
         """Handle alias expansion and ';;' separator."""
-        if not line:
+        if not line.strip():
             return line
         args = line.split()
         while self.aliases.has_key(args[0]):
