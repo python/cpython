@@ -1255,6 +1255,19 @@ class Menu(Widget):
 		self.add('radiobutton', cnf or kw)
 	def add_separator(self, cnf={}, **kw):
 		self.add('separator', cnf or kw)
+	def insert(self, index, itemType, cnf={}, **kw):
+		apply(self.tk.call, (self._w, 'insert', index, itemType) 
+		      + self._options(cnf, kw))
+	def insert_cascade(self, index, cnf={}, **kw):
+		self.insert(index, 'cascade', cnf or kw)
+	def insert_checkbutton(self, index, cnf={}, **kw):
+		self.insert(index, 'checkbutton', cnf or kw)
+	def insert_command(self, index, cnf={}, **kw):
+		self.insert(index, 'command', cnf or kw)
+	def insert_radiobutton(self, index, cnf={}, **kw):
+		self.insert(index, 'radiobutton', cnf or kw)
+	def insert_separator(self, index, cnf={}, **kw):
+		self.insert(index, 'separator', cnf or kw)
 	def delete(self, index1, index2=None):
 		self.tk.call(self._w, 'delete', index1, index2)
 	def entryconfig(self, index, cnf=None, **kw):
