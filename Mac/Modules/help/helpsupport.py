@@ -36,9 +36,6 @@ MenuItemIndex = Type("MenuItemIndex", "H")
 #EventKind = Type("EventKind", "H")
 
 includestuff = includestuff + """
-#ifndef PyDoc_STR
-#define PyDoc_STR(x) (x)
-#endif
 #include <Carbon/Carbon.h>
 """
 
