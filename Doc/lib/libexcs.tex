@@ -62,14 +62,15 @@ from this class.  All user-defined exceptions should also be derived
 from this class, but this is not (yet) enforced.  The \code{str()}
 function, when applied to an instance of this class (or most derived
 classes) returns the string value of the argument or arguments, or an
-empty string if no arguments were given to the constructor.
+empty string if no arguments were given to the constructor.  When used
+as a sequence, this accesses the arguments given to the constructor
+(handy for backward compatibility with old code).
 \end{excdesc}
 
 \begin{excdesc}{StandardError}
 The base class for built-in exceptions.  All built-in exceptions are
 derived from this class, which is itself derived from the root class
-\code{Exception}.  For backward compatibility, when used as a
-sequence, this accesses the arguments given to the constructor.
+\code{Exception}.
 \end{excdesc}
 
 \begin{excdesc}{ArithmeticError}
