@@ -2876,7 +2876,7 @@ static
 int charmap_encoding_error(
     const Py_UNICODE *p, int size, int *inpos, PyObject *mapping,
     PyObject **exceptionObject,
-    int *known_errorHandler, PyObject *errorHandler, const char *errors,
+    int *known_errorHandler, PyObject **errorHandler, const char *errors,
     PyObject **res, int *respos)
 {
     PyObject *repunicode = NULL; /* initialize to prevent gcc warning */
@@ -2959,7 +2959,7 @@ int charmap_encoding_error(
 	    *inpos = collendpos;
 	    break;
 	default:
-	    repunicode = unicode_encode_call_errorhandler(errors, &errorHandler,
+	    repunicode = unicode_encode_call_errorhandler(errors, errorHandler,
 		encoding, reason, p, size, exceptionObject,
 		collstartpos, collendpos, &newpos);
 	    if (repunicode == NULL)
@@ -3024,7 +3024,7 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
 	if (x==Py_None) { /* unencodable character */
 	    if (charmap_encoding_error(p, size, &inpos, mapping,
 		&exc,
-		&known_errorHandler, errorHandler, errors,
+		&known_errorHandler, &errorHandler, errors,
 		&res, &respos))
 		goto onError;
 	}
