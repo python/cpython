@@ -1,6 +1,9 @@
-"""MiniAEFrame - A first stab at an AE Application framework.
-This framework is still work-in-progress, so do not rely on it remaining
-unchanged.
+"""MiniAEFrame - A minimal AppleEvent Application framework.
+
+There are two classes:
+	AEServer -- a mixin class offering nice AE handling.
+	MiniApplication -- a very minimal alternative to FrameWork.py,
+		only suitable for the simplest of AppleEvent servers.
 """
 
 import sys
@@ -20,9 +23,11 @@ import EasyDialogs
 
 kHighLevelEvent = 23				# Not defined anywhere for Python yet?
 
-class MiniApplication:
-	"""A minimal FrameWork.Application-like class"""
 
+class MiniApplication:
+	
+	"""A minimal FrameWork.Application-like class"""
+	
 	def __init__(self):
 		self.quitting = 0
 		# Initialize menu
@@ -30,24 +35,25 @@ class MiniApplication:
 		self.quitid = 2
 		Menu.ClearMenuBar()
 		self.applemenu = applemenu = Menu.NewMenu(self.appleid, "\024")
-		applemenu.AppendMenu("All about cgitest...;(-")
+		applemenu.AppendMenu("About %s...;(-" % self.__class__.__name__)
 		applemenu.AppendResMenu('DRVR')
 		applemenu.InsertMenu(0)
 		self.quitmenu = Menu.NewMenu(self.quitid, "File")
 		self.quitmenu.AppendMenu("Quit")
+		self.quitmenu.SetItemCmd(1, ord("Q"))
 		self.quitmenu.InsertMenu(0)
 		Menu.DrawMenuBar()
 	
 	def __del__(self):
 		self.close()
-		
+	
 	def close(self):
 		pass
-
+	
 	def mainloop(self, mask = everyEvent, timeout = 60*60):
 		while not self.quitting:
 			self.dooneevent(mask, timeout)
-			
+	
 	def _quit(self):
 		self.quitting = 1
 	
@@ -71,8 +77,11 @@ class MiniApplication:
 			return
 		elif what == keyDown:
 			c = chr(message & charCodeMask)
-			if c == '.' and modifiers & cmdKey:
-				raise KeyboardInterrupt, "Command-period"
+			if modifiers & cmdKey:
+				if c == '.':
+					raise KeyboardInterrupt, "Command-period"
+				if c == 'q':
+					self.quitting = 1
 		elif what == mouseDown:
 			partcode, window = Win.FindWindow(where)
 			if partcode == inMenuBar:
@@ -81,23 +90,26 @@ class MiniApplication:
 				item = result & 0xffff		# Lo word
 				if id == self.appleid:
 					if item == 1:
-						EasyDialogs.Message("cgitest - First cgi test")
-						return
+						EasyDialogs.Message(self.getabouttext())
 					elif item > 1:
-						name = self.applemenu.GetItem(item)
-						Qd.OpenDeskAcc(name)
-						return
-				if id == self.quitid and item == 1:
-					print "Menu-requested QUIT"
+						name = self.applemenu.GetMenuItemText(item)
+						Menu.OpenDeskAcc(name)
+				elif id == self.quitid and item == 1:
 					self.quitting = 1
-		# Anything not handled is passed to Python/SIOUX
-		MacOS.HandleEvent(event)
-		
+				Menu.HiliteMenu(0)
+		else:
+			# Anything not handled is passed to Python/SIOUX
+			MacOS.HandleEvent(event)
+	
+	def getabouttext(self):
+		return self.__class__.__name__
+
+
 class AEServer:
 	
 	def __init__(self):
 		self.ae_handlers = {}
-		
+	
 	def installaehandler(self, classe, type, callback):
 		AE.AEInstallEventHandler(classe, type, self.callback_wrapper)
 		self.ae_handlers[(classe, type)] = callback
@@ -105,7 +117,7 @@ class AEServer:
 	def close(self):
 		for classe, type in self.ae_handlers.keys():
 			AE.AERemoveEventHandler(classe, type)
-			
+	
 	def callback_wrapper(self, _request, _reply):
 		_parameters, _attributes = aetools.unpackevent(_request)
 		_class = _attributes['evcl'].type
@@ -142,7 +154,8 @@ class AEServer:
 			aetools.packevent(_reply, {})
 		else:
 			aetools.packevent(_reply, {'----':rv})
-			
+
+
 def code(x):
 	"Convert a long int to the 4-character code it really is"
 	s = ''
@@ -171,5 +184,6 @@ class _Test(AEServer, MiniApplication):
 	def other(self, _object=None, _class=None, _type=None, **args):
 		print 'AppleEvent', (_class, _type), 'for', _object, 'Other args:', args
 		
+
 if __name__ == '__main__':
 	_Test()
