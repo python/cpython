@@ -79,10 +79,27 @@ type_dict(PyTypeObject *type, void *context)
 	return PyDictProxy_New(type->tp_dict);
 }
 
+static PyObject *
+type_get_doc(PyTypeObject *type, void *context)
+{
+	PyObject *result;
+	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+		if (type->tp_doc == NULL) {
+			Py_INCREF(Py_None);
+			return Py_None;
+		}
+		return PyString_FromString(type->tp_doc);
+	}
+	result = PyDict_GetItemString(type->tp_dict, "__doc__");
+	Py_INCREF(result);
+	return result;
+}
+
 static PyGetSetDef type_getsets[] = {
 	{"__name__", (getter)type_name, NULL, NULL},
 	{"__module__", (getter)type_module, (setter)type_set_module, NULL},
 	{"__dict__",  (getter)type_dict,  NULL, NULL},
+	{"__doc__", (getter)type_get_doc, NULL, NULL},
 	{0}
 };
 
@@ -1079,9 +1096,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	}
 
 	/* Set tp_doc to a copy of dict['__doc__'], if the latter is there
-	   and is a string.  Note that the tp_doc slot will only be used
-	   by C code -- python code will use the version in tp_dict, so
-	   it isn't that important that non string __doc__'s are ignored.
+	   and is a string.  The __doc__ accessor will first look for tp_doc;
+	   if that fails, it will still look into __dict__.
 	*/
 	{
 		PyObject *doc = PyDict_GetItemString(dict, "__doc__");
