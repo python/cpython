@@ -118,6 +118,18 @@ Adding \code{?} after the qualifier makes it perform the match in
 possible will be matched.  Using \code{.*?} in the previous
 expression will match only \code{<H1>}.
 %
+\item[\code{\{\var{m},\var{n}\}}] Causes the resulting RE to match from
+\var{m} to \var{n} repetitions of the preceding RE, attempting to
+match as many repetitions as possible.   For example, \code{a\{3,5\}}  
+will match from 3 to 5 'a' characters.  
+%
+\item[\code{\{\var{m},\var{n}\}?}] Causes the resulting RE to
+match from \var{m} to \var{n} repetitions of the preceding RE,
+attempting to match as \emph{few} repetitions as possible.  This is
+the non-greedy version of the previous qualifier.  For example, on the
+6-character string 'aaaaaa', \code{a\{3,5\}} will match 5 'a'
+characters, while \code{a\{3,5\}?} will only match 3 characters.   
+%
 \item[\code{\e}] Either escapes special characters (permitting you to match
 characters like '*?+\&\$'), or signals a special sequence; special
 sequences are discussed below.  
@@ -346,14 +358,15 @@ expression will be used several times in a single program.
 \begin{funcdesc}{match}{pattern\, string\optional{\, flags}}
   If zero or more characters at the beginning of \var{string} match
   the regular expression \var{pattern}, return a corresponding
-  \code{Match} object.  Return \code{None} if the string does not
+  \code{MatchObject} instance.  Return \code{None} if the string does not
   match the pattern; note that this is different from a zero-length
   match.
 \end{funcdesc}
 
 \begin{funcdesc}{search}{pattern\, string\optional{\, flags}}
   Scan through \var{string} looking for a location where the regular
-  expression \var{pattern} produces a match.  Return \code{None} if no
+  expression \var{pattern} produces a match, and return a corresponding \code{MatchObject} instance.  
+  Return \code{None} if no
   position in the string matches the pattern; note that this is
   different from finding a zero-length match at some point in the string.
 \end{funcdesc}
