@@ -3876,7 +3876,7 @@ init_stuff(PyObject *module, PyObject *module_dict) {
 /* Initialization function for the module (*must* be called initcPickle) */
 void
 initcPickle() {
-    PyObject *m, *d;
+    PyObject *m, *d, *v;
     char *rev="$Revision$";
     PyObject *format_version;
     PyObject *compatible_formats;
@@ -3893,7 +3893,8 @@ initcPickle() {
     /* Add some symbolic constants to the module */
     d = PyModule_GetDict(m);
     PyDict_SetItemString(d,"__version__",
-			 PyString_FromStringAndSize(rev+11,strlen(rev+11)-2));
+		     v = PyString_FromStringAndSize(rev+11,strlen(rev+11)-2));
+    Py_XDECREF(v);
 
 #ifdef FORMAT_1_3
     format_version = PyString_FromString("1.3");
@@ -3905,6 +3906,8 @@ initcPickle() {
 
     PyDict_SetItemString(d, "format_version", format_version);
     PyDict_SetItemString(d, "compatible_formats", compatible_formats);
+    Py_XDECREF(format_version);
+    Py_XDECREF(compatible_formats);
 
     init_stuff(m, d);
     CHECK_FOR_ERRORS("can't initialize module cPickle");
