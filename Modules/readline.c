@@ -38,7 +38,6 @@ extern int read_history(char *);
 extern int write_history(char *);
 extern int history_truncate_file(char *, int);
 extern Function *rl_event_hook;
-extern char *rl_library_version;
 #endif
 
 /* Pointers needed from outside (but not declared in a header file). */
@@ -495,16 +494,10 @@ static char doc_module[] =
 DL_EXPORT(void)
 initreadline(void)
 {
-	PyObject *m, *d, *v;
+	PyObject *m;
 
 	m = Py_InitModule4("readline", readline_methods, doc_module,
 			   (PyObject *)NULL, PYTHON_API_VERSION);
-
-	d = PyModule_GetDict(m);
-	v = PyString_FromString(rl_library_version);
-	PyDict_SetItemString(d, "library_version", v);
-	Py_XDECREF(v);
-
 	if (isatty(fileno(stdin))) {
 		PyOS_ReadlineFunctionPointer = call_readline;
 		setup_readline();
