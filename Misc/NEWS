@@ -446,7 +446,7 @@ write:
     print >> sys.stderr, "Error: bad dog!"
 
 As a special feature, if the expression used to indicate the file
-evaluates to None, the current value of sys.stdout used.  Thus:
+evaluates to None, the current value of sys.stdout is used.  Thus:
 
     print >> None, "Hello world"
 
