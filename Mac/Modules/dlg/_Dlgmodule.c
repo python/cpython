@@ -20,11 +20,7 @@
     }} while(0)
 
 
-#ifdef WITHOUT_FRAMEWORKS
-#include <Dialogs.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_DlgObj_New(DialogRef);

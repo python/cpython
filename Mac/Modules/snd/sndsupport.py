@@ -17,12 +17,7 @@ class SndMethod(SndMixIn, OSErrMethodGenerator): pass
 # includestuff etc. are imported from macsupport
 
 includestuff = includestuff + """
-#ifdef WITHOUT_FRAMEWORKS
-#include <Sound.h>
-#include <OSUtils.h> /* for Set(Current)A5 */
-#else
 #include <Carbon/Carbon.h>
-#endif
 """
 
 initstuff = initstuff + """

@@ -32,11 +32,7 @@ TextStyle = OpaqueType("TextStyle", "TextStyle")
 TextStyle_ptr = TextStyle
 
 includestuff = includestuff + """
-#ifdef WITHOUT_FRAMEWORKS
-#include <TextEdit.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_TEObj_New(TEHandle);

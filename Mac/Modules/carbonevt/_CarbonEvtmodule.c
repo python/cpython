@@ -5,11 +5,7 @@
 
 
 
-#ifdef WITHOUT_FRAMEWORKS
-#include <CarbonEvents.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 #include "macglue.h"
 

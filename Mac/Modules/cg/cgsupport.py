@@ -23,12 +23,7 @@ RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
 # Create the type objects
 
 includestuff = includestuff + """
-#ifdef WITHOUT_FRAMEWORKS
-#include <Quickdraw.h>
-#include <CGContext.h>
-#else
 #include <ApplicationServices/ApplicationServices.h>
-#endif
 
 #if !TARGET_API_MAC_OSX
 	/* This code is adapted from the CallMachOFramework demo at:

@@ -113,12 +113,7 @@ ControlSliderOrientation = UInt16
 
 
 includestuff = includestuff + """
-#ifdef WITHOUT_FRAMEWORKS
-#include <Controls.h>
-#include <ControlDefinitions.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_CtlObj_New(ControlHandle);

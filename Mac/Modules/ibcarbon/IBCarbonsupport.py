@@ -9,11 +9,7 @@ IBCarbonFunction = OSErrFunctionGenerator
 IBCarbonMethod = OSErrMethodGenerator
 
 includestuff = """
-#ifdef WITHOUT_FRAMEWORKS
-#include <IBCarbonRuntime.h>
-#else
 #include <Carbon/Carbon.h>
-#endif /* WITHOUT_FRAMEWORKS */
 #include "macglue.h"
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE

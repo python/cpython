@@ -35,11 +35,7 @@ EventMask = Type("EventMask", "H")
 EventKind = Type("EventKind", "H")
 
 includestuff = includestuff + """
-#ifdef WITHOUT_FRAMEWORKS
-#include <Events.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 """
 

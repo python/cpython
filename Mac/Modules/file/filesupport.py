@@ -122,11 +122,7 @@ FSCatalogInfo_ptr = OpaqueType("FSCatalogInfo", "FSCatalogInfo")
 #FSSpecArrayPtr
 
 includestuff = includestuff + """
-#ifdef WITHOUT_FRAMEWORKS
-#include <Files.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern int _PyMac_GetFSSpec(PyObject *v, FSSpec *spec);

@@ -29,11 +29,7 @@ RoutingFlags = Type("RoutingFlags", "l")
 
 
 includestuff = includestuff + """
-#ifdef WITHOUT_FRAMEWORKS
-#include <Folders.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 """
 

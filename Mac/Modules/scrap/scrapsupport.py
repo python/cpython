@@ -29,11 +29,7 @@ includestuff = includestuff + """
 #ifndef PyDoc_STR
 #define PyDoc_STR(x) (x)
 #endif
-#ifdef WITHOUT_FRAMEWORKS
-#include <Scrap.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 /*
 ** Generate ScrapInfo records
