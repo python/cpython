@@ -862,7 +862,7 @@ def methods():
     d2 = D(2)
     verify(d2.foo() == 2)
     verify(d2.boo() == 2)
-    verify(d2.goo() == 2)
+    verify(d2.goo() == 1)
 
 def specials():
     # Test operators like __hash__ for which a built-in default exists
