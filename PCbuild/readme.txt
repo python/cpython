@@ -1,5 +1,5 @@
-Building Python using VC++ 5.x
-------------------------------
+Building Python using VC++ 5.0 or 6.0
+-------------------------------------
 
 This directory is used to build Python for Win32 platforms,
 e.g. Windows 95, 98 and NT.  It requires Microsoft Visual C++ 5.x.
@@ -15,7 +15,7 @@ Configuration... in the Build menu), and build the projects.
 
 The proper order to build is
 
-1) python15 (this builds python15.dll and python15.lib)
+1) python16 (this builds python16.dll and python16.lib)
 2) python   (this builds python.exe)
 3) the other subprojects
 
@@ -26,13 +26,14 @@ to change the project settings to point to the right include files,
 libraries etc.
 
 When using the Debug setting, the output files have a _d added to
-their name: python15_d.dll, python_d.exe, parser_d.pyd, and so on.
+their name: python16_d.dll, python_d.exe, parser_d.pyd, and so on.
 
 If you want to create your own extension module DLL, there's an
 example with easy-to-follow instructions in ../PC/example/; read the
 file readme.txt there first.
 
 Pointers:
-Tcl/Tk	http://sunscript.sun.com/ or http://www.scriptics.com
+Python	http://www.python.org
+Tcl/Tk	http://dev.scriptics.com
 zlib	http://www.winimage.com/zLibDll
 bsddb	Sam Rushing's web/ftp site
