@@ -2642,7 +2642,7 @@ exec_statement(f, prog, globals, locals)
 		return 0;
 	}
 	s = PyString_AsString(prog);
-	if (strlen(s) != PyString_Size(prog)) {
+	if ((int)strlen(s) != PyString_Size(prog)) {
 		PyErr_SetString(PyExc_ValueError,
 				"embedded '\\0' in exec string");
 		return -1;
