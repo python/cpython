@@ -441,6 +441,7 @@ file_write(f, args)
 	object *args;
 {
 	int n, n2;
+	char *s;
 	if (f->f_fp == NULL) {
 		err_badarg();
 		return NULL;
@@ -451,7 +452,16 @@ file_write(f, args)
 	}
 	f->f_softspace = 0;
 	errno = 0;
-	n2 = fwrite(getstringvalue(args), 1, n = getstringsize(args), f->f_fp);
+	n = getstringsize(args);
+	s = getstringvalue(args);
+	if (n > BUFSIZ) {
+		fflush(f->f_fp);
+		n2 = write(fileno(f->f_fp), s, n);
+		fflush(f->f_fp);
+	}
+	else {
+		n2 = fwrite(s, 1, n, f->f_fp);
+	}
 	if (n2 != n) {
 		if (errno == 0)
 			errno = EIO;
