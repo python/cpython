@@ -145,10 +145,6 @@ sub do_cmd_authoraddress{
     return $_;
 }
 
-#sub do_cmd_developer{ do_cmd_author($_[0]); }
-#sub do_cmd_developers{ do_cmd_author($_[0]); }
-#sub do_cmd_developersaddress{ do_cmd_authoraddress($_[0]); }
-
 sub do_cmd_hackscore{
     local($_) = @_;
     next_argument();
