@@ -46,10 +46,13 @@ def getextensiondirfile(fname):
 	import macfs
 	import MACFS
 	try:
-		vrefnum, dirid = macfs.FindFolder(MACFS.kOnSystemDisk, MACFS.kSharedLibrariesFolderType, 0)
-		fss = macfs.FSSpec((vrefnum, dirid, fname))
+		vrefnum, dirid = macfs.FindFolder(MACFS.kLocalDomain, MACFS.kSharedLibrariesFolderType, 1)
 	except macfs.error:
-		return None
+		try:
+			vrefnum, dirid = macfs.FindFolder(MACFS.kOnSystemDisk, MACFS.kSharedLibrariesFolderType, 1)
+		except macfs.error:
+			return None
+	fss = macfs.FSSpec((vrefnum, dirid, fname))
 	return fss.as_pathname()
 	
 def mkcorealias(src, altsrc):
@@ -120,7 +123,11 @@ def main():
 	oldcwd = os.getcwd()
 	os.chdir(sys.prefix)
 	newcwd = os.getcwd()
-	if oldcwd != newcwd:
+	if verbose:
+		print "Not running as applet: Skipping check for preference file correctness."
+	elif oldcwd != newcwd:
+		# Hack to make sure we get the new MACFS
+		sys.path.insert(0, os.path.join(oldcwd, ':Mac:Lib'))
 		import Dlg
 		rv = Dlg.CautionAlert(ALERT_NOTPYTHONFOLDER, None)
 		if rv == ALERT_NOTPYTHONFOLDER_REMOVE_QUIT:
