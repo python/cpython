@@ -261,8 +261,8 @@ class Distribution:
                 raise DistutilsArgError, msg
 
             # Require that the command class be derived from Command --
-            # that way, we can be sure that we at least have the 'run'
-            # and 'get_option' methods.
+            # want to be sure that the basic "command" interface is
+            # implemented.
             if not isinstance (cmd_obj, Command):
                 raise DistutilsClassError, \
                       "command class %s must subclass Command" % \
@@ -529,24 +529,6 @@ class Distribution:
             self.run_command (cmd)
 
 
-    def get_option (self, option):
-        """Return the value of a distribution option.  Raise
-           AttributeError if 'option' is not known."""
-        return getattr (self, opt)
-
-
-    def get_options (self, *options):
-        """Return (as a tuple) the values of several distribution
-           options.  Raise AttributeError if any element of
-           'options' is not known."""
-        
-        values = []
-        for opt in options:
-            values.append (getattr (self, opt))
-
-        return tuple (values)
-
-
     # -- Methods that operate on its Commands --------------------------
 
     def run_command (self, command):
@@ -568,33 +550,6 @@ class Distribution:
         cmd_obj.ensure_ready ()
         cmd_obj.run ()
         self.have_run[command] = 1
-
-
-    def get_command_option (self, command, option):
-        """Create a command object for 'command' if necessary, ensure that
-           its option values are all set to their final values, and return
-           the value of its 'option' option.  Raise AttributeError if
-           'option' is not known for that 'command'."""
-
-        cmd_obj = self.find_command_obj (command)
-        cmd_obj.ensure_ready ()
-        return cmd_obj.get_option (option)
-
-
-    def get_command_options (self, command, *options):
-        """Create a command object for 'command' if necessary, ensure that
-           its option values are all set to their final values, and return
-           a tuple containing the values of all the options listed in
-           'options' for that command.  Raise DistutilsOptionError if any
-           invalid option is supplied in 'options'."""
-
-        cmd_obj = self.find_command_obj (command)
-        cmd_obj.ensure_ready ()
-        values = []
-        for opt in options:
-            values.append (getattr (cmd_obj, option))
-
-        return tuple (values)
 
 
     # -- Distribution query methods ------------------------------------
