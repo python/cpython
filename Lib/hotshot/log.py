@@ -9,6 +9,7 @@ from _hotshot import \
      WHAT_EXIT, \
      WHAT_LINENO, \
      WHAT_DEFINE_FILE, \
+     WHAT_DEFINE_FUNC, \
      WHAT_ADD_INFO
 
 
@@ -44,35 +45,40 @@ class LogReader:
     # avoids using an additional method call which kills the performance.
 
     def next(self, index=0):
-        try:
-            what, tdelta, fileno, lineno = self._nextitem()
-        except TypeError:
-            # logreader().next() returns None at the end
-            self._reader.close()
-            raise StopIteration()
-        if what == WHAT_DEFINE_FILE:
-            self._filemap[fileno] = tdelta
-            return self.next()
-        if what == WHAT_ADD_INFO:
-            key = tdelta.lower()
+        while 1:
             try:
-                L = self._info[key]
-            except KeyError:
-                L = []
-                self._info[key] = L
-            L.append(lineno)
-            if key == "current-directory":
-                self.cwd = lineno
-            return self.next()
-        if what == WHAT_ENTER:
-            t = self._decode_location(fileno, lineno)
-            filename, funcname = t
-            self._stack.append((filename, funcname, lineno))
-        elif what == WHAT_EXIT:
-            filename, funcname, lineno = self._stack.pop()
-        else:
-            filename, funcname, firstlineno = self._stack[-1]
-        return what, (filename, lineno, funcname), tdelta
+                what, tdelta, fileno, lineno = self._nextitem()
+            except TypeError:
+                # logreader().next() returns None at the end
+                self._reader.close()
+                raise StopIteration()
+            if what == WHAT_DEFINE_FILE:
+                self._filemap[fileno] = tdelta
+                continue
+            if what == WHAT_DEFINE_FUNC:
+                filename = self._filemap[fileno]
+                self._funcmap[(fileno, lineno)] = (filename, tdelta)
+                continue
+            if what == WHAT_ADD_INFO:
+                key = tdelta.lower()
+                try:
+                    L = self._info[key]
+                except KeyError:
+                    L = []
+                    self._info[key] = L
+                L.append(lineno)
+                if key == "current-directory":
+                    self.cwd = lineno
+                continue
+            if what == WHAT_ENTER:
+                t = self._decode_location(fileno, lineno)
+                filename, funcname = t
+                self._stack.append((filename, funcname, lineno))
+            elif what == WHAT_EXIT:
+                filename, funcname, lineno = self._stack.pop()
+            else:
+                filename, funcname, firstlineno = self._stack[-1]
+            return what, (filename, lineno, funcname), tdelta
 
     if sys.version < "2.2":
         # Don't add this for newer Python versions; we only want iteration
@@ -90,6 +96,11 @@ class LogReader:
         try:
             return self._funcmap[(fileno, lineno)]
         except KeyError:
+            #
+            # This should only be needed when the log file does not
+            # contain all the DEFINE_FUNC records needed to allow the
+            # function name to be retrieved from the log file.
+            #
             if self._loadfile(fileno):
                 filename = funcname = None
             try:
