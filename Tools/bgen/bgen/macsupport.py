@@ -84,6 +84,7 @@ OSStatus = OSErrType("OSStatus", 'l')
 # Various buffer types
 
 InBuffer = VarInputBufferType('char', 'long', 'l')		# (buf, len)
+OptionalInBuffer = OptionalVarInputBufferType('char', 'long', 'l')		# (buf, len)
 
 InOutBuffer = HeapInputOutputBufferType('char', 'long', 'l')	# (inbuf, outbuf, len)
 VarInOutBuffer = VarHeapInputOutputBufferType('char', 'long', 'l') # (inbuf, outbuf, &len)
