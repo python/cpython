@@ -37,7 +37,7 @@ COMMONPERL= $(TOPDIR)/perl/manual.perl \
 	$(TOPDIR)/perl/l2hinit.perl
 
 
-all:	$(INDEXFILES) index.html modindex.html
+all:	$(INDEXFILES) index.html modindex.html acks.html
 
 .PHONY: api ext lib mac ref tut inst dist
 
