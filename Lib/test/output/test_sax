@@ -21,6 +21,9 @@ Passed test_expat_locator_noinfo
 Passed test_expat_locator_withinfo
 Passed test_expat_nsattrs_empty
 Passed test_expat_nsattrs_wattr
+Passed test_expat_nsdecl_pair_diff
+Passed test_expat_nsdecl_pair_same
+Passed test_expat_nsdecl_single
 Passed test_filter_basic
 Passed test_make_parser
 Passed test_make_parser2
@@ -36,4 +39,4 @@ Passed test_xmlgen_content_escape
 Passed test_xmlgen_ignorable
 Passed test_xmlgen_ns
 Passed test_xmlgen_pi
-37 tests, 0 failures
+40 tests, 0 failures

@@ -224,8 +224,14 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         pair = string.split(name)
         if len(pair) == 1:
             pair = (None, name)
+            qname = name
         else:
             pair = tuple(pair)
+            qname = pair[1]
+            if self._ns_stack:
+                prefix = self._ns_stack[-1][pair[0]][-1]
+                if prefix:
+                    qname = "%s:%s" % (prefix, pair[1])
 
         newattrs = {}
         qnames = {}
@@ -233,27 +239,33 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             apair = string.split(aname)
             if len(apair) == 1:
                 apair = (None, aname)
-                qname = aname
+                aqname = aname
             else:
                 apair = tuple(apair)
                 # XXX need to guess the prefix
                 prefix = self._ns_stack[-1][apair[0]][-1]
-                qname = "%s:%s" % (prefix, apair[1])
+                aqname = "%s:%s" % (prefix, apair[1])
 
             newattrs[apair] = value
-            qnames[apair] = qname
+            qnames[apair] = aqname
 
-        self._cont_handler.startElementNS(pair, None,
+        self._cont_handler.startElementNS(pair, qname,
                                           AttributesNSImpl(newattrs, qnames))
 
     def end_element_ns(self, name):
         pair = string.split(name)
         if len(pair) == 1:
             pair = (None, name)
+            qname = name
         else:
             pair = tuple(pair)
+            qname = pair[1]
+            if self._ns_stack:
+                prefix = self._ns_stack[-1][pair[0]][-1]
+                if prefix:
+                    qname = "%s:%s" % (prefix, pair[1])
 
-        self._cont_handler.endElementNS(pair, None)
+        self._cont_handler.endElementNS(pair, qname)
 
     # this is not used (call directly to ContentHandler)
     def processing_instruction(self, target, data):
@@ -265,11 +277,13 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
 
     def start_namespace_decl(self, prefix, uri):
         if self._ns_stack:
-            d = self._ns_stack.copy()
+            d = self._ns_stack[-1].copy()
             if d.has_key(uri):
                 L = d[uri][:]
                 d[uri] = L
                 L.append(prefix)
+            else:
+                d[uri] = [prefix]
         else:
             d = {uri: [prefix]}
         self._ns_stack.append(d)

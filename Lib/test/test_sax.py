@@ -348,6 +348,70 @@ def test_expat_nsattrs_wattr():
            attrs.getValue((ns_uri, "attr")) == "val" and \
            attrs[(ns_uri, "attr")] == "val"
 
+class ElemGatherer(ContentHandler):
+    def __init__(self):
+        self.events = []
+    def startElementNS(self, pair, qname, attrs):
+        self.events.append(('start', pair, qname))
+    def endElementNS(self, pair, qname):
+        self.events.append(('end', pair, qname))
+
+def check_expat_nsdecl(text, expected):
+    parser = create_parser(1)
+    handler = ElemGatherer()
+    parser.setContentHandler(handler)
+    parser.feed(text)
+    parser.close()
+    if verbose and handler.events != expected:
+        from pprint import pprint
+        print "Expected:"
+        pprint(expected)
+        print "Received:"
+        pprint(handler.events)
+    return handler.events == expected
+
+def test_expat_nsdecl_single():
+    return check_expat_nsdecl(
+        "<abc xmlns='http://xml.python.org/'></abc>", [
+            ("start", ("http://xml.python.org/", "abc"), "abc"),
+            ("end", ("http://xml.python.org/", "abc"), "abc"),
+            ])
+
+def test_expat_nsdecl_pair_same():
+    # XXX This shows where xml.sax.expatreader can use the wrong
+    # prefix when more than one is in scope for a particular URI.
+    # We still want to exercise this code since previous versions got
+    # the namespace handling wrong in more severe ways (exceptions
+    # that should not have happened).
+    return check_expat_nsdecl(
+        "<abc xmlns='http://xml.python.org/'"
+        "     xmlns:foo='http://xml.python.org/'>"
+        "<foo:def/>"
+        "<ghi/>"
+        "</abc>", [
+            ("start", ("http://xml.python.org/", "abc"), "foo:abc"),
+            ("start", ("http://xml.python.org/", "def"), "foo:def"),
+            ("end", ("http://xml.python.org/", "def"), "foo:def"),
+            ("start", ("http://xml.python.org/", "ghi"), "foo:ghi"),
+            ("end", ("http://xml.python.org/", "ghi"), "foo:ghi"),
+            ("end", ("http://xml.python.org/", "abc"), "foo:abc"),
+            ])
+
+def test_expat_nsdecl_pair_diff():
+    return check_expat_nsdecl(
+        "<abc xmlns='http://xml.python.org/1'"
+        "     xmlns:foo='http://xml.python.org/2'>"
+        "<foo:def/>"
+        "<ghi/>"
+        "</abc>", [
+            ("start", ("http://xml.python.org/1", "abc"), "abc"),
+            ("start", ("http://xml.python.org/2", "def"), "foo:def"),
+            ("end", ("http://xml.python.org/2", "def"), "foo:def"),
+            ("start", ("http://xml.python.org/1", "ghi"), "ghi"),
+            ("end", ("http://xml.python.org/1", "ghi"), "ghi"),
+            ("end", ("http://xml.python.org/1", "abc"), "abc"),
+            ])
+
 # ===== InputSource support
 
 xml_test_out = open(findfile("test"+os.extsep+"xml"+os.extsep+"out")).read()
