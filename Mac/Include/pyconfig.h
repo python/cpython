@@ -185,7 +185,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #undef HAVE_LARGEFILE_SUPPORT
 
 /* Define this if you have the type long long */
-#undef HAVE_LONG_LONG
+#define HAVE_LONG_LONG
 
 /* Define if your compiler supports function prototypes */
 #define HAVE_PROTOTYPES 1
@@ -341,7 +341,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define SIZEOF_LONG 4
 
 /* The number of bytes in a long long.  */
-#undef SIZEOF_LONG_LONG
+#define SIZEOF_LONG_LONG 8
 
 /* The number of bytes in a short.  */
 #define SIZEOF_SHORT 2
