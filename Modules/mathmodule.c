@@ -51,7 +51,7 @@ is_error(double x)
 		 * the result for zero suffices to distinguish the cases).
 		 */
 		if (x)
-			PyErr_SetString(PyExc_OverflowError, 
+			PyErr_SetString(PyExc_OverflowError,
 					"math range error");
 		else
 			result = 0;
@@ -109,25 +109,28 @@ math_2(PyObject *args, double (*func) (double, double), char *argsfmt)
         static char math_##funcname##_doc [] = docstring;
 
 FUNC1(acos, acos,
-      "acos(x)\n\nReturn the arc cosine of x.")
+      "acos(x)\n\nReturn the arc cosine (measured in radians) of x.")
 FUNC1(asin, asin,
-      "asin(x)\n\nReturn the arc sine of x.")
+      "asin(x)\n\nReturn the arc sine (measured in radians) of x.")
 FUNC1(atan, atan,
-      "atan(x)\n\nReturn the arc tangent of x.")
+      "atan(x)\n\nReturn the arc tangent (measured in radians) of x.")
 FUNC2(atan2, atan2,
-      "atan2(y, x)\n\nReturn atan(y/x).")
+      "atan2(y, x)\n\nReturn the arc tangent (measured in radians) of y/x.\n"
+      "Unlike atan(y/x), the signs of both x and y are considered.")
 FUNC1(ceil, ceil,
-      "ceil(x)\n\nReturn the ceiling of x as a real.")
+      "ceil(x)\n\nReturn the ceiling of x as a float.\n"
+      "This is the smallest integral value >= x.")
 FUNC1(cos, cos,
-      "cos(x)\n\nReturn the cosine of x.")
+      "cos(x)\n\nReturn the cosine of x (measured in radians).")
 FUNC1(cosh, cosh,
       "cosh(x)\n\nReturn the hyperbolic cosine of x.")
 FUNC1(exp, exp,
       "exp(x)\n\nReturn e raised to the power of x.")
 FUNC1(fabs, fabs,
-      "fabs(x)\n\nReturn the absolute value of the real x.")
+      "fabs(x)\n\nReturn the absolute value of the float x.")
 FUNC1(floor, floor,
-      "floor(x)\n\nReturn the floor of x as a real.")
+      "floor(x)\n\nReturn the floor of x as a float.\n"
+      "This is the largest integral value <= x.")
 FUNC2(fmod, fmod,
       "fmod(x,y)\n\nReturn fmod(x, y), according to platform C."
       "  x % y may differ.")
@@ -139,19 +142,19 @@ FUNC1(log10, log10,
       "log10(x)\n\nReturn the base-10 logarithm of x.")
 #ifdef MPW_3_1 /* This hack is needed for MPW 3.1 but not for 3.2 ... */
 FUNC2(pow, power,
-      "pow(x,y)\n\nReturn x**y.")
+      "pow(x,y)\n\nReturn x**y (x to the power of y).")
 #else
 FUNC2(pow, pow,
-      "pow(x,y)\n\nReturn x**y.")
+      "pow(x,y)\n\nReturn x**y (x to the power of y).")
 #endif
 FUNC1(sin, sin,
-      "sin(x)\n\nReturn the sine of x.")
+      "sin(x)\n\nReturn the sine of x (measured in radians).")
 FUNC1(sinh, sinh,
       "sinh(x)\n\nReturn the hyperbolic sine of x.")
 FUNC1(sqrt, sqrt,
       "sqrt(x)\n\nReturn the square root of x.")
 FUNC1(tan, tan,
-      "tan(x)\n\nReturn the tangent of x.")
+      "tan(x)\n\nReturn the tangent of x (measured in radians).")
 FUNC1(tanh, tanh,
       "tanh(x)\n\nReturn the hyperbolic tangent of x.")
 
@@ -198,7 +201,7 @@ math_ldexp(PyObject *self, PyObject *args)
 		return PyFloat_FromDouble(x);
 }
 
-static char math_ldexp_doc [] = 
+static char math_ldexp_doc [] =
 "ldexp_doc(x, i)\n\
 \n\
 Return x * (2**i).";
@@ -270,7 +273,7 @@ DL_EXPORT(void)
 initmath(void)
 {
 	PyObject *m, *d, *v;
-	
+
 	m = Py_InitModule3("math", math_methods, module_doc);
 	d = PyModule_GetDict(m);
 
