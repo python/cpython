@@ -38,4 +38,4 @@ extern typeobject Rangetype;
 
 #define is_rangeobject(op) ((op)->ob_type == &Rangetype)
 
-extern object *newrangeobject PROTO((long, long, long, int));
+extern object *newrangeobject PROTO((long, long, long));
