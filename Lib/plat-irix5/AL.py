@@ -17,6 +17,7 @@ SAMPLE_24	= 4
 
 MONO		= 1
 STEREO		= 2
+QUADRO		= 4			# 4CHANNEL is not a legal Python name
 
 INPUT_LINE	= 0
 INPUT_MIC	= 1
