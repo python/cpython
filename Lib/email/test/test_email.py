@@ -1750,6 +1750,15 @@ message 2
 --BOUNDARY--
 ''')
 
+    def test_mime_attachments_in_constructor(self):
+        eq = self.assertEqual
+        text1 = MIMEText('')
+        text2 = MIMEText('')
+        msg = MIMEMultipart(_subparts=(text1, text2))
+        eq(len(msg.get_payload()), 2)
+        eq(msg.get_payload(0), text1)
+        eq(msg.get_payload(1), text2)
+
 
 
 # A general test of parser->model->generator idempotency.  IOW, read a message
