@@ -141,7 +141,7 @@ class PrettyPrinter:
                 indent = indent + self.__indent_per_level
                 self.__format(object[0], stream, indent, allowance + 1,
                               context, level)
-                if len(object) > 1:
+                if length > 1:
                     for ent in object[1:]:
                         stream.write(',\n' + ' '*indent)
                         self.__format(ent, stream, indent,
