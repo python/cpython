@@ -1,3 +1,6 @@
+(I had no time to update and test this directory.  It is provided
+for your information only.)
+
 Python 1.4beta3 for Windows NT 3.5 and Windows 95
 =================================================
 
