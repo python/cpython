@@ -306,16 +306,42 @@ characters outside of the usual alphanumerics.
 \begin{seealso}
 
 \seepep{263}{Defining Python Source Code Encodings}{Written by
-Marc-Andr\'e Lemburg and Martin von L\"owis; implemented by Martin von
-L\"owis.}
+Marc-Andr\'e Lemburg and Martin von L\"owis; implemented by SUZUKI
+Hisao and Martin von L\"owis.}
 
 \end{seealso}
 
 
 %======================================================================
-\section{PEP 277: XXX}
+\section{PEP 277: Unicode file name support for Windows NT}
 
-XXX write this section
+On Windows NT, 2000, and XP, the system stores file names as Unicode
+strings. Traditionally, Python has represented file names are byte
+strings, which is inadequate since it renders some file names
+inaccessible.
+
+Python allows now to use arbitrary Unicode strings (within limitations
+of the file system) for all functions that expect file names, in
+particular \function{open}. If a Unicode string is passed to
+\function{os.listdir}, Python returns now a list of Unicode strings.
+A new function \function{getcwdu} returns the current directory as a
+Unicode string.
+
+Byte strings continue to work as file names, the system will
+transparently convert them to Unicode using the \code{mbcs} encoding.
+
+Other systems allow Unicode strings as file names as well, but convert
+them to byte strings before passing them to the system, which may
+cause UnicodeErrors. Applications can test whether arbitrary Unicode
+strings are supported as file names with \code{os.path.unicode_file_names}.
+
+\begin{seealso}
+
+\seepep{277}{Unicode file name support for Windows NT}{Written by Neil
+Hodgson; implemented by Neil Hodgson, Martin von L\"owis, and Mark
+Hammond.}
+
+\end{seealso}
 
 
 %======================================================================
