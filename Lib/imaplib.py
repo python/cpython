@@ -46,12 +46,14 @@ Commands = {
         'COPY':         ('SELECTED',),
         'CREATE':       ('AUTH', 'SELECTED'),
         'DELETE':       ('AUTH', 'SELECTED'),
+        'DELETEACL':    ('AUTH', 'SELECTED'),
         'EXAMINE':      ('AUTH', 'SELECTED'),
         'EXPUNGE':      ('SELECTED',),
         'FETCH':        ('SELECTED',),
         'GETACL':       ('AUTH', 'SELECTED'),
         'GETQUOTA':     ('AUTH', 'SELECTED'),
         'GETQUOTAROOT': ('AUTH', 'SELECTED'),
+        'MYRIGHTS':     ('AUTH', 'SELECTED'),
         'LIST':         ('AUTH', 'SELECTED'),
         'LOGIN':        ('NONAUTH',),
         'LOGOUT':       ('NONAUTH', 'AUTH', 'SELECTED', 'LOGOUT'),
@@ -389,6 +391,12 @@ class IMAP4:
         """
         return self._simple_command('DELETE', mailbox)
 
+    def deleteacl(self, mailbox, who):
+        """Delete the ACLs (remove any rights) set for who on mailbox.
+
+        (typ, [data]) = <instance>.deleteacl(mailbox, who)
+        """
+        return self._simple_command('DELETEACL', mailbox, who)
 
     def expunge(self):
         """Permanently remove deleted items from selected mailbox.
@@ -518,6 +526,13 @@ class IMAP4:
         typ, dat = self._simple_command(name, directory, pattern)
         return self._untagged_response(typ, dat, name)
 
+    def myrights(self, mailbox):
+        """Show my ACLs for a mailbox (i.e. the rights that I have on mailbox).
+
+        (typ, [data]) = <instance>.myrights(mailbox)
+        """
+        typ,dat = self._simple_command('MYRIGHTS', mailbox)
+        return self._untagged_response(typ, dat, 'MYRIGHTS')
 
     def namespace(self):
         """ Returns IMAP namespaces ala rfc2342

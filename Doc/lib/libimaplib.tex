@@ -182,6 +182,10 @@ data = authobject(response)
   Delete old mailbox named \var{mailbox}.
 \end{methoddesc}
 
+\begin{methoddesc}{deleteacl}{mailbox, who}
+  Delete the ACLs (remove any rights) set for who on mailbox.
+\end{methoddesc}
+
 \begin{methoddesc}{expunge}{}
   Permanently remove deleted items from selected mailbox. Generates an
   \samp{EXPUNGE} response for each deleted message. Returned data
@@ -240,6 +244,10 @@ data = authobject(response)
   \var{directory} defaults to the top level directory and
   \var{pattern} defaults to match any mailbox.
   Returned data are tuples of message part envelope and data.
+\end{methoddesc}
+
+\begin{methoddes}{myrights}{mailbox}
+  Show my ACLs for a mailbox (i.e. the rights that I have on mailbox).
 \end{methoddesc}
 
 \begin{methoddesc}{namespace}{}

@@ -44,6 +44,8 @@ Extension modules
 Library
 -------
 
+- imaplib has two new methods: deleteacl and myrights.
+
 - nntplib has two new methods: description and descriptions. They
   use a more RFC-compliant way of getting a newsgroup description.
 
