@@ -718,8 +718,8 @@ corresponding items.
 
 \item
 Mappings (dictionaries) are compared through lexicographic
-comparison of their sorted (key, value) lists.%
-\footnote{This is expensive since it requires sorting the keys first,
+comparison of their sorted (key, value) lists.\footnote{
+This is expensive since it requires sorting the keys first,
 but it is about the only sensible definition.  An earlier version of
 Python compared dictionaries by identity only, but this caused
 surprises because people expected to be able to test a dictionary for
@@ -739,8 +739,8 @@ true if and only if there exists an index \var{i} such that
 \code{\var{x} = \var{y}[\var{i}]}.
 \code{\var{x} not in \var{y}} yields the inverse truth value.  The
 exception \exception{TypeError} is raised when \var{y} is not a sequence,
-or when \var{y} is a string and \var{x} is not a string of length one.%
-\footnote{The latter restriction is sometimes a nuisance.}
+or when \var{y} is a string and \var{x} is not a string of length
+one.\footnote{The latter restriction is sometimes a nuisance.}
 \opindex{in}
 \opindex{not in}
 \indexii{membership}{test}
