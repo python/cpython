@@ -145,7 +145,7 @@ extern void initgdbm();
 extern void PyMarshal_Init();
 extern void initimp();
 
-struct _inittab inittab[] = {
+struct _inittab _PyImport_Inittab[] = {
 
 	{"array", initarray},
 #ifndef SYMANTEC__CFM68K__
