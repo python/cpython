@@ -435,9 +435,6 @@ Subject: Re: PEP 255: Simple Generators
 ...
 ...     def __str__(self):
 ...         return self.name
-...
-...     def clear(self):
-...         self.__dict__.clear()
 
 >>> names = "ABCDEFGHIJKLM"
 >>> sets = [disjointSet(name) for name in names]
@@ -594,9 +591,6 @@ arguments are iterable -- a LazyList is the same as a generator to times().
 ...         while i >= len(sofar):
 ...             sofar.append(fetch())
 ...         return sofar[i]
-...
-...     def clear(self):
-...         self.__dict__.clear()
 
 >>> def m235():
 ...     yield 1
@@ -1344,14 +1338,11 @@ __test__ = {"tut":      tutorial_tests,
 # so this works as expected in both ways of running regrtest.
 def test_main():
     import doctest, test_generators
-    if 0:
-        # Temporary block to help track down leaks.  So far, the blame
-        # fell mostly on doctest.  Later:  the only leaks remaining are
-        # in fun_tests, and only if you comment out the two LazyList.clear()
-        # calls.
-        for i in range(10000):
+    if 0:   # change to 1 to run forever (to check for leaks)
+        while 1:
             doctest.master = None
             doctest.testmod(test_generators)
+            print ".",
     else:
         doctest.testmod(test_generators)
 
