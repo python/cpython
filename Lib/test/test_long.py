@@ -77,6 +77,8 @@ def getran2(ndigits):
 def test_division_2(x, y):
     q, r = divmod(x, y)
     q2, r2 = x/y, x%y
+    pab, pba = x*y, y*x
+    check(pab == pba, "multiplication does not commute for", x, y)
     check(q == q2, "divmod returns different quotient than / for", x, y)
     check(r == r2, "divmod returns different mod than % for", x, y)
     check(x == q*y + r, "x != q*y + r after divmod on", x, y)
