@@ -751,14 +751,16 @@ class EditorWindow:
                 traceback.print_exc()
 
     def get_standard_extension_names(self):
-        return idleConf.GetExtensions()
+        return idleConf.GetExtensions(editor_only=True)
 
     def load_extension(self, name):
         mod = __import__(name, globals(), locals(), [])
         cls = getattr(mod, name)
+        keydefs = idleConf.GetExtensionBindings(name)
+        if hasattr(cls, "menudefs"):
+            self.fill_menus(cls.menudefs, keydefs)
         ins = cls(self)
         self.extensions[name] = ins
-        keydefs=idleConf.GetExtensionBindings(name)
         if keydefs:
             self.apply_bindings(keydefs)
             for vevent in keydefs.keys():
@@ -770,8 +772,6 @@ class EditorWindow:
                 methodname = methodname + "_event"
                 if hasattr(ins, methodname):
                     self.text.bind(vevent, getattr(ins, methodname))
-        if hasattr(ins, "menudefs"):
-            self.fill_menus(ins.menudefs, keydefs)
         return ins
 
     def apply_bindings(self, keydefs=None):

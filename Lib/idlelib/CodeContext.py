@@ -1,6 +1,6 @@
 """CodeContext - Display the block context of code at top of edit window
 
-Once code has scolled off the top of the screen, it can be difficult
+Once code has scrolled off the top of the screen, it can be difficult
 to determine which block you are in.  This extension implements a pane
 at the top of each IDLE edit window which provides block structure
 hints.  These hints are the lines which contain the block opening
@@ -12,12 +12,11 @@ the context hints pane.
 """
 import Tkinter
 from configHandler import idleConf
-from PyShell import PyShell
+from sets import Set
 import re
 
-BLOCKOPENERS = dict([(x, None) for x in ("class", "def", "elif", "else",
-                                         "except", "finally", "for", "if",
-                                         "try", "while")])
+BLOCKOPENERS = Set(["class", "def", "elif", "else", "except", "finally", "for",
+                    "if", "try", "while"])
 INFINITY = 1 << 30
 UPDATEINTERVAL = 100 # millisec
 FONTUPDATEINTERVAL = 1000 # millisec
@@ -33,11 +32,7 @@ class CodeContext:
                                  "bgcolor", type="str", default="LightGray")
     fgcolor = idleConf.GetOption("extensions", "CodeContext",
                                  "fgcolor", type="str", default="Black")
-    default_on = idleConf.GetOption("extensions", "CodeContext",
-                                    "default_on", type="int", default=0)
     def __init__(self, editwin):
-        if isinstance(editwin, PyShell):
-            return
         self.editwin = editwin
         self.text = editwin.text
         self.textfont = self.text["font"]
@@ -45,7 +40,9 @@ class CodeContext:
         # Dummy line, which starts the "block" of the whole document:
         self.info = list(self.interesting_lines(1))
         self.lastfirstline = 1
-        if self.default_on:
+        visible = idleConf.GetOption("extensions", "CodeContext",
+                                     "visible", type="bool", default=False)
+        if visible:
             self.toggle_code_context_event()
             self.editwin.setvar('<<toggle-code-context>>', True)
         # Start two update cycles, one for context lines, one for font changes.
@@ -67,6 +64,9 @@ class CodeContext:
         else:
             self.label.destroy()
             self.label = None
+        idleConf.SetOption("extensions", "CodeContext", "visible",
+                           str(self.label is not None))
+        idleConf.SaveUserCfgFiles()
 
     def get_line_info(self, linenum):
         """Get the line indent value, text, and any block start keyword

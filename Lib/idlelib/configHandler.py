@@ -215,7 +215,8 @@ class IdleConf:
                 sys.stderr.write(warn)
         return userDir
 
-    def GetOption(self, configType, section, option, default=None, type=None):
+    def GetOption(self, configType, section, option, default=None, type=None,
+                  warn_on_default=True):
         """
         Get an option value for given config type and given general
         configuration section/option or return a default. If type is specified,
@@ -224,20 +225,29 @@ class IdleConf:
         fallback to a useable passed-in default if the option isn't present in
         either the user or the default configuration.
         configType must be one of ('main','extensions','highlight','keys')
-        If a default is returned a warning is printed to stderr.
+        If a default is returned, and warn_on_default is True, a warning is
+        printed to stderr.
+
         """
         if self.userCfg[configType].has_option(section,option):
             return self.userCfg[configType].Get(section, option, type=type)
         elif self.defaultCfg[configType].has_option(section,option):
             return self.defaultCfg[configType].Get(section, option, type=type)
         else: #returning default, print warning
-            warning=('\n Warning: configHandler.py - IdleConf.GetOption -\n'
-                       ' problem retrieving configration option %r\n'
-                       ' from section %r.\n'
-                       ' returning default value: %r\n' % 
-                       (option, section, default))
-            sys.stderr.write(warning)
+            if warn_on_default:
+                warning = ('\n Warning: configHandler.py - IdleConf.GetOption -\n'
+                           ' problem retrieving configration option %r\n'
+                           ' from section %r.\n'
+                           ' returning default value: %r\n' %
+                           (option, section, default))
+                sys.stderr.write(warning)
             return default
+
+    def SetOption(self, configType, section, option, value):
+        """In user's config file, set section's option to value.
+
+        """
+        self.userCfg[configType].SetOption(section, option, value)
 
     def GetSectionList(self, configSet, configType):
         """
@@ -356,10 +366,10 @@ class IdleConf:
         """
         return self.GetOption('main','Keys','name',default='')
 
-    def GetExtensions(self, activeOnly=1):
+    def GetExtensions(self, active_only=True, editor_only=False, shell_only=False):
         """
         Gets a list of all idle extensions declared in the config files.
-        activeOnly - boolean, if true only return active (enabled) extensions
+        active_only - boolean, if true only return active (enabled) extensions
         """
         extns=self.RemoveKeyBindNames(
                 self.GetSectionList('default','extensions'))
@@ -368,13 +378,23 @@ class IdleConf:
         for extn in userExtns:
             if extn not in extns: #user has added own extension
                 extns.append(extn)
-        if activeOnly:
+        if active_only:
             activeExtns=[]
             for extn in extns:
-                if self.GetOption('extensions',extn,'enable',default=1,
-                    type='bool'):
+                if self.GetOption('extensions', extn, 'enable', default=True,
+                                  type='bool'):
                     #the extension is enabled
-                    activeExtns.append(extn)
+                    if editor_only or shell_only:
+                        if editor_only:
+                            option = "enable_editor"
+                        else:
+                            option = "enable_shell"
+                        if self.GetOption('extensions', extn,option,
+                                          default=True, type='bool',
+                                          warn_on_default=False):
+                            activeExtns.append(extn)
+                    else:
+                        activeExtns.append(extn)
             return activeExtns
         else:
             return extns
@@ -401,7 +421,7 @@ class IdleConf:
         """
         extName=None
         vEvent='<<'+virtualEvent+'>>'
-        for extn in self.GetExtensions(activeOnly=0):
+        for extn in self.GetExtensions(active_only=0):
             for event in self.GetExtensionKeys(extn).keys():
                 if event == vEvent:
                     extName=extn
@@ -482,7 +502,7 @@ class IdleConf:
         in an extension is already in use, that binding is disabled.
         """
         keySet=self.GetCoreKeys(keySetName)
-        activeExtns=self.GetExtensions(activeOnly=1)
+        activeExtns=self.GetExtensions(active_only=1)
         for extn in activeExtns:
             extKeys=self.__GetRawExtensionKeys(extn)
             if extKeys: #the extension defines keybindings
