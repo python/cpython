@@ -146,7 +146,7 @@ class UnixCCompiler (CCompiler):
                            output_dir=None,
                            debug=0):
 
-        (objects, output_dir) = self._fix_link_args (objects, output_dir, takes_libs=0)
+        (objects, output_dir) = self._fix_object_args (objects, output_dir)
 
         output_filename = \
             self.library_filename (output_libname, output_dir=output_dir)
@@ -169,6 +169,7 @@ class UnixCCompiler (CCompiler):
                          output_dir=None,
                          libraries=None,
                          library_dirs=None,
+                         runtime_library_dirs=None,
                          debug=0,
                          extra_preargs=None,
                          extra_postargs=None):
@@ -178,6 +179,7 @@ class UnixCCompiler (CCompiler):
             output_dir,
             libraries,
             library_dirs,
+            runtime_library_dirs,
             debug,
             extra_preargs,
             extra_postargs)
@@ -189,16 +191,17 @@ class UnixCCompiler (CCompiler):
                             output_dir=None,
                             libraries=None,
                             library_dirs=None,
+                            runtime_library_dirs=None,
                             debug=0,
                             extra_preargs=None,
                             extra_postargs=None):
 
-        (objects, output_dir, libraries, library_dirs) = \
-            self._fix_link_args (objects, output_dir, takes_libs=1,
-                                 libraries=libraries, library_dirs=library_dirs)
+        (objects, output_dir) = self._fix_object_args (objects, output_dir)
+        (libraries, library_dirs, runtime_library_dirs) = \
+            self._fix_lib_args (libraries, library_dirs, runtime_library_dirs)
 
         lib_opts = gen_lib_options (self,
-                                    library_dirs, self.runtime_library_dirs,
+                                    library_dirs, runtime_library_dirs,
                                     libraries)
         if type (output_dir) not in (StringType, NoneType):
             raise TypeError, "'output_dir' must be a string or None"
@@ -228,16 +231,17 @@ class UnixCCompiler (CCompiler):
                          output_dir=None,
                          libraries=None,
                          library_dirs=None,
+                         runtime_library_dirs=None,
                          debug=0,
                          extra_preargs=None,
                          extra_postargs=None):
     
-        (objects, output_dir, libraries, library_dirs) = \
-            self._fix_link_args (objects, output_dir, takes_libs=1,
-                                 libraries=libraries, library_dirs=library_dirs)
+        (objects, output_dir) = self._fix_object_args (objects, output_dir)
+        (libraries, library_dirs, runtime_library_dirs) = \
+            self._fix_lib_args (libraries, library_dirs, runtime_library_dirs)
 
         lib_opts = gen_lib_options (self,
-                                    library_dirs, self.runtime_library_dirs,
+                                    library_dirs, runtime_library_dirs,
                                     libraries)
         output_filename = output_progname # Unix-ism!
         if output_dir is not None:
