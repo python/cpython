@@ -627,6 +627,10 @@ class Distribution:
                 print "  setting options:"
                 for (option, (source, value)) in options.items():
                     print "    %s = %s (from %s)" % (option, value, source)
+                    if not hasattr(cmd_obj, option):
+                        raise DistutilsOptionError, \
+                              ("%s: command '%s' has no such option '%s'") % \
+                              (source, command, option)
                     setattr(cmd_obj, option, value)
 
         return cmd_obj
