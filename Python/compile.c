@@ -363,12 +363,13 @@ markblocks(unsigned char *code, int len)
 }
 
 static PyObject *
-optimize_code(PyObject *code, PyObject* consts)
+optimize_code(PyObject *code, PyObject* consts, PyObject *names)
 {
 	int i, j, codelen;
 	int tgt, tgttgt, opcode;
 	unsigned char *codestr;
 	unsigned int *blocks;
+	char *name;
 
 	/* Make a modifiable copy of the code string */
 	if (!PyString_Check(code))
@@ -418,6 +419,21 @@ optimize_code(PyObject *code, PyObject* consts)
   			 continue;
 			SETARG(codestr, i, (j^1));
 			codestr[i+3] = NOP;
+		
+		/* Replace LOAD_GLOBAL/LOAD_NAME None with LOAD_CONST None */
+		case LOAD_NAME:
+		case LOAD_GLOBAL:
+			j = GETARG(codestr, i);
+			name = PyString_AsString(PyTuple_GET_ITEM(names, j));
+			if (name == NULL  ||  strcmp(name, "None") != 0)
+				continue;
+			for (j=0 ; j < PyTuple_GET_SIZE(consts) ; j++) {
+				if (PyTuple_GET_ITEM(consts, j) == Py_None) {
+					codestr[i] = LOAD_CONST;
+					SETARG(codestr, i, j);
+					break;
+				}
+			}
 			break;
 
 		/* Skip over LOAD_CONST trueconst  JUMP_IF_FALSE xx  POP_TOP. 
@@ -441,7 +457,7 @@ optimize_code(PyObject *code, PyObject* consts)
 				continue;
 			if (!ISBASICBLOCK(blocks,i,6))
 				continue;
-			if (GETARG(codestr, i) == 2 && \
+			if (GETARG(codestr, i) == 2 &&
 			    GETARG(codestr, i+3) == 2) {
 				codestr[i] = ROT_TWO;
 				codestr[i+1] = JUMP_FORWARD;
@@ -450,7 +466,7 @@ optimize_code(PyObject *code, PyObject* consts)
 				codestr[i+5] = NOP;
 				continue;
 			} 
-			if (GETARG(codestr, i) == 3 && \
+			if (GETARG(codestr, i) == 3 &&
 			    GETARG(codestr, i+3) == 3) {
 				codestr[i] = ROT_THREE;
 				codestr[i+1] = ROT_TWO;
@@ -542,7 +558,7 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 		co->co_nlocals = nlocals;
 		co->co_stacksize = stacksize;
 		co->co_flags = flags;
-		co->co_code = optimize_code(code, consts);
+		co->co_code = optimize_code(code, consts, names);
 		Py_INCREF(consts);
 		co->co_consts = consts;
 		Py_INCREF(names);
