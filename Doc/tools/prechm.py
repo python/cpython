@@ -68,15 +68,10 @@ contents_header = '''\
 	<param name="ImageType" value="Folder">
 </OBJECT>
 <UL>
-<LI><OBJECT type="text/sitemap">
-       <param name="Name" value="Python %s Docs">
-       <param name="Local" value="./index.html">
-    </OBJECT>
-<UL>
 '''
 
 contents_footer = '''\
-</UL></UL></BODY></HTML>
+</UL></BODY></HTML>
 '''
 
 object_sitemap = '''\
@@ -124,8 +119,9 @@ class Book:
 # Library Doc list of books:
 # each 'book' : (Dir, Title, First page, Content page, Index page)
 supported_libraries = {
-    '2.2':  ### Beta!!!  fix for actual release
+    '2.2':
     [
+        Book('.', 'Main page', 'index'),
         Book('.', 'Global Module Index', 'modindex'),
         Book('whatsnew', "What's New", 'index', 'contents'),
         Book('tut','Tutorial','tut','node2'),
@@ -141,6 +137,7 @@ supported_libraries = {
 
     '2.1.1':
     [
+        Book('.', 'Main page', 'index'),
         Book('.', 'Global Module Index', 'modindex'),
         Book('tut','Tutorial','tut','node2'),
         Book('lib','Library Reference','lib','contents','genindex'),
@@ -341,7 +338,7 @@ def do_index(library, output):
     output.write('</UL>\n')
 
 def do_content(library, version, output):
-    output.write(contents_header % version)
+    output.write(contents_header)
     for book in library:
         print '\t', book.title, '-', book.firstpage
         path = book.directory + "/" + book.firstpage
@@ -356,12 +353,16 @@ def do_content(library, version, output):
 # supported_libraries for the version of the docs getting generated.
 def do_project(library, output, arch, version):
     output.write(project_template % locals())
+    pathseen = {}
     for book in library:
         directory = book.directory
         path = directory + '\\%s\n'
         for page in os.listdir(directory):
             if page.endswith('.html') or page.endswith('.css'):
-                output.write(path % page)
+                fullpath = path % page
+                if fullpath not in pathseen:
+                    output.write(fullpath)
+                    pathseen[fullpath] = True
 
 def openfile(file):
     try:
