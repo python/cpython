@@ -153,11 +153,6 @@ class CodeGenerator:
     """TODO
 
     EmptyNode
-    Exec
-    Invert
-    LeftShift
-    Power
-    RightShift
     Sliceobj
     Tryexcept
     Tryfinally
@@ -276,6 +271,8 @@ class CodeGenerator:
         self.emit('SET_LINENO', node.lineno)
         self.emit('IMPORT_NAME', node.modname)
         for name in node.names:
+            if name == '*':
+                self.namespace = 0
             self.emit('IMPORT_FROM', name)
         self.emit('POP_TOP')
 
@@ -524,7 +521,6 @@ class CodeGenerator:
         return 1
 
     def visitAssign(self, node):
-	print "ASSIGN", node.expr
         self.emit('SET_LINENO', node.lineno)
         self.visit(node.expr)
 	dups = len(node.nodes) - 1
@@ -582,6 +578,18 @@ class CodeGenerator:
 
     def visitMod(self, node):
 	return self.binaryOp(node, 'BINARY_MODULO')
+
+    def visitPower(self, node):
+	return self.binaryOp(node, 'BINARY_POWER')
+
+    def visitLeftShift(self, node):
+	return self.binaryOp(node, 'BINARY_LSHIFT')
+
+    def visitRightShift(self, node):
+	return self.binaryOp(node, 'BINARY_RSHIFT')
+
+    def visitInvert(self, node):
+        return self.unaryOp(node, 'UNARY_INVERT')
 
     def visitUnarySub(self, node):
         return self.unaryOp(node, 'UNARY_NEGATIVE')
