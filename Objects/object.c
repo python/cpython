@@ -212,7 +212,7 @@ PyObject_Repr(PyObject *v)
 	if (v == NULL)
 		return PyString_FromString("<NULL>");
 	else if (v->ob_type->tp_repr == NULL)
-		return PyString_FromFormat("<%s object at %p",
+		return PyString_FromFormat("<%s object at %p>",
 					   v->ob_type->tp_name, v);
 	else {
 		PyObject *res;
