@@ -226,7 +226,7 @@ class Install (Command):
             # Otherwise, just tack the "fallback postfix" onto the
             # user-specified prefix.
 
-            return apply (os.join, (my_prefix,) + fallback_postfix)
+            return apply (os.path.join, (my_prefix,) + fallback_postfix)
 
     # replace_sys_prefix ()
     
