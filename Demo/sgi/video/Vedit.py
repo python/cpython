@@ -19,6 +19,11 @@ import flp
 import Viewer
 import getopt
 import string
+import watchcursor
+
+ARROW = 0
+WATCH = 1
+watchcursor.defwatch(WATCH)
 
 
 def main():
@@ -56,6 +61,14 @@ class Editor:
 				self.vin.redraw(val)
 			if self.vout:
 				self.vout.redraw(val)
+
+	def busy(self):
+		gl.winset(self.form.window)
+		gl.setcursor(WATCH, 0, 0)
+
+	def ready(self):
+		gl.winset(self.form.window)
+		gl.setcursor(ARROW, 0, 0)
 
 
 	def iocheck(self):
@@ -98,7 +111,18 @@ class Editor:
 
 	def cb_in_back(self, *args):
 		if not self.icheck(): return
-		if not self.vin.backup(): self.err('Input buffer exhausted')
+		if not self.vin.backup(): self.err('Begin of input file')
+		self.ishow()
+
+	def cb_in_slider(self, *args):
+		if not self.icheck(): return
+		left, pos, right = self.vin.qinfo()
+		i = int(self.in_slider.get_slider_value())
+		i = max(i, left)
+		i = min(i, right)
+		if i == pos: return
+		if not self.vin.seek(i):
+			self.err('Input seek failed')
 		self.ishow()
 
 	def cb_in_rewind(self, *args):
@@ -128,7 +152,7 @@ class Editor:
 			return
 		self.oshow()
 		if not self.vin.backup():
-			self.err('Input buffer exhausted')
+			self.err('Begin of input file')
 			return
 		self.ishow()
 
@@ -154,6 +178,23 @@ class Editor:
 		if not self.vout.backup(): self.err('Output buffer exhausted')
 		self.oshow()
 
+	def cb_out_slider(self, *args):
+		if not self.ocheck(): return
+		i = int(self.out_slider.get_slider_value())
+		left, pos, right = self.vout.qinfo()
+		i = int(self.out_slider.get_slider_value())
+		i = max(i, left)
+		i = min(i, right)
+		if i == pos: return
+		if not self.vout.seek(i):
+			self.err('Output seek failed')
+		self.oshow()
+
+	def cb_out_trunc(self, *arcs):
+		if not self.ocheck(): return
+		self.vout.trunc()
+		self.oshow()
+
 	def cb_out_rewind(self, *args):
 		if not self.ocheck(): return
 		self.vout.rewind()
@@ -171,8 +212,7 @@ class Editor:
 		basename = os.path.split(filename)[1]
 		title = 'in: ' + basename
 		try:
-			vin = Viewer.InputViewer().init(filename, \
-				title, self.qsize)
+			vin = Viewer.InputViewer().init(filename, title)
 		except:
 			self.err('Can\'t open input file', filename)
 			return
@@ -183,8 +223,10 @@ class Editor:
 
 	def close_input(self):
 		if self.vin:
+			self.busy()
 			self.msg('Closing input file...')
 			self.vin.close()
+			self.ready()
 		self.msg('')
 		self.vin = None
 		self.in_file.label = '(none)'
@@ -213,8 +255,10 @@ class Editor:
 
 	def close_output(self):
 		if self.vout:
+			self.busy()
 			self.msg('Closing output file...')
 			self.vout.close()
+			self.ready()
 		self.msg('')
 		self.vout = None
 		self.out_file.label = '(none)'
@@ -238,13 +282,15 @@ class Editor:
 		if v == None:
 			left = right = pos = 0
 		else:
-			left, right = v.qsizes()
-			pos = v.tell()
-			left = pos - left
-			right = pos + right
+			left, pos, right = v.qinfo()
 		getattr(self, io + '_info1').label = `left`
 		getattr(self, io + '_info2').label = `pos`
 		getattr(self, io + '_info3').label = `right`
+		sl = getattr(self, io + '_slider')
+		sl.freeze_object()
+		sl.set_slider_bounds(left, right)
+		sl.set_slider_value(pos)
+		sl.unfreeze_object()
 
 
 try:
