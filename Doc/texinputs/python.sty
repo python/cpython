@@ -433,11 +433,16 @@
 % {fulllineitems} is used in one place in libregex.tex, but is really for
 % internal use in this file.
 %
+\newcommand{\py@itemnewline}[1]{%
+  \@tempdima\linewidth%
+  \advance\@tempdima \leftmargin\makebox[\@tempdima][l]{#1}%
+}
+
 \newenvironment{fulllineitems}{
   \begin{list}{}{\labelwidth \leftmargin \labelsep 0pt
                  \rightmargin 0pt \topsep -\parskip \partopsep \parskip
                  \itemsep -\parsep
-                 \let\makelabel=\itemnewline}
+                 \let\makelabel=\py@itemnewline}
 }{\end{list}}
 
 % \optional is mostly for use in the arguments parameters to the various
@@ -759,24 +764,6 @@
   \end{center}%
 }
 
-\newcommand{\itemnewline}[1]{%
-  \@tempdima\linewidth%
-  \advance\@tempdima \leftmargin\makebox[\@tempdima][l]{#1}%
-}
-
-% Define \itembreak: force the text after an item to start on a new line
-\newcommand{\itembreak}{%
-  \mbox{}%
-  \\*[0mm]%
-}
-
-% Define \itemjoin: some negative vspace to join two items together
-\newcommand{\itemjoin}{%
-  \mbox{}%
-  \vspace{-\itemsep}%
-  \vspace{-\parsep}%
-}
-
 % Cross-referencing (AMK, new impl. FLD)
 % Sample usage:
 %  \begin{seealso}
@@ -858,7 +845,7 @@
 %
 \newenvironment{definitions}{%
   \begin{description}%
-  \def\term##1{\item[##1]\itembreak}
+  \def\term##1{\item[##1]\mbox{}\\*[0mm]}
 }{%
   \end{description}%
 }
