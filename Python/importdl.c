@@ -104,6 +104,7 @@ typedef int (* APIENTRY dl_funcptr)();
 #ifdef MS_WINDOWS /* i.e. MS_WIN32 or MS_WIN16 */
 #define DYNAMIC_LINK
 #include <windows.h>
+#include <direct.h>
 typedef FARPROC dl_funcptr;
 #define _DL_FUNCPTR_DEFINED
 #ifdef _DEBUG
@@ -419,6 +420,19 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 #ifdef MS_WIN32
 	{
 		HINSTANCE hDLL;
+		char pathbuf[260];
+		if (strchr(pathname, SEP) == NULL &&
+		    strchr(pathname, ALTSEP) == NULL)
+		{
+			/* Prefix bare filename with ".\" */
+			char *p = pathbuf;
+			*p = '\0';
+			_getcwd(pathbuf, sizeof pathbuf);
+			if (*p != '\0' && p[1] == ':')
+				p += 2;
+			sprintf(p, ".\\%-.255s", pathname);
+			pathname = pathbuf;
+		}
 		hDLL = LoadLibrary(pathname);
 		if (hDLL==NULL){
 			char errBuf[256];
@@ -471,6 +485,14 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 #ifdef MS_WIN16
 	{
 		HINSTANCE hDLL;
+		char pathbuf[16];
+		if (strchr(pathname, SEP) == NULL &&
+		    strchr(pathname, ALTSEP) == NULL)
+		{
+			/* Prefix bare filename with ".\" */
+			sprintf(pathbuf, ".\\%-.13s", pathname);
+			pathname = pathbuf;
+		}
 		hDLL = LoadLibrary(pathname);
 		if (hDLL < HINSTANCE_ERROR){
 			char errBuf[256];
