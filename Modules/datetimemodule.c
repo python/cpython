@@ -4754,7 +4754,7 @@ datetimetz_astimezone(PyDateTime_DateTimeTZ *self, PyObject *args,
 
 	PyObject *result;
 	PyObject *temp;
-	int selfoff, resoff, resdst, total_added_to_result;
+	int selfoff, resoff, dst1, dst2;
 	int none;
 	int delta;
 
@@ -4792,19 +4792,24 @@ datetimetz_astimezone(PyDateTime_DateTimeTZ *self, PyObject *args,
 
 	/* See the long comment block at the end of this file for an
 	 * explanation of this algorithm.  That it always works requires a
-	 * pretty intricate proof.
+	 * pretty intricate proof.  There are many equivalent ways to code
+	 * up the proof as an algorithm.  This way favors calling dst() over
+	 * calling utcoffset(), because "the usual" utcoffset() calls dst()
+	 * itself, and calling the latter instead saves a Python-level
+	 * function call.  This way of coding it also follows the proof
+	 * closely, w/ x=self, y=result, z=result, and z'=temp.
 	 */
-	resdst = call_dst(tzinfo, result, &none);
-	if (resdst == -1 && PyErr_Occurred())
+	dst1 = call_dst(tzinfo, result, &none);
+	if (dst1 == -1 && PyErr_Occurred())
 		goto Fail;
 	if (none) {
 		PyErr_SetString(PyExc_ValueError, "astimezone(): utcoffset() "
 		"returned a duration but dst() returned None");
 		goto Fail;
 	}
-	total_added_to_result = resoff - resdst - selfoff;
-	if (total_added_to_result != 0) {
-		mm += total_added_to_result;
+	delta = resoff - dst1 - selfoff;
+	if (delta) {
+		mm += delta;
 		if ((mm < 0 || mm >= 60) &&
 		    normalize_datetime(&y, &m, &d, &hh, &mm, &ss, &us) < 0)
 			goto Fail;
@@ -4814,58 +4819,47 @@ datetimetz_astimezone(PyDateTime_DateTimeTZ *self, PyObject *args,
 		Py_DECREF(result);
 		result = temp;
 
-		resoff = call_utcoffset(tzinfo, result, &none);
-		if (resoff == -1 && PyErr_Occurred())
+		dst1 = call_dst(tzinfo, result, &none);
+		if (dst1 == -1 && PyErr_Occurred())
 			goto Fail;
 		if (none)
 			goto Inconsistent;
 	}
-
-	/* The distance now from self to result is
-	 * self - result == naive(self) - selfoff - (naive(result) - resoff) ==
-	 * naive(self) - selfoff -
-	 *             ((naive(self) + total_added_to_result - resoff) ==
-	 * - selfoff - total_added_to_result + resoff.
-	 */
-	delta = resoff - selfoff - total_added_to_result;
-
-	/* Now self and result are the same UTC time iff delta is 0.
-	 * If it is 0, we're done, although that takes some proving.
-	 */
-	if (delta == 0)
+	if (dst1 == 0)
 		return result;
 
-	total_added_to_result += delta;
-	mm += delta;
+	mm += dst1;
 	if ((mm < 0 || mm >= 60) &&
 	    normalize_datetime(&y, &m, &d, &hh, &mm, &ss, &us) < 0)
 		goto Fail;
-
 	temp = new_datetimetz(y, m, d, hh, mm, ss, us, tzinfo);
 	if (temp == NULL)
 		goto Fail;
-	Py_DECREF(result);
-	result = temp;
 
-	resoff = call_utcoffset(tzinfo, result, &none);
-	if (resoff == -1 && PyErr_Occurred())
+	dst2 = call_dst(tzinfo, temp, &none);
+	if (dst2 == -1 && PyErr_Occurred()) {
+		Py_DECREF(temp);
 		goto Fail;
-	if (none)
+	}
+	if (none) {
+		Py_DECREF(temp);
 		goto Inconsistent;
+	}
 
-	if (resoff - selfoff == total_added_to_result)
-		/* self and result are the same UTC time */
-		return result;
-
-        /* Else there's no way to spell self in zone tzinfo. */
-        PyErr_SetString(PyExc_ValueError, "astimezone(): the source "
-        		"datetimetz can't be expressed in the target "
-        		"timezone's local time");
-        goto Fail;
+	if (dst1 == dst2) {
+		/* The normal case:  we want temp, not result. */
+		Py_DECREF(result);
+		result = temp;
+	}
+	else {
+		/* The "unspellable hour" at the end of DST. */
+		Py_DECREF(temp);
+	}
+	return result;
 
 Inconsistent:
-	PyErr_SetString(PyExc_ValueError, "astimezone(): tz.utcoffset() "
-			"gave inconsistent results; cannot convert");
+	PyErr_SetString(PyExc_ValueError, "astimezone(): tz.dst() gave"
+			"inconsistent results; cannot convert");
 
 	/* fall thru to failure */
 Fail:
