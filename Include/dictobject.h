@@ -45,9 +45,6 @@ typedef struct {
 	long me_hash;      /* cached hash code of me_key */
 	PyObject *me_key;
 	PyObject *me_value;
-#ifdef USE_CACHE_ALIGNED
-	long	aligner;
-#endif
 } PyDictEntry;
 
 /*
