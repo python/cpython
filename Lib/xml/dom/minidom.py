@@ -68,33 +68,6 @@ class Node(xml.dom.Node):
                 #open("debug4.out", "w")
             Node.debug.write("create %s\n" % index)
 
-    def __getattr__(self, key):
-        if key[0:2] == "__":
-            raise AttributeError, key
-        # getattr should never call getattr!
-        if self.__dict__.has_key("inGetAttr"):
-            del self.inGetAttr
-            raise AttributeError, key
-
-        prefix, attrname = key[:5], key[5:]
-        if prefix == "_get_":
-            self.inGetAttr = 1
-            if hasattr(self, attrname):
-                del self.inGetAttr
-                return (lambda self=self, attrname=attrname:
-                                getattr(self, attrname))
-            else:
-                del self.inGetAttr
-                raise AttributeError, key
-        else:
-            self.inGetAttr = 1
-            try:
-                func = getattr(self, "_get_" + key)
-            except AttributeError:
-                raise AttributeError, key
-            del self.inGetAttr
-            return func()
-
     def __nonzero__(self):
         return 1
 
@@ -123,6 +96,41 @@ class Node(xml.dom.Node):
     def _get_lastChild(self):
         if self.childNodes:
             return self.childNodes[-1]
+
+    try:
+        property
+    except NameError:
+        def __getattr__(self, key):
+            if key[0:2] == "__":
+                raise AttributeError, key
+            # getattr should never call getattr!
+            if self.__dict__.has_key("inGetAttr"):
+                del self.inGetAttr
+                raise AttributeError, key
+
+            prefix, attrname = key[:5], key[5:]
+            if prefix == "_get_":
+                self.inGetAttr = 1
+                if hasattr(self, attrname):
+                    del self.inGetAttr
+                    return (lambda self=self, attrname=attrname:
+                                    getattr(self, attrname))
+                else:
+                    del self.inGetAttr
+                    raise AttributeError, key
+            else:
+                self.inGetAttr = 1
+                try:
+                    func = getattr(self, "_get_" + key)
+                except AttributeError:
+                    raise AttributeError, key
+                del self.inGetAttr
+                return func()
+    else:
+        firstChild = property(_get_firstChild,
+                              doc="First child node, or None.")
+        lastChild = property(_get_lastChild,
+                             doc="Last child node, or None.")
 
     def insertBefore(self, newChild, refChild):
         if newChild.nodeType == self.DOCUMENT_FRAGMENT_NODE:
@@ -362,10 +370,16 @@ class NamedNodeMap:
         self._attrs = attrs
         self._attrsNS = attrsNS
 
-    def __getattr__(self, name):
-        if name == "length":
-            return len(self._attrs)
-        raise AttributeError, name
+    try:
+        property
+    except NameError:
+        def __getattr__(self, name):
+            if name == "length":
+                return len(self._attrs)
+            raise AttributeError, name
+    else:
+        length = property(lambda self: len(self._attrs),
+                          doc="Number of nodes in the NamedNodeMap.")
 
     def item(self, index):
         try:
@@ -597,6 +611,14 @@ class Element(Node):
 
     def _get_attributes(self):
         return AttributeList(self._attrs, self._attrsNS)
+
+    try:
+        property
+    except NameError:
+        pass
+    else:
+        attributes = property(_get_attributes,
+                              doc="NamedNodeMap of attributes on the element.")
 
     def hasAttributes(self):
         if self._attrs or self._attrsNS:
@@ -840,6 +862,14 @@ class Document(Node):
         for node in self.childNodes:
             if node.nodeType == Node.ELEMENT_NODE:
                 return node
+
+    try:
+        property
+    except NameError:
+        pass
+    else:
+        documentElement = property(_get_documentElement,
+                                   doc="Top-level element of this document.")
 
     def unlink(self):
         if self.doctype is not None:
