@@ -6,7 +6,8 @@ C, not for instances of user-defined classes.
 
 from types import ClassType as _ClassType
 
-__all__ = ["pickle","constructor"]
+__all__ = ["pickle", "constructor",
+           "add_extension", "remove_extension", "clear_extension_cache"]
 
 dispatch_table = {}
 safe_constructors = {}
