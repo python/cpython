@@ -412,6 +412,8 @@ min_max(v, sign)
 		return NULL;
 	}
 	n = (*sq->sq_length)(v);
+	if (n < 0)
+		return NULL;
 	if (n == 0) {
 		err_setstr(ValueError, "min() or max() of empty sequence");
 		return NULL;

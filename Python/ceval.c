@@ -1881,6 +1881,8 @@ loop_subscript(v, w)
 	}
 	i = getintvalue(w);
 	n = (*sq->sq_length)(v);
+	if (n < 0)
+		return NULL; /* Exception */
 	if (i >= n)
 		return NULL; /* End of loop */
 	return (*sq->sq_item)(v, i);
