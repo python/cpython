@@ -309,7 +309,13 @@ class test__mkstemp_inner(TC):
 
         file = self.do_create()
         mode = stat.S_IMODE(os.stat(file.name).st_mode)
-        self.assertEqual(mode, 0600)
+        expected = 0600
+        if sys.platform in ('win32',):
+            # There's no distinction among 'user', 'group' and 'world';
+            # replicate the 'user' bits.
+            user = expected >> 6
+            expected = user * (1 + 8 + 64)
+        self.assertEqual(mode, expected)
 
     def test_noinherit(self):
         """_mkstemp_inner file handles are not inherited by child processes"""
@@ -513,7 +519,13 @@ class test_mkdtemp(TC):
         dir = self.do_create()
         try:
             mode = stat.S_IMODE(os.stat(dir).st_mode)
-            self.assertEqual(mode, 0700)
+            expected = 0700
+            if sys.platform in ('win32',):
+                # There's no distinction among 'user', 'group' and 'world';
+                # replicate the 'user' bits.
+                user = expected >> 6
+                expected = user * (1 + 8 + 64)
+            self.assertEqual(mode, expected)
         finally:
             os.rmdir(dir)
 
