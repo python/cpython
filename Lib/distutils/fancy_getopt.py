@@ -182,7 +182,7 @@ class FancyGetopt:
                       ("invalid short option '%s': "
                        "must a single character or None") % short
 
-            self.repeat[long] = 1
+            self.repeat[long] = repeat
             self.long_opts.append(long)
 
             if long[-1] == '=':             # option takes an argument?
