@@ -130,12 +130,8 @@ All arithmetic on hash should ignore overflow.
 (This version is due to Reimer Behrends, some ideas are also due to
 Jyrki Alakuijala and Vladimir Marangozov.)
 */
-static dictentry *lookdict Py_PROTO((dictobject *, PyObject *, long));
 static dictentry *
-lookdict(mp, key, hash)
-	dictobject *mp;
-	PyObject *key;
-	register long hash;
+lookdict(dictobject *mp, PyObject *key, register long hash)
 {
 	register int i;
 	register unsigned incr;
@@ -199,14 +195,8 @@ Internal routine to insert a new item into the table.
 Used both by the internal resize routine and by the public insert routine.
 Eats a reference to key and one to value.
 */
-static void insertdict
-	Py_PROTO((dictobject *, PyObject *, long, PyObject *));
 static void
-insertdict(mp, key, hash, value)
-	register dictobject *mp;
-	PyObject *key;
-	long hash;
-	PyObject *value;
+insertdict(register dictobject *mp, PyObject *key, long hash, PyObject *value)
 {
 	PyObject *old_value;
 	register dictentry *ep;
@@ -234,11 +224,8 @@ Restructure the table by allocating a new table and reinserting all
 items again.  When entries have been deleted, the new table may
 actually be smaller than the old one.
 */
-static int dictresize Py_PROTO((dictobject *, int));
 static int
-dictresize(mp, minused)
-	dictobject *mp;
-	int minused;
+dictresize(dictobject *mp, int minused)
 {
 	register int oldsize = mp->ma_size;
 	register int newsize, newpoly;
@@ -287,9 +274,7 @@ dictresize(mp, minused)
 }
 
 PyObject *
-PyDict_GetItem(op, key)
-	PyObject *op;
-	PyObject *key;
+PyDict_GetItem(PyObject *op, PyObject *key)
 {
 	long hash;
 	if (!PyDict_Check(op)) {
@@ -312,10 +297,7 @@ PyDict_GetItem(op, key)
 }
 
 int
-PyDict_SetItem(op, key, value)
-	register PyObject *op;
-	PyObject *key;
-	PyObject *value;
+PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 {
 	register dictobject *mp;
 	register long hash;
@@ -360,9 +342,7 @@ PyDict_SetItem(op, key, value)
 }
 
 int
-PyDict_DelItem(op, key)
-	PyObject *op;
-	PyObject *key;
+PyDict_DelItem(PyObject *op, PyObject *key)
 {
 	register dictobject *mp;
 	register long hash;
@@ -403,8 +383,7 @@ PyDict_DelItem(op, key)
 }
 
 void
-PyDict_Clear(op)
-	PyObject *op;
+PyDict_Clear(PyObject *op)
 {
 	int i, n;
 	register dictentry *table;
@@ -426,11 +405,7 @@ PyDict_Clear(op)
 }
 
 int
-PyDict_Next(op, ppos, pkey, pvalue)
-	PyObject *op;
-	int *ppos;
-	PyObject **pkey;
-	PyObject **pvalue;
+PyDict_Next(PyObject *op, int *ppos, PyObject **pkey, PyObject **pvalue)
 {
 	int i;
 	register dictobject *mp;
@@ -455,8 +430,7 @@ PyDict_Next(op, ppos, pkey, pvalue)
 /* Methods */
 
 static void
-dict_dealloc(mp)
-	register dictobject *mp;
+dict_dealloc(register dictobject *mp)
 {
 	register int i;
 	register dictentry *ep;
@@ -478,10 +452,7 @@ dict_dealloc(mp)
 }
 
 static int
-dict_print(mp, fp, flags)
-	register dictobject *mp;
-	register FILE *fp;
-	register int flags;
+dict_print(register dictobject *mp, register FILE *fp, register int flags)
 {
 	register int i;
 	register int any;
@@ -518,8 +489,7 @@ dict_print(mp, fp, flags)
 }
 
 static PyObject *
-dict_repr(mp)
-	dictobject *mp;
+dict_repr(dictobject *mp)
 {
 	auto PyObject *v;
 	PyObject *sepa, *colon;
@@ -555,16 +525,13 @@ dict_repr(mp)
 }
 
 static int
-dict_length(mp)
-	dictobject *mp;
+dict_length(dictobject *mp)
 {
 	return mp->ma_used;
 }
 
 static PyObject *
-dict_subscript(mp, key)
-	dictobject *mp;
-	register PyObject *key;
+dict_subscript(dictobject *mp, register PyObject *key)
 {
 	PyObject *v;
 	long hash;
@@ -590,9 +557,7 @@ dict_subscript(mp, key)
 }
 
 static int
-dict_ass_sub(mp, v, w)
-	dictobject *mp;
-	PyObject *v, *w;
+dict_ass_sub(dictobject *mp, PyObject *v, PyObject *w)
 {
 	if (w == NULL)
 		return PyDict_DelItem((PyObject *)mp, v);
@@ -607,9 +572,7 @@ static PyMappingMethods dict_as_mapping = {
 };
 
 static PyObject *
-dict_keys(mp, args)
-	register dictobject *mp;
-	PyObject *args;
+dict_keys(register dictobject *mp, PyObject *args)
 {
 	register PyObject *v;
 	register int i, j;
@@ -630,9 +593,7 @@ dict_keys(mp, args)
 }
 
 static PyObject *
-dict_values(mp, args)
-	register dictobject *mp;
-	PyObject *args;
+dict_values(register dictobject *mp, PyObject *args)
 {
 	register PyObject *v;
 	register int i, j;
@@ -653,9 +614,7 @@ dict_values(mp, args)
 }
 
 static PyObject *
-dict_items(mp, args)
-	register dictobject *mp;
-	PyObject *args;
+dict_items(register dictobject *mp, PyObject *args)
 {
 	register PyObject *v;
 	register int i, j;
@@ -685,9 +644,7 @@ dict_items(mp, args)
 }
 
 static PyObject *
-dict_update(mp, args)
-      register dictobject *mp;
-      PyObject *args;
+dict_update(register dictobject *mp, PyObject *args)
 {
 	register int i;
 	dictobject *other;
@@ -718,9 +675,7 @@ dict_update(mp, args)
 }
 
 static PyObject *
-dict_copy(mp, args)
-      register dictobject *mp;
-      PyObject *args;
+dict_copy(register dictobject *mp, PyObject *args)
 {
 	if (!PyArg_Parse(args, ""))
 		return NULL;
@@ -728,8 +683,7 @@ dict_copy(mp, args)
 }
 
 PyObject *
-PyDict_Copy(o)
-	PyObject *o;
+PyDict_Copy(PyObject *o)
 {
 	register dictobject *mp;
 	register int i;
@@ -761,8 +715,7 @@ PyDict_Copy(o)
 }
 
 int
-PyDict_Size(mp)
-	PyObject *mp;
+PyDict_Size(PyObject *mp)
 {
 	if (mp == NULL || !PyDict_Check(mp)) {
 		PyErr_BadInternalCall();
@@ -772,8 +725,7 @@ PyDict_Size(mp)
 }
 
 PyObject *
-PyDict_Keys(mp)
-	PyObject *mp;
+PyDict_Keys(PyObject *mp)
 {
 	if (mp == NULL || !PyDict_Check(mp)) {
 		PyErr_BadInternalCall();
@@ -783,8 +735,7 @@ PyDict_Keys(mp)
 }
 
 PyObject *
-PyDict_Values(mp)
-	PyObject *mp;
+PyDict_Values(PyObject *mp)
 {
 	if (mp == NULL || !PyDict_Check(mp)) {
 		PyErr_BadInternalCall();
@@ -794,8 +745,7 @@ PyDict_Values(mp)
 }
 
 PyObject *
-PyDict_Items(mp)
-	PyObject *mp;
+PyDict_Items(PyObject *mp)
 {
 	if (mp == NULL || !PyDict_Check(mp)) {
 		PyErr_BadInternalCall();
@@ -813,10 +763,7 @@ PyDict_Items(mp)
    pval argument.  No reference counts are incremented. */
 
 static PyObject *
-characterize(a, b, pval)
-	dictobject *a;
-	dictobject *b;
-	PyObject **pval;
+characterize(dictobject *a, dictobject *b, PyObject **pval)
 {
 	PyObject *diff = NULL;
 	int i;
@@ -843,8 +790,7 @@ characterize(a, b, pval)
 }
 
 static int
-dict_compare(a, b)
-	dictobject *a, *b;
+dict_compare(dictobject *a, dictobject *b)
 {
 	PyObject *adiff, *bdiff, *aval, *bval;
 	int res;
@@ -873,8 +819,7 @@ dict_compare(a, b)
 #else /* !NEWCMP */
 
 static int
-dict_compare(a, b)
-	dictobject *a, *b;
+dict_compare(dictobject *a, dictobject *b)
 {
 	PyObject *akeys, *bkeys;
 	int i, n, res;
@@ -952,9 +897,7 @@ dict_compare(a, b)
 #endif /* !NEWCMP */
 
 static PyObject *
-dict_has_key(mp, args)
-	register dictobject *mp;
-	PyObject *args;
+dict_has_key(register dictobject *mp, PyObject *args)
 {
 	PyObject *key;
 	long hash;
@@ -975,9 +918,7 @@ dict_has_key(mp, args)
 }
 
 static PyObject *
-dict_get(mp, args)
-	register dictobject *mp;
-	PyObject *args;
+dict_get(register dictobject *mp, PyObject *args)
 {
 	PyObject *key;
 	PyObject *failobj = Py_None;
@@ -1009,9 +950,7 @@ dict_get(mp, args)
 
 
 static PyObject *
-dict_clear(mp, args)
-	register dictobject *mp;
-	PyObject *args;
+dict_clear(register dictobject *mp, PyObject *args)
 {
 	if (!PyArg_NoArgs(args))
 		return NULL;
@@ -1058,9 +997,7 @@ static PyMethodDef mapp_methods[] = {
 };
 
 static PyObject *
-dict_getattr(mp, name)
-	dictobject *mp;
-	char *name;
+dict_getattr(dictobject *mp, char *name)
 {
 	return Py_FindMethod(mapp_methods, (PyObject *)mp, name);
 }
@@ -1095,9 +1032,7 @@ PyTypeObject PyDict_Type = {
 /* For backward compatibility with old dictionary interface */
 
 PyObject *
-PyDict_GetItemString(v, key)
-	PyObject *v;
-	char *key;
+PyDict_GetItemString(PyObject *v, char *key)
 {
 	PyObject *kv, *rv;
 	kv = PyString_FromString(key);
@@ -1109,10 +1044,7 @@ PyDict_GetItemString(v, key)
 }
 
 int
-PyDict_SetItemString(v, key, item)
-	PyObject *v;
-	char *key;
-	PyObject *item;
+PyDict_SetItemString(PyObject *v, char *key, PyObject *item)
 {
 	PyObject *kv;
 	int err;
@@ -1126,9 +1058,7 @@ PyDict_SetItemString(v, key, item)
 }
 
 int
-PyDict_DelItemString(v, key)
-	PyObject *v;
-	char *key;
+PyDict_DelItemString(PyObject *v, char *key)
 {
 	PyObject *kv;
 	int err;
