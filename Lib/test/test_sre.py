@@ -78,10 +78,12 @@ test(r"""sre.match(r'(a)|(b)', 'b').start(1)""", -1)
 test(r"""sre.match(r'(a)|(b)', 'b').end(1)""", -1)
 test(r"""sre.match(r'(a)|(b)', 'b').span(1)""", (-1, -1))
 
-# bug described in patch 527371
+# bug described in patches 527371/672491
 test(r"""sre.match(r'(a)?a','a').lastindex""", None)
 test(r"""sre.match(r'(a)(b)?b','ab').lastindex""", 1)
 test(r"""sre.match(r'(?P<a>a)(?P<b>b)?b','ab').lastgroup""", 'a')
+test(r"""sre.match("(?P<a>a(b))", "ab").lastgroup""", 'a')
+test(r"""sre.match("((a))", "a").lastindex""", 1)
 
 # bug 545855 -- This pattern failed to cause a compile error as it
 # should, instead provoking a TypeError.
