@@ -62,7 +62,7 @@ typedef long stwodigits; /* signed variant of twodigits */
 
 struct _longobject {
 	PyObject_HEAD
-	int ob_size; /* XXX Hack! newvarobj() stores it as unsigned! */
+	int ob_size;
 	digit ob_digit[1];
 };
 

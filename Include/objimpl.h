@@ -48,7 +48,7 @@ n * tp_itemsize.  This fills in the ob_size field as well.
 */
 
 extern PyObject *_PyObject_New Py_PROTO((PyTypeObject *));
-extern varobject *_PyObject_NewVar Py_PROTO((PyTypeObject *, unsigned int));
+extern varobject *_PyObject_NewVar Py_PROTO((PyTypeObject *, int));
 
 #define PyObject_NEW(type, typeobj) ((type *) _PyObject_New(typeobj))
 #define PyObject_NEW_VAR(type, typeobj, n) ((type *) _PyObject_NewVar(typeobj, n))
