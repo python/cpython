@@ -2164,8 +2164,8 @@ To mark the current `def', see `\\[py-mark-def-or-class]'."
 	     (zerop (current-column))
 	     (looking-at start-re))
 	(end-of-line))
-    (re-search-backward start-re nil 'move count)
-    (goto-char (match-beginning 0))))
+    (if (re-search-backward start-re nil 'move count)
+	(goto-char (match-beginning 0)))))
 
 ;; Backwards compatibility
 (defalias 'beginning-of-python-def-or-class 'py-beginning-of-def-or-class)
