@@ -633,7 +633,7 @@ open_exclusive(char *filename)
 #ifdef O_BINARY
 				|O_BINARY   /* necessary for Windows */
 #endif
-		
+
 			, 0666);
 	if (fd < 0)
 		return NULL;
@@ -830,13 +830,10 @@ extern FILE *PyWin_FindRegisteredModule(const char *, struct filedescr **,
 					char *, int);
 #endif
 
-#ifdef CHECK_IMPORT_CASE
-static int check_case(char *, int, int, char *);
-#endif
-
+static int case_ok(char *, int, int, char *);
 static int find_init_module(char *); /* Forward */
 
-#ifdef HAVE_DIRENT_H
+#if 0 /* XXX was #ifdef HAVE_DIRENT_H; resolve whether we really need this */
 
 static int MatchFilename(char *pathname, char *filename);
 
@@ -944,11 +941,11 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 			continue; /* v contains '\0' */
 #ifdef macintosh
 #ifdef INTERN_STRINGS
-		/* 
+		/*
 		** Speedup: each sys.path item is interned, and
 		** FindResourceModule remembers which items refer to
 		** folders (so we don't have to bother trying to look
-		** into them for resources). 
+		** into them for resources).
 		*/
 		PyString_InternInPlace(&PyList_GET_ITEM(path, i));
 		v = PyList_GET_ITEM(path, i);
@@ -956,13 +953,13 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 		if (PyMac_FindResourceModule((PyStringObject *)v, name, buf)) {
 			static struct filedescr resfiledescr =
 				{"", "", PY_RESOURCE};
-			
+
 			return &resfiledescr;
 		}
 		if (PyMac_FindCodeResourceModule((PyStringObject *)v, name, buf)) {
 			static struct filedescr resfiledescr =
 				{"", "", PY_CODERESOURCE};
-			
+
 			return &resfiledescr;
 		}
 #endif
@@ -974,18 +971,17 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 			buf[len++] = SEP;
 		strcpy(buf+len, name);
 		len += namelen;
+
+		/* Check for package import (buf holds a directory name,
+		   and there's an __init__ module in that directory */
 #ifdef HAVE_STAT
-		if (stat(buf, &statbuf) == 0) {
-			if (S_ISDIR(statbuf.st_mode)) {
-				if (find_init_module(buf)) {
-#ifdef CHECK_IMPORT_CASE
-					if (!check_case(buf, len, namelen,
-							name))
-						return NULL;
-#endif
-					return &fd_package;
-				}
-			}
+		if (stat(buf, &statbuf) == 0 &&
+		    S_ISDIR(statbuf.st_mode) &&
+		    find_init_module(buf)) {
+			if (case_ok(buf, len, namelen, name))
+				return &fd_package;
+			else
+				return NULL;
 		}
 #else
 		/* XXX How are you going to test for directories? */
@@ -1000,27 +996,14 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 			if (Py_VerboseFlag > 1)
 				PySys_WriteStderr("# trying %s\n", buf);
 			fp = fopen(buf, fdp->mode);
-#ifdef HAVE_DIRENT_H
-
-		        if (fp != NULL) {  /* check case */
-				char *curpath = PyString_AsString(v);
-				char *nstart = buf + strlen(curpath);
-				if (*nstart == SEP)
-					nstart++; 
-				if (MatchFilename(curpath, nstart)) {
-					break;      /* Found */
+			if (fp != NULL) {
+				if (case_ok(buf, len, namelen, name))
+					break;
+				else {	 /* continue search */
+					fclose(fp);
+					fp = NULL;
 				}
-				fclose(fp); /* No. Close & continue search */
-				fp = NULL;
-				if (Py_VerboseFlag > 1)
-					PySys_WriteStderr(
-					      "# case mismatch for %s:  %s\n", 
-					      name, buf);
 			}
-#else  /* !HAVE_DIRENT_H */
-			if (fp != NULL)
-				break;
-#endif /* HAVE_DIRENT_H */
 		}
 #endif /* !macintosh */
 		if (fp != NULL)
@@ -1031,62 +1014,62 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 			     "No module named %.200s", name);
 		return NULL;
 	}
-#ifdef CHECK_IMPORT_CASE
-	if (!check_case(buf, len, namelen, name)) {
-		fclose(fp);
-		return NULL;
-	}
-#endif
-
 	*p_fp = fp;
 	return fdp;
 }
 
-#ifdef CHECK_IMPORT_CASE
+/* case_ok(buf, len, namelen, name)
+ * We've already done a successful stat() or fopen() on buf (a path of length
+ * len; can not assume there's a trailing null).  name is the last component
+ * of then path (a string of length namelen, exclusive of trailing null).
+ * case_ok() is to return 1 if there's a case-sensitive match for
+ * name, else 0.  case_ok() is also to return 1 if envar PYTHONCASEOK
+ * exists.
+ * case_ok() is used to implement case-sensitive import semantics even
+ * on platforms with case-insensitive filesystems.  It's trivial to implement
+ * for case-sensitive filesystems.  It's pretty much a cross-platform
+ * nightmare for systems with case-insensitive filesystems.
+ */
 
+/* First we may need a pile of platform-specific header files; the sequence
+ * of #if's here should match the sequence in the body of case_ok().
+ */
 #if defined(MS_WIN32) || defined(__CYGWIN__)
 #include <windows.h>
 #include <ctype.h>
-
-static int
-allcaps8x3(char *s)
-{
-	/* Return 1 if s is an 8.3 filename in ALLCAPS */
-	char c;
-	char *dot = strchr(s, '.');
-	char *end = strchr(s, '\0');
-	if (dot != NULL) {
-		if (dot-s > 8)
-			return 0; /* More than 8 before '.' */
-		if (end-dot > 4)
-			return 0; /* More than 3 after '.' */
-		end = strchr(dot+1, '.');
-		if (end != NULL)
-			return 0; /* More than one dot  */
-	}
-	else if (end-s > 8)
-		return 0; /* More than 8 and no dot */
-	while ((c = *s++)) {
-		if (islower(c))
-			return 0;
-	}
-	return 1;
-}
-
 #ifdef __CYGWIN__
 #include <sys/cygwin.h>
 #endif
 
+#elif defined(DJGPP)
+#include <dir.h>
+
+#elif defined(macintosh)
+#include <TextUtils.h>
+#ifdef USE_GUSI1
+#include "TFileSpec.h"		/* for Path2FSSpec() */
+#endif
+
+#endif
+
 static int
-check_case(char *buf, int len, int namelen, char *name)
+case_ok(char *buf, int len, int namelen, char *name)
 {
+/* Pick a platform-specific implementation; the sequence of #if's here should
+ * match the sequence just above.
+ */
+
+/* MS_WIN32 || __CYGWIN__ */
+#if defined(MS_WIN32) || defined(__CYGWIN__)
 	WIN32_FIND_DATA data;
 	HANDLE h;
 #ifdef __CYGWIN__
 	char tempbuf[MAX_PATH];
 #endif
+
 	if (getenv("PYTHONCASEOK") != NULL)
 		return 1;
+
 #ifdef __CYGWIN__
 	cygwin32_conv_to_win32_path(buf, tempbuf);
 	h = FindFirstFile(tempbuf, &data);
@@ -1100,35 +1083,33 @@ check_case(char *buf, int len, int namelen, char *name)
 		return 0;
 	}
 	FindClose(h);
-	if (allcaps8x3(data.cFileName)) {
-		/* Skip the test if the filename is ALL.CAPS.  This can
-		   happen in certain circumstances beyond our control,
-		   e.g. when software is installed under NT on a FAT
-		   filesystem and then the same FAT filesystem is used
-		   under Windows 95. */
+	return strncmp(data.cFileName, name, namelen) == 0;
+
+/* DJGPP */
+#elif defined(DJGPP)
+	struct ffblk ffblk;
+	int done;
+
+	if (getenv("PYTHONCASEOK") != NULL)
 		return 1;
-	}
-	if (strncmp(data.cFileName, name, namelen) != 0) {
-		strcpy(buf+len-namelen, data.cFileName);
+
+	done = findfirst(buf, &ffblk, FA_ARCH|FA_RDONLY|FA_HIDDEN|FA_DIREC);
+	if (done) {
 		PyErr_Format(PyExc_NameError,
-		  "Case mismatch for module name %.100s\n(filename %.300s)",
+		  "Can't find file for module %.100s\n(filename %.300s)",
 		  name, buf);
 		return 0;
 	}
-	return 1;
-}
-#endif /* MS_WIN32 */
+	return strncmp(ffblk.ff_name, name, namelen) == 0;
 
-#ifdef macintosh
-#include <TextUtils.h>
-#ifdef USE_GUSI1
-#include "TFileSpec.h"		/* for Path2FSSpec() */
-#endif
-static int
-check_case(char *buf, int len, int namelen, char *name)
-{
+/* macintosh */
+#elif defined(macintosh)
 	FSSpec fss;
 	OSErr err;
+
+	if (getenv("PYTHONCASEOK") != NULL)
+		return 1;
+
 #ifndef USE_GUSI1
 	err = FSMakeFSSpec(0, 0, Pstring(buf), &fss);
 #else
@@ -1154,48 +1135,16 @@ check_case(char *buf, int len, int namelen, char *name)
 		     name, buf);
 		return 0;
 	}
-	if (namelen > fss.name[0] ||
-	    strncmp(name, (char *)fss.name+1, namelen) != 0) {
-		PyErr_Format(PyExc_NameError,
-		     "Case mismatch for module name %.100s\n(filename %.300s)",
-		     name, fss.name);
-		return 0;
-	}
+	return fss.name[0] >= namelen &&
+	       strncmp(name, (char *)fss.name+1, namelen) == 0;
+
+/* assuming it's a case-sensitive filesystem, so there's nothing to do! */
+#else
 	return 1;
-}
-#endif /* macintosh */
 
-#ifdef DJGPP
-#include <dir.h>
-
-static int
-check_case(char *buf, int len, int namelen, char *name)
-{
-	struct ffblk ffblk;
-	int done;
-
-	if (getenv("PYTHONCASEOK") != NULL)
-		return 1;
-	done = findfirst(buf, &ffblk, FA_ARCH|FA_RDONLY|FA_HIDDEN|FA_DIREC);
-	if (done) {
-		PyErr_Format(PyExc_NameError,
-		  "Can't find file for module %.100s\n(filename %.300s)",
-		  name, buf);
-		return 0;
-	}
-
-	if (strncmp(ffblk.ff_name, name, namelen) != 0) {
-		strcpy(buf+len-namelen, ffblk.ff_name);
-		PyErr_Format(PyExc_NameError,
-		  "Case mismatch for module name %.100s\n(filename %.300s)",
-		  name, buf);
-		return 0;
-	}
-	return 1;
-}
 #endif
+}
 
-#endif /* CHECK_IMPORT_CASE */
 
 #ifdef HAVE_STAT
 /* Helper to look for __init__.py or __init__.py[co] in potential package */
@@ -1754,7 +1703,7 @@ import_submodule(PyObject *mod, char *subname, char *fullname)
 	   else: mod.__name__ + "." + subname == fullname
 	*/
 
-	if ((m = PyDict_GetItemString(modules, fullname)) != NULL) { 
+	if ((m = PyDict_GetItemString(modules, fullname)) != NULL) {
 		Py_INCREF(m);
 	}
 	else {
@@ -1929,7 +1878,7 @@ PyImport_Import(PyObject *module_name)
 	Py_XDECREF(globals);
 	Py_XDECREF(builtins);
 	Py_XDECREF(import);
- 
+
 	return r;
 }
 
@@ -2006,7 +1955,7 @@ call_find_module(char *name, PyObject *path)
 	else {
 		fob = Py_None;
 		Py_INCREF(fob);
-	}		
+	}
 	ret = Py_BuildValue("Os(ssi)",
 		      fob, pathname, fdp->suffix, fdp->mode, fdp->type);
 	Py_DECREF(fob);
