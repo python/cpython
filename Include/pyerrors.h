@@ -138,8 +138,10 @@ PyAPI_FUNC(void) PyErr_SetInterrupt(void);
 PyAPI_FUNC(void) PyErr_SyntaxLocation(char *, int);
 PyAPI_FUNC(PyObject *) PyErr_ProgramText(char *, int);
 
+#ifdef Py_USING_UNICODE
 /* The following functions are used to create and modify unicode
    exceptions from C */
+
 /* create a UnicodeDecodeError object */
 PyAPI_FUNC(PyObject *) PyUnicodeDecodeError_Create(
 	const char *, const char *, int, int, int, const char *);
@@ -198,6 +200,7 @@ PyAPI_FUNC(int) PyUnicodeDecodeError_SetReason(
 	PyObject *, const char *);
 PyAPI_FUNC(int) PyUnicodeTranslateError_SetReason(
 	PyObject *, const char *);
+#endif
 
 
 /* These APIs aren't really part of the error implementation, but

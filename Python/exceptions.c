@@ -892,6 +892,7 @@ static PyMethodDef KeyError_methods[] = {
 };
 
 
+#ifdef Py_USING_UNICODE
 static
 int get_int(PyObject *exc, const char *name, int *value)
 {
@@ -1469,6 +1470,7 @@ PyObject * PyUnicodeTranslateError_Create(
     return PyObject_CallFunction(PyExc_UnicodeTranslateError, "u#iis",
 	object, length, start, end, reason);
 }
+#endif
 
 
 
@@ -1496,11 +1498,13 @@ PyDoc_STRVAR(ValueError__doc__,
 
 PyDoc_STRVAR(UnicodeError__doc__, "Unicode related error.");
 
+#ifdef Py_USING_UNICODE
 PyDoc_STRVAR(UnicodeEncodeError__doc__, "Unicode encoding error.");
 
 PyDoc_STRVAR(UnicodeDecodeError__doc__, "Unicode decoding error.");
 
 PyDoc_STRVAR(UnicodeTranslateError__doc__, "Unicode translation error.");
+#endif
 
 PyDoc_STRVAR(SystemError__doc__,
 "Internal error in the Python interpreter.\n\
@@ -1675,12 +1679,14 @@ static struct {
   FloatingPointError__doc__},
  {"ValueError",   &PyExc_ValueError,  0, ValueError__doc__},
  {"UnicodeError", &PyExc_UnicodeError, &PyExc_ValueError, UnicodeError__doc__},
+#ifdef Py_USING_UNICODE
  {"UnicodeEncodeError", &PyExc_UnicodeEncodeError, &PyExc_UnicodeError,
   UnicodeEncodeError__doc__, UnicodeEncodeError_methods},
  {"UnicodeDecodeError", &PyExc_UnicodeDecodeError, &PyExc_UnicodeError,
   UnicodeDecodeError__doc__, UnicodeDecodeError_methods},
  {"UnicodeTranslateError", &PyExc_UnicodeTranslateError, &PyExc_UnicodeError,
   UnicodeTranslateError__doc__, UnicodeTranslateError_methods},
+#endif
  {"ReferenceError",  &PyExc_ReferenceError, 0, ReferenceError__doc__},
  {"SystemError",  &PyExc_SystemError, 0, SystemError__doc__},
  {"MemoryError",  &PyExc_MemoryError, 0, MemoryError__doc__},
