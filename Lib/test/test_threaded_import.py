@@ -6,6 +6,7 @@
 # randrange, and then Python hangs.
 
 import thread
+from test_support import verbose
 
 critical_section = thread.allocate_lock()
 done = thread.allocate_lock()
@@ -20,33 +21,26 @@ def task():
         done.release()
     critical_section.release()
 
-# Tricky, tricky, tricky.
-# When regrtest imports this module, the thread running regrtest grabs the
-# import lock and won't let go of it until this module returns.  All other
-# threads attempting an import hang for the duration.  So we have to spawn
-# a thread to run the test and return to regrtest.py right away, else the
-# test can't make progress.
-#
-# One miserable consequence:  This test can't wait to make sure all the
-# threads complete!
-#
-# Another:  If this test fails, the output may show up while running
-# some other test.
-#
-# Another:  If you run this test directly, the OS will probably kill
-# all the threads right away, because the program exits immediately
-# after spawning a thread to run the real test.
-#
-# Another:  If this test ever does fail and you attempt to run it by
-# itself via regrtest, the same applies:  regrtest will get out so fast
-# the OS will kill all the threads here.
+# Tricky:  When regrtest imports this module, the thread running regrtest
+# grabs the import lock and won't let go of it until this module returns.
+# All other threads attempting an import hang for the duration.  Since
+# this test spawns threads that do little *but* import, we can't do that
+# successfully until after this module finishes importing and regrtest
+# regains control.  To make this work, a special case was added to
+# regrtest to invoke a module's "test_main" function (if any) after
+# importing it.
 
-def run_the_test():
+def test_main():        # magic name!  see above
     global N, done
     done.acquire()
-    for N in [1, 2, 3, 4, 20, 4, 3, 2]:
+    for N in (20, 50) * 3:
+        if verbose:
+            print "Trying", N, "threads ...",
         for i in range(N):
             thread.start_new_thread(task, ())
         done.acquire()
+        if verbose:
+            print "OK."
 
-thread.start_new_thread(run_the_test, ())
+if __name__ == "__main__":
+    test_main()
