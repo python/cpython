@@ -380,11 +380,11 @@ class PimpPackage:
         return self._dict[key]
         
     def name(self): return self._dict['Name']
-    def version(self): return self._dict['Version']
-    def flavor(self): return self._dict['Flavor']
+    def version(self): return self._dict.get('Version')
+    def flavor(self): return self._dict.get('Flavor')
     def description(self): return self._dict['Description']
     def homepage(self): return self._dict.get('Home-page')
-    def downloadURL(self): return self._dict['Download-URL']
+    def downloadURL(self): return self._dict.get('Download-URL')
     
     def fullname(self):
         """Return the full name "name-version-flavor" of a package.
