@@ -84,7 +84,6 @@ def ISEOF(x):
 
 def main():
     import re
-    import string
     import sys
     args = sys.argv[1:]
     inFileName = args and args[0] or "Include/token.h"
