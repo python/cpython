@@ -850,7 +850,8 @@ or by code that needs to save and restore the error indicator
 temporarily.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{void}{PyErr_Restore}{PyObject *type, PyObject *value, PyObject *traceback}
+\begin{cfuncdesc}{void}{PyErr_Restore}{PyObject *type, PyObject *value,
+                                       PyObject *traceback}
 Set  the error indicator from the three objects.  If the error
 indicator is already set, it is cleared first.  If the objects are
 \NULL{}, the error indicator is cleared.  Do not pass a \NULL{} type
@@ -858,7 +859,7 @@ and non-\NULL{} value or traceback.  The exception type should be a
 string or class; if it is a class, the value should be an instance of
 that class.  Do not pass an invalid exception type or value.
 (Violating these rules will cause subtle problems later.)  This call
-takes away a reference to each object, i.e. you must own a reference
+takes away a reference to each object, i.e.\ you must own a reference
 to each object before the call and after the call you no longer own
 these references.  (If you don't understand this, don't use this
 function.  I warned you.)  \strong{Note:}  This function is normally
@@ -1060,6 +1061,15 @@ Function to update some internal state after a process fork; this
 should be called in the new process if the Python interpreter will
 continue to be used.  If a new executable is loaded into the new
 process, this function does not need to be called.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyOS_CheckStack}{}
+Return true when the interpreter runs out of stack space.  This is a
+reliable check, but is only available when \code{USE_STACKCHECK} is
+defined (currently on Windows using the Microsoft Visual C++ compiler
+and on the Macintosh).  \code{USE_CHECKSTACK} will be defined
+automatically; you should never change the definition in your own
+code.
 \end{cfuncdesc}
 
 
