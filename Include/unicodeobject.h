@@ -358,7 +358,7 @@ extern DL_IMPORT(PyObject*) PyUnicode_EncodeUTF8(
 
 /* --- UTF-16 Codecs ------------------------------------------------------ */
 
-/* Decodes length bytes from a UTF-16 encoded buffer string and return
+/* Decodes length bytes from a UTF-16 encoded buffer string and returns
    the corresponding Unicode object.
 
    errors (if non-NULL) defines the error handling. It defaults
@@ -397,7 +397,7 @@ extern DL_IMPORT(PyObject*) PyUnicode_AsUTF16String(
     );
 
 /* Returns a Python string object holding the UTF-16 encoded value of
-   the Unicode data in s.
+   the Unicode data.
 
    If byteorder is not 0, output is written according to the following
    byte order:
@@ -586,6 +586,37 @@ extern DL_IMPORT(PyObject*) PyUnicode_EncodeMBCS(
     );
 
 #endif /* MS_WIN32 */
+
+/* --- Decimal Encoder ---------------------------------------------------- */
+
+/* Takes a Unicode string holding a decimal value and writes it into
+   an output buffer using standard ASCII digit codes.
+
+   The output buffer has to provide at least length+1 bytes of storage
+   area. The output string is 0-terminated.
+
+   The encoder converts whitespace to ' ', decimal characters to their
+   corresponding ASCII digit and all other Latin-1 characters except
+   \0 as-is. Characters outside this range (Unicode ordinals 1-256)
+   are treated as errors. This includes embedded NULL bytes.
+
+   Error handling is defined by the errors argument:
+
+      NULL or "strict": raise a ValueError
+      "ignore": ignore the wrong characters (these are not copied to the
+		output buffer)
+      "replace": replaces illegal characters with '?'
+
+   Returns 0 on success, -1 on failure.
+
+*/
+
+extern DL_IMPORT(int) PyUnicode_EncodeDecimal(
+    Py_UNICODE *s,		/* Unicode buffer */
+    int length,			/* Number of Py_UNICODE chars to encode */
+    char *output,		/* Output buffer; must have size >= length */
+    const char *errors		/* error handling */
+    );
 
 /* --- Methods & Slots ----------------------------------------------------
 

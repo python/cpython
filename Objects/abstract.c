@@ -726,6 +726,27 @@ PyNumber_Absolute(o)
 	return type_error("bad operand type for abs()");
 }
 
+/* Add a check for embedded NULL-bytes in the argument. */
+static PyObject *
+int_from_string(s, len)
+	const char *s;
+	int len;
+{
+	char *end;
+	PyObject *x;
+
+	x = PyInt_FromString((char*)s, &end, 10);
+	if (x == NULL)
+		return NULL;
+	if (end != s + len) {
+		PyErr_SetString(PyExc_ValueError,
+				"null byte in argument for int()");
+		Py_DECREF(x);
+		return NULL;
+	}
+	return x;
+}
+
 PyObject *
 PyNumber_Int(o)
 	PyObject *o;
@@ -736,69 +757,42 @@ PyNumber_Int(o)
 
 	if (o == NULL)
 		return null_error();
+	if (PyInt_Check(o)) {
+		Py_INCREF(o);
+		return o;
+	}
 	if (PyString_Check(o))
-		return PyInt_FromString(PyString_AS_STRING(o), NULL, 10);
+		return int_from_string(PyString_AS_STRING(o), 
+				       PyString_GET_SIZE(o));
+	if (PyUnicode_Check(o))
+		return PyInt_FromUnicode(PyUnicode_AS_UNICODE(o),
+					 PyUnicode_GET_SIZE(o),
+					 10);
 	m = o->ob_type->tp_as_number;
 	if (m && m->nb_int)
 		return m->nb_int(o);
 	if (!PyObject_AsCharBuffer(o, &buffer, &buffer_len))
-		return PyInt_FromString((char*)buffer, NULL, 10);
+		return int_from_string((char*)buffer, buffer_len);
 
 	return type_error("object can't be converted to int");
 }
 
-/* There are two C API functions for converting a string to a long,
- * PyNumber_Long() and PyLong_FromString().  Both are used in builtin_long, 
- * reachable from Python with the built-in function long().
- *
- * The difference is this: PyNumber_Long will raise an exception when the
- * string cannot be converted to a long.  The most common situation is
- * where a float string is passed in; this raises a ValueError.
- * PyLong_FromString does not raise an exception; it silently truncates the 
- * float to an integer.
- *
- * You can see the different behavior from Python with the following:
- *
- * long('9.5')
- * => ValueError: invalid literal for long(): 9.5
- *
- * long('9.5', 10)
- * => 9L
- *
- * The first example ends up calling PyNumber_Long(), while the second one
- * calls PyLong_FromString().
- */
+/* Add a check for embedded NULL-bytes in the argument. */
 static PyObject *
 long_from_string(s, len)
 	const char *s;
 	int len;
 {
-	const char *start;
 	char *end;
 	PyObject *x;
-	char buffer[256]; /* For errors */
 
-	start = s;
-	while (*s && isspace(Py_CHARMASK(*s)))
-		s++;
 	x = PyLong_FromString((char*)s, &end, 10);
-	if (x == NULL) {
-		if (PyErr_ExceptionMatches(PyExc_ValueError))
-			goto bad;
+	if (x == NULL)
 		return NULL;
-	}
-	while (*end && isspace(Py_CHARMASK(*end)))
-		end++;
-	if (*end != '\0') {
-  bad:
-		sprintf(buffer, "invalid literal for long(): %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		Py_XDECREF(x);
-		return NULL;
-	}
-	else if (end != start + len) {
+	if (end != s + len) {
 		PyErr_SetString(PyExc_ValueError,
 				"null byte in argument for long()");
+		Py_DECREF(x);
 		return NULL;
 	}
 	return x;
@@ -814,6 +808,10 @@ PyNumber_Long(o)
 
 	if (o == NULL)
 		return null_error();
+	if (PyLong_Check(o)) {
+		Py_INCREF(o);
+		return o;
+	}
 	if (PyString_Check(o))
 		/* need to do extra error checking that PyLong_FromString() 
 		 * doesn't do.  In particular long('9.5') must raise an
@@ -821,6 +819,11 @@ PyNumber_Long(o)
 		 */
 		return long_from_string(PyString_AS_STRING(o),
 					PyString_GET_SIZE(o));
+	if (PyUnicode_Check(o))
+		/* The above check is done in PyLong_FromUnicode(). */
+		return PyLong_FromUnicode(PyUnicode_AS_UNICODE(o),
+					  PyUnicode_GET_SIZE(o),
+					  10);
 	m = o->ob_type->tp_as_number;
 	if (m && m->nb_long)
 		return m->nb_long(o);
@@ -838,6 +841,10 @@ PyNumber_Float(o)
 
 	if (o == NULL)
 		return null_error();
+	if (PyFloat_Check(o)) {
+		Py_INCREF(o);
+		return o;
+	}
 	if (!PyString_Check(o)) {
 		m = o->ob_type->tp_as_number;
 		if (m && m->nb_float)

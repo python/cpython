@@ -196,14 +196,11 @@ def atof(s):
     Return the floating point number represented by the string s.
 
     """
-    if type(s) == _StringType:
-        return _float(s)
-    else:
-        raise TypeError('argument 1: expected string, %s found' %
-                        type(s).__name__)
+    return _float(s)
+
 
 # Convert string to integer
-def atoi(*args):
+def atoi(s , base=10):
     """atoi(s [,base]) -> int
 
     Return the integer represented by the string s in the given
@@ -214,23 +211,11 @@ def atoi(*args):
     accepted.
 
     """
-    try:
-        s = args[0]
-    except IndexError:
-        raise TypeError('function requires at least 1 argument: %d given' %
-                        len(args))
-    # Don't catch type error resulting from too many arguments to int().  The
-    # error message isn't compatible but the error type is, and this function
-    # is complicated enough already.
-    if type(s) == _StringType:
-        return _apply(_int, args)
-    else:
-        raise TypeError('argument 1: expected string, %s found' %
-                        type(s).__name__)
+    return _int(s, base)
 
 
 # Convert string to long integer
-def atol(*args):
+def atol(s, base=10):
     """atol(s [,base]) -> long
 
     Return the long integer represented by the string s in the
@@ -242,19 +227,7 @@ def atol(*args):
     unless base is 0.
 
     """
-    try:
-        s = args[0]
-    except IndexError:
-        raise TypeError('function requires at least 1 argument: %d given' %
-                        len(args))
-    # Don't catch type error resulting from too many arguments to long().  The
-    # error message isn't compatible but the error type is, and this function
-    # is complicated enough already.
-    if type(s) == _StringType:
-        return _apply(_long, args)
-    else:
-        raise TypeError('argument 1: expected string, %s found' %
-                        type(s).__name__)
+    return _long(s, base)
 
 
 # Left-justify a string

@@ -724,7 +724,7 @@ PyLong_FromString(str, pend, base)
 	int base;
 {
 	int sign = 1;
-	char *start;
+	char *start, *orig_str = str;
 	PyLongObject *z;
 	
 	if ((base != 0 && base < 2) || base > 36) {
@@ -772,17 +772,44 @@ PyLong_FromString(str, pend, base)
 	}
 	if (z == NULL)
 		return NULL;
-	if (str == start) {
-		PyErr_SetString(PyExc_ValueError,
-				"no digits in long int constant");
-		Py_DECREF(z);
-		return NULL;
-	}
+	if (str == start)
+		goto onError;
 	if (sign < 0 && z != NULL && z->ob_size != 0)
 		z->ob_size = -(z->ob_size);
+	if (*str == 'L' || *str == 'l')
+		str++;
+	while (*str && isspace(Py_CHARMASK(*str)))
+		str++;
+	if (*str != '\0')
+		goto onError;
 	if (pend)
 		*pend = str;
 	return (PyObject *) z;
+
+ onError:
+	PyErr_Format(PyExc_ValueError, 
+		     "invalid literal for long(): %.200s", orig_str);
+	Py_XDECREF(z);
+	return NULL;
+}
+
+PyObject *
+PyLong_FromUnicode(u, length, base)
+	Py_UNICODE *u;
+	int length;
+	int base;
+{
+	char buffer[256];
+
+	if (length >= sizeof(buffer)) {
+		PyErr_SetString(PyExc_ValueError,
+				"long() literal too large to convert");
+		return NULL;
+	}
+	if (PyUnicode_EncodeDecimal(u, length, buffer, NULL))
+		return NULL;
+
+	return PyLong_FromString(buffer, NULL, base);
 }
 
 static PyLongObject *x_divrem

@@ -221,15 +221,23 @@ test('translate', u"abababc", u'iiix', {ord('a'):None, ord('b'):ord('i'), ord('c
 
 # Contains:
 print 'Testing Unicode contains method...',
-assert ('a' in 'abdb') == 1
-assert ('a' in 'bdab') == 1
-assert ('a' in 'bdaba') == 1
-assert ('a' in 'bdba') == 1
+assert ('a' in u'abdb') == 1
+assert ('a' in u'bdab') == 1
+assert ('a' in u'bdaba') == 1
+assert ('a' in u'bdba') == 1
 assert ('a' in u'bdba') == 1
 assert (u'a' in u'bdba') == 1
 assert (u'a' in u'bdb') == 0
 assert (u'a' in 'bdb') == 0
 assert (u'a' in 'bdba') == 1
+assert (u'a' in ('a',1,None)) == 1
+assert (u'a' in (1,None,'a')) == 1
+assert (u'a' in (1,None,u'a')) == 1
+assert ('a' in ('a',1,None)) == 1
+assert ('a' in (1,None,'a')) == 1
+assert ('a' in (1,None,u'a')) == 1
+assert ('a' in ('x',1,u'y')) == 0
+assert ('a' in ('x',1,None)) == 0
 print 'done.'
 
 # Formatting:
@@ -270,11 +278,88 @@ for encoding in ('utf-8', 'utf-16', 'utf-16-le', 'utf-16-be',
     assert unicode(u.encode(encoding),encoding) == u
 
 u = u''.join(map(unichr, range(256)))
-for encoding in ('latin-1',):
-    assert unicode(u.encode(encoding),encoding) == u
+for encoding in (
+    'latin-1',
+    ):
+    try:
+        assert unicode(u.encode(encoding),encoding) == u
+    except AssertionError:
+        print '*** codec "%s" failed round-trip' % encoding
+    except ValueError,why:
+        print '*** codec for "%s" failed: %s' % (encoding, why)
 
 u = u''.join(map(unichr, range(128)))
-for encoding in ('ascii',):
-    assert unicode(u.encode(encoding),encoding) == u
+for encoding in (
+    'ascii',
+    ):
+    try:
+        assert unicode(u.encode(encoding),encoding) == u
+    except AssertionError:
+        print '*** codec "%s" failed round-trip' % encoding
+    except ValueError,why:
+        print '*** codec for "%s" failed: %s' % (encoding, why)
+
+print 'done.'
+
+print 'Testing standard mapping codecs...',
+
+print '0-127...',
+s = ''.join(map(chr, range(128)))
+for encoding in (
+    'cp037', 'cp1026',
+    'cp437', 'cp500', 'cp737', 'cp775', 'cp850',
+    'cp852', 'cp855', 'cp860', 'cp861', 'cp862',
+    'cp863', 'cp865', 'cp866', 
+    'iso8859_10', 'iso8859_13', 'iso8859_14', 'iso8859_15',
+    'iso8859_2', 'iso8859_3', 'iso8859_4', 'iso8859_5', 'iso8859_6',
+    'iso8859_7', 'iso8859_9', 'koi8_r', 'latin_1',
+    'mac_cyrillic', 'mac_latin2',
+
+    'cp1250', 'cp1251', 'cp1252', 'cp1253', 'cp1254', 'cp1255',
+    'cp1256', 'cp1257', 'cp1258',
+    'cp856', 'cp857', 'cp864', 'cp869', 'cp874',
+
+    'mac_greek', 'mac_iceland','mac_roman', 'mac_turkish',
+    'cp1006', 'cp875', 'iso8859_8',
+    
+    ### These have undefined mappings:
+    #'cp424',
+    
+    ):
+    try:
+        assert unicode(s,encoding).encode(encoding) == s
+    except AssertionError:
+        print '*** codec "%s" failed round-trip' % encoding
+    except ValueError,why:
+        print '*** codec for "%s" failed: %s' % (encoding, why)
+
+print '128-255...',
+s = ''.join(map(chr, range(128,256)))
+for encoding in (
+    'cp037', 'cp1026',
+    'cp437', 'cp500', 'cp737', 'cp775', 'cp850',
+    'cp852', 'cp855', 'cp860', 'cp861', 'cp862',
+    'cp863', 'cp865', 'cp866', 
+    'iso8859_10', 'iso8859_13', 'iso8859_14', 'iso8859_15',
+    'iso8859_2', 'iso8859_3', 'iso8859_4', 'iso8859_5', 'iso8859_6',
+    'iso8859_7', 'iso8859_9', 'koi8_r', 'latin_1',
+    'mac_cyrillic', 'mac_latin2',
+    
+    ### These have undefined mappings:
+    #'cp1250', 'cp1251', 'cp1252', 'cp1253', 'cp1254', 'cp1255',
+    #'cp1256', 'cp1257', 'cp1258',
+    #'cp424', 'cp856', 'cp857', 'cp864', 'cp869', 'cp874',
+    #'mac_greek', 'mac_iceland','mac_roman', 'mac_turkish',
+    
+    ### These fail the round-trip:
+    #'cp1006', 'cp875', 'iso8859_8',
+    
+    ):
+    try:
+        assert unicode(s,encoding).encode(encoding) == s
+    except AssertionError:
+        print '*** codec "%s" failed round-trip' % encoding
+    except ValueError,why:
+        print '*** codec for "%s" failed: %s' % (encoding, why)
 
 print 'done.'

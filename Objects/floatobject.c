@@ -164,6 +164,22 @@ PyFloat_FromString(v, pend)
 		s = PyString_AS_STRING(v);
 		len = PyString_GET_SIZE(v);
 	}
+	else if (PyUnicode_Check(v)) {
+		char s_buffer[256];
+
+		if (PyUnicode_GET_SIZE(v) >= sizeof(s_buffer)) {
+			PyErr_SetString(PyExc_ValueError,
+				 "float() literal too large to convert");
+			return NULL;
+		}
+		if (PyUnicode_EncodeDecimal(PyUnicode_AS_UNICODE(v), 
+					    PyUnicode_GET_SIZE(v),
+					    s_buffer, 
+					    NULL))
+			return NULL;
+		s = s_buffer;
+		len = strlen(s);
+	}
 	else if (PyObject_AsCharBuffer(v, &s, &len)) {
 		PyErr_SetString(PyExc_TypeError,
 				"float() needs a string argument");

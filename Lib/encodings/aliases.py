@@ -54,4 +54,7 @@ aliases = {
     'macroman': 'mac_roman',
     'macturkish': 'mac_turkish',
 
+    # MBCS
+    'dbcs': 'mbcs',
+
 }

@@ -449,17 +449,44 @@ complex_from_string(v)
 	PyObject *v;
 {
 	extern double strtod Py_PROTO((const char *, char **));
-	char *s, *start, *end;
+	const char *s, *start;
+	char *end;
 	double x=0.0, y=0.0, z;
 	int got_re=0, got_im=0, done=0;
 	int digit_or_dot;
 	int sw_error=0;
 	int sign;
 	char buffer[256]; /* For errors */
+	int len;
 
-	start = s = PyString_AS_STRING(v);
+	if (PyString_Check(v)) {
+		s = PyString_AS_STRING(v);
+		len = PyString_GET_SIZE(v);
+	}
+	else if (PyUnicode_Check(v)) {
+		char s_buffer[256];
+
+		if (PyUnicode_GET_SIZE(v) >= sizeof(s_buffer)) {
+			PyErr_SetString(PyExc_ValueError,
+				 "complex() literal too large to convert");
+			return NULL;
+		}
+		if (PyUnicode_EncodeDecimal(PyUnicode_AS_UNICODE(v), 
+					    PyUnicode_GET_SIZE(v),
+					    s_buffer, 
+					    NULL))
+			return NULL;
+		s = s_buffer;
+		len = strlen(s);
+	}
+	else if (PyObject_AsCharBuffer(v, &s, &len)) {
+		PyErr_SetString(PyExc_TypeError,
+				"complex() needs a string first argument");
+		return NULL;
+	}
 
 	/* position on first nonblank */
+	start = s;
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
 	if (s[0] == '\0') {
@@ -475,7 +502,7 @@ complex_from_string(v)
 		switch (*s) {
 
 		case '\0':
-			if (s-start != PyString_GET_SIZE(v)) {
+			if (s-start != len) {
 				PyErr_SetString(
 					PyExc_ValueError,
 					"null byte in argument for complex()");
@@ -584,7 +611,7 @@ builtin_complex(self, args)
 	i = NULL;
 	if (!PyArg_ParseTuple(args, "O|O:complex", &r, &i))
 		return NULL;
-	if (PyString_Check(r))
+	if (PyString_Check(r) || PyUnicode_Check(r))
 		return complex_from_string(r);
 	if ((nbr = r->ob_type->tp_as_number) == NULL ||
 	    nbr->nb_float == NULL ||
@@ -1289,12 +1316,17 @@ builtin_int(self, args)
 		return NULL;
 	if (base == -909)
 		return PyNumber_Int(v);
-	else if (!PyString_Check(v)) {
+	else if (PyString_Check(v))
+		return PyInt_FromString(PyString_AS_STRING(v), NULL, base);
+	else if (PyUnicode_Check(v))
+		return PyInt_FromUnicode(PyUnicode_AS_UNICODE(v),
+					 PyUnicode_GET_SIZE(v),
+					 base);
+	else {
 		PyErr_SetString(PyExc_TypeError,
 				"can't convert non-string with explicit base");
 		return NULL;
 	}
-	return PyInt_FromString(PyString_AS_STRING(v), NULL, base);
 }
 
 static char int_doc[] =
@@ -1319,12 +1351,17 @@ builtin_long(self, args)
 		return NULL;
 	if (base == -909)
 		return PyNumber_Long(v);
-	else if (!PyString_Check(v)) {
+	else if (PyString_Check(v))
+		return PyLong_FromString(PyString_AS_STRING(v), NULL, base);
+	else if (PyUnicode_Check(v))
+		return PyLong_FromUnicode(PyUnicode_AS_UNICODE(v),
+					  PyUnicode_GET_SIZE(v),
+					  base);
+	else {
 		PyErr_SetString(PyExc_TypeError,
 				"can't convert non-string with explicit base");
 		return NULL;
 	}
-	return PyLong_FromString(PyString_AS_STRING(v), NULL, base);
 }
 
 static char long_doc[] =

@@ -3,3 +3,4 @@ Testing Unicode comparisons... done.
 Testing Unicode contains method... done.
 Testing Unicode formatting strings... done.
 Testing builtin codecs... done.
+Testing standard mapping codecs... 0-127... 128-255... done.

@@ -4,8 +4,8 @@
     directory.
 
     Codec modules must have names corresponding to standard lower-case
-    encoding names. Hyphens are automatically converted to
-    underscores, e.g. 'utf-8' is looked up as module utf_8.
+    encoding names with hyphens mapped to underscores, e.g. 'utf-8' is
+    implemented by the module 'utf_8.py'.
 
     Each codec module must export the following interface:
 
@@ -40,7 +40,7 @@ def search_function(encoding):
         return entry
 
     # Import the module
-    modname = string.replace(encoding,'-','_')
+    modname = string.replace(encoding, '-', '_')
     modname = aliases.aliases.get(modname,modname)
     try:
         mod = __import__(modname,globals(),locals(),'*')

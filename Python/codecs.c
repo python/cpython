@@ -84,8 +84,11 @@ int PyCodec_Register(PyObject *search_function)
     return -1;
 }
 
+/* Convert a string to a normalized Python string: all characters are
+   converted to lower case, spaces are replaced with underscores. */
+
 static
-PyObject *lowercasestring(const char *string)
+PyObject *normalizestring(const char *string)
 {
     register int i;
     int len = strlen(string);
@@ -96,8 +99,14 @@ PyObject *lowercasestring(const char *string)
     if (v == NULL)
 	return NULL;
     p = PyString_AS_STRING(v);
-    for (i = 0; i < len; i++)
-	p[i] = tolower(string[i]);
+    for (i = 0; i < len; i++) {
+        register char ch = string[i];
+        if (ch == ' ')
+            ch = '-';
+        else
+            ch = tolower(ch);
+	p[i] = ch;
+    }
     return v;
 }
 
@@ -132,8 +141,10 @@ PyObject *_PyCodec_Lookup(const char *encoding)
 	    goto onError;
     }
 
-    /* Convert the encoding to a lower-cased Python string */
-    v = lowercasestring(encoding);
+    /* Convert the encoding to a normalized Python string: all
+       characters are converted to lower case, spaces and hypens are
+       replaced with underscores. */
+    v = normalizestring(encoding);
     if (v == NULL)
 	goto onError;
     PyString_InternInPlace(&v);
