@@ -83,7 +83,7 @@ def getpass(prompt = "Password: "):
     fd = sys.stdin.fileno()
     old = termios.tcgetattr(fd)
     new = termios.tcgetattr(fd)
-    new[3] = new[3] & ~TERMIOS.ECHO          # lflags
+    new[3] = new[3] & \~TERMIOS.ECHO          # lflags
     try:
         termios.tcsetattr(fd, TERMIOS.TCSADRAIN, new)
         passwd = raw_input(prompt)
