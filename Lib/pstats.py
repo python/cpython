@@ -185,7 +185,6 @@ class Stats:
         """Expand all abbreviations that are unique."""
         if not self.sort_arg_dict:
             self.sort_arg_dict = dict = {}
-            std_list = dict.keys()
             bad_list = {}
             for word in self.sort_arg_dict_default.keys():
                 fragment = word

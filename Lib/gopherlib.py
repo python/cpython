@@ -169,7 +169,6 @@ def test():
     selector = DEF_SELECTOR
     type = selector[0]
     host = DEF_HOST
-    port = DEF_PORT
     if args:
         host = args[0]
         args = args[1:]
