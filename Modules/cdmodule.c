@@ -82,47 +82,6 @@ CD_preventremoval(self, args)
 }
 
 static object *
-CD_getvolume(self, args)
-	cdplayerobject *self;
-	object *args;
-{
-	CDVOLUME vol;
-	int retval;
-
-	CheckPlayer(self);
-
-	if (!getnoarg(args))
-		return NULL;
-
-#if 0
-	if (!CDgetvolume(self->ob_cdplayer, &vol)) {
-		err_setstr(RuntimeError, "getvolume failed");
-		return NULL;
-	}
-#endif
-	retval = CDgetvolume(self->ob_cdplayer, &vol);
-	return mkvalue("(iiiii)", retval,
-		       vol.chan0, vol.chan1, vol.chan2, vol.chan3);
-}
-
-static object *
-CD_setvolume(self, args)
-	cdplayerobject *self;
-	object *args;
-{
-	CDVOLUME vol;
-	int retval;
-
-	CheckPlayer(self);
-
-	if (!getargs(args, "(bbbb)", &vol.chan0, &vol.chan1,
-		     &vol.chan2, &vol.chan3))
-		return NULL;
-
-	return newintobject(CDsetvolume(self->ob_cdplayer, &vol));
-}
-
-static object *
 CD_bestreadsize(self, args)
 	cdplayerobject *self;
 	object *args;
@@ -146,7 +105,7 @@ CD_close(self, args)
 		return NULL;
 
 	if (!CDclose(self->ob_cdplayer)) {
-		err_errno(RuntimeError); /* XXX - ??? */
+		err_errno(IOError); /* XXX - ??? */
 		return NULL;
 	}
 	self->ob_cdplayer = NULL;
@@ -160,13 +119,19 @@ CD_eject(self, args)
 	cdplayerobject *self;
 	object *args;
 {
+	CDSTATUS status;
+
 	CheckPlayer(self);
 
 	if (!getnoarg(args))
 		return NULL;
 
 	if (!CDeject(self->ob_cdplayer)) {
-		err_setstr(RuntimeError, "eject failed");
+		if (CDgetstatus(self->ob_cdplayer, &status) &&
+		    status.state == CD_NODISC)
+			err_setstr(IOError, "no disc in player");
+		else
+			err_setstr(IOError, "eject failed");
 		return NULL;
 	}
 
@@ -187,7 +152,7 @@ CD_getstatus(self, args)
 		return NULL;
 
 	if (!CDgetstatus(self->ob_cdplayer, &status)) {
-		err_errno(RuntimeError); /* XXX - ??? */
+		err_errno(IOError); /* XXX - ??? */
 		return NULL;
 	}
 
@@ -207,6 +172,7 @@ CD_gettrackinfo(self, args)
 {
 	int track;
 	CDTRACKINFO info;
+	CDSTATUS status;
 
 	CheckPlayer(self);
 
@@ -214,7 +180,11 @@ CD_gettrackinfo(self, args)
 		return NULL;
 
 	if (!CDgettrackinfo(self->ob_cdplayer, track, &info)) {
-		err_setstr(RuntimeError, "gettrackinfo failed");
+		if (CDgetstatus(self->ob_cdplayer, &status) &&
+		    status.state == CD_NODISC)
+			err_setstr(IOError, "no disc in player");
+		else
+			err_setstr(IOError, "gettrackinfo failed");
 		return NULL;
 	}
 
@@ -246,6 +216,7 @@ CD_play(self, args)
 	object *args;
 {
 	int start, play;
+	CDSTATUS status;
 
 	CheckPlayer(self);
 
@@ -253,7 +224,11 @@ CD_play(self, args)
 		return NULL;
 
 	if (!CDplay(self->ob_cdplayer, start, play)) {
-		err_setstr(RuntimeError, "play failed");
+		if (CDgetstatus(self->ob_cdplayer, &status) &&
+		    status.state == CD_NODISC)
+			err_setstr(IOError, "no disc in player");
+		else
+			err_setstr(IOError, "play failed");
 		return NULL;
 	}
 
@@ -267,6 +242,7 @@ CD_playabs(self, args)
 	object *args;
 {
 	int min, sec, frame, play;
+	CDSTATUS status;
 
 	CheckPlayer(self);
 
@@ -274,7 +250,11 @@ CD_playabs(self, args)
 		return NULL;
 
 	if (!CDplayabs(self->ob_cdplayer, min, sec, frame, play)) {
-		err_setstr(RuntimeError, "playabs failed");
+		if (CDgetstatus(self->ob_cdplayer, &status) &&
+		    status.state == CD_NODISC)
+			err_setstr(IOError, "no disc in player");
+		else
+			err_setstr(IOError, "playabs failed");
 		return NULL;
 	}
 
@@ -288,6 +268,7 @@ CD_playtrack(self, args)
 	object *args;
 {
 	int start, play;
+	CDSTATUS status;
 
 	CheckPlayer(self);
 
@@ -295,7 +276,11 @@ CD_playtrack(self, args)
 		return NULL;
 
 	if (!CDplaytrack(self->ob_cdplayer, start, play)) {
-		err_setstr(RuntimeError, "playtrack failed");
+		if (CDgetstatus(self->ob_cdplayer, &status) &&
+		    status.state == CD_NODISC)
+			err_setstr(IOError, "no disc in player");
+		else
+			err_setstr(IOError, "playtrack failed");
 		return NULL;
 	}
 
@@ -309,6 +294,7 @@ CD_playtrackabs(self, args)
 	object *args;
 {
 	int track, min, sec, frame, play;
+	CDSTATUS status;
 
 	CheckPlayer(self);
 
@@ -316,7 +302,11 @@ CD_playtrackabs(self, args)
 		return NULL;
 
 	if (!CDplaytrackabs(self->ob_cdplayer, track, min, sec, frame, play)) {
-		err_setstr(RuntimeError, "playtrackabs failed");
+		if (CDgetstatus(self->ob_cdplayer, &status) &&
+		    status.state == CD_NODISC)
+			err_setstr(IOError, "no disc in player");
+		else
+			err_setstr(IOError, "playtrackabs failed");
 		return NULL;
 	}
 
@@ -344,7 +334,7 @@ CD_readda(self, args)
 	n = CDreadda(self->ob_cdplayer, (CDFRAME *) getstringvalue(result), numframes);
 	if (n == -1) {
 		DECREF(result);
-		err_errno(RuntimeError); /* XXX - ??? (seems to work) */
+		err_errno(IOError); /* XXX - ??? (seems to work) */
 		return NULL;
 	}
 	if (n < numframes)
@@ -369,7 +359,7 @@ CD_seek(self, args)
 
 	block = CDseek(self->ob_cdplayer, min, sec, frame);
 	if (block == -1) {
-		err_errno(RuntimeError);
+		err_errno(IOError);
 		return NULL;
 	}
 
@@ -391,7 +381,7 @@ CD_seektrack(self, args)
 
 	block = CDseektrack(self->ob_cdplayer, track);
 	if (block == -1) {
-		err_errno(RuntimeError);
+		err_errno(IOError);
 		return NULL;
 	}
 
@@ -403,13 +393,19 @@ CD_stop(self, args)
 	cdplayerobject *self;
 	object *args;
 {
+	CDSTATUS status;
+
 	CheckPlayer(self);
 
 	if (!getnoarg(args))
 		return NULL;
 
 	if (!CDstop(self->ob_cdplayer)) {
-		err_setstr(RuntimeError, "stop failed");
+		if (CDgetstatus(self->ob_cdplayer, &status) &&
+		    status.state == CD_NODISC)
+			err_setstr(IOError, "no disc in player");
+		else
+			err_setstr(IOError, "stop failed");
 		return NULL;
 	}
 
@@ -422,13 +418,19 @@ CD_togglepause(self, args)
 	cdplayerobject *self;
 	object *args;
 {
+	CDSTATUS status;
+
 	CheckPlayer(self);
 
 	if (!getnoarg(args))
 		return NULL;
 
 	if (!CDtogglepause(self->ob_cdplayer)) {
-		err_setstr(RuntimeError, "togglepause failed");
+		if (CDgetstatus(self->ob_cdplayer, &status) &&
+		    status.state == CD_NODISC)
+			err_setstr(IOError, "no disc in player");
+		else
+			err_setstr(IOError, "togglepause failed");
 		return NULL;
 	}
 
@@ -443,7 +445,6 @@ static struct methodlist cdplayer_methods[] = {
 	{"eject",		CD_eject},
 	{"getstatus",		CD_getstatus},
 	{"gettrackinfo",	CD_gettrackinfo},
-	{"getvolume",		CD_getvolume},
 	{"msftoblock",		CD_msftoblock},
 	{"play",		CD_play},
 	{"playabs",		CD_playabs},
@@ -453,7 +454,6 @@ static struct methodlist cdplayer_methods[] = {
 	{"readda",		CD_readda},
 	{"seek",		CD_seek},
 	{"seektrack",		CD_seektrack},
-	{"setvolume",		CD_setvolume},
 	{"stop",		CD_stop},
 	{"togglepause",		CD_togglepause},
 	{NULL,			NULL} 		/* sentinel */
@@ -528,7 +528,7 @@ CD_open(self, args)
 
 	cdp = CDopen(dev, direction);
 	if (cdp == NULL) {
-		err_errno(RuntimeError);
+		err_errno(IOError);
 		return NULL;
 	}
 
@@ -820,7 +820,7 @@ CD_createparser(self, args)
 		return NULL;
 	cdp = CDcreateparser();
 	if (cdp == NULL) {
-		err_setstr(RuntimeError, "createparser failed");
+		err_setstr(IOError, "createparser failed");
 		return NULL;
 	}
 
