@@ -742,6 +742,7 @@ argument delets that many characters."
   (if (or (/= (current-indentation) (current-column))
 	  (bolp)
 	  (py-continuation-line-p)
+	  (not py-honor-comment-indentation)
 	  (looking-at "#[^ \t\n]"))	; non-indenting #
       (backward-delete-char-untabify count)
     ;; else indent the same as the colon line that opened the block
