@@ -83,6 +83,10 @@ class MyScanner(Scanner):
 ##			([("ControlActionUPP", "actionProc", "InMode")],
 ##			 [("FakeType('(ControlActionUPP)0')", "*", "*")]),
 			
+			# For GetControlTitle
+			([('Str255', 'title', 'InMode')],
+			 [('Str255', 'title', 'OutMode')]),
+			 
 			([("ControlHandle", "*", "OutMode")],
 			 [("ExistingControlHandle", "*", "*")]),
 			([("ControlRef", "*", "OutMode")],	# Ditto, for Universal Headers

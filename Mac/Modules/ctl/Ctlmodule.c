@@ -462,13 +462,12 @@ static PyObject *CtlObj_GetControlTitle(_self, _args)
 {
 	PyObject *_res = NULL;
 	Str255 title;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetStr255, title))
+	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetControlTitle(_self->ob_itself,
 	                title);
-	Py_INCREF(Py_None);
-	_res = Py_None;
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildStr255, title);
 	return _res;
 }
 
@@ -952,7 +951,7 @@ static PyMethodDef CtlObj_methods[] = {
 	{"SetControlTitle", (PyCFunction)CtlObj_SetControlTitle, 1,
 	 "(Str255 title) -> None"},
 	{"GetControlTitle", (PyCFunction)CtlObj_GetControlTitle, 1,
-	 "(Str255 title) -> None"},
+	 "() -> (Str255 title)"},
 	{"GetControlValue", (PyCFunction)CtlObj_GetControlValue, 1,
 	 "() -> (SInt16 _rv)"},
 	{"SetControlValue", (PyCFunction)CtlObj_SetControlValue, 1,
