@@ -26,6 +26,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* _tkinter.c -- Interface to libtk.a and libtcl.a. */
 
 #include "Python.h"
+#include <ctype.h>
 
 #include <tcl.h>
 #include <tk.h>
@@ -49,8 +50,11 @@ extern struct { Tk_Window win; } *tkMainWindowList;
 
 /*
 ** Additional cruft needed by Tcl/Tk on the Mac.
-** This is for Tcl 7.5 and Tk 4.1 (final releases).
+** This is for Tcl 7.5 and Tk 4.1 (patch release 1).
 */
+
+/* free() expects a char* */
+#define FREECAST (char *)
 
 #include <Events.h> /* For EventRecord */
 
@@ -61,6 +65,10 @@ int TkMacConvertEvent Py_PROTO((EventRecord *eventPtr));
 staticforward int PyMacConvertEvent Py_PROTO((EventRecord *eventPtr));
 
 #endif /* macintosh */
+
+#ifndef FREECAST
+#define FREECAST
+#endif
 
 /**** Tkapp Object Declaration ****/
 
@@ -201,9 +209,9 @@ Merge (args)
   for (i = 0; i < argc; i++)
     if (fv[i]) free (argv[i]);
   if (argv != argvStore)
-    free (argv);
+    free (FREECAST argv);
   if (fv != fvStore)
-    free (fv);
+    free (FREECAST fv);
 
   return res;
 }
@@ -239,7 +247,7 @@ Split (self, list)
 	PyTuple_SetItem (v, i, Split (self, argv[i]));
     }
 
-  free (argv);
+  free (FREECAST argv);
   return v;
 }
 
@@ -276,6 +284,7 @@ Tkapp_New (screenName, baseName, className, interactive)
      int interactive;
 {
   TkappObject *v;
+  char *argv0;
   
   v = PyObject_NEW (TkappObject, &Tkapp_Type);
   if (v == NULL)
@@ -299,6 +308,16 @@ Tkapp_New (screenName, baseName, className, interactive)
     Tcl_SetVar (v->interp, "tcl_interactive", "1", TCL_GLOBAL_ONLY);
   else
     Tcl_SetVar (v->interp, "tcl_interactive", "0", TCL_GLOBAL_ONLY);
+
+  /* This is used to get the application class for Tk 4.1 and up */
+  argv0 = (char*) malloc (strlen (className) + 1);
+  if (argv0 != NULL) {
+    strcpy (argv0, className);
+    if (isupper (argv0[0]))
+      argv0[0] = tolower (argv0[0]);
+    Tcl_SetVar (v->interp, "argv0", argv0, TCL_GLOBAL_ONLY);
+    free (argv0);
+  }
 
   if (Tcl_AppInit (v->interp) != TCL_OK)
     return (TkappObject *) Tkinter_Error (v);
@@ -677,7 +696,7 @@ Tkapp_SplitList (self, args)
   for (i = 0; i < argc; i++)
     PyTuple_SetItem (v, i, PyString_FromString (argv[i]));
 
-  free (argv);
+  free (FREECAST argv);
   return v;
 }
 
