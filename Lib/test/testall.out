@@ -56,9 +56,12 @@ test_builtin
 test_b1
 abs
 apply
+callable
 chr
 cmp
 coerce
+compile
+delattr
 dir
 divmod
 eval
@@ -66,7 +69,10 @@ execfile
 filter
 float
 getattr
+hasattr
+hash
 hex
+id
 int
 len
 long
@@ -88,7 +94,10 @@ repr
 round
 setattr
 str
+tuple
 type
+vars
+xrange
 test_exceptions
 5. Built-in exceptions
 AttributeError

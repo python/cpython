@@ -31,6 +31,21 @@ apply(f1, (1,))
 apply(f2, (1, 2))
 apply(f3, (1, 2, 3))
 
+print 'callable'
+if not callable(len):raise TestFailed, 'callable(len)'
+def f(): pass
+if not callable(f): raise TestFailed, 'callable(f)'
+class C:
+	def meth(self): pass
+if not callable(C): raise TestFailed, 'callable(C)'
+x = C()
+if not callable(x.meth): raise TestFailed, 'callable(x.meth)'
+if callable(x): raise TestFailed, 'callable(x)'
+class D(C):
+	def __call__(self): pass
+y = D()
+if not callable(y): raise TestFailed, 'callable(y)'
+
 print 'chr'
 if chr(32) <> ' ': raise TestFailed, 'chr(32)'
 if chr(65) <> 'A': raise TestFailed, 'chr(65)'
@@ -45,6 +60,14 @@ print 'coerce'
 if fcmp(coerce(1, 1.1), (1.0, 1.1)): raise TestFailed, 'coerce(1, 1.1)'
 if coerce(1, 1L) <> (1L, 1L): raise TestFailed, 'coerce(1, 1L)'
 if fcmp(coerce(1L, 1.1), (1.0, 1.1)): raise TestFailed, 'coerce(1L, 1.1)'
+
+print 'compile'
+compile('print 1\n', '', 'exec')
+
+print 'delattr'
+import sys
+sys.spam = 1
+delattr(sys, 'spam')
 
 print 'dir'
 x = 1
@@ -123,11 +146,32 @@ print 'getattr'
 import sys
 if getattr(sys, 'stdout') is not sys.stdout: raise TestFailed, 'getattr'
 
+print 'hasattr'
+import sys
+if not hasattr(sys, 'stdout'): raise TestFailed, 'hasattr'
+
+print 'hash'
+hash(None)
+if not hash(1) == hash(1L) == hash(1.0): raise TestFailed, 'numeric hash()'
+hash('spam')
+hash((0,1,2,3))
+def f(): pass
+
 print 'hex'
 if hex(16) != '0x10': raise TestFailed, 'hex(16)'
 if hex(16L) != '0x10L': raise TestFailed, 'hex(16L)'
 if hex(-16) != '-0x10': raise TestFailed, 'hex(-16)'
 if hex(-16L) != '-0x10L': raise TestFailed, 'hex(-16L)'
+
+print 'id'
+id(None)
+id(1)
+id(1L)
+id(1.0)
+id('spam')
+id((0,1,2,3))
+id([0,1,2,3])
+id({'spam': 1, 'eggs': 2, 'ham': 3})
 
 # Test input() later, together with raw_input
 

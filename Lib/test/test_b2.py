@@ -86,6 +86,12 @@ if fcmp(pow(2.,30), 1024.*1024.*1024.): raise TestFailed, 'pow(2.,30)'
 #if fcmp(pow(-2.,1), -2.): raise TestFailed, 'pow(-2.,1)'
 #if fcmp(pow(-2.,2), 4.): raise TestFailed, 'pow(-2.,2)'
 #if fcmp(pow(-2.,3), -8.): raise TestFailed, 'pow(-2.,3)'
+#
+for x in 2, 2L, 2.0:
+	for y in 10, 10L, 10.0:
+		for z in 1000, 1000L, 1000.0:
+			if fcmp(pow(x, y, z), 24.0):
+				raise TestFailed, 'pow(%s, %s, %s)' % (x, y, z)
 
 print 'range'
 if range(3) <> [0, 1, 2]: raise TestFailed, 'range(3)'
@@ -142,8 +148,14 @@ if reduce(lambda x, y: x+y, Squares(0), 0) != 0:
 
 
 print 'reload'
+#import strop
+#reload(strop)
 import string
 reload(string)
+import sys
+try: reload(sys)
+except ImportError: pass
+else: raise TestFailed, 'reload(sys) should fail'
 
 print 'repr'
 if repr('') <> '\'\'': raise TestFailed, 'repr(\'\')'
@@ -190,8 +202,8 @@ if round(-999999999.9) <> -1000000000.0:
 
 print 'setattr'
 import sys
-setattr(sys, 'foobar', 1)
-if sys.foobar != 1: raise TestFailed, 'setattr(sys, \'foobar\', 1)'
+setattr(sys, 'spam', 1)
+if sys.spam != 1: raise TestFailed, 'setattr(sys, \'spam\', 1)'
 
 print 'str'
 if str('') <> '': raise TestFailed, 'str(\'\')'
@@ -201,9 +213,37 @@ if str(()) <> '()': raise TestFailed, 'str(())'
 if str([]) <> '[]': raise TestFailed, 'str([])'
 if str({}) <> '{}': raise TestFailed, 'str({})'
 
+print 'tuple'
+if tuple(()) <> (): raise TestFailed, 'tuple(())'
+if tuple((0, 1, 2, 3)) <> (0, 1, 2, 3): raise TestFailed, 'tuple((0, 1, 2, 3))'
+if tuple([]) <> (): raise TestFailed, 'tuple([])'
+if tuple([0, 1, 2, 3]) <> (0, 1, 2, 3): raise TestFailed, 'tuple([0, 1, 2, 3])'
+if tuple('') <> (): raise TestFailed, 'tuple('')'
+if tuple('spam') <> ('s', 'p', 'a', 'm'): raise TestFailed, "tuple('spam')"
+
 print 'type'
 if type('') <> type('123') or type('') == type(()):
 	raise TestFailed, 'type()'
+
+print 'vars'
+a = b = None
+a = vars().keys()
+b = dir()
+a.sort()
+b.sort()
+if a <> b: raise TestFailed, 'vars()'
+import sys
+a = vars(sys).keys()
+b = dir(sys)
+a.sort()
+b.sort()
+if a <> b: raise TestFailed, 'vars(sys)'
+
+print 'xrange'
+if tuple(xrange(10)) <> tuple(range(10)): raise TestFailed, 'xrange(10)'
+if tuple(xrange(5,10)) <> tuple(range(5,10)): raise TestFailed, 'xrange(5,10)'
+if tuple(xrange(0,10,2)) <> tuple(range(0,10,2)):
+	raise TestFailed, 'xrange(0,10,2)'
 
 
 # Epilogue -- unlink the temp file
