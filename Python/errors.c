@@ -125,6 +125,10 @@ int
 PyErr_GivenExceptionMatches(err, exc)
      PyObject *err, *exc;
 {
+	if (err == NULL || exc == NULL) {
+		/* maybe caused by "import exceptions" that failed early on */
+		return 0;
+	}
 	if (PyTuple_Check(exc)) {
 		int i, n;
 		n = PyTuple_Size(exc);
@@ -331,7 +335,7 @@ PyErr_SetFromErrnoWithFilename(exc, filename)
 		}
 	}
 #endif
-	if (filename != NULL && Py_UseClassExceptionsFlag)
+	if (filename != NULL)
 		v = Py_BuildValue("(iss)", i, s, filename);
 	else
 		v = Py_BuildValue("(is)", i, s);
@@ -379,7 +383,7 @@ PyObject *PyErr_SetFromWindowsErrWithFilename(
 	/* remove trailing cr/lf and dots */
 	while (len > 0 && (s[len-1] <= ' ' || s[len-1] == '.'))
 		s[--len] = '\0';
-	if (filename != NULL && Py_UseClassExceptionsFlag)
+	if (filename != NULL)
 		v = Py_BuildValue("(iss)", err, s, filename);
 	else
 		v = Py_BuildValue("(is)", err, s);
