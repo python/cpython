@@ -8,7 +8,7 @@
 #include "frameobject.h"
 #include "ceval.h"
 #include "opcode.h"
-#include "builtinmodule.h"
+#include "bltinmodule.h"
 #include "traceback.h"
 
 #ifndef NDEBUG
