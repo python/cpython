@@ -161,8 +161,7 @@ Library
 
 - sets.py now runs under Py2.2.  In addition, the argument restrictions
   for most set methods (but not the operators) have been relaxed to
-  allow any iterable.  Also the Set.update() has been deprecated because
-  it duplicates Set.union_update().
+  allow any iterable.
 
 - _strptime.py now has a behind-the-scenes caching mechanism for the most
   recent TimeRE instance used along with the last five unique directive
