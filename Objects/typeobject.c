@@ -4638,9 +4638,6 @@ half_richcompare(PyObject *self, PyObject *other, int op)
 	return res;
 }
 
-/* Map rich comparison operators to their swapped version, e.g. LT --> GT */
-static int swapped_op[] = {Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE};
-
 static PyObject *
 slot_tp_richcompare(PyObject *self, PyObject *other, int op)
 {
@@ -4653,7 +4650,7 @@ slot_tp_richcompare(PyObject *self, PyObject *other, int op)
 		Py_DECREF(res);
 	}
 	if (other->ob_type->tp_richcompare == slot_tp_richcompare) {
-		res = half_richcompare(other, self, swapped_op[op]);
+		res = half_richcompare(other, self, _Py_SwappedOp[op]);
 		if (res != Py_NotImplemented) {
 			return res;
 		}
