@@ -1,3 +1,58 @@
+What's New in Python 2.1.2 (final) ?
+==============================
+
+- The socket object gained a new method, 'sendall()'. This method 
+  is guaranteed to send all data - this is not guaranteed by the
+  'send()' method. See also SF patch #474307. The standard library
+  has been updated to use this method where appropriate.
+
+Many bugs were fixed. The following is a list of some of the major or
+notable fixes:
+
+- Fix for incorrectly swapped arguments to PyFrame_BlockSetup in ceval.c.
+  This bug could cause python to crash.
+
+- SF bug #422004: Py_Initialise fix that allows reload(exceptions) to 
+  work - this is apparently very important for embedded python.
+
+- The Python compiler package was updated to correctly calculate stack
+  depth in some cases. This was affecting Zope Python Scripts rather badly.
+
+- SF bug #443120: Fix a cgi.py denial-of-service attack, 
+
+- socketmodule's SSL_read and SSL_write now release the global interpreter 
+  lock.
+
+- threading uses the PTHREAD_SCOPE_SYSTEM attribute where available. 
+  This should remove the need to add tiny sleeps at the start of threads 
+  to allow other threads to be scheduled.
+
+- Lib/asyncore is now more defensive in select()
+
+- Lib/dumbdbm is now merely dumb, rather than terminally broken.
+
+- SF bug #441712: more liberal handling of ftp servers' 227 responses.
+
+- SF bug #440693: make sure zip files use "/" as directory separator.
+
+- If 'unittest.py' was run from the command line with the name of a test
+  case class as a parameter, it failed with an ugly error.
+
+- SF bug #231249: cgi.py opens too many (temporary) files.
+
+- Lib/CGIHTTPServer.py supports binary data on Windows.
+
+- base64.encodestring/decodestring are much faster.
+
+- SF bug #471928: global made w/nested list comprehensions
+
+- SF patch #422106: fix segmentation fault in sys.displayhook
+
+- SF bug 476129: gc.collect sometimes hangs
+
+- SF bug #448351: select.select() puts FDs on the heap where needed.
+
+
 What's New in Python 2.1.1 (final) ?
 ==============================
 
