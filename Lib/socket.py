@@ -129,11 +129,16 @@ _socketmethods = (
 
 class _socketobject:
 
+    class _closedsocket:
+        def __getattr__(self, name):
+            raise error(9, 'Bad file descriptor')
+
     def __init__(self, sock):
         self._sock = sock
 
     def close(self):
-        self._sock = _closedsocket()
+        # Avoid referencing globals here
+        self._sock = self.__class__._closedsocket()
 
     def __del__(self):
         self.close()
@@ -151,12 +156,6 @@ class _socketobject:
     _s = "def %s(self, *args): return self._sock.%s(*args)\n\n"
     for _m in _socketmethods:
         exec _s % (_m, _m)
-
-
-class _closedsocket:
-
-    def __getattr__(self, name):
-        raise error(9, 'Bad file descriptor')
 
 
 class _fileobject:
