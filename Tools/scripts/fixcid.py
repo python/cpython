@@ -116,7 +116,7 @@ def recursedown(dirname):
     return bad
 
 def fix(filename):
-##      dbg('fix(' + `filename` + ')\n')
+##  dbg('fix(' + `filename` + ')\n')
     if filename == '-':
         # Filter mode
         f = sys.stdin
@@ -226,15 +226,15 @@ def initfixline():
 
 def fixline(line):
     global Program
-##      print '-->', `line`
+##  print '-->', `line`
     i = 0
     while i < len(line):
         i = Program.search(line, i)
         if i < 0: break
         found = Program.group(0)
-##              if Program is InsideCommentProgram: print '...',
-##              else: print '   ',
-##              print found
+##      if Program is InsideCommentProgram: print '...',
+##      else: print '   ',
+##      print found
         if len(found) == 2:
             if found == '/*':
                 Program = InsideCommentProgram
@@ -249,14 +249,14 @@ def fixline(line):
                     i = i + n
                     continue
                 if NotInComment.has_key(found):
-##                                      print 'Ignored in comment:',
-##                                      print found, '-->', subst
-##                                      print 'Line:', line,
+##                  print 'Ignored in comment:',
+##                  print found, '-->', subst
+##                  print 'Line:', line,
                     subst = found
-##                              else:
-##                                      print 'Substituting in comment:',
-##                                      print found, '-->', subst
-##                                      print 'Line:', line,
+##              else:
+##                  print 'Substituting in comment:',
+##                  print found, '-->', subst
+##                  print 'Line:', line,
             line = line[:i] + subst + line[i+n:]
             n = len(subst)
         i = i + n
