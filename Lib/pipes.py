@@ -56,7 +56,7 @@ To create a new template object initialized to a given one:
    t2 = t.clone()
 
 For an example, see the function test() at the end of the file.
-"""
+"""                                     # '
 
 
 import sys
@@ -66,6 +66,7 @@ import os
 import tempfile
 import string
 
+__all__ = ["Template"]
 
 # Conversion step kinds
 

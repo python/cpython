@@ -13,6 +13,9 @@ import repr
 import os
 import re
 
+__all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
+           "post_mortem", "help"]
+
 def find_function(funcname, filename):
     cre = re.compile(r'def\s+%s\s*[(]' % funcname)
     try:

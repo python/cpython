@@ -31,6 +31,9 @@ import marshal
 import sys
 import struct
 
+__all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
+           "Unpickler", "dump", "dumps", "load", "loads"]
+
 format_version = "1.3"                     # File format version we write
 compatible_formats = ["1.0", "1.1", "1.2"] # Old format versions we can read
 
