@@ -347,14 +347,14 @@ class sdist (Command):
           * the build tree (typically "build")
           * the release tree itself (only an issue if we ran "sdist"
             previously with --keep-temp, or it aborted)
-          * any RCS or CVS directories
+          * any RCS, CVS and .svn directories
         """
         build = self.get_finalized_command('build')
         base_dir = self.distribution.get_fullname()
 
         self.filelist.exclude_pattern(None, prefix=build.build_base)
         self.filelist.exclude_pattern(None, prefix=base_dir)
-        self.filelist.exclude_pattern(r'/(RCS|CVS)/.*', is_regex=1)
+        self.filelist.exclude_pattern(r'/(RCS|CVS|\.svn)/.*', is_regex=1)
 
 
     def write_manifest (self):

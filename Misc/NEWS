@@ -149,7 +149,7 @@ Core and builtins
   over a sequence.
 
 - Added a sorted() builtin function that returns a new sorted list
-  from any iterable.  
+  from any iterable.
 
 - CObjects are now mutable (on the C level) through PyCObject_SetVoidPtr.
 
@@ -197,9 +197,9 @@ Core and builtins
 
 - buffer objects based on other objects no longer cache a pointer to
   the data and the data length.  Instead, the appropriate tp_as_buffer
-  method is called as necessary.  
+  method is called as necessary.
 
-- fixed: if a file is opened with an explicit buffer size >= 1, repeated 
+- fixed: if a file is opened with an explicit buffer size >= 1, repeated
   close() calls would attempt to free() the buffer already free()ed on
   the first call.
 
@@ -310,6 +310,10 @@ Extension modules
 
 Library
 -------
+
+- The distutils sdist command now ignores all .svn directories, in
+  addition to CVS and RCS directories.  .svn directories hold
+  administrative files for the Subversion source control system.
 
 - Added a new module: cookielib.  Automatic cookie handling for HTTP
   clients.  Also, support for cookielib has been added to urllib2, so
