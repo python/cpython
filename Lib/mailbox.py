@@ -1,8 +1,8 @@
-#
-# A class to hand a unix-style or mmdf-style mailboxes
-#
-# Jack Jansen, CWI, March 1994.
-#
+#!/usr/local/bin/python
+
+"""Classes to handle Unix style, MMDF style, and MH style mailboxes."""
+
+
 import rfc822
 import os
 import regex
@@ -134,17 +134,32 @@ class MHMailbox:
 	return rfc822.Message(fp)
 	    
     
-if __name__ == '__main__':
-	import posix
+def _test():
 	import time
 	import sys
 	import string
-##	mbox = '/usr/mail/'+posix.environ['USER']
-##	fp = open(mbox, 'r')
-##	mb = UnixMailbox(fp)
+	import os
 
-	mbox = posix.environ['HOME']+'/Mail/inbox'
-	mb = MHMailbox(mbox)
+	args = sys.argv[1:]
+	if not args:
+		if os.environ.has_key('MAIL'):
+			mbox = os.environ['MAIL']
+		elif os.environ.has_key('MAIL'):
+			mbox = os.environ['USER']
+		else:
+			print "Who are you?"
+			return
+	else:
+		mbox = args[0]
+	if mbox[:1] == '+':
+		mbox = os.environ['HOME'] + '/Mail/' + mbox[1:]
+	elif not '/' in mbox:
+		mbox = '/usr/mail/' + mbox
+	if os.path.isdir(mbox):
+		mb = MHMailbox(mbox)
+	else:
+		fp = open(mbox, 'r')
+		mb = UnixMailbox(fp)
 	
 	msgs = []
 	while 1:
@@ -152,17 +167,20 @@ if __name__ == '__main__':
 		if not msg:
 			break
 		msgs.append(msg)
-	if len(sys.argv) > 1:
-		num = string.atoi(sys.argv[1])
+	if len(args) > 1:
+		num = string.atoi(args[1])
 		print 'Message %d body:'%num
 		msg = msgs[num-1]
 		msg.rewindbody()
 		sys.stdout.write(msg.fp.read())
-		sys.exit(0)
-	print 'Mailbox',mbox,'has',len(msgs),'messages:'
-	for msg in msgs:
-		f = msg.getheader('from')
-		s = msg.getheader('subject')
-		d = (msg.getheader('date'))
-		print '%20.20s   %18.18s   %-30.30s'%(f, d[5:], s)
-		
+	else:
+		print 'Mailbox',mbox,'has',len(msgs),'messages:'
+		for msg in msgs:
+			f = msg.getheader('from')
+			s = msg.getheader('subject')
+			d = (msg.getheader('date'))
+			print '%20.20s   %18.18s   %-30.30s'%(f, d[5:], s)
+
+
+if __name__ == '__main__':
+	_test()
