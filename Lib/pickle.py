@@ -270,61 +270,64 @@ class Pickler:
         try:
             f = self.dispatch[t]
         except KeyError:
-            try:
-                issc = issubclass(t, TypeType)
-            except TypeError: # t is not a class
-                issc = 0
-            if issc:
-                self.save_global(object)
-                return
-
-            try:
-                reduce = dispatch_table[t]
-            except KeyError:
-                try:
-                    reduce = object.__reduce__
-                except AttributeError:
-                    raise PicklingError, \
-                        "can't pickle %s object: %s" % (`t.__name__`,
-                                                         `object`)
-                else:
-                    tup = reduce()
-            else:
-                tup = reduce(object)
-
-            if type(tup) is StringType:
-                self.save_global(object, tup)
-                return
-
-            if type(tup) is not TupleType:
-                raise PicklingError, "Value returned by %s must be a " \
-                                     "tuple" % reduce
-
-            l = len(tup)
-
-            if (l != 2) and (l != 3):
-                raise PicklingError, "tuple returned by %s must contain " \
-                                     "only two or three elements" % reduce
-
-            callable = tup[0]
-            arg_tup  = tup[1]
-
-            if l > 2:
-                state = tup[2]
-            else:
-                state = None
-
-            if type(arg_tup) is not TupleType and arg_tup is not None:
-                raise PicklingError, "Second element of tuple returned " \
-                                     "by %s must be a tuple" % reduce
-
-            self.save_reduce(callable, arg_tup, state)
-            memo_len = len(memo)
-            self.write(self.put(memo_len))
-            memo[d] = (memo_len, object)
+            pass
+        else:
+            f(self, object)
             return
 
-        f(self, object)
+        # The dispatch table doesn't know about type t.
+        try:
+            issc = issubclass(t, TypeType)
+        except TypeError: # t is not a class
+            issc = 0
+        if issc:
+            self.save_global(object)
+            return
+
+        try:
+            reduce = dispatch_table[t]
+        except KeyError:
+            try:
+                reduce = object.__reduce__
+            except AttributeError:
+                raise PicklingError, \
+                    "can't pickle %s object: %s" % (`t.__name__`,
+                                                     `object`)
+            else:
+                tup = reduce()
+        else:
+            tup = reduce(object)
+
+        if type(tup) is StringType:
+            self.save_global(object, tup)
+            return
+
+        if type(tup) is not TupleType:
+            raise PicklingError, "Value returned by %s must be a " \
+                                 "tuple" % reduce
+
+        l = len(tup)
+
+        if (l != 2) and (l != 3):
+            raise PicklingError, "tuple returned by %s must contain " \
+                                 "only two or three elements" % reduce
+
+        callable = tup[0]
+        arg_tup  = tup[1]
+
+        if l > 2:
+            state = tup[2]
+        else:
+            state = None
+
+        if type(arg_tup) is not TupleType and arg_tup is not None:
+            raise PicklingError, "Second element of tuple returned " \
+                                 "by %s must be a tuple" % reduce
+
+        self.save_reduce(callable, arg_tup, state)
+        memo_len = len(memo)
+        self.write(self.put(memo_len))
+        memo[d] = (memo_len, object)
 
     def persistent_id(self, object):
         return None
