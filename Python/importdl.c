@@ -76,7 +76,7 @@ typedef void (*dl_funcptr)();
 #define LONG_EXT "module.sl"
 #endif 
 
-#if defined(__NetBSD__) || defined(__FreeBSD__)
+#if defined(__NetBSD__)
 #define DYNAMIC_LINK
 #define USE_SHLIB
 
@@ -142,7 +142,7 @@ static void aix_loaderror(char *);
 #ifdef USE_SHLIB
 #include <sys/types.h>
 #include <sys/stat.h>
-#if defined(__NetBSD__) || defined(__FreeBSD__)
+#if defined(__NetBSD__)
 #include <nlist.h>
 #include <link.h>
 #else
