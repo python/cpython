@@ -39,8 +39,6 @@ class MyScanner(Scanner):
 		return [
 			'ProcPtr',
 			'ControlActionUPP',
-			'CCTabHandle',
-			'AuxCtlHandle',
 			]
 
 	def makerepairinstructions(self):

@@ -429,6 +429,39 @@ static PyObject *CtlObj_GetControlReference(_self, _args)
 	return _res;
 }
 
+static PyObject *CtlObj_GetAuxiliaryControlRecord(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	AuxCtlHandle acHndl;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetAuxiliaryControlRecord(_self->ob_itself,
+	                                &acHndl);
+	_res = Py_BuildValue("bO&",
+	                     _rv,
+	                     ResObj_New, acHndl);
+	return _res;
+}
+
+static PyObject *CtlObj_SetControlColor(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	CCTabHandle newColorTable;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &newColorTable))
+		return NULL;
+	SetControlColor(_self->ob_itself,
+	                newColorTable);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *CtlObj_as_Resource(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
@@ -501,6 +534,10 @@ static PyMethodDef CtlObj_methods[] = {
 	 "(SInt32 data) -> None"},
 	{"GetControlReference", (PyCFunction)CtlObj_GetControlReference, 1,
 	 "() -> (SInt32 _rv)"},
+	{"GetAuxiliaryControlRecord", (PyCFunction)CtlObj_GetAuxiliaryControlRecord, 1,
+	 "() -> (Boolean _rv, AuxCtlHandle acHndl)"},
+	{"SetControlColor", (PyCFunction)CtlObj_SetControlColor, 1,
+	 "(CCTabHandle newColorTable) -> None"},
 	{"as_Resource", (PyCFunction)CtlObj_as_Resource, 1,
 	 "Return this Control as a Resource"},
 	{"DisposeControl", (PyCFunction)CtlObj_DisposeControl, 1,
