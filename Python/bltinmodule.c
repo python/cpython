@@ -186,21 +186,22 @@ builtin_filter(self, args)
 
 		if (func == None) {
 			good = item;
+			INCREF(good);
 		}
 		else {
 			object *arg = mkvalue("(O)", item);
-			DECREF(item);
 			if (arg == NULL)
 				goto Fail_1;
 			good = call_object(func, arg);
 			DECREF(arg);
-			if (good == NULL)
+			if (good == NULL) {
+				DECREF(item);
 				goto Fail_1;
+			}
 		}
 		ok = testbool(good);
 		DECREF(good);
 		if (ok) {
-			INCREF(item);
 			if (j < len) {
 				if (setlistitem(result, j++, item) < 0)
 					goto Fail_1;
@@ -210,6 +211,8 @@ builtin_filter(self, args)
 				if (addlistitem(result, item) < 0)
 					goto Fail_1;
 			}
+		} else {
+			DECREF(item);
 		}
 	}
 
