@@ -125,30 +125,6 @@ def poll(timeout=0.0, map=None):
             write(obj)
 
 def poll2(timeout=0.0, map=None):
-    import poll
-    if map is None:
-        map = socket_map
-    if timeout is not None:
-        # timeout is in milliseconds
-        timeout = int(timeout*1000)
-    if map:
-        l = []
-        for fd, obj in map.items():
-            flags = 0
-            if obj.readable():
-                flags = poll.POLLIN
-            if obj.writable():
-                flags = flags | poll.POLLOUT
-            if flags:
-                l.append((fd, flags))
-        r = poll.poll(l, timeout)
-        for fd, flags in r:
-            obj = map.get(fd)
-            if obj is None:
-                continue
-            readwrite(obj, flags)
-
-def poll3(timeout=0.0, map=None):
     # Use the poll() support added to the select module in Python 2.0
     if map is None:
         map = socket_map
@@ -177,15 +153,14 @@ def poll3(timeout=0.0, map=None):
                 continue
             readwrite(obj, flags)
 
+poll3 = poll2                           # Alias for backward compatibility
+
 def loop(timeout=30.0, use_poll=0, map=None):
     if map is None:
         map = socket_map
 
-    if use_poll:
-        if hasattr(select, 'poll'):
-            poll_fun = poll3
-        else:
-            poll_fun = poll2
+    if use_poll and hasattr(select, 'poll'):
+        poll_fun = poll2
     else:
         poll_fun = poll
 
