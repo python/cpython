@@ -20,7 +20,7 @@ import regex
 import os
 
 
-__version__ = '1.3'
+__version__ = '1.4'
 
 # Helper for non-unix systems
 if os.name == 'mac':
@@ -179,15 +179,18 @@ class URLopener:
 		import httplib
 		if type(url) is type(""):
 			host, selector = splithost(url)
+			user_passwd, host = splituser(host)
 		else:
 			host, selector = url
+			urltype, rest = splittype(selector)
+			if string.lower(urltype) == 'http':
+			    realhost, rest = splithost(rest)
+			    user_passwd, realhost = splituser(realhost)
+			    if user_passwd:
+				selector = "%s://%s%s" % (urltype,
+							  realhost, rest)
 			print "proxy via http:", host, selector
 		if not host: raise IOError, ('http error', 'no host given')
-		i = string.find(host, '@')
-		if i >= 0:
-			user_passwd, host = host[:i], host[i+1:]
-		else:
-			user_passwd = None
 		if user_passwd:
 			import base64
 			auth = string.strip(base64.encodestring(user_passwd))
