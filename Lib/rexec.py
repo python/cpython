@@ -136,9 +136,9 @@ class RExec(ihooks._Verbose):
     ok_builtin_modules = ('audioop', 'array', 'binascii',
                           'cmath', 'errno', 'imageop',
                           'marshal', 'math', 'md5', 'operator',
-                          'parser', 'regex', 'rotor', 'select',
+                          'parser', 'regex', 'select',
                           'sha', '_sre', 'strop', 'struct', 'time',
-                          'xreadlines', '_weakref')
+                          '_weakref')
 
     ok_posix_names = ('error', 'fstat', 'listdir', 'lstat', 'readlink',
                       'stat', 'times', 'uname', 'getpid', 'getppid',
