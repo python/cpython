@@ -749,7 +749,7 @@ posix_fdatasync(PyObject *self, PyObject *args)
 #endif /* HAVE_FDATASYNC */
 
 
-#if HAVE_CHOWN
+#ifdef HAVE_CHOWN
 static char posix_chown__doc__[] =
 "chown(path, uid, gid) -> None\n\
 Change the owner and group id of path to the numeric uid and gid.";
