@@ -1,4 +1,4 @@
 test_global
-got SyntaxWarning as expected
-got SyntaxWarning as expected
-got SyntaxWarning as expected
+got SyntaxError as expected
+got SyntaxError as expected
+got SyntaxError as expected
