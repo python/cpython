@@ -34,7 +34,7 @@ and returns an iterator that returns the elements of the sequence
 in reverse order.  
 
 \begin{verbatim}
->>> for i in reversed([1,2,3]):
+>>> for i in reversed(xrange(1,4)):
 ...    print i
 ... 
 3
@@ -42,9 +42,12 @@ in reverse order.
 1
 \end{verbatim}
 
+Compared to extended slicing, \code{range(1,4)[::-1]}, \function{reversed()}
+is easier to read, runs faster, and uses substantially less memory.
+
 Note that \function{reversed()} only accepts sequences, not arbitrary
-iterators.  If you want to reverse an iterator, convert it to 
-a list or tuple with \function{list()} or \function{tuple()}.
+iterators.  If you want to reverse an iterator, first convert it to 
+a list with \function{list()}.
 
 \begin{verbatim}
 >>> input = open('/etc/passwd', 'r')
