@@ -28,7 +28,6 @@ pathfix.py		Change #!/usr/local/bin/python into something else
 pdeps.py		Print dependencies between Python modules
 pindent.py		Indent Python code, giving block-closing comments
 ptags.py		Create vi tags file for Python modules
-pystone.py		Benchmark, based on "Dhrystone" C benchmark
 suff.py			Sort a list of files by suffix
 sum5.py			Print md5 checksums of files
 treesync.py		Synchronize source trees (very ideosyncratic)
