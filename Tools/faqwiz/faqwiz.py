@@ -325,12 +325,6 @@ class FaqDir:
 	sec, num = self.__okprog.group(1, 2)
 	return string.atoi(sec), string.atoi(num)
 
-    def roulette(self):
-	self.__fill()
-	import whrandom
-	if not self.__files: return None
-	return whrandom.choice(self.__files)
-
     def list(self):
 	# XXX Caller shouldn't modify result
 	self.__fill()
@@ -577,10 +571,12 @@ class FaqWizard:
 	emit(TAIL_RECENT)
 
     def do_roulette(self):
-	file = self.dir.roulette()
-	if not file:
+	import whrandom
+	files = self.dir.list()
+	if not files: 
 	    self.error("No entries.")
 	    return
+	file = whrandom.choice(files)
 	self.prologue(T_ROULETTE)
 	self.dir.show(file)
 
