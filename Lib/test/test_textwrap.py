@@ -29,7 +29,7 @@ class BaseTestCase(unittest.TestCase):
 
 
     def check(self, result, expect):
-        self.assertEquals(result, expect, 
+        self.assertEquals(result, expect,
             'expected:\n%s\nbut got:\n%s' % (
                 self.show(expect), self.show(result)))
 
@@ -44,7 +44,7 @@ class WrapTestCase(BaseTestCase):
         self.wrapper = TextWrapper(width=45, fix_sentence_endings=True)
 
     def test_simple(self):
-        '''Simple case: just words, spaces, and a bit of punctuation.'''
+        # Simple case: just words, spaces, and a bit of punctuation
 
         text = "Hello there, how are you this fine day?  I'm glad to hear it!"
 
@@ -62,7 +62,7 @@ class WrapTestCase(BaseTestCase):
 
 
     def test_whitespace(self):
-        '''Whitespace munging and end-of-sentence detection.'''
+        # Whitespace munging and end-of-sentence detection
 
         text = """\
 This is a paragraph that already has
@@ -86,7 +86,7 @@ What a mess!
 
 
     def test_wrap_short(self):
-        '''Wrapping to make short lines longer.'''
+        # Wrapping to make short lines longer
 
         text = "This is a\nshort paragraph."
 
@@ -96,7 +96,7 @@ What a mess!
 
 
     def test_hyphenated(self):
-        '''Test breaking hyphenated words.'''
+        # Test breaking hyphenated words
 
         text = ("this-is-a-useful-feature-for-"
                 "reformatting-posts-from-tim-peters'ly")
@@ -112,7 +112,7 @@ What a mess!
                          "posts-from-tim-peters'ly"])
 
     def test_em_dash(self):
-        '''Test text with em-dashes.'''
+        # Test text with em-dashes
         text = "Em-dashes should be written -- thus."
         self.check_wrap(text, 25,
                         ["Em-dashes should be",
@@ -129,7 +129,7 @@ What a mess!
         self.check_wrap(text, 35, expect)
         self.check_wrap(text, 36,
                         ["Em-dashes should be written -- thus."])
-        
+
         # The improperly written em-dash is handled too, because
         # it's adjacent to non-whitespace on both sides.
         text = "You can also do--this or even---this."
@@ -164,8 +164,8 @@ What a mess!
                           "but got  %r" % (expect, result))
 
     def test_split(self):
-        '''Ensure that the standard _split() method works as advertised 
-           in the comments.'''
+        # Ensure that the standard _split() method works as advertised
+        # in the comments
 
         text = "Hello there -- you goof-ball, use the -b option!"
 
@@ -184,7 +184,7 @@ How *do* you spell that odd word, anyways?
 '''
 
     def test_break_long(self):
-        '''Wrap text with long words and lots of punctuation.'''
+        # Wrap text with long words and lots of punctuation
 
         self.check_wrap(self.text, 30,
                         ['Did you say "supercalifragilis',
@@ -196,15 +196,15 @@ How *do* you spell that odd word, anyways?
                          'How *do* you spell that odd word, anyways?'])
 
 
-    def test_nobreak_long(self):        
-        '''Test with break_long_words disabled.'''
+    def test_nobreak_long(self):
+        # Test with break_long_words disabled
         self.wrapper.break_long_words = 0
         self.wrapper.width = 30
         expect = ['Did you say',
                   '"supercalifragilisticexpialidocious?"',
                   'How *do* you spell that odd',
                   'word, anyways?'
-                  ] 
+                  ]
         result = self.wrapper.wrap(self.text)
         self.check(result, expect)
 
@@ -224,7 +224,7 @@ and then with some (including a hanging indent).'''
 
 
     def test_fill(self):
-        '''Test the fill() method.'''
+        # Test the fill() method
 
         expect = '''\
 This paragraph will be filled, first
@@ -236,7 +236,7 @@ some (including a hanging indent).'''
 
 
     def test_initial_indent(self):
-        '''Test initial_indent parameter.'''
+        # Test initial_indent parameter
 
         expect = ["     This paragraph will be filled,",
                   "first without any indentation, and then",
@@ -250,7 +250,7 @@ some (including a hanging indent).'''
 
 
     def test_subsequent_indent(self):
-        '''Test subsequent_indent parameter.'''
+        # Test subsequent_indent parameter
 
         expect = '''\
   * This paragraph will be filled, first
