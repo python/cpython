@@ -54,7 +54,7 @@ FILE *PyWin_FindRegisteredModule( const char *moduleName, struct filedescr **ppF
 	moduleKey = alloca(bufSize); 
 	sprintf(moduleKey, "Software\\Python\\PythonCore\\%s\\Modules\\%s%s", PyWin_DLLVersionString, moduleName, debugString);
 
-	modNameSize = bufSize;
+	modNameSize = pathLen;
 	regStat = RegQueryValue(keyBase, moduleKey, pathBuf, &modNameSize);
 	if (regStat!=ERROR_SUCCESS)
 		return NULL;
