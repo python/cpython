@@ -377,6 +377,7 @@ sp_CreateProcess(PyObject* self, PyObject* args)
 
 	/* note: we only support a small subset of all SI attributes */
 	si.dwFlags = getint(startup_info, "dwFlags");
+	si.wShowWindow = getint(startup_info, "wShowWindow");
 	si.hStdInput = gethandle(startup_info, "hStdInput");
 	si.hStdOutput = gethandle(startup_info, "hStdOutput");
 	si.hStdError = gethandle(startup_info, "hStdError");
@@ -530,6 +531,8 @@ init_subprocess()
 	defint(d, "STD_ERROR_HANDLE", STD_ERROR_HANDLE);
 	defint(d, "DUPLICATE_SAME_ACCESS", DUPLICATE_SAME_ACCESS);
 	defint(d, "STARTF_USESTDHANDLES", STARTF_USESTDHANDLES);
+	defint(d, "STARTF_USESHOWWINDOW", STARTF_USESHOWWINDOW);
+	defint(d, "SW_HIDE", SW_HIDE);
 	defint(d, "INFINITE", INFINITE);
 	defint(d, "WAIT_OBJECT_0", WAIT_OBJECT_0);
 	defint(d, "CREATE_NEW_CONSOLE", CREATE_NEW_CONSOLE);
