@@ -1,4 +1,4 @@
-"""Framework for measuring execution time for small code snippets.
+"""Tool for measuring execution time of small code snippets.
 
 This module avoids a number of common traps for measuring execution
 times.  See also Tim Peters' introduction to the Algorithms chapter in
@@ -12,7 +12,7 @@ Command line usage:
 Options:
   -n/--number N: how many times to execute 'statement' (default: see below)
   -r/--repeat N: how many times to repeat the timer (default 1)
-  -s/--setup S: statements executed once before 'statement' (default 'pass')
+  -s/--setup S: statement to be executed once initially (default 'pass')
   -t/--time: use time.time() (default on Unix)
   -c/--clock: use time.clock() (default on Windows)
   -h/--help: print this usage message and exit
@@ -20,7 +20,8 @@ Options:
 
 A multi-line statement may be given by specifying each line as a
 separate argument; indented lines are possible by enclosing an
-argument in quotes and using leading spaces.
+argument in quotes and using leading spaces.  Multiple -s options are
+treated similarly.
 
 If -n is not given, a suitable number of loops is calculated by trying
 successive powers of 10 until the total time is at least 0.2 seconds.
@@ -37,27 +38,23 @@ good for this.  On Unix, you can use clock() to measure CPU time.
 
 Note: there is a certain baseline overhead associated with executing a
 pass statement.  The code here doesn't try to hide it, but you should
-be aware of it (especially when comparing different versions of
-Python).  The baseline overhead is measured by invoking the program
-without arguments.
+be aware of it.  The baseline overhead can be measured by invoking the
+program without arguments.
+
+The baseline overhead differs between Python versions!  Also, to
+fairly compare older Python versions to Python 2.3, you may want to
+use python -O for the older versions to avoid timing SET_LINENO
+instructions.
 """
-
-# To use this module with older versions of Python, the dependency on
-# the itertools module is easily removed; in the template, instead of
-# itertools.repeat(None, number), use [None]*number.  It's barely
-# slower.  Note: the baseline overhead, measured by the default
-# invocation, differs for older Python versions!  Also, to fairly
-# compare older Python versions to Python 2.3, you may want to use
-# python -O for the older versions to avoid timing SET_LINENO
-# instructions.
-
-# XXX Maybe for convenience of comparing with previous Python versions,
-# itertools.repeat() should not be used at all?
 
 import sys
 import math
 import time
-import itertools
+try:
+    import itertools
+except ImportError:
+    # Must be an older Python version (see timeit() below)
+    itertools = None
 
 __all__ = ["Timer"]
 
@@ -75,9 +72,8 @@ else:
 # in Timer.__init__() depend on setup being indented 4 spaces and stmt
 # being indented 8 spaces.
 template = """
-def inner(number, timer):
+def inner(seq, timer):
     %(setup)s
-    seq = itertools.repeat(None, number)
     t0 = timer()
     for i in seq:
         %(stmt)s
@@ -126,7 +122,11 @@ class Timer:
         to one million.  The main statement, the setup statement and
         the timer function to be used are passed to the constructor.
         """
-        return self.inner(number, self.timer)
+        if itertools:
+            seq = itertools.repeat(None, number)
+        else:
+            seq = [None] * number
+        return self.inner(seq, self.timer)
 
     def repeat(self, repeat=default_repeat, number=default_number):
         """Call timer() a few times.
@@ -177,13 +177,13 @@ def main(args=None):
     timer = default_timer
     stmt = "\n".join(args) or "pass"
     number = 0 # auto-determine
-    setup = "pass"
+    setup = []
     repeat = 1
     for o, a in opts:
         if o in ("-n", "--number"):
             number = int(a)
         if o in ("-s", "--setup"):
-            setup = a
+            setup.append(a)
         if o in ("-r", "--repeat"):
             repeat = int(a)
             if repeat <= 0:
@@ -195,6 +195,7 @@ def main(args=None):
         if o in ("-h", "--help"):
             print __doc__,
             return 0
+    setup = "\n".join(setup) or "pass"
     t = Timer(stmt, setup, timer)
     if number == 0:
         # determine number so that 0.2 <= total time < 2.0
