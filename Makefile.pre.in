@@ -110,8 +110,8 @@ PYTHONFRAMEWORKINSTALLDIR= @PYTHONFRAMEWORKINSTALLDIR@
 # Deployment target selected during configure, to be checked
 # by distutils
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
-# Options to enable prebinding (for fast startup)
-OTHER_LIBTOOL_OPT = -prebind -seg1addr 0x10000000
+# Options to enable prebinding (for fast startup prior to Mac OS X 10.3)
+OTHER_LIBTOOL_OPT=@OTHER_LIBTOOL_OPT@
 
 # Environment to run shared python without installed libraries
 RUNSHARED=       @RUNSHARED@
@@ -371,7 +371,7 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
                 $(RESSRCDIR)/English.lproj/InfoPlist.strings
 	$(INSTALL) -d -m $(DIRMODE) $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)
 	libtool -o $(LDLIBRARY) -dynamic $(OTHER_LIBTOOL_OPT) $(LIBRARY) \
-		-framework System @LIBTOOL_CRUFT@
+		@LIBTOOL_CRUFT@
 	$(INSTALL) -d -m $(DIRMODE)  \
 		$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Resources/English.lproj
 	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist \
