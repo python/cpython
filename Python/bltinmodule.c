@@ -71,55 +71,37 @@ builtin_bagof(self, args)
 	object *self;
 	object *args;
 {
-	object *func, *seq, *arg, *result;
+	object *func, *seq, *result;
 	sequence_methods *sqf;
-	int len, newfunc = 0;
-	register int i,j;
-	static char bagof_err[] = "bagof() requires 1 or 2 args";
+	int len;
+	register int i, j;
 
-	if (args == NULL) {
-		err_setstr(TypeError, bagof_err);
+	if (!getargs(args, "(OO)", &func, &seq))
 		return NULL;
-	}
 
-	if (is_tupleobject(args)) {
-		if (gettuplesize(args) != 2) {
-			err_setstr(TypeError, bagof_err);
+	if (is_stringobject(func)) {
+		if ((func = exec_eval(func, lambda_input)) == NULL)
 			return NULL;
-		}
-
-		func = gettupleitem(args, 0);
-		seq  = gettupleitem(args, 1);
-
-		if (is_stringobject(func)) {
-			if ((func = exec_eval(func, lambda_input)) == NULL)
-				return NULL;
-			newfunc = 1;
-		}
 	}
 	else {
-		func = None;
-		seq  = args;
+		INCREF(func);
 	}
 
-	/* check for special cases; strings and tuples are returned as same */
 	if (is_stringobject(seq)) {
 		object *r = filterstring(func, seq);
-		if (newfunc)
-			DECREF(func);
+		DECREF(func);
 		return r;
 	}
 
-	else if (is_tupleobject(seq)) {
+	if (is_tupleobject(seq)) {
 		object *r = filtertuple(func, seq);
-		if (newfunc)
-			DECREF(func);
+		DECREF(func);
 		return r;
 	}
 
-	if (! (sqf = seq->ob_type->tp_as_sequence)) {
+	if ((sqf = seq->ob_type->tp_as_sequence) == NULL) {
 		err_setstr(TypeError,
-			   "argument to bagof() must be a sequence type");
+			   "argument 2 to bagof() must be a sequence type");
 		goto Fail_2;
 	}
 
@@ -130,65 +112,51 @@ builtin_bagof(self, args)
 		INCREF(seq);
 		result = seq;
 	}
-	else
+	else {
 		if ((result = newlistobject(len)) == NULL)
 			goto Fail_2;
-
-	if ((arg = newtupleobject(1)) == NULL)
-		goto Fail_1;
+	}
 
 	for (i = j = 0; i < len; ++i) {
-		object *ele, *value;
+		object *item, *good;
+		int ok;
 
-		if (arg->ob_refcnt > 1) {
+		if ((item = (*sqf->sq_item)(seq, i)) == NULL)
+			goto Fail_1;
+
+		if (func == None) {
+			good = item;
+		}
+		else {
+			object *arg = mkvalue("(O)", item);
+			DECREF(item);
+			if (arg == NULL)
+				goto Fail_1;
+			good = call_object(func, arg);
 			DECREF(arg);
-			if ((arg = newtupleobject(1)) == NULL)
+			if (good == NULL)
 				goto Fail_1;
 		}
-
-		if ((ele = (*sqf->sq_item)(seq, i)) == NULL)
-			goto Fail_0;
-
-		if (func == None)
-			value = ele;
-		else {
-			if (settupleitem(arg, 0, ele) < 0)
-				goto Fail_0;
-
-			if ((value = call_object(func, arg)) == NULL)
-				goto Fail_0;
+		ok = testbool(good);
+		DECREF(good);
+		if (ok) {
+			INCREF(item);
+			if (setlistitem(result, j++, item) < 0)
+				goto Fail_1;
 		}
-
-		if (testbool(value)) {
-			INCREF(ele);
-			if (setlistitem(result, j++, ele) < 0)
-				goto Fail_0;
-		}
-
-		DECREF(value);
 	}
 
-	/* list_ass_slice() expects the rest of the list to be non-null */
-	for (i = j; i < len; ++i) {
-		INCREF(None);
-		if (setlistitem(result, i, None) < 0)
-			goto Fail_0;
-	}
 
-	DECREF(arg);
-	if (newfunc)
-		DECREF(func);
+	if (setlistslice(result, j, len, NULL) < 0)
+		goto Fail_1;
 
-	(*result->ob_type->tp_as_sequence->sq_ass_slice)(result, j, len, NULL);
+	DECREF(func);
 	return result;
 
-Fail_0:
-	DECREF(arg);
 Fail_1:
 	DECREF(result);
 Fail_2:
-	if (newfunc)
-		DECREF(func);
+	DECREF(func);
 	return NULL;
 }
 
@@ -495,11 +463,15 @@ builtin_map(self, args)
 	if (is_stringobject(func)) {
 		if ((func = exec_eval(func, lambda_input)) == NULL)
 			return NULL;
-		newfunc = 1;
+	}
+	else {
+		INCREF(func);
 	}
 
-	if ((seqs = (sequence *) malloc(n * sizeof(sequence))) == NULL)
-		return err_nomem();
+	if ((seqs = NEW(sequence, n)) == NULL) {
+		err_nomem();
+		goto Fail_2;
+	}
 
 	for (len = -1, i = 0, sqp = seqs; i < n; ++i, ++sqp) {
 		int curlen;
@@ -527,74 +499,64 @@ builtin_map(self, args)
 	if ((result = (object *) newlistobject(len)) == NULL)
 		goto Fail_2;
 
-	if ((args = newtupleobject(n)) == NULL)
-		goto Fail_1;
-
+	/* XXX Special case map(None, single_list) could be more efficient */
 	for (i = 0; i < len; ++i) {
-		object *arg, *value;
+		object *arglist, *item;
 
-		if (args->ob_refcnt > 1) {
-			DECREF(args);
-			if ((args = newtupleobject(n)) == NULL)
-				goto Fail_1;
-		}
+		if ((arglist = newtupleobject(n)) == NULL)
+			goto Fail_1;
 
 		for (j = 0, sqp = seqs; j < n; ++j, ++sqp) {
 			if (i >= sqp->len) {
 				INCREF(None);
-				if (settupleitem(args, j, None) < 0)
-					goto Fail_0;
-				arg = None;
+				item = None;
 			}
-
 			else {
-				if ((arg = (*sqp->sqf->sq_item)(sqp->seq, i)) == NULL)
+				item = (*sqp->sqf->sq_item)(sqp->seq, i);
+				if (item == NULL)
 					goto Fail_0;
 
-				if (settupleitem(args, j, arg) < 0)
-					goto Fail_0;
 			}
+			if (settupleitem(arglist, j, item) < 0)
+				goto Fail_0;
+			continue;
+
+		Fail_0:
+			DECREF(arglist);
+			goto Fail_1;
 		}
 
 		if (func == None) {
 			if (n == 1)	{ /* avoid creating singleton */
-				INCREF(arg);
-				if (setlistitem(result, i, arg) < 0)
-					goto Fail_0;
+				INCREF(item); /* This is arglist[0] !!! */
+				DECREF(arglist);
+				if (setlistitem(result, i, item) < 0)
+					goto Fail_1;
 			}
 			else {
-				INCREF(args);
-				if (setlistitem(result, i, args) < 0)
-					goto Fail_0;
+				if (setlistitem(result, i, arglist) < 0)
+					goto Fail_1;
 			}
 		}
 		else {
-			if ((value = call_object(func, args)) == NULL)
-				goto Fail_0;
-
+			object *value = call_object(func, arglist);
+			DECREF(arglist);
+			if (value == NULL)
+				goto Fail_1;
 			if (setlistitem((object *) result, i, value) < 0)
-				goto Fail_0;
+				goto Fail_1;
 		}
 	}
 
-	if (seqs) free(seqs);
-
-	DECREF(args);
-	if (newfunc)
-		DECREF(func);
-
+	if (seqs) DEL(seqs);
+	DECREF(func);
 	return result;
 
-Fail_0:
-	DECREF(args);
 Fail_1:
 	DECREF(result);
 Fail_2:
-	if (newfunc)
-		DECREF(func);
-
-	if (seqs) free(seqs);
-
+	DECREF(func);
+	if (seqs) DEL(seqs);
 	return NULL;
 }
 
@@ -990,7 +952,7 @@ builtin_reduce(self, args)
 	sequence_methods *sqf;
 	static char reduce_err[] = "reduce() requires 2 or 3 args";
 	register int i;
-	int start = 0, newfunc = 0;
+	int start = 0;
 	int len;
 
 	if (args == NULL || !is_tupleobject(args)) {
@@ -1018,7 +980,9 @@ builtin_reduce(self, args)
 	if (is_stringobject(func)) {
 		if ((func = exec_eval(func, lambda_input)) == NULL)
 			return NULL;
-		newfunc = 1;
+	}
+	else {
+		INCREF(func);
 	}
 
 	if ((len = (*sqf->sq_length)(seq)) < 0)
@@ -1061,20 +1025,17 @@ builtin_reduce(self, args)
 	}
 
 	DECREF(args);
-	if (newfunc)
-		DECREF(func);
+	DECREF(func);
 
 	return result;
 
-	/* XXX I hate goto's. I hate goto's. I hate goto's. I hate goto's. */
 Fail_0:
 	DECREF(args);
 	goto Fail_2;
 Fail_1:
 	DECREF(result);
 Fail_2:
-	if (newfunc)
-		DECREF(func);
+	DECREF(func);
 	return NULL;
 }
 
@@ -1310,14 +1271,14 @@ coerce(pv, pw)
 }
 
 
-/* Filter a tuple through a function */
+/* Helper for bagof(): filter a tuple through a function */
 
 static object *
 filtertuple(func, tuple)
 	object *func;
 	object *tuple;
 {
-	object *arg, *result;
+	object *result;
 	register int i, j;
 	int len = gettuplesize(tuple), shared = 0;
 
@@ -1330,42 +1291,34 @@ filtertuple(func, tuple)
 		if ((result = newtupleobject(len)) == NULL)
 			return NULL;
 
-	if ((arg = newtupleobject(1)) == NULL)
-		goto Fail_1;
-
 	for (i = j = 0; i < len; ++i) {
-		object *ele, *value;
+		object *item, *good;
+		int ok;
 
-		if (arg->ob_refcnt > 1) {
+		if ((item = gettupleitem(tuple, i)) == NULL)
+			goto Fail_1;
+		if (func == None) {
+			INCREF(item);
+			good = item;
+		}
+		else {
+			object *arg = mkvalue("(O)", item);
+			if (arg == NULL)
+				goto Fail_1;
+			good = call_object(func, arg);
 			DECREF(arg);
-			if ((arg = newtupleobject(1)) == NULL)
+			if (good == NULL)
 				goto Fail_1;
 		}
-
-		if ((ele = gettupleitem(tuple, i)) == NULL)
-			goto Fail_0;
-		INCREF(ele);
-
-		if (func == None)
-			value = ele;
-		else {
-			if (settupleitem(arg, 0, ele) < 0)
-				goto Fail_0;
-
-			if ((value = call_object(func, arg)) == NULL)
-				goto Fail_0;
+		ok = testbool(good);
+		DECREF(good);
+		if (ok) {
+			INCREF(item);
+			if (settupleitem(result, j++, item) < 0)
+				goto Fail_1;
 		}
-
-		if (testbool(value)) {
-			INCREF(ele);
-			if (settupleitem(result, j++, ele) < 0)
-				goto Fail_0;
-		}
-
-		DECREF(value);
 	}
 
-	DECREF(arg);
 	if (resizetuple(&result, j) < 0)
 		return NULL;
 
@@ -1374,8 +1327,6 @@ filtertuple(func, tuple)
 
 	return result;
 
-Fail_0:
-	DECREF(arg);
 Fail_1:
 	if (!shared)
 		DECREF(result);
@@ -1383,14 +1334,14 @@ Fail_1:
 }
 
 
-/* Filter a string through a function */
+/* Helper for bagof(): filter a string through a function */
 
 static object *
 filterstring(func, strobj)
 	object *func;
 	object *strobj;
 {
-	object *arg, *result;
+	object *result;
 	register int i, j;
 	int len = getstringsize(strobj), shared = 0;
 
@@ -1415,36 +1366,28 @@ filterstring(func, strobj)
 		}
 	}
 
-	if ((arg = newtupleobject(1)) == NULL)
-		goto Fail_1;
-
 	for (i = j = 0; i < len; ++i) {
-		object *ele, *value;
+		object *item, *arg, *good;
+		int ok;
 
-		if (arg->ob_refcnt > 1) {
-			DECREF(arg);
-			if ((arg = newtupleobject(1)) == NULL)
-				goto Fail_1;
-		}
-
-		if ((ele = (*strobj->ob_type->tp_as_sequence->sq_item)
-		           (strobj, i)) == NULL)
-			goto Fail_0;
-
-		if (settupleitem(arg, 0, ele) < 0)
-			goto Fail_0;
-
-		if ((value = call_object(func, arg)) == NULL)
-			goto Fail_0;
-
-		if (testbool(value))
+		item = (*strobj->ob_type->tp_as_sequence->sq_item)(strobj, i);
+		if (item == NULL)
+			goto Fail_1;
+		arg = mkvalue("(O)", item);
+		DECREF(item);
+		if (arg == NULL)
+			goto Fail_1;
+		good = call_object(func, arg);
+		DECREF(arg);
+		if (good == NULL)
+			goto Fail_1;
+		ok = testbool(good);
+		DECREF(good);
+		if (ok)
 			GETSTRINGVALUE((stringobject *)result)[j++] =
-				GETSTRINGVALUE((stringobject *)ele)[0];
-
-		DECREF(value);
+				GETSTRINGVALUE((stringobject *)item)[0];
 	}
 
-	DECREF(arg);
 	if (resizestring(&result, j) < 0)
 		return NULL;
 
@@ -1453,8 +1396,6 @@ filterstring(func, strobj)
 
 	return result;
 
-Fail_0:
-	DECREF(arg);
 Fail_1:
 	if (!shared)
 		DECREF(result);
