@@ -122,7 +122,7 @@ EMACS=     emacs
 
 # The end of this should reflect the major/minor version numbers of
 # the release:
-WHATSNEW=whatsnew24
+WHATSNEW=whatsnew25
 
 # what's what
 MANDVIFILES=	paper-$(PAPER)/api.dvi paper-$(PAPER)/ext.dvi \
@@ -700,7 +700,7 @@ pkglist:
 	$(TOOLSDIR)/mkpkglist >pkglist.html
 
 distfiles:	paperdist edist
-	$(TOOLSDIR)/mksourcepkg --all $(RELEASE)
+	$(TOOLSDIR)/mksourcepkg --bzip2 --zip $(RELEASE)
 	$(TOOLSDIR)/mkpkglist >pkglist.html
 
 
