@@ -1,0 +1,176 @@
+\section{Built-in module \sectcode{imp}}
+\bimodindex{imp}
+\index{import}
+
+This module provides an interface to the mechanisms use to implement
+the \code{import} statement.  It defines the following constants and
+functions:
+
+\renewcommand{\indexsubitem}{(in module struct)}
+
+\begin{funcdesc}{get_magic}{}
+Return the magic string used to recognize value byte-compiled code
+files (``\code{.pyc} files'').
+\end{funcdesc}
+
+\begin{funcdesc}{get_suffixes}{}
+Return a list of triples, each describing a particular type of file.
+Each triple has the form \code{(\var{suffix}, \var{mode},
+\var{type})}, where \var{suffix} is a string to be appended to the
+module name to form the filename to search for, \var{mode} is the mode
+string to pass to the built-in \code{open} function to open the file
+(this can be \code{'r'} for text files or \code{'rb'} for binary
+files), and \var{type} is the file type, which has one of the values
+\code{PY_SOURCE}, \code{PY_COMPILED} or \code{C_EXTENSION}, defined
+below.
+\end{funcdesc}
+
+\begin{funcdesc}{find_module}{name\, \optional{path}}
+Try to find the module \var{name} on the search path \var{path}.  The
+default \var{path} is \code{sys.path}.  The return value is a triple
+\code{(\var{file}, \var{pathname}, \var{description})} where
+\var{file} is an open file object positioned at the beginning
+corresponding to the file found, \var{pathname} is the pathname of the
+file found, and \var{description} is a triple as contained in the list
+returned by \code{get_suffixes} describing the kind of file found.
+\end{funcdesc}
+
+\begin{funcdesc}{init_builtin}{name}
+Initialize the built-in module called \var{name} and return its module
+object.  If the module was already initialized, it will be initialized
+{\em again}.  A few modules cannot be initialized twice -- attempting
+to initialize these again will raise an exception.  If there is no
+built-in module called \var{name}, \code{None} is returned.
+\end{funcdesc}
+
+\begin{funcdesc}{init_frozen}{name}
+Initialize the frozen module called \var{name} and return its module
+object.  If the module was already initialized, it will be initialized
+{\em again}.  If there is no frozen module called \var{name},
+\code{None} is returned.  (Frozen modules are modules written in
+Python whose compiled byte-code object is incorporated into a
+custom-built Python interpreter by Python's \code{freeze} utility.
+See \code{Demo/freeze} for now.)
+\end{funcdesc}
+
+\begin{funcdesc}{is_builtin}{name}
+Return \code{1} if there is a built-in module called \var{name} which can be
+initialized again.  Return \code{-1} if there is a built-in module
+called \var{name} which cannot be initialized again (see
+\code{init_builtin}).  Return \code{0} if there is no built-in module
+called \var{name}.
+\end{funcdesc}
+
+\begin{funcdesc}{is_frozen}{name}
+Return \code{1} if there is a frozen module (see \code{init_frozen})
+called \var{name}, \code{0} if there is no such module.
+\end{funcdesc}
+
+\begin{funcdesc}{load_compiled}{name\, pathname\, \optional{file}}
+Load and initialize a module implemented as a byte-compiled code file
+and return its module object.  If the module was already initialized,
+it will be initialized {\em again}.  The \var{name} argument is used
+to create or access a module object.  The \var{pathname} argument
+points to the byte-compiled code file.  The optional \var{file}
+argument is the byte-compiled code file, open for reading in binary
+mode, from the beginning -- if not given, the function opens
+\var{pathname}.  It must currently be a real file object, not a
+user-defined class emulating a file.
+\end{funcdesc}
+
+\begin{funcdesc}{load_dynamic}{name\, pathname\, \optional{file}}
+Load and initialize a module implemented as a dynamically loadable
+shared library and return its module object.  If the module was
+already initialized, it will be initialized {\em again}.  Some modules
+don't like that and may raise an exception.  The \var{pathname}
+argument must point to the shared library.  The \var{name} argument is
+used to construct the name of the initialization function: an external
+C function called \code{init\var{name}()} in the shared library is
+called.  The optional \var{file} argment is ignored.  (Note: using
+shared libraries is highly system dependent, and not all systems
+support it.)
+\end{funcdesc}
+
+\begin{funcdesc}{load_source}{name\, pathname\, \optional{file}}
+Load and initialize a module implemented as a Python source file and
+return its module object.  If the module was already initialized, it
+will be initialized {\em again}.  The \var{name} argument is used to
+create or access a module object.  The \var{pathname} argument points
+to the source file.  The optional \var{file} argument is the source
+file, open for reading as text, from the beginning -- if not given,
+the function opens \var{pathname}.  It must currently be a real file
+object, not a user-defined class emulating a file.  Note that if a
+properly matching byte-compiled file (with suffix \code{.pyc}) exists,
+it will be used instead of parsing the given source file.
+\end{funcdesc}
+
+\begin{funcdesc}{new_module}{name}
+Return a new empty module object called \var{name}.  This object is
+{\em not} inserted in \code{sys.modules}.
+\end{funcdesc}
+
+The following constants with integer values, defined in the module,
+are used to indicate the search result of \code{imp.find_module}.
+
+\begin{datadesc}{SEARCH_ERROR}
+The module was not found.
+\end{datadesc}
+
+\begin{datadesc}{PY_SOURCE}
+The module was found as a source file.
+\end{datadesc}
+
+\begin{datadesc}{PY_COMPILED}
+The module was found as a compiled code object file.
+\end{datadesc}
+
+\begin{datadesc}{C_EXTENSION}
+The module was found as dynamically loadable shared library.
+\end{datadesc}
+
+\subsection{Examples}
+The following function emulates the default import statement:
+
+\begin{verbatim}
+import imp
+from sys import modules
+
+def __import__(name):
+    # Fast path: let's see if it's already in sys.modules.
+    # Two speed optimizations are worth mentioning:
+    # - We use 'modules' instead of 'sys.modules'; this saves a
+    #   dictionary look-up per call.
+    # - It's also faster to use a try-except statement than
+    #   to use modules.has_key(name) to check if it's there.
+    try:
+        return modules[name]
+    except KeyError:
+        pass
+
+    # See if it's a built-in module
+    m = imp.init_builtin(name)
+    if m:
+        return m
+
+    # See if it's a frozen module
+    m = imp.init_frozen(name)
+    if m:
+        return m
+
+    # Search the default path (i.e. sys.path).
+    # If this raises an exception, the module is not found --
+    # let the caller handle the exception.
+    fp, pathname, (suffix, mode, type) = imp.find_module(name)
+
+    # See what we got.
+    # Note that fp will be closed automatically when we return.
+    if type == imp.C_EXTENSION:
+        return imp.load_dynamic(name, pathname)
+    if type == imp.PY_SOURCE:
+        return imp.load_source(name, pathname, fp)
+    if type == imp.PY_COMPILED:
+        return imp.load_source(name, pathname, fp)
+
+    # Shouldn't get here at all.
+    raise ImportError, '%s: unknown module type (%d)' % (name, type)
+\end{verbatim}
