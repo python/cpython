@@ -27,9 +27,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* XXX The functional organization of this file is terrible */
 
 #include "allobjects.h"
+#include "intrcheck.h"
 #include "longintrepr.h"
 #include <math.h>
 #include <assert.h>
+
+#define ABS(x) ((x) < 0 ? -(x) : (x))
+
+/* Forward */
+static longobject *long_normalize PROTO((longobject *));
+static longobject *mul1 PROTO((longobject *, wdigit));
+static longobject *muladd1 PROTO((longobject *, wdigit, wdigit));
+static longobject *divrem1 PROTO((longobject *, wdigit, digit *));
 
 static int ticker;	/* XXX Could be shared with ceval? */
 
@@ -187,7 +196,7 @@ dgetlongvalue(vv)
 
 /* Multiply by a single digit, ignoring the sign. */
 
-longobject *
+static longobject *
 mul1(a, n)
 	longobject *a;
 	wdigit n;
@@ -197,7 +206,7 @@ mul1(a, n)
 
 /* Multiply by a single digit and add a single digit, ignoring the sign. */
 
-longobject *
+static longobject *
 muladd1(a, n, extra)
 	longobject *a;
 	wdigit n;
@@ -223,7 +232,7 @@ muladd1(a, n, extra)
    (as function result) and the remainder (through *prem).
    The sign of a is ignored; n should not be zero. */
 
-longobject *
+static longobject *
 divrem1(a, n, prem)
 	longobject *a;
 	wdigit n;
@@ -252,18 +261,23 @@ divrem1(a, n, prem)
    If base is 8 or 16, add the proper prefix '0' or '0x'.
    External linkage: used in bltinmodule.c by hex() and oct(). */
 
-stringobject *
-long_format(a, base)
-	longobject *a;
+object *
+long_format(aa, base)
+	object *aa;
 	int base;
 {
+	register longobject *a = (longobject *)aa;
 	stringobject *str;
 	int i;
 	int size_a = ABS(a->ob_size);
 	char *p;
 	int bits;
 	char sign = '\0';
-	
+
+	if (a == NULL || !is_longobject(a)) {
+		err_badcall();
+		return NULL;
+	}
 	assert(base >= 2 && base <= 36);
 	
 	/* Compute a rough upper bound for the length of the string */
@@ -330,7 +344,7 @@ long_format(a, base)
 		q--;
 		resizestring((object **)&str, (int) (q - GETSTRINGVALUE(str)));
 	}
-	return str;
+	return (object *)str;
 }
 
 /* Convert a string to a long int object, in a given base.
@@ -386,58 +400,55 @@ long_scan(str, base)
 
 static longobject *x_divrem PROTO((longobject *, longobject *, longobject **));
 static object *long_pos PROTO((longobject *));
+static long_divrem PROTO((longobject *, longobject *,
+	longobject **, longobject **));
 
 /* Long division with remainder, top-level routine */
 
-static longobject *
-long_divrem(a, b, prem)
+static int
+long_divrem(a, b, pdiv, prem)
 	longobject *a, *b;
+	longobject **pdiv;
 	longobject **prem;
 {
 	int size_a = ABS(a->ob_size), size_b = ABS(b->ob_size);
 	longobject *z;
 	
 	if (size_b == 0) {
-		if (prem != NULL)
-			*prem = NULL;
-		err_setstr(ZeroDivisionError, "long division or remainder");
-		return NULL;
+		err_setstr(ZeroDivisionError, "long division or modulo");
+		return -1;
 	}
 	if (size_a < size_b ||
 			size_a == size_b &&
 			a->ob_digit[size_a-1] < b->ob_digit[size_b-1]) {
 		/* |a| < |b|. */
-		if (prem != NULL) {
-			INCREF(a);
-			*prem = (longobject *) a;
-		}
-		return alloclongobject(0);
+		*pdiv = alloclongobject(0);
+		INCREF(a);
+		*prem = (longobject *) a;
+		return 0;
 	}
 	if (size_b == 1) {
 		digit rem = 0;
 		z = divrem1(a, b->ob_digit[0], &rem);
-		if (prem != NULL) {
-			if (z == NULL)
-				*prem = NULL;
-			else
-				*prem = (longobject *)
-					newlongobject((long)rem);
-		}
+		if (z == NULL)
+			return -1;
+		*prem = (longobject *) newlongobject((long)rem);
 	}
-	else
+	else {
 		z = x_divrem(a, b, prem);
+		if (z == NULL)
+			return -1;
+	}
 	/* Set the signs.
 	   The quotient z has the sign of a*b;
 	   the remainder r has the sign of a,
 	   so a = b*z + r. */
-	if (z != NULL) {
-		if ((a->ob_size < 0) != (b->ob_size < 0))
-			z->ob_size = -(z->ob_size);
-		if (prem != NULL && *prem != NULL && a->ob_size < 0 &&
-						(*prem)->ob_size != 0)
-			(*prem)->ob_size = -((*prem)->ob_size);
-	}
-	return z;
+	if ((a->ob_size < 0) != (b->ob_size < 0))
+		z->ob_size = -(z->ob_size);
+	if (a->ob_size < 0 && (*prem)->ob_size != 0)
+		(*prem)->ob_size = -((*prem)->ob_size);
+	*pdiv = z;
+	return 0;
 }
 
 /* Unsigned long division with remainder -- the algorithm */
@@ -457,8 +468,6 @@ x_divrem(v1, w1, prem)
 	if (v == NULL || w == NULL) {
 		XDECREF(v);
 		XDECREF(w);
-		if (prem != NULL)
-			*prem = NULL;
 		return NULL;
 	}
 	
@@ -523,19 +532,13 @@ x_divrem(v1, w1, prem)
 		}
 	} /* for j, k */
 	
-	if (a == NULL) {
-		if (prem != NULL)
-			*prem = NULL;
-	}
-	else {
+	if (a != NULL) {
 		a = long_normalize(a);
-		if (prem != NULL) {
-			*prem = divrem1(v, d, &d);
-			/* d receives the (unused) remainder */
-			if (*prem == NULL) {
-				DECREF(a);
-				a = NULL;
-			}
+		*prem = divrem1(v, d, &d);
+		/* d receives the (unused) remainder */
+		if (*prem == NULL) {
+			DECREF(a);
+			a = NULL;
 		}
 	}
 	DECREF(v);
@@ -544,6 +547,30 @@ x_divrem(v1, w1, prem)
 }
 
 /* Methods */
+
+/* Forward */
+static void long_dealloc PROTO((longobject *));
+static int long_print PROTO((longobject *, FILE *, int));
+static object *long_repr PROTO((longobject *));
+static int long_compare PROTO((longobject *, longobject *));
+
+static object *long_add PROTO((longobject *, longobject *));
+static object *long_sub PROTO((longobject *, longobject *));
+static object *long_mul PROTO((longobject *, longobject *));
+static object *long_div PROTO((longobject *, longobject *));
+static object *long_mod PROTO((longobject *, longobject *));
+static object *long_divmod PROTO((longobject *, longobject *));
+static object *long_pow PROTO((longobject *, longobject *));
+static object *long_neg PROTO((longobject *));
+static object *long_pos PROTO((longobject *));
+static object *long_abs PROTO((longobject *));
+static int long_nonzero PROTO((longobject *));
+static object *long_invert PROTO((longobject *));
+static object *long_lshift PROTO((longobject *, longobject *));
+static object *long_rshift PROTO((longobject *, longobject *));
+static object *long_and PROTO((longobject *, longobject *));
+static object *long_xor PROTO((longobject *, longobject *));
+static object *long_or PROTO((longobject *, longobject *));
 
 static void
 long_dealloc(v)
@@ -558,7 +585,7 @@ long_print(v, fp, flags)
 	FILE *fp;
 	int flags;
 {
-	stringobject *str = long_format(v, 10);
+	stringobject *str = (stringobject *) long_format((object *)v, 10);
 	if (str == NULL)
 		return -1;
 	fprintf(fp, "%s", GETSTRINGVALUE(str));
@@ -570,7 +597,7 @@ static object *
 long_repr(v)
 	longobject *v;
 {
-	return (object *) long_format(v, 10);
+	return long_format((object *)v, 10);
 }
 
 static int
@@ -782,34 +809,9 @@ long_mul(a, b)
 	return (object *) long_normalize(z);
 }
 
-static object *
-long_div(v, w)
-	longobject *v;
-	longobject *w;
-{
-	return (object *) long_divrem(v, w, (longobject **)0);
-}
-
-static object *
-long_rem(v, w)
-	longobject *v;
-	longobject *w;
-{
-	longobject *div, *rem = NULL;
-	
-	div = long_divrem(v, w, &rem);
-	if (div == NULL) {
-		XDECREF(rem);
-		rem = NULL;
-	}
-	else {
-		DECREF(div);
-	}
-	return (object *) rem;
-}
-
-/* The expression a mod b has the value a - b*floor(a/b).
-   The divrem function gives the remainder after division of
+/* The / and % operators are now defined in terms of divmod().
+   The expression a mod b has the value a - b*floor(a/b).
+   The long_divrem function gives the remainder after division of
    |a| by |b|, with the sign of a.  This is also expressed
    as a - b*trunc(a/b), if trunc truncates towards zero.
    Some examples:
@@ -822,47 +824,86 @@ long_rem(v, w)
    have different signs.  We then subtract one from the 'div'
    part of the outcome to keep the invariant intact. */
 
+static int l_divmod PROTO((longobject *, longobject *,
+	longobject **, longobject **));
+static int
+l_divmod(v, w, pdiv, pmod)
+	longobject *v;
+	longobject *w;
+	longobject **pdiv;
+	longobject **pmod;
+{
+	longobject *div, *mod;
+	
+	if (long_divrem(v, w, &div, &mod) < 0)
+		return -1;
+	if (mod->ob_size < 0 && w->ob_size > 0 ||
+				mod->ob_size > 0 && w->ob_size < 0) {
+		longobject *temp;
+		longobject *one;
+		temp = (longobject *) long_add(mod, w);
+		DECREF(mod);
+		mod = temp;
+		if (mod == NULL) {
+			DECREF(div);
+			return -1;
+		}
+		one = (longobject *) newlongobject(1L);
+		if (one == NULL ||
+		    (temp = (longobject *) long_sub(div, one)) == NULL) {
+			DECREF(mod);
+			DECREF(div);
+			return -1;
+		}
+		DECREF(div);
+		div = temp;
+	}
+	*pdiv = div;
+	*pmod = mod;
+	return 0;
+}
+
+static object *
+long_div(v, w)
+	longobject *v;
+	longobject *w;
+{
+	longobject *div, *mod;
+	if (l_divmod(v, w, &div, &mod) < 0)
+		return NULL;
+	DECREF(mod);
+	return (object *)div;
+}
+
+static object *
+long_mod(v, w)
+	longobject *v;
+	longobject *w;
+{
+	longobject *div, *mod;
+	if (l_divmod(v, w, &div, &mod) < 0)
+		return NULL;
+	DECREF(div);
+	return (object *)mod;
+}
+
 static object *
 long_divmod(v, w)
 	longobject *v;
 	longobject *w;
 {
 	object *z;
-	longobject *div, *rem;
-	div = long_divrem(v, w, &rem);
-	if (div == NULL) {
-		XDECREF(rem);
+	longobject *div, *mod;
+	if (l_divmod(v, w, &div, &mod) < 0)
 		return NULL;
-	}
-	if (rem->ob_size < 0 && w->ob_size > 0 ||
-				rem->ob_size > 0 && w->ob_size < 0) {
-		longobject *temp;
-		longobject *one;
-		temp = (longobject *) long_add(rem, (object *)w);
-		DECREF(rem);
-		rem = temp;
-		if (rem == NULL) {
-			DECREF(div);
-			return NULL;
-		}
-		one = (longobject *) newlongobject(1L);
-		if (one == NULL ||
-		    (temp = (longobject *) long_sub(div, one)) == NULL) {
-			DECREF(rem);
-			DECREF(div);
-			return NULL;
-		}
-		DECREF(div);
-		div = temp;
-	}
 	z = newtupleobject(2);
 	if (z != NULL) {
 		settupleitem(z, 0, (object *) div);
-		settupleitem(z, 1, (object *) rem);
+		settupleitem(z, 1, (object *) mod);
 	}
 	else {
 		DECREF(div);
-		DECREF(rem);
+		DECREF(mod);
 	}
 	return z;
 }
@@ -892,7 +933,7 @@ long_pow(a, b)
 			longobject *temp;
 			
 			if (bi & 1) {
-				temp = (longobject *)long_mul(z, (object *)a);
+				temp = (longobject *)long_mul(z, a);
 				DECREF(z);
 				z = temp;
 				if (z == NULL)
@@ -901,7 +942,7 @@ long_pow(a, b)
 			bi >>= 1;
 			if (bi == 0 && i+1 == size_b)
 				break;
-			temp = (longobject *)long_mul(a, (object *)a);
+			temp = (longobject *)long_mul(a, a);
 			DECREF(a);
 			a = temp;
 			if (a == NULL) {
@@ -923,8 +964,8 @@ long_invert(v)
 {
 	/* Implement ~x as -(x+1) */
 	longobject *x;
-	object *w;
-	w = newlongobject(1L);
+	longobject *w;
+	w = (longobject *)newlongobject(1L);
 	if (w == NULL)
 		return NULL;
 	x = (longobject *) long_add(v, w);
@@ -1098,7 +1139,9 @@ long_lshift(a, b)
 #define MAX(x, y) ((x) < (y) ? (y) : (x))
 #define MIN(x, y) ((x) > (y) ? (y) : (x))
 
-static object *long_bitwise(a, op, b)
+static object *long_bitwise PROTO((longobject *, int, longobject *));
+static object *
+long_bitwise(a, op, b)
 	longobject *a;
 	int op; /* '&', '|', '^' */
 	longobject *b;
@@ -1214,7 +1257,7 @@ static number_methods long_as_number = {
 	long_sub,	/*nb_subtract*/
 	long_mul,	/*nb_multiply*/
 	long_div,	/*nb_divide*/
-	long_rem,	/*nb_remainder*/
+	long_mod,	/*nb_remainder*/
 	long_divmod,	/*nb_divmod*/
 	long_pow,	/*nb_power*/
 	long_neg,	/*nb_negative*/
