@@ -143,6 +143,23 @@ To create HTML files:
 	  <http://www.latex2html.org/>.
 
 
+LaTeX (or pdfLaTeX) ran out of memory; how can I fix it?
+--------------------------------------------------------
+
+This is known to be a problem at least on Mac OS X, but it has been
+observed on other systems in the past.
+
+On some systems, the default sizes of some of the memory pools
+allocated by TeX needs to be changed; this is a configuration setting
+for installations based on web2c (most if not all installations).
+This is usually set in a file named texmf/web2c/texmf.cnf (where the
+top-level texmf/ directory is part of the TeX installation).  If you
+get a "buffer overflow" warning from LaTeX, open that configuration
+file and look for the "main_memory.pdflatex" setting.  If there is not
+one, you can add a line with the setting.  The value 1500000 seems to
+be sufficient for formatting the Python documetantion.
+
+
 What if Times fonts are not available?
 --------------------------------------
 
