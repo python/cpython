@@ -153,6 +153,8 @@ initmath()
 	
 	m = initmodule("math", math_methods);
 	d = getmoduledict(m);
-	dictinsert(d, "pi", newfloatobject(atan(1.0) * 4.0));
-	dictinsert(d, "e", newfloatobject(exp(1.0)));
+	dictinsert(d, "pi", v = newfloatobject(atan(1.0) * 4.0));
+	DECREF(v);
+	dictinsert(d, "e", v = newfloatobject(exp(1.0)));
+	DECREF(v);
 }
