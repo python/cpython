@@ -272,8 +272,8 @@ class config (Command):
         from distutils.ccompiler import CompileError, LinkError
         self._check_compiler()
         try:
-            self._link(body, headers, include_dirs,
-                       libraries, library_dirs, lang)
+            src, obj, exe = self._link(body, headers, include_dirs,
+                                       libraries, library_dirs, lang)
             self.spawn([exe])
             ok = 1
         except (CompileError, LinkError, DistutilsExecError):
