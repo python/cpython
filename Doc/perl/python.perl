@@ -1037,6 +1037,7 @@ methodline # [] # {} # {}
 modulesynopsis # {}
 samp # {}
 setindexsubitem # {}
+withsubitem # {} # {}
 _RAW_ARG_DEFERRED_CMDS_
 
 
