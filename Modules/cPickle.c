@@ -1623,7 +1623,7 @@ finally:
 
 static int
 save_global(Picklerobject *self, PyObject *args, PyObject *name) {
-    PyObject *global_name = 0, *module = 0;
+    PyObject *global_name = 0, *module = 0, *mod = 0, *moddict = 0, *klass = 0;
     char *name_str, *module_str;
     int module_size, name_size, res = -1;
 
@@ -1648,6 +1648,29 @@ save_global(Picklerobject *self, PyObject *args, PyObject *name) {
     module_str = PyString_AS_STRING((PyStringObject *)module);
     name_str   = PyString_AS_STRING((PyStringObject *)global_name);
 
+    mod = PyImport_ImportModule(module_str);
+    if (mod == NULL) {
+        /* Py_ErrClear(); ?? */
+        cPickle_ErrFormat(PicklingError,
+			  "Can't pickle %s: it's not found as %s.%s",
+			  "OSS", args, module, global_name);
+	goto finally;
+    }
+    moddict = PyModule_GetDict(mod);        /* borrowed ref */
+    klass = PyDict_GetItemString(moddict, name_str);        /* borrowed ref */
+    if (klass == NULL) {
+	cPickle_ErrFormat(PicklingError,
+			  "Can't pickle %s: it's not found as %s.%s",
+			  "OSS", args, module, global_name);
+	goto finally;
+    }
+    if (klass != args) {
+	cPickle_ErrFormat(PicklingError,
+			  "Can't pickle %s: it's not the same object as %s.%s",
+			  "OSS", args, module, global_name);
+	goto finally;
+    }
+
     if ((*self->write_func)(self, &global, 1) < 0)
         goto finally;
 
@@ -1671,6 +1694,7 @@ save_global(Picklerobject *self, PyObject *args, PyObject *name) {
 finally:
     Py_XDECREF(module);
     Py_XDECREF(global_name);
+    Py_XDECREF(mod);
 
     return res;
 }
