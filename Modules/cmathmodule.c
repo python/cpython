@@ -247,7 +247,9 @@ math_1(args, func)
 	if (!PyArg_ParseTuple(args, "D", &x))
 		return NULL;
 	errno = 0;
+	PyFPE_START_PROTECT("complex function", return 0)
 	x = (*func)(x);
+	PyFPE_END_PROTECT
 	CHECK(x.real);
 	CHECK(x.imag);
 	if (errno != 0)

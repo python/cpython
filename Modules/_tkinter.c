@@ -724,10 +724,14 @@ Tkapp_ExprDouble (self, args)
 {
 	char *s;
 	double v;
+	int retval;
 
 	if (!PyArg_Parse(args, "s", &s))
 		return NULL;
-	if (Tcl_ExprDouble(Tkapp_Interp(self), s, &v) == TCL_ERROR)
+	PyFPE_START_PROTECT("Tkapp_ExprDouble", return 0)
+	retval = Tcl_ExprDouble (Tkapp_Interp (self), s, &v);
+	PyFPE_END_PROTECT
+	if (retval == TCL_ERROR)
 		return Tkinter_Error(self);
 	return Py_BuildValue("d", v);
 }
