@@ -442,7 +442,7 @@ setlistslice(a, ilow, ihigh, v)
 {
 	if (!is_listobject(a)) {
 		err_badcall();
-		return NULL;
+		return -1;
 	}
 	return list_ass_slice((listobject *)a, ilow, ihigh, v);
 }
