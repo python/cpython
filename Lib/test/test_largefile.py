@@ -69,15 +69,17 @@ def expect(got_this, expect_this):
 if test_support.verbose:
     print 'create large file via seek (may be sparse file) ...'
 f = open(name, 'wb')
-f.write('z')
-f.seek(0)
-f.seek(size)
-f.write('a')
-f.flush()
-if test_support.verbose:
-    print 'check file size with os.fstat'
-expect(os.fstat(f.fileno())[stat.ST_SIZE], size+1)
-f.close()
+try:
+    f.write('z')
+    f.seek(0)
+    f.seek(size)
+    f.write('a')
+    f.flush()
+    if test_support.verbose:
+        print 'check file size with os.fstat'
+    expect(os.fstat(f.fileno())[stat.ST_SIZE], size+1)
+finally:
+    f.close()
 if test_support.verbose:
     print 'check file size with os.stat'
 expect(os.stat(name)[stat.ST_SIZE], size+1)
@@ -85,78 +87,84 @@ expect(os.stat(name)[stat.ST_SIZE], size+1)
 if test_support.verbose:
     print 'play around with seek() and read() with the built largefile'
 f = open(name, 'rb')
-expect(f.tell(), 0)
-expect(f.read(1), 'z')
-expect(f.tell(), 1)
-f.seek(0)
-expect(f.tell(), 0)
-f.seek(0, 0)
-expect(f.tell(), 0)
-f.seek(42)
-expect(f.tell(), 42)
-f.seek(42, 0)
-expect(f.tell(), 42)
-f.seek(42, 1)
-expect(f.tell(), 84)
-f.seek(0, 1)
-expect(f.tell(), 84)
-f.seek(0, 2) # seek from the end
-expect(f.tell(), size + 1 + 0)
-f.seek(-10, 2)
-expect(f.tell(), size + 1 - 10)
-f.seek(-size-1, 2)
-expect(f.tell(), 0)
-f.seek(size)
-expect(f.tell(), size)
-expect(f.read(1), 'a') # the 'a' that was written at the end of the file above
-f.seek(-size-1, 1)
-expect(f.read(1), 'z')
-expect(f.tell(), 1)
-f.close()
+try:
+    expect(f.tell(), 0)
+    expect(f.read(1), 'z')
+    expect(f.tell(), 1)
+    f.seek(0)
+    expect(f.tell(), 0)
+    f.seek(0, 0)
+    expect(f.tell(), 0)
+    f.seek(42)
+    expect(f.tell(), 42)
+    f.seek(42, 0)
+    expect(f.tell(), 42)
+    f.seek(42, 1)
+    expect(f.tell(), 84)
+    f.seek(0, 1)
+    expect(f.tell(), 84)
+    f.seek(0, 2) # seek from the end
+    expect(f.tell(), size + 1 + 0)
+    f.seek(-10, 2)
+    expect(f.tell(), size + 1 - 10)
+    f.seek(-size-1, 2)
+    expect(f.tell(), 0)
+    f.seek(size)
+    expect(f.tell(), size)
+    expect(f.read(1), 'a') # the 'a' that was written at the end of file above
+    f.seek(-size-1, 1)
+    expect(f.read(1), 'z')
+    expect(f.tell(), 1)
+finally:
+    f.close()
 
 if test_support.verbose:
     print 'play around with os.lseek() with the built largefile'
 f = open(name, 'rb')
-expect(os.lseek(f.fileno(), 0, 0), 0)
-expect(os.lseek(f.fileno(), 42, 0), 42)
-expect(os.lseek(f.fileno(), 42, 1), 84)
-expect(os.lseek(f.fileno(), 0, 1), 84)
-expect(os.lseek(f.fileno(), 0, 2), size+1+0)
-expect(os.lseek(f.fileno(), -10, 2), size+1-10)
-expect(os.lseek(f.fileno(), -size-1, 2), 0)
-expect(os.lseek(f.fileno(), size, 0), size)
-expect(f.read(1), 'a') # the 'a' that was written at the end of the file above
-f.close()
+try:
+    expect(os.lseek(f.fileno(), 0, 0), 0)
+    expect(os.lseek(f.fileno(), 42, 0), 42)
+    expect(os.lseek(f.fileno(), 42, 1), 84)
+    expect(os.lseek(f.fileno(), 0, 1), 84)
+    expect(os.lseek(f.fileno(), 0, 2), size+1+0)
+    expect(os.lseek(f.fileno(), -10, 2), size+1-10)
+    expect(os.lseek(f.fileno(), -size-1, 2), 0)
+    expect(os.lseek(f.fileno(), size, 0), size)
+    expect(f.read(1), 'a') # the 'a' that was written at the end of file above
+finally:
+    f.close()
 
 if hasattr(f, 'truncate'):
     if test_support.verbose:
         print 'try truncate'
     f = open(name, 'r+b')
-    f.seek(0, 2)
-    expect(f.tell(), size+1)    # else we've lost track of the true size
-    # Cut it back via seek + truncate with no argument.
-    newsize = size - 10
-    f.seek(newsize)
-    f.truncate()
-    expect(f.tell(), newsize)   # else pointer moved
-    f.seek(0, 2)
-    expect(f.tell(), newsize)   # else wasn't truncated
-    # Ensure that truncate(smaller than true size) shrinks the file.
-    newsize -= 1
-    f.seek(42)
-    f.truncate(newsize)
-    expect(f.tell(), 42)        # else pointer moved
-    f.seek(0, 2)
-    expect(f.tell(), newsize)   # else wasn't truncated
+    try:
+        f.seek(0, 2)
+        expect(f.tell(), size+1)    # else we've lost track of the true size
+        # Cut it back via seek + truncate with no argument.
+        newsize = size - 10
+        f.seek(newsize)
+        f.truncate()
+        expect(f.tell(), newsize)   # else pointer moved
+        f.seek(0, 2)
+        expect(f.tell(), newsize)   # else wasn't truncated
+        # Ensure that truncate(smaller than true size) shrinks the file.
+        newsize -= 1
+        f.seek(42)
+        f.truncate(newsize)
+        expect(f.tell(), 42)        # else pointer moved
+        f.seek(0, 2)
+        expect(f.tell(), newsize)   # else wasn't truncated
 
-    # XXX truncate(larger than true size) is ill-defined across platforms
+        # XXX truncate(larger than true size) is ill-defined across platforms
 
-    # cut it waaaaay back
-    f.seek(0)
-    f.truncate(1)
-    expect(f.tell(), 0)         # else pointer moved
-    expect(len(f.read()), 1)    # else wasn't truncated
+        # cut it waaaaay back
+        f.seek(0)
+        f.truncate(1)
+        expect(f.tell(), 0)         # else pointer moved
+        expect(len(f.read()), 1)    # else wasn't truncated
 
-    f.close()
+    finally:
+        f.close()
 
 os.unlink(name)
