@@ -1104,9 +1104,10 @@ arbitrary objects):
           {\code{\var{a}[\var{k}]} if \code{\var{k} in \var{a}},
            else \var{x} (also setting it)}
           {(5)}
-  \lineiii{\var{a}.pop(\var{k})}
-          {remove specified \var{key} and return corresponding \var{value}}
-          {}			     
+  \lineiii{\var{a}.pop(\var{k}\optional{, \var{x}})}
+          {\code{\var{a}[\var{k}]} if \code{\var{k} in \var{a}},
+           else \var{x} (and remove k)}
+          {(8)}
   \lineiii{\var{a}.popitem()}
           {remove and return an arbitrary (\var{key}, \var{value}) pair}
           {(6)}
@@ -1155,6 +1156,9 @@ over a dictionary, as often used in set algorithms.
 
 \item[(7)] \function{fromkeys()} is a class method that returns a
 new dictionary. \var{value} defaults to \code{None}.  \versionadded{2.3}
+
+\item[(8)] \function{pop()} raises a \exception{KeyError} when no default
+value is given and the key is not found.  \versionadded{2.3}
 \end{description}
 
 

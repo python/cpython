@@ -1544,13 +1544,20 @@ dict_clear(register dictobject *mp)
 }
 
 static PyObject *
-dict_pop(dictobject *mp, PyObject *key)
+dict_pop(dictobject *mp, PyObject *args)
 {
 	long hash;
 	dictentry *ep;
 	PyObject *old_value, *old_key;
+	PyObject *key, *deflt = NULL;
 
+	if(!PyArg_UnpackTuple(args, "pop", 1, 2, &key, &deflt))
+		return NULL;
 	if (mp->ma_used == 0) {
+		if (deflt) {
+			Py_INCREF(deflt);
+			return deflt;
+		}
 		PyErr_SetString(PyExc_KeyError,
 				"pop(): dictionary is empty");
 		return NULL;
@@ -1563,6 +1570,10 @@ dict_pop(dictobject *mp, PyObject *key)
 	}
 	ep = (mp->ma_lookup)(mp, key, hash);
 	if (ep->me_value == NULL) {
+		if (deflt) {
+			Py_INCREF(deflt);
+			return deflt;
+		}
 		PyErr_SetObject(PyExc_KeyError, key);
 		return NULL;
 	}
@@ -1719,7 +1730,8 @@ PyDoc_STRVAR(setdefault_doc__,
 "D.setdefault(k[,d]) -> D.get(k,d), also set D[k]=d if k not in D");
 
 PyDoc_STRVAR(pop__doc__,
-"D.pop(k) -> v, remove specified key and return the corresponding value");
+"D.pop(k[,d]) -> v, remove specified key and return the corresponding value\n\
+If key is not found, d is returned if given, otherwise KeyError is raised");
 
 PyDoc_STRVAR(popitem__doc__,
 "D.popitem() -> (k, v), remove and return some (key, value) pair as a\n\
@@ -1763,7 +1775,7 @@ static PyMethodDef mapp_methods[] = {
 	 get__doc__},
 	{"setdefault",  (PyCFunction)dict_setdefault,   METH_VARARGS,
 	 setdefault_doc__},
-	{"pop",         (PyCFunction)dict_pop,          METH_O,
+	{"pop",         (PyCFunction)dict_pop,          METH_VARARGS,
 	 pop__doc__},
 	{"popitem",	(PyCFunction)dict_popitem,	METH_NOARGS,
 	 popitem__doc__},

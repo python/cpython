@@ -643,9 +643,13 @@ else: raise TestFailed, "{}.pop(k) doesn't raise KeyError when dictionary is emp
 # see SF bug #689659
 x = 4503599627370496L
 y = 4503599627370496
-h = {x: 'anything', y: 'something else'} 
+h = {x: 'anything', y: 'something else'}
 if h[x] != h[y]:
     raise TestFailed, "long/int key should match"
+
+if d.pop(k, v) != v: raise TestFailed, "{}.pop(k, v) doesn't return default value"
+d[k] = v
+if d.pop(k, 1) != v: raise TestFailed, "{}.pop(k, v) doesn't find known key/value pair"
 
 d[1] = 1
 try:

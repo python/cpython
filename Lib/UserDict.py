@@ -55,8 +55,8 @@ class UserDict:
         if not self.has_key(key):
             self[key] = failobj
         return self[key]
-    def pop(self, key):
-        return self.data.pop(key)
+    def pop(self, key, *args):
+        return self.data.pop(key, *args)
     def popitem(self):
         return self.data.popitem()
     def __contains__(self, key):
@@ -117,8 +117,16 @@ class DictMixin:
         except KeyError:
             self[key] = default
         return default
-    def pop(self, key):
-        value = self[key]
+    def pop(self, key, *args):
+        if len(args) > 1:
+            raise TypeError, "pop expected at most 2 arguments, got "\
+                              + repr(1 + len(args))
+        try:
+            value = self[key]
+        except KeyError:
+            if args:
+                return args[0]
+            raise
         del self[key]
         return value
     def popitem(self):
