@@ -51,7 +51,7 @@ static int call_trace(Py_tracefunc, PyObject *, PyFrameObject *,
 static void call_trace_protected(Py_tracefunc, PyObject *,
 				 PyFrameObject *, int);
 static void call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
-static void maybe_call_line_trace(Py_tracefunc, PyObject *, 
+static int maybe_call_line_trace(Py_tracefunc, PyObject *, 
 				  PyFrameObject *, int *, int *);
 
 static PyObject *apply_slice(PyObject *, PyObject *, PyObject *);
@@ -726,9 +726,14 @@ eval_frame(PyFrameObject *f)
 			/* see maybe_call_line_trace
 			   for expository comments */
 			f->f_stacktop = stack_pointer;
-			maybe_call_line_trace(tstate->c_tracefunc,
-					      tstate->c_traceobj,
-					      f, &instr_lb, &instr_ub);
+			
+			if (maybe_call_line_trace(tstate->c_tracefunc,
+						  tstate->c_traceobj,
+						  f, &instr_lb, &instr_ub)) {
+				/* trace function raised an exception */
+				why = WHY_EXCEPTION;
+				goto on_error;
+			}
 			/* Reload possibly changed frame fields */
 			JUMPTO(f->f_lasti);
 			stack_pointer = f->f_stacktop;
@@ -2872,7 +2877,7 @@ call_trace(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
 	return result;
 }
 
-static void
+static int
 maybe_call_line_trace(Py_tracefunc func, PyObject *obj, 
 		      PyFrameObject *frame, int *instr_lb, int *instr_ub)
 {
@@ -2947,6 +2952,8 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
 	   suggested by f_lasti on this one occasion where it's desirable.
 	*/
 
+	int result = 0;
+
 	if ((frame->f_lasti < *instr_lb || frame->f_lasti >= *instr_ub)) {
 		PyCodeObject* co = frame->f_code;
 		int size, addr, line;
@@ -2980,8 +2987,8 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
 
 		if (addr == frame->f_lasti) {
 			frame->f_lineno = line;
-			call_trace(func, obj, frame, 
-				   PyTrace_LINE, Py_None);
+			result = call_trace(func, obj, frame, 
+					    PyTrace_LINE, Py_None);
 		}
 
 		if (size > 0) {
@@ -2996,6 +3003,8 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
 			*instr_ub = INT_MAX;
 		}
 	}
+
+	return result;
 }
 
 void

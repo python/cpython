@@ -178,23 +178,48 @@ class TraceTestCase(unittest.TestCase):
         self.run_test2(settrace_and_raise)
 
 class RaisingTraceFuncTestCase(unittest.TestCase):
-    def test_it(self):
-        def tr(frame, event, arg):
+    def trace(self, frame, event, arg):
+        """A trace function that raises an exception in response to a
+        specific trace event."""
+        if event == self.raiseOnEvent:
             raise ValueError # just something that isn't RuntimeError
-        def f():
+        else:
+            return self.trace
+    
+    def f(self):
+        """The function to trace; raises an exception if that's the case
+        we're testing, so that the 'exception' trace event fires."""
+        if self.raiseOnEvent == 'exception':
+            x = 0
+            y = 1/x
+        else:
             return 1
+    
+    def run_test_for_event(self, event):
+        """Tests that an exception raised in response to the given event is
+        handled OK."""
+        self.raiseOnEvent = event
         try:
             for i in xrange(sys.getrecursionlimit() + 1):
-                sys.settrace(tr)
+                sys.settrace(self.trace)
                 try:
-                    f()
+                    self.f()
                 except ValueError:
                     pass
                 else:
                     self.fail("exception not thrown!")
         except RuntimeError:
             self.fail("recursion counter not reset")
-            
+    
+    # Test the handling of exceptions raised by each kind of trace event.
+    def test_call(self):
+        self.run_test_for_event('call')
+    def test_line(self):
+        self.run_test_for_event('line')
+    def test_return(self):
+        self.run_test_for_event('return')
+    def test_exception(self):
+        self.run_test_for_event('exception')
 
 def test_main():
     test_support.run_unittest(TraceTestCase)
