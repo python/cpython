@@ -3,13 +3,13 @@
 This adds the following commands:
 
 - Check module does a full syntax check of the current module.
-It also runs the tabnanny to catch any inconsistent tabs.
+  It also runs the tabnanny to catch any inconsistent tabs.
 
 - Run module executes the module's code in the __main__ namespace.  The window
-must have been saved previously. The module is added to sys.modules, and is
-also added to the __main__ namespace.
+  must have been saved previously. The module is added to sys.modules, and is
+  also added to the __main__ namespace.
 
-XXX Redesign this interface (yet again) as follows:
+XXX GvR Redesign this interface (yet again) as follows:
 
 - Present a dialog box for ``Run script''
 
@@ -17,7 +17,13 @@ XXX Redesign this interface (yet again) as follows:
 
 """
 
+import re
+import string
+import tabnanny
+import tokenize
 import tkMessageBox
+
+IDENTCHARS = string.ascii_letters + string.digits + "_"
 
 indent_message = """Error: Inconsistent indentation detected!
 
@@ -32,13 +38,14 @@ To fix case 2, change all tabs to spaces by using Select All followed \
 by Untabify Region (both in the Edit menu)."""
 
 
-# XXX TBD Implement stop-execution  KBK 11Jun02
+# XXX 11Jun02 KBK TBD Implement stop-execution
+
 class ScriptBinding:
 
     menudefs = [
         ('run', [None,
-                 ('Check module', '<<check-module>>'),
-                 ('Run script', '<<run-script>>'), ]), ]
+                 ('Check Module', '<<check-module>>'),
+                 ('Run Script', '<<run-script>>'), ]), ]
 
     def __init__(self, editwin):
         self.editwin = editwin
@@ -53,12 +60,9 @@ class ScriptBinding:
             return
         if not self.tabnanny(filename):
             return
-        if not self.checksyntax(filename):
-            return
+        self.checksyntax(filename)
 
     def tabnanny(self, filename):
-        import tabnanny
-        import tokenize
         f = open(filename, 'r')
         try:
             tabnanny.process_tokens(tokenize.generate_tokens(f.readline))
@@ -77,30 +81,45 @@ class ScriptBinding:
         source = f.read()
         f.close()
         if '\r' in source:
-            import re
             source = re.sub(r"\r\n", "\n", source)
         if source and source[-1] != '\n':
             source = source + '\n'
         try:
-            compile(source, filename, "exec")
+            # If successful, return the compiled code
+            return compile(source, filename, "exec")
         except (SyntaxError, OverflowError), err:
             try:
                 msg, (errorfilename, lineno, offset, line) = err
                 if not errorfilename:
                     err.args = msg, (filename, lineno, offset, line)
                     err.filename = filename
+                self.colorize_syntax_error(msg, lineno, offset)
             except:
-                lineno = None
                 msg = "*** " + str(err)
-            if lineno:
-                self.editwin.gotoline(lineno)
             self.errorbox("Syntax error",
                           "There's an error in your program:\n" + msg)
-        return True
-
+            return False
+        
+    def colorize_syntax_error(self, msg, lineno, offset):
+        text = self.editwin.text
+        pos = "0.0 + %d lines + %d chars" % (lineno-1, offset-1)
+        text.tag_add("ERROR", pos)
+        char = text.get(pos)
+        if char and char in IDENTCHARS:
+            text.tag_add("ERROR", pos + " wordstart", pos)
+        if '\n' == text.get(pos):   # error at line end
+            text.mark_set("insert", pos)
+        else:
+            text.mark_set("insert", pos + "+1c")
+        text.see(pos)
+        
     def run_script_event(self, event):
+        "Check syntax, if ok run the script in the shell top level"
         filename = self.getfilename()
         if not filename:
+            return
+        code = self.checksyntax(filename)
+        if not code:
             return
         flist = self.editwin.flist
         shell = flist.open_shell()
@@ -116,11 +135,10 @@ class ScriptBinding:
             from os.path import basename as _basename
             if (not _sys.argv or
                 _basename(_sys.argv[0]) != _basename(_filename)):
-                # XXX 25 July 2002 KBK should this be sys.argv not _sys.argv?
                 _sys.argv = [_filename]
-            del _filename, _sys, _basename
+                del _filename, _sys, _basename
                 \n""" % `filename`)
-        interp.execfile(filename)
+        interp.runcode(code)
 
     def getfilename(self):
         # Logic to make sure we have a saved filename
