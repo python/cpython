@@ -61,7 +61,7 @@ inc_count(tp)
 	typeobject *tp;
 {
 	if (tp->tp_alloc == 0) {
-		/* first time; hang in linked list */
+		/* first time; insert in linked list */
 		if (tp->tp_next != NULL) /* sanity check */
 			fatal("XXX inc_count sanity check");
 		tp->tp_next = type_list;
@@ -490,6 +490,9 @@ UNREF(op)
 	op->_ob_next->_ob_prev = op->_ob_prev;
 	op->_ob_prev->_ob_next = op->_ob_next;
 	op->_ob_next = op->_ob_prev = NULL;
+#ifdef COUNT_ALLOCS
+	op->ob_type->tp_free++;
+#endif
 }
 
 DELREF(op)
@@ -497,9 +500,6 @@ DELREF(op)
 {
 	destructor dealloc = op->ob_type->tp_dealloc;
 	UNREF(op);
-#ifdef COUNT_ALLOCS
-	op->ob_type->tp_free++;
-#endif
 	op->ob_type = NULL;
 	(*dealloc)(op);
 }
