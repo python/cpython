@@ -1,24 +1,12 @@
 """Word completion for GNU readline 2.0.
 
 This requires the latest extension to the readline module (the
-        object=eval(expr, __main__.__dict__)
-        words = dir(object)
-        if hasattr(object,'__class__'):
-            words.append('__class__')
-            words=words+get_class_members(object.__class__)
 completes keywords, built-ins and globals in __main__; when completing
 NAME.NAME..., it evaluates (!) the expression up to the last dot and
 completes its attributes.
 
 It's very cool to do "import string" type "string.", hit the
 completion key (twice), and see the list of names defined by the
-
-def get_class_members(klass):
-    ret=dir(klass)
-    if hasattr(klass,'__bases__'):
-        for base in klass.__bases__:
-            ret=ret + get_class_members(base)
-    return ret
 string module!
 
 Tip: to use the tab key as the completion key, call
