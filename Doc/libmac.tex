@@ -2,6 +2,37 @@
 
 The modules in this chapter are available on the Apple Macintosh only.
 
+Aside from the modules described here there are also interfaces to
+various MacOS toolboxes, which are currently not extensively
+described. The toolboxes for which modules exist are:
+\code{AE} (Apple Events),
+\code{Cm} (Component Manager),
+\code{Ctl} (Control Manager),
+\code{Dlg} (Dialog Manager),
+\code{Evt} (Event Manager),
+\code{Fm} (Font Manager),
+\code{List} (List Manager),
+\code{Menu} (Moenu Manager),
+\code{Qd} (QuickDraw),
+\code{Qt} (QuickTime),
+\code{Res} (Resource Manager and Handles),
+\code{Scrap} (Scrap Manager),
+\code{Snd} (Sound Manager),
+\code{TE} (TextEdit),
+\code{Waste} (non-Apple TextEdit replacement) and
+\code{Win} (Window Manager).
+
+If applicable the module will define a number of Python objects for
+the various structures declared by the toolbox, and operations will be
+implemented as methods of the object. Other operations will be
+implemented as functions in the module. Not all operations possible in
+C will also be possible in Python (callbacks are often a problem), and
+parameters will occasionally be different in Python (input and output
+buffers, especially). All methods and functions have a \code{__doc__}
+string describing their arguments and return values, and for
+additional description you are referred to Inside Mac or similar
+works.
+
 \section{Built-in Module \sectcode{mac}}
 
 \bimodindex{mac}
@@ -12,14 +43,21 @@ It is best accessed through the more portable standard module
 
 The following functions are available in this module:
 \code{chdir},
+\code{close},
+\code{dup},
+\code{fdopen},
 \code{getcwd},
+\code{lseek},
 \code{listdir},
 \code{mkdir},
+\code{open},
+\code{read},
 \code{rename},
 \code{rmdir},
 \code{stat},
 \code{sync},
 \code{unlink},
+\code{write},
 as well as the exception \code{error}.
 
 \section{Standard Module \sectcode{macpath}}
@@ -32,9 +70,13 @@ best accessed through the more portable standard module \code{os}, as
 
 The following functions are available in this module:
 \code{normcase},
+\code{normpath},
 \code{isabs},
 \code{join},
 \code{split},
 \code{isdir},
 \code{isfile},
+\code{walk},
 \code{exists}.
+For other functions available in \code{posixpath} dummy counterparts
+are available.
