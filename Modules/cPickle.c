@@ -1,5 +1,5 @@
 /*
- * cPickle.c,v 1.70 1999/06/15 14:09:35 jim Exp
+ * cPickle.c,v 1.71 1999/07/11 13:30:34 jim Exp
  * 
  * Copyright (c) 1996-1998, Digital Creations, Fredericksburg, VA, USA.  
  * All rights reserved.
@@ -49,7 +49,7 @@
 static char cPickle_module_documentation[] = 
 "C implementation and optimization of the Python pickle module\n"
 "\n"
-"cPickle.c,v 1.70 1999/06/15 14:09:35 jim Exp\n"
+"cPickle.c,v 1.71 1999/07/11 13:30:34 jim Exp\n"
 ;
 
 #include "Python.h"
@@ -3017,6 +3017,7 @@ load_get(Unpicklerobject *self) {
     PyObject *py_str = 0, *value = 0;
     int len;
     char *s;
+    int rc;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
     if (len < 2) return bad_readline();
@@ -3024,14 +3025,16 @@ load_get(Unpicklerobject *self) {
     UNLESS (py_str = PyString_FromStringAndSize(s, len - 1)) return -1;
 
     value = PyDict_GetItem(self->memo, py_str);
-    Py_DECREF(py_str);
     if (! value) {
         PyErr_SetObject(BadPickleGet, py_str);
-        return -1;
-      }
+        rc = -1;
+    } else {
+      PDATA_APPEND(self->stack, value, -1);
+      rc = 0;
+    }
 
-    PDATA_APPEND(self->stack, value, -1);
-    return 0;
+    Py_DECREF(py_str);
+    return rc;
 }
 
 
@@ -3040,6 +3043,7 @@ load_binget(Unpicklerobject *self) {
     PyObject *py_key = 0, *value = 0;
     unsigned char key;
     char *s;
+    int rc;
 
     if ((*self->read_func)(self, &s, 1) < 0) return -1;
 
@@ -3047,14 +3051,16 @@ load_binget(Unpicklerobject *self) {
     UNLESS (py_key = PyInt_FromLong((long)key)) return -1;
     
     value = PyDict_GetItem(self->memo, py_key);
-    Py_DECREF(py_key);
     if (! value) {
         PyErr_SetObject(BadPickleGet, py_key);
-        return -1;
-      }
+        rc = -1;
+    } else {
+      PDATA_APPEND(self->stack, value, -1);
+      rc = 0;
+    }
 
-    PDATA_APPEND(self->stack, value, -1);
-    return 0;
+    Py_DECREF(py_key);
+    return rc;
 }
 
 
@@ -3063,6 +3069,7 @@ load_long_binget(Unpicklerobject *self) {
     PyObject *py_key = 0, *value = 0;
     unsigned char c, *s;
     long key;
+    int rc;
 
     if ((*self->read_func)(self, &s, 4) < 0) return -1;
 
@@ -3078,14 +3085,16 @@ load_long_binget(Unpicklerobject *self) {
     UNLESS (py_key = PyInt_FromLong((long)key)) return -1;
     
     value = PyDict_GetItem(self->memo, py_key);
-    Py_DECREF(py_key);
     if (! value) {
         PyErr_SetObject(BadPickleGet, py_key);
-        return -1;
-      }
+        rc = -1;
+    } else {
+      PDATA_APPEND(self->stack, value, -1);
+      rc = 0;
+    }
 
-    PDATA_APPEND(self->stack, value, -1);
-    return 0;
+    Py_DECREF(py_key);
+    return rc;
 }
 
 
@@ -4360,7 +4369,7 @@ init_stuff(PyObject *module, PyObject *module_dict) {
 DL_EXPORT(void)
 initcPickle() {
     PyObject *m, *d, *v;
-    char *rev="1.70";
+    char *rev="1.71";
     PyObject *format_version;
     PyObject *compatible_formats;
 
