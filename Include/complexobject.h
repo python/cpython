@@ -42,6 +42,7 @@ extern PyObject *PyComplex_FromDoubles Py_PROTO((double real, double imag));
 
 extern double PyComplex_RealAsDouble Py_PROTO((PyObject *op));
 extern double PyComplex_ImagAsDouble Py_PROTO((PyObject *op));
+extern complex PyComplex_AsCComplex Py_PROTO((PyObject *op));
 
 #ifdef __cplusplus
 }
