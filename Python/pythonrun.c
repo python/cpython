@@ -62,6 +62,8 @@ static object *run_err_node PROTO((node *n, char *filename,
 				   object *globals, object *locals));
 static object *run_node PROTO((node *n, char *filename,
 			       object *globals, object *locals));
+static object *run_pyc_file PROTO((FILE *fp, char *filename,
+				   object *globals, object *locals));
 static void err_input PROTO((perrdetail *));
 static void initsigs PROTO((void));
 
@@ -348,8 +350,18 @@ print_error()
 				v = message;
 			}
 		}
-		if (writeobject(exception, f, PRINT_RAW) != 0)
-			err_clear();
+		if (is_classobject(exception)) {
+			object* className = ((classobject*)exception)->cl_name;
+			if (className == NULL)
+				writestring("<unknown>", f);
+			else {
+				if (writeobject(className, f, PRINT_RAW) != 0)
+					err_clear();
+			}
+		} else {
+			if (writeobject(exception, f, PRINT_RAW) != 0)
+				err_clear();
+		}
 		if (v != NULL && v != None) {
 			writestring(": ", f);
 			if (writeobject(v, f, PRINT_RAW) != 0)
