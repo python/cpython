@@ -185,44 +185,64 @@ def check_syntax(s):
     else:
         raise TestFailed
 
-# XXX for now, it is easiest to call this a syntax error:
-# explicit is better than implicit...
-test1 = \
-"""def unoptimized_clash1(strip):
+check_syntax("""def unoptimized_clash1(strip):
     def f(s):
         from string import *
         return strip(s) # ambiguity: free or local
     return f
-"""
-check_syntax(test1)
+""")
 
-# a little harder to reject this one, but possible...
-test2 = \
-"""def unoptimized_clash2():
+check_syntax("""def unoptimized_clash2():
     from string import *
     def f(s):
         return strip(s) # ambiguity: global or local
     return f
-"""
-# check_syntax(test2)
+""")
 
-# XXX could allow this for exec with const argument, but what's the point
-test3 = \
-"""def error(y):
+check_syntax("""def unoptimized_clash2():
+    from string import *
+    def g():
+        def f(s):
+            return strip(s) # ambiguity: global or local
+        return f
+""")
+
+# XXX could allow this for exec with const argument, but what's the point 
+check_syntax("""def error(y):
     exec "a = 1"
     def f(x):
         return x + y
     return f
-"""
-check_syntax(test3)
+""")
 
-test4 = \
-"""def f(x):
+check_syntax("""def f(x):
     def g():
         return x
-    del x
-"""
-check_syntax(test4)
+    del x # can't del name
+""")
+
+check_syntax("""def f():
+    def g():
+         from string import *
+         return strip # global or local?
+""")            
+
+# and verify a few cases that should work
+
+def noproblem1():
+    from string import *
+    f = lambda x:x
+
+def noproblem2():
+    from string import *
+    def f(x):
+        return x + 1
+
+def noproblem3():
+    from string import *
+    def f(x):
+        global y
+        y = x
 
 print "12. lambdas"
 
@@ -275,3 +295,26 @@ except UnboundLocalError:
     pass
 else:
     raise TestFailed
+
+print "14. complex definitions"
+
+def makeReturner(*lst):
+    def returner():
+        return lst
+    return returner
+ 
+verify(makeReturner(1,2,3)() == (1,2,3))
+ 
+def makeReturner2(**kwargs):
+    def returner():
+        return kwargs
+    return returner
+
+verify(makeReturner2(a=11)()['a'] == 11)
+
+def makeAddPair((a, b)):
+    def addPair((c, d)):
+        return (a + c, b + d)
+    return addPair
+
+verify(makeAddPair((1, 2))((100, 200)) == (101,202))
