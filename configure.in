@@ -2018,6 +2018,13 @@ done
 #    AC_MSG_RESULT(already exists)
 #fi
 
+AC_SUBST(THREADHEADERS)
+
+for h in `(cd $srcdir;echo Python/thread_*.h)`
+do
+  THREADHEADERS="$THREADHEADERS \$(srcdir)/$h"
+done
+
 AC_SUBST(SRCDIRS)
 SRCDIRS="Parser Grammar Objects Python Modules"
 AC_MSG_CHECKING(for build directories)
