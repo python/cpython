@@ -549,7 +549,7 @@ parser_suite(PyST_Object *self, PyObject *args, PyObject *kw)
 static node* build_node_tree(PyObject *tuple);
 static int   validate_expr_tree(node *tree);
 static int   validate_file_input(node *tree);
-
+static int   validate_encoding_decl(node *tree);
 
 /*  PyObject* parser_tuple2st(PyObject* self, PyObject* args)
  *
@@ -598,6 +598,13 @@ parser_tuple2st(PyST_Object *self, PyObject *args, PyObject *kw)
         else if (start_sym == file_input) {
             /*  This looks like an exec form so far.  */
             if (validate_file_input(tree))
+                st = parser_newstobject(tree, PyST_SUITE);
+            else
+                PyNode_Free(tree);
+        }
+        else if (start_sym == encoding_decl) {
+            /* This looks like an encoding_decl so far. */
+            if (validate_encoding_decl(tree))
                 st = parser_newstobject(tree, PyST_SUITE);
             else
                 PyNode_Free(tree);
@@ -764,12 +771,28 @@ build_node_tree(PyObject *tuple)
          *  Not efficient, but that can be handled later.
          */
         int line_num = 0;
+        PyObject *encoding = NULL;
+        PyObject *tmpTuple = NULL;
 
+        if (num == encoding_decl) {
+            encoding = PySequence_GetItem(tuple, 2);
+            /* tuple isn't borrowed anymore here, need to DECREF */
+            tuple = PySequence_GetSlice(tuple, 0, 2);
+        }
         res = PyNode_New(num);
         if (res != NULL) {
             if (res != build_node_children(tuple, res, &line_num)) {
                 PyNode_Free(res);
                 res = NULL;
+            }
+            if (res && encoding) {
+                int len;
+                len = PyString_GET_SIZE(encoding) + 1;
+                res->n_str = (char *)PyMem_MALLOC(len);
+                if (res->n_str != NULL)
+                    (void) memcpy(res->n_str, PyString_AS_STRING(encoding), len);
+                Py_DECREF(encoding);
+                Py_DECREF(tuple);
             }
         }
     }
@@ -1694,6 +1717,12 @@ validate_global_stmt(node *tree)
     int res = (validate_ntype(tree, global_stmt)
                && is_even(nch) && (nch >= 2));
 
+    if (!res && !PyErr_Occurred())
+        err_string("illegal global statement");
+
+    if (!res && !PyErr_Occurred())
+        err_string("illegal global statement");
+
     if (res)
         res = (validate_name(CHILD(tree, 0), "global")
                && validate_ntype(CHILD(tree, 1), NAME));
@@ -1741,8 +1770,7 @@ validate_assert_stmt(node *tree)
     int nch = NCH(tree);
     int res = (validate_ntype(tree, assert_stmt)
                && ((nch == 2) || (nch == 4))
-               && (validate_name(CHILD(tree, 0), "__assert__") ||
-                   validate_name(CHILD(tree, 0), "assert"))
+               && (validate_name(CHILD(tree, 0), "assert"))
                && validate_test(CHILD(tree, 1)));
 
     if (!res && !PyErr_Occurred())
@@ -2775,6 +2803,18 @@ validate_file_input(node *tree)
     return (res);
 }
 
+static int
+validate_encoding_decl(node *tree)
+{
+    int nch = NCH(tree);
+    int res = ((nch == 1)
+        && validate_file_input(CHILD(tree, 0)));
+
+    if (!res && !PyErr_Occurred())
+        err_string("Error Parsing encoding_decl");
+
+    return res;
+}
 
 static PyObject*
 pickle_constructor = NULL;
