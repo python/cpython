@@ -339,7 +339,11 @@ def _init_mac():
     # XXX hmmm.. a normal install puts include files here
     g['INCLUDEPY'] = get_python_inc(plat_specific=0)
 
-    g['SO'] = '.ppc.slb'
+    import MacOS
+    if not hasattr(MacOS, 'runtimemodel'):
+        g['SO'] = '.ppc.slb'
+    else:
+        g['SO'] = '.%s.slb' % MacOS.runtimemodel
 
     # XXX are these used anywhere?
     g['install_lib'] = os.path.join(EXEC_PREFIX, "Lib")
