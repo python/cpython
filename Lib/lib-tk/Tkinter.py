@@ -1094,7 +1094,7 @@ class Text(Widget):
 			self._w, 'tag', 'ranges', tagName))
 	def tag_remove(self, tagName, index1, index2=None):
 		self.tk.call(
-			self._w, 'tag', 'remove', index1, index2)
+			self._w, 'tag', 'remove', tagName, index1, index2)
 	def yview(self, what):
 		self.tk.call(self._w, 'yview', what)
 	def yview_pickplace(self, what):
