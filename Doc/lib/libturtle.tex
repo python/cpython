@@ -73,15 +73,13 @@ Set the line width to \var{width}.
 \end{funcdesc}
 
 \begin{funcdesc}{color}{s}
-Set the color by giving a Tk color string.
-\end{funcdesc}
-
-\begin{funcdesc}{color}{(r, g, b)}
-Set the color by giving a RGB tuple, each between 0 and 1.
-\end{funcdesc}
-
-\begin{funcdesc}{color}{r, g, b}
-Set the color by giving the RGB components, each between 0 and 1.
+\funclineni{color}{(r, g, b)}
+\funclineni{color}{r, g, b}
+Set the pen color.  In the first form, the color is specified as a
+Tk color specification as a string.  The second form specifies the
+color as a tuple of the RGB values, each in the range [0..1].  For the
+third form, the color is specified giving the RGB values as three
+separate parameters (each in the range [0..1]).
 \end{funcdesc}
 
 \begin{funcdesc}{write}{text\optional{, move}}
@@ -109,12 +107,9 @@ direction.
 \end{funcdesc}
 
 \begin{funcdesc}{goto}{x, y}
-Go to co-ordinates (\var{x}, \var{y}).
-\end{funcdesc}
-
-\begin{funcdesc}{goto}{(x, y)}
-Go to co-ordinates (\var{x}, \var{y}) (specified as a tuple instead of 
-individually).
+\funclineni{goto}{(x, y)}
+Go to co-ordinates \var{x}, \var{y}.  The co-ordinates may be
+specified either as two separate arguments or as a 2-tuple.
 \end{funcdesc}
 
 This module also does \code{from math import *}, so see the
