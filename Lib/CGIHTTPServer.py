@@ -182,7 +182,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             for k in ('QUERY_STRING', 'REMOTE_HOST', 'CONTENT_LENGTH',
                       'HTTP_USER_AGENT', 'HTTP_COOKIE'):
                 env.setdefault(k, "")
-        so.environ.update(env)
+        os.environ.update(env)
 
         self.send_response(200, "Script output follows")
 
