@@ -46,6 +46,7 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #define as_Control(h) ((ControlHandle)h)
 #define as_Resource(ctl) ((Handle)ctl)
+#define GetControlRect(ctl, rectp) (*(rectp) = ((*(ctl))->contrlRect))
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
@@ -1021,6 +1022,21 @@ static PyObject *CtlObj_as_Resource(_self, _args)
 	return _res;
 }
 
+static PyObject *CtlObj_GetControlRect(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect rect;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetControlRect(_self->ob_itself,
+	               &rect);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &rect);
+	return _res;
+}
+
 static PyObject *CtlObj_DisposeControl(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
@@ -1442,6 +1458,8 @@ static PyMethodDef CtlObj_methods[] = {
 	 "(ControlPartCode inPart, ResType inTagName) -> (Size outMaxSize)"},
 	{"as_Resource", (PyCFunction)CtlObj_as_Resource, 1,
 	 "() -> (Handle _rv)"},
+	{"GetControlRect", (PyCFunction)CtlObj_GetControlRect, 1,
+	 "() -> (Rect rect)"},
 	{"DisposeControl", (PyCFunction)CtlObj_DisposeControl, 1,
 	 "() -> None"},
 	{"TrackControl", (PyCFunction)CtlObj_TrackControl, 1,
@@ -1890,6 +1908,7 @@ PyObject *CtlObj_NewUnmanaged(itself)
 	it = PyObject_NEW(ControlObject, &Control_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
+	it->ob_callbackdict = NULL;
 	return (PyObject *)it;
 }
 
