@@ -200,20 +200,6 @@ tuplerepr(PyTupleObject *v)
 	return s;
 }
 
-static int
-tuplecompare(register PyTupleObject *v, register PyTupleObject *w)
-{
-	register int len =
-		(v->ob_size < w->ob_size) ? v->ob_size : w->ob_size;
-	register int i;
-	for (i = 0; i < len; i++) {
-		int cmp = PyObject_Compare(v->ob_item[i], w->ob_item[i]);
-		if (cmp != 0)
-			return cmp;
-	}
-	return v->ob_size - w->ob_size;
-}
-
 static long
 tuplehash(PyTupleObject *v)
 {
@@ -246,10 +232,11 @@ tuplecontains(PyTupleObject *a, PyObject *el)
 	int i, cmp;
 
 	for (i = 0; i < a->ob_size; ++i) {
-		cmp = PyObject_Compare(el, PyTuple_GET_ITEM(a, i));
-		if (cmp == 0)
+		cmp = PyObject_RichCompareBool(el, PyTuple_GET_ITEM(a, i),
+					       Py_EQ);
+		if (cmp > 0)
 			return 1;
-		if (PyErr_Occurred())
+		else if (cmp < 0)
 			return -1;
 	}
 	return 0;
@@ -384,15 +371,87 @@ tupletraverse(PyTupleObject *o, visitproc visit, void *arg)
 	return 0;
 }
 
+static PyObject *
+tuplerichcompare(PyObject *v, PyObject *w, int op)
+{
+	PyTupleObject *vt, *wt;
+	int i;
+
+	if (!PyTuple_Check(v) || !PyTuple_Check(w)) {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+
+	vt = (PyTupleObject *)v;
+	wt = (PyTupleObject *)w;
+
+	if (vt->ob_size != wt->ob_size && (op == Py_EQ || op == Py_NE)) {
+		/* Shortcut: if the lengths differ, the tuples differ */
+		PyObject *res;
+		if (op == Py_EQ)
+			res = Py_False;
+		else
+			res = Py_True;
+		Py_INCREF(res);
+		return res;
+	}
+
+	/* Search for the first index where items are different */
+	for (i = 0; i < vt->ob_size && i < wt->ob_size; i++) {
+		int k = PyObject_RichCompareBool(vt->ob_item[i],
+						 wt->ob_item[i], Py_EQ);
+		if (k < 0)
+			return NULL;
+		if (!k)
+			break;
+	}
+
+	if (i >= vt->ob_size || i >= wt->ob_size) {
+		/* No more items to compare -- compare sizes */
+		int vs = vt->ob_size;
+		int ws = wt->ob_size;
+		int cmp;
+		PyObject *res;
+		switch (op) {
+		case Py_LT: cmp = vs <  ws; break;
+		case Py_LE: cmp = ws <= ws; break;
+		case Py_EQ: cmp = vs == ws; break;
+		case Py_NE: cmp = vs != ws; break;
+		case Py_GT: cmp = vs >  ws; break;
+		case Py_GE: cmp = vs >= ws; break;
+		default: return NULL; /* cannot happen */
+		}
+		if (cmp)
+			res = Py_True;
+		else
+			res = Py_False;
+		Py_INCREF(res);
+		return res;
+	}
+
+	/* We have an item that differs -- shortcuts for EQ/NE */
+	if (op == Py_EQ) {
+		Py_INCREF(Py_False);
+		return Py_False;
+	}
+	if (op == Py_NE) {
+		Py_INCREF(Py_True);
+		return Py_True;
+	}
+
+	/* Compare the final item again using the proper operator */
+	return PyObject_RichCompare(vt->ob_item[i], wt->ob_item[i], op);
+}
+
 static PySequenceMethods tuple_as_sequence = {
-	(inquiry)tuplelength, /*sq_length*/
-	(binaryfunc)tupleconcat, /*sq_concat*/
-	(intargfunc)tuplerepeat, /*sq_repeat*/
-	(intargfunc)tupleitem, /*sq_item*/
-	(intintargfunc)tupleslice, /*sq_slice*/
-	0,		/*sq_ass_item*/
-	0,		/*sq_ass_slice*/
-	(objobjproc)tuplecontains, /*sq_contains*/
+	(inquiry)tuplelength,			/* sq_length */
+	(binaryfunc)tupleconcat,		/* sq_concat */
+	(intargfunc)tuplerepeat,		/* sq_repeat */
+	(intargfunc)tupleitem,			/* sq_item */
+	(intintargfunc)tupleslice,		/* sq_slice */
+	0,					/* sq_ass_item */
+	0,					/* sq_ass_slice */
+	(objobjproc)tuplecontains,		/* sq_contains */
 };
 
 PyTypeObject PyTuple_Type = {
@@ -401,24 +460,26 @@ PyTypeObject PyTuple_Type = {
 	"tuple",
 	sizeof(PyTupleObject) - sizeof(PyObject *) + PyGC_HEAD_SIZE,
 	sizeof(PyObject *),
-	(destructor)tupledealloc, /*tp_dealloc*/
-	(printfunc)tupleprint, /*tp_print*/
-	0,		/*tp_getattr*/
-	0,		/*tp_setattr*/
-	(cmpfunc)tuplecompare, /*tp_compare*/
-	(reprfunc)tuplerepr, /*tp_repr*/
-	0,		/*tp_as_number*/
-	&tuple_as_sequence,	/*tp_as_sequence*/
-	0,		/*tp_as_mapping*/
-	(hashfunc)tuplehash, /*tp_hash*/
-	0,		/*tp_call*/
-	0,		/*tp_str*/
-	0,		/*tp_getattro*/
-	0,		/*tp_setattro*/
-	0,		/*tp_as_buffer*/
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC, /*tp_flags*/
-	0,              /*tp_doc*/
- 	(traverseproc)tupletraverse,	/* tp_traverse */
+	(destructor)tupledealloc,		/* tp_dealloc */
+	(printfunc)tupleprint,			/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	(reprfunc)tuplerepr,			/* tp_repr */
+	0,					/* tp_as_number */
+	&tuple_as_sequence,			/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	(hashfunc)tuplehash,			/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	0,					/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
+	0,             				/* tp_doc */
+ 	(traverseproc)tupletraverse,		/* tp_traverse */
+	0,					/* tp_clear */
+	tuplerichcompare,			/* tp_richcompare */
 };
 
 /* The following function breaks the notion that tuples are immutable:
