@@ -12,6 +12,7 @@ Mac OS X unix Python (a.k.a. MachoPython) too.
 - test_longexp took days to finish on OSX. It now fails with a message so the
   other tests continue.
 - The IDE looks better under OSX after redesign of some windows.
+- The IDE class browser and object browser now work under OSX.
 - The IDE browser now has some understanding of the 2.2 object model.
 - IDE readline() output is echoed to the output window.
 - IDE output is flushed to the screen more often under OSX.
@@ -24,6 +25,9 @@ Mac OS X unix Python (a.k.a. MachoPython) too.
 - macresource module fixed to work under MachoPython.
 - macfs.FSRef objects now have an as_pathname method.
 - The ic module returned bogus values for creator/type. Fixed.
+- Most toolbox modules now weaklink against InterfaceLib (or CarbonLib) so
+  they can be imported even if not all functionality is available. Calling a
+  method missing on your system will raise an exception.
 - Carbon.App: support for various missing methods added.
 - Carbon.CarbonEvt: various method signatures fixed.
 - Carbon.CF: Unicode support added.
@@ -62,7 +66,6 @@ http://www.cwi.nl/~jack/macpython.html.
 - The IDE and Tkinter do not work together. Run tkinter programs under PythonInterpreter.
 - Tkinter file events do not work, unless you have opened the file through Tcl (but then
   you cannot access it from Python).
-- The IDE object and class browser look funny on OSX, but they work fine.
 - Aliases may not work in sys.path entries.
 - PythonInterpreter used interactively will eat a lot of processor cycles. You should use
   PythonIDE for interactive work and PythonInterpreter for scripts only. This is especially
