@@ -81,7 +81,9 @@
   \function{time.ctime()}.  If not specified, the strings default to blanks.
 
   \file{Tools/scripts/diff.py} is a command-line front-end for this
-  function.  
+  function.
+
+  \versionadded{2.3}
 \end{funcdesc}  
 
 \begin{funcdesc}{get_close_matches}{word, possibilities\optional{,
@@ -212,7 +214,9 @@ emu
   \function{time.ctime()}.  If not specified, the strings default to blanks.
 
   \file{Tools/scripts/diff.py} is a command-line front-end for this
-  function.  
+  function.
+
+  \versionadded{2.3}  
 \end{funcdesc} 
 
 \begin{funcdesc}{IS_LINE_JUNK}{line}
@@ -395,6 +399,17 @@ replace a[3:4] (x) b[2:3] (y)
   equal a[4:6] (cd) b[3:5] (cd)
  insert a[6:6] () b[5:6] (f)
 \end{verbatim}
+\end{methoddesc}
+
+\begin{methoddesc}{get_grouped_opcodes}{\optional{n}}
+  Return a generator of groups with up to \var{n} lines of context.
+
+  Starting with the groups returned by \method{get_opcodes()},
+  this method splits out smaller change clusters and eliminates
+  intervening ranges which have no changes.
+
+  The groups are returned in the same format as \method{get_opcodes()}.
+  \versionadded{2.3}			    
 \end{methoddesc}
 
 \begin{methoddesc}{ratio}{}
