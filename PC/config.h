@@ -1,8 +1,5 @@
 #ifndef Py_CONFIG_H
 #define Py_CONFIG_H
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* config.h.  NOT Generated automatically by configure.
 
@@ -106,6 +103,9 @@ typedef int pid_t;
 /* Windows 3.1 will not tolerate any console io in a dll */
 #ifdef _USRDLL
 #include <time.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 #define stdin	((FILE *)0)
 #define stdout	((FILE *)1)
 #define stderr	((FILE *)2)
@@ -125,6 +125,9 @@ clock_t clock();
 void _exit(int);
 void exit(int);
 int sscanf(const char *, const char *, ...);
+#ifdef __cplusplus
+}
+#endif
 #endif /* _USRDLL */
 #ifndef NETSCAPE_PI
 /* use sockets, but not in a Netscape dll */
@@ -465,7 +468,4 @@ typedef int pid_t;
 
 /* Define if you have the thread library (-lthread).  */
 /* #undef HAVE_LIBTHREAD */
-#ifdef __cplusplus
-}
-#endif
 #endif /* !Py_CONFIG_H */
