@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -25,6 +25,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* String object implementation */
 
 #include "allobjects.h"
+
+#include <ctype.h>
 
 #ifdef COUNT_ALLOCS
 int null_strings, one_strings;
@@ -428,11 +430,11 @@ string_hash(a)
 }
 
 static sequence_methods string_as_sequence = {
-	string_length,	/*sq_length*/
-	string_concat,	/*sq_concat*/
-	string_repeat,	/*sq_repeat*/
-	string_item,	/*sq_item*/
-	string_slice,	/*sq_slice*/
+	(inquiry)string_length, /*sq_length*/
+	(binaryfunc)string_concat, /*sq_concat*/
+	(intargfunc)string_repeat, /*sq_repeat*/
+	(intargfunc)string_item, /*sq_item*/
+	(intintargfunc)string_slice, /*sq_slice*/
 	0,		/*sq_ass_item*/
 	0,		/*sq_ass_slice*/
 };
@@ -443,16 +445,16 @@ typeobject Stringtype = {
 	"string",
 	sizeof(stringobject),
 	sizeof(char),
-	string_dealloc,	/*tp_dealloc*/
-	string_print,	/*tp_print*/
+	(destructor)string_dealloc, /*tp_dealloc*/
+	(printfunc)string_print, /*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
-	string_compare,	/*tp_compare*/
-	string_repr,	/*tp_repr*/
+	(cmpfunc)string_compare, /*tp_compare*/
+	(reprfunc)string_repr, /*tp_repr*/
 	0,		/*tp_as_number*/
 	&string_as_sequence,	/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
-	string_hash,	/*tp_hash*/
+	(hashfunc)string_hash, /*tp_hash*/
 };
 
 void
@@ -461,12 +463,27 @@ joinstring(pv, w)
 	register object *w;
 {
 	register object *v;
-	if (*pv == NULL || w == NULL || !is_stringobject(*pv))
+	if (*pv == NULL)
 		return;
+	if (w == NULL || !is_stringobject(*pv)) {
+		DECREF(*pv);
+		*pv = NULL;
+		return;
+	}
 	v = string_concat((stringobject *) *pv, w);
 	DECREF(*pv);
 	*pv = v;
 }
+
+void
+joinstring_decref(pv, w)
+	register object **pv;
+	register object *w;
+{
+	joinstring(pv, w);
+	XDECREF(w);
+}
+
 
 /* The following function breaks the notion that strings are immutable:
    it changes the size of a string.  We get away with this only if there
@@ -596,6 +613,27 @@ formatchar(v)
 	return buf;
 }
 
+/* XXX this could be moved to object.c */
+static object *
+get_mapping_item(mo, ko)
+	object *mo;
+	object *ko;
+{
+	mapping_methods *mm = mo->ob_type->tp_as_mapping;
+	object *val;
+
+	if (!mm || !mm->mp_subscript) {
+		err_setstr(TypeError, "subscript not implemented");
+		return NULL;
+	}
+
+	val = (*mm->mp_subscript)(mo, ko);
+	XDECREF(val);		/* still in mapping */
+
+	return val;
+}
+
+
 /* fmt%(v1,v2,...) is roughly equivalent to sprintf(fmt, v1, v2, ...) */
 
 object *
@@ -606,6 +644,7 @@ formatstring(format, args)
 	char *fmt, *res;
 	int fmtcnt, rescnt, reslen, arglen, argidx;
 	object *result;
+	object *dict = NULL;
 	if (format == NULL || !is_stringobject(format) || args == NULL) {
 		err_badcall();
 		return NULL;
@@ -625,6 +664,8 @@ formatstring(format, args)
 		arglen = -1;
 		argidx = -2;
 	}
+	if (args->ob_type->tp_as_mapping)
+		dict = args;
 	while (--fmtcnt >= 0) {
 		if (*fmt != '%') {
 			if (--rescnt < 0) {
@@ -633,6 +674,7 @@ formatstring(format, args)
 				if (resizestring(&result, reslen) < 0)
 					return NULL;
 				res = getstringvalue(result) + reslen - rescnt;
+				--rescnt;
 			}
 			*res++ = *fmt++;
 		}
@@ -646,9 +688,43 @@ formatstring(format, args)
 			int c = '\0';
 			int fill;
 			object *v;
+			object *temp = NULL;
 			char *buf;
 			int sign;
 			int len;
+			if (*fmt == '(') {
+				char *keystart;
+				int keylen;
+				object *key;
+
+				if (dict == NULL) {
+					err_setstr(TypeError,
+						 "format requires a mapping"); 
+					goto error;
+				}
+				++fmt;
+				--fmtcnt;
+				keystart = fmt;
+				while (--fmtcnt >= 0 && *fmt != ')')
+					fmt++;
+				keylen = fmt - keystart;
+				++fmt;
+				if (fmtcnt < 0) {
+					err_setstr(ValueError,
+						   "incomplete format key");
+					goto error;
+				}
+				key = newsizedstringobject(keystart, keylen);
+				if (key == NULL)
+					goto error;
+				args = get_mapping_item(dict, key);
+				DECREF(key);
+				if (args == NULL) {
+					goto error;
+				}
+				arglen = -1;
+				argidx = -2;
+			}
 			while (--fmtcnt >= 0) {
 				switch (c = *fmt++) {
 				case '-': flags |= F_LJUST; continue;
@@ -745,13 +821,11 @@ formatstring(format, args)
 				len = 1;
 				break;
 			case 's':
-				if (!is_stringobject(v)) {
-					err_setstr(TypeError,
-						   "%s wants string");
+				temp = strobject(v);
+				if (temp == NULL)
 					goto error;
-				}
-				buf = getstringvalue(v);
-				len = getstringsize(v);
+				buf = getstringvalue(temp);
+				len = getstringsize(temp);
 				if (prec >= 0 && len > prec)
 					len = prec;
 				break;
@@ -839,6 +913,12 @@ formatstring(format, args)
 				--rescnt;
 				*res++ = ' ';
 			}
+                        if (dict && (argidx < arglen)) {
+                                err_setstr(TypeError,
+                                           "not all arguments converted");
+                                goto error;
+                        }
+			XDECREF(temp);
 		} /* '%' */
 	} /* until end */
 	if (argidx < arglen) {
