@@ -52,7 +52,7 @@ PyAPI_DATA(PyTypeObject) PyCode_Type;
 
 /* Public interface */
 struct _node; /* Declare the existence of this type */
-PyAPI_FUNC(PyCodeObject *) PyNode_Compile(struct _node *, char *);
+PyAPI_FUNC(PyCodeObject *) PyNode_Compile(struct _node *, const char *);
 PyAPI_FUNC(PyCodeObject *) PyCode_New(
 	int, int, int, int, PyObject *, PyObject *, PyObject *, PyObject *,
 	PyObject *, PyObject *, PyObject *, PyObject *, int, PyObject *); 
@@ -67,8 +67,8 @@ typedef struct {
     int ff_features;
 } PyFutureFeatures;
 
-PyAPI_FUNC(PyFutureFeatures *) PyNode_Future(struct _node *, char *);
-PyAPI_FUNC(PyCodeObject *) PyNode_CompileFlags(struct _node *, char *,
+PyAPI_FUNC(PyFutureFeatures *) PyNode_Future(struct _node *, const char *);
+PyAPI_FUNC(PyCodeObject *) PyNode_CompileFlags(struct _node *, const char *,
 					      PyCompilerFlags *);
 
 #define FUTURE_NESTED_SCOPES "nested_scopes"

@@ -386,7 +386,8 @@ fp_setreadl(struct tok_state *tok, const char* enc)
 {
 	PyObject *reader, *stream, *readline;
 
-	stream = PyFile_FromFile(tok->fp, tok->filename, "rb", NULL);
+	/* XXX: constify filename argument. */
+	stream = PyFile_FromFile(tok->fp, (char*)tok->filename, "rb", NULL);
 	if (stream == NULL)
 		return 0;
 
@@ -591,7 +592,7 @@ decode_str(const char *str, struct tok_state *tok)
 /* Set up tokenizer for string */
 
 struct tok_state *
-PyTokenizer_FromString(char *str)
+PyTokenizer_FromString(const char *str)
 {
 	struct tok_state *tok = tok_new();
 	if (tok == NULL)
@@ -599,7 +600,8 @@ PyTokenizer_FromString(char *str)
 	str = (char *)decode_str(str, tok);
 	if (str == NULL)
 		return NULL;
-	tok->buf = tok->cur = tok->end = tok->inp = str;
+	/* XXX: constify members. */
+	tok->buf = tok->cur = tok->end = tok->inp = (char*)str;
 	return tok;
 }
 

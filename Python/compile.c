@@ -472,7 +472,7 @@ struct compiling {
 	int c_begin;		/* begin of current loop, for 'continue' */
 	int c_block[CO_MAXBLOCKS]; /* stack of block types */
 	int c_nblocks;		/* current block stack level */
-	char *c_filename;	/* filename of current node */
+	const char *c_filename;	/* filename of current node */
 	char *c_name;		/* name of object (e.g. function) */
 	int c_lineno;		/* Current line number */
 	int c_stacklevel;	/* Current stack level */
@@ -574,8 +574,8 @@ block_pop(struct compiling *c, int type)
 
 /* Prototype forward declarations */
 
-static int issue_warning(char *, char *, int);
-static int com_init(struct compiling *, char *);
+static int issue_warning(const char *, const char *, int);
+static int com_init(struct compiling *, const char *);
 static void com_free(struct compiling *);
 static void com_push(struct compiling *, int);
 static void com_pop(struct compiling *, int);
@@ -597,7 +597,7 @@ static int com_argdefs(struct compiling *, node *);
 static void com_assign(struct compiling *, node *, int, node *);
 static void com_assign_name(struct compiling *, node *, int);
 static PyCodeObject *icompile(node *, struct compiling *);
-static PyCodeObject *jcompile(node *, char *, struct compiling *,
+static PyCodeObject *jcompile(node *, const char *, struct compiling *,
 			      PyCompilerFlags *);
 static PyObject *parsestrplus(struct compiling*, node *);
 static PyObject *parsestr(struct compiling *, char *);
@@ -654,7 +654,7 @@ dump(node *n, int pad, int depth)
 #define DUMP(N) dump(N, 0, -1)
 
 static int
-com_init(struct compiling *c, char *filename)
+com_init(struct compiling *c, const char *filename)
 {
 	memset((void *)c, '\0', sizeof(struct compiling));
 	if ((c->c_code = PyString_FromStringAndSize((char *)NULL,
@@ -1182,7 +1182,9 @@ parsenumber(struct compiling *c, char *s)
 				    "hex/oct constants > sys.maxint "
 				    "will return positive values "
 				    "in Python 2.4 and up",
-				    c->c_filename,
+				    /* XXX: Give WarnExplicit
+				       a const char* argument. */
+				    (char*)c->c_filename,
 				    c->c_lineno,
 				    NULL,
 				    NULL) < 0)
@@ -4142,19 +4144,19 @@ dict_keys_inorder(PyObject *dict, int offset)
 }
 
 PyCodeObject *
-PyNode_Compile(node *n, char *filename)
+PyNode_Compile(node *n, const char *filename)
 {
 	return PyNode_CompileFlags(n, filename, NULL);
 }
 
 PyCodeObject *
-PyNode_CompileFlags(node *n, char *filename, PyCompilerFlags *flags)
+PyNode_CompileFlags(node *n, const char *filename, PyCompilerFlags *flags)
 {
 	return jcompile(n, filename, NULL, flags);
 }
 
 struct symtable *
-PyNode_CompileSymtable(node *n, char *filename)
+PyNode_CompileSymtable(node *n, const char *filename)
 {
 	struct symtable *st;
 	PyFutureFeatures *ff;
@@ -4191,7 +4193,7 @@ icompile(node *n, struct compiling *base)
 }
 
 static PyCodeObject *
-jcompile(node *n, char *filename, struct compiling *base,
+jcompile(node *n, const char *filename, struct compiling *base,
 	 PyCompilerFlags *flags)
 {
 	struct compiling sc;
@@ -4351,7 +4353,7 @@ get_ref_type(struct compiling *c, char *name)
 /* Helper functions to issue warnings */
 
 static int
-issue_warning(char *msg, char *filename, int lineno)
+issue_warning(const char *msg, const char *filename, int lineno)
 {
 	if (PyErr_WarnExplicit(PyExc_SyntaxWarning, msg, filename,
 			       lineno, NULL, NULL) < 0)	{

@@ -130,16 +130,17 @@ PyAPI_FUNC(void) PyErr_WriteUnraisable(PyObject *);
 
 /* Issue a warning or exception */
 PyAPI_FUNC(int) PyErr_Warn(PyObject *, char *);
-PyAPI_FUNC(int) PyErr_WarnExplicit(PyObject *, char *,
-					 char *, int, char *, PyObject *);
+PyAPI_FUNC(int) PyErr_WarnExplicit(PyObject *, const char *,
+				   const char *, int, 
+				   const char *, PyObject *);
 
 /* In sigcheck.c or signalmodule.c */
 PyAPI_FUNC(int) PyErr_CheckSignals(void);
 PyAPI_FUNC(void) PyErr_SetInterrupt(void);
 
 /* Support for adding program text to SyntaxErrors */
-PyAPI_FUNC(void) PyErr_SyntaxLocation(char *, int);
-PyAPI_FUNC(PyObject *) PyErr_ProgramText(char *, int);
+PyAPI_FUNC(void) PyErr_SyntaxLocation(const char *, int);
+PyAPI_FUNC(PyObject *) PyErr_ProgramText(const char *, int);
 
 #ifdef Py_USING_UNICODE
 /* The following functions are used to create and modify unicode

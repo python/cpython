@@ -637,9 +637,9 @@ PyErr_Warn(PyObject *category, char *message)
 
 /* Warning with explicit origin */
 int
-PyErr_WarnExplicit(PyObject *category, char *message,
-		   char *filename, int lineno,
-		   char *module, PyObject *registry)
+PyErr_WarnExplicit(PyObject *category, const char *message,
+		   const char *filename, int lineno,
+		   const char *module, PyObject *registry)
 {
 	PyObject *mod, *dict, *func = NULL;
 
@@ -679,7 +679,7 @@ PyErr_WarnExplicit(PyObject *category, char *message,
    to make printing of exceptions believe it is a syntax error. */
 
 void
-PyErr_SyntaxLocation(char *filename, int lineno)
+PyErr_SyntaxLocation(const char *filename, int lineno)
 {
 	PyObject *exc, *v, *tb, *tmp;
 
@@ -743,7 +743,7 @@ PyErr_SyntaxLocation(char *filename, int lineno)
 */
 
 PyObject *
-PyErr_ProgramText(char *filename, int lineno)
+PyErr_ProgramText(const char *filename, int lineno)
 {
 	FILE *fp;
 	int i;
