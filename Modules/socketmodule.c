@@ -2377,10 +2377,15 @@ PySocket_getaddrinfo(PyObject *self, PyObject *args)
 	if ((all = PyList_New(0)) == NULL)
 		goto err;
 	for (res = res0; res; res = res->ai_next) {
+		PyObject *addr =
+			makesockaddr(-1, res->ai_addr, res->ai_addrlen);
+		if (addr == NULL)
+			goto err;
 		single = Py_BuildValue("iiisO", res->ai_family,
 			res->ai_socktype, res->ai_protocol,
 			res->ai_canonname ? res->ai_canonname : "",
-			makesockaddr(-1, res->ai_addr, res->ai_addrlen));
+			addr);
+		Py_DECREF(addr);
 		if (single == NULL)
 			goto err;
 
@@ -2388,12 +2393,10 @@ PySocket_getaddrinfo(PyObject *self, PyObject *args)
 			goto err;
 		Py_XDECREF(single);
 	}
-	Py_XDECREF(pobj);
 	return all;
  err:
 	Py_XDECREF(single);
 	Py_XDECREF(all);
-	Py_XDECREF(pobj);
 	return (PyObject *)NULL;
 }
 
