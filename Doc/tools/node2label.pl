@@ -4,7 +4,8 @@
 require "labels.pl";
 
 %nodes = ();
-foreach $label (keys %external_labels) {
+# sort so that we get a consistent assignment for nodes with multiple labels 
+foreach $label (sort keys %external_labels) {
   $nodes{$external_labels{$label}} = $label;
 }
 
