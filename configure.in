@@ -654,12 +654,33 @@ if test "$ac_cv_has_makedev" = "yes"; then
     AC_DEFINE(HAVE_MAKEDEV, 1, [Define this if you have the makedev macro.])
 fi
 
+# Enabling LFS on Solaris (2.6 to 9) with gcc 2.95 triggers a bug in
+# the system headers: If _XOPEN_SOURCE and _LARGEFILE_SOURCE are
+# defined, but the compiler does not support pragma redefine_extname,
+# and _LARGEFILE64_SOURCE is not defined, the headers refer to 64-bit
+# structures (such as rlimit64) without declaring them. As a
+# work-around, disable LFS on such configurations
+
+use_lfs=yes
+AC_MSG_CHECKING(Solaris LFS bug)
+AC_TRY_COMPILE([
+#define _LARGEFILE_SOURCE 1
+#define _FILE_OFFSET_BITS 64
+#include <sys/resource.h>
+],struct rlimit foo;,sol_lfs_bug=no,sol_lfs_bug=yes)
+AC_MSG_RESULT($sol_lfs_bug)
+if test "$sol_lfs_bug" = "yes"; then
+  use_lfs=no
+fi
+
+if test "$use_lfs" = "yes"; then
 # Two defines needed to enable largefile support on various platforms
 # These may affect some typedefs
 AC_DEFINE(_LARGEFILE_SOURCE, 1, 
 [This must be defined on some systems to enable large file support.])
 AC_DEFINE(_FILE_OFFSET_BITS, 64,
 [This must be set to 64 on some systems to enable large file support.])
+fi
 
 # Add some code to confdefs.h so that the test for off_t works on SCO
 cat >> confdefs.h <<\EOF
