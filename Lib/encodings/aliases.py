@@ -32,7 +32,7 @@ aliases = {
     'csascii'            : 'ascii',
     'ibm367'             : 'ascii',
     'iso646_us'          : 'ascii',
-    'iso_646.irv:1991'   : 'ascii',
+    'iso_646.irv_1991'   : 'ascii',
     'iso_ir_6'           : 'ascii',
     'us'                 : 'ascii',
     'us_ascii'           : 'ascii',
@@ -171,7 +171,7 @@ aliases = {
     # iso8859_10 codec
     'csisolatin6'        : 'iso8859_10',
     'iso_8859_10'        : 'iso8859_10',
-    'iso_8859_10:1992'   : 'iso8859_10',
+    'iso_8859_10_1992'   : 'iso8859_10',
     'iso_ir_157'         : 'iso8859_10',
     'l6'                 : 'iso8859_10',
     'latin6'             : 'iso8859_10',
@@ -181,7 +181,7 @@ aliases = {
 
     # iso8859_14 codec
     'iso_8859_14'        : 'iso8859_14',
-    'iso_8859_14:1998'   : 'iso8859_14',
+    'iso_8859_14_1998'   : 'iso8859_14',
     'iso_celtic'         : 'iso8859_14',
     'iso_ir_199'         : 'iso8859_14',
     'l8'                 : 'iso8859_14',
@@ -193,7 +193,7 @@ aliases = {
     # iso8859_2 codec
     'csisolatin2'        : 'iso8859_2',
     'iso_8859_2'         : 'iso8859_2',
-    'iso_8859_2:1987'    : 'iso8859_2',
+    'iso_8859_2_1987'    : 'iso8859_2',
     'iso_ir_101'         : 'iso8859_2',
     'l2'                 : 'iso8859_2',
     'latin2'             : 'iso8859_2',
@@ -201,7 +201,7 @@ aliases = {
     # iso8859_3 codec
     'csisolatin3'        : 'iso8859_3',
     'iso_8859_3'         : 'iso8859_3',
-    'iso_8859_3:1988'    : 'iso8859_3',
+    'iso_8859_3_1988'    : 'iso8859_3',
     'iso_ir_109'         : 'iso8859_3',
     'l3'                 : 'iso8859_3',
     'latin3'             : 'iso8859_3',
@@ -209,7 +209,7 @@ aliases = {
     # iso8859_4 codec
     'csisolatin4'        : 'iso8859_4',
     'iso_8859_4'         : 'iso8859_4',
-    'iso_8859_4:1988'    : 'iso8859_4',
+    'iso_8859_4_1988'    : 'iso8859_4',
     'iso_ir_110'         : 'iso8859_4',
     'l4'                 : 'iso8859_4',
     'latin4'             : 'iso8859_4',
@@ -218,7 +218,7 @@ aliases = {
     'csisolatincyrillic' : 'iso8859_5',
     'cyrillic'           : 'iso8859_5',
     'iso_8859_5'         : 'iso8859_5',
-    'iso_8859_5:1988'    : 'iso8859_5',
+    'iso_8859_5_1988'    : 'iso8859_5',
     'iso_ir_144'         : 'iso8859_5',
 
     # iso8859_6 codec
@@ -227,7 +227,7 @@ aliases = {
     'csisolatinarabic'   : 'iso8859_6',
     'ecma_114'           : 'iso8859_6',
     'iso_8859_6'         : 'iso8859_6',
-    'iso_8859_6:1987'    : 'iso8859_6',
+    'iso_8859_6_1987'    : 'iso8859_6',
     'iso_ir_127'         : 'iso8859_6',
 
     # iso8859_7 codec
@@ -237,20 +237,20 @@ aliases = {
     'greek'              : 'iso8859_7',
     'greek8'             : 'iso8859_7',
     'iso_8859_7'         : 'iso8859_7',
-    'iso_8859_7:1987'    : 'iso8859_7',
+    'iso_8859_7_1987'    : 'iso8859_7',
     'iso_ir_126'         : 'iso8859_7',
 
     # iso8859_8 codec
     'csisolatinhebrew'   : 'iso8859_8',
     'hebrew'             : 'iso8859_8',
     'iso_8859_8'         : 'iso8859_8',
-    'iso_8859_8:1988'    : 'iso8859_8',
+    'iso_8859_8_1988'    : 'iso8859_8',
     'iso_ir_138'         : 'iso8859_8',
 
     # iso8859_9 codec
     'csisolatin5'        : 'iso8859_9',
     'iso_8859_9'         : 'iso8859_9',
-    'iso_8859_9:1989'    : 'iso8859_9',
+    'iso_8859_9_1989'    : 'iso8859_9',
     'iso_ir_148'         : 'iso8859_9',
     'l5'                 : 'iso8859_9',
     'latin5'             : 'iso8859_9',
@@ -269,7 +269,7 @@ aliases = {
     'ibm819'             : 'latin_1',
     'iso8859'            : 'latin_1',
     'iso_8859_1'         : 'latin_1',
-    'iso_8859_1:1987'    : 'latin_1',
+    'iso_8859_1_1987'    : 'latin_1',
     'iso_ir_100'         : 'latin_1',
     'l1'                 : 'latin_1',
     'latin'              : 'latin_1',
@@ -328,8 +328,8 @@ aliases = {
     'u8'                 : 'utf_8',
     'utf'                : 'utf_8',
     'utf8'               : 'utf_8',
-    'utf8@ucs2'          : 'utf_8',
-    'utf8@ucs4'          : 'utf_8',
+    'utf8_ucs2'          : 'utf_8',
+    'utf8_ucs4'          : 'utf_8',
 
     # uu_codec codec
     'uu'                 : 'uu_codec',
