@@ -29,6 +29,10 @@ Extension modules
 Library
 -------
 
+- Bug #979794: difflib.get_grouped_opcodes() now handles the case of when it is
+  comparing two empty lists.  Was affecting both context_diff() and
+  unified_diff().  Was also a duplicate of bug #980117.
+
 - Bug #980938: smtplib now prints debug output to sys.stderr.
 
 - Bug #930024: posixpath.realpath() now handles infinite loops in symlinks by
