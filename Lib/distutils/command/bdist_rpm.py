@@ -18,8 +18,11 @@ class bdist_rpm (Command):
     description = "create an RPM distribution"
 
     user_options = [
-        ('bdist-base', None,
+        ('bdist-base=', None,
          "base directory for creating built distributions"),
+        ('rpm-base=', None,
+         "base directory for creating RPMs (defaults to \"rpm\" under "
+         "--bdist-base; must be specified for RPM 2)"),
         ('spec-only', None,
          "only regenerate spec file"),
         ('source-only', None,
@@ -104,6 +107,7 @@ class bdist_rpm (Command):
                     
     def initialize_options (self):
         self.bdist_base = None
+        self.rpm_base = None
         self.spec_only = None
         self.binary_only = None
         self.source_only = None
@@ -143,6 +147,12 @@ class bdist_rpm (Command):
 
     def finalize_options (self):
         self.set_undefined_options('bdist', ('bdist_base', 'bdist_base'))
+        if self.rpm_base is None:
+            if not self.rpm3_mode:
+                raise DistutilsOptionError, \
+                      "you must specify --rpm-base in RPM 2 mode"
+            self.rpm_base = os.path.join(self.bdist_base, "rpm")
+
         if os.name != 'posix':
             raise DistutilsPlatformError, \
                   ("don't know how to create RPM "
@@ -218,14 +228,9 @@ class bdist_rpm (Command):
             spec_dir = "dist"
             self.mkpath(spec_dir)       # XXX should be configurable
         else:
-            if self.rpm3_mode:
-                rpm_base = os.path.join(self.bdist_base, "rpm")
-            else:
-                # complete path must be specified in RPM 2 mode
-                rpm_base = self.bdist_base
             rpm_dir = {}
             for d in ('SOURCES', 'SPECS', 'BUILD', 'RPMS', 'SRPMS'):
-                rpm_dir[d] = os.path.join(rpm_base, d)
+                rpm_dir[d] = os.path.join(self.rpm_base, d)
                 self.mkpath(rpm_dir[d])
             spec_dir = rpm_dir['SPECS']
 
@@ -273,7 +278,7 @@ class bdist_rpm (Command):
             rpm_args.append('-ba')
         if self.rpm3_mode:
             rpm_args.extend(['--define',
-                             '_topdir %s/%s' % (os.getcwd(), rpm_base),])
+                             '_topdir %s/%s' % (os.getcwd(), self.rpm_base),])
         if self.clean:
             rpm_args.append('--clean')
         rpm_args.append(spec_path)
@@ -391,7 +396,7 @@ class bdist_rpm (Command):
             ('pre', 'pre_install', None),
             ('post', 'post_install', None),
             ('preun', 'pre_uninstall', None),
-            ('postun', 'post_uninstall', None))
+            ('postun', 'post_uninstall', None),
         ]
 
         for (rpm_opt, attr, default) in script_options:
