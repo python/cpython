@@ -1353,7 +1353,10 @@ in the \emph{defining} scope, so that
 
 \begin{verbatim}
 i = 5
-def f(arg = i): print arg
+
+def f(arg=i):
+    print arg
+
 i = 6
 f()
 \end{verbatim}
@@ -1366,9 +1369,10 @@ list or dictionary.  For example, the following function accumulates
 the arguments passed to it on subsequent calls:
 
 \begin{verbatim}
-def f(a, l = []):
-    l.append(a)
-    return l
+def f(a, L=[]):
+    L.append(a)
+    return L
+
 print f(1)
 print f(2)
 print f(3)
@@ -1386,11 +1390,11 @@ If you don't want the default to be shared between subsequent calls,
 you can write the function like this instead:
 
 \begin{verbatim}
-def f(a, l = None):
-    if l is None:
-        l = []
-    l.append(a)
-    return l
+def f(a, L=None):
+    if L is None:
+        L = []
+    L.append(a)
+    return L
 \end{verbatim}
 
 \subsection{Keyword Arguments \label{keywordArgs}}
