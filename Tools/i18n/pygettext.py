@@ -338,11 +338,12 @@ class TokenEater:
             rentries = reverse[rkey]
             rentries.sort()
             for k, v in rentries:
+                isdocstring = 0
                 # If the entry was gleaned out of a docstring, then add a
                 # comment stating so.  This is to aid translators who may wish
                 # to skip translating some unimportant docstrings.
                 if reduce(operator.__add__, v.values()):
-                    print >> fp, '#, docstring'
+                    isdocstring = 1
                 # k is the message string, v is a dictionary-set of (filename,
                 # lineno) tuples.  We want to sort the entries in v first by
                 # file name and then by line number.
@@ -370,6 +371,8 @@ class TokenEater:
                             locline = "#:" + s
                     if len(locline) > 2:
                         print >> fp, locline
+                if isdocstring:
+                    print >> fp, '#, docstring'
                 print >> fp, 'msgid', normalize(k)
                 print >> fp, 'msgstr ""\n'
 
