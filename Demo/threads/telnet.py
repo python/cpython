@@ -21,94 +21,94 @@ BUFSIZE = 8*1024
 
 # Telnet protocol characters
 
-IAC  = chr(255)	# Interpret as command
+IAC  = chr(255) # Interpret as command
 DONT = chr(254)
 DO   = chr(253)
 WONT = chr(252)
 WILL = chr(251)
 
 def main():
-	if len(sys.argv) < 2:
-		sys.stderr.write('usage: telnet hostname [port]\n')
-		sys.exit(2)
-	host = sys.argv[1]
-	try:
-		hostaddr = gethostbyname(host)
-	except error:
-		sys.stderr.write(sys.argv[1] + ': bad host name\n')
-		sys.exit(2)
-	#
-	if len(sys.argv) > 2:
-		servname = sys.argv[2]
-	else:
-		servname = 'telnet'
-	#
-	if '0' <= servname[:1] <= '9':
-		port = eval(servname)
-	else:
-		try:
-			port = getservbyname(servname, 'tcp')
-		except error:
-			sys.stderr.write(servname + ': bad tcp service name\n')
-			sys.exit(2)
-	#
-	s = socket(AF_INET, SOCK_STREAM)
-	#
-	try:
-		s.connect((host, port))
-	except error, msg:
-		sys.stderr.write('connect failed: ' + `msg` + '\n')
-		sys.exit(1)
-	#
-	thread.start_new(child, (s,))
-	parent(s)
+    if len(sys.argv) < 2:
+        sys.stderr.write('usage: telnet hostname [port]\n')
+        sys.exit(2)
+    host = sys.argv[1]
+    try:
+        hostaddr = gethostbyname(host)
+    except error:
+        sys.stderr.write(sys.argv[1] + ': bad host name\n')
+        sys.exit(2)
+    #
+    if len(sys.argv) > 2:
+        servname = sys.argv[2]
+    else:
+        servname = 'telnet'
+    #
+    if '0' <= servname[:1] <= '9':
+        port = eval(servname)
+    else:
+        try:
+            port = getservbyname(servname, 'tcp')
+        except error:
+            sys.stderr.write(servname + ': bad tcp service name\n')
+            sys.exit(2)
+    #
+    s = socket(AF_INET, SOCK_STREAM)
+    #
+    try:
+        s.connect((host, port))
+    except error, msg:
+        sys.stderr.write('connect failed: ' + `msg` + '\n')
+        sys.exit(1)
+    #
+    thread.start_new(child, (s,))
+    parent(s)
 
 def parent(s):
-	# read socket, write stdout
-	iac = 0		# Interpret next char as command
-	opt = ''	# Interpret next char as option
-	while 1:
-		data, dummy = s.recvfrom(BUFSIZE)
-		if not data:
-			# EOF -- exit
-			sys.stderr.write( '(Closed by remote host)\n')
-			sys.exit(1)
-		cleandata = ''
-		for c in data:
-			if opt:
-				print ord(c)
-##				print '(replying: ' + `opt+c` + ')'
-				s.send(opt + c)
-				opt = ''
-			elif iac:
-				iac = 0
-				if c == IAC:
-					cleandata = cleandata + c
-				elif c in (DO, DONT):
-					if c == DO: print '(DO)',
-					else: print '(DONT)',
-					opt = IAC + WONT
-				elif c in (WILL, WONT):
-					if c == WILL: print '(WILL)',
-					else: print '(WONT)',
-					opt = IAC + DONT
-				else:
-					print '(command)', ord(c)
-			elif c == IAC:
-				iac = 1
-				print '(IAC)',
-			else:
-				cleandata = cleandata + c
-		sys.stdout.write(cleandata)
-		sys.stdout.flush()
-##		print 'Out:', `cleandata`
+    # read socket, write stdout
+    iac = 0         # Interpret next char as command
+    opt = ''        # Interpret next char as option
+    while 1:
+        data, dummy = s.recvfrom(BUFSIZE)
+        if not data:
+            # EOF -- exit
+            sys.stderr.write( '(Closed by remote host)\n')
+            sys.exit(1)
+        cleandata = ''
+        for c in data:
+            if opt:
+                print ord(c)
+##                              print '(replying: ' + `opt+c` + ')'
+                s.send(opt + c)
+                opt = ''
+            elif iac:
+                iac = 0
+                if c == IAC:
+                    cleandata = cleandata + c
+                elif c in (DO, DONT):
+                    if c == DO: print '(DO)',
+                    else: print '(DONT)',
+                    opt = IAC + WONT
+                elif c in (WILL, WONT):
+                    if c == WILL: print '(WILL)',
+                    else: print '(WONT)',
+                    opt = IAC + DONT
+                else:
+                    print '(command)', ord(c)
+            elif c == IAC:
+                iac = 1
+                print '(IAC)',
+            else:
+                cleandata = cleandata + c
+        sys.stdout.write(cleandata)
+        sys.stdout.flush()
+##              print 'Out:', `cleandata`
 
 def child(s):
-	# read stdin, write socket
-	while 1:
-		line = sys.stdin.readline()
-##		print 'Got:', `line`
-		if not line: break
-		s.send(line)
+    # read stdin, write socket
+    while 1:
+        line = sys.stdin.readline()
+##              print 'Got:', `line`
+        if not line: break
+        s.send(line)
 
 main()
