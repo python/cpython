@@ -28,7 +28,6 @@ class Cmd:
 		line = string.strip(line)
 		if not line:
 			line = self.lastcmd
-			print line
 		else:
 			self.lastcmd = line
 		i, n = 0, len(line)
