@@ -1,3 +1,19 @@
+"""Color chip megawidget.
+This widget is used for displaying a color.  It consists of three components:
+
+    label -- a Tkinter.Label, this is the chip's label which is displayed
+             about the color chip 
+    chip  -- A Tkinter.Frame, the frame displaying the color
+    name  -- a Tkinter.Label, the name of the color
+
+In addition, the megawidget understands the following options:
+
+    color -- the color displayed in the chip and name widgets
+
+When run as a script, this program displays a sample chip.
+"""
+
+
 from Tkinter import *
 import Pmw
 
@@ -6,10 +22,11 @@ class ChipWidget(Pmw.MegaWidget):
     _HEIGHT = 100
 
     def __init__(self, parent=None, **kw):
-	optionsdefs = (('chipcolor', 'blue', self.__set_color),
-		       ('width', self._WIDTH, self.__set_dims),
-		       ('height', self._HEIGHT, self.__set_dims),
-		       ('text', 'Color', self.__set_label),
+	optionsdefs = (('chip_borderwidth', 2,            None),
+		       ('chip_width',       self._WIDTH,  None),
+		       ('chip_height',      self._HEIGHT, None),
+		       ('label_text',       'Color',      None),
+		       ('color',            'blue',       self.__set_color),
 		       )
 	self.defineoptions(kw, optionsdefs)
 
@@ -41,21 +58,11 @@ class ChipWidget(Pmw.MegaWidget):
 	# Check keywords and initialize options
 	self.initialiseoptions(ChipWidget)
 
-    # called whenever `chipcolor' option is set
+    # called whenever `color' option is set
     def __set_color(self):
-	color = self['chipcolor']
+	color = self['color']
 	self.__chip['background'] = color
 	self.__name['text'] = color
-
-    def __set_dims(self):
-	width = self['width']
-	height = self['height']
-	self.__chip.configure(width=width, height=height)
-
-    def __set_label(self):
-	self.__label['text'] = self['text']
-
-Pmw.forwardmethods(ChipWidget, Frame, '__chip')
 
 
 
@@ -65,7 +72,8 @@ if __name__ == '__main__':
 
     exitbtn = Button(root, text='Exit', command=root.destroy)
     exitbtn.pack(side=BOTTOM)
-    widget = ChipWidget(root, chipcolor='red', width=200,
-			text='Selected Color')
+    widget = ChipWidget(root, color='red',
+			chip_width=200,
+			label_text='Selected Color')
     widget.pack()
     root.mainloop()
