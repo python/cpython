@@ -35,8 +35,7 @@ PERFORMANCE OF THIS SOFTWARE.
    The item type is restricted to simple C types like int or float */
 
 #include "Python.h"
-#include "modsupport.h"
-#include "ceval.h"
+
 #ifdef STDC_HEADERS
 #include <stddef.h>
 #else
@@ -327,7 +326,8 @@ ins1(self, where, v)
 	if ((*self->ob_descr->setitem)(self, -1, v) < 0)
 		return -1;
 	items = self->ob_item;
-	PyMem_RESIZE(items, char, (self->ob_size+1) * self->ob_descr->itemsize);
+	PyMem_RESIZE(items, char,
+		     (self->ob_size+1) * self->ob_descr->itemsize);
 	if (items == NULL) {
 		PyErr_NoMemory();
 		return -1;
@@ -780,7 +780,8 @@ array_remove(self, args)
 	}
 	for (i = 0; i < self->ob_size; i++) {
 		if (PyObject_Compare(self->ob_item[i], args) == 0) {
-			if (array_ass_slice(self, i, i+1, (PyObject *)NULL) != 0)
+			if (array_ass_slice(self, i, i+1,
+					    (PyObject *)NULL) != 0)
 				return NULL;
 			Py_INCREF(Py_None);
 			return Py_None;
@@ -945,7 +946,8 @@ array_fromstring(self, args)
 		}
 		self->ob_item = item;
 		self->ob_size += n;
-		memcpy(item + (self->ob_size - n) * itemsize, str, itemsize*n);
+		memcpy(item + (self->ob_size - n) * itemsize,
+		       str, itemsize*n);
 	}
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -997,8 +999,10 @@ array_getattr(a, name)
 	if (strcmp(name, "__members__") == 0) {
 		PyObject *list = PyList_New(2);
 		if (list) {
-			PyList_SetItem(list, 0, PyString_FromString("typecode"));
-			PyList_SetItem(list, 1, PyString_FromString("itemsize"));
+			PyList_SetItem(list, 0,
+				       PyString_FromString("typecode"));
+			PyList_SetItem(list, 1,
+				       PyString_FromString("itemsize"));
 			if (PyErr_Occurred()) {
 				Py_DECREF(list);
 				list = NULL;
@@ -1082,10 +1086,10 @@ array_repr(a)
 }
 
 static PySequenceMethods array_as_sequence = {
-	(inquiry)array_length,		/*sq_length*/
-	(binaryfunc)array_concat,		/*sq_concat*/
+	(inquiry)array_length,		        /*sq_length*/
+	(binaryfunc)array_concat,               /*sq_concat*/
 	(intargfunc)array_repeat,		/*sq_repeat*/
-	(intargfunc)array_item,		/*sq_item*/
+	(intargfunc)array_item,		        /*sq_item*/
 	(intintargfunc)array_slice,		/*sq_slice*/
 	(intobjargproc)array_ass_item,		/*sq_ass_item*/
 	(intintobjargproc)array_ass_slice,	/*sq_ass_slice*/
@@ -1097,9 +1101,9 @@ statichere PyTypeObject Arraytype = {
 	"array",
 	sizeof(arrayobject),
 	0,
-	(destructor)array_dealloc,	                /*tp_dealloc*/
+	(destructor)array_dealloc,	/*tp_dealloc*/
 	(printfunc)array_print,		/*tp_print*/
-	(getattrfunc)array_getattr,	                /*tp_getattr*/
+	(getattrfunc)array_getattr,	/*tp_getattr*/
 	0,				/*tp_setattr*/
 	(cmpfunc)array_compare,		/*tp_compare*/
 	(reprfunc)array_repr,		/*tp_repr*/
@@ -1123,7 +1127,7 @@ a_array(self, args)
 			return NULL;
 		if (!PyList_Check(initial) && !PyString_Check(initial)) {
 			PyErr_SetString(PyExc_TypeError,
-				   "array initializer must be list or string");
+				 "array initializer must be list or string");
 			return NULL;
 		}
 	}
@@ -1161,7 +1165,8 @@ a_array(self, args)
 			return a;
 		}
 	}
-	PyErr_SetString(PyExc_ValueError, "bad typecode (must be c, b, h, l, f or d)");
+	PyErr_SetString(PyExc_ValueError,
+			"bad typecode (must be c, b, h, l, f or d)");
 	return NULL;
 }
 
