@@ -4582,19 +4582,52 @@ posix_pipe(PyObject *self, PyObject *args)
 
 #ifdef HAVE_MKFIFO
 static char posix_mkfifo__doc__[] =
-"mkfifo(file, [, mode=0666]) -> None\n\
+"mkfifo(filename, [, mode=0666]) -> None\n\
 Create a FIFO (a POSIX named pipe).";
 
 static PyObject *
 posix_mkfifo(PyObject *self, PyObject *args)
 {
-	char *file;
+	char *filename;
 	int mode = 0666;
 	int res;
-	if (!PyArg_ParseTuple(args, "s|i:mkfifo", &file, &mode))
+	if (!PyArg_ParseTuple(args, "s|i:mkfifo", &filename, &mode))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	res = mkfifo(file, mode);
+	res = mkfifo(filename, mode);
+	Py_END_ALLOW_THREADS
+	if (res < 0)
+		return posix_error();
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+#endif
+
+
+#ifdef HAVE_MKNOD
+static char posix_mknod__doc__[] =
+"mknod(filename, [, mode=0600, major, minor]) -> None\n\
+Create a filesystem node (file, device special file or named pipe)\n\
+named filename. mode specifies both the permissions to use and the\n\
+type of node to be created, being combined (bitwise OR) with one of\n\
+S_IFREG, S_IFCHR, S_IFBLK, and S_IFIFO. For S_IFCHR and S_IFBLK,\n\
+major and minor define the newly created device special file, otherwise\n\
+they are ignored.";
+
+
+static PyObject *
+posix_mknod(PyObject *self, PyObject *args)
+{
+	char *filename;
+	int mode = 0600;
+	int major = 0;
+	int minor = 0;
+	int res;
+	if (!PyArg_ParseTuple(args, "s|iii:mknod", &filename,
+			      &mode, &major, &minor))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	res = mknod(filename, mode, makedev(major, minor));
 	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return posix_error();
@@ -6335,6 +6368,9 @@ static PyMethodDef posix_methods[] = {
 #endif
 #ifdef HAVE_MKFIFO
 	{"mkfifo",	posix_mkfifo, METH_VARARGS, posix_mkfifo__doc__},
+#endif
+#ifdef HAVE_MKNOD
+	{"mknod",	posix_mknod, METH_VARARGS, posix_mknod__doc__},
 #endif
 #ifdef HAVE_FTRUNCATE
 	{"ftruncate",	posix_ftruncate, METH_VARARGS, posix_ftruncate__doc__},
