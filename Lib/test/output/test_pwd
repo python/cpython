@@ -1,1 +1,7 @@
 test_pwd
+pwd.getpwall()
+pwd.getpwuid()
+pwd.getpwnam()
+name matches uid
+caught expected exception
+caught expected exception
