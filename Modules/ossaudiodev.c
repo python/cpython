@@ -672,23 +672,23 @@ oss_mixer_fileno(oss_mixer_t *self, PyObject *args)
 /* Simple mixer interface methods */
 
 static PyObject *
-oss_mixer_devices(oss_mixer_t *self, PyObject *args)
+oss_mixer_controls(oss_mixer_t *self, PyObject *args)
 {
-    return _do_ioctl_1_internal(self->fd, args, "devices",
+    return _do_ioctl_1_internal(self->fd, args, "controls",
         SOUND_MIXER_READ_DEVMASK);
 }
 
 static PyObject *
-oss_mixer_stereodevices(oss_mixer_t *self, PyObject *args)
+oss_mixer_stereocontrols(oss_mixer_t *self, PyObject *args)
 {
-    return _do_ioctl_1_internal(self->fd, args, "stereodevices",
+    return _do_ioctl_1_internal(self->fd, args, "stereocontrols",
         SOUND_MIXER_READ_STEREODEVS);
 }
 
 static PyObject *
-oss_mixer_recdevices(oss_mixer_t *self, PyObject *args)
+oss_mixer_reccontrols(oss_mixer_t *self, PyObject *args)
 {
-    return _do_ioctl_1_internal(self->fd, args, "recdevices",
+    return _do_ioctl_1_internal(self->fd, args, "reccontrols",
         SOUND_MIXER_READ_RECMASK);
 }
 
@@ -791,9 +791,9 @@ static PyMethodDef oss_mixer_methods[] = {
     { "fileno",         (PyCFunction)oss_mixer_fileno, METH_VARARGS },
 
     /* Simple ioctl wrappers */
-    { "devices",        (PyCFunction)oss_mixer_devices, METH_VARARGS }, 
-    { "stereodevices",  (PyCFunction)oss_mixer_stereodevices, METH_VARARGS},
-    { "recdevices",     (PyCFunction)oss_mixer_recdevices, METH_VARARGS},   
+    { "controls",       (PyCFunction)oss_mixer_controls, METH_VARARGS }, 
+    { "stereocontrols", (PyCFunction)oss_mixer_stereocontrols, METH_VARARGS},
+    { "reccontrols",    (PyCFunction)oss_mixer_reccontrols, METH_VARARGS},   
     { "get",            (PyCFunction)oss_mixer_get, METH_VARARGS },
     { "set",            (PyCFunction)oss_mixer_set, METH_VARARGS },
     { "get_recsrc",     (PyCFunction)oss_mixer_get_recsrc, METH_VARARGS },
