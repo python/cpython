@@ -322,6 +322,7 @@ class HTMLParser(SGMLParser):
         name = ''
         type = ''
         for attrname, value in attrs:
+	    value = string.strip(value)
             if attrname == 'href':
                 href = value
             if attrname == 'name':
