@@ -895,8 +895,11 @@ the new line indented."
        (t
 	;; skip back over blank & non-indenting comment lines note:
 	;; will skip a blank or non-indenting comment line that
-	;; happens to be a continuation line too
-	(re-search-backward "^[ \t]*\\([^ \t\n#]\\|#[ \t\n]\\)" nil 'move)
+	;; happens to be a continuation line too.  use fast Emacs 19
+	;; function if it's there.
+	(if (fboundp 'forward-comment)
+	    (forward-comment (- (point-max)))
+	  (re-search-backward "^[ \t]*\\([^ \t\n#]\\|#[ \t\n]\\)" nil 'move))
 	;; if we landed inside a string, go to the beginning of that
 	;; string. this handles triple quoted, multi-line spanning
 	;; strings.
