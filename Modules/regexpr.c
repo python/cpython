@@ -1251,6 +1251,11 @@ regexp_registers_t regs;
 		goto error;
 	      failure_stack_start = (struct failure_point *)
 		malloc(MAX_FAILURES * sizeof(*failure_stack_start));
+	      if (failure_stack_start == NULL)
+	        {
+		  failure_stack_start = initial_failure_stack;
+		  goto error;
+		}
 	      failure_stack_end = failure_stack_start + MAX_FAILURES;
 	      memcpy((char *)failure_stack_start, (char *)initial_failure_stack,
 		     INITIAL_FAILURES * sizeof(*failure_stack_start));
@@ -1529,6 +1534,8 @@ char *s;
       /* the buffer will be allocated automatically */
       re_comp_buf.fastmap = malloc(256);
       re_comp_buf.translate = NULL;
+      if (re_comp_buf.fastmap == NULL)
+	return "Out of memory";
     }
   return re_compile_pattern(s, strlen(s), &re_comp_buf);
 }

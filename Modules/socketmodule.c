@@ -380,6 +380,7 @@ sock_accept(s, args)
 }
 
 
+#if 0
 /* s.allowbroadcast() method */
 /* XXX obsolete -- will disappear in next release */
 
@@ -399,6 +400,7 @@ sock_allowbroadcast(s, args)
 	INCREF(None);
 	return None;
 }
+#endif
 
 
 /* s.setsockopt() method.
@@ -796,7 +798,9 @@ sock_shutdown(s, args)
 
 static struct methodlist sock_methods[] = {
 	{"accept",		(method)sock_accept},
+#if 0
 	{"allowbroadcast",	(method)sock_allowbroadcast},
+#endif
 	{"setsockopt",		(method)sock_setsockopt},
 	{"getsockopt",		(method)sock_getsockopt},
 	{"bind",		(method)sock_bind},
