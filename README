@@ -1,11 +1,13 @@
-Python release 1.1
-==================
+Python release 1.1.1
+====================
 
-==> This is Python version 1.1.  
+==> This is Python version 1.1.1.
 
-==> Python 1.1 contains many improvements over 1.0.3, but is almost
-    backward compatible (though the magic number for .pyc file has
-    changed).  It is portable to many more non-UNIX platforms.
+==> Python 1.1.1 is a pure bugfix release.  It fixes two core dumps
+    related to the changed implementation of (new)getargs, some
+    portability bugs, and some very minor things here and there.  If
+    you have 1.1, you only need to install 1.1 if bugs in it are
+    bugging you.
 
 ==> If you don't know yet what Python is: it's an interpreted,
     extensible, embeddable, interactive, object-oriented programming

@@ -9,29 +9,53 @@ nother to make an entry in this file, unless it was a serious bug
 BUGS found in 1.1 and fixed in 1.1.1
 ------------------------------------
 
+(*) printing name of lambda in traceback dereferences NULL
+
+(*) A built-in function using getargs() and expecting >= 1 argument
+may dump core when called without arguments
+
+(*) newgetargs() dumps core in compat mode when NULL is passed in but
+max is >0
+
 (*) pow() should be declared varargs since it uses newgetargs
+
+(*) newmodule.c doesn't compile on SunOS 4.1.3 due to non-K&R backslashes
+
+(*) some typos in tut.tex
+
+(*) test for broken static forward is not strong enough
+
+(*) Doc/Makefile assumes . is in $PATH in call to whichlibs
+
+(*) math module misses hypot() function
+
+(*) structmember.h should include stddef.h (for offsetof macro)
+
+(*) gdbmmodule.c frees the wrong structures
+
+(*) makesetup script misses some dollars and backslashes
+
+(*) getargs.obj missing from NT makefile
+
+(*) sorting class instances broken if no __cmp__ defined
 
 BUGS found in 1.1 and not yet fixed
 -----------------------------------
 
-(-) A built-in function using getargs() and expecting >= 1 argument
-may dump core when called without arguments
+(-) HP doesn't compile out of the box (needs LIBS=-ldld or
+LIBS=/usr/lib/libdld.sl)
 
+(-) something fishy with softspace and print_error (flushline clears
+the error)
+
+(-) tkinter doesn't seem to see any declaration of malloc on sunos 4.1.3
+
+======================================================================
 BUGS found in 1.0.3 and fixed in 1.1
 ------------------------------------
-
 
 (*) If class C doesn't define __cmp__, cmp(a,b) will return -2 and
 [a,b].sort() will fail
-
-BUGS found in 1.0.3 and not yet fixed
--------------------------------------
-
-(-) print_error raises and then masks an error if softspace is not
-    defined (can't reproduce this one?)
-
-BUGS found in 1.0.3 and fixed in 1.1
-------------------------------------
 
 (*) Syntax errors are reported in a silly way if multi-line tokens are
 involved.

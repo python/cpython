@@ -123,7 +123,8 @@ then
 fi
 
 # checks for libraries
-AC_HAVE_LIBRARY(dl)
+AC_HAVE_LIBRARY(dl)	# Dynamic linking for SunOS/Solaris (and SYSV?)
+AC_HAVE_LIBRARY(dld)	# Dynamic linking for HP-UX
 
 AC_CHECKING(for --with-svr4)
 AC_WITH(svr4, [
@@ -239,9 +240,15 @@ AC_CHECKING(for bad static forward)
 AC_TEST_PROGRAM([
 struct s { int a; int b; };
 static struct s foo;
-int foobar() { return !foo.a; }
+int foobar() {
+ static int random;
+ random = (int) &foo;
+ return random;
+}
 static struct s foo = { 1, 2 };
-main() { exit(foobar()); }
+main() {
+ exit(!((int)&foo == foobar()));
+}
 ], , AC_DEFINE(BAD_STATIC_FORWARD))
 
 # checks for system services
