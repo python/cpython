@@ -10,7 +10,7 @@ run.  If a difference is noticed it raises an exception; if all is
 well, it prints nothing except 'All tests OK.' at the very end.
 
 The output from a previous run is supposed to be contained in separate
-files (one per test) in the `Output' subdirectory somewhere on the
+files (one per test) in the `output' subdirectory somewhere on the
 search path for modules (sys.path, initialized from $PYTHONPATH plus
 some default places).
 
@@ -128,7 +128,7 @@ def main():
 			warn = 1
 
 	# find the output directory
-	outdir = findfile('Output')
+	outdir = findfile('output')
 	if args:
 	    tests = args
 	else:
