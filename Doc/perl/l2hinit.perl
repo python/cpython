@@ -617,10 +617,17 @@ sub make_head_and_body($$) {
             "<html>\n<head>\n",
             ($BASE ? "<base href=\"$BASE\">\n" : ''),
             "<link rel=\"STYLESHEET\" href=\"$STYLESHEET\" type='text/css'>\n",
-            "<link rel=\"first\" href=\"$FILE.html\">\n",
             ($FAVORITES_ICON
              ? ('<link rel="SHORTCUT ICON" href="' . "$FAVORITES_ICON\">\n")
              : ''),
+            ($EXTERNAL_UP_LINK
+             ? ('<link rel="start" href="' . "$EXTERNAL_UP_LINK\""
+                . ($EXTERNAL_UP_TITLE ? " title='$EXTERNAL_UP_TITLE'" : '')
+                . ">\n")
+             : ''),
+            "<link rel=\"first\" href=\"$FILE.html\"",
+            ($t_title ? " title='$t_title'" : ''),
+            ">\n",
             ($HAVE_TABLE_OF_CONTENTS
              ? ('<link rel="contents" href="contents.html" title="Contents">'
                 . ($HAVE_GENERAL_INDEX ? "\n" : ''))
@@ -633,6 +640,16 @@ sub make_head_and_body($$) {
             #  ? '<link rel="index" href="modindex.html" title="Module Index">'
             #    . "\n"
             #  : ''),
+            ($INFO
+             # XXX We can do this with the Python tools since the About...
+             # page always gets copied to about.html, even when we use the
+             # generated node###.html page names.  Won't work with the
+             # rest of the Python doc tools.
+             ? ("<link rel='last' href='about.html'"
+                . " title='About this document...'>\n"
+                . "<link rel='help' href='about.html'"
+                . " title='About this document...'>\n")
+             : ''),
             $more_links_mark,
             "\n",
             ($CHARSET && $HTML_VERSION ge "2.1"
