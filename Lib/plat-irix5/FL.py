@@ -3,12 +3,13 @@
 # Recommended use: import FL; ... FL.NORMAL_BOX ... etc.
 # Alternate use: from FL import *; ... NORMAL_BOX ... etc.
 
-import fl
-try:
-	_v20 = (fl.get_rgbmode <> None)
-except:
-	_v20 = 0
-del fl
+_v20 = 1
+##import fl
+##try:
+##	_v20 = (fl.get_rgbmode <> None)
+##except:
+##	_v20 = 0
+##del fl
 
 NULL = 0
 FALSE = 0
