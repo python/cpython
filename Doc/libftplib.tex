@@ -4,12 +4,13 @@
 \indexii{FTP}{protocol}
 
 
-This module defines the class \class{FTP} and a few related items.  The
-\class{FTP} class implements the client side of the FTP protocol.  You
-can use this to write Python programs that perform a variety of
+This module defines the class \class{FTP} and a few related items.
+The \class{FTP} class implements the client side of the FTP protocol.
+You can use this to write Python programs that perform a variety of
 automated FTP jobs, such as mirroring other ftp servers.  It is also
 used by the module \module{urllib} to handle URLs that use FTP.  For
-more information on FTP (File Transfer Protocol), see Internet \rfc{959}.
+more information on FTP (File Transfer Protocol), see Internet
+\rfc{959}.
 
 Here's a sample session using the \module{ftplib} module:
 
@@ -32,7 +33,7 @@ The module defines the following items:
 
 \begin{classdesc}{FTP}{\optional{host\optional{, user\optional{,
                        passwd\optional{, acct}}}}}
-Return a new instance of the \code{FTP} class.  When
+Return a new instance of the \class{FTP} class.  When
 \var{host} is given, the method call \code{connect(\var{host})} is
 made.  When \var{user} is given, additionally the method call
 \code{login(\var{user}, \var{passwd}, \var{acct})} is made (where
@@ -160,6 +161,21 @@ read until \EOF{} from the open file object \var{file} using its
 \method{readline()} method to privide the data to be stored.
 \end{methoddesc}
 
+\begin{methoddesc}{transfercmd}{cmd}
+Initiate a transfer over the data connection.  If the transfer is
+active, send a \samp{PORT} command and the transfer command specified
+by \var{cmd}, and accept the connection.  If the server is passive,
+send a \samp{PASV} command, connect to it, and start the transfer
+command.  Either way, return the socket for the connection.
+\end{methoddesc}
+
+\begin{methoddesc}{ntransfercmd}{cmd}
+Like \method{transfercmd()}, but returns a tuple of the data
+connection and the expected size of the data.  If the expected size
+could not be computed, \code{None} will be returned as the expected
+size.
+\end{methoddesc}
+
 \begin{methoddesc}{nlst}{argument\optional{, \ldots}}
 Return a list of files as returned by the \samp{NLST} command.  The
 optional \var{argument} is a directory to list (default is the current
@@ -180,6 +196,13 @@ as for \method{retrlines()}.
 Rename file \var{fromname} on the server to \var{toname}.
 \end{methoddesc}
 
+\begin{methoddesc}{delete}{filename}
+Remove the file named \var{filename} from the server.  If successful,
+returns the text of the response, otherwise raises
+\exception{error_perm} on permission errors or \exception{error_reply} 
+on other errors.
+\end{methoddesc}
+
 \begin{methoddesc}{cwd}{pathname}
 Set the current directory on the server.
 \end{methoddesc}
@@ -190,6 +213,17 @@ Create a new directory on the server.
 
 \begin{methoddesc}{pwd}{}
 Return the pathname of the current directory on the server.
+\end{methoddesc}
+
+\begin{methoddesc}{rmd}{dirname}
+Remove the directory named \var{dirname} on the server.
+\end{methoddesc}
+
+\begin{methoddesc}{size}{filename}
+Request the size of the file named \var{filename} on the server.  On
+success, the size of the file is returned as an integer, otherwise
+\code{None} is returned.  Note that the \samp{SIZE} command is not 
+standardized, but is supported by many common server implementations.
 \end{methoddesc}
 
 \begin{methoddesc}{quit}{}
