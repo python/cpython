@@ -85,6 +85,7 @@ class Options:
     quiet = 0
     runs = 0
     style_file = os.path.join(TOPDIR, "html", "style.css")
+    about_file = os.path.join(TOPDIR, "html", "about.dat")
     #
     DEFAULT_FORMATS = ("pdf",)
     ALL_FORMATS = ("dvi", "html", "pdf", "ps", "text")
@@ -105,7 +106,8 @@ class Options:
                                    ["all", "postscript", "help", "iconserver=",
                                     "address=", "a4", "l2h-config=", "letter",
                                     "link=", "split=", "logging", "debugging",
-                                    "keep", "quiet", "runs=", "image-type="]
+                                    "keep", "quiet", "runs=", "image-type=",
+                                    "about="]
                                    + list(self.ALL_FORMATS))
         for opt, arg in opts:
             if opt == "--all":
@@ -139,6 +141,10 @@ class Options:
                 self.runs = int(arg)
             elif opt == "--image-type":
                 self.image_type = arg
+            elif opt == "--about":
+                # always make this absolute:
+                self.about_file = os.path.normpath(
+                    os.path.join(os.getcwd(), arg))
             #
             # Format specifiers:
             #
@@ -363,6 +369,7 @@ class Job:
                      "\n"
                      'print "\nInitializing from file: %s\";\n\n'
                      % string_to_perl(fn))
+        l2hoption(fp, "ABOUT_FILE", options.about_file)
         l2hoption(fp, "ICONSERVER", options.icon_server)
         l2hoption(fp, "IMAGE_TYPE", options.image_type)
         l2hoption(fp, "ADDRESS", options.address)
