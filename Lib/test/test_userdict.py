@@ -191,12 +191,12 @@ class SeqDict(UserDict.DictMixin):
         for key, value in self.iteritems():
             d[key] = value
         return d
+    @classmethod
     def fromkeys(cls, keys, value=None):
         d = cls()
         for key in keys:
             d[key] = value
         return d
-    fromkeys = classmethod(fromkeys)
 
 class UserDictMixinTest(mapping_tests.TestMappingProtocol):
     type2test = SeqDict

@@ -446,9 +446,9 @@ class TestTimeDelta(HarmlessMixedComparison):
     def test_subclass_timedelta(self):
 
         class T(timedelta):
+            @staticmethod
             def from_td(td):
                 return T(td.days, td.seconds, td.microseconds)
-            from_td = staticmethod(from_td)
 
             def as_hours(self):
                 sum = (self.days * 24 +

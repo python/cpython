@@ -246,9 +246,9 @@ static methods in C++ or Java. Here's an example:
 
     >>> class C:
     ...
+    ...     @staticmethod
     ...     def foo(x, y):
     ...         print "staticmethod", x, y
-    ...     foo = staticmethod(foo)
 
     >>> C.foo(1, 2)
     staticmethod 1 2
@@ -260,9 +260,9 @@ Class methods use a similar pattern to declare methods that receive an
 implicit first argument that is the *class* for which they are invoked.
 
     >>> class C:
+    ...     @classmethod
     ...     def foo(cls, y):
     ...         print "classmethod", cls, y
-    ...     foo = classmethod(foo)
 
     >>> C.foo(1)
     classmethod test.test_descrtut.C 1
@@ -286,10 +286,10 @@ call, not the class involved in the definition of foo().
 But notice this:
 
     >>> class E(C):
+    ...     @classmethod
     ...     def foo(cls, y): # override C.foo
     ...         print "E.foo() called"
     ...         C.foo(y)
-    ...     foo = classmethod(foo)
 
     >>> E.foo(1)
     E.foo() called
