@@ -60,9 +60,9 @@ newfloatobject(fval)
 	register floatobject *op = (floatobject *) malloc(sizeof(floatobject));
 	if (op == NULL)
 		return err_nomem();
-	NEWREF(op);
 	op->ob_type = &Floattype;
 	op->ob_fval = fval;
+	NEWREF(op);
 	return (object *) op;
 }
 

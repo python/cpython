@@ -35,9 +35,9 @@ newsizedstringobject(str, size)
 		malloc(sizeof(stringobject) + size * sizeof(char));
 	if (op == NULL)
 		return err_nomem();
-	NEWREF(op);
 	op->ob_type = &Stringtype;
 	op->ob_size = size;
+	NEWREF(op);
 	if (str != NULL)
 		memcpy(op->ob_sval, str, size);
 	op->ob_sval[size] = '\0';
@@ -53,9 +53,9 @@ newstringobject(str)
 		malloc(sizeof(stringobject) + size * sizeof(char));
 	if (op == NULL)
 		return err_nomem();
-	NEWREF(op);
 	op->ob_type = &Stringtype;
 	op->ob_size = size;
+	NEWREF(op);
 	strcpy(op->ob_sval, str);
 	return (object *) op;
 }
@@ -187,9 +187,9 @@ string_concat(a, bb)
 		malloc(sizeof(stringobject) + size * sizeof(char));
 	if (op == NULL)
 		return err_nomem();
-	NEWREF(op);
 	op->ob_type = &Stringtype;
 	op->ob_size = size;
+	NEWREF(op);
 	memcpy(op->ob_sval, a->ob_sval, (int) a->ob_size);
 	memcpy(op->ob_sval + a->ob_size, b->ob_sval, (int) b->ob_size);
 	op->ob_sval[size] = '\0';
@@ -216,9 +216,9 @@ string_repeat(a, n)
 		malloc(sizeof(stringobject) + size * sizeof(char));
 	if (op == NULL)
 		return err_nomem();
-	NEWREF(op);
 	op->ob_type = &Stringtype;
 	op->ob_size = size;
+	NEWREF(op);
 	for (i = 0; i < size; i += a->ob_size)
 		memcpy(op->ob_sval+i, a->ob_sval, (int) a->ob_size);
 	op->ob_sval[size] = '\0';

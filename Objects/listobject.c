@@ -58,11 +58,11 @@ newlistobject(size)
 			return err_nomem();
 		}
 	}
-	NEWREF(op);
 	op->ob_type = &Listtype;
 	op->ob_size = size;
 	for (i = 0; i < size; i++)
 		op->ob_item[i] = NULL;
+	NEWREF(op);
 	return (object *) op;
 }
 
@@ -520,7 +520,7 @@ cmp(v, w)
 		return cmpobject(* (object **) v, * (object **) w);
 
 	/* Call the user-supplied comparison function */
-	t = mkvalue("OO", v, w);
+	t = mkvalue("OO", * (object **) v, * (object **) w);
 	if (t == NULL)
 		return 0;
 	res = call_object(cmpfunc, t);
