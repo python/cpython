@@ -93,7 +93,7 @@ else:
 		    if not c in string.whitespace \
 			and (c<' ' or ord(c) > 0177):
 			break
-		    else:
+		else:
 			finfo.Type = 'TEXT'
 		fp.seek(0, 2)
 		dsize = fp.tell()
@@ -336,28 +336,36 @@ class _Rledecoderengine:
 		return rv
 
 	def _fill(self, wtd):
-		#
-		# Obfuscated code ahead. We keep at least one byte in the
-		# pre_buffer, so we don't stumble over an orphaned RUNCHAR
-		# later on. If the last or second-last char is a RUNCHAR
-		# we keep more bytes.
-		#
-		self.pre_buffer = self.pre_buffer + self.ifp.read(wtd+2)
+		self.pre_buffer = self.pre_buffer + self.ifp.read(wtd+4)
 		if self.ifp.eof:
 			self.post_buffer = self.post_buffer + \
 				binascii.rledecode_hqx(self.pre_buffer)
 			self.pre_buffer = ''
 			return
 			
-		lastrle = string.rfind(self.pre_buffer, RUNCHAR)
-		if lastrle > 0 and lastrle == len(self.pre_buffer)-1:
-			# Last byte is an RLE, keep two bytes
-			mark = len(self.pre_buffer)-2
-		elif lastrle > 0 and lastrle == len(self.pre_buffer)-2:
-			# second-last byte is an RLE. Decode all.
-			mark = len(self.pre_buffer)
+		#
+		# Obfuscated code ahead. We have to take care that we don't
+		# end up with an orphaned RUNCHAR later on. So, we keep a couple
+		# of bytes in the buffer, depending on what the end of
+		# the buffer looks like:
+		# '\220\0\220' - Keep 3 bytes: repeated \220 (escaped as \220\0)
+		# '?\220' - Keep 2 bytes: repeated something-else
+		# '\220\0' - Escaped \220: Keep 2 bytes.
+		# '?\220?' - Complete repeat sequence: decode all
+		# otherwise: keep 1 byte.
+		#
+		mark = len(self.pre_buffer)
+		if self.pre_buffer[-3:] == RUNCHAR + '\0' + RUNCHAR:
+			mark = mark - 3
+		elif self.pre_buffer[-1] == RUNCHAR:
+			mark = mark - 2
+		elif self.pre_buffer[-2:] == RUNCHAR + '\0':
+			mark = mark - 2
+		elif self.pre_buffer[-2] == RUNCHAR:
+			pass # Decode all
 		else:
-			mark = len(self.pre_buffer)-1
+			mark = mark - 1
+
 		self.post_buffer = self.post_buffer + \
 			binascii.rledecode_hqx(self.pre_buffer[:mark])
 		self.pre_buffer = self.pre_buffer[mark:]
@@ -376,6 +384,10 @@ class HexBin:
 			ch = ifp.read(1)
 			if not ch:
 				raise Error, "No binhex data found"
+			# Cater for \r\n terminated lines (which show up as \n\r, hence
+			# all lines start with \r)
+			if ch == '\r':
+				continue
 			if ch == ':':
 				break
 			if ch != '\n':
@@ -429,8 +441,11 @@ class HexBin:
 			n = min(n, self.dlen)
 		else:
 			n = self.dlen
+		rv = ''
+		while len(rv) < n:
+			rv = rv + self._read(n-len(rv))
 		self.dlen = self.dlen - n
-		return self._read(n)
+		return rv
 		
 	def close_data(self):
 		if self.state != _DID_HEADER:
