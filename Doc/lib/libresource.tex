@@ -67,7 +67,9 @@ used by \C{} programs.
 
 The \UNIX{} man page for \manpage{getrlimit}{2} lists the available
 resources.  Note that not all systems use the same symbol or same
-value to denote the same resource.
+value to denote the same resource.  This module does not attempt to
+mask platform differences --- symbols not defined for a platform will
+not be available from this module on that platform.
 
 \begin{datadesc}{RLIMIT_CORE}
   The maximum size (in bytes) of a core file that the current process
