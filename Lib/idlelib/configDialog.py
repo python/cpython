@@ -93,7 +93,7 @@ class ConfigDialog(Toplevel):
         self.spaceNum=IntVar(self)
         #self.tabCols=IntVar(self)
         self.indentBySpaces=BooleanVar(self)
-        self.editFont=tkFont.Font(self,('courier',12,'normal'))
+        self.editFont=tkFont.Font(self,('courier',10,'normal'))
         ##widget creation
         #body frame
         frame=self.tabPages.pages['Fonts/Tabs']['page']
@@ -837,7 +837,8 @@ class ConfigDialog(Toplevel):
         self.SetThemeType()
 
     def OnListFontButtonRelease(self,event):
-        self.fontName.set(self.listFontName.get(ANCHOR))
+        font = self.listFontName.get(ANCHOR)
+        self.fontName.set(font.lower())
         self.SetFontSample()
 
     def SetFontSample(self,event=None):
@@ -956,15 +957,17 @@ class ConfigDialog(Toplevel):
             self.listFontName.insert(END,font)
         configuredFont=idleConf.GetOption('main','EditorWindow','font',
                 default='courier')
-        self.fontName.set(configuredFont)
-        if configuredFont in fonts:
-            currentFontIndex=fonts.index(configuredFont)
+        lc_configuredFont = configuredFont.lower()
+        self.fontName.set(lc_configuredFont)
+        lc_fonts = [s.lower() for s in fonts]
+        if lc_configuredFont in lc_fonts:
+            currentFontIndex = lc_fonts.index(lc_configuredFont)
             self.listFontName.see(currentFontIndex)
             self.listFontName.select_set(currentFontIndex)
             self.listFontName.select_anchor(currentFontIndex)
         ##font size dropdown
         fontSize=idleConf.GetOption('main','EditorWindow','font-size',
-                default='12')
+                default='10')
         self.optMenuFontSize.SetMenu(('7','8','9','10','11','12','13','14',
                 '16','18','20','22'),fontSize )
         ##fontWeight
