@@ -1095,7 +1095,7 @@ static PyObject *AE_AECreateAppleEvent(_self, _args)
 	AEReturnID returnID;
 	AETransactionID transactionID;
 	AppleEvent result;
-	if (!PyArg_ParseTuple(_args, "O&O&O&hh",
+	if (!PyArg_ParseTuple(_args, "O&O&O&hl",
 	                      PyMac_GetOSType, &theAEEventClass,
 	                      PyMac_GetOSType, &theAEEventID,
 	                      AEDesc_Convert, &target,
