@@ -648,7 +648,7 @@ PyDict_Clear(PyObject *op)
  *     int i;
  *     PyObject *key, *value;
  *     i = 0;   # important!  i should not otherwise be changed by you
- *     while (PyDict_Next(yourdict, &i, &key, &value) {
+ *     while (PyDict_Next(yourdict, &i, &key, &value)) {
  *              Refer to borrowed references in key and value.
  *     }
  *
