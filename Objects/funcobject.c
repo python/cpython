@@ -130,7 +130,7 @@ static struct memberlist func_memberlist[] = {
         {"func_globals",  T_OBJECT,     OFF(func_globals),      READONLY},
         {"func_name",     T_OBJECT,     OFF(func_name),         READONLY},
         {"__name__",      T_OBJECT,     OFF(func_name),         READONLY},
-        {"func_closure",  T_OBJECT,     OFF(func_closure)},
+        {"func_closure",  T_OBJECT,     OFF(func_closure),      READONLY},
         {"func_defaults", T_OBJECT,     OFF(func_defaults)},
         {"func_doc",      T_OBJECT,     OFF(func_doc)},
         {"__doc__",       T_OBJECT,     OFF(func_doc)},
