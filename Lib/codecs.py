@@ -231,10 +231,13 @@ class StreamReader(Codec):
         """ Read one line from the input stream and return the
             decoded data.
 
-            Note: Unlike the .readlines() method, line breaking must
-            be implemented by the underlying stream's .readline()
-            method -- there is currently no support for line breaking
-            using the codec decoder due to lack of line buffering.
+            Note: Unlike the .readlines() method, this method inherits
+            the line breaking knowledge from the underlying stream's
+            .readline() method -- there is currently no support for
+            line breaking using the codec decoder due to lack of line
+            buffering. Sublcasses should however, if possible, try to
+            implement this method using their own knowledge of line
+            breaking.
 
             size, if given, is passed as size argument to the stream's
             .readline() method.
@@ -288,6 +291,14 @@ class StreamReader(Codec):
 
 class StreamReaderWriter:
 
+    """ StreamReaderWriter instances allow wrapping streams which
+        work in both read and write modes.
+
+        The design is such that one can use the factory functions
+        returned by the codec.lookup() function to contruct the
+        instance.
+
+    """
     # Optional attributes set by the file wrappers below
     encoding = 'unknown'
 
@@ -346,6 +357,21 @@ class StreamReaderWriter:
 
 class StreamRecoder:
 
+    """ StreamRecoder instances provide a frontend - backend
+        view of encoding data.
+
+        They use the complete set of APIs returned by the
+        codecs.lookup() function to implement their task.
+
+        Data written to the stream is first decoded into an
+        intermediate format (which is dependent on the given codec
+        combination) and then written to the stream using an instance
+        of the provided Writer class.
+
+        In the other direction, data is read from the stream using a
+        Reader instance and then return encoded data to the caller.
+
+    """
     # Optional attributes set by the file wrappers below
     data_encoding = 'unknown'
     file_encoding = 'unknown'
@@ -452,6 +478,11 @@ def open(filename, mode, encoding=None, errors='strict', buffering=1):
         buffering has the same meaning as for the builtin open() API.
         It defaults to line buffered.
 
+        The returned wrapped file object provides an extra attribute
+        .encoding which allows querying the used encoding. This
+        attribute is only available if an encoding was specified as
+        parameter.
+
     """
     if encoding is not None and \
        'b' not in mode:
@@ -487,6 +518,11 @@ def EncodedFile(file, data_encoding, file_encoding=None, errors='strict'):
 
         data_encoding and file_encoding are added to the wrapped file
         object as attributes .data_encoding and .file_encoding resp.
+
+        The returned wrapped file object provides two extra attributes
+        .data_encoding and .file_encoding which reflect the given
+        parameters of the same name. The attributes can be used for
+        introspection by Python programs.
 
     """
     if file_encoding is None:
