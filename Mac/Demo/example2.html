@@ -134,16 +134,20 @@ nothing has changed. <p>
 
 Now let us try to turn the python script into an applet, a standalone
 application. This will <em>not</em> work if you have the "classic 68k"
-Python distribution, only if you have the cfm68k or PPC distribution. 
+Python distribution, only if you have the cfm68k or PPC distribution.
+
+<blockquote>
 Actually, "standalone" is probably not the correct term here, since an
 applet does still depend on a lot of the python environment: the
 PythonCore shared library, the Python Preferences file, the python Lib
 folder and any other modules that the main module depends on. It is
-possible to get rid of all these dependencies except for the dependency
-on PythonCore, but at the moment that is still quite difficult so we
-will ignore that possibility for now. By standalone we mean here that
+possible to get rid of all these dependencies and create true standalone
+applications in Python, but this is a bit difficult. See <a href="standalone.html">
+Standalone Applications in Python</a> for details. For this
+document, by standalone we mean here that
 the script has the look-and-feel of an application, including the
-ability to have its own document types, be droppable, etc. <p>
+ability to have its own document types, be droppable, etc.
+</blockquote>
 
 The easiest way to create an applet is to take your source file and
 drop it onto "BuildApplet", located in the Python home

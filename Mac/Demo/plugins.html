@@ -26,8 +26,7 @@ Next, you need a <A
 HREF="http://www.python.org/python/Sources.html">python source
 distribution</A>.  For PowerPC and cfm68k development you can actually
 get by without a full source distribution, using the Development
-distribution (if I have gotten around to putting it together by the time
-you read this). You'll also need a functional python interpreter, and
+distribution. You'll also need a functional python interpreter, and
 the Modulator program (which lives in <CODE>Tools:Modulator</CODE> in
 the standard source distribution). You may also find that Guido's <A
 HREF="http://www.python.org/doc/ext/ext.html">Extending and embedding
@@ -190,9 +189,9 @@ language" section of the MW preferences dialog, it will probably be
 Make the new interpreter and check that you can import the module, see
 the methods (with "dir(interslip)") and call them. <p>
 
-<H2>Creating a PowerPC plugin module</H2>
+<H2>Creating a plugin module</H2>
 
-For PowerPC development you could follow the same path, but it is
+For PowerPC or cfm68k development you could follow the same path, but it is
 actually a better idea to use a dynamically loadable module. The
 advantage of dynamically loadable modules is that they are not loaded
 until a python program actually uses them (resulting in less memory
@@ -211,6 +210,12 @@ of adjustments to the preferences:
 <UL>
 <LI> in PPC target, set the output file name to "interslipmodule.pcc.slb",
 <LI> in cfm68k target set the output file name to "interslipmodule.cfm68k.slb".
+<LI> if you are working without a source distribution (i.e. with a normal
+binary distribution plus a development distribution) you will not have
+a file <code>PythonCore</code>. The installation process has deposited this
+file in the System <code>Extensions</code> folder under the name
+<code>PythonCore <i>version</i></code>. Add that file to the project, replacing
+<code>PythonCore</code>.
 </UL>
 Next, compile and link your module, fire up python and do the same
 tests as for 68K python. <p>

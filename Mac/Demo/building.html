@@ -44,10 +44,10 @@ directory <code>Mac/mwerks/projects</code> for the project files and
 related stuff.
 
 <LI> You need MetroWerks CodeWarrior. The current distribution has
-been built with CodeWarrior Pro 1. Ordering information is
+been built with CodeWarrior Pro 2. Ordering information is
 available on the <A HREF="http://www.metrowerks.com/">MetroWerks
-homepage</A>. You might still be able to build Python with MPW or
-Think/Symantec C but you are basically on your own.
+homepage</A>. Building Python with MPW or Think/Symantec C is
+probably impossible without major surgery.
 
 <LI> You need GUSI, the Grand Unified Socket Interface, by Matthias
 Neeracher. The original CWGUSI is
@@ -61,7 +61,7 @@ these modifications are available in folder <code>Python:Mac:GUSI-mods</code>.
 
 <A NAME="optional">The MacPython project files are configured to
 include a plethora of optional modules</A>, and these modules need a
-number extra packages. To use the project files as-is you have to
+number of extra packages. To use the project files as-is you have to
 download these packages too. PPC and CFM68K Python have all such modules as
 dynamically loaded modules, so if you don't need a certain package it
 suffices to just refrain from builing the extension module. For static 68K
@@ -81,8 +81,8 @@ below. Get the "full source" distribution, which includes MoreFiles.
 
 <LI> Waste, a TextEdit replacement written by Marco Piovanelli, <A
 HREF="mailto:piovanel@kagi.com">&lt;piovanel@kagi.com&gt;</A>.  Python
-was built using version 1.2, which you can obtain from <A
-HREF="ftp://rhino.harvard.edu/pub/dan/WASTE">&lt;ftp://rhino.harvard.edu/pub/dan/WASTE&gt;</A>
+was built using version 1.3, which you can obtain from <A
+HREF="http://www.boingo.com/waste">&lt;http://www.boingo.com/waste&gt;</A>
 and various other places.
 
 <LI> Gdbm library for the Mac. Available from Jack's Mac software page at
@@ -121,12 +121,12 @@ Top-level-folder:
 		zlib
 		libpng
 	gdbm
-	MoreFiles 1.4.3 (not needed by Python, only by tcl/tk)
 	Python
 	Tcl/Tk Folder
 		tcl8.0
 		tk8.0
-	Waste 1.2 distribution (if you want waste)
+		MoreFiles 1.4.3
+	Waste 1.3 distribution (if you want waste)
 </PRE>
 
 First build GUSI. If you didn't get the python-specific GUSI you have to 
@@ -137,7 +137,7 @@ platform (ppc, 68k, cfm68k). <p>
 Next, in
 <code>MoreFiles</code>, <code>libjpeg</code>, <code>pbmplus</code>,
 <code>zlib</code>, <code>libpng</code>, <code>gdbm</code>,
-and<code>libtiff</code> you build all projects. Sometimes the projects are in "mac"
+and<code>libtiff</code> you build all projects. Usually the projects are in "mac"
 subfolders, sometimes they are in the main folder. Tcl/tk is a special
 case, see below. Of course, if you are only interested in one of
 static 68K, CFM68K or PPC you can skip building the other libraries.
@@ -174,14 +174,7 @@ building Python.
 <H2>Building Waste</H2>
 
 You do not need to build the Waste libraries, as Python includes the
-source modules themselves. You have to make one modification,
-though. In file <code>ICCFMGlue.c</code> in folder <code>Minimal IC
-APIs</code>, add the following lines:
-
-<blockquote><pre><code>
-#include <Gestalt.h>
-#include <Errors.h>
-</code></pre></blockquote>
+source modules themselves.
 
 <H2>The organization of the Python source tree</H2>
 
@@ -190,19 +183,16 @@ the Python source tree.  At the top level, we find the following
 folders:
 
 <DL>
-<DT> build.mac68k.stand
-<DD> This is where you build static 68K interpreters.
+<DT> build.macstand
+<DD> This is where you build static 68K interpreter, and possibly (if
+you want them) static PPC and fat interpreters. There is also a project
+here that builds smaller versions of the static interpreter.
 
-<DT> build.mac68k.shared
-<DD> This is where you build the CFM68K shared library, interpreter
-and applet framework.
-
-<DT> build.macppc.shared
-<DD> This is where you build the PPC shared library, interpreter and
-applet framework. You can also build the fat applet framework here.
-
-<DT> build.macppc.stand
-<DD> This is where you build a nonshared PPC interpreter (optional).
+<DT> build.mac
+<DD> This is where you build the CFM68K, PPC and fat shared library,
+interpreter and applet framework. The fat targets are deposited in the
+main folder (one level up), the others, which are intermediate results
+really, are left here.
 
 <DT> Demo
 <DD> Demo programs that are not Mac-specific. Some of these may not
@@ -211,7 +201,7 @@ work, the file <code>README-Mac</code> has some details.
 <DT> Extensions
 <DD> Extensions to the interpreter that are not Mac-specific. Contains
 only the <code>img</code> extension in this distribution. Extensions
-are <em>not</em> built here, as they are on Unix, but incorporated in
+are not always built here, as they are on Unix, but sometimes incorporated in
 the core interpreter or built as plugin modules.
 
 <DT> Grammar
