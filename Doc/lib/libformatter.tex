@@ -265,7 +265,10 @@ Break the current line.
 \begin{methoddesc}[writer]{send_paragraph}{blankline}
 Produce a paragraph separation of at least \var{blankline} blank
 lines, or the equivelent.  The \var{blankline} value will be an
-integer.
+integer.  Note that the implementation will receive a call to
+\method{send_line_break()} before this call if a line break is needed; 
+this method should not include ending the last line of the paragraph.
+It is only responsible for vertical spacing between paragraphs.
 \end{methoddesc}
 
 \begin{methoddesc}[writer]{send_hor_rule}{*args, **kw}
