@@ -132,20 +132,20 @@ static PyObject *
 mmap_read_line_method (mmap_object * self,
 			   PyObject * args)
 {
-	char * start;
+	char * start = self->data+self->pos;
 	char * eof = self->data+self->size;
 	char * eol;
 	PyObject * result;
 
 	CHECK_VALID(NULL);
-	start = self->data+self->pos;
 
-	/* strchr was a bad idea here - there's no way to range
-	   check it.  there is no 'strnchr' */
-	for (eol = start; (eol < eof) && (*eol != '\n') ; eol++)
-	{ /* do nothing */ }
-
-	result = Py_BuildValue("s#", start, (long) (++eol - start));
+	eol = memchr(start, '\n', self->size - self->pos);
+	if (!eol)
+		eol = eof;
+	else
+		++eol;		/* we're interested in the position after the
+				   newline. */
+	result = PyString_FromStringAndSize(start, (long) (eol - start));
 	self->pos += (eol - start);
 	return (result);
 }
