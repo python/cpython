@@ -138,6 +138,7 @@ Py_InteractiveFlag
 Py_NoSiteFlag
 Py_FrozenFlag
 _PyThread_Started
+Py_UnicodeFlag
 Py_FdIsInteractive
 Py_Exit
 Py_AtExit
@@ -374,15 +375,16 @@ _PyCompareState_Key
 _PyTrash_delete_later
 _PyTrash_delete_nesting
 _PyCompareState_nesting
+_PyTrash_destroy_chain
 _PyTrash_deposit_object
 Py_ReprLeave
 Py_ReprEnter
+PyObject_Free
+PyObject_Realloc
+PyObject_Malloc
 PyMem_Free
 PyMem_Realloc
 PyMem_Malloc
-Py_Free
-Py_Realloc
-Py_Malloc
 PyCallable_Check
 PyNumber_Coerce
 PyNumber_CoerceEx
@@ -399,8 +401,11 @@ PyObject_Compare
 PyObject_Str
 PyObject_Repr
 PyObject_Print
+_PyObject_Del
 _PyObject_NewVar
 _PyObject_New
+PyObject_InitVar
+PyObject_Init
 PyRange_Type
 PyRange_New
 _Py_EllipsisObject
@@ -739,6 +744,7 @@ PyUnicode_AsUTF16String
 PyUnicode_EncodeUTF16
 PyUnicode_DecodeUTF16
 PyUnicode_AsUTF8String
+_PyUnicode_AsUTF8String
 PyUnicode_EncodeUTF8
 PyUnicode_DecodeUTF8
 PyUnicode_GetSize
