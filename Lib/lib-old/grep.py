@@ -58,7 +58,7 @@ def pgrep(pat, *files):
 def showline(filename, lineno, line, prog):
 	if line[-1:] == '\n': line = line[:-1]
 	if opt_show_lineno:
-		prefix = `lineno`.rjust(, 3) + ': '
+		prefix = `lineno`.rjust(3) + ': '
 	else:
 		prefix = ''
 	if opt_show_filename:
