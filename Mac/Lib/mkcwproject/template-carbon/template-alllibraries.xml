@@ -1,0 +1,7 @@
+                <FILE>
+                    <PATHTYPE>Name</PATHTYPE>
+                    <PATH>%(libraries)s</PATH>
+                    <PATHFORMAT>MacOS</PATHFORMAT>
+                    <FILEKIND>Library</FILEKIND>
+                    <FILEFLAGS>Debug</FILEFLAGS>
+                </FILE>
