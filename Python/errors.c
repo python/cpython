@@ -148,7 +148,12 @@ object *
 err_errno(exc)
 	object *exc;
 {
-	object *v = newtupleobject(2);
+	object *v;
+	if (errno == EINTR && intrcheck()) {
+		err_set(KeyboardInterrupt);
+		return NULL;
+	}
+	v = newtupleobject(2);
 	if (v != NULL) {
 		settupleitem(v, 0, newintobject((long)errno));
 		settupleitem(v, 1, newstringobject(strerror(errno)));
