@@ -541,9 +541,13 @@ tok_get(tok, p_start, p_end)
 	
 	/* Identifier (most frequent token!) */
 	if (isalpha(c) || c == '_') {
-		c = tok_nextc(tok);
-		if (c == '"' || c == '\'')
-			goto letter_quote;
+		switch (c) {
+		case 'r':
+		case 'R':
+			c = tok_nextc(tok);
+			if (c == '"' || c == '\'')
+				goto letter_quote;
+		}
 		while (isalnum(c) || c == '_') {
 			c = tok_nextc(tok);
 		}
