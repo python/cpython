@@ -341,7 +341,7 @@ def whichmodule(cls):
 	import sys
 	clsname = cls.__name__
 	for name, module in sys.modules.items():
-		if module.__name__ != '__main__' and \
+		if name != '__main__' and \
 		   hasattr(module, clsname) and \
 		   getattr(module, clsname) is cls:
 			break
