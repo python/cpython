@@ -110,9 +110,11 @@ def spawn(prog, args):
 	pid = os.fork()
 	if pid == 0:
 		# Child
-		os.close(0)
-		os.close(1)
-		os.close(2)
+		for i in 0, 1, 2:
+		    try:
+			os.close(i)
+		    except os.error:
+			pass
 		if os.dup(p2cread) <> 0:
 			sys.stderr.write('popen2: bad read dup\n')
 		if os.dup(c2pwrite) <> 1:
