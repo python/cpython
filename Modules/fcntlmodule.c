@@ -178,9 +178,10 @@ fcntl_flock(self, args)
 	if (!PyArg_Parse(args, "(ii)", &fd, &code))
 		return NULL;
 
-	Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_FLOCK
+	Py_BEGIN_ALLOW_THREADS
 	ret = flock(fd, code);
+	Py_END_ALLOW_THREADS
 #else
 
 #ifndef LOCK_SH
@@ -203,10 +204,11 @@ fcntl_flock(self, args)
 			return NULL;
 		}
 		l.l_whence = l.l_start = l.l_len = 0;
+		Py_BEGIN_ALLOW_THREADS
 		ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
+		Py_END_ALLOW_THREADS
 	}
 #endif /* HAVE_FLOCK */
-	Py_END_ALLOW_THREADS
 	if (ret < 0) {
 		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
@@ -229,13 +231,13 @@ fcntl_lockf(self, args)
 	PyObject *self; /* Not used */
 	PyObject *args;
 {
-	int fd, code, len = 0, start = 0, whence = 0, ret;
+	int fd, code, ret, whence = 0;
+	PyObject *lenobj = NULL, *startobj = NULL;
 
-	if (!PyArg_ParseTuple(args, "ii|iii", &fd, &code, &len, 
-			       &start, &whence))
+	if (!PyArg_ParseTuple(args, "ii|OOi", &fd, &code,
+			      &lenobj, &startobj, &whence))
 	    return NULL;
 
-	Py_BEGIN_ALLOW_THREADS
 #ifndef LOCK_SH
 #define LOCK_SH		1	/* shared lock */
 #define LOCK_EX		2	/* exclusive lock */
@@ -255,12 +257,34 @@ fcntl_lockf(self, args)
 					"unrecognized flock argument");
 			return NULL;
 		}
-		l.l_len = len;
-		l.l_start = start;
+		l.l_start = l.l_len = 0;
+		if (startobj != NULL) {
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+			l.l_start = PyInt_AsLong(startobj);
+#else
+			l.l_start = PyLong_Check(startobj) ?
+					PyLong_AsLongLong(startobj) :
+					PyInt_AsLong(startobj);
+#endif
+			if (PyErr_Occurred())
+				return NULL;
+		}
+		if (lenobj != NULL) {
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+			l.l_len = PyInt_AsLong(lenobj);
+#else
+			l.l_len = PyLong_Check(lenobj) ?
+					PyLong_AsLongLong(lenobj) :
+					PyInt_AsLong(lenobj);
+#endif
+			if (PyErr_Occurred())
+				return NULL;
+		}
 		l.l_whence = whence;
+		Py_BEGIN_ALLOW_THREADS
 		ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
+		Py_END_ALLOW_THREADS
 	}
-	Py_END_ALLOW_THREADS
 	if (ret < 0) {
 		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
