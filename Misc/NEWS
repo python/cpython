@@ -2,22 +2,23 @@ What's New in Python 2.2a0?
 ===========================
 
 Core
+
 - Some operating systems now support the concept of a default Unicode
   encoding for file system operations.  Notably, Windows supports 'mbcs'
   as the default.  The Macintosh will also adopt this concept in the medium
-  term, altough the default encoding for that platform will be other than 
+  term, altough the default encoding for that platform will be other than
   'mbcs'.
-  On operating system that support non-ascii filenames, it is common for 
+  On operating system that support non-ascii filenames, it is common for
   functions that return filenames (such as os.listdir()) to return Python
   string objects pre-encoded using the default file system encoding for
   the platform.  As this encoding is likely to be different from Python's
   default encoding, converting this name to a Unicode object before passing
   it back to the Operating System would result in a Unicode error, as Python
-  would attempt to use it's default encoding (generally ASCII) rather 
-  than the default encoding for the file system.
-  In general, this change simply removes surprises when working with 
-  Unicode and the file system, making these operations work as
-  you expect, increasing the transparency of Unicode objects in this context.
+  would attempt to use its default encoding (generally ASCII) rather than
+  the default encoding for the file system.
+  In general, this change simply removes surprises when working with
+  Unicode and the file system, making these operations work as you expect,
+  increasing the transparency of Unicode objects in this context.
   See [????] for more details, including examples.
 
 - Float (and complex) literals in source code were evaluated to full
@@ -81,6 +82,23 @@ Core
   insecurities in the dict comparison implementation that could cause Python
   to crash if the element comparison routines for the dict keys and/or
   values mutated the dicts.  Making the code bulletproof slowed it down.
+
+Library
+
+- Cookie.py now sorts key+value pairs by key in output strings.
+
+- pprint.isrecursive(object) didn't correctly identify recursive objects.
+  Now it does.
+
+Tests
+
+- New test_mutants.py runs dict comparisons where the key and value
+  comparison operators mutute the dicts randomly during comparison.  This
+  rapidly causes Python to crash under earlier releases (not for the faint
+  of heart:  it can also cause Win9x to freeze or reboot!).
+
+- New test_pprint.py verfies that pprint.isrecursive() and
+  pprint.isreadable() return sensible results.
 
 
 What's New in Python 2.1 (final)?
