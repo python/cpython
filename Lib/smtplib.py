@@ -137,6 +137,8 @@ class SSLFakeSocket:
         self.sslobj.write(str)
         return len(str)
 
+    sendall = send
+
     def close(self):
         self.realsock.close()
 
