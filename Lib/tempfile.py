@@ -67,25 +67,40 @@ def gettempdir():
     return tempdir
 
 
-_pid = None
+# template caches the result of gettempprefix, for speed, when possible.
+# XXX unclear why this isn't "_template"; left it "template" for backward
+# compatibility.
+if os.name == "posix":
+    # We don't try to cache the template on posix:  the pid may change on us
+    # between calls due to a fork, and on Linux the pid changes even for
+    # another thread in the same process.  Since any attempt to keep the
+    # cache in synch would have to call os.getpid() anyway in order to make
+    # sure the pid hasn't changed between calls, a cache wouldn't save any
+    # time.  In addition, a cache is difficult to keep correct with the pid
+    # changing willy-nilly, and earlier attempts proved buggy (races).
+    template = None
+
+# Else the pid never changes, so gettempprefix always returns the same
+# string.
+elif os.name == "nt":
+    template = '~' + `os.getpid()` + '-'
+elif os.name == 'mac':
+    template = 'Python-Tmp-'
+else:
+    template = 'tmp' # XXX might choose a better one
 
 def gettempprefix():
-    """Function to calculate a prefix of the filename to use."""
-    global template, _pid
-    if os.name == 'posix' and _pid and _pid != os.getpid():
-        # Our pid changed; we must have forked -- zap the template
-        template = None
+    """Function to calculate a prefix of the filename to use.
+
+    This incorporates the current process id on systems that support such a
+    notion, so that concurrent processes don't generate the same prefix.
+    """
+
+    global template
     if template is None:
-        if os.name == 'posix':
-            _pid = os.getpid()
-            template = '@' + `_pid` + '.'
-        elif os.name == 'nt':
-            template = '~' + `os.getpid()` + '-'
-        elif os.name == 'mac':
-            template = 'Python-Tmp-'
-        else:
-            template = 'tmp' # XXX might choose a better one
-    return template
+        return '@' + `os.getpid()` + '.'
+    else:
+        return template
 
 
 def mktemp(suffix=""):
