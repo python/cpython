@@ -580,7 +580,7 @@ if _exists("spawnvp"):
     # At the moment, Windows doesn't implement spawnvp[e],
     # so it won't have spawnlp[e] either.
     def spawnlp(mode, file, *args):
-        """spawnlp(mode, file, *args, env) -> integer
+        """spawnlp(mode, file, *args) -> integer
 
 Execute file (which is looked for along $PATH) with arguments from
 args in a subprocess with the supplied environment.
