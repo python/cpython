@@ -310,7 +310,13 @@
 \newcommand{\strong}[1]{{\bf #1}}
 % let's experiment with a new font:
 \newcommand{\file}[1]{\mbox{`\small\textsf{#1}'}}
-\newcommand{\url}[1]{\mbox{\small\textsf{#1}}}
+%\@ifundefined{pdfannotlink}{%
+  \newcommand{\url}[1]{\mbox{\small\textsf{#1}}}%
+%}{
+%  \newcommand{\url}[1]{{%
+%    \pdfannotlink user{/S /URI /URI (#1)}%
+%    \mbox{\small\textsf{#1}}}}%
+%}
 \let\email=\url
 
 \newcommand{\varvars}[1]{{\def\,{\/{\char`\,}}\var{#1}}}
@@ -445,6 +451,11 @@
   \let\footnoterule\relax
   \@ifundefined{ChTitleVar}{}{%
     \mghrulefill{\RW}}%
+  \@ifundefined{pdfinfo}{}{
+    \pdfinfo
+      author {\@author}
+      title {\@title}
+  }
   \begin{flushright}%
     {\rm\Huge\HeaderFamily \@title \par}%
     {\em\LARGE\HeaderFamily \@release \par}
