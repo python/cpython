@@ -60,8 +60,7 @@ static PyObject *SunAudioError;
 
 
 static sadobject *
-newsadobject(arg)
-	PyObject *arg;
+newsadobject(PyObject *args)
 {
 	sadobject *xp;
 	int fd;
@@ -72,7 +71,7 @@ newsadobject(arg)
 	char* opendev;
 
 	/* Check arg for r/w/rw */
-	if (!PyArg_Parse(arg, "s", &mode))
+	if (!PyArg_Parse(args, "s", &mode))
 		return NULL;
 	if (strcmp(mode, "r") == 0)
 		imode = 0;
@@ -133,17 +132,14 @@ newsadobject(arg)
 /* Sad methods */
 
 static void
-sad_dealloc(xp)
-	sadobject *xp;
+sad_dealloc(sadobject *xp)
 {
         close(xp->x_fd);
 	PyObject_Del(xp);
 }
 
 static PyObject *
-sad_read(self, args)
-        sadobject *self;
-        PyObject *args;
+sad_read(sadobject *self, PyObject *args)
 {
         int size, count;
 	char *cp;
@@ -180,9 +176,7 @@ sad_read(self, args)
 }
 
 static PyObject *
-sad_write(self, args)
-        sadobject *self;
-        PyObject *args;
+sad_write(sadobject *self, PyObject *args)
 {
         char *cp;
 	int count, size;
@@ -206,9 +200,7 @@ sad_write(self, args)
 }
 
 static PyObject *
-sad_getinfo(self, args)
-	sadobject *self;
-	PyObject *args;
+sad_getinfo(sadobject *self, PyObject *args)
 {
 	sadstatusobject *rv;
 
@@ -226,9 +218,7 @@ sad_getinfo(self, args)
 }
 
 static PyObject *
-sad_setinfo(self, arg)
-	sadobject *self;
-	sadstatusobject *arg;
+sad_setinfo(sadobject *self, sadstatusobject *arg)
 {
 	if (!is_sadstatusobject(arg)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -244,9 +234,7 @@ sad_setinfo(self, arg)
 }
 
 static PyObject *
-sad_ibufcount(self, args)
-	sadobject *self;
-	PyObject *args;
+sad_ibufcount(sadobject *self, PyObject *args)
 {
 	audio_info_t ai;
     
@@ -260,9 +248,7 @@ sad_ibufcount(self, args)
 }
 
 static PyObject *
-sad_obufcount(self, args)
-	sadobject *self;
-	PyObject *args;
+sad_obufcount(sadobject *self, PyObject *args)
 {
 	audio_info_t ai;
     
@@ -280,9 +266,7 @@ sad_obufcount(self, args)
 }
 
 static PyObject *
-sad_drain(self, args)
-	sadobject *self;
-	PyObject *args;
+sad_drain(sadobject *self, PyObject *args)
 {
     
 	if (!PyArg_Parse(args, ""))
@@ -297,9 +281,7 @@ sad_drain(self, args)
 
 #ifdef SOLARIS
 static PyObject *
-sad_getdev(self, args)
-	sadobject *self;
-	PyObject *args;
+sad_getdev(sadobject *self, PyObject *args)
 {
 	struct audio_device ad;
 
@@ -314,9 +296,7 @@ sad_getdev(self, args)
 #endif
 
 static PyObject *
-sad_flush(self, args)
-	sadobject *self;
-	PyObject *args;
+sad_flush(sadobject *self, PyObject *args)
 {
     
 	if (!PyArg_Parse(args, ""))
@@ -330,9 +310,7 @@ sad_flush(self, args)
 }
 
 static PyObject *
-sad_close(self, args)
-	sadobject *self;
-	PyObject *args;
+sad_close(sadobject *self, PyObject *args)
 {
     
 	if (!PyArg_Parse(args, ""))
@@ -346,9 +324,7 @@ sad_close(self, args)
 }
 
 static PyObject *
-sad_fileno(self, args)
-	sadobject *self;
-	PyObject *args;
+sad_fileno(sadobject *self, PyObject *args)
 {
 	if (!PyArg_Parse(args, ""))
 		return NULL;
@@ -376,9 +352,7 @@ static PyMethodDef sad_methods[] = {
 };
 
 static PyObject *
-sad_getattr(xp, name)
-	sadobject *xp;
-	char *name;
+sad_getattr(sadobject *xp, char *name)
 {
 	if (xp->x_isctl)
 		return Py_FindMethod(sad_methods+CTL_METHODS,
@@ -395,8 +369,7 @@ sads_alloc() {
 }
 
 static void
-sads_dealloc(xp)
-	sadstatusobject *xp;
+sads_dealloc(sadstatusobject *xp)
 {
 	PyMem_DEL(xp);
 }
@@ -446,18 +419,13 @@ static struct memberlist sads_ml[] = {
 };
 
 static PyObject *
-sads_getattr(xp, name)
-	sadstatusobject *xp;
-	char *name;
+sads_getattr(sadstatusobject *xp, char *name)
 {
 	return PyMember_Get((char *)&xp->ai, sads_ml, name);
 }
 
 static int
-sads_setattr(xp, name, v)
-	sadstatusobject *xp;
-	char *name;
-	PyObject *v;
+sads_setattr(sadstatusobject *xp, char *name, PyObject *v)
 {
 
 	if (v == NULL) {
@@ -503,9 +471,7 @@ static PyTypeObject Sadstatustype = {
 /* ------------------------------------------------------------------- */
 
 static PyObject *
-sadopen(self, args)
-	PyObject *self;
-	PyObject *args;
+sadopen(PyObject *self, PyObject *args)
 {
 	return (PyObject *)newsadobject(args);
 }
