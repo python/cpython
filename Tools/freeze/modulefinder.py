@@ -1,5 +1,7 @@
 """Find modules used by a script, using introspection."""
 
+# This module should be kept compatible with Python 1.5.2, see PEP 291.
+
 import dis
 import imp
 import marshal
@@ -127,14 +129,20 @@ class ModuleFinder:
 
     def run_script(self, pathname):
         self.msg(2, "run_script", pathname)
-        fp = open(pathname, "U")
+        if hasattr(sys.stdout, "newlines"): # detect universal newline support
+            fp = open(pathname, "U")
+        else:
+            fp = open(pathname, "r")
         stuff = ("", "r", imp.PY_SOURCE)
         self.load_module('__main__', fp, pathname, stuff)
 
     def load_file(self, pathname):
         dir, name = os.path.split(pathname)
         name, ext = os.path.splitext(name)
-        fp = open(pathname, "U")
+        if hasattr(sys.stdout, "newlines"):
+            fp = open(pathname, "U")
+        else:
+            fp = open(pathname, "r")
         stuff = (ext, "r", imp.PY_SOURCE)
         self.load_module(name, fp, pathname, stuff)
 
