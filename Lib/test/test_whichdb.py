@@ -42,10 +42,9 @@ for name in anydbm._names:
     except ImportError:
         continue
 
-    def test_whichdb_name(self,name=name,mod=mod):
-        """Check whether whichdb correctly guesses module name
-        for databases opened with module mod.
-        """
+    def test_whichdb_name(self, name=name, mod=mod):
+        # Check whether whichdb correctly guesses module name
+        # for databases opened with module mod.
         f = mod.open(_fname, 'c')
         f["1"] = "1"
         f.close()
