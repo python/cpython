@@ -5,13 +5,18 @@ AC_INIT(Include/object.h)
 AC_CONFIG_HEADER(config.h)
 
 # checks for alternative programs
-AC_CHECKING(for --with(out)-gcc)
+AC_MSG_CHECKING(for --without-gcc)
 AC_ARG_WITH(gcc, [--without-gcc             never use gcc], [
 	case $withval in
-	no)	withval=cc;;
-	yes)	withval=gcc;;
-	esac
-	CC=$withval])
+	no)	CC=cc
+		without_gcc=yes;;
+	yes)	CC=gcc
+		without_gcc=no;;
+	*)	CC=$withval
+		without_gcc=$withval;;
+	esac], [without_gcc=no])
+AC_MSG_RESULT($without_gcc)
+
 AC_PROG_CC
 AC_PROG_RANLIB
 AC_SUBST(AR)
@@ -39,12 +44,15 @@ fi
 AC_AIX
 AC_ISC_POSIX
 AC_MINIX
-AC_CHECKING(for NeXT)
+
+was_it_defined=no
 AC_TRY_RUN([
 #ifdef _NEXT_SOURCE
 main() { exit(0); }
 #endif
-], AC_DEFINE(_POSIX_SOURCE))
+], AC_DEFINE(_POSIX_SOURCE) was_it_defined=yes)
+AC_MSG_CHECKING(for NeXT)
+AC_MSG_RESULT($was_it_defined)
 
 # checks for header files
 AC_HEADER_STDC
@@ -52,8 +60,11 @@ AC_CHECK_HEADERS(dlfcn.h fcntl.h limits.h signal.h stdarg.h stddef.h stdlib.h th
 AC_HEADER_DIRENT
 
 # checks for typedefs
-AC_CHECKING(for clock_t in time.h)
-AC_EGREP_HEADER(clock_t, time.h, , AC_DEFINE(clock_t, long))
+was_it_defined=no
+AC_MSG_CHECKING(for clock_t in time.h)
+AC_EGREP_HEADER(clock_t, time.h, was_it_defined=yes, AC_DEFINE(clock_t, long))
+AC_MSG_RESULT($was_it_defined)
+
 AC_TYPE_MODE_T
 AC_TYPE_OFF_T
 AC_TYPE_PID_T
@@ -138,8 +149,9 @@ AC_CHECK_LIB(nsl, t_open, [LIBS="-lnsl $LIBS"]) # SVR4
 AC_CHECK_LIB(inet, gethostbyname, [LIBS="-linet $LIBS"], [], -lnsl) # Sequent
 AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
 
-AC_CHECKING(for --with-readline)
+AC_MSG_CHECKING(for --with-readline)
 AC_ARG_WITH(readline, [--with-readline=DIRECTORY GNU readline], [
+AC_MSG_RESULT($withval)
 AC_DEFINE(WITH_READLINE)
 if test ! -d "$withval"
 then AC_ERROR(proper usage is --with-readline=DIRECTORY)
@@ -156,10 +168,11 @@ then LIBS="$LIBS $withval/libreadline.a"
      else LIBS="$LIBS -l$termcap"
      fi
 else AC_ERROR(no working termcap/termlib, do not use --with-readline)
-fi])
+fi], AC_MSG_RESULT(no))
 
-AC_CHECKING(for --with-thread)
+AC_MSG_CHECKING(for --with-thread)
 AC_ARG_WITH(thread, [--with-thread[=DIRECTORY] make interpreter thread-safe], [
+AC_MSG_RESULT($withval)
 if test -d "$withval"
 then LIBS="$LIBS -L$withval"
 fi
@@ -173,14 +186,15 @@ LIBOBJS="$LIBOBJS thread.o"])
 AC_CHECK_LIB(thread, thr_create, [AC_DEFINE(WITH_THREAD)
 LIBS="$LIBS -lthread"
 LIBOBJS="$LIBOBJS thread.o"])
-])
+], AC_MSG_RESULT(no))
 
 # -I${DLINCLDIR} is added to the compile rule for import.o
 AC_SUBST(DLINCLDIR)
 DLINCLDIR=/
 
-AC_CHECKING(for --with-sgi-dl)
+AC_MSG_CHECKING(for --with-sgi-dl)
 AC_ARG_WITH(sgi-dl, [--with-sgi-dl=DIRECTORY   IRIX 4 dynamic linking], [
+AC_MSG_RESULT($withval)
 AC_DEFINE(WITH_SGI_DL)
 dldir=$withval
 if test -d "$dldir"
@@ -188,10 +202,11 @@ then LIBS="$LIBS -L$dldir"
 else AC_ERROR(proper usage is --with-sgi-dl=DIRECTORY)
 fi
 DLINCLDIR=${dldir}
-LIBS="$LIBS -ldl -lmld"])
+LIBS="$LIBS -ldl -lmld"], AC_MSG_RESULT(no))
 
-AC_CHECKING(for --with-dl-dld)
+AC_MSG_CHECKING(for --with-dl-dld)
 AC_ARG_WITH(dl-dld, [--with-dl-dld=DL_DIR,DLD_DIR  GNU dynamic linking], [
+AC_MSG_RESULT($withval)
 AC_DEFINE(WITH_DL_DLD)
 dldir=`echo "$withval" | sed 's/,.*//'`
 dlddir=`echo "$withval" | sed 's/.*,//'`
@@ -200,7 +215,7 @@ then LIBS="$LIBS -L$dldir -L$dlddir"
 else AC_ERROR(proper usage is --with-dl-dld=DL_DIRECTORY,DLD_DIRECTORY)
 fi
 DLINCLDIR=${dldir}
-LIBS="$LIBS -ldl -ldld"])
+LIBS="$LIBS -ldl -ldld"], AC_MSG_RESULT(no))
 
 # checks for library functions
 AC_CHECK_FUNCS(chown clock dlopen ftime ftruncate gethostname_r gettimeofday getpeername getpgrp getpid getwd link lstat nice readlink select setgid setuid setsid setpgid setpgrp setvbuf siginterrupt symlink tcgetpgrp tcsetpgrp times truncate uname waitpid)
@@ -224,12 +239,14 @@ if test $ac_cv_header_time_altzone = yes; then
   AC_DEFINE(HAVE_ALTZONE)
 fi
 
-AC_CHECKING(whether sys/select.h and sys/time.h may both be included)
+was_it_defined=no
+AC_MSG_CHECKING(whether sys/select.h and sys/time.h may both be included)
 AC_TRY_COMPILE([
 #include <sys/types.h>
 #include <sys/select.h>
 #include <sys/time.h>
-], [;], [AC_DEFINE(SYS_SELECT_WITH_SYS_TIME)])
+], [;], [AC_DEFINE(SYS_SELECT_WITH_SYS_TIME) was_it_defined=yes])
+AC_MSG_RESULT($was_it_defined)
 
 # checks for compiler characteristics
 
@@ -237,29 +254,41 @@ AC_C_CHAR_UNSIGNED
 
 AC_C_CONST
 
-AC_CHECKING(for working volatile)
-AC_TRY_COMPILE([],[volatile int x; x = 0;],,AC_DEFINE(volatile, []))
+works=no
+AC_MSG_CHECKING(for working volatile)
+AC_TRY_COMPILE([],[volatile int x; x = 0;], works=yes, AC_DEFINE(volatile, []))
+AC_MSG_RESULT($works)
 
-AC_CHECKING(for working signed char)
-AC_TRY_COMPILE([], [signed char c;],,AC_DEFINE(signed, []))
+works=no
+AC_MSG_CHECKING(for working signed char)
+AC_TRY_COMPILE([], [signed char c;], works=yes, AC_DEFINE(signed, []))
+AC_MSG_RESULT($works)
 
-AC_CHECKING(for prototypes)
+have_prototypes=no
+AC_MSG_CHECKING(for prototypes)
 AC_TRY_COMPILE([int foo(int x) { return 0; }], [return foo(10);],
 AC_DEFINE(HAVE_PROTOTYPES) have_prototypes=yes)
+AC_MSG_RESULT($have_prototypes)
 
-AC_CHECKING(for variable length prototypes and stdarg.h)
+works=no
+AC_MSG_CHECKING(for variable length prototypes and stdarg.h)
 AC_TRY_COMPILE([
 #include <stdarg.h>
 int foo(int x, ...) { return 0; }
 ], [return foo(10, 11, 12);],
-AC_DEFINE(HAVE_STDARG_PROTOTYPES))
+AC_DEFINE(HAVE_STDARG_PROTOTYPES) works=yes)
+AC_MSG_RESULT($works)
 
-if test "$have_prototypes"; then
-AC_CHECKING(for bad exec* prototypes)
-AC_TRY_COMPILE([#include <unistd.h>], [char **t;execve("@",t,t);], , AC_DEFINE(BAD_EXEC_PROTOTYPES))
+if test "$have_prototypes" = yes; then
+bad_prototypes=no
+AC_MSG_CHECKING(for bad exec* prototypes)
+AC_TRY_COMPILE([#include <unistd.h>], [char **t;execve("@",t,t);], ,
+	AC_DEFINE(BAD_EXEC_PROTOTYPES) bad_prototypes=yes)
+AC_MSG_RESULT($bad_prototypes)
 fi
 
-AC_CHECKING(for bad static forward)
+bad_forward=no
+AC_MSG_CHECKING(for bad static forward)
 AC_TRY_RUN([
 struct s { int a; int b; };
 static struct s foo;
@@ -272,16 +301,20 @@ static struct s foo = { 1, 2 };
 main() {
  exit(!((int)&foo == foobar()));
 }
-], , AC_DEFINE(BAD_STATIC_FORWARD))
+], , AC_DEFINE(BAD_STATIC_FORWARD) bad_forward=yes)
+AC_MSG_RESULT($bad_forward)
 
-AC_CHECKING(whether va_list is an array)
+va_list_is_array=no
+AC_MSG_CHECKING(whether va_list is an array)
 AC_TRY_COMPILE([
 #ifdef HAVE_STDARG_PROTOTYPES
 #include <stdarg.h>
 #else
 #include <varargs.h>
 #endif
-], [va_list list1, list2; list1 = list2;], , AC_DEFINE(VA_LIST_IS_ARRAY))
+], [va_list list1, list2; list1 = list2;], , 
+AC_DEFINE(VA_LIST_IS_ARRAY) va_list_is_array=yes)
+AC_MSG_RESULT($va_list_is_array)
 
 # checks for system services
 # (none yet)
