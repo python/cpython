@@ -3,8 +3,6 @@
 
 \modulesynopsis{Parse \rfc{822} style mail headers.}
 
-%\index{RFC!RFC 822}
-
 This module defines a class, \class{Message}, which represents a
 collection of ``email headers'' as defined by the Internet standard
 \rfc{822}.  It is used in various contexts, usually to read such
@@ -17,38 +15,41 @@ style mailbox files: \module{mailbox}\refstmodindex{mailbox}.
 \begin{classdesc}{Message}{file\optional{, seekable}}
 A \class{Message} instance is instantiated with an input object as
 parameter.  Message relies only on the input object having a
-\code{readline} method; in particular, ordinary file objects qualify.
-Instantiation reads headers from the input object up to a delimiter
-line (normally a blank line) and stores them in the instance.
+\method{readline()} method; in particular, ordinary file objects
+qualify.  Instantiation reads headers from the input object up to a
+delimiter line (normally a blank line) and stores them in the
+instance.
 
-This class can work with any input object that supports a readline
-method.  If the input object has seek and tell capability, the
-\code{rewindbody} method will work; also, illegal lines will be pushed back
-onto the input stream.  If the input object lacks seek but has an
-\code{unread} method that can push back a line of input, Message will use
-that to push back illegal lines.  Thus this class can be used to parse
-messages coming from a buffered stream.
+This class can work with any input object that supports a
+\method{readline()} method.  If the input object has seek and tell
+capability, the \method{rewindbody()} method will work; also, illegal
+lines will be pushed back onto the input stream.  If the input object
+lacks seek but has an \method{unread()} method that can push back a
+line of input, \class{Message} will use that to push back illegal
+lines.  Thus this class can be used to parse messages coming from a
+buffered stream.
 
-The optional \code{seekable} argument is provided as a workaround for
-certain stdio libraries in which tell() discards buffered data before
-discovering that the \code{lseek()} system call doesn't work.  For
-maximum portability, you should set the seekable argument to zero to
-prevent that initial \code{tell} when passing in an unseekable object
-such as a a file object created from a socket object.
+The optional \var{seekable} argument is provided as a workaround for
+certain stdio libraries in which \cfunction{tell()} discards buffered
+data before discovering that the \cfunction{lseek()} system call
+doesn't work.  For maximum portability, you should set the seekable
+argument to zero to prevent that initial \method{tell()} when passing
+in an unseekable object such as a a file object created from a socket
+object.
 
 Input lines as read from the file may either be terminated by CR-LF or
 by a single linefeed; a terminating CR-LF is replaced by a single
 linefeed before the line is stored.
 
 All header matching is done independent of upper or lower case;
-e.g. \code{\var{m}['From']}, \code{\var{m}['from']} and
+e.g.\ \code{\var{m}['From']}, \code{\var{m}['from']} and
 \code{\var{m}['FROM']} all yield the same result.
 \end{classdesc}
 
 \begin{classdesc}{AddressList}{field}
 You may instantiate the AddresssList helper class using a single
-string parameter, a comma-separated list of RFC822 addresses to be
-parsed.  (The parameter None yields an empty list.)
+string parameter, a comma-separated list of \rfc{822} addresses to be
+parsed.  (The parameter \code{None} yields an empty list.)
 \end{classdesc}
 
 \begin{funcdesc}{parsedate}{date}
@@ -144,7 +145,7 @@ be returned when there is no header matching \var{name}.
 \end{methoddesc}
 
 \begin{methoddesc}{get}{name\optional{, default}}
-An alias for \code{getheader()}, to make the interface more compatible 
+An alias for \method{getheader()}, to make the interface more compatible 
 with regular dictionaries.
 \end{methoddesc}
 
@@ -166,7 +167,7 @@ exact same result.
 
 \begin{methoddesc}{getaddrlist}{name}
 This is similar to \code{getaddr(\var{list})}, but parses a header
-containing a list of email addresses (e.g. a \code{To} header) and
+containing a list of email addresses (e.g.\ a \code{To} header) and
 returns a list of \code{(\var{full name}, \var{email address})} pairs
 (even if there was only one address in the header).  If there is no
 header matching \var{name}, return an empty list.
