@@ -572,3 +572,7 @@ getobjects(self, args)
 }
 
 #endif
+
+
+/* Hack to force loading of cobject.o */
+static PyTypeObject *cobject_hack = &PyCObject_Type;
