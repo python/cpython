@@ -56,48 +56,48 @@ extern double pow PROTO((double, double));
 /* elementary operations on complex numbers */
 
 static int c_error;
-static complex c_1 = {1., 0.};
+static Py_complex c_1 = {1., 0.};
 
-complex c_sum(a,b)
-	complex a,b;
+Py_complex c_sum(a,b)
+	Py_complex a,b;
 {
-	complex r;
+	Py_complex r;
 	r.real = a.real + b.real;
 	r.imag = a.imag + b.imag;
 	return r;
 }
 
-complex c_diff(a,b)
-	complex a,b;
+Py_complex c_diff(a,b)
+	Py_complex a,b;
 {
-	complex r;
+	Py_complex r;
 	r.real = a.real - b.real;
 	r.imag = a.imag - b.imag;
 	return r;
 }
 
-complex c_neg(a)
-	complex a;
+Py_complex c_neg(a)
+	Py_complex a;
 {
-	complex r;
+	Py_complex r;
 	r.real = -a.real;
 	r.imag = -a.imag;
 	return r;
 }
 
-complex c_prod(a,b)
-	complex a,b;
+Py_complex c_prod(a,b)
+	Py_complex a,b;
 {
-	complex r;
+	Py_complex r;
 	r.real = a.real*b.real - a.imag*b.imag;
 	r.imag = a.real*b.imag + a.imag*b.real;
 	return r;
 }
 
-complex c_quot(a,b)
-	complex a,b;
+Py_complex c_quot(a,b)
+	Py_complex a,b;
 {
-	complex r;
+	Py_complex r;
 	double d = b.real*b.real + b.imag*b.imag;
 	if (d == 0.)
 		c_error = 1;
@@ -106,10 +106,10 @@ complex c_quot(a,b)
 	return r;
 }
 
-complex c_pow(a,b)
-	complex a,b;
+Py_complex c_pow(a,b)
+	Py_complex a,b;
 {
-	complex r;
+	Py_complex r;
 	double vabs,len,at,phase;
 	if (b.real == 0. && b.imag == 0.) {
 		r.real = 1.;
@@ -136,12 +136,12 @@ complex c_pow(a,b)
 	return r;
 }
 
-static complex c_powu(x, n)
-	complex x;
+static Py_complex c_powu(x, n)
+	Py_complex x;
 	long n;
 {
-	complex r = c_1;
-	complex p = x;
+	Py_complex r = c_1;
+	Py_complex p = x;
 	long mask = 1;
 	while (mask > 0 && n >= mask) {
 		if (n & mask)
@@ -152,11 +152,11 @@ static complex c_powu(x, n)
 	return r;
 }
 
-static complex c_powi(x, n)
-	complex x;
+static Py_complex c_powi(x, n)
+	Py_complex x;
 	long n;
 {
-	complex cn;
+	Py_complex cn;
 
 	if (n > 100 || n < -100) {
 		cn.real = (double) n;
@@ -171,7 +171,7 @@ static complex c_powi(x, n)
 }
 
 PyObject *
-PyComplex_FromCComplex(complex cval)
+PyComplex_FromCComplex(Py_complex cval)
 {
 	register complexobject *op = (complexobject *) malloc(sizeof(complexobject));
 	if (op == NULL)
@@ -184,7 +184,7 @@ PyComplex_FromCComplex(complex cval)
 
 PyObject *
 PyComplex_FromDoubles(double real, double imag) {
-  complex c;
+  Py_complex c;
   c.real = real;
   c.imag = imag;
   return PyComplex_FromCComplex(c);
@@ -208,9 +208,9 @@ PyComplex_ImagAsDouble(PyObject *op) {
   }
 }
 
-complex
+Py_complex
 PyComplex_AsCComplex(PyObject *op) {
-	complex cv;
+	Py_complex cv;
 	if (PyComplex_Check(op)) {
 		return ((PyComplexObject *)op)->cval;
 	} else {
@@ -266,8 +266,8 @@ complex_compare(v, w)
 {
 /* Note: "greater" and "smaller" have no meaning for complex numbers,
    but Python requires that they be defined nevertheless. */
-	complex i = v->cval;
-	complex j = w->cval;
+	Py_complex i = v->cval;
+	Py_complex j = w->cval;
 	if (i.real == j.real && i.imag == j.imag)
 	   return 0;
 	else if (i.real != j.real)
@@ -348,7 +348,7 @@ complex_div(v, w)
 	complexobject *v;
 	complexobject *w;
 {
-	complex quot;
+	Py_complex quot;
 	c_error = 0;
 	quot = c_quot(v->cval,w->cval);
 	if (c_error == 1) {
@@ -365,8 +365,8 @@ complex_pow(v, w, z)
 	object *w;
 	complexobject *z;
 {
-	complex p;
-	complex exponent;
+	Py_complex p;
+	Py_complex exponent;
 	long int_exponent;
 
  	if ((object *)z!=None) {
@@ -394,7 +394,7 @@ static object *
 complex_neg(v)
 	complexobject *v;
 {
-	complex neg;
+	Py_complex neg;
 	neg.real = -v->cval.real;
 	neg.imag = -v->cval.imag;
 	return newcomplexobject(neg);
@@ -427,7 +427,7 @@ complex_coerce(pv, pw)
 	object **pv;
 	object **pw;
 {
-	complex cval;
+	Py_complex cval;
 	cval.imag = 0.;
 	if (is_intobject(*pw)) {
 		cval.real = (double)getintvalue(*pw);
@@ -485,7 +485,7 @@ complex_new(self, args)
 	object *self;
 	object *args;
 {
-	complex cval;
+	Py_complex cval;
 
 	cval.imag = 0.;
 	if (!PyArg_ParseTuple(args, "d|d", &cval.real, &cval.imag))
@@ -497,7 +497,7 @@ static object *
 complex_conjugate(self)
 	object *self;
 {
-	complex c = ((complexobject *)self)->cval;
+	Py_complex c = ((complexobject *)self)->cval;
 	c.imag = -c.imag;
 	return newcomplexobject(c);
 }
@@ -513,7 +513,7 @@ complex_getattr(self, name)
 	complexobject *self;
 	char *name;
 {
-	complex cval;
+	Py_complex cval;
 	if (strcmp(name, "real") == 0)
 		return (object *)newfloatobject(self->cval.real);
 	else if (strcmp(name, "imag") == 0)
