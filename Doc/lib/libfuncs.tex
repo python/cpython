@@ -334,8 +334,9 @@ returns \code{['a', 'b', 'c']} and \code{list( (1, 2, 3) )} returns
 
 \begin{funcdesc}{locals}{}
 Return a dictionary representing the current local symbol table.
-Inside a function, modifying this dictionary does not always have the
-desired effect.
+\strong{Warning:} the contents of this dictionary should not be
+modified; changes may not affect the values of local variables used by 
+the interpreter.
 \end{funcdesc}
 
 \begin{funcdesc}{long}{x}
