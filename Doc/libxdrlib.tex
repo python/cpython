@@ -36,11 +36,6 @@ type packing methods are supported: \code{pack_uint}, \code{pack_int},
 \code{pack_enum}, \code{pack_bool}, \code{pack_uhyper},
 and \code{pack_hyper}.
 
-The following methods pack floating point numbers, however they
-require C library support.  Without the optional C built-in module,
-both of these methods will raise an \code{xdrlib.ConversionError}
-exception.  See the note at the end of this chapter for details.
-
 \begin{funcdesc}{pack_float}{value}
 Packs the single-precision floating point number \var{value}.
 \end{funcdesc}
@@ -138,8 +133,7 @@ if all of the data has not been unpacked.
 In addition, every data type that can be packed with a \code{Packer},
 can be unpacked with an \code{Unpacker}.  Unpacking methods are of the
 form \code{unpack_\var{type}}, and take no arguments.  They return the
-unpacked object.  The same caveats apply for \code{unpack_float} and
-\code{unpack_double} as above.
+unpacked object.
 
 \begin{funcdesc}{unpack_float}{}
 Unpacks a single-precision floating point number.
