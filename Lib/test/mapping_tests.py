@@ -9,7 +9,7 @@ class BasicTestMappingProtocol(unittest.TestCase):
 
     # Functions that can be useful to override to adapt to dictionary
     # semantics
-    _tested_class = None # which class is being tested (overwrite in subclasses)
+    type2test = None # which class is being tested (overwrite in subclasses)
 
     def _reference(self):
         """Return a dictionary of values which are invariant by storage
@@ -17,7 +17,7 @@ class BasicTestMappingProtocol(unittest.TestCase):
         return {1:2, "key1":"value1", "key2":(1,2,3)}
     def _empty_mapping(self):
         """Return an empty mapping object"""
-        return self._tested_class()
+        return self.type2test()
     def _full_mapping(self, data):
         """Return a mapping object with the value contained in data
         dictionary"""
@@ -303,7 +303,7 @@ class TestMappingProtocol(BasicTestMappingProtocol):
     def test_constructor(self):
         BasicTestMappingProtocol.test_constructor(self)
         self.assert_(self._empty_mapping() is not self._empty_mapping())
-        self.assertEqual(self._tested_class(x=1, y=2), {"x": 1, "y": 2})
+        self.assertEqual(self.type2test(x=1, y=2), {"x": 1, "y": 2})
 
     def test_bool(self):
         BasicTestMappingProtocol.test_bool(self)
@@ -427,7 +427,7 @@ class TestMappingProtocol(BasicTestMappingProtocol):
         self.assertEqual(d, {1:1, 2:2, 3:3})
 
     def test_fromkeys(self):
-        self.assertEqual(self._tested_class.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
+        self.assertEqual(self.type2test.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
         d = self._empty_mapping()
         self.assert_(not(d.fromkeys('abc') is d))
         self.assertEqual(d.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
@@ -437,14 +437,14 @@ class TestMappingProtocol(BasicTestMappingProtocol):
             yield 1
         self.assertEqual(d.fromkeys(g()), {1:None})
         self.assertRaises(TypeError, {}.fromkeys, 3)
-        class dictlike(self._tested_class): pass
+        class dictlike(self.type2test): pass
         self.assertEqual(dictlike.fromkeys('a'), {'a':None})
         self.assertEqual(dictlike().fromkeys('a'), {'a':None})
         self.assert_(dictlike.fromkeys('a').__class__ is dictlike)
         self.assert_(dictlike().fromkeys('a').__class__ is dictlike)
         # FIXME: the following won't work with UserDict, because it's an old style class
         # self.assert_(type(dictlike.fromkeys('a')) is dictlike)
-        class mydict(self._tested_class):
+        class mydict(self.type2test):
             def __new__(cls):
                 return UserDict.UserDict()
         ud = mydict.fromkeys('ab')
@@ -455,7 +455,7 @@ class TestMappingProtocol(BasicTestMappingProtocol):
 
         class Exc(Exception): pass
 
-        class baddict1(self._tested_class):
+        class baddict1(self.type2test):
             def __init__(self):
                 raise Exc()
 
@@ -467,9 +467,9 @@ class TestMappingProtocol(BasicTestMappingProtocol):
             def next(self):
                 raise Exc()
 
-        self.assertRaises(Exc, self._tested_class.fromkeys, BadSeq())
+        self.assertRaises(Exc, self.type2test.fromkeys, BadSeq())
 
-        class baddict2(self._tested_class):
+        class baddict2(self.type2test):
             def __setitem__(self, key, value):
                 raise Exc()
 
@@ -578,7 +578,7 @@ class TestHashMappingProtocol(TestMappingProtocol):
 
     def test_fromkeys(self):
         TestMappingProtocol.test_fromkeys(self)
-        class mydict(self._tested_class):
+        class mydict(self.type2test):
             def __new__(cls):
                 return UserDict.UserDict()
         ud = mydict.fromkeys('ab')

@@ -917,14 +917,14 @@ from test import mapping_tests
 class WeakValueDictionaryTestCase(mapping_tests.BasicTestMappingProtocol):
     """Check that WeakValueDictionary conforms to the mapping protocol"""
     __ref = {"key1":Object(1), "key2":Object(2), "key3":Object(3)}
-    _tested_class = weakref.WeakValueDictionary
+    type2test = weakref.WeakValueDictionary
     def _reference(self):
         return self.__ref.copy()
 
 class WeakKeyDictionaryTestCase(mapping_tests.BasicTestMappingProtocol):
     """Check that WeakKeyDictionary conforms to the mapping protocol"""
     __ref = {Object("key1"):1, Object("key2"):2, Object("key3"):3}
-    _tested_class = weakref.WeakKeyDictionary
+    type2test = weakref.WeakKeyDictionary
     def _reference(self):
         return self.__ref.copy()
 

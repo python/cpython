@@ -209,7 +209,7 @@ from test import mapping_tests
 
 class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     """check that os.environ object conform to mapping protocol"""
-    _tested_class = None
+    type2test = None
     def _reference(self):
         return {"KEY1":"VALUE1", "KEY2":"VALUE2", "KEY3":"VALUE3"}
     def _empty_mapping(self):
