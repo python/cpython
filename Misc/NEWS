@@ -37,6 +37,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1117339: Add cookielib special name tests.
+
 - Patch #1112812: Make bsddb/__init__.py more friendly for modulefinder.
 
 - Patch #1121234: Properly cleanup _exit and tkerror commands.
