@@ -91,6 +91,7 @@ class Options:
     quiet = 0
     runs = 0
     numeric = 0
+    global_module_index = None
     style_file = os.path.join(TOPDIR, "html", "style.css")
     about_file = os.path.join(TOPDIR, "html", "about.dat")
     up_link = None
@@ -117,7 +118,8 @@ class Options:
                                     "link=", "split=", "logging", "debugging",
                                     "keep", "quiet", "runs=", "image-type=",
                                     "about=", "numeric", "style=",
-                                    "up-link=", "up-title="]
+                                    "up-link=", "up-title=",
+                                    "global-module-index="]
                                    + list(self.ALL_FORMATS))
         for opt, arg in opts:
             if opt == "--all":
@@ -163,6 +165,8 @@ class Options:
                 self.up_link = arg
             elif opt == "--up-title":
                 self.up_title = arg
+            elif opt == "--global-module-index":
+                self.global_module_index = arg
             #
             # Format specifiers:
             #
@@ -405,6 +409,7 @@ class Job:
         l2hoption(fp, "MAX_SPLIT_DEPTH", options.max_split_depth)
         l2hoption(fp, "EXTERNAL_UP_LINK", options.up_link)
         l2hoption(fp, "EXTERNAL_UP_TITLE", options.up_title)
+        l2hoption(fp, "GLOBAL_MODULE_INDEX", options.global_module_index)
         fp.write("1;\n")
         fp.close()
 

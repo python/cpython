@@ -14,7 +14,8 @@ PYTHON=	   python
 WEBCHECKER=$(PYTHON) $(TOPDIR)/../Tools/webchecker/webchecker.py
 MKHOWTO=   $(TOOLSDIR)/mkhowto --about $(TOPDIR)/html/stdabout.dat \
 		--address $(PYTHONDOCS) --up-link ../index.html \
-		--up-title "Python Documentation Index"
+		--up-title "Python Documentation Index" \
+		--global-module-index "../modindex.html"
 MKHTML=	   $(MKHOWTO) --html
 
 BUILDINDEX=$(TOOLSDIR)/buildindex.py
