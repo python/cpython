@@ -476,9 +476,11 @@ attributes:
   match.
   
   The optional second parameter \var{pos} gives an index in the string
-  where the search is to start; it defaults to \code{0}.  The
-  \character{\^} pattern character will not match at the index where the
-  search is to start.
+  where the search is to start; it defaults to \code{0}.  This is not
+  completely equivalent to slicing the string; the \code{'\^'} pattern
+  character matches at the real beginning of the string and at positions
+  just after a newline, but not necessarily at the index where the search
+  is to start.
 
   The optional parameter \var{endpos} limits how far the string will
   be searched; it will be as if the string is \var{endpos} characters
