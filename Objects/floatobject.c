@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -28,6 +28,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    for any kind of float exception without losing portability. */
 
 #include "allobjects.h"
+#include "modsupport.h"
 
 #include <errno.h>
 #ifndef errno
@@ -222,16 +223,7 @@ float_divmod(v, w)
 		mod += wx;
 		div -= 1.0;
 	}
-	t = newtupleobject(2);
-	if (t != NULL) {
-		settupleitem(t, 0, newfloatobject(div));
-		settupleitem(t, 1, newfloatobject(mod));
-		if (err_occurred()) {
-			DECREF(t);
-			t = NULL;
-		}
-	}
-	return t;
+	return mkvalue("(dd)", div, mod);
 }
 
 static object *

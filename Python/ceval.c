@@ -1671,6 +1671,9 @@ rem(v, w)
 		DECREF(w);
 		return x;
 	}
+	if (is_stringobject(v)) {
+		return formatstring(v, w);
+	}
 	err_setstr(TypeError, "bad operand type(s) for %");
 	return NULL;
 }

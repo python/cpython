@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -25,6 +25,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Integer object implementation */
 
 #include "allobjects.h"
+#include "modsupport.h"
 
 /* Standard Booleans */
 
@@ -252,18 +253,7 @@ int_divmod(x, y)
 	long d, m;
 	if (i_divmod(x, y, &d, &m) < 0)
 		return NULL;
-	v = newtupleobject(2);
-	v0 = newintobject(d);
-	v1 = newintobject(m);
-	if (v == NULL || v0 == NULL || v1 == NULL ||
-		settupleitem(v, 0, v0) != 0 ||
-		settupleitem(v, 1, v1) != 0) {
-		XDECREF(v);
-		XDECREF(v0);
-		XDECREF(v1);
-		v = NULL;
-	}
-	return v;
+	return mkvalue("(ll)", d, m);
 }
 
 static object *

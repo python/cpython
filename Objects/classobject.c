@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -49,7 +49,7 @@ newclassobject(bases, methods, name)
 	if (bases == NULL) {
 		bases = newtupleobject(0);
 		if (bases == NULL)
-			return err_nomem();
+			return NULL;
 	}
 	else
 		INCREF(bases);

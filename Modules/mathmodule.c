@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -136,7 +136,6 @@ math_frexp(self, args)
 	object *self;
 	object *args;
 {
-	object *v;
 	double x;
 	int i;
 	if (!getdoublearg(args, &x))
@@ -146,16 +145,7 @@ math_frexp(self, args)
 	CHECK(x);
 	if (errno != 0)
 		return math_error();
-	v = newtupleobject(2);
-	if (v != NULL) {
-		settupleitem(v, 0, newfloatobject(x));
-		settupleitem(v, 1, newintobject((long)i));
-		if (err_occurred()) {
-			DECREF(v);
-			v = NULL;
-		}
-	}
-	return v;
+	return mkvalue("(di)", x, i);
 }
 
 static object *
@@ -181,7 +171,6 @@ math_modf(self, args)
 	object *self;
 	object *args;
 {
-	object *v;
 	double x, y;
 	if (!getdoublearg(args, &x))
 		return NULL;
@@ -190,16 +179,7 @@ math_modf(self, args)
 	CHECK(x);
 	if (errno != 0)
 		return math_error();
-	v = newtupleobject(2);
-	if (v != NULL) {
-		settupleitem(v, 0, newfloatobject(x));
-		settupleitem(v, 1, newfloatobject(y));
-		if (err_occurred()) {
-			DECREF(v);
-			v = NULL;
-		}
-	}
-	return v;
+	return mkvalue("(dd)", x, y);
 }
 
 static struct methodlist math_methods[] = {

@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -134,22 +134,15 @@ fh_getfontinfo(self, args)
 		err_setstr(RuntimeError, "error in fmgetfontinfo");
 		return NULL;
 	}
-	v = newtupleobject(8);
-	if (v == NULL)
-		return NULL;
-#define SET(i, member) settupleitem(v, i, newintobject(info.member))
-	SET(0, printermatched);
-	SET(1, fixed_width);
-	SET(2, xorig);
-	SET(3, yorig);
-	SET(4, xsize);
-	SET(5, ysize);
-	SET(6, height);
-	SET(7, nglyphs);
-#undef SET
-	if (err_occurred())
-		return NULL;
-	return v;
+	return mkvalue("(llllllll)",
+		       info.printermatched,
+		       info.fixed_width,
+		       info.xorig,
+		       info.yorig,
+		       info.xsize,
+		       info.ysize,
+		       info.height,
+		       info.nglyphs);
 }
 
 #if 0

@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -168,8 +168,11 @@ parsetok(tok, g, start, n_ret)
 				*n_ret = ps->p_tree;
 				ps->p_tree = NULL;
 			}
-			else if (tok->lineno <= 1 && tok->done == E_EOF)
-				ret = E_EOF;
+			else {
+				*n_ret = NULL;
+				if (tok->lineno <= 1 && tok->done == E_EOF)
+					ret = E_EOF;
+			}
 			break;
 		}
 	}

@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -24,9 +24,21 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Module support interface */
 
+#ifdef HAVE_PROTOTYPES
+#define USE_STDARG
+#endif
+
+#ifdef USE_STDARG
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
 extern object *initmodule PROTO((char *, struct methodlist *));
 extern int getargs PROTO((object *, char *, ...));
+extern int vgetargs PROTO((object *, char *, va_list));
 extern object *mkvalue PROTO((char *, ...));
+extern object *vmkvalue PROTO((char *, va_list));
 
 #define getnoarg(v) getargs(v, "")
 #define getintarg(v, a) getargs(v, "i", a)
