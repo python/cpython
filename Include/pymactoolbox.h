@@ -1,5 +1,5 @@
 /*
-** pymactoolbox.h - global routines exported by the toolbox modules
+** pymactoolbox.h - globals defined in mactoolboxglue.c
 */
 
 #ifdef __cplusplus
@@ -19,6 +19,51 @@
 #include <Carbon/Carbon.h>
 #include <QuickTime/QuickTime.h>
 #endif
+
+/*
+** Helper routines for error codes and such.
+*/
+char *PyMac_getscript(void);				/* Get the default encoding for our 8bit character set */
+char *PyMac_StrError(int);					/* strerror with mac errors */
+PyObject *PyErr_Mac(PyObject *, int);		/* Exception with a mac error */
+PyObject *PyMac_Error(OSErr);				/* Uses PyMac_GetOSErrException */
+
+/*
+** These conversion routines are defined in mactoolboxglue.c itself.
+*/
+int PyMac_GetOSType(PyObject *, OSType *);	/* argument parser for OSType */
+PyObject *PyMac_BuildOSType(OSType);		/* Convert OSType to PyObject */
+
+PyObject *PyMac_BuildNumVersion(NumVersion);/* Convert NumVersion to PyObject */
+
+int PyMac_GetStr255(PyObject *, Str255);	/* argument parser for Str255 */
+PyObject *PyMac_BuildStr255(Str255);		/* Convert Str255 to PyObject */
+PyObject *PyMac_BuildOptStr255(Str255);		/* Convert Str255 to PyObject, NULL to None */
+
+int PyMac_GetRect(PyObject *, Rect *);		/* argument parser for Rect */
+PyObject *PyMac_BuildRect(Rect *);			/* Convert Rect to PyObject */
+
+int PyMac_GetPoint(PyObject *, Point *);	/* argument parser for Point */
+PyObject *PyMac_BuildPoint(Point);			/* Convert Point to PyObject */
+
+int PyMac_GetEventRecord(PyObject *, EventRecord *); /* argument parser for EventRecord */
+PyObject *PyMac_BuildEventRecord(EventRecord *); /* Convert EventRecord to PyObject */
+
+int PyMac_GetFixed(PyObject *, Fixed *);	/* argument parser for Fixed */
+PyObject *PyMac_BuildFixed(Fixed);			/* Convert Fixed to PyObject */
+int PyMac_Getwide(PyObject *, wide *);		/* argument parser for wide */
+PyObject *PyMac_Buildwide(wide *);			/* Convert wide to PyObject */
+
+/*
+** The rest of the routines are implemented by extension modules. If they are
+** dynamically loaded mactoolboxglue will contain a stub implementation of the
+** routine, which imports the module, whereupon the module's init routine will
+** communicate the routine pointer back to the stub.
+** If USE_TOOLBOX_OBJECT_GLUE is not defined there is no glue code, and the
+** extension modules simply declare the routine. This is the case for static
+** builds (and could be the case for MacPython CFM builds, because CFM extension
+** modules can reference each other without problems).
+*/
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 /*
