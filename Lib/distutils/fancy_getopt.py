@@ -412,6 +412,11 @@ def fancy_getopt (options, negative_opt, object, args):
 WS_TRANS = string.maketrans (string.whitespace, ' ' * len (string.whitespace))
 
 def wrap_text (text, width):
+    """wrap_text(text : string, width : int) -> [string]
+
+    Split 'text' into multiple lines of no more than 'width' characters
+    each, and return the list of strings that results.
+    """
 
     if text is None:
         return []
