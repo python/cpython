@@ -79,6 +79,10 @@ class ManualGenerator(BaseFunctionGenerator):
 
 	def functionbody(self):
 		Output("%s", self.body)
+		
+	def setselftype(self, selftype, itselftype):
+		self.objecttype = selftype
+		self.itselftype = itselftype
 
 
 class FunctionGenerator(BaseFunctionGenerator):
