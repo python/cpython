@@ -784,7 +784,7 @@ strop_atof(self, args)
 	double x;
 	char buffer[256]; /* For errors */
 
-	if (!PyArg_Parse(args, "s", &s))
+	if (!PyArg_ParseTuple(args, "s", &s))
 		return NULL;
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
@@ -1114,22 +1114,22 @@ strop_methods[] = {
 	{"atof",	strop_atof, 1, atof__doc__},
 	{"atoi",	strop_atoi, 1, atoi__doc__},
 	{"atol",	strop_atol, 1, atol__doc__},
-	{"capitalize",	strop_capitalize, 1, capitalize__doc__},
+	{"capitalize",	strop_capitalize, 0, capitalize__doc__},
 	{"find",	strop_find, 1, find__doc__},
 	{"join",	strop_joinfields, 1, joinfields__doc__},
 	{"joinfields",	strop_joinfields, 1, joinfields__doc__},
-	{"lstrip",	strop_lstrip, 1, lstrip__doc__},
-	{"lower",	strop_lower, 1, lower__doc__},
+	{"lstrip",	strop_lstrip, 0, lstrip__doc__},
+	{"lower",	strop_lower, 0, lower__doc__},
 	{"maketrans",	strop_maketrans, 1, maketrans__doc__},
 	{"replace",	strop_replace, 1, replace__doc__},
 	{"rfind",	strop_rfind, 1, rfind__doc__},
-	{"rstrip",	strop_rstrip, 1,rstrip__doc__},
+	{"rstrip",	strop_rstrip, 0, rstrip__doc__},
 	{"split",	strop_splitfields, 1, splitfields__doc__},
 	{"splitfields",	strop_splitfields, 1, splitfields__doc__},
-	{"strip",	strop_strip, 1, strip__doc__},
-	{"swapcase",	strop_swapcase, 1, swapcase__doc__},
+	{"strip",	strop_strip, 0, strip__doc__},
+	{"swapcase",	strop_swapcase, 0, swapcase__doc__},
 	{"translate",	strop_translate, 1, translate__doc__},
-	{"upper",	strop_upper, 1, upper__doc__},
+	{"upper",	strop_upper, 0, upper__doc__},
 	{NULL,		NULL}	/* sentinel */
 };
 
