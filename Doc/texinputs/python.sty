@@ -805,9 +805,9 @@
    $\!\rfloor\!$%
   }}
 \newcommand{\envvar}[1]{%
-  \$#1%                                 $ <-- bow to font-lock 3 times!
-  \index{#1@{\$#1}}%                    $
-  \index{environment variables!{\$#1}}% $
+  #1%
+  \index{#1@{#1}}%
+  \index{environment variables!{#1}}%
 }
 \newcommand{\makevar}[1]{#1}		% variable in a Makefile
 \newcommand{\character}[1]{\samp{#1}}
