@@ -54,13 +54,13 @@ string containing the ciphertext.
 
 \begin{methoddesc}[rotor]{decrypt}{ciphertext}
 Reset the rotor object to its initial state and decrypt \var{ciphertext},
-returning a string containing the ciphertext.  The plaintext string will
+returning a string containing the plaintext.  The plaintext string will
 always be the same length as the ciphertext.
 \end{methoddesc}
 
 \begin{methoddesc}[rotor]{decryptmore}{ciphertext}
 Decrypt \var{ciphertext} without resetting the rotor object, and return a
-string containing the ciphertext.
+string containing the plaintext.
 \end{methoddesc}
 
 An example usage:
