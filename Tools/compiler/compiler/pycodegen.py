@@ -24,7 +24,6 @@ def parse(path):
     return t.parsesuite(src)
 
 def walk(tree, visitor, verbose=None, walker=None):
-    print visitor, "start"
     if walker:
         w = walker()
     else:
@@ -32,7 +31,6 @@ def walk(tree, visitor, verbose=None, walker=None):
     if verbose is not None:
         w.VERBOSE = verbose
     w.preorder(tree, visitor)
-    print visitor, "finish"
     return w.visitor
 
 def dumpNode(node):
@@ -154,26 +152,25 @@ class CodeGenerator:
     # XXX this should be combined with PythonVMCode.  there is no
     # clear way to split the functionality into two classes.
 
-    MODULE_NAMESPACE = 1
-    FUNCTION_NAMESPACE = 2
-    
-    def __init__(self, filename=None):
+    OPTIMIZED = 1
+
+    def __init__(self, filename="<?>"):
         self.filename = filename
-	self.code = PythonVMCode(filename=filename)
+	self.code = PythonVMCode()
         self.code.setFlags(0)
 	self.locals = misc.Stack()
         self.loops = misc.Stack()
-        self.namespace = self.MODULE_NAMESPACE
+        self.namespace = 0
         self.curStack = 0
         self.maxStack = 0
 
-    def _generateFunctionOrLambdaCode(self, func, filename):
+    def _generateFunctionOrLambdaCode(self, func):
         self.name = func.name
         self.filename = filename
         args = func.argnames
-	self.code = PythonVMCode(len(args), name=func.name,
-                                 filename=filename, args=args)
-        self.namespace = self.FUNCTION_NAMESPACE
+	self.code = PythonVMCode(args=args, name=func.name,
+                                 filename=filename)
+        self.namespace = self.OPTIMIZED
         if func.varargs:
             self.code.setVarArgs()
         if func.kwargs:
@@ -183,14 +180,24 @@ class CodeGenerator:
 	self.code.setLineNo(func.lineno)
         walk(func.code, self)
 
-    def generateFunctionCode(self, func, filename='<?>'):
+    def generateFunctionCode(self, func):
         """Generate code for a function body"""
-        self._generateFunctionOrLambdaCode(func, filename)
+        self._generateFunctionOrLambdaCode(func)
         self.code.emit('LOAD_CONST', None)
         self.code.emit('RETURN_VALUE')
 
-    def generateLambdaCode(self, func, filename='<?>'):
-        self._generateFunctionOrLambdaCode(func, filename)
+    def generateLambdaCode(self, func):
+        self._generateFunctionOrLambdaCode(func)
+        self.code.emit('RETURN_VALUE')
+
+    def generateClassCode(self, klass):
+        self.code = PythonVMCode(name=klass.name,
+                                 filename=filename)
+        self.code.setLineNo(klass.lineno)
+        lnf = walk(klass.code, LocalNameFinder(), 0)
+        self.locals.push(lnf.getLocals())
+        walk(klass.code, self)
+        self.code.emit('LOAD_LOCALS')
         self.code.emit('RETURN_VALUE')
 
     def emit(self):
@@ -199,6 +206,8 @@ class CodeGenerator:
         XXX It is confusing that this method isn't related to the
         method named emit in the PythonVMCode.
         """
+        if self.namespace == self.OPTIMIZED:
+            self.code.setOptimized()
         return self.code.makeCodeObject(self.maxStack)
 
     def isLocalName(self, name):
@@ -206,10 +215,10 @@ class CodeGenerator:
 
     def _nameOp(self, prefix, name):
         if self.isLocalName(name):
-            if self.namespace == self.MODULE_NAMESPACE:
-                self.code.emit(prefix + '_NAME', name)
-            else:
+            if self.namespace == self.OPTIMIZED:
                 self.code.emit(prefix + '_FAST', name)
+            else:
+                self.code.emit(prefix + '_NAME', name)
         else:
             self.code.emit(prefix + '_GLOBAL', name)
 
@@ -274,11 +283,25 @@ class CodeGenerator:
             self.code.emit('IMPORT_FROM', name)
         self.code.emit('POP_TOP')
 
+    def visitClassdef(self, node):
+        self.code.emit('SET_LINENO', node.lineno)
+        self.code.emit('LOAD_CONST', node.name)
+        for base in node.bases:
+            self.visit(base)
+        self.code.emit('BUILD_TUPLE', len(node.bases))
+        classBody = CodeGenerator(self.filename)
+        classBody.generateClassCode(node)
+        self.code.emit('LOAD_CONST', classBody)
+        self.code.emit('MAKE_FUNCTION', 0)
+        self.code.emit('CALL_FUNCTION', 0)
+        self.code.emit('BUILD_CLASS')
+        self.storeName(node.name)
+        return 1
+
     def _visitFuncOrLambda(self, node, kind):
         """Code common to Function and Lambda nodes"""
-        codeBody = CodeGenerator()
-        meth = getattr(codeBody, 'generate%sCode' % kind)
-        meth(node, filename=self.filename)
+        codeBody = CodeGenerator(self.filename)
+        getattr(codeBody, 'generate%sCode' % kind)(node)
         self.code.setLineNo(node.lineno)
         for default in node.defaults:
             self.visit(default)
@@ -297,13 +320,24 @@ class CodeGenerator:
         return 1
 
     def visitCallFunc(self, node):
+        pos = 0
+        kw = 0
         if hasattr(node, 'lineno'):
             self.code.emit('SET_LINENO', node.lineno)
 	self.visit(node.node)
 	for arg in node.args:
 	    self.visit(arg)
-	self.code.callFunction(len(node.args))
+            if isinstance(arg, ast.Keyword):
+                kw = kw + 1
+            else:
+                pos = pos + 1
+	self.code.callFunction(kw << 8 | pos)
 	return 1
+
+    def visitKeyword(self, node):
+        self.code.emit('LOAD_CONST', node.name)
+        self.visit(node.expr)
+        return 1
 
     def visitIf(self, node):
 	after = StackRef()
@@ -461,6 +495,7 @@ class CodeGenerator:
     def visitGetattr(self, node):
         self.visit(node.expr)
         self.code.emit('LOAD_ATTR', node.attrname)
+        self.push(1)
         return 1
 
     def visitSubscript(self, node):
@@ -763,19 +798,21 @@ class PythonVMCode:
     """
 
     # XXX flag bits
-    VARARGS = 0x04
-    KWARGS = 0x08
+    CO_OPTIMIZED = 0x0001  # uses LOAD_FAST!
+    CO_NEWLOCALS = 0x0002  # everybody uses this?
+    CO_VARARGS = 0x0004
+    CO_VARKEYWORDS = 0x0008
 
-    def __init__(self, argcount=0, name='?', filename='<?>',
-                 docstring=None, args=()):
+    def __init__(self, args=(), name='?', filename='<?>',
+                 docstring=None):
         # XXX why is the default value for flags 3?
 	self.insts = []
         # used by makeCodeObject
-        self.argcount = argcount
+        self.argcount = len(args)
         self.code = ''
         self.consts = [docstring]
         self.filename = filename
-        self.flags = 3
+        self.flags = self.CO_NEWLOCALS
         self.name = name
         self.names = []
         self.varnames = list(args) or []
@@ -790,13 +827,16 @@ class PythonVMCode:
 
     def setFlags(self, val):
         """XXX for module's function"""
-        self.flags = 0
+        self.flags = val
+
+    def setOptimized(self):
+        self.flags = self.flags | self.CO_OPTIMIZED
 
     def setVarArgs(self):
-        self.flags = self.flags | self.VARARGS
+        self.flags = self.flags | self.CO_VARARGS
 
     def setKWArgs(self):
-        self.flags = self.flags | self.KWARGS
+        self.flags = self.flags | self.CO_VARKEYWORDS
 
     def getCurInst(self):
 	return len(self.insts)
@@ -851,6 +891,9 @@ class PythonVMCode:
             nlocals = 0
         else:
             nlocals = len(self.varnames)
+        # XXX danger! can't pass through here twice
+        if self.flags & self.CO_VARKEYWORDS:
+            self.argcount = self.argcount - 1
         co = new.code(self.argcount, nlocals, stacksize,
                       self.flags, lnotab.getCode(), self._getConsts(),
                       tuple(self.names), tuple(self.varnames),
@@ -883,8 +926,16 @@ class PythonVMCode:
             elif l == 2:
                 cur = cur + 3
                 arg = t[1]
+                # XXX this is a total hack: for a reference used
+                # multiple times, we create a list of offsets and
+                # expect that we when we pass through the code again
+                # to actually generate the offsets, we'll pass in the
+                # same order.
                 if isinstance(arg, StackRef):
-                    arg.__offset = cur
+                    try:
+                        arg.__offset.append(cur)
+                    except AttributeError:
+                        arg.__offset = [cur]
 
     def _convertArg(self, op, arg):
         """Convert the string representation of an arg to a number
@@ -909,7 +960,9 @@ class PythonVMCode:
         if op == 'COMPARE_OP':
             return self.cmp_op.index(arg)
         if self.hasjrel.has_elt(op):
-            return self.offsets[arg.resolve()] - arg.__offset
+            offset = arg.__offset[0]
+            del arg.__offset[0]
+            return self.offsets[arg.resolve()] - offset
         if self.hasjabs.has_elt(op):
             return self.offsets[arg.resolve()]
         return arg
