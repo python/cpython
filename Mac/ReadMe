@@ -22,16 +22,18 @@ NumPy printing don't work.
 What to install
 ---------------
 
-There are three flavors of Python: PowerPC, cfm68k and Classic 68k (the
-FAT flavor is just a combination of the first two, which is handy if you
-want to install Python on a fileserver or so). 68K-mac owners should
-definitely use the cfm68k version if possible, since it enables the use
-of applets and dynamically loaded modules and usually has a smaller
-memory footprint. It does however need the CFM68K Runtime Enabler which
-is available from Apple (available for free from
+There are three flavors of Python: PowerPC, cfm68k and Classic 68k
+(the FAT flavor is just a combination of the first two, which is handy
+if you want to install Python on a fileserver or so). 68K-mac owners
+should definitely use the cfm68k version if possible, since it enables
+the use of applets and dynamically loaded modules and usually has a
+smaller memory footprint. If you have an older system than MacOS 8 it
+does however need the CFM68K Runtime Enabler which is available from
+Apple (available for free from
 <http://support.info.apple.com/ftp/swhome.html>, included since MacOS
-7.6.1). If your machine is pre-68020 you cannot use cfm68k and you can
-install the classic 68k Python.
+7.6.1 and builtin to the system since MacOS 8). If your machine is
+pre-68020 you cannot use cfm68k and you can install the classic 68k
+Python.
 
 After the installer finishes it automatically launches the
 ConfigurePython applet, to finish configuration of your Python
