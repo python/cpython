@@ -306,8 +306,10 @@ def expanduser(path):
         i = i + 1
     if i == 1:
         if not os.environ.has_key('HOME'):
-            return path
-        userhome = os.environ['HOME']
+            import pwd
+            userhome = pwd.getpwuid(os.getuid())[5]
+        else:
+            userhome = os.environ['HOME']
     else:
         import pwd
         try:
