@@ -1,4 +1,4 @@
-#! /usr/bin/env python1.5
+#! /usr/bin/env python
 
 r"""Convert old ("regex") regular expressions to new syntax ("re").
 
