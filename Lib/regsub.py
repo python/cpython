@@ -1,7 +1,9 @@
 # Regular expression subroutines:
 # sub(pat, repl, str): replace first occurrence of pattern in string
 # gsub(pat, repl, str): replace all occurrences of pattern in string
-# split(str, pat): split string using pattern as delimiter
+# split(str, pat, maxsplit): split string using pattern as delimiter
+# splitx(str, pat, maxsplit): split string using pattern as delimiter plus
+#			      return delimiters
 
 
 import regex
@@ -50,13 +52,28 @@ def gsub(pat, repl, str):
 # Split string str in fields separated by delimiters matching pattern
 # pat.  Only non-empty matches for the pattern are considered, so e.g.
 # split('abc', '') returns ['abc'].
-# When the optional 3rd argument is true, the separators are also
-# inserted to the list.
+# The optional 3rd argument sets the number of splits that are performed.
 
-def split(str, pat, retain = 0):
+def split(str, pat, maxsplit = 0):
+	return intsplit(str, pat, maxsplit, 0)
+
+# Split string str in fields separated by delimiters matching pattern
+# pat.  Only non-empty matches for the pattern are considered, so e.g.
+# split('abc', '') returns ['abc']. The delimiters are also included
+# in the list.
+# The optional 3rd argument sets the number of splits that are performed.
+
+
+def splitx(str, pat, maxsplit = 0):
+	return intsplit(str, pat, maxsplit, 1)
+	
+# Internal function used to implement split() and splitx().
+
+def intsplit(str, pat, maxsplit, retain):
 	prog = compile(pat)
 	res = []
 	start = next = 0
+	splitcount = 0
 	while prog.search(str, next) >= 0:
 		regs = prog.regs
 		a, b = regs[0]
@@ -69,6 +86,9 @@ def split(str, pat, retain = 0):
 			if retain:
 				res.append(str[a:b])
 			start = next = b
+			splitcount = splitcount + 1
+			if (maxsplit and (splitcount >= maxsplit)):
+			    break
 	res.append(str[start:])
 	return res
 
