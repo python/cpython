@@ -53,11 +53,11 @@ class Readcd():
 
 	def pmsf2msf(self, track, min, sec, frame):
 		if not self.status:
-			self.status = self.player.getstatus()
-		if not self.trackinfo:
-			dummy = self.gettrackinfo()
+			self.cachestatus()
 		if track < self.status[5] or track > self.status[6]:
 			raise Error, 'track number out of range'
+		if not self.trackinfo:
+			self.cacheinfo()
 		start, total = self.trackinfo[track]
 		start = ((start[0] * 60) + start[1]) * 75 + start[2]
 		total = ((total[0] * 60) + total[1]) * 75 + total[2]
@@ -77,7 +77,7 @@ class Readcd():
 				
 	def appendstretch(self, start, end):
 		if not self.status:
-			self.status = self.player.getstatus()
+			self.cachestatus()
 		if not start:
 			start = 1
 		if not end:
@@ -149,13 +149,9 @@ class Readcd():
 
 	def gettrackinfo(self, *arg):
 		if not self.status:
-			self.status = self.player.getstatus()
+			self.cachestatus()
 		if not self.trackinfo:
-			self.trackinfo = []
-			for i in range(self.status[5]):
-				self.trackinfo.append(None)
-			for i in range(self.status[5], self.status[6]+1):
-				self.trackinfo.append(self.player.gettrackinfo(i))
+			self.cacheinfo()
 		if len(arg) == 0:
 			return self.trackinfo[self.status[5]:self.status[6]+1]
 		result = []
@@ -165,13 +161,27 @@ class Readcd():
 			result.append(self.trackinfo[i])
 		return result
 
-	def getstatus(self):
+	def cacheinfo(self):
+		if not self.status:
+			self.cachestatus()
+		self.trackinfo = []
+		for i in range(self.status[5]):
+			self.trackinfo.append(None)
+		for i in range(self.status[5], self.status[6]+1):
+			self.trackinfo.append(self.player.gettrackinfo(i))
+
+	def cachestatus(self):
 		self.status = self.player.getstatus()
-		return self.status
+		if self.status[0] == CD.NODISK:
+			self.status = None
+			raise Error, 'no disk in player'
+
+	def getstatus(self):
+		return self.player.getstatus()
 
 	def play(self):
 		if not self.status:
-			self.status = self.player.getstatus()
+			self.cachestatus()
 		size = self.player.bestreadsize()
 		self.listindex = 0
 		self.playing = 0
