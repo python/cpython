@@ -63,24 +63,8 @@ categorized syntactically as atoms.  The syntax for atoms is:
 \index{name}
 \index{identifier}
 
-An identifier occurring as an atom is a reference to a local, global
-or built-in name binding.  If a name is assigned to anywhere in a code
-block (even in unreachable code), and is not mentioned in a
-\keyword{global} statement in that code block, then it refers to a local
-name throughout that code block.  When it is not assigned to anywhere
-in the block, or when it is assigned to but also explicitly listed in
-a \keyword{global} statement, it refers to a global name if one exists,
-else to a built-in name (and this binding may dynamically
-change).\footnote{The Python interpreter provides a useful set of
-  predefined built-in functions.  It is not recommended to reuse
-  (hide) these names with self defined objects.  See the
-  \citetitle[../lib/built-in-funcs.html]{Python Library Reference} for
-  the descriptions of built-in functions and methods.}
-\indexii{name}{binding}
-\index{code block}
-\stindex{global}
-\indexii{built-in}{name}
-\indexii{global}{name}
+An identifier occurring as an atom is a name.  See Section 4.1 for
+documentation of naming and binding.
 
 When the name is bound to an object, evaluation of the atom yields
 that object.  When a name is not bound, an attempt to evaluate it
