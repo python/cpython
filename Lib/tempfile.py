@@ -351,7 +351,7 @@ class _TemporaryFileWrapper:
     def __init__(self, file, name):
         self.file = file
         self.name = name
-        self.close_called = 0
+        self.close_called = False
 
     def __getattr__(self, name):
         file = self.__dict__['file']
@@ -374,7 +374,7 @@ class _TemporaryFileWrapper:
 
         def close(self):
             if not self.close_called:
-                self.close_called = 1
+                self.close_called = True
                 self.file.close()
                 self.unlink(self.name)
 
