@@ -268,7 +268,18 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
 	if shortname[-4:] == '.app':
 		# Strip the .app suffix
 		shortname = shortname[:-4]
-	plistname = shortname + '.plist'
+	# And deduce the .plist and .icns names
+	plistname = None
+	icnsname = None
+	if rsrcname and rsrcname[-5:] == '.rsrc':
+		tmp = rsrcname[:-5]
+		plistname = tmp + '.plist'
+		if os.path.exists(plistname):
+			icnsname = tmp + '.icns'
+			if not os.path.exists(icnsname):
+				icnsname = None
+		else:
+			plistname = None
 	# Start with copying the .app framework
 	if not is_update:
 		exceptlist = ["Contents/Info.plist", 
@@ -277,11 +288,18 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
 				]
 		copyapptree(template, destname, exceptlist)
 	# Now either use the .plist file or the default
-	if plistname and os.path.exists(plistname):
+	if plistname:
 		shutil.copy2(plistname, os.path.join(destname, 'Contents/Info.plist'))
-		# XXXX Wrong. This should be parsed from plist file
-		# icnsname = 'PythonApplet.icns'
-		ownertype = 'PytA'
+		if icnsname:
+			icnsdest = os.path.split(icnsname)[1]
+			icnsdest = os.path.join(destname, 
+				os.path.join('Contents/Resources', icnsdest))
+			shutil.copy2(icnsname, icnsdest)
+		# XXXX Wrong. This should be parsed from plist file. Also a big hack:-)
+		if shortname == 'PythonIDE':
+			ownertype = 'Pide'
+		else:
+			ownertype = 'PytA'
 		# XXXX Should copy .icns file
 	else:
 		plistname = os.path.join(template, 'Contents/Resources/Applet-Info.plist')
