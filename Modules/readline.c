@@ -574,7 +574,9 @@ setup_readline(void)
 	rl_completer_word_break_characters =
 		strdup(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?");
 		/* All nonalphanums except '.' */
+#ifdef HAVE_RL_COMPLETION_APPEND_CHARACTER
 	rl_completion_append_character ='\0';
+#endif
 
 	begidx = PyInt_FromLong(0L);
 	endidx = PyInt_FromLong(0L);
@@ -626,7 +628,9 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
         if (sys_stdin != rl_instream || sys_stdout != rl_outstream) {
                 rl_instream = sys_stdin;
                 rl_outstream = sys_stdout;
+#ifdef HAVE_RL_COMPLETION_APPEND_CHARACTER
                 rl_prep_terminal (1);
+#endif
         }
         
 	p = readline(prompt);
