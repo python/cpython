@@ -1,7 +1,7 @@
 This is Python release 1.4 beta 2
 =================================
 
-It's a beta release.  Only use this if you want to help me iron the
+It's a beta release.   Use this only if you want to help me iron the
 last wrinkles out of the distribution before I release the real 1.4
 release.  In particular, I'm interested in porting experiences to Unix
 boxes.  It should build out of the box using "./configure; make".
@@ -9,24 +9,12 @@ Also try running configue with the --with-thread and --with-readline
 options (described below).
 
 
-What's new since 1.4 beta 1?
-----------------------------
+What's new in this release?
+---------------------------
 
-- New modules: errno, operator
-
-- Changes for Numerical Python: slice and ellipses objects, and
-corresponding syntax:
-
-	- x[lo:hi:stride]
-	- x[a, ..., z]
-
-XXX
-
-
-What's new since Python release 1.3?
-------------------------------------
-
-See the Misc/NEWS file.
+A list of things that changed since 1.4 beta 1 can be found in
+Misc/NEWS.  This file will eventually be updated to also list what's
+new since to 1.3.
 
 
 What is Python anyway?
@@ -66,14 +54,11 @@ A modest plug
 
 *************************************************************************
 *                                                                       *
-*     Python exists, and is free, thanks to the contributed efforts     *
-*     of many people.  The PSA was created to maximize the results      *
-*     of those efforts, by helping to coordinate them.  The PSA         *
-*     operates web, ftp and email servers, organizes Python             *
-*     workshops, and engages in other activities that benefit the       *
-*     Python user community.  The PSA is seeking support for these      *
-*     activities.  See this URL for information on how to join:         *
-*     http://www.python.org/psa/Joining.html                            *
+*     If you use Python, please consider joining the Python Software    *
+*     Activity (PSA).  See http://www.python.org/psa/.                  *
+*                                                                       *
+*     Organizations making heavy use of Python are especially invited   *
+*     to become corporate members!                                      *
 *                                                                       *
 *************************************************************************
 
@@ -198,15 +183,18 @@ which test failed.
 Installing
 ----------
 
+XXX TO be rewritten for new install procedure.
+
 To install the interpreter as /usr/local/bin/python, type "make
-install".  To install the library as /usr/local/lib/python, type "make
-libinstall".  To install the manual page as
+bininstall".  To install the library as /usr/local/lib/python, type
+"make libinstall".  To install the manual page as
 /usr/local/man/man1/python.1, type "make maninstall".  To install the
 Emacs editing mode for Python, manually copy the file
 Misc/python-mode.el to your local Emacs lisp directory.  The directory
 /usr/local can be overridden at configuration time by passing
 --prefix=DIRECTORY to the configure script, or at make time by passing
-"prefix=DIRECTORY" to make.  See below for more information on --prefix.
+"prefix=DIRECTORY" to make.  See below for more information on
+--prefix.
 
 If you plan to do development of extension modules or to embed Python
 in another application and don't want to reference the original source
@@ -324,16 +312,6 @@ all object files by running "make clean" before rebuilding.
 	directory.
 
 
-Extensions
-----------
-
-You can also build an "extended" interpreter, using modules that are
-not contained in the Modules directory.  See the manual titled
-"Extending and Embedding the Python Interpreter" (Doc/ext.tex) for
-more details on writing an extension or building an existing
-extension.
-
-
 Building for multiple architectures (using the VPATH feature)
 -------------------------------------------------------------
 
@@ -374,6 +352,8 @@ however this assumes that you only need to add modules.)
 
 Building on non-UNIX systems
 ----------------------------
+
+XXX Rewrite -- nothing in this chapter is true any more.
 
 On non-UNIX systems, you will have to fake the effect of running the
 configure script manually.  A good start is to copy the file
@@ -455,20 +435,27 @@ Before posting, read the FAQ (file Misc/FAQ) first to see if your
 problem has already been answered!
 
 
+Web site
+--------
+
+Python's own web site has URL http://www.python.org/.  Come visit us!
+
+
 Ftp access
 ----------
 
-Python's "home ftp site" is ftp.python.org, directory /pub/python.
-See the FAQ (file Misc/FAQ) for a list of other ftp sites carrying the
+Python's own ftp site is ftp.python.org, directory /pub/python.  See
+the FAQ (file Misc/FAQ) for a list of other ftp sites carrying the
 Python distribution.
 
 
 Newsgroup and mailing list
 --------------------------
 
-There are a newsgroup and a mailing list devoted to Python
-programming, design and bugs.  The newsgroup, comp.lang.python,
-contains exactly the same messages as the mailing list.  To subscribe
+There are a newsgroup and a mailing list devoted to Python.  The
+newsgroup, comp.lang.python, contains exactly the same messages as the
+mailing list (though not always in the same order, due to the
+mysterious nature of Usenet news' flooding algorithms).  To subscribe
 to the mailing list, send mail containing your real name and e-mail
 address to "python-list-request@cwi.nl" (a real person reads these
 messages, so no LISTPROC or Majordomo commands, please).
@@ -476,6 +463,8 @@ messages, so no LISTPROC or Majordomo commands, please).
 
 The Tk interface
 ----------------
+
+XXX To be rewritten in the light of _tkinter and Tk 4.1.
 
 Tk (the user interface component of John Ousterhout's Tcl language) is
 also usable from Python.  Since this requires that you first build and
@@ -518,10 +507,11 @@ to get Tcl/Tk.
 Distribution structure
 ----------------------
 
+XXX To be redone!
+
 Most subdirectories have their own README file.  Most files have
 comments.
 
-Contrib/	Interesting or useful Python code contributed by others
 Demo/		Demonstration scripts, modules and programs
 Doc/		Documentation (LaTeX sources)
 Grammar/	Input for the parser generator
@@ -558,10 +548,10 @@ Author's address
 Guido van Rossum
 CNRI
 1895 Preston White Drive
-Reston, VA 22094
+Reston, VA 20191
 USA
 
-E-mail: guido@python.org
+E-mail: guido@cnri.reston.va.or or guido@python.org
 
 
 
