@@ -93,7 +93,7 @@ MAKESETUP=	$(srcdir)/makesetup
 
 OBJS=		$(MODOBJS)
 
-ADDOBJS=	main.o config.o getpath.o
+ADDOBJS=	main.o config.o getpath.o getbuildinfo.o
 
 LIB=		libModules.a
 
@@ -120,10 +120,17 @@ $(LIB):		$& $(OBJS) Makefile
 		$(AR) cr $(LIB) $(OBJS)
 		$(RANLIB) $(LIB)
 
-../python:	$(MYLIBS) $(ADDOBJS) Makefile
+../python:	$(MYLIBS) $(ADDOBJS) Makefile buildno
+		expr `cat buildno` + 1 >@buildno
+		mv @buildno buildno
+		$(CC) -c $(CFLAGS) -DBUILD=`cat buildno` $(srcdir)/getbuildinfo.c
+		$(AR) r $(LIB) getbuildinfo.o
 		$(LINKCC) $(LDFLAGS) $(OPT) $(LINKFORSHARED) $(ADDOBJS) \
 		      $(MYLIBS) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python
 		mv python ../python
+
+buildno:
+		echo 0 >buildno
 
 clean:
 		-rm -f *.o python core *~ [@,#]* *.old *.orig *.rej
