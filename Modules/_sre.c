@@ -24,7 +24,8 @@
  * 2000-10-24 fl  really fixed assert_not; reset groups in findall
  * 2000-12-21 fl  fixed memory leak in groupdict
  * 2001-01-02 fl  properly reset pointer after failed assertion in MIN_UNTIL
- * 2001-01-15 fl  don't use recursion for unbounded MIN_UTIL
+ * 2001-01-15 fl  don't use recursion for unbounded MIN_UTIL; fixed
+ * 2001-01-16 fl  fixed memory leak in pattern destructor
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
@@ -1234,8 +1235,10 @@ _compile(PyObject* self_, PyObject* args)
 
     Py_DECREF(code);
 
-    if (PyErr_Occurred())
+    if (PyErr_Occurred()) {
+        PyObject_DEL(self);
         return NULL;
+    }
 
     Py_INCREF(pattern);
     self->pattern = pattern;
@@ -1532,6 +1535,7 @@ pattern_dealloc(PatternObject* self)
 {
     Py_XDECREF(self->pattern);
     Py_XDECREF(self->groupindex);
+    Py_XDECREF(self->indexgroup);
     PyObject_DEL(self);
 }
 
