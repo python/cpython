@@ -122,7 +122,8 @@ def setup (**attrs):
             
         except (DistutilsExecError,
                 DistutilsFileError,
-                DistutilsOptionError), msg:
+                DistutilsOptionError,
+                CCompilerError), msg:
             if DEBUG:
                 raise
             else:
