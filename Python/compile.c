@@ -1878,7 +1878,7 @@ compile(n, filename)
 	else
 		co = NULL;
 	com_free(&sc);
-	if (co != NULL)
+	if (co != NULL && filename[0] != '<')
 		optimizer(co);
 	return co;
 }
