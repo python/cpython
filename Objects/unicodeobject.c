@@ -6883,20 +6883,15 @@ PyObject *PyUnicode_Format(PyObject *format,
 		else {
 		    PyObject *unicode;
 		    if (c == 's')
-			temp = PyObject_Str(v);
+			temp = PyObject_Unicode(v);
 		    else
 			temp = PyObject_Repr(v);
 		    if (temp == NULL)
 			goto onError;
-		    if (!PyString_Check(temp)) {
-			/* XXX Note: this should never happen, since
-   			       PyObject_Repr() and PyObject_Str() assure
-			       this */
-			Py_DECREF(temp);
-			PyErr_SetString(PyExc_TypeError,
-					"%s argument has non-string str()");
-			goto onError;
-		    }
+                    if (PyUnicode_Check(temp))
+                        /* nothing to do */;
+                    else if (PyString_Check(temp)) {
+                        /* convert to string to Unicode */
 		    unicode = PyUnicode_Decode(PyString_AS_STRING(temp),
 						   PyString_GET_SIZE(temp),
 					       NULL,
@@ -6905,6 +6900,13 @@ PyObject *PyUnicode_Format(PyObject *format,
 		    temp = unicode;
 		    if (temp == NULL)
 			goto onError;
+		}
+		    else {
+			Py_DECREF(temp);
+			PyErr_SetString(PyExc_TypeError,
+					"%s argument has non-string str()");
+			goto onError;
+		    }
 		}
 		pbuf = PyUnicode_AS_UNICODE(temp);
 		len = PyUnicode_GET_SIZE(temp);
