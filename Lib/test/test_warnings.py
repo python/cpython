@@ -8,7 +8,7 @@ _filters = []
 _showwarning = None
 
 def showwarning(message, category, filename, lineno, file=None):
-    i = filename.find("Lib/")
+    i = filename.find("Lib")
     filename = filename[i:]
     print "%s:%s: %s: %s" % (filename, lineno, category.__name__, message)
 
