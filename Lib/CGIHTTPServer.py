@@ -182,6 +182,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             for k in ('QUERY_STRING', 'REMOTE_HOST', 'CONTENT_LENGTH',
                       'HTTP_USER_AGENT', 'HTTP_COOKIE'):
                 env.setdefault(k, "")
+        os.environ.update(env)
 
         self.send_response(200, "Script output follows")
 
@@ -221,7 +222,6 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 popenx = os.popen3
             else:
                 popenx = os.popen2
-            os.environ.update(env)
             cmdline = scriptfile
             if self.is_python(scriptfile):
                 interp = sys.executable
@@ -259,7 +259,6 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         else:
             # Other O.S. -- execute script in this process
-            os.environ.update(env)
             save_argv = sys.argv
             save_stdin = sys.stdin
             save_stdout = sys.stdout
