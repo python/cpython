@@ -90,6 +90,8 @@ sub do_cmd_textasciicircum{ '^' . @_[0]; }
 sub do_cmd_textbar{ '|' . @_[0]; }
 sub do_cmd_infinity{ '&infin;' . @_[0]; }
 sub do_cmd_plusminus{ '&plusmn;' . @_[0]; }
+sub do_cmd_menuselection{ @_[0]; }
+sub do_cmd_sub{ ' > ' . @_[0]; }
 
 
 # words typeset in a special way (not in HTML though)
@@ -322,6 +324,13 @@ sub do_cmd_rfc{
     $index{$nstr} .= make_half_href("$CURRENT_FILE#$id");
     return ("<a class=\"rfc\" name=\"$id\"\nhref=\"$href\">RFC $rfcnumber"
             . "$icon</a>" . $_);
+}
+
+sub do_cmd_ulink{
+    local($_) = @_;
+    my $text = next_argument();
+    my $url = next_argument();
+    return "<a class=\"ulink\" href=\"$url\"\n  >$text</a>" . $_;
 }
 
 sub do_cmd_citetitle{
@@ -681,6 +690,135 @@ sub make_str_index_entry{
     add_index_entry($str, $ahref);
     return "$aname$str</a>";
 }
+
+
+%TokenToTargetMapping = ();
+%DefinedGrammars = ();
+%BackpatchGrammarFiles = ();
+
+sub do_cmd_token{
+    local($_) = @_;
+    my $token = next_argument();
+    my $target = $TokenToTargetMapping{"$CURRENT_GRAMMAR:$token"};
+    if ($token eq $CURRENT_TOKEN || $CURRENT_GRAMMAR eq '*') {
+        # recursive definition or display-only productionlist
+        return "$token";
+    }
+    if ($target eq '') {
+        $target = "<pyGrammarToken><$CURRENT_GRAMMAR><$token>";
+        if (! $BackpatchGrammarFiles{"$CURRENT_FILE"}) {
+            print "Adding '$CURRENT_FILE' to back-patch list.\n";
+        }
+        $BackpatchGrammarFiles{"$CURRENT_FILE"} = 1;
+    }
+    return "<a href=\"$target\">$token</a>" . $_;
+}
+
+sub do_env_productionlist{
+    local($_) = @_;
+    my $lang = next_optional_argument();
+    my $filename = "grammar-$lang.txt";
+    if ($lang eq '') {
+        $filename = 'grammar.txt';
+    }
+    local($CURRENT_GRAMMAR) = $lang;
+    $DefinedGrammars{$lang} .= $_;
+    return ("<dl><dd class=\"grammar\">\n"
+            . "<div class=\"productions\">\n"
+            . "<table cellpadding=\"2\" valign=\"baseline\">\n"
+            . translate_commands(translate_environments($_))
+            . "</table>\n"
+            . "</div>\n"
+            . (($lang eq '*')
+               ? ''
+               : ("<a class=\"grammar-footer\"\n"
+                  . "  href=\"$filename\" type=\"text/plain\"\n"
+                  . "  >Download entire grammar as text.</a>\n"))
+            . "</dd></dl>");
+}
+
+sub do_cmd_production{
+    local($_) = @_;
+    my $token = next_argument();
+    my $defn = next_argument();
+    my $lang = $CURRENT_GRAMMAR;
+    local($CURRENT_TOKEN) = $token;
+    if ($lang eq '*') {
+        return ("<tr>\n"
+                . "    <td><code>$token</code></td>\n"
+                . "    <td>&nbsp;::=&nbsp;</td>\n"
+                . "    <td><code>"
+                . translate_commands($defn)
+                . "</code></td></tr>"
+                . $_);
+    }
+    my $target;
+    if ($lang eq '') {
+        $target = "$CURRENT_FILE\#tok-$token";
+    }
+    else {
+        $target = "$CURRENT_FILE\#tok-$lang-$token";
+    }
+    $TokenToTargetMapping{"$CURRENT_GRAMMAR:$token"} = $target;
+    return ("<tr>\n"
+            . "    <td><code><a name=\"tok-$token\">$token</a></code></td>\n"
+            . "    <td>&nbsp;::=&nbsp;</td>\n"
+            . "    <td><code>"
+            . translate_commands($defn)
+            . "</code></td></tr>"
+            . $_);
+}
+
+sub process_grammar_files{
+    my $lang;
+    my $filename;
+    local($_);
+    print "process_grammar_files()\n";
+    foreach $lang (keys %DefinedGrammars) {
+        $filename = "grammar-$lang.txt";
+        if ($lang eq '*') {
+            next;
+        }
+        if ($lang eq '') {
+            $filename = 'grammar.txt';
+        }
+        open(GRAMMAR, ">$filename") || die "\n$!\n";
+        print GRAMMAR strip_grammar_markup($DefinedGrammars{$lang});
+        close(GRAMMAR);
+        print "Wrote grammar file $filename\n";
+    }
+    my $PATTERN = '<pyGrammarToken><([^>]*)><([^>]*)>';
+    foreach $filename (keys %BackpatchGrammarFiles) {
+        print "\nBack-patching grammar links in $filename\n";
+        my $buffer;
+        open(GRAMMAR, "<$filename") || die "\n$!\n";
+        # read all of the file into the buffer
+        sysread(GRAMMAR, $buffer, 1024*1024);
+        close(GRAMMAR);
+        while ($buffer =~ /$PATTERN/) {
+            my($lang, $token) = ($1, $2);
+            my $target = $TokenToTargetMapping{"$lang:$token"};
+            my $source = "<pyGrammarToken><$lang><$token>";
+            $buffer =~ s/$source/$target/g;
+        }
+        open(GRAMMAR, ">$filename") || die "\n$!\n";
+        print GRAMMAR $buffer;
+        close(GRAMMAR);
+    }
+}
+
+sub strip_grammar_markup{
+    local($_) = @_;
+    s/\\production(<<\d+>>)(.+)\1/\n\2 ::= /g;
+    s/\\token(<<\d+>>)(.+)\1/\2/g;
+    s/\\e([^a-zA-Z])/\\\1/g;
+    s/<<\d+>>//g;
+    s/;SPMgt;/>/g;
+    s/;SPMlt;/</g;
+    s/;SPMquot;/\"/g;
+    return $_;
+}
+
 
 $REFCOUNTS_LOADED = 0;
 
@@ -1490,6 +1628,7 @@ sub process_localmoduletables_in_file{
 }
 sub process_python_state{
     process_all_localmoduletables();
+    process_grammar_files();
 }
 
 
@@ -1685,10 +1824,17 @@ sub do_cmd_verbatiminput{
         $file = "$texpath$dd$fname";
         last if ($found = (-f $file));
     }
+    my $srcname;
     my $text;
     if ($found) {
         open(MYFILE, "<$file") || die "\n$!\n";
         read(MYFILE, $text, 1024*1024);
+        close(MYFILE);
+        use File::Basename;
+        my $srcdir, $srcext;
+        ($srcname, $srcdir, $srcext) = fileparse($file, '\..*');
+        open(MYFILE, ">$srcname.txt");
+        print MYFILE $text;
         close(MYFILE);
         #
         # These rewrites convert the raw text to something that will
@@ -1715,9 +1861,12 @@ sub do_cmd_verbatiminput{
     else {
         $text = '<b>Could not locate requested file <i>$fname</i>!</b>\n';
     }
-    return ($alltt_start
+    return ('<dl><dd><pre class="verbatim">'
             . $text
-            . $alltt_end
+            . "</pre>\n<div class=\"verbatiminput-footer\">\n"
+            . "<a href=\"$srcname.txt\" type=\"text/plain\""
+            . ">Download as text.</a>"
+            . "\n</div>\n</dd></dl>"
             . $_);
 }
 
