@@ -163,7 +163,10 @@ def _exit(code='0'):
 
 _varnum = 0
 class Variable:
-    """Internal class. Base class to define value holders for e.g. buttons."""
+    """Class to define value holders for e.g. buttons.
+
+    Subclasses StringVar, IntVar, DoubleVar, BooleanVar are specializations
+    that constrain the type of the value returned from get()."""
     _default = ""
     def __init__(self, master=None):
         """Construct a variable with an optional MASTER as master widget.
@@ -186,6 +189,9 @@ class Variable:
     def set(self, value):
         """Set the variable to VALUE."""
         return self._tk.globalsetvar(self._name, value)
+    def get(self):
+        """Return value of variable."""
+        return self._tk.globalgetvar(self._name)
     def trace_variable(self, mode, callback):
         """Define a trace callback for the variable.
 
