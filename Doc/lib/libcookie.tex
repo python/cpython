@@ -46,6 +46,7 @@ This class derives from \class{BaseCookie} and overrides
 cookie data is a huge security hole, as pickle strings can be crafted
 to cause arbitrary code to execute on your server.  It is supported
 for backwards compatibility only, and may eventually go away.
+\deprecated{2.3}
 \end{classdesc}
 
 \begin{classdesc}{SmartCookie}{\optional{input}}
@@ -57,6 +58,7 @@ string, in which case it returns the value itself.
 
 \strong{Note:} The same security warning from \class{SerialCookie}
 applies here.
+\deprecated{2.3}
 \end{classdesc}
 
 A further security note is warranted.  For backwards compatibility,
