@@ -1645,7 +1645,9 @@ type:
   Type of the visitor function passed to the \member{tp_traverse}
   handler.  The function should be called with an object to traverse
   as \var{object} and the third parameter to the \member{tp_traverse}
-  handler as \var{arg}.
+  handler as \var{arg}.  The Python core uses several visitor functions
+  to implement cyclic garbage detection; it's not expected that users will
+  need to write their own visitor functions.
 \end{ctypedesc}
 
 The \member{tp_traverse} handler must have the following type:
@@ -1655,8 +1657,9 @@ The \member{tp_traverse} handler must have the following type:
   Traversal function for a container object.  Implementations must
   call the \var{visit} function for each object directly contained by
   \var{self}, with the parameters to \var{visit} being the contained
-  object and the \var{arg} value passed to the handler.  If
-  \var{visit} returns a non-zero value then an error has occurred and
+  object and the \var{arg} value passed to the handler.  The \var{visit}
+  function must not be called with a \NULL{} object argument.  If
+  \var{visit} returns a non-zero value
   that value should be returned immediately.
 \end{ctypedesc}
 
