@@ -53,7 +53,8 @@ individual descriptions below.
 
 
 \begin{methoddesc}{read_until}{expected\optional{, timeout}}
-Read until a given string is encountered or until timeout.
+Read until a given string, \var{expected}, is encountered or until
+\var{timeout} seconds have passed.
 
 When no match is found, return whatever is available instead,
 possibly the empty string.  Raise \exception{EOFError} if the connection
