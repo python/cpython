@@ -80,3 +80,10 @@ test''', [('', ''),
           ('', 'dd47@mail.xxx.edu'),
           ('', '_at_hmhq@hdq-mdm1-imgout.companay.com')
           ])
+
+# This exercises the old commas-in-a-full-name bug, which should be doing the
+# right thing in recent versions of the module.
+test('''To: "last, first" <userid@foo.net>
+
+test''', [('last, first', 'userid@foo.net'),
+          ])
