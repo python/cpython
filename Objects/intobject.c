@@ -358,14 +358,41 @@ int_mul(PyObject *v, PyObject *w)
 	double doubleprod;		/* (double)a * (double)b */
 
 	if (USE_SQ_REPEAT(v)) {
+	  repeat:
 		/* sequence * int */
 		a = PyInt_AsLong(w);
+#if LONG_MAX != INT_MAX
+		if (a > INT_MAX) {
+			PyErr_SetString(PyExc_ValueError,
+					"sequence repeat count too large");
+			return NULL;
+		}
+		else if (a < INT_MIN)
+			a = INT_MIN;
+		/* XXX Why don't I either
+
+		   - set a to -1 whenever it's negative (after all,
+		     sequence repeat usually treats negative numbers
+		     as zero(); or
+
+		   - raise an exception when it's less than INT_MIN?
+
+		   I'm thinking about a hypothetical use case where some
+		   sequence type might use a negative value as a flag of
+		   some kind.  In those cases I don't want to break the
+		   code by mapping all negative values to -1.  But I also
+		   don't want to break e.g. []*(-sys.maxint), which is
+		   perfectly safe, returning [].  As a compromise, I do
+		   map out-of-range negative values.
+		*/
+#endif
 		return (*v->ob_type->tp_as_sequence->sq_repeat)(v, a);
 	}
 	if (USE_SQ_REPEAT(w)) {
-		/* int * sequence */
-		a = PyInt_AsLong(v);
-		return (*w->ob_type->tp_as_sequence->sq_repeat)(w, a);
+		PyObject *tmp = v;
+		v = w;
+		w = tmp;
+		goto repeat;
 	}
 
 	CONVERT_TO_LONG(v, a);
