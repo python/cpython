@@ -1,6 +1,5 @@
 # -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
 #
-# Id: tixwidgets.py,v 1.7 2002/11/14 02:44:08 nnorwitz Exp
 # $Id$
 #
 # tixwidgets.py --
@@ -545,11 +544,7 @@ def MkSWindow(w):
 
     win = Tix.ScrolledWindow(top, scrollbar='auto')
 
-    global image1
-    # This image is not showing up in the Label unless it is set to a
-    # global variable - no problem under Tcl/Tix. It is being
-    # garbage collected at the end of this proecedure if not global
-    image1 = Tix.Image('photo', file=file)
+    image1 = win.window.image_create('photo', file=file)
     lbl = Tix.Label(win.window, image=image1)
     lbl.pack(expand=1, fill=Tix.BOTH)
 
