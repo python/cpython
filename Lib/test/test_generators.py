@@ -444,15 +444,15 @@ Subject: Re: PEP 255: Simple Generators
 >>> roots = sets[:]
 
 >>> import random
->>> random.seed(42)
+>>> gen = random.WichmannHill(42)
 >>> while 1:
 ...     for s in sets:
 ...         print "%s->%s" % (s, s.find()),
 ...     print
 ...     if len(roots) > 1:
-...         s1 = random.choice(roots)
+...         s1 = gen.choice(roots)
 ...         roots.remove(s1)
-...         s2 = random.choice(roots)
+...         s2 = gen.choice(roots)
 ...         s1.union(s2)
 ...         print "merged", s1, "into", s2
 ...     else:
