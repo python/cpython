@@ -29,12 +29,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 /* Regular expression objects */
-/* This uses GNU regex.c, from subdirectory regex !!! */
+/* This uses Tatu Ylonen's copyleft-free reimplementation of
+   GNU regular expressions */
 
 #include "allobjects.h"
 #include "modsupport.h"
 
-#include "regex.h"
+#include "regexpr.h"
 
 static object *RegexError;	/* Exception */	
 
