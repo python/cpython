@@ -120,6 +120,10 @@ function:
     profile.run("foo()", 'fooprof')
 \end{verbatim}
 
+\code{profile.py} can also be invoked as
+a script to profile another script.  For example:
+\code{python /usr/local/lib/python1.4/profile.py myscript.py}
+
 When you wish to review the profile, you should use the methods in the
 \code{pstats} module.  Typically you would load the statistics data as
 follows:
