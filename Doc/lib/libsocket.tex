@@ -480,6 +480,10 @@ This was never intentional and is no longer be available in Python
 \begin{methoddesc}[socket]{fileno}{}
 Return the socket's file descriptor (a small integer).  This is useful
 with \function{select.select()}.
+
+Under Windows the small integer returned by this method cannot be used where
+a file descriptor can be used (such as \function{os.fdopen()}).  \UNIX{} does
+not have this limitation.
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{getpeername}{}
