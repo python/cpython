@@ -1,23 +1,25 @@
 \section{\module{filecmp} ---
-         File Comparisons}
+         File and Directory Comparisons}
 
 \declaremodule{standard}{filecmp}
 \sectionauthor{Moshe Zadka}{mzadka@geocities.com}
 \modulesynopsis{Compare files efficiently.}
 
-The \module{filecmp} module defines a function to compare files, taking all
-sort of short-cuts to make it a highly efficient operation.
+
+The \module{filecmp} module defines functions to compare files and directories,
+with various optional time/correctness trade-offs.
 
 The \module{filecmp} module defines the following function:
 
 \begin{funcdesc}{cmp}{f1, f2\optional{, shallow\optional{, use_statcache}}}
-Compare the files named \var{f1} and \var{f2}, returning \code{1}
-if they seem equal, \code{0} otherwise.
+Compare the files named \var{f1} and \var{f2}, returning \code{1} if
+they seem equal, \code{0} otherwise.
 
 Unless \var{shallow} is given and is false, files with identical
-\function{os.stat()} signatures are taken to be equal. If
+\function{os.stat()} signatures are taken to be equal.  If
 \var{use_statcache} is given and is true,
-\function{statcache.stat()} will be called rather then \var{os.stat()}.
+\function{statcache.stat()} will be called rather then
+\function{os.stat()}; the default is to use \function{os.stat()}.
 
 Files that were compared using this function will not be compared again
 unless their \function{os.stat()} signature changes. Note that using
@@ -25,8 +27,22 @@ unless their \function{os.stat()} signature changes. Note that using
 fail --- the stale stat value will be used from \refmodule{statcache}'s 
 cache.
 
-Note that no external programs are called from this module giving it
+Note that no external programs are called from this function, giving it
 portability and efficiency.
+\end{funcdesc}
+
+\begin{funcdesc}{cmpfiles}{dir1, dir2, common\optional{,
+                           shallow\optional{, use_statcache}}}
+Returns three lists of file names: \var{match}, \var{mismatch},
+\var{errors}.  \var{match} contains the list of files match in both
+directories, \var{mismatch} includes the names of those that don't,
+and \var{errros} lists the names of files which could not be
+compared.  Files may be listed in \var{errors} because the user may
+lack permission to read them or many other reasons, but always that
+the comparison could not be done for some reason.
+
+The \var{shallow} and \var{use_statcache} parameters have the same
+meanings and default values as for \function{filecmp.cmp()}.
 \end{funcdesc}
 
 Example:
@@ -38,3 +54,85 @@ Example:
 >>> filecmp.cmp('libundoc.tex', 'lib.tex')
 0
 \end{verbatim}
+
+
+\subsection{The \protect\class{dircmp} class \label{dircmp-objects}}
+
+\begin{classdesc}{dircmp}{a, b\optional{, ignore\optional{, hide}}}
+Construct a new directory comparison object, to compare the
+directories \var{a} and \var{b}. \var{ignore} is a list of names to
+ignore, and defaults to \code{['RCS', 'CVS', 'tags']}. \var{hide} is a
+list of names to hid, and defaults to \code{[os.curdir, os.pardir]}.
+\end{classdesc}
+
+\begin{methoddesc}[dircmp]{report}{}
+Print (to \code{sys.stdout}) a comparison between \var{a} and \var{b}.
+\end{methoddesc}
+
+\begin{methoddesc}[dircmp]{report_partial_closure}{}
+Print a comparison between \var{a} and \var{b} and common immediate
+subdirctories.
+\end{methoddesc}
+
+\begin{methoddesc}[dircmp]{report_full_closure}{}
+Print a comparison between \var{a} and \var{b} and common 
+subdirctories (recursively).
+\end{methoddesc}
+
+\begin{memberdesc}[dircmp]{left_list}
+Files and subdirectories in \var{a}, filtered by \var{hide} and
+\var{ignore}.
+\end{memberdesc}
+
+\begin{memberdesc}[dircmp]{right_list}
+Files and subdirectories in \var{b}, filtered by \var{hide} and
+\var{ignore}.
+\end{memberdesc}
+
+\begin{memberdesc}[dircmp]{common}
+Files and subdirectories in both \var{a} and \var{b}.
+\end{memberdesc}
+
+\begin{memberdesc}[dircmp]{left_only}
+Files and subdirectories only in \var{a}.
+\end{memberdesc}
+
+\begin{memberdesc}[dircmp]{right_only}
+Files and subdirectories only in \var{b}.
+\end{memberdesc}
+
+\begin{memberdesc}[dircmp]{common_dirs}
+Subdirectories in both \var{a} and \var{b}.
+\end{memberdesc}
+
+\begin{memberdesc}[dircmp]{common_files}
+Files in both \var{a} and \var{b}
+\end{memberdesc}
+
+\begin{memberdesc}[dircmp]{common_funny}
+Names in both \var{a} and \var{b}, such that the type differs between
+the directories, or names for which \function{os.stat()} reports an
+error.
+\end{memberdesc}
+
+\begin{memberdesc}[dircmp]{same_files}
+Files which are identical in both \var{a} and \var{b}.
+\end{memberdesc}
+
+\begin{memberdesc}[dircmp]{diff_files}
+Files which are in both \var{a} and \var{b}, whose contents differ.
+\end{memberdesc}
+
+\begin{memberdesc}[dircmp]{funny_files}
+Files which are in both \var{a} and \var{b}, but could not be
+compared.
+\end{memberdesc}
+
+\begin{memberdesc}[dircmp]{subdirs}
+A dictionary mapping names in \member{common_dirs} to
+\class{dircmp} objects.
+\end{memberdesc}
+
+Note that via \method{__getattr__()} hooks, all attributes are
+computed lazilly, so there is no speed penalty if only those
+attributes which are lightweight to compute are used.
