@@ -1,19 +1,99 @@
 \chapter{Using Python on a Mac OS 9 Macintosh \label{using}}
 \sectionauthor{Bob Savage}{bobsavage@mac.com}
 
-Using Python on a Mac OS 9 Macintosh can seem like something completely
+Using Python on a Macintosh, especially on Mac OS 9 (MacPython-OSX
+includes a complete unix Python) can seem like something completely
 different than using it on a \UNIX-like or Windows system. Most of the
-Python documentation, both the ``official'' documentation and
-published books, describe only how Python is used on these systems,
-causing confusion for the new user of MacPython-OS9. This chapter gives a
-brief introduction to the specifics of using Python on a Macintosh.
+Python documentation, both the ``official'' documentation and published
+books, describe only how Python is used on these systems, causing
+confusion for the new user of MacPython-OS9. This chapter gives a brief
+introduction to the specifics of using Python on a Macintosh.
 
-Note that this chapter is mainly relevant to Mac OS 9: MacPython-OSX
-is a superset of a normal unix Python. While MacPython-OS9 runs fine
-on Mac OS X it is a better choice to use MacPython-OSX there.
 
 The section on the IDE (see Section \ref{IDE}) is relevant to MacPython-OSX
 too.
+
+\section{Getting and Installing MacPython-OSX \label{getting-OSX}}
+
+As of Python 2.3a2 the only sure way of getting MacPython-OSX on your machine
+is getting a source distribution and building what is called a "framework Python".
+The details are in the file \file{Mac/OSX/README}.
+
+As binary installers become available the details will be posted to
+\url{http://www.cwi.nl/\textasciitilde jack/macpython.html}.
+
+
+What you get after installing is a number of things:
+
+\begin{itemize}
+    \item A \file{MacPython-2.3} folder in your \file{Applications}
+    folder. In here you find the PythonIDE Integrated Development Environment;
+    PythonLauncher, which handles double-clicking Python scripts from the Finder; and
+    the Package Manager.
+    
+    \item A fairly standard unix commandline Python interpreter in
+    \file{/usr/local/bin/python}, but without the usual \file{/usr/local/lib/python}.
+    
+    \item A framework \file{/Library/Frameworks/Python.framework}, where
+    all the action really is, but which you usually do not have to be aware of.
+\end{itemize}
+
+To uninstall MacPython you can simply remove these three things.
+
+PythonIDE contains an Apple Help Viewer book called "MacPython Help"
+which you can access through its help menu. If you are completely new to
+Python you should start reading the IDE introduction in that document.
+
+If you are familiar with Python on other unix platforms you should read the
+section on running Python scripts from the unix shell.
+
+\subsection{How to run a Python script}
+
+Your best way to get started with Python on Mac OS X is through the PythonIDE
+integrated development environment, see section \ref{IDE} and use the Help
+menu when the IDE is running.
+
+If you want to run Python scripts from the Terminal window command line
+or from the Finder you first need an editor to create your script.
+Mac OS X comes with a number of standard unix command line editors,
+\program{vi} and \program{emacs} among them. If you want a more Mac-like
+editor \program{BBEdit} or \program{TextWrangler} from Bare Bones Software
+(see \url{http://www.barebones.com}) are good choices. Their freeware
+\program{BBEdit Lite} is officially discontinued but still available.
+\program{AppleWorks} or any other word processor that can save files
+in ASCII is also a possibility, but \program{TextEdit} is not: it saves in .rtf
+format only.
+
+To run your script from the Terminal window you must make sure that
+\file{/usr/local/bin} is in your shell search path before \file{/usr/bin},
+where the Apple-supplied Python lives (which is version 2.2, as of Mac OS X
+10.2.4). There is one Mac OS X quirk that you need to be aware of: programs
+that talk to the window manager (in other words, anything that has a GUI)
+need to be run in a special way. Use \program{pythonw} in stead of \program{python}
+to start such scripts.
+
+To run your script from the Finder you have two options:
+\begin{itemize}
+    \item Drag it to \program{PythonLauncher}
+    \item Select \program{PythonLauncher} as the default application
+    to open your script (or any .py script) through the finder Info window
+    and double-click it.
+\end{itemize}
+
+PythonLauncher has various preferences to control how your script is launched.
+Option-dragging allows you to change these for one invocation, or use its
+Preferences menu to change things globally.
+
+\subsection{configuration}
+
+MacPython honours all standard unix environment variables such as \envvar{PYTHONPATH},
+but setting these variables for programs started from the Finder is non-standard
+as the Finder does not read your \file{.profile} or \file{.cshrc} at startup.
+You need to create a file \file{\textasciitilde /.MacOSX/environment.plist}.
+See Apple's Technical Document QA1067 for details.
+
+Installing additional Python packages is most easily done through the
+Package Manager, see the MacPython Help Book for details.
 
 \section{Getting and Installing MacPython-OS9 \label{getting}}
 
@@ -21,12 +101,16 @@ The most recent release version as well as possible newer experimental
 versions are best found at the MacPython page maintained by Jack
 Jansen: \url{http://www.cwi.nl/\textasciitilde jack/macpython.html}.
 
-
 Please refer to the \file{README} included with your distribution for
 the most up-to-date instructions.
 
+Note that MacPython-OS9 runs fine on Mac OS X, and it runs in native
+mode, not in the Classic environment. Unless you have specific
+requirements for a CFM-based Python there is no reason not to
+use MacPython-OSX, though.
 
-\section{Entering the interactive Interpreter
+
+\subsection{Entering the interactive Interpreter
          \label{interpreter}}
 
 The interactive interpreter that you will see used in Python
@@ -37,7 +121,7 @@ falling. You should see the version information and the
 standard documentation.
 
 
-\section{How to run a Python script}
+\subsection{How to run a Python script}
 
 There are several ways to run an existing Python script; two common
 ways to run a Python script are ``drag and drop'' and ``double
@@ -45,7 +129,7 @@ clicking''.  Other ways include running it from within the IDE (see
 Section \ref{IDE}), or launching via AppleScript.
 
 
-\subsection{Drag and drop}
+\subsubsection{Drag and drop}
 
 One of the easiest ways to launch a Python script is via ``Drag and
 Drop''. This is just like launching a text file in the Finder by
@@ -74,7 +158,7 @@ section \ref{creator-code} for more details.
 \end{itemize}
 
 
-\subsection{Set Creator and Double Click \label{creator-code}}
+\subsubsection{Set Creator and Double Click \label{creator-code}}
 
 If the script that you want to launch has the appropriate Creator Code
 and File Type you can simply double-click on the script to launch it.
@@ -111,7 +195,7 @@ Navigate into the folder of files you want to fix, and press the
 \end{enumerate}
 
 
-\section{Simulating command line arguments
+\subsection{Simulating command line arguments
          \label{argv}}
 
 There are two ways to simulate command-line arguments with MacPython-OS9.
@@ -139,14 +223,14 @@ applet.
 \end{enumerate}
 
 
-\section{Creating a Python script}
+\subsection{Creating a Python script}
 
 Since Python scripts are simply text files, they can be created in any
 way that text files can be created, but some special tools also exist
 with extra features.
 
 
-\subsection{In an editor}
+\subsubsection{In an editor}
 
 You can create a text file with any word processing program such as
 \program{MSWord} or \program{AppleWorks} but you need to make sure
@@ -190,6 +274,82 @@ you can simply double click on the saved file to launch it.
 %\subsubsection{Pepper}
 % **NEED INFO HERE**
 
+\subsection{Configuration \label{configuration}}
+
+The MacPython distribution comes with \program{EditPythonPrefs}, an
+applet which will help you to customize the MacPython environment for
+your working habits.
+ 
+\subsubsection{EditPythonPrefs\label{EditPythonPrefs}}
+
+\program{EditPythonPrefs} gives you the capability to configure Python
+to behave the way you want it to.  There are two ways to use
+\program{EditPythonPrefs}, you can use it to set the preferences in
+general, or you can drop a particular Python engine onto it to
+customize only that version. The latter can be handy if, for example,
+you want to have a second copy of the \program{PythonInterpreter} that
+keeps the output window open on a normal exit even though you prefer
+to normally not work that way.
+
+To change the default preferences, simply double-click on
+\program{EditPythonPrefs}. To change the preferences only for one copy
+of the Interpreter, drop the icon for that copy onto
+\program{EditPythonPrefs}.  You can also use \program{EditPythonPrefs}
+in this fashion to set the preferences of the \program{Python IDE} and
+any applets you create -- see section %s \ref{BuildApplet} and
+\ref{IDEapplet}.
+
+\subsubsection{Adding modules to the Module Search Path
+            \label{search-path}}
+
+When executing an \keyword{import} statement, Python looks for modules
+in places defined by the \member{sys.path} To edit the
+\member{sys.path} on a Mac, launch \program{EditPythonPrefs}, and
+enter them into the largish field at the top (one per line).
+
+Since MacPython defines a main Python directory, the easiest thing is
+to add folders to search within the main Python directory. To add a
+folder of scripts that you created called ``My Folder'' located in the
+main Python Folder, enter \samp{\$(PYTHON):My Folder} onto a new line.
+
+To add the Desktop under OS 9 or below, add
+\samp{StartupDriveName:Desktop Folder} on a new line.
+
+\subsubsection{Default startup options \label{defaults}}
+
+% I'm assuming that there exists some other documentation on the
+% rest of the options so I only go over a couple here.
+
+The ``Default startup options...'' button in the
+\program{EditPythonPrefs} dialog box gives you many options including
+the ability to keep the ``Output'' window open after the script
+terminates, and the ability to enter interactive mode after the
+termination of the run script. The latter can be very helpful if you
+want to examine the objects that were created during your script.
+
+%\section{Nifty Tools}
+%There are many other tools included with the MacPython
+%distribution. In addition to those discussed here, make 
+%sure to check the \file{Mac} directory.
+
+%\subsection{BuildApplet \label{BuildApplet}}
+% **NEED INFO HERE**
+
+%\subsection{BuildApplication}
+% **NEED INFO HERE**
+ 
+%\section{TKInter on the Mac \label{TKInter}}
+
+%TKinter is installed by default with the MacPython distribution, but
+%you may need to add the \file{lib-tk} folder to the Python Path (see
+%section \ref{search-path}).  Also, it is important that you do not
+%try to launch Tk from within the \program{Python IDE} because the two
+%event loops will collide -- always run a script which uses Tkinter
+%with the \program{PythonInterpreter} instead -- see section
+%\ref{interpreter}.
+ 
+%\section{CGI on the Mac with Python \label{CGI}}
+%**NEED INFO HERE**
 
 \section{The IDE\label{IDE}}
 
@@ -282,79 +442,3 @@ system without a Python installation.
 %\subsection{The ``Scripts'' menu}
 % **NEED INFO HERE**
  
-\section{Configuration \label{configuration}}
-
-The MacPython distribution comes with \program{EditPythonPrefs}, an
-applet which will help you to customize the MacPython environment for
-your working habits.
- 
-\subsection{EditPythonPrefs\label{EditPythonPrefs}}
-
-\program{EditPythonPrefs} gives you the capability to configure Python
-to behave the way you want it to.  There are two ways to use
-\program{EditPythonPrefs}, you can use it to set the preferences in
-general, or you can drop a particular Python engine onto it to
-customize only that version. The latter can be handy if, for example,
-you want to have a second copy of the \program{PythonInterpreter} that
-keeps the output window open on a normal exit even though you prefer
-to normally not work that way.
-
-To change the default preferences, simply double-click on
-\program{EditPythonPrefs}. To change the preferences only for one copy
-of the Interpreter, drop the icon for that copy onto
-\program{EditPythonPrefs}.  You can also use \program{EditPythonPrefs}
-in this fashion to set the preferences of the \program{Python IDE} and
-any applets you create -- see section %s \ref{BuildApplet} and
-\ref{IDEapplet}.
-
-\subsection{Adding modules to the Module Search Path
-            \label{search-path}}
-
-When executing an \keyword{import} statement, Python looks for modules
-in places defined by the \member{sys.path} To edit the
-\member{sys.path} on a Mac, launch \program{EditPythonPrefs}, and
-enter them into the largish field at the top (one per line).
-
-Since MacPython defines a main Python directory, the easiest thing is
-to add folders to search within the main Python directory. To add a
-folder of scripts that you created called ``My Folder'' located in the
-main Python Folder, enter \samp{\$(PYTHON):My Folder} onto a new line.
-
-To add the Desktop under OS 9 or below, add
-\samp{StartupDriveName:Desktop Folder} on a new line.
-
-\subsection{Default startup options \label{defaults}}
-
-% I'm assuming that there exists some other documentation on the
-% rest of the options so I only go over a couple here.
-
-The ``Default startup options...'' button in the
-\program{EditPythonPrefs} dialog box gives you many options including
-the ability to keep the ``Output'' window open after the script
-terminates, and the ability to enter interactive mode after the
-termination of the run script. The latter can be very helpful if you
-want to examine the objects that were created during your script.
-
-%\section{Nifty Tools}
-%There are many other tools included with the MacPython
-%distribution. In addition to those discussed here, make 
-%sure to check the \file{Mac} directory.
-
-%\subsection{BuildApplet \label{BuildApplet}}
-% **NEED INFO HERE**
-
-%\subsection{BuildApplication}
-% **NEED INFO HERE**
- 
-%\section{TKInter on the Mac \label{TKInter}}
-
-%TKinter is installed by default with the MacPython distribution, but
-%you may need to add the \file{lib-tk} folder to the Python Path (see
-%section \ref{search-path}).  Also, it is important that you do not
-%try to launch Tk from within the \program{Python IDE} because the two
-%event loops will collide -- always run a script which uses Tkinter
-%with the \program{PythonInterpreter} instead -- see section
-%\ref{interpreter}.
- 
-%\section{CGI on the Mac with Python \label{CGI}}
-%**NEED INFO HERE**
