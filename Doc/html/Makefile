@@ -59,7 +59,12 @@ include ../Makefile.deps
 
 # The index.html target is at the end since it screws up font-lock.
 
-modindex.html: lib/lib.html mac/mac.html $(TOOLSDIR)/mkmodindex
+acks.html: ../ACKS $(TOOLSDIR)/support.py $(TOOLSDIR)/mkackshtml
+	$(TOOLSDIR)/mkackshtml --address $(PYTHONDOCS) --output acks.html \
+		<../ACKS
+
+modindex.html: $(TOOLSDIR)/support.py $(TOOLSDIR)/mkmodindex
+modindex.html: lib/lib.html mac/mac.html
 	$(TOOLSDIR)/mkmodindex --columns 4 --output modindex.html \
 		--address $(PYTHONDOCS) \
 		lib/modindex.html mac/modindex.html
@@ -107,7 +112,7 @@ clean:
 	rm -rf @webchecker.pickle
 
 distclean realclean clobber: clean
-	rm -rf index.html modindex.html 
+	rm -rf index.html modindex.html acks.html
 	rm -rf api/ doc/ ext/ lib/ mac/ ref/ tut/ inst/ dist/
 
 
