@@ -279,19 +279,33 @@ class URLopener:
 		if errcode == 200:
 			return addinfourl(fp, headers, "http:" + url)
 		else:
-			return self.http_error(url,
-					       fp, errcode, errmsg, headers)
+			if data is None:
+				return self.http_error(url,
+						       fp, errcode,
+						       errmsg,
+						       headers,
+						       data)
+			else:
+				return self.http_error(url,
+						       fp, errcode,
+						       errmsg,
+						       headers)
 
 	# Handle http errors.
 	# Derived class can override this, or provide specific handlers
 	# named http_error_DDD where DDD is the 3-digit error code
-	def http_error(self, url, fp, errcode, errmsg, headers):
+	def http_error(self, url, fp, errcode, errmsg, headers, data=None):
 		# First check if there's a specific handler for this error
 		name = 'http_error_%d' % errcode
 		if hasattr(self, name):
 			method = getattr(self, name)
-			result = method(url, fp, errcode, errmsg, headers)
-			if result: return result
+			if data is None:
+				result = method(url, fp, errcode, errmsg,
+						headers, data)
+			else:
+				result = method(url, fp, errcode, errmsg,
+						headers)
+ 			if result: return result
 		return self.http_error_default(
 			url, fp, errcode, errmsg, headers)
 
@@ -450,7 +464,8 @@ class FancyURLopener(URLopener):
 		return addinfourl(fp, headers, "http:" + url)
 
 	# Error 302 -- relocated (temporarily)
-	def http_error_302(self, url, fp, errcode, errmsg, headers):
+	def http_error_302(self, url, fp, errcode, errmsg, headers,
+			   data=None): 
 		# XXX The server can force infinite recursion here!
 		if headers.has_key('location'):
 			newurl = headers['location']
@@ -460,7 +475,7 @@ class FancyURLopener(URLopener):
 			return
 		void = fp.read()
 		fp.close()
-		return self.open(newurl)
+		return self.open(newurl, data)
 
 	# Error 301 -- also relocated (permanently)
 	http_error_301 = http_error_302
@@ -468,7 +483,8 @@ class FancyURLopener(URLopener):
 	# Error 401 -- authentication required
 	# See this URL for a description of the basic authentication scheme:
 	# http://www.ics.uci.edu/pub/ietf/http/draft-ietf-http-v10-spec-00.txt
-	def http_error_401(self, url, fp, errcode, errmsg, headers):
+	def http_error_401(self, url, fp, errcode, errmsg, headers,
+			   data=None): 
 		if headers.has_key('www-authenticate'):
 			stuff = headers['www-authenticate']
 			import re
@@ -478,9 +494,9 @@ class FancyURLopener(URLopener):
 				scheme, realm = match.groups()
 				if string.lower(scheme) == 'basic':
 					return self.retry_http_basic_auth(
-						url, realm)
+						url, realm, data)
 
-	def retry_http_basic_auth(self, url, realm):
+	def retry_http_basic_auth(self, url, realm, data):
 		host, selector = splithost(url)
 		i = string.find(host, '@') + 1
 		host = host[i:]
@@ -488,7 +504,7 @@ class FancyURLopener(URLopener):
 		if not (user or passwd): return None
 		host = user + ':' + passwd + '@' + host
 		newurl = 'http://' + host + selector
-		return self.open(newurl)
+		return self.open(newurl, data)
 
 	def get_user_passwd(self, host, realm, clear_cache = 0):
 		key = realm + '@' + string.lower(host)
