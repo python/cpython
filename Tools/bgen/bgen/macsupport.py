@@ -70,8 +70,7 @@ WindowRef = WindowPtr
 DialogPtr = OpaqueByValueType("DialogPtr", "DlgObj")
 DialogRef = DialogPtr
 ExistingWindowPtr = OpaqueByValueType("WindowPtr", "WinObj_WhichWindow", "BUG")
-# XXX This is incorrect: it returns a Window, not a Dialog!
-ExistingDialogPtr = OpaqueByValueType("DialogPtr", "WinObj_WhichWindow", "BUG")
+ExistingDialogPtr = OpaqueByValueType("DialogPtr", "DlgObj_WhichDialog", "BUG")
 
 # NULL pointer passed in as optional storage -- not present in Python version
 NullStorage = FakeType("(void *)0")
