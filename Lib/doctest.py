@@ -85,6 +85,7 @@ __all__ = [
     # 8. Unittest Support
     'DocTestSuite',
     'DocFileSuite',
+    'set_unittest_reportflags',
     # 9. Debugging Support
     'script_from_examples',
     'testsource',
