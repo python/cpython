@@ -350,11 +350,20 @@ def normpath(p):
 # Independent of host system. Why am I in os.path?
 
 def walk(top, func, arg):
-    """
-  walk(top,func,args) calls func(arg, d, files) for each directory "d" in the tree
-  rooted at "top" (including "top" itself). "files" is a list of all the files and
-  subdirs in directory "d".
-  """
+    """Directory tree walk with callback function.
+
+    For each directory in the directory tree rooted at top (including top
+    itself, but excluding '.' and '..'), call func(arg, dirname, fnames).
+    dirname is the name of the directory, and fnames a list of the names of
+    the files and subdirectories in dirname (excluding '.' and '..').  func
+    may modify the fnames list in-place (e.g. via del or slice assignment),
+    and walk will only recurse into the subdirectories whose names remain in
+    fnames; this can be used to implement a filter, or to impose a specific
+    order of visiting.  No semantics are defined for, or required of, arg,
+    beyond that arg is always passed to func.  It can be used, e.g., to pass
+    a filename pattern, or a mutable object designed to accumulate
+    statistics.  Passing None for arg is common."""
+
     try:
         names= os.listdir(top)
     except os.error:
