@@ -320,6 +320,21 @@ def maketrans(fromstr, tostr):
 		L[fromstr[i]] = tostr[i]
 	return joinfields(L, "")
 
+# Substring replacement (global)
+def replace(old, new, str):
+	return joinfields(splitfields(str, old), new)
+
+# Substring replacement (1st substring only)
+def replace1(old, new, str, i=0, last=None):
+	if last is None:
+		i = find(str, old, i)
+	else:
+		i = find(str, old, i, last)
+	if i >= 0:
+		str = str[:i] + new + str[i+len(old):]
+	return str
+
+
 # Try importing optional built-in module "strop" -- if it exists,
 # it redefines some string operations that are 100-1000 times faster.
 # It also defines values for whitespace, lowercase and uppercase
