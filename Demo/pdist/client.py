@@ -120,6 +120,23 @@ class Client:
 		self._wf.flush()
 
 
+from security import Security
+
+
+class SecureClient(Client, Security):
+
+	def __init__(self, *args):
+		import string
+		apply(Client.__init__, (self,) + args)
+		Security.__init__(self)
+		line = self._rf.readline()
+		challenge = string.atoi(string.strip(firstline))
+		response = self._encode_challenge(challenge)
+		line = `long(response)`
+		if line[-1] in 'Ll': line = line[:-1]
+		self._wf.write(line + '\n')
+		self._wf.flush()
+
 class _stub:
 	
 	"""Helper class for Client -- each instance serves as a method of the client."""
