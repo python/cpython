@@ -666,7 +666,7 @@ if not _exists("urandom"):
 
         """
         global _urandomfd
-        if not _urandomfd:
+        if _urandomfd is None:
             try:
                 _urandomfd = open("/dev/urandom", O_RDONLY)
             except:
