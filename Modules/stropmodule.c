@@ -190,7 +190,7 @@ strop_joinfields(PyObject *self, PyObject *args)
 		seplen = 1;
 	}
 
-	seqlen = PySequence_Length(seq);
+	seqlen = PySequence_Size(seq);
 	if (seqlen < 0 && PyErr_Occurred())
 		return NULL;
 

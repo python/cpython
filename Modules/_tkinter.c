@@ -1934,7 +1934,7 @@ Tkinter_Flatten(PyObject* self, PyObject* args)
 	if (!PyArg_ParseTuple(args, "O:_flatten", &item))
 		return NULL;
 
-	context.maxsize = PySequence_Length(item);
+	context.maxsize = PySequence_Size(item);
 	if (context.maxsize <= 0)
 		return PyTuple_New(0);
 	

@@ -1127,7 +1127,7 @@ _compile(PyObject* self_, PyObject* args)
 	if (!code)
 		return NULL;
 
-    n = PySequence_Length(code);
+    n = PySequence_Size(code);
 
 	self = PyObject_NEW_VAR(PatternObject, &Pattern_Type, 100*n);
 	if (!self) {

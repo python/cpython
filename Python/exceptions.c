@@ -224,7 +224,8 @@ Exception__init__(PyObject* self, PyObject* args)
 	return NULL;
 
     /* set args attribute */
-    args = PySequence_GetSlice(args, 1, PySequence_Length(args));
+    /* XXX size is only a hint */
+    args = PySequence_GetSlice(args, 1, PySequence_Size(args));
     if (!args)
         return NULL;
     status = PyObject_SetAttrString(self, "args", args);
@@ -249,7 +250,7 @@ Exception__str__(PyObject* self, PyObject* args)
     if (!args)
         return NULL;
 
-    switch (PySequence_Length(args)) {
+    switch (PySequence_Size(args)) {
     case 0:
         out = PyString_FromString("");
         break;
@@ -374,7 +375,7 @@ SystemExit__init__(PyObject* self, PyObject* args)
 	return NULL;
 
     /* Set args attribute. */
-    if (!(args = PySequence_GetSlice(args, 1, PySequence_Length(args))))
+    if (!(args = PySequence_GetSlice(args, 1, PySequence_Size(args))))
         return NULL;
     
     status = PyObject_SetAttrString(self, "args", args);
@@ -384,7 +385,7 @@ SystemExit__init__(PyObject* self, PyObject* args)
     }
 
     /* set code attribute */
-    switch (PySequence_Length(args)) {
+    switch (PySequence_Size(args)) {
     case 0:
         Py_INCREF(Py_None);
         code = Py_None;
@@ -441,7 +442,7 @@ EnvironmentError__init__(PyObject* self, PyObject* args)
     if (!(self = get_self(args)))
 	return NULL;
 
-    if (!(args = PySequence_GetSlice(args, 1, PySequence_Length(args))))
+    if (!(args = PySequence_GetSlice(args, 1, PySequence_Size(args))))
 	return NULL;
 
     if (PyObject_SetAttrString(self, "args", args) ||
@@ -452,7 +453,7 @@ EnvironmentError__init__(PyObject* self, PyObject* args)
 	goto finally;
     }
 
-    switch (PySequence_Length(args)) {
+    switch (PySequence_Size(args)) {
     case 3:
 	/* Where a function has a single filename, such as open() or some
 	 * of the os module functions, PyErr_SetFromErrnoWithFilename() is
@@ -671,13 +672,13 @@ SyntaxError__init__(PyObject* self, PyObject* args)
     if (!(self = get_self(args)))
 	return NULL;
 
-    if (!(args = PySequence_GetSlice(args, 1, PySequence_Length(args))))
+    if (!(args = PySequence_GetSlice(args, 1, PySequence_Size(args))))
 	return NULL;
 
     if (PyObject_SetAttrString(self, "args", args))
 	goto finally;
 
-    lenargs = PySequence_Length(args);
+    lenargs = PySequence_Size(args);
     if (lenargs >= 1) {
 	PyObject* item0 = PySequence_GetItem(args, 0);
 	int status;

@@ -759,7 +759,7 @@ string_join(PyStringObject *self, PyObject *args)
 	/* From here on out, errors go through finally: for proper
 	 * reference count manipulations.
 	 */
-	seqlen = PySequence_Length(seq);
+	seqlen = PySequence_Size(seq);
 	if (seqlen == 1) {
 		item = PySequence_Fast_GET_ITEM(seq, 0);
 		Py_INCREF(item);

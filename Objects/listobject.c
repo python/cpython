@@ -563,7 +563,7 @@ listextend(PyListObject *self, PyObject *args)
 	if (!b)
 		return NULL;
 
-	if (PyObject_Length(b) == 0)
+	if (PyObject_Size(b) == 0)
 		/* short circuit when b is empty */
 		goto ok;
 
@@ -585,7 +585,7 @@ listextend(PyListObject *self, PyObject *args)
 		}
 	}
 
-	blen = PyObject_Length(b);
+	blen = PyObject_Size(b);
 
 	/* resize a using idiom */
 	items = self->ob_item;

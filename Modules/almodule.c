@@ -176,13 +176,13 @@ python2param(int resource, ALpv *param, PyObject *value, ALparamInfo *pinfo)
 		case AL_INT32_ELEM:
 		case AL_RESOURCE_ELEM:
 		case AL_ENUM_ELEM:
-			param->sizeIn = PySequence_Length(value);
+			param->sizeIn = PySequence_Size(value);
 			param->value.ptr = PyMem_NEW(int, param->sizeIn);
 			stepsize = sizeof(int);
 			break;
 		case AL_INT64_ELEM:
 		case AL_FIXED_ELEM:
-			param->sizeIn = PySequence_Length(value);
+			param->sizeIn = PySequence_Size(value);
 			param->value.ptr = PyMem_NEW(long long, param->sizeIn);
 			stepsize = sizeof(long long);
 			break;
