@@ -178,26 +178,26 @@ static void aix_loaderror(char *);
 #endif
 
 #ifdef __BEOS__
-#  undef USE_SHLIB /* probably not defined anyway */
-#  define DYNAMIC_LINK
-#  define SHORT_EXT ".so"
-#  define LONG_EXT "module.so"
+#undef USE_SHLIB /* probably not defined anyway */
+#define DYNAMIC_LINK
+#define SHORT_EXT ".so"
+#define LONG_EXT "module.so"
 typedef void (*dl_funcptr)(void);
-#  define _DL_FUNCPTR_DEFINED
+#define _DL_FUNCPTR_DEFINED
 
-#  if defined(MAXPATHLEN) && !defined(_SYS_PARAM_H)
-#    undef MAXPATHLEN
-#  endif
+#if defined(MAXPATHLEN) && !defined(_SYS_PARAM_H)
+#undef MAXPATHLEN
+#endif
 
-#  include <kernel/image.h>
-#  include <kernel/OS.h>
-#  include <stdlib.h>
-#  include <unistd.h>
+#include <kernel/image.h>
+#include <kernel/OS.h>
+#include <stdlib.h>
+#include <unistd.h>
 
-#  ifdef WITH_THREAD
-#    include "thread.h"
+#ifdef WITH_THREAD
+#include "pythread.h"
 static type_lock beos_dyn_lock;
-#  endif
+#endif
 
 static PyObject *beos_dyn_images = NULL;
 
