@@ -512,13 +512,14 @@ static PyMethodDef time_methods[] = {
 static void
 ins(PyObject *d, char *name, PyObject *v)
 {
-	if (v == NULL)
-		Py_FatalError("Can't initialize time module -- NULL value");
-	if (PyDict_SetItemString(d, name, v) != 0)
-		Py_FatalError(
-		"Can't initialize time module -- PyDict_SetItemString failed");
-	Py_DECREF(v);
+	/* Don't worry too much about errors, they'll be caught by the
+	 * caller of inittime().
+	 */
+	if (v)
+		PyDict_SetItemString(d, name, v);
+	Py_XDECREF(v);
 }
+
 
 static char module_doc[] =
 "This module provides various functions to manipulate time values.\n\
@@ -647,8 +648,6 @@ inittime(void)
 #endif /* macintosh */
 #endif /* HAVE_TM_ZONE */
 #endif /* !HAVE_TZNAME || __GLIBC__ */
-	if (PyErr_Occurred())
-		Py_FatalError("Can't initialize time module");
 }
 
 

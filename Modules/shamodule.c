@@ -559,8 +559,4 @@ initsha(void)
                                 functions require an integral number of
                                 blocks */ 
     insint("digestsize", 20);
-
-    /* Check for errors */
-    if (PyErr_Occurred())
-        Py_FatalError("can't initialize module SHA");
 }

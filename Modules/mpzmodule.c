@@ -1729,23 +1729,25 @@ initmpz(void)
 
 	/* create some frequently used constants */
 	if ((mpz_value_zero = newmpzobject()) == NULL)
-		Py_FatalError("initmpz: can't initialize mpz constants");
+		goto finally;
 	mpz_set_ui(&mpz_value_zero->mpz, (unsigned long int)0);
 
 	if ((mpz_value_one = newmpzobject()) == NULL)
-		Py_FatalError("initmpz: can't initialize mpz constants");
+		goto finally;
 	mpz_set_ui(&mpz_value_one->mpz, (unsigned long int)1);
 
 	if ((mpz_value_mone = newmpzobject()) == NULL)
-		Py_FatalError("initmpz: can't initialize mpz constants");
+		goto finally;
 	mpz_set_si(&mpz_value_mone->mpz, (long)-1);
 
 	dict = PyModule_GetDict(module);
 	if (dict != NULL) {
 		PyDict_SetItemString(dict, "MPZType", (PyObject*)&MPZtype);
 	}
-
+  finally:
+	return;
 } /* initmpz() */
+
 #ifdef MAKEDUMMYINT
 int _mpz_dummy_int;	/* XXX otherwise, we're .bss-less (DYNLOAD->Jack?) */
 #endif /* def MAKEDUMMYINT */

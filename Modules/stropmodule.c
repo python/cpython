@@ -1244,7 +1244,4 @@ initstrop(void)
 		PyDict_SetItemString(d, "uppercase", s);
 		Py_DECREF(s);
 	}
-
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module strop");
 }

@@ -3242,9 +3242,6 @@ inital(void)
 	(void) ALseterrorhandler(ErrorHandler);
 #endif /* OLD_INTERFACE */
 	
-	/* Check for errors */
-	if (PyErr_Occurred()) {
-	  error:
-		Py_FatalError("can't initialize module al");
-	}
+  error:
+	return;
 }

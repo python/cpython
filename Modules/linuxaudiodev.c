@@ -442,9 +442,6 @@ initlinuxaudiodev(void)
         goto error;
     Py_DECREF(x);
 
-    /* Check for errors */
-    if (PyErr_Occurred()) {
-    error:
-        Py_FatalError("can't initialize module linuxaudiodev");
-    }
+  error:
+    return;
 }

@@ -802,7 +802,4 @@ initcd(void)
 #ifdef CD_CDROM			/* only newer versions of the library */
 	PyDict_SetItemString(d, "CDROM", PyInt_FromLong((long) CD_CDROM));
 #endif
-
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module cd");
 }
