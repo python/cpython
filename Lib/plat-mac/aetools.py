@@ -26,11 +26,15 @@ from Carbon import AE
 from Carbon import AppleEvents
 import MacOS
 import sys
+import time
 
 from aetypes import *
 from aepack import packkey, pack, unpack, coerce, AEDescType
 
 Error = 'aetools.Error'
+
+# Amount of time to wait for program to be launched
+LAUNCH_MAX_WAIT_TIME=10
 
 # Special code to unpack an AppleEvent (which is *not* a disguised record!)
 # Note by Jack: No??!? If I read the docs correctly it *is*....
@@ -174,6 +178,14 @@ class TalkTo:
 			self.send('ascr', 'noop')
 		except AE.Error:
 			_launch(self.target_signature)
+			for i in range(LAUNCH_MAX_WAIT_TIME):
+				try:
+					self.send('ascr', 'noop')
+				except AE.Error:
+					pass
+				else:
+					break
+				time.sleep(1)
 			
 	def start(self):
 		"""Deprecated, used _start()"""
