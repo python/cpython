@@ -190,6 +190,7 @@ Instead, you can get the same information from the list type:
      '__contains__',
      '__delattr__',
      '__delitem__',
+     '__delslice__',
      '__eq__',
      '__ge__',
      '__getattribute__',
