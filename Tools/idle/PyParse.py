@@ -113,6 +113,19 @@ class Parser:
 
     def set_str(self, str):
         assert len(str) == 0 or str[-1] == '\n'
+        if type(str) == type(u""):
+            # The parse functions have no idea what to do with Unicode, so
+            # replace all Unicode characters with "x".  This is "safe"
+            # so long as the only characters germane to parsing the structure
+            # of Python are 7-bit ASCII.  It's *necessary* because Unicode
+            # strings don't have a .translate() method that supports
+            # deletechars.
+            uniphooey = str
+            str = []
+            push = str.append
+            for raw in map(ord, uniphooey):
+                push(raw < 127 and chr(raw) or "x")
+            str = "".join(str)
         self.str = str
         self.study_level = 0
 
