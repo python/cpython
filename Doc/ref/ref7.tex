@@ -223,11 +223,11 @@ clause, if present, must be last; it matches any exception.  For an
 except clause with an expression, that expression is evaluated, and the
 clause matches the exception if the resulting object is ``compatible''
 with the exception.  An object is compatible with an exception if it
-is either the object that identifies the exception, or (for exceptions
-that are classes) it is a base class of the exception, or it is a
-tuple containing an item that is compatible with the exception.  Note
-that the object identities must match, i.e. it must be the same
-object, not just an object with the same value.
+is the class or a base class of the exception object, a tuple
+containing an item compatible with the exception, or, in the
+(deprecated) case of string exceptions, is the raised string itself
+(note that the object identities must match, i.e. it must be the same
+string object, not just a string with the same value).
 \kwindex{except}
 
 If no except clause matches the exception, the search for an exception
@@ -239,14 +239,14 @@ and a search starts for the new exception in the surrounding code and
 on the call stack (it is treated as if the entire \keyword{try} statement
 raised the exception).
 
-When a matching except clause is found, the exception's parameter is
-assigned to the target specified in that except clause, if present,
-and the except clause's suite is executed.  All except clauses must
-have an executable block.  When the end of this block
-is reached, execution continues normally after the entire try
-statement.  (This means that if two nested handlers exist for the same
-exception, and the exception occurs in the try clause of the inner
-handler, the outer handler will not handle the exception.)
+When a matching except clause is found, the exception is assigned to
+the target specified in that except clause, if present, and the except
+clause's suite is executed.  All except clauses must have an
+executable block.  When the end of this block is reached, execution
+continues normally after the entire try statement.  (This means that
+if two nested handlers exist for the same exception, and the exception
+occurs in the try clause of the inner handler, the outer handler will
+not handle the exception.)
 
 Before an except clause's suite is executed, details about the
 exception are assigned to three variables in the
