@@ -1309,9 +1309,11 @@ otherwise you have to select it as a build option (see below).  Once
 configured, dynamic loading is trivial to use: when a Python program
 executes \code{import spam}, the search for modules tries to find a
 file \file{spammodule.o} (\file{spammodule.so} when using shared
-libraries) in the module search path, and if one is found, it is
-loaded into the executing binary and executed.  Once loaded, the
-module acts just like a built-in extension module.
+libraries) in the module search path,%
+\indexiii{module}{search}{path}
+and if one is found, it is loaded into the executing binary and
+executed.  Once loaded, the module acts just like a built-in extension
+module.
 
 The advantages of dynamic loading are twofold: the ``core'' Python
 binary gets smaller, and users can extend Python with their own
@@ -1411,10 +1413,10 @@ described earlier).
 Note that in all cases you will have to create your own Makefile that
 compiles your module file(s).  This Makefile will have to pass two
 \samp{-I} arguments to the \C{} compiler which will make it find the
-Python header files.  If the Make variable \var{PYTHONTOP} points to
-the toplevel Python directory, your \var{CFLAGS} Make variable should
+Python header files.  If the Make variable \makevar{PYTHONTOP} points to
+the toplevel Python directory, your \makevar{CFLAGS} Make variable should
 contain the options \samp{-I\$(PYTHONTOP) -I\$(PYTHONTOP)/Include}.
-(Most header files are in the \file{Include} subdirectory, but the
+(Most header files are in the \file{Include/} subdirectory, but the
 \file{config.h} header lives in the toplevel directory.)
 
 
@@ -1461,7 +1463,8 @@ additional \C{} flag \samp{-G0} (or \samp{-G 0}).  This instructs the
 assembler to generate position-independent code.
 
 You don't need to link the resulting \file{spammodule.o} file; just
-copy it into a directory along the Python module search path.
+copy it into a directory along the Python module search path.%
+\indexiii{module}{search}{path}
 
 The first time your extension is loaded, it takes some extra time and
 a few messages may be printed.  This creates a file
@@ -1486,7 +1489,8 @@ normally only \samp{-l} options or absolute pathnames of libraries
 \label{gnuLinking}
 
 Just copy \file{spammodule.o} into a directory along the Python module
-search path.
+search path.%
+\indexiii{module}{search}{path}
 
 If your extension modules uses additional system libraries, you must
 create a file \file{spammodule.libs} in the same directory as the
@@ -1494,7 +1498,5 @@ create a file \file{spammodule.libs} in the same directory as the
 whitespace-separated absolute pathnames of libraries (\samp{.a}
 files).  No \samp{-l} options can be used.
 
-
-\input{ext.ind}
 
 \end{document}
