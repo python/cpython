@@ -30,6 +30,9 @@ item: Global
   Variable Description4=HTML documentation tree
   Variable Default4=D:\src\Python-1.5\html
   Variable Flags4=00001000
+  Variable Name5=_TCL_
+  Variable Default5=tcl805.exe
+  Variable Flags5=00001000
 end
 remarked item: Open/Close INSTALL.LOG
   Flags=00000001
@@ -1250,14 +1253,14 @@ item: Display Message
   Flags=00100001
 end
 item: Install File
-  Source=D:\downloads\tcl804.exe
-  Destination=%TEMP%\tcl804.exe
+  Source=D:\downloads\%_TCL_%
+  Destination=%TEMP%\%_TCL_%
   Description=Tcl/Tk installer
   Flags=0000000000000010
 end
 item: Execute Program
-  Pathname=%TEMP%\tcl804.exe
-  Command Line=tcl804.exe
+  Pathname=%TEMP%\%_TCL_%
+  Command Line=%_TCL_%
   Default Directory=%TEMP%
   Flags=00000011
 end
