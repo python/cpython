@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.189 
+# From configure.in Revision: 1.190 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -4058,7 +4058,7 @@ fi
 
 
 # enabled by default but one of the dbm.h files must be found
-if test "$ac_cv_header_dbm_h" = "yes" -o "$ac_cv_header_db1_ndbm_h" = "yes" -o "$ac_cv_header_gdbm_ndbm_h" = "yes"
+if test "$ac_cv_header_ndbm_h" = "yes" -o "$ac_cv_header_db1_ndbm_h" = "yes" -o "$ac_cv_header_gdbm_ndbm_h" = "yes"
 then
     if test "$with_dbm" != "no"
     then with_dbm="yes"
