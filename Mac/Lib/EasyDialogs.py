@@ -326,7 +326,7 @@ ARGV_CMDLINE_DATA=14
 ##				MacOS.HandleEvent(ev) 
 ##
 def _setmenu(control, items):
-		mhandle = control.GetControlDataHandle(Controls.kControlMenuPart,
+		mhandle = control.GetControlData_Handle(Controls.kControlMenuPart,
 				Controls.kControlPopupButtonMenuHandleTag)
 		menu = Menu.as_Menu(mhandle)
 		for item in items:
@@ -338,7 +338,7 @@ def _setmenu(control, items):
 				label = label[:-1]
 			menu.AppendMenu(label)
 ##		mhandle, mid = menu.getpopupinfo()
-##		control.SetControlDataHandle(Controls.kControlMenuPart,
+##		control.SetControlData_Handle(Controls.kControlMenuPart,
 ##				Controls.kControlPopupButtonMenuHandleTag, mhandle)
 		control.SetControlMinimum(1)
 		control.SetControlMaximum(len(items)+1)
