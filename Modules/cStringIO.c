@@ -289,6 +289,7 @@ IO_truncate(IOobject *self, PyObject *args) {
         if (pos < 0) pos = self->pos;
 
         if (self->string_size > pos) self->string_size = pos;
+        self->pos = self->string_size;
 
         Py_INCREF(Py_None);
         return Py_None;

@@ -41,6 +41,11 @@ Core and builtins
 Extension modules
 -----------------
 
+- Patch 1012740:  truncate() on a writeable cStringIO now resets the
+  position to the end of the stream.  This is consistent with the original
+  StringIO module and avoids inadvertently resurrecting data that was
+  supposed to have been truncated away.
+
 - Added socket.socketpair().
 
 Library
@@ -59,7 +64,7 @@ Library
 - A new function tkFont.nametofont was added to return an existing
   font. The Font class constructor now has an additional exists argument
   which, if True, requests to return/configure an existing font, rather
-  than creating a new one. 
+  than creating a new one.
 
 - Updated the decimal package's min() and max() methods to match the
   latest revision of the General Decimal Arithmetic Specification.
