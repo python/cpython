@@ -452,7 +452,7 @@ typedef long intptr_t;
 /* #define WITH_READLINE 1 */
 
 /* Define if you want cycle garbage collection */
-/* #define WITH_CYCLE_GC 1 */
+#define WITH_CYCLE_GC 1
 
 /* Define if you have clock.  */
 /* #define HAVE_CLOCK */
