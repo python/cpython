@@ -335,7 +335,7 @@ ins(d, name, v)
 		Py_FatalError("Can't initialize time module -- NULL value");
 	if (PyDict_SetItemString(d, name, v) != 0)
 		Py_FatalError(
-                        "Can't initialize time module -- dictinsert failed");
+                        "Can't initialize time module -- PyDict_SetItemString failed");
 	Py_DECREF(v);
 }
 
