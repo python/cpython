@@ -702,6 +702,11 @@ class PyBuildExt(build_ext):
                     exts.append( Extension('zlib', ['zlibmodule.c'],
                                            libraries = ['z']) )
 
+        # Gustavo Niemeyer's bz2 module.
+        if (self.compiler.find_library_file(lib_dirs, 'bz2')):
+            exts.append( Extension('bz2', ['bz2module.c'],
+                                   libraries = ['bz2']) )
+
         # Interface to the Expat XML parser
         #
         # Expat was written by James Clark and is now maintained by a
