@@ -146,16 +146,16 @@ COUNT_ALLOCS                                            introduced in 0.9.9
 Each type object grows three new members:
 
     /* Number of times an object of this type was allocated. */
-	int tp_allocs;
+    int tp_allocs;
 
     /* Number of times an object of this type was deallocated. */
-	int tp_frees;
+    int tp_frees;
 
-	/* Highwater mark:  the maximum value of tp_allocs - tp_frees so
-	 * far; or, IOW, the largest number of objects of this type alive at
-	 * the same time.
-	 */
-	int tp_maxalloc;
+    /* Highwater mark:  the maximum value of tp_allocs - tp_frees so
+     * far; or, IOW, the largest number of objects of this type alive at
+     * the same time.
+     */
+    int tp_maxalloc;
 
 Allocation and deallocation code keeps these counts up to date.
 Py_Finalize() displays a summary of the info returned by sys.getcounts()
