@@ -33,9 +33,10 @@ AC_DEFINE(_GNU_SOURCE, 1, [Define on Linux to activate all library features])
 AH_VERBATIM([_XOPEN_SOURCE],
 [/* Define on UNIX to activate XPG/5 features.  */
 #ifndef _XOPEN_SOURCE
-# define _XOPEN_SOURCE 500
+# undef _XOPEN_SOURCE
 #endif])
-AC_DEFINE(_XOPEN_SOURCE, 500)
+
+define_xopen_source=yes
 
 # On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires definition
 # of _XOPEN_SOURCE_EXTENDED and _POSIX_C_SOURCE, or else several APIs
@@ -111,6 +112,28 @@ then
 	atheos*) MACHDEP="atheos";;
 	'')	MACHDEP="unknown";;
 	esac
+fi
+
+# Some systems cannot stand _XOPEN_SOURCE being defined at all; they
+# disable features if it is defined, without any means to access these
+# features as extensions. For these systems, we skip the definition of
+# _XOPEN_SOURCE. Before adding a system to the list to gain access to
+# some feature, make sure there is no alternative way to access this
+# feature. Also, when using wildcards, make sure you have verified the
+# need for not defining _XOPEN_SOURCE on all systems matching the
+# wildcard, and that the wildcard does not include future systems
+# (which may remove their limitations).
+dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
+case $ac_sys_system/$ac_sys_release in
+  # On OpenBSD, select(2) is not available if _XOPEN_SOURCE is defined,
+  # even though select is a POSIX function. Reported by J. Ribbens.
+  OpenBSD/2.* | OpenBSD/3.@<:@012@:>@) 
+    define_xopen_source=no;;
+esac
+
+if test $define_xopen_source = yes
+then
+  AC_DEFINE(_XOPEN_SOURCE, 500)
 fi
 
 #
