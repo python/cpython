@@ -1,7 +1,14 @@
-What's New in IDLE 1.0rc1?
+What's New in IDLE 1.0 release candidate 2?
 ===================================
 
-*Release date: 17-Jul-2003*
+*Release date: 24-Jul-2003*
+
+- Calltip error when docstring was None  Python Bug 775541
+
+What's New in IDLE 1.0 release candidate 1?
+===================================
+
+*Release date: 18-Jul-2003*
 
 - Updated extend.txt, help.txt, and config-extensions.def to correctly
   reflect the current status of the configuration system.  Python Bug 768469
