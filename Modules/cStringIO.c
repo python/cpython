@@ -376,7 +376,7 @@ O_write(Oobject *self, PyObject *args) {
         char *c;
         int l;
 
-        UNLESS (PyArg_ParseTuple(args, "s#:write", &c, &l)) return NULL;
+        UNLESS (PyArg_ParseTuple(args, "t#:write", &c, &l)) return NULL;
 
         if (O_cwrite((PyObject*)self,c,l) < 0) return NULL;
 
