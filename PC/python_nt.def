@@ -15,6 +15,7 @@ EXPORTS
 	PyExc_AccessError DATA
 	PyExc_AttributeError DATA
 	PyExc_EOFError DATA
+	PyExc_FloatingPointError DATA
 	PyExc_IOError DATA
 	PyExc_ImportError DATA
 	PyExc_IndexError DATA
