@@ -33,14 +33,9 @@ extern char *optarg;
 extern int getopt(); /* PROTO((int, char **, char *)); -- not standardized */
 
 
-extern int Py_DebugFlag; /* For parser.c, declared in pythonrun.c */
-extern int Py_VerboseFlag; /* For import.c, declared in pythonrun.c */
-extern int Py_SuppressPrintingFlag; /* For ceval.c, declared in pythonrun.c */
-
-
 /* Subroutines that live in their own file */
-extern char *getversion();
-extern char *getcopyright();
+extern char *Py_GetVersion();
+extern char *Py_GetCopyright();
 
 
 /* For getprogramname(); set by main() */
@@ -174,7 +169,7 @@ main(argc, argv)
 	if (Py_VerboseFlag ||
 	    command == NULL && filename == NULL && isatty((int)fileno(fp)))
 		fprintf(stderr, "Python %s\n%s\n",
-			getversion(), getcopyright());
+			Py_GetVersion(), Py_GetCopyright());
 	
 	if (filename != NULL) {
 		if ((fp = fopen(filename, "r")) == NULL) {

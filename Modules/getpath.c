@@ -1,11 +1,31 @@
+/***********************************************************
+Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
+
+                        All Rights Reserved
+
+Permission to use, copy, modify, and distribute this software and its 
+documentation for any purpose and without fee is hereby granted, 
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in 
+supporting documentation, and that the names of Stichting Mathematisch
+Centrum or CWI not be used in advertising or publicity pertaining to
+distribution of the software without specific, written prior permission.
+
+STICHTING MATHEMATISCH CENTRUM DISCLAIMS ALL WARRANTIES WITH REGARD TO
+THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH CENTRUM BE LIABLE
+FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+******************************************************************/
+
+/* Return the initial module search path. */
+
 #include "Python.h"
 #include "osdefs.h"
-
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#else
-extern char *getenv Py_PROTO((const char *));
-#endif
 
 
 #ifndef PYTHONPATH
@@ -13,14 +33,14 @@ extern char *getenv Py_PROTO((const char *));
 #endif
 
 
-/* Return the initial python search path.  This is called once from
-   initsys() to initialize sys.path.  The environment variable
-   PYTHONPATH is fetched and the default path appended.  The default
-   path may be passed to the preprocessor; if not, a system-dependent
-   default is used. */
+/* This is called once from pythonrun to initialize sys.path.  The
+   environment variable PYTHONPATH is fetched and the default path
+   appended.  The default path may be passed to the preprocessor; if
+   not, a hardcoded default is used, which only makes (some) sense on
+   Unix. */
 
 char *
-getpythonpath()
+Py_GetPath()
 {
 	char *path = getenv("PYTHONPATH");
 	char *defpath = PYTHONPATH;

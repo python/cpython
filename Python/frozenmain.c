@@ -26,13 +26,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
-extern int Py_DebugFlag; /* For parser.c, declared in pythonrun.c */
-extern int Py_VerboseFlag; /* For import.c, declared in pythonrun.c */
-extern int Py_SuppressPrintingFlag; /* For ceval.c, declared in pythonrun.c */
-
 /* Subroutines that live in their own file */
-extern char *getversion();
-extern char *getcopyright();
+extern char *Py_GetVersion();
+extern char *Py_GetCopyright();
 
 /* For getprogramname(); set by main() */
 static char *argv0;
@@ -69,7 +65,7 @@ main(argc, argv)
 
 	if (Py_VerboseFlag)
 		fprintf(stderr, "Python %s\n%s\n",
-			getversion(), getcopyright());
+			Py_GetVersion(), Py_GetCopyright());
 	Py_Initialize();
 	PySys_SetArgv(argc, argv);
 

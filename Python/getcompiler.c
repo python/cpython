@@ -22,26 +22,30 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+/* Return the compiler identification, if possible. */
+
+#include "Python.h"
 
 #ifndef COMPILER
+
 #ifdef __GNUC__
 #define COMPILER " [GCC " __VERSION__ "]"
 #endif
+
 #endif /* !COMPILER */
 
 #ifndef COMPILER
+
 #ifdef __cplusplus
 #define COMPILER "[C++]"
 #else
 #define COMPILER "[C]"
 #endif
+
 #endif /* !COMPILER */
 
 char *
-getcompiler()
+Py_GetCompiler()
 {
 	return COMPILER;
 }
