@@ -384,7 +384,9 @@ Currently-active file is at the head of the list.")
 			     "while\\s +.*:"
 			     "for\\s +.*:"
 			     "if\\s +.*:"
-			     "elif\\s +.*:")
+			     "elif\\s +.*:"
+			     "\\(return\\|break\\|raise\\|continue\\)[ \t\n]"
+			     )
 			   "\\|")
 	  "\\)")
   "Regexp matching lines to not outdent after.")
