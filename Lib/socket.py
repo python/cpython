@@ -42,7 +42,7 @@ from _socket import *
 import os, sys
 
 if (sys.platform.lower().startswith("win")
-    or os.uname()[0] == "BeOS"):
+    or (hasattr(os, 'uname') and os.uname()[0] == "BeOS")):
 
     # be sure this happens only once, even in the face of reload():
     try:
