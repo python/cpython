@@ -419,21 +419,32 @@ class LineAddrTable:
             # compute deltas
             addr = self.codeOffset - self.lastoff
             line = lineno - self.lastline
-            while addr > 0 or line > 0:
-                # write the values in 1-byte chunks that sum
-                # to desired value
-                trunc_addr = addr
-                trunc_line = line
-                if trunc_addr > 255:
-                    trunc_addr = 255
-                if trunc_line > 255:
-                    trunc_line = 255
-                self.lnotab.append(trunc_addr)
-                self.lnotab.append(trunc_line)
-                addr = addr - trunc_addr
-                line = line - trunc_line
-            self.lastline = lineno
-            self.lastoff = self.codeOffset
+            # Python assumes that lineno always increases with
+            # increasing bytecode address (lnotab is unsigned char).
+            # Depending on when SET_LINENO instructions are emitted
+            # this is not always true.  Consider the code:
+            #     a = (1,
+            #          b)
+            # In the bytecode stream, the assignment to "a" occurs
+            # after the loading of "b".  This works with the C Python
+            # compiler because it only generates a SET_LINENO instruction
+            # for the assignment.
+            if line > 0:
+                while addr > 0 or line > 0:
+                    # write the values in 1-byte chunks that sum
+                    # to desired value
+                    trunc_addr = addr
+                    trunc_line = line
+                    if trunc_addr > 255:
+                        trunc_addr = 255
+                    if trunc_line > 255:
+                        trunc_line = 255
+                    self.lnotab.append(trunc_addr)
+                    self.lnotab.append(trunc_line)
+                    addr = addr - trunc_addr
+                    line = line - trunc_line
+                self.lastline = lineno
+                self.lastoff = self.codeOffset
 
     def getCode(self):
         return string.join(self.code, '')
