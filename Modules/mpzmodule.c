@@ -916,7 +916,7 @@ MPZ_mpz(self, args)
 		return NULL;
 
 	/* at least we know it's some object */
-	/* note DON't DECREF args NEITHER objp */
+	/* note DON't Py_DECREF args NEITHER objp */
 
 	if (PyInt_Check(objp)) {
 		long lval;
@@ -1146,7 +1146,7 @@ MPZ_gcdext(self, args)
 		Py_XDECREF(z);
 		Py_XDECREF(g);
 		Py_XDECREF(s);
-		/*XDECREF(t);*/
+		/*Py_XDECREF(t);*/
 		return NULL;
 	}
 
@@ -1210,7 +1210,7 @@ MPZ_sqrtrem(self, args)
 		Py_XDECREF(mpzop);
 		Py_XDECREF(z);
 		Py_XDECREF(root);
-		/*XDECREF(rem);*/
+		/*Py_XDECREF(rem);*/
 		return NULL;
 	}
 
@@ -1405,7 +1405,7 @@ mpz_long(self)
 		mpz_neg(&mpzscratch, &mpzscratch);
 
 	/* let those bits come, let those bits go,
-	   e.g. dismantle mpzscratch, build longobject */
+	   e.g. dismantle mpzscratch, build PyLongObject */
 
 	bitpointer = 0;		/* the number of valid bits in stock */
 	newbitpointer = 0;
@@ -1486,7 +1486,7 @@ mpz_float(self)
 		mpz_init_set(&mpzscratch, &self->mpz);
 
 	/* let those bits come, let those bits go,
-	   e.g. dismantle mpzscratch, build floatobject */
+	   e.g. dismantle mpzscratch, build PyFloatObject */
 
 	x = 0.0;
 	mulstate = 1.0;
@@ -1712,7 +1712,7 @@ static PyMethodDef mpz_functions[] = {
 #if 0
 	{initialiser_name,	MPZ_mpz},
 #else /* 0 */
-	/* until guido ``fixes'' struct methodlist */
+	/* until guido ``fixes'' struct PyMethodDef */
 	{(char *)initialiser_name,	MPZ_mpz},
 #endif /* 0 else */	
 	{"powm",		MPZ_powm},
