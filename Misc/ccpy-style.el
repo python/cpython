@@ -12,7 +12,7 @@
 ;; This file defines the standard C coding style for Python C files
 ;; and modules.  It is compatible with cc-mode.el which should be a
 ;; standard part of your Emacs distribution (or see
-;; <http://www.python.org/ftp/emacs/>).
+;; <http://www.python.org/emacs/cc-mode>).
 
 ;; To use, make sure this file is on your Emacs load-path, and simply
 ;; add this to your .emacs file:
