@@ -44,9 +44,7 @@ RESOURCE_FORK_NAME=Carbon.File.FSGetResourceForkName()
 def findtemplate(template=None):
 	"""Locate the applet template along sys.path"""
 	if MacOS.runtimemodel == 'macho':
-		if template:
-			return template
-		return findtemplate_macho()
+		return None
 	if not template:
 		template=TEMPLATE
 	for p in sys.path:
@@ -61,15 +59,7 @@ def findtemplate(template=None):
 	file = file.as_pathname()
 	return file
 	
-def findtemplate_macho():
-	execpath = sys.executable.split('/')
-	if not 'Contents' in execpath:
-		raise BuildError, "Not running from a .app bundle: %s" % sys.executable
-	i = execpath.index('Contents')
-	return '/'.join(execpath[:i])
-
-
-def process(template, filename, destname, copy_codefragment, 
+def process(template, filename, destname, copy_codefragment=0, 
 		rsrcname=None, others=[], raw=0, progress="default"):
 	
 	if progress == "default":
@@ -118,7 +108,7 @@ def process(template, filename, destname, copy_codefragment,
 	except os.error:
 		pass
 	process_common(template, progress, code, rsrcname, destname, 0, 
-		copy_codefragment, raw, others)
+		copy_codefragment, raw, others, filename)
 	
 
 def update(template, filename, output):
@@ -140,10 +130,10 @@ def update(template, filename, output):
 
 
 def process_common(template, progress, code, rsrcname, destname, is_update, 
-		copy_codefragment, raw=0, others=[]):
+		copy_codefragment, raw=0, others=[], filename=None):
 	if MacOS.runtimemodel == 'macho':
 		return process_common_macho(template, progress, code, rsrcname, destname,
-			is_update, raw, others)
+			is_update, raw, others, filename)
 	if others:
 		raise BuildError, "Extra files only allowed for MachoPython applets"
 	# Create FSSpecs for the various files
@@ -274,12 +264,16 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
 		progress.label("Done.")
 		progress.inc(0)
 
-def process_common_macho(template, progress, code, rsrcname, destname, is_update, raw=0, others=[]):
+def process_common_macho(template, progress, code, rsrcname, destname, is_update, 
+		raw=0, others=[], filename=None):
+	# Check that we have a filename
+	if filename is None:
+		raise BuildError, "Need source filename on MacOSX"
 	# First make sure the name ends in ".app"
 	if destname[-4:] != '.app':
 		destname = destname + '.app'
 	# Now deduce the short name
-	shortname = os.path.split(destname)[1]
+	destdir, shortname = os.path.split(destname)
 	if shortname[-4:] == '.app':
 		# Strip the .app suffix
 		shortname = shortname[:-4]
@@ -295,136 +289,26 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
 				icnsname = None
 		else:
 			plistname = None
-	# Start with copying the .app framework
-	if not is_update:
-		exceptlist = ["Contents/Info.plist", 
-				"Contents/Resources/English.lproj/InfoPlist.strings", 
-				"Contents/Resources/English.lproj/Documentation", 
-				"Contents/Resources/python.rsrc",
-				]
-		copyapptree(template, destname, exceptlist, progress)
-		# SERIOUS HACK. If we've just copied a symlink as the
-		# executable we assume we're running from the MacPython addon
-		# to 10.2 python. We remove the symlink again and install
-		# the appletrunner script.
-		executable = os.path.join(destname, "Contents/MacOS/python")
-		if os.path.islink(executable):
-			os.remove(executable)
-			dummyfp, appletrunner, d2 = imp.find_module('appletrunner')
-			del dummyfp
-			shutil.copy2(appletrunner, executable)
-			os.chmod(executable, 0775)
-	# Now either use the .plist file or the default
+	if not os.path.exists(rsrcname):
+		rsrcname = None
 	if progress:
-		progress.label('Create info.plist')
-		progress.inc(0)
+		progress.label('Creating bundle...')
+	import bundlebuilder
+	builder = bundlebuilder.AppBuilder(verbosity=0)
+	builder.mainprogram = filename
+	builder.builddir = destdir
+	builder.name = shortname
+	if rsrcname:
+		builder.resources.append(rsrcname)
+	for o in others:
+		builder.resources.append(o)
 	if plistname:
-		shutil.copy2(plistname, os.path.join(destname, 'Contents', 'Info.plist'))
-		if icnsname:
-			icnsdest = os.path.split(icnsname)[1]
-			icnsdest = os.path.join(destname, 
-				os.path.join('Contents', 'Resources', icnsdest))
-			shutil.copy2(icnsname, icnsdest)
-		# XXXX Wrong. This should be parsed from plist file. Also a big hack:-)
-		if shortname == 'PythonIDE':
-			ownertype = 'Pide'
-		else:
-			ownertype = 'PytA'
-		# XXXX Should copy .icns file
-	else:
-		cocoainfo = ''
-		for o in others:
-			if o[-4:] == '.nib':
-				nibname = os.path.split(o)[1][:-4]
-				cocoainfo = """
-        <key>NSMainNibFile</key>
-        <string>%s</string>
-        <key>NSPrincipalClass</key>
-        <string>NSApplication</string>""" % nibname
-			elif o[-6:] == '.lproj':
-				files = os.listdir(o)
-				for f in files:
-					if f[-4:] == '.nib':
-						nibname = os.path.split(f)[1][:-4]
-						cocoainfo = """
-        <key>NSMainNibFile</key>
-        <string>%s</string>
-        <key>NSPrincipalClass</key>
-        <string>NSApplication</string>""" % nibname
-
-		plistname = os.path.join(template, 'Contents', 'Resources', 'Applet-Info.plist')
-		plistdata = open(plistname).read()
-		plistdata = plistdata % {'appletname':shortname, 'cocoainfo':cocoainfo}
-		ofp = open(os.path.join(destname, 'Contents', 'Info.plist'), 'w')
-		ofp.write(plistdata)
-		ofp.close()
-		ownertype = 'PytA'
-	# Create the PkgInfo file
-	if progress:
-		progress.label('Create PkgInfo')
-		progress.inc(0)
-	ofp = open(os.path.join(destname, 'Contents', 'PkgInfo'), 'wb')
-	ofp.write('APPL' + ownertype)
-	ofp.close()
-		
-	
-	# Copy the resources from the target specific resource template, if any
-	typesfound, ownertype = [], None
-	try:
-		input = macresource.open_pathname(rsrcname)
-	except (MacOS.Error, ValueError):
-		if progress:
-			progress.inc(50)
-	else:
-		if progress:
-			progress.label("Copy resources...")
-			progress.set(20)
-		resfilename = 'python.rsrc'  # XXXX later: '%s.rsrc' % shortname
-		try:
-			output = Res.FSOpenResourceFile(
-					os.path.join(destname, 'Contents', 'Resources', resfilename), 
-					u'', WRITE)
-		except MacOS.Error:
-			fsr, dummy = Res.FSCreateResourceFile(
-					os.path.join(destname, 'Contents', 'Resources'), 
-					unicode(resfilename), '')
-			output = Res.FSOpenResourceFile(fsr, u'', WRITE)
-		
-		typesfound, ownertype = copyres(input, output, [], 0, progress)
-		Res.CloseResFile(input)
-		Res.CloseResFile(output)
-
-	if code:
-		if raw:
-			pycname = '__rawmain__.pyc'
-		else:
-			pycname = '__main__.pyc'
-			# And we also create __rawmain__.pyc
-			outputfilename = os.path.join(destname, 'Contents', 'Resources', '__rawmain__.pyc')
-			if progress:
-				progress.label('Creating __rawmain__.pyc')
-				progress.inc(0)
-			rawsourcefp, rawsourcefile, d2 = imp.find_module('appletrawmain')
-			rawsource = rawsourcefp.read()
-			rawcode = compile(rawsource, rawsourcefile, 'exec')
-			writepycfile(rawcode, outputfilename)
-			
-		outputfilename = os.path.join(destname, 'Contents', 'Resources', pycname)
-		if progress:
-			progress.label('Creating '+pycname)
-			progress.inc(0)
-		writepycfile(code, outputfilename)
-	# Copy other files the user asked for
-	for osrc in others:
-		oname = os.path.split(osrc)[1]
-		odst = os.path.join(destname, 'Contents', 'Resources', oname)
-		if progress: 
-			progress.label('Copy ' + oname)
-			progress.inc(0)
-		if os.path.isdir(osrc):
-			copyapptree(osrc, odst)
-		else:
-			shutil.copy2(osrc, odst)
+		import Plist
+		builder.plist = Plist.fromFile(plistname)
+	if icnsname:
+		builder.iconfile = icnsname
+	builder.setup()
+	builder.build()
 	if progress: 
 		progress.label('Done.')
 		progress.inc(0)

@@ -88,6 +88,8 @@ def pack(x, forcetype = None):
 		return x
 	if isinstance(x, FSSType):
 		return AE.AECreateDesc('fss ', x.data)
+	if isinstance(x, FSRefType):
+		return AE.AECreateDesc('fsrf', x.data)
 	if isinstance(x, AliasType):
 		return AE.AECreateDesc('alis', x.data)
 	if isinstance(x, IntType):
@@ -166,6 +168,8 @@ def unpack(desc, formodulename=""):
 		return struct.unpack('d', data)[0]
 	if t == typeFSS:
 		return Carbon.File.FSSpec(rawdata=desc.data)
+	if t == typeFSRef:
+		return Carbon.File.FSRef(rawdata=desc.data)
 	if t == typeInsertionLoc:
 		record = desc.AECoerceDesc('reco')
 		return mkinsertionloc(unpack(record, formodulename))

@@ -11,24 +11,8 @@ import string
 #
 def pack(*args, **kwargs):
 	from aepack import pack
-	return apply(pack, args, kwargs)
+	return pack( *args, **kwargs)
 	
-def IsSubclass(cls, base):
-	"""Test whether CLASS1 is the same as or a subclass of CLASS2"""
-	# Loop to optimize for single inheritance
-	while 1:
-		if cls is base: return 1
-		if len(cls.__bases__) <> 1: break
-		cls = cls.__bases__[0]
-	# Recurse to cope with multiple inheritance
-	for c in cls.__bases__:
-		if IsSubclass(c, base): return 1
-	return 0
-
-def IsInstance(x, cls):
-	"""Test whether OBJECT is an instance of (a subclass of) CLASS"""
-	return type(x) is InstanceType and IsSubclass(x.__class__, cls)
-
 def nice(s):
 	"""'nice' representation of an object"""
 	if type(s) is StringType: return repr(s)
@@ -63,7 +47,7 @@ class Enum:
 		return pack(self.enum, typeEnumeration)
 
 def IsEnum(x):
-	return IsInstance(x, Enum)
+	return isinstance(x, Enum)
 
 def mkenum(enum):
 	if IsEnum(enum): return enum
@@ -108,7 +92,7 @@ class Boolean:
 		return pack(struct.pack('b', self.bool), 'bool')
 
 def IsBoolean(x):
-	return IsInstance(x, Boolean)
+	return isinstance(x, Boolean)
 
 def mkboolean(bool):
 	if IsBoolean(bool): return bool
@@ -130,7 +114,7 @@ class Type:
 		return pack(self.type, typeType)
 
 def IsType(x):
-	return IsInstance(x, Type)
+	return isinstance(x, Type)
 
 def mktype(type):
 	if IsType(type): return type
@@ -153,7 +137,7 @@ class Keyword:
 		return pack(self.keyword, typeKeyword)
 
 def IsKeyword(x):
-	return IsInstance(x, Keyword)
+	return isinstance(x, Keyword)
 
 class Range:
 	"""An AE range object"""
@@ -172,7 +156,7 @@ class Range:
 		return pack({'star': self.start, 'stop': self.stop}, 'rang')
 
 def IsRange(x):
-	return IsInstance(x, Range)
+	return isinstance(x, Range)
 
 class Comparison:
 	"""An AE Comparison"""
@@ -195,7 +179,7 @@ class Comparison:
 			    'cmpd')
 
 def IsComparison(x):
-	return IsInstance(x, Comparison)
+	return isinstance(x, Comparison)
 	
 class NComparison(Comparison):
 	# The class attribute 'relo' must be set in a subclass
@@ -220,7 +204,7 @@ class Ordinal:
 		return pack(self.abso, 'abso')
 
 def IsOrdinal(x):
-	return IsInstance(x, Ordinal)
+	return isinstance(x, Ordinal)
 	
 class NOrdinal(Ordinal):
 	# The class attribute 'abso' must be set in a subclass
@@ -250,7 +234,7 @@ class Logical:
 		return pack({'logc': mkenum(self.logc), 'term': self.term}, 'logi')
 
 def IsLogical(x):
-	return IsInstance(x, Logical)
+	return isinstance(x, Logical)
 
 class StyledText:
 	"""An AE object respresenting text in a certain style"""
@@ -269,7 +253,7 @@ class StyledText:
 		return pack({'ksty': self.style, 'ktxt': self.text}, 'STXT')
 
 def IsStyledText(x):
-	return IsInstance(x, StyledText)
+	return isinstance(x, StyledText)
 
 class AEText:
 	"""An AE text object with style, script and language specified"""
@@ -290,7 +274,7 @@ class AEText:
 				 keyAEText: self.text}, typeAEText)
 
 def IsAEText(x):
-	return IsInstance(x, AEText)
+	return isinstance(x, AEText)
 
 class IntlText:
 	"""A text object with script and language specified"""
@@ -311,7 +295,7 @@ class IntlText:
 			typeIntlText)
 
 def IsIntlText(x):
-	return IsInstance(x, IntlText)
+	return isinstance(x, IntlText)
 
 class IntlWritingCode:
 	"""An object representing script and language"""
@@ -331,7 +315,7 @@ class IntlWritingCode:
 			typeIntlWritingCode)
 
 def IsIntlWritingCode(x):
-	return IsInstance(x, IntlWritingCode)
+	return isinstance(x, IntlWritingCode)
 
 class QDPoint:
 	"""A point"""
@@ -351,7 +335,7 @@ class QDPoint:
 			typeQDPoint)
 
 def IsQDPoint(x):
-	return IsInstance(x, QDPoint)
+	return isinstance(x, QDPoint)
 
 class QDRectangle:
 	"""A rectangle"""
@@ -374,7 +358,7 @@ class QDRectangle:
 			typeQDRectangle)
 
 def IsQDRectangle(x):
-	return IsInstance(x, QDRectangle)
+	return isinstance(x, QDRectangle)
 
 class RGBColor:
 	"""An RGB color"""
@@ -395,7 +379,7 @@ class RGBColor:
 			typeRGBColor)
 
 def IsRGBColor(x):
-	return IsInstance(x, RGBColor)
+	return isinstance(x, RGBColor)
 
 class ObjectSpecifier:
 	
@@ -444,7 +428,7 @@ class ObjectSpecifier:
 			    'obj ')
 
 def IsObjectSpecifier(x):
-	return IsInstance(x, ObjectSpecifier)
+	return isinstance(x, ObjectSpecifier)
 
 
 # Backwards compatability, sigh...
