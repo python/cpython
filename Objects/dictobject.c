@@ -151,26 +151,25 @@ Subsequent probe indices use the values of x^i in GF(2^n) as an offset,
 where x is a root. The initial value is derived from sum, too.
 
 (This version is due to Reimer Behrends, some ideas are also due to
-Jyrki Alakuijala.)
+Jyrki Alakuijala and Vladimir Marangozov.)
 */
 static dictentry *lookdict Py_PROTO((dictobject *, PyObject *, long));
 static dictentry *
 lookdict(mp, key, hash)
 	dictobject *mp;
 	PyObject *key;
-	long hash;
+	register long hash;
 {
 	register int i;
 	register unsigned incr;
-	register unsigned long sum = (unsigned long) hash;
-	register dictentry *freeslot = NULL;
+	register dictentry *freeslot;
 	register unsigned int mask = mp->ma_size-1;
 	dictentry *ep0 = mp->ma_table;
 	register dictentry *ep;
 	/* We must come up with (i, incr) such that 0 <= i < ma_size
 	   and 0 < incr < ma_size and both are a function of hash */
-	i = (~sum) & mask;
-	/* We use ~sum instead if sum, as degenerate hash functions, such
+	i = (~hash) & mask;
+	/* We use ~hash instead of hash, as degenerate hash functions, such
 	   as for ints <sigh>, can have lots of leading zeros. It's not
 	   really a performance risk, but better safe than sorry. */
 	ep = &ep0[i];
@@ -178,19 +177,22 @@ lookdict(mp, key, hash)
 		return ep;
 	if (ep->me_key == dummy)
 		freeslot = ep;
-	else if (ep->me_key == key ||
+	else {
+		if (ep->me_key == key ||
 		 (ep->me_hash == hash &&
 		  PyObject_Compare(ep->me_key, key) == 0))
-	{
-		return ep;
+		{
+			return ep;
+		}
+		freeslot = NULL;
 	}
 	/* XXX What if PyObject_Compare returned an exception? */
 	/* Derive incr from sum, just to make it more arbitrary. Note that
 	   incr must not be 0, or we will get into an infinite loop.*/
-	incr = (sum ^ (sum >> 3)) & mask;
+	incr = (hash ^ ((unsigned long)hash >> 3)) & mask;
 	if (!incr)
 		incr = mask;
-	if (incr > mask) /* Cycle through GF(2^n)-{0} */
+	else if (incr > mask) /* Cycle through GF(2^n)-{0} */
 		incr ^= mp->ma_poly; /* This will implicitly clear the
 					highest bit */
 	for (;;) {
