@@ -128,11 +128,19 @@ perform the match in \dfn{non-greedy} or \dfn{minimal} fashion; as
 \emph{few} characters as possible will be matched.  Using \regexp{.*?}
 in the previous expression will match only \code{'<H1>'}.
 
+\item[\code{\{\var{m}\}}]
+Specifies that exactly \var{m} copies of the previous RE should be
+matched; fewer matches cause the entire RE not to match.  For example,
+\regexp{a\{6\}} will match exactly six \character{a} characters, but
+not five.
+
 \item[\code{\{\var{m},\var{n}\}}] Causes the resulting RE to match from
 \var{m} to \var{n} repetitions of the preceding RE, attempting to
 match as many repetitions as possible.  For example, \regexp{a\{3,5\}}
 will match from 3 to 5 \character{a} characters.  Omitting \var{n}
-specifies an infinite upper bound; you can't omit \var{m}.
+specifies an infinite upper bound; you can't omit \var{m}.  The comma
+may not be omitted or the modifier would be confused with the
+previously described form.
 
 \item[\code{\{\var{m},\var{n}\}?}] Causes the resulting RE to
 match from \var{m} to \var{n} repetitions of the preceding RE,
@@ -497,21 +505,36 @@ ignored.
 \end{funcdesc}
 
 \begin{funcdesc}{findall}{pattern, string}
-Return a list of all non-overlapping matches of \var{pattern} in
-\var{string}.  If one or more groups are present in the pattern,
-return a list of groups; this will be a list of tuples if the pattern
-has more than one group.  Empty matches are included in the result.
-\versionadded{1.5.2}
+  Return a list of all non-overlapping matches of \var{pattern} in
+  \var{string}.  If one or more groups are present in the pattern,
+  return a list of groups; this will be a list of tuples if the
+  pattern has more than one group.  Empty matches are included in the
+  result.
+  \versionadded{1.5.2}
 \end{funcdesc}
 
-\begin{funcdesc}{sub}{pattern, repl, string\optional{, count\code{ = 0}}}
-Return the string obtained by replacing the leftmost non-overlapping
-occurrences of \var{pattern} in \var{string} by the replacement
-\var{repl}.  If the pattern isn't found, \var{string} is returned
-unchanged.  \var{repl} can be a string or a function; if a function,
-it is called for every non-overlapping occurrence of \var{pattern}.
-The function takes a single match object argument, and returns the
-replacement string.  For example:
+\begin{funcdesc}{sub}{pattern, repl, string\optional{, count}}
+  Return the string obtained by replacing the leftmost non-overlapping
+  occurrences of \var{pattern} in \var{string} by the replacement
+  \var{repl}.  If the pattern isn't found, \var{string} is returned
+  unchanged.  \var{repl} can be a string or a function; if it is a
+  string, any backslash escapes in it are processed.  That is,
+  \samp{\e n} is converted to a single newline character, \samp{\e r}
+  is converted to a linefeed, and so forth.  Unknown escapes such as
+  \samp{\e j} are left alone.  Backreferences, such as \samp{\e6}, are
+  replaced with the substring matched by group 6 in the pattern.  For
+  example:
+
+\begin{verbatim}
+>>> re.sub(r'def\s+([a-zA-Z_][a-zA-Z_0-9]*)\s*\(\s*\):',
+...        r'static PyObject*\npy_\1(void)\n{',
+...        'def myfunc():')
+'static PyObject*\npy_myfunc(void)\n{'
+\end{verbatim}
+
+  If \var{repl} is a function, it is called for every non-overlapping
+  occurrence of \var{pattern}.  The function takes a single match
+  object argument, and returns the replacement string.  For example:
 
 \begin{verbatim}
 >>> def dashrepl(matchobj):
@@ -521,38 +544,31 @@ replacement string.  For example:
 'pro--gram files'
 \end{verbatim}
 
-The pattern may be a string or an RE object; if you need to specify
-regular expression flags, you must use a RE object, or use
-embedded modifiers in a pattern; for example,
-\samp{sub("(?i)b+", "x", "bbbb BBBB")} returns \code{'x x'}.
+  The pattern may be a string or an RE object; if you need to specify
+  regular expression flags, you must use a RE object, or use embedded
+  modifiers in a pattern; for example, \samp{sub("(?i)b+", "x", "bbbb
+  BBBB")} returns \code{'x x'}.
 
-The optional argument \var{count} is the maximum number of pattern
-occurrences to be replaced; \var{count} must be a non-negative
-integer, and the default value of 0 means to replace all occurrences.
+  The optional argument \var{count} is the maximum number of pattern
+  occurrences to be replaced; \var{count} must be a non-negative
+  integer.  If omitted or zero, all occurrences will be replaced.
+  Empty matches for the pattern are replaced only when not adjacent to
+  a previous match, so \samp{sub('x*', '-', 'abc')} returns
+  \code{'-a-b-c-'}.
 
-Empty matches for the pattern are replaced only when not adjacent to a
-previous match, so \samp{sub('x*', '-', 'abc')} returns
-\code{'-a-b-c-'}.
-
-If \var{repl} is a string, any backslash escapes in it are processed.
-That is, \samp{\e n} is converted to a single newline character,
-\samp{\e r} is converted to a linefeed, and so forth.  Unknown escapes
-such as \samp{\e j} are left alone.  Backreferences, such as \samp{\e
-6}, are replaced with the substring matched by group 6 in the pattern. 
-
-In addition to character escapes and backreferences as described
-above, \samp{\e g<name>} will use the substring matched by the group
-named \samp{name}, as defined by the \regexp{(?P<name>...)} syntax.
-\samp{\e g<number>} uses the corresponding group number; \samp{\e
-g<2>} is therefore equivalent to \samp{\e 2}, but isn't ambiguous in a
-replacement such as \samp{\e g<2>0}.  \samp{\e 20} would be
-interpreted as a reference to group 20, not a reference to group 2
-followed by the literal character \character{0}.  
+  In addition to character escapes and backreferences as described
+  above, \samp{\e g<name>} will use the substring matched by the group
+  named \samp{name}, as defined by the \regexp{(?P<name>...)} syntax.
+  \samp{\e g<number>} uses the corresponding group number;
+  \samp{\e g<2>} is therefore equivalent to \samp{\e 2}, but isn't
+  ambiguous in a replacement such as \samp{\e g<2>0}.  \samp{\e 20}
+  would be interpreted as a reference to group 20, not a reference to
+  group 2 followed by the literal character \character{0}.
 \end{funcdesc}
 
-\begin{funcdesc}{subn}{pattern, repl, string\optional{, count\code{ = 0}}}
-Perform the same operation as \function{sub()}, but return a tuple
-\code{(\var{new_string}, \var{number_of_subs_made})}.
+\begin{funcdesc}{subn}{pattern, repl, string\optional{, count}}
+  Perform the same operation as \function{sub()}, but return a tuple
+  \code{(\var{new_string}, \var{number_of_subs_made})}.
 \end{funcdesc}
 
 \begin{funcdesc}{escape}{string}
