@@ -46,7 +46,7 @@ any similar types.
 
 Classes can use the same interfaces to control copying that they use
 to control pickling: they can define methods called __getinitargs__(),
-__getstate__() and __setstate__().  See the __doc__ string of module
+__getstate__() and __setstate__().  See the documentation for module
 "pickle" for information on these methods.
 """
 
@@ -107,9 +107,10 @@ def _copy_inst(x):
 		return x.__copy__()
 	if hasattr(x, '__getinitargs__'):
 		args = x.__getinitargs__()
+		y = apply(x.__class__, args)
 	else:
-		args = ()
-	y = apply(x.__class__, args)
+		y = _EmptyClass()
+		y.__class__ = x.__class__
 	if hasattr(x, '__getstate__'):
 		state = x.__getstate__()
 	else:
@@ -219,9 +220,10 @@ def _deepcopy_inst(x, memo):
 		args = x.__getinitargs__()
 		_keep_alive(args, memo)
 		args = deepcopy(args, memo)
+		y = apply(x.__class__, args)
 	else:
-		args = ()
-	y = apply(x.__class__, args)
+		y = _EmptyClass()
+		y.__class__ = x.__class__
 	memo[id(x)] = y
 	if hasattr(x, '__getstate__'):
 		state = x.__getstate__()
@@ -239,6 +241,10 @@ d[types.InstanceType] = _deepcopy_inst
 del d
 
 del types
+
+# Helper for instance creation without calling __init__
+class _EmptyClass:
+    pass
 
 def _test():
 	l = [None, 1, 2L, 3.14, 'xyzzy', (1, 2L), [3.14, 'abc'],
