@@ -168,7 +168,7 @@ have to open a command prompt window and do it there; on Mac~OS ...
 You should always run the setup command from the distribution root
 directory, i.e. the top-level subdirectory that the module source
 distribution unpacks into.  For example, if you've just downloaded a
-module source distribution \file{foo-1.0.tar.gz} onto a Unix system, the 
+module source distribution \file{foo-1.0.tar.gz} onto a Unix system, the
 normal thing to do is:
 \begin{verbatim}
 gunzip -c foo-1.0.tar.gz | tar xf -    # unpacks into directory foo-1.0
@@ -177,10 +177,11 @@ python setup.py install
 \end{verbatim}
 
 On Windows, you'd probably unpack the archive before opening the command
-prompt.  If you downloaded the archive file to \file{C:\textbackslash{}Temp},
-then it probably unpacked (depending on your software) into
-\file{C:\textbackslash{}Temp\textbackslash{}foo-1.0}; from the command prompt window,
-you would then run
+prompt.  If you downloaded the archive file to
+\file{C:\textbackslash{}Temp}, then it probably unpacked (depending on
+your software) into
+\file{C:\textbackslash{}Temp\textbackslash{}foo-1.0}; from the command
+prompt window, you would then run
 \begin{verbatim}
 cd c:\temp\foo-1.0
 python setup.py install
@@ -219,8 +220,8 @@ As implied above, the \command{build} command is responsible for putting
 the files to install into a \emph{build directory}.  By default, this is
 \file{build} under the distribution root; if you're excessively
 concerned with speed, or want to keep the source tree pristine, you can
-change the build directory with the \longprogramopt{build-base} option.  For
-example:
+change the build directory with the \longprogramopt{build-base} option.
+For example:
 \begin{verbatim}
 python setup.py build --build-base=/tmp/pybuild/foo-1.0
 \end{verbatim}
@@ -269,23 +270,23 @@ being installed is pure Python or contains extensions (``non-pure''):
 \begin{tableiv}{l|l|l|c}{textrm}%
   {Platform}{Standard installation location}{Default value}{Notes}
   \lineiv{Unix (pure)}
-          {\filenq{\var{prefix}/lib/python1.6/site-packages}}
+          {\filenq{\filevar{prefix}/lib/python1.6/site-packages}}
           {\filenq{/usr/local/lib/python1.6/site-packages}}
           {(1)}
   \lineiv{Unix (non-pure)}
-          {\filenq{\var{exec-prefix}/lib/python1.6/site-packages}}
+          {\filenq{\filevar{exec-prefix}/lib/python1.6/site-packages}}
           {\filenq{/usr/local/lib/python1.6/site-packages}}
           {(1)}
   \lineiv{Windows}
-          {\filenq{\var{prefix}}}
+          {\filenq{\filevar{prefix}}}
           {\filenq{C:\textbackslash{}Python}}
           {(2)}
   \lineiv{Mac~OS (pure)}
-          {\filenq{\var{prefix}:Lib}}
+          {\filenq{\filevar{prefix}:Lib}}
           {\filenq{Python:Lib}  \XXX{???}}
           {}
   \lineiv{Mac~OS (non-pure)}
-          {\var{prefix}:Mac:PlugIns}
+          {\filevar{prefix}:Mac:PlugIns}
           {\filenq{Python:Mac:PlugIns}\XXX{???}}
           {}
 \end{tableiv}
@@ -298,8 +299,8 @@ being installed is pure Python or contains extensions (``non-pure''):
   any Unix-like system), the default \filevar{prefix} and
   \filevar{exec-prefix} are \file{/usr/local}.
 \item[(2)] The default installation directory on Windows was
-  \file{C:\textbackslash{}Program Files\textbackslash{}Python} under Python 1.6a1,
-  1.5.2, and earlier.
+  \file{C:\textbackslash{}Program Files\textbackslash{}Python} under
+  Python 1.6a1, 1.5.2, and earlier.
 \end{description}
 
 \filevar{prefix} and \filevar{exec-prefix} stand for the directories
@@ -397,9 +398,9 @@ option.  Lazy typists can just type a tilde (\code{\textasciitilde}); the
 python setup.py install --home=~
 \end{verbatim}
 
-The \longprogramopt{home} option defines the installation base directory.  Files
-are installed to the following directories under the installation base
-as follows:
+The \longprogramopt{home} option defines the installation base
+directory.  Files are installed to the following directories under the
+installation base as follows:
 \installscheme{home}{/lib/python}
               {home}{/lib/python}
               {home}{/bin}
@@ -438,30 +439,31 @@ could be done with
 /usr/local/bin/python setup.py install --prefix=/mnt/@server/export
 \end{verbatim}
 
-In either case, the \longprogramopt{prefix} option defines the installation
-base, and the \longprogramopt{exec-prefix} option defines the platform-specific
-installation base, which is used for platform-specific files.
-(Currently, this just means non-pure module distributions, but could be
-expanded to C libraries, binary executables, etc.)  If
-\longprogramopt{exec-prefix} is not supplied, it defaults to \longprogramopt{prefix}.
-Files are installed as follows:
+In either case, the \longprogramopt{prefix} option defines the
+installation base, and the \longprogramopt{exec-prefix} option defines
+the platform-specific installation base, which is used for
+platform-specific files.  (Currently, this just means non-pure module
+distributions, but could be expanded to C libraries, binary executables,
+etc.)  If \longprogramopt{exec-prefix} is not supplied, it defaults to
+\longprogramopt{prefix}.  Files are installed as follows:
 
 \installscheme{prefix}{/lib/python1.\filevar{X}/site-packages}
               {exec-prefix}{/lib/python1.\filevar{X}/site-packages}
               {prefix}{/bin}
               {prefix}{/share}
 
-There is no requirement that \longprogramopt{prefix} or \longprogramopt{exec-prefix}
-actually point to an alternate Python installation; if the directories
-listed above do not already exist, they are created at installation
-time.
+There is no requirement that \longprogramopt{prefix} or
+\longprogramopt{exec-prefix} actually point to an alternate Python
+installation; if the directories listed above do not already exist, they
+are created at installation time.
 
 Incidentally, the real reason the prefix scheme is important is simply
 that a standard Unix installation uses the prefix scheme, but with
-\longprogramopt{prefix} and \longprogramopt{exec-prefix} supplied by Python itself (as
-\code{sys.prefix} and \code{sys.exec\_prefix}).  Thus, you might think
-you'll never use the prefix scheme, but every time you run \code{python
-  setup.py install} without any other options, you're using it.
+\longprogramopt{prefix} and \longprogramopt{exec-prefix} supplied by
+Python itself (as \code{sys.prefix} and \code{sys.exec\_prefix}).  Thus,
+you might think you'll never use the prefix scheme, but every time you
+run \code{python setup.py install} without any other options, you're
+using it.
 
 Note that installing extensions to an alternate Python installation has
 no effect on how those extensions are built: in particular, the Python
@@ -472,8 +474,8 @@ used to run extensions installed in this way is compatibile with the
 interpreter used to build them.  The best way to do this is to ensure
 that the two interpreters are the same version of Python (possibly
 different builds, or possibly copies of the same build).  (Of course, if
-your \longprogramopt{prefix} and \longprogramopt{exec-prefix} don't even point to an
-alternate Python installation, this is immaterial.)
+your \longprogramopt{prefix} and \longprogramopt{exec-prefix} don't even
+point to an alternate Python installation, this is immaterial.)
 
 
 \subsection{Alternate installation: Windows}
@@ -481,18 +483,18 @@ alternate Python installation, this is immaterial.)
 
 Since Windows has no conception of a user's home directory, and since
 the standard Python installation under Windows is simpler than that
-under Unix, there's no point in having separate \longprogramopt{prefix} and
-\longprogramopt{home} options.  Just use the \longprogramopt{prefix} option to specify
-a base directory, e.g.
+under Unix, there's no point in having separate \longprogramopt{prefix}
+and \longprogramopt{home} options.  Just use the \longprogramopt{prefix}
+option to specify a base directory, e.g.
 \begin{verbatim}
 python setup.py install --prefix="\Temp\Python"
 \end{verbatim}
 to install modules to the \file{\textbackslash{}Temp} directory on the current
 drive.
 
-The installation base is defined by the \longprogramopt{prefix} option; the
-\longprogramopt{exec-prefix} option is not supported under Windows.  Files are
-installed as follows:
+The installation base is defined by the \longprogramopt{prefix} option;
+the \longprogramopt{exec-prefix} option is not supported under Windows.
+Files are installed as follows:
 \installscheme{prefix}{}
               {prefix}{}
               {prefix}{\textbackslash{}Scripts}
@@ -504,8 +506,8 @@ installed as follows:
 
 Like Windows, Mac~OS has no notion of home directories (or even of
 users), and a fairly simple standard Python installation.  Thus, only a
-\longprogramopt{prefix} option is needed.  It defines the installation base, and 
-files are installed under it as follows:
+\longprogramopt{prefix} option is needed.  It defines the installation
+base, and files are installed under it as follows:
 
 \XXX{how do MacPython users run the interpreter with command-line args?}
 
@@ -541,16 +543,16 @@ how you define a custom installation scheme.  These override options can
 be relative, absolute, or explicitly defined in terms of one of the
 installation base directories.  (There are two installation base
 directories, and they are normally the same---they only differ when you
-use the Unix ``prefix scheme'' and supply different \longprogramopt{prefix} and
-\longprogramopt{exec-prefix} options.)
+use the Unix ``prefix scheme'' and supply different
+\longprogramopt{prefix} and \longprogramopt{exec-prefix} options.)
 
 For example, say you're installing a module distribution to your home
 directory under Unix---but you want scripts to go in
-\file{\textasciitilde/scripts} rather than \file{\textasciitilde/bin}.  As you might
-expect, you can override this directory with the
-\longprogramopt{install-scripts} option; in this case, it makes most sense to
-supply a relative path, which will be interpreted relative to the
-installation base directory (your home directory, in this case):
+\file{\textasciitilde/scripts} rather than \file{\textasciitilde/bin}.
+As you might expect, you can override this directory with the
+\longprogramopt{install-scripts} option; in this case, it makes most
+sense to supply a relative path, which will be interpreted relative to
+the installation base directory (your home directory, in this case):
 \begin{verbatim}
 python setup.py install --home --install-scripts=scripts
 \end{verbatim}
