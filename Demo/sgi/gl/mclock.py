@@ -41,10 +41,10 @@ SCREENBG = 127, 156, 191
 NPARTS = 9
 TITLE = 'M Clock'
 
-import tzparse
-TZDIFF = tzparse.timezone
-if tzparse.isdst(time.time()):
-	TZDIFF = tzparse.altzone
+# Set timezone, check for daylight saving time
+TZDIFF = time.timezone
+if time.localtime(time.time())[-1]:
+	TZDIFF = time.altzone
 
 # Default parameters
 
@@ -145,7 +145,7 @@ def main():
 	Gl.change = 1
 	while 1:
 		if realtime:
-			localtime = time.time() - Gl.tzdiff
+			localtime = int(time.time() - Gl.tzdiff)
 		if Gl.alarm_set:
 			if localtime%(24*HOUR) == Gl.alarm_time:
 				# Ring the alarm!
@@ -313,7 +313,7 @@ def usage(exc, msg):
 	print '-u update : update interval [60]'
 	print '-CMYK     : Cyan, Magenta, Yellow or blacK overlay only'
 	print 'if hh [mm [ss]] is specified, display that time statically'
-	print 'on machines with < 12 bitplanes, -c and -s are forced on'
+	print 'on machines with < 12 bitplanes, -s is forced on'
 	#
 	sys.exit(2)
 
@@ -329,7 +329,8 @@ def makehands(localtime):
 	little_hand = (MIDN + FULLC - ((localtime/12) % HOUR)) % FULLC
 	return little_hand, big_hand, seconds_hand
 
-def makelist(little_hand, big_hand, seconds_hand):
+def makelist(hands):
+	little_hand, big_hand, seconds_hand = hands
 	total = []
 	if Gl.cyan or not Gl.colorsubset:
 		total = total + makesublist(big_hand, Gl.indices[0])
@@ -476,7 +477,7 @@ def makewindow():
 		prefposition(0, scrwidth-1, 0, scrheight-1)
 	else:
 		keepaspect(1, 1)
-		prefsize(100, 100)
+		prefsize(80, 80)
 	#
 	if not Gl.border:
 		noborder()
@@ -495,7 +496,11 @@ def makewindow():
 	if Gl.warnings:
 		print nplanes, 'color planes,', nmaps, 'color maps'
 	#
-	if nplanes < 12 or Gl.colormap:
+	if Gl.doublebuffer and not Gl.colormap and nplanes < 12:
+		if Gl.warnings: print 'forcing single buffer mode'
+		Gl.doublebuffer = 0
+	#
+	if Gl.colormap:
 		if not Gl.colormap:
 			Gl.colormap = nmaps - 1
 			if Gl.warnings:

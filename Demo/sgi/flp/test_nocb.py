@@ -12,7 +12,7 @@ import sys
 # The following struct is created to hold the instance variables
 # main_form, button1, button2 and exitbutton.
 
-class struct(): pass
+class struct: pass
 container = struct()
 
 #
