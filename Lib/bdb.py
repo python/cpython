@@ -68,7 +68,7 @@ class Bdb: # Basic Debugger
 		return self.trace_dispatch
 	
 	# Normally derived classes don't override the following
-	# functions, but they may if they want to redefine the
+	# methods, but they may if they want to redefine the
 	# definition of stopping and breakpoints.
 	
 	def stop_here(self, frame):
@@ -93,28 +93,28 @@ class Bdb: # Basic Debugger
 	def break_anywhere(self, frame):
 		return self.breaks.has_key(frame.f_code.co_filename)
 	
-	# Derived classes should override the user_* functions
+	# Derived classes should override the user_* methods
 	# to gain control.
 	
 	def user_call(self, frame, argument_list):
-		# This function is called when there is the remote possibility
+		# This method is called when there is the remote possibility
 		# that we ever need to stop in this function
 		pass
 	
 	def user_line(self, frame):
-		# This function is called when we stop or break at this line
+		# This method is called when we stop or break at this line
 		pass
 	
 	def user_return(self, frame, return_value):
-		# This function is called when a return trap is set here
+		# This method is called when a return trap is set here
 		pass
 	
 	def user_exception(self, frame, (exc_type, exc_value, exc_traceback)):
-		# This function is called if an exception occurs,
+		# This method is called if an exception occurs,
 		# but only if we are to stop at or just below this level
 		pass
 	
-	# Derived classes and clients can call the following functions
+	# Derived classes and clients can call the following methods
 	# to affect the stepping state.
 	
 	def set_step(self):
@@ -147,8 +147,8 @@ class Bdb: # Basic Debugger
 		self.quitting = 1
 		sys.settrace(None)
 	
-	# Derived classes and clients can call the following functions
-	# to manipulate breakpoints.  These functions return an
+	# Derived classes and clients can call the following methods
+	# to manipulate breakpoints.  These methods return an
 	# error message is something went wrong, None if all is well.
 	# Call self.get_*break*() to see the breakpoints.
 	
@@ -196,7 +196,7 @@ class Bdb: # Basic Debugger
 	def get_all_breaks(self):
 		return self.breaks
 	
-	# Derived classes and clients can call the following function
+	# Derived classes and clients can call the following method
 	# to get a data structure representing a stack trace.
 	
 	def get_stack(self, f, t):
@@ -234,7 +234,7 @@ class Bdb: # Basic Debugger
 		if line: s = s + ': ' + string.strip(line)
 		return s
 	
-	# The following two functions can be called by clients to use
+	# The following two methods can be called by clients to use
 	# a debugger to debug a statement, given as a string.
 	
 	def run(self, cmd):
@@ -253,7 +253,20 @@ class Bdb: # Basic Debugger
 		finally:
 			self.quitting = 1
 			sys.settrace(None)
-		# XXX What to do if the command finishes normally?
+
+	# This method is more useful to debug a single function call.
+
+	def runcall(self, func, *args):
+		self.reset()
+		sys.settrace(self.trace_dispatch)
+		try:
+			try:
+				apply(func, args)
+			except BdbQuit:
+				pass
+		finally:
+			self.quitting = 1
+			sys.settrace(None)
 
 
 # -------------------- testing --------------------

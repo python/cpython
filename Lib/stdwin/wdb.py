@@ -283,6 +283,11 @@ def runctx(statement, globals, locals):
 	try: x.runctx(statement, globals, locals)
 	finally: x.close()
 
+def runcall(*args):
+	x = Wdb().init()
+	try: apply(Pdb().init().runcall, args)
+	finally: x.close()
+
 TESTCMD = 'import x; x.main()'
 
 def test():

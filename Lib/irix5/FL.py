@@ -4,6 +4,7 @@
 # Alternate use: from FL import *; ... NORMAL_BOX ... etc.
 
 _v20 = 1
+_v21 = 1
 ##import fl
 ##try:
 ##	_v20 = (fl.get_rgbmode <> None)
@@ -198,6 +199,9 @@ if _v20:
 	FLOAT_INPUT = 1
 	INT_INPUT = 2
 	HIDDEN_INPUT = 3
+	if _v21:
+		MULTILINE_INPUT = 4
+		SECRET_INPUT = 5
 else:
 	ALWAYS_INPUT = 1
 INPUT_BOXTYPE = DOWN_BOX

@@ -1,12 +1,16 @@
 #
 # Class for profiling python code.
 # Author: Sjoerd Mullender
+# Hacked somewhat by: Guido van Rossum
 #
 # See the accompanying document profile.doc for more information.
 
 import sys
 import codehack
-import posix
+import os
+import string
+import fpformat
+import marshal
 
 class Profile():
 
@@ -30,7 +34,7 @@ class Profile():
 				if self.profile_func.has_key(funcname):
 					return
 				self.profiling = 1
-			t = posix.times()
+			t = os.times()
 			t = t[0] + t[1]
 			lineno = codehack.getlineno(frame.f_code)
 			filename = frame.f_code.co_filename
@@ -42,13 +46,16 @@ class Profile():
 				s0 = 'call: ' + key + ' depth: ' + `self.call_level` + ' time: ' + `t`
 			if pframe:
 				pkey = pframe.f_code.co_filename + ':' + \
-					  `codehack.getlineno(pframe.f_code)` + '(' + \
-					  codehack.getcodename(pframe.f_code) + ')'
+					  `codehack.getlineno(pframe.f_code)` \
+					  + '(' + \
+					  codehack.getcodename(pframe.f_code) \
+					  + ')'
 				if self.debug:
 					s1 = 'parent: ' + pkey
 				if pframe.f_locals.has_key('__start_time'):
 					st = pframe.f_locals['__start_time']
-					nc, tt, ct, callers, callees = self.timings[pkey]
+					nc, tt, ct, callers, callees = \
+						self.timings[pkey]
 					if self.debug:
 						s1 = s1+' before: st='+`st`+' nc='+`nc`+' tt='+`tt`+' ct='+`ct`
 					if callers.has_key(key):
@@ -80,7 +87,8 @@ class Profile():
 			if self.profile_func:
 				if not self.profiling:
 					return
-				if self.profile_func.has_key(codehack.getcodename(frame.f_code)):
+				if self.profile_func.has_key( \
+					codehack.getcodename(frame.f_code)):
 					self.profiling = 0
 			self.call_level = depth(frame)
 			self.cur_frame = frame
@@ -106,11 +114,12 @@ class Profile():
 			self.call_level = call_level
 			self.cur_frame = frame
 			return
-		print 'profile.Profile.dispatch: unknown debugging event:', `event`
+		print 'profile.Profile.dispatch: unknown debugging event:',
+		print `event`
 		return
 
 	def handle_return(self, pframe, frame, s0):
-		t = posix.times()
+		t = os.times()
 		t = t[0] + t[1]
 		funcname = codehack.getcodename(frame.f_code)
 		lineno = codehack.getlineno(frame.f_code)
@@ -128,11 +137,13 @@ class Profile():
 			if pframe.f_locals.has_key('__start_time') and \
 				  self.timings.has_key(pkey):
 				st = pframe.f_locals['__start_time']
-				nc, tt, ct, callers, callees = self.timings[pkey]
+				nc, tt, ct, callers, callees = \
+					self.timings[pkey]
 				if self.debug:
 					s1 = s1+' before: st='+`st`+' nc='+`nc`+' tt='+`tt`+' ct='+`ct`
 					s1 = s1+' after: st='+`t`+' nc='+`nc`+' tt='+`tt`+' ct='+`ct+(t-st)`
-				self.timings[pkey] = nc, tt, ct + (t - st), callers, callees
+				self.timings[pkey] = \
+					nc, tt, ct + (t - st), callers, callees
 				pframe.f_locals['__start_time'] = t
 		if self.timings.has_key(key):
 			nc, tt, ct, callers, callees = self.timings[key]
@@ -147,35 +158,30 @@ class Profile():
 			s0 = s0+' after: nc='+`nc`+' tt='+`tt+(t-st)`+' ct='+`ct+(t-st)`
 			print s0
 			print s1
-		self.timings[key] = nc, tt + (t - st), ct + (t - st), callers, callees
+		self.timings[key] = \
+			nc, tt + (t - st), ct + (t - st), callers, callees
 
 	def print_stats(self):
-		import string
-		s = string.rjust('# calls', 8)
-		s = s + ' ' + string.rjust('tot time', 8)
-		s = s + ' ' + string.rjust('per call', 8)
-		s = s + ' ' + string.rjust('cum time', 8)
-		s = s + ' ' + string.rjust('per call', 8)
-		print s + ' filename(function)'
+		# Print in reverse order by ct
+		print_title()
+		list = []
 		for key in self.timings.keys():
 			nc, tt, ct, callers, callees = self.timings[key]
 			if nc == 0:
 				continue
-			s = string.rjust(`nc`, 8)
-			s = s + ' ' + string.rjust(`tt`, 8)
-			s = s + ' ' + string.rjust(`tt/nc`, 8)
-			s = s + ' ' + string.rjust(`ct`, 8)
-			s = s + ' ' + string.rjust(`ct/nc`, 8)
-			print s + ' ' + key
+			list.append(ct, tt, nc, key)
+		list.sort()
+		list.reverse()
+		for ct, tt, nc, key in list:
+			print_line(nc, tt, ct, os.path.basename(key))
 
 	def dump_stats(self, file):
-		import marshal
 		f = open(file, 'w')
 		marshal.dump(self.timings, f)
 		f.close()
 
-	# The following two functions can be called by clients to use
-	# a debugger to debug a statement, given as a string.
+	# The following two methods can be called by clients to use
+	# a profiler to profile a statement, given as a string.
 	
 	def run(self, cmd):
 		import __main__
@@ -183,17 +189,21 @@ class Profile():
 		self.runctx(cmd, dict, dict)
 	
 	def runctx(self, cmd, globals, locals):
-##		self.reset()
 		sys.setprofile(self.trace_dispatch)
 		try:
-##			try:
-				exec(cmd + '\n', globals, locals)
-##			except ProfQuit:
-##				pass
+			exec(cmd + '\n', globals, locals)
 		finally:
-##			self.quitting = 1
 			sys.setprofile(None)
-		# XXX What to do if the command finishes normally?
+
+	# This method is more useful to profile a single function call.
+
+	def runcall(self, func, *args):
+		sys.setprofile(self.trace_dispatch)
+		try:
+			apply(func, args)
+		finally:
+			sys.setprofile(None)
+
 
 def depth(frame):
 	d = 0
@@ -202,98 +212,8 @@ def depth(frame):
 		frame = frame.f_back
 	return d
 
-def run(statement, *args):
-	prof = Profile().init()
-	try:
-		prof.run(statement)
-	except SystemExit:
-		pass
-	if len(args) == 0:
-		prof.print_stats()
-	else:
-		prof.dump_stats(args[0])
-
-def cv_float(val, width):
-	import string
-	s = `val`
-	try:
-		e = string.index(s, 'e')
-		exp = s[e+1:]
-		s = s[:e]
-		width = width - len(exp) - 1
-	except string.index_error:
-		exp = ''
-	try:
-		d = string.index(s, '.')
-		frac = s[d+1:]
-		s = s[:d]
-		width = width - len(s) - 1
-	except string.index_error:
-		if exp <> '':
-			return s + 'e' + exp
-		else:
-			return s
-	if width < 0:
-		width = 0
-	while width < len(frac):
-		c = frac[width]
-		frac = frac[:width]
-		if ord(c) >= ord('5'):
-			carry = 1
-			for i in range(width-1, -1, -1):
-				if frac[i] == '9':
-					frac = frac[:i]
-					# keep if trailing zeroes are wanted
-					# + '0' + frac[i+1:width]
-				else:
-					frac = frac[:i] + chr(ord(frac[i])+1) + frac[i+1:width]
-					carry = 0
-					break
-			if carry:
-				for i in range(len(s)-1, -1, -1):
-					if s[i] == '9':
-						s = s[:i] + '0' + s[i+1:]
-						if i == 0:
-							# gets one wider, so
-							# should shorten
-							# fraction by one
-							s = '1' + s
-							if width > 0:
-								width = width - 1
-					else:
-						s = s[:i] + chr(ord(s[i])+1) + s[i+1:]
-						break
-	# delete trailing zeroes
-	for i in range(len(frac)-1, -1, -1):
-		if frac[i] == '0':
-			frac = frac[:i]
-		else:
-			break
-	# build up the number
-	if width > 0 and len(frac) > 0:
-		s = s + '.' + frac[:width]
-	if exp <> '':
-		s = s + 'e' + exp
-	return s
-
-def print_line(nc, tt, ct, callers, callees, key):
-	import string
-	s = string.rjust(cv_float(nc,8), 8)
-	s = s + ' ' + string.rjust(cv_float(tt,8), 8)
-	if nc == 0:
-		s = s + ' '*9
-	else:
-		s = s + ' ' + string.rjust(cv_float(tt/nc,8), 8)
-	s = s + ' ' + string.rjust(cv_float(ct,8), 8)
-	if nc == 0:
-		s = s + ' '*9
-	else:
-		s = s + ' ' + string.rjust(cv_float(ct/nc,8), 8)
-	print s + ' ' + key
-
 class Stats():
 	def init(self, file):
-		import marshal
 		f = open(file, 'r')
 		self.stats = marshal.load(f)
 		f.close()
@@ -301,26 +221,22 @@ class Stats():
 		return self
 
 	def print_stats(self):
-		import string
-		s = string.rjust('# calls', 8)
-		s = s + ' ' + string.rjust('tot time', 8)
-		s = s + ' ' + string.rjust('per call', 8)
-		s = s + ' ' + string.rjust('cum time', 8)
-		s = s + ' ' + string.rjust('per call', 8)
-		print s + ' filename(function)'
+		print_title()
 		if self.stats_list:
 			for i in range(len(self.stats_list)):
-				nc, tt, ct, callers, callees, key = self.stats_list[i]
-				print_line(nc, tt, ct, callers, callees, key)
+				nc, tt, ct, callers, callees, key = \
+					self.stats_list[i]
+				print_line(nc, tt, ct, key)
 		else:
 			for key in self.stats.keys():
 				nc, tt, ct, callers, callees = self.stats[key]
-				print_line(nc, tt, ct, callers, callees, key)
+				print_line(nc, tt, ct, key)
 
 	def print_callers(self):
 		if self.stats_list:
 			for i in range(len(self.stats_list)):
-				nc, tt, ct, callers, callees, key = self.stats_list[i]
+				nc, tt, ct, callers, callees, key = \
+					self.stats_list[i]
 				print key,
 				for func in callers.keys():
 					print func+'('+`callers[func]`+')',
@@ -336,7 +252,8 @@ class Stats():
 	def print_callees(self):
 		if self.stats_list:
 			for i in range(len(self.stats_list)):
-				nc, tt, ct, callers, callees, key = self.stats_list[i]
+				nc, tt, ct, callers, callees, key = \
+					self.stats_list[i]
 				print key,
 				for func in callees.keys():
 					print func+'('+`callees[func]`+')',
@@ -375,8 +292,10 @@ class Stats():
 				nt = nt[:field] + t[0:1] + nt[field:]
 			self.stats_list.append(nt)
 
+	def reverse_order(self):
+		self.stats_list.reverse()
+
 	def strip_dirs(self):
-		import os
 		newstats = {}
 		for key in self.stats.keys():
 			nc, tt, ct, callers, callees = self.stats[key]
@@ -391,7 +310,44 @@ class Stats():
 		self.stats = newstats
 		self.stats_list = None
 
-# test command
+def print_title():
+	print string.rjust('ncalls', 8),
+	print string.rjust('tottime', 8),
+	print string.rjust('percall', 8),
+	print string.rjust('cumtime', 8),
+	print string.rjust('percall', 8),
+	print 'filename:lineno(function)'
+
+def print_line(nc, tt, ct, key):
+	print string.rjust(`nc`, 8),
+	print f8(tt),
+	if nc == 0:
+		print ' '*8,
+	else:
+		print f8(tt/nc),
+	print f8(ct),
+	if nc == 0:
+		print ' '*8,
+	else:
+		print f8(ct/nc),
+	print key
+
+def f8(x):
+	return string.rjust(fpformat.fix(x, 3), 8)
+
+# simplified user interface
+def run(statement, *args):
+	prof = Profile().init()
+	try:
+		prof.run(statement)
+	except SystemExit:
+		pass
+	if len(args) == 0:
+		prof.print_stats()
+	else:
+		prof.dump_stats(args[0])
+
+# test command with debugging
 def debug():
 	prof = Profile().init()
 	prof.debug = 1
@@ -401,5 +357,6 @@ def debug():
 		pass
 	prof.print_stats()
 
+# test command
 def test():
 	run('import x; x.main()')
