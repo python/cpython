@@ -38,16 +38,16 @@ COMMONPERL= $(TOPDIR)/perl/manual.perl \
 	$(TOPDIR)/perl/l2hinit.perl
 
 
-all:	icons $(INDEXFILES)
+all:	$(INDEXFILES)
 
 .PHONY: api ext lib mac ref tut
 
-api: icons api/api.html
-ext: icons ext/ext.html
-lib: icons lib/lib.html
-mac: icons mac/mac.html
-ref: icons ref/ref.html
-tut: icons tut/tut.html
+api: api/api.html
+ext: ext/ext.html
+lib: lib/lib.html
+mac: mac/mac.html
+ref: ref/ref.html
+tut: tut/tut.html
 
 $(INDEXFILES): $(COMMONPERL) $(TOPDIR)/html/about.dat
 
@@ -89,11 +89,6 @@ $(PAPERDIR)/ref.aux: $(REFFILES)
 $(PAPERDIR)/tut.aux: $(TUTFILES)
 	(cd $(PAPERDIR); $(MKAUX) tut)
 
-# copy the icons/ directory over...
-icons:
-	mkdir icons/
-	cp $(TOPDIR)/icons/*.gif icons/
-
 
 webcheck: all
 	$(WEBCHECKER) $(HTMLBASE)/api/
@@ -104,7 +99,7 @@ webcheck: all
 	$(WEBCHECKER) $(HTMLBASE)/tut/
 
 clean:
-	rm -rf icons/ @webchecker.pickle
+	rm -rf @webchecker.pickle
 
 clobber: clean
 	rm -rf api/ ext/ lib/ mac/ ref/ tut/
