@@ -55,6 +55,16 @@ class TestGenericStringIO(unittest.TestCase):
         f.close()
         self.assertRaises(ValueError, f.write, 'frobnitz')
 
+    def test_closed_flag(self):
+        f = self.MODULE.StringIO()
+        self.assertEqual(f.closed, False)
+        f.close()
+        self.assertEqual(f.closed, True)
+        f = self.MODULE.StringIO("abc")
+        self.assertEqual(f.closed, False)
+        f.close()
+        self.assertEqual(f.closed, True)
+
     def test_iterator(self):
         eq = self.assertEqual
         unless = self.failUnless

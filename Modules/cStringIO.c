@@ -88,6 +88,22 @@ IO__opencheck(IOobject *self) {
 }
 
 static PyObject *
+IO_get_closed(IOobject *self, void *closure)
+{
+	PyObject *result = Py_False;
+
+	if (self->buf == NULL)
+		result = Py_True;
+	Py_INCREF(result);
+	return result;
+}
+
+static PyGetSetDef file_getsetlist[] = {
+	{"closed", (getter)IO_get_closed, NULL, "True if the file is closed"},
+	{0},
+};
+
+static PyObject *
 IO_flush(IOobject *self, PyObject *unused) {
 
         UNLESS (IO__opencheck(self)) return NULL;
@@ -455,6 +471,7 @@ static struct PyMethodDef O_methods[] = {
 static PyMemberDef O_memberlist[] = {
 	{"softspace",	T_INT,	offsetof(Oobject, softspace),	0,
 	 "flag indicating that a space needs to be printed; used by print"},
+	 /* getattr(f, "closed") is implemented without this table */
 	{NULL} /* Sentinel */
 };
 
@@ -498,7 +515,8 @@ static PyTypeObject Otype = {
   PyObject_SelfIter,		/*tp_iter */
   (iternextfunc)IO_iternext,	/*tp_iternext */
   O_methods,			/*tp_methods */
-  O_memberlist			/*tp_members */
+  O_memberlist,			/*tp_members */
+  file_getsetlist,		/*tp_getset */
 };
 
 static PyObject *
@@ -614,7 +632,9 @@ static PyTypeObject Itype = {
   0,					/* tp_weaklistoffset */
   PyObject_SelfIter,			/* tp_iter */
   (iternextfunc)IO_iternext,		/* tp_iternext */
-  I_methods				/* tp_methods */
+  I_methods,				/* tp_methods */
+  0,					/* tp_members */
+  file_getsetlist,			/* tp_getset */
 };
 
 static PyObject *
