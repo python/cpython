@@ -52,7 +52,7 @@ front of the \var{handler}s, unless the \var{handler}s contain
 them, instances of them or subclasses of them:
 \class{ProxyHandler}, \class{UnknownHandler}, \class{HTTPHandler},
 \class{HTTPDefaultErrorHandler}, \class{HTTPRedirectHandler},
-\class{FTPHandler}, \class{FileHandler}
+\class{FTPHandler}, \class{FileHandler}, \class{HTTPErrorProcessor}.
 
 If the Python installation has SSL support (\function{socket.ssl()}
 exists), \class{HTTPSHandler} will also be added.
@@ -248,6 +248,15 @@ when used more than once have a (header-specific) way of gaining the
 same functionality using only one header.
 \end{methoddesc}
 
+\begin{methoddesc}[Request]{add_unredirected_header}{key, header}
+Add a header that will not be added to a redirected request.
+\end{methoddesc}
+
+\begin{methoddesc}[Request]{has_header}{header}
+Return whether the instance has the named header (checks both regular
+and unredirected).
+\end{methoddesc}
+
 \begin{methoddesc}[Request]{get_full_url}{}
 Return the URL given in the constructor.
 \end{methoddesc}
@@ -286,6 +295,12 @@ following methods are searched, and added to the possible chains.
   \item \method{\var{protocol}_error_\var{type}()} ---
     signal that the handler knows how to handle \var{type} errors from
     \var{protocol}.
+  \item \method{\var{protocol}_request()} ---
+    signal that the handler knows how to pre-process \var{protocol}
+    requests.
+  \item \method{\var{protocol}_response()} ---
+    signal that the handler knows how to post-process \var{protocol}
+    responses.
 \end{itemize}
 \end{methoddesc}
 
@@ -617,6 +632,21 @@ Open the gopher resource indicated by \var{req}.
 
 \begin{methoddesc}[UnknownHandler]{unknown_open}{}
 Raise a \exception{URLError} exception.
+\end{methoddesc}
+
+
+\subsection{HTTPErrorProcessor Objects \label{http-error-processor-objects}}
+
+\begin{methoddesc}[HTTPErrorProcessor]{unknown_open}{}
+Process HTTP error responses.
+
+For 200 error codes, the response object is returned immediately.
+
+For non-200 error codes, this simply passes the job on to the
+\method{\var{protocol}_error_\var{code}()} handler methods, via
+\method{OpenerDirector.error()}.  Eventually,
+\class{urllib2.HTTPDefaultErrorHandler} will raise an
+\exception{HTTPError} if no other handler handles the error.
 \end{methoddesc}
 
 
