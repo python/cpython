@@ -2288,6 +2288,32 @@ They are found in the dictionary of type objects.
 
 \begin{cfuncdesc}{int}{PySlice_GetIndices}{PySliceObject *slice, int length,
                                            int *start, int *stop, int *step}
+Retrieve the start, stop and step indices from the slice object
+\var{slice}, assuming a sequence of length \var{length}. Treats
+indices greater than \var{length} as errors.
+
+Returns 0 on success and -1 on error with no exception set (unless one
+of the indices was not \constant{None} and failed to be converted to
+an integer, in which case -1 is returned with an exception set).
+
+You probably do not want to use this function.  If you want to use
+slice objects in versions of Python prior to 2.3, you would probably
+do well to incorporate the source of \cfunction{PySlice_GetIndicesEx},
+suitably renamed, in the source of your extension.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PySlice_GetIndicesEx}{PySliceObject *slice, int length,
+                                             int *start, int *stop, int *step, 
+                                             int *slicelength}
+Usable replacement for \cfunction{PySlice_GetIndices}.  Retrieve the
+start, stop, and step indices from the slice object \var{slice}
+assuming a sequence of length \var{length}, and store the length of
+the slice in \var{slicelength}.  Out of bounds indices are clipped in
+a manner consistent with the handling of normal slices.
+
+Returns 0 on success and -1 on error with exception set.
+
+\versionadded{2.3}
 \end{cfuncdesc}
 
 

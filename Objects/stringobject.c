@@ -940,6 +940,60 @@ string_hash(PyStringObject *a)
 	return x;
 }
 
+static PyObject*
+string_subscript(PyStringObject* self, PyObject* item)
+{
+	if (PyInt_Check(item)) {
+		long i = PyInt_AS_LONG(item);
+		if (i < 0)
+			i += PyString_GET_SIZE(self);
+		return string_item(self,i);
+	}
+	else if (PyLong_Check(item)) {
+		long i = PyLong_AsLong(item);
+		if (i == -1 && PyErr_Occurred())
+			return NULL;
+		if (i < 0)
+			i += PyString_GET_SIZE(self);
+		return string_item(self,i);
+	}
+	else if (PySlice_Check(item)) {
+		int start, stop, step, slicelength, cur, i;
+		char* source_buf;
+		char* result_buf;
+		PyObject* result;
+
+		if (PySlice_GetIndicesEx((PySliceObject*)item, 
+				 PyString_GET_SIZE(self),
+				 &start, &stop, &step, &slicelength) < 0) {
+			return NULL;
+		}
+
+		if (slicelength <= 0) {
+			return PyString_FromStringAndSize("", 0);
+		}
+		else {
+			source_buf = PyString_AsString((PyObject*)self);
+			result_buf = PyMem_Malloc(slicelength);
+
+			for (cur = start, i = 0; i < slicelength; 
+			     cur += step, i++) {
+				result_buf[i] = source_buf[cur];
+			}
+			
+			result = PyString_FromStringAndSize(result_buf, 
+							    slicelength);
+			PyMem_Free(result_buf);
+			return result;
+		}
+	} 
+	else {
+		PyErr_SetString(PyExc_TypeError, 
+				"string indices must be integers");
+		return NULL;
+	}
+}
+
 static int
 string_buffer_getreadbuf(PyStringObject *self, int index, const void **ptr)
 {
@@ -989,6 +1043,12 @@ static PySequenceMethods string_as_sequence = {
 	0,		/*sq_ass_item*/
 	0,		/*sq_ass_slice*/
 	(objobjproc)string_contains /*sq_contains*/
+};
+
+static PyMappingMethods string_as_mapping = {
+	(inquiry)string_length,
+	(binaryfunc)string_subscript,
+	0,
 };
 
 static PyBufferProcs string_as_buffer = {
@@ -2929,7 +2989,7 @@ PyTypeObject PyString_Type = {
 	(reprfunc)string_repr, 			/* tp_repr */
 	0,					/* tp_as_number */
 	&string_as_sequence,			/* tp_as_sequence */
-	0,					/* tp_as_mapping */
+	&string_as_mapping,			/* tp_as_mapping */
 	(hashfunc)string_hash, 			/* tp_hash */
 	0,					/* tp_call */
 	(reprfunc)string_str,			/* tp_str */
@@ -3349,7 +3409,7 @@ PyString_Format(PyObject *format, PyObject *args)
 		arglen = -1;
 		argidx = -2;
 	}
-	if (args->ob_type->tp_as_mapping)
+	if (args->ob_type->tp_as_mapping && !PyTuple_Check(args))
 		dict = args;
 	while (--fmtcnt >= 0) {
 		if (*fmt != '%') {

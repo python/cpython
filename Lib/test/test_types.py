@@ -188,6 +188,31 @@ else: raise TestFailed, 'in/not in string'
 x = 'x'*103
 if '%s!'%x != x+'!': raise TestFailed, 'nasty string formatting bug'
 
+#extended slices for strings
+a = '0123456789'
+vereq(a[::], a)
+vereq(a[::2], '02468')
+vereq(a[1::2], '13579')
+vereq(a[::-1],'9876543210')
+vereq(a[::-2], '97531')
+vereq(a[3::-2], '31')
+vereq(a[-100:100:], a)
+vereq(a[100:-100:-1], a[::-1])
+vereq(a[-100L:100L:2L], '02468')
+
+if have_unicode:
+    a = unicode('0123456789', 'ascii')
+    vereq(a[::], a)
+    vereq(a[::2], unicode('02468', 'ascii'))
+    vereq(a[1::2], unicode('13579', 'ascii'))
+    vereq(a[::-1], unicode('9876543210', 'ascii'))
+    vereq(a[::-2], unicode('97531', 'ascii'))
+    vereq(a[3::-2], unicode('31', 'ascii'))
+    vereq(a[-100:100:], a)
+    vereq(a[100:-100:-1], a[::-1])
+    vereq(a[-100L:100L:2L], unicode('02468', 'ascii'))
+    
+
 print '6.5.2 Tuples'
 if len(()) != 0: raise TestFailed, 'len(())'
 if len((1,)) != 1: raise TestFailed, 'len((1,))'
@@ -206,6 +231,19 @@ x += ()
 if x != (): raise TestFailed, 'tuple inplace add from () to () failed'
 x += (1,)
 if x != (1,): raise TestFailed, 'tuple resize from () failed'
+
+# extended slicing - subscript only for tuples
+a = (0,1,2,3,4)
+vereq(a[::], a)
+vereq(a[::2], (0,2,4))
+vereq(a[1::2], (1,3))
+vereq(a[::-1], (4,3,2,1,0))
+vereq(a[::-2], (4,2,0))
+vereq(a[3::-2], (3,1))
+vereq(a[-100:100:], a)
+vereq(a[100:-100:-1], a[::-1])
+vereq(a[-100L:100L:2L], (0,2,4))
+
 
 print '6.5.3 Lists'
 if len([]) != 0: raise TestFailed, 'len([])'
@@ -321,6 +359,40 @@ if a[ -pow(2,128L): 3 ] != [0,1,2]:
     raise TestFailed, "list slicing with too-small long integer"
 if a[ 3: pow(2,145L) ] != [3,4]:
     raise TestFailed, "list slicing with too-large long integer"
+
+
+# extended slicing
+
+#  subscript
+a = [0,1,2,3,4]
+vereq(a[::], a)
+vereq(a[::2], [0,2,4])
+vereq(a[1::2], [1,3])
+vereq(a[::-1], [4,3,2,1,0])
+vereq(a[::-2], [4,2,0])
+vereq(a[3::-2], [3,1])
+vereq(a[-100:100:], a)
+vereq(a[100:-100:-1], a[::-1])
+vereq(a[-100L:100L:2L], [0,2,4])
+#  deletion
+del a[::2]
+vereq(a, [1,3])
+a = range(5)
+del a[1::2]
+vereq(a, [0,2,4])
+a = range(5)
+del a[1::-2]
+vereq(a, [0,2,3,4])
+#  assignment
+a = range(10)
+a[::2] = [-1]*5
+vereq(a, [-1, 1, -1, 3, -1, 5, -1, 7, -1, 9])
+a = range(10)
+a[::-4] = [10]*3
+vereq(a, [0, 10, 2, 3, 4, 10, 6, 7, 8 ,10])
+a = range(4)
+a[::-1] = a
+vereq(a, [3, 2, 1, 0])
 
 print '6.6 Mappings == Dictionaries'
 d = {}

@@ -252,6 +252,13 @@ sequence of the same type.  This implies that the index set is
 renumbered so that it starts at 0.
 \index{slicing}
 
+Some sequences also support ``extended slicing'' with a third ``step''
+parameter: \code{\var{a}[\var{i}:\var{j}:\var{k}]} selects all items
+of \var{a} with index \var{x} where \code{\var{x} = \var{i} +
+\var{n}*\var{k}}, \var{n} \code{>=} \code{0} and \var{i} \code{<=}
+\var{x} \code{<} \var{j}.
+\index{extended slicing}
+
 Sequences are distinguished according to their mutability:
 
 \begin{description}
