@@ -22,7 +22,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 #ifndef Py_GETAPPLBYCREATOR_H
-#define Py_GETALLPBYCREATOR_H
+#define Py_GETAPPLBYCREATOR_H
 
 #ifdef WITHOUT_FRAMEWORKS
 #include <Types.h>
