@@ -623,6 +623,15 @@
       \index{#1@{\py@idxcode{#1}} (class in \py@thismodule)}]
 }{\end{fulllineitems}}
 
+% \begin{classdesc*}{name}
+\newenvironment{classdesc*}[1]{
+  % Using \renewcommand doesn't work for this, for unknown reasons:
+  \global\def\py@thisclass{#1}
+  \begin{fulllineitems}
+    \item[\strong{class }\code{\bfcode{#1}}%
+      \index{#1@{\py@idxcode{#1}} (class in \py@thismodule)}]
+}{\end{fulllineitems}}
+
 % \begin{excclassdesc}{name}{constructor args}
 % but indexes as an exception
 \newenvironment{excclassdesc}[2]{
@@ -632,6 +641,9 @@
     \item[\strong{exception }\code{\bfcode{#1}(\py@varvars{#2})}%
       \index{#1@{\py@idxcode{#1}} (exception in \py@thismodule)}]
 }{\end{fulllineitems}}
+
+% There is no corresponding {excclassdesc*} environment.  To describe
+% a class exception without parameters, use the {excdesc} environment.
 
 
 \let\py@classbadkey=\@undefined
@@ -1036,12 +1048,15 @@
 \newcommand{\py@release}{}
 \newcommand{\version}{}
 \newcommand{\shortversion}{}
+\newcommand{\releaseinfo}{}
 \newcommand{\releasename}{Release}
 \newcommand{\release}[1]{%
   \renewcommand{\py@release}{\releasename\space\version}%
   \renewcommand{\version}{#1}}
 \newcommand{\setshortversion}[1]{%
   \renewcommand{\shortversion}{#1}}
+\newcommand{\setreleaseinfo}[1]{%
+  \renewcommand{\releaseinfo}{#1}}
 
 % Allow specification of the author's address separately from the
 % author's name.  This can be used to format them differently, which

@@ -181,12 +181,12 @@ sub make_nav_panel {
 sub get_version_text {
     if ($PACKAGE_VERSION ne '' && $t_date) {
         return ("<span class=\"release-info\">"
-                . "Release $PACKAGE_VERSION,"
+                . "Release $PACKAGE_VERSION$RELEASE_INFO,"
                 . " documentation updated on $t_date.</span>");
     }
     if ($PACKAGE_VERSION ne '') {
         return ("<span class=\"release-info\">"
-                . "Release $PACKAGE_VERSION.</span>");
+                . "Release $PACKAGE_VERSION$RELEASE_INFO.</span>");
     }
     if ($t_date) {
         return ("<span class=\"release-info\">Documentation released on "
@@ -415,7 +415,7 @@ sub do_cmd_textohtmlinfopage {
     if ($t_date) {					# mostly ours
 	$the_version = ",\n$t_date";
 	if ($PACKAGE_VERSION) {
-	    $the_version .= ", Release $PACKAGE_VERSION";
+	    $the_version .= ", Release $PACKAGE_VERSION$RELEASE_INFO";
 	}
     }
     $_ = (($INFO == 1)
