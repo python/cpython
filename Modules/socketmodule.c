@@ -66,6 +66,7 @@ Socket methods:
 - s.recv(buflen [,flags]) --> string
 - s.recvfrom(buflen [,flags]) --> string, sockaddr
 - s.send(string [,flags]) --> nbytes
+- s.sendall(string [,flags]) # tries to send everything in a loop
 - s.sendto(string, [flags,] sockaddr) --> nbytes
 - s.setblocking(0 | 1) --> None
 - s.setsockopt(level, optname, value) --> None
@@ -1553,10 +1554,45 @@ PySocketSock_send(PySocketSockObject *s, PyObject *args)
 }
 
 static char send_doc[] =
-"send(data[, flags])\n\
+"send(data[, flags]) -> count\n\
 \n\
 Send a data string to the socket.  For the optional flags\n\
-argument, see the Unix manual.";
+argument, see the Unix manual.  Return the number of bytes\n\
+sent; this may be less than len(data) if the network is busy.";
+
+
+/* s.sendall(data [,flags]) method */
+
+static PyObject *
+PySocketSock_sendall(PySocketSockObject *s, PyObject *args)
+{
+	char *buf;
+	int len, n, flags = 0, total = 0;
+	if (!PyArg_ParseTuple(args, "s#|i:sendall", &buf, &len, &flags))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	do {
+		n = send(s->sock_fd, buf, len, flags);
+		if (n < 0)
+			break;
+		total += n;
+		buf += n;
+		len -= n;
+	} while (len > 0);
+	Py_END_ALLOW_THREADS
+	if (n < 0)
+		return PySocket_Err();
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char sendall_doc[] =
+"sendall(data[, flags])\n\
+\n\
+Send a data string to the socket.  For the optional flags\n\
+argument, see the Unix manual.  This calls send() repeatedly\n\
+until all data is sent.  If an error occurs, it's impossible\n\
+to tell how much data has been sent.";
 
 
 /* s.sendto(data, [flags,] sockaddr) method */
@@ -1658,6 +1694,8 @@ static PyMethodDef PySocketSock_methods[] = {
 			recvfrom_doc},
 	{"send",	(PyCFunction)PySocketSock_send, METH_VARARGS,
 			send_doc},
+	{"sendall",	(PyCFunction)PySocketSock_sendall, METH_VARARGS,
+			sendall_doc},
 	{"sendto",	(PyCFunction)PySocketSock_sendto, METH_VARARGS,
 			sendto_doc},
 	{"setblocking",	(PyCFunction)PySocketSock_setblocking, METH_O,
@@ -2692,7 +2730,9 @@ static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s#:write", &data, &len))
 		return NULL;
 
+	Py_BEGIN_ALLOW_THREADS
 	len = SSL_write(self->ssl, data, len);
+	Py_END_ALLOW_THREADS
 	if (len > 0)
 		return PyInt_FromLong(len);
 	else
@@ -2717,7 +2757,9 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 	if (!(buf = PyString_FromStringAndSize((char *) 0, len)))
 		return NULL;
 
+	Py_BEGIN_ALLOW_THREADS
 	count = SSL_read(self->ssl, PyString_AsString(buf), len);
+	Py_END_ALLOW_THREADS
  	if (count <= 0) {
 		Py_DECREF(buf);
 		return PySSL_SetError(self->ssl, count);
