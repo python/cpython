@@ -4,8 +4,9 @@ import sys
 import os
 import string
 import MacOS
+import sys
 
-BGENDIR= '/Users/dsp/Documents/python/dist/src/Tools/bgen/bgen'
+BGENDIR= os.path.join(sys.prefix, ':Tools:bgen:bgen:')
 sys.path.append(BGENDIR)
 
 from bgenlocations import TOOLBOXDIR
@@ -21,7 +22,7 @@ def main():
 	scanner.scan()
 	scanner.close()
 	print "--done scanning, importing--"
-	import CarbonEventssupport
+	import CarbonEvtsupport
 	print "done"
 
 RefObjectTypes = ["EventRef", 
@@ -87,5 +88,9 @@ class CarbonEvents_Scanner(Scanner):
 #				"EventLoopTimerProcPtr",
 #				"EventHandlerProcPtr",
 #				]
+
+	def makerepairinstructions(self):
+		return []
+		
 if __name__ == "__main__":
 	main()
