@@ -465,7 +465,7 @@ class EditorWindow:
         top, bot = self.getwindowlines()
         lineno = self.getlineno(mark)
         height = bot - top
-        newtop = max(1, lineno - height/2)
+        newtop = max(1, lineno - height//2)
         text.yview(float(newtop))
 
     def getwindowlines(self):

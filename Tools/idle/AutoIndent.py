@@ -171,7 +171,7 @@ class AutoIndent:
         expand, tabwidth = string.expandtabs, self.tabwidth
         have = len(expand(chars, tabwidth))
         assert have > 0
-        want = int((have - 1) / self.indentwidth) * self.indentwidth
+        want = int((have - 1) // self.indentwidth) * self.indentwidth
         ncharsdeleted = 0
         while 1:
             chars = chars[:-1]
@@ -495,7 +495,7 @@ def classifyws(s, tabwidth):
             effective = effective + 1
         elif ch == '\t':
             raw = raw + 1
-            effective = (int(effective / tabwidth) + 1) * tabwidth
+            effective = (effective // tabwidth + 1) * tabwidth
         else:
             break
     return raw, effective
