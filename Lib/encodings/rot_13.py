@@ -93,9 +93,7 @@ decoding_map.update({
 
 ### Encoding Map
 
-encoding_map = {}
-for k,v in decoding_map.items():
-    encoding_map[v] = k
+encoding_map = codecs.make_encoding_map(decoding_map)
 
 ### Filter API
 
