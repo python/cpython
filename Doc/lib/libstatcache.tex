@@ -20,7 +20,8 @@ The rest of the functions are used to clear the cache, or parts of
 it.
 
 \begin{funcdesc}{reset}{}
-Clear the cache: forget all results of previous \code{stat}s.
+Clear the cache: forget all results of previous \function{stat()}
+calls.
 \end{funcdesc}
 
 \begin{funcdesc}{forget}{path}
@@ -33,12 +34,12 @@ with \var{prefix}.
 \end{funcdesc}
 
 \begin{funcdesc}{forget_dir}{prefix}
-Forget all results of \code{stat(\var{path})} for \var{path} a file in
+Forget all results of \code{stat(\var{path})} for \var{path} a file in 
 the directory \var{prefix}, including \code{stat(\var{prefix})}.
 \end{funcdesc}
 
 \begin{funcdesc}{forget_except_prefix}{prefix}
-Similar to \function{forget_prefix()}, but for all \var{path}
+Similar to \function{forget_prefix()}, but for all \var{path} values
 \emph{not} starting with \var{prefix}.
 \end{funcdesc}
 
