@@ -147,7 +147,7 @@ time_convert(when, function)
 	p = function(&when);
 	if (p == NULL) {
 #ifdef EINVAL
-		if (errno == NULL)
+		if (errno == 0)
 			errno = EINVAL;
 #endif
 		return err_errno(IOError);
