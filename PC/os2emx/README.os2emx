@@ -292,7 +292,7 @@ distribution by changing to the Python 2.3 home directory and executing the
 REGRTEST.CMD batch file.  The following tests are known to fail at this 
 time:
 - test_mhlib (I don't know of any port of MH to OS/2);
-- test_pwd (see "YOU HAVE BEEN WARNED" item 10, probably a bug in my code);
+- test_pwd (see "YOU HAVE BEEN WARNED" item 10);
 - test_grp (as per test_pwd);
 - test_strftime (see "YOU HAVE BEEN WARNED" item 15);
 - test_strptime (see "YOU HAVE BEEN WARNED" item 22);
@@ -494,6 +494,11 @@ grp.py:  $ETC_GROUP              (%ETC_GROUP%)
          $ETC/group              (%ETC%/group)
          $PYTHONHOME/Etc/group   (%PYTHONHOME%/Etc/group)
 
+The ETC_PASSWD and ETC_GROUP environment variables are intended to allow 
+support for multiple passwd/grp files, where other applications may not 
+support as wide a variety of input variations (drive remappings, 
+separators etc).
+
 Both modules support using either the ":" character (Unix standard) or 
 ";" (OS/2, DOS, Windows standard) field separator character, and pwd.py 
 implements the following drive letter conversions for the home_directory and 
@@ -501,9 +506,9 @@ shell fields (for the ":" separator only):
          $x  ->  x:
          x;  ->  x:
 
-Example versions of passwd and group are in the Etc subdirectory.  Note 
-that as of this release, this code fails the regression test.  I'm looking 
-into why, and hope to have this fixed.
+Example versions of passwd and group are in the Etc subdirectory.  The 
+regression tests (test_pwd and test_grp) will fail if valid password and 
+group files cannot be found, but should pass otherwise.
 
 Be aware that Python's pwd & group modules are for reading password and 
 group information only.
