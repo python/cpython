@@ -968,7 +968,6 @@ then
 elif test "$ac_cv_pthread_is_default" = yes
 then
     AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(_POSIX_THREADS)
     # Defining _REENTRANT on system with POSIX threads should not hurt.
     AC_DEFINE(_REENTRANT)
     posix_threads=yes
@@ -977,7 +976,6 @@ elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
     AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(_POSIX_THREADS)
     posix_threads=yes
     LIBOBJS="$LIBOBJS thread.o"
 else
@@ -987,6 +985,18 @@ else
     if test ! -z "$withval" -a -d "$withval"
     then LDFLAGS="$LDFLAGS -L$withval"
     fi
+
+    # According to the POSIX spec, a pthreads implementation must
+    # define _POSIX_THREADS in unistd.h. Some apparently don't (which ones?)
+    AC_MSG_CHECKING(for _POSIX_THREADS in unistd.h)
+    AC_EGREP_CPP(yes,
+    [#include <unistd.h>
+     #ifdef _POSIX_THREADS
+     yes
+     #endif
+    ], unistd_defines_pthreads=yes, unistd_defines_pthreads=no)
+    AC_MSG_RESULT($unistd_defines_pthreads)
+
     AC_DEFINE(_REENTRANT)
     AC_CHECK_HEADER(mach/cthreads.h, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(C_THREADS)
@@ -1013,47 +1023,32 @@ void * start_routine (void *arg) { exit (0); }], [
 pthread_create (NULL, NULL, start_routine, NULL)], [
     AC_MSG_RESULT(yes)
     AC_DEFINE(WITH_THREAD)
-    case $ac_sys_system in
-      Darwin*) ;;
-      *) AC_DEFINE(_POSIX_THREADS)
-         posix_threads=yes
-         ;;
-    esac
+    posix_threads=yes
     LIBOBJS="$LIBOBJS thread.o"],[
     LIBS=$_libs
     AC_CHECK_FUNC(pthread_detach, [AC_DEFINE(WITH_THREAD)
-    case $ac_sys_system in
-      Darwin*) ;;
-      *) AC_DEFINE(_POSIX_THREADS)
-         posix_threads=yes
-         ;;
-    esac
+    posix_threads=yes
     LIBOBJS="$LIBOBJS thread.o"],[
     AC_CHECK_HEADER(kernel/OS.h, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(BEOS_THREADS)
     LIBOBJS="$LIBOBJS thread.o"],[
     AC_CHECK_LIB(pthreads, pthread_create, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(_POSIX_THREADS)
     posix_threads=yes
     LIBS="$LIBS -lpthreads"
     LIBOBJS="$LIBOBJS thread.o"], [
     AC_CHECK_LIB(c_r, pthread_create, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(_POSIX_THREADS)
     posix_threads=yes
     LIBS="$LIBS -lc_r"
     LIBOBJS="$LIBOBJS thread.o"], [
     AC_CHECK_LIB(thread, __d6_pthread_create, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(_POSIX_THREADS)
     posix_threads=yes
     LIBS="$LIBS -lthread"
     LIBOBJS="$LIBOBJS thread.o"], [
     AC_CHECK_LIB(pthread, __pthread_create_system, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(_POSIX_THREADS)
     posix_threads=yes
     LIBS="$LIBS -lpthread"
     LIBOBJS="$LIBOBJS thread.o"], [
     AC_CHECK_LIB(cma, pthread_create, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(_POSIX_THREADS)
     posix_threads=yes
     LIBS="$LIBS -lcma"
     LIBOBJS="$LIBOBJS thread.o"],[
@@ -1061,6 +1056,10 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
     ])])])])])])])])])
 
     if test "$posix_threads" = "yes"; then
+      if test "$unistd_defines_pthreads" = "no"; then
+         AC_DEFINE(_POSIX_THREADS)
+      fi
+
       AC_MSG_CHECKING(if PTHREAD_SCOPE_SYSTEM is supported)
       AC_CACHE_VAL(ac_cv_pthread_system_supported,
       [AC_TRY_RUN([#include <pthread.h>
@@ -1082,6 +1081,7 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
       if test "$ac_cv_pthread_system_supported" = "yes"; then
         AC_DEFINE(PTHREAD_SYSTEM_SCHED_SUPPORTED)
       fi
+      AC_CHECK_FUNCS(pthread_sigmask)
     fi
 
     AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)

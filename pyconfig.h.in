@@ -477,6 +477,9 @@
 /* Define if you have the pthread_init function.  */
 #undef HAVE_PTHREAD_INIT
 
+/* Define if you have the pthread_sigmask function.  */
+#undef HAVE_PTHREAD_SIGMASK
+
 /* Define if you have the putenv function.  */
 #undef HAVE_PUTENV
 
