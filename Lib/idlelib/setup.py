@@ -104,6 +104,8 @@ David Scherer at CMU as part of VPython.  It features execution in a
 separate process which is newly initiated for each run.  At version 0.9
 the RPC was changed to incorporate code by GvR, which supports the
 debugger.  IDLEfork also incorporates a GUI configuration utilility.
+It is written in almost pure Python :-P
+
 For further details, refer to idlefork.sourceforge.net.
 """,
 

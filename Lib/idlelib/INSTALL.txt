@@ -5,55 +5,85 @@ IDLEfork requires Python Version 2.2 or later.
 
 There are several distribution files (where xx is the subversion):
 
-IDLEfork-0.9xx.win32.exe
-	This is a Windows installer which will install IDLEfork in 
-	..../site-packages/idleforklib/ and place the idefork startup script
-	at ..../scripts/idlefork.  Rename this to idlefork.pyw and
-	point your launcher icons at it.  Installation is as idlefork
-	to avoid conflict with the original Python IDLE.
-
-IDLEfork-0.9xx-1.noarch.rpm
- 	This is an rpm which is designed to install as idleforklib in an
-	existing /usr/lib/python2.2 tree.  It installs as idlefork to avoid
-	conflict with Python IDLE.
-
-	Python rpms are available at http://www.python.org/2.2.2/rpms.html and
-	http://www.python.org/2.2.1/rpms.html.
+IDLEfork-0.9xx.win32-py2.2.exe
+IDLEfork-0.9xx.win32-py2.3.exe
+	
+        These are Windows installers which will install IDLEfork in
+	..../site-packages/idleforklib/ and place the idefork startup script at
+	..../scripts/idlefork.  Rename this script to idlefork.pyw and point
+	your launcher icons at it.  Installation is as idlefork to avoid
+	conflict with the original Python IDLE.  Choose the installer
+	appropriate for your version of Python.
 
 IDLEfork-0.9xx.tar.gz
 	This is a distutils sdist (source) tarfile which can be used to make 
-	installations on platforms not supported by the above files.
-	** It remains configured to install as idlelib, not idleforklib. **
+	installations on non-Windows platforms, or on Windows if a custom
+	installation is desired.  It installs as idlefork and will not
+	conflict with Python IDLE.
 
 	Unpack in ..../Tools/, cd to the IDLEfork directory created, and
-	"python setup.py install" to install in ....site-packages/idlelib.
-	This will overwrite the Python IDLE installation.  
+	"python setup.py install" to install in ....site-packages/idleforklib.
 
-        If you don't want to overwrite Python IDLE, it is also possible to
-	simply call "python idle.py" to run from the IDLEfork source directory
-	without making an installation.  In this case, IDLE will not be on
-	your PATH unless you are in the source directory.  Also, it is then
-	advisable to remove any Python IDLE installation by removing
-	..../site-packages/idlelib so the two identically named packages don't
-	conflict.
+IDLE-0.9xx.tar.gz
+	This is also a distutils sdist (source) tarfile.
+	
+	** It remains configured to install as idlelib, not idleforklib. **
+
+	First, remove your existing ..../site-packages/idlelib directory.
+
+	Unpack in ..../Tools/, cd to the IDLE directory (note the caps)
+	created, and "python setup.py install" to install in
+	....site-packages/idlelib.  This will replace the Python IDLE
+	installation.
+
+        If you don't want to overwrite Python IDLE, I'd recommend using the
+	IDLEfork release mentioned above.  However, it is also possible to
+	simply build IDLE without installing it: "python setup.py build" and
+	then copy the interrupt.so library out of the build directory into the
+	IDLE directory where IDLE can find it,
+
+	In this case, IDLE will not be on your PATH unless you are in the
+	source directory.  Either append your PATH or use a fully qualified
+	path to access IDLE, something like
+
+	python  /usr/bin/python/Tools/IDLE/idle.py 
+
+	That way you can continue to use the original IDLE at
+	..../Tools/idle/idle.py if you like.   (note lower case)
+
+	Using this approach, it's possible to have many different versions
+	of IDLE on your system at the same time, for comparison/test.
+
 
 	On Redhat Linux systems prior to 8.0, /usr/bin/python may be pointing
 	at python1.5.  If so, change the first line in the /usr/bin/idle 
 	script to read:
+
 	       !# /usr/bin/python2.2
+
+
+	An RPM has not been released since with addition of the interrupt
+	extension it is no longer platform/architecture independent.  The
+	distutils make it easy to build and install from the .tar.gz
+	distribution.  Certainly it's just as easy as installing the rpm.
+
 
 	On Mac OS X, /usr/bin/python may be pointing at the OS-installed
 	python, which does not have GUI support. Change the first line of
 	/usr/bin/idle to read:
+
 		#! /usr/bin/env pythonw
 
 	Also, to build an IDLE application that can be used from the Finder
 	on Mac OS X, run:
+
 		pythonw buildapp.py build
 		open build
+
 	You will see an IDLE application.
+
 	       
-See README.txt for more details on this version of IDLEfork. 
+See README.txt and NEWS.txt for more details on this version of IDLEfork. 
 
 
 
