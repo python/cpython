@@ -63,12 +63,11 @@ _varnum = 0
 class Variable:
 	_default = ""
 	def __init__(self, master=None):
-		global _default_root
 		global _varnum
-		if master:
-			self._tk = master.tk
-		else:
-			self._tk = _default_root.tk
+		if not master:
+			master = _default_root
+		self._master = master
+		self._tk = master.tk
 		self._name = 'PY_VAR' + `_varnum`
 		_varnum = _varnum + 1
 		self.set(self._default)
@@ -78,6 +77,17 @@ class Variable:
 		return self._name
 	def set(self, value):
 		return self._tk.globalsetvar(self._name, value)
+	def trace_variable(self, mode, callback):
+		cbname = self._master._register(callback)
+		self._tk.call("trace", "variable", self._name, mode, cbname)
+		return cbname
+	trace = trace_variable
+	def trace_vdelete(self, mode, cbname):
+		self._tk.call("trace", "vdelete", self._name, mode, cbname)
+		self._tk.deletecommand(cbname)
+	def trace_vinfo(self):
+		return map(self._tk.split, self._tk.splitlist(
+			self._tk.call("trace", "vinfo", self._name)))
 
 class StringVar(Variable):
 	_default = ""
