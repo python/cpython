@@ -143,13 +143,13 @@ set_contains(PySetObject *so, PyObject *key)
 	PyObject *tmp;
 	int result;
 
-	result = PySequence_Contains(so->data, key);
+	result = PyDict_Contains(so->data, key);
 	if (result == -1 && PyAnySet_Check(key)) {
 		PyErr_Clear();
 		tmp = frozenset_dict_wrapper(((PySetObject *)(key))->data);
 		if (tmp == NULL)
 			return -1;
-		result = PySequence_Contains(so->data, tmp);
+		result = PyDict_Contains(so->data, tmp);
 		Py_DECREF(tmp);
 	}
 	return result;
@@ -252,7 +252,7 @@ set_intersection(PySetObject *so, PyObject *other)
 	}
 
 	while ((item = PyIter_Next(it)) != NULL) {
-		if (PySequence_Contains(selfdata, item)) {
+		if (PyDict_Contains(selfdata, item)) {
 			if (PyDict_SetItem(tgtdata, item, Py_True) == -1) {
 				Py_DECREF(it);
 				Py_DECREF(result);
@@ -292,7 +292,7 @@ set_intersection_update(PySetObject *so, PyObject *other)
 
 	selfdata = so->data;
 	while ((item = PyIter_Next(it)) != NULL) {
-		if (PySequence_Contains(selfdata, item)) {
+		if (PyDict_Contains(selfdata, item)) {
 			if (PyDict_SetItem(newdict, item, Py_True) == -1) {
 				Py_DECREF(newdict);
 				Py_DECREF(it);
@@ -375,7 +375,7 @@ set_difference(PySetObject *so, PyObject *other)
 	}
 
 	while ((item = PyIter_Next(it)) != NULL) {
-		if (!PySequence_Contains(otherdata, item)) {
+		if (!PyDict_Contains(otherdata, item)) {
 			if (PyDict_SetItem(tgtdata, item, Py_True) == -1) {
 				Py_XDECREF(otherset);
 				Py_DECREF(it);
@@ -481,7 +481,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 		return NULL;
 
 	while ((item = PyIter_Next(it)) != NULL) {
-		if (PySequence_Contains(selfdata, item)) {
+		if (PyDict_Contains(selfdata, item)) {
 			if (PyDict_DelItem(selfdata, item) == -1) {
 				Py_XDECREF(otherset);
 				Py_DECREF(it);
@@ -541,7 +541,7 @@ set_symmetric_difference(PySetObject *so, PyObject *other)
 		return NULL;
 	}
 	while ((item = PyIter_Next(it)) != NULL) {
-		if (!PySequence_Contains(selfdata, item)) {
+		if (!PyDict_Contains(selfdata, item)) {
 			if (PyDict_SetItem(tgtdata, item, Py_True) == -1) {
 				Py_DECREF(it);
 				Py_DECREF(item);
@@ -562,7 +562,7 @@ set_symmetric_difference(PySetObject *so, PyObject *other)
 		return NULL;
 	}
 	while ((item = PyIter_Next(it)) != NULL) {
-		if (!PySequence_Contains(otherdata, item)) {
+		if (!PyDict_Contains(otherdata, item)) {
 			if (PyDict_SetItem(tgtdata, item, Py_True) == -1) {
 				Py_DECREF(it);
 				Py_DECREF(item);
@@ -634,7 +634,7 @@ set_issubset(PySetObject *so, PyObject *other)
 
 	otherdata = ((PySetObject *)other)->data;
 	while ((item = PyIter_Next(it)) != NULL) {
-		if (!PySequence_Contains(otherdata, item)) {
+		if (!PyDict_Contains(otherdata, item)) {
 			Py_DECREF(it);
 			Py_DECREF(item);
 			Py_RETURN_FALSE;

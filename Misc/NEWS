@@ -231,6 +231,10 @@ Build
 C API
 -----
 
+- Added a new function, PyDict_Contains(d, k) which is like
+  PySequence_Contains() but is specific to dictionaries and executes
+  about 10% faster.
+
 - Added three new macros: Py_RETURN_NONE, Py_RETURN_TRUE, and Py_RETURN_FALSE.
   Each return the singleton they mention after Py_INCREF()ing them.
 
