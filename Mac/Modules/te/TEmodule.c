@@ -808,28 +808,40 @@ static PyObject *TEObj_getattr(self, name)
 
 				if( strcmp(name, "destRect") == 0 )
 					return Py_BuildValue("O&", PyMac_BuildRect,
-							(*self->ob_itself)->destRect);
+							&(*self->ob_itself)->destRect);
 				if( strcmp(name, "viewRect") == 0 )
 					return Py_BuildValue("O&", PyMac_BuildRect,
-							(*self->ob_itself)->viewRect);
+							&(*self->ob_itself)->viewRect);
 				if( strcmp(name, "selRect") == 0 )
 					return Py_BuildValue("O&", PyMac_BuildRect,
-							(*self->ob_itself)->selRect);
+							&(*self->ob_itself)->selRect);
 				if( strcmp(name, "lineHeight") == 0 )
 					return Py_BuildValue("h", (*self->ob_itself)->lineHeight);
 				if( strcmp(name, "fontAscent") == 0 )
 					return Py_BuildValue("h", (*self->ob_itself)->fontAscent);
 				if( strcmp(name, "selPoint") == 0 )
 					return Py_BuildValue("O&", PyMac_BuildPoint,
-							(*self->ob_itself)->selPoint);
+							&(*self->ob_itself)->selPoint);
 				if( strcmp(name, "selStart") == 0 )
 					return Py_BuildValue("h", (*self->ob_itself)->selStart);
 				if( strcmp(name, "selEnd") == 0 )
 					return Py_BuildValue("h", (*self->ob_itself)->selEnd);
 				if( strcmp(name, "active") == 0 )
 					return Py_BuildValue("h", (*self->ob_itself)->active);
+				if( strcmp(name, "just") == 0 )
+					return Py_BuildValue("h", (*self->ob_itself)->just);
 				if( strcmp(name, "teLength") == 0 )
 					return Py_BuildValue("h", (*self->ob_itself)->teLength);
+				if( strcmp(name, "txFont") == 0 )
+					return Py_BuildValue("h", (*self->ob_itself)->txFont);
+				if( strcmp(name, "txFace") == 0 )
+					return Py_BuildValue("h", (*self->ob_itself)->txFace);
+				if( strcmp(name, "txMode") == 0 )
+					return Py_BuildValue("h", (*self->ob_itself)->txMode);
+				if( strcmp(name, "txSize") == 0 )
+					return Py_BuildValue("h", (*self->ob_itself)->txSize);
+				if( strcmp(name, "nLines") == 0 )
+					return Py_BuildValue("h", (*self->ob_itself)->nLines);
 			
 	return Py_FindMethodInChain(&TEObj_chain, (PyObject *)self, name);
 }
