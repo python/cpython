@@ -2182,12 +2182,7 @@ PyObject *
 PyIter_Next(PyObject *iter)
 {
 	PyObject *result;
-	if (!PyIter_Check(iter)) {
-		PyErr_Format(PyExc_TypeError,
-			     "'%.100s' object is not an iterator",
-			     iter->ob_type->tp_name);
-		return NULL;
-	}
+	assert(PyIter_Check(iter));
 	result = (*iter->ob_type->tp_iternext)(iter);
 	if (result == NULL &&
 	    PyErr_Occurred() &&
