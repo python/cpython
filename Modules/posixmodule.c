@@ -868,16 +868,22 @@ posix_popen(self, args)
 	object *self;
 	object *args;
 {
-	char *name, *mode;
+	char *name;
+	char *mode = "r";
+	int bufsize = -1;
 	FILE *fp;
-	if (!getargs(args, "(ss)", &name, &mode))
+	object *f;
+	if (!newgetargs(args, "s|si", &name, &mode, &bufsize))
 		return NULL;
 	BGN_SAVE
 	fp = popen(name, mode);
 	END_SAVE
 	if (fp == NULL)
 		return posix_error();
-	return newopenfileobject(fp, name, mode, pclose);
+	f = newopenfileobject(fp, name, mode, pclose);
+	if (f != NULL)
+		setfilebufsize(f, bufsize);
+	return f;
 }
 
 #ifdef HAVE_SETUID
@@ -1272,18 +1278,21 @@ posix_fdopen(self, args)
 {
 	extern int fclose PROTO((FILE *));
 	int fd;
-	char *mode;
+	char *mode = "r";
+	int bufsize = -1;
 	FILE *fp;
-	if (!getargs(args, "(is)", &fd, &mode))
+	object *f;
+	if (!newgetargs(args, "i|si", &fd, &mode, &bufsize))
 		return NULL;
 	BGN_SAVE
 	fp = fdopen(fd, mode);
 	END_SAVE
 	if (fp == NULL)
 		return posix_error();
-	/* From now on, ignore SIGPIPE and let the error checking
-	   do the work. */
-	return newopenfileobject(fp, "(fdopen)", mode, fclose);
+	f = newopenfileobject(fp, "(fdopen)", mode, fclose);
+	if (f != NULL)
+		setfilebufsize(f, bufsize);
+	return f;
 }
 
 static object *
@@ -1369,7 +1378,7 @@ static struct methodlist posix_methods[] = {
 	{"getuid",	posix_getuid},
 	{"kill",	posix_kill},
 #endif /* !NT */
-	{"popen",	posix_popen},
+	{"popen",	posix_popen,	1},
 #ifdef HAVE_SETUID
 	{"setuid",	posix_setuid},
 #endif /* HAVE_SETUID */
@@ -1405,7 +1414,7 @@ static struct methodlist posix_methods[] = {
 	{"read",	posix_read},
 	{"write",	posix_write},
 	{"fstat",	posix_fstat},
-	{"fdopen",	posix_fdopen},
+	{"fdopen",	posix_fdopen,	1},
 	{"pipe",	posix_pipe},
 	{NULL,		NULL}		 /* Sentinel */
 };
