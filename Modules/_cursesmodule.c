@@ -2260,7 +2260,7 @@ PyCurses_tparm(PyObject *self, PyObject *args)
 {
 	char* fmt;
 	char* result = NULL;
-	int i1,i2,i3,i4,i5,i6,i7,i8,i9;
+	int i1=0,i2=0,i3=0,i4=0,i5=0,i6=0,i7=0,i8=0,i9=0;
 
 	PyCursesSetupTermCalled;
 
@@ -2269,49 +2269,9 @@ PyCurses_tparm(PyObject *self, PyObject *args)
 			      &i5, &i6, &i7, &i8, &i9)) {
 		return NULL;
 	}
-	
-#if defined(__hpux) || defined(_AIX)
-	/* tparm is declared with 10 arguments on a few platforms
-	   (HP-UX, AIX). If this proves to be a problem on other 
-	   platforms as well, perhaps an autoconf test should be 
-	   added to determine whether tparm can be called with a 
-	   variable number of arguments. Perhaps the other arguments 
-	   should be initialized in this case also. */
+
 	result = tparm(fmt,i1,i2,i3,i4,i5,i6,i7,i8,i9);
-#else
-	switch (PyTuple_GET_SIZE(args)) {
-	case 1:
-		result = tparm(fmt);
-		break;
-	case 2:
-		result = tparm(fmt,i1);
-		break;
-	case 3:
-		result = tparm(fmt,i1,i2);
-		break;
-	case 4:
-		result = tparm(fmt,i1,i2,i3);
-		break;
-	case 5:
-		result = tparm(fmt,i1,i2,i3,i4);
-		break;
-	case 6:
-		result = tparm(fmt,i1,i2,i3,i4,i5);
-		break;
-	case 7:
-		result = tparm(fmt,i1,i2,i3,i4,i5,i6);
-		break;
-	case 8:
-		result = tparm(fmt,i1,i2,i3,i4,i5,i6,i7);
-		break;
-	case 9:
-		result = tparm(fmt,i1,i2,i3,i4,i5,i6,i7,i8);
-		break;
-	case 10:
-		result = tparm(fmt,i1,i2,i3,i4,i5,i6,i7,i8,i9);
-		break;
-	}
-#endif /* defined(__hpux) || defined(_AIX) */
+
 	return PyString_FromString(result);
 }
 
