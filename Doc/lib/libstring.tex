@@ -12,6 +12,22 @@ expressions.
 
 The constants defined in this module are:
 
+\begin{datadesc}{ascii_letters}
+  The concatenation of the \constant{ascii_lowercase} and
+  \constant{ascii_uppercase} constants described below.  This value is
+  not locale-dependent.
+\end{datadesc}
+
+\begin{datadesc}{ascii_lowercase}
+  The lowercase letters \code{'abcdefghijklmnopqrstuvwxyz'}.  This
+  value is not locale-dependent and will not change.
+\end{datadesc}
+
+\begin{datadesc}{ascii_uppercase}
+  The uppercase letters \code{'ABCDEFGHIJKLMNOPQRSTUVWXYZ'}.  This
+  value is not locale-dependent and will not change.
+\end{datadesc}
+
 \begin{datadesc}{digits}
   The string \code{'0123456789'}.
 \end{datadesc}
@@ -22,7 +38,9 @@ The constants defined in this module are:
 
 \begin{datadesc}{letters}
   The concatenation of the strings \constant{lowercase} and
-  \constant{uppercase} described below.
+  \constant{uppercase} described below.  The specific value is
+  locale-dependent, and will be updated when
+  \function{locale.setlocale()} is called.
 \end{datadesc}
 
 \begin{datadesc}{lowercase}
@@ -30,7 +48,9 @@ The constants defined in this module are:
   letters.  On most systems this is the string
   \code{'abcdefghijklmnopqrstuvwxyz'}.  Do not change its definition ---
   the effect on the routines \function{upper()} and
-  \function{swapcase()} is undefined.
+  \function{swapcase()} is undefined.  The specific value is
+  locale-dependent, and will be updated when
+  \function{locale.setlocale()} is called.
 \end{datadesc}
 
 \begin{datadesc}{octdigits}
@@ -53,7 +73,9 @@ The constants defined in this module are:
   letters.  On most systems this is the string
   \code{'ABCDEFGHIJKLMNOPQRSTUVWXYZ'}.  Do not change its definition ---
   the effect on the routines \function{lower()} and
-  \function{swapcase()} is undefined.
+  \function{swapcase()} is undefined.  The specific value is
+  locale-dependent, and will be updated when
+  \function{locale.setlocale()} is called.
 \end{datadesc}
 
 \begin{datadesc}{whitespace}
