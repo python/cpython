@@ -46,6 +46,28 @@ def split(s):
 	return s[:colon-1], s[colon:]
 
 
+# Split a path in root and extension.
+# The extension is everything starting at the last dot in the last
+# pathname component; the root is everything before that.
+# It is always true that root + ext == p.
+
+def splitext(p):
+	root, ext = '', ''
+	for c in p:
+		if c == ':':
+			root, ext = root + ext + c, ''
+		elif c == '.':
+			if ext:
+				root, ext = root + ext, c
+			else:
+				ext = c
+		elif ext:
+			ext = ext + c
+		else:
+			root = root + c
+	return root, ext
+
+
 # Split a pathname into a drive specification and the rest of the
 # path.  Useful on DOS/Windows/NT; on the Mac, the drive is always
 # empty (don't use the volume name -- it doesn't have the same
