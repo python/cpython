@@ -217,9 +217,16 @@ x * 1
 1 * x
 x *= 1
 
-x / 1
-1 / x
-x /= 1
+if 1/2 == 0:
+    x / 1
+    1 / x
+    x /= 1
+else:
+    # True division is in effect, so "/" doesn't map to __div__ etc;
+    # but the canned expected-output file requires that those get called.
+    x.__div__(1)
+    x.__rdiv__(1)
+    x.__idiv__(1)
 
 x // 1
 1 // x
