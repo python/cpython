@@ -6,6 +6,9 @@ import signal
 import os
 from test import test_support
 
+if sys.platform[:3] in ('win', 'os2') or sys.platform=='riscos':
+    raise TestSkipped, "Can't test signal on %s" % sys.platform
+
 signal_blackboard = { signal.SIGUSR1 : {'tripped': 0, 'tripped_by': 0 }, 
                       signal.SIGUSR2 : {'tripped': 0, 'tripped_by': 0 },
                       signal.SIGALRM : {'tripped': 0, 'tripped_by': 0 } }
