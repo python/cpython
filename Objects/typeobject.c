@@ -2693,9 +2693,21 @@ static PyObject * \
 FUNCNAME(PyObject *self, PyObject *other) \
 { \
 	static PyObject *cache_str, *rcache_str; \
+	int do_other = self->ob_type != other->ob_type && \
+	    other->ob_type->tp_as_number != NULL && \
+	    other->ob_type->tp_as_number->SLOTNAME == TESTFUNC; \
 	if (self->ob_type->tp_as_number != NULL && \
 	    self->ob_type->tp_as_number->SLOTNAME == TESTFUNC) { \
 		PyObject *r; \
+		if (do_other && \
+		    PyType_IsSubtype(other->ob_type, self->ob_type)) { \
+			r = call_maybe( \
+				other, ROPSTR, &rcache_str, "(O)", self); \
+			if (r != Py_NotImplemented) \
+				return r; \
+			Py_DECREF(r); \
+			do_other = 0; \
+		} \
 		r = call_maybe( \
 			self, OPSTR, &cache_str, "(O)", other); \
 		if (r != Py_NotImplemented || \
@@ -2703,8 +2715,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
 			return r; \
 		Py_DECREF(r); \
 	} \
-	if (other->ob_type->tp_as_number != NULL && \
-	    other->ob_type->tp_as_number->SLOTNAME == TESTFUNC) { \
+	if (do_other) { \
 		return call_maybe( \
 			other, ROPSTR, &rcache_str, "(O)", self); \
 	} \
@@ -2785,7 +2796,7 @@ slot_sq_contains(PyObject *self, PyObject *value)
 	PyObject *func, *res, *args;
 	static PyObject *contains_str;
 
-	func = lookup_method(self, "__contains__", &contains_str);
+	func = lookup_maybe(self, "__contains__", &contains_str);
 
 	if (func != NULL) {
 		args = Py_BuildValue("(O)", value);
@@ -2800,8 +2811,9 @@ slot_sq_contains(PyObject *self, PyObject *value)
 			return -1;
 		return PyObject_IsTrue(res);
 	}
+	else if (PyErr_Occurred())
+		return -1;
 	else {
-		PyErr_Clear();
 		return _PySequence_IterSearch(self, value,
 					      PY_ITERSEARCH_CONTAINS);
 	}
@@ -2866,23 +2878,23 @@ slot_nb_nonzero(PyObject *self)
 	PyObject *func, *res;
 	static PyObject *nonzero_str, *len_str;
 
-	func = lookup_method(self, "__nonzero__", &nonzero_str);
+	func = lookup_maybe(self, "__nonzero__", &nonzero_str);
 	if (func == NULL) {
-		PyErr_Clear();
-		func = lookup_method(self, "__len__", &len_str);
-	}
-
-	if (func != NULL) {
-		res = PyObject_CallObject(func, NULL);
-		Py_DECREF(func);
-		if (res == NULL)
+		if (PyErr_Occurred())
 			return -1;
-		return PyObject_IsTrue(res);
+		func = lookup_maybe(self, "__len__", &len_str);
+		if (func == NULL) {
+			if (PyErr_Occurred())
+				return -1;
+			else
+				return 1;
+		}
 	}
-	else {
-		PyErr_Clear();
-		return 1;
-	}
+	res = PyObject_CallObject(func, NULL);
+	Py_DECREF(func);
+	if (res == NULL)
+		return -1;
+	return PyObject_IsTrue(res);
 }
 
 SLOT0(slot_nb_invert, "__invert__")
@@ -2907,20 +2919,21 @@ slot_nb_coerce(PyObject **a, PyObject **b)
 			return -1;
 		if (r == Py_NotImplemented) {
 			Py_DECREF(r);
-			return 1;
 		}
-		if (!PyTuple_Check(r) || PyTuple_GET_SIZE(r) != 2) {
-			PyErr_SetString(PyExc_TypeError,
+		else {
+			if (!PyTuple_Check(r) || PyTuple_GET_SIZE(r) != 2) {
+				PyErr_SetString(PyExc_TypeError,
 					"__coerce__ didn't return a 2-tuple");
+				Py_DECREF(r);
+				return -1;
+			}
+			*a = PyTuple_GET_ITEM(r, 0);
+			Py_INCREF(*a);
+			*b = PyTuple_GET_ITEM(r, 1);
+			Py_INCREF(*b);
 			Py_DECREF(r);
-			return -1;
+			return 0;
 		}
-		*a = PyTuple_GET_ITEM(r, 0);
-		Py_INCREF(*a);
-		*b = PyTuple_GET_ITEM(r, 1);
-		Py_INCREF(*b);
-		Py_DECREF(r);
-		return 0;
 	}
 	if (other->ob_type->tp_as_number != NULL &&
 	    other->ob_type->tp_as_number->nb_coerce == slot_nb_coerce) {
