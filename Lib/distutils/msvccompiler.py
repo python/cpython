@@ -219,8 +219,9 @@ class MSVCCompiler (CCompiler) :
             self.lib = "lib.exe"
 
         self.preprocess_options = None
-        self.compile_options = [ '/nologo', '/Ox', '/MD', '/W3' ]
-        self.compile_options_debug = ['/nologo', '/Od', '/MDd', '/W3', '/Z7', '/D_DEBUG']
+        self.compile_options = [ '/nologo', '/Ox', '/MD', '/W3', '/GX' ]
+        self.compile_options_debug = ['/nologo', '/Od', '/MDd', '/W3', '/GX',
+                                      '/Z7', '/D_DEBUG']
 
         self.ldflags_shared = ['/DLL', '/nologo', '/INCREMENTAL:NO']
         self.ldflags_shared_debug = [
