@@ -8,3 +8,4 @@ normal compression/decompression succeeded
 compress/decompression obj succeeded
 decompress with init options succeeded
 decompressobj with init options succeeded
+Testing on 17K of random data
