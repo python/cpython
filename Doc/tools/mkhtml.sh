@@ -21,7 +21,10 @@ fi
 
 set -x
 
-latex2html -init_file $srcdir/perl/l2hinit.perl ${1:+$@} $srcdir/$part/$part
+latex2html \
+ -init_file $srcdir/perl/l2hinit.perl \
+ ${1:+$@} \
+ $srcdir/$part/$part.tex
 
 cd $part
 $srcdir/tools/node2label.pl *.html
