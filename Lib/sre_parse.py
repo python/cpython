@@ -515,6 +515,8 @@ def _parse(source, state):
                     group = state.getgroup(name)
                 while 1:
                     p = _parse(source, state)
+                    if group is not None:
+                        p.append((INDEX, group))
                     if source.match(")"):
                         if b:
                             b.append(p)

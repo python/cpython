@@ -21,6 +21,7 @@ typedef struct {
     PyObject* code; /* link to the code string object */
     int groups;
     PyObject* groupindex;
+    PyObject* indexgroup;
     /* compatibility */
     PyObject* pattern; /* pattern source (or None) */
     int flags; /* flags used when compiling pattern source */

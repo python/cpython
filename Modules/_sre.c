@@ -1104,9 +1104,10 @@ _compile(PyObject* self_, PyObject* args)
 	PyObject* code;
 	int groups = 0;
 	PyObject* groupindex = NULL;
-	if (!PyArg_ParseTuple(args, "OiO!|iO", &pattern, &flags,
+    PyObject* indexgroup = NULL;
+	if (!PyArg_ParseTuple(args, "OiO!|iOO", &pattern, &flags,
                           &PyString_Type, &code,
-                          &groups, &groupindex))
+                          &groups, &groupindex, &indexgroup))
 		return NULL;
 
 	self = PyObject_NEW(PatternObject, &Pattern_Type);
@@ -1126,6 +1127,9 @@ _compile(PyObject* self_, PyObject* args)
 
 	Py_XINCREF(groupindex);
 	self->groupindex = groupindex;
+
+	Py_XINCREF(indexgroup);
+	self->indexgroup = indexgroup;
 
 	return (PyObject*) self;
 }
@@ -1883,7 +1887,28 @@ match_getattr(MatchObject* self, char* name)
 
 	PyErr_Clear();
 
-	/* attributes */
+	if (!strcmp(name, "lastindex")) {
+        /* experimental */
+        if (self->index >= 0)
+            return Py_BuildValue("i", self->index);
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+
+    if (!strcmp(name, "lastgroup")) {
+        /* experimental */
+        if (self->pattern->indexgroup) {
+            PyObject* result = PySequence_GetItem(
+                self->pattern->indexgroup, self->index
+                );
+            if (result)
+                return result;
+            PyErr_Clear();
+        }
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+
 	if (!strcmp(name, "string")) {
         Py_INCREF(self->string);
 		return self->string;
@@ -1899,15 +1924,6 @@ match_getattr(MatchObject* self, char* name)
 
 	if (!strcmp(name, "endpos"))
 		return Py_BuildValue("i", 0); /* FIXME */
-
-	if (!strcmp(name, "index")) {
-        /* experimental */
-        if (self->index < 0) {
-            Py_INCREF(Py_None);
-            return Py_None;
-        } else
-            return Py_BuildValue("i", self->index);
-    }
 
 	PyErr_SetString(PyExc_AttributeError, name);
 	return NULL;
