@@ -756,7 +756,7 @@ Electric behavior is inhibited inside a string or comment."
 	  (if (and (not arg)
 		   (py-outdent-p)
 		   (= indent (save-excursion
-			       (forward-line -1)
+			       (py-next-statement -1)
 			       (py-compute-indentation)))
 		   )
 	      (setq outdent py-indent-offset))
