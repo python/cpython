@@ -1215,12 +1215,11 @@ strop_methods[] = {
 DL_EXPORT(void)
 initstrop(void)
 {
-	PyObject *m, *d, *s;
+	PyObject *m, *s;
 	char buf[256];
 	int c, n;
 	m = Py_InitModule4("strop", strop_methods, strop_module__doc__,
 			   (PyObject*)NULL, PYTHON_API_VERSION);
-	d = PyModule_GetDict(m);
 
 	/* Create 'whitespace' object */
 	n = 0;
@@ -1229,10 +1228,9 @@ initstrop(void)
 			buf[n++] = c;
 	}
 	s = PyString_FromStringAndSize(buf, n);
-	if (s) {
-		PyDict_SetItemString(d, "whitespace", s);
-		Py_DECREF(s);
-	}
+	if (s)
+		PyModule_AddObject(m, "whitespace", s);
+
 	/* Create 'lowercase' object */
 	n = 0;
 	for (c = 0; c < 256; c++) {
@@ -1240,10 +1238,8 @@ initstrop(void)
 			buf[n++] = c;
 	}
 	s = PyString_FromStringAndSize(buf, n);
-	if (s) {
-		PyDict_SetItemString(d, "lowercase", s);
-		Py_DECREF(s);
-	}
+	if (s)
+		PyModule_AddObject(m, "lowercase", s);
 
 	/* Create 'uppercase' object */
 	n = 0;
@@ -1252,8 +1248,6 @@ initstrop(void)
 			buf[n++] = c;
 	}
 	s = PyString_FromStringAndSize(buf, n);
-	if (s) {
-		PyDict_SetItemString(d, "uppercase", s);
-		Py_DECREF(s);
-	}
+	if (s)
+		PyModule_AddObject(m, "uppercase", s);
 }

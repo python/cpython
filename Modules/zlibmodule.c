@@ -847,17 +847,18 @@ static char zlib_module_documentation[]=
 DL_EXPORT(void)
 PyInit_zlib(void)
 {
-    PyObject *m, *d, *ver;
+    PyObject *m, *ver;
     Comptype.ob_type = &PyType_Type;
     Decomptype.ob_type = &PyType_Type;
     m = Py_InitModule4("zlib", zlib_methods,
 		       zlib_module_documentation,
 		       (PyObject*)NULL,PYTHON_API_VERSION);
-    d = PyModule_GetDict(m);
-    ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
-    if (ZlibError != NULL)
-	PyDict_SetItemString(d, "error", ZlibError);
 
+    ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
+    if (ZlibError != NULL) {
+        Py_INCREF(ZlibError);
+	PyModule_AddObject(m, "error", ZlibError);
+    }
     PyModule_AddIntConstant(m, "MAX_WBITS", MAX_WBITS);
     PyModule_AddIntConstant(m, "DEFLATED", DEFLATED);
     PyModule_AddIntConstant(m, "DEF_MEM_LEVEL", DEF_MEM_LEVEL);
@@ -874,10 +875,8 @@ PyInit_zlib(void)
     PyModule_AddIntConstant(m, "Z_FULL_FLUSH", Z_FULL_FLUSH);
 
     ver = PyString_FromString(ZLIB_VERSION);
-    if (ver != NULL) {
-	PyDict_SetItemString(d, "ZLIB_VERSION", ver);
-	Py_DECREF(ver);
-    }
+    if (ver != NULL)
+	PyModule_AddObject(m, "ZLIB_VERSION", ver);
 
 #ifdef WITH_THREAD
     zlib_lock = PyThread_allocate_lock();
