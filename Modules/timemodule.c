@@ -69,15 +69,13 @@ time_time(self, args)
 	if (!getnoarg(args))
 		return NULL;
 	time(&secs);
-#ifdef applec /* MPW */
-/* Difference in origin between Mac and Unix clocks: */
-/* For THINK C 3.0 add a correction like 5*3600;
-   it converts to UCT from local assuming EST */
+#ifdef macintosh
+/* The Mac epoch is 1904, while UNIX uses 1970; Python prefers 1970 */
+/* Moreover, the Mac returns local time.  This we cannot fix... */
 #define TIMEDIFF ((time_t) \
 	(((1970-1904)*365L + (1970-1904)/4) * 24 * 3600))
 	secs -= TIMEDIFF;
-/* XXX It's almost better to directly fetch the Mac clock... */
-#endif /* applec */
+#endif
 	return newintobject((long)secs);
 }
 
