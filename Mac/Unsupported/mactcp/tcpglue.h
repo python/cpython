@@ -14,6 +14,21 @@
 #include <UDPPB.h>
 #include <AddressXlation.h>
 
+#ifndef __MWERKS__
+#define TCPIOCompletionUPP TCPIOCompletionProc
+#define TCPNotifyUPP TCPNotifyProc
+#define UDPIOCompletionUPP UDPIOCompletionProc
+#define UDPNotifyUPP UDPNotifyProc
+#define NewTCPIOCompletionProc(x) (x)
+#define NewTCPNotifyProc(x) (x)
+#define NewUDPIOCompletionProc(x) (x)
+#define NewUDPNotifyProc(x) (x)
+#endif /* __MWERKS__ */
+
+#if defined(powerc) || defined (__powerc)
+#pragma options align=mac68k
+#endif
+
 typedef	struct	miniwds
 	{
 	unsigned short length;
@@ -21,26 +36,30 @@ typedef	struct	miniwds
 	unsigned short terminus;	/* must be zero'd for use */
 	} miniwds;
 
+#if defined(powerc) || defined(__powerc)
+#pragma options align=reset
+#endif
+
 
 OSErr xOpenDriver(void);
-OSErr xPBControl(TCPiopb *pb, TCPIOCompletionProc completion);
+OSErr xPBControl(TCPiopb *pb, TCPIOCompletionUPP completion);
 OSErr xPBControlSync(TCPiopb *pb);
-OSErr xTCPCreate(int buflen, TCPNotifyProc notify, void *udp, TCPiopb *pb);
-OSErr xTCPPassiveOpen(TCPiopb *pb, short port, TCPIOCompletionProc completion, void *udp);
-OSErr xTCPActiveOpen(TCPiopb *pb, short port, long rhost, short rport, TCPIOCompletionProc completion);
-OSErr xTCPRcv(TCPiopb *pb, char *buf, int buflen, int timeout, TCPIOCompletionProc completion);
-OSErr xTCPNoCopyRcv(TCPiopb *,rdsEntry *,int,int,TCPIOCompletionProc);
-OSErr xTCPBufReturn(TCPiopb *pb,rdsEntry *rds,TCPIOCompletionProc completion);
-OSErr xTCPSend(TCPiopb *pb, wdsEntry *wds, Boolean push, Boolean urgent, TCPIOCompletionProc completion);
-OSErr xTCPClose(TCPiopb *pb,TCPIOCompletionProc completion);
+OSErr xTCPCreate(int buflen, TCPNotifyUPP notify, void *udp, TCPiopb *pb);
+OSErr xTCPPassiveOpen(TCPiopb *pb, short port, TCPIOCompletionUPP completion, void *udp);
+OSErr xTCPActiveOpen(TCPiopb *pb, short port, long rhost, short rport, TCPIOCompletionUPP completion);
+OSErr xTCPRcv(TCPiopb *pb, char *buf, int buflen, int timeout, TCPIOCompletionUPP completion);
+OSErr xTCPNoCopyRcv(TCPiopb *,rdsEntry *,int,int,TCPIOCompletionUPP);
+OSErr xTCPBufReturn(TCPiopb *pb,rdsEntry *rds,TCPIOCompletionUPP completion);
+OSErr xTCPSend(TCPiopb *pb, wdsEntry *wds, Boolean push, Boolean urgent, TCPIOCompletionUPP completion);
+OSErr xTCPClose(TCPiopb *pb,TCPIOCompletionUPP completion);
 OSErr xTCPAbort(TCPiopb *pb);
 OSErr xTCPRelease(TCPiopb *pb);
 
-OSErr xUDPCreate(UDPiopb *pb,int buflen,ip_port *port, UDPNotifyProc asr, void *udp);
-OSErr xUDPRead(UDPiopb *pb,int timeout, UDPIOCompletionProc completion);
+OSErr xUDPCreate(UDPiopb *pb,int buflen,ip_port *port, UDPNotifyUPP asr, void *udp);
+OSErr xUDPRead(UDPiopb *pb,int timeout, UDPIOCompletionUPP completion);
 OSErr xUDPBfrReturn(UDPiopb *pb, char *buff);
 OSErr xUDPWrite(UDPiopb *pb,ip_addr host,ip_port port,miniwds *wds,
-		UDPIOCompletionProc completion);
+		UDPIOCompletionUPP completion);
 OSErr xUDPRelease(UDPiopb *pb);
 
 ip_addr xIPAddr(void);

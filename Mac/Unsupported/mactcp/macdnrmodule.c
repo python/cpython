@@ -190,8 +190,10 @@ dnrr_getattr(self, name)
 	if ( rv ) return rv;
 	err_clear();
 	if ( self->waiting )
-		if ( !dnrwait(self) )
+		if ( !dnrwait(self) ) {
+			err_setstr(ErrorObject, "Resolver busy");
 			return NULL;
+		}
 	tp = self->type;
 	return getmember((char *)&self->hinfo, dnrr_mlists[tp], name);
 }
@@ -293,7 +295,7 @@ dnr_StrToAddr(self, args)
 	if ( err == cacheFault ) {
 		rv->waiting++;
 		INCREF(rv);
-	} else {
+	} else if ( err ) {
 		DECREF(rv);
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
@@ -321,7 +323,7 @@ dnr_AddrToName(self, args)
 	if ( err == cacheFault ) {
 		rv->waiting++;
 		INCREF(rv);
-	} else {
+	} else if ( err ) {
 		DECREF(rv);
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
@@ -369,7 +371,7 @@ dnr_HInfo(self, args)
 	if ( err == cacheFault ) {
 		rv->waiting++;
 		INCREF(rv);
-	} else {
+	} else if ( err ) {
 		DECREF(rv);
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
@@ -401,17 +403,12 @@ dnr_MXInfo(self, args)
 	if ( err == cacheFault ) {
 		rv->waiting++;
 		INCREF(rv);
-	} else {
+	} else if ( err ) {
 		DECREF(rv);
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
 	}
 	return (object *)rv;
-
-	if (!newgetargs(args, ""))
-		return NULL;
-	INCREF(None);
-	return None;
 }
 
 /* List of methods defined in the module */
