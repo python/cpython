@@ -77,6 +77,7 @@ WIZVERSION = "0.3 (alpha)"		# FAQ Wizard version
 SH_RLOG = RCSBINDIR + "rlog %(file)s </dev/null 2>&1"
 SH_RLOG_H = RCSBINDIR + "rlog -h %(file)s </dev/null 2>&1"
 SH_RDIFF = RCSBINDIR + "rcsdiff -r%(prev)s -r%(rev)s %(file)s </dev/null 2>&1"
+SH_REVISION = RCSBINDIR + "co -p%(rev)s %(file)s </dev/null 2>&1"
 SH_LOCK = RCSBINDIR + "rcs -l %(file)s </dev/null 2>&1"
 SH_CHECKIN =  RCSBINDIR + "ci -u %(file)s <%(tfn)s 2>&1"
 
@@ -91,6 +92,7 @@ T_SEARCH = FAQNAME + " Search Results"
 T_RECENT = "What's New in the " + FAQNAME
 T_SHOW = FAQNAME + " Entry"
 T_LOG = "RCS log for %s entry" % FAQNAME
+T_REVISION = "RCS revision for %s entry" % FAQNAME
 T_DIFF = "RCS diff for %s entry" % FAQNAME
 T_ADD = "Add an entry to the " + FAQNAME
 T_DELETE = "Deleting an entry from the " + FAQNAME
@@ -142,7 +144,7 @@ HOME = """
 	/
     <INPUT TYPE=radio NAME=querytype VALUE=regex>
         Regular expression
-	/
+	/<BR>
     <INPUT TYPE=radio NAME=querytype VALUE=anykeywords>
         Keywords (any)
 	/
@@ -197,11 +199,15 @@ INDEX_ENTRY = """\
 <LI><A HREF="%(FAQCGI)s?req=show&amp;file=%(file)s">%(title)s</A>
 """
 
+LOCAL_ENTRY = """\
+<LI><A HREF="#%(sec)s.%(num)s">%(title)s</A>
+"""
+
 # Entry formatting
 
 ENTRY_HEADER = """
 <HR>
-<H2>%(title)s</H2>
+<H2><A NAME="%(sec)s.%(num)s">%(title)s</A></H2>
 """
 
 ENTRY_FOOTER = """
@@ -240,8 +246,14 @@ Click on a revision line to see the diff between that revision and the
 previous one.
 """
 
+REVISIONLINK = """\
+<A HREF="%(FAQCGI)s?req=revision&amp;file=%(file)s&amp;rev=%(rev)s"
+>%(line)s</A>\
+"""
 DIFFLINK = """\
-<A HREF="%(FAQCGI)s?req=diff&amp;file=%(file)s&amp;rev=%(rev)s">%(line)s</A>
+ (<A HREF="%(FAQCGI)s?req=diff&amp;file=%(file)s&amp;\
+prev=%(prev)s&amp;rev=%(rev)s"
+>diff -r%(prev)s -r%(rev)s</A>)\
 """
 
 # Recently changed entries
