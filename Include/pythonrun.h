@@ -99,6 +99,11 @@ void PyInt_Fini Py_PROTO((void));
 void PyFloat_Fini Py_PROTO((void));
 void PyOS_FiniInterrupts Py_PROTO((void));
 
+/* Stuff with no proper home (yet) */
+char *PyOS_Readline Py_PROTO((char *));
+extern DL_IMPORT(int) (*PyOS_InputHook) Py_PROTO((void));
+extern DL_IMPORT(char) *(*PyOS_ReadlineFunctionPointer) Py_PROTO((char *));
+
 #ifdef __cplusplus
 }
 #endif
