@@ -341,7 +341,7 @@ def _init_mac():
 
     import MacOS
     if not hasattr(MacOS, 'runtimemodel'):
-    g['SO'] = '.ppc.slb'
+        g['SO'] = '.ppc.slb'
     else:
         g['SO'] = '.%s.slb' % MacOS.runtimemodel
 
