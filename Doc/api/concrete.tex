@@ -2603,3 +2603,34 @@ when accessed.  Cell objects are not likely to be useful elsewhere.
   reference counts are adjusted, and no checks are made for safety;
   \var{cell} must be non-\NULL{} and must be a cell object.
 \end{cfuncdesc}
+
+
+\subsection{Generator Objects \label{gen-objects}}
+
+Generator objects are what Python uses to implement generator iterators.
+They are normally created by iterating over a function that yields values,
+rather than explicitly calling \cfunction{PyGen_New}.
+
+\begin{ctypedesc}{PyGenObject}
+  The C structure used for generator objects.
+\end{ctypedesc}
+
+\begin{cvardesc}{PyTypeObject}{PyGen_Type}
+  The type object corresponding to generator objects
+\end{cvardesc}
+
+\begin{cfuncdesc}{int}{PyGen_Check}{ob}
+  Return true if \var{ob} is a generator object; \var{ob} must not be
+  \NULL.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyGen_CheckExact}{ob}
+  Return true if \var{ob}'s type is \var{PyGen_Type}
+  is a generator object; \var{ob} must not be
+  \NULL.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyGen_New}{PyFrameObject *frame}
+  Create and return a new generator object based on the \var{frame} object.
+  The parameter must not be \NULL.
+\end{cfuncdesc}
