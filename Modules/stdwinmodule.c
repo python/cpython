@@ -314,6 +314,18 @@ drawing_circle(dp, args)
 	INCREF(None);
 	return None;
 }
+static object *
+drawing_fillcircle(dp, args)
+	drawingobject *dp;
+	object *args;
+{
+	int a[3];
+	if (!getpointintarg(args, a))
+		return NULL;
+	wfillcircle(a[0], a[1], a[2]);
+	INCREF(None);
+	return None;
+}
 
 static object *
 drawing_elarc(dp, args)
@@ -324,6 +336,19 @@ drawing_elarc(dp, args)
 	if (!get3pointarg(args, a))
 		return NULL;
 	wdrawelarc(a[0], a[1], a[2], a[3], a[4], a[5]);
+	INCREF(None);
+	return None;
+}
+
+static object *
+drawing_fillelarc(dp, args)
+	drawingobject *dp;
+	object *args;
+{
+	int a[6];
+	if (!get3pointarg(args, a))
+		return NULL;
+	wfillelarc(a[0], a[1], a[2], a[3], a[4], a[5]);
 	INCREF(None);
 	return None;
 }
@@ -358,6 +383,83 @@ drawing_invert(dp, args)
 	object *args;
 {
 	return drawing_generic(dp, args, winvert);
+}
+
+static POINT *
+getpointsarray(v, psize)
+	object *v;
+	int *psize;
+{
+	int n = -1;
+	object * (*getitem) PROTO((object *, int));
+	int i;
+	POINT *points;
+
+	if (v == NULL)
+		;
+	else if (is_listobject(v)) {
+		n = getlistsize(v);
+		getitem = getlistitem;
+	}
+	else if (is_tupleobject(v)) {
+		n = gettuplesize(v);
+		getitem = gettupleitem;
+	}
+
+	if (n <= 0) {
+		(void) err_badarg();
+		return NULL;
+	}
+
+	points = NEW(POINT, n);
+	if (points == NULL) {
+		(void) err_nomem();
+		return NULL;
+	}
+
+	for (i = 0; i < n; i++) {
+		object *w = (*getitem)(v, i);
+		int a[2];
+		if (!getpointarg(w, a)) {
+			DEL(points);
+			return NULL;
+		}
+		points[i].h = a[0];
+		points[i].v = a[1];
+	}
+
+	*psize = n;
+	return points;
+}
+
+static object *
+drawing_poly(dp, args)
+	drawingobject *dp;
+	object *args;
+{
+	int n;
+	POINT *points = getpointsarray(args, &n);
+	if (points == NULL)
+		return NULL;
+	wdrawpoly(n, points);
+	DEL(points);
+	INCREF(None);
+	return None;
+}
+
+static object *
+drawing_fillpoly(dp, args)
+	drawingobject *dp;
+	object *args;
+{
+	int n;
+	POINT *points = getpointsarray(args, &n);
+	if (points == NULL)
+		return NULL;
+	wfillpoly(n, points);
+	DEL(points);
+	INCREF(None);
+	return None;
 }
 
 static object *
@@ -563,10 +665,14 @@ static struct methodlist drawing_methods[] = {
 	{"cliprect",	drawing_cliprect},
 	{"elarc",	drawing_elarc},
 	{"erase",	drawing_erase},
+	{"fillelarc",	drawing_fillelarc},
+	{"fillcircle",	drawing_fillcircle},
+	{"fillpoly",	drawing_fillpoly},
 	{"invert",	drawing_invert},
 	{"line",	drawing_line},
 	{"noclip",	drawing_noclip},
 	{"paint",	drawing_paint},
+	{"poly",	drawing_poly},
 	{"shade",	drawing_shade},
 	{"text",	drawing_text},
 	{"xorline",	drawing_xorline},
@@ -889,7 +995,7 @@ static typeobject Texttype = {
 /* Menu objects */
 
 #define IDOFFSET 10		/* Menu IDs we use start here */
-#define MAXNMENU 20		/* Max #menus we allow */
+#define MAXNMENU 200		/* Max #menus we allow */
 static menuobject *menulist[MAXNMENU];
 
 static menuobject *
@@ -903,8 +1009,10 @@ newmenuobject(title)
 		if (menulist[id] == NULL)
 			break;
 	}
-	if (id >= MAXNMENU)
-		return (menuobject *) err_nomem();
+	if (id >= MAXNMENU) {
+		err_setstr(MemoryError, "creating too many menus");
+		return NULL;
+	}
 	menu = wmenucreate(id + IDOFFSET, getstringvalue(title));
 	if (menu == NULL)
 		return (menuobject *) err_nomem();
@@ -1324,23 +1432,6 @@ window_setwincursor(self, args)
 	return None;
 }
 
-static object *
-window_setfont(self, args)
-	windowobject *self;
-	object *args;
-{
-	object *v;
-	TEXTATTR saveattr, winattr;
-	wgettextattr(&saveattr);
-	wgetwintextattr(self->w_win, &winattr);
-	wsettextattr(&winattr);
-	v = drawing_setfont((drawingobject *)NULL, args);
-	wgettextattr(&winattr);
-	wsetwintextattr(self->w_win, &winattr);
-	wsettextattr(&saveattr);
-	return v;
-}
-
 static struct methodlist window_methods[] = {
 	{"begindrawing",window_begindrawing},
 	{"change",	window_change},
@@ -1350,13 +1441,12 @@ static struct methodlist window_methods[] = {
 	{"getwinsize",	window_getwinsize},
 	{"menucreate",	window_menucreate},
 	{"scroll",	window_scroll},
-	{"setwincursor",window_setwincursor},
 	{"setdocsize",	window_setdocsize},
-	{"setfont",	window_setfont},
 	{"setorigin",	window_setorigin},
 	{"setselection",window_setselection},
 	{"settimer",	window_settimer},
 	{"settitle",	window_settitle},
+	{"setwincursor",window_setwincursor},
 	{"show",	window_show},
 	{"textcreate",	window_textcreate},
 	{NULL,		NULL}		/* sentinel */
@@ -1425,8 +1515,10 @@ stdwin_open(sw, args)
 		if (windowlist[tag] == NULL)
 			break;
 	}
-	if (tag >= MAXNWIN)
-		return err_nomem();
+	if (tag >= MAXNWIN) {
+		err_setstr(MemoryError, "creating too many windows");
+		return NULL;
+	}
 	wp = NEWOBJ(windowobject, &Windowtype);
 	if (wp == NULL)
 		return NULL;
@@ -1828,14 +1920,14 @@ static struct methodlist stdwin_methods[] = {
 	{"askfile",		stdwin_askfile},
 	{"askstr",		stdwin_askstr},
 	{"askync",		stdwin_askync},
+	{"fetchcolor",		stdwin_fetchcolor},
 	{"fleep",		stdwin_fleep},
-	{"getselection",	stdwin_getselection},
 	{"getcutbuffer",	stdwin_getcutbuffer},
 	{"getdefscrollbars",	stdwin_getdefscrollbars},
 	{"getdefwinpos",	stdwin_getdefwinpos},
 	{"getdefwinsize",	stdwin_getdefwinsize},
 	{"getevent",		stdwin_getevent},
-	{"fetchcolor",		stdwin_fetchcolor},
+	{"getselection",	stdwin_getselection},
 	{"menucreate",		stdwin_menucreate},
 	{"message",		stdwin_message},
 	{"open",		stdwin_open},
