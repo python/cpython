@@ -135,87 +135,18 @@ install_BuildApplet: $(INSTALLED_PYTHONW)
 		--output $(PYTHONAPPSDIR)/BuildApplet.app \
 		$(srcdir)/Mac/scripts/BuildApplet.py
 		
-MACLIBDEST=$(prefix)/Mac/Lib
-MACLIBSRC=$(srcdir)/Mac/Lib
-MACLIBSUBDIRS= \
-	Carbon \
-	lib-scriptpackages \
-	lib-scriptpackages/_builtinSuites \
-	lib-scriptpackages/CodeWarrior \
-	lib-scriptpackages/Explorer \
-	lib-scriptpackages/Finder \
-	lib-scriptpackages/Netscape \
-	lib-scriptpackages/StdSuites \
-	lib-scriptpackages/Terminal \
-	mkcwproject \
-	mkcwproject/template \
-	mkcwproject/template-carbon \
-	mkcwproject/template-ppc
+MACLIBDEST=$(LIBDEST)/plat-mac
 MACTOOLSDEST=$(prefix)/Mac/Tools
 MACTOOLSSRC=$(srcdir)/Mac/Tools
 MACTOOLSSUBDIRS=IDE
 installmacsubtree:
-	@for i in $(MACLIBDEST) $(MACTOOLSDEST); \
+	@for i in $(MACTOOLSDEST); \
 	do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
 			$(INSTALL) -d -m $(DIRMODE) $$i; \
 		else	true; \
 		fi; \
-	done
-	@for d in $(MACLIBSUBDIRS); \
-	do \
-		a=$(MACLIBSRC)/$$d; \
-		if test ! -d $$a; then continue; else true; fi; \
-		b=$(MACLIBDEST)/$$d; \
-		if test ! -d $$b; then \
-			echo "Creating directory $$b"; \
-			$(INSTALL) -d -m $(DIRMODE) $$b; \
-		else	true; \
-		fi; \
-	done
-	@for i in $(MACLIBSRC)/*.py; \
-	do \
-		if test -x $$i; then \
-			$(INSTALL_SCRIPT) $$i $(MACLIBDEST); \
-			echo $(INSTALL_SCRIPT) $$i $(MACLIBDEST); \
-		else \
-			$(INSTALL_DATA) $$i $(MACLIBDEST); \
-			echo $(INSTALL_DATA) $$i $(MACLIBDEST); \
-		fi; \
-	done
-	@for i in $(MACLIBSRC)/*.rsrc; \
-	do \
-		echo $(CPMAC) $$i $(MACLIBDEST) ; \
-		$(CPMAC) $$i $(MACLIBDEST) ; \
-	done
-	@for d in $(MACLIBSUBDIRS); \
-	do \
-		a=$(MACLIBSRC)/$$d; \
-		if test ! -d $$a; then continue; else true; fi; \
-		b=$(MACLIBDEST)/$$d; \
-		for i in $$a/*; \
-		do \
-			case $$i in \
-			*CVS) ;; \
-			*.py[co]) ;; \
-			*.orig) ;; \
-			*~) ;; \
-			*.rsrc) \
-				echo $(CPMAC) $$i $$b ; \
-				$(CPMAC) $$i $$b ; \
-				;; \
-			*) \
-				if test -d $$i; then continue; fi; \
-				if test -x $$i; then \
-				    echo $(INSTALL_SCRIPT) $$i $$b; \
-				    $(INSTALL_SCRIPT) $$i $$b; \
-				else \
-				    echo $(INSTALL_DATA) $$i $$b; \
-				    $(INSTALL_DATA) $$i $$b; \
-				fi;; \
-			esac; \
-		done; \
 	done
 	@for d in $(MACTOOLSSUBDIRS); \
 	do \
@@ -260,8 +191,8 @@ installmacsubtree:
 	$(INSTALL_DATA) $(PTHFILE) $(LIBDEST)/site-packages/
 
 	$(PYTHON) $(CACHERSRC) -v $(MACLIBDEST) $(MACTOOLSDEST)
-	$(PYTHON) -Wi -tt $(compileall) -x badsyntax $(MACLIBDEST) $(MACTOOLSDEST)
-	$(PYTHON) -O -Wi -tt $(compileall) -x badsyntax $(MACLIBDEST) $(MACTOOLSDEST)
+	$(PYTHON) -Wi -tt $(compileall) -x badsyntax $(MACTOOLSDEST)
+	$(PYTHON) -O -Wi -tt $(compileall) -x badsyntax $(MACTOOLSDEST)
 
 #
 # We use the full name here in stead of $(INSTALLED_PYTHONW), because
@@ -278,10 +209,3 @@ installunixtools: $(INSTALLED_PYTHON) $(INSTALLED_PYTHONW)
 	echo "#!/bin/sh" > pythonw.sh
 	echo "exec \"$(INSTALLED_PYTHONW)\" \"\$$@\"" >> pythonw.sh
 	$(INSTALL) pythonw.sh $(bindir)/pythonw
-	
-# This is for development purposes: create a Mac.pth that refers to the source
-# directories
-dontinstallmacsubtree:
-	l=`cd $(srcdir)/Mac/Lib; pwd`; \
-	echo $$l > $(MACLIBDEST)/site-packages/Mac.pth ; \
-	echo $$l/lib-scriptpackages >> $(MACLIBDEST)/site-packages/Mac.pth
