@@ -994,7 +994,7 @@ PyObject *PyUnicode_AsUTF16String(PyObject *unicode)
 
 static
 int unicodeescape_decoding_error(const char **source,
-                                 unsigned int *x,
+                                 unsigned long *x,
                                  const char *errors,
                                  const char *details) 
 {
@@ -1009,7 +1009,7 @@ int unicodeescape_decoding_error(const char **source,
         return 0;
     }
     else if (strcmp(errors,"replace") == 0) {
-        *x = (unsigned int)Py_UNICODE_REPLACEMENT_CHARACTER;
+        *x = (unsigned long)Py_UNICODE_REPLACEMENT_CHARACTER;
         return 0;
     }
     else {
