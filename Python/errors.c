@@ -140,3 +140,9 @@ err_errno(exc)
 		DECREF(v);
 	return NULL;
 }
+
+void
+err_badcall()
+{
+	err_setstr(SystemError, "bad argument to internal function");
+}
