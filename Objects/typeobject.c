@@ -2619,6 +2619,7 @@ reduce_2(PyObject *obj)
 	Py_XDECREF(cls);
 	Py_XDECREF(args);
 	Py_XDECREF(args2);
+	Py_XDECREF(slots);
 	Py_XDECREF(state);
 	Py_XDECREF(names);
 	Py_XDECREF(listitems);
