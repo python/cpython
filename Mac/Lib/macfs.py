@@ -78,7 +78,7 @@ AliasType = Alias
 FInfoType = FInfo
 
 def ResolveAliasFile(fss, chain=1):
-	return Carbon.Files.ResolveAliasFile(fss, chain)
+	return Carbon.File.ResolveAliasFile(fss, chain)
 	
 def RawFSSpec(data):
 	return FSSpec(rawdata=data)
