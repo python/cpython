@@ -44,7 +44,7 @@ RESOURCEDIR=$(srcdir)/Mac/Resources
 RESOURCEFILE=python.rsrc
 RFCONVERTER=$(srcdir)/Mac/Lib/applesingle.py
 
-install_all: install_PythonLauncher install_Python install_IDE
+install_all: install_PythonLauncher install_Python install_IDE install_BuildApplet
 
 install_PythonLauncher:
 	cd $(srcdir)/Mac/OSX/PythonLauncher/PythonLauncher.pbproj ; \
@@ -101,6 +101,11 @@ install_IDE: $(INSTALLED_PYTHONW)
 	$(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
 		--output $(PYTHONAPPSDIR)/PythonIDE.app --noargv \
 		$(srcdir)/Mac/Tools/IDE/PythonIDE.py
+		
+install_BuildApplet: $(INSTALLED_PYTHONW)
+	$(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
+		--output $(PYTHONAPPSDIR)/BuildApplet.app \
+		$(srcdir)/Mac/scripts/BuildApplet.py
 		
 LIBDEST=$(prefix)/Mac/Lib
 LIBSRC=$(srcdir)/Mac/Lib
