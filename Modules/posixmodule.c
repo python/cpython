@@ -5169,7 +5169,7 @@ posix_mknod(PyObject *self, PyObject *args)
 	int mode = 0600;
 	int device = 0;
 	int res;
-	if (!PyArg_ParseTuple(args, "s|iii:mknod", &filename, &mode, &device))
+	if (!PyArg_ParseTuple(args, "s|ii:mknod", &filename, &mode, &device))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = mknod(filename, mode, device);
