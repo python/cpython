@@ -7,6 +7,8 @@ import traceback
 import StringIO
 
 # Rename some stuff so "from threading import *" is safe
+__all__ = ['activeCount', 'Condition', 'currentThread', 'enumerate', 'Event',
+           'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread', 'Timer']
 
 _sys = sys
 del sys
