@@ -62,6 +62,22 @@ x = 3.e14
 x = .3e14
 x = 3.1e4
 
+print '1.1.3 String literals'
+
+def assert(s):
+	if not s: raise TestFailed, 'see traceback'
+
+x = ''; y = ""; assert(len(x) == 0 and x == y)
+x = '\''; y = "'"; assert(len(x) == 1 and x == y and ord(x) == 39)
+x = '"'; y = "\""; assert(len(x) == 1 and x == y and ord(x) == 34)
+x = "doesn't \"shrink\" does it"
+y = 'doesn\'t "shrink" does it'
+assert(len(x) == 24 and x == y)
+x = "doesn \"shrink\" doesn't it"
+y = 'doesn "shrink" doesn\'t it'
+assert(len(x) == 25 and x == y)
+
+
 print '1.2 Grammar'
 
 print 'single_input' # NEWLINE | simple_stmt | compound_stmt NEWLINE
