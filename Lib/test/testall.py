@@ -26,6 +26,7 @@ tests = ['test_grammar',
 	 'test_dl',
 	 'test_thread',
 	 'test_xdr',
+	 'test_fcntl',
 	 ]
 
 if __name__ == '__main__':
