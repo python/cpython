@@ -123,6 +123,8 @@ Tools/Demos
 Build
 -----
 
+- Bug #1034496: Use -h instead of -soname for Solaris compatibility.
+
 - Patch #973204: Use -rpath instead of -R for runtime_library_dirs 
   on Irix and True64.
 
