@@ -60,6 +60,7 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 
 /* Forward */
 static void initmain Py_PROTO((void));
+static void initsite Py_PROTO((void));
 static PyObject *run_err_node Py_PROTO((node *n, char *filename,
 				   PyObject *globals, PyObject *locals));
 static PyObject *run_node Py_PROTO((node *n, char *filename,
@@ -75,6 +76,7 @@ static void call_ll_exitfuncs Py_PROTO((void));
 int Py_DebugFlag; /* Needed by parser.c */
 int Py_VerboseFlag; /* Needed by import.c */
 int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
+int Py_NoSiteFlag; /* Suppress 'import site' */
 int Py_UseClassExceptionsFlag; /* Needed by bltinmodule.c */
 
 static int initialized = 0;
@@ -107,8 +109,9 @@ Py_Initialize()
 	PyObject *bimod, *sysmod;
 	char *p;
 
-	if (++initialized > 1)
+	if (initialized)
 		return;
+	initialized = 1;
 	
 	if ((p = getenv("PYTHONDEBUG")) && *p != '\0')
 		Py_DebugFlag = 1;
@@ -153,6 +156,8 @@ Py_Initialize()
 	initsigs(); /* Signal handling stuff, including initintr() */
 
 	initmain(); /* Module __main__ */
+	if (!Py_NoSiteFlag)
+		initsite(); /* Module site */
 }
 
 /* Undo the effect of Py_Initialize().
@@ -177,10 +182,9 @@ Py_Finalize()
 
 	call_sys_exitfunc();
 
-	if (--initialized > 0)
+	if (!initialized)
 		return;
-	if (initialized < 0)
-		Py_FatalError("Py_Finalize: not initialized");
+	initialized = 0;
 
 	/* We must call this before the current thread gets removed because
 	   it decrefs class instances, which in turn save and restore the
@@ -291,6 +295,8 @@ Py_NewInterpreter()
 		PyDict_SetItemString(interp->sysdict, "modules",
 				     interp->modules);
 		initmain();
+		if (!Py_NoSiteFlag)
+			initsite();
 	}
 
 	if (!PyErr_Occurred())
@@ -368,6 +374,31 @@ initmain()
 		if (PyDict_SetItemString(d, "__builtins__",
 					 PyEval_GetBuiltins()))
 			Py_FatalError("can't add __builtins__ to __main__");
+	}
+}
+
+/* Import the site module (not into __main__ though) */
+
+static void
+initsite()
+{
+	PyObject *m, *f;
+	m = PyImport_ImportModule("site");
+	if (m == NULL) {
+		f = PySys_GetObject("stderr");
+		if (Py_VerboseFlag) {
+			PyFile_WriteString(
+				"'import site' failed; traceback:\n", f);
+			PyErr_Print();
+		}
+		else {
+			PyFile_WriteString(
+			  "'import site' failed; use -v for traceback\n", f);
+			PyErr_Clear();
+		}
+	}
+	else {
+		Py_DECREF(m);
 	}
 }
 
