@@ -1,9 +1,8 @@
 \section{\module{UserDict} ---
-         Class wrapper for dictionary objects.}
+         Class wrapper for dictionary objects}
+
 \declaremodule{standard}{UserDict}
-
 \modulesynopsis{Class wrapper for dictionary objects.}
-
 
 This module defines a class that acts as a wrapper around
 dictionary objects.  It is a useful base class for
@@ -19,6 +18,10 @@ contents are kept in a regular dictionary, which is accessible via the
 \member{data} attribute of \class{UserDict} instances.
 \end{classdesc}
 
+In addition to supporting the methods and operations of mappings (see
+section \ref{typesmapping}), \class{UserDict} instances provide the
+following attribute:
+
 \begin{memberdesc}{data}
 A real dictionary used to store the contents of the \class{UserDict}
 class.
@@ -26,9 +29,9 @@ class.
 
 
 \section{\module{UserList} ---
-         Class wrapper for list objects.}
-\declaremodule{standard}{UserList}
+         Class wrapper for list objects}
 
+\declaremodule{standard}{UserList}
 \modulesynopsis{Class wrapper for list objects.}
 
 
@@ -48,6 +51,10 @@ contents are initially set to a copy of \var{list}, defaulting to the
 empty list \code{[]}.  \var{list} can be either a regular Python list,
 or an instance of \class{UserList} (or a subclass).
 \end{classdesc}
+
+In addition to supporting the methods and operations of mutable
+sequences (see section \ref{typesseq}), \class{UserList} instances
+provide the following attribute:
 
 \begin{memberdesc}{data}
 A real Python list object used to store the contents of the
