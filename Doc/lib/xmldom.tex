@@ -40,7 +40,7 @@ code.  The DOM is a standard tree representation for XML data.
 The Document Object Model is being defined by the W3C in stages, or
 ``levels'' in their terminology.  The Python mapping of the API is
 substantially based on the DOM Level 2 recommendation.  Some aspects
-of the API will only became available in Python 2.1, or may only be
+of the API will only become available in Python 2.1, or may only be
 available in particular DOM implementations.
 
 DOM applications typically start by parsing some XML into a DOM.  How
@@ -49,11 +49,11 @@ provides only limited improvements.  There is a
 \class{DOMImplementation} object class which provides access to
 \class{Document} creation methods, but these methods were only added
 in DOM Level 2 and were not implemented in time for Python 2.0.  There
-is also no well-defined way to access this functions without an
+is also no well-defined way to access these methods without an
 existing \class{Document} object.  For Python 2.0, consult the
 documentation for each particular DOM implementation to determine the
 bootstrap procedure needed to create and initialize \class{Document}
-instances.
+and \class{DocumentType} instances.
 
 Once you have a DOM document object, you can access the parts of your
 XML document through its properties and methods.  These properties are
@@ -143,7 +143,7 @@ All of the components of an XML document are subclasses of
 
 \begin{memberdesc}[Node]{nodeType}
 An integer representing the node type.  Symbolic constants for the
-types are on the \class{Node} object: \constant{DOCUMENT_NODE},
+types are on the \class{Node} object:
 \constant{ELEMENT_NODE}, \constant{ATTRIBUTE_NODE},
 \constant{TEXT_NODE}, \constant{CDATA_SECTION_NODE},
 \constant{ENTITY_NODE}, \constant{PROCESSING_INSTRUCTION_NODE},
