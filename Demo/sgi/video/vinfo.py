@@ -14,20 +14,20 @@ def openvideo(filename):
     f = open(filename, 'r')
     line = f.readline()
     if not line: raise EndOfFile
-    if line[:4] = 'CMIF': line = f.readline()
+    if line[:4] == 'CMIF': line = f.readline()
     x = eval(line[:-1])
-    if len(x) = 3: w, h, pf = x
+    if len(x) == 3: w, h, pf = x
     else: w, h = x; pf = 2
     return f, w, h, pf
 
 def loadframe(f, w, h, pf):
     line = f.readline()
-    if line = '':
+    if line == '':
 	raise EndOfFile
     x = eval(line[:-1])
-    if type(x) = type(0) or type(x) = type(0.0):
+    if type(x) == type(0) or type(x) == type(0.0):
     	tijd = x
-    	if pf = 0:
+    	if pf == 0:
     		size = w*h*4
     	else:
     		size = (w/pf) * (h/pf)
@@ -47,8 +47,8 @@ def main():
 	delta = 0
 	opts, names = getopt.getopt(sys.argv[1:], 'd')
 	for opt, arg in opts:
-		if opt = '-d': delta = 1
-	if names = []:
+		if opt == '-d': delta = 1
+	if names == []:
 		names = ['film.video']
 	for name in names:
 	    try:
@@ -67,7 +67,7 @@ def main():
 			else: print '\t', tijd,
 			otijd = tijd
 			num = num + 1
-			if num % 8 = 0:
+			if num % 8 == 0:
 				print
 		    except EndOfFile:
 			raise bye

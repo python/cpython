@@ -94,7 +94,7 @@ def packline(line):
 	i, n = 1, len(bytes)
 	while i < n:
 		for pack in (0, 2, 4, 8):
-			if pack = 0:
+			if pack == 0:
 				lo, hi = 0, 0
 			else:
 				hi = pow(2, pack-1)-1

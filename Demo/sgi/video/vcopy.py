@@ -7,10 +7,10 @@ from DEVICE import *
 
 def loadframe(f, w, h, pf):
 	line = f.readline()
-	if not line or line = '\n':
+	if not line or line == '\n':
 		raise EOFError
 	x = eval(line[:-1])
-	if type(x) = type(0):
+	if type(x) == type(0):
 		if pf: size = w*h*4
 		else: size = w*h*pf
 	else:
@@ -47,10 +47,10 @@ def main():
 	ofp = open(ofile, 'w')
 	#
 	line = ifp.readline()
-	if line[:4] = 'CMIF':
+	if line[:4] == 'CMIF':
 		line = ifp.readline()
 	x = eval(line[:-1])
-	if len(x) = 3:
+	if len(x) == 3:
 		w, h, pf = x
 	else:
 		w, h = x
@@ -82,11 +82,11 @@ def main():
 		dev, val = qread()
 		if dev in (ESCKEY, WINQUIT, WINSHUT):
 			break
-		if dev = REDRAW:
+		if dev == REDRAW:
 			reshapeviewport()
-		elif dev = KEYBD:
+		elif dev == KEYBD:
 			c = chr(val)
-			if c = 'n':
+			if c == 'n':
 				try:
 					time, data = loadframe(ifp, w, h, pf)
 					iframe = iframe+1
@@ -94,13 +94,13 @@ def main():
 				except EOFError:
 					print 'EOF'
 					ringbell()
-			elif c = 'w':
+			elif c == 'w':
 				ofp.write(`time, len(data)` + '\n')
 				ofp.write(data)
 				print 'Frame', iframe, 'written.'
 			else:
 				print 'Character', `c`, 'ignored'
-		elif dev = INPUTCHANGE:
+		elif dev == INPUTCHANGE:
 			pass
 		else:
 			print '(dev, val) =', (dev, val)

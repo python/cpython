@@ -31,26 +31,26 @@ def openvideo(name):
         sys.exit(1)
     line = f.readline()
     if not line: raise EndOfFile
-    if line[:4] = 'CMIF':
-	if line[:14] = 'CMIF video 2.0':
+    if line[:4] == 'CMIF':
+	if line[:14] == 'CMIF video 2.0':
 	    line = f.readline()
 	    colorinfo = eval(line[:-1])
 	else:
 	    colorinfo = (8,0,0,0)
 	line = f.readline()
     x = eval(line[:-1])
-    if len(x) = 3: w, h, pf = x
+    if len(x) == 3: w, h, pf = x
     else: w, h = x; pf = 2
     return f, w, h, pf, colorinfo
 
 def loadframe(f,w,h,pf,af,spkr, (ybits,ibits,qbits,chrompack),mf):
     line = f.readline()
-    if line = '':
+    if line == '':
 	raise EndOfFile
     x = eval(line[:-1])
-    if type(x) = type(0) or type(x) = type(0.0):
+    if type(x) == type(0) or type(x) == type(0.0):
     	tijd = x
-    	if pf = 0:
+    	if pf == 0:
     		size = w*h*4
     	else:
     		size = (w/pf) * (h/pf)
@@ -98,10 +98,10 @@ def initcmap(ybits,ibits,qbits,chrompack):
     for y in range(maxy):
       yv = float(y)/float(maxy-1)
       for i in range(maxi):
-      	if maxi = 1: iv = 0
+      	if maxi == 1: iv = 0
 	else: iv = (float(i)/float(maxi-1))-0.5
 	for q in range(maxq):
-	  if maxq = 1: qv = 0
+	  if maxq == 1: qv = 0
 	  else: qv = (float(q)/float(maxq-1))-0.5
 	  index = 2048 + y + (i << ybits) + (q << (ybits+ibits))
 	  rv,gv,bv = colorsys.yiq_to_rgb(yv,iv,qv)
@@ -125,13 +125,13 @@ def main():
 	'[-l] [-p pf] [-m mag] [-F] [moviefile [soundfile [skipbytes]]]\n')
 		sys.exit(2)
 	for opt, arg in opts:
-		if opt = '-m':
+		if opt == '-m':
 			magfactor = int(eval(arg))
-		elif opt = '-p':
+		elif opt == '-p':
 			packfactor = int(eval(arg))
-		elif opt = '-l':
+		elif opt == '-l':
 			looping = 1
-		elif opt = '-F':
+		elif opt == '-F':
 			epoch.correcttiming = 0
 	if args:
 		filename = args[0]
@@ -206,7 +206,7 @@ def main():
 		    dev, val = qread()
 		    if dev in (ESCKEY, WINSHUT, WINQUIT):
 			raise bye
-		    elif dev = REDRAW:
+		    elif dev == REDRAW:
 		    	reshapeviewport()
 	except bye:
 	    pass
