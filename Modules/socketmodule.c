@@ -322,6 +322,24 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #define SEGMENT_SIZE 65535
 #endif
 
+#if defined(HAVE_BLUETOOTH_H) || defined(HAVE_BLUETOOTH_BLUETOOTH_H)
+#define USE_BLUETOOTH 1
+#if defined(__FreeBSD__)
+#define BTPROTO_L2CAP BLUETOOTH_PROTO_L2CAP
+#define BTPROTO_RFCOMM BLUETOOTH_PROTO_RFCOMM
+#define sockaddr_l2 sockaddr_l2cap
+#define sockaddr_rc sockaddr_rfcomm
+#define _BT_SOCKADDR_MEMB(s, proto) &((s)->sock_addr)
+#define _BT_L2_MEMB(sa, memb) ((sa)->l2cap_##memb)
+#define _BT_RC_MEMB(sa, memb) ((sa)->rfcomm_##memb)
+#else
+#define _BT_SOCKADDRMEMB(s, proto) (&((s)->sock_addr).bt_##proto)
+#define _BT_L2_MEMB(sa, memb) ((sa)->l2_##memb)
+#define _BT_RC_MEMB(sa, memb) ((sa)->rc_##memb)
+#define _BT_SCO_MEMB(sa, memb) ((sa)->sco_##memb)
+#endif
+#endif
+
 /*
  * Constants for getnameinfo()
  */
@@ -1012,18 +1030,18 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 	}
 #endif
 
-#ifdef HAVE_BLUETOOTH_BLUETOOTH_H
+#ifdef USE_BLUETOOTH
 	case AF_BLUETOOTH:
 	{
 		switch( s->sock_proto )
 		{
 			case BTPROTO_L2CAP:
 			{
-				struct sockaddr_l2* addr = (struct sockaddr_l2*) &(s->sock_addr).bt_l2;
-				bdaddr_t* bdaddr = &(addr->l2_bdaddr);
+				struct sockaddr_l2* addr = (struct sockaddr_l2*)_BT_SOCKADDR_MEMB(s, l2);
+				bdaddr_t* bdaddr = &_BT_L2_MEMB(addr, bdaddr);
 
-				addr->l2_family = AF_BLUETOOTH;
-				if( !PyArg_ParseTuple(args, "(iiiiii)i", &bdaddr->b[0], &bdaddr->b[1], &bdaddr->b[2], &bdaddr->b[3], &bdaddr->b[4], &bdaddr->b[5], &addr->l2_psm) )
+				_BT_L2_MEMB(addr, family) = AF_BLUETOOTH;
+				if( !PyArg_ParseTuple(args, "(iiiiii)i", &bdaddr->b[0], &bdaddr->b[1], &bdaddr->b[2], &bdaddr->b[3], &bdaddr->b[4], &bdaddr->b[5], &_BT_L2_MEMB(addr, psm)) )
 				{
 					PyErr_SetString(socket_error, "getsockaddrarg: wrong format");
 					return 0;
@@ -1035,11 +1053,11 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 			}
 			case BTPROTO_RFCOMM:
 			{
-				struct sockaddr_rc* addr = (struct sockaddr_rc*) &(s->sock_addr).bt_rc;
-				bdaddr_t* bdaddr = &(addr->rc_bdaddr);
+				struct sockaddr_rc* addr = (struct sockaddr_rc*)_BT_SOCKADDR_MEMB(s, rc);
+				bdaddr_t* bdaddr = &_BT_RC_MEMB(addr, bdaddr);
 
-				addr->rc_family = AF_BLUETOOTH;
-				if( !PyArg_ParseTuple(args, "(iiiiii)i", &bdaddr->b[0], &bdaddr->b[1], &bdaddr->b[2], &bdaddr->b[3], &bdaddr->b[4], &bdaddr->b[5], &addr->rc_channel) )
+				_BT_RC_MEMB(addr, family) = AF_BLUETOOTH;
+				if( !PyArg_ParseTuple(args, "(iiiiii)i", &bdaddr->b[0], &bdaddr->b[1], &bdaddr->b[2], &bdaddr->b[3], &bdaddr->b[4], &bdaddr->b[5], &_BT_RC_MEMB(addr, channel)) )
 				{
 					PyErr_SetString(socket_error, "getsockaddrarg: wrong format");
 					return 0;
@@ -1049,12 +1067,13 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 				*len_ret = sizeof *addr;
 				return 1;
 			}
+#if !defined(__FreeBSD__)
 			case BTPROTO_SCO:
 			{
-				struct sockaddr_sco* addr = (struct sockaddr_sco*) &(s->sock_addr).bt_sco;
-				bdaddr_t* bdaddr = &(addr->sco_bdaddr);
+				struct sockaddr_sco* addr = (struct sockaddr_sco*)_BT_SOCKADDR_MEMB(s, sco);
+				bdaddr_t* bdaddr = &_BT_SCO_MEMB(addr, bdaddr);
 
-				addr->sco_family = AF_BLUETOOTH;
+				_BT_SCO_MEMB(addr, family) = AF_BLUETOOTH;
 				if( !PyArg_ParseTuple(args, "iiiiii", &bdaddr->b[0], &bdaddr->b[1], &bdaddr->b[2], &bdaddr->b[3], &bdaddr->b[4], &bdaddr->b[5]) )
 				{
 					PyErr_SetString(socket_error, "getsockaddrarg: wrong format");
@@ -1065,6 +1084,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 				*len_ret = sizeof *addr;
 				return 1;
 			}
+#endif
 			default:
 			{
 				PyErr_SetString(socket_error, "getsockaddrarg: unknown Bluetooth protocol");
@@ -1147,7 +1167,7 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
 	}
 #endif
 
-#ifdef HAVE_BLUETOOTH_BLUETOOTH_H
+#ifdef USE_BLUETOOTH
 	case AF_BLUETOOTH:
 	{
 		switch(s->sock_proto)
@@ -1162,11 +1182,13 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
 				*len_ret = sizeof (struct sockaddr_rc);
 				return 1;
 			}
+#if !defined(__FreeBSD__)
 			case BTPROTO_SCO:
 			{
 				*len_ret = sizeof (struct sockaddr_sco);
 				return 1;
 			}
+#endif
 			default:
 			{
 				PyErr_SetString(socket_error, "getsockaddrlen: unknown BT protocol");
@@ -3665,10 +3687,12 @@ init_socket(void)
 	PyModule_AddIntConstant(m, "AF_ROSE", AF_ROSE);
 #endif
 
-#ifdef HAVE_BLUETOOTH_BLUETOOTH_H
+#ifdef USE_BLUETOOTH
 	PyModule_AddIntConstant(m, "AF_BLUETOOTH", AF_BLUETOOTH);
 	PyModule_AddIntConstant(m, "BTPROTO_L2CAP", BTPROTO_L2CAP);
+#if !defined(__FreeBSD__)
 	PyModule_AddIntConstant(m, "BTPROTO_SCO", BTPROTO_SCO);
+#endif
 	PyModule_AddIntConstant(m, "BTPROTO_RFCOMM", BTPROTO_RFCOMM);
 	PyModule_AddObject(m, "BDADDR_ANY", Py_BuildValue( "iiiiii", 0,0,0,0,0,0 ) );
 	PyModule_AddObject(m, "BDADDR_LOCAL", Py_BuildValue( "iiiiii", 0,0,0,0xff,0xff,0xff ) );
