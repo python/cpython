@@ -1075,6 +1075,11 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=%_SRC_%\Lib\test\*.out
+  Destination=%MAINDIR%\Lib\test
+  Flags=0000000000000010
+end
+item: Install File
   Source=%_SRC_%\Lib\test\output\*.*
   Destination=%MAINDIR%\Lib\test\output
   Description=Python Test output files
