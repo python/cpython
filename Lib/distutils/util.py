@@ -545,10 +545,8 @@ def get_platform ():
        i.e. "???" or "???"."""
 
     if os.name == 'posix':
-        uname = os.uname()
-        OS = uname[0]
-        arch = uname[4]
-        return "%s-%s" % (string.lower (OS), string.lower (arch))
+        (OS, _, rel, _, arch) = os.uname()
+        return "%s%c-%s" % (string.lower (OS), rel[0], string.lower (arch))
     else:
         return sys.platform
 
