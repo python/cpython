@@ -255,19 +255,19 @@ svc_FindVisibleRegion(captureobject *self, PyObject *args)
 }
 
 static PyMethodDef capture_methods[] = {
-	{"YUVtoRGB",		(PyCFunction)svc_YUVtoRGB},
-	{"RGB8toRGB32",		(PyCFunction)svc_RGB8toRGB32},
-	{"InterleaveFields",	(PyCFunction)svc_InterleaveFields},
-	{"UnlockCaptureData",	(PyCFunction)svc_UnlockCaptureData},
-	{"FindVisibleRegion",	(PyCFunction)svc_FindVisibleRegion},
-	{"GetFields",		(PyCFunction)svc_GetFields},
-	{"YUVtoYUV422DC",	(PyCFunction)svc_YUVtoYUV422DC},
-	{"YUVtoYUV422DC_quarter",(PyCFunction)svc_YUVtoYUV422DC_quarter},
-	{"YUVtoYUV422DC_sixteenth",(PyCFunction)svc_YUVtoYUV422DC_sixteenth},
+	{"YUVtoRGB",		(PyCFunction)svc_YUVtoRGB, METH_OLDARGS},
+	{"RGB8toRGB32",		(PyCFunction)svc_RGB8toRGB32, METH_OLDARGS},
+	{"InterleaveFields",	(PyCFunction)svc_InterleaveFields, METH_OLDARGS},
+	{"UnlockCaptureData",	(PyCFunction)svc_UnlockCaptureData, METH_OLDARGS},
+	{"FindVisibleRegion",	(PyCFunction)svc_FindVisibleRegion, METH_OLDARGS},
+	{"GetFields",		(PyCFunction)svc_GetFields, METH_OLDARGS},
+	{"YUVtoYUV422DC",	(PyCFunction)svc_YUVtoYUV422DC, METH_OLDARGS},
+	{"YUVtoYUV422DC_quarter",(PyCFunction)svc_YUVtoYUV422DC_quarter, METH_OLDARGS},
+	{"YUVtoYUV422DC_sixteenth",(PyCFunction)svc_YUVtoYUV422DC_sixteenth, METH_OLDARGS},
 #ifdef USE_GL
-	{"lrectwrite",		(PyCFunction)svc_lrectwrite},
+	{"lrectwrite",		(PyCFunction)svc_lrectwrite, METH_OLDARGS},
 #endif
-	{"writefile",		(PyCFunction)svc_writefile},
+	{"writefile",		(PyCFunction)svc_writefile, METH_OLDARGS},
 	{NULL,			NULL} 		/* sentinel */
 };
 
@@ -810,25 +810,25 @@ sv_SetParam(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef svideo_methods[] = {
-	{"BindGLWindow",	(PyCFunction)sv_BindGLWindow},
-	{"EndContinuousCapture",(PyCFunction)sv_EndContinuousCapture},
-	{"IsVideoDisplayed",	(PyCFunction)sv_IsVideoDisplayed},
-	{"OutputOffset",	(PyCFunction)sv_OutputOffset},
-	{"PutFrame",		(PyCFunction)sv_PutFrame},
-	{"QuerySize",		(PyCFunction)sv_QuerySize},
-	{"SetSize",		(PyCFunction)sv_SetSize},
-	{"SetStdDefaults",	(PyCFunction)sv_SetStdDefaults},
-	{"UseExclusive",	(PyCFunction)sv_UseExclusive},
-	{"WindowOffset",	(PyCFunction)sv_WindowOffset},
-	{"InitContinuousCapture",(PyCFunction)sv_InitContinuousCapture},
-	{"CaptureBurst",	(PyCFunction)sv_CaptureBurst},
-	{"CaptureOneFrame",	(PyCFunction)sv_CaptureOneFrame},
-	{"GetCaptureData",	(PyCFunction)sv_GetCaptureData},
-	{"CloseVideo",		(PyCFunction)sv_CloseVideo},
-	{"LoadMap",		(PyCFunction)sv_LoadMap},
-	{"GetParam",		(PyCFunction)sv_GetParam},
-	{"GetParamRange",	(PyCFunction)sv_GetParamRange},
-	{"SetParam",		(PyCFunction)sv_SetParam},
+	{"BindGLWindow",	(PyCFunction)sv_BindGLWindow, METH_OLDARGS},
+	{"EndContinuousCapture",(PyCFunction)sv_EndContinuousCapture, METH_OLDARGS},
+	{"IsVideoDisplayed",	(PyCFunction)sv_IsVideoDisplayed, METH_OLDARGS},
+	{"OutputOffset",	(PyCFunction)sv_OutputOffset, METH_OLDARGS},
+	{"PutFrame",		(PyCFunction)sv_PutFrame, METH_OLDARGS},
+	{"QuerySize",		(PyCFunction)sv_QuerySize, METH_OLDARGS},
+	{"SetSize",		(PyCFunction)sv_SetSize, METH_OLDARGS},
+	{"SetStdDefaults",	(PyCFunction)sv_SetStdDefaults, METH_OLDARGS},
+	{"UseExclusive",	(PyCFunction)sv_UseExclusive, METH_OLDARGS},
+	{"WindowOffset",	(PyCFunction)sv_WindowOffset, METH_OLDARGS},
+	{"InitContinuousCapture",(PyCFunction)sv_InitContinuousCapture, METH_OLDARGS},
+	{"CaptureBurst",	(PyCFunction)sv_CaptureBurst, METH_OLDARGS},
+	{"CaptureOneFrame",	(PyCFunction)sv_CaptureOneFrame, METH_OLDARGS},
+	{"GetCaptureData",	(PyCFunction)sv_GetCaptureData, METH_OLDARGS},
+	{"CloseVideo",		(PyCFunction)sv_CloseVideo, METH_OLDARGS},
+	{"LoadMap",		(PyCFunction)sv_LoadMap, METH_OLDARGS},
+	{"GetParam",		(PyCFunction)sv_GetParam, METH_OLDARGS},
+	{"GetParamRange",	(PyCFunction)sv_GetParamRange, METH_OLDARGS},
+	{"SetParam",		(PyCFunction)sv_SetParam, METH_OLDARGS},
 	{NULL,			NULL} 		/* sentinel */
 };
 
@@ -943,10 +943,10 @@ sv_OpenVideo(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef sv_methods[] = {
-	{"InterleaveFields",	(PyCFunction)sv_InterleaveFields},
-	{"RGB8toRGB32",		(PyCFunction)sv_RGB8toRGB32},
-	{"YUVtoRGB",		(PyCFunction)sv_YUVtoRGB},
-	{"OpenVideo",		(PyCFunction)sv_OpenVideo},
+	{"InterleaveFields",	(PyCFunction)sv_InterleaveFields, METH_OLDARGS},
+	{"RGB8toRGB32",		(PyCFunction)sv_RGB8toRGB32, METH_OLDARGS},
+	{"YUVtoRGB",		(PyCFunction)sv_YUVtoRGB, METH_OLDARGS},
+	{"OpenVideo",		(PyCFunction)sv_OpenVideo, METH_OLDARGS},
 	{NULL,			NULL}	/* Sentinel */
 };
 

@@ -42,8 +42,8 @@ sgi__getpty(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef sgi_methods[] = {
-	{"nap",		sgi_nap},
-	{"_getpty",	sgi__getpty},
+	{"nap",		sgi_nap, METH_OLDARGS},
+	{"_getpty",	sgi__getpty, METH_OLDARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 

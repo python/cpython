@@ -147,10 +147,10 @@ resource_getpagesize(PyObject *self, PyObject *args)
 
 static struct PyMethodDef
 resource_methods[] = {
-	{"getrusage",    resource_getrusage,   1},
-	{"getrlimit",    resource_getrlimit,   1},
-	{"setrlimit",    resource_setrlimit,   1},
-	{"getpagesize",  resource_getpagesize, 1},
+	{"getrusage",    resource_getrusage,   METH_VARARGS},
+	{"getrlimit",    resource_getrlimit,   METH_VARARGS},
+	{"setrlimit",    resource_setrlimit,   METH_VARARGS},
+	{"getpagesize",  resource_getpagesize, METH_VARARGS},
 	{NULL, NULL}			     /* sentinel */
 };
 

@@ -120,9 +120,9 @@ dl_call(dlobject *xp, PyObject *args)
 }
 
 static PyMethodDef dlobject_methods[] = {
-	{"call",	(PyCFunction)dl_call,	1 /* varargs */},
-	{"sym", 	(PyCFunction)dl_sym},
-	{"close",	(PyCFunction)dl_close},
+	{"call",	(PyCFunction)dl_call, METH_VARARGS},
+	{"sym", 	(PyCFunction)dl_sym, METH_OLDARGS},
+	{"close",	(PyCFunction)dl_close, METH_OLDARGS},
 	{NULL,  	NULL}			 /* Sentinel */
 };
 
@@ -187,7 +187,7 @@ dl_open(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef dl_methods[] = {
-	{"open",	dl_open},
+	{"open",	dl_open, METH_OLDARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 

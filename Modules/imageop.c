@@ -677,21 +677,21 @@ imageop_mul(object *self, object *args)
 */
 
 static PyMethodDef imageop_methods[] = {
-	{ "crop",		imageop_crop },
-	{ "scale",		imageop_scale },
-	{ "grey2mono",	        imageop_grey2mono },
-	{ "grey2grey2",	        imageop_grey2grey2 },
-	{ "grey2grey4",	        imageop_grey2grey4 },
-	{ "dither2mono",	imageop_dither2mono },
-	{ "dither2grey2",	imageop_dither2grey2 },
-	{ "mono2grey",	        imageop_mono2grey },
-	{ "grey22grey",	        imageop_grey22grey },
-	{ "grey42grey",	        imageop_grey42grey },
-	{ "tovideo",	        imageop_tovideo },
-	{ "rgb2rgb8",	        imageop_rgb2rgb8 },
-	{ "rgb82rgb",	        imageop_rgb82rgb },
-	{ "rgb2grey",	        imageop_rgb2grey },
-	{ "grey2rgb",	        imageop_grey2rgb },
+	{ "crop",		imageop_crop, METH_OLDARGS },
+	{ "scale",		imageop_scale, METH_OLDARGS },
+	{ "grey2mono",	        imageop_grey2mono, METH_OLDARGS },
+	{ "grey2grey2",	        imageop_grey2grey2, METH_OLDARGS },
+	{ "grey2grey4",	        imageop_grey2grey4, METH_OLDARGS },
+	{ "dither2mono",	imageop_dither2mono, METH_OLDARGS },
+	{ "dither2grey2",	imageop_dither2grey2, METH_OLDARGS },
+	{ "mono2grey",	        imageop_mono2grey, METH_OLDARGS },
+	{ "grey22grey",	        imageop_grey22grey, METH_OLDARGS },
+	{ "grey42grey",	        imageop_grey42grey, METH_OLDARGS },
+	{ "tovideo",	        imageop_tovideo, METH_OLDARGS },
+	{ "rgb2rgb8",	        imageop_rgb2rgb8, METH_OLDARGS },
+	{ "rgb82rgb",	        imageop_rgb82rgb, METH_OLDARGS },
+	{ "rgb2grey",	        imageop_rgb2grey, METH_OLDARGS },
+	{ "grey2rgb",	        imageop_grey2rgb, METH_OLDARGS },
 	{ 0,                    0 }
 };
 

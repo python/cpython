@@ -743,10 +743,10 @@ ttob(PyObject *self, PyObject *args)
 
 static PyMethodDef
 rgbimg_methods[] = {
-	{"sizeofimage",	   sizeofimage},
-	{"longimagedata",  longimagedata},
-	{"longstoimage",   longstoimage},
-	{"ttob",	   ttob},
+	{"sizeofimage",	   sizeofimage, METH_OLDARGS},
+	{"longimagedata",  longimagedata, METH_OLDARGS},
+	{"longstoimage",   longstoimage, METH_OLDARGS},
+	{"ttob",	   ttob, METH_OLDARGS},
 	{NULL,             NULL}	     /* sentinel */
 };
 

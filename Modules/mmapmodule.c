@@ -558,19 +558,19 @@ mmap_move_method(mmap_object *self, PyObject *args)
 }
 
 static struct PyMethodDef mmap_object_methods[] = {
-	{"close",	(PyCFunction) mmap_close_method,	1},
-	{"find",	(PyCFunction) mmap_find_method,		1},
-	{"flush",	(PyCFunction) mmap_flush_method,	1},
-	{"move",	(PyCFunction) mmap_move_method,		1},
-	{"read",	(PyCFunction) mmap_read_method,		1},
-	{"read_byte",	(PyCFunction) mmap_read_byte_method,  	1},
-	{"readline",	(PyCFunction) mmap_read_line_method,	1},
-	{"resize",	(PyCFunction) mmap_resize_method,	1},
-	{"seek",	(PyCFunction) mmap_seek_method,		1},
-	{"size",	(PyCFunction) mmap_size_method,		1},
-	{"tell",	(PyCFunction) mmap_tell_method,		1},
-	{"write",	(PyCFunction) mmap_write_method,	1},
-	{"write_byte",	(PyCFunction) mmap_write_byte_method,	1},
+	{"close",	(PyCFunction) mmap_close_method,	METH_VARARGS},
+	{"find",	(PyCFunction) mmap_find_method,		METH_VARARGS},
+	{"flush",	(PyCFunction) mmap_flush_method,	METH_VARARGS},
+	{"move",	(PyCFunction) mmap_move_method,		METH_VARARGS},
+	{"read",	(PyCFunction) mmap_read_method,		METH_VARARGS},
+	{"read_byte",	(PyCFunction) mmap_read_byte_method,  	METH_VARARGS},
+	{"readline",	(PyCFunction) mmap_read_line_method,	METH_VARARGS},
+	{"resize",	(PyCFunction) mmap_resize_method,	METH_VARARGS},
+	{"seek",	(PyCFunction) mmap_seek_method,		METH_VARARGS},
+	{"size",	(PyCFunction) mmap_size_method,		METH_VARARGS},
+	{"tell",	(PyCFunction) mmap_tell_method,		METH_VARARGS},
+	{"write",	(PyCFunction) mmap_write_method,	METH_VARARGS},
+	{"write_byte",	(PyCFunction) mmap_write_byte_method,	METH_VARARGS},
 	{NULL,	   NULL}       /* sentinel */
 };
 

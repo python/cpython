@@ -114,7 +114,7 @@ PyPcre_exec(PcreObject *self, PyObject *args)
 }
 
 static PyMethodDef Pcre_methods[] = {
-	{"match",	(PyCFunction)PyPcre_exec,	1},
+	{"match",	(PyCFunction)PyPcre_exec,	METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -582,8 +582,8 @@ PyPcre_expand(PyObject *self, PyObject *args)
 /* List of functions defined in the module */
 
 static PyMethodDef pcre_methods[] = {
-	{"pcre_compile",		PyPcre_compile,		1},
-	{"pcre_expand",		PyPcre_expand,		1},
+	{"pcre_compile",		PyPcre_compile,		METH_VARARGS},
+	{"pcre_expand",		PyPcre_expand,		METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 

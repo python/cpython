@@ -2863,9 +2863,9 @@ static char PySSL_SSLread_doc[] =
 Read up to len bytes from the SSL socket.";
 
 static PyMethodDef PySSLMethods[] = {
-	{"write", (PyCFunction)PySSL_SSLwrite, 1,
+	{"write", (PyCFunction)PySSL_SSLwrite, METH_VARARGS,
 	          PySSL_SSLwrite_doc},
-	{"read", (PyCFunction)PySSL_SSLread, 1,
+	{"read", (PyCFunction)PySSL_SSLread, METH_VARARGS,
 	          PySSL_SSLread_doc},
 	{"server", (PyCFunction)PySSL_server, METH_NOARGS},
 	{"issuer", (PyCFunction)PySSL_issuer, METH_NOARGS},

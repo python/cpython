@@ -60,11 +60,11 @@ micro(PyObject *self, PyObject *args)
 
 
 static PyMethodDef timing_methods[] = {
-	{"start",   start_timing},
-	{"finish",  finish_timing},
-	{"seconds", seconds},
-	{"milli",   milli},
-	{"micro",   micro},
+	{"start",   start_timing, METH_OLDARGS},
+	{"finish",  finish_timing, METH_OLDARGS},
+	{"seconds", seconds, METH_OLDARGS},
+	{"milli",   milli, METH_OLDARGS},
+	{"micro",   micro, METH_OLDARGS},
 	{NULL,      NULL}
 };
 

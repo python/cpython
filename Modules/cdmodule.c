@@ -353,24 +353,24 @@ CD_togglepause(cdplayerobject *self, PyObject *args)
 }
 	
 static PyMethodDef cdplayer_methods[] = {
-	{"allowremoval",	(PyCFunction)CD_allowremoval,	1},
-	{"bestreadsize",	(PyCFunction)CD_bestreadsize,	1},
-	{"close",		(PyCFunction)CD_close,		1},
-	{"eject",		(PyCFunction)CD_eject,		1},
-	{"getstatus",		(PyCFunction)CD_getstatus,		1},
-	{"gettrackinfo",	(PyCFunction)CD_gettrackinfo,	1},
-	{"msftoblock",		(PyCFunction)CD_msftoblock,		1},
-	{"play",		(PyCFunction)CD_play,		1},
-	{"playabs",		(PyCFunction)CD_playabs,		1},
-	{"playtrack",		(PyCFunction)CD_playtrack,		1},
-	{"playtrackabs",	(PyCFunction)CD_playtrackabs,	1},
-	{"preventremoval",	(PyCFunction)CD_preventremoval,	1},
-	{"readda",		(PyCFunction)CD_readda,		1},
-	{"seek",		(PyCFunction)CD_seek,		1},
-	{"seekblock",		(PyCFunction)CD_seekblock,		1},
-	{"seektrack",		(PyCFunction)CD_seektrack,		1},
-	{"stop",		(PyCFunction)CD_stop,		1},
-	{"togglepause",		(PyCFunction)CD_togglepause,   	1},
+	{"allowremoval",	(PyCFunction)CD_allowremoval,	METH_VARARGS},
+	{"bestreadsize",	(PyCFunction)CD_bestreadsize,	METH_VARARGS},
+	{"close",		(PyCFunction)CD_close,		METH_VARARGS},
+	{"eject",		(PyCFunction)CD_eject,		METH_VARARGS},
+	{"getstatus",		(PyCFunction)CD_getstatus,		METH_VARARGS},
+	{"gettrackinfo",	(PyCFunction)CD_gettrackinfo,	METH_VARARGS},
+	{"msftoblock",		(PyCFunction)CD_msftoblock,		METH_VARARGS},
+	{"play",		(PyCFunction)CD_play,		METH_VARARGS},
+	{"playabs",		(PyCFunction)CD_playabs,		METH_VARARGS},
+	{"playtrack",		(PyCFunction)CD_playtrack,		METH_VARARGS},
+	{"playtrackabs",	(PyCFunction)CD_playtrackabs,	METH_VARARGS},
+	{"preventremoval",	(PyCFunction)CD_preventremoval,	METH_VARARGS},
+	{"readda",		(PyCFunction)CD_readda,		METH_VARARGS},
+	{"seek",		(PyCFunction)CD_seek,		METH_VARARGS},
+	{"seekblock",		(PyCFunction)CD_seekblock,		METH_VARARGS},
+	{"seektrack",		(PyCFunction)CD_seektrack,		METH_VARARGS},
+	{"stop",		(PyCFunction)CD_stop,		METH_VARARGS},
+	{"togglepause",		(PyCFunction)CD_togglepause,   	METH_VARARGS},
 	{NULL,			NULL} 		/* sentinel */
 };
 
@@ -653,13 +653,13 @@ CD_addcallback(cdparserobject *self, PyObject *args)
 }
 
 static PyMethodDef cdparser_methods[] = {
-	{"addcallback",		(PyCFunction)CD_addcallback,   	1},
-	{"deleteparser",	(PyCFunction)CD_deleteparser,	1},
-	{"parseframe",		(PyCFunction)CD_parseframe,	1},
-	{"removecallback",	(PyCFunction)CD_removecallback,	1},
-	{"resetparser",		(PyCFunction)CD_resetparser,	1},
+	{"addcallback",		(PyCFunction)CD_addcallback,   	METH_VARARGS},
+	{"deleteparser",	(PyCFunction)CD_deleteparser,	METH_VARARGS},
+	{"parseframe",		(PyCFunction)CD_parseframe,	METH_VARARGS},
+	{"removecallback",	(PyCFunction)CD_removecallback,	METH_VARARGS},
+	{"resetparser",		(PyCFunction)CD_resetparser,	METH_VARARGS},
 		                                /* backward compatibility */
-	{"setcallback",		(PyCFunction)CD_addcallback,   	1},
+	{"setcallback",		(PyCFunction)CD_addcallback,   	METH_VARARGS},
 	{NULL,			NULL} 		/* sentinel */
 };
 
@@ -749,9 +749,9 @@ CD_msftoframe(PyObject *self, PyObject *args)
 }
 	
 static PyMethodDef CD_methods[] = {
-	{"open",		(PyCFunction)CD_open,		1},
-	{"createparser",	(PyCFunction)CD_createparser,	1},
-	{"msftoframe",		(PyCFunction)CD_msftoframe,	1},
+	{"open",		(PyCFunction)CD_open,		METH_VARARGS},
+	{"createparser",	(PyCFunction)CD_createparser,	METH_VARARGS},
+	{"msftoframe",		(PyCFunction)CD_msftoframe,	METH_VARARGS},
 	{NULL,		NULL}	/* Sentinel */
 };
 

@@ -1608,17 +1608,17 @@ static PyTypeObject MPZtype = {
 
 static PyMethodDef mpz_functions[] = {
 #if 0
-	{initialiser_name,	MPZ_mpz},
+	{initialiser_name,	MPZ_mpz, METH_OLDARGS},
 #else /* 0 */
 	/* until guido ``fixes'' struct PyMethodDef */
-	{(char *)initialiser_name,	MPZ_mpz},
+	{(char *)initialiser_name,	MPZ_mpz, METH_OLDARGS},
 #endif /* 0 else */	
-	{"powm",		MPZ_powm},
-	{"gcd",			MPZ_gcd},
-	{"gcdext",		MPZ_gcdext},
-	{"sqrt",		MPZ_sqrt},
-	{"sqrtrem",		MPZ_sqrtrem},
-	{"divm",		MPZ_divm},
+	{"powm",		MPZ_powm, METH_OLDARGS},
+	{"gcd",			MPZ_gcd, METH_OLDARGS},
+	{"gcdext",		MPZ_gcdext, METH_OLDARGS},
+	{"sqrt",		MPZ_sqrt, METH_OLDARGS},
+	{"sqrtrem",		MPZ_sqrtrem, METH_OLDARGS},
+	{"divm",		MPZ_divm, METH_OLDARGS},
 	{NULL,			NULL}		 /* Sentinel */
 };
 

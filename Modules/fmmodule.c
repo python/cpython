@@ -126,15 +126,15 @@ fh_getstrwidth(fhobject *self, PyObject *args)
 }
 
 static PyMethodDef fh_methods[] = {
-	{"scalefont",	(PyCFunction)fh_scalefont},
-	{"setfont",	(PyCFunction)fh_setfont},
-	{"getfontname",	(PyCFunction)fh_getfontname},
-	{"getcomment",	(PyCFunction)fh_getcomment},
-	{"getfontinfo",	(PyCFunction)fh_getfontinfo},
+	{"scalefont",	(PyCFunction)fh_scalefont, METH_OLDARGS},
+	{"setfont",	(PyCFunction)fh_setfont, METH_OLDARGS},
+	{"getfontname",	(PyCFunction)fh_getfontname, METH_OLDARGS},
+	{"getcomment",	(PyCFunction)fh_getcomment, METH_OLDARGS},
+	{"getfontinfo",	(PyCFunction)fh_getfontinfo, METH_OLDARGS},
 #if 0
-	{"getwholemetrics",	(PyCFunction)fh_getwholemetrics},
+	{"getwholemetrics",	(PyCFunction)fh_getwholemetrics, METH_OLDARGS},
 #endif
-	{"getstrwidth",	(PyCFunction)fh_getstrwidth},
+	{"getstrwidth",	(PyCFunction)fh_getstrwidth, METH_OLDARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -258,12 +258,12 @@ fm_fontpath(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef fm_methods[] = {
-	{"init",	fm_init},
-	{"findfont",	fm_findfont},
-	{"enumerate",	fm_enumerate},
-	{"prstr",	fm_prstr},
-	{"setpath",	fm_setpath},
-	{"fontpath",	fm_fontpath},
+	{"init",	fm_init, METH_OLDARGS},
+	{"findfont",	fm_findfont, METH_OLDARGS},
+	{"enumerate",	fm_enumerate, METH_OLDARGS},
+	{"prstr",	fm_prstr, METH_OLDARGS},
+	{"setpath",	fm_setpath, METH_OLDARGS},
+	{"fontpath",	fm_fontpath, METH_OLDARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 

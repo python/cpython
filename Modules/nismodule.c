@@ -364,9 +364,9 @@ nis_maps (PyObject *self, PyObject *args)
 }
 
 static PyMethodDef nis_methods[] = {
-	{"match",	nis_match},
-	{"cat",		nis_cat},
-	{"maps",	nis_maps},
+	{"match",	nis_match, METH_OLDARGS},
+	{"cat",		nis_cat, METH_OLDARGS},
+	{"maps",	nis_maps, METH_OLDARGS},
 	{NULL,		NULL}		 /* Sentinel */
 };
 

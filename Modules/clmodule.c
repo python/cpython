@@ -600,37 +600,37 @@ clm_ReadHeader(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef compressor_methods[] = {
-	{"close",		clm_CloseCompressor}, /* alias */
-	{"CloseCompressor",	clm_CloseCompressor},
-	{"Compress",		clm_Compress},
-	{"GetDefault",		clm_GetDefault},
-	{"GetMinMax",		clm_GetMinMax},
-	{"GetName",		clm_GetName},
-	{"GetParam",		clm_GetParam},
-	{"GetParamID",		clm_GetParamID},
-	{"GetParams",		clm_GetParams},
-	{"QueryParams",		clm_QueryParams},
-	{"QuerySchemeFromHandle",clm_QuerySchemeFromHandle},
-	{"SetParam",		clm_SetParam},
-	{"SetParams",		clm_SetParams},
+	{"close",		clm_CloseCompressor, METH_OLDARGS}, /* alias */
+	{"CloseCompressor",	clm_CloseCompressor, METH_OLDARGS},
+	{"Compress",		clm_Compress, METH_OLDARGS},
+	{"GetDefault",		clm_GetDefault, METH_OLDARGS},
+	{"GetMinMax",		clm_GetMinMax, METH_OLDARGS},
+	{"GetName",		clm_GetName, METH_OLDARGS},
+	{"GetParam",		clm_GetParam, METH_OLDARGS},
+	{"GetParamID",		clm_GetParamID, METH_OLDARGS},
+	{"GetParams",		clm_GetParams, METH_OLDARGS},
+	{"QueryParams",		clm_QueryParams, METH_OLDARGS},
+	{"QuerySchemeFromHandle",clm_QuerySchemeFromHandle, METH_OLDARGS},
+	{"SetParam",		clm_SetParam, METH_OLDARGS},
+	{"SetParams",		clm_SetParams, METH_OLDARGS},
 	{NULL,			NULL}		/* sentinel */
 };
 
 static PyMethodDef decompressor_methods[] = {
-	{"close",		clm_CloseDecompressor},	/* alias */
-	{"CloseDecompressor",	clm_CloseDecompressor},
-	{"Decompress",		clm_Decompress},
-	{"GetDefault",		clm_GetDefault},
-	{"GetMinMax",		clm_GetMinMax},
-	{"GetName",		clm_GetName},
-	{"GetParam",		clm_GetParam},
-	{"GetParamID",		clm_GetParamID},
-	{"GetParams",		clm_GetParams},
-	{"ReadHeader",		clm_ReadHeader},
-	{"QueryParams",		clm_QueryParams},
-	{"QuerySchemeFromHandle",clm_QuerySchemeFromHandle},
-	{"SetParam",		clm_SetParam},
-	{"SetParams",		clm_SetParams},
+	{"close",		clm_CloseDecompressor, METH_OLDARGS},	/* alias */
+	{"CloseDecompressor",	clm_CloseDecompressor, METH_OLDARGS},
+	{"Decompress",		clm_Decompress, METH_OLDARGS},
+	{"GetDefault",		clm_GetDefault, METH_OLDARGS},
+	{"GetMinMax",		clm_GetMinMax, METH_OLDARGS},
+	{"GetName",		clm_GetName, METH_OLDARGS},
+	{"GetParam",		clm_GetParam, METH_OLDARGS},
+	{"GetParamID",		clm_GetParamID, METH_OLDARGS},
+	{"GetParams",		clm_GetParams, METH_OLDARGS},
+	{"ReadHeader",		clm_ReadHeader, METH_OLDARGS},
+	{"QueryParams",		clm_QueryParams, METH_OLDARGS},
+	{"QuerySchemeFromHandle",clm_QuerySchemeFromHandle, METH_OLDARGS},
+	{"SetParam",		clm_SetParam, METH_OLDARGS},
+	{"SetParams",		clm_SetParams, METH_OLDARGS},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -936,30 +936,30 @@ cvt_type(PyObject *self, PyObject *args)
 #endif
 
 static PyMethodDef cl_methods[] = {
-	{"CompressImage",	cl_CompressImage},
-	{"DecompressImage",	cl_DecompressImage},
-	{"GetAlgorithmName",	cl_GetAlgorithmName},
-	{"OpenCompressor",	cl_OpenCompressor},
-	{"OpenDecompressor",	cl_OpenDecompressor},
-	{"QueryAlgorithms",	cl_QueryAlgorithms},
-	{"QueryMaxHeaderSize",	cl_QueryMaxHeaderSize},
-	{"QueryScheme",		cl_QueryScheme},
-	{"QuerySchemeFromName",	cl_QuerySchemeFromName},
-	{"SetDefault",		cl_SetDefault},
-	{"SetMax",		cl_SetMax},
-	{"SetMin",		cl_SetMin},
-	{"BytesPerSample",	cl_BytesPerSample},
-	{"BytesPerPixel",	cl_BytesPerPixel},
-	{"AudioFormatName",	cl_AudioFormatName},
-	{"VideoFormatName",	cl_VideoFormatName},
-	{"AlgorithmNumber",	cl_AlgorithmNumber},
-	{"AlgorithmType",	cl_AlgorithmType},
-	{"Algorithm",		cl_Algorithm},
-	{"ParamNumber",		cl_ParamNumber},
-	{"ParamType",		cl_ParamType},
-	{"ParamID",		cl_ParamID},
+	{"CompressImage",	cl_CompressImage, METH_OLDARGS},
+	{"DecompressImage",	cl_DecompressImage, METH_OLDARGS},
+	{"GetAlgorithmName",	cl_GetAlgorithmName, METH_OLDARGS},
+	{"OpenCompressor",	cl_OpenCompressor, METH_OLDARGS},
+	{"OpenDecompressor",	cl_OpenDecompressor, METH_OLDARGS},
+	{"QueryAlgorithms",	cl_QueryAlgorithms, METH_OLDARGS},
+	{"QueryMaxHeaderSize",	cl_QueryMaxHeaderSize, METH_OLDARGS},
+	{"QueryScheme",		cl_QueryScheme, METH_OLDARGS},
+	{"QuerySchemeFromName",	cl_QuerySchemeFromName, METH_OLDARGS},
+	{"SetDefault",		cl_SetDefault, METH_OLDARGS},
+	{"SetMax",		cl_SetMax, METH_OLDARGS},
+	{"SetMin",		cl_SetMin, METH_OLDARGS},
+	{"BytesPerSample",	cl_BytesPerSample, METH_OLDARGS},
+	{"BytesPerPixel",	cl_BytesPerPixel, METH_OLDARGS},
+	{"AudioFormatName",	cl_AudioFormatName, METH_OLDARGS},
+	{"VideoFormatName",	cl_VideoFormatName, METH_OLDARGS},
+	{"AlgorithmNumber",	cl_AlgorithmNumber, METH_OLDARGS},
+	{"AlgorithmType",	cl_AlgorithmType, METH_OLDARGS},
+	{"Algorithm",		cl_Algorithm, METH_OLDARGS},
+	{"ParamNumber",		cl_ParamNumber, METH_OLDARGS},
+	{"ParamType",		cl_ParamType, METH_OLDARGS},
+	{"ParamID",		cl_ParamID, METH_OLDARGS},
 #ifdef CLDEBUG
-	{"cvt_type",		cvt_type},
+	{"cvt_type",		cvt_type, METH_OLDARGS},
 #endif
 	{NULL,			NULL} /* Sentinel */
 };

@@ -558,11 +558,11 @@ rotorobj_setkey(Rotorobj *self, PyObject *args)
 
 static struct PyMethodDef
 rotorobj_methods[] = {
-	{"encrypt",	(PyCFunction)rotorobj_encrypt},
-	{"encryptmore",	(PyCFunction)rotorobj_encrypt_more},
-	{"decrypt",	(PyCFunction)rotorobj_decrypt},
-	{"decryptmore",	(PyCFunction)rotorobj_decrypt_more},
-	{"setkey",	(PyCFunction)rotorobj_setkey, 1},
+	{"encrypt",	(PyCFunction)rotorobj_encrypt, METH_OLDARGS},
+	{"encryptmore",	(PyCFunction)rotorobj_encrypt_more, METH_OLDARGS},
+	{"decrypt",	(PyCFunction)rotorobj_decrypt, METH_OLDARGS},
+	{"decryptmore",	(PyCFunction)rotorobj_decrypt_more, METH_OLDARGS},
+	{"setkey",	(PyCFunction)rotorobj_setkey, METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 
