@@ -155,7 +155,4 @@ def run_unittest(testclass):
         else:
             raise TestFailed("errors occurred in %s.%s"
                              % (testclass.__module__, testclass.__name__))
-        if err[0] is AssertionError:
-            raise TestFailed(str(err[1]))
-        else:
-            raise TestFailed("%s: %s" % err[:2])
+        raise TestFailed(err)
