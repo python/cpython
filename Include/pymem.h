@@ -89,20 +89,34 @@ extern DL_IMPORT(void) PyMem_Free(void *);
    it is recommended to write the test explicitly in the code.
    Note that according to ANSI C, free(NULL) has no effect. */
 
-	
+
 /* pymalloc (private to the interpreter) */
 #ifdef WITH_PYMALLOC
 DL_IMPORT(void *) _PyMalloc_Malloc(size_t nbytes);
 DL_IMPORT(void *) _PyMalloc_Realloc(void *p, size_t nbytes);
 DL_IMPORT(void) _PyMalloc_Free(void *p);
+
+#ifdef PYMALLOC_DEBUG
+DL_IMPORT(void *) _PyMalloc_DebugMalloc(size_t nbytes, int family);
+DL_IMPORT(void *) _PyMalloc_DebugRealloc(void *p, size_t nbytes, int family);
+DL_IMPORT(void) _PyMalloc_DebugFree(void *p, int family);
+DL_IMPORT(void) _PyMalloc_DebugDumpAddress(const void *p);
+DL_IMPORT(void) _PyMalloc_DebugCheckAddress(const void *p);
+#define _PyMalloc_MALLOC(N) _PyMalloc_DebugMalloc(N, 0)
+#define _PyMalloc_REALLOC(P, N) _PyMalloc_DebugRealloc(P, N, 0)
+#define _PyMalloc_FREE(P) _PyMalloc_DebugFree(P, 0)
+
+#else	/* WITH_PYMALLOC && ! PYMALLOC_DEBUG */
 #define _PyMalloc_MALLOC _PyMalloc_Malloc
 #define _PyMalloc_REALLOC _PyMalloc_Realloc
 #define _PyMalloc_FREE _PyMalloc_Free
-#else
+#endif
+
+#else	/* ! WITH_PYMALLOC */
 #define _PyMalloc_MALLOC PyMem_MALLOC
 #define _PyMalloc_REALLOC PyMem_REALLOC
 #define _PyMalloc_FREE PyMem_FREE
-#endif
+#endif	/* WITH_PYMALLOC */
 
 
 #ifdef __cplusplus

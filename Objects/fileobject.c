@@ -772,13 +772,9 @@ getline_via_fgets(FILE *fp)
  * cautions about boosting that.  300 was chosen because the worst real-life
  * text-crunching job reported on Python-Dev was a mail-log crawler where over
  * half the lines were 254 chars.
- * INCBUFSIZE is the amount by which we grow the buffer, if MAXBUFSIZE isn't
- * enough.  It doesn't much matter what this is set to: we only get here for
- * absurdly long lines anyway.
  */
 #define INITBUFSIZE 100
 #define MAXBUFSIZE 300
-#define INCBUFSIZE 1000
 	char* p;	/* temp */
 	char buf[MAXBUFSIZE];
 	PyObject* v;	/* the string object result */
@@ -786,6 +782,7 @@ getline_via_fgets(FILE *fp)
 	char* pvend;    /* address one beyond last free slot */
 	size_t nfree;	/* # of free buffer slots; pvend-pvfree */
 	size_t total_v_size;  /* total # of slots in buffer */
+	size_t increment;	/* amount to increment the buffer */
 
 	/* Optimize for normal case:  avoid _PyString_Resize if at all
 	 * possible via first reading into stack buffer "buf".
@@ -853,7 +850,7 @@ getline_via_fgets(FILE *fp)
 	/* The stack buffer isn't big enough; malloc a string object and read
 	 * into its buffer.
 	 */
-	total_v_size = MAXBUFSIZE + INCBUFSIZE;
+	total_v_size = MAXBUFSIZE << 1;
 	v = PyString_FromStringAndSize((char*)NULL, (int)total_v_size);
 	if (v == NULL)
 		return v;
@@ -897,7 +894,8 @@ getline_via_fgets(FILE *fp)
 		}
 		/* expand buffer and try again */
 		assert(*(pvend-1) == '\0');
-		total_v_size += INCBUFSIZE;
+		increment = total_v_size >> 2;	/* mild exponential growth */
+		total_v_size += increment;
 		if (total_v_size > INT_MAX) {
 			PyErr_SetString(PyExc_OverflowError,
 			    "line is longer than a Python string can hold");
@@ -907,14 +905,13 @@ getline_via_fgets(FILE *fp)
 		if (_PyString_Resize(&v, (int)total_v_size) < 0)
 			return NULL;
 		/* overwrite the trailing null byte */
-		pvfree = BUF(v) + (total_v_size - INCBUFSIZE - 1);
+		pvfree = BUF(v) + (total_v_size - increment - 1);
 	}
 	if (BUF(v) + total_v_size != p)
 		_PyString_Resize(&v, p - BUF(v));
 	return v;
 #undef INITBUFSIZE
 #undef MAXBUFSIZE
-#undef INCBUFSIZE
 }
 #endif	/* ifdef USE_FGETS_IN_GETLINE */
 
