@@ -132,7 +132,7 @@ mac_1str(args, func)
 {
 	char *path1;
 	int res;
-	if (!PyArg_Parse(args, "s", &path1))
+	if (!PyArg_ParseTuple(args, "s", &path1))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = (*func)(path1);
@@ -150,7 +150,7 @@ mac_2str(args, func)
 {
 	char *path1, *path2;
 	int res;
-	if (!PyArg_Parse(args, "(ss)", &path1, &path2))
+	if (!PyArg_ParseTuple(args, "ss", &path1, &path2))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = (*func)(path1, path2);
@@ -169,7 +169,7 @@ mac_strint(args, func)
 	char *path;
 	int i;
 	int res;
-	if (!PyArg_Parse(args, "(si)", &path, &i))
+	if (!PyArg_ParseTuple(args, "si", &path, &i))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = (*func)(path, i);
@@ -204,7 +204,7 @@ mac_close(self, args)
 	PyObject *args;
 {
 	int fd, res;
-	if (!PyArg_Parse(args, "i", &fd))
+	if (!PyArg_ParseTuple(args, "i", &fd))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = close(fd);
@@ -226,7 +226,7 @@ mac_dup(self, args)
 	PyObject *args;
 {
 	int fd;
-	if (!PyArg_Parse(args, "i", &fd))
+	if (!PyArg_ParseTuple(args, "i", &fd))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	fd = dup(fd);
@@ -248,7 +248,7 @@ mac_fdopen(self, args)
 	int fd;
 	char *mode;
 	FILE *fp;
-	if (!PyArg_Parse(args, "(is)", &fd, &mode))
+	if (!PyArg_ParseTuple(args, "is", &fd, &mode))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	fp = fdopen(fd, mode);
@@ -266,7 +266,7 @@ mac_getbootvol(self, args)
 	PyObject *args;
 {
 	char *res;
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = getbootvol();
@@ -284,7 +284,7 @@ mac_getcwd(self, args)
 {
 	char path[MAXPATHLEN];
 	char *res;
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 #ifdef USE_GUSI
@@ -309,7 +309,7 @@ mac_listdir(self, args)
 	PyObject *d, *v;
 	DIR *dirp;
 	struct dirent *ep;
-	if (!PyArg_Parse(args, "s", &name))
+	if (!PyArg_ParseTuple(args, "s", &name))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	if ((dirp = opendir(name)) == NULL) {
@@ -351,7 +351,7 @@ mac_lseek(self, args)
 	int where;
 	int how;
 	long res;
-	if (!PyArg_Parse(args, "(iii)", &fd, &where, &how))
+	if (!PyArg_ParseTuple(args, "iii", &fd, &where, &how))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = lseek(fd, (long)where, how);
@@ -391,8 +391,9 @@ mac_open(self, args)
 {
 	char *path;
 	int mode;
+	int perm; /* Accepted but ignored */
 	int fd;
-	if (!PyArg_Parse(args, "(si)", &path, &mode))
+	if (!PyArg_ParseTuple(args, "si|i", &path, &mode, &perm))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	fd = open(path, mode);
@@ -409,7 +410,7 @@ mac_read(self, args)
 {
 	int fd, size;
 	PyObject *buffer;
-	if (!PyArg_Parse(args, "(ii)", &fd, &size))
+	if (!PyArg_ParseTuple(args, "ii", &fd, &size))
 		return NULL;
 	buffer = PyString_FromStringAndSize((char *)NULL, size);
 	if (buffer == NULL)
@@ -449,7 +450,7 @@ mac_stat(self, args)
 	struct stat st;
 	char *path;
 	int res;
-	if (!PyArg_Parse(args, "s", &path))
+	if (!PyArg_ParseTuple(args, "s", &path))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = stat(path, &st);
@@ -478,7 +479,7 @@ mac_fstat(self, args)
 	struct stat st;
 	long fd;
 	int res;
-	if (!PyArg_Parse(args, "l", &fd))
+	if (!PyArg_ParseTuple(args, "l", &fd))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = fstat((int)fd, &st);
@@ -509,7 +510,7 @@ mac_xstat(self, args)
 	struct stat st;
 	char *path;
 	int res;
-	if (!PyArg_Parse(args, "s", &path))
+	if (!PyArg_ParseTuple(args, "s", &path))
 		return NULL;
 	/*
 	** Convoluted: we want stat() and xstat() to agree, so we call both
@@ -549,7 +550,7 @@ mac_sync(self, args)
 	PyObject *args;
 {
 	int res;
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = sync();
@@ -575,7 +576,7 @@ mac_write(self, args)
 {
 	int fd, size;
 	char *buffer;
-	if (!PyArg_Parse(args, "(is#)", &fd, &buffer, &size))
+	if (!PyArg_ParseTuple(args, "is#", &fd, &buffer, &size))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	size = write(fd, buffer, size);
@@ -600,42 +601,137 @@ mac_mstats(self, args)
 #endif /* USE_MALLOC_DEBUG */
 
 static struct PyMethodDef mac_methods[] = {
-	{"chdir",	mac_chdir},
-	{"close",	mac_close},
+	{"chdir",	mac_chdir, 1},
+	{"close",	mac_close, 1},
 #ifdef WEHAVE_DUP
-	{"dup",		mac_dup},
+	{"dup",		mac_dup, 1},
 #endif
 #ifdef WEHAVE_FDOPEN
-	{"fdopen",	mac_fdopen},
+	{"fdopen",	mac_fdopen, 1},
 #endif
 #ifdef WEHAVE_FSTAT
-	{"fstat",	mac_fstat},
+	{"fstat",	mac_fstat, 1},
 #endif
 #if TARGET_API_MAC_OS8
-	{"getbootvol",	mac_getbootvol}, /* non-standard */
+	{"getbootvol",	mac_getbootvol, 1}, /* non-standard */
 #endif
-	{"getcwd",	mac_getcwd},
-	{"listdir",	mac_listdir, 0},
-	{"lseek",	mac_lseek},
+	{"getcwd",	mac_getcwd, 1},
+	{"listdir",	mac_listdir, 1},
+	{"lseek",	mac_lseek, 1},
 	{"mkdir",	mac_mkdir, 1},
-	{"open",	mac_open},
-	{"read",	mac_read},
-	{"rename",	mac_rename},
-	{"rmdir",	mac_rmdir},
-	{"stat",	mac_stat},
+	{"open",	mac_open, 1},
+	{"read",	mac_read, 1},
+	{"rename",	mac_rename, 1},
+	{"rmdir",	mac_rmdir, 1},
+	{"stat",	mac_stat, 1},
 #if TARGET_API_MAC_OS8
-	{"xstat",	mac_xstat},
+	{"xstat",	mac_xstat, 1},
 #endif
-	{"sync",	mac_sync},
-	{"remove",	mac_unlink},
-	{"unlink",	mac_unlink},
-	{"write",	mac_write},
+	{"sync",	mac_sync, 1},
+	{"remove",	mac_unlink, 1},
+	{"unlink",	mac_unlink, 1},
+	{"write",	mac_write, 1},
 #ifdef USE_MALLOC_DEBUG
-	{"mstats",	mac_mstats},
+	{"mstats",	mac_mstats, 1},
 #endif
 
 	{NULL,		NULL}		 /* Sentinel */
 };
+
+static int
+ins(PyObject *d, char *symbol, long value)
+{
+        PyObject* v = PyInt_FromLong(value);
+        if (!v || PyDict_SetItemString(d, symbol, v) < 0)
+                return -1;                   /* triggers fatal error */
+
+        Py_DECREF(v);
+        return 0;
+}
+
+static int
+all_ins(PyObject *d)
+{
+#ifdef F_OK
+        if (ins(d, "F_OK", (long)F_OK)) return -1;
+#endif        
+#ifdef R_OK
+        if (ins(d, "R_OK", (long)R_OK)) return -1;
+#endif        
+#ifdef W_OK
+        if (ins(d, "W_OK", (long)W_OK)) return -1;
+#endif        
+#ifdef X_OK
+        if (ins(d, "X_OK", (long)X_OK)) return -1;
+#endif        
+#ifdef NGROUPS_MAX
+        if (ins(d, "NGROUPS_MAX", (long)NGROUPS_MAX)) return -1;
+#endif
+#ifdef TMP_MAX
+        if (ins(d, "TMP_MAX", (long)TMP_MAX)) return -1;
+#endif
+#ifdef WNOHANG
+        if (ins(d, "WNOHANG", (long)WNOHANG)) return -1;
+#endif        
+#ifdef O_RDONLY
+        if (ins(d, "O_RDONLY", (long)O_RDONLY)) return -1;
+#endif
+#ifdef O_WRONLY
+        if (ins(d, "O_WRONLY", (long)O_WRONLY)) return -1;
+#endif
+#ifdef O_RDWR
+        if (ins(d, "O_RDWR", (long)O_RDWR)) return -1;
+#endif
+#ifdef O_NDELAY
+        if (ins(d, "O_NDELAY", (long)O_NDELAY)) return -1;
+#endif
+#ifdef O_NONBLOCK
+        if (ins(d, "O_NONBLOCK", (long)O_NONBLOCK)) return -1;
+#endif
+#ifdef O_APPEND
+        if (ins(d, "O_APPEND", (long)O_APPEND)) return -1;
+#endif
+#ifdef O_DSYNC
+        if (ins(d, "O_DSYNC", (long)O_DSYNC)) return -1;
+#endif
+#ifdef O_RSYNC
+        if (ins(d, "O_RSYNC", (long)O_RSYNC)) return -1;
+#endif
+#ifdef O_SYNC
+        if (ins(d, "O_SYNC", (long)O_SYNC)) return -1;
+#endif
+#ifdef O_NOCTTY
+        if (ins(d, "O_NOCTTY", (long)O_NOCTTY)) return -1;
+#endif
+#ifdef O_CREAT
+        if (ins(d, "O_CREAT", (long)O_CREAT)) return -1;
+#endif
+#ifdef O_EXCL
+        if (ins(d, "O_EXCL", (long)O_EXCL)) return -1;
+#endif
+#ifdef O_TRUNC
+        if (ins(d, "O_TRUNC", (long)O_TRUNC)) return -1;
+#endif
+#ifdef O_BINARY
+        if (ins(d, "O_BINARY", (long)O_BINARY)) return -1;
+#endif
+#ifdef O_TEXT
+        if (ins(d, "O_TEXT", (long)O_TEXT)) return -1;
+#endif
+
+#ifdef HAVE_SPAWNV
+        if (ins(d, "P_WAIT", (long)_P_WAIT)) return -1;
+        if (ins(d, "P_NOWAIT", (long)_P_NOWAIT)) return -1;
+        if (ins(d, "P_OVERLAY", (long)_OLD_P_OVERLAY)) return -1;
+        if (ins(d, "P_NOWAITO", (long)_P_NOWAITO)) return -1;
+        if (ins(d, "P_DETACH", (long)_P_DETACH)) return -1;
+#endif
+
+#if defined(PYOS_OS2)
+        if (insertvalues(d)) return -1;
+#endif
+        return 0;
+}
 
 
 void
@@ -646,6 +742,9 @@ initmac()
 	m = Py_InitModule("mac", mac_methods);
 	d = PyModule_GetDict(m);
 	
+        if (all_ins(d))
+                return;
+
 	/* Initialize mac.error exception */
 	MacError = PyErr_NewException("mac.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", MacError);
