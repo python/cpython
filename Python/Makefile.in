@@ -9,38 +9,42 @@ VPATH=		@srcdir@
 
 CC=		@CC@
 RANLIB=		@RANLIB@
+DEFS=		@DEFS@
+LIBOBJS=	@LIBOBJS@
+LIBS=		@LIBS@
 
 
 # === Other things that are customizable but not by configure ===
+
+TOP=		..
+INCLDIR=	$(TOP)/Py
+OPT=		-g
+CFLAGS=		$(OPT) -I$(INCLDIR) $(DEFS)
 
 AR=		ar
 MKDEP=		mkdep
 SHELL=		/bin/sh
 
-INCLDIR=	$(srcdir)/../Py
-OPT=		-g
-CFLAGS=		$(OPT) -I$(INCLDIR)
-
 
 # === Fixed definitions ===
 
-SRCS=		\
-		bltinmodule.c ceval.c cgensupport.c compile.c \
-		errors.c fmod.c frozenmain.c getcwd.c graminit.c \
-		import.c marshal.c mathmodule.o modsupport.c posixmodule.c \
-		pythonrun.c strerror.c strtod.c strtol.c \
-		structmember.c structmodule.c \
-		sysmodule.c timemodule.c traceback.c
-
 OBJS=		\
-		bltinmodule.o ceval.o cgensupport.o compile.o \
-		errors.o fmod.o frozenmain.o getcwd.o graminit.o \
-		import.o marshal.o mathmodule.o modsupport.o posixmodule.o \
-		pythonrun.o strerror.o strtod.o strtol.o \
-		structmember.o structmodule.o \
-		sysmodule.o timemodule.o traceback.o
+		arraymodule.o \
+		bltinmodule.o \
+		ceval.o cgensupport.o compile.o \
+		errors.o \
+		frozenmain.o \
+		getmtime.o graminit.o \
+		import.o \
+		marshal.o mathmodule.o modsupport.o \
+		parsermodule.o posixmodule.o pythonmain.o pythonrun.o \
+		regexmodule.o regexpr.o \
+		stropmodule.o structmember.o structmodule.o sysmodule.o \
+		timemodule.o traceback.o \
+		version.o \
+		$(LIBOBJS)
 
-LIB=		libObjects.a
+LIB=		libPython.a
 
 MYLIBS=		$(LIB) ../Objects/libObjects.a ../Parser/libParser.a
 
@@ -53,19 +57,21 @@ all:		$(LIB) python
 
 $(LIB):		$(OBJS)
 		$(AR) cr $(LIB) $(OBJS)
+		$(RANLIB) $(LIB)
 
-python:		pythonmain.o config.o $(MYLIBS)
-		$(CC) pythonmain.o config.o $(MYLIBS) $(SYSLIBS) -o python
+python:		config.o $(MYLIBS)
+		$(CC) config.o $(MYLIBS) $(LIBS) $(SYSLIBS) -o python
+
+config.o:	Makefile
 
 clean:
-		-rm -f $(OBJS)
-		-rm -f core *~ [@,#]* *.old *.orig *.rej
+		-rm -f *.o core *~ [@,#]* *.old *.orig *.rej
 
 clobber:	clean
-		-rm -f $(LIB) tags TAGS
+		-rm -f *.a python tags TAGS
 
-Makefile:	Makefile.in ../config.status
-		(cd ..; $(SHELL) config.status)
+Makefile:	Makefile.in $(TOP)/config.status
+		CONFIG_FILES=Makefile $(SHELL) $(TOP)/config.status
 
 depend:		$(SRCS)
 		$(MKDEP) $(CFLAGS) $(SRCS) $(PGENSRCS)
