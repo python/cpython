@@ -602,12 +602,13 @@ class BaseTest(unittest.TestCase):
 
     def test_bug_782369(self):
         import sys
-        for i in range(10):
-            b = array.array('B', range(64))
-        rc = sys.getrefcount(10)
-        for i in range(10):
-            b = array.array('B', range(64))
-        self.assertEqual(rc, sys.getrefcount(10))
+        if hasattr(sys, "getrefcount"):
+            for i in range(10):
+                b = array.array('B', range(64))
+            rc = sys.getrefcount(10)
+            for i in range(10):
+                b = array.array('B', range(64))
+            self.assertEqual(rc, sys.getrefcount(10))
 
 class StringTest(BaseTest):
 
