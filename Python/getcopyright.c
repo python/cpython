@@ -4,7 +4,7 @@
 
 static char cprt[] = 
 "\
-Copyright (c) 2000, 2001 Guido van Rossum.\n\
+Copyright (c) 2001 Python Software Foundation.\n\
 All Rights Reserved.\n\
 \n\
 Copyright (c) 2000 BeOpen.com.\n\
