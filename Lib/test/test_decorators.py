@@ -191,13 +191,19 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(C.foo.booh, 42)
 
     def test_order(self):
-        class C(object):
-            @staticmethod
-            @funcattrs(abc=1)
-            def foo(): return 42
-        # This wouldn't work if staticmethod was called first
-        self.assertEqual(C.foo(), 42)
-        self.assertEqual(C().foo(), 42)
+        # Test that decorators are applied in the proper order to the function
+        # they are decorating.
+        def callnum(num):
+            """Decorator factory that returns a decorator that replaces the
+            passed-in function with one that returns the value of 'num'"""
+            def deco(func):
+                return lambda: num
+            return deco
+        @callnum(2)
+        @callnum(1)
+        def foo(): return 42
+        self.assertEqual(foo(), 2,
+                            "Application order of decorators is incorrect")
 
     def test_eval_order(self):
         # Evaluating a decorated function involves four steps for each
