@@ -28,3 +28,5 @@ CVS
 Makefile*
 Setup.in
 [(]*[)]
+.DS_Store
+*.cp
