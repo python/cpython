@@ -67,6 +67,23 @@ PyCObject_FromVoidPtrAndDesc:void(*)(void*,void*):destr::
 PyCObject_GetDesc:void*:::
 PyCObject_GetDesc:PyObject*:self:0:
 
+PyCell_New:PyObject*::+1:
+PyCell_New:PyObject*:ob:0:
+
+PyCell_GET:PyObject*::0:
+PyCell_GET:PyObject*:ob:0:
+
+PyCell_Get:PyObject*::+1:
+PyCell_Get:PyObject*:cell:0:
+
+PyCell_SET:void:::
+PyCell_SET:PyObject*:cell:0:
+PyCell_SET:PyObject*:value:0:
+
+PyCell_Set:int:::
+PyCell_Set:PyObject*:cell:0:
+PyCell_Set:PyObject*:value:0:
+
 PyCallIter_New:PyObject*::+1:
 PyCallIter_New:PyObject*:callable::
 PyCallIter_New:PyObject*:sentinel::
