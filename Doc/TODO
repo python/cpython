@@ -7,10 +7,11 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 * Update the pickle documentation to describe all of the current behavior;
   only a subset is described.  __reduce__, etc.
 
-* Review libppath.tex for completeness, & system-specific behaviors.
-
-* Clean up upgrade to LaTeX2HTML 98.1.  Most important: figure out a way to
-  avoid image creation, & if necessary, make sure image creation at least
-  doesn't fail.
+* Review libppath.tex for completeness, & system-specific behaviors.  (Why
+  did this one get mentioned, specifically?)
 
 * Separate modules which share a section.  (I think only one case remains.)
+
+* In the indexes, some subitem entries are separated from the item entries
+  by column- or page-breaks.  Reported by Lorenzo M. Catucci
+  <lorenzo@argon.roma2.infn.it>.  This one will be hard.
