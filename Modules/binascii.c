@@ -137,7 +137,7 @@ static char table_a2b_base64[] = {
 #define BASE64_PAD '='
 
 /* Max binary chunk size; limited only by available memory */
-#define BASE64_MAXBIN (INT_MAX/2 - sizeof(PyStringObject))
+#define BASE64_MAXBIN (INT_MAX/2 - sizeof(PyStringObject) - 3)
 
 static unsigned char table_b2a_base64[] =
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -436,8 +436,10 @@ binascii_b2a_base64(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	
-	/* We're lazy and allocate to much (fixed up later) */
-	if ( (rv=PyString_FromStringAndSize(NULL, bin_len*2)) == NULL )
+	/* We're lazy and allocate too much (fixed up later).
+	   "+3" leaves room for up to two pad characters and a trailing
+	   newline.  Note that 'b' gets encoded as 'Yg==\n' (1 in, 5 out). */
+	if ( (rv=PyString_FromStringAndSize(NULL, bin_len*2 + 3)) == NULL )
 		return NULL;
 	ascii_data = (unsigned char *)PyString_AsString(rv);
 
