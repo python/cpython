@@ -226,15 +226,19 @@ except NameError:
 else:
     import UserDict
 
-    if name in ('os2', ):  # Where Env Var Names Must Be UPPERCASE
+    if name in ('os2', 'nt', 'dos'):  # Where Env Var Names Must Be UPPERCASE
+        # But we store them as upper case
         import string
         class _Environ(UserDict.UserDict):
             def __init__(self, environ):
                 UserDict.UserDict.__init__(self)
-                self.data = environ
+                data = self.data
+                upper = string.upper
+                for k, v in environ.items():
+                    data[upper(k)] = v
             def __setitem__(self, key, item):
-                key = string.upper(key)
                 putenv(key, item)
+                key = string.upper(key)
                 self.data[key] = item
             def __getitem__(self, key):
                 return self.data[string.upper(key)]
@@ -244,13 +248,8 @@ else:
             def __init__(self, environ):
                 UserDict.UserDict.__init__(self)
                 self.data = environ
-            def __getinitargs__(self):
-                import copy
-                return (copy.copy(self.data),)
             def __setitem__(self, key, item):
                 putenv(key, item)
                 self.data[key] = item
-            def __copy__(self):
-                return _Environ(self.data.copy())
 
     environ = _Environ(environ)
