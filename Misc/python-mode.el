@@ -1524,8 +1524,8 @@ zero).
 
 Otherwise the preceding character is deleted, converting a tab to
 spaces if needed so that only a single column position is deleted.
-\\[universal-argument] specifies how many characters to delete
-(default is 1).
+\\[universal-argument] specifies how many characters to delete;
+default is 1.
 
 When used programmatically, argument ARG specifies the number of
 blocks to dedent, or the number of characters to delete, as indicated
@@ -1534,8 +1534,9 @@ above."
   (if (or (/= (current-indentation) (current-column))
 	  (bolp)
 	  (py-continuation-line-p)
-	  (not py-honor-comment-indentation)
-	  (looking-at "#[^ \t\n]"))	; non-indenting #
+;	  (not py-honor-comment-indentation)
+;	  (looking-at "#[^ \t\n]")	; non-indenting #
+	  )
       (funcall py-backspace-function arg)
     ;; else indent the same as the colon line that opened the block
     ;; force non-blank so py-goto-block-up doesn't ignore it
