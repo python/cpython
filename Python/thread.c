@@ -37,6 +37,11 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "config.h"
 
+/* config.h may or may not define DL_IMPORT */
+#ifndef DL_IMPORT	/* declarations for DLL import/export */
+#define DL_IMPORT(RTYPE) RTYPE
+#endif
+
 #include <stdio.h>
 
 #ifdef HAVE_STDLIB_H
