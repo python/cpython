@@ -53,7 +53,7 @@ class MessageTestCase(unittest.TestCase):
         out = m.getdate('date')
         if out:
             self.assertEqual(out,
-                             (1999, 1, 13, 23, 57, 35, 0, 0, 0),
+                             (1999, 1, 13, 23, 57, 35, 0, 1, 0),
                              "date conversion failed")
 
 
