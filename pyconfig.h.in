@@ -410,6 +410,9 @@
 /* Define if you have the getwd function.  */
 #undef HAVE_GETWD
 
+/* Define if you have the hstrerror function.  */
+#undef HAVE_HSTRERROR
+
 /* Define if you have the hypot function.  */
 #undef HAVE_HYPOT
 
