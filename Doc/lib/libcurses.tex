@@ -33,6 +33,7 @@ open-source curses library hosted on Linux and the BSD variants of
             Programming with Python}{Tutorial material on using curses
             with Python, by Andrew Kuchling, is available on the
             Python Web site.}
+   \seetitle[Demo/curses]{}{Some example programs.}
 \end{seealso}
 
 
@@ -308,6 +309,10 @@ specified mouse events can be reported; on complete failure it returns
 0.  \var{oldmask} is the previous value of the given window's mouse
 event mask.  If this function is never called, no mouse events are
 ever reported.
+\end{funcdesc}
+
+\begin{funcdesc}{napms}{ms}
+Sleep for \var{ms} milliseconds.
 \end{funcdesc}
 
 \begin{funcdesc}{newpad}{nlines, ncols}
