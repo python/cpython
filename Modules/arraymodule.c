@@ -467,7 +467,7 @@ array_richcompare(PyObject *v, PyObject *w, int op)
 		int cmp;
 		switch (op) {
 		case Py_LT: cmp = vs <  ws; break;
-		case Py_LE: cmp = ws <= ws; break;
+		case Py_LE: cmp = vs <= ws; break;
 		case Py_EQ: cmp = vs == ws; break;
 		case Py_NE: cmp = vs != ws; break;
 		case Py_GT: cmp = vs >  ws; break;
