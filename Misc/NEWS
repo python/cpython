@@ -83,6 +83,8 @@ Library
   in core.setup().  Previously you could supply one or the other, but
   not both of them.  (SF patch #695090 from Bernhard Herzog)
 
+- New csv package makes it easy to read/write CSV files.
+
 Tools/Demos
 -----------
 
