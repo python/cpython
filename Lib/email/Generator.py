@@ -15,10 +15,12 @@ from cStringIO import StringIO
 import Message
 import Errors
 
+EMPTYSTRING = ''
 SEMISPACE = '; '
 BAR = '|'
 UNDERSCORE = '_'
 NL = '\n'
+NLTAB = '\n\t'
 SEMINLTAB = ';\n\t'
 SPACE8 = ' ' * 8
 
@@ -171,18 +173,47 @@ class Generator:
             # Short lines can remain unchanged
             if len(line.replace('\t', SPACE8)) <= maxheaderlen:
                 rtn.append(line)
+                SEMINLTAB.join(rtn)
             else:
+                oldlen = len(text)
                 # Try to break the line on semicolons, but if that doesn't
-                # work, then just leave it alone.
+                # work, try to split on folding whitespace.
                 while len(text) > maxheaderlen:
                     i = text.rfind(';', 0, maxheaderlen)
                     if i < 0:
-                        rtn.append(text)
                         break
                     rtn.append(text[:i])
                     text = text[i+1:].lstrip()
-                rtn.append(text)
-        return SEMINLTAB.join(rtn)
+                if len(text) <> oldlen:
+                    # Splitting on semis worked
+                    rtn.append(text)
+                    return SEMINLTAB.join(rtn)
+                # Splitting on semis didn't help, so try to split on
+                # whitespace.
+                parts = re.split(r'(\s+)', text)
+                # Watch out though for "Header: longnonsplittableline"
+                if parts[0].endswith(':') and len(parts) == 3:
+                    return text
+                first = parts.pop(0)
+                sublines = [first]
+                acc = len(first)
+                while parts:
+                    len0 = len(parts[0])
+                    len1 = len(parts[1])
+                    if acc + len0 + len1 < maxheaderlen:
+                        sublines.append(parts.pop(0))
+                        sublines.append(parts.pop(0))
+                        acc += len0 + len1
+                    else:
+                        # Split it here, but don't forget to ignore the
+                        # next whitespace-only part
+                        rtn.append(EMPTYSTRING.join(sublines))
+                        del parts[0]
+                        first = parts.pop(0)
+                        sublines = [first]
+                        acc = len(first)
+                rtn.append(EMPTYSTRING.join(sublines))
+                return NLTAB.join(rtn)
 
     #
     # Handlers for writing types and subtypes
