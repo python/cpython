@@ -447,8 +447,8 @@ this package.")
     (easy-menu-define
      py-menu py-mode-map "Python Mode menu"
      '("Python"
-       ["Comment Out Region"   comment-region  (mark)]
-       ["Uncomment Region"     (comment-region (point) (mark) '(4)) (mark)]
+       ["Comment Out Region"   py-comment-region  (mark)]
+       ["Uncomment Region"     (py-comment-region (point) (mark) '(4)) (mark)]
        "-"
        ["Mark current block"   py-mark-block t]
        ["Mark current def"     mark-python-def-or-class t]
