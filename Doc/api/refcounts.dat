@@ -1413,7 +1413,7 @@ PyUnicode_Contains:PyObject*:element:0:
 PyWeakref_GET_OBJECT:PyObject*::0:
 PyWeakref_GET_OBJECT:PyObject*:ref:0:
 
-PyWeakref_GetObject:PyObject*::+1:
+PyWeakref_GetObject:PyObject*::0:
 PyWeakref_GetObject:PyObject*:ref:0:
 
 PyWeakref_NewProxy:PyObject*::+1:
