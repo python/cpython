@@ -17,7 +17,7 @@ import os
 import re
 import string
 
-from xml.utils import escape
+from xml.sax.saxutils import escape
 
 
 AUTOCLOSE = ()
