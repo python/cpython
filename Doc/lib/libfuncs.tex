@@ -507,6 +507,8 @@ def my_import(name):
   Otherwise, the argument may be a plain or
   long integer or a floating point number.  Conversion of floating
   point numbers to integers truncates (towards zero).
+  If the argument is outside the integer range a long object will
+  be returned instead.
 \end{funcdesc}
 
 \begin{funcdesc}{intern}{string}

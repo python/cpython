@@ -642,6 +642,13 @@ float_coerce(PyObject **pv, PyObject **pw)
 }
 
 static PyObject *
+float_long(PyObject *v)
+{
+	double x = PyFloat_AsDouble(v);
+	return PyLong_FromDouble(x);
+}
+
+static PyObject *
 float_int(PyObject *v)
 {
 	double x = PyFloat_AsDouble(v);
@@ -652,8 +659,7 @@ float_int(PyObject *v)
 #ifdef RISCOS
 	/* conversion from floating to integral type would raise exception */
 	if (wholepart>LONG_MAX || wholepart<LONG_MIN) {
-		PyErr_SetString(PyExc_OverflowError, "float too large to convert");
-		return NULL;
+		return float_long(v);
 	}
 #endif
 	/* doubles may have more bits than longs, or vice versa; and casting
@@ -663,15 +669,7 @@ float_int(PyObject *v)
 	aslong = (long)wholepart;
 	if ((double)aslong == wholepart)
 		return PyInt_FromLong(aslong);
-	PyErr_SetString(PyExc_OverflowError, "float too large to convert");
-	return NULL;
-}
-
-static PyObject *
-float_long(PyObject *v)
-{
-	double x = PyFloat_AsDouble(v);
-	return PyLong_FromDouble(x);
+	return float_long(v);
 }
 
 static PyObject *

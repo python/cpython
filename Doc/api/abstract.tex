@@ -650,8 +650,9 @@ determination.
 
 \begin{cfuncdesc}{PyObject*}{PyNumber_Int}{PyObject *o}
   Returns the \var{o} converted to an integer object on success, or
-  \NULL{} on failure.  This is the equivalent of the Python expression
-  \samp{int(\var{o})}.\bifuncindex{int}
+  \NULL{} on failure.  If the argument is outside the integer range
+  a long object will be returned instead. This is the equivalent
+  of the Python expression \samp{int(\var{o})}.\bifuncindex{int}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyNumber_Long}{PyObject *o}

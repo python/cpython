@@ -166,9 +166,20 @@ PyInt_AsLong(register PyObject *op)
 	if (io == NULL)
 		return -1;
 	if (!PyInt_Check(io)) {
-		PyErr_SetString(PyExc_TypeError,
-				"nb_int should return int object");
-		return -1;
+		if (PyLong_Check(io)) {
+			/* got a long? => retry int conversion */
+			val = PyLong_AsLong((PyObject *)io);
+			if (PyErr_Occurred()) {
+				Py_DECREF(io);
+				return -1;
+			}
+		}
+		else
+		{
+			PyErr_SetString(PyExc_TypeError,
+					"nb_int should return int object");
+			return -1;
+		}
 	}
 
 	val = PyInt_AS_LONG(io);
@@ -892,7 +903,8 @@ Convert a string or number to an integer, if possible.  A floating point\n\
 argument will be truncated towards zero (this does not include a string\n\
 representation of a floating point number!)  When converting a string, use\n\
 the optional base.  It is an error to supply a base when converting a\n\
-non-string.");
+non-string. If the argument is outside the integer range a long object\n\
+will be returned instead.");
 
 static PyNumberMethods int_as_number = {
 	(binaryfunc)int_add,	/*nb_add*/
