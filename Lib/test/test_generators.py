@@ -649,28 +649,28 @@ Ye olde Fibonacci generator, LazyList style.
 
 syntax_tests = """
 
->>> def f():
+>>> def f(): #doctest: +ELLIPSIS
 ...     return 22
 ...     yield 1
 Traceback (most recent call last):
-  ...
-SyntaxError: 'return' with argument inside generator (<string>, line 2)
+  ..
+SyntaxError: 'return' with argument inside generator (..., line 2)
 
->>> def f():
+>>> def f(): #doctest: +ELLIPSIS
 ...     yield 1
 ...     return 22
 Traceback (most recent call last):
-  ...
-SyntaxError: 'return' with argument inside generator (<string>, line 3)
+  ..
+SyntaxError: 'return' with argument inside generator (..., line 3)
 
 "return None" is not the same as "return" in a generator:
 
->>> def f():
+>>> def f(): #doctest: +ELLIPSIS
 ...     yield 1
 ...     return None
 Traceback (most recent call last):
-  ...
-SyntaxError: 'return' with argument inside generator (<string>, line 3)
+  ..
+SyntaxError: 'return' with argument inside generator (..., line 3)
 
 This one is fine:
 
@@ -678,16 +678,16 @@ This one is fine:
 ...     yield 1
 ...     return
 
->>> def f():
+>>> def f(): #doctest: +ELLIPSIS
 ...     try:
 ...         yield 1
 ...     finally:
 ...         pass
 Traceback (most recent call last):
-  ...
-SyntaxError: 'yield' not allowed in a 'try' block with a 'finally' clause (<string>, line 3)
+  ..
+SyntaxError: 'yield' not allowed in a 'try' block with a 'finally' clause (..., line 3)
 
->>> def f():
+>>> def f(): #doctest: +ELLIPSIS
 ...     try:
 ...         try:
 ...             1//0
@@ -699,7 +699,7 @@ SyntaxError: 'yield' not allowed in a 'try' block with a 'finally' clause (<stri
 ...         pass
 Traceback (most recent call last):
   ...
-SyntaxError: 'yield' not allowed in a 'try' block with a 'finally' clause (<string>, line 6)
+SyntaxError: 'yield' not allowed in a 'try' block with a 'finally' clause (..., line 6)
 
 But this is fine:
 
@@ -794,7 +794,7 @@ SyntaxError: invalid syntax
 <type 'generator'>
 
 
->>> def f():
+>>> def f(): #doctest: +ELLIPSIS
 ...     if 0:
 ...         lambda x:  x        # shouldn't trigger here
 ...         return              # or here
@@ -805,7 +805,7 @@ SyntaxError: invalid syntax
 ...     if 0:
 ...         yield 2             # because it's a generator
 Traceback (most recent call last):
-SyntaxError: 'return' with argument inside generator (<string>, line 8)
+SyntaxError: 'return' with argument inside generator (..., line 8)
 
 This one caused a crash (see SF bug 567538):
 
