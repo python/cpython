@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # A window-oriented recursive diff utility.
 # NB: This uses undocumented window classing modules.
