@@ -188,7 +188,6 @@ class Set(Instruction):
     name = 'set'
     def __init__(self, set):
 	self.set = set
-	print set
 	Instruction.__init__(self, chr(3), 33)
     def assemble(self, position, labels):
 	result = self.opcode
@@ -719,11 +718,11 @@ def compile(pattern, flags=0):
 
 		elif pattern[index] in 'iImMsSxX':
 		    while (index < len(pattern)) and (pattern[index] != ')'):
-			if pattern[index] == 'iI':
+			if pattern[index] in 'iI':
 			    flags = flags | IGNORECASE
-			elif pattern[index] == 'mM':
+			elif pattern[index] in 'mM':
 			    flags = flags | MULTILINE
-			elif pattern[index] == 'sS':
+			elif pattern[index] in 'sS':
 			    flags = flags | DOTALL
 			elif pattern[index] in 'xX':
 			    flags = flags | VERBOSE
