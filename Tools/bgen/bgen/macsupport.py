@@ -150,9 +150,9 @@ initstuff = """
 # This requires that the OSErr type (defined above) has a non-trivial
 # errorCheck method.
 class OSErrMixIn:
-	"Mix-in class to treat OSErr return values special"
+	"Mix-in class to treat OSErr/OSStatus return values special"
 	def makereturnvar(self):
-		if self.returntype is OSErr:
+		if self.returntype.__class__ == OSErrType:
 			return Variable(self.returntype, "_err", ErrorMode)
 		else:
 			return Variable(self.returntype, "_rv", OutMode)
