@@ -99,7 +99,7 @@ class TimeoutTestCase(unittest.TestCase):
 
     def testConnectTimeout(self):
         # Test connect() timeout
-        _timeout = 0.02
+        _timeout = 0.001
         self.sock.settimeout(_timeout)
 
         _t1 = time.time()
