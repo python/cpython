@@ -124,6 +124,8 @@ Library
 - Bug #1083110: ``zlib.decompress.flush()`` would segfault if called immediately
   after creating the object, without any intervening ``.decompress()`` calls.
 
+- The reconvert.quote function can now emit triple-quoted strings.  The
+  reconvert module now has some simple documentation.
 
 Build
 -----
