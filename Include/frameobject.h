@@ -14,7 +14,7 @@ typedef struct {
 } PyTryBlock;
 
 typedef struct _frame {
-    PyObject_HEAD
+    PyObject_VAR_HEAD
     struct _frame *f_back;	/* previous frame, or NULL */
     PyCodeObject *f_code;	/* code segment */
     PyObject *f_builtins;	/* builtin symbol table (PyDictObject) */
@@ -34,7 +34,6 @@ typedef struct _frame {
 				   in this scope */
     int f_iblock;		/* index in f_blockstack */
     PyTryBlock f_blockstack[CO_MAXBLOCKS]; /* for try and loop blocks */
-    int f_size;                 /* size of localsplus */
     int f_nlocals;		/* number of locals */
     int f_ncells;
     int f_nfreevars;
