@@ -1249,12 +1249,11 @@ com_subscriptlist(struct compiling *c, node *n, int assigning)
 	/* Check to make backward compatible slice behavior for '[i:j]' */
 	if (NCH(n) == 1) {
 		node *sub = CHILD(n, 0); /* subscript */
-		/* Make it is a simple slice.
-		   Should have exactly one colon. */
-        if ((TYPE(CHILD(sub, 0)) == COLON
-             || (NCH(sub) > 1 && TYPE(CHILD(sub, 1)) == COLON))
-            && (TYPE(CHILD(sub,NCH(sub)-1)) != sliceop))
-	{
+		/* 'Basic' slice, should have exactly one colon. */
+		if ((TYPE(CHILD(sub, 0)) == COLON
+		     || (NCH(sub) > 1 && TYPE(CHILD(sub, 1)) == COLON))
+		    && (TYPE(CHILD(sub,NCH(sub)-1)) != sliceop))
+		{
 			if (assigning == OP_APPLY)
 				op = SLICE;
 			else
