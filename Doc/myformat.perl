@@ -21,6 +21,30 @@ sub do_cmd_NULL{ join('', '<tt>NULL</tt>', @_[0]); }
 
 sub do_cmd_e{ local($_) = @_; '&#92;' . $_; }
 
+$AUTHOR_ADDRESS = '(not specified)';
+$PYTHON_VERSION = '(not specified)';
+
+sub do_cmd_version{ $PYTHON_VERSION . @_[0]; }
+sub do_cmd_release{
+    local($_) = @_;
+    s/$any_next_pair_pr_rx//;
+    $PYTHON_VERSION = "$2";
+    $_;
+}
+
+sub do_cmd_authoraddress{
+    local($_) = @_;
+    s/$any_next_pair_pr_rx//;
+    $AUTHOR_ADDRESS = "$2";
+    $_;
+}
+
+sub do_cmd_hackscore{
+    local($_) = @_;
+    s/$any_next_pair_pr_rx/_/;
+    $_;
+}
+
 sub do_cmd_optional{
     local($_) = @_;
     s/$any_next_pair_pr_rx/<\/var><big>\[<\/big><var>\2<\/var><big>\]<\/big><var>/;
@@ -258,9 +282,9 @@ sub do_cmd_refstmodindex{ &ref_module_index_helper('standard', @_); }
 sub do_cmd_nodename{ &do_cmd_label(@_); }
 
 sub init_myformat{
-    # XXX need some way for this to be called after &initialise;
-    $anchor_mark = '';
-    $icons{'anchor_mark'} = '';
+    # XXX need some way for this to be called after &initialise; ???
+#     $anchor_mark = '';
+#     $icons{'anchor_mark'} = '';
     # <<2>>...<<2>>
     $any_next_pair_rx3 = "$O(\\d+)$C([\\s\\S]*)$O\\3$C";
     $any_next_pair_rx5 = "$O(\\d+)$C([\\s\\S]*)$O\\5$C";
@@ -276,9 +300,7 @@ sub init_myformat{
 &init_myformat;
 
 sub get_indexsubitem{
-  local($result) = $INDEX_SUBITEM;
-  #print "\nget_indexsubitem ==> $result\n";
-  $result ? " $result" : '';
+  $INDEX_SUBITEM ? " $INDEX_SUBITEM" : '';
 }
 
 # similar to make_index_entry(), but includes the string in the result
