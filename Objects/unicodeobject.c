@@ -2988,8 +2988,11 @@ int PyUnicode_Contains(PyObject *container,
 
     /* Coerce the two arguments */
     v = (PyUnicodeObject *)PyUnicode_FromObject(element);
-    if (v == NULL)
+    if (v == NULL) {
+	PyErr_SetString(PyExc_TypeError,
+	    "'in <string>' requires character as left operand");
 	goto onError;
+    }
     u = (PyUnicodeObject *)PyUnicode_FromObject(container);
     if (u == NULL) {
 	Py_DECREF(v);
