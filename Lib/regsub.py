@@ -95,9 +95,9 @@ def intsplit(str, pat, maxsplit, retain):
 
 # Capitalize words split using a pattern
 
-def capwords(str, pat):
+def capwords(str, pat='[^a-zA-Z0-9_]+'):
 	import string
-	words = split(str, pat, 1)
+	words = splitx(str, pat)
 	for i in range(0, len(words), 2):
 		words[i] = string.capitalize(words[i])
 	return string.joinfields(words, "")
