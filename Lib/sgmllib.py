@@ -176,7 +176,7 @@ class SGMLParser:
 		attrs = []
 		tagfind = regex.compile('[a-zA-Z][a-zA-Z0-9]*')
 		attrfind = regex.compile(
-		  '[ \t\n]+\([a-zA-Z][a-zA-Z0-9]*\)' +
+		  '[ \t\n]+\([a-zA-Z_][a-zA-Z_0-9]*\)' +
 		  '\([ \t\n]*=[ \t\n]*' +
 		     '\(\'[^\']*\';\|"[^"]*"\|[-a-zA-Z0-9./:+*%?!()_#]+\)\)?')
 		k = tagfind.match(rawdata, i+1)
