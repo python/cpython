@@ -43,16 +43,13 @@ class SoundScanner(Scanner):
 			'StartSound',
 			'StopSound',
 			'SoundDone',
-			# These are soundMgr 3.0 routines that I can't seem to find...
-			'GetSoundPreference',
-			'SetSoundPreference',
-			'GetCompressionInfo',
-			'GetCompressionName',
-			# Calls with void_ptr arguments (to be done).
+			# These do not work for cfm68k:
 			'SndGetInfo',
 			'SndSetInfo',
-			'SPBGetDeviceInfo',
-			'SPBSetDeviceInfo',
+			'GetCompressionInfo',
+			'GetCompressionName',
+			'GetSoundPreference',
+			'SetSoundPreference',
 			# And old calls that are no longer supported
 			'SetSoundVol',
 			'GetSoundVol',
@@ -72,7 +69,6 @@ class SoundScanner(Scanner):
 			"SoundComponentData_ptr",
 			"SoundConverter",
 			"ModalFilterUPP",
-			"SPBPtr",
 			]
 
 	def makerepairinstructions(self):
@@ -116,6 +112,9 @@ class SoundScanner(Scanner):
 			([("StateBlockPtr", "inState", "InMode"), ("StateBlockPtr", "outState", "InMode")],
 			 [("StateBlock", "state", "InOutMode")]),
 
+			# Catch-all for the last couple of void pointers
+			([("void", "*", "OutMode")],
+			 [("void_ptr", "*", "InMode")]),
 			]
 
 if __name__ == "__main__":

@@ -76,6 +76,8 @@ SndCmd_Convert(PyObject *v, SndCommand *pc)
 }
 
 static pascal void SndCh_UserRoutine(SndChannelPtr chan, SndCommand *cmd); /* Forward */
+static pascal void SPB_completion(SPBPtr my_spb); /* Forward */
+static pascal void SPB_interrupt(SPBPtr my_spb); /* Forward */
 
 static PyObject *Snd_Error;
 
@@ -314,6 +316,133 @@ staticforward PyTypeObject SndChannel_Type = {
 
 /* ------------------- End object type SndChannel ------------------- */
 
+
+/* ------------------------ Object type SPB ------------------------- */
+
+staticforward PyTypeObject SPB_Type;
+
+#define SPBObj_Check(x) ((x)->ob_type == &SPB_Type)
+
+typedef struct SPBObject {
+	PyObject_HEAD
+	/* Members used to implement callbacks: */
+	PyObject *ob_completion;
+	PyObject *ob_interrupt;
+	PyObject *ob_thiscallback;
+	long ob_A5;
+	SPB ob_spb;
+} SPBObject;
+
+static PyObject *SPBObj_New()
+{
+	SPBObject *it;
+	it = PyObject_NEW(SPBObject, &SPB_Type);
+	if (it == NULL) return NULL;
+	it->ob_completion = NULL;
+	it->ob_interrupt = NULL;
+	it->ob_thiscallback = NULL;
+	it->ob_A5 = SetCurrentA5();
+	memset((char *)&it->ob_spb, 0, sizeof(it->ob_spb));
+	it->ob_spb.userLong = (long)it;
+	return (PyObject *)it;
+}
+static SPBObj_Convert(v, p_itself)
+	PyObject *v;
+	SPBPtr *p_itself;
+{
+	if (!SPBObj_Check(v))
+	{
+		PyErr_SetString(PyExc_TypeError, "SPB required");
+		return 0;
+	}
+	*p_itself = &((SPBObject *)v)->ob_spb;
+	return 1;
+}
+
+static void SPBObj_dealloc(self)
+	SPBObject *self;
+{
+	/* Cleanup of self->ob_itself goes here */
+	self->ob_spb.userLong = 0;
+	self->ob_thiscallback = 0;
+	Py_XDECREF(self->ob_completion);
+	Py_XDECREF(self->ob_interrupt);
+	PyMem_DEL(self);
+}
+
+static PyMethodDef SPBObj_methods[] = {
+	{NULL, NULL, 0}
+};
+
+static PyMethodChain SPBObj_chain = { SPBObj_methods, NULL };
+
+static PyObject *SPBObj_getattr(self, name)
+	SPBObject *self;
+	char *name;
+{
+
+				if (strcmp(name, "inRefNum") == 0)
+					return Py_BuildValue("l", self->ob_spb.inRefNum);
+				else if (strcmp(name, "count") == 0)
+					return Py_BuildValue("l", self->ob_spb.count);
+				else if (strcmp(name, "milliseconds") == 0)
+					return Py_BuildValue("l", self->ob_spb.milliseconds);
+				else if (strcmp(name, "error") == 0)
+					return Py_BuildValue("h", self->ob_spb.error);
+	return Py_FindMethodInChain(&SPBObj_chain, (PyObject *)self, name);
+}
+
+static int SPBObj_setattr(self, name, value)
+	SPBObject *self;
+	char *name;
+	PyObject *value;
+{
+
+				if (strcmp(name, "inRefNum") == 0)
+					return PyArg_Parse(value, "l", &self->ob_spb.inRefNum);
+				else if (strcmp(name, "count") == 0)
+					return PyArg_Parse(value, "l", &self->ob_spb.count);
+				else if (strcmp(name, "milliseconds") == 0)
+					return PyArg_Parse(value, "l", &self->ob_spb.milliseconds);
+				else if (strcmp(name, "buffer") == 0)
+					return PyArg_Parse(value, "w#", &self->ob_spb.bufferPtr, &self->ob_spb.bufferLength);
+				else if (strcmp(name, "completionRoutine") == 0) {
+					self->ob_spb.completionRoutine = NewSICompletionProc(SPB_completion);
+					self->ob_completion = value;
+					Py_INCREF(value);
+					return 0;
+				} else if (strcmp(name, "interruptRoutine") == 0) {
+					self->ob_spb.completionRoutine = NewSIInterruptProc(SPB_interrupt);
+					self->ob_interrupt = value;
+					Py_INCREF(value);
+					return 0;
+				}
+				return -1;
+}
+
+staticforward PyTypeObject SPB_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0, /*ob_size*/
+	"SPB", /*tp_name*/
+	sizeof(SPBObject), /*tp_basicsize*/
+	0, /*tp_itemsize*/
+	/* methods */
+	(destructor) SPBObj_dealloc, /*tp_dealloc*/
+	0, /*tp_print*/
+	(getattrfunc) SPBObj_getattr, /*tp_getattr*/
+	(setattrfunc) SPBObj_setattr, /*tp_setattr*/
+};
+
+/* ---------------------- End object type SPB ----------------------- */
+
+
+static PyObject *Snd_SPB(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	return SPBObj_New();
+}
 
 static PyObject *Snd_SysBeep(_self, _args)
 	PyObject *_self;
@@ -839,6 +968,49 @@ static PyObject *Snd_SPBCloseDevice(_self, _args)
 	return _res;
 }
 
+static PyObject *Snd_SPBRecord(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	SPBPtr inParamPtr;
+	Boolean asynchFlag;
+	if (!PyArg_ParseTuple(_args, "O&b",
+	                      SPBObj_Convert, &inParamPtr,
+	                      &asynchFlag))
+		return NULL;
+	_err = SPBRecord(inParamPtr,
+	                 asynchFlag);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Snd_SPBRecordToFile(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	short fRefNum;
+	SPBPtr inParamPtr;
+	Boolean asynchFlag;
+	if (!PyArg_ParseTuple(_args, "hO&b",
+	                      &fRefNum,
+	                      SPBObj_Convert, &inParamPtr,
+	                      &asynchFlag))
+		return NULL;
+	_err = SPBRecordToFile(fRefNum,
+	                       inParamPtr,
+	                       asynchFlag);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *Snd_SPBPauseRecording(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -924,6 +1096,52 @@ static PyObject *Snd_SPBGetRecordingStatus(_self, _args)
 	return _res;
 }
 
+static PyObject *Snd_SPBGetDeviceInfo(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	long inRefNum;
+	OSType infoType;
+	void * infoData;
+	if (!PyArg_ParseTuple(_args, "lO&w",
+	                      &inRefNum,
+	                      PyMac_GetOSType, &infoType,
+	                      &infoData))
+		return NULL;
+	_err = SPBGetDeviceInfo(inRefNum,
+	                        infoType,
+	                        infoData);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Snd_SPBSetDeviceInfo(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	long inRefNum;
+	OSType infoType;
+	void * infoData;
+	if (!PyArg_ParseTuple(_args, "lO&w",
+	                      &inRefNum,
+	                      PyMac_GetOSType, &infoType,
+	                      &infoData))
+		return NULL;
+	_err = SPBSetDeviceInfo(inRefNum,
+	                        infoType,
+	                        infoData);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *Snd_SPBMillisecondsToBytes(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -963,6 +1181,8 @@ static PyObject *Snd_SPBBytesToMilliseconds(_self, _args)
 }
 
 static PyMethodDef Snd_methods[] = {
+	{"SPB", (PyCFunction)Snd_SPB, 1,
+	 NULL},
 	{"SysBeep", (PyCFunction)Snd_SysBeep, 1,
 	 "(short duration) -> None"},
 	{"SndNewChannel", (PyCFunction)Snd_SndNewChannel, 1,
@@ -1009,6 +1229,10 @@ static PyMethodDef Snd_methods[] = {
 	 "(Str255 deviceName, short permission) -> (long inRefNum)"},
 	{"SPBCloseDevice", (PyCFunction)Snd_SPBCloseDevice, 1,
 	 "(long inRefNum) -> None"},
+	{"SPBRecord", (PyCFunction)Snd_SPBRecord, 1,
+	 "(SPBPtr inParamPtr, Boolean asynchFlag) -> None"},
+	{"SPBRecordToFile", (PyCFunction)Snd_SPBRecordToFile, 1,
+	 "(short fRefNum, SPBPtr inParamPtr, Boolean asynchFlag) -> None"},
 	{"SPBPauseRecording", (PyCFunction)Snd_SPBPauseRecording, 1,
 	 "(long inRefNum) -> None"},
 	{"SPBResumeRecording", (PyCFunction)Snd_SPBResumeRecording, 1,
@@ -1017,6 +1241,10 @@ static PyMethodDef Snd_methods[] = {
 	 "(long inRefNum) -> None"},
 	{"SPBGetRecordingStatus", (PyCFunction)Snd_SPBGetRecordingStatus, 1,
 	 "(long inRefNum) -> (short recordingStatus, short meterLevel, unsigned long totalSamplesToRecord, unsigned long numberOfSamplesRecorded, unsigned long totalMsecsToRecord, unsigned long numberOfMsecsRecorded)"},
+	{"SPBGetDeviceInfo", (PyCFunction)Snd_SPBGetDeviceInfo, 1,
+	 "(long inRefNum, OSType infoType, void * infoData) -> None"},
+	{"SPBSetDeviceInfo", (PyCFunction)Snd_SPBSetDeviceInfo, 1,
+	 "(long inRefNum, OSType infoType, void * infoData) -> None"},
 	{"SPBMillisecondsToBytes", (PyCFunction)Snd_SPBMillisecondsToBytes, 1,
 	 "(long inRefNum) -> (long milliseconds)"},
 	{"SPBBytesToMilliseconds", (PyCFunction)Snd_SPBBytesToMilliseconds, 1,
@@ -1057,6 +1285,52 @@ SndCh_UserRoutine(SndChannelPtr chan, SndCommand *cmd)
 	}
 }
 
+/* SPB callbacks - Schedule callbacks to Python */
+static int
+SPB_CallCallBack(arg)
+	void *arg;
+{
+	SPBObject *p = (SPBObject *)arg;
+	PyObject *args;
+	PyObject *res;
+	
+	if ( p->ob_thiscallback == 0 ) return 0;
+	args = Py_BuildValue("(O)", p);
+	res = PyEval_CallObject(p->ob_thiscallback, args);
+	p->ob_thiscallback = 0;
+	Py_DECREF(args);
+	if (res == NULL)
+		return -1;
+	Py_DECREF(res);
+	return 0;
+}
+
+static pascal void
+SPB_completion(SPBPtr my_spb)
+{
+	SPBObject *p = (SPBObject *)(my_spb->userLong);
+	
+	if (p && p->ob_completion) {
+		long A5 = SetA5(p->ob_A5);
+		p->ob_thiscallback = p->ob_completion;	/* Hope we cannot get two at the same time */
+		Py_AddPendingCall(SPB_CallCallBack, (void *)p);
+		SetA5(A5);
+	}
+}
+
+static pascal void
+SPB_interrupt(SPBPtr my_spb)
+{
+	SPBObject *p = (SPBObject *)(my_spb->userLong);
+	
+	if (p && p->ob_interrupt) {
+		long A5 = SetA5(p->ob_A5);
+		p->ob_thiscallback = p->ob_interrupt;	/* Hope we cannot get two at the same time */
+		Py_AddPendingCall(SPB_CallCallBack, (void *)p);
+		SetA5(A5);
+	}
+}
+
 
 void initSnd()
 {
@@ -1077,6 +1351,10 @@ void initSnd()
 	Py_INCREF(&SndChannel_Type);
 	if (PyDict_SetItemString(d, "SndChannelType", (PyObject *)&SndChannel_Type) != 0)
 		Py_FatalError("can't initialize SndChannelType");
+	SPB_Type.ob_type = &PyType_Type;
+	Py_INCREF(&SPB_Type);
+	if (PyDict_SetItemString(d, "SPBType", (PyObject *)&SPB_Type) != 0)
+		Py_FatalError("can't initialize SPBType");
 }
 
 /* ========================= End module Snd ========================= */
