@@ -1,4 +1,5 @@
 \section{Standard Module \sectcode{types}}
+\label{module-types}
 \stmodindex{types}
 
 \renewcommand{\indexsubitem}{(in module types)}
@@ -13,15 +14,15 @@ all end in \code{Type}.
 Typical use is for functions that do different things depending on
 their argument types, like the following:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 from types import *
 def delete(list, item):
     if type(item) is IntType:
        del list[item]
     else:
        list.remove(item)
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 The module defines the following names:
 
 \begin{datadesc}{NoneType}

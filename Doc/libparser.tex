@@ -288,30 +288,30 @@ bytecode generation, the simplest operation is to do nothing.  For
 this purpose, using the \code{parser} module to produce an
 intermediate data structure is equivelent to the code
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 >>> code = compile('a + 5', 'eval')
 >>> a = 5
 >>> eval(code)
 10
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 The equivelent operation using the \code{parser} module is somewhat
 longer, and allows the intermediate internal parse tree to be retained
 as an AST object:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 >>> import parser
 >>> ast = parser.expr('a + 5')
 >>> code = parser.compileast(ast)
 >>> a = 5
 >>> eval(code)
 10
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 An application which needs both AST and code objects can package this
 code into readily available functions:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 import parser
 
 def load_suite(source_string):
@@ -323,8 +323,8 @@ def load_expression(source_string):
     ast = parser.expr(source_string)
     code = parser.compileast(ast)
     return ast, code
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 \subsubsection{Information Discovery}
 
 Some applications benefit from direct access to the parse tree.  The
@@ -366,16 +366,16 @@ Consider the simplest case of interest when searching for docstrings:
 a module consisting of a docstring and nothing else.  (See file
 \file{docstring.py}.)
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 """Some documentation.
 """
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 Using the interpreter to take a look at the parse tree, we find a
 bewildering mass of numbers and parentheses, with the documentation
 buried deep in nested tuples.
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 >>> import parser
 >>> import pprint
 >>> ast = parser.suite(open('docstring.py').read())
@@ -403,8 +403,8 @@ buried deep in nested tuples.
    (4, ''))),
  (4, ''),
  (0, ''))
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 The numbers at the first element of each node in the tree are the node
 types; they map directly to terminal and non-terminal symbols in the
 grammar.  Unfortunately, they are represented as integers in the
@@ -442,7 +442,7 @@ form, allowing a simple variable representation to be
 the pattern matching, returning a boolean and a dictionary of variable
 name to value mappings.  (See file \file{example.py}.)
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 from types import ListType, TupleType
 
 def match(pattern, data, vars=None):
@@ -460,13 +460,13 @@ def match(pattern, data, vars=None):
         if not same:
             break
     return same, vars
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 Using this simple representation for syntactic variables and the symbolic
 node types, the pattern for the candidate docstring subtrees becomes
 fairly readable.  (See file \file{example.py}.)
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 import symbol
 import token
 
@@ -493,19 +493,19 @@ DOCSTRING_STMT_PATTERN = (
                      )))))))))))))))),
      (token.NEWLINE, '')
      ))
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 Using the \code{match()} function with this pattern, extracting the
 module docstring from the parse tree created previously is easy:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 >>> found, vars = match(DOCSTRING_STMT_PATTERN, tup[1])
 >>> found
 1
 >>> vars
 {'docstring': '"""Some documentation.\012"""'}
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 Once specific data can be extracted from a location where it is
 expected, the question of where information can be expected
 needs to be answered.  When dealing with docstrings, the answer is
@@ -567,7 +567,7 @@ grammar, but the method which recursively creates new information
 objects requires further examination.  Here is the relevant part of
 the \code{SuiteInfoBase} definition from \file{example.py}:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 class SuiteInfoBase:
     _docstring = ''
     _name = ''
@@ -597,8 +597,8 @@ class SuiteInfoBase:
                 elif cstmt[0] == symbol.classdef:
                     name = cstmt[2][1]
                     self._class_info[name] = ClassInfo(cstmt)
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 After initializing some internal state, the constructor calls the
 \code{_extract_info()} method.  This method performs the bulk of the
 information extraction which takes place in the entire example.  The
@@ -611,21 +611,21 @@ the ``short form'' or the ``long form.''  The short form is used when
 the code block is on the same line as the definition of the code
 block, as in
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 def square(x): "Square an argument."; return x ** 2
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 while the long form uses an indented block and allows nested
 definitions:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 def make_power(exp):
     "Make a function that raises an argument to the exponent `exp'."
     def raiser(x, y=exp):
         return x ** y
     return raiser
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 When the short form is used, the code block may contain a docstring as
 the first, and possibly only, \code{small_stmt} element.  The
 extraction of such a docstring is slightly different and requires only
@@ -660,7 +660,7 @@ the real extraction algorithm remains common to all forms of code
 blocks.  A high-level function can be used to extract the complete set
 of information from a source file.  (See file \file{example.py}.)
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 def get_docs(fileName):
     source = open(fileName).read()
     import os
@@ -669,8 +669,8 @@ def get_docs(fileName):
     ast = parser.suite(source)
     tup = parser.ast2tuple(ast)
     return ModuleInfo(tup, basename)
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 This provides an easy-to-use interface to the documentation of a
 module.  If information is required which is not extracted by the code
 of this example, the code may be extended at clearly defined points to

@@ -184,10 +184,10 @@ Delete the slice of a from index b to index c-1.
 Example: Build a dictionary that maps the ordinals from 0 to 256 to their
 character equivalents.
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 >>> import operator
 >>> d = {}
 >>> keys = range(256)
 >>> vals = map(chr, keys)
 >>> map(operator.setitem, [d]*len(keys), keys, vals)
-\end{verbatim}
+\end{verbatim}\ecode

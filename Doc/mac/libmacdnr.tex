@@ -1,5 +1,5 @@
-
 \section{Built-in Module \sectcode{macdnr}}
+\label{module-macdnr}
 \bimodindex{macdnr}
 
 This module provides an interface to the Macintosh Domain Name
@@ -111,9 +111,9 @@ will only return a single mx record.  Mx queries only.
 
 The simplest way to use the module to convert names to dotted-decimal
 strings, without worrying about idle time, etc:
-\begin{verbatim}
+\bcode\begin{verbatim}
 >>> def gethostname(name):
 ...     import macdnr
 ...     dnrr = macdnr.StrToAddr(name)
 ...     return macdnr.AddrToStr(dnrr.ip0)
-\end{verbatim}
+\end{verbatim}\ecode

@@ -1,4 +1,5 @@
 \section{Built-in Module \sectcode{imp}}
+\label{module-imp}
 \bimodindex{imp}
 \index{import}
 
@@ -132,7 +133,7 @@ The module was found as dynamically loadable shared library.
 \subsection{Examples}
 The following function emulates the default import statement:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 import imp
 import sys
 
@@ -171,4 +172,4 @@ def __import__(name, globals=None, locals=None, fromlist=None):
     finally:
         # Since we may exit via an exception, close fp explicitly.
         fp.close()
-\end{verbatim}
+\end{verbatim}\ecode

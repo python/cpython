@@ -1,4 +1,5 @@
 \section{Standard Module \sectcode{whrandom}}
+\label{module-whrandom}
 \stmodindex{whrandom}
 
 This module implements a Wichmann-Hill pseudo-random number generator
@@ -36,7 +37,14 @@ When imported, the \code{whrandom} module also creates an instance of
 the \code{whrandom} class, and makes the methods of that instance
 available at the module level.  Therefore one can write either 
 \code{N = whrandom.random()} or:
-\begin{verbatim}
+\bcode\begin{verbatim}
 generator = whrandom.whrandom()
 N = generator.random()
-\end{verbatim}
+\end{verbatim}\ecode
+%
+\begin{seealso}
+\seemodule{random}{generators for various random distributions}
+\seetext{Wichmann, B. A. \& Hill, I. D., ``Algorithm AS 183: 
+An efficient and portable pseudo-random number generator'', 
+Applied Statistics 31 (1982) 188-190}
+\end{seealso}

@@ -1,4 +1,5 @@
 \section{Standard Module \sectcode{pickle}}
+\label{module-pickle}
 \stmodindex{pickle}
 \index{persistency}
 \indexii{persistent}{objects}
@@ -133,30 +134,30 @@ The interface can be summarized as follows.
 
 To pickle an object \code{x} onto a file \code{f}, open for writing:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 p = pickle.Pickler(f)
 p.dump(x)
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 A shorthand for this is:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 pickle.dump(x, f)
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 To unpickle an object \code{x} from a file \code{f}, open for reading:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 u = pickle.Unpickler(f)
 x = u.load()
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 A shorthand is:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 x = pickle.load(f)
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 The \code{Pickler} class only calls the method \code{f.write} with a
 string argument.  The \code{Unpickler} calls the methods \code{f.read}
 (with an integer argument) and \code{f.readline} (without argument),

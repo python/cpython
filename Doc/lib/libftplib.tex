@@ -1,4 +1,5 @@
 \section{Standard Module \sectcode{ftplib}}
+\label{module-ftplib}
 \stmodindex{ftplib}
 
 \renewcommand{\indexsubitem}{(in module ftplib)}
@@ -13,7 +14,7 @@ more information on FTP (File Transfer Protocol), see Internet RFC
 
 Here's a sample session using the \code{ftplib} module:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 >>> from ftplib import FTP
 >>> ftp = FTP('ftp.cwi.nl')   # connect to host, default port
 >>> ftp.login()               # user anonymous, passwd user@hostname
@@ -26,8 +27,8 @@ dr-xr-srwt 105 ftp-usr  pdmaint     1536 Mar 21 14:32 ..
  .
  .
 >>> ftp.quit()
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 The module defines the following items:
 
 \begin{funcdesc}{FTP}{\optional{host\optional{\, user\, passwd\, acct}}}

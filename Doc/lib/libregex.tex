@@ -1,4 +1,5 @@
 \section{Built-in Module \sectcode{regex}}
+\label{module-regex}
 
 \bimodindex{regex}
 This module provides regular expression matching operations similar to
@@ -204,13 +205,13 @@ The module defines these functions, and an exception:
 prog = regex.compile(pat)
 result = prog.match(str)
 \end{verbatim}\ecode
-
+%
 is equivalent to
 
 \bcode\begin{verbatim}
 result = regex.match(pat, str)
 \end{verbatim}\ecode
-
+%
 but the version using \code{compile()} is more efficient when multiple
 regular expressions are used concurrently in a single program.  (The
 compiled version of the last pattern passed to \code{regex.match()} or

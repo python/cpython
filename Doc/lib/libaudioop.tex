@@ -1,4 +1,5 @@
 \section{Built-in Module \sectcode{audioop}}
+\label{module-audioop}
 \bimodindex{audioop}
 
 The \code{audioop} module contains some useful operations on sound fragments.
@@ -210,7 +211,7 @@ def mul_stereo(sample, width, lfactor, rfactor):
     rsample = audioop.tostereo(rsample, width, 0, 1)
     return audioop.add(lsample, rsample, width)
 \end{verbatim}\ecode
-
+%
 If you use the ADPCM coder to build network packets and you want your
 protocol to be stateless (i.e.\ to be able to tolerate packet loss)
 you should not only transmit the data but also the state.  Note that

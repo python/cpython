@@ -1,4 +1,5 @@
 \section{Built-in Module \sectcode{socket}}
+\label{module-socket}
 
 \bimodindex{socket}
 This module provides access to the BSD {\em socket} interface.
@@ -336,7 +337,7 @@ while 1:
     conn.send(data)
 conn.close()
 \end{verbatim}\ecode
-
+%
 \bcode\begin{verbatim}
 # Echo client program
 from socket import *
@@ -349,3 +350,7 @@ data = s.recv(1024)
 s.close()
 print 'Received', `data`
 \end{verbatim}\ecode
+%
+\begin{seealso}
+\seemodule{SocketServer}{classes that simplify writing network servers}
+\end{seealso}

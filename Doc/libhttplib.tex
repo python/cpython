@@ -1,4 +1,5 @@
 \section{Standard Module \sectcode{httplib}}
+\label{module-httplib}
 \stmodindex{httplib}
 \index{HTTP}
 
@@ -19,12 +20,12 @@ method should be used to connect to a server.  For example, the
 following calls all create instances that connect to the server at the
 same host and port:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 >>> h1 = httplib.HTTP('www.cwi.nl')
 >>> h2 = httplib.HTTP('www.cwi.nl:80')
 >>> h3 = httplib.HTTP('www.cwi.nl', 80)
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 Once an \code{HTTP} instance has been connected to an HTTP server, it
 should be used as follows:
 
@@ -111,7 +112,7 @@ methods.
 
 Here is an example session:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 >>> import httplib
 >>> h = httplib.HTTP('www.cwi.nl')
 >>> h.putrequest('GET', '/index.html')
@@ -124,4 +125,4 @@ Here is an example session:
 >>> data f.read() # Get the raw HTML
 >>> f.close()
 >>> 
-\end{verbatim}
+\end{verbatim}\ecode
