@@ -155,8 +155,10 @@ def rewrite_descriptor(doc, descriptor):
     #   2. Create a <signature> from the name attribute and <args>.
     #   3. Create additional <signature>s from <*line{,ni}> elements,
     #      if found.
-    #   4. Move remaining child nodes to a <description> element.
-    #   5. Put it back together.
+    #   4. If a <versionadded> is found, move it to an attribute on the
+    #      descriptor.
+    #   5. Move remaining child nodes to a <description> element.
+    #   6. Put it back together.
     #
     descname = descriptor.tagName
     index = 1
@@ -200,16 +202,21 @@ def rewrite_descriptor(doc, descriptor):
             signature.appendChild(doc.createTextNode("\n    "))
             signature.appendChild(args)
     signature.appendChild(doc.createTextNode("\n  "))
-    # 3.
+    # 3, 4.
     pos = skip_leading_nodes(children, pos + 1)
     while pos < len(children) \
           and children[pos].nodeType == xml.dom.core.ELEMENT \
-          and children[pos].tagName == linename:
-        # this is really a supplemental signature, create <signature>
-        sig = methodline_to_signature(doc, children[pos])
-        newchildren.append(sig)
+          and children[pos].tagName in (linename, "versionadded"):
+        if children[pos].tagName == linename:
+            # this is really a supplemental signature, create <signature>
+            sig = methodline_to_signature(doc, children[pos])
+            newchildren.append(sig)
+        else:
+            # <versionadded added=...>
+            descriptor.setAttribute(
+                "added", children[pos].getAttribute("version"))
         pos = skip_leading_nodes(children, pos + 1)
-    # 4.
+    # 5.
     description = doc.createElement("description")
     description.appendChild(doc.createTextNode("\n"))
     newchildren.append(description)
@@ -217,7 +224,7 @@ def rewrite_descriptor(doc, descriptor):
     last = description.childNodes[-1]
     if last.nodeType == xml.dom.core.TEXT:
         last.data = string.rstrip(last.data) + "\n  "
-    # 5.
+    # 6.
     # should have nothing but whitespace and signature lines in <descriptor>;
     # discard them
     while descriptor.childNodes:
@@ -408,6 +415,9 @@ def create_module_info(doc, section):
                 typenode = doc.createElement("type")
                 typenode.appendChild(doc.createTextNode(type))
                 modinfo.appendChild(typenode)
+        versionadded = extract_first_element(section, "versionadded")
+        if versionadded:
+            modinfo.setAttribute("added", versionadded.getAttribute("version"))
         title = get_first_element(section, "title")
         if title:
             children = title.childNodes
