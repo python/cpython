@@ -184,6 +184,17 @@ test(r"""sre.findall(r"(a)|(b)", "abc")""", [("a", ""), ("", "b")])
 # bug 117612
 test(r"""sre.findall(r"(a|(b))", "aba")""", [("a", ""),("b", "b"),("a", "")])
 
+if sys.hexversion >= 0x02020000:
+    if verbose:
+        print "Running tests on sre.finditer"
+    def fixup(seq):
+        # convert iterator to list
+        if not hasattr(seq, "next") or not hasattr(seq, "__iter__"):
+            print "finditer returned", type(seq)
+        return map(lambda item: item.group(0), seq)
+    # sanity
+    test(r"""fixup(sre.finditer(r":+", "a:b::c:::d"))""", [":", "::", ":::"])
+
 if verbose:
     print "Running tests on sre.match"
 
