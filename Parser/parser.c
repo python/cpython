@@ -44,7 +44,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "errcode.h"
 
 
-#ifdef DEBUG
+#ifdef Py_DEBUG
 extern int debugging;
 #define D(x) if (!debugging); else x
 #else
@@ -85,7 +85,7 @@ s_push(s, d, parent)
 	return 0;
 }
 
-#ifdef DEBUG
+#ifdef Py_DEBUG
 
 static void s_pop PROTO((stack *));
 
@@ -98,7 +98,7 @@ s_pop(s)
 	s->s_top++;
 }
 
-#else /* !DEBUG */
+#else /* !Py_DEBUG */
 
 #define s_pop(s) (s)->s_top++
 
@@ -309,7 +309,7 @@ addtoken(ps, type, str, lineno)
 }
 
 
-#ifdef DEBUG
+#ifdef Py_DEBUG
 
 /* DEBUG OUTPUT */
 
@@ -379,7 +379,7 @@ printtree(ps)
 	printf("\n");
 }
 
-#endif /* DEBUG */
+#endif /* Py_DEBUG */
 
 /*
 

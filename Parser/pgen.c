@@ -166,7 +166,7 @@ addnfa(gr, name)
 	return nf;
 }
 
-#ifdef DEBUG
+#ifdef Py_DEBUG
 
 static char REQNFMT[] = "metacompile: less than %d children\n";
 

@@ -171,7 +171,7 @@ translatelabels(g)
 {
 	int i;
 
-#ifdef DEBUG
+#ifdef Py_DEBUG
 	printf("Translating labels ...\n");
 #endif
 	/* Don't translate EMPTY */

@@ -736,7 +736,7 @@ tok_get(tok, p_start, p_end)
 }
 
 
-#ifdef DEBUG
+#ifdef Py_DEBUG
 
 void
 tok_dump(type, start, end)
