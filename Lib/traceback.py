@@ -6,8 +6,8 @@ import types
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
-           'format_tb', 'print_exc', 'print_exception', 'print_last',
-           'print_stack', 'print_tb', 'tb_lineno']
+           'format_tb', 'print_exc', 'format_exc', 'print_exception',
+           'print_last', 'print_stack', 'print_tb', 'tb_lineno']
 
 def _print(file, str='', terminator='\n'):
     file.write(str+terminator)
@@ -210,6 +210,16 @@ def print_exc(limit=None, file=None):
         print_exception(etype, value, tb, limit, file)
     finally:
         etype = value = tb = None
+
+
+def format_exc(limit=None):
+    """Like print_exc() but return a string."""
+    try:
+        etype, value, tb = sys.exc_info()
+        return ''.join(format_exception(etype, value, tb, limit))
+    finally:
+        etype = value = tb = None
+    
 
 def print_last(limit=None, file=None):
     """This is a shorthand for 'print_exception(sys.last_type,

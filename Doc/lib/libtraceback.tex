@@ -48,6 +48,11 @@ information in a thread-safe way instead of using the deprecated
 variables.)
 \end{funcdesc}
 
+\begin{funcdesc}{format_exc}{\optional{limit\optional{, file}}}
+This is like \code{print_exc(\var{limit})} but returns a string
+instead of printing to a file.
+\end{funcdesc}
+
 \begin{funcdesc}{print_last}{\optional{limit\optional{, file}}}
 This is a shorthand for \code{print_exception(sys.last_type,
 sys.last_value, sys.last_traceback, \var{limit}, \var{file})}.
