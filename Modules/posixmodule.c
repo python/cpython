@@ -1459,9 +1459,6 @@ posix_symlink(self, args)
 #ifndef HZ
 #define HZ 60 /* Universal constant :-) */
 #endif /* HZ */
-static char posix_times__doc__[] =
-"times() -> (utime, stime, cutime, cstime, elapsed_time)\n\
-Return a tuple of floating point numbers indicating process times.";
 	
 static PyObject *
 posix_times(self, args)
@@ -1506,6 +1503,9 @@ posix_times(self, args)
 		(double)0);
 }
 #endif /* MS_WIN32 */
+static char posix_times__doc__[] =
+"times() -> (utime, stime, cutime, cstime, elapsed_time)\n\
+Return a tuple of floating point numbers indicating process times.";
 
 
 #ifdef HAVE_SETSID
