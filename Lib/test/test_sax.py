@@ -111,8 +111,8 @@ def test_xmlgen_ns():
     
     gen.startDocument()
     gen.startPrefixMapping("ns1", ns_uri)
-    gen.startElementNS((ns_uri, "doc"), "ns:doc", {})
-    gen.endElementNS((ns_uri, "doc"), "ns:doc")
+    gen.startElementNS((ns_uri, "doc"), "ns1:doc", {})
+    gen.endElementNS((ns_uri, "doc"), "ns1:doc")
     gen.endPrefixMapping("ns1")
     gen.endDocument()
 
