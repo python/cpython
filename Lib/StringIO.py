@@ -48,8 +48,8 @@ class StringIO:
 		self.pos = max(0, pos)
 	def tell(self):
 		return self.pos
-	def read(self, n = 0):
-		if n <= 0:
+	def read(self, n = -1):
+		if n < 0:
 			newpos = len(self.buf)
 		else:
 			newpos = min(self.pos+n, len(self.buf))
