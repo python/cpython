@@ -54,10 +54,10 @@ for i in range(256):
         fillers = fillers + c
 def addnoise(line):
     noise = fillers
-    ratio = len(line) / len(noise)
+    ratio = len(line) // len(noise)
     res = ""
     while line and noise:
-        if len(line) / len(noise) > ratio:
+        if len(line) // len(noise) > ratio:
             c, line = line[0], line[1:]
         else:
             c, noise = noise[0], noise[1:]

@@ -128,7 +128,7 @@ class _Hqxcoderengine:
     def write(self, data):
         self.data = self.data + data
         datalen = len(self.data)
-        todo = (datalen/3)*3
+        todo = (datalen//3)*3
         data = self.data[:todo]
         self.data = self.data[todo:]
         if not data:
@@ -292,7 +292,7 @@ class _Hqxdecoderengine:
         # much to decode: there may be newlines in the incoming data.
         while wtd > 0:
             if self.eof: return decdata
-            wtd = ((wtd+2)/3)*4
+            wtd = ((wtd+2)//3)*4
             data = self.ifp.read(wtd)
             #
             # Next problem: there may not be a complete number of

@@ -76,7 +76,7 @@ def getran2(ndigits):
 
 def test_division_2(x, y):
     q, r = divmod(x, y)
-    q2, r2 = x/y, x%y
+    q2, r2 = x//y, x%y
     pab, pba = x*y, y*x
     check(pab == pba, "multiplication does not commute for", x, y)
     check(q == q2, "divmod returns different quotient than / for", x, y)
@@ -117,7 +117,7 @@ def test_bitop_identities_1(x):
     for n in range(2*SHIFT):
         p2 = 2L ** n
         check(x << n >> n == x, "x << n >> n != x for", x, n)
-        check(x / p2 == x >> n, "x / p2 != x >> n for x n p2", x, n, p2)
+        check(x // p2 == x >> n, "x // p2 != x >> n for x n p2", x, n, p2)
         check(x * p2 == x << n, "x * p2 != x << n for x n p2", x, n, p2)
         check(x & -p2 == x >> n << n == x & ~(p2 - 1),
             "not x & -p2 == x >> n << n == x & ~(p2 - 1) for x n p2",
@@ -161,7 +161,7 @@ def test_bitop_identities(maxdigits=MAXDIGITS):
         for leny in digits:
             y = getran(leny)
             test_bitop_identities_2(x, y)
-            test_bitop_identities_3(x, y, getran((lenx + leny)/2))
+            test_bitop_identities_3(x, y, getran((lenx + leny)//2))
 
 # ------------------------------------------------- hex oct repr str atol
 
@@ -296,8 +296,8 @@ def test_auto_overflow():
             checkit(x, '*', y)
 
             if y:
-                expected = longx / longy
-                got = x / y
+                expected = longx // longy
+                got = x // y
                 checkit(x, '/', y)
 
                 expected = longx // longy

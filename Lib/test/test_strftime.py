@@ -64,10 +64,10 @@ def strftest(now):
         ('%M', '%02d' % now[4], 'minute, (00-59)'),
         ('%p', ampm, 'AM or PM as appropriate'),
         ('%S', '%02d' % now[5], 'seconds of current time (00-60)'),
-        ('%U', '%02d' % ((now[7] + jan1[6])/7),
+        ('%U', '%02d' % ((now[7] + jan1[6])//7),
          'week number of the year (Sun 1st)'),
         ('%w', '0?%d' % ((1+now[6]) % 7), 'weekday as a number (Sun 1st)'),
-        ('%W', '%02d' % ((now[7] + (jan1[6] - 1)%7)/7),
+        ('%W', '%02d' % ((now[7] + (jan1[6] - 1)%7)//7),
          'week number of the year (Mon 1st)'),
         # %x see below
         ('%X', '%02d:%02d:%02d' % (now[3], now[4], now[5]), '%H:%M:%S'),

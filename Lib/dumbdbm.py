@@ -87,7 +87,7 @@ class _Database:
 ## Does not work under MW compiler
 ##              pos = ((pos + _BLOCKSIZE - 1) / _BLOCKSIZE) * _BLOCKSIZE
 ##              f.seek(pos)
-        npos = ((pos + _BLOCKSIZE - 1) / _BLOCKSIZE) * _BLOCKSIZE
+        npos = ((pos + _BLOCKSIZE - 1) // _BLOCKSIZE) * _BLOCKSIZE
         f.write('\0'*(npos-pos))
         pos = npos
 

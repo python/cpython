@@ -413,7 +413,7 @@ else:
 # Worked by accident in Windows release build, but failed in debug build.
 # Failed in all Linux builds.
 x = -1-sys.maxint
-if x >> 1 != x/2:
+if x >> 1 != x//2:
     raise TestFailed("x >> 1 != x/2 when x == -1-sys.maxint")
 
 print 'isinstance'

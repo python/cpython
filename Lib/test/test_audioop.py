@@ -116,8 +116,8 @@ def testlin2lin(data):
     # too simple: we test only the size
     for d1 in data:
         for d2 in data:
-            got = len(d1)/3
-            wtd = len(d2)/3
+            got = len(d1)//3
+            wtd = len(d2)//3
             if len(audioop.lin2lin(d1, got, wtd)) != len(d2):
                 return 0
     return 1

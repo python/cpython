@@ -65,7 +65,7 @@ class Repr:
     def repr_str(self, x, level):
         s = `x[:self.maxstring]`
         if len(s) > self.maxstring:
-            i = max(0, (self.maxstring-3)/2)
+            i = max(0, (self.maxstring-3)//2)
             j = max(0, self.maxstring-3-i)
             s = `x[:i] + x[len(x)-j:]`
             s = s[:i] + '...' + s[len(s)-j:]
@@ -73,7 +73,7 @@ class Repr:
     def repr_long(self, x, level):
         s = `x` # XXX Hope this isn't too slow...
         if len(s) > self.maxlong:
-            i = max(0, (self.maxlong-3)/2)
+            i = max(0, (self.maxlong-3)//2)
             j = max(0, self.maxlong-3-i)
             s = s[:i] + '...' + s[len(s)-j:]
         return s
@@ -86,7 +86,7 @@ class Repr:
             return '<' + x.__class__.__name__ + ' instance at ' + \
                       hex(id(x))[2:] + '>'
         if len(s) > self.maxstring:
-            i = max(0, (self.maxstring-3)/2)
+            i = max(0, (self.maxstring-3)//2)
             j = max(0, self.maxstring-3-i)
             s = s[:i] + '...' + s[len(s)-j:]
         return s

@@ -146,7 +146,7 @@ class Wave_read:
                 if not self._fmt_chunk_read:
                     raise Error, 'data chunk before fmt chunk'
                 self._data_chunk = chunk
-                self._nframes = chunk.chunksize / self._framesize
+                self._nframes = chunk.chunksize // self._framesize
                 self._data_seek_needed = 0
                 break
             chunk.skip()
@@ -248,7 +248,7 @@ class Wave_read:
             data = self._data_chunk.read(nframes * self._framesize)
         if self._convert and data:
             data = self._convert(data)
-        self._soundpos = self._soundpos + len(data) / (self._nchannels * self._sampwidth)
+        self._soundpos = self._soundpos + len(data) // (self._nchannels * self._sampwidth)
         return data
 
     #
@@ -259,7 +259,7 @@ class Wave_read:
         wFormatTag, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack('<hhllh', chunk.read(14))
         if wFormatTag == WAVE_FORMAT_PCM:
             sampwidth = struct.unpack('<h', chunk.read(2))[0]
-            self._sampwidth = (sampwidth + 7) / 8
+            self._sampwidth = (sampwidth + 7) // 8
         else:
             raise Error, 'unknown format: ' + `wFormatTag`
         self._framesize = self._nchannels * self._sampwidth
@@ -403,7 +403,7 @@ class Wave_write:
 
     def writeframesraw(self, data):
         self._ensure_header_written(len(data))
-        nframes = len(data) / (self._sampwidth * self._nchannels)
+        nframes = len(data) // (self._sampwidth * self._nchannels)
         if self._convert:
             data = self._convert(data)
         if self._sampwidth > 1 and big_endian:
