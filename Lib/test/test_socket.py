@@ -682,10 +682,65 @@ class SmallBufferedFileObjectClassTestCase(FileObjectClassTestCase):
 
     bufsize = 2 # Exercise the buffering code
 
+class TCPTimeoutTest(SocketTCPTest):
+
+    def testTCPTimeout(self):
+        def raise_timeout(*args, **kwargs):
+            self.serv.settimeout(1.0)
+            self.serv.accept()
+        self.failUnlessRaises(socket.timeout, raise_timeout,
+                              "Error generating a timeout exception (TCP)")
+
+    def testTimeoutZero(self):
+        ok = False
+        try:
+            self.serv.settimeout(0.0)
+            foo = self.serv.accept()
+        except socket.timeout:
+            self.fail("caught timeout instead of error (TCP)")
+        except socket.error:
+            ok = True
+        except:
+            self.fail("caught unexpected exception (TCP)")
+        if not ok:
+            self.fail("accept() returned success when we did not expect it")
+
+class UDPTimeoutTest(SocketTCPTest):
+
+    def testUDPTimeout(self):
+        def raise_timeout(*args, **kwargs):
+            self.serv.settimeout(1.0)
+            self.serv.recv(1024)
+        self.failUnlessRaises(socket.timeout, raise_timeout,
+                              "Error generating a timeout exception (UDP)")
+
+    def testTimeoutZero(self):
+        ok = False
+        try:
+            self.serv.settimeout(0.0)
+            foo = self.serv.recv(1024)
+        except socket.timeout:
+            self.fail("caught timeout instead of error (UDP)")
+        except socket.error:
+            ok = True
+        except:
+            self.fail("caught unexpected exception (UDP)")
+        if not ok:
+            self.fail("recv() returned success when we did not expect it")
+
+class TestExceptions(unittest.TestCase):
+
+    def testExceptionTree(self):
+        self.assert_(issubclass(socket.error, Exception))
+        self.assert_(issubclass(socket.herror, socket.error))
+        self.assert_(issubclass(socket.gaierror, socket.error))
+        self.assert_(issubclass(socket.timeout, socket.error))
+
+
 def test_main():
-    tests = [ GeneralModuleTests, BasicTCPTest ]
+    tests = [GeneralModuleTests, BasicTCPTest, TCPTimeoutTest, TestExceptions]
     if sys.platform != 'mac':
-        tests.append(BasicUDPTest)
+        tests.extend([ BasicUDPTest, UDPTimeoutTest ])
 
     tests.extend([
         NonBlockingTCPTests,
