@@ -1417,6 +1417,43 @@ merge_class_dict(PyObject* dict, PyObject* aclass)
 	return 0;
 }
 
+/* Helper for PyObject_Dir.
+   If obj has an attr named attrname that's a list, merge its string
+   elements into keys of dict.
+   Return 0 on success, -1 on error.  Errors due to not finding the attr,
+   or the attr not being a list, are suppressed.
+*/
+
+static int
+merge_list_attr(PyObject* dict, PyObject* obj, char *attrname)
+{
+	PyObject *list;
+	int result = 0;
+
+	assert(PyDict_Check(dict));
+	assert(obj);
+	assert(attrname);
+
+	list = PyObject_GetAttrString(obj, attrname);
+	if (list == NULL)
+		PyErr_Clear();
+
+	else if (PyList_Check(list)) {
+		int i;
+		for (i = 0; i < PyList_GET_SIZE(list); ++i) {
+			PyObject *item = PyList_GET_ITEM(list, i);
+			if (PyString_Check(item)) {
+				result = PyDict_SetItem(dict, item, Py_None);
+				if (result < 0)
+					break;
+			}
+		}
+	}
+
+	Py_XDECREF(list);
+	return result;
+}
+
 /* Like __builtin__.dir(arg).  See bltinmodule.c's builtin_dir for the
    docstring, which should be kept in synch with this implementation. */
 
@@ -1482,6 +1519,14 @@ PyObject_Dir(PyObject *arg)
 			masterdict = temp;
 		}
 		if (masterdict == NULL)
+			goto error;
+
+		/* Merge in __members__ and __methods__ (if any).
+		   XXX Would like this to go away someday; for now, it's
+		   XXX needed to get at im_self etc of method objects. */
+		if (merge_list_attr(masterdict, arg, "__members__") < 0)
+			goto error;
+		if (merge_list_attr(masterdict, arg, "__methods__") < 0)
 			goto error;
 
 		/* Merge in attrs reachable from its class.
