@@ -900,6 +900,33 @@ cl_SetMax(object *self, object *args)
 	return do_set(self, args, clSetMax);
 }
 
+#define func(name, type)	\
+		static object *cl_##name(object *self, object *args) \
+		{ \
+			int x; \
+			if (!getargs(args, "i", &x)) return NULL; \
+			return new##type##object(CL_##name(x)); \
+		}
+
+#define func2(name, type)	\
+		static object *cl_##name(object *self, object *args) \
+		{ \
+			int a1, a2; \
+			if (!getargs(args, "(ii)", &a1, &a2)) return NULL; \
+			return new##type##object(CL_##name(a1, a2)); \
+		}
+
+func(BytesPerSample,int)
+func(BytesPerPixel,int)
+func(AudioFormatName,string)
+func(VideoFormatName,string)
+func(AlgorithmNumber,int)
+func(AlgorithmType,int)
+func2(Algorithm,int)
+func(ParamNumber,int)
+func(ParamType,int)
+func2(ParamID,int)
+
 #ifdef CLDEBUG
 static object *
 cvt_type(object *self, object *args)
@@ -931,11 +958,25 @@ static struct methodlist cl_methods[] = {
 	{"SetDefault",		cl_SetDefault},
 	{"SetMax",		cl_SetMax},
 	{"SetMin",		cl_SetMin},
+	{"BytesPerSample",	cl_BytesPerSample},
+	{"BytesPerPixel",	cl_BytesPerPixel},
+	{"AudioFormatName",	cl_AudioFormatName},
+	{"VideoFormatName",	cl_VideoFormatName},
+	{"AlgorithmNumber",	cl_AlgorithmNumber},
+	{"AlgorithmType",	cl_AlgorithmType},
+	{"Algorithm",		cl_Algorithm},
+	{"ParamNumber",		cl_ParamNumber},
+	{"ParamType",		cl_ParamType},
+	{"ParamID",		cl_ParamID},
 #ifdef CLDEBUG
 	{"cvt_type",		cvt_type},
 #endif
 	{NULL,			NULL} /* Sentinel */
 };
+
+#ifdef CL_JPEG_SOFTWARE
+#define IRIX_5_3_LIBRARY
+#endif
 
 void
 initcl()
@@ -946,8 +987,296 @@ initcl()
 	d = getmoduledict(m);
 
 	ClError = newstringobject("cl.error");
-	if (ClError == NULL || dictinsert(d, "error", ClError) != 0)
-		fatal("can't define cl.error");
+	(void) dictinsert(d, "error", ClError);
+
+	(void) dictinsert(d, "MAX_NUMBER_OF_ORIGINAL_FORMATS",
+			  newintobject(CL_MAX_NUMBER_OF_ORIGINAL_FORMATS));
+	(void) dictinsert(d, "MONO", newintobject(CL_MONO));
+	(void) dictinsert(d, "STEREO_INTERLEAVED",
+			  newintobject(CL_STEREO_INTERLEAVED));
+	(void) dictinsert(d, "RGB", newintobject(CL_RGB));
+	(void) dictinsert(d, "RGBX", newintobject(CL_RGBX));
+	(void) dictinsert(d, "RGBA", newintobject(CL_RGBA));
+	(void) dictinsert(d, "RGB332", newintobject(CL_RGB332));
+	(void) dictinsert(d, "GRAYSCALE", newintobject(CL_GRAYSCALE));
+	(void) dictinsert(d, "Y", newintobject(CL_Y));
+	(void) dictinsert(d, "YUV", newintobject(CL_YUV));
+	(void) dictinsert(d, "YCbCr", newintobject(CL_YCbCr));
+	(void) dictinsert(d, "YUV422", newintobject(CL_YUV422));
+	(void) dictinsert(d, "YCbCr422", newintobject(CL_YCbCr422));
+	(void) dictinsert(d, "YUV422HC", newintobject(CL_YUV422HC));
+	(void) dictinsert(d, "YCbCr422HC", newintobject(CL_YCbCr422HC));
+	(void) dictinsert(d, "YUV422DC", newintobject(CL_YUV422DC));
+	(void) dictinsert(d, "YCbCr422DC", newintobject(CL_YCbCr422DC));
+	(void) dictinsert(d, "RGB8", newintobject(CL_RGB8));
+	(void) dictinsert(d, "BEST_FIT", newintobject(CL_BEST_FIT));
+	(void) dictinsert(d, "MAX_NUMBER_OF_AUDIO_ALGORITHMS",
+			  newintobject(CL_MAX_NUMBER_OF_AUDIO_ALGORITHMS));
+	(void) dictinsert(d, "MAX_NUMBER_OF_VIDEO_ALGORITHMS",
+			  newintobject(CL_MAX_NUMBER_OF_VIDEO_ALGORITHMS));
+	(void) dictinsert(d, "AUDIO", newintobject(CL_AUDIO));
+	(void) dictinsert(d, "VIDEO", newintobject(CL_VIDEO));
+	(void) dictinsert(d, "UNKNOWN_SCHEME",
+			  newintobject(CL_UNKNOWN_SCHEME));
+	(void) dictinsert(d, "UNCOMPRESSED_AUDIO",
+			  newintobject(CL_UNCOMPRESSED_AUDIO));
+	(void) dictinsert(d, "G711_ULAW", newintobject(CL_G711_ULAW));
+	(void) dictinsert(d, "ULAW", newintobject(CL_ULAW));
+	(void) dictinsert(d, "G711_ALAW", newintobject(CL_G711_ALAW));
+	(void) dictinsert(d, "ALAW", newintobject(CL_ALAW));
+	(void) dictinsert(d, "AWARE_MPEG_AUDIO",
+			  newintobject(CL_AWARE_MPEG_AUDIO));
+	(void) dictinsert(d, "AWARE_MULTIRATE",
+			  newintobject(CL_AWARE_MULTIRATE));
+	(void) dictinsert(d, "UNCOMPRESSED", newintobject(CL_UNCOMPRESSED));
+	(void) dictinsert(d, "UNCOMPRESSED_VIDEO",
+			  newintobject(CL_UNCOMPRESSED_VIDEO));
+	(void) dictinsert(d, "RLE", newintobject(CL_RLE));
+	(void) dictinsert(d, "JPEG", newintobject(CL_JPEG));
+#ifdef IRIX_5_3_LIBRARY
+	(void) dictinsert(d, "JPEG_SOFTWARE", newintobject(CL_JPEG_SOFTWARE));
+#endif
+	(void) dictinsert(d, "MPEG_VIDEO", newintobject(CL_MPEG_VIDEO));
+	(void) dictinsert(d, "MVC1", newintobject(CL_MVC1));
+	(void) dictinsert(d, "RTR", newintobject(CL_RTR));
+	(void) dictinsert(d, "RTR1", newintobject(CL_RTR1));
+	(void) dictinsert(d, "HDCC", newintobject(CL_HDCC));
+	(void) dictinsert(d, "MVC2", newintobject(CL_MVC2));
+	(void) dictinsert(d, "RLE24", newintobject(CL_RLE24));
+	(void) dictinsert(d, "MAX_NUMBER_OF_PARAMS",
+			  newintobject(CL_MAX_NUMBER_OF_PARAMS));
+	(void) dictinsert(d, "IMAGE_WIDTH", newintobject(CL_IMAGE_WIDTH));
+	(void) dictinsert(d, "IMAGE_HEIGHT", newintobject(CL_IMAGE_HEIGHT));
+	(void) dictinsert(d, "ORIGINAL_FORMAT",
+			  newintobject(CL_ORIGINAL_FORMAT));
+	(void) dictinsert(d, "INTERNAL_FORMAT",
+			  newintobject(CL_INTERNAL_FORMAT));
+	(void) dictinsert(d, "COMPONENTS", newintobject(CL_COMPONENTS));
+	(void) dictinsert(d, "BITS_PER_COMPONENT",
+			  newintobject(CL_BITS_PER_COMPONENT));
+	(void) dictinsert(d, "FRAME_RATE", newintobject(CL_FRAME_RATE));
+	(void) dictinsert(d, "COMPRESSION_RATIO",
+			  newintobject(CL_COMPRESSION_RATIO));
+	(void) dictinsert(d, "EXACT_COMPRESSION_RATIO",
+			  newintobject(CL_EXACT_COMPRESSION_RATIO));
+	(void) dictinsert(d, "FRAME_BUFFER_SIZE",
+			  newintobject(CL_FRAME_BUFFER_SIZE));
+	(void) dictinsert(d, "COMPRESSED_BUFFER_SIZE",
+			  newintobject(CL_COMPRESSED_BUFFER_SIZE));
+	(void) dictinsert(d, "BLOCK_SIZE", newintobject(CL_BLOCK_SIZE));
+	(void) dictinsert(d, "PREROLL", newintobject(CL_PREROLL));
+	(void) dictinsert(d, "FRAME_TYPE", newintobject(CL_FRAME_TYPE));
+	(void) dictinsert(d, "ALGORITHM_ID", newintobject(CL_ALGORITHM_ID));
+	(void) dictinsert(d, "ALGORITHM_VERSION",
+			  newintobject(CL_ALGORITHM_VERSION));
+	(void) dictinsert(d, "ORIENTATION", newintobject(CL_ORIENTATION));
+	(void) dictinsert(d, "NUMBER_OF_FRAMES",
+			  newintobject(CL_NUMBER_OF_FRAMES));
+	(void) dictinsert(d, "SPEED", newintobject(CL_SPEED));
+	(void) dictinsert(d, "LAST_FRAME_INDEX",
+			  newintobject(CL_LAST_FRAME_INDEX));
+#ifdef IRIX_5_3_LIBRARY
+	(void) dictinsert(d, "ENABLE_IMAGEINFO",
+			  newintobject(CL_ENABLE_IMAGEINFO));
+	(void) dictinsert(d, "INTERNAL_IMAGE_WIDTH",
+			  newintobject(CL_INTERNAL_IMAGE_WIDTH));
+	(void) dictinsert(d, "INTERNAL_IMAGE_HEIGHT",
+			  newintobject(CL_INTERNAL_IMAGE_HEIGHT));
+#endif
+	(void) dictinsert(d, "NUMBER_OF_PARAMS",
+			  newintobject(CL_NUMBER_OF_PARAMS));
+#ifdef IRIX_5_3_LIBRARY
+	(void) dictinsert(d, "MVC2_LUMA_THRESHOLD",
+			  newintobject(CL_MVC2_LUMA_THRESHOLD));
+	(void) dictinsert(d, "MVC2_CHROMA_THRESHOLD",
+			  newintobject(CL_MVC2_CHROMA_THRESHOLD));
+	(void) dictinsert(d, "MVC2_EDGE_THRESHOLD",
+			  newintobject(CL_MVC2_EDGE_THRESHOLD));
+	(void) dictinsert(d, "MVC2_BLENDING", newintobject(CL_MVC2_BLENDING));
+	(void) dictinsert(d, "MVC2_BLENDING_OFF",
+			  newintobject(CL_MVC2_BLENDING_OFF));
+	(void) dictinsert(d, "MVC2_BLENDING_ON",
+			  newintobject(CL_MVC2_BLENDING_ON));
+	(void) dictinsert(d, "JPEG_QUALITY_FACTOR",
+			  newintobject(CL_JPEG_QUALITY_FACTOR));
+	(void) dictinsert(d, "JPEG_STREAM_HEADERS",
+			  newintobject(CL_JPEG_STREAM_HEADERS));
+	(void) dictinsert(d, "JPEG_QUANTIZATION_TABLES",
+			  newintobject(CL_JPEG_QUANTIZATION_TABLES));
+	(void) dictinsert(d, "JPEG_NUM_PARAMS",
+			  newintobject(CL_JPEG_NUM_PARAMS));
+	(void) dictinsert(d, "RTR_QUALITY_LEVEL",
+			  newintobject(CL_RTR_QUALITY_LEVEL));
+	(void) dictinsert(d, "HDCC_TILE_THRESHOLD",
+			  newintobject(CL_HDCC_TILE_THRESHOLD));
+	(void) dictinsert(d, "HDCC_SAMPLES_PER_TILE",
+			  newintobject(CL_HDCC_SAMPLES_PER_TILE));
+#endif
+	(void) dictinsert(d, "END_OF_SEQUENCE",
+			  newintobject(CL_END_OF_SEQUENCE));
+	(void) dictinsert(d, "CHANNEL_POLICY",
+			  newintobject(CL_CHANNEL_POLICY));
+	(void) dictinsert(d, "NOISE_MARGIN", newintobject(CL_NOISE_MARGIN));
+	(void) dictinsert(d, "BITRATE_POLICY",
+			  newintobject(CL_BITRATE_POLICY));
+	(void) dictinsert(d, "BITRATE_TARGET",
+			  newintobject(CL_BITRATE_TARGET));
+	(void) dictinsert(d, "LAYER", newintobject(CL_LAYER));
+	(void) dictinsert(d, "ENUM_VALUE", newintobject(CL_ENUM_VALUE));
+	(void) dictinsert(d, "RANGE_VALUE", newintobject(CL_RANGE_VALUE));
+	(void) dictinsert(d, "FLOATING_ENUM_VALUE",
+			  newintobject(CL_FLOATING_ENUM_VALUE));
+	(void) dictinsert(d, "FLOATING_RANGE_VALUE",
+			  newintobject(CL_FLOATING_RANGE_VALUE));
+	(void) dictinsert(d, "DECOMPRESSOR", newintobject(CL_DECOMPRESSOR));
+	(void) dictinsert(d, "COMPRESSOR", newintobject(CL_COMPRESSOR));
+	(void) dictinsert(d, "CODEC", newintobject(CL_CODEC));
+	(void) dictinsert(d, "NONE", newintobject(CL_NONE));
+#ifdef IRIX_5_3_LIBRARY
+	(void) dictinsert(d, "BUF_FRAME", newintobject(CL_BUF_FRAME));
+	(void) dictinsert(d, "BUF_DATA", newintobject(CL_BUF_DATA));
+#endif
+#ifdef CL_FRAME
+	(void) dictinsert(d, "FRAME", newintobject(CL_FRAME));
+	(void) dictinsert(d, "DATA", newintobject(CL_DATA));
+#endif
+	(void) dictinsert(d, "NONE", newintobject(CL_NONE));
+	(void) dictinsert(d, "KEYFRAME", newintobject(CL_KEYFRAME));
+	(void) dictinsert(d, "INTRA", newintobject(CL_INTRA));
+	(void) dictinsert(d, "PREDICTED", newintobject(CL_PREDICTED));
+	(void) dictinsert(d, "BIDIRECTIONAL", newintobject(CL_BIDIRECTIONAL));
+	(void) dictinsert(d, "TOP_DOWN", newintobject(CL_TOP_DOWN));
+	(void) dictinsert(d, "BOTTOM_UP", newintobject(CL_BOTTOM_UP));
+#ifdef IRIX_5_3_LIBRARY
+	(void) dictinsert(d, "CONTINUOUS_BLOCK",
+			  newintobject(CL_CONTINUOUS_BLOCK));
+	(void) dictinsert(d, "CONTINUOUS_NONBLOCK",
+			  newintobject(CL_CONTINUOUS_NONBLOCK));
+	(void) dictinsert(d, "EXTERNAL_DEVICE",
+			  newintobject((long)CL_EXTERNAL_DEVICE));
+#endif
+	(void) dictinsert(d, "AWCMP_STEREO", newintobject(AWCMP_STEREO));
+	(void) dictinsert(d, "AWCMP_JOINT_STEREO",
+			  newintobject(AWCMP_JOINT_STEREO));
+	(void) dictinsert(d, "AWCMP_INDEPENDENT",
+			  newintobject(AWCMP_INDEPENDENT));
+	(void) dictinsert(d, "AWCMP_FIXED_RATE",
+			  newintobject(AWCMP_FIXED_RATE));
+	(void) dictinsert(d, "AWCMP_CONST_QUAL",
+			  newintobject(AWCMP_CONST_QUAL));
+	(void) dictinsert(d, "AWCMP_LOSSLESS", newintobject(AWCMP_LOSSLESS));
+	(void) dictinsert(d, "AWCMP_MPEG_LAYER_I",
+			  newintobject(AWCMP_MPEG_LAYER_I));
+	(void) dictinsert(d, "AWCMP_MPEG_LAYER_II",
+			  newintobject(AWCMP_MPEG_LAYER_II));
+	(void) dictinsert(d, "HEADER_START_CODE",
+			  newintobject(CL_HEADER_START_CODE));
+	(void) dictinsert(d, "BAD_NO_BUFFERSPACE",
+			  newintobject(CL_BAD_NO_BUFFERSPACE));
+	(void) dictinsert(d, "BAD_PVBUFFER", newintobject(CL_BAD_PVBUFFER));
+	(void) dictinsert(d, "BAD_BUFFERLENGTH_NEG",
+			  newintobject(CL_BAD_BUFFERLENGTH_NEG));
+	(void) dictinsert(d, "BAD_BUFFERLENGTH_ODD",
+			  newintobject(CL_BAD_BUFFERLENGTH_ODD));
+	(void) dictinsert(d, "BAD_PARAM", newintobject(CL_BAD_PARAM));
+	(void) dictinsert(d, "BAD_COMPRESSION_SCHEME",
+			  newintobject(CL_BAD_COMPRESSION_SCHEME));
+	(void) dictinsert(d, "BAD_COMPRESSOR_HANDLE",
+			  newintobject(CL_BAD_COMPRESSOR_HANDLE));
+	(void) dictinsert(d, "BAD_COMPRESSOR_HANDLE_POINTER",
+			  newintobject(CL_BAD_COMPRESSOR_HANDLE_POINTER));
+	(void) dictinsert(d, "BAD_BUFFER_HANDLE",
+			  newintobject(CL_BAD_BUFFER_HANDLE));
+	(void) dictinsert(d, "BAD_BUFFER_QUERY_SIZE",
+			  newintobject(CL_BAD_BUFFER_QUERY_SIZE));
+	(void) dictinsert(d, "JPEG_ERROR", newintobject(CL_JPEG_ERROR));
+	(void) dictinsert(d, "BAD_FRAME_SIZE",
+			  newintobject(CL_BAD_FRAME_SIZE));
+	(void) dictinsert(d, "PARAM_OUT_OF_RANGE",
+			  newintobject(CL_PARAM_OUT_OF_RANGE));
+	(void) dictinsert(d, "ADDED_ALGORITHM_ERROR",
+			  newintobject(CL_ADDED_ALGORITHM_ERROR));
+	(void) dictinsert(d, "BAD_ALGORITHM_TYPE",
+			  newintobject(CL_BAD_ALGORITHM_TYPE));
+	(void) dictinsert(d, "BAD_ALGORITHM_NAME",
+			  newintobject(CL_BAD_ALGORITHM_NAME));
+	(void) dictinsert(d, "BAD_BUFFERING", newintobject(CL_BAD_BUFFERING));
+	(void) dictinsert(d, "BUFFER_NOT_CREATED",
+			  newintobject(CL_BUFFER_NOT_CREATED));
+	(void) dictinsert(d, "BAD_BUFFER_EXISTS",
+			  newintobject(CL_BAD_BUFFER_EXISTS));
+	(void) dictinsert(d, "BAD_INTERNAL_FORMAT",
+			  newintobject(CL_BAD_INTERNAL_FORMAT));
+	(void) dictinsert(d, "BAD_BUFFER_POINTER",
+			  newintobject(CL_BAD_BUFFER_POINTER));
+	(void) dictinsert(d, "FRAME_BUFFER_SIZE_ZERO",
+			  newintobject(CL_FRAME_BUFFER_SIZE_ZERO));
+	(void) dictinsert(d, "BAD_STREAM_HEADER",
+			  newintobject(CL_BAD_STREAM_HEADER));
+	(void) dictinsert(d, "BAD_LICENSE", newintobject(CL_BAD_LICENSE));
+	(void) dictinsert(d, "AWARE_ERROR", newintobject(CL_AWARE_ERROR));
+	(void) dictinsert(d, "BAD_BUFFER_SIZE_POINTER",
+			  newintobject(CL_BAD_BUFFER_SIZE_POINTER));
+	(void) dictinsert(d, "BAD_BUFFER_SIZE",
+			  newintobject(CL_BAD_BUFFER_SIZE));
+	(void) dictinsert(d, "BAD_BUFFER_TYPE",
+			  newintobject(CL_BAD_BUFFER_TYPE));
+	(void) dictinsert(d, "BAD_HEADER_SIZE",
+			  newintobject(CL_BAD_HEADER_SIZE));
+	(void) dictinsert(d, "BAD_FUNCTION_POINTER",
+			  newintobject(CL_BAD_FUNCTION_POINTER));
+	(void) dictinsert(d, "BAD_SCHEME_POINTER",
+			  newintobject(CL_BAD_SCHEME_POINTER));
+	(void) dictinsert(d, "BAD_STRING_POINTER",
+			  newintobject(CL_BAD_STRING_POINTER));
+	(void) dictinsert(d, "BAD_MIN_GT_MAX",
+			  newintobject(CL_BAD_MIN_GT_MAX));
+	(void) dictinsert(d, "BAD_INITIAL_VALUE",
+			  newintobject(CL_BAD_INITIAL_VALUE));
+	(void) dictinsert(d, "BAD_PARAM_ID_POINTER",
+			  newintobject(CL_BAD_PARAM_ID_POINTER));
+	(void) dictinsert(d, "BAD_PARAM_TYPE",
+			  newintobject(CL_BAD_PARAM_TYPE));
+	(void) dictinsert(d, "BAD_TEXT_STRING_PTR",
+			  newintobject(CL_BAD_TEXT_STRING_PTR));
+	(void) dictinsert(d, "BAD_FUNCTIONALITY",
+			  newintobject(CL_BAD_FUNCTIONALITY));
+	(void) dictinsert(d, "BAD_NUMBER_OF_BLOCKS",
+			  newintobject(CL_BAD_NUMBER_OF_BLOCKS));
+	(void) dictinsert(d, "BAD_BLOCK_SIZE",
+			  newintobject(CL_BAD_BLOCK_SIZE));
+	(void) dictinsert(d, "BAD_POINTER", newintobject(CL_BAD_POINTER));
+	(void) dictinsert(d, "BAD_BOARD", newintobject(CL_BAD_BOARD));
+	(void) dictinsert(d, "MVC2_ERROR", newintobject(CL_MVC2_ERROR));
+#ifdef IRIX_5_3_LIBRARY
+	(void) dictinsert(d, "NEXT_NOT_AVAILABLE",
+			  newintobject(CL_NEXT_NOT_AVAILABLE));
+	(void) dictinsert(d, "SCHEME_BUSY", newintobject(CL_SCHEME_BUSY));
+	(void) dictinsert(d, "SCHEME_NOT_AVAILABLE",
+			  newintobject(CL_SCHEME_NOT_AVAILABLE));
+#endif
+#ifdef CL_LUMA_THRESHOLD
+	/* backward compatibility */
+	(void) dictinsert(d, "LUMA_THRESHOLD",
+			  newintobject(CL_LUMA_THRESHOLD));
+	(void) dictinsert(d, "CHROMA_THRESHOLD",
+			  newintobject(CL_CHROMA_THRESHOLD));
+	(void) dictinsert(d, "EDGE_THRESHOLD",
+			  newintobject(CL_EDGE_THRESHOLD));
+	(void) dictinsert(d, "BLENDING", newintobject(CL_BLENDING));
+	(void) dictinsert(d, "QUALITY_FACTOR",
+			  newintobject(CL_QUALITY_FACTOR));
+	(void) dictinsert(d, "STREAM_HEADERS",
+			  newintobject(CL_STREAM_HEADERS));
+	(void) dictinsert(d, "QUALITY_LEVEL", newintobject(CL_QUALITY_LEVEL));
+	(void) dictinsert(d, "TILE_THRESHOLD",
+			  newintobject(CL_TILE_THRESHOLD));
+	(void) dictinsert(d, "SAMPLES_PER_TILE",
+			  newintobject(CL_SAMPLES_PER_TILE));
+#endif
+
+	if (err_occurred())
+		fatal("can't initialize module cl");
 
 	(void) clSetErrorHandler(cl_ErrorHandler);
 }
