@@ -485,7 +485,6 @@ complex_new(self, args)
 	object *self;
 	object *args;
 {
-	int n;
 	complex cval;
 
 	cval.imag = 0.;
