@@ -19,7 +19,7 @@ holds (such as object references or memory allocations); it should
 \emph{not} continue normally if it is not prepared to handle the
 error.  If returning due to an error, it is important to indicate to
 the caller that an error has been set.  If the error is not handled or
-carefully propogated, additional calls into the Python/C API may not
+carefully propagated, additional calls into the Python/C API may not
 behave as intended and may fail in mysterious ways.
 
 The error indicator consists of three Python objects corresponding to
