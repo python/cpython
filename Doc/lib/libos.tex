@@ -87,6 +87,7 @@ doesn't have a \code{'PATH'} key.
 
 \begin{funcdesc}{makedirs}{path\optional{, mode}}
 \versionadded{1.5.2}
+\index{directory!creating}
 Recursive directory creation function.  Like \function{mkdir()},
 but makes all intermediate-level directories needed to contain the
 leaf directory.  Throws an \exception{os.error} exception if the leaf
@@ -96,6 +97,7 @@ is \code{0777} (octal).
 
 \begin{funcdesc}{removedirs}{path}
 \versionadded{1.5.2}
+\index{directory!deleting}
 Recursive directory removal function.  Works like
 \function{rmdir()} except that, if the leaf directory is
 successfully removed, directories corresponding to rightmost path
