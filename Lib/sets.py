@@ -471,13 +471,9 @@ class _TemporarilyImmutableSet(BaseSet):
     # Wrap a mutable set as if it was temporarily immutable.
     # This only supplies hashing and equality comparisons.
 
-    _hashcode = None
-
     def __init__(self, set):
         self._set = set
         self._data = set._data  # Needed by ImmutableSet.__eq__()
 
     def __hash__(self):
-        if self._hashcode is None:
-            self._hashcode = self._set._compute_hash()
-        return self._hashcode
+        return self._set._compute_hash()
