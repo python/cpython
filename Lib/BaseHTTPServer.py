@@ -467,7 +467,7 @@ def test(HandlerClass = BaseHTTPRequestHandler,
     """
 
     if sys.argv[1:]:
-        port = sys.argv[1].atoi()
+        port = int(sys.argv[1])
     else:
         port = 8000
     server_address = ('', port)
