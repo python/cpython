@@ -3239,9 +3239,9 @@ slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds)
 
    - slot_tp_getattr_hook() is used when a __getattr__ hook is present.
 
-   The code in update_slot() and fixup_slot_dispatchers() always installs
-   slot_tp_getattr_hook(); this detects the absence of __getattr__ and then
-   installs the simpler slot if necessary. */
+   The code in update_one_slot() always installs slot_tp_getattr_hook(); this
+   detects the absence of __getattr__ and then installs the simpler slot if
+   necessary. */
 
 static PyObject *
 slot_tp_getattro(PyObject *self, PyObject *name)
@@ -3492,7 +3492,9 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
    incorporates the additional structures used for numbers, sequences and
    mappings.  Note that multiple names may map to the same slot (e.g. __eq__,
    __ne__ etc. all map to tp_richcompare) and one name may map to multiple
-   slots (e.g. __str__ affects tp_str as well as tp_repr). */
+   slots (e.g. __str__ affects tp_str as well as tp_repr). The table is
+   terminated with an all-zero entry.  (This table is further initialized and
+   sorted in init_slotdefs() below.) */
 
 typedef struct wrapperbase slotdef;
 
@@ -3713,6 +3715,11 @@ static slotdef slotdefs[] = {
 	{NULL}
 };
 
+/* Given a type pointer and an offset gotten from a slotdef entry, return a
+   pointer to the actual slot.  This is not quite the same as simply adding
+   the offset to the type pointer, since it takes care to indirect through the
+   proper indirection pointer (as_buffer, etc.); it returns NULL if the
+   indirection pointer is NULL. */
 static void **
 slotptr(PyTypeObject *type, int offset)
 {
@@ -3740,51 +3747,120 @@ slotptr(PyTypeObject *type, int offset)
 	return (void **)ptr;
 }
 
+/* Length of array of slotdef pointers used to store slots with the
+   same __name__.  There should be at most MAX_EQUIV-1 slotdef entries with
+   the same __name__, for any __name__. Since that's a static property, it is
+   appropriate to declare fixed-size arrays for this. */
+#define MAX_EQUIV 10
+
+/* Return a slot pointer for a given name, but ONLY if the attribute has
+   exactly one slot function.  The name must be an interned string. */
+static void **
+resolve_slotdups(PyTypeObject *type, PyObject *name)
+{
+	/* XXX Maybe this could be optimized more -- but is it worth it? */
+
+	/* pname and ptrs act as a little cache */
+	static PyObject *pname;
+	static slotdef *ptrs[MAX_EQUIV];
+	slotdef *p, **pp;
+	void **res, **ptr;
+
+	if (pname != name) {
+		/* Collect all slotdefs that match name into ptrs. */
+		pname = name;
+		pp = ptrs;
+		for (p = slotdefs; p->name_strobj; p++) {
+			if (p->name_strobj == name)
+				*pp++ = p;
+		}
+		*pp = NULL;
+	}
+
+	/* Look in all matching slots of the type; if exactly one of these has
+	   a filled-in slot, return its value.  Otherwise return NULL. */
+	res = NULL;
+	for (pp = ptrs; *pp; pp++) {
+		ptr = slotptr(type, (*pp)->offset);
+		if (ptr == NULL || *ptr == NULL)
+			continue;
+		if (res != NULL)
+			return NULL;
+		res = ptr;
+	}
+	return res;
+}
+
+/* Common code for update_these_slots() and fixup_slot_dispatchers().  This
+   does some incredibly complex thinking and then sticks something into the
+   slot.  (It sees if the adjacent slotdefs for the same slot have conflicting
+   interests, and then stores a generic wrapper or a specific function into
+   the slot.)  Return a pointer to the next slotdef with a different offset,
+   because that's convenient  for fixup_slot_dispatchers(). */
+static slotdef *
+update_one_slot(PyTypeObject *type, slotdef *p)
+{
+	PyObject *descr;
+	PyWrapperDescrObject *d;
+	void *generic = NULL, *specific = NULL;
+	int use_generic = 0;
+	int offset = p->offset;
+	void **ptr = slotptr(type, offset);
+
+	if (ptr == NULL) {
+		do {
+			++p;
+		} while (p->offset == offset);
+		return p;
+	}
+	do {
+		descr = _PyType_Lookup(type, p->name_strobj);
+		if (descr == NULL)
+			continue;
+		if (descr->ob_type == &PyWrapperDescr_Type) {
+			void **tptr = resolve_slotdups(type, p->name_strobj);
+			if (tptr == NULL || tptr == ptr)
+				generic = p->function;
+			d = (PyWrapperDescrObject *)descr;
+			if (d->d_base->wrapper == p->wrapper &&
+			    PyType_IsSubtype(type, d->d_type))
+			{
+				if (specific == NULL ||
+				    specific == d->d_wrapped)
+					specific = d->d_wrapped;
+				else
+					use_generic = 1;
+			}
+		}
+		else {
+			use_generic = 1;
+			generic = p->function;
+		}
+	} while ((++p)->offset == offset);
+	if (specific && !use_generic)
+		*ptr = specific;
+	else
+		*ptr = generic;
+	return p;
+}
+
 staticforward int recurse_down_subclasses(PyTypeObject *type,
 					  slotdef **pp, PyObject *name);
 
+/* In the type, update the slots whose slotdefs are gathered in the pp0 array,
+   and then do the same for all this type's subtypes. */
 static int
 update_these_slots(PyTypeObject *type, slotdef **pp0, PyObject *name)
 {
 	slotdef **pp;
 
-	for (pp = pp0; *pp; pp++) {
-		slotdef *p = *pp;
-		PyObject *descr;
-		PyWrapperDescrObject *d;
-		void *generic = NULL, *specific = NULL;
-		int use_generic = 0;
-		int offset = p->offset;
-		void **ptr = slotptr(type, offset);
-		if (ptr == NULL)
-			continue;
-		do {
-			descr = _PyType_Lookup(type, p->name_strobj);
-			if (descr == NULL)
-				continue;
-			generic = p->function;
-			if (descr->ob_type == &PyWrapperDescr_Type) {
-				d = (PyWrapperDescrObject *)descr;
-				if (d->d_base->wrapper == p->wrapper &&
-				    PyType_IsSubtype(type, d->d_type)) {
-					if (specific == NULL ||
-					    specific == d->d_wrapped)
-						specific = d->d_wrapped;
-					else
-						use_generic = 1;
-				}
-			}
-			else
-				use_generic = 1;
-		} while ((++p)->offset == offset);
-		if (specific && !use_generic)
-			*ptr = specific;
-		else
-			*ptr = generic;
-	}
+	for (pp = pp0; *pp; pp++)
+		update_one_slot(type, *pp);
 	return recurse_down_subclasses(type, pp0, name);
 }
 
+/* Update the slots whose slotdefs are gathered in the pp array in all (direct
+   or indirect) subclasses of type. */
 static int
 recurse_down_subclasses(PyTypeObject *type, slotdef **pp, PyObject *name)
 {
@@ -3815,6 +3891,8 @@ recurse_down_subclasses(PyTypeObject *type, slotdef **pp, PyObject *name)
 	return 0;
 }
 
+/* Comparison function for qsort() to compare slotdefs by their offset, and
+   for equal offset by their address (to force a stable sort). */
 static int
 slotdef_cmp(const void *aa, const void *bb)
 {
@@ -3826,6 +3904,8 @@ slotdef_cmp(const void *aa, const void *bb)
 		return a - b;
 }
 
+/* Initialize the slotdefs table by adding interned string objects for the
+   names and sorting the entries. */
 static void
 init_slotdefs(void)
 {
@@ -3837,17 +3917,18 @@ init_slotdefs(void)
 	for (p = slotdefs; p->name; p++) {
 		p->name_strobj = PyString_InternFromString(p->name);
 		if (!p->name_strobj)
-			Py_FatalError("XXX ouch");
+			Py_FatalError("Out of memory interning slotdef names");
 	}
 	qsort((void *)slotdefs, (size_t)(p-slotdefs), sizeof(slotdef),
 	      slotdef_cmp);
 	initialized = 1;
 }
 
+/* Update the slots after assignment to a class (type) attribute. */
 static int
 update_slot(PyTypeObject *type, PyObject *name)
 {
-	slotdef *ptrs[10];
+	slotdef *ptrs[MAX_EQUIV];
 	slotdef *p;
 	slotdef **pp;
 	int offset;
@@ -3867,74 +3948,22 @@ update_slot(PyTypeObject *type, PyObject *name)
 			--p;
 		*pp = p;
 	}
+	if (ptrs[0] == NULL)
+		return 0; /* Not an attribute that affects any slots */
 	return update_these_slots(type, ptrs, name);
 }
 
+/* Store the proper functions in the slot dispatches at class (type)
+   definition time, based upon which operations the class overrides in its
+   dict. */
 static void
 fixup_slot_dispatchers(PyTypeObject *type)
 {
 	slotdef *p;
-	PyObject *mro, *descr;
-	PyWrapperDescrObject *d;
-	int i, n, offset;
-	void **ptr;
-	void *generic, *specific;
-	int use_generic;
 
 	init_slotdefs();
-	mro = type->tp_mro;
-	assert(PyTuple_Check(mro));
-	n = PyTuple_GET_SIZE(mro);
-	for (p = slotdefs; p->name; ) {
-		offset = p->offset;
-		ptr = slotptr(type, offset);
-		if (!ptr) {
-			do {
-				++p;
-			} while (p->offset == offset);
-			continue;
-		}
-		generic = specific = NULL;
-		use_generic = 0;
-		do {
-			descr = NULL;
-			for (i = 0; i < n; i++) {
-				PyObject *b = PyTuple_GET_ITEM(mro, i);
-				PyObject *dict = NULL;
-				if (PyType_Check(b))
-					dict = ((PyTypeObject *)b)->tp_dict;
-				else if (PyClass_Check(b))
-					dict = ((PyClassObject *)b)->cl_dict;
-				if (dict != NULL) {
-					descr = PyDict_GetItem(
-						dict, p->name_strobj);
-					if (descr != NULL)
-						break;
-				}
-			}
-			if (descr == NULL)
-				continue;
-			generic = p->function;
-			if (descr->ob_type == &PyWrapperDescr_Type) {
-				d = (PyWrapperDescrObject *)descr;
-				if (d->d_base->wrapper == p->wrapper &&
-				    PyType_IsSubtype(type, d->d_type))
-				{
-					if (specific == NULL ||
-					    specific == d->d_wrapped)
-						specific = d->d_wrapped;
-					else
-						use_generic = 1;
-				}
-			}
-			else
-				use_generic = 1;
-		} while ((++p)->offset == offset);
-		if (specific && !use_generic)
-			*ptr = specific;
-		else
-			*ptr = generic;
-	}
+	for (p = slotdefs; p->name; )
+		p = update_one_slot(type, p);
 }
 
 /* This function is called by PyType_Ready() to populate the type's
