@@ -319,26 +319,6 @@ class sdist (Command):
     # add_defaults ()
     
 
-    def search_dir (self, dir, pattern=None):
-        """Recursively find files under 'dir' matching 'pattern' (a string
-        containing a Unix-style glob pattern).  If 'pattern' is None, find
-        all files under 'dir'.  Return the list of found filenames.
-        """
-        allfiles = findall (dir)
-        if pattern is None:
-            return allfiles
-
-        pattern_re = translate_pattern (pattern)
-        files = []
-        for file in allfiles:
-            if pattern_re.match (os.path.basename (file)):
-                files.append (file)
-
-        return files
-
-    # search_dir ()
-
-
     def recursive_exclude_pattern (self, dir, pattern=None):
         """Remove filenames from 'self.files' that are under 'dir' and
         whose basenames match 'pattern'.
@@ -717,7 +697,7 @@ def findall (dir = os.curdir):
         names = os.listdir (dir)
 
         for name in names:
-            if dir != os.curdir:        # avoid the dreaded "./" syndrome
+            if dir != os.curdir:        # avoid leading "./"
                 fullname = os.path.join (dir, name)
             else:
                 fullname = name
