@@ -6,9 +6,8 @@
 # check in files for which rcsdiff returns nonzero exit status
 
 import sys
-import posix
+import os
 from stat import *
-import path
 import commands
 import fnmatch
 import string
@@ -23,7 +22,7 @@ def getargs():
 		return args
 	print 'No arguments, checking almost *, in "ls -t" order'
 	list = []
-	for file in posix.listdir('.'):
+	for file in os.listdir(os.curdir):
 		if not skipfile(file):
 			list.append((getmtime(file), file))
 	list.sort()
@@ -37,9 +36,9 @@ def getargs():
 
 def getmtime(file):
 	try:
-		st = posix.stat(file)
+		st = os.stat(file)
 		return st[ST_MTIME]
-	except posix.error:
+	except os.error:
 		return -1
 
 badnames = ['tags', 'TAGS', 'xyzzy', 'nohup.out', 'core']
@@ -65,8 +64,8 @@ def skipfile(file):
 	for p in ignore:
 		if fnmatch.fnmatch(file, p): return 1
 	try:
-		st = posix.lstat(file)
-	except posix.error:
+		st = os.lstat(file)
+	except os.error:
 		return 1 # Doesn't exist -- skip it
 	# Skip non-plain files.
 	if not S_ISREG(st[ST_MODE]): return 1
@@ -94,18 +93,19 @@ def go(args):
 	for file in args:
 		print file + ':'
 		if differing(file):
-			sts = posix.system('rcsdiff ' + file) # ignored
+			showdiffs(file)
 			if askyesno('Check in ' + file + ' ? '):
-				sts = posix.system('rcs -l ' + file) # ignored
-				sts = posix.system('ci -l ' + file)
+				sts = os.system('rcs -l ' + file) # ignored
+				sts = os.system('ci -l ' + file)
 
 def differing(file):
-	try:
-		this = open(file, 'r').read()
-		that = posix.popen('co -p '+file+' 2>/dev/null', 'r').read()
-		return this <> that
-	except:
-		return 1
+	cmd = 'co -p ' + file + ' 2>/dev/null | cmp -s - ' + file
+	sts = os.system(cmd)
+	return sts != 0
+
+def showdiffs(file):
+	cmd = 'rcsdiff ' + file + ' 2>&1 | ${PAGER-more}'
+	sts = os.system(cmd)
 
 def askyesno(prompt):
 	s = raw_input(prompt)

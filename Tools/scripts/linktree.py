@@ -10,7 +10,7 @@
 #
 # usage: mklinks oldtree newtree
 
-import sys, posix, path
+import sys, os
 
 LINK = '.LINK' # Name of special symlink at the top.
 
@@ -27,18 +27,18 @@ def main():
 	else:
 		link = LINK
 		link_may_fail = 0
-	if not path.isdir(oldtree):
+	if not os.path.isdir(oldtree):
 		print oldtree + ': not a directory'
 		return 1
 	try:
-		posix.mkdir(newtree, 0777)
-	except posix.error, msg:
+		os.mkdir(newtree, 0777)
+	except os.error, msg:
 		print newtree + ': cannot mkdir:', msg
 		return 1
-	linkname = path.cat(newtree, link)
+	linkname = os.path.join(newtree, link)
 	try:
-		posix.symlink(path.cat('..', oldtree), linkname)
-	except posix.error, msg:
+		os.symlink(os.path.join(os.pardir, oldtree), linkname)
+	except os.error, msg:
 		if not link_may_fail:
 			print linkname + ': cannot symlink:', msg
 			return 1
@@ -50,27 +50,27 @@ def main():
 def linknames(old, new, link):
 	if debug: print 'linknames', (old, new, link)
 	try:
-		names = posix.listdir(old)
-	except posix.error, msg:
+		names = os.listdir(old)
+	except os.error, msg:
 		print old + ': warning: cannot listdir:', msg
 		return
 	for name in names:
-	    if name not in ('.', '..'):
-		oldname = path.cat(old, name)
-		linkname = path.cat(link, name)
-		newname = path.cat(new, name)
+	    if name not in (os.curdir, os.pardir):
+		oldname = os.path.join(old, name)
+		linkname = os.path.join(link, name)
+		newname = os.path.join(new, name)
 		if debug > 1: print oldname, newname, linkname
-		if path.isdir(oldname) and not path.islink(oldname):
+		if os.path.isdir(oldname) and not os.path.islink(oldname):
 			try:
-				posix.mkdir(newname, 0777)
+				os.mkdir(newname, 0777)
 				ok = 1
 			except:
 				print newname + ': warning: cannot mkdir:', msg
 				ok = 0
 			if ok:
-				linkname = path.cat('..', linkname)
+				linkname = os.path.join(os.pardir, linkname)
 				linknames(oldname, newname, linkname)
 		else:
-			posix.symlink(linkname, newname)
+			os.symlink(linkname, newname)
 
 sys.exit(main())

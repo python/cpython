@@ -4,13 +4,13 @@
 # On stderr, near and total misses are reported.
 # '-l<flags>' argument adds ls -l<flags> of each file found.
 
-import sys, posix, string, path
+import sys, os, string
 from stat import *
 
 def msg(str):
 	sys.stderr.write(str + '\n')
 
-pathlist = string.splitfields(posix.environ['PATH'], ':')
+pathlist = string.splitfields(os.environ['PATH'], ':')
 
 sts = 0
 longlist = ''
@@ -22,10 +22,10 @@ if sys.argv[1:] and sys.argv[1][:2] == '-l':
 for prog in sys.argv[1:]:
 	ident = ()
 	for dir in pathlist:
-		file = path.join(dir, prog)
+		file = os.path.join(dir, prog)
 		try:
-			st = posix.stat(file)
-		except posix.error:
+			st = os.stat(file)
+		except os.error:
 			continue
 		if not S_ISREG(st[ST_MODE]):
 			msg(file + ': not a disk file')
@@ -44,7 +44,7 @@ for prog in sys.argv[1:]:
 			else:
 				msg(file + ': not executable')
 		if longlist:
-			sts = posix.system('ls ' + longlist + ' ' + file)
+			sts = os.system('ls ' + longlist + ' ' + file)
 			if sts: msg('"ls -l" exit status: ' + `sts`)
 	if not ident:
 		msg(prog + ': not found')
