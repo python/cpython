@@ -932,14 +932,17 @@ class TestMiscellaneous(unittest.TestCase):
         else:
             matchdate = "I don't understand your epoch"
         gdate = Utils.formatdate(now)
-        ldate = Utils.formatdate(now, localtime=1)
         self.assertEqual(gdate, matchdate)
 
-    def test_formatdate_zoneoffsets(self):
+    def test_formatdate_localtime(self):
         now = 1005327232.109884
         ldate = Utils.formatdate(now, localtime=1)
         zone = ldate.split()[5]
-        offset = int(zone[:3]) * -3600 + int(zone[-2:]) * -60
+        offset = int(zone[1:3]) * 3600 + int(zone[-2:]) * 60
+        # Remember offset is in seconds west of UTC, but the timezone is in
+        # minutes east of UTC, so the signs differ.
+        if zone[0] == '+':
+            offset = -offset
         if time.daylight and time.localtime(now)[-1]:
             toff = time.altzone
         else:
