@@ -602,6 +602,26 @@ eval_frame(PyFrameObject *f)
 #define JUMPTO(x)	(next_instr = first_instr + (x))
 #define JUMPBY(x)	(next_instr += (x))
 
+/* OpCode prediction macros
+	Some opcodes tend to come in pairs thus making it possible to predict
+	the second code when the first is run.  For example, COMPARE_OP is often
+	followed by JUMP_IF_FALSE or JUMP_IF_TRUE.  And, those opcodes are often
+	followed by a POP_TOP.
+
+	Verifying the prediction costs a single high-speed test of register
+	variable against a constant.  If the pairing was good, then the odds
+	processor has a high likelihood of making its own successful branch
+	prediction which results in a nearly zero overhead transition to the
+	next opcode.
+
+	A successful prediction saves a trip through the eval-loop including
+	its two unpredictable branches, the HASARG test and the switch-case.
+*/
+
+#define PREDICT(op)	if (*next_instr == op) goto PRED_##op
+#define PREDICTED(op)		PRED_##op: next_instr++
+#define PREDICTED_WITH_ARG(op)	PRED_##op: oparg = (next_instr += 3, (next_instr[-1]<<8) + next_instr[-2])
+
 /* Stack manipulation macros */
 
 #define STACK_LEVEL()	(stack_pointer - f->f_valuestack)
@@ -873,6 +893,7 @@ eval_frame(PyFrameObject *f)
 			SETLOCAL(oparg, v);
 			goto fast_next_opcode;
 
+		PREDICTED(POP_TOP);
 		case POP_TOP:
 			v = POP();
 			Py_DECREF(v);
@@ -920,7 +941,7 @@ eval_frame(PyFrameObject *f)
 				STACKADJ(2);
 				SET_TOP(x);
 				SET_SECOND(w);
-				continue;
+				goto fast_next_opcode;
 			} else if (oparg == 3) {
 				x = TOP();
 				Py_INCREF(x);
@@ -932,7 +953,7 @@ eval_frame(PyFrameObject *f)
 				SET_TOP(x);
 				SET_SECOND(w);
 				SET_THIRD(v);
-				continue;
+				goto fast_next_opcode;
 			}
 			Py_FatalError("invalid argument to DUP_TOPX"
 				      " (bytecode corruption?)");
@@ -1918,8 +1939,10 @@ eval_frame(PyFrameObject *f)
 			Py_DECREF(v);
 			Py_DECREF(w);
 			SET_TOP(x);
-			if (x != NULL) continue;
-			break;
+			if (x == NULL) break;
+			PREDICT(JUMP_IF_FALSE);
+			PREDICT(JUMP_IF_TRUE);
+			continue;
 
 		case IMPORT_NAME:
 			w = GETITEM(names, oparg);
@@ -1974,10 +1997,13 @@ eval_frame(PyFrameObject *f)
 			JUMPBY(oparg);
 			goto fast_next_opcode;
 
+		PREDICTED_WITH_ARG(JUMP_IF_FALSE);
 		case JUMP_IF_FALSE:
 			w = TOP();
-			if (w == Py_True)
+			if (w == Py_True) {
+				PREDICT(POP_TOP);
 				goto fast_next_opcode;
+			}
 			if (w == Py_False) {
 				JUMPBY(oparg);
 				goto fast_next_opcode;
@@ -1991,10 +2017,13 @@ eval_frame(PyFrameObject *f)
 				break;
 			continue;
 
+		PREDICTED_WITH_ARG(JUMP_IF_TRUE);
 		case JUMP_IF_TRUE:
 			w = TOP();
-			if (w == Py_False)
+			if (w == Py_False) {
+				PREDICT(POP_TOP);
 				goto fast_next_opcode;
+			}
 			if (w == Py_True) {
 				JUMPBY(oparg);
 				goto fast_next_opcode;
