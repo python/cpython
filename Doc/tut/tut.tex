@@ -4653,7 +4653,7 @@ supplies classes for manipulating dates and times in both simple
 and complex ways. While date and time arithmetic is supported, the
 focus of the implementation is on efficient member extraction for
 output formatting and manipulation.  The module also supports objects
-that are time zone aware.
+that are timezone aware.
 
 \begin{verbatim}
 # dates are easily constructed and formatted
@@ -4777,7 +4777,7 @@ packages. For example:
 \item The \ulink{\module{xmlrpclib}}{../lib/module-xmlrpclib.html} and
   \ulink{\module{SimpleXMLRPCServer}}{../lib/module-SimpleXMLRPCServer.html}
   modules make implementing remote procedure calls into an almost trivial task.
-  Despite the names, no direct knowledge or handling of XML is needed.
+  Despite the modules names, no direct knowledge or handling of XML is needed.
 \item The \ulink{\module{email}}{../lib/module-email.html} package is a library
   for managing email messages, including MIME and other RFC 2822-based message
   documents. Unlike \module{smptlib} and \module{poplib} which actually send
@@ -4805,9 +4805,9 @@ programming needs.  These modules rarely occur in small scripts.
 
 \section{Output Formatting\label{output-formatting}}
 
-The \ulink{\module{repr}}{../lib/module-repr.html} module provides an
-version of \function{repr()} for abbreviated displays of large or deeply
-nested containers:
+The \ulink{\module{repr}}{../lib/module-repr.html} module provides a
+version of \function{repr()} customized for abbreviated displays of large
+or deeply nested containers:
 
 \begin{verbatim}
     >>> import repr   
@@ -5097,7 +5097,7 @@ with different performance trade-offs.
 
 The \ulink{\module{array}}{../lib/module-array.html} module provides an
 \class{array()} object that is like a list that stores only homogenous
-data but stores it more compactly.  The following example shows an array
+data and stores it more compactly.  The following example shows an array
 of numbers stored as two byte unsigned binary numbers (typecode
 \code{"H"}) rather than the usual 16 bytes per entry for regular lists
 of python int objects:
