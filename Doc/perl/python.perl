@@ -808,6 +808,7 @@ sub do_cmd_production{
 sub do_cmd_productioncont{
     local($_) = @_;
     my $defn = next_argument();
+    $defn =~ s/^( +)/'&nbsp;' x length $1/e;
     return ("<tr valign=\"baseline\">\n"
             . "    <td>&nbsp;</td>\n"
             . "    <td>&nbsp;</td>\n"
