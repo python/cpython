@@ -281,8 +281,13 @@ sub do_cmd_versionadded{
 sub do_cmd_versionchanged{
     # one parameter:  \versionchanged{version}
     local($_) = @_;
+    my $explanation = next_optional_argument();
     my $release = next_argument();
-    return "\nChanged in version $release.\n" . $_;
+    my $text = "\nChanged in version $release.\n";
+    if ($release) {
+        $text = "\nChanged in version $release:\n$explanation.\n";
+    }
+    return $text . $_;
 }
 
 #
