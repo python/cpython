@@ -531,6 +531,10 @@ def f8(x):
 
 if __name__ == '__main__':
     import cmd
+    try:
+        import readline
+    except:
+        pass
 
     class ProfileBrowser(cmd.Cmd):
         def __init__(self, profile=None):
