@@ -442,14 +442,15 @@ class Random:
 ## -------------------- gamma distribution --------------------
 
     def gammavariate(self, alpha, beta):
-        # beta times standard gamma
-        return beta * self.stdgamma(alpha)
 
-    def stdgamma(self, alpha, *args):  # *args for Py2.2 compatiblity
+        # alpha > 0, beta > 0, mean is alpha*beta, variance is alpha*beta**2
+        
+	# Warning: a few older sources define the gamma distribution in terms
+	# of alpha > -1.0
+	if alpha <= 0.0 or beta <= 0.0:
+	    raise ValueError, 'gammavariate: alpha and beta must be > 0.0'
+
         random = self.random
-        if alpha <= 0.0:
-            raise ValueError, 'stdgamma: alpha must be > 0.0'
-
         if alpha > 1.0:
 
             # Uses R.C.H. Cheng, "The generation of Gamma
@@ -468,14 +469,14 @@ class Random:
                 z = u1*u1*u2
                 r = bbb+ccc*v-x
                 if r + SG_MAGICCONST - 4.5*z >= 0.0 or r >= _log(z):
-                    return x
+                    return x * beta
 
         elif alpha == 1.0:
             # expovariate(1)
             u = random()
             while u <= 1e-7:
                 u = random()
-            return -_log(u)
+            return -_log(u) * beta
 
         else:   # alpha is between 0 and 1 (exclusive)
 
@@ -494,7 +495,27 @@ class Random:
                 if not (((p <= 1.0) and (u1 > _exp(-x))) or
                           ((p > 1)  and  (u1 > pow(x, alpha - 1.0)))):
                     break
-            return x
+            return x * beta
+
+
+    def stdgamma(self, alpha, ainv, bbb, ccc):
+        # This method was (and shall remain) undocumented.
+        # This method is deprecated
+        # for the following reasons:
+        # 1. Returns same as .gammavariate(alpha, 1.0)
+        # 2. Requires caller to provide 3 extra arguments
+        #    that are functions of alpha anyway
+        # 3. Can't be used for alpha < 0.5
+
+        # ainv = sqrt(2 * alpha - 1)
+        # bbb = alpha - log(4)
+        # ccc = alpha + ainv
+        import warnings
+        warnings.warn("The stdgamma function is deprecated; "
+                      "use gammavariate() instead",
+                      DeprecationWarning)
+        return self.gammavariate(alpha, 1.0)
+
 
 
 ## -------------------- Gauss (faster alternative) --------------------
@@ -593,7 +614,7 @@ def _test_generator(n, funccall):
     print 'avg %g, stddev %g, min %g, max %g' % \
               (avg, stddev, smallest, largest)
 
-def _test(N=200):
+def _test(N=20000):
     print 'TWOPI         =', TWOPI
     print 'LOG4          =', LOG4
     print 'NV_MAGICCONST =', NV_MAGICCONST
@@ -604,6 +625,9 @@ def _test(N=200):
     _test_generator(N, 'cunifvariate(0.0, 1.0)')
     _test_generator(N, 'expovariate(1.0)')
     _test_generator(N, 'vonmisesvariate(0.0, 1.0)')
+    _test_generator(N, 'gammavariate(0.01, 1.0)')
+    _test_generator(N, 'gammavariate(0.1, 1.0)')
+    _test_generator(N, 'gammavariate(0.1, 2.0)')    
     _test_generator(N, 'gammavariate(0.5, 1.0)')
     _test_generator(N, 'gammavariate(0.9, 1.0)')
     _test_generator(N, 'gammavariate(1.0, 1.0)')
