@@ -26,8 +26,9 @@ The Python language documentation has a substantial body of
 documentation, much of it contributed by various authors.  The markup
 used for the Python documentation is based on \LaTeX{} and requires a
 significant set of macros written specifically for documenting Python.
-Maintaining the documentation requires substantial effort, in part
-because selecting the correct markup to use is not always easy.
+This document describes the macros introduced to support Python
+documentation and how they should be used to support a wide range of
+output formats.
 
 This document describes the document classes and special markup used
 in the Python documentation.  Authors may use this guide, in
@@ -147,6 +148,13 @@ distribution, to create or maintain whole documents or sections.
   This section is a brief introduction to \LaTeX{} concepts and
   syntax, to provide authors enough information to author documents
   productively without having to become ``\TeX{}nicians.''
+
+  Perhaps the most important concept to keep in mind while marking up
+  Python documentation is the while \TeX{} is unstructured, \LaTeX{} was
+  designed as a layer on top of \TeX{} which specifically supports 
+  structured markup.  The Python-specific markup is intended to extend
+  the structure provided by standard \LaTeX{} document classes to
+  support additional information specific to Python.
 
   \LaTeX{} documents contain two parts: the preamble and the body.
   The preamble is used to specify certain metadata about the document
@@ -304,6 +312,30 @@ distribution, to create or maintain whole documents or sections.
     \begin{envdesc}{methoddescni}{\op{type name}\p{name}\p{parameters}}
       Like \env{methoddesc}, but without creating any index entries.
     \end{envdesc}
+
+
+  \subsection{Showing Code Examples}
+
+    Examples of Python source code or interactive sessions are
+    represented as \env{verbatim} environments.  This environment
+    is a standard part of \LaTeX{}.  It is important to only use
+    spaces for indentation in code examples since \TeX{} drops tabs
+    instead of converting them to spaces.
+
+    Representing an interactive session requires including the prompts
+    and output along with the Python code.  No special markup is
+    required for interactive sessions.
+
+    Within the \env{verbatim} environment, characters special to
+    \LaTeX{} do not need to be specially marked in any way.  The entire
+    example will be presented in a monospaced font; no attempt at
+    ``pretty-printing'' is made, as the environment must work for
+    non-Python code and non-code displays.
+
+    The Python Documentation Special Interest Group has discussed a
+    number of approaches to creating pretty-printed code displays and
+    interactive sessions; see the Doc-SIG area on the Python Web site
+    for more information on this topic.
 
 
   \subsection{Inline Markup}
