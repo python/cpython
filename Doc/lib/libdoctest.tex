@@ -190,15 +190,16 @@ attempted.
 
 See \file{docstring.py} for all the details.  They're unsurprising:  the
 module docstring, and all function, class and method docstrings are
-searched, with the exception of docstrings attached to objects with private
-names.  Objects imported into the module are not searched.
+searched.  Optionally, the tester can be directed to exclude
+docstrings attached to objects with private names.
+Objects imported into the module are not searched.
 
 In addition, if \code{M.__test__} exists and "is true", it must be a
 dict, and each entry maps a (string) name to a function object, class
 object, or string.  Function and class object docstrings found from
-\code{M.__test__} are searched even if the name is private, and
-strings are searched directly as if they were docstrings.  In output,
-a key \code{K} in \code{M.__test__} appears with name
+\code{M.__test__} are searched even if the the tester has been
+directly to skip over private names in the rest of the module.
+In output, a key \code{K} in \code{M.__test__} appears with name
 
 \begin{verbatim}
       <name of M>.__test__.K
@@ -206,7 +207,7 @@ a key \code{K} in \code{M.__test__} appears with name
 
 Any classes found are recursively searched similarly, to test docstrings in
 their contained methods and nested classes.  While private names reached
-from \module{M}'s globals are skipped, all names reached from
+from \module{M}'s globals can be optionally skipped, all names reached from
 \code{M.__test__} are searched.
 
 \subsection{What's the Execution Context?}
