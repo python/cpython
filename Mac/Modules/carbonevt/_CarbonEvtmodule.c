@@ -171,7 +171,7 @@ int EventRef_Convert(PyObject *v, EventRef *p_itself)
 static void EventRef_dealloc(EventRefObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *EventRef_RetainEvent(EventRefObject *_self, PyObject *_args)
@@ -478,7 +478,7 @@ int EventQueueRef_Convert(PyObject *v, EventQueueRef *p_itself)
 static void EventQueueRef_dealloc(EventQueueRefObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *EventQueueRef_PostEventToQueue(EventQueueRefObject *_self, PyObject *_args)
@@ -661,7 +661,7 @@ int EventLoopRef_Convert(PyObject *v, EventLoopRef *p_itself)
 static void EventLoopRef_dealloc(EventLoopRefObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *EventLoopRef_QuitEventLoop(EventLoopRefObject *_self, PyObject *_args)
@@ -753,7 +753,7 @@ int EventLoopTimerRef_Convert(PyObject *v, EventLoopTimerRef *p_itself)
 static void EventLoopTimerRef_dealloc(EventLoopTimerRefObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *EventLoopTimerRef_RemoveEventLoopTimer(EventLoopTimerRefObject *_self, PyObject *_args)
@@ -868,7 +868,7 @@ static void EventHandlerRef_dealloc(EventHandlerRefObject *self)
 		RemoveEventHandler(self->ob_itself);
 		Py_DECREF(self->ob_callback);
 	}
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *EventHandlerRef_AddEventTypesToHandler(EventHandlerRefObject *_self, PyObject *_args)
@@ -1018,7 +1018,7 @@ int EventHandlerCallRef_Convert(PyObject *v, EventHandlerCallRef *p_itself)
 static void EventHandlerCallRef_dealloc(EventHandlerCallRefObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *EventHandlerCallRef_CallNextEventHandler(EventHandlerCallRefObject *_self, PyObject *_args)
@@ -1113,7 +1113,7 @@ int EventTargetRef_Convert(PyObject *v, EventTargetRef *p_itself)
 static void EventTargetRef_dealloc(EventTargetRefObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *EventTargetRef_InstallStandardEventHandler(EventTargetRefObject *_self, PyObject *_args)
@@ -1230,7 +1230,7 @@ int EventHotKeyRef_Convert(PyObject *v, EventHotKeyRef *p_itself)
 static void EventHotKeyRef_dealloc(EventHotKeyRefObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *EventHotKeyRef_UnregisterEventHotKey(EventHotKeyRefObject *_self, PyObject *_args)

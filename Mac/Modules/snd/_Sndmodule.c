@@ -90,7 +90,7 @@ static void SndCh_dealloc(SndChannelObject *self)
 {
 	SndDisposeChannel(self->ob_itself, 1);
 	Py_XDECREF(self->ob_callback);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *SndCh_SndDoCommand(SndChannelObject *_self, PyObject *_args)
@@ -384,7 +384,7 @@ static void SPBObj_dealloc(SPBObject *self)
 	self->ob_thiscallback = 0;
 	Py_XDECREF(self->ob_completion);
 	Py_XDECREF(self->ob_interrupt);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyMethodDef SPBObj_methods[] = {

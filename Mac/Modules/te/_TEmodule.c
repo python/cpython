@@ -100,7 +100,7 @@ int TEObj_Convert(PyObject *v, TEHandle *p_itself)
 static void TEObj_dealloc(TEObject *self)
 {
 	TEDispose(self->ob_itself);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *TEObj_TESetText(TEObject *_self, PyObject *_args)

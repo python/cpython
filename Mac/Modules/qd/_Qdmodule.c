@@ -202,7 +202,7 @@ int GrafObj_Convert(PyObject *v, GrafPtr *p_itself)
 static void GrafObj_dealloc(GrafPortObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyMethodDef GrafObj_methods[] = {
@@ -433,7 +433,7 @@ static void BMObj_dealloc(BitMapObject *self)
 {
 	Py_XDECREF(self->referred_object);
 	if (self->referred_bitmap) free(self->referred_bitmap);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *BMObj_getdata(BitMapObject *_self, PyObject *_args)
@@ -545,7 +545,7 @@ static PyObject *QDGA_New(void)
 
 static void QDGA_dealloc(QDGlobalsAccessObject *self)
 {
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyMethodDef QDGA_methods[] = {

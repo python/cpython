@@ -108,7 +108,7 @@ int MenuObj_Convert(PyObject *v, MenuHandle *p_itself)
 static void MenuObj_dealloc(MenuObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *MenuObj_DisposeMenu(MenuObject *_self, PyObject *_args)

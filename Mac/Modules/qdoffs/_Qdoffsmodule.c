@@ -73,7 +73,7 @@ int GWorldObj_Convert(PyObject *v, GWorldPtr *p_itself)
 static void GWorldObj_dealloc(GWorldObject *self)
 {
 	DisposeGWorld(self->ob_itself);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *GWorldObj_GetGWorldDevice(GWorldObject *_self, PyObject *_args)

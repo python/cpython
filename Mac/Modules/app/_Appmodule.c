@@ -69,7 +69,7 @@ int ThemeDrawingStateObj_Convert(PyObject *v, ThemeDrawingState *p_itself)
 static void ThemeDrawingStateObj_dealloc(ThemeDrawingStateObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *ThemeDrawingStateObj_SetThemeDrawingState(ThemeDrawingStateObject *_self, PyObject *_args)

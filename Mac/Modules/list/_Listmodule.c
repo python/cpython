@@ -150,7 +150,7 @@ static void ListObj_dealloc(ListObject *self)
 #endif
 	SetListRefCon(self->ob_itself, (long)0);
 	if (self->ob_must_be_disposed && self->ob_itself) LDispose(self->ob_itself);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *ListObj_LAddColumn(ListObject *_self, PyObject *_args)

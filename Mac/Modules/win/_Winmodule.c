@@ -120,7 +120,7 @@ static void WinObj_dealloc(WindowObject *self)
 	}
 	self->ob_itself = NULL;
 	self->ob_freeit = NULL;
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *WinObj_GetWindowOwnerCount(WindowObject *_self, PyObject *_args)

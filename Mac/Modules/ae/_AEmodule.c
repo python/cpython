@@ -89,7 +89,7 @@ int AEDesc_Convert(PyObject *v, AEDesc *p_itself)
 static void AEDesc_dealloc(AEDescObject *self)
 {
 	AEDisposeDesc(&self->ob_itself);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *AEDesc_AECoerceDesc(AEDescObject *_self, PyObject *_args)
