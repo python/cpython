@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.1}
-\release{0.01}
+\release{0.03}
 \author{A.M. Kuchling}
 \authoraddress{\email{amk1@bigfoot.com}}
 \begin{document}
@@ -140,11 +140,6 @@ for the full list of related functions.
 based on earlier work by David Ascher, and implemented by Guido van Rossum.}
 
 \end{seealso}
-
-% ======================================================================
-\section{XXX Nested Scopes ?}
-
-xxx
 
 % ======================================================================
 \section{PEP 230: Warning Framework}
@@ -335,6 +330,13 @@ for line in sys.stdin.xreadlines():
 
 For a fuller discussion of the line I/O changes, see the python-dev
 summary for January 1-15, 2001.  
+
+\item A new method, \method{popitem()}, was added to dictionaries to enable 
+destructively iterating through the contents of a dictionary; this can be faster for large dictionaries because .  
+\code{D.popitem()} removes a random \code{(\var{key}, \var{value})} pair
+from the dictionary and returns it as a 2-tuple.  This was implemented
+mostly by Tim Peters and Guido van Rossum, after a suggestion and
+preliminary patch by Moshe Zadka.
  
 \item \module{curses.panel}, a wrapper for the panel library, part of
 ncurses and of SYSV curses, was contributed by Thomas Gellekum.  The
@@ -357,17 +359,15 @@ __all__ = ['Database', 'open']
 \end{verbatim}
 
 A stricter version of this patch was first suggested and implemented
-by Ben Wolfson, but after some python-dev discussion, this weaker final version 
+by Ben Wolfson, but after some python-dev discussion, a weaker
+final version was checked in.
 
-\item The \module{ftplib} module now defaults to retrieving files in passive mode,
-because passive mode is more likely to work from behind a firewall.
-This request came from the Debian bug tracking system, since other
-Debian packages use \module{ftplib} to retrieve files and then don't
-work from behind a firewall.  It's deemed unlikely that this will
-cause problems for anyone, because Netscape defaults to passive mode
-and few people complain, but if passive mode is unsuitable for your
-application or network setup, call
-\method{set_pasv(0)} on FTP objects to disable passive mode.  
+\item The PyXML package has gone through a few releases since Python
+2.0, and Python 2.1 includes an updated version of the \module{xml}
+package.  Some of the noteworthy changes include support for Expat
+1.2, the ability for Expat parsers to handle files in any encoding
+supported by Python, and various bugfixes for SAX, DOM, and the
+\module{minidom} module.
 
 \item Various functions in the \module{time} module, such as
 \function{asctime()} and \function{localtime()},
@@ -382,6 +382,18 @@ previously required.
  
 This change was proposed and implemented by Thomas Wouters.
 
+\item The \module{ftplib} module now defaults to retrieving files in passive mode,
+because passive mode is more likely to work from behind a firewall.
+This request came from the Debian bug tracking system, since other
+Debian packages use \module{ftplib} to retrieve files and then don't
+work from behind a firewall.  It's deemed unlikely that this will
+cause problems for anyone, because Netscape defaults to passive mode
+and few people complain, but if passive mode is unsuitable for your
+application or network setup, call
+\method{set_pasv(0)} on FTP objects to disable passive mode.  
+
+\item The size of the Unicode character database was compressed by another 55K thanks to Fredrik Lundh.
+
 \end{itemize}
 
 And there's the usual list of bugfixes, minor memory leaks, docstring
@@ -390,10 +402,21 @@ CVS logs for the full details if you want them.
 
 
 % ======================================================================
+\section{XXX Nested Scopes ?}
+
+xxx
+
+% ======================================================================
+\section{XXX Weak References ?}
+
+xxx
+
+% ======================================================================
 \section{Acknowledgements}
 
 The author would like to thank the following people for offering
-suggestions on various drafts of this article: Neil Schemenauer,
-Thomas Wouters.
+suggestions on various drafts of this article: Michael Hudson,
+Marc-Andr\'e Lemburg, 
+Neil Schemenauer, Thomas Wouters.
 
 \end{document}
