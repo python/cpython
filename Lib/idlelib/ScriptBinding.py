@@ -144,10 +144,11 @@ class ScriptBinding:
         filename = self.getfilename()
         if not filename:
             return
-
         flist = self.editwin.flist
         shell = flist.open_shell()
         interp = shell.interp
+        # clear the subprocess environment before every Run/F5 invocation
+        interp.rpcclt.remotecall("exec", "clear_the_environment", (), {})
         # XXX Too often this discards arguments the user just set...
         interp.runcommand("""if 1:
             _filename = %s
@@ -155,6 +156,7 @@ class ScriptBinding:
             from os.path import basename as _basename
             if (not _sys.argv or
                 _basename(_sys.argv[0]) != _basename(_filename)):
+                # XXX 25 July 2002 KBK should this be sys.argv not _sys.argv?
                 _sys.argv = [_filename]
             del _filename, _sys, _basename
                 \n""" % `filename`)
