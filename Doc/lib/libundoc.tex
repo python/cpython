@@ -31,15 +31,11 @@ This is a package rather than a module.
 
 \section{Miscellaneous useful utilities}
 
-Some of these are very old and/or not very robust; marked with ``hmm''.
+Some of these are very old and/or not very robust; marked with ``hmm.''
 
 \begin{description}
 \item[dircmp.py]
---- class to build directory diff tools on
-
-\item[pipes.py]
---- Conversion pipeline templates (hmm, used by \module{toaiff} and
-\module{torgb})
+--- class to build directory diff tools on (may become a demo or tool)
 
 \item[pty.py]
 --- Pseudo terminal utilities
@@ -51,7 +47,7 @@ Some of these are very old and/or not very robust; marked with ``hmm''.
 --- A generic Python debugger base class (used by pdb)
 
 \item[ihooks.py]
---- Import hook support (for rexec)
+--- Import hook support (for \refmodule{rexec}; may become obsolete)
 \end{description}
 
 
@@ -77,17 +73,14 @@ document these.
 
 \begin{description}
 \item[audiodev.py]
---- Plays audio files
-
-\item[sunau.py]
---- parse Sun and NeXT audio files
+--- Platform-independent API for playing audio data
 
 \item[sunaudio.py]
---- interpret sun audio headers
+--- interpret sun audio headers (may become obsolete or a tool/demo)
 
 \item[toaiff.py]
 --- Convert "arbitrary" sound files to AIFF files; should probably
-become a tool or demo
+become a tool or demo.  Requires the external program \program{sox}.
 \end{description}
 
 
@@ -98,10 +91,11 @@ Some of these may be made into tools or demos in future releases.
 
 \begin{description}
 \item[find.py]
---- find files matching pattern in directory tree
+--- find files matching pattern in directory tree (may become a demo
+or tool, or possibly obsolete)
 
 \item[grep.py]
---- grep
+--- grep (may become a demo or tool)
 
 \item[mutex.py]
 --- Mutual exclusion --- for use with module sched
@@ -128,15 +122,17 @@ possibly using \envvar{PYTHONPATH}.
 
 \begin{description}
 \item[newdir.py]
---- New dir() function (the standard dir() is now just as good)
+--- New \function{dir()} function (the standard \function{dir()} is
+now just as good)
 
 \item[addpack.py]
 --- standard support for "packages"
 
 \item[codehack.py]
 --- Extract function name or line number from a function
-code object (these are now accessible as attributes: co.co_name,
-func.func_name, co.co_firstlineno).
+code object (these are now accessible as attributes:
+\member{co.co_name}, \member{func.func_name},
+\member{co.co_firstlineno}).
 
 \item[dump.py]
 --- Print python code that reconstructs a variable
@@ -149,7 +145,7 @@ func.func_name, co.co_firstlineno).
 
 \item[lockfile.py]
 --- wrapper around FCNTL file locking (use
-\function{fcntl.lockf()}/\function{flock()} intead)
+\function{fcntl.lockf()}/\function{flock()} intead; see \refmodule{fcntl})
 
 \item[poly.py]
 --- Polynomials
@@ -176,7 +172,9 @@ func.func_name, co.co_firstlineno).
 \end{description}
 
 The following modules were documented in previous versions of this
-manual, but are now considered obsolete:
+manual, but are now considered obsolete.  The source for the
+documentation is still available as part of the documentation source
+archive.
 
 \begin{description}
 \item[ni]
@@ -195,9 +193,6 @@ key.  (This is an extension module.)
 \section{Extension modules}
 
 \begin{description}
-\item[cursesmodule.c]
---- Curses interface.
-
 \item[dlmodule.c]
 ---  A highly experimental and dangerous device for calling
 arbitrary \C{} functions in arbitrary shared libraries.
@@ -211,7 +206,8 @@ platform-independent GUI package).  Obsolete; use Tkinter for a
 platform-independent GUI instead.
 \end{description}
 
-The following are SGI specific:
+The following are SGI specific, and may be out of touch with the
+current version of reality.
 
 \begin{description}
 \item[clmodule.c]
