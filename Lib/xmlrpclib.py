@@ -439,8 +439,7 @@ if not _bool_is_builtin:
 # XML parsers
 
 try:
-    # optional xmlrpclib accelerator.  for more information on this
-    # component, contact info@pythonware.com
+    # optional xmlrpclib accelerator
     import _xmlrpclib
     FastParser = _xmlrpclib.Parser
     FastUnmarshaller = _xmlrpclib.Unmarshaller
