@@ -29,7 +29,11 @@ import os, sys, string, struct, types, cPickle, cStringIO
 import socket, threading, time, locale
 import logging, logging.handlers, logging.config
 
-locale.setlocale(locale.LC_ALL, '')
+try:
+    locale.setlocale(locale.LC_ALL, '')
+except ValueError:
+    # this happens on a Solaris box which only supports "C" locale
+    pass
 
 BANNER = "-- %-10s %-6s ---------------------------------------------------\n"
 
