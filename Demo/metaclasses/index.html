@@ -1,18 +1,16 @@
 <HTML>
 
 <HEAD>
-<TITLE>Metaprogramming in Python 1.5</TITLE>
+<TITLE>Metaclasses in Python 1.5</TITLE>
 </HEAD>
 
 <BODY BGCOLOR="FFFFFF">
 
-<H1>Metaprogramming in Python 1.5 (DRAFT)</H1>
+<H1>Metaclasses in Python 1.5</H1>
+<H2>(A.k.a. The Killer Joke :-)</H2>
 
-<H4>XXX This is very much a work in progress.</H4>
-
-<P>While Python 1.5 is only out as a <A
-HREF="http://grail.cnri.reston.va.us/python/1.5a3/">restricted alpha
-release</A>, its metaprogramming feature is worth mentioning.
+<P><b>Note: this document describes a feature only released in <A
+HREF="../../1.5a3/">Python 1.5a3</A>.</b>
 
 <P>In previous Python releases (and still in 1.5), there is something
 called the ``Don Beaudry hook'', after its inventor and champion.
@@ -144,7 +142,7 @@ class C:
 the class namespace's contents would be {'a': 1, 'f': &lt;function f
 ...&gt;}.
 
-<P>But enough already about Python metaprogramming in C; read the
+<P>But enough already about writing Python metaclasses in C; read the
 documentation of <A
 HREF="http://maigret.cog.brown.edu/pyutil/">MESS</A> or <A
 HREF="http://www.digicool.com/papers/ExtensionClass.html" >Extension
@@ -153,7 +151,7 @@ Classes</A> for more information.
 <H2>Writing Metaclasses in Python</H2>
 
 <P>In Python 1.5, the requirement to write a C extension in order to
-engage in metaprogramming has been dropped (though you can still do
+write metaclasses has been dropped (though you can still do
 it, of course).  In addition to the check ``is the type of the base
 class callable,'' there's a check ``does the base class have a
 __class__ attribute.''  If so, it is assumed that the __class__
@@ -189,8 +187,8 @@ new (meta)inststance of the base class's metaclass.
 
 <P>Going back to the example, the class B.__class__ is instantiated,
 passing its constructor the same three arguments that are passed to
-the default class constructor or to an extension's metaprogramming
-code: <i>name</i>, <i>bases</i>, and <i>namespace</i>.
+the default class constructor or to an extension's metaclass:
+<i>name</i>, <i>bases</i>, and <i>namespace</i>.
 
 <P>It is easy to be confused by what exactly happens when using a
 metaclass, because we lose the absolute distinction between classes
@@ -244,7 +242,7 @@ How did this happen?  MySpecialClass is an instance of MetaClass1
 __call__ method is invoked, and presumably the __call__ method defined
 by MetaClass1 returns an instance of HelperClass1.
 
-<P>Now let's see how we could use metaprogramming -- what can we do
+<P>Now let's see how we could use metaclasses -- what can we do
 with metaclasses that we can't easily do without them?  Here's one
 idea: a metaclass could automatically insert trace calls for all
 method calls.  Let's first develop a simplified example, without
@@ -424,7 +422,7 @@ doesn't support all these features yet.
 <H1>Real-life Examples</H1>
 
 <P>Have a look at some very preliminary examples that I coded up to
-teach myself how to use metaprogramming:
+teach myself how to write metaclasses:
 
 <DL>
 
