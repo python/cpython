@@ -19,7 +19,6 @@ you need to adjust the width constraint.
 
 The \module{pprint} module defines one class:
 
-\setindexsubitem{(in module pprint)}
 
 % First the implementation class:
 
@@ -126,20 +125,22 @@ recursive data structures.  If the representation of \var{object}
 exposes a recursive entry, the recursive reference will be represented
 as \samp{<Recursion on \var{typename} with id=\var{number}>}.  The
 representation is not otherwise formatted.
+\end{funcdesc}
 
+% This example is outside the {funcdesc} to keep it from running over
+% the right margin.
 \begin{verbatim}
 >>> pprint.saferepr(stuff)
 "[<Recursion on list with id=682968>, '', '/usr/local/lib/python1.4', '/usr/loca
 l/lib/python1.4/test', '/usr/local/lib/python1.4/sunos5', '/usr/local/lib/python
 1.4/sharedmodules', '/usr/local/lib/python1.4/tkinter']"
 \end{verbatim}
-\end{funcdesc}
 
 
 \subsection{PrettyPrinter Objects}
 \label{PrettyPrinter Objects}
 
-PrettyPrinter instances have the following methods:
+\class{PrettyPrinter} instances have the following methods:
 
 \setindexsubitem{(PrettyPrinter method)}
 
