@@ -29,8 +29,7 @@ staticforward PyTypeObject Dltype;
 static PyObject *Dlerror;
 
 static PyObject *
-newdlobject(handle)
-	PyUnivPtr *handle;
+newdlobject(PyUnivPtr *handle)
 {
 	dlobject *xp;
 	xp = PyObject_New(dlobject, &Dltype);
@@ -41,8 +40,7 @@ newdlobject(handle)
 }
 
 static void
-dl_dealloc(xp)
-	dlobject *xp;
+dl_dealloc(dlobject *xp)
 {
 	if (xp->dl_handle != NULL)
 		dlclose(xp->dl_handle);
@@ -50,9 +48,7 @@ dl_dealloc(xp)
 }
 
 static PyObject *
-dl_close(xp, args)
-	dlobject *xp;
-	PyObject *args;
+dl_close(dlobject *xp, PyObject *args)
 {
 	if (!PyArg_Parse(args, ""))
 		return NULL;
@@ -65,9 +61,7 @@ dl_close(xp, args)
 }
 
 static PyObject *
-dl_sym(xp, args)
-	dlobject *xp;
-	PyObject *args;
+dl_sym(dlobject *xp, PyObject *args)
 {
 	char *name;
 	PyUnivPtr *func;
@@ -82,9 +76,7 @@ dl_sym(xp, args)
 }
 
 static PyObject *
-dl_call(xp, args)
-	dlobject *xp;
-	PyObject *args; /* (varargs) */
+dl_call(dlobject *xp, PyObject *args)
 {
 	PyObject *name;
 	long (*func)();
@@ -141,9 +133,7 @@ static PyMethodDef dlobject_methods[] = {
 };
 
 static PyObject *
-dl_getattr(xp, name)
-	dlobject *xp;
-	char *name;
+dl_getattr(dlobject *xp, char *name)
 {
 	return Py_FindMethod(dlobject_methods, (PyObject *)xp, name);
 }
@@ -169,9 +159,7 @@ static PyTypeObject Dltype = {
 };
 
 static PyObject *
-dl_open(self, args)
-	PyObject *self;
-	PyObject *args;
+dl_open(PyObject *self, PyObject *args)
 {
 	char *name;
 	int mode;

@@ -17,9 +17,7 @@ static char new_instance_doc[] =
 "Create an instance object from (CLASS, DICT) without calling its __init__().";
 
 static PyObject *
-new_instance(unused, args)
-	PyObject* unused;
-	PyObject* args;
+new_instance(PyObject* unused, PyObject* args)
 {
 	PyObject* klass;
 	PyObject *dict;
@@ -43,9 +41,7 @@ static char new_im_doc[] =
 "Create a instance method object from (FUNCTION, INSTANCE, CLASS).";
 
 static PyObject *
-new_instancemethod(unused, args)
-	PyObject* unused;
-	PyObject* args;
+new_instancemethod(PyObject* unused, PyObject* args)
 {
 	PyObject* func;
 	PyObject* self;
@@ -75,9 +71,7 @@ static char new_function_doc[] =
 "Create a function object from (CODE, GLOBALS, [NAME, ARGDEFS]).";
 
 static PyObject *
-new_function(unused, args)
-	PyObject* unused;
-	PyObject* args;
+new_function(PyObject* unused, PyObject* args)
 {
 	PyObject* code;
 	PyObject* globals;
@@ -114,9 +108,7 @@ static char new_code_doc[] =
 "Create a code object from (ARGCOUNT, NLOCALS, STACKSIZE, FLAGS, CODESTRING, CONSTANTS, NAMES, VARNAMES, FILENAME, NAME, FIRSTLINENO, LNOTAB).";
 
 static PyObject *
-new_code(unused, args)
-	PyObject* unused;
-	PyObject* args;
+new_code(PyObject* unused, PyObject* args)
 {
 	int argcount;
 	int nlocals;
@@ -162,9 +154,7 @@ static char new_module_doc[] =
 "Create a module object from (NAME).";
 
 static PyObject *
-new_module(unused, args)
-	PyObject* unused;
-	PyObject* args;
+new_module(PyObject* unused, PyObject* args)
 {
 	char *name;
   
@@ -177,9 +167,7 @@ static char new_class_doc[] =
 "Create a class object from (NAME, BASE_CLASSES, DICT).";
 
 static PyObject *
-new_class(unused, args)
-	PyObject* unused;
-	PyObject* args;
+new_class(PyObject* unused, PyObject* args)
 {
 	PyObject * name;
 	PyObject * classes;

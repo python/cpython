@@ -37,8 +37,7 @@ staticforward PyTypeObject Xxo_Type;
 #define XxoObject_Check(v)	((v)->ob_type == &Xxo_Type)
 
 static XxoObject *
-newXxoObject(arg)
-	PyObject *arg;
+newXxoObject(PyObject *arg)
 {
 	XxoObject *self;
 	self = PyObject_New(XxoObject, &Xxo_Type);
@@ -51,17 +50,14 @@ newXxoObject(arg)
 /* Xxo methods */
 
 static void
-Xxo_dealloc(self)
-	XxoObject *self;
+Xxo_dealloc(XxoObject *self)
 {
 	Py_XDECREF(self->x_attr);
 	PyObject_Del(self);
 }
 
 static PyObject *
-Xxo_demo(self, args)
-	XxoObject *self;
-	PyObject *args;
+Xxo_demo(XxoObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":demo"))
 		return NULL;
@@ -75,9 +71,7 @@ static PyMethodDef Xxo_methods[] = {
 };
 
 static PyObject *
-Xxo_getattr(self, name)
-	XxoObject *self;
-	char *name;
+Xxo_getattr(XxoObject *self, char *name)
 {
 	if (self->x_attr != NULL) {
 		PyObject *v = PyDict_GetItemString(self->x_attr, name);
@@ -90,10 +84,7 @@ Xxo_getattr(self, name)
 }
 
 static int
-Xxo_setattr(self, name, v)
-	XxoObject *self;
-	char *name;
-	PyObject *v;
+Xxo_setattr(XxoObject *self, char *name, PyObject *v)
 {
 	if (self->x_attr == NULL) {
 		self->x_attr = PyDict_New();
@@ -136,9 +127,7 @@ statichere PyTypeObject Xxo_Type = {
 /* Function of two integers returning integer */
 
 static PyObject *
-xx_foo(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
+xx_foo(PyObject *self, PyObject *args)
 {
 	long i, j;
 	long res;
@@ -152,9 +141,7 @@ xx_foo(self, args)
 /* Function of no arguments returning new Xxo object */
 
 static PyObject *
-xx_new(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
+xx_new(PyObject *self, PyObject *args)
 {
 	XxoObject *rv;
 	
@@ -169,9 +156,7 @@ xx_new(self, args)
 /* Example with subtle bug from extensions manual ("Thin Ice"). */
 
 static PyObject *
-xx_bug(self, args)
-    PyObject *self;
-    PyObject *args;
+xx_bug(PyObject *self, PyObject *args)
 {
 	PyObject *list, *item;
 	
@@ -192,9 +177,7 @@ xx_bug(self, args)
 /* Test bad format character */
 
 static PyObject *
-xx_roj(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
+xx_roj(PyObject *self, PyObject *args)
 {
 	PyObject *a;
 	long b;
