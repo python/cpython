@@ -5,7 +5,7 @@
    occurrences of 'xx' should be changed to something reasonable for your
    module. If your module is named foo your sourcefile should be named
    foomodule.c.
-   
+
    You will probably want to delete all references to 'x_attr' and add
    your own types of attributes instead.  Maybe you want to name your
    local variables other than 'self'.  If your object type is needed in
@@ -161,12 +161,12 @@ static PyObject *
 xx_new(PyObject *self, PyObject *args)
 {
 	XxoObject *rv;
-	
+
 	if (!PyArg_ParseTuple(args, ":new"))
 		return NULL;
 	rv = newXxoObject(args);
-	if ( rv == NULL )
-	    return NULL;
+	if (rv == NULL)
+		return NULL;
 	return (PyObject *)rv;
 }
 
@@ -176,17 +176,17 @@ static PyObject *
 xx_bug(PyObject *self, PyObject *args)
 {
 	PyObject *list, *item;
-	
+
 	if (!PyArg_ParseTuple(args, "O:bug", &list))
 		return NULL;
-	
+
 	item = PyList_GetItem(list, 0);
 	/* Py_INCREF(item); */
 	PyList_SetItem(list, 1, PyInt_FromLong(0L));
 	PyObject_Print(item, stdout, 0);
 	printf("\n");
 	/* Py_DECREF(item); */
-	
+
 	Py_INCREF(Py_None);
 	return Py_None;
 }
