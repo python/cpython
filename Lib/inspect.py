@@ -27,7 +27,7 @@ Here are some of the useful functions provided by this module:
 __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __date__ = '1 Jan 2001'
 
-import sys, os, types, string, dis, imp, tokenize
+import sys, os, types, string, re, dis, imp, tokenize
 
 # ----------------------------------------------------------- type-checking
 def ismodule(object):
@@ -259,10 +259,9 @@ def findsource(object):
 
     if isclass(object):
         name = object.__name__
-        matches = (['class', name], ['class', name + ':'])
+        pat = re.compile(r'^\s*class\s*' + name + r'\b')
         for i in range(len(lines)):
-            if string.split(lines[i])[:2] in matches:
-                return lines, i
+            if pat.match(lines[i]): return lines, i
         else: raise IOError, 'could not find class definition'
 
     if ismethod(object):
@@ -277,8 +276,9 @@ def findsource(object):
         if not hasattr(object, 'co_firstlineno'):
             raise IOError, 'could not find function definition'
         lnum = object.co_firstlineno - 1
+        pat = re.compile(r'^\s*def\s')
         while lnum > 0:
-            if string.split(lines[lnum])[:1] == ['def']: break
+            if pat.match(lines[lnum]): break
             lnum = lnum - 1
         return lines, lnum
 
