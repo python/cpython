@@ -183,9 +183,9 @@ class Distribution:
            commands (currently, this only happens if user asks for
            help)."""
 
-        # late import because of mutual dependence between these classes
+        # late import because of mutual dependence between these modules
         from distutils.cmd import Command
-
+        from distutils.core import usage
 
         # We have to parse the command line a bit at a time -- global
         # options, then the first command, then its options, and so on --
