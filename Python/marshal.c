@@ -468,6 +468,7 @@ r_object(p)
 			XDECREF(code);
 			XDECREF(consts);
 			XDECREF(names);
+			XDECREF(varnames);
 			XDECREF(filename);
 			XDECREF(name);
 
