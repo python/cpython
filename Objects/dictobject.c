@@ -950,6 +950,41 @@ dict_get(register dictobject *mp, PyObject *args)
 
 
 static PyObject *
+dict_setdefault(register dictobject *mp, PyObject *args)
+{
+	PyObject *key;
+	PyObject *failobj = Py_None;
+	PyObject *val = NULL;
+	long hash;
+
+	if (!PyArg_ParseTuple(args, "O|O:setdefault", &key, &failobj))
+		return NULL;
+	if (mp->ma_table == NULL)
+		goto finally;
+
+#ifdef CACHE_HASH
+	if (!PyString_Check(key) ||
+	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
+#endif
+	{
+		hash = PyObject_Hash(key);
+		if (hash == -1)
+			return NULL;
+	}
+	val = lookdict(mp, key, hash)->me_value;
+
+  finally:
+	if (val == NULL) {
+		val = failobj;
+		if (PyDict_SetItem((PyObject*)mp, key, failobj))
+			val = NULL;
+	}
+	Py_XINCREF(val);
+	return val;
+}
+
+
+static PyObject *
 dict_clear(register dictobject *mp, PyObject *args)
 {
 	if (!PyArg_NoArgs(args))
@@ -993,6 +1028,7 @@ static PyMethodDef mapp_methods[] = {
 	{"clear",	(PyCFunction)dict_clear},
 	{"copy",	(PyCFunction)dict_copy},
 	{"get",         (PyCFunction)dict_get,          METH_VARARGS},
+	{"setdefault",  (PyCFunction)dict_setdefault,   METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 
