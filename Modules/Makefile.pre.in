@@ -153,8 +153,11 @@ yuvconvert.o: yuvconvert.c
 
 # Rules to build and install all shared modules
 sharedmods:	$(SHAREDMODS)
-sharedinstall:	$(SHAREDMODS)
+sharedinstall:	$(DESTSHARED) $(SHAREDMODS)
 		for i in dummy $(SHAREDMODS); do \
 		    if test -f $$i; then mv $$i $(DESTSHARED)/$$i; fi; done
+
+$(DESTSHARED):
+		mkdir $(DESTSHARED)
 
 # Stuff is appended here by makesetup and make depend
