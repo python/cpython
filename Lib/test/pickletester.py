@@ -502,6 +502,12 @@ class AbstractPickleTests(unittest.TestCase):
                 y = self.loads(s)
                 self.assert_(x is y, (proto, x, s, y))
 
+                # Test that proto >= 2 really uses the bool opcodes.
+                if proto >= 2 and x in (False, True):
+                    expected = x and pickle.NEWTRUE or pickle.NEWFALSE
+                    # Skip the PROTO opcode at the start.
+                    self.assertEqual(s[2], expected)
+
     def test_newobj_tuple(self):
         x = MyTuple([1, 2, 3])
         x.foo = 42

@@ -963,9 +963,13 @@ save_bool(Picklerobject *self, PyObject *args)
 	static char len[2] = {sizeof(FALSE)-1, sizeof(TRUE)-1};
 	long l = PyInt_AS_LONG((PyIntObject *)args);
 
-	if ((*self->write_func)(self, buf[l], len[l]) < 0)
+	if (self->proto >= 2) {
+		char opcode = l ? NEWTRUE : NEWFALSE;
+		if (self->write_func(self, &opcode, 1) < 0)
+			return -1;
+	}
+	else if (self->write_func(self, buf[l], len[l]) < 0)
 		return -1;
-
 	return 0;
 }
 
@@ -2789,6 +2793,15 @@ load_int(Unpicklerobject *self)
 	return res;
 }
 
+static int
+load_bool(Unpicklerobject *self, PyObject *boolean)
+{
+	assert(boolean == Py_True || boolean == Py_False);
+	Py_INCREF(boolean);
+	PDATA_PUSH(self->stack, boolean, -1);
+	return 0;
+}
+
 /* s contains x bytes of a little-endian integer.  Return its value as a
  * C int.  Obscure:  when x is 1 or 2, this is an unsigned little-endian
  * int, but when x is 4 it's a signed one.  This is an historical source
@@ -4144,6 +4157,16 @@ load(Unpicklerobject *self)
 				break;
 			continue;
 
+		case NEWTRUE:
+			if (load_bool(self, Py_True) < 0)
+				break;
+			continue;
+
+		case NEWFALSE:
+			if (load_bool(self, Py_False) < 0)
+				break;
+			continue;
+
 		case '\0':
 			/* end of file */
 			PyErr_SetNone(PyExc_EOFError);
@@ -4462,6 +4485,15 @@ noload(Unpicklerobject *self)
 				break;
 			continue;
 
+		case NEWTRUE:
+			if (load_bool(self, Py_True) < 0)
+				break;
+			continue;
+
+		case NEWFALSE:
+			if (load_bool(self, Py_False) < 0)
+				break;
+			continue;
 		default:
 			cPickle_ErrFormat(UnpicklingError,
 					  "invalid load key, '%s'.",
