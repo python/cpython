@@ -43,6 +43,7 @@
 # 2002-04-16 fl  Added __str__ methods to datetime/binary wrappers
 # 2002-05-15 fl  Added error constants (from Andrew Kuchling)
 # 2002-06-27 fl  Merged with Python CVS version
+# 2002-10-22 fl  Added basic authentication (based on code from Phillip Eby)
 #
 # Copyright (c) 1999-2002 by Secret Labs AB.
 # Copyright (c) 1999-2002 by Fredrik Lundh.
@@ -1044,6 +1045,37 @@ class Transport:
         return getparser()
 
     ##
+    # Get authorization info from host parameter
+    # Host may be a string, or a (host, x509-dict) tuple; if a string,
+    # it is checked for a "user:pw@host" format, and a "Basic
+    # Authentication" header is added if appropriate.
+    #
+    # @param host Host descriptor (URL or (URL, x509 info) tuple).
+    # @return A 3-tuple containing (actual host, extra headers,
+    #     x509 info).  The header and x509 fields may be None.
+
+    def get_host_info(self, host):
+
+        x509 = {}
+        if isinstance(host, TupleType):
+            host, x509 = host
+
+        import urllib
+        auth, host = urllib.splituser(host)
+
+        if auth:
+            import base64
+            auth = base64.encodestring(auth)
+            auth = string.join(string.split(auth), "") # get rid of whitespace
+            extra_headers = [
+                ("Authorization", "Basic " + auth)
+                ]
+        else:
+            extra_headers = None
+
+        return host, extra_headers, x509
+
+    ##
     # Connect to server.
     #
     # @param host Target host.
@@ -1052,6 +1084,7 @@ class Transport:
     def make_connection(self, host):
         # create a HTTP connection object from a host descriptor
         import httplib
+        host, extra_headers, x509 = self.get_host_info(host)
         return httplib.HTTP(host)
 
     ##
@@ -1071,7 +1104,13 @@ class Transport:
     # @param host Host name.
 
     def send_host(self, connection, host):
+        host, extra_headers, x509 = self.get_host_info(host)
         connection.putheader("Host", host)
+        if extra_headers:
+            if isinstance(extra_headers, DictType):
+                extra_headers = extra_headers.items()
+            for key, value in extra_headers:
+                connection.putheader(key, value)
 
     ##
     # Send user-agent identifier.
@@ -1147,22 +1186,15 @@ class SafeTransport(Transport):
         # create a HTTPS connection object from a host descriptor
         # host may be a string, or a (host, x509-dict) tuple
         import httplib
-        if isinstance(host, TupleType):
-            host, x509 = host
-        else:
-            x509 = {}
+        host, extra_headers, x509 = self.get_host_info(host)
         try:
             HTTPS = httplib.HTTPS
         except AttributeError:
-            raise NotImplementedError,\
-                  "your version of httplib doesn't support HTTPS"
+            raise NotImplementedError(
+                "your version of httplib doesn't support HTTPS"
+                )
         else:
-            return apply(HTTPS, (host, None), x509)
-
-    def send_host(self, connection, host):
-        if isinstance(host, TupleType):
-            host, x509 = host
-        connection.putheader("Host", host)
+            return apply(HTTPS, (host, None), x509 or {})
 
 ##
 # Standard server proxy.  This class establishes a virtual connection
