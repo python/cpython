@@ -127,6 +127,8 @@ Extension modules
 Library
 -------
 
+- netrc now allows Ascii punctuation characters in passwords.
+
 - shelve now supports the optional writeback argument, and exposes
   pickle protocol versions.
 
