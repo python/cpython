@@ -465,6 +465,8 @@ parse_grow_buff(ReaderObj *self)
 {
 	if (self->field_size == 0) {
 		self->field_size = 4096;
+		if (self->field != NULL)
+			PyMem_Free(self->field);
 		self->field = PyMem_Malloc(self->field_size);
 	}
 	else {
@@ -739,6 +741,8 @@ Reader_dealloc(ReaderObj *self)
         Py_XDECREF(self->dialect);
         Py_XDECREF(self->input_iter);
         Py_XDECREF(self->fields);
+        if (self->field != NULL)
+        	PyMem_Free(self->field);
 	PyObject_GC_Del(self);
 }
 
@@ -1002,6 +1006,8 @@ join_check_rec_size(WriterObj *self, int rec_len)
 	if (rec_len > self->rec_size) {
 		if (self->rec_size == 0) {
 			self->rec_size = (rec_len / MEM_INCR + 1) * MEM_INCR;
+			if (self->rec != NULL)
+				PyMem_Free(self->rec);
 			self->rec = PyMem_Malloc(self->rec_size);
 		}
 		else {
@@ -1191,6 +1197,8 @@ Writer_dealloc(WriterObj *self)
 {
         Py_XDECREF(self->dialect);
         Py_XDECREF(self->writeline);
+	if (self->rec != NULL)
+		PyMem_Free(self->rec);
 	PyObject_GC_Del(self);
 }
 
