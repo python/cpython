@@ -2281,6 +2281,11 @@ PyEval_CallObjectWithKeywords(func, arg, kw)
 	else
 		INCREF(arg);
 
+	if (kw != NULL && !is_dictobject(kw)) {
+		err_setstr(TypeError, "keyword list must be a dictionary");
+		return NULL;
+	}
+
         if (call = func->ob_type->tp_call)
                 result = (*call)(func, arg, kw);
         else if (is_instancemethodobject(func) || is_funcobject(func))
@@ -2316,7 +2321,7 @@ call_builtin(func, arg, kw)
 		}
 		if (flags & METH_KEYWORDS)
 			return (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
-		if (kw != NULL) {
+		if (kw != NULL && getmappingsize(kw) != 0) {
 			err_setstr(TypeError,
 				   "this function takes no keyword arguments");
 			return NULL;
