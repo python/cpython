@@ -381,7 +381,6 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	/* Make it easier to find out where we are with a debugger */
 	char *filename = PyString_AsString(co->co_filename);
 #endif
-	static PyObject *nextstr;
 
 /* Code access macros */
 
@@ -417,11 +416,6 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				     GETLOCAL(i) = value; } while (0)
 
 /* Start of code */
-	if (nextstr == NULL) {
-		nextstr = PyString_InternFromString("next");
-		if (nextstr == NULL)
-			return NULL;
-	}
 
 #ifdef USE_STACKCHECK
 	if (tstate->recursion_depth%10 == 0 && PyOS_CheckStack()) {
@@ -1887,34 +1881,29 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			x = PyObject_GetIter(v);
 			Py_DECREF(v);
 			if (x != NULL) {
-				w = x;
-				x = PyObject_GetAttr(w, nextstr);
-				Py_DECREF(w);
-				if (x != NULL) {
-					PUSH(x);
-					continue;
-				}
+				PUSH(x);
+				continue;
 			}
 			break;
 
 		case FOR_ITER:
 			/* before: [iter]; after: [iter, iter()] *or* [] */
 			v = TOP();
-			x = PyObject_CallObject(v, NULL);
-			if (x == NULL) {
-				if (PyErr_ExceptionMatches(
-					PyExc_StopIteration))
-				{
-					PyErr_Clear();
-					x = v = POP();
-					Py_DECREF(v);
-					JUMPBY(oparg);
-					continue;
-				}
-				break;
+			x = PyIter_Next(v);
+			if (x != NULL) {
+				PUSH(x);
+				continue;
 			}
-			PUSH(x);
-			continue;
+			if (!PyErr_Occurred() ||
+			    PyErr_ExceptionMatches(
+				    PyExc_StopIteration))
+			{
+				x = v = POP();
+				Py_DECREF(v);
+				JUMPBY(oparg);
+				continue;
+			}
+			break;
 
 		case FOR_LOOP:
 			/* for v in s: ...

@@ -6,13 +6,13 @@ typedef struct {
 	PyObject_HEAD
 	long      it_index;
 	PyObject *it_seq;
-} iterobject;
+} seqiterobject;
 
 PyObject *
-PyIter_New(PyObject *seq)
+PySeqIter_New(PyObject *seq)
 {
-	iterobject *it;
-	it = PyObject_NEW(iterobject, &PyIter_Type);
+	seqiterobject *it;
+	it = PyObject_NEW(seqiterobject, &PySeqIter_Type);
 	if (it == NULL)
 		return NULL;
 	it->it_index = 0;
@@ -21,35 +21,21 @@ PyIter_New(PyObject *seq)
 	return (PyObject *)it;
 }
 static void
-iter_dealloc(iterobject *it)
+iter_dealloc(seqiterobject *it)
 {
 	Py_DECREF(it->it_seq);
 	PyObject_DEL(it);
 }
 
 static PyObject *
-iter_next(iterobject *it, PyObject *args)
+iter_next(seqiterobject *it, PyObject *args)
 {
 	PyObject *seq = it->it_seq;
+	PyObject *result = PySequence_GetItem(seq, it->it_index++);
 
-	if (PyList_Check(seq)) {
-		PyObject *item;
-		if (it->it_index >= PyList_GET_SIZE(seq)) {
-			PyErr_SetObject(PyExc_StopIteration, Py_None);
-			return NULL;
-		}
-		item = PyList_GET_ITEM(seq, it->it_index);
-		it->it_index++;
-		Py_INCREF(item);
-		return item;
-	}
-	else {
-		PyObject *result = PySequence_GetItem(seq, it->it_index++);
-		if (result == NULL &&
-		    PyErr_ExceptionMatches(PyExc_IndexError))
-			PyErr_SetObject(PyExc_StopIteration, Py_None);
-		return result;
-	}
+	if (result == NULL && PyErr_ExceptionMatches(PyExc_IndexError))
+		PyErr_SetObject(PyExc_StopIteration, Py_None);
+	return result;
 }
 
 static PyObject *
@@ -59,6 +45,43 @@ iter_getiter(PyObject *it)
 	return it;
 }
 
+/* Return (value, 0) if OK; (NULL, 0) at end; (NULL, -1) if exception */
+static PyObject *
+iter_iternext(PyObject *iterator)
+{
+	seqiterobject *it;
+	PyObject *seq;
+
+	assert(PySeqIter_Check(iterator));
+	it = (seqiterobject *)iterator;
+	seq = it->it_seq;
+
+	if (PyList_Check(seq)) {
+		PyObject *item;
+		if (it->it_index >= PyList_GET_SIZE(seq)) {
+			return NULL;
+		}
+		item = PyList_GET_ITEM(seq, it->it_index);
+		it->it_index++;
+		Py_INCREF(item);
+		return item;
+	}
+	else {
+		PyObject *result = PySequence_GetItem(seq, it->it_index++);
+		if (result != NULL) {
+			return result;
+		}
+		if (PyErr_ExceptionMatches(PyExc_IndexError) ||
+			PyErr_ExceptionMatches(PyExc_StopIteration)) {
+			PyErr_Clear();
+			return NULL;
+		}
+		else {
+			return NULL;
+		}
+	}
+}
+
 static PyMethodDef iter_methods[] = {
 	{"next",	(PyCFunction)iter_next,	METH_VARARGS,
 	 "it.next() -- get the next value, or raise StopIteration"},
@@ -66,16 +89,16 @@ static PyMethodDef iter_methods[] = {
 };
 
 static PyObject *
-iter_getattr(iterobject *it, char *name)
+iter_getattr(seqiterobject *it, char *name)
 {
 	return Py_FindMethod(iter_methods, (PyObject *)it, name);
 }
 
-PyTypeObject PyIter_Type = {
+PyTypeObject PySeqIter_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
 	"iterator",				/* tp_name */
-	sizeof(iterobject),			/* tp_basicsize */
+	sizeof(seqiterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */
 	(destructor)iter_dealloc, 		/* tp_dealloc */
@@ -100,6 +123,7 @@ PyTypeObject PyIter_Type = {
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	(getiterfunc)iter_getiter,		/* tp_iter */
+	(iternextfunc)iter_iternext,		/* tp_iternext */
 };
 
 /* -------------------------------------- */
@@ -130,6 +154,7 @@ calliter_dealloc(calliterobject *it)
 	Py_DECREF(it->it_sentinel);
 	PyObject_DEL(it);
 }
+
 static PyObject *
 calliter_next(calliterobject *it, PyObject *args)
 {
@@ -154,6 +179,22 @@ static PyObject *
 calliter_getattr(calliterobject *it, char *name)
 {
 	return Py_FindMethod(calliter_methods, (PyObject *)it, name);
+}
+
+static PyObject *
+calliter_iternext(calliterobject *it)
+{
+	PyObject *result = PyObject_CallObject(it->it_callable, NULL);
+	if (result != NULL) {
+		if (PyObject_RichCompareBool(result, it->it_sentinel, Py_EQ)) {
+			Py_DECREF(result);
+			result = NULL;
+		}
+	}
+	else if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
+		PyErr_Clear();
+	}
+	return result;
 }
 
 PyTypeObject PyCallIter_Type = {
@@ -185,4 +226,5 @@ PyTypeObject PyCallIter_Type = {
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	(getiterfunc)iter_getiter,		/* tp_iter */
+	(iternextfunc)calliter_iternext,	/* tp_iternext */
 };

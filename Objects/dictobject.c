@@ -1354,6 +1354,7 @@ PyTypeObject PyDict_Type = {
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	(getiterfunc)dictiter_new,		/* tp_iter */
+	0,					/* tp_iternext */
 };
 
 /* For backward compatibility with old dictionary interface */
@@ -1433,6 +1434,7 @@ static PyObject *
 dictiter_next(dictiterobject *di, PyObject *args)
 {
 	PyObject *key;
+
 	if (di->di_size != di->di_dict->ma_size) {
 		PyErr_SetString(PyExc_RuntimeError,
 				"dictionary changed size during iteration");
@@ -1460,9 +1462,25 @@ static PyMethodDef dictiter_methods[] = {
 };
 
 static PyObject *
-dictiter_getattr(dictiterobject *it, char *name)
+dictiter_getattr(dictiterobject *di, char *name)
 {
-	return Py_FindMethod(dictiter_methods, (PyObject *)it, name);
+	return Py_FindMethod(dictiter_methods, (PyObject *)di, name);
+}
+
+static PyObject *dictiter_iternext(dictiterobject *di)
+{
+	PyObject *key;
+
+	if (di->di_size != di->di_dict->ma_size) {
+		PyErr_SetString(PyExc_RuntimeError,
+				"dictionary changed size during iteration");
+		return NULL;
+	}
+	if (PyDict_Next((PyObject *)(di->di_dict), &di->di_pos, &key, NULL)) {
+		Py_INCREF(key);
+		return key;
+	}
+	return NULL;
 }
 
 PyTypeObject PyDictIter_Type = {
@@ -1494,4 +1512,5 @@ PyTypeObject PyDictIter_Type = {
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	(getiterfunc)dictiter_getiter,		/* tp_iter */
+	(iternextfunc)dictiter_iternext,	/* tp_iternext */
 };
