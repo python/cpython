@@ -1334,17 +1334,10 @@ Collection}{../api/supporting-cycle-detection.html} in the
 \subsection{More Suggestions}
 
 Remember that you can omit most of these functions, in which case you
-provide \code{0} as a value.
-
-In the \file{Objects} directory of the Python source distribution,
-there is a file \file{xxobject.c}, which is intended to be used as a
-template for the implementation of new types.  One useful strategy
-for implementing a new type is to copy and rename this file, then
-read the instructions at the top of it.
-
-There are type definitions for each of the functions you must
-provide.  They are in \file{object.h} in the Python include
-directory that comes with the source distribution of Python.
+provide \code{0} as a value.  There are type definitions for each of
+the functions you must provide.  They are in \file{object.h} in the
+Python include directory that comes with the source distribution of
+Python.
 
 In order to learn how to implement any specific method for your new
 datatype, do the following: Download and unpack the Python source
@@ -1353,20 +1346,13 @@ C source files for \code{tp_} plus the function you want (for
 example, \code{tp_print} or \code{tp_compare}).  You will find
 examples of the function you want to implement.
 
-When you need to verify that the type of an object is indeed the
-object you are implementing and if you use xxobject.c as an starting
-template for your implementation, then there is a macro defined for
-this purpose. The macro definition will look something like this:
+When you need to verify that an object is an instance of the type
+you are implementing, use the \cfunction{PyObject_TypeCheck} function.
+A sample of its use might be something like the following:
 
 \begin{verbatim}
-#define is_newdatatypeobject(v)  ((v)->ob_type == &Newdatatypetype)
-\end{verbatim}
-
-And, a sample of its use might be something like the following:
-
-\begin{verbatim}
-    if (!is_newdatatypeobject(objp1) {
-        PyErr_SetString(PyExc_TypeError, "arg #1 not a newdatatype");
+    if (! PyObject_TypeCheck(some_object, &MyType) {
+        PyErr_SetString(PyExc_TypeError, "arg #1 not a mything");
         return NULL;
     }
 \end{verbatim}
