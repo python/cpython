@@ -100,7 +100,7 @@ static void	NotifierExitHandler _ANSI_ARGS_((ClientData clientData));
  */
 
 static void
-InitNotifier()
+InitNotifier(void)
 {
     initialized = 1;
     memset(&notifier, 0, sizeof(notifier));
@@ -507,7 +507,7 @@ Tcl_ServiceEvent(flags)
  */
 
 int
-Tcl_GetServiceMode()
+Tcl_GetServiceMode(void)
 {
     if (!initialized) {
 	InitNotifier();
@@ -799,7 +799,7 @@ Tcl_DoOneEvent(flags)
  */
 
 int
-Tcl_ServiceAll()
+Tcl_ServiceAll(void)
 {
     int result = 0;
     EventSource *sourcePtr;
@@ -894,7 +894,7 @@ Tcl_ServiceAll()
  */
 
 int
-PyTcl_WaitUntilEvent()
+PyTcl_WaitUntilEvent(void)
 {
     int flags = TCL_ALL_EVENTS;
     int result = 0, oldMode;

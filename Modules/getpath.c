@@ -347,7 +347,7 @@ search_for_exec_prefix(char *argv0_path, char *home)
 
 
 static void
-calculate_path()
+calculate_path(void)
 {
     extern char *Py_GetProgramName();
 
@@ -572,7 +572,7 @@ calculate_path()
 /* External interface */
 
 char *
-Py_GetPath()
+Py_GetPath(void)
 {
     if (!module_search_path)
         calculate_path();
@@ -580,7 +580,7 @@ Py_GetPath()
 }
 
 char *
-Py_GetPrefix()
+Py_GetPrefix(void)
 {
     if (!module_search_path)
         calculate_path();
@@ -588,7 +588,7 @@ Py_GetPrefix()
 }
 
 char *
-Py_GetExecPrefix()
+Py_GetExecPrefix(void)
 {
     if (!module_search_path)
         calculate_path();
@@ -596,7 +596,7 @@ Py_GetExecPrefix()
 }
 
 char *
-Py_GetProgramFullPath()
+Py_GetProgramFullPath(void)
 {
     if (!module_search_path)
         calculate_path();

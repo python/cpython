@@ -273,7 +273,7 @@ static PyMethodDef unicodedata_functions[] = {
 };
 
 DL_EXPORT(void)
-initunicodedata()
+initunicodedata(void)
 {
     Py_InitModule("unicodedata", unicodedata_functions);
 }

@@ -107,7 +107,7 @@ static PyObject *moddict;
 static long timezone;
 
 static void 
-initmactimezone()
+initmactimezone(void)
 {
 	MachineLocation	loc;
 	long		delta;
@@ -579,7 +579,7 @@ strptime() -- parse string to time tuple according to format specification\n\
   
 
 DL_EXPORT(void)
-inittime()
+inittime(void)
 {
 	PyObject *m, *d;
 	char *p;
@@ -667,7 +667,7 @@ inittime()
 /* Implement floattime() for various platforms */
 
 static double
-floattime()
+floattime(void)
 {
 	/* There are three ways to get the time:
 	  (1) gettimeofday() -- resolution in microseconds

@@ -618,7 +618,7 @@ rotor_methods[] = {
 
 
 DL_EXPORT(void)
-initrotor()
+initrotor(void)
 {
 	(void)Py_InitModule("rotor", rotor_methods);
 }

@@ -755,7 +755,7 @@ rgbimg_methods[] = {
 
 
 DL_EXPORT(void)
-initrgbimg()
+initrgbimg(void)
 {
 	PyObject *m, *d;
 	m = Py_InitModule("rgbimg", rgbimg_methods);

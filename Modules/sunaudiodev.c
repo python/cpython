@@ -482,7 +482,7 @@ static PyMethodDef sunaudiodev_methods[] = {
 };
 
 void
-initsunaudiodev()
+initsunaudiodev(void)
 {
 	PyObject *m, *d;
 

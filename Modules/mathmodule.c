@@ -38,7 +38,7 @@ extern double modf (double, double *);
 #endif
 
 static PyObject *
-math_error()
+math_error(void)
 {
 	if (errno == EDOM)
 		PyErr_SetString(PyExc_ValueError, "math domain error");
@@ -259,7 +259,7 @@ static char module_doc [] =
 mathematical functions defined by the C standard.";
 
 DL_EXPORT(void)
-initmath()
+initmath(void)
 {
 	PyObject *m, *d, *v;
 	

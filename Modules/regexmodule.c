@@ -657,7 +657,7 @@ static struct PyMethodDef regex_global_methods[] = {
 };
 
 DL_EXPORT(void)
-initregex()
+initregex(void)
 {
 	PyObject *m, *d, *v;
 	int i;

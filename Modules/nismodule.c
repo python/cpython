@@ -295,7 +295,7 @@ nisproc_maplist_2(domainname *argp, CLIENT *clnt)
 
 static
 nismaplist *
-nis_maplist ()
+nis_maplist (void)
 {
 	nisresp_maplist *list;
 	char *dom;
@@ -371,7 +371,7 @@ static PyMethodDef nis_methods[] = {
 };
 
 void
-initnis ()
+initnis (void)
 {
 	PyObject *m, *d;
 	m = Py_InitModule("nis", nis_methods);

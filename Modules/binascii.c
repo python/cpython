@@ -899,7 +899,7 @@ static struct PyMethodDef binascii_module_methods[] = {
 static char doc_binascii[] = "Conversion between binary data and ASCII";
 
 DL_EXPORT(void)
-initbinascii()
+initbinascii(void)
 {
 	PyObject *m, *d, *x;
 

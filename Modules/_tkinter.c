@@ -1912,9 +1912,7 @@ Tkinter_Flatten(PyObject* self, PyObject* args)
 }
 
 static PyObject *
-Tkinter_Create(self, args)
-	PyObject *self;
-	PyObject *args;
+Tkinter_Create(PyObject *self, PyObject *args)
 {
 	char *screenName = NULL;
 	char *baseName = NULL;
@@ -1967,7 +1965,7 @@ MyFileProc(void *clientData, int mask)
 static PyThreadState *event_tstate = NULL;
 
 static int
-EventHook()
+EventHook(void)
 {
 #ifndef MS_WINDOWS
 	int tfile;
@@ -2026,7 +2024,7 @@ EventHook()
 #endif
 
 static void
-EnableEventHook()
+EnableEventHook(void)
 {
 #ifdef WAIT_FOR_STDIN
 	if (PyOS_InputHook == NULL) {
@@ -2039,7 +2037,7 @@ EnableEventHook()
 }
 
 static void
-DisableEventHook()
+DisableEventHook(void)
 {
 #ifdef WAIT_FOR_STDIN
 	if (Tk_GetNumMainWindows() == 0 && PyOS_InputHook == EventHook) {
@@ -2071,7 +2069,7 @@ ins_string(PyObject *d, char *name, char *val)
 
 
 DL_EXPORT(void)
-init_tkinter()
+init_tkinter(void)
 {
 	PyObject *m, *d;
 
@@ -2218,7 +2216,7 @@ init_tkinter_shlib(CFragInitBlockPtr data)
 ** the resources from the application. Again, we ignore errors.
 */
 static
-mac_addlibresources()
+mac_addlibresources(void)
 {
 	if ( !loaded_from_shlib ) 
 		return;

@@ -446,7 +446,7 @@ static int regexp_ansi_sequences;
 
 unsigned char re_syntax_table[256];
 
-void re_compile_initialize()
+void re_compile_initialize(void)
 {
 	int a;
   

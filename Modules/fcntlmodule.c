@@ -312,7 +312,7 @@ all_ins(PyObject* d)
 }
 
 DL_EXPORT(void)
-initfcntl()
+initfcntl(void)
 {
 	PyObject *m, *d;
 

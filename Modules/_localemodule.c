@@ -400,7 +400,7 @@ static struct PyMethodDef PyLocale_Methods[] = {
 };
 
 DL_EXPORT(void)
-init_locale()
+init_locale(void)
 {
     PyObject *m, *d, *x;
 

@@ -41,7 +41,7 @@ static PyObject *newcaptureobject(svobject *, void *, int);
 
 /* Set a SV-specific error from svideo_errno and return NULL */
 static PyObject *
-sv_error()
+sv_error(void)
 {
 	PyErr_SetString(SvError, svStrerror(svideo_errno));
 	return NULL;
@@ -961,7 +961,7 @@ static PyMethodDef sv_methods[] = {
 };
 
 void
-initsv()
+initsv(void)
 {
 	PyObject *m, *d;
 

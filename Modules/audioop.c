@@ -284,10 +284,7 @@ audioop_rms(PyObject *self, PyObject *args)
 	return PyInt_FromLong(val);
 }
 
-static double _sum2(a, b, len)
-	short *a;
-        short *b;
-        int len;
+static double _sum2(short *a, short *b, int len)
 {
 	int i;
 	double sum = 0.0;
@@ -899,8 +896,7 @@ audioop_lin2lin(PyObject *self, PyObject *args)
 }
 
 static int
-gcd(a, b)
-	int a, b;
+gcd(int a, int b)
 {
 	while (b > 0) {
 		int tmp = a % b;
@@ -1344,7 +1340,7 @@ static PyMethodDef audioop_methods[] = {
 };
 
 DL_EXPORT(void)
-initaudioop()
+initaudioop(void)
 {
 	PyObject *m, *d;
 	m = Py_InitModule("audioop", audioop_methods);

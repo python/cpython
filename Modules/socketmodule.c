@@ -228,7 +228,7 @@ static PyObject *SSLErrorObject;
    and return a NULL pointer from a function. */
 
 static PyObject *
-PySocket_Err()
+PySocket_Err(void)
 {
 #ifdef MS_WINDOWS
 	if (WSAGetLastError()) {
@@ -1437,9 +1437,7 @@ Return the IP address (a string of the form '255.255.255.255') for a host.";
 /* Convenience function common to gethostbyname_ex and gethostbyaddr */
 
 static PyObject *
-gethost_common(h, addr)
-	struct hostent *h;
-	struct sockaddr_in *addr;
+gethost_common(struct hostent *h, struct sockaddr_in *addr)
 {
 	char **pch;
 	PyObject *rtn_tuple = (PyObject *)NULL;
@@ -2185,13 +2183,13 @@ insint(PyObject *d, char *name, int value)
 /* Additional initialization and cleanup for NT/Windows */
 
 static void
-NTcleanup()
+NTcleanup(void)
 {
 	WSACleanup();
 }
 
 static int
-NTinit()
+NTinit(void)
 {
 	WSADATA WSAData;
 	int ret;
@@ -2225,13 +2223,13 @@ NTinit()
 /* Additional initialization and cleanup for OS/2 */
 
 static void
-OS2cleanup()
+OS2cleanup(void)
 {
     /* No cleanup is necessary for OS/2 Sockets */
 }
 
 static int
-OS2init()
+OS2init(void)
 {
     char reason[64];
     int rc = sock_init();

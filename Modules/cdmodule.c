@@ -766,7 +766,7 @@ static PyMethodDef CD_methods[] = {
 };
 
 void
-initcd()
+initcd(void)
 {
 	PyObject *m, *d;
 

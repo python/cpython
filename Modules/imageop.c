@@ -706,7 +706,7 @@ static PyMethodDef imageop_methods[] = {
 
 
 DL_EXPORT(void)
-initimageop()
+initimageop(void)
 {
 	PyObject *m, *d;
 	m = Py_InitModule("imageop", imageop_methods);

@@ -1270,9 +1270,7 @@ static PyMethodDef PyCursesWindow_Methods[] = {
 };
 
 static PyObject *
-PyCursesWindow_GetAttr(self, name)
-	PyCursesWindowObject *self;
-	char *name;
+PyCursesWindow_GetAttr(PyCursesWindowObject *self, char *name)
 {
   return Py_FindMethod(PyCursesWindow_Methods, (PyObject *)self, name);
 }
@@ -2161,7 +2159,7 @@ static PyMethodDef PyCurses_methods[] = {
 /* Initialization function for the module */
 
 void
-init_curses()
+init_curses(void)
 {
 	PyObject *m, *d, *v;
 

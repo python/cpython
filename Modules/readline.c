@@ -396,7 +396,7 @@ flex_complete(char *text, int start, int end)
 /* Helper to initialize GNU readline properly. */
 
 static void
-setup_readline()
+setup_readline(void)
 {
 	rl_readline_name = "python";
 	/* Force rebind of TAB to insert-tab */
@@ -485,7 +485,7 @@ static char doc_module[] =
 "Importing this module enables command line editing using GNU readline.";
 
 DL_EXPORT(void)
-initreadline()
+initreadline(void)
 {
 	PyObject *m;
 

@@ -1180,7 +1180,7 @@ strop_methods[] = {
 
 
 DL_EXPORT(void)
-initstrop()
+initstrop(void)
 {
 	PyObject *m, *d, *s;
 	char buf[256];

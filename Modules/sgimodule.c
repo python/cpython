@@ -59,7 +59,7 @@ static PyMethodDef sgi_methods[] = {
 
 
 void
-initsgi()
+initsgi(void)
 {
 	Py_InitModule("sgi", sgi_methods);
 }

@@ -2097,7 +2097,7 @@ void
 #if defined(WIN32)
 __declspec(dllexport)
 #endif
-init_sre()
+init_sre(void)
 {
 	/* Patch object types */
 	Pattern_Type.ob_type = Match_Type.ob_type =

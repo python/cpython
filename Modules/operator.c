@@ -247,7 +247,7 @@ spam2(delslice,__delslice__,
 /* Initialization function for the module (*must* be called initoperator) */
 
 DL_EXPORT(void)
-initoperator()
+initoperator(void)
 {
         /* Create the module and add the functions */
         Py_InitModule4("operator", operator_methods, operator_doc,

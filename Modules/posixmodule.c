@@ -284,7 +284,7 @@ extern char **environ;
 #endif /* !_MSC_VER */
 
 static PyObject *
-convertenviron()
+convertenviron(void)
 {
 	PyObject *d;
 	char **e;
@@ -344,7 +344,7 @@ convertenviron()
 /* Set a POSIX-specific error from errno, and return NULL */
 
 static PyObject *
-posix_error()
+posix_error(void)
 {
 	return PyErr_SetFromErrno(PyExc_OSError);
 }
@@ -1916,9 +1916,7 @@ static char posix_getppid__doc__[] =
 Return the parent's process id.";
 
 static PyObject *
-posix_getppid(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_getppid(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":getppid"))
 		return NULL;
@@ -2856,7 +2854,7 @@ posix_symlink(PyObject *self, PyObject *args)
 	
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
 static long
-system_uptime()
+system_uptime(void)
 {
     ULONG     value = 0;
 
@@ -5196,8 +5194,7 @@ static int insertvalues(PyObject *d)
 #endif
 
 static int
-all_ins(d)
-        PyObject* d;
+all_ins(PyObject *d)
 {
 #ifdef F_OK
         if (ins(d, "F_OK", (long)F_OK)) return -1;
@@ -5295,7 +5292,7 @@ all_ins(d)
 #endif
 
 DL_EXPORT(void)
-INITFUNC()
+INITFUNC(void)
 {
 	PyObject *m, *d, *v;
 	

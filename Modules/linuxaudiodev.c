@@ -384,7 +384,7 @@ static PyMethodDef linuxaudiodev_methods[] = {
 };
 
 void
-initlinuxaudiodev()
+initlinuxaudiodev(void)
 {
     PyObject *m, *d, *x;
   
