@@ -285,13 +285,17 @@ The \module{gettext} module provides one additional class derived from
 \class{NullTranslations}: \class{GNUTranslations}.  This class
 overrides \method{_parse()} to enable reading GNU \program{gettext}
 format \file{.mo} files in both big-endian and little-endian format.
+It also adds the ability to coerce both message ids and message
+strings to Unicode.
 
-It also parses optional meta-data out of the translation catalog.  It
-is convention with GNU \program{gettext} to include meta-data as the
-translation for the empty string.  This meta-data is in \rfc{822}-style
-\code{key: value} pairs.  If the key \code{Content-Type} is found,
-then the \code{charset} property is used to initialize the
-``protected'' \member{_charset} instance variable.  The entire set of
+\class{GNUTranslations} parses optional meta-data out of the
+translation catalog.  It is convention with GNU \program{gettext} to
+include meta-data as the translation for the empty string.  This
+meta-data is in \rfc{822}-style \code{key: value} pairs, and must
+contain the \code{Project-Id-Version}.  If the key
+\code{Content-Type} is found, then the \code{charset} property is used
+to initialize the ``protected'' \member{_charset} instance variable,
+defaulting to \code{iso-8859-1} if not found.  The entire set of
 key/value pairs are placed into a dictionary and set as the
 ``protected'' \member{_info} instance variable.
 
@@ -302,10 +306,26 @@ can raise \exception{IOError}.
 The other usefully overridden method is \method{ugettext()}, which
 returns a Unicode string by passing both the translated message string
 and the value of the ``protected'' \member{_charset} variable to the
-builtin \function{unicode()} function.
+builtin \function{unicode()} function.  Note that if you use
+\method{ugettext()} you probably also want your message ids to be
+Unicode.  To do this, set the variable \var{coerce} to \code{True} in
+the \class{GNUTranslations} constructor.  This ensures that both the
+message ids and message strings are decoded to Unicode when the file
+is read, using the file's \code{charset} value.  If you do this, you
+will not want to use the \method{gettext()} method -- always use
+\method{ugettext()} instead.
 
 To facilitate plural forms, the methods \method{ngettext} and
 \method{ungettext} are overridden as well.
+
+\begin{methoddesc}[GNUTranslations]{__init__}{
+    \optional{fp\optional{, coerce}}
+Constructs and parses a translation catalog in GNU gettext format.
+\var{fp} is passed to the base class (\class{NullTranslations})
+constructor.  \var{coerce} is a flag specifying whether message ids
+and message strings should be converted to Unicode when the file is
+parsed.  It defaults to \code{False} for backward compatibility.
+\end{methoddesc}
 
 \subsubsection{Solaris message catalog support}
 

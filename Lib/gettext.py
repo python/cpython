@@ -50,8 +50,10 @@ import copy, os, re, struct, sys
 from errno import ENOENT
 
 
-__all__ = ["bindtextdomain","textdomain","gettext","dgettext",
-           "find","translation","install","Catalog"]
+__all__ = ['NullTranslations', 'GNUTranslations', 'Catalog',
+           'find', 'translation', 'install', 'textdomain', 'bindtextdomain',
+           'dgettext', 'dngettext', 'gettext', 'ngettext',
+           ]
 
 _default_localedir = os.path.join(sys.prefix, 'share', 'locale')
 
@@ -170,7 +172,7 @@ def _expand_lang(locale):
 class NullTranslations:
     def __init__(self, fp=None):
         self._info = {}
-        self._charset = None
+        self._charset = 'iso-8859-1'
         self._fallback = None
         if fp is not None:
             self._parse(fp)
@@ -226,6 +228,12 @@ class GNUTranslations(NullTranslations):
     LE_MAGIC = 0x950412deL
     BE_MAGIC = 0xde120495L
 
+    def __init__(self, fp=None, coerce=False):
+        # Set this attribute before calling the base class constructor, since
+        # the latter calls _parse() which depends on self._coerce.
+        self._coerce = coerce
+        NullTranslations.__init__(self, fp)
+
     def _parse(self, fp):
         """Override this method to support alternative .mo formats."""
         unpack = struct.unpack
@@ -260,16 +268,22 @@ class GNUTranslations(NullTranslations):
                     # Plural forms
                     msgid1, msgid2 = msg.split('\x00')
                     tmsg = tmsg.split('\x00')
+                    if self._coerce:
+                        msgid1 = unicode(msgid1, self._charset)
+                        tmsg = [unicode(x, self._charset) for x in tmsg]
                     for i in range(len(tmsg)):
                         catalog[(msgid1, i)] = tmsg[i]
                 else:
+                    if self._coerce:
+                        msg = unicode(msg, self._charset)
+                        tmsg = unicode(tmsg, self._charset)
                     catalog[msg] = tmsg
             else:
                 raise IOError(0, 'File is corrupt', filename)
             # See if we're looking at GNU .mo conventions for metadata
-            if mlen == 0:
+            if mlen == 0 and tmsg.lower().startswith('project-id-version:'):
                 # Catalog description
-                for item in tmsg.split('\n'):
+                for item in tmsg.splitlines():
                     item = item.strip()
                     if not item:
                         continue
@@ -297,7 +311,6 @@ class GNUTranslations(NullTranslations):
                 return self._fallback.gettext(message)
             return message
 
-
     def ngettext(self, msgid1, msgid2, n):
         try:
             return self._catalog[(msgid1, self.plural(n))]
@@ -309,16 +322,17 @@ class GNUTranslations(NullTranslations):
             else:
                 return msgid2
 
-
     def ugettext(self, message):
-        try:
-            tmsg = self._catalog[message]
-        except KeyError:
+        missing = object()
+        tmsg = self._catalog.get(message, missing)
+        if tmsg is missing:
             if self._fallback:
                 return self._fallback.ugettext(message)
             tmsg = message
-        return unicode(tmsg, self._charset)
-
+        if not self._coerce:
+            return unicode(tmsg, self._charset)
+        # The msgstr is already coerced to Unicode
+        return tmsg
 
     def ungettext(self, msgid1, msgid2, n):
         try:
@@ -330,7 +344,10 @@ class GNUTranslations(NullTranslations):
                 tmsg = msgid1
             else:
                 tmsg = msgid2
-        return unicode(tmsg, self._charset)
+        if not self._coerce:
+            return unicode(tmsg, self._charset)
+        # The msgstr is already coerced to Unicode
+        return tmsg
 
 
 # Locate a .mo file using the gettext strategy
