@@ -212,7 +212,13 @@ class dispatcher:
             # I think it should inherit this anyway
             self.socket.setblocking (0)
             self.connected = 1
-            self.addr = sock.getpeername()
+            # XXX Does the constructor require that the socket passed
+            # be connected?
+            try:
+                self.addr = sock.getpeername()
+            except socket.error:
+                # The addr isn't crucial
+                pass
         else:
             self.socket = None
 
