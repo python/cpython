@@ -199,7 +199,10 @@ static pascal OSErr
 handle_open_app(AppleEvent *theAppleEvent, AppleEvent *reply, long refCon)
 {
 	#pragma unused (reply, refCon)
+#if 0
+	/* Test by Jack: would removing this facilitate debugging? */
 	got_one = 1;
+#endif
 	return get_missing_params(theAppleEvent);
 }
 
