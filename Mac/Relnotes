@@ -33,7 +33,8 @@ What is not in this distribution
 --------------------------------
 
 - The garbage collection mods to 2.0 have not been enabled, mainly due to lack of test-time.
-- Stackless Python/microthreads are not in here. Ask on the pythonmac-SIG if you want them.
+- Stackless Python/microthreads hasn't been ported to 2.0 yet. If/when it becomes available
+  Just will undoubtedly announce it on pythonmac-sig.
 - Carbon support is not in here, but should be happening as soon as GUSI is ready.
 - Distutils is not in here, again due to lack of time.
 
@@ -47,3 +48,4 @@ http://www.cwi.nl/~jack/macpython.html.
 - Aliases do not work in sys.path entries.
 - Once you have used multiple threads you cannot raise KeyboardInterrupt anymore:
   typing command-. will immedeately exit the interpreter.
+- The gdbm module does not work.
