@@ -1,3 +1,0 @@
-Make {Parameters} -f Makefile >Make.out
-Set Echo 1
-Make.out

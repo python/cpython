@@ -1,5 +1,0 @@
-tell application "AEservertest"
-	activate
-	set x to window "testing"
-	open file x
-end tell

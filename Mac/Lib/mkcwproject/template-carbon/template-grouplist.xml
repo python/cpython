@@ -1,6 +1,0 @@
-            <FILEREF>
-                <TARGETNAME>%(mac_targetname)s</TARGETNAME>
-                <PATHTYPE>Name</PATHTYPE>
-                <PATH>%(sources)s</PATH>
-                <PATHFORMAT>MacOS</PATHFORMAT>
-            </FILEREF>
