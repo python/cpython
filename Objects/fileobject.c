@@ -651,7 +651,7 @@ get_line(PyFileObject *f, int n)
 	size_t n1, n2;
 	PyObject *v;
 
-#ifdef HAVE_GETLINE
+#if defined(HAVE_GETLINE) && defined(_GNU_SOURCE)
 	/* Use GNU libc extension getline() for arbitrary-sized lines */
 	if (n == 0) {
 		size_t size = 0;
