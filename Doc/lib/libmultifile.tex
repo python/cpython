@@ -1,10 +1,10 @@
 \section{\module{multifile} ---
-         Support for reading files which contain distinct parts.}
-\declaremodule{standard}{multifile}
-\sectionauthor{Eric S. Raymond}{esr@snark.thyrsus.com}
+         Support for files containing distinct parts}
 
+\declaremodule{standard}{multifile}
 \modulesynopsis{Support for reading files which contain distinct
-parts, such as some MIME data.}
+                parts, such as some MIME data.}
+\sectionauthor{Eric S. Raymond}{esr@snark.thyrsus.com}
 
 
 The \class{MultiFile} object enables you to treat sections of a text
@@ -95,7 +95,7 @@ Return the file position relative to the start of the current section.
 
 \begin{methoddesc}{is_data}{str}
 Return true if \var{str} is data and false if it might be a section
-boundary.  As written, it tests for a prefix other than \code{'--'} at
+boundary.  As written, it tests for a prefix other than \code{'-}\code{-'} at
 start of line (which all MIME boundaries have) but it is declared so
 it can be overridden in derived classes.
 
@@ -106,7 +106,7 @@ processing, not cause it to fail.
 
 \begin{methoddesc}{section_divider}{str}
 Turn a boundary into a section-divider line.  By default, this
-method prepends \code{'--'} (which MIME section boundaries have) but
+method prepends \code{'-}\code{-'} (which MIME section boundaries have) but
 it is declared so it can be overridden in derived classes.  This
 method need not append LF or CR-LF, as comparison with the result
 ignores trailing whitespace. 
@@ -114,7 +114,7 @@ ignores trailing whitespace.
 
 \begin{methoddesc}{end_marker}{str}
 Turn a boundary string into an end-marker line.  By default, this
-method prepends \code{'--'} and appends \code{'--'} (like a
+method prepends \code{'-}\code{-'} and appends \code{'-}\code{-'} (like a
 MIME-multipart end-of-message marker) but it is declared so it can be
 be overridden in derived classes.  This method need not append LF or
 CR-LF, as comparison with the result ignores trailing whitespace.
