@@ -226,6 +226,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
 	"""
 
 	self.raw_requestline = self.rfile.readline()
+	self.request_version = version = "HTTP/0.9" # Default
 	requestline = self.raw_requestline
 	if requestline[-2:] == '\r\n':
 	    requestline = requestline[:-2]
@@ -244,15 +245,14 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
 		self.send_error(400,
 				"Bad HTTP/0.9 request type (%s)" % `command`)
 		return
-	    version = "HTTP/0.9"
 	else:
-	    self.send_error(400, "Bad request syntax (%s)" % `command`)
+	    self.send_error(400, "Bad request syntax (%s)" % `requestline`)
 	    return
 	self.command, self.path, self.request_version = command, path, version
 	self.headers = self.MessageClass(self.rfile, 0)
 	mname = 'do_' + command
 	if not hasattr(self, mname):
-	    self.send_error(501, "Unsupported method (%s)" % `command`)
+	    self.send_error(501, "Unsupported method (%s)" % `mname`)
 	    return
 	method = getattr(self, mname)
 	method()
