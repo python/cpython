@@ -83,14 +83,19 @@ int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 	static int local_initialized = 0;
 #endif /* SGI_THREADS and USE_DL */
 	pthread_t th;
-	int success = 0;	/* init not needed when SOLARIS_THREADS and */
-				/* C_THREADS implemented properly */
-
+	int success;
 	dprintf(("start_new_thread called\n"));
 	if (!initialized)
 		init_thread();
 	success = pthread_create(&th, pthread_attr_default, func, arg);
 	return success < 0 ? 0 : 1;
+}
+
+long get_thread_ident _P0()
+{
+	if (!initialized)
+		init_thread();
+	return (long) pthread_self();
 }
 
 static void do_exit_thread _P1(no_cleanup, int no_cleanup)
