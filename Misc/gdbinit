@@ -26,17 +26,6 @@ define pyg
 print _PyGC_Dump($arg0)
 end
 
-# Here's a somewhat fragile way to print the entire Python stack from gdb.
-# It's fragile because the tests for the value of $pc depend on the layout
-# of specific functions in the C source code.
-
-# Explanation of while and if tests: We want to pop up the stack until we
-# land in Py_Main (this is probably an incorrect assumption in an embedded
-# interpreter, but the test can be extended by an interested party).  If
-# Py_Main <= $pc <= Py_GetArgcArv is true $pc is in Py_Main(), so the while
-# tests succeeds as long as it's not true.  In a similar fashion the if
-# statement tests to see if we are in eval_frame().
-
 # print the local variables of the current frame
 define pylocals
     set $_i = 0
@@ -62,23 +51,22 @@ define pyframe
     pylocals
 end
 
+# Here's a somewhat fragile way to print the entire Python stack from gdb.
+# It's fragile because the tests for the value of $pc depend on the layout
+# of specific functions in the C source code.
+
+# Explanation of while and if tests: We want to pop up the stack until we
+# land in Py_Main (this is probably an incorrect assumption in an embedded
+# interpreter, but the test can be extended by an interested party).  If
+# Py_Main <= $pc <= Py_GetArgcArv is true, $pc is in Py_Main(), so the while
+# tests succeeds as long as it's not true.  In a similar fashion the if
+# statement tests to see if we are in eval_frame().
+
 # print the entire Python call stack
 define pystack
     while $pc < Py_Main || $pc > Py_GetArgcArgv
         if $pc > eval_frame && $pc < PyEval_EvalCodeEx
 	    pyframe
-        end
-        up-silently 1
-    end
-    select-frame 0
-end
-
-define pystack
-    while $pc < Py_Main || $pc > Py_GetArgcArgv
-        if $pc > eval_frame && $pc < PyEval_EvalCodeEx
-            set $__fn = PyString_AsString(co->co_filename)
-            set $__n = PyString_AsString(co->co_name)
-            printf "%s (%d): %s\n",  $__fn, f->f_lineno, $__n
         end
         up-silently 1
     end
