@@ -1596,14 +1596,20 @@ class OutputChecker:
                               REPORT_CDIFF |
                               REPORT_NDIFF):
             return False
+
         # If expected output uses ellipsis, a meaningful fancy diff is
-        # too hard.
-        if optionflags & ELLIPSIS and ELLIPSIS_MARKER in want:
-            return False
+        # too hard ... or maybe not.  In two real-life failures Tim saw,
+        # a diff was a major help anyway, so this is commented out.
+        # [todo] _ellipsis_match() knows which pieces do and don't match,
+        # and could be the basis for a kick-ass diff in this case.
+        ##if optionflags & ELLIPSIS and ELLIPSIS_MARKER in want:
+        ##    return False
+
         # ndiff does intraline difference marking, so can be useful even
-        # for 1-line inputs.
+        # for 1-line differences.
         if optionflags & REPORT_NDIFF:
             return True
+
         # The other diff types need at least a few lines to be helpful.
         return want.count('\n') > 2 and got.count('\n') > 2
 
@@ -1620,9 +1626,7 @@ class OutputChecker:
         if not (optionflags & DONT_ACCEPT_BLANKLINE):
             got = re.sub('(?m)^[ ]*(?=\n)', BLANKLINE_MARKER, got)
 
-        # Check if we should use diff.  Don't use diff if the actual
-        # or expected outputs are too short, or if the expected output
-        # contains an ellipsis marker.
+        # Check if we should use diff.
         if self._do_a_fancy_diff(want, got, optionflags):
             # Split want & got into lines.
             want_lines = [l+'\n' for l in want.split('\n')]
