@@ -868,6 +868,10 @@ sub get_refcount{
     return $REFCOUNTS{"$func:$param"};
 }
 
+
+$TLSTART = '<span class="typelabel">';
+$TLEND   = '</span>';
+
 sub do_env_cfuncdesc{
     local($_) = @_;
     my $return_type = next_argument();
@@ -1047,7 +1051,10 @@ sub do_env_excdesc{
     local($_) = @_;
     my $excname = next_argument();
     my $idx = make_str_index_entry("<tt class=\"exception\">$excname</tt>");
-    return "<dl><dt><b>exception $idx</b>\n<dd>" . $_ . '</dl>'
+    return ("<dl><dt><b>${TLSTART}exception$TLEND $idx</b>"
+            . "\n<dd>"
+            . $_
+            . '</dl>');
 }
 
 sub do_env_fulllineitems{ return do_env_itemize(@_); }
@@ -1060,7 +1067,8 @@ sub handle_classlike_descriptor{
     $idx = make_str_index_entry(
 	"<tt class=\"$what\">$THIS_CLASS</tt> ($what in $THIS_MODULE)" );
     $idx =~ s/ \(.*\)//;
-    return ("<dl><dt><b>$what $idx</b>(<var>$arg_list</var>)\n<dd>"
+    return ("<dl><dt><b>$TLSTART$what$TLEND $idx</b>"
+            . "(<var>$arg_list</var>)\n<dd>"
             . $_
             . '</dl>');
 }
@@ -1075,7 +1083,7 @@ sub do_env_classdescstar{
     $idx = make_str_index_entry(
 	"<tt class=\"class\">$THIS_CLASS</tt> (class in $THIS_MODULE)");
     $idx =~ s/ \(.*\)//;
-    return ("<dl><dt><b>class $idx</b>\n<dd>"
+    return ("<dl><dt><b>${TLSTART}class$TLEND $idx</b>\n<dd>"
             . $_
             . '</dl>');
 }
