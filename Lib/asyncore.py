@@ -302,6 +302,7 @@ class dispatcher:
     def connect(self, address):
         self.connected = 0
         err = self.socket.connect_ex(address)
+        # XXX Should interpret Winsock return values
         if err in (EINPROGRESS, EALREADY, EWOULDBLOCK):
             return
         if err in (0, EISCONN):
