@@ -1,4 +1,5 @@
 "Support for number formatting using the current locale settings"
+# Author: Martin von Loewis
 
 from _locale import *
 import string
