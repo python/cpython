@@ -254,12 +254,13 @@ class URLopener:
 	# Use local file
 	def open_local_file(self, url):
 		host, file = splithost(url)
-		if not host: return addinfourl(open(url2pathname(file), 'r'), noheaders(), self.openedurl)
+		if not host:
+			return addinfourl(open(url2pathname(file), 'r'), noheaders(), 'file:'+file)
 		host, port = splitport(host)
 		if not port and socket.gethostbyname(host) in (
 			  localhost(), thishost()):
 			file = unquote(file)
-			return addinfourl(open(url2pathname(file), 'r'), noheaders(), self.openedurl)
+			return addinfourl(open(url2pathname(file), 'r'), noheaders(), 'file:'+file)
 		raise IOError, ('local file error', 'not on local host')
 
 	# Use FTP protocol
