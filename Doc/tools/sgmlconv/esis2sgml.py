@@ -12,13 +12,15 @@ import esistools
 import re
 import string
 
+from xml.utils import escape
+
 
 def format_attrs(attrs):
     attrs = attrs.items()
     attrs.sort()
     s = ''
     for name, value in attrs:
-        s = '%s %s="%s"' % (s, name, value)
+        s = '%s %s="%s"' % (s, name, escape(value))
     return s
 
 
@@ -39,7 +41,7 @@ def do_convert(ifp, ofp, xml=0):
             data = data[:-1]
         if type == "-":
             data = esistools.decode(data)
-            ofp.write(data)
+            ofp.write(escape(data))
             if "\n" in data:
                 lastopened = None
             knownempty = 0
