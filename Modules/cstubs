@@ -886,6 +886,18 @@ gl_gversion(self, args)
 }
 
 
+/* void clear - Manual because of clash with termcap */
+%clear
+static PyObject *
+gl_clear(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	__GLclear( );
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 /* End of manually written stubs */
 
 %%
@@ -898,7 +910,6 @@ void 	rects 		short s short s short s short s
 void 	rmv2i 		long s long s
 void	noport
 void	popviewport
-void	clear
 void	clearhitcode
 void	closeobj
 void	cursoff
