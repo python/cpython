@@ -81,7 +81,6 @@ extern int gettp();
 #include "Python.h"
 #include "cgensupport.h"
 
-
 /*
 Some stubs are too complicated for the stub generator.
 We can include manually written versions of them here.
@@ -407,8 +406,7 @@ gl_nurbscurve(self, args)
 	}
 	pnext = arg4;
 	for (i = 0; i < npoints; i++) {
-		if (!PyArg_GetDoubleArray(PyList_GetItem(v, i),
-					  1, 0, ncoords, pnext))
+		if (!PyArg_GetDoubleArray(PyList_GetItem(v, i), 1, 0, ncoords, pnext))
 			return NULL;
 		pnext += ncoords;
 	}
@@ -454,8 +452,7 @@ gl_pwlcurve(self, args)
 	}
 	pnext = data;
 	for (i = 0; i < npoints; i++) {
-		if (!PyArg_GetDoubleArray(PyList_GetItem(v, i),
-					  1, 0, ncoords, pnext))
+		if (!PyArg_GetDoubleArray(PyList_GetItem(v, i), 1, 0, ncoords, pnext))
 			return NULL;
 		pnext += ncoords;
 	}
@@ -682,8 +679,7 @@ gl_lrectread(self, args)
 	if (!PyArg_GetShort(args, 4, 3, &y2))
 		return NULL;
 	pixcount = (long)(x2+1-x1) * (long)(y2+1-y1);
-	parray = PyString_FromStringAndSize((char *)NULL,
-					    pixcount*sizeof(long));
+	parray = PyString_FromStringAndSize((char *)NULL, pixcount*sizeof(long));
 	if (parray == NULL)
 		return NULL; /* No memory */
 	lrectread(x1, y1, x2, y2, (unsigned long *) PyString_AsString(parray));
@@ -712,8 +708,7 @@ gl_readdisplay(self, args)
 	if ( size_ret != size ) {
 	    printf("gl_readdisplay: got %ld pixels, expected %ld\n",
 		   size_ret, size);
-	    PyErr_SetString(PyExc_RuntimeError,
-			    "readdisplay returned unexpected length");
+	    PyErr_SetString(PyExc_RuntimeError, "readdisplay returned unexpected length");
 	    return NULL;
 	}
 	return rv;
@@ -759,8 +754,7 @@ gl_packrect(self, args)
 	if (!PyArg_GetObject(args, 4, 3, &unpacked))
 		return NULL;
 	if (width <= 0 || height <= 0 || packfactor <= 0) {
-		PyErr_SetString(PyExc_RuntimeError,
-				"packrect args must be > 0");
+		PyErr_SetString(PyExc_RuntimeError, "packrect args must be > 0");
 		return NULL;
 	}
 	pixcount = width*height;
@@ -820,8 +814,7 @@ gl_unpackrect(self, args)
 	if (!PyArg_GetObject(args, 4, 3, &packed))
 		return NULL;
 	if (width <= 0 || height <= 0 || packfactor <= 0) {
-		PyErr_SetString(PyExc_RuntimeError,
-				"packrect args must be > 0");
+		PyErr_SetString(PyExc_RuntimeError, "packrect args must be > 0");
 		return NULL;
 	}
 	pixcount = width*height;
@@ -832,8 +825,7 @@ gl_unpackrect(self, args)
 			   "string arg to unpackrect has wrong size");
 		return NULL;
 	}
-	unpacked = PyString_FromStringAndSize((char *)NULL,
-					      pixcount*sizeof(long));
+	unpacked = PyString_FromStringAndSize((char *)NULL, pixcount*sizeof(long));
 	if (unpacked == NULL)
 		return NULL;
 	parray = (unsigned long *) PyString_AsString(unpacked);
@@ -899,9 +891,9 @@ gl_devport(self, args)
 {
 	short arg1 ;
 	long arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	devport( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -917,9 +909,9 @@ gl_rdr2i(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	rdr2i( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -937,13 +929,13 @@ gl_rectfs(self, args)
 	short arg2 ;
 	short arg3 ;
 	short arg4 ;
-	if (!PyArg_GetShort(args, 4, 0, &arg1))
+	if (!getishortarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 1, &arg2))
+	if (!getishortarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 2, &arg3))
+	if (!getishortarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 3, &arg4))
+	if (!getishortarg(args, 4, 3, &arg4))
 		return NULL;
 	rectfs( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -961,13 +953,13 @@ gl_rects(self, args)
 	short arg2 ;
 	short arg3 ;
 	short arg4 ;
-	if (!PyArg_GetShort(args, 4, 0, &arg1))
+	if (!getishortarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 1, &arg2))
+	if (!getishortarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 2, &arg3))
+	if (!getishortarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 3, &arg4))
+	if (!getishortarg(args, 4, 3, &arg4))
 		return NULL;
 	rects( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -983,9 +975,9 @@ gl_rmv2i(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	rmv2i( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -1564,7 +1556,7 @@ gl_pagecolor(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	pagecolor( arg1 );
 	Py_INCREF(Py_None);
@@ -1579,7 +1571,7 @@ gl_textcolor(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	textcolor( arg1 );
 	Py_INCREF(Py_None);
@@ -1594,7 +1586,7 @@ gl_color(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	color( arg1 );
 	Py_INCREF(Py_None);
@@ -1609,7 +1601,7 @@ gl_curveit(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	curveit( arg1 );
 	Py_INCREF(Py_None);
@@ -1624,7 +1616,7 @@ gl_font(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	font( arg1 );
 	Py_INCREF(Py_None);
@@ -1639,7 +1631,7 @@ gl_linewidth(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	linewidth( arg1 );
 	Py_INCREF(Py_None);
@@ -1654,7 +1646,7 @@ gl_setlinestyle(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	setlinestyle( arg1 );
 	Py_INCREF(Py_None);
@@ -1669,7 +1661,7 @@ gl_setmap(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	setmap( arg1 );
 	Py_INCREF(Py_None);
@@ -1684,7 +1676,7 @@ gl_swapinterval(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	swapinterval( arg1 );
 	Py_INCREF(Py_None);
@@ -1699,7 +1691,7 @@ gl_writemask(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	writemask( arg1 );
 	Py_INCREF(Py_None);
@@ -1714,7 +1706,7 @@ gl_textwritemask(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	textwritemask( arg1 );
 	Py_INCREF(Py_None);
@@ -1729,7 +1721,7 @@ gl_qdevice(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	qdevice( arg1 );
 	Py_INCREF(Py_None);
@@ -1744,7 +1736,7 @@ gl_unqdevice(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	unqdevice( arg1 );
 	Py_INCREF(Py_None);
@@ -1759,7 +1751,7 @@ gl_curvebasis(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	curvebasis( arg1 );
 	Py_INCREF(Py_None);
@@ -1774,7 +1766,7 @@ gl_curveprecision(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	curveprecision( arg1 );
 	Py_INCREF(Py_None);
@@ -1789,7 +1781,7 @@ gl_loadname(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	loadname( arg1 );
 	Py_INCREF(Py_None);
@@ -1804,7 +1796,7 @@ gl_passthrough(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	passthrough( arg1 );
 	Py_INCREF(Py_None);
@@ -1819,7 +1811,7 @@ gl_pushname(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	pushname( arg1 );
 	Py_INCREF(Py_None);
@@ -1834,7 +1826,7 @@ gl_setmonitor(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	setmonitor( arg1 );
 	Py_INCREF(Py_None);
@@ -1849,7 +1841,7 @@ gl_setshade(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	setshade( arg1 );
 	Py_INCREF(Py_None);
@@ -1864,7 +1856,7 @@ gl_setpattern(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	setpattern( arg1 );
 	Py_INCREF(Py_None);
@@ -1879,7 +1871,7 @@ gl_pagewritemask(self, args)
 	PyObject *args;
 {
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	pagewritemask( arg1 );
 	Py_INCREF(Py_None);
@@ -1894,7 +1886,7 @@ gl_callobj(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	callobj( arg1 );
 	Py_INCREF(Py_None);
@@ -1909,7 +1901,7 @@ gl_delobj(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	delobj( arg1 );
 	Py_INCREF(Py_None);
@@ -1924,7 +1916,7 @@ gl_editobj(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	editobj( arg1 );
 	Py_INCREF(Py_None);
@@ -1939,7 +1931,7 @@ gl_makeobj(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	makeobj( arg1 );
 	Py_INCREF(Py_None);
@@ -1954,7 +1946,7 @@ gl_maketag(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	maketag( arg1 );
 	Py_INCREF(Py_None);
@@ -1969,7 +1961,7 @@ gl_chunksize(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	chunksize( arg1 );
 	Py_INCREF(Py_None);
@@ -1984,7 +1976,7 @@ gl_compactify(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	compactify( arg1 );
 	Py_INCREF(Py_None);
@@ -1999,7 +1991,7 @@ gl_deltag(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	deltag( arg1 );
 	Py_INCREF(Py_None);
@@ -2014,7 +2006,7 @@ gl_lsrepeat(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	lsrepeat( arg1 );
 	Py_INCREF(Py_None);
@@ -2029,7 +2021,7 @@ gl_objinsert(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	objinsert( arg1 );
 	Py_INCREF(Py_None);
@@ -2044,7 +2036,7 @@ gl_objreplace(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	objreplace( arg1 );
 	Py_INCREF(Py_None);
@@ -2059,7 +2051,7 @@ gl_winclose(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	winclose( arg1 );
 	Py_INCREF(Py_None);
@@ -2074,7 +2066,7 @@ gl_blanktime(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	blanktime( arg1 );
 	Py_INCREF(Py_None);
@@ -2089,7 +2081,7 @@ gl_freepup(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	freepup( arg1 );
 	Py_INCREF(Py_None);
@@ -2104,7 +2096,7 @@ gl_backbuffer(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	backbuffer( arg1 );
 	Py_INCREF(Py_None);
@@ -2119,7 +2111,7 @@ gl_frontbuffer(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	frontbuffer( arg1 );
 	Py_INCREF(Py_None);
@@ -2134,7 +2126,7 @@ gl_lsbackup(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	lsbackup( arg1 );
 	Py_INCREF(Py_None);
@@ -2149,7 +2141,7 @@ gl_resetls(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	resetls( arg1 );
 	Py_INCREF(Py_None);
@@ -2164,7 +2156,7 @@ gl_lampon(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	lampon( arg1 );
 	Py_INCREF(Py_None);
@@ -2179,7 +2171,7 @@ gl_lampoff(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	lampoff( arg1 );
 	Py_INCREF(Py_None);
@@ -2194,7 +2186,7 @@ gl_setbell(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	setbell( arg1 );
 	Py_INCREF(Py_None);
@@ -2209,7 +2201,7 @@ gl_blankscreen(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	blankscreen( arg1 );
 	Py_INCREF(Py_None);
@@ -2224,7 +2216,7 @@ gl_depthcue(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	depthcue( arg1 );
 	Py_INCREF(Py_None);
@@ -2239,7 +2231,7 @@ gl_zbuffer(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	zbuffer( arg1 );
 	Py_INCREF(Py_None);
@@ -2254,7 +2246,7 @@ gl_backface(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	backface( arg1 );
 	Py_INCREF(Py_None);
@@ -2270,9 +2262,9 @@ gl_cmov2i(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	cmov2i( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2288,9 +2280,9 @@ gl_draw2i(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	draw2i( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2306,9 +2298,9 @@ gl_move2i(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	move2i( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2324,9 +2316,9 @@ gl_pnt2i(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	pnt2i( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2342,9 +2334,9 @@ gl_patchbasis(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	patchbasis( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2360,9 +2352,9 @@ gl_patchprecision(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	patchprecision( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2378,9 +2370,9 @@ gl_pdr2i(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	pdr2i( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2396,9 +2388,9 @@ gl_pmv2i(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	pmv2i( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2414,9 +2406,9 @@ gl_rpdr2i(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	rpdr2i( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2432,9 +2424,9 @@ gl_rpmv2i(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	rpmv2i( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2450,9 +2442,9 @@ gl_xfpt2i(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	xfpt2i( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2468,9 +2460,9 @@ gl_objdelete(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	objdelete( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2486,9 +2478,9 @@ gl_patchcurves(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	patchcurves( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2504,9 +2496,9 @@ gl_minsize(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	minsize( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2522,9 +2514,9 @@ gl_maxsize(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	maxsize( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2540,9 +2532,9 @@ gl_keepaspect(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	keepaspect( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2558,9 +2550,9 @@ gl_prefsize(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	prefsize( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2576,9 +2568,9 @@ gl_stepunit(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	stepunit( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2594,9 +2586,9 @@ gl_fudge(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	fudge( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2612,9 +2604,9 @@ gl_winmove(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	winmove( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2630,9 +2622,9 @@ gl_attachcursor(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	attachcursor( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2648,9 +2640,9 @@ gl_deflinestyle(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	deflinestyle( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2666,9 +2658,9 @@ gl_noise(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	noise( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2684,9 +2676,9 @@ gl_picksize(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	picksize( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2702,9 +2694,9 @@ gl_qenter(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	qenter( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2720,9 +2712,9 @@ gl_setdepth(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	setdepth( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2738,9 +2730,9 @@ gl_cmov2s(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	cmov2s( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2756,9 +2748,9 @@ gl_draw2s(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	draw2s( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2774,9 +2766,9 @@ gl_move2s(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	move2s( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2792,9 +2784,9 @@ gl_pdr2s(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	pdr2s( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2810,9 +2802,9 @@ gl_pmv2s(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	pmv2s( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2828,9 +2820,9 @@ gl_pnt2s(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	pnt2s( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2846,9 +2838,9 @@ gl_rdr2s(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	rdr2s( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2864,9 +2856,9 @@ gl_rmv2s(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	rmv2s( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2882,9 +2874,9 @@ gl_rpdr2s(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	rpdr2s( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2900,9 +2892,9 @@ gl_rpmv2s(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	rpmv2s( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2918,9 +2910,9 @@ gl_xfpt2s(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	xfpt2s( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2936,9 +2928,9 @@ gl_cmov2(self, args)
 {
 	float arg1 ;
 	float arg2 ;
-	if (!PyArg_GetFloat(args, 2, 0, &arg1))
+	if (!getifloatarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 2, 1, &arg2))
+	if (!getifloatarg(args, 2, 1, &arg2))
 		return NULL;
 	cmov2( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2954,9 +2946,9 @@ gl_draw2(self, args)
 {
 	float arg1 ;
 	float arg2 ;
-	if (!PyArg_GetFloat(args, 2, 0, &arg1))
+	if (!getifloatarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 2, 1, &arg2))
+	if (!getifloatarg(args, 2, 1, &arg2))
 		return NULL;
 	draw2( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2972,9 +2964,9 @@ gl_move2(self, args)
 {
 	float arg1 ;
 	float arg2 ;
-	if (!PyArg_GetFloat(args, 2, 0, &arg1))
+	if (!getifloatarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 2, 1, &arg2))
+	if (!getifloatarg(args, 2, 1, &arg2))
 		return NULL;
 	move2( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -2990,9 +2982,9 @@ gl_pnt2(self, args)
 {
 	float arg1 ;
 	float arg2 ;
-	if (!PyArg_GetFloat(args, 2, 0, &arg1))
+	if (!getifloatarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 2, 1, &arg2))
+	if (!getifloatarg(args, 2, 1, &arg2))
 		return NULL;
 	pnt2( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -3008,9 +3000,9 @@ gl_pdr2(self, args)
 {
 	float arg1 ;
 	float arg2 ;
-	if (!PyArg_GetFloat(args, 2, 0, &arg1))
+	if (!getifloatarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 2, 1, &arg2))
+	if (!getifloatarg(args, 2, 1, &arg2))
 		return NULL;
 	pdr2( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -3026,9 +3018,9 @@ gl_pmv2(self, args)
 {
 	float arg1 ;
 	float arg2 ;
-	if (!PyArg_GetFloat(args, 2, 0, &arg1))
+	if (!getifloatarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 2, 1, &arg2))
+	if (!getifloatarg(args, 2, 1, &arg2))
 		return NULL;
 	pmv2( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -3044,9 +3036,9 @@ gl_rdr2(self, args)
 {
 	float arg1 ;
 	float arg2 ;
-	if (!PyArg_GetFloat(args, 2, 0, &arg1))
+	if (!getifloatarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 2, 1, &arg2))
+	if (!getifloatarg(args, 2, 1, &arg2))
 		return NULL;
 	rdr2( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -3062,9 +3054,9 @@ gl_rmv2(self, args)
 {
 	float arg1 ;
 	float arg2 ;
-	if (!PyArg_GetFloat(args, 2, 0, &arg1))
+	if (!getifloatarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 2, 1, &arg2))
+	if (!getifloatarg(args, 2, 1, &arg2))
 		return NULL;
 	rmv2( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -3080,9 +3072,9 @@ gl_rpdr2(self, args)
 {
 	float arg1 ;
 	float arg2 ;
-	if (!PyArg_GetFloat(args, 2, 0, &arg1))
+	if (!getifloatarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 2, 1, &arg2))
+	if (!getifloatarg(args, 2, 1, &arg2))
 		return NULL;
 	rpdr2( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -3098,9 +3090,9 @@ gl_rpmv2(self, args)
 {
 	float arg1 ;
 	float arg2 ;
-	if (!PyArg_GetFloat(args, 2, 0, &arg1))
+	if (!getifloatarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 2, 1, &arg2))
+	if (!getifloatarg(args, 2, 1, &arg2))
 		return NULL;
 	rpmv2( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -3116,9 +3108,9 @@ gl_xfpt2(self, args)
 {
 	float arg1 ;
 	float arg2 ;
-	if (!PyArg_GetFloat(args, 2, 0, &arg1))
+	if (!getifloatarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 2, 1, &arg2))
+	if (!getifloatarg(args, 2, 1, &arg2))
 		return NULL;
 	xfpt2( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -3133,7 +3125,7 @@ gl_loadmatrix(self, args)
 	PyObject *args;
 {
 	float arg1 [ 4 ] [ 4 ] ;
-	if (!PyArg_GetFloatArray(args, 1, 0, 4 * 4 , (float *) arg1))
+	if (!getifloatarray(args, 1, 0, 4 * 4 , (float *) arg1))
 		return NULL;
 	loadmatrix( arg1 );
 	Py_INCREF(Py_None);
@@ -3148,7 +3140,7 @@ gl_multmatrix(self, args)
 	PyObject *args;
 {
 	float arg1 [ 4 ] [ 4 ] ;
-	if (!PyArg_GetFloatArray(args, 1, 0, 4 * 4 , (float *) arg1))
+	if (!getifloatarray(args, 1, 0, 4 * 4 , (float *) arg1))
 		return NULL;
 	multmatrix( arg1 );
 	Py_INCREF(Py_None);
@@ -3163,7 +3155,7 @@ gl_crv(self, args)
 	PyObject *args;
 {
 	float arg1 [ 4 ] [ 3 ] ;
-	if (!PyArg_GetFloatArray(args, 1, 0, 3 * 4 , (float *) arg1))
+	if (!getifloatarray(args, 1, 0, 3 * 4 , (float *) arg1))
 		return NULL;
 	crv( arg1 );
 	Py_INCREF(Py_None);
@@ -3178,7 +3170,7 @@ gl_rcrv(self, args)
 	PyObject *args;
 {
 	float arg1 [ 4 ] [ 4 ] ;
-	if (!PyArg_GetFloatArray(args, 1, 0, 4 * 4 , (float *) arg1))
+	if (!getifloatarray(args, 1, 0, 4 * 4 , (float *) arg1))
 		return NULL;
 	rcrv( arg1 );
 	Py_INCREF(Py_None);
@@ -3195,11 +3187,11 @@ gl_addtopup(self, args)
 	long arg1 ;
 	string arg2 ;
 	long arg3 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetString(args, 3, 1, &arg2))
+	if (!getistringarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 2, &arg3))
+	if (!getilongarg(args, 3, 2, &arg3))
 		return NULL;
 	addtopup( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -3214,7 +3206,7 @@ gl_charstr(self, args)
 	PyObject *args;
 {
 	string arg1 ;
-	if (!PyArg_GetString(args, 1, 0, &arg1))
+	if (!getistringarg(args, 1, 0, &arg1))
 		return NULL;
 	charstr( arg1 );
 	Py_INCREF(Py_None);
@@ -3229,7 +3221,7 @@ gl_getport(self, args)
 	PyObject *args;
 {
 	string arg1 ;
-	if (!PyArg_GetString(args, 1, 0, &arg1))
+	if (!getistringarg(args, 1, 0, &arg1))
 		return NULL;
 	getport( arg1 );
 	Py_INCREF(Py_None);
@@ -3245,7 +3237,7 @@ gl_strwidth(self, args)
 {
 	long retval;
 	string arg1 ;
-	if (!PyArg_GetString(args, 1, 0, &arg1))
+	if (!getistringarg(args, 1, 0, &arg1))
 		return NULL;
 	retval = strwidth( arg1 );
 	return mknewlongobject(retval);
@@ -3260,7 +3252,7 @@ gl_winopen(self, args)
 {
 	long retval;
 	string arg1 ;
-	if (!PyArg_GetString(args, 1, 0, &arg1))
+	if (!getistringarg(args, 1, 0, &arg1))
 		return NULL;
 	retval = winopen( arg1 );
 	return mknewlongobject(retval);
@@ -3274,7 +3266,7 @@ gl_wintitle(self, args)
 	PyObject *args;
 {
 	string arg1 ;
-	if (!PyArg_GetString(args, 1, 0, &arg1))
+	if (!getistringarg(args, 1, 0, &arg1))
 		return NULL;
 	wintitle( arg1 );
 	Py_INCREF(Py_None);
@@ -3290,12 +3282,12 @@ gl_polf(self, args)
 {
 	long arg1 ;
 	float (* arg2) [ 3 ] ;
-	if (!PyArg_GetLongArraySize(args, 1, 0, &arg1))
+	if (!getilongarraysize(args, 1, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 3;
 	if ((arg2 = (float(*)[3]) PyMem_NEW(float , 3 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetFloatArray(args, 1, 0, 3 * arg1 , (float *) arg2))
+	if (!getifloatarray(args, 1, 0, 3 * arg1 , (float *) arg2))
 		return NULL;
 	polf( arg1 , arg2 );
 	PyMem_DEL(arg2);
@@ -3312,12 +3304,12 @@ gl_polf2(self, args)
 {
 	long arg1 ;
 	float (* arg2) [ 2 ] ;
-	if (!PyArg_GetLongArraySize(args, 1, 0, &arg1))
+	if (!getilongarraysize(args, 1, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 2;
 	if ((arg2 = (float(*)[2]) PyMem_NEW(float , 2 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetFloatArray(args, 1, 0, 2 * arg1 , (float *) arg2))
+	if (!getifloatarray(args, 1, 0, 2 * arg1 , (float *) arg2))
 		return NULL;
 	polf2( arg1 , arg2 );
 	PyMem_DEL(arg2);
@@ -3334,12 +3326,12 @@ gl_poly(self, args)
 {
 	long arg1 ;
 	float (* arg2) [ 3 ] ;
-	if (!PyArg_GetLongArraySize(args, 1, 0, &arg1))
+	if (!getilongarraysize(args, 1, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 3;
 	if ((arg2 = (float(*)[3]) PyMem_NEW(float , 3 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetFloatArray(args, 1, 0, 3 * arg1 , (float *) arg2))
+	if (!getifloatarray(args, 1, 0, 3 * arg1 , (float *) arg2))
 		return NULL;
 	poly( arg1 , arg2 );
 	PyMem_DEL(arg2);
@@ -3356,12 +3348,12 @@ gl_poly2(self, args)
 {
 	long arg1 ;
 	float (* arg2) [ 2 ] ;
-	if (!PyArg_GetLongArraySize(args, 1, 0, &arg1))
+	if (!getilongarraysize(args, 1, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 2;
 	if ((arg2 = (float(*)[2]) PyMem_NEW(float , 2 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetFloatArray(args, 1, 0, 2 * arg1 , (float *) arg2))
+	if (!getifloatarray(args, 1, 0, 2 * arg1 , (float *) arg2))
 		return NULL;
 	poly2( arg1 , arg2 );
 	PyMem_DEL(arg2);
@@ -3378,12 +3370,12 @@ gl_crvn(self, args)
 {
 	long arg1 ;
 	float (* arg2) [ 3 ] ;
-	if (!PyArg_GetLongArraySize(args, 1, 0, &arg1))
+	if (!getilongarraysize(args, 1, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 3;
 	if ((arg2 = (float(*)[3]) PyMem_NEW(float , 3 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetFloatArray(args, 1, 0, 3 * arg1 , (float *) arg2))
+	if (!getifloatarray(args, 1, 0, 3 * arg1 , (float *) arg2))
 		return NULL;
 	crvn( arg1 , arg2 );
 	PyMem_DEL(arg2);
@@ -3400,12 +3392,12 @@ gl_rcrvn(self, args)
 {
 	long arg1 ;
 	float (* arg2) [ 4 ] ;
-	if (!PyArg_GetLongArraySize(args, 1, 0, &arg1))
+	if (!getilongarraysize(args, 1, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 4;
 	if ((arg2 = (float(*)[4]) PyMem_NEW(float , 4 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetFloatArray(args, 1, 0, 4 * arg1 , (float *) arg2))
+	if (!getifloatarray(args, 1, 0, 4 * arg1 , (float *) arg2))
 		return NULL;
 	rcrvn( arg1 , arg2 );
 	PyMem_DEL(arg2);
@@ -3422,12 +3414,12 @@ gl_polf2i(self, args)
 {
 	long arg1 ;
 	long (* arg2) [ 2 ] ;
-	if (!PyArg_GetLongArraySize(args, 1, 0, &arg1))
+	if (!getilongarraysize(args, 1, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 2;
 	if ((arg2 = (long(*)[2]) PyMem_NEW(long , 2 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetLongArray(args, 1, 0, 2 * arg1 , (long *) arg2))
+	if (!getilongarray(args, 1, 0, 2 * arg1 , (long *) arg2))
 		return NULL;
 	polf2i( arg1 , arg2 );
 	PyMem_DEL(arg2);
@@ -3444,12 +3436,12 @@ gl_polfi(self, args)
 {
 	long arg1 ;
 	long (* arg2) [ 3 ] ;
-	if (!PyArg_GetLongArraySize(args, 1, 0, &arg1))
+	if (!getilongarraysize(args, 1, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 3;
 	if ((arg2 = (long(*)[3]) PyMem_NEW(long , 3 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetLongArray(args, 1, 0, 3 * arg1 , (long *) arg2))
+	if (!getilongarray(args, 1, 0, 3 * arg1 , (long *) arg2))
 		return NULL;
 	polfi( arg1 , arg2 );
 	PyMem_DEL(arg2);
@@ -3466,12 +3458,12 @@ gl_poly2i(self, args)
 {
 	long arg1 ;
 	long (* arg2) [ 2 ] ;
-	if (!PyArg_GetLongArraySize(args, 1, 0, &arg1))
+	if (!getilongarraysize(args, 1, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 2;
 	if ((arg2 = (long(*)[2]) PyMem_NEW(long , 2 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetLongArray(args, 1, 0, 2 * arg1 , (long *) arg2))
+	if (!getilongarray(args, 1, 0, 2 * arg1 , (long *) arg2))
 		return NULL;
 	poly2i( arg1 , arg2 );
 	PyMem_DEL(arg2);
@@ -3488,12 +3480,12 @@ gl_polyi(self, args)
 {
 	long arg1 ;
 	long (* arg2) [ 3 ] ;
-	if (!PyArg_GetLongArraySize(args, 1, 0, &arg1))
+	if (!getilongarraysize(args, 1, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 3;
 	if ((arg2 = (long(*)[3]) PyMem_NEW(long , 3 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetLongArray(args, 1, 0, 3 * arg1 , (long *) arg2))
+	if (!getilongarray(args, 1, 0, 3 * arg1 , (long *) arg2))
 		return NULL;
 	polyi( arg1 , arg2 );
 	PyMem_DEL(arg2);
@@ -3510,12 +3502,12 @@ gl_polf2s(self, args)
 {
 	long arg1 ;
 	short (* arg2) [ 2 ] ;
-	if (!PyArg_GetLongArraySize(args, 1, 0, &arg1))
+	if (!getilongarraysize(args, 1, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 2;
 	if ((arg2 = (short(*)[2]) PyMem_NEW(short , 2 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetShortArray(args, 1, 0, 2 * arg1 , (short *) arg2))
+	if (!getishortarray(args, 1, 0, 2 * arg1 , (short *) arg2))
 		return NULL;
 	polf2s( arg1 , arg2 );
 	PyMem_DEL(arg2);
@@ -3532,12 +3524,12 @@ gl_polfs(self, args)
 {
 	long arg1 ;
 	short (* arg2) [ 3 ] ;
-	if (!PyArg_GetLongArraySize(args, 1, 0, &arg1))
+	if (!getilongarraysize(args, 1, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 3;
 	if ((arg2 = (short(*)[3]) PyMem_NEW(short , 3 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetShortArray(args, 1, 0, 3 * arg1 , (short *) arg2))
+	if (!getishortarray(args, 1, 0, 3 * arg1 , (short *) arg2))
 		return NULL;
 	polfs( arg1 , arg2 );
 	PyMem_DEL(arg2);
@@ -3554,12 +3546,12 @@ gl_polys(self, args)
 {
 	long arg1 ;
 	short (* arg2) [ 3 ] ;
-	if (!PyArg_GetLongArraySize(args, 1, 0, &arg1))
+	if (!getilongarraysize(args, 1, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 3;
 	if ((arg2 = (short(*)[3]) PyMem_NEW(short , 3 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetShortArray(args, 1, 0, 3 * arg1 , (short *) arg2))
+	if (!getishortarray(args, 1, 0, 3 * arg1 , (short *) arg2))
 		return NULL;
 	polys( arg1 , arg2 );
 	PyMem_DEL(arg2);
@@ -3576,12 +3568,12 @@ gl_poly2s(self, args)
 {
 	long arg1 ;
 	short (* arg2) [ 2 ] ;
-	if (!PyArg_GetLongArraySize(args, 1, 0, &arg1))
+	if (!getilongarraysize(args, 1, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 2;
 	if ((arg2 = (short(*)[2]) PyMem_NEW(short , 2 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetShortArray(args, 1, 0, 2 * arg1 , (short *) arg2))
+	if (!getishortarray(args, 1, 0, 2 * arg1 , (short *) arg2))
 		return NULL;
 	poly2s( arg1 , arg2 );
 	PyMem_DEL(arg2);
@@ -3598,9 +3590,9 @@ gl_defcursor(self, args)
 {
 	short arg1 ;
 	unsigned short arg2 [ 128 ] ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShortArray(args, 2, 1, 128 , (short *) arg2))
+	if (!getishortarray(args, 2, 1, 128 , (short *) arg2))
 		return NULL;
 	defcursor( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -3616,11 +3608,11 @@ gl_writepixels(self, args)
 {
 	short arg1 ;
 	unsigned short * arg2 ;
-	if (!PyArg_GetShortArraySize(args, 1, 0, &arg1))
+	if (!getishortarraysize(args, 1, 0, &arg1))
 		return NULL;
 	if ((arg2 = PyMem_NEW(unsigned short , arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetShortArray(args, 1, 0, arg1 , (short *) arg2))
+	if (!getishortarray(args, 1, 0, arg1 , (short *) arg2))
 		return NULL;
 	writepixels( arg1 , arg2 );
 	PyMem_DEL(arg2);
@@ -3637,9 +3629,9 @@ gl_defbasis(self, args)
 {
 	long arg1 ;
 	float arg2 [ 4 ] [ 4 ] ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloatArray(args, 2, 1, 4 * 4 , (float *) arg2))
+	if (!getifloatarray(args, 2, 1, 4 * 4 , (float *) arg2))
 		return NULL;
 	defbasis( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -3655,11 +3647,11 @@ gl_gewrite(self, args)
 {
 	short arg1 ;
 	short * arg2 ;
-	if (!PyArg_GetShortArraySize(args, 1, 0, &arg1))
+	if (!getishortarraysize(args, 1, 0, &arg1))
 		return NULL;
 	if ((arg2 = PyMem_NEW(short , arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetShortArray(args, 1, 0, arg1 , arg2))
+	if (!getishortarray(args, 1, 0, arg1 , arg2))
 		return NULL;
 	gewrite( arg1 , arg2 );
 	PyMem_DEL(arg2);
@@ -3676,9 +3668,9 @@ gl_rotate(self, args)
 {
 	short arg1 ;
 	char arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetChar(args, 2, 1, &arg2))
+	if (!getichararg(args, 2, 1, &arg2))
 		return NULL;
 	rotate( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -3694,9 +3686,9 @@ gl_rot(self, args)
 {
 	float arg1 ;
 	char arg2 ;
-	if (!PyArg_GetFloat(args, 2, 0, &arg1))
+	if (!getifloatarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetChar(args, 2, 1, &arg2))
+	if (!getichararg(args, 2, 1, &arg2))
 		return NULL;
 	rot( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -3713,11 +3705,11 @@ gl_circfi(self, args)
 	long arg1 ;
 	long arg2 ;
 	long arg3 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 1, &arg2))
+	if (!getilongarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 2, &arg3))
+	if (!getilongarg(args, 3, 2, &arg3))
 		return NULL;
 	circfi( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -3734,11 +3726,11 @@ gl_circi(self, args)
 	long arg1 ;
 	long arg2 ;
 	long arg3 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 1, &arg2))
+	if (!getilongarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 2, &arg3))
+	if (!getilongarg(args, 3, 2, &arg3))
 		return NULL;
 	circi( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -3755,11 +3747,11 @@ gl_cmovi(self, args)
 	long arg1 ;
 	long arg2 ;
 	long arg3 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 1, &arg2))
+	if (!getilongarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 2, &arg3))
+	if (!getilongarg(args, 3, 2, &arg3))
 		return NULL;
 	cmovi( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -3776,11 +3768,11 @@ gl_drawi(self, args)
 	long arg1 ;
 	long arg2 ;
 	long arg3 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 1, &arg2))
+	if (!getilongarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 2, &arg3))
+	if (!getilongarg(args, 3, 2, &arg3))
 		return NULL;
 	drawi( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -3797,11 +3789,11 @@ gl_movei(self, args)
 	long arg1 ;
 	long arg2 ;
 	long arg3 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 1, &arg2))
+	if (!getilongarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 2, &arg3))
+	if (!getilongarg(args, 3, 2, &arg3))
 		return NULL;
 	movei( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -3818,11 +3810,11 @@ gl_pnti(self, args)
 	long arg1 ;
 	long arg2 ;
 	long arg3 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 1, &arg2))
+	if (!getilongarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 2, &arg3))
+	if (!getilongarg(args, 3, 2, &arg3))
 		return NULL;
 	pnti( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -3839,11 +3831,11 @@ gl_newtag(self, args)
 	long arg1 ;
 	long arg2 ;
 	long arg3 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 1, &arg2))
+	if (!getilongarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 2, &arg3))
+	if (!getilongarg(args, 3, 2, &arg3))
 		return NULL;
 	newtag( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -3860,11 +3852,11 @@ gl_pdri(self, args)
 	long arg1 ;
 	long arg2 ;
 	long arg3 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 1, &arg2))
+	if (!getilongarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 2, &arg3))
+	if (!getilongarg(args, 3, 2, &arg3))
 		return NULL;
 	pdri( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -3881,11 +3873,11 @@ gl_pmvi(self, args)
 	long arg1 ;
 	long arg2 ;
 	long arg3 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 1, &arg2))
+	if (!getilongarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 2, &arg3))
+	if (!getilongarg(args, 3, 2, &arg3))
 		return NULL;
 	pmvi( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -3902,11 +3894,11 @@ gl_rdri(self, args)
 	long arg1 ;
 	long arg2 ;
 	long arg3 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 1, &arg2))
+	if (!getilongarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 2, &arg3))
+	if (!getilongarg(args, 3, 2, &arg3))
 		return NULL;
 	rdri( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -3923,11 +3915,11 @@ gl_rmvi(self, args)
 	long arg1 ;
 	long arg2 ;
 	long arg3 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 1, &arg2))
+	if (!getilongarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 2, &arg3))
+	if (!getilongarg(args, 3, 2, &arg3))
 		return NULL;
 	rmvi( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -3944,11 +3936,11 @@ gl_rpdri(self, args)
 	long arg1 ;
 	long arg2 ;
 	long arg3 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 1, &arg2))
+	if (!getilongarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 2, &arg3))
+	if (!getilongarg(args, 3, 2, &arg3))
 		return NULL;
 	rpdri( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -3965,11 +3957,11 @@ gl_rpmvi(self, args)
 	long arg1 ;
 	long arg2 ;
 	long arg3 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 1, &arg2))
+	if (!getilongarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 2, &arg3))
+	if (!getilongarg(args, 3, 2, &arg3))
 		return NULL;
 	rpmvi( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -3986,11 +3978,11 @@ gl_xfpti(self, args)
 	long arg1 ;
 	long arg2 ;
 	long arg3 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 1, &arg2))
+	if (!getilongarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 2, &arg3))
+	if (!getilongarg(args, 3, 2, &arg3))
 		return NULL;
 	xfpti( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4007,11 +3999,11 @@ gl_circ(self, args)
 	float arg1 ;
 	float arg2 ;
 	float arg3 ;
-	if (!PyArg_GetFloat(args, 3, 0, &arg1))
+	if (!getifloatarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 1, &arg2))
+	if (!getifloatarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 2, &arg3))
+	if (!getifloatarg(args, 3, 2, &arg3))
 		return NULL;
 	circ( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4028,11 +4020,11 @@ gl_circf(self, args)
 	float arg1 ;
 	float arg2 ;
 	float arg3 ;
-	if (!PyArg_GetFloat(args, 3, 0, &arg1))
+	if (!getifloatarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 1, &arg2))
+	if (!getifloatarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 2, &arg3))
+	if (!getifloatarg(args, 3, 2, &arg3))
 		return NULL;
 	circf( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4049,11 +4041,11 @@ gl_cmov(self, args)
 	float arg1 ;
 	float arg2 ;
 	float arg3 ;
-	if (!PyArg_GetFloat(args, 3, 0, &arg1))
+	if (!getifloatarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 1, &arg2))
+	if (!getifloatarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 2, &arg3))
+	if (!getifloatarg(args, 3, 2, &arg3))
 		return NULL;
 	cmov( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4070,11 +4062,11 @@ gl_draw(self, args)
 	float arg1 ;
 	float arg2 ;
 	float arg3 ;
-	if (!PyArg_GetFloat(args, 3, 0, &arg1))
+	if (!getifloatarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 1, &arg2))
+	if (!getifloatarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 2, &arg3))
+	if (!getifloatarg(args, 3, 2, &arg3))
 		return NULL;
 	draw( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4091,11 +4083,11 @@ gl_move(self, args)
 	float arg1 ;
 	float arg2 ;
 	float arg3 ;
-	if (!PyArg_GetFloat(args, 3, 0, &arg1))
+	if (!getifloatarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 1, &arg2))
+	if (!getifloatarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 2, &arg3))
+	if (!getifloatarg(args, 3, 2, &arg3))
 		return NULL;
 	move( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4112,11 +4104,11 @@ gl_pnt(self, args)
 	float arg1 ;
 	float arg2 ;
 	float arg3 ;
-	if (!PyArg_GetFloat(args, 3, 0, &arg1))
+	if (!getifloatarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 1, &arg2))
+	if (!getifloatarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 2, &arg3))
+	if (!getifloatarg(args, 3, 2, &arg3))
 		return NULL;
 	pnt( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4133,11 +4125,11 @@ gl_scale(self, args)
 	float arg1 ;
 	float arg2 ;
 	float arg3 ;
-	if (!PyArg_GetFloat(args, 3, 0, &arg1))
+	if (!getifloatarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 1, &arg2))
+	if (!getifloatarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 2, &arg3))
+	if (!getifloatarg(args, 3, 2, &arg3))
 		return NULL;
 	scale( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4154,11 +4146,11 @@ gl_translate(self, args)
 	float arg1 ;
 	float arg2 ;
 	float arg3 ;
-	if (!PyArg_GetFloat(args, 3, 0, &arg1))
+	if (!getifloatarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 1, &arg2))
+	if (!getifloatarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 2, &arg3))
+	if (!getifloatarg(args, 3, 2, &arg3))
 		return NULL;
 	translate( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4175,11 +4167,11 @@ gl_pdr(self, args)
 	float arg1 ;
 	float arg2 ;
 	float arg3 ;
-	if (!PyArg_GetFloat(args, 3, 0, &arg1))
+	if (!getifloatarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 1, &arg2))
+	if (!getifloatarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 2, &arg3))
+	if (!getifloatarg(args, 3, 2, &arg3))
 		return NULL;
 	pdr( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4196,11 +4188,11 @@ gl_pmv(self, args)
 	float arg1 ;
 	float arg2 ;
 	float arg3 ;
-	if (!PyArg_GetFloat(args, 3, 0, &arg1))
+	if (!getifloatarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 1, &arg2))
+	if (!getifloatarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 2, &arg3))
+	if (!getifloatarg(args, 3, 2, &arg3))
 		return NULL;
 	pmv( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4217,11 +4209,11 @@ gl_rdr(self, args)
 	float arg1 ;
 	float arg2 ;
 	float arg3 ;
-	if (!PyArg_GetFloat(args, 3, 0, &arg1))
+	if (!getifloatarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 1, &arg2))
+	if (!getifloatarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 2, &arg3))
+	if (!getifloatarg(args, 3, 2, &arg3))
 		return NULL;
 	rdr( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4238,11 +4230,11 @@ gl_rmv(self, args)
 	float arg1 ;
 	float arg2 ;
 	float arg3 ;
-	if (!PyArg_GetFloat(args, 3, 0, &arg1))
+	if (!getifloatarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 1, &arg2))
+	if (!getifloatarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 2, &arg3))
+	if (!getifloatarg(args, 3, 2, &arg3))
 		return NULL;
 	rmv( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4259,11 +4251,11 @@ gl_rpdr(self, args)
 	float arg1 ;
 	float arg2 ;
 	float arg3 ;
-	if (!PyArg_GetFloat(args, 3, 0, &arg1))
+	if (!getifloatarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 1, &arg2))
+	if (!getifloatarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 2, &arg3))
+	if (!getifloatarg(args, 3, 2, &arg3))
 		return NULL;
 	rpdr( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4280,11 +4272,11 @@ gl_rpmv(self, args)
 	float arg1 ;
 	float arg2 ;
 	float arg3 ;
-	if (!PyArg_GetFloat(args, 3, 0, &arg1))
+	if (!getifloatarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 1, &arg2))
+	if (!getifloatarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 2, &arg3))
+	if (!getifloatarg(args, 3, 2, &arg3))
 		return NULL;
 	rpmv( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4301,11 +4293,11 @@ gl_xfpt(self, args)
 	float arg1 ;
 	float arg2 ;
 	float arg3 ;
-	if (!PyArg_GetFloat(args, 3, 0, &arg1))
+	if (!getifloatarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 1, &arg2))
+	if (!getifloatarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 3, 2, &arg3))
+	if (!getifloatarg(args, 3, 2, &arg3))
 		return NULL;
 	xfpt( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4322,11 +4314,11 @@ gl_RGBcolor(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	RGBcolor( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4343,11 +4335,11 @@ gl_RGBwritemask(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	RGBwritemask( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4364,11 +4356,11 @@ gl_setcursor(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	setcursor( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4385,11 +4377,11 @@ gl_tie(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	tie( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4406,11 +4398,11 @@ gl_circfs(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	circfs( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4427,11 +4419,11 @@ gl_circs(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	circs( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4448,11 +4440,11 @@ gl_cmovs(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	cmovs( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4469,11 +4461,11 @@ gl_draws(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	draws( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4490,11 +4482,11 @@ gl_moves(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	moves( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4511,11 +4503,11 @@ gl_pdrs(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	pdrs( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4532,11 +4524,11 @@ gl_pmvs(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	pmvs( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4553,11 +4545,11 @@ gl_pnts(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	pnts( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4574,11 +4566,11 @@ gl_rdrs(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	rdrs( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4595,11 +4587,11 @@ gl_rmvs(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	rmvs( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4616,11 +4608,11 @@ gl_rpdrs(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	rpdrs( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4637,11 +4629,11 @@ gl_rpmvs(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	rpmvs( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4658,11 +4650,11 @@ gl_xfpts(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	xfpts( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4679,11 +4671,11 @@ gl_curorigin(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	curorigin( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4700,11 +4692,11 @@ gl_cyclemap(self, args)
 	short arg1 ;
 	short arg2 ;
 	short arg3 ;
-	if (!PyArg_GetShort(args, 3, 0, &arg1))
+	if (!getishortarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	cyclemap( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4721,11 +4713,11 @@ gl_patch(self, args)
 	float arg1 [ 4 ] [ 4 ] ;
 	float arg2 [ 4 ] [ 4 ] ;
 	float arg3 [ 4 ] [ 4 ] ;
-	if (!PyArg_GetFloatArray(args, 3, 0, 4 * 4 , (float *) arg1))
+	if (!getifloatarray(args, 3, 0, 4 * 4 , (float *) arg1))
 		return NULL;
-	if (!PyArg_GetFloatArray(args, 3, 1, 4 * 4 , (float *) arg2))
+	if (!getifloatarray(args, 3, 1, 4 * 4 , (float *) arg2))
 		return NULL;
-	if (!PyArg_GetFloatArray(args, 3, 2, 4 * 4 , (float *) arg3))
+	if (!getifloatarray(args, 3, 2, 4 * 4 , (float *) arg3))
 		return NULL;
 	patch( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -4742,16 +4734,16 @@ gl_splf(self, args)
 	long arg1 ;
 	float (* arg2) [ 3 ] ;
 	unsigned short * arg3 ;
-	if (!PyArg_GetLongArraySize(args, 2, 0, &arg1))
+	if (!getilongarraysize(args, 2, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 3;
 	if ((arg2 = (float(*)[3]) PyMem_NEW(float , 3 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetFloatArray(args, 2, 0, 3 * arg1 , (float *) arg2))
+	if (!getifloatarray(args, 2, 0, 3 * arg1 , (float *) arg2))
 		return NULL;
 	if ((arg3 = PyMem_NEW(unsigned short , arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetShortArray(args, 2, 1, arg1 , (short *) arg3))
+	if (!getishortarray(args, 2, 1, arg1 , (short *) arg3))
 		return NULL;
 	splf( arg1 , arg2 , arg3 );
 	PyMem_DEL(arg2);
@@ -4770,16 +4762,16 @@ gl_splf2(self, args)
 	long arg1 ;
 	float (* arg2) [ 2 ] ;
 	unsigned short * arg3 ;
-	if (!PyArg_GetLongArraySize(args, 2, 0, &arg1))
+	if (!getilongarraysize(args, 2, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 2;
 	if ((arg2 = (float(*)[2]) PyMem_NEW(float , 2 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetFloatArray(args, 2, 0, 2 * arg1 , (float *) arg2))
+	if (!getifloatarray(args, 2, 0, 2 * arg1 , (float *) arg2))
 		return NULL;
 	if ((arg3 = PyMem_NEW(unsigned short , arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetShortArray(args, 2, 1, arg1 , (short *) arg3))
+	if (!getishortarray(args, 2, 1, arg1 , (short *) arg3))
 		return NULL;
 	splf2( arg1 , arg2 , arg3 );
 	PyMem_DEL(arg2);
@@ -4798,16 +4790,16 @@ gl_splfi(self, args)
 	long arg1 ;
 	long (* arg2) [ 3 ] ;
 	unsigned short * arg3 ;
-	if (!PyArg_GetLongArraySize(args, 2, 0, &arg1))
+	if (!getilongarraysize(args, 2, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 3;
 	if ((arg2 = (long(*)[3]) PyMem_NEW(long , 3 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetLongArray(args, 2, 0, 3 * arg1 , (long *) arg2))
+	if (!getilongarray(args, 2, 0, 3 * arg1 , (long *) arg2))
 		return NULL;
 	if ((arg3 = PyMem_NEW(unsigned short , arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetShortArray(args, 2, 1, arg1 , (short *) arg3))
+	if (!getishortarray(args, 2, 1, arg1 , (short *) arg3))
 		return NULL;
 	splfi( arg1 , arg2 , arg3 );
 	PyMem_DEL(arg2);
@@ -4826,16 +4818,16 @@ gl_splf2i(self, args)
 	long arg1 ;
 	long (* arg2) [ 2 ] ;
 	unsigned short * arg3 ;
-	if (!PyArg_GetLongArraySize(args, 2, 0, &arg1))
+	if (!getilongarraysize(args, 2, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 2;
 	if ((arg2 = (long(*)[2]) PyMem_NEW(long , 2 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetLongArray(args, 2, 0, 2 * arg1 , (long *) arg2))
+	if (!getilongarray(args, 2, 0, 2 * arg1 , (long *) arg2))
 		return NULL;
 	if ((arg3 = PyMem_NEW(unsigned short , arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetShortArray(args, 2, 1, arg1 , (short *) arg3))
+	if (!getishortarray(args, 2, 1, arg1 , (short *) arg3))
 		return NULL;
 	splf2i( arg1 , arg2 , arg3 );
 	PyMem_DEL(arg2);
@@ -4854,16 +4846,16 @@ gl_splfs(self, args)
 	long arg1 ;
 	short (* arg2) [ 3 ] ;
 	unsigned short * arg3 ;
-	if (!PyArg_GetLongArraySize(args, 2, 0, &arg1))
+	if (!getilongarraysize(args, 2, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 3;
 	if ((arg2 = (short(*)[3]) PyMem_NEW(short , 3 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetShortArray(args, 2, 0, 3 * arg1 , (short *) arg2))
+	if (!getishortarray(args, 2, 0, 3 * arg1 , (short *) arg2))
 		return NULL;
 	if ((arg3 = PyMem_NEW(unsigned short , arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetShortArray(args, 2, 1, arg1 , (short *) arg3))
+	if (!getishortarray(args, 2, 1, arg1 , (short *) arg3))
 		return NULL;
 	splfs( arg1 , arg2 , arg3 );
 	PyMem_DEL(arg2);
@@ -4882,16 +4874,16 @@ gl_splf2s(self, args)
 	long arg1 ;
 	short (* arg2) [ 2 ] ;
 	unsigned short * arg3 ;
-	if (!PyArg_GetLongArraySize(args, 2, 0, &arg1))
+	if (!getilongarraysize(args, 2, 0, &arg1))
 		return NULL;
 	arg1 = arg1 / 2;
 	if ((arg2 = (short(*)[2]) PyMem_NEW(short , 2 * arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetShortArray(args, 2, 0, 2 * arg1 , (short *) arg2))
+	if (!getishortarray(args, 2, 0, 2 * arg1 , (short *) arg2))
 		return NULL;
 	if ((arg3 = PyMem_NEW(unsigned short , arg1 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetShortArray(args, 2, 1, arg1 , (short *) arg3))
+	if (!getishortarray(args, 2, 1, arg1 , (short *) arg3))
 		return NULL;
 	splf2s( arg1 , arg2 , arg3 );
 	PyMem_DEL(arg2);
@@ -4911,13 +4903,13 @@ gl_rpatch(self, args)
 	float arg2 [ 4 ] [ 4 ] ;
 	float arg3 [ 4 ] [ 4 ] ;
 	float arg4 [ 4 ] [ 4 ] ;
-	if (!PyArg_GetFloatArray(args, 4, 0, 4 * 4 , (float *) arg1))
+	if (!getifloatarray(args, 4, 0, 4 * 4 , (float *) arg1))
 		return NULL;
-	if (!PyArg_GetFloatArray(args, 4, 1, 4 * 4 , (float *) arg2))
+	if (!getifloatarray(args, 4, 1, 4 * 4 , (float *) arg2))
 		return NULL;
-	if (!PyArg_GetFloatArray(args, 4, 2, 4 * 4 , (float *) arg3))
+	if (!getifloatarray(args, 4, 2, 4 * 4 , (float *) arg3))
 		return NULL;
-	if (!PyArg_GetFloatArray(args, 4, 3, 4 * 4 , (float *) arg4))
+	if (!getifloatarray(args, 4, 3, 4 * 4 , (float *) arg4))
 		return NULL;
 	rpatch( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -4935,13 +4927,13 @@ gl_ortho2(self, args)
 	float arg2 ;
 	float arg3 ;
 	float arg4 ;
-	if (!PyArg_GetFloat(args, 4, 0, &arg1))
+	if (!getifloatarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 1, &arg2))
+	if (!getifloatarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 2, &arg3))
+	if (!getifloatarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 3, &arg4))
+	if (!getifloatarg(args, 4, 3, &arg4))
 		return NULL;
 	ortho2( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -4959,13 +4951,13 @@ gl_rect(self, args)
 	float arg2 ;
 	float arg3 ;
 	float arg4 ;
-	if (!PyArg_GetFloat(args, 4, 0, &arg1))
+	if (!getifloatarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 1, &arg2))
+	if (!getifloatarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 2, &arg3))
+	if (!getifloatarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 3, &arg4))
+	if (!getifloatarg(args, 4, 3, &arg4))
 		return NULL;
 	rect( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -4983,13 +4975,13 @@ gl_rectf(self, args)
 	float arg2 ;
 	float arg3 ;
 	float arg4 ;
-	if (!PyArg_GetFloat(args, 4, 0, &arg1))
+	if (!getifloatarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 1, &arg2))
+	if (!getifloatarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 2, &arg3))
+	if (!getifloatarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 3, &arg4))
+	if (!getifloatarg(args, 4, 3, &arg4))
 		return NULL;
 	rectf( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -5007,13 +4999,13 @@ gl_xfpt4(self, args)
 	float arg2 ;
 	float arg3 ;
 	float arg4 ;
-	if (!PyArg_GetFloat(args, 4, 0, &arg1))
+	if (!getifloatarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 1, &arg2))
+	if (!getifloatarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 2, &arg3))
+	if (!getifloatarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 3, &arg4))
+	if (!getifloatarg(args, 4, 3, &arg4))
 		return NULL;
 	xfpt4( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -5031,13 +5023,13 @@ gl_textport(self, args)
 	short arg2 ;
 	short arg3 ;
 	short arg4 ;
-	if (!PyArg_GetShort(args, 4, 0, &arg1))
+	if (!getishortarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 1, &arg2))
+	if (!getishortarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 2, &arg3))
+	if (!getishortarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 3, &arg4))
+	if (!getishortarg(args, 4, 3, &arg4))
 		return NULL;
 	textport( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -5055,13 +5047,13 @@ gl_mapcolor(self, args)
 	short arg2 ;
 	short arg3 ;
 	short arg4 ;
-	if (!PyArg_GetShort(args, 4, 0, &arg1))
+	if (!getishortarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 1, &arg2))
+	if (!getishortarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 2, &arg3))
+	if (!getishortarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 3, &arg4))
+	if (!getishortarg(args, 4, 3, &arg4))
 		return NULL;
 	mapcolor( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -5079,13 +5071,13 @@ gl_scrmask(self, args)
 	short arg2 ;
 	short arg3 ;
 	short arg4 ;
-	if (!PyArg_GetShort(args, 4, 0, &arg1))
+	if (!getishortarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 1, &arg2))
+	if (!getishortarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 2, &arg3))
+	if (!getishortarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 3, &arg4))
+	if (!getishortarg(args, 4, 3, &arg4))
 		return NULL;
 	scrmask( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -5103,13 +5095,13 @@ gl_setvaluator(self, args)
 	short arg2 ;
 	short arg3 ;
 	short arg4 ;
-	if (!PyArg_GetShort(args, 4, 0, &arg1))
+	if (!getishortarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 1, &arg2))
+	if (!getishortarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 2, &arg3))
+	if (!getishortarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 3, &arg4))
+	if (!getishortarg(args, 4, 3, &arg4))
 		return NULL;
 	setvaluator( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -5127,13 +5119,13 @@ gl_viewport(self, args)
 	short arg2 ;
 	short arg3 ;
 	short arg4 ;
-	if (!PyArg_GetShort(args, 4, 0, &arg1))
+	if (!getishortarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 1, &arg2))
+	if (!getishortarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 2, &arg3))
+	if (!getishortarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 3, &arg4))
+	if (!getishortarg(args, 4, 3, &arg4))
 		return NULL;
 	viewport( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -5151,13 +5143,13 @@ gl_shaderange(self, args)
 	short arg2 ;
 	short arg3 ;
 	short arg4 ;
-	if (!PyArg_GetShort(args, 4, 0, &arg1))
+	if (!getishortarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 1, &arg2))
+	if (!getishortarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 2, &arg3))
+	if (!getishortarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 3, &arg4))
+	if (!getishortarg(args, 4, 3, &arg4))
 		return NULL;
 	shaderange( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -5175,13 +5167,13 @@ gl_xfpt4s(self, args)
 	short arg2 ;
 	short arg3 ;
 	short arg4 ;
-	if (!PyArg_GetShort(args, 4, 0, &arg1))
+	if (!getishortarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 1, &arg2))
+	if (!getishortarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 2, &arg3))
+	if (!getishortarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 3, &arg4))
+	if (!getishortarg(args, 4, 3, &arg4))
 		return NULL;
 	xfpt4s( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -5199,13 +5191,13 @@ gl_rectfi(self, args)
 	long arg2 ;
 	long arg3 ;
 	long arg4 ;
-	if (!PyArg_GetLong(args, 4, 0, &arg1))
+	if (!getilongarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 1, &arg2))
+	if (!getilongarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 2, &arg3))
+	if (!getilongarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 3, &arg4))
+	if (!getilongarg(args, 4, 3, &arg4))
 		return NULL;
 	rectfi( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -5223,13 +5215,13 @@ gl_recti(self, args)
 	long arg2 ;
 	long arg3 ;
 	long arg4 ;
-	if (!PyArg_GetLong(args, 4, 0, &arg1))
+	if (!getilongarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 1, &arg2))
+	if (!getilongarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 2, &arg3))
+	if (!getilongarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 3, &arg4))
+	if (!getilongarg(args, 4, 3, &arg4))
 		return NULL;
 	recti( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -5247,13 +5239,13 @@ gl_xfpt4i(self, args)
 	long arg2 ;
 	long arg3 ;
 	long arg4 ;
-	if (!PyArg_GetLong(args, 4, 0, &arg1))
+	if (!getilongarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 1, &arg2))
+	if (!getilongarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 2, &arg3))
+	if (!getilongarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 3, &arg4))
+	if (!getilongarg(args, 4, 3, &arg4))
 		return NULL;
 	xfpt4i( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -5271,13 +5263,13 @@ gl_prefposition(self, args)
 	long arg2 ;
 	long arg3 ;
 	long arg4 ;
-	if (!PyArg_GetLong(args, 4, 0, &arg1))
+	if (!getilongarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 1, &arg2))
+	if (!getilongarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 2, &arg3))
+	if (!getilongarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 3, &arg4))
+	if (!getilongarg(args, 4, 3, &arg4))
 		return NULL;
 	prefposition( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -5296,15 +5288,15 @@ gl_arc(self, args)
 	float arg3 ;
 	short arg4 ;
 	short arg5 ;
-	if (!PyArg_GetFloat(args, 5, 0, &arg1))
+	if (!getifloatarg(args, 5, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 5, 1, &arg2))
+	if (!getifloatarg(args, 5, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 5, 2, &arg3))
+	if (!getifloatarg(args, 5, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 3, &arg4))
+	if (!getishortarg(args, 5, 3, &arg4))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 4, &arg5))
+	if (!getishortarg(args, 5, 4, &arg5))
 		return NULL;
 	arc( arg1 , arg2 , arg3 , arg4 , arg5 );
 	Py_INCREF(Py_None);
@@ -5323,15 +5315,15 @@ gl_arcf(self, args)
 	float arg3 ;
 	short arg4 ;
 	short arg5 ;
-	if (!PyArg_GetFloat(args, 5, 0, &arg1))
+	if (!getifloatarg(args, 5, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 5, 1, &arg2))
+	if (!getifloatarg(args, 5, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 5, 2, &arg3))
+	if (!getifloatarg(args, 5, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 3, &arg4))
+	if (!getishortarg(args, 5, 3, &arg4))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 4, &arg5))
+	if (!getishortarg(args, 5, 4, &arg5))
 		return NULL;
 	arcf( arg1 , arg2 , arg3 , arg4 , arg5 );
 	Py_INCREF(Py_None);
@@ -5350,15 +5342,15 @@ gl_arcfi(self, args)
 	long arg3 ;
 	short arg4 ;
 	short arg5 ;
-	if (!PyArg_GetLong(args, 5, 0, &arg1))
+	if (!getilongarg(args, 5, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 5, 1, &arg2))
+	if (!getilongarg(args, 5, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 5, 2, &arg3))
+	if (!getilongarg(args, 5, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 3, &arg4))
+	if (!getishortarg(args, 5, 3, &arg4))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 4, &arg5))
+	if (!getishortarg(args, 5, 4, &arg5))
 		return NULL;
 	arcfi( arg1 , arg2 , arg3 , arg4 , arg5 );
 	Py_INCREF(Py_None);
@@ -5377,15 +5369,15 @@ gl_arci(self, args)
 	long arg3 ;
 	short arg4 ;
 	short arg5 ;
-	if (!PyArg_GetLong(args, 5, 0, &arg1))
+	if (!getilongarg(args, 5, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 5, 1, &arg2))
+	if (!getilongarg(args, 5, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 5, 2, &arg3))
+	if (!getilongarg(args, 5, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 3, &arg4))
+	if (!getishortarg(args, 5, 3, &arg4))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 4, &arg5))
+	if (!getishortarg(args, 5, 4, &arg5))
 		return NULL;
 	arci( arg1 , arg2 , arg3 , arg4 , arg5 );
 	Py_INCREF(Py_None);
@@ -5405,17 +5397,17 @@ gl_bbox2(self, args)
 	float arg4 ;
 	float arg5 ;
 	float arg6 ;
-	if (!PyArg_GetShort(args, 6, 0, &arg1))
+	if (!getishortarg(args, 6, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 6, 1, &arg2))
+	if (!getishortarg(args, 6, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 6, 2, &arg3))
+	if (!getifloatarg(args, 6, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetFloat(args, 6, 3, &arg4))
+	if (!getifloatarg(args, 6, 3, &arg4))
 		return NULL;
-	if (!PyArg_GetFloat(args, 6, 4, &arg5))
+	if (!getifloatarg(args, 6, 4, &arg5))
 		return NULL;
-	if (!PyArg_GetFloat(args, 6, 5, &arg6))
+	if (!getifloatarg(args, 6, 5, &arg6))
 		return NULL;
 	bbox2( arg1 , arg2 , arg3 , arg4 , arg5 , arg6 );
 	Py_INCREF(Py_None);
@@ -5435,17 +5427,17 @@ gl_bbox2i(self, args)
 	long arg4 ;
 	long arg5 ;
 	long arg6 ;
-	if (!PyArg_GetShort(args, 6, 0, &arg1))
+	if (!getishortarg(args, 6, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 6, 1, &arg2))
+	if (!getishortarg(args, 6, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 6, 2, &arg3))
+	if (!getilongarg(args, 6, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetLong(args, 6, 3, &arg4))
+	if (!getilongarg(args, 6, 3, &arg4))
 		return NULL;
-	if (!PyArg_GetLong(args, 6, 4, &arg5))
+	if (!getilongarg(args, 6, 4, &arg5))
 		return NULL;
-	if (!PyArg_GetLong(args, 6, 5, &arg6))
+	if (!getilongarg(args, 6, 5, &arg6))
 		return NULL;
 	bbox2i( arg1 , arg2 , arg3 , arg4 , arg5 , arg6 );
 	Py_INCREF(Py_None);
@@ -5465,17 +5457,17 @@ gl_bbox2s(self, args)
 	short arg4 ;
 	short arg5 ;
 	short arg6 ;
-	if (!PyArg_GetShort(args, 6, 0, &arg1))
+	if (!getishortarg(args, 6, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 6, 1, &arg2))
+	if (!getishortarg(args, 6, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 6, 2, &arg3))
+	if (!getishortarg(args, 6, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 6, 3, &arg4))
+	if (!getishortarg(args, 6, 3, &arg4))
 		return NULL;
-	if (!PyArg_GetShort(args, 6, 4, &arg5))
+	if (!getishortarg(args, 6, 4, &arg5))
 		return NULL;
-	if (!PyArg_GetShort(args, 6, 5, &arg6))
+	if (!getishortarg(args, 6, 5, &arg6))
 		return NULL;
 	bbox2s( arg1 , arg2 , arg3 , arg4 , arg5 , arg6 );
 	Py_INCREF(Py_None);
@@ -5494,15 +5486,15 @@ gl_blink(self, args)
 	short arg3 ;
 	short arg4 ;
 	short arg5 ;
-	if (!PyArg_GetShort(args, 5, 0, &arg1))
+	if (!getishortarg(args, 5, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 1, &arg2))
+	if (!getishortarg(args, 5, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 2, &arg3))
+	if (!getishortarg(args, 5, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 3, &arg4))
+	if (!getishortarg(args, 5, 3, &arg4))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 4, &arg5))
+	if (!getishortarg(args, 5, 4, &arg5))
 		return NULL;
 	blink( arg1 , arg2 , arg3 , arg4 , arg5 );
 	Py_INCREF(Py_None);
@@ -5522,17 +5514,17 @@ gl_ortho(self, args)
 	float arg4 ;
 	float arg5 ;
 	float arg6 ;
-	if (!PyArg_GetFloat(args, 6, 0, &arg1))
+	if (!getifloatarg(args, 6, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 6, 1, &arg2))
+	if (!getifloatarg(args, 6, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 6, 2, &arg3))
+	if (!getifloatarg(args, 6, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetFloat(args, 6, 3, &arg4))
+	if (!getifloatarg(args, 6, 3, &arg4))
 		return NULL;
-	if (!PyArg_GetFloat(args, 6, 4, &arg5))
+	if (!getifloatarg(args, 6, 4, &arg5))
 		return NULL;
-	if (!PyArg_GetFloat(args, 6, 5, &arg6))
+	if (!getifloatarg(args, 6, 5, &arg6))
 		return NULL;
 	ortho( arg1 , arg2 , arg3 , arg4 , arg5 , arg6 );
 	Py_INCREF(Py_None);
@@ -5552,17 +5544,17 @@ gl_window(self, args)
 	float arg4 ;
 	float arg5 ;
 	float arg6 ;
-	if (!PyArg_GetFloat(args, 6, 0, &arg1))
+	if (!getifloatarg(args, 6, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 6, 1, &arg2))
+	if (!getifloatarg(args, 6, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 6, 2, &arg3))
+	if (!getifloatarg(args, 6, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetFloat(args, 6, 3, &arg4))
+	if (!getifloatarg(args, 6, 3, &arg4))
 		return NULL;
-	if (!PyArg_GetFloat(args, 6, 4, &arg5))
+	if (!getifloatarg(args, 6, 4, &arg5))
 		return NULL;
-	if (!PyArg_GetFloat(args, 6, 5, &arg6))
+	if (!getifloatarg(args, 6, 5, &arg6))
 		return NULL;
 	window( arg1 , arg2 , arg3 , arg4 , arg5 , arg6 );
 	Py_INCREF(Py_None);
@@ -5583,19 +5575,19 @@ gl_lookat(self, args)
 	float arg5 ;
 	float arg6 ;
 	short arg7 ;
-	if (!PyArg_GetFloat(args, 7, 0, &arg1))
+	if (!getifloatarg(args, 7, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 7, 1, &arg2))
+	if (!getifloatarg(args, 7, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 7, 2, &arg3))
+	if (!getifloatarg(args, 7, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetFloat(args, 7, 3, &arg4))
+	if (!getifloatarg(args, 7, 3, &arg4))
 		return NULL;
-	if (!PyArg_GetFloat(args, 7, 4, &arg5))
+	if (!getifloatarg(args, 7, 4, &arg5))
 		return NULL;
-	if (!PyArg_GetFloat(args, 7, 5, &arg6))
+	if (!getifloatarg(args, 7, 5, &arg6))
 		return NULL;
-	if (!PyArg_GetShort(args, 7, 6, &arg7))
+	if (!getishortarg(args, 7, 6, &arg7))
 		return NULL;
 	lookat( arg1 , arg2 , arg3 , arg4 , arg5 , arg6 , arg7 );
 	Py_INCREF(Py_None);
@@ -5613,13 +5605,13 @@ gl_perspective(self, args)
 	float arg2 ;
 	float arg3 ;
 	float arg4 ;
-	if (!PyArg_GetShort(args, 4, 0, &arg1))
+	if (!getishortarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 1, &arg2))
+	if (!getifloatarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 2, &arg3))
+	if (!getifloatarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 3, &arg4))
+	if (!getifloatarg(args, 4, 3, &arg4))
 		return NULL;
 	perspective( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -5637,13 +5629,13 @@ gl_polarview(self, args)
 	short arg2 ;
 	short arg3 ;
 	short arg4 ;
-	if (!PyArg_GetFloat(args, 4, 0, &arg1))
+	if (!getifloatarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 1, &arg2))
+	if (!getishortarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 2, &arg3))
+	if (!getishortarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 3, &arg4))
+	if (!getishortarg(args, 4, 3, &arg4))
 		return NULL;
 	polarview( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -5662,15 +5654,15 @@ gl_arcfs(self, args)
 	short arg3 ;
 	short arg4 ;
 	short arg5 ;
-	if (!PyArg_GetShort(args, 5, 0, &arg1))
+	if (!getishortarg(args, 5, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 1, &arg2))
+	if (!getishortarg(args, 5, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 2, &arg3))
+	if (!getishortarg(args, 5, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 3, &arg4))
+	if (!getishortarg(args, 5, 3, &arg4))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 4, &arg5))
+	if (!getishortarg(args, 5, 4, &arg5))
 		return NULL;
 	arcfs( arg1 , arg2 , arg3 , arg4 , arg5 );
 	Py_INCREF(Py_None);
@@ -5689,15 +5681,15 @@ gl_arcs(self, args)
 	short arg3 ;
 	short arg4 ;
 	short arg5 ;
-	if (!PyArg_GetShort(args, 5, 0, &arg1))
+	if (!getishortarg(args, 5, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 1, &arg2))
+	if (!getishortarg(args, 5, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 2, &arg3))
+	if (!getishortarg(args, 5, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 3, &arg4))
+	if (!getishortarg(args, 5, 3, &arg4))
 		return NULL;
-	if (!PyArg_GetShort(args, 5, 4, &arg5))
+	if (!getishortarg(args, 5, 4, &arg5))
 		return NULL;
 	arcs( arg1 , arg2 , arg3 , arg4 , arg5 );
 	Py_INCREF(Py_None);
@@ -5717,17 +5709,17 @@ gl_rectcopy(self, args)
 	short arg4 ;
 	short arg5 ;
 	short arg6 ;
-	if (!PyArg_GetShort(args, 6, 0, &arg1))
+	if (!getishortarg(args, 6, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 6, 1, &arg2))
+	if (!getishortarg(args, 6, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 6, 2, &arg3))
+	if (!getishortarg(args, 6, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 6, 3, &arg4))
+	if (!getishortarg(args, 6, 3, &arg4))
 		return NULL;
-	if (!PyArg_GetShort(args, 6, 4, &arg5))
+	if (!getishortarg(args, 6, 4, &arg5))
 		return NULL;
-	if (!PyArg_GetShort(args, 6, 5, &arg6))
+	if (!getishortarg(args, 6, 5, &arg6))
 		return NULL;
 	rectcopy( arg1 , arg2 , arg3 , arg4 , arg5 , arg6 );
 	Py_INCREF(Py_None);
@@ -5748,19 +5740,19 @@ gl_RGBcursor(self, args)
 	short arg5 ;
 	short arg6 ;
 	short arg7 ;
-	if (!PyArg_GetShort(args, 7, 0, &arg1))
+	if (!getishortarg(args, 7, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 7, 1, &arg2))
+	if (!getishortarg(args, 7, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 7, 2, &arg3))
+	if (!getishortarg(args, 7, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 7, 3, &arg4))
+	if (!getishortarg(args, 7, 3, &arg4))
 		return NULL;
-	if (!PyArg_GetShort(args, 7, 4, &arg5))
+	if (!getishortarg(args, 7, 4, &arg5))
 		return NULL;
-	if (!PyArg_GetShort(args, 7, 5, &arg6))
+	if (!getishortarg(args, 7, 5, &arg6))
 		return NULL;
-	if (!PyArg_GetShort(args, 7, 6, &arg7))
+	if (!getishortarg(args, 7, 6, &arg7))
 		return NULL;
 	RGBcursor( arg1 , arg2 , arg3 , arg4 , arg5 , arg6 , arg7 );
 	Py_INCREF(Py_None);
@@ -5776,7 +5768,7 @@ gl_getbutton(self, args)
 {
 	long retval;
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	retval = getbutton( arg1 );
 	return mknewlongobject(retval);
@@ -5863,7 +5855,7 @@ gl_isobj(self, args)
 {
 	long retval;
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	retval = isobj( arg1 );
 	return mknewlongobject(retval);
@@ -5878,7 +5870,7 @@ gl_isqueued(self, args)
 {
 	long retval;
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	retval = isqueued( arg1 );
 	return mknewlongobject(retval);
@@ -5893,7 +5885,7 @@ gl_istag(self, args)
 {
 	long retval;
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	retval = istag( arg1 );
 	return mknewlongobject(retval);
@@ -6172,7 +6164,7 @@ gl_getvaluator(self, args)
 {
 	long retval;
 	short arg1 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	retval = getvaluator( arg1 );
 	return mknewlongobject(retval);
@@ -6186,7 +6178,7 @@ gl_winset(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	winset( arg1 );
 	Py_INCREF(Py_None);
@@ -6202,7 +6194,7 @@ gl_dopup(self, args)
 {
 	long retval;
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	retval = dopup( arg1 );
 	return mknewlongobject(retval);
@@ -6357,13 +6349,13 @@ gl_winposition(self, args)
 	long arg2 ;
 	long arg3 ;
 	long arg4 ;
-	if (!PyArg_GetLong(args, 4, 0, &arg1))
+	if (!getilongarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 1, &arg2))
+	if (!getilongarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 2, &arg3))
+	if (!getilongarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 3, &arg4))
+	if (!getilongarg(args, 4, 3, &arg4))
 		return NULL;
 	winposition( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -6443,7 +6435,7 @@ gl_getmcolor(self, args)
 	short arg2 ;
 	short arg3 ;
 	short arg4 ;
-	if (!PyArg_GetShort(args, 1, 0, &arg1))
+	if (!getishortarg(args, 1, 0, &arg1))
 		return NULL;
 	getmcolor( arg1 , & arg2 , & arg3 , & arg4 );
 	{ PyObject *v = PyTuple_New( 3 );
@@ -6455,8 +6447,7 @@ gl_getmcolor(self, args)
 	}
 }
 
-/* void mapw long s short s short s float r float r float r
-   float r float r float r */
+/* void mapw long s short s short s float r float r float r float r float r float r */
 
 static PyObject *
 gl_mapw(self, args)
@@ -6472,13 +6463,13 @@ gl_mapw(self, args)
 	float arg7 ;
 	float arg8 ;
 	float arg9 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
-	mapw( arg1, arg2, arg3, &arg4, &arg5, &arg6, &arg7, &arg8, &arg9 );
+	mapw( arg1 , arg2 , arg3 , & arg4 , & arg5 , & arg6 , & arg7 , & arg8 , & arg9 );
 	{ PyObject *v = PyTuple_New( 6 );
 	  if (v == NULL) return NULL;
 	  PyTuple_SetItem(v, 0, mknewfloatobject(arg4));
@@ -6503,11 +6494,11 @@ gl_mapw2(self, args)
 	short arg3 ;
 	float arg4 ;
 	float arg5 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 1, &arg2))
+	if (!getishortarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 3, 2, &arg3))
+	if (!getishortarg(args, 3, 2, &arg3))
 		return NULL;
 	mapw2( arg1 , arg2 , arg3 , & arg4 , & arg5 );
 	{ PyObject *v = PyTuple_New( 2 );
@@ -6560,7 +6551,7 @@ gl_concave(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	concave( arg1 );
 	Py_INCREF(Py_None);
@@ -6575,7 +6566,7 @@ gl_curstype(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	curstype( arg1 );
 	Py_INCREF(Py_None);
@@ -6590,7 +6581,7 @@ gl_drawmode(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	drawmode( arg1 );
 	Py_INCREF(Py_None);
@@ -6607,11 +6598,11 @@ gl_gammaramp(self, args)
 	short arg1 [ 256 ] ;
 	short arg2 [ 256 ] ;
 	short arg3 [ 256 ] ;
-	if (!PyArg_GetShortArray(args, 3, 0, 256 , arg1))
+	if (!getishortarray(args, 3, 0, 256 , arg1))
 		return NULL;
-	if (!PyArg_GetShortArray(args, 3, 1, 256 , arg2))
+	if (!getishortarray(args, 3, 1, 256 , arg2))
 		return NULL;
-	if (!PyArg_GetShortArray(args, 3, 2, 256 , arg3))
+	if (!getishortarray(args, 3, 2, 256 , arg3))
 		return NULL;
 	gammaramp( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -6687,7 +6678,7 @@ gl_getvideo(self, args)
 {
 	long retval;
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	retval = getvideo( arg1 );
 	return mknewlongobject(retval);
@@ -6714,9 +6705,9 @@ gl_lmbind(self, args)
 {
 	short arg1 ;
 	short arg2 ;
-	if (!PyArg_GetShort(args, 2, 0, &arg1))
+	if (!getishortarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 2, 1, &arg2))
+	if (!getishortarg(args, 2, 1, &arg2))
 		return NULL;
 	lmbind( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -6734,15 +6725,15 @@ gl_lmdef(self, args)
 	long arg2 ;
 	long arg3 ;
 	float * arg4 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 1, &arg2))
+	if (!getilongarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLongArraySize(args, 3, 2, &arg3))
+	if (!getilongarraysize(args, 3, 2, &arg3))
 		return NULL;
 	if ((arg4 = PyMem_NEW(float , arg3 )) == NULL)
 		return PyErr_NoMemory();
-	if (!PyArg_GetFloatArray(args, 3, 2, arg3 , arg4))
+	if (!getifloatarray(args, 3, 2, arg3 , arg4))
 		return NULL;
 	lmdef( arg1 , arg2 , arg3 , arg4 );
 	PyMem_DEL(arg4);
@@ -6758,7 +6749,7 @@ gl_mmode(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	mmode( arg1 );
 	Py_INCREF(Py_None);
@@ -6773,7 +6764,7 @@ gl_normal(self, args)
 	PyObject *args;
 {
 	float arg1 [ 3 ] ;
-	if (!PyArg_GetFloatArray(args, 1, 0, 3 , arg1))
+	if (!getifloatarray(args, 1, 0, 3 , arg1))
 		return NULL;
 	normal( arg1 );
 	Py_INCREF(Py_None);
@@ -6788,15 +6779,14 @@ gl_overlay(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	overlay( arg1 );
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
-/* void RGBrange short s short s short s
-   short s short s short s short s short s */
+/* void RGBrange short s short s short s short s short s short s short s short s */
 
 static PyObject *
 gl_RGBrange(self, args)
@@ -6811,23 +6801,23 @@ gl_RGBrange(self, args)
 	short arg6 ;
 	short arg7 ;
 	short arg8 ;
-	if (!PyArg_GetShort(args, 8, 0, &arg1))
+	if (!getishortarg(args, 8, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 8, 1, &arg2))
+	if (!getishortarg(args, 8, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 8, 2, &arg3))
+	if (!getishortarg(args, 8, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 8, 3, &arg4))
+	if (!getishortarg(args, 8, 3, &arg4))
 		return NULL;
-	if (!PyArg_GetShort(args, 8, 4, &arg5))
+	if (!getishortarg(args, 8, 4, &arg5))
 		return NULL;
-	if (!PyArg_GetShort(args, 8, 5, &arg6))
+	if (!getishortarg(args, 8, 5, &arg6))
 		return NULL;
-	if (!PyArg_GetShort(args, 8, 6, &arg7))
+	if (!getishortarg(args, 8, 6, &arg7))
 		return NULL;
-	if (!PyArg_GetShort(args, 8, 7, &arg8))
+	if (!getishortarg(args, 8, 7, &arg8))
 		return NULL;
-	RGBrange( arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 );
+	RGBrange( arg1 , arg2 , arg3 , arg4 , arg5 , arg6 , arg7 , arg8 );
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -6841,9 +6831,9 @@ gl_setvideo(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	setvideo( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -6858,7 +6848,7 @@ gl_shademodel(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	shademodel( arg1 );
 	Py_INCREF(Py_None);
@@ -6873,7 +6863,7 @@ gl_underlay(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	underlay( arg1 );
 	Py_INCREF(Py_None);
@@ -7057,9 +7047,9 @@ gl_blendfunction(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	blendfunction( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -7074,7 +7064,7 @@ gl_c3f(self, args)
 	PyObject *args;
 {
 	float arg1 [ 3 ] ;
-	if (!PyArg_GetFloatArray(args, 1, 0, 3 , arg1))
+	if (!getifloatarray(args, 1, 0, 3 , arg1))
 		return NULL;
 	c3f( arg1 );
 	Py_INCREF(Py_None);
@@ -7089,7 +7079,7 @@ gl_c3i(self, args)
 	PyObject *args;
 {
 	long arg1 [ 3 ] ;
-	if (!PyArg_GetLongArray(args, 1, 0, 3 , arg1))
+	if (!getilongarray(args, 1, 0, 3 , arg1))
 		return NULL;
 	c3i( arg1 );
 	Py_INCREF(Py_None);
@@ -7104,7 +7094,7 @@ gl_c3s(self, args)
 	PyObject *args;
 {
 	short arg1 [ 3 ] ;
-	if (!PyArg_GetShortArray(args, 1, 0, 3 , arg1))
+	if (!getishortarray(args, 1, 0, 3 , arg1))
 		return NULL;
 	c3s( arg1 );
 	Py_INCREF(Py_None);
@@ -7119,7 +7109,7 @@ gl_c4f(self, args)
 	PyObject *args;
 {
 	float arg1 [ 4 ] ;
-	if (!PyArg_GetFloatArray(args, 1, 0, 4 , arg1))
+	if (!getifloatarray(args, 1, 0, 4 , arg1))
 		return NULL;
 	c4f( arg1 );
 	Py_INCREF(Py_None);
@@ -7134,7 +7124,7 @@ gl_c4i(self, args)
 	PyObject *args;
 {
 	long arg1 [ 4 ] ;
-	if (!PyArg_GetLongArray(args, 1, 0, 4 , arg1))
+	if (!getilongarray(args, 1, 0, 4 , arg1))
 		return NULL;
 	c4i( arg1 );
 	Py_INCREF(Py_None);
@@ -7149,7 +7139,7 @@ gl_c4s(self, args)
 	PyObject *args;
 {
 	short arg1 [ 4 ] ;
-	if (!PyArg_GetShortArray(args, 1, 0, 4 , arg1))
+	if (!getishortarray(args, 1, 0, 4 , arg1))
 		return NULL;
 	c4s( arg1 );
 	Py_INCREF(Py_None);
@@ -7164,7 +7154,7 @@ gl_colorf(self, args)
 	PyObject *args;
 {
 	float arg1 ;
-	if (!PyArg_GetFloat(args, 1, 0, &arg1))
+	if (!getifloatarg(args, 1, 0, &arg1))
 		return NULL;
 	colorf( arg1 );
 	Py_INCREF(Py_None);
@@ -7179,7 +7169,7 @@ gl_cpack(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	cpack( arg1 );
 	Py_INCREF(Py_None);
@@ -7195,9 +7185,9 @@ gl_czclear(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	czclear( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -7212,7 +7202,7 @@ gl_dglclose(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	dglclose( arg1 );
 	Py_INCREF(Py_None);
@@ -7229,9 +7219,9 @@ gl_dglopen(self, args)
 	long retval;
 	string arg1 ;
 	long arg2 ;
-	if (!PyArg_GetString(args, 2, 0, &arg1))
+	if (!getistringarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	retval = dglopen( arg1 , arg2 );
 	return mknewlongobject(retval);
@@ -7246,7 +7236,7 @@ gl_getgdesc(self, args)
 {
 	long retval;
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	retval = getgdesc( arg1 );
 	return mknewlongobject(retval);
@@ -7261,7 +7251,7 @@ gl_getnurbsproperty(self, args)
 {
 	long arg1 ;
 	float arg2 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	getnurbsproperty( arg1 , & arg2 );
 	return mknewfloatobject(arg2);
@@ -7276,9 +7266,9 @@ gl_glcompat(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	glcompat( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -7294,9 +7284,9 @@ gl_iconsize(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	iconsize( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -7311,15 +7301,14 @@ gl_icontitle(self, args)
 	PyObject *args;
 {
 	string arg1 ;
-	if (!PyArg_GetString(args, 1, 0, &arg1))
+	if (!getistringarg(args, 1, 0, &arg1))
 		return NULL;
 	icontitle( arg1 );
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
-/* void lRGBrange short s short s short s short s
-   short s short s long s long s */
+/* void lRGBrange short s short s short s short s short s short s long s long s */
 
 static PyObject *
 gl_lRGBrange(self, args)
@@ -7334,23 +7323,23 @@ gl_lRGBrange(self, args)
 	short arg6 ;
 	long arg7 ;
 	long arg8 ;
-	if (!PyArg_GetShort(args, 8, 0, &arg1))
+	if (!getishortarg(args, 8, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 8, 1, &arg2))
+	if (!getishortarg(args, 8, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 8, 2, &arg3))
+	if (!getishortarg(args, 8, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 8, 3, &arg4))
+	if (!getishortarg(args, 8, 3, &arg4))
 		return NULL;
-	if (!PyArg_GetShort(args, 8, 4, &arg5))
+	if (!getishortarg(args, 8, 4, &arg5))
 		return NULL;
-	if (!PyArg_GetShort(args, 8, 5, &arg6))
+	if (!getishortarg(args, 8, 5, &arg6))
 		return NULL;
-	if (!PyArg_GetLong(args, 8, 6, &arg7))
+	if (!getilongarg(args, 8, 6, &arg7))
 		return NULL;
-	if (!PyArg_GetLong(args, 8, 7, &arg8))
+	if (!getilongarg(args, 8, 7, &arg8))
 		return NULL;
-	lRGBrange( arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 );
+	lRGBrange( arg1 , arg2 , arg3 , arg4 , arg5 , arg6 , arg7 , arg8 );
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -7363,7 +7352,7 @@ gl_linesmooth(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	linesmooth( arg1 );
 	Py_INCREF(Py_None);
@@ -7378,7 +7367,7 @@ gl_lmcolor(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	lmcolor( arg1 );
 	Py_INCREF(Py_None);
@@ -7393,7 +7382,7 @@ gl_logicop(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	logicop( arg1 );
 	Py_INCREF(Py_None);
@@ -7409,9 +7398,9 @@ gl_lsetdepth(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	lsetdepth( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -7429,13 +7418,13 @@ gl_lshaderange(self, args)
 	short arg2 ;
 	long arg3 ;
 	long arg4 ;
-	if (!PyArg_GetShort(args, 4, 0, &arg1))
+	if (!getishortarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 1, &arg2))
+	if (!getishortarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 2, &arg3))
+	if (!getilongarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 3, &arg4))
+	if (!getilongarg(args, 4, 3, &arg4))
 		return NULL;
 	lshaderange( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -7450,7 +7439,7 @@ gl_n3f(self, args)
 	PyObject *args;
 {
 	float arg1 [ 3 ] ;
-	if (!PyArg_GetFloatArray(args, 1, 0, 3 , arg1))
+	if (!getifloatarray(args, 1, 0, 3 , arg1))
 		return NULL;
 	n3f( arg1 );
 	Py_INCREF(Py_None);
@@ -7477,7 +7466,7 @@ gl_pntsmooth(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	pntsmooth( arg1 );
 	Py_INCREF(Py_None);
@@ -7492,7 +7481,7 @@ gl_readsource(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	readsource( arg1 );
 	Py_INCREF(Py_None);
@@ -7508,9 +7497,9 @@ gl_rectzoom(self, args)
 {
 	float arg1 ;
 	float arg2 ;
-	if (!PyArg_GetFloat(args, 2, 0, &arg1))
+	if (!getifloatarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 2, 1, &arg2))
+	if (!getifloatarg(args, 2, 1, &arg2))
 		return NULL;
 	rectzoom( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -7528,13 +7517,13 @@ gl_sbox(self, args)
 	float arg2 ;
 	float arg3 ;
 	float arg4 ;
-	if (!PyArg_GetFloat(args, 4, 0, &arg1))
+	if (!getifloatarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 1, &arg2))
+	if (!getifloatarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 2, &arg3))
+	if (!getifloatarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 3, &arg4))
+	if (!getifloatarg(args, 4, 3, &arg4))
 		return NULL;
 	sbox( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -7552,13 +7541,13 @@ gl_sboxi(self, args)
 	long arg2 ;
 	long arg3 ;
 	long arg4 ;
-	if (!PyArg_GetLong(args, 4, 0, &arg1))
+	if (!getilongarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 1, &arg2))
+	if (!getilongarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 2, &arg3))
+	if (!getilongarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 3, &arg4))
+	if (!getilongarg(args, 4, 3, &arg4))
 		return NULL;
 	sboxi( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -7576,15 +7565,15 @@ gl_sboxs(self, args)
 	short arg2 ;
 	short arg3 ;
 	short arg4 ;
-	if (!PyArg_GetShort(args, 4, 0, &arg1))
+	if (!getishortarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 1, &arg2))
+	if (!getishortarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 2, &arg3))
+	if (!getishortarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 3, &arg4))
+	if (!getishortarg(args, 4, 3, &arg4))
 		return NULL;
-	sboxs( arg1, arg2, arg3, arg4 );
+	sboxs( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -7600,15 +7589,15 @@ gl_sboxf(self, args)
 	float arg2 ;
 	float arg3 ;
 	float arg4 ;
-	if (!PyArg_GetFloat(args, 4, 0, &arg1))
+	if (!getifloatarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 1, &arg2))
+	if (!getifloatarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 2, &arg3))
+	if (!getifloatarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetFloat(args, 4, 3, &arg4))
+	if (!getifloatarg(args, 4, 3, &arg4))
 		return NULL;
-	sboxf( arg1, arg2, arg3, arg4 );
+	sboxf( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -7624,15 +7613,15 @@ gl_sboxfi(self, args)
 	long arg2 ;
 	long arg3 ;
 	long arg4 ;
-	if (!PyArg_GetLong(args, 4, 0, &arg1))
+	if (!getilongarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 1, &arg2))
+	if (!getilongarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 2, &arg3))
+	if (!getilongarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetLong(args, 4, 3, &arg4))
+	if (!getilongarg(args, 4, 3, &arg4))
 		return NULL;
-	sboxfi( arg1, arg2, arg3, arg4 );
+	sboxfi( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -7648,13 +7637,13 @@ gl_sboxfs(self, args)
 	short arg2 ;
 	short arg3 ;
 	short arg4 ;
-	if (!PyArg_GetShort(args, 4, 0, &arg1))
+	if (!getishortarg(args, 4, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 1, &arg2))
+	if (!getishortarg(args, 4, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 2, &arg3))
+	if (!getishortarg(args, 4, 2, &arg3))
 		return NULL;
-	if (!PyArg_GetShort(args, 4, 3, &arg4))
+	if (!getishortarg(args, 4, 3, &arg4))
 		return NULL;
 	sboxfs( arg1 , arg2 , arg3 , arg4 );
 	Py_INCREF(Py_None);
@@ -7670,9 +7659,9 @@ gl_setnurbsproperty(self, args)
 {
 	long arg1 ;
 	float arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetFloat(args, 2, 1, &arg2))
+	if (!getifloatarg(args, 2, 1, &arg2))
 		return NULL;
 	setnurbsproperty( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -7689,11 +7678,11 @@ gl_setpup(self, args)
 	long arg1 ;
 	long arg2 ;
 	long arg3 ;
-	if (!PyArg_GetLong(args, 3, 0, &arg1))
+	if (!getilongarg(args, 3, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 1, &arg2))
+	if (!getilongarg(args, 3, 1, &arg2))
 		return NULL;
-	if (!PyArg_GetLong(args, 3, 2, &arg3))
+	if (!getilongarg(args, 3, 2, &arg3))
 		return NULL;
 	setpup( arg1 , arg2 , arg3 );
 	Py_INCREF(Py_None);
@@ -7708,7 +7697,7 @@ gl_smoothline(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	smoothline( arg1 );
 	Py_INCREF(Py_None);
@@ -7723,7 +7712,7 @@ gl_subpixel(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	subpixel( arg1 );
 	Py_INCREF(Py_None);
@@ -7751,7 +7740,7 @@ gl_swinopen(self, args)
 {
 	long retval;
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	retval = swinopen( arg1 );
 	return mknewlongobject(retval);
@@ -7765,7 +7754,7 @@ gl_v2f(self, args)
 	PyObject *args;
 {
 	float arg1 [ 2 ] ;
-	if (!PyArg_GetFloatArray(args, 1, 0, 2 , arg1))
+	if (!getifloatarray(args, 1, 0, 2 , arg1))
 		return NULL;
 	v2f( arg1 );
 	Py_INCREF(Py_None);
@@ -7780,7 +7769,7 @@ gl_v2i(self, args)
 	PyObject *args;
 {
 	long arg1 [ 2 ] ;
-	if (!PyArg_GetLongArray(args, 1, 0, 2 , arg1))
+	if (!getilongarray(args, 1, 0, 2 , arg1))
 		return NULL;
 	v2i( arg1 );
 	Py_INCREF(Py_None);
@@ -7795,7 +7784,7 @@ gl_v2s(self, args)
 	PyObject *args;
 {
 	short arg1 [ 2 ] ;
-	if (!PyArg_GetShortArray(args, 1, 0, 2 , arg1))
+	if (!getishortarray(args, 1, 0, 2 , arg1))
 		return NULL;
 	v2s( arg1 );
 	Py_INCREF(Py_None);
@@ -7810,7 +7799,7 @@ gl_v3f(self, args)
 	PyObject *args;
 {
 	float arg1 [ 3 ] ;
-	if (!PyArg_GetFloatArray(args, 1, 0, 3 , arg1))
+	if (!getifloatarray(args, 1, 0, 3 , arg1))
 		return NULL;
 	v3f( arg1 );
 	Py_INCREF(Py_None);
@@ -7825,7 +7814,7 @@ gl_v3i(self, args)
 	PyObject *args;
 {
 	long arg1 [ 3 ] ;
-	if (!PyArg_GetLongArray(args, 1, 0, 3 , arg1))
+	if (!getilongarray(args, 1, 0, 3 , arg1))
 		return NULL;
 	v3i( arg1 );
 	Py_INCREF(Py_None);
@@ -7840,7 +7829,7 @@ gl_v3s(self, args)
 	PyObject *args;
 {
 	short arg1 [ 3 ] ;
-	if (!PyArg_GetShortArray(args, 1, 0, 3 , arg1))
+	if (!getishortarray(args, 1, 0, 3 , arg1))
 		return NULL;
 	v3s( arg1 );
 	Py_INCREF(Py_None);
@@ -7855,7 +7844,7 @@ gl_v4f(self, args)
 	PyObject *args;
 {
 	float arg1 [ 4 ] ;
-	if (!PyArg_GetFloatArray(args, 1, 0, 4 , arg1))
+	if (!getifloatarray(args, 1, 0, 4 , arg1))
 		return NULL;
 	v4f( arg1 );
 	Py_INCREF(Py_None);
@@ -7870,7 +7859,7 @@ gl_v4i(self, args)
 	PyObject *args;
 {
 	long arg1 [ 4 ] ;
-	if (!PyArg_GetLongArray(args, 1, 0, 4 , arg1))
+	if (!getilongarray(args, 1, 0, 4 , arg1))
 		return NULL;
 	v4i( arg1 );
 	Py_INCREF(Py_None);
@@ -7885,7 +7874,7 @@ gl_v4s(self, args)
 	PyObject *args;
 {
 	short arg1 [ 4 ] ;
-	if (!PyArg_GetShortArray(args, 1, 0, 4 , arg1))
+	if (!getishortarray(args, 1, 0, 4 , arg1))
 		return NULL;
 	v4s( arg1 );
 	Py_INCREF(Py_None);
@@ -7900,7 +7889,7 @@ gl_videocmd(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	videocmd( arg1 );
 	Py_INCREF(Py_None);
@@ -7916,7 +7905,7 @@ gl_windepth(self, args)
 {
 	long retval;
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	retval = windepth( arg1 );
 	return mknewlongobject(retval);
@@ -7930,7 +7919,7 @@ gl_wmpack(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	wmpack( arg1 );
 	Py_INCREF(Py_None);
@@ -7945,7 +7934,7 @@ gl_zdraw(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	zdraw( arg1 );
 	Py_INCREF(Py_None);
@@ -7960,7 +7949,7 @@ gl_zfunction(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	zfunction( arg1 );
 	Py_INCREF(Py_None);
@@ -7975,7 +7964,7 @@ gl_zsource(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	zsource( arg1 );
 	Py_INCREF(Py_None);
@@ -7990,7 +7979,7 @@ gl_zwritemask(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	zwritemask( arg1 );
 	Py_INCREF(Py_None);
@@ -8005,7 +7994,7 @@ gl_v2d(self, args)
 	PyObject *args;
 {
 	double arg1 [ 2 ] ;
-	if (!PyArg_GetDoubleArray(args, 1, 0, 2 , arg1))
+	if (!getidoublearray(args, 1, 0, 2 , arg1))
 		return NULL;
 	v2d( arg1 );
 	Py_INCREF(Py_None);
@@ -8020,7 +8009,7 @@ gl_v3d(self, args)
 	PyObject *args;
 {
 	double arg1 [ 3 ] ;
-	if (!PyArg_GetDoubleArray(args, 1, 0, 3 , arg1))
+	if (!getidoublearray(args, 1, 0, 3 , arg1))
 		return NULL;
 	v3d( arg1 );
 	Py_INCREF(Py_None);
@@ -8035,7 +8024,7 @@ gl_v4d(self, args)
 	PyObject *args;
 {
 	double arg1 [ 4 ] ;
-	if (!PyArg_GetDoubleArray(args, 1, 0, 4 , arg1))
+	if (!getidoublearray(args, 1, 0, 4 , arg1))
 		return NULL;
 	v4d( arg1 );
 	Py_INCREF(Py_None);
@@ -8051,9 +8040,9 @@ gl_pixmode(self, args)
 {
 	long arg1 ;
 	long arg2 ;
-	if (!PyArg_GetLong(args, 2, 0, &arg1))
+	if (!getilongarg(args, 2, 0, &arg1))
 		return NULL;
-	if (!PyArg_GetLong(args, 2, 1, &arg2))
+	if (!getilongarg(args, 2, 1, &arg2))
 		return NULL;
 	pixmode( arg1 , arg2 );
 	Py_INCREF(Py_None);
@@ -8080,14 +8069,14 @@ gl_dither(self, args)
 	PyObject *args;
 {
 	long arg1 ;
-	if (!PyArg_GetLong(args, 1, 0, &arg1))
+	if (!getilongarg(args, 1, 0, &arg1))
 		return NULL;
 	dither( arg1 );
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
-static PyMethodDef gl_methods[] = {
+static struct PyMethodDef gl_methods[] = {
 	{"qread", gl_qread},
 	{"varray", gl_varray},
 	{"nvarray", gl_nvarray},
@@ -8526,5 +8515,5 @@ static PyMethodDef gl_methods[] = {
 void
 initgl()
 {
-	Py_InitModule("gl", gl_methods);
+	(void) Py_InitModule("gl", gl_methods);
 }
