@@ -1,15 +1,14 @@
-\section{Built-in Module \sectcode{sunaudiodev}}
+\section{Built-in Module \module{sunaudiodev}}
 \label{module-sunaudiodev}
 \bimodindex{sunaudiodev}
 
 This module allows you to access the sun audio interface. The sun
 audio hardware is capable of recording and playing back audio data
-in U-LAW format with a sample rate of 8K per second. A full
-description can be gotten with \samp{man audio}.
+in u-LAW\index{u-LAW} format with a sample rate of 8K per second. A
+full description can be found in the \manpage{audio}{7I} manual page.
 
 The module defines the following variables and functions:
 
-\setindexsubitem{(in module sunaudiodev)}
 \begin{excdesc}{error}
 This exception is raised on all errors. The argument is a string
 describing what went wrong.
@@ -22,87 +21,87 @@ is one of \code{'r'} for record-only access, \code{'w'} for play-only
 access, \code{'rw'} for both and \code{'control'} for access to the
 control device. Since only one process is allowed to have the recorder
 or player open at the same time it is a good idea to open the device
-only for the activity needed. See the audio manpage for details.
+only for the activity needed. See \manpage{audio}{7I} for details.
 \end{funcdesc}
 
+
 \subsection{Audio Device Objects}
+\label{audio-device-objects}
 
-The audio device objects are returned by \code{open} define the
+The audio device objects are returned by \function{open()} define the
 following methods (except \code{control} objects which only provide
-getinfo, setinfo and drain):
+\method{getinfo()}, \method{setinfo()} and \method{drain()}):
 
-\setindexsubitem{(audio device method)}
-
-\begin{funcdesc}{close}{}
+\begin{methoddesc}[audio device]{close}{}
 This method explicitly closes the device. It is useful in situations
 where deleting the object does not immediately close it since there
 are other references to it. A closed device should not be used again.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{drain}{}
+\begin{methoddesc}[audio device]{drain}{}
 This method waits until all pending output is processed and then returns.
 Calling this method is often not necessary: destroying the object will
 automatically close the audio device and this will do an implicit drain.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{flush}{}
+\begin{methoddesc}[audio device]{flush}{}
 This method discards all pending output. It can be used avoid the
 slow response to a user's stop request (due to buffering of up to one
 second of sound).
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{getinfo}{}
+\begin{methoddesc}[audio device]{getinfo}{}
 This method retrieves status information like input and output volume,
 etc. and returns it in the form of
 an audio status object. This object has no methods but it contains a
 number of attributes describing the current device status. The names
 and meanings of the attributes are described in
-\file{/usr/include/sun/audioio.h} and in the audio man page. Member names
-are slightly different from their C counterparts: a status object is
-only a single structure. Members of the \code{play} substructure have
-\samp{o_} prepended to their name and members of the \code{record}
-structure have \samp{i_}. So, the C member \code{play.sample_rate} is
-accessed as \code{o_sample_rate}, \code{record.gain} as \code{i_gain}
-and \code{monitor_gain} plainly as \code{monitor_gain}.
-\end{funcdesc}
+\file{/usr/include/sun/audioio.h} and in the \manpage{audio}{7I}
+manual page.  Member names
+are slightly different from their \C{} counterparts: a status object is
+only a single structure. Members of the \cdata{play} substructure have
+\samp{o_} prepended to their name and members of the \cdata{record}
+structure have \samp{i_}. So, the \C{} member \cdata{play.sample_rate} is
+accessed as \member{o_sample_rate}, \cdata{record.gain} as \member{i_gain}
+and \cdata{monitor_gain} plainly as \member{monitor_gain}.
+\end{methoddesc}
 
-\begin{funcdesc}{ibufcount}{}
+\begin{methoddesc}[audio device]{ibufcount}{}
 This method returns the number of samples that are buffered on the
-recording side, i.e.
-the program will not block on a \function{read()} call of so many samples.
-\end{funcdesc}
+recording side, i.e.\ the program will not block on a
+\function{read()} call of so many samples.
+\end{methoddesc}
 
-\begin{funcdesc}{obufcount}{}
+\begin{methoddesc}[audio device]{obufcount}{}
 This method returns the number of samples buffered on the playback
 side. Unfortunately, this number cannot be used to determine a number
 of samples that can be written without blocking since the kernel
 output queue length seems to be variable.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{read}{size}
+\begin{methoddesc}[audio device]{read}{size}
 This method reads \var{size} samples from the audio input and returns
 them as a Python string. The function blocks until enough data is available.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{setinfo}{status}
+\begin{methoddesc}[audio device]{setinfo}{status}
 This method sets the audio device status parameters. The \var{status}
 parameter is an device status object as returned by \function{getinfo()} and
 possibly modified by the program.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{write}{samples}
+\begin{methoddesc}[audio device]{write}{samples}
 Write is passed a Python string containing audio samples to be played.
 If there is enough buffer space free it will immediately return,
 otherwise it will block.
-\end{funcdesc}
+\end{methoddesc}
 
-There is a companion module, \module{SUNAUDIODEV}, which defines useful
+There is a companion module,
+\module{SUNAUDIODEV}\refstmodindex{SUNAUDIODEV}, which defines useful
 symbolic constants like \constant{MIN_GAIN}, \constant{MAX_GAIN},
-\constant{SPEAKER}, etc. The names of
-the constants are the same names as used in the \C{} include file
-\code{<sun/audioio.h>}, with the leading string \samp{AUDIO_}
-stripped.
-\refstmodindex{SUNAUDIODEV}
+\constant{SPEAKER}, etc. The names of the constants are the same names
+as used in the \C{} include file \code{<sun/audioio.h>}, with the
+leading string \samp{AUDIO_} stripped.
 
 Useability of the control device is limited at the moment, since there
 is no way to use the ``wait for something to happen'' feature the

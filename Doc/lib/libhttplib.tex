@@ -1,4 +1,4 @@
-\section{Standard Module \sectcode{httplib}}
+\section{Standard Module \module{httplib}}
 \label{module-httplib}
 \stmodindex{httplib}
 \indexii{HTTP}{protocol}
@@ -9,7 +9,10 @@ HTTP protocol.  It is normally not used directly --- the module
 \module{urllib}\refstmodindex{urllib} uses it to handle URLs that use
 HTTP.
 
-The module defines one class, \class{HTTP}.  An \class{HTTP} instance
+The module defines one class, \class{HTTP}:
+
+\begin{classdesc}{HTTP}{\optional{host\optional{, port}}}
+An \class{HTTP} instance
 represents one transaction with an HTTP server.  It should be
 instantiated passing it a host and optional port number.  If no port
 number is passed, the port is extracted from the host string if it has
@@ -45,50 +48,50 @@ step 4 makes no calls).
 file object that it returns.
 
 \end{enumerate}
+\end{classdesc}
 
 \subsection{HTTP Objects}
 
 \class{HTTP} instances have the following methods:
 
-\setindexsubitem{(HTTP method)}
 
-\begin{funcdesc}{set_debuglevel}{level}
+\begin{methoddesc}{set_debuglevel}{level}
 Set the debugging level (the amount of debugging output printed).
 The default debug level is \code{0}, meaning no debugging output is
 printed.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{connect}{host\optional{, port}}
+\begin{methoddesc}{connect}{host\optional{, port}}
 Connect to the server given by \var{host} and \var{port}.  See the
 intro for the default port.  This should be called directly only if
 the instance was instantiated without passing a host.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{send}{data}
+\begin{methoddesc}{send}{data}
 Send data to the server.  This should be used directly only after the
 \method{endheaders()} method has been called and before
 \method{getreply()} has been called.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{putrequest}{request, selector}
+\begin{methoddesc}{putrequest}{request, selector}
 This should be the first call after the connection to the server has
 been made.  It sends a line to the server consisting of the
 \var{request} string, the \var{selector} string, and the HTTP version
 (\code{HTTP/1.0}).
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{putheader}{header, argument\optional{, ...}}
+\begin{methoddesc}{putheader}{header, argument\optional{, ...}}
 Send an \rfc{822} style header to the server.  It sends a line to the
 server consisting of the header, a colon and a space, and the first
 argument.  If more arguments are given, continuation lines are sent,
 each consisting of a tab and an argument.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{endheaders}{}
+\begin{methoddesc}{endheaders}{}
 Send a blank line to the server, signalling the end of the headers.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{getreply}{}
+\begin{methoddesc}{getreply}{}
 Complete the request by shutting down the sending end of the socket,
 read the reply from the server, and return a triple
 \code{(\var{replycode}, \var{message}, \var{headers})}.  Here,
@@ -98,13 +101,13 @@ message string corresponding to the reply code; and \var{headers} is
 an instance of the class \class{mimetools.Message} containing the
 headers received from the server.  See the description of the
 \module{mimetools}\refstmodindex{mimetools} module.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{getfile}{}
+\begin{methoddesc}{getfile}{}
 Return a file object from which the data returned by the server can be
 read, using the \method{read()}, \method{readline()} or
 \method{readlines()} methods.
-\end{funcdesc}
+\end{methoddesc}
 
 \subsection{Example}
 \nodename{HTTP Example}
@@ -123,5 +126,4 @@ Here is an example session:
 >>> f = h.getfile()
 >>> data = f.read() # Get the raw HTML
 >>> f.close()
->>> 
 \end{verbatim}

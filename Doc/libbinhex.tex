@@ -1,15 +1,13 @@
-\section{Standard Module \sectcode{binhex}}
+\section{Standard Module \module{binhex}}
 \label{module-binhex}
 \stmodindex{binhex}
 
 This module encodes and decodes files in binhex4 format, a format
-allowing representation of Macintosh files in ASCII. On the macintosh,
+allowing representation of Macintosh files in \ASCII{}. On the Macintosh,
 both forks of a file and the finder information are encoded (or
 decoded), on other platforms only the data fork is handled.
 
-The \code{binhex} module defines the following functions:
-
-\setindexsubitem{(in module binhex)}
+The \module{binhex} module defines the following functions:
 
 \begin{funcdesc}{binhex}{input, output}
 Convert a binary file with filename \var{input} to binhex file
@@ -31,7 +29,8 @@ There is an alternative, more powerful interface to the coder and
 decoder, see the source for details.
 
 If you code or decode textfiles on non-Macintosh platforms they will
-still use the macintosh newline convention (carriage-return as end of
+still use the Macintosh newline convention (carriage-return as end of
 line).
 
-As of this writing, \var{hexbin} appears to not work in all cases.
+As of this writing, \function{hexbin()} appears to not work in all
+cases.

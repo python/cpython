@@ -1,11 +1,10 @@
-\section{Standard Module \sectcode{nntplib}}
+\section{Standard Module \module{nntplib}}
 \label{module-nntplib}
 \stmodindex{nntplib}
 \indexii{NNTP}{protocol}
 
-\setindexsubitem{(in module nntplib)}
 
-This module defines the class \code{NNTP} which implements the client
+This module defines the class \class{NNTP} which implements the client
 side of the NNTP protocol.  It can be used to implement a news reader
 or poster, or automated news processors.  For more information on NNTP
 (Network News Transfer Protocol), see Internet \rfc{977}.
@@ -34,7 +33,6 @@ Group comp.lang.python has 59 articles, range 3742 to 3803
 3803 Re: \POSIX{} wait and SIGCHLD
 >>> s.quit()
 '205 news.cwi.nl closing connection.  Goodbye.'
->>> 
 \end{verbatim}
 
 To post an article from a file (this assumes that the article has
@@ -47,16 +45,15 @@ valid headers):
 '240 Article posted successfully.'
 >>> s.quit()
 '205 news.cwi.nl closing connection.  Goodbye.'
->>> 
 \end{verbatim}
 %
 The module itself defines the following items:
 
-\begin{funcdesc}{NNTP}{host\optional{, port}}
-Return a new instance of the \code{NNTP} class, representing a
+\begin{classdesc}{NNTP}{host\optional{, port}}
+Return a new instance of the \class{NNTP} class, representing a
 connection to the NNTP server running on host \var{host}, listening at
 port \var{port}.  The default \var{port} is 119.
-\end{funcdesc}
+\end{classdesc}
 
 \begin{excdesc}{error_reply}
 Exception raised when an unexpected reply is received from the server.
@@ -75,7 +72,9 @@ Exception raised when a reply is received from the server that does
 not begin with a digit in the range 1--5.
 \end{excdesc}
 
+
 \subsection{NNTP Objects}
+\label{nntp-objects}
 
 NNTP instances have the following methods.  The \var{response} that is
 returned as the first item in the return tuple of almost all methods
@@ -83,40 +82,40 @@ is the server's response: a string beginning with a three-digit code.
 If the server's response indicates an error, the method raises one of
 the above exceptions.
 
-\setindexsubitem{(NNTP object method)}
 
-\begin{funcdesc}{getwelcome}{}
+\begin{methoddesc}{getwelcome}{}
 Return the welcome message sent by the server in reply to the initial
 connection.  (This message sometimes contains disclaimers or help
 information that may be relevant to the user.)
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{set_debuglevel}{level}
+\begin{methoddesc}{set_debuglevel}{level}
 Set the instance's debugging level.  This controls the amount of
-debugging output printed.  The default, 0, produces no debugging
-output.  A value of 1 produces a moderate amount of debugging output,
-generally a single line per request or response.  A value of 2 or
-higher produces the maximum amount of debugging output, logging each
-line sent and received on the connection (including message text).
-\end{funcdesc}
+debugging output printed.  The default, \code{0}, produces no debugging
+output.  A value of \code{1} produces a moderate amount of debugging
+output, generally a single line per request or response.  A value of
+\code{2} or higher produces the maximum amount of debugging output,
+logging each line sent and received on the connection (including
+message text).
+\end{methoddesc}
 
-\begin{funcdesc}{newgroups}{date, time}
+\begin{methoddesc}{newgroups}{date, time}
 Send a \samp{NEWGROUPS} command.  The \var{date} argument should be a
 string of the form \code{"\var{yy}\var{mm}\var{dd}"} indicating the
 date, and \var{time} should be a string of the form
 \code{"\var{hh}\var{mm}\var{ss}"} indicating the time.  Return a pair
 \code{(\var{response}, \var{groups})} where \var{groups} is a list of
 group names that are new since the given date and time.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{newnews}{group, date, time}
+\begin{methoddesc}{newnews}{group, date, time}
 Send a \samp{NEWNEWS} command.  Here, \var{group} is a group name or
-\code{"*"}, and \var{date} and \var{time} have the same meaning as for
-\code{newgroups()}.  Return a pair \code{(\var{response},
+\code{'*'}, and \var{date} and \var{time} have the same meaning as for
+\method{newgroups()}.  Return a pair \code{(\var{response},
 \var{articles})} where \var{articles} is a list of article ids.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{list}{}
+\begin{methoddesc}{list}{}
 Send a \samp{LIST} command.  Return a pair \code{(\var{response},
 \var{list})} where \var{list} is a list of tuples.  Each tuple has the
 form \code{(\var{group}, \var{last}, \var{first}, \var{flag})}, where
@@ -124,106 +123,107 @@ form \code{(\var{group}, \var{last}, \var{first}, \var{flag})}, where
 and first article numbers (as strings), and \var{flag} is \code{'y'}
 if posting is allowed, \code{'n'} if not, and \code{'m'} if the
 newsgroup is moderated.  (Note the ordering: \var{last}, \var{first}.)
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{group}{name}
+\begin{methoddesc}{group}{name}
 Send a \samp{GROUP} command, where \var{name} is the group name.
-Return a tuple \code{(\var{response}, \var{count}, \var{first},
-\var{last}, \var{name})} where \var{count} is the (estimated) number
-of articles in the group, \var{first} is the first article number in
-the group, \var{last} is the last article number in the group, and
-\var{name} is the group name.  The numbers are returned as strings.
-\end{funcdesc}
+Return a tuple \code{(}\var{response}\code{,} \var{count}\code{,}
+\var{first}\code{,} \var{last}\code{,} \var{name}\code{)} where
+\var{count} is the (estimated) number of articles in the group,
+\var{first} is the first article number in the group, \var{last} is
+the last article number in the group, and \var{name} is the group
+name.  The numbers are returned as strings.
+\end{methoddesc}
 
-\begin{funcdesc}{help}{}
+\begin{methoddesc}{help}{}
 Send a \samp{HELP} command.  Return a pair \code{(\var{response},
 \var{list})} where \var{list} is a list of help strings.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{stat}{id}
+\begin{methoddesc}{stat}{id}
 Send a \samp{STAT} command, where \var{id} is the message id (enclosed
-in \samp{<} and \samp{>}) or an article number (as a string).
+in \character{<} and \character{>}) or an article number (as a string).
 Return a triple \code{(\var{response}, \var{number}, \var{id})} where
 \var{number} is the article number (as a string) and \var{id} is the
-article id  (enclosed in \samp{<} and \samp{>}).
-\end{funcdesc}
+article id  (enclosed in \character{<} and \character{>}).
+\end{methoddesc}
 
-\begin{funcdesc}{next}{}
-Send a \samp{NEXT} command.  Return as for \code{stat()}.
-\end{funcdesc}
+\begin{methoddesc}{next}{}
+Send a \samp{NEXT} command.  Return as for \method{stat()}.
+\end{methoddesc}
 
-\begin{funcdesc}{last}{}
-Send a \samp{LAST} command.  Return as for \code{stat()}.
-\end{funcdesc}
+\begin{methoddesc}{last}{}
+Send a \samp{LAST} command.  Return as for \method{stat()}.
+\end{methoddesc}
 
-\begin{funcdesc}{head}{id}
+\begin{methoddesc}{head}{id}
 Send a \samp{HEAD} command, where \var{id} has the same meaning as for
-\code{stat()}.  Return a pair \code{(\var{response}, \var{list})}
+\method{stat()}.  Return a pair \code{(\var{response}, \var{list})}
 where \var{list} is a list of the article's headers (an uninterpreted
 list of lines, without trailing newlines).
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{body}{id}
+\begin{methoddesc}{body}{id}
 Send a \samp{BODY} command, where \var{id} has the same meaning as for
-\code{stat()}.  Return a pair \code{(\var{response}, \var{list})}
+\method{stat()}.  Return a pair \code{(\var{response}, \var{list})}
 where \var{list} is a list of the article's body text (an
 uninterpreted list of lines, without trailing newlines).
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{article}{id}
+\begin{methoddesc}{article}{id}
 Send a \samp{ARTICLE} command, where \var{id} has the same meaning as
-for \code{stat()}.  Return a pair \code{(\var{response}, \var{list})}
+for \method{stat()}.  Return a pair \code{(\var{response}, \var{list})}
 where \var{list} is a list of the article's header and body text (an
 uninterpreted list of lines, without trailing newlines).
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{slave}{}
+\begin{methoddesc}{slave}{}
 Send a \samp{SLAVE} command.  Return the server's \var{response}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{xhdr}{header, string}
+\begin{methoddesc}{xhdr}{header, string}
 Send an \samp{XHDR} command.  This command is not defined in the RFC
 but is a common extension.  The \var{header} argument is a header
-keyword, e.g. \code{"subject"}.  The \var{string} argument should have
+keyword, e.g. \code{'subject'}.  The \var{string} argument should have
 the form \code{"\var{first}-\var{last}"} where \var{first} and
 \var{last} are the first and last article numbers to search.  Return a
 pair \code{(\var{response}, \var{list})}, where \var{list} is a list of
 pairs \code{(\var{id}, \var{text})}, where \var{id} is an article id
 (as a string) and \var{text} is the text of the requested header for
 that article.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{post}{file}
+\begin{methoddesc}{post}{file}
 Post an article using the \samp{POST} command.  The \var{file}
 argument is an open file object which is read until EOF using its
-\code{readline()} method.  It should be a well-formed news article,
-including the required headers.  The \code{post()} method
+\method{readline()} method.  It should be a well-formed news article,
+including the required headers.  The \method{post()} method
 automatically escapes lines beginning with \samp{.}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{ihave}{id, file}
+\begin{methoddesc}{ihave}{id, file}
 Send an \samp{IHAVE} command.  If the response is not an error, treat
-\var{file} exactly as for the \code{post()} method.
-\end{funcdesc}
+\var{file} exactly as for the \method{post()} method.
+\end{methoddesc}
 
-\begin{funcdesc}{date}{}
+\begin{methoddesc}{date}{}
 Return a triple \code{(\var{response}, \var{date}, \var{time})},
 containing the current date and time in a form suitable for the
-\code{newnews} and \code{newgroups} methods.
+\method{newnews()} and \method{newgroups()} methods.
 This is an optional NNTP extension, and may not be supported by all
 servers.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{xgtitle}{name}
-Process an XGTITLE command, returning a pair \code{(\var{response},
+\begin{methoddesc}{xgtitle}{name}
+Process an \samp{XGTITLE} command, returning a pair \code{(\var{response},
 \var{list})}, where \var{list} is a list of tuples containing
 \code{(\var{name}, \var{title})}.
 % XXX huh?  Should that be name, description?
 This is an optional NNTP extension, and may not be supported by all
 servers.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{xover}{start, end}
+\begin{methoddesc}{xover}{start, end}
 Return a pair \code{(\var{resp}, \var{list})}.  \var{list} is a list
 of tuples, one for each article in the range delimited by the \var{start}
 and \var{end} article numbers.  Each tuple is of the form
@@ -232,15 +232,15 @@ and \var{end} article numbers.  Each tuple is of the form
 \var{references}\code{,} \var{size}\code{,} \var{lines}\code{)}.
 This is an optional NNTP extension, and may not be supported by all
 servers.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{xpath}{id}
+\begin{methoddesc}{xpath}{id}
 Return a pair \code{(\var{resp}, \var{path})}, where \var{path} is the
 directory path to the article with message ID \var{id}.  This is an
 optional NNTP extension, and may not be supported by all servers.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{quit}{}
+\begin{methoddesc}{quit}{}
 Send a \samp{QUIT} command and close the connection.  Once this method
 has been called, no other methods of the NNTP object should be called.
-\end{funcdesc}
+\end{methoddesc}

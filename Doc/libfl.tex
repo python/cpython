@@ -1,4 +1,4 @@
-\section{Built-in Module \sectcode{fl}}
+\section{Built-in Module \module{fl}}
 \label{module-fl}
 \bimodindex{fl}
 
@@ -37,7 +37,7 @@ FORMS with pure GL windows.
 function \cfunction{foreground()} and to the FORMS routine
 \cfunction{fl_init()}.
 
-\subsection{Functions Defined in Module \sectcode{fl}}
+\subsection{Functions Defined in Module \module{fl}}
 \nodename{FL Functions}
 
 Module \module{fl} defines the following functions.  For more
@@ -83,7 +83,8 @@ Show a dialog box with a three-line message and YES and NO buttons.
 It returns \code{1} if the user pressed YES, \code{0} if NO.
 \end{funcdesc}
 
-\begin{funcdesc}{show_choice}{str1, str2, str3, but1\optional{, but2, but3}}
+\begin{funcdesc}{show_choice}{str1, str2, str3, but1\optional{,
+                              but2\optional{, but3}}}
 Show a dialog box with a three-line message and up to three buttons.
 It returns the number of the button clicked by the user
 (\code{1}, \code{2} or \code{3}).
@@ -136,116 +137,117 @@ See the description in the FORMS documentation of
 \end{funcdesc}
 
 \subsection{Form Objects}
+\label{form-objects}
 
-Form objects (returned by \function{fl.make_form()} above) have the
+Form objects (returned by \function{make_form()} above) have the
 following methods.  Each method corresponds to a \C{} function whose
 name is prefixed with \samp{fl_}; and whose first argument is a form
 pointer; please refer to the official FORMS documentation for
 descriptions.
 
-All the \code{add_*()} functions return a Python object
-representing the FORMS object.  Methods of FORMS objects are described
-below.  Most kinds of FORMS object also have some methods specific to
-that kind; these methods are listed here.
+All the \method{add_*()} methods return a Python object representing
+the FORMS object.  Methods of FORMS objects are described below.  Most
+kinds of FORMS object also have some methods specific to that kind;
+these methods are listed here.
 
 \begin{flushleft}
-\setindexsubitem{(form method)}
-\begin{funcdesc}{show_form}{placement, bordertype, name}
+
+\begin{methoddesc}[form]{show_form}{placement, bordertype, name}
   Show the form.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{hide_form}{}
+\begin{methoddesc}[form]{hide_form}{}
   Hide the form.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{redraw_form}{}
+\begin{methoddesc}[form]{redraw_form}{}
   Redraw the form.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{set_form_position}{x, y}
+\begin{methoddesc}[form]{set_form_position}{x, y}
 Set the form's position.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{freeze_form}{}
+\begin{methoddesc}[form]{freeze_form}{}
 Freeze the form.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{unfreeze_form}{}
+\begin{methoddesc}[form]{unfreeze_form}{}
   Unfreeze the form.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{activate_form}{}
+\begin{methoddesc}[form]{activate_form}{}
   Activate the form.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{deactivate_form}{}
+\begin{methoddesc}[form]{deactivate_form}{}
   Deactivate the form.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{bgn_group}{}
+\begin{methoddesc}[form]{bgn_group}{}
   Begin a new group of objects; return a group object.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{end_group}{}
+\begin{methoddesc}[form]{end_group}{}
   End the current group of objects.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{find_first}{}
+\begin{methoddesc}[form]{find_first}{}
   Find the first object in the form.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{find_last}{}
+\begin{methoddesc}[form]{find_last}{}
   Find the last object in the form.
-\end{funcdesc}
+\end{methoddesc}
 
 %---
 
-\begin{funcdesc}{add_box}{type, x, y, w, h, name}
+\begin{methoddesc}[form]{add_box}{type, x, y, w, h, name}
 Add a box object to the form.
 No extra methods.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{add_text}{type, x, y, w, h, name}
+\begin{methoddesc}[form]{add_text}{type, x, y, w, h, name}
 Add a text object to the form.
 No extra methods.
-\end{funcdesc}
+\end{methoddesc}
 
-%\begin{funcdesc}{add_bitmap}{type, x, y, w, h, name}
+%\begin{methoddesc}[form]{add_bitmap}{type, x, y, w, h, name}
 %Add a bitmap object to the form.
-%\end{funcdesc}
+%\end{methoddesc}
 
-\begin{funcdesc}{add_clock}{type, x, y, w, h, name}
+\begin{methoddesc}[form]{add_clock}{type, x, y, w, h, name}
 Add a clock object to the form. \\
 Method:
 \method{get_clock()}.
-\end{funcdesc}
+\end{methoddesc}
 
 %---
 
-\begin{funcdesc}{add_button}{type, x, y, w, h,  name}
+\begin{methoddesc}[form]{add_button}{type, x, y, w, h,  name}
 Add a button object to the form. \\
 Methods:
 \method{get_button()},
 \method{set_button()}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{add_lightbutton}{type, x, y, w, h, name}
+\begin{methoddesc}[form]{add_lightbutton}{type, x, y, w, h, name}
 Add a lightbutton object to the form. \\
 Methods:
 \method{get_button()},
 \method{set_button()}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{add_roundbutton}{type, x, y, w, h, name}
+\begin{methoddesc}[form]{add_roundbutton}{type, x, y, w, h, name}
 Add a roundbutton object to the form. \\
 Methods:
 \method{get_button()},
 \method{set_button()}.
-\end{funcdesc}
+\end{methoddesc}
 
 %---
 
-\begin{funcdesc}{add_slider}{type, x, y, w, h, name}
+\begin{methoddesc}[form]{add_slider}{type, x, y, w, h, name}
 Add a slider object to the form. \\
 Methods:
 \method{set_slider_value()},
@@ -256,9 +258,9 @@ Methods:
 \method{set_slider_size()},
 \method{set_slider_precision()},
 \method{set_slider_step()}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{add_valslider}{type, x, y, w, h, name}
+\begin{methoddesc}[form]{add_valslider}{type, x, y, w, h, name}
 Add a valslider object to the form. \\
 Methods:
 \method{set_slider_value()},
@@ -269,18 +271,18 @@ Methods:
 \method{set_slider_size()},
 \method{set_slider_precision()},
 \method{set_slider_step()}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{add_dial}{type, x, y, w, h, name}
+\begin{methoddesc}[form]{add_dial}{type, x, y, w, h, name}
 Add a dial object to the form. \\
 Methods:
 \method{set_dial_value()},
 \method{get_dial_value()},
 \method{set_dial_bounds()},
 \method{get_dial_bounds()}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{add_positioner}{type, x, y, w, h, name}
+\begin{methoddesc}[form]{add_positioner}{type, x, y, w, h, name}
 Add a positioner object to the form. \\
 Methods:
 \method{set_positioner_xvalue()},
@@ -291,9 +293,9 @@ Methods:
 \method{get_positioner_yvalue()},
 \method{get_positioner_xbounds()},
 \method{get_positioner_ybounds()}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{add_counter}{type, x, y, w, h, name}
+\begin{methoddesc}[form]{add_counter}{type, x, y, w, h, name}
 Add a counter object to the form. \\
 Methods:
 \method{set_counter_value()},
@@ -302,30 +304,30 @@ Methods:
 \method{set_counter_step()},
 \method{set_counter_precision()},
 \method{set_counter_return()}.
-\end{funcdesc}
+\end{methoddesc}
 
 %---
 
-\begin{funcdesc}{add_input}{type, x, y, w, h, name}
+\begin{methoddesc}[form]{add_input}{type, x, y, w, h, name}
 Add a input object to the form. \\
 Methods:
 \method{set_input()},
 \method{get_input()},
 \method{set_input_color()},
 \method{set_input_return()}.
-\end{funcdesc}
+\end{methoddesc}
 
 %---
 
-\begin{funcdesc}{add_menu}{type, x, y, w, h, name}
+\begin{methoddesc}[form]{add_menu}{type, x, y, w, h, name}
 Add a menu object to the form. \\
 Methods:
 \method{set_menu()},
 \method{get_menu()},
 \method{addto_menu()}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{add_choice}{type, x, y, w, h, name}
+\begin{methoddesc}[form]{add_choice}{type, x, y, w, h, name}
 Add a choice object to the form. \\
 Methods:
 \method{set_choice()},
@@ -337,9 +339,9 @@ Methods:
 \method{get_choice_text()},
 \method{set_choice_fontsize()},
 \method{set_choice_fontstyle()}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{add_browser}{type, x, y, w, h, name}
+\begin{methoddesc}[form]{add_browser}{type, x, y, w, h, name}
 Add a browser object to the form. \\
 Methods:
 \method{set_browser_topline()},
@@ -360,16 +362,16 @@ Methods:
 \method{set_browser_fontsize()},
 \method{set_browser_fontstyle()},
 \method{set_browser_specialkey()}.
-\end{funcdesc}
+\end{methoddesc}
 
 %---
 
-\begin{funcdesc}{add_timer}{type, x, y, w, h, name}
+\begin{methoddesc}[form]{add_timer}{type, x, y, w, h, name}
 Add a timer object to the form. \\
 Methods:
 \method{set_timer()},
 \method{get_timer()}.
-\end{funcdesc}
+\end{methoddesc}
 \end{flushleft}
 
 Form objects have the following data attributes; see the FORMS
@@ -388,49 +390,49 @@ documentation:
 \end{tableiii}
 
 \subsection{FORMS Objects}
+\label{forms-objects}
 
 Besides methods specific to particular kinds of FORMS objects, all
 FORMS objects also have the following methods:
 
-\setindexsubitem{(FORMS method)}
-\begin{funcdesc}{set_call_back}{function, argument}
+\begin{methoddesc}[FORMS object]{set_call_back}{function, argument}
 Set the object's callback function and argument.  When the object
 needs interaction, the callback function will be called with two
 arguments: the object, and the callback argument.  (FORMS objects
 without a callback function are returned by \function{fl.do_forms()}
 or \function{fl.check_forms()} when they need interaction.)  Call this
 method without arguments to remove the callback function.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{delete_object}{}
+\begin{methoddesc}[FORMS object]{delete_object}{}
   Delete the object.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{show_object}{}
+\begin{methoddesc}[FORMS object]{show_object}{}
   Show the object.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{hide_object}{}
+\begin{methoddesc}[FORMS object]{hide_object}{}
   Hide the object.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{redraw_object}{}
+\begin{methoddesc}[FORMS object]{redraw_object}{}
   Redraw the object.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{freeze_object}{}
+\begin{methoddesc}[FORMS object]{freeze_object}{}
   Freeze the object.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{unfreeze_object}{}
+\begin{methoddesc}[FORMS object]{unfreeze_object}{}
   Unfreeze the object.
-\end{funcdesc}
+\end{methoddesc}
 
-%\begin{funcdesc}{handle_object}{} XXX
-%\end{funcdesc}
+%\begin{methoddesc}[FORMS object]{handle_object}{} XXX
+%\end{methoddesc}
 
-%\begin{funcdesc}{handle_object_direct}{} XXX
-%\end{funcdesc}
+%\begin{methoddesc}[FORMS object]{handle_object_direct}{} XXX
+%\end{methoddesc}
 
 FORMS objects have these data attributes; see the FORMS documentation:
 
@@ -460,7 +462,7 @@ FORMS objects have these data attributes; see the FORMS documentation:
   \lineiii{automatic}{int (read-only)}{(see FORMS docs)}
 \end{tableiii}
 
-\section{Standard Module \sectcode{FL}}
+\section{Standard Module \module{FL}}
 \label{module-FLuppercase}
 \stmodindex{FL}
 
@@ -475,7 +477,7 @@ import fl
 from FL import *
 \end{verbatim}
 
-\section{Standard Module \sectcode{flp}}
+\section{Standard Module \module{flp}}
 \label{module-flp}
 \stmodindex{flp}
 
