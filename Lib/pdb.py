@@ -4,7 +4,6 @@
 
 # (See pdb.doc for documentation.)
 
-import string
 import sys
 import linecache
 import cmd
@@ -154,26 +153,25 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """Handle alias expansion and ';;' separator."""
         if not line:
             return line
-        args = string.split(line)
+        args = line.split()
         while self.aliases.has_key(args[0]):
             line = self.aliases[args[0]]
             ii = 1
             for tmpArg in args[1:]:
-                line = string.replace(line, "%" + str(ii),
+                line = line.replace("%" + str(ii),
                                       tmpArg)
                 ii = ii + 1
-            line = string.replace(line, "%*",
-                                  string.join(args[1:], ' '))
-            args = string.split(line)
+            line = line.replace("%*", ' '.join(args[1:]))
+            args = line.split()
         # split into ';;' separated commands
         # unless it's an alias command
         if args[0] != 'alias':
-            marker = string.find(line, ';;')
+            marker = line.find(';;')
             if marker >= 0:
                 # queue up everything after marker
-                next = string.lstrip(line[marker+2:])
+                next = line[marker+2:].lstrip()
                 self.cmdqueue.append(next)
-                line = string.rstrip(line[:marker])
+                line = line[:marker].rstrip()
         return line
 
     # Command definitions, called by cmdloop()
@@ -199,15 +197,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         filename = None
         lineno = None
         cond = None
-        comma = string.find(arg, ',')
+        comma = arg.find(',')
         if comma > 0:
             # parse stuff after comma: "condition"
-            cond = string.lstrip(arg[comma+1:])
-            arg = string.rstrip(arg[:comma])
+            cond = arg[comma+1:].lstrip()
+            arg = arg[:comma].rstrip()
         # parse stuff before comma: [filename:]lineno | function
-        colon = string.rfind(arg, ':')
+        colon = arg.rfind(':')
         if colon >= 0:
-            filename = string.rstrip(arg[:colon])
+            filename = arg[:colon].rstrip()
             f = self.lookupmodule(filename)
             if not f:
                 print '*** ', `filename`,
@@ -215,7 +213,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return
             else:
                 filename = f
-            arg = string.lstrip(arg[colon+1:])
+            arg = arg[colon+1:].lstrip()
             try:
                 lineno = int(arg)
             except ValueError, msg:
@@ -279,17 +277,17 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def lineinfo(self, identifier):
         failed = (None, None, None)
         # Input is identifier, may be in single quotes
-        idstring = string.split(identifier, "'")
+        idstring = identifier.split("'")
         if len(idstring) == 1:
             # not in single quotes
-            id = string.strip(idstring[0])
+            id = idstring[0].strip()
         elif len(idstring) == 3:
             # quoted
-            id = string.strip(idstring[1])
+            id = idstring[1].strip()
         else:
             return failed
         if id == '': return failed
-        parts = string.split(id, '.')
+        parts = id.split('.')
         # Protection for derived debuggers
         if parts[0] == 'self':
             del parts[0]
@@ -321,7 +319,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if not line:
             print 'End of file'
             return 0
-        line = string.strip(line)
+        line = line.strip()
         # Don't allow setting breakpoint at a blank line
         if ( not line or (line[0] == '#') or
              (line[:3] == '"""') or line[:3] == "'''" ):
@@ -357,21 +355,21 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 if not line:
                     print 'end of file'
                     return 0
-                line = string.strip(line)
+                line = line.strip()
                 if not line: continue   # Blank line
                 if brackets <= 0 and line[0] not in ('#','"',"'"):
                     break
         return lineno
 
     def do_enable(self, arg):
-        args = string.split(arg)
+        args = arg.split()
         for i in args:
             bp = bdb.Breakpoint.bpbynumber[int(i)]
             if bp:
                 bp.enable()
 
     def do_disable(self, arg):
-        args = string.split(arg)
+        args = arg.split()
         for i in args:
             bp = bdb.Breakpoint.bpbynumber[int(i)]
             if bp:
@@ -379,8 +377,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_condition(self, arg):
         # arg is breakpoint number and condition
-        args = string.split(arg, ' ', 1)
-        bpnum = int(string.strip(args[0]))
+        args = arg.split(' ', 1)
+        bpnum = int(args[0].strip())
         try:
             cond = args[1]
         except:
@@ -394,10 +392,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_ignore(self,arg):
         """arg is bp number followed by ignore count."""
-        args = string.split(arg)
-        bpnum = int(string.strip(args[0]))
+        args = arg.split()
+        bpnum = int(args[0].strip())
         try:
-            count = int(string.strip(args[1]))
+            count = int(args[1].strip())
         except:
             count = 0
         bp = bdb.Breakpoint.bpbynumber[bpnum]
@@ -424,13 +422,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 reply = raw_input('Clear all breaks? ')
             except EOFError:
                 reply = 'no'
-            reply = string.lower(string.strip(reply))
+            reply = reply.strip().lower()
             if reply in ('y', 'yes'):
                 self.clear_all_breaks()
             return
         if ':' in arg:
             # Make sure it works for "clear C:\foo\bar.py:12"
-            i = string.rfind(arg, ':')
+            i = arg.rfind(':')
             filename = arg[:i]
             arg = arg[i+1:]
             try:
@@ -441,7 +439,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 err = self.clear_break(filename, lineno)
             if err: print '***', err
             return
-        numberlist = string.split(arg)
+        numberlist = arg.split()
         for i in numberlist:
             err = self.clear_bpbynumber(i)
             if err:
@@ -568,7 +566,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     print '[EOF]'
                     break
                 else:
-                    s = string.rjust(`lineno`, 3)
+                    s = `lineno`.rjust(3)
                     if len(s) < 4: s = s + ' '
                     if lineno in breaklist: s = s + 'B'
                     else: s = s + ' '
@@ -608,7 +606,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         print type(value)
 
     def do_alias(self, arg):
-        args = string.split (arg)
+        args = arg.split()
         if len(args) == 0:
             keys = self.aliases.keys()
             keys.sort()
@@ -618,10 +616,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if self.aliases.has_key(args[0]) and len (args) == 1:
             print "%s = %s" % (args[0], self.aliases[args[0]])
         else:
-            self.aliases[args[0]] = string.join(args[1:], ' ')
+            self.aliases[args[0]] = ' '.join(args[1:])
 
     def do_unalias(self, arg):
-        args = string.split (arg)
+        args = arg.split()
         if len(args) == 0: return
         if self.aliases.has_key(args[0]):
             del self.aliases[args[0]]
