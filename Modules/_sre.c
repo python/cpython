@@ -16,6 +16,7 @@
  * 00-08-03 fl  added recursion limit
  * 00-08-07 fl  use PyOS_CheckStack() if available
  * 00-08-08 fl  changed findall to return empty strings instead of None
+ * 00-08-27 fl  properly propagate memory errors
  *
  * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
  *
@@ -58,18 +59,17 @@ char copyright[] = " SRE 0.9.8 Copyright (c) 1997-2000 by Secret Labs AB ";
 /* -------------------------------------------------------------------- */
 /* optional features */
 
-/* prevent run-away recursion (bad patterns on long strings)
-   Require a smaller recursion limit for a number of 64-bit platforms
-   to prevent stack overflow:
-    Win64 - MS_WIN64, Linux64 - __LP64__, Monterey (64-bit AIX) - _LP64
-   XXX Or maybe this should be defined for all SIZEOF_VOIDP>4 platforms?
-*/
+/* prevent run-away recursion (bad patterns on long strings) */
+
 #if !defined(USE_STACKCHECK)
-#	if defined(MS_WIN64) || defined(__LP64__) || defined(_LP64)
-#		define USE_RECURSION_LIMIT 7500
-#	else
-#		define USE_RECURSION_LIMIT 10000
-#	endif
+#if defined(MS_WIN64) || defined(__LP64__) || defined(_LP64)
+/* require smaller recursion limit for a number of 64-bit platforms:
+   Win64 (MS_WIN64), Linux64 (__LP64__), Monterey (64-bit AIX) (_LP64) */
+/* FIXME: maybe the limit should be 40000 / sizeof(void*) ? */
+#define USE_RECURSION_LIMIT 7500
+#else
+#define USE_RECURSION_LIMIT 10000
+#endif
 #endif
 
 /* enables fast searching */
@@ -534,6 +534,7 @@ SRE_COUNT(SRE_STATE* state, SRE_CODE* pattern, int maxcount, int level)
     return ptr - (SRE_CHAR*) state->ptr;
 }
 
+#if 0 /* not used in this release */
 LOCAL(int)
 SRE_INFO(SRE_STATE* state, SRE_CODE* pattern)
 {
@@ -559,6 +560,7 @@ SRE_INFO(SRE_STATE* state, SRE_CODE* pattern)
     }
     return pattern[0];
 }
+#endif
 
 LOCAL(int)
 SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
@@ -875,7 +877,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                     state->ptr = ptr;
                     i = SRE_MATCH(state, pattern + pattern[0], level + 1);
                     if (i)
-                        return 1;
+                        return i;
                     ptr--;
                     count--;
                 }
@@ -887,7 +889,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                     state->ptr = ptr;
                     i = SRE_MATCH(state, pattern + pattern[0], level + 1);
                     if (i)
-                        return 1;
+                        return i;
                     ptr--;
                     count--;
                     if (state->lastmark > lastmark) {
@@ -956,12 +958,16 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                    match another item, do so */
                 rp->count = count;
                 lastmark = state->lastmark;
-                mark_save(state, 0, lastmark);
+                i = mark_save(state, 0, lastmark);
+                if (i < 0)
+                    return i;
                 /* RECURSIVE */
                 i = SRE_MATCH(state, rp->pattern + 3, level + 1);
                 if (i)
                     return i;
-                mark_restore(state, 0, lastmark);
+                i = mark_restore(state, 0, lastmark);
+                if (i < 0)
+                    return i;
                 rp->count = count - 1;
                 state->ptr = ptr;
             }
@@ -1698,10 +1704,10 @@ pattern_findall(PatternObject* self, PyObject* args)
                 break;
             }
 
-	    status = PyList_Append(list, item);
-	    Py_DECREF(item);
-            if (status < 0)
+            if (PyList_Append(list, item) < 0) {
+                Py_DECREF(item);
                 goto error;
+            }
 
             if (state.ptr == state.start)
                 state.start = (void*) ((char*) state.ptr + state.charsize);
