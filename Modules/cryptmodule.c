@@ -2,7 +2,6 @@
  */
 
 #include "allobjects.h"
-#include "modsupport.h"
 
 #include <sys/types.h>
 
