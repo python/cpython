@@ -426,6 +426,9 @@ def numops(a, b, skip=[]):
 def ints():
     if verbose: print "Testing int operations..."
     numops(100, 3)
+    # The following crashes in Python 2.2
+    vereq((1).__nonzero__(), 1)
+    vereq((0).__nonzero__(), 0)
 
 def longs():
     if verbose: print "Testing long operations..."
