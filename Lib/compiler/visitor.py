@@ -26,13 +26,7 @@ class ASTVisitor:
     the order during a postorder walk, because it is called _after_
     the walk has occurred.)  The ASTVisitor modifies the visitor
     argument by adding a visit method to the visitor; this method can
-    be used to visit a particular child node.
-
-    XXX The interface for controlling the preorder walk needs to be
-    re-considered.  The current interface is convenient for visitors
-    that mostly let the ASTVisitor do everything.  For something like
-    a code generator, where you want to walk to occur in a specific
-    order, it's a pain to add "return 1" to the end of each method.
+    be used to visit a child node of arbitrary type.
     """
 
     VERBOSE = 0
