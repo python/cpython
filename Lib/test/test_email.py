@@ -1457,7 +1457,7 @@ class TestQuopri(unittest.TestCase):
         # Test the keep_eols flag
         eq(he('hello\nworld', keep_eols=1), '=?iso-8859-1?q?hello=0Aworld?=')
         # Test a non-ASCII character
-        eq(he('hello«there'), '=?iso-8859-1?q?hello=C7there?=')
+        eq(he('hello\xc7there'), '=?iso-8859-1?q?hello=C7there?=')
         # Test the maxlinelen argument
         eq(he('xxxx ' * 20, maxlinelen=40), """\
 =?iso-8859-1?q?xxxx_xxxx_xxxx_xxxx_xx?=
