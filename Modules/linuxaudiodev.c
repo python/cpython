@@ -26,7 +26,6 @@
 #include <fcntl.h>
 #endif
 
-#include <stropts.h>
 #include <sys/ioctl.h>
 #include <linux/soundcard.h>
 

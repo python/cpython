@@ -275,7 +275,7 @@ sha shamodule.c
 
 # Linux specific modules -- off by default:
 
-#linuxaudio linuxaudio.c
+#linuxaudiodev linuxaudiodev.c
 
 
 # George Neville-Neil's timing module:
