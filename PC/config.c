@@ -29,6 +29,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
+#ifndef MS_WIN16
+/* Assume all 32-bit platforms come standard with a WINSOCK library */
+#define USE_SOCKET
+#define USE_SELECT
+#endif
+
 extern void initarray();
 extern void initaudioop();
 extern void initbinascii();
@@ -41,8 +47,9 @@ extern void initnt();
 extern void initregex();
 extern void initrgbimg();
 extern void initrotor();
+extern void initselect();
 extern void initsignal();
-extern void initsocket();
+extern void init_socket();
 extern void initsoundex();
 extern void initstrop();
 extern void initstruct();
@@ -72,9 +79,12 @@ struct {
         {"regex", initregex},
         {"rgbimg", initrgbimg},
         {"rotor", initrotor},
+#ifdef USE_SELECT
+	{"select", initselect},
+#endif
         {"signal", initsignal},
 #ifdef USE_SOCKET
-	{"socket", initsocket},
+	{"_socket", init_socket},
 #endif
         {"soundex", initsoundex},
         {"strop", initstrop},

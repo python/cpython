@@ -24,7 +24,6 @@ standard part of the Python distribution.
 #define HAVE_HYPOT
 #define DONT_HAVE_SIG_ALARM
 #define DONT_HAVE_SIG_PAUSE
-#define LONG_BIT	32
 
 /* Microsoft C defines _MSC_VER */
 
@@ -38,7 +37,6 @@ standard part of the Python distribution.
 #endif
 #define PYTHONPATH "c:\\python\\lib"
 typedef int pid_t;
-#define WORD_BIT 32
 #pragma warning(disable:4113)
 #define hypot _hypot
 #include <stdio.h>
@@ -48,7 +46,6 @@ typedef int pid_t;
 #define WITH_THREAD
 #ifndef NETSCAPE_PI
 #define USE_SOCKET
-#define _COMPLEX_DEFINED
 #endif
 #ifdef USE_DL_IMPORT
 #define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
@@ -65,8 +62,6 @@ typedef int pid_t;
 #define PYTHONPATH "c:\\python\\lib;c:\\python\\lib\\dos_8x3"
 #define IMPORT_8x3_NAMES
 typedef int pid_t;
-#define WORD_BIT 16
-#define _COMPLEX_DEFINED
 #pragma warning(disable:4113)
 #define memcpy memmove	/* memcpy dangerous pointer wrap in Win 3.1 */
 #define hypot _hypot
@@ -111,11 +106,6 @@ int sscanf(const char *, const char *, ...);
 typedef int mode_t;
 typedef int uid_t;
 typedef int gid_t;
-#ifdef M_I386
-#define WORD_BIT 32
-#else
-#define WORD_BIT 16
-#endif
 #define VA_LIST_IS_ARRAY
 #define HAVE_CLOCK
 #define HAVE_STRFTIME
