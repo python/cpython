@@ -19,7 +19,7 @@ class bdist_wininst (Command):
 
     user_options = [('bdist-dir=', 'd',
                      "temporary directory for creating the distribution"),
-                    ('keep-tree', 'k',
+                    ('keep-temp', 'k',
                      "keep the pseudo-installation tree around after " +
                      "creating the distribution archive"),
                     ('target-version=', 'v',
@@ -35,7 +35,7 @@ class bdist_wininst (Command):
 
     def initialize_options (self):
         self.bdist_dir = None
-        self.keep_tree = 0
+        self.keep_temp = 0
         self.no_target_compile = 0
         self.no_target_optimize = 0
         self.target_version = None
@@ -111,7 +111,7 @@ class bdist_wininst (Command):
                                      root_dir=root_dir)
         self.create_exe (arcname, fullname)
 
-        if not self.keep_tree:
+        if not self.keep_temp:
             remove_tree (self.bdist_dir, self.verbose, self.dry_run)
 
     # run()
