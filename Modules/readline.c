@@ -821,6 +821,10 @@ readline_until_enter_or_signal(char *prompt, int *signal)
 static char *
 call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 {
+#ifdef SAVE_LOCALE
+	char *saved_locale = strdup(setlocale(LC_CTYPE, NULL));
+	setlocale(LC_CTYPE, "");
+#endif
 	size_t n;
 	char *p, *q;
 	int signal;
@@ -879,6 +883,10 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 		p[n+1] = '\0';
 	}
 	free(q);
+#ifdef SAVE_LOCALE
+	setlocale(LC_CTYPE, saved_locale); /* Restore locale */
+	free(saved_locale);
+#endif
 	return p;
 }
 
