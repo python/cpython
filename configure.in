@@ -1753,7 +1753,7 @@ AC_CHECK_FUNCS(gettimeofday,
 )
 
 AC_MSG_CHECKING(for major, minor, and makedev)
-AC_TRY_COMPILE([
+AC_TRY_LINK([
   #if defined(MAJOR_IN_MKDEV)
   #include <sys/mkdev.h>
   #elif defined(MAJOR_IN_SYSMACROS)
