@@ -1297,7 +1297,7 @@ x_add(PyLongObject *a, PyLongObject *b)
 	PyLongObject *z;
 	int i;
 	digit carry = 0;
-	
+
 	/* Ensure a is the larger of the two: */
 	if (size_a < size_b) {
 		{ PyLongObject *temp = a; a = b; b = temp; }
@@ -1332,7 +1332,7 @@ x_sub(PyLongObject *a, PyLongObject *b)
 	int i;
 	int sign = 1;
 	digit borrow = 0;
-	
+
 	/* Ensure a is the larger of the two: */
 	if (size_a < size_b) {
 		sign = -1;
@@ -1381,7 +1381,7 @@ static PyObject *
 long_add(PyLongObject *v, PyLongObject *w)
 {
 	PyLongObject *a, *b, *z;
-	
+
 	CONVERT_BINOP((PyObject *)v, (PyObject *)w, &a, &b);
 
 	if (a->ob_size < 0) {
@@ -1820,27 +1820,26 @@ long_invert(PyLongObject *v)
 static PyObject *
 long_pos(PyLongObject *v)
 {
-	Py_INCREF(v);
-	return (PyObject *)v;
+	if (PyLong_CheckExact(v)) {
+		Py_INCREF(v);
+		return (PyObject *)v;
+	}
+	else
+		return _PyLong_Copy(v);
 }
 
 static PyObject *
 long_neg(PyLongObject *v)
 {
 	PyLongObject *z;
-	int i, n;
-	n = ABS(v->ob_size);
-	if (n == 0) {
+	if (v->ob_size == 0 && PyLong_CheckExact(v)) {
 		/* -0 == 0 */
 		Py_INCREF(v);
 		return (PyObject *) v;
 	}
-	z = _PyLong_New(ABS(n));
-	if (z == NULL)
-		return NULL;
-	for (i = 0; i < n; i++)
-		z->ob_digit[i] = v->ob_digit[i];
-	z->ob_size = -(v->ob_size);
+	z = (PyLongObject *)_PyLong_Copy(v);
+	if (z != NULL)
+		z->ob_size = -(v->ob_size);
 	return (PyObject *)z;
 }
 
@@ -1849,10 +1848,8 @@ long_abs(PyLongObject *v)
 {
 	if (v->ob_size < 0)
 		return long_neg(v);
-	else {
-		Py_INCREF(v);
-		return (PyObject *)v;
-	}
+	else
+		return long_pos(v);
 }
 
 static int
