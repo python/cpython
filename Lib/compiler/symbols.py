@@ -260,13 +260,13 @@ class SymbolVisitor:
 
     def visitGenExprIf(self, node, scope):
         self.visit(node.test, scope)
-        
+
     def visitLambda(self, node, parent, assign=0):
         # Lambda is an expression, so it could appear in an expression
         # context where assign is passed.  The transformer should catch
         # any code that has a lambda on the left-hand side.
-        assert not assign 
-        
+        assert not assign
+
         for n in node.defaults:
             self.visit(n, parent)
         scope = LambdaScope(self.module, self.klass)

@@ -210,7 +210,7 @@ def setBEGINLIBPATH():
     The library search path needs to be amended so these will be found
     during module import.  Use BEGINLIBPATH so that these are at the start
     of the library search path.
-    
+
     """
     dllpath = os.path.join(sys.prefix, "Lib", "lib-dynload")
     libpath = os.environ['BEGINLIBPATH'].split(';')

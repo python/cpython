@@ -315,9 +315,9 @@ class SocketHandler(logging.Handler):
         # is the first time back after a disconnect, or
         # we've waited long enough.
         if self.retryTime is None:
-          attempt = 1
+            attempt = 1
         else:
-          attempt = (now >= self.retryTime)
+            attempt = (now >= self.retryTime)
         if attempt:
             try:
                 self.sock = self.makeSocket()
@@ -366,11 +366,11 @@ class SocketHandler(logging.Handler):
         """
         ei = record.exc_info
         if ei:
-          dummy = self.format(record) # just to get traceback text into record.exc_text
-          record.exc_info = None  # to avoid Unpickleable error
+            dummy = self.format(record) # just to get traceback text into record.exc_text
+            record.exc_info = None  # to avoid Unpickleable error
         s = cPickle.dumps(record.__dict__, 1)
         if ei:
-          record.exc_info = ei  # for next handler
+            record.exc_info = ei  # for next handler
         slen = struct.pack(">L", len(s))
         return slen + s
 

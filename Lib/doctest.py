@@ -205,7 +205,7 @@ Bummers:
   docstring, which will preserve your backslahses exactly as you type
   them:
 
-      >>> def f(x): 
+      >>> def f(x):
       ...     r'''Backslashes in a raw docstring: m\n'''
       >>> print f.__doc__
       Backslashes in a raw docstring: m\n
@@ -215,11 +215,11 @@ Bummers:
   Alternatively, you can double each backslash in the doctest version
   (and not use a raw string):
 
-      >>> def f(x): 
+      >>> def f(x):
       ...     '''Backslashes in a raw docstring: m\\n'''
       >>> print f.__doc__
       Backslashes in a raw docstring: m\n
-      
+
 The starting column doesn't matter:
 
 >>> assert "Easy!"

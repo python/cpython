@@ -1162,7 +1162,7 @@ def basicConfig(**kwargs):
         root.addHandler(hdlr)
         level = kwargs.get("level")
         if level:
-          root.setLevel(level)
+            root.setLevel(level)
 
 #---------------------------------------------------------------------------
 # Utility functions at module level.

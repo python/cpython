@@ -671,7 +671,7 @@ class CodeGenerator:
     def visitGenExprFor(self, node):
         start = self.newBlock()
         anchor = self.newBlock()
-        
+
         if node.is_outmost:
             self.loadName('[outmost-iterable]')
         else:
