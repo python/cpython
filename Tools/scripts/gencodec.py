@@ -12,7 +12,7 @@ will be written to <codec_prefix><mapname>.py with <mapname> being the
 first part of the map's filename ('a' in a.b.c.txt) converted to
 lowercase with hyphens replaced by underscores.
 
-The tool also write marhsalled versions of the mapping tables to the
+The tool also writes marhsalled versions of the mapping tables to the
 same location (with .mapping extension).
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
