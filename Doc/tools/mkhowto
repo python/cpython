@@ -525,9 +525,11 @@ class Job:
             self.warning(
                 "Session transcript and error messages are in %s."
                 % self.log_filename)
+            result = 1
             if hasattr(os, "WIFEXITED"):
                 if os.WIFEXITED(rc):
-                    self.warning("Exited with status %s." % os.WEXITSTATUS(rc))
+                    result = os.WEXITSTATUS(rc)
+                    self.warning("Exited with status %s." % result)
                 else:
                     self.warning("Killed by signal %s." % os.WSTOPSIG(rc))
             else:
@@ -535,7 +537,7 @@ class Job:
             sys.stderr.write("The relevant lines from the transcript are:\n")
             sys.stderr.write("-" * 72 + "\n")
             sys.stderr.writelines(get_run_transcript(self.log_filename))
-            sys.exit(rc)
+            sys.exit(result)
 
     def message(self, msg):
         msg = "+++ " + msg
