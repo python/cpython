@@ -294,6 +294,71 @@ PyDoc_STRVAR(doc_set_completer_delims,
 "set_completer_delims(string) -> None\n\
 set the readline word delimiters for tab-completion");
 
+static PyObject *
+py_remove_history(PyObject *self, PyObject *args)
+{
+        int entry_number;
+        HIST_ENTRY *entry;
+
+        if (!PyArg_ParseTuple(args, "i:remove_history", &entry_number))
+                return NULL;
+        entry = remove_history(entry_number);
+        if (!entry) {
+                char buf[80];
+                PyOS_snprintf(buf, sizeof(buf),
+                              "No history item at position %i",
+                              entry_number);
+                PyErr_SetString(PyExc_ValueError, buf);
+                return NULL;
+        }
+        /* free memory allocated for the history entry */
+        if (entry->line)
+                free(entry->line);
+        if (entry->data)
+                free(entry->data);
+        free(entry);
+
+        Py_INCREF(Py_None);
+        return Py_None;
+}
+
+PyDoc_STRVAR(doc_remove_history,
+"remove_history(pos) -> None\n\
+remove history item given by its position");
+
+static PyObject *
+py_replace_history(PyObject *self, PyObject *args)
+{
+        int entry_number;
+        char *line;
+        HIST_ENTRY *old_entry;
+
+        if (!PyArg_ParseTuple(args, "is:replace_history", &entry_number, &line)) {
+                return NULL;
+        }
+        old_entry = replace_history_entry(entry_number, line, (void *)NULL);
+        if (!old_entry) {
+                char buf[80];
+                PyOS_snprintf(buf, sizeof(buf),
+                              "No history item at position %i",
+                              entry_number);
+                PyErr_SetString(PyExc_ValueError, buf);
+                return NULL;
+        }
+        /* free memory allocated for the old history entry */
+        if (old_entry->line)
+            free(old_entry->line);
+        if (old_entry->data)
+            free(old_entry->data);
+        free(old_entry);
+
+        Py_INCREF(Py_None);
+        return Py_None;
+}
+
+PyDoc_STRVAR(doc_replace_history,
+"replace_history(pos, line) -> None\n\
+replaces history item given by its position with contents of line");
 
 /* Add a line to the history buffer */
 
@@ -493,6 +558,8 @@ static struct PyMethodDef readline_methods[] =
 	{"set_completer_delims", set_completer_delims,
 	 METH_VARARGS, doc_set_completer_delims},
 	{"add_history", py_add_history, METH_VARARGS, doc_add_history},
+        {"remove_history_item", py_remove_history, METH_VARARGS, doc_remove_history},
+        {"replace_history_item", py_replace_history, METH_VARARGS, doc_replace_history},
 	{"get_completer_delims", get_completer_delims,
 	 METH_NOARGS, doc_get_completer_delims},
 

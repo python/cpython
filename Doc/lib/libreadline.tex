@@ -71,6 +71,16 @@ Return the current contents of history item at \var{index}.
 \versionadded{2.3}
 \end{funcdesc}
 
+\begin{funcdesc}{remove_history_item}{pos}
+Remove history item specified by its position from the history.
+\versionadded{2.4}
+\end{funcdesc}
+
+\begin{funcdesc}{replace_history_item}{pos, line}
+Replace history item specified by its position with the given line.
+\versionadded{2.4}
+\end{funcdesc}
+
 \begin{funcdesc}{redisplay}{}
 Change what's displayed on the screen to reflect the current contents
 of the line buffer.  \versionadded{2.3}
@@ -126,7 +136,6 @@ Get the readline word delimiters for tab-completion.
 \begin{funcdesc}{add_history}{line}
 Append a line to the history buffer, as if it was the last line typed.
 \end{funcdesc}
-
 
 \begin{seealso}
   \seemodule{rlcompleter}{Completion of Python identifiers at the
