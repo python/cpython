@@ -899,11 +899,11 @@ listed as operand type in the table.
 This module implements \rfc{3490} (Internationalized Domain Names in
 Applications) and \rfc{3492} (Nameprep: A Stringprep Profile for
 Internationalized Domain Names (IDN)). It builds upon the
-\code{punycode} encoding and \module{stringprep}.
+\code{punycode} encoding and \refmodule{stringprep}.
 
 These RFCs together define a protocol to support non-\ASCII{} characters
 in domain names. A domain name containing non-\ASCII{} characters (such
-as ``www.Alliancefran\c{c}aise.nu'') is converted into an
+as ``www.Alliancefran\c caise.nu'') is converted into an
 \ASCII-compatible encoding (ACE, such as
 ``www.xn--alliancefranaise-npb.nu''). The ACE form of the domain name
 is then used in all places where arbitrary characters are not allowed
@@ -915,13 +915,13 @@ to Unicode before presenting them to the user.
 
 Python supports this conversion in several ways: The \code{idna} codec
 allows to convert between Unicode and the ACE. Furthermore, the
-\module{socket} module transparently converts Unicode host names to
+\refmodule{socket} module transparently converts Unicode host names to
 ACE, so that applications need not be concerned about converting host
 names themselves when they pass them to the socket module. On top of
 that, modules that have host names as function parameters, such as
-\module{httplib} and \module{ftplib}, accept Unicode host names
-(\module{httplib} then also transparently sends an IDNA hostname in
-the \code{Host:} field if it sends that field at all). 
+\refmodule{httplib} and \refmodule{ftplib}, accept Unicode host names
+(\refmodule{httplib} then also transparently sends an IDNA hostname in
+the \mailheader{Host} field if it sends that field at all). 
 
 When receiving host names from the wire (such as in reverse name
 lookup), no automatic conversion to Unicode is performed: Applications
