@@ -185,7 +185,7 @@ MacOS_SetScheduleTimes(PyObject *self, PyObject *args)
 	bgi = bgy = -2;	
 	if (!PyArg_ParseTuple(args, "ll|ll", &fgi, &fgy, &bgi, &bgy))
 		return NULL;
-	if ( bgi == -2 ) {
+	if ( bgi == -2 || bgy == -2 ) {
 		bgi = fgi;
 		bgy = fgy;
 	}
