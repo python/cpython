@@ -241,9 +241,6 @@ class SMTPChannel(asynchat.async_chat):
         if not address:
             self.push('501 Syntax: RCPT TO: <address>')
             return
-        if address.lower().startswith('stimpy'):
-            self.push('503 You suck %s' % address)
-            return
         self.__rcpttos.append(address)
         print >> DEBUGSTREAM, 'recips:', self.__rcpttos
         self.push('250 Ok')
