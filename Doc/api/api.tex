@@ -983,7 +983,12 @@ Return the module object corresponding to a module name.  The
 check the modules dictionary if there's one there, and if not, create
 a new one and insert in in the modules dictionary.  Because the former
 action is most common, this does not return a new reference, and you
-do not own the returned reference.  Return \NULL{} with an
+do not own the returned reference.
+Warning: this function does not load or import the module; if the
+module wasn't already loaded, you will get an empty module object.
+Use \cfunction{PyImport_ImportModule()} or one of its variants to
+import a module.
+Return \NULL{} with an
 exception set on failure.  \strong{Note:} this function returns
 a ``borrowed'' reference.  
 \end{cfuncdesc}
