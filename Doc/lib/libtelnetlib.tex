@@ -13,7 +13,7 @@ implements the Telnet protocol.  See \rfc{854} for details about the
 protocol.
 
 
-\begin{classdesc}{Telnet}{\optional{host\optional{, port=0}}}
+\begin{classdesc}{Telnet}{\optional{host\optional{, port}}}
 \class{Telnet} represents a connection to a telnet server. The
 instance is initially not connected; the \method{open()} method must
 be used to establish a connection.  Alternatively, the host name and
@@ -24,7 +24,7 @@ Do not reopen an already connected instance.
 This class has many \method{read_*()} methods.  Note that some of them 
 raise \exception{EOFError} when the end of the connection is read,
 because they can return an empty string for other reasons.  See the
-individual doc strings.
+individual descriptions below.
 \end{classdesc}
 
 
@@ -33,7 +33,7 @@ individual doc strings.
 \class{Telnet} instances have the following methods:
 
 
-\begin{methoddesc}[Telnet]{read_until}{expected\optional{, timeout}}
+\begin{methoddesc}{read_until}{expected\optional{, timeout}}
 Read until a given string is encountered or until timeout.
 
 When no match is found, return whatever is available instead,
@@ -41,103 +41,100 @@ possibly the empty string.  Raise \exception{EOFError} if the connection
 is closed and no cooked data is available.
 \end{methoddesc}
 
-\begin{methoddesc}[Telnet]{read_all}{}
-Read all data until EOF; block until connection closed.
+\begin{methoddesc}{read_all}{}
+Read all data until \EOF{}; block until connection closed.
 \end{methoddesc}
 
-\begin{methoddesc}[Telnet]{read_some}{}
-Read at least one byte of cooked data unless EOF is hit.
-
-Return \code{''} if EOF is hit.  Block if no data is immediately available.
+\begin{methoddesc}{read_some}{}
+Read at least one byte of cooked data unless \EOF{} is hit.
+Return \code{''} if \EOF{} is hit.  Block if no data is immediately
+available.
 \end{methoddesc}
 
-\begin{methoddesc}[Telnet]{read_very_eager}{}
-Read everything that's possible without blocking in I/O (eager).
+\begin{methoddesc}{read_very_eager}{}
+Read everything that can be without blocking in I/O (eager).
 
 Raise \exception{EOFError} if connection closed and no cooked data
 available.  Return \code{''} if no cooked data available otherwise.
-Don't block unless in the midst of an IAC sequence.
+Do not block unless in the midst of an IAC sequence.
 \end{methoddesc}
 
-\begin{methoddesc}[Telnet]{read_eager}{}
+\begin{methoddesc}{read_eager}{}
 Read readily available data.
 
 Raise \exception{EOFError} if connection closed and no cooked data
 available.  Return \code{''} if no cooked data available otherwise.
-Don't block unless in the midst of an IAC sequence.
+Do not block unless in the midst of an IAC sequence.
 \end{methoddesc}
 
-\begin{methoddesc}[Telnet]{read_lazy}{}
-Process and return data that's already in the queues (lazy).
+\begin{methoddesc}{read_lazy}{}
+Process and return data already in the queues (lazy).
 
 Raise \exception{EOFError} if connection closed and no data available.
-Return \code{''} if no cooked data available otherwise.  Don't block
+Return \code{''} if no cooked data available otherwise.  Do not block
 unless in the midst of an IAC sequence.
 \end{methoddesc}
 
-\begin{methoddesc}[Telnet]{read_very_lazy}{}
+\begin{methoddesc}{read_very_lazy}{}
 Return any data available in the cooked queue (very lazy).
 
 Raise \exception{EOFError} if connection closed and no data available.
-Return \code{''} if no cooked data available otherwise.  Don't block.
+Return \code{''} if no cooked data available otherwise.  This method
+never blocks.
 \end{methoddesc}
 
-\begin{methoddesc}[Telnet]{open}{host\optional{, port=0}}
+\begin{methoddesc}{open}{host\optional{, port}}
 Connect to a host.
-
 The optional second argument is the port number, which
 defaults to the standard telnet port (23).
 
-Don't try to reopen an already connected instance.
+Do not try to reopen an already connected instance.
 \end{methoddesc}
 
-\begin{methoddesc}[Telnet]{msg}{msg\optional{, *args}}
-Print a debug message, when the debug level is > 0.
-
+\begin{methoddesc}{msg}{msg\optional{, *args}}
+Print a debug message when the debug level is \code{>} 0.
 If extra arguments are present, they are substituted in the
 message using the standard string formatting operator.
 \end{methoddesc}
 
-\begin{methoddesc}[Telnet]{set_debuglevel}{debuglevel}
-Set the debug level.
-
-The higher it is, the more debug output you get (on sys.stdout).
+\begin{methoddesc}{set_debuglevel}{debuglevel}
+Set the debug level.  The higher the value of \var{debuglevel}, the
+more debug output you get (on \code{sys.stdout}).
 \end{methoddesc}
 
-\begin{methoddesc}[Telnet]{close}{}
+\begin{methoddesc}{close}{}
 Close the connection.
 \end{methoddesc}
 
-\begin{methoddesc}[Telnet]{get_socket}{}
+\begin{methoddesc}{get_socket}{}
 Return the socket object used internally.
 \end{methoddesc}
 
-\begin{methoddesc}[Telnet]{fileno}{}
-Return the fileno() of the socket object used internally.
+\begin{methoddesc}{fileno}{}
+Return the file descriptor of the socket object used internally.
 \end{methoddesc}
 
-\begin{methoddesc}[Telnet]{write}{buffer}
+\begin{methoddesc}{write}{buffer}
 Write a string to the socket, doubling any IAC characters.
-
-Can block if the connection is blocked.  May raise
-socket.error if the connection is closed.
+This can block if the connection is blocked.  May raise
+\exception{socket.error} if the connection is closed.
 \end{methoddesc}
 
-\begin{methoddesc}[Telnet]{interact}{}
+\begin{methoddesc}{interact}{}
 Interaction function, emulates a very dumb telnet client.
 \end{methoddesc}
 
-\begin{methoddesc}[Telnet]{mt_interact}{}
-Multithreaded version of \method{interact}.
+\begin{methoddesc}{mt_interact}{}
+Multithreaded version of \method{interact()}.
 \end{methoddesc}
 
-\begin{methoddesc}[Telnet]{expect}{list, timeout=None}
+\begin{methoddesc}{expect}{list\optional{, timeout}}
 Read until one from a list of a regular expressions matches.
 
 The first argument is a list of regular expressions, either
 compiled (\class{re.RegexObject} instances) or uncompiled (strings).
-The optional second argument is a timeout, in seconds; default
-is no timeout.
+The optional second argument is a timeout, in seconds; the default
+is to block indefinately.
 
 Return a tuple of three items: the index in the list of the
 first regular expression that matches; the match object
