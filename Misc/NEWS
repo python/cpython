@@ -6,6 +6,12 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- A new built-in type, bool, has been added, as well as built-in
+  names for its two values, True and False.  Comparisons and sundry
+  other operations that return a truth value have been changed to
+  return a bool instead.  Read PEP 285 for an explanantion of why this
+  is backward compatible.
+
 - Fixed two bugs reported as SF #535905: under certain conditions,
   deallocating a deeply nested structure could cause a segfault in the
   garbage collector, due to interaction with the "trashcan" code;
