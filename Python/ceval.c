@@ -1501,6 +1501,11 @@ eval_frame(PyFrameObject *f)
 					err = -1;
 				}
 			}
+			/* PyFile_SoftSpace() can exececute arbitrary code
+			   if sys.stdout is an instance with a __getattr__.
+			   If __getattr__ raises an exception, w will
+			   be freed, so we need to prevent that temporarily. */
+			Py_XINCREF(w);
 			if (w != NULL && PyFile_SoftSpace(w, 0))
 				err = PyFile_WriteString(" ", w);
 			if (err == 0)
@@ -1528,6 +1533,7 @@ eval_frame(PyFrameObject *f)
 			    else
 			    	PyFile_SoftSpace(w, 1);
 			}
+			Py_XDECREF(w);
 			Py_DECREF(v);
 			Py_XDECREF(stream);
 			stream = NULL;
