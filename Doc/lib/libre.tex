@@ -272,18 +272,39 @@ followed by \code{'Asimov'}.
 
 \item[\code{(?<=...)}] Matches if the current position in the string
 is preceded by a match for \regexp{...} that ends at the current
-position.  This is called a positive lookbehind assertion.
-\regexp{(?<=abc)def} will match \samp{abcdef}, since the lookbehind
-will back up 3 characters and check if the contained pattern matches.
-The contained pattern must only match strings of some fixed length,
-meaning that \regexp{abc} or \regexp{a|b} are allowed, but \regexp{a*}
-isn't.
+position.  This is called a \dfn{positive lookbehind assertion}.
+\regexp{(?<=abc)def} will find a match in \samp{abcdef}, since the
+lookbehind will back up 3 characters and check if the contained
+pattern matches.  The contained pattern must only match strings of
+some fixed length, meaning that \regexp{abc} or \regexp{a|b} are
+allowed, but \regexp{a*} and \regexp{a\{3,4\}} are not.  Note that
+patterns which start with positive lookbehind assertions will never
+match at the beginning of the string being searched; you will most
+likely want to use the \function{search()} function rather than the
+\function{match()} function:
+
+\begin{verbatim}
+>>> import re
+>>> m = re.search('(?<=abc)def', 'abdef')
+>>> m.group(0)
+'def'
+\end{verbatim}
+
+This example looks for a word following a hyphen:
+
+\begin{verbatim}
+>>> m = re.search('(?<=-)\w+', 'spam-egg')
+>>> m.group(0)
+'egg'
+\end{verbatim}
 
 \item[\code{(?<!...)}] Matches if the current position in the string
-is not preceded by a match for \regexp{...}.  This
-is called a negative lookbehind assertion.  Similar to positive lookbehind
+is not preceded by a match for \regexp{...}.  This is called a
+\dfn{negative lookbehind assertion}.  Similar to positive lookbehind
 assertions, the contained pattern must only match strings of some
-fixed length.
+fixed length.  Patterns which start with negative lookbehind
+assertions will may match at the beginning of the string being
+searched.
 
 \end{list}
 
