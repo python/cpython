@@ -1,13 +1,13 @@
 #
-# cp949.py: Python Unicode Codec for CP949
+# big5hkscs.py: Python Unicode Codec for BIG5HKSCS
 #
 # Written by Hye-Shik Chang <perky@FreeBSD.org>
-# $CJKCodecs: cp949.py,v 1.8 2004/06/28 18:16:03 perky Exp $
+# $CJKCodecs: big5hkscs.py,v 1.1 2004/06/29 05:14:27 perky Exp $
 #
 
-import _codecs_kr, codecs
+import _codecs_hk, codecs
 
-codec = _codecs_kr.getcodec('cp949')
+codec = _codecs_hk.getcodec('big5hkscs')
 
 class Codec(codecs.Codec):
     encode = codec.encode

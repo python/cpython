@@ -3,7 +3,7 @@
 # test_multibytecodec_support.py
 #   Common Unittest Routines for CJK codecs
 #
-# $CJKCodecs: test_multibytecodec_support.py,v 1.5 2004/01/17 12:47:19 perky Exp $
+# $CJKCodecs: test_multibytecodec_support.py,v 1.6 2004/06/19 06:09:55 perky Exp $
 
 import sys, codecs, os.path
 import unittest
@@ -164,13 +164,8 @@ class TestBase_Mapping(unittest.TestCase):
     def __init__(self, *args, **kw):
         unittest.TestCase.__init__(self, *args, **kw)
         if not os.path.exists(self.mapfilename):
-            parent = os.path.join(os.pardir, self.mapfilename)
-            if not os.path.exists(parent):
-                format = '%s not found, download from %s'
-                raise test_support.TestSkipped(format %
-                        (self.mapfilename, self.mapfileurl))
-            else:
-                self.mapfilename = parent
+            raise test_support.TestSkipped('%s not found, download from %s' %
+                    (self.mapfilename, self.mapfileurl))
 
     def test_mapping_file(self):
         unichrs = lambda s: u''.join(map(unichr, map(eval, s.split('+'))))

@@ -3,7 +3,7 @@
 # test_codecmaps_jp.py
 #   Codec mapping tests for Japanese encodings
 #
-# $CJKCodecs: test_codecmaps_jp.py,v 1.2 2004/01/17 12:47:19 perky Exp $
+# $CJKCodecs: test_codecmaps_jp.py,v 1.3 2004/06/19 06:09:55 perky Exp $
 
 from test import test_support
 from test import test_multibytecodec_support
@@ -48,15 +48,6 @@ class TestSJISCOMPATMap(test_multibytecodec_support.TestBase_Mapping,
         ('\x81_', u'\\'),
     ]
 
-
-class TestSJISSTRICTMap(test_multibytecodec_support.TestBase_Mapping,
-                        unittest.TestCase):
-    encoding = 'shift_jis_strict'
-    mapfilename = 'SHIFTJIS.TXT'
-    mapfileurl = 'http://www.unicode.org/Public/MAPPINGS/OBSOLETE' \
-                 '/EASTASIA/JIS/SHIFTJIS.TXT'
-
-
 class TestEUCJISX0213Map(test_multibytecodec_support.TestBase_Mapping,
                          unittest.TestCase):
     encoding = 'euc_jisx0213'
@@ -76,8 +67,6 @@ def test_main():
     suite.addTest(unittest.makeSuite(TestCP932Map))
     suite.addTest(unittest.makeSuite(TestEUCJPCOMPATMap))
     suite.addTest(unittest.makeSuite(TestSJISCOMPATMap))
-    if test_multibytecodec_support.__cjkcodecs__:
-        suite.addTest(unittest.makeSuite(TestSJISSTRICTMap))
     suite.addTest(unittest.makeSuite(TestEUCJISX0213Map))
     suite.addTest(unittest.makeSuite(TestSJISX0213Map))
     test_support.run_suite(suite)
@@ -85,5 +74,6 @@ def test_main():
 test_multibytecodec_support.register_skip_expected(TestCP932Map,
     TestEUCJPCOMPATMap, TestSJISCOMPATMap, TestEUCJISX0213Map,
     TestSJISX0213Map)
+
 if __name__ == "__main__":
     test_main()

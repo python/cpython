@@ -39,6 +39,10 @@ aliases = {
     'big5_tw'            : 'big5',
     'csbig5'             : 'big5',
 
+    # big5hkscs codec
+    'big5_hkscs'         : 'big5hkscs',
+    'hkscs'              : 'big5hkscs',
+
     # bz2_codec codec
     'bz2'                : 'bz2_codec',
 
@@ -197,8 +201,12 @@ aliases = {
     '950'                : 'cp950',
     'ms950'              : 'cp950',
 
+    # euc_jis_2004 codec
+    'jisx0213'           : 'euc_jis_2004',
+    'eucjis2004'         : 'euc_jis_2004',
+    'euc_jis2004'        : 'euc_jis_2004',
+
     # euc_jisx0213 codec
-    'jisx0213'           : 'euc_jisx0213',
     'eucjisx0213'        : 'euc_jisx0213',
 
     # euc_jp codec
@@ -253,6 +261,10 @@ aliases = {
     # iso2022_jp_2 codec
     'iso2022jp_2'        : 'iso2022_jp_2',
     'iso_2022_jp_2'      : 'iso2022_jp_2',
+
+    # iso2022_jp_2004 codec
+    'iso_2022_jp_2004'   : 'iso2022_jp_2004',
+    'iso2022jp_2004'     : 'iso2022_jp_2004',
 
     # iso2022_jp_3 codec
     'iso2022jp_3'        : 'iso2022_jp_3',
@@ -415,6 +427,11 @@ aliases = {
     'shiftjis'           : 'shift_jis',
     'sjis'               : 'shift_jis',
     's_jis'              : 'shift_jis',
+
+    # shift_jis_2004 codec
+    'shiftjis2004'       : 'shift_jis_2004',
+    'sjis_2004'          : 'shift_jis_2004',
+    's_jis_2004'         : 'shift_jis_2004',
 
     # shift_jisx0213 codec
     'shiftjisx0213'      : 'shift_jisx0213',

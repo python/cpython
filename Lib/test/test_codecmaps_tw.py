@@ -3,7 +3,7 @@
 # test_codecmaps_tw.py
 #   Codec mapping tests for ROC encodings
 #
-# $CJKCodecs: test_codecmaps_tw.py,v 1.2 2004/01/17 12:47:19 perky Exp $
+# $CJKCodecs: test_codecmaps_tw.py,v 1.3 2004/06/19 06:09:55 perky Exp $
 
 from test import test_support
 from test import test_multibytecodec_support

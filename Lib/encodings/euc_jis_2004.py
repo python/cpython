@@ -1,13 +1,13 @@
 #
-# cp949.py: Python Unicode Codec for CP949
+# euc_jis_2004.py: Python Unicode Codec for EUC_JIS_2004
 #
 # Written by Hye-Shik Chang <perky@FreeBSD.org>
-# $CJKCodecs: cp949.py,v 1.8 2004/06/28 18:16:03 perky Exp $
+# $CJKCodecs: euc_jis_2004.py,v 1.1 2004/07/07 16:18:25 perky Exp $
 #
 
-import _codecs_kr, codecs
+import _codecs_jp, codecs
 
-codec = _codecs_kr.getcodec('cp949')
+codec = _codecs_jp.getcodec('euc_jis_2004')
 
 class Codec(codecs.Codec):
     encode = codec.encode

@@ -2,11 +2,12 @@
 # big5.py: Python Unicode Codec for BIG5
 #
 # Written by Hye-Shik Chang <perky@FreeBSD.org>
-# $CJKCodecs: big5.py,v 1.3 2004/01/17 11:26:10 perky Exp $
+# $CJKCodecs: big5.py,v 1.8 2004/06/28 18:16:03 perky Exp $
 #
 
-from _codecs_big5 import codec
-import codecs
+import _codecs_tw, codecs
+
+codec = _codecs_tw.getcodec('big5')
 
 class Codec(codecs.Codec):
     encode = codec.encode
@@ -30,4 +31,4 @@ class StreamWriter(Codec, codecs.StreamWriter):
         self.reset = __codec.reset
 
 def getregentry():
-    return (Codec().encode,Codec().decode,StreamReader,StreamWriter)
+    return (codec.encode, codec.decode, StreamReader, StreamWriter)

@@ -1,12 +1,13 @@
 #
-# iso2022_jp_ext.py: Python Unicode Codec for ISO_2022_JP_EXT
+# iso2022_jp_ext.py: Python Unicode Codec for ISO2022_JP_EXT
 #
 # Written by Hye-Shik Chang <perky@FreeBSD.org>
-# $CJKCodecs: iso2022_jp_ext.py,v 1.3 2004/01/17 11:26:10 perky Exp $
+# $CJKCodecs: iso2022_jp_ext.py,v 1.2 2004/06/28 18:16:03 perky Exp $
 #
 
-from _codecs_iso2022_jp_ext import codec
-import codecs
+import _codecs_iso2022, codecs
+
+codec = _codecs_iso2022.getcodec('iso2022_jp_ext')
 
 class Codec(codecs.Codec):
     encode = codec.encode
@@ -30,4 +31,4 @@ class StreamWriter(Codec, codecs.StreamWriter):
         self.reset = __codec.reset
 
 def getregentry():
-    return (Codec().encode,Codec().decode,StreamReader,StreamWriter)
+    return (codec.encode, codec.decode, StreamReader, StreamWriter)

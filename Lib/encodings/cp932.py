@@ -2,11 +2,12 @@
 # cp932.py: Python Unicode Codec for CP932
 #
 # Written by Hye-Shik Chang <perky@FreeBSD.org>
-# $CJKCodecs: cp932.py,v 1.3 2004/01/17 11:26:10 perky Exp $
+# $CJKCodecs: cp932.py,v 1.8 2004/06/28 18:16:03 perky Exp $
 #
 
-from _codecs_cp932 import codec
-import codecs
+import _codecs_jp, codecs
+
+codec = _codecs_jp.getcodec('cp932')
 
 class Codec(codecs.Codec):
     encode = codec.encode
@@ -30,4 +31,4 @@ class StreamWriter(Codec, codecs.StreamWriter):
         self.reset = __codec.reset
 
 def getregentry():
-    return (Codec().encode,Codec().decode,StreamReader,StreamWriter)
+    return (codec.encode, codec.decode, StreamReader, StreamWriter)
