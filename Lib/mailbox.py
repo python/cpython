@@ -199,6 +199,7 @@ class MHMailbox:
         # This only works in Python 1.6 or later;
         # before that str() added 'L':
         self.boxes = map(str, list)
+        self.boxes.reverse()
         self.factory = factory
 
     def __iter__(self):
@@ -207,7 +208,7 @@ class MHMailbox:
     def next(self):
         if not self.boxes:
             return None
-        fn = self.boxes.pop(0)
+        fn = self.boxes.pop()
         fp = open(os.path.join(self.dirname, fn))
         msg = self.factory(fp)
         try:
@@ -233,7 +234,7 @@ class Maildir:
         curdir = os.path.join(self.dirname, 'cur')
         boxes += [os.path.join(curdir, f)
                   for f in os.listdir(curdir) if f[0] != '.']
-
+        boxes.reverse()
         self.boxes = boxes
 
     def __iter__(self):
@@ -242,7 +243,7 @@ class Maildir:
     def next(self):
         if not self.boxes:
             return None
-        fn = self.boxes.pop(0)
+        fn = self.boxes.pop()
         fp = open(fn)
         return self.factory(fp)
 
