@@ -620,6 +620,9 @@
 /* Define if you have the <sys/wait.h> header file.  */
 #undef HAVE_SYS_WAIT_H
 
+/* Define if you have the <termios.h> header file.  */
+#undef HAVE_TERMIOS_H
+
 /* Define if you have the <thread.h> header file.  */
 #undef HAVE_THREAD_H
 
