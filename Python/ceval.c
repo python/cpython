@@ -536,9 +536,7 @@ _Py_CheckRecursiveCall(char *where)
 	return 0;
 }
 
-
 /* Status code for main loop (reason for stack unwind) */
-
 enum why_code {
 		WHY_NOT,	/* No error */
 		WHY_EXCEPTION,	/* Exception occurred */
@@ -3425,6 +3423,42 @@ err_args(PyObject *func, int flags, int nargs)
 			     nargs);
 }
 
+#define BEGIN_C_TRACE \
+if (tstate->use_tracing) { \
+	if (tstate->c_profilefunc != NULL) { \
+		PyObject *func_name = \
+			PyString_FromString (((PyCFunctionObject *) \
+						func)->m_ml->ml_name); \
+		are_tracing = 1; \
+		if (call_trace(tstate->c_profilefunc, \
+			tstate->c_profileobj, \
+			tstate->frame, PyTrace_C_CALL, \
+			func_name)) \
+			{ return NULL; } \
+		Py_DECREF (func_name); \
+		} \
+	}
+
+#define END_C_TRACE \
+	if (tstate->use_tracing && are_tracing) { \
+		if (tstate->c_profilefunc != NULL) { \
+			if (x == NULL) { \
+				if (call_trace (tstate->c_profilefunc, \
+					tstate->c_profileobj, \
+					tstate->frame, PyTrace_C_EXCEPTION, \
+					NULL)) \
+					{ return NULL; } \
+			} else { \
+				if (call_trace(tstate->c_profilefunc, \
+					tstate->c_profileobj, \
+					tstate->frame, PyTrace_C_RETURN, \
+					NULL))	\
+					{ return NULL; } \
+			} \
+		} \
+	}
+
+
 static PyObject *
 call_function(PyObject ***pp_stack, int oparg)
 {
@@ -3435,6 +3469,10 @@ call_function(PyObject ***pp_stack, int oparg)
 	PyObject *func = *pfunc;
 	PyObject *x, *w;
 
+	int     are_tracing = 0;
+
+	PyThreadState *tstate = PyThreadState_GET();
+
 	/* Always dispatch PyCFunction first, because these are
 	   presumed to be the most frequent callable object.
 	*/
@@ -3444,11 +3482,16 @@ call_function(PyObject ***pp_stack, int oparg)
 		if (flags & (METH_NOARGS | METH_O)) {
 			PyCFunction meth = PyCFunction_GET_FUNCTION(func);
 			PyObject *self = PyCFunction_GET_SELF(func);
-			if (flags & METH_NOARGS && na == 0) 
+			if (flags & METH_NOARGS && na == 0) {
+ 				BEGIN_C_TRACE
 				x = (*meth)(self, NULL);
+				END_C_TRACE
+			}
 			else if (flags & METH_O && na == 1) {
 				PyObject *arg = EXT_POP(*pp_stack);
+				BEGIN_C_TRACE
 				x = (*meth)(self, arg);
+				END_C_TRACE
 				Py_DECREF(arg);
 			}
 			else {
@@ -3459,7 +3502,9 @@ call_function(PyObject ***pp_stack, int oparg)
 		else {
 			PyObject *callargs;
 			callargs = load_args(pp_stack, na);
+			BEGIN_C_TRACE
 			x = PyCFunction_Call(func, callargs, NULL);
+			END_C_TRACE
 			Py_XDECREF(callargs); 
 		} 
 	} else {

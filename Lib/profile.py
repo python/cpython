@@ -163,6 +163,7 @@ class Profile:
         self.timings = {}
         self.cur = None
         self.cmd = ""
+        self.c_func_name = ""
 
         if bias is None:
             bias = self.bias
@@ -214,6 +215,9 @@ class Profile:
         t = timer()
         t = t[0] + t[1] - self.t - self.bias
 
+        if event == "c_call":
+            self.c_func_name = arg
+
         if self.dispatch[event](self, frame,t):
             t = timer()
             self.t = t[0] + t[1]
@@ -227,7 +231,11 @@ class Profile:
     def trace_dispatch_i(self, frame, event, arg):
         timer = self.timer
         t = timer() - self.t - self.bias
-        if self.dispatch[event](self, frame,t):
+
+        if event == "c_call":
+            self.c_func_name = arg
+
+        if self.dispatch[event](self, frame, t):
             self.t = timer()
         else:
             self.t = timer() - t  # put back unrecorded delta
@@ -238,6 +246,10 @@ class Profile:
     def trace_dispatch_mac(self, frame, event, arg):
         timer = self.timer
         t = timer()/60.0 - self.t - self.bias
+
+        if event == "c_call":
+            self.c_func_name = arg
+
         if self.dispatch[event](self, frame, t):
             self.t = timer()/60.0
         else:
@@ -248,6 +260,9 @@ class Profile:
     def trace_dispatch_l(self, frame, event, arg):
         get_time = self.get_time
         t = get_time() - self.t - self.bias
+
+        if event == "c_call":
+            self.c_func_name = arg
 
         if self.dispatch[event](self, frame, t):
             self.t = get_time()
@@ -287,6 +302,17 @@ class Profile:
         if fn in timings:
             cc, ns, tt, ct, callers = timings[fn]
             timings[fn] = cc, ns + 1, tt, ct, callers
+        else:
+            timings[fn] = 0, 0, 0, 0, {}
+        return 1
+
+    def trace_dispatch_c_call (self, frame, t):
+        fn = ("", 0, self.c_func_name)
+        self.cur = (t, 0, 0, fn, frame, self.cur)
+        timings = self.timings
+        if timings.has_key(fn):
+            cc, ns, tt, ct, callers = timings[fn]
+            timings[fn] = cc, ns+1, tt, ct, callers
         else:
             timings[fn] = 0, 0, 0, 0, {}
         return 1
@@ -333,6 +359,9 @@ class Profile:
         "call": trace_dispatch_call,
         "exception": trace_dispatch_exception,
         "return": trace_dispatch_return,
+        "c_call": trace_dispatch_c_call,
+        "c_exception": trace_dispatch_exception,
+        "c_return": trace_dispatch_return,
         }
 
 
