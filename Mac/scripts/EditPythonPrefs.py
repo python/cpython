@@ -17,7 +17,7 @@ import Res # For Res.Error
 # resource IDs in our own resources (dialogs, etc)
 MESSAGE_ID = 256
 
-DIALOG_ID = 512
+DIALOG_ID = 511
 TEXT_ITEM = 1
 OK_ITEM = 2
 CANCEL_ITEM = 3
@@ -27,7 +27,7 @@ OPTIONS_ITEM = 7
 
 # The options dialog. There is a correspondence between
 # the dialog item numbers and the option.
-OPT_DIALOG_ID = 513
+OPT_DIALOG_ID = 510
 # 1 thru 9 are the options
 # The GUSI creator/type and delay-console
 OD_CREATOR_ITEM = 10
@@ -356,6 +356,7 @@ def edit_applet(name):
 	if notfound:
 		message('Warning: initial %s taken from system-wide defaults'%notfound)
 	# Let the user play away
+	print 'DBG interaction'
 	result = interact(l, fss, (options, creator, type, delaycons), name)
 	
 	# See what we have to update, and how
