@@ -18,6 +18,8 @@ def test_both():
     f.close()
 
     # Simple sanity checks
+
+    print type(m)  # SF bug 128713:  segfaulted on Linux
     print '  Position of foo:', string.find(m, 'foo') / float(PAGESIZE), 'pages'
     assert string.find(m, 'foo') == PAGESIZE
 
