@@ -217,7 +217,7 @@ static struct PyMethodDef msvcrt_functions[] = {
 	{NULL,			NULL}
 };
 
-__declspec(dllexport) void
+PyMODINIT_FUNC
 initmsvcrt(void)
 {
 	PyObject *m = Py_InitModule("msvcrt", msvcrt_functions);
