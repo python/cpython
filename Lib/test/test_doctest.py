@@ -1,3 +1,2 @@
-from test_support import verbose
-import doctest
-doctest.testmod(doctest, verbose=verbose)
+import doctest, test_support 
+test_support.run_doctest(doctest)

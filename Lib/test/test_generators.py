@@ -1351,16 +1351,16 @@ __test__ = {"tut":      tutorial_tests,
 # This worms around a bootstrap problem.
 # Note that doctest and regrtest both look in sys.argv for a "-v" argument,
 # so this works as expected in both ways of running regrtest.
-def test_main():
-    import doctest, test_generators
+def test_main(verbose=None):
+    import doctest, test_support, test_generators
     if 0:   # change to 1 to run forever (to check for leaks)
         while 1:
             doctest.master = None
-            doctest.testmod(test_generators)
+            test_support.run_doctest(test_generators, verbose)
             print ".",
     else:
-        doctest.testmod(test_generators)
+        test_support.run_doctest(test_generators, verbose)
 
 # This part isn't needed for regrtest, but for running the test directly.
 if __name__ == "__main__":
-    test_main()
+    test_main(1)

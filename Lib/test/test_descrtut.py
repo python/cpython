@@ -484,10 +484,15 @@ __test__ = {"tut1": test_1,
 # This worms around a bootstrap problem.
 # Note that doctest and regrtest both look in sys.argv for a "-v" argument,
 # so this works as expected in both ways of running regrtest.
-def test_main():
-    import doctest, test.test_descrtut
-    doctest.testmod(test.test_descrtut)
+def test_main(verbose=None):
+    # Obscure:  import this module as test.test_descrtut instead of as
+    # plain test_descrtut because the name of this module works its way
+    # into the doctest examples, and unless the full test.test_descrtut
+    # business is used the name can change depending on how the test is
+    # invoked.
+    import test_support, test.test_descrtut
+    test_support.run_doctest(test.test_descrtut, verbose)
 
 # This part isn't needed for regrtest, but for running the test directly.
 if __name__ == "__main__":
-    test_main()
+    test_main(1)

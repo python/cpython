@@ -288,7 +288,7 @@ def runtest(test, generate, verbose, quiet, testdir = None):
         elif verbose:
             cfp = sys.stdout
         else:
-            cfp = Compare(outputfile)
+            cfp = Compare(outputfile, sys.stdout)
     except IOError:
         cfp = None
         print "Warning: can't open", outputfile
@@ -386,7 +386,8 @@ def printlist(x, width=70, indent=4):
         print line
 
 class Compare:
-    def __init__(self, filename):
+    def __init__(self, filename, origstdout):
+        self.origstdout = origstdout
         if os.path.exists(filename):
             self.fp = open(filename, 'r')
         else:
@@ -395,6 +396,9 @@ class Compare:
         self.stuffthatmatched = []
 
     def write(self, data):
+        if test_support.suppress_output_comparison():
+            self.origstdout.write(data)
+            return
         expected = self.fp.read(len(data))
         if data == expected:
             self.stuffthatmatched.append(expected)
