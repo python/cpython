@@ -1,5 +1,4 @@
 test_unicode
 Testing Unicode comparisons... done.
-Testing Unicode contains method... done.
 Testing Unicode formatting strings... done.
 Testing unicodedata module... done.

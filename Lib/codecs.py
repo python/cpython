@@ -46,7 +46,7 @@ class Codec:
         handling schemes by providing the errors argument. These
         string values are defined:
 
-         'strict' - raise an error (or a subclass)
+         'strict' - raise a ValueError error (or a subclass)
          'ignore' - ignore the character and continue with the next
          'replace' - replace with a suitable replacement character;
                     Python will use the official U+FFFD REPLACEMENT

@@ -715,20 +715,125 @@ Internal Argument Parsing:
 
 These markers are used by the PyArg_ParseTuple() APIs:
 
-  'U':  Check for Unicode object and return a pointer to it
+  "U":  Check for Unicode object and return a pointer to it
 
-  's':  For Unicode objects: auto convert them to the <default encoding>
+  "s":  For Unicode objects: auto convert them to the <default encoding>
         and return a pointer to the object's <defencstr> buffer.
 
-  's#': Access to the Unicode object via the bf_getreadbuf buffer interface 
+  "s#": Access to the Unicode object via the bf_getreadbuf buffer interface 
         (see Buffer Interface); note that the length relates to the buffer
         length, not the Unicode string length (this may be different
         depending on the Internal Format).
 
-  't#': Access to the Unicode object via the bf_getcharbuf buffer interface
+  "t#": Access to the Unicode object via the bf_getcharbuf buffer interface
         (see Buffer Interface); note that the length relates to the buffer
         length, not necessarily to the Unicode string length (this may
         be different depending on the <default encoding>).
+
+  "es": 
+	Takes two parameters: encoding (const char *) and
+	buffer (char **). 
+
+	The input object is first coerced to Unicode in the usual way
+	and then encoded into a string using the given encoding.
+
+	On output, a buffer of the needed size is allocated and
+	returned through *buffer as NULL-terminated string.
+	The encoded may not contain embedded NULL characters.
+	The caller is responsible for free()ing the allocated *buffer
+	after usage.
+
+  "es#":
+	Takes three parameters: encoding (const char *),
+	buffer (char **) and buffer_len (int *).
+	
+	The input object is first coerced to Unicode in the usual way
+	and then encoded into a string using the given encoding.
+
+	If *buffer is non-NULL, *buffer_len must be set to sizeof(buffer)
+	on input. Output is then copied to *buffer.
+
+	If *buffer is NULL, a buffer of the needed size is
+	allocated and output copied into it. *buffer is then
+	updated to point to the allocated memory area. The caller
+	is responsible for free()ing *buffer after usage.
+
+	In both cases *buffer_len is updated to the number of
+	characters written (excluding the trailing NULL-byte).
+	The output buffer is assured to be NULL-terminated.
+
+Examples:
+
+Using "es#" with auto-allocation:
+
+    static PyObject *
+    test_parser(PyObject *self,
+		PyObject *args)
+    {
+	PyObject *str;
+	const char *encoding = "latin-1";
+	char *buffer = NULL;
+	int buffer_len = 0;
+
+	if (!PyArg_ParseTuple(args, "es#:test_parser",
+			      encoding, &buffer, &buffer_len))
+	    return NULL;
+	if (!buffer) {
+	    PyErr_SetString(PyExc_SystemError,
+			    "buffer is NULL");
+	    return NULL;
+	}
+	str = PyString_FromStringAndSize(buffer, buffer_len);
+	free(buffer);
+	return str;
+    }
+
+Using "es" with auto-allocation returning a NULL-terminated string:    
+    
+    static PyObject *
+    test_parser(PyObject *self,
+		PyObject *args)
+    {
+	PyObject *str;
+	const char *encoding = "latin-1";
+	char *buffer = NULL;
+
+	if (!PyArg_ParseTuple(args, "es:test_parser",
+			      encoding, &buffer))
+	    return NULL;
+	if (!buffer) {
+	    PyErr_SetString(PyExc_SystemError,
+			    "buffer is NULL");
+	    return NULL;
+	}
+	str = PyString_FromString(buffer);
+	free(buffer);
+	return str;
+    }
+
+Using "es#" with a pre-allocated buffer:
+    
+    static PyObject *
+    test_parser(PyObject *self,
+		PyObject *args)
+    {
+	PyObject *str;
+	const char *encoding = "latin-1";
+	char _buffer[10];
+	char *buffer = _buffer;
+	int buffer_len = sizeof(_buffer);
+
+	if (!PyArg_ParseTuple(args, "es#:test_parser",
+			      encoding, &buffer, &buffer_len))
+	    return NULL;
+	if (!buffer) {
+	    PyErr_SetString(PyExc_SystemError,
+			    "buffer is NULL");
+	    return NULL;
+	}
+	str = PyString_FromStringAndSize(buffer, buffer_len);
+	return str;
+    }
 
 
 File/Stream Output:
@@ -837,6 +942,7 @@ Encodings:
 
 History of this Proposal:
 -------------------------
+1.3: Added new "es" and "es#" parser markers
 1.2: Removed POD about codecs.open()
 1.1: Added note about comparisons and hash values. Added note about
      case mapping algorithms. Changed stream codecs .read() and
