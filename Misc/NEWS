@@ -12,6 +12,8 @@ What's New in Python 2.3 alpha 2?
 Core and builtins
 -----------------
 
+- raw_input can now return Unicode objects.
+
 - List objects' sort() method now accepts None as the comparison function.
   Passing None is semantically identical to calling sort() with no
   arguments.
