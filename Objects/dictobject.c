@@ -880,7 +880,20 @@ mapping_has_key(mp, args)
 	return newintobject(ok);
 }
 
+static object *
+mapping_clear(mp, args)
+	register mappingobject *mp;
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+	mappingclear((object *)mp);
+	INCREF(None);
+	return None;
+}
+
 static struct methodlist mapp_methods[] = {
+	{"clear",	(method)mapping_clear},
 	{"has_key",	(method)mapping_has_key},
 	{"items",	(method)mapping_items},
 	{"keys",	(method)mapping_keys},
