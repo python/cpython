@@ -272,5 +272,12 @@ rotor rotormodule.c		# enigma-inspired encryption
 #gdbm gdbmmodule.c -I/usr/local/include -L/usr/local/lib -lgdbm
 
 
+# Andy Bensky's "environment" module (contains putenv())
+#environment environment.c
+
+# David Wayne Williams' soundex module
+#soundex soundex.c
+
+
 # Example -- included for reference only:
 # xx xxmodule.c
