@@ -470,7 +470,7 @@ magnitude (as a float) or \code{z.real} to get its real part.
 \begin{verbatim}
 >>> a=1.5+0.5j
 >>> float(a)
-Traceback (innermost last):
+Traceback (most recent call last):
   File "<stdin>", line 1, in ?
 TypeError: can't convert complex to float; use e.g. abs(z)
 >>> a.real
@@ -617,11 +617,11 @@ indexed position in the string results in an error:
 
 \begin{verbatim}
 >>> word[0] = 'x'
-Traceback (innermost last):
+Traceback (most recent call last):
   File "<stdin>", line 1, in ?
 TypeError: object doesn't support item assignment
 >>> word[:-1] = 'Splat'
-Traceback (innermost last):
+Traceback (most recent call last):
   File "<stdin>", line 1, in ?
 TypeError: object doesn't support slice assignment
 \end{verbatim}
@@ -699,7 +699,7 @@ for single-element (non-slice) indices:
 >>> word[-100:]
 'HelpA'
 >>> word[-10]    # error
-Traceback (innermost last):
+Traceback (most recent call last):
   File "<stdin>", line 1
 IndexError: string index out of range
 \end{verbatim}
@@ -1432,7 +1432,7 @@ Here's an example that fails due to this restriction:
 ...     pass
 ... 
 >>> function(0, a=0)
-Traceback (innermost last):
+Traceback (most recent call last):
   File "<stdin>", line 1, in ?
 TypeError: keyword parameter redefined
 \end{verbatim}
@@ -2852,7 +2852,7 @@ free up any system resources taken up by the open file.  After calling
 \begin{verbatim}
 >>> f.close()
 >>> f.read()
-Traceback (innermost last):
+Traceback (most recent call last):
   File "<stdin>", line 1, in ?
 ValueError: I/O operation on closed file
 \end{verbatim}
@@ -2950,15 +2950,15 @@ however, and result in error messages as shown here:
 
 \begin{verbatim}
 >>> 10 * (1/0)
-Traceback (innermost last):
+Traceback (most recent call last):
   File "<stdin>", line 1
 ZeroDivisionError: integer division or modulo
 >>> 4 + spam*3
-Traceback (innermost last):
+Traceback (most recent call last):
   File "<stdin>", line 1
 NameError: spam
 >>> '2' + 2
-Traceback (innermost last):
+Traceback (most recent call last):
   File "<stdin>", line 1
 TypeError: illegal argument type for built-in operation
 \end{verbatim}
@@ -3133,7 +3133,7 @@ For example:
 
 \begin{verbatim}
 >>> raise NameError, 'HiThere'
-Traceback (innermost last):
+Traceback (most recent call last):
   File "<stdin>", line 1
 NameError: HiThere
 \end{verbatim}
@@ -3162,7 +3162,7 @@ variable or creating a new exception class.  For example:
 ... 
 My exception occurred, value: 4
 >>> raise MyError, 1
-Traceback (innermost last):
+Traceback (most recent call last):
   File "<stdin>", line 1
 __main__.MyError: 1
 \end{verbatim}
@@ -3187,7 +3187,7 @@ circumstances.  For example:
 ...     print 'Goodbye, world!'
 ... 
 Goodbye, world!
-Traceback (innermost last):
+Traceback (most recent call last):
   File "<stdin>", line 2
 KeyboardInterrupt
 \end{verbatim}
