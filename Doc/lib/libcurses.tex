@@ -1,8 +1,9 @@
 \section{\module{curses} ---
-         Terminal independent console handling}
+         Screen painting and input handling for character-cell terminals}
 
 \declaremodule{extension}{curses}
 \sectionauthor{Moshe Zadka}{mzadka@geocities.com}
+\sectionauthor{Eric Raymond}{esr@thyrsus.com}
 \modulesynopsis{An interface to the curses library.}
 
 The \module{curses} module provides an interface to the curses \UNIX{}
@@ -10,14 +11,17 @@ library, the de-facto standard for portable advanced terminal
 handling.
 
 While curses is most widely used in the \UNIX{} environment, versions
-are available for DOS, OS/2, and possibly other systems as well.  The
-extension module has not been tested with all available versions of
-curses.
+are available for DOS, OS/2, and possibly other systems as well.  This
+extension module is designed to match the API of ncurses, an
+open-source curses library hosted on Linux and the BSD variants of
+Unix.
 
 \begin{seealso}
   \seemodule{curses.ascii}{Utilities for working with \ASCII{}
                            characters, regardless of your locale
                            settings.}
+  \seemodule{curses.textbox}{Editable text widget for curses supporting 
+			   Emacs-like bindings.}
   \seetext{Tutorial material on using curses with Python is available
            on the Python Web site as Andrew Kuchling's
 \citetitle[http://www.python.org/doc/howto/curses/curses.html]{Curses
@@ -40,11 +44,15 @@ Whenever \var{attr} is optional, it defaults to \constant{A_NORMAL}.
 The module \module{curses} defines the following functions:
 
 \begin{funcdesc}{baudrate}{}
-Returns the output speed of the terminal in bits per second.
+Returns the output speed of the terminal in bits per second.  On
+software terminal emulators it will have a fixed high value.
+Included for historical reasons; in former times, it was used to 
+write output loops for time delays and occasionally to change
+interfaces depending on the line speed.
 \end{funcdesc}
 
 \begin{funcdesc}{beep}{}
-Emit a short sound.
+Emit a short attention sound.
 \end{funcdesc}
 
 \begin{funcdesc}{can_change_color}{}
@@ -53,7 +61,12 @@ the colors displayed by the terminal.
 \end{funcdesc}
 
 \begin{funcdesc}{cbreak}{}
-Enter cbreak mode.
+Enter cbreak mode.  In cbreak mode (sometimes called ``rare'' mode)
+normal tty line buffering is turned off and characters are available
+to be read one by one.  However, unlike raw mode, special characters
+(interrupt, quit, suspend, and flow control) retain their effects on
+the tty driver and calling program.  Calling first \function{raw()}
+then \function{cbreak()} leaves the terminal in cbreak mode.
 \end{funcdesc}
 
 \begin{funcdesc}{color_content}{color_number}
@@ -75,7 +88,8 @@ color.  This attribute value can be combined with
 Sets the cursor state.  \var{visibility} can be set to 0, 1, or 2, for
 invisible, normal, or very visible.  If the terminal supports the
 visibility requested, the previous cursor state is returned;
-otherwise, an exception is raised.
+otherwise, an exception is raised.  On many terminals, the ``visible''
+mode is an underline cursor and the ``very visible'' mode is a block cursor.
 \end{funcdesc}
 
 \begin{funcdesc}{def_prog_mode}{}
@@ -98,11 +112,24 @@ Inserts an \var{ms} millisecond pause in output.
 \end{funcdesc}
 
 \begin{funcdesc}{doupdate}{}
-Update the screen.
+Update the physical screen.  The curses library keeps two data
+structures, one representing the current physical screen contents
+and a virtual screen representing the desired next state.  The
+\function{doupdate()} ground updates the physical screen to match the
+virtual screen.
+
+The virtual screen may be updated by a \method{noutrefresh()} call
+after write operations such as \method{addstr()} have been performed
+on a window.  The normal \method{refresh()} call is simply
+\method{noutrefresh()} followed by \function{doupdate()}; if you have
+to update multiple windows, you can speed performance and perhaps
+reduce screen flicker by issuing \method{noutrefresh()} calls on
+all windows, followed by a single \function{doupdate()}.
 \end{funcdesc}
 
 \begin{funcdesc}{echo}{}
-Enter echo mode.
+Enter echo mode.  In echo mode, each character input is echoed to the
+screen as it is entered.  
 \end{funcdesc}
 
 \begin{funcdesc}{endwin}{}
@@ -110,24 +137,30 @@ De-initialize the library, and return terminal to normal status.
 \end{funcdesc}
 
 \begin{funcdesc}{erasechar}{}
-Returns the user's current erase character.
+Returns the user's current erase character.  Under Unix operating
+systems this is a property of the controlling tty of the curses
+program, and is not set by the curses library itself.
 \end{funcdesc}
 
 \begin{funcdesc}{filter}{}
-The \function{filter()} routine, if used, must be called before 
-\function{initscr()} is  called.  
-
-The effect is that, during those calls, LINES is set to 1; the
-capabilities clear, cup, cud, cud1, cuu1, cuu, vpa are disabled; and
-the home string is set to the value of cr.  
+The \function{filter()} routine, if used, must be called before
+\function{initscr()} is  called.  The effect is that, during those
+calls, LINES is set to 1; the capabilities clear, cup, cud, cud1,
+cuu1, cuu, vpa are disabled; and the home string is set to the value of cr.
+The effect is that the cursor is confined to the current line, and so
+are screen updates.  This may be used for enabling cgaracter-at-a-time 
+line editing without touching the rest of the screen.
 \end{funcdesc}
 
 \begin{funcdesc}{flash}{}
-Flash the screen.
+Flash the screen.  That is, change it to reverse-video and then change
+it back in a short interval.  Some people prefer such as `visible bell'
+to the audible attention signal produced by \function{beep()}.
 \end{funcdesc}
 
 \begin{funcdesc}{flushinp}{}
-Flush all input buffers.
+Flush all input buffers.  This throws away any  typeahead  that  has
+been typed by the user and has not yet been processed by the program.
 \end{funcdesc}
 
 \begin{funcdesc}{getmouse}{}
@@ -163,19 +196,21 @@ new window using that data, returning the new window object.
 \end{funcdesc}
 
 \begin{funcdesc}{has_colors}{}
-Returns true if the terminal can manipulate colors; otherwise, it
+Returns true if the terminal can display colors; otherwise, it
 returns false. 
 \end{funcdesc}
 
 \begin{funcdesc}{has_ic}{}
 Returns true if the terminal has insert- and delete- character
-capabilities.
+capabilities.  This function is included for historical reasons only,
+as all modern software terminal emulators have such capabilities.
 \end{funcdesc}
 
 \begin{funcdesc}{has_il}{}
 Returns true if the terminal has insert- and
 delete-line  capabilities,  or  can  simulate  them  using
-scrolling regions. 
+scrolling regions. This function is included for historical reasons only,
+as all modern software terminal emulators have such capabilities.
 \end{funcdesc}
 
 \begin{funcdesc}{has_key}{ch}
@@ -188,7 +223,7 @@ Used for half-delay mode, which is similar to cbreak mode in that
 characters typed by the user are immediately available to the program.
 However, after blocking for \var{tenths} tenths of seconds, an
 exception is raised if nothing has been typed.  The value of
-\var{tenths} must be a number between 1 and 255.  Use nocbreak to
+\var{tenths} must be a number between 1 and 255.  Use \function{nocbreak()} to
 leave half-delay mode.
 \end{funcdesc}
 
@@ -199,7 +234,8 @@ green, and blue components).  The value of \var{color_number} must be
 between 0 and COLORS.  Each of \var{r}, \var{g}, \var{b}, must be a
 value between 0 and 1000.  When \function{init_color()} is used, all
 occurrences of that color on the screen immediately change to the new
-definition.
+definition.  This function is a no-op on most terminals; it is active
+only if \function{can_change_color()} returns 1.
 \end{funcdesc}
 
 \begin{funcdesc}{init_pair}{pair_number, fg, bg}
@@ -219,26 +255,34 @@ the whole screen.
 \end{funcdesc}
 
 \begin{funcdesc}{isendwin}{}
-Returns true if \function{endwin()} has been called.
+Returns true if \function{endwin()} has been called (that is, the 
+curses library has been deinitialized).
 \end{funcdesc}
 
 \begin{funcdesc}{keyname}{k}
-Return the name of the key numbered \var{k}.
+Return the name of the key numbered \var{k}.  The name of a key
+generating printable ASCII character is the key's character.  The name
+of a control-key combination is a two-character string consisting of a
+caret followed by the corresponding printable ASCII character.  The
+name of an alt-key combination (128-255) is a string consisting of the
+prefix `M-' followed by the name of the corresponding ASCII character.
 \end{funcdesc}
 
 \begin{funcdesc}{killchar}{}
-Returns the user's current line kill character.
+Returns the user's current line kill character. Under Unix operating
+systems this is a property of the controlling tty of the curses
+program, and is not set by the curses library itself.
 \end{funcdesc}
 
 \begin{funcdesc}{longname}{}
-Returns a string containing a verbose description of the current
+Returns a string containing the terminfo long name field describing the current
 terminal.  The maximum length of a verbose description is 128
 characters.  It is defined only after the call to
 \function{initscr()}.
 \end{funcdesc}
 
 \begin{funcdesc}{meta}{yes}
-If \var{yes} is 1, allow 8-bit characters. If \var{yes} is 0, 
+If \var{yes} is 1, allow 8-bit characters to be input. If \var{yes} is 0, 
 allow only 7-bit chars.
 \end{funcdesc}
 
@@ -264,19 +308,18 @@ Creates and returns a pointer to a new pad data structure with the
 given number of lines and columns.  A pad is returned as a
 window object.
 
-A pad is like a window,
-except that it is not restricted by the screen size, and is not
-necessarily associated with a particular part of the screen.
-Pads can be used when a large window is needed, and only a part
-of the window will be on the screen at one time.  Automatic
-refreshes of pads (e.g., from scrolling or echoing of
-       input) do not occur.  It is not legal to call wrefresh
-       with a pad as an argument; the routines prefresh or
-       pnoutrefresh should be called instead.  Note that these
-       routines require additional parameters to specify the part of
-       the pad to be displayed and the location on the screen to be
-       used for the display.
-
+A pad is like a window, except that it is not restricted by the screen
+size, and is not necessarily associated with a particular part of the
+screen.  Pads can be used when a large window is needed, and only a
+part of the window will be on the screen at one time.  Automatic
+refreshes of pads (e.g., from scrolling or echoing of input) do not
+occur.  The \method{refresh()} and \method{noutrefresh()} methods of a
+pad require 6 arguments to specify the part of the pad to be
+displayed and the location on the screen to be used for the display.
+The arguments are pminrow, pmincol, sminrow, smincol, smaxrow,
+smaxcol; the p arguments refer to the upper left corner of the the pad
+region to be displayed and the s arguments define a clipping box on
+the screen within which the pad region is to be displayed.
 \end{funcdesc}
 
 \begin{funcdesc}{newwin}{\optional{nlines, ncols,} begin_y, begin_x}
@@ -289,32 +332,40 @@ specified position to the lower right corner of the screen.
 \end{funcdesc}
 
 \begin{funcdesc}{nl}{}
-Enter nl mode.
+Enter newline mode.  This mode translates the return key into newline
+on input, and translates newline into return and line-feed on output.
+Newline mode is initially on.
 \end{funcdesc}
 
 \begin{funcdesc}{nocbreak}{}
-Leave cbreak mode.
+Leave cbreak mode.  Return to normal ``cooked'' mode with line buffering.
 \end{funcdesc}
 
 \begin{funcdesc}{noecho}{}
-Leave echo mode.
+Leave echo mode.  Echoing of input characters is turned off,
 \end{funcdesc}
 
 \begin{funcdesc}{nonl}{}
-Leave nl mode.
+Leave newline mode.  Disable translation of return into newline on
+input, and disable low-level translation of newline into
+newline/return on output (but this does not change the behavior of
+addch('\n') which always does the equivalent of return and line feed
+on the virtual screen).  With translation off, curses can sometimes speed
+up vertical motion a little; also, it will be able to detect the
+return key on input
 \end{funcdesc}
 
 \begin{funcdesc}{noqiflush}{}
-       When the noqiflush routine is used, normal flush of input and
-       output queues associated with the INTR, QUIT and SUSP
-       characters will not be done.  You may want to call
-       \function{noqiflush()} in a signal handler if you want output
-       to continue as though the interrupt had not occurred, after the
-       handler exits.
+When the noqiflush routine is used, normal flush of input and
+output queues associated with the INTR, QUIT and SUSP
+characters will not be done.  You may want to call
+\function{noqiflush()} in a signal handler if you want output
+to continue as though the interrupt had not occurred, after the
+handler exits.
 \end{funcdesc}
 
 \begin{funcdesc}{noraw}{}
-Leave raw mode.
+Leave raw mode. Return to normal ``cooked'' mode with line buffering.
 \end{funcdesc}
 
 \begin{funcdesc}{pair_content}{pair_number}
@@ -329,8 +380,9 @@ Returns the number of the color-pair set by the attribute value \var{attr}.
 \end{funcdesc}
 
 \begin{funcdesc}{putp}{string}
-Equivalent to \code{tputs(str, 1, putchar)}.  Note that the output of putp always
-goes to standard output.
+Equivalent to \code{tputs(str, 1, putchar)}; emits the value of a
+specified terminfo capability for the current terminal.  Note that the
+output of putp always goes to standard output.
 \end{funcdesc}
 
 \begin{funcdesc}{qiflush}{ \optional{flag} }
@@ -341,7 +393,10 @@ read.
 \end{funcdesc}
 
 \begin{funcdesc}{raw}{}
-Enter raw mode.
+Enter raw mode.  In raw mode, normal line buffering and 
+processing of interrupt, quit, suspend, and flow control keys are
+turned off; characters are presented to curses input functions one
+by one.
 \end{funcdesc}
 
 \begin{funcdesc}{reset_prog_mode}{}
@@ -433,6 +488,7 @@ following methods:
 \strong{Note:} A \emph{character} means a C character (i.e., an
 \ASCII{} code), rather then a Python character (a string of length 1).
 (This note is true whenever the documentation mentions a character.)
+The builtin \function{ord()} is handy for conveying strings to codes.
 
 Paint character \var{ch} at \code{(\var{y}, \var{x})} with attributes
 \var{attr}, overwriting any character previously painter at that
@@ -452,15 +508,18 @@ Paint the string \var{str} at \code{(\var{y}, \var{x})} with attributes
 \end{methoddesc}
 
 \begin{methoddesc}{attroff}{attr}
-Turn off attribute \var{attr}.
+Remove attribute \var{attr} from the ``background'' set applied to all
+writes to the current window.
 \end{methoddesc}
 
 \begin{methoddesc}{attron}{attr}
-Turn on attribute \var{attr}.
+Add attribute \var{attr} from the ``background'' set applied to all
+writes to the current window.
 \end{methoddesc}
 
 \begin{methoddesc}{attrset}{attr}
-Set the attributes to \var{attr}.
+Set the ``background'' set of attributes to \var{attr}.  This set is
+initially 0 (no attributes).
 \end{methoddesc}
 
 \begin{methoddesc}{bkgd}{ch\optional{, attr}}
@@ -520,17 +579,17 @@ corner characters are always used by this function.
 \end{methoddesc}
 
 \begin{methoddesc}{clear}{}
-Like \method{erase()}, but also causes the whole screen to be repainted
+Like \method{erase()}, but also causes the whole window to be repainted
 upon next call to \method{refresh()}.
 \end{methoddesc}
 
 \begin{methoddesc}{clearok}{yes}
 If \var{yes} is 1, the next call to \method{refresh()}
-will clear the screen completely.
+will clear the window completely.
 \end{methoddesc}
 
 \begin{methoddesc}{clrtobot}{}
-Erase from cursor to the end of the screen: all lines below the cursor
+Erase from cursor to the end of the window: all lines below the cursor
 are deleted, and then the equivalent of \method{clrtoeol()} is performed.
 \end{methoddesc}
 
@@ -562,7 +621,7 @@ derived window.
 
 \begin{methoddesc}{echochar}{ch\optional{, attr}}
 Add character \var{ch} with attribute \var{attr}, and immediately 
-call \method{refresh}.
+call \method{refresh} on the window.
 \end{methoddesc}
 
 \begin{methoddesc}{enclose}{y, x}
@@ -611,7 +670,8 @@ Read a string from the user, with primitive line editing capacity.
 \end{methoddesc}
 
 \begin{methoddesc}{getyx}{}
-Return a tuple \code{(\var{y}, \var{x})} of current cursor position.
+Return a tuple \code{(\var{y}, \var{x})} of current cursor position 
+relative to the window's upper-left corner.
 \end{methoddesc}
 
 \begin{methoddesc}{hline}{\optional{y, x,} ch, n}
@@ -712,13 +772,12 @@ stream.
 \end{methoddesc}
 
 \begin{methoddesc}{leaveok}{yes}
-If \var{yes} is 1,
-cursor is left where it is, instead of being at ``cursor position.''
-This reduces cursor movement where possible. If possible it will be made
-invisible.
+If \var{yes} is 1, cursor is left where it is on update, instead of
+being at ``cursor position.''  This reduces cursor movement where
+possible. If possible the cursor will be made invisible.
 
-If \var{yes} is 0, cursor will always be at
-``cursor position'' after an update.
+If \var{yes} is 0, cursor will always be at ``cursor position'' after
+an update.
 \end{methoddesc}
 
 \begin{methoddesc}{move}{new_y, new_x}
@@ -792,13 +851,13 @@ Scroll the screen upward by \var{lines} lines.
 
 \begin{methoddesc}{scrollok}{flag}
 Controls what happens when the cursor of a window is moved off the
-       edge of the window or scrolling region, either as a result of a
-       newline action on the bottom line, or typing the last character
-       of the last line.  If \var{flag} is false, the cursor is left
-       on the bottom line.  If \var{flag} is true, the window is
-       scrolled up one line.  Note that in order to get the physical
-       scrolling effect on the terminal, it is also necessary to call
-       \method{idlok()}.
+edge of the window or scrolling region, either as a result of a
+newline action on the bottom line, or typing the last character
+of the last line.  If \var{flag} is false, the cursor is left
+on the bottom line.  If \var{flag} is true, the window is
+scrolled up one line.  Note that in order to get the physical
+scrolling effect on the terminal, it is also necessary to call
+\method{idlok()}.
 \end{methoddesc}
 
 \begin{methoddesc}{setscrreg}{top, bottom}
@@ -807,7 +866,8 @@ scrolling actions will take place in this region.
 \end{methoddesc}
 
 \begin{methoddesc}{standend}{}
-Turn off all attributes.
+Turn off the standout attribute.  On some terminals this has the
+side effect of turning off all attributes.
 \end{methoddesc}
 
 \begin{methoddesc}{standout}{}
@@ -1004,34 +1064,35 @@ been called.
 
 \begin{tableii}{c|l}{code}{ACS code}{Meaning}
   \lineii{ACS_BBSS}{}
-  \lineii{ACS_BLOCK}{}
-  \lineii{ACS_BOARD}{}
+  \lineii{ACS_BLOCK}{solid square block}
+  \lineii{ACS_BOARD}{board of squares}
   \lineii{ACS_BSBS}{}
   \lineii{ACS_BSSB}{}
   \lineii{ACS_BSSS}{}
-  \lineii{ACS_BTEE}{}
-  \lineii{ACS_BULLET}{}
-  \lineii{ACS_CKBOARD}{}
-  \lineii{ACS_DARROW}{}
-  \lineii{ACS_DEGREE}{}
-  \lineii{ACS_DIAMOND}{}
-  \lineii{ACS_GEQUAL}{ (Not available with SGI curses)}
-  \lineii{ACS_HLINE}{}
-  \lineii{ACS_LANTERN}{}
-  \lineii{ACS_LARROW}{}
-  \lineii{ACS_LEQUAL}{ (Not available with SGI curses)}
-  \lineii{ACS_LLCORNER}{}
-  \lineii{ACS_LRCORNER}{}
-  \lineii{ACS_LTEE}{}
-  \lineii{ACS_NEQUAL}{ (Not available with SGI curses)}
-  \lineii{ACS_PI}{ (Not available with SGI curses)}
-  \lineii{ACS_PLMINUS}{}
-  \lineii{ACS_PLUS}{}
-  \lineii{ACS_RARROW}{}
-  \lineii{ACS_RTEE}{}
-  \lineii{ACS_S1}{}
-  \lineii{ACS_S3}{ (Not available with SGI curses)}
-  \lineii{ACS_S9}{}
+  \lineii{ACS_BTEE}{bottom tee}
+  \lineii{ACS_BULLET}{bullet}
+  \lineii{ACS_CKBOARD}{checker board (stipple)}
+  \lineii{ACS_DARROW}{arrow pointing down}
+  \lineii{ACS_DEGREE}{degree symbol}
+  \lineii{ACS_DIAMOND}{diamond}
+  \lineii{ACS_GEQUAL}{greater-than-or-equal-to}
+  \lineii{ACS_HLINE}{horizontal line}
+  \lineii{ACS_LANTERN}{lantern symbol}
+  \lineii{ACS_LARROW}{left arrow}
+  \lineii{ACS_LEQUAL}{less-than-or-equal-to}
+  \lineii{ACS_LLCORNER}{lower left-hand corner}
+  \lineii{ACS_LRCORNER}{lower right-hand corner}
+  \lineii{ACS_LTEE}{left tee}
+  \lineii{ACS_NEQUAL}{not-equal sign}
+  \lineii{ACS_PI}{letter pi}
+  \lineii{ACS_PLMINUS}{plus-or-minus sign}
+  \lineii{ACS_PLUS}{plus sign}
+  \lineii{ACS_RARROW}{right arrow}
+  \lineii{ACS_RTEE}{right tee}
+  \lineii{ACS_S1}{scan line 1}
+  \lineii{ACS_S3}{scan line 3}
+  \lineii{ACS_S7}{scan line 7}
+  \lineii{ACS_S9}{scan line 9}
   \lineii{ACS_SBBS}{}
   \lineii{ACS_SBSB}{}
   \lineii{ACS_SBSS}{}
@@ -1039,12 +1100,12 @@ been called.
   \lineii{ACS_SSBS}{}
   \lineii{ACS_SSSB}{}
   \lineii{ACS_SSSS}{}
-  \lineii{ACS_STERLING}{ (Not available with SGI curses)}
-  \lineii{ACS_TTEE}{}
-  \lineii{ACS_UARROW}{}
-  \lineii{ACS_ULCORNER}{}
-  \lineii{ACS_URCORNER}{}
-  \lineii{ACS_VLINE}{}
+  \lineii{ACS_STERLING}{pound sterling}
+  \lineii{ACS_TTEE}{top tee}
+  \lineii{ACS_UARROW}{up arrow}
+  \lineii{ACS_ULCORNER}{upper left corner}
+  \lineii{ACS_URCORNER}{upper right corner}
+  \lineii{ACS_VLINE}{vertical line}
 \end{tableii}
 
 The following table lists the predefined colors:
