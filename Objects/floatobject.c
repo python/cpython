@@ -960,7 +960,7 @@ _PyFloat_Pack4(double x, unsigned char *p, int le)
 	}
 
 	f *= 8388608.0; /* 2**23 */
-	fbits = (long) floor(f + 0.5); /* Round */
+	fbits = (unsigned int)(f + 0.5); /* Round */
 	assert(fbits <= 8388608);
 	if (fbits >> 23) {
 		/* The carry propagated out of a string of 23 1 bits. */
