@@ -40,6 +40,10 @@ os.chmod(TESTFN_ENCODED, 0777)
 os.chmod(TESTFN_UNICODE, 0777)
 
 # Test rename
+try:
+    os.unlink(TESTFN_ENCODED + ".new")
+except os.error:
+    pass
 os.rename(TESTFN_ENCODED, TESTFN_ENCODED + ".new")
 os.rename(TESTFN_UNICODE+".new", TESTFN_ENCODED)
 

@@ -367,6 +367,15 @@ posix_error_with_filename(char* name)
 	return PyErr_SetFromErrnoWithFilename(PyExc_OSError, name);
 }
 
+#ifdef Py_WIN_WIDE_FILENAMES
+static PyObject *
+posix_error_with_unicode_filename(Py_UNICODE* name)
+{
+	return PyErr_SetFromErrnoWithUnicodeFilename(PyExc_OSError, name);
+}
+#endif /* Py_WIN_WIDE_FILENAMES */
+
+
 static PyObject *
 posix_error_with_allocated_filename(char* name)
 {
@@ -390,6 +399,40 @@ win32_error(char* function, char* filename)
 	else
 		return PyErr_SetFromWindowsErr(errno);
 }
+
+#ifdef Py_WIN_WIDE_FILENAMES
+static PyObject *
+win32_error_unicode(char* function, Py_UNICODE* filename)
+{
+	/* XXX - see win32_error for comments on 'function' */
+	errno = GetLastError();
+	if (filename)
+		return PyErr_SetFromWindowsErrWithUnicodeFilename(errno, filename);
+	else
+		return PyErr_SetFromWindowsErr(errno);
+}
+
+static PyObject *_PyUnicode_FromFileSystemEncodedObject(register PyObject *obj)
+{
+	/* XXX Perhaps we should make this API an alias of
+	   PyObject_Unicode() instead ?! */
+	if (PyUnicode_CheckExact(obj)) {
+		Py_INCREF(obj);
+		return obj;
+	}
+	if (PyUnicode_Check(obj)) {
+		/* For a Unicode subtype that's not a Unicode object,
+		   return a true Unicode object with the same data. */
+	return PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(obj),
+	                             PyUnicode_GET_SIZE(obj));
+	}
+	return PyUnicode_FromEncodedObject(obj, 
+	                                   Py_FileSystemDefaultEncoding, 
+	                                   "strict");
+}
+
+#endif /* Py_WIN_WIDE_FILENAMES */
+
 #endif
 
 #if defined(PYOS_OS2)
@@ -487,11 +530,50 @@ posix_fildes(PyObject *fdobj, int (*func)(int))
 	return Py_None;
 }
 
+#ifdef Py_WIN_WIDE_FILENAMES
+static int 
+unicode_file_names(void)
+{
+	static int canusewide = -1;
+	if (canusewide == -1) {
+		/* As per doc for ::GetVersion(), this is the correct test for 
+		   the Windows NT family. */
+		canusewide = (GetVersion() < 0x80000000) ? 1 : 0;
+	}
+	return canusewide;
+}
+#endif
+  
 static PyObject *
-posix_1str(PyObject *args, char *format, int (*func)(const char*))
+posix_1str(PyObject *args, char *format, int (*func)(const char*),
+	   char *wformat, int (*wfunc)(const Py_UNICODE*))
 {
 	char *path1 = NULL;
 	int res;
+#ifdef Py_WIN_WIDE_FILENAMES
+	if (unicode_file_names()) {
+		PyUnicodeObject *po;
+		if (PyArg_ParseTuple(args, wformat, &po)) {
+			Py_BEGIN_ALLOW_THREADS
+			/*  PyUnicode_AS_UNICODE OK without thread
+			    lock as it is a simple dereference. */
+			res = (*wfunc)(PyUnicode_AS_UNICODE(po));
+			Py_END_ALLOW_THREADS
+			if (res < 0)
+				return posix_error();
+			Py_INCREF(Py_None);
+			return Py_None;
+		}
+		/* Drop the argument parsing error as narrow
+		   strings are also valid. */
+		PyErr_Clear();
+	}
+#else
+	/* Platforms that don't support Unicode filenames
+	   shouldn't be passing these extra params */
+	assert(wformat==NULL && wfunc == NULL);
+#endif
+
 	if (!PyArg_ParseTuple(args, format,
 	                      Py_FileSystemDefaultEncoding, &path1))
 		return NULL;
@@ -506,11 +588,54 @@ posix_1str(PyObject *args, char *format, int (*func)(const char*))
 }
 
 static PyObject *
-posix_2str(PyObject *args, char *format,
-	   int (*func)(const char *, const char *))
+posix_2str(PyObject *args, 
+	   char *format,
+	   int (*func)(const char *, const char *),
+	   char *wformat,
+	   int (*wfunc)(const Py_UNICODE *, const Py_UNICODE *))
 {
 	char *path1 = NULL, *path2 = NULL;
 	int res;
+#ifdef Py_WIN_WIDE_FILENAMES
+	if (unicode_file_names()) {
+		PyObject *po1;
+		PyObject *po2;
+		if (PyArg_ParseTuple(args, wformat, &po1, &po2)) {
+			if (PyUnicode_Check(po1) || PyUnicode_Check(po2)) {
+				PyObject *wpath1;
+				PyObject *wpath2;
+				wpath1 = _PyUnicode_FromFileSystemEncodedObject(po1);
+				wpath2 = _PyUnicode_FromFileSystemEncodedObject(po2);
+				if (!wpath1 || !wpath2) {
+					Py_XDECREF(wpath1);
+					Py_XDECREF(wpath2);
+					return NULL;
+				}
+				Py_BEGIN_ALLOW_THREADS
+				/* PyUnicode_AS_UNICODE OK without thread
+				   lock as it is a simple dereference.  */
+				res = (*wfunc)(PyUnicode_AS_UNICODE(wpath1),
+					       PyUnicode_AS_UNICODE(wpath2));
+				Py_END_ALLOW_THREADS
+				Py_XDECREF(wpath1);
+				Py_XDECREF(wpath2);
+				if (res != 0)
+					return posix_error();
+				Py_INCREF(Py_None);
+				return Py_None;
+			}
+			/* Else flow through as neither is Unicode. */
+		}
+		/* Drop the argument parsing error as narrow
+		   strings are also valid. */
+		PyErr_Clear();
+	}
+#else
+	/* Platforms that don't support Unicode filenames
+	   shouldn't be passing these extra params */
+	assert(wformat==NULL && wfunc == NULL);
+#endif
+
 	if (!PyArg_ParseTuple(args, format,
 	                      Py_FileSystemDefaultEncoding, &path1,
 	                      Py_FileSystemDefaultEncoding, &path2))
@@ -692,8 +817,11 @@ _pystat_fromstructstat(STRUCT_STAT st)
 }
 
 static PyObject *
-posix_do_stat(PyObject *self, PyObject *args, char *format,
-	      int (*statfunc)(const char *, STRUCT_STAT *))
+posix_do_stat(PyObject *self, PyObject *args, 
+	      char *format,
+	      int (*statfunc)(const char *, STRUCT_STAT *),
+	      char *wformat,
+	      int (*wstatfunc)(const Py_UNICODE *, STRUCT_STAT *))
 {
 	STRUCT_STAT st;
 	char *path = NULL;	/* pass this to stat; do not free() it */
@@ -704,6 +832,50 @@ posix_do_stat(PyObject *self, PyObject *args, char *format,
 	int pathlen;
 	char pathcopy[MAX_PATH];
 #endif /* MS_WINDOWS */
+
+
+#ifdef Py_WIN_WIDE_FILENAMES
+	/* If on wide-character-capable OS see if argument
+	   is Unicode and if so use wide API.  */
+	if (unicode_file_names()) {
+		PyUnicodeObject *po;
+		if (PyArg_ParseTuple(args, wformat, &po)) {
+			Py_UNICODE wpath[MAX_PATH+1];
+			pathlen = wcslen(PyUnicode_AS_UNICODE(po));
+			/* the library call can blow up if the file name is too long! */
+			if (pathlen > MAX_PATH) {
+				errno = ENAMETOOLONG;
+				return posix_error();
+			}
+			wcscpy(wpath, PyUnicode_AS_UNICODE(po));
+			/* Remove trailing slash or backslash, unless it's the current
+			   drive root (/ or \) or a specific drive's root (like c:\ or c:/).
+			*/
+			if (pathlen > 0 &&
+				(wpath[pathlen-1]== L'\\' || wpath[pathlen-1] == L'/')) {
+	    			/* It does end with a slash -- exempt the root drive cases. */
+	    			/* XXX UNC root drives should also be exempted? */
+				if (pathlen == 1 || (pathlen == 3 && wpath[1] == L':'))
+	    			/* leave it alone */;
+	    		else {
+					/* nuke the trailing backslash */
+					wpath[pathlen-1] = L'\0';
+				}
+			}
+			Py_BEGIN_ALLOW_THREADS
+				/* PyUnicode_AS_UNICODE result OK without
+				   thread lock as it is a simple dereference. */
+			res = wstatfunc(wpath, &st);
+			Py_END_ALLOW_THREADS
+			if (res != 0)
+				return posix_error_with_unicode_filename(wpath);
+			return _pystat_fromstructstat(st);
+		}
+		/* Drop the argument parsing error as narrow strings
+		   are also valid. */
+		PyErr_Clear();
+	}
+#endif
 
 	if (!PyArg_ParseTuple(args, format,
 	                      Py_FileSystemDefaultEncoding, &path))
@@ -839,10 +1011,12 @@ Change the current working directory to the specified path.");
 static PyObject *
 posix_chdir(PyObject *self, PyObject *args)
 {
-#if defined(PYOS_OS2) && defined(PYCC_GCC)
-	return posix_1str(args, "et:chdir", _chdir2);
+#ifdef MS_WINDOWS
+	return posix_1str(args, "et:chdir", chdir, "U:chdir", _wchdir);
+#elif defined(PYOS_OS2) && defined(PYCC_GCC)
+	return posix_1str(args, "et:chdir", _chdir2, NULL, NULL);
 #else
-	return posix_1str(args, "et:chdir", chdir);
+	return posix_1str(args, "et:chdir", chdir, NULL, NULL);
 #endif
 }
 
@@ -892,7 +1066,7 @@ Change root directory to path.");
 static PyObject *
 posix_chroot(PyObject *self, PyObject *args)
 {
-	return posix_1str(args, "et:chroot", chroot);
+	return posix_1str(args, "et:chroot", chroot, NULL, NULL);
 }
 #endif
 
@@ -1004,6 +1178,43 @@ posix_getcwd(PyObject *self, PyObject *args)
 		return posix_error();
 	return PyString_FromString(buf);
 }
+
+PyDoc_STRVAR(posix_getcwdu__doc__,
+"getcwdu() -> path\n\n\
+Return a unicode string representing the current working directory.");
+
+static PyObject *
+posix_getcwdu(PyObject *self, PyObject *args)
+{
+	char buf[1026];
+	char *res;
+	if (!PyArg_ParseTuple(args, ":getcwd"))
+		return NULL;
+
+#ifdef Py_WIN_WIDE_FILENAMES
+	if (unicode_file_names()) {
+		wchar_t *wres;
+		wchar_t wbuf[1026];
+		Py_BEGIN_ALLOW_THREADS
+		wres = _wgetcwd(wbuf, sizeof wbuf/ sizeof wbuf[0]);
+		Py_END_ALLOW_THREADS
+		if (wres == NULL)
+			return posix_error();
+		return PyUnicode_FromWideChar(wbuf, wcslen(wbuf));
+	}
+#endif
+
+	Py_BEGIN_ALLOW_THREADS
+#if defined(PYOS_OS2) && defined(PYCC_GCC)
+	res = _getcwd2(buf, sizeof buf);
+#else
+	res = getcwd(buf, sizeof buf);
+#endif
+	Py_END_ALLOW_THREADS
+	if (res == NULL)
+		return posix_error();
+	return PyUnicode_Decode(buf, strlen(buf), Py_FileSystemDefaultEncoding,"strict");
+}
 #endif
 
 
@@ -1015,7 +1226,7 @@ Create a hard link to a file.");
 static PyObject *
 posix_link(PyObject *self, PyObject *args)
 {
-	return posix_2str(args, "etet:link", link);
+	return posix_2str(args, "etet:link", link, NULL, NULL);
 }
 #endif /* HAVE_LINK */
 
@@ -1044,6 +1255,66 @@ posix_listdir(PyObject *self, PyObject *args)
 	char *bufptr = namebuf;
 	int len = sizeof(namebuf)/sizeof(namebuf[0]);
 
+#ifdef Py_WIN_WIDE_FILENAMES
+	/* If on wide-character-capable OS see if argument
+	   is Unicode and if so use wide API.  */
+	if (unicode_file_names()) {
+		PyUnicodeObject *po;
+		if (PyArg_ParseTuple(args, "U:listdir", &po)) {
+			WIN32_FIND_DATAW wFileData;
+			Py_UNICODE wnamebuf[MAX_PATH*2+5];
+			Py_UNICODE wch;
+			wcsncpy(wnamebuf, PyUnicode_AS_UNICODE(po), MAX_PATH);
+			wnamebuf[MAX_PATH] = L'\0';
+			len = wcslen(wnamebuf);
+			wch = (len > 0) ? wnamebuf[len-1] : L'\0';
+			if (wch != L'/' && wch != L'\\' && wch != L':')
+				wnamebuf[len++] = L'/';
+			wcscpy(wnamebuf + len, L"*.*");
+			if ((d = PyList_New(0)) == NULL)
+				return NULL;
+			hFindFile = FindFirstFileW(wnamebuf, &wFileData);
+			if (hFindFile == INVALID_HANDLE_VALUE) {
+				errno = GetLastError();
+				if (errno == ERROR_FILE_NOT_FOUND) {
+					return d;
+				}
+				Py_DECREF(d);
+				return win32_error_unicode("FindFirstFileW", wnamebuf);
+			}
+			do {
+				if (wFileData.cFileName[0] == L'.' &&
+					(wFileData.cFileName[1] == L'\0' ||
+					 wFileData.cFileName[1] == L'.' &&
+					 wFileData.cFileName[2] == L'\0'))
+					continue;
+				v = PyUnicode_FromUnicode(wFileData.cFileName, wcslen(wFileData.cFileName));
+				if (v == NULL) {
+					Py_DECREF(d);
+					d = NULL;
+					break;
+				}
+				if (PyList_Append(d, v) != 0) {
+					Py_DECREF(v);
+					Py_DECREF(d);
+					d = NULL;
+					break;
+				}
+				Py_DECREF(v);
+			} while (FindNextFileW(hFindFile, &wFileData) == TRUE);
+
+			if (FindClose(hFindFile) == FALSE) {
+				Py_DECREF(d);
+				return win32_error_unicode("FindClose", wnamebuf);
+			}
+			return d;
+		}
+		/* Drop the argument parsing error as narrow strings
+		   are also valid. */
+		PyErr_Clear();
+	}
+#endif
+
 	if (!PyArg_ParseTuple(args, "et#:listdir",
 	                      Py_FileSystemDefaultEncoding, &bufptr, &len))
 		return NULL;
@@ -1061,7 +1332,8 @@ posix_listdir(PyObject *self, PyObject *args)
 	if (hFindFile == INVALID_HANDLE_VALUE) {
 		errno = GetLastError();
 		if (errno == ERROR_FILE_NOT_FOUND)
-			return PyList_New(0);
+			return d;
+		Py_DECREF(d);
 		return win32_error("FindFirstFile", namebuf);
 	}
 	do {
@@ -1085,8 +1357,10 @@ posix_listdir(PyObject *self, PyObject *args)
 		Py_DECREF(v);
 	} while (FindNextFile(hFindFile, &FileData) == TRUE);
 
-	if (FindClose(hFindFile) == FALSE)
+	if (FindClose(hFindFile) == FALSE) {
+		Py_DECREF(d);
 		return win32_error("FindClose", namebuf);
+	}
 
 	return d;
 
@@ -1213,6 +1487,23 @@ posix__getfullpathname(PyObject *self, PyObject *args)
 	int insize = sizeof(inbuf)/sizeof(inbuf[0]);
 	char outbuf[MAX_PATH*2];
 	char *temp;
+#ifdef Py_WIN_WIDE_FILENAMES
+	if (unicode_file_names()) {
+		PyUnicodeObject *po;
+		if (PyArg_ParseTuple(args, "U|:_getfullpathname", &po)) {
+			Py_UNICODE woutbuf[MAX_PATH*2];
+			Py_UNICODE *wtemp;
+			if (!GetFullPathNameW(PyUnicode_AS_UNICODE(po), 
+						sizeof(woutbuf)/sizeof(woutbuf[0]),
+						 woutbuf, &wtemp))
+				return win32_error("GetFullPathName", "");
+			return PyUnicode_FromUnicode(woutbuf, wcslen(woutbuf));
+		}
+		/* Drop the argument parsing error as narrow strings
+		   are also valid. */
+		PyErr_Clear();
+	}
+#endif
 	if (!PyArg_ParseTuple (args, "et#:_getfullpathname",
 	                       Py_FileSystemDefaultEncoding, &inbufp,
 	                       &insize))
@@ -1234,6 +1525,27 @@ posix_mkdir(PyObject *self, PyObject *args)
 	int res;
 	char *path = NULL;
 	int mode = 0777;
+
+#ifdef Py_WIN_WIDE_FILENAMES
+	if (unicode_file_names()) {
+		PyUnicodeObject *po;
+		if (PyArg_ParseTuple(args, "U|i:mkdir", &po)) {
+			Py_BEGIN_ALLOW_THREADS
+			/* PyUnicode_AS_UNICODE OK without thread lock as
+			   it is a simple dereference. */
+			res = _wmkdir(PyUnicode_AS_UNICODE(po));
+			Py_END_ALLOW_THREADS
+			if (res < 0)
+				return posix_error();
+			Py_INCREF(Py_None);
+			return Py_None;
+		}
+		/* Drop the argument parsing error as narrow strings
+		   are also valid. */
+		PyErr_Clear();
+	}
+#endif
+
 	if (!PyArg_ParseTuple(args, "et|i:mkdir",
 	                      Py_FileSystemDefaultEncoding, &path, &mode))
 		return NULL;
@@ -1302,7 +1614,11 @@ Rename a file or directory.");
 static PyObject *
 posix_rename(PyObject *self, PyObject *args)
 {
-	return posix_2str(args, "etet:rename", rename);
+#ifdef MS_WINDOWS
+	return posix_2str(args, "etet:rename", rename, "OO:rename", _wrename);
+#else
+	return posix_2str(args, "etet:rename", rename, NULL, NULL);
+#endif
 }
 
 
@@ -1313,7 +1629,11 @@ Remove a directory.");
 static PyObject *
 posix_rmdir(PyObject *self, PyObject *args)
 {
-	return posix_1str(args, "et:rmdir", rmdir);
+#ifdef MS_WINDOWS
+	return posix_1str(args, "et:rmdir", rmdir, "U:rmdir", _wrmdir);
+#else
+	return posix_1str(args, "et:rmdir", rmdir, NULL, NULL);
+#endif
 }
 
 
@@ -1324,7 +1644,11 @@ Perform a stat system call on the given path.");
 static PyObject *
 posix_stat(PyObject *self, PyObject *args)
 {
-	return posix_do_stat(self, args, "et:stat", STAT);
+#ifdef MS_WINDOWS
+	return posix_do_stat(self, args, "et:stat", STAT, "U:stat", _wstati64);
+#else
+	return posix_do_stat(self, args, "et:stat", STAT, NULL, NULL);
+#endif
 }
 
 
@@ -1376,7 +1700,11 @@ Remove a file (same as unlink(path)).");
 static PyObject *
 posix_unlink(PyObject *self, PyObject *args)
 {
-	return posix_1str(args, "et:remove", unlink);
+#ifdef MS_WINDOWS
+	return posix_1str(args, "et:remove", unlink, "U:remove", _wunlink);
+#else
+	return posix_1str(args, "et:remove", unlink, NULL, NULL);
+#endif
 }
 
 
@@ -4150,9 +4478,13 @@ static PyObject *
 posix_lstat(PyObject *self, PyObject *args)
 {
 #ifdef HAVE_LSTAT
-	return posix_do_stat(self, args, "et:lstat", lstat);
+	return posix_do_stat(self, args, "et:lstat", lstat, NULL, NULL);
 #else /* !HAVE_LSTAT */
-	return posix_do_stat(self, args, "et:lstat", STAT);
+#ifdef MS_WINDOWS
+	return posix_do_stat(self, args, "et:lstat", STAT, "u:lstat", _wstati64);
+#else
+	return posix_do_stat(self, args, "et:lstat", STAT, NULL, NULL);
+#endif
 #endif /* !HAVE_LSTAT */
 }
 
@@ -4188,7 +4520,7 @@ Create a symbolic link.");
 static PyObject *
 posix_symlink(PyObject *self, PyObject *args)
 {
-	return posix_2str(args, "etet:symlink", symlink);
+	return posix_2str(args, "etet:symlink", symlink, NULL, NULL);
 }
 #endif /* HAVE_SYMLINK */
 
@@ -4369,6 +4701,26 @@ posix_open(PyObject *self, PyObject *args)
 	int flag;
 	int mode = 0777;
 	int fd;
+
+#ifdef MS_WINDOWS
+	if (unicode_file_names()) {
+		PyUnicodeObject *po;
+		if (PyArg_ParseTuple(args, "Ui|i:mkdir", &po, &flag, &mode)) {
+			Py_BEGIN_ALLOW_THREADS
+			/* PyUnicode_AS_UNICODE OK without thread
+			   lock as it is a simple dereference. */
+			fd = _wopen(PyUnicode_AS_UNICODE(po), flag, mode);
+			Py_END_ALLOW_THREADS
+			if (fd < 0)
+				return posix_error();
+			return PyInt_FromLong((long)fd);
+		}
+		/* Drop the argument parsing error as narrow strings
+		   are also valid. */
+		PyErr_Clear();
+	}
+#endif
+
 	if (!PyArg_ParseTuple(args, "eti|i",
 	                      Py_FileSystemDefaultEncoding, &file,
 	                      &flag, &mode))
@@ -6341,6 +6693,7 @@ static PyMethodDef posix_methods[] = {
 #endif
 #ifdef HAVE_GETCWD
 	{"getcwd",	posix_getcwd, METH_VARARGS, posix_getcwd__doc__},
+	{"getcwdu",	posix_getcwdu, METH_VARARGS, posix_getcwdu__doc__},
 #endif
 #ifdef HAVE_LINK
 	{"link",	posix_link, METH_VARARGS, posix_link__doc__},

@@ -15,6 +15,12 @@
 #include <windows.h>
 #endif
 
+#ifdef _MSC_VER
+/* Need GetVersion to see if on NT so safe to use _wfopen */
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif /* _MSC_VER */
+
 #ifdef macintosh
 #ifdef USE_GUSI
 #define HAVE_FTRUNCATE
@@ -102,7 +108,7 @@ dircheck(PyFileObject* f)
 
 static PyObject *
 fill_file_fields(PyFileObject *f, FILE *fp, char *name, char *mode,
-		 int (*close)(FILE *))
+		 int (*close)(FILE *), PyObject *wname)
 {
 	assert(f != NULL);
 	assert(PyFile_Check(f));
@@ -110,7 +116,10 @@ fill_file_fields(PyFileObject *f, FILE *fp, char *name, char *mode,
 
 	Py_DECREF(f->f_name);
 	Py_DECREF(f->f_mode);
-	f->f_name = PyString_FromString(name);
+	if (wname)
+		f->f_name = PyUnicode_FromObject(wname);
+	else
+		f->f_name = PyString_FromString(name);
 	f->f_mode = PyString_FromString(mode);
 
 	f->f_close = close;
@@ -135,7 +144,12 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 {
 	assert(f != NULL);
 	assert(PyFile_Check(f));
+#ifdef MS_WINDOWS
+	/* windows ignores the passed name in order to support Unicode */
+	assert(f->f_name != NULL);
+#else
 	assert(name != NULL);
+#endif
 	assert(mode != NULL);
 	assert(f->f_fp == NULL);
 
@@ -156,7 +170,6 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 	else
 #endif
 	{
-		Py_BEGIN_ALLOW_THREADS
 #ifdef WITH_UNIVERSAL_NEWLINES
 		if (strcmp(mode, "U") == 0 || strcmp(mode, "rU") == 0)
 			mode = "rb";
@@ -168,8 +181,26 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 		if (strcmp(mode, "U") == 0 || strcmp(mode, "rU") == 0)
 			mode = "r";
 #endif
-		f->f_fp = fopen(name, mode);
-		Py_END_ALLOW_THREADS
+#ifdef MS_WINDOWS
+		if (PyUnicode_Check(f->f_name)) {
+			PyObject *wmode; 
+			wmode = PyUnicode_DecodeASCII(mode, strlen(mode), NULL); 
+			if (f->f_name && wmode) {
+				Py_BEGIN_ALLOW_THREADS
+				/* PyUnicode_AS_UNICODE OK without thread
+				   lock as it is a simple dereference. */
+				f->f_fp = _wfopen(PyUnicode_AS_UNICODE(f->f_name),
+						  PyUnicode_AS_UNICODE(wmode));
+				Py_END_ALLOW_THREADS
+			}
+			Py_XDECREF(wmode);
+		}
+#endif
+		if (NULL == f->f_fp && NULL != name) {
+			Py_BEGIN_ALLOW_THREADS
+			f->f_fp = fopen(name, mode);
+			Py_END_ALLOW_THREADS
+		}
 	}
 	if (f->f_fp == NULL) {
 #ifdef NO_FOPEN_ERRNO
@@ -201,7 +232,11 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 			PyErr_Format(PyExc_IOError, "invalid mode: %s",
 				     mode);
 		else
+#ifdef MS_WINDOWS
+			PyErr_SetFromErrnoWithFilenameObject(PyExc_IOError, f->f_name);
+#else
 			PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
+#endif /* MS_WINDOWS */
 		f = NULL;
 	}
 	if (f != NULL)
@@ -215,7 +250,7 @@ PyFile_FromFile(FILE *fp, char *name, char *mode, int (*close)(FILE *))
 	PyFileObject *f = (PyFileObject *)PyFile_Type.tp_new(&PyFile_Type,
 							     NULL, NULL);
 	if (f != NULL) {
-		if (fill_file_fields(f, fp, name, mode, close) == NULL) {
+		if (fill_file_fields(f, fp, name, mode, close, NULL) == NULL) {
 			Py_DECREF(f);
 			f = NULL;
 		}
@@ -293,11 +328,24 @@ file_dealloc(PyFileObject *f)
 static PyObject *
 file_repr(PyFileObject *f)
 {
-	return PyString_FromFormat("<%s file '%s', mode '%s' at %p>",
+	if (PyUnicode_Check(f->f_name)) {
+		PyObject *ret = NULL;
+		PyObject *name;
+		name = PyUnicode_AsUnicodeEscapeString(f->f_name);
+		ret = PyString_FromFormat("<%s file u'%s', mode '%s' at %p>",
+				   f->f_fp == NULL ? "closed" : "open",
+				   PyString_AsString(name),
+				   PyString_AsString(f->f_mode),
+				   f);
+		Py_XDECREF(name);
+		return ret;
+	} else {
+		return PyString_FromFormat("<%s file '%s', mode '%s' at %p>",
 				   f->f_fp == NULL ? "closed" : "open",
 				   PyString_AsString(f->f_name),
 				   PyString_AsString(f->f_mode),
 				   f);
+	}
 }
 
 static PyObject *
@@ -1766,6 +1814,7 @@ file_init(PyObject *self, PyObject *args, PyObject *kwds)
 	char *name = NULL;
 	char *mode = "r";
 	int bufsize = -1;
+	int wideargument = 0;
 
 	assert(PyFile_Check(self));
 	if (foself->f_fp != NULL) {
@@ -1776,12 +1825,33 @@ file_init(PyObject *self, PyObject *args, PyObject *kwds)
 		Py_DECREF(closeresult);
 	}
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "et|si:file", kwlist,
-					 Py_FileSystemDefaultEncoding, &name,
-					 &mode, &bufsize))
-		return -1;
-	if (fill_file_fields(foself, NULL, name, mode, fclose) == NULL)
-		goto Error;
+#ifdef Py_WIN_WIDE_FILENAMES
+	if (GetVersion() < 0x80000000) {    /* On NT, so wide API available */
+		PyObject *po;
+		if (PyArg_ParseTupleAndKeywords(args, kwds, "U|si:file",
+						kwlist, &po, &mode, &bufsize)) {
+			wideargument = 1;
+			if (fill_file_fields(foself, NULL, name, mode,
+					     fclose, po) == NULL)
+				goto Error;
+		} else {
+			/* Drop the argument parsing error as narrow
+			   strings are also valid. */
+			PyErr_Clear();
+		}
+	}
+#endif
+
+	if (!wideargument) {
+		if (!PyArg_ParseTupleAndKeywords(args, kwds, "et|si:file", kwlist,
+						 Py_FileSystemDefaultEncoding,
+						 &name,
+						 &mode, &bufsize))
+			return -1;
+		if (fill_file_fields(foself, NULL, name, mode,
+				     fclose, NULL) == NULL)
+			goto Error;
+	}
 	if (open_the_file(foself, name, mode) == NULL)
 		goto Error;
 	PyFile_SetBufSize(self, bufsize);
