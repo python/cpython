@@ -406,6 +406,13 @@ that it creates (which is unused here).  It aborts with a fatal error
 if the module could not be initialized satisfactorily, so the caller
 doesn't need to check for errors.
 
+\strong{Note:}  Removing entries from \code{sys.modules} or importing
+compiled modules into multiple interpreters within a process (or
+following a \cfunction{fork()} without an intervening
+\cfunction{exec()}) can create problems for some extension modules.
+Extension module authors should exercise caution when initializing
+internal data structures.
+
 
 \section{Compilation and Linkage
          \label{compilation}}
