@@ -76,6 +76,8 @@ def mmdf(f):
 				'Bad line in MMFD mailbox: %s\n' % `line`)
 	return sts
 
+counter = 0 # for generating unique Message-ID headers
+
 def message(f, delimiter = ''):
 	sts = 0
 	# Parse RFC822 header
@@ -93,6 +95,14 @@ def message(f, delimiter = ''):
 	# Copy RFC822 header
 	for line in m.headers:
 		print line,
+	# Invent Message-ID header if none is present
+	if not m.has_key('message-id'):
+		global counter
+		counter = counter + 1
+		msgid = "<%s.%d>" % (hex(t), counter)
+		sys.stderr.write("Adding Message-ID %s (From %s)\n" %
+				 (msgid, email))
+		print "Message-ID:", msgid
 	print
 	# Copy body
 	while 1:
