@@ -1382,12 +1382,13 @@ static PyObject *TimeBaseObj_SetTimeBaseZero(_self, _args)
 {
 	PyObject *_res = NULL;
 	TimeRecord zero;
-	if (!PyArg_ParseTuple(_args, ""))
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      QtTimeRecord_Convert, &zero))
 		return NULL;
 	SetTimeBaseZero(_self->ob_itself,
 	                &zero);
-	_res = Py_BuildValue("O&",
-	                     QtTimeRecord_New, &zero);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -1441,7 +1442,7 @@ static PyMethodDef TimeBaseObj_methods[] = {
 	{"GetTimeBaseStatus", (PyCFunction)TimeBaseObj_GetTimeBaseStatus, 1,
 	 "() -> (long _rv, TimeRecord unpinnedTime)"},
 	{"SetTimeBaseZero", (PyCFunction)TimeBaseObj_SetTimeBaseZero, 1,
-	 "() -> (TimeRecord zero)"},
+	 "(TimeRecord zero) -> None"},
 	{"GetTimeBaseEffectiveRate", (PyCFunction)TimeBaseObj_GetTimeBaseEffectiveRate, 1,
 	 "() -> (Fixed _rv)"},
 	{NULL, NULL, 0}
@@ -7633,7 +7634,8 @@ static PyObject *Qt_ConvertTime(_self, _args)
 	PyObject *_res = NULL;
 	TimeRecord inout;
 	TimeBase newBase;
-	if (!PyArg_ParseTuple(_args, "O&",
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      QtTimeRecord_Convert, &inout,
 	                      TimeBaseObj_Convert, &newBase))
 		return NULL;
 	ConvertTime(&inout,
@@ -7650,7 +7652,8 @@ static PyObject *Qt_ConvertTimeScale(_self, _args)
 	PyObject *_res = NULL;
 	TimeRecord inout;
 	TimeScale newScale;
-	if (!PyArg_ParseTuple(_args, "l",
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      QtTimeRecord_Convert, &inout,
 	                      &newScale))
 		return NULL;
 	ConvertTimeScale(&inout,
@@ -7667,7 +7670,8 @@ static PyObject *Qt_AddTime(_self, _args)
 	PyObject *_res = NULL;
 	TimeRecord dst;
 	TimeRecord src;
-	if (!PyArg_ParseTuple(_args, "O&",
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      QtTimeRecord_Convert, &dst,
 	                      QtTimeRecord_Convert, &src))
 		return NULL;
 	AddTime(&dst,
@@ -7684,7 +7688,8 @@ static PyObject *Qt_SubtractTime(_self, _args)
 	PyObject *_res = NULL;
 	TimeRecord dst;
 	TimeRecord src;
-	if (!PyArg_ParseTuple(_args, "O&",
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      QtTimeRecord_Convert, &dst,
 	                      QtTimeRecord_Convert, &src))
 		return NULL;
 	SubtractTime(&dst,
@@ -7903,13 +7908,13 @@ static PyMethodDef Qt_methods[] = {
 	{"NewTimeBase", (PyCFunction)Qt_NewTimeBase, 1,
 	 "() -> (TimeBase _rv)"},
 	{"ConvertTime", (PyCFunction)Qt_ConvertTime, 1,
-	 "(TimeBase newBase) -> (TimeRecord inout)"},
+	 "(TimeRecord inout, TimeBase newBase) -> (TimeRecord inout)"},
 	{"ConvertTimeScale", (PyCFunction)Qt_ConvertTimeScale, 1,
-	 "(TimeScale newScale) -> (TimeRecord inout)"},
+	 "(TimeRecord inout, TimeScale newScale) -> (TimeRecord inout)"},
 	{"AddTime", (PyCFunction)Qt_AddTime, 1,
-	 "(TimeRecord src) -> (TimeRecord dst)"},
+	 "(TimeRecord dst, TimeRecord src) -> (TimeRecord dst)"},
 	{"SubtractTime", (PyCFunction)Qt_SubtractTime, 1,
-	 "(TimeRecord src) -> (TimeRecord dst)"},
+	 "(TimeRecord dst, TimeRecord src) -> (TimeRecord dst)"},
 	{"MusicMediaGetIndexedTunePlayer", (PyCFunction)Qt_MusicMediaGetIndexedTunePlayer, 1,
 	 "(ComponentInstance ti, long sampleDescIndex) -> (ComponentResult _rv, ComponentInstance tp)"},
 	{"AlignWindow", (PyCFunction)Qt_AlignWindow, 1,
