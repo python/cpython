@@ -53,10 +53,12 @@ static int allocated;
 #define DEBUG_UNCOLLECTABLE	(1<<2) /* print uncollectable objects */
 #define DEBUG_INSTANCES		(1<<3) /* print instances */
 #define DEBUG_OBJECTS		(1<<4) /* print other objects */
+#define DEBUG_SAVEALL		(1<<5) /* save all garbage in gc.garbage */
 #define DEBUG_LEAK		DEBUG_COLLECTABLE | \
 				DEBUG_UNCOLLECTABLE | \
 				DEBUG_INSTANCES | \
-				DEBUG_OBJECTS
+				DEBUG_OBJECTS | \
+				DEBUG_SAVEALL
 static int debug;
 
 /* list of uncollectable objects */
@@ -100,7 +102,8 @@ gc_list_move(PyGC_Head *from, PyGC_Head *to)
 	if (from->gc_next == from) {
 		/* empty from list */
 		gc_list_init(to);
-	} else {
+	}
+	else {
 		to->gc_next = from->gc_next;
 		to->gc_next->gc_prev = to;
 		to->gc_prev = from->gc_prev;
@@ -290,7 +293,8 @@ debug_cycle(char *msg, PyObject *op)
 {
 	if ((debug & DEBUG_INSTANCES) && PyInstance_Check(op)) {
 		debug_instance(msg, (PyInstanceObject *)op);
-	} else if (debug & DEBUG_OBJECTS) {
+	}
+	else if (debug & DEBUG_OBJECTS) {
 		PySys_WriteStderr("gc: %.100s <%.100s %p>\n",
 				  msg, op->ob_type->tp_name, op);
 	}
@@ -307,19 +311,20 @@ handle_finalizers(PyGC_Head *finalizers, PyGC_Head *old)
 	for (gc = finalizers->gc_next; gc != finalizers;
 			gc = finalizers->gc_next) {
 		PyObject *op = PyObject_FROM_GC(gc);
-		/* Add all instances to a Python accessible list of garbage */
-		if (PyInstance_Check(op)) {
+		if ((debug & DEBUG_SAVEALL) || PyInstance_Check(op)) {
+			/* If SAVEALL is not set then just append
+			 * instances to the list of garbage.  We assume
+			 * that all objects in the finalizers list are
+			 * reachable from instances. */
 			PyList_Append(garbage, op);
 		}
-		/* We assume that all objects in finalizers are reachable from
-		 * instances.  Once we add the instances to the garbage list
-		 * everything is reachable from Python again. */
+		/* object is now reachable again */ 
 		gc_list_remove(gc);
 		gc_list_append(gc, old);
 	}
 }
 
-/* Break reference cycles by clearing the containers involved.  This is
+/* Break reference cycles by clearing the containers involved.	This is
  * tricky business as the lists can be changing and we don't know which
  * objects may be freed.  It is possible I screwed something up here. */
 static void
@@ -330,17 +335,18 @@ delete_garbage(PyGC_Head *unreachable, PyGC_Head *old)
 	while (unreachable->gc_next != unreachable) {
 		PyGC_Head *gc = unreachable->gc_next;
 		PyObject *op = PyObject_FROM_GC(gc);
-		/*
-		PyList_Append(garbage, op);
-		*/
-		if ((clear = op->ob_type->tp_clear) != NULL) {
-			Py_INCREF(op);
-			clear((PyObject *)op);
-			Py_DECREF(op);
+		if (debug & DEBUG_SAVEALL) {
+			PyList_Append(garbage, op);
 		}
-		/* only try to call tp_clear once for each object */
+		else {
+			if ((clear = op->ob_type->tp_clear) != NULL) {
+				Py_INCREF(op);
+				clear((PyObject *)op);
+				Py_DECREF(op);
+			}
+		}
 		if (unreachable->gc_next == gc) {
-			/* still alive, move it, it may die later */
+			/* object is still alive, move it, it may die later */
 			gc_list_remove(gc);
 			gc_list_append(gc, old);
 		}
@@ -425,7 +431,8 @@ collect(PyGC_Head *young, PyGC_Head *old)
 	if (debug & DEBUG_STATS) {
 		if (m == 0 && n == 0) {
 			PySys_WriteStderr("gc: done.\n");
-		} else {
+		}
+		else {
 			PySys_WriteStderr(
 			    "gc: done, %ld unreachable, %ld uncollectable.\n",
 			    n+m, n);
@@ -438,6 +445,9 @@ collect(PyGC_Head *young, PyGC_Head *old)
 	handle_finalizers(&finalizers, old);
 
 	if (PyErr_Occurred()) {
+		if (gc_str == NULL) {
+		    gc_str = PyString_FromString("garbage collection");
+		}
 		PyErr_WriteUnraisable(gc_str);
 		Py_FatalError("unexpected exception during garbage collection");
 	}
@@ -461,7 +471,8 @@ collect_generations(void)
 			n = collect(&generation2, &generation2);
 		}
 		collections1 = 0;
-	} else if (collections0 > threshold1) {
+	}
+	else if (collections0 > threshold1) {
 		generation = 1;
 		collections1++;
 		gc_list_merge(&generation0, &generation1);
@@ -469,7 +480,8 @@ collect_generations(void)
 			n = collect(&generation1, &generation2);
 		}
 		collections0 = 0;
-	} else {
+	}
+	else {
 		generation = 0;
 		collections0++;
 		if (generation0.gc_next != &generation0) {
@@ -603,6 +615,7 @@ static char gc_set_debug__doc__[] =
 "  DEBUG_UNCOLLECTABLE - Print unreachable but uncollectable objects found.\n"
 "  DEBUG_INSTANCES - Print instance objects.\n"
 "  DEBUG_OBJECTS - Print objects other than instances.\n"
+"  DEBUG_SAVEALL - Save objects to gc.garbage rather than freeing them.\n"
 "  DEBUG_LEAK - Debug leaking programs (everything but STATS).\n"
 ;
 
@@ -679,14 +692,14 @@ static char gc__doc__ [] =
 ;
 
 static PyMethodDef GcMethods[] = {
-	{"enable",	   gc_enable,     METH_VARARGS, gc_enable__doc__},
-	{"disable",	   gc_disable,    METH_VARARGS, gc_disable__doc__},
+	{"enable",	   gc_enable,	  METH_VARARGS, gc_enable__doc__},
+	{"disable",	   gc_disable,	  METH_VARARGS, gc_disable__doc__},
 	{"isenabled",	   gc_isenabled,  METH_VARARGS, gc_isenabled__doc__},
 	{"set_debug",	   gc_set_debug,  METH_VARARGS, gc_set_debug__doc__},
 	{"get_debug",	   gc_get_debug,  METH_VARARGS, gc_get_debug__doc__},
 	{"set_threshold",  gc_set_thresh, METH_VARARGS, gc_set_thresh__doc__},
 	{"get_threshold",  gc_get_thresh, METH_VARARGS, gc_get_thresh__doc__},
-	{"collect",	   gc_collect,    METH_VARARGS, gc_collect__doc__},
+	{"collect",	   gc_collect,	  METH_VARARGS, gc_collect__doc__},
 	{NULL,	NULL}		/* Sentinel */
 };
 
@@ -705,9 +718,6 @@ initgc(void)
 	if (garbage == NULL) {
 		garbage = PyList_New(0);
 	}
-	if (gc_str == NULL) {
-		gc_str = PyString_FromString("garbage collection");
-	}
 	PyDict_SetItemString(d, "garbage", garbage);
 	PyDict_SetItemString(d, "DEBUG_STATS",
 			PyInt_FromLong(DEBUG_STATS));
@@ -719,6 +729,8 @@ initgc(void)
 			PyInt_FromLong(DEBUG_INSTANCES));
 	PyDict_SetItemString(d, "DEBUG_OBJECTS",
 			PyInt_FromLong(DEBUG_OBJECTS));
+	PyDict_SetItemString(d, "DEBUG_SAVEALL",
+			PyInt_FromLong(DEBUG_SAVEALL));
 	PyDict_SetItemString(d, "DEBUG_LEAK",
 			PyInt_FromLong(DEBUG_LEAK));
 }

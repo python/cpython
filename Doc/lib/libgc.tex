@@ -85,7 +85,9 @@ The following variable is provided for read-only access:
 A list of objects which the collector found to be unreachable
 but could not be freed (uncollectable objects).  Objects that have
 \method{__del__()} methods and create part of a reference cycle cause
-the entire reference cycle to be uncollectable.  
+the entire reference cycle to be uncollectable.  If
+\constant{DEBUG_SAVEALL} is set, then all unreachable objects will
+be added to this list rather than freed.
 \end{datadesc}
 
 
@@ -117,8 +119,14 @@ When \constant{DEBUG_COLLECTABLE} or \constant{DEBUG_UNCOLLECTABLE} is
 set, print information about objects other than instance objects found.
 \end{datadesc}
 
+\begin{datadesc}{DEBUG_SAVEALL}
+When set, all unreachable objects found will be appended to
+\var{garbage} rather than being freed.  This can be useful for debugging
+a leaking program.
+\end{datadesc}
+
 \begin{datadesc}{DEBUG_LEAK}
 The debugging flags necessary for the collector to print
 information about a leaking program (equal to \code{DEBUG_COLLECTABLE |
-DEBUG_UNCOLLECTABLE | DEBUG_INSTANCES | DEBUG_OBJECTS}).  
+DEBUG_UNCOLLECTABLE | DEBUG_INSTANCES | DEBUG_OBJECTS | DEBUG_SAVEALL}).  
 \end{datadesc}
