@@ -24,34 +24,37 @@ ConfigParser -- responsible for for parsing a list of
 
     methods:
 
-    __init__(defaults=None) -- create the parser and specify a
-                               dictionary of intrinsic defaults.  The
-                               keys must be strings, the values must
-                               be appropriate for %()s string
-                               interpolation.  Note that `__name__' is
-                               always an intrinsic default; it's value
-                               is the section's name.
+    __init__(defaults=None)
+        create the parser and specify a dictionary of intrinsic defaults.  The
+        keys must be strings, the values must be appropriate for %()s string
+        interpolation.  Note that `__name__' is always an intrinsic default;
+        it's value is the section's name.
 
-    sections() -- return all the configuration section names, sans DEFAULT
+    sections()
+        return all the configuration section names, sans DEFAULT
 
-    options(section) -- return list of configuration options for the named
-                        section
+    options(section)
+        return list of configuration options for the named section
 
-    read(*filenames) -- read and parse the list of named configuration files
+    read(*filenames)
+        read and parse the list of named configuration files
 
-    get(section, option, raw=0) -- return a string value for the named
-                                   option.  All % interpolations are
-                                   expanded in the return values, based on
-                                   the defaults passed into the constructor
-                                   and the DEFAULT section.
+    get(section, option, raw=0, vars=None)
+        return a string value for the named option.  All % interpolations are
+        expanded in the return values, based on the defaults passed into the
+        constructor and the DEFAULT section.  Additional substitutions may be
+        provided using the `vars' argument, which must be a dictionary whose
+        contents override any pre-existing defaults.
 
-    getint(section, options) -- like get(), but convert value to an integer
+    getint(section, options)
+        like get(), but convert value to an integer
 
-    getfloat(section, options) -- like get(), but convert value to a float
+    getfloat(section, options)
+        like get(), but convert value to a float
 
-    getboolean(section, options) -- like get(), but convert value to
-                                    a boolean (currently defined as 0
-                                    or 1, only)
+    getboolean(section, options)
+        like get(), but convert value to a boolean (currently defined as 0 or
+        1, only)
 """
 
 import sys
@@ -176,11 +179,11 @@ class ConfigParser:
     def get(self, section, option, raw=0, vars=None):
         """Get an option value for a given section.
 
-        All % interpolations are expanded in the return values, based
-        on the defaults passed into the constructor, unless the optional
-        argument `raw' is true. Additional substitutions may be provided
-        using the vars keyword argument, which override any pre-existing
-        defaults.
+        All % interpolations are expanded in the return values, based on the
+        defaults passed into the constructor, unless the optional argument
+        `raw' is true.  Additional substitutions may be provided using the
+        `vars' argument, which must be a dictionary whose contents overrides
+        any pre-existing defaults.
 
         The section DEFAULT is special.
         """
