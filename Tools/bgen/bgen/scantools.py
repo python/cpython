@@ -228,7 +228,7 @@ if missing: raise "Missing Types"
 #		self.type_pat = "pascal[ \t\n]+\(<type>[a-zA-Z0-9_ \t]*[a-zA-Z0-9_]\)[ \t\n]+"
 		self.type_pat = "EXTERN_API" + \
 						"[ \t\n]*([ \t\n]*" + \
-						"\(<type>[a-zA-Z0-9_ \t]*[a-zA-Z0-9_]\)" + \
+						"\(<type>[a-zA-Z0-9_* \t]*[a-zA-Z0-9_*]\)" + \
 						"[ \t\n]*)[ \t\n]*"
 		self.name_pat = "\(<name>[a-zA-Z0-9_]+\)[ \t\n]*"
 		self.args_pat = "(\(<args>\([^(;=)]+\|([^(;=)]*)\)*\))"
@@ -399,6 +399,7 @@ if missing: raise "Missing Types"
 			self.report("Bad raw spec: %s", `raw`)
 			return
 		type, name, args = self.whole.group('type', 'name', 'args')
+		type = regsub.gsub("\*", " ptr", type)
 		type = regsub.gsub("[ \t]+", "_", type)
 		if name in self.alreadydone:
 			self.report("Name has already been defined: %s", `name`)
