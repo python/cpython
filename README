@@ -558,6 +558,15 @@ Linker (ld) libraries and flags for threads
 	    (jph@emilia.engr.sgi.com)
 
 
+Building a shared libpython
+---------------------------
+
+Starting with Python 2.3, the majority of the interpreter can be built
+into a shared library, which can then be used by the interpreter 
+executable, and by applications embedding Python. To enable this feature,
+configure with --enable-shared.
+
+
 Configuring additional built-in modules
 ---------------------------------------
 

@@ -8,6 +8,9 @@ AC_CONFIG_HEADER(pyconfig.h)
 AC_SUBST(VERSION)
 VERSION=2.3
 
+AC_SUBST(SOVERSION)
+SOVERSION=1.0
+
 # Arguments passed to configure.
 AC_SUBST(CONFIG_ARGS)
 CONFIG_ARGS="$ac_configure_args"
@@ -257,14 +260,22 @@ AC_MSG_RESULT($LIBRARY)
 # (defined in the Makefiles). On Cygwin LDLIBRARY is the import library,
 # DLLLIBRARY is the shared (i.e., DLL) library.
 # 
+# RUNSHARED is used to run shared python without installed libraries
+#
+# INSTSONAME is the name of the shared library that will be use to install
+# on the system - some systems like version suffix, others don't
 AC_SUBST(LDLIBRARY)
 AC_SUBST(DLLLIBRARY)
 AC_SUBST(BLDLIBRARY)
 AC_SUBST(LDLIBRARYDIR)
+AC_SUBST(INSTSONAME)
+AC_SUBST(RUNSHARED)
 LDLIBRARY="$LIBRARY"
 BLDLIBRARY='$(LDLIBRARY)'
+INSTSONMAE='$(LDLIBRARY)'
 DLLLIBRARY=''
 LDLIBRARYDIR=''
+RUNSHARED=''
 
 # LINKCC is the command that links the python executable -- default is $(CC).
 # If CXX is set, and if it is needed to link a main function that was
@@ -301,22 +312,18 @@ then
 fi
 AC_MSG_RESULT($LINKCC)
 
-AC_MSG_CHECKING(LDLIBRARY)
+AC_MSG_CHECKING(for --enable-shared)
+AC_ARG_ENABLE(shared,
+[  --enable-shared                 disable/enable building shared python library])
 
-# DG/UX requires some fancy ld contortions to produce a .so from an .a
-case $MACHDEP in
-dguxR4)
-      LDLIBRARY='libpython$(VERSION).so'
-      OPT="$OPT -pic"
-      ;;
-beos*)
-      LDLIBRARY='libpython$(VERSION).so'
-      ;;
-cygwin*)
-      LDLIBRARY='libpython$(VERSION).dll.a'
-      DLLLIBRARY='libpython$(VERSION).dll'
-      ;;
-esac
+if test -z "$enable_shared"
+then 
+  enable_shared="no"
+fi
+AC_MSG_RESULT($enable_shared)
+
+
+AC_MSG_CHECKING(LDLIBRARY)
 
 # MacOSX framework builds need more magic. LDLIBRARY is the dynamic
 # library that we build, but we do not want to link against it (we
@@ -332,6 +339,47 @@ then
 else
   BLDLIBRARY='$(LDLIBRARY)'
 fi  
+
+# Other platforms follow
+if test $enable_shared = "yes"; then
+  case $ac_sys_system in
+    BeOS*)
+          LDLIBRARY='libpython$(VERSION).so'
+          ;;
+    CYGWIN*)
+          LDLIBRARY='libpython$(VERSION).dll.a'
+          DLLLIBRARY='libpython$(VERSION).dll'
+          ;;
+    SunOS*)
+	  LDLIBRARY='libpython$(VERSION).so'
+	  BLDLIBRARY='-Wl,-rpath,$(LIBDIR) -L. -lpython$(VERSION)'
+	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH
+          ;;
+    Linux*)
+	  LDLIBRARY='libpython$(VERSION).so'
+	  BLDLIBRARY='-L. -lpython$(VERSION)'
+	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH
+	  INSTSONAME="$LDLIBRARY".$SOVERSION
+	  ;;
+    hp*|HP*)
+	  LDLIBRARY='libpython$(VERSION).sl'
+	  BLDLIBRARY='-Wl,+b,$(LIBDIR) -L. -lpython$(VERSION)'
+	  RUNSHARED=SHLIB_PATH=`pwd`:$SHLIB_PATH
+	  ;;
+    OSF*)
+	  LDLIBRARY='libpython$(VERSION).so'
+         BLDLIBRARY='-rpath $(LIBDIR) -L. -lpython$(VERSION)'
+	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH
+	  ;;
+  esac
+  # DG/UX requires some fancy ld contortions to produce a .so from an .a
+  case $MACHDEP in
+  dguxR4)
+        LDLIBRARY='libpython$(VERSION).so'
+        OPT="$OPT -pic"
+        ;;
+  esac
+fi
 
 AC_MSG_RESULT($LDLIBRARY)
 
@@ -861,7 +909,8 @@ then
 	case $ac_sys_system/$ac_sys_release in
 	AIX*)	LINKFORSHARED='-Wl,-bE:Modules/python.exp -lld';;
 	hp*|HP*)
-	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
+	    LINKFORSHARED="-Wl,-E -Wl,+s";;
+#	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
 	BSD/OS/4*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	Linux*|GNU*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
