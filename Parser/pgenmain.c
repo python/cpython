@@ -101,6 +101,7 @@ main(argc, argv)
 	printnonterminals(g, fp);
 	fclose(fp);
 	goaway(0);
+	return 0; /* Make gcc -Wall happy */
 }
 
 grammar *

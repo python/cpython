@@ -159,7 +159,7 @@ findlabel(ll, type, str)
 	}
 	fprintf(stderr, "Label %d/'%s' not found\n", type, str);
 	fatal("grammar.c:findlabel()");
-	/*NOTREACHED*/
+	return 0; /* Make gcc -Wall happy */
 }
 
 /* Forward */

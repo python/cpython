@@ -54,6 +54,8 @@ PERFORMANCE OF THIS SOFTWARE.
 extern char *readline();
 extern int rl_initialize();
 extern int rl_insert();
+extern int rl_bind_key();
+extern void add_history();
 extern char *rl_readline_name;
 
 #include <setjmp.h>
