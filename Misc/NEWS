@@ -10,6 +10,17 @@ What's New in Python 2.3 release candidate?
 Core and builtins
 -----------------
 
+- The Windows implementation of PyThread_start_new_thread() never
+  checked error returns from Windows functions correctly.  As a result,
+  it could claim to start a new thread even when the Microsoft
+  _beginthread() function failed (due to "too many threads" -- this is
+  on the order of thousands when it happens).  In these cases, the
+  Python exception ::
+
+      thread.error: can't start new thread
+
+  is raised now.
+
 Extension modules
 -----------------
 
