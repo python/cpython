@@ -1770,7 +1770,7 @@ AC_CHECK_FUNCS(alarm chown clock confstr ctermid execv \
  setlocale setregid setreuid setsid setpgid setuid setvbuf snprintf \
  sigaction siginterrupt sigrelse strftime strptime \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
- truncate uname unsetenv utimes waitpid _getpty getpriority)
+ truncate uname unsetenv utimes waitpid wcscoll _getpty getpriority)
 
 # For some functions, having a definition is not sufficient, since
 # we want to take their address.

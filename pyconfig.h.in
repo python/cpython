@@ -586,6 +586,9 @@
 /* Define if the compiler provides a wchar.h header file. */
 #undef HAVE_WCHAR_H
 
+/* Define to 1 if you have the `wcscoll' function. */
+#undef HAVE_WCSCOLL
+
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY
 

@@ -497,6 +497,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if you have waitpid.  */
 /* #undef HAVE_WAITPID */
 
+/* Define to 1 if you have the `wcscoll' function. */
+#define HAVE_WCSCOLL 1
+
 /* Define if you have the <dlfcn.h> header file.  */
 /* #undef HAVE_DLFCN_H */
 
@@ -550,6 +553,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if you have the <utime.h> header file.  */
 /* #define HAVE_UTIME_H 1 */
+
+/* Define if the compiler provides a wchar.h header file. */
+#define HAVE_WCHAR_H 1
 
 /* Define if you have the dl library (-ldl).  */
 /* #undef HAVE_LIBDL */
