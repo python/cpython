@@ -1005,30 +1005,12 @@ PySequence_Tuple(v)
 	if (PyList_Check(v))
 		return PyList_AsTuple(v);
 
-	if (PyString_Check(v)) {
-		int n = PyString_Size(v);
-		PyObject *t = PyTuple_New(n);
-		if (t != NULL) {
-			int i;
-			char *p = PyString_AsString(v);
-			for (i = 0; i < n; i++) {
-				PyObject *item =
-					PyString_FromStringAndSize(p+i, 1);
-				if (item == NULL) {
-					Py_DECREF(t);
-					t = NULL;
-					break;
-				}
-				PyTuple_SetItem(t, i, item);
-			}
-		}
-		return t;
-	}
+	/* There used to be code for strings here, but tuplifying strings is
+	   not a common activity, so I nuked it.  Down with code bloat! */
 
 	/* Generic sequence object */
 	m = v->ob_type->tp_as_sequence;
 	if (m && m->sq_item) {
-		/* XXX Should support indefinite-length sequences */
 		int i;
 		PyObject *t;
 		int n = PySequence_Length(v);
@@ -1037,15 +1019,29 @@ PySequence_Tuple(v)
 		t = PyTuple_New(n);
 		if (t == NULL)
 			return NULL;
-		for (i = 0; i < n; i++) {
+		for (i = 0; ; i++) {
 			PyObject *item = (*m->sq_item)(v, i);
 			if (item == NULL) {
-				Py_DECREF(t);
-				t = NULL;
+				if (PyErr_ExceptionMatches(PyExc_IndexError))
+					PyErr_Clear();
+				else {
+					Py_DECREF(t);
+					t = NULL;
+				}
 				break;
 			}
-			PyTuple_SetItem(t, i, item);
+			if (i >= n) {
+				if (n < 500)
+					n += 10;
+				else
+					n += 100;
+				if (_PyTuple_Resize(&t, n, 0) != 0)
+					break;
+			}
+			PyTuple_SET_ITEM(t, i, item);
 		}
+		if (i < n && t != NULL)
+			_PyTuple_Resize(&t, i, 0);
 		return t;
 	}
 
@@ -1061,7 +1057,6 @@ PySequence_List(v)
 
 	m = v->ob_type->tp_as_sequence;
 	if (m && m->sq_item) {
-		/* XXX Should support indefinite-length sequences */
 		int i;
 		PyObject *l;
 		int n = PySequence_Length(v);
@@ -1070,14 +1065,30 @@ PySequence_List(v)
 		l = PyList_New(n);
 		if (l == NULL)
 			return NULL;
-		for (i = 0; i < n; i++) {
+		for (i = 0; ; i++) {
 			PyObject *item = (*m->sq_item)(v, i);
 			if (item == NULL) {
+				if (PyErr_ExceptionMatches(PyExc_IndexError))
+					PyErr_Clear();
+				else {
+					Py_DECREF(l);
+					l = NULL;
+				}
+				break;
+			}
+			if (i < n)
+				PyList_SET_ITEM(l, i, item);
+			else if (PyList_Append(l, item) < 0) {
 				Py_DECREF(l);
 				l = NULL;
 				break;
 			}
-			PyList_SetItem(l, i, item);
+		}
+		if (i < n && l != NULL) {
+			if (PyList_SetSlice(l, i, n, (PyObject *)NULL) != 0) {
+				Py_DECREF(l);
+				l = NULL;
+			}
 		}
 		return l;
 	}
