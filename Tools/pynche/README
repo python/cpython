@@ -344,6 +344,8 @@ Color Name Database Files
     sister say NS and MSIE both understand (with some controversy over 
     AliceBlue).
 
+    namedcolors.txt -- an alternative set of Netscape colors.
+
     You can switch between files by choosing "Load palette..." from
     the "File" menu.  This brings up a standard Tk file dialog.
     Choose the file you want and then click "Ok".  If Pynche
