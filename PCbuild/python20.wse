@@ -1700,6 +1700,11 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=.\_csv.pyd
+  Destination=%MAINDIR%\DLLs\_csv.pyd
+  Flags=0000000000000010
+end
+item: Install File
   Source=.\_sre.pyd
   Destination=%MAINDIR%\DLLs\_sre.pyd
   Flags=0000000000000010
@@ -1788,6 +1793,11 @@ item: Install File
   Source=.\_winreg.lib
   Destination=%MAINDIR%\libs\_winreg.lib
   Description=Link library files
+  Flags=0000000000000010
+end
+item: Install File
+  Source=.\_csv.lib
+  Destination=%MAINDIR%\libs\_csv.lib
   Flags=0000000000000010
 end
 item: Install File
@@ -1923,6 +1933,14 @@ item: Install File
   Destination=%MAINDIR%\Lib\compiler
   Description=Python compiler written in Python
   Flags=0000000000000010
+end
+item: Remark
+end
+item: Install File
+  Source=..\lib\csv\*.py
+  Destination=%MAINDIR%\Lib\csv
+  Description=CSV package
+  Flags=0000000100000010
 end
 item: Remark
 end

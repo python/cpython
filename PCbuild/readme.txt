@@ -39,6 +39,8 @@ python
     .exe
 pythonw
     pythonw.exe, a variant of python.exe that doesn't pop up a DOS box
+_csv
+    C support for the comma-separated values module
 _socket
     socketmodule.c
 _sre
