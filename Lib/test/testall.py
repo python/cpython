@@ -41,4 +41,8 @@ print 'test_array'
 unload('test_array')
 import test_array
 
+print 'test_strop'
+unload('test_strop')
+import test_strop
+
 print 'Passed all tests.'

@@ -166,4 +166,5 @@ tan
 tanh
 test_time
 test_array
+test_strop
 Passed all tests.
