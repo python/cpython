@@ -76,11 +76,11 @@ class MyScanner(Scanner):
 
 	def makeblacklisttypes(self):
 		return [
-			'CCrsrHandle',
-			'CIconHandle',
+##			'CCrsrHandle',
+			'CIconHandle', # Obsolete
 			'CQDProcs',
 			'CSpecArray',
-			'CTabHandle',
+##			'CTabHandle',
 			'ColorComplementProcPtr',
 			'ColorComplementUPP',
 			'ColorSearchProcPtr',
@@ -89,7 +89,7 @@ class MyScanner(Scanner):
 			'DeviceLoopDrawingProcPtr',
 			'DeviceLoopFlags',
 ##			'FontInfo',
-			'GDHandle',
+##			'GDHandle',
 			'GrafVerb',
 			'OpenCPicParams_ptr',
 			'Ptr',

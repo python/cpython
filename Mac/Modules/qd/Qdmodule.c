@@ -2969,6 +2969,68 @@ static PyObject *Qd_HiliteColor(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_DisposeCTable(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	CTabHandle cTable;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &cTable))
+		return NULL;
+	DisposeCTable(cTable);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_GetCTable(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	CTabHandle _rv;
+	short ctID;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &ctID))
+		return NULL;
+	_rv = GetCTable(ctID);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qd_GetCCursor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	CCrsrHandle _rv;
+	short crsrID;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &crsrID))
+		return NULL;
+	_rv = GetCCursor(crsrID);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qd_SetCCursor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	CCrsrHandle cCrsr;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &cCrsr))
+		return NULL;
+	SetCCursor(cCrsr);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *Qd_AllocCursor(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -2979,6 +3041,37 @@ static PyObject *Qd_AllocCursor(_self, _args)
 	AllocCursor();
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_DisposeCCursor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	CCrsrHandle cCrsr;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &cCrsr))
+		return NULL;
+	DisposeCCursor(cCrsr);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_GetMaxDevice(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	GDHandle _rv;
+	Rect globalRect;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetRect, &globalRect))
+		return NULL;
+	_rv = GetMaxDevice(&globalRect);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
 	return _res;
 }
 
@@ -2993,6 +3086,174 @@ static PyObject *Qd_GetCTSeed(_self, _args)
 	_rv = GetCTSeed();
 	_res = Py_BuildValue("l",
 	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_GetDeviceList(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	GDHandle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetDeviceList();
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qd_GetMainDevice(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	GDHandle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetMainDevice();
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qd_GetNextDevice(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	GDHandle _rv;
+	GDHandle curDevice;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &curDevice))
+		return NULL;
+	_rv = GetNextDevice(curDevice);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qd_TestDeviceAttribute(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	GDHandle gdh;
+	short attribute;
+	if (!PyArg_ParseTuple(_args, "O&h",
+	                      ResObj_Convert, &gdh,
+	                      &attribute))
+		return NULL;
+	_rv = TestDeviceAttribute(gdh,
+	                          attribute);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_SetDeviceAttribute(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	GDHandle gdh;
+	short attribute;
+	Boolean value;
+	if (!PyArg_ParseTuple(_args, "O&hb",
+	                      ResObj_Convert, &gdh,
+	                      &attribute,
+	                      &value))
+		return NULL;
+	SetDeviceAttribute(gdh,
+	                   attribute,
+	                   value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_InitGDevice(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short qdRefNum;
+	long mode;
+	GDHandle gdh;
+	if (!PyArg_ParseTuple(_args, "hlO&",
+	                      &qdRefNum,
+	                      &mode,
+	                      ResObj_Convert, &gdh))
+		return NULL;
+	InitGDevice(qdRefNum,
+	            mode,
+	            gdh);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_NewGDevice(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	GDHandle _rv;
+	short refNum;
+	long mode;
+	if (!PyArg_ParseTuple(_args, "hl",
+	                      &refNum,
+	                      &mode))
+		return NULL;
+	_rv = NewGDevice(refNum,
+	                 mode);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qd_DisposeGDevice(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	GDHandle gdh;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &gdh))
+		return NULL;
+	DisposeGDevice(gdh);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_SetGDevice(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	GDHandle gd;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &gd))
+		return NULL;
+	SetGDevice(gd);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_GetGDevice(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	GDHandle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetGDevice();
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
 	return _res;
 }
 
@@ -3056,6 +3317,48 @@ static PyObject *Qd_RealColor(_self, _args)
 	_rv = RealColor(&color);
 	_res = Py_BuildValue("b",
 	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_GetSubTable(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	CTabHandle myColors;
+	short iTabRes;
+	CTabHandle targetTbl;
+	if (!PyArg_ParseTuple(_args, "O&hO&",
+	                      ResObj_Convert, &myColors,
+	                      &iTabRes,
+	                      ResObj_Convert, &targetTbl))
+		return NULL;
+	GetSubTable(myColors,
+	            iTabRes,
+	            targetTbl);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_MakeITable(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	CTabHandle cTabH;
+	ITabHandle iTabH;
+	short res;
+	if (!PyArg_ParseTuple(_args, "O&O&h",
+	                      ResObj_Convert, &cTabH,
+	                      ResObj_Convert, &iTabH,
+	                      &res))
+		return NULL;
+	MakeITable(cTabH,
+	           iTabH,
+	           res);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -3840,10 +4143,42 @@ static PyMethodDef Qd_methods[] = {
 	 "(RGBColor color) -> None"},
 	{"HiliteColor", (PyCFunction)Qd_HiliteColor, 1,
 	 "(RGBColor color) -> None"},
+	{"DisposeCTable", (PyCFunction)Qd_DisposeCTable, 1,
+	 "(CTabHandle cTable) -> None"},
+	{"GetCTable", (PyCFunction)Qd_GetCTable, 1,
+	 "(short ctID) -> (CTabHandle _rv)"},
+	{"GetCCursor", (PyCFunction)Qd_GetCCursor, 1,
+	 "(short crsrID) -> (CCrsrHandle _rv)"},
+	{"SetCCursor", (PyCFunction)Qd_SetCCursor, 1,
+	 "(CCrsrHandle cCrsr) -> None"},
 	{"AllocCursor", (PyCFunction)Qd_AllocCursor, 1,
 	 "() -> None"},
+	{"DisposeCCursor", (PyCFunction)Qd_DisposeCCursor, 1,
+	 "(CCrsrHandle cCrsr) -> None"},
+	{"GetMaxDevice", (PyCFunction)Qd_GetMaxDevice, 1,
+	 "(Rect globalRect) -> (GDHandle _rv)"},
 	{"GetCTSeed", (PyCFunction)Qd_GetCTSeed, 1,
 	 "() -> (long _rv)"},
+	{"GetDeviceList", (PyCFunction)Qd_GetDeviceList, 1,
+	 "() -> (GDHandle _rv)"},
+	{"GetMainDevice", (PyCFunction)Qd_GetMainDevice, 1,
+	 "() -> (GDHandle _rv)"},
+	{"GetNextDevice", (PyCFunction)Qd_GetNextDevice, 1,
+	 "(GDHandle curDevice) -> (GDHandle _rv)"},
+	{"TestDeviceAttribute", (PyCFunction)Qd_TestDeviceAttribute, 1,
+	 "(GDHandle gdh, short attribute) -> (Boolean _rv)"},
+	{"SetDeviceAttribute", (PyCFunction)Qd_SetDeviceAttribute, 1,
+	 "(GDHandle gdh, short attribute, Boolean value) -> None"},
+	{"InitGDevice", (PyCFunction)Qd_InitGDevice, 1,
+	 "(short qdRefNum, long mode, GDHandle gdh) -> None"},
+	{"NewGDevice", (PyCFunction)Qd_NewGDevice, 1,
+	 "(short refNum, long mode) -> (GDHandle _rv)"},
+	{"DisposeGDevice", (PyCFunction)Qd_DisposeGDevice, 1,
+	 "(GDHandle gdh) -> None"},
+	{"SetGDevice", (PyCFunction)Qd_SetGDevice, 1,
+	 "(GDHandle gd) -> None"},
+	{"GetGDevice", (PyCFunction)Qd_GetGDevice, 1,
+	 "() -> (GDHandle _rv)"},
 	{"Color2Index", (PyCFunction)Qd_Color2Index, 1,
 	 "(RGBColor myColor) -> (long _rv)"},
 	{"Index2Color", (PyCFunction)Qd_Index2Color, 1,
@@ -3852,6 +4187,10 @@ static PyMethodDef Qd_methods[] = {
 	 "() -> (RGBColor myColor)"},
 	{"RealColor", (PyCFunction)Qd_RealColor, 1,
 	 "(RGBColor color) -> (Boolean _rv)"},
+	{"GetSubTable", (PyCFunction)Qd_GetSubTable, 1,
+	 "(CTabHandle myColors, short iTabRes, CTabHandle targetTbl) -> None"},
+	{"MakeITable", (PyCFunction)Qd_MakeITable, 1,
+	 "(CTabHandle cTabH, ITabHandle iTabH, short res) -> None"},
 	{"SetClientID", (PyCFunction)Qd_SetClientID, 1,
 	 "(short id) -> None"},
 	{"ProtectEntry", (PyCFunction)Qd_ProtectEntry, 1,
