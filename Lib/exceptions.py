@@ -105,10 +105,10 @@ class EnvironmentError(StandardError):
 
     def __str__(self):
         if self.filename:
-            return '[Errno %d] %s: %s' % (self.errno, self.strerror,
+            return '[Errno %s] %s: %s' % (self.errno, self.strerror,
                                         self.filename)
         elif self.errno and self.strerror:
-            return '[Errno %d] %s' % (self.errno, self.strerror)
+            return '[Errno %s] %s' % (self.errno, self.strerror)
         else:
             return StandardError.__str__(self)
 
