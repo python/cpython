@@ -112,12 +112,7 @@ fill_free_list(void)
 }
 
 PyObject *
-#ifdef __SC__
 PyFloat_FromDouble(double fval)
-#else
-PyFloat_FromDouble(fval)
-	double fval;
-#endif
 {
 	register PyFloatObject *op;
 	if (free_list == NULL) {
