@@ -196,7 +196,7 @@ tb_displayline(f, filename, lineno, name)
 					if (len + 1 + taillen >= MAXPATHLEN)
 						continue; /* Too long */
 					strcpy(namebuf, getstringvalue(v));
-					if (strlen(namebuf) != len)
+					if ((int)strlen(namebuf) != len)
 						continue; /* v contains '\0' */
 					if (len > 0 && namebuf[len-1] != SEP)
 						namebuf[len++] = SEP;

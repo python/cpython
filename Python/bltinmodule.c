@@ -42,6 +42,8 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "mymath.h"
 
+#include <ctype.h>
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -233,7 +235,7 @@ builtin_chr(self, args)
 		err_setstr(ValueError, "chr() arg not in range(256)");
 		return NULL;
 	}
-	s[0] = x;
+	s[0] = (char)x;
 	return newsizedstringobject(s, 1);
 }
 
@@ -301,7 +303,7 @@ builtin_complex(self, args)
 	object *args;
 {
 	object *r, *i, *tmp;
-	number_methods *nbr, *nbi;
+	number_methods *nbr, *nbi = NULL;
 	Py_complex cr, ci;
 	int own_r = 0;
 
@@ -484,7 +486,7 @@ builtin_eval(self, args)
 		return NULL;
 	}
 	str = getstringvalue(cmd);
-	if (strlen(str) != getstringsize(cmd)) {
+	if ((int)strlen(str) != getstringsize(cmd)) {
 		err_setstr(ValueError,
 			   "embedded '\\0' in string arg");
 		return NULL;
