@@ -1,4 +1,3 @@
-from new import * # import all the CO_xxx flags
 del classobj, code, function, instance, instancemethod, module
 
 # operation flags
@@ -11,3 +10,12 @@ SC_GLOBAL = 2
 SC_FREE = 3
 SC_CELL = 4
 SC_UNKNOWN = 5
+
+CO_OPTIMIZED = 0x0001
+CO_NEWLOCALS = 0x0002
+CO_VARARGS = 0x0004
+CO_VARKEYWORDS = 0x0008
+CO_NESTED = 0x0010
+CO_GENERATOR = 0x0020
+CO_GENERATOR_ALLOWED = 0x1000
+CO_FUTURE_DIVISION = 0x2000
