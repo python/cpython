@@ -1,5 +1,7 @@
 /* Return the full version string. */
 
+#include "Python.h"
+
 #include "patchlevel.h"
 
 #define VERSION "%s (%s) %s"

@@ -1,5 +1,7 @@
 /* Return the copyright string.  This is updated manually. */
 
+#include "Python.h"
+
 const char *
 getcopyright()
 {
