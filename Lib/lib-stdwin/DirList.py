@@ -2,14 +2,7 @@
 
 # XXX Displays messy paths when following '..'
 
-try:
-	import posix, path
-	os = posix
-except ImportError:
-	import mac, macpath
-	os = mac
-	path = macpath
-
+import os
 import stdwin, rect
 from stdwinevents import *
 from Buttons import PushButton
@@ -22,8 +15,8 @@ class DirList(VSplit):
 		self = VSplit.create(self, parent)
 		names = os.listdir(dirname)
 		for name in names:
-			if path.isdir(path.join(dirname, name)):
-				fullname = path.join(dirname, name)
+			if os.path.isdir(os.path.join(dirname, name)):
+				fullname = os.path.join(dirname, name)
 				btn = SubdirButton().definetext(self, fullname)
 			elif name[-3:] == '.py':
 				btn = ModuleButton().definetext(self, name)
