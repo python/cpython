@@ -48,7 +48,7 @@ class PullDOM(xml.sax.ContentHandler):
             self._xmlns_attrs = []
         self._xmlns_attrs.append((prefix or 'xmlns', uri))
         self._ns_contexts.append(self._current_context.copy())
-        self._current_context[uri] = prefix or ''
+        self._current_context[uri] = prefix or None
 
     def endPrefixMapping(self, prefix):
         self._current_context = self._ns_contexts.pop()
@@ -211,6 +211,8 @@ class DOMEventStream:
         self.stream = stream
         self.parser = parser
         self.bufsize = bufsize
+        if not hasattr(self.parser, 'feed'):
+            self.getEvent = self._slurp
         self.reset()
 
     def reset(self):
@@ -241,6 +243,8 @@ class DOMEventStream:
             event = self.getEvent()
 
     def getEvent(self):
+        # use IncrementalParser interface, so we get the desired
+        # pull effect
         if not self.pulldom.firstEvent[1]:
             self.pulldom.lastEvent = self.pulldom.firstEvent
         while not self.pulldom.firstEvent[1]:
@@ -253,8 +257,26 @@ class DOMEventStream:
         self.pulldom.firstEvent[1] = self.pulldom.firstEvent[1][1]
         return rc
 
+    def _slurp(self):
+        """ Fallback replacement for getEvent() using the
+            standard SAX2 interface, which means we slurp the
+            SAX events into memory (no performance gain, but
+            we are compatible to all SAX parsers).
+        """
+        self.parser.parse(self.stream)
+        self.getEvent = self._emit
+        return self._emit()
+
+    def _emit(self):
+        """ Fallback replacement for getEvent() that emits
+            the events that _slurp() read previously.
+        """
+        rc = self.pulldom.firstEvent[1][0]
+        self.pulldom.firstEvent[1] = self.pulldom.firstEvent[1][1]
+        return rc
+
     def clear(self):
-        "clear(): Explicitly release parsing objects"
+        """clear(): Explicitly release parsing objects"""
         self.pulldom.clear()
         del self.pulldom
         self.parser = None
