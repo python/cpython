@@ -245,6 +245,7 @@ longer:
 - Systems defining PY_PTHREAD_D4, PY_PTHREAD_D6,
   or PY_PTHREAD_D7 in thread_pthread.h
 - Systems using --with-dl-dld
+- Systems using --without-universal-newlines
 
 Platform specific notes
 -----------------------
@@ -957,7 +958,7 @@ Modules/getpath.o.
 	any of \r, \n or \r\n is acceptable as end-of-line character.
 	If enabled import and execfile will automatically accept any newline
 	in files. Python code can open a file with open(file, 'U') to
-	read it in universal newline mode.
+	read it in universal newline mode. THIS OPTION IS UNSUPPORTED.
 
 
 Building for multiple architectures (using the VPATH feature)

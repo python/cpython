@@ -1606,7 +1606,9 @@ AC_ARG_WITH(universal-newlines,
 if test -z "$with_universal_newlines"
 then with_universal_newlines="yes"
 fi
-if test "$with_universal_newlines" != "no"
+if test "$with_universal_newlines" = "no"
+    echo --without-universal-newlines is unsupported, see README
+    exit 1
 then
     AC_DEFINE(WITH_UNIVERSAL_NEWLINES, 1,
       [Define if you want to read files with foreign newlines.])
