@@ -4,8 +4,8 @@
     map encodings names to module names.
 
     Note that the search function converts the encoding names to lower
-    case and replaces hyphens and periods with underscores *before*
-    performing the lookup.
+    case and replaces hyphens with underscores *before* performing the
+    lookup.
 
     Contents:
 
@@ -25,13 +25,13 @@ aliases = {
 
     # ascii codec
     '646'                : 'ascii',
-    'ansi_x3_4_1968'     : 'ascii',
-    'ansi_x3_4_1986'     : 'ascii',
+    'ansi_x3.4_1968'     : 'ascii',
+    'ansi_x3.4_1986'     : 'ascii',
     'cp367'              : 'ascii',
     'csascii'            : 'ascii',
     'ibm367'             : 'ascii',
     'iso646_us'          : 'ascii',
-    'iso_646_irv:1991'   : 'ascii',
+    'iso_646.irv:1991'   : 'ascii',
     'iso_ir_6'           : 'ascii',
     'us'                 : 'ascii',
     'us_ascii'           : 'ascii',
