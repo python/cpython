@@ -534,6 +534,10 @@ PyNumber_Divmod:PyObject*:o2:0:
 PyNumber_Float:PyObject*::+1:
 PyNumber_Float:PyObject*:o:0:
 
+PyNumber_FloorDivide:PyObject*::+1:
+PyNumber_FloorDivide:PyObject*:v:0:
+PyNumber_FloorDivide:PyObject*:w:0:
+
 PyNumber_InPlaceAdd:PyObject*::+1:
 PyNumber_InPlaceAdd:PyObject*:v:0:
 PyNumber_InPlaceAdd:PyObject*:w:0:
@@ -545,6 +549,10 @@ PyNumber_InPlaceAnd:PyObject*:w:0:
 PyNumber_InPlaceDivide:PyObject*::+1:
 PyNumber_InPlaceDivide:PyObject*:v:0:
 PyNumber_InPlaceDivide:PyObject*:w:0:
+
+PyNumber_InPlaceFloorDivide:PyObject*::+1:
+PyNumber_InPlaceFloorDivide:PyObject*:v:0:
+PyNumber_InPlaceFloorDivide:PyObject*:w:0:
 
 PyNumber_InPlaceLshift:PyObject*::+1:
 PyNumber_InPlaceLshift:PyObject*:v:0:
@@ -574,6 +582,10 @@ PyNumber_InPlaceRshift:PyObject*:w:0:
 PyNumber_InPlaceSubtract:PyObject*::+1:
 PyNumber_InPlaceSubtract:PyObject*:v:0:
 PyNumber_InPlaceSubtract:PyObject*:w:0:
+
+PyNumber_InPlaceTrueDivide:PyObject*::+1:
+PyNumber_InPlaceTrueDivide:PyObject*:v:0:
+PyNumber_InPlaceTrueDivide:PyObject*:w:0:
 
 PyNumber_InPlaceXor:PyObject*::+1:
 PyNumber_InPlaceXor:PyObject*:v:0:
@@ -622,6 +634,10 @@ PyNumber_Rshift:PyObject*:o2:0:
 PyNumber_Subtract:PyObject*::+1:
 PyNumber_Subtract:PyObject*:o1:0:
 PyNumber_Subtract:PyObject*:o2:0:
+
+PyNumber_TrueDivide:PyObject*::+1:
+PyNumber_TrueDivide:PyObject*:v:0:
+PyNumber_TrueDivide:PyObject*:w:0:
 
 PyNumber_Xor:PyObject*::+1:
 PyNumber_Xor:PyObject*:o1:0:
