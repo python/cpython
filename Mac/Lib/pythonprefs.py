@@ -16,14 +16,14 @@ OVERRIDE_POPT_ID = 229
 OVERRIDE_GUSI_ID = 10241
 
 # version
-CUR_VERSION=7
+CUR_VERSION=8
 
 preffilename = PstringLoader(AnyResLoader('STR ', resname=PREFNAME_NAME)).load()
 pref_fss = preferencefile(preffilename, 'Pyth', 'pref')
 
 class PoptLoader(VersionLoader):
 	def __init__(self, loader):
-		VersionLoader.__init__(self, "bbbbbbbbbbbbbb", loader)
+		VersionLoader.__init__(self, "bbbbbbbbbbbbbbbb", loader)
 		
 	def versioncheck(self, data):
 		if data[0] == CUR_VERSION:
@@ -51,7 +51,7 @@ class GusiLoader:
 		newdata = tp + cr + self.data[8:]
 		self.loader.save(newdata)
 		
-popt_default_default = NullLoader(chr(CUR_VERSION) + 8*'\0')
+popt_default_default = NullLoader(chr(CUR_VERSION) + 14*'\0' + '\001')
 popt_default = AnyResLoader('Popt', POPT_ID, default=popt_default_default)
 popt_loader = ResLoader(pref_fss, 'Popt', POPT_ID, default=popt_default)
 popt = PoptLoader(popt_loader)
@@ -85,7 +85,8 @@ class PythonOptions:
 		dict['version'], dict['inspect'], dict['verbose'], dict['optimize'], \
 			dict['unbuffered'], dict['debugging'], dummy, dict['keep_console'], \
 			dict['nointopt'], dict['noargs'], dict['tabwarn'], \
-			dict['nosite'], dict['nonavservice'], dict['delayconsole'] = flags
+			dict['nosite'], dict['nonavservice'], dict['delayconsole'], \
+			dict['divisionwarn'], dict['unixnewlines'] = flags
 		return dict
 		
 	def save(self, dict):
@@ -96,7 +97,8 @@ class PythonOptions:
 		flags = dict['version'], dict['inspect'], dict['verbose'], dict['optimize'], \
 			dict['unbuffered'], dict['debugging'], 0, dict['keep_console'], \
 			dict['nointopt'], dict['noargs'], dict['tabwarn'], \
-			dict['nosite'], dict['nonavservice'], dict['delayconsole']
+			dict['nosite'], dict['nonavservice'], dict['delayconsole'], \
+			dict['divisionwarn'], dict['unixnewlines']
 		self.popt.save(flags)
 
 def AppletOptions(file):
