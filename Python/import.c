@@ -1800,6 +1800,7 @@ PyImport_ReloadModule(m)
 		if (parentname == NULL)
 			return NULL;
 		parent = PyDict_GetItem(modules, parentname);
+		Py_DECREF(parentname);
 		if (parent == NULL) {
 			PyErr_Format(PyExc_ImportError,
 			    "reload(): parent %.200s not in sys.modules",
