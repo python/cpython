@@ -13,7 +13,20 @@
 #define HAVE_FOPENRF
 #endif
 #ifdef __MWERKS__
+#ifndef USE_GUSI
 #define HAVE_FOPENRF
+#endif
+#endif
+
+#ifdef USE_GUSI
+/* GUSI provides a lot of unixisms */
+#define HAVE_SELECT
+#define DIRENT
+#define HAVE_GETPEERNAME
+#define HAVE_SELECT
+#define HAVE_FCNTL_H
+#define HAVE_SYS_TIME_H
+#define HAVE_UNISTD_H
 #endif
 
 #ifdef SYMANTEC__CFM68K__

@@ -43,7 +43,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #undef S_ISREG
 #endif
 
+#ifdef USE_GUSI
+#include <sys/types.h>
+#include <stat.h>
+#define macstat stat
+#else
 #include "macstat.h"
+#endif
 
 #ifdef __MWERKS__
 /* For CodeWarrior 4 also define CW4 */
@@ -57,7 +63,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #include "macdefs.h"
+#ifdef USE_GUSI
+#include <dirent.h>
+#else
 #include "dirent.h"
+#endif
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
@@ -68,13 +78,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 int chdir PROTO((const char *path));
 char *getbootvol PROTO((void));
 char *getwd PROTO((char *));
+#ifdef USE_GUSI
+int mkdir PROTO((const char *path));
+DIR * opendir PROTO((const char *));
+int closedir PROTO((DIR *));
+#else
 int mkdir PROTO((const char *path, int mode));
 DIR * opendir PROTO((char *));
 void closedir PROTO((DIR *));
+#endif
 struct dirent * readdir PROTO((DIR *));
 int rmdir PROTO((const char *path));
 int sync PROTO((void));
-#if defined(THINK_C) || defined(__SC__)
+#if defined(THINK_C) || defined(__SC__) || defined(USE_GUSI)
 int unlink PROTO((char *));
 #else
 int unlink PROTO((const char *));
@@ -315,12 +331,26 @@ mac_lseek(self, args)
 }
 #endif /* !CW4 */
 
+#ifdef USE_GUSI
+/* GUSI mkdir doesn't accept the (dummy) mode. Grrr. */
+int _gusi_mkdir(name, mode)
+	char *name;
+	int mode;
+{
+	return mkdir(name);
+}
+#endif /* USE_GUSI */
+
 static object *
 mac_mkdir(self, args)
 	object *self;
 	object *args;
 {
+#ifdef USE_GUSI
+	return mac_strint(args, _gusi_mkdir);
+#else
 	return mac_strint(args, mkdir);
+#endif
 }
 
 #ifndef CW4
@@ -425,6 +455,19 @@ mac_xstat(self, args)
 	END_SAVE
 	if (res != 0)
 		return mac_error();
+#ifdef USE_GUSI
+	return mkvalue("(llllllllll)",
+		    (long)st.st_mode,
+		    (long)st.st_ino,
+		    (long)st.st_dev,
+		    (long)st.st_nlink,
+		    (long)st.st_uid,
+		    (long)st.st_gid,
+		    (long)st.st_size,
+		    (long)st.st_atime,
+		    (long)st.st_mtime,
+		    (long)st.st_ctime);
+#else
 	return mkvalue("(llllllllllls#s#)",
 		    (long)st.st_mode,
 		    (long)st.st_ino,
@@ -439,6 +482,7 @@ mac_xstat(self, args)
 		    (long)st.st_rsize,
 		    st.st_creator, 4,
 		    st.st_type, 4);
+#endif
 }
 
 static object *
