@@ -599,7 +599,7 @@ inittime(void)
 	/* Squirrel away the module's dictionary for the y2k check */
 	Py_INCREF(d);
 	moddict = d;
-#if defined(HAVE_TZNAME) && !defined(__GLIBC__)
+#if defined(HAVE_TZNAME) && !defined(__GLIBC__) && !defined(__CYGWIN__)
 	tzset();
 #ifdef PYOS_OS2
 	ins(d, "timezone", PyInt_FromLong((long)_timezone));
@@ -617,7 +617,7 @@ inittime(void)
 #endif
 	ins(d, "daylight", PyInt_FromLong((long)daylight));
 	ins(d, "tzname", Py_BuildValue("(zz)", tzname[0], tzname[1]));
-#else /* !HAVE_TZNAME || __GLIBC__ */
+#else /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
 #ifdef HAVE_TM_ZONE
 	{
 #define YEAR ((time_t)((365 * 24 + 6) * 3600))
@@ -673,7 +673,7 @@ inittime(void)
 	ins(d, "daylight", PyInt_FromLong(_daylight));
 	ins(d, "tzname", Py_BuildValue("(zz)", _tzname[0], _tzname[1]));
 #endif /* __CYGWIN__ */
-#endif /* !HAVE_TZNAME || __GLIBC__ */
+#endif /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
 }
 
 
