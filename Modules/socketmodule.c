@@ -1853,7 +1853,7 @@ shutdown() -- shut down traffic in one or both directions\n\
 static PyTypeObject PySocketSock_Type = {
 	PyObject_HEAD_INIT(0)	/* Must fill in type value later */
 	0,					/* ob_size */
-	"socket.socket",			/* tp_name */
+	"_socket.socket",			/* tp_name */
 	sizeof(PySocketSockObject),		/* tp_basicsize */
 	0,					/* tp_itemsize */
 	(destructor)PySocketSock_dealloc,	/* tp_dealloc */
@@ -2867,7 +2867,7 @@ static PyObject *PySSL_getattr(PySSLObject *self, char *name)
 staticforward PyTypeObject PySSL_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/*ob_size*/
-	"SSL",				/*tp_name*/
+	"_socket.SSL",			/*tp_name*/
 	sizeof(PySSLObject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/
 	/* methods */
