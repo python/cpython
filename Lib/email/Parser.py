@@ -22,6 +22,75 @@ except NameError:
 
 NLCRE = re.compile('\r\n|\r|\n')
 
+class TextUtil:
+    """ A utility class for wrapping a file object and providing a 
+        couple of additional useful functions.
+    """
+
+    def __init__(self, fp):
+        self.fp = fp
+        self.unread = []
+
+    def readline(self):
+        """ Return a line of data.
+
+        If data has been pushed back with unreadline(), the most recently
+        returned unreadline()d data will be returned.
+        """
+        if self.unread:
+            return self.unread.pop()
+        else:
+            return self.fp.readline()
+
+    def unreadline(self, line):
+        """Push a line back into the object. 
+        """
+        self.unread.append(line)
+
+    def peekline(self):
+        """Non-destructively look at the next line"""
+        line = self.readline()
+        self.unreadline(line)
+        return line
+
+    def read(self):
+        """Return the remaining data
+        """
+        r = self.fp.read()
+        if self.unread:
+            r = "\n".join(self.unread) + r
+            self.unread = []
+        return r
+
+    def readuntil(self, re, afterblank=0, includematch=0):
+        """Read a line at a time until we get the specified RE. 
+
+        Returns the text up to (and including, if includematch is true) the 
+        matched text, and the RE match object. If afterblank is true, 
+        there must be a blank line before the matched text. Moves current 
+        filepointer to the line following the matched line. If we reach 
+        end-of-file, return what we've got so far, and return None as the
+        RE match object.
+        """
+        prematch = []
+        blankseen = 0
+        while 1:
+            line = self.readline()
+            if not line:
+                # end of file
+                return EMPTYSTRING.join(prematch), None
+            if afterblank:
+                if NLCRE.match(line):
+                    blankseen = 1
+                    continue
+                else:
+                    blankseen = 0
+            m = re.match(line)
+            if (m and not afterblank) or (m and afterblank and blankseen):
+                if includematch:
+                    prematch.append(line)
+                return EMPTYSTRING.join(prematch), m
+            prematch.append(line)
 
 
 class Parser:
@@ -59,9 +128,13 @@ class Parser:
         meaning it parses the entire contents of the file.
         """
         root = self._class()
-        firstbodyline = self._parseheaders(root, fp)
+        fp = TextUtil(fp)
+        self._parseheaders(root, fp)
         if not headersonly:
-            self._parsebody(root, fp, firstbodyline)
+            obj = self._parsemessage(root, fp)
+            trailer = fp.read()
+            if obj and trailer:
+                self._attach_trailer(obj, trailer)
         return root
 
     def parsestr(self, text, headersonly=False):
@@ -80,7 +153,6 @@ class Parser:
         lastheader = ''
         lastvalue = []
         lineno = 0
-        firstbodyline = None
         while True:
             # Don't strip the line before we test for the end condition,
             # because whitespace-only header lines are RFC compliant
@@ -129,7 +201,7 @@ class Parser:
                     # There was no separating blank line as mandated by RFC
                     # 2822, but we're in non-strict mode.  So just offer up
                     # this current line as the first body line.
-                    firstbodyline = line
+                    fp.unreadline(line)
                     break
             if lastheader:
                 container[lastheader] = NL.join(lastvalue)
@@ -138,140 +210,114 @@ class Parser:
         # Make sure we retain the last header
         if lastheader:
             container[lastheader] = NL.join(lastvalue)
-        return firstbodyline
+        return 
 
-    def _parsebody(self, container, fp, firstbodyline=None):
-        # Parse the body, but first split the payload on the content-type
-        # boundary if present.
+    def _parsemessage(self, container, fp):
+        # Parse the body. We walk through the body from top to bottom,
+        # keeping track of the current multipart nesting as we go.
+        # We return the object that gets the data at the end of this 
+        # block.
         boundary = container.get_boundary()
         isdigest = (container.get_content_type() == 'multipart/digest')
-        # If there's a boundary, split the payload text into its constituent
-        # parts and parse each separately.  Otherwise, just parse the rest of
-        # the body as a single message.  Note: any exceptions raised in the
-        # recursive parse need to have their line numbers coerced.
-        if boundary:
-            preamble = epilogue = None
-            # Split into subparts.  The first boundary we're looking for won't
-            # always have a leading newline since we're at the start of the
-            # body text, and there's not always a preamble before the first
-            # boundary.
+        if boundary: 
             separator = '--' + boundary
-            payload = fp.read()
-            if firstbodyline is not None:
-                payload = firstbodyline + '\n' + payload
-            # We use an RE here because boundaries can have trailing
-            # whitespace.
-            mo = re.search(
-                r'(?P<sep>' + re.escape(separator) + r')(?P<ws>[ \t]*)',
-                payload)
-            if not mo:
-                if self._strict:
-                    raise Errors.BoundaryError(
-                        "Couldn't find starting boundary: %s" % boundary)
-                container.set_payload(payload)
-                return
-            start = mo.start()
-            if start > 0:
-                # there's some pre-MIME boundary preamble
-                preamble = payload[0:start]
-            # Find out what kind of line endings we're using
-            start += len(mo.group('sep')) + len(mo.group('ws'))
-            mo = NLCRE.search(payload, start)
-            if mo:
-                start += len(mo.group(0))
-            # We create a compiled regexp first because we need to be able to
-            # specify the start position, and the module function doesn't
-            # support this signature. :(
-            cre = re.compile('(?P<sep>\r\n|\r|\n)' +
-                             re.escape(separator) + '--')
-            mo = cre.search(payload, start)
-            if mo:
-                terminator = mo.start()
-                linesep = mo.group('sep')
-                if mo.end() < len(payload):
-                    # There's some post-MIME boundary epilogue
-                    epilogue = payload[mo.end():]
-            elif self._strict:
-                raise Errors.BoundaryError(
-                        "Couldn't find terminating boundary: %s" % boundary)
-            else:
-                # Handle the case of no trailing boundary.  Check that it ends
-                # in a blank line.  Some cases (spamspamspam) don't even have
-                # that!
-                mo = re.search('(?P<sep>\r\n|\r|\n){2}$', payload)
-                if not mo:
-                    mo = re.search('(?P<sep>\r\n|\r|\n)$', payload)
-                    if not mo:
-                        raise Errors.BoundaryError(
-                          'No terminating boundary and no trailing empty line')
-                linesep = mo.group('sep')
-                terminator = len(payload)
-            # We split the textual payload on the boundary separator, which
-            # includes the trailing newline. If the container is a
-            # multipart/digest then the subparts are by default message/rfc822
-            # instead of text/plain.  In that case, they'll have a optional
-            # block of MIME headers, then an empty line followed by the
-            # message headers.
-            parts = re.split(
-                linesep + re.escape(separator) + r'[ \t]*' + linesep,
-                payload[start:terminator])
-            for part in parts:
-                if isdigest:
-                    if part.startswith(linesep):
-                        # There's no header block so create an empty message
-                        # object as the container, and lop off the newline so
-                        # we can parse the sub-subobject
-                        msgobj = self._class()
-                        part = part[len(linesep):]
-                    else:
-                        parthdrs, part = part.split(linesep+linesep, 1)
-                        # msgobj in this case is the "message/rfc822" container
-                        msgobj = self.parsestr(parthdrs, headersonly=1)
-                    # while submsgobj is the message itself
-                    msgobj.set_default_type('message/rfc822')
-                    maintype = msgobj.get_content_maintype()
-                    if maintype in ('message', 'multipart'):
-                        submsgobj = self.parsestr(part)
-                        msgobj.attach(submsgobj)
-                    else:
-                        msgobj.set_payload(part)
-                else:
-                    msgobj = self.parsestr(part)
+            boundaryRE = re.compile(
+                    r'(?P<sep>' + re.escape(separator) + 
+                    r')(?P<end>--)?(?P<ws>[ \t]*)(?P<linesep>\r\n|\r|\n)$')
+            preamble, matchobj = fp.readuntil(boundaryRE)
+            if not matchobj:
+                # Broken - we hit the end of file. Just set the body 
+                # to the text.
+                container.set_payload(preamble)
+                return container
+            if preamble:
                 container.preamble = preamble
-                container.epilogue = epilogue
-                container.attach(msgobj)
-        elif container.get_main_type() == 'multipart':
+            else:
+                # The module docs specify an empty preamble is None, not ''
+                container.preamble = None
+            while 1:
+                subobj = self._class()
+                if isdigest:
+                    subobj.set_default_type('message/rfc822')
+                    firstline = fp.peekline()
+                    if firstline.strip():
+                        # we have MIME headers. all good. 
+                        self._parseheaders(subobj, fp)
+                    else:
+                        # no MIME headers. this is allowed for multipart/digest
+                        # Consume the extra blank line
+                        fp.readline()
+                        pass
+                else:
+                    self._parseheaders(subobj, fp)
+                container.attach(subobj)
+                maintype = subobj.get_content_maintype()
+                hassubparts = (subobj.get_content_maintype() in 
+                                                ( "message", "multipart" ))
+                if hassubparts:
+                    subobj = self._parsemessage(subobj, fp)
+
+                trailer, matchobj = fp.readuntil(boundaryRE)
+                if matchobj is None or trailer:
+                    mo = re.search('(?P<sep>\r\n|\r|\n){2}$', trailer)
+                    if not mo:
+                        mo = re.search('(?P<sep>\r\n|\r|\n)$', trailer)
+                        if not mo:
+                            raise Errors.BoundaryError(
+                          'No terminating boundary and no trailing empty line')
+                    linesep = mo.group('sep')
+                    trailer = trailer[:-len(linesep)]
+                if trailer:
+                    self._attach_trailer(subobj, trailer)
+                if matchobj is None or matchobj.group('end'):
+                    # That was the last piece of data. Let our caller attach
+                    # the epilogue to us. But before we do that, push the
+                    # line ending of the match group back into the readline
+                    # buffer, as it's part of the epilogue.
+                    if matchobj:
+                        fp.unreadline(matchobj.group('linesep'))
+                    return container
+
+        elif container.get_content_maintype() == "multipart":
             # Very bad.  A message is a multipart with no boundary!
             raise Errors.BoundaryError(
-                'multipart message with no defined boundary')
-        elif container.get_type() == 'message/delivery-status':
-            # This special kind of type contains blocks of headers separated
-            # by a blank line.  We'll represent each header block as a
-            # separate Message object
-            blocks = []
-            while True:
-                blockmsg = self._class()
-                self._parseheaders(blockmsg, fp)
-                if not len(blockmsg):
-                    # No more header blocks left
-                    break
-                blocks.append(blockmsg)
-            container.set_payload(blocks)
-        elif container.get_main_type() == 'message':
-            # Create a container for the payload, but watch out for there not
-            # being any headers left
-            try:
-                msg = self.parse(fp)
-            except Errors.HeaderParseError:
+                    'multipart message with no defined boundary')
+        elif container.get_content_maintype() == "message":
+            ct = container.get_content_type()
+            if ct == "message/rfc822":
+                submessage = self._class()
+                self._parseheaders(submessage, fp)
+                self._parsemessage(submessage, fp)
+                container.attach(submessage)
+                return submessage
+            elif ct == "message/delivery-status":
+                # This special kind of type contains blocks of headers 
+                # separated by a blank line.  We'll represent each header 
+                # block as a separate Message object
+                while 1:
+                    nextblock = self._class()
+                    self._parseheaders(nextblock, fp)
+                    container.attach(nextblock)
+                    # next peek ahead to see whether we've hit the end or not
+                    nextline = fp.peekline()
+                    if nextline[:2] == "--":
+                        break
+                return container
+            else:
+                # Other sort of message object (e.g. external-body)
                 msg = self._class()
-                self._parsebody(msg, fp)
-            container.attach(msg)
+                self._parsemessage(msg, fp)
+                container.attach(msg)
+                return msg
         else:
-            text = fp.read()
-            if firstbodyline is not None:
-                text = firstbodyline + '\n' + text
-            container.set_payload(text)
+            # single body section. We let our caller set the payload.
+            return container
 
+    def _attach_trailer(self, obj, trailer):
+        if obj.get_content_maintype() in ("message", "multipart"):
+            obj.epilogue = trailer
+        else:
+            obj.set_payload(trailer)
 
 
 class HeaderParser(Parser):
@@ -284,9 +330,8 @@ class HeaderParser(Parser):
     Parsing with this subclass can be considerably faster if all you're
     interested in is the message headers.
     """
-    def _parsebody(self, container, fp, firstbodyline=None):
+    def _parsemessage(self, container, fp):
         # Consume but do not parse, the body
         text = fp.read()
-        if firstbodyline is not None:
-            text = firstbodyline + '\n' + text
         container.set_payload(text)
+        return None
