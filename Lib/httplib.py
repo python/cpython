@@ -332,10 +332,7 @@ class HTTPConnection:
         if port is None:
             i = host.find(':')
             if i >= 0:
-                try:
-                    port = int(host[i+1:])
-                except ValueError, msg:
-                    raise socket.error, str(msg)
+                port = int(host[i+1:])
                 host = host[:i]
             else:
                 port = self.default_port
