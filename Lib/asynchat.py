@@ -269,9 +269,7 @@ class fifo:
 
     def pop (self):
         if self.list:
-            result = self.list[0]
-            del self.list[0]
-            return (1, result)
+            return (1, self.list.pop(0))
         else:
             return (0, None)
 

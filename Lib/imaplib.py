@@ -973,11 +973,10 @@ class IMAP4:
             return typ, dat
         if not name in self.untagged_responses:
             return typ, [None]
-        data = self.untagged_responses[name]
+        data = self.untagged_responses.pop(name)
         if __debug__:
             if self.debug >= 5:
                 self._mesg('untagged_responses[%s] => %s' % (name, data))
-        del self.untagged_responses[name]
         return typ, data
 
 

@@ -323,8 +323,7 @@ def parse_header(line):
 
     """
     plist = map(lambda x: x.strip(), line.split(';'))
-    key = plist[0].lower()
-    del plist[0]
+    key = plist.pop(0).lower()
     pdict = {}
     for p in plist:
         i = p.find('=')

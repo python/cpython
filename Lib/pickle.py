@@ -692,11 +692,7 @@ class Unpickler:
     dispatch[PERSID] = load_persid
 
     def load_binpersid(self):
-        stack = self.stack
-
-        pid = stack[-1]
-        del stack[-1]
-
+        pid = self.stack.pop()
         self.append(self.persistent_load(pid))
     dispatch[BINPERSID] = load_binpersid
 
@@ -977,8 +973,7 @@ class Unpickler:
 
     def load_append(self):
         stack = self.stack
-        value = stack[-1]
-        del stack[-1]
+        value = stack.pop()
         list = stack[-1]
         list.append(value)
     dispatch[APPEND] = load_append
@@ -995,9 +990,8 @@ class Unpickler:
 
     def load_setitem(self):
         stack = self.stack
-        value = stack[-1]
-        key = stack[-2]
-        del stack[-2:]
+        value = stack.pop()
+        key = stack.pop()
         dict = stack[-1]
         dict[key] = value
     dispatch[SETITEM] = load_setitem
@@ -1014,8 +1008,7 @@ class Unpickler:
 
     def load_build(self):
         stack = self.stack
-        value = stack[-1]
-        del stack[-1]
+        value = stack.pop()
         inst = stack[-1]
         try:
             setstate = inst.__setstate__
@@ -1038,8 +1031,7 @@ class Unpickler:
     dispatch[MARK] = load_mark
 
     def load_stop(self):
-        value = self.stack[-1]
-        del self.stack[-1]
+        value = self.stack.pop()
         raise _Stop(value)
     dispatch[STOP] = load_stop
 
