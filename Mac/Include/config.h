@@ -48,7 +48,15 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef __MWERKS__
 #define HAVE_STRFTIME
+#ifndef __MC68K__
+/* 68K hypot definition (and implementation) are unuseable
+** because they use 10-byte floats.
+*/
+#define HAVE_HYPOT
 #endif
+#endif
+
+#define CHECK_IMPORT_CASE
 
 #ifdef USE_GUSI
 /* GUSI provides a lot of unixisms */
