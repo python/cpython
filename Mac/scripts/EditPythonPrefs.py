@@ -161,7 +161,7 @@ def interact(options, title):
 		if n == DIR_ITEM:
 			fss = EasyDialogs.AskFolder(message='Select python home folder:',
 				wanted=macfs.FSSpec)
-			if ok:
+			if fss:
 				options['dir'] = fss
 		elif n == HELP_ITEM and Help:
 			onoff = Help.HMGetBalloons()
