@@ -1,0 +1,95 @@
+\section{\module{webbrowser} ---
+         Convenient Web-browser controller}
+
+\declaremodule{standard}{webbrowser}
+\modulesynopsis{Easy-to-use controller for Web browsers.}
+\moduleauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+
+The \module{webbrowser} module provides a very high-level interface to
+allow displaying Web-based documents to users.  The controller objects
+are easy to use and are platform independent.
+
+Under \UNIX, graphical browsers are preferred under X11, but text-mode
+browser will be used if graphical browsers are not available or an X11
+display isn't available.  If text-mode browsers are used, the calling
+process will block until the user exits the browser.
+
+For non-\UNIX{} platforms, or when X11 browsers are available on
+\UNIX, the controlling process will not wait for the user to finish
+with the browser, but allow the browser to maintain its own window on
+the display.
+
+The following exception is defined:
+
+\begin{excdesc}{Error}
+  Exception raised when a browser control error occurs.
+\end{excdesc}
+
+The following functions are defined:
+
+\begin{funcdesc}{open}{url\optional{, new}}
+  Display \var{url} using the default browser.  If \var{new} is true,
+  a new browser window is opened if possible.
+\end{funcdesc}
+
+\begin{funcdesc}{open_new}{url}
+  Open \var{url} in a new window of the default browser, if possible,
+  otherwise, open \var{url} in the only browser window.
+\end{funcdesc}
+
+\begin{funcdesc}{get}{\optional{name}}
+  Return a controller object for the browser type \var{name}.
+\end{funcdesc}
+
+\begin{funcdesc}{register}{name, constructor\optional{, controller}}
+  Register the browser type \var{name}.  Once a browser type is
+  registered, the \function{get()} function can return a controller
+  for that browser type.  If \var{instance} is not provided, or is
+  \code{None}, \var{constructor} will be called without parameters to
+  create an instance when needed.  If \var{instance} is provided,
+  \var{constructor} will never be called, and may be \code{None}.
+\end{funcdesc}
+
+Several browser types are defined.  This table gives the type names
+that may be passed to the \function{get()} function and the names of
+the implementation classes, all defined in this module.
+
+\begin{tableiii}{l|l|c}{code}{Type Name}{Class Name}{Notes}
+  \lineiii{'netscape'}{\class{Netscape}}{}
+  \lineiii{'grail'}{\class{Grail}}{}
+  \lineiii{'windows-default'}{\class{WindowsDefault}}{(1)}
+  \lineiii{'internet-config'}{\class{InternetConfig}}{(2)}
+  \lineiii{'command-line'}{\class{CommandLineBrowser}}{}
+\end{tableiii}
+
+\noindent
+Notes:
+
+\begin{description}
+\item[(1)]
+Only on Windows platforms; requires the common
+extension modules \module{win32api} and \module{win32con}.
+
+\item[(2)]
+Only on MacOS platforms; requires the standard MacPython \module{ic}
+module, described in the \citetitle[../mac/module-ic.html]{Macintosh
+Library Modules} manual.
+\end{description}
+
+
+\subsection{Browser Controller Objects \label{browser-controllers}}
+
+Browser controllers provide two methods which parallel two of the
+module-level convenience functions:
+
+\begin{funcdesc}{open}{url\optional{, new}}
+  Display \var{url} using the browser handled by this controller.  If
+  \var{new} is true, a new browser window is opened if possible.
+\end{funcdesc}
+
+\begin{funcdesc}{open_new}{url}
+  Open \var{url} in a new window of the browser handled by this
+  controller, if possible, otherwise, open \var{url} in the only
+  browser window.
+\end{funcdesc}
