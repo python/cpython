@@ -4529,8 +4529,8 @@ posix_fdopen(PyObject *self, PyObject *args)
 }
 
 static char posix_isatty__doc__[] =
-"isatty(fd) -> Boolean\n\
-Return true if the file descriptor 'fd' is an open file descriptor\n\
+"isatty(fd) -> bool\n\
+Return True if the file descriptor 'fd' is an open file descriptor\n\
 connected to the slave end of a terminal.";
 
 static PyObject *
@@ -4539,7 +4539,7 @@ posix_isatty(PyObject *self, PyObject *args)
 	int fd;
 	if (!PyArg_ParseTuple(args, "i:isatty", &fd))
 		return NULL;
-	return Py_BuildValue("i", isatty(fd));
+	return PyBool_FromLong(isatty(fd));
 }
 
 #ifdef HAVE_PIPE
@@ -4823,10 +4823,65 @@ posix_strerror(PyObject *self, PyObject *args)
 
 #ifdef HAVE_SYS_WAIT_H
 
+#ifdef WCOREDUMP
+static char posix_WCOREDUMP__doc__[] =
+"WCOREDUMP(status) -> bool\n\
+Return True if the process returning 'status' was dumped to a core file.";
+
+static PyObject *
+posix_WCOREDUMP(PyObject *self, PyObject *args)
+{
+#ifdef UNION_WAIT
+	union wait status;
+#define status_i (status.w_status)
+#else
+	int status;
+#define status_i status
+#endif
+	status_i = 0;
+
+	if (!PyArg_ParseTuple(args, "i:WCOREDUMP", &status_i))
+	{
+		return NULL;
+	}
+
+	return PyBool_FromLong(WCOREDUMP(status));
+#undef status_i
+}
+#endif /* WCOREDUMP */
+
+#ifdef WIFCONTINUED
+static char posix_WIFCONTINUED__doc__[] =
+"WIFCONTINUED(status) -> bool\n\
+Return True if the process returning 'status' was continued from a\n\
+job control stop.";
+
+static PyObject *
+posix_WCONTINUED(PyObject *self, PyObject *args)
+{
+#ifdef UNION_WAIT
+	union wait status;
+#define status_i (status.w_status)
+#else
+	int status;
+#define status_i status
+#endif
+	status_i = 0;
+
+	if (!PyArg_ParseTuple(args, "i:WCONTINUED", &status_i))
+	{
+		return NULL;
+	}
+
+	return PyBool_FromLong(WCONTINUED(status));
+#undef status_i
+}
+#endif /* WIFCONTINUED */
+
 #ifdef WIFSTOPPED
 static char posix_WIFSTOPPED__doc__[] =
-"WIFSTOPPED(status) -> Boolean\n\
-Return true if the process returning 'status' was stopped.";
+"WIFSTOPPED(status) -> bool\n\
+Return True if the process returning 'status' was stopped.";
 
 static PyObject *
 posix_WIFSTOPPED(PyObject *self, PyObject *args)
@@ -4845,15 +4900,15 @@ posix_WIFSTOPPED(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	return Py_BuildValue("i", WIFSTOPPED(status));
+	return PyBool_FromLong(WIFSTOPPED(status));
 #undef status_i
 }
 #endif /* WIFSTOPPED */
 
 #ifdef WIFSIGNALED
 static char posix_WIFSIGNALED__doc__[] =
-"WIFSIGNALED(status) -> Boolean\n\
-Return true if the process returning 'status' was terminated by a signal.";
+"WIFSIGNALED(status) -> bool\n\
+Return True if the process returning 'status' was terminated by a signal.";
 
 static PyObject *
 posix_WIFSIGNALED(PyObject *self, PyObject *args)
@@ -4872,14 +4927,14 @@ posix_WIFSIGNALED(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	return Py_BuildValue("i", WIFSIGNALED(status));
+	return PyBool_FromLong(WIFSIGNALED(status));
 #undef status_i
 }
 #endif /* WIFSIGNALED */
 
 #ifdef WIFEXITED
 static char posix_WIFEXITED__doc__[] =
-"WIFEXITED(status) -> Boolean\n\
+"WIFEXITED(status) -> bool\n\
 Return true if the process returning 'status' exited using the exit()\n\
 system call.";
 
@@ -4900,7 +4955,7 @@ posix_WIFEXITED(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	return Py_BuildValue("i", WIFEXITED(status));
+	return PyBool_FromLong(WIFEXITED(status));
 #undef status_i
 }
 #endif /* WIFEXITED */
@@ -6407,6 +6462,9 @@ static PyMethodDef posix_methods[] = {
 	{"fdatasync",   posix_fdatasync,  METH_O, posix_fdatasync__doc__},
 #endif
 #ifdef HAVE_SYS_WAIT_H
+#ifdef WCOREDUMP
+        {"WCOREDUMP",	posix_WCOREDUMP, METH_VARARGS, posix_WCOREDUMP__doc__},
+#endif /* WCOREDUMP */
 #ifdef WIFSTOPPED
         {"WIFSTOPPED",	posix_WIFSTOPPED, METH_VARARGS, posix_WIFSTOPPED__doc__},
 #endif /* WIFSTOPPED */
@@ -6541,8 +6599,14 @@ all_ins(PyObject *d)
 #ifdef TMP_MAX
         if (ins(d, "TMP_MAX", (long)TMP_MAX)) return -1;
 #endif
+#ifdef WCONTINUED
+        if (ins(d, "WCONTINUED", (long)WCONTINUED)) return -1;
+#endif
 #ifdef WNOHANG
         if (ins(d, "WNOHANG", (long)WNOHANG)) return -1;
+#endif
+#ifdef WUNTRACED
+        if (ins(d, "WUNTRACED", (long)WUNTRACED)) return -1;
 #endif
 #ifdef O_RDONLY
         if (ins(d, "O_RDONLY", (long)O_RDONLY)) return -1;
