@@ -12,11 +12,14 @@ if verbose:
     for group in groups:
 	print group
 
+if not groups:
+    if verbose:
+	print "Empty Group Database -- no further tests of grp module possible"
+else:
+    group = grp.getgrgid(groups[0][2])
+    if verbose:
+	print 'Group Entry for GID %d: %s' % (groups[0][2], group)
 
-group = grp.getgrgid(groups[0][2])
-if verbose:
-    print 'Group Entry for GID %d: %s' % (groups[0][2], group)
-
-group = grp.getgrnam(groups[0][0])
-if verbose:
-    print 'Group Entry for group %s: %s' % (groups[0][0], group)
+    group = grp.getgrnam(groups[0][0])
+    if verbose:
+	print 'Group Entry for group %s: %s' % (groups[0][0], group)
