@@ -46,6 +46,7 @@ ii_next(iiobject *lz)
 {
 	teeobject *to = lz->tee;
 	PyObject *result, *tmp;
+	int n;
 
 	if (lz->num_seen == to->num_seen) { 
 		/* This instance is leading, use iter to get more data */
@@ -53,7 +54,10 @@ ii_next(iiobject *lz)
 		if (result == NULL)
 			return NULL;
 		if (to->save_mode)
-			PyList_Append(to->inbasket, result);
+			if(PyList_Append(to->inbasket, result) == -1){
+				Py_DECREF(result);
+				return NULL;
+			}
 		to->num_seen++;
 		lz->num_seen++;
 		return result;
@@ -66,18 +70,37 @@ ii_next(iiobject *lz)
 		to->outbasket = to->inbasket;
 		to->inbasket = tmp;
 		PyList_Reverse(to->outbasket);
-		assert(PyList_GET_SIZE(to->outbasket) > 0);
 	}
 
+	/* Pop result from to->outbasket */
+	n = PyList_GET_SIZE(to->outbasket);
+	assert(n>0);
+	result = PyList_GET_ITEM(to->outbasket, n-1);
+	Py_INCREF(result);
+	if (PyList_SetSlice(to->outbasket, n-1, n, NULL) == -1) {
+		Py_DECREF(result);
+		return NULL;
+	}
 	lz->num_seen++;
-	return PyObject_CallMethod(to->outbasket, "pop", NULL);
+	return result;
 }
 
 static void
 ii_dealloc(iiobject *ii)
 {
+	teeobject *to = ii->tee;
+	int n;
+
 	PyObject_GC_UnTrack(ii);
 	ii->tee->save_mode = 0;  /* Stop saving data */
+	if (ii->num_seen < to->num_seen) {
+		/* It is the trailing iterator being freed; this means 
+		   that the stored queue data is no longer needed */
+		n = PyList_GET_SIZE(to->inbasket);
+		PyList_SetSlice(to->inbasket, 0, n, NULL);
+		n = PyList_GET_SIZE(to->outbasket);
+		PyList_SetSlice(to->outbasket, 0, n, NULL);
+	}
 	Py_XDECREF(ii->tee);
 	PyObject_GC_Del(ii);
 }
