@@ -125,6 +125,22 @@ wr_object(v, fp)
 			wr_object(getlistitem(v, (int)i), fp);
 		}
 	}
+	else if (is_dictobject(v)) {
+		wr_byte(TYPE_DICT, fp);
+		/* This one is NULL object terminated! */
+		n = getdictsize(v);
+		for (i = 0; i < n; i++) {
+			object *key, *val;
+			extern object *getdict2key();
+			key = getdict2key(v, (int)i);
+			if (key != NULL) {
+				val = dictlookup(v, getstringvalue(key));
+				wr_object(key, fp);
+				wr_object(val, fp);
+			}
+		}
+		wr_object((object *)NULL, fp);
+	}
 	else if (is_codeobject(v)) {
 		codeobject *co = (codeobject *)v;
 		wr_byte(TYPE_CODE, fp);
@@ -261,6 +277,22 @@ rd_object(fp)
 			setlistitem(v, (int)i, rd_object(fp));
 		return v;
 	
+	case TYPE_DICT:
+		v = newdictobject();
+		if (v == NULL)
+			return NULL;
+		for (;;) {
+			object *key, *val;
+			key = rd_object(fp);
+			if (key == NULL)
+				break;
+			val = rd_object(fp);
+			dict2insert(v, key, val);
+			DECREF(key);
+			XDECREF(val);
+		}
+		return v;
+	
 	case TYPE_CODE:
 		{
 			object *code = rd_object(fp);
@@ -288,7 +320,7 @@ rd_object(fp)
 	}
 }
 
-/* The rest is meant to test only... */
+/* And an interface for Python programs... */
 
 static object *
 dump(self, args)
