@@ -7,13 +7,13 @@
 #  $ make -f tools/sgmlconv/Makefile
 
 TOPDIR=.
-TOOLSDIR=$(TOPDIR)/tools
+TOOLSDIR=tools
 
 SGMLRULES=../$(TOOLSDIR)/sgmlconv/make.rules
 SUBDIRS=api ext lib mac ref tut
 SUBMAKE=$(MAKE) -f $(SGMLRULES) TOOLSDIR=../$(TOOLSDIR)
 
-all:	sgml
+all:	xml
 
 .PHONY: sgml xml
 .PHONY: $(SUBDIRS)
