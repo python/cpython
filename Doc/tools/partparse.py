@@ -788,6 +788,7 @@ def getnextarg(length, buf, pp, item):
 			item = item+1
 		return length, item
 	else:
+	        ch = pp[item]
 		try:
 			str = `s(buf, ch.data)`
 		except TypeError:
@@ -852,9 +853,9 @@ class Wobj:
 		return self
 	def write(self, data):
 		self.data = self.data + data
-		
+
 # ignore these commands
-ignoredcommands = ('bcode', 'ecode', 'optional')
+ignoredcommands = ('bcode', 'ecode')
 # map commands like these to themselves as plaintext
 wordsselves = ('UNIX', 'ABC', 'C', 'ASCII', 'EOF')
 # \{ --> {,  \} --> }, etc
@@ -1080,7 +1081,7 @@ def do_funcdesc(length, buf, pp, i):
 	idxsi = hist.indexsubitem	# words
 	command = ''
 	cat_class = ''
-	if idxsi and idxsi[-1] in ('method', 'attribute'):
+	if idxsi and idxsi[-1] in ('method', 'protocol'):
 		command = 'defmethod'
 		cat_class = string.join(idxsi[:-1])
 	elif len(idxsi) == 2 and idxsi[1] == 'function':
@@ -1170,9 +1171,9 @@ def do_datadesc(length, buf, pp, i):
 	command = ''
 	cat_class = ''
 	class_class = ''
-	if idxsi[-1] == 'attribute':
+	if idxsi[-1] in ('attribute', 'option'):
 		command = 'defcv'
-		cat_class = 'attribute'
+		cat_class = idxsi[-1]
 		class_class = string.join(idxsi[:-1])
 	elif len(idxsi) == 3 and idxsi[:2] == ['in', 'module']:
 		command = 'defcv'
@@ -1332,7 +1333,12 @@ def changeit(buf, pp):
 					  chunk(GROUP, ch.where, ingroupch)]
 				length, i = length+2, i+2
 				
-			elif envname == 'tableiii':
+			elif (envname == 'tableiii') or \
+			     (envname == 'tableii'):
+				if (envname == 'tableii'):
+					ltable = 2
+				else:
+					ltable = 3
 				wh = ch.where
 				newcode = []
 				
@@ -1359,7 +1365,8 @@ def changeit(buf, pp):
 				del pp[i:newi]
 				length = length - (newi-i)
 
-				for count in range(3):
+				itembody = []
+				for count in range(ltable):
 					length, newi = getnextarg(length, buf, pp, i)
 					emphgroup = [\
 						  chunk(CSNAME, wh, 'emph'), \
@@ -1368,7 +1375,7 @@ def changeit(buf, pp):
 					length = length - (newi-i)
 					if count == 0:
 						itemarg = emphgroup
-					elif count == 2:
+					elif count == ltable-1:
 						itembody = itembody + \
 							  [chunk(PLAIN, wh, '  ---  ')] + \
 							  emphgroup
@@ -1437,7 +1444,7 @@ def changeit(buf, pp):
 					  chunk(GROUP, ch.where, [\
 					  chunk(PLAIN, ch.where, 'table')])]
 				i, length = i+2, length+2
-			elif envname == 'tableiii':
+			elif (envname == 'tableiii') or (envname == 'tableii'):
 				pp[i:i] = [\
 					  chunk(CSLINE, ch.where, 'end'), \
 					  chunk(GROUP, ch.where, [\
@@ -1457,7 +1464,16 @@ def changeit(buf, pp):
 				
 		elif ch.chtype == chunk_type(CSNAME):
 			# control name transformations
-			if s(buf, ch.data) in ignoredcommands:
+			if s(buf, ch.data) == 'optional':
+				pp[i-1].chtype = chunk_type (PLAIN)
+				pp[i-1].data = '['
+				if (i < length) and \
+				   (pp[i].chtype == chunk_type(GROUP)):
+					cp=pp[i].data
+					pp[i:i+1]=cp + [\
+					    chunk(PLAIN, ch.where, ']')]
+					length = length+len(cp)
+			elif s(buf, ch.data) in ignoredcommands:
 				del pp[i-1]
 				i, length = i-1, length-1
 			elif s(buf, ch.data) == '@' and \
@@ -1503,7 +1519,7 @@ def changeit(buf, pp):
 					length = length - (newi-i)
 					length, newi = getnextarg(length, buf, pp, i)
 					text = flattext(buf, pp[i:newi])
-					if text[0] != '(' or text[-1] != ')':
+					if text[:1] != '(' or text[-1:] != ')':
 						raise error, 'expected indexsubitme enclosed in braces'
 					words = string.split(text[1:-1])
 					hist.indexsubitem = words
@@ -1527,7 +1543,7 @@ def changeit(buf, pp):
 
 				cat_class = ''
 				if len(idxsi) >= 2 and idxsi[1] in \
-					  ('method', 'function'):
+					  ('method', 'function', 'protocol'):
 					command = 'findex'
 				elif len(idxsi) >= 2 and idxsi[1] in \
 					  ('exception', 'object'):
@@ -1590,7 +1606,8 @@ def changeit(buf, pp):
 				# \e --> \
 				ch.data = '\\'
 				ch.chtype = chunk_type(PLAIN)
-			elif s(buf, ch.data) == 'lineiii':
+			elif (s(buf, ch.data) == 'lineiii') or\
+			     (s(buf, ch.data) == 'lineii'):
 				# This is the most tricky one
 				# \lineiii{a1}{a2}[{a3}] -->
 				# @item @<cts. of itemargmacro>{a1}
@@ -1603,10 +1620,11 @@ def changeit(buf, pp):
 				if not hist.inenv:
 					raise error, \
 						  'no environment for lineiii'
-				if hist.inenv[0] != 'tableiii':
+				if (hist.inenv[0] != 'tableiii') and\
+				   (hist.inenv[0] != 'tableii'):
 					raise error, \
 						  'wrong command (' + \
-						  `'lineiii'` + \
+						  s(buf, ch.data)+ \
 						  ') in wrong environment (' \
 						  + `hist.inenv[0]` + ')'
 				ch.chtype = chunk_type(CSLINE)
