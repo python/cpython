@@ -657,7 +657,7 @@ interpreter lock has been created.
   state information.  Each extension should use a unique key to use to
   store state in the dictionary.  If this function returns \NULL, an
   exception has been raised and the caller should allow it to
-  propogate.
+  propagate.
 \end{cfuncdesc}
 
 
@@ -715,7 +715,7 @@ previous versions.
   processed after which the exception becomes set within the frame
   being executed.  The effect of this is that as exception propogation
   causes the Python stack to unwind, the callback is called upon
-  return to each frame as the exception propogates.  Only trace
+  return to each frame as the exception propagates.  Only trace
   functions receives these events; they are not needed by the
   profiler.
 \end{cvardesc}
