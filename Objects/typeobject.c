@@ -28,6 +28,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Type object implementation */
 
+/* ARGSUSED */
 static int
 type_print(v, fp, flags)
 	typeobject *v;
