@@ -281,7 +281,7 @@ Guido's binary tree example.
 
 """
 
-# A few examples from Iterator-List and Python-Dev email.
+# Examples from Iterator-List and Python-Dev and c.l.py.
 
 email_tests = """
 
@@ -319,6 +319,54 @@ Traceback (most recent call last):
  ...
   File "<string>", line 2, in g
 ValueError: generator already executing
+
+Next one was posted to c.l.py.
+
+>>> def gcomb(x, k):
+...     "Generate all combinations of k elements from list x."
+...
+...     if k > len(x):
+...         return
+...     if k == 0:
+...         yield []
+...     else:
+...         first, rest = x[0], x[1:]
+...         # A combination does or doesn't contain first.
+...         # If it does, the remainder is a k-1 comb of rest.
+...         for c in gcomb(rest, k-1):
+...             c.insert(0, first)
+...             yield c
+...         # If it doesn't contain first, it's a k comb of rest.
+...         for c in gcomb(rest, k):
+...             yield c
+
+>>> seq = range(1, 5)
+>>> for k in range(len(seq) + 2):
+...     print "%d-combs of %s:" % (k, seq)
+...     for c in gcomb(seq, k):
+...         print "   ", c
+0-combs of [1, 2, 3, 4]:
+    []
+1-combs of [1, 2, 3, 4]:
+    [1]
+    [2]
+    [3]
+    [4]
+2-combs of [1, 2, 3, 4]:
+    [1, 2]
+    [1, 3]
+    [1, 4]
+    [2, 3]
+    [2, 4]
+    [3, 4]
+3-combs of [1, 2, 3, 4]:
+    [1, 2, 3]
+    [1, 2, 4]
+    [1, 3, 4]
+    [2, 3, 4]
+4-combs of [1, 2, 3, 4]:
+    [1, 2, 3, 4]
+5-combs of [1, 2, 3, 4]:
 """
 
 # Fun tests (for sufficiently warped notions of "fun").
