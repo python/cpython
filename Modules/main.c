@@ -18,6 +18,9 @@
 #define PYTHONHOMEHELP "<prefix>/python2.0"
 #endif
 
+#define COPYRIGHT \
+    "Type \"copyright\", \"credits\" or \"license\" for more information."
+
 /* Interface to getopt(): */
 extern int optind;
 extern char *optarg;
@@ -222,7 +225,7 @@ Py_Main(int argc, char **argv)
 	if (Py_VerboseFlag ||
 	    (command == NULL && filename == NULL && stdin_is_interactive))
 		fprintf(stderr, "Python %s on %s\n%s\n",
-			Py_GetVersion(), Py_GetPlatform(), Py_GetCopyright());
+			Py_GetVersion(), Py_GetPlatform(), COPYRIGHT);
 	
 	
 	if (command != NULL) {
