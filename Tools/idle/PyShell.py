@@ -36,6 +36,9 @@ def linecache_checkcache(orig_checkcache=linecache.checkcache):
 linecache.checkcache = linecache_checkcache
 
 
+IDENTCHARS = string.ascii_letters + string.digits + "_"
+
+
 # Note: <<newline-and-indent>> event is defined in AutoIndent.py
 
 #$ event <<plain-newline-and-indent>>
@@ -217,7 +220,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         text.tag_add("ERROR", pos)
         text.see(pos)
         char = text.get(pos)
-        if char and char in string.letters + string.digits + "_":
+        if char and char in IDENTCHARS:
             text.tag_add("ERROR", pos + " wordstart", pos)
         self.tkconsole.resetoutput()
         self.write("SyntaxError: %s\n" % str(msg))
