@@ -25,30 +25,34 @@
 ;; and is the current maintainer.  Tim's now back but disavows all
 ;; responsibility for the mode.  Smart Tim :-)
 
-;; This version of python-mode.el is no longer compatible with Emacs
-;; 18.  I am striving to maintain compatibility with the X/Emacs 19
-;; lineage but as time goes on that becomes more and more difficult.
-;; I current recommend that you upgrade to the latest stable released
-;; version of your favorite branch: Emacs 20.3 or better, or XEmacs
-;; 20.4 or better (XEmacs 21.0 is in beta testing as of this writing
-;; 27-Oct-1998 appears to work fine with this version of
-;; python-mode.el).  Even Windows users should be using at least
-;; NTEmacs 20.3, and XEmacs 21.0 will work very nicely on Windows when
-;; it is released.
+;; pdbtrack support contributed by Ken Manheimer, April 2001.
+
+;; This version of python-mode.el has only been tested with XEmacs
+;; 21.1.14 and Emacs 20.7 as these are the latest versions of these
+;; Emacsen as of this writing (11-Apr-2001).  I have no intent to test
+;; it with earlier Emacsen, but I will accept patches if they are
+;; small and reasonable.  Please use the SourceForge Python project to
+;; submit bugs or patches:
+;;
+;;     http://sourceforge.net/projects/python
 
 ;; FOR MORE INFORMATION:
 
-;; For more information on installing python-mode.el, especially with
-;; respect to compatibility information, please see
-;;
+;; There is some information on python-mode.el at
+
 ;;     http://www.python.org/emacs/python-mode/
 ;;
-;; This site also contains links to other packages that you might find 
-;; useful, such as pdb interfaces, OO-Browser links, etc.
+;; but this link is fairly out of date, due to the current difficulty
+;; in updating that site. It does contain links to other packages that
+;; you might find useful, such as pdb interfaces, OO-Browser links,
+;; etc.  Eventually, we'll be able to update it much more easily.
 
 ;; BUG REPORTING:
 
-;; To submit bug reports, use C-c C-b.  Please include a complete, but
+;; As mentioned above, please use the SourceForge Python project for
+;; submitting bug reports or patches.  The old recommendation, to use
+;; C-c C-b will still work, but those reports have a higher chance of
+;; getting buried in my mailbox.  Please include a complete, but
 ;; concise code sample and a recipe for reproducing the bug.  Send
 ;; suggestions and other comments to python-mode@python.org.
 
@@ -56,38 +60,11 @@
 ;; doubtful that a texinfo manual would be very useful, but if you
 ;; want to contribute one, I'll certainly accept it!
 
-;; TO DO LIST:
-
-;; - Better integration with pdb.py and gud-mode for debugging.
-;; - Rewrite according to GNU Emacs Lisp standards.
-;; - add a py-goto-block-down, bound to C-c C-d
-
 ;;; Code:
 
 (require 'comint)
 (require 'custom)
-(eval-when-compile
-  (require 'cl)
-  (if (not (and (condition-case nil
-		    (require 'custom)
-		  (error nil))
-		;; Stock Emacs 19.34 has a broken/old Custom library
-		;; that does more harm than good.  Fortunately, it is
-		;; missing defcustom
-		(fboundp 'defcustom)))
-      (error "STOP! STOP! STOP! STOP!
-
-The Custom library was not found or is out of date.  A more current
-version is required.  Please download and install the latest version
-of the Custom library from:
-
-    <http://www.dina.kvl.dk/~abraham/custom/>
-
-See the Python Mode home page for details:
-
-    <http://www.python.org/emacs/python-mode>
-")))
-
+(require 'cl)
 
 
 ;; user definable variables
@@ -274,6 +251,22 @@ When non-nil, arguments are printed."
   :group 'python)
 (make-variable-buffer-local 'py-indent-offset)
 
+(defcustom py-pdbtrack-do-tracking-p t
+  "*Controls whether the pdbtrack feature is enabled or not.
+When non-nil, pdbtrack is enabled in all comint-based buffers,
+e.g. shell buffers and the *Python* buffer.  When using pdb to debug a
+Python program, pdbtrack notices the pdb prompt and displays the
+source file and line that the program is stopped at, much the same way
+as gud-mode does for debugging C programs with gdb."
+  :type 'boolean
+  :group 'python)
+(make-variable-buffer-local 'py-pdbtrack-do-tracking-p)
+
+(defcustom py-pdbtrack-minor-mode-string " PDB"
+  "*String to use in the minor mode list when pdbtrack is enabled."
+  :type 'string
+  :group 'python)
+
 ;; Not customizable
 (defvar py-master-file nil
   "If non-nil, execute the named file instead of the buffer's file.
@@ -297,13 +290,6 @@ buffer is prepended to come up with a file name.")
 
 (defconst py-emacs-features
   (let (features)
-   ;; NTEmacs 19.34.6 has a broken make-temp-name; it always returns
-   ;; the same string.
-   (let ((tmp1 (make-temp-name ""))
-	 (tmp2 (make-temp-name "")))
-     (if (string-equal tmp1 tmp2)
-	 (push 'broken-temp-names features)))
-   ;; return the features
    features)
   "A list of features extant in the Emacs you are using.
 There are many flavors of Emacs out there, with different levels of
@@ -346,6 +332,9 @@ support for features needed by `python-mode'.")
 (defvar py-file-queue nil
   "Queue of Python temp files awaiting execution.
 Currently-active file is at the head of the list.")
+
+(defvar py-pdbtrack-is-tracking-p nil)
+
 
 
 ;; Constants
@@ -428,6 +417,17 @@ Currently-active file is at the head of the list.")
   "[ \t]+File \"\\([^\"]+\\)\", line \\([0-9]+\\)"
   "Regular expression that describes tracebacks.")
 
+;; pdbtrack contants
+(defconst py-pdbtrack-stack-entry-regexp
+  "> \\([^(]+\\)(\\([0-9]+\\))[?a-zA-Z0-9_]+()"
+  "Regular expression pdbtrack uses to find a stack trace entry.")
+
+(defconst py-pdbtrack-input-prompt "\n[(<]?pdb[>)]? "
+  "Regular expression pdbtrack uses to recognize a pdb prompt.")
+
+(defconst py-pdbtrack-track-range 10000
+  "Max number of characters from end of buffer to search for stack entry.")
+
 
 
 ;; Major mode boilerplate
@@ -489,6 +489,7 @@ Currently-active file is at the head of the list.")
   ;; Miscellaneous
   (define-key py-mode-map "\C-c:"     'py-guess-indent-offset)
   (define-key py-mode-map "\C-c\t"    'py-indent-region)
+  (define-key py-mode-map "\C-c\C-d"  'py-pdbtrack-toggle-stack-tracking)
   (define-key py-mode-map "\C-c\C-n"  'py-next-statement)
   (define-key py-mode-map "\C-c\C-p"  'py-previous-statement)
   (define-key py-mode-map "\C-c\C-u"  'py-goto-block-up)
@@ -1091,6 +1092,70 @@ This function is appropriate for `comint-output-filter-functions'."
 	  (py-execute-file pyproc (car py-file-queue))))
     ))
 
+(defun py-pdbtrack-overlay-arrow (activation)
+  "Activate or de arrow at beginning-of-line in current buffer."
+  ;; This was derived/simplified from edebug-overlay-arrow
+  (cond (activation
+	 (setq overlay-arrow-position (make-marker))
+	 (setq overlay-arrow-string "=>")
+	 (set-marker overlay-arrow-position (py-point 'bol) (current-buffer))
+	 (setq py-pdbtrack-is-tracking-p t))
+	(overlay-arrow-position
+	 (setq overlay-arrow-position nil)
+	 (setq py-pdbtrack-is-tracking-p nil))
+	))
+
+(defun py-pdbtrack-track-stack-file (text)
+  "Show the file indicated by the pdb stack entry line, in a separate window.
+
+Activity is disabled if the buffer-local variable
+`py-pdbtrack-do-tracking-p' is nil.
+
+We depend on the pdb input prompt matching `py-pdbtrack-input-prompt'
+at the beginning of the line."
+  ;; Instead of trying to piece things together from partial text
+  ;; (which can be almost useless depending on Emacs version), we
+  ;; monitor to the point where we have the next pdb prompt, and then
+  ;; check all text from comint-last-input-end to process-mark.
+  ;;
+  ;; KLM: It might be nice to provide an optional override, so this
+  ;; routine could be fed debugger output strings as the text
+  ;; argument, for deliberate application elsewhere.
+  ;;
+  ;; KLM: We're very conservative about clearing the overlay arrow, to
+  ;; minimize residue.  This means, for instance, that executing other
+  ;; pdb commands wipes out the highlight.
+  (let* ((origbuf (current-buffer))
+	 (currproc (get-buffer-process origbuf)))
+    (if (not (and currproc py-pdbtrack-do-tracking-p))
+        (py-pdbtrack-overlay-arrow nil)
+      (let* (;(origdir default-directory)
+             (procmark (process-mark currproc))
+             (block (buffer-substring (max comint-last-input-end
+                                           (- procmark
+                                              py-pdbtrack-track-range))
+                                      procmark))
+             fname lineno)
+        (if (not (string-match (concat py-pdbtrack-input-prompt "$") block))
+            (py-pdbtrack-overlay-arrow nil)
+          (if (not (string-match
+                    (concat ".*" py-pdbtrack-stack-entry-regexp ".*")
+                    block))
+              (py-pdbtrack-overlay-arrow nil)
+            (setq fname (match-string 1 block)
+                  lineno (match-string 2 block))
+            (if (file-exists-p fname)
+                (progn
+                  (find-file-other-window fname)
+                  (goto-line (string-to-int lineno))
+                  (message "L%s %s" lineno fname)
+                  (py-pdbtrack-overlay-arrow t)
+                  (pop-to-buffer origbuf t) )
+              (if (= (elt fname 0) ?\<)
+                  (message "(Non-file source: '%s')" fname)
+                (message "Not found: %s" fname))
+              )))))))
+
 (defun py-postprocess-output-buffer (buf)
   "Highlight exceptions found in BUF.
 If an exception occurred return t, otherwise return nil.  BUF must exist."
@@ -1227,6 +1292,9 @@ filter."
     (setq comint-prompt-regexp "^>>> \\|^[.][.][.] \\|^(pdb) ")
     (add-hook 'comint-output-filter-functions
 	      'py-comint-output-filter-function)
+    ;; pdbtrack
+    (add-hook 'comint-output-filter-functions 'py-pdbtrack-track-stack-file)
+    (setq py-pdbtrack-do-tracking-p t)
     (set-syntax-table py-mode-syntax-table)
     (use-local-map py-shell-map)
     ))
@@ -2489,6 +2557,29 @@ A `nomenclature' is a fancy way of saying AWordWithMixedCaseNotUnderscores."
 
 
 
+;; pdbtrack functions
+(defun py-pdbtrack-toggle-stack-tracking (arg)
+  (interactive "P")
+  (if (not (get-buffer-process (current-buffer)))
+      (error "No process associated with buffer '%s'" (current-buffer)))
+  ;; missing or 0 is toggle, >0 turn on, <0 turn off
+  (if (or (not arg)
+	  (zerop (setq arg (prefix-numeric-value arg))))
+      (setq py-pdbtrack-do-tracking-p (not py-pdbtrack-do-tracking-p))
+    (setq py-pdbtrack-do-tracking-p (> arg 0)))
+  (message "%sabled Python's pdbtrack"
+           (if py-pdbtrack-do-tracking-p "En" "Dis")))
+
+(defun turn-on-pdbtrack ()
+  (interactive)
+  (py-pdbtrack-toggle-stack-tracking 1))
+
+(defun turn-off-pdbtrack ()
+  (interactive)
+  (py-pdbtrack-toggle-stack-tracking 0))
+
+
+
 ;; Documentation functions
 
 ;; dump the long form of the mode blurb; does the usual doc escapes,
@@ -3135,6 +3226,12 @@ These are Python temporary files awaiting execution."
 
 ;; arrange to kill temp files when Emacs exists
 (add-hook 'kill-emacs-hook 'py-kill-emacs-hook)
+(add-hook 'comint-output-filter-functions 'py-pdbtrack-track-stack-file)
+
+;; Add a designator to the minor mode strings
+(or (assq 'py-pdbtrack-minor-mode-string minor-mode-alist)
+    (push '(py-pdbtrack-is-tracking-p py-pdbtrack-minor-mode-string)
+	  minor-mode-alist))
 
 
 
