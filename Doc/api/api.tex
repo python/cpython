@@ -3070,12 +3070,12 @@ Can be used to resize a tuple.  \var{newsize} will be the new length
 of the tuple.  Because tuples are \emph{supposed} to be immutable,
 this should only be used if there is only one reference to the object.
 Do \emph{not} use this if the tuple may already be known to some other
-part of the code.  \var{last_is_sticky} is a flag --- if true, the
-tuple will grow or shrink at the front, otherwise it will grow or
-shrink at the end.  Think of this as destroying the old tuple and
-creating a new one, only more efficiently.  Returns \code{0} on
-success and \code{-1} on failure (in which case a
-\exception{MemoryError} or \exception{SystemError} will be raised).
+part of the code.  The tuple will always grow or shrink at the end.  The
+\var{last_is_sticky} flag is not used and should always be false.  Think
+of this as destroying the old tuple and creating a new one, only more
+efficiently.  Returns \code{0} on success and \code{-1} on failure (in
+which case a \exception{MemoryError} or \exception{SystemError} will be
+raised).
 \end{cfuncdesc}
 
 
