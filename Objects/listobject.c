@@ -8,6 +8,19 @@
 #include <sys/types.h>		/* For size_t */
 #endif
 
+/* Ensure ob_item has room for at least newsize elements, and set
+ * ob_size to newsize.  If newsize > ob_size on entry, the content
+ * of the new slots at exit is undefined heap trash; it's the caller's
+ * responsiblity to overwrite them with sane values.
+ * The number of allocated elements may grow, shrink, or stay the same.
+ * Failure is impossible if newsize <= self.allocated on entry, although
+ * that partly relies on an assumption that the system realloc() never
+ * fails when passed a number of bytes <= the number of bytes last
+ * allocated (the C standard doesn't guarantee this, but it's hard to
+ * imagine a realloc implementation where it wouldn't be true).
+ * Note that self->ob_item may change, and even if newsize is less
+ * than ob_size on entry.
+ */
 static int
 list_resize(PyListObject *self, int newsize)
 {
@@ -18,7 +31,6 @@ list_resize(PyListObject *self, int newsize)
 	   to accommodate the newsize.  If the newsize is 16 smaller than the
 	   current size, then proceed with the realloc() to shrink the list.
 	*/
-
 	if (self->allocated >= newsize && self->ob_size < newsize + 16) {
 		assert(self->ob_item != NULL || newsize == 0);
 		self->ob_size = newsize;
@@ -516,32 +528,33 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 	   we must allocate an additional array, 'recycle', into which
 	   we temporarily copy the items that are deleted from the
 	   list. :-( */
-	PyObject **recycle, **p;
 	PyObject *recycled[8];
+	PyObject **recycle = recycled; /* will allocate more if needed */
 	PyObject **item;
 	PyObject **vitem = NULL;
 	PyObject *v_as_SF = NULL; /* PySequence_Fast(v) */
-	int n; /* Size of replacement list */
+	int n; /* # of elements in replacement list */
+	int norig; /* # of elements in list getting replaced */
 	int d; /* Change in size */
 	int k; /* Loop index */
-	int s;
+	size_t s;
+	int result = -1;	/* guilty until proved innocent */
 #define b ((PyListObject *)v)
 	if (v == NULL)
 		n = 0;
 	else {
 		if (a == b) {
 			/* Special case "a[i:j] = a" -- copy b first */
-			int ret;
 			v = list_slice(b, 0, b->ob_size);
 			if (v == NULL)
-				return -1;
-			ret = list_ass_slice(a, ilow, ihigh, v);
+				return result;
+			result = list_ass_slice(a, ilow, ihigh, v);
 			Py_DECREF(v);
-			return ret;
+			return result;
 		}
 		v_as_SF = PySequence_Fast(v, "can only assign an iterable");
 		if(v_as_SF == NULL)
-			return -1;
+			goto Error;
 		n = PySequence_Fast_GET_SIZE(v_as_SF);
 		vitem = PySequence_Fast_ITEMS(v_as_SF);
 	}
@@ -549,31 +562,31 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		ilow = 0;
 	else if (ilow > a->ob_size)
 		ilow = a->ob_size;
+
 	if (ihigh < ilow)
 		ihigh = ilow;
 	else if (ihigh > a->ob_size)
 		ihigh = a->ob_size;
 
-	d = n - (ihigh-ilow);
+	norig = ihigh - ilow;
+	assert(norig >= 0);
+	d = n - norig;
 	if (a->ob_size + d == 0) {
 		Py_XDECREF(v_as_SF);
 		return list_clear(a);
 	}
 	item = a->ob_item;
-	/* recycle the ihigh-ilow items that we are about to remove */
-	s = (ihigh - ilow)*sizeof(PyObject *);
+	/* recycle the items that we are about to remove */
+	s = norig * sizeof(PyObject *);
 	if (s > sizeof(recycled)) {
 		recycle = (PyObject **)PyMem_MALLOC(s);
 		if (recycle == NULL) {
 			PyErr_NoMemory();
-			Py_XDECREF(v_as_SF);
-			return -1;
+			goto Error;
 		}
 	}
-	else
-		recycle = recycled;
-	p = recycle + (ihigh - ilow);
 	memcpy(recycle, &item[ilow], s);
+
 	if (d < 0) { /* Delete -d items */
 		memmove(&item[ihigh+d], &item[ihigh],
 			(a->ob_size - ihigh)*sizeof(PyObject *));
@@ -582,12 +595,8 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 	}
 	else if (d > 0) { /* Insert d items */
 		s = a->ob_size;
-		if (list_resize(a, s+d) == -1) {
-			if (recycle != recycled)
-				PyMem_FREE(recycle);
-			Py_XDECREF(v_as_SF);
-			return -1;
-		}
+		if (list_resize(a, s+d) < 0)
+			goto Error;
 		item = a->ob_item;
 		memmove(&item[ihigh+d], &item[ihigh],
 			(s - ihigh)*sizeof(PyObject *));
@@ -597,12 +606,21 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		Py_XINCREF(w);
 		item[ilow] = w;
 	}
-	while (--p >= recycle)
-		Py_XDECREF(*p);
+	/* Convoluted:  there's some obscure reason for wanting to do
+	 * the decrefs "backwards", but C doesn't guarantee you can compute
+	 * a pointer to one slot *before* an allocated vector.  So checking
+	 * for item >= recycle is incorrect.
+	 */
+	for (item = recycle + norig; item > recycle; ) {
+		--item;
+		Py_XDECREF(*item);
+	}
+	result = 0;
+ Error:
 	if (recycle != recycled)
 		PyMem_FREE(recycle);
 	Py_XDECREF(v_as_SF);
-	return 0;
+	return result;
 #undef b
 }
 
