@@ -60,8 +60,12 @@
 #endif
 
 /* define the appropriate 64-bit capable tell() function */
-#ifdef MS_WIN64
-#	define TELL64 _telli64
+#if defined(MS_WIN64)
+#define TELL64 _telli64
+#elif defined(__NetBSD__) || defined(__OpenBSD__)
+/* NOTE: this is only used on older
+   NetBSD prior to f*o() funcions */
+#define TELL64(fd) lseek((fd),0,SEEK_CUR)
 #endif
 
 
