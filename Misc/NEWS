@@ -210,6 +210,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- nt now properly allows to refer to UNC roots, e.g. in nt.stat().
+
 - the weakref module now supports additional objects:  array.array,
   sre.pattern_objects, file objects, and sockets.
 

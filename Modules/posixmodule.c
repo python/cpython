@@ -892,6 +892,66 @@ _pystat_fromstructstat(STRUCT_STAT st)
 	return v;
 }
 
+#ifdef MS_WINDOWS
+
+/* IsUNCRoot -- test whether the supplied path is of the form \\SERVER\SHARE\,
+   where / can be used in place of \ and the trailing slash is optional.
+   Both SERVER and SHARE must have at least one character.
+*/
+
+#define ISSLASHA(c) ((c) == '\\' || (c) == '/')
+#define ISSLASHW(c) ((c) == L'\\' || (c) == L'/')
+#define ARRAYSIZE(a) (sizeof(a) / sizeof(a[0]))
+
+static BOOL 
+IsUNCRootA(char *path, int pathlen)
+{
+	#define ISSLASH ISSLASHA
+
+	int i, share;
+
+	if (pathlen < 5 || !ISSLASH(path[0]) || !ISSLASH(path[1]))
+		/* minimum UNCRoot is \\x\y */
+		return FALSE;
+	for (i = 2; i < pathlen ; i++)
+		if (ISSLASH(path[i])) break;
+	if (i == 2 || i == pathlen)
+		/* do not allow \\\SHARE or \\SERVER */
+		return FALSE;
+	share = i+1;
+	for (i = share; i < pathlen; i++)
+		if (ISSLASH(path[i])) break;
+	return (i != share && (i == pathlen || i == pathlen-1));
+
+	#undef ISSLASH
+}
+
+#ifdef Py_WIN_WIDE_FILENAMES
+static BOOL 
+IsUNCRootW(Py_UNICODE *path, int pathlen)
+{
+	#define ISSLASH ISSLASHW
+
+	int i, share;
+
+	if (pathlen < 5 || !ISSLASH(path[0]) || !ISSLASH(path[1]))
+		/* minimum UNCRoot is \\x\y */
+		return FALSE;
+	for (i = 2; i < pathlen ; i++)
+		if (ISSLASH(path[i])) break;
+	if (i == 2 || i == pathlen)
+		/* do not allow \\\SHARE or \\SERVER */
+		return FALSE;
+	share = i+1;
+	for (i = share; i < pathlen; i++)
+		if (ISSLASH(path[i])) break;
+	return (i != share && (i == pathlen || i == pathlen-1));
+
+	#undef ISSLASH
+}
+#endif /* Py_WIN_WIDE_FILENAMES */
+#endif /* MS_WINDOWS */
+
 static PyObject *
 posix_do_stat(PyObject *self, PyObject *args,
 	      char *format,
@@ -931,15 +991,22 @@ posix_do_stat(PyObject *self, PyObject *args,
 			/* Remove trailing slash or backslash, unless it's the current
 			   drive root (/ or \) or a specific drive's root (like c:\ or c:/).
 			*/
-			if (pathlen > 0 &&
-				(wpath[pathlen-1]== L'\\' || wpath[pathlen-1] == L'/')) {
-	    			/* It does end with a slash -- exempt the root drive cases. */
-	    			/* XXX UNC root drives should also be exempted? */
-				if (pathlen == 1 || (pathlen == 3 && wpath[1] == L':'))
-	    			/* leave it alone */;
-	    		else {
-					/* nuke the trailing backslash */
-					wpath[pathlen-1] = L'\0';
+			if (pathlen > 0) {
+				if (ISSLASHW(wpath[pathlen-1])) {
+	    				/* It does end with a slash -- exempt the root drive cases. */
+					if (pathlen == 1 || (pathlen == 3 && wpath[1] == L':') || 
+						IsUNCRootW(wpath, pathlen))
+	    					/* leave it alone */;
+					else {
+						/* nuke the trailing backslash */
+						wpath[pathlen-1] = L'\0';
+					}
+				}
+				else if (ISSLASHW(wpath[1]) && pathlen < ARRAYSIZE(wpath)-1 && 
+					IsUNCRootW(wpath, pathlen)) {
+					/* UNC root w/o trailing slash: add one when there's room */
+					wpath[pathlen++] = L'\\';
+					wpath[pathlen] = L'\0';
 				}
 			}
 			Py_BEGIN_ALLOW_THREADS
@@ -974,16 +1041,25 @@ posix_do_stat(PyObject *self, PyObject *args,
 	/* Remove trailing slash or backslash, unless it's the current
 	   drive root (/ or \) or a specific drive's root (like c:\ or c:/).
 	*/
-	if (pathlen > 0 &&
-	    (path[pathlen-1]== '\\' || path[pathlen-1] == '/')) {
-	    	/* It does end with a slash -- exempt the root drive cases. */
-	    	/* XXX UNC root drives should also be exempted? */
-	    	if (pathlen == 1 || (pathlen == 3 && path[1] == ':'))
-	    		/* leave it alone */;
-	    	else {
-			/* nuke the trailing backslash */
+	if (pathlen > 0) {
+		if (ISSLASHA(path[pathlen-1])) {
+			/* It does end with a slash -- exempt the root drive cases. */
+			if (pathlen == 1 || (pathlen == 3 && path[1] == ':') || 
+				IsUNCRootA(path, pathlen))
+	    			/* leave it alone */;
+			else {
+				/* nuke the trailing backslash */
+				strncpy(pathcopy, path, pathlen);
+				pathcopy[pathlen-1] = '\0';
+				path = pathcopy;
+			}
+		}
+		else if (ISSLASHA(path[1]) && pathlen < ARRAYSIZE(pathcopy)-1 && 
+			IsUNCRootA(path, pathlen)) {
+			/* UNC root w/o trailing slash: add one when there's room */
 			strncpy(pathcopy, path, pathlen);
-			pathcopy[pathlen-1] = '\0';
+			pathcopy[pathlen++] = '\\';
+			pathcopy[pathlen] = '\0';
 			path = pathcopy;
 		}
 	}
