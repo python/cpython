@@ -111,7 +111,7 @@ rgbimg rgbimgmodule.c   # Read SGI RGB image files (but coded portably)
 # STDWIN toplevel directory.  The ARCH variable must be set to the
 # architecture identifier used to build STDWIN.  NB if you combine this
 # with the gl module on an SGI IRIX 4 machine, you should replace
-"-lX11" with "-lX11_s".
+# "-lX11" with "-lX11_s".
 
 #STDWIN=/ufs/guido/src/stdwin
 #ARCH=???
