@@ -470,7 +470,7 @@ class PyShell(OutputWindow):
 
     def begin(self):
         self.resetoutput()
-        self.write("Python %s on %s\n%s\nIDLE %s -- press F1 for help\n" %
+        self.write("Python %s on %s\n%s\nIDLE Fork %s -- press F1 for help\n" %
                    (sys.version, sys.platform, self.COPYRIGHT,
                     idlever.IDLE_VERSION))
         try:
