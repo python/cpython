@@ -12,27 +12,178 @@ software which can be successfully built on both \UNIX{} and Windows.
 
 \section{A Cookbook Approach \label{win-cookbook}}
 
-\sectionauthor{Neil Schemenauer}{neil_schemenauer@transcanada.com}
+There are two approaches to building extension modules on Windows,
+just as there are on \UNIX: use the \refmodule{distutils} package to
+control the build process, or do things manually.  The distutils
+approach works well for most extensions; documentation on using
+\refmodule{distutils} to build and package extension modules is
+available in \citetitle[../dist/dist.html]{Distributing Python
+Modules}.  This section describes the manual approach to building
+Python extensions written in C or \Cpp.
 
-This section provides a recipe for building a Python extension on
-Windows.
+To build extensions using these instructions, you need to have a copy
+of the Python sources of the same version as your installed Python.
+You will need Microsoft Visual \Cpp{} ``Developer Studio''; project
+files are supplied for V\Cpp{} version 6, but you can use older
+versions of V\Cpp.  The example files described here are distributed
+with the Python sources in the \file{PC\textbackslash
+example_nt\textbackslash} directory.
 
-Grab the binary installer from \url{http://www.python.org/} and
-install Python.  The binary installer has all of the required header
-files except for \file{pyconfig.h}.
+\begin{enumerate}
+  \item
+  \strong{Copy the example files}\\
+    The \file{example_nt} directory is a subdirectory of the \file{PC}
+    directory, in order to keep all the PC-specific files under the
+    same directory in the source distribution.  However, the
+    \file{example_nt} directory can't actually be used from this
+    location.  You first need to copy or move it up one level, so that
+    \file{example_nt} is a sibling of the \file{PC} and \file{Include}
+    directories.  Do all your work from within this new location.
 
-Get the source distribution and extract it into a convenient location.
-Copy the \file{pyconfig.h} from the \file{PC/} directory into the
-\file{include/} directory created by the installer.
+  \item
+  \strong{Open the project}\\
+    From V\Cpp, use the \menuselection{File \sub Open Workspace}
+    dialog (not \menuselection{File \sub Open}!).  Navigate to and
+    select the file \file{example.dsw}, in the \emph{copy} of the
+    \file{example_nt} directory you made above.  Click Open.
 
-Create a \file{Setup} file for your extension module, as described in
-chapter \ref{building-on-unix}.
+  \item
+  \strong{Build the example DLL}\\
+    In order to check that everything is set up right, try building:
 
-Get David Ascher's \file{compile.py} script from
-\url{http://starship.python.net/crew/da/compile/}.  Run the script to
-create Microsoft Visual \Cpp{} project files.
+    \begin{enumerate}
+      \item
+        Select a configuration.  This step is optional.  Choose
+        \menuselection{Build \sub Select Active Configuration} and
+        select either ``example - Win32 Release'' or ``example - Win32
+        Debug.''  If you skip this step, V\Cpp{} will use the Debug
+        configuration by default.
 
-Open the DSW file in Visual \Cpp{} and select \strong{Build}.
+      \item
+        Build the DLL.  Choose \menuselection{Build \sub Build
+        example_d.dll} in Debug mode, or \menuselection{Build \sub
+        Build example.dll} in Release mode.  This creates all
+        intermediate and result files in a subdirectory called either
+        \file{Debug} or \file{Release}, depending on which
+        configuration you selected in the preceding step.
+    \end{enumerate}
+
+  \item
+  \strong{Testing the debug-mode DLL}\\
+    Once the Debug build has succeeded, bring up a DOS box, and change
+    to the \file{example_nt\textbackslash Debug} directory.  You
+    should now be able to repeat the following session (\code{C>} is
+    the DOS prompt, \code{>\code{>}>} is the Python prompt; note that
+    build information and various debug output from Python may not
+    match this screen dump exactly):
+
+\begin{verbatim}
+C>..\..\PCbuild\python_d
+Adding parser accelerators ...
+Done.
+Python 2.2 (#28, Dec 19 2001, 23:26:37) [MSC 32 bit (Intel)] on win32
+Type "copyright", "credits" or "license" for more information.
+>>> import example
+[4897 refs]
+>>> example.foo()
+Hello, world
+[4903 refs]
+>>>
+\end{verbatim}
+
+    Congratulations!  You've successfully built your first Python
+    extension module.
+
+  \item
+  \strong{Cretating your own project}\\
+    Choose a name and create a directory for it.  Copy your C sources
+    into it.  Note that the module source file name does not
+    necessarily have to match the module name, but the name of the
+    initialization function should match the module name --- you can
+    only import a module \module{spam} if its initialization function
+    is called \cfunction{initspam()}, and it should call
+    \cfunction{Py_InitModule()} with the string \code{"spam"} as its
+    first argument (use the minimal \file{example.c} in this directory
+    as a guide).  By convention, it lives in a file called
+    \file{spam.c} or \file{spammodule.c}.  The output file should be
+    called \file{spam.dll} or \file{spam.pyd} (the latter is supported
+    to avoid confusion with a system library \file{spam.dll} to which
+    your module could be a Python interface) in Release mode, or
+    \file{spam_d.dll} or \file{spam_d.pyd} in Debug mode.
+
+    Now your options are:
+
+    \begin{enumerate}
+      \item  Copy \file{example.dsw} and \file{example.dsp}, rename
+             them to \file{spam.*}, and edit them by hand, or
+      \item  Create a brand new project; instructions are below.
+    \end{enumerate}
+
+    In either case, copy \file{example_nt\textbackslash example.def}
+    to \file{spam\textbackslash spam.def}, and edit the new
+    \file{spam.def} so its second line contains the string
+    `\code{initspam}'.  If you created a new project yourself, add the
+    file \file{spam.def} to the project now.  (This is an annoying
+    little file with only two lines.  An alternative approach is to
+    forget about the \file{.def} file, and add the option
+    \programopt{/export:initspam} somewhere to the Link settings, by
+    manually editing the setting in Project Options dialog).
+
+  \item
+  \strong{Creating a brand new project}\\
+    Use the \menuselection{File \sub New \sub Projects} dialog to
+    create a new Project Workspace.  Select ``Win32 Dynamic-Link
+    Library,'' enter the name (\samp{spam}), and make sure the
+    Location is set to the \file{spam} directory you have created
+    (which should be a direct subdirectory of the Python build tree, a
+    sibling of \file{Include} and \file{PC}).  Select Win32 as the
+    platform (in my version, this is the only choice).  Make sure the
+    Create new workspace radio button is selected.  Click OK.
+
+    Now open the \menuselection{Project \sub Settings} dialog.  You
+    only need to change a few settings.  Make sure All Configurations
+    is selected from the Settings for: dropdown list.  Select the
+    C/\Cpp{} tab.  Choose the Preprocessor category in the popup menu
+    at the top.  Type the following text in the entry box labeled
+    Addditional include directories:
+
+\begin{verbatim}
+..\Include,..\PC
+\end{verbatim}
+
+    Then, choose the Input category in the Link tab, and enter
+
+\begin{verbatim}
+..\PCbuild
+\end{verbatim}
+
+    in the text box labelled ``Additional library path.''
+
+    Now you need to add some mode-specific settings:
+
+    Select ``Win32 Release'' in the ``Settings for'' dropdown list.
+    Click the Link tab, choose the Input Category, and append
+    \code{python22.lib} to the list in the ``Object/library modules''
+    box.
+
+    Select ``Win32 Debug'' in the ``Settings for'' dropdown list, and
+    append \code{python22_d.lib} to the list in the ``Object/library
+    modules'' box.  Then click the C/\Cpp{} tab, select ``Code
+    Generation'' from the Category dropdown list, and select ``Debug
+    Multithreaded DLL'' from the ``Use run-time library'' dropdown
+    list.
+
+    Select ``Win32 Release'' again from the ``Settings for'' dropdown
+    list.  Select ``Multithreaded DLL'' from the ``Use run-time
+    library:'' dropdown list.
+
+    You should now create the file spam.def as instructed in the
+    previous section.  Then chose the \menuselection{Insert \sub Files
+    into Project} dialog.  Set the pattern to \code{*.*} and select
+    both \file{spam.c} and \file{spam.def} and click OK.  (Inserting
+    them one by one is fine too.)
+\end{enumerate}
+
 
 If your module creates a new type, you may have trouble with this line:
 
