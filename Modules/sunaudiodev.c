@@ -39,6 +39,14 @@ PERFORMANCE OF THIS SOFTWARE.
 #define SOLARIS
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
+
 #include <stropts.h>
 #include <sys/ioctl.h>
 #ifdef SOLARIS
@@ -68,8 +76,6 @@ staticforward typeobject Sadstatustype;
 static sadstatusobject *sads_alloc();	/* Forward */
 
 static object *SunAudioError;
-
-static int dummy_for_dl;
 
 #define is_sadobject(v)		((v)->ob_type == &Sadtype)
 #define is_sadstatusobject(v)	((v)->ob_type == &Sadstatustype)
