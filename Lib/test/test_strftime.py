@@ -69,7 +69,7 @@ def strftest(now):
     nonstandard_expectations = (
 	# These are standard but don't have predictable output
 	('%c', fixasctime(time.asctime(now)), 'near-asctime() format'),
-	('%Z', tz, 'time zone name'),
+	('(%Z)', '(%s)' % tz, 'time zone name'),
 
 	# These are some platform specific extensions
 	('%D', '%02d/%02d/%02d' % (now[1], now[2], (now[0]%100)), 'mm/dd/yy'),
