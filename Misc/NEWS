@@ -952,8 +952,7 @@ _tkinter.createfilehandler().
 - The truncate() method for file objects now works on Windows.
 
 - Py_Initialize() is no longer called when the DLL is loaded.  You
-must call it yourself.  (And you can't call it twice -- it's a fatal
-error to call it when Python is already initialized.)
+must call it yourself.
 
 - The time module's clock() function now has good precision through
 the use of the Win32 API QueryPerformanceCounter().
@@ -1100,8 +1099,6 @@ file to buildno1.
 
 - Moved Include/assert.h to Parser/assert.h, which seems to be the
 only place where it's needed.
-
-- Alas, the thread support for _tkinter didn't work.  Withdrew it.
 
 - Tweaked the dictionary lookup code again for some more speed
 (Vladimir Marangozov).
@@ -1263,11 +1260,12 @@ using sys.exc_info().
 Also, the command argument can now be either a string (passed to the
 shell) or a list of arguments (passed directly to execv).
 
-- The thread support for _tkinter.c now works.  The bad news is that
-it requires a modified version of a file in the standard Tcl
-distribution, which you must compile with a -I option pointing to the
-standard Tcl source tree.  For this reason, the thread support is
-disabled by default.
+
+- Alas, the thread support for _tkinter released with 1.5a3 didn't
+work.  It's been rewritten.  The bad news is that it now requires a
+modified version of a file in the standard Tcl distribution, which you
+must compile with a -I option pointing to the standard Tcl source
+tree.  For this reason, the thread support is disabled by default.
 
 - The errno extension module adds two tables: errorcode maps errno
 numbers to errno names (e.g. EINTR), and errorcode maps them to
@@ -1336,7 +1334,7 @@ default.
 - The imp module now supports parts of the functionality to implement
 import of hierarchical module names.  It now supports find_module()
 and load_module() for all types of modules.  Docstrings have been
-added for those functions in the built-in impo module that are still
+added for those functions in the built-in imp module that are still
 relevant (some old interfaces are obsolete).  For a sample
 implementation of hierarchical module import in Python, see the new
 library module knee.py.
@@ -1357,8 +1355,6 @@ others are PyObject*s).
 
 - The 'p' format in the struct extension module alloded to above is
 new in 1.5a4.
-
-- The xlib extension module has been debugged and improved.
 
 - The types.py module now uses try-except in a few places to make it
 more likely that it can be imported in restricted mode.  Some type
@@ -1409,7 +1405,7 @@ Adding support for a new OS is now a bit more work, but I bet that
 
 - Tools/faqwiz/: New installation instructions show how to maintain
 multiple FAQs.  Removed bootstrap script from end of faqwiz.py module.
-Added instructions to bootstrap script, too.  Version bumped to 0.8.
+Added instructions to bootstrap script, too.  Version bumped to 0.8.1.
 Added <html>...</html> feature suggested by Skip Montanaro.  Added
 leading text for Roulette, default to 'Hit Reload ...'.  Fix typo in
 default SRCDIR.
@@ -1417,3 +1413,10 @@ default SRCDIR.
 - Documentation for the relatively new modules "keyword" and "symbol"
 has been added (to the end of the section on the parser extension
 module).
+
+- In module bisect.py, but functions have two optional argument 'lo'
+and 'hi' which allow you to specify a subsequence of the array to
+operate on.
+
+- In ftplib.py, changed most methods to return their status (even when
+it is always "200 OK") rather than swallowing it.
