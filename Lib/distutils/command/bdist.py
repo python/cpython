@@ -22,6 +22,9 @@ class bdist (Command):
                      "(tar, ztar, gztar, bztar, zip, ... )"),
                    ]
 
+    # The following commands do not take a format option from bdist
+    no_format_option = ('bdist_rpm',)
+
     # This won't do in reality: will need to distinguish RPM-ish Linux,
     # Debian-ish Linux, Solaris, FreeBSD, ..., Windows, Mac OS.
     default_format = { 'posix': 'gztar',
@@ -31,6 +34,7 @@ class bdist (Command):
                        'bztar': 'bdist_dumb',
                        'ztar':  'bdist_dumb',
                        'tar':   'bdist_dumb',
+                       'rpm':   'bdist_rpm',
                        'zip':   'bdist_dumb', }
 
 
@@ -63,8 +67,9 @@ class bdist (Command):
             raise DistutilsOptionError, \
                   "invalid archive format '%s'" % self.format
 
-        sub_cmd = self.find_peer (cmd_name)
-        sub_cmd.format = self.format
+        if cmd_name not in self.no_format_option:
+            sub_cmd = self.find_peer (cmd_name)
+            sub_cmd.format = self.format
         self.run_peer (cmd_name)
 
     # run()
