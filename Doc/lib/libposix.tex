@@ -52,7 +52,7 @@ corresponding string, as would be printed by the C function
 \code{perror()}.
 \end{excdesc}
 
-It defines the following functions:
+It defines the following functions and constants:
 
 \renewcommand{\indexsubitem}{(in module posix)}
 \begin{funcdesc}{chdir}{path}
@@ -355,3 +355,8 @@ built-in function \code{open} or by \code{posix.popen} or
 \code{posix.fdopen}, or \code{sys.stdout} or \code{sys.stderr}, use
 its \code{write()} method.
 \end{funcdesc}
+
+\begin{datadesc}{WNOHANG}
+The option for \code{waitpid()} to avoid hanging if no child process
+status is available immediately.
+\end{datadesc}
