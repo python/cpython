@@ -1,7 +1,8 @@
 This is a VERY preliminary release of my Python interface to Sun RPC.
 It consists of two library modules, xdr.py and rpc.py, and two example
 clients, mountclient.py and nfsclient.py, implementing the NFS Mount
-protocol and (part of) the NFS protocol, respectively.
+protocol and (part of) the NFS protocol, respectively.  There is also
+a way to create servers in Python.
 
 To test the nfs client, run it from the shell with something like this:
 
