@@ -55,6 +55,8 @@ Library
 Tools/Demos
 -----------
 
+- texcheck.py now detects double word errors.
+
 - md5sum.py mistakenly opened input files in text mode by default, a
   silent and dangerous change from previous releases.  It once again
   opens input files in binary mode by default.  The -t and -b flags
