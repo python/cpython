@@ -242,9 +242,10 @@ html/acks.html: ACKS $(TOOLSDIR)/support.py $(TOOLSDIR)/mkackshtml
 
 html/modindex.html: $(TOOLSDIR)/support.py $(TOOLSDIR)/mkmodindex
 html/modindex.html: html/lib/lib.html html/mac/mac.html
-	$(TOOLSDIR)/mkmodindex --columns 4 --output html/modindex.html \
+	(cd html; \
+	 ../$(TOOLSDIR)/mkmodindex --columns 4 --output modindex.html \
 		--address $(PYTHONDOCS) \
-		html/lib/modindex.html html/mac/modindex.html
+		lib/modindex.html mac/modindex.html)
 
 html:	$(INDEXFILES) html/index.html html/modindex.html html/acks.html
 
