@@ -32,9 +32,7 @@ int getpagesize();
 static PyObject *ResourceError;
 
 static PyObject *
-resource_getrusage(self, args)
-	PyObject *self;
-	PyObject *args;
+resource_getrusage(PyObject *self, PyObject *args)
 {
 	int who;
 	struct rusage ru;
@@ -79,9 +77,7 @@ resource_getrusage(self, args)
 
 
 static PyObject *
-resource_getrlimit(self, args)
-	PyObject *self;
-	PyObject *args;
+resource_getrlimit(PyObject *self, PyObject *args)
 {
 	struct rlimit rl;
 	int resource;
@@ -111,9 +107,7 @@ resource_getrlimit(self, args)
 }
 
 static PyObject *
-resource_setrlimit(self, args)
-	PyObject *self;
-	PyObject *args;
+resource_setrlimit(PyObject *self, PyObject *args)
 {
 	struct rlimit rl;
 	int resource;
@@ -157,9 +151,7 @@ resource_setrlimit(self, args)
 }
 
 static PyObject *
-resource_getpagesize(self, args)
-	PyObject *self;
-	PyObject *args;
+resource_getpagesize(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":getpagesize"))
 		return NULL;

@@ -128,9 +128,7 @@ initmactimezone()
 
 
 static PyObject *
-time_time(self, args)
-	PyObject *self;
-	PyObject *args;
+time_time(PyObject *self, PyObject *args)
 {
 	double secs;
 	if (!PyArg_NoArgs(args))
@@ -160,9 +158,7 @@ Fractions of a second may be present if the system clock provides them.";
 #endif
 
 static PyObject *
-time_clock(self, args)
-	PyObject *self;
-	PyObject *args;
+time_clock(PyObject *self, PyObject *args)
 {
 	if (!PyArg_NoArgs(args))
 		return NULL;
@@ -173,9 +169,7 @@ time_clock(self, args)
 #if defined(MS_WIN32) && !defined(MS_WIN64)
 /* Due to Mark Hammond */
 static PyObject *
-time_clock(self, args)
-	PyObject *self;
-	PyObject *args;
+time_clock(PyObject *self, PyObject *args)
 {
 	static LARGE_INTEGER ctrStart;
 	static LARGE_INTEGER divisor = {0,0};
@@ -217,9 +211,7 @@ the first call to clock().  This has as much precision as the system records.";
 #endif
 
 static PyObject *
-time_sleep(self, args)
-	PyObject *self;
-	PyObject *args;
+time_sleep(PyObject *self, PyObject *args)
 {
 	double secs;
 	if (!PyArg_Parse(args, "d", &secs))
@@ -237,8 +229,7 @@ Delay execution for a given number of seconds.  The argument may be\n\
 a floating point number for subsecond precision.";
 
 static PyObject *
-tmtotuple(p)
-	struct tm *p;
+tmtotuple(struct tm *p)
 {
 	return Py_BuildValue("(iiiiiiiii)",
 			     p->tm_year + 1900,
@@ -253,9 +244,7 @@ tmtotuple(p)
 }
 
 static PyObject *
-time_convert(when, function)
-	time_t when;
-	struct tm * (*function)(const time_t *);
+time_convert(time_t when, struct tm * (*function)(const time_t *))
 {
 	struct tm *p;
 	errno = 0;
@@ -274,9 +263,7 @@ time_convert(when, function)
 }
 
 static PyObject *
-time_gmtime(self, args)
-	PyObject *self;
-	PyObject *args;
+time_gmtime(PyObject *self, PyObject *args)
 {
 	double when;
 	if (!PyArg_Parse(args, "d", &when))
@@ -290,9 +277,7 @@ static char gmtime_doc[] =
 Convert seconds since the Epoch to a time tuple expressing UTC (a.k.a. GMT).";
 
 static PyObject *
-time_localtime(self, args)
-	PyObject *self;
-	PyObject *args;
+time_localtime(PyObject *self, PyObject *args)
 {
 	double when;
 	if (!PyArg_Parse(args, "d", &when))
@@ -305,9 +290,7 @@ static char localtime_doc[] =
 Convert seconds since the Epoch to a time tuple expressing local time.";
 
 static int
-gettmarg(args, p)
-	PyObject *args;
-	struct tm *p;
+gettmarg(PyObject *args, struct tm *p)
 {
 	int y;
 	memset((ANY *) p, '\0', sizeof(struct tm));
@@ -351,9 +334,7 @@ gettmarg(args, p)
 
 #ifdef HAVE_STRFTIME
 static PyObject *
-time_strftime(self, args)
-	PyObject *self;
-	PyObject *args;
+time_strftime(PyObject *self, PyObject *args)
 {
 	PyObject *tup;
 	struct tm buf;
@@ -407,9 +388,7 @@ extern char *strptime(); /* Enable this if it's not declared in <time.h> */
 #endif
 
 static PyObject *
-time_strptime(self, args)
-	PyObject *self;
-	PyObject *args;
+time_strptime(PyObject *self, PyObject *args)
 {
 	struct tm tm;
 	char *fmt = "%a %b %d %H:%M:%S %Y";
@@ -441,9 +420,7 @@ See the library reference manual for formatting codes (same as strftime()).";
 #endif /* HAVE_STRPTIME */
 
 static PyObject *
-time_asctime(self, args)
-	PyObject *self;
-	PyObject *args;
+time_asctime(PyObject *self, PyObject *args)
 {
 	PyObject *tup;
 	struct tm buf;
@@ -464,9 +441,7 @@ static char asctime_doc[] =
 Convert a time tuple to a string, e.g. 'Sat Jun 06 16:26:11 1998'.";
 
 static PyObject *
-time_ctime(self, args)
-	PyObject *self;
-	PyObject *args;
+time_ctime(PyObject *self, PyObject *args)
 {
 	double dt;
 	time_t tt;
@@ -495,9 +470,7 @@ This is equivalent to asctime(localtime(seconds)).";
 
 #ifdef HAVE_MKTIME
 static PyObject *
-time_mktime(self, args)
-	PyObject *self;
-	PyObject *args;
+time_mktime(PyObject *self, PyObject *args)
 {
 	PyObject *tup;
 	struct tm buf;
@@ -549,10 +522,7 @@ static PyMethodDef time_methods[] = {
 };
 
 static void
-ins(d, name, v)
-	PyObject *d;
-	char *name;
-	PyObject *v;
+ins(PyObject *d, char *name, PyObject *v)
 {
 	if (v == NULL)
 		Py_FatalError("Can't initialize time module -- NULL value");
