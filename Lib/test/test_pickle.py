@@ -5,11 +5,10 @@ from cStringIO import StringIO
 from test import test_support
 
 from test.pickletester import AbstractPickleTests
-from test.pickletester import TempAbstractPickleTests as XXXTemp
 from test.pickletester import AbstractPickleModuleTests
 from test.pickletester import AbstractPersistentPicklerTests
 
-class PickleTests(AbstractPickleTests, AbstractPickleModuleTests, XXXTemp):
+class PickleTests(AbstractPickleTests, AbstractPickleModuleTests):
 
     def dumps(self, arg, proto=0, fast=0):
         # Ignore fast

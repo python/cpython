@@ -4309,43 +4309,93 @@ load_setitems(Unpicklerobject *self)
 static int
 load_build(Unpicklerobject *self)
 {
-	PyObject *value = 0, *inst = 0, *instdict = 0, *d_key = 0, *d_value = 0,
-		*junk = 0, *__setstate__ = 0;
-	int i, r = 0;
+	PyObject *state, *inst, *slotstate;
+	PyObject *__setstate__;
+	PyObject *d_key, *d_value;
+	int i;
+	int res = -1;
 
-	if (self->stack->length < 2) return stackUnderflow();
-	PDATA_POP(self->stack, value);
-	if (! value) return -1;
-	inst=self->stack->data[self->stack->length-1];
+	/* Stack is ... instance, state.  We want to leave instance at
+	 * the stack top, possibly mutated via instance.__setstate__(state).
+	 */
+	if (self->stack->length < 2)
+		return stackUnderflow();
+	PDATA_POP(self->stack, state);
+	if (state == NULL)
+		return -1;
+	inst = self->stack->data[self->stack->length - 1];
 
-	if ((__setstate__ = PyObject_GetAttr(inst, __setstate___str))) {
-		ARG_TUP(self, value);
+	__setstate__ = PyObject_GetAttr(inst, __setstate___str);
+	if (__setstate__ != NULL) {
+		PyObject *junk = NULL;
+
+		/* The explicit __setstate__ is responsible for everything. */
+		ARG_TUP(self, state);
 		if (self->arg) {
 			junk = PyObject_Call(__setstate__, self->arg, NULL);
 			FREE_ARG_TUP(self);
 		}
 		Py_DECREF(__setstate__);
-		if (! junk) return -1;
+		if (junk == NULL)
+			return -1;
 		Py_DECREF(junk);
 		return 0;
 	}
-
 	PyErr_Clear();
-	if ((instdict = PyObject_GetAttr(inst, __dict___str))) {
-		i = 0;
-		while (PyDict_Next(value, &i, &d_key, &d_value)) {
-			if (PyObject_SetItem(instdict, d_key, d_value) < 0) {
-				r=-1;
-				break;
-			}
-		}
-		Py_DECREF(instdict);
+
+	/* A default __setstate__.  First see whether state embeds a
+	 * slot state dict too (a proto 2 addition).
+	 */
+	if (PyTuple_Check(state) && PyTuple_Size(state) == 2) {
+		PyObject *temp = state;
+		state = PyTuple_GET_ITEM(temp, 0);
+		slotstate = PyTuple_GET_ITEM(temp, 1);
+		Py_INCREF(state);
+		Py_INCREF(slotstate);
+		Py_DECREF(temp);
 	}
-	else r=-1;
+	else
+		slotstate = NULL;
 
-	Py_XDECREF(value);
+	/* Set inst.__dict__ from the state dict (if any). */
+	if (state != Py_None) {
+		PyObject *dict;
+		if (! PyDict_Check(state)) {
+			PyErr_SetString(UnpicklingError, "state is not a "
+					"dictionary");
+			goto finally;
+		}
+		dict = PyObject_GetAttr(inst, __dict___str);
+		if (dict == NULL)
+			goto finally;
 
-	return r;
+		i = 0;
+		while (PyDict_Next(state, &i, &d_key, &d_value)) {
+			if (PyObject_SetItem(dict, d_key, d_value) < 0)
+				goto finally;
+		}
+		Py_DECREF(dict);
+	}
+
+	/* Also set instance attributes from the slotstate dict (if any). */
+	if (slotstate != NULL) {
+		if (! PyDict_Check(slotstate)) {
+			PyErr_SetString(UnpicklingError, "slot state is not "
+					"a dictionary");
+			goto finally;
+		}
+		i = 0;
+		while (PyDict_Next(slotstate, &i, &d_key, &d_value)) {
+			if (PyObject_SetAttr(inst, d_key, d_value) < 0)
+				goto finally;
+		}
+	}
+	res = 0;
+
+  finally:
+	Py_DECREF(state);
+	Py_XDECREF(slotstate);
+	return res;
 }
 
 
