@@ -78,8 +78,8 @@ class PopupMenu:
         except:
             print "No stack trace yet"
             return
-        from StackViewer import StackViewer
-        sv = StackViewer(self.text._root(), self.flist)
+        from StackViewer import StackBrowser
+        sv = StackBrowser(self.text._root(), self.flist)
 
     def help(self):
         from HelpWindow import HelpWindow
