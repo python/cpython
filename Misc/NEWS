@@ -2,6 +2,11 @@ What's New in Python 2.2.4?
 Release date: XX-XXX-XXXX
 ===========================
 
+- Fixed a bug in the cache of length-one Unicode strings that could
+  lead to a seg fault.  The specific problem occurred when an earlier,
+  non-fatal error left an uninitialized Unicode object in the
+  freelist.
+
 - The email package handles some RFC 2231 parameters with missing
   CHARSET fields better.  It also includes a patch to parameter
   parsing when semicolons appear inside quotes.
