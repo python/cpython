@@ -6,7 +6,7 @@ import warnings
 
 warnings.filterwarnings("ignore",
          r'complex divmod\(\), // and % are deprecated$',
-         DeprecationWarning, r'(<string>|test_descr)$')
+         DeprecationWarning, r'(<string>|%s)$' % __name__)
 
 def veris(a, b):
     if a is not b:
