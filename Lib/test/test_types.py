@@ -78,6 +78,18 @@ if (-12L) + 24L <> 12L: raise TestFailed, 'long op'
 if (-12L) + (-24L) <> -36L: raise TestFailed, 'long op'
 if not 12L < 24L: raise TestFailed, 'long op'
 if not -24L < -12L: raise TestFailed, 'long op'
+x = sys.maxint
+if int(long(x)) != x: raise TestFailed, 'long op'
+try: int(long(x)+1L)
+except OverflowError: pass
+else:raise TestFailed, 'long op'
+x = -x
+if int(long(x)) != x: raise TestFailed, 'long op'
+x = x-1
+if int(long(x)) != x: raise TestFailed, 'long op'
+try: int(long(x)-1L)
+except OverflowError: pass
+else:raise TestFailed, 'long op'
 print '6.4.3 Floating point numbers'
 if 12.0 + 24.0 <> 36.0: raise TestFailed, 'float op'
 if 12.0 + (-24.0) <> -12.0: raise TestFailed, 'float op'
