@@ -406,6 +406,9 @@ class PyBuildExt(build_ext):
             elif self.compiler.find_library_file(lib_dirs, 'db1'):
                 exts.append( Extension('dbm', ['dbmmodule.c'],
                                        libraries = ['db1'] ) )
+            elif self.compiler.find_library_file(lib_dirs, 'gdbm'):
+                exts.append( Extension('dbm', ['dbmmodule.c'],
+                                       libraries = ['gdbm'] ) )
             else:
                 exts.append( Extension('dbm', ['dbmmodule.c']) )
 
