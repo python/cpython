@@ -178,9 +178,11 @@ PyMac_FixGUSIcd()
 		return;
 }
 
-#ifdef __CFM68K__
+/*
+** SpinCursor (needed by GUSI) drags in heaps of stuff, so we
+** provide a dummy here.
+*/
 void SpinCursor(short x) { /* Dummy */ }
-#endif /* __CFM68K */
 
 /*
 ** Replacement GUSI Spin function
