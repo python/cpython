@@ -23,6 +23,8 @@ menudefs = [
    ('Save _As...', '<<save-window-as-file>>'),
    ('Save Co_py As...', '<<save-copy-of-window-as-file>>'),
    None,
+   ('_Print window', '<<print-window>>'),
+   None,
    ('_Close', '<<close-window>>'),
    ('E_xit', '<<close-all-windows>>'),
   ]),
