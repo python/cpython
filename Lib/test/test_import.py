@@ -19,8 +19,11 @@ import double_const  # don't blink -- that *was* the test
 sys.path.insert(0, os.curdir)
 
 source = TESTFN + ".py"
-pyc = TESTFN + ".pyc"
 pyo = TESTFN + ".pyo"
+if sys.platform.endswith('java'):
+    pyc = TESTFN + "$py.class"
+else:
+    pyc = TESTFN + ".pyc"
 
 f = open(source, "w")
 print >> f, "# This will test Python's ability to import a .py file"
