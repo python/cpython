@@ -26,6 +26,14 @@ lib:
 	latex lib
 	dvips lib >lib.ps
 
+ext:
+	touch ext.ind
+	latex ext
+	./fix_hack ext.idx
+	makeindex ext
+	latex ext
+	dvips ext >ext.ps
+
 qua:
 	latex qua
 	bibtex qua
@@ -33,19 +41,27 @@ qua:
 	latex qua
 	dvips qua >qua.ps
 
-libinfo:
-	@echo This may take a while...
-	python -c 'import partparse; partparse.main()' lib[1-5].tex
-	sh fix.sh
+lib.texi: lib1.tex lib2.tex lib3.tex lib4.tex lib5.tex texipre.dat texipost.dat
+	python partparse.py -o @lib.texi lib[1-5].tex
+	mv @lib.texi lib.texi
 
-# This target is very local to CWI...  (first make libinfo)
-libwww:
-	texi2html -d @out.texi /usr/local/ftp.cwi.nl/pub/www/texinfo/python
+.PRECIOUS:	lib.texi
+
+python-lib.info: lib.texi
+	emacs -batch -l fix.el -f save-buffer -kill
+	makeinfo +footnote-style end +fill-column 72 +paragraph-indent 0 \
+	         lib.texi
+
+lib.info: python-lib.info
+
+# This target is very local to CWI...
+libwww: lib.texi
+	texi2html -d lib.texi /usr/local/ftp.cwi.nl/pub/www/texinfo/python
 
 clean:
 	rm -f @* *~ *.aux *.idx *.ilg *.ind *.log *.toc *.blg *.bbl *.pyc
 	# Sources: .tex, .bib, .sty
-	# Useful results: .dvi, .ps
+	# Useful results: .dvi, .ps, .texi, .info
 
 clobber: clean
-	 rm -f *.dvi *.ps *.info *.info-[0-9]*
+	 rm -f *.dvi *.ps *.texi *.info *.info-[0-9]*

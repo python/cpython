@@ -583,10 +583,12 @@ class, then \verb\x[i]\ is equivalent to \verb\x.__getitem__(i)\.
 (The reverse is not true --- if \verb\x\ is a list object,
 \verb\x.__getitem__(i)\ is not equivalent to \verb\x[i]\.)
 
-Except for \verb\__repr__\ and \verb\__cmp__\, attempts to execute an
+Except for \verb\__repr__\, \verb\__str__\ and \verb\__cmp__\,
+attempts to execute an
 operation raise an exception when no appropriate method is defined.
 For \verb\__repr__\ and \verb\__cmp__\, the traditional
 interpretations are used in this case.
+For \verb\__str__\, the \verb\__repr__\ method is used.
 
 
 \subsection{Special methods for any type}
@@ -612,8 +614,12 @@ reference is deleted.  Also note that it is not guaranteed that
 the interpreter exits.
 
 \item[\tt __repr__(self)]
-Called by the \verb\print\ statement and conversions (reverse quotes) to
-compute the string representation of an object.
+Called by the \verb\repr()\ built-in function and by conversions
+(reverse quotes) to compute the string representation of an object.
+
+\item[\tt __str__(self)]
+Called by the \verb\str()\ built-in function and by the \verb\print\
+statement compute the string representation of an object.
 
 \item[\tt __cmp__(self, other)]
 Called by all comparison operations.  Should return -1 if
