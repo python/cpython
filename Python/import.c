@@ -346,7 +346,7 @@ write_compiled_module(co, cpathname, mtime)
 	if (verbose)
 		fprintf(stderr, "# wrote %s\n", cpathname);
 #ifdef macintosh
-	setfiletype(cpathname, 'PYTH', 'PYC ');
+	setfiletype(cpathname, 'Pyth', 'PYC ');
 #endif
 }
 
