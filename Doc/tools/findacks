@@ -7,8 +7,7 @@ import re
 import sys
 import UserDict
 
-import fdrake.cvstools.info
-cvstools = fdrake.cvstools
+import cvsinfo
 
 
 class Acknowledgements(UserDict.UserDict):
@@ -53,7 +52,7 @@ def find_acks(f, acks):
 
 
 def load_cvs_log_acks(acks, args):
-    repolist = cvstools.info.get_repository_list(args or [""])
+    repolist = cvsinfo.get_repository_list(args or [""])
     for info, paths in repolist:
         print >>sys.stderr, "Repository:", info.get_cvsroot()
         f = open_cvs_log(info, paths)
