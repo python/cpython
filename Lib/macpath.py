@@ -122,10 +122,13 @@ def getatime(filename):
 
 
 def islink(s):
-    """Return true if the pathname refers to a symbolic link.
-    Always false on the Mac, until we understand Aliases.)"""
+    """Return true if the pathname refers to a symbolic link."""
 
-    return False
+    try:
+    	import macfs
+        return macfs.ResolveAliasFile(s)[2]
+    except:
+        return False
 
 
 def isfile(s):
@@ -223,7 +226,7 @@ def walk(top, func, arg):
     func(arg, top, names)
     for name in names:
         name = join(top, name)
-        if isdir(name):
+        if isdir(name) and not islink(name):
             walk(name, func, arg)
 
 
@@ -234,4 +237,17 @@ def abspath(path):
     return normpath(path)
 
 # realpath is a no-op on systems without islink support
-realpath = abspath
+def realpath(path):
+	path = abspath(path)
+	try:
+		import macfs
+	except ImportError:
+		return path
+	if not path:
+		return path
+	components = path.split(':')
+	path = components[0] + ':'
+	for c in components[1:]:
+		path = join(path, c)
+		path = macfs.ResolveAliasFile(path)[0].as_pathname()
+	return path
