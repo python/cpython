@@ -139,9 +139,11 @@ class AboutDialog(Toplevel):
             try:
                 textFile = codecs.open(fn, 'r')
             except IOError:
+                import tkMessageBox
                 tkMessageBox.showerror(title='File Load Error',
                                        message='Unable to load file '+
-                                       `fileName`+' .')
+                                       `fn`+' .',
+                                       parent=self)
                 return
             else:
                 data = textFile.read()
