@@ -1,5 +1,29 @@
-/* _tkinter.c -- Interface to libtk.a and libtcl.a.
-   Copyright (C) 1994 Steen Lumholt */
+/***********************************************************
+Copyright (C) 1994 Steen Lumholt.
+Copyright 1994-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
+
+                        All Rights Reserved
+
+Permission to use, copy, modify, and distribute this software and its 
+documentation for any purpose and without fee is hereby granted, 
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in 
+supporting documentation, and that the names of Stichting Mathematisch
+Centrum or CWI not be used in advertising or publicity pertaining to
+distribution of the software without specific, written prior permission.
+
+STICHTING MATHEMATISCH CENTRUM DISCLAIMS ALL WARRANTIES WITH REGARD TO
+THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH CENTRUM BE LIABLE
+FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+******************************************************************/
+
+/* _tkinter.c -- Interface to libtk.a and libtcl.a. */
 
 #include "Python.h"
 
@@ -25,8 +49,7 @@ extern struct { Tk_Window win; } *tkMainWindowList;
 
 /*
 ** Additional cruft needed by Tcl/Tk on the Mac.
-** Unfortunately this changes with each beta.
-** This is for beta 2 of Tcl 7.5 and Tk 4.1.
+** This is for Tcl 7.5 and Tk 4.1 (final releases).
 */
 
 #include <Events.h> /* For EventRecord */
@@ -128,7 +151,11 @@ Merge (args)
   argv = argvStore;
   fv = fvStore;
 
-  if (!PyTuple_Check (args))
+  if (args == NULL)
+    {
+      argc = 0;
+    }
+  else if (!PyTuple_Check (args))
     {
       argc = 1;
       fv[0] = 0;
@@ -237,12 +264,6 @@ Tcl_AppInit (interp)
   return TCL_OK;
 }
 
-char *
-TkDefaultAppName()
-{
-    return "Python";
-}
-
 #endif /* !WITH_APPINIT */
 
 /* Initialize the Tk application; see the `main' function in
@@ -280,10 +301,7 @@ Tkapp_New (screenName, baseName, className, interactive)
     Tcl_SetVar (v->interp, "tcl_interactive", "0", TCL_GLOBAL_ONLY);
 
   if (Tcl_AppInit (v->interp) != TCL_OK)
-    {
-      PyErr_SetString (Tkinter_TclError, "Tcl_AppInit failed"); /* XXX */
-      return NULL;
-    }
+    return (TkappObject *) Tkinter_Error (v);
 
   return v;
 }
@@ -871,11 +889,16 @@ Tkapp_CreateFileHandler (self, args)
   data = Py_BuildValue ("(OO)", func, file);
 
 #if (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION) >= 4001
+#ifdef NT
+  /* We assume this is a socket... */
+  tfile = Tcl_GetFile((ClientData)id, TCL_WIN_SOCKET);
+#else
   tfile = Tcl_GetFile((ClientData)id, TCL_UNIX_FD);
+#endif
   /* Oughtta check for null Tcl_File object... */
   Tcl_CreateFileHandler (tfile, mask, FileHandler, (ClientData) data);
 #else
-  Tk_CreateFileHandler ((ClientData) id, mask, FileHandler, (ClientData) data);
+  Tk_CreateFileHandler (id, mask, FileHandler, (ClientData) data);
 #endif
   /* XXX fileHandlerDict */
 
@@ -901,11 +924,16 @@ Tkapp_DeleteFileHandler (self, args)
     return NULL;
 
 #if (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION) >= 4001
-  tfile = Tcl_GetFile((ClientData) id, TCL_UNIX_FD);
+#ifdef NT
+  /* We assume this is a socket... */
+  tfile = Tcl_GetFile((ClientData)id, TCL_WIN_SOCKET);
+#else
+  tfile = Tcl_GetFile((ClientData)id, TCL_UNIX_FD);
+#endif
   /* Oughtta check for null Tcl_File object... */
   Tcl_DeleteFileHandler(tfile);
 #else
-  Tk_DeleteFileHandler ((ClientData) id);
+  Tk_DeleteFileHandler (id);
 #endif
   /* XXX fileHandlerDict */
   Py_INCREF (Py_None);
