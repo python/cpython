@@ -70,12 +70,14 @@
   This would typically be done in your init function.
 
   $Log$
-  Revision 2.1  1996/12/05 23:30:48  guido
-  Jim F's brainchild
+  Revision 2.2  1997/01/06 22:50:12  guido
+  Jim's latest version
+
+  Revision 1.1  1997/01/02 15:18:36  chris
+  initial version
 
 
 */
-
 
 /* Basic fuctions to manipulate cStringIO objects from C */
 
@@ -89,13 +91,13 @@ static int(*PycStringIO_creadline)(PyObject *, char **)=NULL;
 static int(*PycStringIO_cwrite)(PyObject *, char *, int)=NULL;
 
 /* Get the cStringIO object as a Python string */
-static PyObject(*PycStringIO_cgetvalue)(PyObject *)=NULL;
+static PyObject *(*PycStringIO_cgetvalue)(PyObject *)=NULL;
 
 /* Create a new output object */
-static PyObject(*PycStringIO_NewOutput)(void)=NULL;
+static PyObject *(*PycStringIO_NewOutput)(int)=NULL;
 
 /* Create an input object from a Python string */
-static PyObject(*PycStringIO_NewInput)(PyObject *)=NULL;
+static PyObject *(*PycStringIO_NewInput)(PyObject *)=NULL;
 
 /* The Python types for cStringIO input and output objects.
    Note that you can do input on an output object.
@@ -103,8 +105,10 @@ static PyObject(*PycStringIO_NewInput)(PyObject *)=NULL;
 static PyObject *PycStringIO_InputType=NULL, *PycStringIO_OutputType=NULL;
 
 /* These can be used to test if you have one */
-#define PycStringIO_InputCheck(O) ((O)->ob_type==PycStringIO_InputType)
-#define PycStringIO_OutputCheck(O) ((O)->ob_type==PycStringIO_OutputType)
+#define PycStringIO_InputCheck(O) \
+  ((O)->ob_type==(PyTypeObject*)PycStringIO_InputType)
+#define PycStringIO_OutputCheck(O) \
+  ((O)->ob_type==(PyTypeObject*)PycStringIO_OutputType)
 
 /* The following is used to implement PycString_IMPORT: */
 static PyObject *PycStringIO_Module=NULL, *PycStringIO_CObject=NULL;
