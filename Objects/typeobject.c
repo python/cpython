@@ -878,7 +878,7 @@ bozo_func(PyObject *self, PyObject *args)
 	return NULL;
 }
 
-static PyMethodDef bozo_ml = {"__getstate__", bozo_func};
+static PyMethodDef bozo_ml = {"__getstate__", bozo_func, METH_VARARGS};
 
 static PyObject *bozo_obj = NULL;
 
