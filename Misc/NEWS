@@ -96,6 +96,8 @@ Library
 Build
 -----
 
+- Bug #1158607: Build with --disable-unicode again.
+
 - term.h is now properly detected again.
 
 - Check for tzset no longer dependent on tm->tm_zone to exist in the struct

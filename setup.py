@@ -770,11 +770,12 @@ class PyBuildExt(build_ext):
                               ))
 
         # Hye-Shik Chang's CJKCodecs modules.
-        exts.append(Extension('_multibytecodec',
-                              ['cjkcodecs/multibytecodec.c']))
-        for loc in ('kr', 'jp', 'cn', 'tw', 'hk', 'iso2022'):
-            exts.append(Extension('_codecs_' + loc,
-                                  ['cjkcodecs/_codecs_%s.c' % loc]))
+        if have_unicode:
+            exts.append(Extension('_multibytecodec',
+                                  ['cjkcodecs/multibytecodec.c']))
+            for loc in ('kr', 'jp', 'cn', 'tw', 'hk', 'iso2022'):
+                exts.append(Extension('_codecs_' + loc,
+                                      ['cjkcodecs/_codecs_%s.c' % loc]))
 
         # Dynamic loading module
         if sys.maxint == 0x7fffffff:

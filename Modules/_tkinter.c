@@ -838,8 +838,10 @@ static PyGetSetDef PyTclObject_getsetlist[] = {
 };
 
 static PyMethodDef PyTclObject_methods[] = {
+#ifdef Py_USING_UNICODE
 	{"__unicode__",	(PyCFunction)PyTclObject_unicode, METH_NOARGS,
 	PyTclObject_unicode__doc__},
+#endif
 	{0}
 };
 
@@ -991,7 +993,7 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
 			}
 		}
 #else
-		res = PyString_FromStringAndSize(value->bytes, value->length);
+		result = PyString_FromStringAndSize(value->bytes, value->length);
 #endif
 		return result;
 	}
