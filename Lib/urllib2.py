@@ -781,7 +781,7 @@ def encode_digest(digest):
 class AbstractHTTPHandler(BaseHandler):
 
     def do_open(self, http_class, req):
-        host = urlparse.urlparse(req.get_full_url())[1]
+        host = req.get_host()
         if not host:
             raise URLError('no host given')
 
