@@ -137,6 +137,8 @@ PyErr_SetInterrupt()
 	interrupted = 1;
 }
 
+extern int sigcheck();
+
 /* ARGSUSED */
 static RETSIGTYPE
 #ifdef _M_IX86
@@ -161,6 +163,7 @@ intcatcher(sig)
 		break;
 	}
 	signal(SIGINT, intcatcher);
+	Py_AddPendingCall(sigcheck, NULL);
 }
 
 void
