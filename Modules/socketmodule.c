@@ -211,6 +211,7 @@ Socket methods:
 #include "openssl/pem.h"
 #include "openssl/ssl.h"
 #include "openssl/err.h"
+#include "openssl/rand.h"
 #endif /* USE_SSL */
 
 #ifndef HAVE_INET_PTON
@@ -2762,6 +2763,66 @@ staticforward PyTypeObject PySSL_Type = {
 	0,				/*tp_hash*/
 };
 
+/* helper routines for seeding the SSL PRNG */
+static PyObject *
+PySSL_RAND_add(PyObject *self, PyObject *args)
+{
+    char *buf;
+    int len;
+    double entropy;
+
+    if (!PyArg_ParseTuple(args, "s#d:RAND_add", &buf, &len, &entropy))
+	return NULL;
+    RAND_add(buf, len, entropy);
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static char PySSL_RAND_add_doc[] =
+"RAND_add(string, entropy)\n\
+\n\
+Mix string into the OpenSSL PRNG state.  entropy (a float) is a lower\n\
+bound on the entropy contained in string.";
+
+static PyObject *
+PySSL_RAND_status(PyObject *self)
+{
+    return PyInt_FromLong(RAND_status());
+}
+
+static char PySSL_RAND_status_doc[] = 
+"RAND_status() -> 0 or 1\n\
+\n\
+Returns 1 if the OpenSSL PRNG has been seeded with enough data and 0 if not.\n\
+It is necessary to seed the PRNG with RAND_add() on some platforms before\n\
+using the ssl() function.";
+
+static PyObject *
+PySSL_RAND_egd(PyObject *self, PyObject *arg)
+{
+    int bytes;
+
+    if (!PyString_Check(arg))
+	return PyErr_Format(PyExc_TypeError,
+			    "RAND_egd() expected string, found %s",
+			    arg->ob_type->tp_name);
+    bytes = RAND_egd(PyString_AS_STRING(arg));
+    if (bytes == -1) {
+	PyErr_SetString(PySSLErrorObject,
+			"EGD connection failed or EGD did not return "
+			"enough data to seed the PRNG");
+	return NULL;
+    }
+    return PyInt_FromLong(bytes);
+}
+
+static char PySSL_RAND_egd_doc[] = 
+"RAND_egd(path) -> bytes
+\n\
+Queries the entropy gather daemon (EGD) on socket path.  Returns number\n\
+of bytes read.  Raises socket.sslerror if connection to EGD fails or\n\
+if it does provide enough data to seed PRNG.";
+
 #endif /* USE_SSL */
 
 
@@ -2805,6 +2866,12 @@ static PyMethodDef PySocket_methods[] = {
 #ifdef USE_SSL
 	{"ssl",			PySocket_ssl,
 	 METH_VARARGS, ssl_doc},
+	{"RAND_add",            PySSL_RAND_add, METH_VARARGS, 
+	 PySSL_RAND_add_doc},
+	{"RAND_egd",            PySSL_RAND_egd, METH_O,
+	 PySSL_RAND_egd_doc},
+	{"RAND_status",         (PyCFunction)PySSL_RAND_status, METH_NOARGS,
+	 PySSL_RAND_status_doc},
 #endif /* USE_SSL */
 	{NULL,			NULL}		 /* Sentinel */
 };
