@@ -146,7 +146,7 @@ def getatime(filename):
     return os.stat(filename).st_atime
 
 def getctime(filename):
-    """Return the creation time of a file, reported by os.stat()."""
+    """Return the metadata change time of a file, reported by os.stat()."""
     return os.stat(filename).st_ctime
 
 # Is a path a symbolic link?
