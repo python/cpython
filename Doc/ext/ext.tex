@@ -591,7 +591,7 @@ operator to pass a variable's address.)
 
 \begin{description}
 
-\item[\samp{s} (string) [char *{]}]
+\item[\samp{s} (string) {[char *]}]
 Convert a Python string to a \C{} pointer to a character string.  You
 must not provide storage for the string itself; a pointer to an
 existing string is stored into the character pointer variable whose
@@ -642,7 +642,7 @@ The \C{} program thus receives the actual object that was passed.  The
 object's reference count is not increased.  The pointer stored is not
 \NULL{}.
 
-\item[\samp{O!} (object) {[\var{typeobject}, PyObject *{]}}]
+\item[\samp{O!} (object) {[\var{typeobject}, PyObject *]}]
 Store a Python object in a \C{} object pointer.  This is similar to
 \samp{O}, but takes two \C{} arguments: the first is the address of a
 Python type object, the second is the address of the \C{} variable (of
@@ -650,7 +650,7 @@ type \ctype{PyObject *}) into which the object pointer is stored.
 If the Python object does not have the required type, a
 \exception{TypeError} exception is raised.
 
-\item[\samp{O\&} (object) {[\var{converter}, \var{anything}{]}}]
+\item[\samp{O\&} (object) {[\var{converter}, \var{anything}]}]
 Convert a Python object to a \C{} variable through a \var{converter}
 function.  This takes two arguments: the first is a function, the
 second is the address of a \C{} variable (of arbitrary type), converted
@@ -671,7 +671,7 @@ Like \samp{O} but requires that the Python object is a string object.
 Raises a \exception{TypeError} exception if the object is not a string
 object.  The \C{} variable may also be declared as \ctype{PyObject *}.
 
-\item[\samp{(\var{items})} (tuple) {[\var{matching-items}{]}}]
+\item[\samp{(\var{items})} (tuple) {[\var{matching-items}]}]
 The object must be a Python tuple whose length is the number of format
 units in \var{items}.  The \C{} arguments must correspond to the
 individual format units in \var{items}.  Format units for tuples may
