@@ -177,10 +177,12 @@ print 'try_stmt' # 'try' ':' suite (except_clause ':' suite)* ['finally' ':' sui
 try: pass
 try: 1/0
 except RuntimeError: pass
+except ZeroDivisionError: pass
 try: 1/0
 except EOFError: pass
 except TypeError, msg: pass
 except RuntimeError, msg: pass
+except ZeroDivisionError, msg: pass
 except: pass
 try: pass
 finally: pass
@@ -291,6 +293,7 @@ for i in range(10):
 	try: 1/0
 	except NameError: pass
 	except RuntimeError: pass
+	except ZeroDivisionError: pass
 	except TypeError: pass
 	finally: pass
 	try: pass
