@@ -265,6 +265,7 @@ sedscript:	$(MAKEFILE)
 	 -e '/^SO=/s/^SO=[ 	]*\(.*\)/s%@SO[@]%\1%/p' \
 	 -e '/^LDSHARED=/s/^LDSHARED=[ 	]*\(.*\)/s%@LDSHARED[@]%\1%/p' \
 	 -e '/^CCSHARED=/s/^CCSHARED=[ 	]*\(.*\)/s%@CCSHARED[@]%\1%/p' \
+	 -e '/^SGI_ABI=/s/^SGI_ABI=[ 	]*\(.*\)/s%@SGI_ABI[@]%\1%/p' \
 	 -e '/^$L=/s/^$L=[ 	]*\(.*\)/s%@$L[@]%\1%/p' \
 	 -e '/^$P=/s/^$P=\(.*\)/s%^$P=.*%$P=\1%/p' \
 	 -e '/^$E=/s/^$E=\(.*\)/s%^$E=.*%$E=\1%/p' \
