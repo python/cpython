@@ -1,0 +1,5 @@
+#! /usr/local/bin/python
+
+import rrcs
+
+rrcs.main()
