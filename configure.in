@@ -1133,10 +1133,13 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
     LIBS="$LIBS -lmpc"
     LIBOBJS="$LIBOBJS thread.o"
     USE_THREAD_MODULE=""])
-    AC_CHECK_LIB(thread, thr_create, [AC_DEFINE(WITH_THREAD)
-    LIBS="$LIBS -lthread"
-    LIBOBJS="$LIBOBJS thread.o"
-    USE_THREAD_MODULE=""])
+
+    if test $posix_threads != "yes"; then     
+      AC_CHECK_LIB(thread, thr_create, [AC_DEFINE(WITH_THREAD)
+      LIBS="$LIBS -lthread"
+      LIBOBJS="$LIBOBJS thread.o"
+      USE_THREAD_MODULE=""])
+    fi
 
     if test "$USE_THREAD_MODULE" != "#"
     then
