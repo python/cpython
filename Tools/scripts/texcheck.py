@@ -57,6 +57,7 @@ cmdstr = r"""
     \makevar \csimplemacro \menuselection \bfcode \sub \release
     \email \kwindex \refexmodindex \filenq \e \menuselection
     \exindex \linev \newsgroup \verbatim \setshortversion
+    \author \authoraddress \paragraph \subparagraph \cmemberline
 """
 
 def matchclose(c_lineno, c_symbol, openers, pairmap):
