@@ -59,6 +59,7 @@ static object *xor();
 static object *or();
 static object *call_builtin();
 static object *call_function();
+object *call_object();
 static object *apply_subscript();
 static object *loop_subscript();
 static object *apply_slice();
@@ -272,10 +273,7 @@ eval_code(co, globals, locals, arg)
 		
 		case UNARY_CALL:
 			v = POP();
-			if (is_instancemethodobject(v) || is_funcobject(v))
-				x = call_function(v, (object *)NULL);
-			else
-				x = call_builtin(v, (object *)NULL);
+			x = call_object(v, (object *)NULL);
 			DECREF(v);
 			PUSH(x);
 			break;
@@ -344,10 +342,7 @@ eval_code(co, globals, locals, arg)
 		case BINARY_CALL:
 			w = POP();
 			v = POP();
-			if (is_instancemethodobject(v) || is_funcobject(v))
-				x = call_function(v, w);
-			else
-				x = call_builtin(v, w);
+			x = call_object(v, w);
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
@@ -550,22 +545,6 @@ eval_code(co, globals, locals, arg)
 			why = WHY_RETURN;
 			break;
 		
-		case REQUIRE_ARGS:
-			if (EMPTY()) {
-				err_setstr(TypeError,
-					"function expects argument(s)");
-				why = WHY_EXCEPTION;
-			}
-			break;
-		
-		case REFUSE_ARGS:
-			if (!EMPTY()) {
-				err_setstr(TypeError,
-					"function expects no argument(s)");
-				why = WHY_EXCEPTION;
-			}
-			break;
-		
 		case BUILD_FUNCTION:
 			v = POP();
 			x = newfuncobject(v, f->f_globals);
@@ -629,6 +608,79 @@ eval_code(co, globals, locals, arg)
 				err_setstr(NameError, getstringvalue(w));
 			break;
 		
+		case UNPACK_ARG:
+			/* Implement various compatibility hacks:
+			   (a) f(a,b,...) should accept f((1,2,...))
+			   (b) f((a,b,...)) should accept f(1,2,...)
+			   (c) f(self,(a,b,...)) should accept f(x,1,2,...)
+			*/
+			{
+				int n;
+				if (EMPTY()) {
+					err_setstr(TypeError,
+						   "no argument list");
+					why = WHY_EXCEPTION;
+					break;
+				}
+				v = POP();
+				if (!is_tupleobject(v)) {
+					err_setstr(TypeError,
+						   "bad argument list");
+					why = WHY_EXCEPTION;
+					break;
+				}
+				n = gettuplesize(v);
+				if (n == 1 && oparg != 1) {
+					/* Rule (a) */
+					w = gettupleitem(v, 0);
+					if (is_tupleobject(w)) {
+						INCREF(w);
+						DECREF(v);
+						v = w;
+						n = gettuplesize(v);
+					}
+				}
+				else if (n != 1 && oparg == 1) {
+					/* Rule (b) */
+					PUSH(v);
+					break;
+					/* Don't fall through */
+				}
+				else if (n > 2 && oparg == 2) {
+					/* Rule (c) */
+					int i;
+					w = newtupleobject(n-1);
+					u = newtupleobject(2);
+					if (u == NULL || w == NULL) {
+						XDECREF(w);
+						XDECREF(u);
+						DECREF(v);
+						why = WHY_EXCEPTION;
+						break;
+					}
+					t = gettupleitem(v, 0);
+					INCREF(t);
+					settupleitem(u, 0, t);
+					for (i = 1; i < n; i++) {
+						t = gettupleitem(v, i);
+						INCREF(t);
+						settupleitem(w, i-1, t);
+					}
+					settupleitem(u, 1, w);
+					DECREF(v);
+					v = u;
+					n = 2;
+				}
+				if (n != oparg) {
+					err_setstr(TypeError,
+						"arg count mismatch");
+					why = WHY_EXCEPTION;
+					DECREF(v);
+					break;
+				}
+				PUSH(v);
+			}
+			/* Fall through */
 		case UNPACK_TUPLE:
 			v = POP();
 			if (!is_tupleobject(v)) {
@@ -1346,10 +1398,19 @@ call_builtin(func, arg)
 	if (is_methodobject(func)) {
 		method meth = getmethod(func);
 		object *self = getself(func);
+		if (!getvarargs(func) && arg != NULL && is_tupleobject(arg)) {
+			int size = gettuplesize(arg);
+			if (size == 1)
+				arg = gettupleitem(arg, 0);
+			else if (size == 0)
+				arg = NULL;
+		}
 		return (*meth)(self, arg);
 	}
 	if (is_classobject(func)) {
-		if (arg != NULL) {
+		if (arg != NULL &&
+				!(is_tupleobject(arg) &&
+					gettuplesize(arg) == 0)) {
 			err_setstr(TypeError,
 				"classobject() allows no arguments");
 			return NULL;
@@ -1370,21 +1431,34 @@ call_function(func, arg)
 	object *co, *v;
 	
 	if (is_instancemethodobject(func)) {
+		int argcount;
 		object *self = instancemethodgetself(func);
 		func = instancemethodgetfunc(func);
-		if (arg == NULL) {
-			arg = self;
+		if (arg == NULL)
+			argcount = 0;
+		else if (is_tupleobject(arg))
+			argcount = gettuplesize(arg);
+		else
+			argcount = 1;
+		newarg = newtupleobject(argcount + 1);
+		if (newarg == NULL)
+			return NULL;
+		INCREF(self);
+		settupleitem(newarg, 0, self);
+		if (arg != NULL && !is_tupleobject(arg)) {
+			INCREF(arg);
+			settupleitem(newarg, 1, arg);
 		}
 		else {
-			newarg = newtupleobject(2);
-			if (newarg == NULL)
-				return NULL;
-			INCREF(self);
-			INCREF(arg);
-			settupleitem(newarg, 0, self);
-			settupleitem(newarg, 1, arg);
-			arg = newarg;
+			int i;
+			object *v;
+			for (i = 0; i < argcount; i++) {
+				v = gettupleitem(arg, i);
+				XINCREF(v);
+				settupleitem(newarg, i+1, v);
+			}
 		}
+		arg = newarg;
 	}
 	else {
 		if (!is_funcobject(func)) {
