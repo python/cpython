@@ -58,7 +58,7 @@ def main():
 	#
 	pid = posix.fork()
 	#
-	if pid = 0:
+	if pid == 0:
 		# child -- read stdin, write socket
 		while 1:
 			line = sys.stdin.readline()
@@ -82,19 +82,19 @@ def main():
 					opt = ''
 				elif iac:
 					iac = 0
-					if c = IAC:
+					if c == IAC:
 						cleandata = cleandata + c
 					elif c in (DO, DONT):
-						if c = DO: print '(DO)',
+						if c == DO: print '(DO)',
 						else: print '(DONT)',
 						opt = IAC + WONT
 					elif c in (WILL, WONT):
-						if c = WILL: print '(WILL)',
+						if c == WILL: print '(WILL)',
 						else: print '(WONT)',
 						opt = IAC + DONT
 					else:
 						print '(command)', ord(c)
-				elif c = IAC:
+				elif c == IAC:
 					iac = 1
 					print '(IAC)',
 				else:

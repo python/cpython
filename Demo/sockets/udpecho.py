@@ -14,9 +14,9 @@ BUFSIZE = 1024
 def main():
 	if len(sys.argv) < 2:
 		usage()
-	if sys.argv[1] = '-s':
+	if sys.argv[1] == '-s':
 		server()
-	elif sys.argv[1] = '-c':
+	elif sys.argv[1] == '-c':
 		client()
 	else:
 		usage()
