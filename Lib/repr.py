@@ -1,7 +1,5 @@
 """Redo the `...` (representation) but with limits on most sizes."""
 
-import string
-
 class Repr:
     def __init__(self):
         self.maxlevel = 6
@@ -16,8 +14,8 @@ class Repr:
     def repr1(self, x, level):
         typename = `type(x)`[7:-2] # "<type '......'>"
         if ' ' in typename:
-            parts = string.split(typename)
-            typename = string.joinfields(parts, '_')
+            parts = typename.split()
+            typename = '_'.join(parts)
         if hasattr(self, 'repr_' + typename):
             return getattr(self, 'repr_' + typename)(x, level)
         else:

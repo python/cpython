@@ -1,7 +1,6 @@
 """Utility to compile possibly incomplete Python source code."""
 
 import sys
-import string
 import traceback
 
 __all__ = ["compile_command"]
@@ -49,8 +48,8 @@ def compile_command(source, filename="<input>", symbol="single"):
     """
 
     # Check for source consisting of only blank lines and comments
-    for line in string.split(source, "\n"):
-        line = string.strip(line)
+    for line in source.split("\n"):
+        line = line.strip()
         if line and line[0] != '#':
             break               # Leave it alone
     else:

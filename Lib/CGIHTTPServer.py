@@ -103,12 +103,12 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def run_cgi(self):
         """Execute a CGI script."""
         dir, rest = self.cgi_info
-        i = string.rfind(rest, '?')
+        i = rest.rfind('?')
         if i >= 0:
             rest, query = rest[:i], rest[i+1:]
         else:
             query = ''
-        i = string.find(rest, '/')
+        i = rest.find('/')
         if i >= 0:
             script, rest = rest[:i], rest[i:]
         else:
@@ -165,16 +165,16 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         accept = []
         for line in self.headers.getallmatchingheaders('accept'):
             if line[:1] in string.whitespace:
-                accept.append(string.strip(line))
+                accept.append(line.strip())
             else:
-                accept = accept + string.split(line[7:], ',')
-        env['HTTP_ACCEPT'] = string.joinfields(accept, ',')
+                accept = accept + line[7:].split(',')
+        env['HTTP_ACCEPT'] = ','.join(accept)
         ua = self.headers.getheader('user-agent')
         if ua:
             env['HTTP_USER_AGENT'] = ua
         co = filter(None, self.headers.getheaders('cookie'))
         if co:
-            env['HTTP_COOKIE'] = string.join(co, ', ')
+            env['HTTP_COOKIE'] = ', '.join(co)
         # XXX Other HTTP_* headers
         if not self.have_fork:
             # Since we're setting the env in the parent, provide empty
@@ -185,7 +185,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         self.send_response(200, "Script output follows")
 
-        decoded_query = string.replace(query, '+', ' ')
+        decoded_query = query.replace('+', ' ')
 
         if self.have_fork:
             # Unix -- fork as we should
