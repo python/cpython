@@ -648,6 +648,7 @@ then
 	# loading of any modules which reference it in System.framework
 	next/4*|next/5*) LINKFORSHARED="-u __dummy -framework System" ;;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
+	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
 	FreeBSD*|NetBSD*) 
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
