@@ -92,7 +92,7 @@ PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include "gmp.h"
-#include "gmp-impl.h"
+#include "gmp-mparam.h"
 
 #if __GNU_MP__ + 0 == 2
 #define GMP2
