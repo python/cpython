@@ -611,6 +611,21 @@ This \UNIX\ is also followed by a space.
     non-Python code and non-code displays.  There should be no blank
     lines at the top or bottom of any \env{verbatim} display.
 
+    Longer displays of verbatim text may be included by storing the
+    example text in an external file containing only plain text.  The
+    file may be included using the standard \macro{verbatiminput}
+    macro; this macro takes a single argument naming the file
+    containing the text.  For example, to include the Python source
+    file \file{example.py}, use:
+
+\begin{verbatim}
+\verbatiminput{example.py}
+\end{verbatim}
+
+    Use of \macro{verbatiminput} allows easier use of special editing
+    modes for the included file.  The file should be placed in the
+    same directory as the \LaTeX{} files for the document.
+
     The Python Documentation Special Interest Group has discussed a
     number of approaches to creating pretty-printed code displays and
     interactive sessions; see the Doc-SIG area on the Python Web site
