@@ -15,14 +15,24 @@ in case I change my mind about them.
 
 classes		Some examples of how to use classes.
 
+comparisons	A set of responses to a really old language-comparison
+		challenge.
+
+curses		A set of curses demos.
+
 embed		An example of embedding Python in another application
 		(see also pysvr).
 
-extend		An example of using the generic Makefile.pre.in from
-		the Misc directory to build a statically linked or
-		shared extension module.
+imputil		Demonstration subclasses of imputil.Importer.
 
 md5test		Test program for the optional md5 module.
+
+metaclasses	The code from the 1.5 metaclasses paper on the web.
+
+parser		Example using the parser module.
+
+pdist		Old, unfinished code messing with CVS, RCS and remote
+		files.
 
 pysvr		An example of embedding Python in a threaded
 		application.
@@ -33,18 +43,26 @@ rpc		A set of classes for building clients and servers for
 scripts		Some useful Python scripts that I put in my bin
 		directory.  No optional built-in modules needed.
 
-sockets		Examples for the new built-in module 'socket'.
-
 sgi		Demos that only run on Silicon Graphics machines.
 		These require at least one of the optional built-in
 		modules that only make sense for the SGI, such as
 		'gl', 'al', and 'sv'.  Split in subdirectories
 		per subject.
 
+sockets		Examples for the new built-in module 'socket'.
+
 threads		Demos that use the 'thread' module.  (Currently these
 		only run on SGIs, but this may change in the future.)
+
+tix		Demos using the Tix widget set addition to Tkinter.
 
 tkinter		Demos using the Tk interface (including Matt Conway's
 		excellent set of demos).
 
-tix		Demos using the Tix widget set addition to Tkinter.
+xml		Some XML demos.
+
+xmlrpc		XML-RPC server framework (but see the standard library
+		module SimpleXMLRPCServer.py for a replacement).
+
+zlib		Some demos for the zlib module (see also the standard
+		library module gzip.py).
