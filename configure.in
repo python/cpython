@@ -2084,6 +2084,8 @@ then
   enable_unicode="ucs2"
 fi
 
+AH_TEMPLATE(Py_UNICODE_SIZE,
+  [Define as the size of the unicode type.])
 case "$enable_unicode" in
 ucs2) unicode_size="2"
       AC_DEFINE(Py_UNICODE_SIZE,2)
@@ -2095,6 +2097,7 @@ esac
 
 AH_TEMPLATE(PY_UNICODE_TYPE,
   [Define as the integral type used for Unicode representation.])
+
 AC_SUBST(UNICODE_OBJS)
 if test "$enable_unicode" = "no"
 then
