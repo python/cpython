@@ -42,6 +42,13 @@ a script to debug other scripts.  For example:
 python -m pdb myscript.py
 \end{verbatim}
 
+When invoked as a script, pdb will automatically enter post-mortem debugging
+if the program being debugged exits abnormally. After post-mortem debugging
+(or after normal exit of the program), pdb will restart the program.
+Automatic restarting preserves pdb's state (such as breakpoints) and in most
+cases is more useful than quitting the debugger upon program's exit.
+\versionadded[Restarting post-mortem behavior added]{2.4}
+
 Typical usage to inspect a crashed program is:
 
 \begin{verbatim}
