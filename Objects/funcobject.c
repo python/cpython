@@ -508,7 +508,7 @@ It can be called either on the class (e.g. C.f()) or on an instance\n\
 (e.g. C().f()).  The instance is ignored except for its class.\n\
 If a class method is called for a derived class, the derived class\n\
 object is passed as the implied first argument.\n\
-
+\n\
 Class methods are different than C++ or Java static methods.\n\
 If you want those, see the staticmethod builtin.";
 
