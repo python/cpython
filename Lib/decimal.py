@@ -509,10 +509,10 @@ class Decimal(object):
             return
 
         if isinstance(value, Decimal):
-          self._exp  = value._exp
-          self._sign = value._sign
-          self._int  = value._int
-          return
+            self._exp  = value._exp
+            self._sign = value._sign
+            self._int  = value._int
+            return
 
         raise TypeError("Can't convert %r" % value)
 
@@ -2817,7 +2817,7 @@ class _WorkRep(object):
                 carry = 1
                 selfint[x] += 10
             else:
-              carry = 0
+                carry = 0
         if carry:
             selfint[x+1] -= 1
         last = len(selfint)-1

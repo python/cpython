@@ -304,7 +304,7 @@ class dispatcher:
             if why[0] == EWOULDBLOCK:
                 pass
             else:
-                raise 
+                raise
 
     def send(self, data):
         try:
@@ -314,7 +314,7 @@ class dispatcher:
             if why[0] == EWOULDBLOCK:
                 return 0
             else:
-                raise 
+                raise
             return 0
 
     def recv(self, buffer_size):
@@ -333,7 +333,7 @@ class dispatcher:
                 self.handle_close()
                 return ''
             else:
-                raise 
+                raise
 
     def close(self):
         self.del_channel()
@@ -529,4 +529,3 @@ if os.name == 'posix':
             self._fileno = fd
             self.socket = file_wrapper(fd)
             self.add_channel()
-

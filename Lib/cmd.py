@@ -149,7 +149,7 @@ class Cmd:
                     readline.set_completer(self.old_completer)
                 except ImportError:
                     pass
-            
+
 
     def precmd(self, line):
         """Hook method executed just before the command line is
@@ -172,7 +172,7 @@ class Cmd:
 
         """
         pass
-    
+
     def parseline(self, line):
         """Parse the line into a command name and a string containing
         the arguments.  Returns a tuple containing (command, args, line).

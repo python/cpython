@@ -598,14 +598,14 @@ if __name__ == '__main__':
 
     parser = ProfileParser(usage)
     parser.allow_interspersed_args = False
-    parser.add_option('-o', '--outfile', dest="outfile", 
+    parser.add_option('-o', '--outfile', dest="outfile",
         help="Save stats to <outfile>", default=None)
     parser.add_option('-s', '--sort', dest="sort",
         help="Sort order when printing to stdout, based on pstats.Stats class", default=-1)
 
     (options, args) = parser.parse_args()
     sys.argv[:] = args
-    
+
     if (len(sys.argv) > 0):
         sys.path.insert(0, os.path.dirname(sys.argv[0]))
         run('execfile(%r)' % (sys.argv[0],), options.outfile, options.sort)
