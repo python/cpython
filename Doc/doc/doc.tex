@@ -214,7 +214,11 @@ distribution, to create or maintain whole documents or sections.
 
   This section is a brief introduction to \LaTeX{} concepts and
   syntax, to provide authors enough information to author documents
-  productively without having to become ``\TeX{}nicians.''
+  productively without having to become ``\TeX{}nicians.''  This does
+  not teach everything needed to know about writing \LaTeX{} for
+  Python documentation; many of the standard ``environments'' are not
+  described here (though you will learn how to mark something as an
+  environment).
 
   Perhaps the most important concept to keep in mind while marking up
   Python documentation is that while \TeX{} is unstructured, \LaTeX{} was
@@ -445,6 +449,34 @@ This \UNIX\ is also followed by a space.
     \end{description}
 
 
+  \subsection{Common Environments \label{latex-environments}}
+
+    \LaTeX{} provides a variety of environments even without the
+    additional markup provided by the Python-specific document classes
+    introducted in the next section.  The following environments are
+    provided as part of standard \LaTeX{} and are being used in the
+    standard Python documentation; descriptions will be added here as
+    time allows.
+
+\begin{verbatim}
+abstract
+alltt
+description
+displaymath
+document
+enumerate
+figure
+flushleft
+itemize
+list
+math
+quotation
+quote
+sloppypar
+verbatim
+\end{verbatim}
+
+
 \section{Document Classes \label{classes}}
 
   Two \LaTeX{} document classes are defined specifically for use with
@@ -480,7 +512,8 @@ This \UNIX\ is also followed by a space.
 
   The Python document classes define a lot of new environments and
   macros.  This section contains the reference material for these
-  facilities.
+  facilities.  Documentation for ``standard'' \LaTeX{} constructs is
+  not included here, though they are used in the Python documentation.
 
   \subsection{Markup for the Preamble \label{preamble-info}}
 
