@@ -20,6 +20,8 @@ class clean (Command):
          "build directory for all modules (default: 'build.build-lib')"),
         ('build-temp=', 't',
          "temporary build directory (default: 'build.build-temp')"),
+        ('build-bdist=', None,
+         "temporary directory for built distributions"),
         ('all', 'a',
          "remove all build output, not just temporary by-products")
     ]
@@ -28,6 +30,7 @@ class clean (Command):
         self.build_base = None
         self.build_lib = None
         self.build_temp = None
+        self.build_bdist = None
         self.all = None
 
     def finalize_options(self):
@@ -39,9 +42,10 @@ class clean (Command):
                        self.build_temp)
 
         self.set_undefined_options('build',
-	    ('build_base', 'build_base'),
-	    ('build_lib', 'build_lib'),
-	    ('build_temp', 'build_temp'))
+                                   ('build_base', 'build_base'),
+                                   ('build_lib', 'build_lib'),
+                                   ('build_temp', 'build_temp'),
+                                   ('build_bdist', 'build_bdist'))
 
     def run(self):
         # remove the build/temp.<plat> directory (unless it's already
@@ -53,6 +57,13 @@ class clean (Command):
             # remove the module build directory (unless already gone)
             if os.path.exists (self.build_lib):
                 remove_tree (self.build_lib, self.verbose, self.dry_run)
+            # remove the temporary directory used for creating built
+            # distributions (default "build/bdist") -- eg. type of
+            # built distribution will have its own subdirectory under
+            # "build/bdist", but they'll be taken care of by
+            # 'remove_tree()'.
+            if os.path.exists (self.build_bdist)
+                remove_tree (self.build_bdist, self.verbose, self.dry_run)
 
         # just for the heck of it, try to remove the base build directory:
         # we might have emptied it right now, but if not we don't care
