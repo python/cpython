@@ -21,6 +21,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #define ROT_TWO		2
 #define ROT_THREE	3
 #define DUP_TOP		4
+#define ROT_FOUR	5
 
 #define UNARY_POSITIVE	10
 #define UNARY_NEGATIVE	11
@@ -47,6 +48,11 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #define DELETE_SLICE	50
 /* Also uses 51-53 */
 
+#define INPLACE_ADD	55
+#define INPLACE_SUBTRACT	56
+#define INPLACE_MULTIPLY	57
+#define INPLACE_DIVIDE	58
+#define INPLACE_MODULO	59
 #define STORE_SUBSCR	60
 #define DELETE_SUBSCR	61
 
@@ -55,14 +61,18 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #define BINARY_AND	64
 #define BINARY_XOR	65
 #define BINARY_OR	66
-
+#define INPLACE_POWER	67
 
 #define PRINT_EXPR	70
 #define PRINT_ITEM	71
 #define PRINT_NEWLINE	72
 #define PRINT_ITEM_TO   73
 #define PRINT_NEWLINE_TO 74
-
+#define INPLACE_LSHIFT	75
+#define INPLACE_RSHIFT	76
+#define INPLACE_AND	77
+#define INPLACE_XOR	78
+#define INPLACE_OR	79
 #define BREAK_LOOP	80
 
 #define LOAD_LOCALS	82
@@ -84,7 +94,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #define DELETE_ATTR	96	/* "" */
 #define STORE_GLOBAL	97	/* "" */
 #define DELETE_GLOBAL	98	/* "" */
-
+#define DUP_TOPX	99	/* number of items to duplicate */
 #define LOAD_CONST	100	/* Index in const list */
 #define LOAD_NAME	101	/* Index in name list */
 #define BUILD_TUPLE	102	/* Number of tuple items */

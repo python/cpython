@@ -73,6 +73,10 @@ extern DL_IMPORT(PyObject *) PyInstance_DoBinOp(PyObject *, PyObject *,
                                                 PyObject * (*)(PyObject *,
                                                                PyObject *));
 
+extern DL_IMPORT(int)
+PyInstance_HalfBinOp(PyObject *, PyObject *, char *, PyObject **,
+			PyObject * (*)(PyObject *, PyObject *), int);
+
 #ifdef __cplusplus
 }
 #endif

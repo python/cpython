@@ -151,6 +151,17 @@ typedef struct {
 	unaryfunc nb_float;
 	unaryfunc nb_oct;
 	unaryfunc nb_hex;
+	binaryfunc nb_inplace_add;
+	binaryfunc nb_inplace_subtract;
+	binaryfunc nb_inplace_multiply;
+	binaryfunc nb_inplace_divide;
+	binaryfunc nb_inplace_remainder;
+	ternaryfunc nb_inplace_power;
+	binaryfunc nb_inplace_lshift;
+	binaryfunc nb_inplace_rshift;
+	binaryfunc nb_inplace_and;
+	binaryfunc nb_inplace_xor;
+	binaryfunc nb_inplace_or;
 } PyNumberMethods;
 
 typedef struct {
@@ -162,6 +173,8 @@ typedef struct {
 	intobjargproc sq_ass_item;
 	intintobjargproc sq_ass_slice;
 	objobjproc sq_contains;
+	binaryfunc sq_inplace_concat;
+	intargfunc sq_inplace_repeat;
 } PySequenceMethods;
 
 typedef struct {
@@ -315,8 +328,12 @@ given type object has a specified feature.
 #define Py_TPFLAGS_GC 0
 #endif
 
+/* PySequenceMethods and PyNumberMethods contain in-place operators */
+#define Py_TPFLAGS_HAVE_INPLACEOPS (1L<<3)
+
 #define Py_TPFLAGS_DEFAULT  (Py_TPFLAGS_HAVE_GETCHARBUFFER | \
-                             Py_TPFLAGS_HAVE_SEQUENCE_IN)
+                             Py_TPFLAGS_HAVE_SEQUENCE_IN | \
+                             Py_TPFLAGS_HAVE_INPLACEOPS)
 
 #define PyType_HasFeature(t,f)  (((t)->tp_flags & (f)) != 0)
 
