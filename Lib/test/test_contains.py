@@ -39,3 +39,26 @@ try:
 	check(0, "not in base_set did not raise error")
 except AttributeError:
 	pass
+
+# Test char in string
+
+check('c' in 'abc', "'c' not in 'abc'")
+check('d' not in 'abc', "'d' in 'abc'")
+
+try:
+	'' in 'abc'
+	check(0, "'' in 'abc' did not raise error")
+except TypeError:
+	pass
+
+try:
+	'ab' in 'abc'
+	check(0, "'ab' in 'abc' did not raise error")
+except TypeError:
+	pass
+
+try:
+	None in 'abc'
+	check(0, "None in 'abc' did not raise error")
+except TypeError:
+	pass
