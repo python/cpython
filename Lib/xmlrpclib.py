@@ -387,11 +387,11 @@ class Marshaller:
             write("</fault>\n")
         else:
             # parameter block
-	    # FIXME: the xml-rpc specification allows us to leave out
-	    # the entire <params> block if there are no parameters.
-	    # however, changing this may break older code (including
-	    # old versions of xmlrpclib.py), so this is better left as
-	    # is for now.  See @XMLRPC3 for more information. /F
+            # FIXME: the xml-rpc specification allows us to leave out
+            # the entire <params> block if there are no parameters.
+            # however, changing this may break older code (including
+            # old versions of xmlrpclib.py), so this is better left as
+            # is for now.  See @XMLRPC3 for more information. /F
             write("<params>\n")
             for v in values:
                 write("<param>\n")
