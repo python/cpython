@@ -93,7 +93,7 @@ dbm_length(dp)
 	    for ( key=gdbm_firstkey(dp->di_dbm); key.dptr;
 				   key = gdbm_nextkey(dp->di_dbm,okey)) {
 		 size++;
-    	    	 if(okey.dsize) free(okey);
+    	    	 if(okey.dsize) free(okey.dptr);
     	    	 okey=key;
     	    }
 	    dp->di_size = size;
@@ -180,7 +180,7 @@ dbm_keys(dp, args)
 	    if ( item == 0 )
 	      return NULL;
 	    addlistitem(v, item);
-    	    if(okey.dsize) free(okey);
+    	    if(okey.dsize) free(okey.dptr);
     	    okey=key;
 	}
 	return v;
