@@ -4,6 +4,20 @@
 # At the end of this file most functions are replaced by built-in
 # functions imported from built-in module "strop".
 
+"""Common string manipulations.
+
+Public module variables:
+
+whitespace -- a string containing all characters considered whitespace
+lowercase -- a string containing all characters considered lowercase letters
+uppercase -- a string containing all characters considered uppercase letters
+letters -- a string containing all characters considered letters
+digits -- a string containing all characters considered decimal digits
+hexdigits -- a string containing all characters considered hexadecimal digits
+octdigits -- a string containing all characters considered octal digits
+
+"""
+
 # Some strings for ctype-style character classification
 whitespace = ' \t\n\r\v\f'
 lowercase = 'abcdefghijklmnopqrstuvwxyz'
@@ -29,6 +43,11 @@ atol_error = ValueError
 
 # convert UPPER CASE letters to lower case
 def lower(s):
+	"""lower(s) -> string
+
+	Return a copy of the string s converted to lowercase
+
+	"""
 	res = ''
 	for c in s:
 		res = res + _lower[ord(c)]
@@ -36,6 +55,11 @@ def lower(s):
 
 # Convert lower case letters to UPPER CASE
 def upper(s):
+	"""upper(s) -> string
+
+	Return a copy of the string s converted to uppercase
+
+	"""
 	res = ''
 	for c in s:
 		res = res + _upper[ord(c)]
@@ -43,6 +67,12 @@ def upper(s):
 
 # Swap lower case letters and UPPER CASE
 def swapcase(s):
+	"""swapcase(s) -> strng
+
+	Return a copy of the string s with upper case characters
+	converted to lowercase and vice versa
+
+	"""
 	res = ''
 	for c in s:
 		res = res + _swapcase[ord(c)]
@@ -50,6 +80,12 @@ def swapcase(s):
 
 # Strip leading and trailing tabs and spaces
 def strip(s):
+	"""strip(s) -> string
+
+	Return a copy of the string s with leading and trailing
+	whitespace removed
+
+	"""
 	i, j = 0, len(s)
 	while i < j and s[i] in whitespace: i = i+1
 	while i < j and s[j-1] in whitespace: j = j-1
@@ -57,12 +93,22 @@ def strip(s):
 
 # Strip leading tabs and spaces
 def lstrip(s):
+	"""lstrip(s) -> string
+
+	Return a copy of the string s with leading whitespace removed
+
+	"""
 	i, j = 0, len(s)
 	while i < j and s[i] in whitespace: i = i+1
 	return s[i:j]
 
 # Strip trailing tabs and spaces
 def rstrip(s):
+	"""rstrip(s) -> string
+
+	Return a copy of the string s with trailing whitespace removed
+
+	"""
 	i, j = 0, len(s)
 	while i < j and s[j-1] in whitespace: j = j-1
 	return s[i:j]
@@ -71,6 +117,16 @@ def rstrip(s):
 # Split a string into a list of space/tab-separated words
 # NB: split(s) is NOT the same as splitfields(s, ' ')!
 def split(s, sep=None, maxsplit=0):
+	"""split(str [,sep [,maxsplit]]) -> list of strings
+
+	Return a list of the words in the string s, using sep as the
+	delimiter string.  If maxsplit is nonzero, splits into at most
+	maxsplit words If sep is not specified, any whitespace string
+	is a separator.  Maxsplit defaults to 0.
+
+	(split and splitfields are synonymous)
+
+	"""
 	if sep is not None: return splitfields(s, sep, maxsplit)
 	res = []
 	i, n = 0, len(s)
@@ -93,6 +149,16 @@ def split(s, sep=None, maxsplit=0):
 # NB: splitfields(s, ' ') is NOT the same as split(s)!
 # splitfields(s, '') returns [s] (in analogy with split() in nawk)
 def splitfields(s, sep=None, maxsplit=0):
+	"""splitfields(str [,sep [,maxsplit]]) -> list of strings
+
+	Return a list of the words in the string s, using sep as the
+	delimiter string.  If maxsplit is nonzero, splits into at most
+	maxsplit words If sep is not specified, any whitespace string
+	is a separator.  Maxsplit defaults to 0.
+
+	(split and splitfields are synonymous)
+
+	"""
 	if sep is None: return split(s, None, maxsplit)
 	res = []
 	nsep = len(sep)
@@ -116,10 +182,28 @@ def splitfields(s, sep=None, maxsplit=0):
 
 # Join words with spaces between them
 def join(words, sep = ' '):
+	"""join(list [,sep]) -> string
+
+	Return a string composed of the words in list, with
+	intervening occurences of sep.  The default separator is a
+	single space.
+
+	(joinfields and join are synonymous)
+
+	"""    
 	return joinfields(words, sep)
 
 # Join fields with optional separator
 def joinfields(words, sep = ' '):
+	"""joinfields(list [,sep]) -> string
+
+	Return a string composed of the words in list, with
+	intervening occurences of sep.  The default separator is a
+	single space.
+
+	(joinfields and join are synonymous)
+
+	"""    
 	res = ''
 	for w in words:
 		res = res + (sep + w)
@@ -127,6 +211,15 @@ def joinfields(words, sep = ' '):
 
 # Find substring, raise exception if not found
 def index(s, sub, i = 0, last=None):
+	"""index(s, sub [,start [,end]]) -> int
+
+	Return the lowest index in s where substring sub is found,
+	such that sub is contained within s[start,end].  Optional
+	arguments start and end are interpreted as in slice notation.
+
+	Raise ValueError if not found.
+
+	"""
 	if last is None: last = len(s)
 	res = find(s, sub, i, last)
 	if res < 0:
@@ -135,6 +228,15 @@ def index(s, sub, i = 0, last=None):
 
 # Find last substring, raise exception if not found
 def rindex(s, sub, i = 0, last=None):
+	"""rindex(s, sub [,start [,end]]) -> int
+
+	Return the highest index in s where substring sub is found,
+	such that sub is contained within s[start,end].  Optional
+	arguments start and end are interpreted as in slice notation.
+
+	Raise ValueError if not found.
+
+	"""
 	if last is None: last = len(s)
 	res = rfind(s, sub, i, last)
 	if res < 0:
@@ -143,6 +245,13 @@ def rindex(s, sub, i = 0, last=None):
 
 # Count non-overlapping occurrences of substring
 def count(s, sub, i = 0, last=None):
+	"""count(s, sub[, start[,end]]) -> int
+
+	Return the number of occurrences of substring sub in string
+	s[start:end].  Optional arguments start and end are
+	interpreted as in slice notation.
+
+	"""
 	Slen = len(s)  # cache this value, for speed
 	if last is None:
 		last = Slen
@@ -165,6 +274,15 @@ def count(s, sub, i = 0, last=None):
 
 # Find substring, return -1 if not found
 def find(s, sub, i = 0, last=None):
+	"""find(s, sub [,start [,end]]) -> in
+
+	Return the lowest index in s where substring sub is found,
+	such that sub is contained within s[start,end].  Optional
+	arguments start and end are interpreted as in slice notation.
+
+	Return -1 on failure.
+
+	"""
 	Slen = len(s)  # cache this value, for speed
 	if last is None:
 		last = Slen
@@ -182,6 +300,15 @@ def find(s, sub, i = 0, last=None):
 
 # Find last substring, return -1 if not found
 def rfind(s, sub, i = 0, last=None):
+	"""rfind(s, sub [,start [,end]]) -> int
+
+	Return the highest index in s where substring sub is found,
+	such that sub is contained within s[start,end].  Optional
+	arguments start and end are interpreted as in slice notation.
+
+	Returns -1 on failure.
+
+	"""
 	Slen = len(s)  # cache this value, for speed
 	if last is None:
 		last = Slen
@@ -204,6 +331,11 @@ safe_env = {"__builtins__": {}}
 # Convert string to float
 re = None
 def atof(str):
+	"""atof(s) -> float
+
+	Return the floating point number represented by the string s.
+
+	"""
 	global re
 	if re is None:
 		# Don't fail if re doesn't exist -- just skip the syntax check
@@ -228,6 +360,16 @@ def atof(str):
 
 # Convert string to integer
 def atoi(str, base=10):
+	"""atoi(s [,base]) -> int
+
+	Return the integer represented by the string s in the given
+	base, which defaults to 10.  The string s must consist of one
+	or more digits, possibly preceded by a sign.  If base is 0, it
+	is chosen from the leading characters of s, 0 for octal, 0x or
+	0X for hexadecimal.  If base is 16, a preceding 0x or 0X is
+	accepted.
+
+	"""
 	if base != 10:
 		# We only get here if strop doesn't define atoi()
 		raise ValueError, "this string.atoi doesn't support base != 10"
@@ -246,6 +388,17 @@ def atoi(str, base=10):
 
 # Convert string to long integer
 def atol(str, base=10):
+	"""atol(s [,base]) -> long
+
+	Return the long integer represented by the string s in the
+	given base, which defaults to 10.  The string s must consist
+	of one or more digits, possibly preceded by a sign.  If base
+	is 0, it is chosen from the leading characters of s, 0 for
+	octal, 0x or 0X for hexadecimal.  If base is 16, a preceding
+	0x or 0X is accepted.  A trailing L or l is not accepted,
+	unless base is 0.
+
+	"""
 	if base != 10:
 		# We only get here if strop doesn't define atol()
 		raise ValueError, "this string.atol doesn't support base != 10"
@@ -264,18 +417,39 @@ def atol(str, base=10):
 
 # Left-justify a string
 def ljust(s, width):
+	"""ljust(s, width) -> string
+
+	Return a left-justified version of s, in a field of the
+	specified width, padded with spaces as needed.  The string is
+	never truncated.
+
+	"""
 	n = width - len(s)
 	if n <= 0: return s
 	return s + ' '*n
 
 # Right-justify a string
 def rjust(s, width):
+    	"""rjust(s, width) -> string
+
+	Return a right-justified version of s, in a field of the
+	specified width, padded with spaces as needed.  The string is
+	never truncated.
+
+	"""
 	n = width - len(s)
 	if n <= 0: return s
 	return ' '*n + s
 
 # Center a string
 def center(s, width):
+   	"""center(s, width) -> string
+
+	Return a center version of s, in a field of the specified
+	width. padded with spaces as needed.  The string is never
+	truncated.
+
+	"""
 	n = width - len(s)
 	if n <= 0: return s
 	half = n/2
@@ -288,6 +462,12 @@ def center(s, width):
 # Decadent feature: the argument may be a string or a number
 # (Use of this is deprecated; it should be a string as with ljust c.s.)
 def zfill(x, width):
+	"""zfill(x, width) -> string
+
+	Pad a numeric string x with zeros on the left, to fill a field
+	of the specified width.  The string x is never truncated.
+
+	"""
 	if type(x) == type(''): s = x
 	else: s = `x`
 	n = len(s)
@@ -300,6 +480,13 @@ def zfill(x, width):
 # Expand tabs in a string.
 # Doesn't take non-printing chars into account, but does understand \n.
 def expandtabs(s, tabsize=8):
+	"""expandtabs(s [,tabsize]) -> string
+
+	Return a copy of the string s with all tab characters replaced
+	by the appropriate number of spaces, depending on the current
+	column, and the tabsize (default=8).
+
+	"""
 	res = line = ''
 	for c in s:
 		if c == '\t':
@@ -312,6 +499,14 @@ def expandtabs(s, tabsize=8):
 
 # Character translation through look-up table.
 def translate(s, table, deletions=""):
+	"""translate(s,table [,deletechars]) -> string
+
+	Return a copy of the string s, where all characters occurring
+	in the optional argument deletechars are removed, and the
+	remaining characters have been mapped through the given
+	translation table, which must be a string of length 256.
+
+	"""
 	if type(table) != type('') or len(table) != 256:
 	    raise TypeError, "translation table must be 256 characters long"
 	res = ""
@@ -322,16 +517,37 @@ def translate(s, table, deletions=""):
 
 # Capitalize a string, e.g. "aBc  dEf" -> "Abc  def".
 def capitalize(s):
+	"""capitalize(s) -> string
+
+	Return a copy of the string s with only its first character
+	capitalized.
+
+	"""
 	return upper(s[:1]) + lower(s[1:])
 
 # Capitalize the words in a string, e.g. " aBc  dEf " -> "Abc Def".
 # See also regsub.capwords().
 def capwords(s, sep=None):
+	"""capwords(s, [sep]) -> string
+
+	Split the argument into words using split, capitalize each
+	word using capitalize, and join the capitalized words using
+	join. Note that this replaces runs of whitespace characters by
+	a single space.
+
+	"""
 	return join(map(capitalize, split(s, sep)), sep or ' ')
 
 # Construct a translation string
 _idmapL = None
 def maketrans(fromstr, tostr):
+	"""maketrans(frm, to) -> string
+
+	Return a translation table (a string of 256 bytes long)
+	suitable for use in string.translate.  The strings frm and to
+	must be of the same length.
+
+	"""
 	if len(fromstr) != len(tostr):
 		raise ValueError, "maketrans arguments must have same length"
 	global _idmapL
@@ -345,6 +561,13 @@ def maketrans(fromstr, tostr):
 
 # Substring replacement (global)
 def replace(str, old, new, maxsplit=0):
+	"""replace (str, old, new[, maxsplit]) -> string
+
+	Return a copy of string str with all occurrences of substring
+	old replaced by new. If the optional argument maxsplit is
+	given, only the first maxsplit occurrences are replaced.
+
+	"""
 	return joinfields(splitfields(str, old, maxsplit), new)
 
 
