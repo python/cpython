@@ -203,9 +203,11 @@ main(argc, argv)
 		setvbuf(stderr, (char *)NULL, _IOLBF, BUFSIZ);
 #endif
 	}
-	else if (stdin_is_interactive) {
-		setvbuf(stdin,  (char *)NULL, _IOLBF, BUFSIZ);
-		setvbuf(stdout, (char *)NULL, _IOLBF, BUFSIZ);
+	else if (Py_InteractiveFlag) {
+		char *ibuffer = malloc(BUFSIZ);
+		char *obuffer = malloc(BUFSIZ);
+		setvbuf(stdin,  ibuffer, _IOLBF, BUFSIZ);
+		setvbuf(stdout, obuffer, _IOLBF, BUFSIZ);
 		/* Leave stderr alone - it should be unbuffered anyway. */
   	}
 
