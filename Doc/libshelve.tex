@@ -1,0 +1,38 @@
+\section{Built-in module \sectcode{shelve}}
+\stmodindex{shelve}
+\stmodindex{pickle}
+\bimodindex{dbm}
+
+A ``shelf'' is a persistent, dictionary-like object.  The difference
+with ``dbm'' databases is that the values (not the keys!) in a shelf
+can be essentially arbitrary Python objects --- anything that the
+\code{pickle} module can handle.  This includes most class instances,
+recursive data types, and objects containing lots of shared
+sub-objects.  The keys are ordinary strings.
+
+To summarize the interface (\code{key} is a string, \code{data} is an
+arbitrary object):
+
+\begin{verbatim}
+import shelve
+
+d = shelve.open(filename) # open, with (g)dbm filename -- no suffix
+
+d[key] = data   # store data at key (overwrites old data if
+                # using an existing key)
+data = d[key]   # retrieve data at key (raise KeyError if no
+                # such key)
+del d[key]      # delete data stored at key (raises KeyError
+                # if no such key)
+flag = d.has_key(key)   # true if the key exists
+list = d.keys() # a list of all existing keys (slow!)
+
+d.close()       # close it
+\end{verbatim}
+
+Dependent on the implementation, closing a persistent dictionary may
+or may not be necessary to flush changes to disk.
+
+Note: \code{shelve} does not support {\em concurrent} access to
+shelved objects.  Two programs should not try to simultaneously access
+the same shelf.

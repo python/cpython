@@ -1,0 +1,170 @@
+\section{Built-in module \sectcode{pickle}}
+\stmodindex{pickle}
+\index{persistency}
+\indexii{persistent}{objects}
+\indexii{serializing}{objects}
+\indexii{marshalling}{objects}
+\indexii{flattening}{objects}
+\indexii{pickling}{objects}
+
+The \code{pickle} module implements a basic but powerful algorithm for
+``pickling'' (a.k.a. serializing, marshalling or flattening) nearly
+arbitrary Python objects.  This is a more primitive notion than
+persistency --- although \code{pickle} reads and writes file objects,
+it does not handle the issue of naming persistent objects, nor the
+(even more complicated) area of concurrent access to persistent
+objects.  The \code{pickle} module can transform a complex object into
+a byte stream and it can transform the byte stream into an object with
+the same internal structure.  The most obvious thing to do with these
+byte streams is to write them onto a file, but it is also conceivable
+to send them across a network or store them in a database.  The module
+\code{shelve} provides a simple interface to pickle and unpickle
+objects on ``dbm''-style database files.
+\stmodindex{shelve}
+
+Unlike the built-in module \code{marshal}, \code{pickle} handles the
+following correctly:
+\stmodindex{marshal}
+
+\begin{itemize}
+
+\item recursive objects
+
+\item pointer sharing
+
+\item instances uf user-defined classes
+
+\end{itemize}
+
+The data format used by \code{pickle} is Python-specific.  This has
+the advantage that there are no restrictions imposed by external
+standards such as CORBA (which probably can't represent pointer
+sharing or recursive objects); however it means that non-Python
+programs may not be able to reconstruct pickled Python objects.
+
+The \code{pickle} data format uses a printable ASCII representation.
+This is slightly more voluminous than a binary representation.
+However, small integers actually take {\em less} space when
+represented as minimal-size decimal strings than when represented as
+32-bit binary numbers, and strings are only much longer if they
+contain many control characters or 8-bit characters.  The big
+advantage of using printable ASCII (and of some other characteristics
+of \code{pickle}'s representation) is that for debugging or recovery
+purposes it is possible for a human to read the pickled file with a
+standard text editor.  (I could have gone a step further and used a
+notation like S-expressions, but the parser would have been
+considerably more complicated and slower, and the files would probably
+have become much larger.)
+
+The \code{pickle} module doesn't handle code objects, which the
+\code{marshal} module does.  I suppose \code{pickle} could, and maybe
+it should, but there's probably no great need for it right now (as
+long as \code{marshal} continues to be used for reading and writing
+code objects), and at least this avoids the possibility of smuggling
+Trojan horses into a program.
+\stmodindex{marshal}
+
+For the benefit of persistency modules written using \code{pickle}, it
+supports the notion of a reference to an object outside the pickled
+data stream.  Such objects are referenced by a name, which is an
+arbitrary string of printable ASCII characters.  The resolution of
+such names is not defined by the \code{pickle} module --- the
+persistent object module will have to implement a method
+\code{persistent_load}.  To write references to persistent objects,
+the persistent module must define a method \code{persistent_id} which
+returns either \code{None} or the persistent ID of the object.
+
+There are some restrictions on the pickling of class instances.
+
+First of all, the class must be defined at the top level in a module.
+
+Next, it must normally be possible to create class instances by
+calling the class without arguments.  If this is undesirable, the
+class can define a method \code{__getinitargs__()}, which should
+return a {\em tuple} containing the arguments to be passed to the
+class constructor (\code{__init__()}).
+\ttindex{__getinitargs__}
+\ttindex{__init__}
+
+Classes can further influence how they are pickled --- if the class
+defines the method \code{__getstate__()}, it is called and the return
+state is pickled as the contents for the instance, and if the class
+defines the method \code{__setstate__()}, it is called with the
+unpickled state.  (Note that these methods can also be used to
+implement copying class instances.)  If there is no
+\code{__getstate__()} method, the instance's \code{__dict__} is
+pickled.  If there is no \code{__setstate__()} method, the pickled
+object must be a dictionary and its items are assigned to the new
+instance's dictionary.  (If a class defines both \code{__getstate__()}
+and \code{__setstate__()}, the state object needn't be a dictionary
+--- these methods can do what they want.)  This protocol is also used
+by the shallow and deep copying operations defined in the \code{copy}
+module.
+\ttindex{__getstate__}
+\ttindex{__setstate__}
+\ttindex{__dict__}
+
+Note that when class instances are pickled, their class's code and
+data is not pickled along with them.  Only the instance data is
+pickled.  This is done on purpose, so you can fix bugs in a class or
+add methods and still load objects that were created with an earlier
+version of the class.  If you plan to have long-lived objects that
+will see many versions of a class, it may be worth to put a version
+number in the objects so that suitable conversions can be made by the
+class's \code{__setstate__()} method.
+
+The interface can be summarized as follows.
+
+To pickle an object \code{x} onto a file \code{f}, open for writing:
+
+\begin{verbatim}
+p = pickle.Pickler(f)
+p.dump(x)
+\end{verbatim}
+
+To unpickle an object \code{x} from a file \code{f}, open for reading:
+
+\begin{verbatim}
+u = pickle.Unpickler(f)
+x = u.load(x)
+\end{verbatim}
+
+The \code{Pickler} class only calls the method \code{f.write} with a
+string argument.  The \code{Unpickler} calls the methods \code{f.read}
+(with an integer argument) and \code{f.readline} (without argument),
+both returning a string.  It is explicitly allowed to pass non-file
+objects here, as long as they have the right methods.
+
+The following types can be pickled:
+\begin{itemize}
+
+\item \code{None}
+
+\item integers, long integers, floating point numbers
+
+\item strings
+
+\item tuples, lists and dictionaries containing only picklable objects
+
+\item class instances whose \code{__dict__} or \code{__setstate__()}
+is picklable
+
+\end{itemize}
+
+Attempts to pickle unpicklable objects will raise an exception; when
+this happens, an unspecified number of bytes may have been written to
+the file argument.
+
+It is possible to make multiple calls to \code{Pickler.dump()} or to
+\code{Unpickler.load()}, as long as there is a one-to-one
+correspondence between pickler and \code{Unpickler} objects and
+between \code{dump} and \code{load} calls for any pair of
+corresponding \code{Pickler} and \code{Unpicklers}.  {\em Warning}:
+this is intended for pickling multiple objects without intervening
+modifications to the objects or their parts.  If you modify an object
+and then pickle it again using the same \code{Pickler} instance, the
+object is not pickled again --- a reference to it is pickled and the
+\code{Unpickler} will return the old value, not the modified one.  (There
+are two problems here: (a) detecting changes, and (b) marshalling a
+minimal set of changes.  I have no answers.  Garbage Collection may
+also become a problem here.)
