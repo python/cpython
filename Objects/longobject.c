@@ -398,10 +398,6 @@ PyLong_FromLongLong(ival)
 
 		return (PyObject *)v;
 	}
-
-	/* If we got here, we're confused... */
-	PyErr_SetString( PyExc_ArithmeticError, "invalid long integer" );
-	return NULL;
 #endif
 }
 
@@ -434,10 +430,6 @@ PyLong_FromUnsignedLongLong(ival)
 
 		return (PyObject *)v;
 	}
-
-	/* If we got here, we're confused... */
-	PyErr_SetString( PyExc_ArithmeticError, "invalid unsigned long integer" );
-	return NULL;
 #endif
 }
 
