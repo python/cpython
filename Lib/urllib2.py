@@ -304,10 +304,13 @@ class OpenerDirector:
                 self.handle_error[protocol] = lookup
             elif condition == "open":
                 kind = protocol
-                lookup = getattr(self, "handle_"+condition)
-            elif condition in ["response", "request"]:
+                lookup = self.handle_open
+            elif condition == "response":
                 kind = protocol
-                lookup = getattr(self, "process_"+condition)
+                lookup = self.process_response
+            elif condition == "request":
+                kind = protocol
+                lookup = self.process_request
             else:
                 continue
 
