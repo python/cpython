@@ -602,29 +602,27 @@ getbuiltin(name)
 
 /* Predefined exceptions */
 
-object *RuntimeError;
+object *AttributeError;
 object *EOFError;
-object *TypeError;
+object *IOError;
+object *IndexError;
+object *KeyError;
+object *KeyboardInterrupt;
 object *MemoryError;
 object *NameError;
-object *SystemError;
-object *KeyboardInterrupt;
-
-/* New exceptions */
-object *AttributeError;
-object *IOError;
-object *ZeroDivisionError;
-object *IndexError;
-object *ValueError;
-object *KeyError;
 object *OverflowError;
+object *RuntimeError;
 object *SyntaxError;
+object *SystemError;
+object *TypeError;
+object *ValueError;
+object *ZeroDivisionError;
 
 static object *
-newstdexception(name, message)
-	char *name, *message;
+newstdexception(name)
+	char *name;
 {
-	object *v = newstringobject(message);
+	object *v = newstringobject(name);
 	if (v == NULL || dictinsert(builtin_dict, name, v) != 0)
 		fatal("no mem for new standard exception");
 	return v;
@@ -633,28 +631,21 @@ newstdexception(name, message)
 static void
 initerrors()
 {
-	RuntimeError = newstdexception("RuntimeError", "run-time error");
-	EOFError = newstdexception("EOFError", "end-of-file read");
-	TypeError = newstdexception("TypeError", "type error");
-	MemoryError = newstdexception("MemoryError", "out of memory");
-	NameError = newstdexception("NameError", "undefined name");
-	SystemError = newstdexception("SystemError", "system error");
-	KeyboardInterrupt =
-		newstdexception("KeyboardInterrupt", "keyboard interrupt");
-	
-	/* New exceptions */
-	AttributeError =
-		newstdexception("AttributeError", "undefined attribute");
-	IOError = newstdexception("IOError", "I/O error");
-	ZeroDivisionError =
-		newstdexception("ZeroDivisionError", "division by zero");
-	IndexError = newstdexception("IndexError", "index out of range");
-	ValueError = newstdexception("ValueError", "unacceptable value");
-	KeyError = newstdexception("KeyError", "invalid key");
-	OverflowError =
-		newstdexception("OverflowError", "arithmetic overflow");
-	SyntaxError =
-		newstdexception("SyntaxError", "syntax error");
+	RuntimeError = newstdexception("RuntimeError");
+	EOFError = newstdexception("EOFError");
+	TypeError = newstdexception("TypeError");
+	MemoryError = newstdexception("MemoryError");
+	NameError = newstdexception("NameError");
+	SystemError = newstdexception("SystemError");
+	KeyboardInterrupt = newstdexception("KeyboardInterrupt");
+	AttributeError = newstdexception("AttributeError");
+	IOError = newstdexception("IOError");
+	ZeroDivisionError = newstdexception("ZeroDivisionError");
+	IndexError = newstdexception("IndexError");
+	ValueError = newstdexception("ValueError");
+	KeyError = newstdexception("KeyError");
+	OverflowError = newstdexception("OverflowError");
+	SyntaxError = newstdexception("SyntaxError");
 }
 
 void

@@ -33,23 +33,21 @@ void err_clear PROTO((void));
 
 /* Predefined exceptions */
 
-extern object *RuntimeError;
+extern object *AttributeError;
 extern object *EOFError;
-extern object *TypeError;
+extern object *IOError;
+extern object *IndexError;
+extern object *KeyError;
+extern object *KeyboardInterrupt;
 extern object *MemoryError;
 extern object *NameError;
-extern object *SystemError;
-extern object *KeyboardInterrupt;
-
-/* New exceptions */
-extern object *AttributeError;
-extern object *IOError;
-extern object *ZeroDivisionError;
-extern object *IndexError;
-extern object *ValueError;
-extern object *KeyError;
 extern object *OverflowError;
+extern object *RuntimeError;
 extern object *SyntaxError;
+extern object *SystemError;
+extern object *TypeError;
+extern object *ValueError;
+extern object *ZeroDivisionError;
 
 /* Convenience functions */
 
