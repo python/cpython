@@ -16,6 +16,17 @@ class AnchorCollector(htmllib.HTMLParser):
     def anchor_bgn(self, *args):
         self.__anchors.append(args)
 
+class DeclCollector(htmllib.HTMLParser):
+    def __init__(self, *args, **kw):
+        self.__decls = []
+        htmllib.HTMLParser.__init__(self, *args, **kw)
+
+    def get_decl_info(self):
+        return self.__decls
+
+    def unknown_decl(self, data):
+        self.__decls.append(data)
+
 
 class HTMLParserTestCase(unittest.TestCase):
     def test_anchor_collection(self):
@@ -33,6 +44,22 @@ class HTMLParserTestCase(unittest.TestCase):
                            ('', 'frob', ''),
                            ])
 
+    def test_decl_collection(self):
+        # See SF patch #545300
+        parser = DeclCollector(formatter.NullFormatter(), verbose=1)
+        parser.feed(
+            """<html>
+            <body>
+            hallo
+            <![if !supportEmptyParas]>&nbsp;<![endif]>
+            </body>
+            </html>
+            """)
+        parser.close()
+        self.assertEquals(parser.get_decl_info(),
+                          ["if !supportEmptyParas",
+                           "endif"
+                           ])
 
 def test_main():
     test_support.run_unittest(HTMLParserTestCase)
