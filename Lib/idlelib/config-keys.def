@@ -6,9 +6,9 @@
 # single 'emacs style' multi-keystoke binding.
 
 [IDLE Classic Windows]
-Copy=<Control-c> <Control-C>
-Cut=<Control-x> <Control-X>
-Paste=<Control-v> <Control-V>
+copy=<Control-c> <Control-C>
+cut=<Control-x> <Control-X>
+paste=<Control-v> <Control-V>
 beginning-of-line=<Control-a> <Home>
 center-insert=<Control-l>
 close-all-windows=<Control-q>
@@ -40,9 +40,9 @@ replace=<Control-h>
 goto-line=<Alt-g>
 
 [IDLE Classic Unix]
-Copy=<Alt-w> <Meta-w>
-Cut=<Control-w>
-Paste=<Control-y>
+copy=<Alt-w> <Meta-w>
+cut=<Control-w>
+paste=<Control-y>
 beginning-of-line=<Control-a> <Home>
 center-insert=<Control-l>
 close-all-windows=<Control-x><Control-c>
