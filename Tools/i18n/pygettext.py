@@ -4,15 +4,7 @@
 # minimally patched to make it even more xgettext compatible 
 # by Peter Funk <pf@artcom-gmbh.de>
 
-# for selftesting
-try:
-    import fintl
-    _ = fintl.gettext
-except ImportError:
-    def _(s): return s
-
-
-__doc__ = _("""pygettext -- Python equivalent of xgettext(1)
+"""pygettext -- Python equivalent of xgettext(1)
 
 Many systems (Solaris, Linux, Gnu) provide extensive tools that ease the
 internationalization of C programs.  Most of these tools are independent of
@@ -65,7 +57,13 @@ Options:
 
     -E
     --escape
-        replace non-ASCII characters with octal escape sequences.
+        Replace non-ASCII characters with octal escape sequences.
+
+    -D
+    --docstrings
+        Extract module, class, method, and function docstrings.  These do not
+        need to be wrapped in _() markers, and in fact cannot be for Python to
+        consider them docstrings.
 
     -h
     --help
@@ -93,6 +91,15 @@ Options:
         each msgid.  The style of comments is controlled by the -S/--style
         option.  This is the default.
 
+    -o filename
+    --output=filename
+        Rename the default output file from messages.pot to filename.  If
+        filename is `-' then the output is sent to standard out.
+
+    -p dir
+    --output-dir=dir
+        Output files will be placed in directory dir.
+
     -S stylename
     --style stylename
         Specify which style to use for location comments.  Two styles are
@@ -102,15 +109,6 @@ Options:
         GNU      #: filename:line
 
         The style name is case insensitive.  GNU style is the default.
-
-    -o filename
-    --output=filename
-        Rename the default output file from messages.pot to filename.  If
-        filename is `-' then the output is sent to standard out.
-
-    -p dir
-    --output-dir=dir
-        Output files will be placed in directory dir.
 
     -v
     --verbose
@@ -132,7 +130,7 @@ Options:
 
 If `inputfile' is -, standard input is read.
 
-""")
+"""
 
 import os
 import sys
@@ -140,7 +138,14 @@ import time
 import getopt
 import tokenize
 
-__version__ = '1.1'
+# for selftesting
+try:
+    import fintl
+    _ = fintl.gettext
+except ImportError:
+    def _(s): return s
+
+__version__ = '1.2'
 
 default_keywords = ['_']
 DEFAULTKEYWORDS = ', '.join(default_keywords)
@@ -171,9 +176,9 @@ msgstr ""
 
 
 def usage(code, msg=''):
-    print __doc__ % globals()
+    print >> sys.stderr, _(__doc__) % globals()
     if msg:
-        print msg
+        print >> sys.stderr, msg
     sys.exit(code)
 
 
@@ -239,14 +244,47 @@ class TokenEater:
         self.__state = self.__waiting
         self.__data = []
         self.__lineno = -1
+        self.__freshmodule = 1
 
     def __call__(self, ttype, tstring, stup, etup, line):
         # dispatch
+##        import token
+##        print >> sys.stderr, 'ttype:', token.tok_name[ttype], \
+##              'tstring:', tstring
         self.__state(ttype, tstring, stup[0])
 
     def __waiting(self, ttype, tstring, lineno):
+        # Do docstring extractions, if enabled
+        if self.__options.docstrings:
+            # module docstring?
+            if self.__freshmodule:
+                if ttype == tokenize.STRING:
+                    self.__addentry(safe_eval(tstring), lineno)
+                    self.__freshmodule = 0
+                elif ttype not in (tokenize.COMMENT, tokenize.NL):
+                    self.__freshmodule = 0
+                return
+            # class docstring?
+            if ttype == tokenize.NAME and tstring in ('class', 'def'):
+                self.__state = self.__suiteseen
+                return
         if ttype == tokenize.NAME and tstring in self.__options.keywords:
             self.__state = self.__keywordseen
+
+    def __suiteseen(self, ttype, tstring, lineno):
+        # ignore anything until we see the colon
+        if ttype == tokenize.OP and tstring == ':':
+            self.__state = self.__suitedocstring
+
+    def __suitedocstring(self, ttype, tstring, lineno):
+        # ignore any intervening noise
+        if ttype == tokenize.STRING:
+            self.__addentry(safe_eval(tstring), lineno)
+            self.__state = self.__waiting
+        elif ttype not in (tokenize.NEWLINE, tokenize.INDENT,
+                           tokenize.COMMENT):
+            # there was no class docstring
+            self.__state = self.__waiting
 
     def __keywordseen(self, ttype, tstring, lineno):
         if ttype == tokenize.OP and tstring == '(':
@@ -263,18 +301,18 @@ class TokenEater:
             # of messages seen.  Reset state for the next batch.  If there
             # were no strings inside _(), then just ignore this entry.
             if self.__data:
-                msg = EMPTYSTRING.join(self.__data)
-                if not msg in self.__options.toexclude:
-                    entry = (self.__curfile, self.__lineno)
-                    linenos = self.__messages.get(msg)
-                    if linenos is None:
-                        self.__messages[msg] = [entry]
-                    else:
-                        linenos.append(entry)
+                self.__addentry(EMPTYSTRING.join(self.__data))
             self.__state = self.__waiting
         elif ttype == tokenize.STRING:
             self.__data.append(safe_eval(tstring))
         # TBD: should we warn if we seen anything else?
+
+    def __addentry(self, msg, lineno=None):
+        if lineno is None:
+            lineno = self.__lineno
+        if not msg in self.__options.toexclude:
+            entry = (self.__curfile, lineno)
+            self.__messages.setdefault(msg, []).append(entry)
 
     def set_filename(self, filename):
         self.__curfile = filename
@@ -282,10 +320,9 @@ class TokenEater:
     def write(self, fp):
         options = self.__options
         timestamp = time.ctime(time.time())
-        # common header
-        # The time stamp in the header doesn't have the same format
-        # as that generated by xgettext...
-        print >>fp, pot_header % {'time': timestamp, 'version': __version__}
+        # The time stamp in the header doesn't have the same format as that
+        # generated by xgettext...
+        print >> fp, pot_header % {'time': timestamp, 'version': __version__}
         for k, v in self.__messages.items():
             if not options.writelocations:
                 pass
@@ -304,13 +341,14 @@ class TokenEater:
                     if len(locline) + len(s) <= options.width:
                         locline = locline + s
                     else:
-                        print >>fp, locline
+                        print >> fp, locline
                         locline = "#:" + s
                 if len(locline) > 2:
-                    print >>fp, locline
+                    print >> fp, locline
             # TBD: sorting, normalizing
-            print >>fp, 'msgid', normalize(k)
-            print >>fp, 'msgstr ""\n'
+            print >> fp, 'msgid', normalize(k)
+            print >> fp, 'msgstr ""\n'
+
 
 
 def main():
@@ -318,11 +356,12 @@ def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            'ad:Ehk:Kno:p:S:Vvw:x:',
+            'ad:DEhk:Kno:p:S:Vvw:x:',
             ['extract-all', 'default-domain', 'escape', 'help',
              'keyword=', 'no-default-keywords',
              'add-location', 'no-location', 'output=', 'output-dir=',
              'style=', 'verbose', 'version', 'width=', 'exclude-file=',
+             'docstrings',
              ])
     except getopt.error, msg:
         usage(1, msg)
@@ -343,6 +382,7 @@ def main():
         verbose = 0
         width = 78
         excludefilename = ''
+        docstrings = 0
 
     options = Options()
     locations = {'gnu' : options.GNU,
@@ -359,6 +399,8 @@ def main():
             options.outfile = arg + '.pot'
         elif opt in ('-E', '--escape'):
             options.escape = 1
+        elif opt in ('-D', '--docstrings'):
+            options.docstrings = 1
         elif opt in ('-k', '--keyword'):
             options.keywords.append(arg)
         elif opt in ('-K', '--no-default-keywords'):
