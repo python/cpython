@@ -35,6 +35,7 @@ class ReprTests(unittest.TestCase):
 
     def test_container(self):
         from array import array
+        from collections import deque
 
         eq = self.assertEquals
         # Tuples give up after 6 elements
@@ -64,6 +65,9 @@ class ReprTests(unittest.TestCase):
         eq(r(frozenset([1, 2, 3])), "frozenset([1, 2, 3])")
         eq(r(frozenset([1, 2, 3, 4, 5, 6])), "frozenset([1, 2, 3, 4, 5, 6])")
         eq(r(frozenset([1, 2, 3, 4, 5, 6, 7])), "frozenset([1, 2, 3, 4, 5, 6, ...])")
+
+        # collections.deque after 6
+        eq(r(deque([1, 2, 3, 4, 5, 6, 7])), "deque([1, 2, 3, 4, 5, 6, ...])")
 
         # Dictionaries give up after 4.
         eq(r({}), "{}")
