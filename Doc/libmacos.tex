@@ -5,38 +5,41 @@
 \setindexsubitem{(in module MacOS)}
 
 This module provides access to MacOS specific functionality in the
-python interpreter, such as how the interpreter eventloop functions
+Python interpreter, such as how the interpreter eventloop functions
 and the like. Use with care.
 
 Note the capitalisation of the module name, this is a historical
-artefact.
+artifact.
 
 \begin{excdesc}{Error}
 This exception is raised on MacOS generated errors, either from
 functions in this module or from other mac-specific modules like the
 toolbox interfaces. The arguments are the integer error code (the
-\var{OSErr} value) and a textual description of the error code.
+\cdata{OSErr} value) and a textual description of the error code.
 Symbolic names for all known error codes are defined in the standard
-module \var{macerrors}.
+module \module{macerrors}\refstmodindex{macerrors}.
 \end{excdesc}
 
 \begin{funcdesc}{SetEventHandler}{handler}
 In the inner interpreter loop Python will occasionally check for events,
-unless disabled with \var{ScheduleParams}. With this function you
+unless disabled with \function{ScheduleParams()}. With this function you
 can pass a Python event-handler function that will be called if an event
 is available. The event is passed as parameter and the function should return
 non-zero if the event has been fully processed, otherwise event processing
 continues (by passing the event to the console window package, for instance).
 
-Call SetEventHandler without parameter to clear the event handler. Setting
-an eventhandler while one is already set is an error.
+Call \function{SetEventHandler()} without a parameter to clear the
+event handler. Setting an event handler while one is already set is an
+error.
 \end{funcdesc}
 
-\begin{funcdesc}{SchedParams}{\optional{doint, evtmask, besocial, interval, bgyield}}
+\begin{funcdesc}{SchedParams}{\optional{doint\optional{, evtmask\optional{,
+                              besocial\optional{, interval\optional{,
+                              bgyield}}}}}}
 Influence the interpreter inner loop event handling. \var{Interval}
 specifies how often (in seconds, floating point) the interpreter
 should enter the event processing code. When true, \var{doint} causes
-interrupt (command-dot) checking to be done. \var{Evtmask} tells the
+interrupt (command-dot) checking to be done. \var{evtmask} tells the
 interpreter to do event processing for events in the mask (redraws,
 mouseclicks to switch to other applications, etc). The \var{besocial}
 flag gives other processes a chance to run. They are granted minimal
@@ -51,14 +54,14 @@ background.
 \end{funcdesc}
 
 \begin{funcdesc}{HandleEvent}{ev}
-Pass the event record \code{ev} back to the python event loop, or
+Pass the event record \var{ev} back to the Python event loop, or
 possibly to the handler for the \code{sys.stdout} window (based on the
-compiler used to build python). This allows python programs that do
+compiler used to build Python). This allows Python programs that do
 their own event handling to still have some command-period and
 window-switching capability.
 
 If you attempt to call this function from an event handler set through
-\code{SetEventHandler} you will get an exception.
+\function{SetEventHandler()} you will get an exception.
 \end{funcdesc}
 
 \begin{funcdesc}{GetErrorString}{errno}
@@ -68,7 +71,7 @@ Return the textual description of MacOS error code \var{errno}.
 \begin{funcdesc}{splash}{resid}
 This function will put a splash window
 on-screen, with the contents of the DLOG resource specified by
-\code{resid}. Calling with a zero argument will remove the splash
+\var{resid}. Calling with a zero argument will remove the splash
 screen. This function is useful if you want an applet to post a splash screen
 early in initialization without first having to load numerous
 extension modules.
@@ -87,7 +90,7 @@ modules.
 
 \begin{funcdesc}{openrf}{name \optional{, mode}}
 Open the resource fork of a file. Arguments are the same as for the
-builtin function \code{open}. The object returned has file-like
-semantics, but it is not a python file object, so there may be subtle
+built-in function \function{open()}. The object returned has file-like
+semantics, but it is not a Python file object, so there may be subtle
 differences.
 \end{funcdesc}

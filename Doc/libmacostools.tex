@@ -5,13 +5,12 @@
 This module contains some convenience routines for file-manipulation
 on the Macintosh.
 
-The \code{macostools} module defines the following functions:
+The \module{macostools} module defines the following functions:
 
-\setindexsubitem{(in module macostools)}
 
-\begin{funcdesc}{copy}{src, dst\optional{, createpath, copytimes}}
+\begin{funcdesc}{copy}{src, dst\optional{, createpath\optional{, copytimes}}}
 Copy file \var{src} to \var{dst}. The files can be specified as
-pathnames or \code{FSSpec} objects. If \var{createpath} is non-zero
+pathnames or \pytype{FSSpec} objects. If \var{createpath} is non-zero
 \var{dst} must be a pathname and the folders leading to the
 destination are created if necessary.  The method copies data and
 resource fork and some finder information (creator, type, flags) and
@@ -24,13 +23,13 @@ copied, not the aliasfile.
 
 \begin{funcdesc}{copytree}{src, dst}
 Recursively copy a file tree from \var{src} to \var{dst}, creating
-folders as needed. \var{Src} and \var{dst} should be specified as
+folders as needed. \var{src} and \var{dst} should be specified as
 pathnames.
 \end{funcdesc}
 
 \begin{funcdesc}{mkalias}{src, dst}
 Create a finder alias \var{dst} pointing to \var{src}. Both may be
-specified as pathnames or \var{FSSpec} objects.
+specified as pathnames or \pytype{FSSpec} objects.
 \end{funcdesc}
 
 \begin{funcdesc}{touched}{dst}
@@ -45,7 +44,7 @@ The buffer size for \code{copy}, default 1 megabyte.
 \end{datadesc}
 
 Note that the process of creating finder aliases is not specified in
-the Apple documentation. Hence, aliases created with \code{mkalias}
+the Apple documentation. Hence, aliases created with \function{mkalias()}
 could conceivably have incompatible behaviour in some cases.
 
 \section{Standard Module \sectcode{findertools}}
@@ -54,14 +53,13 @@ could conceivably have incompatible behaviour in some cases.
 
 This module contains routines that give Python programs access to some
 functionality provided by the finder. They are implemented as wrappers
-around the AppleEvent interface to the finder.
+around the AppleEvent\index{AppleEvents} interface to the finder.
 
 All file and folder parameters can be specified either as full
-pathnames or as \code{FSSpec} objects.
+pathnames or as \pytype{FSSpec} objects.
 
-The \code{findertools} module defines the following functions:
+The \module{findertools} module defines the following functions:
 
-\setindexsubitem{(in module macostools)}
 
 \begin{funcdesc}{launch}{file}
 Tell the finder to launch \var{file}. What launching means depends on the file:
@@ -71,24 +69,25 @@ in the correct application.
 
 \begin{funcdesc}{Print}{file}
 Tell the finder to print a file (again specified by full pathname or
-FSSpec). The behaviour is identical to selecting the file and using
+\pytype{FSSpec}). The behaviour is identical to selecting the file and using
 the print command in the finder.
 \end{funcdesc}
 
 \begin{funcdesc}{copy}{file, destdir}
 Tell the finder to copy a file or folder \var{file} to folder
-\var{destdir}. The function returns an \code{Alias} object pointing to
+\var{destdir}. The function returns an \pytype{Alias} object pointing to
 the new file.
 \end{funcdesc}
 
 \begin{funcdesc}{move}{file, destdir}
 Tell the finder to move a file or folder \var{file} to folder
-\var{destdir}. The function returns an \code{Alias} object pointing to
+\var{destdir}. The function returns an \pytype{Alias} object pointing to
 the new file.
 \end{funcdesc}
 
 \begin{funcdesc}{sleep}{}
-Tell the finder to put the mac to sleep, if your machine supports it.
+Tell the finder to put the Macintosh to sleep, if your machine
+supports it.
 \end{funcdesc}
 
 \begin{funcdesc}{restart}{}
