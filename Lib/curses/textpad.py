@@ -88,7 +88,7 @@ class Textbox:
             self.win.delch()
         elif ch == ascii.ENQ:				# ^e
             if self.stripspaces:
-                self.win.move(y, self.firstblank(y, maxx))
+                self.win.move(y, self.firstblank(y))
             else:
                 self.win.move(y, self.maxx)
         elif ch in (ascii.ACK, curses.KEY_RIGHT):	# ^f
