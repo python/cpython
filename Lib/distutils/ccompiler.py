@@ -644,8 +644,27 @@ class CCompiler:
 
         Raises CompileError on failure.
         """
-        pass
 
+        # A concrete compiler class can either override this method
+        # entirely or implement _compile().
+        
+        macros, objects, extra_postargs, pp_opts, build = \
+                self._setup_compile(output_dir, macros, include_dirs, sources,
+                                    depends, extra_postargs)
+        cc_args = self._get_cc_args(pp_opts, debug, extra_preargs)
+
+        for obj, (src, ext) in build.items():
+            self._compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
+
+        # Return *all* object filenames, not just the ones we just built.
+        return objects
+
+    def _compile(self, obj, src, ext, cc_args, extra_postargs, pp_opts):
+        """Compile 'src' to product 'obj'."""
+        
+        # A concrete compiler class that does not override compile()
+        # should implement _compile().
+        pass
 
     def create_static_lib (self,
                            objects,
