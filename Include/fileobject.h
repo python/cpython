@@ -41,6 +41,9 @@ extern PyObject *PyFile_FromFile
 extern FILE *PyFile_AsFile Py_PROTO((PyObject *));
 extern PyObject *PyFile_Name Py_PROTO((PyObject *));
 extern PyObject *PyFile_GetLine Py_PROTO((PyObject *, int));
+extern int PyFile_WriteObject Py_PROTO((PyObject *, PyObject *, int));
+extern int PyFile_SoftSpace Py_PROTO((PyObject *, int));
+extern void PyFile_WriteString Py_PROTO((char *, PyObject *));
 
 #ifdef __cplusplus
 }
