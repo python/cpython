@@ -15,6 +15,9 @@ SignedByte = Type("SignedByte", "b")
 ScriptCode = Type("ScriptCode", "h")
 Size = Type("Size", "l")
 Style = Type("Style", "b")
+StyleParameter = Type("Style", "h")
+CharParameter = Type("CharParameter", "h")
+TextEncoding = Type("TextEncoding", "l")
 
 UInt8 = Type("UInt8", "b")
 SInt8 = Type("SInt8", "b")
@@ -75,6 +78,7 @@ class OSErrType(Type):
 		Output("if (%s != noErr) return PyMac_Error(%s);", name, name)
 		self.used = 1
 OSErr = OSErrType("OSErr", 'h')
+OSStatus = OSErrType("OSStatus", 'l')
 
 
 # Various buffer types
