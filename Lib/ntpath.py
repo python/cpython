@@ -404,10 +404,10 @@ def abspath(path):
     try:
         import win32api
         try:
-            return win32api.GetFullPathName(path)
+            path = win32api.GetFullPathName(path)
         except win32api.error:
-            return path # Bad path - return unchanged.
+            pass # Bad path - return unchanged.
     except ImportError:
         if not isabs(path):
             path = join(os.getcwd(), path)
-        return normpath(path)
+    return normpath(path)
