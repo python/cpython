@@ -162,7 +162,7 @@ int PyMac_ConsoleIsDead;
 /*
 ** Sioux menu bar, saved early so we can restore it
 */
-static Handle sioux_mbar;
+static MenuBarHandle sioux_mbar;
 
 /*
 ** Some stuff for our GetDirectory and PromptGetFile routines
@@ -784,11 +784,19 @@ PyMac_InitMenuBar()
 void
 PyMac_RestoreMenuBar()
 {
+#if 0
+	/* This doesn't seem to work anymore? Or only for Carbon? */
+	MenuBarHandle curmenubar;
+	
+	curmenubar = GetMenuBar();
 	if ( sioux_mbar ) {
 		SetMenuBar(sioux_mbar);
 		DrawMenuBar();
-	} else
+	} else {
 		PyMac_InitMenuBar();
+		DrawMenuBar();
+	}
+#endif
 }
 
 
