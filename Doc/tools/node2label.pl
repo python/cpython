@@ -49,7 +49,7 @@ while (<>) {
     shift @parts;
     for $node (@parts) {
       $node =~ s/[\#\"\'].*$//g;
-      chop($node);
+      chomp($node);
       if (defined($nodes{$node})) {
 	$label = $nodes{$node};
 	if (s/(HREF|href)=([\"\'])$node([\#\"\'])/href=$2$label.html$3/g) {
