@@ -614,26 +614,25 @@ sub make_head_and_body($$) {
         $STYLESHEET = $FILE.".css" unless $STYLESHEET;
         $MY_PARTIAL_HEADER = join('',
             ($DOCTYPE ? $DTDcomment : ''),
-            "<html>\n<head>\n",
-            ($BASE ? "<base href=\"$BASE\">\n" : ''),
-            "<link rel=\"STYLESHEET\" href=\"$STYLESHEET\" type='text/css'>\n",
+            "<html>\n<head>",
+            ($BASE ? "\n<base href=\"$BASE\">" : ''),
+            "\n<link rel=\"STYLESHEET\" href=\"$STYLESHEET\" type='text/css'>",
             ($FAVORITES_ICON
-             ? ('<link rel="SHORTCUT ICON" href="' . "$FAVORITES_ICON\">\n")
+             ? ("\n<link rel=\"SHORTCUT ICON\" href=\"" . "$FAVORITES_ICON\">")
              : ''),
             ($EXTERNAL_UP_LINK
-             ? ('<link rel="start" href="' . "$EXTERNAL_UP_LINK\""
-                . ($EXTERNAL_UP_TITLE ? " title='$EXTERNAL_UP_TITLE'" : '')
-                . ">\n")
+             ? ("\n<link rel='start' href='" . $EXTERNAL_UP_LINK
+                . ($EXTERNAL_UP_TITLE ?
+                   "' title='$EXTERNAL_UP_TITLE'>" : "'>"))
              : ''),
-            "<link rel=\"first\" href=\"$FILE.html\"",
+            "\n<link rel=\"first\" href=\"$FILE.html\"",
             ($t_title ? " title='$t_title'" : ''),
-            ">\n",
+            '>',
             ($HAVE_TABLE_OF_CONTENTS
-             ? ('<link rel="contents" href="contents.html" title="Contents">'
-                . ($HAVE_GENERAL_INDEX ? "\n" : ''))
+             ? "\n<link rel='contents' href='contents.html' title='Contents'>"
              : ''),
             ($HAVE_GENERAL_INDEX
-             ? '<link rel="index" href="genindex.html" title="Index">' . "\n"
+             ? "\n<link rel='index' href='genindex.html' title='Index'>"
              : ''),
             # disable for now -- Mozilla doesn't do well with multiple indexes
             # ($HAVE_MODULE_INDEX
@@ -645,10 +644,10 @@ sub make_head_and_body($$) {
              # page always gets copied to about.html, even when we use the
              # generated node###.html page names.  Won't work with the
              # rest of the Python doc tools.
-             ? ("<link rel='last' href='about.html'"
-                . " title='About this document...'>\n"
-                . "<link rel='help' href='about.html'"
-                . " title='About this document...'>\n")
+             ? ("\n<link rel='last' href='about.html'"
+                . " title='About this document...'>"
+                . "\n<link rel='help' href='about.html'"
+                . " title='About this document...'>")
              : ''),
             $more_links_mark,
             "\n",
