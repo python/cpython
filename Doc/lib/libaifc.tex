@@ -1,0 +1,180 @@
+\section{Standard Module \sectcode{aifc}}
+\stmodindex{aifc}
+
+This module provides support for reading and writing AIFF and AIFF-C
+files.  AIFF is Audio Interchange File Format, a format for storing
+digital audio samples in a file.  AIFF-C is a newer version of the
+format that includes the ability to compress the audio data.
+
+Audio files have a number of parameters that describe the audio data.
+The sampling rate or frame rate is the number of times per second the
+sound is sampled.  The number of channels indicate if the audio is
+mono, stereo, or quadro.  Each frame consists of one sample per
+channel.  The sample size is the size in bytes of each sample.  Thus a
+frame consists of nchannels*framesize bytes, and a second's worth of
+audio consists of nchannels*framesize*framerate bytes.
+
+Module \code{aifc} defines the following function:
+
+\renewcommand{\indexsubitem}{(in module aifc)}
+\begin{funcdesc}{open}{file\, mode}
+Opens an AIFF or AIFF-C file and returns an object instance with
+methods that are described below.  The argument file is either a
+string naming a file or a file object.  The mode is either the string
+'r' when the file must be opened for reading, or 'w' when the file
+must be opened for writing.
+\end{funcdesc}
+
+Objects returned by \code{aifc.open()} when a file is opened for
+reading have the following methods:
+
+\renewcommand{\indexsubitem}{(aifc object method)}
+\begin{funcdesc}{getnchannels}{}
+Return the number of audio channels (1 for mono, 2 for stereo).
+\end{funcdesc}
+
+\begin{funcdesc}{getsampwidth}{}
+Return the size in bytes of individual samples.
+\end{funcdesc}
+
+\begin{funcdesc}{getframerate}{}
+Return the sampling rate (number of audio frames per second).
+\end{funcdesc}
+
+\begin{funcdesc}{getnframes}{}
+Return the number of audio frames in the file.
+\end{funcdesc}
+
+\begin{funcdesc}{getcomptype}{}
+Return a four-character string describing the type of compression used
+in the audio file.  For AIFF files, the returned value is
+\code{'NONE'}.
+\end{funcdesc}
+
+\begin{funcdesc}{getcompname}{}
+Return a human-readable description of the type of compression used in
+the audio file.  For AIFF files, the returned value is \code{'not
+compressed'}.
+\end{funcdesc}
+
+\begin{funcdesc}{getparams}{}
+Return a tuple consisting of all of the above values in the above
+order.
+\end{funcdesc}
+
+\begin{funcdesc}{getmarkers}{}
+Return a list of markers in the audio file.  A marker consists of a
+tuple of three elements.  The first is the mark ID (an integer), the
+second is the mark position in frames from the beginning of the data
+(an integer), the third is the name of the mark (a string).
+\end{funcdesc}
+
+\begin{funcdesc}{getmark}{id}
+Return the tuple as described in \code{getmarkers} for the mark with
+the given id.
+\end{funcdesc}
+
+\begin{funcdesc}{readframes}{nframes}
+Read and return the next nframes frames from the audio file.  The
+returned data is a string containing for each frame the uncompressed
+samples of all channels.
+\end{funcdesc}
+
+\begin{funcdesc}{rewind}{}
+Rewind the read pointer.  The next \code{readframes} will start from
+the beginning.
+\end{funcdesc}
+
+\begin{funcdesc}{setpos}{pos}
+Seek to the specified frame number.
+\end{funcdesc}
+
+\begin{funcdesc}{tell}{}
+Return the current frame number.
+\end{funcdesc}
+
+\begin{funcdesc}{close}{}
+Close the AIFF file.  After calling this method, the object can no
+longer be used.
+\end{funcdesc}
+
+Objects returned by \code{aifc.open()} when a file is opened for
+writing have all the above methods, except for \code{readframes} and
+\code{setpos}.  In addition the following methods exist.  The
+\code{get} methods can only be called after the corresponding
+\code{set} methods have been called.  Before the first
+\code{writeframes} or \code{writeframesraw}, all parameters except for
+the number of frames must be filled in.
+
+\begin{funcdesc}{aiff}{}
+Create an AIFF file.  The default is that an AIFF-C file is created,
+unless the name of the file ends in '.aiff' in which case the default
+is an AIFF file.
+\end{funcdesc}
+
+\begin{funcdesc}{aifc}{}
+Create an AIFF-C file.  The default is that an AIFF-C file is created,
+unless the name of the file ends in '.aiff' in which case the default
+is an AIFF file.
+\end{funcdesc}
+
+\begin{funcdesc}{setnchannels}{nchannels}
+Specify the number of channels in the audio file.
+\end{funcdesc}
+
+\begin{funcdesc}{setsampwidth}{width}
+Specify the size in bytes of audio samples.
+\end{funcdesc}
+
+\begin{funcdesc}{setframerate}{rate}
+Specify the sampling frequency in frames per second.
+\end{funcdesc}
+
+\begin{funcdesc}{setnframes}{nframes}
+Specify the number of frames that are to be written to the audio file.
+If this parameter is not set, or not set correctly, the file needs to
+support seeking.
+\end{funcdesc}
+
+\begin{funcdesc}{setcomptype}{type\, name}
+Specify the compression type.  If not specified, the audio data will
+not be compressed.  In AIFF files, compression is not possible.  The
+name parameter should be a human-readable description of the
+compression type, the type parameter should be a four-character
+string.  Currently the following compression types are supported:
+NONE, ULAW, ALAW, G722.
+\end{funcdesc}
+
+\begin{funcdesc}{setparams}{(nchannels\, sampwidth\, framerate\, comptype\, compname)}
+Set all the above parameters at once.  The argument is a tuple
+consisting of the various parameters.  This means that it is possible
+to use the result of a \code{getparams} call as argument to
+\code{setparams}.
+\end{funcdesc}
+
+\begin{funcdesc}{setmark}{id\, pos\, name}
+Add a mark with the given id (larger than 0), and the given name at
+the given position.  This method can be called at any time before
+\code{close}.
+\end{funcdesc}
+
+\begin{funcdesc}{tell}{}
+Return the current write position in the output file.  Useful in
+combination with \code{setmark}.
+\end{funcdesc}
+
+\begin{funcdesc}{writeframes}{data}
+Write data to the output file.  This method can only be called after
+the audio file parameters have been set.
+\end{funcdesc}
+
+\begin{funcdesc}{writeframesraw}{data}
+Like \code{writeframes}, except that the header of the audio file is
+not updated.
+\end{funcdesc}
+
+\begin{funcdesc}{close}{}
+Close the AIFF file.  The header of the file is updated to reflect the
+actual size of the audio data After calling this method, the object
+can no longer be used.
+\end{funcdesc}
