@@ -46,6 +46,10 @@ PERFORMANCE OF THIS SOFTWARE.
 #define UsingSharedLibs
 #endif
 
+#if defined(__sgi) && defined(WITH_THREAD) && !defined(_SGI_MP_SOURCE)
+#define _SGI_MP_SOURCE
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
