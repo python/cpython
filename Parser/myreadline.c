@@ -220,8 +220,6 @@ char *
 PyOS_Readline(prompt)
 	char *prompt;
 {
-	int n;
-	char *p;
 	if (PyOS_ReadlineFunctionPointer == NULL) {
 #ifdef WITH_READLINE
 		if (isatty(fileno(stdin)))
