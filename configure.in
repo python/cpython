@@ -2445,25 +2445,16 @@ then
   [Define if WINDOW in curses.h offers a field _flags.])
 fi
 
-# THIS MUST BE LAST, IT CAN BREAK OTHER TESTS!
-# Add sys/socket.h to confdefs.h
-cat >> confdefs.h <<\EOF
+AC_CHECK_TYPE(socklen_t,,
+  AC_DEFINE(socklen_t,int,
+            Define to `int' if <sys/socket.h> does not define.),[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-EOF
-AC_CHECK_TYPE(socklen_t, int)
-
-#AC_MSG_CHECKING(for Modules/Setup)
-#if test ! -f Modules/Setup ; then
-#    if test ! -d Modules ; then
-#        mkdir Modules
-#    fi
-#    cp "$srcdir/Modules/Setup.dist" Modules/Setup
-#    AC_MSG_RESULT(creating)
-#else
-#    AC_MSG_RESULT(already exists)
-#fi
+])
 
 AC_SUBST(THREADHEADERS)
 
