@@ -621,7 +621,7 @@ replace_tzinfo(PyObject *self, PyObject *newtzinfo)
 	assert(PyDateTimeTZ_Check(self));
 	assert(check_tzinfo_subclass(newtzinfo) >= 0);
 	Py_INCREF(newtzinfo);
-	Py_DECREF(((PyDateTime_DateTimeTZ *)self)->tzinfo);
+	Py_XDECREF(((PyDateTime_DateTimeTZ *)self)->tzinfo);
 	((PyDateTime_DateTimeTZ *)self)->tzinfo = newtzinfo;
 }
 
@@ -3233,8 +3233,6 @@ datetime_richcompare(PyDateTime_DateTime *self, PyObject *other, int op)
 	return NULL;
 }
 
-static PyObject *datetime_getstate(PyDateTime_DateTime *self);
-
 static long
 datetime_hash(PyDateTime_DateTime *self)
 {
@@ -3251,7 +3249,9 @@ datetime_hash(PyDateTime_DateTime *self)
 
 		/* Reduce this to a hash of another object. */
 		if (n == OFFSET_NAIVE)
-			temp = datetime_getstate(self);
+			temp = PyString_FromStringAndSize(
+					(char *)self->data,
+					_PyDateTime_DATETIME_DATASIZE);
 		else {
 			int days;
 			int seconds;
@@ -3350,34 +3350,6 @@ datetime_gettime(PyDateTime_DateTime *self)
 			  Py_None);
 }
 
-/* Pickle support.  Quite a maze! */
-
-static PyObject *
-datetime_getstate(PyDateTime_DateTime *self)
-{
-	return PyString_FromStringAndSize((char *)self->data,
-					  _PyDateTime_DATETIME_DATASIZE);
-}
-
-static PyObject *
-datetime_setstate(PyDateTime_DateTime *self, PyObject *state)
-{
-	const int len = PyString_Size(state);
-	unsigned char *pdata = (unsigned char*)PyString_AsString(state);
-
-	if (! PyString_Check(state) ||
-	    len != _PyDateTime_DATETIME_DATASIZE) {
-		PyErr_SetString(PyExc_TypeError,
-				"bad argument to datetime.__setstate__");
-		return NULL;
-	}
-	memcpy(self->data, pdata, _PyDateTime_DATETIME_DATASIZE);
-	self->hashcode = -1;
-
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
 static PyMethodDef datetime_methods[] = {
 	/* Class methods: */
 	{"now",         (PyCFunction)datetime_now,
@@ -3428,11 +3400,6 @@ static PyMethodDef datetime_methods[] = {
 	{"astimezone",  (PyCFunction)datetime_astimezone, METH_KEYWORDS,
 	 PyDoc_STR("tz -> datetimetz with same date & time, and tzinfo=tz\n")},
 
-	{"__setstate__", (PyCFunction)datetime_setstate, METH_O,
-	 PyDoc_STR("__setstate__(state)")},
-
-	{"__getstate__", (PyCFunction)datetime_getstate, METH_NOARGS,
-	 PyDoc_STR("__getstate__() -> state")},
 	{NULL,	NULL}
 };
 
@@ -3696,8 +3663,6 @@ time_richcompare(PyDateTime_Time *self, PyObject *other, int op)
 	return NULL;
 }
 
-static PyObject *time_getstate(PyDateTime_Time *self);
-
 static long
 time_hash(PyDateTime_Time *self)
 {
@@ -3713,7 +3678,8 @@ time_hash(PyDateTime_Time *self)
 
 		/* Reduce this to a hash of another object. */
 		if (offset == 0)
-			temp = time_getstate(self);
+			temp = PyString_FromStringAndSize((char *)self->data,
+						_PyDateTime_TIME_DATASIZE);
 		else {
 			int hour;
 			int minute;
@@ -3773,34 +3739,6 @@ time_nonzero(PyDateTime_Time *self)
 	       TIME_GET_MICROSECOND(self);
 }
 
-/* Pickle support.  Quite a maze! */
-
-static PyObject *
-time_getstate(PyDateTime_Time *self)
-{
-	return PyString_FromStringAndSize((char *)self->data,
-					  _PyDateTime_TIME_DATASIZE);
-}
-
-static PyObject *
-time_setstate(PyDateTime_Time *self, PyObject *state)
-{
-	const int len = PyString_Size(state);
-	unsigned char *pdata = (unsigned char*)PyString_AsString(state);
-
-	if (! PyString_Check(state) ||
-	    len != _PyDateTime_TIME_DATASIZE) {
-		PyErr_SetString(PyExc_TypeError,
-				"bad argument to time.__setstate__");
-		return NULL;
-	}
-	memcpy(self->data, pdata, _PyDateTime_TIME_DATASIZE);
-	self->hashcode = -1;
-
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
 static PyMethodDef time_methods[] = {
 	{"isoformat",   (PyCFunction)time_isoformat,	METH_KEYWORDS,
 	 PyDoc_STR("Return string in ISO 8601 format, HH:MM:SS[.mmmmmm].")},
@@ -3810,12 +3748,6 @@ static PyMethodDef time_methods[] = {
 
 	{"replace",     (PyCFunction)time_replace,	METH_KEYWORDS,
 	 PyDoc_STR("Return datetime with new specified fields.")},
-
-	{"__setstate__", (PyCFunction)time_setstate,	METH_O,
-	 PyDoc_STR("__setstate__(state)")},
-
-	{"__getstate__", (PyCFunction)time_getstate,	METH_NOARGS,
-	 PyDoc_STR("__getstate__() -> state")},
 	{NULL,	NULL}
 };
 
@@ -4176,7 +4108,7 @@ timetz_nonzero(PyDateTime_TimeTZ *self)
  * Pickle support.  Quite a maze!
  */
 
-/* Let basestate be the state string returned by time_getstate.
+/* Let basestate be the non-tzinfo data string.
  * If tzinfo is None, this returns (basestate,), else (basestate, tzinfo).
  * So it's a tuple in any (non-error) case.
  */
@@ -4186,7 +4118,8 @@ timetz_getstate(PyDateTime_TimeTZ *self)
 	PyObject *basestate;
 	PyObject *result = NULL;
 
-	basestate = time_getstate((PyDateTime_Time *)self);
+	basestate =  PyString_FromStringAndSize((char *)self->data,
+						_PyDateTime_TIME_DATASIZE);
 	if (basestate != NULL) {
 		if (self->tzinfo == Py_None)
 			result = Py_BuildValue("(O)", basestate);
@@ -4200,7 +4133,6 @@ timetz_getstate(PyDateTime_TimeTZ *self)
 static PyObject *
 timetz_setstate(PyDateTime_TimeTZ *self, PyObject *state)
 {
-	PyObject *temp;
 	PyObject *basestate;
 	PyObject *tzinfo = Py_None;
 
@@ -4208,15 +4140,19 @@ timetz_setstate(PyDateTime_TimeTZ *self, PyObject *state)
 			       &PyString_Type, &basestate,
 			       &tzinfo))
 		return NULL;
-	temp = time_setstate((PyDateTime_Time *)self, basestate);
-	if (temp == NULL)
+	if (PyString_Size(basestate) !=  _PyDateTime_TIME_DATASIZE ||
+	    check_tzinfo_subclass(tzinfo) < 0) {
+		PyErr_SetString(PyExc_TypeError,
+				"bad argument to time.__setstate__");
 		return NULL;
-	Py_DECREF(temp);
-
+	}
+	memcpy((char *)self->data,
+	       PyString_AsString(basestate),
+	       _PyDateTime_TIME_DATASIZE);
+	self->hashcode = -1;
 	Py_INCREF(tzinfo);
 	Py_XDECREF(self->tzinfo);
 	self->tzinfo = tzinfo;
-
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -4864,7 +4800,10 @@ datetimetz_gettimetz(PyDateTime_DateTimeTZ *self)
  * Pickle support.  Quite a maze!
  */
 
-/* Let basestate be the state string returned by datetime_getstate.
+
+/* Pickle support.  Quite a maze! */
+
+/* Let basestate be the state string returned by the date & time fields.
  * If tzinfo is None, this returns (basestate,), else (basestate, tzinfo).
  * So it's a tuple in any (non-error) case.
  */
@@ -4874,7 +4813,8 @@ datetimetz_getstate(PyDateTime_DateTimeTZ *self)
 	PyObject *basestate;
 	PyObject *result = NULL;
 
-	basestate = datetime_getstate((PyDateTime_DateTime *)self);
+	basestate = PyString_FromStringAndSize((char *)self->data,
+					  _PyDateTime_DATETIME_DATASIZE);
 	if (basestate != NULL) {
 		if (self->tzinfo == Py_None)
 			result = Py_BuildValue("(O)", basestate);
@@ -4888,7 +4828,6 @@ datetimetz_getstate(PyDateTime_DateTimeTZ *self)
 static PyObject *
 datetimetz_setstate(PyDateTime_DateTimeTZ *self, PyObject *state)
 {
-	PyObject *temp;
 	PyObject *basestate;
 	PyObject *tzinfo = Py_None;
 
@@ -4896,15 +4835,17 @@ datetimetz_setstate(PyDateTime_DateTimeTZ *self, PyObject *state)
 			       &PyString_Type, &basestate,
 			       &tzinfo))
 		return NULL;
-	temp = datetime_setstate((PyDateTime_DateTime *)self, basestate);
-	if (temp == NULL)
+	if (PyString_Size(basestate) !=  _PyDateTime_DATETIME_DATASIZE ||
+	    check_tzinfo_subclass(tzinfo) < 0) {
+		PyErr_SetString(PyExc_TypeError,
+				"bad argument to datetime.__setstate__");
 		return NULL;
-	Py_DECREF(temp);
-
-	Py_INCREF(tzinfo);
-	Py_XDECREF(self->tzinfo);
-	self->tzinfo = tzinfo;
-
+	}
+	memcpy((char *)self->data,
+	       PyString_AsString(basestate),
+	       _PyDateTime_DATETIME_DATASIZE);
+	self->hashcode = -1;
+	replace_tzinfo((PyObject *)self, tzinfo);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
