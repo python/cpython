@@ -62,10 +62,7 @@ class CygwinCCompiler (UnixCCompiler):
     shared_lib_format = "%s%s"
     exe_extension = ".exe"
 
-    def __init__ (self,
-                  verbose=0,
-                  dry_run=0,
-                  force=0):
+    def __init__ (self, verbose=0, dry_run=0, force=0):
 
         UnixCCompiler.__init__ (self, verbose, dry_run, force)
 
@@ -74,11 +71,12 @@ class CygwinCCompiler (UnixCCompiler):
                          (status, details))
         if status is not CONFIG_H_OK:
             self.warn(
-                "Python's pyconfig.h doesn't seem to support your compiler.  " +
-                ("Reason: %s." % details) +
-                "Compiling may fail because of undefined preprocessor macros.")
+                "Python's pyconfig.h doesn't seem to support your compiler. " 
+                "Reason: %s. "
+                "Compiling may fail because of undefined preprocessor macros."
+                % details)
 
-        (self.gcc_version, self.ld_version, self.dllwrap_version) = \
+        self.gcc_version, self.ld_version, self.dllwrap_version = \
             get_versions()
         self.debug_print(self.compiler_type + ": gcc %s, ld %s, dllwrap %s\n" %
                          (self.gcc_version,
@@ -120,57 +118,32 @@ class CygwinCCompiler (UnixCCompiler):
     # we put here a adapted version of it.
     # (If we would call compile() in the base class, it would do some
     # initializations a second time, this is why all is done here.)
-    def compile (self,
-                 sources,
-                 output_dir=None,
-                 macros=None,
-                 include_dirs=None,
-                 debug=0,
-                 extra_preargs=None,
-                 extra_postargs=None):
+    def compile(self, sources,
+                output_dir=None, macros=None, include_dirs=None, debug=0,
+                extra_preargs=None, extra_postargs=None, depends=None):
+        
+        macros, objects, extra_postargs, pp_opts, build = \
+                self._setup_compile(output_dir, macros, include_dirs, sources,
+                                    depends, extra_postargs)
+        cc_args = self._get_cc_args(pp_opts, debug, extra_preargs)
 
-        (output_dir, macros, include_dirs) = \
-            self._fix_compile_args (output_dir, macros, include_dirs)
-        (objects, skip_sources) = self._prep_compile (sources, output_dir)
-
-        # Figure out the options for the compiler command line.
-        pp_opts = gen_preprocess_options (macros, include_dirs)
-        cc_args = pp_opts + ['-c']
-        if debug:
-            cc_args[:0] = ['-g']
-        if extra_preargs:
-            cc_args[:0] = extra_preargs
-        if extra_postargs is None:
-            extra_postargs = []
-
-        # Compile all source files that weren't eliminated by
-        # '_prep_compile()'.
-        for i in range (len (sources)):
-            src = sources[i] ; obj = objects[i]
-            ext = (os.path.splitext (src))[1]
-            if skip_sources[src]:
-                log.debug("skipping %s (%s up-to-date)", src, obj)
-            else:
-                self.mkpath (os.path.dirname (obj))
-                if ext == '.rc' or ext == '.res':
-                    # gcc needs '.res' and '.rc' compiled to object files !!!
-                    try:
-                        self.spawn (["windres","-i",src,"-o",obj])
-                    except DistutilsExecError, msg:
-                        raise CompileError, msg
-                else: # for other files use the C-compiler
-                    try:
-                        self.spawn (self.compiler_so + cc_args +
-                                [src, '-o', obj] +
-                                extra_postargs)
-                    except DistutilsExecError, msg:
-                        raise CompileError, msg
+        for obj, (src, ext) in build.items():
+            if ext == '.rc' or ext == '.res':
+                # gcc needs '.res' and '.rc' compiled to object files !!!
+                try:
+                    self.spawn (["windres","-i",src,"-o",obj])
+                except DistutilsExecError, msg:
+                    raise CompileError, msg
+            else: # for other files use the C-compiler
+                try:
+                    self.spawn (self.compiler_so + cc_args +
+                            [src, '-o', obj] +
+                            extra_postargs)
+                except DistutilsExecError, msg:
+                    raise CompileError, msg
 
         # Return *all* object filenames, not just the ones we just built.
         return objects
-
-    # compile ()
-
 
     def link (self,
               target_desc,

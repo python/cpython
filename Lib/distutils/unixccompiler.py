@@ -107,35 +107,19 @@ class UnixCCompiler(CCompiler):
 
     def compile(self, sources,
                 output_dir=None, macros=None, include_dirs=None, debug=0,
-                extra_preargs=None, extra_postargs=None):
-        output_dir, macros, include_dirs = \
-            self._fix_compile_args(output_dir, macros, include_dirs)
-        objects, skip_sources = self._prep_compile(sources, output_dir)
+                extra_preargs=None, extra_postargs=None, depends=None):
+        
+        macros, objects, extra_postargs, pp_opts, build = \
+                self._setup_compile(output_dir, macros, include_dirs, sources,
+                                    depends, extra_postargs)
+        cc_args = self._get_cc_args(pp_opts, debug, extra_preargs)
 
-        # Figure out the options for the compiler command line.
-        pp_opts = gen_preprocess_options(macros, include_dirs)
-        cc_args = pp_opts + ['-c']
-        if debug:
-            cc_args[:0] = ['-g']
-        if extra_preargs:
-            cc_args[:0] = extra_preargs
-        if extra_postargs is None:
-            extra_postargs = []
-
-        # Compile all source files that weren't eliminated by
-        # '_prep_compile()'.
-        for i in range(len(sources)):
-            src = sources[i]
-            obj = objects[i]
-            if skip_sources[src]:
-                log.debug("skipping %s (%s up-to-date)", src, obj)
-            else:
-                self.mkpath(os.path.dirname(obj))
-                try:
-                    self.spawn(self.compiler_so + cc_args +
-                               [src, '-o', obj] + extra_postargs)
-                except DistutilsExecError, msg:
-                    raise CompileError, msg
+        for obj, (src, ext) in build.items():
+            try:
+                self.spawn(self.compiler_so + cc_args +
+                           [src, '-o', obj] + extra_postargs)
+            except DistutilsExecError, msg:
+                raise CompileError, msg
 
         # Return *all* object filenames, not just the ones we just built.
         return objects
