@@ -48,10 +48,31 @@ Availability: Windows.
 If \var{value} is not \code{None}, this function prints it to 
 \code{sys.stdout}, and saves it in \code{__builtin__._}.
 
-This function is called when an expression is entered at the prompt
-of an interactive Python session. It exists mainly so it can be
-overridden.
+\code{sys.displayhook} is called on the result of evaluating
+an expression entered in an interactive Python session.
+The display of these values can be customized by assigning
+another function to \code{sys.displayhook}.
 \end{funcdesc}
+
+\begin{funcdesc}{excepthook}{\var{type}, \var{value}, \var{traceback}}
+This function prints out a given traceback and exception to
+\code{sys.stderr}.
+
+\code{sys.excepthook} is called when an exception is raised
+and uncaught.  In an interactive session this happens just before
+control is returned to the prompt; in a Python program this happens
+just before the program exits.
+The handling of such top-level exceptions can be customized by
+assigning another function to \code{sys.excepthook}.
+\end{funcdesc}
+
+\begin{datadesc}{__displayhook__}
+\dataline{__excepthook__}
+These objects contain the original values of \code{displayhook}
+and \code{excepthook} at the start of the program.  They are saved
+so that \code{displayhook} and \code{excepthook} can be restored
+in case they happen to get replaced with broken objects.
+\end{datadesc}
 
 \begin{funcdesc}{exc_info}{}
 This function returns a tuple of three values that give information
