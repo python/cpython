@@ -21,8 +21,10 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef HAVE_POLL_H
+#if defined(HAVE_POLL_H)
 #include <poll.h>
+#elif defined(HAVE_SYS_POLL_H)
+#include <sys/poll.h>
 #endif
 
 #ifdef __sgi
