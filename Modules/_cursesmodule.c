@@ -1,14 +1,14 @@
 /*
- *   This is a curses implementation for Python.
+ *   This is a curses module for Python.
  *
- *   Based on a prior work by Lance Ellinghaus
- *   (version 1.2 of this module
- *    Copyright 1994 by Lance Ellinghouse,
- *    Cathedral City, California Republic, United States of America.)
- *   Updated, fixed and heavily extended by Oliver Andrich
+ *   Based on prior work by Lance Ellinghaus and Oliver Andrich
+ *   Version 1.2 of this module: Copyright 1994 by Lance Ellinghouse,
+ *    Cathedral City, California Republic, United States of America.
  *
- *   Copyright 1996,1997 by Oliver Andrich,
- *   Koblenz, Germany
+ *   Version 1.5b1, heavily extended for ncurses by Oliver Andrich:
+ *   Copyright 1996,1997 by Oliver Andrich, Koblenz, Germany.
+ *
+ *   Tidied for Python 1.6, and currently maintained by AMK (amk1@bigfoot.com)
  *
  *   Permission is hereby granted, free of charge, to any person obtaining
  *   a copy of this source file to use, copy, modify, merge, or publish it
@@ -35,14 +35,19 @@
 
 /* Release Number */
 
-char *PyCursesVersion = "1.5b1";
+char *PyCursesVersion = "1.6";
 
 /* Includes */
 
 #include "Python.h"
-#include <curses.h>
 
-#ifdef __sgi__
+#ifdef HAVE_NCURSES_H
+#include <ncurses.h>
+#else
+#include <curses.h>
+#endif
+
+#if defined(__sgi__) || defined(__sun__)
  /* No attr_t type is available */
 typedef chtype attr_t;
 #endif
@@ -89,8 +94,6 @@ PyCursesCheckERR(code, fname)
      int code;
      char *fname;
 {
-  char buf[100];
-
   if (code != ERR) {
     Py_INCREF(Py_None);
     return Py_None;
@@ -98,15 +101,13 @@ PyCursesCheckERR(code, fname)
     if (fname == NULL) {
       PyErr_SetString(PyCursesError, catchall_ERR);
     } else {
-      strcpy(buf, fname);
-      strcat(buf, "() returned ERR");
-      PyErr_SetString(PyCursesError, buf);
+      PyErr_Format(PyCursesError, "%s() returned ERR", fname);
     }
     return NULL;
   }
 }
 
-int 
+static int 
 PyCurses_ConvertToChtype(obj, ch)
         PyObject *obj;
         chtype *ch;
@@ -241,17 +242,17 @@ Window_OneArgNoReturnFunction(leaveok, int, "i;True(1) or False(0)")
 Window_OneArgNoReturnFunction(nodelay, int, "i;True(1) or False(0)")
 Window_OneArgNoReturnFunction(notimeout, int, "i;True(1) or False(0)")
 Window_OneArgNoReturnFunction(scrollok, int, "i;True(1) or False(0)")
-Window_OneArgNoReturnFunction(winsdelln, int, "i;cnt")
+Window_OneArgNoReturnFunction(winsdelln, int, "i;nlines")
 Window_OneArgNoReturnFunction(syncok, int, "i;True(1) or False(0)")
 
 Window_TwoArgNoReturnFunction(mvwin, int, "(ii);y,x")
 Window_TwoArgNoReturnFunction(mvderwin, int, "(ii);y,x")
 Window_TwoArgNoReturnFunction(wmove, int, "(ii);y,x")
-#ifndef __sgi__
+#if !defined(__sgi__) && !defined(__sun__)
 Window_TwoArgNoReturnFunction(wresize, int, "(ii);lines,columns")
 #endif
 
-/* Allocation and Deallocation of Window Objects */
+/* Allocation and deallocation of Window Objects */
 
 static PyObject *
 PyCursesWindow_New(win)
@@ -475,7 +476,7 @@ PyCursesWindow_BkgdSet(self,arg)
   }
 
   if (!PyCurses_ConvertToChtype(temp, &bkgd)) {
-    PyErr_SetString(PyExc_TypeError, "argument 1 or 3 must be a ch or an int");
+    PyErr_SetString(PyExc_TypeError, "argument 1 must be a ch or an int");
     return NULL;
   }
 
@@ -663,7 +664,7 @@ PyCursesWindow_GetKey(self,arg)
     rtn = mvwgetch(self->win,y,x);
     break;
   default:
-    PyErr_SetString(PyExc_TypeError, "getch requires 0 or 2 arguments");
+    PyErr_SetString(PyExc_TypeError, "getkey requires 0 or 2 arguments");
     return NULL;
   }
   if (rtn<=255)
@@ -698,7 +699,7 @@ PyCursesWindow_GetStr(self,arg)
   case 3:
     if (!PyArg_Parse(arg,"(iii);y,x,n", &y, &x, &n))
       return NULL;
-#ifdef __sgi__
+#if defined(__sgi__) || defined(__sun__)
  /* Untested */
     rtn2 = wmove(self->win,y,x)==ERR ? ERR :
       wgetnstr(self->win, rtn, n);
@@ -735,7 +736,7 @@ PyCursesWindow_Hline(self, args)
       return NULL;
     break;
   case 4:
-    if (!PyArg_Parse(args, "(iiOi);y,x,ch o int,n", &y, &x, &temp, &n))
+    if (!PyArg_Parse(args, "(iiOi);y,x,ch or int,n", &y, &x, &temp, &n))
       return NULL;
     code = wmove(self->win, y, x);
     break;
@@ -1100,14 +1101,28 @@ PyCursesWindow_SubWin(self,arg)
   WINDOW *win;
   int nlines, ncols, begin_y, begin_x;
 
-  if (!PyArg_Parse(arg, "(iiii);nlines,ncols,begin_y,begin_x",
+  nlines = 0;
+  ncols  = 0;
+  switch (ARG_COUNT(arg)) {
+  case 2:
+    if (!PyArg_Parse(arg,"(ii);begin_y,begin_x",&begin_y,&begin_x))
+      return NULL;
+    break;
+  case 4:
+    if (!PyArg_Parse(arg, "(iiii);nlines,ncols,begin_y,begin_x",
 		   &nlines,&ncols,&begin_y,&begin_x))
+      return NULL;
+    break;
+  default:
+    PyErr_SetString(PyExc_TypeError, "subwin requires 2 or 4 arguments");
     return NULL;
+  }
 
+  printf("Subwin: %i %i %i %i   \n", nlines, ncols, begin_y, begin_x);
   if (self->win->_flags & _ISPAD)
     win = subpad(self->win, nlines, ncols, begin_y, begin_x);
   else
-    win = subwin(self->win,nlines,ncols,begin_y,begin_x);
+    win = subwin(self->win, nlines, ncols, begin_y, begin_x);
 
   if (win == NULL) {
     PyErr_SetString(PyCursesError, catchall_NULL);
@@ -1179,7 +1194,7 @@ PyCursesWindow_Vline(self, args)
       return NULL;
     break;
   case 4:
-    if (!PyArg_Parse(args, "(iiOi);y,x,ch o int,n", &y, &x, &temp, &n))
+    if (!PyArg_Parse(args, "(iiOi);y,x,ch or int,n", &y, &x, &temp, &n))
       return NULL;
     code = wmove(self->win, y, x);
     break;
@@ -1199,7 +1214,7 @@ PyCursesWindow_Vline(self, args)
 		      "argument 1 or 3 must be a ch or an int");
       return NULL;
     }
-    return PyCursesCheckERR(whline(self->win, ch | attr, n), "vline");
+    return PyCursesCheckERR(wvline(self->win, ch | attr, n), "vline");
   } else
     return PyCursesCheckERR(code, "wmove");
 }
@@ -1208,12 +1223,9 @@ static PyMethodDef PyCursesWindow_Methods[] = {
 	{"addch",           (PyCFunction)PyCursesWindow_AddCh},
 	{"addnstr",         (PyCFunction)PyCursesWindow_AddNStr},
 	{"addstr",          (PyCFunction)PyCursesWindow_AddStr},
-	{"attron",          (PyCFunction)PyCursesWindow_wattron},
-	{"attr_on",         (PyCFunction)PyCursesWindow_wattron},
 	{"attroff",         (PyCFunction)PyCursesWindow_wattroff},
-	{"attr_off",        (PyCFunction)PyCursesWindow_wattroff},
+	{"attron",          (PyCFunction)PyCursesWindow_wattron},
 	{"attrset",         (PyCFunction)PyCursesWindow_wattrset},
-	{"attr_set",        (PyCFunction)PyCursesWindow_wattrset},
 	{"bkgd",            (PyCFunction)PyCursesWindow_Bkgd},
 	{"bkgdset",         (PyCFunction)PyCursesWindow_BkgdSet},
 	{"border",          (PyCFunction)PyCursesWindow_Border, METH_VARARGS},
@@ -1237,8 +1249,8 @@ static PyMethodDef PyCursesWindow_Methods[] = {
 	{"getstr",          (PyCFunction)PyCursesWindow_GetStr},
 	{"getyx",           (PyCFunction)PyCursesWindow_getyx},
 	{"hline",           (PyCFunction)PyCursesWindow_Hline},
-	{"idlok",           (PyCFunction)PyCursesWindow_idlok},
 	{"idcok",           (PyCFunction)PyCursesWindow_idcok},
+	{"idlok",           (PyCFunction)PyCursesWindow_idlok},
 	{"immedok",         (PyCFunction)PyCursesWindow_immedok},
 	{"inch",            (PyCFunction)PyCursesWindow_InCh},
 	{"insch",           (PyCFunction)PyCursesWindow_InsCh},
@@ -1252,16 +1264,16 @@ static PyMethodDef PyCursesWindow_Methods[] = {
 	{"keypad",          (PyCFunction)PyCursesWindow_keypad},
 	{"leaveok",         (PyCFunction)PyCursesWindow_leaveok},
 	{"move",            (PyCFunction)PyCursesWindow_wmove},
-	{"mvwin",           (PyCFunction)PyCursesWindow_mvwin},
 	{"mvderwin",        (PyCFunction)PyCursesWindow_mvderwin},
+	{"mvwin",           (PyCFunction)PyCursesWindow_mvwin},
 	{"nodelay",         (PyCFunction)PyCursesWindow_nodelay},
-	{"noutrefresh",     (PyCFunction)PyCursesWindow_NoOutRefresh},
 	{"notimeout",       (PyCFunction)PyCursesWindow_notimeout},
+	{"noutrefresh",     (PyCFunction)PyCursesWindow_NoOutRefresh},
 	{"putwin",          (PyCFunction)PyCursesWindow_PutWin},
-	{"redrawwin",       (PyCFunction)PyCursesWindow_redrawwin},
 	{"redrawln",        (PyCFunction)PyCursesWindow_RedrawLine},
+	{"redrawwin",       (PyCFunction)PyCursesWindow_redrawwin},
 	{"refresh",         (PyCFunction)PyCursesWindow_Refresh},
-#ifndef __sgi__
+#if !defined(__sgi__) && !defined(__sun__)
 	{"resize",          (PyCFunction)PyCursesWindow_wresize},
 #endif
 	{"scroll",          (PyCFunction)PyCursesWindow_Scroll},
@@ -1348,7 +1360,7 @@ static PyObject *PyCurses_ ## X (self, arg) \
     if (flag) return PyCursesCheckERR(X(), # X); \
     else return PyCursesCheckERR(no ## X (), # X); \
   default: \
-    PyErr_SetString(PyExc_TypeError, # X " requires 0 or 1 argument"); \
+    PyErr_SetString(PyExc_TypeError, # X " requires 0 or 1 arguments"); \
     return NULL; } }
 
 #define NoArgReturnIntFunction(X) \
@@ -1426,7 +1438,6 @@ NoArgTrueFalseFunction(has_colors)
 NoArgTrueFalseFunction(has_ic)
 NoArgTrueFalseFunction(has_il)
 NoArgTrueFalseFunction(isendwin)
-
 NoArgNoReturnVoidFunction(filter)
 NoArgNoReturnVoidFunction(flushinp)
 NoArgNoReturnVoidFunction(noqiflush)
@@ -1459,7 +1470,7 @@ PyCurses_Color_Content(self, arg)
 }
 
 static PyObject *
-PyCurses_COLOR_PAIR(self, arg)
+PyCurses_color_pair(self, arg)
      PyObject * self;
      PyObject * arg;
 {
@@ -1469,7 +1480,7 @@ PyCurses_COLOR_PAIR(self, arg)
   PyCursesInitialisedColor
 
   if (ARG_COUNT(arg)!=1) {
-    PyErr_SetString(PyExc_TypeError, "COLOR_PAIR requires 1 argument");
+    PyErr_SetString(PyExc_TypeError, "color_pair requires 1 argument");
     return NULL;
   }
   if (!PyArg_Parse(arg, "i;number", &n)) return NULL;
@@ -1596,7 +1607,7 @@ PyCurses_HalfDelay(self,arg)
   return PyCursesCheckERR(halfdelay(tenths), "halfdelay");
 }
 
-#ifndef __sgi__
+#if !defined(__sgi__) && !defined(__sun__)
  /* No has_key! */
 static PyObject * PyCurses_has_key(self,arg)
      PyObject * self;
@@ -1682,6 +1693,58 @@ PyCurses_InitScr(self, args)
   }
 
   initialised = TRUE;
+
+/* This was moved from initcurses() because it core dumped on SGI,
+   where they're not defined until you've called initscr() */
+#define SetDictInt(string,ch) \
+	PyDict_SetItemString(ModDict,string,PyInt_FromLong((long) (ch)));
+
+	/* Here are some graphic symbols you can use */
+        SetDictInt("ACS_ULCORNER",      (ACS_ULCORNER));
+	SetDictInt("ACS_LLCORNER",      (ACS_LLCORNER));
+	SetDictInt("ACS_URCORNER",      (ACS_URCORNER));
+	SetDictInt("ACS_LRCORNER",      (ACS_LRCORNER));
+	SetDictInt("ACS_LTEE",          (ACS_LTEE));
+	SetDictInt("ACS_RTEE",          (ACS_RTEE));
+	SetDictInt("ACS_BTEE",          (ACS_BTEE));
+	SetDictInt("ACS_TTEE",          (ACS_TTEE));
+	SetDictInt("ACS_HLINE",         (ACS_HLINE));
+	SetDictInt("ACS_VLINE",         (ACS_VLINE));
+	SetDictInt("ACS_PLUS",          (ACS_PLUS));
+	SetDictInt("ACS_S1",            (ACS_S1));
+	SetDictInt("ACS_S9",            (ACS_S9));
+	SetDictInt("ACS_DIAMOND",       (ACS_DIAMOND));
+	SetDictInt("ACS_CKBOARD",       (ACS_CKBOARD));
+	SetDictInt("ACS_DEGREE",        (ACS_DEGREE));
+	SetDictInt("ACS_PLMINUS",       (ACS_PLMINUS));
+	SetDictInt("ACS_BULLET",        (ACS_BULLET));
+	SetDictInt("ACS_LARROW",        (ACS_LARROW));
+	SetDictInt("ACS_RARROW",        (ACS_RARROW));
+	SetDictInt("ACS_DARROW",        (ACS_DARROW));
+	SetDictInt("ACS_UARROW",        (ACS_UARROW));
+	SetDictInt("ACS_BOARD",         (ACS_BOARD));
+	SetDictInt("ACS_LANTERN",       (ACS_LANTERN));
+	SetDictInt("ACS_BLOCK",         (ACS_BLOCK));
+	SetDictInt("ACS_BSSB",          (ACS_ULCORNER));
+	SetDictInt("ACS_SSBB",          (ACS_LLCORNER));
+	SetDictInt("ACS_BBSS",          (ACS_URCORNER));
+	SetDictInt("ACS_SBBS",          (ACS_LRCORNER));
+	SetDictInt("ACS_SBSS",          (ACS_RTEE));
+	SetDictInt("ACS_SSSB",          (ACS_LTEE));
+	SetDictInt("ACS_SSBS",          (ACS_BTEE));
+	SetDictInt("ACS_BSSS",          (ACS_TTEE));
+	SetDictInt("ACS_BSBS",          (ACS_HLINE));
+	SetDictInt("ACS_SBSB",          (ACS_VLINE));
+	SetDictInt("ACS_SSSS",          (ACS_PLUS));
+#if !defined(__sgi__) && !defined(__sun__)
+  /* The following are never available on IRIX 5.3 */
+	SetDictInt("ACS_S3",            (ACS_S3));
+	SetDictInt("ACS_LEQUAL",        (ACS_LEQUAL));
+	SetDictInt("ACS_GEQUAL",        (ACS_GEQUAL));
+	SetDictInt("ACS_PI",            (ACS_PI));
+	SetDictInt("ACS_NEQUAL",        (ACS_NEQUAL));
+	SetDictInt("ACS_STERLING",      (ACS_STERLING));
+#endif
 
   lines = PyInt_FromLong((long) LINES);
   PyDict_SetItemString(ModDict, "LINES", lines);
@@ -1853,7 +1916,7 @@ PyCurses_Pair_Content(self, arg)
 }
 
 static PyObject *
-PyCurses_PAIR_NUMBER(self, arg)
+PyCurses_pair_number(self, arg)
      PyObject * self;
      PyObject * arg;
 {
@@ -1868,7 +1931,7 @@ PyCurses_PAIR_NUMBER(self, arg)
     break;
   default:
     PyErr_SetString(PyExc_TypeError,
-                    "PAIR_NUMBER requires 1 argument");
+                    "pair_number requires 1 argument");
     return NULL;
   }
 
@@ -1907,7 +1970,7 @@ PyCurses_QiFlush(self, arg)
     Py_INCREF(Py_None);
     return Py_None;
   default:
-    PyErr_SetString(PyExc_TypeError, "nl requires 0 or 1 argument");
+    PyErr_SetString(PyExc_TypeError, "qiflush requires 0 or 1 arguments");
     return NULL;
   }
 }
@@ -1921,8 +1984,8 @@ PyCurses_setsyx(self, arg)
 
   PyCursesInitialised
 
-  if (ARG_COUNT(arg)!=3) {
-    PyErr_SetString(PyExc_TypeError, "curs_set requires 3 argument");
+  if (ARG_COUNT(arg)!=2) {
+    PyErr_SetString(PyExc_TypeError, "setsyx requires 2 arguments");
     return NULL;
   }
 
@@ -2042,7 +2105,7 @@ static PyMethodDef PyCurses_methods[] = {
   {"can_change_color",    (PyCFunction)PyCurses_can_change_color},
   {"cbreak",              (PyCFunction)PyCurses_cbreak},
   {"color_content",       (PyCFunction)PyCurses_Color_Content},
-  {"COLOR_PAIR",          (PyCFunction)PyCurses_COLOR_PAIR},
+  {"color_pair",          (PyCFunction)PyCurses_color_pair},
   {"curs_set",            (PyCFunction)PyCurses_Curs_Set},
   {"def_prog_mode",       (PyCFunction)PyCurses_def_prog_mode},
   {"def_shell_mode",      (PyCFunction)PyCurses_def_shell_mode},
@@ -2059,7 +2122,7 @@ static PyMethodDef PyCurses_methods[] = {
   {"has_colors",          (PyCFunction)PyCurses_has_colors},
   {"has_ic",              (PyCFunction)PyCurses_has_ic},
   {"has_il",              (PyCFunction)PyCurses_has_il},
-#ifndef __sgi__
+#if !defined(__sgi__) && !defined(__sun__)
   {"has_key",             (PyCFunction)PyCurses_has_key},
 #endif
   {"halfdelay",           (PyCFunction)PyCurses_HalfDelay},
@@ -2081,7 +2144,7 @@ static PyMethodDef PyCurses_methods[] = {
   {"noqiflush",           (PyCFunction)PyCurses_noqiflush},
   {"noraw",               (PyCFunction)PyCurses_noraw},
   {"pair_content",        (PyCFunction)PyCurses_Pair_Content},
-  {"PAIR_NUMBER",         (PyCFunction)PyCurses_PAIR_NUMBER},
+  {"pair_number",         (PyCFunction)PyCurses_pair_number},
   {"putp",                (PyCFunction)PyCurses_Putp},
   {"qiflush",             (PyCFunction)PyCurses_QiFlush},
   {"raw",                 (PyCFunction)PyCurses_raw},
@@ -2123,70 +2186,20 @@ initcurses()
 
 	/* Here are some attributes you can add to chars to print */
 	
-#define SetDictInt(string,ch) \
-	PyDict_SetItemString(ModDict,string,PyInt_FromLong((long) (ch)));
-
-#ifndef __sgi__
-  /* On IRIX 5.3, the ACS characters aren't available until initscr() has been called.  */
-        SetDictInt("ACS_ULCORNER",      (ACS_ULCORNER));
-	SetDictInt("ACS_LLCORNER",      (ACS_LLCORNER));
-	SetDictInt("ACS_URCORNER",      (ACS_URCORNER));
-	SetDictInt("ACS_LRCORNER",      (ACS_LRCORNER));
-	SetDictInt("ACS_LTEE",          (ACS_LTEE));
-	SetDictInt("ACS_RTEE",          (ACS_RTEE));
-	SetDictInt("ACS_BTEE",          (ACS_BTEE));
-	SetDictInt("ACS_TTEE",          (ACS_TTEE));
-	SetDictInt("ACS_HLINE",         (ACS_HLINE));
-	SetDictInt("ACS_VLINE",         (ACS_VLINE));
-	SetDictInt("ACS_PLUS",          (ACS_PLUS));
-	SetDictInt("ACS_S1",            (ACS_S1));
-	SetDictInt("ACS_S9",            (ACS_S9));
-	SetDictInt("ACS_DIAMOND",       (ACS_DIAMOND));
-	SetDictInt("ACS_CKBOARD",       (ACS_CKBOARD));
-	SetDictInt("ACS_DEGREE",        (ACS_DEGREE));
-	SetDictInt("ACS_PLMINUS",       (ACS_PLMINUS));
-	SetDictInt("ACS_BULLET",        (ACS_BULLET));
-	SetDictInt("ACS_LARROW",        (ACS_LARROW));
-	SetDictInt("ACS_RARROW",        (ACS_RARROW));
-	SetDictInt("ACS_DARROW",        (ACS_DARROW));
-	SetDictInt("ACS_UARROW",        (ACS_UARROW));
-	SetDictInt("ACS_BOARD",         (ACS_BOARD));
-	SetDictInt("ACS_LANTERN",       (ACS_LANTERN));
-	SetDictInt("ACS_BLOCK",         (ACS_BLOCK));
-#ifndef __sgi__
-  /* The following are never available on IRIX 5.3 */
-	SetDictInt("ACS_S3",            (ACS_S3));
-	SetDictInt("ACS_LEQUAL",        (ACS_LEQUAL));
-	SetDictInt("ACS_GEQUAL",        (ACS_GEQUAL));
-	SetDictInt("ACS_PI",            (ACS_PI));
-	SetDictInt("ACS_NEQUAL",        (ACS_NEQUAL));
-	SetDictInt("ACS_STERLING",      (ACS_STERLING));
-#endif
-	SetDictInt("ACS_BSSB",          (ACS_ULCORNER));
-	SetDictInt("ACS_SSBB",          (ACS_LLCORNER));
-	SetDictInt("ACS_BBSS",          (ACS_URCORNER));
-	SetDictInt("ACS_SBBS",          (ACS_LRCORNER));
-	SetDictInt("ACS_SBSS",          (ACS_RTEE));
-	SetDictInt("ACS_SSSB",          (ACS_LTEE));
-	SetDictInt("ACS_SSBS",          (ACS_BTEE));
-	SetDictInt("ACS_BSSS",          (ACS_TTEE));
-	SetDictInt("ACS_BSBS",          (ACS_HLINE));
-	SetDictInt("ACS_SBSB",          (ACS_VLINE));
-	SetDictInt("ACS_SSSS",          (ACS_PLUS));
-#endif
-
 	SetDictInt("A_ATTRIBUTES",      A_ATTRIBUTES);
-	SetDictInt("A_NORMAL",		    A_NORMAL);
-	SetDictInt("A_STANDOUT",	    A_STANDOUT);
-	SetDictInt("A_UNDERLINE",	    A_UNDERLINE);
-	SetDictInt("A_REVERSE",		    A_REVERSE);
-	SetDictInt("A_BLINK",		    A_BLINK);
-	SetDictInt("A_DIM",		        A_DIM);
-	SetDictInt("A_BOLD",		    A_BOLD);
-	SetDictInt("A_ALTCHARSET",	    A_ALTCHARSET);
+	SetDictInt("A_NORMAL",		A_NORMAL);
+	SetDictInt("A_STANDOUT",	A_STANDOUT);
+	SetDictInt("A_UNDERLINE",	A_UNDERLINE);
+	SetDictInt("A_REVERSE",		A_REVERSE);
+	SetDictInt("A_BLINK",		A_BLINK);
+	SetDictInt("A_DIM",		A_DIM);
+	SetDictInt("A_BOLD",		A_BOLD);
+	SetDictInt("A_ALTCHARSET",	A_ALTCHARSET);
 	SetDictInt("A_INVIS",           A_INVIS);
 	SetDictInt("A_PROTECT",         A_PROTECT);
-#ifndef __sgi__
+	SetDictInt("A_CHARTEXT",        A_CHARTEXT);
+	SetDictInt("A_COLOR",           A_COLOR);
+#if !defined(__sgi__) && !defined(__sun__)
 	SetDictInt("A_HORIZONTAL",      A_HORIZONTAL);
 	SetDictInt("A_LEFT",            A_LEFT);
 	SetDictInt("A_LOW",             A_LOW);
@@ -2194,27 +2207,7 @@ initcurses()
 	SetDictInt("A_TOP",             A_TOP);
 	SetDictInt("A_VERTICAL",        A_VERTICAL);
 #endif
-	SetDictInt("A_CHARTEXT",        A_CHARTEXT);
-	SetDictInt("A_COLOR",           A_COLOR);
-#ifndef __sgi__
-	SetDictInt("WA_ATTRIBUTES",     WA_ATTRIBUTES);
-	SetDictInt("WA_NORMAL",		    WA_NORMAL);
-	SetDictInt("WA_STANDOUT",	    WA_STANDOUT);
-	SetDictInt("WA_UNDERLINE",	    WA_UNDERLINE);
-	SetDictInt("WA_REVERSE",	    WA_REVERSE);
-	SetDictInt("WA_BLINK",		    WA_BLINK);
-	SetDictInt("WA_DIM",		    WA_DIM);
-	SetDictInt("WA_BOLD",		    WA_BOLD);
-	SetDictInt("WA_ALTCHARSET",	    WA_ALTCHARSET);
-	SetDictInt("WA_INVIS",          WA_INVIS);
-	SetDictInt("WA_PROTECT",        WA_PROTECT);
-	SetDictInt("WA_HORIZONTAL",     WA_HORIZONTAL);
-	SetDictInt("WA_LEFT",           WA_LEFT);
-	SetDictInt("WA_LOW",            WA_LOW);
-	SetDictInt("WA_RIGHT",          WA_RIGHT);
-	SetDictInt("WA_TOP",            WA_TOP);
-	SetDictInt("WA_VERTICAL",       WA_VERTICAL);
-#endif
+
 	SetDictInt("COLOR_BLACK",       COLOR_BLACK);
 	SetDictInt("COLOR_RED",         COLOR_RED);
 	SetDictInt("COLOR_GREEN",       COLOR_GREEN);
@@ -2260,5 +2253,3 @@ initcurses()
 	if (PyErr_Occurred())
 		Py_FatalError("can't initialize module curses");
 }
-
-
