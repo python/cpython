@@ -297,10 +297,19 @@ class TestBasic(unittest.TestCase):
 
     def test_pickle(self):
         d = deque(xrange(200))
-        s = pickle.dumps(d)
-        e = pickle.loads(s)
-        self.assertNotEqual(id(d), id(e))
-        self.assertEqual(list(d), list(e))
+        for i in (0, 1, 2):
+            s = pickle.dumps(d, i)
+            e = pickle.loads(s)
+            self.assertNotEqual(id(d), id(e))
+            self.assertEqual(list(d), list(e))
+
+    def test_pickle_recursive(self):
+        d = deque('abc')
+        d.append(d)
+        for i in (0, 1, 2):
+            e = pickle.loads(pickle.dumps(d, i))
+            self.assertNotEqual(id(d), id(e))
+            self.assertEqual(id(e), id(e[-1]))
 
     def test_deepcopy(self):
         mut = [10]
@@ -430,6 +439,10 @@ class TestVariousIteratorArgs(unittest.TestCase):
 class Deque(deque):
     pass
 
+class DequeWithBadIter(deque):
+    def __iter__(self):
+        raise TypeError
+
 class TestSubclass(unittest.TestCase):
 
     def test_basics(self):
@@ -471,6 +484,25 @@ class TestSubclass(unittest.TestCase):
         self.assertNotEqual(id(d), id(e))
         self.assertEqual(type(d), type(e))
         self.assertEqual(list(d), list(e))
+
+    def test_pickle(self):
+        d = Deque('abc')
+        d.append(d)
+
+        e = pickle.loads(pickle.dumps(d))
+        self.assertNotEqual(id(d), id(e))
+        self.assertEqual(type(d), type(e))
+        dd = d.pop()
+        ee = e.pop()
+        self.assertEqual(id(e), id(ee))
+        self.assertEqual(d, e)
+
+        d.x = d
+        e = pickle.loads(pickle.dumps(d))
+        self.assertEqual(id(e), id(e.x))
+
+        d = DequeWithBadIter('abc')
+        self.assertRaises(TypeError, pickle.dumps, d)
 
     def test_weakref(self):
         d = deque('gallahad')
