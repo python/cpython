@@ -18,7 +18,10 @@ class MultiIOBinding(IOBinding):
 class MultiEditorWindow(EditorWindow):
 
     IOBinding = MultiIOBinding
-    from PopupMenu import PopupMenu
+    
+    # Override menu bar specs
+    menu_specs = EditorWindow.menu_specs[:]
+    menu_specs.insert(len(menu_specs)-1, ("windows", "Windows"))
 
     def __init__(self, flist, filename, key):
         self.flist = flist
@@ -28,7 +31,6 @@ class MultiEditorWindow(EditorWindow):
         EditorWindow.__init__(self, flist.root, filename)
         self.io.flist = flist
         self.io.edit = self
-        self.popup = self.PopupMenu(self.text, self.flist)
         self.text.bind("<<open-new-window>>", self.flist.new_callback)
         self.text.bind("<<close-all-windows>>", self.flist.close_all_callback)
 
@@ -38,10 +40,32 @@ class MultiEditorWindow(EditorWindow):
     def filename_change_hook(self):
         self.flist.filename_changed_edit(self)
         EditorWindow.filename_change_hook(self)
+    
+    def wakeup(self):
+        self.top.tkraise()
+        self.top.wm_deiconify()
+        self.text.focus_set()
+
+    def createmenubar(self):
+        EditorWindow.createmenubar(self)
+        self.menudict['windows'].configure(postcommand=self.postwindowsmenu)
+    
+    def postwindowsmenu(self):
+        wmenu = self.menudict['windows']
+        wmenu.delete(0, 'end')
+        self.fixedwindowsmenu(wmenu)
+        files = self.flist.dict.keys()
+        files.sort()
+        for file in files:
+            def openit(self=self, file=file):
+                self.flist.open(file)
+            wmenu.add_command(label=file, command=openit)
 
 
 class FileList:
-
+    
+    EditorWindow = MultiEditorWindow
+    
     def __init__(self, root):
         self.root = root
         self.dict = {}
@@ -62,9 +86,7 @@ class FileList:
             key = os.path.normcase(filename)
             if self.dict.has_key(key):
                 edit = self.dict[key]
-                edit.top.tkraise()
-                edit.top.wm_deiconify()
-                edit.text.focus_set()
+                edit.wakeup()
                 return edit
             if not os.path.exists(filename):
                 tkMessageBox.showinfo(
@@ -76,13 +98,11 @@ class FileList:
                 edit.io.loadfile(filename)
                 self.dict[key] = edit
                 self.inversedict[edit] = key
-                edit.top.tkraise()
-                edit.top.wm_deiconify()
-                edit.text.focus_set()
+                edit.wakeup()
                 return edit
         else:
             key = None
-        edit = MultiEditorWindow(self, filename, key)
+        edit = self.EditorWindow(self, filename, key)
         return edit
 
     def new_callback(self, event):
