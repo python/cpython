@@ -1977,13 +1977,6 @@ static SSLObject *
 newSSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 {
 	SSLObject *self;
-	char *str;
-
-#if 0
-	meth=SSLv23_client_method();
-	meth=SSLv3_client_method();
-	meth=SSLv2_client_method();
-#endif
 
 	self = PyObject_New(SSLObject, &SSL_Type); /* Create new object */
 	if (self == NULL){
