@@ -62,7 +62,7 @@ PyString_FromStringAndSize(const char *str, int size)
 		return (PyObject *)op;
 	}
 
-	/* PyObject_NewVar is inlined */
+	/* Inline PyObject_NewVar */
 	op = (PyStringObject *)
 		PyObject_MALLOC(sizeof(PyStringObject) + size * sizeof(char));
 	if (op == NULL)
@@ -118,7 +118,7 @@ PyString_FromString(const char *str)
 		return (PyObject *)op;
 	}
 
-	/* PyObject_NewVar is inlined */
+	/* Inline PyObject_NewVar */
 	op = (PyStringObject *)
 		PyObject_MALLOC(sizeof(PyStringObject) + size * sizeof(char));
 	if (op == NULL)
@@ -878,7 +878,7 @@ string_concat(register PyStringObject *a, register PyObject *bb)
 		return (PyObject *)a;
 	}
 	size = a->ob_size + b->ob_size;
-	/* PyObject_NewVar is inlined */
+	/* Inline PyObject_NewVar */
 	op = (PyStringObject *)
 		PyObject_MALLOC(sizeof(PyStringObject) + size * sizeof(char));
 	if (op == NULL)

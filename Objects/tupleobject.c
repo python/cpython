@@ -48,7 +48,7 @@ PyTuple_New(register int size)
 #ifdef COUNT_ALLOCS
 		fast_tuple_allocs++;
 #endif
-		/* PyObject_InitVar is inlined */
+		/* Inline PyObject_InitVar */
 #ifdef Py_TRACE_REFS
 		op->ob_size = size;
 		op->ob_type = &PyTuple_Type;

@@ -606,7 +606,7 @@ PyHKEY_FromHKEY(HKEY h)
 {
 	PyHKEYObject *op;
 
-	/* PyObject_New is inlined */
+	/* Inline PyObject_New */
 	op = (PyHKEYObject *) PyObject_MALLOC(sizeof(PyHKEYObject));
 	if (op == NULL)
 		return PyErr_NoMemory();

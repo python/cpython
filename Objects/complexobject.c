@@ -199,7 +199,7 @@ PyComplex_FromCComplex(Py_complex cval)
 {
 	register PyComplexObject *op;
 
-	/* PyObject_New is inlined */
+	/* Inline PyObject_New */
 	op = (PyComplexObject *) PyObject_MALLOC(sizeof(PyComplexObject));
 	if (op == NULL)
 		return PyErr_NoMemory();
