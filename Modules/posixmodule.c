@@ -193,10 +193,6 @@ extern int lstat(const char *, struct stat *);
 #include <sys/utsname.h>
 #endif /* HAVE_SYS_UTSNAME_H */
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN 1024
-#endif /* MAXPATHLEN */
-
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #define NAMLEN(dirent) strlen((dirent)->d_name)
@@ -223,6 +219,7 @@ extern int lstat(const char *, struct stat *);
 #include <direct.h>
 #include <io.h>
 #include <process.h>
+#include "osdefs.h"
 #define WINDOWS_LEAN_AND_MEAN
 #include <windows.h>
 #ifdef MS_WIN32
@@ -237,6 +234,10 @@ extern int lstat(const char *, struct stat *);
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
 #include <io.h>
 #endif /* OS2 */
+
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 1024
+#endif /* MAXPATHLEN */
 
 #ifdef UNION_WAIT
 /* Emulate some macros on systems that have a union instead of macros */
