@@ -1,4 +1,3 @@
-#! /ufs/guido/bin/sgi/python
 #! /usr/local/python
 
 # Read #define's from stdin and translate to Python code on stdout.
@@ -18,7 +17,7 @@ import sys, regex, string
 
 p_define = regex.compile('^#[\t ]*define[\t ]+\([a-zA-Z0-9_]+\)[\t ]+')
 
-p_comment = regex.compile('/\*\([^*]+\|\*+[^/]\)*\*+/')
+p_comment = regex.compile('/\*\([^*]+\|\*+[^/]\)*\(\*+/\)?')
 
 def main():
 	process(sys.stdin)
