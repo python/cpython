@@ -79,7 +79,7 @@ struct HandlerInfo{
         xmlhandler handler;
 };
 
-static struct HandlerInfo handler_info[];
+staticforward struct HandlerInfo handler_info[];
 
 static PyObject *conv_atts( XML_Char **atts){
         PyObject *attrs_obj=NULL;
@@ -147,8 +147,10 @@ static RC my_##NAME##Handler PARAMS {\
         return RETURN; \
 }
 
+#define NOTHING /**/
+
 #define VOID_HANDLER( NAME, PARAMS, PARAM_FORMAT ) \
-        RC_HANDLER( void, NAME, PARAMS, , PARAM_FORMAT, , ,\
+        RC_HANDLER( void, NAME, PARAMS, NOTHING, PARAM_FORMAT, NOTHING, NOTHING,\
         (xmlparseobject *)userData )
 
 #define INT_HANDLER( NAME, PARAMS, PARAM_FORMAT )\
