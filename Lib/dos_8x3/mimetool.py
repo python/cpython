@@ -67,6 +67,14 @@ class Message(rfc822.Message):
 				return rfc822.unquote(p[n:])
 		return None
 
+	def getparamnames(self):
+		result = []
+		for p in self.plist:
+			i = string.find(p, '=')
+			if i >= 0:
+				result.append(string.lower(p[:i]))
+		return result
+
 	def getencoding(self):
 		if self.encodingheader == None:
 			return '7bit'

@@ -10,7 +10,10 @@ AS_IS = None
 
 class NullFormatter:
 
-    def __init__(self, writer): pass
+    def __init__(self, writer=None):
+	if not writer:
+	    writer = NullWriter()
+	self.writer = writer
     def end_paragraph(self, blankline): pass
     def add_line_break(self): pass
     def add_hor_rule(self, abswidth=None, percentwidth=1.0,

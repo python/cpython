@@ -6,7 +6,6 @@ def test(name, input, output):
 	value = f(input)
     except:
 	 value = sys.exc_type
-	 print sys.exc_value
     if value != output:
 	print f, `input`, `output`, `value`
 
