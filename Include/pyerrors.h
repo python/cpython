@@ -48,6 +48,7 @@ void PyErr_Restore Py_PROTO((PyObject *, PyObject *, PyObject *));
 /* Predefined exceptions */
 
 extern DL_IMPORT(PyObject *) PyExc_AccessError;
+extern DL_IMPORT(PyObject *) PyExc_AssertionError;
 extern DL_IMPORT(PyObject *) PyExc_AttributeError;
 extern DL_IMPORT(PyObject *) PyExc_EOFError;
 extern DL_IMPORT(PyObject *) PyExc_FloatingPointError;
