@@ -124,6 +124,7 @@ LIBFILES= ../lib/lib.tex \
 	../lib/libglob.tex \
 	../lib/libuser.tex \
 	../lib/libanydbm.tex \
+	../lib/libbsddb.tex \
 	../lib/libdbhash.tex \
 	../lib/librandom.tex \
 	../lib/libsite.tex \
@@ -179,6 +180,7 @@ LIBFILES= ../lib/lib.tex \
 	../lib/libtokenize.tex \
 	../lib/libmhlib.tex \
 	../lib/libtelnetlib.tex \
+	../lib/libcolorsys.tex \
 	../lib/libcfgparser.tex
 
 # LaTeX source files for Macintosh Library Modules.
