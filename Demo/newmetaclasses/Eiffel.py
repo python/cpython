@@ -14,11 +14,9 @@ class EiffelBaseMetaClass(type):
         """
         # find methods with pre or post conditions
         methods = []
-        prenpost = []
         for k, v in dict.iteritems():
             if k.endswith('_pre') or k.endswith('_post'):
                 assert isinstance(v, function)
-                prenpost.append(k)
             elif isinstance(v, function):
                 methods.append(k)
         for m in methods:
@@ -60,7 +58,6 @@ class EiffelMethodWrapper:
 
     def __call__(self, *args, **kwargs):
         return self._descr.callmethod(self._inst, args, kwargs)
-        
 
 class EiffelDescriptor(object):
 
