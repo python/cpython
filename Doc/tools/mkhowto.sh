@@ -17,7 +17,7 @@ L2H_INIT_FILE=$TOPDIR/perl/l2hinit.perl
 
 # This is needed to support kpathsea based TeX installations.  Others are
 # not supported.  ;-)
-TEXINPUTS=`dirname $MYDIR`/texinputs:$TEXINPUTS
+TEXINPUTS=$TOPDIR/texinputs:$TEXINPUTS
 export TEXINPUTS
 
 LOGFILE=/usr/tmp/mkhowto-$LOGNAME-$$.how
@@ -157,9 +157,13 @@ while [ "$1" ] ; do
 	-H|--help|--hel|--he)
 	    usage 0
 	    ;;
-	-a|--address|--addres|--addre|-addr|--add|--ad|--a)
+	-a|--address|--addres|--addre|-addr|--add|--ad)
 	    ADDRESS="$2"
 	    shift 2
+	    ;;
+	--a4)
+	    TEXINPUTS=$TOPDIR/paper-a4:$TEXINPUTS
+	    shift 1
 	    ;;
 	--link|--lin|--li)
 	    LINK="$2"
