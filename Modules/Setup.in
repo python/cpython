@@ -245,7 +245,8 @@ rotor rotormodule.c		# enigma-inspired encryption
 
 # Lance's curses module.  This requires the System V version of
 # curses, sometimes known as ncurses (e.g. on Linux, link with
-# -lncurses).
+# -lncurses instead of -lcurses; on SunOS 4.1.3, insert -I/usr/5include
+# -L/usr/5lib before -lcurses).
 
 #curses cursesmodule.c -lcurses -ltermcap
 
@@ -295,6 +296,9 @@ rotor rotormodule.c		# enigma-inspired encryption
 
 # David Wayne Williams' soundex module
 #soundex soundex.c
+
+# Objective-C (incomplete!!!)
+#objc.c
 
 
 # Example -- included for reference only:

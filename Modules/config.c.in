@@ -22,222 +22,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* Universal Python configuration file */
+/* Module configuration */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+/* !!! !!! !!! This file is edited by the makesetup script !!! !!! !!! */
 
-#ifdef macintosh
-/* The Macintosh main program is in macmain.c */
-#define NO_MAIN
-#endif
+/* This file contains the table of built-in modules.
+   See init_builtin() in import.c. */
 
-#include <stdio.h>
-#include <string.h>
+#include "Python.h"
 
-#include "myproto.h"
-#include "mymalloc.h"
-#include "osdefs.h"
-#include "intrcheck.h"
-
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
-#ifndef NO_MAIN
-
-/* Normally, the main program is called from here (so everything else
-   can be in libPython.a).  We save a pointer to argv[0] because it
-   may be needed for dynamic loading of modules in import.c.  If you
-   have your own main program and want to use non-SunOS dynamic
-   loading, you will have to provide your own version of
-   getprogramname(). */
-
-static char *argv0;
-
-/* These are made available for other modules that might need them.
-   This is rare, but it is needed by the secureware module. */
-
-static char **orig_argv;
-static int  orig_argc;
-
-extern int realmain PROTO((int, char**));
-
-#if defined(__cplusplus)
-main(int argc, char **argv)
-#else
-main(argc, argv)
-	int argc;
-	char **argv;
-#endif
-{
-	orig_argc = argc;
-	orig_argv = argv;
-	argv0 = argv[0];
-	realmain(argc, argv);
-}
-
-char *
-getprogramname()
-{
-	return argv0;
-}
-
-void
-#if defined(__cplusplus)
-getargcargv(int *argc, char ***argv)
-#else
-getargcargv(argc,argv)
-	int *argc;
-	char ***argv;
-#endif
-{
-	*argc = orig_argc;
-	*argv = orig_argv;
-}
-
-#endif
-
-
-/* Python version information */
-
-#include "patchlevel.h"
-
-/* Return the version string.  This is constructed from the official
-   version number (from patchlevel.h), and the current date (if known
-   to the compiler, else a manually inserted date). */
-
-#define VERSION "%s (%s)%s"
-
-#ifdef __DATE__
-#define DATE __DATE__
-#else
-#define DATE "July 7 1995"
-#endif
-
-#ifdef THINK_C
-#define COMPILER " [THINK C]"
-#endif
-
-#ifdef __MWERKS__
-#ifdef __powerc
-#define COMPILER " [CW PPC]"
-#else
-#define COMPILER " [CW 68K]"
-#endif
-#endif
-
-#ifdef MPW
-#ifdef __SC__
-#define COMPILER " [Symantec MPW]"
-#else
-#define COMPILER " [Apple MPW]"
-#endif
-#endif
-
-#ifdef __GNUC__
-#define COMPILER " [GCC " __VERSION__ "]"
-#endif
-
-#ifndef COMPILER
-#define COMPILER ""
-#endif
-
-char *
-getversion()
-{
-	static char version[80];
-	sprintf(version, VERSION, PATCHLEVEL, DATE, COMPILER);
-	return version;
-}
-
-
-/* Return the copyright string.  This is updated manually. */
-
-char *
-getcopyright()
-{
-	return "Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam";
-}
-
-
-/* Return the initial python search path.  This is called once from
-   initsys() to initialize sys.path.
-   The environment variable PYTHONPATH is fetched and the default path
-   appended.  (The Mac has no environment variables, so there the
-   default path is always returned.)  The default path may be passed
-   to the preprocessor; if not, a system-dependent default is used. */
-
-#ifndef PYTHONPATH
-#ifdef macintosh
-#define PYTHONPATH ": :Lib :Lib:stdwin :Lib:test :Lib:mac"
-#endif /* macintosh */
-#endif /* !PYTHONPATH */
-
-#ifndef PYTHONPATH
-#if defined(MSDOS) || defined(NT)
-#define PYTHONPATH ".;..\\lib;\\python\\lib"
-#endif /* MSDOS || NT */
-#endif /* !PYTHONPATH */
-
-#ifndef PYTHONPATH
-#define PYTHONPATH ".:/usr/local/lib/python"
-#endif /* !PYTHONPATH */
-
-#ifndef __cplusplus
-extern char *getenv();
-#endif
-
-#ifndef PLATFORM
-#define PLATFORM "unknown"
-#endif
-
-char *
-getplatform()
-{
-	return PLATFORM;
-}
-
-char *
-getpythonpath()
-{
-#ifdef __cplusplus
-	void fatal(char *);
-#endif
-	char *path = getenv("PYTHONPATH");
-	char *defpath = PYTHONPATH;
-	static char *buf = NULL;
-	char *p;
-	int n;
-
-	if (path == NULL)
-		path = "";
-	n = strlen(path) + strlen(defpath) + 2;
-	if (buf != NULL) {
-		free(buf);
-		buf = NULL;
-	}
-	buf = malloc(n);
-	if (buf == NULL)
-		fatal("not enough memory to copy module search path");
-	strcpy(buf, path);
-	p = buf + strlen(buf);
-	if (p != buf)
-		*p++ = DELIM;
-	strcpy(p, defpath);
-	return buf;
-}
-
-
-/* Table of built-in modules.
-   These are initialized when first imported.
-   Note: selection of optional extensions is now generally done by the
-   makesetup script. */
 
 /* -- ADDMODULE MARKER 1 -- */
 
-extern void initmarshal();
+extern void PyMarshal_Init();
 extern void initimp();
 
 struct {
@@ -248,7 +45,7 @@ struct {
 /* -- ADDMODULE MARKER 2 -- */
 
 	/* This module "lives in" with marshal.c */
-	{"marshal", initmarshal},
+	{"marshal", PyMarshal_Init},
 
 	/* This lives it with import.c */
 	{"imp", initimp},
@@ -261,17 +58,3 @@ struct {
 	/* Sentinel */
 	{0, 0}
 };
-
-#ifndef USE_FROZEN
-struct frozen {
-	char *name;
-	char *code;
-	int size;
-} frozen_modules[] = {
-	{0, 0, 0}
-};
-#endif
-
-#if defined(__cplusplus)
-}
-#endif
