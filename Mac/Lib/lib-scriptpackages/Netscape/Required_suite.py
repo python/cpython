@@ -1,7 +1,7 @@
 """Suite Required suite: 
 Level 0, version 0
 
-Generated from Moes:Applications (Mac OS 9):Netscape Communicatoré Folder:Netscape Communicatoré
+Generated from /Volumes/Sap/Applications (Mac OS 9)/Netscape Communicator\xe2\x84\xa2 Folder/Netscape Communicator\xe2\x84\xa2
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -33,7 +33,7 @@ class Required_suite_Events(Required_Suite_Events):
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def _print(self, _object, _attributes={}, **_arguments):
+	def print_(self, _object, _attributes={}, **_arguments):
 		"""print: Print the specified object(s)
 		Required argument: list of objects to print
 		Keyword argument _attributes: AppleEvent attribute dictionary

@@ -1,7 +1,7 @@
 """Suite Standard Suite: Common terms for most applications
 Level 1, version 1
 
-Generated from Moes:Systeemmap:Extensies:AppleScript
+Generated from /Volumes/Sap/System Folder/Extensions/AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -71,7 +71,7 @@ class Standard_Suite_Events(builtin_Suite_Events):
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def _print(self, _object, _attributes={}, **_arguments):
+	def print_(self, _object, _attributes={}, **_arguments):
 		"""print: Print the specified object(s)
 		Required argument: list of objects to print
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -297,14 +297,14 @@ class Standard_Suite_Events(builtin_Suite_Events):
 			return _arguments['----']
 
 	_argmap_save = {
-		'_in' : 'kfil',
+		'in_' : 'kfil',
 		'as' : 'fltp',
 	}
 
 	def save(self, _object, _attributes={}, **_arguments):
 		"""save: Save an object
 		Required argument: the object to save, usually a document or window
-		Keyword argument _in: the file in which to save the object
+		Keyword argument in_: the file in which to save the object
 		Keyword argument as: the file type of the document in which to save the data
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
@@ -370,13 +370,13 @@ class Standard_Suite_Events(builtin_Suite_Events):
 			return _arguments['----']
 
 	_argmap_suite_info = {
-		'_in' : 'wrcd',
+		'in_' : 'wrcd',
 	}
 
 	def suite_info(self, _object, _attributes={}, **_arguments):
 		"""suite info: (optional) Get information about event suite(s)
 		Required argument: the suite for which to return information
-		Keyword argument _in: the human language and script system in which to return information
+		Keyword argument in_: the human language and script system in which to return information
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: a record containing the suites and their versions
 		"""
@@ -396,13 +396,13 @@ class Standard_Suite_Events(builtin_Suite_Events):
 			return _arguments['----']
 
 	_argmap_event_info = {
-		'_in' : 'wrcd',
+		'in_' : 'wrcd',
 	}
 
 	def event_info(self, _object, _attributes={}, **_arguments):
 		"""event info: (optional) Get information about the Apple events in a suite
 		Required argument: the event class of the Apple events for which to return information
-		Keyword argument _in: the human language and script system in which to return information
+		Keyword argument in_: the human language and script system in which to return information
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: a record containing the events and their parameters
 		"""
@@ -422,15 +422,15 @@ class Standard_Suite_Events(builtin_Suite_Events):
 			return _arguments['----']
 
 	_argmap_class_info = {
-		'_in' : 'wrcd',
+		'in_' : 'wrcd',
 	}
 
 	def class_info(self, _object=None, _attributes={}, **_arguments):
 		"""class info: (optional) Get information about an object class
 		Required argument: the object class about which information is requested
-		Keyword argument _in: the human language and script system in which to return information
+		Keyword argument in_: the human language and script system in which to return information
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: a record containing the objectÕs properties and elements
+		Returns: a record containing the object\xd5s properties and elements
 		"""
 		_code = 'core'
 		_subcode = 'qobj'
@@ -460,7 +460,7 @@ class frontmost(aetools.NProperty):
 	which = 'pisf'
 	want = 'bool'
 class selection(aetools.NProperty):
-	"""selection - the selection visible to the user.  Use the •selectÕ command to set a new selection; use •contents of selectionÕ to get or change information in the document. """
+	"""selection - the selection visible to the user.  Use the \xd4select\xd5 command to set a new selection; use \xd4contents of selection\xd5 to get or change information in the document. """
 	which = 'sele'
 	want = 'csel'
 class clipboard(aetools.NProperty):
@@ -501,10 +501,10 @@ class alias(aetools.ComponentItem):
 aliases = alias
 
 class selection_2d_object(aetools.ComponentItem):
-	"""selection-object - A way to refer to the state of the current of the selection.  Use the •selectÕ command to make a new selection. """
+	"""selection-object - A way to refer to the state of the current of the selection.  Use the \xd4select\xd5 command to make a new selection. """
 	want = 'csel'
 class contents(aetools.NProperty):
-	"""contents - the information currently selected.  Use •contents of selectionÕ to get or change information in a document. """
+	"""contents - the information currently selected.  Use \xd4contents of selection\xd5 to get or change information in a document. """
 	which = 'pcnt'
 	want = '****'
 
@@ -559,35 +559,41 @@ class insertion_point(aetools.ComponentItem):
 	want = 'cins'
 
 insertion_points = insertion_point
-application._propdict = {
+application._superclassnames = []
+application._privpropdict = {
 	'name' : name,
 	'frontmost' : frontmost,
 	'selection' : selection,
 	'clipboard' : clipboard,
 	'version' : version,
 }
-application._elemdict = {
+application._privelemdict = {
 }
-document._propdict = {
+document._superclassnames = []
+document._privpropdict = {
 	'modified' : modified,
 }
-document._elemdict = {
+document._privelemdict = {
 }
-file._propdict = {
+file._superclassnames = []
+file._privpropdict = {
 	'stationery' : stationery,
 }
-file._elemdict = {
+file._privelemdict = {
 }
-alias._propdict = {
+alias._superclassnames = []
+alias._privpropdict = {
 }
-alias._elemdict = {
+alias._privelemdict = {
 }
-selection_2d_object._propdict = {
+selection_2d_object._superclassnames = []
+selection_2d_object._privpropdict = {
 	'contents' : contents,
 }
-selection_2d_object._elemdict = {
+selection_2d_object._privelemdict = {
 }
-window._propdict = {
+window._superclassnames = []
+window._privpropdict = {
 	'bounds' : bounds,
 	'closeable' : closeable,
 	'titled' : titled,
@@ -599,11 +605,12 @@ window._propdict = {
 	'zoomed' : zoomed,
 	'visible' : visible,
 }
-window._elemdict = {
+window._privelemdict = {
 }
-insertion_point._propdict = {
+insertion_point._superclassnames = []
+insertion_point._privpropdict = {
 }
-insertion_point._elemdict = {
+insertion_point._privelemdict = {
 }
 class starts_with(aetools.NComparison):
 	"""starts with - Starts with """
@@ -616,11 +623,11 @@ class _3d_(aetools.NComparison):
 class _3e_(aetools.NComparison):
 	"""> - Greater than """
 class _b3_(aetools.NComparison):
-	"""³ - Greater than or equal to """
+	"""\xb3 - Greater than or equal to """
 class _3c_(aetools.NComparison):
 	"""< - Less than """
 class _b2_(aetools.NComparison):
-	"""² - Less than or equal to """
+	"""\xb2 - Less than or equal to """
 _Enum_savo = {
 	'yes' : 'yes ',	# Save objects now
 	'no' : 'no  ',	# Do not save objects

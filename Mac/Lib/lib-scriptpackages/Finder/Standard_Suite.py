@@ -1,7 +1,7 @@
 """Suite Standard Suite: Common terms that most applications should support
 Level 1, version 1
 
-Generated from Moes:Systeemmap:Finder
+Generated from /Volumes/Sap/System Folder/Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -40,11 +40,11 @@ class Standard_Suite_Events(Standard_Suite_Events):
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	_argmap__print = {
+	_argmap_print_ = {
 		'with_properties' : 'prdt',
 	}
 
-	def _print(self, _object, _attributes={}, **_arguments):
+	def print_(self, _object, _attributes={}, **_arguments):
 		"""print: Print the specified object(s)
 		Required argument: list of objects to print
 		Keyword argument with_properties: optional properties to be included with the print command sent to the application that prints the direct object
@@ -53,7 +53,7 @@ class Standard_Suite_Events(Standard_Suite_Events):
 		_code = 'aevt'
 		_subcode = 'pdoc'
 
-		aetools.keysubst(_arguments, self._argmap__print)
+		aetools.keysubst(_arguments, self._argmap_print_)
 		_arguments['----'] = _object
 
 

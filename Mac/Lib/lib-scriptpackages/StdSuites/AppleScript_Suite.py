@@ -1,7 +1,7 @@
 """Suite AppleScript Suite: Standard terms for AppleScript
 Level 1, version 1
 
-Generated from Moes:Systeemmap:Extensies:AppleScript
+Generated from /Volumes/Sap/System Folder/Extensions/AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -129,7 +129,7 @@ class AppleScript_Suite_Events:
 			return _arguments['----']
 
 	def tell(self, _no_object=None, _attributes={}, **_arguments):
-		"""tell: Record or log a •tellÕ statement
+		"""tell: Record or log a \xd4tell\xd5 statement
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'ascr'
@@ -148,7 +148,7 @@ class AppleScript_Suite_Events:
 			return _arguments['----']
 
 	def end_tell(self, _no_object=None, _attributes={}, **_arguments):
-		"""end tell: Record or log an •end tellÕ statement
+		"""end tell: Record or log an \xd4end tell\xd5 statement
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'ascr'
@@ -169,7 +169,7 @@ class AppleScript_Suite_Events:
 	_argmap_error = {
 		'number' : 'errn',
 		'partial_result' : 'ptlr',
-		'_from' : 'erob',
+		'from_' : 'erob',
 		'to' : 'errt',
 	}
 
@@ -178,7 +178,7 @@ class AppleScript_Suite_Events:
 		Required argument: anything
 		Keyword argument number: an error number
 		Keyword argument partial_result: any partial result occurring before the error
-		Keyword argument _from: the object that caused the error
+		Keyword argument from_: the object that caused the error
 		Keyword argument to: the desired class for a failed coercion
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
@@ -199,8 +199,8 @@ class AppleScript_Suite_Events:
 
 	_argmap_Call_a5_subroutine = {
 		'at' : 'at  ',
-		'_from' : 'from',
-		'_for' : 'for ',
+		'from_' : 'from',
+		'for_' : 'for ',
 		'to' : 'to  ',
 		'thru' : 'thru',
 		'through' : 'thgh',
@@ -229,11 +229,11 @@ class AppleScript_Suite_Events:
 	}
 
 	def Call_a5_subroutine(self, _object=None, _attributes={}, **_arguments):
-		"""Call‚subroutine: A subroutine call
+		"""Call\xa5subroutine: A subroutine call
 		Required argument: anything
 		Keyword argument at: a preposition
-		Keyword argument _from: a preposition
-		Keyword argument _for: a preposition
+		Keyword argument from_: a preposition
+		Keyword argument for_: a preposition
 		Keyword argument to: a preposition
 		Keyword argument thru: a preposition
 		Keyword argument through: a preposition
@@ -299,7 +299,7 @@ class AppleScript_Suite_Events:
 			return _arguments['----']
 
 	def _ad_(self, _object, _attributes={}, **_arguments):
-		"""­: Inequality
+		"""\xad: Inequality
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: anything
@@ -383,7 +383,7 @@ class AppleScript_Suite_Events:
 			return _arguments['----']
 
 	def _d6_(self, _object, _attributes={}, **_arguments):
-		"""÷: Division
+		"""\xd6: Division
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: anything
@@ -488,7 +488,7 @@ class AppleScript_Suite_Events:
 			return _arguments['----']
 
 	def _b3_(self, _object, _attributes={}, **_arguments):
-		"""³: Greater than or equal to
+		"""\xb3: Greater than or equal to
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: anything
@@ -530,7 +530,7 @@ class AppleScript_Suite_Events:
 			return _arguments['----']
 
 	def _b2_(self, _object, _attributes={}, **_arguments):
-		"""²: Less than or equal to
+		"""\xb2: Less than or equal to
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: anything
@@ -634,7 +634,7 @@ class AppleScript_Suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def _and(self, _object, _attributes={}, **_arguments):
+	def and_(self, _object, _attributes={}, **_arguments):
 		"""and: Logical conjunction
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -655,7 +655,7 @@ class AppleScript_Suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def _or(self, _object, _attributes={}, **_arguments):
+	def or_(self, _object, _attributes={}, **_arguments):
 		"""or: Logical disjunction
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -697,7 +697,7 @@ class AppleScript_Suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def _not(self, _object, _attributes={}, **_arguments):
+	def not_(self, _object, _attributes={}, **_arguments):
 		"""not: Logical negation
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -818,7 +818,7 @@ class name(aetools.NProperty):
 	which = 'pnam'
 	want = 'TEXT'
 class parent(aetools.NProperty):
-	"""parent - its parent, i.e. the script that will handle events that this script doesnÕt """
+	"""parent - its parent, i.e. the script that will handle events that this script doesn\xd5t """
 	which = 'pare'
 	want = 'scpt'
 
@@ -852,7 +852,7 @@ class number_2c__date_or_text(aetools.ComponentItem):
 	"""number, date or text - a number, date or text """
 	want = 'nds '
 
-class _class(aetools.ComponentItem):
+class class_(aetools.ComponentItem):
 	"""class - the type of a value """
 	want = 'pcls'
 class _3c_Inheritance_3e_(aetools.NProperty):
@@ -860,7 +860,7 @@ class _3c_Inheritance_3e_(aetools.NProperty):
 	which = 'c@#^'
 	want = 'type'
 
-classes = _class
+classes = class_
 
 class event(aetools.ComponentItem):
 	"""event - an AppleEvents event """
@@ -990,7 +990,7 @@ class language_code(aetools.NProperty):
 
 writing_code_infos = writing_code_info
 
-class _empty_ae_name(aetools.ComponentItem):
+class empty_ae_name_(aetools.ComponentItem):
 	""" - the undefined value """
 	want = 'undf'
 
@@ -1345,7 +1345,7 @@ class space(aetools.NProperty):
 	"""space - a space character """
 	which = 'spac'
 	want = 'cha '
-class _return(aetools.NProperty):
+class return_(aetools.NProperty):
 	"""return - a return character """
 	which = 'ret '
 	want = 'cha '
@@ -1391,257 +1391,317 @@ class AppleScript(aetools.NProperty):
 	want = 'scpt'
 
 applications = app
-boolean._propdict = {
+boolean._superclassnames = []
+boolean._privpropdict = {
 }
-boolean._elemdict = {
+boolean._privelemdict = {
 }
-integer._propdict = {
+integer._superclassnames = []
+integer._privpropdict = {
 }
-integer._elemdict = {
+integer._privelemdict = {
 }
-real._propdict = {
+real._superclassnames = []
+real._privpropdict = {
 }
-real._elemdict = {
+real._privelemdict = {
 }
-number._propdict = {
+number._superclassnames = []
+number._privpropdict = {
 }
-number._elemdict = {
+number._privelemdict = {
 }
-list._propdict = {
+list._superclassnames = []
+list._privpropdict = {
 	'length' : length,
 	'reverse' : reverse,
 	'rest' : rest,
 }
-list._elemdict = {
+list._privelemdict = {
 }
-linked_list._propdict = {
+linked_list._superclassnames = []
+linked_list._privpropdict = {
 	'length' : length,
 }
-linked_list._elemdict = {
+linked_list._privelemdict = {
 }
-vector._propdict = {
+vector._superclassnames = []
+vector._privpropdict = {
 	'length' : length,
 }
-vector._elemdict = {
+vector._privelemdict = {
 }
-record._propdict = {
+record._superclassnames = []
+record._privpropdict = {
 }
-record._elemdict = {
+record._privelemdict = {
 }
-item._propdict = {
+item._superclassnames = []
+item._privpropdict = {
 	'id' : id,
 }
-item._elemdict = {
+item._privelemdict = {
 }
-script._propdict = {
+script._superclassnames = []
+script._privpropdict = {
 	'name' : name,
 	'parent' : parent,
 }
-script._elemdict = {
+script._privelemdict = {
 }
-list_or_record._propdict = {
+list_or_record._superclassnames = []
+list_or_record._privpropdict = {
 }
-list_or_record._elemdict = {
+list_or_record._privelemdict = {
 }
-list_or_string._propdict = {
+list_or_string._superclassnames = []
+list_or_string._privpropdict = {
 }
-list_or_string._elemdict = {
+list_or_string._privelemdict = {
 }
-number_or_string._propdict = {
+number_or_string._superclassnames = []
+number_or_string._privpropdict = {
 }
-number_or_string._elemdict = {
+number_or_string._privelemdict = {
 }
-alias_or_string._propdict = {
+alias_or_string._superclassnames = []
+alias_or_string._privpropdict = {
 }
-alias_or_string._elemdict = {
+alias_or_string._privelemdict = {
 }
-list_2c__record_or_text._propdict = {
+list_2c__record_or_text._superclassnames = []
+list_2c__record_or_text._privpropdict = {
 }
-list_2c__record_or_text._elemdict = {
+list_2c__record_or_text._privelemdict = {
 }
-number_or_date._propdict = {
+number_or_date._superclassnames = []
+number_or_date._privpropdict = {
 }
-number_or_date._elemdict = {
+number_or_date._privelemdict = {
 }
-number_2c__date_or_text._propdict = {
+number_2c__date_or_text._superclassnames = []
+number_2c__date_or_text._privpropdict = {
 }
-number_2c__date_or_text._elemdict = {
+number_2c__date_or_text._privelemdict = {
 }
-_class._propdict = {
+class_._superclassnames = ['type_class']
+class_._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 }
-_class._elemdict = {
+class_._privelemdict = {
 }
-event._propdict = {
+event._superclassnames = []
+event._privpropdict = {
 }
-event._elemdict = {
+event._privelemdict = {
 }
-property._propdict = {
+property._superclassnames = []
+property._privpropdict = {
 }
-property._elemdict = {
+property._privelemdict = {
 }
-constant._propdict = {
+constant._superclassnames = []
+constant._privpropdict = {
 }
-constant._elemdict = {
+constant._privelemdict = {
 }
-preposition._propdict = {
+preposition._superclassnames = []
+preposition._privpropdict = {
 }
-preposition._elemdict = {
+preposition._privelemdict = {
 }
-reference_form._propdict = {
+reference_form._superclassnames = []
+reference_form._privpropdict = {
 }
-reference_form._elemdict = {
+reference_form._privelemdict = {
 }
-handler._propdict = {
+handler._superclassnames = []
+handler._privpropdict = {
 }
-handler._elemdict = {
+handler._privelemdict = {
 }
-data._propdict = {
+data._superclassnames = []
+data._privpropdict = {
 }
-data._elemdict = {
+data._privelemdict = {
 }
-text._propdict = {
+text._superclassnames = []
+text._privpropdict = {
 }
-text._elemdict = {
+text._privelemdict = {
 }
-international_text._propdict = {
+international_text._superclassnames = []
+international_text._privpropdict = {
 }
-international_text._elemdict = {
+international_text._privelemdict = {
 }
-international_text._propdict = {
+international_text._superclassnames = []
+international_text._privpropdict = {
 }
-international_text._elemdict = {
+international_text._privelemdict = {
 }
-string._propdict = {
+string._superclassnames = []
+string._privpropdict = {
 }
-string._elemdict = {
+string._privelemdict = {
 }
-styled_text._propdict = {
+styled_text._superclassnames = []
+styled_text._privpropdict = {
 }
-styled_text._elemdict = {
+styled_text._privelemdict = {
 }
-styled_text._propdict = {
+styled_text._superclassnames = []
+styled_text._privpropdict = {
 }
-styled_text._elemdict = {
+styled_text._privelemdict = {
 }
-styled_Clipboard_text._propdict = {
+styled_Clipboard_text._superclassnames = []
+styled_Clipboard_text._privpropdict = {
 }
-styled_Clipboard_text._elemdict = {
+styled_Clipboard_text._privelemdict = {
 }
-styled_Clipboard_text._propdict = {
+styled_Clipboard_text._superclassnames = []
+styled_Clipboard_text._privpropdict = {
 }
-styled_Clipboard_text._elemdict = {
+styled_Clipboard_text._privelemdict = {
 }
-Unicode_text._propdict = {
+Unicode_text._superclassnames = []
+Unicode_text._privpropdict = {
 }
-Unicode_text._elemdict = {
+Unicode_text._privelemdict = {
 }
-Unicode_text._propdict = {
+Unicode_text._superclassnames = []
+Unicode_text._privpropdict = {
 }
-Unicode_text._elemdict = {
+Unicode_text._privelemdict = {
 }
-styled_Unicode_text._propdict = {
+styled_Unicode_text._superclassnames = []
+styled_Unicode_text._privpropdict = {
 }
-styled_Unicode_text._elemdict = {
+styled_Unicode_text._privelemdict = {
 }
-styled_Unicode_text._propdict = {
+styled_Unicode_text._superclassnames = []
+styled_Unicode_text._privpropdict = {
 }
-styled_Unicode_text._elemdict = {
+styled_Unicode_text._privelemdict = {
 }
-encoded_string._propdict = {
+encoded_string._superclassnames = []
+encoded_string._privpropdict = {
 }
-encoded_string._elemdict = {
+encoded_string._privelemdict = {
 }
-C_string._propdict = {
+C_string._superclassnames = []
+C_string._privpropdict = {
 }
-C_string._elemdict = {
+C_string._privelemdict = {
 }
-Pascal_string._propdict = {
+Pascal_string._superclassnames = []
+Pascal_string._privpropdict = {
 }
-Pascal_string._elemdict = {
+Pascal_string._privelemdict = {
 }
-character._propdict = {
+character._superclassnames = []
+character._privpropdict = {
 }
-character._elemdict = {
+character._privelemdict = {
 }
-text_item._propdict = {
+text_item._superclassnames = []
+text_item._privpropdict = {
 }
-text_item._elemdict = {
+text_item._privelemdict = {
 }
-writing_code._propdict = {
+writing_code._superclassnames = []
+writing_code._privpropdict = {
 }
-writing_code._elemdict = {
+writing_code._privelemdict = {
 }
-writing_code_info._propdict = {
+writing_code_info._superclassnames = []
+writing_code_info._privpropdict = {
 	'script_code' : script_code,
 	'language_code' : language_code,
 }
-writing_code_info._elemdict = {
+writing_code_info._privelemdict = {
 }
-_empty_ae_name._propdict = {
+empty_ae_name_._superclassnames = []
+empty_ae_name_._privpropdict = {
 }
-_empty_ae_name._elemdict = {
+empty_ae_name_._privelemdict = {
 }
-missing_value._propdict = {
+missing_value._superclassnames = []
+missing_value._privpropdict = {
 }
-missing_value._elemdict = {
+missing_value._privelemdict = {
 }
-reference._propdict = {
+reference._superclassnames = []
+reference._privpropdict = {
 }
-reference._elemdict = {
+reference._privelemdict = {
 }
-anything._propdict = {
+anything._superclassnames = []
+anything._privpropdict = {
 }
-anything._elemdict = {
+anything._privelemdict = {
 }
-type_class._propdict = {
+type_class._superclassnames = []
+type_class._privpropdict = {
 }
-type_class._elemdict = {
+type_class._privelemdict = {
 }
-RGB_color._propdict = {
+RGB_color._superclassnames = []
+RGB_color._privpropdict = {
 }
-RGB_color._elemdict = {
+RGB_color._privelemdict = {
 }
-picture._propdict = {
+picture._superclassnames = []
+picture._privpropdict = {
 }
-picture._elemdict = {
+picture._privelemdict = {
 }
-sound._propdict = {
+sound._superclassnames = []
+sound._privpropdict = {
 }
-sound._elemdict = {
+sound._privelemdict = {
 }
-version._propdict = {
+version._superclassnames = []
+version._privpropdict = {
 }
-version._elemdict = {
+version._privelemdict = {
 }
-file_specification._propdict = {
+file_specification._superclassnames = []
+file_specification._privpropdict = {
 }
-file_specification._elemdict = {
+file_specification._privelemdict = {
 }
-alias._propdict = {
+alias._superclassnames = []
+alias._privpropdict = {
 }
-alias._elemdict = {
+alias._privelemdict = {
 }
-machine._propdict = {
+machine._superclassnames = []
+machine._privpropdict = {
 }
-machine._elemdict = {
+machine._privelemdict = {
 }
-zone._propdict = {
+zone._superclassnames = []
+zone._privpropdict = {
 }
-zone._elemdict = {
+zone._privelemdict = {
 }
-keystroke._propdict = {
+keystroke._superclassnames = []
+keystroke._privpropdict = {
 	'key' : key,
 	'modifiers' : modifiers,
 	'key_kind' : key_kind,
 }
-keystroke._elemdict = {
+keystroke._privelemdict = {
 }
-seconds._propdict = {
+seconds._superclassnames = []
+seconds._privpropdict = {
 }
-seconds._elemdict = {
+seconds._privelemdict = {
 }
-date._propdict = {
+date._superclassnames = []
+date._privpropdict = {
 	'weekday' : weekday,
 	'month' : month,
 	'day' : day,
@@ -1650,207 +1710,257 @@ date._propdict = {
 	'date_string' : date_string,
 	'time_string' : time_string,
 }
-date._elemdict = {
+date._privelemdict = {
 }
-month._propdict = {
+month._superclassnames = []
+month._privpropdict = {
 }
-month._elemdict = {
+month._privelemdict = {
 }
-January._propdict = {
+January._superclassnames = []
+January._privpropdict = {
 }
-January._elemdict = {
+January._privelemdict = {
 }
-February._propdict = {
+February._superclassnames = []
+February._privpropdict = {
 }
-February._elemdict = {
+February._privelemdict = {
 }
-March._propdict = {
+March._superclassnames = []
+March._privpropdict = {
 }
-March._elemdict = {
+March._privelemdict = {
 }
-April._propdict = {
+April._superclassnames = []
+April._privpropdict = {
 }
-April._elemdict = {
+April._privelemdict = {
 }
-May._propdict = {
+May._superclassnames = []
+May._privpropdict = {
 }
-May._elemdict = {
+May._privelemdict = {
 }
-June._propdict = {
+June._superclassnames = []
+June._privpropdict = {
 }
-June._elemdict = {
+June._privelemdict = {
 }
-July._propdict = {
+July._superclassnames = []
+July._privpropdict = {
 }
-July._elemdict = {
+July._privelemdict = {
 }
-August._propdict = {
+August._superclassnames = []
+August._privpropdict = {
 }
-August._elemdict = {
+August._privelemdict = {
 }
-September._propdict = {
+September._superclassnames = []
+September._privpropdict = {
 }
-September._elemdict = {
+September._privelemdict = {
 }
-October._propdict = {
+October._superclassnames = []
+October._privpropdict = {
 }
-October._elemdict = {
+October._privelemdict = {
 }
-November._propdict = {
+November._superclassnames = []
+November._privpropdict = {
 }
-November._elemdict = {
+November._privelemdict = {
 }
-December._propdict = {
+December._superclassnames = []
+December._privpropdict = {
 }
-December._elemdict = {
+December._privelemdict = {
 }
-weekday._propdict = {
+weekday._superclassnames = []
+weekday._privpropdict = {
 }
-weekday._elemdict = {
+weekday._privelemdict = {
 }
-Sunday._propdict = {
+Sunday._superclassnames = []
+Sunday._privpropdict = {
 }
-Sunday._elemdict = {
+Sunday._privelemdict = {
 }
-Monday._propdict = {
+Monday._superclassnames = []
+Monday._privpropdict = {
 }
-Monday._elemdict = {
+Monday._privelemdict = {
 }
-Tuesday._propdict = {
+Tuesday._superclassnames = []
+Tuesday._privpropdict = {
 }
-Tuesday._elemdict = {
+Tuesday._privelemdict = {
 }
-Wednesday._propdict = {
+Wednesday._superclassnames = []
+Wednesday._privpropdict = {
 }
-Wednesday._elemdict = {
+Wednesday._privelemdict = {
 }
-Thursday._propdict = {
+Thursday._superclassnames = []
+Thursday._privpropdict = {
 }
-Thursday._elemdict = {
+Thursday._privelemdict = {
 }
-Friday._propdict = {
+Friday._superclassnames = []
+Friday._privpropdict = {
 }
-Friday._elemdict = {
+Friday._privelemdict = {
 }
-Saturday._propdict = {
+Saturday._superclassnames = []
+Saturday._privpropdict = {
 }
-Saturday._elemdict = {
+Saturday._privelemdict = {
 }
-metres._propdict = {
+metres._superclassnames = []
+metres._privpropdict = {
 }
-metres._elemdict = {
+metres._privelemdict = {
 }
-inches._propdict = {
+inches._superclassnames = []
+inches._privpropdict = {
 }
-inches._elemdict = {
+inches._privelemdict = {
 }
-feet._propdict = {
+feet._superclassnames = []
+feet._privpropdict = {
 }
-feet._elemdict = {
+feet._privelemdict = {
 }
-yards._propdict = {
+yards._superclassnames = []
+yards._privpropdict = {
 }
-yards._elemdict = {
+yards._privelemdict = {
 }
-miles._propdict = {
+miles._superclassnames = []
+miles._privpropdict = {
 }
-miles._elemdict = {
+miles._privelemdict = {
 }
-kilometres._propdict = {
+kilometres._superclassnames = []
+kilometres._privpropdict = {
 }
-kilometres._elemdict = {
+kilometres._privelemdict = {
 }
-centimetres._propdict = {
+centimetres._superclassnames = []
+centimetres._privpropdict = {
 }
-centimetres._elemdict = {
+centimetres._privelemdict = {
 }
-square_metres._propdict = {
+square_metres._superclassnames = []
+square_metres._privpropdict = {
 }
-square_metres._elemdict = {
+square_metres._privelemdict = {
 }
-square_feet._propdict = {
+square_feet._superclassnames = []
+square_feet._privpropdict = {
 }
-square_feet._elemdict = {
+square_feet._privelemdict = {
 }
-square_yards._propdict = {
+square_yards._superclassnames = []
+square_yards._privpropdict = {
 }
-square_yards._elemdict = {
+square_yards._privelemdict = {
 }
-square_miles._propdict = {
+square_miles._superclassnames = []
+square_miles._privpropdict = {
 }
-square_miles._elemdict = {
+square_miles._privelemdict = {
 }
-square_kilometres._propdict = {
+square_kilometres._superclassnames = []
+square_kilometres._privpropdict = {
 }
-square_kilometres._elemdict = {
+square_kilometres._privelemdict = {
 }
-litres._propdict = {
+litres._superclassnames = []
+litres._privpropdict = {
 }
-litres._elemdict = {
+litres._privelemdict = {
 }
-gallons._propdict = {
+gallons._superclassnames = []
+gallons._privpropdict = {
 }
-gallons._elemdict = {
+gallons._privelemdict = {
 }
-quarts._propdict = {
+quarts._superclassnames = []
+quarts._privpropdict = {
 }
-quarts._elemdict = {
+quarts._privelemdict = {
 }
-cubic_metres._propdict = {
+cubic_metres._superclassnames = []
+cubic_metres._privpropdict = {
 }
-cubic_metres._elemdict = {
+cubic_metres._privelemdict = {
 }
-cubic_centimetres._propdict = {
+cubic_centimetres._superclassnames = []
+cubic_centimetres._privpropdict = {
 }
-cubic_centimetres._elemdict = {
+cubic_centimetres._privelemdict = {
 }
-cubic_feet._propdict = {
+cubic_feet._superclassnames = []
+cubic_feet._privpropdict = {
 }
-cubic_feet._elemdict = {
+cubic_feet._privelemdict = {
 }
-cubic_inches._propdict = {
+cubic_inches._superclassnames = []
+cubic_inches._privpropdict = {
 }
-cubic_inches._elemdict = {
+cubic_inches._privelemdict = {
 }
-cubic_yards._propdict = {
+cubic_yards._superclassnames = []
+cubic_yards._privpropdict = {
 }
-cubic_yards._elemdict = {
+cubic_yards._privelemdict = {
 }
-kilograms._propdict = {
+kilograms._superclassnames = []
+kilograms._privpropdict = {
 }
-kilograms._elemdict = {
+kilograms._privelemdict = {
 }
-grams._propdict = {
+grams._superclassnames = []
+grams._privpropdict = {
 }
-grams._elemdict = {
+grams._privelemdict = {
 }
-ounces._propdict = {
+ounces._superclassnames = []
+ounces._privpropdict = {
 }
-ounces._elemdict = {
+ounces._privelemdict = {
 }
-pounds._propdict = {
+pounds._superclassnames = []
+pounds._privpropdict = {
 }
-pounds._elemdict = {
+pounds._privelemdict = {
 }
-degrees_Celsius._propdict = {
+degrees_Celsius._superclassnames = []
+degrees_Celsius._privpropdict = {
 }
-degrees_Celsius._elemdict = {
+degrees_Celsius._privelemdict = {
 }
-degrees_Fahrenheit._propdict = {
+degrees_Fahrenheit._superclassnames = []
+degrees_Fahrenheit._privpropdict = {
 }
-degrees_Fahrenheit._elemdict = {
+degrees_Fahrenheit._privelemdict = {
 }
-degrees_Kelvin._propdict = {
+degrees_Kelvin._superclassnames = []
+degrees_Kelvin._privpropdict = {
 }
-degrees_Kelvin._elemdict = {
+degrees_Kelvin._privelemdict = {
 }
-upper_case._propdict = {
+upper_case._superclassnames = []
+upper_case._privpropdict = {
 }
-upper_case._elemdict = {
+upper_case._privelemdict = {
 }
-app._propdict = {
+app._superclassnames = []
+app._privpropdict = {
 }
-app._elemdict = {
+app._privelemdict = {
 }
 _Enum_cons = {
 	'case' : 'case',	# case
@@ -1988,7 +2098,7 @@ _classdeclarations = {
 	'degk' : degrees_Kelvin,
 	'mon ' : Monday,
 	'snd ' : sound,
-	'pcls' : _class,
+	'pcls' : class_,
 	'kgrm' : kilograms,
 	'scpt' : script,
 	'****' : anything,
@@ -2003,7 +2113,7 @@ _classdeclarations = {
 	'gram' : grams,
 	'cha ' : character,
 	'apr ' : April,
-	'undf' : _empty_ae_name,
+	'undf' : empty_ae_name_,
 	'capp' : app,
 	'enum' : constant,
 	'hand' : handler,
@@ -2045,7 +2155,7 @@ _propdeclarations = {
 	'tab ' : tab,
 	'tstr' : time_string,
 	'pi  ' : pi,
-	'ret ' : _return,
+	'ret ' : return_,
 	'plcd' : language_code,
 	'kMsg' : key,
 	'spac' : space,

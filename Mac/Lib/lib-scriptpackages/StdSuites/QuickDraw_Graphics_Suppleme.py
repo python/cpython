@@ -1,7 +1,7 @@
 """Suite QuickDraw Graphics Supplemental Suite: Defines transformations of graphic objects
 Level 1, version 1
 
-Generated from Moes:Systeemmap:Extensies:AppleScript
+Generated from /Volumes/Sap/System Folder/Extensions/AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -38,16 +38,18 @@ class graphic_group(aetools.ComponentItem):
 	want = 'cpic'
 
 graphic_groups = graphic_group
-drawing_area._propdict = {
+drawing_area._superclassnames = []
+drawing_area._privpropdict = {
 	'rotation' : rotation,
 	'scale' : scale,
 	'translation' : translation,
 }
-drawing_area._elemdict = {
+drawing_area._privelemdict = {
 }
-graphic_group._propdict = {
+graphic_group._superclassnames = []
+graphic_group._privpropdict = {
 }
-graphic_group._elemdict = {
+graphic_group._privelemdict = {
 }
 
 #

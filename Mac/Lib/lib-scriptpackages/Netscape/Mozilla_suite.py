@@ -1,7 +1,7 @@
 """Suite Mozilla suite: Experimental Mozilla suite
 Level 1, version 1
 
-Generated from Moes:Applications (Mac OS 9):Netscape CommunicatorŽ Folder:Netscape CommunicatorŽ
+Generated from /Volumes/Sap/Applications (Mac OS 9)/Netscape Communicator\xe2\x84\xa2 Folder/Netscape Communicator\xe2\x84\xa2
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -20,7 +20,7 @@ class Mozilla_suite_Events:
 	def Read_help_file(self, _object, _attributes={}, **_arguments):
 		"""Read help file: Reads in the help file (file should be in the help file format)
 		Required argument: undocumented, typecode 'alis'
-		Keyword argument with_index: Index to the help file. Defaults to  •DEFAULTÕ)
+		Keyword argument with_index: Index to the help file. Defaults to  \xd4DEFAULT\xd5)
 		Keyword argument search_text: Optional text to search for
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
@@ -88,7 +88,7 @@ class Mozilla_suite_Events:
 	def Get_workingURL(self, _no_object=None, _attributes={}, **_arguments):
 		"""Get workingURL: Get the path to the running application in URL format.  This will allow a script to construct a relative URL
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: Will return text of the from –FILE://foo/applicationname”
+		Returns: Will return text of the from \xd2FILE://foo/applicationname\xd3
 		"""
 		_code = 'MOSS'
 		_subcode = 'wurl'
@@ -127,7 +127,7 @@ class Mozilla_suite_Events:
 	def Get_Import_Data(self, _no_object=None, _attributes={}, **_arguments):
 		"""Get Import Data: Returns a structure containing information that is of use to an external module in importing data from an external mail application into Communicator.
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: vRefNum and dirID of profile folder (2+4 bytes), vRefNum and DirID of the local mail folder (2+4 bytes), window type of front window (0 if none, •BrwzÕ browser, •AddrÕ addressbook, •MesgÕ messenger, etc., 4 bytes)
+		Returns: vRefNum and dirID of profile folder (2+4 bytes), vRefNum and DirID of the local mail folder (2+4 bytes), window type of front window (0 if none, \xd4Brwz\xd5 browser, \xd4Addr\xd5 addressbook, \xd4Mesg\xd5 messenger, etc., 4 bytes)
 		"""
 		_code = 'MOSS'
 		_subcode = 'Impt'
@@ -147,7 +147,7 @@ class Mozilla_suite_Events:
 	def Get_Profile_Name(self, _no_object=None, _attributes={}, **_arguments):
 		"""Get Profile Name: Get the current User Profile
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: Name of the current profile, like –Joe Bloggs”. This is the name of the profile folder in the Netscape Users folder.
+		Returns: Name of the current profile, like \xd2Joe Bloggs\xd3. This is the name of the profile folder in the Netscape Users folder.
 		"""
 		_code = 'MOSS'
 		_subcode = 'upro'

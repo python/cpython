@@ -1,7 +1,7 @@
 """Suite Required Suite: Events that every application should support
 Level 1, version 1
 
-Generated from Moes:Applications (Mac OS 9):Internet Explorer 5:Internet Explorer
+Generated from /Volumes/Sap/Applications (Mac OS 9)/Internet Explorer 5/Internet Explorer
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -52,7 +52,7 @@ class Required_Suite_Events(Required_Suite_Events):
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def _print(self, _object, _attributes={}, **_arguments):
+	def print_(self, _object, _attributes={}, **_arguments):
 		"""print: Print documents
 		Required argument: undocumented, typecode 'alis'
 		Keyword argument _attributes: AppleEvent attribute dictionary

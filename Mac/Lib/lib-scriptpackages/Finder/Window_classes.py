@@ -1,7 +1,7 @@
 """Suite Window classes: Classes representing windows
 Level 1, version 1
 
-Generated from Moes:Systeemmap:Finder
+Generated from /Volumes/Sap/System Folder/Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -164,7 +164,7 @@ class uses_relative_dates(aetools.NProperty):
 container_windows = container_window
 
 class information_window(aetools.ComponentItem):
-	"""information window - An information window (opened by –Get Info”) """
+	"""information window - An information window (opened by \xd2Get Info\xd3) """
 	want = 'iwnd'
 class current_panel(aetools.NProperty):
 	"""current panel - the current panel in the information window """
@@ -219,11 +219,11 @@ class warns_before_emptying(aetools.NProperty):
 	which = 'warn'
 	want = 'bool'
 class product_version(aetools.NProperty):
-	"""product version - the version of the product (visible at the top of the –Get Info” window) """
+	"""product version - the version of the product (visible at the top of the \xd2Get Info\xd3 window) """
 	which = 'ver2'
 	want = 'itxt'
 class version(aetools.NProperty):
-	"""version - the version of the file (visible at the bottom of the –Get Info” window) """
+	"""version - the version of the file (visible at the bottom of the \xd2Get Info\xd3 window) """
 	which = 'vers'
 	want = 'itxt'
 
@@ -246,11 +246,12 @@ class clipping_window(aetools.ComponentItem):
 clipping_windows = clipping_window
 
 class content_space(aetools.ComponentItem):
-	"""content space - All windows, including the desktop window (–Window” does not include the desktop window) """
+	"""content space - All windows, including the desktop window (\xd2Window\xd3 does not include the desktop window) """
 	want = 'dwnd'
 
 content_spaces = content_space
-window._propdict = {
+window._superclassnames = []
+window._privpropdict = {
 	'position' : position,
 	'bounds' : bounds,
 	'titled' : titled,
@@ -268,9 +269,10 @@ window._propdict = {
 	'pulled_open' : pulled_open,
 	'collapsed' : collapsed,
 }
-window._elemdict = {
+window._privelemdict = {
 }
-container_window._propdict = {
+container_window._superclassnames = ['window']
+container_window._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'container' : container,
 	'item' : item,
@@ -290,9 +292,10 @@ container_window._propdict = {
 	'shows_version' : shows_version,
 	'uses_relative_dates' : uses_relative_dates,
 }
-container_window._elemdict = {
+container_window._privelemdict = {
 }
-information_window._propdict = {
+information_window._superclassnames = ['window']
+information_window._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'item' : item,
 	'current_panel' : current_panel,
@@ -311,28 +314,32 @@ information_window._propdict = {
 	'product_version' : product_version,
 	'version' : version,
 }
-information_window._elemdict = {
+information_window._privelemdict = {
 }
-view_options_window._propdict = {
+view_options_window._superclassnames = ['window']
+view_options_window._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'item' : item,
 }
-view_options_window._elemdict = {
+view_options_window._privelemdict = {
 }
-preferences_window._propdict = {
+preferences_window._superclassnames = ['window']
+preferences_window._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'current_panel' : current_panel,
 }
-preferences_window._elemdict = {
+preferences_window._privelemdict = {
 }
-clipping_window._propdict = {
+clipping_window._superclassnames = ['window']
+clipping_window._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 }
-clipping_window._elemdict = {
+clipping_window._privelemdict = {
 }
-content_space._propdict = {
+content_space._superclassnames = []
+content_space._privpropdict = {
 }
-content_space._elemdict = {
+content_space._privelemdict = {
 }
 
 #

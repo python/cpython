@@ -1,5 +1,5 @@
 """
-Package generated from Moes:Applications (Mac OS 9):Netscape Communicatoré Folder:Netscape Communicatoré
+Package generated from /Volumes/Sap/Applications (Mac OS 9)/Netscape Communicator‚Ñ¢ Folder/Netscape Communicator‚Ñ¢
 Resource aete resid 0 
 """
 import aetools
@@ -42,6 +42,49 @@ from WorldWideWeb_suite import *
 from Mozilla_suite import *
 from PowerPlant import *
 from Text import *
+def getbaseclasses(v):
+	if hasattr(v, '_superclassnames') and not hasattr(v, '_propdict'):
+		v._propdict = {}
+		v._elemdict = {}
+		for superclass in v._superclassnames:
+			v._propdict.update(getattr(eval(superclass), '_privpropdict', {}))
+			v._elemdict.update(getattr(eval(superclass), '_privelemdict', {}))
+		v._propdict.update(v._privpropdict)
+		v._elemdict.update(v._privelemdict)
+
+import StdSuites
+
+#
+# Set property and element dictionaries now that all classes have been defined
+#
+getbaseclasses(window)
+getbaseclasses(application)
+getbaseclasses(text)
+getbaseclasses(styleset)
+getbaseclasses(StdSuites.Text_Suite.paragraph)
+getbaseclasses(StdSuites.Text_Suite.character)
+getbaseclasses(StdSuites.Text_Suite.text_style_info)
+getbaseclasses(StdSuites.Text_Suite.word)
+getbaseclasses(StdSuites.Text_Suite.text_flow)
+getbaseclasses(StdSuites.Text_Suite.line)
+getbaseclasses(StdSuites.Text_Suite.text)
+
+#
+# Indices of types declared in this module
+#
+_classdeclarations = {
+	'cwin' : window,
+	'capp' : application,
+	'ctxt' : text,
+	'stys' : styleset,
+	'cpar' : StdSuites.Text_Suite.paragraph,
+	'cha ' : StdSuites.Text_Suite.character,
+	'tsty' : StdSuites.Text_Suite.text_style_info,
+	'cwor' : StdSuites.Text_Suite.word,
+	'cflo' : StdSuites.Text_Suite.text_flow,
+	'clin' : StdSuites.Text_Suite.line,
+	'ctxt' : StdSuites.Text_Suite.text,
+}
 
 
 class Netscape(Required_suite_Events,
@@ -53,4 +96,6 @@ class Netscape(Required_suite_Events,
 		Text_Events,
 		aetools.TalkTo):
 	_signature = 'MOSS'
+
+	_moduleName = 'Netscape'
 

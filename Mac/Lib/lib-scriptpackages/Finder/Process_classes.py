@@ -1,7 +1,7 @@
 """Suite Process classes: Classes representing processes that are running
 Level 1, version 1
 
-Generated from Moes:Systeemmap:Finder
+Generated from /Volumes/Sap/System Folder/Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -88,7 +88,8 @@ class desk_accessory_file(aetools.NProperty):
 	want = 'obj '
 
 desk_accessory_processes = desk_accessory_process
-process._propdict = {
+process._superclassnames = []
+process._privpropdict = {
 	'name' : name,
 	'visible' : visible,
 	'frontmost' : frontmost,
@@ -101,19 +102,21 @@ process._propdict = {
 	'total_partition_size' : total_partition_size,
 	'partition_space_used' : partition_space_used,
 }
-process._elemdict = {
+process._privelemdict = {
 }
-application_process._propdict = {
+application_process._superclassnames = ['process']
+application_process._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'application_file' : application_file,
 }
-application_process._elemdict = {
+application_process._privelemdict = {
 }
-desk_accessory_process._propdict = {
+desk_accessory_process._superclassnames = ['process']
+desk_accessory_process._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'desk_accessory_file' : desk_accessory_file,
 }
-desk_accessory_process._elemdict = {
+desk_accessory_process._privelemdict = {
 }
 
 #

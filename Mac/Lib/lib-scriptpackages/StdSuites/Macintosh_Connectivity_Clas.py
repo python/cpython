@@ -1,7 +1,7 @@
 """Suite Macintosh Connectivity Classes: Classes relating to Apple Macintosh personal computer connectivity
 Level 1, version 1
 
-Generated from Moes:Systeemmap:Extensies:AppleScript
+Generated from /Volumes/Sap/System Folder/Extensions/AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -158,87 +158,99 @@ class name(aetools.NProperty):
 	want = 'TEXT'
 
 USB_Addresses = USB_address
-device_specification._propdict = {
+device_specification._superclassnames = []
+device_specification._privpropdict = {
 	'properties' : properties,
 	'device_type' : device_type,
 	'device_address' : device_address,
 }
-device_specification._elemdict = {
+device_specification._privelemdict = {
 }
-address_specification._propdict = {
+address_specification._superclassnames = []
+address_specification._privpropdict = {
 	'properties' : properties,
 	'conduit' : conduit,
 	'protocol' : protocol,
 }
-address_specification._elemdict = {
+address_specification._privelemdict = {
 }
-ADB_address._propdict = {
+ADB_address._superclassnames = ['address_specification']
+ADB_address._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'ID' : ID,
 }
-ADB_address._elemdict = {
+ADB_address._privelemdict = {
 }
-AppleTalk_address._propdict = {
+AppleTalk_address._superclassnames = ['address_specification']
+AppleTalk_address._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'AppleTalk_machine' : AppleTalk_machine,
 	'AppleTalk_zone' : AppleTalk_zone,
 	'AppleTalk_type' : AppleTalk_type,
 }
-AppleTalk_address._elemdict = {
+AppleTalk_address._privelemdict = {
 }
-bus_slot._propdict = {
+bus_slot._superclassnames = ['address_specification']
+bus_slot._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'ID' : ID,
 }
-bus_slot._elemdict = {
+bus_slot._privelemdict = {
 }
-Ethernet_address._propdict = {
+Ethernet_address._superclassnames = ['address_specification']
+Ethernet_address._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'ID' : ID,
 }
-Ethernet_address._elemdict = {
+Ethernet_address._privelemdict = {
 }
-FireWire_address._propdict = {
+FireWire_address._superclassnames = ['address_specification']
+FireWire_address._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'ID' : ID,
 }
-FireWire_address._elemdict = {
+FireWire_address._privelemdict = {
 }
-IP_address._propdict = {
+IP_address._superclassnames = ['address_specification']
+IP_address._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'ID' : ID,
 	'DNS_form' : DNS_form,
 	'port' : port,
 }
-IP_address._elemdict = {
+IP_address._privelemdict = {
 }
-LocalTalk_address._propdict = {
+LocalTalk_address._superclassnames = ['address_specification']
+LocalTalk_address._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'network' : network,
 	'node' : node,
 	'socket' : socket,
 }
-LocalTalk_address._elemdict = {
+LocalTalk_address._privelemdict = {
 }
-SCSI_address._propdict = {
+SCSI_address._superclassnames = ['address_specification']
+SCSI_address._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'SCSI_bus' : SCSI_bus,
 	'ID' : ID,
 	'LUN' : LUN,
 }
-SCSI_address._elemdict = {
+SCSI_address._privelemdict = {
 }
-Token_Ring_address._propdict = {
+Token_Ring_address._superclassnames = ['address_specification']
+Token_Ring_address._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'ID' : ID,
 }
-Token_Ring_address._elemdict = {
+Token_Ring_address._privelemdict = {
 }
-USB_address._propdict = {
+USB_address._superclassnames = ['address_specification']
+USB_address._privpropdict = {
 	'_3c_inheritance_3e_' : _3c_inheritance_3e_,
 	'name' : name,
 }
-USB_address._elemdict = {
+USB_address._privelemdict = {
 }
 _Enum_edvt = {
 	'hard_disk_drive' : 'ehd ',	# 

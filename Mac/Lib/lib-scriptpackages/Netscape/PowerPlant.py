@@ -1,7 +1,7 @@
 """Suite PowerPlant: 
 Level 0, version 0
 
-Generated from Moes:Applications (Mac OS 9):Netscape Communicatoré Folder:Netscape Communicatoré
+Generated from /Volumes/Sap/Applications (Mac OS 9)/Netscape Communicator\xe2\x84\xa2 Folder/Netscape Communicator\xe2\x84\xa2
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -42,7 +42,7 @@ class PowerPlant_Events:
 	}
 
 	def SwitchTellTarget(self, _no_object=None, _attributes={}, **_arguments):
-		"""SwitchTellTarget: Makes an object the ñfocusî of AppleEvents
+		"""SwitchTellTarget: Makes an object the \xd2focus\xd3 of AppleEvents
 		Keyword argument to: reference to new focus of AppleEvents
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
