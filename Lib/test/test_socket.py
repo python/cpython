@@ -260,11 +260,23 @@ class GeneralModuleTests(unittest.TestCase):
     def testGetServByName(self):
         """Testing getservbyname()."""
         if hasattr(socket, 'getservbyname'):
-            socket.getservbyname('telnet', 'tcp')
-            try:
-                socket.getservbyname('telnet', 'udp')
-            except socket.error:
-                pass
+            # try a few protocols - not everyone has telnet enabled
+            found = 0
+            for proto in ("telnet", "ssh", "www", "ftp"):
+                try:
+                    socket.getservbyname(proto, 'tcp')
+                    found = 1
+                    break
+                except socket.error:
+                    pass
+                try:
+                    socket.getservbyname(proto, 'udp')
+                    found = 1
+                    break
+                except socket.error:
+                    pass
+                if not found:
+                    raise socket.error
 
     def testDefaultTimeout(self):
         """Testing default timeout."""
