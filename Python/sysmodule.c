@@ -196,10 +196,14 @@ static char setdefaultencoding_doc[] =
 \n\
 Set the current default string encoding used by the Unicode implementation.";
 
+extern int _PyTrace_Init(void);
+
 static PyObject *
 sys_settrace(PyObject *self, PyObject *args)
 {
 	PyThreadState *tstate = PyThreadState_Get();
+	if (_PyTrace_Init() == -1)
+		return NULL;
 	if (args == Py_None)
 		args = NULL;
 	else
@@ -220,6 +224,8 @@ static PyObject *
 sys_setprofile(PyObject *self, PyObject *args)
 {
 	PyThreadState *tstate = PyThreadState_Get();
+	if (_PyTrace_Init() == -1)
+		return NULL;
 	if (args == Py_None)
 		args = NULL;
 	else
