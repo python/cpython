@@ -221,9 +221,13 @@ class Parser:
                         # msgobj in this case is the "message/rfc822" container
                         msgobj = self.parsestr(parthdrs, headersonly=1)
                     # while submsgobj is the message itself
-                    submsgobj = self.parsestr(part)
-                    msgobj.attach(submsgobj)
                     msgobj.set_default_type('message/rfc822')
+                    maintype = msgobj.get_content_maintype()
+                    if maintype in ('message', 'multipart'):
+                        submsgobj = self.parsestr(part)
+                        msgobj.attach(submsgobj)
+                    else:
+                        msgobj.set_payload(part)
                 else:
                     msgobj = self.parsestr(part)
                 container.preamble = preamble
