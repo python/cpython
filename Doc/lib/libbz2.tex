@@ -17,7 +17,7 @@ Here is a resume of the features offered by the bz2 module:
 
 \begin{itemize}
 \item \class{BZ2File} class implements a complete file interface, including
-      \method{readline()}, \method{readlines()}, \method{xreadlines()},
+      \method{readline()}, \method{readlines()},
       \method{writelines()}, \method{seek()}, etc;
 \item \class{BZ2File} class implements emulated \method{seek()} support;
 \item \class{BZ2File} class implements universal newline support;
@@ -47,14 +47,15 @@ it doesn't exist, and truncated otherwise. If \var{buffering} is given,
 the default is \code{0}. If
 \var{compresslevel} is given, must be a number between \code{1} and
 \code{9}; the default is \code{9}.
-Add a \code{'U'} to mode to open the file for input with universal newline
+Add a \character{U} to mode to open the file for input with universal newline
 support. Any line ending in the input file will be seen as a
-\character{\textbackslash n}
-in Python.  Also, a file so opened gains the attribute \member{newlines};
-the value for this attribute is one of \code{None} (no newline read yet),
-\code{'\textbackslash r'}, \code{'\textbackslash n'},
-\code{'\textbackslash r\textbackslash n'} or a tuple containing all the
-newline types seen. Universal newlines are available only when reading.
+\character{\e n} in Python.  Also, a file so opened gains the
+attribute \member{newlines}; the value for this attribute is one of
+\code{None} (no newline read yet), \code{'\e r'}, \code{'\e n'},
+\code{'\e r\e n'} or a tuple containing all the newline types
+seen. Universal newlines are available only when reading.
+Instances support iteration in the same way as normal \class{file}
+instances.
 \end{classdesc}
 
 \begin{methoddesc}[BZ2File]{close}{}
@@ -82,13 +83,11 @@ is an approximate bound on the total number of bytes in the lines returned.
 
 \begin{methoddesc}[BZ2File]{xreadlines}{}
 For backward compatibility. \class{BZ2File} objects now include the
-performance optimizations previously implemented in the \module{xreadlines}
-module.
-\end{methoddesc}
-
-\begin{methoddesc}[BZ2File]{\_\_iter\_\_}{}
-Iterate through the file lines. Iteration optimization is implemented
-using the same readahead algorithm available in \class{file} objects.
+performance optimizations previously implemented in the
+\refmodule{xreadlines} module.
+\deprecated{2.3}{This exists only for compatibility with the method by
+                 this name on \class{file} objects, which is
+                 deprecated.  Use \code{for line in file} instead.}
 \end{methoddesc}
 
 \begin{methoddesc}[BZ2File]{seek}{offset\optional{, whence}}
