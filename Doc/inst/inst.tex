@@ -177,9 +177,9 @@ python setup.py install
 \end{verbatim}
 
 On Windows, you'd probably unpack the archive before opening the command
-prompt.  If you downloaded the archive file to \file{C:\bslash{}Temp},
+prompt.  If you downloaded the archive file to \file{C:\textbackslash{}Temp},
 then it probably unpacked (depending on your software) into
-\file{C:\bslash{}Temp\bslash{}foo-1.0}; from the command prompt window,
+\file{C:\textbackslash{}Temp\textbackslash{}foo-1.0}; from the command prompt window,
 you would then run
 \begin{verbatim}
 cd c:\temp\foo-1.0
@@ -278,7 +278,7 @@ being installed is pure Python or contains extensions (``non-pure''):
           {(1)}
   \lineiv{Windows}
           {\filenq{\var{prefix}}}
-          {\filenq{C:\bslash{}Python}}
+          {\filenq{C:\textbackslash{}Python}}
           {(2)}
   \lineiv{Mac~OS (pure)}
           {\filenq{\var{prefix}:Lib}}
@@ -298,7 +298,7 @@ being installed is pure Python or contains extensions (``non-pure''):
   any Unix-like system), the default \filevar{prefix} and
   \filevar{exec-prefix} are \file{/usr/local}.
 \item[(2)] The default installation directory on Windows was
-  \file{C:\bslash{}Program Files\bslash{}Python} under Python 1.6a1,
+  \file{C:\textbackslash{}Program Files\textbackslash{}Python} under Python 1.6a1,
   1.5.2, and earlier.
 \end{description}
 
@@ -391,7 +391,7 @@ Installing a new module distribution is as simple as
 python setup.py install --home=<dir>
 \end{verbatim}
 where you can supply any directory you like for the \longprogramopt{home}
-option.  Lazy typists can just type a tilde (\code{\tilde}); the
+option.  Lazy typists can just type a tilde (\code{\textasciitilde}); the
 \command{install} command will expand this to your home directory:
 \begin{verbatim}
 python setup.py install --home=~
@@ -487,7 +487,7 @@ a base directory, e.g.
 \begin{verbatim}
 python setup.py install --prefix="\Temp\Python"
 \end{verbatim}
-to install modules to the \file{\bslash{}Temp} directory on the current
+to install modules to the \file{\textbackslash{}Temp} directory on the current
 drive.
 
 The installation base is defined by the \longprogramopt{prefix} option; the
@@ -495,8 +495,8 @@ The installation base is defined by the \longprogramopt{prefix} option; the
 installed as follows:
 \installscheme{prefix}{}
               {prefix}{}
-              {prefix}{\bslash{}Scripts}
-              {prefix}{\bslash{}Data}
+              {prefix}{\textbackslash{}Scripts}
+              {prefix}{\textbackslash{}Data}
 
 
 \subsection{Alternate installation: Mac~OS}
@@ -546,7 +546,7 @@ use the Unix ``prefix scheme'' and supply different \longprogramopt{prefix} and
 
 For example, say you're installing a module distribution to your home
 directory under Unix---but you want scripts to go in
-\file{\tilde/scripts} rather than \file{\tilde/bin}.  As you might
+\file{\textasciitilde/scripts} rather than \file{\textasciitilde/bin}.  As you might
 expect, you can override this directory with the
 \longprogramopt{install-scripts} option; in this case, it makes most sense to
 supply a relative path, which will be interpreted relative to the
