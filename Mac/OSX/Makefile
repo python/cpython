@@ -90,9 +90,20 @@ install: pythonforbundle
 		
 LIBDEST=$(INSTALLDIR)/Mac/Lib
 LIBSRC=$(PYTHONBUILDDIR)/Mac/Lib
-LIBSUBDIRS=Carbon lib-scriptpackages lib-scriptpackages/CodeWarrior lib-scriptpackages/Explorer \
-	lib-scriptpackages/Finder lib-scriptpackages/Netscape lib-scriptpackages/StdSuites \
-	mkcwproject mkcwproject/template mkcwproject/template-carbon mkcwproject/template-ppc
+LIBSUBDIRS= \
+	Carbon \
+	lib-scriptpackages \
+	lib-scriptpackages/_builtinSuites \
+	lib-scriptpackages/CodeWarrior \
+	lib-scriptpackages/Explorer \
+	lib-scriptpackages/Finder \
+	lib-scriptpackages/Netscape \
+	lib-scriptpackages/StdSuites \
+	lib-scriptpackages/Terminal \
+	mkcwproject \
+	mkcwproject/template \
+	mkcwproject/template-carbon \
+	mkcwproject/template-ppc
 TOOLSDEST=$(INSTALLDIR)/Mac/Tools
 TOOLSSRC=$(PYTHONBUILDDIR)/Mac/Tools
 TOOLSSUBDIRS=IDE
