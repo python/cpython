@@ -4395,7 +4395,7 @@ running \samp{python demo.py one two three} at the command line:
 
 \begin{verbatim}
 >>> import sys
->>> print sys.argv[]
+>>> print sys.argv
 ['demo.py', 'one', 'two', 'three']
 \end{verbatim}
 
@@ -4441,7 +4441,7 @@ optimized solutions:
 
 \section{Mathematics\label{mathematics}}
 
-The \ulink{\module{math}}{../lib/module-math.html} math module gives
+The \ulink{\module{math}}{../lib/module-math.html} module gives
 access to the underlying C library functions for floating point math:
 
 \begin{verbatim}
@@ -4559,9 +4559,9 @@ quickly demonstrates that the traditional approach is faster:
 \begin{verbatim}
 >>> from timeit import Timer
 >>> dir(Timer)
->>> Timer('t=a; a=b; b=t', 'a=1; b=1').timeit()
+>>> Timer('t=a; a=b; b=t', 'a=1; b=2').timeit()
 0.60864915603680925
->>> Timer('a,b = b,a', 'a=1; b=1').timeit()
+>>> Timer('a,b = b,a', 'a=1; b=2').timeit()
 0.8625194857439773
 \end{verbatim}
 
