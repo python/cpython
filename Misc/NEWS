@@ -13,7 +13,12 @@ Core and builtins
 -----------------
 
 - Removed PendingDeprecationWarning from apply().  apply() remains
-  deprecated, but the nuissance warning will not be issued.
+  deprecated, but the nuisance warning will not be issued.
+
+Library
+-------
+
+- A couple of bugs were squished in trace.py
 
 What's New in Python 2.3.3c1?
 =============================
