@@ -586,6 +586,10 @@ class FancyURLopener(URLopener):
         """Error 301 -- also relocated (permanently)."""
         return self.http_error_302(url, fp, errcode, errmsg, headers, data)
 
+    def http_error_303(self, url, fp, errcode, errmsg, headers, data=None):
+        """Error 303 -- also relocated (essentially identical to 302)."""
+        return self.http_error_302(url, fp, errcode, errmsg, headers, data)
+
     def http_error_401(self, url, fp, errcode, errmsg, headers, data=None):
         """Error 401 -- authentication required.
         See this URL for a description of the basic authentication scheme:

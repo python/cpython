@@ -11,8 +11,8 @@ option.  The OpenerDirector is a composite object that invokes the
 Handlers needed to open the requested URL.  For example, the
 HTTPHandler performs HTTP GET and POST requests and deals with
 non-error returns.  The HTTPRedirectHandler automatically deals with
-HTTP 301 & 302 redirect errors, and the HTTPDigestAuthHandler deals
-with digest authentication.
+HTTP 301, 302, 303 and 307 redirect errors, and the HTTPDigestAuthHandler
+deals with digest authentication.
 
 urlopen(url, data=None) -- basic usage is that same as original
 urllib.  pass the url and optionally data to post to an HTTP URL, and
@@ -206,6 +206,12 @@ class Request:
                 getattr(self, 'get_' + name)()
                 return getattr(self, attr)
         raise AttributeError, attr
+
+    def get_method(self):
+        if self.has_data():
+            return "POST"
+        else:
+            return "GET"
 
     def add_data(self, data):
         self.data = data
@@ -402,6 +408,26 @@ class HTTPDefaultErrorHandler(BaseHandler):
         raise HTTPError(req.get_full_url(), code, msg, hdrs, fp)
 
 class HTTPRedirectHandler(BaseHandler):
+    def redirect_request(self, req, fp, code, msg, headers):
+        """Return a Request or None in response to a redirect.
+
+        This is called by the http_error_30x methods when a redirection
+        response is received.  If a redirection should take place, return a new
+        Request to allow http_error_30x to perform the redirect.  Otherwise,
+        raise HTTPError if no-one else should try to handle this url.  Return
+        None if you can't but another Handler might.
+
+        """
+        if (code in (301, 302, 303, 307) and req.method() in ("GET", "HEAD") or
+            code in (302, 303) and req.method() == "POST"):
+            # Strictly (according to RFC 2616), 302 in response to a POST
+            # MUST NOT cause a redirection without confirmation from the user
+           # (of urllib2, in this case).  In practice, essentially all clients
+            # do redirect in this case, so we do the same.
+            return Request(newurl, headers=req.headers)
+        else:
+            raise HTTPError(req.get_full_url(), code, msg, hdrs, fp)
+
     # Implementation note: To avoid the server sending us into an
     # infinite loop, the request object needs to track what URLs we
     # have already seen.  Do this by adding a handler-specific
@@ -418,7 +444,11 @@ class HTTPRedirectHandler(BaseHandler):
         # XXX Probably want to forget about the state of the current
         # request, although that might interact poorly with other
         # handlers that also use handler-specific request attributes
-        new = Request(newurl, req.get_data(), req.headers)
+        new = self.redirect_request(req, fp, code, msg, headers)
+        if new is None:
+            return
+
+        # loop detection
         new.error_302_dict = {}
         if hasattr(req, 'error_302_dict'):
             if len(req.error_302_dict)>10 or \
@@ -435,7 +465,7 @@ class HTTPRedirectHandler(BaseHandler):
 
         return self.parent.open(new)
 
-    http_error_301 = http_error_302
+    http_error_301 = http_error_303 = http_error_307 = http_error_302
 
     inf_msg = "The HTTP server returned a redirect error that would" \
               "lead to an infinite loop.\n" \
