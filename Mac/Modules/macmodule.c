@@ -170,6 +170,8 @@ mac_dup(self, args)
 	return newintobject((long)fd);
 }
 
+#endif /* MPW */
+
 static object *
 mac_fdopen(self, args)
 	object *self;
@@ -188,8 +190,6 @@ mac_fdopen(self, args)
 		return mac_error();
 	return newopenfileobject(fp, "(fdopen)", mode, fclose);
 }
-
-#endif /* MPW */
 
 static object *
 mac_getbootvol(self, args)
@@ -369,7 +369,7 @@ mac_stat(self, args)
 		return mac_error();
 	return mkvalue("(llllllllll)",
 		    (long)st.st_mode,
-		    (long)st.st_ito, /* XXX st_ino -- typo in THINK C <stat.h>? */
+		    (long)st.st_ino,
 		    (long)st.st_dev,
 		    (long)st.st_nlink,
 		    (long)st.st_uid,
@@ -427,8 +427,8 @@ static struct methodlist mac_methods[] = {
 	{"close",	mac_close},
 #ifdef MPW
 	{"dup",		mac_dup},
-	{"fdopen",	mac_fdopen},
 #endif
+	{"fdopen",	mac_fdopen},
 	{"getbootvol",	mac_getbootvol}, /* non-standard */
 	{"getcwd",	mac_getcwd},
 	{"listdir",	mac_listdir},

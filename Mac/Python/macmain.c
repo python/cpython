@@ -28,9 +28,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "config.h"
 #endif
 
-/* Comment this out if you're not interested in STDWIN */
-#define USE_STDWIN
-
 #ifdef THINK_C
 #define CONSOLE_IO
 #endif
