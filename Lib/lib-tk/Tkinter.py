@@ -4,7 +4,7 @@ __version__ = "$Revision$"
 
 import sys
 if sys.platform == "win32":
-    import FixTk # Attempt to configure Tcl/Tk without requiring PATH
+	import FixTk # Attempt to configure Tcl/Tk without requiring PATH
 import _tkinter # If this fails your Python may not be configured for Tk
 tkinter = _tkinter # b/w compat for export
 TclError = _tkinter.TclError
@@ -1827,7 +1827,11 @@ class Image:
 	def __str__(self): return self.name
 	def __del__(self):
 		if self.name:
-			self.tk.call('image', 'delete', self.name)
+			try:
+				self.tk.call('image', 'delete', self.name)
+			except TclError:
+				# May happen if the root was destroyed
+				pass
 	def __setitem__(self, key, value):
 		self.tk.call(self.name, 'configure', '-'+key, value)
 	def __getitem__(self, key):
