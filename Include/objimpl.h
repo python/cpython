@@ -219,70 +219,86 @@ extern DL_IMPORT(void) _PyObject_Del(PyObject *);
  * ==========================
  */
 
-/* To make a new object participate in garbage collection use
-   PyObject_{New, VarNew, Del} to manage the memory.  Set the type flag
-   Py_TPFLAGS_GC and define the type method tp_traverse.  You should also
-   add the method tp_clear if your object is mutable.  Include
-   PyGC_HEAD_SIZE in the calculation of tp_basicsize.  Call
-   PyObject_GC_Init after the pointers followed by tp_traverse become
-   valid (usually just before returning the object from the allocation
-   method.  Call PyObject_GC_Fini before those pointers become invalid
-   (usually at the top of the deallocation method).  */
+/* Test if a type has a GC head */
+#define PyType_IS_GC(t) PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
 
-#ifndef WITH_CYCLE_GC
+/* Test if an object has a GC head */
+#define PyObject_IS_GC(o) PyType_IS_GC((o)->ob_type)
 
+extern DL_IMPORT(PyObject *) _PyObject_GC_Malloc(PyTypeObject *, int);
+extern DL_IMPORT(PyVarObject *) _PyObject_GC_Resize(PyVarObject *, int);
+
+#define PyObject_GC_Resize(type, op, n) \
+		( (type *) _PyObject_GC_Resize((PyVarObject *)(op), (n)) )
+
+#ifdef WITH_CYCLE_GC
+
+extern DL_IMPORT(PyObject *) _PyObject_GC_New(PyTypeObject *);
+extern DL_IMPORT(PyVarObject *) _PyObject_GC_NewVar(PyTypeObject *, int);
+extern DL_IMPORT(void) _PyObject_GC_Del(PyObject *);
+extern DL_IMPORT(void) _PyObject_GC_Track(PyObject *);
+extern DL_IMPORT(void) _PyObject_GC_UnTrack(PyObject *);
+
+/* GC information is stored BEFORE the object structure */
+typedef struct _gc_head {
+	struct _gc_head *gc_next; /* not NULL if object is tracked */
+	struct _gc_head *gc_prev;
+	int gc_refs;
+} PyGC_Head;
+
+extern PyGC_Head _PyGC_generation0;
+
+/* Tell the GC to track this object.  NB: While the object is tracked the
+ * collector it must be safe to call the ob_traverse method. */
+#define _PyObject_GC_TRACK(o) do { \
+	PyGC_Head *g = (PyGC_Head *)(o)-1; \
+	if (g->gc_next != NULL) \
+		Py_FatalError("GC object already in linked list"); \
+	g->gc_next = &_PyGC_generation0; \
+	g->gc_prev = _PyGC_generation0.gc_prev; \
+	g->gc_prev->gc_next = g; \
+	_PyGC_generation0.gc_prev = g; \
+    } while (0);
+
+/* Tell the GC to stop tracking this object. */
+#define _PyObject_GC_UNTRACK(o) do { \
+	PyGC_Head *g = (PyGC_Head *)(o)-1; \
+	g->gc_prev->gc_next = g->gc_next; \
+	g->gc_next->gc_prev = g->gc_prev; \
+	g->gc_next = NULL; \
+    } while (0);
+
+#define PyObject_GC_Track(op) _PyObject_GC_Track((PyObject *)op)
+#define PyObject_GC_UnTrack(op) _PyObject_GC_UnTrack((PyObject *)op)
+	
+
+#define PyObject_GC_New(type, typeobj) \
+		( (type *) _PyObject_GC_New(typeobj) )
+#define PyObject_GC_NewVar(type, typeobj, n) \
+		( (type *) _PyObject_GC_NewVar((typeobj), (n)) )
+#define PyObject_GC_Del(op) _PyObject_GC_Del((PyObject *)(op))
+
+#else /* !WITH_CYCLE_GC */
+
+#define PyObject_GC_New PyObject_New
+#define PyObject_GC_NewVar PyObject_NewVar
+#define PyObject_GC_Del	 PyObject_Del
+#define PyObject_GC_TRACK(op)
+#define PyObject_GC_UNTRACK(op)
+#define PyObject_GC_Track(op)
+#define PyObject_GC_UnTrack(op)
+
+#endif
+
+/* This is here for the sake of backwards compatibility.  Extensions that
+ * use the old GC API will still compile but the objects will not be
+ * tracked by the GC. */
 #define PyGC_HEAD_SIZE 0
 #define PyObject_GC_Init(op)
 #define PyObject_GC_Fini(op)
 #define PyObject_AS_GC(op) (op)
 #define PyObject_FROM_GC(op) (op)
-#define PyType_IS_GC(t) 0
-#define PyObject_IS_GC(o) 0
-#define PyType_BASICSIZE(t) ((t)->tp_basicsize)
-#define PyType_SET_BASICSIZE(t, s) ((t)->tp_basicsize = (s))
 
-#else
-
-/* Add the object into the container set */
-extern DL_IMPORT(void) _PyGC_Insert(PyObject *);
-
-/* Remove the object from the container set */
-extern DL_IMPORT(void) _PyGC_Remove(PyObject *);
-
-#define PyObject_GC_Init(op) _PyGC_Insert((PyObject *)op)
-#define PyObject_GC_Fini(op) _PyGC_Remove((PyObject *)op)
-
-/* Structure *prefixed* to container objects participating in GC */ 
-typedef struct _gc_head {
-	struct _gc_head *gc_next;
-	struct _gc_head *gc_prev;
-	int gc_refs;
-} PyGC_Head;
-
-#define PyGC_HEAD_SIZE sizeof(PyGC_Head)
-
-/* Test if a type has a GC head */
-#define PyType_IS_GC(t) PyType_HasFeature((t), Py_TPFLAGS_GC)
-
-/* Test if an object has a GC head */
-#define PyObject_IS_GC(o) PyType_IS_GC((o)->ob_type)
-
-/* Get an object's GC head */
-#define PyObject_AS_GC(o) ((PyGC_Head *)(o)-1)
-
-/* Get the object given the PyGC_Head */
-#define PyObject_FROM_GC(g) ((PyObject *)(((PyGC_Head *)g)+1))
-
-/* Calculate tp_basicsize excluding PyGC_HEAD_SIZE if applicable */
-#define PyType_BASICSIZE(t) (!PyType_IS_GC(t) ? (t)->tp_basicsize : \
-			     (t)->tp_basicsize - PyGC_HEAD_SIZE)
-#define PyType_SET_BASICSIZE(t, s) (!PyType_IS_GC(t) ? \
-			((t)->tp_basicsize = (s)) : \
-			((t)->tp_basicsize  = (s) + PyGC_HEAD_SIZE))
-
-extern DL_IMPORT(void) _PyGC_Dump(PyGC_Head *);
-
-#endif /* WITH_CYCLE_GC */
 
 /* Test if a type supports weak references */
 #define PyType_SUPPORTS_WEAKREFS(t) \
