@@ -204,11 +204,11 @@ PyFrame_New(tstate, code, globals, locals)
 	if (builtins == NULL) {
 		/* No builtins!  Make up a minimal one. */
 		builtins = PyDict_New();
-		if (builtins == NULL)
+		if (builtins == NULL || /* Give them 'None', at least. */
+		    PyDict_SetItemString(builtins, "None", Py_None) < 0) {
+			Py_DECREF(f);
 			return NULL;
-		/* Give them 'None', at least. */
-		if (PyDict_SetItemString(builtins, "None", Py_None) < 0)
-			return NULL;
+		}
 	}
 	else
 		Py_XINCREF(builtins);
