@@ -4,6 +4,9 @@ This window provides the basic decorations, primarily including the menubar.
 It is used to bring up other windows.
 """
 
+import sys
+import os
+import string
 from Tkinter import *
 import tkMessageBox
 
@@ -19,6 +22,7 @@ class PyncheWidget:
         self.__textwin = None
         self.__listwin = None
         self.__detailswin = None
+        self.__helpwin = None
         modal = self.__modal = not not master
         # If a master was given, we are running as a modal dialog servant to
         # some other application.  We rearrange our UI in this case (there's
@@ -72,6 +76,9 @@ class PyncheWidget:
         helpmenu = Menu(menubar, name='help', tearoff=0)
 	helpmenu.add_command(label='About Pynche...',
                              command=self.__popup_about,
+                             underline=0)
+        helpmenu.add_command(label='Help...',
+                             command=self.__popup_usage,
                              underline=0)
         #
         # Tie them all together
@@ -153,6 +160,11 @@ For information contact
 author: Barry A. Warsaw
 email : bwarsaw@python.org''' % __version__)
 
+    def __popup_usage(self, event=None):
+        if not self.__helpwin:
+            self.__helpwin = Helpwin(self.__root, self.__quit)
+        self.__helpwin.deiconify()
+
     def __popup_text(self, event=None):
         if not self.__textwin:
             from TextViewer import TextViewer
@@ -175,6 +187,54 @@ email : bwarsaw@python.org''' % __version__)
         self.__detailswin.deiconify()
 
     def withdraw(self):
+        self.__root.withdraw()
+
+    def deiconify(self):
+        self.__root.deiconify()
+
+
+
+class Helpwin:
+    def __init__(self, master, quitfunc):
+        from Main import __version__, docstring
+        self.__root = root = Toplevel(master, class_='Pynche')
+        root.protocol('WM_DELETE_WINDOW', self.__withdraw)
+        root.title('Pynche Help Window')
+        root.iconname('Pynche Help Window')
+        root.bind('<Alt-q>', quitfunc)
+        root.bind('<Alt-Q>', quitfunc)
+        root.bind('<Alt-w>', self.__withdraw)
+        root.bind('<Alt-W>', self.__withdraw)
+
+        # more elaborate help is available in the README file
+        readmefile = os.path.join(sys.path[0], 'README')
+        try:
+            fp = None
+            try:
+                fp = open(readmefile)
+                contents = fp.read()
+                # wax the last page, it contains Emacs cruft
+                i = string.rfind(contents, '\f')
+                if i > 0:
+                    contents = string.rstrip(contents[:i])
+            finally:
+                if fp:
+                    fp.close()
+        except IOError:
+            sys.stderr.write("Couldn't open Pynche's README, "
+                             'using docstring instead.\n')
+            contents = docstring()
+
+        self.__text = text = Text(root, relief=SUNKEN,
+                                  width=80, height=24)
+        text.insert(0.0, contents)
+        scrollbar = Scrollbar(root)
+        scrollbar.pack(fill=Y, side=RIGHT)
+        text.pack(fill=BOTH, expand=YES)
+        text.configure(yscrollcommand=(scrollbar, 'set'))
+        scrollbar.configure(command=(text, 'yview'))
+
+    def __withdraw(self, event=None):
         self.__root.withdraw()
 
     def deiconify(self):
