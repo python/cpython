@@ -868,6 +868,7 @@ typedef struct {
 	PyObject_HEAD
 	PyObject *get;
 	PyObject *set;
+	PyObject *del;
 } getsetobject;
 
 static void
@@ -877,6 +878,7 @@ getset_dealloc(PyObject *self)
 
 	Py_XDECREF(gs->get);
 	Py_XDECREF(gs->set);
+	Py_XDECREF(gs->del);
 	self->ob_type->tp_free(self);
 }
 
@@ -900,16 +902,23 @@ static int
 getset_descr_set(PyObject *self, PyObject *obj, PyObject *value)
 {
 	getsetobject *gs = (getsetobject *)self;
-	PyObject *res;
+	PyObject *func, *res;
 
-	if (gs->set == NULL) {
-		PyErr_SetString(PyExc_AttributeError, "unsettable attribute");
+	if (value == NULL)
+		func = gs->del;
+	else
+		func = gs->set;
+	if (func == NULL) {
+		PyErr_SetString(PyExc_AttributeError,
+				value == NULL ?
+				"can't delete attribute" :
+				"can't set attribute");
 		return -1;
 	}
 	if (value == NULL)
-		res = PyObject_CallFunction(gs->set, "(O)", obj);
+		res = PyObject_CallFunction(func, "(O)", obj);
 	else
-		res = PyObject_CallFunction(gs->set, "(OO)", obj, value);
+		res = PyObject_CallFunction(func, "(OO)", obj, value);
 	if (res == NULL)
 		return -1;
 	Py_DECREF(res);
@@ -919,10 +928,10 @@ getset_descr_set(PyObject *self, PyObject *obj, PyObject *value)
 static int
 getset_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	PyObject *get = NULL, *set = NULL;
+	PyObject *get = NULL, *set = NULL, *del = NULL;
 	getsetobject *gs = (getsetobject *)self;
 
-	if (!PyArg_ParseTuple(args, "|OO:getset.__init__", &get, &set))
+	if (!PyArg_ParseTuple(args, "|OOO:getset.__init__", &get, &set, &del))
 		return -1;
 	if (get == Py_None)
 		get = NULL;
@@ -930,18 +939,21 @@ getset_init(PyObject *self, PyObject *args, PyObject *kwds)
 		set = NULL;
 	Py_XINCREF(get);
 	Py_XINCREF(set);
+	Py_XINCREF(del);
 	gs->get = get;
 	gs->set = set;
+	gs->del = del;
 	return 0;
 }
 
 static char getset_doc[] =
-"getset([getfunc[, setfunc]]) -> getset attribute\n"
+"getset([getfunc[, setfunc[, delfunc]]]) -> getset attribute\n"
 "Typical use to define a managed attribute x of C instances:\n"
 "class C(object):\n"
 "    def getx(self): return self.__x\n"
 "    def setx(self, value): self.__x = value\n"
-"    x = getset(getx, setx)";
+"    def delx(self): del self.__x\n"
+"    x = getset(getx, setx, delx)";
 
 PyTypeObject PyGetSet_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
