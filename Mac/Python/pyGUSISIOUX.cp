@@ -79,10 +79,12 @@ bool GUSISIOUXSocket::initialized = false;
 
 GUSISIOUXSocket::GUSISIOUXSocket(int fd) : fFd(fd) 
 {
-	if (!PyMac_GetDelayConsoleFlag() && !hasCustomConsole() && !initialized)
-		Initialize();
-	/* Tell the upper layers there's no unseen output */
-	PyMac_OutputSeen();
+	if (!hasCustomConsole()) {
+		if (!PyMac_GetDelayConsoleFlag() && !initialized)
+			Initialize();
+		/* Tell the upper layers there's no unseen output */
+		PyMac_OutputSeen();
+	}
 }
 
 void
