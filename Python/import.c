@@ -1069,7 +1069,7 @@ check_case(char *buf, int len, int namelen, char *name)
 }
 #endif
 
-#endif CHECK_IMPORT_CASE
+#endif /* CHECK_IMPORT_CASE */
 
 #ifdef HAVE_STAT
 /* Helper to look for __init__.py or __init__.py[co] in potential package */
