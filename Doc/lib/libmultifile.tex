@@ -132,29 +132,35 @@ True if the last end-of-file was for an end-of-message marker.
 
 
 \subsection{\class{MultiFile} Example \label{multifile-example}}
-
-% This is almost unreadable; should be re-written when someone gets time.
+\sectionauthor{Skip Montanaro}{skip@mojam.org}
 
 \begin{verbatim}
-fp = MultiFile(sys.stdin, 0)
-fp.push(outer_boundary)
-message1 = fp.readlines()
-# We should now be either at real EOF or stopped on a message
-# boundary. Re-enable the outer boundary.
-fp.next()
-# Read another message with the same delimiter
-message2 = fp.readlines()
-# Re-enable that delimiter again
-fp.next()
-# Now look for a message subpart with a different boundary
-fp.push(inner_boundary)
-sub_header = fp.readlines()
-# If no exception has been thrown, we're looking at the start of
-# the message subpart.  Reset and grab the subpart
-fp.next()
-sub_body = fp.readlines()
-# Got it.  Now pop the inner boundary to re-enable the outer one.
-fp.pop()
-# Read to next outer boundary
-message3 = fp.readlines()
+import mimetools
+import MultiFile
+import StringIO
+
+def extract_mime_part_matching(stream, mimetype):
+    """Return the first element in a multipart MIME message on stream
+    matching mimetype."""
+
+    msg = mimetools.Message(stream)
+    msgtype = msg.gettype()
+    params = msg.getplist()
+
+    data = StringIO.StringIO()
+    if msgtype[:10] == "multipart/":
+
+        file = multifile.MultiFile(stream)
+        file.push(msg.getparam("boundary"))
+        while file.next():
+            submsg = mimetools.Message(file)
+            try:
+                data = StringIO.StringIO()
+                mimetools.decode(file, data, submsg.getencoding())
+            except ValueError:
+                continue
+            if submsg.gettype() == mimetype:
+                break
+        file.pop()
+    return data.getvalue()
 \end{verbatim}
