@@ -638,7 +638,8 @@ class Tk(Misc, Wm):
 		if baseName is None:
 			import sys, os
 			baseName = os.path.basename(sys.argv[0])
-			if baseName[-3:] == '.py': baseName = baseName[:-3]
+			baseName, ext = os.path.splitext(baseName)
+			if ext not in ('.py', 'pyc'): baseName = baseName + ext
 		self.tk = tkinter.create(screenName, baseName, className)
 		try:
 			# Disable event scanning except for Command-Period
