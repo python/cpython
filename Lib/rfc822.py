@@ -125,7 +125,14 @@ class Message:
         self.status = ''
         headerseen = ""
         firstline = 1
+        startofline = unread = tell = None
+        if hasattr(self.fp, 'unread'):
+            unread = self.fp.unread
+        elif self.seekable:
+            tell = self.fp.tell
         while 1:
+            if tell:
+                startofline = tell()
             line = self.fp.readline()
             if not line:
                 self.status = 'EOF in headers'
@@ -160,10 +167,10 @@ class Message:
                 else:
                     self.status = 'Non-header line where header expected'
                 # Try to undo the read.
-                if hasattr(self.fp, 'unread'):
-                    self.fp.unread(line)
-                elif self.seekable:
-                    self.fp.seek(-len(line), 1)
+                if unread:
+                    unread(line)
+                elif tell:
+                    self.fp.seek(startofline)
                 else:
                     self.status = self.status + '; bad seek'
                 break
