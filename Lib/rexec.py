@@ -229,7 +229,7 @@ class RExec(ihooks._Verbose):
 	for name in exceptions:
 	    try:
 		delattr(dst, name)
-	    except KeyError:
+	    except AttributeError:
 		pass
 	return dst
 
@@ -356,7 +356,7 @@ class RExec(ihooks._Verbose):
 
 def test():
     import traceback
-    r = RExec(None, '-v' in sys.argv[1:])
+    r = RExec(verbose=('-v' in sys.argv[1:]))
     print "*** RESTRICTED *** Python", sys.version
     print sys.copyright
     while 1:
