@@ -53,36 +53,6 @@ from string import expandtabs, find, join, lower, split, strip, rfind, rstrip
 
 # --------------------------------------------------------- common routines
 
-def synopsis(filename, cache={}):
-    """Get the one-line summary out of a module file."""
-    mtime = os.stat(filename)[stat.ST_MTIME]
-    lastupdate, result = cache.get(filename, (0, None))
-    if lastupdate < mtime:
-        info = inspect.getmoduleinfo(filename)
-        file = open(filename)
-        if info and 'b' in info[2]: # binary modules have to be imported
-            try: module = imp.load_module(info[0], file, filename, info[1:])
-            except: return None
-            result = split(module.__doc__ or '', '\n')[0]
-        else: # text modules can be directly examined
-            line = file.readline()
-            while line[:1] == '#' or not strip(line):
-                line = file.readline()
-                if not line: break
-            line = strip(line)
-            if line[:4] == 'r"""': line = line[1:]
-            if line[:3] == '"""':
-                line = line[3:]
-                if line[-1:] == '\\': line = line[:-1]
-                while not strip(line):
-                    line = file.readline()
-                    if not line: break
-                result = strip(split(line, '"""')[0])
-            else: result = None
-        file.close()
-        cache[filename] = (mtime, result)
-    return result
-
 def pathdirs():
     """Convert sys.path into a list of absolute, existing, unique paths."""
     dirs = []
@@ -116,12 +86,11 @@ def classname(object, modname):
         name = object.__module__ + '.' + name
     return name
 
-def isconstant(object):
-    """Check if an object is of a type that probably means it's a constant."""
-    return type(object) in [
-        types.FloatType, types.IntType, types.ListType, types.LongType,
-        types.StringType, types.TupleType, types.TypeType,
-        hasattr(types, 'UnicodeType') and types.UnicodeType or 0]
+def isdata(object):
+    """Check if an object is of a type that probably means it's data."""
+    return not (inspect.ismodule(object) or inspect.isclass(object) or
+                inspect.isroutine(object) or inspect.isframe(object) or
+                inspect.istraceback(object) or inspect.iscode(object))
 
 def replace(text, *pairs):
     """Do a series of global replacements on a string."""
@@ -156,6 +125,46 @@ def allmethods(cl):
         methods[key] = getattr(cl, key)
     return methods
 
+# ----------------------------------------------------- module manipulation
+
+def ispackage(path):
+    """Guess whether a path refers to a package directory."""
+    if os.path.isdir(path):
+        for ext in ['.py', '.pyc', '.pyo']:
+            if os.path.isfile(os.path.join(path, '__init__' + ext)):
+                return 1
+
+def synopsis(filename, cache={}):
+    """Get the one-line summary out of a module file."""
+    mtime = os.stat(filename)[stat.ST_MTIME]
+    lastupdate, result = cache.get(filename, (0, None))
+    if lastupdate < mtime:
+        info = inspect.getmoduleinfo(filename)
+        file = open(filename)
+        if info and 'b' in info[2]: # binary modules have to be imported
+            try: module = imp.load_module('__temp__', file, filename, info[1:])
+            except: return None
+            result = split(module.__doc__ or '', '\n')[0]
+            del sys.modules['__temp__']
+        else: # text modules can be directly examined
+            line = file.readline()
+            while line[:1] == '#' or not strip(line):
+                line = file.readline()
+                if not line: break
+            line = strip(line)
+            if line[:4] == 'r"""': line = line[1:]
+            if line[:3] == '"""':
+                line = line[3:]
+                if line[-1:] == '\\': line = line[:-1]
+                while not strip(line):
+                    line = file.readline()
+                    if not line: break
+                result = strip(split(line, '"""')[0])
+            else: result = None
+        file.close()
+        cache[filename] = (mtime, result)
+    return result
+
 class ErrorDuringImport(Exception):
     """Errors that occurred while trying to import something to document it."""
     def __init__(self, filename, (exc, value, tb)):
@@ -189,12 +198,49 @@ def importfile(path):
     file.close()
     return module
 
-def ispackage(path):
-    """Guess whether a path refers to a package directory."""
-    if os.path.isdir(path):
-        for ext in ['.py', '.pyc', '.pyo']:
-            if os.path.isfile(os.path.join(path, '__init__' + ext)):
-                return 1
+def safeimport(path, forceload=0, cache={}):
+    """Import a module; handle errors; return None if the module isn't found.
+
+    If the module *is* found but an exception occurs, it's wrapped in an
+    ErrorDuringImport exception and reraised.  Unlike __import__, if a
+    package path is specified, the module at the end of the path is returned,
+    not the package at the beginning.  If the optional 'forceload' argument
+    is 1, we reload the module from disk (unless it's a dynamic extension)."""
+    if forceload and sys.modules.has_key(path):
+        # This is the only way to be sure.  Checking the mtime of the file
+        # isn't good enough (e.g. what if the module contains a class that
+        # inherits from another module that has changed?).
+        if path not in sys.builtin_module_names:
+            # Python never loads a dynamic extension a second time from the
+            # same path, even if the file is changed or missing.  Deleting
+            # the entry in sys.modules doesn't help for dynamic extensions,
+            # so we're not even going to try to keep them up to date.
+            info = inspect.getmoduleinfo(sys.modules[path].__file__)
+            if info[3] != imp.C_EXTENSION:
+                cache[path] = sys.modules[path] # prevent module from clearing
+                del sys.modules[path]
+    try:
+        module = __import__(path)
+    except:
+        # Did the error occur before or after the module was found?
+        (exc, value, tb) = info = sys.exc_info()
+        if sys.modules.has_key(path):
+            # An error occured while executing the imported module.
+            raise ErrorDuringImport(sys.modules[path].__file__, info)
+        elif exc is SyntaxError:
+            # A SyntaxError occurred before we could execute the module.
+            raise ErrorDuringImport(value.filename, info)
+        elif exc is ImportError and \
+             split(lower(str(value)))[:2] == ['no', 'module']:
+            # The module was not found.
+            return None
+        else:
+            # Some other error occurred during the importing process.
+            raise ErrorDuringImport(path, sys.exc_info())
+    for part in split(path, '.')[1:]:
+        try: module = getattr(module, part)
+        except AttributeError: return None
+    return module
 
 # ---------------------------------------------------- formatter base class
 
@@ -221,7 +267,8 @@ class HTMLRepr(Repr):
     """Class for safely making an HTML representation of a Python object."""
     def __init__(self):
         Repr.__init__(self)
-        self.maxlist = self.maxtuple = self.maxdict = 10
+        self.maxlist = self.maxtuple = 20
+        self.maxdict = 10
         self.maxstring = self.maxother = 100
 
     def escape(self, text):
@@ -344,12 +391,11 @@ TT { font-family: lucida console, lucida typewriter, courier }
 
     def classlink(self, object, modname):
         """Make a link for a class."""
-        name = classname(object, modname)
-        if sys.modules.has_key(object.__module__) and \
-            getattr(sys.modules[object.__module__], object.__name__) is object:
+        name, module = object.__name__, sys.modules.get(object.__module__)
+        if hasattr(module, name) and getattr(module, name) is object:
             return '<a href="%s.html#%s">%s</a>' % (
-                object.__module__, object.__name__, name)
-        return name
+                module.__name__, name, classname(object, modname))
+        return classname(object, modname)
 
     def modulelink(self, object):
         """Make a link for a module."""
@@ -475,9 +521,10 @@ TT { font-family: lucida console, lucida typewriter, courier }
                 funcs.append((key, value))
                 fdict[key] = '#-' + key
                 if inspect.isfunction(value): fdict[value] = fdict[key]
-        constants = []
-        for key, value in inspect.getmembers(object, isconstant):
-            constants.append((key, value))
+        data = []
+        for key, value in inspect.getmembers(object, isdata):
+            if key not in ['__builtins__', '__doc__']:
+                data.append((key, value))
 
         doc = self.markup(getdoc(object), self.preformat, fdict, cdict)
         doc = doc and '<tt>%s</tt>' % doc
@@ -518,12 +565,12 @@ TT { font-family: lucida console, lucida typewriter, courier }
                 contents.append(self.document(value, key, name, fdict, cdict))
             result = result + self.bigsection(
                 'Functions', '#ffffff', '#eeaa77', join(contents))
-        if constants:
+        if data:
             contents = []
-            for key, value in constants:
+            for key, value in data:
                 contents.append(self.document(value, key))
             result = result + self.bigsection(
-                'Constants', '#ffffff', '#55aa55', join(contents, '<br>'))
+                'Data', '#ffffff', '#55aa55', join(contents, '<br>\n'))
         if hasattr(object, '__author__'):
             contents = self.markup(str(object.__author__), self.preformat)
             result = result + self.bigsection(
@@ -665,7 +712,8 @@ class TextRepr(Repr):
     """Class for safely making a text representation of a Python object."""
     def __init__(self):
         Repr.__init__(self)
-        self.maxlist = self.maxtuple = self.maxdict = 10
+        self.maxlist = self.maxtuple = 20
+        self.maxdict = 10
         self.maxstring = self.maxother = 100
 
     def repr1(self, x, level):
@@ -754,9 +802,10 @@ class TextDoc(Doc):
         for key, value in inspect.getmembers(object, inspect.isroutine):
             if inspect.isbuiltin(value) or inspect.getmodule(value) is object:
                 funcs.append((key, value))
-        constants = []
-        for key, value in inspect.getmembers(object, isconstant):
-            constants.append((key, value))
+        data = []
+        for key, value in inspect.getmembers(object, isdata):
+            if key not in ['__builtins__', '__doc__']:
+                data.append((key, value))
 
         if hasattr(object, '__path__'):
             modpkgs = []
@@ -785,11 +834,11 @@ class TextDoc(Doc):
                 contents.append(self.document(value, key, name))
             result = result + self.section('FUNCTIONS', join(contents, '\n'))
 
-        if constants:
+        if data:
             contents = []
-            for key, value in constants:
+            for key, value in data:
                 contents.append(self.docother(value, key, name, 70))
-            result = result + self.section('CONSTANTS', join(contents, '\n'))
+            result = result + self.section('DATA', join(contents, '\n'))
 
         if hasattr(object, '__version__'):
             version = str(object.__version__)
@@ -903,13 +952,15 @@ def getpager():
         return plainpager
     if os.environ.has_key('PAGER'):
         if sys.platform == 'win32': # pipes completely broken in Windows
-            return lambda a: tempfilepager(a, os.environ['PAGER'])
+            return lambda text: tempfilepager(plain(text), os.environ['PAGER'])
+        elif os.environ.get('TERM') in ['dumb', 'emacs']:
+            return lambda text: pipepager(plain(text), os.environ['PAGER'])
         else:
-            return lambda a: pipepager(a, os.environ['PAGER'])
+            return lambda text: pipepager(text, os.environ['PAGER'])
     if sys.platform == 'win32':
-        return lambda a: tempfilepager(a, 'more <')
+        return lambda text: tempfilepager(plain(text), 'more <')
     if hasattr(os, 'system') and os.system('less 2>/dev/null') == 0:
-        return lambda a: pipepager(a, 'less')
+        return lambda text: pipepager(text, 'less')
 
     import tempfile
     filename = tempfile.mktemp()
@@ -921,6 +972,10 @@ def getpager():
             return ttypager
     finally:
         os.unlink(filename)
+
+def plain(text):
+    """Remove boldface formatting from text."""
+    return re.sub('.\b', '', text)
 
 def pipepager(text, cmd):
     """Page through text by feeding it to another program."""
@@ -942,10 +997,6 @@ def tempfilepager(text, cmd):
         os.system(cmd + ' ' + filename)
     finally:
         os.unlink(filename)
-
-def plain(text):
-    """Remove boldface formatting from text."""
-    return re.sub('.\b', '', text)
 
 def ttypager(text):
     """Page through text on a text terminal."""
@@ -1010,49 +1061,12 @@ def describe(thing):
         return 'instance of ' + thing.__class__.__name__
     return type(thing).__name__
 
-def freshimport(path, cache={}):
-    """Import a module freshly from disk, making sure it's up to date."""
-    if sys.modules.has_key(path):
-        # This is the only way to be sure.  Checking the mtime of the file
-        # isn't good enough (e.g. what if the module contains a class that
-        # inherits from another module that has changed?).
-        if path not in sys.builtin_module_names:
-            # Python never loads a dynamic extension a second time from the
-            # same path, even if the file is changed or missing.  Deleting
-            # the entry in sys.modules doesn't help for dynamic extensions,
-            # so we're not even going to try to keep them up to date.
-            info = inspect.getmoduleinfo(sys.modules[path].__file__)
-            if info[3] != imp.C_EXTENSION:
-                del sys.modules[path]
-    try:
-        module = __import__(path)
-    except:
-        # Did the error occur before or after the module was found?
-        (exc, value, tb) = info = sys.exc_info()
-        if sys.modules.has_key(path):
-            # An error occured while executing the imported module.
-            raise ErrorDuringImport(sys.modules[path].__file__, info)
-        elif exc is SyntaxError:
-            # A SyntaxError occurred before we could execute the module.
-            raise ErrorDuringImport(value.filename, info)
-        elif exc is ImportError and \
-             split(lower(str(value)))[:2] == ['no', 'module']:
-            # The module was not found.
-            return None
-        else:
-            # Some other error occurred during the importing process.
-            raise ErrorDuringImport(path, sys.exc_info())
-    for part in split(path, '.')[1:]:
-        try: module = getattr(module, part)
-        except AttributeError: return None
-    return module
-
-def locate(path):
+def locate(path, forceload=0):
     """Locate an object by name or dotted path, importing as necessary."""
     parts = split(path, '.')
     module, n = None, 0
     while n < len(parts):
-        nextmodule = freshimport(join(parts[:n+1], '.'))
+        nextmodule = safeimport(join(parts[:n+1], '.'), forceload)
         if nextmodule: module, n = nextmodule, n + 1
         else: break
     if module:
@@ -1071,12 +1085,12 @@ def locate(path):
 text = TextDoc()
 html = HTMLDoc()
 
-def doc(thing, title='Python Library Documentation: %s'):
+def doc(thing, title='Python Library Documentation: %s', forceload=0):
     """Display text documentation, given an object or a path to an object."""
     suffix, name = '', None
     if type(thing) is type(''):
         try:
-            object = locate(thing)
+            object = locate(thing, forceload)
         except ErrorDuringImport, value:
             print value
             return
@@ -1094,10 +1108,10 @@ def doc(thing, title='Python Library Documentation: %s'):
         suffix = ' in module ' + module.__name__
     pager(title % (desc + suffix) + '\n\n' + text.document(thing, name))
 
-def writedoc(key):
+def writedoc(key, forceload=0):
     """Write HTML documentation to a file in the current directory."""
     try:
-        object = locate(key)
+        object = locate(key, forceload)
     except ErrorDuringImport, value:
         print value
     else:
@@ -1111,12 +1125,13 @@ def writedoc(key):
         else:
             print 'no Python documentation found for %s' % repr(key)
 
-def writedocs(dir, pkgpath='', done={}):
+def writedocs(dir, pkgpath='', done=None):
     """Write out HTML documentation for all modules in a directory tree."""
+    if done is None: done = {}
     for file in os.listdir(dir):
         path = os.path.join(dir, file)
         if ispackage(path):
-            writedocs(path, pkgpath + file + '.')
+            writedocs(path, pkgpath + file + '.', done)
         elif os.path.isfile(path):
             modname = inspect.getmodulename(path)
             if modname:
@@ -1251,32 +1266,31 @@ class Helper:
             if dir and os.path.isdir(os.path.join(dir, 'lib')):
                 self.docdir = dir
 
-    def __repr__(self):
-        self()
-        return ''
-
     def __call__(self, request=None):
         if request is not None:
             self.help(request)
         else:
             self.intro()
-            self.output.write('\n')
-            while 1:
-                self.output.write('help> ')
-                self.output.flush()
-                try:
-                    request = self.input.readline()
-                    if not request: break
-                except KeyboardInterrupt: break
-                request = strip(replace(request, '"', '', "'", ''))
-                if lower(request) in ['q', 'quit']: break
-                self.help(request)
+            self.interact()
             self.output.write('''
 You're now leaving help and returning to the Python interpreter.
 If you want to ask for help on a particular object directly from the
 interpreter, you can type "help(object)".  Executing "help('string')"
 has the same effect as typing a particular string at the help> prompt.
 ''')
+
+    def interact(self):
+        self.output.write('\n')
+        while 1:
+            self.output.write('help> ')
+            self.output.flush()
+            try:
+                request = self.input.readline()
+                if not request: break
+            except KeyboardInterrupt: break
+            request = strip(replace(request, '"', '', "'", ''))
+            if lower(request) in ['q', 'quit']: break
+            self.help(request)
 
     def help(self, request):
         if type(request) is type(''):
@@ -1361,8 +1375,8 @@ please set the environment variable PYTHONDOCS to indicate their location.
             self.output.write('could not read docs from %s\n' % filename)
             return
 
-        divpat = re.compile('<div[^>]*navigat.*?</div[^>]*>', re.I | re.S)
-        addrpat = re.compile('<address[^>]*>.*?</address[^>]*>', re.I | re.S)
+        divpat = re.compile('<div[^>]*navigat.*?</div.*?>', re.I | re.S)
+        addrpat = re.compile('<address.*?>.*?</address.*?>', re.I | re.S)
         document = re.sub(addrpat, '', re.sub(divpat, '', file.read()))
         file.close()
 
@@ -1460,7 +1474,7 @@ class ModuleScanner(Scanner):
                 if key is None:
                     callback(None, modname, '')
                 else:
-                    desc = split(freshimport(modname).__doc__ or '', '\n')[0]
+                    desc = split(__import__(modname).__doc__ or '', '\n')[0]
                     if find(lower(modname + ' - ' + desc), key) >= 0:
                         callback(None, modname, desc)
 
@@ -1522,7 +1536,7 @@ def serve(port, callback=None, completer=None):
             if path[:1] == '/': path = path[1:]
             if path and path != '.':
                 try:
-                    obj = locate(path)
+                    obj = locate(path, forceload=1)
                 except ErrorDuringImport, value:
                     self.send_document(path, html.escape(str(value)))
                     return
