@@ -137,7 +137,7 @@
 # Index:
 #   Perhaps double-check that every tag mentioned in the index is found
 #     in the text.
-# Python:  email to python-docs@python.org, to get their feedback.
+# Python:  email to docs@python.org, to get their feedback.
 #   Compare to existing lib/ Info manual
 #   Write the hooks into info-look; replace pyliblookup1-1.tar.gz.
 #   Postpass to remove extra quotation marks around typography already in

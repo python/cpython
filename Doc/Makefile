@@ -49,7 +49,7 @@
 # The formatted output is located in subdirectories.  For PDF and
 # PostScript, look in the paper-$(PAPER)/ directory.  For HTML, look in
 # the html/ directory.  If you want to fix the GNU info process, look
-# in the info/ directory; please send patches to python-docs@python.org.
+# in the info/ directory; please send patches to docs@python.org.
 
 # This Makefile only includes information on how to perform builds; for
 # dependency information, see Makefile.deps.
