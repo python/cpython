@@ -1,3 +1,0 @@
-
-[install]
-install_platlib = @prefix@/lib/python@VERSION@/lib-dynload
