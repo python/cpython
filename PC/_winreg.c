@@ -830,19 +830,23 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 			if (value == Py_None)
 				*retDataSize = 0;
 			else {
-				if (!PyString_Check(value))
-					return 0;
-				*retDataSize = PyString_Size(value);
+				void *src_buf;
+				PyBufferProcs *pb = value->ob_type->tp_as_buffer;
+				if (pb==NULL) {
+					PyErr_Format(PyExc_TypeError, 
+						"Objects of type '%s' can not "
+						"be used as binary registry values", 
+						value->ob_type->tp_name);
+					return FALSE;
+				}
+				*retDataSize = (*pb->bf_getreadbuffer)(value, 0, &src_buf);
 				*retDataBuf = (BYTE *)PyMem_NEW(char,
 								*retDataSize);
 				if (*retDataBuf==NULL){
 					PyErr_NoMemory();
 					return FALSE;
 				}
-				memcpy(*retDataBuf,
-				       PyString_AS_STRING(
-				       		(PyStringObject *)value),
-				       *retDataSize);
+				memcpy(*retDataBuf, src_buf, *retDataSize);
 			}
 			break;
 	}
