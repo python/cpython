@@ -1,7 +1,79 @@
-Thu Jan 12 12:27:23 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+Tue Jan 17 11:24:23 1995  Guido van Rossum  <guido@zeus.cwi.nl>
+
+	* Makefile.pre.in: be more careful about building 
+	Modules/Makefile.pre
+
+	* Objects/floatobject.c: test for __STDC__ instead of macintosh de
+	decide whether to declare fmod() and pow() -- this works in
+	mathomodule.c so why not here...
+
+	* Objects/rangeobject.c: made a few things static
+
+	* Objects/longobject.c, Include/{longobject.h,rename2.h}:
+	long_scan is now a macro that calls long_escan; long_scan no
+	longer exists
+
+	* Objects/object.c (strobject): use tp_str and only try __str__ if
+	it's an instance
+
+	* configure.in: hopefully final changes for Sequent's -linet
+
+	* README: add hint for NeXT users to use --without-gcc
+
+	* Python/{bltinmodule.c,ceval.c}, Objects/frameobject.c:
+	initialize __builtins__ from built-in *module* instead of *dict*,
+	to prevent interactive vars() call to loop recursively
+
+	* Python/bltinmodule.c: fix Alpha bug in range and xrange --
+	sizeof(int) != sizeof(long)
+
+	* Python/mystrtoul.c: include rename2.h
+
+	* Modules/*: made things static and general clean-up for new
+	naming scheme
+
+	* Include/*.h: new names for lots of new functions
+
+	* Lib/rexec.py: no need for distrusting dir() or vars(), changed
+	open() to allow everything (for reading) except /etc/*
+
+	* Mac/macmain.c: include rename2.h
+
+	* */Makefile*in: added harmless $& to $(LIB) target for Sequent
+	parallel make
+
+	* Parser/tokenizer.c: fix loop on unterminated triple quotes
+
+	* Parser/intrcheck.c: made 'interrupted' flag static again
+
+	* Objects/listobject.c (list_ass_slice): free recycling bin when
+	making early exit due to memory error
+
+	* Objects/listobject.c, Include/{listobject.h,rename2.h}: added
+	reverselist, C interface to list.reverse().
+
+	* Object/listobject.c (list_ass_slice): fixed re-entrancy bug
+	(noticed by Jim Roskind) 
+
+Sat Jan 14 11:21:29 1995  Guido van Rossum  <guido@zeus.cwi.nl>
+
+	* Python/modsupport.c (PyEval_CallMethod): changed method argument
+	name to methodname -- since method is also a typedef and some
+	compiler choke on this (e.g. HP) (Andrew Kuchling)
+
+	* Python/thread.c: added #include thread_nt.h (Mark Hammond)
+
+	* Demo/scripts/h2py.py: support $include or $INCLUDE path instead
+	of only using /usr/include (Mark Hammond)
 
 	* Python/ceval.c (eval_code/PRINT_EXPR): fix messed output when
 	x.__repr__() prints something and repr(x) is called at the prompt
+
+========================================
+==> Release 1.2 BETA 1 (12 Jan 1995) <==
+========================================
+
+Thu Jan 12 12:27:23 1995  Guido van Rossum  <guido@voorn.cwi.nl>
 
 	* Python/pythonrun.c (initmain), Python/import.c
 	(exec_code_module): use getbuiltins(), not getbuiltindict() to
