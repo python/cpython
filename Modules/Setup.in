@@ -164,7 +164,7 @@ errno errnomodule.c	# posix (UNIX) errno values
 
 
 # Multimedia modules -- off by default.
-# These don't for 64-bit platforms!!!
+# These don't work for 64-bit platforms!!!
 # These represent audio samples or images as strings:
 
 #audioop audioop.c	# Operations on audio samples
@@ -259,20 +259,46 @@ md5 md5module.c md5c.c
 
 # The _tkinter module.
 #
-# See the section "The Tk interface" in ../README for more info.
-#
-# Enable the TKPATH line and choose the most applicable _tkinter line.
-# You may have to change /usr/local to wherever Tcl/Tk are installed.
-# Change the -l arguments to use Tcl 7.4 and Tk 4.0!
+# The TKPATH variable is always enabled, to save you the effort.
+TKPATH=:lib-tk
 
-# *** ALWAYS enable this line:
-#TKPATH=:lib-tk
+# The command for _tkinter is long and site specific.  Please
+# uncomment and/or edit those parts as indicated.  If you don't have a
+# specific extension (e.g. Tix or BLT), leave the corresponding line
+# commented out.  (Leave the trailing backslashes in!  If you
+# experience strange errors, you may want to join all uncommented
+# lines and remove the backslashes -- the backslash interpretation is
+# done by the shell's "read" command and it may not be implemented on
+# every system.
 
-# *** Enable *one* of the following lines:
-# For Solaris:
-#_tkinter _tkinter.c -I/usr/openwin/include -I/usr/local/include -L/usr/openwin/lib -L/usr/local/lib -ltk4.1 -ltcl7.5 -lX11
-# For generic system (may have to add -I/-L options to find X11):
-#_tkinter _tkinter.c -I/usr/local/include -L/usr/local/lib -ltk4.1 -ltcl7.5 -lX11
+# *** Always uncomment this (leave the leading underscore in!):
+# _tkinter _tkinter.c tkappinit.c -DWITH_APPINIT \
+# *** Uncommend and edit to reflect where your X11 header files are:
+#	-I/usr/X11R6/include \
+# *** Or uncomment this for Solaris:
+#	-I/usr/openwin/include \
+# *** Uncomment and edit to reflect where your Tcl/Tk headers are:
+#	-I/usr/local/include \
+# *** Uncomment and edit for Tix extension only:
+#	-DWITH_TIX -ltix4.1.8.0 \
+# *** Uncomment and edit for BLT extension only:
+#	-DWITH_BLT -I/usr/local/blt/blt8.0-unoff/include -lBLT8.0 \
+# *** Uncomment and edit for PIL (TkImaging) extension only:
+#	-DWITH_PIL -I../Extensions/Imaging/libImaging  tkImaging.c \
+# *** Uncomment and edit for Mesa (what's Mesa?):
+#	-lGL -lGLU -lMesatk -lMesaaux \
+# *** Uncomment and edit for TOGL extension only:
+#	-DWITH_TOGL togl.c \
+# *** Uncomment and edit to reflect where your Tcl/Tk libraries are:
+#	-L/usr/local/lib \
+# *** Uncomment and edit to reflect your Tcl/Tk versions:
+#	-ltk8.0 -ltcl8.0 \
+# *** Uncomment and edit to reflect where your X11 libraries are:
+#	-L/usr/X11R6/lib \
+# *** Or uncomment this for Solaris:
+#	-L/usr/openwin/lib \
+# *** Always uncomment this; X11 libraries to link with:
+#	-lX11 -lXext -lXmu
 
 
 # Lance Ellinghaus's modules:
