@@ -1,5 +1,5 @@
 # -*- Mode: Python; tab-width: 4 -*-
-#	Id: asynchat.py,v 2.23 1999/05/01 04:49:24 rushing Exp 
+#	Id: asynchat.py,v 2.25 1999/11/18 11:01:08 rushing Exp 
 #	Author: Sam Rushing <rushing@nightmare.com>
 
 # ======================================================================
@@ -123,7 +123,9 @@ class async_chat (asyncore.dispatcher):
 				index = string.find (self.ac_in_buffer, terminator)
 				if index != -1:
 					# we found the terminator
-					self.collect_incoming_data (self.ac_in_buffer[:index])
+					if index > 0:
+						# don't bother reporting the empty string (source of subtle bugs)
+						self.collect_incoming_data (self.ac_in_buffer[:index])
 					self.ac_in_buffer = self.ac_in_buffer[index+terminator_len:]
 					# This does the Right Thing if the terminator is changed here.
 					self.found_terminator()
@@ -220,9 +222,10 @@ class async_chat (asyncore.dispatcher):
 	def discard_buffers (self):
 		# Emergencies only!
 		self.ac_in_buffer = ''
-		self.ac_out_buffer == ''
+		self.ac_out_buffer = ''
 		while self.producer_fifo:
 			self.producer_fifo.pop()
+
 
 class simple_producer:
 
@@ -287,7 +290,7 @@ class fifo:
 ##	return result
 
 # yes, this is about twice as fast, but still seems
-# to be negligible CPU.  The previous could do about 290
+# to be negligible CPU.  The previous version could do about 290
 # searches/sec. the new one about 555/sec.
 
 import regex
