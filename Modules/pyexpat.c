@@ -779,7 +779,7 @@ static struct PyMethodDef xmlparse_methods[] = {
     Make it as simple as possible.
 */
 
-static char template_buffer[256];
+static char template_buffer[257];
 PyObject * template_string=NULL;
 
 static void 
