@@ -68,7 +68,7 @@ class TestMacostools(unittest.TestCase):
             pass
         macostools.mkalias(test_support.TESTFN, TESTFN2)
         fss, _, _ = macfs.ResolveAliasFile(TESTFN2)
-        self.assertEqual(fss.as_pathname(), os.path.abspath(test_support.TESTFN))
+        self.assertEqual(fss.as_pathname(), os.path.realpath(test_support.TESTFN))
         
     def test_mkalias_relative(self):
         try:
@@ -77,7 +77,7 @@ class TestMacostools(unittest.TestCase):
             pass
         macostools.mkalias(test_support.TESTFN, TESTFN2, sys.prefix)
         fss, _, _ = macfs.ResolveAliasFile(TESTFN2)
-        self.assertEqual(fss.as_pathname(), os.path.abspath(test_support.TESTFN))
+        self.assertEqual(fss.as_pathname(), os.path.realpath(test_support.TESTFN))
         
     
 def test_main():
