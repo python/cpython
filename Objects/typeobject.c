@@ -130,6 +130,12 @@ static int add_subclass(PyTypeObject*, PyTypeObject*);
 static void remove_subclass(PyTypeObject *, PyTypeObject *);
 static void update_all_slots(PyTypeObject *);
 
+typedef int (*update_callback)(PyTypeObject *, void *);
+static int update_subclasses(PyTypeObject *type, PyObject *name,
+			     update_callback callback, void *data);
+static int recurse_down_subclasses(PyTypeObject *type, PyObject *name,
+				   update_callback callback, void *data);
+
 static int
 mro_subclasses(PyTypeObject *type, PyObject* temp)
 {
@@ -2031,6 +2037,10 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
 			type->tp_name);
 		return -1;
 	}
+	/* XXX Example of how I expect this to be used...
+	if (update_subclasses(type, name, invalidate_cache, NULL) < 0)
+		return -1;
+	*/
 	if (PyObject_GenericSetAttr((PyObject *)type, name, value) < 0)
 		return -1;
 	return update_slot(type, name);
@@ -4993,7 +5003,7 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
 	return res;
 }
 
-/* Common code for update_these_slots() and fixup_slot_dispatchers().  This
+/* Common code for update_slots_callback() and fixup_slot_dispatchers().  This
    does some incredibly complex thinking and then sticks something into the
    slot.  (It sees if the adjacent slotdefs for the same slot have conflicting
    interests, and then stores a generic wrapper or a specific function into
@@ -5068,51 +5078,15 @@ update_one_slot(PyTypeObject *type, slotdef *p)
 	return p;
 }
 
-static int recurse_down_subclasses(PyTypeObject *type, slotdef **pp,
-				   PyObject *name);
-
-/* In the type, update the slots whose slotdefs are gathered in the pp0 array,
-   and then do the same for all this type's subtypes. */
+/* In the type, update the slots whose slotdefs are gathered in the pp array.
+   This is a callback for update_subclasses(). */
 static int
-update_these_slots(PyTypeObject *type, slotdef **pp0, PyObject *name)
+update_slots_callback(PyTypeObject *type, void *data)
 {
-	slotdef **pp;
+	slotdef **pp = (slotdef **)data;
 
-	for (pp = pp0; *pp; pp++)
+	for (; *pp; pp++)
 		update_one_slot(type, *pp);
-	return recurse_down_subclasses(type, pp0, name);
-}
-
-/* Update the slots whose slotdefs are gathered in the pp array in all (direct
-   or indirect) subclasses of type. */
-static int
-recurse_down_subclasses(PyTypeObject *type, slotdef **pp, PyObject *name)
-{
-	PyTypeObject *subclass;
-	PyObject *ref, *subclasses, *dict;
-	int i, n;
-
-	subclasses = type->tp_subclasses;
-	if (subclasses == NULL)
-		return 0;
-	assert(PyList_Check(subclasses));
-	n = PyList_GET_SIZE(subclasses);
-	for (i = 0; i < n; i++) {
-		ref = PyList_GET_ITEM(subclasses, i);
-		assert(PyWeakref_CheckRef(ref));
-		subclass = (PyTypeObject *)PyWeakref_GET_OBJECT(ref);
-		assert(subclass != NULL);
-		if ((PyObject *)subclass == Py_None)
-			continue;
-		assert(PyType_Check(subclass));
-		/* Avoid recursing down into unaffected classes */
-		dict = subclass->tp_dict;
-		if (dict != NULL && PyDict_Check(dict) &&
-		    PyDict_GetItem(dict, name) != NULL)
-			continue;
-		if (update_these_slots(subclass, pp, name) < 0)
-			return -1;
-	}
 	return 0;
 }
 
@@ -5175,7 +5149,8 @@ update_slot(PyTypeObject *type, PyObject *name)
 	}
 	if (ptrs[0] == NULL)
 		return 0; /* Not an attribute that affects any slots */
-	return update_these_slots(type, ptrs, name);
+	return update_subclasses(type, name,
+				 update_slots_callback, (void *)ptrs);
 }
 
 /* Store the proper functions in the slot dispatches at class (type)
@@ -5203,6 +5178,51 @@ update_all_slots(PyTypeObject* type)
 	}
 }
 
+/* recurse_down_subclasses() and update_subclasses() are mutually
+   recursive functions to call a callback for all subclasses,
+   but refraining from recursing into subclasses that define 'name'. */
+
+static int
+update_subclasses(PyTypeObject *type, PyObject *name,
+		  update_callback callback, void *data)
+{
+	if (callback(type, data) < 0)
+		return -1;
+	return recurse_down_subclasses(type, name, callback, data);
+}
+
+static int
+recurse_down_subclasses(PyTypeObject *type, PyObject *name,
+			update_callback callback, void *data)
+{
+	PyTypeObject *subclass;
+	PyObject *ref, *subclasses, *dict;
+	int i, n;
+
+	subclasses = type->tp_subclasses;
+	if (subclasses == NULL)
+		return 0;
+	assert(PyList_Check(subclasses));
+	n = PyList_GET_SIZE(subclasses);
+	for (i = 0; i < n; i++) {
+		ref = PyList_GET_ITEM(subclasses, i);
+		assert(PyWeakref_CheckRef(ref));
+		subclass = (PyTypeObject *)PyWeakref_GET_OBJECT(ref);
+		assert(subclass != NULL);
+		if ((PyObject *)subclass == Py_None)
+			continue;
+		assert(PyType_Check(subclass));
+		/* Avoid recursing down into unaffected classes */
+		dict = subclass->tp_dict;
+		if (dict != NULL && PyDict_Check(dict) &&
+		    PyDict_GetItem(dict, name) != NULL)
+			continue;
+		if (update_subclasses(subclass, name, callback, data) < 0)
+			return -1;
+	}
+	return 0;
+}
+
 /* This function is called by PyType_Ready() to populate the type's
    dictionary with method descriptors for function slots.  For each
    function slot (like tp_repr) that's defined in the type, one or more
@@ -5216,10 +5236,11 @@ update_all_slots(PyTypeObject* type)
    In the latter case, the first slotdef entry encoutered wins.  Since
    slotdef entries are sorted by the offset of the slot in the
    PyHeapTypeObject, this gives us some control over disambiguating
-   between competing slots: the members of PyHeapTypeObject are listed from most
-   general to least general, so the most general slot is preferred.  In
-   particular, because as_mapping comes before as_sequence, for a type
-   that defines both mp_subscript and sq_item, mp_subscript wins.
+   between competing slots: the members of PyHeapTypeObject are listed
+   from most general to least general, so the most general slot is
+   preferred.  In particular, because as_mapping comes before as_sequence,
+   for a type that defines both mp_subscript and sq_item, mp_subscript
+   wins.
 
    This only adds new descriptors and doesn't overwrite entries in
    tp_dict that were previously defined.  The descriptors contain a
