@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -38,13 +38,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pythonrun.h"
 #include "import.h"
 
-#ifdef unix
-#define HANDLE_SIGNALS
-#endif
-
-#ifdef HANDLE_SIGNALS
+#ifdef HAVE_SIGNAL_H
 #include <signal.h>
-#include "sigtype.h"
 #endif
 
 extern char *getpythonpath();
@@ -52,16 +47,16 @@ extern char *getpythonpath();
 extern grammar gram; /* From graminit.c */
 
 /* Forward */
-static object *run_err_node PROTO((int err, node *n, char *filename,
+static object *run_err_node PROTO((node *n, char *filename,
 				   object *globals, object *locals));
 static object *run_node PROTO((node *n, char *filename,
 			       object *globals, object *locals));
-static object *eval_node PROTO((node *n, char *filename,
-				object *globals, object *locals));
+static void err_input PROTO((perrdetail *));
 static void initsigs PROTO((void));
 
 int debugging; /* Needed by parser.c */
 int verbose; /* Needed by import.c */
+int suppress_print; /* Needed by ceval.c */
 
 /* Initialize all */
 
@@ -76,15 +71,13 @@ initall()
 	
 	initimport();
 	
-	/* Modules 'builtin' and 'sys' are initialized here,
+	/* Modules '__builtin__' and 'sys' are initialized here,
 	   they are needed by random bits of the interpreter.
 	   All other modules are optional and are initialized
 	   when they are first imported. */
 	
 	initbuiltin(); /* Also initializes builtin exceptions */
 	initsys();
-	
-	initcalls(); /* Configuration-dependent initializations */
 
 	setpythonpath(getpythonpath());
 
@@ -144,8 +137,8 @@ run_tty_1(fp, filename)
 {
 	object *m, *d, *v, *w;
 	node *n;
+	perrdetail err;
 	char *ps1, *ps2;
-	int err;
 	v = sysget("ps1");
 	w = sysget("ps2");
 	if (v != NULL && is_stringobject(v)) {
@@ -165,16 +158,19 @@ run_tty_1(fp, filename)
 		ps2 = "";
 	}
 	BGN_SAVE
-	err = parsefile(fp, filename, &gram, single_input, ps1, ps2, &n);
+	n = parsefile(fp, filename, &gram, single_input, ps1, ps2, &err);
 	END_SAVE
 	XDECREF(v);
 	XDECREF(w);
-	if (err == E_EOF)
-		return E_EOF;
-	if (err != E_DONE) {
-		err_input(err);
+	if (n == NULL) {
+		if (err.error == E_EOF) {
+			if (err.text)
+				free(err.text);
+			return E_EOF;
+		}
+		err_input(&err);
 		print_error();
-		return err;
+		return err.error;
 	}
 	m = add_module("__main__");
 	if (m == NULL)
@@ -234,6 +230,10 @@ print_error()
 {
 	object *exception, *v, *f;
 	err_get(&exception, &v);
+	if (exception == NULL) {
+		fprintf(stderr, "print_error called but no exception\n");
+		abort();
+	}
 	if (exception == SystemExit) {
 		if (v == NULL || v == None)
 			goaway(0);
@@ -253,6 +253,47 @@ print_error()
 		fprintf(stderr, "lost sys.stderr\n");
 	else {
 		printtraceback(f);
+		if (exception == SyntaxError) {
+			object *message;
+			char *filename, *text;
+			int lineno, offset;
+			if (!getargs(v, "(O(ziiz))", &message,
+				     &filename, &lineno, &offset, &text))
+				err_clear();
+			else {
+				char buf[10];
+				writestring("  File \"", f);
+				if (filename == NULL)
+					writestring("<string>", f);
+				else
+					writestring(filename, f);
+				writestring("\", line ", f);
+				sprintf(buf, "%d", lineno);
+				writestring(buf, f);
+				writestring("\n", f);
+				if (text != NULL) {
+					while (*text == ' ' || *text == '\t') {
+						text++;
+						offset--;
+					}
+					writestring("    ", f);
+					writestring(text, f);
+					if (*text == '\0' ||
+					    text[strlen(text)-1] != '\n')
+						writestring("\n", f);
+					writestring("    ", f);
+					offset--;
+					while (offset > 0) {
+						writestring(" ", f);
+						offset--;
+					}
+					writestring("^\n", f);
+				}
+				INCREF(message);
+				DECREF(v);
+				v = message;
+			}
+		}
 		if (writeobject(exception, f, PRINT_RAW) != 0)
 			err_clear();
 		if (v != NULL && v != None) {
@@ -272,10 +313,8 @@ run_string(str, start, globals, locals)
 	int start;
 	object *globals, *locals;
 {
-	node *n;
-	int err;
-	err = parse_string(str, start, &n);
-	return run_err_node(err, n, "<string>", globals, locals);
+	return run_err_node(parse_string(str, start),
+			    "<string>", globals, locals);
 }
 
 object *
@@ -285,23 +324,18 @@ run_file(fp, filename, start, globals, locals)
 	int start;
 	object *globals, *locals;
 {
-	node *n;
-	int err;
-	err = parse_file(fp, filename, start, &n);
-	return run_err_node(err, n, filename, globals, locals);
+	return run_err_node(parse_file(fp, filename, start),
+			    filename, globals, locals);
 }
 
 static object *
-run_err_node(err, n, filename, globals, locals)
-	int err;
+run_err_node(n, filename, globals, locals)
 	node *n;
 	char *filename;
 	object *globals, *locals;
 {
-	if (err != E_DONE) {
-		err_input(err);
-		return NULL;
-	}
+	if (n == NULL)
+		return  NULL;
 	return run_node(n, filename, globals, locals);
 }
 
@@ -310,16 +344,6 @@ run_node(n, filename, globals, locals)
 	node *n;
 	char *filename;
 	object *globals, *locals;
-{
-	return eval_node(n, filename, globals, locals);
-}
-
-static object *
-eval_node(n, filename, globals, locals)
-	node *n;
-	char *filename;
-	object *globals;
-	object *locals;
 {
 	codeobject *co;
 	object *v;
@@ -341,46 +365,88 @@ compile_string(str, filename, start)
 	node *n;
 	int err;
 	codeobject *co;
-	err = parse_string(str, start, &n);
-	if (err != E_DONE) {
-		err_input(err);
+	n = parse_string(str, start);
+	if (n == NULL)
 		return NULL;
-	}
 	co = compile(n, filename);
 	freetree(n);
 	return (object *)co;
 }
 
-/* Simplified interface to parsefile */
+/* Simplified interface to parsefile -- return node or set exception */
 
-int
-parse_file(fp, filename, start, n_ret)
+node *
+parse_file(fp, filename, start)
 	FILE *fp;
 	char *filename;
 	int start;
-	node **n_ret;
 {
-	int ret;
+	node *n;
+	perrdetail err;
 	BGN_SAVE
-	ret = parsefile(fp, filename, &gram, start,
-				(char *)0, (char *)0, n_ret);
+	n = parsefile(fp, filename, &gram, start,
+				(char *)0, (char *)0, &err);
 	END_SAVE
-	return ret;
+	if (n == NULL)
+		err_input(&err);
+	return n;
 }
 
-/* Simplified interface to parsestring */
+/* Simplified interface to parsestring -- return node or set exception */
 
-int
-parse_string(str, start, n_ret)
+node *
+parse_string(str, start)
 	char *str;
 	int start;
-	node **n_ret;
 {
-	int err = parsestring(str, &gram, start, n_ret);
-	/* Don't confuse early end of string with early end of input */
-	if (err == E_EOF)
-		err = E_SYNTAX;
-	return err;
+	node *n;
+	perrdetail err;
+	n = parsestring(str, &gram, start, &err);
+	if (n == NULL)
+		err_input(&err);
+	return n;
+}
+
+/* Set the error appropriate to the given input error code (see errcode.h) */
+
+static void
+err_input(err)
+	perrdetail *err;
+{
+	object *v, *w;
+	char *msg = NULL;
+	v = mkvalue("(ziiz)", err->filename,
+			    err->lineno, err->offset, err->text);
+	if (err->text != NULL) {
+		free(err->text);
+		err->text = NULL;
+	}
+	switch (err->error) {
+	case E_SYNTAX:
+		msg = "invalid syntax";
+		break;
+	case E_TOKEN:
+		msg = "invalid token";
+
+		break;
+	case E_INTR:
+		err_set(KeyboardInterrupt);
+		return;
+	case E_NOMEM:
+		err_nomem();
+		return;
+	case E_EOF:
+		msg = "unexpected EOF while parsing";
+		break;
+	default:
+		fprintf(stderr, "error=%d\n", err->error);
+		msg = "unknown parsing error";
+		break;
+	}
+	w = mkvalue("(sO)", msg, v);
+	XDECREF(v);
+	err_setval(SyntaxError, w);
+	XDECREF(w);
 }
 
 /* Print fatal error message and abort */
@@ -395,11 +461,12 @@ fatal(msg)
 
 /* Clean up and exit */
 
-#ifdef USE_THREAD
-extern int threads_started;
+#ifdef WITH_THREAD
+#include "thread.h"
+int threads_started = 0; /* Set by threadmodule.c and maybe others */
 #endif
 
-static void
+void
 cleanup()
 {
 	object *exitfunc = sysget("exitfunc");
@@ -438,25 +505,28 @@ goaway(sts)
 	dump_counts();
 #endif
 
-#ifdef USE_THREAD
+#ifdef WITH_THREAD
 
 	/* Other threads may still be active, so skip most of the
 	   cleanup actions usually done (these are mostly for
 	   debugging anyway). */
 	
 	(void) save_thread();
-	donecalls();
+#ifndef NO_EXIT_PROG
 	if (threads_started)
 		_exit_prog(sts);
 	else
 		exit_prog(sts);
+#else /* !NO_EXIT_PROG */
+	if (threads_started)
+		_exit(sts);
+	else
+		exit(sts);
+#endif /* !NO_EXIT_PROG */
 	
-#else /* USE_THREAD */
+#else /* WITH_THREAD */
 	
-	/* XXX Call doneimport() before donecalls(), since donecalls()
-	   calls wdone(), and doneimport() may close windows */
 	doneimport();
-	donecalls();
 	
 	err_clear();
 
@@ -471,18 +541,22 @@ goaway(sts)
 #endif /* TRACE_REFS */
 
 	exit(sts);
-#endif /* USE_THREAD */
+#endif /* WITH_THREAD */
 	/*NOTREACHED*/
 }
 
-#ifdef HANDLE_SIGNALS
-static SIGTYPE
+#ifdef HAVE_SIGNAL_H
+static RETSIGTYPE
 sighandler(sig)
 	int sig;
 {
 	signal(sig, SIG_DFL); /* Don't catch recursive signals */
 	cleanup(); /* Do essential clean-up */
+#ifdef HAVE_GETPID
 	kill(getpid(), sig); /* Pretend the signal killed us */
+#else
+	exit(1);
+#endif
 	/*NOTREACHED*/
 }
 #endif
@@ -490,13 +564,27 @@ sighandler(sig)
 static void
 initsigs()
 {
-	initintr();
-#ifdef HANDLE_SIGNALS
-	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
-		signal(SIGHUP, sighandler);
-	if (signal(SIGTERM, SIG_IGN) != SIG_IGN)
-		signal(SIGTERM, sighandler);
+	RETSIGTYPE (*t)();
+#ifdef HAVE_SIGNAL_H
+#ifdef SIGPIPE
+	signal(SIGPIPE, SIG_IGN);
 #endif
+#ifdef SIGHUP
+	t = signal(SIGHUP, SIG_IGN);
+	if (t == SIG_DFL)
+		signal(SIGHUP, sighandler);
+	else
+		signal(SIGHUP, t);
+#endif              
+#ifdef SIGTERM
+	t = signal(SIGTERM, SIG_IGN);
+	if (t == SIG_DFL)
+		signal(SIGTERM, sighandler);
+	else
+		signal(SIGTERM, t);
+#endif
+#endif /* HAVE_SIGNAL_H */
+	initintr(); /* May imply initsignal() */
 }
 
 #ifdef TRACE_REFS
@@ -515,7 +603,7 @@ askyesno(prompt)
 }
 #endif
 
-#ifdef applec /* MPW (also usable for Think C 3.0) */
+#ifdef MPW
 
 /* Check for file descriptor connected to interactive device.
    Pretend that stdin is always interactive, other files never. */
