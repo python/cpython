@@ -75,6 +75,7 @@ Options and arguments (and corresponding environment variables):\n\
 ";
 static char *usage_mid = "\
 -u     : unbuffered binary stdout and stderr (also PYTHONUNBUFFERED=x)\n\
+-U     : Unicode literals: treats '...' literals like u'...'\n\
 -v     : verbose (trace import statements) (also PYTHONVERBOSE=x)\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
 -X     : disable class based built-in exceptions\n\
@@ -119,7 +120,7 @@ Py_Main(argc, argv)
 	if ((p = getenv("PYTHONUNBUFFERED")) && *p != '\0')
 		unbuffered = 1;
 
-	while ((c = getopt(argc, argv, "c:diOStuvxX")) != EOF) {
+	while ((c = getopt(argc, argv, "c:diOStuUvxX")) != EOF) {
 		if (c == 'c') {
 			/* -c is the last option; following arguments
 			   that look like options are left for the
@@ -170,6 +171,10 @@ Py_Main(argc, argv)
 
 		case 'X':
 			Py_UseClassExceptionsFlag = 0;
+			break;
+
+		case 'U':
+			Py_UnicodeFlag++;
 			break;
 
 		/* This space reserved for other options */
