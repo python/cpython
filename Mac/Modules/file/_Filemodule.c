@@ -320,7 +320,7 @@ static void Alias_dealloc(AliasObject *self)
 static PyObject *Alias_ResolveAlias(AliasObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	OSErr _rv;
+	OSErr _err;
 	FSSpec fromFile__buf__;
 	FSSpec *fromFile = &fromFile__buf__;
 	FSSpec target;
@@ -328,12 +328,12 @@ static PyObject *Alias_ResolveAlias(AliasObject *_self, PyObject *_args)
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      myPyMac_GetOptFSSpecPtr, &fromFile))
 		return NULL;
-	_rv = ResolveAlias(fromFile,
-	                   _self->ob_itself,
-	                   &target,
-	                   &wasChanged);
-	_res = Py_BuildValue("hO&b",
-	                     _rv,
+	_err = ResolveAlias(fromFile,
+	                    _self->ob_itself,
+	                    &target,
+	                    &wasChanged);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&b",
 	                     FSSpec_New, &target,
 	                     wasChanged);
 	return _res;
@@ -360,7 +360,7 @@ static PyObject *Alias_GetAliasInfo(AliasObject *_self, PyObject *_args)
 static PyObject *Alias_ResolveAliasWithMountFlags(AliasObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	OSErr _rv;
+	OSErr _err;
 	FSSpec fromFile__buf__;
 	FSSpec *fromFile = &fromFile__buf__;
 	FSSpec target;
@@ -370,13 +370,13 @@ static PyObject *Alias_ResolveAliasWithMountFlags(AliasObject *_self, PyObject *
 	                      myPyMac_GetOptFSSpecPtr, &fromFile,
 	                      &mountFlags))
 		return NULL;
-	_rv = ResolveAliasWithMountFlags(fromFile,
-	                                 _self->ob_itself,
-	                                 &target,
-	                                 &wasChanged,
-	                                 mountFlags);
-	_res = Py_BuildValue("hO&b",
-	                     _rv,
+	_err = ResolveAliasWithMountFlags(fromFile,
+	                                  _self->ob_itself,
+	                                  &target,
+	                                  &wasChanged,
+	                                  mountFlags);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&b",
 	                     FSSpec_New, &target,
 	                     wasChanged);
 	return _res;
@@ -385,7 +385,7 @@ static PyObject *Alias_ResolveAliasWithMountFlags(AliasObject *_self, PyObject *
 static PyObject *Alias_FollowFinderAlias(AliasObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	OSErr _rv;
+	OSErr _err;
 	FSSpec fromFile__buf__;
 	FSSpec *fromFile = &fromFile__buf__;
 	Boolean logon;
@@ -395,13 +395,13 @@ static PyObject *Alias_FollowFinderAlias(AliasObject *_self, PyObject *_args)
 	                      myPyMac_GetOptFSSpecPtr, &fromFile,
 	                      &logon))
 		return NULL;
-	_rv = FollowFinderAlias(fromFile,
-	                        _self->ob_itself,
-	                        logon,
-	                        &target,
-	                        &wasChanged);
-	_res = Py_BuildValue("hO&b",
-	                     _rv,
+	_err = FollowFinderAlias(fromFile,
+	                         _self->ob_itself,
+	                         logon,
+	                         &target,
+	                         &wasChanged);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&b",
 	                     FSSpec_New, &target,
 	                     wasChanged);
 	return _res;
@@ -410,7 +410,7 @@ static PyObject *Alias_FollowFinderAlias(AliasObject *_self, PyObject *_args)
 static PyObject *Alias_FSResolveAliasWithMountFlags(AliasObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	OSErr _rv;
+	OSErr _err;
 	FSRef fromFile__buf__;
 	FSRef *fromFile = &fromFile__buf__;
 	FSRef target;
@@ -420,13 +420,13 @@ static PyObject *Alias_FSResolveAliasWithMountFlags(AliasObject *_self, PyObject
 	                      myPyMac_GetOptFSRefPtr, &fromFile,
 	                      &mountFlags))
 		return NULL;
-	_rv = FSResolveAliasWithMountFlags(fromFile,
-	                                   _self->ob_itself,
-	                                   &target,
-	                                   &wasChanged,
-	                                   mountFlags);
-	_res = Py_BuildValue("hO&b",
-	                     _rv,
+	_err = FSResolveAliasWithMountFlags(fromFile,
+	                                    _self->ob_itself,
+	                                    &target,
+	                                    &wasChanged,
+	                                    mountFlags);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&b",
 	                     FSRef_New, &target,
 	                     wasChanged);
 	return _res;
@@ -435,7 +435,7 @@ static PyObject *Alias_FSResolveAliasWithMountFlags(AliasObject *_self, PyObject
 static PyObject *Alias_FSResolveAlias(AliasObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	OSErr _rv;
+	OSErr _err;
 	FSRef fromFile__buf__;
 	FSRef *fromFile = &fromFile__buf__;
 	FSRef target;
@@ -443,12 +443,12 @@ static PyObject *Alias_FSResolveAlias(AliasObject *_self, PyObject *_args)
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      myPyMac_GetOptFSRefPtr, &fromFile))
 		return NULL;
-	_rv = FSResolveAlias(fromFile,
-	                     _self->ob_itself,
-	                     &target,
-	                     &wasChanged);
-	_res = Py_BuildValue("hO&b",
-	                     _rv,
+	_err = FSResolveAlias(fromFile,
+	                      _self->ob_itself,
+	                      &target,
+	                      &wasChanged);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&b",
 	                     FSRef_New, &target,
 	                     wasChanged);
 	return _res;
@@ -457,7 +457,7 @@ static PyObject *Alias_FSResolveAlias(AliasObject *_self, PyObject *_args)
 static PyObject *Alias_FSFollowFinderAlias(AliasObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	OSErr _rv;
+	OSErr _err;
 	FSRef fromFile;
 	Boolean logon;
 	FSRef target;
@@ -465,13 +465,13 @@ static PyObject *Alias_FSFollowFinderAlias(AliasObject *_self, PyObject *_args)
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &logon))
 		return NULL;
-	_rv = FSFollowFinderAlias(&fromFile,
-	                          _self->ob_itself,
-	                          logon,
-	                          &target,
-	                          &wasChanged);
-	_res = Py_BuildValue("hO&O&b",
-	                     _rv,
+	_err = FSFollowFinderAlias(&fromFile,
+	                           _self->ob_itself,
+	                           logon,
+	                           &target,
+	                           &wasChanged);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&O&b",
 	                     FSRef_New, &fromFile,
 	                     FSRef_New, &target,
 	                     wasChanged);
@@ -480,19 +480,19 @@ static PyObject *Alias_FSFollowFinderAlias(AliasObject *_self, PyObject *_args)
 
 static PyMethodDef Alias_methods[] = {
 	{"ResolveAlias", (PyCFunction)Alias_ResolveAlias, 1,
-	 PyDoc_STR("(FSSpec fromFile) -> (OSErr _rv, FSSpec target, Boolean wasChanged)")},
+	 PyDoc_STR("(FSSpec fromFile) -> (FSSpec target, Boolean wasChanged)")},
 	{"GetAliasInfo", (PyCFunction)Alias_GetAliasInfo, 1,
 	 PyDoc_STR("(AliasInfoType index) -> (Str63 theString)")},
 	{"ResolveAliasWithMountFlags", (PyCFunction)Alias_ResolveAliasWithMountFlags, 1,
-	 PyDoc_STR("(FSSpec fromFile, unsigned long mountFlags) -> (OSErr _rv, FSSpec target, Boolean wasChanged)")},
+	 PyDoc_STR("(FSSpec fromFile, unsigned long mountFlags) -> (FSSpec target, Boolean wasChanged)")},
 	{"FollowFinderAlias", (PyCFunction)Alias_FollowFinderAlias, 1,
-	 PyDoc_STR("(FSSpec fromFile, Boolean logon) -> (OSErr _rv, FSSpec target, Boolean wasChanged)")},
+	 PyDoc_STR("(FSSpec fromFile, Boolean logon) -> (FSSpec target, Boolean wasChanged)")},
 	{"FSResolveAliasWithMountFlags", (PyCFunction)Alias_FSResolveAliasWithMountFlags, 1,
-	 PyDoc_STR("(FSRef fromFile, unsigned long mountFlags) -> (OSErr _rv, FSRef target, Boolean wasChanged)")},
+	 PyDoc_STR("(FSRef fromFile, unsigned long mountFlags) -> (FSRef target, Boolean wasChanged)")},
 	{"FSResolveAlias", (PyCFunction)Alias_FSResolveAlias, 1,
-	 PyDoc_STR("(FSRef fromFile) -> (OSErr _rv, FSRef target, Boolean wasChanged)")},
+	 PyDoc_STR("(FSRef fromFile) -> (FSRef target, Boolean wasChanged)")},
 	{"FSFollowFinderAlias", (PyCFunction)Alias_FSFollowFinderAlias, 1,
-	 PyDoc_STR("(Boolean logon) -> (OSErr _rv, FSRef fromFile, FSRef target, Boolean wasChanged)")},
+	 PyDoc_STR("(Boolean logon) -> (FSRef fromFile, FSRef target, Boolean wasChanged)")},
 	{NULL, NULL, 0}
 };
 

@@ -527,7 +527,7 @@ class AliasDefinition(PEP253Mixin, ObjectDefinition):
 	
 # Alias methods come in two flavors: those with the alias as arg1 and
 # those with the alias as arg 2.
-class Arg2MethodGenerator(MethodGenerator):
+class Arg2MethodGenerator(OSErrMethodGenerator):
 	"""Similar to MethodGenerator, but has self as second argument"""
 
 	def parseArgumentList(self, args):
