@@ -499,19 +499,23 @@ The \class{RotatingFileHandler} class supports rotation of disk log files.
 Returns a new instance of the \class{RotatingFileHandler} class. The
 specified file is opened and used as the stream for logging. If
 \var{mode} is not specified, \code{'a'} is used. By default, the
-file grows indefinitely. You can use the \var{maxBytes} and
+file grows indefinitely. 
+
+You can use the \var{maxBytes} and
 \var{backupCount} values to allow the file to \dfn{rollover} at a
 predetermined size. When the size is about to be exceeded, the file is
-closed and a new file opened for output, transparently to the
-caller. Rollover occurs whenever the current log file is nearly
-\var{maxBytes} in length. If \var{backupCount} is >= 1, the system
-will successively create new files with the same pathname as the base
-file, but with extensions ".1", ".2" etc. appended to it. For example,
-with a backupCount of 5 and a base file name of "app.log", you would
-get "app.log", "app.log.1", "app.log.2", ... through to
-"app.log.5". When the last file reaches its size limit, the logging
-reverts to "app.log" which is truncated to zero length. If
-\var{maxBytes} is zero, rollover never occurs.
+closed and a new file is silently opened for output. Rollover occurs
+whenever the current log file is nearly \var{maxBytes} in length; if
+\var{maxBytes} is zero, rollover never occurs.  If \var{backupCount}
+is non-zero, the system will save old log files by appending the
+extensions ".1", ".2" etc., to the filename. For example, with
+a \var{backupCount} of 5 and a base file name of
+\file{app.log}, you would get \file{app.log},
+\file{app.log.1}, \file{app.log.2}, up to \file{app.log.5}. The file being
+written to is always \file{app.log}.  When this file is filled, it is
+closed and renamed to \file{app.log.1}, and if files \file{app.log.1},
+\file{app.log.2}, etc.  exist, then they are renamed to \file{app.log.2},
+\file{app.log.3} etc.  respectively.  
 \end{classdesc}
 
 \begin{methoddesc}{doRollover}{}
