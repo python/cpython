@@ -42,7 +42,7 @@ NULL=nul
 !ENDIF 
 ################################################################################
 # Begin Project
-# PROP Target_Last_Scanned "_tkinter - Win32 Release"
+# PROP Target_Last_Scanned "fast_umath - Win32 Release"
 
 !IF  "$(CFG)" == "python14 - Win32 Release"
 
@@ -54,10 +54,10 @@ NULL=nul
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "vc40"
-# PROP Intermediate_Dir "vc40/tmp"
+# PROP Intermediate_Dir "vc40\tmp"
 # PROP Target_Dir "python14"
 OUTDIR=.\vc40
-INTDIR=.\vc40/tmp
+INTDIR=.\vc40\tmp
 
 ALL : "$(OUTDIR)\python14.dll"
 
@@ -145,6 +145,7 @@ CLEAN :
 	-@erase ".\vc40\tmp\listobject.obj"
 	-@erase ".\vc40\tmp\bltinmodule.obj"
 	-@erase ".\vc40\tmp\accessobject.obj"
+	-@erase ".\vc40\tmp\python_nt.res"
 	-@erase ".\vc40\python14.lib"
 	-@erase ".\vc40\python14.exp"
 
@@ -156,11 +157,11 @@ CLEAN :
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MD /W3 /O2 /I "./PC" /I "./Include" /I "./Python" /D "WIN32" /D "_WINDOWS" /D "HAVE_CONFIG_H" /D "USE_DL_EXPORT" /YX /c
-CPP_PROJ=/nologo /MD /W3 /O2 /I "./PC" /I "./Include" /I "./Python" /D "WIN32"\
- /D "_WINDOWS" /D "HAVE_CONFIG_H" /D "USE_DL_EXPORT" /Fp"$(INTDIR)/python14.pch"\
+# ADD CPP /nologo /MD /W3 /O2 /I "PC" /I "Include" /I "Python" /D "WIN32" /D "_WINDOWS" /D "HAVE_CONFIG_H" /D "USE_DL_EXPORT" /YX /c
+CPP_PROJ=/nologo /MD /W3 /O2 /I "PC" /I "Include" /I "Python" /D "WIN32" /D\
+ "_WINDOWS" /D "HAVE_CONFIG_H" /D "USE_DL_EXPORT" /Fp"$(INTDIR)/python14.pch"\
  /YX /Fo"$(INTDIR)/" /c 
-CPP_OBJS=.\vc40/tmp/
+CPP_OBJS=.\vc40\tmp/
 CPP_SBRS=
 
 .c{$(CPP_OBJS)}.obj:
@@ -188,6 +189,7 @@ MTL_PROJ=/nologo /D "NDEBUG" /win32
 RSC=rc.exe
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)/python_nt.res" /d "NDEBUG" 
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -285,7 +287,8 @@ LINK32_OBJS= \
 	"$(INTDIR)/modsupport.obj" \
 	"$(INTDIR)/listobject.obj" \
 	"$(INTDIR)/bltinmodule.obj" \
-	"$(INTDIR)/accessobject.obj"
+	"$(INTDIR)/accessobject.obj" \
+	"$(INTDIR)/python_nt.res"
 
 "$(OUTDIR)\python14.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -302,10 +305,10 @@ LINK32_OBJS= \
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "vc40"
-# PROP Intermediate_Dir "vc40/tmp"
+# PROP Intermediate_Dir "vc40\tmp"
 # PROP Target_Dir "python"
 OUTDIR=.\vc40
-INTDIR=.\vc40/tmp
+INTDIR=.\vc40\tmp
 
 ALL : "$(OUTDIR)\python.exe"
 
@@ -321,11 +324,10 @@ CLEAN :
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /YX /c
-# ADD CPP /nologo /MT /W3 /O2 /I "./PC" /I "./Include" /I "./Python" /D "WIN32" /D "_WINDOWS" /D "HAVE_CONFIG_H" /YX /c
-CPP_PROJ=/nologo /MT /W3 /O2 /I "./PC" /I "./Include" /I "./Python" /D "WIN32"\
- /D "_WINDOWS" /D "HAVE_CONFIG_H" /Fp"$(INTDIR)/python.pch" /YX /Fo"$(INTDIR)/"\
- /c 
-CPP_OBJS=.\vc40/tmp/
+# ADD CPP /nologo /MT /W3 /O2 /I "PC" /I "Include" /I "Python" /D "WIN32" /D "_WINDOWS" /D "HAVE_CONFIG_H" /YX /c
+CPP_PROJ=/nologo /MT /W3 /O2 /I "PC" /I "Include" /I "Python" /D "WIN32" /D\
+ "_WINDOWS" /D "HAVE_CONFIG_H" /Fp"$(INTDIR)/python.pch" /YX /Fo"$(INTDIR)/" /c 
+CPP_OBJS=.\vc40\tmp/
 CPP_SBRS=
 
 .c{$(CPP_OBJS)}.obj:
@@ -380,10 +382,10 @@ LINK32_OBJS= \
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "vc40"
-# PROP Intermediate_Dir "vc40/tmp"
+# PROP Intermediate_Dir "vc40\tmp"
 # PROP Target_Dir "_tkinter"
 OUTDIR=.\vc40
-INTDIR=.\vc40/tmp
+INTDIR=.\vc40\tmp
 
 ALL : "$(OUTDIR)\_tkinter.dll"
 
@@ -401,11 +403,11 @@ CLEAN :
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "./PC" /I "./Include" /I "C:\tcl\include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H" /YX /c
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "./PC" /I "./Include" /I "C:\tcl\include"\
- /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H"\
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "PC" /I "Include" /I "C:\tcl\include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H" /YX /c
+CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "PC" /I "Include" /I "C:\tcl\include" /D\
+ "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H"\
  /Fp"$(INTDIR)/_tkinter.pch" /YX /Fo"$(INTDIR)/" /c 
-CPP_OBJS=.\vc40/tmp/
+CPP_OBJS=.\vc40\tmp/
 CPP_SBRS=
 
 .c{$(CPP_OBJS)}.obj:
@@ -440,10 +442,10 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)/_tkinter.bsc"
 BSC32_SBRS=
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:0x1e190000 /subsystem:windows /dll /machine:I386
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
- odbccp32.lib /nologo /subsystem:windows /dll /incremental:no\
+ odbccp32.lib /nologo /base:0x1e190000 /subsystem:windows /dll /incremental:no\
  /pdb:"$(OUTDIR)/_tkinter.pdb" /machine:I386 /def:".\PC\_tkinter.def"\
  /out:"$(OUTDIR)/_tkinter.dll" /implib:"$(OUTDIR)/_tkinter.lib" 
 DEF_FILE= \
@@ -491,9 +493,9 @@ CLEAN :
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "./PC" /I "./Include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "./PC" /I "./Include" /D "WIN32" /D\
- "NDEBUG" /D "_WINDOWS" /Fp"$(INTDIR)/NumPy.pch" /YX /Fo"$(INTDIR)/" /c 
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "PC" /I "Include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
+CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "PC" /I "Include" /D "WIN32" /D "NDEBUG" /D\
+ "_WINDOWS" /Fp"$(INTDIR)/NumPy.pch" /YX /Fo"$(INTDIR)/" /c 
 CPP_OBJS=.\vc40\tmp/
 CPP_SBRS=
 
@@ -578,9 +580,9 @@ CLEAN :
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "./PC" /I "./Include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "./PC" /I "./Include" /D "WIN32" /D\
- "NDEBUG" /D "_WINDOWS" /Fp"$(INTDIR)/multiarray.pch" /YX /Fo"$(INTDIR)/" /c 
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "PC" /I "Include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
+CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "PC" /I "Include" /D "WIN32" /D "NDEBUG" /D\
+ "_WINDOWS" /Fp"$(INTDIR)/multiarray.pch" /YX /Fo"$(INTDIR)/" /c 
 CPP_OBJS=.\vc40\tmp/
 CPP_SBRS=
 
@@ -732,11 +734,11 @@ LINK32_OBJS= \
 
 SOURCE=.\Objects\longobject.c
 DEP_CPP_LONGO=\
-	".\./Include\allobjects.h"\
-	".\./Include\longintrepr.h"\
-	".\./Include\mymath.h"\
+	".\Include\allobjects.h"\
+	".\Include\longintrepr.h"\
+	".\Include\mymath.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -744,7 +746,7 @@ DEP_CPP_LONGO=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -756,21 +758,20 @@ DEP_CPP_LONGO=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\longobject.obj" : $(SOURCE) $(DEP_CPP_LONGO) "$(INTDIR)"
@@ -783,12 +784,12 @@ DEP_CPP_LONGO=\
 
 SOURCE=.\Objects\listobject.c
 DEP_CPP_LISTO=\
-	".\./Include\allobjects.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
+	".\Include\allobjects.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -796,7 +797,7 @@ DEP_CPP_LISTO=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -808,19 +809,18 @@ DEP_CPP_LISTO=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\listobject.obj" : $(SOURCE) $(DEP_CPP_LISTO) "$(INTDIR)"
@@ -833,10 +833,10 @@ DEP_CPP_LISTO=\
 
 SOURCE=.\Objects\intobject.c
 DEP_CPP_INTOB=\
-	".\./Include\allobjects.h"\
-	".\./Include\modsupport.h"\
+	".\Include\allobjects.h"\
+	".\Include\modsupport.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -844,7 +844,7 @@ DEP_CPP_INTOB=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -856,20 +856,19 @@ DEP_CPP_INTOB=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\intobject.obj" : $(SOURCE) $(DEP_CPP_INTOB) "$(INTDIR)"
@@ -882,13 +881,13 @@ DEP_CPP_INTOB=\
 
 SOURCE=.\Python\importdl.c
 DEP_CPP_IMPOR=\
-	".\./Include\allobjects.h"\
-	".\./Include\osdefs.h"\
-	".\./Python\importdl.h"\
+	".\Include\allobjects.h"\
+	".\Include\osdefs.h"\
+	".\Python\importdl.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	{$(INCLUDE)}"\sys\STAT.H"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -896,7 +895,7 @@ DEP_CPP_IMPOR=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -908,21 +907,20 @@ DEP_CPP_IMPOR=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 NODEP_CPP_IMPOR=\
 	".\Python\dl.h"\
@@ -940,10 +938,10 @@ NODEP_CPP_IMPOR=\
 
 SOURCE=.\Modules\imageop.c
 DEP_CPP_IMAGE=\
-	".\./Include\allobjects.h"\
-	".\./Include\modsupport.h"\
+	".\Include\allobjects.h"\
+	".\Include\modsupport.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -951,7 +949,7 @@ DEP_CPP_IMAGE=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -963,20 +961,19 @@ DEP_CPP_IMAGE=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\imageop.obj" : $(SOURCE) $(DEP_CPP_IMAGE) "$(INTDIR)"
@@ -989,14 +986,14 @@ DEP_CPP_IMAGE=\
 
 SOURCE=.\Parser\grammar1.c
 DEP_CPP_GRAMM=\
-	".\./Include\pgenheaders.h"\
-	".\./Include\grammar.h"\
-	".\./Include\token.h"\
+	".\Include\pgenheaders.h"\
+	".\Include\grammar.h"\
+	".\Include\token.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
-	".\./Include\mymalloc.h"\
+	".\Include\myproto.h"\
+	".\Include\mymalloc.h"\
 	".\Include\pydebug.h"\
-	".\./Include\rename2.h"\
+	".\Include\rename2.h"\
 	".\Include\bitset.h"\
 	
 
@@ -1010,13 +1007,13 @@ DEP_CPP_GRAMM=\
 
 SOURCE=.\Python\graminit.c
 DEP_CPP_GRAMI=\
-	".\./Include\pgenheaders.h"\
-	".\./Include\grammar.h"\
+	".\Include\pgenheaders.h"\
+	".\Include\grammar.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
-	".\./Include\mymalloc.h"\
+	".\Include\myproto.h"\
+	".\Include\mymalloc.h"\
 	".\Include\pydebug.h"\
-	".\./Include\rename2.h"\
+	".\Include\rename2.h"\
 	".\Include\bitset.h"\
 	
 
@@ -1031,10 +1028,10 @@ DEP_CPP_GRAMI=\
 SOURCE=.\Python\getversion.c
 DEP_CPP_GETVE=\
 	".\Include\Python.h"\
-	".\./Include\patchlevel.h"\
-	".\./Include\allobjects.h"\
+	".\Include\patchlevel.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1042,7 +1039,7 @@ DEP_CPP_GETVE=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1054,20 +1051,20 @@ DEP_CPP_GETVE=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\getversion.obj" : $(SOURCE) $(DEP_CPP_GETVE) "$(INTDIR)"
@@ -1081,9 +1078,9 @@ DEP_CPP_GETVE=\
 SOURCE=.\Python\getplatform.c
 DEP_CPP_GETPL=\
 	".\Include\Python.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1091,7 +1088,7 @@ DEP_CPP_GETPL=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1103,21 +1100,20 @@ DEP_CPP_GETPL=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\getplatform.obj" : $(SOURCE) $(DEP_CPP_GETPL) "$(INTDIR)"
@@ -1133,7 +1129,7 @@ DEP_CPP_GETMT=\
 	".\PC\config.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	{$(INCLUDE)}"\sys\STAT.H"\
-	".\./Include\rename2.h"\
+	".\Include\rename2.h"\
 	
 
 "$(INTDIR)\getmtime.obj" : $(SOURCE) $(DEP_CPP_GETMT) "$(INTDIR)"
@@ -1147,9 +1143,9 @@ DEP_CPP_GETMT=\
 SOURCE=.\Python\getcopyright.c
 DEP_CPP_GETCO=\
 	".\Include\Python.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1157,7 +1153,7 @@ DEP_CPP_GETCO=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1169,21 +1165,20 @@ DEP_CPP_GETCO=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\getcopyright.obj" : $(SOURCE) $(DEP_CPP_GETCO) "$(INTDIR)"
@@ -1197,9 +1192,9 @@ DEP_CPP_GETCO=\
 SOURCE=.\Python\getcompiler.c
 DEP_CPP_GETCOM=\
 	".\Include\Python.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1207,7 +1202,7 @@ DEP_CPP_GETCOM=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1219,21 +1214,20 @@ DEP_CPP_GETCOM=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\getcompiler.obj" : $(SOURCE) $(DEP_CPP_GETCOM) "$(INTDIR)"
@@ -1246,9 +1240,9 @@ DEP_CPP_GETCOM=\
 
 SOURCE=.\Python\getargs.c
 DEP_CPP_GETAR=\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1256,7 +1250,7 @@ DEP_CPP_GETAR=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1268,21 +1262,20 @@ DEP_CPP_GETAR=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\getargs.obj" : $(SOURCE) $(DEP_CPP_GETAR) "$(INTDIR)"
@@ -1295,11 +1288,11 @@ DEP_CPP_GETAR=\
 
 SOURCE=.\Objects\funcobject.c
 DEP_CPP_FUNCO=\
-	".\./Include\allobjects.h"\
-	".\./Include\compile.h"\
-	".\./Include\structmember.h"\
+	".\Include\allobjects.h"\
+	".\Include\compile.h"\
+	".\Include\structmember.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1307,7 +1300,7 @@ DEP_CPP_FUNCO=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1319,21 +1312,20 @@ DEP_CPP_FUNCO=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\funcobject.obj" : $(SOURCE) $(DEP_CPP_FUNCO) "$(INTDIR)"
@@ -1347,9 +1339,9 @@ DEP_CPP_FUNCO=\
 SOURCE=.\Python\frozen.c
 DEP_CPP_FROZE=\
 	".\Include\Python.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1357,7 +1349,7 @@ DEP_CPP_FROZE=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1369,21 +1361,20 @@ DEP_CPP_FROZE=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\frozen.obj" : $(SOURCE) $(DEP_CPP_FROZE) "$(INTDIR)"
@@ -1396,14 +1387,14 @@ DEP_CPP_FROZE=\
 
 SOURCE=.\Objects\frameobject.c
 DEP_CPP_FRAME=\
-	".\./Include\allobjects.h"\
-	".\./Include\compile.h"\
-	".\./Include\frameobject.h"\
-	".\./Include\opcode.h"\
-	".\./Include\structmember.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\allobjects.h"\
+	".\Include\compile.h"\
+	".\Include\frameobject.h"\
+	".\Include\opcode.h"\
+	".\Include\structmember.h"\
+	".\Include\bltinmodule.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1411,7 +1402,7 @@ DEP_CPP_FRAME=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1423,20 +1414,19 @@ DEP_CPP_FRAME=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\frameobject.obj" : $(SOURCE) $(DEP_CPP_FRAME) "$(INTDIR)"
@@ -1449,11 +1439,11 @@ DEP_CPP_FRAME=\
 
 SOURCE=.\Objects\floatobject.c
 DEP_CPP_FLOAT=\
-	".\./Include\allobjects.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\mymath.h"\
+	".\Include\allobjects.h"\
+	".\Include\modsupport.h"\
+	".\Include\mymath.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1461,7 +1451,7 @@ DEP_CPP_FLOAT=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1473,20 +1463,19 @@ DEP_CPP_FLOAT=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\floatobject.obj" : $(SOURCE) $(DEP_CPP_FLOAT) "$(INTDIR)"
@@ -1499,12 +1488,12 @@ DEP_CPP_FLOAT=\
 
 SOURCE=.\Objects\fileobject.c
 DEP_CPP_FILEO=\
-	".\./Include\allobjects.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\structmember.h"\
-	".\./Include\ceval.h"\
+	".\Include\allobjects.h"\
+	".\Include\modsupport.h"\
+	".\Include\structmember.h"\
+	".\Include\ceval.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1512,7 +1501,7 @@ DEP_CPP_FILEO=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1524,19 +1513,18 @@ DEP_CPP_FILEO=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\fileobject.obj" : $(SOURCE) $(DEP_CPP_FILEO) "$(INTDIR)"
@@ -1549,10 +1537,10 @@ DEP_CPP_FILEO=\
 
 SOURCE=.\Python\errors.c
 DEP_CPP_ERROR=\
-	".\./Include\allobjects.h"\
-	".\./Include\traceback.h"\
+	".\Include\allobjects.h"\
+	".\Include\traceback.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1560,7 +1548,7 @@ DEP_CPP_ERROR=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1574,18 +1562,17 @@ DEP_CPP_ERROR=\
 	".\Include\cobject.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\errors.obj" : $(SOURCE) $(DEP_CPP_ERROR) "$(INTDIR)"
@@ -1599,9 +1586,9 @@ DEP_CPP_ERROR=\
 SOURCE=.\PC\config.c
 DEP_CPP_CONFI=\
 	".\Include\Python.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1609,7 +1596,7 @@ DEP_CPP_CONFI=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1621,21 +1608,20 @@ DEP_CPP_CONFI=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\config.obj" : $(SOURCE) $(DEP_CPP_CONFI) "$(INTDIR)"
@@ -1648,11 +1634,11 @@ DEP_CPP_CONFI=\
 
 SOURCE=.\Objects\complexobject.c
 DEP_CPP_COMPL=\
-	".\./Include\allobjects.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\mymath.h"\
+	".\Include\allobjects.h"\
+	".\Include\modsupport.h"\
+	".\Include\mymath.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1660,7 +1646,7 @@ DEP_CPP_COMPL=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1672,20 +1658,19 @@ DEP_CPP_COMPL=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\complexobject.obj" : $(SOURCE) $(DEP_CPP_COMPL) "$(INTDIR)"
@@ -1698,15 +1683,15 @@ DEP_CPP_COMPL=\
 
 SOURCE=.\Python\compile.c
 DEP_CPP_COMPI=\
-	".\./Include\allobjects.h"\
-	".\./Include\node.h"\
-	".\./Include\token.h"\
-	".\./Include\graminit.h"\
-	".\./Include\compile.h"\
-	".\./Include\opcode.h"\
-	".\./Include\structmember.h"\
+	".\Include\allobjects.h"\
+	".\Include\node.h"\
+	".\Include\token.h"\
+	".\Include\graminit.h"\
+	".\Include\compile.h"\
+	".\Include\opcode.h"\
+	".\Include\structmember.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1714,7 +1699,7 @@ DEP_CPP_COMPI=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1726,21 +1711,20 @@ DEP_CPP_COMPI=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\compile.obj" : $(SOURCE) $(DEP_CPP_COMPI) "$(INTDIR)"
@@ -1754,9 +1738,9 @@ DEP_CPP_COMPI=\
 SOURCE=.\Objects\cobject.c
 DEP_CPP_COBJE=\
 	".\Include\Python.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1764,7 +1748,7 @@ DEP_CPP_COBJE=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1776,21 +1760,20 @@ DEP_CPP_COBJE=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\cobject.obj" : $(SOURCE) $(DEP_CPP_COBJE) "$(INTDIR)"
@@ -1803,11 +1786,11 @@ DEP_CPP_COBJE=\
 
 SOURCE=.\Modules\cmathmodule.c
 DEP_CPP_CMATH=\
-	".\./Include\allobjects.h"\
-	".\./Include\complexobject.h"\
-	".\./Include\mymath.h"\
+	".\Include\allobjects.h"\
+	".\Include\complexobject.h"\
+	".\Include\mymath.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1826,21 +1809,20 @@ DEP_CPP_CMATH=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\cmathmodule.obj" : $(SOURCE) $(DEP_CPP_CMATH) "$(INTDIR)"
@@ -1853,10 +1835,10 @@ DEP_CPP_CMATH=\
 
 SOURCE=.\Objects\classobject.c
 DEP_CPP_CLASS=\
-	".\./Include\allobjects.h"\
-	".\./Include\structmember.h"\
+	".\Include\allobjects.h"\
+	".\Include\structmember.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1864,7 +1846,7 @@ DEP_CPP_CLASS=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1876,21 +1858,20 @@ DEP_CPP_CLASS=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\classobject.obj" : $(SOURCE) $(DEP_CPP_CLASS) "$(INTDIR)"
@@ -1903,10 +1884,10 @@ DEP_CPP_CLASS=\
 
 SOURCE=.\Python\cgensupport.c
 DEP_CPP_CGENS=\
-	".\./Include\allobjects.h"\
-	".\./Include\cgensupport.h"\
+	".\Include\allobjects.h"\
+	".\Include\cgensupport.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1914,7 +1895,7 @@ DEP_CPP_CGENS=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1926,21 +1907,20 @@ DEP_CPP_CGENS=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\cgensupport.obj" : $(SOURCE) $(DEP_CPP_CGENS) "$(INTDIR)"
@@ -1953,15 +1933,15 @@ DEP_CPP_CGENS=\
 
 SOURCE=.\Python\ceval.c
 DEP_CPP_CEVAL=\
-	".\./Include\allobjects.h"\
-	".\./Include\compile.h"\
-	".\./Include\frameobject.h"\
-	".\./Include\eval.h"\
-	".\./Include\opcode.h"\
-	".\./Include\graminit.h"\
-	".\./Include\thread.h"\
+	".\Include\allobjects.h"\
+	".\Include\compile.h"\
+	".\Include\frameobject.h"\
+	".\Include\eval.h"\
+	".\Include\opcode.h"\
+	".\Include\graminit.h"\
+	".\Include\thread.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -1969,7 +1949,7 @@ DEP_CPP_CEVAL=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -1981,20 +1961,19 @@ DEP_CPP_CEVAL=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
 	
 
 "$(INTDIR)\ceval.obj" : $(SOURCE) $(DEP_CPP_CEVAL) "$(INTDIR)"
@@ -2007,16 +1986,16 @@ DEP_CPP_CEVAL=\
 
 SOURCE=.\Python\bltinmodule.c
 DEP_CPP_BLTIN=\
-	".\./Include\allobjects.h"\
-	".\./Include\node.h"\
-	".\./Include\graminit.h"\
-	".\./Include\bltinmodule.h"\
-	".\./Include\import.h"\
-	".\./Include\compile.h"\
-	".\./Include\eval.h"\
-	".\./Include\mymath.h"\
+	".\Include\allobjects.h"\
+	".\Include\node.h"\
+	".\Include\graminit.h"\
+	".\Include\bltinmodule.h"\
+	".\Include\import.h"\
+	".\Include\compile.h"\
+	".\Include\eval.h"\
+	".\Include\mymath.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2024,7 +2003,7 @@ DEP_CPP_BLTIN=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2036,19 +2015,18 @@ DEP_CPP_BLTIN=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\bltinmodule.obj" : $(SOURCE) $(DEP_CPP_BLTIN) "$(INTDIR)"
@@ -2062,9 +2040,9 @@ DEP_CPP_BLTIN=\
 SOURCE=.\Modules\binascii.c
 DEP_CPP_BINAS=\
 	".\Include\Python.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2072,7 +2050,7 @@ DEP_CPP_BINAS=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2084,21 +2062,20 @@ DEP_CPP_BINAS=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\binascii.obj" : $(SOURCE) $(DEP_CPP_BINAS) "$(INTDIR)"
@@ -2111,11 +2088,11 @@ DEP_CPP_BINAS=\
 
 SOURCE=.\Modules\audioop.c
 DEP_CPP_AUDIO=\
-	".\./Include\allobjects.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\mymath.h"\
+	".\Include\allobjects.h"\
+	".\Include\modsupport.h"\
+	".\Include\mymath.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2123,7 +2100,7 @@ DEP_CPP_AUDIO=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2135,20 +2112,19 @@ DEP_CPP_AUDIO=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\audioop.obj" : $(SOURCE) $(DEP_CPP_AUDIO) "$(INTDIR)"
@@ -2161,12 +2137,12 @@ DEP_CPP_AUDIO=\
 
 SOURCE=.\Modules\arraymodule.c
 DEP_CPP_ARRAY=\
-	".\./Include\allobjects.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
+	".\Include\allobjects.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2174,7 +2150,7 @@ DEP_CPP_ARRAY=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2186,19 +2162,18 @@ DEP_CPP_ARRAY=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\arraymodule.obj" : $(SOURCE) $(DEP_CPP_ARRAY) "$(INTDIR)"
@@ -2211,12 +2186,12 @@ DEP_CPP_ARRAY=\
 
 SOURCE=.\Objects\accessobject.c
 DEP_CPP_ACCES=\
-	".\./Include\allobjects.h"\
-	".\./Include\ceval.h"\
-	".\./Include\structmember.h"\
-	".\./Include\modsupport.h"\
+	".\Include\allobjects.h"\
+	".\Include\ceval.h"\
+	".\Include\structmember.h"\
+	".\Include\modsupport.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2224,7 +2199,7 @@ DEP_CPP_ACCES=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2236,19 +2211,18 @@ DEP_CPP_ACCES=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\accessobject.obj" : $(SOURCE) $(DEP_CPP_ACCES) "$(INTDIR)"
@@ -2261,16 +2235,16 @@ DEP_CPP_ACCES=\
 
 SOURCE=.\Parser\acceler.c
 DEP_CPP_ACCEL=\
-	".\./Include\pgenheaders.h"\
-	".\./Include\grammar.h"\
-	".\./Include\node.h"\
-	".\./Include\token.h"\
+	".\Include\pgenheaders.h"\
+	".\Include\grammar.h"\
+	".\Include\node.h"\
+	".\Include\token.h"\
 	".\Parser\parser.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
-	".\./Include\mymalloc.h"\
+	".\Include\myproto.h"\
+	".\Include\mymalloc.h"\
 	".\Include\pydebug.h"\
-	".\./Include\rename2.h"\
+	".\Include\rename2.h"\
 	".\Include\bitset.h"\
 	
 
@@ -2285,9 +2259,9 @@ DEP_CPP_ACCEL=\
 SOURCE=.\Objects\abstract.c
 DEP_CPP_ABSTR=\
 	".\Include\Python.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2295,7 +2269,7 @@ DEP_CPP_ABSTR=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2307,21 +2281,20 @@ DEP_CPP_ABSTR=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\abstract.obj" : $(SOURCE) $(DEP_CPP_ABSTR) "$(INTDIR)"
@@ -2347,9 +2320,9 @@ DEP_CPP_YUVCO=\
 
 SOURCE=.\Objects\typeobject.c
 DEP_CPP_TYPEO=\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2357,7 +2330,7 @@ DEP_CPP_TYPEO=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2369,21 +2342,20 @@ DEP_CPP_TYPEO=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\typeobject.obj" : $(SOURCE) $(DEP_CPP_TYPEO) "$(INTDIR)"
@@ -2396,9 +2368,9 @@ DEP_CPP_TYPEO=\
 
 SOURCE=.\Objects\tupleobject.c
 DEP_CPP_TUPLE=\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2406,7 +2378,7 @@ DEP_CPP_TUPLE=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2418,21 +2390,20 @@ DEP_CPP_TUPLE=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\tupleobject.obj" : $(SOURCE) $(DEP_CPP_TUPLE) "$(INTDIR)"
@@ -2445,15 +2416,15 @@ DEP_CPP_TUPLE=\
 
 SOURCE=.\Python\traceback.c
 DEP_CPP_TRACE=\
-	".\./Include\allobjects.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\compile.h"\
-	".\./Include\frameobject.h"\
-	".\./Include\traceback.h"\
-	".\./Include\structmember.h"\
-	".\./Include\osdefs.h"\
+	".\Include\allobjects.h"\
+	".\Include\sysmodule.h"\
+	".\Include\compile.h"\
+	".\Include\frameobject.h"\
+	".\Include\traceback.h"\
+	".\Include\structmember.h"\
+	".\Include\osdefs.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2461,7 +2432,7 @@ DEP_CPP_TRACE=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2475,17 +2446,16 @@ DEP_CPP_TRACE=\
 	".\Include\cobject.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\traceback.obj" : $(SOURCE) $(DEP_CPP_TRACE) "$(INTDIR)"
@@ -2498,15 +2468,15 @@ DEP_CPP_TRACE=\
 
 SOURCE=.\Parser\tokenizer.c
 DEP_CPP_TOKEN=\
-	".\./Include\pgenheaders.h"\
+	".\Include\pgenheaders.h"\
 	".\Parser\tokenizer.h"\
-	".\./Include\errcode.h"\
+	".\Include\errcode.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
-	".\./Include\mymalloc.h"\
+	".\Include\myproto.h"\
+	".\Include\mymalloc.h"\
 	".\Include\pydebug.h"\
-	".\./Include\rename2.h"\
-	".\./Include\token.h"\
+	".\Include\rename2.h"\
+	".\Include\token.h"\
 	
 
 "$(INTDIR)\tokenizer.obj" : $(SOURCE) $(DEP_CPP_TOKEN) "$(INTDIR)"
@@ -2519,16 +2489,16 @@ DEP_CPP_TOKEN=\
 
 SOURCE=.\Modules\timemodule.c
 DEP_CPP_TIMEM=\
-	".\./Include\allobjects.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\mymath.h"\
+	".\Include\allobjects.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\mymath.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
-	".\./Include\myselect.h"\
-	".\./Include\mytime.h"\
+	".\Include\myselect.h"\
+	".\Include\mytime.h"\
 	{$(INCLUDE)}"\sys\TIMEB.H"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2536,7 +2506,7 @@ DEP_CPP_TIMEM=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2548,19 +2518,18 @@ DEP_CPP_TIMEM=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\timemodule.obj" : $(SOURCE) $(DEP_CPP_TIMEM) "$(INTDIR)"
@@ -2574,14 +2543,18 @@ DEP_CPP_TIMEM=\
 SOURCE=.\Python\thread.c
 DEP_CPP_THREA=\
 	".\PC\config.h"\
-	".\./Include\thread.h"\
+	".\Include\thread.h"\
 	".\Python\thread_sgi.h"\
 	".\Python\thread_solaris.h"\
 	".\Python\thread_lwp.h"\
 	".\Python\thread_pthread.h"\
 	".\Python\thread_cthread.h"\
 	".\Python\thread_nt.h"\
+	".\Python\thread_foobar.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
+	
+NODEP_CPP_THREA=\
+	".\..\..\..\..\usr\include\thread.h"\
 	
 
 "$(INTDIR)\thread.obj" : $(SOURCE) $(DEP_CPP_THREA) "$(INTDIR)"
@@ -2594,10 +2567,10 @@ DEP_CPP_THREA=\
 
 SOURCE=.\Modules\structmodule.c
 DEP_CPP_STRUC=\
-	".\./Include\allobjects.h"\
-	".\./Include\modsupport.h"\
+	".\Include\allobjects.h"\
+	".\Include\modsupport.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2605,7 +2578,7 @@ DEP_CPP_STRUC=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2617,20 +2590,19 @@ DEP_CPP_STRUC=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\structmodule.obj" : $(SOURCE) $(DEP_CPP_STRUC) "$(INTDIR)"
@@ -2643,10 +2615,10 @@ DEP_CPP_STRUC=\
 
 SOURCE=.\Python\structmember.c
 DEP_CPP_STRUCT=\
-	".\./Include\allobjects.h"\
-	".\./Include\structmember.h"\
+	".\Include\allobjects.h"\
+	".\Include\structmember.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2654,7 +2626,7 @@ DEP_CPP_STRUCT=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2666,21 +2638,20 @@ DEP_CPP_STRUCT=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\structmember.obj" : $(SOURCE) $(DEP_CPP_STRUCT) "$(INTDIR)"
@@ -2693,10 +2664,10 @@ DEP_CPP_STRUCT=\
 
 SOURCE=.\Modules\stropmodule.c
 DEP_CPP_STROP=\
-	".\./Include\allobjects.h"\
-	".\./Include\modsupport.h"\
+	".\Include\allobjects.h"\
+	".\Include\modsupport.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2704,7 +2675,7 @@ DEP_CPP_STROP=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2716,20 +2687,19 @@ DEP_CPP_STROP=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\stropmodule.obj" : $(SOURCE) $(DEP_CPP_STROP) "$(INTDIR)"
@@ -2742,9 +2712,9 @@ DEP_CPP_STROP=\
 
 SOURCE=.\Objects\stringobject.c
 DEP_CPP_STRIN=\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2752,7 +2722,7 @@ DEP_CPP_STRIN=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2764,21 +2734,20 @@ DEP_CPP_STRIN=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\stringobject.obj" : $(SOURCE) $(DEP_CPP_STRIN) "$(INTDIR)"
@@ -2792,9 +2761,9 @@ DEP_CPP_STRIN=\
 SOURCE=.\Modules\soundex.c
 DEP_CPP_SOUND=\
 	".\Include\Python.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2802,7 +2771,7 @@ DEP_CPP_SOUND=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2814,21 +2783,20 @@ DEP_CPP_SOUND=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\soundex.obj" : $(SOURCE) $(DEP_CPP_SOUND) "$(INTDIR)"
@@ -2842,11 +2810,11 @@ DEP_CPP_SOUND=\
 SOURCE=.\Modules\signalmodule.c
 DEP_CPP_SIGNA=\
 	".\Include\Python.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\thread.h"\
-	".\./Include\allobjects.h"\
+	".\Include\intrcheck.h"\
+	".\Include\thread.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2854,7 +2822,7 @@ DEP_CPP_SIGNA=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2866,19 +2834,18 @@ DEP_CPP_SIGNA=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
 	
 
 "$(INTDIR)\signalmodule.obj" : $(SOURCE) $(DEP_CPP_SIGNA) "$(INTDIR)"
@@ -2892,10 +2859,10 @@ DEP_CPP_SIGNA=\
 SOURCE=.\Modules\rotormodule.c
 DEP_CPP_ROTOR=\
 	".\Include\Python.h"\
-	".\./Include\mymath.h"\
-	".\./Include\allobjects.h"\
+	".\Include\mymath.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2903,7 +2870,7 @@ DEP_CPP_ROTOR=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2915,21 +2882,20 @@ DEP_CPP_ROTOR=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\rotormodule.obj" : $(SOURCE) $(DEP_CPP_ROTOR) "$(INTDIR)"
@@ -2942,10 +2908,10 @@ DEP_CPP_ROTOR=\
 
 SOURCE=.\Modules\rgbimgmodule.c
 DEP_CPP_RGBIM=\
-	".\./Include\allobjects.h"\
-	".\./Include\modsupport.h"\
+	".\Include\allobjects.h"\
+	".\Include\modsupport.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -2953,7 +2919,7 @@ DEP_CPP_RGBIM=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -2965,20 +2931,19 @@ DEP_CPP_RGBIM=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\rgbimgmodule.obj" : $(SOURCE) $(DEP_CPP_RGBIM) "$(INTDIR)"
@@ -2992,9 +2957,9 @@ DEP_CPP_RGBIM=\
 SOURCE=.\Modules\regexpr.c
 DEP_CPP_REGEX=\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Modules\regexpr.h"\
-	".\./Include\rename2.h"\
+	".\Include\rename2.h"\
 	
 NODEP_CPP_REGEX=\
 	".\Modules\lisp.h"\
@@ -3014,9 +2979,9 @@ SOURCE=.\Modules\regexmodule.c
 DEP_CPP_REGEXM=\
 	".\Include\Python.h"\
 	".\Modules\regexpr.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -3024,7 +2989,7 @@ DEP_CPP_REGEXM=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -3036,21 +3001,20 @@ DEP_CPP_REGEXM=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\regexmodule.obj" : $(SOURCE) $(DEP_CPP_REGEXM) "$(INTDIR)"
@@ -3063,9 +3027,9 @@ DEP_CPP_REGEXM=\
 
 SOURCE=.\Objects\rangeobject.c
 DEP_CPP_RANGE=\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -3073,7 +3037,7 @@ DEP_CPP_RANGE=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -3085,21 +3049,20 @@ DEP_CPP_RANGE=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\rangeobject.obj" : $(SOURCE) $(DEP_CPP_RANGE) "$(INTDIR)"
@@ -3112,22 +3075,22 @@ DEP_CPP_RANGE=\
 
 SOURCE=.\Python\pythonrun.c
 DEP_CPP_PYTHO=\
-	".\./Include\allobjects.h"\
-	".\./Include\grammar.h"\
-	".\./Include\node.h"\
-	".\./Include\parsetok.h"\
-	".\./Include\graminit.h"\
-	".\./Include\errcode.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\bltinmodule.h"\
-	".\./Include\compile.h"\
-	".\./Include\eval.h"\
-	".\./Include\ceval.h"\
-	".\./Include\import.h"\
-	".\./Include\marshal.h"\
-	".\./Include\thread.h"\
+	".\Include\allobjects.h"\
+	".\Include\grammar.h"\
+	".\Include\node.h"\
+	".\Include\parsetok.h"\
+	".\Include\graminit.h"\
+	".\Include\errcode.h"\
+	".\Include\sysmodule.h"\
+	".\Include\bltinmodule.h"\
+	".\Include\compile.h"\
+	".\Include\eval.h"\
+	".\Include\ceval.h"\
+	".\Include\import.h"\
+	".\Include\marshal.h"\
+	".\Include\thread.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -3135,7 +3098,7 @@ DEP_CPP_PYTHO=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -3147,16 +3110,15 @@ DEP_CPP_PYTHO=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\intrcheck.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\pythonrun.h"\
+	".\Include\intrcheck.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
 	".\Include\bitset.h"\
 	
 
@@ -3170,19 +3132,19 @@ DEP_CPP_PYTHO=\
 
 SOURCE=.\Parser\parsetok.c
 DEP_CPP_PARSE=\
-	".\./Include\pgenheaders.h"\
+	".\Include\pgenheaders.h"\
 	".\Parser\tokenizer.h"\
-	".\./Include\node.h"\
-	".\./Include\grammar.h"\
+	".\Include\node.h"\
+	".\Include\grammar.h"\
 	".\Parser\parser.h"\
-	".\./Include\parsetok.h"\
-	".\./Include\errcode.h"\
+	".\Include\parsetok.h"\
+	".\Include\errcode.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
-	".\./Include\mymalloc.h"\
+	".\Include\myproto.h"\
+	".\Include\mymalloc.h"\
 	".\Include\pydebug.h"\
-	".\./Include\rename2.h"\
-	".\./Include\token.h"\
+	".\Include\rename2.h"\
+	".\Include\token.h"\
 	".\Include\bitset.h"\
 	
 
@@ -3196,17 +3158,17 @@ DEP_CPP_PARSE=\
 
 SOURCE=.\Parser\parser.c
 DEP_CPP_PARSER=\
-	".\./Include\pgenheaders.h"\
-	".\./Include\token.h"\
-	".\./Include\grammar.h"\
-	".\./Include\node.h"\
+	".\Include\pgenheaders.h"\
+	".\Include\token.h"\
+	".\Include\grammar.h"\
+	".\Include\node.h"\
 	".\Parser\parser.h"\
-	".\./Include\errcode.h"\
+	".\Include\errcode.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
-	".\./Include\mymalloc.h"\
+	".\Include\myproto.h"\
+	".\Include\mymalloc.h"\
 	".\Include\pydebug.h"\
-	".\./Include\rename2.h"\
+	".\Include\rename2.h"\
 	".\Include\bitset.h"\
 	
 
@@ -3220,9 +3182,9 @@ DEP_CPP_PARSER=\
 
 SOURCE=.\Objects\object.c
 DEP_CPP_OBJEC=\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -3230,7 +3192,7 @@ DEP_CPP_OBJEC=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -3242,21 +3204,20 @@ DEP_CPP_OBJEC=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\object.obj" : $(SOURCE) $(DEP_CPP_OBJEC) "$(INTDIR)"
@@ -3269,13 +3230,13 @@ DEP_CPP_OBJEC=\
 
 SOURCE=.\Parser\node.c
 DEP_CPP_NODE_=\
-	".\./Include\pgenheaders.h"\
-	".\./Include\node.h"\
+	".\Include\pgenheaders.h"\
+	".\Include\node.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
-	".\./Include\mymalloc.h"\
+	".\Include\myproto.h"\
+	".\Include\mymalloc.h"\
 	".\Include\pydebug.h"\
-	".\./Include\rename2.h"\
+	".\Include\rename2.h"\
 	
 
 "$(INTDIR)\node.obj" : $(SOURCE) $(DEP_CPP_NODE_) "$(INTDIR)"
@@ -3288,10 +3249,10 @@ DEP_CPP_NODE_=\
 
 SOURCE=.\Modules\newmodule.c
 DEP_CPP_NEWMO=\
-	".\./Include\allobjects.h"\
-	".\./Include\compile.h"\
+	".\Include\allobjects.h"\
+	".\Include\compile.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -3299,7 +3260,7 @@ DEP_CPP_NEWMO=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -3311,21 +3272,20 @@ DEP_CPP_NEWMO=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\newmodule.obj" : $(SOURCE) $(DEP_CPP_NEWMO) "$(INTDIR)"
@@ -3338,13 +3298,13 @@ DEP_CPP_NEWMO=\
 
 SOURCE=.\Python\marshal.c
 DEP_CPP_MARSH=\
-	".\./Include\allobjects.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\longintrepr.h"\
-	".\./Include\compile.h"\
-	".\./Include\marshal.h"\
+	".\Include\allobjects.h"\
+	".\Include\modsupport.h"\
+	".\Include\longintrepr.h"\
+	".\Include\compile.h"\
+	".\Include\marshal.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -3352,7 +3312,7 @@ DEP_CPP_MARSH=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -3364,20 +3324,19 @@ DEP_CPP_MARSH=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\marshal.obj" : $(SOURCE) $(DEP_CPP_MARSH) "$(INTDIR)"
@@ -3391,7 +3350,7 @@ DEP_CPP_MARSH=\
 SOURCE=.\Python\mystrtoul.c
 DEP_CPP_MYSTR=\
 	".\PC\config.h"\
-	".\./Include\rename2.h"\
+	".\Include\rename2.h"\
 	
 
 "$(INTDIR)\mystrtoul.obj" : $(SOURCE) $(DEP_CPP_MYSTR) "$(INTDIR)"
@@ -3405,10 +3364,10 @@ DEP_CPP_MYSTR=\
 SOURCE=.\Parser\myreadline.c
 DEP_CPP_MYREA=\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\rename2.h"\
+	".\Include\myproto.h"\
+	".\Include\mymalloc.h"\
+	".\Include\intrcheck.h"\
+	".\Include\rename2.h"\
 	
 
 "$(INTDIR)\myreadline.obj" : $(SOURCE) $(DEP_CPP_MYREA) "$(INTDIR)"
@@ -3421,10 +3380,10 @@ DEP_CPP_MYREA=\
 
 SOURCE=.\Objects\moduleobject.c
 DEP_CPP_MODUL=\
-	".\./Include\allobjects.h"\
-	".\./Include\ceval.h"\
+	".\Include\allobjects.h"\
+	".\Include\ceval.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -3432,7 +3391,7 @@ DEP_CPP_MODUL=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -3444,20 +3403,19 @@ DEP_CPP_MODUL=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\moduleobject.obj" : $(SOURCE) $(DEP_CPP_MODUL) "$(INTDIR)"
@@ -3470,10 +3428,10 @@ DEP_CPP_MODUL=\
 
 SOURCE=.\Python\modsupport.c
 DEP_CPP_MODSU=\
-	".\./Include\allobjects.h"\
-	".\./Include\import.h"\
+	".\Include\allobjects.h"\
+	".\Include\import.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -3481,7 +3439,7 @@ DEP_CPP_MODSU=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -3493,20 +3451,19 @@ DEP_CPP_MODSU=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\modsupport.obj" : $(SOURCE) $(DEP_CPP_MODSU) "$(INTDIR)"
@@ -3519,10 +3476,10 @@ DEP_CPP_MODSU=\
 
 SOURCE=.\Objects\methodobject.c
 DEP_CPP_METHO=\
-	".\./Include\allobjects.h"\
-	".\./Include\token.h"\
+	".\Include\allobjects.h"\
+	".\Include\token.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -3530,7 +3487,7 @@ DEP_CPP_METHO=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -3542,21 +3499,20 @@ DEP_CPP_METHO=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\methodobject.obj" : $(SOURCE) $(DEP_CPP_METHO) "$(INTDIR)"
@@ -3569,11 +3525,11 @@ DEP_CPP_METHO=\
 
 SOURCE=.\Modules\md5module.c
 DEP_CPP_MD5MO=\
-	".\./Include\allobjects.h"\
-	".\./Include\modsupport.h"\
+	".\Include\allobjects.h"\
+	".\Include\modsupport.h"\
 	".\Modules\md5.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -3581,7 +3537,7 @@ DEP_CPP_MD5MO=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -3593,20 +3549,19 @@ DEP_CPP_MD5MO=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\md5module.obj" : $(SOURCE) $(DEP_CPP_MD5MO) "$(INTDIR)"
@@ -3633,10 +3588,10 @@ DEP_CPP_MD5C_=\
 
 SOURCE=.\Modules\mathmodule.c
 DEP_CPP_MATHM=\
-	".\./Include\allobjects.h"\
-	".\./Include\mymath.h"\
+	".\Include\allobjects.h"\
+	".\Include\mymath.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -3644,7 +3599,7 @@ DEP_CPP_MATHM=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -3656,21 +3611,20 @@ DEP_CPP_MATHM=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\mathmodule.obj" : $(SOURCE) $(DEP_CPP_MATHM) "$(INTDIR)"
@@ -3683,10 +3637,10 @@ DEP_CPP_MATHM=\
 
 SOURCE=.\Objects\mappingobject.c
 DEP_CPP_MAPPI=\
-	".\./Include\allobjects.h"\
-	".\./Include\modsupport.h"\
+	".\Include\allobjects.h"\
+	".\Include\modsupport.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -3694,7 +3648,7 @@ DEP_CPP_MAPPI=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -3706,20 +3660,19 @@ DEP_CPP_MAPPI=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\mappingobject.obj" : $(SOURCE) $(DEP_CPP_MAPPI) "$(INTDIR)"
@@ -3734,10 +3687,10 @@ SOURCE=.\Modules\socketmodule.c
 DEP_CPP_SOCKE=\
 	".\Include\Python.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
-	".\./Include\mytime.h"\
-	".\./Include\allobjects.h"\
+	".\Include\mytime.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -3745,7 +3698,7 @@ DEP_CPP_SOCKE=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -3757,21 +3710,20 @@ DEP_CPP_SOCKE=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\socketmodule.obj" : $(SOURCE) $(DEP_CPP_SOCKE) "$(INTDIR)"
@@ -3784,13 +3736,13 @@ DEP_CPP_SOCKE=\
 
 SOURCE=.\Modules\selectmodule.c
 DEP_CPP_SELEC=\
-	".\./Include\allobjects.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
+	".\Include\allobjects.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
-	".\./Include\myselect.h"\
+	".\Include\myselect.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -3798,7 +3750,7 @@ DEP_CPP_SELEC=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -3810,20 +3762,19 @@ DEP_CPP_SELEC=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
-	".\./Include\mytime.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
+	".\Include\mytime.h"\
 	
 
 "$(INTDIR)\selectmodule.obj" : $(SOURCE) $(DEP_CPP_SELEC) "$(INTDIR)"
@@ -3836,13 +3787,13 @@ DEP_CPP_SELEC=\
 
 SOURCE=.\Python\sysmodule.c
 DEP_CPP_SYSMO=\
-	".\./Include\allobjects.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\import.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\osdefs.h"\
+	".\Include\allobjects.h"\
+	".\Include\sysmodule.h"\
+	".\Include\import.h"\
+	".\Include\modsupport.h"\
+	".\Include\osdefs.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -3850,7 +3801,7 @@ DEP_CPP_SYSMO=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -3862,18 +3813,17 @@ DEP_CPP_SYSMO=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\intrcheck.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\sysmodule.obj" : $(SOURCE) $(DEP_CPP_SYSMO) "$(INTDIR)"
@@ -3886,22 +3836,22 @@ DEP_CPP_SYSMO=\
 
 SOURCE=.\Python\import.c
 DEP_CPP_IMPORT=\
-	".\./Include\allobjects.h"\
-	".\./Include\node.h"\
-	".\./Include\token.h"\
-	".\./Include\graminit.h"\
-	".\./Include\import.h"\
-	".\./Include\errcode.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\bltinmodule.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\marshal.h"\
-	".\./Include\compile.h"\
-	".\./Include\eval.h"\
-	".\./Include\osdefs.h"\
-	".\./Python\importdl.h"\
+	".\Include\allobjects.h"\
+	".\Include\node.h"\
+	".\Include\token.h"\
+	".\Include\graminit.h"\
+	".\Include\import.h"\
+	".\Include\errcode.h"\
+	".\Include\sysmodule.h"\
+	".\Include\bltinmodule.h"\
+	".\Include\pythonrun.h"\
+	".\Include\marshal.h"\
+	".\Include\compile.h"\
+	".\Include\eval.h"\
+	".\Include\osdefs.h"\
+	".\Python\importdl.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -3909,7 +3859,7 @@ DEP_CPP_IMPORT=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -3921,17 +3871,16 @@ DEP_CPP_IMPORT=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\intrcheck.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\intrcheck.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 NODEP_CPP_IMPORT=\
 	".\Python\macglue.h"\
@@ -3947,15 +3896,15 @@ NODEP_CPP_IMPORT=\
 
 SOURCE=.\Modules\posixmodule.c
 DEP_CPP_POSIX=\
-	".\./Include\allobjects.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
+	".\Include\allobjects.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	{$(INCLUDE)}"\sys\STAT.H"\
-	".\./Include\mytime.h"\
+	".\Include\mytime.h"\
 	{$(INCLUDE)}"\sys\UTIME.H"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -3963,7 +3912,7 @@ DEP_CPP_POSIX=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -3975,19 +3924,18 @@ DEP_CPP_POSIX=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\posixmodule.obj" : $(SOURCE) $(DEP_CPP_POSIX) "$(INTDIR)"
@@ -4001,9 +3949,9 @@ DEP_CPP_POSIX=\
 SOURCE=.\Modules\operator.c
 DEP_CPP_OPERA=\
 	".\Include\Python.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -4011,7 +3959,7 @@ DEP_CPP_OPERA=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -4023,21 +3971,20 @@ DEP_CPP_OPERA=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\operator.obj" : $(SOURCE) $(DEP_CPP_OPERA) "$(INTDIR)"
@@ -4051,9 +3998,9 @@ DEP_CPP_OPERA=\
 SOURCE=.\Modules\errnomodule.c
 DEP_CPP_ERRNO=\
 	".\Include\Python.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -4061,7 +4008,7 @@ DEP_CPP_ERRNO=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -4073,21 +4020,20 @@ DEP_CPP_ERRNO=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\errnomodule.obj" : $(SOURCE) $(DEP_CPP_ERRNO) "$(INTDIR)"
@@ -4101,9 +4047,9 @@ DEP_CPP_ERRNO=\
 SOURCE=.\Objects\sliceobject.c
 DEP_CPP_SLICE=\
 	".\Include\Python.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -4111,7 +4057,7 @@ DEP_CPP_SLICE=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -4123,21 +4069,20 @@ DEP_CPP_SLICE=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\sliceobject.obj" : $(SOURCE) $(DEP_CPP_SLICE) "$(INTDIR)"
@@ -4151,9 +4096,9 @@ DEP_CPP_SLICE=\
 SOURCE=.\Modules\main.c
 DEP_CPP_MAIN_=\
 	".\Include\Python.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -4161,7 +4106,7 @@ DEP_CPP_MAIN_=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -4173,21 +4118,20 @@ DEP_CPP_MAIN_=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\main.obj" : $(SOURCE) $(DEP_CPP_MAIN_) "$(INTDIR)"
@@ -4210,12 +4154,11 @@ SOURCE=.\Python\getopt.c
 
 SOURCE=.\PC\import_nt.c
 DEP_CPP_IMPORT_=\
-	".\./Include\allobjects.h"\
-	".\./Include\osdefs.h"\
-	".\./Include\import.h"\
-	".\./Python\importdl.h"\
+	".\Include\allobjects.h"\
+	".\Include\osdefs.h"\
+	".\Python\importdl.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -4223,7 +4166,7 @@ DEP_CPP_IMPORT_=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -4235,20 +4178,20 @@ DEP_CPP_IMPORT_=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\import_nt.obj" : $(SOURCE) $(DEP_CPP_IMPORT_) "$(INTDIR)"
@@ -4262,10 +4205,10 @@ DEP_CPP_IMPORT_=\
 SOURCE=.\PC\getpath_nt.c
 DEP_CPP_GETPA=\
 	".\Include\Python.h"\
-	".\./Include\osdefs.h"\
-	".\./Include\allobjects.h"\
+	".\Include\osdefs.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -4273,7 +4216,7 @@ DEP_CPP_GETPA=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -4285,21 +4228,20 @@ DEP_CPP_GETPA=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\getpath_nt.obj" : $(SOURCE) $(DEP_CPP_GETPA) "$(INTDIR)"
@@ -4313,8 +4255,8 @@ DEP_CPP_GETPA=\
 SOURCE=.\PC\dl_nt.c
 DEP_CPP_DL_NT=\
 	".\PC\config.h"\
-	".\./Include\allobjects.h"\
-	".\./Include\myproto.h"\
+	".\Include\allobjects.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -4322,7 +4264,7 @@ DEP_CPP_DL_NT=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -4334,21 +4276,20 @@ DEP_CPP_DL_NT=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\dl_nt.obj" : $(SOURCE) $(DEP_CPP_DL_NT) "$(INTDIR)"
@@ -4366,10 +4307,10 @@ SOURCE=.\PC\python_nt.def
 
 SOURCE=.\Modules\threadmodule.c
 DEP_CPP_THREAD=\
-	".\./Include\allobjects.h"\
-	".\./Include\thread.h"\
+	".\Include\allobjects.h"\
+	".\Include\thread.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -4377,7 +4318,7 @@ DEP_CPP_THREAD=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -4389,25 +4330,42 @@ DEP_CPP_THREAD=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
 	
 
 "$(INTDIR)\threadmodule.obj" : $(SOURCE) $(DEP_CPP_THREAD) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\PC\python_nt.rc
+
+!IF  "$(CFG)" == "python14 - Win32 Release"
+
+# ADD BASE RSC /l 0x409 /i "PC"
+# ADD RSC /l 0x409 /i "PC" /i "Include"
+
+"$(INTDIR)\python_nt.res" : $(SOURCE) "$(INTDIR)"
+   $(RSC) /l 0x409 /fo"$(INTDIR)/python_nt.res" /i "PC" /i "Include" /d\
+ "NDEBUG" $(SOURCE)
+
+
+!ENDIF 
 
 # End Source File
 # End Target
@@ -4443,9 +4401,10 @@ DEP_CPP__TKIN=\
 	".\Include\Python.h"\
 	"\tcl\include\tcl.h"\
 	"\tcl\include\tk.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
+	"\tcl\include\X11/Xlib.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -4453,7 +4412,7 @@ DEP_CPP__TKIN=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -4465,24 +4424,22 @@ DEP_CPP__TKIN=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
-	"\tcl\include\X11/Xlib.h"\
+	".\Include\rename2.h"\
 	"\tcl\include\X11/X.h"\
 	"\tcl\include\X11/Xfuncproto.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\_tkinter.obj" : $(SOURCE) $(DEP_CPP__TKIN) "$(INTDIR)"
@@ -4524,9 +4481,9 @@ DEP_CPP_ARRAYO=\
 	".\NumPy\arrayobject.h"\
 	".\NumPy\ofuncobject.h"\
 	".\NumPy\arraytypes.c"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -4534,7 +4491,7 @@ DEP_CPP_ARRAYO=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -4546,21 +4503,20 @@ DEP_CPP_ARRAYO=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\arrayobject.obj" : $(SOURCE) $(DEP_CPP_ARRAYO) "$(INTDIR)"
@@ -4576,9 +4532,9 @@ DEP_CPP_OFUNC=\
 	".\Include\Python.h"\
 	".\NumPy\arrayobject.h"\
 	".\NumPy\ofuncobject.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -4586,7 +4542,7 @@ DEP_CPP_OFUNC=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -4598,21 +4554,20 @@ DEP_CPP_OFUNC=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\ofuncobject.obj" : $(SOURCE) $(DEP_CPP_OFUNC) "$(INTDIR)"
@@ -4643,9 +4598,9 @@ DEP_CPP_MULTI=\
 	".\Include\Python.h"\
 	".\NumPy\arrayobject.h"\
 	".\NumPy\ofuncobject.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -4653,7 +4608,7 @@ DEP_CPP_MULTI=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -4665,21 +4620,20 @@ DEP_CPP_MULTI=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
 	".\Include\abstract.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\multiarraymodule.obj" : $(SOURCE) $(DEP_CPP_MULTI) "$(INTDIR)"
@@ -4716,9 +4670,9 @@ DEP_CPP_FAST_=\
 	".\NumPy\arrayobject.h"\
 	".\NumPy\ofuncobject.h"\
 	".\Include\abstract.h"\
-	".\./Include\allobjects.h"\
+	".\Include\allobjects.h"\
 	".\PC\config.h"\
-	".\./Include\myproto.h"\
+	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -4726,7 +4680,7 @@ DEP_CPP_FAST_=\
 	".\Include\intobject.h"\
 	".\Include\longobject.h"\
 	".\Include\floatobject.h"\
-	".\./Include\complexobject.h"\
+	".\Include\complexobject.h"\
 	".\Include\rangeobject.h"\
 	".\Include\stringobject.h"\
 	".\Include\tupleobject.h"\
@@ -4738,20 +4692,19 @@ DEP_CPP_FAST_=\
 	".\Include\classobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\cobject.h"\
-	".\./Include\traceback.h"\
+	".\Include\traceback.h"\
 	".\Include\sliceobject.h"\
 	".\Include\pyerrors.h"\
-	".\./Include\mymalloc.h"\
-	".\./Include\modsupport.h"\
-	".\./Include\ceval.h"\
-	".\./Include\pythonrun.h"\
-	".\./Include\sysmodule.h"\
-	".\./Include\intrcheck.h"\
-	".\./Include\import.h"\
-	".\./Include\bltinmodule.h"\
-	".\./Include\rename2.h"\
-	".\./Include\thread.h"\
-	".\./Include\patchlevel.h"\
+	".\Include\mymalloc.h"\
+	".\Include\modsupport.h"\
+	".\Include\ceval.h"\
+	".\Include\pythonrun.h"\
+	".\Include\sysmodule.h"\
+	".\Include\intrcheck.h"\
+	".\Include\import.h"\
+	".\Include\bltinmodule.h"\
+	".\Include\rename2.h"\
+	".\Include\thread.h"\
 	
 
 "$(INTDIR)\fast_umathmodule.obj" : $(SOURCE) $(DEP_CPP_FAST_) "$(INTDIR)"
