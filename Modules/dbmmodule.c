@@ -171,7 +171,6 @@ dbm__close(dp, args)
         if ( dp->di_dbm )
 	    dbm_close(dp->di_dbm);
 	dp->di_dbm = NULL;
-	DEL(dp);
 	INCREF(None);
 	return None;
 }
