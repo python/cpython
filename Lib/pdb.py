@@ -181,7 +181,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     do_h = cmd.Cmd.do_help
 
     def do_EOF(self, arg):
-        return 0        # Don't die on EOF
+        print
+        self.set_quit()
+        return 1
 
     def do_break(self, arg, temporary = 0):
         # break [ ([filename:]lineno | function) [, "condition"] ]
