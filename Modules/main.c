@@ -395,7 +395,7 @@ Py_Main(int argc, char **argv)
 
 	Py_Finalize();
 #ifdef RISCOS
-	if(Py_RISCOSWimpFlag)
+	if (Py_RISCOSWimpFlag)
                 fprintf(stderr, "\x0cq\x0c"); /* make frontend quit */
 #endif
 
