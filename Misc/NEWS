@@ -499,6 +499,8 @@ Core and builtins
   slots are now always tried after trying the corresponding nb_* slots.
   This fixes a number of minor bugs (see bug #624807).
 
+- Fix problem with dynamic loading on 64-bit AIX (see bug #639945).
+
 Extension modules
 -----------------
 
