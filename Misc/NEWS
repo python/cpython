@@ -52,6 +52,18 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - del func.func_defaults raises a TypeError instead of dumping core
 
+- #121013 - stringobject.c -- "".join(u"this is a test") dumped core
+
+- exceptions.c  - make_class() Added a "goto finally" so that if
+  populate_methods() fails, the return status will be -1 (failure)
+  instead of 0 (success).
+
+  fini_exceptions(): When decref'ing the static pointers to the
+  exception classes, clear out their dictionaries too.  This breaks a
+  cycle from class->dict->method->class and allows the classes with
+  unbound methods to be reclaimed.  This plugs a large memory leak in a
+  common Py_Initialize()/dosomething/Py_Finalize() loop.
+
 What's New in Python 2.0?
 =========================
 

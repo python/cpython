@@ -168,6 +168,7 @@ make_class(PyObject **klass, PyObject *base,
     if (populate_methods(*klass, dict, methods)) {
 	Py_DECREF(*klass);
 	*klass = NULL;
+	goto finally;
     }
 
     status = 0;
@@ -1096,6 +1097,14 @@ fini_exceptions(void)
     PyExc_MemoryErrorInst = NULL;
 
     for (i=0; exctable[i].name; i++) {
+	/* clear the class's dictionary, freeing up circular references
+	 * between the class and its methods.
+	 */
+	PyObject* cdict = PyObject_GetAttrString(*exctable[i].exc, "__dict__");
+	PyDict_Clear(cdict);
+	Py_DECREF(cdict);
+
+	/* Now decref the exception class */
 	Py_XDECREF(*exctable[i].exc);
 	*exctable[i].exc = NULL;
     }
