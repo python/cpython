@@ -221,12 +221,12 @@ def formatdate(timeval=None, localtime=False):
 
 
 def make_msgid(idstring=None):
-    """Returns a string suitable for RFC 2822 compliant Message-ID:, e.g:
+    """Returns a string suitable for RFC 2822 compliant Message-ID, e.g:
 
     <20020201195627.33539.96671@nightshade.la.mastaler.com>
 
     Optional idstring if given is a string used to strengthen the
-    uniqueness of the Message-ID, otherwise an empty string is used.
+    uniqueness of the message id.
     """
     timeval = time.time()
     utcdate = time.strftime('%Y%m%d%H%M%S', time.gmtime(timeval))
@@ -286,19 +286,28 @@ def decode_rfc2231(s):
 
 
 def encode_rfc2231(s, charset=None, language=None):
-    """Encode string according to RFC 2231"""
+    """Encode string according to RFC 2231.
+
+    If neither charset nor language is given, then s is returned as-is.  If
+    charset is given but not language, the string is encoded using the empty
+    string for language.
+    """
     import urllib
     s = urllib.quote(s, safe='')
     if charset is None and language is None:
         return s
-    else:
-        return "%s'%s'%s" % (charset, language, s)
+    if language is None:
+        language = ''
+    return "%s'%s'%s" % (charset, language, s)
 
 
 rfc2231_continuation = re.compile(r'^(?P<name>\w+)\*((?P<num>[0-9]+)\*?)?$')
 
 def decode_params(params):
-    """Decode parameters list according to RFC 2231"""
+    """Decode parameters list according to RFC 2231.
+
+    params is a sequence of 2-tuples containing (content type, string value).
+    """
     new_params = []
     # maps parameter's name to a list of continuations
     rfc2231_params = {}
