@@ -67,6 +67,10 @@
 #define	AI_DEFAULT	(AI_V4MAPPED_CFG | AI_ADDRCONFIG)
 #endif
 
+#endif /* HAVE_GETADDRINFO */
+
+#ifndef HAVE_GETNAMEINFO
+
 /*
  * Constants for getnameinfo()
  */
@@ -85,6 +89,8 @@
 #define	NI_NUMERICSERV	0x00000008
 #define	NI_DGRAM	0x00000010
 #endif
+
+#endif /* HAVE_GETNAMEINFO */
 
 #ifndef HAVE_ADDRINFO
 struct addrinfo {
@@ -136,5 +142,4 @@ extern "C" {
 extern void freehostent Py_PROTO((struct hostent *));
 #ifdef __cplusplus
 }
-#endif
 #endif

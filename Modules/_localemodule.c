@@ -527,6 +527,8 @@ init_locale(void)
     ADDINT(ABMON_11);
     ADDINT(ABMON_12);
 
+#ifdef RADIXCHAR
+    /* The following are not available with glibc 2.0 */
     ADDINT(RADIXCHAR);
     ADDINT(THOUSEP);
     /* YESSTR and NOSTR are deprecated in glibc, since they are
@@ -537,6 +539,7 @@ init_locale(void)
     ADDINT(NOSTR);
     */
     ADDINT(CRNCYSTR);
+#endif
 
     ADDINT(D_T_FMT);
     ADDINT(D_FMT);
