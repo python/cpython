@@ -48,16 +48,15 @@ typedef unsigned short int UINT2;
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
 #else
-#ifndef LONG_BIT
-#define LONG_BIT 32
-#endif
+/* Wild guess */
+#define LONG_MAX 2147483647L
 #endif
 
 /* UINT4 defines a four byte word */
-#if WORD_BIT == 32
+#if defined(INT_MAX) && INT_MAX == 2147483647
 typedef unsigned int UINT4;
 #else
-#if LONG_BIT == 32
+#if defined(LONG_MAX) && LONG_MAX == 2147483647L
 typedef unsigned long int UINT4;
 #endif
 /* Too bad if neither is */
