@@ -759,6 +759,8 @@ class PyBuildExt(build_ext):
                         extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('MacOS', ['macosmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('OSATerminology', ['OSATerminology.c'],
+                        extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('icglue', ['icgluemodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('_Res', ['res/_Resmodule.c'],
