@@ -38,8 +38,8 @@ class SearchDialogBase:
         self.top = top
 
         self.row = 0
-        self.top.grid_columnconfigure(0, weight=0)
-        self.top.grid_columnconfigure(1, weight=100)
+        self.top.grid_columnconfigure(0, pad=2, weight=0)
+        self.top.grid_columnconfigure(1, pad=2, minsize=100, weight=100)
 
         self.create_entries()
         self.create_option_buttons()
@@ -48,30 +48,35 @@ class SearchDialogBase:
 
     def make_entry(self, label, var):
         l = Label(self.top, text=label)
-        l.grid(row=self.row, col=0, sticky="w")
+        l.grid(row=self.row, col=0, sticky="nw")
         e = Entry(self.top, textvariable=var, exportselection=0)
-        e.grid(row=self.row, col=1, sticky="we")
+        e.grid(row=self.row, col=1, sticky="nwe")
         self.row = self.row + 1
         return e
 
-    def make_frame(self):
+    def make_frame(self,labeltext=None):
+        if labeltext:
+            l = Label(self.top, text=labeltext)
+            l.grid(row=self.row, col=0, sticky="nw")
         f = Frame(self.top)
-        f.grid(row=self.row, col=0, columnspan=2, sticky="we")
+        f.grid(row=self.row, col=1, columnspan=1, sticky="nwe")
         self.row = self.row + 1
         return f
 
-    def make_button(self, label, command, isdef=0, side="left"):
+    def make_button(self, label, command, isdef=0):
         b = Button(self.buttonframe,
                    text=label, command=command,
                    default=isdef and "active" or "normal")
-        b.pack(side=side)
+        cols,rows=self.buttonframe.grid_size()
+        b.grid(pady=1,row=rows,column=0,sticky="ew")
+        self.buttonframe.grid(rowspan=rows+1)
         return b
 
     def create_entries(self):
         self.ent = self.make_entry("Find:", self.engine.patvar)
 
     def create_option_buttons(self):
-        f = self.make_frame()
+        f = self.make_frame("Options")
 
         btn = Checkbutton(f, anchor="w",
                 variable=self.engine.revar,
@@ -103,10 +108,10 @@ class SearchDialogBase:
                 btn.select()
 
     def create_other_buttons(self):
-        f = self.make_frame()
+        f = self.make_frame("Direction")
 
-        lbl = Label(f, text="Direction: ")
-        lbl.pack(side="left")
+        #lbl = Label(f, text="Direction: ")
+        #lbl.pack(side="left")
 
         btn = Radiobutton(f, anchor="w",
                 variable=self.engine.backvar, value=1,
@@ -123,6 +128,10 @@ class SearchDialogBase:
             btn.select()
 
     def create_command_buttons(self):
-        f = self.buttonframe = self.make_frame()
-        b = self.make_button("close", self.close, side="right")
+        #
+        # place button frame on the right
+        f = self.buttonframe = Frame(self.top)
+        f.grid(row=0,col=2,padx=2,pady=2,ipadx=2,ipady=2)
+
+        b = self.make_button("close", self.close)
         b.lower()
