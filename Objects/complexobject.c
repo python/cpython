@@ -1,58 +1,52 @@
+/***********************************************************
+Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
+
+                        All Rights Reserved
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in
+supporting documentation, and that the names of Stichting Mathematisch
+Centrum or CWI or Corporation for National Research Initiatives or
+CNRI not be used in advertising or publicity pertaining to
+distribution of the software without specific, written prior
+permission.
+
+While CWI is the initial source for this software, a modified version
+is made available by the Corporation for National Research Initiatives
+(CNRI) at the Internet address ftp://ftp.python.org.
+
+STICHTING MATHEMATISCH CENTRUM AND CNRI DISCLAIM ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH
+CENTRUM OR CNRI BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL
+DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+
+******************************************************************/
+
 /* Complex object implementation */
 
 /* Borrows heavily from floatobject.c */
+
+/* Submitted by Jim Hugunin */
 
 #ifndef WITHOUT_COMPLEX
 
 #include "Python.h"
 #include "mymath.h"
 
-#ifdef i860
-/* Cray APP has bogus definition of HUGE_VAL in <math.h> */
-#undef HUGE_VAL
-#endif
-
-#ifdef HUGE_VAL
-#define CHECK(x) if (errno != 0) ; \
-	else if (-HUGE_VAL <= (x) && (x) <= HUGE_VAL) ; \
-	else errno = ERANGE
-#else
-#define CHECK(x) /* Don't know how to check */
-#endif
-
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
-#endif
-
-#ifndef LONG_MAX
-#define LONG_MAX 0X7FFFFFFFL
-#endif
-
-#ifndef LONG_MIN
-#define LONG_MIN (-LONG_MAX-1)
-#endif
-
-#ifdef __NeXT__
-#ifdef __sparc__
-/*
- * This works around a bug in the NS/Sparc 3.3 pre-release
- * limits.h header file.
- * 10-Feb-1995 bwarsaw@cnri.reston.va.us
- */
-#undef LONG_MIN
-#define LONG_MIN (-LONG_MAX-1)
-#endif
-#endif
-
-#if !defined(__STDC__) && !defined(macintosh)
-extern double fmod Py_PROTO((double, double));
-extern double pow Py_PROTO((double, double));
 #endif
 
 
 /* elementary operations on complex numbers */
 
-static int c_error;
 static Py_complex c_1 = {1., 0.};
 
 Py_complex c_sum(a,b)
@@ -97,7 +91,7 @@ Py_complex c_quot(a,b)
 	Py_complex r;
 	double d = b.real*b.real + b.imag*b.imag;
 	if (d == 0.)
-		c_error = 1;
+		errno = EDOM;
 	r.real = (a.real*b.real + a.imag*b.imag)/d;
 	r.imag = (a.imag*b.real - a.real*b.imag)/d;
 	return r;
@@ -114,7 +108,7 @@ Py_complex c_pow(a,b)
 	}
 	else if (a.real == 0. && a.imag == 0.) {
 		if (b.imag != 0. || b.real < 0.)
-			c_error = 2;
+			errno = ERANGE;
 		r.real = 0.;
 		r.imag = 0.;
 	}
@@ -399,10 +393,10 @@ complex_div(v, w)
 {
 	Py_complex quot;
 	PyFPE_START_PROTECT("complex_div", return 0)
-	c_error = 0;
+	errno = 0;
 	quot = c_quot(v->cval,w->cval);
 	PyFPE_END_PROTECT(quot)
-	if (c_error == 1) {
+	if (errno == EDOM) {
 		PyErr_SetString(PyExc_ZeroDivisionError, "complex division");
 		return NULL;
 	}
@@ -415,9 +409,9 @@ complex_remainder(v, w)
 	PyComplexObject *w;
 {
         Py_complex div, mod;
-	c_error = 0;
+	errno = 0;
 	div = c_quot(v->cval,w->cval); /* The raw divisor value. */
-	if (c_error == 1) {
+	if (errno == EDOM) {
 		PyErr_SetString(PyExc_ZeroDivisionError, "complex remainder");
 		return NULL;
 	}
@@ -436,9 +430,9 @@ complex_divmod(v, w)
 {
         Py_complex div, mod;
 	PyObject *d, *m, *z;
-	c_error = 0;
+	errno = 0;
 	div = c_quot(v->cval,w->cval); /* The raw divisor value. */
-	if (c_error == 1) {
+	if (errno == EDOM) {
 		PyErr_SetString(PyExc_ZeroDivisionError, "complex divmod()");
 		return NULL;
 	}
@@ -469,7 +463,7 @@ complex_pow(v, w, z)
 	}
 
 	PyFPE_START_PROTECT("complex_pow", return 0)
-	c_error = 0;
+	errno = 0;
 	exponent = ((PyComplexObject*)w)->cval;
 	int_exponent = (long)exponent.real;
 	if (exponent.imag == 0. && exponent.real == int_exponent)
@@ -478,7 +472,7 @@ complex_pow(v, w, z)
 		p = c_pow(v->cval,exponent);
 
 	PyFPE_END_PROTECT(p)
-	if (c_error == 2) {
+	if (errno == ERANGE) {
 		PyErr_SetString(PyExc_ValueError,
 				"0.0 to a negative or complex power");
 		return NULL;
