@@ -41,14 +41,14 @@
 
 
 % need to do one of these....
-\newcommand{\@doHorizontalRule}{\rule{\textwidth}{1pt}}
+\newcommand{\py@doHorizontalRule}{\rule{\textwidth}{1pt}}
 
 
 % Change the title page to look a bit better, and fit in with the
 % fncychap ``Bjarne'' style a bit better.
 %
 \renewcommand{\maketitle}{
-  \@doHorizontalRule
+  \py@doHorizontalRule
   \@ifundefined{pdfinfo}{}{
     \pdfinfo{
       /Author (\@author)
@@ -56,13 +56,13 @@
     }
   }
   \begin{flushright}
-    {\rm\Huge\HeaderFamily \@title} \par
-    {\em\large\HeaderFamily \@release} \par
+    {\rm\Huge\py@HeaderFamily \@title} \par
+    {\em\large\py@HeaderFamily \py@release} \par
     \vspace{25pt}
-    {\Large\HeaderFamily \@author} \par
+    {\Large\py@HeaderFamily \@author} \par
     \vspace{25pt}
     \@date \par
-    \@authoraddress \par
+    \py@authoraddress \par
   \end{flushright}
   \@thanks
   \setcounter{footnote}{0}
@@ -71,25 +71,25 @@
 }
 
 
-\let\OldTableofcontents=\tableofcontents
+\let\py@OldTableofcontents=\tableofcontents
 \renewcommand{\tableofcontents}{
   \begingroup
     \parskip = 0mm
-    \OldTableofcontents
+    \py@OldTableofcontents
   \endgroup
-  \@doHorizontalRule
+  \py@doHorizontalRule
   \vspace{12pt}
-  \@doing@page@targetstrue
+  \py@doing@page@targetstrue
 }  
 
 % Fix the theindex environment to add an entry to the Table of
 % Contents; this is much nicer than just having to jump to the end of
 % the book and flip around, especially with multiple indexes.
 %
-\let\OldTheindex=\theindex
+\let\py@OldTheindex=\theindex
 \renewcommand{\theindex}{
   \clearpage
-  \OldTheindex
+  \py@OldTheindex
   \addcontentsline{toc}{section}{\indexname}
 }
 

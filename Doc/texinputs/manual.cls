@@ -41,7 +41,7 @@
 %
 \RequirePackage[Bjarne]{fncychap}\typeout{Using fancy chapter headings.}
 % Do horizontal rules it this way to match:
-\newcommand{\@doHorizontalRule}{\mghrulefill{\RW}}
+\newcommand{\py@doHorizontalRule}{\mghrulefill{\RW}}
 %
 %
 % This gives us all the Python-specific markup that we really want.
@@ -57,7 +57,7 @@
   \begin{titlepage}%
     \let\footnotesize\small
     \let\footnoterule\relax
-    \@doHorizontalRule%
+    \py@doHorizontalRule%
     \@ifundefined{pdfinfo}{}{
       \pdfinfo{
         /Author (\@author)
@@ -65,15 +65,15 @@
       }
     }
     \begin{flushright}%
-      {\rm\Huge\HeaderFamily \@title \par}%
-      {\em\LARGE\HeaderFamily \@release \par}
+      {\rm\Huge\py@HeaderFamily \@title \par}%
+      {\em\LARGE\py@HeaderFamily \py@release \par}
       \vfill
-      {\LARGE\HeaderFamily \@author \par}
+      {\LARGE\py@HeaderFamily \@author \par}
       \vfill\vfill
       {\large
        \@date \par
        \vfill
-       \@authoraddress \par
+       \py@authoraddress \par
       }%
     \end{flushright}%\par
     \@thanks
@@ -87,7 +87,7 @@
 % Catch the end of the {abstract} environment, but here make sure the
 % abstract is followed by a blank page if the 'openright' option is used.
 %
-\let\OldEndAbstract=\endabstract
+\let\py@OldEndAbstract=\endabstract
 \renewcommand{\endabstract}{
   \if@openright
     \ifodd\value{page}
@@ -95,7 +95,7 @@
       \vfil\pagebreak
     \fi
   \fi
-  \OldEndAbstract
+  \py@OldEndAbstract
 }
 
 % This wraps the \tableofcontents macro with all the magic to get the
@@ -103,14 +103,14 @@
 % option has been used.  This eliminates a fair amount of crud in the
 % individual document files.
 %
-\let\OldTableofcontents=\tableofcontents
+\let\py@OldTableofcontents=\tableofcontents
 \renewcommand{\tableofcontents}{%
   \setcounter{page}{1}%
   \pagebreak%
   \pagestyle{plain}%
   {%
     \parskip = 0mm%
-    \OldTableofcontents%
+    \py@OldTableofcontents%
     \if@openright%
       \ifodd\value{page}%
         \typeout{Adding blank page after the table of contents.}%
@@ -121,7 +121,7 @@
   }%
   \pagenumbering{arabic}%
   \@ifundefined{fancyhf}{}{\pagestyle{normal}}%
-  \@doing@page@targetstrue%
+  \py@doing@page@targetstrue%
 }
 % This is needed to get the width of the section # area wide enough in the
 % library reference.  Doing it here keeps it the same for all the manuals.
@@ -134,9 +134,9 @@
 % Contents; this is much nicer than just having to jump to the end of
 % the book and flip around, especially with multiple indexes.
 %
-\let\OldTheindex=\theindex
+\let\py@OldTheindex=\theindex
 \renewcommand{\theindex}{
   \cleardoublepage
-  \OldTheindex
+  \py@OldTheindex
   \addcontentsline{toc}{chapter}{\indexname}
 }
