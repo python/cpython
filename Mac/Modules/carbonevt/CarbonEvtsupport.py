@@ -126,8 +126,7 @@ EventHotKeyID_Convert(PyObject *v, EventHotKeyID *out)
 
 /******** handlecommand ***********/
 
-pascal OSStatus CarbonEvents_HandleCommand(EventHandlerCallRef handlerRef, Even
-tRef event, void *outPyObject) {
+pascal OSStatus CarbonEvents_HandleCommand(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject) {
 	PyObject *retValue;
 	int status;
 
@@ -136,8 +135,7 @@ tRef event, void *outPyObject) {
     PyEval_RestoreThread(_save);
 #endif /* USE_MAC_MP_MULTITHREADING */
 
-    retValue = PyObject_CallFunction((PyObject *)outPyObject, "O&O&", EventHand
-lerCallRef_New, handlerRef, EventRef_New, event);
+    retValue = PyObject_CallFunction((PyObject *)outPyObject, "O&O&", EventHandlerCallRef_New, handlerRef, EventRef_New, event);
     status = PyInt_AsLong(retValue);
 
 #if USE_MAC_MP_MULTITHREADING
@@ -152,8 +150,7 @@ lerCallRef_New, handlerRef, EventRef_New, event);
 
 """
 
-module = MacModule('CarbonEvents', 'CarbonEvents', includestuff, finalstuff, in
-itstuff)
+module = MacModule('CarbonEvents', 'CarbonEvents', includestuff, finalstuff, initstuff)
 
 #class CFReleaserObj(GlobalObjectDefinition):
 #	def outputFreeIt(self, name):
@@ -165,25 +162,20 @@ for typ in RefObjectTypes:
 	module.addobject(eval(typ + 'object'))
 
 functions = []
-for typ in RefObjectTypes: ## go thru all ObjectTypes as defined in CarbonEvent
-sscan.py
+for typ in RefObjectTypes: ## go thru all ObjectTypes as defined in CarbonEventsscan.py
 	# initialize the lists for carbongen to fill
 	execstr = typ + 'methods = []'
 	exec execstr
 
 execfile('CarbonEventsgen.py')
 
-for f in functions: module.add(f)	# add all the functions carboneventsgen
- put in the list
+for f in functions: module.add(f)	# add all the functions carboneventsgen put in the list
 
-for typ in RefObjectTypes:				 ## go thru all ObjectT
-ypes as defined in CarbonEventsscan.py
+for typ in RefObjectTypes:				 ## go thru all ObjectTypes as defined in CarbonEventsscan.py
 	methods = eval(typ + 'methods')  ## get a reference to the method list 
 from the main namespace
-	obj = eval(typ + 'object')		  ## get a reference to the obj
-ect
-	for m in methods: obj.add(m)	## add each method in the list to the o
-bject
+	obj = eval(typ + 'object')		  ## get a reference to the object
+	for m in methods: obj.add(m)	## add each method in the list to the object
 
 installeventhandler = """
 EventTypeSpec inSpec;
@@ -196,16 +188,14 @@ if (!PyArg_ParseTuple(_args, "O&O", EventTypeSpec_Convert, &inSpec, &callback))
 	return NULL;
 
 event = NewEventHandlerUPP(CarbonEvents_HandleCommand);
-_err = InstallEventHandler(_self->ob_itself, event, 1, &inSpec, (void *)callbac
-k, &outRef);
+_err = InstallEventHandler(_self->ob_itself, event, 1, &inSpec, (void *)callback, &outRef);
 if (_err != noErr) return PyMac_Error(_err);
 
 return Py_BuildValue("l", outRef);
 """
 
 f = ManualGenerator("InstallEventHandler", installeventhandler);
-f.docstring = lambda: "(EventTargetRef inTarget, EventTypeSpec inSpec, Method c
-allback) -> (EventHandlerRef outRef)"
+f.docstring = lambda: "(EventTargetRef inTarget, EventTypeSpec inSpec, Method callback) -> (EventHandlerRef outRef)"
 EventTargetRefobject.add(f)
 
 runappeventloop = """
@@ -234,7 +224,7 @@ f = ManualGenerator("RunApplicationEventLoop", runappeventloop);
 f.docstring = lambda: "() -> ()"
 module.add(f)
 
-SetOutputFileName('_CarbonEvents.c')
+SetOutputFileName('_CarbonEvt.c')
 module.generate()
 
 import os
