@@ -230,7 +230,7 @@ initdl()
 
 	if (sizeof(int) != sizeof(long) ||
 	    sizeof(long) != sizeof(char *)) {
-		Py_Err_SetStr(
+		PyErr_SetString(PyExc_SystemError,
  "module dl requires sizeof(int) == sizeof(long) == sizeof(char*)");
 		return;
 	}
