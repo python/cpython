@@ -4,7 +4,7 @@
 #
 # This is *not* a good example of good programming practices. In fact, this
 #     file could use a complete rewrite, in order to become faster, more
-#     easy extensible and maintainable.
+#     easily extensible and maintainable.
 #
 # However, I added some comments on a few places for the pityful person who
 #     would ever need to take a look into this file.
@@ -12,7 +12,11 @@
 # Have I been clear enough??
 #
 # -jh
-
+#
+# Yup.  I made some performance improvements and hope this lasts a while;
+#     I don't want to be the schmuck who ends up re-writting it!
+#
+# -fld
 
 import sys, string, regex, getopt, os
 
@@ -28,7 +32,7 @@ MODE_DMATH = 5
 MODE_GOBBLEWHITE = 6
 
 the_modes = (MODE_REGULAR, MODE_VERBATIM, MODE_CS_SCAN, MODE_COMMENT,
-	  MODE_MATH, MODE_DMATH, MODE_GOBBLEWHITE)
+	     MODE_MATH, MODE_DMATH, MODE_GOBBLEWHITE)
 
 # Show the neighbourhood of the scanned buffer
 def epsilon(buf, where):
@@ -62,7 +66,7 @@ class Mode:
 
     def __cmp__(self, other):
 	if type(self) != type(other):
-	    other = mode(other)
+	    other = mode[other]
 	return cmp(self.mode, other.mode)
 
     def __repr__(self):
@@ -84,7 +88,9 @@ class Mode:
 	    raise ValueError, 'mode not in the_modes'
 
 # just a wrapper around a class initialisation
-mode = Mode
+mode = {}
+for t in the_modes:
+    mode[t] = Mode(t)
 
 
 # After phase 1, the text consists of chunks, with a certain type
@@ -106,15 +112,16 @@ GOBBLEDWHITE = 8		# Gobbled LWSP, after CSNAME
 ENDLINE = 9			# END-OF-LINE, data = '\n'
 DENDLINE = 10			# DOUBLE EOL, data='\n', indicates \par
 ENV = 11			# LaTeX-environment
-    # data =(envname,[ch,ch,ch,.])
+				# data =(envname,[ch,ch,ch,.])
 CSLINE = 12			# for texi: next chunk will be one group
-    # of args. Will be set all on 1 line
+				# of args. Will be set all on 1 line
 IGNORE = 13			# IGNORE this data
 ENDENV = 14			# TEMP END OF GROUP INDICATOR
 IF = 15				# IF-directive
-    # data = (flag,negate,[ch, ch, ch,...])
+				# data = (flag,negate,[ch, ch, ch,...])
+
 the_types = (PLAIN, GROUP, CSNAME, COMMENT, DMATH, MATH, OTHER, ACTIVE,
-	  GOBBLEDWHITE, ENDLINE, DENDLINE, ENV, CSLINE, IGNORE, ENDENV, IF)
+	     GOBBLEDWHITE, ENDLINE, DENDLINE, ENV, CSLINE, IGNORE, ENDENV, IF)
 
 # class, just to display symbolic name
 class ChunkType:
@@ -125,7 +132,7 @@ class ChunkType:
 
     def __cmp__(self, other):
 	if type(self) != type(other):
-	    other = chunk_type(other)
+	    other = chunk_type[other]
 	return cmp(self.chunk_type, other.chunk_type)
 
     def __repr__(self):
@@ -165,24 +172,19 @@ class ChunkType:
 	    raise ValueError, 'chunk_type not in the_types'
 
 # ...and the wrapper
-_all_chunk_types = {}
+chunk_type = {}
 for t in the_types:
-    _all_chunk_types[t] = ChunkType(t)
-
-def chunk_type(t):
-    return _all_chunk_types[t]
+    chunk_type[t] = ChunkType(t)
 
 # store a type object of the ChunkType-class-instance...
-chunk_type_type = type(chunk_type(0))
+chunk_type_type = type(chunk_type[PLAIN])
 
 # this class contains a part of the parsed buffer
 class Chunk:
     def __init__(self, chtype, where, data):
 	if type(chtype) != chunk_type_type:
-	    chtype = chunk_type(chtype)
+	    chtype = chunk_type[chtype]
 	self.chtype = chtype
-	if type(where) != IntType:
-	    raise TypeError, "'where' is not a number"
 	self.where = where
 	self.data = data
 
@@ -376,7 +378,7 @@ rc_comment = make_rc_comment(my_cc)
 rc_endwhite = make_rc_endwhite(my_cc)
 
 
-# parseit (BUF, PARSEMODE=mode(MODE_REGULAR), START=0, RECURSION-LEVEL=0)
+# parseit (BUF, PARSEMODE=mode[MODE_REGULAR], START=0, RECURSION-LEVEL=0)
 #     RECURSION-LEVEL will is incremented on entry.
 #     result contains the list of chunks returned
 #     together with this list, the buffer position is returned
@@ -385,22 +387,12 @@ rc_endwhite = make_rc_endwhite(my_cc)
 #     {,D}MATH-mode scan has been enetered.
 #     This has been done in order to better check for environment-mismatches
 
-def parseit(buf, *rest):
+def parseit(buf, parsemode=mode[MODE_REGULAR], start=0, lvl=0):
     global lineno
 
-    if len(rest) == 3:
-	parsemode, start, lvl = rest
-    elif len(rest) == 2:
-	parsemode, start, lvl = rest + (0, )
-    elif len(rest) == 1:
-	parsemode, start, lvl = rest + (0, 0)
-    elif len(rest) == 0:
-	parsemode, start, lvl = mode(MODE_REGULAR), 0, 0
-    else:
-	raise TypeError, 'usage: parseit(buf[, parsemode[, start[, level]]])'
     result = []
     end = len(buf)
-    if lvl == 0 and parsemode == mode(MODE_REGULAR):
+    if lvl == 0 and parsemode == mode[MODE_REGULAR]:
 	lineno = 1
     lvl = lvl + 1
 
@@ -410,7 +402,7 @@ def parseit(buf, *rest):
     # some of the more regular modes...
     #
 
-    if parsemode in (mode(MODE_REGULAR), mode(MODE_DMATH), mode(MODE_MATH)):
+    if parsemode in (mode[MODE_REGULAR], mode[MODE_DMATH], mode[MODE_MATH]):
 	cstate = []
 	newpos = start
 	curpmode = parsemode
@@ -418,7 +410,7 @@ def parseit(buf, *rest):
 	    where = newpos
 	    #print '\tnew round: ' + epsilon(buf, where)
 	    if where == end:
-		if lvl > 1 or curpmode != mode(MODE_REGULAR):
+		if lvl > 1 or curpmode != mode[MODE_REGULAR]:
 		    # not the way we started...
 		    raise EOFError, 'premature end of file.' + lle(lvl, buf, where)
 		# the real ending of lvl-1 parse
@@ -447,7 +439,7 @@ def parseit(buf, *rest):
 	    elif foundchar in my_cc[CC_RBRACE]:
 		if lvl <= 1:
 		    raise error, 'ENDGROUP while in base level.' + lle(lvl, buf, where)
-		if  lvl == 1 and mode != mode(MODE_REGULAR):
+		if  lvl == 1 and mode != mode[MODE_REGULAR]:
 		    raise error, 'endgroup while in math mode. +lin() + epsilon(buf, where)'
 		return where + 1, result
 
@@ -467,7 +459,7 @@ def parseit(buf, *rest):
 
 	    elif foundchar in my_cc[CC_COMMENT]:
 		newpos, data = parseit(buf,
-			  mode(MODE_COMMENT), where+1, lvl)
+			  mode[MODE_COMMENT], where+1, lvl)
 		result.append(chunk(COMMENT, where, data))
 
 	    elif foundchar in my_cc[CC_MATHSHIFT]:
@@ -479,13 +471,11 @@ def parseit(buf, *rest):
 		    #
 		    # double mathshift, e.g. '$$'
 		    #
-		    if curpmode == mode(MODE_REGULAR):
-			newpos, data = parseit(buf,
-				  mode(MODE_DMATH),
-				  where+2, 0)
-			result.append(chunk(DMATH,
-				  where, data))
-		    elif curpmode == mode(MODE_MATH):
+		    if curpmode == mode[MODE_REGULAR]:
+			newpos, data = parseit(buf, mode[MODE_DMATH],
+					       where + 2, 0)
+			result.append(chunk(DMATH, where, data))
+		    elif curpmode == mode[MODE_MATH]:
 			raise error, 'wrong math delimiiter' + lin() + epsilon(buf, where)
 		    elif lvl != 1:
 			raise error, 'bad mathend.' + lle(lvl, buf, where)
@@ -495,13 +485,11 @@ def parseit(buf, *rest):
 		    #
 		    # single math shift, e.g. '$'
 		    #
-		    if curpmode == mode(MODE_REGULAR):
-			newpos, data = parseit(buf,
-				  mode(MODE_MATH),
-				  where+1, 0)
-			result.append(chunk(MATH,
-				  where, data))
-		    elif curpmode == mode(MODE_DMATH):
+		    if curpmode == mode[MODE_REGULAR]:
+			newpos, data = parseit(buf, mode[MODE_MATH],
+					       where + 1, 0)
+			result.append(chunk(MATH, where, data))
+		    elif curpmode == mode[MODE_DMATH]:
 			raise error, 'wrong math delimiiter' + lin() + epsilon(buf, where)
 		    elif lvl != 1:
 			raise error, 'bad mathend.' + lv(lvl, buf, where)
@@ -530,7 +518,7 @@ def parseit(buf, *rest):
 		#
 		lineno = lineno + 1
 		savedwhere = where
-		newpos, dummy = parseit(buf, mode(MODE_GOBBLEWHITE), where + 1, lvl)
+		newpos, dummy = parseit(buf, mode[MODE_GOBBLEWHITE], where + 1, lvl)
 		if newpos != end and buf[newpos] in my_cc[CC_ENDLINE]:
 		    result.append(chunk(DENDLINE, savedwhere, foundchar))
 		else:
@@ -539,7 +527,7 @@ def parseit(buf, *rest):
 		result.append(chunk(OTHER, where, foundchar))
 		newpos = where + 1
 
-    elif parsemode == mode(MODE_CS_SCAN):
+    elif parsemode == mode[MODE_CS_SCAN]:
 	#
 	# scan for a control sequence token. `\ape', `\nut' or `\%'
 	#
@@ -561,10 +549,10 @@ def parseit(buf, *rest):
 	    if buf[pos] == '\n':
 		lineno = lineno + 1
 		spos = pos + 1
-	    pos2, dummy = parseit(buf, mode(MODE_GOBBLEWHITE), spos, lvl)
+	    pos2, dummy = parseit(buf, mode[MODE_GOBBLEWHITE], spos, lvl)
 	    return pos2, (start, pos)
 
-    elif parsemode == mode(MODE_GOBBLEWHITE):
+    elif parsemode == mode[MODE_GOBBLEWHITE]:
 	if start == end:
 	    return start, ''
 	pos = rc_endwhite.search(buf, start)
@@ -572,16 +560,15 @@ def parseit(buf, *rest):
 	    pos = start
 	return pos, (start, pos)
 
-    elif parsemode == mode(MODE_COMMENT):
+    elif parsemode == mode[MODE_COMMENT]:
 	pos = rc_comment.search(buf, start)
 	lineno = lineno + 1
 	if pos < 0:
 	    print 'no newline perhaps?'
 	    raise EOFError, 'can\'t find end of comment'
 	pos = pos + 1
-	pos2, dummy = parseit(buf, mode(MODE_GOBBLEWHITE), pos, lvl)
+	pos2, dummy = parseit(buf, mode[MODE_GOBBLEWHITE], pos, lvl)
 	return pos2, (start, pos)
-
 
     else:
 	raise error, 'Unknown mode (' + `parsemode` + ')'
@@ -608,42 +595,44 @@ def handlecs(buf, where, curpmode, lvl, result, end):
     global lineno
 
     # get the control sequence name...
-    newpos, data = parseit(buf, mode(MODE_CS_SCAN), where+1, lvl)
+    newpos, data = parseit(buf, mode[MODE_CS_SCAN], where+1, lvl)
     saveddata = data
+    s_buf_data = s(buf, data)
 
-    if s(buf, data) in ('begin', 'end'):
+    if s_buf_data in ('begin', 'end'):
 	# skip the expected '{' and get the LaTeX-envname '}'
-	newpos, data = parseit(buf, mode(MODE_REGULAR), newpos+1, lvl)
+	newpos, data = parseit(buf, mode[MODE_REGULAR], newpos+1, lvl)
 	if len(data) != 1:
-	    raise error, 'expected 1 chunk of data.' + \
-		      lle(lvl, buf, where)
+	    raise error, 'expected 1 chunk of data.' + lle(lvl, buf, where)
 
 	# yucky, we've got an environment
 	envname = s(buf, data[0].data)
+	s_buf_saveddata = s(buf, saveddata)
 	##print 'FOUND ' + s(buf, saveddata) + '. Name ' + `envname` + '.' + lv(lvl)
-	if s(buf, saveddata) == 'begin' and envname == 'verbatim':
+	if s_buf_saveddata == 'begin' and envname == 'verbatim':
 	    # verbatim deserves special treatment
 	    pos = re_endverb.search(buf, newpos)
 	    if pos < 0:
-		raise error, `endverbstr` + ' not found.' + lle(lvl, buf, where)
+		raise error, "%s not found.%s" \
+		      % (`endverbstr`, lle(lvl, buf, where))
 	    result.append(chunk(ENV, where, (envname, [chunk(PLAIN, newpos, (newpos, pos))])))
 	    newpos = pos + len(endverbstr)
 
-	elif s(buf, saveddata) == 'begin':
+	elif s_buf_saveddata == 'begin':
 	    # start parsing recursively... If that parse returns
 	    # from an '\end{...}', then should the last item of
 	    # the returned data be a string containing the ended
 	    # environment
 	    newpos, data = parseit(buf, curpmode, newpos, lvl)
 	    if not data or type(data[-1]) is not StringType:
-		raise error, 'missing \'end\'' + lle(lvl, buf, where) + epsilon(buf, newpos)
+		raise error, "missing 'end'" + lle(lvl, buf, where) \
+		      + epsilon(buf, newpos)
 	    retenv = data[-1]
 	    del data[-1]
 	    if retenv != envname:
 		#[`retenv`, `envname`]
-		raise error, 'environments do not match.' + \
-			  lle(lvl, buf, where) + \
-			  epsilon(buf, newpos)
+		raise error, 'environments do not match.%s%s' \
+		      % (lle(lvl, buf, where), epsilon(buf, newpos))
 	    result.append(chunk(ENV, where, (retenv, data)))
 	else:
 	    # 'end'... append the environment name, as just
@@ -655,9 +644,9 @@ def handlecs(buf, where, curpmode, lvl, result, end):
 
     # end of \begin ... \end handling
 
-    elif s(buf, data)[0:2] == 'if':
+    elif s_buf_data[0:2] == 'if':
 	# another scary monster: the 'if' directive
-	flag = s(buf, data)[2:]
+	flag = s_buf_data[2:]
 
 	# recursively call parseit, just like environment above..
 	# the last item of data should contain the if-termination
@@ -677,15 +666,15 @@ def handlecs(buf, where, curpmode, lvl, result, end):
 	    newpos, data = parseit(buf, curpmode, newpos, lvl)
 	    if not data or data[-1] not in ('fi', ):
 		raise error, 'wrong if...else... termination' \
-			  + lle(lvl, buf, where) \
-			  + epsilon(buf, newpos)
+		      + lle(lvl, buf, where) \
+		      + epsilon(buf, newpos)
 
 	    ifterm = data[-1]
 	    del data[-1]
 	    result.append(chunk(IF, where, (flag, 1, data)))
 	#done implicitely: return None, newpos
 
-    elif s(buf, data) in ('else', 'fi'):
+    elif s_buf_data in ('else', 'fi'):
 	result.append(s(buf, data))
 	# order calling party to return tuple
 	return (newpos, result), newpos
@@ -702,8 +691,8 @@ def handlecs(buf, where, curpmode, lvl, result, end):
 	pos = regex.compile(un_re(delimchar)).search(buf, x2 + 1)
 	if pos < 0:
 	    raise error, 'end of \'verb\' argument (' + \
-		      `delimchar` + ') not found.' + \
-		      lle(lvl, buf, where)
+		  `delimchar` + ') not found.' + \
+		  lle(lvl, buf, where)
 	result.append(chunk(GROUP, x2, [chunk(PLAIN, x2+1, (x2+1, pos))]))
 	newpos = pos + 1
     else:
@@ -729,7 +718,7 @@ def crcopy(r):
 
 # copy a chunk, would better be a method of class Chunk...
 def chunkcopy(ch):
-    if ch.chtype == chunk_type(GROUP):
+    if ch.chtype == chunk_type[GROUP]:
 	return chunk(GROUP, ch.where, map(chunkcopy, ch.data))
     else:
 	return chunk(ch.chtype, ch.where, ch.data)
@@ -743,12 +732,12 @@ def getnextarg(length, buf, pp, item):
     ##dumpit(buf, wobj.write, pp[item:min(length, item + 5)])
     ##print 'GETNEXTARG, (len, item) =', `length, item` + ' ---> ' + wobj.data + ' <---'
 
-    while item < length and pp[item].chtype == chunk_type(ENDLINE):
+    while item < length and pp[item].chtype == chunk_type[ENDLINE]:
 	del pp[item]
 	length = length - 1
     if item >= length:
 	raise error, 'no next arg.' + epsilon(buf, pp[-1].where)
-    if pp[item].chtype == chunk_type(GROUP):
+    if pp[item].chtype == chunk_type[GROUP]:
 	newpp = pp[item].data
 	del pp[item]
 	length = length - 1
@@ -761,7 +750,7 @@ def getnextarg(length, buf, pp, item):
 	    dumpit(buf, wobj.write, newpp)
 	    ##print 'GETNEXTARG: inserted ' + `wobj.data`
 	return length, item
-    elif pp[item].chtype == chunk_type(PLAIN):
+    elif pp[item].chtype == chunk_type[PLAIN]:
 	#grab one char
 	print 'WARNING: grabbing one char'
 	if len(s(buf, pp[item].data)) > 1:
@@ -795,7 +784,7 @@ def getoptarg(length, buf, pp, item):
     ##print 'GETOPTARG, (len, item) =', `length, item` + ' ---> ' + wobj.data + ' <---'
 
     if item >= length or \
-	      pp[item].chtype != chunk_type(PLAIN) or \
+	      pp[item].chtype != chunk_type[PLAIN] or \
 	      s(buf, pp[item].data)[0] != '[':
 	return length, item
 
@@ -807,7 +796,7 @@ def getoptarg(length, buf, pp, item):
     while 1:
 	if item == length:
 	    raise error, 'No end of optional arg found'
-	if pp[item].chtype == chunk_type(PLAIN):
+	if pp[item].chtype == chunk_type[PLAIN]:
 	    text = s(buf, pp[item].data)
 	    pos = re_endopt.search(text)
 	    if pos >= 0:
@@ -842,7 +831,7 @@ ignoredcommands = ('bcode', 'ecode')
 # map commands like these to themselves as plaintext
 wordsselves = ('UNIX', 'ABC', 'C', 'ASCII', 'EOF', 'LaTeX')
 # \{ --> {,  \} --> }, etc
-themselves = ('{', '}', '.', '@', ' ', '\n') + wordsselves
+themselves = ('{', '}', ',', '.', '@', ' ', '\n') + wordsselves
 # these ones also themselves (see argargs macro in myformat.sty)
 inargsselves = (',', '[', ']', '(', ')')
 # this is how *I* would show the difference between emph and strong
@@ -872,33 +861,34 @@ def flattext(buf, pp):
 	    break
 	ch = pp[i]
 	i = i+1
-	if ch.chtype == chunk_type(PLAIN):
+	if ch.chtype == chunk_type[PLAIN]:
 	    pass
-	elif ch.chtype == chunk_type(CSNAME):
-	    if s(buf, ch.data) in themselves or hist.inargs and s(buf, ch.data) in inargsselves:
-		ch.chtype = chunk_type(PLAIN)
-	    elif s(buf, ch.data) == 'e':
-		ch.chtype = chunk_type(PLAIN)
+	elif ch.chtype == chunk_type[CSNAME]:
+	    s_buf_data = s(buf, ch.data)
+	    if s_buf_data in themselves or hist.inargs and s_buf_data in inargsselves:
+		ch.chtype = chunk_type[PLAIN]
+	    elif s_buf_data == 'e':
+		ch.chtype = chunk_type[PLAIN]
 		ch.data = '\\'
-	    elif len(s(buf, ch.data)) == 1 \
-		      and s(buf, ch.data) in onlylatexspecial:
-		ch.chtype = chunk_type(PLAIN)
+	    elif len(s_buf_data) == 1 \
+		      and s_buf_data in onlylatexspecial:
+		ch.chtype = chunk_type[PLAIN]
 		# if it is followed by an empty group,
 		# remove that group, it was needed for
 		# a true space
 		if i < length \
-			  and pp[i].chtype==chunk_type(GROUP) \
+			  and pp[i].chtype==chunk_type[GROUP] \
 			  and len(pp[i].data) == 0:
 		    del pp[i]
 		    length = length-1
 
-	    elif s(buf, ch.data) in markcmds.keys():
+	    elif s_buf_data in markcmds.keys():
 		length, newi = getnextarg(length, buf, pp, i)
 		str = flattext(buf, pp[i:newi])
 		del pp[i:newi]
 		length = length - (newi - i)
-		ch.chtype = chunk_type(PLAIN)
-		markcmd = s(buf, ch.data)
+		ch.chtype = chunk_type[PLAIN]
+		markcmd = s_buf_data
 		x = markcmds[markcmd]
 		if type(x) == TupleType:
 		    pre, after = x
@@ -909,18 +899,18 @@ def flattext(buf, pp):
 		    raise 'FATAL', 'corrupt markcmds'
 		ch.data = str
 	    else:
-		if s(buf, ch.data) not in ignoredcommands:
-		    print 'WARNING: deleting command ' + `s(buf, ch.data)`
+		if s_buf_data not in ignoredcommands:
+		    print 'WARNING: deleting command ' + s_buf_data
 		    print 'PP' + `pp[i-1]`
 		del pp[i-1]
 		i, length = i-1, length-1
-	elif ch.chtype == chunk_type(GROUP):
+	elif ch.chtype == chunk_type[GROUP]:
 	    length, newi = getnextarg(length, buf, pp, i-1)
 	    i = i-1
 ##			str = flattext(buf, crcopy(pp[i-1:newi]))
 ##			del pp[i:newi]
 ##			length = length - (newi - i)
-##			ch.chtype = chunk_type(PLAIN)
+##			ch.chtype = chunk_type[PLAIN]
 ##			ch.data = str
 	else:
 	    pass
@@ -937,15 +927,16 @@ def invent_node_names(text):
     ##print 'WORDS ' + `words`
 
     if len(words) == 2 \
-	      and string.lower(words[0]) == 'built-in' \
-	      and string.lower(words[1]) not in ('modules', 'functions'):
+       and string.lower(words[0]) == 'built-in' \
+       and string.lower(words[1]) not in ('modules', 'functions'):
 	return words[1]
     if len(words) == 3 and string.lower(words[1]) == 'module':
 	return words[2]
     if len(words) == 3 and string.lower(words[1]) == 'object':
 	return string.join(words[0:2])
-    if len(words) > 4 and string.lower(string.join(words[-4:])) == \
-	      'methods and data attributes':
+    if len(words) > 4 \
+       and (string.lower(string.join(words[-4:])) \
+	    == 'methods and data attributes'):
 	return string.join(words[:2])
     return text
 
@@ -966,16 +957,16 @@ def next_command_p(length, buf, pp, i, cmdname):
 	    break
 	ch = pp[i]
 	i = i+1
-	if ch.chtype == chunk_type(ENDLINE):
+	if ch.chtype == chunk_type[ENDLINE]:
 	    continue
-	if ch.chtype == chunk_type(DENDLINE):
+	if ch.chtype == chunk_type[DENDLINE]:
 	    continue
-	if ch.chtype == chunk_type(PLAIN):
+	if ch.chtype == chunk_type[PLAIN]:
 	    if re_whitespace.search(s(buf, ch.data)) == 0 and \
 		      re_whitespace.match(s(buf, ch.data)) == len(s(buf, ch.data)):
 		continue
 	    return -1
-	if ch.chtype == chunk_type(CSNAME):
+	if ch.chtype == chunk_type[CSNAME]:
 	    if s(buf, ch.data) == cmdname:
 		return i # _after_ the command
 	    return -1
@@ -1076,7 +1067,7 @@ def do_funcdesc(length, buf, pp, i):
     if not command:
 	raise error, 'don\'t know what to do with indexsubitem ' + `idxsi`
 
-    ch.chtype = chunk_type(CSLINE)
+    ch.chtype = chunk_type[CSLINE]
     ch.data = command
 
     cslinearg = [chunk(GROUP, wh, [chunk(PLAIN, wh, cat_class)])]
@@ -1124,7 +1115,7 @@ def do_excdesc(length, buf, pp, i):
     if not command:
 	raise error, 'don\'t know what to do with indexsubitem ' + `idxsi`
 
-    ch.chtype = chunk_type(CSLINE)
+    ch.chtype = chunk_type[CSLINE]
     ch.data = command
 
     cslinearg = [chunk(GROUP, wh, [chunk(PLAIN, wh, cat_class)])]
@@ -1170,7 +1161,7 @@ def do_datadesc(length, buf, pp, i):
     if not command:
 	raise error, 'don\'t know what to do with indexsubitem ' + `idxsi`
 
-    ch.chtype = chunk_type(CSLINE)
+    ch.chtype = chunk_type[CSLINE]
     ch.data = command
 
     cslinearg = [chunk(GROUP, wh, [chunk(PLAIN, wh, cat_class)])]
@@ -1235,11 +1226,11 @@ def changeit(buf, pp):
 	    # has been inserted, e.g., the \end{...} clauses
 	    raise 'FATAL', 'got string, probably too many ' + `end`
 
-	if ch.chtype == chunk_type(GROUP):
+	if ch.chtype == chunk_type[GROUP]:
 	    # check for {\em ...} constructs
 	    if ch.data and \
-		      ch.data[0].chtype == chunk_type(CSNAME) and \
-		      s(buf, ch.data[0].data) in fontchanges.keys():
+	       ch.data[0].chtype == chunk_type[CSNAME] and \
+	       s(buf, ch.data[0].data) in fontchanges.keys():
 		k = s(buf, ch.data[0].data)
 		del ch.data[0]
 		pp.insert(i-1, chunk(CSNAME, ch.where, fontchanges[k]))
@@ -1248,7 +1239,7 @@ def changeit(buf, pp):
 	    # recursively parse the contents of the group
 	    changeit(buf, ch.data)
 
-	elif ch.chtype == chunk_type(IF):
+	elif ch.chtype == chunk_type[IF]:
 	    # \if...
 	    flag, negate, data = ch.data
 	    ##print 'IF: flag, negate = ' + `flag, negate`
@@ -1265,7 +1256,7 @@ def changeit(buf, pp):
 		length = length + len(data)
 
 
-	elif ch.chtype == chunk_type(ENV):
+	elif ch.chtype == chunk_type[ENV]:
 	    # \begin{...} ....
 	    envname, data = ch.data
 
@@ -1340,7 +1331,7 @@ def changeit(buf, pp):
 
 		if newi-i != 1:
 		    raise error, 'Sorry, expected 1 chunk argument'
-		if pp[i].chtype != chunk_type(PLAIN):
+		if pp[i].chtype != chunk_type[PLAIN]:
 		    raise error, 'Sorry, expected plain text argument'
 		hist.itemargmacro = s(buf, pp[i].data)
 		del pp[i:newi]
@@ -1390,7 +1381,7 @@ def changeit(buf, pp):
 	    else:
 		print 'WARNING: don\'t know what to do with env ' + `envname`
 
-	elif ch.chtype == chunk_type(ENDENV):
+	elif ch.chtype == chunk_type[ENDENV]:
 	    envname = ch.data
 	    if envname != hist.inenv[0]:
 		raise error, '\'end\' does not match. Name ' + `envname` + ', expected ' + `hist.inenv[0]`
@@ -1442,75 +1433,78 @@ def changeit(buf, pp):
 	    else:
 		print 'WARNING: ending env ' + `envname` + 'has no actions'
 
-	elif ch.chtype == chunk_type(CSNAME):
+	elif ch.chtype == chunk_type[CSNAME]:
 	    # control name transformations
-	    if s(buf, ch.data) == 'optional':
-		pp[i-1].chtype = chunk_type (PLAIN)
+	    s_buf_data = s(buf, ch.data)
+	    if s_buf_data == 'optional':
+		pp[i-1].chtype = chunk_type[PLAIN]
 		pp[i-1].data = '['
 		if (i < length) and \
-		   (pp[i].chtype == chunk_type(GROUP)):
+		   (pp[i].chtype == chunk_type[GROUP]):
 		    cp=pp[i].data
 		    pp[i:i+1]=cp + [
 			chunk(PLAIN, ch.where, ']')]
 		    length = length+len(cp)
-	    elif s(buf, ch.data) in ignoredcommands:
+	    elif s_buf_data in ignoredcommands:
 		del pp[i-1]
 		i, length = i-1, length-1
-	    elif s(buf, ch.data) == '@' and \
+	    elif s_buf_data == '@' and \
 		      i != length and \
-		      pp[i].chtype == chunk_type(PLAIN) and \
+		      pp[i].chtype == chunk_type[PLAIN] and \
 		      s(buf, pp[i].data)[0] == '.':
 		# \@. --> \. --> @.
 		ch.data = '.'
 		del pp[i]
 		length = length-1
-	    elif s(buf, ch.data) == '\\':
+	    elif s_buf_data == '\\':
 		# \\ --> \* --> @*
 		ch.data = '*'
-	    elif len(s(buf, ch.data)) == 1 and \
-		      s(buf, ch.data) in onlylatexspecial:
-		ch.chtype = chunk_type(PLAIN)
+	    elif len(s_buf_data) == 1 and \
+		      s_buf_data in onlylatexspecial:
+		ch.chtype = chunk_type[PLAIN]
 		# check if such a command is followed by
 		# an empty group: e.g., `\%{}'.  If so, remove
 		# this empty group too
 		if i < length and \
-			  pp[i].chtype == chunk_type(GROUP) \
+			  pp[i].chtype == chunk_type[GROUP] \
 			  and len(pp[i].data) == 0:
 		    del pp[i]
 		    length = length-1
 
-	    elif hist.inargs and s(buf, ch.data) in inargsselves:
+	    elif hist.inargs and s_buf_data in inargsselves:
 		# This is the special processing of the
 		# arguments of the \begin{funcdesc}... or
 		# \funcline... arguments
 		# \, --> , \[ --> [, \] --> ]
-		ch.chtype = chunk_type(PLAIN)
+		ch.chtype = chunk_type[PLAIN]
 
-	    elif s(buf, ch.data) == 'renewcommand':
+	    elif s_buf_data == 'renewcommand':
 		# \renewcommand{\indexsubitem}....
 		i, length = i-1, length-1
 		del pp[i]
 		length, newi = getnextarg(length, buf, pp, i)
 		if newi-i == 1 \
 			  and i < length \
-			  and pp[i].chtype == chunk_type(CSNAME) \
+			  and pp[i].chtype == chunk_type[CSNAME] \
 			  and s(buf, pp[i].data) == 'indexsubitem':
 		    del pp[i:newi]
 		    length = length - (newi-i)
 		    length, newi = getnextarg(length, buf, pp, i)
 		    text = flattext(buf, pp[i:newi])
 		    if text[:1] != '(' or text[-1:] != ')':
-			raise error, 'expected indexsubitme enclosed in braces'
+			raise error, \
+			      'expected indexsubitem enclosed in parenteses'
 		    words = string.split(text[1:-1])
 		    hist.indexsubitem = words
+## 		    print 'set hist.indexsubitem =', words
 		    del text, words
 		else:
 		    print 'WARNING: renewcommand with unsupported arg removed'
 		del pp[i:newi]
 		length = length - (newi-i)
 
-	    elif s(buf, ch.data) == 'item':
-		ch.chtype = chunk_type(CSLINE)
+	    elif s_buf_data == 'item':
+		ch.chtype = chunk_type[CSLINE]
 		length, newi = getoptarg(length, buf, pp, i)
 		ingroupch = pp[i:newi]
 		del pp[i:newi]
@@ -1518,7 +1512,7 @@ def changeit(buf, pp):
 		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
 		i, length = i+1, length+1
 
-	    elif s(buf, ch.data) == 'ttindex':
+	    elif s_buf_data == 'ttindex':
 		idxsi = hist.indexsubitem
 
 		cat_class = ''
@@ -1535,7 +1529,7 @@ def changeit(buf, pp):
 		if not cat_class:
 		    cat_class = '('+string.join(idxsi)+')'
 
-		ch.chtype = chunk_type(CSLINE)
+		ch.chtype = chunk_type[CSLINE]
 		ch.data = command
 
 		length, newi = getnextarg(length, buf, pp, i)
@@ -1562,32 +1556,30 @@ def changeit(buf, pp):
 		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
 		length, i = length+1, i+1
 
-
-	    elif s(buf, ch.data) == 'ldots':
+	    elif s_buf_data == 'ldots':
 		# \ldots --> \dots{} --> @dots{}
 		ch.data = 'dots'
 		if i == length \
-			  or pp[i].chtype != chunk_type(GROUP) \
+			  or pp[i].chtype != chunk_type[GROUP] \
 			  or pp[i].data != []:
 		    pp.insert(i, chunk(GROUP, ch.where, []))
 		    i, length = i+1, length+1
-	    elif s(buf, ch.data) in wordsselves:
+	    elif s_buf_data in themselves:
 		# \UNIX --> UNIX
-		ch.chtype = chunk_type(PLAIN)
+		ch.chtype = chunk_type[PLAIN]
 		if i != length \
-			  and pp[i].chtype == chunk_type(GROUP) \
+			  and pp[i].chtype == chunk_type[GROUP] \
 			  and pp[i].data == []:
 		    del pp[i]
 		    length = length-1
-	    elif s(buf, ch.data) in for_texi:
+	    elif s_buf_data in for_texi:
 		pass
 
-	    elif s(buf, ch.data) == 'e':
+	    elif s_buf_data == 'e':
 		# "\e" --> "\"
 		ch.data = '\\'
-		ch.chtype = chunk_type(PLAIN)
-	    elif (s(buf, ch.data) == 'lineiii') or\
-		 (s(buf, ch.data) == 'lineii'):
+		ch.chtype = chunk_type[PLAIN]
+	    elif s_buf_data in ('lineiii', 'lineii'):
 		# This is the most tricky one
 		# \lineiii{a1}{a2}[{a3}] -->
 		# @item @<cts. of itemargmacro>{a1}
@@ -1602,16 +1594,13 @@ def changeit(buf, pp):
 		if (hist.inenv[0] != 'tableiii') and \
 		   (hist.inenv[0] != 'tableii'):
 		    raise error, \
-			      'wrong command (' + \
-			      s(buf, ch.data)+ \
-			      ') in wrong environment (' \
-			      + `hist.inenv[0]` + ')'
-		ch.chtype = chunk_type(CSLINE)
+			  'wrong command (%s) in wrong environment (%s)' \
+			  % (s_buf_data, `hist.inenv[0]`)
+		ch.chtype = chunk_type[CSLINE]
 		ch.data = 'item'
 		length, newi = getnextarg(length, buf, pp, i)
-		ingroupch = [chunk(CSNAME, 0,
-			  hist.itemargmacro),
-			  chunk(GROUP, 0, pp[i:newi])]
+		ingroupch = [chunk(CSNAME, 0, hist.itemargmacro),
+			     chunk(GROUP, 0, pp[i:newi])]
 		del pp[i:newi]
 		length = length - (newi-i)
 ##				print 'ITEM ARG: --->',
@@ -1636,19 +1625,17 @@ def changeit(buf, pp):
 		if length != len(pp):
 		    raise 'IN LINEIII IS THE ERR', `i`
 
-	    elif s(buf, ch.data) in ('chapter', 'section', 'subsection', 'subsubsection'):
+	    elif s_buf_data in ('chapter', 'section', 'subsection', 'subsubsection'):
 		#\xxxsection{A} ---->
 		# @node A, , ,
 		# @xxxsection A
 		## also: remove commas and quotes
-		ch.chtype = chunk_type(CSLINE)
+		ch.chtype = chunk_type[CSLINE]
 		length, newi = getnextarg(length, buf, pp, i)
 		afternodenamecmd = next_command_p(length, buf, pp, newi, 'nodename')
 		if afternodenamecmd < 0:
 		    cp1 = crcopy(pp[i:newi])
-		    pp[i:newi] = [
-			      chunk(GROUP, ch.where,
-			      pp[i:newi])]
+		    pp[i:newi] = [chunk(GROUP, ch.where, pp[i:newi])]
 		    length, newi = length - (newi-i) + 1, i+1
 		    text = flattext(buf, cp1)
 		    text = invent_node_names(text)
@@ -1658,9 +1645,7 @@ def changeit(buf, pp):
 		    del pp[newi:endarg]
 		    length = length - (endarg-newi)
 
-		    pp[i:newi] = [
-			      chunk(GROUP, ch.where,
-			      pp[i:newi])]
+		    pp[i:newi] = [chunk(GROUP, ch.where, pp[i:newi])]
 		    length, newi = length - (newi-i) + 1, i + 1
 		    text = flattext(buf, cp1)
 		if text[-1] == '.':
@@ -1672,43 +1657,38 @@ def changeit(buf, pp):
 		else:
 		    hist.nodenames.append(text)
 		text = rm_commas_etc(text)
-		pp[i-1:i-1] = [
-			  chunk(CSLINE, ch.where, 'node'),
-			  chunk(GROUP, ch.where, [
-			  chunk(PLAIN, ch.where, text+', , ,')
-			  ])]
+		pp[i-1:i-1] = [chunk(CSLINE, ch.where, 'node'),
+			       chunk(GROUP, ch.where, [
+				   chunk(PLAIN, ch.where, text+', , ,')
+				   ])]
 		i, length = newi+2, length+2
 
-	    elif s(buf,ch.data) == 'funcline':
+	    elif s_buf_data == 'funcline':
 		# fold it to a very short environment
-		pp[i-1:i-1] = [
-			  chunk(CSLINE, ch.where, 'end'),
-			  chunk(GROUP, ch.where, [
-			  chunk(PLAIN, ch.where, hist.command)])]
+		pp[i-1:i-1] = [chunk(CSLINE, ch.where, 'end'),
+			       chunk(GROUP, ch.where, [
+				   chunk(PLAIN, ch.where, hist.command)])]
 		i, length = i+2, length+2
 		length, i = do_funcdesc(length, buf, pp, i)
 
-	    elif s(buf,ch.data) == 'dataline':
-		pp[i-1:i-1] = [
-			  chunk(CSLINE, ch.where, 'end'),
-			  chunk(GROUP, ch.where, [
-			  chunk(PLAIN, ch.where, hist.command)])]
+	    elif s_buf_data == 'dataline':
+		pp[i-1:i-1] = [chunk(CSLINE, ch.where, 'end'),
+			       chunk(GROUP, ch.where, [
+				   chunk(PLAIN, ch.where, hist.command)])]
 		i, length = i+2, length+2
 		length, i = do_datadesc(length, buf, pp, i)
 
-	    elif s(buf,ch.data) == 'excline':
-		pp[i-1:i-1] = [
-			  chunk(CSLINE, ch.where, 'end'),
-			  chunk(GROUP, ch.where, [
-			  chunk(PLAIN, ch.where, hist.command)])]
+	    elif s_buf_data == 'excline':
+		pp[i-1:i-1] = [chunk(CSLINE, ch.where, 'end'),
+			       chunk(GROUP, ch.where, [
+				   chunk(PLAIN, ch.where, hist.command)])]
 		i, length = i+2, length+2
 		length, i = do_excdesc(length, buf, pp, i)
 
-
-	    elif s(buf, ch.data) == 'index':
+	    elif s_buf_data == 'index':
 		#\index{A} --->
 		# @cindex A
-		ch.chtype = chunk_type(CSLINE)
+		ch.chtype = chunk_type[CSLINE]
 		ch.data = 'cindex'
 		length, newi = getnextarg(length, buf, pp, i)
 
@@ -1718,8 +1698,8 @@ def changeit(buf, pp):
 		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
 		length, i = length+1, i+1
 
-	    elif s(buf, ch.data) == 'bifuncindex':
-		ch.chtype = chunk_type(CSLINE)
+	    elif s_buf_data == 'bifuncindex':
+		ch.chtype = chunk_type[CSLINE]
 		ch.data = 'findex'
 		length, newi = getnextarg(length, buf, pp, i)
 		ingroupch = pp[i:newi]
@@ -1735,9 +1715,8 @@ def changeit(buf, pp):
 		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
 		length, i = length+1, i+1
 
-
-	    elif s(buf, ch.data) == 'obindex':
-		ch.chtype = chunk_type(CSLINE)
+	    elif s_buf_data == 'obindex':
+		ch.chtype = chunk_type[CSLINE]
 		ch.data = 'findex'
 		length, newi = getnextarg(length, buf, pp, i)
 		ingroupch = pp[i:newi]
@@ -1753,9 +1732,8 @@ def changeit(buf, pp):
 		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
 		length, i = length+1, i+1
 
-
-	    elif s(buf, ch.data) == 'opindex':
-		ch.chtype = chunk_type(CSLINE)
+	    elif s_buf_data == 'opindex':
+		ch.chtype = chunk_type[CSLINE]
 		ch.data = 'findex'
 		length, newi = getnextarg(length, buf, pp, i)
 		ingroupch = pp[i:newi]
@@ -1771,9 +1749,8 @@ def changeit(buf, pp):
 		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
 		length, i = length+1, i+1
 
-
-	    elif s(buf, ch.data) == 'bimodindex':
-		ch.chtype = chunk_type(CSLINE)
+	    elif s_buf_data == 'bimodindex':
+		ch.chtype = chunk_type[CSLINE]
 		ch.data = 'pindex'
 		length, newi = getnextarg(length, buf, pp, i)
 		ingroupch = pp[i:newi]
@@ -1789,12 +1766,11 @@ def changeit(buf, pp):
 		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
 		length, i = length+1, i+1
 
-	    elif s(buf, ch.data) == 'sectcode':
+	    elif s_buf_data == 'sectcode':
 		ch.data = 'code'
 
-
-	    elif s(buf, ch.data) == 'stmodindex':
-		ch.chtype = chunk_type(CSLINE)
+	    elif s_buf_data == 'stmodindex':
+		ch.chtype = chunk_type[CSLINE]
 		# use the program index as module index
 		ch.data = 'pindex'
 		length, newi = getnextarg(length, buf, pp, i)
@@ -1811,11 +1787,10 @@ def changeit(buf, pp):
 		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
 		length, i = length+1, i+1
 
-
-	    elif s(buf, ch.data) == 'stindex':
+	    elif s_buf_data == 'stindex':
 		# XXX must actually go to newindex st
 		wh = ch.where
-		ch.chtype = chunk_type(CSLINE)
+		ch.chtype = chunk_type[CSLINE]
 		ch.data = 'cindex'
 		length, newi = getnextarg(length, buf, pp, i)
 		ingroupch = [chunk(CSNAME, wh, 'code'),
@@ -1839,8 +1814,7 @@ def changeit(buf, pp):
 		pp.insert(i, chunk(GROUP, wh, t))
 		i, length = i+1, length+1
 
-
-	    elif s(buf, ch.data) == 'indexii':
+	    elif s_buf_data == 'indexii':
 		#\indexii{A}{B} --->
 		# @cindex A B
 		# @cindex B, A
@@ -1855,7 +1829,7 @@ def changeit(buf, pp):
 		del pp[i:newi]
 		length = length - (newi-i)
 
-		ch.chtype = chunk_type(CSLINE)
+		ch.chtype = chunk_type[CSLINE]
 		ch.data = 'cindex'
 		pp.insert(i, chunk(GROUP, ch.where, cp11 + [
 			  chunk(PLAIN, ch.where, ' ')] + cp12))
@@ -1865,7 +1839,7 @@ def changeit(buf, pp):
 			  chunk(PLAIN, ch.where, ', ')]+ cp21)]
 		i, length = i+2, length+2
 
-	    elif s(buf, ch.data) == 'indexiii':
+	    elif s_buf_data == 'indexiii':
 		length, newi = getnextarg(length, buf, pp, i)
 		cp11 = pp[i:newi]
 		cp21 = crcopy(pp[i:newi])
@@ -1885,7 +1859,7 @@ def changeit(buf, pp):
 		del pp[i:newi]
 		length = length - (newi-i)
 
-		ch.chtype = chunk_type(CSLINE)
+		ch.chtype = chunk_type[CSLINE]
 		ch.data = 'cindex'
 		pp.insert(i, chunk(GROUP, ch.where, cp11 + [
 			  chunk(PLAIN, ch.where, ' ')] + cp12
@@ -1905,8 +1879,7 @@ def changeit(buf, pp):
 			  cp32)]
 		i, length = i+2, length+2
 
-
-	    elif s(buf, ch.data) == 'indexiv':
+	    elif s_buf_data == 'indexiv':
 		length, newi = getnextarg(length, buf, pp, i)
 		cp11 = pp[i:newi]
 		cp21 = crcopy(pp[i:newi])
@@ -1936,7 +1909,7 @@ def changeit(buf, pp):
 		del pp[i:newi]
 		length = length - (newi-i)
 
-		ch.chtype = chunk_type(CSLINE)
+		ch.chtype = chunk_type[CSLINE]
 		ch.data = 'cindex'
 		ingroupch = cp11 + \
 			  spacech + cp12 + \
@@ -1966,11 +1939,15 @@ def changeit(buf, pp):
 			  chunk(GROUP, ch.where, ingroupch)]
 		i, length = i+2, length+2
 
+## 	    elif s_buf_data == 'indexsubitem':
+## 		ch.data = flattext(buf, [ch])
+## 		ch.chtype = chunk_type[PLAIN]
 
+	    elif s_buf_data in ('noindent', 'indexsubitem'):
+		pass
 
 	    else:
-		print 'don\'t know what to do with keyword ' + `s(buf, ch.data)`
-
+		print "don't know what to do with keyword " + s_buf_data
 
 
 re_atsign = regex.compile('[@{}]')
@@ -1992,22 +1969,20 @@ def dumpit(buf, wm, pp):
 	ch = pp[i]
 	i = i + 1
 
-	if addspace:
-	    dospace = 1
-	    addspace = 0
-	else:
-	    dospace = 0
+	dospace = addspace
+	addspace = 0
 
-	if ch.chtype == chunk_type(CSNAME):
-	    wm('@' + s(buf, ch.data))
-	    if s(buf, ch.data) == 'node' and \
-		      pp[i].chtype == chunk_type(PLAIN) and \
+	if ch.chtype == chunk_type[CSNAME]:
+	    s_buf_data = s(buf, ch.data)
+	    wm('@' + s_buf_data)
+	    if s_buf_data == 'node' and \
+		      pp[i].chtype == chunk_type[PLAIN] and \
 		      s(buf, pp[i].data) in out.doublenodes:
 		##XXX doesnt work yet??
 		wm(' ZZZ-' + zfill(`i`, 4))
-	    if s(buf, ch.data)[0] in string.letters:
+	    if s_buf_data[0] in string.letters:
 		addspace = 1
-	elif ch.chtype == chunk_type(PLAIN):
+	elif ch.chtype == chunk_type[PLAIN]:
 	    if dospace and s(buf, ch.data) not in (' ', '\t'):
 		wm(' ')
 	    text = s(buf, ch.data)
@@ -2018,32 +1993,32 @@ def dumpit(buf, wm, pp):
 		wm(text[:pos] + '@' + text[pos])
 		text = text[pos+1:]
 	    wm(text)
-	elif ch.chtype == chunk_type(GROUP):
+	elif ch.chtype == chunk_type[GROUP]:
 	    wm('{')
 	    dumpit(buf, wm, ch.data)
 	    wm('}')
-	elif ch.chtype == chunk_type(DENDLINE):
+	elif ch.chtype == chunk_type[DENDLINE]:
 	    wm('\n\n')
 	    while i != length and pp[i].chtype in \
-		      (chunk_type(DENDLINE), chunk_type(ENDLINE)):
+		      (chunk_type[DENDLINE], chunk_type[ENDLINE]):
 		i = i + 1
-	elif ch.chtype == chunk_type(OTHER):
+	elif ch.chtype == chunk_type[OTHER]:
 	    wm(s(buf, ch.data))
-	elif ch.chtype == chunk_type(ACTIVE):
+	elif ch.chtype == chunk_type[ACTIVE]:
 	    wm(s(buf, ch.data))
-	elif ch.chtype == chunk_type(ENDLINE):
+	elif ch.chtype == chunk_type[ENDLINE]:
 	    wm('\n')
-	elif ch.chtype == chunk_type(CSLINE):
+	elif ch.chtype == chunk_type[CSLINE]:
 	    if i >= 2 and pp[i-2].chtype not in \
-		      (chunk_type(ENDLINE), chunk_type(DENDLINE)) \
-		      and (pp[i-2].chtype != chunk_type(PLAIN)
+		      (chunk_type[ENDLINE], chunk_type[DENDLINE]) \
+		      and (pp[i-2].chtype != chunk_type[PLAIN]
 		      or s(buf, pp[i-2].data)[-1] != '\n'):
 
 		wm('\n')
 	    wm('@' + s(buf, ch.data))
 	    if i == length:
 		raise error, 'CSLINE expected another chunk'
-	    if pp[i].chtype != chunk_type(GROUP):
+	    if pp[i].chtype != chunk_type[GROUP]:
 		raise error, 'CSLINE expected GROUP'
 	    if type(pp[i].data) != ListType:
 		raise error, 'GROUP chould contain []-data'
@@ -2064,26 +2039,25 @@ def dumpit(buf, wm, pp):
 		    text = text[pos+1:]
 		wm(text)
 	    if i >= length or \
-		      pp[i].chtype not in (chunk_type(CSLINE),
-		      chunk_type(ENDLINE), chunk_type(DENDLINE)) \
-		      and (pp[i].chtype != chunk_type(PLAIN)
+		      pp[i].chtype not in (chunk_type[CSLINE],
+		      chunk_type[ENDLINE], chunk_type[DENDLINE]) \
+		      and (pp[i].chtype != chunk_type[PLAIN]
 		      or s(buf, pp[i].data)[0] != '\n'):
 		wm('\n')
 
-	elif ch.chtype == chunk_type(COMMENT):
-##			print 'COMMENT: previous chunk =', pp[i-2]
-##			if pp[i-2].chtype == chunk_type(PLAIN):
-##				print 'PLAINTEXT =', `s(buf, pp[i-2].data)`
+	elif ch.chtype == chunk_type[COMMENT]:
+## 	    print 'COMMENT: previous chunk =', pp[i-2]
+## 	    if pp[i-2].chtype == chunk_type[PLAIN]:
+## 		print 'PLAINTEXT =', `s(buf, pp[i-2].data)`
 	    if s(buf, ch.data) and \
 		      regex.match('^[ \t]*$', s(buf, ch.data)) < 0:
-		if i >= 2 and pp[i-2].chtype not in \
-			  (chunk_type(ENDLINE), chunk_type(DENDLINE)) \
-			  and not (pp[i-2].chtype == chunk_type(PLAIN)
-			  and regex.match('\\(.\\|\n\\)*[ \t]*\n$', s(buf, pp[i-2].data)) >= 0):
-		    print 'ADDING NEWLINE'
+		if i >= 2 \
+		   and pp[i-2].chtype not in (chunk_type[ENDLINE], chunk_type[DENDLINE]) \
+		   and not (pp[i-2].chtype == chunk_type[PLAIN]
+			    and regex.match('\\(.\\|\n\\)*[ \t]*\n$', s(buf, pp[i-2].data)) >= 0):
 		    wm('\n')
 		wm('@c ' + s(buf, ch.data))
-	elif ch.chtype == chunk_type(IGNORE):
+	elif ch.chtype == chunk_type[IGNORE]:
 	    pass
 	else:
 	    try:
