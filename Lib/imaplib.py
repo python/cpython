@@ -573,11 +573,11 @@ class IMAP4:
         return apply(self._simple_command, (name,) + args)
 
     def namespace(self):
-	""" Returns IMAP namespaces ala rfc2342
-	"""
-	name = 'NAMESPACE'
-	typ, dat = self._simple_command(name)
-	return self._untagged_response(typ, dat, name)
+        """ Returns IMAP namespaces ala rfc2342
+        """
+        name = 'NAMESPACE'
+        typ, dat = self._simple_command(name)
+        return self._untagged_response(typ, dat, name)
 
 
     #       Private methods
