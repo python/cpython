@@ -1467,10 +1467,34 @@ validate_expr_stmt(node *tree)
                && is_odd(nch)
                && validate_testlist(CHILD(tree, 0)));
 
-    for (j = 1; res && (j < nch); j += 2)
-        res = (validate_equal(CHILD(tree, j))
-               && validate_testlist(CHILD(tree, j + 1)));
+    if (res && nch == 3
+        && TYPE(CHILD(tree, 1)) == augassign) {
+        res = (validate_numnodes(CHILD(tree, 1), 1, "augassign")
+               && validate_testlist(CHILD(tree, 2)));
 
+        if (res) {
+            char *s = STR(CHILD(CHILD(tree, 1), 0));
+
+            res = (strcmp(s, "+=") == 0
+                   || strcmp(s, "-=") == 0
+                   || strcmp(s, "*=") == 0
+                   || strcmp(s, "/=") == 0
+                   || strcmp(s, "%=") == 0
+                   || strcmp(s, "&=") == 0
+                   || strcmp(s, "|=") == 0
+                   || strcmp(s, "^=") == 0
+                   || strcmp(s, "<<=") == 0
+                   || strcmp(s, ">>=") == 0
+                   || strcmp(s, "**=") == 0);
+            if (!res)
+                err_string("illegal augmmented assignment operator");
+        }
+    }
+    else {
+        for (j = 1; res && (j < nch); j += 2)
+            res = (validate_equal(CHILD(tree, j))
+                   && validate_testlist(CHILD(tree, j + 1)));
+    }
     return (res);
 }
 
@@ -2822,9 +2846,11 @@ static PyMethodDef parser_functions[] =  {
     };
 
 
+DL_IMPORT(void) initparser(void);
+
 DL_EXPORT(void)
 initparser(void)
- {
+{
     PyObject* module;
     PyObject* dict;
         
@@ -2834,8 +2860,6 @@ initparser(void)
 
     if (parser_error == 0)
         parser_error = PyErr_NewException("parser.ParserError", NULL, NULL);
-    else
-        puts("parser module initialized more than once!");
 
     if ((parser_error == 0)
         || (PyDict_SetItemString(dict, "ParserError", parser_error) != 0)) {
