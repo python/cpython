@@ -32,13 +32,13 @@ if 'publish' not in dir(b):
 
 try:
     del b.__dict__
-except (AttributeError, TypeError): pass
+except TypeError: pass
 else: raise TestFailed, 'del func.__dict__ expected TypeError'
 
 b.publish = 1
 try:
     b.__dict__ = None
-except (AttributeError, TypeError): pass
+except TypeError: pass
 else: raise TestFailed, 'func.__dict__ = None expected TypeError'
 
 d = {'hello': 'world'}
@@ -108,7 +108,7 @@ if f1.a.myclass is not f2.a.myclass or \
 # try setting __dict__
 try:
     F.a.__dict__ = (1, 2, 3)
-except (AttributeError, TypeError): pass
+except TypeError: pass
 else: raise TestFailed, 'expected TypeError'
 
 F.a.im_func.__dict__ = {'one': 11, 'two': 22, 'three': 33}
@@ -121,7 +121,7 @@ d = UserDict({'four': 44, 'five': 55})
 
 try:
     F.a.__dict__ = d
-except (AttributeError, TypeError): pass
+except TypeError: pass
 else: raise TestFailed
 
 if f2.a.one <> f1.a.one <> F.a.one <> 11:
@@ -171,17 +171,17 @@ def another():
 
 try:
     del another.__dict__
-except (AttributeError, TypeError): pass
+except TypeError: pass
 else: raise TestFailed
 
 try:
     del another.func_dict
-except (AttributeError, TypeError): pass
+except TypeError: pass
 else: raise TestFailed
 
 try:
     another.func_dict = None
-except (AttributeError, TypeError): pass
+except TypeError: pass
 else: raise TestFailed
 
 try:
@@ -218,13 +218,13 @@ def cantset(obj, name, value):
     verify(hasattr(obj, name)) # Otherwise it's probably a typo
     try:
         setattr(obj, name, value)
-    except (AttributeError, TypeError):
+    except TypeError:
         pass
     else:
         raise TestFailed, "shouldn't be able to set %s to %r" % (name, value)
     try:
         delattr(obj, name)
-    except (AttributeError, TypeError):
+    except TypeError:
         pass
     else:
         raise TestFailed, "shouldn't be able to del %s" % name
