@@ -410,9 +410,9 @@ static char setdlopenflags_doc[] =
 "setdlopenflags(n) -> None\n\
 \n\
 Set the flags that will be used for dlopen() calls. Among other\n\
-things, this will enable a lazy resolving of symbols when imporing\n\
+things, this will enable a lazy resolving of symbols when importing\n\
 a module, if called as sys.setdlopenflags(0)\n\
-To share symols across extension modules, call as\n\
+To share symbols across extension modules, call as\n\
 sys.setdlopenflags(dl.RTLD_NOW|dl.RTLD_GLOBAL)";
 
 static PyObject *
@@ -673,7 +673,7 @@ Static objects:\n\
 \n\
 maxint -- the largest supported integer (the smallest is -maxint-1)\n\
 maxunicode -- the largest supported character\n\
-builtin_module_names -- tuple of module names built into this intepreter\n\
+builtin_module_names -- tuple of module names built into this interpreter\n\
 version -- the version of this interpreter as a string\n\
 version_info -- version information as a tuple\n\
 hexversion -- version information encoded as a single integer\n\

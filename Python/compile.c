@@ -61,7 +61,7 @@ int Py_OptimizeFlag = 0;
 "name '%.400s' is used prior to global declaration"
 
 #define LOCAL_GLOBAL \
-"name '%.400s' is a function paramter and declared global"
+"name '%.400s' is a function parameter and declared global"
 
 #define LATE_FUTURE \
 "from __future__ imports must occur at the beginning of the file"
@@ -4452,7 +4452,7 @@ symtable_check_unoptimized(struct compiling *c,
 "unqualified exec is not allowed in function '%.100s' it %s"
 
 #define ILLEGAL_EXEC_AND_IMPORT_STAR \
-"function '%.100s' uses import * and bare exec, which are illegal" \
+"function '%.100s' uses import * and bare exec, which are illegal " \
 "because it %s"
 
 	/* XXX perhaps the linenos for these opt-breaking statements
