@@ -1,8 +1,5 @@
 """Minimal "re" compatibility wrapper"""
 
-# If your regexps don't work well under 2.0b1, you can switch
-# to the old engine ("pre") down below.
-#
 # To help us fix any remaining bugs in the new engine, please
 # report what went wrong.  You can either use the following web
 # page:
@@ -19,15 +16,6 @@
 # thanks /F
 #
 
-engine = "sre"
-# engine = "pre"
+from sre import *
+from sre import __all__
 
-if engine == "sre":
-    # New unicode-aware engine
-    from sre import *
-    from sre import __all__
-else:
-    # Old 1.5.2 engine.  This one supports 8-bit strings only,
-    # and will be removed in 2.0 final.
-    from pre import *
-    from pre import __all__
