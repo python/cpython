@@ -427,7 +427,7 @@ bsddb_keys(bsddbobject *dp, PyObject *args)
 		if (data != NULL) memcpy(data,krec.data,krec.size);
 	}
 	BSDDB_END_SAVE(dp)
-	if (data==NULL) return PyErr_NoMemory();
+	if (status == 0 && data==NULL) return PyErr_NoMemory();
 	while (status == 0) {
 		if (dp->di_type == DB_RECNO)
 			item = PyInt_FromLong(*((int*)data));
