@@ -55,6 +55,9 @@ PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
 {
 	PySliceObject *obj = PyObject_NEW(PySliceObject, &PySlice_Type);
 
+	if (obj == NULL)
+		return NULL;
+
 	if (step == NULL) step = Py_None;
 	Py_INCREF(step);
 	if (start == NULL) start = Py_None;
