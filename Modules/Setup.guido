@@ -64,7 +64,7 @@ select selectmodule.o	# select(2); not on ancient System V
 socket socketmodule.o	# socket(2); not on ancient System V
 
 
-# Multimedia modules -- off by default
+# Multimedia modules -- on by default
 # These represent audio samples or images as strings
 
 audioop audioopmodule.o # Operations on audio samples
