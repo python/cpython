@@ -21,6 +21,17 @@ class TestSkipped(Error):
 verbose = 1              # Flag set to 0 by regrtest.py
 use_resources = None       # Flag set to [] by regrtest.py
 
+# _original_stdout is meant to hold stdout at the time regrtest began.
+# This may be "the real" stdout, or IDLE's emulation of stdout, or whatever.
+# The point is to have some flavor of stdout the user can actually see.
+_original_stdout = None
+def record_original_stdout(stdout):
+    global _original_stdout
+    _original_stdout = stdout
+
+def get_original_stdout():
+    return _original_stdout or sys.stdout
+
 def unload(name):
     try:
         del sys.modules[name]
@@ -182,7 +193,7 @@ def run_doctest(module, verbosity=None):
     # Direct doctest output (normally just errors) to real stdout; doctest
     # output shouldn't be compared by regrtest.
     save_stdout = sys.stdout
-    sys.stdout = sys.__stdout__
+    sys.stdout = get_original_stdout()
     try:
         f, t = doctest.testmod(module, verbose=verbosity)
         if f:

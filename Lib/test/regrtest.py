@@ -85,6 +85,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
 
     """
 
+    test_support.record_original_stdout(sys.stdout)
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrlu:',
                                    ['help', 'verbose', 'quiet', 'generate',
