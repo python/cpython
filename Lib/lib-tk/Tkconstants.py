@@ -56,6 +56,7 @@ END='end'
 INSERT='insert'
 CURRENT='current'
 ANCHOR='anchor'
+ALL='all' # e.g. Canvas.delete(ALL)
 
 # Text widget and button states
 NORMAL='normal'
