@@ -62,73 +62,55 @@ class TimeTestCase(unittest.TestCase):
         # hemisphere.
         xmas2002 = 1040774400.0 
 
+        # These formats are correct for 2002, and possibly future years
+        # This format is the 'standard' as documented at:
+        # http://www.opengroup.org/onlinepubs/007904975/basedefs/xbd_chap08.html
+        # They are also documented in the tzset(3) man page on most Unix
+        # systems.
+        eastern = 'EST+05EDT,M4.1.0,M10.5.0' 
+        victoria = 'AEST-10AEDT-11,M10.5.0,M3.5.0'
+        utc='UTC+0'
+
         org_TZ = environ.get('TZ',None)
         try:
-
             # Make sure we can switch to UTC time and results are correct
             # Note that unknown timezones default to UTC.
-            for tz in ('UTC','GMT','Luna/Tycho'):
-                environ['TZ'] = 'US/Eastern'
-                time.tzset()
-                environ['TZ'] = tz
-                time.tzset()
-                self.failUnlessEqual(
-                    time.gmtime(xmas2002),time.localtime(xmas2002)
-                    )
-                self.failUnlessEqual(time.timezone,time.altzone)
-                self.failUnlessEqual(time.daylight,0) 
-                self.failUnlessEqual(time.timezone,0)
-                self.failUnlessEqual(time.altzone,0)
-                self.failUnlessEqual(time.localtime(xmas2002).tm_isdst,0)
+            # Note that altzone is undefined in UTC, as there is no DST
+            environ['TZ'] = eastern
+            time.tzset()
+            environ['TZ'] = utc
+            time.tzset()
+            self.failUnlessEqual(
+                time.gmtime(xmas2002), time.localtime(xmas2002)
+                )
+            self.failUnlessEqual(time.daylight, 0) 
+            self.failUnlessEqual(time.timezone, 0)
+            self.failUnlessEqual(time.localtime(xmas2002).tm_isdst, 0)
 
             # Make sure we can switch to US/Eastern
-            environ['TZ'] = 'US/Eastern'
+            environ['TZ'] = eastern
             time.tzset()
-            self.failIfEqual(time.gmtime(xmas2002),time.localtime(xmas2002))
-            self.failUnlessEqual(time.tzname,('EST','EDT'))
-            self.failUnlessEqual(len(time.tzname),2)
-            self.failUnlessEqual(time.daylight,1)
-            self.failUnlessEqual(time.timezone,18000)
-            self.failUnlessEqual(time.altzone,14400)
-            self.failUnlessEqual(time.localtime(xmas2002).tm_isdst,0)
-            self.failUnlessEqual(len(time.tzname),2)
+            self.failIfEqual(time.gmtime(xmas2002), time.localtime(xmas2002))
+            self.failUnlessEqual(time.tzname, ('EST', 'EDT'))
+            self.failUnlessEqual(len(time.tzname), 2)
+            self.failUnlessEqual(time.daylight, 1)
+            self.failUnlessEqual(time.timezone, 18000)
+            self.failUnlessEqual(time.altzone, 14400)
+            self.failUnlessEqual(time.localtime(xmas2002).tm_isdst, 0)
+            self.failUnlessEqual(len(time.tzname), 2)
 
-            # Now go to the southern hemisphere. We want somewhere all OS's
-            # know about that has DST.
-            environ['TZ'] = 'Australia/Melbourne'
+            # Now go to the southern hemisphere.
+            environ['TZ'] = victoria
             time.tzset()
-            self.failIfEqual(time.gmtime(xmas2002),time.localtime(xmas2002))
-            self.failUnless(time.tzname[0] in ('EST','AEST'))
-            self.failUnless(time.tzname[1] in ('EST','EDT','AEDT'))
-            self.failUnlessEqual(len(time.tzname),2)
-            self.failUnlessEqual(time.daylight,1)
-            self.failUnlessEqual(time.timezone,-36000)
-            self.failUnlessEqual(time.altzone,-39600)
-            self.failUnlessEqual(time.localtime(xmas2002).tm_isdst,1)
+            self.failIfEqual(time.gmtime(xmas2002), time.localtime(xmas2002))
+            self.failUnless(time.tzname[0] == 'AEST', str(time.tzname[0]))
+            self.failUnless(time.tzname[1] == 'AEDT', str(time.tzname[1]))
+            self.failUnlessEqual(len(time.tzname), 2)
+            self.failUnlessEqual(time.daylight, 1)
+            self.failUnlessEqual(time.timezone, -36000)
+            self.failUnlessEqual(time.altzone, -39600)
+            self.failUnlessEqual(time.localtime(xmas2002).tm_isdst, 1)
 
-            # Get some times from a timezone that isn't wallclock timezone
-            del environ['TZ']
-            time.tzset()
-            if time.timezone == 0:
-                environ['TZ'] = 'US/Eastern'
-            else:
-                environ['TZ'] = 'UTC'
-            time.tzset()
-            nonlocal = time.localtime(xmas2002)
-
-            # Then the same time in wallclock timezone
-            del environ['TZ']
-            time.tzset()
-            local = time.localtime(xmas2002)
-
-            # And make sure they arn't the same
-            self.failIfEqual(local,nonlocal) 
-
-            # Do some basic sanity checking after wallclock time set
-            self.failUnlessEqual(len(time.tzname),2)
-            time.daylight
-            time.timezone
-            time.altzone
         finally:
             # Repair TZ environment variable in case any other tests
             # rely on it.
@@ -136,6 +118,7 @@ class TimeTestCase(unittest.TestCase):
                 environ['TZ'] = org_TZ
             elif environ.has_key('TZ'):
                 del environ['TZ']
+            time.tzset()
             
 
 def test_main():
