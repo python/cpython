@@ -335,7 +335,7 @@ closechar = \
     {'b':'*', 'i':'_', 'u':'_', 'q':'\'', 'B':'*', 'I':'_', 'U':'_', 'Q':'\''}
 def finalize(para):
 	oldfont = curfont = 'r'
-	para.words.append('r', '', 0, 0, 0, 0) # temporary, deleted at end
+	para.words.append(('r', '', 0, 0, 0, 0)) # temporary, deleted at end
 	for i in range(len(para.words)):
 		fo, te, wi = para.words[i][:3]
 		if fo <> None: curfont = fo
