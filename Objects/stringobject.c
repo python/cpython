@@ -818,6 +818,8 @@ formatstring(format, args)
 				res = getstringvalue(result) + reslen - rescnt;
 			}
 			if (sign) {
+				if (fill != ' ')
+					*res++ = sign;
 				rescnt--;
 				if (width > len)
 					width--;
@@ -828,7 +830,7 @@ formatstring(format, args)
 					*res++ = fill;
 				} while (--width > len);
 			}
-			if (sign)
+			if (sign && fill == ' ')
 				*res++ = sign;
 			memcpy(res, buf, len);
 			res += len;
