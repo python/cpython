@@ -28,7 +28,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 #include "longintrepr.h"
+#include <math.h>
 #include <assert.h>
+
+/* Forward: */
+extern object *long_mul PROTO((longobject *, object *));
+extern object *long_add PROTO((longobject *, object *));
+extern object *long_neg PROTO((longobject *));
 
 static int ticker;	/* XXX Could be shared with ceval? */
 
@@ -84,6 +90,39 @@ newlongobject(ival)
 		v->ob_digit[2] = (ival >> (2*SHIFT)) & MASK;
 		v = long_normalize(v);
 	}
+	return (object *)v;
+}
+
+/* Create a new long int object from a C double */
+
+object *
+dnewlongobject(dval)
+	double dval;
+{
+	longobject *v;
+	double frac;
+	int i, ndig, expo, neg;
+	neg = 0;
+	if (dval < 0.0) {
+		neg = 1;
+		dval = -dval;
+	}
+	frac = frexp(dval, &expo); /* dval = frac*2**expo; 0.0 <= frac < 1.0 */
+	if (expo <= 0)
+		return newlongobject(0L);
+	ndig = (expo-1) / SHIFT + 1; /* Number of 'digits' in result */
+	v = alloclongobject(ndig);
+	if (v == NULL)
+		return NULL;
+	frac = ldexp(frac, (expo-1) % SHIFT + 1);
+	for (i = ndig; --i >= 0; ) {
+		long bits = (long)frac;
+		v->ob_digit[i] = bits;
+		frac = frac - (double)bits;
+		frac = ldexp(frac, SHIFT);
+	}
+	if (neg)
+		v->ob_size = -v->ob_size;
 	return (object *)v;
 }
 
