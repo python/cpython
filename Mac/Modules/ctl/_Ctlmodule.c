@@ -128,8 +128,10 @@ DataBrowserListViewColumnDesc_Convert(PyObject *v, DataBrowserListViewColumnDesc
 }
 
 /* TrackControl and HandleControlClick callback support */
+#define kMyControlActionProcTag 'ACTN'  /* not an official tag, only for internal use */
 static PyObject *tracker;
 static ControlActionUPP mytracker_upp;
+static ControlActionUPP myactionproc_upp;
 static ControlUserPaneDrawUPP mydrawproc_upp;
 static ControlUserPaneIdleUPP myidleproc_upp;
 static ControlUserPaneHitTestUPP myhittestproc_upp;
@@ -1180,6 +1182,25 @@ static PyObject *CtlObj_GetControlVariant(ControlObject *_self, PyObject *_args)
 	_rv = GetControlVariant(_self->ob_itself);
 	_res = Py_BuildValue("h",
 	                     _rv);
+	return _res;
+}
+
+static PyObject *CtlObj_SetControlAction(ControlObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	PyObject* actionProc;
+	UniversalProcPtr c_callback;
+#ifndef SetControlAction
+	PyMac_PRECHECK(SetControlAction);
+#endif
+	if (!PyArg_ParseTuple(_args, "O",
+	                      &actionProc))
+		return NULL;
+	SetControlAction(_self->ob_itself,
+	                 myactionproc_upp);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	setcallback((PyObject*)_self, kMyControlActionProcTag, actionProc, &c_callback);
 	return _res;
 }
 
@@ -4004,6 +4025,8 @@ static PyMethodDef CtlObj_methods[] = {
 	 "(ControlPartCode inPart, RgnHandle outRegion) -> None"},
 	{"GetControlVariant", (PyCFunction)CtlObj_GetControlVariant, 1,
 	 "() -> (ControlVariant _rv)"},
+	{"SetControlAction", (PyCFunction)CtlObj_SetControlAction, 1,
+	 "(PyObject* actionProc) -> None"},
 	{"SetControlReference", (PyCFunction)CtlObj_SetControlReference, 1,
 	 "(SInt32 data) -> None"},
 	{"GetControlReference", (PyCFunction)CtlObj_GetControlReference, 1,
@@ -4989,6 +5012,52 @@ static PyObject *Ctl_CreateBevelButtonControl(PyObject *_self, PyObject *_args)
 }
 #endif
 
+static PyObject *Ctl_CreateSliderControl(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr window;
+	Rect boundsRect;
+	SInt32 value;
+	SInt32 minimum;
+	SInt32 maximum;
+	UInt16 orientation;
+	UInt16 numTickMarks;
+	Boolean liveTracking;
+	PyObject* liveTrackingProc;
+	UniversalProcPtr c_callback;
+	ControlHandle outControl;
+#ifndef CreateSliderControl
+	PyMac_PRECHECK(CreateSliderControl);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&lllHHbO",
+	                      WinObj_Convert, &window,
+	                      PyMac_GetRect, &boundsRect,
+	                      &value,
+	                      &minimum,
+	                      &maximum,
+	                      &orientation,
+	                      &numTickMarks,
+	                      &liveTracking,
+	                      &liveTrackingProc))
+		return NULL;
+	_err = CreateSliderControl(window,
+	                           &boundsRect,
+	                           value,
+	                           minimum,
+	                           maximum,
+	                           orientation,
+	                           numTickMarks,
+	                           liveTracking,
+	                           myactionproc_upp,
+	                           &outControl);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_New, outControl);
+	setcallback(_res, kMyControlActionProcTag, liveTrackingProc, &c_callback);
+	return _res;
+}
+
 #if TARGET_API_MAC_CARBON
 
 static PyObject *Ctl_CreateDisclosureTriangleControl(PyObject *_self, PyObject *_args)
@@ -5755,6 +5824,49 @@ static PyObject *Ctl_CreateCheckBoxControl(PyObject *_self, PyObject *_args)
 }
 #endif
 
+static PyObject *Ctl_CreateScrollBarControl(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr window;
+	Rect boundsRect;
+	SInt32 value;
+	SInt32 minimum;
+	SInt32 maximum;
+	SInt32 viewSize;
+	Boolean liveTracking;
+	PyObject* liveTrackingProc;
+	UniversalProcPtr c_callback;
+	ControlHandle outControl;
+#ifndef CreateScrollBarControl
+	PyMac_PRECHECK(CreateScrollBarControl);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&llllbO",
+	                      WinObj_Convert, &window,
+	                      PyMac_GetRect, &boundsRect,
+	                      &value,
+	                      &minimum,
+	                      &maximum,
+	                      &viewSize,
+	                      &liveTracking,
+	                      &liveTrackingProc))
+		return NULL;
+	_err = CreateScrollBarControl(window,
+	                              &boundsRect,
+	                              value,
+	                              minimum,
+	                              maximum,
+	                              viewSize,
+	                              liveTracking,
+	                              myactionproc_upp,
+	                              &outControl);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_New, outControl);
+	setcallback(_res, kMyControlActionProcTag, liveTrackingProc, &c_callback);
+	return _res;
+}
+
 #if TARGET_API_MAC_CARBON
 
 static PyObject *Ctl_CreatePopupButtonControl(PyObject *_self, PyObject *_args)
@@ -6144,6 +6256,8 @@ static PyMethodDef Ctl_methods[] = {
 	{"CreateBevelButtonControl", (PyCFunction)Ctl_CreateBevelButtonControl, 1,
 	 "(WindowPtr window, Rect boundsRect, CFStringRef title, UInt16 thickness, UInt16 behavior, ControlButtonContentInfo info, SInt16 menuID, UInt16 menuBehavior, UInt16 menuPlacement) -> (ControlHandle outControl)"},
 #endif
+	{"CreateSliderControl", (PyCFunction)Ctl_CreateSliderControl, 1,
+	 "(WindowPtr window, Rect boundsRect, SInt32 value, SInt32 minimum, SInt32 maximum, UInt16 orientation, UInt16 numTickMarks, Boolean liveTracking, PyObject* liveTrackingProc) -> (ControlHandle outControl)"},
 
 #if TARGET_API_MAC_CARBON
 	{"CreateDisclosureTriangleControl", (PyCFunction)Ctl_CreateDisclosureTriangleControl, 1,
@@ -6259,6 +6373,8 @@ static PyMethodDef Ctl_methods[] = {
 	{"CreateCheckBoxControl", (PyCFunction)Ctl_CreateCheckBoxControl, 1,
 	 "(WindowPtr window, Rect boundsRect, CFStringRef title, SInt32 initialValue, Boolean autoToggle) -> (ControlHandle outControl)"},
 #endif
+	{"CreateScrollBarControl", (PyCFunction)Ctl_CreateScrollBarControl, 1,
+	 "(WindowPtr window, Rect boundsRect, SInt32 value, SInt32 minimum, SInt32 maximum, SInt32 viewSize, Boolean liveTracking, PyObject* liveTrackingProc) -> (ControlHandle outControl)"},
 
 #if TARGET_API_MAC_CARBON
 	{"CreatePopupButtonControl", (PyCFunction)Ctl_CreatePopupButtonControl, 1,
@@ -6371,8 +6487,10 @@ mytracker(ControlHandle ctl, short part)
 	}
 	if (rv)
 		Py_DECREF(rv);
-	else
+	else {
 		PySys_WriteStderr("TrackControl or HandleControlClick: exception in tracker function\n");
+		PyErr_Print();
+	}
 }
 
 static int
@@ -6381,7 +6499,9 @@ setcallback(PyObject *myself, OSType which, PyObject *callback, UniversalProcPtr
 	ControlObject *self = (ControlObject *)myself;
 	char keybuf[9];
 	
-	if ( which == kControlUserPaneDrawProcTag )
+	if ( which == kMyControlActionProcTag )
+		*uppp = (UniversalProcPtr)myactionproc_upp;
+	else if ( which == kControlUserPaneDrawProcTag )
 		*uppp = (UniversalProcPtr)mydrawproc_upp;
 	else if ( which == kControlUserPaneIdleProcTag )
 		*uppp = (UniversalProcPtr)myidleproc_upp;
@@ -6418,9 +6538,24 @@ callcallback(ControlObject *self, OSType which, PyObject *arglist)
 		return NULL;
 	}
 	rv = PyEval_CallObject(func, arglist);
-	if ( rv == NULL )
+	if ( rv == NULL ) {
 		PySys_WriteStderr("Exception in control callback %x handler\n", (unsigned)which);
+		PyErr_Print();
+	}
 	return rv;
+}
+
+static pascal void
+myactionproc(ControlHandle control, SInt16 part)
+{
+	ControlObject *ctl_obj;
+	PyObject *arglist, *rv;
+	
+	ctl_obj = (ControlObject *)CtlObj_WhichControl(control);
+	arglist = Py_BuildValue("Oh", ctl_obj, part);
+	rv = callcallback(ctl_obj, kMyControlActionProcTag, arglist);
+	Py_XDECREF(arglist);
+	Py_XDECREF(rv);
 }
 
 static pascal void
@@ -6494,6 +6629,7 @@ void init_Ctl(void)
 
 
 	mytracker_upp = NewControlActionUPP(mytracker);
+	myactionproc_upp = NewControlActionUPP(myactionproc);
 	mydrawproc_upp = NewControlUserPaneDrawUPP(mydrawproc);
 	myidleproc_upp = NewControlUserPaneIdleUPP(myidleproc);
 	myhittestproc_upp = NewControlUserPaneHitTestUPP(myhittestproc);
