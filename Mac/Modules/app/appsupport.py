@@ -118,12 +118,12 @@ object = MyObjectDefinition(OBJECTNAME, OBJECTPREFIX, OBJECTTYPE)
 module.addobject(object)
 
 ThemeDrawingState = OpaqueByValueType("ThemeDrawingState", "ThemeDrawingStateObj")
-Method = MethodGenerator
+Method = WeakLinkMethodGenerator
 
 
 # Create the generator classes used to populate the lists
-Function = OSErrFunctionGenerator
-##Method = OSErrMethodGenerator
+Function = OSErrWeakLinkFunctionGenerator
+##Method = OSErrWeakLinkMethodGenerator
 
 # Create and populate the lists
 functions = []
