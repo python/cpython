@@ -446,21 +446,14 @@ com_addname(c, v)
 }
 
 static void
-com_addopname(c, op, n)
+com_addopnamestr(c, op, name)
 	struct compiling *c;
 	int op;
-	node *n;
+	char *name;
 {
 	object *v;
 	int i;
-	char *name;
-	if (TYPE(n) == STAR)
-		name = "*";
-	else {
-		REQ(n, NAME);
-		name = STR(n);
-	}
-	if ((v = newstringobject(name)) == NULL) {
+	if (name == NULL || (v = newstringobject(name)) == NULL) {
 		c->c_errors++;
 		i = 255;
 	}
@@ -482,6 +475,45 @@ com_addopname(c, op, n)
 		}
 	}
 	com_addoparg(c, op, i);
+}
+
+static void
+com_addopname(c, op, n)
+	struct compiling *c;
+	int op;
+	node *n;
+{
+	object *v;
+	char *name;
+	char buffer[1000];
+	/* XXX it is possible to write this code without the 1000
+	   chars on the total length of dotted names, I just can't be
+	   bothered right now */
+	if (TYPE(n) == STAR)
+		name = "*";
+	else if (TYPE(n) == dotted_name) {
+		char *p = buffer;
+		int i;
+		name = buffer;
+		for (i = 0; i < NCH(n); i += 2) {
+			char *s = STR(CHILD(n, i));
+			if (p + strlen(s) > buffer + (sizeof buffer) - 2) {
+				err_setstr(MemoryError,
+					   "dotted_name too long");
+				name == NULL;
+				break;
+			}
+			if (p != buffer)
+				*p++ = '.';
+			strcpy(p, s);
+			p = strchr(p, '\0');
+		}
+	}
+	else {
+		REQ(n, NAME);
+		name = STR(n);
+	}
+	com_addopnamestr(c, op, name);
 }
 
 static object *
@@ -593,6 +625,22 @@ parsestr(s)
 	return v;
 }
 
+static object *
+parsestrplus(n)
+	node *n;
+{
+	object *v;
+	int i;
+	REQ(CHILD(n, 0), STRING);
+	if ((v = parsestr(STR(CHILD(n, 0)))) != NULL) {
+		/* String literal concatenation */
+		for (i = 1; i < NCH(n) && v != NULL; i++) {
+			joinstring_decref(&v, parsestr(STR(CHILD(n, i))));
+		}
+	}
+	return v;
+}
+
 static void
 com_list_constructor(c, n)
 	struct compiling *c;
@@ -671,13 +719,7 @@ com_atom(c, n)
 		com_addoparg(c, LOAD_CONST, i);
 		break;
 	case STRING:
-		if ((v = parsestr(STR(ch))) != NULL) {
-			/* String literal concatenation */
-			for (i = 1; i < NCH(n) && v != NULL; i++) {
-				joinstring_decref(&v,
-					parsestr(STR(CHILD(n, i))));
-			}
-		}
+		v = parsestrplus(n);
 		if (v == NULL) {
 			c->c_errors++;
 			i = 255;
@@ -1457,11 +1499,11 @@ com_import_stmt(c, n)
 {
 	int i;
 	REQ(n, import_stmt);
-	/* 'import' NAME (',' NAME)* |
-	   'from' NAME 'import' ('*' | NAME (',' NAME)*) */
+	/* 'import' dotted_name (',' dotted_name)* |
+	   'from' dotted_name 'import' ('*' | NAME (',' NAME)*) */
 	if (STR(CHILD(n, 0))[0] == 'f') {
-		/* 'from' NAME 'import' ... */
-		REQ(CHILD(n, 1), NAME);
+		/* 'from' dotted_name 'import' ... */
+		REQ(CHILD(n, 1), dotted_name);
 		com_addopname(c, IMPORT_NAME, CHILD(n, 1));
 		for (i = 3; i < NCH(n); i += 2)
 			com_addopname(c, IMPORT_FROM, CHILD(n, i));
@@ -1470,8 +1512,9 @@ com_import_stmt(c, n)
 	else {
 		/* 'import' ... */
 		for (i = 1; i < NCH(n); i += 2) {
+			REQ(CHILD(n, i), dotted_name);
 			com_addopname(c, IMPORT_NAME, CHILD(n, i));
-			com_addopname(c, STORE_NAME, CHILD(n, i));
+			com_addopname(c, STORE_NAME, CHILD(CHILD(n, i), 0));
 		}
 	}
 }
@@ -1819,6 +1862,56 @@ com_try_stmt(c, n)
 		com_try_finally(c, n);
 	else
 		com_try_except(c, n);
+}
+
+static object *
+get_docstring(n)
+	node *n;
+{
+	switch (TYPE(n)) {
+
+	case suite:
+		if (NCH(n) == 1)
+			return get_docstring(CHILD(n, 0));
+		else {
+			int i;
+			for (i = 0; i < NCH(n); i++) {
+				node *ch = CHILD(n, i);
+				if (TYPE(ch) == stmt)
+					return get_docstring(ch);
+			}
+		}
+		break;
+
+	case stmt:
+	case simple_stmt:
+	case small_stmt:
+		return get_docstring(CHILD(n, 0));
+
+	case expr_stmt:
+	case testlist:
+	case test:
+	case and_test:
+	case not_test:
+	case comparison:
+	case expr:
+	case xor_expr:
+	case and_expr:
+	case shift_expr:
+	case arith_expr:
+	case term:
+	case factor:
+		if (NCH(n) == 1)
+			return get_docstring(CHILD(n, 0));
+		break;
+
+	case atom:
+		if (TYPE(CHILD(n, 0)) == STRING)
+			return parsestrplus(n);
+		break;
+
+	}
+	return NULL;
 }
 
 static void
@@ -2235,7 +2328,15 @@ com_file_input(c, n)
 	node *n;
 {
 	int i;
+	object *doc;
 	REQ(n, file_input); /* (NEWLINE | stmt)* ENDMARKER */
+	doc = get_docstring(n);
+	if (doc != NULL) {
+		int i = com_addconst(c, doc);
+		DECREF(doc);
+		com_addoparg(c, LOAD_CONST, i);
+		com_addopnamestr(c, STORE_NAME, "__doc__");
+	}
 	for (i = 0; i < NCH(n); i++) {
 		node *ch = CHILD(n, i);
 		if (TYPE(ch) != ENDMARKER && TYPE(ch) != NEWLINE)
@@ -2250,9 +2351,15 @@ compile_funcdef(c, n)
 	struct compiling *c;
 	node *n;
 {
+	object *doc;
 	node *ch;
 	REQ(n, funcdef); /* funcdef: 'def' NAME parameters ':' suite */
 	c->c_name = STR(CHILD(n, 1));
+	doc = get_docstring(CHILD(n, 4));
+	if (doc != NULL) {
+		(void) com_addconst(c, doc);
+		DECREF(doc);
+	}
 	com_addoparg(c, RESERVE_FAST, com_addconst(c, None)); /* Patched! */
 	ch = CHILD(n, 2); /* parameters: '(' [varargslist] ')' */
 	ch = CHILD(ch, 1); /* ')' | varargslist */
@@ -2277,6 +2384,7 @@ compile_lambdef(c, n)
 	c->c_name = "<lambda>";
 
 	ch = CHILD(n, 1);
+	(void) com_addconst(c, None);
 	if (TYPE(ch) == COLON) {
 		com_addoparg(c, UNPACK_ARG, 0);
 		com_node(c, CHILD(n, 2));
@@ -2287,6 +2395,31 @@ compile_lambdef(c, n)
 		com_node(c, CHILD(n, 3));
 	}
 
+	com_addbyte(c, RETURN_VALUE);
+}
+
+static void
+compile_classdef(c, n)
+	struct compiling *c;
+	node *n;
+{
+	node *ch;
+	object *doc;
+	REQ(n, classdef);
+	/* classdef: 'class' NAME ['(' testlist ')'] ':' suite */
+	c->c_name = STR(CHILD(n, 1));
+	ch = CHILD(n, NCH(n)-1); /* The suite */
+	doc = get_docstring(ch);
+	if (doc != NULL) {
+		int i = com_addconst(c, doc);
+		DECREF(doc);
+		com_addoparg(c, LOAD_CONST, i);
+		com_addopnamestr(c, STORE_NAME, "__doc__");
+	}
+	else
+		(void) com_addconst(c, None);
+	com_node(c, ch);
+	com_addbyte(c, LOAD_LOCALS);
 	com_addbyte(c, RETURN_VALUE);
 }
 
@@ -2330,11 +2463,7 @@ compile_node(c, n)
 		break;
 	
 	case classdef: /* A class definition */
-		/* classdef: 'class' NAME ['(' testlist ')'] ':' suite */
-		c->c_name = STR(CHILD(n, 1));
-		com_node(c, CHILD(n, NCH(n)-1)); /* The suite */
-		com_addbyte(c, LOAD_LOCALS);
-		com_addbyte(c, RETURN_VALUE);
+		compile_classdef(c, n);
 		break;
 	
 	default:
