@@ -12,7 +12,8 @@ This module allows you to output calendars like the \UNIX{}
 related to the calendar. By default, these calendars have Monday as
 the first day of the week, and Sunday as the last (the European
 convention). Use \function{setfirstweekday()} to set the first day of the
-week to Sunday (6) or to any other weekday.
+week to Sunday (6) or to any other weekday.  Parameters that specify
+dates are given as integers.
 
 \begin{funcdesc}{setfirstweekday}{weekday}
 Sets the weekday (\code{0} is Monday, \code{6} is Sunday) to start
@@ -32,12 +33,12 @@ Returns the current setting for the weekday to start each week.
 \end{funcdesc}
 
 \begin{funcdesc}{isleap}{year}
-Returns true if \var{year} is a leap year.
+Returns \code{1} if \var{year} is a leap year, otherwise \code{0}.
 \end{funcdesc}
 
 \begin{funcdesc}{leapdays}{y1, y2}
 Returns the number of leap years in the range
-[\var{y1}\ldots\var{y2}).
+[\var{y1}\ldots\var{y2}), where \var{y1} and \var{y2} are years.
 \end{funcdesc}
 
 \begin{funcdesc}{weekday}{year, month, day}
