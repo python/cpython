@@ -15,6 +15,8 @@ def getpass(prompt='Password: '):
 
 	On Windows, this calls win_getpass(prompt) which uses the
 	msvcrt module to get the same effect.
+	
+	On the Mac EasyDialogs.AskPassword is used, if available.
 
 	"""
 
@@ -29,7 +31,12 @@ def getpass(prompt='Password: '):
 		try:
 			import msvcrt
 		except ImportError:
-			return default_getpass(prompt)
+			try:
+				from EasyDialogs import AskPassword
+			except ImportError:
+				return default_getpass(prompt)
+			else:
+				return AskPassword(prompt)
 		else:
 			return win_getpass(prompt)
 
