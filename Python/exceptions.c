@@ -189,7 +189,7 @@ static PyObject* get_self(PyObject* args)
  *
  * First thing we create is the base class for all exceptions, called
  * appropriately enough: Exception.  Creation of this class makes no
- * assumptions about the existance of any other exception class -- except
+ * assumptions about the existence of any other exception class -- except
  * for TypeError, which can conditionally exist.
  *
  * Next, StandardError is created (which is quite simple) followed by
@@ -282,9 +282,9 @@ Exception__getitem__(PyObject* self, PyObject* args)
 static PyMethodDef
 Exception_methods[] = {
     /* methods for the Exception class */
-    { "__getitem__", Exception__getitem__, 1},
-    { "__str__",     Exception__str__, 1},
-    { "__init__",    Exception__init__, 1},
+    { "__getitem__", Exception__getitem__, METH_VARARGS},
+    { "__str__",     Exception__str__, METH_VARARGS},
+    { "__init__",    Exception__init__, METH_VARARGS},
     { NULL, NULL }
 };
 
@@ -396,7 +396,7 @@ SystemExit__init__(PyObject* self, PyObject* args)
 
 
 PyMethodDef SystemExit_methods[] = {
-    { "__init__", SystemExit__init__, 1},
+    { "__init__", SystemExit__init__, METH_VARARGS},
     {NULL, NULL}
 };
 
@@ -576,8 +576,8 @@ EnvironmentError__str__(PyObject* self, PyObject* args)
 
 static
 PyMethodDef EnvironmentError_methods[] = {
-    {"__init__", EnvironmentError__init__, 1},
-    {"__str__",  EnvironmentError__str__, 1},
+    {"__init__", EnvironmentError__init__, METH_VARARGS},
+    {"__str__",  EnvironmentError__str__, METH_VARARGS},
     {NULL, NULL}
 };
 
@@ -726,8 +726,8 @@ SyntaxError__str__(PyObject* self, PyObject* args)
 
 
 PyMethodDef SyntaxError_methods[] = {
-    {"__init__", SyntaxError__init__, 1},
-    {"__str__",  SyntaxError__str__, 1},
+    {"__init__", SyntaxError__init__, METH_VARARGS},
+    {"__str__",  SyntaxError__str__, METH_VARARGS},
     {NULL, NULL}
 };
 
