@@ -19,7 +19,7 @@ def makeconfig(infp, outfp, modules, with_ifdef=0):
 					continue
 				if with_ifdef:
 					outfp.write("#ifndef init%s\n"%mod)
-				outfp.write('extern void init%s();\n' % mod)
+				outfp.write('extern void init%s(void);\n' % mod)
 				if with_ifdef:
 					outfp.write("#endif\n")
 		elif m2 and m2.search(line):

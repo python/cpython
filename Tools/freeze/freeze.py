@@ -464,7 +464,7 @@ def main():
 
     somevars['CFLAGS'] = string.join(cflags) # override
     somevars['CPPFLAGS'] = string.join(cppflags) # override
-    files = ['$(OPT)', '$(LDFLAGS)', base_config_c, base_frozen_c] + \
+    files = [base_config_c, base_frozen_c] + \
             files + supp_sources +  addfiles + libs + \
             ['$(MODLIBS)', '$(LIBS)', '$(SYSLIBS)']
 
