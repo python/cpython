@@ -33,19 +33,15 @@ def decode(input, output):
 
 def encodestring(s):
     """Encode a string."""
-    import StringIO
-    f = StringIO.StringIO(s)
-    g = StringIO.StringIO()
-    encode(f, g)
-    return g.getvalue()
+    pieces = []
+    for i in range(0, len(s), MAXBINSIZE):
+        chunk = s[i : i + MAXBINSIZE]
+        pieces.append(binascii.b2a_base64(chunk))
+    return "".join(pieces)
 
 def decodestring(s):
     """Decode a string."""
-    import StringIO
-    f = StringIO.StringIO(s)
-    g = StringIO.StringIO()
-    decode(f, g)
-    return g.getvalue()
+    return binascii.a2b_base64(s)
 
 def test():
     """Small test program"""
