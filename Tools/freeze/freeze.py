@@ -130,9 +130,6 @@ def main():
 
     fail_import = exclude[:]
 
-    # modules that are imported by the Python runtime
-    implicits = ["site", "exceptions"]
-
     # output files
     frozen_c = 'frozen.c'
     config_c = 'config.c'
@@ -201,6 +198,12 @@ def main():
         if o == '-r':
             f,r = a.split("=", 2)
             replace_paths.append( (f,r) )
+
+    # modules that are imported by the Python runtime
+    implicits = []
+    for module in ('site', 'exceptions',):
+        if module not in exclude:
+            implicits.append(module)
 
     # default prefix and exec_prefix
     if not exec_prefix:
