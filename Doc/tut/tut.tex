@@ -619,7 +619,7 @@ expressions:
 >>> string.strip('str') + 'ing'   #  <-  This is ok
 'string'
 >>> string.strip('str') 'ing'     #  <-  This is invalid
-  File "<stdin>", line 1
+  File "<stdin>", line 1, in ?
     string.strip('str') 'ing'
                             ^
 SyntaxError: invalid syntax
@@ -728,7 +728,7 @@ for single-element (non-slice) indices:
 'HelpA'
 >>> word[-10]    # error
 Traceback (most recent call last):
-  File "<stdin>", line 1
+  File "<stdin>", line 1, in ?
 IndexError: string index out of range
 \end{verbatim}
 
@@ -1834,7 +1834,7 @@ parenthesized.
 >>> [[x,x**2] for x in vec]
 [[2, 4], [4, 16], [6, 36]]
 >>> [x, x**2 for x in vec]	# error - parens required for tuples
-  File "<stdin>", line 1
+  File "<stdin>", line 1, in ?
     [x, x**2 for x in vec]
                ^
 SyntaxError: invalid syntax
@@ -2961,7 +2961,7 @@ kind of complaint you get while you are still learning Python:
 
 \begin{verbatim}
 >>> while 1 print 'Hello world'
-  File "<stdin>", line 1
+  File "<stdin>", line 1, in ?
     while 1 print 'Hello world'
                 ^
 SyntaxError: invalid syntax
@@ -2987,15 +2987,15 @@ however, and result in error messages as shown here:
 \begin{verbatim}
 >>> 10 * (1/0)
 Traceback (most recent call last):
-  File "<stdin>", line 1
+  File "<stdin>", line 1, in ?
 ZeroDivisionError: integer division or modulo
 >>> 4 + spam*3
 Traceback (most recent call last):
-  File "<stdin>", line 1
+  File "<stdin>", line 1, in ?
 NameError: spam
 >>> '2' + 2
 Traceback (most recent call last):
-  File "<stdin>", line 1
+  File "<stdin>", line 1, in ?
 TypeError: illegal argument type for built-in operation
 \end{verbatim}
 
@@ -3170,7 +3170,7 @@ For example:
 \begin{verbatim}
 >>> raise NameError, 'HiThere'
 Traceback (most recent call last):
-  File "<stdin>", line 1
+  File "<stdin>", line 1, in ?
 NameError: HiThere
 \end{verbatim}
 
@@ -3178,14 +3178,33 @@ The first argument to \keyword{raise} names the exception to be
 raised.  The optional second argument specifies the exception's
 argument.
 
+If you need to determine whether an exception was raised but don't
+intend to handle it, a simpler form of the \keyword{raise} statement
+allows you to re-raise the exception:
+
+\begin{verbatim}
+>>> try:
+...     raise NameError, 'HiThere'
+... except NameError:
+...     print 'An exception flew by!'
+...     raise
+...
+An exception flew by!
+Traceback (most recent call last):
+  File "<stdin>", line 2, in ?
+NameError: HiThere
+\end{verbatim}
+
 
 \section{User-defined Exceptions \label{userExceptions}}
 
-Programs may name their own exceptions by assigning a string to a
-variable or creating a new exception class.  For example:
+Programs may name their own exceptions by creating a new exception
+class.  Exceptions should typically be derived from the
+\exception{Exception} class, either directly or indirectly.  For
+example:
 
 \begin{verbatim}
->>> class MyError:
+>>> class MyError(Exception):
 ...     def __init__(self, value):
 ...         self.value = value
 ...     def __str__(self):
@@ -3197,17 +3216,59 @@ variable or creating a new exception class.  For example:
 ...     print 'My exception occurred, value:', e.value
 ... 
 My exception occurred, value: 4
->>> raise MyError, 1
+>>> raise MyError, 'oops!'
 Traceback (most recent call last):
-  File "<stdin>", line 1
-__main__.MyError: 1
+  File "<stdin>", line 1, in ?
+__main__.MyError: 'oops!'
 \end{verbatim}
 
-Many standard modules use this to report errors that may occur in
-functions they define.
+Exception classes can be defined which do anything any other class can
+do, but are usually kept simple, often only offering a number of
+attributes that allow information about the error to be extracted by
+handlers for the exception.  When creating a module which can raise
+several distinct errors, a common practice is to create a base class
+for exceptions defined by that module, and subclass that to create
+specific exception classes for different error conditions:
 
-More information on classes is presented in chapter \ref{classes},
-``Classes.''
+\begin{verbatim}
+class Error(Exception):
+    """Base class for exceptions in this module."""
+    pass
+
+class InputError(Error):
+    """Exception raised for errors in the input.
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, expression, message):
+        self.expression = expression
+        self.message = message
+
+class TransitionError(Error):
+    """Raised when an operation attempts a state transition that's not
+    allowed.
+
+    Attributes:
+        previous -- state at beginning of transition
+        next -- attempted new state
+        message -- explanation of why the specific transition is not allowed
+    """
+
+    def __init__(self, previous, next, message):
+        self.previous = previous
+        self.next = next
+        self.message = message
+\end{verbatim}
+
+Most exceptions are defined with names that end in ``Error,'' similar
+to the naming of the standard exceptions.
+
+Many standard modules define their own exceptions to report errors
+that may occur in functions they define.  More information on classes
+is presented in chapter \ref{classes}, ``Classes.''
 
 
 \section{Defining Clean-up Actions \label{cleanup}}
@@ -3224,7 +3285,7 @@ circumstances.  For example:
 ... 
 Goodbye, world!
 Traceback (most recent call last):
-  File "<stdin>", line 2
+  File "<stdin>", line 2, in ?
 KeyboardInterrupt
 \end{verbatim}
 
@@ -3234,8 +3295,13 @@ re-raised after the finally clause is executed.  The finally clause is
 also executed ``on the way out'' when the \keyword{try} statement is
 left via a \keyword{break} or \keyword{return} statement.
 
+The code in the finally clause is useful for releasing external
+resources (such as files or network connections), regardless of
+whether or not the use of the resource was successful.
+
 A \keyword{try} statement must either have one or more except clauses
 or one finally clause, but not both.
+
 
 \chapter{Classes \label{classes}}
 
