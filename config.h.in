@@ -187,6 +187,9 @@
 /* Define if you have the plock function.  */
 #undef HAVE_PLOCK
 
+/* Define if you have the putenv function.  */
+#undef HAVE_PUTENV
+
 /* Define if you have the readlink function.  */
 #undef HAVE_READLINK
 
