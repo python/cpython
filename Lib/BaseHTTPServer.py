@@ -132,11 +132,11 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
     <path> is encoded using the URL encoding scheme (using %xx to signify
     the ASCII character with hex code xx).
 
-    The protocol is vague about whether lines are separated by LF
-    characters or by CRLF pairs -- for compatibility with the widest
-    range of clients, both should be accepted.  Similarly, whitespace
-    in the request line should be treated sensibly (allowing multiple
-    spaces between components and allowing trailing whitespace).
+    The specification specifies that lines are separated by CRLF but
+    for compatibility with the widest range of clients recommends
+    servers also handle LF.  Similarly, whitespace in the request line
+    is treated sensibly (allowing multiple spaces between components
+    and allowing trailing whitespace).
 
     Similarly, for output, lines ought to be separated by CRLF pairs
     but most clients grok LF characters just fine.
