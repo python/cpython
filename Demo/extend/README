@@ -1,0 +1,16 @@
+This directory contains a test and demonstration of the power of the
+generic Makefile.pre.in from the Misc directory.  There are three
+shell scripts.  Study the source of the scripts to find out how they
+work (it's really easy).
+
+./make_static	Make a static python binary with the xx module
+		linked in.  To test this, run ./python and try to
+		import xx.
+
+./make_shared	Make a shared module xx.  To test this, run the
+		standard python interpreter in this directory and try
+		to import xx.
+
+./make_clean	Clean up after either of the above.  Note that each
+		scripts starts by calling this script, to begin with a
+		clean slate.

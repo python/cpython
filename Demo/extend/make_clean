@@ -1,0 +1,5 @@
+#! /bin/sh
+
+# Reset the directory contents.
+
+rm -f Setup* Makefile* *.c *.o *.a *.so *~ python sedscript

@@ -1,0 +1,15 @@
+#! /bin/sh
+
+# This script tests and demonstrates the mechanism for building a
+# static Python binary with an additional extension module using the
+# generic Makefile.pre.in from the Misc directory.
+
+./make_clean
+
+cp ../../Misc/Makefile.pre.in .
+cp ../../Modules/xxmodule.c .
+echo xx xxmodule.c >Setup.in
+
+make -f Makefile.pre.in boot
+make Makefile
+make static
