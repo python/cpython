@@ -438,7 +438,7 @@ class HTTPRedirectHandler(BaseHandler):
             # do the same.
             return Request(newurl, headers=req.headers)
         else:
-            raise HTTPError(req.get_full_url(), code, msg, hdrs, fp)
+            raise HTTPError(req.get_full_url(), code, msg, headers, fp)
 
     # Implementation note: To avoid the server sending us into an
     # infinite loop, the request object needs to track what URLs we
