@@ -26,7 +26,7 @@ Copyright (C) 2001-2002 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, os, types, time, string, struct, cPickle, cStringIO
+import sys, os, types, time, string, cStringIO
 
 try:
     import thread
@@ -713,11 +713,11 @@ class Manager:
     There is [under normal circumstances] just one Manager instance, which
     holds the hierarchy of loggers.
     """
-    def __init__(self, root):
+    def __init__(self, rootnode):
         """
         Initialize the manager with the root node of the logger hierarchy.
         """
-        self.root = root
+        self.root = rootnode
         self.disable = 0
         self.emittedNoHandlerWarning = 0
         self.loggerDict = {}
