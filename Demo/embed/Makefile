@@ -10,12 +10,13 @@ INCLUDES=	-I$(srcdir)/Include -I$(blddir)
 DEFINES=	-DHAVE_CONFIG_H
 CFLAGS=		$(OPT) $(DEFINES) $(INCLUDES)
 
-# Libraries
-# XXX edit MODLIBS, LIBS and SYSLIBS to match $(blddir)/Modules/Makefile
+# Libraries (must be in this order!)
 MYLIBS=		$(blddir)/Modules/libModules.a \
 		$(blddir)/Python/libPython.a \
 		$(blddir)/Objects/libObjects.a \
 		$(blddir)/Parser/libParser.a
+
+# XXX edit MODLIBS, LIBS and SYSLIBS to match $(blddir)/Modules/Makefile
 MODLIBS=	
 LIBS=		
 SYSLIBS=	-lm

@@ -1,6 +1,6 @@
-This directory show how easy it is to embed the Python interpreter in
-your own application.  The file demo.c shows you all that is needed in
-your C code.
+This directory show how to embed the Python interpreter in your own
+application.  The file demo.c shows you all that is needed in your C
+code.
 
 To build it, you may have to edit the Makefile:
 
