@@ -121,10 +121,12 @@ install_IDE:
 		echo See Mac/OSX/README for details; \
 	else \
 		echo $(BUILDPYTHON) $(srcdir)/Mac/scripts/BuildApplet.py \
+		    --destroot $(DESTDIR) \
 			--python $(INSTALLED_PYTHONW) \
 			--output $(DESTDIR)$(PYTHONAPPSDIR)/PythonIDE.app --noargv \
 			$(srcdir)/Mac/Tools/IDE/PythonIDE.py ; \
 		$(BUILDPYTHON) $(srcdir)/Mac/scripts/BuildApplet.py \
+		    --destroot $(DESTDIR) \
 			--python $(INSTALLED_PYTHONW) \
 			--output $(DESTDIR)$(PYTHONAPPSDIR)/PythonIDE.app --noargv \
 			$(srcdir)/Mac/Tools/IDE/PythonIDE.py; \
@@ -137,6 +139,7 @@ install_PackageManager:
 	else \
 		echo $(BUILDPYTHON) $(bundlebuilder) \
 			--builddir $(DESTDIR)$(PYTHONAPPSDIR)/ \
+		    --destroot $(DESTDIR) \
 			--python $(INSTALLED_PYTHONW) \
 			--resource $(srcdir)/Mac/Tools/IDE/PythonIDE.rsrc \
 			--mainprogram $(srcdir)/Mac/Tools/IDE/PackageManager.py \
@@ -145,6 +148,7 @@ install_PackageManager:
 			--creator Pimp build; \
 		$(BUILDPYTHON) $(bundlebuilder) \
 			--builddir $(DESTDIR)$(PYTHONAPPSDIR)/ \
+		    --destroot $(DESTDIR) \
 			--python $(INSTALLED_PYTHONW) \
 			--resource $(srcdir)/Mac/Tools/IDE/PythonIDE.rsrc \
 			--mainprogram $(srcdir)/Mac/Tools/IDE/PackageManager.py \
@@ -160,11 +164,13 @@ install_IDLE:
 	else \
 		echo $(BUILDPYTHON) $(srcdir)/Mac/scripts/BuildApplet.py \
 			--python $(INSTALLED_PYTHONW) \
+			--destroot $(DESTDIR) \
 			--output $(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app \
 			--extra $(srcdir)/Lib/idlelib \
 			$(srcdir)/Lib/idlelib/idle ; \
 		$(BUILDPYTHON) $(srcdir)/Mac/scripts/BuildApplet.py \
 			--python $(INSTALLED_PYTHONW) \
+			--destroot $(DESTDIR) \
 			--output $(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app \
 			--extra $(srcdir)/Lib/idlelib:Contents/Resources/idlelib \
 			$(srcdir)/Lib/idlelib/idle ; \
@@ -173,6 +179,7 @@ install_IDLE:
 
 install_BuildApplet:
 	$(BUILDPYTHON) $(srcdir)/Mac/scripts/BuildApplet.py \
+		--destroot $(DESTDIR) \
 		--python $(INSTALLED_PYTHONW) \
 		--output $(DESTDIR)$(PYTHONAPPSDIR)/BuildApplet.app \
 		$(srcdir)/Mac/scripts/BuildApplet.py

@@ -53,8 +53,8 @@ def buildapplet():
 			buildtools.process(template, filename, dstfilename, 1)
 	else:
 		
-		SHORTOPTS = "o:r:ne:v?P"
-		LONGOPTS=("output=", "resource=", "noargv", "extra=", "verbose", "help", "python=")
+		SHORTOPTS = "o:r:ne:v?PR"
+		LONGOPTS=("output=", "resource=", "noargv", "extra=", "verbose", "help", "python=", "destroot=")
 		try:
 			options, args = getopt.getopt(sys.argv[1:], SHORTOPTS, LONGOPTS)
 		except getopt.error:
@@ -67,6 +67,7 @@ def buildapplet():
 		raw = 0
 		extras = []
 		verbose = None
+		destroot = ''
 		for opt, arg in options:
 			if opt in ('-o', '--output'):
 				dstfilename = arg
@@ -87,6 +88,8 @@ def buildapplet():
 				verbose = Verbose()
 			elif opt in ('-?', '--help'):
 				usage()
+			elif opt in ('-d', '--destroot'):
+				destroot = arg
 		# On OS9 always be verbose
 		if sys.platform == 'mac' and not verbose:
 			verbose = 'default'
@@ -97,21 +100,22 @@ def buildapplet():
 				buildtools.update(template, filename, dstfilename)
 			else:
 				buildtools.process(template, filename, dstfilename, 1,
-					rsrcname=rsrcfilename, others=extras, raw=raw, progress=verbose)
+						rsrcname=rsrcfilename, others=extras, raw=raw,
+						progress=verbose, destroot=destroot)
 
 def usage():
 	print "BuildApplet creates an application from a Python source file"
 	print "Usage:"
-	print "  BuildApplet     interactive, single file, no options"
-	print "  BuildApplet src1.py src2.py ...   non-interactive multiple file"
-	print "  BuildApplet [options] src.py    non-interactive single file"
+	print "	 BuildApplet	 interactive, single file, no options"
+	print "	 BuildApplet src1.py src2.py ...   non-interactive multiple file"
+	print "	 BuildApplet [options] src.py	 non-interactive single file"
 	print "Options:"
-	print "  --output o        Output file; default based on source filename, short -o"
-	print "  --resource r      Resource file; default based on source filename, short -r"
-	print "  --noargv          Build applet without drag-and-drop sys.argv emulation, short -n, OSX only"
-	print "  --extra src[:dst] Extra file to put in .app bundle, short -e, OSX only"
-	print "  --verbose         Verbose, short -v"
-	print "  --help            This message, short -?"
+	print "	 --output o		   Output file; default based on source filename, short -o"
+	print "	 --resource r	   Resource file; default based on source filename, short -r"
+	print "	 --noargv		   Build applet without drag-and-drop sys.argv emulation, short -n, OSX only"
+	print "	 --extra src[:dst] Extra file to put in .app bundle, short -e, OSX only"
+	print "	 --verbose		   Verbose, short -v"
+	print "	 --help			   This message, short -?"
 	sys.exit(1)
 
 class Verbose:
