@@ -1,9 +1,18 @@
 # This module exports classes for the various canvas item types
 
-from Tkinter import Canvas, _flatten
+from Tkinter import Canvas
 
 StringType = type('')
 DictionaryType = type({})
+
+def _flatten(tuple):
+	res = ()
+	for item in tuple:
+		if type(item) in (TupleType, ListType):
+			res = res + _flatten(item)
+		elif item is not None:
+			res = res + (item,)
+	return res
 
 class CanvasItem:
 	def __init__(self, canvas, itemType, *args, **kw):
@@ -25,7 +34,7 @@ class CanvasItem:
 			self.id, '-' + key))
 		return v[4]
 	def __setitem__(self, key, value):
-		self.canvas._itemconfig(self.id, {key: value})
+		self.canvas.itemconfig(self.id, {key: value})
 	def keys(self):
 		if not hasattr(self, '_keys'):
 			self._keys = map(lambda x, tk=self.canvas.tk:
@@ -34,7 +43,7 @@ class CanvasItem:
 						 self.canvas._do(
 							 'itemconfigure',
 							 (self.id,))))
-			return self._keys
+		return self._keys
 	def has_key(self, key):
 		return key in self.keys()
 	def addtag(self, tag, option='withtag'):
@@ -68,8 +77,9 @@ class CanvasItem:
 		self.canvas.lower(self.id, belowthis)
 	def move(self, xamount, yamount):
 		self.canvas.move(self.id, xamount, yamount)
-	def raise_(self, abovethis=None):
-		self.canvas.raise_(self.id, abovethis)
+	def tkraise(self, abovethis=None):
+		self.canvas.tkraise(self.id, abovethis)
+	raise_ = tkraise # BW compat
 	def scale(self, xorigin, yorigin, xscale, yscale):
 		self.canvas.scale(self.id, xorigin, yorigin, xscale, yscale)
 	def type(self):
@@ -82,6 +92,10 @@ class Arc(CanvasItem):
 class Bitmap(CanvasItem):
 	def __init__(self, canvas, *args):
 		CanvasItem.__init__(self, canvas, 'bitmap', args)
+
+class ImageItem(CanvasItem):
+	def __init__(self, canvas, *args):
+		CanvasItem.__init__(self, canvas, 'image', args)
 
 class Line(CanvasItem):
 	def __init__(self, canvas, *args):
