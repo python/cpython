@@ -30,6 +30,16 @@ class ScrolledText(Pack, Place):
 		# XXX should do all Text methods...
 		self.pack = self.frame.pack
 		self.forget = self.frame.forget
+		self.delete = self.text.delete
+		self.insert = self.text.insert
+		self.index = self.text.index
+		self.get = self.text.get
+		self.mark_set = self.text.mark_set
+		self.tag_add = self.text.tag_add
+		self.tag_delete = self.text.tag_delete
+		self.tag_remove = self.text.tag_remove
+		self.yview = self.text.yview
+		self.yview_pickplace = self.text.yview_pickplace
 		self.tk = master.tk
 	def __str__(self):
 		return str(self.frame)
