@@ -28,7 +28,7 @@ __version__ = "$Revision$"       # Code version
 
 from types import *
 from copy_reg import dispatch_table, _reconstructor
-from copy_reg import extension_registry, inverted_registry, extension_cache
+from copy_reg import _extension_registry, _inverted_registry, _extension_cache
 import marshal
 import sys
 import struct
@@ -845,7 +845,7 @@ class Pickler:
                     (obj, module, name))
 
         if self.proto >= 2:
-            code = extension_registry.get((module, name))
+            code = _extension_registry.get((module, name))
             if code:
                 assert code > 0
                 if code <= 0xff:
@@ -1238,15 +1238,15 @@ class Unpickler:
 
     def get_extension(self, code):
         nil = []
-        obj = extension_cache.get(code, nil)
+        obj = _extension_cache.get(code, nil)
         if obj is not nil:
             self.append(obj)
             return
-        key = inverted_registry.get(code)
+        key = _inverted_registry.get(code)
         if not key:
             raise ValueError("unregistered extension code %d" % code)
         obj = self.find_class(*key)
-        extension_cache[code] = obj
+        _extension_cache[code] = obj
         self.append(obj)
 
     def find_class(self, module, name):

@@ -102,11 +102,11 @@ static PyObject *empty_tuple;
 static PyObject *dispatch_table;
 
 /* For EXT[124] opcodes. */
-/* copy_reg.extension_registry, {(module_name, function_name): code} */
+/* copy_reg._extension_registry, {(module_name, function_name): code} */
 static PyObject *extension_registry;
-/* copy_reg.inverted_registry, {code: (module_name, function_name)} */
+/* copy_reg._inverted_registry, {code: (module_name, function_name)} */
 static PyObject *inverted_registry;
-/* copy_reg.extension_cache, {code: object} */
+/* copy_reg._extension_cache, {code: object} */
 static PyObject *extension_cache;
 
 static PyObject *__class___str, *__getinitargs___str, *__dict___str,
@@ -5092,15 +5092,15 @@ init_stuff(PyObject *module_dict)
 	if (!dispatch_table) return -1;
 
 	extension_registry = PyObject_GetAttrString(copy_reg,
-				"extension_registry");
+				"_extension_registry");
 	if (!extension_registry) return -1;
 
 	inverted_registry = PyObject_GetAttrString(copy_reg,
-				"inverted_registry");
+				"_inverted_registry");
 	if (!inverted_registry) return -1;
 
 	extension_cache = PyObject_GetAttrString(copy_reg,
-				"extension_cache");
+				"_extension_cache");
 	if (!extension_cache) return -1;
 
 	Py_DECREF(copy_reg);
