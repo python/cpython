@@ -979,24 +979,26 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
   (make-local-variable 'comment-end)
   (make-local-variable 'comment-start-skip)
   (make-local-variable 'comment-column)
+  (make-local-variable 'comment-indent-function)
   (make-local-variable 'indent-region-function)
   (make-local-variable 'indent-line-function)
   (make-local-variable 'add-log-current-defun-function)
   ;;
   (set-syntax-table py-mode-syntax-table)
-  (setq major-mode             'python-mode
-	mode-name              "Python"
-	local-abbrev-table     python-mode-abbrev-table
-	font-lock-defaults     '(python-font-lock-keywords)
-	paragraph-separate     "^[ \t]*$"
-	paragraph-start        "^[ \t]*$"
-	require-final-newline  t
-	comment-start          "# "
-	comment-end            ""
-	comment-start-skip     "# *"
-	comment-column         40
-	indent-region-function 'py-indent-region
-	indent-line-function   'py-indent-line
+  (setq major-mode              'python-mode
+	mode-name               "Python"
+	local-abbrev-table      python-mode-abbrev-table
+	font-lock-defaults      '(python-font-lock-keywords)
+	paragraph-separate      "^[ \t]*$"
+	paragraph-start         "^[ \t]*$"
+	require-final-newline   t
+	comment-start           "# "
+	comment-end             ""
+	comment-start-skip      "# *"
+	comment-column          40
+	comment-indent-function 'py-comment-indent-function
+	indent-region-function  'py-indent-region
+	indent-line-function    'py-indent-line
 	;; tell add-log.el how to find the current function/method/variable
 	add-log-current-defun-function 'py-current-defun
 	)
@@ -1884,6 +1886,23 @@ it's tried again going backward."
 	       py-indent-offset))
     ))
 
+(defun py-comment-indent-function ()
+  ;; A better value for comment-indent-function in Python source, this
+  ;; actually works when filladapt is turned off.  Without this, in
+  ;; that case, comments which start in column zero cascade one
+  ;; character to the right
+  (save-excursion
+    (beginning-of-line)
+    (let ((eol (py-point 'eol)))
+      (and comment-start-skip
+	   (re-search-forward comment-start-skip eol t)
+	   (setq eol (match-beginning 0)))
+      (goto-char eol)
+      (skip-chars-backward " \t")
+      (max comment-column (+ (current-column) (if (bolp) 0 1)))
+      )))
+
+
 (defun py-shift-region (start end count)
   (save-excursion
     (goto-char end)   (beginning-of-line) (setq end (point))
