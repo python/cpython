@@ -110,7 +110,10 @@ Time of last modification.
 \end{datadesc}
 
 \begin{datadesc}{ST_CTIME}
-Time of last status change (see manual pages for details).
+The ``ctime'' as reported by the operating system.  On some systems
+(like \UNIX) is the time of the last metadata change, and, on others
+(like Windows), is the creation time (see platform documentation for
+details).
 \end{datadesc}
 
 The interpretation of ``file size'' changes according to the file
