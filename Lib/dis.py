@@ -137,8 +137,6 @@ def disassemble_string(code, lasti=-1, varnames=None, names=None,
     while i < n:
         c = code[i]
         op = ord(c)
-        if op == opmap['SET_LINENO'] and i > 0:
-            print # Extra blank line
         if i == lasti: print '-->',
         else: print '   ',
         if i in labels: print '>>',
