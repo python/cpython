@@ -4,6 +4,7 @@
 #include "Python.h"
 #include <ctype.h>
 #include "structmember.h" /* we need the offsetof() macro from there */
+#include "longintrepr.h"
 
 #define NEW_STYLE_NUMBER(o) PyType_HasFeature((o)->ob_type, \
 				Py_TPFLAGS_CHECKTYPES)
@@ -818,9 +819,13 @@ PyNumber_Int(PyObject *o)
 
 	if (o == NULL)
 		return null_error();
-	if (PyInt_Check(o)) {
+	if (PyInt_CheckExact(o)) {
 		Py_INCREF(o);
 		return o;
+	}
+	if (PyInt_Check(o)) {
+		PyIntObject *io = (PyIntObject*)o;
+		return PyInt_FromLong(io->ob_ival);
 	}
 	if (PyString_Check(o))
 		return int_from_string(PyString_AS_STRING(o), 
@@ -868,10 +873,12 @@ PyNumber_Long(PyObject *o)
 
 	if (o == NULL)
 		return null_error();
-	if (PyLong_Check(o)) {
+	if (PyLong_CheckExact(o)) {
 		Py_INCREF(o);
 		return o;
 	}
+	if (PyLong_Check(o))
+		return _PyLong_Copy((PyLongObject *)o);
 	if (PyString_Check(o))
 		/* need to do extra error checking that PyLong_FromString() 
 		 * doesn't do.  In particular long('9.5') must raise an

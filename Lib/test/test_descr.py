@@ -1340,6 +1340,9 @@ def inherits():
         # because the int type gets first dibs.)
     verify(repr(hexint(7) + 9) == "0x10")
     verify(repr(hexint(1000) + 7) == "0x3ef")
+    a = hexint(12345)
+    #XXX verify(int(a) == 12345)
+    verify(int(a).__class__ is int)
 
     class octlong(long):
         __slots__ = []
@@ -1355,6 +1358,9 @@ def inherits():
     # (Note that overriding __radd__ here only seems to work
     # because the example uses a short int left argument.)
     verify(str(5 + octlong(3000)) == "05675")
+    a = octlong(12345)
+    #XXX verify(long(a) == 12345L)
+    verify(long(a).__class__ is long)
 
     class precfloat(float):
         __slots__ = ['prec']
@@ -1364,6 +1370,9 @@ def inherits():
         def __repr__(self):
             return "%.*g" % (self.prec, self)
     verify(repr(precfloat(1.1)) == "1.1")
+    a = precfloat(12345)
+    #XXX verify(float(a) == 12345.0)
+    #XXX verify(float(a).__class__ is float)
 
     class madtuple(tuple):
         _rev = None
@@ -1382,6 +1391,12 @@ def inherits():
         u = t.rev()
         v = u.rev()
         verify(v == t)
+    a = madtuple((1,2,3,4,5))
+    verify(tuple(a) == (1,2,3,4,5))
+    #XXX verify(tuple(a).__class__ is tuple)
+    a = madtuple(())
+    verify(tuple(a) == ())
+    #XXX verify(tuple(a).__class__ is tuple)
 
     class madstring(str):
         _rev = None
@@ -1400,6 +1415,9 @@ def inherits():
         t = s.rev()
         u = t.rev()
         verify(u == s)
+    s = madstring("12345")
+    #XXX verify(str(s) == "12345")
+    #XXX verify(str(s).__class__ is str)
 
     class madunicode(unicode):
         _rev = None
@@ -1413,6 +1431,9 @@ def inherits():
     u = madunicode("ABCDEF")
     verify(u.rev() == madunicode(u"FEDCBA"))
     verify(u.rev().rev() == madunicode(u"ABCDEF"))
+    u = madunicode(u"12345")
+    verify(unicode(u) == u"12345")
+    #XXX verify(unicode(u).__class__ is unicode)
 
 def all():
     lists()

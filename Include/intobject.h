@@ -28,6 +28,7 @@ typedef struct {
 extern DL_IMPORT(PyTypeObject) PyInt_Type;
 
 #define PyInt_Check(op) PyObject_TypeCheck(op, &PyInt_Type)
+#define PyInt_CheckExact(op) ((op)->ob_type == &PyInt_Type)
 
 extern DL_IMPORT(PyObject *) PyInt_FromString(char*, char**, int);
 #ifdef Py_USING_UNICODE

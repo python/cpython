@@ -51,6 +51,25 @@ _PyLong_New(int size)
 	return PyObject_NEW_VAR(PyLongObject, &PyLong_Type, size);
 }
 
+PyObject *
+_PyLong_Copy(PyLongObject *src)
+{
+	PyLongObject *result;
+	int i;
+
+	assert(src != NULL);
+	i = src->ob_size;
+	if (i < 0)
+		i = -(i);
+	result = _PyLong_New(i);
+	if (result != NULL) {
+		result->ob_size = i;
+		while (--i >= 0)
+			result->ob_digit[i] = src->ob_digit[i];
+	}
+	return (PyObject *)result;
+}
+
 /* Create a new long int object from a C long int */
 
 PyObject *
@@ -2205,7 +2224,7 @@ long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	tmp = (PyLongObject *)long_new(&PyLong_Type, args, kwds);
 	if (tmp == NULL)
 		return NULL;
-	assert(PyLong_Check(tmp));
+	assert(PyLong_CheckExact(tmp));
 	n = tmp->ob_size;
 	if (n < 0)
 		n = -n;
