@@ -2,7 +2,7 @@
          Floating point exception control}
 
 \declaremodule{extension}{fpectl}
-  \platform{Unix, Windows}
+  \platform{Unix}
 \moduleauthor{Lee Busby}{busby1@llnl.gov}
 \sectionauthor{Lee Busby}{busby1@llnl.gov}
 \modulesynopsis{Provide control for floating point exception handling.}
@@ -18,7 +18,7 @@ For example, try
 >>> import math
 >>> math.exp(1000)
 inf
->>> math.exp(1000)/math.exp(1000)
+>>> math.exp(1000) / math.exp(1000)
 nan
 \end{verbatim}
 
