@@ -107,6 +107,32 @@ The \class{MIMEBase} class always adds a \mailheader{Content-Type} header
 \mailheader{MIME-Version} header (always set to \code{1.0}).
 \end{classdesc}
 
+\begin{classdesc}{MIMEAudio}{_audiodata\optional{, _subtype\optional{,
+    _encoder\optional{, **_params}}}}
+
+A subclass of \class{MIMEBase}, the \class{MIMEAudio} class is used to
+create MIME message objects of major type \mimetype{audio}.
+\var{_audiodata} is a string containing the raw image data.  If this
+data can be decoded by the standard Python module \refmodule{sndhdr},
+then the subtype will be automatically included in the
+\mailheader{Content-Type} header.  Otherwise you can explicitly specify the
+audio subtype via the \var{_subtype} parameter.  If the minor type could
+not be guessed and \var{_subtype} was not given, then \exception{TypeError}
+is raised.
+
+Optional \var{_encoder} is a callable (i.e. function) which will
+perform the actual encoding of the audio data for transport.  This
+callable takes one argument, which is the \class{MIMEAudio} instance.
+It should use \method{get_payload()} and \method{set_payload()} to
+change the payload to encoded form.  It should also add any
+\mailheader{Content-Transfer-Encoding} or other headers to the message
+object as necessary.  The default encoding is \emph{Base64}.  See the
+\refmodule{email.Encoders} module for a list of the built-in encoders.
+
+\var{_params} are passed straight through to the \class{MIMEBase}
+constructor.
+\end{classdesc}
+
 \begin{classdesc}{MIMEImage}{_imagedata\optional{, _subtype\optional{,
     _encoder\optional{, **_params}}}}
 
