@@ -29,10 +29,10 @@ The default levels provided are \constant{DEBUG}, \constant{INFO},
 \constant{WARNING}, \constant{ERROR} and \constant{CRITICAL}. As a
 convenience, you indicate the importance of a logged message by calling
 an appropriate method of \class{Logger}. The methods are
-\method{debug}, \method{info}, \method{warning}, \method{error} and
-\method{critical}, which mirrors the default levels. You are not
-constrained to use these levels - you can specify your own and use a
-more general \class{Logger} method, \method{log}, which takes an
+\method{debug()}, \method{info()}, \method{warning()}, \method{error()} and
+\method{critical()}, which mirror the default levels. You are not
+constrained to use these levels: you can specify your own and use a
+more general \class{Logger} method, \method{log()}, which takes an
 explicit level argument.
 
 Levels can also be associated with loggers, being set either by the
@@ -57,14 +57,14 @@ developers). Handlers are passed \class{LogRecord} instances intended for
 particular destinations. Each logger can have zero, one or more handlers
 associated with it (via the \method{addHandler} method of \class{Logger}).
 In addition to any handlers directly associated with a logger,
-\emph{all handlers associated with all ancestors of the logger} are called
-upon to dispatch the message.
+\emph{all handlers associated with all ancestors of the logger} are
+called to dispatch the message.
 
 Just as for loggers, handlers can have levels associated with them.
 A handler's level acts as a filter in the same way as a logger's level does.
-If a handler decides to actually dispatch an event, the \method{emit} method
+If a handler decides to actually dispatch an event, the \method{emit()} method
 is used to send the message to its destination. Most user-defined subclasses
-of \class{Handler} will need to override this \method{emit}.
+of \class{Handler} will need to override this \method{emit()}.
 
 In addition to the base \class{Handler} class, many useful subclasses
 are provided:
@@ -120,7 +120,7 @@ header and trailer format strings.
 
 When filtering based on logger level and/or handler level is not enough,
 instances of \class{Filter} can be added to both \class{Logger} and
-\class{Handler} instances (through their \method{addFilter} method).
+\class{Handler} instances (through their \method{addFilter()} method).
 Before deciding to process a message further, both loggers and handlers
 consult all their filters for permission. If any filter returns a false
 value, the message is not processed further.
@@ -147,7 +147,7 @@ The \var{msg} is the message format string, and the \var{args} are the
 arguments which are merged into \var{msg}. The only keyword argument in
 \var{kwargs} which is inspected is \var{exc_info} which, if it does not
 evaluate as false, causes exception information (via a call to
-\method{sys.exc_info()}) to be added to the logging message.
+\function{sys.exc_info()}) to be added to the logging message.
 \end{funcdesc}
 
 \begin{funcdesc}{info}{msg\optional{, *args\optional{, **kwargs}}}
@@ -274,7 +274,7 @@ The \var{msg} is the message format string, and the \var{args} are the
 arguments which are merged into \var{msg}. The only keyword argument in
 \var{kwargs} which is inspected is \var{exc_info} which, if it does not
 evaluate as false, causes exception information (via a call to
-\method{sys.exc_info()}) to be added to the logging message.
+\function{sys.exc_info()}) to be added to the logging message.
 \end{methoddesc}
 
 \begin{methoddesc}{info}{msg\optional{, *args\optional{, **kwargs}}}
@@ -841,15 +841,15 @@ This method should be called from \method{format()} by a formatter which
 wants to make use of a formatted time. This method can be overridden
 in formatters to provide for any specific requirement, but the
 basic behavior is as follows: if \var{datefmt} (a string) is specified,
-it is used with \method{time.strftime()} to format the creation time of the
+it is used with \function{time.strftime()} to format the creation time of the
 record. Otherwise, the ISO8601 format is used. The resulting
 string is returned.
 \end{methoddesc}
 
 \begin{methoddesc}{formatException}{exc_info}
 Formats the specified exception information (a standard exception tuple
-as returned by \method{sys.exc_info()}) as a string. This default
-implementation just uses \method{traceback.print_exception()}.
+as returned by \function{sys.exc_info()}) as a string. This default
+implementation just uses \function{traceback.print_exception()}.
 The resulting string is returned.
 \end{methoddesc}
 
