@@ -367,7 +367,7 @@ class Transformer:
                     names.append((nodelist[i][1], None))
             else:
                 for i in range(3, len(nodelist), 2):
-                    names.append(self.com_import_as_name(nodelist[i][1]))
+                    names.append(self.com_import_as_name(nodelist[i]))
             n = From(self.com_dotted_name(nodelist[1]), names)
             n.lineno = nodelist[0][2]
             return n
@@ -692,7 +692,7 @@ class Transformer:
         #       We'll just dispatch them.
         return self._dispatch[node[0]](node[1:])
 
-    def com_NEWLINE(self):
+    def com_NEWLINE(self, *args):
         # A ';' at the end of a line can make a NEWLINE token appear
         # here, Render it harmless. (genc discards ('discard',
         # ('const', xxxx)) Nodes)
@@ -784,14 +784,17 @@ class Transformer:
             return dot, node[3][1]
 
     def com_import_as_name(self, node):
-        if node == '*':
+        if node[0] == token.STAR:
             return '*', None
-        if node[0] == token.NAME:
-            return node[1], None
-        assert len(node) == 4
-        assert node[2][1] == 'as'
-        assert node[3][0] == token.NAME
-        return node[1][1], node[3][1]
+        assert node[0] == symbol.import_as_name
+        node = node[1:]
+        if len(node) == 1:
+            assert node[0][0] == token.NAME
+            return node[0][1], None
+
+        assert node[1][1] == 'as', node
+        assert node[2][0] == token.NAME
+        return node[0][1], node[2][1]
 
     def com_bases(self, node):
         bases = []
@@ -963,6 +966,9 @@ class Transformer:
             # list_iter: list_for | list_if
             # list_for: 'for' exprlist 'in' testlist [list_iter]
             # list_if: 'if' test [list_iter]
+
+            # XXX should raise SyntaxError for assignment
+            
             lineno = node[1][2]
             fors = []
             while node:
