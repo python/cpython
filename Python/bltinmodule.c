@@ -1896,11 +1896,11 @@ initerrors(dict)
 	PyTuple_SET_ITEM(PyExc_ArithmeticError, 2, PyExc_FloatingPointError);
 	PyDict_SetItemString(dict, "ArithmeticError", PyExc_ArithmeticError);
 
-	PyExc_StandardError = PyTuple_New(exccnt-1);
-	for (i = 1; bltin_exc[i].name; i++) {
+	PyExc_StandardError = PyTuple_New(exccnt-2);
+	for (i = 2; bltin_exc[i].name; i++) {
 		PyObject *exc = *bltin_exc[i].exc;
 		Py_INCREF(exc);
-		PyTuple_SET_ITEM(PyExc_StandardError, i-1, exc);
+		PyTuple_SET_ITEM(PyExc_StandardError, i-2, exc);
 	}
 	PyDict_SetItemString(dict, "StandardError", PyExc_StandardError);
 
