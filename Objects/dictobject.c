@@ -809,42 +809,80 @@ dict_print(register dictobject *mp, register FILE *fp, register int flags)
 static PyObject *
 dict_repr(dictobject *mp)
 {
-	auto PyObject *v;
-	PyObject *sepa, *colon;
-	register int i;
-	register int any;
+	int i, pos;
+	PyObject *s, *temp, *colon = NULL;
+	PyObject *pieces = NULL, *result = NULL;
+	PyObject *key, *value;
 
-	i = Py_ReprEnter((PyObject*)mp);
+	i = Py_ReprEnter((PyObject *)mp);
 	if (i != 0) {
-		if (i > 0)
-			return PyString_FromString("{...}");
-		return NULL;
+		return i > 0 ? PyString_FromString("{...}") : NULL;
 	}
 
-	v = PyString_FromString("{");
-	sepa = PyString_FromString(", ");
-	colon = PyString_FromString(": ");
-	any = 0;
-	for (i = 0; i <= mp->ma_mask && v; i++) {
-		dictentry *ep = mp->ma_table + i;
-		PyObject *pvalue = ep->me_value;
-		if (pvalue != NULL) {
-			/* Prevent PyObject_Repr from deleting value during
-			   key format */
-			Py_INCREF(pvalue);
-			if (any++)
-				PyString_Concat(&v, sepa);
-			PyString_ConcatAndDel(&v, PyObject_Repr(ep->me_key));
-			PyString_Concat(&v, colon);
-			PyString_ConcatAndDel(&v, PyObject_Repr(pvalue));
-			Py_DECREF(pvalue);
-		}
+	if (mp->ma_used == 0) {
+		result = PyString_FromString("{}");
+		goto Done;
 	}
-	PyString_ConcatAndDel(&v, PyString_FromString("}"));
-	Py_ReprLeave((PyObject*)mp);
-	Py_XDECREF(sepa);
+
+	pieces = PyList_New(0);
+	if (pieces == NULL)
+		goto Done;
+
+	colon = PyString_FromString(": ");
+	if (colon == NULL)
+		goto Done;
+
+	/* Do repr() on each key+value pair, and insert ": " between them.
+	   Note that repr may mutate the dict. */
+	pos = 0;
+	while (PyDict_Next((PyObject *)mp, &pos, &key, &value)) {
+		int status;
+		/* Prevent repr from deleting value during key format. */
+		Py_INCREF(value);
+		s = PyObject_Repr(key);
+		PyString_Concat(&s, colon);
+		PyString_ConcatAndDel(&s, PyObject_Repr(value));
+		Py_DECREF(value);
+		if (s == NULL)
+			goto Done;
+		status = PyList_Append(pieces, s);
+		Py_DECREF(s);  /* append created a new ref */
+		if (status < 0)
+			goto Done;
+	}
+
+	/* Add "{}" decorations to the first and last items. */
+	assert(PyList_GET_SIZE(pieces) > 0);
+	s = PyString_FromString("{");
+	if (s == NULL)
+		goto Done;
+	temp = PyList_GET_ITEM(pieces, 0);
+	PyString_ConcatAndDel(&s, temp);
+	PyList_SET_ITEM(pieces, 0, s);
+	if (s == NULL)
+		goto Done;
+
+	s = PyString_FromString("}");
+	if (s == NULL)
+		goto Done;
+	temp = PyList_GET_ITEM(pieces, PyList_GET_SIZE(pieces) - 1);
+	PyString_ConcatAndDel(&temp, s);
+	PyList_SET_ITEM(pieces, PyList_GET_SIZE(pieces) - 1, temp);
+	if (temp == NULL)
+		goto Done;
+
+	/* Paste them all together with ", " between. */
+	s = PyString_FromString(", ");
+	if (s == NULL)
+		goto Done;
+	result = _PyString_Join(s, pieces);
+	Py_DECREF(s);	
+
+Done:
+	Py_XDECREF(pieces);
 	Py_XDECREF(colon);
-	return v;
+	Py_ReprLeave((PyObject *)mp);
+	return result;
 }
 
 static int

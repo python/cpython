@@ -77,6 +77,10 @@ extern DL_IMPORT(void) _Py_ReleaseInternedStrings(void);
 #define PyString_AS_STRING(op) (((PyStringObject *)(op))->ob_sval)
 #define PyString_GET_SIZE(op)  (((PyStringObject *)(op))->ob_size)
 
+/* _PyString_Join(sep, x) is like sep.join(x).  sep must be PyStringObject*,
+   x must be an iterable object. */
+extern DL_IMPORT(PyObject *) _PyString_Join(PyObject *sep, PyObject *x);
+
 /* --- Generic Codecs ----------------------------------------------------- */
 
 /* Create an object by decoding the encoded string s of the

@@ -184,20 +184,56 @@ tupleprint(PyTupleObject *op, FILE *fp, int flags)
 static PyObject *
 tuplerepr(PyTupleObject *v)
 {
-	PyObject *s, *comma;
-	int i;
-	s = PyString_FromString("(");
-	comma = PyString_FromString(", ");
-	for (i = 0; i < v->ob_size && s != NULL; i++) {
-		if (i > 0)
-			PyString_Concat(&s, comma);
-		PyString_ConcatAndDel(&s, PyObject_Repr(v->ob_item[i]));
+	int i, n;
+	PyObject *s, *temp;
+	PyObject *pieces, *result = NULL;
+
+	n = v->ob_size;
+	if (n == 0)
+		return PyString_FromString("()");
+
+	pieces = PyTuple_New(n);
+	if (pieces == NULL)
+		return NULL;
+
+	/* Do repr() on each element. */
+	for (i = 0; i < n; ++i) {
+		s = PyObject_Repr(v->ob_item[i]);
+		if (s == NULL)
+			goto Done;
+		PyTuple_SET_ITEM(pieces, i, s);
 	}
-	Py_DECREF(comma);
-	if (v->ob_size == 1)
-		PyString_ConcatAndDel(&s, PyString_FromString(","));
-	PyString_ConcatAndDel(&s, PyString_FromString(")"));
-	return s;
+
+	/* Add "()" decorations to the first and last items. */
+	assert(n > 0);
+	s = PyString_FromString("(");
+	if (s == NULL)
+		goto Done;
+	temp = PyTuple_GET_ITEM(pieces, 0);
+	PyString_ConcatAndDel(&s, temp);
+	PyTuple_SET_ITEM(pieces, 0, s);
+	if (s == NULL)
+		goto Done;
+
+	s = PyString_FromString(n == 1 ? ",)" : ")");
+	if (s == NULL)
+		goto Done;
+	temp = PyTuple_GET_ITEM(pieces, n-1);
+	PyString_ConcatAndDel(&temp, s);
+	PyTuple_SET_ITEM(pieces, n-1, temp);
+	if (temp == NULL)
+		goto Done;
+
+	/* Paste them all together with ", " between. */
+	s = PyString_FromString(", ");
+	if (s == NULL)
+		goto Done;
+	result = _PyString_Join(s, pieces);
+	Py_DECREF(s);	
+
+Done:
+	Py_DECREF(pieces);
+	return result;
 }
 
 static long
