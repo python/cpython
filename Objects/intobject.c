@@ -344,14 +344,16 @@ int_mul(PyObject *v, PyObject *w)
 	long a, b, ah, bh, x, y;
 	int s = 1;
 
-	if (v->ob_type->tp_as_sequence &&
-			v->ob_type->tp_as_sequence->sq_repeat) {
+	if (!PyInt_Check(v) &&
+	    v->ob_type->tp_as_sequence &&
+	    v->ob_type->tp_as_sequence->sq_repeat) {
 		/* sequence * int */
 		a = PyInt_AsLong(w);
 		return (*v->ob_type->tp_as_sequence->sq_repeat)(v, a);
 	}
-	else if (w->ob_type->tp_as_sequence &&
-			w->ob_type->tp_as_sequence->sq_repeat) {
+	if (!PyInt_Check(w) &&
+	    w->ob_type->tp_as_sequence &&
+	    w->ob_type->tp_as_sequence->sq_repeat) {
 		/* int * sequence */
 		a = PyInt_AsLong(v);
 		return (*w->ob_type->tp_as_sequence->sq_repeat)(w, a);
