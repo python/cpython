@@ -32,6 +32,8 @@ ControlPartCode = Type("ControlPartCode", "h")
 DragConstraint = Type("DragConstraint", "H")
 ControlVariant = Type("ControlVariant", "h")
 IconTransformType = Type("IconTransformType", "h")
+EventModifiers = Type("EventModifiers", "H")
+ClickActivationResult = Type("ClickActivationResult", "l")
 ControlButtonGraphicAlignment = Type("ControlButtonGraphicAlignment", "h")
 ControlButtonTextAlignment = Type("ControlButtonTextAlignment", "h")
 ControlButtonTextPlacement = Type("ControlButtonTextPlacement", "h")
@@ -40,9 +42,14 @@ ControlFocusPart = Type("ControlFocusPart", "h")
 
 ControlFontStyleRec = OpaqueType('ControlFontStyleRec', 'ControlFontStyle')
 ControlFontStyleRec_ptr = ControlFontStyleRec
+ControlID = OpaqueType('ControlID', 'PyControlID')
+ControlID_ptr = ControlID
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
+#ifndef kControlCheckBoxUncheckedValue
+#include <ControlDefinitions.h>
+#endif
 
 staticforward PyObject *CtlObj_WhichControl(ControlHandle);
 
@@ -79,6 +86,26 @@ ControlFontStyle_Convert(v, itself)
 		&itself->just, QdRGB_Convert, &itself->foreColor,
 		QdRGB_Convert, &itself->backColor);
 }
+
+/*
+** Parse/generate ControlID records
+*/
+static PyObject *
+PyControlID_New(itself)
+	ControlID *itself;
+{
+
+	return Py_BuildValue("O&l", PyMac_BuildOSType, itself->signature, itself->id);
+}
+
+static int
+PyControlID_Convert(v, itself)
+	PyObject *v;
+	ControlID *itself;
+{
+	return PyArg_ParseTuple(v, "O&l", PyMac_GetOSType, &itself->signature, &itself->id);
+}
+
 
 /* TrackControl and HandleControlClick callback support */
 static PyObject *tracker;

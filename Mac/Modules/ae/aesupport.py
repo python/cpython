@@ -83,6 +83,7 @@ AEMethod = OSErrMethodGenerator
 
 includestuff = includestuff + """
 #include <AppleEvents.h>
+#include <AEObjects.h>
 
 static pascal OSErr GenericEventHandler(); /* Forward */
 

@@ -43,6 +43,11 @@ class MyScanner(Scanner):
 				'SystemClick',
 				'GetOSEvent',
 				'OSEventAvail',
+			]),
+			('#if TARGET_API_MAC_CARBON', [
+				'CheckEventQueueForUserCancel',
+				'GetCurrentKeyModifiers',
+				'GetGlobalMouse',
 			])]
 
 	def makeblacklistnames(self):

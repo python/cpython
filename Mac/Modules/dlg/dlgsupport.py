@@ -19,6 +19,8 @@ ModalFilterProcPtr.passInput = lambda name: "NewModalFilterProc(Dlg_PassFilterPr
 ModalFilterUPP = ModalFilterProcPtr
 
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
+TEHandle = OpaqueByValueType("TEHandle", "ResObj")
+CGrafPtr = OpaqueByValueType("CGrafPtr", "GrafObj")
 
 DITLMethod = Type("DITLMethod", "h")
 DialogItemIndex = Type("DialogItemIndex", "h")
@@ -30,6 +32,13 @@ EventMask = Type("EventMask", "H")
 
 includestuff = includestuff + """
 #include <Dialogs.h>
+
+#if !ACCESSOR_CALLS_ARE_FUNCTIONS
+#define GetDialogTextEditHandle(dlg) (((DialogPeek)(dlg))->textH)
+#define SetPortDialogPort(dlg) SetPort(dlg)
+#define GetDialogPort(dlg) ((CGrafPtr)(dlg))
+#define GetDialogFromWindow(win) ((DialogRef)(win))
+#endif
 
 /* XXX Shouldn't this be a stack? */
 static PyObject *Dlg_FilterProc_callback = NULL;
@@ -178,14 +187,14 @@ for f in methods: object.add(f)
 # Some methods that are currently macro's in C, but will be real routines
 # in MacOS 8.
 
-f = Method(ExistingWindowPtr, 'GetDialogWindow', (DialogRef, 'dialog', InMode))
-object.add(f)
-f = Method(SInt16, 'GetDialogDefaultItem', (DialogRef, 'dialog', InMode))
-object.add(f)
-f = Method(SInt16, 'GetDialogCancelItem', (DialogRef, 'dialog', InMode))
-object.add(f)
-f = Method(SInt16, 'GetDialogKeyboardFocusItem', (DialogRef, 'dialog', InMode))
-object.add(f)
+##f = Method(ExistingWindowPtr, 'GetDialogWindow', (DialogRef, 'dialog', InMode))
+##object.add(f)
+##f = Method(SInt16, 'GetDialogDefaultItem', (DialogRef, 'dialog', InMode))
+##object.add(f)
+##f = Method(SInt16, 'GetDialogCancelItem', (DialogRef, 'dialog', InMode))
+##object.add(f)
+##f = Method(SInt16, 'GetDialogKeyboardFocusItem', (DialogRef, 'dialog', InMode))
+##object.add(f)
 f = Method(void, 'SetGrafPortOfDialog', (DialogRef, 'dialog', InMode), 
 	condition='#if !TARGET_API_MAC_CARBON')
 object.add(f)

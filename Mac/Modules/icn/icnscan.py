@@ -49,6 +49,12 @@ class MyScanner(Scanner):
 		return [
 			('#if !TARGET_API_MAC_CARBON', [
 				'IconServicesTerminate',
+			]),
+			('#if TARGET_API_MAC_CARBON', [
+				'WriteIconFile',
+				'ReadIconFile',
+				'RegisterIconRefFromIconFile',
+				'GetIconRefVariant',
 			])]
 
 	def makeblacklisttypes(self):

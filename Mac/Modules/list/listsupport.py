@@ -22,15 +22,45 @@ from macsupport import *
 
 # Create the type objects
 ListHandle = OpaqueByValueType("ListHandle", "ListObj")
+ListRef = ListHandle # Obsolete, but used in Lists.h
 Cell = Point
+ListBounds = Rect
+ListBounds_ptr = Rect_ptr
 VarOutBufferShortsize = VarHeapOutputBufferType('char', 'short', 's')	# (buf, &len)
 InBufferShortsize = VarInputBufferType('char', 'short', 's')		# (buf, len)
 
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
+DataHandle = OpaqueByValueType("DataHandle", "ResObj")
 Handle = OpaqueByValueType("Handle", "ResObj")
+CGrafPtr = OpaqueByValueType("CGrafPtr", "GrafObj")
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
+
+#if !ACCESSOR_CALLS_ARE_FUNCTIONS
+#define GetListPort(list) ((CGrafPtr)(*(list))->port)
+#define GetListVerticalScrollBar(list) ((*(list))->vScroll)
+#define GetListHorizontalScrollBar(list) ((*(list))->hScroll)
+#define GetListActive(list) ((*(list))->lActive)
+#define GetListClickTime(list) ((*(list))->clikTime)
+#define GetListRefCon(list) ((*(list))->refCon)
+#define GetListDefinition(list) ((*(list))->listDefProc) /* XXX Is this indeed the same? */
+#define GetListUserHandle(list) ((*(list))->userHandle)
+#define GetListDataHandle(list) ((*(list))->cells)
+#define GetListFlags(list) ((*(list))->listFlags)
+#define GetListSelectionFlags(list) ((*(list))->selFlags)
+#define SetListViewBounds(list, bounds) (((*(list))->rView) = *(bounds))
+
+#define SetListPort(list, port) (((*(list))->port) = (GrafPtr)(port))
+#define SetListCellIndent(list, ind) (((*(list))->indent) = *(ind))
+#define SetListClickTime(list, time) (((*(list))->clikTime) = (time))
+#define SetListLastClick(list, click) (((*(list)->lastClick) = *(click))
+#define SetListRefCon(list, refcon) (((*(list))->refCon) = (refcon))
+#define SetListUserHandle(list, handle) (((*(list))->userHandle) = (handle))
+#define SetListFlags(list, flags) (((*(list))->listFlags) = (flags))
+#define SetListSelectionFlags(list, flags) (((*(list))->selFlags) = (flags))
+
+#endif
 
 #define as_List(x) ((ListHandle)x)
 #define as_Resource(lh) ((Handle)lh)

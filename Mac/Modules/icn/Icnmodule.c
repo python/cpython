@@ -1248,6 +1248,120 @@ static PyObject *Icn_GetCustomIconsEnabled(_self, _args)
 	return _res;
 }
 
+static PyObject *Icn_IsIconRefMaskEmpty(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	IconRef iconRef;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &iconRef))
+		return NULL;
+	_rv = IsIconRefMaskEmpty(iconRef);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Icn_GetIconRefVariant(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	IconRef _rv;
+	IconRef inIconRef;
+	OSType inVariant;
+	IconTransformType outTransform;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      ResObj_Convert, &inIconRef,
+	                      PyMac_GetOSType, &inVariant))
+		return NULL;
+	_rv = GetIconRefVariant(inIconRef,
+	                        inVariant,
+	                        &outTransform);
+	_res = Py_BuildValue("O&h",
+	                     ResObj_New, _rv,
+	                     outTransform);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Icn_RegisterIconRefFromIconFile(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	OSType creator;
+	OSType iconType;
+	FSSpec iconFile;
+	IconRef theIconRef;
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      PyMac_GetOSType, &creator,
+	                      PyMac_GetOSType, &iconType,
+	                      PyMac_GetFSSpec, &iconFile))
+		return NULL;
+	_err = RegisterIconRefFromIconFile(creator,
+	                                   iconType,
+	                                   &iconFile,
+	                                   &theIconRef);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, theIconRef);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Icn_ReadIconFile(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	FSSpec iconFile;
+	IconFamilyHandle iconFamily;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetFSSpec, &iconFile))
+		return NULL;
+	_err = ReadIconFile(&iconFile,
+	                    &iconFamily);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, iconFamily);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Icn_WriteIconFile(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	IconFamilyHandle iconFamily;
+	FSSpec iconFile;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      ResObj_Convert, &iconFamily,
+	                      PyMac_GetFSSpec, &iconFile))
+		return NULL;
+	_err = WriteIconFile(iconFamily,
+	                     &iconFile);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
 static PyMethodDef Icn_methods[] = {
 	{"GetCIcon", (PyCFunction)Icn_GetCIcon, 1,
 	 "(SInt16 iconID) -> (CIconHandle _rv)"},
@@ -1364,6 +1478,28 @@ static PyMethodDef Icn_methods[] = {
 	 "(SInt16 vRefNum, Boolean enableCustomIcons) -> None"},
 	{"GetCustomIconsEnabled", (PyCFunction)Icn_GetCustomIconsEnabled, 1,
 	 "(SInt16 vRefNum) -> (Boolean customIconsEnabled)"},
+	{"IsIconRefMaskEmpty", (PyCFunction)Icn_IsIconRefMaskEmpty, 1,
+	 "(IconRef iconRef) -> (Boolean _rv)"},
+
+#if TARGET_API_MAC_CARBON
+	{"GetIconRefVariant", (PyCFunction)Icn_GetIconRefVariant, 1,
+	 "(IconRef inIconRef, OSType inVariant) -> (IconRef _rv, IconTransformType outTransform)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"RegisterIconRefFromIconFile", (PyCFunction)Icn_RegisterIconRefFromIconFile, 1,
+	 "(OSType creator, OSType iconType, FSSpec iconFile) -> (IconRef theIconRef)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"ReadIconFile", (PyCFunction)Icn_ReadIconFile, 1,
+	 "(FSSpec iconFile) -> (IconFamilyHandle iconFamily)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"WriteIconFile", (PyCFunction)Icn_WriteIconFile, 1,
+	 "(IconFamilyHandle iconFamily, FSSpec iconFile) -> None"},
+#endif
 	{NULL, NULL, 0}
 };
 
@@ -1383,7 +1519,7 @@ void initIcn()
 	Icn_Error = PyMac_GetOSErrException();
 	if (Icn_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Icn_Error) != 0)
-		Py_FatalError("can't initialize Icn.Error");
+		return;
 }
 
 /* ========================= End module Icn ========================= */

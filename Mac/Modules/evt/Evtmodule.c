@@ -316,6 +316,57 @@ static PyObject *Evt_SystemEvent(_self, _args)
 }
 #endif
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Evt_GetGlobalMouse(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Point globalMouse;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetGlobalMouse(&globalMouse);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildPoint, globalMouse);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Evt_GetCurrentKeyModifiers(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	UInt32 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetCurrentKeyModifiers();
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Evt_CheckEventQueueForUserCancel(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CheckEventQueueForUserCancel();
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+#endif
+
 static PyObject *Evt_WaitNextEvent(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -396,6 +447,21 @@ static PyMethodDef Evt_methods[] = {
 	{"SystemEvent", (PyCFunction)Evt_SystemEvent, 1,
 	 "(EventRecord theEvent) -> (Boolean _rv)"},
 #endif
+
+#if TARGET_API_MAC_CARBON
+	{"GetGlobalMouse", (PyCFunction)Evt_GetGlobalMouse, 1,
+	 "() -> (Point globalMouse)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"GetCurrentKeyModifiers", (PyCFunction)Evt_GetCurrentKeyModifiers, 1,
+	 "() -> (UInt32 _rv)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"CheckEventQueueForUserCancel", (PyCFunction)Evt_CheckEventQueueForUserCancel, 1,
+	 "() -> (Boolean _rv)"},
+#endif
 	{"WaitNextEvent", (PyCFunction)Evt_WaitNextEvent, 1,
 	 "(EventMask eventMask, UInt32 sleep [,RegionHandle]) -> (Boolean _rv, EventRecord theEvent)"},
 	{NULL, NULL, 0}
@@ -417,7 +483,7 @@ void initEvt()
 	Evt_Error = PyMac_GetOSErrException();
 	if (Evt_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Evt_Error) != 0)
-		Py_FatalError("can't initialize Evt.Error");
+		return;
 }
 
 /* ========================= End module Evt ========================= */

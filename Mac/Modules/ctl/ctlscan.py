@@ -8,7 +8,8 @@ from scantools import Scanner
 from bgenlocations import TOOLBOXDIR
 
 def main():
-	input = "Controls.h"
+#	input = "Controls.h" # Universal Headers < 3.3
+	input = ["Controls.h", "ControlDefinitions.h"] # Universal Headers >= 3.3
 	output = "ctlgen.py"
 	defsoutput = TOOLBOXDIR + "Controls.py"
 	scanner = MyScanner(input, output, defsoutput)
@@ -85,14 +86,43 @@ class MyScanner(Scanner):
 				'GetAuxiliaryControlRecord',
 				'SetControlColor',
 				# These have suddenly disappeared in UH 3.3.2...
-				'GetBevelButtonMenuValue',
-				'SetBevelButtonMenuValue',
-				'GetBevelButtonMenuHandle',
-				'SetBevelButtonTransform',
-				'SetImageWellTransform',
-				'GetTabContentRect',
-				'SetTabEnabled',
-				'SetDisclosureTriangleLastValue',
+##				'GetBevelButtonMenuValue',
+##				'SetBevelButtonMenuValue',
+##				'GetBevelButtonMenuHandle',
+##				'SetBevelButtonTransform',
+##				'SetImageWellTransform',
+##				'GetTabContentRect',
+##				'SetTabEnabled',
+##				'SetDisclosureTriangleLastValue',
+			]),
+			('#if TARGET_API_MAC_CARBON', [
+				'IsAutomaticControlDragTrackingEnabledForWindow',
+				'SetAutomaticControlDragTrackingEnabledForWindow',
+				'GetControlByID',
+				'IsControlDragTrackingEnabled',
+				'SetControlDragTrackingEnabled',
+				'GetControlPropertyAttributes',
+				'ChangeControlPropertyAttributes',
+				'GetControlID',
+				'SetControlID',
+				'HandleControlSetCursor',
+				'GetControlClickActivation',
+				'HandleControlContextualMenuClick',
+			]),
+			('#if ACCESSOR_CALLS_ARE_FUNCTIONS', [
+				# XXX These are silly, they should be #defined to access the fields
+				# directly. Later...
+				'GetControlBounds',
+				'IsControlHilited',
+				'GetControlHilite',
+				'GetControlOwner',
+				'GetControlDataHandle',
+				'GetControlPopupMenuHandle',
+				'GetControlPopupMenuID',
+				'SetControlDataHandle',
+				'SetControlBounds',
+				'SetControlPopupMenuHandle',
+				'SetControlPopupMenuID',
 			])]
 			
 	def makeblacklisttypes(self):
@@ -101,6 +131,11 @@ class MyScanner(Scanner):
 			'ControlActionUPP',
 			'ControlButtonContentInfoPtr',
 			'Ptr',
+			'ControlDefSpec', # Don't know how to do this yet
+			'ControlDefSpec_ptr', # ditto
+			'Collection', # Ditto
+			'DragTrackingMessage', # Needs Drag module, must implement later
+			'DragReference', # ditto
 			]
 
 	def makerepairinstructions(self):
