@@ -67,6 +67,8 @@ Core and builtins
 -----------------
 
 - Unicode file name processing for Windows (PEP 277) is implemented.
+  All platforms now have an os.path.supports_unicode_filenames attribute,
+  which is set to True on Windows NT/2000/XP, and False elsewhere.
 
 - Codec error handling callbacks (PEP 293) are implemented.
   Error handling in unicode.encode or str.decode can now be customized.
@@ -192,6 +194,10 @@ Core and builtins
   created via the popen family (on win2k; we can't make win9x work
   reliably) are also interrupted (as generally happens on for Linux/Unix.)
   [SF bugs 231273, 439992 and 581232]
+
+- sys.getwindowsversion() has been added on Windows.  This
+  returns a tuple with information about the version of Windows
+  currently running.
 
 - Slices and repetitions of buffer objects now consistently return
   a string.  Formerly, strings would be returned most of the time,
