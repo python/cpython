@@ -2812,8 +2812,9 @@ call_object(PyObject *func, PyObject *arg, PyObject *kw)
 	else if ((call = func->ob_type->tp_call) != NULL)
 		result = (*call)(func, arg, kw);
 	else {
-		PyErr_Format(PyExc_TypeError, "object is not callable: %s",
-			     PyString_AS_STRING(PyObject_Repr(func)));
+		PyErr_Format(PyExc_TypeError,
+			     "object of type '%.100s' is not callable",
+			     func->ob_type->tp_name);
 		return NULL;
 	}
         if (result == NULL && !PyErr_Occurred())
