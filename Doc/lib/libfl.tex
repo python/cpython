@@ -1,6 +1,8 @@
 \section{Built-in Module \module{fl}}
-\label{module-fl}
-\bimodindex{fl}
+\declaremodule{builtin}{fl}
+
+\modulesynopsis{FORMS library interface for GUI applications.}
+
 
 This module provides an interface to the FORMS Library\index{FORMS
 Library} by Mark Overmars\index{Overmars, Mark}.  The source for the
@@ -463,8 +465,10 @@ FORMS objects have these data attributes; see the FORMS documentation:
 \end{tableiii}
 
 \section{Standard Module \module{FL}}
-\label{module-FLuppercase}
-\stmodindex{FL}
+\declaremodule{standard}{FL}
+
+\modulesynopsis{Constants used with the \module{fl} module.}
+
 
 This module defines symbolic constants needed to use the built-in
 module \module{fl} (see above); they are equivalent to those defined in
@@ -478,8 +482,10 @@ from FL import *
 \end{verbatim}
 
 \section{Standard Module \module{flp}}
-\label{module-flp}
-\stmodindex{flp}
+\declaremodule{standard}{flp}
+
+\modulesynopsis{Loading functions for stored FORMS designs.}
+
 
 This module defines functions that can read form definitions created
 by the `form designer' (\program{fdesign}) program that comes with the

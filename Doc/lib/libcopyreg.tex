@@ -1,13 +1,13 @@
 \section{Standard Module \module{copy_reg}}
-% Note that the label is a little off; the underscore causes LaTeX to
-% yell & scream.
-\label{module-copyreg}
-\stmodindex{copy_reg}
+\declaremodule[copyreg]{standard}{copy_reg}
 
-The \code{copy_reg} module provides support for the
-\code{pickle}\refstmodindex{pickle} and
-\code{cPickle}\refbimodindex{cPickle} modules.  The
-\code{copy}\refstmodindex{copy} module is likely to use this in the
+\modulesynopsis{Register \module{pickle} support functions.}
+
+
+The \module{copy_reg} module provides support for the
+\module{pickle}\refstmodindex{pickle} and
+\module{cPickle}\refbimodindex{cPickle} modules.  The
+\module{copy}\refstmodindex{copy} module is likely to use this in the
 future as well.  It provides configuration information about object
 constructors which are not classes.  Such constructors may be factory
 functions or class instances.

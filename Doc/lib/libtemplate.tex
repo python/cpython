@@ -4,29 +4,27 @@
 
 % ==== 1. ====
 % Choose one of the following section headers and index entries;
-% \section generates the section header,
-% \bimodindex or \stmodindex generates an index entry for this
-% module.  Note that these should only be used for the defining entry
-% for the module.  Other references to the module should use
-% \refbimodindex, \refstmodindex, \refexmodindex or \refmodindex, as
-% appropriate.  (Just prepend "ref" to the csname of the \*modindex
-% macro used in the module definition.)
-%
-% The \label{module-spam} line is for the \seealso command.
+% \section generates the section header, \declmodule produces the
+% appropriate index entry for this module.  Note that these should
+% only be used for the defining entry for the module.  Other
+% references to the module should use \refbimodindex, \refstmodindex,
+% \refexmodindex or \refmodindex, as appropriate.
 
 \section{Built-in Module \module{spam}}	% If implemented in C, in
-\bimodindex{spam}			% standard library
+\declaremodule{builtin}{spam}		% standard library
 
 \section{Standard Module \module{spam}}	% If implemented in Python, in
-\stmodindex{spam}			% standard library
+\declaremodule{standard}{spam}		% standard library
 
 \section{Extension Module \module{spam}}% If implemented in C, but not 
-\exmodindex{spam}			% in standard library
+\declaremodule{extension}{spam}		% in standard library
 
 \section{Module \module{spam}}		% If implemented in Python, but not 
-\modindex{spam}				% in standard library
+\declaremodule{}{spam}			% in standard library
 
-\label{module-spam}
+
+\modulesynopsis{This is a one-line descrition, for the chapter header.}
+
 
 % ==== 2. ====
 % Give a short overview of what the module does.

@@ -1,6 +1,8 @@
 \section{Built-in Module \module{gl}}
-\label{module-gl}
-\bimodindex{gl}
+\declaremodule{builtin}{gl}
+
+\modulesynopsis{Functions from the Silicon Graphics \emph{Graphics Library}.}
+
 
 This module provides access to the Silicon Graphics
 \emph{Graphics Library}.
@@ -183,15 +185,22 @@ def main():
 main()
 \end{verbatim}
 %
-\section{Standard Modules \module{GL} and \module{DEVICE}}
-\nodename{GL and DEVICE}
-\stmodindex{GL}
-\stmodindex{DEVICE}
+\section{Standard Module \module{DEVICE}}
+\declaremodule{standard}{DEVICE}
 
-These modules define the constants used by the Silicon Graphics
-\emph{Graphics Library}
-that C programmers find in the header files
-\file{<gl/gl.h>}
-and
-\file{<gl/device.h>}.
-Read the module source files for details.
+\modulesynopsis{Constants used with the \module{gl} module.}
+
+This modules defines the constants used by the Silicon Graphics
+\emph{Graphics Library} that C programmers find in the header file
+\code{<gl/device.h>}.
+Read the module source file for details.
+
+
+\section{Standard Module \module{GL}}
+\declaremodule{standard}{GL}
+
+\modulesynopsis{Constants used with the \module{gl} module.}
+
+This module contains constants used by the Silicon Graphics
+\emph{Graphics Library} from the C header file \code{<gl/gl.h>}.
+Read the module source file for details.

@@ -1,7 +1,8 @@
 \section{Built-in Module \module{sys}}
-\label{module-sys}
+\declaremodule{builtin}{sys}
 
-\bimodindex{sys}
+\modulesynopsis{Access system specific parameters and functions.}
+
 This module provides access to some variables used or maintained by the
 interpreter and to functions that interact strongly with the interpreter.
 It is always available.
@@ -13,7 +14,7 @@ It is always available.
   dependent whether this is a full pathname or not).
   If the command was executed using the \samp{-c} command line option
   to the interpreter, \code{argv[0]} is set to the string
-  \code{"-c"}.
+  \code{'-c'}.
   If no script name was passed to the Python interpreter,
   \code{argv} has zero length.
 \end{datadesc}
@@ -81,13 +82,13 @@ the other two are undefined.
 \begin{datadesc}{exec_prefix}
 A string giving the site-specific
 directory prefix where the platform-dependent Python files are
-installed; by default, this is also \code{"/usr/local"}.  This can be
+installed; by default, this is also \code{'/usr/local'}.  This can be
 set at build time with the \code{-}\code{-exec-prefix} argument to the
 \program{configure} script.  Specifically, all configuration files
 (e.g. the \file{config.h} header file) are installed in the directory
-\code{exec_prefix + "/lib/python\var{version}/config"}, and shared library
+\code{exec_prefix + '/lib/python\var{version}/config'}, and shared library
 modules are installed in
-\code{exec_prefix + "/lib/python\var{version}/lib-dynload"},
+\code{exec_prefix + '/lib/python\var{version}/lib-dynload'},
 where \var{version} is equal to \code{version[:3]}.
 \end{datadesc}
 
@@ -116,7 +117,7 @@ interpreter, on systems where this makes sense.
 \begin{funcdesc}{getrefcount}{object}
 Return the reference count of the \var{object}.  The count returned is
 generally one higher than you might expect, because it includes the
-(temporary) reference as an argument to \code{getrefcount()}.
+(temporary) reference as an argument to \function{getrefcount()}.
 \end{funcdesc}
 
 \begin{datadesc}{last_type}
@@ -157,7 +158,7 @@ complement binary arithmetic.
 \begin{datadesc}{path}
 \indexiii{module}{search}{path}
   A list of strings that specifies the search path for modules.
-  Initialized from the environment variable \code{\$PYTHONPATH}, or an
+  Initialized from the environment variable \envvar{PYTHONPATH}, or an
   installation-dependent default.  
 
 The first item of this list, \code{path[0]}, is the 
@@ -167,7 +168,7 @@ interpreter is invoked interactively or if the script is read from
 standard input), \code{path[0]} is the empty string, which directs 
 Python to search modules in the current directory first.  Notice that 
 the script directory is inserted \emph{before} the entries inserted as 
-a result of \code{\$PYTHONPATH}.  
+a result of \envvar{PYTHONPATH}.  
 \end{datadesc}
 
 \begin{datadesc}{platform}
@@ -179,12 +180,12 @@ components to \code{path}, for instance.
 \begin{datadesc}{prefix}
 A string giving the site-specific directory prefix where the platform
 independent Python files are installed; by default, this is the string
-\code{"/usr/local"}.  This can be set at build time with the
+\code{'/usr/local'}.  This can be set at build time with the
 \code{-}\code{-prefix} argument to the \program{configure} script.  The main
 collection of Python library modules is installed in the directory
-\code{prefix + "/lib/python\var{version}"} while the platform
+\code{prefix + '/lib/python\var{version}'} while the platform
 independent header files (all except \file{config.h}) are stored in
-\code{prefix + "/include/python\var{version}"},
+\code{prefix + '/include/python\var{version}'},
 where \var{version} is equal to \code{version[:3]}.
 
 \end{datadesc}
