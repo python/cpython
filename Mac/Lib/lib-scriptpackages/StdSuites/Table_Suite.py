@@ -1,7 +1,7 @@
 """Suite Table Suite: Classes for manipulating tables
 Level 1, version 1
 
-Generated from Macintosh HD:Systeemmap:Extensies:AppleScript
+Generated from Moes:Systeemmap:Extensies:AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -81,15 +81,15 @@ _Enum_prtn = {
 #
 _classdeclarations = {
 	'ccel' : cell,
-	'ctbl' : table,
 	'ccol' : column,
+	'ctbl' : table,
 	'crow' : row,
 }
 
 _propdeclarations = {
-	'ppro' : protection,
-	'pfor' : formula,
 	'pnam' : name,
+	'pfor' : formula,
+	'ppro' : protection,
 }
 
 _compdeclarations = {

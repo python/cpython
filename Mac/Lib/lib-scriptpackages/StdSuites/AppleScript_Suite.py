@@ -1,7 +1,7 @@
 """Suite AppleScript Suite: Standard terms for AppleScript
 Level 1, version 1
 
-Generated from Macintosh HD:Systeemmap:Extensies:AppleScript
+Generated from Moes:Systeemmap:Extensies:AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -305,7 +305,7 @@ class AppleScript_Suite_Events:
 		Returns: anything
 		"""
 		_code = 'ascr'
-		_subcode = '\255   '
+		_subcode = '\xad   '
 
 		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
@@ -785,14 +785,12 @@ lists = list
 class linked_list(aetools.ComponentItem):
 	"""linked list - An ordered collection of items """
 	want = 'llst'
-# repeated property length the length of a list
 
 linked_lists = linked_list
 
 class vector(aetools.ComponentItem):
 	"""vector - An ordered collection of items """
 	want = 'vect'
-# repeated property length the length of a list
 
 vectors = vector
 
@@ -1882,37 +1880,37 @@ _Enum_eMds = {
 }
 
 _Enum_ekst = {
-	'escape_key' : 'ks5\000',	# 
-	'delete_key' : 'ks3\000',	# 
-	'tab_key' : 'ks0\000',	# 
-	'return_key' : 'ks$\000',	# 
-	'clear_key' : 'ksG\000',	# 
-	'enter_key' : 'ksL\000',	# 
-	'up_arrow_key' : 'ks~\000',	# 
-	'down_arrow_key' : 'ks}\000',	# 
-	'left_arrow_key' : 'ks{\000',	# 
-	'right_arrow_key' : 'ks|\000',	# 
-	'help_key' : 'ksr\000',	# 
-	'home_key' : 'kss\000',	# 
-	'page_up_key' : 'kst\000',	# 
-	'page_down_key' : 'ksy\000',	# 
-	'forward_del_key' : 'ksu\000',	# 
-	'end_key' : 'ksw\000',	# 
-	'F1_key' : 'ksz\000',	# 
-	'F2_key' : 'ksx\000',	# 
-	'F3_key' : 'ksc\000',	# 
-	'F4_key' : 'ksv\000',	# 
-	'F5_key' : 'ks`\000',	# 
-	'F6_key' : 'ksa\000',	# 
-	'F7_key' : 'ksb\000',	# 
-	'F8_key' : 'ksd\000',	# 
-	'F9_key' : 'kse\000',	# 
-	'F10_key' : 'ksm\000',	# 
-	'F11_key' : 'ksg\000',	# 
-	'F12_key' : 'kso\000',	# 
-	'F13_key' : 'ksi\000',	# 
-	'F14_key' : 'ksk\000',	# 
-	'F15_key' : 'ksq\000',	# 
+	'escape_key' : 'ks5\x00',	# 
+	'delete_key' : 'ks3\x00',	# 
+	'tab_key' : 'ks0\x00',	# 
+	'return_key' : 'ks$\x00',	# 
+	'clear_key' : 'ksG\x00',	# 
+	'enter_key' : 'ksL\x00',	# 
+	'up_arrow_key' : 'ks~\x00',	# 
+	'down_arrow_key' : 'ks}\x00',	# 
+	'left_arrow_key' : 'ks{\x00',	# 
+	'right_arrow_key' : 'ks|\x00',	# 
+	'help_key' : 'ksr\x00',	# 
+	'home_key' : 'kss\x00',	# 
+	'page_up_key' : 'kst\x00',	# 
+	'page_down_key' : 'ksy\x00',	# 
+	'forward_del_key' : 'ksu\x00',	# 
+	'end_key' : 'ksw\x00',	# 
+	'F1_key' : 'ksz\x00',	# 
+	'F2_key' : 'ksx\x00',	# 
+	'F3_key' : 'ksc\x00',	# 
+	'F4_key' : 'ksv\x00',	# 
+	'F5_key' : 'ks`\x00',	# 
+	'F6_key' : 'ksa\x00',	# 
+	'F7_key' : 'ksb\x00',	# 
+	'F8_key' : 'ksd\x00',	# 
+	'F9_key' : 'kse\x00',	# 
+	'F10_key' : 'ksm\x00',	# 
+	'F11_key' : 'ksg\x00',	# 
+	'F12_key' : 'kso\x00',	# 
+	'F13_key' : 'ksi\x00',	# 
+	'F14_key' : 'ksk\x00',	# 
+	'F15_key' : 'ksq\x00',	# 
 }
 
 
@@ -1920,155 +1918,155 @@ _Enum_ekst = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
+	'jul ' : July,
+	'may ' : May,
+	'TEXT' : string,
+	'cmet' : cubic_metres,
+	'STXT' : styled_text,
+	'nds ' : number_2c__date_or_text,
+	'feet' : feet,
+	'feb ' : February,
 	'nmbr' : number,
-	'ctxt' : text,
-	'fss ' : file_specification,
-	'sat ' : Saturday,
-	'ccmt' : cubic_centimetres,
-	'cfet' : cubic_feet,
-	'lbs ' : pounds,
-	'yard' : yards,
-	'sqyd' : square_yards,
-	'mach' : machine,
-	'utxt' : Unicode_text,
-	'cstr' : C_string,
-	'rdat' : data,
-	'doub' : real,
-	'hand' : handler,
-	'sutx' : styled_Unicode_text,
-	'sqmi' : square_miles,
-	'undf' : _empty_ae_name,
-	'reco' : record,
-	'cha ' : character,
-	'cobj' : item,
-	'kfrm' : reference_form,
-	'enum' : constant,
-	'inch' : inches,
-	'sqrm' : square_metres,
-	'bool' : boolean,
-	'prop' : property,
-	'****' : anything,
-	'scpt' : script,
-	'kgrm' : kilograms,
-	'sep ' : September,
-	'snd ' : sound,
-	'mon ' : Monday,
-	'capp' : app,
-	'lr  ' : list_or_record,
-	'fri ' : Friday,
-	'cuin' : cubic_inches,
-	'mar ' : March,
-	'galn' : gallons,
-	'encs' : encoded_string,
-	'litr' : litres,
-	'case' : upper_case,
-	'styl' : styled_Clipboard_text,
-	'llst' : linked_list,
-	'pcls' : _class,
-	'jun ' : June,
-	'ns  ' : number_or_string,
-	'ozs ' : ounces,
-	'mnth' : month,
-	'metr' : metres,
-	'jan ' : January,
-	'pstr' : Pascal_string,
-	'alis' : alias,
-	'gram' : grams,
-	'msng' : missing_value,
-	'qrts' : quarts,
-	'nov ' : November,
-	'list' : list,
-	'sqft' : square_feet,
-	'kmtr' : kilometres,
-	'cRGB' : RGB_color,
-	'itxt' : international_text,
-	'scnd' : seconds,
-	'apr ' : April,
-	'nd  ' : number_or_date,
-	'wkdy' : weekday,
-	'vect' : vector,
-	'obj ' : reference,
-	'sqkm' : square_kilometres,
-	'dec ' : December,
-	'wed ' : Wednesday,
-	'cyrd' : cubic_yards,
-	'vers' : version,
-	'tue ' : Tuesday,
-	'prep' : preposition,
-	'type' : type_class,
-	'citm' : text_item,
-	'citl' : writing_code_info,
-	'sf  ' : alias_or_string,
-	'degc' : degrees_Celsius,
-	'long' : integer,
-	'ls  ' : list_or_string,
-	'PICT' : picture,
-	'zone' : zone,
+	'mile' : miles,
+	'kprs' : keystroke,
 	'psct' : writing_code,
+	'degf' : degrees_Fahrenheit,
 	'lrs ' : list_2c__record_or_text,
+	'ldt ' : date,
+	'litr' : litres,
+	'nd  ' : number_or_date,
 	'cmtr' : centimetres,
 	'evnt' : event,
-	'oct ' : October,
-	'degk' : degrees_Kelvin,
-	'ldt ' : date,
-	'thu ' : Thursday,
-	'degf' : degrees_Fahrenheit,
-	'kprs' : keystroke,
-	'mile' : miles,
-	'feb ' : February,
-	'feet' : feet,
-	'nds ' : number_2c__date_or_text,
-	'STXT' : styled_text,
-	'cmet' : cubic_metres,
+	'pstr' : Pascal_string,
+	'zone' : zone,
+	'PICT' : picture,
+	'ls  ' : list_or_string,
+	'long' : integer,
+	'sf  ' : alias_or_string,
+	'citl' : writing_code_info,
+	'citm' : text_item,
+	'mach' : machine,
+	'type' : type_class,
+	'prep' : preposition,
+	'tue ' : Tuesday,
+	'case' : upper_case,
+	'vers' : version,
+	'wed ' : Wednesday,
+	'dec ' : December,
+	'sqkm' : square_kilometres,
+	'obj ' : reference,
+	'vect' : vector,
+	'wkdy' : weekday,
+	'cRGB' : RGB_color,
 	'sun ' : Sunday,
+	'itxt' : international_text,
+	'scnd' : seconds,
+	'mar ' : March,
+	'kmtr' : kilometres,
+	'sqft' : square_feet,
+	'list' : list,
+	'doub' : real,
+	'nov ' : November,
+	'qrts' : quarts,
+	'degc' : degrees_Celsius,
+	'msng' : missing_value,
+	'alis' : alias,
+	'jan ' : January,
+	'metr' : metres,
+	'mnth' : month,
+	'ns  ' : number_or_string,
+	'jun ' : June,
 	'aug ' : August,
-	'may ' : May,
-	'jul ' : July,
-	'TEXT' : string,
+	'llst' : linked_list,
+	'styl' : styled_Clipboard_text,
+	'encs' : encoded_string,
+	'galn' : gallons,
+	'cuin' : cubic_inches,
+	'fri ' : Friday,
+	'sutx' : styled_Unicode_text,
+	'lr  ' : list_or_record,
+	'degk' : degrees_Kelvin,
+	'mon ' : Monday,
+	'snd ' : sound,
+	'pcls' : _class,
+	'kgrm' : kilograms,
+	'scpt' : script,
+	'****' : anything,
+	'prop' : property,
+	'reco' : record,
+	'bool' : boolean,
+	'oct ' : October,
+	'sqrm' : square_metres,
+	'inch' : inches,
+	'kfrm' : reference_form,
+	'cobj' : item,
+	'gram' : grams,
+	'cha ' : character,
+	'apr ' : April,
+	'undf' : _empty_ae_name,
+	'capp' : app,
+	'enum' : constant,
+	'hand' : handler,
+	'sqmi' : square_miles,
+	'rdat' : data,
+	'cstr' : C_string,
+	'utxt' : Unicode_text,
+	'thu ' : Thursday,
+	'sqyd' : square_yards,
+	'yard' : yards,
+	'cyrd' : cubic_yards,
+	'ozs ' : ounces,
+	'lbs ' : pounds,
+	'cfet' : cubic_feet,
+	'ccmt' : cubic_centimetres,
+	'sat ' : Saturday,
+	'sep ' : September,
+	'fss ' : file_specification,
+	'ctxt' : text,
 }
 
 _propdeclarations = {
-	'pscd' : script_code,
-	'rslt' : result,
-	'pnam' : name,
-	'time' : time,
-	'txdl' : text_item_delimiters,
-	'prln' : print_length,
-	'prdp' : print_depth,
-	'kMod' : modifiers,
-	'days' : days,
-	'spac' : space,
-	'kMsg' : key,
-	'plcd' : language_code,
-	'ret ' : _return,
-	'tstr' : time_string,
-	'hour' : hours,
-	'tab ' : tab,
-	'rvse' : reverse,
-	'wkdy' : weekday,
-	'day ' : day,
-	'ID  ' : id,
-	'c@#^' : _3c_Inheritance_3e_,
-	'kknd' : key_kind,
-	'ascr' : AppleScript,
-	'rest' : rest,
-	'dstr' : date_string,
-	'min ' : minutes,
-	'pi  ' : pi,
-	'leng' : length,
-	'year' : year,
-	'pare' : parent,
-	'mnth' : month,
 	'week' : weeks,
+	'kMod' : modifiers,
+	'pare' : parent,
+	'leng' : length,
+	'hour' : hours,
+	'mnth' : month,
+	'min ' : minutes,
+	'wkdy' : weekday,
+	'dstr' : date_string,
+	'rest' : rest,
+	'ascr' : AppleScript,
+	'kknd' : key_kind,
+	'c@#^' : _3c_Inheritance_3e_,
+	'ID  ' : id,
+	'year' : year,
+	'rvse' : reverse,
+	'tab ' : tab,
+	'tstr' : time_string,
+	'pi  ' : pi,
+	'ret ' : _return,
+	'plcd' : language_code,
+	'kMsg' : key,
+	'spac' : space,
+	'days' : days,
+	'txdl' : text_item_delimiters,
+	'prdp' : print_depth,
+	'prln' : print_length,
+	'pscd' : script_code,
+	'time' : time,
+	'pnam' : name,
+	'rslt' : result,
+	'day ' : day,
 }
 
 _compdeclarations = {
 }
 
 _enumdeclarations = {
-	'boov' : _Enum_boov,
-	'ekst' : _Enum_ekst,
-	'misc' : _Enum_misc,
-	'cons' : _Enum_cons,
 	'eMds' : _Enum_eMds,
+	'cons' : _Enum_cons,
+	'misc' : _Enum_misc,
+	'ekst' : _Enum_ekst,
+	'boov' : _Enum_boov,
 }
