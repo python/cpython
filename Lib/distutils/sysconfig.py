@@ -19,6 +19,19 @@ from errors import DistutilsPlatformError
 PREFIX = os.path.normpath(sys.prefix)
 EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 
+# Boolean; if it's true, we're still building Python, so
+# we use different (hard-wired) directories.
+
+python_build = 0
+
+def set_python_build():
+    """Set the python_build flag to true; this means that we're
+    building Python itself.  Only called from the setup.py script
+    shipped with Python.
+    """
+    
+    global python_build
+    python_build = 1
 
 def get_python_inc(plat_specific=0, prefix=None):
     """Return the directory containing installed Python header files.
@@ -34,6 +47,8 @@ def get_python_inc(plat_specific=0, prefix=None):
     if prefix is None:
         prefix = (plat_specific and EXEC_PREFIX or PREFIX)
     if os.name == "posix":
+        if python_build:
+            return "Include/"
         return os.path.join(prefix, "include", "python" + sys.version[:3])
     elif os.name == "nt":
         return os.path.join(prefix, "Include") # include or Include?
@@ -119,12 +134,15 @@ def customize_compiler (compiler):
 
 def get_config_h_filename():
     """Return full pathname of installed config.h file."""
-    inc_dir = get_python_inc(plat_specific=1)
+    if python_build: inc_dir = '.'
+    else:            inc_dir = get_python_inc(plat_specific=1)
     return os.path.join(inc_dir, "config.h")
 
 
 def get_makefile_filename():
     """Return full pathname of installed Makefile from the Python build."""
+    if python_build:
+        return './Modules/Makefile'
     lib_dir = get_python_lib(plat_specific=1, standard_lib=1)
     return os.path.join(lib_dir, "config", "Makefile")
 
