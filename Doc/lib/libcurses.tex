@@ -834,7 +834,9 @@ not be interpreted, and will be left in the input stream as is.
 \end{methoddesc}
 
 \begin{methoddesc}{noutrefresh}{}
-Mark for refresh but wait.
+Mark for refresh but wait.  This function updates the data structure
+representing the desired state of the window, but does not force
+an update of the physical screen.
 \end{methoddesc}
 
 \begin{methoddesc}{putwin}{file}
