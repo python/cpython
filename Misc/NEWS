@@ -21,6 +21,10 @@ Extension modules
 - itertools.islice() now accepts stop=None as documented.
   Fixes SF bug #730685.
 
+- the bsddb185 module is built in one restricted instance -
+  /usr/include/db.h exists and defines HASHVERSION to be 2.  This is true
+  for many BSD-derived systems.
+
 Library
 -------
 
