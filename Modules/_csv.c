@@ -776,6 +776,7 @@ Reader_iternext(ReaderObj *self)
 static void
 Reader_dealloc(ReaderObj *self)
 {
+	PyObject_GC_UnTrack(self);
         Py_XDECREF(self->dialect);
         Py_XDECREF(self->input_iter);
         Py_XDECREF(self->fields);
@@ -909,6 +910,7 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
 		return NULL;
 	}
 
+	PyObject_GC_Track(self);
         return (PyObject *)self;
 }
 
@@ -1234,6 +1236,7 @@ static struct PyMemberDef Writer_memberlist[] = {
 static void
 Writer_dealloc(WriterObj *self)
 {
+	PyObject_GC_UnTrack(self);
         Py_XDECREF(self->dialect);
         Py_XDECREF(self->writeline);
 	if (self->rec != NULL)
@@ -1349,6 +1352,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
                 Py_DECREF(self);
                 return NULL;
         }
+	PyObject_GC_Track(self);
         return (PyObject *)self;
 }
 
