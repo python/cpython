@@ -8,9 +8,8 @@ import re
 from cStringIO import StringIO
 from types import ListType
 
-# Intrapackage imports
-import Errors
-import Message
+from email import Errors
+from email import Message
 
 EMPTYSTRING = ''
 NL = '\n'
@@ -176,7 +175,7 @@ class Parser:
             except Errors.HeaderParseError:
                 msg = self._class()
                 self._parsebody(msg, fp)
-            container.set_payload(msg)
+            container.attach(msg)
         else:
             container.set_payload(fp.read())
 
