@@ -528,15 +528,15 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 	   we must allocate an additional array, 'recycle', into which
 	   we temporarily copy the items that are deleted from the
 	   list. :-( */
-	PyObject *recycled[8];
-	PyObject **recycle = recycled; /* will allocate more if needed */
+	PyObject *recycle_on_stack[8];
+	PyObject **recycle = recycle_on_stack; /* will allocate more if needed */
 	PyObject **item;
 	PyObject **vitem = NULL;
 	PyObject *v_as_SF = NULL; /* PySequence_Fast(v) */
 	int n; /* # of elements in replacement list */
 	int norig; /* # of elements in list getting replaced */
 	int d; /* Change in size */
-	int k; /* Loop index */
+	int k;
 	size_t s;
 	int result = -1;	/* guilty until proved innocent */
 #define b ((PyListObject *)v)
@@ -578,7 +578,7 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 	item = a->ob_item;
 	/* recycle the items that we are about to remove */
 	s = norig * sizeof(PyObject *);
-	if (s > sizeof(recycled)) {
+	if (s > sizeof(recycle_on_stack)) {
 		recycle = (PyObject **)PyMem_MALLOC(s);
 		if (recycle == NULL) {
 			PyErr_NoMemory();
@@ -594,30 +594,23 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		item = a->ob_item;
 	}
 	else if (d > 0) { /* Insert d items */
-		s = a->ob_size;
-		if (list_resize(a, s+d) < 0)
+		k = a->ob_size;
+		if (list_resize(a, k+d) < 0)
 			goto Error;
 		item = a->ob_item;
 		memmove(&item[ihigh+d], &item[ihigh],
-			(s - ihigh)*sizeof(PyObject *));
+			(k - ihigh)*sizeof(PyObject *));
 	}
 	for (k = 0; k < n; k++, ilow++) {
 		PyObject *w = vitem[k];
 		Py_XINCREF(w);
 		item[ilow] = w;
 	}
-	/* Convoluted:  there's some obscure reason for wanting to do
-	 * the decrefs "backwards", but C doesn't guarantee you can compute
-	 * a pointer to one slot *before* an allocated vector.  So checking
-	 * for item >= recycle is incorrect.
-	 */
-	for (item = recycle + norig; item > recycle; ) {
-		--item;
-		Py_XDECREF(*item);
-	}
+	for (k = norig - 1; k >= 0; --k)
+		Py_XDECREF(recycle[k]);
 	result = 0;
  Error:
-	if (recycle != recycled)
+	if (recycle != recycle_on_stack)
 		PyMem_FREE(recycle);
 	Py_XDECREF(v_as_SF);
 	return result;
