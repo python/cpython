@@ -47,7 +47,9 @@ def istoken(s):
     return _token_rx.match(s) is not None
 
 
-def do_convert(ifp, ofp, xml=0):
+def do_convert(ifp, ofp, xml=0, autoclose=()):
+    if xml:
+        autoclose = ()
     attrs = {}
     lastopened = None
     knownempties = []
@@ -92,7 +94,9 @@ def do_convert(ifp, ofp, xml=0):
                 if not lastempty:
                     ofp.write("</%s>" % data)
             elif data not in knownempties:
-                if lastopened == data:
+                if data in autoclose:
+                    pass
+                elif lastopened == data:
                     ofp.write("</>")
                 else:
                     ofp.write("</%s>" % data)
@@ -115,28 +119,35 @@ def do_convert(ifp, ofp, xml=0):
         fp.close()
 
 
-def sgml_convert(ifp, ofp):
-    return do_convert(ifp, ofp, xml=0)
+def sgml_convert(ifp, ofp, autoclose):
+    return do_convert(ifp, ofp, xml=0, autoclose=autoclose)
 
 
-def xml_convert(ifp, ofp):
-    return do_convert(ifp, ofp, xml=1)
+def xml_convert(ifp, ofp, autoclose):
+    return do_convert(ifp, ofp, xml=1, autoclose=autoclose)
+
+
+AUTOCLOSE = ("para",)
 
 
 def main():
     import getopt
     import sys
     #
+    autoclose = AUTOCLOSE
     convert = sgml_convert
     xml = 0
     xmldecl = 0
-    opts, args = getopt.getopt(sys.argv[1:], "dx", ["declare", "xml"])
+    opts, args = getopt.getopt(sys.argv[1:], "adx",
+                               ["autoclose", "declare", "xml"])
     for opt, arg in opts:
         if opt in ("-d", "--declare"):
             xmldecl = 1
         elif opt in ("-x", "--xml"):
             xml = 1
             convert = xml_convert
+        elif opt in ("-a", "--autoclose"):
+            autoclose = string.split(arg, ",")
     if len(args) == 0:
         ifp = sys.stdin
         ofp = sys.stdout
@@ -153,7 +164,7 @@ def main():
     try:
         if xml and xmldecl:
             opf.write('<?xml version="1.0" encoding="iso8859-1"?>\n')
-        convert(ifp, ofp)
+        convert(ifp, ofp, autoclose)
     except IOError, (err, msg):
         if err != errno.EPIPE:
             raise
