@@ -1,8 +1,27 @@
 dnl Process this file with autoconf 2.0 or later to make a configure script.
 AC_REVISION($Revision$)
-AC_PREREQ(2.0)
+AC_PREREQ(2.50)
 AC_INIT(Include/object.h)
 AC_CONFIG_HEADER(pyconfig.h)
+
+# This is for stuff that absolutely must end up in pyconfig.h.
+# Please use pyport.h instead, if possible.
+AH_BOTTOM([
+#ifdef __CYGWIN__
+#ifdef USE_DL_IMPORT
+#define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
+#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
+#else
+#define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
+#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
+#endif
+#endif
+
+/* Define the macros needed if on a UnixWare 7.x system. */
+#if defined(__USLC__) && defined(__SCO_VERSION__)
+#define STRICT_SYSV_CURSES /* Don't use ncurses extensions */
+#endif
+])
 
 # Set VERSION so we only need to edit in one place (i.e., here)
 AC_SUBST(VERSION)
@@ -1065,6 +1084,14 @@ if test "${with_thread+set}" != set; then
 fi],
 AC_MSG_RESULT(no))
 
+# Templates for things AC_DEFINEd more than once.
+# For a single AC_DEFINE, no template is needed.
+AH_TEMPLATE(C_THREADS,[Define if you have the Mach cthreads package])
+AH_TEMPLATE(_REENTRANT,
+  [Define to force use of thread-safe errno, h_errno, and other functions])
+AH_TEMPLATE(WITH_THREAD,
+  [Define if you want to compile in rudimentary thread support])
+
 AC_MSG_CHECKING(for --with-threads)
 AC_ARG_WITH(threads,
 [  --with(out)-threads[=DIRECTORY] disable/enable thread support])
@@ -1237,6 +1264,7 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
 fi
 
 # Check for enable-ipv6
+AH_TEMPLATE(ENABLE_IPV6, [Define if --enable-ipv6 is specified])
 AC_MSG_CHECKING([if --enable-ipv6 is specified])
 AC_ARG_ENABLE(ipv6,
 [  --enable-ipv6                   Enable ipv6 (with ipv4) support
@@ -1869,6 +1897,9 @@ AC_TRY_COMPILE([
 AC_MSG_RESULT($va_list_is_array)
 
 # sigh -- gethostbyname_r is a mess; it can have 3, 5 or 6 arguments :-(
+AH_TEMPLATE(HAVE_GETHOSTBYNAME_R,
+  [Define this if you have some version of gethostbyname_r()])
+
 AC_CHECK_FUNC(gethostbyname_r, [
   AC_DEFINE(HAVE_GETHOSTBYNAME_R)
   AC_MSG_CHECKING([gethostbyname_r with 6 args])
@@ -2062,6 +2093,8 @@ ucs4) unicode_size="4"
       ;;
 esac
 
+AH_TEMPLATE(PY_UNICODE_TYPE,
+  [Define as the integral type used for Unicode representation.])
 AC_SUBST(UNICODE_OBJS)
 if test "$enable_unicode" = "no"
 then
