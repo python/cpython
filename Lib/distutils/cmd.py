@@ -215,6 +215,10 @@ class Command:
         cmd_obj.ensure_finalized ()
         return cmd_obj
 
+    # XXX rename to 'get_reinitialized_command()'? (should do the
+    # same in dist.py, if so)
+    def reinitialize_command (self, command):
+        return self.distribution.reinitialize_command(command)
 
     def run_command (self, command):
         """Run some other command: uses the 'run_command()' method of
@@ -306,8 +310,8 @@ class Command:
 
     def make_archive (self, base_name, format,
                       root_dir=None, base_dir=None):
-        util.make_archive (base_name, format, root_dir, base_dir,
-                           self.verbose, self.dry_run)
+        return util.make_archive (base_name, format, root_dir, base_dir,
+                                  self.verbose, self.dry_run)
 
 
     def make_file (self, infiles, outfile, func, args,
