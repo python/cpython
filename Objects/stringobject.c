@@ -19,32 +19,29 @@ static PyStringObject *nullstring;
 #endif
 
 /*
-   PyString_FromStringAndSize() and PyString_FromString() try in certain cases
-   to share string objects.  When the size of the string is zero, these 
-   routines always return a pointer to the same string object; when the size 
-   is one, they return a pointer to an already existing object if the contents
-   of the string is known.  For PyString_FromString() this is always the case,
-   for PyString_FromStringAndSize() this is the case when the first argument 
-   in not NULL.
+   For both PyString_FromString() and PyString_FromStringAndSize(), the 
+   parameter `size' denotes number of characters to allocate, not counting any 
+   null terminating character.
 
-   A common practice of allocating a string and then filling it in or changing
-   it must be done carefully.  It is only allowed to change the contents of 
-   the string if the object was gotten from PyString_FromStringAndSize() with 
-   a NULL first argument, because in the future these routines may try to do 
-   even more sharing of objects.
+   For PyString_FromString(), the parameter `str' points to a null-terminated 
+   string containing exactly `size' bytes.
 
-   The string in the  `str' parameter does not have to be null-character 
-   terminated.  (Therefore it is safe to construct a substring by using 
-   `PyString_FromStringAndSize(origstring, substrlen)'.)
+   For PyString_FromStringAndSize(), the parameter the parameter `str' is 
+   either NULL or else points to a string containing at least `size' bytes.  For
+   PyString_FromStringAndSize(), the string in the `str' parameter does not 
+   have to be null-terminated.  (Therefore it is safe to construct a substring 
+   by calling `PyString_FromStringAndSize(origstring, substrlen)'.)  If `str' 
+   is NULL then PyString_FromStringAndSize() will allocate `size+1' bytes 
+   (setting the last byte to the null terminating character) and you can fill in 
+   the data yourself.  If `str' is non-NULL then the resulting PyString object 
+   must be treated as immutable and you must not fill in nor alter the data 
+   yourself, since the strings may be shared.
 
-   The parameter `size' denotes number of characters to allocate, not
-   counting the null terminating character.  If the `str' argument is
-   not NULL, then it points to a of length `size'. For
-   PyString_FromString, this string must be null-terminated.
-
-   The member `op->ob_size' denotes the number of bytes of data in the string, 
-   not counting the null terminating character, and is therefore equal to the 
-   `size' parameter.
+   The PyObject member `op->ob_size', which denotes the number of "extra items" 
+   in a variable-size object, will contain the number of bytes allocated for 
+   string data, not counting the null terminating character.  It is therefore 
+   equal to the equal to the `size' parameter (for PyString_FromStringAndSize()) 
+   or the length of the string in the `str' parameter (for PyString_FromString()).
 */
 PyObject *
 PyString_FromStringAndSize(const char *str, int size)
@@ -605,7 +602,7 @@ string_print(PyStringObject *op, FILE *fp, int flags)
 
 	/* figure out which quote to use; single is preferred */
 	quote = '\'';
-	if (strchr(op->ob_sval, '\'') && !strchr(op->ob_sval, '"'))
+	if (memchr(op->ob_sval, '\'', op->ob_size) && !memchr(op->ob_sval, '"', op->ob_size))
 		quote = '"';
 
 	fputc(quote, fp);
@@ -649,7 +646,7 @@ string_repr(register PyStringObject *op)
 
 		/* figure out which quote to use; single is preferred */
 		quote = '\'';
-		if (strchr(op->ob_sval, '\'') && !strchr(op->ob_sval, '"'))
+		if (memchr(op->ob_sval, '\'', op->ob_size) && !memchr(op->ob_sval, '"', op->ob_size))
 			quote = '"';
 
 		p = PyString_AS_STRING(v);
