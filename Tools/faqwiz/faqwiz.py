@@ -386,22 +386,43 @@ class FaqWizard:
 	if not query:
 	    self.error("Empty query string!")
 	    return
-	self.prologue(T_SEARCH)
-	if self.ui.querytype != 'regex':
+	if self.ui.querytype == 'simple':
 	    for c in '\\.[]?+^$*':
 		if c in query:
 		    query = replace(query, c, '\\'+c)
-	if self.ui.casefold == 'no':
-	    p = regex.compile(query)
+	    queries = [query]
+	elif self.ui.querytype in ('anykeywords', 'allkeywords'):
+	    import regsub
+	    words = string.split(regsub.gsub('[^a-zA-Z0-9]+', ' ', query))
+	    if not words:
+		self.error("No keywords specified!")
+		return
+	    words = map(lambda w: '\<%s\>' % w, words)
+	    if self.ui.querytype[:3] == 'any':
+		queries = [string.join(words, '\|')]
+	    else:
+		queries = words
 	else:
-	    p = regex.compile(query, regex.casefold)
+	    # Default to regex
+	    queries = [query]
+	self.prologue(T_SEARCH)
+	progs = []
+	for query in queries:
+	    if self.ui.casefold == 'no':
+		p = regex.compile(query)
+	    else:
+		p = regex.compile(query, regex.casefold)
+	    progs.append(p)
 	hits = []
 	for file in self.dir.list():
 	    try:
 		entry = self.dir.open(file)
 	    except FileError:
 		constants
-	    if p.search(entry.title) >= 0 or p.search(entry.body) >= 0:
+	    for p in progs:
+		if p.search(entry.title) < 0 and p.search(entry.body) < 0:
+		    break
+	    else:
 		hits.append(file)
 	if not hits:
 	    emit(NO_HITS, self.ui, count=0)
