@@ -16,7 +16,7 @@ Quick Reference
 - To import module ham from package spam and use function hamneggs()
   from that module, you can either do
 
-    import spam.ham		# *not* "import spam" !!!
+    import spam.ham             # *not* "import spam" !!!
     spam.ham.hamneggs()
 
   or
@@ -36,7 +36,7 @@ Quick Reference
   spam.__init__ is a submodule of package spam.  It can reference to
   spam's namespace via the '__.' prefix, for instance
 
-    __.spam_inited = 1		# Set a package-level variable
+    __.spam_inited = 1          # Set a package-level variable
 
 
 
@@ -182,84 +182,84 @@ class PackageLoader(ModuleLoader):
     """
 
     def find_module_in_dir(self, name, dir):
-	if dir is not None:
-	    dirname = self.hooks.path_join(dir, name)
-	    if self.hooks.path_isdir(dirname):
-		return None, dirname, ('', '', 'PACKAGE')
-	return ModuleLoader.find_module_in_dir(self, name, dir)
+        if dir is not None:
+            dirname = self.hooks.path_join(dir, name)
+            if self.hooks.path_isdir(dirname):
+                return None, dirname, ('', '', 'PACKAGE')
+        return ModuleLoader.find_module_in_dir(self, name, dir)
 
     def load_module(self, name, stuff):
-	file, filename, info = stuff
-	suff, mode, type = info
-	if type == 'PACKAGE':
-	    return self.load_package(name, stuff)
-	if sys.modules.has_key(name):
-	    m = sys.modules[name]
-	else:
-	    sys.modules[name] = m = imp.new_module(name)
-	self.set_parent(m)
-	if type == imp.C_EXTENSION and '.' in name:
-	    return self.load_dynamic(name, stuff)
-	else:
-	    return ModuleLoader.load_module(self, name, stuff)
+        file, filename, info = stuff
+        suff, mode, type = info
+        if type == 'PACKAGE':
+            return self.load_package(name, stuff)
+        if sys.modules.has_key(name):
+            m = sys.modules[name]
+        else:
+            sys.modules[name] = m = imp.new_module(name)
+        self.set_parent(m)
+        if type == imp.C_EXTENSION and '.' in name:
+            return self.load_dynamic(name, stuff)
+        else:
+            return ModuleLoader.load_module(self, name, stuff)
 
     def load_dynamic(self, name, stuff):
-	file, filename, (suff, mode, type) = stuff
-	# Hack around restriction in imp.load_dynamic()
-	i = string.rfind(name, '.')
-	tail = name[i+1:]
-	if sys.modules.has_key(tail):
-	    save = sys.modules[tail]
-	else:
-	    save = None
-	sys.modules[tail] = imp.new_module(name)
-	try:
-	    m = imp.load_dynamic(tail, filename, file)
-	finally:
-	    if save:
-		sys.modules[tail] = save
-	    else:
-		del sys.modules[tail]
-	sys.modules[name] = m
-	return m
+        file, filename, (suff, mode, type) = stuff
+        # Hack around restriction in imp.load_dynamic()
+        i = string.rfind(name, '.')
+        tail = name[i+1:]
+        if sys.modules.has_key(tail):
+            save = sys.modules[tail]
+        else:
+            save = None
+        sys.modules[tail] = imp.new_module(name)
+        try:
+            m = imp.load_dynamic(tail, filename, file)
+        finally:
+            if save:
+                sys.modules[tail] = save
+            else:
+                del sys.modules[tail]
+        sys.modules[name] = m
+        return m
 
     def load_package(self, name, stuff):
-	file, filename, info = stuff
-	if sys.modules.has_key(name):
-	    package = sys.modules[name]
-	else:
-	    sys.modules[name] = package = imp.new_module(name)
-	package.__path__ = [filename]
-	self.init_package(package)
-	return package
+        file, filename, info = stuff
+        if sys.modules.has_key(name):
+            package = sys.modules[name]
+        else:
+            sys.modules[name] = package = imp.new_module(name)
+        package.__path__ = [filename]
+        self.init_package(package)
+        return package
 
     def init_package(self, package):
-	self.set_parent(package)
-	self.set_domain(package)
-	self.call_init_module(package)
+        self.set_parent(package)
+        self.set_domain(package)
+        self.call_init_module(package)
 
     def set_parent(self, m):
-	name = m.__name__
-	if '.' in name:
-	    name = name[:string.rfind(name, '.')]
-	else:
-	    name = ''
-	m.__ = sys.modules[name]
+        name = m.__name__
+        if '.' in name:
+            name = name[:string.rfind(name, '.')]
+        else:
+            name = ''
+        m.__ = sys.modules[name]
 
     def set_domain(self, package):
-	name = package.__name__
-	package.__domain__ = domain = [name]
-	while '.' in name:
-	    name = name[:string.rfind(name, '.')]
-	    domain.append(name)
-	if name:
-	    domain.append('')
+        name = package.__name__
+        package.__domain__ = domain = [name]
+        while '.' in name:
+            name = name[:string.rfind(name, '.')]
+            domain.append(name)
+        if name:
+            domain.append('')
 
     def call_init_module(self, package):
-	stuff = self.find_module('__init__', package.__path__)
-	if stuff:
-	    m = self.load_module(package.__name__ + '.__init__', stuff)
-	    package.__init__ = m
+        stuff = self.find_module('__init__', package.__path__)
+        if stuff:
+            m = self.load_module(package.__name__ + '.__init__', stuff)
+            package.__init__ = m
 
 
 class PackageImporter(ModuleImporter):
@@ -267,132 +267,132 @@ class PackageImporter(ModuleImporter):
     """Importer that understands packages and '__'."""
 
     def __init__(self, loader = None, verbose = 0):
-	ModuleImporter.__init__(self,
-	loader or PackageLoader(None, verbose), verbose)
+        ModuleImporter.__init__(self,
+        loader or PackageLoader(None, verbose), verbose)
 
     def import_module(self, name, globals={}, locals={}, fromlist=[]):
-	if globals.has_key('__'):
-	    package = globals['__']
-	else:
-	    # No calling context, assume in root package
-	    package = sys.modules['']
-	if name[:3] in ('__.', '__'):
-	    p = package
-	    name = name[3:]
-	    while name[:3] in ('__.', '__'):
-		p = p.__
-		name = name[3:]
-	    if not name:
-		return self.finish(package, p, '', fromlist)
-	    if '.' in name:
-		i = string.find(name, '.')
-		name, tail = name[:i], name[i:]
-	    else:
-		tail = ''
-	    mname = p.__name__ and p.__name__+'.'+name or name
-	    m = self.get1(mname)
-	    return self.finish(package, m, tail, fromlist)
-	if '.' in name:
-	    i = string.find(name, '.')
-	    name, tail = name[:i], name[i:]
-	else:
-	    tail = ''
-	for pname in package.__domain__:
-	    mname = pname and pname+'.'+name or name
-	    m = self.get0(mname)
-	    if m: break
-	else:
-	    raise ImportError, "No such module %s" % name
-	return self.finish(m, m, tail, fromlist)
+        if globals.has_key('__'):
+            package = globals['__']
+        else:
+            # No calling context, assume in root package
+            package = sys.modules['']
+        if name[:3] in ('__.', '__'):
+            p = package
+            name = name[3:]
+            while name[:3] in ('__.', '__'):
+                p = p.__
+                name = name[3:]
+            if not name:
+                return self.finish(package, p, '', fromlist)
+            if '.' in name:
+                i = string.find(name, '.')
+                name, tail = name[:i], name[i:]
+            else:
+                tail = ''
+            mname = p.__name__ and p.__name__+'.'+name or name
+            m = self.get1(mname)
+            return self.finish(package, m, tail, fromlist)
+        if '.' in name:
+            i = string.find(name, '.')
+            name, tail = name[:i], name[i:]
+        else:
+            tail = ''
+        for pname in package.__domain__:
+            mname = pname and pname+'.'+name or name
+            m = self.get0(mname)
+            if m: break
+        else:
+            raise ImportError, "No such module %s" % name
+        return self.finish(m, m, tail, fromlist)
 
     def finish(self, module, m, tail, fromlist):
-	# Got ....A; now get ....A.B.C.D
-	yname = m.__name__
-	if tail and sys.modules.has_key(yname + tail): # Fast path
-	    yname, tail = yname + tail, ''
-	    m = self.get1(yname)
-	while tail:
-	    i = string.find(tail, '.', 1)
-	    if i > 0:
-		head, tail = tail[:i], tail[i:]
-	    else:
-		head, tail = tail, ''
-	    yname = yname + head
-	    m = self.get1(yname)
+        # Got ....A; now get ....A.B.C.D
+        yname = m.__name__
+        if tail and sys.modules.has_key(yname + tail): # Fast path
+            yname, tail = yname + tail, ''
+            m = self.get1(yname)
+        while tail:
+            i = string.find(tail, '.', 1)
+            if i > 0:
+                head, tail = tail[:i], tail[i:]
+            else:
+                head, tail = tail, ''
+            yname = yname + head
+            m = self.get1(yname)
 
-	# Got ....A.B.C.D; now finalize things depending on fromlist
-	if not fromlist:
-	    return module
-	if '__' in fromlist:
-	    raise ImportError, "Can't import __ from anywhere"
-	if not hasattr(m, '__path__'): return m
-	if '*' in fromlist:
-	    raise ImportError, "Can't import * from a package"
-	for f in fromlist:
-	    if hasattr(m, f): continue
-	    fname = yname + '.' + f
-	    self.get1(fname)
-	return m
+        # Got ....A.B.C.D; now finalize things depending on fromlist
+        if not fromlist:
+            return module
+        if '__' in fromlist:
+            raise ImportError, "Can't import __ from anywhere"
+        if not hasattr(m, '__path__'): return m
+        if '*' in fromlist:
+            raise ImportError, "Can't import * from a package"
+        for f in fromlist:
+            if hasattr(m, f): continue
+            fname = yname + '.' + f
+            self.get1(fname)
+        return m
 
     def get1(self, name):
-	m = self.get(name)
-	if not m:
-	    raise ImportError, "No module named %s" % name
-	return m
+        m = self.get(name)
+        if not m:
+            raise ImportError, "No module named %s" % name
+        return m
 
     def get0(self, name):
-	m = self.get(name)
-	if not m:
-	    sys.modules[name] = None
-	return m
+        m = self.get(name)
+        if not m:
+            sys.modules[name] = None
+        return m
 
     def get(self, name):
-	# Internal routine to get or load a module when its parent exists
-	if sys.modules.has_key(name):
-	    return sys.modules[name]
-	if '.' in name:
-	    i = string.rfind(name, '.')
-	    head, tail = name[:i], name[i+1:]
-	else:
-	    head, tail = '', name
-	path = sys.modules[head].__path__
-	stuff = self.loader.find_module(tail, path)
-	if not stuff:
-	    return None
-	sys.modules[name] = m = self.loader.load_module(name, stuff)
-	if head:
-	    setattr(sys.modules[head], tail, m)
-	return m
+        # Internal routine to get or load a module when its parent exists
+        if sys.modules.has_key(name):
+            return sys.modules[name]
+        if '.' in name:
+            i = string.rfind(name, '.')
+            head, tail = name[:i], name[i+1:]
+        else:
+            head, tail = '', name
+        path = sys.modules[head].__path__
+        stuff = self.loader.find_module(tail, path)
+        if not stuff:
+            return None
+        sys.modules[name] = m = self.loader.load_module(name, stuff)
+        if head:
+            setattr(sys.modules[head], tail, m)
+        return m
 
     def reload(self, module):
-	name = module.__name__
-	if '.' in name:
-	    i = string.rfind(name, '.')
-	    head, tail = name[:i], name[i+1:]
-	    path = sys.modules[head].__path__
-	else:
-	    tail = name
-	    path = sys.modules[''].__path__
-	stuff = self.loader.find_module(tail, path)
-	if not stuff:
-	    raise ImportError, "No module named %s" % name
-	return self.loader.load_module(name, stuff)
+        name = module.__name__
+        if '.' in name:
+            i = string.rfind(name, '.')
+            head, tail = name[:i], name[i+1:]
+            path = sys.modules[head].__path__
+        else:
+            tail = name
+            path = sys.modules[''].__path__
+        stuff = self.loader.find_module(tail, path)
+        if not stuff:
+            raise ImportError, "No module named %s" % name
+        return self.loader.load_module(name, stuff)
 
     def unload(self, module):
-	if hasattr(module, '__path__'):
-	    raise ImportError, "don't know how to unload packages yet"
-	PackageImporter.unload(self, module)
+        if hasattr(module, '__path__'):
+            raise ImportError, "don't know how to unload packages yet"
+        PackageImporter.unload(self, module)
 
     def install(self):
-	if not sys.modules.has_key(''):
-	    sys.modules[''] = package = imp.new_module('')
-	    package.__path__ = None
-	    self.loader.init_package(package)
-	    for m in sys.modules.values():
-		if not m: continue
-		if not hasattr(m, '__'):
-		    self.loader.set_parent(m)
-	ModuleImporter.install(self)
+        if not sys.modules.has_key(''):
+            sys.modules[''] = package = imp.new_module('')
+            package.__path__ = None
+            self.loader.init_package(package)
+            for m in sys.modules.values():
+                if not m: continue
+                if not hasattr(m, '__'):
+                    self.loader.set_parent(m)
+        ModuleImporter.install(self)
 
 
 def install(v = 0):
@@ -410,22 +410,22 @@ def no():
 def test():
     import pdb
     try:
-	testproper()
+        testproper()
     except:
-	sys.last_type, sys.last_value, sys.last_traceback = sys.exc_info()
-	print
-	print sys.last_type, ':', sys.last_value
-	print
-	pdb.pm()
+        sys.last_type, sys.last_value, sys.last_traceback = sys.exc_info()
+        print
+        print sys.last_type, ':', sys.last_value
+        print
+        pdb.pm()
 
 def testproper():
     install(1)
     try:
-	import mactest
-	print dir(mactest)
-	raw_input('OK?')
+        import mactest
+        print dir(mactest)
+        raw_input('OK?')
     finally:
-	uninstall()
+        uninstall()
 
 
 if __name__ == '__main__':
