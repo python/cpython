@@ -2202,7 +2202,19 @@ Tkapp_CreateFileHandler(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "OiO:createfilehandler",
 			      &file, &mask, &func))
 		return NULL;
-	CHECK_TCL_APPARTMENT;
+
+	if (!self && !tcl_lock) {
+		/* We don't have the Tcl lock since Tcl is threaded. */
+		PyErr_SetString(PyExc_RuntimeError,
+				"_tkinter.createfilehandler not supported "
+				"for threaded Tcl");
+		return NULL;
+	}
+
+	if (self) {
+		CHECK_TCL_APPARTMENT;
+	}
+
 	tfile = PyObject_AsFileDescriptor(file);
 	if (tfile < 0)
 		return NULL;
@@ -2396,6 +2408,19 @@ Tkapp_CreateTimerHandler(PyObject *self, PyObject *args)
 		PyErr_SetString(PyExc_TypeError, "bad argument list");
 		return NULL;
 	}
+
+	if (!self && !tcl_lock) {
+		/* We don't have the Tcl lock since Tcl is threaded. */
+		PyErr_SetString(PyExc_RuntimeError,
+				"_tkinter.createtimerhandler not supported "
+				"for threaded Tcl");
+		return NULL;
+	}
+
+	if (self) {
+		CHECK_TCL_APPARTMENT;
+	}
+
 	v = Tktt_New(func);
 	v->token = Tcl_CreateTimerHandler(milliseconds, TimerHandler,
 					  (ClientData)v);
