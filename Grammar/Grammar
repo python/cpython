@@ -1,4 +1,11 @@
-# Grammar for Python, version 8
+# Grammar for Python, version 10
+
+# Changes since version 9:
+#	Equality is now only tested with '=='; consequently
+#	Exprlist replaced by testlist everywhere except after 'for'
+
+# Changes since version 8:
+#	Trailing commas in formal parameter lists are allowed
 
 # Changes since version 7:
 #	New syntax to specify base classes (but old syntax retained for now)
@@ -51,13 +58,13 @@ eval_input: testlist ENDMARKER
 
 funcdef: 'def' NAME parameters ':' suite
 parameters: '(' [fplist] ')'
-fplist: fpdef (',' fpdef)*
+fplist: fpdef (',' fpdef)* [',']
 fpdef: NAME | '(' fplist ')'
 
 stmt: simple_stmt | compound_stmt
 simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
 small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt
-expr_stmt: (exprlist '=')* exprlist
+expr_stmt: (testlist '=')* testlist
 # For assignments, additional restrictions enforced by the interpreter
 print_stmt: 'print' (test ',')* [test]
 del_stmt: 'del' exprlist
@@ -81,7 +88,7 @@ test: and_test ('or' and_test)*
 and_test: not_test ('and' not_test)*
 not_test: 'not' not_test | comparison
 comparison: expr (comp_op expr)*
-comp_op: '<'|'>'|'='|'>='|'<='|'<>'|'!='|'=='|'in'|'not' 'in'|'is'|'is' 'not'
+comp_op: '<'|'>'|'=='|'>='|'<='|'<>'|'!='|'in'|'not' 'in'|'is'|'is' 'not'
 expr: xor_expr ('|' xor_expr)*
 xor_expr: and_expr ('^' and_expr)*
 and_expr: shift_expr ('&' shift_expr)*
