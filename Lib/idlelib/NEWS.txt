@@ -1,7 +1,7 @@
 What's New in IDLE 1.1b3/rc1?
 =============================
 
-*Release date: XX-XXX-2004*
+*Release date: 18-NOV-2004*
 
 - Saving a Keyset w/o making changes (by using the "Save as New Custom Key Set"
   button) caused IDLE to fail on restart (no new keyset was created in
