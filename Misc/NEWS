@@ -8,6 +8,11 @@ Core
 
 Library
 
++ pickle, cPickle and marshal on 32-bit platforms can now correctly read
+  dumps containing ints written on platforms where Python ints are 8 bytes.
+  When read on a box where Python ints are 4 bytes, such values are
+  converted to Python longs.
+
 Tools
 
 Build

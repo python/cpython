@@ -342,23 +342,35 @@ r_long(RFILE *p)
 	return x;
 }
 
-static long
+/* r_long64 deals with the TYPE_INT64 code.  On a machine with
+   sizeof(long) > 4, it returns a Python int object, else a Python long
+   object.  Note that w_long64 writes out TYPE_INT if 32 bits is enough,
+   so there's no inefficiency here in returning a PyLong on 32-bit boxes
+   for everything written via TYPE_INT64 (i.e., if an int is written via
+   TYPE_INT64, it *needs* more than 32 bits).
+*/
+static PyObject *
 r_long64(RFILE *p)
 {
-	register long x;
-	x = r_long(p);
+	long lo4 = r_long(p);
+	long hi4 = r_long(p);
 #if SIZEOF_LONG > 4
-	x = (x & 0xFFFFFFFFL) | (r_long(p) << 32);
+	long x = (hi4 << 32) | (lo4 & 0xFFFFFFFFL);
+	return PyInt_FromLong(x);
 #else
-	if (r_long(p) != 0) {
-		PyObject *f = PySys_GetObject("stderr");
-		if (f != NULL)
-			(void) PyFile_WriteString(
-			    "Warning: un-marshal 64-bit int in 32-bit mode\n",
-			    f);
+	unsigned char buf[8];
+	int one = 1;
+	int is_little_endian = (int)*(char*)&one;
+	if (is_little_endian) {
+		memcpy(buf, &lo4, 4);
+		memcpy(buf+4, &hi4, 4);
 	}
+	else {
+		memcpy(buf, &hi4, 4);
+		memcpy(buf+4, &lo4, 4);
+	}
+	return _PyLong_FromByteArray(buf, 8, is_little_endian, 1);
 #endif
-	return x;
 }
 
 static PyObject *
@@ -394,7 +406,7 @@ r_object(RFILE *p)
 		return PyInt_FromLong(r_long(p));
 
 	case TYPE_INT64:
-		return PyInt_FromLong(r_long64(p));
+		return r_long64(p);
 
 	case TYPE_LONG:
 		{
