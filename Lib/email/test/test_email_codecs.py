@@ -26,7 +26,14 @@ class TestEmailAsianCodecs(TestEmailBase):
         ghello = 'Gr\xfc\xdf Gott!'
         h.append(jhello, j)
         h.append(ghello, g)
-        eq(h.encode(), 'Hello World! =?iso-2022-jp?b?GyRCJU8lbSE8JW8hPCVrJUkhKhsoQg==?=\n =?iso-8859-1?q?Gr=FC=DF_Gott!?=')
+        # BAW: This used to -- and maybe should -- fold the two iso-8859-1
+        # chunks into a single encoded word.  However it doesn't violate the
+        # standard to have them as two encoded chunks and maybe it's
+        # reasonable <wink> for each .append() call to result in a separate
+        # encoded word.
+        eq(h.encode(), """\
+Hello World! =?iso-2022-jp?b?GyRCJU8lbSE8JW8hPCVrJUkhKhsoQg==?=
+ =?iso-8859-1?q?Gr=FC=DF?= =?iso-8859-1?q?_Gott!?=""")
         eq(decode_header(h.encode()),
            [('Hello World!', None),
             ('\x1b$B%O%m!<%o!<%k%I!*\x1b(B', 'iso-2022-jp'),
@@ -35,23 +42,12 @@ class TestEmailAsianCodecs(TestEmailBase):
         h = Header(long, j, header_name="Subject")
         # test a very long header
         enc = h.encode()
-        # BAW: The following used to pass.  Sadly, the test afterwards is what
-        # happens now.  I've no idea which is right.  Please, any Japanese and
-        # RFC 2047 experts, please verify!
-##        eq(enc, '''\
-##=?iso-2022-jp?b?dGVzdC1qYSAbJEIkWEVqOUYkNSRsJD8lYRsoQg==?=
-## =?iso-2022-jp?b?GyRCITwlayRPO0oycTxUJE4+NRsoQg==?=
-## =?iso-2022-jp?b?GyRCRyckckJUJEMkRiQkJF4kORsoQg==?=''')
-        eq(enc, """\
-=?iso-2022-jp?b?dGVzdC1qYSAbJEIkWEVqOUYkNSRsJD8lYRsoQg==?=
- =?iso-2022-jp?b?GyRCITwlayRPO0oycTxUJE4+NUcnJHJCVCRDJEYkJCReJDkbKEI=?=""")
-        # BAW: same deal here. :(
-##        self.assertEqual(
-##            decode_header(enc),
-##            [("test-ja \x1b$B$XEj9F$5$l$?%a\x1b(B\x1b$B!<%k$O;J2q<T$N>5\x1b(B\x1b$BG'$rBT$C$F$$$^$9\x1b(B", 'iso-2022-jp')])
-        self.assertEqual(
-            decode_header(enc),
-            [("test-ja \x1b$B$XEj9F$5$l$?%a\x1b(B\x1b$B!<%k$O;J2q<T$N>5G'$rBT$C$F$$$^$9\x1b(B", 'iso-2022-jp')])
+        # TK: splitting point may differ by codec design and/or Header encoding
+        eq(enc , """\
+=?iso-2022-jp?b?dGVzdC1qYSAbJEIkWEVqOUYkNSRsJD8lYSE8JWskTztKGyhC?=
+ =?iso-2022-jp?b?GyRCMnE8VCROPjVHJyRyQlQkQyRGJCQkXiQ5GyhC?=""")
+        # TK: full decode comparison
+        eq(h.__unicode__().encode('euc-jp'), long)
 
 
 
