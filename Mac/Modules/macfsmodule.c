@@ -48,7 +48,7 @@ mfs_NewAlias(self, args)
 	FSSpec src, dst, *dstptr;
 	
 	src.name[0] = 0;
-	if (!newgetargs(args, "O&|O&", GetFSSpec, &dst, GetFSSpec, &src))
+	if (!newgetargs(args, "O&|O&", PyMac_GetFSSpec, &dst, PyMac_GetFSSpec, &src))
 		return NULL;
 		
 	/* XXXX */
@@ -90,7 +90,7 @@ mfs_StandardPutFile(self, args)
 	StandardFileReply reply;
 	
 	dft[0] = 0;
-	if (!newgetargs(args, "O&|O&", GetStr255, &prompt, GetStr255, &dft) )
+	if (!newgetargs(args, "O&|O&", PyMac_GetStr255, &prompt, PyMac_GetStr255, &dft) )
 		return NULL;
 	StandardPutFile(prompt, dft, &reply);
 	return mkvalue("(iO)", reply.sfGood, PyMac_BuildFSSpec(&reply.sfFile));
@@ -126,7 +126,7 @@ mfs_FSSpecNormalize(self, args)
 {
 	FSSpec fss;
 
-	if (!newgetargs(args, "O&", GetFSSpec, &fss))
+	if (!newgetargs(args, "O&", PyMac_GetFSSpec, &fss))
 		return NULL;
 	return PyMac_BuildFSSpec(&fss);
 }
@@ -140,7 +140,7 @@ mfs_FSSpecPath(self, args)
 	char strbuf[257];
 	OSErr err;
 
-	if (!newgetargs(args, "O&", GetFSSpec, &fss))
+	if (!newgetargs(args, "O&", PyMac_GetFSSpec, &fss))
 		return NULL;
 	err = nfullpath(&fss, strbuf);
 	if ( err ) {

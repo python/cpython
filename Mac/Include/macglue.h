@@ -10,7 +10,3 @@ int PyMac_GetStr255 Py_PROTO((PyObject *, Str255));	/* argument parser for Str25
 int PyMac_GetFSSpec Py_PROTO((PyObject *, FSSpec *));	/* argument parser for FSSpec */
 PyObject *PyMac_BuildFSSpec Py_PROTO((FSSpec *));	/* Convert FSSpec to PyObject */
 PyObject *PyMac_BuildOSType Py_PROTO((OSType));		/* Convert OSType to PyObject */
-
-#define GetOSType PyMac_GetOSType
-#define GetStr255 PyMac_GetStr255
-#define GetFSSpec PyMac_GetFSSpec

@@ -261,10 +261,9 @@ extern void initnew();
 extern void initdl();
 extern void initsyslog();
 extern void initgestalt();
-#ifdef THINK_C
 extern void initmacconsole();
-#endif
 extern void initctb();
+extern void initmacfs();
 extern void initmacspeech();
 extern void initmacdnr();
 extern void initmactcp();
@@ -302,6 +301,7 @@ struct {
 	{"macconsole", initmacconsole},
 #endif
 	{"ctb", initctb},
+	{"macfs", initmacfs},
 #ifdef __MWERKS__
 /* This is really "Jack Jansen" specific for now :-) */
 	{"macspeech", initmacspeech},
