@@ -331,7 +331,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
             short, long = self.responses[code]
         except KeyError:
             short, long = '???', '???'
-        if not message:
+        if message is None:
             message = short
         explain = long
         self.log_error("code %d, message %s", code, message)
