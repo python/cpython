@@ -1,49 +1,61 @@
-Windows and files:
+File menu:
 
-	^X ^N creates new empty text editor window
-	^X ^C closes all windows
-	Alt-F4 or ^X ^0 (that's control-x-control-zero) closes current window
-	^X ^D opens a file from dialog box
-	^X ^S saves to current file
-	^X ^W saves to file from dialog box
-	^X w save a copy to file from dialog box
+	New window -- create a new editing window
+	Open file... -- open an existing file from a dialog box
+	Open module... -- asks for a module name, finds it on sys.path,
+		and opens it; if there's a selection, it's the module name
+	Class browser... -- open a class browser for the current module
+	---
+	Save -- save the current window to its associated file
+	Save As... -- save to a new file from a dialog box
+	Save Copy As... -- save to a new file without changing window name
+	---
+	Close -- close current window; asks to save if unsaved
+	Exit -- close all windows; asks to save unsaved windows
 
-Navigation:
+Edit menu:
 
+	Undo -- Undo last change to current window (max 1000 changes)
+	Redo -- Redo last undone change to current window
+	---
+	Cut -- Copy selection into system-wide clipboard; then delete selection
+	Copy -- Copy selection into system-wide clipboard
+	Paste -- Insert system-wide clipboard into window
+	---
+	Find... -- Search (case sensitive, Perl regular expression)
+	Find next -- Repeat last search
+	Fine same -- Search for the string in the selection
+	Go to line -- Ask for a line number and show that line
+	---
+	Dedent region -- Shift selected lines left 4 spaces
+	Indent region -- Shift selected lines right 4 spaces
+	Comment out region -- Insert ## in front of selected lines
+	Uncomment region -- Remove leading # or ## from selected lines
+
+Windows menu:
+
+	Contains the names of all open windows.  The Python Shell
+	entry at the top will recreate the shell window if it has
+	been closed.
+
+Debug menu (in the Python Shell window only):
+
+	Go to line from traceback -- look around the insert point for a
+		filename and linenumber, open the file, and show the line
+	Open stack viewer -- show the stack traceback of the last exception
+
+Basic editing and navigation:
+
+	Backspace deletes to the left; DEL deletes to the right
 	Arrow keys and Page Up/Down to move around
 	Home/End go to begin/end of line
 	Control-Home/End go to begin/end of file
-	Some Emacs bindings may also work, e.g. ^A/^E
+	Some Emacs bindings may also work, e.g. ^F/^B/^P/^N/^A/^E
 
-Searching: all searches are forward from the cursor without
-wrap-around, case sensitive, Perl-style regular expression matches
-
-	^S without a selection opens search dialog box
-	^S with a selection searches for selected text
-	^U ^S repeats last search
-	Alt-G opens dialog box to go to a specific line
-
-Editing:
-
-	Backspace deletes left of cursor, Delete right of cursor
-	Cut and paste use platform's conventions
-	^[ or Alt-[ left-shifts (dedents) the current line or selection
-	^] or Alt-] right-shifts (indents) the current line or selection
-	Alt-/ expands last word you type (like Emacs dabbrev)
-
-Undo:
-
-	^Z undoes last change; repeat to undo more
-	Alt-Z redoes last undone change; repeat to redo more
-
-Console window:
+Python Shell window:
 
 	^C interrupts executing command
-	^D sends end-of-file; closes console if typed at >>> prompt
-
-	If you get a traceback, right-click on any line listing a
-	filename and line number and select "Go to line from
-	traceback" to open that file and go to the indicated line
+	^D sends end-of-file; closes window if typed at >>> prompt
 
 Python syntax colors: the coloring is applied in a background thread
 
