@@ -127,7 +127,7 @@ class ListWindow(DialogWindow):
 			for i in range(len(contents)):
 				self.list.LSetCell(contents[i], (0, i))
 		self.list.LSetDrawingMode(1)
-		self.list.LUpdate()
+		self.list.LUpdate(self.wid.GetWindowPort().visRgn)
 		
 	def additem(self, item):
 		where = self.list.LAddRow(1, 0)
@@ -161,7 +161,7 @@ class ListWindow(DialogWindow):
 		return values
 		
 	def do_rawupdate(self, window, event):
-		self.list.LUpdate()
+		self.list.LUpdate(self.wid.GetWindowPort().visRgn)
 		
 	def do_close(self):
 		self.close()

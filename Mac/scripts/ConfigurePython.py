@@ -86,6 +86,7 @@ goals = [
 	("Qt.slb", "toolboxmodules.slb"),
 	("Res.slb", "toolboxmodules.slb"),
 	("Snd.slb", "toolboxmodules.slb"),
+	("TE.slb", "toolboxmodules.slb"),
 	("Win.slb", "toolboxmodules.slb"),
 	("imgcolormap.slb", "imgmodules.slb"),
 	("imgformat.slb", "imgmodules.slb"),
