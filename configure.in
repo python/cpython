@@ -968,7 +968,7 @@ else
 fi
 
 # Check for enable-ipv6
-AC_MSG_CHECKING([whether to enable ipv6])
+AC_MSG_CHECKING([if --enable-ipv6 is specified])
 AC_ARG_ENABLE(ipv6,
 [  --enable-ipv6                   Enable ipv6 (with ipv4) support
   --disable-ipv6                  Disable ipv6 support],
@@ -983,6 +983,8 @@ AC_ARG_ENABLE(ipv6,
        ;;
   esac ],
 
+[
+dnl the check does not work on cross compilation case...
   AC_TRY_RUN([ /* AF_INET6 available check */
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -995,13 +997,29 @@ main()
 }
 ],
   AC_MSG_RESULT(yes)
-  AC_DEFINE(ENABLE_IPV6)
   ipv6=yes,
   AC_MSG_RESULT(no)
   ipv6=no,
   AC_MSG_RESULT(no)
   ipv6=no
-))
+)
+
+if test "$ipv6" = "yes"; then
+	AC_MSG_CHECKING(if RFC2553 API is available)
+	AC_TRY_COMPILE([#include <sys/types.h>
+#include <netinet/in.h>],
+	[struct sockaddr_in6 x;
+x.sin6_scope_id;],
+		AC_MSG_RESULT(yes)
+		ipv6=yes,
+		AC_MSG_RESULT(no, IPv6 disabled)
+		ipv6=no)
+fi
+
+if test "$ipv6" = "yes"; then
+	AC_DEFINE(ENABLE_IPV6)
+fi
+])
 
 ipv6type=unknown
 ipv6lib=none
