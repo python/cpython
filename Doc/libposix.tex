@@ -89,6 +89,13 @@ Note: the standard way to exit is \code{sys.exit(\var{n})}.
 after a \code{fork()}.
 \end{funcdesc}
 
+\begin{funcdesc}{fdopen}{fd\, mode}
+Return an open file object connected to the file descriptor \var{fd},
+open for reading and/or writing according to the \var{mode} string
+(which has the same meaning as the \var{mode} argument to the built-in
+\code{open()} function.
+\end{funcdesc}
+
 \begin{funcdesc}{fork}{}
 Fork a child process.  Return 0 in the child, the child's process id
 in the parent.
