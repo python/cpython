@@ -270,7 +270,7 @@ class ConfigParser:
         d = self.__defaults.copy()
         d.update(sectdict)
         # Update with the entry specific variables
-        if vars:
+        if vars is not None:
             d.update(vars)
         option = self.optionxform(option)
         try:

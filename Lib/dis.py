@@ -13,7 +13,7 @@ def dis(x=None):
     With no argument, disassemble the last traceback.
 
     """
-    if not x:
+    if x is None:
         distb()
         return
     if type(x) is types.InstanceType:
@@ -44,7 +44,7 @@ def dis(x=None):
 
 def distb(tb=None):
     """Disassemble a traceback (default: last traceback)."""
-    if not tb:
+    if tb is None:
         try:
             tb = sys.last_traceback
         except AttributeError:
@@ -312,12 +312,12 @@ def _test():
             fn = None
     else:
         fn = None
-    if not fn:
+    if fn is None:
         f = sys.stdin
     else:
         f = open(fn)
     source = f.read()
-    if fn:
+    if fn is not None:
         f.close()
     else:
         fn = "<stdin>"
