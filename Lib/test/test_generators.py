@@ -267,9 +267,9 @@ Guido's binary tree example.
     ...             yield x
 
     >>> # Show it off: create a tree.
-    ... t = tree("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-    ... # Print the nodes of the tree in in-order.
-    ... for x in t:
+    >>> t = tree("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    >>> # Print the nodes of the tree in in-order.
+    >>> for x in t:
     ...     print x,
     A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
 
