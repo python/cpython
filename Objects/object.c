@@ -1176,14 +1176,14 @@ _PyObject_GetDictPtr(PyObject *obj)
 	return (PyObject **) ((char *)obj + dictoffset);
 }
 
-/* Generic GetAttr functions - put these in your tp_[gs]etattro slot */
-
 PyObject *
 PyObject_SelfIter(PyObject *obj)
 {
 	Py_INCREF(obj);
 	return obj;
 }
+
+/* Generic GetAttr functions - put these in your tp_[gs]etattro slot */
 
 PyObject *
 PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
