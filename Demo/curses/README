@@ -1,0 +1,3 @@
+Sample programs that use the curses package:
+
+life.py		Simple game of Life
