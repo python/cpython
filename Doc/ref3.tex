@@ -1,0 +1,705 @@
+\chapter{Data model}
+
+\section{Objects, values and types}
+
+{\em Objects} are Python's abstraction for data.  All data in a Python
+program is represented by objects or by relations between objects.
+(In a sense, and in conformance to Von Neumann's model of a
+``stored program computer'', code is also represented by objects.)
+\index{object}
+\index{data}
+
+Every object has an identity, a type and a value.  An object's {\em
+identity} never changes once it has been created; you may think of it
+as the object's address in memory.  An object's {\em type} is also
+unchangeable.  It determines the operations that an object supports
+(e.g. ``does it have a length?'') and also defines the possible
+values for objects of that type.  The {\em value} of some objects can
+change.  Objects whose value can change are said to be {\em mutable};
+objects whose value is unchangeable once they are created are called
+{\em immutable}.  The type determines an object's (im)mutability.
+\index{identity of an object}
+\index{value of an object}
+\index{type of an object}
+\index{mutable object}
+\index{immutable object}
+
+Objects are never explicitly destroyed; however, when they become
+unreachable they may be garbage-collected.  An implementation is
+allowed to delay garbage collection or omit it altogether --- it is a
+matter of implementation quality how garbage collection is
+implemented, as long as no objects are collected that are still
+reachable.  (Implementation note: the current implementation uses a
+reference-counting scheme which collects most objects as soon as they
+become unreachable, but never collects garbage containing circular
+references.)
+\index{garbage collection}
+\index{reference counting}
+\index{unreachable object}
+
+Note that the use of the implementation's tracing or debugging
+facilities may keep objects alive that would normally be collectable.
+
+Some objects contain references to ``external'' resources such as open
+files or windows.  It is understood that these resources are freed
+when the object is garbage-collected, but since garbage collection is
+not guaranteed to happen, such objects also provide an explicit way to
+release the external resource, usually a \verb\close\ method.
+Programs are strongly recommended to always explicitly close such
+objects.
+
+Some objects contain references to other objects; these are called
+{\em containers}.  Examples of containers are tuples, lists and
+dictionaries.  The references are part of a container's value.  In
+most cases, when we talk about the value of a container, we imply the
+values, not the identities of the contained objects; however, when we
+talk about the (im)mutability of a container, only the identities of
+the immediately contained objects are implied.  (So, if an immutable
+container contains a reference to a mutable object, its value changes
+if that mutable object is changed.)
+\index{container}
+
+Types affect almost all aspects of objects' lives.  Even the meaning
+of object identity is affected in some sense: for immutable types,
+operations that compute new values may actually return a reference to
+any existing object with the same type and value, while for mutable
+objects this is not allowed.  E.g. after
+
+\begin{verbatim}
+a = 1; b = 1; c = []; d = []
+\end{verbatim}
+
+\verb\a\ and \verb\b\ may or may not refer to the same object with the
+value one, depending on the implementation, but \verb\c\ and \verb\d\
+are guaranteed to refer to two different, unique, newly created empty
+lists.
+
+\section{The standard type hierarchy} \label{types}
+
+Below is a list of the types that are built into Python.  Extension
+modules written in C can define additional types.  Future versions of
+Python may add types to the type hierarchy (e.g. rational or complex
+numbers, efficiently stored arrays of integers, etc.).
+\index{type}
+\indexii{data}{type}
+\indexii{type}{hierarchy}
+\indexii{extension}{module}
+\index{C}
+
+Some of the type descriptions below contain a paragraph listing
+`special attributes'.  These are attributes that provide access to the
+implementation and are not intended for general use.  Their definition
+may change in the future.  There are also some `generic' special
+attributes, not listed with the individual objects: \verb\__methods__\
+is a list of the method names of a built-in object, if it has any;
+\verb\__members__\ is a list of the data attribute names of a built-in
+object, if it has any.
+\index{attribute}
+\indexii{special}{attribute}
+\indexiii{generic}{special}{attribute}
+\ttindex{__methods__}
+\ttindex{__members__}
+
+\begin{description}
+
+\item[None]
+This type has a single value.  There is a single object with this value.
+This object is accessed through the built-in name \verb\None\.
+It is returned from functions that don't explicitly return an object.
+\ttindex{None}
+\obindex{None@{\tt None}}
+
+\item[Numbers]
+These are created by numeric literals and returned as results by
+arithmetic operators and arithmetic built-in functions.  Numeric
+objects are immutable; once created their value never changes.  Python
+numbers are of course strongly related to mathematical numbers, but
+subject to the limitations of numerical representation in computers.
+\obindex{number}
+\obindex{numeric}
+
+Python distinguishes between integers and floating point numbers:
+
+\begin{description}
+\item[Integers]
+These represent elements from the mathematical set of whole numbers.
+\obindex{integer}
+
+There are two types of integers:
+
+\begin{description}
+
+\item[Plain integers]
+These represent numbers in the range $-2^{31}$ through $2^{31}-1$.
+(The range may be larger on machines with a larger natural word
+size, but not smaller.)
+When the result of an operation falls outside this range, the
+exception \verb\OverflowError\ is raised.
+For the purpose of shift and mask operations, integers are assumed to
+have a binary, 2's complement notation using 32 or more bits, and
+hiding no bits from the user (i.e., all $2^{32}$ different bit
+patterns correspond to different values).
+\obindex{plain integer}
+
+\item[Long integers]
+These represent numbers in an unlimited range, subject to available
+(virtual) memory only.  For the purpose of shift and mask operations,
+a binary representation is assumed, and negative numbers are
+represented in a variant of 2's complement which gives the illusion of
+an infinite string of sign bits extending to the left.
+\obindex{long integer}
+
+\end{description} % Integers
+
+The rules for integer representation are intended to give the most
+meaningful interpretation of shift and mask operations involving
+negative integers and the least surprises when switching between the
+plain and long integer domains.  For any operation except left shift,
+if it yields a result in the plain integer domain without causing
+overflow, it will yield the same result in the long integer domain or
+when using mixed operands.
+\indexii{integer}{representation}
+
+\item[Floating point numbers]
+These represent machine-level double precision floating point numbers.  
+You are at the mercy of the underlying machine architecture and
+C implementation for the accepted range and handling of overflow.
+\obindex{floating point}
+\indexii{floating point}{number}
+\index{C}
+
+\end{description} % Numbers
+
+\item[Sequences]
+These represent finite ordered sets indexed by natural numbers.
+The built-in function \verb\len()\ returns the number of elements
+of a sequence.  When this number is $n$, the index set contains
+the numbers $0, 1, \ldots, n-1$.  Element \verb\i\ of sequence
+\verb\a\ is selected by \verb\a[i]\.
+\obindex{seqence}
+\bifuncindex{len}
+\index{index operation}
+\index{item selection}
+\index{subscription}
+
+Sequences also support slicing: \verb\a[i:j]\ selects all elements
+with index $k$ such that $i <= k < j$.  When used as an expression,
+a slice is a sequence of the same type --- this implies that the
+index set is renumbered so that it starts at 0 again.
+\index{slicing}
+
+Sequences are distinguished according to their mutability:
+
+\begin{description}
+%
+\item[Immutable sequences]
+An object of an immutable sequence type cannot change once it is
+created.  (If the object contains references to other objects,
+these other objects may be mutable and may be changed; however
+the collection of objects directly referenced by an immutable object
+cannot change.)
+\obindex{immutable sequence}
+\obindex{immutable}
+
+The following types are immutable sequences:
+
+\begin{description}
+
+\item[Strings]
+The elements of a string are characters.  There is no separate
+character type; a character is represented by a string of one element.
+Characters represent (at least) 8-bit bytes.  The built-in
+functions \verb\chr()\ and \verb\ord()\ convert between characters
+and nonnegative integers representing the byte values.
+Bytes with the values 0-127 represent the corresponding ASCII values.
+The string data type is also used to represent arrays of bytes, e.g.
+to hold data read from a file.
+\obindex{string}
+\index{character}
+\index{byte}
+\index{ASCII}
+\bifuncindex{chr}
+\bifuncindex{ord}
+
+(On systems whose native character set is not ASCII, strings may use
+EBCDIC in their internal representation, provided the functions
+\verb\chr()\ and \verb\ord()\ implement a mapping between ASCII and
+EBCDIC, and string comparison preserves the ASCII order.
+Or perhaps someone can propose a better rule?)
+\index{ASCII}
+\index{EBCDIC}
+\index{character set}
+\indexii{string}{comparison}
+\bifuncindex{chr}
+\bifuncindex{ord}
+
+\item[Tuples]
+The elements of a tuple are arbitrary Python objects.
+Tuples of two or more elements are formed by comma-separated lists
+of expressions.  A tuple of one element (a `singleton') can be formed
+by affixing a comma to an expression (an expression by itself does
+not create a tuple, since parentheses must be usable for grouping of
+expressions).  An empty tuple can be formed by enclosing `nothing' in
+parentheses.
+\obindex{tuple}
+\indexii{singleton}{tuple}
+\indexii{empty}{tuple}
+
+\end{description} % Immutable sequences
+
+\item[Mutable sequences]
+Mutable sequences can be changed after they are created.  The
+subscription and slicing notations can be used as the target of
+assignment and \verb\del\ (delete) statements.
+\obindex{mutable sequece}
+\obindex{mutable}
+\indexii{assignment}{statement}
+\index{delete}
+\stindex{del}
+\index{subscription}
+\index{slicing}
+
+There is currently a single mutable sequence type:
+
+\begin{description}
+
+\item[Lists]
+The elements of a list are arbitrary Python objects.  Lists are formed
+by placing a comma-separated list of expressions in square brackets.
+(Note that there are no special cases needed to form lists of length 0
+or 1.)
+\obindex{list}
+
+\end{description} % Mutable sequences
+
+\end{description} % Sequences
+
+\item[Mapping types]
+These represent finite sets of objects indexed by arbitrary index sets.
+The subscript notation \verb\a[k]\ selects the element indexed
+by \verb\k\ from the mapping \verb\a\; this can be used in
+expressions and as the target of assignments or \verb\del\ statements.
+The built-in function \verb\len()\ returns the number of elements
+in a mapping.
+\bifuncindex{len}
+\index{subscription}
+\obindex{mapping}
+
+There is currently a single mapping type:
+
+\begin{description}
+
+\item[Dictionaries]
+These represent finite sets of objects indexed by strings.
+Dictionaries are mutable; they are created by the \verb\{...}\
+notation (see section \ref{dict}).  (Implementation note: the strings
+used for indexing must not contain null bytes.)
+\obindex{dictionary}
+\obindex{mutable}
+
+\end{description} % Mapping types
+
+\item[Callable types]
+These are the types to which the function call (invocation) operation,
+written as \verb\function(argument, argument, ...)\, can be applied:
+\indexii{function}{call}
+\index{invocation}
+\indexii{function}{argument}
+\obindex{callable}
+
+\begin{description}
+
+\item[User-defined functions]
+A user-defined function object is created by a function definition
+(see section \ref{function}).  It should be called with an argument
+list containing the same number of items as the function's formal
+parameter list.
+\indexii{user-defined}{function}
+\obindex{function}
+\obindex{user-defined function}
+
+Special read-only attributes: \verb\func_code\ is the code object
+representing the compiled function body, and \verb\func_globals\ is (a
+reference to) the dictionary that holds the function's global
+variables --- it implements the global name space of the module in
+which the function was defined.
+\ttindex{func_code}
+\ttindex{func_globals}
+\indexii{global}{name space}
+
+\item[User-defined methods]
+A user-defined method (a.k.a. {\em object closure}) is a pair of a
+class instance object and a user-defined function.  It should be
+called with an argument list containing one item less than the number
+of items in the function's formal parameter list.  When called, the
+class instance becomes the first argument, and the call arguments are
+shifted one to the right.
+\obindex{method}
+\obindex{user-defined method}
+\indexii{user-defined}{method}
+\index{object closure}
+
+Special read-only attributes: \verb\im_self\ is the class instance
+object, \verb\im_func\ is the function object.
+\ttindex{im_func}
+\ttindex{im_self}
+
+\item[Built-in functions]
+A built-in function object is a wrapper around a C function.  Examples
+of built-in functions are \verb\len\ and \verb\math.sin\.  There
+are no special attributes.  The number and type of the arguments are
+determined by the C function.
+\obindex{built-in function}
+\obindex{function}
+\index{C}
+
+\item[Built-in methods]
+This is really a different disguise of a built-in function, this time
+containing an object passed to the C function as an implicit extra
+argument.  An example of a built-in method is \verb\list.append\ if
+\verb\list\ is a list object.
+\obindex{built-in method}
+\obindex{method}
+\indexii{built-in}{method}
+
+\item[Classes]
+Class objects are described below.  When a class object is called as a
+parameterless function, a new class instance (also described below) is
+created and returned.  The class's initialization function is not
+called --- this is the responsibility of the caller.  It is illegal to
+call a class object with one or more arguments.
+\obindex{class}
+\obindex{class instance}
+\obindex{instance}
+\indexii{class object}{call}
+
+\end{description}
+
+\item[Modules]
+Modules are imported by the \verb\import\ statement (see section
+\ref{import}).  A module object is a container for a module's name
+space, which is a dictionary (the same dictionary as referenced by the
+\verb\func_globals\ attribute of functions defined in the module).
+Module attribute references are translated to lookups in this
+dictionary.  A module object does not contain the code object used to
+initialize the module (since it isn't needed once the initialization
+is done).
+\stindex{import}
+\obindex{module}
+
+Attribute assignment update the module's name space dictionary.
+
+Special read-only attributes: \verb\__dict__\ yields the module's name
+space as a dictionary object; \verb\__name__\ yields the module's name
+as a string object.
+\ttindex{__dict__}
+\ttindex{__name__}
+\indexii{module}{name space}
+
+\item[Classes]
+Class objects are created by class definitions (see section
+\ref{class}).  A class is a container for a dictionary containing the
+class's name space.  Class attribute references are translated to
+lookups in this dictionary.  When an attribute name is not found
+there, the attribute search continues in the base classes.  The search
+is depth-first, left-to-right in the order of their occurrence in the
+base class list.
+\obindex{class}
+\obindex{class instance}
+\obindex{instance}
+\indexii{class object}{call}
+\index{container}
+\index{dictionary}
+\indexii{class}{attribute}
+
+Class attribute assignments update the class's dictionary, never the
+dictionary of a base class.
+\indexiii{class}{attribute}{assignment}
+
+A class can be called as a parameterless function to yield a class
+instance (see above).
+\indexii{class object}{call}
+
+Special read-only attributes: \verb\__dict__\ yields the dictionary
+containing the class's name space; \verb\__bases__\ yields a tuple
+(possibly empty or a singleton) containing the base classes, in the
+order of their occurrence in the base class list.
+\ttindex{__dict__}
+\ttindex{__bases__}
+
+\item[Class instances]
+A class instance is created by calling a class object as a
+parameterless function.  A class instance has a dictionary in which
+attribute references are searched.  When an attribute is not found
+there, and the instance's class has an attribute by that name, and
+that class attribute is a user-defined function (and in no other
+cases), the instance attribute reference yields a user-defined method
+object (see above) constructed from the instance and the function.
+\obindex{class instance}
+\obindex{instance}
+\indexii{class}{instance}
+\indexii{class instance}{attribute}
+
+Attribute assignments update the instance's dictionary.
+\indexiii{class instance}{attribute}{assignment}
+
+Class instances can pretend to be numbers, sequences, or mappings if
+they have methods with certain special names.  These are described in
+section \ref{specialnames}.
+\obindex{number}
+\obindex{sequence}
+\obindex{mapping}
+
+Special read-only attributes: \verb\__dict__\ yields the attribute
+dictionary; \verb\__class__\ yields the instance's class.
+\ttindex{__dict__}
+\ttindex{__class__}
+
+\item[Files]
+A file object represents an open file.  (It is a wrapper around a C
+{\tt stdio} file pointer.)  File objects are created by the
+\verb\open()\ built-in function, and also by \verb\posix.popen()\ and
+the \verb\makefile\ method of socket objects.  \verb\sys.stdin\,
+\verb\sys.stdout\ and \verb\sys.stderr\ are file objects corresponding
+the the interpreter's standard input, output and error streams.
+See the Python Library Reference for methods of file objects and other
+details.
+\obindex{file}
+\index{C}
+\index{stdio}
+\bifuncindex{open}
+\bifuncindex{popen}
+\bifuncindex{makefile}
+\ttindex{stdin}
+\ttindex{stdout}
+\ttindex{stderr}
+\ttindex{sys.stdin}
+\ttindex{sys.stdout}
+\ttindex{sys.stderr}
+
+\item[Internal types]
+A few types used internally by the interpreter are exposed to the user.
+Their definition may change with future versions of the interpreter,
+but they are mentioned here for completeness.
+\index{internal type}
+
+\begin{description}
+
+\item[Code objects]
+Code objects represent executable code.  The difference between a code
+object and a function object is that the function object contains an
+explicit reference to the function's context (the module in which it
+was defined) which a code object contains no context.  There is no way
+to execute a bare code object.
+\obindex{code}
+
+Special read-only attributes: \verb\co_code\ is a string representing
+the sequence of instructions; \verb\co_consts\ is a list of literals
+used by the code; \verb\co_names\ is a list of names (strings) used by
+the code; \verb\co_filename\ is the filename from which the code was
+compiled.  (To find out the line numbers, you would have to decode the
+instructions; the standard library module \verb\dis\ contains an
+example of how to do this.)
+\ttindex{co_code}
+\ttindex{co_consts}
+\ttindex{co_names}
+\ttindex{co_filename}
+
+\item[Frame objects]
+Frame objects represent execution frames.  They may occur in traceback
+objects (see below).
+\obindex{frame}
+
+Special read-only attributes: \verb\f_back\ is to the previous
+stack frame (towards the caller), or \verb\None\ if this is the bottom
+stack frame; \verb\f_code\ is the code object being executed in this
+frame; \verb\f_globals\ is the dictionary used to look up global
+variables; \verb\f_locals\ is used for local variables;
+\verb\f_lineno\ gives the line number and \verb\f_lasti\ gives the
+precise instruction (this is an index into the instruction string of
+the code object).
+\ttindex{f_back}
+\ttindex{f_code}
+\ttindex{f_globals}
+\ttindex{f_locals}
+\ttindex{f_lineno}
+\ttindex{f_lasti}
+
+\item[Traceback objects]
+Traceback objects represent a stack trace of an exception.  A
+traceback object is created when an exception occurs.  When the search
+for an exception handler unwinds the execution stack, at each unwound
+level a traceback object is inserted in front of the current
+traceback.  When an exception handler is entered, the stack trace is
+made available to the program as \verb\sys.exc_traceback\.  When the
+program contains no suitable handler, the stack trace is written
+(nicely formatted) to the standard error stream; if the interpreter is
+interactive, it is also made available to the user as
+\verb\sys.last_traceback\.
+\obindex{traceback}
+\indexii{stack}{trace}
+\indexii{exception}{handler}
+\indexii{execution}{stack}
+\ttindex{exc_traceback}
+\ttindex{last_traceback}
+\ttindex{sys.exc_traceback}
+\ttindex{sys.last_traceback}
+
+Special read-only attributes: \verb\tb_next\ is the next level in the
+stack trace (towards the frame where the exception occurred), or
+\verb\None\ if there is no next level; \verb\tb_frame\ points to the
+execution frame of the current level; \verb\tb_lineno\ gives the line
+number where the exception occurred; \verb\tb_lasti\ indicates the
+precise instruction.  The line number and last instruction in the
+traceback may differ from the line number of its frame object if the
+exception occurred in a \verb\try\ statement with no matching
+\verb\except\ clause or with a \verb\finally\ clause.
+\ttindex{tb_next}
+\ttindex{tb_frame}
+\ttindex{tb_lineno}
+\ttindex{tb_lasti}
+\stindex{try}
+
+\end{description} % Internal types
+
+\end{description} % Types
+
+
+\section{Special method names} \label{specialnames}
+
+A class can implement certain operations that are invoked by special
+syntax (such as subscription or arithmetic operations) by defining
+methods with special names.  For instance, if a class defines a
+method named \verb\__getitem__\, and \verb\x\ is an instance of this
+class, then \verb\x[i]\ is equivalent to \verb\x.__getitem__(i)\.
+(The reverse is not true --- if \verb\x\ is a list object,
+\verb\x.__getitem__(i)\ is not equivalent to \verb\x[i]\.)
+
+Except for \verb\__repr__\ and \verb\__cmp__\, attempts to execute an
+operation raise an exception when no appropriate method is defined.
+For \verb\__repr__\ and \verb\__cmp__\, the traditional
+interpretations are used in this case.
+
+
+\subsection{Special methods for any type}
+
+\begin{description}
+
+\item[\tt __repr__(self)]
+Called by the \verb\print\ statement and conversions (reverse quotes) to
+compute the string representation of an object.
+
+\item[\tt _cmp__(self, other)]
+Called by all comparison operations.  Should return -1 if
+\verb\self < other\,  0 if \verb\self == other\, +1 if
+\verb\self > other\.  (Implementation note: due to limitations in the
+interpreter, exceptions raised by comparisons are ignored, and the
+objects will be considered equal in this case.)
+
+\end{description}
+
+
+\subsection{Special methods for sequence and mapping types}
+
+\begin{description}
+
+\item[\tt __len__(self)]
+Called to implement the built-in function \verb\len()\.  Should return
+the length of the object, an integer \verb\>=\ 0.  Also, an object
+whose \verb\__len__()\ method returns 0 is considered to be false in a
+Boolean context.
+
+\item[\tt __getitem__(self, key)]
+Called to implement evaluation of \verb\self[key]\.  Note that the
+special interpretation of negative keys (if the class wishes to
+emulate a sequence type) is up to the \verb\__getitem__\ method.
+
+\item[\tt __setitem__(self, key, value)]
+Called to implement assignment to \verb\self[key]\.  Same note as for
+\verb\__getitem__\.
+
+\item[\tt __delitem__(self, key)]
+Called to implement deletion of \verb\self[key]\.  Same note as for
+\verb\__getitem__\.
+
+\end{description}
+
+
+\subsection{Special methods for sequence types}
+
+\begin{description}
+
+\item[\tt __getslice__(self, i, j)]
+Called to implement evaluation of \verb\self[i:j]\.  Note that missing
+\verb\i\ or \verb\j\ are replaced by 0 or \verb\len(self)\,
+respectively, and \verb\len(self)\ has been added (once) to originally
+negative \verb\i\ or \verb\j\ by the time this function is called
+(unlike for \verb\__getitem__\).
+
+\item[\tt __setslice__(self, i, j, sequence)]
+Called to implement assignment to \verb\self[i:j]\.  Same notes as for
+\verb\__getslice__\.
+
+\item[\tt __delslice__(self, i, j)]
+Called to implement deletion of \verb\self[i:j]\.  Same notes as for
+\verb\__getslice__\.
+
+\end{description}
+
+
+\subsection{Special methods for numeric types}
+
+\begin{description}
+
+\item[\tt __add__(self, other)]\itemjoin
+\item[\tt __sub__(self, other)]\itemjoin
+\item[\tt __mul__(self, other)]\itemjoin
+\item[\tt __div__(self, other)]\itemjoin
+\item[\tt __mod__(self, other)]\itemjoin
+\item[\tt __divmod__(self, other)]\itemjoin
+\item[\tt __pow__(self, other)]\itemjoin
+\item[\tt __lshift__(self, other)]\itemjoin
+\item[\tt __rshift__(self, other)]\itemjoin
+\item[\tt __and__(self, other)]\itemjoin
+\item[\tt __xor__(self, other)]\itemjoin
+\item[\tt __or__(self, other)]\itembreak
+Called to implement the binary arithmetic operations (\verb\+\,
+\verb\-\, \verb\*\, \verb\/\, \verb\%\, \verb\divmod()\, \verb\pow()\,
+\verb\<<\, \verb\>>\, \verb\&\, \verb\^\, \verb\|\).
+
+\item[\tt __neg__(self)]\itemjoin
+\item[\tt __pos__(self)]\itemjoin
+\item[\tt __abs__(self)]\itemjoin
+\item[\tt __invert__(self)]\itembreak
+Called to implement the unary arithmetic operations (\verb\-\, \verb\+\,
+\verb\abs()\ and \verb\~\).
+
+\item[\tt __nonzero__(self)]
+Called to implement boolean testing; should return 0 or 1.  An
+alternative name for this method is \verb\__len__\.
+
+\item[\tt __coerce__(self, other)]
+Called to implement ``mixed-mode'' numeric arithmetic.  Should either
+return a tuple containing self and other converted to a common numeric
+type, or None if no way of conversion is known.  When the common type
+would be the type of other, it is sufficient to return None, since the
+interpreter will also ask the other object to attempt a coercion (but
+sometimes, if the implementation of the other type cannot be changed,
+it is useful to do the conversion to the other type here).
+
+Note that this method is not called to coerce the arguments to \verb\+\
+and \verb\*\, because these are also used to implement sequence
+concatenation and repetition, respectively.  Also note that, for the
+same reason, in \verb\n*x\, where \verb\n\ is a built-in number and
+\verb\x\ is an instance, a call to \verb\x.__mul__(n)\ is made.%
+\footnote{The interpreter should really distinguish between
+user-defined classes implementing sequences, mappings or numbers, but
+currently it doesn't --- hence this strange exception.}
+
+\item[\tt __int__(self)]\itemjoin
+\item[\tt __long__(self)]\itemjoin
+\item[\tt __float__(self)]\itembreak
+Called to implement the built-in functions \verb\int()\, \verb\long()\
+and \verb\float()\.  Should return a value of the appropriate type.
+
+\end{description}
