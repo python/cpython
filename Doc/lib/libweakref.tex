@@ -14,6 +14,9 @@
 The \module{weakref} module allows the Python programmer to create
 \dfn{weak references} to objects.
 
+In the discussion which follows, the term \dfn{referent} means the
+object which is referred to by a weak reference.
+
 XXX --- need to say more here!
 
 Not all objects can be weakly referenced; those objects which do
@@ -24,12 +27,13 @@ be made to support weak references; see section \ref{weakref-extension},
 
 
 \begin{funcdesc}{ref}{object\optional{, callback}}
-  Return a weak reference to \var{object}.  If \var{callback} is
+  Return a weak reference to \var{object}.  The original object can be
+  retrieved by calling the reference object if the referent is still
+  alive; if the referent is no longer alive, calling the reference
+  object will cause \code{None} to be returned.  If \var{callback} is
   provided, it will be called when the object is about to be
   finalized; the weak reference object will be passed as the only
   parameter to the callback; the referent will no longer be available.
-  The original object can be retrieved by calling the reference
-  object, if the referent is still alive.
 
   It is allowable for many weak references to be constructed for the
   same object.  Callbacks registered for each weak reference will be
@@ -48,10 +52,11 @@ be made to support weak references; see section \ref{weakref-extension},
   \exception{TypeError}.
   
   Weak references support tests for equality, but not ordering.  If
-  the \var{object} is still alive, two references are equal if the
-  objects are equal (regardless of the \var{callback}).  If
-  \var{object} has been deleted, they are equal only if the references
-  being compared are the same reference object.
+  the referents are still alive, two references have the same
+  equalality relationship as their referents (regardless of the
+  \var{callback}).  If either referent has been deleted, the
+  references are equal only if the reference objects are the same
+  object.
 \end{funcdesc}
 
 \begin{funcdesc}{proxy}{object\optional{, callback}}
@@ -89,7 +94,7 @@ be made to support weak references; see section \ref{weakref-extension},
 \begin{classdesc}{WeakValueDictionary}{\optional{dict}}
   Mapping class that references values weakly.  Entries in the
   dictionary will be discarded when no strong reference to the value
-  exists anymore.
+  exists any more.
 \end{classdesc}
 
 \begin{datadesc}{ReferenceType}
@@ -158,7 +163,8 @@ application code that needs to use a reference object should follow
 this pattern:
 
 \begin{verbatim}
-o = ref()
+# r is a weak reference object
+o = r()
 if o is None:
     # referent has been garbage collected
     print "Object has been allocated; can't frobnicate."
@@ -169,7 +175,7 @@ else:
 
 Using a separate test for ``liveness'' creates race conditions in
 threaded applications; another thread can cause a weak reference to
-become invalidated before the \method{get()} method is called; the
+become invalidated before the weak reference is called; the
 idiom shown above is safe in threaded applications as well as
 single-threaded applications.
 
@@ -189,10 +195,12 @@ import weakref
 _id2obj_dict = weakref.WeakValueDictionary()
 
 def remember(obj):
-    _id2obj_dict[id(obj)] = obj
+    oid = id(obj)
+    _id2obj_dict[oid] = obj
+    return oid
 
-def id2obj(id):
-    return _id2obj_dict(id)
+def id2obj(oid):
+    return _id2obj_dict[oid]
 \end{verbatim}
 
 
@@ -205,7 +213,7 @@ overhead on those objects which do not benefit by weak referencing
 (such as numbers).
 
 For an object to be weakly referencable, the extension must include a
-\ctype{PyObject *} field in the instance structure for the use of the
+\ctype{PyObject*} field in the instance structure for the use of the
 weak reference mechanism; it must be initialized to \NULL{} by the
 object's constructor.  It must also set the \member{tp_weaklistoffset}
 field of the corresponding type object to the offset of the field.
@@ -236,17 +244,19 @@ PyTypeObject PyInstance_Type = {
 
 The only further addition is that the destructor needs to call the
 weak reference manager to clear any weak references.  This should be
-done before any other parts of the destruction have occurred:
+done before any other parts of the destruction have occurred, but is
+only required if the weak reference list is non-\NULL:
 
 \begin{verbatim}
 static void
 instance_dealloc(PyInstanceObject *inst)
 {
-    /* Allocate tempories if needed, but do not begin
+    /* Allocate temporaries if needed, but do not begin
        destruction just yet.
      */
 
-    PyObject_ClearWeakRefs((PyObject *) inst);
+    if (inst->in_weakreflist != NULL)
+        PyObject_ClearWeakRefs((PyObject *) inst);
 
     /* Proceed with object destruction normally. */
 }
