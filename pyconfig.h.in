@@ -59,7 +59,7 @@
 /* Define to 1 if you have the `ctermid' function. */
 #undef HAVE_CTERMID
 
-/* Define to 1 if you have the `ctermid_r' function. */
+/* Define if you have the 'ctermid_r' function. */
 #undef HAVE_CTERMID_R
 
 /* Define to 1 if you have the device macros. */
@@ -348,7 +348,7 @@
 /* Define to 1 if you have the `setgid' function. */
 #undef HAVE_SETGID
 
-/* Define to 1 if you have the `setgroups' function. */
+/* Define if you have the 'setgroups' function. */
 #undef HAVE_SETGROUPS
 
 /* Define to 1 if you have the `setlocale' function. */
