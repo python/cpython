@@ -23,46 +23,47 @@ from distutils.dir_util import copy_tree
 from distutils.log import log
 from distutils.spawn import spawn
 from distutils import sysconfig, dep_util
+from distutils.util import change_root
 
-def visit(arg, d,l):
-	for f in l:
-		arg.hackFile(d,f)
 		
 class DocBuild(build):
 	def initialize_options(self):
 		build.initialize_options(self)
-		self.doc_dir = None
-		self.base_dir = None
-		self.build_dir = None
+		self.build_html = None
+		self.build_dest = None
 		self.download = 1
 		self.doc_version = '2.2.1'
 		
 	def finalize_options(self):
 		build.finalize_options(self)
-		if self.build_dir is None:
-			self.build_dir = self.build_temp
-		if self.doc_dir is None:
-			self.doc_dir = data_info = self.distribution.data_files[0][1][0]
-		self.build_dest = os.path.abspath(os.path.join(self.build_dir,self.doc_dir))
-		#print 'DocBuild.finalize_options:\n  build_dest = %s,\n  doc_dir = %s' % (self.build_dest, self.doc_dir)
+		if self.build_html is None:
+			self.build_html = os.path.join(self.build_base, 'html')
+		if self.build_dest is None:
+			self.build_dest = os.path.join(self.build_base, 'processed-html')
 	
 	def spawn(self, *args):
 		spawn(args, 1,  self.verbose, self.dry_run)
 	
 	def downloadDocs(self):
 		workdir = os.getcwd()
+		self.mkpath(self.build_html)
+		os.chdir(self.build_base)
 		self.spawn('curl','-O', 'http://www.python.org/ftp/python/doc/%s/html-%s.tgz' % (self.doc_version,self.doc_version))
-		self.mkpath(self.doc_dir)
-		os.chdir(self.doc_dir)
+		os.chdir(workdir)
+		os.chdir(self.build_html)
 		self.spawn('tar', '-xzf', '../html-%s.tgz' % self.doc_version)
-		os.chdir(workdir);
+		os.chdir(workdir)
 		
 	def buildDocsFromSource(self):
-		spawn(('make','--directory', '../../Doc', 'html'), 1, self.verbose, self.dry_run)
-		copy_tree('../../Doc/html', self.doc_dir)
+		srcdir = '../../..'
+		docdir = os.path.join(srcdir, 'Doc')
+		htmldir = os.path.join(docdir, 'html')
+		spawn(('make','--directory', docdir, 'html'), 1, self.verbose, self.dry_run)
+		self.mkpath(self.build_html)
+		copy_tree(htmldir, self.build_html)
 		
 	def ensureHtml(self):
-		if not os.path.exists(self.doc_dir):
+		if not os.path.exists(self.build_html):
 			if self.download:
 				self.downloadDocs()
 			else:
@@ -72,13 +73,14 @@ class DocBuild(build):
 		ind_html = 'index.html'
 		#print 'self.build_dest =', self.build_dest
 		hackedIndex = file(os.path.join(self.build_dest, ind_html),'w')
-		origIndex = file(os.path.join(self.doc_dir,ind_html))
+		origIndex = file(os.path.join(self.build_html,ind_html))
 		r = re.compile('<style type="text/css">.*</style>', re.DOTALL)
 		hackedIndex.write(r.sub('<META NAME="AppleTitle" CONTENT="Python Help">',origIndex.read()))
 	
 	def hackFile(self,d,f):
 		origPath = os.path.join(d,f)
-		outPath = os.path.join(self.build_dir, d, f)
+		assert(origPath[:len(self.build_html)] == self.build_html)
+		outPath = os.path.join(self.build_dest, d[len(self.build_html)+1:], f)
 		(name, ext) = os.path.splitext(f)
 		if os.path.isdir(origPath):
 			self.mkpath(outPath)
@@ -92,7 +94,11 @@ class DocBuild(build):
 			
 	def hackHtml(self):
 		self.r = re.compile('<dl><dd>')
-		os.path.walk(self.doc_dir, visit, self)
+		os.path.walk(self.build_html, self.visit, None)
+
+	def visit(self, dummy, dirname, filenames):
+		for f in filenames:
+			self.hackFile(dirname, f)
 			
 	def makeHelpIndex(self):
 		app = '/Developer/Applications/Apple Help Indexing Tool.app'
@@ -102,45 +108,52 @@ class DocBuild(build):
 	def run(self):
 		self.ensure_finalized()
 		self.ensureHtml()
-		data_info = self.distribution.data_files[0][1]
-		if not os.path.isdir(self.doc_dir):
+		if not os.path.isdir(self.build_html):
 			raise RuntimeError, \
   			"Can't find source folder for documentation."
-		if dep_util.newer(os.path.join(self.doc_dir,'index.html'), os.path.join(self.build_dest,'index.html')):
+  		self.mkpath(self.build_dest)
+		if dep_util.newer(os.path.join(self.build_html,'index.html'), os.path.join(self.build_dest,'index.html')):
 			self.mkpath(self.build_dest)
 			self.hackHtml()
 			self.hackIndex()
 			self.makeHelpIndex()
 
-class DirInstall(Command):
+class AHVDocInstall(Command):
+	description = "install Apple Help Viewer html files"
+	user_options = [('install-doc=', 'd',
+		'directory to install HTML tree'),
+		 ('root=', None,
+		 "install everything relative to this alternate root directory"),
+		]
+		
 	def initialize_options(self):
 		self.build_dest = None
-		self.install_dir = None
+		self.install_doc = None
+		self.prefix = None
+		self.root = None
 			
-	def finalize_options(self):	
+	def finalize_options(self):
+		self.set_undefined_options('install',
+			('prefix', 'prefix'),
+			('root', 'root'))
+#		import pdb ; pdb.set_trace()
 		build_cmd = self.get_finalized_command('build')
 		if self.build_dest == None:
+			build_cmd = self.get_finalized_command('build')
 			self.build_dest = build_cmd.build_dest
-		if self.install_dir == None:
-			self.install_dir = self.distribution.data_files[0][0]
-		print self.build_dest, self.install_dir
+		if self.install_doc == None:
+			self.install_doc = os.path.join(self.prefix, 'Resources/English.lproj/Documentation')
+		print 'INSTALL', self.build_dest, '->', self.install_doc
 		
 	def run(self):
 		self.finalize_options()
 		self.ensure_finalized()
 		print "Running Installer"
-		data_info = self.distribution.data_files[0][1]
-		# spawn('pax','-r', '-w', base_dir, 
-		print self.__dict__
-		self.mkpath(self.install_dir)
-		# The Python way
-		copy_tree(self.build_dest, self.install_dir)
-		# The fast way
-		#workdir=os.getcwd()
-		#os.chdir(self.build_dest)
-		#self.spawn = ('pax', '-r', '-w', '.', self.install_dir)
-		#selfspawn(cmd, 1, self.verbose, self.dry_run);
-		#os.chdir(workdir)
+		instloc = self.install_doc
+		if self.root:
+			instloc = change_root(self.root, instloc)
+		self.mkpath(instloc)
+		copy_tree(self.build_dest, instloc)
 		print "Installation complete"
 		
 def mungeVersion(infile, outfile):
@@ -152,14 +165,13 @@ def mungeVersion(infile, outfile):
 		
 def main():
 	# turn off warnings when deprecated modules are imported
-	import warnings
-	warnings.filterwarnings("ignore",category=DeprecationWarning)
-	setup(name = 'Python Documentation',
+##	import warnings
+##	warnings.filterwarnings("ignore",category=DeprecationWarning)
+	setup(name = 'Documentation',
   		version = '%d.%d' % sys.version_info[:2],
-  		cmdclass = {'install_data':DirInstall, 'build':DocBuild},
-  		# Data to install
-  		data_files =   [(sys.prefix+'/Resources/English.lproj/Documentation',['build-html'])]
-		)
+  		cmdclass = {'install_data':AHVDocInstall, 'build':DocBuild},
+  		data_files = ['dummy'],
+ 		)
 
 if __name__ == '__main__':
 	main()
