@@ -1199,7 +1199,7 @@ Core and builtins
 
 - Optimized list resize operations to make fewer calls to the system
   realloc().  Significantly speeds up list appends, list pops,
-  list comprehensions, and the list contructor (when the input iterable
+  list comprehensions, and the list constructor (when the input iterable
   length is not known).
 
 - Changed the internal list over-allocation scheme.  For larger lists,
