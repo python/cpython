@@ -117,7 +117,6 @@ def main():
     target = 'a.out'                    # normally derived from script name
     makefile = 'Makefile'
     subsystem = 'console'
-    if win: extensions_c = 'frozen_extensions.c'
 
     # parse command line
     try:
@@ -171,6 +170,8 @@ def main():
 
     # locations derived from options
     version = sys.version[:3]
+    if win:
+        extensions_c = 'frozen_extensions.c'
     if ishome:
         print "(Using Python source directory)"
         binlib = exec_prefix
@@ -190,6 +191,7 @@ def main():
         config_c_in = os.path.join(binlib, 'config.c.in')
         frozenmain_c = os.path.join(binlib, 'frozenmain.c')
         makefile_in = os.path.join(binlib, 'Makefile')
+        frozendllmain_c = os.path.join(binlib, 'frozen_dllmain.c')
     supp_sources = []
     defines = []
     includes = ['-I' + incldir, '-I' + config_h_dir]
