@@ -1,9 +1,10 @@
 /* RISCOS module implementation */
 
-#include "h.osfscontrol"
-#include "h.osgbpb"
-#include "h.os"
-#include "h.osfile"
+#include "oslib/osfscontrol.h"
+#include "oslib/osgbpb.h"
+#include "oslib/os.h"
+#include "oslib/osfile.h"
+#include "unixstuff.h"
 
 #include "Python.h"
 
@@ -11,21 +12,26 @@
 
 static os_error *e;
 
-static PyObject *RiscosError; /* Exception riscos.error */
+/*static PyObject *RiscosError;*/ /* Exception riscos.error */
 
-static PyObject *riscos_oserror(void)
-{ PyErr_SetString(RiscosError,e->errmess);
-  return 0;
+static PyObject *riscos_error(char *s)
+{
+	PyErr_SetString(PyExc_OSError, s);
+	return NULL;
 }
 
-static PyObject *riscos_error(char *s) { PyErr_SetString(RiscosError,s);return 0;}
+static PyObject *riscos_oserror(void)
+{
+	return riscos_error(e->errmess);
+}
+
 
 /* RISCOS file commands */
 
 static PyObject *riscos_remove(PyObject *self,PyObject *args)
 {       char *path1;
 	if (!PyArg_Parse(args, "s", &path1)) return NULL;
-	if (remove(path1)) return PyErr_SetFromErrno(RiscosError);
+	if (remove(path1)) return PyErr_SetFromErrno(PyExc_OSError);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -33,7 +39,7 @@ static PyObject *riscos_remove(PyObject *self,PyObject *args)
 static PyObject *riscos_rename(PyObject *self,PyObject *args)
 {	char *path1, *path2;
 	if (!PyArg_Parse(args, "(ss)", &path1, &path2)) return NULL;
-	if (rename(path1,path2)) return PyErr_SetFromErrno(RiscosError);;
+	if (rename(path1,path2)) return PyErr_SetFromErrno(PyExc_OSError);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -211,12 +217,56 @@ static PyObject *riscos_chmod(PyObject *self,PyObject *args)
 	return Py_None;
 }
 
+
 static PyObject *riscos_utime(PyObject *self,PyObject *args)
-{	char *path;
-        int x,y;
-	if (!PyArg_Parse(args, "(s(ii))", &path,&x,&y)) return NULL;
-        e=xosfile_stamp(path);
-        if(e) return riscos_oserror();
+{
+	char *path;
+	long atime, mtime;
+	PyObject* arg;
+
+	if (!PyArg_ParseTuple(args, "sO:utime", &path, &arg))
+		return NULL;
+
+	if (arg == Py_None) {
+		/* optional time values not given */
+		Py_BEGIN_ALLOW_THREADS
+		e=xosfile_stamp(path);
+		Py_END_ALLOW_THREADS
+        	if(e) return riscos_oserror();
+	}
+	else if (!PyArg_Parse(arg, "(ll)", &atime, &mtime)) {
+		PyErr_SetString(PyExc_TypeError,
+				"utime() arg 2 must be a tuple (atime, mtime)");
+		return NULL;
+	}
+	else {
+	        /* catalogue info*/
+	        fileswitch_object_type obj_type;
+	        bits load_addr, exec_addr;
+	        int size;
+	        fileswitch_attr attr;
+
+		/* read old catalogue info */
+		Py_BEGIN_ALLOW_THREADS
+		e=xosfile_read_no_path(path, &obj_type, &load_addr, &exec_addr, &size, &attr);
+		Py_END_ALLOW_THREADS
+	        if(e) return riscos_oserror();
+
+		/* check if load and exec address really contain filetype and date */
+		if ( (load_addr & 0xFFF00000U) != 0xFFF00000U)
+			return riscos_error("can't set date for object with load and exec addresses");
+
+	        /* convert argument mtime to RISC OS load and exec address */
+	        if(acorntime(&exec_addr, &load_addr, (time_t) mtime))
+	        	return riscos_oserror();
+
+		/* write new load and exec address */
+		Py_BEGIN_ALLOW_THREADS
+		e = xosfile_write(path, load_addr, exec_addr, attr);
+		Py_END_ALLOW_THREADS
+	        if(e) return riscos_oserror();
+	}
+
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -328,9 +378,7 @@ initriscos()
 	d = PyModule_GetDict(m);
 
 	/* Initialize riscos.error exception */
-	RiscosError = PyString_FromString("riscos.error");
-	if (RiscosError == NULL || PyDict_SetItemString(d, "error", RiscosError) != 0)
-		Py_FatalError("can't define riscos.error");
+	PyDict_SetItemString(d, "error", PyExc_OSError);
 
 	PyStructSequence_InitType(&StatResultType, &stat_result_desc);
 	PyDict_SetItemString(d, "stat_result", (PyObject*) &StatResultType);

@@ -5,7 +5,7 @@ static char *prefix,*exec_prefix,*progpath,*module_search_path=0;
 
 static void
 calculate_path()
-{ char *pypath=Py_GETENV("Python$Path");
+{ char *pypath=getenv("Python$Path");
   if(pypath)
   { module_search_path=malloc(strlen(pypath)+1);
     if (module_search_path) sprintf(module_search_path,"%s",pypath);
@@ -16,9 +16,9 @@ calculate_path()
     }
   }
   if(!module_search_path) module_search_path = "<Python$Dir>.Lib";
-  prefix="";
+  prefix="<Python$Dir>";
   exec_prefix=prefix;
-  progpath="<Python$Dir>";
+  progpath=Py_GetProgramName();
 }
 
 /* External interface */

@@ -17,20 +17,20 @@ Compiling:
 3. Create missing directories with 'amu cdirs'.
 4. Build with 'amu'.
 
-I've only tested Acorn C/C++ 5.06 and amu.
+I've only tested Acorn/Norcroft C/C++ 5.30 and amu.
 
+Python now uses the 32 bit libraries from Pace as well as the 32 bit
+version of OSLib.
 
 You will also need some additional libraries:
 
-  DLK
-    ftp://ftp.infc.ulst.ac.uk/pub/users/chris/
+  DLK (patched version)
+    http://www.schwertberger.de
   OSLib
     http://www.mk-net.demon.co.uk/oslib
   
   zlib (optional)
     ftp://ftp.freesoftware.com/pub/infozip/zlib/
-  sockets (optional)
-    http://www.mirror.ac.uk/sites/ftp.acorn.co.uk/pub/riscos/releases/networking/tcpip/sockets.arc
   expat (optional)
     http://sourceforge.net/projects/expat/
     (makefile and config.h available from http://www.schwertberger.de/riscos_expat.zip
