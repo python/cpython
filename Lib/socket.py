@@ -178,9 +178,9 @@ class _fileobject:
         self._sock = sock
         self._mode = mode
         if bufsize <= 0:
-	    if bufsize == 0:
-	        bufsize = 1 # Unbuffered mode
-	    else:
+            if bufsize == 0:
+                bufsize = 1 # Unbuffered mode
+            else:
                 bufsize = 8192
         self._rbufsize = bufsize
         self._wbufsize = bufsize
