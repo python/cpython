@@ -164,25 +164,29 @@ class PyBuildExt(build_ext):
         try:
             __import__(ext.name)
         except ImportError:
-            self.announce('WARNING: removing "%s" since importing it failed' %
-                          ext.name)
-            assert not self.inplace
-            fullname = self.get_ext_fullname(ext.name)
-            ext_filename = os.path.join(self.build_lib,
-                                        self.get_ext_filename(fullname))
-            os.remove(ext_filename)
+            if 1:
+                self.announce('*** WARNING: renaming "%s" since importing it'
+                              ' failed: %s' % (ext.name, why))
+                assert not self.inplace
+                basename, tail = os.path.splitext(ext_filename)
+                newname = basename + "_failed" + tail
+                if os.path.exists(newname): os.remove(newname)
+                os.rename(ext_filename, newname)
 
-            # XXX -- This relies on a Vile HACK in
-            # distutils.command.build_ext.build_extension().  The
-            # _built_objects attribute is stored there strictly for
-            # use here.
-            # If there is a failure, _built_objects may not be there,
-            # so catch the AttributeError and move on.
-            try:
-                for filename in self._built_objects:
-                    os.remove(filename)
-            except AttributeError:
-                self.announce('unable to remove files (ignored)')
+                # XXX -- This relies on a Vile HACK in
+                # distutils.command.build_ext.build_extension().  The
+                # _built_objects attribute is stored there strictly for
+                # use here.
+                # If there is a failure, _built_objects may not be there,
+                # so catch the AttributeError and move on.
+                try:
+                    for filename in self._built_objects:
+                        os.remove(filename)
+                except AttributeError:
+                    self.announce('unable to remove files (ignored)')
+            else:
+                self.announce('*** WARNING: importing extension "%s" '
+                              'failed: %s' % (ext.name, why))
 
     def get_platform (self):
         # Get value of sys.platform
