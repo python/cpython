@@ -399,6 +399,7 @@ Python/getplatform.o: $(srcdir)/Python/getplatform.c
 Python/importdl.o: $(srcdir)/Python/importdl.c
 		$(CC) -c $(CFLAGS) -I$(DLINCLDIR) -o $@ $(srcdir)/Python/importdl.c
 
+Objects/object.o: $(srcdir)/Objects/object.c $(srcdir)/Objects/obmalloc.c
 
 Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
 				$(srcdir)/Objects/unicodetype_db.h

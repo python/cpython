@@ -1641,3 +1641,7 @@ _PyTrash_destroy_chain(void)
 		--_PyTrash_delete_nesting;
 	}
 }
+
+#ifdef WITH_PYMALLOC
+#include "obmalloc.c"
+#endif
