@@ -11,6 +11,10 @@ class AutoExpand:
         '<<expand-word>>': ['<Alt-slash>'],
     }
 
+    unix_keydefs = {
+        '<<expand-word>>': ['<Meta-slash>'],
+    }
+
     menudefs = [
         ('edit', [
             ('E_xpand word', '<<expand-word>>'),
