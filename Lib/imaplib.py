@@ -16,7 +16,7 @@ Public functions:       Internaldate2tuple
 # String method conversion by ESR, February 2001.
 # GET/SETACL contributed by Anthony Baxter <anthony@interlink.com.au> April 2001.
 
-__version__ = "2.47"
+__version__ = "2.49"
 
 import binascii, re, socket, time, random, sys
 
