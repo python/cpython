@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -30,6 +30,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* "allobjects.c" -- Source for precompiled header "allobjects.h" */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifdef THINK_C
 #define macintosh
 #endif
@@ -37,7 +41,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <stdio.h>
 #include <string.h>
 
-#include "PROTO.h"
+#include "myproto.h"
 
 #include "object.h"
 #include "objimpl.h"

@@ -241,7 +241,7 @@ class Wdb(bdb.Bdb, basewin.BaseWindow): # Window debugger
 			stdwin.fleep()
 	
 	def draw(self, detail):
-		import linecache, codehack, string
+		import linecache, string
 		d = self.win.begindrawing()
 		try:
 			h, v = 0, 0
@@ -252,7 +252,7 @@ class Wdb(bdb.Bdb, basewin.BaseWindow): # Window debugger
 				else:
 					s = '  '
 				s = s + fn + '(' + `lineno` + ')'
-				s = s + codehack.getcodename(f.f_code)
+				s = s + f.f_code.co_name
 				if f.f_locals.has_key('__args__'):
 					args = f.f_locals['__args__']
 					if args is not None:
@@ -286,6 +286,8 @@ def runcall(*args):
 	try: apply(x.runcall, args)
 	finally: x.close()
 
+def set_trace():
+	Wdb().set_trace()
 
 # Post-Mortem interface
 
@@ -304,6 +306,4 @@ def pm():
 TESTCMD = 'import x; x.main()'
 
 def test():
-	import linecache
-	linecache.checkcache()
 	run(TESTCMD)

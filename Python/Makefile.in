@@ -9,19 +9,20 @@ VPATH=		@srcdir@
 
 CC=		@CC@
 RANLIB=		@RANLIB@
+AR=		@AR@
+
 DEFS=		@DEFS@
 LIBOBJS=	@LIBOBJS@
 LIBS=		@LIBS@
+DLINCLDIR=	@DLINCLDIR@
 
 
 # === Other things that are customizable but not by configure ===
 
-TOP=		..
-INCLDIR=	$(TOP)/Py
-OPT=		-g
-CFLAGS=		$(OPT) -I$(INCLDIR) $(DEFS)
+INCLDIR=	$(srcdir)/../Include
+OPT=		-O
+CFLAGS=		$(OPT) -I$(INCLDIR) -I.. $(DEFS)
 
-AR=		ar
 MKDEP=		mkdep
 SHELL=		/bin/sh
 
@@ -29,52 +30,77 @@ SHELL=		/bin/sh
 # === Fixed definitions ===
 
 OBJS=		\
-		arraymodule.o \
 		bltinmodule.o \
 		ceval.o cgensupport.o compile.o \
 		errors.o \
 		frozenmain.o \
 		getmtime.o graminit.o \
 		import.o \
-		marshal.o mathmodule.o modsupport.o \
-		parsermodule.o posixmodule.o pythonmain.o pythonrun.o \
-		regexmodule.o regexpr.o \
-		stropmodule.o structmember.o structmodule.o sysmodule.o \
-		timemodule.o traceback.o \
+		marshal.o modsupport.o mystrtoul.o \
+		pythonmain.o pythonrun.o \
+		sigcheck.o structmember.o sysmodule.o \
+		traceback.o \
 		version.o \
 		$(LIBOBJS)
 
 LIB=		libPython.a
-
-MYLIBS=		$(LIB) ../Objects/libObjects.a ../Parser/libParser.a
 
 SYSLIBS=	-lm
 
 
 # === Rules ===
 
-all:		$(LIB) python
+all:		$(LIB)
 
 $(LIB):		$(OBJS)
 		$(AR) cr $(LIB) $(OBJS)
 		$(RANLIB) $(LIB)
 
-python:		config.o $(MYLIBS)
-		$(CC) config.o $(MYLIBS) $(LIBS) $(SYSLIBS) -o python
-
-config.o:	Makefile
-
 clean:
 		-rm -f *.o core *~ [@,#]* *.old *.orig *.rej
 
 clobber:	clean
-		-rm -f *.a python tags TAGS
+		-rm -f *.a tags TAGS
 
-Makefile:	Makefile.in $(TOP)/config.status
-		CONFIG_FILES=Makefile $(SHELL) $(TOP)/config.status
+Makefile:	$(srcdir)/Makefile.in ../config.status
+		(cd ..; CONFIG_FILES=Python/Makefile CONFIG_HEADERS= \
+		$(SHELL) config.status)
 
-depend:		$(SRCS)
-		$(MKDEP) $(CFLAGS) $(SRCS) $(PGENSRCS)
+import.o:	import.c
+		$(CC) $(CFLAGS) -I$(DLINCLDIR) -c $(srcdir)/import.c
+
+depend:
+		$(MKDEP) $(CFLAGS) `echo $(OBJS) | tr ' ' '\012' | \
+					sed 's|\(.*\)\.o|$(srcdir)/\1.c|'`
+
+.PRECIOUS:	Makefile
+
+bltinmodule.o: bltinmodule.c
+ceval.o: ceval.c
+cgensupport.o: cgensupport.c
+compile.o: compile.c
+dup2.o: dup2.c
+errors.o: errors.c
+fmod.o: fmod.c
+frozenmain.o: frozenmain.c
+getcwd.o: getcwd.c
+getmtime.o: getmtime.c
+graminit.o: graminit.c
+import.o: import.c
+marshal.o: marshal.c
+memmove.o: memmove.c
+modsupport.o: modsupport.c
+mystrtoul.o: mystrtoul.c
+pythonmain.o: pythonmain.c
+pythonrun.o: pythonrun.c
+sigcheck.o: sigcheck.c
+strerror.o: strerror.c
+strtod.o: strtod.c
+structmember.o: structmember.c
+sysmodule.o: sysmodule.c
+thread.o: thread.c
+traceback.o: traceback.c
+version.o: version.c
 
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.

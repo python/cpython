@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -103,7 +103,7 @@ class_getattr(op, name)
 	register char *name;
 {
 	register object *v;
-	object *class;
+	classobject *class;
 	if (strcmp(name, "__dict__") == 0) {
 		INCREF(op->cl_dict);
 		return op->cl_dict;
@@ -189,12 +189,12 @@ typeobject Classtype = {
 	"class",
 	sizeof(classobject),
 	0,
-	class_dealloc,	/*tp_dealloc*/
+	(destructor)class_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
-	class_getattr,	/*tp_getattr*/
-	class_setattr,	/*tp_setattr*/
+	(getattrfunc)class_getattr, /*tp_getattr*/
+	(setattrfunc)class_setattr, /*tp_setattr*/
 	0,		/*tp_compare*/
-	class_repr,	/*tp_repr*/
+	(reprfunc)class_repr, /*tp_repr*/
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
@@ -235,7 +235,7 @@ addaccess(class, inst)
 	
 	n = gettuplesize(class->cl_bases);
 	for (i = 0; i < n; i++) {
-		if (addaccess(gettupleitem(class->cl_bases, i), inst) < 0)
+		if (addaccess((classobject *)gettupleitem(class->cl_bases, i), inst) < 0)
 			return -1;
 	}
 	
@@ -613,9 +613,9 @@ instance_ass_subscript(inst, key, value)
 }
 
 static mapping_methods instance_as_mapping = {
-	instance_length,	/*mp_length*/
-	instance_subscript,	/*mp_subscript*/
-	instance_ass_subscript,	/*mp_ass_subscript*/
+	(inquiry)instance_length, /*mp_length*/
+	(binaryfunc)instance_subscript, /*mp_subscript*/
+	(objobjargproc)instance_ass_subscript, /*mp_ass_subscript*/
 };
 
 static object *
@@ -764,13 +764,13 @@ instance_ass_slice(inst, i, j, value)
 }
 
 static sequence_methods instance_as_sequence = {
-	instance_length,	/*sq_length*/
-	instance_concat,	/*sq_concat*/
-	instance_repeat,	/*sq_repeat*/
-	instance_item,		/*sq_item*/
-	instance_slice,		/*sq_slice*/
-	instance_ass_item,	/*sq_ass_item*/
-	instance_ass_slice,	/*sq_ass_slice*/
+	(inquiry)instance_length, /*sq_length*/
+	(binaryfunc)instance_concat, /*sq_concat*/
+	(intargfunc)instance_repeat, /*sq_repeat*/
+	(intargfunc)instance_item, /*sq_item*/
+	(intintargfunc)instance_slice, /*sq_slice*/
+	(intobjargproc)instance_ass_item, /*sq_ass_item*/
+	(intintobjargproc)instance_ass_slice, /*sq_ass_slice*/
 };
 
 static object *
@@ -916,29 +916,29 @@ UNARY(instance_oct, "__oct__")
 UNARY(instance_hex, "__hex__")
 
 static number_methods instance_as_number = {
-	instance_add,		/*nb_add*/
-	instance_sub,		/*nb_subtract*/
-	instance_mul,		/*nb_multiply*/
-	instance_div,		/*nb_divide*/
-	instance_mod,		/*nb_remainder*/
-	instance_divmod,	/*nb_divmod*/
-	instance_pow,		/*nb_power*/
-	instance_neg,		/*nb_negative*/
-	instance_pos,		/*nb_positive*/
-	instance_abs,		/*nb_absolute*/
-	instance_nonzero,	/*nb_nonzero*/
-	instance_invert,	/*nb_invert*/
-	instance_lshift,	/*nb_lshift*/
-	instance_rshift,	/*nb_rshift*/
-	instance_and,		/*nb_and*/
-	instance_xor,		/*nb_xor*/
-	instance_or,		/*nb_or*/
-	instance_coerce,	/*nb_coerce*/
-	instance_int,		/*nb_int*/
-	instance_long,		/*nb_long*/
-	instance_float,		/*nb_float*/
-	instance_oct,		/*nb_oct*/
-	instance_hex,		/*nb_hex*/
+	(binaryfunc)instance_add, /*nb_add*/
+	(binaryfunc)instance_sub, /*nb_subtract*/
+	(binaryfunc)instance_mul, /*nb_multiply*/
+	(binaryfunc)instance_div, /*nb_divide*/
+	(binaryfunc)instance_mod, /*nb_remainder*/
+	(binaryfunc)instance_divmod, /*nb_divmod*/
+	(binaryfunc)instance_pow, /*nb_power*/
+	(unaryfunc)instance_neg, /*nb_negative*/
+	(unaryfunc)instance_pos, /*nb_positive*/
+	(unaryfunc)instance_abs, /*nb_absolute*/
+	(inquiry)instance_nonzero, /*nb_nonzero*/
+	(unaryfunc)instance_invert, /*nb_invert*/
+	(binaryfunc)instance_lshift, /*nb_lshift*/
+	(binaryfunc)instance_rshift, /*nb_rshift*/
+	(binaryfunc)instance_and, /*nb_and*/
+	(binaryfunc)instance_xor, /*nb_xor*/
+	(binaryfunc)instance_or, /*nb_or*/
+	(coercion)instance_coerce, /*nb_coerce*/
+	(unaryfunc)instance_int, /*nb_int*/
+	(unaryfunc)instance_long, /*nb_long*/
+	(unaryfunc)instance_float, /*nb_float*/
+	(unaryfunc)instance_oct, /*nb_oct*/
+	(unaryfunc)instance_hex, /*nb_hex*/
 };
 
 typeobject Instancetype = {
@@ -947,17 +947,17 @@ typeobject Instancetype = {
 	"instance",
 	sizeof(instanceobject),
 	0,
-	instance_dealloc,	/*tp_dealloc*/
+	(destructor)instance_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
 	(object * (*) FPROTO((object *, char *)))
-	instance_getattr,	/*tp_getattr*/
-	instance_setattr,	/*tp_setattr*/
-	instance_compare,	/*tp_compare*/
-	instance_repr,		/*tp_repr*/
+	(getattrfunc)instance_getattr, /*tp_getattr*/
+	(setattrfunc)instance_setattr, /*tp_setattr*/
+	(cmpfunc)instance_compare, /*tp_compare*/
+	(reprfunc)instance_repr, /*tp_repr*/
 	&instance_as_number,	/*tp_as_number*/
 	&instance_as_sequence,	/*tp_as_sequence*/
 	&instance_as_mapping,	/*tp_as_mapping*/
-	instance_hash,		/*tp_hash*/
+	(hashfunc)instance_hash, /*tp_hash*/
 };
 
 
@@ -1126,14 +1126,14 @@ typeobject Instancemethodtype = {
 	"instance method",
 	sizeof(instancemethodobject),
 	0,
-	instancemethod_dealloc,	/*tp_dealloc*/
+	(destructor)instancemethod_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	instancemethod_getattr,	/*tp_getattr*/
+	(getattrfunc)instancemethod_getattr, /*tp_getattr*/
 	0,			/*tp_setattr*/
-	instancemethod_compare,	/*tp_compare*/
-	instancemethod_repr,	/*tp_repr*/
+	(cmpfunc)instancemethod_compare, /*tp_compare*/
+	(reprfunc)instancemethod_repr, /*tp_repr*/
 	0,			/*tp_as_number*/
 	0,			/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
-	instancemethod_hash,	/*tp_hash*/
+	(hashfunc)instancemethod_hash, /*tp_hash*/
 };

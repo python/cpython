@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -62,6 +62,7 @@ extern int addlistitem PROTO((object *, object *));
 extern object *getlistslice PROTO((object *, int, int));
 extern int setlistslice PROTO((object *, int, int, object *));
 extern int sortlist PROTO((object *));
+extern object *listtuple PROTO((object *));
 
 /* Macro, trading safety for speed */
 #define GETLISTITEM(op, i) ((op)->ob_item[i])

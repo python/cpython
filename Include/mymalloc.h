@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -32,41 +32,35 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef macintosh
 #define ANY void
-#ifndef THINK_C_3_0
-#define HAVE_STDLIB
-#endif
-#endif
-
-#ifdef sun
-/* Maybe not for very old versions of SunOS ? */
-#define HAVE_STDLIB
-#endif
-
-#ifdef sgi
-#define HAVE_STDLIB
 #endif
 
 #ifdef __STDC__
 #define ANY void
-#define HAVE_STDLIB
 #endif
 
 #ifdef __TURBOC__
 #define ANY void
-#define HAVE_STDLIB
 #endif
 
 #ifdef __GNUC__
 #define ANY void
-#define HAVE_STDLIB
 #endif
 
 #ifndef ANY
 #define ANY char
 #endif
 
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#else /* !HAVE_STDLIB */
+extern ANY *malloc PROTO((size_t));
+extern ANY *calloc PROTO((size_t, size_t));
+extern ANY *realloc PROTO((ANY *, size_t));
+extern void free PROTO((ANY *)); /* XXX sometimes int on Unix old systems */
+#endif /* !HAVE_STDLIB */
+
 #ifndef NULL
-#define NULL 0
+#define NULL ((ANY *)0)
 #endif
 
 /* XXX Always allocate one extra byte, since some malloc's return NULL
@@ -79,17 +73,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 		(p) = (type *) realloc((ANY *)(p), 1 + (n) * sizeof(type))
 #define DEL(p) free((ANY *)p)
 #define XDEL(p) if ((p) == NULL) ; else DEL(p)
-
-#ifdef HAVE_STDLIB
-#include <stdlib.h>
-#define MALLARG size_t
-#else
-#define MALLARG size_t
-extern ANY *malloc PROTO((MALLARG));
-extern ANY *calloc PROTO((MALLARG, MALLARG));
-extern ANY *realloc PROTO((ANY *, MALLARG));
-extern void free PROTO((ANY *)); /* XXX sometimes int on Unix old systems */
-#endif
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -26,6 +26,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 #include "modsupport.h"
+#include "structmember.h"
 #include "ceval.h"
 
 #define BUF(v) GETSTRINGVALUE((stringobject *)v)
@@ -111,6 +112,30 @@ newfileobject(name, mode)
 		return NULL;
 	}
 	return (object *)f;
+}
+
+void
+setfilebufsize(f, bufsize)
+	object *f;
+	int bufsize;
+{
+	if (bufsize >= 0) {
+#ifdef HAVE_SETVBUF
+		int type;
+		switch (bufsize) {
+		case 0:
+			type = _IONBF;
+			break;
+		case 1:
+			type = _IOLBF;
+			bufsize = BUFSIZ;
+			break;
+		default:
+			type = _IOFBF;
+		}
+		setvbuf(((fileobject *)f)->f_fp, (char *)NULL, type, bufsize);
+#endif /* HAVE_SETVBUF */
+	}
 }
 
 static object *
@@ -290,16 +315,16 @@ file_read(f, args)
 	
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (args == NULL) {
+	if (args == NULL)
 		n = 0;
+	else {
+		if (!getargs(args, "i", &n))
+			return NULL;
 		if (n < 0) {
 			err_setstr(ValueError, "negative read count");
 			return NULL;
 		}
 	}
-	else if (!getargs(args, "i", &n))
-		return NULL;
-	
 	n2 = n != 0 ? n : BUFSIZ;
 	v = newsizedstringobject((char *)NULL, n2);
 	if (v == NULL)
@@ -358,10 +383,9 @@ getline(f, n)
 	for (;;) {
 		if ((c = getc(fp)) == EOF) {
 			clearerr(fp);
-			if (intrcheck()) {
+			if (sigcheck()) {
 				RET_SAVE
 				DECREF(v);
-				err_set(KeyboardInterrupt);
 				return NULL;
 			}
 			if (n < 0 && buf == BUF(v)) {
@@ -583,18 +607,29 @@ file_writelines(f, args)
 }
 
 static struct methodlist file_methods[] = {
-	{"close",	file_close},
-	{"flush",	file_flush},
-	{"fileno",	file_fileno},
-	{"isatty",	file_isatty},
-	{"read",	file_read},
-	{"readline",	file_readline},
-	{"readlines",	file_readlines},
-	{"seek",	file_seek},
-	{"tell",	file_tell},
-	{"write",	file_write},
-	{"writelines",	file_writelines},
+	{"close",	(method)file_close},
+	{"flush",	(method)file_flush},
+	{"fileno",	(method)file_fileno},
+	{"isatty",	(method)file_isatty},
+	{"read",	(method)file_read},
+	{"readline",	(method)file_readline},
+	{"readlines",	(method)file_readlines},
+	{"seek",	(method)file_seek},
+	{"tell",	(method)file_tell},
+	{"write",	(method)file_write},
+	{"writelines",	(method)file_writelines},
 	{NULL,		NULL}		/* sentinel */
+};
+
+#define OFF(x) offsetof(fileobject, x)
+
+static struct memberlist file_memberlist[] = {
+	{"softspace",	T_INT,		OFF(f_softspace)},
+	{"mode",	T_OBJECT,	OFF(f_mode),	RO},
+	{"name",	T_OBJECT,	OFF(f_name),	RO},
+	/* getattr(f, "closed") is implemented without this table */
+	{"closed",	T_INT,		0,		RO},
+	{NULL}	/* Sentinel */
 };
 
 static object *
@@ -602,7 +637,28 @@ file_getattr(f, name)
 	fileobject *f;
 	char *name;
 {
-	return findmethod(file_methods, (object *)f, name);
+	object *res;
+
+	res = findmethod(file_methods, (object *)f, name);
+	if (res != NULL)
+		return res;
+	err_clear();
+	if (strcmp(name, "closed") == 0)
+		return newintobject((long)(f->f_fp == 0));
+	return getmember((char *)f, file_memberlist, name);
+}
+
+static int
+file_setattr(f, name, v)
+	fileobject *f;
+	char *name;
+	object *v;
+{
+	if (v == NULL) {
+		err_setstr(AttributeError, "can't delete file attributes");
+		return -1;
+	}
+	return setmember((char *)f, file_memberlist, name, v);
 }
 
 typeobject Filetype = {
@@ -611,12 +667,12 @@ typeobject Filetype = {
 	"file",
 	sizeof(fileobject),
 	0,
-	file_dealloc,	/*tp_dealloc*/
+	(destructor)file_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
-	file_getattr,	/*tp_getattr*/
-	0,		/*tp_setattr*/
+	(getattrfunc)file_getattr, /*tp_getattr*/
+	(setattrfunc)file_setattr, /*tp_setattr*/
 	0,		/*tp_compare*/
-	file_repr,	/*tp_repr*/
+	(reprfunc)file_repr, /*tp_repr*/
 };
 
 /* Interface for the 'soft space' between print items. */
@@ -710,7 +766,7 @@ writestring(s, f)
 		if (fp != NULL)
 			fputs(s, fp);
 	}
-	else {
+	else if (!err_occurred()) {
 		object *v = newstringobject(s);
 		if (v == NULL) {
 			err_clear();

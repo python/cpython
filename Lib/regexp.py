@@ -10,13 +10,7 @@ class Prog:
 			self.prog = regex.compile(pat)
 		finally:
 			xxx = regex.set_syntax(save_syntax)
-	def match(self, *args):
-		if len(args) == 2:
-			str, offset = args
-		elif len(args) == 1:
-			str, offset = args[0], 0
-		else:
-			raise TypeError, 'wrong argument count'
+	def match(self, str, offset = 0):
 		if self.prog.search(str, offset) < 0:
 			return ()
 		regs = self.prog.regs

@@ -107,6 +107,19 @@ signal_handler(sig_num)
  
 
 static object *
+signal_alarm(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	int t;
+	if (!getargs(args, "i", &t))
+		return NULL;
+	alarm(t);
+	INCREF(None);
+	return None;
+}
+
+static object *
 signal_signal(self, args)
 	object *self; /* Not used */
 	object *args;
@@ -173,6 +186,7 @@ signal_getsignal(self, args)
 /* List of functions defined in the module */
 
 static struct methodlist signal_methods[] = {
+	{"alarm",	signal_alarm},
         {"signal",	signal_signal},
         {"getsignal",	signal_getsignal},
 	{NULL,		NULL}		/* sentinel */

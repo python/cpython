@@ -1,5 +1,5 @@
 /**********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -56,7 +56,7 @@ typedef struct {
 	object *ob_callback_arg;
 } genericobject;
 
-extern typeobject GenericObjecttype; /* Forward */
+staticforward typeobject GenericObjecttype;
 
 #define is_genericobject(g) ((g)->ob_type == &GenericObjecttype)
 
@@ -298,16 +298,16 @@ generic_set_object_shortcut(g, args)
 }
 
 static struct methodlist generic_methods[] = {
-	{"set_call_back",	generic_set_call_back},
-	{"delete_object",	generic_delete_object},
-	{"show_object",		generic_show_object},
-	{"hide_object",		generic_hide_object},
-	{"redraw_object",	generic_redraw_object},
-	{"freeze_object",	generic_freeze_object},
-	{"unfreeze_object",	generic_unfreeze_object},
-	{"activate_object",	generic_activate_object},
-	{"deactivate_object",	generic_deactivate_object},
-	{"set_object_shortcut",	generic_set_object_shortcut},
+	{"set_call_back",	(method)generic_set_call_back},
+	{"delete_object",	(method)generic_delete_object},
+	{"show_object",		(method)generic_show_object},
+	{"hide_object",		(method)generic_hide_object},
+	{"redraw_object",	(method)generic_redraw_object},
+	{"freeze_object",	(method)generic_freeze_object},
+	{"unfreeze_object",	(method)generic_unfreeze_object},
+	{"activate_object",	(method)generic_activate_object},
+	{"deactivate_object",	(method)generic_deactivate_object},
+	{"set_object_shortcut",	(method)generic_set_object_shortcut},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -424,19 +424,19 @@ generic_repr(g)
 	return newstringobject(buf);
 }
 
-typeobject GenericObjecttype = {
+static typeobject GenericObjecttype = {
 	OB_HEAD_INIT(&Typetype)
-	0,			/*ob_size*/
-	"FORMS_object",		/*tp_name*/
-	sizeof(genericobject),	/*tp_size*/
-	0,			/*tp_itemsize*/
+	0,				/*ob_size*/
+	"FORMS_object",			/*tp_name*/
+	sizeof(genericobject),		/*tp_size*/
+	0,				/*tp_itemsize*/
 	/* methods */
-	generic_dealloc,	/*tp_dealloc*/
-	0,			/*tp_print*/
-	generic_getattr,	/*tp_getattr*/
-	generic_setattr,	/*tp_setattr*/
-	0,			/*tp_compare*/
-	generic_repr,		/*tp_repr*/
+	(destructor)generic_dealloc,	/*tp_dealloc*/
+	0,				/*tp_print*/
+	(getattrfunc)generic_getattr,	/*tp_getattr*/
+	(setattrfunc)generic_setattr,	/*tp_setattr*/
+	0,				/*tp_compare*/
+	(reprfunc)generic_repr,		/*tp_repr*/
 };
 
 static object *
@@ -837,24 +837,24 @@ set_browser_specialkey (g, args)
 }
 
 static struct methodlist browser_methods[] = {
-	{"set_browser_topline",		set_browser_topline},
-	{"clear_browser",		clear_browser},
-	{"add_browser_line",		add_browser_line},
-	{"addto_browser",		addto_browser},
-	{"insert_browser_line",		insert_browser_line},
-	{"delete_browser_line",		delete_browser_line},
-	{"replace_browser_line",	replace_browser_line},
-	{"get_browser_line",		get_browser_line},
-	{"load_browser",		load_browser},
-	{"get_browser_maxline",		get_browser_maxline},
-	{"select_browser_line",		select_browser_line},
-	{"deselect_browser_line",	deselect_browser_line},
-	{"deselect_browser",		deselect_browser},
-	{"isselected_browser_line",	isselected_browser_line},
-	{"get_browser",			get_browser},
-	{"set_browser_fontsize",	set_browser_fontsize},
-	{"set_browser_fontstyle",	set_browser_fontstyle},
-	{"set_browser_specialkey",	set_browser_specialkey},
+	{"set_browser_topline",		(method)set_browser_topline},
+	{"clear_browser",		(method)clear_browser},
+	{"add_browser_line",		(method)add_browser_line},
+	{"addto_browser",		(method)addto_browser},
+	{"insert_browser_line",		(method)insert_browser_line},
+	{"delete_browser_line",		(method)delete_browser_line},
+	{"replace_browser_line",	(method)replace_browser_line},
+	{"get_browser_line",		(method)get_browser_line},
+	{"load_browser",		(method)load_browser},
+	{"get_browser_maxline",		(method)get_browser_maxline},
+	{"select_browser_line",		(method)select_browser_line},
+	{"deselect_browser_line",	(method)deselect_browser_line},
+	{"deselect_browser",		(method)deselect_browser},
+	{"isselected_browser_line",	(method)isselected_browser_line},
+	{"get_browser",			(method)get_browser},
+	{"set_browser_fontsize",	(method)set_browser_fontsize},
+	{"set_browser_fontstyle",	(method)set_browser_fontstyle},
+	{"set_browser_specialkey",	(method)set_browser_specialkey},
 	{NULL,				NULL}		/* sentinel */
 };
 
@@ -893,10 +893,10 @@ set_button_shortcut(g, args)
 }
 
 static struct methodlist button_methods[] = {
-	{"set_button",		set_button},
-	{"get_button",		get_button},
-	{"get_button_numb",	get_button_numb},
-	{"set_button_shortcut",	set_button_shortcut},
+	{"set_button",		(method)set_button},
+	{"get_button",		(method)get_button},
+	{"get_button_numb",	(method)get_button_numb},
+	{"set_button_shortcut",	(method)set_button_shortcut},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -975,15 +975,15 @@ set_choice_fontstyle (g, args)
 }
 
 static struct methodlist choice_methods[] = {
-	{"set_choice",		set_choice},
-	{"get_choice",		get_choice},
-	{"clear_choice",	clear_choice},
-	{"addto_choice",	addto_choice},
-	{"replace_choice",	replace_choice},
-	{"delete_choice",	delete_choice},
-	{"get_choice_text",	get_choice_text},
-	{"set_choice_fontsize", set_choice_fontsize},
-	{"set_choice_fontstyle",set_choice_fontstyle},
+	{"set_choice",		(method)set_choice},
+	{"get_choice",		(method)get_choice},
+	{"clear_choice",	(method)clear_choice},
+	{"addto_choice",	(method)addto_choice},
+	{"replace_choice",	(method)replace_choice},
+	{"delete_choice",	(method)delete_choice},
+	{"get_choice_text",	(method)get_choice_text},
+	{"set_choice_fontsize", (method)set_choice_fontsize},
+	{"set_choice_fontstyle",(method)set_choice_fontstyle},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -1005,7 +1005,7 @@ get_clock(g, args)
 }
 
 static struct methodlist clock_methods[] = {
-	{"get_clock",		get_clock},
+	{"get_clock",		(method)get_clock},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -1060,12 +1060,12 @@ set_counter_return (g, args)
 }
 
 static struct methodlist counter_methods[] = {
-	{"set_counter_value",		set_counter_value},
-	{"get_counter_value",		get_counter_value},
-	{"set_counter_bounds",		set_counter_bounds},
-	{"set_counter_step",		set_counter_step},
-	{"set_counter_precision",	set_counter_precision},
-	{"set_counter_return",		set_counter_return},
+	{"set_counter_value",		(method)set_counter_value},
+	{"get_counter_value",		(method)get_counter_value},
+	{"set_counter_bounds",		(method)set_counter_bounds},
+	{"set_counter_step",		(method)set_counter_step},
+	{"set_counter_precision",	(method)set_counter_precision},
+	{"set_counter_return",		(method)set_counter_return},
 	{NULL,				NULL}		/* sentinel */
 };
 
@@ -1113,11 +1113,11 @@ set_dial_step (g, args)
 }
 
 static struct methodlist dial_methods[] = {
-	{"set_dial_value",	set_dial_value},
-	{"get_dial_value",	get_dial_value},
-	{"set_dial_bounds",	set_dial_bounds},
-	{"get_dial_bounds",	get_dial_bounds},
-	{"set_dial_step",	set_dial_step},
+	{"set_dial_value",	(method)set_dial_value},
+	{"get_dial_value",	(method)get_dial_value},
+	{"set_dial_bounds",	(method)set_dial_bounds},
+	{"get_dial_bounds",	(method)get_dial_bounds},
+	{"set_dial_step",	(method)set_dial_step},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -1156,10 +1156,10 @@ set_input_return (g, args)
 }
 
 static struct methodlist input_methods[] = {
-	{"set_input",		set_input},
-	{"get_input",		get_input},
-	{"set_input_color",	set_input_color},
-	{"set_input_return",	set_input_return},
+	{"set_input",		(method)set_input},
+	{"get_input",		(method)get_input},
+	{"set_input_color",	(method)set_input_color},
+	{"set_input_return",	(method)set_input_return},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -1201,10 +1201,10 @@ addto_menu (g, args)
 }
 
 static struct methodlist menu_methods[] = {
-	{"set_menu",		set_menu},
-	{"get_menu",		get_menu},
-	{"get_menu_text",	get_menu_text},
-	{"addto_menu",		addto_menu},
+	{"set_menu",		(method)set_menu},
+	{"get_menu",		(method)get_menu},
+	{"get_menu_text",	(method)get_menu_text},
+	{"addto_menu",		(method)addto_menu},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -1277,14 +1277,14 @@ set_slider_step (g, args)
 
 
 static struct methodlist slider_methods[] = {
-	{"set_slider_value",	set_slider_value},
-	{"get_slider_value",	get_slider_value},
-	{"set_slider_bounds",	set_slider_bounds},
-	{"get_slider_bounds",	get_slider_bounds},
-	{"set_slider_return",	set_slider_return},
-	{"set_slider_size",	set_slider_size},
-	{"set_slider_precision",set_slider_precision},
-	{"set_slider_step",	set_slider_step},
+	{"set_slider_value",	(method)set_slider_value},
+	{"get_slider_value",	(method)get_slider_value},
+	{"set_slider_bounds",	(method)set_slider_bounds},
+	{"get_slider_bounds",	(method)get_slider_bounds},
+	{"set_slider_return",	(method)set_slider_return},
+	{"set_slider_size",	(method)set_slider_size},
+	{"set_slider_precision",(method)set_slider_precision},
+	{"set_slider_step",	(method)set_slider_step},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -1357,14 +1357,14 @@ get_positioner_ybounds (g, args)
 }
 
 static struct methodlist positioner_methods[] = {
-	{"set_positioner_xvalue",		set_positioner_xvalue},
-	{"set_positioner_yvalue",		set_positioner_yvalue},
-	{"set_positioner_xbounds",		set_positioner_xbounds},
-	{"set_positioner_ybounds",		set_positioner_ybounds},
-	{"get_positioner_xvalue",		get_positioner_xvalue},
-	{"get_positioner_yvalue",		get_positioner_yvalue},
-	{"get_positioner_xbounds",		get_positioner_xbounds},
-	{"get_positioner_ybounds",		get_positioner_ybounds},
+	{"set_positioner_xvalue",	(method)set_positioner_xvalue},
+	{"set_positioner_yvalue",	(method)set_positioner_yvalue},
+	{"set_positioner_xbounds",	(method)set_positioner_xbounds},
+	{"set_positioner_ybounds",	(method)set_positioner_ybounds},
+	{"get_positioner_xvalue",	(method)get_positioner_xvalue},
+	{"get_positioner_yvalue",	(method)get_positioner_yvalue},
+	{"get_positioner_xbounds",	(method)get_positioner_xbounds},
+	{"get_positioner_ybounds",	(method)get_positioner_ybounds},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -1387,8 +1387,8 @@ get_timer (g, args)
 }
 
 static struct methodlist timer_methods[] = {
-	{"set_timer",		set_timer},
-	{"get_timer",		get_timer},
+	{"set_timer",		(method)set_timer},
+	{"get_timer",		(method)get_timer},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -1399,7 +1399,7 @@ typedef struct {
 	FL_FORM *ob_form;
 } formobject;
 
-extern typeobject Formtype; /* Forward */
+staticforward typeobject Formtype;
 
 #define is_formobject(v) ((v)->ob_type == &Formtype)
 
@@ -1813,40 +1813,40 @@ form_set_object_focus(f, args)
 
 static struct methodlist form_methods[] = {
 /* adm */
-	{"show_form",		form_show_form},
-	{"hide_form",		form_hide_form},
-	{"redraw_form",		form_redraw_form},
-	{"set_form_position",	form_set_form_position},
-	{"set_form_size",	form_set_form_size},
-	{"scale_form",		form_scale_form},
-	{"freeze_form",		form_freeze_form},
-	{"unfreeze_form",	form_unfreeze_form},
-	{"activate_form",	form_activate_form},
-	{"deactivate_form",	form_deactivate_form},
-	{"bgn_group",		form_bgn_group},
-	{"end_group",		form_end_group},
-	{"find_first",		form_find_first},
-	{"find_last",		form_find_last},
-	{"set_object_focus",	form_set_object_focus},
+	{"show_form",		(method)form_show_form},
+	{"hide_form",		(method)form_hide_form},
+	{"redraw_form",		(method)form_redraw_form},
+	{"set_form_position",	(method)form_set_form_position},
+	{"set_form_size",	(method)form_set_form_size},
+	{"scale_form",		(method)form_scale_form},
+	{"freeze_form",		(method)form_freeze_form},
+	{"unfreeze_form",	(method)form_unfreeze_form},
+	{"activate_form",	(method)form_activate_form},
+	{"deactivate_form",	(method)form_deactivate_form},
+	{"bgn_group",		(method)form_bgn_group},
+	{"end_group",		(method)form_end_group},
+	{"find_first",		(method)form_find_first},
+	{"find_last",		(method)form_find_last},
+	{"set_object_focus",	(method)form_set_object_focus},
 
 /* basic objects */
-	{"add_button",		form_add_button},
-/*	{"add_bitmap",		form_add_bitmap}, */
-	{"add_lightbutton",	form_add_lightbutton},
-	{"add_roundbutton",	form_add_roundbutton},
-	{"add_menu",		form_add_menu},
-	{"add_slider",		form_add_slider},
-	{"add_positioner",	form_add_positioner},
-	{"add_valslider",	form_add_valslider},
-	{"add_dial",		form_add_dial},
-	{"add_counter",		form_add_counter},
-	{"add_box",		form_add_box},
-	{"add_clock",		form_add_clock},
-	{"add_choice",		form_add_choice},
-	{"add_browser",		form_add_browser},
-	{"add_input",		form_add_input},
-	{"add_timer",		form_add_timer},
-	{"add_text",		form_add_text},
+	{"add_button",		(method)form_add_button},
+/*	{"add_bitmap",		(method)form_add_bitmap}, */
+	{"add_lightbutton",	(method)form_add_lightbutton},
+	{"add_roundbutton",	(method)form_add_roundbutton},
+	{"add_menu",		(method)form_add_menu},
+	{"add_slider",		(method)form_add_slider},
+	{"add_positioner",	(method)form_add_positioner},
+	{"add_valslider",	(method)form_add_valslider},
+	{"add_dial",		(method)form_add_dial},
+	{"add_counter",		(method)form_add_counter},
+	{"add_box",		(method)form_add_box},
+	{"add_clock",		(method)form_add_clock},
+	{"add_choice",		(method)form_add_choice},
+	{"add_browser",		(method)form_add_browser},
+	{"add_input",		(method)form_add_input},
+	{"add_timer",		(method)form_add_timer},
+	{"add_text",		(method)form_add_text},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -1918,19 +1918,19 @@ form_repr(f)
 	return newstringobject(buf);
 }
 
-typeobject Formtype = {
+static typeobject Formtype = {
 	OB_HEAD_INIT(&Typetype)
-	0,			/*ob_size*/
-	"FORMS_form",		/*tp_name*/
-	sizeof(formobject),	/*tp_size*/
-	0,			/*tp_itemsize*/
+	0,				/*ob_size*/
+	"FORMS_form",			/*tp_name*/
+	sizeof(formobject),		/*tp_size*/
+	0,				/*tp_itemsize*/
 	/* methods */
-	form_dealloc,		/*tp_dealloc*/
-	0,			/*tp_print*/
-	form_getattr,		/*tp_getattr*/
-	form_setattr,		/*tp_setattr*/
-	0,			/*tp_compare*/
-	form_repr,		/*tp_repr*/
+	(destructor)form_dealloc,	/*tp_dealloc*/
+	0,				/*tp_print*/
+	(getattrfunc)form_getattr,	/*tp_getattr*/
+	(setattrfunc)form_setattr,	/*tp_setattr*/
+	0,				/*tp_compare*/
+	(reprfunc)form_repr,		/*tp_repr*/
 };
 
 static object *

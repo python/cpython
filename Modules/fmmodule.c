@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -40,7 +40,7 @@ typedef struct {
 	fmfonthandle fh_fh;
 } fhobject;
 
-extern typeobject Fhtype;	/* Really static, forward */
+staticforward typeobject Fhtype;
 
 #define is_fhobject(v)		((v)->ob_type == &Fhtype)
 
@@ -166,15 +166,15 @@ fh_getstrwidth(self, args)
 }
 
 static struct methodlist fh_methods[] = {
-	{"scalefont",	fh_scalefont},
-	{"setfont",	fh_setfont},
-	{"getfontname",	fh_getfontname},
-	{"getcomment",	fh_getcomment},
-	{"getfontinfo",	fh_getfontinfo},
+	{"scalefont",	(method)fh_scalefont},
+	{"setfont",	(method)fh_setfont},
+	{"getfontname",	(method)fh_getfontname},
+	{"getcomment",	(method)fh_getcomment},
+	{"getfontinfo",	(method)fh_getfontinfo},
 #if 0
-	{"getwholemetrics",	fh_getwholemetrics},
+	{"getwholemetrics",	(method)fh_getwholemetrics},
 #endif
-	{"getstrwidth",	fh_getstrwidth},
+	{"getstrwidth",	(method)fh_getstrwidth},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -196,17 +196,17 @@ fh_dealloc(fhp)
 
 static typeobject Fhtype = {
 	OB_HEAD_INIT(&Typetype)
-	0,			/*ob_size*/
-	"font handle",		/*tp_name*/
-	sizeof(fhobject),	/*tp_size*/
-	0,			/*tp_itemsize*/
+	0,				/*ob_size*/
+	"font handle",			/*tp_name*/
+	sizeof(fhobject),		/*tp_size*/
+	0,				/*tp_itemsize*/
 	/* methods */
-	fh_dealloc,	/*tp_dealloc*/
-	0,		/*tp_print*/
-	fh_getattr,	/*tp_getattr*/
-	0,		/*tp_setattr*/
-	0,		/*tp_compare*/
-	0,		/*tp_repr*/
+	(destructor)fh_dealloc,		/*tp_dealloc*/
+	0,				/*tp_print*/
+	(getattrfunc)fh_getattr,	/*tp_getattr*/
+	0,				/*tp_setattr*/
+	0,				/*tp_compare*/
+	0,				/*tp_repr*/
 };
 
 

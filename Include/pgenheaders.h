@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -31,9 +31,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Include files and extern declarations used by most of the parser.
    This is a precompiled header for THINK C. */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifdef THINK_C
 #define macintosh
-/* #define THINK_C_3_0		/*** TURN THIS ON FOR THINK C 3.0 ***/
 #endif
 
 #include <stdio.h>
@@ -44,17 +47,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #undef label
 #endif
 
-#ifdef THINK_C_3_0
-#include <proto.h>
-#endif
-
-#ifdef macintosh
-#ifndef THINK_C_3_0
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#endif
 
-#include "PROTO.h"
+#include "myproto.h"
 #include "mymalloc.h"
 
 extern void fatal PROTO((char *));

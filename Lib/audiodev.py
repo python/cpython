@@ -1,28 +1,40 @@
-import AL, SUNAUDIODEV
-
 error = 'audiodev.error'
 
 class Play_Audio_sgi:
 	# Private instance variables
 	access frameratelist, nchannelslist, sampwidthlist, oldparams, \
 		  params, config, inited_outrate, inited_width, \
-		  inited_nchannels, port, converter: private
+		  inited_nchannels, port, converter, classinited: private
 
-	frameratelist = [(48000, AL.RATE_48000),
-			 (44100, AL.RATE_44100),
-			 (32000, AL.RATE_32000),
-			 (22050, AL.RATE_22050),
-			 (16000, AL.RATE_16000),
-			 (11025, AL.RATE_11025),
-			 ( 8000,  AL.RATE_8000)]
-	nchannelslist = [(1, AL.MONO),
-			 (2, AL.STEREO)]
-	sampwidthlist = [(1, AL.SAMPLE_8),
-			 (2, AL.SAMPLE_16),
-			 (3, AL.SAMPLE_24)]
+	classinited = 0
+	frameratelist = nchannelslist = sampwidthlist = None
+
+	def initclass(self):
+		import AL
+		Play_Audio_sgi.frameratelist = [
+			  (48000, AL.RATE_48000),
+			  (44100, AL.RATE_44100),
+			  (32000, AL.RATE_32000),
+			  (22050, AL.RATE_22050),
+			  (16000, AL.RATE_16000),
+			  (11025, AL.RATE_11025),
+			  ( 8000,  AL.RATE_8000),
+			  ]
+		Play_Audio_sgi.nchannelslist = [
+			  (1, AL.MONO),
+			  (2, AL.STEREO),
+			  ]
+		Play_Audio_sgi.sampwidthlist = [
+			  (1, AL.SAMPLE_8),
+			  (2, AL.SAMPLE_16),
+			  (3, AL.SAMPLE_24),
+			  ]
+		Play_Audio_sgi.classinited = 1
 
 	def __init__(self):
-		import al
+		import al, AL
+		if not self.classinited:
+			self.initclass()
 		self.oldparams = []
 		self.params = [AL.OUTPUT_RATE, 0]
 		self.config = al.newconfig()
@@ -37,7 +49,7 @@ class Play_Audio_sgi:
 		if self.port:
 			self.stop()
 		if self.oldparams:
-			import al
+			import al, AL
 			al.setparams(AL.DEFAULT_DEVICE, self.oldparams)
 			self.oldparams = []
 
@@ -54,7 +66,7 @@ class Play_Audio_sgi:
 			self.port.closeport()
 			self.port = None
 		if self.oldparams:
-			import al
+			import al, AL
 			al.setparams(AL.DEFAULT_DEVICE, self.oldparams)
 			self.oldparams = []
 
@@ -75,6 +87,7 @@ class Play_Audio_sgi:
 				break
 		else:
 			if width == 0:
+				import AL
 				self.inited_width = 0
 				self.config.setwidth(AL.SAMPLE_16)
 				self.converter = self.ulaw2lin
@@ -94,7 +107,7 @@ class Play_Audio_sgi:
 		if not (self.inited_outrate and self.inited_nchannels):
 			raise error, 'params not specified'
 		if not self.port:
-			import al
+			import al, AL
 			self.port = al.openport('Python', 'w', self.config)
 			self.oldparams = self.params[:]
 			al.getparams(AL.DEFAULT_DEVICE, self.oldparams)
@@ -156,7 +169,7 @@ class Play_Audio_sun:
 		if not (self.inited_outrate and self.inited_width and self.inited_nchannels):
 			raise error, 'params not specified'
 		if not self.port:
-			import sunaudiodev
+			import sunaudiodev, SUNAUDIODEV
 			self.port = sunaudiodev.open('w')
 			info = self.port.getinfo()
 			info.o_sample_rate = self.outrate

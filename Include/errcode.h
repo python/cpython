@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -29,11 +29,15 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 /* Error codes passed around between file input, tokenizer, parser and
-   interpreter.  This was necessary so we can turn them into Python
-   exceptions at a higher level. */
+   interpreter.  This is necessary so we can turn them into Python
+   exceptions at a higher level.  Note that some errors have a
+   slightly different meaning when passed from the tokenizer to the
+   parser than when passed from the parser to the interpreter; e.g.
+   the parser only returns E_EOF when it hits EOF immediately, and it
+   never returns E_OK. */
 
 #define E_OK		10	/* No error */
-#define E_EOF		11	/* (Unexpected) EOF read */
+#define E_EOF		11	/* End Of File */
 #define E_INTR		12	/* Interrupted */
 #define E_TOKEN		13	/* Bad token */
 #define E_SYNTAX	14	/* Syntax error */

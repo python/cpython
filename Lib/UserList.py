@@ -1,11 +1,9 @@
 # A more or less complete user-defined wrapper around list objects
 
 class UserList:
-	def __init__(self, *args):
-		if len(args) > 1: raise TypeError, 'too many args'
+	def __init__(self, list = None):
 		self.data = []
-		if args:
-			list = args[0]
+		if list is not None:
 			if type(list) == type(self.data):
 				self.data[:] = list
 			else:

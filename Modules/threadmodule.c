@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -29,9 +29,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 #include "ceval.h"
 
+#ifndef WITH_THREAD
+Error!  The rest of Python is not compiled with thread support.
+Rerun configure, adding a --with-thread option.
+#endif
+
 #include "thread.h"
 
-int threads_started = 0;
+extern int threads_started;
 
 static object *ThreadError;
 
@@ -43,7 +48,7 @@ typedef struct {
 	type_lock lock_lock;
 } lockobject;
 
-extern typeobject Locktype;	/* Really static, forward */
+staticforward typeobject Locktype;
 
 #define is_lockobject(v)		((v)->ob_type == &Locktype)
 
@@ -147,12 +152,12 @@ lock_locked_lock(self, args)
 }
 
 static struct methodlist lock_methods[] = {
-	{"acquire_lock",	lock_acquire_lock},
-	{"acquire",		lock_acquire_lock},
-	{"release_lock",	lock_release_lock},
-	{"release",		lock_release_lock},
-	{"locked_lock",		lock_locked_lock},
-	{"locked",		lock_locked_lock},
+	{"acquire_lock",	(method)lock_acquire_lock},
+	{"acquire",		(method)lock_acquire_lock},
+	{"release_lock",	(method)lock_release_lock},
+	{"release",		(method)lock_release_lock},
+	{"locked_lock",		(method)lock_locked_lock},
+	{"locked",		(method)lock_locked_lock},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -166,17 +171,17 @@ lock_getattr(self, name)
 
 static typeobject Locktype = {
 	OB_HEAD_INIT(&Typetype)
-	0,			/*ob_size*/
-	"lock",			/*tp_name*/
-	sizeof(lockobject),	/*tp_size*/
-	0,			/*tp_itemsize*/
+	0,				/*ob_size*/
+	"lock",				/*tp_name*/
+	sizeof(lockobject),		/*tp_size*/
+	0,				/*tp_itemsize*/
 	/* methods */
-	lock_dealloc,	/*tp_dealloc*/
-	0,		/*tp_print*/
-	lock_getattr,	/*tp_getattr*/
-	0,		/*tp_setattr*/
-	0,		/*tp_compare*/
-	0,		/*tp_repr*/
+	(destructor)lock_dealloc,	/*tp_dealloc*/
+	0,				/*tp_print*/
+	(getattrfunc)lock_getattr,	/*tp_getattr*/
+	0,				/*tp_setattr*/
+	0,				/*tp_compare*/
+	0,				/*tp_repr*/
 };
 
 
@@ -238,6 +243,7 @@ thread_exit_thread(self, args)
 	for (;;) { } /* Should not be reached */
 }
 
+#ifndef NO_EXIT_PROG
 static object *
 thread_exit_prog(self, args)
 	object *self; /* Not used */
@@ -249,6 +255,7 @@ thread_exit_prog(self, args)
 	goaway(sts); /* Calls exit_prog(sts) or _exit_prog(sts) */
 	for (;;) { } /* Should not be reached */
 }
+#endif
 
 static object *
 thread_allocate_lock(self, args)
@@ -260,14 +267,33 @@ thread_allocate_lock(self, args)
 	return (object *) newlockobject();
 }
 
+static object *
+thread_get_ident(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	long ident;
+	if (!getnoarg(args))
+		return NULL;
+	ident = get_thread_ident();
+	if (ident == -1) {
+		err_setstr(ThreadError, "no current thread ident");
+		return NULL;
+	}
+	return newintobject(ident);
+}
+
 static struct methodlist thread_methods[] = {
-	{"start_new_thread",	thread_start_new_thread},
-	{"start_new",		thread_start_new_thread},
-	{"allocate_lock",	thread_allocate_lock},
-	{"allocate",		thread_allocate_lock},
-	{"exit_thread",		thread_exit_thread},
-	{"exit",		thread_exit_thread},
-	{"exit_prog",		thread_exit_prog},
+	{"start_new_thread",	(method)thread_start_new_thread},
+	{"start_new",		(method)thread_start_new_thread},
+	{"allocate_lock",	(method)thread_allocate_lock},
+	{"allocate",		(method)thread_allocate_lock},
+	{"exit_thread",		(method)thread_exit_thread},
+	{"exit",		(method)thread_exit_thread},
+	{"get_ident",		(method)thread_get_ident},
+#ifndef NO_EXIT_PROG
+	{"exit_prog",		(method)thread_exit_prog},
+#endif
 	{NULL,			NULL}		/* sentinel */
 };
 

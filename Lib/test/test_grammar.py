@@ -41,7 +41,7 @@ if maxint == 2147483647:
 		raise TestFailed, \
 			  'No OverflowError on huge integer literal ' + `s`
 elif eval('maxint == 9223372036854775807'):
-	if eval('9223372036854775807-1 != -01000000000000000000000'):
+	if eval('-9223372036854775807-1 != 01000000000000000000000'):
 		raise TestFailed, 'max negative int'
 	if eval('01777777777777777777777') != -1: raise TestFailed, 'oct -1'
 	if eval('0xffffffffffffffff') != -1: raise TestFailed, 'hex -1'
@@ -91,9 +91,35 @@ x = '"'; y = "\""; assert(len(x) == 1 and x == y and ord(x) == 34)
 x = "doesn't \"shrink\" does it"
 y = 'doesn\'t "shrink" does it'
 assert(len(x) == 24 and x == y)
-x = "doesn \"shrink\" doesn't it"
-y = 'doesn "shrink" doesn\'t it'
-assert(len(x) == 25 and x == y)
+x = "does \"shrink\" doesn't it"
+y = 'does "shrink" doesn\'t it'
+assert(len(x) == 24 and x == y)
+x = """
+The "quick"
+brown fox
+jumps over
+the 'lazy' dog.
+"""
+y = '\nThe "quick"\nbrown fox\njumps over\nthe \'lazy\' dog.\n'
+assert(x == y)
+y = '''
+The "quick"
+brown fox
+jumps over
+the 'lazy' dog.
+'''; assert(x == y)
+y = "\n\
+The \"quick\"\n\
+brown fox\n\
+jumps over\n\
+the 'lazy' dog.\n\
+"; assert(x == y)
+y = '\n\
+The \"quick\"\n\
+brown fox\n\
+jumps over\n\
+the \'lazy\' dog.\n\
+'; assert(x == y)
 
 
 print '1.2 Grammar'
@@ -113,7 +139,8 @@ x = eval('1, 0 or 1')
 print 'funcdef'
 ### 'def' NAME parameters ':' suite
 ### parameters: '(' [varargslist] ')'
-### varargslist: (fpdef ',')* '*' NAME | fpdef (',' fpdef)* [',']
+### varargslist: (fpdef ['=' test] ',')* '*' NAME
+###            | fpdef ['=' test] (',' fpdef ['=' test])* [',']
 ### fpdef: NAME | '(' fplist ')'
 ### fplist: fpdef (',' fpdef)* [',']
 def f1(): pass
@@ -126,6 +153,54 @@ def v0(*rest): pass
 def v1(a, *rest): pass
 def v2(a, b, *rest): pass
 def v3(a, (b, c), *rest): pass
+def d01(a=1): pass
+d01()
+d01(1)
+def d11(a, b=1): pass
+d11(1)
+d11(1, 2)
+def d21(a, b, c=1): pass
+d21(1, 2)
+d21(1, 2, 3)
+def d02(a=1, b=2): pass
+d02()
+d02(1)
+d02(1, 2)
+def d12(a, b=1, c=2): pass
+d12(1)
+d12(1, 2)
+d12(1, 2, 3)
+def d22(a, b, c=1, d=2): pass
+d22(1, 2)
+d22(1, 2, 3)
+d22(1, 2, 3, 4)
+def d01v(a=1, *rest): pass
+d01v()
+d01v(1)
+d01v(1, 2)
+def d11v(a, b=1, *rest): pass
+d11v(1)
+d11v(1, 2)
+d11v(1, 2, 3)
+def d21v(a, b, c=1, *rest): pass
+d21v(1, 2)
+d21v(1, 2, 3)
+d21v(1, 2, 3, 4)
+def d02v(a=1, b=2, *rest): pass
+d02v()
+d02v(1)
+d02v(1, 2)
+d02v(1, 2, 3)
+def d12v(a, b=1, c=2, *rest): pass
+d12v(1)
+d12v(1, 2)
+d12v(1, 2, 3)
+d12v(1, 2, 3, 4)
+def d22v(a, b, c=1, d=2, *rest): pass
+d22v(1, 2)
+d22v(1, 2, 3)
+d22v(1, 2, 3, 4)
+d22v(1, 2, 3, 4, 5)
 
 ### stmt: simple_stmt | compound_stmt
 # Tested below
@@ -184,17 +259,11 @@ try: raise KeyboardInterrupt
 except KeyboardInterrupt: pass
 
 print 'import_stmt' # 'import' NAME (',' NAME)* | 'from' NAME 'import' ('*' | NAME (',' NAME)*)
-[1]
 import sys
-[2]
 import time, math
-[3]
-from time import sleep
-[4]
+from time import time
 from sys import *
-[5]
 from math import sin, cos
-[6]
 
 print 'global_stmt' # 'global' NAME (',' NAME)*
 def f():
@@ -242,24 +311,41 @@ while 0: pass
 else: pass
 
 print 'for_stmt' # 'for' exprlist 'in' exprlist ':' suite ['else' ':' suite]
-[1]
 for i in 1, 2, 3: pass
-[2]
 for i, j, k in (): pass
 else: pass
-[3]
+class Squares:
+	def __init__(self, max):
+		self.max = max
+		self.sofar = []
+	def __len__(self): return len(self.sofar)
+	def __getitem__(self, i):
+		if not 0 <= i < self.max: raise IndexError
+		n = len(self.sofar)
+		while n <= i:
+			self.sofar.append(n*n)
+			n = n+1
+		return self.sofar[i]
+n = 0
+for x in Squares(10): n = n+x
+if n != 285: raise TestFailed, 'for over growing sequence'
 
-print 'try_stmt' # 'try' ':' suite (except_clause ':' suite)+ | 'try' ':' suite 'finally' ':' suite
+print 'try_stmt'
+### try_stmt: 'try' ':' suite (except_clause ':' suite)+ ['else' ':' suite]
+###         | 'try' ':' suite 'finally' ':' suite
 ### except_clause: 'except' [expr [',' expr]]
 try:
 	1/0
 except ZeroDivisionError:
+	pass
+else:
 	pass
 try: 1/0
 except EOFError: pass
 except TypeError, msg: pass
 except RuntimeError, msg: pass
 except: pass
+else: pass
 try: 1/0
 except (EOFError, TypeError, ZeroDivisionError): pass
 try: 1/0

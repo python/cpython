@@ -32,6 +32,9 @@ documentation and/or software.
 The following makes PROTOTYPES default to 0 if it has not already
   been defined with C compiler flags.
  */
+#ifdef HAVE_PROTOTYPES
+#define PROTOTYPES 1
+#endif
 #ifndef PROTOTYPES
 #define PROTOTYPES 0
 #endif

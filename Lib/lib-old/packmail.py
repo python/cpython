@@ -41,12 +41,28 @@ def packsome(outfp, dirname, names):
 # Pack all files from a directory
 def packall(outfp, dirname):
 	names = os.listdir(dirname)
+	try:
+	    names.remove('.')
+	except:
+	    pass
+	try:
+	    names.remove('..')
+	except:
+	    pass
 	names.sort()
 	packsome(outfp, dirname, names)
 
 # Pack all files from a directory that are not older than a give one
 def packnotolder(outfp, dirname, oldest):
 	names = os.listdir(dirname)
+	try:
+	    names.remove('.')
+	except:
+	    pass
+	try:
+	    names.remove('..')
+	except:
+	    pass
 	oldest = os.path.join(dirname, oldest)
 	st = os.stat(oldest)
 	mtime = st[ST_MTIME]
@@ -67,6 +83,14 @@ def packtree(outfp, dirname):
 	print 'packtree', dirname
 	outfp.write('mkdir ' + unixfix(dirname) + '\n')
 	names = os.listdir(dirname)
+	try:
+	    names.remove('.')
+	except:
+	    pass
+	try:
+	    names.remove('..')
+	except:
+	    pass
 	subdirs = []
 	for name in names:
 		fullname = os.path.join(dirname, name)

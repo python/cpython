@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -22,18 +22,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* Passwd/group file access module */
+/* UNIX password file access module */
 
 #include "allobjects.h"
 #include "modsupport.h"
 
 #include <sys/types.h>
 #include <pwd.h>
-#include <grp.h>
-
-
-/* Module pwd */
-
 
 static object *mkpwent(p)
 	struct passwd *p;
@@ -108,95 +103,4 @@ void
 initpwd()
 {
 	initmodule("pwd", pwd_methods);
-}
-
-
-/* Module grp */
-
-
-static object *mkgrent(p)
-	struct group *p;
-{
-	object *v, *w;
-	char **member;
-	if ((w = newlistobject(0)) == NULL) {
-		return NULL;
-	}
-	for (member = p->gr_mem; *member != NULL; member++) {
-		object *x = newstringobject(*member);
-		if (x == NULL || addlistitem(w, x) != 0) {
-			XDECREF(x);
-			DECREF(w);
-			return NULL;
-		}
-	}
-	v = mkvalue("(sslO)",
-		       p->gr_name,
-		       p->gr_passwd,
-		       (long)p->gr_gid,
-		       w);
-	DECREF(w);
-	return v;
-}
-
-static object *grp_getgrgid(self, args)
-	object *self, *args;
-{
-	int gid;
-	struct group *p;
-	if (!getintarg(args, &gid))
-		return NULL;
-	if ((p = getgrgid(gid)) == NULL) {
-		err_setstr(KeyError, "getgrgid(): gid not found");
-		return NULL;
-	}
-	return mkgrent(p);
-}
-
-static object *grp_getgrnam(self, args)
-	object *self, *args;
-{
-	char *name;
-	struct group *p;
-	if (!getstrarg(args, &name))
-		return NULL;
-	if ((p = getgrnam(name)) == NULL) {
-		err_setstr(KeyError, "getgrnam(): name not found");
-		return NULL;
-	}
-	return mkgrent(p);
-}
-
-static object *grp_getgrall(self, args)
-	object *self, *args;
-{
-	object *d;
-	struct group *p;
-	if (!getnoarg(args))
-		return NULL;
-	if ((d = newlistobject(0)) == NULL)
-		return NULL;
-	setgrent();
-	while ((p = getgrent()) != NULL) {
-		object *v = mkgrent(p);
-		if (v == NULL || addlistitem(d, v) != 0) {
-			XDECREF(v);
-			DECREF(d);
-			return NULL;
-		}
-	}
-	return d;
-}
-
-static struct methodlist grp_methods[] = {
-	{"getgrgid",	grp_getgrgid},
-	{"getgrnam",	grp_getgrnam},
-	{"getgrall",	grp_getgrall},
-	{NULL,		NULL}		/* sentinel */
-};
-
-void
-initgrp()
-{
-	initmodule("grp", grp_methods);
 }

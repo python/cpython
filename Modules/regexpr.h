@@ -25,11 +25,6 @@ Last modified: Mon Nov  4 15:49:46 1991 ylo
 #ifndef REGEXPR_H
 #define REGEXPR_H
 
-#if defined(__STDC__) || defined(THINK_C)
-#undef HAVE_PROTOTYPES
-#define HAVE_PROTOTYPES
-#endif
-
 #define RE_NREGS	100  /* number of registers available */
 
 typedef struct re_pattern_buffer
@@ -68,6 +63,10 @@ typedef struct re_registers
 #define RE_SYNTAX_EMACS	0
 
 #ifdef HAVE_PROTOTYPES
+
+extern int re_syntax;
+/* This is the actual syntax mask.  It was added so that Python
+   could do syntax-dependent munging of patterns before compilation. */
 
 int re_set_syntax(int syntax);
 /* This sets the syntax to use and returns the previous syntax.  The
@@ -129,6 +128,7 @@ int re_exec(char *s);
 
 #else /* HAVE_PROTOTYPES */
 
+extern int re_syntax;
 int re_set_syntax();
 char *re_compile_pattern();
 int re_match();

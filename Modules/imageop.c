@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -161,7 +161,7 @@ imageop_tovideo(self, args)
 	for (y=1; y<maxy; y++) {	/* Interpolate other lines */
 	    for(x=0; x<maxx; x++) {
 		i = y*maxx + x;
-		*ncp++ = (cp[i] + cp[i-maxx]) >> 1;
+		*ncp++ = ((int)cp[i] + (int)cp[i-maxx]) >> 1;
 	    }
 	}
     } else {
@@ -171,11 +171,11 @@ imageop_tovideo(self, args)
 	    for(x=0; x<maxx; x++) {
 		i = (y*maxx + x)*4 + 1;
 		*ncp++ = 0;	/* Skip alfa comp */
-		*ncp++ = (cp[i] + cp[i-4*maxx]) >> 1;
+		*ncp++ = ((int)cp[i] + (int)cp[i-4*maxx]) >> 1;
 		i++;
-		*ncp++ = (cp[i] + cp[i-4*maxx]) >> 1;
+		*ncp++ = ((int)cp[i] + (int)cp[i-4*maxx]) >> 1;
 		i++;
-		*ncp++ = (cp[i] + cp[i-4*maxx]) >> 1;
+		*ncp++ = ((int)cp[i] + (int)cp[i-4*maxx]) >> 1;
 	    }
 	}
     }
@@ -210,7 +210,7 @@ imageop_grey2mono(self, args)
     bit = 0x80;
     ovalue = 0;
     for ( i=0; i < len; i++ ) {
-	if ( cp[i] > tres )
+	if ( (int)cp[i] > tres )
 	  ovalue |= bit;
 	bit >>= 1;
 	if ( bit == 0 ) {
@@ -252,7 +252,7 @@ imageop_grey2grey4(self, args)
     pos = 0;
     ovalue = 0;
     for ( i=0; i < len; i++ ) {
-	ovalue |= (cp[i] & 0xf0) >> pos;
+	ovalue |= ((int)cp[i] & 0xf0) >> pos;
 	pos += 4;
 	if ( pos == 8 ) {
 	    *ncp++ = ovalue;
@@ -293,7 +293,7 @@ imageop_grey2grey2(self, args)
     pos = 0;
     ovalue = 0;
     for ( i=0; i < len; i++ ) {
-	ovalue |= (cp[i] & 0xc0) >> pos;
+	ovalue |= ((int)cp[i] & 0xc0) >> pos;
 	pos += 2;
 	if ( pos == 8 ) {
 	    *ncp++ = ovalue;

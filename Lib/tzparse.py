@@ -12,7 +12,7 @@ def tzparse(tzstr):
 	if tzprog == None:
 		import regex
 		tzprog = regex.compile(tzpat)
-	if not tzprog.match(tzstr):
+	if tzprog.match(tzstr) < 0:
 		raise ValueError, 'not the TZ syntax I understand'
 	regs = tzprog.regs
 	subs = []
@@ -78,5 +78,3 @@ def test():
 		x = localtime(t)
 		tm = x[:-1] + (0,)
 		print 'd =', d, 't =', t, '=', asctime(tm), x[-1]
-
-test()

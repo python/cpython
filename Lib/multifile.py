@@ -85,6 +85,17 @@ class MultiFile:
 			err('*** Missing endmarker in MultiFile.readline()\n')
 		return ''
 	#
+	def readlines(self):
+		list = []
+		while 1:
+			line = self.readline()
+			if not line: break
+			list.append(line)
+		return list
+	#
+	def read(self): # Note: no size argument -- read until EOF only!
+		return string.joinfields(self.readlines(), '')
+	#
 	def next(self):
 		while self.readline(): pass
 		if self.level > 1 or self.last:

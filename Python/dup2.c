@@ -20,12 +20,17 @@ dup2(fd1, fd2)
 int fd1, fd2;
 {
 	if (fd1 != fd2) {
+#ifdef MPW
+		close (fd2); /* XXX RJW MPW does not implement F_GETFL but it does have dup */
+		fd2 = dup(fd1);
+#else
 		if (fcntl(fd1, F_GETFL) < 0)
 			return BADEXIT;
 		if (fcntl(fd2, F_GETFL) >= 0)
 			close(fd2);
 		if (fcntl(fd1, F_DUPFD, fd2) < 0)
 			return BADEXIT;
+#endif
 	}
 	return fd2;
 }

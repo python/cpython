@@ -77,6 +77,19 @@ class Repr:
 			j = max(0, self.maxlong-3-i)
 			s = s[:i] + '...' + s[len(s)-j:]
 		return s
+	def repr_instance(self, x, level):
+		try:
+			s = `x`
+			# Bugs in x.__repr__() can cause arbitrary
+			# exceptions -- then make up something
+		except:
+			return '<' + x.__class__.__name__ + ' instance at ' + \
+				  hex(id(x))[2:] + '>'
+		if len(s) > self.maxstring:
+			i = max(0, (self.maxstring-3)/2)
+			j = max(0, self.maxstring-3-i)
+			s = s[:i] + '...' + s[len(s)-j:]
+		return s
 
 aRepr = Repr()
 repr = aRepr.repr

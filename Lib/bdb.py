@@ -17,6 +17,8 @@ class Bdb: # Basic Debugger
 		self.breaks = {}
 	
 	def reset(self):
+		import linecache
+		linecache.checkcache()
 		self.botframe = None
 		self.stopframe = None
 		self.returnframe = None
@@ -134,11 +136,35 @@ class Bdb: # Basic Debugger
 		self.returnframe = frame
 		self.quitting = 0
 	
+	def set_trace(self):
+		# Start debugging from here
+		try:
+			1 + ''
+		except:
+			frame = sys.exc_traceback.tb_frame.f_back
+		self.reset()
+		while frame:
+			frame.f_trace = self.trace_dispatch
+			self.botframe = frame
+			frame = frame.f_back
+		self.set_step()
+		sys.settrace(self.trace_dispatch)
+
 	def set_continue(self):
 		# Don't stop except at breakpoints or when finished
 		self.stopframe = self.botframe
 		self.returnframe = None
 		self.quitting = 0
+		if not self.breaks:
+			# no breakpoints; run without debugger overhead
+			sys.settrace(None)
+			try:
+				1 + ''	# raise an exception
+			except:
+				frame = sys.exc_traceback.tb_frame.f_back
+			while frame and frame is not self.botframe:
+				del frame.f_trace
+				frame = frame.f_back
 	
 	def set_quit(self):
 		self.stopframe = self.botframe
@@ -177,7 +203,7 @@ class Bdb: # Basic Debugger
 			return 'There are no breakpoints in that file!'
 		del self.breaks[filename]
 	
-	def clear_all_breaks(self, filename, lineno):
+	def clear_all_breaks(self):
 		if not self.breaks:
 			return 'There are no breakpoints!'
 		self.breaks = {}
@@ -217,11 +243,14 @@ class Bdb: # Basic Debugger
 	# 
 	
 	def format_stack_entry(self, frame_lineno):
-		import codehack, linecache, repr, string
+		import linecache, repr, string
 		frame, lineno = frame_lineno
 		filename = frame.f_code.co_filename
 		s = filename + '(' + `lineno` + ')'
-		s = s + codehack.getcodename(frame.f_code)
+		if frame.f_code.co_name:
+		    s = s + frame.f_code.co_name
+		else:
+		    s = s + "<lambda>"
 		if frame.f_locals.has_key('__args__'):
 			args = frame.f_locals['__args__']
 			if args is not None:
@@ -269,17 +298,19 @@ class Bdb: # Basic Debugger
 			sys.settrace(None)
 
 
+def set_trace():
+	Bdb().set_trace()
+
 # -------------------- testing --------------------
 
 class Tdb(Bdb):
 	def user_call(self, frame, args):
-		import codehack
-		name = codehack.getcodename(frame.f_code)
+		name = frame.f_code.co_name
 		if not name: name = '???'
 		print '+++ call', name, args
 	def user_line(self, frame):
-		import linecache, string, codehack
-		name = codehack.getcodename(frame.f_code)
+		import linecache, string
+		name = frame.f_code.co_name
 		if not name: name = '???'
 		fn = frame.f_code.co_filename
 		line = linecache.getline(fn, frame.f_lineno)
@@ -300,7 +331,5 @@ def bar(a):
 	return a/2
 
 def test():
-	import linecache
-	linecache.checkcache()
 	t = Tdb()
 	t.run('import bdb; bdb.foo(10)')

@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -35,7 +35,7 @@ typedef char *string;
 #define mknewlongobject(x) newintobject(x)
 #define mknewshortobject(x) newintobject((long)x)
 #define mknewfloatobject(x) newfloatobject(x)
-#define mknewcharobject(c) mkvalue("c", c)
+#define mknewcharobject(ch) mkvalue("c", ch)
 
 extern int getiobjectarg PROTO((object *args, int nargs, int i, object **p_a));
 extern int getilongarg PROTO((object *args, int nargs, int i, long *p_a));

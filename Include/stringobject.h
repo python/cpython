@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -66,6 +66,7 @@ extern object *newstringobject PROTO((char *));
 extern unsigned int getstringsize PROTO((object *));
 extern char *getstringvalue PROTO((object *));
 extern void joinstring PROTO((object **, object *));
+extern void joinstring_decref PROTO((object **, object *));
 extern int resizestring PROTO((object **, int));
 extern object *formatstring PROTO((object *, object *));
 

@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -21,6 +21,8 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
+
+/* Raw interface to the parser. */
 
 #include "allobjects.h"
 #include "node.h"
@@ -85,12 +87,10 @@ parser_parsefile(self, args)
 		err_errno(IOError);
 		return NULL;
 	}
-	err = parse_file(fp, filename, file_input, &n);
+	n = parse_file(fp, filename, file_input);
 	fclose(fp);
-	if (err != E_DONE) {
-		err_input(err);
+	if (n == NULL)
 		return NULL;
-	}
 	res = node2tuple(n);
 	freetree(n);
 	return res;

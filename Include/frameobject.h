@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -52,6 +52,7 @@ typedef struct _frame {
 	int f_iblock;		/* index in f_blockstack */
 	int f_lasti;		/* Last instruction if called */
 	int f_lineno;		/* Current line number */
+	object *f_trace;	/* Trace function */
 } frameobject;
 
 
@@ -70,11 +71,11 @@ frameobject * newframeobject PROTO(
 /* List access macros */
 
 #ifdef NDEBUG
-#define GETITEM(v, i) GETLISTITEM((listobject *)(v), (i))
+#define GETITEM(v, i) GETTUPLEITEM((tupleobject *)(v), (i))
 #define GETITEMNAME(v, i) GETSTRINGVALUE((stringobject *)GETITEM((v), (i)))
 #else
-#define GETITEM(v, i) getlistitem((v), (i))
-#define GETITEMNAME(v, i) getstringvalue(getlistitem((v), (i)))
+#define GETITEM(v, i) gettupleitem((v), (i))
+#define GETITEMNAME(v, i) getstringvalue(GETITEM(v, i))
 #endif
 
 #define GETUSTRINGVALUE(s) ((unsigned char *)GETSTRINGVALUE(s))
@@ -94,6 +95,11 @@ block *pop_block PROTO((frameobject *));
 /* Extend the value stack */
 
 object **extend_stack PROTO((frameobject *, int, int));
+
+/* Conversions between "fast locals" and locals in dictionary */
+
+void locals_2_fast PROTO((frameobject *, int));
+void fast_2_locals PROTO((frameobject *));
 
 #ifdef __cplusplus
 }

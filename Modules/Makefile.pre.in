@@ -1,39 +1,46 @@
-# NOTE: Makefile.in.in is converted into Makefile.in by running the
-# makesetup script in the current directory.  Makefile.in is converted
-# into Makefile by the configure script in the toplevel directory.
-# Once Makefile exists, it can be brought up to date by running
-# "make Makefile".
+# META-NOTE: this note is different from the note in the other Makefiles!
+# NOTE: Makefile.pre.in is converted into Makefile.pre by the configure
+# script in the toplevel directory or by ../config.status.
+# Makefile.pre is converted into Makefile by running the makesetup
+# script in the source directory.  Once Makefile exists, it can be
+# brought up to date by running "make Makefile".  (The makesetup also
+# creates config.c from config.c.in in the source directory.)
 
-# === Variables set by ./makesetup ===
+# === Variables set by makesetup ===
 
 MODOBJS=	@MODOBJS@
 MODLIBS=	@MODLIBS@
-MODCPPS=	@MODCPPS@
 
-# === Definitions added by ./makesetup ===
+# === Definitions added by makesetup ===
 
-# === Variables set by $(TOP)/configure ===
+# === Variables set by configure ===
 
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 
 CC=		@CC@
 RANLIB=		@RANLIB@
+AR=		@AR@
+
 DEFS=		@DEFS@
 LIBS=		@LIBS@
+LIBM=		@LIBM@
+LIBC=		@LIBC@
+
+# Install prefix, may be changed by configure
+prefix=		/usr/local
 
 
 # === Variables that are customizable by hand ===
 
-TOP=		..
-INCLDIR=	$(TOP)/Include
-OPT=		-g
-CFLAGS=		$(OPT) -I$(INCLDIR) $(DEFS)
+INCLDIR=	$(srcdir)/../Include
+OPT=		-O
+CFLAGS=		$(OPT) -I$(INCLDIR) -I.. $(DEFS)
 
-AR=		ar
 MKDEP=		mkdep
 SHELL=		/bin/sh
 
+MAKESETUP=	$(srcdir)/makesetup
 
 # === Fixed definitions ===
 
@@ -46,46 +53,88 @@ MYLIBS=		$(LIB) \
 		../Objects/libObjects.a \
 		../Parser/libParser.a
 
-SYSLIBS=	$(MODLIBS) -lm
+SYSLIBS=	$(LIBM) $(LIBC)
 
 
 # === Rules ===
 
-all:		$(LIB) $(TOP)/python
+all:		$(LIB) ../python
 
 $(LIB):		$(OBJS)
 		$(AR) cr $(LIB) $(OBJS)
 		$(RANLIB) $(LIB)
 
-$(TOP)/python:	config.o $(MYLIBS)
-		$(CC) config.o $(MYLIBS) $(LIBS) $(SYSLIBS) -o python
-		mv python $(TOP)/python
+../python:	config.o $(MYLIBS)
+		$(CC) config.o $(MYLIBS) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python
+		mv python ../python
 
-config.o:	Makefile
+config.o:	config.c Makefile
+		$(CC) $(CFLAGS) -DPYTHONPATH=\"$(PYTHONPATH)\" -c config.c
 
 clean:
 		-rm -f *.o python core *~ [@,#]* *.old *.orig *.rej
 
 clobber:	clean
-		-rm -f *.a tags TAGS
+		-rm -f *.a tags TAGS config.c glmodule.c Makefile.pre
 
-Makefile:	Makefile.in $(TOP)/config.status
-		CONFIG_FILES=Makefile CONFIG_HEADERS= \
-		$(SHELL) $(TOP)/config.status
+config.c Makefile: Makefile.pre config.c.in $(MAKESETUP) Setup
+		$(SHELL) $(MAKESETUP) Setup
 
-config.c Makefile.in:	Makefile.in.in config.c.in Setup makesetup
-		$(SHELL) ./makesetup Setup
+Setup:
+		cp $(srcdir)/Setup.in Setup
+
+Makefile.pre:	Makefile.pre.in ../config.status
+		(cd ..; CONFIG_FILES=Modules/Makefile.pre CONFIG_HEADERS= \
+		$(SHELL) config.status)
 
 depend:
-		$(MKDEP) $(CFLAGS) \
-			`echo $(OBJS) | tr ' ' '\012' | sed 's/\.o/.c/'`
+		$(MKDEP) $(CFLAGS) `echo $(OBJS) | tr ' ' '\012' | \
+					sed 's|\(.*\)\.o|$(srcdir)/\1.c|'`
 
-.PRECIOUS:	Makefile.in Makefile config.c
+.PRECIOUS:	../python
 
-glmodule.c:	cgen.py cstubs
-		python cgen.py <cstubs >glmodule.c
+glmodule.c:	$(srcdir)/cgen.py $(srcdir)/cstubs
+		python $(srcdir)/cgen.py <$(srcdir)/cstubs >glmodule.c
 
-# === Rules added by ./makesetup ===
+almodule.o: almodule.c
+arraymodule.o: arraymodule.c
+audioopmodule.o: audioopmodule.c
+cdmodule.o: cdmodule.c
+clmodule.o: clmodule.c
+dbmmodule.o: dbmmodule.c
+fcntlmodule.o: fcntlmodule.c
+flmodule.o: flmodule.c
+fmmodule.o: fmmodule.c
+glmodule.o: glmodule.c
+imageopmodule.o: imageopmodule.c
+imgfilemodule.o: imgfilemodule.c
+mathmodule.o: mathmodule.c
+md5c.o: md5c.c
+md5module.o: md5module.c
+mpzmodule.o: mpzmodule.c
+nismodule.o: nismodule.c
+parsermodule.o: parsermodule.c
+posixmodule.o: posixmodule.c
+pwdmodule.o: pwdmodule.c
+regexmodule.o: regexmodule.c
+regexpr.o: regexpr.c
+rgbimgmodule.o: rgbimgmodule.c
+rotormodule.o: rotormodule.c
+selectmodule.o: selectmodule.c
+sgimodule.o: sgimodule.c
+socketmodule.o: socketmodule.c
+stdwinmodule.o: stdwinmodule.c
+stropmodule.o: stropmodule.c
+structmodule.o: structmodule.c
+sunaudiodevmodule.o: sunaudiodevmodule.c
+svmodule.o: svmodule.c
+threadmodule.o: threadmodule.c
+timemodule.o: timemodule.c
+timingmodule.o: timingmodule.c
+xxmodule.o: xxmodule.c
+yuvconvert.o: yuvconvert.c
+
+# === Rules added by makesetup ===
 
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.

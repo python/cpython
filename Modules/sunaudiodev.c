@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -28,10 +28,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 #include "structmember.h"
 
+#ifdef HAVE_SYS_AUDIOIO_H
+#define SOLARIS
+#endif
+
 #include <stropts.h>
 #include <sys/ioctl.h>
 #ifdef SOLARIS
-#include <multimedia/libaudio.h>
+#include <sys/audioio.h>
 #else
 #include <sun/audioio.h>
 #endif
@@ -52,8 +56,8 @@ typedef struct {
 	audio_info_t ai;
 } sadstatusobject;
 
-extern typeobject Sadtype;		/* Really static, forward */
-extern typeobject Sadstatustype;	/* Really static, forward */
+staticforward typeobject Sadtype;
+staticforward typeobject Sadstatustype;
 static sadstatusobject *sads_alloc();	/* Forward */
 
 static object *SunAudioError;
@@ -427,17 +431,17 @@ sads_setattr(xp, name, v)
 
 static typeobject Sadtype = {
 	OB_HEAD_INIT(&Typetype)
-	0,			/*ob_size*/
-	"sun_audio_device",	/*tp_name*/
-	sizeof(sadobject),	/*tp_size*/
-	0,			/*tp_itemsize*/
+	0,				/*ob_size*/
+	"sun_audio_device",		/*tp_name*/
+	sizeof(sadobject),		/*tp_size*/
+	0,				/*tp_itemsize*/
 	/* methods */
-	sad_dealloc,	/*tp_dealloc*/
-	0,		/*tp_print*/
-	sad_getattr,	/*tp_getattr*/
-	0,		/*tp_setattr*/
-	0,		/*tp_compare*/
-	0,		/*tp_repr*/
+	(destructor)sad_dealloc,	/*tp_dealloc*/
+	0,				/*tp_print*/
+	(getattrfunc)sad_getattr,	/*tp_getattr*/
+	0,				/*tp_setattr*/
+	0,				/*tp_compare*/
+	0,				/*tp_repr*/
 };
 
 static typeobject Sadstatustype = {
@@ -447,12 +451,12 @@ static typeobject Sadstatustype = {
 	sizeof(sadstatusobject),	/*tp_size*/
 	0,				/*tp_itemsize*/
 	/* methods */
-	sads_dealloc,	/*tp_dealloc*/
-	0,		/*tp_print*/
-	sads_getattr,	/*tp_getattr*/
-	sads_setattr,	/*tp_setattr*/
-	0,		/*tp_compare*/
-	0,		/*tp_repr*/
+	(destructor)sads_dealloc,	/*tp_dealloc*/
+	0,				/*tp_print*/
+	(getattrfunc)sads_getattr,	/*tp_getattr*/
+	(setattrfunc)sads_setattr,	/*tp_setattr*/
+	0,				/*tp_compare*/
+	0,				/*tp_repr*/
 };
 /* ------------------------------------------------------------------- */
 
