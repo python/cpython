@@ -1,4 +1,3 @@
-
 /* Range object implementation */
 
 #include "Python.h"
@@ -251,15 +250,8 @@ rangeiter_next(rangeiterobject *r)
 {
 	if (r->index < r->len) 
 		return PyInt_FromLong(r->start + (r->index++) * r->step);
-	PyErr_SetObject(PyExc_StopIteration, Py_None);
 	return NULL;
 }
-
-static PyMethodDef rangeiter_methods[] = {
-	{"next",        (PyCFunction)rangeiter_next,     METH_NOARGS,
-	 "it.next() -- get the next value, or raise StopIteration"},
-	{NULL,          NULL}           /* sentinel */
-};
 
 static PyTypeObject Pyrangeiter_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -291,6 +283,5 @@ static PyTypeObject Pyrangeiter_Type = {
 	0,                                      /* tp_weaklistoffset */
 	(getiterfunc)rangeiter_getiter,		/* tp_iter */
 	(iternextfunc)rangeiter_next,		/* tp_iternext */
-	rangeiter_methods,			/* tp_methods */
+	0,					/* tp_methods */
 };
-
