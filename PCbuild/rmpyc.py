@@ -1,5 +1,7 @@
 # Remove all the .pyc and .pyo files under ../Lib.
 
+from __future__ import nested_scopes
+
 def deltree(root):
     import os
     def rm(path):
