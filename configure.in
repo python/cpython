@@ -763,7 +763,8 @@ fi
 AC_CHECK_FUNCS(alarm chown clock confstr ctermid ctermid_r dlopen execv \
  flock fork fsync fdatasync fpathconf ftime ftruncate \
  getgroups getlogin getpeername getpgrp getpid getpwent gettimeofday getwd \
- kill link lstat mkfifo mktime nice pathconf pause plock pthread_init \
+ kill link lstat mkfifo mktime mremap \
+ nice pathconf pause plock pthread_init \
  putenv readlink \
  select setgid setlocale setuid setsid setpgid setpgrp setvbuf \
  sigaction siginterrupt sigrelse strftime strptime symlink sysconf \
