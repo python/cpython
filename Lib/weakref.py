@@ -179,7 +179,11 @@ class WeakKeyDictionary(UserDict.UserDict):
         return self.data.get(ref(key),default)
 
     def has_key(self, key):
-        return self.data.has_key(ref(key))
+        try:
+            wr = ref(key)
+        except TypeError:
+            return 0
+        return self.data.has_key(wr)
 
     def items(self):
         L = []
