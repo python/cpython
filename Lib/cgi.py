@@ -407,16 +407,25 @@ import string
 import sys
 import os
 
-
-# A shorthand for os.environ
-environ = os.environ
-
-
 # Parsing functions
 # =================
 
-def parse(fp=None):
-    """Parse a query in the environment or from a file (default stdin)"""
+def parse(fp=None, environ=os.environ, keep_blank_values=None):
+    """Parse a query in the environment or from a file (default stdin)
+
+        Arguments, all optional:
+
+        fp              : file pointer; default: sys.stdin
+
+	environ         : environment dictionary; default: os.environ
+
+        keep_blank_values: flag indicating whether blank values in
+            URL encoded forms should be treated as blank strings.  
+            A true value inicates that blanks should be retained as 
+            blank strings.  The default false value indicates that
+	    blank values are to be ignored and treated as if they were
+	    not included.
+    """
     if not fp:
 	fp = sys.stdin
     if not environ.has_key('REQUEST_METHOD'):
@@ -439,11 +448,23 @@ def parse(fp=None):
 	else:
 	    qs = ""
 	environ['QUERY_STRING'] = qs	# XXX Shouldn't, really
-    return parse_qs(qs)
+    return parse_qs(qs, keep_blank_values)
 
 
-def parse_qs(qs):
-    """Parse a query given as a string argument"""
+def parse_qs(qs, keep_blank_values=None):
+    """Parse a query given as a string argumen
+
+        Arguments:
+
+	qs              : URL-encoded query string to be parsed
+
+        keep_blank_values: flag indicating whether blank values in
+            URL encoded queries should be treated as blank strings.  
+            A true value inicates that blanks should be retained as 
+            blank strings.  The default false value indicates that
+	    blank values are to be ignored and treated as if they were
+	    not included.
+    """
     import urllib, regsub
     name_value_pairs = string.splitfields(qs, '&')
     dict = {}
@@ -453,7 +474,7 @@ def parse_qs(qs):
 	    continue
 	name = nv[0]
 	value = urllib.unquote(regsub.gsub('+', ' ', nv[1]))
-	if len(value):
+        if len(value) or keep_blank_values:
 	    if dict.has_key (name):
 		dict[name].append(value)
 	    else:
@@ -579,6 +600,7 @@ class MiniFieldStorage:
     filename = None
     list = None
     type = None
+    file = None
     type_options = {}
     disposition = None
     disposition_options = {}
@@ -589,7 +611,7 @@ class MiniFieldStorage:
 	from StringIO import StringIO
 	self.name = name
 	self.value = value
-	self.file = StringIO(value)
+        # self.file = StringIO(value)
 
     def __repr__(self):
 	"""Return printable representation."""
@@ -639,7 +661,8 @@ class FieldStorage:
 
     """
 
-    def __init__(self, fp=None, headers=None, outerboundary=""):
+    def __init__(self, fp=None, headers=None, outerboundary="",
+		 environ=os.environ, keep_blank_values=None):
 	"""Constructor.  Read multipart/* until last part.
 
 	Arguments, all optional:
@@ -649,11 +672,21 @@ class FieldStorage:
 	headers 	: header dictionary-like object; default:
 	    taken from environ as per CGI spec
 
-	outerboundary	: optional terminating multipart boundary
+        outerboundary   : terminating multipart boundary
 	    (for internal use only)
+
+	environ         : environment dictionary; default: os.environ
+
+        keep_blank_values: flag indicating whether blank values in
+            URL encoded forms should be treated as blank strings.  
+            A true value inicates that blanks should be retained as 
+            blank strings.  The default false value indicates that
+	    blank values are to be ignored and treated as if they were
+	    not included.
 
 	"""
 	method = None
+	self.keep_blank_values = keep_blank_values
 	if environ.has_key('REQUEST_METHOD'):
 	    method = string.upper(environ['REQUEST_METHOD'])
 	if not fp and method == 'GET':
@@ -767,7 +800,7 @@ class FieldStorage:
     def read_urlencoded(self):
 	"""Internal: read data in query string format."""
 	qs = self.fp.read(self.length)
-	dict = parse_qs(qs)
+        dict = parse_qs(qs, self.keep_blank_values)
 	self.list = []
 	for key, valuelist in dict.items():
 	    for value in valuelist:
@@ -922,8 +955,8 @@ class FormContentDict:
     form.dict == {key: [val, val, ...], ...}
 
     """
-    def __init__( self ):
-	self.dict = parse()
+    def __init__(self, environ=os.environ):
+        self.dict = parse(environ)
 	self.query_string = environ['QUERY_STRING']
     def __getitem__(self,key):
 	return self.dict[key]
@@ -1027,7 +1060,7 @@ class FormContent(FormContentDict):
 # Test/debug code
 # ===============
 
-def test():
+def test(environ=os.environ):
     """Robust test CGI script, usable as main program.
 
     Write minimal HTTP headers and dump all information provided to
@@ -1041,7 +1074,7 @@ def test():
     try:
 	form = FieldStorage()	# Replace with other classes to test those
 	print_form(form)
-	print_environ()
+        print_environ(environ)
 	print_directory()
 	print_arguments()
 	print_environ_usage()
@@ -1049,7 +1082,7 @@ def test():
 	print "\n\n<PRE>"	# Turn off HTML word wrap
 	traceback.print_exc()
 
-def print_environ():
+def print_environ(environ=os.environ):
     """Dump the shell environment as HTML."""
     keys = environ.keys()
     keys.sort()
