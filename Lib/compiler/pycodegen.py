@@ -141,13 +141,16 @@ class CodeGenerator:
     def visitModule(self, node):
         lnf = walk(node.node, LocalNameFinder(), 0)
         self.locals.push(lnf.getLocals())
-        self.setDocstring(node.doc)
+        if node.doc:
+            self.fixDocstring(node.node)
         self.visit(node.node)
         self.emit('LOAD_CONST', None)
         self.emit('RETURN_VALUE')
 
     def visitFunction(self, node):
         self._visitFuncOrLambda(node, isLambda=0)
+        if node.doc:
+            self.setDocstring(node.doc)
         self.storeName(node.name)
 
     def visitLambda(self, node):
@@ -165,6 +168,8 @@ class CodeGenerator:
 
     def visitClass(self, node):
         gen = ClassCodeGenerator(node, self.filename)
+        if node.doc:
+            self.fixDocstring(node.code)
         walk(node.code, gen)
         gen.finish()
         self.set_lineno(node)
@@ -178,6 +183,19 @@ class CodeGenerator:
         self.emit('BUILD_CLASS')
         self.storeName(node.name)
 
+    def fixDocstring(self, node):
+        """Rewrite the ast for a class with a docstring.
+
+        The AST includes a Discard(Const(docstring)) node.  Replace
+        this with an Assign([AssName('__doc__', ...])
+        """
+        assert isinstance(node, ast.Stmt)
+        stmts = node.nodes
+        discard = stmts[0]
+        assert isinstance(discard, ast.Discard)
+        stmts[0] = ast.Assign([ast.AssName('__doc__', 'OP_ASSIGN')],
+                              discard.expr)
+        stmts[0].lineno = discard.lineno
     # The rest are standard visitor methods
 
     # The next few implement control-flow statements
@@ -627,7 +645,7 @@ class CodeGenerator:
 
     def visitAugSlice(self, node, mode):
         if mode == "load":
-            self.visitSlice(node, 1)
+            self.visitlSice(node, 1)
         elif mode == "store":
             slice = 0
             if node.lower:
@@ -896,9 +914,12 @@ class FunctionCodeGenerator(CodeGenerator):
             name = func.name
         args, hasTupleArg = generateArgList(func.argnames)
         self.graph = pyassem.PyFlowGraph(name, filename, args, 
-                                           optimized=1) 
+                                         optimized=1) 
         self.isLambda = isLambda
         self.super_init(filename)
+
+        if not isLambda and func.doc:
+            self.setDocstring(func.doc)
 
         lnf = walk(func.code, LocalNameFinder(args), 0)
         self.locals.push(lnf.getLocals())
@@ -947,6 +968,8 @@ class ClassCodeGenerator(CodeGenerator):
         lnf = walk(klass.code, LocalNameFinder(), 0)
         self.locals.push(lnf.getLocals())
         self.graph.setFlag(CO_NEWLOCALS)
+        if klass.doc:
+            self.setDocstring(klass.doc)
 
     def finish(self):
         self.graph.startExitBlock()
