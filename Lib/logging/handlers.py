@@ -1,4 +1,4 @@
-# Copyright 2001-2002 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2004 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -726,6 +726,15 @@ class BufferingHandler(logging.Handler):
         """
         self.buffer = []
 
+    def close(self):
+        """
+        Close the handler.
+
+        This version just flushes and chains to the parent class' close().
+        """
+        self.flush()
+        logging.Handler.close(self)
+
 class MemoryHandler(BufferingHandler):
     """
     A handler class which buffers logging records in memory, periodically
@@ -774,5 +783,4 @@ class MemoryHandler(BufferingHandler):
         """
         self.flush()
         self.target = None
-        self.buffer = []
         BufferingHandler.close(self)
