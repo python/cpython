@@ -274,8 +274,8 @@ PyImport_Cleanup()
 		while (PyDict_Next(modules, &pos, &key, &value)) {
 			if (value->ob_refcnt != 1)
 				continue;
-			if (PyModule_Check(value)) {
-				name = PyString_AsString(key);
+			if (PyString_Check(key) && PyModule_Check(value)) {
+				name = PyString_AS_STRING(key);
 				if (strcmp(name, "__builtin__") == 0)
 					continue;
 				if (strcmp(name, "sys") == 0)
@@ -293,8 +293,8 @@ PyImport_Cleanup()
 	/* Next, delete all modules (still skipping __builtin__ and sys) */
 	pos = 0;
 	while (PyDict_Next(modules, &pos, &key, &value)) {
-		if (PyModule_Check(value)) {
-			name = PyString_AsString(key);
+		if (PyString_Check(key) && PyModule_Check(value)) {
+			name = PyString_AS_STRING(key);
 			if (strcmp(name, "__builtin__") == 0)
 				continue;
 			if (strcmp(name, "sys") == 0)
