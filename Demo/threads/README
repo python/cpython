@@ -4,5 +4,6 @@ This module is only (optionally) available for the SGI, for now.
 These are mostly "proof of concept" type applications:
 
 find.py		Parallelized "find(1)".
+Generator.py	Generator class implemented with threads.
 telnet.py	Version of ../sockets/telnet.py using threads.
 wpi.py		Version of ../scripts/pi.py using threads and stdwin.
