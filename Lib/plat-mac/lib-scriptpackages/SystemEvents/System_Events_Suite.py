@@ -12,28 +12,28 @@ _code = 'sevs'
 
 class System_Events_Suite_Events:
 
-	pass
+    pass
 
 
 class application(aetools.ComponentItem):
-	"""application - The System Events application """
-	want = 'capp'
+    """application - The System Events application """
+    want = 'capp'
 class _Prop__3c_Inheritance_3e_(aetools.NProperty):
-	"""<Inheritance> - All of the properties of the superclass. """
-	which = 'c@#^'
-	want = 'capp'
+    """<Inheritance> - All of the properties of the superclass. """
+    which = 'c@#^'
+    want = 'capp'
 class _Prop_folder_actions_enabled(aetools.NProperty):
-	"""folder actions enabled - Are Folder Actions currently being processed? """
-	which = 'faen'
-	want = 'bool'
+    """folder actions enabled - Are Folder Actions currently being processed? """
+    which = 'faen'
+    want = 'bool'
 class _Prop_properties(aetools.NProperty):
-	"""properties - every property of the System Events application """
-	which = 'pALL'
-	want = '****'
+    """properties - every property of the System Events application """
+    which = 'pALL'
+    want = '****'
 class _Prop_system_wide_UI_element(aetools.NProperty):
-	"""system wide UI element - the UI element for the entire system """
-	which = 'swui'
-	want = 'uiel'
+    """system wide UI element - the UI element for the entire system """
+    which = 'swui'
+    want = 'uiel'
 #        element 'alis' as ['name', 'indx', 'rele', 'rang', 'test']
 #        element 'cdis' as ['name', 'indx', 'rele', 'rang', 'test']
 #        element 'cfol' as ['name', 'indx', 'rele', 'rang', 'test']
@@ -56,30 +56,43 @@ import Folder_Actions_Suite
 import Login_Items_Suite
 import Processes_Suite
 application._privpropdict = {
-	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
-	'folder_actions_enabled' : _Prop_folder_actions_enabled,
-	'properties' : _Prop_properties,
-	'system_wide_UI_element' : _Prop_system_wide_UI_element,
+    '_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+    'folder_actions_enabled' : _Prop_folder_actions_enabled,
+    'properties' : _Prop_properties,
+    'system_wide_UI_element' : _Prop_system_wide_UI_element,
 }
 application._privelemdict = {
-	'UI_element' : Processes_Suite.UI_element,
-	'alias' : Disk_2d_Folder_2d_File_Suite.alias,
-	'application_process' : Processes_Suite.application_process,
-	'desk_accessory_process' : Processes_Suite.desk_accessory_process,
-	'disk' : Disk_2d_Folder_2d_File_Suite.disk,
-	'document' : Standard_Suite.document,
-	'file' : Disk_2d_Folder_2d_File_Suite.file,
-	'folder' : Disk_2d_Folder_2d_File_Suite.folder,
-	'folder_action' : Folder_Actions_Suite.folder_action,
-	'item' : Disk_2d_Folder_2d_File_Suite.item,
-	'login_item' : Login_Items_Suite.login_item,
-	'process' : Processes_Suite.process,
-	'window' : Standard_Suite.window,
+    'UI_element' : Processes_Suite.UI_element,
+    'alias' : Disk_2d_Folder_2d_File_Suite.alias,
+    'application_process' : Processes_Suite.application_process,
+    'desk_accessory_process' : Processes_Suite.desk_accessory_process,
+    'disk' : Disk_2d_Folder_2d_File_Suite.disk,
+    'document' : Standard_Suite.document,
+    'file' : Disk_2d_Folder_2d_File_Suite.file,
+    'folder' : Disk_2d_Folder_2d_File_Suite.folder,
+    'folder_action' : Folder_Actions_Suite.folder_action,
+    'item' : Disk_2d_Folder_2d_File_Suite.item,
+    'login_item' : Login_Items_Suite.login_item,
+    'process' : Processes_Suite.process,
+    'window' : Standard_Suite.window,
 }
 
 #
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'capp' : application,
+    'capp' : application,
+}
+
+_propdeclarations = {
+    'c@#^' : _Prop__3c_Inheritance_3e_,
+    'faen' : _Prop_folder_actions_enabled,
+    'pALL' : _Prop_properties,
+    'swui' : _Prop_system_wide_UI_element,
+}
+
+_compdeclarations = {
+}
+
+_enumdeclarations = {
 }

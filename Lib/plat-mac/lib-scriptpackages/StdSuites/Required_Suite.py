@@ -13,11 +13,20 @@ _code = 'reqd'
 from _builtinSuites.builtin_Suite import *
 class Required_Suite_Events(builtin_Suite_Events):
 
-	pass
+    pass
 
 
 #
 # Indices of types declared in this module
 #
 _classdeclarations = {
+}
+
+_propdeclarations = {
+}
+
+_compdeclarations = {
+}
+
+_enumdeclarations = {
 }
