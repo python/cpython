@@ -248,6 +248,7 @@ AC_MSG_CHECKING(LDLIBRARY)
 if test "$with_next_framework"
 then
   LDLIBRARY='libpython$(VERSION).dylib'
+  DLLLIBRARY=$LDLIBRARY
 fi  
 
 # DG/UX requires some fancy ld contortions to produce a .so from an .a
@@ -326,6 +327,10 @@ then
 	*)
 	    OPT="-O";;
 	esac
+    esac
+    case $ac_sys_system in
+    Darwin*)
+    	OPT="$OPT -no-cpp-precomp";;
     esac
 fi
 
@@ -675,7 +680,7 @@ AC_SUBST(LIBTOOL_CRUFT)
 case $ac_sys_system/$ac_sys_release in
   Darwin/*)
     ns_undef_sym='_environ'
-    LIBTOOL_CRUFT="-lcc_dynamic -arch_only ppc -U $ns_undef_sym" ;;
+    LIBTOOL_CRUFT="-framework Foundation -framework Carbon -lcc_dynamic -arch_only ppc -U $ns_undef_sym" ;;
   next/4*)
     ns_undef_sym='__environ'
     LIBTOOL_CRUFT="-U $ns_undef_sym" ;;
@@ -687,7 +692,7 @@ esac
 AC_MSG_CHECKING(for --with-next-framework)
 if test "$with_next_framework"
 then
-	OPT="$OPT -fno-common"
+	OPT="$OPT -fno-common -dynamic"
 	# -U __environ is needed since bundles don't have access
 	# to crt0 when built but will always be linked against it
 	LDFLAGS="$LDFLAGS -Wl,-U,$ns_undef_sym"
