@@ -447,8 +447,7 @@ class Distribution:
            expected class was not found in it."""
 
         module_name = 'distutils.command.' + command
-        klass_name = string.join \
-            (map (string.capitalize, string.split (command, '_')), '')
+        klass_name = command
 
         try:
             __import__ (module_name)
