@@ -37,7 +37,7 @@ except ImportError:
 prog = sys.argv[0]
 
 def usage():
-   print >> sys.stderr, __doc__ % globals()
+   sys.stderr.write(__doc__ % globals())
 
 def main(args):
     try:
@@ -56,9 +56,9 @@ def main(args):
     else:
         dbfile = args[0]
         try:
-            pfile = file(args[1], 'rb')
+            pfile = open(args[1], 'rb')
         except IOError:
-            print >> sys.stderr, "Unable to open", args[1]
+            sys.stderr.write("Unable to open %s\n" % args[1])
             return 1
 
     dbopen = None
@@ -67,36 +67,36 @@ def main(args):
             try:
                 dbopen = bsddb.hashopen
             except AttributeError:
-                print >> sys.stderr, "bsddb module unavailable."
+                sys.stderr.write("bsddb module unavailable.\n")
                 return 1
         elif opt in ("-b", "--btree"):
             try:
                 dbopen = bsddb.btopen
             except AttributeError:
-                print >> sys.stderr, "bsddb module unavailable."
+                sys.stderr.write("bsddb module unavailable.\n")
                 return 1
         elif opt in ("-r", "--recno"):
             try:
                 dbopen = bsddb.rnopen
             except AttributeError:
-                print >> sys.stderr, "bsddb module unavailable."
+                sys.stderr.write("bsddb module unavailable.\n")
                 return 1
         elif opt in ("-a", "--anydbm"):
             try:
                 dbopen = anydbm.open
             except AttributeError:
-                print >> sys.stderr, "anydbm module unavailable."
+                sys.stderr.write("anydbm module unavailable.\n")
                 return 1
         elif opt in ("-d", "--dbm"):
             try:
                 dbopen = dbm.open
             except AttributeError:
-                print >> sys.stderr, "dbm module unavailable."
+                sys.stderr.write("dbm module unavailable.\n")
                 return 1
     if dbopen is None:
         if bsddb is None:
-            print >> sys.stderr, "bsddb module unavailable -"
-            print >> sys.stderr, "must specify dbtype."
+            sys.stderr.write("bsddb module unavailable - ")
+            sys.stderr.write("must specify dbtype.\n")
             return 1
         else:
             dbopen = bsddb.hashopen
@@ -104,8 +104,8 @@ def main(args):
     try:
         db = dbopen(dbfile, 'c')
     except bsddb.error:
-        print >> sys.stderr, "Unable to open", dbfile,
-        print >> sys.stderr, "Check for format or version mismatch."
+        sys.stderr.write("Unable to open %s.  " % dbfile)
+        sys.stderr.write("Check for format or version mismatch.\n")
         return 1
     else:
         for k in db.keys():
