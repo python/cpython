@@ -854,7 +854,7 @@ static char pyexpat_module_documentation[] =
 
 /* Initialization function for the module */
 
-DL_IMPORT(void) initpyexpat(void);
+DL_EXPORT(void) initpyexpat(void);  /* supply a prototype */
 
 DL_EXPORT(void)
 initpyexpat(void)
