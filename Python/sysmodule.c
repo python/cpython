@@ -486,3 +486,93 @@ PySys_SetArgv(argc, argv)
 	}
 	Py_DECREF(av);
 }
+
+
+/* APIs to write to sys.stdout or sys.stderr using a printf-like interface.
+   Adapted from code submitted by Just van Rossum.
+
+   PySys_WriteStdout(format, ...)
+   PySys_WriteStderr(format, ...)
+
+      The first function writes to sys.stdout; the second to sys.stderr.  When
+      there is a problem, they write to the real (C level) stdout or stderr;
+      no exceptions are raised (but a pending exception may be cleared when a
+      new exception is caught).
+
+      Both take a printf-style format string as their first argument followed
+      by a variable length argument list determined by the format string.
+
+      *** WARNING ***
+
+      The format should limit the total size of the formatted output string to
+      1000 bytes.  In particular, this means that no unrestricted "%s" formats
+      should occur; these should be limited using "%.<N>s where <N> is a
+      decimal number calculated so that <N> plus the maximum size of other
+      formatted text does not exceed 1000 bytes.  Also watch out for "%f",
+      which can print hundreds of digits for very large numbers.
+
+ */
+
+static void
+mywrite(name, fp, format, va)
+	char *name;
+	FILE *fp;
+	const char *format;
+	va_list va;
+{
+	PyObject *file;
+
+	file = PySys_GetObject(name);
+	if (file == NULL || PyFile_AsFile(file) == fp)
+		vfprintf(fp, format, va);
+	else {
+		char buffer[1001];
+		vsprintf(buffer, format, va);
+		if (PyFile_WriteString(buffer, file) != 0) {
+			PyErr_Clear();
+			fputs(buffer, fp);
+		}
+	}
+}
+
+void
+#ifdef HAVE_STDARG_PROTOTYPES
+PySys_WriteStdout(const char *format, ...)
+#else
+PySys_WriteStdout(va_alist)
+	va_dcl
+#endif
+{
+	va_list va;
+
+#ifdef HAVE_STDARG_PROTOTYPES
+	va_start(va, format);
+#else
+	char *format;
+	va_start(va);
+	format = va_arg(va, char *);
+#endif
+	mywrite("stdout", stdout, format, va);
+	va_end(va);
+}
+
+void
+#ifdef HAVE_STDARG_PROTOTYPES
+PySys_WriteStderr(const char *format, ...)
+#else
+PySys_WriteStderr(va_alist)
+	va_dcl
+#endif
+{
+	va_list va;
+
+#ifdef HAVE_STDARG_PROTOTYPES
+	va_start(va, format);
+#else
+	char *format;
+	va_start(va);
+	format = va_arg(va, char *);
+#endif
+	mywrite("stderr", stderr, format, va);
+	va_end(va);
+}
