@@ -23,6 +23,9 @@ Core and builtins
   signal handlers and threads, complicated by readline's behaviour.
   It's quite possible that there are still bugs here.
 
+- Added C macros Py_CLEAR and Py_VISIT to ease the implementation of
+  types that support garbage collection.
+
 Extension modules
 -----------------
 
@@ -71,6 +74,16 @@ Library
 - Non-blocking SSL sockets work again; they were broken in Python 2.3.
   SF patch 945642.
 
+- doctest unittest integration improvements:
+
+  o Improved the unitest test output for doctest-based unit tests
+
+  o Can now pass setUp and tearDown functions when creating
+    DocTestSuites.
+
+- The threading module has a new class, local, for creating objects
+  that provide thread-local data.
+
 Tools/Demos
 -----------
 
@@ -82,6 +95,19 @@ C API
 
 - A large pile of datetime field-extraction macros is now documented,
   thanks to Anthony Tuininga (patch #986010).
+
+Documentation
+-------------
+
+Improved the tutorial on creating types in C.
+
+  - point out the importance of reassigning data members before
+    assigning thier values
+
+  - correct my missconception about return values from visitprocs. Sigh.
+
+  - mention the labor saving Py_VISIT and Py_CLEAR macros.
+
 
 New platforms
 -------------
