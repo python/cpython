@@ -344,8 +344,8 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
 
-     DL_IMPORT(PyObject *) PyObject_CallFunctionObArgs(PyObject *callable,
-                                                       ...);
+     DL_IMPORT(PyObject *) PyObject_CallFunctionObjArgs(PyObject *callable,
+                                                        ...);
 
        /*
 	 Call a callable Python object, callable_object, with a
@@ -357,8 +357,8 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
 
-     DL_IMPORT(PyObject *) PyObject_CallMethodObArgs(PyObject *o,
-                                                     PyObject *m, ...);
+     DL_IMPORT(PyObject *) PyObject_CallMethodObjArgs(PyObject *o,
+                                                      PyObject *m, ...);
 
        /*
 	 Call the method named m of object o with a variable number of

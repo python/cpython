@@ -719,9 +719,9 @@ PyObject_CallFunction:PyObject*:callable_object:0:
 PyObject_CallFunction:char*:format::
 PyObject_CallFunction::...::
 
-PyObject_CallFunctionObArgs:PyObject*::+1:
-PyObject_CallFunctionObArgs:PyObject*:callable:0:
-PyObject_CallFunctionObArgs::...::
+PyObject_CallFunctionObjArgs:PyObject*::+1:
+PyObject_CallFunctionObjArgs:PyObject*:callable:0:
+PyObject_CallFunctionObjArgs::...::
 
 PyObject_CallMethod:PyObject*::+1:
 PyObject_CallMethod:PyObject*:o:0:
@@ -729,10 +729,10 @@ PyObject_CallMethod:char*:m::
 PyObject_CallMethod:char*:format::
 PyObject_CallMethod::...::
 
-PyObject_CallMethodObArgs:PyObject*::+1:
-PyObject_CallMethodObArgs:PyObject*:o:0:
-PyObject_CallMethodObArgs:char*:name::
-PyObject_CallMethodObArgs::...::
+PyObject_CallMethodObjArgs:PyObject*::+1:
+PyObject_CallMethodObjArgs:PyObject*:o:0:
+PyObject_CallMethodObjArgs:char*:name::
+PyObject_CallMethodObjArgs::...::
 
 PyObject_CallObject:PyObject*::+1:
 PyObject_CallObject:PyObject*:callable_object:0:
