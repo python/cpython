@@ -1655,7 +1655,7 @@ eval_frame(PyFrameObject *f)
 
 		case UNPACK_SEQUENCE:
 			v = POP();
-			if (PyTuple_Check(v)) {
+			if (PyTuple_CheckExact(v)) {
 				if (PyTuple_Size(v) != oparg) {
 					PyErr_SetString(PyExc_ValueError,
 						 "unpack tuple of wrong size");
@@ -1669,7 +1669,7 @@ eval_frame(PyFrameObject *f)
 					}
 				}
 			}
-			else if (PyList_Check(v)) {
+			else if (PyList_CheckExact(v)) {
 				if (PyList_Size(v) != oparg) {
 					PyErr_SetString(PyExc_ValueError,
 						  "unpack list of wrong size");
@@ -1975,7 +1975,14 @@ eval_frame(PyFrameObject *f)
 			continue;
 
 		case JUMP_IF_FALSE:
-			err = PyObject_IsTrue(TOP());
+			w = TOP();
+			if (w == Py_True)
+				continue;
+			if (w == Py_False) {
+				JUMPBY(oparg);
+				continue;
+			}
+			err = PyObject_IsTrue(w);
 			if (err > 0)
 				err = 0;
 			else if (err == 0)
@@ -1985,7 +1992,14 @@ eval_frame(PyFrameObject *f)
 			continue;
 
 		case JUMP_IF_TRUE:
-			err = PyObject_IsTrue(TOP());
+			w = TOP();
+			if (w == Py_False)
+				continue;
+			if (w == Py_True) {
+				JUMPBY(oparg);
+				continue;
+			}
+			err = PyObject_IsTrue(w);
 			if (err > 0) {
 				err = 0;
 				JUMPBY(oparg);
