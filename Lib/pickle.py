@@ -77,11 +77,13 @@ class _Stop(Exception):
     def __init__(self, value):
         self.value = value
 
+# Jython has PyStringMap; it's a dict subclass with string keys
 try:
     from org.python.core import PyStringMap
 except ImportError:
     PyStringMap = None
 
+# UnicodeType may or may not be exported (normally imported from types)
 try:
     UnicodeType
 except NameError:
@@ -249,7 +251,10 @@ class Pickler:
 
         return GET + `i` + '\n'
 
-    def save(self, obj):
+    def save(self, obj,
+             _builtin_type = (int, long, float, complex, str, unicode,
+                              tuple, list, dict),
+             ):
         # Check for persistent id (defined by a subclass)
         pid = self.persistent_id(obj)
         if pid:
@@ -277,6 +282,30 @@ class Pickler:
         if issc:
             self.save_global(obj)
             return
+
+        # Check for instance of subclass of common built-in types
+        # XXX This block is experimental code that will go away!
+        if self.proto >= 2:
+            if isinstance(obj, _builtin_type):
+                assert t not in _builtin_type # Proper subclass
+                args = ()
+                getnewargs = getattr(obj, "__getnewargs__", None)
+                if getnewargs:
+                    args = getnewargs() # This better not reference obj
+                self.save_global(t)
+                self.save(args)
+                self.write(NEWOBJ)
+                self.memoize(obj)
+                getstate = getattr(obj, "__getstate__", None)
+                if getstate:
+                    state = getstate()
+                else:
+                    state = getattr(obj, "__dict__", None)
+                    # XXX What about __slots__?
+                if state is not None:
+                    self.save(state)
+                    self.write(BUILD)
+                return
 
         # Check copy_reg.dispatch_table
         reduce = dispatch_table.get(t)
@@ -970,7 +999,7 @@ class Unpickler:
         args = self.stack.pop()
         cls = self.stack[-1]
         obj = cls.__new__(cls, *args)
-        self.stack[-1:] = obj
+        self.stack[-1] = obj
     dispatch[NEWOBJ] = load_newobj
 
     def load_global(self):
