@@ -1679,7 +1679,7 @@ PyObject *PyExc_AccessError;
 PyObject *PyExc_AssertionError;
 PyObject *PyExc_AttributeError;
 PyObject *PyExc_EOFError;
-PyObject *FloatingPointError;
+PyObject *PyExc_FloatingPointError;
 PyObject *PyExc_IOError;
 PyObject *PyExc_ImportError;
 PyObject *PyExc_IndexError;
@@ -1713,7 +1713,7 @@ initerrors()
 	PyExc_AssertionError = newstdexception("AssertionError");
 	PyExc_AttributeError = newstdexception("AttributeError");
 	PyExc_EOFError = newstdexception("EOFError");
-	FloatingPointError = newstdexception("FloatingPointError");
+	PyExc_FloatingPointError = newstdexception("FloatingPointError");
 	PyExc_IOError = newstdexception("IOError");
 	PyExc_ImportError = newstdexception("ImportError");
 	PyExc_IndexError = newstdexception("IndexError");

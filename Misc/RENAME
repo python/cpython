@@ -36,6 +36,7 @@ AccessError PyExc_AccessError
 AttributeError PyExc_AttributeError
 ConflictError PyExc_ConflictError
 EOFError PyExc_EOFError
+FloatingPointError PyExc_FloatingPointError
 IOError PyExc_IOError
 ImportError PyExc_ImportError
 IndexError PyExc_IndexError
