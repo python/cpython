@@ -33,8 +33,14 @@ ConfigParser -- responsible for for parsing a list of
     sections()
         return all the configuration section names, sans DEFAULT
 
+    has_section(section)
+        return whether the given section exists
+
     options(section)
         return list of configuration options for the named section
+
+    has_option(section, option)
+        return whether the given section has the given option
 
     read(filenames)
         read and parse the list of named configuration files, given by
@@ -165,12 +171,21 @@ class ConfigParser:
         return self.__sections.has_key(section)
 
     def options(self, section):
+        """Return a list of option names for the given section name."""
         try:
             opts = self.__sections[section].copy()
         except KeyError:
             raise NoSectionError(section)
         opts.update(self.__defaults)
         return opts.keys()
+
+    def has_option(self, section, option):
+        """Return whether the given section has the given option."""
+        try:
+            opts = self.__sections[section]
+        except KeyError:
+            raise NoSectionError(section)
+        return opts.has_key(option)
 
     def read(self, filenames):
 
@@ -245,7 +260,7 @@ class ConfigParser:
         depth = 0                       
         while depth < 10:               # Loop through this until it's done
             depth = depth + 1
-            if not string.find(value, "%("):
+            if string.find(value, "%(") >= 0:
                 try:
                     value = value % d
                 except KeyError, key:
