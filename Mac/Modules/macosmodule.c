@@ -502,15 +502,17 @@ static PyObject *
 MacOS_splash(PyObject *self, PyObject *args)
 {
 	int resid = -1;
-	static DialogPtr curdialog;
+	static DialogPtr curdialog = NULL;
 	WindowRef theWindow;
 	CGrafPtr thePort;
 	short xpos, ypos, width, height, swidth, sheight;
 	
 	if (!PyArg_ParseTuple(args, "|i", &resid))
 		return NULL;
-	if (curdialog)
+	if (curdialog) {
 		DisposeDialog(curdialog);
+		curdialog = NULL;
+	}
 		
 	if ( resid != -1 ) {
 		curdialog = GetNewDialog(resid, NULL, (WindowPtr)-1);
