@@ -514,6 +514,15 @@ class Aifc_read:
 		import audioop
 		return audioop.ulaw2lin(data, 2)
 
+	def _adpcm2lin(self, data):
+		import audioop
+		if not hasattr(self, '_adpcmstate'):
+			# first time
+			self._adpcmstate = None
+		data, self._adpcmstate = audioop.adpcm2lin(data, 2,
+							   self._adpcmstate)
+		return data
+
 	def _read_comm_chunk(self, chunk):
 		self._nchannels = _read_short(chunk)
 		self._nframes = _read_long(chunk)
@@ -539,6 +548,16 @@ class Aifc_read:
 			#DEBUG end
 			self._compname = _read_string(chunk)
 			if self._comptype != 'NONE':
+				if self._comptype == 'G722':
+					try:
+						import audioop
+					except ImportError:
+						pass
+					else:
+						self._convert = self._adpcm2lin
+						self._framesize = self._framesize / 4
+						return
+				# for ULAW and ALAW try Compression Library
 				try:
 					import cl, CL
 				except ImportError:
@@ -711,7 +730,7 @@ class Aifc_write:
 	def setcomptype(self, comptype, compname):
 		if self._nframeswritten:
 			raise Error, 'cannot change parameters after starting to write'
-		if comptype not in ('NONE', 'ULAW', 'ALAW'):
+		if comptype not in ('NONE', 'ULAW', 'ALAW', 'G722'):
 			raise Error, 'unsupported compression type'
 		self._comptype = comptype
 		self._compname = compname
@@ -730,7 +749,7 @@ class Aifc_write:
 	def setparams(self, (nchannels, sampwidth, framerate, nframes, comptype, compname)):
 		if self._nframeswritten:
 			raise Error, 'cannot change parameters after starting to write'
-		if comptype not in ('NONE', 'ULAW', 'ALAW'):
+		if comptype not in ('NONE', 'ULAW', 'ALAW', 'G722'):
 			raise Error, 'unsupported compression type'
 		self.setnchannels(nchannels)
 		self.setsampwidth(sampwidth)
@@ -817,6 +836,14 @@ class Aifc_write:
 		import audioop
 		return audioop.lin2ulaw(data, 2)
 
+	def _lin2adpcm(self, data):
+		import audioop
+		if not hasattr(self, '_adpcmstate'):
+			self._adpcmstate = None
+		data, self._adpcmstate = audioop.lin2adpcm(data, 2,
+							   self._adpcmstate)
+		return data
+
 	def _ensure_header_written(self, datasize):
 		if not self._nframeswritten:
 			if self._comptype in ('ULAW', 'ALAW'):
@@ -824,6 +851,11 @@ class Aifc_write:
 					self._sampwidth = 2
 				if self._sampwidth != 2:
 					raise Error, 'sample width must be 2 when compressing with ULAW or ALAW'
+			if self._comptype == 'G722':
+				if not self._sampwidth:
+					self._sampwidth = 2
+				if self._sampwidth != 2:
+					raise Error, 'sample width must be 2 when compressing with G7.22 (ADPCM)'
 			if not self._nchannels:
 				raise Error, '# channels not specified'
 			if not self._sampwidth:
@@ -833,6 +865,10 @@ class Aifc_write:
 			self._write_header(datasize)
 
 	def _init_compression(self):
+		if self._comptype == 'G722':
+			import audioop
+			self._convert = self._lin2adpcm
+			return
 		try:
 			import cl, CL
 		except ImportError:
@@ -876,10 +912,15 @@ class Aifc_write:
 		self._datalength = self._nframes * self._nchannels * self._sampwidth
 		if self._datalength & 1:
 			self._datalength = self._datalength + 1
-		if self._aifc and self._comptype in ('ULAW', 'ALAW'):
-			self._datalength = self._datalength / 2
-			if self._datalength & 1:
-				self._datalength = self._datalength + 1
+		if self._aifc:
+			if self._comptype in ('ULAW', 'ALAW'):
+				self._datalength = self._datalength / 2
+				if self._datalength & 1:
+					self._datalength = self._datalength + 1
+			elif self._comptype == 'G722':
+				self._datalength = (self._datalength + 3) / 4
+				if self._datalength & 1:
+					self._datalength = self._datalength + 1
 		self._form_length_pos = self._file.tell()
 		commlength = self._write_form_length(self._datalength)
 		if self._aifc:
