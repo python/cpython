@@ -138,6 +138,6 @@ if __name__ == "__main__":
     except (ImportError, AttributeError):
         pass
 
-    print "open", askopenfilename(filetypes=[("all filez", "*")]).encode(enc)
+    print "open", askopenfilename(filetypes=[("all files", "*")]).encode(enc)
     print "saveas", asksaveasfilename().encode(enc)
 
