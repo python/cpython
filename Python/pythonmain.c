@@ -106,6 +106,8 @@ realmain(argc, argv)
 			fprintf(stderr,
 "usage: %s [-d] [-i] [-s] [-u ] [-v] [-c cmd | file | -] [arg] ...\n",
 				argv[0]);
+#if !(defined(__CFM68K__) && defined(__MWERKS__))
+			/* Mwerks cfm68k linker doesn't like these... */
 			fprintf(stderr, "\
 \n\
 Options and arguments (and corresponding environment variables):\n\
@@ -128,6 +130,7 @@ PYTHONSTARTUP: file executed on interactive startup (no default)\n\
 PYTHONPATH   : colon-separated list of directories prefixed to the\n\
                default module search path.  The result is sys.path.\n\
 ");
+#endif /* !cfm68k || !mwerks */
 			exit(2);
 			/*NOTREACHED*/
 

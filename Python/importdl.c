@@ -151,7 +151,7 @@ typedef void (*dl_funcptr)();
 
 #ifdef USE_MAC_DYNAMIC_LOADING
 #include <CodeFragments.h>
-#ifdef __CFM68K__ /* Really just an older version of Universal Headers */
+#ifdef SYMANTEC__CFM68K__ /* Really just an older version of Universal Headers */
 #define CFragConnectionID ConnectionID
 #define kLoadCFrag 0x01
 #endif
@@ -268,7 +268,10 @@ load_dynamic_module(name, pathname, fp)
 		
 		/* First resolve any aliases to find the real file */
 		(void)FSMakeFSSpec(0, 0, Pstring(pathname), &libspec);
+#if !(defined(__MWERKS__) && defined(__CFM68K__))
+		/* Bug: not in library */
 		err = ResolveAliasFile(&libspec, 1, &isfolder, &didsomething);
+#endif
 		if ( err ) {
 			sprintf(buf, "%s: %s", pathname, PyMac_StrError(err));
 			err_setstr(ImportError, buf);
