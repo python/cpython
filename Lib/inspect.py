@@ -29,7 +29,6 @@ __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __date__ = '1 Jan 2001'
 
 import sys, os, types, string, re, dis, imp, tokenize, linecache
-from operator import attrgetter
 
 # ----------------------------------------------------------- type-checking
 def ismodule(object):
