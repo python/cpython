@@ -79,6 +79,10 @@ class PyBuildExt(build_ext):
         srcdir = os.path.normpath(srcdir)
         moddir = os.path.normpath(moddir)
 
+        # Fix up the paths for scripts, too
+        self.distribution.scripts = [os.path.join(srcdir, filename)
+                                     for filename in self.distribution.scripts]
+
         for ext in self.extensions[:]:
             ext.sources = [ os.path.join(moddir, filename)
                             for filename in ext.sources ]
