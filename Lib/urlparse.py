@@ -1,11 +1,5 @@
-# Parse (absolute and relative) URLs according to latest internet draft:
-
-# Uniform Resource Identifiers Working Group                  R. Fielding
-# INTERNET-DRAFT                                                UC Irvine
-# Expires February 24, 1995                               August 24, 1994
-#
-#                   Relative Uniform Resource Locators
-#                  <draft-ietf-uri-relative-url-00.txt>
+# Parse (absolute and relative) URLs.  See RFC 1808: "Relative Uniform
+# Resource Locators", by R. Fielding, UC Irvine, June 1995.
 
 # Standard/builtin Python modules
 import string
@@ -16,7 +10,7 @@ uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'wais', 'file',
 uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet', 'wais',
 	       'prospero', '']
 non_hierarchical = ['gopher', 'mailto', 'news', 'telnet', 'wais']
-uses_params = ['ftp', 'prospero', '']
+uses_params = ['ftp', 'prospero', 'http', '']
 uses_query = ['http', 'wais', '']
 uses_fragment = ['ftp', 'http', 'gopher', 'news', 'nntp', 'wais',
 		 'file', 'prospero', '']
