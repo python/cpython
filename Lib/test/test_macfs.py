@@ -1,6 +1,8 @@
 # Copyright (C) 2003 Python Software Foundation
 
 import unittest
+import warnings
+warnings.filterwarnings("ignore", "macfs.*", DeprecationWarning, __name__)
 import macfs
 import os
 import tempfile
