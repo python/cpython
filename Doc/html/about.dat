@@ -23,3 +23,23 @@
       Jr.  Original navigation icons were contributed by Christopher
       Petrilli.
     </p>
+
+    <hr>
+
+    <h2>Comments and Questions</h2>
+
+    <p> General comments and questions regarding this document should
+      be sent by email to <a href="mailto:python-docs@python.org"
+        >python-docs@python.org</a>.  If you find specific errors in
+      this document, please report the bug at the <a
+        href="http://www.python.org/python-bugs/">Python Bugs
+        List</a>.
+    </p>
+
+    <p> Questions regarding how to use the information in this
+      document should be sent to the Python news group, <a
+        href="news:comp.lang.python">comp.lang.python</a>, or the <a
+        href="http://www.python.org/mailman/listinfo/python-list"
+        >Python mailing list</a> (which is gated to the newsgroup and
+      carries the same content).
+    </p>
