@@ -110,8 +110,6 @@ class PackageManagerMain(Wapplication.Application):
 				runitem, homepageitem]
 			
 	def quitevent(self, theAppleEvent, theReply):
-		from Carbon import AE
-		AE.AEInteractWithUser(50000000)
 		self._quit()
 		
 	def ignoreevent(self, theAppleEvent, theReply):
@@ -272,7 +270,7 @@ class PackageBrowser(PimpInterface):
 		self.closepimp()
 	
 	def setupwidgets(self): 
-		self.w = W.Window((580, 400), "Python Install Manager", minsize = (300, 200), tabbable = 0)
+		self.w = W.Window((580, 400), "Python Install Manager", minsize = (400, 200), tabbable = 0)
 ##		self.w.divline = W.HorizontalLine((0, 20, 0, 0))
 		self.w.titlebar = W.TextBox((4, 4, 40, 12), 'Packages:')
 		data = self.getbrowserdata()
@@ -282,10 +280,10 @@ class PackageBrowser(PimpInterface):
 		self.w.message_l = W.TextBox((4, -48, 60, 12), 'Status:')
 		self.w.message = W.TextBox((64, -48, 0, 12), '')
 		self.w.homepage_button = W.Button((4, -28, 96, 18), 'View homepage', self.do_homepage)
-		self.w.verbose_button = W.CheckBox((-288, -26, 60, 18), 'Verbose')
-		self.w.recursive_button = W.CheckBox((-224, -26, 80, 18), 'Recursive', self.updatestatus)
+		self.w.verbose_button = W.CheckBox((-358, -26, 60, 18), 'Verbose')
+		self.w.recursive_button = W.CheckBox((-284, -26, 140, 18), 'Install dependencies', self.updatestatus)
 		self.w.recursive_button.set(1)
-		self.w.force_button = W.CheckBox((-140, -26, 60, 18), 'Force', self.updatestatus)
+		self.w.force_button = W.CheckBox((-160, -26, 80, 18), 'Overwrite', self.updatestatus)
 		self.w.install_button = W.Button((-76, -28, 56, 18), 'Install', self.do_install)
 		self.w.open()
 		
