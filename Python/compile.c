@@ -2646,6 +2646,9 @@ static PyObject *
 get_docstring(n)
 	node *n;
 {
+	/* Don't generate doc-strings if run with -OO */
+	if (Py_OptimizeFlag > 1)
+		return NULL;
 	n = get_rawdocstring(n);
 	if (n == NULL)
 		return NULL;
