@@ -497,10 +497,8 @@ simple example:
 static PyObject *
 newdatatype_repr(newdatatypeobject * obj)
 {
-    char buf[4096];
-    sprintf(buf, "Repr-ified_newdatatype{{size:%d}}",
+    return PyString_FromFormat("Repr-ified_newdatatype{{size:\%d}}",
             obj->obj_UnderlyingDatatypePtr->size);
-    return PyString_FromString(buf);
 }
 \end{verbatim}
 
@@ -512,7 +510,7 @@ The \member{tp_str} handler is to \function{str()} what the
 \member{tp_repr} handler described above is to \function{repr()}; that
 is, it is called when Python code calls \function{str()} on an
 instance of your object.  It's implementation is very similar to the
-\member{tp_repr} function, but the resulting string is intended to be
+\member{tp_repr} function, but the resulting string is intended for
 human consumption.  It \member{tp_str} is not specified, the
 \member{tp_repr} handler is used instead.
 
@@ -522,13 +520,9 @@ Here is a simple example:
 static PyObject *
 newdatatype_str(newdatatypeobject * obj)
 {
-    PyObject *pyString;
-    char buf[4096];
-    sprintf(buf, "Stringified_newdatatype{{size:%d}}",
+    return PyString_FromFormat("Stringified_newdatatype{{size:\%d}}",
         obj->obj_UnderlyingDatatypePtr->size
         );
-    pyString = PyString_FromString(buf);
-    return pyString;
 }
 \end{verbatim}
 
@@ -610,9 +604,7 @@ an exception; if this were really all you wanted, the
 static int
 newdatatype_setattr(newdatatypeobject *obj, char *name, PyObject *v)
 {
-    char buf[1024];
-    sprintf(buf, "Set attribute not supported for attribute %s", name);
-    PyErr_SetString(PyExc_RuntimeError, buf);
+    (void)PyErr_Format(PyExc_RuntimeError, "Read-only attribute: \%s", name);
     return -1;
 }
 \end{verbatim}
@@ -740,16 +732,16 @@ newdatatype_call(newdatatypeobject *obj, PyObject *args, PyObject *other)
     char *arg1;
     char *arg2;
     char *arg3;
-    char buf[4096];
+
     if (!PyArg_ParseTuple(args, "sss:call", &arg1, &arg2, &arg3)) {
         return NULL;
     }
-    sprintf(buf,
-            "Returning -- value: [%d] arg1: [%s] arg2: [%s] arg3: [%s]\n",
-            obj->obj_UnderlyingDatatypePtr->size,
-            arg1, arg2, arg3);
-    printf(buf);
-    return PyString_FromString(buf);
+    result = PyString_FromFormat(
+        "Returning -- value: [\%d] arg1: [\%s] arg2: [\%s] arg3: [\%s]\n",
+        obj->obj_UnderlyingDatatypePtr->size,
+        arg1, arg2, arg3);
+    printf("\%s", PyString_AS_STRING(result));
+    return result;
 }
 \end{verbatim}
 
