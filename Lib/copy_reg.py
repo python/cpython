@@ -10,7 +10,6 @@ __all__ = ["pickle", "constructor",
            "add_extension", "remove_extension", "clear_extension_cache"]
 
 dispatch_table = {}
-safe_constructors = {}
 
 def pickle(ob_type, pickle_function, constructor_ob=None):
     if type(ob_type) is _ClassType:
@@ -26,7 +25,6 @@ def pickle(ob_type, pickle_function, constructor_ob=None):
 def constructor(object):
     if not callable(object):
         raise TypeError("constructors must be callable")
-    safe_constructors[object] = 1
 
 # Example: provide pickling support for complex numbers.
 
@@ -41,7 +39,6 @@ def _reconstructor(cls, base, state):
     obj = base.__new__(cls, state)
     base.__init__(obj, state)
     return obj
-_reconstructor.__safe_for_unpickling__ = 1
 
 _HEAPTYPE = 1<<9
 

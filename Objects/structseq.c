@@ -392,5 +392,4 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 		       PyInt_FromLong((long) n_members));
 	PyDict_SetItemString(dict, unnamed_fields_key, 
 		       PyInt_FromLong((long) n_unnamed_members));
-	PyDict_SetItemString(dict, "__safe_for_unpickling__", Py_True);
 }
