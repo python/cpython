@@ -78,7 +78,6 @@ if it does, the resulting binary is not self-contained.
 
 # Import standard modules
 
-import cmp
 import getopt
 import os
 import string
