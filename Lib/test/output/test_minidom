@@ -1,5 +1,7 @@
 test_minidom
 Passed testAAA
+Passed setAttribute() sets ownerDocument
+Passed setAttribute() sets ownerElement
 Test Succeeded testAAA
 Passed assertion: len(Node.allnodes) == 0
 Passed testAAB
@@ -130,6 +132,12 @@ Passed insertBefore(<fragment>, orig)
 Test Succeeded testInsertBeforeFragment
 Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testLegalChildren
+Passed assertion: len(Node.allnodes) == 0
+Passed NamedNodeMap.__setitem__() sets ownerDocument
+Passed NamedNodeMap.__setitem__() sets ownerElement
+Passed NamedNodeMap.__setitem__() sets value
+Passed NamedNodeMap.__setitem__() sets nodeValue
+Test Succeeded testNamedNodeMapSetItem
 Passed assertion: len(Node.allnodes) == 0
 Passed test NodeList.item()
 Test Succeeded testNodeListItem
