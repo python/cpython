@@ -424,8 +424,11 @@ redirect.  Otherwise, raise \exception{HTTPError} if no other
 if you can't but another \class{Handler} might.
 
 \note{The default implementation of this method does not strictly
- follow \rfc{2616}: it allows automatic 302 redirection of POST
- requests, because essentially all HTTP clients do this.}
+ follow \rfc{2616}, which says that 301 and 302 responses to POST
+ requests must not be automatically redirected without confirmation by
+ the user.  In reality, browsers do allow automatic redirection of
+ these responses, changing the POST to a GET, and the default
+ implementation reproduces this behaviour.}
 
 \end{methoddesc}
 
@@ -446,8 +449,13 @@ The same as \method{http_error_301()}, but called for the
 \begin{methoddesc}[HTTPRedirectHandler]{http_error_303}{req,
                                                   fp, code, msg, hdrs}
 The same as \method{http_error_301()}, but called for the
-`see other' redirect response.
+`see other' response.
 \end{methoddesc}
+
+\begin{methoddesc}[HTTPRedirectHandler]{http_error_307}{req,
+                                                  fp, code, msg, hdrs}
+The same as \method{http_error_301()}, but called for the
+`temporary redirect' response.
 
 \subsection{ProxyHandler Objects \label{proxy-handler}}
 
