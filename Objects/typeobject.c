@@ -211,6 +211,12 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 			     type->tp_name, value->ob_type->tp_name);
 		return -1;
 	}
+	if (PyTuple_GET_SIZE(value) == 0) {
+		PyErr_Format(PyExc_TypeError,
+		     "can only assign non-empty tuple to %s.__bases__, not ()",
+			     type->tp_name);
+		return -1;
+	}
 	for (i = 0; i < PyTuple_GET_SIZE(value); i++) {
 		ob = PyTuple_GET_ITEM(value, i);
 		if (!PyClass_Check(ob) && !PyType_Check(ob)) {
