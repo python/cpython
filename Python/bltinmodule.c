@@ -1632,7 +1632,9 @@ initbuiltin()
 	INCREF(builtin_dict);
 	initerrors();
 	(void) dictinsert(builtin_dict, "None", None);
-	(void) dictinsert(builtin_dict, "Ellipses", Py_Ellipses);
+	(void) dictinsert(builtin_dict, "Ellipsis", Py_Ellipsis);
+	/* And once more for bad spellers like me :-( */
+	(void) dictinsert(builtin_dict, "Ellipses", Py_Ellipsis);
 }
 
 

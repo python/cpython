@@ -52,8 +52,8 @@ extern PyObject *Py_BuildValue();
 extern int PyArg_VaParse Py_PROTO((PyObject *, char *, va_list));
 extern PyObject *Py_VaBuildValue Py_PROTO((char *, va_list));
 
-#define PYTHON_API_VERSION 1005
-#define PYTHON_API_STRING "1005"
+#define PYTHON_API_VERSION 1006
+#define PYTHON_API_STRING "1006"
 /* The API version is maintained (independently from the Python version)
    so we can detect mismatches between the interpreter and dynamically
    loaded modules.  These are diagnosticised by an error message but
@@ -66,6 +66,8 @@ extern PyObject *Py_VaBuildValue Py_PROTO((char *, va_list));
 
    Please add a line or two to the top of this log for each API
    version change:
+
+   11-Oct-1996	GvR	renamed Py_Ellipses to Py_Ellipsis :-(
 
    30-Jul-1996	GvR	Slice and ellipses syntax added
 

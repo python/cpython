@@ -48,6 +48,6 @@ except TypeError:
 	FrameType = type(sys.exc_traceback.tb_frame)
 
 SliceType = type(slice(0))
-EllipsesType = type(Ellipses)
+EllipsisType = type(Ellipsis)
 
 del sys, _f, _C, _x			# Not for export

@@ -4,12 +4,12 @@
 extern "C" {
 #endif
 
-/* The unique ellipses object "..." */
+/* The unique ellipsis object "..." */
 
-extern DL_IMPORT(PyObject) _Py_EllipsesObject; /* Don't use this directly */
+extern DL_IMPORT(PyObject) _Py_EllipsisObject; /* Don't use this directly */
 
-#define Py_Ellipses (&_Py_EllipsesObject)
-
+#define Py_Ellipsis (&_Py_EllipsisObject)
+#define Py_Ellipses Py_Ellipsis /* For bad spellers like me :-( */
 
 /* Slice object interface */
 

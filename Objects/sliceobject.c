@@ -1,14 +1,14 @@
 /*
 Written by Jim Hugunin and Chris Chase.
 
-This includes both the singular ellipses object and slice objects.
+This includes both the singular ellipsis object and slice objects.
 
 Guido, feel free to do whatever you want in the way of copyrights
 for this file.
 */
 
 /* 
-Py_Ellipses encodes the '...' rubber index token. It is similar to
+Py_Ellipsis encodes the '...' rubber index token. It is similar to
 the Py_NoneStruct in that there is no way to create other objects of
 this type and there is exactly one in existence.
 */
@@ -16,16 +16,16 @@ this type and there is exactly one in existence.
 #include "Python.h"
 
 static PyObject *
-ellipses_repr(op)
+ellipsis_repr(op)
 	PyObject *op;
 {
-	return PyString_FromString("Ellipses");
+	return PyString_FromString("Ellipsis");
 }
 
-static PyTypeObject PyEllipses_Type = {
+static PyTypeObject PyEllipsis_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
-	"ellipses",
+	"ellipsis",
 	0,
 	0,
 	0,		/*tp_dealloc*/ /*never called*/
@@ -33,15 +33,15 @@ static PyTypeObject PyEllipses_Type = {
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
-	(reprfunc)ellipses_repr, /*tp_repr*/
+	(reprfunc)ellipsis_repr, /*tp_repr*/
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
 	0,		/*tp_hash */
 };
 
-PyObject _Py_EllipsesObject = {
-	PyObject_HEAD_INIT(&PyEllipses_Type)
+PyObject _Py_EllipsisObject = {
+	PyObject_HEAD_INIT(&PyEllipsis_Type)
 };
 
 
