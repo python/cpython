@@ -338,6 +338,7 @@ Py_NewInterpreter(void)
 		PySys_SetPath(Py_GetPath());
 		PyDict_SetItemString(interp->sysdict, "modules",
 				     interp->modules);
+		_PyImportHooks_Init();
 		initmain();
 		if (!Py_NoSiteFlag)
 			initsite();
