@@ -18,7 +18,7 @@ APPINSTALLDIR=$(prefix)/Resources/Python.app
 
 # Variables for installing the "normal" unix binaries
 INSTALLED_PYTHON=$(prefix)/bin/python
-INSTALLED_PYTHONW=$(APPINSTALLDIR)/Contents/MacOS/python
+INSTALLED_PYTHONW=$(APPINSTALLDIR)/Contents/MacOS/Python
 
 # Items more-or-less copied from the main Makefile
 DIRMODE=755
@@ -230,7 +230,7 @@ installmacsubtree:
 # We use the full name here in stead of $(INSTALLED_PYTHONW), because
 # the latter may be overridden by Makefile.jaguar when building for a pre-installed
 # /usr/bin/python
-$(APPINSTALLDIR)/Contents/MacOS/python: install_Python
+$(APPINSTALLDIR)/Contents/MacOS/Python: install_Python
 
 # $(INSTALLED_PYTHON) has to be done by the main Makefile, we cannot do that here.
 # At least this rule will give an error if it doesn't exist.
