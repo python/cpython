@@ -97,8 +97,13 @@ $CUSTOM_BUTTONS = '';
 sub make_nav_sectref {
     my($label,$title) = @_;
     if ($title) {
-	return ("<b class='navlabel'>$label:</b> "
-		. "<span class='sectref'>$title</span>\n");
+        if ($title =~ /\<[aA] /) {
+            $title =~ s/\<[aA] /<a class="sectref" /;
+        }
+        else {
+            $title = "<span class=\"sectref\">$title</span>";
+        }
+        return "<b class=\"navlabel\">$label:</b> $title\n";
     }
     return '';
 }
