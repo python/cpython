@@ -13,7 +13,7 @@ pyinstalldir=	$(PYTHONHOME)
 installdir=	$(PYTHONHOME)
 exec_installdir=$(pyinstalldir)
 INCLUDEPY=	$(pyinstalldir)/include/python1.4
-LIBP=		$(exec_installdir)/lib/python
+LIBP=		$(exec_installdir)/lib/python1.4
 LIBPL=		$(LIBP)/config
 PYMAKE=		make -f $(LIBPL)/Makefile
 
