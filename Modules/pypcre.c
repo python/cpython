@@ -211,7 +211,7 @@ the file Tech.Notes for some information on the internals.
 
 Written by: Philip Hazel <ph10@cam.ac.uk>
 
-           Copyright (c) 1997 University of Cambridge
+           Copyright (c) 1998 University of Cambridge
 
 -----------------------------------------------------------------------------
 Permission is granted to anyone to use this software for any purpose on any
@@ -409,6 +409,7 @@ do
       according to the repeat count. */
 
       case OP_CLASS:
+      case OP_NEGCLASS:
         {
         tcode++;
         for (c = 0; c < 32; c++) start_bits[c] |= tcode[c];
@@ -547,7 +548,7 @@ the file Tech.Notes for some information on the internals.
 
 Written by: Philip Hazel <ph10@cam.ac.uk>
 
-           Copyright (c) 1997 University of Cambridge
+           Copyright (c) 1998 University of Cambridge
 
 -----------------------------------------------------------------------------
 Permission is granted to anyone to use this software for any purpose on any
@@ -586,18 +587,26 @@ the external pcre header. */
 
 
 
+
 #ifndef Py_eval_input
 /* For Python 1.4, graminit.h has to be explicitly included */
 #define Py_eval_input eval_input
 
 #endif /* FOR_PYTHON */
 
+/* Allow compilation as C++ source code, should anybody want to do that. */
+
+#ifdef __cplusplus
+#define class pcre_class
+#endif
+
+
 /* Min and max values for the common repeats; for the maxima, 0 => infinity */
 
-static char rep_min[] = { 0, 0, 1, 1, 0, 0 };
-static char rep_max[] = { 0, 0, 0, 0, 1, 1 };
+static const char rep_min[] = { 0, 0, 1, 1, 0, 0 };
+static const char rep_max[] = { 0, 0, 0, 0, 1, 1 };
 
-/* Text forms of OP_ values and things, for debugging */
+/* Text forms of OP_ values and things, for debugging (not all used) */
 
 #ifdef DEBUG
 static const char *OP_names[] = { 
@@ -610,7 +619,7 @@ static const char *OP_names[] = {
   "*", "*?", "+", "+?", "?", "??", "{", "{", "{",
   "*", "*?", "+", "+?", "?", "??", "{", "{", "{",
   "*", "*?", "+", "+?", "?", "??", "{", "{",
-  "class", "classL", "Ref",
+  "class", "negclass", "classL", "Ref",
   "Alt", "Ket", "KetRmax", "KetRmin", "Assert", "Assert not", "Once",
   "Brazero", "Braminzero", "Bra"
 };
@@ -621,7 +630,7 @@ are simple data values; negative values are for special things like \d and so
 on. Zero means further processing is needed (for things like \x), or the escape
 is invalid. */
 
-static short int escapes[] = {
+static const short int escapes[] = {
     0,      0,      0,      0,      0,      0,      0,      0,   /* 0 - 7 */
     0,      0,    ':',    ';',    '<',    '=',    '>',    '?',   /* 8 - ? */
   '@', -ESC_A, -ESC_B,      0, -ESC_D,      0,      0,      0,   /* @ - G */
@@ -636,8 +645,9 @@ static short int escapes[] = {
 
 /* Definition to allow mutual recursion */
 
-static BOOL compile_regex(int, int *, uschar **, const uschar **, 
-			   const char **, PyObject *);
+static BOOL 
+compile_regex(int, int *, uschar **, const uschar **, const char **,
+	      PyObject *); 
 
 /* Structure for passing "static" information around between the functions
 doing the matching, so that they are thread-safe. */
@@ -866,12 +876,13 @@ do {
       /* Check a class or a back reference for a zero minimum */
 
       case OP_CLASS:
+      case OP_NEGCLASS:
       case OP_REF:
       case OP_CLASS_L:
 	switch(*cc)
 	  {
 	  case (OP_REF):    cc += 2; break;
-	  case (OP_CLASS):  cc += 1+32; break;
+	  case (OP_CLASS): case (OP_NEGCLASS): cc += 1+32; break;
 	  case (OP_CLASS_L): cc += 1+1+32; break;
 	  }
 
@@ -1017,15 +1028,17 @@ else
 
     {
       /* PYTHON: Try to compute an octal value for a character */
-      for(c=0, i=0; c!=-1 && ptr[i]!=0 && i<3; i++) 
+      for(c=0, i=0; ptr[i]!=0 && i<3; i++) 
 	{
 	  if (( pcre_ctypes[ ptr[i] ] & ctype_odigit) != 0)
 	    c = c * 8 + ptr[i]-'0';
 	  else
-	    c = -1; /* Non-octal character */
+	    break; /* Non-octal character--break out of the loop */
 	}
-      /* Aha!  There were 3 octal digits, so it must be a character */
-      if (c != -1 && i == 3) 
+      /* It's a character if there were exactly 3 octal digits, or if
+	 we're inside a character class and there was at least one
+	 octal digit. */
+      if ( (i == 3) || (isclass && i!=0) )
 	{
 	  ptr += i-1;
 	  break;
@@ -1278,11 +1291,14 @@ for (;; ptr++)
 	class_flag = NULL;
       }
     
-    /* If the first character is '^', set the negation flag */
+    /* If the first character is '^', set the negation flag, and use a
+    different opcode. This only matters if caseless matching is specified at
+    runtime. */
 
     if ((c = *(++ptr)) == '^')
       {
       negate_class = TRUE;
+      if (*(code-1)==OP_CLASS) *(code-1) = OP_NEGCLASS;
       c = *(++ptr);
       }
     else negate_class = FALSE;
@@ -1648,7 +1664,8 @@ for (;; ptr++)
     /* If previous was a character class or a back reference, we put the repeat
     stuff after it. */
 
-    else if (*previous == OP_CLASS || *previous==OP_CLASS_L || *previous == OP_REF)
+    else if (*previous == OP_CLASS || *previous == OP_NEGCLASS || 
+	     *previous==OP_CLASS_L || *previous == OP_REF)
       {
       if (repeat_min == 0 && repeat_max == -1)
         *code++ = OP_CRSTAR + repeat_type;
@@ -2003,7 +2020,7 @@ for (;; ptr++)
     the next state. */
 
     previous[1] = length;
-    ptr--;
+    if (length < 255) ptr--;
     break;
     }
   }                   /* end of big loop */
@@ -2832,6 +2849,7 @@ while (code < code_end)
     goto CLASS_REF_REPEAT;
 
     case OP_CLASS:
+    case OP_NEGCLASS:
     case OP_CLASS_L:
       {
       int i, min, max;
@@ -2840,11 +2858,14 @@ while (code < code_end)
 	{
 	  code++;
 	  printf("Locflag = %i ", *code++);
+	  printf("    [");
 	}
       else 
-        code++;
-
-      printf("    [");
+	{
+	  if (*code++ == OP_CLASS) printf("    [");
+	  else printf("   ^[");
+	}
+      
 
       for (i = 0; i < 256; i++)
         {
@@ -3601,10 +3622,14 @@ for (;;)
     item to see if there is repeat information following. Then obey similar
     code to character type repeats - written out again for speed. If caseless
     matching was set at runtime but not at compile time, we have to check both
-    versions of a character. */
+    versions of a character, and we have to behave differently for positive and
+    negative classes. This is the only time where OP_CLASS and OP_NEGCLASS are
+    treated differently. */
 
     case OP_CLASS:
+    case OP_NEGCLASS:
       {
+      BOOL nasty_case = *ecode == OP_NEGCLASS && md->runtime_caseless;
       const uschar *data = ecode + 1;  /* Save for matching */
       ecode += 33;                     /* Advance past the item */
 
@@ -3633,15 +3658,8 @@ for (;;)
         break;
 
         default:               /* No repeat follows */
-        if (eptr >= md->end_subject) FAIL;
-        c = *eptr++;
-        if ((data[c/8] & (1 << (c&7))) != 0) continue;    /* With main loop */
-        if (md->runtime_caseless)
-          {
-          c = pcre_fcc[c];
-          if ((data[c/8] & (1 << (c&7))) != 0) continue;  /* With main loop */
-          }
-        FAIL;
+	  min = max = 1;
+	  break;
         }
 
       /* First, ensure the minimum number of matches are present. */
@@ -3650,13 +3668,31 @@ for (;;)
         {
         if (eptr >= md->end_subject) FAIL;
         c = *eptr++;
-        if ((data[c/8] & (1 << (c&7))) != 0) continue;
-        if (md->runtime_caseless)
+
+        /* Either not runtime caseless, or it was a positive class. For
+        runtime caseless, continue if either case is in the map. */
+
+        if (!nasty_case)
           {
-          c = pcre_fcc[c];
           if ((data[c/8] & (1 << (c&7))) != 0) continue;
+          if (md->runtime_caseless)
+            {
+            c = pcre_fcc[c];
+            if ((data[c/8] & (1 << (c&7))) != 0) continue;
+            }
           }
-        FAIL;
+
+        /* Runtime caseless and it was a negative class. Continue only if
+        both cases are in the map. */
+
+        else
+          {
+           if ((data[c/8] & (1 << (c&7))) == 0) FAIL;
+           c = pcre_fcc[c];
+           if ((data[c/8] & (1 << (c&7))) != 0) continue;
+           }
+
+	FAIL;
         }
 
       /* If max == min we can continue with the main loop without the
@@ -3674,12 +3710,30 @@ for (;;)
           if (match(eptr, ecode, offset_top, md)) SUCCEED;
           if (i >= max || eptr >= md->end_subject) FAIL;
           c = *eptr++;
-          if ((data[c/8] & (1 << (c&7))) != 0) continue;
-          if (md->runtime_caseless)
+
+          /* Either not runtime caseless, or it was a positive class. For
+          runtime caseless, continue if either case is in the map. */
+
+          if (!nasty_case)
             {
-            c = pcre_fcc[c];
             if ((data[c/8] & (1 << (c&7))) != 0) continue;
+            if (md->runtime_caseless)
+              {
+              c = pcre_fcc[c];
+              if ((data[c/8] & (1 << (c&7))) != 0) continue;
+              }
             }
+
+          /* Runtime caseless and it was a negative class. Continue only if
+          both cases are in the map. */
+
+          else
+             {
+             if ((data[c/8] & (1 << (c&7))) == 0) return FALSE;
+             c = pcre_fcc[c];
+             if ((data[c/8] & (1 << (c&7))) != 0) continue;
+             }
+
           FAIL;
           }
         /* Control never gets here */
@@ -3694,12 +3748,30 @@ for (;;)
           {
           if (eptr >= md->end_subject) break;
           c = *eptr;
-          if ((data[c/8] & (1 << (c&7))) != 0) continue;
-          if (md->runtime_caseless)
+
+          /* Either not runtime caseless, or it was a positive class. For
+          runtime caseless, continue if either case is in the map. */
+
+          if (!nasty_case)
             {
+            if ((data[c/8] & (1 << (c&7))) != 0) continue;
+            if (md->runtime_caseless)
+              {
+              c = pcre_fcc[c];
+              if ((data[c/8] & (1 << (c&7))) != 0) continue;
+              }
+            }
+
+          /* Runtime caseless and it was a negative class. Continue only if
+          both cases are in the map. */
+
+          else
+            {
+            if ((data[c/8] & (1 << (c&7))) == 0) break;
             c = pcre_fcc[c];
             if ((data[c/8] & (1 << (c&7))) != 0) continue;
             }
+
           break;
           }
 
@@ -4430,17 +4502,17 @@ pcre_exec(const pcre *external_re, const pcre_extra *external_extra,
   /* The "volatile" directives are to make gcc -Wall stop complaining
      that these variables can be clobbered by the longjmp.  Hopefully
      they won't cost too much performance. */ 
-int resetcount, ocount;
-int first_char = -1;
+volatile int resetcount, ocount;
+volatile int first_char = -1;
 match_data match_block;
 const uschar *start_bits = NULL;
 const uschar *start_match = (const uschar *)subject + start_pos;
 const uschar *end_subject;
 const real_pcre *re = (const real_pcre *)external_re;
 const real_pcre_extra *extra = (const real_pcre_extra *)external_extra;
-BOOL using_temporary_offsets = FALSE;
-BOOL anchored = ((re->options | options) & PCRE_ANCHORED) != 0;
-BOOL startline = (re->options & PCRE_STARTLINE) != 0;
+volatile BOOL using_temporary_offsets = FALSE;
+volatile BOOL anchored = ((re->options | options) & PCRE_ANCHORED) != 0;
+volatile BOOL startline = (re->options & PCRE_STARTLINE) != 0;
 
 if ((options & ~PUBLIC_EXEC_OPTIONS) != 0) return PCRE_ERROR_BADOPTION;
 
@@ -4480,7 +4552,7 @@ ocount = offsetcount & (-2);
 if (re->top_backref > 0 && re->top_backref >= ocount/2)
   {
   ocount = re->top_backref * 2 + 2;
-  match_block.offset_vector = (pcre_malloc)(ocount * sizeof(int));
+  match_block.offset_vector = (int *)(pcre_malloc)(ocount * sizeof(int));
   if (match_block.offset_vector == NULL) return PCRE_ERROR_NOMEMORY;
   using_temporary_offsets = TRUE;
   DPRINTF(("Got memory to hold back references\n"));
@@ -4639,10 +4711,10 @@ do
   free_stack(&match_block);
   return rc;
   }  /* End of (if setjmp(match_block.error_env)...) */
+  free_stack(&match_block);
+
   /* Return an error code; pcremodule.c will preserve the exception */
   if (PyErr_Occurred()) return PCRE_ERROR_NOMEMORY;
-
-  free_stack(&match_block);
   }
 while (!anchored &&
        match_block.errorcode == PCRE_ERROR_NOMATCH &&

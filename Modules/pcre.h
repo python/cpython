@@ -2,7 +2,7 @@
 *       Perl-Compatible Regular Expressions      *
 *************************************************/
 
-/* Copyright (c) 1997 University of Cambridge */
+/* Copyright (c) 1998 University of Cambridge */
 
 #ifndef _PCRE_H
 #define _PCRE_H
@@ -16,6 +16,12 @@ it is needed here for malloc. */
 
 #include <sys/types.h>
 #include <stdlib.h>
+
+/* Allow for C++ users */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Options */
 
@@ -67,5 +73,9 @@ extern int pcre_exec(const pcre *, const pcre_extra *, const char *,
 extern int pcre_info(const pcre *, int *, int *);
 extern pcre_extra *pcre_study(const pcre *, int, const char **);
 extern const char *pcre_version(void);
+
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
 
 #endif /* End of pcre.h */
