@@ -1,2 +1,9 @@
 python-lib.info*
 lib.texi
+*.ind
+*.log
+*.aux
+*.dvi
+*.toc
+*.ps
+*.idx
