@@ -1248,7 +1248,7 @@ static PyTypeObject ProfilerType = {
     0,					/* tp_hash		*/
     0,					/* tp_call		*/
     0,					/* tp_str		*/
-    PyObject_GenericGetAttr,		/* tp_getattro		*/
+    0,					/* tp_getattro		*/
     0,					/* tp_setattro		*/
     0,					/* tp_as_buffer		*/
     Py_TPFLAGS_DEFAULT,			/* tp_flags		*/
@@ -1333,7 +1333,7 @@ static PyTypeObject LogReaderType = {
     0,					/* tp_hash		*/
     0,					/* tp_call		*/
     0,					/* tp_str		*/
-    PyObject_GenericGetAttr,		/* tp_getattro		*/
+    0,					/* tp_getattro		*/
     0,					/* tp_setattro		*/
     0,					/* tp_as_buffer		*/
     Py_TPFLAGS_DEFAULT,			/* tp_flags		*/
@@ -1624,7 +1624,9 @@ init_hotshot(void)
     PyObject *module;
 
     LogReaderType.ob_type = &PyType_Type;
+    LogReaderType.tp_getattro = PyObject_GenericGetAttr;
     ProfilerType.ob_type = &PyType_Type;
+    ProfilerType.tp_getattro = PyObject_GenericGetAttr;
     module = Py_InitModule("_hotshot", functions);
     if (module != NULL) {
         char *s = get_version_string();
