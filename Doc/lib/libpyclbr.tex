@@ -1,9 +1,9 @@
 \section{\module{pyclbr} ---
-         Python class browser information}
+         Python class browser support}
 
 \declaremodule{standard}{pyclbr}
 \modulesynopsis{Supports information extraction for a Python class
-browser.}
+                browser.}
 \sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
 
 
@@ -31,6 +31,11 @@ untrusted source code.
 The class descriptor objects used as values in the dictionary returned
 by \function{readmodule()} provide the following data members:
 
+
+\begin{memberdesc}[class descriptor]{module}
+  The name of the module defining the class described by the class
+  descriptor.
+\end{memberdesc}
 
 \begin{memberdesc}[class descriptor]{name}
   The name of the class.
