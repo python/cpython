@@ -230,10 +230,11 @@ class PyBuildExt(build_ext):
         add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
         add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
 
-        add_dir_to_list(self.compiler.library_dirs,
-                        sysconfig.get_config_var("LIBDIR"))
-        add_dir_to_list(self.compiler.include_dirs,
-                        sysconfig.get_config_var("INCLUDEDIR"))
+        if os.path.normpath(sys.prefix) != '/usr':
+            add_dir_to_list(self.compiler.library_dirs,
+                            sysconfig.get_config_var("LIBDIR"))
+            add_dir_to_list(self.compiler.include_dirs,
+                            sysconfig.get_config_var("INCLUDEDIR"))
 
         try:
             have_unicode = unicode
