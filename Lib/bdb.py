@@ -8,7 +8,7 @@ BdbQuit = 'bdb.BdbQuit' # Exception to give up completely
 
 
 class Bdb:
-    
+
     """Generic Python debugger base class.
 
     This class takes care of details of the trace facility;
@@ -26,7 +26,7 @@ class Bdb:
             canonic = os.path.abspath(filename)
             self.fncache[filename] = canonic
         return canonic
-    
+
     def reset(self):
         import linecache
         linecache.checkcache()
@@ -34,7 +34,7 @@ class Bdb:
         self.stopframe = None
         self.returnframe = None
         self.quitting = 0
-    
+
     def trace_dispatch(self, frame, event, arg):
         if self.quitting:
             return # None
@@ -48,13 +48,13 @@ class Bdb:
             return self.dispatch_exception(frame, arg)
         print 'bdb.Bdb.dispatch: unknown debugging event:', `event`
         return self.trace_dispatch
-    
+
     def dispatch_line(self, frame):
         if self.stop_here(frame) or self.break_here(frame):
             self.user_line(frame)
             if self.quitting: raise BdbQuit
         return self.trace_dispatch
-    
+
     def dispatch_call(self, frame, arg):
         # XXX 'arg' is no longer used
         if self.botframe is None:
@@ -67,22 +67,22 @@ class Bdb:
         self.user_call(frame, arg)
         if self.quitting: raise BdbQuit
         return self.trace_dispatch
-    
+
     def dispatch_return(self, frame, arg):
         if self.stop_here(frame) or frame == self.returnframe:
             self.user_return(frame, arg)
             if self.quitting: raise BdbQuit
-    
+
     def dispatch_exception(self, frame, arg):
         if self.stop_here(frame):
             self.user_exception(frame, arg)
             if self.quitting: raise BdbQuit
         return self.trace_dispatch
-    
+
     # Normally derived classes don't override the following
     # methods, but they may if they want to redefine the
     # definition of stopping and breakpoints.
-    
+
     def stop_here(self, frame):
         if self.stopframe is None:
             return 1
@@ -110,53 +110,53 @@ class Bdb:
             return 1
         else:
             return 0
-    
+
     def break_anywhere(self, frame):
         return self.breaks.has_key(
             self.canonic(frame.f_code.co_filename))
-    
+
     # Derived classes should override the user_* methods
     # to gain control.
-    
+
     def user_call(self, frame, argument_list):
         """This method is called when there is the remote possibility
         that we ever need to stop in this function."""
         pass
-    
+
     def user_line(self, frame):
         """This method is called when we stop or break at this line."""
         pass
-    
+
     def user_return(self, frame, return_value):
         """This method is called when a return trap is set here."""
         pass
-    
+
     def user_exception(self, frame, (exc_type, exc_value, exc_traceback)):
         """This method is called if an exception occurs,
         but only if we are to stop at or just below this level."""
         pass
-    
+
     # Derived classes and clients can call the following methods
     # to affect the stepping state.
-    
+
     def set_step(self):
         """Stop after one line of code."""
         self.stopframe = None
         self.returnframe = None
         self.quitting = 0
-    
+
     def set_next(self, frame):
         """Stop on the next line in or below the given frame."""
         self.stopframe = frame
         self.returnframe = None
         self.quitting = 0
-    
+
     def set_return(self, frame):
         """Stop when returning from the given frame."""
         self.stopframe = frame.f_back
         self.returnframe = frame
         self.quitting = 0
-    
+
     def set_trace(self):
         """Start debugging from here."""
         try:
@@ -186,20 +186,20 @@ class Bdb:
             while frame and frame is not self.botframe:
                 del frame.f_trace
                 frame = frame.f_back
-    
+
     def set_quit(self):
         self.stopframe = self.botframe
         self.returnframe = None
         self.quitting = 1
         sys.settrace(None)
-    
+
     # Derived classes and clients can call the following methods
     # to manipulate breakpoints.  These methods return an
     # error message is something went wrong, None if all is well.
     # Set_break prints out the breakpoint line and file:lineno.
     # Call self.get_*break*() to see the breakpoints or better
     # for bp in Breakpoint.bpbynumber: if bp: bp.bpprint().
-    
+
     def set_break(self, filename, lineno, temporary=0, cond = None):
         filename = self.canonic(filename)
         import linecache # Import as late as possible
@@ -229,7 +229,7 @@ class Bdb:
             self.breaks[filename].remove(lineno)
         if not self.breaks[filename]:
             del self.breaks[filename]
-    
+
     def clear_bpbynumber(self, arg):
         try:
             number = int(arg)
@@ -252,7 +252,7 @@ class Bdb:
             for bp in blist:
                 bp.deleteMe()
         del self.breaks[filename]
-    
+
     def clear_all_breaks(self):
         if not self.breaks:
             return 'There are no breakpoints'
@@ -260,31 +260,31 @@ class Bdb:
             if bp:
                 bp.deleteMe()
         self.breaks = {}
-    
+
     def get_break(self, filename, lineno):
         filename = self.canonic(filename)
         return self.breaks.has_key(filename) and \
             lineno in self.breaks[filename]
-    
+
     def get_breaks(self, filename, lineno):
         filename = self.canonic(filename)
         return self.breaks.has_key(filename) and \
             lineno in self.breaks[filename] and \
             Breakpoint.bplist[filename, lineno] or []
-    
+
     def get_file_breaks(self, filename):
         filename = self.canonic(filename)
         if self.breaks.has_key(filename):
             return self.breaks[filename]
         else:
             return []
-    
+
     def get_all_breaks(self):
         return self.breaks
-    
+
     # Derived classes and clients can call the following method
     # to get a data structure representing a stack trace.
-    
+
     def get_stack(self, f, t):
         stack = []
         if t and t.tb_frame is f:
@@ -300,9 +300,9 @@ class Bdb:
             stack.append((t.tb_frame, t.tb_lineno))
             t = t.tb_next
         return stack, i
-    
-    # 
-    
+
+    #
+
     def format_stack_entry(self, frame_lineno, lprefix=': '):
         import linecache, repr, string
         frame, lineno = frame_lineno
@@ -327,10 +327,10 @@ class Bdb:
         line = linecache.getline(filename, lineno)
         if line: s = s + lprefix + string.strip(line)
         return s
-    
+
     # The following two methods can be called by clients to use
     # a debugger to debug a statement, given as a string.
-    
+
     def run(self, cmd, globals=None, locals=None):
         if globals is None:
             import __main__
@@ -349,7 +349,7 @@ class Bdb:
         finally:
             self.quitting = 1
             sys.settrace(None)
-    
+
     def runeval(self, expr, globals=None, locals=None):
         if globals is None:
             import __main__
@@ -435,7 +435,7 @@ class Breakpoint:
         else:
             self.bplist[file, line] = [self]
 
-        
+
     def deleteMe(self):
         index = (self.file, self.line)
         self.bpbynumber[self.number] = None   # No longer in list
@@ -452,13 +452,13 @@ class Breakpoint:
 
     def bpprint(self):
         if self.temporary:
-           disp = 'del  '
+            disp = 'del  '
         else:
-           disp = 'keep '
+            disp = 'keep '
         if self.enabled:
-           disp = disp + 'yes'
+            disp = disp + 'yes'
         else:
-           disp = disp + 'no '
+            disp = disp + 'no '
         print '%-4dbreakpoint    %s at %s:%d' % (self.number, disp,
                              self.file, self.line)
         if self.cond:
@@ -506,7 +506,7 @@ def effective(file, line, frame):
             # condition evaluates to true.
             try:
                 val = eval(b.cond, frame.f_globals,
-                       frame.f_locals) 
+                       frame.f_locals)
                 if val:
                     if b.ignore > 0:
                         b.ignore = b.ignore -1
@@ -518,7 +518,7 @@ def effective(file, line, frame):
             except:
                 # if eval fails, most conservative
                 # thing is to stop on breakpoint
-                # regardless of ignore count. 
+                # regardless of ignore count.
                 # Don't delete temporary,
                 # as another hint to user.
                 return (b,0)

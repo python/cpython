@@ -32,31 +32,31 @@ XXX To do:
 
 # Log files
 # ---------
-# 
+#
 # Here's a quote from the NCSA httpd docs about log file format.
-# 
-# | The logfile format is as follows. Each line consists of: 
-# | 
-# | host rfc931 authuser [DD/Mon/YYYY:hh:mm:ss] "request" ddd bbbb 
-# | 
-# |        host: Either the DNS name or the IP number of the remote client 
+#
+# | The logfile format is as follows. Each line consists of:
+# |
+# | host rfc931 authuser [DD/Mon/YYYY:hh:mm:ss] "request" ddd bbbb
+# |
+# |        host: Either the DNS name or the IP number of the remote client
 # |        rfc931: Any information returned by identd for this person,
-# |                - otherwise. 
+# |                - otherwise.
 # |        authuser: If user sent a userid for authentication, the user name,
-# |                  - otherwise. 
-# |        DD: Day 
-# |        Mon: Month (calendar name) 
-# |        YYYY: Year 
-# |        hh: hour (24-hour format, the machine's timezone) 
-# |        mm: minutes 
-# |        ss: seconds 
-# |        request: The first line of the HTTP request as sent by the client. 
-# |        ddd: the status code returned by the server, - if not available. 
+# |                  - otherwise.
+# |        DD: Day
+# |        Mon: Month (calendar name)
+# |        YYYY: Year
+# |        hh: hour (24-hour format, the machine's timezone)
+# |        mm: minutes
+# |        ss: seconds
+# |        request: The first line of the HTTP request as sent by the client.
+# |        ddd: the status code returned by the server, - if not available.
 # |        bbbb: the total number of bytes sent,
-# |              *not including the HTTP/1.0 header*, - if not available 
-# | 
+# |              *not including the HTTP/1.0 header*, - if not available
+# |
 # | You can determine the name of the file accessed through request.
-# 
+#
 # (Actually, the latter is only true if you know the server configuration
 # at the time the request was made!)
 
@@ -429,13 +429,13 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
               'Request accepted, processing continues off-line'),
         203: ('Partial information', 'Request fulfilled from cache'),
         204: ('No response', 'Request fulfilled, nothing follows'),
-        
+
         301: ('Moved', 'Object moved permanently -- see URI list'),
         302: ('Found', 'Object moved temporarily -- see URI list'),
         303: ('Method', 'Object moved -- see Method and URL list'),
         304: ('Not modified',
               'Document has not changed singe given time'),
-        
+
         400: ('Bad request',
               'Bad request syntax or unsupported method'),
         401: ('Unauthorized',
@@ -445,7 +445,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
         403: ('Forbidden',
               'Request forbidden -- authorization will not help'),
         404: ('Not found', 'Nothing matches the given URI'),
-        
+
         500: ('Internal error', 'Server got itself in trouble'),
         501: ('Not implemented',
               'Server does not support this operation'),
@@ -453,7 +453,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
               'The server cannot process the request due to a high load'),
         503: ('Gateway timeout',
               'The gateway server did not receive a timely response'),
-        
+
         }
 
 
