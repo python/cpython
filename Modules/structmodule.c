@@ -477,6 +477,26 @@ np_byte(char *p, PyObject *v, const formatdef *f)
 	long x;
 	if (get_long(v, &x) < 0)
 		return -1;
+	if (x < -128 || x > 127){
+		PyErr_SetString(StructError,
+				"byte format requires -128<=number<=127");
+		return -1;
+	}
+	*p = (char)x;
+	return 0;
+}
+
+static int
+np_ubyte(char *p, PyObject *v, const formatdef *f)
+{
+	long x;
+	if (get_long(v, &x) < 0)
+		return -1;
+	if (x < 0 || x > 255){
+		PyErr_SetString(StructError,
+				"ubyte format requires 0<=number<=255");
+		return -1;
+	}
 	*p = (char)x;
 	return 0;
 }
@@ -499,7 +519,27 @@ np_short(char *p, PyObject *v, const formatdef *f)
 	long x;
 	if (get_long(v, &x) < 0)
 		return -1;
+	if (x < -32768 || x > 32767){
+		PyErr_SetString(StructError,
+				"short format requires -32768<=number<=32767");
+		return -1;
+	}
 	* (short *)p = (short)x;
+	return 0;
+}
+
+static int
+np_ushort(char *p, PyObject *v, const formatdef *f)
+{
+	long x;
+	if (get_long(v, &x) < 0)
+		return -1;
+	if (x < 0 || x > 65535){
+		PyErr_SetString(StructError,
+				"short format requires 0<=number<=65535");
+		return -1;
+	}
+	* (unsigned short *)p = (unsigned short)x;
 	return 0;
 }
 
@@ -587,12 +627,12 @@ np_void_p(char *p, PyObject *v, const formatdef *f)
 static formatdef native_table[] = {
 	{'x',	sizeof(char),	0,		NULL},
 	{'b',	sizeof(char),	0,		nu_byte,	np_byte},
-	{'B',	sizeof(char),	0,		nu_ubyte,	np_byte},
+	{'B',	sizeof(char),	0,		nu_ubyte,	np_ubyte},
 	{'c',	sizeof(char),	0,		nu_char,	np_char},
 	{'s',	sizeof(char),	0,		NULL},
 	{'p',	sizeof(char),	0,		NULL},
 	{'h',	sizeof(short),	SHORT_ALIGN,	nu_short,	np_short},
-	{'H',	sizeof(short),	SHORT_ALIGN,	nu_ushort,	np_short},
+	{'H',	sizeof(short),	SHORT_ALIGN,	nu_ushort,	np_ushort},
 	{'i',	sizeof(int),	INT_ALIGN,	nu_int,		np_int},
 	{'I',	sizeof(int),	INT_ALIGN,	nu_uint,	np_uint},
 	{'l',	sizeof(long),	LONG_ALIGN,	nu_long,	np_long},
