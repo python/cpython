@@ -8,13 +8,13 @@ Number of forms: 1
 =============== FORM ===============
 Name: form
 Width: 480.000000
-Height: 350.000000
+Height: 290.000000
 Number of Objects: 23
 
 --------------------
 class: 1
 type: 1
-box: 0.000000 0.000000 480.000000 350.000000
+box: 0.000000 0.000000 480.000000 290.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
@@ -29,7 +29,7 @@ argument:
 --------------------
 class: 11
 type: 4
-box: 170.000000 110.000000 140.000000 40.000000
+box: 180.000000 70.000000 120.000000 40.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
@@ -44,14 +44,14 @@ argument: 0
 --------------------
 class: 11
 type: 4
-box: 10.000000 110.000000 140.000000 40.000000
+box: 90.000000 50.000000 60.000000 60.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
 style: 0
 size: 11.000000
 lcol: 0
-label: Forward
+label: @>
 name: 
 callback: cb_in_skip
 argument: 0
@@ -59,7 +59,7 @@ argument: 0
 --------------------
 class: 11
 type: 0
-box: 10.000000 10.000000 140.000000 40.000000
+box: 10.000000 10.000000 140.000000 30.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
@@ -74,14 +74,14 @@ argument: 0
 --------------------
 class: 11
 type: 0
-box: 330.000000 10.000000 140.000000 40.000000
+box: 330.000000 10.000000 140.000000 30.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
 style: 0
 size: 11.000000
 lcol: 0
-label: Reset output
+label: Clear output
 name: 
 callback: cb_out_rewind
 argument: 0
@@ -89,7 +89,7 @@ argument: 0
 --------------------
 class: 11
 type: 0
-box: 10.000000 260.000000 80.000000 40.000000
+box: 10.000000 210.000000 80.000000 30.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
@@ -104,7 +104,7 @@ argument: 0
 --------------------
 class: 11
 type: 0
-box: 330.000000 260.000000 80.000000 40.000000
+box: 330.000000 210.000000 80.000000 30.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
@@ -119,10 +119,10 @@ argument: 0
 --------------------
 class: 2
 type: 0
-box: 10.000000 210.000000 140.000000 40.000000
+box: 10.000000 170.000000 140.000000 30.000000
 boxtype: 6
 colors: 47 47
-alignment: 2
+alignment: 4
 style: 0
 size: 11.000000
 lcol: 0
@@ -134,10 +134,10 @@ argument:
 --------------------
 class: 2
 type: 0
-box: 330.000000 210.000000 140.000000 40.000000
+box: 330.000000 170.000000 140.000000 30.000000
 boxtype: 6
 colors: 47 47
-alignment: 2
+alignment: 4
 style: 0
 size: 11.000000
 lcol: 0
@@ -149,10 +149,10 @@ argument:
 --------------------
 class: 2
 type: 0
-box: 10.000000 160.000000 30.000000 30.000000
+box: 10.000000 130.000000 30.000000 30.000000
 boxtype: 6
 colors: 47 47
-alignment: 2
+alignment: 4
 style: 0
 size: 8.000000
 lcol: 0
@@ -164,7 +164,7 @@ argument:
 --------------------
 class: 11
 type: 0
-box: 170.000000 260.000000 140.000000 40.000000
+box: 170.000000 210.000000 140.000000 30.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
@@ -179,14 +179,14 @@ argument: 0
 --------------------
 class: 11
 type: 4
-box: 330.000000 60.000000 140.000000 40.000000
+box: 330.000000 50.000000 60.000000 60.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
 style: 0
 size: 11.000000
 lcol: 0
-label: Back
+label: @<
 name: 
 callback: cb_out_back
 argument: 0
@@ -194,14 +194,14 @@ argument: 0
 --------------------
 class: 11
 type: 4
-box: 10.000000 60.000000 140.000000 40.000000
+box: 10.000000 50.000000 60.000000 60.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
 style: 0
 size: 11.000000
 lcol: 0
-label: Back
+label: @<
 name: 
 callback: cb_in_back
 argument: 0
@@ -209,14 +209,14 @@ argument: 0
 --------------------
 class: 11
 type: 4
-box: 330.000000 110.000000 140.000000 40.000000
+box: 410.000000 50.000000 60.000000 60.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
 style: 0
 size: 11.000000
 lcol: 0
-label: Forward
+label: @>
 name: 
 callback: cb_out_skip
 argument: 0
@@ -224,7 +224,7 @@ argument: 0
 --------------------
 class: 11
 type: 4
-box: 170.000000 60.000000 140.000000 40.000000
+box: 180.000000 20.000000 120.000000 40.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
@@ -239,7 +239,7 @@ argument: 0
 --------------------
 class: 11
 type: 0
-box: 100.000000 260.000000 50.000000 40.000000
+box: 100.000000 210.000000 50.000000 30.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
@@ -254,7 +254,7 @@ argument: 0
 --------------------
 class: 11
 type: 0
-box: 420.000000 260.000000 50.000000 40.000000
+box: 420.000000 210.000000 50.000000 30.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
@@ -269,10 +269,10 @@ argument: 0
 --------------------
 class: 2
 type: 0
-box: 10.000000 310.000000 460.000000 30.000000
+box: 10.000000 250.000000 460.000000 30.000000
 boxtype: 6
 colors: 47 47
-alignment: 2
+alignment: 4
 style: 0
 size: 11.000000
 lcol: 0
@@ -284,10 +284,10 @@ argument:
 --------------------
 class: 2
 type: 0
-box: 50.000000 160.000000 60.000004 40.000000
+box: 50.000000 130.000000 60.000004 30.000000
 boxtype: 6
 colors: 47 47
-alignment: 2
+alignment: 4
 style: 0
 size: 11.000000
 lcol: 0
@@ -299,10 +299,10 @@ argument:
 --------------------
 class: 2
 type: 0
-box: 120.000000 160.000000 30.000000 30.000000
+box: 120.000000 130.000000 30.000000 30.000000
 boxtype: 6
 colors: 47 47
-alignment: 2
+alignment: 4
 style: 0
 size: 8.000000
 lcol: 0
@@ -314,10 +314,10 @@ argument:
 --------------------
 class: 2
 type: 0
-box: 330.000000 160.000000 30.000000 30.000000
+box: 330.000000 130.000000 30.000000 30.000000
 boxtype: 6
 colors: 47 47
-alignment: 2
+alignment: 4
 style: 0
 size: 8.000000
 lcol: 0
@@ -329,10 +329,10 @@ argument:
 --------------------
 class: 2
 type: 0
-box: 370.000000 160.000000 60.000004 40.000000
+box: 370.000000 130.000000 60.000004 30.000000
 boxtype: 6
 colors: 47 47
-alignment: 2
+alignment: 4
 style: 0
 size: 11.000000
 lcol: 0
@@ -344,10 +344,10 @@ argument:
 --------------------
 class: 2
 type: 0
-box: 440.000000 160.000000 30.000000 30.000000
+box: 440.000000 130.000000 30.000000 30.000000
 boxtype: 6
 colors: 47 47
-alignment: 2
+alignment: 4
 style: 0
 size: 8.000000
 lcol: 0

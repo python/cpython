@@ -3,13 +3,12 @@
 # Edit CMIF movies interactively -- copy one or more files to an output file
 
 
-# Possibilities:
+# XXX To do:
 #
 # - convert between formats (grey, rgb, rgb8, ...)
 # - change size
 # - cut out a given area of the image
 # - change time base (a la Vtime)
-# - skip stretches of frames
 
 
 import sys
@@ -23,7 +22,7 @@ import string
 
 
 def main():
-	qsize = 20
+	qsize = 40
 	opts, args = getopt.getopt(sys.argv[1:], 'q:')
 	for o, a in opts:
 		if o == '-q':
@@ -111,12 +110,15 @@ class Editor:
 	def cb_copy(self, args):
 		if not self.iocheck(): return
 		data = self.vin.get()
-		if data:
-			if self.vout.getinfo() <> self.vin.getinfo():
-				print 'Copying info...'
-				self.vout.setinfo(self.vin.getinfo())
-			self.vout.put(data)
-			self.oshow()
+		if not data:
+			self.err('End of input file')
+			self.ishow()
+			return
+		if self.vout.getinfo() <> self.vin.getinfo():
+			print 'Copying info...'
+			self.vout.setinfo(self.vin.getinfo())
+		self.vout.put(data)
+		self.oshow()
 		self.ishow()
 
 	def cb_uncopy(self, args):
