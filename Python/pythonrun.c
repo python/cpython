@@ -38,9 +38,20 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pythonrun.h"
 #include "import.h"
 
+#ifdef unix
+#define HANDLE_SIGNALS
+#endif
+
+#ifdef HANDLE_SIGNALS
+#include <signal.h>
+#include "sigtype.h"
+#endif
+
 extern char *getpythonpath();
 
 extern grammar gram; /* From graminit.c */
+
+void initsigs(); /* Forward */
 
 int debugging; /* Needed by parser.c */
 int verbose; /* Needed by import.c */
@@ -67,10 +78,10 @@ initall()
 	initsys();
 	
 	initcalls(); /* Configuration-dependent initializations */
-	
-	initintr(); /* For intrcheck() */
 
 	setpythonpath(getpythonpath());
+
+	initsigs(); /* Signal handling stuff, including initintr() */
 }
 
 /* Parse input from a file and execute it */
@@ -372,8 +383,7 @@ extern int threads_started;
 #endif
 
 void
-goaway(sts)
-	int sts;
+cleanup()
 {
 	object *exitfunc = sysget("exitfunc");
 
@@ -395,6 +405,13 @@ goaway(sts)
 	}
 
 	flushline();
+}
+
+void
+goaway(sts)
+	int sts;
+{
+	cleanup();
 
 #ifdef USE_THREAD
 
@@ -431,6 +448,30 @@ goaway(sts)
 	exit(sts);
 #endif /* USE_THREAD */
 	/*NOTREACHED*/
+}
+
+#ifdef HANDLE_SIGNALS
+SIGTYPE
+sighandler(sig)
+	int sig;
+{
+	signal(sig, SIG_DFL); /* Don't catch recursive signals */
+	cleanup(); /* Do essential clean-up */
+	kill(getpid(), sig); /* Pretend the signal killed us */
+	/*NOTREACHED*/
+}
+#endif
+
+void
+initsigs()
+{
+	initintr();
+#ifdef HANDLE_SIGNALS
+	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
+		signal(SIGHUP, sighandler);
+	if (signal(SIGTERM, SIG_IGN) != SIG_IGN)
+		signal(SIGTERM, sighandler);
+#endif
 }
 
 #ifdef TRACE_REFS
