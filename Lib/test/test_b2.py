@@ -123,6 +123,41 @@ if repr(()) <> '()': raise TestFailed, 'repr(())'
 if repr([]) <> '[]': raise TestFailed, 'repr([])'
 if repr({}) <> '{}': raise TestFailed, 'repr({})'
 
+print 'round'
+if round(0.0) <> 0.0: raise TestFailed, 'round(0.0)'
+if round(1.0) <> 1.0: raise TestFailed, 'round(1.0)'
+if round(10.0) <> 10.0: raise TestFailed, 'round(10.0)'
+if round(1000000000.0) <> 1000000000.0:
+	raise TestFailed, 'round(1000000000.0)'
+if round(1e20) <> 1e20: raise TestFailed, 'round(1e20)'
+
+if round(-1.0) <> -1.0: raise TestFailed, 'round(-1.0)'
+if round(-10.0) <> -10.0: raise TestFailed, 'round(-10.0)'
+if round(-1000000000.0) <> -1000000000.0:
+	raise TestFailed, 'round(-1000000000.0)'
+if round(-1e20) <> -1e20: raise TestFailed, 'round(-1e20)'
+
+if round(0.1) <> 0.0: raise TestFailed, 'round(0.0)'
+if round(1.1) <> 1.0: raise TestFailed, 'round(1.0)'
+if round(10.1) <> 10.0: raise TestFailed, 'round(10.0)'
+if round(1000000000.1) <> 1000000000.0:
+	raise TestFailed, 'round(1000000000.0)'
+
+if round(-1.1) <> -1.0: raise TestFailed, 'round(-1.0)'
+if round(-10.1) <> -10.0: raise TestFailed, 'round(-10.0)'
+if round(-1000000000.1) <> -1000000000.0:
+	raise TestFailed, 'round(-1000000000.0)'
+
+if round(0.9) <> 1.0: raise TestFailed, 'round(0.9)'
+if round(9.9) <> 10.0: raise TestFailed, 'round(9.9)'
+if round(999999999.9) <> 1000000000.0:
+	raise TestFailed, 'round(999999999.9)'
+
+if round(-0.9) <> -1.0: raise TestFailed, 'round(-0.9)'
+if round(-9.9) <> -10.0: raise TestFailed, 'round(-9.9)'
+if round(-999999999.9) <> -1000000000.0:
+	raise TestFailed, 'round(-999999999.9)'
+
 print 'setattr'
 import sys
 setattr(sys, 'foobar', 1)
