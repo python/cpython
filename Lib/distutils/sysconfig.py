@@ -66,7 +66,10 @@ def get_python_inc(plat_specific=0, prefix=None):
     elif os.name == "nt":
         return os.path.join(prefix, "include")
     elif os.name == "mac":
-        return os.path.join(prefix, "Include")
+    	if plat_specific:
+    		return os.path.join(prefix, "Mac", "Include")
+    	else:
+	        return os.path.join(prefix, "Include")
     elif os.name == "os2":
         return os.path.join(prefix, "Include")
     else:
@@ -403,6 +406,8 @@ def _init_mac():
     g['install_lib'] = os.path.join(EXEC_PREFIX, "Lib")
     g['install_platlib'] = os.path.join(EXEC_PREFIX, "Mac", "Lib")
 
+    # These are used by the extension module build
+    g['srcdir'] = ':'
     global _config_vars
     _config_vars = g
 
