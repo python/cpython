@@ -290,12 +290,11 @@ class URLopener:
         if hasattr(self, name):
             method = getattr(self, name)
             if data is None:
-                result = method(url, fp, errcode, errmsg, headers, data)
-            else:
                 result = method(url, fp, errcode, errmsg, headers)
+            else:
+                result = method(url, fp, errcode, errmsg, headers, data)
             if result: return result
-        return self.http_error_default(
-            url, fp, errcode, errmsg, headers)
+        return self.http_error_default(url, fp, errcode, errmsg, headers)
 
     # Default http error handler: close the connection and raises IOError
     def http_error_default(self, url, fp, errcode, errmsg, headers):
