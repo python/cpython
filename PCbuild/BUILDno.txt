@@ -35,7 +35,7 @@ Windows Python BUILD numbers
 ----------------------------
   20    2.1.1       TENTATIVE
         20-Jul-2001
-  19    2.1.1c1     TENTATIVE
+  19    2.1.1c1
         13-Jul-2001
   15    2.1
         16-Apr-2001
