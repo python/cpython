@@ -668,8 +668,6 @@ struct_pack(self, args)
 			       num = num*10 + (c - '0');
 			if (c == '\0')
 				break;
-			if (num == 0 && c != 's')
-				continue;
 		}
 		else
 			num = 1;
@@ -678,10 +676,12 @@ struct_pack(self, args)
 		if (e == NULL)
 			goto fail;
 		res = restart + align((int)(res-restart), c, e);
+		if (num == 0 && c != 's')
+			continue;
 		do {
 			if (c == 'x') {
 				/* doesn't consume arguments */
-				memchr(res, '\0', num);
+				memset(res, '\0', num);
 				res += num;
 				break;
 			}
@@ -707,7 +707,7 @@ struct_pack(self, args)
 				if (n > 0)
 					memcpy(res, PyString_AsString(v), n);
 				if (n < num)
-					memchr(res+n, '\0', num-n);
+					memset(res+n, '\0', num-n);
 				res += num;
 				break;
 			}
@@ -769,8 +769,6 @@ struct_unpack(self, args)
 			       num = num*10 + (c - '0');
 			if (c == '\0')
 				break;
-			if (num == 0 && c != 's')
-				break;
 		}
 		else
 			num = 1;
@@ -779,6 +777,8 @@ struct_unpack(self, args)
 		if (e == NULL)
 			goto fail;
 		str = start + align((int)(str-start), c, e);
+		if (num == 0 && c != 's')
+			continue;
 
 		do {
 			if (c == 'x') {
