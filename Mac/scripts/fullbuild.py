@@ -126,8 +126,8 @@ def buildmwproject(top, creator, projects):
 	
 def buildapplet(top, dummy, list):
 	"""Create python applets"""
-	template = buildtools.findtemplate()
-	for src, dst in list:
+	for src, dst, tmpl in list:
+		template = buildtools.findtemplate(tmpl)
 		if src[-3:] != '.py':
 			raise 'Should end in .py', src
 		base = os.path.basename(src)
@@ -138,7 +138,10 @@ def buildapplet(top, dummy, list):
 		except os.error:
 			pass
 		print 'Building applet', dst
-		buildtools.process(template, src, dst, 1)
+		try:
+			buildtools.process(template, src, dst, 1)
+		except buildtools.BuildError, arg:
+			print '**', dst, arg
 		
 def buildprojectfile(top, arg, list):
 	"""Create CodeWarrior project files with a script"""
@@ -331,13 +334,15 @@ I_CARBON_EXTENSIONS : (buildmwproject, "CWIE", [
 	]),
 	
 I_APPLETS : (buildapplet, None, [
-		(":Mac:scripts:EditPythonPrefs.py", "EditPythonPrefs"),
-		(":Mac:scripts:BuildApplet.py", "BuildApplet"),
-		(":Mac:scripts:BuildApplication.py", "BuildApplication"),
-		(":Mac:scripts:ConfigurePython.py", "ConfigurePython"),
-		(":Mac:Tools:IDE:PythonIDE.py", "Python IDE"),
-		(":Mac:Tools:CGI:PythonCGISlave.py", ":Mac:Tools:CGI:PythonCGISlave"),
-		(":Mac:Tools:CGI:BuildCGIApplet.py", ":Mac:Tools:CGI:BuildCGIApplet"),
+		(":Mac:scripts:EditPythonPrefs.py", "EditPythonPrefs", None),
+		(":Mac:scripts:BuildApplet.py", "BuildApplet", None),
+		(":Mac:scripts:BuildApplication.py", "BuildApplication", None),
+		(":Mac:scripts:ConfigurePython.py", "ConfigurePython", None),
+		(":Mac:scripts:ConfigurePython.py", "ConfigurePythonCarbon", "PythonInterpreterCarbon"),
+		(":Mac:scripts:ConfigurePython.py", "ConfigurePythonClassic", "PythonInterpreterClassic"),
+		(":Mac:Tools:IDE:PythonIDE.py", "Python IDE", None),
+		(":Mac:Tools:CGI:PythonCGISlave.py", ":Mac:Tools:CGI:PythonCGISlave", None),
+		(":Mac:Tools:CGI:BuildCGIApplet.py", ":Mac:Tools:CGI:BuildCGIApplet", None),
 	]),
 }
 
