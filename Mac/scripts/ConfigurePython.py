@@ -2,11 +2,8 @@
 # dynamically-loaded modules that "live in" in a single
 # shared library.
 # It needs a fully functional non-dynamic python to work
-# (since it creates aliases to stuff it needs itself),
-# you should probably drag it onto your non-dynamic python.
-# 
-# If you compare it to MkPluginAliases.as it also serves
-# as a comparison between python and AppleScript:-)
+# but you can run it in a shared python as long as you can point
+# it to toolboxmodules.slb
 #
 # Jack Jansen, CWI, August 1995
 
@@ -16,10 +13,10 @@ def help():
 	print"""
 Try the following:
 1. Remove any old "Python Preferences" files from the system folder.
-2. Remove any old "PythonCore" files from the system folder.
-3. Make sure this script, PythonPPC and PythonCore are all located in the
-   python home folder (where the Lib and PlugIns folders are)
-4. Run this script again, by dropping it on PythonPPC.
+2. Remove any old "PythonCore" or "PythonCoreCFM68K" files from the system folder.
+3. Make sure this script, your interpreter and your PythonCore are all located in the
+   same folder.
+4. Run this script again, by dropping it on your interpreter.
 
 If this fails try removing starting afresh from the distribution archive.
 """
@@ -36,26 +33,12 @@ I cannot import the 'os' module, so something is wrong with sys.path
 try:
 	import Res
 except ImportError:
+	import macfs
 	#
 	# Check that we are actually in the main python directory
 	#
-	try:
-		os.chdir(':PlugIns')
-	except IOError:
-		print """
-I cannot find the 'PlugIns' folder, so I am obviously not run from the Python
-home folder.
-"""
-		help()
-	import imp
-	cwd = os.getcwd()
-	tblibname = os.path.join(cwd, "toolboxmodules.slb")
-	if not os.path.exists(tblibname):
-		print """
-I cannot find the 'toolboxmodules.slb' file in the PlugIns directory.
-Start afresh from a clean distribution. 
-"""
-		sys.exit(1)
+	fss, ok = macfs.StandardGetFile('Where are the toolbox modules?', 'shlb')
+	tblibname = fss.as_pathname()
 	try:
 		for wtd in ["Ctl", "Dlg", "Evt", "Qd", "Res", "Win"]:
 			imp.load_dynamic(wtd, tblibname)
@@ -71,32 +54,53 @@ import macfs
 import EasyDialogs
 import macostools
 
-goals = [
-	("AE.slb", "toolboxmodules.slb"),
-	("Cm.slb", "toolboxmodules.slb"),
-	("Ctl.slb", "toolboxmodules.slb"),
-	("Dlg.slb", "toolboxmodules.slb"),
-	("Evt.slb", "toolboxmodules.slb"),
-	("Fm.slb", "toolboxmodules.slb"),
-	("Menu.slb", "toolboxmodules.slb"),
-	("List.slb", "toolboxmodules.slb"),
-	("Qd.slb", "toolboxmodules.slb"),
-	("Qt.slb", "toolboxmodules.slb"),
-	("Res.slb", "toolboxmodules.slb"),
-	("Scrap.slb", "toolboxmodules.slb"),
-	("Snd.slb", "toolboxmodules.slb"),
-	("TE.slb", "toolboxmodules.slb"),
-	("Win.slb", "toolboxmodules.slb"),
-	("imgcolormap.slb", "imgmodules.slb"),
-	("imgformat.slb", "imgmodules.slb"),
-	("imggif.slb", "imgmodules.slb"),
-	("imgjpeg.slb", "imgmodules.slb"),
-	("imgop.slb", "imgmodules.slb"),
-	("imgpbm.slb", "imgmodules.slb"),
-	("imgpgm.slb", "imgmodules.slb"),
-	("imgppm.slb", "imgmodules.slb"),
-	("imgtiff.slb", "imgmodules.slb"),
-	("imgsgi.slb", "imgmodules.slb")
+ppc_goals = [
+	("AE.ppc.slb", "toolboxmodules.ppc.slb"),
+	("Ctl.ppc.slb", "toolboxmodules.ppc.slb"),
+	("Dlg.ppc.slb", "toolboxmodules.ppc.slb"),
+	("Evt.ppc.slb", "toolboxmodules.ppc.slb"),
+	("Fm.ppc.slb", "toolboxmodules.ppc.slb"),
+	("Menu.ppc.slb", "toolboxmodules.ppc.slb"),
+	("List.ppc.slb", "toolboxmodules.ppc.slb"),
+	("Qd.ppc.slb", "toolboxmodules.ppc.slb"),
+	("Res.ppc.slb", "toolboxmodules.ppc.slb"),
+	("Scrap.ppc.slb", "toolboxmodules.ppc.slb"),
+	("Snd.ppc.slb", "toolboxmodules.ppc.slb"),
+	("TE.ppc.slb", "toolboxmodules.ppc.slb"),
+	("Win.ppc.slb", "toolboxmodules.ppc.slb"),
+
+	("Cm.ppc.slb", "qtmodules.ppc.slb"),
+	("Qt.ppc.slb", "qtmodules.ppc.slb"),
+
+	("imgcolormap.ppc.slb", "imgmodules.ppc.slb"),
+	("imgformat.ppc.slb", "imgmodules.ppc.slb"),
+	("imggif.ppc.slb", "imgmodules.ppc.slb"),
+	("imgjpeg.ppc.slb", "imgmodules.ppc.slb"),
+	("imgop.ppc.slb", "imgmodules.ppc.slb"),
+	("imgpbm.ppc.slb", "imgmodules.ppc.slb"),
+	("imgpgm.ppc.slb", "imgmodules.ppc.slb"),
+	("imgppm.ppc.slb", "imgmodules.ppc.slb"),
+	("imgtiff.ppc.slb", "imgmodules.ppc.slb"),
+	("imgsgi.ppc.slb", "imgmodules.ppc.slb")
+]
+
+cfm68k_goals = [
+	("AE.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
+	("Ctl.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
+	("Dlg.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
+	("Evt.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
+	("Fm.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
+	("Menu.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
+	("List.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
+	("Qd.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
+	("Res.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
+	("Scrap.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
+	("Snd.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
+	("TE.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
+	("Win.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
+
+	("Cm.CFM68K.slb", "qtmodules.CFM68K.slb"),
+	("Qt.CFM68K.slb", "qtmodules.CFM68K.slb"),
 ]
 
 
@@ -121,13 +125,18 @@ def main():
 	
 	print LibFiles
 	# Create the new aliases.
-	if EasyDialogs.AskYesNoCancel('Proceed with creating new ones?') <= 0:
-		sys.exit(0)
-	for dst, src in goals:
-		if src in LibFiles:
-			macostools.mkalias(src, dst)
-		else:
-			EasyDialogs.Message(dst+' not created: '+src+' not found')
+	if EasyDialogs.AskYesNoCancel('Proceed with creating PPC aliases?') > 0:
+		for dst, src in ppc_goals:
+			if src in LibFiles:
+				macostools.mkalias(src, dst)
+			else:
+				EasyDialogs.Message(dst+' not created: '+src+' not found')
+	if EasyDialogs.AskYesNoCancel('Proceed with creating CFM68K aliases?') > 0:
+		for dst, src in cfm68k_goals:
+			if src in LibFiles:
+				macostools.mkalias(src, dst)
+			else:
+				EasyDialogs.Message(dst+' not created: '+src+' not found')
 			
 	EasyDialogs.Message('All done!')
 			
