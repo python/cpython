@@ -126,7 +126,7 @@ w_object(PyObject *v, WFILE *p)
 	else if (PyInt_Check(v)) {
 		long x = PyInt_AS_LONG((PyIntObject *)v);
 #if SIZEOF_LONG > 4
-		long y = x>>31;
+		long y = Py_ARITHMETIC_RIGHT_SHIFT(long, x, 31);
 		if (y && y != -1) {
 			w_byte(TYPE_INT64, p);
 			w_long64(x, p);

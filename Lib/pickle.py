@@ -243,18 +243,25 @@ class Pickler:
 
     def save_int(self, object):
         if self.bin:
-            i = mdumps(object)[1:]
-            if i[-2:] == '\000\000':
-                if i[-3] == '\000':
-                    self.write(BININT1 + i[:-3])
-                    return
-
-                self.write(BININT2 + i[:-2])
+            # If the int is small enough to fit in a signed 4-byte 2's-comp
+            # format, we can store it more efficiently than the general
+            # case.
+            high_bits = object >> 31  # note that Python shift sign-extends
+            if  high_bits == 0 or high_bits == -1:
+                # All high bits are copies of bit 2**31, so the value
+                # fits in a 4-byte signed int.
+                i = mdumps(object)[1:]
+                assert len(i) == 4
+                if i[-2:] == '\000\000':    # fits in 2-byte unsigned int
+                    if i[-3] == '\000':     # fits in 1-byte unsigned int
+                        self.write(BININT1 + i[0])
+                    else:
+                        self.write(BININT2 + i[:2])
+                else:
+                    self.write(BININT + i)
                 return
-
-            self.write(BININT + i)
-        else:
-            self.write(INT + `object` + '\n')
+        # Text pickle, or int too big to fit in signed 4-byte format.
+        self.write(INT + `object` + '\n')
     dispatch[IntType] = save_int
 
     def save_long(self, object):
