@@ -298,8 +298,8 @@ Done:
  * means we don't need to go through PyObject_Compare(); we can always use
  * _PyString_Eq directly.
  *
- * This really only becomes meaningful if proper error handling in lookdict()
- * is too expensive.
+ * This is valuable because the general-case error handling in lookdict() is
+ * expensive, and dicts with pure-string keys are very common.
  */
 static dictentry *
 lookdict_string(dictobject *mp, PyObject *key, register long hash)
@@ -311,8 +311,11 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 	dictentry *ep0 = mp->ma_table;
 	register dictentry *ep;
 
-	/* make sure this function doesn't have to handle non-string keys */
-	if (!PyString_Check(key)) {
+	/* Make sure this function doesn't have to handle non-string keys,
+	   including subclasses of str; e.g., one reason to subclass
+	   strings is to override __eq__, and for speed we don't cater to
+	   that here. */
+	if (!PyString_CheckExact(key)) {
 #ifdef SHOW_CONVERSION_COUNTS
 		++converted;
 #endif
@@ -478,7 +481,7 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 		return NULL;
 	}
 #ifdef CACHE_HASH
-	if (!PyString_Check(key) ||
+	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
 #endif
 	{
@@ -510,7 +513,7 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 	}
 	mp = (dictobject *)op;
 #ifdef CACHE_HASH
-	if (PyString_Check(key)) {
+	if (PyString_CheckExact(key)) {
 #ifdef INTERN_STRINGS
 		if (((PyStringObject *)key)->ob_sinterned != NULL) {
 			key = ((PyStringObject *)key)->ob_sinterned;
@@ -562,7 +565,7 @@ PyDict_DelItem(PyObject *op, PyObject *key)
 		return -1;
 	}
 #ifdef CACHE_HASH
-	if (!PyString_Check(key) ||
+	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
 #endif
 	{
@@ -820,7 +823,7 @@ dict_repr(dictobject *mp)
 	if (s == NULL)
 		goto Done;
 	result = _PyString_Join(s, pieces);
-	Py_DECREF(s);	
+	Py_DECREF(s);
 
 Done:
 	Py_XDECREF(pieces);
@@ -842,7 +845,7 @@ dict_subscript(dictobject *mp, register PyObject *key)
 	long hash;
 	assert(mp->ma_table != NULL);
 #ifdef CACHE_HASH
-	if (!PyString_Check(key) ||
+	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
 #endif
 	{
@@ -1358,7 +1361,7 @@ dict_has_key(register dictobject *mp, PyObject *key)
 	long hash;
 	register long ok;
 #ifdef CACHE_HASH
-	if (!PyString_Check(key) ||
+	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
 #endif
 	{
@@ -1382,7 +1385,7 @@ dict_get(register dictobject *mp, PyObject *args)
 		return NULL;
 
 #ifdef CACHE_HASH
-	if (!PyString_Check(key) ||
+	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
 #endif
 	{
@@ -1411,7 +1414,7 @@ dict_setdefault(register dictobject *mp, PyObject *args)
 		return NULL;
 
 #ifdef CACHE_HASH
-	if (!PyString_Check(key) ||
+	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
 #endif
 	{
@@ -1647,7 +1650,7 @@ dict_contains(dictobject *mp, PyObject *key)
 	long hash;
 
 #ifdef CACHE_HASH
-	if (!PyString_Check(key) ||
+	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
 #endif
 	{
