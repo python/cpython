@@ -176,7 +176,9 @@ class PimpPackage:
 			longdesc=None,
 			downloadURL=None,
 			installTest=None,
-			prerequisites=None):
+			prerequisites=None,
+			preInstall=None,
+			postInstall=None):
 		self._db = db
 		self.name = name
 		self.version = version
@@ -186,6 +188,8 @@ class PimpPackage:
 		self.downloadURL = downloadURL
 		self._installTest = installTest
 		self._prerequisites = prerequisites
+		self._preInstall = preInstall
+		self._postInstall = postInstall
 		
 	def dump(self):
 		dict = {
@@ -205,6 +209,10 @@ class PimpPackage:
 			dict['installTest'] = self._installTest
 		if self._prerequisites:
 			dict['prerequisites'] = self._prerequisites
+		if self._preInstall:
+			dict['preInstall'] = self._preInstall
+		if self._postInstall:
+			dict['postInstall'] = self._postInstall
 		return dict
 		
 	def __cmp__(self, other):
@@ -312,8 +320,16 @@ class PimpPackage:
 		msg = self.unpackSinglePackage(output)
 		if msg:
 			return "unpack %s: %s" % (_fmtpackagename(self), msg)
+		if self._preInstall:
+			if self._cmd(output, self._buildDirname, self._preInstall):
+				return "pre-install %s: running \"%s\" failed" % \
+					(_fmtpackagename(self), self._preInstall)
 		if self._cmd(output, self._buildDirname, sys.executable, "setup.py install"):
 			return "install %s: running \"setup.py install\" failed" % _fmtpackagename(self)
+		if self._postInstall:
+			if self._cmd(output, self._buildDirname, self._postInstall):
+				return "post-install %s: running \"%s\" failed" % \
+					(_fmtpackagename(self), self._postInstall)
 		return None
 
 class PimpInstaller:
