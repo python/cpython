@@ -187,6 +187,48 @@ class TestDecorators(GetSourceBase):
     def test_replacing_decorator(self):
         self.assertSourceEqual(mod2.gone, 9, 10)
 
+class TestOneliners(GetSourceBase):
+    fodderFile = mod2
+    def test_oneline_lambda(self):
+        # Test inspect.getsource with a one-line lambda function.
+        self.assertSourceEqual(mod2.oll, 25, 25)
+    
+    def test_threeline_lambda(self):
+        # Test inspect.getsource with a three-line lambda function,
+        # where the second and third lines are _not_ indented.
+        self.assertSourceEqual(mod2.tll, 28, 30)        
+    
+    def test_twoline_indented_lambda(self):
+        # Test inspect.getsource with a two-line lambda function,
+        # where the second line _is_ indented.
+        self.assertSourceEqual(mod2.tlli, 33, 34)
+    
+    def test_onelinefunc(self):
+        # Test inspect.getsource with a regular one-line function.
+        self.assertSourceEqual(mod2.onelinefunc, 37, 37)
+    
+    def test_manyargs(self):
+        # Test inspect.getsource with a regular function where
+        # the arguments are on two lines and _not_ indented and
+        # the body on the second line with the last arguments.
+        self.assertSourceEqual(mod2.manyargs, 40, 41)
+    
+    def test_twolinefunc(self):
+        # Test inspect.getsource with a regular function where
+        # the body is on two lines, following the argument list and
+        # continued on the next line by a \\.
+        self.assertSourceEqual(mod2.twolinefunc, 44, 45)
+    
+    def test_lambda_in_list(self):
+        # Test inspect.getsource with a one-line lambda function
+        # defined in a list, indented.
+        self.assertSourceEqual(mod2.a[1], 49, 49)
+    
+    def test_anonymous(self):
+        # Test inspect.getsource with a lambda function defined
+        # as argument to another function.
+        self.assertSourceEqual(mod2.anonymous, 55, 55)
+
 # Helper for testing classify_class_attrs.
 def attrs_wo_objs(cls):
     return [t[:3] for t in inspect.classify_class_attrs(cls)]
@@ -371,7 +413,7 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assert_(('datablob', 'data', A) in attrs, 'missing data')
 
 def test_main():
-    run_unittest(TestDecorators, TestRetrievingSourceCode,
+    run_unittest(TestDecorators, TestRetrievingSourceCode, TestOneliners,
                  TestInterpreterStack, TestClassesAndFunctions, TestPredicates)
 
 if __name__ == "__main__":
