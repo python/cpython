@@ -7,7 +7,7 @@
 # creates config.c from config.c.in in the source directory.)
 
 # Interpreter version number, for library destination pathnames
-VERSION=	1.4
+VERSION=	1.5
 
 # === Variables set by makesetup ===
 
