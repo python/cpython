@@ -473,6 +473,13 @@ quicktest:	all platform
 		-PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(QUICKTESTOPTS)
 		PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(QUICKTESTOPTS)
 
+MEMTESTOPTS=    $(QUICKTESTOPTS) -x test_dl test___all__ test_fork1 \
+		test_longexp
+memtest:	all platform
+		-rm -f $(srcdir)/Lib/test/*.py[co]
+		-PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(MEMTESTOPTS)
+		PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(MEMTESTOPTS)
+
 # Install everything
 install:	altinstall bininstall maninstall
 
