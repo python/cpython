@@ -88,7 +88,7 @@ PYTHONCASEOK : ignore case in 'import' statements (Windows).\n\
 ";
 
 
-static void
+static int
 usage(int exitcode, char* program)
 {
 	FILE *f = exitcode ? stderr : stdout;
@@ -105,14 +105,14 @@ usage(int exitcode, char* program)
 #if defined(__VMS)
 	if (exitcode == 0) {
 		/* suppress 'error' message */
-		exit(1);
+		return 1;
 	}
 	else {
 		/* STS$M_INHIB_MSG + SS$_ABORT */
-		exit(0x1000002c);
+		return 0x1000002c;
 	}
 #else
-	exit(exitcode);
+	return exitcode;
 #endif
 	/*NOTREACHED*/
 }
@@ -194,7 +194,7 @@ Py_Main(int argc, char **argv)
 			fprintf(stderr,
 				"-Q option should be `-Qold', "
 				"`-Qwarn', `-Qwarnall', or `-Qnew' only\n");
-			usage(2, argv[0]);
+			return usage(2, argv[0]);
 			/* NOTREACHED */
 
 		case 'i':
@@ -255,18 +255,18 @@ Py_Main(int argc, char **argv)
 		/* This space reserved for other options */
 
 		default:
-			usage(2, argv[0]);
+			return usage(2, argv[0]);
 			/*NOTREACHED*/
 
 		}
 	}
 
 	if (help)
-		usage(0, argv[0]);
+		return usage(0, argv[0]);
 
 	if (version) {
 		fprintf(stderr, "Python %s\n", PY_VERSION);
-		exit(0);
+		return 0;
 	}
 
 	if (!saw_inspect_flag &&
@@ -291,7 +291,7 @@ Py_Main(int argc, char **argv)
 			if ((fp = fopen(filename, "r")) == NULL) {
 				fprintf(stderr, "%s: can't open file '%s'\n",
 					argv[0], filename);
-				exit(2);
+				return 2;
 			}
 			else if (skipfirstline) {
 				int ch;
