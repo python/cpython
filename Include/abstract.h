@@ -911,7 +911,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
          tuple or list.  Use PySequence_Fast_GET_ITEM to access the
          members of this list.
 
-         Returns NULL on failure.  If the object is not a sequence,
+         Returns NULL on failure.  If the object does not support iteration,
          raises a TypeError exception with m as the message text.
        */
 

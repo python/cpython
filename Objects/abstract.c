@@ -1176,61 +1176,68 @@ PySequence_DelSlice(PyObject *s, int i1, int i2)
 PyObject *
 PySequence_Tuple(PyObject *v)
 {
-	PySequenceMethods *m;
+	PyObject *it;  /* iter(v) */
+	int n;         /* guess for result tuple size */
+	PyObject *result;
+	int j;
 
 	if (v == NULL)
 		return null_error();
 
+	/* Special-case the common tuple and list cases, for efficiency. */
 	if (PyTuple_Check(v)) {
 		Py_INCREF(v);
 		return v;
 	}
-
 	if (PyList_Check(v))
 		return PyList_AsTuple(v);
 
-	/* There used to be code for strings here, but tuplifying strings is
-	   not a common activity, so I nuked it.  Down with code bloat! */
+	/* Get iterator. */
+	it = PyObject_GetIter(v);
+	if (it == NULL)
+		return type_error("tuple() argument must support iteration");
 
-	/* Generic sequence object */
-	m = v->ob_type->tp_as_sequence;
-	if (m && m->sq_item) {
-		int i;
-		PyObject *t;
-		int n = PySequence_Size(v);
-		if (n < 0)
-			return NULL;
-		t = PyTuple_New(n);
-		if (t == NULL)
-			return NULL;
-		for (i = 0; ; i++) {
-			PyObject *item = (*m->sq_item)(v, i);
-			if (item == NULL) {
-				if (PyErr_ExceptionMatches(PyExc_IndexError))
-					PyErr_Clear();
-				else {
-					Py_DECREF(t);
-					t = NULL;
-				}
-				break;
-			}
-			if (i >= n) {
-				if (n < 500)
-					n += 10;
-				else
-					n += 100;
-				if (_PyTuple_Resize(&t, n, 0) != 0)
-					break;
-			}
-			PyTuple_SET_ITEM(t, i, item);
+	/* Guess result size and allocate space. */
+	n = PySequence_Size(v);
+	if (n < 0) {
+		PyErr_Clear();
+		n = 10;  /* arbitrary */
+	}
+	result = PyTuple_New(n);
+	if (result == NULL)
+		goto Fail;
+
+	/* Fill the tuple. */
+	for (j = 0; ; ++j) {
+		PyObject *item = PyIter_Next(it);
+		if (item == NULL) {
+			if (PyErr_Occurred())
+				goto Fail;
+			break;
 		}
-		if (i < n && t != NULL)
-			_PyTuple_Resize(&t, i, 0);
-		return t;
+		if (j >= n) {
+			if (n < 500)
+				n += 10;
+			else
+				n += 100;
+			if (_PyTuple_Resize(&result, n, 0) != 0)
+				goto Fail;
+		}
+		PyTuple_SET_ITEM(result, j, item);
 	}
 
-	/* None of the above */
-	return type_error("tuple() argument must be a sequence");
+	/* Cut tuple back if guess was too large. */
+	if (j < n &&
+	    _PyTuple_Resize(&result, j, 0) != 0)
+		goto Fail;
+
+	Py_DECREF(it);
+	return result;
+
+Fail:
+	Py_XDECREF(result);
+	Py_DECREF(it);
+	return NULL;
 }
 
 PyObject *
