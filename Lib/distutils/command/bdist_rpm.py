@@ -361,7 +361,7 @@ class bdist_rpm (Command):
         spec_file.extend([
             'License: ' + self.distribution.get_license(),
             'Group: ' + self.group,
-            'BuildRoot: %{_tmppath}/%{name}-buildroot',
+            'BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot',
             'Prefix: %{_prefix}', ])
 
         # noarch if no extension modules
