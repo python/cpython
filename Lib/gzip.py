@@ -5,7 +5,7 @@ but random access is not allowed."""
 
 # based on Andrew Kuchling's minigzip.py distributed with the zlib module
 
-import string, struct, sys, time
+import struct, sys, time
 import zlib
 import __builtin__
 
@@ -138,7 +138,7 @@ class GzipFile:
             self.fileobj.write( self.compress.compress(data) )
 
     def writelines(self,lines):
-        self.write(string.join(lines))
+        self.write(" ".join(lines))
 
     def read(self, size=-1):
         if self.extrasize <= 0 and self.fileobj is None:
@@ -281,10 +281,10 @@ class GzipFile:
         readsize = min(100, size)    # Read from the file in small chunks
         while 1:
             if size == 0:
-                return string.join(bufs, '') # Return resulting line
+                return "".join(bufs) # Return resulting line
 
             c = self.read(readsize)
-            i = string.find(c, '\n')
+            i = c.find('\n')
             if size is not None:
                 # We set i=size to break out of the loop under two
                 # conditions: 1) there's no newline, and the chunk is
@@ -296,7 +296,7 @@ class GzipFile:
             if i >= 0 or c == '':
                 bufs.append(c[:i+1])    # Add portion of last chunk
                 self._unread(c[i+1:])   # Push back rest of chunk
-                return string.join(bufs, '') # Return resulting line
+                return ''.join(bufs)    # Return resulting line
 
             # Append chunk to list, decrease 'size',
             bufs.append(c)
