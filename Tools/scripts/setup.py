@@ -10,6 +10,7 @@ setup(
     'ftpmirror.py',
     'h2py.py',
     'lfcr.py',
+    'logmerge.py',
     '../../Lib/tabnanny.py',
     'untabify.py',
     ],
