@@ -28,6 +28,7 @@ AT = "at"
 BRANCH = "branch"
 CALL = "call"
 CATEGORY = "category"
+CHARSET = "charset"
 GROUP = "group"
 GROUP_IGNORE = "group_ignore"
 IN = "in"
@@ -87,6 +88,7 @@ OPCODES = [
     BRANCH,
     CALL,
     CATEGORY,
+    CHARSET,
     GROUP, GROUP_IGNORE,
     IN, IN_IGNORE,
     INFO,
@@ -166,13 +168,18 @@ CH_UNICODE = {
 }
 
 # flags
-SRE_FLAG_TEMPLATE = 1
-SRE_FLAG_IGNORECASE = 2
-SRE_FLAG_LOCALE = 4
-SRE_FLAG_MULTILINE = 8
-SRE_FLAG_DOTALL = 16
-SRE_FLAG_UNICODE = 32
-SRE_FLAG_VERBOSE = 64
+SRE_FLAG_TEMPLATE = 1 # template mode (disable backtracking)
+SRE_FLAG_IGNORECASE = 2 # case insensitive
+SRE_FLAG_LOCALE = 4 # honour system locale
+SRE_FLAG_MULTILINE = 8 # treat target as multiline string
+SRE_FLAG_DOTALL = 16 # treat target as a single string
+SRE_FLAG_UNICODE = 32 # use unicode locale
+SRE_FLAG_VERBOSE = 64 # ignore whitespace and comments
+
+# flags for INFO primitive
+SRE_INFO_PREFIX = 1 # has prefix
+SRE_INFO_LITERAL = 2 # entire pattern is literal (given by prefix)
+SRE_INFO_CHARSET = 4 # pattern starts with character from given set
 
 if __name__ == "__main__":
     import string
@@ -201,6 +208,7 @@ if __name__ == "__main__":
     dump(f, OPCODES, "SRE_OP")
     dump(f, ATCODES, "SRE")
     dump(f, CHCODES, "SRE")
+
     f.write("#define SRE_FLAG_TEMPLATE %d\n" % SRE_FLAG_TEMPLATE)
     f.write("#define SRE_FLAG_IGNORECASE %d\n" % SRE_FLAG_IGNORECASE)
     f.write("#define SRE_FLAG_LOCALE %d\n" % SRE_FLAG_LOCALE)
@@ -208,5 +216,10 @@ if __name__ == "__main__":
     f.write("#define SRE_FLAG_DOTALL %d\n" % SRE_FLAG_DOTALL)
     f.write("#define SRE_FLAG_UNICODE %d\n" % SRE_FLAG_UNICODE)
     f.write("#define SRE_FLAG_VERBOSE %d\n" % SRE_FLAG_VERBOSE)
+
+    f.write("#define SRE_INFO_PREFIX %d\n" % SRE_INFO_PREFIX)
+    f.write("#define SRE_INFO_LITERAL %d\n" % SRE_INFO_LITERAL)
+    f.write("#define SRE_INFO_CHARSET %d\n" % SRE_INFO_CHARSET)
+
     f.close()
     print "done"

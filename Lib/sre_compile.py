@@ -16,11 +16,70 @@ import _sre
 from sre_constants import *
 
 # find an array type code that matches the engine's code size
-for WORDSIZE in "BHil":
+for WORDSIZE in "Hil":
     if len(array.array(WORDSIZE, [0]).tostring()) == _sre.getcodesize():
         break
 else:
     raise RuntimeError, "cannot find a useable array type"
+
+MAXCODE = 65535
+
+def _charset(charset, fixup):
+    # internal: optimize character set
+    out = []
+    charmap = [0]*256
+    try:
+        for op, av in charset:
+            if op is NEGATE:
+                out.append((op, av))
+            elif op is LITERAL:
+                charmap[fixup(av)] = 1
+            elif op is RANGE:
+                for i in range(fixup(av[0]), fixup(av[1])+1):
+                    charmap[i] = 1
+            elif op is CATEGORY:
+                # FIXME: could append to charmap tail
+                return charset # cannot compress
+    except IndexError:
+        # unicode
+        return charset
+    # compress character map
+    i = p = n = 0
+    runs = []
+    for c in charmap:
+        if c:
+            if n == 0:
+                p = i
+            n = n + 1
+        elif n:
+            runs.append((p, n))
+            n = 0
+        i = i + 1
+    if n:
+        runs.append((p, n))
+    if len(runs) <= 2:
+        # use literal/range
+        for p, n in runs:
+            if n == 1:
+                out.append((LITERAL, p))
+            else:
+                out.append((RANGE, (p, p+n-1)))
+        if len(out) < len(charset):
+            return out
+    else:
+        # use bitmap
+        data = []
+        m = 1; v = 0
+        for c in charmap:
+            if c:
+                v = v + m
+            m = m << 1
+            if m > MAXCODE:
+                data.append(v)
+                m = 1; v = 0
+        out.append((CHARSET, data))
+        return out
+    return charset
 
 def _compile(code, pattern, flags):
     # internal: compile a (sub)pattern
@@ -41,7 +100,7 @@ def _compile(code, pattern, flags):
                 emit(OPCODES[op])
                 fixup = lambda x: x
             skip = len(code); emit(0)
-            for op, av in av:
+            for op, av in _charset(av, fixup):
                 emit(OPCODES[op])
                 if op is NEGATE:
                     pass
@@ -50,6 +109,8 @@ def _compile(code, pattern, flags):
                 elif op is RANGE:
                     emit(fixup(av[0]))
                     emit(fixup(av[1]))
+                elif op is CHARSET:
+                    code.extend(av)
                 elif op is CATEGORY:
                     if flags & SRE_FLAG_LOCALE:
                         emit(CHCODES[CH_LOCALE[av]])
@@ -155,13 +216,14 @@ def _compile(code, pattern, flags):
 
 def _compile_info(code, pattern, flags):
     # internal: compile an info block.  in the current version,
-    # this contains min/max pattern width and a literal prefix,
-    # if any
+    # this contains min/max pattern width, and an optional literal
+    # prefix or a character map
     lo, hi = pattern.getwidth()
     if lo == 0:
         return # not worth it
     # look for a literal prefix
     prefix = []
+    charset = [] # not used
     if not (flags & SRE_FLAG_IGNORECASE):
         for op, av in pattern.data:
             if op is LITERAL:
@@ -174,26 +236,40 @@ def _compile_info(code, pattern, flags):
     skip = len(code); emit(0)
     # literal flag
     mask = 0
-    if len(prefix) == len(pattern.data):
-        mask = 1
+    if prefix:
+        mask = SRE_INFO_PREFIX
+        if len(prefix) == len(pattern.data):
+            mask = mask + SRE_INFO_LITERAL
+    elif charset:
+        mask = mask + SRE_INFO_CHARSET
     emit(mask)
     # pattern length
-    emit(lo)
-    if hi < 32768:
+    if lo < MAXCODE:
+        emit(lo)
+    else:
+        emit(MAXCODE)
+        prefix = prefix[:MAXCODE]
+    if hi < MAXCODE:
         emit(hi)
     else:
         emit(0)
     # add literal prefix
-    emit(len(prefix))
     if prefix:
-        code.extend(prefix)
-        # generate overlap table
-        table = [-1] + ([0]*len(prefix))
-        for i in range(len(prefix)):
-            table[i+1] = table[i]+1
-            while table[i+1] > 0 and prefix[i] != prefix[table[i+1]-1]:
-                table[i+1] = table[table[i+1]-1]+1
-        code.extend(table[1:]) # don't store first entry
+        emit(len(prefix))
+        if prefix:
+            code.extend(prefix)
+            # generate overlap table
+            table = [-1] + ([0]*len(prefix))
+            for i in range(len(prefix)):
+                table[i+1] = table[i]+1
+                while table[i+1] > 0 and prefix[i] != prefix[table[i+1]-1]:
+                    table[i+1] = table[table[i+1]-1]+1
+            code.extend(table[1:]) # don't store first entry
+    elif charset:
+        for char in charset:
+            emit(OPCODES[LITERAL])
+            emit(char)
+        emit(OPCODES[FAILURE])
     code[skip] = len(code) - skip
 
 def compile(p, flags=0):

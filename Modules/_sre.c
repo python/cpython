@@ -378,6 +378,13 @@ SRE_MEMBER(SRE_CODE* set, SRE_CODE ch)
 			set += 2;
 			break;
 
+        case SRE_OP_CHARSET:
+            /* args: <bitmap> (16 bits per code word) */
+            if (ch < 256 && (set[ch >> 4] & (1 << (ch & 15))))
+                return ok;
+            set += 16;
+            break;
+
 		case SRE_OP_CATEGORY:
             /* args: <category> */
 			if (sre_category(set[0], (int) ch))
@@ -952,35 +959,38 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 	SRE_CHAR* ptr = state->start;
 	SRE_CHAR* end = state->end;
 	int status = 0;
-    int prefix_len = 0;
-    SRE_CODE* prefix;
-    SRE_CODE* overlap;
-    int literal = 0;
+    int prefix_len;
+    SRE_CODE* prefix = NULL;
+    SRE_CODE* charset = NULL;
+    SRE_CODE* overlap = NULL;
+    int flags = 0;
 
     if (pattern[0] == SRE_OP_INFO) {
         /* optimization info block */
-        /* args: <1=skip> <2=flags> <3=min> <4=max> <5=prefix> <6=data...> */
+        /* args: <1=skip> <2=flags> <3=min> <4=max> <5=prefix info>  */
+
+        flags = pattern[2];
 
         if (pattern[3] > 0) {
             /* adjust end point (but make sure we leave at least one
-               character in there) */
+               character in there, so literal search will work) */
             end -= pattern[3]-1;
             if (end <= ptr)
                 end = ptr+1;
         }
 
-        literal = pattern[2];
-
-        prefix = pattern + 6;
-        prefix_len = pattern[5];
-
-        overlap = prefix + prefix_len - 1;
+        if (flags & SRE_INFO_PREFIX) {
+            prefix_len = pattern[5];
+            prefix = pattern + 6;
+            overlap = prefix + prefix_len - 1;
+        } else if (flags & SRE_INFO_CHARSET)
+            charset = pattern + 5;
 
         pattern += 1 + pattern[1];
     }
 
 #if defined(USE_FAST_SEARCH)
-    if (prefix_len > 1) {
+    if (prefix && overlap && prefix_len > 1) {
         /* pattern starts with a known prefix.  use the overlap
            table to skip forward as fast as we possibly can */
         int i = 0;
@@ -998,8 +1008,8 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
                         TRACE(("%8d: === SEARCH === hit\n", PTR(ptr)));
                         state->start = ptr - prefix_len + 1;
                         state->ptr = ptr + 1;
-                        if (literal)
-                            return 1; /* all of it */
+                        if (flags & SRE_INFO_LITERAL)
+                            return 1; /* we got all of it */
                         status = SRE_MATCH(state, pattern + 2*prefix_len);
                         if (status != 0)
                             return status;
@@ -1016,9 +1026,9 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
     }
 #endif
 
-	if (pattern[0] == SRE_OP_LITERAL) {
-		/* pattern starts with a literal character.  this is used for
-           short prefixes, and if fast search is disabled*/
+    if (pattern[0] == SRE_OP_LITERAL) {
+		/* pattern starts with a literal character.  this is used
+           for short prefixes, and if fast search is disabled */
 		SRE_CODE chr = pattern[1];
 		for (;;) {
 			while (ptr < end && (SRE_CODE) ptr[0] != chr)
@@ -1032,6 +1042,22 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 			if (status != 0)
 				break;
 		}
+#if 0
+    } else if (charset) {
+		/* pattern starts with a character from a known set */
+		for (;;) {
+			while (ptr < end && !SRE_MEMBER(charset, ptr[0]))
+				ptr++;
+			if (ptr == end)
+				return 0;
+			TRACE(("%8d: === SEARCH === charset\n", PTR(ptr)));
+			state->start = ptr;
+			state->ptr = ptr;
+			status = SRE_MATCH(state, pattern);
+			if (status != 0)
+				break;
+        }
+#endif
 	} else
 		/* general case */
 		while (ptr <= end) {
@@ -1044,6 +1070,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 
 	return status;
 }
+    
 
 #if !defined(SRE_RECURSIVE)
 
