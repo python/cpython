@@ -64,6 +64,10 @@ class SaveAs(_Dialog):
 
     command = "tk_getSaveFile"
 
+class Directory(_Dialog):
+    "Ask for a directory"
+
+    command = "tk_chooseDirectory"
 
 #
 # convenience stuff
@@ -71,19 +75,19 @@ class SaveAs(_Dialog):
 def askopenfilename(**options):
     "Ask for a filename to open"
 
-    return apply(Open, (), options).show()
+    return Open(**options).show()
 
 def asksaveasfilename(**options):
     "Ask for a filename to save as"
 
-    return apply(SaveAs, (), options).show()
+    return SaveAs(**options).show()
 
 # FIXME: are the following two perhaps a bit too convenient?
 
 def askopenfile(mode = "r", **options):
     "Ask for a filename to open, and returned the opened file"
 
-    filename = apply(Open, (), options).show()
+    filename = Open(**options).show()
     if filename:
         return open(filename, mode)
     return None
@@ -91,11 +95,14 @@ def askopenfile(mode = "r", **options):
 def asksaveasfile(mode = "w", **options):
     "Ask for a filename to save as, and returned the opened file"
 
-    filename = apply(SaveAs, (), options).show()
+    filename = SaveAs(**options).show()
     if filename:
         return open(filename, mode)
     return None
 
+def askdirectory (**options):
+    "Ask for a directory, and return the file name"
+    return Directory(**options).show()
 
 # --------------------------------------------------------------------
 # test stuff
