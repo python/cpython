@@ -25,6 +25,8 @@ Extension Modules
 Library
 -------
 
+- the deprecated tzparse module was removed.
+
 - the pickle module no longer uses the deprecated bin parameter.
 
 - the depecated statcache module was removed.
