@@ -389,6 +389,67 @@ verify('%i %*.*s' % (10, 5,3,u'abc',) == u'10   abc')
 verify('%i%s %*.*s' % (10, 3, 5,3,u'abc',) == u'103   abc')
 print 'done.'
 
+print 'Testing builtin unicode()...',
+
+# unicode(obj) tests (this maps to PyObject_Unicode() at C level)
+
+verify(unicode(u'unicode remains unicode') == u'unicode remains unicode')
+
+class UnicodeSubclass(unicode):
+    pass
+
+verify(unicode(UnicodeSubclass('unicode subclass becomes unicode'))
+       == u'unicode subclass becomes unicode')
+
+verify(unicode('strings are converted to unicode')
+       == u'strings are converted to unicode')
+
+class UnicodeCompat:
+    def __init__(self, x):
+        self.x = x
+    def __unicode__(self):
+        return self.x
+
+verify(unicode(UnicodeCompat('__unicode__ compatible objects are recognized'))
+       == u'__unicode__ compatible objects are recognized')
+
+class StringCompat:
+    def __init__(self, x):
+        self.x = x
+    def __str__(self):
+        return self.x
+
+verify(unicode(StringCompat('__str__ compatible objects are recognized'))
+       == u'__str__ compatible objects are recognized')
+
+# unicode(obj) is compatible to str():
+
+o = StringCompat('unicode(obj) is compatible to str()')
+verify(unicode(o) == u'unicode(obj) is compatible to str()')
+verify(str(o) == 'unicode(obj) is compatible to str()')
+
+for obj in (123, 123.45, 123L):
+    verify(unicode(obj) == unicode(str(obj)))
+
+# unicode(obj, encoding, error) tests (this maps to
+# PyUnicode_FromEncodedObject() at C level)
+
+try:
+    unicode(u'decoding unicode is not supported', 'utf-8', 'strict')
+except TypeError:
+    pass
+else:
+    raise TestFailed, "decoding unicode should NOT be supported"
+
+verify(unicode('strings are decoded to unicode', 'utf-8', 'strict')
+       == u'strings are decoded to unicode')
+
+verify(unicode(buffer('character buffers are decoded to unicode'),
+               'utf-8', 'strict')
+       == u'character buffers are decoded to unicode')
+
+print 'done.'
+
 # Test builtin codecs
 print 'Testing builtin codecs...',
 
@@ -437,31 +498,10 @@ verify(unicode(''.join((chr(0xe2), chr(0x82), chr(0xac))),
 # * strict decoding testing for all of the
 #   UTF8_ERROR cases in PyUnicode_DecodeUTF8
 
-
-
 verify(unicode('hello','ascii') == u'hello')
 verify(unicode('hello','utf-8') == u'hello')
 verify(unicode('hello','utf8') == u'hello')
 verify(unicode('hello','latin-1') == u'hello')
-
-# Compatibility to str():
-class String:
-    x = ''
-    def __str__(self):
-        return self.x
-
-o = String()
-
-o.x = 'abc'
-verify(unicode(o) == u'abc')
-verify(str(o) == 'abc')
-
-o.x = u'abc'
-verify(unicode(o) == u'abc')
-verify(str(o) == 'abc')
-
-for obj in (123, 123.45, 123L):
-    verify(unicode(obj) == unicode(str(obj)))
 
 # Error handling
 try:

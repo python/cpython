@@ -44,7 +44,7 @@ Core and builtins
 - unicode(obj) now behaves more like str(obj), accepting arbitrary
   objects, and calling a __unicode__ method if it exists.
   unicode(obj, encoding) and unicode(obj, encoding, errors) still
-  require an 8-bit string argument.
+  require an 8-bit string or character buffer argument.
 
 - isinstance() now allows any object as the first argument and a
   class, a type or something with a __bases__ tuple attribute for the
