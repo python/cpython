@@ -7,37 +7,68 @@
 
 
 This module implements pseudo-random number generators for various
-distributions: on the real line, there are functions to compute normal
-or Gaussian, lognormal, negative exponential, gamma, and beta
-distributions.  For generating distribution of angles, the circular
-uniform and von Mises distributions are available.
+distributions.
+For integers, uniform selection from a range.
+For sequences, uniform selection of a random element, and a function to
+generate a random permutation of a list in-place.
+On the real line, there are functions to compute uniform, normal (Gaussian),
+lognormal, negative exponential, gamma, and beta distributions.
+For generating distribution of angles, the circular uniform and
+von Mises distributions are available.
 
+Almost all module functions depend on the basic function
+\function{random()}, which generates a random float uniformly in
+the semi-open range [0.0, 1.0).  Python uses the standard Wichmann-Hill
+generator, combining three pure multiplicative congruential
+generators of modulus 30269, 30307 and 30323.  Its period (how many
+numbers it generates before repeating the sequence exactly) is
+6,953,607,871,644.  While of much higher quality than the \function{rand()}
+function supplied by most C libraries, the theoretical properties
+are much the same as for a single linear congruential generator of
+large modulus.
+
+The functions in this module are not threadsafe:  if you want to call these
+functions from multiple threads, you should explicitly serialize the calls.
+Else, because no critical sections are implemented internally, calls
+from different threads may see the same return values.
+
+
+\begin{funcdesc}{seed}{\optional{x}}
+  Initialize the basic random number generator.
+  Optional argument \var{x} can be any hashable object,
+  and the generator is seeded from its hash code.
+  It is not guaranteed that distinct hash codes will produce distinct
+  seeds.
+  If \var{x} is omitted or \code{None},
+  the seed is derived from the current system time.
+  The seed is also set from the current system time when
+  the module is first imported.
+\end{methoddesc}
 
 \begin{funcdesc}{choice}{seq}
-  Chooses a random element from the non-empty sequence \var{seq} and
-  returns it.
+  Return a random element from the non-empty sequence \var{seq}.
 \end{funcdesc}
 
 \begin{funcdesc}{randint}{a, b}
   \deprecated{2.0}{Use \function{randrange()} instead.}
-  Returns a random integer \var{N} such that
+  Return a random integer \var{N} such that
   \code{\var{a} <= \var{N} <= \var{b}}.
-\end{funcdesc}
-
-\begin{funcdesc}{random}{}
-  Returns the next random floating point number in the range [0.0,
-  1.0).
 \end{funcdesc}
 
 \begin{funcdesc}{randrange}{\optional{start,} stop\optional{, step}}
   Return a randomly selected element from \code{range(\var{start},
   \var{stop}, \var{step})}.  This is equivalent to
-  \code{choice(range(\var{start}, \var{stop}, \var{step}))}.
+  \code{choice(range(\var{start}, \var{stop}, \var{step}))},
+  but doesn't actually build a range object.
   \versionadded{1.5.2}
 \end{funcdesc}
 
+\begin{funcdesc}{random}{}
+  Return the next random floating point number in the range [0.0, 1.0).
+\end{funcdesc}
+
 \begin{funcdesc}{uniform}{a, b}
-  Returns a random real number \var{N} such that
+  Return a random real number \var{N} such that
   \code{\var{a} <= \var{N} < \var{b}}.
 \end{funcdesc}
 
@@ -59,7 +90,7 @@ any statistics text.
   Circular uniform distribution.  \var{mean} is the mean angle, and
   \var{arc} is the range of the distribution, centered around the mean
   angle.  Both values must be expressed in radians, and can range
-  between 0 and \emph{pi}.  Returned values will range between
+  between 0 and \emph{pi}.  Returned values range between
   \code{\var{mean} - \var{arc}/2} and \code{\var{mean} +
   \var{arc}/2}.
 \end{funcdesc}
@@ -67,7 +98,7 @@ any statistics text.
 \begin{funcdesc}{expovariate}{lambd}
   Exponential distribution.  \var{lambd} is 1.0 divided by the desired
   mean.  (The parameter would be called ``lambda'', but that is a
-  reserved word in Python.)  Returned values will range from 0 to
+  reserved word in Python.)  Returned values range from 0 to
   positive infinity.
 \end{funcdesc}
 
@@ -86,7 +117,7 @@ any statistics text.
   Log normal distribution.  If you take the natural logarithm of this
   distribution, you'll get a normal distribution with mean \var{mu}
   and standard deviation \var{sigma}.  \var{mu} can have any value,
-  and \var{sigma} must be greater than zero.  
+  and \var{sigma} must be greater than zero.
 \end{funcdesc}
 
 \begin{funcdesc}{normalvariate}{mu, sigma}
@@ -127,8 +158,8 @@ implements a standard useful algorithm:
   long sequence can never be generated.
 \end{funcdesc}
 
-
 \begin{seealso}
-  \seemodule{whrandom}{The standard Python pseudo-random number
-                       generator.}
+  \seetext{Wichmann, B. A. \& Hill, I. D., ``Algorithm AS 183:
+           An efficient and portable pseudo-random number generator'',
+           \citetitle{Applied Statistics} 31 (1982) 188-190.}
 \end{seealso}
