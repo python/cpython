@@ -1000,6 +1000,40 @@ def slots():
     vereq(x.b, 2)
     vereq(x.c, 3)
 
+    # Test leaks
+    class Counted(object):
+        counter = 0    # counts the number of instances alive
+        def __init__(self):
+            Counted.counter += 1
+        def __del__(self):
+            Counted.counter -= 1
+    class C(object):
+        __slots__ = ['a', 'b', 'c']
+    x = C()
+    x.a = Counted()
+    x.b = Counted()
+    x.c = Counted()
+    vereq(Counted.counter, 3)
+    del x
+    vereq(Counted.counter, 0)
+    class D(C):
+        pass
+    x = D()
+    x.a = Counted()
+    x.z = Counted()
+    vereq(Counted.counter, 2)
+    del x
+    vereq(Counted.counter, 0)
+    class E(D):
+        __slots__ = ['e']
+    x = E()
+    x.a = Counted()
+    x.z = Counted()
+    x.e = Counted()
+    vereq(Counted.counter, 3)
+    del x
+    vereq(Counted.counter, 0)
+
 def dynamics():
     if verbose: print "Testing class attribute propagation..."
     class D(object):

@@ -4,6 +4,9 @@ XXX Release date: ??-Dec-2001 XXX
 
 Type/class unification and new-style classes
 
+- Fixed a leak: instance variables declared with __slots__ were never
+  deleted!
+
 - The "delete attribute" method of descriptor objects is called
   __delete__, not __del__.  In previous releases, it was mistakenly
   called __del__, which created an unfortunate overloading condition
