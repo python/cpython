@@ -1,5 +1,5 @@
 /* zlibmodule.c -- gzip-compatible data compression */
-/* See http://www.info-zip.org/pub/infozip/zlib/ */
+/* See http://www.gzip.org/zlib/ */
 
 /* Windows users:  read Python's PCbuild\readme.txt */
 
