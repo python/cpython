@@ -26,6 +26,13 @@ descriptor connected to the child's controlling terminal (and also
 to the child's standard input and output.
 \end{funcdesc}
 
+\begin{funcdesc}{openpty}{}
+Open a new pseudo-terminal pair, using \function{os.openpty()} if
+possible, or emulation code for SGI and generic \UNIX{} systems.
+Return a pair of file descriptors \code{(\var{master}, \var{slave})},
+for the master and the slave end, respectively.
+\end{funcdesc}
+
 \begin{funcdesc}{spawn}{argv\optional{, master_read\optional{, stdin_read}}}
 Spawn a process, and connect its controlling terminal with the current 
 process's standard io. This is often used to baffle programs which
