@@ -1,0 +1,72 @@
+\section{\module{unicodedata} ---
+         Unicode Database}
+
+\declaremodule{standard}{unicodedata}
+\modulesynopsis{Access the Unicode Database.}
+\moduleauthor{Marc-Andre Lemburg}{mal@lemburg.com}
+\sectionauthor{Marc-Andre Lemburg}{mal@lemburg.com}
+
+
+\index{Unicode}
+\index{character}
+\indexii{Unicode}{database}
+
+This module provides access to the Unicode Character Database which
+defines character properties for all Unicode characters. The data in
+this database is based on the \file{UnicodeData.txt} file version
+3.0.0 which is publically available from \url{ftp://ftp.unicode.org/}.
+
+The module uses the same names and symbols as defined by the
+UnicodeData File Format 3.0.0 (see
+\url{ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.html}).  It
+defines the following functions:
+
+\begin{funcdesc}{decimal}{unichr\optional{, default}}
+  Returns the decimal value assigned to the Unicode character
+  \var{unichr} as integer. If no such value is defined,
+  \var{default} is returned, or, if not given,
+  \exception{ValueError} is raised.
+\end{funcdesc}
+
+\begin{funcdesc}{digit}{unichr\optional{, default}}
+  Returns the digit value assigned to the Unicode character
+  \var{unichr} as integer. If no such value is defined,
+  \var{default} is returned, or, if not given,
+  \exception{ValueError} is raised.
+\end{funcdesc}
+
+\begin{funcdesc}{numeric}{unichr\optional{, default}}
+  Returns the numeric value assigned to the Unicode character
+  \var{unichr} as float. If no such value is defined, \var{default} is
+  returned, or, if not given, \exception{ValueError} is raised.
+\end{funcdesc}
+
+\begin{funcdesc}{category}{unichr}
+  Returns the general category assigned to the Unicode character
+  \var{unichr} as string.
+\end{funcdesc}
+
+\begin{funcdesc}{bidirectional}{unichr}
+  Returns the bidirectional category assigned to the Unicode character
+  \var{unichr} as string. If no such value is defined, an empty string
+  is returned.
+\end{funcdesc}
+
+\begin{funcdesc}{combining}{unichr}
+  Returns the canonical combining class assigned to the Unicode
+  character \var{unichr} as integer. Returns \code{0} if no combining
+  class is defined.
+\end{funcdesc}
+
+\begin{funcdesc}{mirrored}{unichr}
+  Returns the mirrored property of assigned to the Unicode character
+  \var{unichr} as integer. Returns \code{1} if the character has been
+  identified as a ``mirrored'' character in bidirectional text,
+  \code{0} otherwise.
+\end{funcdesc}
+
+\begin{funcdesc}{decomposition}{unichr}
+  Returns the character decomposition mapping assigned to the Unicode
+  character \var{unichr} as string. An empty string is returned in case
+  no such mapping is defined.
+\end{funcdesc}
