@@ -202,8 +202,6 @@ static type_lock tcl_lock = 0;
 
 #endif
 
-extern int Tk_GetNumMainWindows();
-
 #ifdef macintosh
 
 /*
