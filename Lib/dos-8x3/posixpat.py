@@ -1,6 +1,12 @@
-# Module 'posixpath' -- common operations on POSIX pathnames
+# Module 'posixpath' -- common operations on Posix pathnames.
+# Some of this can actually be useful on non-Posix systems too, e.g.
+# for manipulation of the pathname component of URLs.
+# The "os.path" name is an alias for this module on Posix systems;
+# on other systems (e.g. Mac, Windows), os.path provides the same
+# operations in a manner specific to that platform, and is an alias
+# to another module (e.g. macpath, ntpath).
 
-import posix
+import os
 import stat
 
 
@@ -102,12 +108,12 @@ def commonprefix(m):
 
 
 # Is a path a symbolic link?
-# This will always return false on systems where posix.lstat doesn't exist.
+# This will always return false on systems where os.lstat doesn't exist.
 
 def islink(path):
 	try:
-		st = posix.lstat(path)
-	except (posix.error, AttributeError):
+		st = os.lstat(path)
+	except (os.error, AttributeError):
 		return 0
 	return stat.S_ISLNK(st[stat.ST_MODE])
 
@@ -117,20 +123,20 @@ def islink(path):
 
 def exists(path):
 	try:
-		st = posix.stat(path)
-	except posix.error:
+		st = os.stat(path)
+	except os.error:
 		return 0
 	return 1
 
 
-# Is a path a posix directory?
+# Is a path a directory?
 # This follows symbolic links, so both islink() and isdir() can be true
 # for the same path.
 
 def isdir(path):
 	try:
-		st = posix.stat(path)
-	except posix.error:
+		st = os.stat(path)
+	except os.error:
 		return 0
 	return stat.S_ISDIR(st[stat.ST_MODE])
 
@@ -141,8 +147,8 @@ def isdir(path):
 
 def isfile(path):
 	try:
-		st = posix.stat(path)
-	except posix.error:
+		st = os.stat(path)
+	except os.error:
 		return 0
 	return stat.S_ISREG(st[stat.ST_MODE])
 
@@ -150,18 +156,17 @@ def isfile(path):
 # Are two filenames really pointing to the same file?
 
 def samefile(f1, f2):
-	s1 = posix.stat(f1)
-	s2 = posix.stat(f2)
+	s1 = os.stat(f1)
+	s2 = os.stat(f2)
 	return samestat(s1, s2)
 
 
 # Are two open files really referencing the same file?
 # (Not necessarily the same file descriptor!)
-# XXX Oops, posix.fstat() doesn't exist yet!
 
 def sameopenfile(fp1, fp2):
-	s1 = posix.fstat(fp1)
-	s2 = posix.fstat(fp2)
+	s1 = os.fstat(fp1)
+	s2 = os.fstat(fp2)
 	return samestat(s1, s2)
 
 
@@ -174,13 +179,13 @@ def samestat(s1, s2):
 
 
 # Is a path a mount point?
-# (Does this work for all UNIXes?  Is it even guaranteed to work by POSIX?)
+# (Does this work for all UNIXes?  Is it even guaranteed to work by Posix?)
 
 def ismount(path):
 	try:
-		s1 = posix.stat(path)
-		s2 = posix.stat(join(path, '..'))
-	except posix.error:
+		s1 = os.stat(path)
+		s2 = os.stat(join(path, '..'))
+	except os.error:
 		return 0 # It doesn't exist -- so not a mount point :-)
 	dev1 = s1[stat.ST_DEV]
 	dev2 = s2[stat.ST_DEV]
@@ -203,8 +208,8 @@ def ismount(path):
 
 def walk(top, func, arg):
 	try:
-		names = posix.listdir(top)
-	except posix.error:
+		names = os.listdir(top)
+	except os.error:
 		return
 	func(arg, top, names)
 	exceptions = ('.', '..')
@@ -231,9 +236,9 @@ def expanduser(path):
 	while i < n and path[i] <> '/':
 		i = i+1
 	if i == 1:
-		if not posix.environ.has_key('HOME'):
+		if not os.environ.has_key('HOME'):
 			return path
-		userhome = posix.environ['HOME']
+		userhome = os.environ['HOME']
 	else:
 		import pwd
 		try:
@@ -267,9 +272,9 @@ def expandvars(path):
 		j = i + len(_varprog.group(0))
 		if name[:1] == '{' and name[-1:] == '}':
 			name = name[1:-1]
-		if posix.environ.has_key(name):
+		if os.environ.has_key(name):
 			tail = path[j:]
-			path = path[:i] + posix.environ[name]
+			path = path[:i] + os.environ[name]
 			i = len(path)
 			path = path + tail
 		else:

@@ -174,12 +174,25 @@ class _posixfile_:
 	elif len(args) > 3:
 	    raise TypeError, 'too many arguments'
 
-	flock = struct.pack('hhllhh', l_type, l_whence, l_start, l_len, 0, 0)
+	# Hack by davem@magnet.com to get locking to go on freebsd
+        import sys, os
+        if sys.platform == 'freebsd2':
+	    flock = struct.pack('lxxxxlxxxxlhh', \
+		  l_start, l_len, os.getpid(), l_type, l_whence) 
+	else:
+	    flock = struct.pack('hhllhh', \
+		  l_type, l_whence, l_start, l_len, 0, 0)
+
 	flock = fcntl.fcntl(self._file_.fileno(), cmd, flock)
 
 	if '?' in how:
-	    l_type, l_whence, l_start, l_len, l_sysid, l_pid = \
-		struct.unpack('hhllhh', flock)
+	    if sys.platform == 'freebsd2':
+		l_start, l_len, l_pid, l_type, l_whence = \
+		    struct.unpack('lxxxxlxxxxlhh', flock)
+	    else:
+		l_type, l_whence, l_start, l_len, l_sysid, l_pid = \
+		    struct.unpack('hhllhh', flock)
+
 	    if l_type != FCNTL.F_UNLCK:
 		if l_type == FCNTL.F_RDLCK:
 		    return 'r', l_len, l_start, l_whence, l_pid
