@@ -1,7 +1,5 @@
 # This module exports classes for the various canvas item types
 
-# vi:set tabsize=4:
-
 from Tkinter import Canvas, _isfunctype
 
 class CanvasItem:
@@ -16,19 +14,20 @@ class CanvasItem:
 		self.canvas.delete(self.id)
 	delete = __del__
 	def __getitem__(self, key):
-		v = self.canvas.tk.split(self.canvas.tk.call(self.canvas.pathName, 
-							     'itemconfigure',
-							     str(self.id),
-							     '-' + key))
+		v = self.canvas.tk.split(self.canvas.tk.call(
+			self.canvas._w, 'itemconfigure',
+			str(self.id), '-' + key))
 		return v[4]
 	def __setitem__(self, key, value):
 		self.canvas._itemconfig(self.id, {key: value})
 	def keys(self):
 		if not hasattr(self, '_keys'):
 			self._keys = map(lambda x, tk=self.canvas.tk:
-							        tk.splitlist(x)[0][1:],
-							 self.canvas._splitlist(
-								 self.canvas.cmd('itemconfigure', self.id)))
+					 tk.splitlist(x)[0][1:],
+					 self.canvas._splitlist(
+						 self.canvas.cmd(
+							 'itemconfigure',
+							 self.id)))
 			return self._keys
 	def has_key(self, key):
 		return key in self.keys()
@@ -71,27 +70,28 @@ class CanvasItem:
 class Arc(CanvasItem):
 	def __init__(self, canvas, (x1, y1), (x2, y2), cnf={}):
 		CanvasItem.__init__(self, canvas, 'arc',
-							(str(x1), str(y1), str(x2), str(y2)), cnf)
+				    (str(x1), str(y1), str(x2), str(y2)), cnf)
 
 class Bitmap(CanvasItem):
 	def __init__(self, canvas, (x1, y1), cnf={}):
-		CanvasItem.__init__(self, canvas, 'bitmap', (str(x1), str(y1)), cnf)
+		CanvasItem.__init__(self, canvas, 'bitmap',
+				    (str(x1), str(y1)), cnf)
 
 class Line(CanvasItem):
 	def __init__(self, canvas, pts, cnf={}):
 		pts = reduce(lambda a, b: a+b,
-					 map(lambda pt: (str(pt[0]), str(pt[1])), pts))
+			     map(lambda pt: (str(pt[0]), str(pt[1])), pts))
 		CanvasItem.__init__(self, canvas, 'line', pts, cnf)
 
 class Oval(CanvasItem):
 	def __init__(self, canvas, (x1, y1), (x2, y2), cnf={}):
 		CanvasItem.__init__(self, canvas, 'oval',
-							(str(x1), str(y1), str(x2), str(y2)), cnf)
+				    (str(x1), str(y1), str(x2), str(y2)), cnf)
 
 class Polygon(CanvasItem):
 	def __init__(self, canvas, pts, cnf={}):
 		pts = reduce(lambda a, b: a+b,
-					 map(lambda pt: (str(pt[0]), str(pt[1])), pts))
+			     map(lambda pt: (str(pt[0]), str(pt[1])), pts))
 		CanvasItem.__init__(self, canvas, 'polygon', pts, cnf)
 
 class Curve(Polygon):
@@ -102,14 +102,15 @@ class Curve(Polygon):
 class Rectangle(CanvasItem):
 	def __init__(self, canvas, (x1, y1), (x2, y2), cnf={}):
 		CanvasItem.__init__(self, canvas, 'rectangle',
-							(str(x1), str(y1), str(x2), str(y2)), cnf)
+				    (str(x1), str(y1), str(x2), str(y2)), cnf)
 
 # XXX Can't use name "Text" since that is already taken by the Text widget...
 class String(CanvasItem):
 	def __init__(self, canvas, (x1, y1), cnf={}):
-		CanvasItem.__init__(self, canvas, 'text', (str(x1), str(y1)), cnf)
+		CanvasItem.__init__(self, canvas, 'text',
+				    (str(x1), str(y1)), cnf)
 
 class Window(CanvasItem):
 	def __init__(self, canvas, where, cnf={}):
 		CanvasItem.__init__(self, canvas, 'window',
-							(str(where[0]), str(where[1])), cnf)
+				    (str(where[0]), str(where[1])), cnf)
