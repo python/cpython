@@ -1892,6 +1892,7 @@ filterstring(PyObject *func, PyObject *strobj)
 	PyObject *result;
 	register int i, j;
 	int len = PyString_Size(strobj);
+	int outlen = len;
 
 	if (func == Py_None) {
 		/* No character is ever false -- share input string */
@@ -1921,13 +1922,43 @@ filterstring(PyObject *func, PyObject *strobj)
 		}
 		ok = PyObject_IsTrue(good);
 		Py_DECREF(good);
-		if (ok)
-			PyString_AS_STRING((PyStringObject *)result)[j++] =
-				PyString_AS_STRING((PyStringObject *)item)[0];
+		if (ok) {
+			int reslen;
+			if (!PyString_Check(item)) {
+				PyErr_SetString(PyExc_TypeError, "can't filter str to str:"
+					" __getitem__ returned different type");
+				Py_DECREF(item);
+				goto Fail_1;
+			}
+			reslen = PyString_GET_SIZE(item);
+			if (reslen == 1) {
+				PyString_AS_STRING(result)[j++] =
+					PyString_AS_STRING(item)[0];
+			} else {
+				/* do we need more space? */
+				int need = j + reslen + len-i-1;
+				if (need > outlen) {
+					/* overallocate, to avoid reallocations */
+					if (need<2*outlen)
+						need = 2*outlen;
+					if (_PyString_Resize(&result, need)) {
+						Py_DECREF(item);
+						return NULL;
+					}
+					outlen = need;
+				}
+				memcpy(
+					PyString_AS_STRING(result) + j,
+					PyString_AS_STRING(item),
+					reslen
+				);
+				j += reslen;
+			}
+		}
 		Py_DECREF(item);
 	}
 
-	if (j < len)
+	if (j < outlen)
 		_PyString_Resize(&result, j);
 
 	return result;
@@ -1946,6 +1977,7 @@ filterunicode(PyObject *func, PyObject *strobj)
 	PyObject *result;
 	register int i, j;
 	int len = PyUnicode_GetSize(strobj);
+	int outlen = len;
 
 	if (func == Py_None) {
 		/* No character is ever false -- share input string */
@@ -1975,13 +2007,43 @@ filterunicode(PyObject *func, PyObject *strobj)
 		}
 		ok = PyObject_IsTrue(good);
 		Py_DECREF(good);
-		if (ok)
-			PyUnicode_AS_UNICODE((PyStringObject *)result)[j++] =
-				PyUnicode_AS_UNICODE((PyStringObject *)item)[0];
+		if (ok) {
+			int reslen;
+			if (!PyUnicode_Check(item)) {
+				PyErr_SetString(PyExc_TypeError, "can't filter unicode to unicode:"
+					" __getitem__ returned different type");
+				Py_DECREF(item);
+				goto Fail_1;
+			}
+			reslen = PyUnicode_GET_SIZE(item);
+			if (reslen == 1) {
+				PyUnicode_AS_UNICODE(result)[j++] =
+					PyUnicode_AS_UNICODE(item)[0];
+			} else {
+				/* do we need more space? */
+				int need = j + reslen + len-i-1;
+				if (need > outlen) {
+					/* overallocate, to avoid reallocations */
+					if (need<2*outlen)
+						need = 2*outlen;
+					if (PyUnicode_Resize(&result, need)) {
+						Py_DECREF(item);
+						return NULL;
+					}
+					outlen = need;
+				}
+				memcpy(
+					PyUnicode_AS_UNICODE(result) + j,
+					PyUnicode_AS_UNICODE(item),
+					reslen*sizeof(Py_UNICODE)
+				);
+				j += reslen;
+			}
+		}
 		Py_DECREF(item);
 	}
 
-	if (j < len)
+	if (j < outlen)
 		PyUnicode_Resize(&result, j);
 
 	return result;
