@@ -841,6 +841,22 @@ Received: from siimage.com ([172.25.1.3]) by zima.siliconimage.com with
 
 ''')
 
+    def test_long_lines_with_different_header(self):
+        eq = self.ndiffAssertEqual
+        h = """\
+List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/spamassassin-talk>,
+        <mailto:spamassassin-talk-request@lists.sourceforge.net?subject=unsubscribe>"""
+        msg = Message()
+        msg['List'] = h
+        msg['List'] = Header(h, header_name='List')
+        eq(msg.as_string(), """\
+List: List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/spamassassin-talk>,
+	<mailto:spamassassin-talk-request@lists.sourceforge.net?subject=unsubscribe>
+List: List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/spamassassin-talk>,
+ <mailto:spamassassin-talk-request@lists.sourceforge.net?subject=unsubscribe>
+
+""")
+
 
 
 # Test mangling of "From " lines in the body of a message
