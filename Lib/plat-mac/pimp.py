@@ -36,12 +36,13 @@ _scriptExc_BadInstalled = "pimp._scriptExc_BadInstalled"
 
 NO_EXECUTE=0
 
-PIMP_VERSION="0.4"
+PIMP_VERSION="0.5"
 
 # Flavors:
 # source: setup-based package
 # binary: tar (or other) archive created with setup.py bdist.
-DEFAULT_FLAVORORDER=['source', 'binary']
+# installer: something that can be opened
+DEFAULT_FLAVORORDER=['source', 'binary', 'installer']
 DEFAULT_DOWNLOADDIR='/tmp'
 DEFAULT_BUILDDIR='/tmp'
 DEFAULT_INSTALLDIR=distutils.sysconfig.get_python_lib()
@@ -418,6 +419,10 @@ class PimpDatabase:
                 pkg = PimpPackage_source(self, p)
             elif flavor == 'binary':
                 pkg = PimpPackage_binary(self, p)
+            elif flavor == 'installer':
+                pkg = PimpPackage_installer(self, p)
+            elif flavor == 'hidden':
+                pkg = PimpPackage_installer(self, p)
             else:
                 pkg = PimpPackage(self, dict(p))
             self._packages.append(pkg)
@@ -543,7 +548,7 @@ class PimpPackage:
             rv = rv + '-%s' % self._dict['Version']
         if self._dict.has_key('Flavor'):
             rv = rv + '-%s' % self._dict['Flavor']
-        if not self._dict.get('Download-URL'):
+        if self._dict.get('Flavor') == 'hidden':
             # Pseudo-package, show in parentheses
             rv = '(%s)' % rv
         return rv
@@ -620,11 +625,11 @@ class PimpPackage:
             if status == "yes":
                 return []
             return [(None,
-                "%s: This package cannot be installed automatically (no Download-URL field)" %
+                "Package %s cannot be installed automatically, see the description" %
                     self.fullname())]
         if self.systemwideOnly() and self._db.preferences.isUserInstall():
             return [(None,
-                "%s: This package can only be installed system-wide" %
+                "Package %s can only be installed system-wide" %
                     self.fullname())]
         if not self._dict.get('Prerequisites'):
             return []
@@ -791,7 +796,7 @@ class PimpPackage_binary(PimpPackage):
             return "%s: Binary package cannot have Install-command" % self.fullname()
 
         if self._dict.has_key('Pre-install-command'):
-            if _cmd(output, self._buildDirname, self._dict['Pre-install-command']):
+            if _cmd(output, '/tmp', self._dict['Pre-install-command']):
                 return "pre-install %s: running \"%s\" failed" % \
                     (self.fullname(), self._dict['Pre-install-command'])
 
@@ -824,7 +829,7 @@ class PimpPackage_binary(PimpPackage):
         self.afterInstall()
 
         if self._dict.has_key('Post-install-command'):
-            if _cmd(output, self._buildDirname, self._dict['Post-install-command']):
+            if _cmd(output, '/tmp', self._dict['Post-install-command']):
                 return "%s: post-install: running \"%s\" failed" % \
                     (self.fullname(), self._dict['Post-install-command'])
 
@@ -891,6 +896,37 @@ class PimpPackage_source(PimpPackage):
                     (self.fullname(), self._dict['Post-install-command'])
         return None
 
+class PimpPackage_installer(PimpPackage):
+
+    def unpackPackageOnly(self, output=None):
+        """We don't unpack dmg packages until installing"""
+        pass
+
+    def installPackageOnly(self, output=None):
+        """Install a single source package.
+        
+        If output is given it should be a file-like object and it
+        will receive a log of what happened."""
+                    
+        if self._dict.has_key('Post-install-command'):
+            return "%s: Installer package cannot have Post-install-command" % self.fullname()
+
+        if self._dict.has_key('Pre-install-command'):
+            if _cmd(output, '/tmp', self._dict['Pre-install-command']):
+                return "pre-install %s: running \"%s\" failed" % \
+                    (self.fullname(), self._dict['Pre-install-command'])
+                    
+        self.beforeInstall()
+
+        installcmd = self._dict.get('Install-command')
+        if installcmd:
+            if '%' in installcmd:
+                installcmd = installcmd % self.archiveFilename
+        else:
+                installcmd = 'open \"%s\"' % self.archiveFilename
+        if _cmd(output, "/tmp", installcmd):
+            return '%s: install command failed (use verbose for details)' % self.fullname()
+        return '%s: downloaded and opened. Install manually and restart Package Manager' % self.archiveFilename
 
 class PimpInstaller:
     """Installer engine: computes dependencies and installs
