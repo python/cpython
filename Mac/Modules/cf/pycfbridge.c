@@ -53,7 +53,7 @@ PyCF_CF2Python_sequence(CFArrayRef src) {
 		if (item_cf == NULL ) goto err;
 		item_py = PyCF_CF2Python(item_cf);
 		if (item_py == NULL ) goto err;
-		if (!PyList_SetItem(rv, i, item_py)) goto err;
+		if (PyList_SetItem(rv, i, item_py) < 0) goto err;
 		item_py = NULL;
 	}
 	return rv;
@@ -86,7 +86,7 @@ PyCF_CF2Python_mapping(CFTypeRef src) {
 		if (key_py == NULL ) goto err;
 		value_py = PyCF_CF2Python(value_py);
 		if (value_py == NULL ) goto err;
-		if (!PyDict_SetItem(rv, key_py, value_py)) goto err;
+		if (PyDict_SetItem(rv, key_py, value_py) < 0) goto err;
 		key_py = NULL;
 		value_py = NULL;
 	}
@@ -135,6 +135,8 @@ PyCF_CF2Python_string(CFStringRef src) {
 int
 PyCF_Python2CF(PyObject *src, CFTypeRef *dst) {
 
+	if (PyString_Check(src) || PyUnicode_Check(src))
+		return PyCF_Python2CF_simple(src, dst);
 	if (PySequence_Check(src))
 		return PyCF_Python2CF_sequence(src, (CFArrayRef *)dst);
 	if (PyMapping_Check(src))
