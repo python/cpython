@@ -8,7 +8,6 @@ __version__ = '$Revision$'
 
 
 import getopt
-import string
 import sys
 
 
@@ -71,7 +70,7 @@ class Options:
         self.args = self.args + args
         for opt, val in opts:
             if opt in ("-a", "--address"):
-                val = string.strip(val)
+                val = val.strip()
                 if val:
                     val = "<address>\n%s\n</address>\n" % val
                     self.variables["address"] = val
