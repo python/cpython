@@ -412,6 +412,9 @@ Build
 C API
 -----
 
+- Added a new macro, PySequence_Fast_ITEMS, which retrieves a fast sequence's
+  underlying array of PyObject pointers.  Useful for high speed looping.
+
 - Created a new method flag, METH_COEXIST, which causes a method to be loaded
   even if already defined by a slot wrapper.  This allows a __contains__
   method, for example, to co-exist with a defined sq_contains slot.  This
