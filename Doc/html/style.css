@@ -50,6 +50,14 @@ h1                      { font-size: 180%; }
 h2                      { font-size: 150%; }
 h3, h4                  { font-size: 120%; }
 
+/* These are section titles used in navigation links, so make sure we
+ * match the section header font here, even it not the weight.
+ */
+.sectref                { font-family: avantgarde, sans-serif; }
+/* And the label before the titles in navigation: */
+.navlabel               { font-size: 85%; }
+
+
 /* LaTeX2HTML insists on inserting <br> elements into headers which
  * are marked with \label.  This little bit of CSS magic ensures that
  * these elements don't cause spurious whitespace to be added.
@@ -62,6 +70,8 @@ code, tt                { font-family: "lucida typewriter", lucidatypewriter,
 var                     { font-family: times, serif;
                           font-style: italic;
                           font-weight: normal; }
+
+.Unix                   { font-variant: small-caps; }
 
 .typelabel              { font-family: lucida, sans-serif; }
 
@@ -89,7 +99,9 @@ div.note                { background-color: #fffaf0;
 div.note .label         { margin-right: 0.5em;
                           font-family: sans-serif; }
 
-.release-info           { font-style: italic; }
+address                 { font-size: 80%; }
+.release-info           { font-style: italic;
+                          font-size: 80%; }
 
 .titlegraphic           { vertical-align: top; }
 

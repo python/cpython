@@ -106,7 +106,7 @@ sub do_cmd_sub{
 # words typeset in a special way (not in HTML though)
 
 sub do_cmd_ABC{ 'ABC' . $_[0]; }
-sub do_cmd_UNIX{ '<font style="font-variant: small-caps;">Unix</font>'
+sub do_cmd_UNIX{ '<span class="Unix">Unix</span>'
                  . $_[0]; }
 sub do_cmd_ASCII{ 'ASCII' . $_[0]; }
 sub do_cmd_POSIX{ 'POSIX' . $_[0]; }
@@ -239,7 +239,7 @@ sub do_cmd_var{
 sub do_cmd_dfn{
     return use_wrappers($_[0], '<i class="dfn">', '</i>'); }
 sub do_cmd_emph{
-    return use_wrappers($_[0], '<i>', '</i>'); }
+    return use_wrappers($_[0], '<em>', '</em>'); }
 sub do_cmd_file{
     return use_wrappers($_[0], '<span class="file">', '</span>'); }
 sub do_cmd_filenq{
@@ -249,7 +249,7 @@ sub do_cmd_samp{
 sub do_cmd_kbd{
     return use_wrappers($_[0], '<kbd>', '</kbd>'); }
 sub do_cmd_strong{
-    return use_wrappers($_[0], '<b>', '</b>'); }
+    return use_wrappers($_[0], '<strong>', '</strong>'); }
 sub do_cmd_textbf{
     return use_wrappers($_[0], '<b>', '</b>'); }
 sub do_cmd_textit{
