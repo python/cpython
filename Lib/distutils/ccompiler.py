@@ -589,7 +589,7 @@ class CCompiler:
         """Detect the language of a given file, or list of files. Uses
         language_map, and language_order to do the job.
         """
-	if type(sources) is not ListType:
+        if type(sources) is not ListType:
             sources = [sources]
         lang = None
         index = len(self.language_order)
