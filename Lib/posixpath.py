@@ -431,7 +431,7 @@ def _resolve_link(path):
         paths_seen.append(path)
         # Resolve where the link points to
         resolved = os.readlink(path)
-        if not abspath(resolved):
+        if not isabs(resolved):
             dir = dirname(path)
             path = normpath(join(dir, resolved))
         else:
