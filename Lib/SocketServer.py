@@ -449,9 +449,17 @@ class ThreadingMixIn:
     """Mix-in class to handle each request in a new thread."""
 
     def process_request_thread(self, request, client_address):
-        """Same as in BaseServer but as a thread."""
-        self.finish_request(request, client_address)
-        self.close_request(request)
+        """Same as in BaseServer but as a thread.
+
+        In addition, exception handling is done here.
+
+        """
+        try:
+            self.finish_request(request, client_address)
+            self.close_request(request)
+        except:
+            self.handle_error(request, client_address)
+            self.close_request(request)
 
     def process_request(self, request, client_address):
         """Start a new thread to process the request."""
