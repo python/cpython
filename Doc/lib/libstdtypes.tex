@@ -563,7 +563,7 @@ Decodes the string using the codec registered for \var{encoding}.
 may be given to set a different error handling scheme.  The default is
 \code{'strict'}, meaning that encoding errors raise
 \exception{ValueError}.  Other possible values are \code{'ignore'} and
-\code{replace'}.
+\code{'replace'}.
 \versionadded{2.2}
 \end{methoddesc}
 
@@ -664,10 +664,10 @@ the string this method is called on.
 \versionchanged[Support for the \var{chars} argument]{2.2.2}
 \end{methoddesc}
 
-\begin{methoddesc}[string]{replace}{old, new\optional{, maxsplit}}
+\begin{methoddesc}[string]{replace}{old, new\optional{, count}}
 Return a copy of the string with all occurrences of substring
 \var{old} replaced by \var{new}.  If the optional argument
-\var{maxsplit} is given, only the first \var{maxsplit} occurrences are
+\var{count} is given, only the first \var{count} occurrences are
 replaced.
 \end{methoddesc}
 

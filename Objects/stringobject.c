@@ -2308,11 +2308,11 @@ mymemreplace(const char *str, int len,		/* input string */
 
 
 PyDoc_STRVAR(replace__doc__,
-"S.replace (old, new[, maxsplit]) -> string\n\
+"S.replace (old, new[, count]) -> string\n\
 \n\
 Return a copy of string S with all occurrences of substring\n\
-old replaced by new.  If the optional argument maxsplit is\n\
-given, only the first maxsplit occurrences are replaced.");
+old replaced by new.  If the optional argument count is\n\
+given, only the first count occurrences are replaced.");
 
 static PyObject *
 string_replace(PyStringObject *self, PyObject *args)
