@@ -103,6 +103,12 @@ Build
 
 C API
 
+- The documentation for the tp_compare slot is updated to require that
+  the return value must be -1, 0, 1; an arbitrary number <0 or >0 is
+  not correct.  This is not yet enforced but will be enforced in
+  Python 2.3; even later, we may use -2 to indicate errors and +2 for
+  "NotImplemented".  Right now, -1 should be used for an error return.
+
 - PyLong_AsLongLong() now accepts int (as well as long) arguments.
   Consequently, PyArg_ParseTuple's 'L' code also accepts int (as well
   as long) arguments.
