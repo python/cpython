@@ -54,8 +54,8 @@ class clean (Command):
         if os.path.exists(self.build_temp):
             remove_tree(self.build_temp, dry_run=self.dry_run)
         else:
-            log.warn("'%s' does not exist -- can't clean it",
-                     self.build_temp)
+            log.debug("'%s' does not exist -- can't clean it",
+                      self.build_temp)
 
         if self.all:
             # remove build directories
