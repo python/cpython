@@ -57,6 +57,9 @@ examine the results of a profile operation.
 \section{How Is This Profiler Different From The Old Profiler?}
 \nodename{Profiler Changes}
 
+(This section is of historical importance only; the old profiler
+discussed here was last seen in Python 1.1.)
+
 The big changes from old profiling module are that you get more
 information, and you pay less CPU time.  It's not a trade-off, it's a
 trade-up.
@@ -441,9 +444,10 @@ the significant entries.  Initially, the list is taken to be the
 complete set of profiled functions.  Each restriction is either an
 integer (to select a count of lines), or a decimal fraction between
 0.0 and 1.0 inclusive (to select a percentage of lines), or a regular
-expression (to pattern match the standard name that is printed).  If
-several restrictions are provided, then they are applied sequentially.
-For example:
+expression (to pattern match the standard name that is printed; as of
+Python 1.5b1, this uses the Perl-style regular expression syntax
+defined by the \code{re} module).  If several restrictions are
+provided, then they are applied sequentially.  For example:
 
 \bcode\begin{verbatim}
 print_stats(.1, "foo:")
