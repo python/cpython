@@ -867,16 +867,30 @@ that functions created with lambda forms cannot contain statements.
 \indexii{lambda}{form}
 \indexii{anonmymous}{function}
 
-\strong{Programmer's note:} a lambda form defined inside a function
-has no access to names defined in the function's namespace.  This is
-because Python has only two scopes: local and global.  A common
-work-around is to use default argument values to pass selected
-variables into the lambda's namespace, e.g.:
+\strong{Programmer's note:} Prior to Python 2.1, a lambda form defined
+inside a function has no access to names defined in the function's
+namespace.  This is because Python had only two scopes: local and
+global.  A common work-around was to use default argument values to
+pass selected variables into the lambda's namespace, e.g.:
 
 \begin{verbatim}
 def make_incrementor(increment):
     return lambda x, n=increment: x+n
 \end{verbatim}
+
+Python 2.1 introduced nested scopes as an optional feature, and this
+work-around has not been necessary when the feature is enabled.  The
+use of nested scopes is enabled by the statement \samp{from __future__
+import nested_scopes}; future versions of Python will enable nested
+scopes by default.  This version works starting with Python 2.1:
+
+\begin{verbatim}
+from __future__ import nested_scopes
+
+def make_incrementor(increment):
+    return lambda x: x+increment
+\end{verbatim}
+
 
 \section{Expression lists\label{exprlists}}
 \indexii{expression}{list}
