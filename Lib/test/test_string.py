@@ -4,9 +4,13 @@ import string, sys
 def test(name, input, output, *args):
     if verbose:
         print 'string.%s%s =? %s... ' % (name, (input,) + args, output),
-    f = getattr(string, name)
     try:
-        value = apply(f, (input,) + args)
+        try:
+            f = getattr(string, name)
+            value = apply(f, (input,) + args)
+        except AttributeError:
+            f = getattr(input, name)
+            value = apply(f, args)
     except:
          value = sys.exc_type
     if value != output:
@@ -104,6 +108,14 @@ test('endswith', 'hello', 1, 'lo')
 test('endswith', 'hello', 0, 'he')
 test('endswith', 'hello', 1, '')
 test('endswith', 'hello', 0, 'hello world')
+test('endswith', 'helloworld', 0, 'worl')
+test('endswith', 'helloworld', 1, 'worl', 3, 9)
+test('endswith', 'helloworld', 1, 'world', 3, 12)
+test('endswith', 'helloworld', 1, 'lowo', 1, 7)
+test('endswith', 'helloworld', 1, 'lowo', 2, 7)
+test('endswith', 'helloworld', 1, 'lowo', 3, 7)
+test('endswith', 'helloworld', 0, 'lowo', 4, 7)
+test('endswith', 'helloworld', 0, 'lowo', 3, 8)
 
 string.whitespace
 string.lowercase
