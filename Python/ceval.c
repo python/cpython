@@ -192,7 +192,7 @@ static struct PyMethodDef gen_methods[] = {
 	{NULL,          NULL}   /* Sentinel */
 };
 
-static struct memberlist gen_memberlist[] = {
+static PyMemberDef gen_memberlist[] = {
 	{"gi_frame",	T_OBJECT, offsetof(genobject, gi_frame),	RO},
 	{"gi_running",	T_INT,    offsetof(genobject, gi_running),	RO},
 	{NULL}	/* Sentinel */

@@ -106,7 +106,7 @@ ste_dealloc(PySymtableEntryObject *ste)
 
 #define OFF(x) offsetof(PySymtableEntryObject, x)
 
-static struct memberlist ste_memberlist[] = {
+static PyMemberDef ste_memberlist[] = {
 	{"id",       T_OBJECT, OFF(ste_id), READONLY},
 	{"name",     T_OBJECT, OFF(ste_name), READONLY},
 	{"symbols",  T_OBJECT, OFF(ste_symbols), READONLY},
@@ -119,12 +119,6 @@ static struct memberlist ste_memberlist[] = {
 	{NULL}
 };
 
-static PyObject *
-ste_getattr(PySymtableEntryObject *ste, char *name)
-{
-	return PyMember_Get((char *)ste, ste_memberlist, name);
-}
-
 PyTypeObject PySymtableEntry_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -133,7 +127,7 @@ PyTypeObject PySymtableEntry_Type = {
 	0,
 	(destructor)ste_dealloc,                /* tp_dealloc */
 	0,                                      /* tp_print */
-	(getattrfunc)ste_getattr,               /* tp_getattr */
+	0,			               /* tp_getattr */
 	0,					/* tp_setattr */
 	0,			                /* tp_compare */
 	(reprfunc)ste_repr,			/* tp_repr */
@@ -143,9 +137,26 @@ PyTypeObject PySymtableEntry_Type = {
 	0,					/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
-	0,					/* tp_getattro */
+	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT,	                /* tp_flags */
  	0,					/* tp_doc */
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	ste_memberlist,				/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	0,					/* tp_init */
+	0,					/* tp_alloc */
+	0,					/* tp_new */
 };

@@ -1383,10 +1383,13 @@ static PyMethodDef file_methods[] = {
 
 #define OFF(x) offsetof(PyFileObject, x)
 
-static struct memberlist file_memberlist[] = {
-	{"softspace",	T_INT,		OFF(f_softspace)},
-	{"mode",	T_OBJECT,	OFF(f_mode),	RO},
-	{"name",	T_OBJECT,	OFF(f_name),	RO},
+static PyMemberDef file_memberlist[] = {
+	{"softspace",	T_INT,		OFF(f_softspace), 0,
+	 "flag indicating that a space needs to be printed; used by print"},
+	{"mode",	T_OBJECT,	OFF(f_mode),	RO,
+	 "file mode ('r', 'w', 'a', possibly with 'b' or '+' added)"},
+	{"name",	T_OBJECT,	OFF(f_name),	RO,
+	 "file name"},
 	/* getattr(f, "closed") is implemented without this table */
 	{NULL}	/* Sentinel */
 };

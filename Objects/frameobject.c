@@ -10,7 +10,7 @@
 
 #define OFF(x) offsetof(PyFrameObject, x)
 
-static struct memberlist frame_memberlist[] = {
+static PyMemberDef frame_memberlist[] = {
 	{"f_back",	T_OBJECT,	OFF(f_back),	RO},
 	{"f_code",	T_OBJECT,	OFF(f_code),	RO},
 	{"f_builtins",	T_OBJECT,	OFF(f_builtins),RO},

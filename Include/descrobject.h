@@ -21,7 +21,7 @@ struct wrapperbase {
 
 extern DL_IMPORT(PyObject *) PyDescr_NewMethod(PyTypeObject *, PyMethodDef *);
 extern DL_IMPORT(PyObject *) PyDescr_NewMember(PyTypeObject *,
-					       struct memberlist *);
+					       struct PyMemberDef *);
 extern DL_IMPORT(PyObject *) PyDescr_NewGetSet(PyTypeObject *,
 					       struct getsetlist *);
 extern DL_IMPORT(PyObject *) PyDescr_NewWrapper(PyTypeObject *,

@@ -129,7 +129,7 @@ slice_repr(PySliceObject *r)
 	return s;
 }
 
-static struct memberlist slice_members[] = {
+static PyMemberDef slice_members[] = {
 	{"start", T_OBJECT, offsetof(PySliceObject, start), READONLY},
 	{"stop", T_OBJECT, offsetof(PySliceObject, stop), READONLY},
 	{"step", T_OBJECT, offsetof(PySliceObject, step), READONLY},

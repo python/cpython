@@ -129,7 +129,7 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
 
 #define RR ()
 
-static struct memberlist func_memberlist[] = {
+static PyMemberDef func_memberlist[] = {
         {"func_closure",  T_OBJECT,     OFF(func_closure),
 	 RESTRICTED|READONLY},
         {"func_doc",      T_OBJECT,     OFF(func_doc), WRITE_RESTRICTED},
