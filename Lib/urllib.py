@@ -91,6 +91,7 @@ class URLopener:
 		self.proxies = proxies
 		server_version = "Python-urllib/%s" % __version__
 		self.addheaders = [('User-agent', server_version)]
+		self.__tempfiles = []
 		self.tempcache = None
 		# Undocumented feature: if you assign {} to tempcache,
 		# it is used to cache files retrieved with
