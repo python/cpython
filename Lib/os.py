@@ -164,7 +164,7 @@ elif 'riscos' in _names:
 
     import riscos
     __all__.extend(_get_exports_list(riscos))
-    del ce
+    del riscos
 
 else:
     raise ImportError, 'no os specific module found'
