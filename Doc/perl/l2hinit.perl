@@ -85,6 +85,12 @@ sub custom_driver_hook{
 }
 
 
+$iconsizes{'up'} = 'width="75" height="25"';
+$iconsizes{'next'} = 'width="75" height="25"';
+$iconsizes{'previous'} = 'width="75" height="25"';
+$iconsizes{'contents'} = 'width="75" height="25"';
+$iconsizes{'index'} = 'width="75" height="25"';
+
 $CUSTOM_BUTTONS = '';
 
 sub make_nav_panel{
@@ -355,7 +361,7 @@ sub add_bbl_and_idx_dummy_commands {
 	# Add a button to the navigation areas:
 	$CUSTOM_BUTTONS .= ("<a\n href=\"modindex.html\"><img"
 			    . " src=\"$ICONSERVER$dd"
-			    . "modules_motif.gif\" border=0"
+			    . "modules_motif.gif\" width=74 height=25 border=0"
 			    . " alt=\"[Modules]\"></a>");
     }
     else {
