@@ -346,6 +346,48 @@ time_strftime(PyObject *self, PyObject *args)
 	} else if (!gettmarg(tup, &buf))
 		return NULL;
 
+        /* Checks added to make sure strftime() does not crash Python by
+            indexing blindly into some array for a textual representation
+            by some bad index (fixes bug #897625).
+        
+            No check for year since handled in gettmarg().
+        */
+        if (buf.tm_mon < 0 || buf.tm_mon > 11) {
+            PyErr_SetString(PyExc_ValueError, "month out of range");
+                        return NULL;
+        }
+        if (buf.tm_mday < 1 || buf.tm_mday > 31) {
+            PyErr_SetString(PyExc_ValueError, "day of month out of range");
+                        return NULL;
+        }
+        if (buf.tm_hour < 0 || buf.tm_hour > 23) {
+            PyErr_SetString(PyExc_ValueError, "hour out of range");
+            return NULL;
+        }
+        if (buf.tm_min < 0 || buf.tm_min > 59) {
+            PyErr_SetString(PyExc_ValueError, "minute out of range");
+            return NULL;
+        }
+        if (buf.tm_sec < 0 || buf.tm_sec > 61) {
+            PyErr_SetString(PyExc_ValueError, "seconds out of range");
+            return NULL;
+        }
+        /* tm_wday does not need checking of its upper-bound since taking
+        ``% 7`` in gettmarg() automatically restricts the range. */
+        if (buf.tm_wday < 0) {
+            PyErr_SetString(PyExc_ValueError, "day of week out of range");
+            return NULL;
+        }
+        if (buf.tm_yday < 0 || buf.tm_yday > 365) {
+            PyErr_SetString(PyExc_ValueError, "day of year out of range");
+            return NULL;
+        }
+        if (buf.tm_isdst < -1 || buf.tm_isdst > 1) {
+            PyErr_SetString(PyExc_ValueError,
+                            "daylight savings flag out of range");
+            return NULL;
+        }
+
 	fmtlen = strlen(fmt);
 
 	/* I hate these functions that presume you know how big the output

@@ -211,8 +211,11 @@ Convert a tuple or \class{struct_time} representing a time as returned
 by \function{gmtime()} or \function{localtime()} to a string as
 specified by the \var{format} argument.  If \var{t} is not
 provided, the current time as returned by \function{localtime()} is
-used.  \var{format} must be a string.
+used.  \var{format} must be a string.  \exception{ValueError} is raised
+if any field in \var{t} is outside of the allowed range.
 \versionchanged[Allowed \var{t} to be omitted]{2.1}
+\versionchanged[\exception{ValueError} raised if a field in \var{t} is
+out of range.]{2.4}
 
 The following directives can be embedded in the \var{format} string.
 They are shown without the optional field width and precision
