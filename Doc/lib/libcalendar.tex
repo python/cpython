@@ -15,10 +15,12 @@ convention). Use \function{setfirstweekday()} to set the first day of the
 week to Sunday (6) or to any other weekday.  Parameters that specify
 dates are given as integers.
 
-Most of these functions rely on the platform provided \function{mktime()}.
-Therefore, valid argument values may vary from system to system.
-On Unix, valid years are typically between \code{1970} and \code{2037},
-but may be work between \code{1902} and \code{2037}.
+Most of these functions rely on the \module{datetime} module which
+uses an idealized calendar, the current Gregorian calendar indefinitely
+extended in both directions.  This matches the definition of the
+"proleptic Gregorian" calendar in Dershowitz and Reingold's book
+"Calendrical Calculations", where it's the base calendar for all
+computations.
 
 \begin{funcdesc}{setfirstweekday}{weekday}
 Sets the weekday (\code{0} is Monday, \code{6} is Sunday) to start

@@ -443,6 +443,10 @@ Extension modules
 Library
 -------
 
+- calendar.py now depends on the new datetime module rather than
+  the time module.  As a result, the range of allowable dates
+  has been increased.
+
 - pdb has a new 'j(ump)' command to select the next line to be
   executed.
 
