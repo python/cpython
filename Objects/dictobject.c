@@ -251,8 +251,8 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	register unsigned int mask = mp->ma_size-1;
 	dictentry *ep0 = mp->ma_table;
 	register dictentry *ep;
-	register int restore_error = 0;
-	register int checked_error = 0;
+	register int restore_error;
+	register int checked_error;
 	register int cmp;
 	PyObject *err_type, *err_value, *err_tb;
 
@@ -260,6 +260,8 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	ep = &ep0[i];
 	if (ep->me_key == NULL || ep->me_key == key)
 		return ep;
+
+	restore_error = checked_error = 0;
 	if (ep->me_key == dummy)
 		freeslot = ep;
 	else {
@@ -271,13 +273,9 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 				PyErr_Fetch(&err_type, &err_value, &err_tb);
 			}
 			cmp = PyObject_RichCompareBool(ep->me_key, key, Py_EQ);
-			if (cmp > 0) {
-				if (restore_error)
-					PyErr_Restore(err_type, err_value,
-						      err_tb);
-				return ep;
-			}
-			else if (cmp < 0)
+			if (cmp > 0)
+				goto Done;
+			if (cmp < 0)
 				PyErr_Clear();
 		}
 		freeslot = NULL;
@@ -289,16 +287,13 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 		i = (i << 2) + i + perturb + 1;
 		ep = &ep0[i & mask];
 		if (ep->me_key == NULL) {
-			if (restore_error)
-				PyErr_Restore(err_type, err_value, err_tb);
-			return freeslot == NULL ? ep : freeslot;
+			if (freeslot != NULL)
+				ep = freeslot;
+			break;
 		}
-		if (ep->me_key == key) {
-			if (restore_error)
-				PyErr_Restore(err_type, err_value, err_tb);
-			return ep;
-		}
-		else if (ep->me_hash == hash && ep->me_key != dummy) {
+		if (ep->me_key == key)
+			break;
+		if (ep->me_hash == hash && ep->me_key != dummy) {
 			if (!checked_error) {
 				checked_error = 1;
 				if (PyErr_Occurred()) {
@@ -308,18 +303,19 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 				}
 			}
 			cmp = PyObject_RichCompareBool(ep->me_key, key, Py_EQ);
-			if (cmp > 0) {
-				if (restore_error)
-					PyErr_Restore(err_type, err_value,
-						      err_tb);
-				return ep;
-			}
-			else if (cmp < 0)
+			if (cmp > 0)
+				break;
+			if (cmp < 0)
 				PyErr_Clear();
 		}
 		else if (ep->me_key == dummy && freeslot == NULL)
 			freeslot = ep;
 	}
+
+Done:
+	if (restore_error)
+		PyErr_Restore(err_type, err_value, err_tb);
+	return ep;
 }
 
 /*
