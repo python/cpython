@@ -1,9 +1,7 @@
 # Generate the Python "info" documentation.
 
-PAPER=letter
 TOPDIR=..
 TOOLSDIR=$(TOPDIR)/tools
-PAPERDIR=$(TOPDIR)/paper-$(PAPER)
 HTMLDIR=$(TOPDIR)/html
 
 MKINFO=$(TOOLSDIR)/mkinfo
@@ -11,7 +9,8 @@ SCRIPTS=$(TOOLSDIR)/html2texi.pl $(TOOLSDIR)/checkargs.pm $(TOOLSDIR)/mkinfo \
 	$(TOOLSDIR)/fixinfo.el
 
 all:	python-api.info python-ext.info python-lib.info \
-	python-ref.info python-tut.info
+	python-ref.info python-tut.info \
+	python-dist.info python-inst.info
 
 
 python-api.info:	$(HTMLDIR)/api/api.html $(SCRIPTS)
@@ -33,6 +32,11 @@ python-ref.info:	$(HTMLDIR)/ref/ref.html $(SCRIPTS)
 python-tut.info:	$(HTMLDIR)/tut/tut.html $(SCRIPTS)
 	$(MKINFO) $<
 
+python-dist.info:	$(HTMLDIR)/dist/dist.html $(SCRIPTS)
+	$(MKINFO) $<
+
+python-inst.info:	$(HTMLDIR)/inst/inst.html $(SCRIPTS)
+	$(MKINFO) $<
 
 clean:
 	rm -f *.texi~ *.texi
@@ -41,42 +45,29 @@ clobber: clean
 	rm -f *.texi python-*.info python-*.info-[0-9]*
 
 
-# The HTML files are dependent on the .aux files, which are dependent on the
-# LaTeX source documents.  This makes sure we can build info files from a
-# "clean" tree:
+# This makes sure we can build info files from a "clean" tree,
+# in case we haven't already built the HTML:
 
-$(HTMLDIR)/api/api.html:  $(PAPERDIR)/api.aux $(BUILDINDEX)
-	(cd $(TOPDIR); $(MAKE) htmlapi)
+$(HTMLDIR)/api/api.html:
+	(cd $(HTMLDIR); $(MAKE) api)
 
-$(HTMLDIR)/ext/ext.html:  $(PAPERDIR)/ext.aux
-	(cd $(TOPDIR); $(MAKE) htmlext)
+$(HTMLDIR)/ext/ext.html:
+	(cd $(HTMLDIR); $(MAKE) ext)
 
-$(HTMLDIR)/lib/lib.html:  $(PAPERDIR)/lib.aux $(BUILDINDEX)
-	(cd $(TOPDIR); $(MAKE) htmllib)
+$(HTMLDIR)/lib/lib.html:
+	(cd $(HTMLDIR); $(MAKE) lib)
 
-$(HTMLDIR)/mac/mac.html:  $(MACFILES) $(BUILDINDEX)
-	(cd $(TOPDIR); $(MAKE) htmlmac)
+$(HTMLDIR)/mac/mac.html:
+	(cd $(HTMLDIR); $(MAKE) mac)
 
-$(HTMLDIR)/ref/ref.html:  $(PAPERDIR)/ref.aux $(BUILDINDEX)
-	(cd $(TOPDIR); $(MAKE) htmlref)
+$(HTMLDIR)/ref/ref.html:
+	(cd $(HTMLDIR); $(MAKE) ref)
 
-$(HTMLDIR)/tut/tut.html:  $(PAPERDIR)/tut.aux
-	(cd $(TOPDIR); $(MAKE) htmltut)
+$(HTMLDIR)/tut/tut.html:
+	(cd $(HTMLDIR); $(MAKE) tut)
 
+$(HTMLDIR)/dist/dist.html:
+	(cd $(HTMLDIR); $(MAKE) dist)
 
-include ../Makefile.deps
-
-$(PAPERDIR)/api.aux: $(APIFILES)
-	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) api.dvi)
-
-$(PAPERDIR)/ext.aux: $(EXTFILES)
-	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) ext.dvi)
-
-$(PAPERDIR)/lib.aux: $(LIBFILES)
-	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) lib.dvi)
-
-$(PAPERDIR)/ref.aux: $(REFFILES)
-	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) ref.dvi)
-
-$(PAPERDIR)/tut.aux: $(TUTFILES)
-	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) tut.dvi)
+$(HTMLDIR)/inst/inst.html:
+	(cd $(HTMLDIR); $(MAKE) inst)
