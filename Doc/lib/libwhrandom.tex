@@ -14,7 +14,8 @@ no longer used.  Please do not use this module directly; use
 This module implements a Wichmann-Hill pseudo-random number generator
 class that is also named \class{whrandom}.  Instances of the
 \class{whrandom} class conform to the Random Number Generator
-interface described in section \ref{rng-objects}.  They also offer the 
+interface described in the docs for the \refmodule{random} module.
+They also offer the 
 following method, specific to the Wichmann-Hill algorithm:
 
 \begin{methoddesc}[whrandom]{seed}{\optional{x, y, z}}
@@ -28,6 +29,8 @@ following method, specific to the Wichmann-Hill algorithm:
   to be equal, with the corresponding result on the pseudo-random
   series produced by the generator.
 \end{methoddesc}
+
+Other supported methods include:
 
 \begin{funcdesc}{choice}{seq}
 Chooses a random element from the non-empty sequence \var{seq} and returns it.
