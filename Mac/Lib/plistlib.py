@@ -34,19 +34,19 @@ The <date> plist data has (limited) support through the Date class.
 Generate Plist example:
 
 	pl = Plist(
-			Foo="Doodah",
-			aList=["A", "B", 12, 32.1, [1, 2, 3]],
-			aFloat = 0.1,
-			anInt = 728,
-			aDict=Dict(
-				aString="<hello & hi there!>",
-				SomeUnicodeValue=u'M\xe4ssig, Ma\xdf',
-				someTrueValue=True,
-				someFalseValue=False,
-			),
-			someData = Data("hello there!"),
-			someMoreData = Data("hello there! " * 10),
-			aDate = Date(time.mktime(time.gmtime())),
+		aString="Doodah",
+		aList=["A", "B", 12, 32.1, [1, 2, 3]],
+		aFloat = 0.1,
+		anInt = 728,
+		aDict=Dict(
+			anotherString="<hello & hi there!>",
+			aUnicodeValue=u'M\xe4ssig, Ma\xdf',
+			aTrueValue=True,
+			aFalseValue=False,
+		),
+		someData = Data("<binary gunk>"),
+		someMoreData = Data("<lots of binary gunk>" * 10),
+		aDate = Date(time.mktime(time.gmtime())),
 	)
 	# unicode keys are possible, but a little awkward to use:
 	pl[u'\xc5benraa'] = "That was a unicode key."
@@ -78,7 +78,6 @@ class DumbXMLWriter:
 
 	def beginElement(self, element):
 		self.stack.append(element)
-		element = _encode(element)
 		self.writeln("<%s>" % element)
 		self.indentLevel += 1
 
@@ -90,7 +89,6 @@ class DumbXMLWriter:
 
 	def simpleElement(self, element, value=None):
 		if value:
-			element = _encode(element)
 			value = _encode(value)
 			self.writeln("<%s>%s</%s>" % (element, value, element))
 		else:
@@ -172,7 +170,7 @@ class PlistWriter(DumbXMLWriter):
 
 class Dict:
 
-	"""Dict wrapper for convenient acces of values through attributes."""
+	"""Dict wrapper for convenient access of values through attributes."""
 
 	def __init__(self, **args):
 		self.__dict__.update(args)
@@ -188,6 +186,9 @@ class Dict:
 	def __str__(self):
 		return "%s(**%s)" % (self.__class__.__name__, self.__dict__)
 	__repr__ = __str__
+
+	def copy(self):
+		return self.__class__(**self.__dict__)
 
 	def __getattr__(self, attr):
 		"""Delegate everything else to the dict object."""
@@ -400,19 +401,19 @@ if __name__ == "__main__":
 	import time
 	if len(sys.argv) == 1:
 		pl = Plist(
-				Foo="Doodah",
-				aList=["A", "B", 12, 32.1, [1, 2, 3]],
-				aFloat = 0.1,
-				anInt = 728,
-				aDict=Dict(
-					aString="<hello & hi there!>",
-					SomeUnicodeValue=u'M\xe4ssig, Ma\xdf',
-					someTrueValue=True,
-					someFalseValue=False,
-				),
-				someData = Data("hello there!"),
-				someMoreData = Data("hello there! " * 10),
-				aDate = Date(time.mktime(time.gmtime())),
+			aString="Doodah",
+			aList=["A", "B", 12, 32.1, [1, 2, 3]],
+			aFloat = 0.1,
+			anInt = 728,
+			aDict=Dict(
+				anotherString="<hello & hi there!>",
+				aUnicodeValue=u'M\xe4ssig, Ma\xdf',
+				aTrueValue=True,
+				aFalseValue=False,
+			),
+			someData = Data("<binary gunk>"),
+			someMoreData = Data("<lots of binary gunk>" * 10),
+			aDate = Date(time.mktime(time.gmtime())),
 		)
 	elif len(sys.argv) == 2:
 		pl = Plist.fromFile(sys.argv[1])
