@@ -122,6 +122,10 @@ Extension modules
 Library
 -------
 
+- The new pickletools.py contains lots of documentation about pickle
+  internals, and supplies some helpers for working with pickles, such as
+  a symbolic pickle disassembler.
+
 - Xmlrpclib.py now supports the builtin boolean type.
 
 - py_compile has a new 'doraise' flag and a new PyCompileError
@@ -151,7 +155,7 @@ Library
   the gain value which is passed to Tk.  SF bug# 602259.
 
 - Fix logging.handlers.SysLogHandler protocol when using UNIX domain sockets.
-  See SF patch #642974. 
+  See SF patch #642974.
 
 Tools/Demos
 -----------
@@ -214,7 +218,7 @@ Mac
 
 - There are new dialogs EasyDialogs.AskFileForOpen, AskFileForSave
   and AskFolder. The old macfs.StandardGetFile and friends are deprecated.
-  
+
 - Type Carbon.File.FSCatalogInfo and supporting methods have been implemented.
   This also makes macfs.FSSpec.SetDates() work again.
 
