@@ -80,15 +80,20 @@ builtin_apply(self, args)
 	object *self;
 	object *args;
 {
-	object *func, *alist;
+	object *func, *alist, *kwdict = NULL;
 
-	if (!newgetargs(args, "OO:apply", &func, &alist))
+	if (!newgetargs(args, "O|OO:apply", &func, &alist, &kwdict))
 		return NULL;
-	if (!is_tupleobject(alist)) {
+	if (alist != NULL && !is_tupleobject(alist)) {
 		err_setstr(TypeError, "apply() 2nd argument must be tuple");
 		return NULL;
 	}
-	return call_object(func, alist);
+	if (kwdict != NULL && !is_dictobject(kwdict)) {
+		err_setstr(TypeError,
+			   "apply() 3rd argument must be dictionary");
+		return NULL;
+	}
+	return PyEval_CallObjectWithKeywords(func, alist, kwdict);
 }
 
 static object *
@@ -373,8 +378,7 @@ builtin_eval(self, args)
 			return NULL;
 	}
 	if (is_codeobject(cmd))
-		return eval_code((codeobject *) cmd, globals, locals,
-				 (object *)NULL, (object *)NULL);
+		return eval_code((codeobject *) cmd, globals, locals);
 	if (!is_stringobject(cmd)) {
 		err_setstr(TypeError,
 			   "eval() argument 1 must be string or code object");

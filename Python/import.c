@@ -54,7 +54,7 @@ extern long getmtime(); /* In getmtime.c */
    Apple MPW compiler swaps their values, botching string constants */
 /* XXX Perhaps the magic number should be frozen and a version field
    added to the .pyc file header? */
-#define MAGIC (0x4127L | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (11913 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 object *import_modules; /* This becomes sys.modules */
 
@@ -159,7 +159,7 @@ exec_code_module(name, co)
 		if (dictinsert(d, "__builtins__", getbuiltins()) != 0)
 			return NULL;
 	}
-	v = eval_code((codeobject *)co, d, d, d, (object *)NULL);
+	v = eval_code((codeobject *)co, d, d); /* XXX owner? */
 	if (v == NULL)
 		return NULL;
 	DECREF(v);

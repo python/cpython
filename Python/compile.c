@@ -25,8 +25,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Compile an expression node to intermediate code */
 
 /* XXX TO DO:
-   XXX Compute maximum needed stack sizes while compiling
+   XXX Compute maximum needed stack sizes while compiling;
+   XXX   then frame object can be one malloc and no stack checks are needed
+   XXX add __doc__ attribute == co_doc to code object attributes
+   XXX don't execute doc string
    XXX Generate simple jump for break/return outside 'try...finally'
+   XXX get rid of SET_LINENO instructions, use JAR's table trick
+   XXX   (need an option to put them back in, for debugger!)
+   XXX other JAR tricks?
 */
 
 #include "allobjects.h"
@@ -44,9 +50,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define OFF(x) offsetof(codeobject, x)
 
 static struct memberlist code_memberlist[] = {
+	{"co_argcount",	T_INT,		OFF(co_argcount),	READONLY},
+	{"co_nlocals",	T_INT,		OFF(co_nlocals),	READONLY},
+	{"co_flags",	T_INT,		OFF(co_flags),		READONLY},
 	{"co_code",	T_OBJECT,	OFF(co_code),		READONLY},
 	{"co_consts",	T_OBJECT,	OFF(co_consts),		READONLY},
 	{"co_names",	T_OBJECT,	OFF(co_names),		READONLY},
+	{"co_varnames",	T_OBJECT,	OFF(co_varnames),	READONLY},
 	{"co_filename",	T_OBJECT,	OFF(co_filename),	READONLY},
 	{"co_name",	T_OBJECT,	OFF(co_name),		READONLY},
 	{NULL}	/* Sentinel */
@@ -69,6 +79,7 @@ code_dealloc(co)
 	XDECREF(co->co_names);
 	XDECREF(co->co_filename);
 	XDECREF(co->co_name);
+	XDECREF(co->co_varnames);
 	DEL(co);
 }
 
@@ -97,11 +108,19 @@ code_compare(co, cp)
 	codeobject *co, *cp;
 {
 	int cmp;
+	cmp = cp->co_argcount - cp->co_argcount;
+	if (cmp) return cmp;
+	cmp = cp->co_nlocals - cp->co_nlocals;
+	if (cmp) return cmp;
+	cmp = cp->co_flags - cp->co_flags;
+	if (cmp) return cmp;
 	cmp = cmpobject((object *)co->co_code, (object *)cp->co_code);
 	if (cmp) return cmp;
 	cmp = cmpobject(co->co_consts, cp->co_consts);
 	if (cmp) return cmp;
 	cmp = cmpobject(co->co_names, cp->co_names);
+	if (cmp) return cmp;
+	cmp = cmpobject(co->co_varnames, cp->co_varnames);
 	return cmp;
 }
 
@@ -109,14 +128,17 @@ static long
 code_hash(co)
 	codeobject *co;
 {
-	long h, h1, h2, h3;
+	long h, h1, h2, h3, h4;
 	h1 = hashobject((object *)co->co_code);
 	if (h1 == -1) return -1;
 	h2 = hashobject(co->co_consts);
 	if (h2 == -1) return -1;
 	h3 = hashobject(co->co_names);
 	if (h3 == -1) return -1;
-	h = h1 ^ h2 ^ h3;
+	h4 = hashobject(co->co_varnames);
+	if (h4 == -1) return -1;
+	h = h1 ^ h2 ^ h3 ^ h4 ^
+		co->co_argcount ^ co->co_nlocals ^ co->co_flags;
 	if (h == -1) h = -2;
 	return h;
 }
@@ -140,66 +162,63 @@ typeobject Codetype = {
 };
 
 codeobject *
-newcodeobject(code, consts, names, filename, name)
+newcodeobject(argcount, nlocals, flags,
+	      code, consts, names, varnames, filename, name)
+	int argcount;
+	int nlocals;
+	int flags;
 	object *code;
 	object *consts;
 	object *names;
+	object *varnames;
 	object *filename;
 	object *name;
 {
 	codeobject *co;
 	int i;
 	/* Check argument types */
-	if (code == NULL || !is_stringobject(code) ||
-		consts == NULL ||
-		names == NULL ||
-		name == NULL || !(is_stringobject(name) || name == None)) {
+	if (argcount < 0 || nlocals < 0 ||
+	    code == NULL || !is_stringobject(code) ||
+	    consts == NULL || !is_tupleobject(consts) ||
+	    names == NULL || !is_tupleobject(names) ||
+	    varnames == NULL || !is_tupleobject(varnames) ||
+	    name == NULL || !is_stringobject(name) ||
+	    filename == NULL || !is_stringobject(filename)) {
 		err_badcall();
 		return NULL;
 	}
-	/* Allow two lists instead of two tuples */
-	if (is_listobject(consts) && is_listobject(names)) {
-		consts = listtuple(consts);
-		if (consts == NULL)
-			return NULL;
-		names = listtuple(names);
-		if (names == NULL) {
-			DECREF(consts);
-			return NULL;
-		}
-	}
-	else if (!is_tupleobject(consts) && !is_tupleobject(names)) {
-		err_badcall();
-		return NULL;
-	}
-	else {
-		INCREF(consts);
-		INCREF(names);
-	}
-	/* Make sure the list of names contains only strings */
+	/* Make sure names and varnames are all strings */
 	for (i = gettuplesize(names); --i >= 0; ) {
 		object *v = gettupleitem(names, i);
 		if (v == NULL || !is_stringobject(v)) {
-			DECREF(consts);
-			DECREF(names);
+			err_badcall();
+			return NULL;
+		}
+	}
+	for (i = gettuplesize(varnames); --i >= 0; ) {
+		object *v = gettupleitem(varnames, i);
+		if (v == NULL || !is_stringobject(v)) {
 			err_badcall();
 			return NULL;
 		}
 	}
 	co = NEWOBJ(codeobject, &Codetype);
 	if (co != NULL) {
+		co->co_argcount = argcount;
+		co->co_nlocals = nlocals;
+		co->co_flags = flags;
 		INCREF(code);
 		co->co_code = (stringobject *)code;
+		INCREF(consts);
 		co->co_consts = consts;
+		INCREF(names);
 		co->co_names = names;
+		INCREF(varnames);
+		co->co_varnames = varnames;
 		INCREF(filename);
 		co->co_filename = filename;
 		INCREF(name);
 		co->co_name = name;
-	}
-	else {
-		DECREF(consts);
-		DECREF(names);
 	}
 	return co;
 }
@@ -213,7 +232,12 @@ struct compiling {
 	object *c_code;		/* string */
 	object *c_consts;	/* list of objects */
 	object *c_names;	/* list of strings (names) */
-	object *c_globals;	/* dictionary */
+	object *c_globals;	/* dictionary (value=None) */
+	object *c_locals;	/* dictionary (value=localID) */
+	object *c_varnames;	/* list (inverse of c_locals) */
+	int c_nlocals;		/* index of next local */
+	int c_argcount;		/* number of top-level arguments */
+	int c_flags;		/* same as co_flags */
 	int c_nexti;		/* index into c_code */
 	int c_errors;		/* counts errors occurred */
 	int c_infunction;	/* set when compiling a function */
@@ -257,7 +281,7 @@ block_pop(c, type)
 }
 
 
-/* Prototypes */
+/* Prototype forward declarations */
 
 static int com_init PROTO((struct compiling *, char *));
 static void com_free PROTO((struct compiling *));
@@ -273,7 +297,8 @@ static int com_addconst PROTO((struct compiling *, object *));
 static int com_addname PROTO((struct compiling *, object *));
 static void com_addopname PROTO((struct compiling *, int, node *));
 static void com_list PROTO((struct compiling *, node *, int));
-static int com_argdefs PROTO((struct compiling *, node *, int *));
+static int com_argdefs PROTO((struct compiling *, node *));
+static int com_newlocal PROTO((struct compiling *, char *));
 
 static int
 com_init(c, filename)
@@ -288,6 +313,13 @@ com_init(c, filename)
 		goto fail_1;
 	if ((c->c_globals = newdictobject()) == NULL)
 		goto fail_0;
+	if ((c->c_locals = newdictobject()) == NULL)
+		goto fail_00;
+	if ((c->c_varnames = newlistobject(0)) == NULL)
+		goto fail_000;
+	c->c_nlocals = 0;
+	c->c_argcount = 0;
+	c->c_flags = 0;
 	c->c_nexti = 0;
 	c->c_errors = 0;
 	c->c_infunction = 0;
@@ -299,6 +331,10 @@ com_init(c, filename)
 	c->c_name = "?";
 	return 1;
 	
+  fail_000:
+  	DECREF(c->c_locals);
+  fail_00:
+  	DECREF(c->c_globals);
   fail_0:
   	DECREF(c->c_names);
   fail_1:
@@ -317,6 +353,8 @@ com_free(c)
 	XDECREF(c->c_consts);
 	XDECREF(c->c_names);
 	XDECREF(c->c_globals);
+	XDECREF(c->c_locals);
+	XDECREF(c->c_varnames);
 }
 
 static void
@@ -333,6 +371,7 @@ com_addbyte(c, byte)
 	int byte;
 {
 	int len;
+	/*fprintf(stderr, "%3d: %3d\n", c->c_nexti, byte);*/
 	if (byte < 0 || byte > 255) {
 		/*
 		fprintf(stderr, "XXX compiling bad byte: %d\n", byte);
@@ -1221,8 +1260,7 @@ com_test(c, n)
 	if (NCH(n) == 1 && TYPE(CHILD(n, 0)) == lambdef) {
 		object *v;
 		int i;
-		int argcount;
-		int ndefs = com_argdefs(c, CHILD(n, 0), &argcount);
+		int ndefs = com_argdefs(c, CHILD(n, 0));
 		v = (object *) compile(CHILD(n, 0), c->c_filename);
 		if (v == NULL) {
 			c->c_errors++;
@@ -1233,9 +1271,7 @@ com_test(c, n)
 			DECREF(v);
 		}
 		com_addoparg(c, LOAD_CONST, i);
-		com_addbyte(c, BUILD_FUNCTION);
-		if (ndefs > 0)
-			com_addoparg(c, SET_FUNC_ARGS, argcount);
+		com_addoparg(c, MAKE_FUNCTION, ndefs);
 	}
 	else {
 		int anchor = 0;
@@ -1537,16 +1573,12 @@ com_raise_stmt(c, n)
 {
 	REQ(n, raise_stmt); /* 'raise' test [',' test [',' test]] */
 	com_node(c, CHILD(n, 1));
-	if (NCH(n) > 3)
+	if (NCH(n) > 3) {
 		com_node(c, CHILD(n, 3));
-	else
-		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
-	if (NCH(n) > 5) {
-		com_node(c, CHILD(n, 5));
-		com_addoparg(c, RAISE_VARARGS, 3);
+		if (NCH(n) > 5)
+			com_node(c, CHILD(n, 5));
 	}
-	else
-		com_addbyte(c, RAISE_EXCEPTION);
+	com_addoparg(c, RAISE_VARARGS, NCH(n)/2);
 }
 
 static void
@@ -1585,9 +1617,67 @@ com_global_stmt(c, n)
 	REQ(n, global_stmt);
 	/* 'global' NAME (',' NAME)* */
 	for (i = 1; i < NCH(n); i += 2) {
-		if (dictinsert(c->c_globals, STR(CHILD(n, i)), None) != 0)
+		char *s = STR(CHILD(n, i));
+		if (dictlookup(c->c_locals, s) != NULL) {
+			err_setstr(SyntaxError, "name is local and global");
+			c->c_errors++;
+		}
+		else if (dictinsert(c->c_globals, s, None) != 0)
 			c->c_errors++;
 	}
+}
+
+static int
+com_newlocal_o(c, nameval)
+	struct compiling *c;
+	object *nameval;
+{
+	int i;
+	object *ival;
+	if (getlistsize(c->c_varnames) != c->c_nlocals) {
+		/* This is usually caused by an error on a previous call */
+		if (c->c_errors == 0) {
+			err_setstr(SystemError, "mixed up var name/index");
+			c->c_errors++;
+		}
+		return 0;
+	}
+	ival = newintobject(i = c->c_nlocals++);
+	if (ival == NULL)
+		c->c_errors++;
+	else if (mappinginsert(c->c_locals, nameval, ival) != 0)
+		c->c_errors++;
+	else if (addlistitem(c->c_varnames, nameval) != 0)
+		c->c_errors++;
+	XDECREF(ival);
+	return i;
+}
+
+static int
+com_addlocal_o(c, nameval)
+	struct compiling *c;
+	object *nameval;
+{
+	object *ival =  mappinglookup(c->c_locals, nameval);
+	if (ival != NULL)
+		return getintvalue(ival);
+	return com_newlocal_o(c, nameval);
+}
+
+static int
+com_newlocal(c, name)
+	struct compiling *c;
+	char *name;
+{
+	object *nameval = newstringobject(name);
+	int i;
+	if (nameval == NULL) {
+		c->c_errors++;
+		return 0;
+	}
+	i = com_newlocal_o(c, nameval);
+	DECREF(nameval);
+	return i;
 }
 
 #define strequ(a, b) (strcmp((a), (b)) == 0)
@@ -2019,12 +2109,11 @@ com_continue_stmt(c, n)
 }
 
 static int
-com_argdefs(c, n, argcount_return)
+com_argdefs(c, n)
 	struct compiling *c;
 	node *n;
-	int *argcount_return;
 {
-	int i, nch, nargs, ndefs, star;
+	int i, nch, nargs, ndefs;
 	if (TYPE(n) == lambdef) {
 		/* lambdef: 'lambda' [varargslist] ':' test */
 		n = CHILD(n, 1);
@@ -2036,14 +2125,13 @@ com_argdefs(c, n, argcount_return)
 		n = CHILD(n, 1);
 	}
 	if (TYPE(n) != varargslist)
-		    return -1;
+		    return 0;
 	/* varargslist:
-		(fpdef ['=' test] ',')* '*' NAME ....... |
+		(fpdef ['=' test] ',')* '*' ....... |
 		fpdef ['=' test] (',' fpdef ['=' test])* [','] */
 	nch = NCH(n);
 	nargs = 0;
 	ndefs = 0;
-	star = 0;
 	for (i = 0; i < nch; i++) {
 		int t;
 		if (TYPE(CHILD(n, i)) == STAR)
@@ -2073,11 +2161,6 @@ com_argdefs(c, n, argcount_return)
 		if (t != COMMA)
 			break;
 	}
-	if (star)
-		nargs ^= 0x4000;
-	*argcount_return = nargs;
-	if (ndefs > 0)
-		com_addoparg(c, BUILD_TUPLE, ndefs);
 	return ndefs;
 }
 
@@ -2093,12 +2176,9 @@ com_funcdef(c, n)
 		c->c_errors++;
 	else {
 		int i = com_addconst(c, v);
-		int argcount;
-		int ndefs = com_argdefs(c, n, &argcount);
+		int ndefs = com_argdefs(c, n);
 		com_addoparg(c, LOAD_CONST, i);
-		com_addbyte(c, BUILD_FUNCTION);
-		if (ndefs > 0)
-			com_addoparg(c, SET_FUNC_ARGS, argcount);
+		com_addoparg(c, MAKE_FUNCTION, ndefs);
 		com_addopname(c, STORE_NAME, CHILD(n, 1));
 		DECREF(v);
 	}
@@ -2145,8 +2225,8 @@ com_classdef(c, n)
 	else {
 		i = com_addconst(c, v);
 		com_addoparg(c, LOAD_CONST, i);
-		com_addbyte(c, BUILD_FUNCTION);
-		com_addbyte(c, UNARY_CALL);
+		com_addoparg(c, MAKE_FUNCTION, 0);
+		com_addoparg(c, CALL_FUNCTION, 0);
 		com_addbyte(c, BUILD_CLASS);
 		com_addopname(c, STORE_NAME, CHILD(n, 1));
 		DECREF(v);
@@ -2312,7 +2392,7 @@ com_fpdef(c, n)
 	if (TYPE(CHILD(n, 0)) == LPAR)
 		com_fplist(c, CHILD(n, 1));
 	else
-		com_addopname(c, STORE_NAME, CHILD(n, 0));
+		com_addoparg(c, STORE_FAST, com_newlocal(c, STR(CHILD(n, 0))));
 }
 
 static void
@@ -2337,53 +2417,87 @@ com_arglist(c, n)
 	struct compiling *c;
 	node *n;
 {
-	int nch, op, nargs, i, t;
+	int nch, i;
+	int complex = 0;
 	REQ(n, varargslist);
 	/* varargslist:
-		(fpdef ['=' test] ',')* '*' NAME ..... |
-		fpdef ['=' test] (',' fpdef ['=' test])* [','] */
+		(fpdef ['=' test] ',')* (fpdef ['=' test] | '*' .....) */
 	nch = NCH(n);
-	op = UNPACK_ARG;
-	nargs = 0;
+	/* Enter all arguments in table of locals */
 	for (i = 0; i < nch; i++) {
-		if (TYPE(CHILD(n, i)) == STAR) {
-			nch = i;
-			if (TYPE(CHILD(n, i+1)) != STAR)
-				op = UNPACK_VARARG;
+		node *ch = CHILD(n, i);
+		node *fp;
+		char *name;
+		if (TYPE(ch) == STAR)
 			break;
+		REQ(ch, fpdef); /* fpdef: NAME | '(' fplist ')' */
+		fp = CHILD(ch, 0);
+		if (TYPE(fp) == NAME)
+			name = STR(fp);
+		else {
+			name = "";
+			complex= 1;
 		}
-		nargs++;
-		i++;
-		if (i >= nch)
+		com_newlocal(c, name);
+		c->c_argcount++;
+		if (++i >= nch)
 			break;
-		t = TYPE(CHILD(n, i));
-		if (t == EQUAL) {
+		ch = CHILD(n, i);
+		if (TYPE(ch) == EQUAL)
 			i += 2;
-			if (i >= nch)
-				break;
-			t = TYPE(CHILD(n, i));
-		}
-		if (t != COMMA)
-			break;
+		else
+			REQ(ch, COMMA);
 	}
-	com_addoparg(c, op, nargs);
-	for (i = 0; i < nch; i++) {
-		com_fpdef(c, CHILD(n, i));
-		i++;
-		if (i >= nch)
-			break;
-		t = TYPE(CHILD(n, i));
-		if (t == EQUAL) {
-			i += 2;
-			if (i >= nch)
-				break;
-			t = TYPE(CHILD(n, i));
+	/* Handle *arguments */
+	if (i < nch) {
+		node *ch;
+		ch = CHILD(n, i);
+		REQ(ch, STAR);
+		ch = CHILD(n, i+1);
+		if (TYPE(ch) == NAME) {
+			c->c_flags |= CO_VARARGS;
+			i += 3;
+			com_newlocal(c, STR(ch));
 		}
-		if (t != COMMA)
-			break;
 	}
-	if (op == UNPACK_VARARG)
-		com_addopname(c, STORE_NAME, CHILD(n, nch+1));
+	/* Handle **keywords */
+	if (i < nch) {
+		node *ch;
+		ch = CHILD(n, i);
+		REQ(ch, STAR);
+		ch = CHILD(n, i+1);
+		REQ(ch, STAR);
+		ch = CHILD(n, i+2);
+		REQ(ch, NAME);
+		c->c_flags |= CO_VARKEYWORDS;
+		com_newlocal(c, STR(ch));
+	}
+	if (complex) {
+		/* Generate code for complex arguments only after
+		   having counted the simple arguments */
+		int ilocal = 0;
+		for (i = 0; i < nch; i++) {
+			node *ch = CHILD(n, i);
+			node *fp;
+			char *name;
+			if (TYPE(ch) == STAR)
+				break;
+			REQ(ch, fpdef); /* fpdef: NAME | '(' fplist ')' */
+			fp = CHILD(ch, 0);
+			if (TYPE(fp) != NAME) {
+				com_addoparg(c, LOAD_FAST, ilocal);
+				com_fpdef(c, ch);
+			}
+			ilocal++;
+			if (++i >= nch)
+				break;
+			ch = CHILD(n, i);
+			if (TYPE(ch) == EQUAL)
+				i += 2;
+			else
+				REQ(ch, COMMA);
+		}
+	}
 }
 
 static void
@@ -2424,12 +2538,11 @@ compile_funcdef(c, n)
 		(void) com_addconst(c, doc);
 		DECREF(doc);
 	}
-	com_addoparg(c, RESERVE_FAST, com_addconst(c, None)); /* Patched! */
+	else
+		(void) com_addconst(c, None); /* No docstring */
 	ch = CHILD(n, 2); /* parameters: '(' [varargslist] ')' */
 	ch = CHILD(ch, 1); /* ')' | varargslist */
-	if (TYPE(ch) == RPAR)
-		com_addoparg(c, UNPACK_ARG, 0);
-	else
+	if (TYPE(ch) == varargslist)
 		com_arglist(c, ch);
 	c->c_infunction = 1;
 	com_node(c, CHILD(n, 4));
@@ -2444,21 +2557,18 @@ compile_lambdef(c, n)
 	node *n;
 {
 	node *ch;
-	REQ(n, lambdef); /* lambdef: 'lambda' [parameters] ':' test */
+	REQ(n, lambdef); /* lambdef: 'lambda' [varargslist] ':' test */
 	c->c_name = "<lambda>";
 
 	ch = CHILD(n, 1);
-	(void) com_addconst(c, None);
-	if (TYPE(ch) == COLON) {
-		com_addoparg(c, UNPACK_ARG, 0);
-		com_node(c, CHILD(n, 2));
-	}
-	else {
-		com_addoparg(c, RESERVE_FAST, com_addconst(c, None));
+	(void) com_addconst(c, None); /* No docstring */
+	if (TYPE(ch) == varargslist) {
 		com_arglist(c, ch);
-		com_node(c, CHILD(n, 3));
+		ch = CHILD(n, 3);
 	}
-
+	else
+		ch = CHILD(n, 2);
+	com_node(c, ch);
 	com_addbyte(c, RETURN_VALUE);
 }
 
@@ -2544,34 +2654,31 @@ compile_node(c, n)
    The latter instructions are much faster because they don't need to
    look up the variable name in a dictionary.
 
-   To find all local variables, we check all STORE_NAME, IMPORT_FROM and
-   DELETE_NAME instructions.  This yields all local variables, including
-   arguments, function definitions, class definitions and import
-   statements.
+   To find all local variables, we check all STORE_NAME, IMPORT_FROM
+   and DELETE_NAME instructions.  This yields all local variables,
+   function definitions, class definitions and import statements.
+   Argument names have already been entered into the list by the
+   special processing for the argument list.
 
    All remaining LOAD_NAME instructions must refer to non-local (global
    or builtin) variables, so are replaced by LOAD_GLOBAL.
 
    There are two problems:  'from foo import *' and 'exec' may introduce
    local variables that we can't know while compiling.  If this is the
-   case, we don't optimize at all (this rarely happens, since exec is
-   rare, & this form of import statement is mostly used at the module
-   level).
+   case, we can still optimize bona fide locals (since those
+   statements will be surrounded by fast_2_locals() and
+   locals_2_fast()), but we can't change LOAD_NAME to LOAD_GLOBAL.
 
-   NB: this modifies the string object co->co_code!
-*/
+   NB: this modifies the string object c->c_code!  */
 
 static void
 optimize(c)
 	struct compiling *c;
 {
 	unsigned char *next_instr, *cur_instr;
-	object *locals;
-	int nlocals;
 	int opcode;
 	int oparg;
 	object *name;
-	int fast_reserved;
 	object *error_type, *error_value, *error_traceback;
 	
 #define NEXTOP()	(*next_instr++)
@@ -2579,53 +2686,33 @@ optimize(c)
 #define GETITEM(v, i)	(getlistitem((v), (i)))
 #define GETNAMEOBJ(i)	(GETITEM(c->c_names, (i)))
 	
-	locals = newdictobject();
-	if (locals == NULL) {
-		c->c_errors++;
-		return;
-	}
-	nlocals = 0;
-
 	err_fetch(&error_type, &error_value, &error_traceback);
+
+	c->c_flags |= CO_OPTIMIZED;
 	
 	next_instr = (unsigned char *) getstringvalue(c->c_code);
 	for (;;) {
 		opcode = NEXTOP();
 		if (opcode == STOP_CODE)
 			break;
-		if (opcode == EXEC_STMT)
-			goto end; /* Don't optimize if exec present */
 		if (HAS_ARG(opcode))
 			oparg = NEXTARG();
-		if (opcode == STORE_NAME || opcode == DELETE_NAME ||
-		    opcode == IMPORT_FROM) {
-			object *v;
-			name = GETNAMEOBJ(oparg);
-			if (dict2lookup(locals, name) != NULL)
-				continue;
-			err_clear();
-			v = newintobject(nlocals);
-			if (v == NULL) {
-				c->c_errors++;
-				goto err;
-			}
-			nlocals++;
-			if (dict2insert(locals, name, v) != 0) {
-				DECREF(v);
-				c->c_errors++;
-				goto err;
-			}
-			DECREF(v);
+		switch (opcode) {
+		case STORE_NAME:
+		case DELETE_NAME:
+		case IMPORT_FROM:
+			com_addlocal_o(c, GETNAMEOBJ(oparg));
+			break;
+		case EXEC_STMT:
+			c->c_flags &= ~CO_OPTIMIZED;
+			break;
 		}
 	}
 	
-	if (dictlookup(locals, "*") != NULL) {
-		/* Don't optimize anything */
-		goto end;
-	}
+	if (dictlookup(c->c_locals, "*") != NULL)
+		c->c_flags &= ~CO_OPTIMIZED;
 	
 	next_instr = (unsigned char *) getstringvalue(c->c_code);
-	fast_reserved = 0;
 	for (;;) {
 		cur_instr = next_instr;
 		opcode = NEXTOP();
@@ -2633,45 +2720,17 @@ optimize(c)
 			break;
 		if (HAS_ARG(opcode))
 			oparg = NEXTARG();
-		if (opcode == RESERVE_FAST) {
-			int i;
-			object *localmap = newtupleobject(nlocals);
-			int pos;
-			object *key, *value;
-			if (localmap == NULL) { /* XXX mask error */
-				err_clear();
-				continue;
-			}
-			pos = 0;
-			while (mappinggetnext(locals, &pos, &key, &value)) {
-				int j;
-				if (!is_intobject(value))
-					continue;
-				j = getintvalue(value);
-				if (0 <= j && j < nlocals) {
-					INCREF(key);
-					settupleitem(localmap, j, key);
-				}
-			}
-			i = com_addconst(c, localmap);
-			cur_instr[1] = i & 0xff;
-			cur_instr[2] = (i>>8) & 0xff;
-			fast_reserved = 1;
-			DECREF(localmap);
-			continue;
-		}
-		if (!fast_reserved)
-			continue;
 		if (opcode == LOAD_NAME ||
 		    opcode == STORE_NAME ||
 		    opcode == DELETE_NAME) {
 			object *v;
 			int i;
 			name = GETNAMEOBJ(oparg);
-			v = dict2lookup(locals, name);
+			v = dict2lookup(c->c_locals, name);
 			if (v == NULL) {
 				err_clear();
-				if (opcode == LOAD_NAME)
+				if (opcode == LOAD_NAME &&
+				    (c->c_flags&CO_OPTIMIZED))
 					cur_instr[0] = LOAD_GLOBAL;
 				continue;
 			}
@@ -2686,10 +2745,8 @@ optimize(c)
 		}
 	}
 
- end:
-	err_restore(error_type, error_value, error_traceback);
- err:
-	DECREF(locals);
+	if (c->c_errors == 0)
+		err_restore(error_type, error_value, error_traceback);
 }
 
 codeobject *
@@ -2703,18 +2760,35 @@ compile(n, filename)
 		return NULL;
 	compile_node(&sc, n);
 	com_done(&sc);
-	if ((TYPE(n) == funcdef || TYPE(n) == lambdef) && sc.c_errors == 0)
+	if ((TYPE(n) == funcdef || TYPE(n) == lambdef) && sc.c_errors == 0) {
 		optimize(&sc);
+		sc.c_flags |= CO_NEWLOCALS;
+	}
+	else if (TYPE(n) == classdef)
+		sc.c_flags |= CO_NEWLOCALS;
 	co = NULL;
 	if (sc.c_errors == 0) {
-		object *v, *w;
-		v = newstringobject(sc.c_filename);
-		w = newstringobject(sc.c_name);
-		if (v != NULL && w != NULL)
-			co = newcodeobject(sc.c_code, sc.c_consts,
-					   sc.c_names, v, w);
-		XDECREF(v);
-		XDECREF(w);
+		object *consts, *names, *varnames, *filename, *name;
+		consts = listtuple(sc.c_consts);
+		names = listtuple(sc.c_names);
+		varnames = listtuple(sc.c_varnames);
+		filename = newstringobject(sc.c_filename);
+		name = newstringobject(sc.c_name);
+		if (!err_occurred())
+			co = newcodeobject(sc.c_argcount,
+					   sc.c_nlocals,
+					   sc.c_flags,
+					   sc.c_code,
+					   consts,
+					   names,
+					   varnames,
+					   filename,
+					   name);
+		XDECREF(consts);
+		XDECREF(names);
+		XDECREF(varnames);
+		XDECREF(filename);
+		XDECREF(name);
 	}
 	com_free(&sc);
 	return co;
