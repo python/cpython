@@ -40,11 +40,9 @@ def test():
     if not args:
         import glob
         args = glob.glob("*.py")
+        args.sort()
     map(testFile, args)
     sys.exit(_numFailed != 0)
 
 if __name__ == '__main__':
     test()
-
-#
-#  end of file
