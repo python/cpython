@@ -565,7 +565,7 @@ class NNTP:
         return resp
 
 
-# Test retrieval when rubn as a script.
+# Test retrieval when run as a script.
 # Assumption: if there's a local news server, it's called 'news'.
 # Assumption: if user queries a remote news server, it's named
 # in the environment variable NNTPSERVER (used by slrn and kin)
