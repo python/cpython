@@ -71,11 +71,11 @@ def setup (**attrs):
     # (ie. everything except distclass) to initialize it
     dist = klass (attrs)
 
-    # If we had a config file, this is where we would parse it: override
-    # the client-supplied command options, but be overridden by the
-    # command line.
-
-    # Parse the command line; any command-line errors are the end-users
+    # Find and parse the config file(s): they will override options from
+    # the setup script, but be overridden by the command line.
+    dist.parse_config_files()
+    
+    # Parse the command line; any command-line errors are the end user's
     # fault, so turn them into SystemExit to suppress tracebacks.
     try:
         ok = dist.parse_command_line (sys.argv[1:])
@@ -101,10 +101,10 @@ def setup (**attrs):
                     raise SystemExit, \
                           "error: %s" % exc.strerror
             else:
-                raise SystemExit, "error: " + exc[-1]
+                raise SystemExit, "error: " + str(exc[-1])
         except (DistutilsExecError,
                 DistutilsFileError,
                 DistutilsOptionError), msg:
-            raise SystemExit, "error: " + str (msg)
+            raise SystemExit, "error: " + str(msg)
 
 # setup ()
