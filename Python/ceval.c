@@ -2470,8 +2470,9 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
 	else {
 		/* Not something you can raise.  You get an exception
 		   anyway, just not what you specified :-) */
-		PyErr_SetString(PyExc_TypeError,
-		    "exceptions must be strings, classes, or instances");
+		PyErr_Format(PyExc_TypeError,
+			     "exceptions must be strings, classes, or "
+			     "instances, not %s", type->ob_type->tp_name);
 		goto raise_error;
 	}
 	PyErr_Restore(type, value, tb);
