@@ -84,5 +84,8 @@
 /* Define if you want to use the GNU readline library */
 #undef WITH_READLINE
 
+/* Define if you want SIGFPE handled (see Include/pyfpe.h). */
+#undef WANT_SIGFPE_HANDLER
+
 
 /* Leave that blank line there-- autoheader needs it! */
