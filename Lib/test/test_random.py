@@ -4,6 +4,7 @@ import unittest
 import random
 import time
 import pickle
+import warnings
 from math import log, exp, sqrt, pi
 from sets import Set
 from test import test_support
@@ -153,6 +154,13 @@ class WichmannHill_TestBasicOps(TestBasicOps):
             self.assertEqual(x1, x2)
             self.assertEqual(y1, y2)
 
+    def test_bigrand(self):
+        # Verify warnings are raised when randrange is too large for random()
+        oldfilters = warnings.filters[:]
+        warnings.filterwarnings("error", "Underlying random")
+        self.assertRaises(UserWarning, self.gen.randrange, 2**60)
+        warnings.filters[:] = oldfilters
+
 class MersenneTwister_TestBasicOps(TestBasicOps):
     gen = random.Random()
 
@@ -218,6 +226,76 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         # so don't make this horribly big.
         seed = (1L << (10000 * 8)) - 1  # about 10K bytes
         self.gen.seed(seed)
+
+    def test_53_bits_per_float(self):
+        # This should pass whenever a C double has 53 bit precision.
+        span = 2 ** 53
+        cum = 0
+        for i in xrange(100):
+            cum |= int(self.gen.random() * span)
+        self.assertEqual(cum, span-1)
+
+    def test_bigrand(self):
+        # The randrange routine should build-up the required number of bits
+        # in stages so that all bit positions are active.
+        span = 2 ** 500
+        cum = 0
+        for i in xrange(100):
+            r = self.gen.randrange(span)
+            self.assert_(0 <= r < span)
+            cum |= r
+        self.assertEqual(cum, span-1)
+
+    def test_bigrand_ranges(self):
+        for i in [40,80, 160, 200, 211, 250, 375, 512, 550]:
+            start = self.gen.randrange(2 ** i)
+            stop = self.gen.randrange(2 ** (i-2))
+            if stop <= start:
+                return
+            self.assert_(start <= self.gen.randrange(start, stop) < stop)
+
+    def test_rangelimits(self):
+        for start, stop in [(-2,0), (-(2**60)-2,-(2**60)), (2**60,2**60+2)]:
+            self.assertEqual(Set(range(start,stop)),
+                Set([self.gen.randrange(start,stop) for i in xrange(100)]))
+
+    def test_genrandbits(self):
+        # Verify cross-platform repeatability
+        self.gen.seed(1234567)
+        self.assertEqual(self.gen.getrandbits(100),
+                         97904845777343510404718956115L)
+        # Verify ranges
+        for k in xrange(1, 1000):
+            self.assert_(0 <= self.gen.getrandbits(k) < 2**k)
+
+        # Verify all bits active
+        getbits = self.gen.getrandbits
+        for span in [1, 2, 3, 4, 31, 32, 32, 52, 53, 54, 119, 127, 128, 129]:
+            cum = 0
+            for i in xrange(100):
+                cum |= getbits(span)
+            self.assertEqual(cum, 2**span-1)
+
+    def test_randbelow_logic(self, _log=log, int=int):
+        # check bitcount transition points:  2**i and 2**(i+1)-1
+        # show that: k = int(1.001 + _log(n, 2))
+        # is equal to or one greater than the number of bits in n
+        for i in xrange(1, 1000):
+            n = 1L << i # check an exact power of two
+            numbits = i+1
+            k = int(1.00001 + _log(n, 2))
+            self.assertEqual(k, numbits)
+            self.assert_(n == 2**(k-1))
+
+            n += n - 1      # check 1 below the next power of two
+            k = int(1.00001 + _log(n, 2))
+            self.assert_(k in [numbits, numbits+1])
+            self.assert_(2**k > n > 2**(k-2))
+
+            n -= n >> 15     # check a little farther below the next power of two
+            k = int(1.00001 + _log(n, 2))
+            self.assertEqual(k, numbits)        # note the stronger assertion
+            self.assert_(2**k > n > 2**(k-1))   # note the stronger assertion
 
 _gammacoeff = (0.9999999999995183, 676.5203681218835, -1259.139216722289,
               771.3234287757674,  -176.6150291498386, 12.50734324009056,
