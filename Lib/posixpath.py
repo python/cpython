@@ -354,6 +354,8 @@ def normpath(path):
     while i < len(comps):
         if comps[i] == '.':
             del comps[i]
+            while i < len(comps) and comps[i] == '':
+                del comps[i]
         elif comps[i] == '..' and i > 0 and comps[i-1] not in ('', '..'):
             del comps[i-1:i+1]
             i = i-1
