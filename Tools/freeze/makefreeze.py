@@ -4,15 +4,15 @@ import marshal
 # Write a file containing frozen code for the modules in the dictionary.
 
 header = """
-struct frozen {
-	char *name;
-	unsigned char *code;
-	int size;
-} frozen_modules[] = {
+#include "Python.h"
+
+static struct _frozen _PyImport_FrozenModules[] = {
 """
 trailer = """\
 	{0, 0, 0} /* sentinel */
 };
+
+struct _frozen *PyImport_FrozenModules = _PyImport_FrozenModules;
 """
 
 def makefreeze(outfp, dict):
