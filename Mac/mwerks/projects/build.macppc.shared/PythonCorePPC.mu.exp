@@ -1066,7 +1066,6 @@ read__11SIOUXSocketFPvi		# SIOUXSocket::read(void*,int)
 ioctl__11SIOUXSocketFUiPv		# SIOUXSocket::ioctl(unsigned int,void*)
 __dt__11SIOUXSocketFv		# SIOUXSocket::~SIOUXSocket()
 __ct__11SIOUXSocketFv		# SIOUXSocket::SIOUXSocket()
-DoInitialize__11SIOUXSocketFv		# SIOUXSocket::DoInitialize()
 __vt__16NullSocketDomain		# NullSocketDomain::__vt
 __vt__10NullSocket		# NullSocket::__vt
 __dt__10NullSocketFv		# NullSocket::~NullSocket()
@@ -1105,17 +1104,14 @@ before__9type_infoCFRC9type_info		# type_info::before(const type_info&) const
 __ne__9type_infoCFRC9type_info		# type_info::operator !=(const type_info&) const
 __eq__9type_infoCFRC9type_info		# type_info::operator ==(const type_info&) const
 __dl__FPv		# operator delete(void*)
-__nw__FUlRC9nothrow_t		# operator new(unsigned long,const nothrow_t&)
 __nw__FUl		# operator new(unsigned long)
 _prealloc_newpool__FUl		# _prealloc_newpool(unsigned long)
 _set_newnonptrmax__FUl		# _set_newnonptrmax(unsigned long)
 _set_newpoolsize__FUl		# _set_newpoolsize(unsigned long)
-__new_handler
-__throws_bad_alloc
+new_handler
 __del_hdl
 __new_hdl
 set_new_handler__FPFv_v		# set_new_handler(void (*)(void))
-__throw_bad_alloc__Fv		# __throw_bad_alloc()
 __destroy_new_array
 __destroy_arr
 __construct_array
@@ -1127,16 +1123,28 @@ set_unexpected__FPFv_v		# set_unexpected(void (*)(void))
 terminate__Fv		# terminate()
 set_terminate__FPFv_v		# set_terminate(void (*)(void))
 qd
+__RTTI__9exception		# exception::__RTTI
+__RTTI__13runtime_error		# runtime_error::__RTTI
+__RTTI__14overflow_error		# overflow_error::__RTTI
 __vt__14overflow_error		# overflow_error::__vt
+__RTTI__11range_error		# range_error::__RTTI
 __vt__11range_error		# range_error::__vt
 __vt__13runtime_error		# runtime_error::__vt
+__RTTI__11logic_error		# logic_error::__RTTI
+__RTTI__12out_of_range		# out_of_range::__RTTI
 __vt__12out_of_range		# out_of_range::__vt
+__RTTI__12length_error		# length_error::__RTTI
 __vt__12length_error		# length_error::__vt
+__RTTI__16invalid_argument		# invalid_argument::__RTTI
 __vt__16invalid_argument		# invalid_argument::__vt
+__RTTI__12domain_error		# domain_error::__RTTI
 __vt__12domain_error		# domain_error::__vt
 __vt__11logic_error		# logic_error::__vt
+__RTTI__13bad_exception		# bad_exception::__RTTI
 __vt__13bad_exception		# bad_exception::__vt
+__RTTI__10bad_typeid		# bad_typeid::__RTTI
 __vt__10bad_typeid		# bad_typeid::__vt
+__RTTI__8bad_cast		# bad_cast::__RTTI
 __vt__8bad_cast		# bad_cast::__vt
 __vt__9exception		# exception::__vt
 __priv_throwbadcast__Fv		# __priv_throwbadcast()
