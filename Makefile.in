@@ -505,6 +505,7 @@ depend:
 
 localclean:
 		-rm -f core *~ [@,#]* *.old *.orig *.rej
+		-rm -rf build
 
 clean:		localclean
 		-for i in $(SUBDIRS); do \
@@ -520,7 +521,6 @@ clean:		localclean
 localclobber:	localclean
 		-rm -f tags TAGS python$(EXE) $(LIBRARY) $(LDLIBRARY) *.o
 		-rm -f config.log config.cache config.h 
-		-rm -rf build
 
 clobber:	localclobber
 		-for i in $(SUBDIRS); do \
