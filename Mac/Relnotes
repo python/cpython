@@ -45,3 +45,5 @@ http://www.cwi.nl/~jack/macpython.html.
 
 - The IDE and Tkinter do not work together. Run tkinter programs under PythonInterpreter.
 - Aliases do not work in sys.path entries.
+- Once you have used multiple threads you cannot raise KeyboardInterrupt anymore:
+  typing command-. will immedeately exit the interpreter.
