@@ -29,6 +29,8 @@ import MacOS
 from aetypes import *
 from aepack import pack, unpack, coerce, AEDescType
 
+Error = 'aetools.Error'
+
 # Special code to unpack an AppleEvent (which is *not* a disguised record!)
 # Note by Jack: No??!? If I read the docs correctly it *is*....
 
@@ -105,35 +107,49 @@ def enumsubst(arguments, key, edict):
 def decodeerror(arguments):
 	"""Create the 'best' argument for a raise MacOS.Error"""
 	errn = arguments['errn']
-	errarg = (errn, MacOS.GetErrorString(errn))
+	errarg = (errn, )
 	if arguments.has_key('errs'):
 		errarg = errarg + (arguments['errs'],)
 	if arguments.has_key('erob'):
 		errarg = errarg + (arguments['erob'],)
+	if len(errarg) == 1:
+		errarg = errarg + ('Server returned error code %d'%errn, )
 	return errarg
 
 class TalkTo:
 	"""An AE connection to an application"""
 	
-	def __init__(self, signature):
+	def __init__(self, signature, start=0):
 		"""Create a communication channel with a particular application.
 		
 		Addressing the application is done by specifying either a
 		4-byte signature, an AEDesc or an object that will __aepack__
 		to an AEDesc.
 		"""
+		self.target_signature = None
 		if type(signature) == AEDescType:
 			self.target = signature
 		elif type(signature) == InstanceType and hasattr(signature, '__aepack__'):
 			self.target = signature.__aepack__()
 		elif type(signature) == StringType and len(signature) == 4:
 			self.target = AE.AECreateDesc(AppleEvents.typeApplSignature, signature)
+			self.target_signature = signature
 		else:
 			raise TypeError, "signature should be 4-char string or AEDesc"
 		self.send_flags = AppleEvents.kAEWaitReply
 		self.send_priority = AppleEvents.kAENormalPriority
 		self.send_timeout = AppleEvents.kAEDefaultTimeout
-	
+		if start:
+			self.start()
+		
+	def start(self):
+		"""Start the application, if it is not running yet"""
+		import findertools
+		import macfs
+		
+		fss = macfs.FindApplication(self.target_signature)
+		findertools.launch(fss)
+			
 	def newevent(self, code, subcode, parameters = {}, attributes = {}):
 		"""Create a complete structure for an apple event"""
 		
@@ -177,7 +193,7 @@ class TalkTo:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, decodeerror(_arguments)
+			raise Error, decodeerror(_arguments)
 
 		if _arguments.has_key('----'):
 			return _arguments['----']
