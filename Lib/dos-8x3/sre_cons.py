@@ -6,9 +6,7 @@
 #
 # Copyright (c) 1998-2000 by Secret Labs AB.  All rights reserved.
 #
-# Portions of this engine have been developed in cooperation with
-# CNRI.  Hewlett-Packard provided funding for 1.6 integration and
-# other compatibility work.
+# See the sre.py file for information on usage and redistribution.
 #
 
 # should this really be here?
@@ -22,14 +20,16 @@ FAILURE = "failure"
 SUCCESS = "success"
 
 ANY = "any"
+ANY_ALL = "any_all"
 ASSERT = "assert"
 ASSERT_NOT = "assert_not"
 AT = "at"
 BRANCH = "branch"
 CALL = "call"
 CATEGORY = "category"
-GROUP = "group"
-GROUP_IGNORE = "group_ignore"
+CHARSET = "charset"
+GROUPREF = "groupref"
+GROUPREF_IGNORE = "groupref_ignore"
 IN = "in"
 IN_IGNORE = "in_ignore"
 INFO = "info"
@@ -38,8 +38,9 @@ LITERAL = "literal"
 LITERAL_IGNORE = "literal_ignore"
 MARK = "mark"
 MAX_REPEAT = "max_repeat"
-MAX_REPEAT_ONE = "max_repeat_one"
+MAX_UNTIL = "max_until"
 MIN_REPEAT = "min_repeat"
+MIN_UNTIL = "min_until"
 NEGATE = "negate"
 NOT_LITERAL = "not_literal"
 NOT_LITERAL_IGNORE = "not_literal_ignore"
@@ -81,25 +82,27 @@ OPCODES = [
     # failure=0 success=1 (just because it looks better that way :-)
     FAILURE, SUCCESS,
 
-    ANY,
+    ANY, ANY_ALL,
     ASSERT, ASSERT_NOT,
     AT,
     BRANCH,
     CALL,
     CATEGORY,
-    GROUP, GROUP_IGNORE,
+    CHARSET,
+    GROUPREF, GROUPREF_IGNORE,
     IN, IN_IGNORE,
     INFO,
     JUMP,
     LITERAL, LITERAL_IGNORE,
     MARK,
-    MAX_REPEAT,
-    MAX_REPEAT_ONE,
-    MIN_REPEAT,
+    MAX_UNTIL,
+    MIN_UNTIL,
     NOT_LITERAL, NOT_LITERAL_IGNORE,
     NEGATE,
     RANGE,
-    REPEAT
+    REPEAT,
+    REPEAT_ONE,
+    SUBPATTERN
 
 ]
 
@@ -132,7 +135,7 @@ CHCODES = makedict(CHCODES)
 
 # replacement operations for "ignore case" mode
 OP_IGNORE = {
-    GROUP: GROUP_IGNORE,
+    GROUPREF: GROUPREF_IGNORE,
     IN: IN_IGNORE,
     LITERAL: LITERAL_IGNORE,
     NOT_LITERAL: NOT_LITERAL_IGNORE
@@ -166,13 +169,18 @@ CH_UNICODE = {
 }
 
 # flags
-SRE_FLAG_TEMPLATE = 1
-SRE_FLAG_IGNORECASE = 2
-SRE_FLAG_LOCALE = 4
-SRE_FLAG_MULTILINE = 8
-SRE_FLAG_DOTALL = 16
-SRE_FLAG_UNICODE = 32
-SRE_FLAG_VERBOSE = 64
+SRE_FLAG_TEMPLATE = 1 # template mode (disable backtracking)
+SRE_FLAG_IGNORECASE = 2 # case insensitive
+SRE_FLAG_LOCALE = 4 # honour system locale
+SRE_FLAG_MULTILINE = 8 # treat target as multiline string
+SRE_FLAG_DOTALL = 16 # treat target as a single string
+SRE_FLAG_UNICODE = 32 # use unicode locale
+SRE_FLAG_VERBOSE = 64 # ignore whitespace and comments
+
+# flags for INFO primitive
+SRE_INFO_PREFIX = 1 # has prefix
+SRE_INFO_LITERAL = 2 # entire pattern is literal (given by prefix)
+SRE_INFO_CHARSET = 4 # pattern starts with character from given set
 
 if __name__ == "__main__":
     import string
@@ -201,6 +209,7 @@ if __name__ == "__main__":
     dump(f, OPCODES, "SRE_OP")
     dump(f, ATCODES, "SRE")
     dump(f, CHCODES, "SRE")
+
     f.write("#define SRE_FLAG_TEMPLATE %d\n" % SRE_FLAG_TEMPLATE)
     f.write("#define SRE_FLAG_IGNORECASE %d\n" % SRE_FLAG_IGNORECASE)
     f.write("#define SRE_FLAG_LOCALE %d\n" % SRE_FLAG_LOCALE)
@@ -208,5 +217,10 @@ if __name__ == "__main__":
     f.write("#define SRE_FLAG_DOTALL %d\n" % SRE_FLAG_DOTALL)
     f.write("#define SRE_FLAG_UNICODE %d\n" % SRE_FLAG_UNICODE)
     f.write("#define SRE_FLAG_VERBOSE %d\n" % SRE_FLAG_VERBOSE)
+
+    f.write("#define SRE_INFO_PREFIX %d\n" % SRE_INFO_PREFIX)
+    f.write("#define SRE_INFO_LITERAL %d\n" % SRE_INFO_LITERAL)
+    f.write("#define SRE_INFO_CHARSET %d\n" % SRE_INFO_CHARSET)
+
     f.close()
     print "done"

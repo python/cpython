@@ -36,6 +36,9 @@ ConfigParser -- responsible for for parsing a list of
     has_section(section)
         return whether the given section exists
 
+    has_option(section, option)
+        return whether the given option exists in the given section
+
     options(section)
         return list of configuration options for the named section
 
@@ -68,6 +71,18 @@ ConfigParser -- responsible for for parsing a list of
     getboolean(section, options)
         like get(), but convert value to a boolean (currently defined as 0 or
         1, only)
+
+    remove_section(section)
+	remove the given file section and all its options
+
+    remove_option(section, option)
+	remove the given option from the given section
+
+    set(section, option, value)
+        set the given option
+
+    write(fp)
+	write the configuration state in .ini format
 """
 
 import sys
@@ -286,6 +301,64 @@ class ConfigParser:
     def optionxform(self, optionstr):
         return string.lower(optionstr)
 
+    def has_option(self, section, option):
+        """Check for the existence of a given option in a given section."""
+        if not section or section == "DEFAULT":
+            return self.__defaults.has_key(option)
+        elif not self.has_section(section):
+            return 0
+        else:
+            return self.__sections[section].has_key(option)
+
+    def set(self, section, option, value):
+        """Set an option."""
+        if not section or section == "DEFAULT":
+            sectdict = self.__defaults
+        else:
+            try:
+                sectdict = self.__sections[section]
+            except KeyError:
+                raise NoSectionError(section)
+        sectdict[option] = value
+
+    def write(self, fp):
+        """Write an .ini-format representation of the configuration state."""
+        if self.__defaults:
+            fp.write("[DEFAULT]\n")
+            for (key, value) in self.__defaults.items():
+                fp.write("%s = %s\n" % (key, value))
+            fp.write("\n")
+        for section in self.sections():
+            fp.write("[" + section + "]\n")
+            sectdict = self.__sections[section]
+            for (key, value) in sectdict.items():
+                if key == "__name__":
+                    continue
+                fp.write("%s = %s\n" % (key, value))
+            fp.write("\n")
+
+    def remove_option(self, section, option):
+        """Remove an option."""
+        if not section or section == "DEFAULT":
+            sectdict = self.__defaults
+        else:
+            try:
+                sectdict = self.__sections[section]
+            except KeyError:
+                raise NoSectionError(section)
+        existed = sectdict.has_key(key)
+        if existed:
+            del sectdict[key]
+        return existed
+
+    def remove_section(self, section):
+        """Remove a file section."""
+        if self.__sections.has_key(section):
+            del self.__sections[section]
+            return 1
+        else:
+            return 0
+
     #
     # Regular expressions for parsing section headers and options.  Note a
     # slight semantic change from the previous version, because of the use
@@ -357,7 +430,6 @@ class ConfigParser:
                     mo = self.OPTCRE.match(line)
                     if mo:
                         optname, vi, optval = mo.group('option', 'vi', 'value')
-                        optname = string.lower(optname)
                         if vi in ('=', ':') and ';' in optval:
                             # ';' is a comment delimiter only if it follows
                             # a spacing character

@@ -30,7 +30,8 @@ seekable stream object.
 import sys
 import string
 
-Error = 'multifile.Error'
+class Error(Exception):
+	pass
 
 class MultiFile:
 

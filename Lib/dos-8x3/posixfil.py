@@ -176,7 +176,7 @@ class _posixfile_:
         import sys, os
         if sys.platform in ('netbsd1',
                             'openbsd2',
-                            'freebsd2', 'freebsd3',
+                            'freebsd2', 'freebsd3', 'freebsd4', 'freebsd5',
                             'bsdos2', 'bsdos3', 'bsdos4'):
             flock = struct.pack('lxxxxlxxxxlhh', \
                   l_start, l_len, os.getpid(), l_type, l_whence) 
@@ -192,7 +192,7 @@ class _posixfile_:
         if '?' in how:
             if sys.platform in ('netbsd1',
                                 'openbsd2',
-                                'freebsd2', 'freebsd3',
+                                'freebsd2', 'freebsd3', 'freebsd4', 'freebsd5',
                                 'bsdos2', 'bsdos3', 'bsdos4'):
                 l_start, l_len, l_pid, l_type, l_whence = \
                     struct.unpack('lxxxxlxxxxlhh', flock)

@@ -85,10 +85,13 @@ assert d == d2, "function call modified dictionary"
 
 # what about willful misconduct?
 def saboteur(**kw):
-    kw['x'] = locals()
+    kw['x'] = locals() # yields a cyclic kw
+    return kw
 d = {}
-saboteur(a=1, **d)
+kw = saboteur(a=1, **d)
 assert d == {}
+# break the cycle
+del kw['x']
         
 try:
     g(1, 2, 3, **{'x':4, 'y':5})
