@@ -1,10 +1,12 @@
 #! /usr/bin/env python
 
-# This file contains a class and a main program that perform two
+# This file contains a class and a main program that perform three
 # related (though complimentary) formatting operations on Python
-# programs.  When called as "pindend -c", it takes a valid Python
+# programs.  When called as "pindent -c", it takes a valid Python
 # program as input and outputs a version augmented with block-closing
-# comments.  When called as "pindent -r" it assumes its input is a
+# comments.  When called as "pindent -e", it assumes its input is a
+# Python program with block-closing comments and outputs a commentless
+# version.   When called as "pindent -r" it assumes its input is a
 # Python program with block-closing comments but with its indentation
 # messed up, and outputs a properly indented version.
 
@@ -34,11 +36,12 @@
 # that indentation is not significant when interpreting block-closing
 # comments).
 
-# Both operations are idempotent (i.e. applied to their own output
+# The operations are idempotent (i.e. applied to their own output
 # they yield an identical result).  Running first "pindent -c" and
 # then "pindent -r" on a valid Python program produces a program that
 # is semantically identical to the input (though its indentation may
-# be different).
+# be different). Running "pindent -e" on that output produces a
+# program that only differs from the original in indentation.
 
 # Other options:
 # -s stepsize: set the indentation step size (default 8)
@@ -193,6 +196,34 @@ class PythonIndenter:
 		# end if
 	# end def reformat
 
+	def eliminate(self):
+		begin_counter = 0
+		end_counter = 0
+		while 1:
+			line = self.getline()
+			if not line: break	# EOF
+			# end if
+			m = self.endprog.match(line)
+			if m:
+				end_counter = end_counter + 1
+				continue
+			# end if
+			m = self.kwprog.match(line)
+			if m:
+				kw = m.group('kw')
+				if kw in start:
+					begin_counter = begin_counter + 1
+				# end if
+			# end if
+			self.putline(line)
+		# end while
+		if begin_counter - end_counter < 0:
+			sys.stderr.write('Warning: input contained more end tags than expected\n')
+		elif begin_counter - end_counter > 0:
+			sys.stderr.write('Warning: input contained less end tags than expected\n')
+		# end if
+	# end def eliminate
+	
 	def complete(self):
 		self.indentsize = 1
 		stack = []
@@ -293,11 +324,17 @@ class PythonIndenter:
 # - xxx_string(s): take and return string object
 # - xxx_file(filename): process file in place, return true iff changed
 
-def complete_filter(input= sys.stdin, output = sys.stdout,
+def complete_filter(input = sys.stdin, output = sys.stdout,
 		    stepsize = STEPSIZE, tabsize = TABSIZE):
 	pi = PythonIndenter(input, output, stepsize, tabsize)
 	pi.complete()
 # end def complete_filter
+
+def eliminate_filter(input= sys.stdin, output = sys.stdout,
+	stepsize = STEPSIZE, tabsize = TABSIZE):
+	pi = PythonIndenter(input, output, stepsize, tabsize)
+	pi.eliminate()
+# end def eliminate_filter
 
 def reformat_filter(input = sys.stdin, output = sys.stdout,
 		    stepsize = STEPSIZE, tabsize = TABSIZE):
@@ -357,6 +394,14 @@ def complete_string(source, stepsize = STEPSIZE, tabsize = TABSIZE):
 	return output.getvalue()
 # end def complete_string
 
+def eliminate_string(source, stepsize = STEPSIZE, tabsize = TABSIZE):
+	input = StringReader(source)
+	output = StringWriter()
+	pi = PythonIndenter(input, output, stepsize, tabsize)
+	pi.eliminate()
+	return output.getvalue()
+# end def eliminate_string
+
 def reformat_string(source, stepsize = STEPSIZE, tabsize = TABSIZE):
 	input = StringReader(source)
 	output = StringWriter()
@@ -380,13 +425,30 @@ def complete_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE):
 	return 1
 # end def complete_file
 
+def eliminate_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE):
+	source = open(filename, 'r').read()
+	result = eliminate_string(source, stepsize, tabsize)
+	if source == result: return 0
+	# end if
+	import os
+	try: os.rename(filename, filename + '~')
+	except os.error: pass
+	# end try
+	f = open(filename, 'w')
+	f.write(result)
+	f.close()
+	return 1
+# end def eliminate_file
+
 def reformat_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE):
 	source = open(filename, 'r').read()
 	result = reformat_string(source, stepsize, tabsize)
 	if source == result: return 0
 	# end if
 	import os
-	os.rename(filename, filename + '~')
+	try: os.rename(filename, filename + '~')
+	except os.error: pass
+	# end try
 	f = open(filename, 'w')
 	f.write(result)
 	f.close()
@@ -396,8 +458,9 @@ def reformat_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE):
 # Test program when called as a script
 
 usage = """
-usage: pindent (-c|-r) [-s stepsize] [-t tabsize] [file] ...
+usage: pindent (-c|-e|-r) [-s stepsize] [-t tabsize] [file] ...
 -c         : complete a correctly indented program (add #end directives)
+-e         : eliminate #end directives
 -r         : reformat a completed program (use #end directives)
 -s stepsize: indentation step (default %(STEPSIZE)d)
 -t tabsize : the worth in spaces of a tab (default %(TABSIZE)d)
@@ -409,7 +472,7 @@ the program acts as a filter (reads stdin, writes stdout).
 def test():
 	import getopt
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'crs:t:')
+		opts, args = getopt.getopt(sys.argv[1:], 'cers:t:')
 	except getopt.error, msg:
 		sys.stderr.write('Error: %s\n' % msg)
 		sys.stderr.write(usage)
@@ -421,6 +484,8 @@ def test():
 	for o, a in opts:
 		if o == '-c':
 			action = 'complete'
+		elif o == '-e':
+			action = 'eliminate'
 		elif o == '-r':
 			action = 'reformat'
 		elif o == '-s':
@@ -431,7 +496,7 @@ def test():
 	# end for
 	if not action:
 		sys.stderr.write(
-			'You must specify -c(omplete) or -r(eformat)\n')
+			'You must specify -c(omplete), -e(eliminate) or -r(eformat)\n')
 		sys.stderr.write(usage)
 		sys.exit(2)
 	# end if
