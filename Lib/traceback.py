@@ -18,7 +18,7 @@ def print_list(extracted_list, file=None):
         _print(file,
                '  File "%s", line %d, in %s' % (filename,lineno,name))
         if line:
-            _print(file, '    %s' % string.strip(line))
+            _print(file, '    %s' % line.strip())
 
 def format_list(extracted_list):
     """Given a list of tuples as returned by extract_tb() or
@@ -31,7 +31,7 @@ def format_list(extracted_list):
     for filename, lineno, name, line in extracted_list:
         item = '  File "%s", line %d, in %s\n' % (filename,lineno,name)
         if line:
-            item = item + '    %s\n' % string.strip(line)
+            item = item + '    %s\n' % line.strip()
         list.append(item)
     return list
 
@@ -56,7 +56,7 @@ def print_tb(tb, limit=None, file=None):
         _print(file,
                '  File "%s", line %d, in %s' % (filename,lineno,name))
         line = linecache.getline(filename, lineno)
-        if line: _print(file, '    ' + string.strip(line))
+        if line: _print(file, '    ' + line.strip())
         tb = tb.tb_next
         n = n+1
 
@@ -85,7 +85,7 @@ def extract_tb(tb, limit = None):
         filename = co.co_filename
         name = co.co_name
         line = linecache.getline(filename, lineno)
-        if line: line = string.strip(line)
+        if line: line = line.strip()
         else: line = None
         list.append((filename, lineno, name, line))
         tb = tb.tb_next
@@ -157,7 +157,7 @@ def format_exception_only(etype, value):
                 while i < len(line) and \
                       line[i] in string.whitespace:
                     i = i+1
-                list.append('    %s\n' % string.strip(line))
+                list.append('    %s\n' % line.strip())
                 s = '    '
                 for c in line[i:offset-1]:
                     if c in string.whitespace:
@@ -246,7 +246,7 @@ def extract_stack(f=None, limit = None):
         filename = co.co_filename
         name = co.co_name
         line = linecache.getline(filename, lineno)
-        if line: line = string.strip(line)
+        if line: line = line.strip()
         else: line = None
         list.append((filename, lineno, name, line))
         f = f.f_back

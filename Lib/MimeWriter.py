@@ -7,7 +7,6 @@ MimeWriter - the only thing here.
 """
 
 
-import string
 import mimetools
 
 __all__ = ["MimeWriter"]
@@ -87,12 +86,12 @@ class MimeWriter:
         self._headers = []
 
     def addheader(self, key, value, prefix=0):
-        lines = string.splitfields(value, "\n")
+        lines = value.split("\n")
         while lines and not lines[-1]: del lines[-1]
         while lines and not lines[0]: del lines[0]
         for i in range(1, len(lines)):
-            lines[i] = "    " + string.strip(lines[i])
-        value = string.joinfields(lines, "\n") + "\n"
+            lines[i] = "    " + lines[i].strip()
+        value = "\n".join(lines) + "\n"
         line = key + ": " + value
         if prefix:
             self._headers.insert(0, line)
