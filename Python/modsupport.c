@@ -206,6 +206,10 @@ do_arg(arg, p_format, p_va)
 			*q = getstringsize(arg);
 			format++;
 		}
+		else if (strlen(*p) != getstringsize(arg)) {
+			err_setstr(ValueError, "embedded '\\0' in string arg");
+			return 0;
+		}
 		break;
 		}
 	
@@ -224,6 +228,10 @@ do_arg(arg, p_format, p_va)
 			else
 				*q = getstringsize(arg);
 			format++;
+		}
+		else if (*p != NULL && strlen(*p) != getstringsize(arg)) {
+			err_setstr(ValueError, "embedded '\\0' in string arg");
+			return 0;
 		}
 		break;
 		}
@@ -292,8 +300,11 @@ int getargs(va_alist) va_dcl
 	va_end(va);
 	if (!ok) {
 		char buf[256];
-		sprintf(buf, "bad argument list (format '%s')", format);
-		err_setstr(TypeError, buf);
+		if (!err_occurred()) {
+			sprintf(buf, "bad argument list (format '%s')",
+				format);
+			err_setstr(TypeError, buf);
+		}
 	}
 	return ok;
 }
