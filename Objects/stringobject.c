@@ -609,7 +609,7 @@ static PyBufferProcs string_as_buffer = {
 
 
 static PyObject *
-split_whitespace(char *s, int len, int maxsplit)
+split_whitespace(const char *s, int len, int maxsplit)
 {
 	int i, j, err;
 	PyObject* item;
@@ -1412,7 +1412,7 @@ string_translate(PyStringObject *self, PyObject *args)
   MEM, the function returns -1.
 */
 static int 
-mymemfind(char *mem, int len, char *pat, int pat_len)
+mymemfind(const char *mem, int len, const char *pat, int pat_len)
 {
 	register int ii;
 
@@ -1435,7 +1435,7 @@ mymemfind(char *mem, int len, char *pat, int pat_len)
            mem=11111 and pat==11 also return 2.
  */
 static int 
-mymemcnt(char *mem, int len, char *pat, int pat_len)
+mymemcnt(const char *mem, int len, const char *pat, int pat_len)
 {
 	register int offset = 0;
 	int nfound = 0;
@@ -1471,10 +1471,10 @@ mymemcnt(char *mem, int len, char *pat, int pat_len)
        NULL if an error occurred.
 */
 static char *
-mymemreplace(char *str, int len,	/* input string */
-             char *pat, int pat_len,	/* pattern string to find */
-             char *sub, int sub_len,	/* substitution string */
-             int count,			/* number of replacements */
+mymemreplace(const char *str, int len,		/* input string */
+             const char *pat, int pat_len,	/* pattern string to find */
+             const char *sub, int sub_len,	/* substitution string */
+             int count,				/* number of replacements */
              int *out_len)
 {
 	char *out_s;
@@ -1526,7 +1526,7 @@ mymemreplace(char *str, int len,	/* input string */
 
   return_same:
 	*out_len = -1;
-	return str;
+	return (char*)str;	/* have to cast away constness here */
 }
 
 
