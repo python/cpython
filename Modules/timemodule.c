@@ -83,7 +83,11 @@ time_time(self, args)
 #ifdef HAVE_CLOCK
 
 #ifndef CLOCKS_PER_SEC
+#ifdef CLK_TCK
+#define CLOCKS_PER_SEC CLK_TCK
+#else
 #define CLOCKS_PER_SEC 1000000
+#endif
 #endif
 
 static object *
