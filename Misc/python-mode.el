@@ -431,7 +431,7 @@ argument is provided, that many colons are inserted non-electrically."
 	  (indent (py-compute-indentation)))
       (if (and (not arg)
 	       (py-outdent-p)
-	       (= indent (progn
+	       (= indent (save-excursion
 			   (forward-line -1)
 			   (py-compute-indentation)))
 	       )
