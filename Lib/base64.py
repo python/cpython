@@ -22,7 +22,6 @@ __all__ = [
     # starting at:
     #
     # http://zgp.org/pipermail/p2p-hackers/2001-September/000316.html
-    'freenet_b64encode', 'freenet_b64decode',
     'urlsafe_b64encode', 'urlsafe_b64decode',
     ]
 
