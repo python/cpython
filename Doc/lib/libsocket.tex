@@ -194,6 +194,34 @@ where the host byte order is the same as network byte order, this is a
 no-op; otherwise, it performs a 2-byte swap operation.
 \end{funcdesc}
 
+\begin{funcdesc}{inet_aton}{ip_string}
+Convert an IP address from dotted-quad string format
+(e.g.\ '123.45.67.89') to 32-bit packed binary format, as a string four
+characters in length.
+
+Useful when conversing with a program that uses the standard C library
+and needs objects of type \ctype{struct in_addr}, which is the C type
+for the 32-bit packed binary this function returns.
+
+If the IP address string passed to this function is invalid,
+\exception{socket.error} will be raised. Note that exactly what is
+valid depends on the underlying C implementation of
+\cfunction{inet_aton()}.
+\end{funcdesc}
+
+\begin{funcdesc}{inet_ntoa}{packed_ip}
+Convert a 32-bit packed IP address (a string four characters in
+length) to its standard dotted-quad string representation
+(e.g. '123.45.67.89').
+
+Useful when conversing with a program that uses the standard C library
+and needs objects of type \ctype{struct in_addr}, which is the C type
+for the 32-bit packed binary this function takes as an argument.
+
+If the string passed to this function is not exactly 4 bytes in
+length, \exception{socket.error} will be raised.
+\end{funcdesc}
+
 \begin{datadesc}{SocketType}
 This is a Python type object that represents the socket object type.
 It is the same as \code{type(socket(...))}.
