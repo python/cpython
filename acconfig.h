@@ -142,5 +142,8 @@
 */
 #undef HAVE_LARGEFILE_SUPPORT
 
+/* Defined when any dynamic module loading is enabled */
+#undef HAVE_DYNAMIC_LOADING
+
 
 /* Leave that blank line there-- autoheader needs it! */
