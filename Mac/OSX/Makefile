@@ -243,3 +243,11 @@ installunixtools:
 	echo "exec \"$(INSTALLED_PYTHONW)\" \"\$$@\"" >> pythonw.sh
 	$(INSTALL) pythonw.sh $(DESTDIR)$(bindir)/pythonw$(VERSION)
 	$(INSTALL_SYMLINK) pythonw$(VERSION) $(DESTDIR)$(bindir)/pythonw
+	
+installextras:
+	$(INSTALL) -d $(DESTDIR)$(PYTHONAPPSDIR)/Extras
+	$(INSTALL) $(srcdir)/Mac/OSX/Extras.ReadMe.txt $(DESTDIR)$(PYTHONAPPSDIR)/Extras/ReadMe
+	$(BUILDPYTHON) $(srcdir)/Mac/OSX/Extras.install.py $(srcdir)/Demo \
+		$(DESTDIR)$(PYTHONAPPSDIR)/Extras/Demo
+	$(BUILDPYTHON) $(srcdir)/Mac/OSX/Extras.install.py $(srcdir)/Tools \
+		$(DESTDIR)$(PYTHONAPPSDIR)/Extras/Tools
