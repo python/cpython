@@ -36,7 +36,7 @@ extern int errno;
 #include <math.h>
 
 #ifndef __STDC__
-extern double fmod();
+extern double fmod PROTO((double, double));
 #endif
 
 #ifdef HUGE_VAL

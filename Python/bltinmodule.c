@@ -315,8 +315,6 @@ builtin_input(self, v)
 {
 	FILE *in = sysgetfile("stdin", stdin);
 	FILE *out = sysgetfile("stdout", stdout);
-	node *n;
-	int err;
 	int c;
 	object *m, *d;
 	flushline();

@@ -126,9 +126,10 @@ intrcheck()
 
 static int interrupted;
 
+/* ARGSUSED */
 static SIGTYPE
 intcatcher(sig)
-	int sig;
+	int sig; /* Not used by required by interface */
 {
 	interrupted = 1;
 	signal(SIGINT, intcatcher);
