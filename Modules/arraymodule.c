@@ -121,7 +121,7 @@ b_setitem(ap, i, v)
 }
 
 static PyObject *
-B_getitem(ap, i)
+BB_getitem(ap, i)
 	arrayobject *ap;
 	int i;
 {
@@ -129,7 +129,7 @@ B_getitem(ap, i)
 	return PyInt_FromLong(x);
 }
 
-#define B_setitem b_setitem
+#define BB_setitem b_setitem
 
 static PyObject *
 h_getitem(ap, i)
@@ -154,14 +154,14 @@ h_setitem(ap, i, v)
 }
 
 static PyObject *
-H_getitem(ap, i)
+HH_getitem(ap, i)
 	arrayobject *ap;
 	int i;
 {
 	return PyInt_FromLong((long) ((unsigned short *)ap->ob_item)[i]);
 }
 
-#define H_setitem h_setitem
+#define HH_setitem h_setitem
 
 static PyObject *
 i_getitem(ap, i)
@@ -186,7 +186,7 @@ i_setitem(ap, i, v)
 }
 
 static PyObject *
-I_getitem(ap, i)
+II_getitem(ap, i)
 	arrayobject *ap;
 	int i;
 {
@@ -195,7 +195,7 @@ I_getitem(ap, i)
 }
 
 static int
-I_setitem(ap, i, v)
+II_setitem(ap, i, v)
 	arrayobject *ap;
 	int i;
 	PyObject *v;
@@ -238,7 +238,7 @@ l_setitem(ap, i, v)
 }
 
 static PyObject *
-L_getitem(ap, i)
+LL_getitem(ap, i)
 	arrayobject *ap;
 	int i;
 {
@@ -246,7 +246,7 @@ L_getitem(ap, i)
 }
 
 static int
-L_setitem(ap, i, v)
+LL_setitem(ap, i, v)
 	arrayobject *ap;
 	int i;
 	PyObject *v;
@@ -314,13 +314,13 @@ d_setitem(ap, i, v)
 static struct arraydescr descriptors[] = {
 	{'c', sizeof(char), c_getitem, c_setitem},
 	{'b', sizeof(char), b_getitem, b_setitem},
-	{'B', sizeof(char), B_getitem, B_setitem},
+	{'B', sizeof(char), BB_getitem, BB_setitem},
 	{'h', sizeof(short), h_getitem, h_setitem},
-	{'H', sizeof(short), H_getitem, H_setitem},
+	{'H', sizeof(short), HH_getitem, HH_setitem},
 	{'i', sizeof(int), i_getitem, i_setitem},
-	{'I', sizeof(int), I_getitem, I_setitem},
+	{'I', sizeof(int), II_getitem, II_setitem},
 	{'l', sizeof(long), l_getitem, l_setitem},
-	{'L', sizeof(long), L_getitem, L_setitem},
+	{'L', sizeof(long), LL_getitem, LL_setitem},
 	{'f', sizeof(float), f_getitem, f_setitem},
 	{'d', sizeof(double), d_getitem, d_setitem},
 	{'\0', 0, 0, 0} /* Sentinel */
