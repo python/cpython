@@ -2632,7 +2632,7 @@ initparser()
     module = Py_InitModule("parser", parser_functions);
     dict = PyModule_GetDict(module);
 
-    parser_error = PyString_FromString("parser.ParserError");
+    parser_error = PyErr_NewException("parser.ParserError", NULL, NULL);
 
     if ((parser_error == 0)
 	|| (PyDict_SetItemString(dict, "ParserError", parser_error) != 0)) {
