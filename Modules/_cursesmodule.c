@@ -33,6 +33,32 @@
 
 /* CVS: $Id$ */
 
+/*
+
+A number of SysV or ncurses functions don't have wrappers yet; if you need
+a given function, add it and send a patch.  Here's a list of currently
+unsupported functions:
+
+	addchnstr addchstr chgat color_set copywin define_key
+	del_curterm delscreen dupwin inchnstr inchstr innstr keyok
+	mcprint mvaddchnstr mvaddchstr mvchgat mvcur mvinchnstr
+	mvinchstr mvinnstr mmvwaddchnstr mvwaddchstr mvwchgat
+	mvwgetnstr mvwinchnstr mvwinchstr mvwinnstr napms newterm
+	overlay overwrite resetty resizeterm restartterm ripoffline
+	savetty scr_dump scr_init scr_restore scr_set scrl set_curterm
+	set_term setterm setupterm tgetent tgetflag tgetnum tgetstr
+	tgoto timeout tparm tputs tputs typeahead use_default_colors
+	vidattr vidputs waddchnstr waddchstr wchgat wcolor_set
+	winchnstr winchstr winnstr wmouse_trafo wredrawln wscrl
+	wtimeout
+
+Low-priority: 
+	slk_attr slk_attr_off slk_attr_on slk_attr_set slk_attroff
+	slk_attron slk_attrset slk_clear slk_color slk_init slk_label
+	slk_noutrefresh slk_refresh slk_restore slk_set slk_touch
+
+ */
+
 /* Release Number */
 
 char *PyCursesVersion = "1.6";
