@@ -57,7 +57,7 @@ static int allocated;
 				DEBUG_UNCOLLECTABLE | \
 				DEBUG_INSTANCES | \
 				DEBUG_OBJECTS
-static int debug;
+static int debug = 0;
 
 /* list of uncollectable objects */
 static PyObject *garbage;
@@ -222,9 +222,11 @@ move_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
 {
 	PyGC_Head *next;
 	PyGC_Head *gc = unreachable->gc_next;
-	static PyObject *delstr;
+	static PyObject *delstr = NULL;
 	if (delstr == NULL) {
 		delstr = PyString_InternFromString("__del__");
+		if (delstr == NULL)
+			Py_FatalError("PyGC: can't initialize __del__ string");
 	}
 	for (; gc != unreachable; gc=next) {
 		PyObject *op = PyObject_FROM_GC(gc);
@@ -268,9 +270,8 @@ move_finalizer_reachable(PyGC_Head *finalizers)
 }
 
 static void
-debug_instance(PyObject *output, char *msg, PyInstanceObject *inst)
+debug_instance(char *msg, PyInstanceObject *inst)
 {
-	char buf[200];
 	char *cname;
 	/* be careful not to create new dictionaries */
 	PyObject *classname = inst->in_class->cl_name;
@@ -278,20 +279,18 @@ debug_instance(PyObject *output, char *msg, PyInstanceObject *inst)
 		cname = PyString_AsString(classname);
 	else
 		cname = "?";
-	sprintf(buf, "gc: %s<%.100s instance at %p>\n", msg, cname, inst);
-	PyFile_WriteString(buf, output);
+	PySys_WriteStderr("gc: %.100s <%.100s instance at %p>\n",
+			  msg, cname, inst);
 }
 
 static void
-debug_cycle(PyObject *output, char *msg, PyObject *op)
+debug_cycle(char *msg, PyObject *op)
 {
 	if ((debug & DEBUG_INSTANCES) && PyInstance_Check(op)) {
-		debug_instance(output, msg, (PyInstanceObject *)op);
+		debug_instance(msg, (PyInstanceObject *)op);
 	} else if (debug & DEBUG_OBJECTS) {
-		char buf[200];
-		sprintf(buf, "gc: %s<%.100s %p>\n", msg,
-			op->ob_type->tp_name, op);
-		PyFile_WriteString(buf, output);
+		PySys_WriteStderr("gc: %.100s <%.100s %p>\n",
+				  msg, op->ob_type->tp_name, op);
 	}
 }
 
@@ -357,20 +356,15 @@ collect(PyGC_Head *young, PyGC_Head *old)
 	PyGC_Head unreachable;
 	PyGC_Head finalizers;
 	PyGC_Head *gc;
-	PyObject *output = NULL;
 
-	if (debug) {
-		output = PySys_GetObject("stderr");
-	}
 	if (debug & DEBUG_STATS) {
-		char buf[100];
-		sprintf(buf, "gc: collecting generation %d...\n", generation);
-		PyFile_WriteString(buf,output);
-		sprintf(buf, "gc: objects in each generation: %ld %ld %ld\n",
+		PySys_WriteStderr(
+			"gc: collecting generation %d...\n"
+			"gc: objects in each generation: %ld %ld %ld\n",
+			generation,
 			gc_list_size(&generation0),
 			gc_list_size(&generation1),
 			gc_list_size(&generation2));
-		PyFile_WriteString(buf,output);
 	}
 
 	/* Using ob_refcnt and gc_refs, calculate which objects in the
@@ -408,8 +402,8 @@ collect(PyGC_Head *young, PyGC_Head *old)
 	for (gc = unreachable.gc_next; gc != &unreachable;
 			gc = gc->gc_next) {
 		m++;
-		if (output != NULL && (debug & DEBUG_COLLECTABLE)) {
-			debug_cycle(output, "collectable ", PyObject_FROM_GC(gc));
+		if (debug & DEBUG_COLLECTABLE) {
+			debug_cycle("collectable", PyObject_FROM_GC(gc));
 		}
 	}
 	/* call tp_clear on objects in the collectable set.  This will cause
@@ -422,19 +416,17 @@ collect(PyGC_Head *young, PyGC_Head *old)
 	for (gc = finalizers.gc_next; gc != &finalizers;
 			gc = gc->gc_next) {
 		n++;
-		if (output != NULL && (debug & DEBUG_UNCOLLECTABLE)) {
-			debug_cycle(output, "uncollectable ", PyObject_FROM_GC(gc));
+		if (debug & DEBUG_UNCOLLECTABLE) {
+			debug_cycle("uncollectable", PyObject_FROM_GC(gc));
 		}
 	}
-	if (output != NULL && (debug & DEBUG_STATS)) {
+	if (debug & DEBUG_STATS) {
 		if (m == 0 && n == 0) {
-			PyFile_WriteString("gc: done.\n", output);
+			PySys_WriteStderr("gc: done.\n");
 		} else {
-			char buf[200];
-			sprintf(buf,
-				"gc: done, %ld unreachable, %ld uncollectable.\n",
-				n+m, n);
-			PyFile_WriteString(buf, output);
+			PySys_WriteStderr(
+			    "gc: done, %ld unreachable, %ld uncollectable.\n",
+			    n+m, n);
 		}
 	}
 
@@ -444,7 +436,6 @@ collect(PyGC_Head *young, PyGC_Head *old)
 	handle_finalizers(&finalizers, old);
 
 	allocated = 0;
-	PyErr_Clear(); /* in case writing to sys.stderr failed */
 	return n+m;
 }
 
