@@ -2145,7 +2145,7 @@ than using \constant{METH_NOARGS}.
 \item A new function, \cfunction{PyObject_DelItemString(\var{mapping},
 char *\var{key})} was added
 as shorthand for
-\code{PyObject_DelItem(\var{mapping}, PyString_New(\var{key})}.
+\code{PyObject_DelItem(\var{mapping}, PyString_New(\var{key}))}.
 
 \item The \method{xreadlines()} method of file objects, introduced in
 Python 2.1, is no longer necessary because files now behave as their
