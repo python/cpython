@@ -2149,12 +2149,12 @@ static PyObject *_PyPopen(char *, int, int);
 static PyObject *
 posix_popen(PyObject *self, PyObject *args)
 {
-	int bufsize = -1;
 	PyObject *f, *s;
 	int tm = 0;
   
 	char *cmdstring;
 	char *mode = "r";
+	int bufsize = -1;
 	if (!PyArg_ParseTuple(args, "s|si:popen", &cmdstring, &mode, &bufsize))
 		return NULL;
 
@@ -2174,9 +2174,9 @@ posix_popen(PyObject *self, PyObject *args)
 	}
 
 	if (*(mode+1) == 't')
-		f = _PyPopen(cmdstring, tm | _O_TEXT , POPEN_1);
+		f = _PyPopen(cmdstring, tm | _O_TEXT, POPEN_1);
 	else if (*(mode+1) == 'b')
-		f = _PyPopen(cmdstring, tm | _O_BINARY , POPEN_1);
+		f = _PyPopen(cmdstring, tm | _O_BINARY, POPEN_1);
 	else
 		f = _PyPopen(cmdstring, tm | _O_TEXT, POPEN_1);
 
@@ -2221,9 +2221,9 @@ win32_popen2(PyObject *self, PyObject  *args)
 
 /*
  * Variation on <om win32pipe.popen>
+ *
  * The result of this function is 3 pipes - the process's stdin,
  * stdout and stderr
- *
  */
 
 static PyObject *
@@ -2288,7 +2288,7 @@ win32_popen4(PyObject *self, PyObject  *args)
 		return NULL;
 	}
 
-	f = _PyPopen(cmdstring, tm , POPEN_4);
+	f = _PyPopen(cmdstring, tm, POPEN_4);
 
 	return f;
 }
@@ -2516,7 +2516,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 		 if (n != 4)
 			 CloseHandle(hChildStderrRdDup);
 
-		 f = Py_BuildValue("OO",p1,p2);
+		 f = Py_BuildValue("OO",p2,p1);
 		 break;
 	 }
 	
@@ -2545,7 +2545,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 		 PyFile_SetBufSize(p1, 0);
 		 PyFile_SetBufSize(p2, 0);
 		 PyFile_SetBufSize(p3, 0);
-		 f = Py_BuildValue("OOO",p1,p2,p3);
+		 f = Py_BuildValue("OOO",p2,p1,p3);
 		 break;
 	 }
 	 }
