@@ -449,7 +449,6 @@ class HTTPResponse:
                 break
 
         # we read everything; close the "file"
-        # XXX Shouldn't the client close the file?
         self.close()
 
         return value
@@ -600,8 +599,7 @@ class HTTPConnection:
         `url' specifies the object being requested, e.g. '/index.html'.
         """
 
-        # check if a prior response has been completed
-        # XXX What if it hasn't?
+        # if a prior response has been completed, then forget about it.
         if self.__response and self.__response.isclosed():
             self.__response = None
 
@@ -743,7 +741,7 @@ class HTTPConnection:
     def getresponse(self):
         "Get the response from the server."
 
-        # check if a prior response has been completed
+        # if a prior response has been completed, then forget about it.
         if self.__response and self.__response.isclosed():
             self.__response = None
 
