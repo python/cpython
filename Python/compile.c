@@ -385,6 +385,9 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 		co->co_firstlineno = firstlineno;
 		Py_INCREF(lnotab);
 		co->co_lnotab = lnotab;
+		if (PyTuple_GET_SIZE(freevars) == 0 &&
+		    PyTuple_GET_SIZE(cellvars) == 0)
+		    co->co_flags |= CO_NOFREE;
 	}
 	return co;
 }
