@@ -28,6 +28,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 #include "import.h"
 
+#ifdef HAVE_PROTOTYPES
+#define USE_STDARG
+#endif
+
+#ifdef USE_STDARG
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
 
 object *
 initmodule(name, methods)
@@ -57,280 +67,194 @@ initmodule(name, methods)
 }
 
 
-/* Argument list handling tools.
-   All return 1 for success, or call err_set*() and return 0 for failure */
+/* Generic argument list parser */
 
-int
-getnoarg(v)
-	object *v;
+static int do_arg PROTO((object *arg, char** p_format, va_list *p_va));
+static int
+do_arg(arg, p_format, p_va)
+	object *arg;
+	char** p_format;
+	va_list *p_va;
 {
-	if (v != NULL) {
-		return err_badarg();
+	char *format = *p_format;
+	va_list va = *p_va;
+	
+	if (arg == NULL)
+		return 0; /* Incomplete tuple or list */
+	
+	switch (*format++) {
+	
+	case '('/*')'*/: /* tuple, distributed over C parameters */ {
+		int i, n;
+		if (!is_tupleobject(arg))
+			return 0;
+		n = gettuplesize(arg);
+		for (i = 0; i < n; i++) {
+			if (!do_arg(gettupleitem(arg, i), &format, &va))
+				return 0;
+		}
+		if (*format++ != /*'('*/')')
+			return 0;
+		break;
+		}
+	
+	case 'h': /* short int */ {
+		short *p = va_arg(va, short *);
+		if (is_intobject(arg))
+			*p = getintvalue(arg);
+		else
+			return 0;
+		break;
+		}
+	
+	case 'i': /* int */ {
+		int *p = va_arg(va, int *);
+		if (is_intobject(arg))
+			*p = getintvalue(arg);
+		else
+			return 0;
+		break;
+		}
+	
+	case 'l': /* long int */ {
+		long *p = va_arg(va, long *);
+		if (is_intobject(arg))
+			*p = getintvalue(arg);
+		else
+			return 0;
+		break;
+		}
+	
+	case 'f': /* float */ {
+		float *p = va_arg(va, float *);
+		if (is_floatobject(arg))
+			*p = getfloatvalue(arg);
+		else if (is_intobject(arg))
+			*p = (float)getintvalue(arg);
+		else
+			return 0;
+		break;
+		}
+	
+	case 'd': /* double */ {
+		double *p = va_arg(va, double *);
+		if (is_floatobject(arg))
+			*p = getfloatvalue(arg);
+		else if (is_intobject(arg))
+			*p = (double)getintvalue(arg);
+		else
+			return 0;
+		break;
+		}
+	
+	case 'c': /* char */ {
+		char *p = va_arg(va, char *);
+		if (is_stringobject(arg) && getstringsize(arg) == 1)
+			*p = getstringvalue(arg)[0];
+		else
+			return 0;
+		break;
+		}
+	
+	case 's': /* string */ {
+		char **p = va_arg(va, char **);
+		if (is_stringobject(arg))
+			*p = getstringvalue(arg);
+		else
+			return 0;
+		if (*format == '#') {
+			int *q = va_arg(va, int *);
+			*q = getstringsize(arg);
+			format++;
+		}
+		break;
+		}
+	
+	case 'z': /* string, may be NULL (None) */ {
+		char **p = va_arg(va, char **);
+		if (arg == None)
+			*p = 0;
+		else if (is_stringobject(arg))
+			*p = getstringvalue(arg);
+		else
+			return 0;
+		if (*format == '#') {
+			int *q = va_arg(va, int *);
+			if (arg == None)
+				*q = 0;
+			else
+				*q = getstringsize(arg);
+			format++;
+		}
+		break;
+		}
+	
+	case 'S': /* string object */ {
+		object **p = va_arg(va, object **);
+		if (is_stringobject(arg))
+			*p = arg;
+		else
+			return 0;
+		break;
+		}
+	
+	case 'O': /* object */ {
+		object **p = va_arg(va, object **);
+		*p = arg;
+		break;
+		}
+
+	default:
+		fprintf(stderr, "bad do_arg format: x%x '%c'\n",
+			format[-1], format[-1]);
+		return 0;
+	
 	}
+	
+	*p_va = va;
+	*p_format = format;
+	
 	return 1;
 }
 
-int
-getintarg(v, a)
-	object *v;
-	int *a;
+#ifdef USE_STDARG
+int getargs(object *arg, char *format, ...)
+#else
+int getargs(va_alist) va_dcl
+#endif
 {
-	if (v == NULL || !is_intobject(v)) {
-		return err_badarg();
-	}
-	*a = getintvalue(v);
-	return 1;
-}
+	char *f;
+	int ok;
+	va_list va;
+#ifdef USE_STDARG
 
-int
-getintintarg(v, a, b)
-	object *v;
-	int *a;
-	int *b;
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
-		return err_badarg();
-	}
-	return getintarg(gettupleitem(v, 0), a) &&
-		getintarg(gettupleitem(v, 1), b);
-}
+	va_start(va, format);
+#else
+	object *arg;
+	char *format;
 
-int
-getintintintarg(v, a, b, c)
-	object *v;
-	int *a;
-	int *b;
-	int *c;
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 3) {
-		return err_badarg();
-	}
-	return getintarg(gettupleitem(v, 0), a) &&
-		getintarg(gettupleitem(v, 1), b) &&
-		getintarg(gettupleitem(v, 2), c);
-}
-
-int
-getlongarg(v, a)
-	object *v;
-	long *a;
-{
-	if (v == NULL || !is_intobject(v)) {
-		return err_badarg();
-	}
-	*a = getintvalue(v);
-	return 1;
-}
-
-int
-getlonglongarg(v, a, b)
-	object *v;
-	long *a, *b;
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
-		return err_badarg();
-	}
-	return getlongarg(gettupleitem(v, 0), a) &&
-		getlongarg(gettupleitem(v, 1), b);
-}
-
-int
-getlongobjectarg(v, a, b)
-	object *v;
-	long *a;
-	object **b;
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
-		return err_badarg();
-	}
-	if (getlongarg(gettupleitem(v, 0), a)) {
-		*b = gettupleitem(v, 1);
+	va_start(va);
+	arg = va_arg(va, object *);
+	format = va_arg(va, char *);
+#endif
+	if (*format == '\0') {
+		va_end(va);
+		if (arg != NULL) {
+			err_setstr(TypeError, "no arguments needed");
+			return 0;
+		}
 		return 1;
 	}
-	else {
-		return err_badarg();
+	
+	f = format;
+	ok = do_arg(arg, &f, &va) && *f == '\0';
+	va_end(va);
+	if (!ok) {
+		char buf[256];
+		sprintf(buf, "bad argument list (format '%s')", format);
+		err_setstr(TypeError, buf);
 	}
-}
-
-int
-getlonglongobjectarg(v, a, b, c)
-	object *v;
-	long *a, *b;
-	object **c;
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 3) {
-		return err_badarg();
-	}
-	if (getlongarg(gettupleitem(v, 0), a) &&
-		getlongarg(gettupleitem(v, 1), b)) {
-		*c = gettupleitem(v, 2);
-		return 1;
-	}
-	else {
-		return err_badarg();
-	}
-}
-
-int
-getstrarg(v, a)
-	object *v;
-	object **a;
-{
-	if (v == NULL || !is_stringobject(v)) {
-		return err_badarg();
-	}
-	*a = v;
-	return 1;
-}
-
-int
-getstrstrarg(v, a, b)
-	object *v;
-	object **a;
-	object **b;
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
-		return err_badarg();
-	}
-	return getstrarg(gettupleitem(v, 0), a) &&
-		getstrarg(gettupleitem(v, 1), b);
-}
-
-int
-getstrstrintarg(v, a, b, c)
-	object *v;
-	object **a;
-	object **b;
-	int *c;
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 3) {
-		return err_badarg();
-	}
-	return getstrarg(gettupleitem(v, 0), a) &&
-		getstrarg(gettupleitem(v, 1), b) &&
-		getintarg(gettupleitem(v, 2), c);
-}
-
-int
-getstrintarg(v, a, b)
-	object *v;
-	object **a;
-	int *b;
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
-		return err_badarg();
-	}
-	return getstrarg(gettupleitem(v, 0), a) &&
-		getintarg(gettupleitem(v, 1), b);
-}
-
-int
-getintstrarg(v, a, b)
-	object *v;
-	int *a;
-	object **b;
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
-		return err_badarg();
-	}
-	return getintarg(gettupleitem(v, 0), a) &&
-		getstrarg(gettupleitem(v, 1), b);
-}
-
-int
-getpointarg(v, a)
-	object *v;
-	int *a; /* [2] */
-{
-	return getintintarg(v, a, a+1);
-}
-
-int
-get3pointarg(v, a)
-	object *v;
-	int *a; /* [6] */
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 3) {
-		return err_badarg();
-	}
-	return getpointarg(gettupleitem(v, 0), a) &&
-		getpointarg(gettupleitem(v, 1), a+2) &&
-		getpointarg(gettupleitem(v, 2), a+4);
-}
-
-int
-getrectarg(v, a)
-	object *v;
-	int *a; /* [2+2] */
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
-		return err_badarg();
-	}
-	return getpointarg(gettupleitem(v, 0), a) &&
-		getpointarg(gettupleitem(v, 1), a+2);
-}
-
-int
-getrectintarg(v, a)
-	object *v;
-	int *a; /* [4+1] */
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
-		return err_badarg();
-	}
-	return getrectarg(gettupleitem(v, 0), a) &&
-		getintarg(gettupleitem(v, 1), a+4);
-}
-
-int
-getpointintarg(v, a)
-	object *v;
-	int *a; /* [2+1] */
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
-		return err_badarg();
-	}
-	return getpointarg(gettupleitem(v, 0), a) &&
-		getintarg(gettupleitem(v, 1), a+2);
-}
-
-int
-getpointstrarg(v, a, b)
-	object *v;
-	int *a; /* [2] */
-	object **b;
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
-		return err_badarg();
-	}
-	return getpointarg(gettupleitem(v, 0), a) &&
-		getstrarg(gettupleitem(v, 1), b);
-}
-
-int
-getstrintintarg(v, a, b, c)
-	object *v;
-	object *a;
-	int *b, *c;
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 3) {
-		return err_badarg();
-	}
-	return getstrarg(gettupleitem(v, 0), a) &&
-		getintarg(gettupleitem(v, 1), b) &&
-		getintarg(gettupleitem(v, 2), c);
-}
-
-int
-getrectpointarg(v, a)
-	object *v;
-	int *a; /* [4+2] */
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
-		return err_badarg();
-	}
-	return getrectarg(gettupleitem(v, 0), a) &&
-		getpointarg(gettupleitem(v, 1), a+4);
+	return ok;
 }
 
 int
@@ -411,37 +335,4 @@ getshortlistarg(args, a, n)
 		a[i] = getintvalue(v);
 	}
 	return 1;
-}
-
-int
-getdoublearg(args, px)
-	register object *args;
-	double *px;
-{
-	if (args == NULL)
-		return err_badarg();
-	if (is_floatobject(args)) {
-		*px = getfloatvalue(args);
-		return 1;
-	}
-	if (is_intobject(args)) {
-		*px = getintvalue(args);
-		return 1;
-	}
-	if (is_longobject(args)) {
-		*px = dgetlongvalue(args);
-		return 1;
-	}
-	return err_badarg();
-}
-
-int
-get2doublearg(args, px, py)
-	register object *args;
-	double *px, *py;
-{
-	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2)
-		return err_badarg();
-	return getdoublearg(gettupleitem(args, 0), px) &&
-		getdoublearg(gettupleitem(args, 1), py);
 }
