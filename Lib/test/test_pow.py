@@ -56,20 +56,20 @@ powtest(float)
 # Other tests-- not very systematic
 
 print 'The number in both columns should match.'
-print pow(3,3) % 8, pow(3,3,8)
-print pow(3,3) % -8, pow(3,3,-8)
-print pow(3,2) % -2, pow(3,2,-2)
-print pow(-3,3) % 8, pow(-3,3,8)
-print pow(-3,3) % -8, pow(-3,3,-8)
-print pow(5,2) % -8, pow(5,2,-8)
+print `pow(3,3) % 8`, `pow(3,3,8)`
+print `pow(3,3) % -8`, `pow(3,3,-8)`
+print `pow(3,2) % -2`, `pow(3,2,-2)`
+print `pow(-3,3) % 8`, `pow(-3,3,8)`
+print `pow(-3,3) % -8`, `pow(-3,3,-8)`
+print `pow(5,2) % -8`, `pow(5,2,-8)`
 print
 
-print pow(3L,3L) % 8, pow(3L,3L,8)
-print pow(3L,3L) % -8, pow(3L,3L,-8)
-print pow(3L,2) % -2, pow(3L,2,-2)
-print pow(-3L,3L) % 8, pow(-3L,3L,8)
-print pow(-3L,3L) % -8, pow(-3L,3L,-8)
-print pow(5L,2) % -8, pow(5L,2,-8)
+print `pow(3L,3L) % 8`, `pow(3L,3L,8)`
+print `pow(3L,3L) % -8`, `pow(3L,3L,-8)`
+print `pow(3L,2) % -2`, `pow(3L,2,-2)`
+print `pow(-3L,3L) % 8`, `pow(-3L,3L,8)`
+print `pow(-3L,3L) % -8`, `pow(-3L,3L,-8)`
+print `pow(5L,2) % -8`, `pow(5L,2,-8)`
 print
 
 print pow(3.0,3.0) % 8, pow(3.0,3.0,8)
