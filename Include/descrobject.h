@@ -16,8 +16,11 @@ typedef PyObject *(*wrapperfunc)(PyObject *self, PyObject *args,
 
 struct wrapperbase {
 	char *name;
+	int offset;
+	void *function;
 	wrapperfunc wrapper;
 	char *doc;
+	PyObject *name_strobj;
 };
 
 /* Various kinds of descriptor objects */

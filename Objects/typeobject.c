@@ -1893,11 +1893,6 @@ wrap_inquiry(PyObject *self, PyObject *args, void *wrapped)
 	return PyInt_FromLong((long)res);
 }
 
-static struct wrapperbase tab_len[] = {
-	{"__len__", (wrapperfunc)wrap_inquiry, "x.__len__() <==> len(x)"},
-	{0}
-};
-
 static PyObject *
 wrap_binaryfunc(PyObject *self, PyObject *args, void *wrapped)
 {
@@ -1941,30 +1936,6 @@ wrap_binaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
 	return (*func)(other, self);
 }
 
-#undef BINARY
-#define BINARY(NAME, OP) \
-static struct wrapperbase tab_##NAME[] = { \
-	{"__" #NAME "__", \
-	 (wrapperfunc)wrap_binaryfunc_l, \
-	 "x.__" #NAME "__(y) <==> " #OP}, \
-	{"__r" #NAME "__", \
-	 (wrapperfunc)wrap_binaryfunc_r, \
-	 "y.__r" #NAME "__(x) <==> " #OP}, \
-	{0} \
-}
-
-BINARY(add, "x+y");
-BINARY(sub, "x-y");
-BINARY(mul, "x*y");
-BINARY(div, "x/y");
-BINARY(mod, "x%y");
-BINARY(divmod, "divmod(x,y)");
-BINARY(lshift, "x<<y");
-BINARY(rshift, "x>>y");
-BINARY(and, "x&y");
-BINARY(xor, "x^y");
-BINARY(or, "x|y");
-
 static PyObject *
 wrap_coercefunc(PyObject *self, PyObject *args, void *wrapped)
 {
@@ -1991,15 +1962,6 @@ wrap_coercefunc(PyObject *self, PyObject *args, void *wrapped)
 	PyTuple_SET_ITEM(res, 1, other);
 	return res;
 }
-
-static struct wrapperbase tab_coerce[] = {
-	{"__coerce__", (wrapperfunc)wrap_coercefunc,
-	 "x.__coerce__(y) <==> coerce(x, y)"},
-	{0}
-};
-
-BINARY(floordiv, "x//y");
-BINARY(truediv, "x/y # true division");
 
 static PyObject *
 wrap_ternaryfunc(PyObject *self, PyObject *args, void *wrapped)
@@ -2029,29 +1991,6 @@ wrap_ternaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
 	return (*func)(other, self, third);
 }
 
-#undef TERNARY
-#define TERNARY(NAME, OP) \
-static struct wrapperbase tab_##NAME[] = { \
-	{"__" #NAME "__", \
-	 (wrapperfunc)wrap_ternaryfunc, \
-	 "x.__" #NAME "__(y, z) <==> " #OP}, \
-	{"__r" #NAME "__", \
-	 (wrapperfunc)wrap_ternaryfunc_r, \
-	 "y.__r" #NAME "__(x, z) <==> " #OP}, \
-	{0} \
-}
-
-TERNARY(pow, "(x**y) % z");
-
-#undef UNARY
-#define UNARY(NAME, OP) \
-static struct wrapperbase tab_##NAME[] = { \
-	{"__" #NAME "__", \
-	 (wrapperfunc)wrap_unaryfunc, \
-	 "x.__" #NAME "__() <==> " #OP}, \
-	{0} \
-}
-
 static PyObject *
 wrap_unaryfunc(PyObject *self, PyObject *args, void *wrapped)
 {
@@ -2061,56 +2000,6 @@ wrap_unaryfunc(PyObject *self, PyObject *args, void *wrapped)
 		return NULL;
 	return (*func)(self);
 }
-
-UNARY(neg, "-x");
-UNARY(pos, "+x");
-UNARY(abs, "abs(x)");
-UNARY(nonzero, "x != 0");
-UNARY(invert, "~x");
-UNARY(int, "int(x)");
-UNARY(long, "long(x)");
-UNARY(float, "float(x)");
-UNARY(oct, "oct(x)");
-UNARY(hex, "hex(x)");
-
-#undef IBINARY
-#define IBINARY(NAME, OP) \
-static struct wrapperbase tab_##NAME[] = { \
-	{"__" #NAME "__", \
-	 (wrapperfunc)wrap_binaryfunc, \
-	 "x.__" #NAME "__(y) <==> " #OP}, \
-	{0} \
-}
-
-IBINARY(iadd, "x+=y");
-IBINARY(isub, "x-=y");
-IBINARY(imul, "x*=y");
-IBINARY(idiv, "x/=y");
-IBINARY(imod, "x%=y");
-IBINARY(ilshift, "x<<=y");
-IBINARY(irshift, "x>>=y");
-IBINARY(iand, "x&=y");
-IBINARY(ixor, "x^=y");
-IBINARY(ior, "x|=y");
-IBINARY(ifloordiv, "x//=y");
-IBINARY(itruediv, "x/=y # true division");
-
-#undef ITERNARY
-#define ITERNARY(NAME, OP) \
-static struct wrapperbase tab_##NAME[] = { \
-	{"__" #NAME "__", \
-	 (wrapperfunc)wrap_ternaryfunc, \
-	 "x.__" #NAME "__(y) <==> " #OP}, \
-	{0} \
-}
-
-ITERNARY(ipow, "x = (x**y) % z");
-
-static struct wrapperbase tab_getitem[] = {
-	{"__getitem__", (wrapperfunc)wrap_binaryfunc,
-	 "x.__getitem__(y) <==> x[y]"},
-	{0}
-};
 
 static PyObject *
 wrap_intargfunc(PyObject *self, PyObject *args, void *wrapped)
@@ -2122,22 +2011,6 @@ wrap_intargfunc(PyObject *self, PyObject *args, void *wrapped)
 		return NULL;
 	return (*func)(self, i);
 }
-
-static struct wrapperbase tab_mul_int[] = {
-	{"__mul__", (wrapperfunc)wrap_intargfunc, "x.__mul__(n) <==> x*n"},
-	{"__rmul__", (wrapperfunc)wrap_intargfunc, "x.__rmul__(n) <==> n*x"},
-	{0}
-};
-
-static struct wrapperbase tab_concat[] = {
-	{"__add__", (wrapperfunc)wrap_binaryfunc, "x.__add__(y) <==> x+y"},
-	{0}
-};
-
-static struct wrapperbase tab_imul_int[] = {
-	{"__imul__", (wrapperfunc)wrap_intargfunc, "x.__imul__(n) <==> x*=n"},
-	{0}
-};
 
 static int
 getindex(PyObject *self, PyObject *arg)
@@ -2178,12 +2051,6 @@ wrap_sq_item(PyObject *self, PyObject *args, void *wrapped)
 	return NULL;
 }
 
-static struct wrapperbase tab_getitem_int[] = {
-	{"__getitem__", (wrapperfunc)wrap_sq_item,
-	 "x.__getitem__(i) <==> x[i]"},
-	{0}
-};
-
 static PyObject *
 wrap_intintargfunc(PyObject *self, PyObject *args, void *wrapped)
 {
@@ -2194,12 +2061,6 @@ wrap_intintargfunc(PyObject *self, PyObject *args, void *wrapped)
 		return NULL;
 	return (*func)(self, i, j);
 }
-
-static struct wrapperbase tab_getslice[] = {
-	{"__getslice__", (wrapperfunc)wrap_intintargfunc,
-	 "x.__getslice__(i, j) <==> x[i:j]"},
-	{0}
-};
 
 static PyObject *
 wrap_sq_setitem(PyObject *self, PyObject *args, void *wrapped)
@@ -2239,14 +2100,6 @@ wrap_sq_delitem(PyObject *self, PyObject *args, void *wrapped)
 	return Py_None;
 }
 
-static struct wrapperbase tab_setitem_int[] = {
-	{"__setitem__", (wrapperfunc)wrap_sq_setitem,
-	 "x.__setitem__(i, y) <==> x[i]=y"},
-	{"__delitem__", (wrapperfunc)wrap_sq_delitem,
-	 "x.__delitem__(y) <==> del x[y]"},
-	{0}
-};
-
 static PyObject *
 wrap_intintobjargproc(PyObject *self, PyObject *args, void *wrapped)
 {
@@ -2278,14 +2131,6 @@ wrap_delslice(PyObject *self, PyObject *args, void *wrapped)
 	return Py_None;
 }
 
-static struct wrapperbase tab_setslice[] = {
-	{"__setslice__", (wrapperfunc)wrap_intintobjargproc,
-	 "x.__setslice__(i, j, y) <==> x[i:j]=y"},
-	{"__delslice__", (wrapperfunc)wrap_delslice,
-	 "x.__delslice__(i, j) <==> del x[i:j]"},
-	{0}
-};
-
 /* XXX objobjproc is a misnomer; should be objargpred */
 static PyObject *
 wrap_objobjproc(PyObject *self, PyObject *args, void *wrapped)
@@ -2301,12 +2146,6 @@ wrap_objobjproc(PyObject *self, PyObject *args, void *wrapped)
 		return NULL;
 	return PyInt_FromLong((long)res);
 }
-
-static struct wrapperbase tab_contains[] = {
-	{"__contains__", (wrapperfunc)wrap_objobjproc,
-	 "x.__contains__(y) <==> y in x"},
-	{0}
-};
 
 static PyObject *
 wrap_objobjargproc(PyObject *self, PyObject *args, void *wrapped)
@@ -2340,14 +2179,6 @@ wrap_delitem(PyObject *self, PyObject *args, void *wrapped)
 	return Py_None;
 }
 
-static struct wrapperbase tab_setitem[] = {
-	{"__setitem__", (wrapperfunc)wrap_objobjargproc,
-	 "x.__setitem__(y, z) <==> x[y]=z"},
-	{"__delitem__", (wrapperfunc)wrap_delitem,
-	 "x.__delitem__(y) <==> del x[y]"},
-	{0}
-};
-
 static PyObject *
 wrap_cmpfunc(PyObject *self, PyObject *args, void *wrapped)
 {
@@ -2372,24 +2203,6 @@ wrap_cmpfunc(PyObject *self, PyObject *args, void *wrapped)
 		return NULL;
 	return PyInt_FromLong((long)res);
 }
-
-static struct wrapperbase tab_cmp[] = {
-	{"__cmp__", (wrapperfunc)wrap_cmpfunc,
-	 "x.__cmp__(y) <==> cmp(x,y)"},
-	{0}
-};
-
-static struct wrapperbase tab_repr[] = {
-	{"__repr__", (wrapperfunc)wrap_unaryfunc,
-	 "x.__repr__() <==> repr(x)"},
-	{0}
-};
-
-static struct wrapperbase tab_getattr[] = {
-	{"__getattribute__", (wrapperfunc)wrap_binaryfunc,
-	 "x.__getattribute__('name') <==> x.name"},
-	{0}
-};
 
 static PyObject *
 wrap_setattr(PyObject *self, PyObject *args, void *wrapped)
@@ -2423,14 +2236,6 @@ wrap_delattr(PyObject *self, PyObject *args, void *wrapped)
 	return Py_None;
 }
 
-static struct wrapperbase tab_setattr[] = {
-	{"__setattr__", (wrapperfunc)wrap_setattr,
-	 "x.__setattr__('name', value) <==> x.name = value"},
-	{"__delattr__", (wrapperfunc)wrap_delattr,
-	 "x.__delattr__('name') <==> del x.name"},
-	{0}
-};
-
 static PyObject *
 wrap_hashfunc(PyObject *self, PyObject *args, void *wrapped)
 {
@@ -2445,12 +2250,6 @@ wrap_hashfunc(PyObject *self, PyObject *args, void *wrapped)
 	return PyInt_FromLong(res);
 }
 
-static struct wrapperbase tab_hash[] = {
-	{"__hash__", (wrapperfunc)wrap_hashfunc,
-	 "x.__hash__() <==> hash(x)"},
-	{0}
-};
-
 static PyObject *
 wrap_call(PyObject *self, PyObject *args, void *wrapped)
 {
@@ -2459,18 +2258,6 @@ wrap_call(PyObject *self, PyObject *args, void *wrapped)
 	/* XXX What about keyword arguments? */
 	return (*func)(self, args, NULL);
 }
-
-static struct wrapperbase tab_call[] = {
-	{"__call__", (wrapperfunc)wrap_call,
-	 "x.__call__(...) <==> x(...)"},
-	{0}
-};
-
-static struct wrapperbase tab_str[] = {
-	{"__str__", (wrapperfunc)wrap_unaryfunc,
-	 "x.__str__() <==> str(x)"},
-	{0}
-};
 
 static PyObject *
 wrap_richcmpfunc(PyObject *self, PyObject *args, void *wrapped, int op)
@@ -2498,26 +2285,6 @@ RICHCMP_WRAPPER(ne, Py_NE)
 RICHCMP_WRAPPER(gt, Py_GT)
 RICHCMP_WRAPPER(ge, Py_GE)
 
-#undef RICHCMP_ENTRY
-#define RICHCMP_ENTRY(NAME, EXPR) \
-	{"__" #NAME "__", (wrapperfunc)richcmp_##NAME, \
-	 "x.__" #NAME "__(y) <==> " EXPR}
-
-static struct wrapperbase tab_richcmp[] = {
-	RICHCMP_ENTRY(lt, "x<y"),
-	RICHCMP_ENTRY(le, "x<=y"),
-	RICHCMP_ENTRY(eq, "x==y"),
-	RICHCMP_ENTRY(ne, "x!=y"),
-	RICHCMP_ENTRY(gt, "x>y"),
-	RICHCMP_ENTRY(ge, "x>=y"),
-	{0}
-};
-
-static struct wrapperbase tab_iter[] = {
-	{"__iter__", (wrapperfunc)wrap_unaryfunc, "x.__iter__() <==> iter(x)"},
-	{0}
-};
-
 static PyObject *
 wrap_next(PyObject *self, PyObject *args, void *wrapped)
 {
@@ -2532,12 +2299,6 @@ wrap_next(PyObject *self, PyObject *args, void *wrapped)
 	return res;
 }
 
-static struct wrapperbase tab_next[] = {
-	{"next", (wrapperfunc)wrap_next,
-		"x.next() -> the next value, or raise StopIteration"},
-	{0}
-};
-
 static PyObject *
 wrap_descr_get(PyObject *self, PyObject *args, void *wrapped)
 {
@@ -2549,12 +2310,6 @@ wrap_descr_get(PyObject *self, PyObject *args, void *wrapped)
 		return NULL;
 	return (*func)(self, obj, type);
 }
-
-static struct wrapperbase tab_descr_get[] = {
-	{"__get__", (wrapperfunc)wrap_descr_get,
-	 "descr.__get__(obj, type) -> value"},
-	{0}
-};
 
 static PyObject *
 wrap_descr_set(PyObject *self, PyObject *args, void *wrapped)
@@ -2572,12 +2327,6 @@ wrap_descr_set(PyObject *self, PyObject *args, void *wrapped)
 	return Py_None;
 }
 
-static struct wrapperbase tab_descr_set[] = {
-	{"__set__", (wrapperfunc)wrap_descr_set,
-	 "descr.__set__(obj, value)"},
-	{0}
-};
-
 static PyObject *
 wrap_init(PyObject *self, PyObject *args, void *wrapped)
 {
@@ -2589,13 +2338,6 @@ wrap_init(PyObject *self, PyObject *args, void *wrapped)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
-
-static struct wrapperbase tab_init[] = {
-	{"__init__", (wrapperfunc)wrap_init,
-	 "x.__init__(...) initializes x; "
-	 "see x.__class__.__doc__ for signature"},
-	{0}
-};
 
 static PyObject *
 tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
@@ -2671,145 +2413,6 @@ add_tp_new_wrapper(PyTypeObject *type)
 	if (func == NULL)
 		return -1;
 	return PyDict_SetItemString(type->tp_dict, "__new__", func);
-}
-
-static int
-add_wrappers(PyTypeObject *type, struct wrapperbase *wraps, void *wrapped)
-{
-	PyObject *dict = type->tp_dict;
-
-	for (; wraps->name != NULL; wraps++) {
-		PyObject *descr;
-		if (PyDict_GetItemString(dict, wraps->name))
-			continue;
-		descr = PyDescr_NewWrapper(type, wraps, wrapped);
-		if (descr == NULL)
-			return -1;
-		if (PyDict_SetItemString(dict, wraps->name, descr) < 0)
-			return -1;
-		Py_DECREF(descr);
-	}
-	return 0;
-}
-
-/* This function is called by PyType_Ready() to populate the type's
-   dictionary with method descriptors for function slots.  For each
-   function slot (like tp_repr) that's defined in the type, one or
-   more corresponding descriptors are added in the type's tp_dict
-   dictionary under the appropriate name (like __repr__).  Some
-   function slots cause more than one descriptor to be added (for
-   example, the nb_add slot adds both __add__ and __radd__
-   descriptors) and some function slots compete for the same
-   descriptor (for example both sq_item and mp_subscript generate a
-   __getitem__ descriptor).  This only adds new descriptors and
-   doesn't overwrite entries in tp_dict that were previously
-   defined.  The descriptors contain a reference to the C function
-   they must call, so that it's safe if they are copied into a
-   subtype's __dict__ and the subtype has a different C function in
-   its slot -- calling the method defined by the descriptor will call
-   the C function that was used to create it, rather than the C
-   function present in the slot when it is called.  (This is important
-   because a subtype may have a C function in the slot that calls the
-   method from the dictionary, and we want to avoid infinite recursion
-   here.) */
-
-static int
-add_operators(PyTypeObject *type)
-{
-	PySequenceMethods *sq;
-	PyMappingMethods *mp;
-	PyNumberMethods *nb;
-
-#undef ADD
-#define ADD(SLOT, TABLE) \
-		if (SLOT) { \
-			if (add_wrappers(type, TABLE, (void *)(SLOT)) < 0) \
-				return -1; \
-		}
-
-	if ((sq = type->tp_as_sequence) != NULL) {
-		ADD(sq->sq_length, tab_len);
-		ADD(sq->sq_concat, tab_concat);
-		ADD(sq->sq_repeat, tab_mul_int);
-		ADD(sq->sq_item, tab_getitem_int);
-		ADD(sq->sq_slice, tab_getslice);
-		ADD(sq->sq_ass_item, tab_setitem_int);
-		ADD(sq->sq_ass_slice, tab_setslice);
-		ADD(sq->sq_contains, tab_contains);
-		ADD(sq->sq_inplace_concat, tab_iadd);
-		ADD(sq->sq_inplace_repeat, tab_imul_int);
-	}
-
-	if ((mp = type->tp_as_mapping) != NULL) {
-		if (sq->sq_length == NULL)
-			ADD(mp->mp_length, tab_len);
-		ADD(mp->mp_subscript, tab_getitem);
-		ADD(mp->mp_ass_subscript, tab_setitem);
-	}
-
-	if ((nb = type->tp_as_number) != NULL) {
-		ADD(nb->nb_add, tab_add);
-		ADD(nb->nb_subtract, tab_sub);
-		ADD(nb->nb_multiply, tab_mul);
-		ADD(nb->nb_divide, tab_div);
-		ADD(nb->nb_remainder, tab_mod);
-		ADD(nb->nb_divmod, tab_divmod);
-		ADD(nb->nb_power, tab_pow);
-		ADD(nb->nb_negative, tab_neg);
-		ADD(nb->nb_positive, tab_pos);
-		ADD(nb->nb_absolute, tab_abs);
-		ADD(nb->nb_nonzero, tab_nonzero);
-		ADD(nb->nb_invert, tab_invert);
-		ADD(nb->nb_lshift, tab_lshift);
-		ADD(nb->nb_rshift, tab_rshift);
-		ADD(nb->nb_and, tab_and);
-		ADD(nb->nb_xor, tab_xor);
-		ADD(nb->nb_or, tab_or);
-		ADD(nb->nb_coerce, tab_coerce);
-		ADD(nb->nb_int, tab_int);
-		ADD(nb->nb_long, tab_long);
-		ADD(nb->nb_float, tab_float);
-		ADD(nb->nb_oct, tab_oct);
-		ADD(nb->nb_hex, tab_hex);
-		ADD(nb->nb_inplace_add, tab_iadd);
-		ADD(nb->nb_inplace_subtract, tab_isub);
-		ADD(nb->nb_inplace_multiply, tab_imul);
-		ADD(nb->nb_inplace_divide, tab_idiv);
-		ADD(nb->nb_inplace_remainder, tab_imod);
-		ADD(nb->nb_inplace_power, tab_ipow);
-		ADD(nb->nb_inplace_lshift, tab_ilshift);
-		ADD(nb->nb_inplace_rshift, tab_irshift);
-		ADD(nb->nb_inplace_and, tab_iand);
-		ADD(nb->nb_inplace_xor, tab_ixor);
-		ADD(nb->nb_inplace_or, tab_ior);
-		if (type->tp_flags & Py_TPFLAGS_HAVE_CLASS) {
-			ADD(nb->nb_floor_divide, tab_floordiv);
-			ADD(nb->nb_true_divide, tab_truediv);
-			ADD(nb->nb_inplace_floor_divide, tab_ifloordiv);
-			ADD(nb->nb_inplace_true_divide, tab_itruediv);
-		}
-	}
-
-	ADD(type->tp_getattro, tab_getattr);
-	ADD(type->tp_setattro, tab_setattr);
-	ADD(type->tp_compare, tab_cmp);
-	ADD(type->tp_repr, tab_repr);
-	ADD(type->tp_hash, tab_hash);
-	ADD(type->tp_call, tab_call);
-	ADD(type->tp_str, tab_str);
-	ADD(type->tp_richcompare, tab_richcmp);
-	ADD(type->tp_iter, tab_iter);
-	ADD(type->tp_iternext, tab_next);
-	ADD(type->tp_descr_get, tab_descr_get);
-	ADD(type->tp_descr_set, tab_descr_set);
-	ADD(type->tp_init, tab_init);
-
-	if (type->tp_new != NULL) {
-		if (add_tp_new_wrapper(type) < 0)
-			return -1;
-	}
-
-	return 0;
 }
 
 /* Slot wrappers that call the corresponding __foo__ slot.  See comments
@@ -3571,155 +3174,216 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
    __ne__ etc. all map to tp_richcompare) and one name may map to multiple
    slots (e.g. __str__ affects tp_str as well as tp_repr). */
 
-typedef struct {
-	char *name;
-	int offset;
-	void *function;
-	wrapperfunc wrapper;
-	PyObject *name_strobj;
-} slotdef;
+typedef struct wrapperbase slotdef;
 
 #undef TPSLOT
 #undef ETSLOT
 #undef SQSLOT
 #undef MPSLOT
 #undef NBSLOT
+#undef UNSLOT
+#undef IBSLOT
 #undef BINSLOT
 #undef RBINSLOT
 
-#define TPSLOT(NAME, SLOT, FUNCTION, WRAPPER) \
-	{NAME, offsetof(PyTypeObject, SLOT), (void *)(FUNCTION), WRAPPER}
-#define ETSLOT(NAME, SLOT, FUNCTION, WRAPPER) \
-	{NAME, offsetof(etype, SLOT), (void *)(FUNCTION), WRAPPER}
-#define SQSLOT(NAME, SLOT, FUNCTION, WRAPPER) \
-	ETSLOT(NAME, as_sequence.SLOT, FUNCTION, WRAPPER)
-#define MPSLOT(NAME, SLOT, FUNCTION, WRAPPER) \
-	ETSLOT(NAME, as_mapping.SLOT, FUNCTION, WRAPPER)
-#define NBSLOT(NAME, SLOT, FUNCTION, WRAPPER) \
-	ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER)
-#define BINSLOT(NAME, SLOT, FUNCTION) \
-	ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_l)
-#define RBINSLOT(NAME, SLOT, FUNCTION) \
-	ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_r)
+#define TPSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
+	{NAME, offsetof(PyTypeObject, SLOT), (void *)(FUNCTION), WRAPPER, DOC}
+#define ETSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
+	{NAME, offsetof(etype, SLOT), (void *)(FUNCTION), WRAPPER, DOC}
+#define SQSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
+	ETSLOT(NAME, as_sequence.SLOT, FUNCTION, WRAPPER, DOC)
+#define MPSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
+	ETSLOT(NAME, as_mapping.SLOT, FUNCTION, WRAPPER, DOC)
+#define NBSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
+	ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER, DOC)
+#define UNSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
+	ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER, \
+	       "x." NAME "() <==> " DOC)
+#define IBSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
+	ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER, \
+	       "x." NAME "(y) <==> x" DOC "y")
+#define BINSLOT(NAME, SLOT, FUNCTION, DOC) \
+	ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_l, \
+	       "x." NAME "(y) <==> x" DOC "y")
+#define RBINSLOT(NAME, SLOT, FUNCTION, DOC) \
+	ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_r, \
+	       "x." NAME "(y) <==> y" DOC "x")
 
 static slotdef slotdefs[] = {
-	SQSLOT("__len__", sq_length, slot_sq_length, wrap_inquiry),
-	SQSLOT("__add__", sq_concat, slot_sq_concat, wrap_binaryfunc),
-	SQSLOT("__mul__", sq_repeat, slot_sq_repeat, wrap_intargfunc),
-	SQSLOT("__rmul__", sq_repeat, slot_sq_repeat, wrap_intargfunc),
-	SQSLOT("__getitem__", sq_item, slot_sq_item, wrap_sq_item),
-	SQSLOT("__getslice__", sq_slice, slot_sq_slice, wrap_intintargfunc),
-	SQSLOT("__setitem__", sq_ass_item, slot_sq_ass_item, wrap_sq_setitem),
-	SQSLOT("__delitem__", sq_ass_item, slot_sq_ass_item, wrap_sq_delitem),
+	SQSLOT("__len__", sq_length, slot_sq_length, wrap_inquiry,
+	       "x.__len__() <==> len(x)"),
+	SQSLOT("__add__", sq_concat, slot_sq_concat, wrap_binaryfunc,
+	       "x.__add__(y) <==> x+y"),
+	SQSLOT("__mul__", sq_repeat, slot_sq_repeat, wrap_intargfunc,
+	       "x.__mul__(n) <==> x*n"),
+	SQSLOT("__rmul__", sq_repeat, slot_sq_repeat, wrap_intargfunc,
+	       "x.__rmul__(n) <==> n*x"),
+	SQSLOT("__getitem__", sq_item, slot_sq_item, wrap_sq_item,
+	       "x.__getitem__(y) <==> x[y]"),
+	SQSLOT("__getslice__", sq_slice, slot_sq_slice, wrap_intintargfunc,
+	       "x.__getslice__(i, j) <==> x[i:j]"),
+	SQSLOT("__setitem__", sq_ass_item, slot_sq_ass_item, wrap_sq_setitem,
+	       "x.__setitem__(i, y) <==> x[i]=y"),
+	SQSLOT("__delitem__", sq_ass_item, slot_sq_ass_item, wrap_sq_delitem,
+	       "x.__delitem__(y) <==> del x[y]"),
 	SQSLOT("__setslice__", sq_ass_slice, slot_sq_ass_slice,
-	       wrap_intintobjargproc),
-	SQSLOT("__delslice__", sq_ass_slice, slot_sq_ass_slice, wrap_delslice),
-	SQSLOT("__contains__", sq_contains, slot_sq_contains, wrap_objobjproc),
+	       wrap_intintobjargproc,
+	       "x.__setslice__(i, j, y) <==> x[i:j]=y"),
+	SQSLOT("__delslice__", sq_ass_slice, slot_sq_ass_slice, wrap_delslice,
+	       "x.__delslice__(i, j) <==> del x[i:j]"),
+	SQSLOT("__contains__", sq_contains, slot_sq_contains, wrap_objobjproc,
+	       "x.__contains__(y) <==> y in x"),
 	SQSLOT("__iadd__", sq_inplace_concat, slot_sq_inplace_concat,
-	       wrap_binaryfunc),
+	       wrap_binaryfunc, "x.__iadd__(y) <==> x+=y"),
 	SQSLOT("__imul__", sq_inplace_repeat, slot_sq_inplace_repeat,
-	       wrap_intargfunc),
+	       wrap_intargfunc, "x.__imul__(y) <==> x*=y"),
 
-	MPSLOT("__len__", mp_length, slot_mp_length, wrap_inquiry),
+	MPSLOT("__len__", mp_length, slot_mp_length, wrap_inquiry,
+	       "x.__len__() <==> len(x)"),
 	MPSLOT("__getitem__", mp_subscript, slot_mp_subscript,
-	       wrap_binaryfunc),
+	       wrap_binaryfunc,
+	       "x.__getitem__(y) <==> x[y]"),
 	MPSLOT("__setitem__", mp_ass_subscript, slot_mp_ass_subscript,
-	       wrap_objobjargproc),
+	       wrap_objobjargproc,
+	       "x.__setitem__(i, y) <==> x[i]=y"),
 	MPSLOT("__delitem__", mp_ass_subscript, slot_mp_ass_subscript,
-	       wrap_delitem),
+	       wrap_delitem,
+	       "x.__delitem__(y) <==> del x[y]"),
 
-	BINSLOT("__add__", nb_add, slot_nb_add),
-	RBINSLOT("__radd__", nb_add, slot_nb_add),
-	BINSLOT("__sub__", nb_subtract, slot_nb_subtract),
-	RBINSLOT("__rsub__", nb_subtract, slot_nb_subtract),
-	BINSLOT("__mul__", nb_multiply, slot_nb_multiply),
-	RBINSLOT("__rmul__", nb_multiply, slot_nb_multiply),
-	BINSLOT("__div__", nb_divide, slot_nb_divide),
-	RBINSLOT("__rdiv__", nb_divide, slot_nb_divide),
-	BINSLOT("__mod__", nb_remainder, slot_nb_remainder),
-	RBINSLOT("__rmod__", nb_remainder, slot_nb_remainder),
-	BINSLOT("__divmod__", nb_divmod, slot_nb_divmod),
-	RBINSLOT("__rdivmod__", nb_divmod, slot_nb_divmod),
-	NBSLOT("__pow__", nb_power, slot_nb_power, wrap_ternaryfunc),
-	NBSLOT("__rpow__", nb_power, slot_nb_power, wrap_ternaryfunc_r),
-	NBSLOT("__neg__", nb_negative, slot_nb_negative, wrap_unaryfunc),
-	NBSLOT("__pos__", nb_positive, slot_nb_positive, wrap_unaryfunc),
-	NBSLOT("__abs__", nb_absolute, slot_nb_absolute, wrap_unaryfunc),
-	NBSLOT("__nonzero__", nb_nonzero, slot_nb_nonzero, wrap_unaryfunc),
-	NBSLOT("__invert__", nb_invert, slot_nb_invert, wrap_unaryfunc),
-	BINSLOT("__lshift__", nb_lshift, slot_nb_lshift),
-	RBINSLOT("__rlshift__", nb_lshift, slot_nb_lshift),
-	BINSLOT("__rshift__", nb_rshift, slot_nb_rshift),
-	RBINSLOT("__rrshift__", nb_rshift, slot_nb_rshift),
-	BINSLOT("__and__", nb_and, slot_nb_and),
-	RBINSLOT("__rand__", nb_and, slot_nb_and),
-	BINSLOT("__xor__", nb_xor, slot_nb_xor),
-	RBINSLOT("__rxor__", nb_xor, slot_nb_xor),
-	BINSLOT("__or__", nb_or, slot_nb_or),
-	RBINSLOT("__ror__", nb_or, slot_nb_or),
-	NBSLOT("__coerce__", nb_coerce, slot_nb_coerce, wrap_coercefunc),
-	NBSLOT("__int__", nb_int, slot_nb_int, wrap_unaryfunc),
-	NBSLOT("__long__", nb_long, slot_nb_long, wrap_unaryfunc),
-	NBSLOT("__float__", nb_float, slot_nb_float, wrap_unaryfunc),
-	NBSLOT("__oct__", nb_oct, slot_nb_oct, wrap_unaryfunc),
-	NBSLOT("__hex__", nb_hex, slot_nb_hex, wrap_unaryfunc),
-	NBSLOT("__iadd__", nb_inplace_add, slot_nb_inplace_add,
-	       wrap_binaryfunc),
-	NBSLOT("__isub__", nb_inplace_subtract, slot_nb_inplace_subtract,
-	       wrap_binaryfunc),
-	NBSLOT("__imul__", nb_inplace_multiply, slot_nb_inplace_multiply,
-	       wrap_binaryfunc),
-	NBSLOT("__idiv__", nb_inplace_divide, slot_nb_inplace_divide,
-	       wrap_binaryfunc),
-	NBSLOT("__imod__", nb_inplace_remainder, slot_nb_inplace_remainder,
-	       wrap_binaryfunc),
-	NBSLOT("__ipow__", nb_inplace_power, slot_nb_inplace_power,
-	       wrap_ternaryfunc),
-	NBSLOT("__ilshift__", nb_inplace_lshift, slot_nb_inplace_lshift,
-	       wrap_binaryfunc),
-	NBSLOT("__irshift__", nb_inplace_rshift, slot_nb_inplace_rshift,
-	       wrap_binaryfunc),
-	NBSLOT("__iand__", nb_inplace_and, slot_nb_inplace_and,
-	       wrap_binaryfunc),
-	NBSLOT("__ixor__", nb_inplace_xor, slot_nb_inplace_xor,
-	       wrap_binaryfunc),
-	NBSLOT("__ior__", nb_inplace_or, slot_nb_inplace_or,
-	       wrap_binaryfunc),
-	BINSLOT("__floordiv__", nb_floor_divide, slot_nb_floor_divide),
-	RBINSLOT("__rfloordiv__", nb_floor_divide, slot_nb_floor_divide),
-	BINSLOT("__truediv__", nb_true_divide, slot_nb_true_divide),
-	RBINSLOT("__rtruediv__", nb_true_divide, slot_nb_true_divide),
-	NBSLOT("__ifloordiv__", nb_inplace_floor_divide,
-	       slot_nb_inplace_floor_divide, wrap_binaryfunc),
-	NBSLOT("__itruediv__", nb_inplace_true_divide,
-	       slot_nb_inplace_true_divide, wrap_binaryfunc),
+	BINSLOT("__add__", nb_add, slot_nb_add,
+		"+"),
+	RBINSLOT("__radd__", nb_add, slot_nb_add,
+		 "+"),
+	BINSLOT("__sub__", nb_subtract, slot_nb_subtract,
+		"-"),
+	RBINSLOT("__rsub__", nb_subtract, slot_nb_subtract,
+		 "-"),
+	BINSLOT("__mul__", nb_multiply, slot_nb_multiply,
+		"*"),
+	RBINSLOT("__rmul__", nb_multiply, slot_nb_multiply,
+		 "*"),
+	BINSLOT("__div__", nb_divide, slot_nb_divide,
+		"/"),
+	RBINSLOT("__rdiv__", nb_divide, slot_nb_divide,
+		 "/"),
+	BINSLOT("__mod__", nb_remainder, slot_nb_remainder,
+		"%"),
+	RBINSLOT("__rmod__", nb_remainder, slot_nb_remainder,
+		 "%"),
+	BINSLOT("__divmod__", nb_divmod, slot_nb_divmod,
+		"divmod(x, y)"),
+	RBINSLOT("__rdivmod__", nb_divmod, slot_nb_divmod,
+		 "divmod(y, x)"),
+	NBSLOT("__pow__", nb_power, slot_nb_power, wrap_ternaryfunc,
+	       "x.__pow__(y[, z]) <==> pow(x, y[, z])"),
+	NBSLOT("__rpow__", nb_power, slot_nb_power, wrap_ternaryfunc_r,
+	       "y.__rpow__(x[, z]) <==> pow(x, y[, z])"),
+	UNSLOT("__neg__", nb_negative, slot_nb_negative, wrap_unaryfunc, "-x"),
+	UNSLOT("__pos__", nb_positive, slot_nb_positive, wrap_unaryfunc, "+x"),
+	UNSLOT("__abs__", nb_absolute, slot_nb_absolute, wrap_unaryfunc,
+	       "abs(x)"),
+	UNSLOT("__nonzero__", nb_nonzero, slot_nb_nonzero, wrap_unaryfunc,
+	       "x != 0"),
+	UNSLOT("__invert__", nb_invert, slot_nb_invert, wrap_unaryfunc, "~x"),
+	BINSLOT("__lshift__", nb_lshift, slot_nb_lshift, "<<"),
+	RBINSLOT("__rlshift__", nb_lshift, slot_nb_lshift, "<<"),
+	BINSLOT("__rshift__", nb_rshift, slot_nb_rshift, ">>"),
+	RBINSLOT("__rrshift__", nb_rshift, slot_nb_rshift, ">>"),
+	BINSLOT("__and__", nb_and, slot_nb_and, "&"),
+	RBINSLOT("__rand__", nb_and, slot_nb_and, "&"),
+	BINSLOT("__xor__", nb_xor, slot_nb_xor, "^"),
+	RBINSLOT("__rxor__", nb_xor, slot_nb_xor, "^"),
+	BINSLOT("__or__", nb_or, slot_nb_or, "|"),
+	RBINSLOT("__ror__", nb_or, slot_nb_or, "|"),
+	NBSLOT("__coerce__", nb_coerce, slot_nb_coerce, wrap_coercefunc,
+	       "x.__coerce__(y) <==> coerce(x, y)"),
+	UNSLOT("__int__", nb_int, slot_nb_int, wrap_unaryfunc,
+	       "int(x)"),
+	UNSLOT("__long__", nb_long, slot_nb_long, wrap_unaryfunc,
+	       "long(x)"),
+	UNSLOT("__float__", nb_float, slot_nb_float, wrap_unaryfunc,
+	       "float(x)"),
+	UNSLOT("__oct__", nb_oct, slot_nb_oct, wrap_unaryfunc,
+	       "oct(x)"),
+	UNSLOT("__hex__", nb_hex, slot_nb_hex, wrap_unaryfunc,
+	       "hex(x)"),
+	IBSLOT("__iadd__", nb_inplace_add, slot_nb_inplace_add,
+	       wrap_binaryfunc, "+"),
+	IBSLOT("__isub__", nb_inplace_subtract, slot_nb_inplace_subtract,
+	       wrap_binaryfunc, "-"),
+	IBSLOT("__imul__", nb_inplace_multiply, slot_nb_inplace_multiply,
+	       wrap_binaryfunc, "*"),
+	IBSLOT("__idiv__", nb_inplace_divide, slot_nb_inplace_divide,
+	       wrap_binaryfunc, "/"),
+	IBSLOT("__imod__", nb_inplace_remainder, slot_nb_inplace_remainder,
+	       wrap_binaryfunc, "%"),
+	IBSLOT("__ipow__", nb_inplace_power, slot_nb_inplace_power,
+	       wrap_ternaryfunc, "**"),
+	IBSLOT("__ilshift__", nb_inplace_lshift, slot_nb_inplace_lshift,
+	       wrap_binaryfunc, "<<"),
+	IBSLOT("__irshift__", nb_inplace_rshift, slot_nb_inplace_rshift,
+	       wrap_binaryfunc, ">>"),
+	IBSLOT("__iand__", nb_inplace_and, slot_nb_inplace_and,
+	       wrap_binaryfunc, "&"),
+	IBSLOT("__ixor__", nb_inplace_xor, slot_nb_inplace_xor,
+	       wrap_binaryfunc, "^"),
+	IBSLOT("__ior__", nb_inplace_or, slot_nb_inplace_or,
+	       wrap_binaryfunc, "|"),
+	BINSLOT("__floordiv__", nb_floor_divide, slot_nb_floor_divide, "//"),
+	RBINSLOT("__rfloordiv__", nb_floor_divide, slot_nb_floor_divide, "//"),
+	BINSLOT("__truediv__", nb_true_divide, slot_nb_true_divide, "/"),
+	RBINSLOT("__rtruediv__", nb_true_divide, slot_nb_true_divide, "/"),
+	IBSLOT("__ifloordiv__", nb_inplace_floor_divide,
+	       slot_nb_inplace_floor_divide, wrap_binaryfunc, "//"),
+	IBSLOT("__itruediv__", nb_inplace_true_divide,
+	       slot_nb_inplace_true_divide, wrap_binaryfunc, "/"),
 
-	TPSLOT("__str__", tp_str, slot_tp_str, wrap_unaryfunc),
-	TPSLOT("__repr__", tp_repr, slot_tp_repr, wrap_unaryfunc),
-	TPSLOT("__cmp__", tp_compare, _PyObject_SlotCompare, wrap_cmpfunc),
-	TPSLOT("__hash__", tp_hash, slot_tp_hash, wrap_hashfunc),
-	TPSLOT("__call__", tp_call, slot_tp_call, wrap_call),
+	TPSLOT("__str__", tp_str, slot_tp_str, wrap_unaryfunc,
+	       "x.__str__() <==> str(x)"),
+	TPSLOT("__repr__", tp_repr, slot_tp_repr, wrap_unaryfunc,
+	       "x.__repr__() <==> repr(x)"),
+	TPSLOT("__cmp__", tp_compare, _PyObject_SlotCompare, wrap_cmpfunc,
+	       "x.__cmp__(y) <==> cmp(x,y)"),
+	TPSLOT("__hash__", tp_hash, slot_tp_hash, wrap_hashfunc,
+	       "x.__hash__() <==> hash(x)"),
+	TPSLOT("__call__", tp_call, slot_tp_call, wrap_call,
+	       "x.__call__(...) <==> x(...)"),
 	TPSLOT("__getattribute__", tp_getattro, slot_tp_getattr_hook,
-	       wrap_binaryfunc),
-	TPSLOT("__getattribute__", tp_getattr, NULL, NULL),
-	TPSLOT("__getattr__", tp_getattro, slot_tp_getattr_hook, NULL),
-	TPSLOT("__getattr__", tp_getattr, NULL, NULL),
-	TPSLOT("__setattr__", tp_setattro, slot_tp_setattro, wrap_setattr),
-	TPSLOT("__setattr__", tp_setattr, NULL, NULL),
-	TPSLOT("__delattr__", tp_setattro, slot_tp_setattro, wrap_delattr),
-	TPSLOT("__delattr__", tp_setattr, NULL, NULL),
-	TPSLOT("__lt__", tp_richcompare, slot_tp_richcompare, richcmp_lt),
-	TPSLOT("__le__", tp_richcompare, slot_tp_richcompare, richcmp_le),
-	TPSLOT("__eq__", tp_richcompare, slot_tp_richcompare, richcmp_eq),
-	TPSLOT("__ne__", tp_richcompare, slot_tp_richcompare, richcmp_ne),
-	TPSLOT("__gt__", tp_richcompare, slot_tp_richcompare, richcmp_gt),
-	TPSLOT("__ge__", tp_richcompare, slot_tp_richcompare, richcmp_ge),
-	TPSLOT("__iter__", tp_iter, slot_tp_iter, wrap_unaryfunc),
-	TPSLOT("next", tp_iternext, slot_tp_iternext, wrap_next),
-	TPSLOT("__get__", tp_descr_get, slot_tp_descr_get, wrap_descr_get),
-	TPSLOT("__set__", tp_descr_set, slot_tp_descr_set, wrap_descr_set),
-	TPSLOT("__init__", tp_init, slot_tp_init, wrap_init),
-	TPSLOT("__new__", tp_new, slot_tp_new, NULL),
+	       wrap_binaryfunc, "x.__getattribute__('name') <==> x.name"),
+	TPSLOT("__getattribute__", tp_getattr, NULL, NULL, ""),
+	TPSLOT("__getattr__", tp_getattro, slot_tp_getattr_hook, NULL, ""),
+	TPSLOT("__getattr__", tp_getattr, NULL, NULL, ""),
+	TPSLOT("__setattr__", tp_setattro, slot_tp_setattro, wrap_setattr,
+	       "x.__setattr__('name', value) <==> x.name = value"),
+	TPSLOT("__setattr__", tp_setattr, NULL, NULL, ""),
+	TPSLOT("__delattr__", tp_setattro, slot_tp_setattro, wrap_delattr,
+	       "x.__delattr__('name') <==> del x.name"),
+	TPSLOT("__delattr__", tp_setattr, NULL, NULL, ""),
+	TPSLOT("__lt__", tp_richcompare, slot_tp_richcompare, richcmp_lt,
+	       "x.__lt__(y) <==> x<y"),
+	TPSLOT("__le__", tp_richcompare, slot_tp_richcompare, richcmp_le,
+	       "x.__le__(y) <==> x<=y"),
+	TPSLOT("__eq__", tp_richcompare, slot_tp_richcompare, richcmp_eq,
+	       "x.__eq__(y) <==> x==y"),
+	TPSLOT("__ne__", tp_richcompare, slot_tp_richcompare, richcmp_ne,
+	       "x.__ne__(y) <==> x!=y"),
+	TPSLOT("__gt__", tp_richcompare, slot_tp_richcompare, richcmp_gt,
+	       "x.__gt__(y) <==> x>y"),
+	TPSLOT("__ge__", tp_richcompare, slot_tp_richcompare, richcmp_ge,
+	       "x.__ge__(y) <==> x>=y"),
+	TPSLOT("__iter__", tp_iter, slot_tp_iter, wrap_unaryfunc,
+	       "x.__iter__() <==> iter(x)"),
+	TPSLOT("next", tp_iternext, slot_tp_iternext, wrap_next,
+	       "x.next() -> the next value, or raise StopIteration"),
+	TPSLOT("__get__", tp_descr_get, slot_tp_descr_get, wrap_descr_get,
+	       "descr.__get__(obj[, type]) -> value"),
+	TPSLOT("__set__", tp_descr_set, slot_tp_descr_set, wrap_descr_set,
+	       "descr.__set__(obj, value)"),
+	TPSLOT("__init__", tp_init, slot_tp_init, wrap_init,
+	       "x.__init__(...) initializes x; "
+	       "see x.__class__.__doc__ for signature"),
+	TPSLOT("__new__", tp_new, slot_tp_new, NULL,
+		""),
 	{NULL}
 };
 
@@ -3941,6 +3605,58 @@ fixup_slot_dispatchers(PyTypeObject *type)
 		else
 			*ptr = generic;
 	}
+}
+
+/* This function is called by PyType_Ready() to populate the type's
+   dictionary with method descriptors for function slots.  For each
+   function slot (like tp_repr) that's defined in the type, one or
+   more corresponding descriptors are added in the type's tp_dict
+   dictionary under the appropriate name (like __repr__).  Some
+   function slots cause more than one descriptor to be added (for
+   example, the nb_add slot adds both __add__ and __radd__
+   descriptors) and some function slots compete for the same
+   descriptor (for example both sq_item and mp_subscript generate a
+   __getitem__ descriptor).  This only adds new descriptors and
+   doesn't overwrite entries in tp_dict that were previously
+   defined.  The descriptors contain a reference to the C function
+   they must call, so that it's safe if they are copied into a
+   subtype's __dict__ and the subtype has a different C function in
+   its slot -- calling the method defined by the descriptor will call
+   the C function that was used to create it, rather than the C
+   function present in the slot when it is called.  (This is important
+   because a subtype may have a C function in the slot that calls the
+   method from the dictionary, and we want to avoid infinite recursion
+   here.) */
+
+static int
+add_operators(PyTypeObject *type)
+{
+	PyObject *dict = type->tp_dict;
+	slotdef *p;
+	PyObject *descr;
+	void **ptr;
+
+	init_slotdefs();
+	for (p = slotdefs; p->name; p++) {
+		if (p->wrapper == NULL)
+			continue;
+		ptr = slotptr(type, p->offset);
+		if (!ptr || !*ptr)
+			continue;
+		if (PyDict_GetItem(dict, p->name_strobj))
+			continue;
+		descr = PyDescr_NewWrapper(type, p, *ptr);
+		if (descr == NULL)
+			return -1;
+		if (PyDict_SetItem(dict, p->name_strobj, descr) < 0)
+			return -1;
+		Py_DECREF(descr);
+	}
+	if (type->tp_new != NULL) {
+		if (add_tp_new_wrapper(type) < 0)
+			return -1;
+	}
+	return 0;
 }
 
 
