@@ -851,8 +851,6 @@ object_dealloc(PyObject *self)
 	self->ob_type->tp_free(self);
 }
 
-#if 0
-/* XXX These should be made smarter before they can be used */
 static PyObject *
 object_repr(PyObject *self)
 {
@@ -862,12 +860,22 @@ object_repr(PyObject *self)
 	return PyString_FromString(buf);
 }
 
+static PyObject *
+object_str(PyObject *self)
+{
+	unaryfunc f;
+
+	f = self->ob_type->tp_repr;
+	if (f == NULL)
+		f = object_repr;
+	return f(self);
+}
+
 static long
 object_hash(PyObject *self)
 {
 	return _Py_HashPointer(self);
 }
-#endif
 
 static void
 object_free(PyObject *self)
@@ -891,13 +899,13 @@ PyTypeObject PyBaseObject_Type = {
 	0,			 		/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_compare */
-	0,					/* tp_repr */
+	object_repr,				/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
-	0,					/* tp_hash */
+	object_hash,				/* tp_hash */
 	0,					/* tp_call */
-	0,					/* tp_str */
+	object_str,				/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	PyObject_GenericSetAttr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
@@ -1163,14 +1171,18 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 	}
 	/* tp_compare see tp_richcompare */
 	COPYSLOT(tp_repr);
-	COPYSLOT(tp_hash);
+	/* tp_hash see tp_richcompare */
 	COPYSLOT(tp_call);
 	COPYSLOT(tp_str);
 	COPYSLOT(tp_as_buffer);
 	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_RICHCOMPARE) {
-		if (type->tp_compare == NULL && type->tp_richcompare == NULL) {
+		if (type->tp_compare == NULL &&
+		    type->tp_richcompare == NULL &&
+		    type->tp_hash == NULL)
+		{
 			type->tp_compare = base->tp_compare;
 			type->tp_richcompare = base->tp_richcompare;
+			type->tp_hash = base->tp_hash;
 		}
 	}
 	else {
@@ -2193,14 +2205,27 @@ slot_sq_ass_slice(PyObject *self, int i, int j, PyObject *value)
 static int
 slot_sq_contains(PyObject *self, PyObject *value)
 {
-	PyObject *res = PyObject_CallMethod(self, "__contains__", "O", value);
-	int r;
+	PyObject *func, *res, *args;
 
-	if (res == NULL)
-		return -1;
-	r = PyInt_AsLong(res);
-	Py_DECREF(res);
-	return r;
+	func = PyObject_GetAttrString(self, "__contains__");
+
+	if (func != NULL) {
+		args = Py_BuildValue("(O)", value);
+		if (args == NULL)
+			res = NULL;
+		else {
+			res = PyEval_CallObject(func, args);
+			Py_DECREF(args);
+		}
+		Py_DECREF(func);
+		if (res == NULL)
+			return -1;
+		return PyObject_IsTrue(res);
+	}
+	else {
+		PyErr_Clear();
+		return _PySequence_IterContains(self, value);
+	}
 }
 
 SLOT1(slot_sq_inplace_concat, "__iadd__", PyObject *, "O")
@@ -2254,13 +2279,25 @@ SLOT0(slot_nb_absolute, "__abs__")
 static int
 slot_nb_nonzero(PyObject *self)
 {
-	/* XXX This should cope with a missing __nonzero__ */
-	/* XXX Should it also look for __len__? */
-	PyObject *res = PyObject_CallMethod(self, "__nonzero__", "");
+	PyObject *func, *res;
 
-	if (res == NULL)
-		return -1;
-	return (int)PyInt_AsLong(res);
+	func = PyObject_GetAttrString(self, "__nonzero__");
+	if (func == NULL) {
+		PyErr_Clear();
+		func = PyObject_GetAttrString(self, "__len__");
+	}
+
+	if (func != NULL) {
+		res = PyEval_CallObject(func, NULL);
+		Py_DECREF(func);
+		if (res == NULL)
+			return -1;
+		return PyObject_IsTrue(res);
+	}
+	else {
+		PyErr_Clear();
+		return 1;
+	}
 }
 
 SLOT0(slot_nb_invert, "__invert__")
@@ -2293,32 +2330,125 @@ SLOT1(slot_nb_inplace_floor_divide, "__ifloordiv__", PyObject *, "O")
 SLOT1(slot_nb_inplace_true_divide, "__itruediv__", PyObject *, "O")
 
 static int
-slot_tp_compare(PyObject *self, PyObject *other)
+half_compare(PyObject *self, PyObject *other)
 {
-	/* XXX Should this cope with a missing __cmp__? */
-	PyObject *res = PyObject_CallMethod(self, "__cmp__", "O", other);
-	long r;
+	PyObject *func, *args, *res;
+	int c;
 
-	if (res == NULL)
-		return -1;
-	r = PyInt_AsLong(res);
-	Py_DECREF(res);
-	return (int)r;
+	func = PyObject_GetAttrString(self, "__cmp__");
+	if (func == NULL) {
+		PyErr_Clear();
+	}
+	else {
+		args = Py_BuildValue("(O)", other);
+		if (args == NULL)
+			res = NULL;
+		else {
+			res = PyObject_CallObject(func, args);
+			Py_DECREF(args);
+		}
+		if (res != Py_NotImplemented) {
+			if (res == NULL)
+				return -2;
+			c = PyInt_AsLong(res);
+			Py_DECREF(res);
+			if (c == -1 && PyErr_Occurred())
+				return -2;
+			return (c < 0) ? -1 : (c > 0) ? 1 : 0;
+		}
+		Py_DECREF(res);
+	}
+	return 2;
 }
 
-/* XXX This should cope with a missing __repr__, and also look for __str__ */
-SLOT0(slot_tp_repr, "__repr__")
+static int
+slot_tp_compare(PyObject *self, PyObject *other)
+{
+	int c;
+
+	if (self->ob_type->tp_compare == slot_tp_compare) {
+		c = half_compare(self, other);
+		if (c <= 1)
+			return c;
+	}
+	if (other->ob_type->tp_compare == slot_tp_compare) {
+		c = half_compare(other, self);
+		if (c < -1)
+			return -2;
+		if (c <= 1)
+			return -c;
+	}
+	return (void *)self < (void *)other ? -1 :
+		(void *)self > (void *)other ? 1 : 0;
+}
+
+static PyObject *
+slot_tp_repr(PyObject *self)
+{
+	PyObject *func, *res;
+
+	func = PyObject_GetAttrString(self, "__repr__");
+	if (func != NULL) {
+		res = PyEval_CallObject(func, NULL);
+		Py_DECREF(func);
+		return res;
+	}
+	else {
+		char buf[120];
+		PyErr_Clear();
+		sprintf(buf, "<%.80s object at %p>",
+			self->ob_type->tp_name, self);
+		return PyString_FromString(buf);
+	}
+}
+
+static PyObject *
+slot_tp_str(PyObject *self)
+{
+	PyObject *func, *res;
+
+	func = PyObject_GetAttrString(self, "__str__");
+	if (func != NULL) {
+		res = PyEval_CallObject(func, NULL);
+		Py_DECREF(func);
+		return res;
+	}
+	else {
+		PyErr_Clear();
+		return slot_tp_repr(self);
+	}
+}
 
 static long
 slot_tp_hash(PyObject *self)
 {
-	/* XXX This should cope with a missing __hash__ */
-	PyObject *res = PyObject_CallMethod(self, "__hash__", "");
+	PyObject *func, *res;
 	long h;
 
-	if (res == NULL)
-		return -1;
-	h = PyInt_AsLong(res);
+	func = PyObject_GetAttrString(self, "__hash__");
+
+	if (func != NULL) {
+		res = PyEval_CallObject(func, NULL);
+		Py_DECREF(func);
+		if (res == NULL)
+			return -1;
+		h = PyInt_AsLong(res);
+	}
+	else {
+		PyErr_Clear();
+		func = PyObject_GetAttrString(self, "__eq__");
+		if (func == NULL) {
+			PyErr_Clear();
+			func = PyObject_GetAttrString(self, "__cmp__");
+		}
+		if (func != NULL) {
+			Py_DECREF(func);
+			PyErr_SetString(PyExc_TypeError, "unhashable type");
+			return -1;
+		}
+		PyErr_Clear();
+		h = _Py_HashPointer((void *)self);
+	}
 	if (h == -1 && !PyErr_Occurred())
 		h = -2;
 	return h;
@@ -2336,9 +2466,6 @@ slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds)
 	Py_DECREF(meth);
 	return res;
 }
-
-/* XXX This should cope with a missing __str__, and also look for __repr__ */
-SLOT0(slot_tp_str, "__str__")
 
 static PyObject *
 slot_tp_getattro(PyObject *self, PyObject *name)
@@ -2385,20 +2512,72 @@ static char *name_op[] = {
 };
 
 static PyObject *
-slot_tp_richcompare(PyObject *self, PyObject *other, int op)
+half_richcompare(PyObject *self, PyObject *other, int op)
 {
-	/* XXX How should this cope with missing __xx__? */
-	PyObject *meth = PyObject_GetAttrString(self, name_op[op]);
-	PyObject *res;
+	PyObject *func, *args, *res;
 
-	if (meth == NULL)
-		return NULL;
-	res = PyObject_CallFunction(meth, "O", other);
-	Py_DECREF(meth);
+	func = PyObject_GetAttrString(self, name_op[op]);
+	if (func == NULL) {
+		PyErr_Clear();
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+	args = Py_BuildValue("(O)", other);
+	if (args == NULL)
+		res = NULL;
+	else {
+		res = PyObject_CallObject(func, args);
+		Py_DECREF(args);
+	}
+	Py_DECREF(func);
 	return res;
 }
 
-SLOT0(slot_tp_iter, "__iter__")
+/* Map rich comparison operators to their swapped version, e.g. LT --> GT */
+static int swapped_op[] = {Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE};
+
+static PyObject *
+slot_tp_richcompare(PyObject *self, PyObject *other, int op)
+{
+	PyObject *res;
+
+	if (self->ob_type->tp_richcompare == slot_tp_richcompare) {
+		res = half_richcompare(self, other, op);
+		if (res != Py_NotImplemented)
+			return res;
+		Py_DECREF(res);
+	}
+	if (other->ob_type->tp_richcompare == slot_tp_richcompare) {
+		res = half_richcompare(other, self, swapped_op[op]);
+		if (res != Py_NotImplemented) {
+			return res;
+		}
+		Py_DECREF(res);
+	}
+	Py_INCREF(Py_NotImplemented);
+	return Py_NotImplemented;
+}
+
+static PyObject *
+slot_tp_iter(PyObject *self)
+{
+	PyObject *func, *res;
+
+	func = PyObject_GetAttrString(self, "__iter__");
+	if (func != NULL) {
+		 res = PyObject_CallObject(func, NULL);
+		 Py_DECREF(func);
+		 return res;
+	}
+	PyErr_Clear();
+	func = PyObject_GetAttrString(self, "__getitem__");
+	if (func == NULL) {
+		PyErr_SetString(PyExc_TypeError, "iter() of non-sequence");
+		return NULL;
+	}
+	Py_DECREF(func);
+	return PySeqIter_New(self);
+}
 
 static PyObject *
 slot_tp_iternext(PyObject *self)
