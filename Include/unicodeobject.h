@@ -372,7 +372,7 @@ typedef struct {
 
 extern DL_IMPORT(PyTypeObject) PyUnicode_Type;
 
-#define PyUnicode_Check(op) (((op)->ob_type == &PyUnicode_Type))
+#define PyUnicode_Check(op) PyObject_TypeCheck(op, &PyUnicode_Type)
 
 /* Fast access macros */
 #define PyUnicode_GET_SIZE(op) \
