@@ -624,7 +624,7 @@ class AddrlistClass:
                 aslist.append('.')
                 self.pos = self.pos + 1
             elif self.field[self.pos] == '"':
-                aslist.append(self.getquote())
+                aslist.append('"%s"' % self.getquote())
             elif self.field[self.pos] in self.atomends:
                 break
             else: aslist.append(self.getatom())
