@@ -70,6 +70,10 @@ Extension modules
 Library
 -------
 
+- copy.py: applied SF patch 707900, fixing bug 702858, by Steven
+  Taschuk.  Copying a new-style class that had a reference to itself
+  didn't work.  (The same thing worked fine for old-style classes.)
+
 - difflib.py has two new functions:  context_diff() and unified_diff().
 
 - More fixes to urllib (SF 549151): (a) When redirecting, always use
