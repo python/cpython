@@ -12,6 +12,7 @@
 # >>> h.putreqest('GET', '/index.html')
 # >>> h.putheader('Accept', 'text/html')
 # >>> h.putheader('Accept', 'text/plain')
+# >>> h.endheaders()
 # >>> errcode, errmsg, headers = h.getreply()
 # >>> if errcode == 200:
 # ...     f = h.getfile()
@@ -67,6 +68,7 @@ class HTTP:
 		self.sock.send(str)
 
 	def putrequest(self, request, selector):
+		if not selector: selector = '/'
 		str = '%s %s %s\r\n' % (request, selector, HTTP_VERSION)
 		self.send(str)
 
@@ -77,13 +79,9 @@ class HTTP:
 	def endheaders(self):
 		self.send('\r\n')
 
-	def endrequest(self):
-		if self.debuglevel > 0: print 'shutdown: 1'
-		self.sock.shutdown(1)
-
 	def getreply(self):
-		self.endrequest()
 		self.file = self.sock.makefile('r')
+		self.sock = None
 		line = self.file.readline()
 		if self.debuglevel > 0: print 'reply:', `line`
 		if replyprog.match(line) < 0:
@@ -92,7 +90,7 @@ class HTTP:
 		errcode, errmsg = replyprog.group(1, 2)
 		errcode = string.atoi(errcode)
 		errmsg = string.strip(errmsg)
-		self.headers = rfc822.Message(self.file)
+		self.headers = rfc822.Message(self.file, 0)
 		return errcode, errmsg, self.headers
 
 	def getfile(self):
