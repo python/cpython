@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.2}
-\release{0.07}
+\release{0.08}
 \author{A.M. Kuchling}
 \authoraddress{\email{akuchlin@mems-exchange.org}}
 \begin{document}
@@ -391,22 +391,22 @@ class C:
 
 That is certainly clearer and easier to write than a pair of
 \method{__getattr__}/\method{__setattr__} methods that check for the
-\member{size} attribute and handle it specially, while retrieving all
+\member{size} attribute and handle it specially while retrieving all
 other attributes from the instance's \member{__dict__}.  Accesses to
 \member{size} are also the only ones which have to perform the work of
-calling a function, letting references to other attributes run at
+calling a function, so references to other attributes run at
 their usual speed.
 
 Finally, it's possible to constrain the list of attributes that can be
-referenced on an object using the new \member{__slots__} attribute.
+referenced on an object using the new \member{__slots__} class attribute.
 Python objects are usually very dynamic; at any time it's possible to
 define a new attribute on an instance by just doing
 \code{obj.new_attr=1}.  This is flexible and convenient, but this
 flexibility can also lead to bugs, as when you meant to write
-\code{obj.template = 'a'} but make a typo and wrote
+\code{obj.template = 'a'} but made a typo and wrote
 \code{obj.templtae} by accident.  
 
-A new-style class can define a class variable named \member{__slots__}
+A new-style class can define a class attribute named \member{__slots__}
 to constrain the list of legal attribute names.  An example will make
 this clear:
 
@@ -426,6 +426,8 @@ Traceback (most recent call last):
 AttributeError: 'C' object has no attribute 'templtae'
 \end{verbatim}
 
+Note how you get an \exception{AttributeError} on the attempt to
+assign to an attribute not listed in \member{__slots__}.
 
 
 \subsection{Related Links}
@@ -455,15 +457,15 @@ rest of the Zope Corp. team.
 Finally, there's the ultimate authority: the source code.  Most of the
 machinery for the type handling is in \file{Objects/typeobject.c}, but
 you should only resort to it after all other avenues have been
-exhausted (including posting a question to python-list or python-dev.)
+exhausted, including posting a question to python-list or python-dev. 
 
 
 %======================================================================
 \section{PEP 234: Iterators}
 
-A significant addition to 2.2 is an iteration interface at both the C
-and Python levels.  Objects can define how they can be looped over by
-callers.
+Another significant addition to 2.2 is an iteration interface at both
+the C and Python levels.  Objects can define how they can be looped
+over by callers.
 
 In Python versions up to 2.1, the usual way to make \code{for item in
 obj} work is to define a \method{__getitem__()} method that looks
@@ -480,14 +482,14 @@ the sixth element.  It's a bit misleading when you're using this only
 to support \keyword{for} loops.  Consider some file-like object that
 wants to be looped over; the \var{index} parameter is essentially
 meaningless, as the class probably assumes that a series of
-\method{__getitem__()} calls will be made, with \var{index}
+\method{__getitem__()} calls will be made with \var{index}
 incrementing by one each time.  In other words, the presence of the
 \method{__getitem__()} method doesn't mean that using \code{file[5]} 
 to randomly access the sixth element will work, though it really should.
 
 In Python 2.2, iteration can be implemented separately, and
 \method{__getitem__()} methods can be limited to classes that really
-do support random access.  The basic idea of iterators is quite
+do support random access.  The basic idea of iterators is 
 simple.  A new built-in function, \function{iter(obj)} or
 \code{iter(\var{C}, \var{sentinel})}, is used to get an iterator.
 \function{iter(obj)} returns an iterator for the object \var{obj},
@@ -503,10 +505,10 @@ implemented in C can implement a \code{tp_iter} function in order to
 return an iterator, and extension types that want to behave as
 iterators can define a \code{tp_iternext} function.
 
-So what do iterators do?  They have one required method,
-\method{next()}, which takes no arguments and returns the next value.
-When there are no more values to be returned, calling \method{next()}
-should raise the \exception{StopIteration} exception.
+So, after all this, what do iterators actually do?  They have one
+required method, \method{next()}, which takes no arguments and returns
+the next value.  When there are no more values to be returned, calling
+\method{next()} should raise the \exception{StopIteration} exception.
 
 \begin{verbatim}
 >>> L = [1,2,3]
@@ -527,7 +529,7 @@ StopIteration
 \end{verbatim}
 
 In 2.2, Python's \keyword{for} statement no longer expects a sequence;
-it expects something for which \function{iter()} will return something.
+it expects something for which \function{iter()} will return an iterator.
 For backward compatibility and convenience, an iterator is
 automatically constructed for sequences that don't implement
 \method{__iter__()} or a \code{tp_iter} slot, so \code{for i in
@@ -536,6 +538,7 @@ a sequence, it's been changed to use the iterator protocol.  This
 means you can do things like this:
 
 \begin{verbatim}
+>>> L = [1,2,3]
 >>> i = iter(L)
 >>> a,b,c = i
 >>> a,b,c
@@ -580,6 +583,7 @@ now read each line of a file using code like this:
 \begin{verbatim}
 for line in file:
     # do something for each line
+    ...
 \end{verbatim}
 
 Note that you can only go forward in an iterator; there's no way to
@@ -607,7 +611,7 @@ variables are created.  When the function reaches a \keyword{return}
 statement, the local variables are destroyed and the resulting value
 is returned to the caller.  A later call to the same function will get
 a fresh new set of local variables.  But, what if the local variables
-weren't destroyed on exiting a function?  What if you could later
+weren't thrown away on exiting a function?  What if you could later
 resume the function where it left off?  This is what generators
 provide; they can be thought of as resumable functions.
 
@@ -715,7 +719,7 @@ sentence := "Store it in the neighboring harbor"
 if (i := find("or", sentence)) > 5 then write(i)
 \end{verbatim}
 
-The \function{find()} function returns the indexes at which the
+In Icon the \function{find()} function returns the indexes at which the
 substring ``or'' is found: 3, 23, 33.  In the \keyword{if} statement,
 \code{i} is first assigned a value of 3, but 3 is less than 5, so the
 comparison fails, and Icon retries it with the second value of 23.  23
@@ -728,8 +732,8 @@ Python language, but learning or using them isn't compulsory; if they
 don't solve any problems that you have, feel free to ignore them.
 One novel feature of Python's interface as compared to
 Icon's is that a generator's state is represented as a concrete object
-that can be passed around to other functions or stored in a data
-structure.
+(the iterator) that can be passed around to other functions or stored
+in a data structure.
 
 \begin{seealso}
 
@@ -772,14 +776,13 @@ will now return a long integer as their result.  For example:
 
 In most cases, integers and long integers will now be treated
 identically.  You can still distinguish them with the
-\function{type()} built-in function, but that's rarely needed.  The
-\function{int()} constructor will now return a long integer if the value
-is large enough.  
+\function{type()} built-in function, but that's rarely needed.  
 
 \begin{seealso}
 
 \seepep{237}{Unifying Long Integers and Integers}{Written by
-Moshe Zadka and Guido van Rossum.  Implemented mostly by Guido van Rossum.}
+Moshe Zadka and Guido van Rossum.  Implemented mostly by Guido van
+Rossum.}
 
 \end{seealso}
 
@@ -787,7 +790,7 @@ Moshe Zadka and Guido van Rossum.  Implemented mostly by Guido van Rossum.}
 %======================================================================
 \section{PEP 238: Changing the Division Operator}
 
-The most controversial change in Python 2.2 is the start of an effort
+The most controversial change in Python 2.2 heralds the start of an effort
 to fix an old design flaw that's been in Python from the beginning.
 Currently Python's division operator, \code{/}, behaves like C's
 division operator when presented with two integer arguments: it
@@ -800,7 +803,7 @@ the possible types of the operands.
 
 (The controversy is over whether this is \emph{really} a design flaw,
 and whether it's worth breaking existing code to fix this.  It's
-caused endless discussions on python-dev and in July erupted into an
+caused endless discussions on python-dev, and in July 2001 erupted into an
 storm of acidly sarcastic postings on \newsgroup{comp.lang.python}. I
 won't argue for either side here and will stick to describing what's 
 implemented in 2.2.  Read \pep{238} for a summary of arguments and
@@ -825,7 +828,7 @@ Here are the changes 2.2 introduces:
 
 \item A new operator, \code{//}, is the floor division operator.
 (Yes, we know it looks like \Cpp's comment symbol.)  \code{//}
-\emph{always} returns the floor divison no matter what the types of
+\emph{always} performs floor division no matter what the types of
 its operands are, so \code{1 // 2} is 0 and \code{1.0 // 2.0} is also
 0.0.
 
