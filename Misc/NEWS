@@ -62,7 +62,25 @@ Windows
   properly, or outdated; the MSI package now does not rely on VB
   anymore.
 
+Macintosh
+---------
 
+- Bug #1091468: make frameworkinstall now works with DESTROOT builds
+
+- On 10.3 and later extensions are built with -undefined dynamic_lookup.
+  This ensures that extensions can be built in older versions of Python after
+  a newer framework has been installed. In addition, an extension will not 
+  accidentally pull in another copy of the Python interpreter.
+  
+  On 10.2 and earlier (or if MACOSX_DEPLOYMENT_TARGET is set to a value <= 10.2)
+  extensions are linked directly to the dylib in the framework, in stead
+  of against the framework itself. This ensures that extensions can be built
+  in older versions of Python after a newer framework has been installed.
+
+- PackageManager and the underlying pimp.py module have been updated to
+  version 0.5, which greatly simplifies maintainance of the package
+  databases.
+  
 What's New in Python 2.4 final?
 ===============================
 
