@@ -417,7 +417,7 @@ def findsource(object):
         if not hasattr(object, 'co_firstlineno'):
             raise IOError, 'could not find function definition'
         lnum = object.co_firstlineno - 1
-        pat = re.compile(r'^\s*def\s')
+        pat = re.compile(r'^(\s*def\s)|(.*\slambda(:|\s))')
         while lnum > 0:
             if pat.match(lines[lnum]): break
             lnum = lnum - 1
@@ -508,6 +508,8 @@ def getblock(lines):
         tokenize.tokenize(ListReader(lines).readline, BlockFinder().tokeneater)
     except EndOfBlock, eob:
         return lines[:eob.args[0]]
+    # Fooling the indent/dedent logic implies a one-line definition
+    return lines[:1]
 
 def getsourcelines(object):
     """Return a list of source lines and starting line number for an object.
