@@ -4351,38 +4351,34 @@ returned by a previous call to \cfunction{PyMem_Malloc()} or
 occurs. If \var{p} is \NULL{}, no operation is performed.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{void*}{Py_Malloc}{size_t n}
-Same as \cfunction{PyMem_Malloc()}, but calls
-\cfunction{PyErr_NoMemory()} on failure.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{void*}{Py_Realloc}{void *p, size_t n}
-Same as \cfunction{PyMem_Realloc()}, but calls
-\cfunction{PyErr_NoMemory()} on failure.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{void}{Py_Free}{void *p}
-Same as \cfunction{PyMem_Free()}.
-\end{cfuncdesc}
-
 The following type-oriented macros are provided for convenience.  Note 
 that \var{TYPE} refers to any C type.
 
-\begin{cfuncdesc}{\var{TYPE}*}{PyMem_NEW}{TYPE, size_t n}
+\begin{cfuncdesc}{\var{TYPE}*}{PyMem_New}{TYPE, size_t n}
 Same as \cfunction{PyMem_Malloc()}, but allocates \code{(\var{n} *
 sizeof(\var{TYPE}))} bytes of memory.  Returns a pointer cast to
 \ctype{\var{TYPE}*}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{\var{TYPE}*}{PyMem_RESIZE}{void *p, TYPE, size_t n}
+\begin{cfuncdesc}{\var{TYPE}*}{PyMem_Resize}{void *p, TYPE, size_t n}
 Same as \cfunction{PyMem_Realloc()}, but the memory block is resized
 to \code{(\var{n} * sizeof(\var{TYPE}))} bytes.  Returns a pointer
 cast to \ctype{\var{TYPE}*}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{void}{PyMem_DEL}{void *p}
+\begin{cfuncdesc}{void}{PyMem_Del}{void *p}
 Same as \cfunction{PyMem_Free()}.
 \end{cfuncdesc}
+
+In addition, the following macro sets are provided for calling the
+Python memory allocator directly, without involving the C API functions
+listed above. However, note that their use does not preserve binary
+compatibility accross Python versions and is therefore deprecated in
+extension modules.
+
+\cfunction{PyMem_MALLOC()}, \cfunction{PyMem_REALLOC()}, \cfunction{PyMem_FREE()}.
+
+\cfunction{PyMem_NEW()}, \cfunction{PyMem_RESIZE()}, \cfunction{PyMem_DEL()}.
 
 
 \section{Examples \label{memoryExamples}}
@@ -4403,37 +4399,22 @@ first function set:
     return res;
 \end{verbatim}
 
-With the second function set, the need to call
-\cfunction{PyErr_NoMemory()} is obviated:
+The same code using the type-oriented function set:
 
 \begin{verbatim}
     PyObject *res;
-    char *buf = (char *) Py_Malloc(BUFSIZ); /* for I/O */
-
-    if (buf == NULL)
-        return NULL;
-    /* ...Do some I/O operation involving buf... */
-    res = PyString_FromString(buf);
-    Py_Free(buf); /* allocated with Py_Malloc */
-    return res;
-\end{verbatim}
-
-The same code using the macro set:
-
-\begin{verbatim}
-    PyObject *res;
-    char *buf = PyMem_NEW(char, BUFSIZ); /* for I/O */
+    char *buf = PyMem_New(char, BUFSIZ); /* for I/O */
 
     if (buf == NULL)
         return PyErr_NoMemory();
     /* ...Do some I/O operation involving buf... */
     res = PyString_FromString(buf);
-    PyMem_DEL(buf); /* allocated with PyMem_NEW */
+    PyMem_Del(buf); /* allocated with PyMem_New */
     return res;
 \end{verbatim}
 
-Note that in the three examples above, the buffer is always
-manipulated via functions/macros belonging to the same set. Indeed, it
+Note that in the two examples above, the buffer is always
+manipulated via functions belonging to the same set. Indeed, it
 is required to use the same memory API family for a given
 memory block, so that the risk of mixing different allocators is
 reduced to a minimum. The following code sequence contains two errors,
@@ -4441,26 +4422,20 @@ one of which is labeled as \emph{fatal} because it mixes two different
 allocators operating on different heaps.
 
 \begin{verbatim}
-char *buf1 = PyMem_NEW(char, BUFSIZ);
+char *buf1 = PyMem_New(char, BUFSIZ);
 char *buf2 = (char *) malloc(BUFSIZ);
 char *buf3 = (char *) PyMem_Malloc(BUFSIZ);
 ...
-PyMem_DEL(buf3);  /* Wrong -- should be PyMem_Free() */
+PyMem_Del(buf3);  /* Wrong -- should be PyMem_Free() */
 free(buf2);       /* Right -- allocated via malloc() */
-free(buf1);       /* Fatal -- should be PyMem_DEL()  */
+free(buf1);       /* Fatal -- should be PyMem_Del()  */
 \end{verbatim}
 
 In addition to the functions aimed at handling raw memory blocks from
 the Python heap, objects in Python are allocated and released with
-\cfunction{_PyObject_New()}\ttindex{_PyObject_New()} and
-\cfunction{_PyObject_NewVar()}\ttindex{_PyObject_NewVar()}, or with
-their corresponding macros
-\cfunction{PyObject_NEW()}\ttindex{PyObject_NEW()} and
-\cfunction{PyObject_NEW_VAR()}\ttindex{PyObject_NEW_VAR()}.
-
-\cfunction{_PyObject_New()}, \cfunction{_PyObject_NewVar()},
-\cfunction{_PyObject_Del()}, or with their corresponding macros
-\cfunction{PyObject_NEW()}, \cfunction{PyObject_NEW_VAR()},
+\cfunction{PyObject_New()}, \cfunction{PyObject_NewVar()} and
+\cfunction{PyObject_Del()}, or with their corresponding macros
+\cfunction{PyObject_NEW()}, \cfunction{PyObject_NEW_VAR()} and
 \cfunction{PyObject_DEL()}.
 
 These will be explained in the next chapter on defining and
@@ -4472,14 +4447,38 @@ implementing new object types in C.
 \begin{cfuncdesc}{PyObject*}{_PyObject_New}{PyTypeObject *type}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{_PyObject_NewVar}{PyTypeObject *type, int size}
+\begin{cfuncdesc}{PyVarObject*}{_PyObject_NewVar}{PyTypeObject *type, int size}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{\var{TYPE}}{_PyObject_NEW}{TYPE, PyTypeObject *type}
+\begin{cfuncdesc}{void}{_PyObject_Del}{PyObject *op}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{\var{TYPE}}{_PyObject_NEW_VAR}{TYPE, PyTypeObject *type,
-                                                 int size}
+\begin{cfuncdesc}{PyObject*}{PyObject_Init}{PyObject *op,
+						PyTypeObject *type}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyVarObject*}{PyObject_InitVar}{PyVarObject *op,
+						PyTypeObject *type, int size}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{\var{TYPE}*}{PyObject_New}{TYPE, PyTypeObject *type}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{\var{TYPE}*}{PyObject_NewVar}{TYPE, PyTypeObject *type,
+                                                int size}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyObject_Del}{PyObject *op}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{\var{TYPE}*}{PyObject_NEW}{TYPE, PyTypeObject *type}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{\var{TYPE}*}{PyObject_NEW_VAR}{TYPE, PyTypeObject *type,
+                                                int size}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyObject_DEL}{PyObject *op}
 \end{cfuncdesc}
 
 Py_InitModule (!!!)
