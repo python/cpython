@@ -82,24 +82,23 @@ __all__ = ["Random","seed","random","uniform","randint","choice",
            "stdgamma","gauss","betavariate","paretovariate","weibullvariate",
            "getstate","setstate","jumpahead","whseed"]
 
-def _verify(name, expected):
-    computed = eval(name)
+def _verify(name, computed, expected):
     if abs(computed - expected) > 1e-7:
         raise ValueError(
             "computed value for %s deviates too much "
             "(computed %g, expected %g)" % (name, computed, expected))
 
 NV_MAGICCONST = 4 * _exp(-0.5)/_sqrt(2.0)
-_verify('NV_MAGICCONST', 1.71552776992141)
+_verify('NV_MAGICCONST', NV_MAGICCONST, 1.71552776992141)
 
 TWOPI = 2.0*_pi
-_verify('TWOPI', 6.28318530718)
+_verify('TWOPI', TWOPI, 6.28318530718)
 
 LOG4 = _log(4.0)
-_verify('LOG4', 1.38629436111989)
+_verify('LOG4', LOG4, 1.38629436111989)
 
 SG_MAGICCONST = 1.0 + _log(4.5)
-_verify('SG_MAGICCONST', 2.50407739677627)
+_verify('SG_MAGICCONST', SG_MAGICCONST, 2.50407739677627)
 
 del _verify
 
