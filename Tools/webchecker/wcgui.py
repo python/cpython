@@ -63,10 +63,8 @@ import getopt
 import string
 from Tkinter import *
 import tktools
-import wcnew
+import webchecker
 import random
-
-webchecker = wcnew
 
 # Override some for a weaker platform
 if sys.platform == 'mac':

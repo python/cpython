@@ -10,9 +10,7 @@ import string
 import urllib
 import getopt
 
-import wcnew
-
-webchecker = wcnew
+import webchecker
 
 # Extract real version number if necessary
 if __version__[0] == '$':
