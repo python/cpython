@@ -16,10 +16,11 @@ testing, removing duplicates from a sequence, and computing standard math
 operations on sets such as intersection, union, difference, and symmetric
 difference.
 
-Like other collections, sets support \code{x in s}, \code{len(s)}, and
-\code{for x in s}.  Being an unordered collection, sets do not record element
-position or order of insertion.  Accordingly, sets do not support indexing,
-slicing or other sequence-like behavior.
+Like other collections, sets support \code{\var{x} in \var{set}},
+\code{len(\var{set})}, and \code{for \var{x} in \var{set}}.  Being an
+unordered collection, sets do not record element position or order of
+insertion.  Accordingly, sets do not support indexing, slicing, or
+other sequence-like behavior.
 
 Most set applications use the \class{Set} class which provides every set
 method except for \method{__hash__()}. For advanced applications requiring
@@ -27,29 +28,30 @@ a hash method, the \class{ImmutableSet} class adds a \method{__hash__()}
 method but omits methods which alter the contents of the set. Both
 \class{Set} and \class{ImmutableSet} derive from \class{BaseSet}, an
 abstract class useful for determining whether something is a set:
-\code{isinstance(x, BaseSet)}.
+\code{isinstance(\var{obj}, BaseSet)}.
 
-The set classes are implemented using dictionaries.  As a result, sets cannot
-contain mutable elements such as lists or dictionaries. However, they can
-contain immutable collections such as tuples or instances of
-\class(ImmutableSet).  For convenience in implementing sets of sets,
-inner sets are automatically converted to immutable form, for example,
-\code{Set([Set(['dog'])])} is transformed to
+The set classes are implemented using dictionaries.  As a result, sets
+cannot contain mutable elements such as lists or dictionaries.
+However, they can contain immutable collections such as tuples or
+instances of \class(ImmutableSet).  For convenience in implementing
+sets of sets, inner sets are automatically converted to immutable
+form, for example, \code{Set([Set(['dog'])])} is transformed to
 \code{Set([ImmutableSet(['dog'])])}.
 
 \begin{classdesc}{Set}{\optional{iterable}}
 Constructs a new empty \class{Set} object.  If the optional \var{iterable}
 parameter is supplied, updates the set with elements obtained from iteration.
 All of the elements in \var{iterable} should be immutable or be transformable
-to an immutable using the protocol described at \ref{immutable-transforms}.
+to an immutable using the protocol described in
+section~\ref{immutable-transforms}.
 \end{classdesc}
 
 \begin{classdesc}{ImmutableSet}{\optional{iterable}}
 Constructs a new empty \class{ImmutableSet} object.  If the optional
 \var{iterable} parameter is supplied, updates the set with elements obtained
 from iteration.  All of the elements in \var{iterable} should be immutable or
-be transformable to an immutable using the protocol described at
-\ref{immutable-transforms}.
+be transformable to an immutable using the protocol described in
+section~\ref{immutable-transforms}.
 
 Because \class{ImmutableSet} objects provide a \method{__hash__()} method,
 they can be used as set elements or as dictionary keys.  \class{ImmutableSet}
@@ -58,44 +60,44 @@ elements must be known when the constructor is called.
 \end{classdesc}
 
 
-\subsection{set Objects}
+\subsection{Set Objects}
 
 Instances of \class{Set} and \class{ImmutableSet} both provide
 the following operations:
 
-\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
-  \lineiii{len(\var{s})}{cardinality of set \var{s}}{}
+\begin{tableii}{c|l}{code}{Operation}{Result}
+  \lineii{len(\var{s})}{cardinality of set \var{s}}
 
   \hline
-  \lineiii{\var{x} in \var{s}}
-          {test \var{x} for membership in \var{s}}{}
-  \lineiii{\var{x} not in \var{s}}
-          {test \var{x} for non-membership in \var{s}}{}
-  \lineiii{\var{s}.issubset(\var{t})}
-          {test whether every element in \var{s} is in \var{t}}{}
-  \lineiii{\var{s}.issuperset(\var{t})}
-          {test whether every element in \var{t} is in \var{s}}{}
+  \lineii{\var{x} in \var{s}}
+         {test \var{x} for membership in \var{s}}
+  \lineii{\var{x} not in \var{s}}
+         {test \var{x} for non-membership in \var{s}}
+  \lineii{\var{s}.issubset(\var{t})}
+         {test whether every element in \var{s} is in \var{t}}
+  \lineii{\var{s}.issuperset(\var{t})}
+         {test whether every element in \var{t} is in \var{s}}
 
   \hline
-  \lineiii{\var{s} | \var{t}}
-          {new set with elements from both \var{s} and \var{t}}{}
-  \lineiii{\var{s}.union(\var{t})}
-          {new set with elements from both \var{s} and \var{t}}{}
-  \lineiii{\var{s} & \var{t}}
-          {new set with elements common to \var{s} and \var{t}}{}
-  \lineiii{\var{s}.intersection(\var{t})}
-          {new set with elements common to \var{s} and \var{t}}{}
-  \lineiii{\var{s} - \var{t}}
-          {new set with elements in \var{s} but not in \var{t}}{}
-  \lineiii{\var{s}.difference(\var{t})}
-          {new set with elements in \var{s} but not in \var{t}}{}
-  \lineiii{\var{s} ^ \var{t}}
-          {new set with elements in either \var{s} or \var{t} but not both}{}
-  \lineiii{\var{s}.symmetric_difference(\var{t})}
-          {new set with elements in either \var{s} or \var{t} but not both}{}
-  \lineiii{\var{s}.copy()}
-          {new set with a shallow copy of \var{s}}{}
-\end{tableiii}
+  \lineii{\var{s} | \var{t}}
+         {new set with elements from both \var{s} and \var{t}}
+  \lineii{\var{s}.union(\var{t})}
+         {new set with elements from both \var{s} and \var{t}}
+  \lineii{\var{s} \&\ \var{t}}
+         {new set with elements common to \var{s} and \var{t}}
+  \lineii{\var{s}.intersection(\var{t})}
+         {new set with elements common to \var{s} and \var{t}}
+  \lineii{\var{s} - \var{t}}
+         {new set with elements in \var{s} but not in \var{t}}
+  \lineii{\var{s}.difference(\var{t})}
+         {new set with elements in \var{s} but not in \var{t}}
+  \lineii{\var{s} \textasciicircum\ \var{t}}
+         {new set with elements in either \var{s} or \var{t} but not both}
+  \lineii{\var{s}.symmetric_difference(\var{t})}
+         {new set with elements in either \var{s} or \var{t} but not both}
+  \lineii{\var{s}.copy()}
+         {new set with a shallow copy of \var{s}}
+\end{tableii}
 
 In addition to the above operations, both \class{Set} and \class{ImmutableSet}
 support set to set comparison operators based on the contents of their
@@ -105,46 +107,48 @@ each set is contained in the other.
 The following table lists operations available in \class{ImmutableSet}
 but not found in \class{Set}:
 
-\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
-  \lineiii{hash(\var{s})}{returns a hash value for \var{s}}{}
-\end{tableiii}
+\begin{tableii}{c|l|c}{code}{Operation}{Result}
+  \lineii{hash(\var{s})}{returns a hash value for \var{s}}
+\end{tableii}
 
 The following table lists operations available in \class{Set}
 but not found in \class{ImmutableSet}:
 
-\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
-  \lineiii{\var{s} |= \var{t}}
-          {return set \var{s} with elements added from \var{t}}{}
-  \lineiii{\var{s}.union_update(\var{t})}
-          {return set \var{s} with elements added from \var{t}}{}
-  \lineiii{\var{s} &= \var{t}}
-          {return set \var{s} keeping only elements also found in \var{t}}{}
-  \lineiii{\var{s}.intersection_update(\var{t})}
-          {return set \var{s} keeping only elements also found in \var{t}}{}
-  \lineiii{\var{s} -= \var{t}}
-          {return set \var{s} after removing elements found in \var{t}}{}
-  \lineiii{\var{s}.difference_update(\var{t})}
-          {return set \var{s} after removing elements found in \var{t}}{}
-  \lineiii{\var{s} ^= \var{t}}
-          {return set \var{s} with elements from \var{s} or \var{t} but not both}{}
-  \lineiii{\var{s}.symmetric_difference_update(\var{t})}
-          {return set \var{s} with elements from \var{s} or \var{t} but not both}{}
+\begin{tableii}{c|l}{code}{Operation}{Result}
+  \lineii{\var{s} |= \var{t}}
+         {return set \var{s} with elements added from \var{t}}
+  \lineii{\var{s}.union_update(\var{t})}
+         {return set \var{s} with elements added from \var{t}}
+  \lineii{\var{s} \&= \var{t}}
+         {return set \var{s} keeping only elements also found in \var{t}}
+  \lineii{\var{s}.intersection_update(\var{t})}
+         {return set \var{s} keeping only elements also found in \var{t}}
+  \lineii{\var{s} -= \var{t}}
+         {return set \var{s} after removing elements found in \var{t}}
+  \lineii{\var{s}.difference_update(\var{t})}
+         {return set \var{s} after removing elements found in \var{t}}
+  \lineii{\var{s} \textasciicircum= \var{t}}
+         {return set \var{s} with elements from \var{s} or \var{t}
+          but not both}
+  \lineii{\var{s}.symmetric_difference_update(\var{t})}
+         {return set \var{s} with elements from \var{s} or \var{t}
+          but not both}
 
   \hline
-  \lineiii{\var{s}.add(\var{x})}
-      {Add element \var{x} to set \var{s}}{}
-  \lineiii{\var{s}.remove(\var{x})}
-      {Remove element \var{x} from set \var{s}}{}
-  \lineiii{\var{s}.discard(\var{x})}
-      {Removes element \var{x} from set \var{s} like \var{s}.remove(\var{x})
-       but does not raise a KeyError if \var{x} is not in \var{s}}{}
-  \lineiii{\var{s}.pop()}
-      {Remove and return a randomly-chosen element from \var{s}}{}
-  \lineiii{\var{s}.update(\var{t})}
-      {Add elements from \var{t} to set \var{s}}{}
-  \lineiii{\var{s}.clear()}
-      {Remove all elements from set \var{s}}{}
-\end{tableiii}
+  \lineii{\var{s}.add(\var{x})}
+         {Add element \var{x} to set \var{s}}
+  \lineii{\var{s}.remove(\var{x})}
+         {Remove element \var{x} from set \var{s}}
+  \lineii{\var{s}.discard(\var{x})}
+         {Removes element \var{x} from set \var{s} like \var{s}.remove(\var{x})
+          but does not raise a KeyError if \var{x} is not in \var{s}}
+  \lineii{\var{s}.pop()}
+         {Remove and return a randomly-chosen element from \var{s}}
+  \lineii{\var{s}.update(\var{t})}
+         {Add elements from \var{t} to set \var{s}}
+  \lineii{\var{s}.clear()}
+         {Remove all elements from set \var{s}}
+\end{tableii}
 
 
 \subsection{Example}
@@ -183,9 +187,9 @@ Sets can only contain immutable elements.  For convenience, mutable
 \class{Set} objects are automatically copied to an \class{ImmutableSet}
 before being added as a set element.
 
-The mechanism is to always add a hashable element, or if it is not hashable,
-the element is checked to see if it has an \method{_as_immutable()} method
-which returns an immutable equivalent.
+The mechanism is to always add a hashable element, or if it is not
+hashable, the element is checked to see if it has an
+\method{_as_immutable()} method which returns an immutable equivalent.
 
 Since \class{Set} objects have a \method{_as_immutable()} method
 returning an instance of \class{ImmutableSet}, it is possible to
@@ -194,15 +198,15 @@ construct sets of sets.
 A similar mechanism is needed by the \method{__contains__()} and
 \method{remove()} methods which need to hash an element to check
 for membership in a set.  Those methods check an element for hashability
-and, if not, check for a \method{_as_Temporarily_Immutable} method
+and, if not, check for a \method{_as_Temporarily_Immutable()} method
 which returns the element wrapped by a class that provides temporary
 methods for \method{__hash__()}, \method{__eq__()}, and \method{__ne__()}.
 
 The alternate mechanism spares the need to build a separate copy of
 the original mutable object.
 
-\class{Set} objects implement the \method{_as_Temporarily_Immutable} method
-which returns the \class{Set} object wrapped by a new class
+\class{Set} objects implement the \method{_as_Temporarily_Immutable()}
+method which returns the \class{Set} object wrapped by a new class
 \class{_TemporarilyImmutableSet}.
 
 The two mechanisms for adding hashability are normally invisible to the
@@ -210,10 +214,3 @@ user; however, a conflict can arise in a multi-threaded environment
 where one thread is updating a Set while another has temporarily wrapped it
 in \class{_TemporarilyImmutableSet}.  In other words, sets of mutable sets
 are not thread-safe.
-
-
-
-
-
-
-
