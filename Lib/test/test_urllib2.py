@@ -461,7 +461,8 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(http.method, method)
             self.assertEqual(http.selector, "/")
             self.assertEqual(http.req_headers,
-                             [("Foo", "bar"), ("Spam", "eggs")])
+                             [("Connection", "close"),
+                              ("Foo", "bar"), ("Spam", "eggs")])
             self.assertEqual(http.data, data)
 
         # check socket.error converted to URLError
