@@ -319,7 +319,7 @@ Currently-active file is at the head of the list.")
 
 (defconst py-no-outdent-re
   (concat "\\(" (mapconcat 'identity
-			   '("try\\s +.*:"
+			   '("try:"
 			     "except\\(\\s +.*\\)?:"
 			     "while\\s +.*:"
 			     "for\\s +.*:"
