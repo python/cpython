@@ -1272,15 +1272,15 @@ PyCursesWindow_SubWin(PyCursesWindowObject *self, PyObject *args)
 static PyObject *
 PyCursesWindow_Scroll(PyCursesWindowObject *self, PyObject *args)
 {
-  int lines;
+  int nlines;
   switch(ARG_COUNT(args)) {
   case 0:
     return PyCursesCheckERR(scroll(self->win), "scroll");
     break;
   case 1:
-    if (!PyArg_Parse(args, "i;lines", &lines))
+    if (!PyArg_Parse(args, "i;nlines", &nlines))
       return NULL;
-    return PyCursesCheckERR(wscrl(self->win, lines), "scroll");
+    return PyCursesCheckERR(wscrl(self->win, nlines), "scroll");
   default:
     PyErr_SetString(PyExc_TypeError, "scroll requires 0 or 1 arguments");
     return NULL;
@@ -1747,7 +1747,7 @@ static PyObject *
 PyCurses_InitScr(PyObject *self, PyObject *args)
 {
   WINDOW *win;
-  PyObject *lines, *cols;
+  PyObject *nlines, *cols;
 
   if (!PyArg_NoArgs(args)) return NULL;
 
@@ -1831,9 +1831,9 @@ PyCurses_InitScr(PyObject *self, PyObject *args)
 	SetDictInt("ACS_STERLING",      (ACS_STERLING));
 #endif
 
-  lines = PyInt_FromLong((long) LINES);
-  PyDict_SetItemString(ModDict, "LINES", lines);
-  Py_DECREF(lines);
+  nlines = PyInt_FromLong((long) LINES);
+  PyDict_SetItemString(ModDict, "LINES", nlines);
+  Py_DECREF(nlines);
   cols = PyInt_FromLong((long) COLS);
   PyDict_SetItemString(ModDict, "COLS", cols);
   Py_DECREF(cols);
