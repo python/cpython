@@ -222,10 +222,7 @@ try:
 except ImportError:
     from pickle import dumps, loads
 
-try:
-    import re
-except ImportError:
-    raise ImportError, "Cookie.py requires 're' from Python 1.5 or later"
+import re
 
 __all__ = ["CookieError","BaseCookie","SimpleCookie","SerialCookie",
            "SmartCookie","Cookie"]
