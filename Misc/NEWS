@@ -58,6 +58,8 @@ Library
 - Fixed socket speed loss caused by use of the _socketobject wrapper class
   in socket.py.
 
+- timeit.py now checks the current directory for imports.
+
 Tools/Demos
 -----------
 
