@@ -43,6 +43,7 @@ extern "C" {
 struct symtable {
 	int st_pass;             /* pass == 1 or 2 */
 	int st_keep;             /* true if symtable will be returned */
+	char *st_filename;       /* name of file being compiled */
 	PyObject *st_symbols;    /* dictionary of symbol tables */
 	PyObject *st_varnames;   /* dictionary of parameter lists */
         PyObject *st_stack;      /* stack of namespace info */

@@ -371,9 +371,38 @@ int is_free(int v)
 /* Error message including line number */
 
 static void
+set_error_location(char *filename, int lineno)
+{
+	PyObject *exc, *v, *tb, *tmp;
+
+	/* add attributes for the line number and filename for the error */
+	PyErr_Fetch(&exc, &v, &tb);
+	PyErr_NormalizeException(&exc, &v, &tb);
+	tmp = PyInt_FromLong(lineno);
+	if (tmp == NULL)
+		PyErr_Clear();
+	else {
+		if (PyObject_SetAttrString(v, "lineno", tmp))
+			PyErr_Clear();
+		Py_DECREF(tmp);
+	}
+	if (filename != NULL) {
+		tmp = PyString_FromString(filename);
+		if (tmp == NULL)
+			PyErr_Clear();
+		else {
+			if (PyObject_SetAttrString(v, "filename", tmp))
+				PyErr_Clear();
+			Py_DECREF(tmp);
+		}
+	}
+	PyErr_Restore(exc, v, tb);
+}
+
+static void
 com_error(struct compiling *c, PyObject *exc, char *msg)
 {
-	PyObject *v, *tb, *tmp;
+	PyObject *v;
 	if (c == NULL) {
 		/* Error occurred via symtable call to
 		   is_constant_false */
@@ -392,28 +421,7 @@ com_error(struct compiling *c, PyObject *exc, char *msg)
 	PyErr_SetObject(exc, v);
 	Py_DECREF(v);
 
-	/* add attributes for the line number and filename for the error */
-	PyErr_Fetch(&exc, &v, &tb);
-	PyErr_NormalizeException(&exc, &v, &tb);
-	tmp = PyInt_FromLong(c->c_lineno);
-	if (tmp == NULL)
-		PyErr_Clear();
-	else {
-		if (PyObject_SetAttrString(v, "lineno", tmp))
-			PyErr_Clear();
-		Py_DECREF(tmp);
-	}
-	if (c->c_filename != NULL) {
-		tmp = PyString_FromString(c->c_filename);
-		if (tmp == NULL)
-			PyErr_Clear();
-		else {
-			if (PyObject_SetAttrString(v, "filename", tmp))
-				PyErr_Clear();
-			Py_DECREF(tmp);
-		}
-	}
-	PyErr_Restore(exc, v, tb);
+	set_error_location(c->c_filename, c->c_lineno);
 }
 
 
@@ -3804,6 +3812,7 @@ PyNode_CompileSymtable(node *n, char *filename)
 	st = symtable_init(1);
 	if (st == NULL)
 		return NULL;
+	assert(st->st_symbols != NULL);
 	symtable_enter_scope(st, TOP, TYPE(n), n->n_lineno);
 	if (st->st_errors > 0) {
 		PySymtable_Free(st);
@@ -3952,6 +3961,7 @@ symtable_build(struct compiling *c, node *n)
 {
 	if ((c->c_symtable = symtable_init(0)) == NULL)
 		return -1;
+	c->c_symtable->st_filename = c->c_filename;
 	symtable_enter_scope(c->c_symtable, TOP, TYPE(n), n->n_lineno);
 	if (c->c_symtable->st_errors > 0)
 		return -1;
@@ -4057,11 +4067,11 @@ symtable_load_symbols(struct compiling *c)
 		else if (info & DEF_GLOBAL) {
 			if ((info & DEF_PARAM) 
 			    && (PyString_AS_STRING(name)[0] != '.')){
-				char buf[500];
-				sprintf(buf, 
-					"name '%.400s' is local and global",
-					PyString_AS_STRING(name));
-				com_error(c, PyExc_SyntaxError, buf);
+				PyErr_Format(PyExc_SyntaxError,
+				     "name '%.400s' is local and global",
+					     PyString_AS_STRING(name));
+				set_error_location(st->st_filename,
+						   st->st_cur_lineno);
 				goto fail;
 			}
 			if (PyDict_SetItem(c->c_globals, name, Py_None) < 0)
@@ -4119,13 +4129,12 @@ symtable_load_symbols(struct compiling *c)
 		if (PyDict_GetItemString(st->st_cur, NOOPT) == NULL)
 			c->c_flags |= CO_OPTIMIZED;
 		else if (ncells || nfrees) {
-			char buf[256];
-			/* XXX need better error message */
-			sprintf(buf, 
+			PyErr_Format(PyExc_SyntaxError,
 				"function %.100s: may not use lexical scoping"
 				" and 'import *' or exec in same function",
 				PyString_AS_STRING(st->st_cur_name));
-			com_error(c, PyExc_SyntaxError, buf);
+			set_error_location(st->st_filename,
+					   st->st_cur_lineno);
 			return -1;
 		}
 	}
@@ -4148,6 +4157,7 @@ symtable_init(int keep)
 		return NULL;
 	st->st_pass = 1;
 	st->st_keep = keep;
+	st->st_filename = NULL;
 	if ((st->st_stack = PyList_New(0)) == NULL)
 		goto fail;
 	if ((st->st_symbols = PyDict_New()) == NULL)
@@ -4160,6 +4170,7 @@ symtable_init(int keep)
 		goto fail;
 	if (PyDict_SetItemString(st->st_symbols, TOP, d) < 0)
 		goto fail;
+	st->st_global = d;
 	Py_DECREF(d);
 	if (keep) {
 		if ((d = PyDict_New()) == NULL)
@@ -4167,7 +4178,6 @@ symtable_init(int keep)
 		st->st_scopes = d;
 	} else 
 		st->st_scopes = NULL;
-	st->st_global = d; /* use ref borrowed from st->st_symbols */
 	st->st_cur = NULL;
 	st->st_cur_id = NULL;
 	st->st_cur_name = NULL;
@@ -4505,6 +4515,8 @@ symtable_add_def_o(struct symtable *st, PyObject *dict,
 	    if ((flag & DEF_PARAM) && (val & DEF_PARAM)) {
 		    PyErr_Format(PyExc_SyntaxError, DUPLICATE_ARGUMENT,
 				 PyString_AsString(name));
+		    set_error_location(st->st_filename,
+				       st->st_cur_lineno);
 		    return -1;
 	    }
 	    val |= flag;
@@ -4844,6 +4856,8 @@ symtable_import(struct symtable *st, node *n)
 			if (st->st_cur_type != TYPE_MODULE) {
 				PyErr_SetString(PyExc_SyntaxError,
 						ILLEGAL_IMPORT_STAR);
+				set_error_location(st->st_filename,
+						   n->n_lineno);
 				st->st_errors++;
 				return;
 			}
