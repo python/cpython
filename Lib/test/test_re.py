@@ -48,7 +48,7 @@ for t in tests:
 			# Special hack because else the string concat fails:
 			if gi is None: gi = "None"
 		    except IndexError:
-			gi = "None"
+			gi = "Error"
 		    vardict['g%d' % i] = gi
 		repl=eval(repl, vardict)
 		if repl!=expected:
