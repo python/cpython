@@ -239,9 +239,8 @@
   program name (set by \cfunction{Py_SetProgramName()} above) and some
   environment variables.  The returned string consists of a series of
   directory names separated by a platform dependent delimiter
-  character.  The delimiter character is \character{:} on \UNIX,
-  \character{;} on Windows, and \character{\e n} (the \ASCII{}
-  newline character) on Macintosh.  The returned string points into
+  character.  The delimiter character is \character{:} on \UNIX and Mac OS X,
+  \character{;} on Windows.  The returned string points into
   static storage; the caller should not modify its value.  The value
   is available to Python code as the list
   \code{sys.path}\withsubitem{(in module sys)}{\ttindex{path}}, which
@@ -272,7 +271,7 @@
   this is formed from the ``official'' name of the operating system,
   converted to lower case, followed by the major revision number;
   e.g., for Solaris 2.x, which is also known as SunOS 5.x, the value
-  is \code{'sunos5'}.  On Macintosh, it is \code{'mac'}.  On Windows,
+  is \code{'sunos5'}.  On Mac OS X, it is \code{'darwin'}.  On Windows,
   it is \code{'win'}.  The returned string points into static storage;
   the caller should not modify its value.  The value is available to
   Python code as \code{sys.platform}.

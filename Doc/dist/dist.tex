@@ -298,7 +298,7 @@ platform-neutral representation into whatever is appropriate on your
 current platform before actually using the pathname.  This makes your
 setup script portable across operating systems, which of course is one
 of the major goals of the Distutils.  In this spirit, all pathnames in
-this document are slash-separated.  (Mac OS programmers should keep in
+this document are slash-separated.  (Mac OS 9 programmers should keep in
 mind that the \emph{absence} of a leading slash indicates a relative
 path, the opposite of the Mac OS convention with colons.)
 
@@ -1021,7 +1021,6 @@ python setup.py sdist
 script or config file), \command{sdist} creates the archive of the
 default format for the current platform.  The default format is a gzip'ed
 tar file (\file{.tar.gz}) on \UNIX, and ZIP file on Windows.
-\XXX{no Mac OS support here}
 
 You can specify as many formats as you like using the
 \longprogramopt{formats} option, for example:
@@ -2059,9 +2058,9 @@ regular filename character, and \code{[\var{range}]} matches any of the
 characters in \var{range} (e.g., \code{a-z}, \code{a-zA-Z},
 \code{a-f0-9\_.}).  The definition of ``regular filename character'' is
 platform-specific: on \UNIX{} it is anything except slash; on Windows
-anything except backslash or colon; on Mac OS anything except colon.
+anything except backslash or colon; on Mac OS 9 anything except colon.
 
-\XXX{Windows and Mac OS support not there yet}
+\XXX{Windows support not there yet}
 
 
 %\section{Creating a built distribution: the
@@ -2759,7 +2758,8 @@ This module provides the EMXCCompiler class, a subclass of \class{UnixCCompiler}
 \modulesynopsis{Metrowerks CodeWarrior support}
 
 Contains \class{MWerksCompiler}, an implementation of the abstract 
-\class{CCompiler} class for MetroWerks CodeWarrior on the Macintosh. Needs work to support CW on Windows.
+\class{CCompiler} class for MetroWerks CodeWarrior on the pre-Mac OS X Macintosh.
+Needs work to support CW on Windows or Mac OS X.
 
 
 %\subsection{Utility modules}
@@ -2999,7 +2999,7 @@ starts or ends with a slash.
 Return \var{pathname} with \var{new_root} prepended.  If \var{pathname} is
 relative, this is equivalent to \samp{os.path.join(new_root,pathname)}
 Otherwise, it requires making \var{pathname} relative and then joining the
-two, which is tricky on DOS/Windows and Mac OS.
+two, which is tricky on DOS/Windows.
 \end{funcdesc}
 
 \begin{funcdesc}{check_environ}{}

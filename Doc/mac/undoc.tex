@@ -21,17 +21,7 @@ touch with
 \modulesynopsis{Helper module for BuildApplet, BuildApplication and
                 macfreeze.}
 
-
-\section{\module{py_resource} --- Resources from Python code}
-\declaremodule[pyresource]{standard}{py_resource}
-  \platform{Mac}
-\modulesynopsis{Helper to create \texttt{'PYC~'} resources for compiled
-                applications.}
-
-This module is primarily used as a help module for
-\program{BuildApplet} and \program{BuildApplication}.  It is able to
-store compiled Python code as \texttt{'PYC~'} resources in a file.
-
+\deprecated{2.4}
 
 \section{\module{cfmfile} --- Code Fragment Resource module}
 \declaremodule{standard}{cfmfile}
@@ -43,6 +33,7 @@ accompanying ``cfrg'' resources. It can parse them and merge them, and is
 used by BuildApplication to combine all plugin modules to a single
 executable.
 
+\deprecated{2.4}
 
 \section{\module{icopen} --- Internet Config replacement for \method{open()}}
 \declaremodule{standard}{icopen}
@@ -79,30 +70,6 @@ script is run under MacPython, as a MacPython applet or under OSX Python.
 
 A low-level interface to Navigation Services. 
 
-\section{\module{mkcwproject} --- Create CodeWarrior projects}
-\declaremodule{standard}{mkcwproject}
-  \platform{Mac}
-\modulesynopsis{Create CodeWarrior projects.}
-
-\refmodindex{distutils}
-\module{mkcwproject} creates project files for the Metrowerks CodeWarrior
-development environment. It is a helper module for
-\module{distutils} but can be used separately for more
-control.
-
-
-\section{\module{nsremote} --- Wrapper around Netscape OSA modules}
-\declaremodule{standard}{nsremote}
-  \platform{Mac}
-\modulesynopsis{Wrapper around Netscape OSA modules.}
-
-\module{nsremote} is a wrapper around the Netscape OSA modules that
-allows you to easily send your browser to a given URL.  A related
-module that may be of interest is the \module{webbrowser} module,
-documented in the \citetitle[../lib/lib.html]{Python Library
-Reference}.
-
-
 \section{\module{PixMapWrapper} --- Wrapper for PixMap objects}
 \declaremodule{standard}{PixMapWrapper}
   \platform{Mac}
@@ -111,43 +78,6 @@ Reference}.
 \module{PixMapWrapper} wraps a PixMap object with a Python object that
 allows access to the fields by name. It also has methods to convert
 to and from \module{PIL} images.
-
-
-\section{\module{preferences} --- Application preferences manager}
-\declaremodule{standard}{preferences}
-  \platform{Mac}
-\modulesynopsis{Nice application preferences manager with support for
-                defaults.}
-
-The \module{preferences} module allows storage of user preferences in
-the system-wide preferences folder, with defaults coming from the
-application itself and the possibility to override preferences for
-specific situations.
-
-
-\section{\module{pythonprefs} --- Preferences manager for Python}
-\declaremodule{standard}{pythonprefs}
-  \platform{Mac}
-\modulesynopsis{Specialized preferences manager for the Python
-                interpreter.}
-
-This module is a specialization of the \refmodule{preferences} module
-that allows reading and writing of the preferences for the Python
-interpreter.
-
-
-\section{\module{quietconsole} --- Non-visible standard output}
-\declaremodule{standard}{quietconsole}
-  \platform{Mac}
-\modulesynopsis{Buffered, non-visible standard output.}
-
-\module{quietconsole} allows you to keep stdio output in a buffer
-without displaying it (or without displaying the stdout window
-altogether, if set with \program{EditPythonPrefs}) until you try to read from
-stdin or disable the buffering, at which point all the saved output is
-sent to the window.  Good for programs with graphical user interfaces
-that do want to display their output at a crash.
-
 
 \section{\module{videoreader} --- Read QuickTime movies}
 \declaremodule{standard}{videoreader}
