@@ -43,6 +43,7 @@ I'd appreciate the feedback.
 
 
 \section{Introduction to the profiler}
+\nodename{Profiler Introduction}
 
 A \dfn{profiler} is a program that describes the run time performance
 of a program, providing a variety of statistics.  This documentation
@@ -54,6 +55,7 @@ examine the results of a profile operation.
 
 
 \section{How Is This Profiler Different From The Old Profiler?}
+\nodename{Profiler Changes}
 
 The big changes from old profiling module are that you get more
 information, and you pay less CPU time.  It's not a trade-off, it's a
@@ -209,6 +211,7 @@ manual, or guess what the following functions do:
 
 
 \section{What Is Deterministic Profiling?}
+\nodename{Deterministic Profiling}
 
 \dfn{Deterministic profiling} is meant to reflect the fact that all
 \dfn{function call}, \dfn{function return}, and \dfn{exception} events
@@ -604,7 +607,8 @@ performance section, and there is no reason to use a variable lookup
 at this point, when a constant can be used.
 
 
-\section{Extensions - Deriving Better Profilers}
+\section{Extensions --- Deriving Better Profilers}
+\nodename{Profiler Extensions}
 
 The \code{Profile} class of module \code{profile} was written so that
 derived classes could be developed to extend the profiler.  Rather
