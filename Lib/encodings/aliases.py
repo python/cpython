@@ -396,6 +396,12 @@ aliases = {
     # mbcs codec
     'dbcs'               : 'mbcs',
 
+    # ptcp154 codec
+    'csptcp154'          : 'ptcp154',
+    'pt154'              : 'ptcp154',
+    'cp154'              : 'ptcp154',
+    'cyrillic-asian'     : 'ptcp154',
+
     # quopri_codec codec
     'quopri'             : 'quopri_codec',
     'quoted_printable'   : 'quopri_codec',
