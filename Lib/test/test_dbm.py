@@ -2,42 +2,54 @@
 """Test script for the dbm module
    Roger E. Masse
 """
+import os
+import random
 import dbm
 from dbm import error
-from test.test_support import verbose, verify
+from test.test_support import verbose, verify, TestSkipped
 
-filename = '/tmp/delete_me'
+# make filename unique to allow multiple concurrent tests
+# and to minimize the likelihood of a problem from an old file
+filename = '/tmp/delete_me_' + str(random.random())[-6:]
 
-d = dbm.open(filename, 'c')
-verify(d.keys() == [])
-d['a'] = 'b'
-d['12345678910'] = '019237410982340912840198242'
-d.keys()
-if d.has_key('a'):
-    if verbose:
-        print 'Test dbm keys: ', d.keys()
+def cleanup():
+    for suffix in ['', '.pag', '.dir', '.db']:
+        try:
+            os.unlink(filename + suffix)
+        except OSError, (errno, strerror):
+            # if we can't delete the file because of permissions,
+            # nothing will work, so skip the test
+            if errno == 1:
+                raise TestSkipped, 'unable to remove: ' + filename + suffix
 
-d.close()
-d = dbm.open(filename, 'r')
-d.close()
-d = dbm.open(filename, 'rw')
-d.close()
-d = dbm.open(filename, 'w')
-d.close()
-d = dbm.open(filename, 'n')
-d.close()
+def test_keys():
+    d = dbm.open(filename, 'c')
+    verify(d.keys() == [])
+    d['a'] = 'b'
+    d['12345678910'] = '019237410982340912840198242'
+    d.keys()
+    if d.has_key('a'):
+        if verbose:
+            print 'Test dbm keys: ', d.keys()
 
+    d.close()
+
+def test_modes():
+    d = dbm.open(filename, 'r')
+    d.close()
+    d = dbm.open(filename, 'rw')
+    d.close()
+    d = dbm.open(filename, 'w')
+    d.close()
+    d = dbm.open(filename, 'n')
+    d.close()
+
+cleanup()
 try:
-    import os
-    if dbm.library == "ndbm":
-        # classic dbm
-        os.unlink(filename + '.dir')
-        os.unlink(filename + '.pag')
-    elif dbm.library == "BSD db":
-        # BSD DB's compatibility layer
-        os.unlink(filename + '.db')
-    else:
-        # GNU gdbm compatibility layer
-        os.unlink(filename)
+    test_keys()
+    test_modes()
 except:
-    pass
+    cleanup()
+    raise
+
+cleanup()
