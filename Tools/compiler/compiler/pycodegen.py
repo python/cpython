@@ -5,7 +5,7 @@ CodeGenerator.  Eventually, this will get split into the ASTVisitor as
 a generic tool and CodeGenerator as a specific tool.
 """
 
-from p2c import transformer, ast
+from compiler import parseFile, ast, visitor, walk, parse
 from pyassem import StackRef, PyAssembler, TupleArg
 import dis
 import misc
@@ -17,143 +17,6 @@ import os
 import stat
 import struct
 import types
-
-def parse(path):
-    f = open(path)
-    src = f.read()
-    f.close()
-    t = transformer.Transformer()
-    return t.parsesuite(src)
-
-def walk(tree, visitor, verbose=None, walker=None):
-    if walker:
-        w = walker()
-    else:
-        w = ASTVisitor()
-    if verbose is not None:
-        w.VERBOSE = verbose
-    w.preorder(tree, visitor)
-    return w.visitor
-
-def dumpNode(node):
-    print node.__class__
-    for attr in dir(node):
-        if attr[0] != '_':
-            print "\t", "%-10.10s" % attr, getattr(node, attr)
-
-class ASTVisitor:
-    """Performs a depth-first walk of the AST
-
-    The ASTVisitor will walk the AST, performing either a preorder or
-    postorder traversal depending on which method is called.
-
-    methods:
-    preorder(tree, visitor)
-    postorder(tree, visitor)
-        tree: an instance of ast.Node
-        visitor: an instance with visitXXX methods
-
-    The ASTVisitor is responsible for walking over the tree in the
-    correct order.  For each node, it checks the visitor argument for
-    a method named 'visitNodeType' where NodeType is the name of the
-    node's class, e.g. Classdef.  If the method exists, it is called
-    with the node as its sole argument.
-
-    The visitor method for a particular node type can control how
-    child nodes are visited during a preorder walk.  (It can't control
-    the order during a postorder walk, because it is called _after_
-    the walk has occurred.)  The ASTVisitor modifies the visitor
-    argument by adding a visit method to the visitor; this method can
-    be used to visit a particular child node.  If the visitor method
-    returns a true value, the ASTVisitor will not traverse the child
-    nodes.
-
-    XXX The interface for controlling the preorder walk needs to be
-    re-considered.  The current interface is convenient for visitors
-    that mostly let the ASTVisitor do everything.  For something like
-    a code generator, where you want to walk to occur in a specific
-    order, it's a pain to add "return 1" to the end of each method.
-
-    XXX Perhaps I can use a postorder walk for the code generator?
-    """
-
-    VERBOSE = 0
-
-    def __init__(self):
-        self.node = None
-
-    def preorder(self, tree, visitor):
-        """Do preorder walk of tree using visitor"""
-        self.visitor = visitor
-        visitor.visit = self._preorder
-        self._preorder(tree)
-
-    def _preorder(self, node):
-        stop = self.dispatch(node)
-        if stop:
-            return
-        for child in node.getChildren():
-            if isinstance(child, ast.Node):
-                self._preorder(child)
-
-    def postorder(self, tree, visitor):
-        """Do preorder walk of tree using visitor"""
-        self.visitor = visitor
-        visitor.visit = self._postorder
-        self._postorder(tree)
-
-    def _postorder(self, tree):
-        for child in node.getChildren():
-            if isinstance(child, ast.Node):
-                self._preorder(child)
-        self.dispatch(node)
-
-    def dispatch(self, node):
-        self.node = node
-        className = node.__class__.__name__
-        meth = getattr(self.visitor, 'visit' + className, None)
-        if self.VERBOSE > 0:
-            if self.VERBOSE == 1:
-                if meth is None:
-                    print "dispatch", className
-            else:
-                print "dispatch", className, (meth and meth.__name__ or '')
-        if meth:
-            return meth(node)
-
-class ExampleASTVisitor(ASTVisitor):
-    """Prints examples of the nodes that aren't visited
-
-    This visitor-driver is only useful for development, when it's
-    helpful to develop a visitor incremently, and get feedback on what
-    you still have to do.
-    """
-    examples = {}
-    
-    def dispatch(self, node):
-        self.node = node
-        className = node.__class__.__name__
-        meth = getattr(self.visitor, 'visit' + className, None)
-        if self.VERBOSE > 0:
-            if self.VERBOSE == 1:
-                if meth is None:
-                    print "dispatch", className
-            else:
-                print "dispatch", className, (meth and meth.__name__ or '')
-        if meth:
-            return meth(node)
-        else:
-            klass = node.__class__
-            if self.VERBOSE < 2:
-                if self.examples.has_key(klass):
-                    return
-            self.examples[klass] = klass
-            print
-            print klass
-            for attr in dir(node):
-                if attr[0] != '_':
-                    print "\t", "%-12.12s" % attr, getattr(node, attr)
-            print
 
 class CodeGenerator:
     """Generate bytecode for the Python VM"""
@@ -311,7 +174,7 @@ class CodeGenerator:
             self.emit('IMPORT_FROM', name)
         self.emit('POP_TOP')
 
-    def visitClassdef(self, node):
+    def visitClass(self, node):
         self.emit('SET_LINENO', node.lineno)
         self.emit('LOAD_CONST', node.name)
         for base in node.bases:
@@ -660,14 +523,11 @@ class CodeGenerator:
 
     visitAssList = visitAssTuple
 
+    # binary ops
+
     def binaryOp(self, node, op):
         self.visit(node.left)
         self.visit(node.right)
-        self.emit(op)
-        return 1
-
-    def unaryOp(self, node, op):
-        self.visit(node.expr)
         self.emit(op)
         return 1
 
@@ -695,6 +555,13 @@ class CodeGenerator:
     def visitRightShift(self, node):
         return self.binaryOp(node, 'BINARY_RSHIFT')
 
+    # unary ops
+
+    def unaryOp(self, node, op):
+        self.visit(node.expr)
+        self.emit(op)
+        return 1
+
     def visitInvert(self, node):
         return self.unaryOp(node, 'UNARY_INVERT')
 
@@ -713,6 +580,8 @@ class CodeGenerator:
     def visitBackquote(self, node):
         return self.unaryOp(node, 'UNARY_CONVERT')
 
+    # bit ops
+
     def bitOp(self, nodes, op):
         self.visit(nodes[0])
         for node in nodes[1:]:
@@ -728,16 +597,6 @@ class CodeGenerator:
 
     def visitBitxor(self, node):
         return self.bitOp(node.nodes, 'BINARY_XOR')
-
-    def visitTest(self, node, jump):
-        end = StackRef()
-        for child in node.nodes[:-1]:
-            self.visit(child)
-            self.emit(jump, end)
-            self.emit('POP_TOP')
-        self.visit(node.nodes[-1])
-        end.bind(self.code.getCurInst())
-        return 1
 
     def visitAssert(self, node):
         # XXX __debug__ and AssertionError appear to be special cases
@@ -755,6 +614,16 @@ class CodeGenerator:
         self.emit('RAISE_VARARGS', 2)
         skip.bind(self.code.getCurInst())
         self.emit('POP_TOP')
+        return 1
+
+    def visitTest(self, node, jump):
+        end = StackRef()
+        for child in node.nodes[:-1]:
+            self.visit(child)
+            self.emit(jump, end)
+            self.emit('POP_TOP')
+        self.visit(node.nodes[-1])
+        end.bind(self.code.getCurInst())
         return 1
 
     def visitAnd(self, node):
@@ -879,7 +748,7 @@ class LocalNameFinder:
         for name in node.names:
             self.names.add(name)
 
-    def visitClassdef(self, node):
+    def visitClass(self, node):
         self.names.add(node.name)
         return 1
 
@@ -921,8 +790,7 @@ class CompiledModule:
         self.filename = filename
 
     def compile(self):
-        t = transformer.Transformer()
-        self.ast = t.parsesuite(self.source)
+	self.ast = parse(self.source)
         cg = CodeGenerator(self.filename)
         walk(self.ast, cg)
         self.code = cg.asConst()
@@ -950,22 +818,3 @@ def compile(filename):
     mod.compile()
     mod.dump(filename + 'c')
         
-if __name__ == "__main__":
-    import getopt
-
-    VERBOSE = 0
-    opts, args = getopt.getopt(sys.argv[1:], 'vq')
-    for k, v in opts:
-        if k == '-v':
-            VERBOSE = 1
-            ASTVisitor.VERBOSE = ASTVisitor.VERBOSE + 1
-        if k == '-q':
-            f = open('/dev/null', 'wb')
-            sys.stdout = f
-    if not args:
-        print "no files to compile"
-    else:
-        for filename in args:
-            if VERBOSE:
-                print filename
-            compile(filename)
