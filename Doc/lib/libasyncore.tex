@@ -17,9 +17,9 @@ There are only two ways to have a program on a single processor do
 ``more than one thing at a time.'' Multi-threaded programming is the 
 simplest and most popular way to do it, but there is another very 
 different technique, that lets youhave nearly all the advantages of 
-multi-threading, without actually using multiple threads.  it's really 
+multi-threading, without actually using multiple threads.  It's really 
 only practical if your program is largely I/O bound.  If your program 
-is CPU bound, then pre-emtpive scheduled threads are probably what 
+is CPU bound, then pre-emptive scheduled threads are probably what 
 you really need. Network servers are rarely CPU-bound, however.
 
 If your operating system supports the \cfunction{select()} system call 
@@ -28,7 +28,7 @@ multiple communication channels at once; doing other work while your
 I/O is taking place in the ``background.''  Although this strategy can 
 seem strange and complex, especially at first, it is in many ways 
 easier to understand and control than multi-threaded programming.  
-The module documented here solves manyof the difficult problems for 
+The module documented here solves many of the difficult problems for 
 you, making the task of building sophisticated high-performance 
 network servers and clients a snap.
 
@@ -115,16 +115,17 @@ def handle_write(self):
 In addition, there are the basic methods needed to construct and
 manipulate ``channels,'' which are what we will call the socket
 connections in this context. Note that most of these are nearly 
-identical to their \class{socket} partners.
+identical to their socket partners.
 
 \begin{methoddesc}{create_socket}{family, type}
   This is identical to the creation of a normal socket, and 
-  will use the same options for creation.  This means you will 
-  need to reference the \refmodule{socket} module.
+  will use the same options for creation.  Refer to the
+  \refmodule{socket} documentation for information on creating
+  sockets.
 \end{methoddesc}
 
 \begin{methoddesc}{connect}{address}
-  As with the normal \class{socket} object, \var{address} is a 
+  As with the normal socket object, \var{address} is a 
   tuple with the first element the host to connect to, and the 
   second the port.
 \end{methoddesc}
