@@ -50,7 +50,7 @@ clearer error message is produced.  This should avoid most
 installation problems with Tkinter use (e.g. in IDLE).
 
 - The -i option doesn't make any calls to set[v]buf() for stdin --
-this apparentlt screwed up _kbhit() and the _tkinter main loop.
+this apparently screwed up _kbhit() and the _tkinter main loop.
 
 - The ntpath module (and hence, os.path on Windows) now parses out UNC
 paths (e.g. \\host\mountpoint\dir\file) as "drive letters", so that
