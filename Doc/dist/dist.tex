@@ -356,7 +356,7 @@ default format for the current platform.  The default formats are:
   \lineii{Unix}{gzipped tar file (\file{.tar.gz})}
   \lineii{Windows}{zip file}  
 \end{tableii}
-You can specify as many formats as you like using the \option{--formats} 
+You can specify as many formats as you like using the \longprogramopt{formats} 
 option, for example:
 \begin{verbatim}
 python setup.py sdist --formats=gztar,zip
@@ -486,10 +486,10 @@ source distribution:
 \begin{verbatim}
 python setup.py sdist --manifest-only
 \end{verbatim}
-(\option{--manifest-only} implies \option{--force-manifest}.)
+(\longprogramopt{manifest-only} implies \longprogramopt{force-manifest}.)
 
 If you don't want to use the default file set, you can supply the
-\option{--no-defaults} option.  If you use \option{--no-defaults} and
+\longprogramopt{no-defaults} option.  If you use \longprogramopt{no-defaults} and
 don't supply a manifest template (or it's empty, or nothing matches the
 patterns in it), then your source distribution will be empty.
 
@@ -547,7 +547,7 @@ between someone being able to use your extensions or not.
 
 \XXX{filenames are inaccurate here!}
 
-The \command{bdist} command has a \option{--format} option, similar to
+The \command{bdist} command has a \longprogramopt{format} option, similar to
 the \command{sdist} command, that you can use to select which formats to
 generate: for example,
 \begin{verbatim}
@@ -580,7 +580,7 @@ The available formats for built distributions are:
 \end{description}
 
 You don't have to use the \command{bdist} command with the
-\option{--formats} option; you can also use the command that directly
+\longprogramopt{formats} option; you can also use the command that directly
 implements the format you're interested in.  Many of these
 \command{bdist} ``sub-commands'' actually generate several similar
 formats; for instance, the \command{bdist\_dumb} command generates all
