@@ -6,13 +6,15 @@ class _Dummy:
 	def meth(self):	return
 
 def _isfunctype(func):
-	return type(func) in (type(_Dummy.meth), type(_isfunctype))	
+	return type(func) in CallableTypes
 
 FunctionType = type(_isfunctype)
 ClassType = type(_Dummy)
 MethodType = type(_Dummy.meth)
+StringType = type('')
 TupleType = type(())
 ListType = type([])
+CallableTypes = (FunctionType, MethodType)
 
 def _tkerror(err):
 	pass
@@ -54,8 +56,16 @@ class Misc:
 		if not func:
 			self.tk.call('after', ms)
 		else:
-			name = self._register(func)
-			apply(self.tk.call, ('after', ms, name) + args)
+			# XXX Disgusting hack to clean up after calling func
+			tmp = []
+			def callit(func=func, args=args, tk=self.tk, tmp=tmp):
+				try:
+					apply(func, args)
+				finally:
+					tk.deletecommand(tmp[0])
+			name = self._register(callit)
+			tmp.append(name)
+			self.tk.call('after', ms, name)
 	# XXX grab current w/o window argument
 	def grab_current(self):
 		name = self.tk.call('grab', 'current', self._w)
@@ -591,12 +601,13 @@ class Canvas(Widget):
 	def coords(self, *args):
 		return self._do('coords', args)
 	def _create(self, itemType, args): # Args: (value, value, ..., cnf={})
+		args = _flatten(args)
 		cnf = args[-1]
 		if type(cnf) == type({}):
 			args = args[:-1]
 		else:
 			cnf = {}
-		v = (self._w, 'create', itemType) + _flatten(args)
+		v = (self._w, 'create', itemType) + args
 		for k in cnf.keys():
 			v = v + ('-' + k, cnf[k])
 		return self.tk.getint(apply(self.tk.call, v))
@@ -623,7 +634,7 @@ class Canvas(Widget):
 	def dtag(self, *args):
 		self._do('dtag', args)
 	def find(self, *args):
-		return self.tk.splitlist(self._do('find', args))
+		return self._getints(self._do('find', args))
 	def focus(self, *args):
 		return self._do('focus', args)
 	def gettags(self, *args):
@@ -634,7 +645,13 @@ class Canvas(Widget):
 		return self.tk.getint(self._do('index', args))
 	def insert(self, *args):
 		self._do('insert', args)
-	def itemconfig(self, tagOrId, cnf={}):
+	def itemconfig(self, tagOrId, cnf=None):
+		if cnf is None:
+			return self.tk.split(self._do('itemconfigure',
+						      (tagOrId)))
+		if type(cnf) == StringType:
+			return self.tk.split(self._do('itemconfigure',
+						      (tagOrId, '-'+cnf,)))
 		self._do('itemconfigure', (tagOrId,) + self._options(cnf))
 	def lower(self, *args):
 		self._do('lower', args)
@@ -652,21 +669,17 @@ class Canvas(Widget):
 	def scan_dragto(self, x, y):
 		self.tk.call(self._w, 'scan', 'dragto', x, y)
 	def select_adjust(self, tagOrId, index):
-		self.tk.call(
-			self._w, 'select', 'adjust', tagOrId, index)
+		self.tk.call(self._w, 'select', 'adjust', tagOrId, index)
 	def select_clear(self):
 		self.tk.call(self._w, 'select', 'clear')
 	def select_from(self, tagOrId, index):
-		self.tk.call(
-			self._w, 'select', 'from', tagOrId, index)
+		self.tk.call(self._w, 'select', 'from', tagOrId, index)
 	def select_item(self):
 		self.tk.call(self._w, 'select', 'item')
 	def select_to(self, tagOrId, index):
-		self.tk.call(
-			self._w, 'select', 'to', tagOrId, index)
+		self.tk.call(self._w, 'select', 'to', tagOrId, index)
 	def type(self, tagOrId):
-		return self.tk.splitlist(self.tk.call(
-			self._w, 'type', tagOrId))
+		return self.tk.call(self._w, 'type', tagOrId) or None
 	def xview(self, index):
 		self.tk.call(self._w, 'xview', index)
 	def yview(self, index):
