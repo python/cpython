@@ -64,6 +64,7 @@ def buildmwproject(top, creator, projects):
 	mgr = MwShell(creator, start=1)
 	mgr.send_timeout = AppleEvents.kNoTimeOut
 	
+	failed = []
 	for file in projects:
 		if type(file) == type(()):
 			file, target = file
@@ -90,7 +91,15 @@ def buildmwproject(top, creator, projects):
 			mgr.Make_Project()
 		except aetools.Error, arg:
 			print '**', file, target, 'Failed:', arg
+			failed.append(fss)
 		mgr.Close_Project()
+	if failed:
+		print 'Open failed projects and exit?',
+		rv = sys.stdin.readline()
+		if rv[0] in ('y', 'Y'):
+			for fss in failed:
+				mgr.open(fss)
+			sys.exit(0)
 ##	mgr.quit()
 	
 def buildapplet(top, dummy, list):
