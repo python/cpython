@@ -378,7 +378,7 @@ Library
   installation scheme for all platforms.
 
 - asyncore.loop now has a repeat count parameter that defaults to
-  looping forever..
+  looping forever.
 
 - The distutils sdist command now ignores all .svn directories, in
   addition to CVS and RCS directories.  .svn directories hold
