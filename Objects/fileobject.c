@@ -52,6 +52,16 @@ getfilefile(f)
 }
 
 object *
+getfilename(f)
+	object *f;
+{
+	if (f == NULL || !is_fileobject(f))
+		return NULL;
+	else
+		return ((fileobject *)f)->f_name;
+}
+
+object *
 newopenfileobject(fp, name, mode, close)
 	FILE *fp;
 	char *name;

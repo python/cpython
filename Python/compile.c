@@ -1305,7 +1305,7 @@ com_expr_stmt(c, n)
 	struct compiling *c;
 	node *n;
 {
-	REQ(n, expr_stmt); /* exprlist ('=' exprlist)* */
+	REQ(n, expr_stmt); /* testlist ('=' testlist)* */
 	com_node(c, CHILD(n, NCH(n)-1));
 	if (NCH(n) == 1) {
 		com_addbyte(c, PRINT_EXPR);
@@ -1464,6 +1464,25 @@ com_access_stmt(c, n)
 		com_addoparg(c, LOAD_CONST, imode);
 		com_addopname(c, ACCESS_MODE, CHILD(n, i));
 	}
+}
+
+static void
+com_exec_stmt(c, n)
+	struct compiling *c;
+	node *n;
+{
+	REQ(n, exec_stmt);
+	/* exec_stmt: 'exec' expr ['in' expr [',' expr]] */
+	com_node(c, CHILD(n, 1));
+	if (NCH(n) >= 4)
+		com_node(c, CHILD(n, 3));
+	else
+		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+	if (NCH(n) >= 6)
+		com_node(c, CHILD(n, 5));
+	else
+		com_addbyte(c, DUP_TOP);
+	com_addbyte(c, EXEC_STMT);
 }
 
 static void
@@ -1909,6 +1928,9 @@ com_node(c, n)
 	case access_stmt:
 		com_access_stmt(c, n);
 		break;
+	case exec_stmt:
+		com_exec_stmt(c, n);
+		break;
 	case if_stmt:
 		com_if_stmt(c, n);
 		break;
@@ -2183,6 +2205,8 @@ optimize(c)
 		opcode = NEXTOP();
 		if (opcode == STOP_CODE)
 			break;
+		if (opcode == EXEC_STMT)
+			goto end; /* Don't optimize if exec present */
 		if (HAS_ARG(opcode))
 			oparg = NEXTARG();
 		if (opcode == STORE_NAME || opcode == DELETE_NAME ||
