@@ -27,6 +27,7 @@
 #include <CFDictionary.h>
 #include <CFString.h>
 #include <CFURL.h>
+#include <CFPropertyList.h>
 #else
 #include <CoreServices/CoreServices.h>
 #endif
@@ -137,7 +138,11 @@ typedef struct CFTypeRefObject {
 PyObject *CFTypeRefObj_New(CFTypeRef itself)
 {
 	CFTypeRefObject *it;
-	if (itself == NULL) return PyMac_Error(resNotFound);
+	if (itself == NULL)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "cannot wrap NULL");
+		return NULL;
+	}
 	it = PyObject_NEW(CFTypeRefObject, &CFTypeRef_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
@@ -275,6 +280,35 @@ static PyObject *CFTypeRefObj_CFCopyDescription(CFTypeRefObject *_self, PyObject
 	return _res;
 }
 
+static PyObject *CFTypeRefObj_CFPropertyListCreateXMLData(CFTypeRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFDataRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFPropertyListCreateXMLData((CFAllocatorRef)NULL,
+	                                  _self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFDataRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFTypeRefObj_CFPropertyListCreateDeepCopy(CFTypeRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFTypeRef _rv;
+	CFOptionFlags mutabilityOption;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &mutabilityOption))
+		return NULL;
+	_rv = CFPropertyListCreateDeepCopy((CFAllocatorRef)NULL,
+	                                   _self->ob_itself,
+	                                   mutabilityOption);
+	_res = Py_BuildValue("O&",
+	                     CFTypeRefObj_New, _rv);
+	return _res;
+}
+
 static PyObject *CFTypeRefObj_CFShow(CFTypeRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -287,6 +321,32 @@ static PyObject *CFTypeRefObj_CFShow(CFTypeRefObject *_self, PyObject *_args)
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
+}
+
+static PyObject *CFTypeRefObj_CFPropertyListCreateFromXMLData(CFTypeRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+
+	CFTypeRef _rv;
+	CFOptionFlags mutabilityOption;
+	CFStringRef errorString;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &mutabilityOption))
+		return NULL;
+	_rv = CFPropertyListCreateFromXMLData((CFAllocatorRef)NULL,
+	                                      _self->ob_itself,
+	                                      mutabilityOption,
+	                                      &errorString);
+	if (errorString)
+		CFRelease(errorString);
+	if (_rv == NULL) {
+		PyErr_SetString(PyExc_RuntimeError, "Parse error in XML data");
+		return NULL;
+	}
+	_res = Py_BuildValue("O&",
+	                     CFTypeRefObj_New, _rv);
+	return _res;
+
 }
 
 static PyObject *CFTypeRefObj_toPython(CFTypeRefObject *_self, PyObject *_args)
@@ -312,8 +372,14 @@ static PyMethodDef CFTypeRefObj_methods[] = {
 	 "() -> (CFHashCode _rv)"},
 	{"CFCopyDescription", (PyCFunction)CFTypeRefObj_CFCopyDescription, 1,
 	 "() -> (CFStringRef _rv)"},
+	{"CFPropertyListCreateXMLData", (PyCFunction)CFTypeRefObj_CFPropertyListCreateXMLData, 1,
+	 "() -> (CFDataRef _rv)"},
+	{"CFPropertyListCreateDeepCopy", (PyCFunction)CFTypeRefObj_CFPropertyListCreateDeepCopy, 1,
+	 "(CFOptionFlags mutabilityOption) -> (CFTypeRef _rv)"},
 	{"CFShow", (PyCFunction)CFTypeRefObj_CFShow, 1,
 	 "() -> None"},
+	{"CFPropertyListCreateFromXMLData", (PyCFunction)CFTypeRefObj_CFPropertyListCreateFromXMLData, 1,
+	 "(CFOptionFlags mutabilityOption) -> (CFTypeRefObj)"},
 	{"toPython", (PyCFunction)CFTypeRefObj_toPython, 1,
 	 "() -> (python_object)"},
 	{NULL, NULL, 0}
@@ -386,7 +452,11 @@ typedef struct CFArrayRefObject {
 PyObject *CFArrayRefObj_New(CFArrayRef itself)
 {
 	CFArrayRefObject *it;
-	if (itself == NULL) return PyMac_Error(resNotFound);
+	if (itself == NULL)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "cannot wrap NULL");
+		return NULL;
+	}
 	it = PyObject_NEW(CFArrayRefObject, &CFArrayRef_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
@@ -538,7 +608,11 @@ typedef struct CFMutableArrayRefObject {
 PyObject *CFMutableArrayRefObj_New(CFMutableArrayRef itself)
 {
 	CFMutableArrayRefObject *it;
-	if (itself == NULL) return PyMac_Error(resNotFound);
+	if (itself == NULL)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "cannot wrap NULL");
+		return NULL;
+	}
 	it = PyObject_NEW(CFMutableArrayRefObject, &CFMutableArrayRef_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
@@ -719,7 +793,11 @@ typedef struct CFDictionaryRefObject {
 PyObject *CFDictionaryRefObj_New(CFDictionaryRef itself)
 {
 	CFDictionaryRefObject *it;
-	if (itself == NULL) return PyMac_Error(resNotFound);
+	if (itself == NULL)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "cannot wrap NULL");
+		return NULL;
+	}
 	it = PyObject_NEW(CFDictionaryRefObject, &CFDictionaryRef_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
@@ -853,7 +931,11 @@ typedef struct CFMutableDictionaryRefObject {
 PyObject *CFMutableDictionaryRefObj_New(CFMutableDictionaryRef itself)
 {
 	CFMutableDictionaryRefObject *it;
-	if (itself == NULL) return PyMac_Error(resNotFound);
+	if (itself == NULL)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "cannot wrap NULL");
+		return NULL;
+	}
 	it = PyObject_NEW(CFMutableDictionaryRefObject, &CFMutableDictionaryRef_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
@@ -971,7 +1053,11 @@ typedef struct CFDataRefObject {
 PyObject *CFDataRefObj_New(CFDataRef itself)
 {
 	CFDataRefObject *it;
-	if (itself == NULL) return PyMac_Error(resNotFound);
+	if (itself == NULL)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "cannot wrap NULL");
+		return NULL;
+	}
 	it = PyObject_NEW(CFDataRefObject, &CFDataRef_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
@@ -982,7 +1068,13 @@ int CFDataRefObj_Convert(PyObject *v, CFDataRef *p_itself)
 {
 
 	if (v == Py_None) { *p_itself = NULL; return 1; }
-	/* Check for other CF objects here */
+	if (PyString_Check(v)) {
+	    char *cStr;
+	    int cLen;
+	    if( PyString_AsStringAndSize(v, &cStr, &cLen) < 0 ) return 0;
+	    *p_itself = CFDataCreate((CFAllocatorRef)NULL, (unsigned char *)cStr, cLen);
+	    return 1;
+	}
 
 	if (!CFDataRefObj_Check(v))
 	{
@@ -1046,6 +1138,18 @@ static PyObject *CFDataRefObj_CFStringCreateFromExternalRepresentation(CFDataRef
 	return _res;
 }
 
+static PyObject *CFDataRefObj_CFDataGetData(CFDataRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+
+	int size = CFDataGetLength(_self->ob_itself);
+	char *data = (char *)CFDataGetBytePtr(_self->ob_itself);
+
+	_res = (PyObject *)PyString_FromStringAndSize(data, size);
+	return _res;
+
+}
+
 static PyMethodDef CFDataRefObj_methods[] = {
 	{"CFDataCreateCopy", (PyCFunction)CFDataRefObj_CFDataCreateCopy, 1,
 	 "() -> (CFDataRef _rv)"},
@@ -1053,6 +1157,8 @@ static PyMethodDef CFDataRefObj_methods[] = {
 	 "() -> (CFIndex _rv)"},
 	{"CFStringCreateFromExternalRepresentation", (PyCFunction)CFDataRefObj_CFStringCreateFromExternalRepresentation, 1,
 	 "(CFStringEncoding encoding) -> (CFStringRef _rv)"},
+	{"CFDataGetData", (PyCFunction)CFDataRefObj_CFDataGetData, 1,
+	 "() -> (string _rv)"},
 	{NULL, NULL, 0}
 };
 
@@ -1123,7 +1229,11 @@ typedef struct CFMutableDataRefObject {
 PyObject *CFMutableDataRefObj_New(CFMutableDataRef itself)
 {
 	CFMutableDataRefObject *it;
-	if (itself == NULL) return PyMac_Error(resNotFound);
+	if (itself == NULL)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "cannot wrap NULL");
+		return NULL;
+	}
 	it = PyObject_NEW(CFMutableDataRefObject, &CFMutableDataRef_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
@@ -1329,7 +1439,11 @@ typedef struct CFStringRefObject {
 PyObject *CFStringRefObj_New(CFStringRef itself)
 {
 	CFStringRefObject *it;
-	if (itself == NULL) return PyMac_Error(resNotFound);
+	if (itself == NULL)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "cannot wrap NULL");
+		return NULL;
+	}
 	it = PyObject_NEW(CFStringRefObject, &CFStringRef_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
@@ -2010,7 +2124,11 @@ typedef struct CFMutableStringRefObject {
 PyObject *CFMutableStringRefObj_New(CFMutableStringRef itself)
 {
 	CFMutableStringRefObject *it;
-	if (itself == NULL) return PyMac_Error(resNotFound);
+	if (itself == NULL)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "cannot wrap NULL");
+		return NULL;
+	}
 	it = PyObject_NEW(CFMutableStringRefObject, &CFMutableStringRef_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
@@ -2339,7 +2457,11 @@ typedef struct CFURLRefObject {
 PyObject *CFURLRefObj_New(CFURLRef itself)
 {
 	CFURLRefObject *it;
-	if (itself == NULL) return PyMac_Error(resNotFound);
+	if (itself == NULL)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "cannot wrap NULL");
+		return NULL;
+	}
 	it = PyObject_NEW(CFURLRefObject, &CFURLRef_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
