@@ -4,7 +4,18 @@ import os
 from unicodedata import normalize
 
 TESTDATAFILE = "NormalizationTest.txt"
-skip_expected = not os.path.exists(TESTDATAFILE)
+
+# This search allows using a build directory just inside the source
+# directory, and saving just one copy of the test data in the source
+# tree, rather than having a copy in each build directory.
+# There might be a better way to do this.
+
+for path in [os.path.curdir, os.path.pardir]:
+    fn = os.path.join(path, TESTDATAFILE)
+    skip_expected = not os.path.exists(fn)
+    if not skip_expected:
+        TESTDATAFILE = fn
+        break
 
 class RangeError:
     pass
