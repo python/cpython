@@ -166,6 +166,13 @@ gen_iternext(genobject *gen)
 	Py_XDECREF(f->f_back);
 	f->f_back = NULL;
 
+	/* If the generator just returned (as opposed to yielding), signal
+	 * that the generator is exhausted. */
+	if (result == Py_None && f->f_stacktop == NULL) {
+		Py_DECREF(result);
+		result = NULL;
+	}
+
 	return result;
 }
 
