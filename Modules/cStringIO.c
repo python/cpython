@@ -565,7 +565,7 @@ static PyObject *
 IO_StringIO(PyObject *self, PyObject *args) {
   PyObject *s=0;
 
-  UNLESS(PyArg_ParseTuple(args, "|O", &s)) return NULL;
+  UNLESS(PyArg_ParseTuple(args, "|S", &s)) return NULL;
   if(s) return newIobject(s);
   return newOobject(128);
 }
