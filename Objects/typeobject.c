@@ -3562,7 +3562,8 @@ wrap_objobjproc(PyObject *self, PyObject *args, void *wrapped)
 	res = (*func)(self, value);
 	if (res == -1 && PyErr_Occurred())
 		return NULL;
-	return PyInt_FromLong((long)res);
+	else
+		return PyBool_FromLong(res);
 }
 
 static PyObject *

@@ -9,6 +9,12 @@ What's New in Python 2.3.3c1?
 
 *Release date: XXX *
 
+Core and builtins
+-----------------
+
+- Patch #820195: object.__contains__() now returns True or False instead
+  of 1 or 0.
+
 Extension modules
 -----------------
 
