@@ -91,17 +91,16 @@ def my_import(name):
 
 \begin{funcdesc}{bool}{\optional{x}}
   Convert a value to a Boolean, using the standard truth testing
-  procedure.  If \code{x} is false, this returns \code{False};
-  otherwise it returns \code{True}.  \code{bool} is also a class,
-  which is a subclass of \code{int}.  Class \code{bool} cannot be
-  subclassed further.  Its only instances are \code{False} and
-  \code{True}.
+  procedure.  If \var{x} is false or omitted, this returns
+  \constant{False}; otherwise it returns \constant{True}.
+  \class{bool} is also a class, which is a subclass of \class{int}.
+  Class \class{bool} cannot be subclassed further.  Its only instances
+  are \constant{False} and \constant{True}.
 
-\indexii{Boolean}{type}
-\versionadded{2.2.1}
-
+  \indexii{Boolean}{type}
+  \versionadded{2.2.1}
   \versionchanged[If no argument is given, this function returns 
-                  \code{False}]{2.3}
+                  \constant{False}]{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{buffer}{object\optional{, offset\optional{, size}}}
