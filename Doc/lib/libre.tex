@@ -420,7 +420,7 @@ previous match, so \samp{sub('x*', '-', 'abc')} returns \code{'-a-b-c-'}.
 If \var{repl} is a string, any backslash escapes in it are processed.
 That is, \samp{\e n} is converted to a single newline character,
 \samp{\e r} is converted to a linefeed, and so forth.  Unknown escapes
-such as \samp{\e j} are XXX.  Backreferences, such as \samp{\e 6} are
+such as \samp{\e j} are left alone.  Backreferences, such as \samp{\e 6} are
 replaced with the substring matched by group 6 in the pattern. 
 
 In addition to character escapes and backreferences as described
@@ -521,13 +521,18 @@ Without arguments, \var{group1} defaults to zero (i.e. the whole match
 is returned).
 If a \var{groupN} argument is zero, the corresponding return value is the
 entire matching string; if it is in the inclusive range [1..99], it is
-the string matching the the corresponding parenthesized group.  If no
-such group exists, the corresponding result is
-\code{None}.
+the string matching the the corresponding parenthesized group.  If a
+group number is negative or larger than the number of groups defined
+in the pattern, an \exception{IndexError} exception is raised.
+If a group is contained in a part of the pattern that did not match,
+the corresponding result is \code{None}.  If a group is contained in a 
+part of the pattern that matched multiple times, the last match is
+returned.
 
 If the regular expression uses the \code{(?P<\var{name}>...)} syntax,
 the \var{groupN} arguments may also be strings identifying groups by
-their group name.
+their group name.  If a string argument is not used as a group name in 
+the pattern, an \exception{IndexError} exception is raised.
 
 A moderately complicated example:
 
