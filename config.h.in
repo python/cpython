@@ -260,6 +260,9 @@
 /* The number of bytes in a void *.  */
 #undef SIZEOF_VOID_P
 
+/* Define if you have the _getpty function.  */
+#undef HAVE__GETPTY
+
 /* Define if you have the alarm function.  */
 #undef HAVE_ALARM
 
