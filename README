@@ -307,7 +307,8 @@ SGI:	SGI's standard "make" utility (/bin/make or /usr/bin/make)
 
 	A bug in gcc-2.8.1 sets sys.maxint to -1 which *also* seems to
 	break Modules/pypcre.c.  The egcs versions of gcc fix this
-	problem.  (Raj Srinivasan)
+	problem.  Or use configure --without-gcc to compile with SGI's
+	compiler, if you have it.  (Raj Srinivasan, Kelvin Chu)
 
 OS/2:   If you are running Warp3 or Warp4 and have IBM's VisualAge C/C++
         compiler installed, just change into the pc\os2vacpp directory
