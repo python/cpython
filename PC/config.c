@@ -60,6 +60,9 @@ extern void inittime();
 extern void initthread();
 extern void initcStringIO();
 extern void initcPickle();
+#ifdef WIN32
+extern void initmsvcrt();
+#endif
 
 /* -- ADDMODULE MARKER 1 -- */
 
@@ -98,6 +101,9 @@ struct _inittab _PyImport_Inittab[] = {
 #endif
         {"cStringIO", initcStringIO},
         {"cPickle", initcPickle},
+#ifdef WIN32
+	{"msvcrt", initmsvcrt},
+#endif
 
 /* -- ADDMODULE MARKER 2 -- */
 

@@ -54,6 +54,8 @@ EXPORTS
 	PySlice_Type DATA
 	Py_InteractiveFlag DATA
 	PyCObject_Type DATA
+	Py_input_hook DATA
+	PyOS_ReadlineFunctionPointer DATA
 
 	_PyObject_New
 	_PyObject_NewVar
@@ -196,21 +198,19 @@ EXPORTS
 	PyEval_ReleaseThread
 	PyEval_RestoreThread
 	PyEval_SaveThread
+	PyEval_AcquireLock
+	PyEval_ReleaseLock
 	PyTraceBack_Here
 	PyTraceBack_Print
 	PyImport_AddModule
-	PyImport_Cleanup
 	PyImport_GetModuleDict
 	PyImport_GetMagicNumber
 	PyImport_ImportModule
 	PyImport_ImportFrozenModule
-	PyImport_Init
 	PyImport_ReloadModule
 	PyNumber_Coerce
-	PyBuiltin_Init
 	PyMarshal_Init
 	Py_InitModule4
-	PySys_Init
 	PySys_SetArgv
 	PySys_SetPath
 	PySys_GetObject
@@ -219,7 +219,6 @@ EXPORTS
 	Py_CompileString
 	Py_FatalError
 	Py_Exit
-	Py_Cleanup
 	Py_Initialize
 	PyErr_Print
 	PyParser_SimpleParseFile
@@ -350,9 +349,17 @@ EXPORTS
 	PyThread_free_sema
 	PyThread_down_sema
 	PyThread_up_sema
-	PyThread_exit_prog
-	PyThread__exit_prog
-	PyThread_create_key
-	PyThread_delete_key
-	PyThread_get_key_value
-	PyThread_set_key_value
+	Py_NewInterpreter
+	Py_EndInterpreter
+	Py_Malloc
+	Py_Realloc
+	Py_Free
+	PyMem_Malloc
+	PyMem_Realloc
+	PyMem_Free
+	PyThreadState_New
+	PyThreadState_Clear
+	PyThreadState_Delete
+	PyInterpreterState_New
+	PyInterpreterState_Clear
+	PyInterpreterState_Delete
