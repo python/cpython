@@ -15,7 +15,7 @@ incomplete = re.compile('&(' + _Name + '|#[0-9]*|#x[0-9a-fA-F]*)?|'
 			   '<([a-zA-Z_:][^<>]*|'
 			      '/([a-zA-Z_:][^<>]*)?|'
 			      '![^<>]*|'
-			      '\?[^<>]*)?')
+			      r'\?[^<>]*)?')
 
 ref = re.compile('&(' + _Name + '|#[0-9]+|#x[0-9a-fA-F]+);?')
 entityref = re.compile('&(?P<name>' + _Name + ')[^-a-zA-Z0-9._:]')
@@ -28,11 +28,12 @@ endtagopen = re.compile('</')
 starttagend = re.compile(_opS + '(?P<slash>/?)>')
 endbracket = re.compile('>')
 tagfind = re.compile(_Name)
-cdataopen = re.compile('<!\[CDATA\[')
-cdataclose = re.compile('\]\]>')
+cdataopen = re.compile(r'<!\[CDATA\[')
+cdataclose = re.compile(r'\]\]>')
+doctype = re.compile('<!DOCTYPE' + _S + '(?P<name>' + _Name + ')' + _S)
 special = re.compile('<!(?P<special>[^<>]*)>')
-procopen = re.compile('<\?(?P<proc>' + _Name + ')' + _S)
-procclose = re.compile('\?>')
+procopen = re.compile(r'<\?(?P<proc>' + _Name + ')' + _S)
+procclose = re.compile(_opS + r'\?>')
 commentopen = re.compile('<!--')
 commentclose = re.compile('-->')
 doubledash = re.compile('--')
@@ -63,10 +64,12 @@ class XMLParser:
     def reset(self):
 	self.rawdata = ''
 	self.stack = []
-	self.lasttag = '???'
 	self.nomoretags = 0
 	self.literal = 0
 	self.lineno = 1
+	self.__at_start = 1
+	self.__seen_doctype = None
+	self.__seen_starttag = 0
 
     # For derived classes only -- enter literal mode (CDATA) till EOF
     def setnomoretags(self):
@@ -98,8 +101,7 @@ class XMLParser:
 		newdata.append(data[i:])
 		return string.join(newdata, '')
 	    if data[res.end(0) - 1] != ';':
-		self.syntax_error(self.lineno,
-				  '; missing after entity/char reference')
+		self.syntax_error("`;' missing after entity/char reference")
 	    newdata.append(data[i:res.start(0)])
 	    str = res.group(1)
 	    if str[0] == '#':
@@ -123,6 +125,8 @@ class XMLParser:
 	i = 0
 	n = len(rawdata)
 	while i < n:
+	    if i > 0:
+		self.__at_start = 0
 	    if self.nomoretags:
 		data = rawdata[i:n]
 		self.handle_data(data)
@@ -135,6 +139,7 @@ class XMLParser:
 	    else:
 		    j = n
 	    if i < j:
+		self.__at_start = 0
 		data = rawdata[i:j]
 		self.handle_data(data)
 		self.lineno = self.lineno + string.count(data, '\n')
@@ -150,6 +155,7 @@ class XMLParser:
 			continue
 		    k = self.parse_starttag(i)
 		    if k < 0: break
+		    self.__seen_starttag = 1
 		    self.lineno = self.lineno + string.count(rawdata[i:k], '\n')
 		    i = k
 		    continue
@@ -180,8 +186,26 @@ class XMLParser:
 		    continue
 		res = procopen.match(rawdata, i)
 		if res:
-		    k = self.parse_proc(i, res)
+		    k = self.parse_proc(i)
 		    if k < 0: break
+		    self.lineno = self.lineno + string.count(rawdata[i:k], '\n')
+		    i = k
+		    continue
+		res = doctype.match(rawdata, i)
+		if res:
+		    if self.literal:
+			data = rawdata[i]
+			self.handle_data(data)
+			self.lineno = self.lineno + string.count(data, '\n')
+			i = i+1
+			continue
+		    if self.__seen_doctype:
+			self.syntax_error('multiple DOCTYPE elements')
+		    if self.__seen_starttag:
+			self.syntax_error('DOCTYPE not at beginning of document')
+		    k = self.parse_doctype(res)
+		    if k < 0: break
+		    self.__seen_doctype = res.group('name')
 		    self.lineno = self.lineno + string.count(rawdata[i:k], '\n')
 		    i = k
 		    continue
@@ -202,7 +226,7 @@ class XMLParser:
 		if res is not None:
 		    i = res.end(0)
 		    if rawdata[i-1] != ';':
-			self.syntax_error(self.lineno, '; missing in charref')
+			self.syntax_error("`;' missing in charref")
 			i = i-1
 		    self.handle_charref(res.group('char')[:-1])
 		    self.lineno = self.lineno + string.count(res.group(0), '\n')
@@ -211,7 +235,7 @@ class XMLParser:
 		if res is not None:
 		    i = res.end(0)
 		    if rawdata[i-1] != ';':
-			self.syntax_error(self.lineno, '; missing in entityref')
+			self.syntax_error("`;' missing in entityref")
 			i = i-1
 		    self.handle_entityref(res.group('name'))
 		    self.lineno = self.lineno + string.count(res.group(0), '\n')
@@ -230,7 +254,7 @@ class XMLParser:
 	    j = res.end(0)
 	    if j == n:
 		break # Really incomplete
-	    self.syntax_error(self.lineno, 'bogus < or &')
+	    self.syntax_error("bogus `<' or `&'")
 	    data = res.group(0)
 	    self.handle_data(data)
 	    self.lineno = self.lineno + string.count(data, '\n')
@@ -242,7 +266,11 @@ class XMLParser:
 	    self.lineno = self.lineno + string.count(data, '\n')
 	    i = n
 	self.rawdata = rawdata[i:]
-	# XXX if end: check for empty stack
+	if end:
+	    if self.stack:
+		self.syntax_error('missing end tags')
+		while self.stack:
+		    self.finish_endtag(self.stack[-1])
 
     # Internal -- parse comment, return length or -1 if not terminated
     def parse_comment(self, i):
@@ -254,11 +282,30 @@ class XMLParser:
 	    return -1
 	# doubledash search will succeed because it's a subset of commentclose
 	if doubledash.search(rawdata, i+4).start(0) < res.start(0):
-	    self.syntax_error(self.lineno, "`--' inside comment")
+	    self.syntax_error("`--' inside comment")
 	self.handle_comment(rawdata[i+4: res.start(0)])
 	return res.end(0)
 
-    # Internal -- handle CDATA tag, return lenth or -1 if not terminated
+    # Internal -- handle DOCTYPE tag, return length or -1 if not terminated
+    def parse_doctype(self, res):
+	rawdata = self.rawdata
+	n = len(rawdata)
+	name = res.group('name')
+	j = k = res.end(0)
+	level = 0
+	while k < n:
+	    c = rawdata[k]
+	    if c == '<':
+		level = level + 1
+	    elif c == '>':
+		if level == 0:
+		    self.handle_doctype(name, rawdata[j:k])
+		    return k+1
+		level = level - 1
+	    k = k+1
+	return -1
+
+    # Internal -- handle CDATA tag, return length or -1 if not terminated
     def parse_cdata(self, i):
 	rawdata = self.rawdata
 	if rawdata[i:i+9] <> '<![CDATA[':
@@ -269,16 +316,73 @@ class XMLParser:
 	self.handle_cdata(rawdata[i+9:res.start(0)])
 	return res.end(0)
 
-    def parse_proc(self, i, res):
+    __xml_attributes = {'version': '1.0', 'standalone': 'no', 'encoding': None}
+    # Internal -- handle a processing instruction tag
+    def parse_proc(self, i):
 	rawdata = self.rawdata
+	end = procclose.search(rawdata, i)
+	if not end:
+	    return -1
+	j = end.start(0)
+	res = tagfind.match(rawdata, i+2)
 	if not res:
 	    raise RuntimeError, 'unexpected call to parse_proc'
-	name = res.group('proc')
-	res = procclose.search(rawdata, res.end(0))
-	if not res:
-	    return -1
-	self.handle_proc(name, rawdata[res.pos:res.start(0)])
-	return res.end(0)
+	k = res.end(0)
+	name = res.group(0)
+	if name == 'xml':
+	    if self.__at_start:
+		attrdict, k = self.parse_attributes('xml', k, j,
+						    self.__xml_attributes)
+		if k != j:
+		    self.syntax_error('garbage at end of <?xml?>')
+		if attrdict['version'] != '1.0':
+		    self.syntax_error('only XML version 1.0 supported')
+		self.handle_xml(attrdict.get('encoding', None),
+				attrdict['standalone'])
+		return end.end(0)
+	    else:
+		self.syntax_error("<?xml?> tag not at start of document")
+	self.handle_proc(name, rawdata[k:j])
+	return end.end(0)
+
+    # Internal -- parse attributes between i and j
+    def parse_attributes(self, tag, k, j, attributes = None):
+	rawdata = self.rawdata
+	# Now parse the data between k and j into a tag and attrs
+	attrdict = {}
+	try:
+	    # convert attributes list to dictionary
+	    d = {}
+	    for a in attributes:
+		d[a] = None
+	    attributes = d
+	except TypeError:
+	    pass
+	while k < j:
+	    res = attrfind.match(rawdata, k)
+	    if not res: break
+	    attrname, attrvalue = res.group('name', 'value')
+	    if attrvalue is None:
+		self.syntax_error('no attribute value specified')
+		attrvalue = attrname
+	    elif attrvalue[:1] == "'" == attrvalue[-1:] or \
+		 attrvalue[:1] == '"' == attrvalue[-1:]:
+		attrvalue = attrvalue[1:-1]
+	    else:
+		self.syntax_error('attribute value not quoted')
+	    if attributes is not None and not attributes.has_key(attrname):
+		self.syntax_error('unknown attribute %s of element %s' %
+				  (attrname, tag))
+	    if attrdict.has_key(attrname):
+		self.syntax_error('attribute specified twice')
+	    attrdict[attrname] = self.translate_references(attrvalue)
+	    k = res.end(0)
+	if attributes is not None:
+	    # fill in with default attributes
+	    for key, val in attributes.items():
+		if val is not None and not attrdict.has_key(key):
+		    attrdict[key] = val
+	return attrdict, k
 
     # Internal -- handle starttag, return length or -1 if not terminated
     def parse_starttag(self, i):
@@ -288,41 +392,22 @@ class XMLParser:
 	if not end:
 	    return -1
 	j = end.start(0)
-	# Now parse the data between i+1 and j into a tag and attrs
-	attrdict = {}
 	res = tagfind.match(rawdata, i+1)
 	if not res:
 	    raise RuntimeError, 'unexpected call to parse_starttag'
 	k = res.end(0)
 	tag = res.group(0)
+	if not self.__seen_starttag and self.__seen_doctype:
+	    if tag != self.__seen_doctype:
+		self.syntax_error('starttag does not match DOCTYPE')
 	if hasattr(self, tag + '_attributes'):
-	    attrlist = getattr(self, tag + '_attributes')
+	    attributes = getattr(self, tag + '_attributes')
 	else:
-	    attrlist = None
-	self.lasttag = tag
-	while k < j:
-	    res = attrfind.match(rawdata, k)
-	    if not res: break
-	    attrname, attrvalue = res.group('name', 'value')
-	    if attrvalue is None:
-		self.syntax_error(self.lineno, 'no attribute value specified')
-		attrvalue = attrname
-	    elif attrvalue[:1] == "'" == attrvalue[-1:] or \
-		 attrvalue[:1] == '"' == attrvalue[-1:]:
-		attrvalue = attrvalue[1:-1]
-	    else:
-		self.syntax_error(self.lineno, 'attribute value not quoted')
-	    if attrlist is not None and attrname not in attrlist:
-		self.syntax_error(self.lineno,
-				  'unknown attribute %s of element %s' %
-				  (attrname, tag))
-	    if attrdict.has_key(attrname):
-		self.syntax_error(self.lineno, 'attribute specified twice')
-	    attrdict[attrname] = self.translate_references(attrvalue)
-	    k = res.end(0)
+	    attributes = None
+	attrdict, k = self.parse_attributes(tag, k, j, attributes)
 	res = starttagend.match(rawdata, k)
 	if not res:
-	    self.syntax_error(self.lineno, 'garbage in start tag')
+	    self.syntax_error('garbage in start tag')
 	self.finish_starttag(tag, attrdict)
 	if res and res.group('slash') == '/':
 	    self.finish_endtag(tag)
@@ -336,7 +421,7 @@ class XMLParser:
 	    return -1
 	res = tagfind.match(rawdata, i+2)
 	if not res:
-	    self.syntax_error(self.lineno, 'no name specified in end tag')
+	    self.syntax_error('no name specified in end tag')
 	    tag = ''
 	    k = i+2
 	else:
@@ -346,7 +431,7 @@ class XMLParser:
 	    # check that there is only white space at end of tag
 	    res = space.match(rawdata, k)
 	    if res is None or res.end(0) != end.start(0):
-		self.syntax_error(self.lineno, 'garbage in end tag')
+		self.syntax_error('garbage in end tag')
 	self.finish_endtag(tag)
 	return end.end(0)
 
@@ -366,12 +451,14 @@ class XMLParser:
     # Internal -- finish processing of end tag
     def finish_endtag(self, tag):
 	if not tag:
+	    self.syntax_error('name-less end tag')
 	    found = len(self.stack) - 1
 	    if found < 0:
 		self.unknown_endtag(tag)
 		return
 	else:
 	    if tag not in self.stack:
+		self.syntax_error('unopened end tag')
 		try:
 		    method = getattr(self, 'end_' + tag)
 		except AttributeError:
@@ -379,8 +466,11 @@ class XMLParser:
 		return
 	    found = len(self.stack)
 	    for i in range(found):
-		if self.stack[i] == tag: found = i
+		if self.stack[i] == tag:
+		    found = i
 	while len(self.stack) > found:
+	    if found < len(self.stack) - 1:
+		self.syntax_error('missing close tag for %s' % self.stack[-1])
 	    tag = self.stack[-1]
 	    try:
 		method = getattr(self, 'end_' + tag)
@@ -391,6 +481,14 @@ class XMLParser:
 	    else:
 		self.unknown_endtag(tag)
 	    del self.stack[-1]
+
+    # Overridable -- handle xml processing instruction
+    def handle_xml(self, encoding, standalone):
+	pass
+
+    # Overridable -- handle DOCTYPE
+    def handle_doctype(self, tag, data):
+	pass
 
     # Overridable -- handle start tag
     def handle_starttag(self, tag, method, attrs):
@@ -416,8 +514,7 @@ class XMLParser:
 	self.handle_data(chr(n))
 
     # Definition of entities -- derived classes may override
-    entitydefs = \
-	    {'lt': '<', 'gt': '>', 'amp': '&', 'quot': '"', 'apos': '\''}
+    entitydefs = {'lt': '<', 'gt': '>', 'amp': '&', 'quot': '"', 'apos': "'"}
 
     # Example -- handle entity reference, no need to override
     def handle_entityref(self, name):
@@ -449,8 +546,8 @@ class XMLParser:
 	pass
 
     # Example -- handle relatively harmless syntax errors, could be overridden
-    def syntax_error(self, lineno, message):
-	raise RuntimeError, 'Syntax error at line %d: %s' % (lineno, message)
+    def syntax_error(self, message):
+	raise RuntimeError, 'Syntax error at line %d: %s' % (self.lineno, message)
 
     # To be overridden -- handlers for unknown objects
     def unknown_starttag(self, tag, attrs): pass
@@ -464,6 +561,14 @@ class TestXMLParser(XMLParser):
     def __init__(self, verbose=0):
 	self.testdata = ""
 	XMLParser.__init__(self, verbose)
+
+    def handle_xml(self, encoding, standalone):
+	self.flush()
+	print 'xml: encoding =',encoding,'standalone =',standalone
+
+    def handle_doctype(self, tag, data):
+	self.flush()
+	print 'DOCTYPE:',tag, `data`
 
     def handle_data(self, data):
 	self.testdata = self.testdata + data
@@ -495,8 +600,8 @@ class TestXMLParser(XMLParser):
 	    r = r[:32] + '...' + r[-32:]
 	print 'comment:', r
 
-    def syntax_error(self, lineno, message):
-	print 'error at line %d:' % lineno, message
+    def syntax_error(self, message):
+	print 'error at line %d:' % self.lineno, message
 
     def unknown_starttag(self, tag, attrs):
 	self.flush()
@@ -504,7 +609,7 @@ class TestXMLParser(XMLParser):
 	    print 'start tag: <' + tag + '>'
 	else:
 	    print 'start tag: <' + tag,
-	    for name, value in attrs:
+	    for name, value in attrs.items():
 		print name + '=' + '"' + value + '"',
 	    print '>'
 
