@@ -385,9 +385,9 @@ class RawConfigParser:
         The sections in setup file contains a title line at the top,
         indicated by a name in square brackets (`[]'), plus key/value
         options lines, indicated by `name: value' format lines.
-        Continuation are represented by an embedded newline then
+        Continuations are represented by an embedded newline then
         leading whitespace.  Blank lines, lines beginning with a '#',
-        and just about everything else is ignored.
+        and just about everything else are ignored.
         """
         cursect = None                            # None, or a dictionary
         optname = None
