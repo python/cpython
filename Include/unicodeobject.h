@@ -239,8 +239,12 @@ extern DL_IMPORT(PyTypeObject) PyUnicode_Type;
 /* --- Plain Py_UNICODE --------------------------------------------------- */
 
 /* Create a Unicode Object from the Py_UNICODE buffer u of the given
-   size. u may be NULL which causes the contents to be undefined. It
-   is the user's responsibility to fill in the needed data.
+   size. 
+
+   u may be NULL which causes the contents to be undefined. It is the
+   user's responsibility to fill in the needed data afterwards. Note
+   that modifying the Unicode object contents after construction is
+   only allowed if u was set to NULL.
 
    The buffer is copied into the new object. */
 

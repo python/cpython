@@ -2457,7 +2457,9 @@ use these APIs:
 Create a Unicode Object from the Py_UNICODE buffer \var{u} of the
 given size. \var{u} may be \NULL{} which causes the contents to be
 undefined. It is the user's responsibility to fill in the needed data.
-The buffer is copied into the new object.
+The buffer is copied into the new object. If the buffer is not \NULL{},
+the return value might be a shared object. Therefore, modification of
+the resulting Unicode Object is only allowed when \var{u} is \NULL{}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{Py_UNICODE*}{PyUnicode_AsUnicode}{PyObject *unicode}
