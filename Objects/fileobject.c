@@ -48,11 +48,10 @@ FILE *
 getfilefile(f)
 	object *f;
 {
-	if (!is_fileobject(f) || ((fileobject *)f)->f_fp == NULL) {
-		err_badcall();
+	if (f == NULL || !is_fileobject(f))
 		return NULL;
-	}
-	return ((fileobject *)f)->f_fp;
+	else
+		return ((fileobject *)f)->f_fp;
 }
 
 object *
@@ -399,9 +398,55 @@ filegetline(f, n)
 	object *f;
 	int n;
 {
-	if (f == NULL || !is_fileobject(f)) {
+	if (f == NULL) {
 		err_badcall();
 		return NULL;
+	}
+	if (!is_fileobject(f)) {
+		object *reader;
+		object *args;
+		object *result;
+		reader = getattr(f, "readline");
+		if (reader == NULL)
+			return NULL;
+		if (n <= 0)
+			args = mkvalue("()");
+		else
+			args = mkvalue("(i)", n);
+		if (args == NULL) {
+			DECREF(reader);
+			return NULL;
+		}
+		result = call_object(reader, args);
+		DECREF(reader);
+		DECREF(args);
+		if (result != NULL && !is_stringobject(result)) {
+			DECREF(result);
+			result = NULL;
+			err_setstr(TypeError,
+				   "object.readline() returned non-string");
+		}
+		if (n < 0 && result != NULL) {
+			char *s = getstringvalue(result);
+			int len = getstringsize(result);
+			if (len == 0) {
+				DECREF(result);
+				result = NULL;
+				err_setstr(EOFError,
+					   "EOF when reading a line");
+			}
+			else if (s[len-1] == '\n') {
+				if (result->ob_refcnt == 1)
+					resizestring(&result, len-1);
+				else {
+					object *v;
+					v == newsizedstringobject(s, len-1);
+					DECREF(result);
+					result = v;
+				}
+			}
+		}
+		return result;
 	}
 	if (((fileobject*)f)->f_fp == NULL)
 		return err_closed();
@@ -532,9 +577,101 @@ softspace(f, newflag)
 	int newflag;
 {
 	int oldflag = 0;
-	if (f != NULL && is_fileobject(f)) {
+	if (f == NULL) {
+		/* Do nothing */
+	}
+	if (is_fileobject(f)) {
 		oldflag = ((fileobject *)f)->f_softspace;
 		((fileobject *)f)->f_softspace = newflag;
 	}
+	else {
+		object *v;
+		v = getattr(f, "softspace");
+		if (v == NULL)
+			err_clear();
+		else {
+			if (is_intobject(v))
+				oldflag = getintvalue(v);
+			DECREF(v);
+		}
+		v = newintobject((long)newflag);
+		if (v == NULL)
+			err_clear();
+		else {
+			if (setattr(f, "softspace", v) != 0)
+				err_clear();
+			DECREF(v);
+		}
+	}
 	return oldflag;
+}
+
+/* Interfaces to write objects/strings to file-like objects */
+
+int
+writeobject(v, f, flags)
+	object *v;
+	object *f;
+	int flags;
+{
+	object *writer, *value, *result;
+	if (f == NULL) {
+		err_setstr(TypeError, "writeobject with NULL file");
+		return -1;
+	}
+	else if (is_fileobject(f)) {
+		FILE *fp = getfilefile(f);
+		if (fp == NULL) {
+			err_closed();
+			return -1;
+		}
+		return printobject(v, fp, flags);
+	}
+	writer = getattr(f, "write");
+	if (writer == NULL)
+		return -1;
+	if ((flags & PRINT_RAW) && is_stringobject(v)) {
+		value = v;
+		INCREF(value);
+	}
+	else {
+		value = reprobject(v);
+		if (value == NULL) {
+			DECREF(writer);
+			return -1;
+		}
+	}
+	result = call_object(writer, value);
+	DECREF(writer);
+	DECREF(value);
+	if (result == NULL)
+		return -1;
+	DECREF(result);
+	return 0;
+}
+
+void
+writestring(s, f)
+	char *s;
+	object *f;
+{
+	if (f == NULL) {
+		/* Do nothing */
+	}
+	else if (is_fileobject(f)) {
+		FILE *fp = getfilefile(f);
+		if (fp != NULL)
+			fputs(s, fp);
+	}
+	else {
+		object *v = newstringobject(s);
+		if (v == NULL) {
+			err_clear();
+		}
+		else {
+			if (writeobject(v, f, PRINT_RAW) != NULL)
+				err_clear();
+			DECREF(v);
+		}
+	}
 }

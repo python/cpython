@@ -150,8 +150,8 @@ tb_store(v)
 }
 
 static void
-tb_displayline(fp, filename, lineno)
-	FILE *fp;
+tb_displayline(f, filename, lineno)
+	object *f;
 	char *filename;
 	int lineno;
 {
@@ -189,15 +189,17 @@ tb_displayline(fp, filename, lineno)
 			}
 		}
 	}
-	fprintf(fp, "  File \"%s\"", filename);
+	sprintf(linebuf, "  File \"%.900s\"%s line %d\n",
+		filename,
 #ifdef applec /* MPW */
-	/* This is needed by MPW's File and Line commands */
-	fprintf(fp, "; ");
+		/* This is needed by MPW's File and Line commands */
+		";",
 #else
-	/* This is needed by Emacs' compile command */
-	fprintf(fp, ", ");
+		/* This is needed by Emacs' compile command */
+		",",
 #endif
-	fprintf(fp, "line %d\n", lineno);
+		lineno);
+	writestring(linebuf, f);
 	if (xfp == NULL)
 		return;
 	for (i = 0; i < lineno; i++) {
@@ -208,20 +210,21 @@ tb_displayline(fp, filename, lineno)
 		char *p = linebuf;
 		while (*p == ' ' || *p == '\t')
 			p++;
-		fprintf(fp, "    %s", p);
+		writestring("    ", f);
+		writestring(p, f);
 		if (strchr(p, '\n') == NULL)
-			fprintf(fp, "\n");
+			writestring("\n", f);
 	}
 	fclose(xfp);
 }
 
 static void
-tb_printinternal(tb, fp)
+tb_printinternal(tb, f)
 	tracebackobject *tb;
-	FILE *fp;
+	object *f;
 {
 	while (tb != NULL && !intrcheck()) {
-		tb_displayline(fp,
+		tb_displayline(f,
 		     getstringvalue(tb->tb_frame->f_code->co_filename),
 							tb->tb_lineno);
 		tb = tb->tb_next;
@@ -229,9 +232,9 @@ tb_printinternal(tb, fp)
 }
 
 int
-tb_print(v, fp)
+tb_print(v, f)
 	object *v;
-	FILE *fp;
+	object *f;
 {
 	if (v == NULL)
 		return 0;
@@ -240,6 +243,6 @@ tb_print(v, fp)
 		return -1;
 	}
 	sysset("last_traceback", v);
-	tb_printinternal((tracebackobject *)v, fp);
+	tb_printinternal((tracebackobject *)v, f);
 	return 0;
 }

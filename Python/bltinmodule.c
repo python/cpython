@@ -308,28 +308,19 @@ builtin_hex(self, v)
 	return (*nb->nb_hex)(v);
 }
 
+static object *builtin_raw_input PROTO((object *, object *));
+
 static object *
 builtin_input(self, v)
 	object *self;
 	object *v;
 {
-	FILE *in = sysgetfile("stdin", stdin);
-	FILE *out = sysgetfile("stdout", stdout);
-	int c;
-	object *m, *d;
-	flushline();
-	if (v != NULL) {
-		if (printobject(v, out, PRINT_RAW) != 0)
-			return NULL;
-	}
-	m = add_module("__main__");
-	d = getmoduledict(m);
-	BGN_SAVE
-	while ((c = getc(in)) != EOF && (c == ' ' || c == '\t'))
-		;
-	ungetc(c, in);
-	END_SAVE
-	return run_file(in, "<stdin>", expr_input, d, d);
+	object *line = builtin_raw_input(self, v);
+	if (line == NULL)
+		return line;
+	v = exec_eval(line, eval_input);
+	DECREF(line);
+	return v;
 }
 
 static object *
@@ -578,10 +569,14 @@ builtin_raw_input(self, v)
 	object *self;
 	object *v;
 {
-	FILE *out = sysgetfile("stdout", stdout);
+	object *f = sysget("stdout");
+	if (f == NULL) {
+		err_setstr(RuntimeError, "lost sys.stdout");
+		return NULL;
+	}
 	flushline();
 	if (v != NULL) {
-		if (printobject(v, out, PRINT_RAW) != 0)
+		if (writeobject(v, f, PRINT_RAW) != 0)
 			return NULL;
 	}
 	return filegetline(sysget("stdin"), -1);
