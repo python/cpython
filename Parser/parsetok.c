@@ -84,6 +84,13 @@ parsefile(fp, filename, g, start, ps1, ps2, n_ret)
 		fprintf(stderr, "no mem for tok_setupf\n");
 		return E_NOMEM;
 	}
+#ifdef macintosh
+	{
+		int tabsize = guesstabsize(filename);
+		if (tabsize > 0)
+			tok->tabsize = tabsize;
+	}
+#endif
 	ret = parsetok(tok, g, start, n_ret);
 	if (ret == E_TOKEN || ret == E_SYNTAX) {
 		char *p;
