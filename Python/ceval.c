@@ -821,7 +821,7 @@ eval_code(co, globals, locals, owner, arg)
 				break;
 			}
 			if ((err = dict2remove(f->f_locals, w)) != 0)
-				err_setstr(NameError, getstringvalue(w));
+				err_setval(NameError, w);
 			break;
 
 #ifdef CASE_TOO_BIG
@@ -1031,7 +1031,7 @@ eval_code(co, globals, locals, owner, arg)
 				break;
 			}
 			if ((err = dict2remove(f->f_globals, w)) != 0)
-				err_setstr(NameError, getstringvalue(w));
+				err_setval(NameError, w);
 			break;
 		
 		case LOAD_CONST:
@@ -1050,8 +1050,7 @@ eval_code(co, globals, locals, owner, arg)
 					err_clear();
 					x = getbuiltin(w);
 					if (x == NULL) {
-						err_setstr(NameError,
-							getstringvalue(w));
+						err_setval(NameError, w);
 						break;
 					}
 				}
@@ -1073,8 +1072,7 @@ eval_code(co, globals, locals, owner, arg)
 				err_clear();
 				x = getbuiltin(w);
 				if (x == NULL) {
-					err_setstr(NameError,
-						getstringvalue(w));
+					err_setval(NameError, w);
 					break;
 				}
 			}
@@ -1092,7 +1090,7 @@ eval_code(co, globals, locals, owner, arg)
 			w = GETNAMEV(oparg);
 			x = dict2lookup(f->f_locals, w);
 			if (x == NULL) {
-				err_setstr(NameError, getstringvalue(w));
+				err_setval(NameError, w);
 				break;
 			}
 			if (is_accessobject(x)) {

@@ -242,6 +242,9 @@ mappinglookup(op, key)
 		err_badcall();
 		return NULL;
 	}
+#ifdef CACHE_HASH
+	if (!is_stringobject(key) || (hash = ((stringobject *) key)->ob_shash) == -1)
+#endif
 	hash = hashobject(key);
 	if (hash == -1)
 		return NULL;
@@ -260,6 +263,9 @@ mappinginsert(op, key, value)
 		err_badcall();
 		return -1;
 	}
+#ifdef CACHE_HASH
+	if (!is_stringobject(key) || (hash = ((stringobject *) key)->ob_shash) == -1)
+#endif
 	hash = hashobject(key);
 	if (hash == -1)
 		return -1;
@@ -289,6 +295,9 @@ mappingremove(op, key)
 		err_badcall();
 		return -1;
 	}
+#ifdef CACHE_HASH
+	if (!is_stringobject(key) || (hash = ((stringobject *) key)->ob_shash) == -1)
+#endif
 	hash = hashobject(key);
 	if (hash == -1)
 		return -1;
@@ -447,7 +456,11 @@ mapping_subscript(mp, key)
 	register object *key;
 {
 	object *v;
-	long hash = hashobject(key);
+	long hash;
+#ifdef CACHE_HASH
+	if (!is_stringobject(key) || (hash = ((stringobject *) key)->ob_shash) == -1)
+#endif
+	hash = hashobject(key);
 	if (hash == -1)
 		return NULL;
 	v = lookmapping(mp, key, hash) -> me_value;
@@ -628,9 +641,15 @@ mapping_compare(a, b)
 		res = cmpobject(akey, bkey);
 		if (res != 0)
 			break;
+#ifdef CACHE_HASH
+		if (!is_stringobject(akey) || (ahash = ((stringobject *) akey)->ob_shash) == -1)
+#endif
 		ahash = hashobject(akey);
 		if (ahash == -1)
 			err_clear(); /* Don't want errors here */
+#ifdef CACHE_HASH
+		if (!is_stringobject(bkey) || (bhash = ((stringobject *) bkey)->ob_shash) == -1)
+#endif
 		bhash = hashobject(bkey);
 		if (bhash == -1)
 			err_clear(); /* Don't want errors here */
@@ -661,6 +680,9 @@ mapping_has_key(mp, args)
 	register long ok;
 	if (!getargs(args, "O", &key))
 		return NULL;
+#ifdef CACHE_HASH
+	if (!is_stringobject(key) || (hash = ((stringobject *) key)->ob_shash) == -1)
+#endif
 	hash = hashobject(key);
 	if (hash == -1)
 		return NULL;
