@@ -165,15 +165,28 @@ builtin_unicode(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	char *s;
+        PyObject *v;
+	const void *buffer;
 	int len;
 	char *encoding = NULL;
 	char *errors = NULL;
 
-	if ( !PyArg_ParseTuple(args, "s#|ss:unicode", &s, &len, 
-			       &encoding, &errors) )
+	if ( !PyArg_ParseTuple(args, "O|ss:unicode", &v, &encoding, &errors) )
 	    return NULL;
-	return PyUnicode_Decode(s, len, encoding, errors);
+	/* Special case: Unicode will stay Unicode */
+	if (PyUnicode_Check(v)) {
+	    if (encoding) {
+		PyErr_SetString(PyExc_TypeError,
+		  "unicode() does not support decoding of Unicode objects");
+		return NULL;
+	    }
+	    Py_INCREF(v);
+	    return v;
+	}
+	/* Read raw data and decode it */
+	if (PyObject_AsReadBuffer(v, &buffer, &len))
+	    return NULL;
+	return PyUnicode_Decode((const char *)buffer, len, encoding, errors);
 }
 
 static char unicode_doc[] =
