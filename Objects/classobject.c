@@ -490,7 +490,6 @@ instance_dealloc(register PyInstanceObject *inst)
 #ifdef Py_TRACE_REFS
 	extern long _Py_RefTotal;
 #endif
-	PyObject_GC_Fini(inst);
 	/* Call the __del__ method if it exists.  First temporarily
 	   revive the object and save the current exception, if any. */
 #ifdef Py_TRACE_REFS
@@ -523,7 +522,6 @@ instance_dealloc(register PyInstanceObject *inst)
 #ifdef COUNT_ALLOCS
 		inst->ob_type->tp_free--;
 #endif
-		PyObject_GC_Init((PyObject *)inst);
 		return; /* __del__ added a reference; don't delete now */
 	}
 #ifdef Py_TRACE_REFS
@@ -535,6 +533,7 @@ instance_dealloc(register PyInstanceObject *inst)
 	inst->ob_type = NULL;
 #endif
 #endif /* Py_TRACE_REFS */
+	PyObject_GC_Fini(inst);
 	Py_DECREF(inst->in_class);
 	Py_XDECREF(inst->in_dict);
 	inst = (PyInstanceObject *) PyObject_AS_GC(inst);
