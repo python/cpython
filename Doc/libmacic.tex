@@ -30,7 +30,7 @@ Exception raised on errors in the \module{ic} module.
 The \module{ic} module defines the following functions:
 
 \begin{funcdesc}{IC}{\optional{signature\optional{, ic}}}
-Create an internet config object. The signature is a 4-char creator
+Create an internet config object. The signature is a 4-character creator
 code of the current application (default \code{'Pyth'}) which may
 influence some of ICs settings. The optional \var{ic} argument is a
 low-level \code{icglue.icinstance} created beforehand, this may be
@@ -62,7 +62,7 @@ documentation.
 
 If the module does not know how to represent the data it returns an
 instance of the \code{ICOpaqueData} type, with the raw data in its
-\var{data} attribute. Objects of this type are also acceptable values
+\member{data} attribute. Objects of this type are also acceptable values
 for assignment.
 
 Besides the dictionary interface IC objects have the following methods:
@@ -82,21 +82,22 @@ position and the URL. The optional \var{start} and \var{end} can be
 used to limit the search, so for instance if a user clicks in a long
 textfield you can pass the whole textfield and the click-position in
 \var{start} and this routine will return the whole URL in which the
-user clicked.  \var{Hint} is again an optional scheme used to complete
-incomplete URLs.
+user clicked.  As above, \var{hint} is an optional scheme used to
+complete incomplete URLs.
 \end{funcdesc}
 
 \begin{funcdesc}{mapfile}{file}
 Return the mapping entry for the given \var{file}, which can be passed
-as either a filename or an \code{macfs.FSSpec} object, and which need
-not exist.
+as either a filename or an \function{macfs.FSSpec()} result, and which
+need not exist.
 
 The mapping entry is returned as a tuple \code{(}\var{version},
 \var{type}, \var{creator}, \var{postcreator}, \var{flags},
 \var{extension}, \var{appname}, \var{postappname}, \var{mimetype},
 \var{entryname}\code{)}, where \var{version} is the entry version
-number, \var{type} is the 4-char filetype, \var{creator} is the 4-char
-creator type, \var{postcreator} is the 4-char creator code of an
+number, \var{type} is the 4-character filetype, \var{creator} is the
+4-character creator type, \var{postcreator} is the 4-character creator
+code of an
 optional application to post-process the file after downloading,
 \var{flags} are various bits specifying whether to transfer in binary
 or ascii and such, \var{extension} is the filename extension for this
@@ -107,7 +108,7 @@ file and \var{entryname} is the name of this entry.
 \end{funcdesc}
 
 \begin{funcdesc}{maptypecreator}{type, creator\optional{, filename}}
-Return the mapping entry for files with given 4-char \var{type} and
+Return the mapping entry for files with given 4-character \var{type} and
 \var{creator} codes. The optional \var{filename} may be specified to
 further help finding the correct entry (if the creator code is
 \code{'????'}, for instance).
@@ -117,7 +118,7 @@ The mapping entry is returned in the same format as for \var{mapfile}.
 
 \begin{funcdesc}{settypecreator}{file}
 Given an existing \var{file}, specified either as a filename or as an
-\code{macfs.FSSpec} record, set its creator and type correctly based
+\function{macfs.FSSpec()} result, set its creator and type correctly based
 on its extension.  The finder is told about the change, so the finder
 icon will be updated quickly.
 \end{funcdesc}

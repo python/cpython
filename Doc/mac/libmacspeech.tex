@@ -1,19 +1,21 @@
-\section{Built-in Module \sectcode{macspeech}}
+\section{Built-in Module \module{macspeech}}
 \label{module-macspeech}
 \bimodindex{macspeech}
 
-\setindexsubitem{(in module macspeech)}
 
 This module provides an interface to the Macintosh Speech Manager,
+\index{Macintosh Speech Manager}
+\index{Speech Manager, Macintosh}
 allowing you to let the Macintosh utter phrases. You need a version of
-the speech manager extension (version 1 and 2 have been tested) in
-your \code{Extensions} folder for this to work. The module does not
+the Speech Manager extension (version 1 and 2 have been tested) in
+your \file{Extensions} folder for this to work. The module does not
 provide full access to all features of the Speech Manager yet.  It may
 not be available in all Mac Python versions.
 
 \begin{funcdesc}{Available}{}
 Test availability of the Speech Manager extension (and, on the
-PowerPC, the Speech Manager shared library). Return 0 or 1. 
+PowerPC, the Speech Manager shared library). Return \code{0} or
+\code{1}.
 \end{funcdesc}
 
 \begin{funcdesc}{Version}{}
@@ -23,7 +25,7 @@ Return the (integer) version number of the Speech Manager.
 \begin{funcdesc}{SpeakString}{str}
 Utter the string \var{str} using the default voice,
 asynchronously. This aborts any speech that may still be active from
-prior \code{SpeakString} invocations.
+prior \function{SpeakString()} invocations.
 \end{funcdesc}
 
 \begin{funcdesc}{Busy}{}
@@ -35,53 +37,57 @@ Return the number of different voices available.
 \end{funcdesc}
 
 \begin{funcdesc}{GetIndVoice}{num}
-Return a voice object for voice number \var{num}.
+Return a \pytype{Voice} object for voice number \var{num}.
 \end{funcdesc}
 
-\subsection{voice objects}
+\subsection{Voice Objects}
+\label{voice-objects}
+
 Voice objects contain the description of a voice. It is currently not
 yet possible to access the parameters of a voice.
 
 \setindexsubitem{(voice object method)}
 
-\begin{funcdesc}{GetGender}{}
-Return the gender of the voice: 0 for male, 1 for female and -1 for neuter.
-\end{funcdesc}
+\begin{methoddesc}[Voice]{GetGender}{}
+Return the gender of the voice: \code{0} for male, \code{1} for female
+and \code{-1} for neuter.
+\end{methoddesc}
 
-\begin{funcdesc}{NewChannel}{}
-Return a new speech channel object using this voice.
-\end{funcdesc}
+\begin{methoddesc}[Voice]{NewChannel}{}
+Return a new Speech Channel object using this voice.
+\end{methoddesc}
 
-\subsection{speech channel objects}
-A speech channel object allows you to speak strings with slightly more
-control than \code{SpeakString()}, and allows you to use multiple
+\subsection{Speech Channel Objects}
+\label{speech-channel-objects}
+
+A Speech Channel object allows you to speak strings with slightly more
+control than \function{SpeakString()}, and allows you to use multiple
 speakers at the same time. Please note that channel pitch and rate are
 interrelated in some way, so that to make your Macintosh sing you will
 have to adjust both.
 
-\setindexsubitem{(speech channel object method)}
-\begin{funcdesc}{SpeakText}{str}
+\begin{methoddesc}[Speech Channel]{SpeakText}{str}
 Start uttering the given string.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{Stop}{}
+\begin{methoddesc}[Speech Channel]{Stop}{}
 Stop babbling.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{GetPitch}{}
+\begin{methoddesc}[Speech Channel]{GetPitch}{}
 Return the current pitch of the channel, as a floating-point number.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{SetPitch}{pitch}
+\begin{methoddesc}[Speech Channel]{SetPitch}{pitch}
 Set the pitch of the channel.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{GetRate}{}
+\begin{methoddesc}[Speech Channel]{GetRate}{}
 Get the speech rate (utterances per minute) of the channel as a
 floating point number.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{SetRate}{rate}
+\begin{methoddesc}[Speech Channel]{SetRate}{rate}
 Set the speech rate of the channel.
-\end{funcdesc}
+\end{methoddesc}
 

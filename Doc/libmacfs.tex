@@ -4,75 +4,80 @@
 
 
 This module provides access to Macintosh FSSpec handling, the Alias
-Manager, finder aliases and the Standard File package.
+Manager, \program{finder} aliases and the Standard File package.
+\index{Macintosh Alias Manager}
+\index{Alias Manager, Macintosh}
+\index{Standard File}
 
 Whenever a function or method expects a \var{file} argument, this
 argument can be one of three things:\ (1) a full or partial Macintosh
-pathname, (2) an FSSpec object or (3) a 3-tuple \code{(\var{wdRefNum},
-\var{parID}, \var{name})} as described in \emph{Inside Macintosh
-VI}\@. A description of aliases and the standard file package can also
-be found there.
+pathname, (2) an \pytype{FSSpec} object or (3) a 3-tuple \code{(\var{wdRefNum},
+\var{parID}, \var{name})} as described in \emph{Inside
+Macintosh:\ Files}\@. A description of aliases and the Standard File
+package can also be found there.
 
 \begin{funcdesc}{FSSpec}{file}
-Create an FSSpec object for the specified file.
+Create an \pytype{FSSpec} object for the specified file.
 \end{funcdesc}
 
 \begin{funcdesc}{RawFSSpec}{data}
-Create an FSSpec object given the raw data for the C structure for the
-FSSpec as a string.  This is mainly useful if you have obtained an
-FSSpec structure over a network.
+Create an \pytype{FSSpec} object given the raw data for the \C{}
+structure for the \pytype{FSSpec} as a string.  This is mainly useful
+if you have obtained an \pytype{FSSpec} structure over a network.
 \end{funcdesc}
 
 \begin{funcdesc}{RawAlias}{data}
-Create an Alias object given the raw data for the C structure for the
-alias as a string.  This is mainly useful if you have obtained an
-FSSpec structure over a network.
+Create an \pytype{Alias} object given the raw data for the \C{}
+structure for the alias as a string.  This is mainly useful if you
+have obtained an \pytype{FSSpec} structure over a network.
 \end{funcdesc}
 
 \begin{funcdesc}{FInfo}{}
-Create a zero-filled FInfo object.
+Create a zero-filled \pytype{FInfo} object.
 \end{funcdesc}
 
 \begin{funcdesc}{ResolveAliasFile}{file}
-Resolve an alias file. Returns a 3-tuple \code{(\var{fsspec}, \var{isfolder},
-\var{aliased})} where \var{fsspec} is the resulting FSSpec object,
-\var{isfolder} is true if \var{fsspec} points to a folder and
-\var{aliased} is true if the file was an alias in the first place
-(otherwise the FSSpec object for the file itself is returned).
+Resolve an alias file. Returns a 3-tuple \code{(\var{fsspec},
+\var{isfolder}, \var{aliased})} where \var{fsspec} is the resulting
+\pytype{FSSpec} object, \var{isfolder} is true if \var{fsspec} points
+to a folder and \var{aliased} is true if the file was an alias in the
+first place (otherwise the \pytype{FSSpec} object for the file itself
+is returned).
 \end{funcdesc}
 
 \begin{funcdesc}{StandardGetFile}{\optional{type, ...}}
 Present the user with a standard ``open input file''
-dialog. Optionally, you can pass up to four 4-char file types to limit
-the files the user can choose from. The function returns an FSSpec
+dialog. Optionally, you can pass up to four 4-character file types to limit
+the files the user can choose from. The function returns an \pytype{FSSpec}
 object and a flag indicating that the user completed the dialog
 without cancelling.
 \end{funcdesc}
 
 \begin{funcdesc}{PromptGetFile}{prompt\optional{, type, ...}}
-Similar to \var{StandardGetFile} but allows you to specify a prompt.
+Similar to \function{StandardGetFile()} but allows you to specify a
+prompt.
 \end{funcdesc}
 
 \begin{funcdesc}{StandardPutFile}{prompt, \optional{default}}
 Present the user with a standard ``open output file''
 dialog. \var{prompt} is the prompt string, and the optional
 \var{default} argument initializes the output file name. The function
-returns an FSSpec object and a flag indicating that the user completed
-the dialog without cancelling.
+returns an \pytype{FSSpec} object and a flag indicating that the user
+completed the dialog without cancelling.
 \end{funcdesc}
 
 \begin{funcdesc}{GetDirectory}{\optional{prompt}}
 Present the user with a non-standard ``select a directory''
 dialog. \var{prompt} is the prompt string, and the optional.
-Return an FSSpec object and a success-indicator.
+Return an \pytype{FSSpec} object and a success-indicator.
 \end{funcdesc}
 
 \begin{funcdesc}{SetFolder}{\optional{fsspec}}
 Set the folder that is initially presented to the user when one of
-the file selection dialogs is presented. \var{Fsspec} should point to
+the file selection dialogs is presented. \var{fsspec} should point to
 a file in the folder, not the folder itself (the file need not exist,
 though). If no argument is passed the folder will be set to the
-current directory, i.e. what \code{os.getcwd()} returns.
+current directory, i.e. what \function{os.getcwd()} returns.
 
 Note that starting with system 7.5 the user can change Standard File
 behaviour with the ``general controls'' controlpanel, thereby making
@@ -81,16 +86,16 @@ this call inoperative.
 
 \begin{funcdesc}{FindFolder}{where, which, create}
 Locates one of the ``special'' folders that MacOS knows about, such as
-the trash or the Preferences folder. \var{Where} is the disk to
-search, \var{which} is the 4-char string specifying which folder to
+the trash or the Preferences folder. \var{where} is the disk to
+search, \var{which} is the 4-character string specifying which folder to
 locate. Setting \var{create} causes the folder to be created if it
-does not exist. Returns a \code{(vrefnum, dirid)} tuple.
+does not exist. Returns a \code{(\var{vrefnum}, \var{dirid})} tuple.
 \end{funcdesc}
 
 \begin{funcdesc}{NewAliasMinimalFromFullPath}{pathname}
-Return a minimal alias record object that points to the given file, which
+Return a minimal \pytype{alias} object that points to the given file, which
 must be specified as a full pathname. This is the only way to create an
-alias record pointing to a non-existing file.
+\pytype{Alias} pointing to a non-existing file.
 
 The constants for \var{where} and \var{which} can be obtained from the
 standard module \var{MACFS}.
@@ -98,122 +103,123 @@ standard module \var{MACFS}.
 
 \begin{funcdesc}{FindApplication}{creator}
 Locate the application with 4-char creator code \var{creator}. The
-function returns an FSSpec object pointing to the application.
+function returns an \pytype{FSSpec} object pointing to the application.
 \end{funcdesc}
 
 \subsection{FSSpec objects}
+\label{fsspec-objects}
 
-\setindexsubitem{(FSSpec object attribute)}
-\begin{datadesc}{data}
+\begin{memberdesc}[FSSpec]{data}
 The raw data from the FSSpec object, suitable for passing
 to other applications, for instance.
-\end{datadesc}
+\end{memberdesc}
 
 \setindexsubitem{(FSSpec object method)}
-\begin{funcdesc}{as_pathname}{}
-Return the full pathname of the file described by the FSSpec object.
-\end{funcdesc}
+\begin{methoddesc}[FSSpec]{as_pathname}{}
+Return the full pathname of the file described by the \pytype{FSSpec}
+object.
+\end{methoddesc}
 
-\begin{funcdesc}{as_tuple}{}
-Return the \code{(\var{wdRefNum}, \var{parID}, \var{name})} tuple of the file described
-by the FSSpec object.
-\end{funcdesc}
+\begin{methoddesc}[FSSpec]{as_tuple}{}
+Return the \code{(\var{wdRefNum}, \var{parID}, \var{name})} tuple of
+the file described by the \pytype{FSSpec} object.
+\end{methoddesc}
 
-\begin{funcdesc}{NewAlias}{\optional{file}}
+\begin{methoddesc}[FSSpec]{NewAlias}{\optional{file}}
 Create an Alias object pointing to the file described by this
 FSSpec. If the optional \var{file} parameter is present the alias
 will be relative to that file, otherwise it will be absolute.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{NewAliasMinimal}{}
+\begin{methoddesc}[FSSpec]{NewAliasMinimal}{}
 Create a minimal alias pointing to this file.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{GetCreatorType}{}
-Return the 4-char creator and type of the file.
-\end{funcdesc}
+\begin{methoddesc}[FSSpec]{GetCreatorType}{}
+Return the 4-character creator and type of the file.
+\end{methoddesc}
 
-\begin{funcdesc}{SetCreatorType}{creator, type}
-Set the 4-char creator and type of the file.
-\end{funcdesc}
+\begin{methoddesc}[FSSpec]{SetCreatorType}{creator, type}
+Set the 4-character creator and type of the file.
+\end{methoddesc}
 
-\begin{funcdesc}{GetFInfo}{}
-Return a FInfo object describing the finder info for the file.
-\end{funcdesc}
+\begin{methoddesc}[FSSpec]{GetFInfo}{}
+Return a \pytype{FInfo} object describing the finder info for the file.
+\end{methoddesc}
 
-\begin{funcdesc}{SetFInfo}{finfo}
-Set the finder info for the file to the values specified in the
-\var{finfo} object.
-\end{funcdesc}
+\begin{methoddesc}[FSSpec]{SetFInfo}{finfo}
+Set the finder info for the file to the values given as \var{finfo}
+(an \pytype{FInfo} object).
+\end{methoddesc}
 
-\begin{funcdesc}{GetDates}{}
+\begin{methoddesc}[FSSpec]{GetDates}{}
 Return a tuple with three floating point values representing the
 creation date, modification date and backup date of the file.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{SetDates}{crdate, moddate, backupdate}
+\begin{methoddesc}[FSSpec]{SetDates}{crdate, moddate, backupdate}
 Set the creation, modification and backup date of the file. The values
 are in the standard floating point format used for times throughout
 Python.
-\end{funcdesc}
+\end{methoddesc}
 
-\subsection{alias objects}
 
-\setindexsubitem{(alias object attribute)}
-\begin{datadesc}{data}
+\subsection{Alias Objects}
+\label{alias-objects}
+
+\begin{memberdesc}[Alias]{data}
 The raw data for the Alias record, suitable for storing in a resource
 or transmitting to other programs.
-\end{datadesc}
+\end{memberdesc}
 
-\setindexsubitem{(alias object method)}
-\begin{funcdesc}{Resolve}{\optional{file}}
+\begin{methoddesc}[Alias]{Resolve}{\optional{file}}
 Resolve the alias. If the alias was created as a relative alias you
 should pass the file relative to which it is. Return the FSSpec for
-the file pointed to and a flag indicating whether the alias object
+the file pointed to and a flag indicating whether the \pytype{Alias} object
 itself was modified during the search process. If the file does
 not exist but the path leading up to it does exist a valid fsspec
 is returned.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{GetInfo}{num}
-An interface to the C routine \code{GetAliasInfo()}.
-\end{funcdesc}
+\begin{methoddesc}[Alias]{GetInfo}{num}
+An interface to the \C{} routine \cfunction{GetAliasInfo()}.
+\end{methoddesc}
 
-\begin{funcdesc}{Update}{file, \optional{file2}}
+\begin{methoddesc}[Alias]{Update}{file, \optional{file2}}
 Update the alias to point to the \var{file} given. If \var{file2} is
 present a relative alias will be created.
-\end{funcdesc}
+\end{methoddesc}
 
-Note that it is currently not possible to directly manipulate a resource
-as an alias object. Hence, after calling \var{Update} or after
-\var{Resolve} indicates that the alias has changed the Python program
-is responsible for getting the \var{data} from the alias object and
-modifying the resource.
+Note that it is currently not possible to directly manipulate a
+resource as an \pytype{Alias} object. Hence, after calling
+\method{Update()} or after \method{Resolve()} indicates that the alias
+has changed the Python program is responsible for getting the
+\var{data} from the \pytype{Alias} object and modifying the resource.
 
 
-\subsection{FInfo objects}
+\subsection{FInfo Objects}
+\label{finfo-objects}
 
-See Inside Mac for a complete description of what the various fields
-mean.
+See \emph{Inside Macintosh: Files} for a complete description of what
+the various fields mean.
 
-\setindexsubitem{(FInfo object attribute)}
-\begin{datadesc}{Creator}
-The 4-char creator code of the file.
-\end{datadesc}
+\begin{memberdesc}[FInfo]{Creator}
+The 4-character creator code of the file.
+\end{memberdesc}
 
-\begin{datadesc}{Type}
-The 4-char type code of the file.
-\end{datadesc}
+\begin{memberdesc}[FInfo]{Type}
+The 4-character type code of the file.
+\end{memberdesc}
 
-\begin{datadesc}{Flags}
+\begin{memberdesc}[FInfo]{Flags}
 The finder flags for the file as 16-bit integer. The bit values in
-\var{Flags} are defined in standard module \var{MACFS}.
-\end{datadesc}
+\var{Flags} are defined in standard module \module{MACFS}.
+\end{memberdesc}
 
-\begin{datadesc}{Location}
+\begin{memberdesc}[FInfo]{Location}
 A Point giving the position of the file's icon in its folder.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{Fldr}
+\begin{memberdesc}[FInfo]{Fldr}
 The folder the file is in (as an integer).
-\end{datadesc}
+\end{memberdesc}

@@ -1,11 +1,13 @@
 \section{Built-in Module \sectcode{ctb}}
 \label{module-ctb}
 \bimodindex{ctb}
-\setindexsubitem{(in module ctb)}
 
 This module provides a partial interface to the Macintosh
 Communications Toolbox. Currently, only Connection Manager tools are
 supported.  It may not be available in all Mac Python versions.
+\index{Communications Toolbox, Macintosh}
+\index{Macintosh Communications Toolbox}
+\index{Connection Manager}
 
 \begin{datadesc}{error}
 The exception raised on errors.
@@ -14,40 +16,41 @@ The exception raised on errors.
 \begin{datadesc}{cmData}
 \dataline{cmCntl}
 \dataline{cmAttn}
-Flags for the \var{channel} argument of the \var{Read} and \var{Write}
-methods.
+Flags for the \var{channel} argument of the \method{Read()} and
+\method{Write()} methods.
 \end{datadesc}
 
 \begin{datadesc}{cmFlagsEOM}
-End-of-message flag for \var{Read} and \var{Write}.
+End-of-message flag for \method{Read()} and \method{Write()}.
 \end{datadesc}
 
 \begin{datadesc}{choose*}
-Values returned by \var{Choose}.
+Values returned by \method{Choose()}.
 \end{datadesc}
 
 \begin{datadesc}{cmStatus*}
-Bits in the status as returned by \var{Status}.
+Bits in the status as returned by \method{Status()}.
 \end{datadesc}
 
 \begin{funcdesc}{available}{}
-Return 1 if the communication toolbox is available, zero otherwise.
+Return \code{1} if the Communication Toolbox is available, zero otherwise.
 \end{funcdesc}
 
 \begin{funcdesc}{CMNew}{name, sizes}
 Create a connection object using the connection tool named
 \var{name}. \var{sizes} is a 6-tuple given buffer sizes for data in,
 data out, control in, control out, attention in and attention out.
-Alternatively, passing \code{None} will result in default buffer sizes.
+Alternatively, passing \code{None} for \var{sizes} will result in
+default buffer sizes.
 \end{funcdesc}
 
 \subsection{connection object}
+\label{connection-object}
+
 For all connection methods that take a \var{timeout} argument, a value
 of \code{-1} is indefinite, meaning that the command runs to completion.
 
-\setindexsubitem{(connection object attribute)}
-
-\begin{datadesc}{callback}
+\begin{memberdesc}[connection]{callback}
 If this member is set to a value other than \code{None} it should point
 to a function accepting a single argument (the connection
 object). This will make all connection object methods work
@@ -57,94 +60,92 @@ completion.
 \emph{Note:} for reasons beyond my understanding the callback routine
 is currently never called. You are advised against using asynchronous
 calls for the time being.
-\end{datadesc}
+\end{memberdesc}
 
 
-\setindexsubitem{(connection object method)}
-
-\begin{funcdesc}{Open}{timeout}
+\begin{methoddesc}[connection]{Open}{timeout}
 Open an outgoing connection, waiting at most \var{timeout} seconds for
 the connection to be established.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{Listen}{timeout}
+\begin{methoddesc}[connection]{Listen}{timeout}
 Wait for an incoming connection. Stop waiting after \var{timeout}
 seconds. This call is only meaningful to some tools.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{accept}{yesno}
+\begin{methoddesc}[connection]{accept}{yesno}
 Accept (when \var{yesno} is non-zero) or reject an incoming call after
-\var{Listen} returned.
-\end{funcdesc}
+\method{Listen()} returned.
+\end{methoddesc}
 
-\begin{funcdesc}{Close}{timeout, now}
+\begin{methoddesc}[connection]{Close}{timeout, now}
 Close a connection. When \var{now} is zero, the close is orderly
 (i.e.\ outstanding output is flushed, etc.)\ with a timeout of
 \var{timeout} seconds. When \var{now} is non-zero the close is
 immediate, discarding output.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{Read}{len, chan, timeout}
-Read \var{len} bytes, or until \var{timeout} seconds have passed, from
-the channel \var{chan} (which is one of \var{cmData}, \var{cmCntl} or
-\var{cmAttn}). Return a 2-tuple:\ the data read and the end-of-message
-flag.
-\end{funcdesc}
+\begin{methoddesc}[connection]{Read}{len, chan, timeout}
+Read \var{len} bytes, or until \var{timeout} seconds have passed, from 
+the channel \var{chan} (which is one of \constant{cmData},
+\constant{cmCntl} or \constant{cmAttn}). Return a 2-tuple:\ the data
+read and the end-of-message flag, \constant{cmFlagsEOM}.
+\end{methoddesc}
 
-\begin{funcdesc}{Write}{buf, chan, timeout, eom}
+\begin{methoddesc}[connection]{Write}{buf, chan, timeout, eom}
 Write \var{buf} to channel \var{chan}, aborting after \var{timeout}
-seconds. When \var{eom} has the value \var{cmFlagsEOM} an
+seconds. When \var{eom} has the value \constant{cmFlagsEOM}, an
 end-of-message indicator will be written after the data (if this
 concept has a meaning for this communication tool). The method returns
 the number of bytes written.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{Status}{}
+\begin{methoddesc}[connection]{Status}{}
 Return connection status as the 2-tuple \code{(\var{sizes},
 \var{flags})}. \var{sizes} is a 6-tuple giving the actual buffer sizes used
-(see \var{CMNew}), \var{flags} is a set of bits describing the state
+(see \function{CMNew()}), \var{flags} is a set of bits describing the state
 of the connection.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{GetConfig}{}
+\begin{methoddesc}[connection]{GetConfig}{}
 Return the configuration string of the communication tool. These
 configuration strings are tool-dependent, but usually easily parsed
 and modified.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{SetConfig}{str}
+\begin{methoddesc}[connection]{SetConfig}{str}
 Set the configuration string for the tool. The strings are parsed
 left-to-right, with later values taking precedence. This means
 individual configuration parameters can be modified by simply appending
 something like \code{'baud 4800'} to the end of the string returned by
-\var{GetConfig} and passing that to this method. The method returns
+\method{GetConfig()} and passing that to this method. The method returns
 the number of characters actually parsed by the tool before it
 encountered an error (or completed successfully).
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{Choose}{}
+\begin{methoddesc}[connection]{Choose}{}
 Present the user with a dialog to choose a communication tool and
 configure it. If there is an outstanding connection some choices (like
 selecting a different tool) may cause the connection to be
-aborted. The return value (one of the \var{choose*} constants) will
+aborted. The return value (one of the \constant{choose*} constants) will
 indicate this.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{Idle}{}
+\begin{methoddesc}[connection]{Idle}{}
 Give the tool a chance to use the processor. You should call this
 method regularly.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{Abort}{}
-Abort an outstanding asynchronous \var{Open} or \var{Listen}.
-\end{funcdesc}
+\begin{methoddesc}[connection]{Abort}{}
+Abort an outstanding asynchronous \method{Open()} or \method{Listen()}.
+\end{methoddesc}
 
-\begin{funcdesc}{Reset}{}
+\begin{methoddesc}[connection]{Reset}{}
 Reset a connection. Exact meaning depends on the tool.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{Break}{length}
+\begin{methoddesc}[connection]{Break}{length}
 Send a break. Whether this means anything, what it means and
-interpretation of the \var{length} parameter depend on the tool in
+interpretation of the \var{length} parameter depends on the tool in
 use.
-\end{funcdesc}
+\end{methoddesc}
