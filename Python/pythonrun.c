@@ -87,6 +87,17 @@ Py_IsInitialized(void)
 
 */
 
+static int
+add_flag(int flag, const char *envs)
+{
+	int env = atoi(envs);
+	if (flag < env)
+		flag = env;
+	if (flag < 1)
+		flag = 1;
+	return flag;
+}
+
 void
 Py_Initialize(void)
 {
@@ -101,11 +112,11 @@ Py_Initialize(void)
 	initialized = 1;
 	
 	if ((p = Py_GETENV("PYTHONDEBUG")) && *p != '\0')
-		Py_DebugFlag = Py_DebugFlag ? Py_DebugFlag : 1;
+		Py_DebugFlag = add_flag(Py_DebugFlag, p);
 	if ((p = Py_GETENV("PYTHONVERBOSE")) && *p != '\0')
-		Py_VerboseFlag = Py_VerboseFlag ? Py_VerboseFlag : 1;
+		Py_VerboseFlag = add_flag(Py_VerboseFlag, p);
 	if ((p = Py_GETENV("PYTHONOPTIMIZE")) && *p != '\0')
-		Py_OptimizeFlag = Py_OptimizeFlag ? Py_OptimizeFlag : 1;
+		Py_OptimizeFlag = add_flag(Py_OptimizeFlag, p);
 
 	interp = PyInterpreterState_New();
 	if (interp == NULL)
