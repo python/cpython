@@ -218,15 +218,25 @@ int inet_pton (int af, const char *src, void *dst);
 const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #endif
 
+#ifdef __APPLE__
+/* On OS X, getaddrinfo returns no error indication of lookup
+   failure, so we must use the emulation instead of the libinfo
+   implementation. Unfortunately, performing an autoconf test
+   for this bug would require DNS access for the machine performing
+   the configuration, which is not acceptable. Therefore, we
+   determine the bug just by checking for __APPLE__. If this bug
+   gets ever fixed, perhaps checking for sys/version.h would be
+   appropriate, which is 10/0 on the system with the bug. */
+#undef HAVE_GETADDRINFO
+/* avoid clashes with the C library definition of the symbol. */
+#define getaddrinfo fake_getaddrinfo
+#endif
+
 /* I know this is a bad practice, but it is the easiest... */
-/* XXX Temporarily work around bug #445928:
-   getaddrinfo on Darwin seems to return an empty result list, with
-   no error, even if host lookup ought to work fine. So use the
-   emulation code for now. */
-#if !defined(HAVE_GETADDRINFO) || defined(__APPLE__)
+#if !defined(HAVE_GETADDRINFO)
 #include "getaddrinfo.c"
 #endif
-#if !defined(HAVE_GETNAMEINFO) || defined(__APPLE__)
+#if !defined(HAVE_GETNAMEINFO)
 #include "getnameinfo.c"
 #endif
 
