@@ -636,7 +636,9 @@ _expectations = {
         test_ntpath
         test_poll
         test_socket_ssl
+        test_socketserver
         test_sunaudiodev
+        test_unicode_file
         test_winreg
         test_winsound
         """,
