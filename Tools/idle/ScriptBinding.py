@@ -131,7 +131,8 @@ class ScriptBinding:
                      sys.last_traceback) = sys.exc_info()
                     linecache.checkcache()
                     traceback.print_exc()
-                    if not debugger:
+                    if not debugger and \
+                       self.editwin.getvar("<<toggle-jit-stack-viewer>>"):
                         from StackViewer import StackBrowser
                         sv = StackBrowser(self.root, self.flist)
             finally:
