@@ -539,6 +539,13 @@ if test $enable_shared = "yes"; then
         BASECFLAGS="$BASECFLAGS -pic"
         ;;
   esac
+else # shared is disabled
+  case $ac_sys_system in
+    CYGWIN*)
+          BLDLIBRARY='$(LIBRARY)'
+          LDLIBRARY='libpython$(VERSION).dll.a'
+          ;;
+  esac
 fi
 
 AC_MSG_RESULT($LDLIBRARY)
@@ -1371,6 +1378,11 @@ then
 			LINKFORSHARED="-Xlinker --export-dynamic"
 		    fi;;
 		  esac;;
+	CYGWIN*)
+		if test $enable_shared = "no"
+		then
+			LINKFORSHARED='-Wl,--out-implib=$(LDLIBRARY)'
+		fi;;
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
