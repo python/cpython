@@ -634,7 +634,7 @@ static int
 insertionsort(array, size, compare)
 	PyObject **array;	/* Start of array to sort */
 	int size;	/* Number of elements to sort */
-	PyObject *compare;/* Comparison function object, or NULL for default */
+	PyObject *compare;/* Comparison function object, or NULL => default */
 {
 	register PyObject **a = array;
 	register PyObject **end = array+size;
@@ -645,6 +645,8 @@ insertionsort(array, size, compare)
 		register PyObject **q = p;
 		while (--q >= a) {
 			register int k = docompare(*q, key, compare);
+			/* if (p-q >= MINSIZE)
+			   fprintf(stderr, "OUCH! %d\n", p-q); */
 			if (k == CMPERROR)
 				return -1;
 			if (k <= 0)
@@ -703,7 +705,7 @@ quicksort(array, size, compare)
 		n = hi - lo;
 		if (n < MINSIZE) {
 			/* 
-		         * skip it.  The insertion sort at the end will 
+			 * skip it.  The insertion sort at the end will 
 			 * catch these 
 			 */
 			continue;
@@ -733,11 +735,14 @@ quicksort(array, size, compare)
 			{ tmp = *l; *l = *lo; *lo = tmp; }
 		pivot = *l;
 
+		/* Move pivot off to the side (swap with lo+1) */
+		*l = *(lo+1); *(lo+1) = pivot;
+
 		/* Partition the array */
-		l = lo+1;
+		l = lo+2;
 		r = hi-2;
-		for (;;) {
-			/* Move left index to element > pivot */
+		do {
+			/* Move left index to element >= pivot */
 			while (l < hi) {
 				k = docompare(*l, pivot, compare); 
 				if (k == CMPERROR)
@@ -746,8 +751,8 @@ quicksort(array, size, compare)
 					break;
 				l++;
 			}
-			/* Move right index to element < pivot */
-			while (r >= lo) {
+			/* Move right index to element <= pivot */
+			while (r > lo) {
 				k = docompare(pivot, *r, compare);
 				if (k == CMPERROR)
 					return -1;
@@ -756,21 +761,17 @@ quicksort(array, size, compare)
 				r--;
 			}
 
-			/* If they met, we're through */
-			if (l < r) {
+			/* If they crossed, we're through */
+			if (l <= r) {
 				/* Swap elements and continue */
 				tmp = *l; *l = *r; *r = tmp; 
 				l++; r--;
 			}
-			else if (l == r) {
-				l++; r--;
-				break;
-			}
 
-			if (l > r)
-				break;
-		}
+		} while (l <= r);
 
+		/* Swap pivot back into place; *r <= pivot */
+		*(lo+1) = *r; *r = pivot;
 
 		/* We have now reached the following conditions:
 			lo <= r < l <= hi
@@ -785,27 +786,19 @@ quicksort(array, size, compare)
 		n2 = hi - l;
 		if (n > n2) {
 			/* First one is bigger */
-			if (n > MINSIZE) {
-				lostack[top] = lo;
-				histack[top++] = r;
-				if (n2 > MINSIZE) {
-					lostack[top] = l;
-					histack[top++] = hi;
-				}
-			}
+			lostack[top] = lo;
+			histack[top++] = r;
+			lostack[top] = l;
+			histack[top++] = hi;
 		} else {
 			/* Second one is bigger */
-			if (n2 > MINSIZE) {
-				lostack[top] = l;
-				histack[top++] = hi;
-				if (n > MINSIZE) {
-					lostack[top] = lo;
-					histack[top++] = r;
-				}
-			}
+			lostack[top] = l;
+			histack[top++] = hi;
+			lostack[top] = lo;
+			histack[top++] = r;
 		}
 
-		/* Should assert top < STACKSIZE-1 */
+		/* Should assert top <= STACKSIZE */
 	}
 
 	/*
