@@ -159,9 +159,10 @@ buildno:
 sharedmods: 	python$(EXE)
 		./python$(EXE) $(srcdir)/setup.py build
 # Old rules for building shared modules using makesetup
-#		cd Modules;  $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
-#			prefix="$(prefix)" exec_prefix="$(exec_prefix)" \
-#			sharedmods
+oldsharedmods:
+		cd Modules;  $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
+			prefix="$(prefix)" exec_prefix="$(exec_prefix)" \
+			sharedmods
 
 # Build the library
 $(LIBRARY):	$(SUBDIRS)
@@ -426,17 +427,18 @@ libainstall:	all
 sharedinstall:
 		./python$(EXE) $(srcdir)/setup.py install
 # Old rules for installing shared modules built using makesetup
-#		cd Modules; $(MAKE) \
-#			OPT="$(OPT)" \
-#			VERSION="$(VERSION)" \
-#			SO="$(SO)" \
-#			LDSHARED="$(LDSHARED)" \
-#			CCSHARED="$(CCSHARED)" \
-#			LINKFORSHARED="$(LINKFORSHARED)" \
-#			DESTSHARED="$(DESTSHARED)" \
-#			prefix="$(prefix)" \
-#			exec_prefix="$(exec_prefix)" \
-#			sharedinstall
+oldsharedinstall:
+		cd Modules; $(MAKE) \
+			OPT="$(OPT)" \
+			VERSION="$(VERSION)" \
+			SO="$(SO)" \
+			LDSHARED="$(LDSHARED)" \
+			CCSHARED="$(CCSHARED)" \
+			LINKFORSHARED="$(LINKFORSHARED)" \
+			DESTSHARED="$(DESTSHARED)" \
+			prefix="$(prefix)" \
+			exec_prefix="$(exec_prefix)" \
+			sharedinstall
 
 # Build the sub-Makefiles
 Makefiles:	config.status Modules/Makefile.pre
