@@ -73,17 +73,27 @@ class Executive:
         try:
             exec code in self.locals
         except:
+            self.flush_stdout()
             efile = sys.stderr
             typ, val, tb = info = sys.exc_info()
             sys.last_type, sys.last_value, sys.last_traceback = info
             tbe = traceback.extract_tb(tb)
-            print >>efile, '\nTraceback (most recent call last):'
+            print >>efile, 'Traceback (most recent call last):'
             exclude = ("run.py", "rpc.py", "RemoteDebugger.py", "bdb.py")
             self.cleanup_traceback(tbe, exclude)
             traceback.print_list(tbe, file=efile)
             lines = traceback.format_exception_only(typ, val)
             for line in lines:
                 print>>efile, line,
+        self.flush_stdout()
+
+    def flush_stdout(self):
+        try:
+            if sys.stdout.softspace:
+                sys.stdout.softspace = 0
+                sys.stdout.write("\n")
+        except AttributeError:
+            pass
 
     def cleanup_traceback(self, tb, exclude):
         "Remove excluded traces from beginning/end of tb; get cached lines"
