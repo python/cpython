@@ -24,6 +24,12 @@ Core language, builtins, and interpreter
 
 - sgmllib.py now calls handle_decl() for simple <!...> declarations.
 
+- It is illegal to assign to the name __debug__, which is set when the
+  interpreter starts.  It is effectively a compile-time constant.
+
+- A warning will be issued if a global statement for a variable
+  follows a use or assignment of that variable.
+
 Standard library
 
 - unittest.py, a unit testing framework by Steve Purcell (PyUNIT,
@@ -66,6 +72,16 @@ Python/C API
   this is done to avoid the cost of checking each object for having a
   weakly referencable type in PyObject_INIT(), since most types are
   not weakly referencable.
+
+- PyFrame_FastToLocals() and PyFrame_LocalsToFast() copy bindings for
+  free variables and cell variables to and from the frame's f_locals.
+
+- Variants of several functions defined in pythonrun.h have been added
+  to support the nested_scopes future statement.  The variants all end
+  in Flags and take an extra argument, a PyCompilerFlags *; examples:
+  PyRun_AnyFileExFlags(), PyRun_InteractiveLoopFlags().  These
+  variants may be removed in Python 2.2, when nested scopes are
+  mandatory. 
 
 Distutils
 
