@@ -43,5 +43,7 @@ extern int getdictsize PROTO((object *dp));
 extern char *getdictkey PROTO((object *dp, int i));
 extern object *getdictkeys PROTO((object *dp));
 
-extern object *dict2key PROTO((object *dp, int i));
+extern object *getdict2key PROTO((object *dp, int i));
+extern object *dict2lookup PROTO((object *dp, object *key));
 extern int dict2insert PROTO((object *dp, object *key, object *item));
+extern int dict2remove PROTO((object *dp, object *key));
