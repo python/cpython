@@ -459,7 +459,11 @@ instance_setattr(inst, name, v)
 {
 	object *ac;
 	if (inst->in_setattr != NULL) {
-		object *args = mkvalue("(sO)", name, v);
+		object *args;
+		if (v == NULL)
+			args = mkvalue("(s)", name);
+		else
+			args = mkvalue("(sO)", name, v);
 		if (args != NULL) {
 			object *res = call_object(inst->in_setattr, args);
 			DECREF(args);
