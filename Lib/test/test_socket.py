@@ -51,8 +51,9 @@ class ThreadableTest:
         self.queue = Queue.Queue(1)
 
         # Do some munging to start the client test.
-        test_method = getattr(self, ''.join(('_', self._TestCase__testMethodName)))
-        self.client_thread = thread.start_new_thread(self.clientRun, (test_method, ))
+        test_method = getattr(self, '_' + self._TestCase__testMethodName)
+        self.client_thread = thread.start_new_thread(
+            self.clientRun, (test_method,))
 
         self.__setUp()
         self.ready.wait()
@@ -281,7 +282,7 @@ class BasicTCPTest(SocketConnectedTest):
         """Testing receive in chunks over TCP."""
         seg1 = self.cli_conn.recv(len(MSG) - 3)
         seg2 = self.cli_conn.recv(1024)
-        msg = ''.join ((seg1, seg2))
+        msg = seg1 + seg2
         self.assertEqual(msg, MSG)
 
     def _testOverFlowRecv(self):
@@ -301,7 +302,7 @@ class BasicTCPTest(SocketConnectedTest):
         """Testing recvfrom() in chunks over TCP."""
         seg1, addr = self.cli_conn.recvfrom(len(MSG)-3)
         seg2, addr = self.cli_conn.recvfrom(1024)
-        msg = ''.join((seg1, seg2))
+        msg = seg1 + seg2
         hostname, port = addr
         ##self.assertEqual(hostname, socket.gethostbyname('localhost'))
         self.assertEqual(msg, MSG)
@@ -320,7 +321,7 @@ class BasicTCPTest(SocketConnectedTest):
             self.assert_(len(read) == 1024, "Error performing sendall.")
 
     def _testSendAll(self):
-        big_chunk = ''.join([ 'f' ] * 2048)
+        big_chunk = 'f' * 2048
         self.serv_conn.sendall(big_chunk)
 
     def testFromFd(self):
@@ -473,7 +474,7 @@ class FileObjectClassTestCase(SocketConnectedTest):
         """Performing small file read test."""
         first_seg = self.serv_file.read(len(MSG)-3)
         second_seg = self.serv_file.read(3)
-        msg = ''.join((first_seg, second_seg))
+        msg = first_seg + second_seg
         self.assertEqual(msg, MSG)
 
     def _testSmallRead(self):
