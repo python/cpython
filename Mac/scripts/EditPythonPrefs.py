@@ -159,7 +159,8 @@ def interact(options, title):
 ##		if n == REVERT_ITEM:
 ##			return [], pythondir
 		if n == DIR_ITEM:
-			fss, ok = macfs.GetDirectory('Select python home folder:')
+			fss = EasyDialogs.AskFolder(message='Select python home folder:',
+				wanted=macfs.FSSpec)
 			if ok:
 				options['dir'] = fss
 		elif n == HELP_ITEM and Help:

@@ -11,7 +11,8 @@ from Carbon import Evt
 from Carbon import Events
 from Carbon import Win
 from Carbon import Windows
-import macfs
+from Carbon import File
+import EasyDialogs
 import sys
 
 
@@ -21,8 +22,8 @@ def main():
 	Qt.EnterMovies()
 	
 	# Get the movie file
-	fss, ok = macfs.StandardGetFile() # Was: QuickTime.MovieFileType
-	if not ok:
+	fss = EasyDialogs.AskFileForOpen(wanted=File.FSSpec) # Was: QuickTime.MovieFileType
+	if not fss:
 		sys.exit(0)
 		
 	# Open the window

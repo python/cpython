@@ -410,10 +410,9 @@ def incbuildno(filename):
 				
 def main():
 	macresource.need('DLOG', DIALOG_ID, 'fullbuild.rsrc')
-	dir, ok = macfs.GetDirectory('Python source folder:')
-	if not ok:
+	dir = EasyDialogs.AskFolder(message='Python source folder:')
+	if not dir:
 		sys.exit(0)
-	dir = dir.as_pathname()
 	# Set genpluginprojects to use this folder (slight hack)
 	genpluginprojects.PYTHONDIR = dir
 	

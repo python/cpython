@@ -1,4 +1,4 @@
-GetPortBounds()"""imgbrowse - Display pictures using img"""
+"""imgbrowse - Display pictures using img"""
 
 import FrameWork
 import EasyDialogs
@@ -11,7 +11,6 @@ import sys
 import struct
 import img
 import imgformat
-import macfs
 import struct
 import mac_image
 
@@ -47,11 +46,10 @@ class imgbrowse(FrameWork.Application):
 		self._quit()
 		
 	def opendoc(self, *args):
-		fss, ok = macfs.StandardGetFile() # Any file type
-		if not ok:
+		pathname = EasyDialogs.AskFileForOpen() # Any file type
+		if not pathname:
 			return
 		bar = EasyDialogs.ProgressBar('Reading and converting...')
-		pathname = fss.as_pathname()
 		try:
 			rdr = img.reader(imgformat.macrgb16, pathname)
 		except img.error, arg:

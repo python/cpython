@@ -6,6 +6,7 @@
 # >>> unshar.unshar(f)
 
 import string
+import EasyDialogs
 
 def unshar(fp, verbose=0, overwrite=0):
 	ofp = None
@@ -82,15 +83,14 @@ def main():
 			unshar(fp)
 	else:
 		import macfs
-		fss, ok = macfs.StandardGetFile('TEXT')
-		if not ok:
+		fname = EasyDialogs.AskFileForOpen()
+		if not fname:
 			sys.exit(0)
-		fname = fss.as_pathname()
 		fp = open(fname, 'r')
-		fss, ok = macfs.GetDirectory('Folder to save files in:')
-		if not ok:
+		dirname = EasyDialogs.AskFolder(message='Folder to save files in:')
+		if not dirname:
 			sys.exit(0)
-		os.chdir(fss.as_pathname())
+		os.chdir(dirname)
 		unshar(fp)
 		
 if __name__ == '__main__':
