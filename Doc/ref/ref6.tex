@@ -348,9 +348,9 @@ print_stmt:     "print" [ expression ("," expression)* [","] ]
 
 \keyword{print} evaluates each expression in turn and writes the
 resulting object to standard output (see below).  If an object is not
-a string, it is first converted to a string using the rules for string 
+a string, it is first converted to a string using the rules for string
 conversions.  The (resulting or original) string is then written.  A
-space is written before each object is (converted and) written, unless 
+space is written before each object is (converted and) written, unless
 the output system believes it is positioned at the beginning of a
 line.  This is the case (1) when no characters have yet been written
 to standard output, (2) when the last character written to standard
