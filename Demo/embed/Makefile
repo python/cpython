@@ -6,11 +6,11 @@
 CC=	 	gcc
 
 # XXX Top of the build tree and source tree
-blddir=		../../linux
+blddir=		../..
 srcdir=		../..
 
 # Python version
-VERSION=	2.0
+VERSION=	2.1
 
 # Compiler flags
 OPT=		-g
