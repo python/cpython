@@ -1094,8 +1094,8 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
 		if (name == NULL)
 			return NULL;
 	}
+	else
 #endif
-
 	if (!PyString_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
 				"attribute name must be string");
@@ -1207,46 +1207,73 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 {
 	PyTypeObject *tp = obj->ob_type;
 	PyObject *descr;
+	PyObject *res = NULL;
 	descrgetfunc f;
 	PyObject **dictptr;
 
+#ifdef Py_USING_UNICODE
+	/* The Unicode to string conversion is done here because the
+	   existing tp_setattro slots expect a string object as name
+	   and we wouldn't want to break those. */
+	if (PyUnicode_Check(name)) {
+		name = PyUnicode_AsEncodedString(name, NULL, NULL);
+		if (name == NULL)
+			return NULL;
+	}
+	else 
+#endif
+	if (!PyString_Check(name)){
+		PyErr_SetString(PyExc_TypeError,
+				"attribute name must be string");
+		return NULL;
+	}
+	else
+		Py_INCREF(name);
+
 	if (tp->tp_dict == NULL) {
 		if (PyType_Ready(tp) < 0)
-			return NULL;
+			goto done;
 	}
 
 	descr = _PyType_Lookup(tp, name);
 	f = NULL;
 	if (descr != NULL) {
 		f = descr->ob_type->tp_descr_get;
-		if (f != NULL && PyDescr_IsData(descr))
-			return f(descr, obj, (PyObject *)obj->ob_type);
+		if (f != NULL && PyDescr_IsData(descr)) {
+			res = f(descr, obj, (PyObject *)obj->ob_type);
+			goto done;
+		}
 	}
 
 	dictptr = _PyObject_GetDictPtr(obj);
 	if (dictptr != NULL) {
 		PyObject *dict = *dictptr;
 		if (dict != NULL) {
-			PyObject *res = PyDict_GetItem(dict, name);
+			res = PyDict_GetItem(dict, name);
 			if (res != NULL) {
 				Py_INCREF(res);
-				return res;
+				goto done;
 			}
 		}
 	}
 
-	if (f != NULL)
-		return f(descr, obj, (PyObject *)obj->ob_type);
+	if (f != NULL) {
+		res = f(descr, obj, (PyObject *)obj->ob_type);
+		goto done;
+	}
 
 	if (descr != NULL) {
 		Py_INCREF(descr);
-		return descr;
+		res = descr;
+		goto done;
 	}
 
 	PyErr_Format(PyExc_AttributeError,
 		     "'%.50s' object has no attribute '%.400s'",
 		     tp->tp_name, PyString_AS_STRING(name));
-	return NULL;
+  done:
+	Py_DECREF(name);
+	return res;
 }
 
 int
@@ -1256,18 +1283,40 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 	PyObject *descr;
 	descrsetfunc f;
 	PyObject **dictptr;
+	int res = -1;
+
+#ifdef Py_USING_UNICODE
+	/* The Unicode to string conversion is done here because the
+	   existing tp_setattro slots expect a string object as name
+	   and we wouldn't want to break those. */
+	if (PyUnicode_Check(name)) {
+		name = PyUnicode_AsEncodedString(name, NULL, NULL);
+		if (name == NULL)
+			return -1;
+	}
+	else 
+#endif
+	if (!PyString_Check(name)){
+		PyErr_SetString(PyExc_TypeError,
+				"attribute name must be string");
+		return -1;
+	}
+	else
+		Py_INCREF(name);
 
 	if (tp->tp_dict == NULL) {
 		if (PyType_Ready(tp) < 0)
-			return -1;
+			goto done;
 	}
 
 	descr = _PyType_Lookup(tp, name);
 	f = NULL;
 	if (descr != NULL) {
 		f = descr->ob_type->tp_descr_set;
-		if (f != NULL && PyDescr_IsData(descr))
-			return f(descr, obj, value);
+		if (f != NULL && PyDescr_IsData(descr)) {
+			res = f(descr, obj, value);
+			goto done;
+		}
 	}
 
 	dictptr = _PyObject_GetDictPtr(obj);
@@ -1276,35 +1325,38 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 		if (dict == NULL && value != NULL) {
 			dict = PyDict_New();
 			if (dict == NULL)
-				return -1;
+				goto done;
 			*dictptr = dict;
 		}
 		if (dict != NULL) {
-			int res;
 			if (value == NULL)
 				res = PyDict_DelItem(dict, name);
 			else
 				res = PyDict_SetItem(dict, name, value);
 			if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
 				PyErr_SetObject(PyExc_AttributeError, name);
-			return res;
+			goto done;
 		}
 	}
 
-	if (f != NULL)
-		return f(descr, obj, value);
+	if (f != NULL) {
+		res = f(descr, obj, value);
+		goto done;
+	}
 
 	if (descr == NULL) {
 		PyErr_Format(PyExc_AttributeError,
 			     "'%.50s' object has no attribute '%.400s'",
 			     tp->tp_name, PyString_AS_STRING(name));
-		return -1;
+		goto done;
 	}
 
 	PyErr_Format(PyExc_AttributeError,
 		     "'%.50s' object attribute '%.400s' is read-only",
 		     tp->tp_name, PyString_AS_STRING(name));
-	return -1;
+  done:
+	Py_DECREF(name);
+	return res;
 }
 
 /* Test a value used as condition, e.g., in a for or if statement.
