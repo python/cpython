@@ -44,7 +44,7 @@ Mynd you, møøse bites Kan be pretty nasti..."""
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
 
-import sys, imp, os, re, types, inspect
+import sys, imp, os, re, types, inspect, __builtin__
 from repr import Repr
 from string import expandtabs, find, join, lower, split, strip, rfind, rstrip
 
@@ -141,6 +141,15 @@ def _split_list(s, predicate):
         else:
             no.append(x)
     return yes, no
+
+def visiblename(name):
+    """Decide whether to show documentation on a variable."""
+    # Certain special names are redundant.
+    if name in ['__builtins__', '__doc__', '__file__', '__path__',
+                '__module__', '__name__']: return 0
+    # Private names are hidden, but special names are displayed.
+    if name.startswith('__') and name.endswith('__'): return 1
+    return not name.startswith('_')
 
 # ----------------------------------------------------- module manipulation
 
@@ -337,9 +346,7 @@ class HTMLDoc(Doc):
         return '''
 <!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html><head><title>Python: %s</title>
-<style type="text/css"><!--
-TT { font-family: lucidatypewriter, lucida console, courier }
---></style></head><body bgcolor="#f0f0f8">
+</head><body bgcolor="#f0f0f8">
 %s
 </body></html>''' % (title, contents)
 
@@ -354,12 +361,12 @@ TT { font-family: lucidatypewriter, lucida console, courier }
 ><font color="%s" face="helvetica, arial">%s</font></td></tr></table>
     ''' % (bgcol, fgcol, title, fgcol, extras or '&nbsp;')
 
-    def section(self, title, fgcol, bgcol, contents, width=10,
-                prelude='', marginalia=None, gap='&nbsp;&nbsp;'):
+    def section(self, title, fgcol, bgcol, contents, width=6,
+                prelude='', marginalia=None, gap='&nbsp;'):
         """Format a section with a heading."""
         if marginalia is None:
             marginalia = '<tt>' + '&nbsp;' * width + '</tt>'
-        result = '''
+        result = '''<p>
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="%s">
 <td colspan=3 valign=bottom>&nbsp;<br>
@@ -529,8 +536,9 @@ TT { font-family: lucidatypewriter, lucida console, courier }
         classes, cdict = [], {}
         for key, value in inspect.getmembers(object, inspect.isclass):
             if (inspect.getmodule(value) or object) is object:
-                classes.append((key, value))
-                cdict[key] = cdict[value] = '#' + key
+                if visiblename(key):
+                    classes.append((key, value))
+                    cdict[key] = cdict[value] = '#' + key
         for key, value in classes:
             for base in value.__bases__:
                 key, modname = base.__name__, base.__module__
@@ -542,12 +550,13 @@ TT { font-family: lucidatypewriter, lucida console, courier }
         funcs, fdict = [], {}
         for key, value in inspect.getmembers(object, inspect.isroutine):
             if inspect.isbuiltin(value) or inspect.getmodule(value) is object:
-                funcs.append((key, value))
-                fdict[key] = '#-' + key
-                if inspect.isfunction(value): fdict[value] = fdict[key]
+                if visiblename(key):
+                    funcs.append((key, value))
+                    fdict[key] = '#-' + key
+                    if inspect.isfunction(value): fdict[value] = fdict[key]
         data = []
         for key, value in inspect.getmembers(object, isdata):
-            if key not in ['__builtins__', '__doc__']:
+            if visiblename(key):
                 data.append((key, value))
 
         doc = self.markup(getdoc(object), self.preformat, fdict, cdict)
@@ -560,11 +569,12 @@ TT { font-family: lucidatypewriter, lucida console, courier }
             for file in os.listdir(object.__path__[0]):
                 path = os.path.join(object.__path__[0], file)
                 modname = inspect.getmodulename(file)
-                if modname and modname not in modnames:
-                    modpkgs.append((modname, name, 0, 0))
-                    modnames.append(modname)
-                elif ispackage(path):
-                    modpkgs.append((file, name, 1, 0))
+                if modname != '__init__':
+                    if modname and modname not in modnames:
+                        modpkgs.append((modname, name, 0, 0))
+                        modnames.append(modname)
+                    elif ispackage(path):
+                        modpkgs.append((file, name, 1, 0))
             modpkgs.sort()
             contents = self.multicolumn(modpkgs, self.modpkglink)
             result = result + self.bigsection(
@@ -658,12 +668,12 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                         doc = self.markup(value.__doc__, self.preformat,
                                           funcs, classes, mdict)
                         push('<dd><tt>%s</tt></dd>\n' % doc)
-                    for attr, tag in [("fget", " getter"),
-                                      ("fset", " setter"),
-                                      ("fdel", " deleter")]:
+                    for attr, tag in [('fget', '<em>get</em>'),
+                                      ('fset', '<em>set</em>'),
+                                      ('fdel', '<em>delete</em>')]:
                         func = getattr(value, attr)
                         if func is not None:
-                            base = self.document(func, name + tag, mod,
+                            base = self.document(func, tag, mod,
                                                  funcs, classes, mdict, object)
                             push('<dd>%s</dd>\n' % base)
                     push('</dl>\n')
@@ -690,7 +700,8 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                     push('\n')
             return attrs
 
-        attrs = inspect.classify_class_attrs(object)
+        attrs = filter(lambda (name, kind, cls, value): visiblename(name),
+                       inspect.classify_class_attrs(object))
         mdict = {}
         for key, kind, homecls, value in attrs:
             mdict[key] = anchor = '#' + name + '-' + key
@@ -709,26 +720,29 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                 thisclass = attrs[0][2]
             attrs, inherited = _split_list(attrs, lambda t: t[2] is thisclass)
 
-            if thisclass is object:
-                tag = "defined here"
+            if thisclass is __builtin__.object:
+                attrs = inherited
+                continue
+            elif thisclass is object:
+                tag = 'defined here'
             else:
-                tag = "inherited from %s" % self.classlink(thisclass,
-                                                          object.__module__)
+                tag = 'inherited from %s' % self.classlink(thisclass,
+                                                           object.__module__)
             tag += ':<br>\n'
 
             # Sort attrs by name.
             attrs.sort(lambda t1, t2: cmp(t1[0], t2[0]))
 
             # Pump out the attrs, segregated by kind.
-            attrs = spill("Methods %s" % tag, attrs,
+            attrs = spill('Methods %s' % tag, attrs,
                           lambda t: t[1] == 'method')
-            attrs = spill("Class methods %s" % tag, attrs,
+            attrs = spill('Class methods %s' % tag, attrs,
                           lambda t: t[1] == 'class method')
-            attrs = spill("Static methods %s" % tag, attrs,
+            attrs = spill('Static methods %s' % tag, attrs,
                           lambda t: t[1] == 'static method')
-            attrs = spillproperties("Properties %s" % tag, attrs,
+            attrs = spillproperties('Properties %s' % tag, attrs,
                                     lambda t: t[1] == 'property')
-            attrs = spilldata("Data and non-method functions %s" % tag, attrs,
+            attrs = spilldata('Data and other attributes %s' % tag, attrs,
                               lambda t: t[1] == 'data')
             assert attrs == []
             attrs = inherited
@@ -747,9 +761,9 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                 parents.append(self.classlink(base, object.__module__))
             title = title + '(%s)' % join(parents, ', ')
         doc = self.markup(getdoc(object), self.preformat, funcs, classes, mdict)
-        doc = doc and '<tt>%s<br>&nbsp;</tt>' % doc or '&nbsp;'
+        doc = doc and '<tt>%s<br>&nbsp;</tt>' % doc
 
-        return self.section(title, '#000000', '#ffc8d8', contents, 5, doc)
+        return self.section(title, '#000000', '#ffc8d8', contents, 3, doc)
 
     def formatvalue(self, object):
         """Format an argument default value as text."""
@@ -935,14 +949,16 @@ class TextDoc(Doc):
         classes = []
         for key, value in inspect.getmembers(object, inspect.isclass):
             if (inspect.getmodule(value) or object) is object:
-                classes.append((key, value))
+                if visiblename(key):
+                    classes.append((key, value))
         funcs = []
         for key, value in inspect.getmembers(object, inspect.isroutine):
             if inspect.isbuiltin(value) or inspect.getmodule(value) is object:
-                funcs.append((key, value))
+                if visiblename(key):
+                    funcs.append((key, value))
         data = []
         for key, value in inspect.getmembers(object, isdata):
-            if key not in ['__builtins__', '__doc__']:
+            if visiblename(key):
                 data.append((key, value))
 
         if hasattr(object, '__path__'):
@@ -950,10 +966,11 @@ class TextDoc(Doc):
             for file in os.listdir(object.__path__[0]):
                 path = os.path.join(object.__path__[0], file)
                 modname = inspect.getmodulename(file)
-                if modname and modname not in modpkgs:
-                    modpkgs.append(modname)
-                elif ispackage(path):
-                    modpkgs.append(file + ' (package)')
+                if modname != '__init__':
+                    if modname and modname not in modpkgs:
+                        modpkgs.append(modname)
+                    elif ispackage(path):
+                        modpkgs.append(file + ' (package)')
             modpkgs.sort()
             result = result + self.section(
                 'PACKAGE CONTENTS', join(modpkgs, '\n'))
@@ -1052,17 +1069,16 @@ class TextDoc(Doc):
                     if doc:
                         push(self.indent(doc))
                         need_blank_after_doc = 1
-                    for attr, tag in [("fget", " getter"),
-                                      ("fset", " setter"),
-                                      ("fdel", " deleter")]:
+                    for attr, tag in [('fget', '<get>'),
+                                      ('fset', '<set>'),
+                                      ('fdel', '<delete>')]:
                         func = getattr(value, attr)
                         if func is not None:
                             if need_blank_after_doc:
                                 push('')
                                 need_blank_after_doc = 0
-                            base = self.docother(func, name + tag, mod, 70)
+                            base = self.document(func, tag, mod)
                             push(self.indent(base))
-                    push('')
             return attrs
 
         def spilldata(msg, attrs, predicate):
@@ -1079,7 +1095,8 @@ class TextDoc(Doc):
                                        name, mod, 70, doc) + '\n')
             return attrs
 
-        attrs = inspect.classify_class_attrs(object)
+        attrs = filter(lambda (name, kind, cls, value): visiblename(name),
+                       inspect.classify_class_attrs(object))
         while attrs:
             if mro:
                 thisclass = mro.pop(0)
@@ -1087,14 +1104,18 @@ class TextDoc(Doc):
                 thisclass = attrs[0][2]
             attrs, inherited = _split_list(attrs, lambda t: t[2] is thisclass)
 
-            if thisclass is object:
+            if thisclass is __builtin__.object:
+                attrs = inherited
+                continue
+            elif thisclass is object:
                 tag = "defined here"
             else:
                 tag = "inherited from %s" % classname(thisclass,
                                                       object.__module__)
+            filter(lambda t: not t[0].startswith('_'), attrs)
 
             # Sort attrs by name.
-            attrs.sort(lambda t1, t2: cmp(t1[0], t2[0]))
+            attrs.sort()
 
             # Pump out the attrs, segregated by kind.
             attrs = spill("Methods %s:\n" % tag, attrs,
@@ -1105,8 +1126,8 @@ class TextDoc(Doc):
                           lambda t: t[1] == 'static method')
             attrs = spillproperties("Properties %s:\n" % tag, attrs,
                                     lambda t: t[1] == 'property')
-            attrs = spilldata("Data and non-method functions %s:\n" % tag,
-                              attrs, lambda t: t[1] == 'data')
+            attrs = spilldata("Data and other attributes %s:\n" % tag, attrs,
+                              lambda t: t[1] == 'data')
             assert attrs == []
             attrs = inherited
 
@@ -1316,7 +1337,6 @@ def locate(path, forceload=0):
             except AttributeError: return None
         return object
     else:
-        import __builtin__
         if hasattr(__builtin__, path):
             return getattr(__builtin__, path)
 
@@ -1371,8 +1391,11 @@ def writedocs(dir, pkgpath='', done=None):
         elif os.path.isfile(path):
             modname = inspect.getmodulename(path)
             if modname:
-                modname = pkgpath + modname
-                if not modname in done:
+                if modname == '__init__':
+                    modname = pkgpath[:-1] # remove trailing period
+                else:
+                    modname = pkgpath + modname
+                if modname not in done:
                     done[modname] = 1
                     writedoc(modname)
 
