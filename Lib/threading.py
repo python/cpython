@@ -284,6 +284,21 @@ class _Semaphore(_Verbose):
         self.__cond.release()
 
 
+def BoundedSemaphore(*args, **kwargs):
+    return apply(_BoundedSemaphore, args, kwargs)
+
+class _BoundedSemaphore(_Semaphore):
+    """Semaphore that checks that # releases is <= # acquires"""
+    def __init__(self, value=1, verbose=None):
+        _Semaphore.__init__(self, value, verbose)
+        self._initial_value = value
+
+    def release(self):
+        if self._Semaphore__value >= self._initial_value:
+            raise ValueError, "Semaphore released too many times"
+        return _Semaphore.release(self)
+
+
 def Event(*args, **kwargs):
     return apply(_Event, args, kwargs)
 
