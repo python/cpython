@@ -793,17 +793,13 @@ class TestIterators(TestEmailBase):
         # First a simple non-multipart message
         msg = self._msgobj('msg_01.txt')
         it = Iterators.body_line_iterator(msg)
-        lines = []
-        for line in it:
-            lines.append(line)
+        lines = list(it)
         eq(len(lines), 6)
         eq(EMPTYSTRING.join(lines), msg.get_payload())
         # Now a more complicated multipart
         msg = self._msgobj('msg_02.txt')
         it = Iterators.body_line_iterator(msg)
-        lines = []
-        for line in it:
-            lines.append(line)
+        lines = list(it)
         eq(len(lines), 43)
         eq(EMPTYSTRING.join(lines), openfile('msg_19.txt').read())
 
@@ -811,12 +807,8 @@ class TestIterators(TestEmailBase):
         eq = self.assertEqual
         msg = self._msgobj('msg_04.txt')
         it = Iterators.typed_subpart_iterator(msg, 'text')
-        lines = []
-        subparts = 0
-        for subpart in it:
-            subparts += 1
-            lines.append(subpart.get_payload())
-        eq(subparts, 2)
+        lines = [subpart.get_payload() for subpart in it]
+        eq(len(lines), 2)
         eq(EMPTYSTRING.join(lines), """\
 a simple kind of mirror
 to reflect upon our own
