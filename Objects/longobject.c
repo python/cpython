@@ -168,7 +168,7 @@ getlongvalue(vv)
 		prev = x;
 		x = (x << SHIFT) + v->ob_digit[i];
 		if ((x >> SHIFT) != prev) {
-			err_setstr(RuntimeError,
+			err_setstr(ValueError,
 				"long int too long to convert");
 			return -1;
 		}
@@ -422,7 +422,7 @@ long_divrem(a, b, prem)
 	if (size_b == 0) {
 		if (prem != NULL)
 			*prem = NULL;
-		err_setstr(RuntimeError, "long division by zero");
+		err_setstr(ZeroDivisionError, "long division or remainder");
 		return NULL;
 	}
 	if (size_a < size_b ||
@@ -938,7 +938,7 @@ long_pow(a, w)
 	if (size_b == ~0)
 		size_b = 0;
 	else if (size_b < 0) {
-		err_setstr(RuntimeError, "long integer to the negative power");
+		err_setstr(ValueError, "long integer to the negative power");
 		return NULL;
 	}
 
@@ -1054,11 +1054,11 @@ long_rshift(a, b)
 	if (shiftby == -1L && err_occurred())
 		return NULL;
 	if (shiftby < 0) {
-		err_setstr(RuntimeError, "negative shift count");
+		err_setstr(ValueError, "negative shift count");
 		return NULL;
 	}
 	if (shiftby > MASK) {
-		err_setstr(RuntimeError, "outrageous shift count");
+		err_setstr(ValueError, "outrageous shift count");
 		return NULL;
 	}
 	wordshift = shiftby / SHIFT;
@@ -1105,11 +1105,11 @@ long_lshift(a, b)
 	if (shiftby == -1L && err_occurred())
 		return NULL;
 	if (shiftby < 0) {
-		err_setstr(RuntimeError, "negative shift count");
+		err_setstr(ValueError, "negative shift count");
 		return NULL;
 	}
 	if (shiftby > MASK) {
-		err_setstr(RuntimeError, "outrageous shift count");
+		err_setstr(ValueError, "outrageous shift count");
 		return NULL;
 	}
 	if (shiftby % SHIFT == 0) {

@@ -191,7 +191,7 @@ rd_object(fp)
 	switch (type) {
 	
 	case EOF:
-		err_setstr(RuntimeError, "EOF read where object expected");
+		err_setstr(EOFError, "EOF read where object expected");
 		return NULL;
 	
 	case TYPE_NULL:
@@ -227,7 +227,7 @@ rd_object(fp)
 			char *end;
 			n = rd_byte(fp);
 			if (fread(buf, 1, (int)n, fp) != n) {
-				err_setstr(RuntimeError,
+				err_setstr(EOFError,
 					"EOF read where object expected");
 				return NULL;
 			}
@@ -235,11 +235,11 @@ rd_object(fp)
 			errno = 0;
 			res = strtod(buf, &end);
 			if (*end != '\0') {
-				err_setstr(RuntimeError, "bad float syntax");
+				err_setstr(ValueError, "bad float syntax");
 				return NULL;
 			}
 			if (errno != 0) {
-				err_setstr(RuntimeError,
+				err_setstr(ValueError,
 					"float constant too large");
 				return NULL;
 			}
@@ -253,7 +253,7 @@ rd_object(fp)
 			if (fread(getstringvalue(v), 1, (int)n, fp) != n) {
 				DECREF(v);
 				v = NULL;
-				err_setstr(RuntimeError,
+				err_setstr(EOFError,
 					"EOF read where object expected");
 			}
 		}
@@ -314,7 +314,7 @@ rd_object(fp)
 		return v;
 	
 	default:
-		err_setstr(RuntimeError, "read unknown object");
+		err_setstr(TypeError, "read unknown object");
 		return NULL;
 	
 	}
