@@ -13,52 +13,6 @@
 #endif /* DONT_HAVE_SYS_TYPES_H */
 #endif /* !STDC_HEADERS */
 
-/* Shamelessy stolen from listobject.c */
-static int
-roundupsize(int n)
-{
-	unsigned int nbits = 0;
-	unsigned int n2 = (unsigned int)n >> 5;
-
-	/* Round up:
-	 * If n <       256, to a multiple of        8.
-	 * If n <      2048, to a multiple of       64.
-	 * If n <     16384, to a multiple of      512.
-	 * If n <    131072, to a multiple of     4096.
-	 * If n <   1048576, to a multiple of    32768.
-	 * If n <   8388608, to a multiple of   262144.
-	 * If n <  67108864, to a multiple of  2097152.
-	 * If n < 536870912, to a multiple of 16777216.
-	 * ...
-	 * If n < 2**(5+3*i), to a multiple of 2**(3*i).
-	 *
-	 * This over-allocates proportional to the list size, making room
-	 * for additional growth.  The over-allocation is mild, but is
-	 * enough to give linear-time amortized behavior over a long
-	 * sequence of appends() in the presence of a poorly-performing
-	 * system realloc() (which is a reality, e.g., across all flavors
-	 * of Windows, with Win9x behavior being particularly bad -- and
-	 * we've still got address space fragmentation problems on Win9x
-	 * even with this scheme, although it requires much longer lists to
-	 * provoke them than it used to).
-	 */
-	do {
-		n2 >>= 3;
-		nbits += 3;
-	} while (n2);
-	return ((n >> nbits) + 1) << nbits;
- }
-
-#define NRESIZE(var, type, nitems)				\
-do {								\
-	size_t _new_size = roundupsize(nitems);			\
-	if (_new_size <= ((~(size_t)0) / sizeof(type)))		\
-		PyMem_RESIZE(var, type, _new_size);		\
-	else							\
-		var = NULL;					\
-} while (0)
-/* END SHAMELESSLY STOLEN CODE */
-
 struct arrayobject; /* Forward */
 
 /* All possible arraydescr values are defined in the vector "descriptors"
@@ -76,6 +30,7 @@ typedef struct arrayobject {
 	PyObject_HEAD
 	int ob_size;
 	char *ob_item;
+	int allocated;
 	struct arraydescr *ob_descr;
 } arrayobject;
 
@@ -83,6 +38,54 @@ static PyTypeObject Arraytype;
 
 #define array_Check(op) PyObject_TypeCheck(op, &Arraytype)
 #define array_CheckExact(op) ((op)->ob_type == &Arraytype)
+
+static int
+array_resize(arrayobject *self, int newsize)
+{
+	char *items;
+	size_t _new_size;
+
+	/* Bypass realloc() when a previous overallocation is large enough
+	   to accommodate the newsize.  If the newsize is 16 smaller than the
+	   current size, then proceed with the realloc() to shrink the list.
+	*/
+
+	if (self->allocated >= newsize &&
+	    self->ob_size < newsize + 16 &&
+	    self->ob_item != NULL) {
+		self->ob_size = newsize;
+		return 0;
+	}
+
+	/* This over-allocates proportional to the array size, making room
+	 * for additional growth.  The over-allocation is mild, but is
+	 * enough to give linear-time amortized behavior over a long
+	 * sequence of appends() in the presence of a poorly-performing
+	 * system realloc().
+	 * The growth pattern is:  0, 4, 8, 16, 25, 34, 46, 56, 67, 79, ...
+	 * Note, the pattern starts out the same as for lists but then
+	 * grows at a smaller rate so that larger arrays only overallocate
+	 * by about 1/16th -- this is done because arrays are presumed to be more
+	 * memory critical.
+	 */
+
+	_new_size = (newsize >> 4) + (self->ob_size < 8 ? 3 : 7) + newsize;
+	items = self->ob_item;
+	/* XXX The following multiplication and division does not optimize away 
+	   like it does for lists since the size is not known at compile time */
+	if (_new_size <= ((~(size_t)0) / self->ob_descr->itemsize))
+		PyMem_RESIZE(items, char, (_new_size * self->ob_descr->itemsize));
+	else
+		items = NULL;
+	if (items == NULL) {
+		PyErr_NoMemory();
+		return -1;
+	}
+	self->ob_item = items;
+	self->ob_size = newsize;
+	self->allocated = _new_size;
+	return 0;
+}
 
 /****************************************************************************
 Get and Set functions for each type.
@@ -438,6 +441,7 @@ newarrayobject(PyTypeObject *type, int size, struct arraydescr *descr)
 		}
 	}
 	op->ob_descr = descr;
+	op->allocated = size;
 	return (PyObject *) op;
 }
 
@@ -455,30 +459,29 @@ static int
 ins1(arrayobject *self, int where, PyObject *v)
 {
 	char *items;
+	int n = self->ob_size;
 	if (v == NULL) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
 	if ((*self->ob_descr->setitem)(self, -1, v) < 0)
 		return -1;
-	items = self->ob_item;
-	NRESIZE(items, char, (self->ob_size+1) * self->ob_descr->itemsize);
-	if (items == NULL) {
-		PyErr_NoMemory();
+
+	if (array_resize(self, n+1) == -1)
 		return -1;
-	}
+	items = self->ob_item;
 	if (where < 0) {
-		where += self->ob_size;
+		where += n;
 		if (where < 0)
 			where = 0;
 	}
-	if (where > self->ob_size)
-		where = self->ob_size;
-	memmove(items + (where+1)*self->ob_descr->itemsize,
-		items + where*self->ob_descr->itemsize,
-		(self->ob_size-where)*self->ob_descr->itemsize);
-	self->ob_item = items;
-	self->ob_size++;
+	if (where > n)
+		where = n;
+	/* appends don't need to call memmove() */
+	if (where != n)
+		memmove(items + (where+1)*self->ob_descr->itemsize,
+			items + where*self->ob_descr->itemsize,
+			(n-where)*self->ob_descr->itemsize);
 	return (*self->ob_descr->setitem)(self, where, v);
 }
 
@@ -728,6 +731,7 @@ array_ass_slice(arrayobject *a, int ilow, int ihigh, PyObject *v)
 		PyMem_RESIZE(item, char, a->ob_size*a->ob_descr->itemsize);
 						/* Can't fail */
 		a->ob_item = item;
+		a->allocated = a->ob_size;
 	}
 	else if (d > 0) { /* Insert d items */
 		PyMem_RESIZE(item, char,
@@ -741,6 +745,7 @@ array_ass_slice(arrayobject *a, int ilow, int ihigh, PyObject *v)
 			(a->ob_size-ihigh)*a->ob_descr->itemsize);
 		a->ob_item = item;
 		a->ob_size += d;
+		a->allocated = a->ob_size;
 	}
 	if (n > 0)
 		memcpy(item + ilow*a->ob_descr->itemsize, b->ob_item,
@@ -795,7 +800,8 @@ array_do_extend(arrayobject *self, PyObject *bb)
         }
 	memcpy(self->ob_item + self->ob_size*self->ob_descr->itemsize,
                b->ob_item, b->ob_size*b->ob_descr->itemsize);
-        self->ob_size = size;
+	self->ob_size = size;
+	self->allocated = size;
 
 	return 0;
 #undef b
@@ -825,6 +831,7 @@ array_inplace_repeat(arrayobject *self, int n)
 			PyMem_FREE(items);
 			self->ob_item = NULL;
 			self->ob_size = 0;
+			self->allocated = 0;
 		}
 		else {
 			PyMem_Resize(items, char, n * size);
@@ -837,6 +844,7 @@ array_inplace_repeat(arrayobject *self, int n)
 			}
 			self->ob_item = items;
 			self->ob_size *= n;
+			self->allocated = self->ob_size;
 		}
 	}
 	Py_INCREF(self);
@@ -1158,12 +1166,14 @@ array_fromfile(arrayobject *self, PyObject *args)
 		}
 		self->ob_item = item;
 		self->ob_size += n;
+		self->allocated = self->ob_size;
 		nread = fread(item + (self->ob_size - n) * itemsize,
 			      itemsize, n, fp);
 		if (nread < (size_t)n) {
 			self->ob_size -= (n - nread);
 			PyMem_RESIZE(item, char, self->ob_size*itemsize);
 			self->ob_item = item;
+			self->allocated = self->ob_size;
 			PyErr_SetString(PyExc_EOFError,
 				         "not enough items in file");
 			return NULL;
@@ -1230,6 +1240,7 @@ array_fromlist(arrayobject *self, PyObject *list)
 		}
 		self->ob_item = item;
 		self->ob_size += n;
+		self->allocated = self->ob_size;
 		for (i = 0; i < n; i++) {
 			PyObject *v = PyList_GetItem(list, i);
 			if ((*self->ob_descr->setitem)(self,
@@ -1238,6 +1249,7 @@ array_fromlist(arrayobject *self, PyObject *list)
 				PyMem_RESIZE(item, char,
 					          self->ob_size * itemsize);
 				self->ob_item = item;
+				self->allocated = self->ob_size;
 				return NULL;
 			}
 		}
@@ -1300,6 +1312,7 @@ array_fromstring(arrayobject *self, PyObject *args)
 		}
 		self->ob_item = item;
 		self->ob_size += n;
+		self->allocated = self->ob_size;
 		memcpy(item + (self->ob_size - n) * itemsize,
 		       str, itemsize*n);
 	}
@@ -1353,6 +1366,7 @@ array_fromunicode(arrayobject *self, PyObject *args)
 		}
 		self->ob_item = (char *) item;
 		self->ob_size += n;
+		self->allocated = self->ob_size;
 		memcpy(item + self->ob_size - n,
 		       ustr, n * sizeof(Py_UNICODE));
 	}
@@ -1611,7 +1625,7 @@ array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
 
 			self->ob_size -= slicelength;
 			self->ob_item = PyMem_REALLOC(self->ob_item, itemsize*self->ob_size);
-
+			self->allocated = self->ob_size;
 
 			return 0;
 		}
@@ -1811,6 +1825,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 					self->ob_item = item;
 					self->ob_size = n / sizeof(Py_UNICODE);
 					memcpy(item, PyUnicode_AS_DATA(initial), n);
+					self->allocated = self->ob_size;
 				}
 #endif
 			}
