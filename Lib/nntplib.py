@@ -297,6 +297,42 @@ class NNTP:
             list[i] = tuple(list[i].split())
         return resp, list
 
+    def description(self, group):
+
+        """Get a description for a single group.  If more than one
+        group matches ('group' is a pattern), return the first.  If no
+        group matches, return an empty string.
+
+        This elides the response code from the server, since it can
+        only be '215' or '285' (for xgtitle) anyway.  If the response
+        code is needed, use the 'descriptions' method.
+
+        NOTE: This neither checks for a wildcard in 'group' nor does
+        it check whether the group actually exists."""
+
+        resp, lines = self.descriptions(group)
+        if len(lines) == 0:
+            return ""
+        else:
+            return lines[0][1]
+
+    def descriptions(self, group_pattern):
+        """Get descriptions for a range of groups."""
+        line_pat = re.compile("^(?P<group>[^ \t]+)[ \t]+(.*)$")
+        # Try the more std (acc. to RFC2980) LIST NEWSGROUPS first
+        resp, raw_lines = self.longcmd('LIST NEWSGROUPS ' + group_pattern)
+        if resp[:3] != "215":
+            # Now the deprecated XGTITLE.  This either raises an error
+            # or succeeds with the same output structure as LIST
+            # NEWSGROUPS.
+            resp, raw_lines = self.longcmd('XGTITLE ' + group_pattern)
+        lines = []
+        for raw_line in raw_lines:
+            match = line_pat.search(raw_line.strip())
+            if match:
+                lines.append(match.group(1, 2))
+        return resp, lines
+
     def group(self, name):
         """Process a GROUP command.  Argument:
         - group: the group name
