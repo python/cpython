@@ -1,0 +1,4 @@
+import PyDocSearch
+# set the creator of the browser. 'MSIE' = Exploser, 'MOSS' = Netscape
+PyDocSearch.SIGNATURE = 'MOSS'
+pds = PyDocSearch.PyDocSearch()
