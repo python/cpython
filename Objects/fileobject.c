@@ -421,7 +421,9 @@ new_buffersize(f, currentsize)
 	struct stat st;
 	if (fstat(fileno(f->f_fp), &st) == 0) {
 		end = st.st_size;
-		pos = ftell(f->f_fp);
+		pos = lseek(fileno(f->f_fp), 0L, SEEK_CUR);
+		if (pos >= 0)
+			pos = ftell(f->f_fp);
 		if (pos < 0)
 			clearerr(f->f_fp);
 		if (end > pos && pos >= 0)
