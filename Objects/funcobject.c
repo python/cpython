@@ -154,6 +154,7 @@ func_dealloc(op)
 {
 	DECREF(op->func_code);
 	DECREF(op->func_globals);
+	DECREF(op->func_name);
 	XDECREF(op->func_argdefs);
 	XDECREF(op->func_doc);
 	DEL(op);
