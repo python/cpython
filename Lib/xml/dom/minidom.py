@@ -34,8 +34,6 @@ import xml.dom
 
 if list is type([]):
     class NodeList(list):
-        __dynamic__ = 0
-
         def item(self, index):
             if 0 <= index < len(self):
                 return self[index]
