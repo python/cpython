@@ -20,7 +20,13 @@ In the Python interpreter, do "from pydoc import help" to provide online
 help.  Calling help(thing) on a Python object documents the object."""
 
 __author__ = "Ka-Ping Yee <ping@lfw.org>"
-__version__ = "26 February 2001"
+__date__ = "26 February 2001"
+__version__ = "$Revision $"
+__credits__ = """Tommy Burnette, the original creator of manpy.
+Paul Prescod, for all his work on onlinehelp.
+Richard Chamberlain, for the first implementation of textdoc.
+
+A moose bit my sister once."""
 
 import sys, imp, os, stat, re, types, inspect
 from repr import Repr
@@ -383,8 +389,16 @@ class HTMLDoc(Doc):
             filelink = '<a href="file:%s">%s</a>' % (file, file)
         except TypeError:
             filelink = '(built-in)'
+        info = []
         if hasattr(object, '__version__'):
-            head = head + ' (version: %s)' % self.escape(object.__version__)
+            version = str(object.__version__)
+            if version[:11] == '$Revision$':
+                version = version[11:-1]
+            info.append('version: %s' % self.escape(version))
+        if hasattr(object, '__date__'):
+            info.append(self.escape(str(object.__date__)))
+        if info:
+            head = head + ' (%s)' % join(info, ', ')
         result = result + self.heading(
             head, '#ffffff', '#7799ee', '<a href=".">index</a><br>' + filelink)
 
@@ -462,6 +476,16 @@ class HTMLDoc(Doc):
                                        (key, self.repr(value)))
             result = result + self.bigsection(
                 'Constants', '#ffffff', '#55aa55', contents)
+
+        if hasattr(object, '__author__'):
+            contents = self.markup(str(object.__author__), self.preformat)
+            result = result + self.bigsection(
+                'Author', '#ffffff', '#7799ee', contents)
+
+        if hasattr(object, '__credits__'):
+            contents = self.markup(str(object.__credits__), self.preformat)
+            result = result + self.bigsection(
+                'Credits', '#ffffff', '#7799ee', contents)
 
         return result
 
@@ -694,16 +718,15 @@ class TextDoc(Doc):
 
         if hasattr(object, '__version__'):
             version = str(object.__version__)
-            if hasattr(object, '__date__'):
-                version = version + ', ' + str(object.__date__)
+            if version[:11] == '$Revision$':
+                version = version[11:-1]
             result = result + self.section('VERSION', version)
-
+        if hasattr(object, '__date__'):
+            result = result + self.section('DATE', str(object.__date__))
         if hasattr(object, '__author__'):
-            author = str(object.__author__)
-            if hasattr(object, '__email__'):
-                author = author + ' <' + str(object.__email__) + '>'
-            result = result + self.section('AUTHOR', author)
-
+            result = result + self.section('AUTHOR', str(object.__author__))
+        if hasattr(object, '__credits__'):
+            result = result + self.section('CREDITS', str(object.__credits__))
         return result
 
     def docclass(self, object):
