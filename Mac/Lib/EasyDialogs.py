@@ -213,7 +213,7 @@ def test():
 			"So far, so good!", "Keep on truckin'" )
 	bar = ProgressBar("Progress, progress...", 100)
 	try:
-		appsw = MacOS.EnableAppswitch(0)
+		appsw = MacOS.SchedParams(1, 0)
 		for i in range(100):
 			bar.set(i)
 			time.sleep(0.1)
@@ -223,7 +223,7 @@ def test():
 		time.sleep(0.3) 	# give'em a chance to see the done.
 	finally:
 		del bar
-		MacOS.EnableAppswitch(appsw)
+		apply(MacOS.SchedParams, appsw)
 
 
 	

@@ -143,7 +143,7 @@ class Application:
 	
 	def mainloop(self, mask = everyEvent, wait = 0):
 		self.quitting = 0
-		saveyield = MacOS.EnableAppswitch(self.yield)
+		saveparams = apply(MacOS.SchedParams, self.schedparams)
 		try:
 			while not self.quitting:
 				try:
@@ -154,9 +154,9 @@ class Application:
 					# applications.
 					break
 		finally:
-			MacOS.EnableAppswitch(saveyield)
+			apply(MacOS.SchedParams, self.schedparams)
 	
-	yield = -1
+	schedparams = MacOS.SchedParams()
 	
 	def do1event(self, mask = everyEvent, wait = 0):
 		ok, event = self.getevent(mask, wait)
