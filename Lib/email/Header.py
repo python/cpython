@@ -337,10 +337,9 @@ class Header:
         return chunk + self._split(last, charset, self._maxlinelen, splitchars)
 
     def _split_ascii(self, s, charset, firstlen, splitchars):
-        line = _split_ascii(s, firstlen, self._maxlinelen,
-                            self._continuation_ws, splitchars)
-        lines = line.splitlines()
-        return zip(lines, [charset]*len(lines))
+        chunks = _split_ascii(s, firstlen, self._maxlinelen,
+                              self._continuation_ws, splitchars)
+        return zip(chunks, [charset]*len(chunks))
 
     def _encode_chunks(self, newchunks, maxlinelen):
         # MIME-encode a header with many different charsets and/or encodings.
@@ -360,14 +359,18 @@ class Header:
         #
         # =?charset1?q?Mar=EDa_Gonz=E1lez_Alonso?=\n
         #  =?charset2?b?SvxyZ2VuIEL2aW5n?="
-        #
         chunks = []
         for header, charset in newchunks:
             if charset is None or charset.header_encoding is None:
                 s = header
             else:
                 s = charset.header_encode(header)
-            _max_append(chunks, s, maxlinelen, ' ')
+            # Don't add more folding whitespace than necessary
+            if chunks and chunks[-1].endswith(' '):
+                extra = ''
+            else:
+                extra = ' '
+            _max_append(chunks, s, maxlinelen, extra)
         joiner = NL + self._continuation_ws
         return joiner.join(chunks)
 
@@ -412,7 +415,6 @@ class Header:
 
 
 def _split_ascii(s, firstlen, restlen, continuation_ws, splitchars):
-    linejoiner = '\n' + continuation_ws
     lines = []
     maxlen = firstlen
     for line in s.splitlines():
@@ -464,9 +466,8 @@ def _split_ascii(s, firstlen, restlen, continuation_ws, splitchars):
                 # splitting on whitespace, try to recursively split this line
                 # on whitespace.
                 if partlen > maxlen and ch <> ' ':
-                    subs = _split_ascii(part, maxlen, restlen,
+                    subl = _split_ascii(part, maxlen, restlen,
                                         continuation_ws, ' ')
-                    subl = re.split(linejoiner, subs)
                     lines.extend(subl[:-1])
                     this = [subl[-1]]
                 else:
@@ -479,7 +480,7 @@ def _split_ascii(s, firstlen, restlen, continuation_ws, splitchars):
         # Put any left over parts on a line by themselves
         if this:
             lines.append(joiner.join(this))
-    return linejoiner.join(lines)
+    return lines
 
 
 
