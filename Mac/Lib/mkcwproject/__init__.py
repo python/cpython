@@ -30,13 +30,20 @@ def mkproject(outputfile, modulename, settings, force=0):
 	xmlbuilder = cwxmlgen.ProjectBuilder(dictcopy)
 	xmlbuilder.generate()
 	if not force:
-		# check whether it is the same as it was
+		# We do a number of checks and all must succeed before we decide to
+		# skip the build-project step:
+		# 1. the xml file must exist, and its content equal to what we've generated
+		# 2. the project file must exist and be newer than the xml file
+		# 3. the .exp file must exist
 		if os.path.exists(dictcopy['mac_projectxmlname']):
 			fp = open(dictcopy['mac_projectxmlname'])
 			data = fp.read()
 			fp.close()
 			if data == dictcopy["tmp_projectxmldata"]:
-				return
+				if os.path.exists(outputfile) and \
+						os.stat(outputfile)[os.path.ST_MTIME] > os.stat(dictcopy['mac_projectxmlname'])[os.path.ST_MTIME]:
+					if os.path.exists(outputfile + '.exp'):
+						return
 	fp = open(dictcopy['mac_projectxmlname'], "w")
 	fp.write(dictcopy["tmp_projectxmldata"])
 	fp.close()
