@@ -191,7 +191,7 @@ particular, it looks for a directory named \code{lib/python1.5}
 (replacing \code{1.5} with the current interpreter version) relative 
 to the parent directory where the executable named \code{python} is 
 found on the shell command search path (the environment variable 
-\code{$PATH}).  For instance, if the Python executable is found in 
+\code{\$PATH}).  For instance, if the Python executable is found in 
 \code{/usr/local/bin/python}, it will assume that the libraries are in 
 \code{/usr/local/lib/python1.5}.  In fact, this also the ``fallback'' 
 location, used when no executable file named \code{python} is found 
@@ -202,7 +202,7 @@ directories in front of the standard path by setting
 
 The embedding application can steer the search by calling 
 \code{Py_SetProgramName(\var{file})} \emph{before} calling 
-\code{Py_Initialize()}.  Note that \code[$PYTHONHOME} still overrides 
+\code{Py_Initialize()}.  Note that \code{\$PYTHONHOME} still overrides 
 this and \code{\$PYTHONPATH} is still inserted in front of the 
 standard path.
 
@@ -1451,7 +1451,7 @@ platform.
 \begin{cfuncdesc}{char *}{Py_GetProgramFullPath}{}
 Return the full program name of the Python executable; this is 
 computed as a side-effect of deriving the default module search path 
-from the program name (set by \code{Py_SetProgramName() above).  The 
+from the program name (set by \code{Py_SetProgramName()} above).  The 
 returned string points into static storage; the caller should not 
 modify its value.  The value is available to Python code as 
 \code{sys.executable}.  % XXX is that the right sys.name?
@@ -1459,11 +1459,11 @@ modify its value.  The value is available to Python code as
 
 \begin{cfuncdesc}{char *}{Py_GetPath}{}
 Return the default module search path; this is computed from the 
-program name (set by \code{Py_SetProgramName() above) and some 
+program name (set by \code{Py_SetProgramName()} above) and some 
 environment variables.  The returned string consists of a series of 
 directory names separated by a platform dependent delimiter character.  
 The delimiter character is \code{':'} on Unix, \code{';'} on 
-DOS/Windows, and \code{'\n'} (the ASCII newline character) on 
+DOS/Windows, and \code{'\\n'} (the ASCII newline character) on 
 Macintosh.  The returned string points into static storage; the caller 
 should not modify its value.  The value is available to Python code 
 as the list \code{sys.path}, which may be modified to change the 
@@ -1476,7 +1476,9 @@ future search path for loaded modules.
 Return the version of this Python interpreter.  This is a string that 
 looks something like
 
-\code{"1.5a3 (#67, Aug 1 1997, 22:34:28) [GCC 2.7.2.2]"}.
+\begin{verbatim}
+"1.5a3 (#67, Aug 1 1997, 22:34:28) [GCC 2.7.2.2]"
+\end{verbatim}
 
 The first word (up to the first space character) is the current Python 
 version; the first three characters are the major and minor version 
@@ -1522,7 +1524,9 @@ the variable \code{sys.version}.
 Return information about the sequence number and build date and time 
 of the current Python interpreter instance, for example
 
-\code{"#67, Aug  1 1997, 22:34:28"}
+\begin{verbatim}
+"#67, Aug  1 1997, 22:34:28"
+\end{verbatim}
 
 The returned string points into static storage; the caller should not 
 modify its value.  The value is available to Python code as part of 
@@ -1556,13 +1560,13 @@ the variable \code{sys.version}.
 \end{cfuncdesc}
 
 % XXX These aren't really C functions!
-\begin{cfuncdesc}{Py_BEGIN_ALLOW_THREADS}{}
+\begin{cfuncdesc}{}{Py_BEGIN_ALLOW_THREADS}{}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{Py_BEGIN_END_THREADS}{}
+\begin{cfuncdesc}{}{Py_BEGIN_END_THREADS}{}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{Py_BEGIN_XXX_THREADS}{}
+\begin{cfuncdesc}{}{Py_BEGIN_XXX_THREADS}{}
 \end{cfuncdesc}
 
 
