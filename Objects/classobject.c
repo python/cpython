@@ -28,8 +28,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "structmember.h"
 
 /* Forward */
-static object *class_lookup PROTO((classobject *, char *, classobject **));
-static object *instance_getattr1 PROTO((instanceobject *, char *));
+static object *class_lookup PROTO((classobject *, object *, classobject **));
+static object *instance_getattr1 PROTO((instanceobject *, object *));
 
 object *
 newclassobject(bases, dict, name)
@@ -40,6 +40,7 @@ newclassobject(bases, dict, name)
 	int pos;
 	object *key, *value;
 	classobject *op, *dummy;
+	static object *getattrstr, *setattrstr, *delattrstr;
 	if (dictlookup(dict, "__doc__") == NULL) {
 		if (dictinsert(dict, "__doc__", None) < 0)
 			return NULL;
@@ -61,9 +62,14 @@ newclassobject(bases, dict, name)
 	op->cl_dict = dict;
 	XINCREF(name);
 	op->cl_name = name;
-	op->cl_getattr = class_lookup(op, "__getattr__", &dummy);
-	op->cl_setattr = class_lookup(op, "__setattr__", &dummy);
-	op->cl_delattr = class_lookup(op, "__delattr__", &dummy);
+	if (getattrstr == NULL) {
+		getattrstr = newstringobject("__getattr__");
+		setattrstr = newstringobject("__setattr__");
+		delattrstr = newstringobject("__delattr__");
+	}
+	op->cl_getattr = class_lookup(op, getattrstr, &dummy);
+	op->cl_setattr = class_lookup(op, setattrstr, &dummy);
+	op->cl_delattr = class_lookup(op, delattrstr, &dummy);
 	XINCREF(op->cl_getattr);
 	XINCREF(op->cl_setattr);
 	XINCREF(op->cl_delattr);
@@ -90,11 +96,11 @@ class_dealloc(op)
 static object *
 class_lookup(cp, name, pclass)
 	classobject *cp;
-	char *name;
+	object *name;
 	classobject **pclass;
 {
 	int i, n;
-	object *value = dictlookup(cp->cl_dict, name);
+	object *value = mappinglookup(cp->cl_dict, name);
 	if (value != NULL) {
 		*pclass = cp;
 		return value;
@@ -112,12 +118,13 @@ class_lookup(cp, name, pclass)
 static object *
 class_getattr(op, name)
 	register classobject *op;
-	register char *name;
+	object *name;
 {
 	register object *v;
+	register char *sname = getstringvalue(name);
 	classobject *class;
-	if (name[0] == '_' && name[1] == '_') {
-		if (strcmp(name, "__dict__") == 0) {
+	if (sname[0] == '_' && sname[1] == '_') {
+		if (strcmp(sname, "__dict__") == 0) {
 			if (getrestricted()) {
 				err_setstr(RuntimeError,
 					   "class.__dict__ not accessible in restricted mode");
@@ -126,11 +133,11 @@ class_getattr(op, name)
 			INCREF(op->cl_dict);
 			return op->cl_dict;
 		}
-		if (strcmp(name, "__bases__") == 0) {
+		if (strcmp(sname, "__bases__") == 0) {
 			INCREF(op->cl_bases);
 			return op->cl_bases;
 		}
-		if (strcmp(name, "__name__") == 0) {
+		if (strcmp(sname, "__name__") == 0) {
 			if (op->cl_name == NULL)
 				v = None;
 			else
@@ -141,7 +148,7 @@ class_getattr(op, name)
 	}
 	v = class_lookup(op, name, &class);
 	if (v == NULL) {
-		err_setstr(AttributeError, name);
+		err_setval(AttributeError, name);
 		return NULL;
 	}
 	if (is_accessobject(v)) {
@@ -163,13 +170,14 @@ class_getattr(op, name)
 static int
 class_setattr(op, name, v)
 	classobject *op;
-	char *name;
+	object *name;
 	object *v;
 {
 	object *ac;
-	if (name[0] == '_' && name[1] == '_') {
-		int n = strlen(name);
-		if (name[n-1] == '_' && name[n-2] == '_') {
+	char *sname = getstringvalue(name);
+	if (sname[0] == '_' && sname[1] == '_') {
+		int n = getstringsize(name);
+		if (sname[n-1] == '_' && sname[n-2] == '_') {
 			err_setstr(TypeError, "read-only special attribute");
 			return -1;
 		}
@@ -179,18 +187,18 @@ class_setattr(op, name, v)
 			   "classes are read-only in restricted mode");
 		return -1;
 	}
-	ac = dictlookup(op->cl_dict, name);
+	ac = mappinglookup(op->cl_dict, name);
 	if (ac != NULL && is_accessobject(ac))
 		return setaccessvalue(ac, getowner(), v);
 	if (v == NULL) {
-		int rv = dictremove(op->cl_dict, name);
+		int rv = mappingremove(op->cl_dict, name);
 		if (rv < 0)
 			err_setstr(AttributeError,
 				   "delete non-existing class attribute");
 		return rv;
 	}
 	else
-		return dictinsert(op->cl_dict, name, v);
+		return mappinginsert(op->cl_dict, name, v);
 }
 
 static object *
@@ -215,13 +223,18 @@ typeobject Classtype = {
 	0,
 	(destructor)class_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
-	(getattrfunc)class_getattr, /*tp_getattr*/
-	(setattrfunc)class_setattr, /*tp_setattr*/
+	0,		/*tp_getattr*/
+	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
 	(reprfunc)class_repr, /*tp_repr*/
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
+	0,		/*tp_hash*/
+	0,		/*tp_call*/
+	0,		/*tp_str*/
+	(getattrofunc)class_getattr, /*tp_getattro*/
+	(setattrofunc)class_setattr, /*tp_setattro*/
 };
 
 int
@@ -291,6 +304,7 @@ newinstanceobject(class, arg, kw)
 {
 	register instanceobject *inst;
 	object *init;
+	static object *initstr;
 	if (!is_classobject(class)) {
 		err_badcall();
 		return NULL;
@@ -306,7 +320,9 @@ newinstanceobject(class, arg, kw)
 		DECREF(inst);
 		return NULL;
 	}
-	init = instance_getattr1(inst, "__init__");
+	if (initstr == NULL)
+		initstr = newstringobject("__init__");
+	init = instance_getattr1(inst, initstr);
 	if (init == NULL) {
 		err_clear();
 		if (arg != NULL && (!is_tupleobject(arg) ||
@@ -345,6 +361,7 @@ instance_dealloc(inst)
 {
 	object *error_type, *error_value, *error_traceback;
 	object *del;
+	static object *delstr;
 	/* Call the __del__ method if it exists.  First temporarily
 	   revive the object and save the current exception, if any. */
 #ifdef Py_TRACE_REFS
@@ -360,7 +377,9 @@ instance_dealloc(inst)
 	INCREF(inst);
 #endif /* !Py_TRACE_REFS */
 	err_fetch(&error_type, &error_value, &error_traceback);
-	if ((del = instance_getattr1(inst, "__del__")) != NULL) {
+	if (delstr == NULL)
+		delstr = newstringobject("__del__");
+	if ((del = instance_getattr1(inst, delstr)) != NULL) {
 		object *res = call_object(del, (object *)NULL);
 		DECREF(del);
 		XDECREF(res);
@@ -390,12 +409,13 @@ instance_dealloc(inst)
 static object *
 instance_getattr1(inst, name)
 	register instanceobject *inst;
-	register char *name;
+	object *name;
 {
 	register object *v;
+	register char *sname = getstringvalue(name);
 	classobject *class;
-	if (name[0] == '_' && name[1] == '_') {
-		if (strcmp(name, "__dict__") == 0) {
+	if (sname[0] == '_' && sname[1] == '_') {
+		if (strcmp(sname, "__dict__") == 0) {
 			if (getrestricted()) {
 				err_setstr(RuntimeError,
 					   "instance.__dict__ not accessible in restricted mode");
@@ -404,17 +424,17 @@ instance_getattr1(inst, name)
 			INCREF(inst->in_dict);
 			return inst->in_dict;
 		}
-		if (strcmp(name, "__class__") == 0) {
+		if (strcmp(sname, "__class__") == 0) {
 			INCREF(inst->in_class);
 			return (object *)inst->in_class;
 		}
 	}
 	class = NULL;
-	v = dictlookup(inst->in_dict, name);
+	v = mappinglookup(inst->in_dict, name);
 	if (v == NULL) {
 		v = class_lookup(inst->in_class, name, &class);
 		if (v == NULL) {
-			err_setstr(AttributeError, name);
+			err_setval(AttributeError, name);
 			return NULL;
 		}
 	}
@@ -450,14 +470,14 @@ instance_getattr1(inst, name)
 static object *
 instance_getattr(inst, name)
 	register instanceobject *inst;
-	register char *name;
+	object *name;
 {
 	register object *func, *res;
 	res = instance_getattr1(inst, name);
 	if (res == NULL && (func = inst->in_class->cl_getattr) != NULL) {
 		object *args;
 		err_clear();
-		args = mkvalue("(Os)", inst, name);
+		args = mkvalue("(OO)", inst, name);
 		if (args == NULL)
 			return NULL;
 		res = call_object(func, args);
@@ -469,36 +489,37 @@ instance_getattr(inst, name)
 static int
 instance_setattr1(inst, name, v)
 	instanceobject *inst;
-	char *name;
+	object *name;
 	object *v;
 {
 	object *ac;
-	ac = dictlookup(inst->in_dict, name);
+	ac = mappinglookup(inst->in_dict, name);
 	if (ac != NULL && is_accessobject(ac))
 		return setaccessvalue(ac, getowner(), v);
 	if (v == NULL) {
-		int rv = dictremove(inst->in_dict, name);
+		int rv = mappingremove(inst->in_dict, name);
 		if (rv < 0)
 			err_setstr(AttributeError,
 				   "delete non-existing instance attribute");
 		return rv;
 	}
 	else
-		return dictinsert(inst->in_dict, name, v);
+		return mappinginsert(inst->in_dict, name, v);
 }
 
 static int
 instance_setattr(inst, name, v)
 	instanceobject *inst;
-	char *name;
+	object *name;
 	object *v;
 {
 	object *func, *args, *res;
-	if (name[0] == '_' && name[1] == '_'
-	    && (strcmp(name, "__dict__") == 0 ||
-		strcmp(name, "__class__") == 0)) {
-	        int n = strlen(name);
-		if (name[n-1] == '_' && name[n-2] == '_') {
+	char *sname = getstringvalue(name);
+	if (sname[0] == '_' && sname[1] == '_'
+	    && (strcmp(sname, "__dict__") == 0 ||
+		strcmp(sname, "__class__") == 0)) {
+	        int n = strlen(sname);
+		if (sname[n-1] == '_' && sname[n-2] == '_') {
 			err_setstr(TypeError, "read-only special attribute");
 			return -1;
 		}
@@ -510,9 +531,9 @@ instance_setattr(inst, name, v)
 	if (func == NULL)
 		return instance_setattr1(inst, name, v);
 	if (v == NULL)
-		args = mkvalue("(Os)", inst, name);
+		args = mkvalue("(OO)", inst, name);
 	else
-		args = mkvalue("(OsO)", inst, name, v);
+		args = mkvalue("(OOO)", inst, name, v);
 	if (args == NULL)
 		return -1;
 	res = call_object(func, args);
@@ -529,8 +550,11 @@ instance_repr(inst)
 {
 	object *func;
 	object *res;
+	static object *reprstr;
 
-	func = instance_getattr(inst, "__repr__");
+	if (reprstr == NULL)
+		reprstr = newstringobject("__repr__");
+	func = instance_getattr(inst, reprstr);
 	if (func == NULL) {
 		char buf[140];
 		object *classname = inst->in_class->cl_name;
@@ -584,13 +608,18 @@ instance_hash(inst)
 	object *func;
 	object *res;
 	long outcome;
+	static object *hashstr, *cmpstr;
 
-	func = instance_getattr(inst, "__hash__");
+	if (hashstr == NULL)
+		hashstr = newstringobject("__hash__");
+	func = instance_getattr(inst, hashstr);
 	if (func == NULL) {
 		/* If there is no __cmp__ method, we hash on the address.
 		   If a __cmp__ method exists, there must be a __hash__. */
 		err_clear();
-		func = instance_getattr(inst, "__cmp__");
+		if (cmpstr == NULL)
+			cmpstr = newstringobject("__cmp__");
+		func = instance_getattr(inst, cmpstr);
 		if (func == NULL) {
 			err_clear();
 			outcome = (long)inst;
@@ -618,6 +647,8 @@ instance_hash(inst)
 	return outcome;
 }
 
+static object *getitemstr, *setitemstr, *delitemstr, *lenstr;
+
 static int
 instance_length(inst)
 	instanceobject *inst;
@@ -626,7 +657,9 @@ instance_length(inst)
 	object *res;
 	int outcome;
 
-	func = instance_getattr(inst, "__len__");
+	if (lenstr == NULL)
+		lenstr = newstringobject("__len__");
+	func = instance_getattr(inst, lenstr);
 	if (func == NULL)
 		return -1;
 	res = call_object(func, (object *)NULL);
@@ -655,7 +688,9 @@ instance_subscript(inst, key)
 	object *arg;
 	object *res;
 
-	func = instance_getattr(inst, "__getitem__");
+	if (getitemstr == NULL)
+		getitemstr = newstringobject("__getitem__");
+	func = instance_getattr(inst, getitemstr);
 	if (func == NULL)
 		return NULL;
 	arg = mkvalue("(O)", key);
@@ -679,10 +714,16 @@ instance_ass_subscript(inst, key, value)
 	object *arg;
 	object *res;
 
-	if (value == NULL)
-		func = instance_getattr(inst, "__delitem__");
-	else
-		func = instance_getattr(inst, "__setitem__");
+	if (value == NULL) {
+		if (delitemstr == NULL)
+			delitemstr = newstringobject("__delitem__");
+		func = instance_getattr(inst, delitemstr);
+	}
+	else {
+		if (setitemstr == NULL)
+			setitemstr = newstringobject("__setitem__");
+		func = instance_getattr(inst, setitemstr);
+	}
 	if (func == NULL)
 		return -1;
 	if (value == NULL)
@@ -715,7 +756,9 @@ instance_item(inst, i)
 {
 	object *func, *arg, *res;
 
-	func = instance_getattr(inst, "__getitem__");
+	if (getitemstr == NULL)
+		getitemstr = newstringobject("__getitem__");
+	func = instance_getattr(inst, getitemstr);
 	if (func == NULL)
 		return NULL;
 	arg = mkvalue("(i)", i);
@@ -735,8 +778,11 @@ instance_slice(inst, i, j)
 	int i, j;
 {
 	object *func, *arg, *res;
+	static object *getslicestr;
 
-	func = instance_getattr(inst, "__getslice__");
+	if (getslicestr == NULL)
+		getslicestr = newstringobject("__getslice__");
+	func = instance_getattr(inst, getslicestr);
 	if (func == NULL)
 		return NULL;
 	arg = mkvalue("(ii)", i, j);
@@ -758,10 +804,16 @@ instance_ass_item(inst, i, item)
 {
 	object *func, *arg, *res;
 
-	if (item == NULL)
-		func = instance_getattr(inst, "__delitem__");
-	else
-		func = instance_getattr(inst, "__setitem__");
+	if (item == NULL) {
+		if (delitemstr == NULL)
+			delitemstr = newstringobject("__delitem__");
+		func = instance_getattr(inst, delitemstr);
+	}
+	else {
+		if (setitemstr == NULL)
+			setitemstr = newstringobject("__setitem__");
+		func = instance_getattr(inst, setitemstr);
+	}
 	if (func == NULL)
 		return -1;
 	if (item == NULL)
@@ -788,11 +840,18 @@ instance_ass_slice(inst, i, j, value)
 	object *value;
 {
 	object *func, *arg, *res;
+	static object *setslicestr, *delslicestr;
 
-	if (value == NULL)
-		func = instance_getattr(inst, "__delslice__");
-	else
-		func = instance_getattr(inst, "__setslice__");
+	if (value == NULL) {
+		if (delslicestr == NULL)
+			delslicestr = newstringobject("__delslice__");
+		func = instance_getattr(inst, delslicestr);
+	}
+	else {
+		if (setslicestr == NULL)
+			setslicestr = newstringobject("__setslice__");
+		func = instance_getattr(inst, setslicestr);
+	}
 	if (func == NULL)
 		return -1;
 	if (value == NULL)
@@ -825,7 +884,7 @@ static sequence_methods instance_as_sequence = {
 static object *
 generic_unary_op(self, methodname)
 	instanceobject *self;
-	char *methodname;
+	object *methodname;
 {
 	object *func, *res;
 
@@ -838,8 +897,8 @@ generic_unary_op(self, methodname)
 
 
 /* Forward */
-static int halfbinop PROTO((object *, object *, char *, object **,
-			    object * (*) PROTO((object *, object *)), int ));
+static int halfbinop Py_PROTO((object *, object *, char *, object **,
+			  object * (*) Py_PROTO((object *, object *)), int ));
 
 
 /* Implement a binary operator involving at least one class instance. */
@@ -871,6 +930,8 @@ instancebinop(v, w, opname, ropname, thisfunc)
    1  if we could try another operation
 */
 
+static object *coerce_obj;
+
 static int
 halfbinop(v, w, opname, r_result, thisfunc, swapped)
 	object *v;
@@ -888,7 +949,12 @@ halfbinop(v, w, opname, r_result, thisfunc, swapped)
 	
 	if (!is_instanceobject(v))
 		return 1;
-	coerce = getattr(v, "__coerce__");
+	if (coerce_obj == NULL) {
+		coerce_obj = newstringobject("__coerce__");
+		if (coerce_obj == NULL)
+			return -1;
+	}
+	coerce = getattro(v, coerce_obj);
 	if (coerce == NULL) {
 		err_clear();
 	}
@@ -960,7 +1026,12 @@ instance_coerce(pv, pw)
 	object *args;
 	object *coerced;
 
-	coerce = getattr(v, "__coerce__");
+	if (coerce_obj == NULL) {
+		coerce_obj = newstringobject("__coerce__");
+		if (coerce_obj == NULL)
+			return -1;
+	}
+	coerce = getattro(v, coerce_obj);
 	if (coerce == NULL) {
 		/* No __coerce__ method: always OK */
 		err_clear();
@@ -1004,7 +1075,9 @@ instance_coerce(pv, pw)
 
 #define UNARY(funcname, methodname) \
 static object *funcname(self) instanceobject *self; { \
-	return generic_unary_op(self, methodname); \
+	static object *o; \
+	if (o == NULL) o = newstringobject(methodname); \
+	return generic_unary_op(self, o); \
 }
 
 UNARY(instance_neg, "__neg__")
@@ -1017,10 +1090,15 @@ instance_nonzero(self)
 {
 	object *func, *res;
 	long outcome;
+	static object *nonzerostr;
 
-	if ((func = instance_getattr(self, "__nonzero__")) == NULL) {
+	if (nonzerostr == NULL)
+		nonzerostr = newstringobject("__nonzero__");
+	if ((func = instance_getattr(self, nonzerostr)) == NULL) {
 		err_clear();
-		if ((func = instance_getattr(self, "__len__")) == NULL) {
+		if (lenstr == NULL)
+			lenstr = newstringobject("__len__");
+		if ((func = instance_getattr(self, lenstr)) == NULL) {
 			err_clear();
 			/* Fall back to the default behavior:
 			   all instances are nonzero */
@@ -1063,7 +1141,11 @@ instance_pow(v, w, z)
 	object *func;
 	object *args;
 	object *result;
-	func = getattr(v, "__pow__");
+	static object *powstr;
+
+	if (powstr == NULL)
+		powstr = newstringobject("__pow__");
+	func = getattro(v, powstr);
 	if (func == NULL)
 		return NULL;
 	args = mkvalue("(OO)", w, z);
@@ -1111,14 +1193,18 @@ typeobject Instancetype = {
 	0,
 	(destructor)instance_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	(getattrfunc)instance_getattr, /*tp_getattr*/
-	(setattrfunc)instance_setattr, /*tp_setattr*/
-	instance_compare, /*tp_compare*/
+	0,			/*tp_getattr*/
+	0,			/*tp_setattr*/
+	instance_compare,	/*tp_compare*/
 	(reprfunc)instance_repr, /*tp_repr*/
 	&instance_as_number,	/*tp_as_number*/
 	&instance_as_sequence,	/*tp_as_sequence*/
 	&instance_as_mapping,	/*tp_as_mapping*/
 	(hashfunc)instance_hash, /*tp_hash*/
+	0,			/*tp_call*/
+	0,			/*tp_str*/
+	(getattrofunc)instance_getattr, /*tp_getattro*/
+	(setattrofunc)instance_setattr, /*tp_setattro*/
 };
 
 
@@ -1208,15 +1294,16 @@ static struct memberlist instancemethod_memberlist[] = {
 static object *
 instancemethod_getattr(im, name)
 	register instancemethodobject *im;
-	char *name;
+	object *name;
 {
-	if (name[0] == '_') {
+	char *sname = getstringvalue(name);
+	if (sname[0] == '_') {
 		funcobject *func = (funcobject *)(im->im_func);
-		if (strcmp(name, "__name__") == 0) {
+		if (strcmp(sname, "__name__") == 0) {
 			INCREF(func->func_name);
 			return func->func_name;
 		}
-		if (strcmp(name, "__doc__") == 0) {
+		if (strcmp(sname, "__doc__") == 0) {
 			INCREF(func->func_doc);
 			return func->func_doc;
 		}
@@ -1226,7 +1313,7 @@ instancemethod_getattr(im, name)
 			   "instance-method attributes not accessible in restricted mode");
 		return NULL;
 	}
-	return getmember((char *)im, instancemethod_memberlist, name);
+	return getmember((char *)im, instancemethod_memberlist, sname);
 }
 
 static void
@@ -1307,7 +1394,7 @@ typeobject Instancemethodtype = {
 	0,
 	(destructor)instancemethod_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	(getattrfunc)instancemethod_getattr, /*tp_getattr*/
+	0,			/*tp_getattr*/
 	0,			/*tp_setattr*/
 	(cmpfunc)instancemethod_compare, /*tp_compare*/
 	(reprfunc)instancemethod_repr, /*tp_repr*/
@@ -1315,4 +1402,8 @@ typeobject Instancemethodtype = {
 	0,			/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
 	(hashfunc)instancemethod_hash, /*tp_hash*/
+	0,			/*tp_call*/
+	0,			/*tp_str*/
+	(getattrofunc)instancemethod_getattr, /*tp_getattro*/
+	0,			/*tp_setattro*/
 };
