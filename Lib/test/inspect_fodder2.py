@@ -53,3 +53,14 @@ a = [None,
 def setfunc(func):
     globals()["anonymous"] = func
 setfunc(lambda x, y: x*y)
+
+# line 57
+def with_comment():  # hello
+    world
+
+# line 61
+multiline_sig = [
+    lambda (x,
+            y): x+y,
+    None,
+    ]
