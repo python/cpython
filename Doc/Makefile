@@ -75,15 +75,16 @@ VPATH=.
 RELEASE=1.5.1
 VERSION=1.5
 
-DVIFILES=	api.dvi ext.dvi lib.dvi ref.dvi tut.dvi
-PDFFILES=	api.pdf ext.pdf lib.pdf ref.pdf tut.pdf
-PSFILES=	api.ps ext.ps lib.ps ref.ps tut.ps
+DVIFILES=	api.dvi ext.dvi lib.dvi mac.dvi ref.dvi tut.dvi
+PDFFILES=	api.pdf ext.pdf lib.pdf mac.pdf ref.pdf tut.pdf
+PSFILES=	api.ps ext.ps lib.ps mac.ps ref.ps tut.ps
 
 # Be careful when messing with this one!
 TEXINPUTS=	.:../texinputs:
 
 MKDVI=		TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkdvi.sh
-MKHTML=		TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkhtml.sh
+MKHOWTO=	$(srcdir)/tools/mkhowto.sh --keep
+MKHTML=		PAPER=$(PAPER) $(srcdir)/tools/mkhtml.sh
 MKPDF=		TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkdvi.sh --pdf
 
 # Main target
@@ -140,7 +141,7 @@ tut:
 
 do-dvi: $(DVIFILES)
 do-pdf: $(PDFFILES)
-do-ps:	 $(PSFILES)
+do-ps:	$(PSFILES)
 
 # This target gets both the PDF and PS files updated.
 #
@@ -251,6 +252,13 @@ ext.dvi: ext/ext.tex
 ext.pdf: ext/ext.tex
 	$(MKPDF) ext
 
+# Macintosh Library Modules
+mac.dvi: $(MACLIBFILES) tools/mkhowto.sh
+	$(MKHOWTO) --dvi $(srcdir)/$*/$*.tex
+
+mac.pdf: $(MACLIBFILES) tools/mkhowto.sh
+	$(MKHOWTO) --pdf $(srcdir)/$*/$*.tex
+
 # Python Reference Manual
 ref.dvi: $(REFFILES)
 	$(MKDVI) ref
@@ -290,7 +298,7 @@ COMMONPERL=perl/manual.perl perl/python.perl
 html:	l2h
 
 l2h:
-	(cd $(HTMLDIR); $(MAKE) TEXINPUTS=../paper-$(PAPER):../texinputs)
+	(cd $(HTMLDIR); $(MAKE) TEXINPUTS=../paper-$(PAPER):../texinputs:)
 
 l2hapi: $(COMMONPERL)
 	$(MKHTML) api $(L2HARGS)
@@ -298,10 +306,13 @@ l2hapi: $(COMMONPERL)
 l2hext: $(COMMONPERL)
 	$(MKHTML) ext $(L2HARGS)
 
-l2hlib: $(COMMONPERL)
+l2hlib: $(COMMONPERL) $(LIBFILES)
 	$(srcdir)/tools/fix_libaux.sed <`$(KPSEWHICH) lib.aux` >lib1.aux
 	mv lib1.aux `$(KPSEWHICH) lib.aux`
 	$(MKHTML) lib $(L2HARGS)
+
+l2hmac: $(COMMONPERL) $(MACLIBFILES)
+	$(srcdir)/tools/mkhowto.sh --html $(srcdir)/mac/mac.tex
 
 l2href: $(COMMONPERL)
 	$(MKHTML) ref $(L2HARGS)
