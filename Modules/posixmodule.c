@@ -1424,6 +1424,7 @@ extract_time(PyObject *t, long* sec, long* usec)
 		return -1;
 	*sec = intval;
 	*usec = 0;
+        return 0;
 }
 
 PyDoc_STRVAR(posix_utime__doc__,
