@@ -1076,7 +1076,10 @@ set_mro_error(PyObject *to_merge, int *remain)
 	}
 	n = PyDict_Size(set);
 
-	off = PyOS_snprintf(buf, sizeof(buf), "MRO conflict among bases");
+	off = PyOS_snprintf(buf, sizeof(buf), "Cannot create class.\
+The superclasses have conflicting\n\
+inheritance trees which leave the method resolution order (MRO)\n\
+undefined for bases");
 	i = 0;
 	while (PyDict_Next(set, &i, &k, &v) && off < sizeof(buf)) {
 		PyObject *name = class_name(k);

@@ -1062,6 +1062,10 @@ def consistency_with_epg():
           (EditableScrollablePane, ScrollablePane, EditablePane,
            Pane, ScrollingMixin, EditingMixin, object))
 
+mro_err_msg = """Cannot create class.The superclasses have conflicting
+inheritance trees which leave the method resolution order (MRO)
+undefined for bases """
+
 def mro_disagreement():
     if verbose: print "Testing error messages for MRO disagreement..."
     def raises(exc, expected, callable, *args):
@@ -1079,9 +1083,9 @@ def mro_disagreement():
     # Test some very simple errors
     raises(TypeError, "duplicate base class A",
            type, "X", (A, A), {})
-    raises(TypeError, "MRO conflict among bases ",
+    raises(TypeError, mro_err_msg,
            type, "X", (A, B), {})
-    raises(TypeError, "MRO conflict among bases ",
+    raises(TypeError, mro_err_msg,
            type, "X", (A, C, B), {})
     # Test a slightly more complex error
     class GridLayout(object): pass
@@ -1089,7 +1093,7 @@ def mro_disagreement():
     class VerticalGrid(GridLayout): pass
     class HVGrid(HorizontalGrid, VerticalGrid): pass
     class VHGrid(VerticalGrid, HorizontalGrid): pass
-    raises(TypeError, "MRO conflict among bases ",
+    raises(TypeError, mro_err_msg,
            type, "ConfusedGrid", (HVGrid, VHGrid), {})
 
 def objects():
