@@ -782,19 +782,72 @@ com_apply_subscript(c, n)
 	}
 }
 
+static int
+com_argument(c, n, inkeywords)
+	struct compiling *c;
+	node *n; /* argument */
+	int inkeywords;
+{
+	node *m;
+	REQ(n, argument); /* [test '='] test; really [ keyword '='] keyword */
+	if (NCH(n) == 1) {
+		if (inkeywords) {
+			err_setstr(SyntaxError,
+				   "non-keyword arg after keyword arg");
+			c->c_errors++;
+		}
+		else {
+			com_node(c, CHILD(n, 0));
+		}
+		return 0;
+	}
+	m = n;
+	do {
+		m = CHILD(m, 0);
+	} while (NCH(m) == 1);
+	if (TYPE(m) != NAME) {
+		err_setstr(SyntaxError, "keyword can't be an expression");
+		c->c_errors++;
+	}
+	else {
+		object *v = newstringobject(STR(m));
+		if (v == NULL)
+			c->c_errors++;
+		else {
+			com_addoparg(c, LOAD_CONST, com_addconst(c, v));
+			DECREF(v);
+		}
+	}
+	com_node(c, CHILD(n, 2));
+	return 1;
+}
+
 static void
 com_call_function(c, n)
 	struct compiling *c;
-	node *n; /* EITHER testlist OR ')' */
+	node *n; /* EITHER arglist OR ')' */
 {
 	if (TYPE(n) == RPAR) {
-		com_addoparg(c, BUILD_TUPLE, 0);
-		com_addbyte(c, BINARY_CALL);
+		com_addoparg(c, CALL_FUNCTION, 0);
 	}
 	else {
-		REQ(n, testlist);
-		com_list(c, n, 1);
-		com_addbyte(c, BINARY_CALL);
+		int inkeywords, i, na, nk;
+		REQ(n, arglist);
+		inkeywords = 0;
+		na = 0;
+		nk = 0;
+		for (i = 0; i < NCH(n); i += 2) {
+			inkeywords = com_argument(c, CHILD(n, i), inkeywords);
+			if (!inkeywords)
+				na++;
+			else
+				nk++;
+		}
+		if (na > 255 || nk > 255) {
+			err_setstr(SyntaxError, "more than 255 arguments");
+			c->c_errors++;
+		}
+		com_addoparg(c, CALL_FUNCTION, na | (nk << 8));
 	}
 }
 
@@ -1482,13 +1535,18 @@ com_raise_stmt(c, n)
 	struct compiling *c;
 	node *n;
 {
-	REQ(n, raise_stmt); /* 'raise' test [',' test] */
+	REQ(n, raise_stmt); /* 'raise' test [',' test [',' test]] */
 	com_node(c, CHILD(n, 1));
 	if (NCH(n) > 3)
 		com_node(c, CHILD(n, 3));
 	else
 		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
-	com_addbyte(c, RAISE_EXCEPTION);
+	if (NCH(n) > 5) {
+		com_node(c, CHILD(n, 5));
+		com_addoparg(c, RAISE_VARARGS, 3);
+	}
+	else
+		com_addbyte(c, RAISE_EXCEPTION);
 }
 
 static void
@@ -1980,19 +2038,16 @@ com_argdefs(c, n, argcount_return)
 	if (TYPE(n) != varargslist)
 		    return -1;
 	/* varargslist:
-		(fpdef ['=' test] ',')* '*' NAME |
+		(fpdef ['=' test] ',')* '*' NAME ....... |
 		fpdef ['=' test] (',' fpdef ['=' test])* [','] */
 	nch = NCH(n);
-	if (nch >= 2 && TYPE(CHILD(n, nch-2)) == STAR) {
-		star = 1;
-		nch -= 2;
-	}
-	else
-		star = 0;
 	nargs = 0;
 	ndefs = 0;
+	star = 0;
 	for (i = 0; i < nch; i++) {
 		int t;
+		if (TYPE(CHILD(n, i)) == STAR)
+			break;
 		nargs++;
 		i++;
 		if (i >= nch)
@@ -2285,17 +2340,18 @@ com_arglist(c, n)
 	int nch, op, nargs, i, t;
 	REQ(n, varargslist);
 	/* varargslist:
-		(fpdef ['=' test] ',')* '*' NAME |
+		(fpdef ['=' test] ',')* '*' NAME ..... |
 		fpdef ['=' test] (',' fpdef ['=' test])* [','] */
 	nch = NCH(n);
-	if (nch >= 2 && TYPE(CHILD(n, nch-2)) == STAR) {
-		op = UNPACK_VARARG;
-		nch -= 2;
-	}
-	else
-		op = UNPACK_ARG;
+	op = UNPACK_ARG;
 	nargs = 0;
 	for (i = 0; i < nch; i++) {
+		if (TYPE(CHILD(n, i)) == STAR) {
+			nch = i;
+			if (TYPE(CHILD(n, i+1)) != STAR)
+				op = UNPACK_VARARG;
+			break;
+		}
 		nargs++;
 		i++;
 		if (i >= nch)
