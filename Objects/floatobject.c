@@ -32,7 +32,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <errno.h>
 #include <ctype.h>
-#include <math.h>
+#include "mymath.h"
 
 #ifdef i860
 /* Cray APP has bogus definition of HUGE_VAL in <math.h> */
@@ -71,14 +71,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 #endif
 
-#ifndef __STDC__
+#if !defined(__STDC__) && !defined(macintosh)
 extern double fmod PROTO((double, double));
 extern double pow PROTO((double, double));
 #endif
 
 object *
+#ifdef __SC__
+newfloatobject(double fval)
+#else
 newfloatobject(fval)
 	double fval;
+#endif
 {
 	/* For efficiency, this code is copied from newobject() */
 	register floatobject *op = (floatobject *) malloc(sizeof(floatobject));
