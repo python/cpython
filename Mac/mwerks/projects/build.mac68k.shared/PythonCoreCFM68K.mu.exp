@@ -1031,7 +1031,9 @@ PySequence_Index
 PySequence_In
 PySequence_Count
 PySequence_Tuple
+PySequence_DelSlice
 PySequence_SetSlice
+PySequence_DelItem
 PySequence_SetItem
 PySequence_GetSlice
 PySequence_GetItem
@@ -1059,6 +1061,7 @@ PyNumber_And
 PyNumber_Xor
 PyNumber_Or
 PyNumber_Check
+PyObject_DelItem
 PyObject_SetItem
 PyObject_GetItem
 PyObject_Length
@@ -1146,6 +1149,7 @@ PyGrammar_FindDFA
 getwd
 getopt
 getbootvol
+PyArg_ParseTupleAndKeywords
 PyArgs_VaParse
 PyArg_ParseTuple
 PyArg_Parse
@@ -1216,9 +1220,6 @@ Py_Initialize
 PyParser_ParseFile
 PyParser_ParseString
 initparser
-validate_eval_input
-validate_funcdef
-validate_if
 PyParser_AddToken
 PyParser_Delete
 PyParser_New
@@ -1278,6 +1279,7 @@ initmath
 myfabs
 hypot
 PyMarshal_Init
+PyMarshal_WriteObjectToString
 PyMarshal_ReadObjectFromString
 PyMarshal_ReadObjectFromFile
 PyMarshal_ReadLongFromFile
@@ -1320,12 +1322,6 @@ PyTokenizer_Free
 PyTokenizer_FromFile
 PyTokenizer_FromString
 inittime
-PyAccess_SetValue
-PyAccess_AsValue
-PyAccess_HasValue
-PyAccess_SetOwner
-PyAccess_Clone
-PyAccess_FromValue
 PyGrammar_AddAccelerators
 initbinascii
 __vt__9exception		# exception::__vt
@@ -1521,10 +1517,6 @@ PyTuple_Type
 new_doc
 PyTraceBack_Type
 _PyParser_TokenNames
-PyAnyMapping_Type
-PyAnySequence_Type
-PyAnyNumber_Type
-PyAccess_Type
 _fcreator
 _ftype
 EnvStr
