@@ -372,8 +372,12 @@ class PyBuildExt(build_ext):
                                       '/usr/contrib/ssl/lib/'
                                      ] )
 
-        if (ssl_incs is not None and
-            ssl_libs is not None):
+        krb5_h = find_file('krb5.h', inc_dirs,
+                           ['/usr/kerberos/include'])
+        if krb5_h:
+            ssl_incs += krb5_h
+
+        if ssl_incs is not None and ssl_libs is not None:
             rtlibs = None
             if platform.startswith('sunos'):
                 rtlibs = ssl_libs
