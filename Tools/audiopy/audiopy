@@ -1,9 +1,10 @@
 #! /usr/bin/env python
 
-"""Program to control the Solaris audio device.
+"""audiopy -- a program to control the Solaris audio device.
 
-Author: Barry Warsaw
-Email:  bwarsaw@python.org
+Author:  Barry Warsaw
+Email:   bwarsaw@python.org
+Version: %(__version__)s
 
 When no arguments are given, this pops up a graphical window which lets you
 choose the audio input and output devices.
@@ -46,7 +47,7 @@ from SUNAUDIODEV import *
 # Milliseconds between interrupt checks
 KEEPALIVE_TIMER = 500
 
-__version__ = '1.0'
+__version__ = '0.1'
 
 
 
@@ -280,7 +281,7 @@ class MainWindow:
 
 
 def usage(msg='', code=1):
-    print __doc__
+    print __doc__ % globals()
     print msg
     sys.exit(code)
 
@@ -320,7 +321,11 @@ def main():
             usage(code=0)
             # does not return
         elif arg in ('-v', '--version'):
-            print 'audiopy version', __version__
+            print '''\
+audiopy -- a program to control the Solaris audio device.
+Author:  Barry Warsaw
+Email:   bwarsaw@python.org
+Version: %s''' % __version__            
             sys.exit(0)
         for long, short, io, mask in options:
             if arg in (long, short):
