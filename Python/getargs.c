@@ -875,7 +875,7 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf)
 			type = va_arg(*p_va, PyTypeObject*);
 			p = va_arg(*p_va, PyObject **);
 			format++;
-			if (arg->ob_type == type)
+			if (PyType_IsSubtype(arg->ob_type, type))
 				*p = arg;
 			else
 				return converterr(type->tp_name, arg, msgbuf);
