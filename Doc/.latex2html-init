@@ -1,7 +1,7 @@
 #LaTeX2HTML Version 96.1 : dot.latex2html-init
 #
 
-$INFO = 0;              # 0 = do not make a "About this document..." section 
+$INFO = 1;              # 0 = do not make a "About this document..." section 
 $MAX_LINK_DEPTH = 3;
 
 # Python documentation uses section numbers to support references to match
@@ -26,7 +26,7 @@ sub img_tag {
      $icon);
 }
 
-# This replacement for process_command() is need to add the case for
+# This replacement for process_command() is needed to add the case for
 # "\,"; it is unfortunate we need to do it this way.
 #
 sub process_command {
