@@ -21,7 +21,6 @@ findlinksto.py		Recursively find symbolic links to a given path prefix
 fixps.py		Fix Python scripts' first line (if #!)
 fixcid.py		Massive identifier substitution on C source files
 fixheader.py		Add some cpp magic to a C include file
-freeze.py		Convert a Python script into a free-standing binary
 from.py			Summarize mailbox
 ftpstats.py		Summarize ftp daemon log file
 ifdef.py		Remove #if(n)def groups from C sources
@@ -31,6 +30,7 @@ lpwatch.py		Watch BSD line printer queues
 markov.py		Markov chain simulation of words or characters
 mboxconvvert.py		Convert MH or MMDF mailboxes to unix mailbox format
 methfix.py		Fix old method syntax def f(self, (a1, ..., aN)):
+morse.py		Produce morse code (audible or on AIFF file)
 mkreal.py		Turn a symbolic link into a real file or directory
 mpzpi.py		test mpz -- print digits of pi (compare pi.py)
 objgraph.py		Print object graph from nm output on a library
@@ -41,7 +41,9 @@ pindent.py		Indent Python code, giving block-closing comments
 pp.py			Emulate some Perl command line options
 primes.py		Print prime numbers
 ptags.py		Create vi tags file for Python modules
+script.py		Equivalent to BSD script(1) -- by Steen Lumholt
 suff.py			Sort a list of files by suffix
+sum5.py			Print md5 checksums of files
 unbirthday.py		Print unbirthday count
 which.py		Find a program in $PATH
 xxci.py			Wrapper for rcsdiff and ci
