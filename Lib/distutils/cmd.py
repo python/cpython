@@ -135,6 +135,21 @@ class Command:
         raise RuntimeError, \
               "abstract method -- subclass %s must override" % self.__class__
 
+
+    def dump_options (self, header=None, indent=""):
+        from distutils.fancy_getopt import longopt_xlate
+        if header is None:
+            header = "command options for '%s':" % self.get_command_name()
+        print indent + header
+        indent = indent + "  "
+        for (option, _, _) in self.user_options:
+            option = string.translate(option, longopt_xlate)
+            if option[-1] == "=":
+                option = option[:-1]
+            value = getattr(self, option)
+            print indent + "%s = %s" % (option, value)
+
+
     def run (self):
         """A command's raison d'etre: carry out the action it exists
            to perform, controlled by the options initialized in
