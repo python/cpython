@@ -98,7 +98,7 @@ def main():
     lines = fp.read().split("\n")
     fp.close()
     prog = re.compile(
-        "#define[ \t][ \t]*([A-Z][A-Z_]*)[ \t][ \t]*([0-9][0-9]*)",
+        "#define[ \t][ \t]*([A-Z0-9][A-Z0-9_]*)[ \t][ \t]*([0-9][0-9]*)",
         re.IGNORECASE)
     tokens = {}
     for line in lines:
