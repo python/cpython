@@ -1023,6 +1023,24 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=%_SRC_%\Tools\compiler\*.py
+  Destination=%MAINDIR%\Tools\compiler
+  Description=Python compiler written in Python
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Tools\compiler\compiler\*.py
+  Destination=%MAINDIR%\Tools\compiler\compiler
+  Description=Python compiler written in Python
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Tools\compiler\compiler\*.txt
+  Destination=%MAINDIR%\Tools\compiler\compiler
+  Description=Python compiler written in Python
+  Flags=0000000000000010
+end
+item: Install File
   Source=%_SRC_%\Tools\pynche\*.py
   Destination=%MAINDIR%\Tools\pynche
   Description=pynche color editor
