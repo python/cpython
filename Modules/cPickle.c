@@ -310,7 +310,7 @@ Pdata_popList(Pdata *self, int start) {
     }                                               \
   }
 
-typedef struct {
+typedef struct Picklerobject {
      PyObject_HEAD
      FILE *fp;
      PyObject *write;
@@ -321,7 +321,7 @@ typedef struct {
      PyObject *inst_pers_func;
      int bin;
      int fast; /* Fast mode doesn't save in memo, don't use if circ ref */
-     int (*write_func)();
+     int (*write_func)(struct Picklerobject *, char *, int);
      char *write_buf;
      int buf_size;
      PyObject *dispatch_table;
@@ -329,7 +329,7 @@ typedef struct {
 
 staticforward PyTypeObject Picklertype;
 
-typedef struct {
+typedef struct Unpicklerobject {
      PyObject_HEAD
      FILE *fp;
      PyObject *file;
@@ -344,8 +344,8 @@ typedef struct {
      int *marks;
      int num_marks;
      int marks_size;
-     int (*read_func)();
-     int (*readline_func)();
+     int (*read_func)(struct Unpicklerobject *, char **, int);
+     int (*readline_func)(struct Unpicklerobject *, char **);
      int buf_size;
      char *buf;
      PyObject *safe_constructors;
@@ -369,25 +369,11 @@ cPickle_PyMapping_HasKey(PyObject *o, PyObject *key) {
 
 static
 PyObject *
-#ifdef HAVE_STDARG_PROTOTYPES
-/* VARARGS 2 */
-cPickle_ErrFormat(PyObject *ErrType, char *stringformat, char *format, ...) {
-#else
-/* VARARGS */
-cPickle_ErrFormat(va_alist) va_dcl {
-#endif
+cPickle_ErrFormat(PyObject *ErrType, char *stringformat, char *format, ...)
+{
   va_list va;
   PyObject *args=0, *retval=0;
-#ifdef HAVE_STDARG_PROTOTYPES
   va_start(va, format);
-#else
-  PyObject *ErrType;
-  char *stringformat, *format;
-  va_start(va);
-  ErrType = va_arg(va, PyObject *);
-  stringformat   = va_arg(va, char *);
-  format   = va_arg(va, char *);
-#endif
   
   if (format) args = Py_VaBuildValue(format, va);
   va_end(va);
@@ -3203,7 +3189,8 @@ load_binget(Unpicklerobject *self) {
 static int
 load_long_binget(Unpicklerobject *self) {
     PyObject *py_key = 0, *value = 0;
-    unsigned char c, *s;
+    unsigned char c;
+    char *s;
     long key;
     int rc;
 
@@ -3254,7 +3241,8 @@ load_put(Unpicklerobject *self) {
 static int
 load_binput(Unpicklerobject *self) {
     PyObject *py_key = 0, *value = 0;
-    unsigned char key, *s;
+    unsigned char key;
+    char *s;
     int len;
 
     if ((*self->read_func)(self, &s, 1) < 0) return -1;
@@ -3274,7 +3262,8 @@ static int
 load_long_binput(Unpicklerobject *self) {
     PyObject *py_key = 0, *value = 0;
     long key;
-    unsigned char c, *s;
+    unsigned char c;
+    char *s;
     int len;
 
     if ((*self->read_func)(self, &s, 4) < 0) return -1;
