@@ -3,6 +3,7 @@
 import unittest
 import random
 import time
+import pickle
 from math import log, exp, sqrt, pi
 from sets import Set
 from test import test_support
@@ -102,6 +103,12 @@ class TestBasicOps(unittest.TestCase):
             self.assertEqual(x1, x2)
             self.assertEqual(y1, y2)
 
+    def test_pickling(self):
+        state = pickle.dumps(self.gen)
+        origseq = [self.gen.random() for i in xrange(10)]
+        newgen = pickle.loads(state)
+        restoredseq = [newgen.random() for i in xrange(10)]
+        self.assertEqual(origseq, restoredseq)
 
 class WichmannHill_TestBasicOps(TestBasicOps):
     gen = random.WichmannHill()
