@@ -230,10 +230,21 @@ reversed_next(reversedobject *ro)
 	return item;
 }
 
+static PyObject *
+reversed_reverse(reversedobject *ro, PyObject *unused)
+{
+	return PyObject_GetIter(ro->seq);
+}
+
 PyDoc_STRVAR(reversed_doc,
 "reverse(sequence) -> reverse iterator over values of the sequence\n"
 "\n"
 "Return a reverse iterator");
+
+static PyMethodDef reversed_methods[] = {
+	{"__reversed__",	(PyCFunction)reversed_reverse,	
+		METH_NOARGS,	 reversed_doc},
+};
 
 PyTypeObject PyReversed_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -266,7 +277,7 @@ PyTypeObject PyReversed_Type = {
 	0,                              /* tp_weaklistoffset */
 	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)reversed_next,    /* tp_iternext */
-	0,                              /* tp_methods */
+	reversed_methods,               /* tp_methods */
 	0,                              /* tp_members */
 	0,                              /* tp_getset */
 	0,                              /* tp_base */
