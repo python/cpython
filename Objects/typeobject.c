@@ -403,7 +403,8 @@ call_finalizer(PyObject *self)
 #ifdef COUNT_ALLOCS
 		self->ob_type->tp_frees--;
 #endif
-		_PyObject_GC_TRACK(self);
+		/* This should still be a tracked gc'ed object. */
+		assert(((PyGC_Head *)(self)-1)->gc.gc_next != NULL);
 		return -1; /* __del__ added a reference; don't delete now */
 	}
 #ifdef Py_TRACE_REFS

@@ -2981,6 +2981,26 @@ def copy_setstate():
     vereq(b.foo, 24)
     vereq(b.getfoo(), 24)
 
+def subtype_resurrection():
+    if verbose:
+        print "Testing resurrection of new-style instance..."
+
+    class C(object):
+        container = []
+
+        def __del__(self):
+            # resurrect the instance
+            C.container.append(self)
+
+    c = C()
+    c.attr = 42
+    # The only interesting thing here is whether this blows up in a
+    # debug build, due to flawed GC tracking logic in typeobject.c's
+    # call_finalizer() (a 2.2.1 bug).
+    del c
+    del C.container[-1]  # resurrect it again for the heck of it
+    vereq(C.container[-1].attr, 42)
+
 def test_main():
     class_docstrings()
     lists()
@@ -3041,6 +3061,7 @@ def test_main():
     docdescriptor()
     imulbug()
     copy_setstate()
+    subtype_resurrection()
     if verbose: print "All OK"
 
 if __name__ == "__main__":

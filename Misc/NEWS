@@ -4,6 +4,9 @@ Release date: dd-mmm-2002
 
 Core and builtins
 
+- If a dying instance of a new-style class got resurrected by its class's
+  __del__ method, Python aborted with a fatal error.
+
 - Source that creates parse nodes with an extremely large number of
   children (e.g.,  test_longexp.py) triggers problems with the
   platform realloc() under several platforms (e.g., MacPython, and
