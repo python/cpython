@@ -42,10 +42,10 @@ programming model, examples and, perhaps, more popular terms.
       >>> A                                # What is A?
       <class __main__.A at 2023e360>
 
-   b) Class instanciation
+   b) Class instantiation
 
       Creating an object with the properties defined in the class A is
-      called instanciation of the class A. After an instanciation of A, we
+      called instantiation of the class A. After an instantiation of A, we
       obtain a new object, called an instance, which has the properties
       packaged in the class A.
 
@@ -172,10 +172,10 @@ programming model, examples and, perhaps, more popular terms.
       >>> M                                # What is M?
       <metaclass __main__.M at 2023e4e0>
 
-   b) Meta-class instanciation
+   b) Meta-class instantiation
 
       Creating an object with the properties defined in the meta-class M is
-      called instanciation of the meta-class M. After an instanciation of M,
+      called instantiation of the meta-class M. After an instantiation of M,
       we obtain a new object, called an class, but now it is called also
       a meta-instance, which has the properties packaged in the meta-class M.
 
@@ -241,7 +241,7 @@ programming model, examples and, perhaps, more popular terms.
       ()                                 # No.
       >>> N.__metabases__                # Does N have any supermetaclasses?
       (<metaclass __main__.M at 2023e360>,)  # Yes. It has a supermetaclass.
-      >>> N.__bases__[0] == M            # Is it really the meta-class M?
+      >>> N.__metabases__[0] == M        # Is it really the meta-class M?
       1                                  # Yes, it is.
 
 --------
