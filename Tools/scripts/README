@@ -14,6 +14,7 @@ findlinksto.py		Recursively find symbolic links to a given path prefix
 fixcid.py		Massive identifier substitution on C source files
 fixheader.py		Add some cpp magic to a C include file
 fixps.py		Fix Python scripts' first line (if #!)
+ftpmirror.py		FTP mirror script
 h2py.py			Translate #define's into Python assignments
 ifdef.py		Remove #if(n)def groups from C sources
 linktree.py		Make a copy of a tree with links to original files
