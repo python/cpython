@@ -4,9 +4,12 @@
 require "labels.pl";
 
 %nodes = ();
+my $key;
 # sort so that we get a consistent assignment for nodes with multiple labels 
 foreach $label (sort keys %external_labels) {
-  $nodes{$external_labels{$label}} = $label;
+  $key = $external_labels{$label};
+  $key =~ s|^/||;
+  $nodes{$key} = $label;
 }
 
 # collect labels that have been used
