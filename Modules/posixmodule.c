@@ -1110,6 +1110,12 @@ posix_mkdir(PyObject *self, PyObject *args)
 
 
 #ifdef HAVE_NICE
+#if defined(HAVE_BROKEN_NICE) && defined(HAVE_SYS_RESOURCE_H)
+#if defined(HAVE_GETPRIORITY) && !defined(PRIO_PROCESS)
+#include <sys/resource.h>
+#endif
+#endif
+
 static char posix_nice__doc__[] =
 "nice(inc) -> new_priority\n\
 Decrease the priority of process and return new priority.";
@@ -1124,8 +1130,8 @@ posix_nice(PyObject *self, PyObject *args)
 
 	/* There are two flavours of 'nice': one that returns the new
 	   priority (as required by almost all standards out there) and the
-	   Linux one, which returns '0' on success and advices the use of
-	   getpriority() to get the new priority.
+	   Linux/FreeBSD/BSDI one, which returns '0' on success and advices
+	   the use of getpriority() to get the new priority.
 	   
 	   If we are of the nice family that returns the new priority, we
 	   need to clear errno before the call, and check if errno is filled
@@ -1134,7 +1140,7 @@ posix_nice(PyObject *self, PyObject *args)
 
 	errno = 0;
 	value = nice(increment);
-#ifdef HAVE_GETPRIORITY
+#if defined(HAVE_BROKEN_NICE) && defined(HAVE_GETPRIORITY)
 	if (value == 0)
 		value = getpriority(PRIO_PROCESS, 0);
 #endif
