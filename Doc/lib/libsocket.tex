@@ -133,6 +133,17 @@ standard input or output (e.g.\ a server started by the \UNIX{} inet
 daemon).
 \end{funcdesc}
 
+\begin{funcdesc}{ntohl}{x}
+\funcline{ntohs}{x}
+\funcline{htonl}{x}
+\funcline{htons}{x}
+These functions convert 32-bit (`l' suffix) and 16-bit (`s' suffix)
+integers between network and host byte order.  On machines where the
+host byte order is the same as the network byte order, they are no-ops
+(assuming the values fit in the indicated size); otherwise, they
+perform 2-byte or 4-byte swap operations.
+\end{funcdesc}
+
 \subsection{Socket Objects}
 
 \noindent
