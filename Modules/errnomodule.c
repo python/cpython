@@ -80,11 +80,25 @@ _inscode(d, de, name, code)
 	Py_XDECREF(v);
 }
 
+static char errno__doc__ [] =
+"This module makes available standard errno system symbols.\n\
+\n\
+The value of each symbol is the corresponding integer value,\n\
+e.g., on most systems, errno.ENOENT equals the integer 2.\n\
+\n\
+The dictionary errno.errorcode maps numeric codes to symbol names,\n\
+e.g., errno.errorcode[2] could be the string 'ENOENT'.\n\
+\n\
+Symbols that are not relevant to the underlying system are not defined.\n\
+\n\
+To map error codes to error messages, use the function os.strerror(),\n\
+e.g. os.strerror(2) could return 'No such file or directory'.";
+
 void
 initerrno()
 {
 	PyObject *m, *d, *de;
-	m = Py_InitModule("errno", errno_methods);
+	m = Py_InitModule3("errno", errno_methods, errno__doc__);
 	d = PyModule_GetDict(m);
 	de = PyDict_New();
 	if (de == NULL || PyDict_SetItemString(d,"errorcode",de))
