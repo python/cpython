@@ -358,7 +358,7 @@ class RExec(ihooks._Verbose):
 
 
 def test():
-    import sys, getopt, traceback
+    import getopt, traceback
     opts, args = getopt.getopt(sys.argv[1:], 'vt:')
     verbose = 0
     trusted = []
@@ -384,7 +384,9 @@ def test():
             return 1
     if fp.isatty():
         print "*** RESTRICTED *** Python", sys.version
-        print sys.copyright
+        print 'Type "help", "copyright", "credits" or "license" ' \
+              'for more information.'
+
         while 1:
             try:
                 try:
