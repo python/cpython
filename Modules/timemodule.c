@@ -755,12 +755,12 @@ floatsleep(double secs)
 	t.tv_usec = (long)(frac*1000000.0);
 	Py_BEGIN_ALLOW_THREADS
 	if (select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t) != 0) {
-		Py_BLOCK_THREADS
 #ifdef EINTR
 		if (errno != EINTR) {
 #else
 		if (1) {
 #endif
+			Py_BLOCK_THREADS
 			PyErr_SetFromErrno(PyExc_IOError);
 			return -1;
 		}
