@@ -63,6 +63,10 @@ If you have previously installed another copy of 2.0 you should manually
 remove your preference file first (but no such action is needed for installing
 beside older MacPythons, and they will live together happily).
 
+Moving your Python installation after installing is generally not a good idea.
+If you have to do this anyway you should remove your preference file, run
+ConfigurePython and remove all .pyc files.
+
 If you don't have enough memory: the sizes choosen are somewhat
 arbitrary. Try lowering the application sizes in the finder "get info"
 window, and seeing whether the resulting python is still usable. Some
@@ -75,15 +79,15 @@ After installing
 It is probably a good idea to run the automatic tests. Start
 Python and "import test.autotest". 
 
-Three tests will fail on the mac, all with MemoryErrors: test_sha, test_longexp
-and test_zlib. If you increase the PythonInterpreter memory partition size they
-will pass.
-It will, however, print some messages about optional features
-not supported. Also, if you didn't run compileall before autotesting
-you may run out of memory the first time you run the
-tests. test_socket may also fail if you have no internet
-connection. Please also read the Relnotes file for other minor
-problems with this distribution.
+Three tests will fail on the mac, all with MemoryErrors: test_sha,
+test_longexp and test_zlib. If you increase the PythonInterpreter memory
+partition size they will pass. It will, however, print some messages
+about optional features not supported. You should not worry about these,
+they are modules that are supported by Python on other platforms. Also,
+if you didn't run compileall before autotesting you may run out of
+memory the first time you run the tests. test_socket may also fail if
+you have no internet connection. Please also read the Relnotes file for
+other minor problems with this distribution.
 
 Using Python is most easily done from the IDE, which has a builtin editor,
 debugger and other goodies. The alternative is to use PythonInterpreter,
