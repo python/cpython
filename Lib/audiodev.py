@@ -2,9 +2,9 @@ error = 'audiodev.error'
 
 class Play_Audio_sgi:
 	# Private instance variables
-	if 0: access frameratelist, nchannelslist, sampwidthlist, oldparams, \
-		  params, config, inited_outrate, inited_width, \
-		  inited_nchannels, port, converter, classinited: private
+## 	if 0: access frameratelist, nchannelslist, sampwidthlist, oldparams, \
+## 		  params, config, inited_outrate, inited_width, \
+## 		  inited_nchannels, port, converter, classinited: private
 
 	classinited = 0
 	frameratelist = nchannelslist = sampwidthlist = None
@@ -129,15 +129,15 @@ class Play_Audio_sgi:
 			return self.config.getqueuesize()
 
 	# private methods
-	if 0: access *: private
+## 	if 0: access *: private
 
 	def ulaw2lin(self, data):
 		import audioop
 		return audioop.ulaw2lin(data, 2)
 
 class Play_Audio_sun:
-	if 0: access outrate, sampwidth, nchannels, inited_outrate, inited_width, \
-		  inited_nchannels, converter: private
+## 	if 0: access outrate, sampwidth, nchannels, inited_outrate, inited_width, \
+## 		  inited_nchannels, converter: private
 
 	def __init__(self):
 		self.outrate = 0
