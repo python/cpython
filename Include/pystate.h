@@ -124,7 +124,7 @@ typedef
    Py_END_ALLOW_THREADS macros are acceptable.
 
    The return value is an opaque "handle" to the thread state when
-   PyGILState_Acquire() was called, and must be passed to
+   PyGILState_Ensure() was called, and must be passed to
    PyGILState_Release() to ensure Python is left in the same state. Even
    though recursive calls are allowed, these handles can *not* be shared - 
    each unique call to PyGILState_Ensure must save the handle for its 
@@ -138,7 +138,7 @@ PyAPI_FUNC(PyGILState_STATE) PyGILState_Ensure(void);
 
 /* Release any resources previously acquired.  After this call, Python's
    state will be the same as it was prior to the corresponding
-   PyGILState_Acquire call (but generally this state will be unknown to 
+   PyGILState_Ensure() call (but generally this state will be unknown to 
    the caller, hence the use of the GILState API.)
 
    Every call to PyGILState_Ensure must be matched by a call to 
