@@ -112,6 +112,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	lib/libgopherlib.tex \
 	lib/libnntplib.tex \
 	lib/liburlparse.tex \
+	lib/libhtmlparser.tex \
 	lib/libhtmllib.tex \
 	lib/libsgmllib.tex \
 	lib/librfc822.tex \
