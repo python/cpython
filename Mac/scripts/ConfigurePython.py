@@ -120,7 +120,31 @@ def loadtoolboxmodules():
 	print "load from toolboxmodules.ppc.slb:", err3
 	sys.exit(1)
 	
-		
+def getextensiondirfile(fname):
+	import macfs
+	import MACFS
+	vrefnum, dirid = macfs.FindFolder(MACFS.kOnSystemDisk, MACFS.kExtensionFolderType, 0)
+	fss = macfs.FSSpec((vrefnum, dirid, fname))
+	return fss.as_pathname()
+	
+def mkcorealias(src, altsrc):
+	import string
+	import macostools
+	version = string.split(sys.version)[0]
+	dst = getextensiondirfile(src+ ' ' + version)
+	if not os.path.exists(src):
+		if not os.path.exists(altsrc):
+			print '*', src, 'not found'
+			return 0
+		src = altsrc
+	try:
+		os.unlink(dst)
+	except os.error:
+		pass
+	macostools.mkalias(src, dst)
+	print ' ', dst, '->', src
+	return 1
+	
 
 def main():
 	gotopluginfolder()
@@ -162,6 +186,16 @@ def main():
 			print ' ', dst, '->', src
 		else:
 			print '*', dst, 'not created:', src, 'not found'
+	print
+			
+	# Create the PythonCore alias(es)
+	print 'Creating PythonCore aliases in Extensions folder...'
+	os.chdir('::')
+	n = 0
+	n = n + mkcorealias('PythonCorePPC', ':build.macppc.shared:PythonCorePPC')
+	n = n + mkcorealias('PythonCoreCFM68K', ':build.mac68k.shared:PythonCoreCFM68K')
+	if n == 0:
+		sys.exit(1)
 			
 if __name__ == '__main__':
 	main()
