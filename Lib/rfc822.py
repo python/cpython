@@ -624,7 +624,7 @@ class AddrlistClass:
         expectroute = 0
         self.pos = self.pos + 1
         self.gotonext()
-        adlist = None
+        adlist = ""
         while self.pos < len(self.field):
             if expectroute:
                 self.getdomain()
