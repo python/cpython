@@ -569,9 +569,13 @@ Do not include .ind files."
 			  (string-match "\\.ind\\.tex$" filename)))
       (setq dirs py2texi-dirs)
       (while (and (not includefile) dirs)
-	(setq includefile (concat path (car dirs) filename))
+	(setq includefile
+              (concat (file-name-as-directory (car dirs)) filename))
+        (if (not (file-name-absolute-p includefile))
+            (setq includefile
+                  (concat (file-name-as-directory path) includefile)))
 	(unless (file-exists-p includefile)
-	  (setq includefile nil)
+          (setq includefile nil)
 	  (setq dirs (cdr dirs))))
       (if includefile
 	  (save-restriction
