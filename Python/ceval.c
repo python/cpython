@@ -1710,9 +1710,11 @@ eval_frame(PyFrameObject *f)
 		case LOAD_GLOBAL:
 			w = GETITEM(names, oparg);
 			if (PyString_CheckExact(w)) {
+				/* Inline the PyDict_GetItem() calls.
+				   WARNING: this is an extreme speed hack.
+				   Do not try this at home. */
 				long hash = ((PyStringObject *)w)->ob_shash;
 				if (hash != -1) {
-					/* Inline the PyDict_GetItem() calls */
 					PyDictObject *d;
 					d = (PyDictObject *)(f->f_globals);
 					x = d->ma_lookup(d, w, hash)->me_value;
