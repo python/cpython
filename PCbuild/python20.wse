@@ -203,11 +203,20 @@ end
 item: End Block
 end
 item: Remark
-  Text=Note from Tim:  doesn't seem to be a way to get the true boot drive, the Wizard hardcodes "C".
+  Text=Note from Tim:  The Wizard hardcod "C:" at the start of the replacement text for MAINDIR.
+end
+item: Remark
+  Text=That's not appropriate if the system drive doesn't happen to be C:.
+end
+item: Remark
+  Text=I removed the "C:", and that did the right thing for two people who tested it on non-C: machines,
+end
+item: Remark
+  Text=but it's unclear whether it will always do the right thing.
 end
 item: Set Variable
   Variable=MAINDIR
-  Value=C:\%MAINDIR%
+  Value=\%MAINDIR%
   Flags=00001100
 end
 item: Remark
