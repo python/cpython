@@ -235,9 +235,11 @@ initxx(void)
 {
 	PyObject *m;
 
-	/* Initialize the type of the new type object here; doing it here
-	 * is required for portability to Windows without requiring C++. */
-	Xxo_Type.ob_type = &PyType_Type;
+	/* Finalize the type object including setting type of the new type
+	 * object; doing it here is required for portability to Windows 
+	 * without requiring C++. */
+	if (PyType_Ready(&Xxo_Type) < 0)
+		return;
 
 	/* Create the module and add the functions */
 	m = Py_InitModule3("xx", xx_methods, module_doc);
