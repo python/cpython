@@ -147,9 +147,15 @@ class Application:
 	# (XXX I'm not sure if using default parameter values is the right
 	# way to define the mask and wait time passed to WaitNextEvent.)
 	
+	schedparams = (0, 0)	# By default disable Python's event handling
+	
+	keepconsole = 0			# By default don't keep console window open
+	
 	def mainloop(self, mask = everyEvent, wait = 0):
 		self.quitting = 0
 		saveparams = apply(MacOS.SchedParams, self.schedparams)
+		if self.keepconsole != None:
+			MacOS.KeepConsole(self.keepconsole)
 		try:
 			while not self.quitting:
 				try:
@@ -161,8 +167,6 @@ class Application:
 					break
 		finally:
 			apply(MacOS.SchedParams, saveparams)
-	
-	schedparams = (0, 0)	# By default disable Python's event handling
 	
 	def dopendingevents(self, mask = everyEvent):
 		"""dopendingevents - Handle all pending events"""
