@@ -14,11 +14,15 @@ The \code{stat} module defines the following functions:
 \renewcommand{\indexsubitem}{(in module stat)}
 
 \begin{funcdesc}{S_ISDIR}{mode}
-Return non-zero if the mode was gotten from a directory file.
+Return non-zero if the mode was gotten from a directory.
 \end{funcdesc}
 
 \begin{funcdesc}{S_ISCHR}{mode}
 Return non-zero if the mode was gotten from a character special device.
+\end{funcdesc}
+
+\begin{funcdesc}{S_ISBLK}{mode}
+Return non-zero if the mode was gotten from a block special device.
 \end{funcdesc}
 
 \begin{funcdesc}{S_ISREG}{mode}
