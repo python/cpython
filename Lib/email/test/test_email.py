@@ -780,6 +780,20 @@ Received-2: from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by
 
 """)
 
+    def test_string_headerinst_eq(self):
+        h = '<15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de> (David Bremner\'s message of "Thu, 6 Mar 2003 13:58:21 +0100")'
+        msg = Message()
+        msg['Received-1'] = Header(h, header_name='Received-1',
+                                   continuation_ws='\t')
+        msg['Received-2'] = h
+        self.assertEqual(msg.as_string(), """\
+Received-1: <15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de>
+	(David Bremner's message of "Thu, 6 Mar 2003 13:58:21 +0100")
+Received-2: <15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de>
+	(David Bremner's message of "Thu, 6 Mar 2003 13:58:21 +0100")
+
+""")
+
 
 
 # Test mangling of "From " lines in the body of a message
