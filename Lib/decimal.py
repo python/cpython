@@ -120,7 +120,6 @@ __all__ = [
     # Constants for use in setting up contexts
     'ROUND_DOWN', 'ROUND_HALF_UP', 'ROUND_HALF_EVEN', 'ROUND_CEILING',
     'ROUND_FLOOR', 'ROUND_UP', 'ROUND_HALF_DOWN',
-    'Signals',    # <-- Used for building trap/flag dictionaries
 
     # Functions for manipulating contexts
     'setcontext', 'getcontext'
@@ -368,7 +367,7 @@ class Underflow(Inexact, Rounded, Subnormal):
     """
 
 # List of public traps and flags
-Signals = [Clamped, DivisionByZero, Inexact, Overflow, Rounded,
+_signals = [Clamped, DivisionByZero, Inexact, Overflow, Rounded,
            Underflow, InvalidOperation, Subnormal]
 
 # Map conditions (per the spec) to signals
@@ -2120,9 +2119,9 @@ class Context(object):
                  capitals=None, _clamp=0,
                  _ignored_flags=[]):
         if not isinstance(flags, dict):
-            flags = dict([(s,s in flags) for s in Signals])
+            flags = dict([(s,s in flags) for s in _signals])
         if traps is not None and not isinstance(traps, dict):
-            traps = dict([(s,s in traps) for s in Signals])
+            traps = dict([(s,s in traps) for s in _signals])
         for name, val in locals().items():
             if val is None:
                 setattr(self, name, copy.copy(getattr(DefaultContext, name)))
@@ -2175,7 +2174,7 @@ class Context(object):
 
     def _ignore_all_flags(self):
         """Ignore all flags, if they are raised"""
-        return self._ignore_flags(*Signals)
+        return self._ignore_flags(*_signals)
 
     def _ignore_flags(self, *flags):
         """Ignore the flags, if they are raised"""
@@ -2244,7 +2243,7 @@ class Context(object):
         self.rounding= type
         return rounding
 
-    def create_decimal(self, num):
+    def create_decimal(self, num='0'):
         """Creates a new Decimal instance but using self as context."""
         d = Decimal(num, context=self)
         return d._fix(context=self)
@@ -2950,7 +2949,7 @@ def _isnan(num):
 ##### Setup Specific Contexts ################################
 
 # The default context prototype used by Context()
-# Is mutable, so than new contexts can have different default values
+# Is mutable, so that new contexts can have different default values
 
 DefaultContext = Context(
         prec=28, rounding=ROUND_HALF_EVEN,
