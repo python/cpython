@@ -132,7 +132,6 @@ check_all("regsub")
 check_all("repr")
 check_all("rexec")
 check_all("rfc822")
-check_all("rlcompleter")
 check_all("robotparser")
 check_all("sched")
 check_all("sgmllib")
@@ -161,3 +160,15 @@ check_all("weakref")
 check_all("webbrowser")
 check_all("xdrlib")
 check_all("zipfile")
+
+# rlcompleter needs special consideration; it import readline which
+# initializes GNU readline which calls setlocale(LC_CTYPE, "")... :-(
+try:
+    check_all("rlcompleter")
+finally:
+    try:
+        import locale
+    except ImportError:
+        pass
+    else:
+        locale.setlocale(locale.LC_CTYPE, 'C')
