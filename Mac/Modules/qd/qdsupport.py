@@ -165,10 +165,26 @@ class MyGRObjectDefinition(GlobalObjectDefinition):
 					return Py_BuildValue("h", itself_color->chExtra);
 				if ( strcmp(name, "pnLocHFrac") == 0 )
 					return Py_BuildValue("h", itself_color->pnLocHFrac);
+				if ( strcmp(name, "bkPixPat") == 0 )
+					return Py_BuildValue("O&", ResObj_New, (Handle)itself_color->bkPixPat);
+				if ( strcmp(name, "rgbFgColor") == 0 )
+					return Py_BuildValue("O&", QdRGB_New, &itself_color->rgbFgColor);
+				if ( strcmp(name, "rgbBkColor") == 0 )
+					return Py_BuildValue("O&", QdRGB_New, &itself_color->rgbBkColor);
+				if ( strcmp(name, "pnPixPat") == 0 )
+					return Py_BuildValue("O&", ResObj_New, (Handle)itself_color->pnPixPat);
+				if ( strcmp(name, "fillPixPat") == 0 )
+					return Py_BuildValue("O&", ResObj_New, (Handle)itself_color->fillPixPat);
 			} else {
 				/* Mono-only attributes */
 				if ( strcmp(name, "portBits") == 0 )
 					return BMObj_New(&self->ob_itself->portBits);
+				if ( strcmp(name, "bkPat") == 0 )
+					return Py_BuildValue("s#", (char *)&self->ob_itself->bkPat, sizeof(Pattern));
+				if ( strcmp(name, "fillPat") == 0 )
+					return Py_BuildValue("s#", (char *)&self->ob_itself->fillPat, sizeof(Pattern));
+				if ( strcmp(name, "pnPat") == 0 )
+					return Py_BuildValue("s#", (char *)&self->ob_itself->pnPat, sizeof(Pattern));
 			}
 			/*
 			** Accessible for both color/mono windows.
@@ -185,18 +201,12 @@ class MyGRObjectDefinition(GlobalObjectDefinition):
 				return Py_BuildValue("O&", ResObj_New, (Handle)self->ob_itself->visRgn);
 			if ( strcmp(name, "clipRgn") == 0 )
 				return Py_BuildValue("O&", ResObj_New, (Handle)self->ob_itself->clipRgn);
-			if ( strcmp(name, "bkPat") == 0 )
-				return Py_BuildValue("s#", (char *)&self->ob_itself->bkPat, sizeof(Pattern));
-			if ( strcmp(name, "fillPat") == 0 )
-				return Py_BuildValue("s#", (char *)&self->ob_itself->fillPat, sizeof(Pattern));
 			if ( strcmp(name, "pnLoc") == 0 )
 				return Py_BuildValue("O&", PyMac_BuildPoint, self->ob_itself->pnLoc);
 			if ( strcmp(name, "pnSize") == 0 )
 				return Py_BuildValue("O&", PyMac_BuildPoint, self->ob_itself->pnSize);
 			if ( strcmp(name, "pnMode") == 0 )
 				return Py_BuildValue("h", self->ob_itself->pnMode);
-			if ( strcmp(name, "pnPat") == 0 )
-				return Py_BuildValue("s#", (char *)&self->ob_itself->pnPat, sizeof(Pattern));
 			if ( strcmp(name, "pnVis") == 0 )
 				return Py_BuildValue("h", self->ob_itself->pnVis);
 			if ( strcmp(name, "txFont") == 0 )
