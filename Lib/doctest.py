@@ -343,25 +343,13 @@ def _normalize_module(module, depth=2):
     else:
         raise TypeError("Expected a module, string, or None")
 
-def _tag_msg(tag, msg, indent='    '):
+def _indent(s, indent=4):
     """
-    Return a string that displays a tag-and-message pair nicely,
-    keeping the tag and its message on the same line when that
-    makes sense.  If the message is displayed on separate lines,
-    then `indent` is added to the beginning of each line.
+    Add the given number of space characters to the beginning every
+    non-blank line in `s`, and return the result.
     """
-    # If the message doesn't end in a newline, then add one.
-    if msg[-1:] != '\n':
-        msg += '\n'
-    # If the message is short enough, and contains no internal
-    # newlines, then display it on the same line as the tag.
-    # Otherwise, display the tag on its own line.
-    if (len(tag) + len(msg) < 75 and
-        msg.find('\n', 0, len(msg)-1) == -1):
-        return '%s: %s' % (tag, msg)
-    else:
-        msg = '\n'.join([indent+l for l in msg[:-1].split('\n')])
-        return '%s:\n%s\n' % (tag, msg)
+    # This regexp matches the start of non-blank lines:
+    return re.sub('(?m)^(?!$)', indent*' ', s)
 
 def _exception_traceback(exc_info):
     """
@@ -1273,8 +1261,12 @@ class DocTestRunner:
         example.  (Only displays a message if verbose=True)
         """
         if self._verbose:
-            out(_tag_msg("Trying", example.source) +
-                _tag_msg("Expecting", example.want or "nothing"))
+            if example.want:
+                out('Trying:\n' + _indent(example.source) +
+                    'Expecting:\n' + _indent(example.want))
+            else:
+                out('Trying:\n' + _indent(example.source) +
+                    'Expecting nothing\n')
 
     def report_success(self, out, test, example, got):
         """
@@ -1298,7 +1290,7 @@ class DocTestRunner:
         Report that the given example raised an unexpected exception.
         """
         out(self._failure_header(test, example) +
-            _tag_msg("Exception raised", _exception_traceback(exc_info)))
+            'Exception raised:\n' + _indent(_exception_traceback(exc_info)))
 
     def _failure_header(self, test, example):
         out = [self.DIVIDER]
@@ -1313,10 +1305,8 @@ class DocTestRunner:
             out.append('Line %s, in %s' % (example.lineno+1, test.name))
         out.append('Failed example:')
         source = example.source
-        if source.endswith('\n'):
-            source = source[:-1]
-        out.append('    ' + '\n    '.join(source.split('\n')))
-        return '\n'.join(out)+'\n'
+        out.append(_indent(source))
+        return '\n'.join(out)
 
     #/////////////////////////////////////////////////////////////////
     # DocTest Running
@@ -1612,10 +1602,8 @@ class OutputChecker:
         Return a string describing the differences between the
         expected output for an example (`want`) and the actual output
         (`got`).  `optionflags` is the set of option flags used to
-        compare `want` and `got`.  `indent` is the indentation of the
-        original example.
+        compare `want` and `got`.
         """
-
         # If <BLANKLINE>s are being used, then replace blank lines
         # with <BLANKLINE> in the actual output string.
         if not (optionflags & DONT_ACCEPT_BLANKLINE):
@@ -1645,18 +1633,18 @@ class OutputChecker:
                 assert 0, 'Bad diff option'
             # Remove trailing whitespace on diff output.
             diff = [line.rstrip() + '\n' for line in diff]
-            return _tag_msg("Differences (" + kind + ")",
-                            ''.join(diff))
+            return 'Differences (%s):\n' % kind + _indent(''.join(diff))
 
         # If we're not using diff, then simply list the expected
         # output followed by the actual output.
-        if want.endswith('\n'):
-            want = want[:-1]
-        want = '    ' + '\n    '.join(want.split('\n'))
-        if got.endswith('\n'):
-            got = got[:-1]
-        got = '    ' + '\n    '.join(got.split('\n'))
-        return "Expected:\n%s\nGot:\n%s\n" % (want, got)
+        if want and got:
+            return 'Expected:\n%sGot:\n%s' % (_indent(want), _indent(got))
+        elif want:
+            return 'Expected:\n%sGot nothing\n' % _indent(want)
+        elif got:
+            return 'Expected nothing\nGot:\n%s' % _indent(got)
+        else:
+            return 'Expected nothing\nGot nothing\n'
 
 class DocTestFailure(Exception):
     """A DocTest example has failed in debugging mode.

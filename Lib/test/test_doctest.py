@@ -591,11 +591,14 @@ the failure and proceeds to the next example:
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=True).run(test)
-    Trying: x = 12
-    Expecting: nothing
+    Trying:
+        x = 12
+    Expecting nothing
     ok
-    Trying: print x
-    Expecting: 14
+    Trying:
+        print x
+    Expecting:
+        14
     **********************************************************************
     Line 3, in f
     Failed example:
@@ -604,8 +607,10 @@ the failure and proceeds to the next example:
         14
     Got:
         12
-    Trying: x/2
-    Expecting: 6
+    Trying:
+        x/2
+    Expecting:
+        6
     ok
     (1, 3)
 """
@@ -624,14 +629,19 @@ output:
     >>> test = doctest.DocTestFinder().find(f)[0]
 
     >>> doctest.DocTestRunner(verbose=True).run(test)
-    Trying: x = 12
-    Expecting: nothing
+    Trying:
+        x = 12
+    Expecting nothing
     ok
-    Trying: print x
-    Expecting: 12
+    Trying:
+        print x
+    Expecting:
+        12
     ok
-    Trying: x/2
-    Expecting: 6
+    Trying:
+        x/2
+    Expecting:
+        6
     ok
     (0, 3)
 
@@ -649,14 +659,19 @@ iff `-v` appears in sys.argv:
     >>> # If -v does appear in sys.argv, then output is verbose.
     >>> sys.argv = ['test', '-v']
     >>> doctest.DocTestRunner().run(test)
-    Trying: x = 12
-    Expecting: nothing
+    Trying:
+        x = 12
+    Expecting nothing
     ok
-    Trying: print x
-    Expecting: 12
+    Trying:
+        print x
+    Expecting:
+        12
     ok
-    Trying: x/2
-    Expecting: 6
+    Trying:
+        x/2
+    Expecting:
+        6
     ok
     (0, 3)
 
@@ -1633,11 +1648,14 @@ def old_test2(): r"""
         ... '''
         >>> t.runstring(test, "Example")
         Running string Example
-        Trying: x = 1 + 2
-        Expecting: nothing
+        Trying:
+            x = 1 + 2
+        Expecting nothing
         ok
-        Trying: x
-        Expecting: 3
+        Trying:
+            x
+        Expecting:
+            3
         ok
         0 of 2 examples failed in string Example
         (0, 2)
