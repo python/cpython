@@ -199,7 +199,7 @@ l2hapi: api.dvi myformat.perl
 	mv api/xxx api/api.html
 	ln -s api.html api/index.html || true
 
-tarhtml: l2h
+tarhtml:
 	@echo "Did you remember to run makeMIFs.py in the ref subdirectory...?"
 	tar cf - index.html ???/???.css ???/*.html lib/*.gif icons/*.* | gzip >html.tar.gz
 
