@@ -45,12 +45,12 @@ step on "official" idle.
 
 # python setup.py install
 
-# echo  "idle" > /usr/local/lib/pythonX.X/site-packages.pth
+# echo  idlelib >> /usr/local/lib/pythonX.X/site-packages/site-packages.pth
 
 This last is necessary so idle can find itself.  I hope we can create/append
 this file via setup.py at some point, but it needs to be done manually now, and
 it only needs to be done once (unless you totally remove and reinstall python
-itself).
+itself).  (Replace X.X with the correct version for your Python.)
 
 # exit    from root
 
