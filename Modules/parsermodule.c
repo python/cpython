@@ -213,7 +213,18 @@ PyTypeObject PyAST_Type = {
     0,					/* tp_as_mapping	*/
     0,					/* tp_hash		*/
     0,					/* tp_call		*/
-    0					/* tp_str		*/
+    0,					/* tp_str		*/
+    0,					/* tp_getattro		*/
+    0,					/* tp_setattro		*/
+
+    /* Functions to access object as input/output buffer */
+    0,					/* tp_as_buffer		*/
+
+    /* Space for future expansion */
+    0,					/* tp_xxx4		*/
+
+    /* __doc__ */
+    "Intermediate representation of a Python parse tree."
 
 };  /* PyAST_Type */
 
