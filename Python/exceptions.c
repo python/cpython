@@ -909,6 +909,7 @@ init_exceptions()
     PyObject* args;
 
     PyDict_SetItemString(mydict, "__doc__", doc);
+    Py_DECREF(doc);
     if (PyErr_Occurred())
 	Py_FatalError("exceptions bootstrapping error.");
 
