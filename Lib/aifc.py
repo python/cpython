@@ -142,7 +142,7 @@ __all__ = ["Error","open","openfp"]
 class Error(Exception):
     pass
 
-_AIFC_version = 0xA2805140      # Version 1 of AIFF-C
+_AIFC_version = 0xA2805140L     # Version 1 of AIFF-C
 
 _skiplist = 'COMT', 'INST', 'MIDI', 'AESD', \
       'APPL', 'NAME', 'AUTH', '(c) ', 'ANNO'
@@ -309,7 +309,7 @@ class Aifc_read:
                 dummy = chunk.read(8)
                 self._ssnd_seek_needed = 0
             elif chunkname == 'FVER':
-                self._version = _read_long(chunk)
+                self._version = _read_ulong(chunk)
             elif chunkname == 'MARK':
                 self._readmark(chunk)
             elif chunkname in _skiplist:
