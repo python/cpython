@@ -45,8 +45,6 @@ class build (Command):
 
     def finalize_options (self):
 
-        print "build.finalize: force=%s" % self.force
-
         # Need this to name platform-specific directories, but sys.platform
         # is not enough -- it only names the OS and version, not the
         # hardware architecture!
