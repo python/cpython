@@ -311,6 +311,18 @@ class CommonTest(seq_tests.CommonTest):
         self.assertRaises(ValueError, a.index, 2, 0, 4)
         self.assertEqual(a, self.type2test([-2, -1, 0, 1, 2]))
 
+        # Test modifying the list during index's iteration
+        class EvilCmp:
+            def __init__(self, victim):
+                self.victim = victim
+            def __eq__(self, other):
+                del self.victim[:]
+                return False
+        a = self.type2test()
+        a[:] = [EvilCmp(a) for _ in xrange(100)]
+        # This used to seg fault before patch #1005778
+        self.assertRaises(ValueError, a.index, None)
+
     def test_reverse(self):
         u = self.type2test([-2, -1, 0, 1, 2])
         u2 = u[:]
