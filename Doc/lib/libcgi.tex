@@ -66,7 +66,29 @@ Begin by writing \samp{import cgi}.  Do not use \samp{from cgi import
 *} --- the module defines all sorts of names for its own use or for
 backward compatibility that you don't want in your namespace.
 
-It's best to use the \class{FieldStorage} class.  The other classes
+When you write a new script, consider adding the line:
+
+\begin{verbatim}
+import cgitb; cgitb.enable()
+\end{verbatim}
+
+This activates a special exception handler that will display detailed
+reports in the Web browser if any errors occur.  If you'd rather not
+show the guts of your program to users of your script, you can have
+the reports saved to files instead, with a line like this:
+
+\begin{verbatim}
+import cgitb; cgitb.enable(display=0, logdir="/tmp")
+\end{verbatim}
+
+It's very helpful to use this feature during script development.
+The reports produced by \refmodule{cgitb} provide information that
+can save you a lot of time in tracking down bugs.  You can always
+remove the \code{cgitb} line later when you have tested your script
+and are confident that it works correctly.
+
+To get at submitted form data,
+it's best to use the \class{FieldStorage} class.  The other classes
 defined in this module are provided mostly for backward compatibility.
 Instantiate it exactly once, without arguments.  This reads the form
 contents from standard input or the environment (depending on the
@@ -389,7 +411,9 @@ module instead.
 \end{funcdesc}
 
 
-\subsection{Caring about security}
+\subsection{Caring about security \label{cgi-security}}
+
+\indexii{CGI}{security}
 
 There's one important rule: if you invoke an external program (via the
 \function{os.system()} or \function{os.popen()} functions. or others
@@ -466,7 +490,7 @@ Assuming your script has no syntax errors, yet it does not work, you
 have no choice but to read the next section.
 
 
-\subsection{Debugging CGI scripts}
+\subsection{Debugging CGI scripts} \indexii{CGI}{debugging}
 
 First of all, check for trivial installation errors --- reading the
 section above on installing your CGI script carefully can save you a
@@ -508,51 +532,24 @@ whatever reason: of a typo in a module name, a file that can't be
 opened, etc.), the Python interpreter prints a nice traceback and
 exits.  While the Python interpreter will still do this when your CGI
 script raises an exception, most likely the traceback will end up in
-one of the HTTP server's log file, or be discarded altogether.
+one of the HTTP server's log files, or be discarded altogether.
 
 Fortunately, once you have managed to get your script to execute
-\emph{some} code, it is easy to catch exceptions and cause a traceback
-to be printed.  The \function{test()} function below in this module is
-an example.  Here are the rules:
-
-\begin{enumerate}
-\item Import the traceback module before entering the \keyword{try}
-   ... \keyword{except} statement
-
-\item Assign \code{sys.stderr} to be \code{sys.stdout}
-
-\item Make sure you finish printing the headers and the blank line
-   early
-
-\item Wrap all remaining code in a \keyword{try} ... \keyword{except}
-   statement
-
-\item In the except clause, call \function{traceback.print_exc()}
-\end{enumerate}
-
-For example:
+\emph{some} code, you can easily send tracebacks to the Web browser
+using the \refmodule{cgitb} module.  If you haven't done so already,
+just add the line:
 
 \begin{verbatim}
-import sys
-import traceback
-print "Content-Type: text/html"
-print
-sys.stderr = sys.stdout
-try:
-    ...your code here...
-except:
-    print "\n\n<PRE>"
-    traceback.print_exc()
+import cgitb; cgitb.enable()
 \end{verbatim}
 
-Notes: The assignment to \code{sys.stderr} is needed because the
-traceback prints to \code{sys.stderr}.
-The \code{print "{\e}n{\e}n<PRE>"} statement is necessary to
-disable the word wrapping in HTML.
+to the top of your script.  Then try running it again; when a
+problem occurs, you should see a detailed report that will
+likely make apparent the cause of the crash.
 
-If you suspect that there may be a problem in importing the traceback
-module, you can use an even more robust approach (which only uses
-built-in modules):
+If you suspect that there may be a problem in importing the
+\refmodule{cgitb} module, you can use an even more robust approach
+(which only uses built-in modules):
 
 \begin{verbatim}
 import sys
@@ -567,7 +564,7 @@ content type of the output is set to plain text, which disables all
 HTML processing.  If your script works, the raw HTML will be displayed
 by your client.  If it raises an exception, most likely after the
 first two lines have been printed, a traceback will be displayed.
-Because no HTML interpretation is going on, the traceback will
+Because no HTML interpretation is going on, the traceback will be
 readable.
 
 
@@ -586,8 +583,8 @@ separate window may be useful!)
 \item Always check a script for syntax errors first, by doing something
 like \samp{python script.py}.
 
-\item When using any of the debugging techniques, don't forget to add
-\samp{import sys} to the top of the script.
+\item If your script does not have any syntax errors, try adding
+\samp{import cgitb; cgitb.enable()} to the top of the script.
 
 \item When invoking external programs, make sure they can be found.
 Usually, this means using absolute path names --- \envvar{PATH} is
