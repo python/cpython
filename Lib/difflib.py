@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 
+from __future__ import generators
+
 """
 Module difflib -- helpers for computing deltas between objects.
 
@@ -21,8 +23,6 @@ Class Differ:
 
 __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
            'Differ']
-
-TRACE = 0
 
 class SequenceMatcher:
 
@@ -406,9 +406,6 @@ class SequenceMatcher:
               a[besti+bestsize] == b[bestj+bestsize]:
             bestsize = bestsize + 1
 
-        if TRACE:
-            print "get_matching_blocks", alo, ahi, blo, bhi
-            print "    returns", besti, bestj, bestsize
         return besti, bestj, bestsize
 
     def get_matching_blocks(self):
@@ -432,8 +429,6 @@ class SequenceMatcher:
         la, lb = len(self.a), len(self.b)
         self.__helper(0, la, 0, lb, self.matching_blocks)
         self.matching_blocks.append( (la, lb, 0) )
-        if TRACE:
-            print '*** matching blocks', self.matching_blocks
         return self.matching_blocks
 
     # builds list of matching blocks covering a[alo:ahi] and
@@ -694,7 +689,7 @@ class Differ:
 
     Finally, we compare the two:
 
-    >>> result = d.compare(text1, text2)
+    >>> result = list(d.compare(text1, text2))
 
     'result' is a list of strings, so let's pretty-print it:
 
@@ -731,7 +726,7 @@ class Differ:
         Construct a text differencer, with optional filters.
 
     compare(a, b)
-        Compare two sequences of lines; return the resulting delta (list).
+        Compare two sequences of lines; generate the resulting delta.
     """
 
     def __init__(self, linejunk=None, charjunk=None):
@@ -753,16 +748,15 @@ class Differ:
 
         self.linejunk = linejunk
         self.charjunk = charjunk
-        self.results = []
 
     def compare(self, a, b):
         r"""
-        Compare two sequences of lines; return the resulting delta (list).
+        Compare two sequences of lines; generate the resulting delta.
 
         Each sequence must contain individual single-line strings ending with
         newlines. Such sequences can be obtained from the `readlines()` method
-        of file-like objects. The list returned is also made up of
-        newline-terminated strings, ready to be used with the `writelines()`
+        of file-like objects.  The delta generated also consists of newline-
+        terminated strings, ready to be printed as-is via the writeline()
         method of a file-like object.
 
         Example:
@@ -783,34 +777,38 @@ class Differ:
         cruncher = SequenceMatcher(self.linejunk, a, b)
         for tag, alo, ahi, blo, bhi in cruncher.get_opcodes():
             if tag == 'replace':
-                self._fancy_replace(a, alo, ahi, b, blo, bhi)
+                g = self._fancy_replace(a, alo, ahi, b, blo, bhi)
             elif tag == 'delete':
-                self._dump('-', a, alo, ahi)
+                g = self._dump('-', a, alo, ahi)
             elif tag == 'insert':
-                self._dump('+', b, blo, bhi)
+                g = self._dump('+', b, blo, bhi)
             elif tag == 'equal':
-                self._dump(' ', a, alo, ahi)
+                g = self._dump(' ', a, alo, ahi)
             else:
                 raise ValueError, 'unknown tag ' + `tag`
-        results = self.results
-        self.results = []
-        return results
+
+            for line in g:
+                yield line
 
     def _dump(self, tag, x, lo, hi):
-        """Store comparison results for a same-tagged range."""
+        """Generate comparison results for a same-tagged range."""
         for i in xrange(lo, hi):
-            self.results.append('%s %s' % (tag, x[i]))
+            yield '%s %s' % (tag, x[i])
 
     def _plain_replace(self, a, alo, ahi, b, blo, bhi):
         assert alo < ahi and blo < bhi
         # dump the shorter block first -- reduces the burden on short-term
         # memory if the blocks are of very different sizes
         if bhi - blo < ahi - alo:
-            self._dump('+', b, blo, bhi)
-            self._dump('-', a, alo, ahi)
+            first  = self._dump('+', b, blo, bhi)
+            second = self._dump('-', a, alo, ahi)
         else:
-            self._dump('-', a, alo, ahi)
-            self._dump('+', b, blo, bhi)
+            first  = self._dump('-', a, alo, ahi)
+            second = self._dump('+', b, blo, bhi)
+
+        for g in first, second:
+            for line in g:
+                yield line
 
     def _fancy_replace(self, a, alo, ahi, b, blo, bhi):
         r"""
@@ -829,12 +827,6 @@ class Differ:
         + abcdefGhijkl
         ?    ^  ^  ^
         """
-
-        if TRACE:
-            self.results.append('*** _fancy_replace %s %s %s %s\n'
-                                % (alo, ahi, blo, bhi))
-            self._dump('>', a, alo, ahi)
-            self._dump('<', b, blo, bhi)
 
         # don't synch up unless the lines have a similarity score of at
         # least cutoff; best_ratio tracks the best score seen so far
@@ -869,7 +861,8 @@ class Differ:
             # no non-identical "pretty close" pair
             if eqi is None:
                 # no identical pair either -- treat it as a straight replace
-                self._plain_replace(a, alo, ahi, b, blo, bhi)
+                for line in self._plain_replace(a, alo, ahi, b, blo, bhi):
+                    yield line
                 return
             # no close pair, but an identical pair -- synch up on that
             best_i, best_j, best_ratio = eqi, eqj, 1.0
@@ -879,14 +872,10 @@ class Differ:
 
         # a[best_i] very similar to b[best_j]; eqi is None iff they're not
         # identical
-        if TRACE:
-            self.results.append('*** best_ratio %s %s %s %s\n'
-                                % (best_ratio, best_i, best_j))
-            self._dump('>', a, best_i, best_i+1)
-            self._dump('<', b, best_j, best_j+1)
 
         # pump out diffs from before the synch point
-        self._fancy_helper(a, alo, best_i, b, blo, best_j)
+        for line in self._fancy_helper(a, alo, best_i, b, blo, best_j):
+            yield line
 
         # do intraline marking on the synch pair
         aelt, belt = a[best_i], b[best_j]
@@ -908,22 +897,28 @@ class Differ:
                     btags += ' ' * lb
                 else:
                     raise ValueError, 'unknown tag ' + `tag`
-            self._qformat(aelt, belt, atags, btags)
+            for line in self._qformat(aelt, belt, atags, btags):
+                yield line
         else:
             # the synch pair is identical
-            self.results.append('  ' + aelt)
+            yield '  ' + aelt
 
         # pump out diffs from after the synch point
-        self._fancy_helper(a, best_i+1, ahi, b, best_j+1, bhi)
+        for line in self._fancy_helper(a, best_i+1, ahi, b, best_j+1, bhi):
+            yield line
 
     def _fancy_helper(self, a, alo, ahi, b, blo, bhi):
+        g = []
         if alo < ahi:
             if blo < bhi:
-                self._fancy_replace(a, alo, ahi, b, blo, bhi)
+                g = self._fancy_replace(a, alo, ahi, b, blo, bhi)
             else:
-                self._dump('-', a, alo, ahi)
+                g = self._dump('-', a, alo, ahi)
         elif blo < bhi:
-            self._dump('+', b, blo, bhi)
+            g = self._dump('+', b, blo, bhi)
+
+        for line in g:
+            yield line
 
     def _qformat(self, aline, bline, atags, btags):
         r"""
@@ -949,13 +944,13 @@ class Differ:
         atags = atags[common:].rstrip()
         btags = btags[common:].rstrip()
 
-        self.results.append("- " + aline)
+        yield "- " + aline
         if atags:
-            self.results.append("? %s%s\n" % ("\t" * common, atags))
+             yield "? %s%s\n" % ("\t" * common, atags)
 
-        self.results.append("+ " + bline)
+        yield "+ " + bline
         if btags:
-            self.results.append("? %s%s\n" % ("\t" * common, btags))
+            yield "? %s%s\n" % ("\t" * common, btags)
 
 # With respect to junk, an earlier version of ndiff simply refused to
 # *start* a match with a junk element.  The result was cases like this:
@@ -1050,7 +1045,7 @@ def ndiff(a, b, linejunk=IS_LINE_JUNK, charjunk=IS_CHARACTER_JUNK):
 
 def restore(delta, which):
     r"""
-    Return one of the two sequences that generated a delta.
+    Generate one of the two sequences that generated a delta.
 
     Given a `delta` produced by `Differ.compare()` or `ndiff()`, extract
     lines originating from file 1 or 2 (parameter `which`), stripping off line
@@ -1060,6 +1055,7 @@ def restore(delta, which):
 
     >>> diff = ndiff('one\ntwo\nthree\n'.splitlines(1),
     ...              'ore\ntree\nemu\n'.splitlines(1))
+    >>> diff = list(diff)
     >>> print ''.join(restore(diff, 1)),
     one
     two
@@ -1075,11 +1071,9 @@ def restore(delta, which):
         raise ValueError, ('unknown delta choice (must be 1 or 2): %r'
                            % which)
     prefixes = ("  ", tag)
-    results = []
     for line in delta:
         if line[:2] in prefixes:
-            results.append(line[2:])
-    return results
+            yield line[2:]
 
 def _test():
     import doctest, difflib
