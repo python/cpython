@@ -293,7 +293,7 @@ paper-$(PAPER)/$(WHATSNEW).pdf: whatsnew/$(WHATSNEW).tex
 # conversions, as described above.  See also the README file.
 
 info:
-	cd $(INFODIR) && $(MAKE) EMACS=$(EMACS)
+	cd $(INFODIR) && $(MAKE) EMACS=$(EMACS) WHATSNEW=$(WHATSNEW)
 
 # Targets to convert the manuals to HTML using Nikos Drakos' LaTeX to
 # HTML converter.  For more info on this program, see
