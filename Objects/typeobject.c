@@ -757,7 +757,9 @@ best_base(PyObject *bases)
 			return NULL;
 		}
 	}
-	assert(base != NULL);
+	if (base == NULL)
+		PyErr_SetString(PyExc_TypeError,
+			"a new-style class can't have only classic bases");
 	return base;
 }
 

@@ -922,6 +922,16 @@ def multi():
     vereq(m.m3method(), "M3 a")
     vereq(m.all_method(), "M3 b")
 
+    class Classic:
+        pass
+    try:
+        class New(Classic):
+            __metaclass__ = type
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "new class with only classic bases - shouldn't be"
+
 def diamond():
     if verbose: print "Testing multiple inheritance special cases..."
     class A(object):
