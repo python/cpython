@@ -11,9 +11,14 @@ MAXLINESIZE = 76
 HEX = '0123456789ABCDEF'
 EMPTYSTRING = ''
 
+try:
+  from binascii import a2b_qp, b2a_qp
+except:
+  a2b_qp = None
+  b2a_qp = None
 
 
-def needsquoting(c, quotetabs):
+def needsquoting(c, quotetabs, header):
     """Decide whether a particular character needs to be quoted.
 
     The 'quotetabs' flag indicates whether embedded tabs and spaces should be
@@ -22,6 +27,9 @@ def needsquoting(c, quotetabs):
     """
     if c in ' \t':
         return quotetabs
+    # if header, we have to escape _ because _ is used to escape space
+    if c == '_': 
+        return header
     return c == ESCAPE or not (' ' <= c <= '~')
 
 def quote(c):
@@ -31,14 +39,23 @@ def quote(c):
 
 
 
-def encode(input, output, quotetabs):
+def encode(input, output, quotetabs, header = 0):
     """Read 'input', apply quoted-printable encoding, and write to 'output'.
 
     'input' and 'output' are files with readline() and write() methods.
     The 'quotetabs' flag indicates whether embedded tabs and spaces should be
     quoted.  Note that line-ending tabs and spaces are always encoded, as per
     RFC 1521.
+    The 'header' flag indicates whether we are encoding spaces as _ as per
+    RFC 1522.
     """
+
+    if b2a_qp is not None:
+        data = input.read()
+        odata = b2a_qp(data, quotetabs = quotetabs, header = header)
+        output.write(odata)
+        return
+      
     def write(s, output=output, lineEnd='\n'):
         # RFC 1521 requires that the line ending in a space or tab must have
         # that trailing character encoded.
@@ -60,9 +77,12 @@ def encode(input, output, quotetabs):
             stripped = '\n'
         # Calculate the un-length-limited encoded line
         for c in line:
-            if needsquoting(c, quotetabs):
+            if needsquoting(c, quotetabs, header):
                 c = quote(c)
-            outline.append(c)
+            if header and c == ' ':
+                outline.append('_')
+            else:
+                outline.append(c)
         # First, write out the previous line
         if prevline is not None:
             write(prevline)
@@ -80,19 +100,28 @@ def encode(input, output, quotetabs):
     if prevline is not None:
         write(prevline, lineEnd=stripped)
 
-def encodestring(s, quotetabs=0):
+def encodestring(s, quotetabs = 0, header = 0):
+    if b2a_qp is not None:
+        return b2a_qp(s, quotetabs = quotetabs, header = header)
     from cStringIO import StringIO
     infp = StringIO(s)
     outfp = StringIO()
-    encode(infp, outfp, quotetabs)
+    encode(infp, outfp, quotetabs, header)
     return outfp.getvalue()
 
 
 
-def decode(input, output):
+def decode(input, output, header = 0):
     """Read 'input', apply quoted-printable decoding, and write to 'output'.
+    'input' and 'output' are files with readline() and write() methods.
+    If 'header' is true, decode underscore as space (per RFC 1522)."""
 
-    'input' and 'output' are files with readline() and write() methods."""
+    if a2b_qp is not None:
+        data = input.read()
+        odata = a2b_qp(data, header = header)
+        output.write(odata)
+        return
+
     new = ''
     while 1:
         line = input.readline()
@@ -107,7 +136,9 @@ def decode(input, output):
             partial = 1
         while i < n:
             c = line[i]
-            if c != ESCAPE:
+            if c == '_' and header:
+                new = new + ' '; i = i+1
+            elif c != ESCAPE:
                 new = new + c; i = i+1
             elif i+1 == n and not partial:
                 partial = 1; break
@@ -123,11 +154,13 @@ def decode(input, output):
     if new:
         output.write(new)
 
-def decodestring(s):
+def decodestring(s, header = 0):
+    if a2b_qp is not None:
+        return a2b_qp(s, header = header)
     from cStringIO import StringIO
     infp = StringIO(s)
     outfp = StringIO()
-    decode(infp, outfp)
+    decode(infp, outfp, header = header)
     return outfp.getvalue()
 
 

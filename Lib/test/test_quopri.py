@@ -104,6 +104,12 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
         ('hello\tworld', 'hello=09world'),
         )
 
+    # These are used in the "header=1" tests.
+    HSTRINGS = (
+        ('hello world', 'hello_world'),
+        ('hello_world', 'hello=5Fworld'),
+        )
+
     def test_encodestring(self):
         for p, e in self.STRINGS:
             self.assert_(encodestring(p) == e)
@@ -135,6 +141,13 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
             self.assert_(encodestring(p, quotetabs=1) == e)
             self.assert_(decodestring(e) == p)
 
+    def test_encode_header(self):
+        for p, e in self.HSTRINGS:
+            self.assert_(encodestring(p, header = 1) == e)
+
+    def test_decode_header(self):
+        for p, e in self.HSTRINGS:
+            self.assert_(decodestring(e, header = 1) == p)
 
 def test_main():
     test_support.run_unittest(QuopriTestCase)
