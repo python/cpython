@@ -286,6 +286,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define if you want to compile in cycle garbage collection */
 #define WITH_CYCLE_GC 1
 
+/* Define if you want cross-platform newline support for reading */
+#define WITH_UNIVERSAL_NEWLINES
+
 /* Define if you want to emulate SGI (IRIX 4) dynamic linking.
    This is rumoured to work on VAX (Ultrix), Sun3 (SunOS 3.4),
    Sequent Symmetry (Dynix), and Atari ST.
