@@ -39,7 +39,7 @@ class ExpatParser( xmlreader.IncrementalParser, xmlreader.Locator ):
     # XMLReader methods
 
     def parse(self, stream_or_string ):
-	"Parse an XML document from a URL."
+        "Parse an XML document from a URL."
         if type( stream_or_string ) == type( "" ):
             stream=open( stream_or_string )
         else:
