@@ -1427,7 +1427,10 @@ PyNumber_CoerceEx(PyObject **pv, PyObject **pw)
 	register PyObject *w = *pw;
 	int res;
 
-	if (v->ob_type == w->ob_type && !PyInstance_Check(v)) {
+	/* Shortcut only for old-style types */
+	if (v->ob_type == w->ob_type &&
+	    !PyType_HasFeature(v->ob_type, Py_TPFLAGS_CHECKTYPES))
+	{
 		Py_INCREF(v);
 		Py_INCREF(w);
 		return 0;

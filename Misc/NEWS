@@ -163,6 +163,10 @@ Build
 
 C API
 
+- PyNumber_Coerce() and PyNumber_CoerceEx() now also invoke the type's
+  coercion if both arguments have the same type but this type has the
+  CHECKTYPES flag set.  This is to better support proxies.
+
 - The type of tp_free has been changed from "void (*)(PyObject *)" to
   "void (*)(void *)".
 
