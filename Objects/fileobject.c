@@ -92,6 +92,14 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 	assert(name != NULL);
 	assert(mode != NULL);
 
+	/* rexec.py can't stop a user from getting the file() constructor --
+	   all they have to do is get *any* file object f, and then do
+	   type(f).  Here we prevent them from doing damage with it. */
+	if (PyEval_GetRestricted()) {
+		PyErr_SetString(PyExc_IOError,
+			"file() constructor not accessible in restricted mode");
+		return NULL;
+	}
 #ifdef HAVE_FOPENRF
 	if (*mode == '*') {
 		FILE *fopenRF();
