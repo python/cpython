@@ -6,6 +6,8 @@ It is created by copying an applet template and then adding a 'PYC '
 resource named __main__ containing the compiled, marshalled script.
 """
 
+DEBUG=0
+
 import sys
 sys.stdout = sys.stderr
 
@@ -35,11 +37,8 @@ OWNERNAME = "owner resource"
 READ = 1
 WRITE = 2
 
-def main():
-	
-	# Find the template
-	# (there's no point in proceeding if we can't find it)
-	
+def findtemplate():
+	"""Locate the applet template along sys.path"""
 	for p in sys.path:
 		template = os.path.join(p, TEMPLATE)
 		try:
@@ -51,6 +50,16 @@ def main():
 		die("Template %s not found on sys.path" % `TEMPLATE`)
 		return
 	template = template.as_pathname()
+	return template
+
+def main():
+	global DEBUG
+	DEBUG=1
+	
+	# Find the template
+	# (there's no point in proceeding if we can't find it)
+	
+	template = findtemplate()
 	print 'Using template', template
 			
 	# Ask for source text if not specified in sys.argv[1:]
@@ -78,7 +87,8 @@ undefs = ('Atmp', '????', '    ', '\0\0\0\0', 'BINA')
 
 def process(template, filename, output):
 	
-	print "Processing", `filename`, "..."
+	if DEBUG:
+		print "Processing", `filename`, "..."
 	
 	# Read the source and compile it
 	# (there's no point overwriting the destination if it has a syntax error)
@@ -130,7 +140,8 @@ def process(template, filename, output):
 	try:
 		output = FSpOpenResFile(dest_fss, WRITE)
 	except MacOS.Error:
-		print "Creating resource fork..."
+		if DEBUG:
+			print "Creating resource fork..."
 		CreateResFile(destname)
 		output = FSpOpenResFile(dest_fss, WRITE)
 	
@@ -145,7 +156,8 @@ def process(template, filename, output):
 	
 	try:
 		input = FSpOpenResFile(rsrcname, READ)
-	except MacOS.Error:
+	except (MacOS.Error, ValueError):
+		print 'No resource file', rsrcname
 		pass
 	else:
 		newctor = copyres(input, output)
@@ -218,7 +230,8 @@ def copyres(input, output):
 			if lcname == OWNERNAME: ctor = type
 			size = res.size
 			attrs = res.GetResAttrs()
-			print id, type, name, size, hex(attrs)
+			if DEBUG:
+				print id, type, name, size, hex(attrs)
 			res.LoadResource()
 			res.DetachResource()
 			UseResFile(output)
@@ -227,12 +240,14 @@ def copyres(input, output):
 			except MacOS.Error:
 				res2 = None
 			if res2:
-				print "Overwriting..."
+				if DEBUG:
+					print "Overwriting..."
 				res2.RemoveResource()
 			res.AddResource(type, id, name)
 			res.WriteResource()
 			attrs = attrs | res.GetResAttrs()
-			print "New attrs =", hex(attrs)
+			if DEBUG:
+				print "New attrs =", hex(attrs)
 			res.SetResAttrs(attrs)
 			UseResFile(input)
 	return ctor
