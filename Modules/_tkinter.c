@@ -1519,6 +1519,9 @@ init_tkinter()
 	ins_string(d, "TK_VERSION", TK_VERSION);
 	ins_string(d, "TCL_VERSION", TCL_VERSION);
 
+	PyDict_SetItemString(d, "TkappType", (PyObject *)&Tkapp_Type);
+	PyDict_SetItemString(d, "TkttType", (PyObject *)&Tktt_Type);
+
 	if (PyOS_InputHook == NULL)
 		PyOS_InputHook = EventHook;
 
