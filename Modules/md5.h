@@ -37,6 +37,8 @@ typedef unsigned long int UINT4;
 typedef unsigned short int UINT4;
 #elif INT_MAX == 2147483647
 typedef unsigned int UINT4;
+#else
+#error "Can't find a 4-byte integral type"
 #endif
 
 /* ========== End global.h; continue md5.h ========== */
