@@ -1419,6 +1419,13 @@ failure. This is the equivalent of the Python statement \samp{del
 \var{o}[\var{key}]}.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{int}{PyObject_AsFileDescriptor}{PyObject *o}
+Derives a file-descriptor from a Python object.  If the object
+is an integer or long integer, its value is returned.  If not, the
+object's \method{fileno()} method is called if it exists; the method
+must return an integer or long integer, which is returned as the file
+descriptor value.  Returns \code{-1} on failure.
+\end{cfuncdesc}
 
 \section{Number Protocol \label{number}}
 
