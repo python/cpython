@@ -328,8 +328,4 @@ initfcntl(void)
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
 	all_ins(d);
-
-	/* Check for errors */
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module fcntl");
 }

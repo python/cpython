@@ -232,8 +232,4 @@ initsyslog(void)
 	ins(d, "LOG_CRON",	LOG_CRON);
 	ins(d, "LOG_UUCP",	LOG_UUCP);
 	ins(d, "LOG_NEWS",	LOG_NEWS);
-
-	/* Check for errors */
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module syslog");
 }

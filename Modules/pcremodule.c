@@ -650,9 +650,5 @@ initpcre(void)
 	insint(d, "DOTALL", PCRE_DOTALL);
 	insint(d, "VERBOSE", PCRE_EXTENDED);
 	insint(d, "LOCALE", PCRE_LOCALE);
-	
-	/* Check for errors */
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module pcre");
 }
 

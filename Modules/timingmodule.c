@@ -72,6 +72,4 @@ static PyMethodDef timing_methods[] = {
 DL_EXPORT(void) inittiming(void)
 {
 	(void)Py_InitModule("timing", timing_methods);
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module timing");
 }

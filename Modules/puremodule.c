@@ -983,6 +983,4 @@ initpure()
 #else
 	PyDict_SetItemString(d, "QUANTIFY_VERSION", Py_None);
 #endif
-	if (PyErr_Occurred())
-		Py_FatalError("couldn't initialize the pure module");
 }

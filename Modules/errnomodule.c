@@ -35,17 +35,14 @@ static PyMethodDef errno_methods[] = {
 static void
 _inscode(PyObject *d, PyObject *de, char *name, int code)
 {
-	PyObject *u;
-	PyObject *v;
+	PyObject *u = PyString_FromString(name);
+	PyObject *v = PyInt_FromLong((long) code);
 
-	u = PyString_FromString(name);
-	v = PyInt_FromLong((long) code);
-
-	if (!u || !v) {
-		/* Don't bother reporting this error */
-		PyErr_Clear();
-	}
-	else {
+	/* Don't bother checking for errors; they'll be caught at the end
+	 * of the module initialization function by the caller of
+	 * initerrno().
+	 */
+	if (u && v) {
 		/* insert in modules dict */
 		PyDict_SetItem(d, u, v);
 		/* insert in errorcode dict */
@@ -76,8 +73,8 @@ initerrno(void)
 	m = Py_InitModule3("errno", errno_methods, errno__doc__);
 	d = PyModule_GetDict(m);
 	de = PyDict_New();
-	if (de == NULL || PyDict_SetItemString(d, "errorcode", de))
-		Py_FatalError("can't initialize errno module");
+	if (!d || !de || PyDict_SetItemString(d, "errorcode", de) < 0)
+		return;
 
 /* Macro so I don't have to edit each and every line below... */
 #define inscode(d, ds, de, name, code, comment) _inscode(d, de, name, code)

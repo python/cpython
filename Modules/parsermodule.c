@@ -2862,11 +2862,10 @@ initparser(void)
         parser_error = PyErr_NewException("parser.ParserError", NULL, NULL);
 
     if ((parser_error == 0)
-        || (PyDict_SetItemString(dict, "ParserError", parser_error) != 0)) {
-        /*
-         *  This is serious.
-         */
-        Py_FatalError("can't define parser.ParserError");
+        || (PyDict_SetItemString(dict, "ParserError", parser_error) != 0))
+    {
+	    /* caller will check PyErr_Occurred() */
+	    return;
     }
     /*
      *  Nice to have, but don't cry if we fail.
