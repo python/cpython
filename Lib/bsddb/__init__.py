@@ -184,7 +184,7 @@ class _DBWithCursor(_iter_mixin):
     # BerkeleyDB deadlocks (due to being opened with DB_INIT_LOCK
     # and DB_THREAD to be thread safe) when intermixing database
     # operations that use the cursor internally with those that don't.
-    def _closeCursors(self, save=True):
+    def _closeCursors(self, save=1):
         if self.dbc:
             c = self.dbc
             self.dbc = None
@@ -223,7 +223,7 @@ class _DBWithCursor(_iter_mixin):
         del self.db[key]
 
     def close(self):
-        self._closeCursors(save=False)
+        self._closeCursors(save=0)
         if self.dbc is not None:
             self.dbc.close()
         v = 0
