@@ -1778,7 +1778,7 @@ cmpwrapper_call(cmpwrapperobject *co, PyObject *args, PyObject *kwds)
 	if (!PyArg_UnpackTuple(args, "", 2, 2, &x, &y))
 		return NULL;
 	if (!PyObject_TypeCheck(x, &sortwrapper_type) ||
-	    !PyObject_TypeCheck(x, &sortwrapper_type)) {
+	    !PyObject_TypeCheck(y, &sortwrapper_type)) {
 		PyErr_SetString(PyExc_TypeError, 
 			"expected a sortwrapperobject");
 		return NULL;
