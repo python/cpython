@@ -1717,13 +1717,18 @@ builtin_zip(PyObject *self, PyObject *args)
 	/* args must be a tuple */
 	assert(PyTuple_Check(args));
 
-	/* Guess at result length:  the shortest of the input lengths. */
+	/* Guess at result length:  the shortest of the input lengths.
+	   If some argument refuses to say, we refuse to guess too, lest
+	   an argument like xrange(sys.maxint) lead us astray.*/
 	len = -1;	/* unknown */
 	for (i = 0; i < itemsize; ++i) {
 		PyObject *item = PyTuple_GET_ITEM(args, i);
 		int thislen = PySequence_Length(item);
-		if (thislen < 0)
+		if (thislen < 0) {
 			PyErr_Clear();
+			len = -1;
+			break;
+		}
 		else if (len < 0 || thislen < len)
 			len = thislen;
 	}
