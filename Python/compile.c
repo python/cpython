@@ -2274,7 +2274,7 @@ compile_lambdef(c, n)
 {
 	node *ch;
 	REQ(n, lambdef); /* lambdef: 'lambda' [parameters] ':' test */
-	c->c_name = NULL;
+	c->c_name = "<lambda>";
 
 	ch = CHILD(n, 1);
 	if (TYPE(ch) == COLON) {
@@ -2515,12 +2515,7 @@ compile(n, filename)
 	if (sc.c_errors == 0) {
 		object *v, *w;
 		v = newstringobject(sc.c_filename);
-		if (sc.c_name)
-			w = newstringobject(sc.c_name);
-		else {
-			INCREF(None);
-			w = None;
-		}
+		w = newstringobject(sc.c_name);
 		if (v != NULL && w != NULL)
 			co = newcodeobject(sc.c_code, sc.c_consts,
 					   sc.c_names, v, w);
