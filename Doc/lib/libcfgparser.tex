@@ -17,7 +17,7 @@ The configuration file consists of sections, lead by a
 with continuations in the style of \rfc{959}.  The optional values 
 can contain format strings which refer to other values in the same
 section, or values in a special \code{DEFAULT} section.  Additional
-defaults can provided upon instantiation of the class.
+defaults can be provided upon initialization and retrieval.
 
 For example:
 
@@ -29,7 +29,9 @@ would resolve the \samp{\%(dir)s} to the value of dir. All reference
 expansions are done late, on demand.
 
 Intrinsic defaults can be specified by passing them into the
-\class{ConfigParser} constructor as a dictionary.
+\class{ConfigParser} constructor as a dictionary.  Additional defaults
+may be passed into the \method{get} method which will override all
+others.
 
 \begin{classdesc}{ConfigParser}{\optional{defaults}}
 Return a new instance of the \class{ConfigParser} class.  When
@@ -66,6 +68,7 @@ headers.
 Exception raised when errors occur attempting to parse a file.
 \end{excdesc}
 
+
 \subsection{ConfigParser Objects \label{ConfigParser-objects}}
 
 \class{ConfigParser} instances have the following methods:
@@ -91,11 +94,11 @@ Returns a list of options available in the specified \var{section}.
 Read and parse a list of filenames.
 \end{methoddesc}
 
-\begin{methoddesc}{get}{section, option\optional{, raw}}
+\begin{methoddesc}{get}{section, option\optional{, raw\optional{, vars}}}
 Get an \var{option} value for the provided \var{section}.  All the
 \samp{\%} interpolations are expanded in the return values, based on
-the defaults passed into the constructor, unless the \var{raw}
-argument is true.
+the defaults passed into the constructor, as well as the options
+\var{vars} provided, unless the \var{raw} argument is true.
 \end{methoddesc}
 
 \begin{methoddesc}{getint}{section, option}
