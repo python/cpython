@@ -21,6 +21,9 @@ static char *which_dbm = "GNU gdbm";  /* EMX port of GDBM */
 #elif defined(HAVE_GDBM_NDBM_H)
 #include <gdbm/ndbm.h>
 static char *which_dbm = "GNU gdbm";
+#elif defined(HAVE_BERKDB_H)
+#include <db.h>
+static char *which_dbm = "Berkeley DB";
 #else
 #error "No ndbm.h available!"
 #endif
