@@ -33,6 +33,10 @@ currently not supported.  The address format required by a particular
 socket object is automatically selected based on the address family
 specified when the socket object was created.
 
+For IP addresses, two special forms are accepted instead of a host
+address: the empty string represents \code{INADDR_ANY}, and the string
+\code{"<broadcast>"} represents \code{INADDR_BROADCAST}.
+
 All errors raise exceptions.  The normal exceptions for invalid
 argument types and out-of-memory conditions can be raised; errors
 related to socket or address semantics raise the error \code{socket.error}.
