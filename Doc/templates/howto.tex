@@ -20,6 +20,16 @@
 \begin{document}
 \maketitle
 
+% This makes the Abstract go on a separate page in the HTML version;
+% if a copyright notice is used, it should go immediately after this.
+%
+\ifhtml
+\chapter*{Front Matter\label{front}}
+\fi
+
+% Copyright statement should go here, if needed.
+% ...
+
 % The abstract should be a paragraph or two long, and describe the
 % scope of the document.
 \begin{abstract}
