@@ -1,8 +1,20 @@
-/* TODO:
+/* csv module */
+
+/*
+
+This module provides the low-level underpinnings of a CSV reading/writing
+module.  Users should not use this module directly, but import the csv.py
+module instead.
+
+**** For people modifying this code, please note that as of this writing
+**** (2003-03-23), it is intended that this code should work with Python
+**** 2.2.
+
 */
 
 #include "Python.h"
 #include "structmember.h"
+
 
 /* begin 2.2 compatibility macros */
 #ifndef PyDoc_STRVAR
