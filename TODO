@@ -1,32 +1,43 @@
-(-) speedup finddfa (and classify?)
-
-(-) more stuff under CVS (demo, extensions)
-
-(-) Mac port of 1.0.3++
-
-(-) Win32s for PC
-
-(-) integrate NT changes
-
-(-) print_error raises and then masks an error if softspace is not
-    defined
 
 (-) systematically create /usr/local/lib/python/<machine>-<os>/
     subdirectories, with a lib/ subdirectory containing the lib*.a
     files etc.
 
+(-) need newer DOS binary (16 bit version doesn't do default args)
+
+(-) support for dynamically loadable libraries in makesetup and Extensions.
+    e.g. add a make rule to build .so files (unfortunately need to figure
+    out what ld option is needed) (more appropriate for makesetup
+    script?)
+
+(-) Move tkinter into the standard Modules directory; Tkinter c.s. to
+    Lib/tkinter etc. (???)
+
+(-) document Tk
+
+(-) class browser
+
+(-) interactive Python GUI (a la NT thingie)
+
+(-) speedup finddfa (and classify?)
+
+(-) more stuff under CVS (demo, extensions)
+
+(-) Mac port of 1.1
+
+(-) Mac port of STDWIN 0.9.9 to THINK C 6.0
+
 (-) use const for char * parameters (and many more) where possible
 
 (-) The Great Renaming!
 
-(-) redo __xxx__ operators for class instances; add __getattr__ and
-__setattr__.
+(-) redo __xxx__ operators for class instances
+
+(-) document __getattr__, __setattr__
+
+(-) add __delattr__ to class instances
 
 (-) many things that take strings should also take arrays of chars
-
-(-) fix pow(x, y, z) for integers
-
-(*) add tuple(seq) to turn any sequence into a tuple
 
 (-) add list of existing extensions to FAQ
 
@@ -34,11 +45,23 @@ __setattr__.
 
 (-) rewrite "output formatting" chapter in tutorial
 
-(-) add a make rule to build .so files (unfortunately need to figure
-    out what ld option is needed) (more appropriate for makesetup
-    script?)
+(*) pass OPT from environment via configure to Makefile
 
-(-) write a script and add a "Make" rule (perhaps) that changes
+(*) version.c should be recompiled for each link
+
+(*) stropmodule should export find/rfind instead of index/rindex
+
+(*) add __getattr__, __setattr__ to class instances
+
+(*) fix pow(x, y, z) for integers
+
+(*) add tuple(seq) to turn any sequence into a tuple
+
+(*) Win32s for PC
+
+(*) integrate NT changes
+
+(*) write a script and add a "Make" rule (perhaps) that changes
     #!/usr/local/bin/python to something else in all scripts around.
 
 (*) int*int overflow check shouldn't doubles on alpha (cf. John Tromp's mail)
@@ -55,15 +78,13 @@ __setattr__.
 
 (*) import.c from JaapV
 
-(-) document os.exec*
+(*) document os.exec*
 
 (*) name sunaudiodevmodule.c is too long
 
 (*) play with / include SUIT interface
 
 (-) make regsub.[g]sub() optionally case insensitive
-
-(-) handle printing of errors in lines containing multiline strings
 
 ======================================================================
 
@@ -79,13 +100,11 @@ __setattr__.
 
 (*) need way to force stdout unbuffered
 
-(-) document new modules (builtin as well as Lib)
-
 (*) restart CVS tree
 
 (?) build shared libs for SunOS 4.1.3
 
-(-) Mac X... code resources as shared libs?
+(-) dynamic linking on the Mac (is this a dream?)
 
 (*) X patches from Adrian Phillips
 

@@ -1,22 +1,12 @@
-Python release 1.0.3
-====================
+Python release 1.1
+==================
 
-==> This is patch number 3 to Python 1.0, bumping its version string
-    to 1.0.3.  It consists almost entirely of essential bug fixes to
-    the C sources.  See the file Misc/NEWS for a description of what's
-    new in this patch (as well as what's new in 1.0).
+==> This is Python version 1.1.  
 
-==> Python 1.0 is the first "official" Python release in more than
-    half a year.  It's significantly improved over version 0.9.9, both
-    at the functionality level and (especially) in portability of the
-    source -- you should now be able to configure build this without
-    manual intervention on almost any type of Unix system.  It is
-    known to work at least on IRIX 4 and 5, SunOS 4, Solaris 2, HP-UX,
-    Ultrix, OSF/1, AIX, SCO ODT 3.0, Minix, Linux, SEQUENT, and
-    through the use of automatic feature detection should work on most
-    other Unix flavors as well.  Binaries are available for Macintosh
-    and PC platforms (for DOS, DOS w/ 32-bit extender, Windows, and
-    Windows NT).
+==> Python 1.1 contains many improvements over 1.0.3, but is almost
+    backward compatible (though the magic number for .pyc file has
+    changed).  It comes with build instructions for many more non-UNIX
+    platforms.
 
 ==> If you don't know yet what Python is: it's an interpreted,
     extensible, embeddable, interactive, object-oriented programming
@@ -76,7 +66,10 @@ copy to Setup for specific systems; have a look at Setup.*.)
 
 If you want to change the optimization level of the build, assign to
 the OPT variable on the toplevel make command; e.g. "make OPT=-g" will
-build a debugging version of Python on most platforms.
+build a debugging version of Python on most platforms.  The default is
+OPT=-O; a value for OPT in the environment when the configure script
+is run overrides this default (likewise for CC; and the initial value
+for LIBS is used as the base set of libraries to link with).
 
 To test the interpreter that you have just built, type "make test".
 This runs the test set silently, twice (once with no compiled files,
@@ -162,6 +155,11 @@ library:
 	#define sigmask(sig)	(1L << ((sig)-1))
 	#endif
 
+    - On most systems, you will have to add #include "rldefs.h" to the
+    top of several source files, and if you use the VPATH feature, you
+    will have to add dependencies of the form foo.o: foo.c to the
+    Makefile for several values of foo.
+
     - The readline library requires use of the termcap library.  A
     known problem with this is that it contains entry points which
     cause conflicts with the STDWIN and SGI GL libraries.  The stdwin
@@ -172,7 +170,8 @@ library:
     hack that forces use of the static version of the termcap library.
 
     - Check the newsgroup gnu.bash.bugs for specific problems with the
-    readline library.
+    readline library (I don't get this group here but I've been told
+    that it is the place for readline bugs.)
 
 - On SGI IRIX, and on Sun SOLARIS 2, you can use multiple threads.  To
 enable this, pass --with-thread.  In the Modules/Setup file, enable
@@ -191,7 +190,8 @@ ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.  This is enabled (after
 you've ftp'ed and compiled the dl library!) by passing
 --with-sgi-dl=DIRECTORY where DIRECTORY is the absolute pathname of
 the dl library.  (Don't bother on IRIX 5, it already has dynamic
-linking using SunOS style shared libraries.)
+linking using SunOS style shared libraries.)  Support for this feature
+is deprecated.
 
 - Dynamic loading of modules is rumoured to be supported on some other
 systems: VAX (Ultrix), Sun3 (SunOS 3.4), Sequent Symmetry (Dynix), and
@@ -204,7 +204,7 @@ it the option --with-dl-dld=DL_DIRECTORY,DLD_DIRECTORY where
 DL_DIRECTORY is the absolute pathname of the dl emulation library and
 DLD_DIRECTORY is the absolute pathname of the GNU dld library.  (Don't
 bother on SunOS 4 or 5, they already have dynamic linking using shared
-libraries.)
+libraries.)  Support for this feature is deprecated.
 
 - It is possible to specify alternative versions for the Math library
 (default -lm) and the C library (default the empty string) using the
@@ -266,37 +266,8 @@ however this assumes that you only need to add modules.)
 Troubleshooting
 ---------------
 
-Here is a selection from the FAQ on various common problems.
-
-3.6. Q. Link errors building Python with STDWIN on SGI IRIX.
-
-A. Rebuild STDWIN, specifying "CC=cc -cckr" in the Makefile.
-
-3.8. Q. Link errors after rerunning the configure script.
-
-A. It is generally necessary to run "make clean" after a configuration
-change.
-
-3.9. Q. The python interpreter complains about options passed to a
-script (after the script name).
-
-A. You are probably linking with GNU getopt, e.g. through -liberty.
-Don't.  (If you are using this because you link with -lreadline, use
-the readline distributed with Python instead.)
-
-3.10. Q. When building on the SGI, make tries to run python to create
-glmodule.c, but python hasn't been built or installed yet.
-
-A. Comment out the line mentioning glmodule.c in Setup and build a
-python without gl first; install it or make sure it is in your $PATH,
-then edit the Setup file again to turn on the gl module, and make
-again.  You don't need to do "make clean"; you do need to run "make
-Makefile" in the Modules subdirectory (or just run "make" at the
-toplevel).
-
-3.13. Q. Other trouble building Python 1.0.2 on platform X.
-
-A. Please email the details to <guido@cwi.nl> and I'll look into it.
+See section 3 of the FAQ (in subdirectory Misc of the distribution)
+for hints on what can go wrong, and how to fix it.
 
 
 Building on non-UNIX systems
@@ -314,6 +285,20 @@ HAVE_CONFIG_H is defined during compilation (usually by passing an
 argument of the form `-DHAVE_CONFIG_H' to the compiler, but this is
 necessarily system-dependent).
 
+I have tried to collect instructions, Makefiles and additional sources
+for various platforms in this release.  The following directories
+exist:
+
+Mac/		Apple Macintosh, using THINK C 6.0 or MPW 3.2.
+Dos/		MS-DOS and Windows 3.1, using Microsoft C.
+Nt/		Windows NT, using Microsoft Visual C/C++.
+Os2/		OS/2.
+
+Most of these instructions were last tested with a previous Python
+release, so you may still experience occasional problems.  If you have
+fixes or suggestions, please let me know and I'll try to incorporate
+them in the next release.
+
 
 Distribution structure
 ----------------------
@@ -322,12 +307,9 @@ Most subdirectories have their own README file.  Most files have
 comments.
 
 ChangeLog	A raw list of changes since the first 1.0.0 BETA release
-Contrib/	Contributed code
 Demo/		Demonstration scripts, modules and programs
-Demo2/		Some more demonstrations (not distributed)
 Doc/		Documentation (in LaTeX)
-Ext-dummy/	Placeholder for Extensions in the distribution
-Extensions/	Extension modules (not distributed)
+Extensions/	Extension modules (distributed separately)
 Grammar/	Input for the parser generator
 Include/	Public header files
 Lib/		Python library modules
@@ -346,7 +328,6 @@ configure	Configuration shell script (GNU autoconf output)
 configure.in	Configuration specification (GNU autoconf input)
 tags, TAGS	Tags files for vi and Emacs (generated)
 python		The executable interpreter (generated)
-readline/	Source code for the GNU readline library
 
 
 Ftp access
@@ -393,10 +374,10 @@ Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
+both that copyright notice and this permission notice appear in
 supporting documentation, and that the names of Stichting Mathematisch
 Centrum or CWI not be used in advertising or publicity pertaining to
 distribution of the software without specific, written prior permission.
@@ -414,4 +395,4 @@ Signature
 ---------
 
 --Guido van Rossum, CWI, Amsterdam <Guido.van.Rossum@cwi.nl>
-URL:  <http://www.cwi.nl/cwi/people/Guido.van.Rossum.html>
+<URL:http://www.cwi.nl/cwi/people/Guido.van.Rossum.html>
