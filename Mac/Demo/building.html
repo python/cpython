@@ -58,7 +58,14 @@ obtainable from <A
 HREF="ftp://sunsite.cnlab-switch.ch/software/platform/macos/src">
 ftp://sunsite.cnlab-switch.ch/software/platform/macos/src</A>.
 At the moment Python is built with a slightly modified version of GUSI,
-these modifications are available in folder <code>Python:Mac:GUSI-mods</code>.
+these modifications are available in folder <code>Python:Mac:GUSI-mods</code>. <br>
+
+The modified GUSI is also in the MacPython cvs source repository, in the
+directory <code>lib-src/CWGUSI</code>. However, some files contain slashes in
+their names, something CVS seriously frowns upon, and each slash has been
+replaced by <code>"_s_"</code>. There is a script
+<code>Mac:scripts:fixgusidir.py</code> which you should run after checking CWGUSI
+out
 
 </UL>
 
@@ -91,12 +98,14 @@ and various other places.
 <LI> Gdbm library for the Mac. Available from Jack's Mac software page at
 <A HREF="http://www.cwi.nl/~jack/macsoftware.html">
 http://www.cwi.nl/~jack/macsoftware.html</A> and <A HREF="ftp://ftp.cwi.nl/pub/jack/mac">
-ftp://ftp.cwi.nl/pub/jack/mac</A>.
+ftp://ftp.cwi.nl/pub/jack/mac</A>. Also in the MacPython cvs repository at
+<code>lib-src/gdbm</code>.
 
 <LI> JPEG library by the Independent JPEG Group. A version including
 Mac projects can be found at Jack's page mentioned above. 
 The most recent JPEG library can always be obtained from <A
-HREF="ftp://ftp.uu.net/graphics/jpeg/">ftp://ftp.uu.net/graphics/jpeg/</A>.
+HREF="ftp://ftp.uu.net/graphics/jpeg/">ftp://ftp.uu.net/graphics/jpeg/</A>. Again,
+also in the MacPython cvs repository at <code>lib-src/jpeg</code>.
 
 <LI> The netpbm/pbmplus, libtiff, zlib and png libraries. The netpbm distribution
 (which includes libtiff) is generally available on Internet ftp
@@ -104,7 +113,9 @@ servers. For Python pbmplus, an older incarnation of netpbm, is
 functionally identical to netpbm, since Python only uses the library
 and not the complete applications. A distribution with correct
 projects and library source only is available from, you guessed it, Jack's Mac software
-page mentioned above.
+page mentioned above. And, guessed it again, in the MacPython cvs repository
+at <code>lib-src/netpbm</code>, etc. The only gotcha is that libtiff lives in
+<code>lib-src/netpbm/libtiff</code>, for historical reasons.
 
 </UL>
 
@@ -199,9 +210,10 @@ work, the file <code>README-Mac</code> has some details.
 
 <DT> Extensions
 <DD> Extensions to the interpreter that are not Mac-specific. Contains
-only the <code>img</code> extension in this distribution. Extensions
-are not always built here, as they are on Unix, but sometimes incorporated in
-the core interpreter or built as plugin modules.
+the <code>img</code>, <code>Imaging</code> and <code>Numeric</code> extensions
+in this distribution. Nowadays, the extensions are all built in their own
+folders (unlike in older distributions, where img was incorporated in the main
+build procedure).
 
 <DT> Grammar
 <DD> The Python grammar. Included for reference only, you cannot build
@@ -240,7 +252,7 @@ All the mac-specific stuff lives in the <code>Mac</code> folder:
 <DD> This is where the project files live and where you build the
 libraries, shared libraries, executables and plugin modules. All the
 resulting binaries, except for intermedeate results, are deposited in
-the toplevel folder or the PlugIns folder (for plugin modules).
+the toplevel folder or the Mac:PlugIns folder (for plugin modules).
 
 <DT> Compat
 <DD> Unix-compatability routines. Some of these are not used anymore,
@@ -364,7 +376,8 @@ file, and add a <code>'PYC '</code> with the module to generate an
 applet. <p>
 
 <DT> Plugin projects
-<DD> Usually, each plugin module has a separate project.
+<DD> Each plugin module has a separate project. The <code>Plugins.prj</code>
+project tries to build them all, but is known to be flakey under CW Pro 4.
 </DL>
 
 After creating the alias to <code>PythonCore</code> you remove any old
@@ -374,11 +387,8 @@ to create the correct preferences file.  <p>
 
 Next, you have to build the extension modules.
 The <code>PlugIns.ppc</code> project has all the
-other projects as subprojects and builds everything. After all
-the dynamically loaded modules are built you have to create a number
-of aliases: some modules live together in a single dynamic
-library. Run the <code>ConfigurePython.py</code> script from
-<code>Mac:scripts</code> to create the aliases. <p>
+other projects as subprojects and builds everything (but see the gotcha above).
+<p>
 
 Finally, you must build the standard applets:
 <code>EditPythonPrefs</code>, <code>BuildApplet</code>, etc. This is
