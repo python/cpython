@@ -41,6 +41,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <ctype.h>
 
+extern int errno;
+
 #define OFF(x) offsetof(codeobject, x)
 
 static struct memberlist code_memberlist[] = {
@@ -349,14 +351,28 @@ parsenumber(s)
 	char *s;
 {
 	extern long strtol();
-	extern double atof();
+	extern double strtod();
 	char *end = s;
 	long x;
+	double xx;
+	errno = 0;
 	x = strtol(s, &end, 0);
-	if (*end == '\0')
+	if (*end == '\0') {
+		if (errno != 0) {
+			err_setstr(RuntimeError, "integer constant too large");
+			return NULL;
+		}
 		return newintobject(x);
-	if (*end == '.' || *end == 'e' || *end == 'E')
-		return newfloatobject(atof(s));
+	}
+	errno = 0;
+	xx = strtod(s, &end);
+	if (*end == '\0') {
+		if (errno != 0) {
+			err_setstr(RuntimeError, "float constant too large");
+			return NULL;
+		}
+		return newfloatobject(xx);
+	}
 	err_setstr(RuntimeError, "bad number syntax");
 	return NULL;
 }
@@ -1752,6 +1768,96 @@ compile_node(c, n)
 	}
 }
 
+/* Optimization for local and global variables.
+
+   Attempt to replace all LOAD_NAME instructions that refer to a local
+   variable with LOAD_LOCAL instructions, and all that refer to a global
+   variable with LOAD_GLOBAL instructions.
+   
+   To find all local variables, we check all STORE_NAME and IMPORT_FROM
+   instructions.  This yields all local variables, including arguments,
+   function definitions, class definitions and import statements.
+   
+   There is one leak: 'from foo import *' introduces local variables
+   that we can't know while compiling.  If this is the case, LOAD_GLOBAL
+   instructions are not generated -- LOAD_NAME is left in place for
+   globals, since it first checks for globals (LOAD_LOCAL is still used
+   for recognized locals, since it doesn't hurt).
+   
+   This optimization means that using the same name as a global and
+   as a local variable within the same scope is now illegal, which
+   is a change to the language!  Also using eval() to introduce new
+   local variables won't work.  But both were bad practice at best.
+   
+   The optimization doesn't save much: basically, it saves one
+   unsuccessful dictionary lookup per global (or built-in) variable
+   reference.  On the (slow!) Mac Plus, with 4 local variables,
+   this saving was measured to be about 0.18 ms.  We might save more
+   by using a different data structure to hold local variables, like
+   an array indexed by variable number.
+   
+   NB: this modifies the string object co->co_code!
+*/
+
+static void
+optimizer(co)
+	codeobject *co;
+{
+	char *next_instr, *cur_instr;
+	object *locals;
+	int opcode;
+	int oparg;
+	object *name;
+	int star_used;
+	
+#define NEXTOP()	(*next_instr++)
+#define NEXTARG()	(next_instr += 2, (next_instr[-1]<<8) + next_instr[-2])
+#define GETITEM(v, i)	(getlistitem((v), (i)))
+#define GETNAMEOBJ(i)	(GETITEM(co->co_names, (i)))
+
+	locals = newdictobject();
+	if (locals == NULL) {
+		err_clear();
+		return; /* For now, this is OK */
+	}
+	
+	next_instr = GETSTRINGVALUE(co->co_code); 
+	for (;;) {
+		opcode = NEXTOP();
+		if (opcode == STOP_CODE)
+			break;
+		if (HAS_ARG(opcode))
+			oparg = NEXTARG();
+		if (opcode == STORE_NAME || opcode == IMPORT_FROM) {
+			name = GETNAMEOBJ(oparg);
+			if (dict2insert(locals, name, None) != 0) {
+				DECREF(locals);
+				return; /* Sorry */
+			}
+		}
+	}
+	
+	star_used = (dictlookup(locals, "*") != NULL);
+	next_instr = GETSTRINGVALUE(co->co_code); 
+	for (;;) {
+		cur_instr = next_instr;
+		opcode = NEXTOP();
+		if (opcode == STOP_CODE)
+			break;
+		if (HAS_ARG(opcode))
+			oparg = NEXTARG();
+		if (opcode == LOAD_NAME) {
+			name = GETNAMEOBJ(oparg);
+			if (dictlookup(locals, getstringvalue(name)) != NULL)
+				*cur_instr = LOAD_LOCAL;
+			else if (!star_used)
+				*cur_instr = LOAD_GLOBAL;
+		}
+	}
+	
+	DECREF(locals);
+}
+
 codeobject *
 compile(n, filename)
 	node *n;
@@ -1768,5 +1874,7 @@ compile(n, filename)
 	else
 		co = NULL;
 	com_free(&sc);
+	if (co != NULL)
+		optimizer(co);
 	return co;
 }
