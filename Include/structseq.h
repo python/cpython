@@ -19,6 +19,8 @@ typedef struct PyStructSequence_Desc {
 	int n_in_sequence;
 } PyStructSequence_Desc;
 
+extern char* PyStructSequence_UnnamedField;
+
 PyAPI_FUNC(void) PyStructSequence_InitType(PyTypeObject *type, 
 						 PyStructSequence_Desc *desc);
        
