@@ -366,6 +366,7 @@ class CCompiler:
         """
         # Get the list of expected output (object) files 
         objects = self.object_filenames (sources,
+                                         strip_dir=1,
                                          output_dir=output_dir)
 
         if self.force:
