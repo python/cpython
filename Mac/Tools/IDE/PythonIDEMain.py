@@ -77,6 +77,7 @@ class PythonIDE(Wapplication.Application):
 		mm = FrameWork.SubMenu(m, "Preferences")
 		FrameWork.MenuItem(mm, "Set Scripts folderä", None, self.do_setscriptsfolder)
 		FrameWork.MenuItem(mm, "Editor default settingsä", None, self.do_editorprefs)
+		FrameWork.MenuItem(mm, "Set default window fontä", None, self.do_setwindowfont)
 		
 		self.openwindowsmenu = Wapplication.Menu(self.menubar, 'Windows')
 		self.makeopenwindowsmenu()
@@ -92,9 +93,13 @@ class PythonIDE(Wapplication.Application):
 			fss, fss_changed = macfs.RawAlias(prefs.scriptsfolder).Resolve()
 			self.scriptsfolder = fss.NewAlias()
 		except:
-			path = os.path.join(os.getcwd(), 'Scripts')
+			path = os.path.join(os.getcwd(), ":Mac:IDE scripts")
 			if not os.path.exists(path):
-				os.mkdir(path)
+				path = os.path.join(os.getcwd(), "Scripts")
+				if not os.path.exists(path):
+					os.mkdir(path)
+					f = open(os.path.join(path, "Place your scripts hereä"), "w")
+					f.close()
 			fss = macfs.FSSpec(path)
 			self.scriptsfolder = fss.NewAlias()
 			self.scriptsfoldermodtime = fss.GetDates()[1]
