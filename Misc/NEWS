@@ -179,6 +179,12 @@ Library
   circular references by using itself as the locator that gets passed
   to the content handler implementation.  [SF bug #535474]
 
+- The email.Parser.Parser class now properly parses strings regardless
+  of their line endings, which can be any of \r, \n, or \r\n (CR, LF,
+  or CRLF).  Also, the Header class's constructor default arguments
+  has changed slightly so that an explicit maxlinelen value is always
+  honored.
+
 Tools/Demos
 
 - freeze.py now produces binaries which can import shared modules,
