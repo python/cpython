@@ -55,7 +55,8 @@ Build
 C API
 -----
 
-...
+- The PyRange_New() function is deprecated.
+
 
 Documentation
 -------------
