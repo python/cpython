@@ -55,7 +55,7 @@ class Codec:
     """
     def encode(self,input,errors='strict'):
         
-        """ Encodes the object intput and returns a tuple (output
+        """ Encodes the object input and returns a tuple (output
             object, length consumed).
 
             errors defines the error handling to apply. It defaults to
