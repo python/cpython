@@ -925,7 +925,7 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
 /* s.accept() method */
 
 static PyObject *
-PySocketSock_accept(PySocketSockObject *s, PyObject *args)
+PySocketSock_accept(PySocketSockObject *s)
 {
 	char addrbuf[256];
 	SOCKET_T newfd;
@@ -934,8 +934,6 @@ PySocketSock_accept(PySocketSockObject *s, PyObject *args)
 	PyObject *addr = NULL;
 	PyObject *res = NULL;
 
-	if (!PyArg_ParseTuple(args, ":accept"))
-		return NULL;
 	if (!getsockaddrlen(s, &addrlen))
 		return NULL;
 	memset(addrbuf, 0, addrlen);
@@ -983,7 +981,7 @@ info is a pair (hostaddr, port).";
 /* s.setblocking(1 | 0) method */
 
 static PyObject *
-PySocketSock_setblocking(PySocketSockObject *s, PyObject *args)
+PySocketSock_setblocking(PySocketSockObject *s, PyObject *arg)
 {
 	int block;
 #ifndef RISCOS
@@ -991,7 +989,8 @@ PySocketSock_setblocking(PySocketSockObject *s, PyObject *args)
 	int delay_flag;
 #endif
 #endif
-	if (!PyArg_ParseTuple(args, "i:setblocking", &block))
+	block = PyInt_AsLong(arg);
+	if (block == -1 && PyErr_Occurred())
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 #ifdef __BEOS__
@@ -1158,14 +1157,12 @@ string of that length; otherwise it is an integer.";
 /* s.bind(sockaddr) method */
 
 static PyObject *
-PySocketSock_bind(PySocketSockObject *s, PyObject *args)
+PySocketSock_bind(PySocketSockObject *s, PyObject *addro)
 {
 	struct sockaddr *addr;
 	int addrlen;
 	int res;
-	PyObject *addro;
-	if (!PyArg_ParseTuple(args, "O:bind", &addro))
-		return NULL;
+
 	if (!getsockaddrarg(s, addro, &addr, &addrlen))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
@@ -1190,11 +1187,10 @@ sockets the address is a tuple (ifname, proto [,pkttype [,hatype]])";
    will surely fail. */
 
 static PyObject *
-PySocketSock_close(PySocketSockObject *s, PyObject *args)
+PySocketSock_close(PySocketSockObject *s)
 {
 	SOCKET_T fd;
-	if (!PyArg_ParseTuple(args, ":close"))
-		return NULL;
+
 	if ((fd = s->sock_fd) != -1) {
 		s->sock_fd = -1;
 		Py_BEGIN_ALLOW_THREADS
@@ -1214,14 +1210,12 @@ Close the socket.  It cannot be used after this call.";
 /* s.connect(sockaddr) method */
 
 static PyObject *
-PySocketSock_connect(PySocketSockObject *s, PyObject *args)
+PySocketSock_connect(PySocketSockObject *s, PyObject *addro)
 {
 	struct sockaddr *addr;
 	int addrlen;
 	int res;
-	PyObject *addro;
-	if (!PyArg_ParseTuple(args, "O:connect", &addro))
-		return NULL;
+
 	if (!getsockaddrarg(s, addro, &addr, &addrlen))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
@@ -1243,14 +1237,12 @@ is a pair (host, port).";
 /* s.connect_ex(sockaddr) method */
 
 static PyObject *
-PySocketSock_connect_ex(PySocketSockObject *s, PyObject *args)
+PySocketSock_connect_ex(PySocketSockObject *s, PyObject *addro)
 {
 	struct sockaddr *addr;
 	int addrlen;
 	int res;
-	PyObject *addro;
-	if (!PyArg_ParseTuple(args, "O:connect_ex", &addro))
-		return NULL;
+
 	if (!getsockaddrarg(s, addro, &addr, &addrlen))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
@@ -1271,10 +1263,8 @@ instead of raising an exception when an error occurs.";
 /* s.fileno() method */
 
 static PyObject *
-PySocketSock_fileno(PySocketSockObject *s, PyObject *args)
+PySocketSock_fileno(PySocketSockObject *s)
 {
-	if (!PyArg_ParseTuple(args, ":fileno"))
-		return NULL;
 #if SIZEOF_SOCKET_T <= SIZEOF_LONG
 	return PyInt_FromLong((long) s->sock_fd);
 #else
@@ -1292,12 +1282,11 @@ Return the integer file descriptor of the socket.";
 /* s.dup() method */
 
 static PyObject *
-PySocketSock_dup(PySocketSockObject *s, PyObject *args)
+PySocketSock_dup(PySocketSockObject *s)
 {
 	SOCKET_T newfd;
 	PyObject *sock;
-	if (!PyArg_ParseTuple(args, ":dup"))
-		return NULL;
+
 	newfd = dup(s->sock_fd);
 	if (newfd < 0)
 		return PySocket_Err();
@@ -1321,14 +1310,12 @@ Return a new socket object connected to the same system resource.";
 /* s.getsockname() method */
 
 static PyObject *
-PySocketSock_getsockname(PySocketSockObject *s, PyObject *args)
+PySocketSock_getsockname(PySocketSockObject *s)
 {
 	char addrbuf[256];
 	int res;
 	socklen_t addrlen;
 
-	if (!PyArg_ParseTuple(args, ":getsockname"))
-		return NULL;
 	if (!getsockaddrlen(s, &addrlen))
 		return NULL;
 	memset(addrbuf, 0, addrlen);
@@ -1351,14 +1338,12 @@ info is a pair (hostaddr, port).";
 /* s.getpeername() method */
 
 static PyObject *
-PySocketSock_getpeername(PySocketSockObject *s, PyObject *args)
+PySocketSock_getpeername(PySocketSockObject *s)
 {
 	char addrbuf[256];
 	int res;
 	socklen_t addrlen;
 
-	if (!PyArg_ParseTuple(args, ":getpeername"))
-		return NULL;
 	if (!getsockaddrlen(s, &addrlen))
 		return NULL;
 	memset(addrbuf, 0, addrlen);
@@ -1382,11 +1367,13 @@ info is a pair (hostaddr, port).";
 /* s.listen(n) method */
 
 static PyObject *
-PySocketSock_listen(PySocketSockObject *s, PyObject *args)
+PySocketSock_listen(PySocketSockObject *s, PyObject *arg)
 {
 	int backlog;
 	int res;
-	if (!PyArg_ParseTuple(args, "i:listen", &backlog))
+
+	backlog = PyInt_AsLong(arg);
+	if (backlog == -1 && PyErr_Occurred())
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	if (backlog < 1)
@@ -1606,11 +1593,13 @@ For IP sockets, the address is a pair (hostaddr, port).";
 /* s.shutdown(how) method */
 
 static PyObject *
-PySocketSock_shutdown(PySocketSockObject *s, PyObject *args)
+PySocketSock_shutdown(PySocketSockObject *s, PyObject *arg)
 {
 	int how;
 	int res;
-	if (!PyArg_ParseTuple(args, "i:shutdown", &how))
+
+	how = PyInt_AsLong(arg);
+	if (how == -1 && PyErr_Occurred())
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = shutdown(s->sock_fd, how);
@@ -1631,31 +1620,31 @@ of the socket (flag == 1), or both ends (flag == 2).";
 /* List of methods for socket objects */
 
 static PyMethodDef PySocketSock_methods[] = {
-	{"accept",	(PyCFunction)PySocketSock_accept, METH_VARARGS,
+	{"accept",	(PyNoArgsFunction)PySocketSock_accept, METH_NOARGS,
 			accept_doc},
-	{"bind",	(PyCFunction)PySocketSock_bind, METH_VARARGS,
+	{"bind",	(PyCFunction)PySocketSock_bind, METH_O,
 			bind_doc},
-	{"close",	(PyCFunction)PySocketSock_close, METH_VARARGS,
+	{"close",	(PyNoArgsFunction)PySocketSock_close, METH_NOARGS,
 			close_doc},
-	{"connect",	(PyCFunction)PySocketSock_connect, METH_VARARGS,
+	{"connect",	(PyCFunction)PySocketSock_connect, METH_O,
 			connect_doc},
-	{"connect_ex",	(PyCFunction)PySocketSock_connect_ex, METH_VARARGS,
+	{"connect_ex",	(PyCFunction)PySocketSock_connect_ex, METH_O,
 			connect_ex_doc},
 #ifndef NO_DUP
-	{"dup",		(PyCFunction)PySocketSock_dup, METH_VARARGS,
+	{"dup",		(PyNoArgsFunction)PySocketSock_dup, METH_NOARGS,
 			dup_doc},
 #endif
-	{"fileno",	(PyCFunction)PySocketSock_fileno, METH_VARARGS,
+	{"fileno",	(PyNoArgsFunction)PySocketSock_fileno, METH_NOARGS,
 			fileno_doc},
 #ifdef HAVE_GETPEERNAME
-	{"getpeername",	(PyCFunction)PySocketSock_getpeername, METH_VARARGS,
-			getpeername_doc},
+	{"getpeername",	(PyNoArgsFunction)PySocketSock_getpeername, 
+	                METH_NOARGS, getpeername_doc},
 #endif
-	{"getsockname",	(PyCFunction)PySocketSock_getsockname, METH_VARARGS,
-			getsockname_doc},
+	{"getsockname",	(PyNoArgsFunction)PySocketSock_getsockname,
+	                METH_NOARGS, getsockname_doc},
 	{"getsockopt",	(PyCFunction)PySocketSock_getsockopt, METH_VARARGS,
 			getsockopt_doc},
-	{"listen",	(PyCFunction)PySocketSock_listen, METH_VARARGS,
+	{"listen",	(PyCFunction)PySocketSock_listen, METH_O,
 			listen_doc},
 #ifndef NO_DUP
 	{"makefile",	(PyCFunction)PySocketSock_makefile, METH_VARARGS,
@@ -1669,11 +1658,11 @@ static PyMethodDef PySocketSock_methods[] = {
 			send_doc},
 	{"sendto",	(PyCFunction)PySocketSock_sendto, METH_VARARGS,
 			sendto_doc},
-	{"setblocking",	(PyCFunction)PySocketSock_setblocking, METH_VARARGS,
+	{"setblocking",	(PyCFunction)PySocketSock_setblocking, METH_O,
 			setblocking_doc},
 	{"setsockopt",	(PyCFunction)PySocketSock_setsockopt, METH_VARARGS,
 			setsockopt_doc},
-	{"shutdown",	(PyCFunction)PySocketSock_shutdown, METH_VARARGS,
+	{"shutdown",	(PyCFunction)PySocketSock_shutdown, METH_O,
 			shutdown_doc},
 #ifdef RISCOS
 	{"sleeptaskw",	(PyCFunction)PySocketSock_sleeptaskw, METH_VARARGS,
