@@ -270,6 +270,10 @@ I_CARBON_PLUGINS :  (buildmwproject, "CWIE", [
 	(":Mac:Build:TE.carbon.mcp", "TE.carbon"),
 	]),
 
+I_PPC_FULL : (buildmwproject, "CWIE", [
+		(":Mac:Build:PythonStandalone.mcp", "PythonStandalone"),
+	]),
+
 I_PPC_SMALL : (buildmwproject, "CWIE", [
 		(":Mac:Build:PythonStandSmall.mcp", "PythonStandSmall"),
 	]),
