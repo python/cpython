@@ -133,7 +133,7 @@ def runtest(test, generate, verbose):
 	    if cfp:
 		sys.stdout = cfp
 		print test		# Output file starts with test name
-	    __import__(test)
+	    __import__(test, globals(), locals(), [])
 	finally:
 	    sys.stdout = save_stdout
     except ImportError, msg:
