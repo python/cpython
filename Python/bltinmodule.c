@@ -37,6 +37,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "ceval.h"
 #include "modsupport.h"
 
+/* Should be in longobject.h */
+extern stringobject *long_format PROTO((object *, int));
+
 static object *
 builtin_abs(self, v)
 	object *self;
@@ -58,7 +61,7 @@ builtin_chr(self, v)
 	long x;
 	char s[1];
 	if (v == NULL || !is_intobject(v)) {
-		err_setstr(TypeError, "chr() must have int argument");
+		err_setstr(TypeError, "chr() requires int argument");
 		return NULL;
 	}
 	x = getintvalue(v);
@@ -84,19 +87,19 @@ builtin_dir(self, v)
 		d = getattr(v, "__dict__");
 		if (d == NULL) {
 			err_setstr(TypeError,
-				"dir() argument has no variable attributes");
+				"dir() argument must have __dict__ attribute");
 			return NULL;
 		}
 	}
-	if (!is_dictobject(d)) { /* Assume it is None */
-		v = newlistobject(0);
-	}
-	else {
+	if (is_dictobject(d)) {
 		v = getdictkeys(d);
 		if (sortlist(v) != 0) {
 			DECREF(v);
 			v = NULL;
 		}
+	}
+	else {
+		v = newlistobject(0);
 	}
 	DECREF(d);
 	return v;
@@ -191,6 +194,29 @@ builtin_float(self, v)
 		return v;
 	}
 	err_setstr(TypeError, "float() argument must be int, long or float");
+	return NULL;
+}
+
+static object *
+builtin_hex(self, v)
+	object *self;
+	object *v;
+{
+	if (v != NULL) {
+		if (is_intobject(v)) {
+			char buf[20];
+			long x = getintvalue(v);
+			if (x >= 0)
+				sprintf(buf, "0x%lx", x);
+			else
+				sprintf(buf, "-0x%lx", -x);
+			return newstringobject(buf);
+		}
+		if (is_longobject(v)) {
+			return (object *) long_format(v, 16);
+		}
+	}
+	err_setstr(TypeError, "hex() requires int/long argument");
 	return NULL;
 }
 
@@ -340,6 +366,29 @@ builtin_max(self, v)
 	object *v;
 {
 	return min_max(v, 1);
+}
+
+static object *
+builtin_oct(self, v)
+	object *self;
+	object *v;
+{
+	if (v != NULL) {
+		if (is_intobject(v)) {
+			char buf[20];
+			long x = getintvalue(v);
+			if (x >= 0)
+				sprintf(buf, "0%lo", x);
+			else
+				sprintf(buf, "-0%lo", -x);
+			return newstringobject(buf);
+		}
+		if (is_longobject(v)) {
+			return (object *) long_format(v, 8);
+		}
+	}
+	err_setstr(TypeError, "oct() requires int/long argument");
+	return NULL;
 }
 
 static object *
@@ -508,12 +557,14 @@ static struct methodlist builtin_methods[] = {
 	{"eval", builtin_eval},
 	{"exec", builtin_exec},
 	{"float", builtin_float},
+	{"hex", builtin_hex},
 	{"input", builtin_input},
 	{"int", builtin_int},
 	{"len", builtin_len},
 	{"long", builtin_long},
 	{"max", builtin_max},
 	{"min", builtin_min},
+	{"oct", builtin_oct},
 	{"open", builtin_open}, /* XXX move to OS module */
 	{"ord", builtin_ord},
 	{"pow", builtin_pow},
