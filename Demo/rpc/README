@@ -23,3 +23,9 @@ Other clients are tested similarly.
 
 For hostname, use e.g. wuarchive.wustl.edu or gatekeeper.dec.com (two
 hosts that are known to export NFS filesystems with little restrictions).
+
+There are now two different RPC compilers:
+
+1) Wim Lewis rpcgen.py found on http://www.omnigroup.com/~wiml/soft/stale-index.html#python. 
+
+2) Peter Åstrands rpcgen.py, which is part of "pynfs" (http://www.cendio.se/~peter/pynfs/). 
