@@ -1122,12 +1122,6 @@ Files have the following methods:
   objects.
 \end{methoddesc}
 
-\begin{methoddesc}[file]{isatty}{}
-  Return \code{True} if the file is connected to a tty(-like) device, else
-  \code{False}.  \note{If a file-like object is not associated
-  with a real file, this method should \emph{not} be implemented.}
-\end{methoddesc}
-
 \begin{methoddesc}[file]{fileno}{}
   \index{file descriptor}
   \index{descriptor, file}
@@ -1139,6 +1133,29 @@ Files have the following methods:
   \function{os.read()} and friends.  \note{File-like objects
   which do not have a real file descriptor should \emph{not} provide
   this method!}
+\end{methoddesc}
+
+\begin{methoddesc}[file]{isatty}{}
+  Return \code{True} if the file is connected to a tty(-like) device, else
+  \code{False}.  \note{If a file-like object is not associated
+  with a real file, this method should \emph{not} be implemented.}
+\end{methoddesc}
+
+\begin{methoddesc}[file]{next}{}
+A file object is its own iterator, i.e. \code{iter(\var{f})} returns
+\var{f} (unless \var{f} is closed).  When a file is used as an
+iterator, typically in a \keyword{for} loop (for example,
+\code{for line in f: print line}), the \method{next()} method is
+called repeatedly.  This method returns the next input line, or raises
+\exception{StopIteration} when \EOF{} is hit.  In order to make a
+\keyword{for} loop the most efficient way of looping over the lines of
+a file (a very common operation), the \method{next()} method uses a
+hidden read-ahead buffer.  As a consequence of using a read-ahead
+buffer, combining \method{next()} with other file methods (like
+\method{readline()}) does not work right.  However, using
+\method{seek()} to reposition the file to an absolute position will
+flush the read-ahead buffer.
+\versionadded{2.3}
 \end{methoddesc}
 
 \begin{methoddesc}[file]{read}{\optional{size}}
@@ -1184,10 +1201,9 @@ Files have the following methods:
 \end{methoddesc}
 
 \begin{methoddesc}[file]{xreadlines}{}
-  Equivalent to
-  \function{xreadlines.xreadlines(\var{file})}.\refstmodindex{xreadlines}
-  (See the \refmodule{xreadlines} module for more information.)
+  This method returns the same thing as \code{iter(f)}.
   \versionadded{2.1}
+  \deprecated{2.3}{Use \code{for line in file} instead.}
 \end{methoddesc}
 
 \begin{methoddesc}[file]{seek}{offset\optional{, whence}}
