@@ -679,33 +679,33 @@ oss_mixer_fileno(oss_mixer_t *self, PyObject *args)
 /* Simple mixer interface methods */
 
 static PyObject *
-oss_mixer_channels (oss_mixer_t *self, PyObject *args)
+oss_mixer_devices (oss_mixer_t *self, PyObject *args)
 {
-    return _do_ioctl_1_internal(self->fd, args, "channels",
+    return _do_ioctl_1_internal(self->fd, args, "devices",
         SOUND_MIXER_READ_DEVMASK);
 }
 
 static PyObject *
-oss_mixer_stereo_channels (oss_mixer_t *self, PyObject *args)
+oss_mixer_stereodevices (oss_mixer_t *self, PyObject *args)
 {
-    return _do_ioctl_1_internal(self->fd, args, "stereochannels",
+    return _do_ioctl_1_internal(self->fd, args, "stereodevices",
         SOUND_MIXER_READ_STEREODEVS);
 }
 
 static PyObject *
-oss_mixer_rec_channels (oss_mixer_t *self, PyObject *args)
+oss_mixer_recdevices (oss_mixer_t *self, PyObject *args)
 {
-    return _do_ioctl_1_internal(self->fd, args, "recchannels",
+    return _do_ioctl_1_internal(self->fd, args, "recdevices",
         SOUND_MIXER_READ_RECMASK);
 }
 
 static PyObject *
-oss_mixer_getvol (oss_mixer_t *self, PyObject *args)
+oss_mixer_get (oss_mixer_t *self, PyObject *args)
 {
     int channel, volume;
     
     /* Can't use _do_ioctl_1 because of encoded arg thingy. */
-    if (!PyArg_ParseTuple (args, "i:getvol", &channel))
+    if (!PyArg_ParseTuple (args, "i:get", &channel))
     	return NULL;
     
     if (channel < 0 || channel > SOUND_MIXER_NRDEVICES) {
@@ -720,12 +720,12 @@ oss_mixer_getvol (oss_mixer_t *self, PyObject *args)
 }
 
 static PyObject *
-oss_mixer_setvol (oss_mixer_t *self, PyObject *args)
+oss_mixer_set (oss_mixer_t *self, PyObject *args)
 {
     int channel, volume, leftVol, rightVol;
     
     /* Can't use _do_ioctl_1 because of encoded arg thingy. */
-    if (!PyArg_ParseTuple (args, "i(ii):setvol", &channel, &leftVol, &rightVol))
+    if (!PyArg_ParseTuple (args, "i(ii):set", &channel, &leftVol, &rightVol))
     	return NULL;
 	    
     if (channel < 0 || channel > SOUND_MIXER_NRDEVICES) {
@@ -798,11 +798,11 @@ static PyMethodDef oss_mixer_methods[] = {
     { "fileno",     	(PyCFunction)oss_mixer_fileno, METH_VARARGS },
 
     /* Simple ioctl wrappers */
-    { "channels",   	(PyCFunction)oss_mixer_channels, METH_VARARGS }, 
-    { "stereochannels", (PyCFunction)oss_mixer_stereo_channels, METH_VARARGS},
-    { "recchannels",    (PyCFunction)oss_mixer_rec_channels, METH_VARARGS},   
-    { "getvol",     	(PyCFunction)oss_mixer_getvol, METH_VARARGS },
-    { "setvol",     	(PyCFunction)oss_mixer_setvol, METH_VARARGS },
+    { "devices",   	(PyCFunction)oss_mixer_devices, METH_VARARGS }, 
+    { "stereodevices",  (PyCFunction)oss_mixer_stereodevices, METH_VARARGS},
+    { "recdevices",     (PyCFunction)oss_mixer_recdevices, METH_VARARGS},   
+    { "get",     	(PyCFunction)oss_mixer_get, METH_VARARGS },
+    { "set",     	(PyCFunction)oss_mixer_set, METH_VARARGS },
     { "getrecsrc",     	(PyCFunction)oss_mixer_getrecsrc, METH_VARARGS },
     { "setrecsrc",     	(PyCFunction)oss_mixer_setrecsrc, METH_VARARGS },
     
@@ -900,7 +900,7 @@ initossaudiodev(void)
     _EXPORT_INT(m, AFMT_AC3);
     _EXPORT_INT(m, AFMT_S16_NE);
 	
-    /* Expose the sound mixer channels. */
+    /* Expose the sound mixer device numbers. */
     _EXPORT_INT(m, SOUND_MIXER_NRDEVICES);
     _EXPORT_INT(m, SOUND_MIXER_VOLUME);
     _EXPORT_INT(m, SOUND_MIXER_BASS);
