@@ -266,9 +266,10 @@ bsddb_subscript(bsddbobject *dp, PyObject *key)
 	if (status == 0) {
 		if (drec.size > sizeof(buf)) data = malloc(drec.size);
 		else data = buf;
-		memcpy(data,drec.data,drec.size);
+		if (data!=NULL) memcpy(data,drec.data,drec.size);
 	}
 	BSDDB_END_SAVE(dp)
+	if (data==NULL) return PyErr_NoMemory();
 	if (status != 0) {
 		if (status < 0)
 			PyErr_SetFromErrno(BsddbError);
@@ -387,9 +388,10 @@ bsddb_keys(bsddbobject *dp, PyObject *args)
 	if (status == 0) {
 		if (krec.size > sizeof(buf)) data = malloc(krec.size);
 		else data = buf;
-		memcpy(data,krec.data,krec.size);
+		if (data!=NULL) memcpy(data,krec.data,krec.size);
 	}
 	BSDDB_END_SAVE(dp)
+	if (data==NULL) return PyErr_NoMemory();
 	while (status == 0) {
 		item = PyString_FromStringAndSize(data, (int)krec.size);
 		if (data != buf) free(data);
@@ -408,9 +410,10 @@ bsddb_keys(bsddbobject *dp, PyObject *args)
 		if (status == 0) {
 			if (krec.size > sizeof(buf)) data = malloc(krec.size);
 			else data = buf;
-			memcpy(data,krec.data,krec.size);
+			if (data!=NULL) memcpy(data,krec.data,krec.size);
 		}
 		BSDDB_END_SAVE(dp)
+		if (data==NULL) return PyErr_NoMemory();
 	}
 	if (status < 0) {
 		PyErr_SetFromErrno(BsddbError);
@@ -467,9 +470,10 @@ bsddb_set_location(bsddbobject *dp, PyObject *key)
 	if (status == 0) {
 		if (drec.size > sizeof(buf)) data = malloc(drec.size);
 		else data = buf;
-		memcpy(data,drec.data,drec.size);
+		if (data!=NULL) memcpy(data,drec.data,drec.size);
 	}
 	BSDDB_END_SAVE(dp)
+	if (data==NULL) return PyErr_NoMemory();
 	if (status != 0) {
 		if (status < 0)
 			PyErr_SetFromErrno(BsddbError);
@@ -505,13 +509,18 @@ bsddb_seq(bsddbobject *dp, PyObject *args, int sequence_request)
 	if (status == 0) {
 		if (krec.size > sizeof(kbuf)) kdata = malloc(krec.size);
 		else kdata = kbuf;
-		memcpy(kdata,krec.data,krec.size);
+		if (kdata!=NULL) memcpy(kdata,krec.data,krec.size);
 		if (drec.size > sizeof(dbuf)) ddata = malloc(drec.size);
 		else ddata = dbuf;
-		memcpy(ddata,drec.data,drec.size);
+		if (ddata!=NULL) memcpy(ddata,drec.data,drec.size);
 	}
 	BSDDB_END_SAVE(dp)
-	if (status != 0) {
+	if (status == 0) {
+		if ((kdata==NULL) || (ddata==NULL)) 
+			return PyErr_NoMemory();
+	}
+	else { 
+		/* (status != 0) */  
 		if (status < 0)
 			PyErr_SetFromErrno(BsddbError);
 		else
