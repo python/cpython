@@ -443,14 +443,9 @@ class Random:
 
     def gammavariate(self, alpha, beta):
         # beta times standard gamma
-        ainv = _sqrt(2.0 * alpha - 1.0)
-        return beta * self.stdgamma(alpha, ainv, alpha - LOG4, alpha + ainv)
+        return beta * self.stdgamma(alpha)
 
-    def stdgamma(self, alpha, ainv, bbb, ccc):
-        # ainv = sqrt(2 * alpha - 1)
-        # bbb = alpha - log(4)
-        # ccc = alpha + ainv
-
+    def stdgamma(self, alpha, *args):  # *args for Py2.2 compatiblity
         random = self.random
         if alpha <= 0.0:
             raise ValueError, 'stdgamma: alpha must be > 0.0'
@@ -461,6 +456,10 @@ class Random:
             # variables with non-integral shape parameters",
             # Applied Statistics, (1977), 26, No. 1, p71-74
 
+            ainv = _sqrt(2.0 * alpha - 1.0)
+            bbb = alpha - LOG4
+            ccc = alpha + ainv
+            
             while 1:
                 u1 = random()
                 u2 = random()
