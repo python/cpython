@@ -11,7 +11,7 @@
 # February 1997.
 #
 # Support for ast.Node subclasses written and other revisions by
-#  Jeremy Hylton (jeremy@cnri.reston.va.us)
+#  Jeremy Hylton (jeremy@beopen.com)
 #
 
 """Parse tree transformation module.
@@ -1001,6 +1001,9 @@ class Transformer:
       args.append(result)
     else:
         i = i + 1 # No broken by star arg, so skip the last one we processed.
+    if i < len_nodelist and nodelist[i][0] == token.COMMA:
+        # need to accept an application that looks like "f(a, b,)"
+        i = i + 1
     star_node = dstar_node = None
     while i < len_nodelist:
         tok = nodelist[i]
