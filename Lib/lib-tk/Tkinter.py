@@ -567,6 +567,36 @@ class Misc:
 		exc, val, tb = sys.exc_type, sys.exc_value, sys.exc_traceback
 		root = self._root()
 		root.report_callback_exception(exc, val, tb)
+	# These used to be defined in Widget:
+	def config(self, cnf=None, **kw):
+		# XXX ought to generalize this so tag_config etc. can use it
+		if kw:
+			cnf = _cnfmerge((cnf, kw))
+		elif cnf:
+			cnf = _cnfmerge(cnf)
+		if cnf is None:
+			cnf = {}
+			for x in self.tk.split(
+				self.tk.call(self._w, 'configure')):
+				cnf[x[0][1:]] = (x[0][1:],) + x[1:]
+			return cnf
+		if type(cnf) is StringType:
+			x = self.tk.split(self.tk.call(
+				self._w, 'configure', '-'+cnf))
+			return (x[0][1:],) + x[1:]
+		apply(self.tk.call, (self._w, 'configure')
+		      + self._options(cnf))
+	configure = config
+	def cget(self, key):
+		return self.tk.call(self._w, 'cget', '-' + key)
+	__getitem__ = cget
+	def __setitem__(self, key, value):
+		Widget.config(self, {key: value})
+	def keys(self):
+		return map(lambda x: x[0][1:],
+			   self.tk.split(self.tk.call(self._w, 'configure')))
+	def __str__(self):
+		return self._w
 
 class CallWrapper:
 	def __init__(self, func, subst, widget):
@@ -710,8 +740,6 @@ class Tk(Misc, Wm):
 		global _default_root
 		if _default_root is self:
 			_default_root = None
-	def __str__(self):
-		return self._w
 	def readprofile(self, baseName, className):
 		import os
 		if os.environ.has_key('HOME'): home = os.environ['HOME']
@@ -927,35 +955,6 @@ class Widget(Misc, Pack, Place, Grid):
 		      (widgetName, self._w) + extra + self._options(cnf))
 		for k, v in classes:
 			k.config(self, v)
-	def config(self, cnf=None, **kw):
-		# XXX ought to generalize this so tag_config etc. can use it
-		if kw:
-			cnf = _cnfmerge((cnf, kw))
-		elif cnf:
-			cnf = _cnfmerge(cnf)
-		if cnf is None:
-			cnf = {}
-			for x in self.tk.split(
-				self.tk.call(self._w, 'configure')):
-				cnf[x[0][1:]] = (x[0][1:],) + x[1:]
-			return cnf
-		if type(cnf) is StringType:
-			x = self.tk.split(self.tk.call(
-				self._w, 'configure', '-'+cnf))
-			return (x[0][1:],) + x[1:]
-		apply(self.tk.call, (self._w, 'configure')
-		      + self._options(cnf))
-	configure = config
-	def cget(self, key):
-		return self.tk.call(self._w, 'cget', '-' + key)
-	__getitem__ = cget
-	def __setitem__(self, key, value):
-		Widget.config(self, {key: value})
-	def keys(self):
-		return map(lambda x: x[0][1:],
-			   self.tk.split(self.tk.call(self._w, 'configure')))
-	def __str__(self):
-		return self._w
 	def destroy(self):
 		for c in self.children.values(): c.destroy()
 		if self.master.children.has_key(self._name):
