@@ -316,6 +316,8 @@ class Misc:
 		self.tk.call('update')
 	def update_idletasks(self):
 		self.tk.call('update', 'idletasks')
+	def unbind(self, sequence):
+		self.tk.call('bind', self._w, sequence, '')
 	def bind(self, sequence, func, add=''):
 		if add: add = '+'
 		name = self._register(func, self._substitute)
@@ -644,7 +646,8 @@ class Widget(Misc, Pack, Place):
 		Widget._setup(self, master, cnf)
 		self.widgetName = widgetName
 		apply(self.tk.call, (widgetName, self._w) + extra)
-		Widget.config(self, cnf)
+		if cnf:
+			Widget.config(self, cnf)
 	def config(self, cnf=None):
 		cnf = _cnfmerge(cnf)
 		if cnf is None:
@@ -749,7 +752,9 @@ class Canvas(Widget):
 		self.addtag('withtag', tagOrId)
 	def bbox(self, *args):
 		return self._getints(self._do('bbox', args)) or None
-	def bind(self, tagOrId, sequence, func, add=''):
+	def tag_unbind(self, tagOrId, sequence):
+		self.tk.call(self._w, 'bind', tagOrId, sequence, '')
+	def tag_bind(self, tagOrId, sequence, func, add=''):
 		if add: add='+'
 		name = self._register(func, self._substitute)
 		self.tk.call(self._w, 'bind', tagOrId, sequence, 
@@ -1101,6 +1106,8 @@ class Text(Widget):
 	def tag_add(self, tagName, index1, index2=None):
 		self.tk.call(
 			self._w, 'tag', 'add', tagName, index1, index2)
+	def tag_unbind(self, tagName, sequence):
+		self.tk.call(self._w, 'tag', 'bind', tagName, sequence, '')
 	def tag_bind(self, tagName, sequence, func, add=''):
 		if add: add='+'
 		name = self._register(func, self._substitute)
