@@ -10,8 +10,10 @@
 
 #ifdef MS_WIN32
 #define fileno _fileno
-/* can (almost fully) duplicate with _chsize, see file_truncate */
+/* can simulate truncate with Win32 API functions; see file_truncate */
 #define HAVE_FTRUNCATE
+#define WINDOWS_LEAN_AND_MEAN
+#include <windows.h>
 #endif
 
 #ifdef macintosh
@@ -379,6 +381,9 @@ file_truncate(PyFileObject *f, PyObject *args)
 	newsizeobj = NULL;
 	if (!PyArg_ParseTuple(args, "|O:truncate", &newsizeobj))
 		return NULL;
+
+	/* Set newsize to current postion if newsizeobj NULL, else to the
+	   specified value. */
 	if (newsizeobj != NULL) {
 #if !defined(HAVE_LARGEFILE_SUPPORT)
 		newsize = PyInt_AsLong(newsizeobj);
@@ -389,37 +394,67 @@ file_truncate(PyFileObject *f, PyObject *args)
 #endif
 		if (PyErr_Occurred())
 			return NULL;
-	} else {
-		/* Default to current position*/
+	}
+	else {
+		/* Default to current position. */
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
 		newsize = _portable_ftell(f->f_fp);
 		Py_END_ALLOW_THREADS
-		if (newsize == -1) {
-		        PyErr_SetFromErrno(PyExc_IOError);
-			clearerr(f->f_fp);
-			return NULL;
-		}
+		if (newsize == -1)
+			goto onioerror;
 	}
+
+	/* Flush the file. */
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
 	ret = fflush(f->f_fp);
 	Py_END_ALLOW_THREADS
-	if (ret != 0) goto onioerror;
+	if (ret != 0)
+		goto onioerror;
 
 #ifdef MS_WIN32
-	/* can use _chsize; if, however, the newsize overflows 32-bits then
-	   _chsize is *not* adequate; in this case, an OverflowError is raised */
-	if (newsize > LONG_MAX) {
-		PyErr_SetString(PyExc_OverflowError,
-			"the new size is too long for _chsize (it is limited to 32-bit values)");
-		return NULL;
-	} else {
-		Py_BEGIN_ALLOW_THREADS
+	/* MS _chsize doesn't work if newsize doesn't fit in 32 bits,
+	   so don't even try using it.  truncate() should never grow the
+	   file, but MS SetEndOfFile will grow a file, so we need to
+	   compare the specified newsize to the actual size.  Some
+	   optimization could be done here when newsizeobj is NULL. */
+	{
+		Py_off_t currentEOF;	/* actual size */
+		HANDLE hFile;
+		int error;
+
+		/* First move to EOF, and set currentEOF to the size. */
 		errno = 0;
-		ret = _chsize(fileno(f->f_fp), (long)newsize);
-		Py_END_ALLOW_THREADS
-		if (ret != 0) goto onioerror;
+		if (_portable_fseek(f->f_fp, 0, SEEK_END) != 0)
+			goto onioerror;
+		errno = 0;
+		currentEOF = _portable_ftell(f->f_fp);
+		if (currentEOF == -1)
+			goto onioerror;
+
+		if (newsize > currentEOF)
+			newsize = currentEOF;	/* never grow the file */
+
+		/* Move to newsize, and truncate the file there. */
+		if (newsize != currentEOF) {
+			errno = 0;
+			if (_portable_fseek(f->f_fp, newsize, SEEK_SET) != 0)
+				goto onioerror;
+			Py_BEGIN_ALLOW_THREADS
+			errno = 0;
+			hFile = (HANDLE)_get_osfhandle(fileno(f->f_fp));
+			error = hFile == (HANDLE)-1;
+			if (!error) {
+				error = SetEndOfFile(hFile) == 0;
+				if (error)
+					errno = EACCES;
+			}
+			Py_END_ALLOW_THREADS
+			if (error)
+				goto onioerror;
+		}
+
 	}
 #else
 	Py_BEGIN_ALLOW_THREADS

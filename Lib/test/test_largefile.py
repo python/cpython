@@ -128,20 +128,29 @@ expect(os.lseek(f.fileno(), size, 0), size)
 expect(f.read(1), 'a') # the 'a' that was written at the end of the file above
 f.close()
 
-
-# XXX add tests for truncate if it exists
-# XXX has truncate ever worked on Windows? specifically on WinNT I get:
-#     "IOError: [Errno 13] Permission denied"
-##try:
-##      newsize = size - 10
-##      f.seek(newsize)
-##      f.truncate()
-##      expect(f.tell(), newsize)
-##      newsize = newsize - 1
-##      f.seek(0)
-##      f.truncate(newsize)
-##      expect(f.tell(), newsize)
-##except AttributeError:
-##      pass
+if hasattr(f, 'truncate'):
+    if test_support.verbose:
+        print 'try truncate'
+    f = open(name, 'r+b')
+    f.seek(0, 2)
+    expect(f.tell(), size+1)
+    # Cut it back via seek + truncate with no argument.
+    newsize = size - 10
+    f.seek(newsize)
+    f.truncate()
+    expect(f.tell(), newsize)
+    # Ensure that truncate(bigger than true size) doesn't grow the file.
+    f.truncate(size)
+    expect(f.tell(), newsize)
+    # Ensure that truncate(smaller than true size) shrinks the file.
+    newsize -= 1
+    f.seek(0)
+    f.truncate(newsize)
+    expect(f.tell(), newsize)
+    # cut it waaaaay back
+    f.truncate(1)
+    f.seek(0)
+    expect(len(f.read()), 1)
+    f.close()
 
 os.unlink(name)
