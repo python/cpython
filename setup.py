@@ -245,11 +245,14 @@ class PyBuildExt(build_ext):
         add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
         add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
 
-        # fink installs lots of goodies in /sw/... - make sure we
-        # check there
+        # Add paths to popular package managers on OS X/darwin
         if sys.platform == "darwin":
+            # Fink installs into /sw by default
             add_dir_to_list(self.compiler.library_dirs, '/sw/lib')
             add_dir_to_list(self.compiler.include_dirs, '/sw/include')
+            # DarwinPorts installs into /opt/local by default
+            add_dir_to_list(self.compiler.library_dirs, '/opt/local/lib')
+            add_dir_to_list(self.compiler.include_dirs, '/opt/local/include')
 
         if os.path.normpath(sys.prefix) != '/usr':
             add_dir_to_list(self.compiler.library_dirs,
