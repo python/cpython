@@ -107,6 +107,8 @@ MacOS_HighLevelEventProc(EventRecord *e)
 	}
 }
 
+/* XXXX Need to come here from PyMac_DoYield too... */
+
 static PyObject *
 MacOS_SetHighLevelEventHandler(self, args)
 	PyObject *self;
@@ -166,6 +168,26 @@ MacOS_AcceptHighLevelEvent(self, args)
 	return res;
 }
 
+/*
+** Set poll frequency and cpu-yield-time
+*/
+static PyObject *
+MacOS_SetScheduleTimes(PyObject *self, PyObject *args)
+{
+	long fgi, fgy, bgi, bgy;
+	
+	bgi = bgy = -2;	
+	if (!PyArg_ParseTuple(args, "ll|ll", &fgi, &fgy, &bgi, &bgy))
+		return NULL;
+	if ( bgi == -2 ) {
+		bgi = fgi;
+		bgy = fgy;
+	}
+	PyMac_SetYield(fgi, fgy, bgi, bgy);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static PyMethodDef MacOS_Methods[] = {
 	{"AcceptHighLevelEvent",	MacOS_AcceptHighLevelEvent, 1},
 	{"GetCreatorAndType",		MacOS_GetCreatorAndType, 1},
@@ -173,6 +195,7 @@ static PyMethodDef MacOS_Methods[] = {
 #ifdef USE_STDWIN
 	{"SetHighLevelEventHandler",	MacOS_SetHighLevelEventHandler, 1},
 #endif
+	{"SetScheduleTimes",	MacOS_SetScheduleTimes, 1},
 	{NULL,				NULL}		 /* Sentinel */
 };
 
