@@ -359,13 +359,16 @@ the form \code{(CHARSET, LANGUAGE, VALUE)}.  Note that both \code{CHARSET} and
 \code{VALUE} to be encoded in the \code{us-ascii} charset.  You can
 usually ignore \code{LANGUAGE}.
 
-Your application should be prepared to deal with 3-tuple return
-values, and can convert the parameter to a Unicode string like so:
+If your application doesn't care whether the parameter was encoded as in
+\rfc{2231}, you can collapse the parameter value by calling
+\function{email.Utils.collapse_rfc2231_value()}, passing in the return value
+from \method{get_param()}.  This will return a suitably decoded Unicode string
+whn the value is a tuple, or the original string unquoted if it isn't.  For
+example:
 
 \begin{verbatim}
-param = msg.get_param('foo')
-if isinstance(param, tuple):
-    param = unicode(param[2], param[0] or 'us-ascii')
+rawparam = msg.get_param('foo')
+param = email.Utils.collapse_rfc2231_value(rawparam)
 \end{verbatim}
 
 In any case, the parameter value (either the returned string, or the
@@ -549,32 +552,21 @@ newline get printed after your closing \mimetype{multipart} boundary,
 set the \var{epilogue} to the empty string.
 \end{datadesc}
 
+\begin{datadesc}{defects}
+The \var{defects} attribute contains a list of all the problems found when
+parsing this message.  See \refmodule{email.Errors} for a detailed description
+of the possible parsing defects.
+
+\versionadded{2.4}
+\end{datadesc}
+
 \subsubsection{Deprecated methods}
 
-The following methods are deprecated in \module{email} version 2.
-They are documented here for completeness.
+\versionchanged[The \method{add_payload()} method was removed; use the
+\method{attach()} method instead]{2.4}
 
-\begin{methoddesc}[Message]{add_payload}{payload}
-Add \var{payload} to the message object's existing payload.  If, prior
-to calling this method, the object's payload was \code{None}
-(i.e. never before set), then after this method is called, the payload
-will be the argument \var{payload}.
-
-If the object's payload was already a list
-(i.e. \method{is_multipart()} returns \code{True}), then \var{payload} is
-appended to the end of the existing payload list.
-
-For any other type of existing payload, \method{add_payload()} will
-transform the new payload into a list consisting of the old payload
-and \var{payload}, but only if the document is already a MIME
-multipart document.  This condition is satisfied if the message's
-\mailheader{Content-Type} header's main type is either
-\mimetype{multipart}, or there is no \mailheader{Content-Type}
-header.  In any other situation,
-\exception{MultipartConversionError} is raised.
-
-\deprecated{2.2.2}{Use the \method{attach()} method instead.}
-\end{methoddesc}
+The following methods are deprecated.  They are documented here for
+completeness.
 
 \begin{methoddesc}[Message]{get_type}{\optional{failobj}}
 Return the message's content type, as a string of the form

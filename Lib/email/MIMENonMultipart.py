@@ -1,8 +1,8 @@
-# Copyright (C) 2002 Python Software Foundation
-# Author: barry@zope.com (Barry Warsaw)
+# Copyright (C) 2002-2004 Python Software Foundation
+# Author: Barry Warsaw
+# Contact: email-sig@python.org
 
-"""Base class for MIME type messages that are not multipart.
-"""
+"""Base class for MIME type messages that are not multipart."""
 
 from email import Errors
 from email import MIMEBase

@@ -1,5 +1,6 @@
 # Copyright (C) 2001-2004 Python Software Foundation
-# Author: barry@python.org (Barry Warsaw)
+# Author: Barry Warsaw
+# Contact: email-sig@python.org
 
 """email package exception classes."""
 
@@ -33,17 +34,20 @@ class MessageDefect:
     def __init__(self, line=None):
         self.line = line
 
-class NoBoundaryInMultipart(MessageDefect):
+class NoBoundaryInMultipartDefect(MessageDefect):
     """A message claimed to be a multipart but had no boundary parameter."""
 
-class StartBoundaryNotFound(MessageDefect):
+class StartBoundaryNotFoundDefect(MessageDefect):
     """The claimed start boundary was never found."""
 
-class FirstHeaderLineIsContinuation(MessageDefect):
+class FirstHeaderLineIsContinuationDefect(MessageDefect):
     """A message had a continuation line as its first header line."""
 
-class MisplacedEnvelopeHeader(MessageDefect):
+class MisplacedEnvelopeHeaderDefect(MessageDefect):
     """A 'Unix-from' header was found in the middle of a header block."""
 
-class MalformedHeader(MessageDefect):
-    """Found a header that was missing a colon, or was otherwise malformed"""
+class MalformedHeaderDefect(MessageDefect):
+    """Found a header that was missing a colon, or was otherwise malformed."""
+
+class MultipartInvariantViolationDefect(MessageDefect):
+    """A message claimed to be a multipart but no subparts were found."""

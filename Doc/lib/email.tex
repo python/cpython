@@ -1,5 +1,5 @@
-% Copyright (C) 2001,2002 Python Software Foundation
-% Author: barry@zope.com (Barry Warsaw)
+% Copyright (C) 2001-2004 Python Software Foundation
+% Author: barry@python.org (Barry Warsaw)
 
 \section{\module{email} ---
 	 An email and MIME handling package}
@@ -7,8 +7,8 @@
 \declaremodule{standard}{email}
 \modulesynopsis{Package supporting the parsing, manipulating, and
     generating email messages, including MIME documents.}
-\moduleauthor{Barry A. Warsaw}{barry@zope.com}
-\sectionauthor{Barry A. Warsaw}{barry@zope.com}
+\moduleauthor{Barry A. Warsaw}{barry@python.org}
+\sectionauthor{Barry A. Warsaw}{barry@python.org}
 
 \versionadded{2.2}
 
@@ -22,7 +22,7 @@ sending of email messages to SMTP (\rfc{2821}) servers; that is the
 function of the \refmodule{smtplib} module.  The \module{email}
 package attempts to be as RFC-compliant as possible, supporting in
 addition to \rfc{2822}, such MIME-related RFCs as
-\rfc{2045}-\rfc{2047}, and \rfc{2231}.
+\rfc{2045}, \rfc{2046}, \rfc{2047}, and \rfc{2231}.
 
 The primary distinguishing feature of the \module{email} package is
 that it splits the parsing and generating of email messages from the
@@ -79,7 +79,7 @@ package, a section on differences and porting is provided.
 \subsection{Encoders}
 \input{emailencoders}
 
-\subsection{Exception classes}
+\subsection{Exception and Defect classes}
 \input{emailexc}
 
 \subsection{Miscellaneous utilities}
@@ -88,14 +88,41 @@ package, a section on differences and porting is provided.
 \subsection{Iterators}
 \input{emailiter}
 
-\subsection{Differences from \module{email} v1 (up to Python 2.2.1)}
+\subsection{Package History}
 
 Version 1 of the \module{email} package was bundled with Python
 releases up to Python 2.2.1.  Version 2 was developed for the Python
 2.3 release, and backported to Python 2.2.2.  It was also available as
-a separate distutils based package.  \module{email} version 2 is
-almost entirely backward compatible with version 1, with the
-following differences:
+a separate distutils-based package, and is compatible back to Python 2.1.
+
+\module{email} version 3.0 was released with Python 2.4 and as a separate
+distutils-based package.  It is compatible back to Python 2.3.
+
+Here are the differences between \module{email} version 3 and version 2:
+
+\begin{itemize}
+\item The \class{FeedParser} class was introduced, and the \class{Parser}
+      class was implemented in terms of the \class{FeedParser}.  All parsing
+      there for is non-strict, and parsing will make a best effort never to
+      raise an exception.  Problems found while parsing messages are stored in
+      the message's \var{defect} attribute.
+
+\item All aspects of the API which raised \exception{DeprecationWarning}s in
+      version 2 have been removed.  These include the \var{_encoder} argument
+      to the \class{MIMEText} constructor, the \method{Message.add_payload()}
+      method, the \function{Utils.dump_address_pair()} function, and the
+      functions \function{Utils.decode()} and \function{Utils.encode()}.
+
+\item New \exception{DeprecationWarning}s have been added to:
+      \method{Generator.__call__()}, \method{Message.get_type()},
+      \method{Message.get_main_type()}, \method{Message.get_subtype()}, and
+      the \var{strict} argument to the \class{Parser} class.  These are
+      expected to be removed in email 3.1.
+
+\item Support for Pythons earlier than 2.3 has been removed.
+\end{itemize}
+
+Here are the differences between \module{email} version 2 and version 1:
 
 \begin{itemize}
 \item The \module{email.Header} and \module{email.Charset} modules

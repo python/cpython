@@ -1,8 +1,8 @@
 # Copyright (C) 2001-2004 Python Software Foundation
-# Author: Barry Warsaw <barry@python.org>
+# Author: Barry Warsaw
+# Contact: email-sig@python.org
 
-"""Various types of useful iterators and generators.
-"""
+"""Various types of useful iterators and generators."""
 
 import sys
 from cStringIO import StringIO

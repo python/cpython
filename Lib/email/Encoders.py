@@ -1,37 +1,16 @@
 # Copyright (C) 2001-2004 Python Software Foundation
-# Author: barry@python.org (Barry Warsaw)
+# Author: Barry Warsaw
+# Contact: email-sig@python.org
 
 """Encodings and related functions."""
 
 import base64
+from quopri import encodestring as _encodestring
 
-
-
-# Helpers
-try:
-    from quopri import encodestring as _encodestring
-
-    def _qencode(s):
-        enc = _encodestring(s, quotetabs=1)
-        # Must encode spaces, which quopri.encodestring() doesn't do
-        return enc.replace(' ', '=20')
-except ImportError:
-    # Python 2.1 doesn't have quopri.encodestring()
-    from cStringIO import StringIO
-    import quopri as _quopri
-
-    def _qencode(s):
-        if not s:
-            return s
-        hasnewline = (s[-1] == '\n')
-        infp = StringIO(s)
-        outfp = StringIO()
-        _quopri.encode(infp, outfp, quotetabs=1)
-        # Python 2.x's encode() doesn't encode spaces even when quotetabs==1
-        value = outfp.getvalue().replace(' ', '=20')
-        if not hasnewline and value[-1] == '\n':
-            return value[:-1]
-        return value
+def _qencode(s):
+    enc = _encodestring(s, quotetabs=True)
+    # Must encode spaces, which quopri.encodestring() doesn't do
+    return enc.replace(' ', '=20')
 
 
 def _bencode(s):

@@ -1,5 +1,6 @@
 # Copyright (C) 2004 Python Software Foundation
 # Authors: Baxter, Wouters and Warsaw
+# Contact: email-sig@python.org
 
 """FeedParser - An email feed parser.
 
@@ -15,7 +16,7 @@ This completes the parsing and returns the root message object.
 The other advantage of this parser is that it will never throw a parsing
 exception.  Instead, when it finds something unexpected, it adds a 'defect' to
 the current message.  Defects are just instances that live on the message
-object's .defect attribute.
+object's .defects attribute.
 """
 
 import re
@@ -100,7 +101,7 @@ class BufferedSubFile(object):
         # and the eol character(s).  Gather up a list of lines after
         # re-attaching the newlines.
         lines = []
-        for i in range(len(parts) / 2):
+        for i in range(len(parts) // 2):
             lines.append(parts[i*2] + parts[i*2+1])
         self.pushlines(lines)
 
@@ -156,6 +157,10 @@ class FeedParser:
         self._call_parse()
         root = self._pop_message()
         assert not self._msgstack
+        # Look for final set of defects
+        if root.get_content_maintype() == 'multipart' \
+               and not root.is_multipart():
+            root.defects.append(Errors.MultipartInvariantViolationDefect())
         return root
 
     def _new_message(self):
@@ -166,7 +171,6 @@ class FeedParser:
             self._msgstack[-1].attach(msg)
         self._msgstack.append(msg)
         self._cur = msg
-        self._cur.defects = []
         self._last = msg
 
     def _pop_message(self):
@@ -259,7 +263,7 @@ class FeedParser:
                 # defined a boundary.  That's a problem which we'll handle by
                 # reading everything until the EOF and marking the message as
                 # defective.
-                self._cur.defects.append(Errors.NoBoundaryInMultipart())
+                self._cur.defects.append(Errors.NoBoundaryInMultipartDefect())
                 lines = []
                 for line in self._input:
                     if line is NeedMoreData:
@@ -305,6 +309,8 @@ class FeedParser:
                             if eolmo:
                                 preamble[-1] = lastline[:-len(eolmo.group(0))]
                             self._cur.preamble = EMPTYSTRING.join(preamble)
+                        #import pdb ; pdb.set_trace()
+                        # See SF bug #1030941
                         capturing_preamble = False
                         self._input.unreadline(line)
                         continue
@@ -363,7 +369,7 @@ class FeedParser:
             # that as a defect and store the captured text as the payload.
             # Otherwise everything from here to the EOF is epilogue.
             if capturing_preamble:
-                self._cur.defects.append(Errors.StartBoundaryNotFound())
+                self._cur.defects.append(Errors.StartBoundaryNotFoundDefect())
                 self._cur.set_payload(EMPTYSTRING.join(preamble))
                 return
             # If the end boundary ended in a newline, we'll need to make sure
@@ -408,7 +414,7 @@ class FeedParser:
                     # The first line of the headers was a continuation.  This
                     # is illegal, so let's note the defect, store the illegal
                     # line, and ignore it for purposes of headers.
-                    defect = Errors.FirstHeaderLineIsContinuation(line)
+                    defect = Errors.FirstHeaderLineIsContinuationDefect(line)
                     self._cur.defects.append(defect)
                     continue
                 lastvalue.append(line)
@@ -436,13 +442,13 @@ class FeedParser:
                 else:
                     # Weirdly placed unix-from line.  Note this as a defect
                     # and ignore it.
-                    defect = Errors.MisplacedEnvelopeHeader(line)
+                    defect = Errors.MisplacedEnvelopeHeaderDefect(line)
                     self._cur.defects.append(defect)
                     continue
             # Split the line on the colon separating field name from value.
             i = line.find(':')
             if i < 0:
-                defect = Errors.MalformedHeader(line)
+                defect = Errors.MalformedHeaderDefect(line)
                 self._cur.defects.append(defect)
                 continue
             lastheader = line[:i]

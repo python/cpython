@@ -1,5 +1,6 @@
-# Copyright (C) 2002 Python Software Foundation
-# Author: che@debian.org (Ben Gertzfield)
+# Copyright (C) 2002-2004 Python Software Foundation
+# Author: Ben Gertzfield
+# Contact: email-sig@python.org
 
 """Base64 content transfer encoding per RFCs 2045-2047.
 

@@ -8,11 +8,11 @@ type messages containing binary data.
 
 The \module{email} package provides some convenient encodings in its
 \module{Encoders} module.  These encoders are actually used by the
-\class{MIMEImage} and \class{MIMEText} class constructors to provide default
-encodings.  All encoder functions take exactly one argument, the
-message object to encode.  They usually extract the payload, encode
-it, and reset the payload to this newly encoded value.  They should also
-set the \mailheader{Content-Transfer-Encoding} header as appropriate.
+\class{MIMEAudio} and \class{MIMEImage} class constructors to provide default
+encodings.  All encoder functions take exactly one argument, the message
+object to encode.  They usually extract the payload, encode it, and reset the
+payload to this newly encoded value.  They should also set the
+\mailheader{Content-Transfer-Encoding} header as appropriate.
 
 Here are the encoding functions provided:
 

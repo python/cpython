@@ -4,17 +4,15 @@
 
 """A parser of RFC 2822 and MIME email messages."""
 
-import re
+import warnings
 from cStringIO import StringIO
 from email.FeedParser import FeedParser
 from email.Message import Message
 
-NLCRE = re.compile('\r\n|\r|\n')
-
 
 
 class Parser:
-    def __init__(self, _class=Message, strict=False):
+    def __init__(self, *args, **kws):
         """Parser of RFC 2822 and MIME email messages.
 
         Creates an in-memory object tree representing the email message, which
@@ -29,14 +27,28 @@ class Parser:
         _class is the class to instantiate for new message objects when they
         must be created.  This class must have a constructor that can take
         zero arguments.  Default is Message.Message.
-
-        Optional strict tells the parser to be strictly RFC compliant or to be
-        more forgiving in parsing of ill-formatted MIME documents.  When
-        non-strict mode is used, the parser will try to make up for missing or
-        erroneous boundaries and other peculiarities seen in the wild.
-        Default is non-strict parsing.
         """
-        self._class = _class
+        if len(args) >= 1:
+            if '_class' in kws:
+                raise TypeError("Multiple values for keyword arg '_class'")
+            kws['_class'] = args[0]
+        if len(args) == 2:
+            if 'strict' in kws:
+                raise TypeError("Multiple values for keyword arg 'strict'")
+            kws['strict'] = args[1]
+        if len(args) > 2:
+            raise TypeError('Too many arguments')
+        if '_class' in kws:
+            self._class = kws['_class']
+            del kws['_class']
+        else:
+            self._class = Message
+        if 'strict' in kws:
+            warnings.warn("'strict' argument is deprecated (and ignored)",
+                          DeprecationWarning, 2)
+            del kws['strict']
+        if kws:
+            raise TypeError('Unexpected keyword arguments')
 
     def parse(self, fp, headersonly=False):
         """Create a message structure from the data in a file.

@@ -119,24 +119,33 @@ as-is.  If \var{charset} is given but \var{language} is not, the
 string is encoded using the empty string for \var{language}.
 \end{funcdesc}
 
+\begin{funcdesc}{collapse_rfc2231_value}{value\optional{, errors\optional{,
+    fallback_charset}}}
+When a header parameter is encoded in \rfc{2231} format,
+\method{Message.get_param()} may return a 3-tuple containing the character
+set, language, and value.  \function{collapse_rfc2231_value()} turns this into
+a unicode string.  Optional \var{errors} is passed to the \var{errors}
+argument of the built-in \function{unicode()} function; it defaults to
+\code{replace}.  Optional \var{fallback_charset} specifies the character set
+to use if the one in the \rfc{2231} header is not known by Python; it defaults
+to \code{us-ascii}.
+
+For convenience, if the \var{value} passed to
+\function{collapse_rfc2231_value()} is not a tuple, it should be a string and
+it is returned unquoted.
+\end{funcdesc}
+
 \begin{funcdesc}{decode_params}{params}
 Decode parameters list according to \rfc{2231}.  \var{params} is a
 sequence of 2-tuples containing elements of the form
 \code{(content-type, string-value)}.
 \end{funcdesc}
 
-The following functions have been deprecated:
+\versionchanged[The \function{dump_address_pair()} function has been removed;
+use \function{formataddr()} instead.]{2.4}
 
-\begin{funcdesc}{dump_address_pair}{pair}
-\deprecated{2.2.2}{Use \function{formataddr()} instead.}
-\end{funcdesc}
+\versionchanged[The \function{decode()} function has been removed; use the
+\method{Header.decode_header()} method instead.]{2.4}
 
-\begin{funcdesc}{decode}{s}
-\deprecated{2.2.2}{Use \method{Header.decode_header()} instead.}
-\end{funcdesc}
-
-
-\begin{funcdesc}{encode}{s\optional{, charset\optional{, encoding}}}
-\deprecated{2.2.2}{Use \method{Header.encode()} instead.}
-\end{funcdesc}
-
+\versionchanged[The \function{encode()} function has been removed; use the
+\method{Header.encode()} method instead.]{2.4}

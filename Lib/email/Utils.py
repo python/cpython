@@ -1,5 +1,6 @@
 # Copyright (C) 2001-2004 Python Software Foundation
-# Author: barry@python.org (Barry Warsaw)
+# Author: Barry Warsaw
+# Contact: email-sig@python.org
 
 """Miscellaneous utilities."""
 
@@ -80,12 +81,6 @@ def formataddr(pair):
         return '%s%s%s <%s>' % (quotes, name, quotes, address)
     return address
 
-# For backwards compatibility
-def dump_address_pair(pair):
-    warnings.warn('Use email.Utils.formataddr() instead',
-                  DeprecationWarning, 2)
-    return formataddr(pair)
-
 
 
 def getaddresses(fieldvalues):
@@ -105,46 +100,6 @@ ecre = re.compile(r'''
   (?P<atom>.*?)         # non-greedy up to the next ?= is the atom
   \?=                   # literal ?=
   ''', re.VERBOSE | re.IGNORECASE)
-
-
-def decode(s):
-    """Return a decoded string according to RFC 2047, as a unicode string.
-
-    NOTE: This function is deprecated.  Use Header.decode_header() instead.
-    """
-    warnings.warn('Use Header.decode_header() instead.', DeprecationWarning, 2)
-    # Intra-package import here to avoid circular import problems.
-    from email.Header import decode_header
-    L = decode_header(s)
-    if not isinstance(L, list):
-        # s wasn't decoded
-        return s
-
-    rtn = []
-    for atom, charset in L:
-        if charset is None:
-            rtn.append(atom)
-        else:
-            # Convert the string to Unicode using the given encoding.  Leave
-            # Unicode conversion errors to strict.
-            rtn.append(unicode(atom, charset))
-    # Now that we've decoded everything, we just need to join all the parts
-    # together into the final string.
-    return UEMPTYSTRING.join(rtn)
-
-
-
-def encode(s, charset='iso-8859-1', encoding='q'):
-    """Encode a string according to RFC 2047."""
-    warnings.warn('Use Header.Header.encode() instead.', DeprecationWarning, 2)
-    encoding = encoding.lower()
-    if encoding == 'q':
-        estr = _qencode(s)
-    elif encoding == 'b':
-        estr = _bencode(s)
-    else:
-        raise ValueError, 'Illegal encoding code: ' + encoding
-    return '=?%s?%s?%s?=' % (charset.lower(), encoding, estr)
 
 
 
@@ -179,7 +134,7 @@ def formatdate(timeval=None, localtime=False):
             sign = '-'
         else:
             sign = '+'
-        zone = '%s%02d%02d' % (sign, hours, minutes / 60)
+        zone = '%s%02d%02d' % (sign, hours, minutes // 60)
     else:
         now = time.gmtime(timeval)
         # Timezone offset is always -0000
@@ -314,3 +269,16 @@ def decode_params(params):
             new_params.append(
                 (name, (charset, language, '"%s"' % quote(value))))
     return new_params
+
+def collapse_rfc2231_value(value, errors='replace',
+                           fallback_charset='us-ascii'):
+    if isinstance(value, tuple):
+        rawval = unquote(value[2])
+        charset = value[0] or 'us-ascii'
+        try:
+            return unicode(rawval, charset, errors)
+        except LookupError:
+            # XXX charset is unknown to Python.
+            return unicode(rawval, fallback_charset, errors)
+    else:
+        return unquote(value)

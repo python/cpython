@@ -52,3 +52,36 @@ rarely raised in practice.  However the exception may also be raised
 if the \method{attach()} method is called on an instance of a class
 derived from \class{MIMENonMultipart} (e.g. \class{MIMEImage}).
 \end{excclassdesc}
+
+Here's the list of the defects that the \class{FeedParser} can find while
+parsing messages.  Note that the defects are added to the message where the
+problem was found, so for example, if a message nested inside a
+\mimetype{multipart/alternative} had a malformed header, that nested message
+object would have a defect, but the containing messages would not.
+
+All defect classes are subclassed from \class{email.Errors.MessageDefect}, but
+this class is \emph{not} an exception!
+
+\versionadded[All the defect classes were added]{2.4}
+
+\begin{itemize}
+\item \class{NoBoundaryInMultipartDefect} -- A message claimed to be a
+      multipart, but had no \mimetype{boundary} parameter.
+
+\item \class{StartBoundaryNotFoundDefect} -- The start boundary claimed in the
+      \mailheader{Content-Type} header was never found.
+
+\item \class{FirstHeaderLineIsContinuationDefect} -- The message had a
+      continuation line as its first header line.
+
+\item \class{MisplacedEnvelopeHeaderDefect} - A ``Unix From'' header was found
+      in the middle of a header block.
+
+\item \class{MalformedHeaderDefect} -- A header was found that was missing a
+      colon, or was otherwise malformed.
+
+\item \class{MultipartInvariantViolationDefect} -- A message claimed to be a
+      \mimetype{multipart}, but no subparts were found.  Note that when a
+      message has this defect, its \method{is_multipart()} method may return
+      false even though its content type claims to be \mimetype{multipart}.
+\end{itemize}
