@@ -31,6 +31,21 @@
 /* Define this if your time.h defines altzone */
 #undef HAVE_ALTZONE
 
+/* Define this if you have gethostbyname() */
+#undef HAVE_GETHOSTBTNAME
+
+/* Define this if you have some version of gethostbyname_r() */
+#undef HAVE_GETHOSTBYNAME_R
+
+/* Define this if you have the 3-arg version of gethostbyname_r() */
+#undef HAVE_GETHOSTBYNAME_R_3_ARG
+
+/* Define this if you have the 5-arg version of gethostbyname_r() */
+#undef HAVE_GETHOSTBYNAME_R_5_ARG
+
+/* Define this if you have the 6-arg version of gethostbyname_r() */
+#undef HAVE_GETHOSTBYNAME_R_6_ARG
+
 /* Define this if you have the type long long */
 #undef HAVE_LONG_LONG
 
