@@ -66,7 +66,7 @@ TOOLSDIR=	tools
 
 # This is the *documentation* release, and is used to construct the file
 # names of the downloadable tarballs.
-RELEASE=2.2+
+RELEASE=2.3a0
 
 PYTHON=	   python
 DVIPS=	   dvips -N0 -t $(PAPER)
@@ -611,6 +611,8 @@ clobber:
 	rm -f pdf-$(RELEASE).zip postscript-$(RELEASE).zip
 	rm -f $(DVIFILES) $(PSFILES) $(PDFFILES)
 	cd $(INFODIR) && $(MAKE) clobber
+	rm -f paper-$(PAPER)/*.tex paper-$(PAPER)/*.ind paper-$(PAPER)/*.idx
+	rm -f paper-$(PAPER)/*.l2h paper-$(PAPER)/*.how paper-$(PAPER)/README
 	rm -rf html/index.html html/modindex.html html/acks.html
 	rm -rf html/api/ html/doc/ html/ext/ html/lib/ html/mac/
 	rm -rf html/ref/ html/tut/ html/inst/ html/dist/
