@@ -12,6 +12,9 @@ What's New in Python 2.3.1?
 Core and builtins
 -----------------
 
+- Bug #795506:  The % formatting operator did not support '%F' as
+  had been documented.
+
 - Bug #775985: Only set stdout.encoding if a codec is available.
 
 Extension modules
