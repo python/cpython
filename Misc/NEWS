@@ -67,6 +67,10 @@ C API
 
 Windows
 
+- SF bug 595919:  popenN return only text mode pipes
+  popen2() and popen3() created text-mode pipes even when binary mode
+  was asked for.  This was specific to Windows.
+
 - Sometimes the uninstall executable (UNWISE.EXE) vanishes.  One cause
   of that has been fixed in the installer (disabled Wise's "delete in-
   use files" uninstall option).
