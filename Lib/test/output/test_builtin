@@ -9,6 +9,7 @@ chr
 cmp
 coerce
 compile
+complex
 delattr
 dir
 divmod
