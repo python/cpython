@@ -14,6 +14,14 @@ HREF="http://www.python.org/doc/tut/tut.html">Python Tutorial</A> by
 Guido van Rossum. This guide more-or-less replaces chapter two of the
 tutorial, and provides some additional material. <p>
 
+There is currently no good tutorial for the mac-specific features of
+Python, but to whet your appetite: it has interfaces to many MacOS
+toolboxes (quickdraw, sound, quicktime, open scripting, etc) and
+various portable toolboxes are available too (Tk, stdwin, complex
+numbers, image manipulation, etc). Some <A HREF="index.html">
+annotated sample programs</A> are available to give you an idea of
+Python's power. <P>
+
 The document refers to Python 1.3.3 or higher, some of the features
 (like setting applet options) will not work in earlier versions of
 Python. <p>
@@ -24,7 +32,7 @@ The name of the interpreter may differ on different installations: it
 may be called <CODE>Python</CODE>, <CODE>PythonPPC</CODE> (for powerpc
 macs) or <CODE>Python68K</CODE> (indeed, for 68K macs). It will always
 be recognizable by the "16 ton" icon, though. You start the
-interpreter in interactive mode by double-clicking it. <p>
+interpreter in interactive mode by double-clicking its icon: <p>
 
 <img src="html.icons/python.gif"><p>
 
@@ -88,7 +96,7 @@ edit-run cycle you can use the <CODE>import</CODE> statement and
 is Guido's original comment for how to do this, from the 1.1 release
 notes: <P>
 
-<CITE>
+<BLOCKQUOTE>
 
 Make sure the program is a module file (filename must be a Python
 identifier followed by '<CODE>.py</CODE>').  You can then import it
@@ -121,7 +129,7 @@ does!).  The trick is to first import the module again, then reload
 it.  For instance, <CODE>import foo; reload(foo)</CODE>.  Because the
 module object already exists internally, the import statement does not
 attempt to execute the module again -- it just places it in your
-workspace.  </CITE>
+workspace.  </BLOCKQUOTE>
 
 <h2>Clickable python scripts</h2>
 
@@ -137,6 +145,14 @@ The <CODE>Scripts</CODE> folder contains a script
 <CODE>fixfiletypes</CODE> that will recursively traverse a folder and
 set the correct creator and type for all files ending in
 <CODE>.py</CODE>. <p>
+
+<BLOCKQUOTE>
+Older releases of Python used the creator code
+<CODE>'PYTH'</CODE> in stead of <CODE>'Pyth'</CODE>. If you still have
+older Python sources on your system and named them with
+<CODE>'.py'</CODE> extension the <CODE>fixfiletypes</CODE> script will
+correct them.
+</BLOCKQUOTE>
 
 <h2>Interaction with the user</h2>
 
@@ -355,7 +371,7 @@ set) the end-of-line convention used in a file. <p>
 
 <HR>
 <A HREF="http://www.cwi.nl/~jack">Jack Jansen</A>,
-<A HREF="mailto:jack@cwi.nl">jack@cwi.nl</A>, 15-Apr-1996.
+<A HREF="mailto:jack@cwi.nl">jack@cwi.nl</A>, 19-Apr-1996.
 
 </BODY>
 </HTML>
