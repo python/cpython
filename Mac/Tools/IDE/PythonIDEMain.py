@@ -32,6 +32,12 @@ def getmodtime(file):
 class PythonIDE(Wapplication.Application):
 	
 	def __init__(self):
+		if sys.platform == "darwin":
+			if len(sys.argv) > 1 and sys.argv[1].startswith("-psn"):
+				home = os.getenv("HOME")
+				if home:
+					os.chdir(home)
+		print "We are in", os.getcwd()
 		self.preffilepath = os.path.join("Python", "PythonIDE preferences")
 		Wapplication.Application.__init__(self, 'Pide')
 		from Carbon import AE
@@ -49,11 +55,6 @@ class PythonIDE(Wapplication.Application):
 				self.quitevent)
 		import PyConsole, PyEdit
 		Splash.wait()
-		if sys.platform == "darwin":
-			if sys.argv and sys.argv[0].startswith("-psn"):
-				home = os.getenv("HOME")
-				if home:
-					os.chdir(home)
 		# With -D option (OSX command line only) keep stderr, for debugging the IDE
 		# itself.
 		debug_stderr = None
@@ -140,9 +141,12 @@ class PythonIDE(Wapplication.Application):
 		except:
 			path = os.path.join(os.getcwd(), "Mac", "IDE scripts")
 			if not os.path.exists(path):
-				path = os.path.join(os.getcwd(), "Scripts")
+				if sys.platform == "darwin":
+					path = os.path.join(os.getenv("HOME"), "Library", "Python", "IDE-Scripts")
+				else:
+					path = os.path.join(os.getcwd(), "Scripts")
 				if not os.path.exists(path):
-					os.mkdir(path)
+					os.makedirs(path)
 					f = open(os.path.join(path, "Place your scripts here"+ELIPSES), "w")
 					f.close()
 			fsr = File.FSRef(path)
