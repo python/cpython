@@ -55,7 +55,6 @@ def decode_header(header):
     header = str(header)
     if not ecre.search(header):
         return [(header, None)]
-
     decoded = []
     dec = ''
     for line in header.splitlines():
@@ -63,7 +62,6 @@ def decode_header(header):
         if not ecre.search(line):
             decoded.append((line, None))
             continue
-
         parts = ecre.split(line)
         while parts:
             unenc = parts.pop(0).strip()
@@ -108,7 +106,8 @@ def make_header(decoded_seq, maxlinelen=None, header_name=None,
     h = Header(maxlinelen=maxlinelen, header_name=header_name,
                continuation_ws=continuation_ws)
     for s, charset in decoded_seq:
-        if not isinstance(charset, Charset):
+        # None means us-ascii but we can simply pass it on to h.append()
+        if charset is not None and not isinstance(charset, Charset):
             charset = Charset(charset)
         h.append(s, charset)
     return h
