@@ -213,6 +213,29 @@ setattr(v, name, w)
 	}
 }
 
+/* Test a value used as condition, e.g., in a for or if statement.
+   Return -1 if an error occurred */
+
+int
+testbool(v)
+	object *v;
+{
+	int res;
+	if (v == None)
+		res = 0;
+	else if (v->ob_type->tp_as_number != NULL)
+		res = (*v->ob_type->tp_as_number->nb_nonzero)(v);
+	else if (v->ob_type->tp_as_mapping != NULL)
+		res = (*v->ob_type->tp_as_mapping->mp_length)(v);
+	else if (v->ob_type->tp_as_sequence != NULL)
+		res = (*v->ob_type->tp_as_sequence->sq_length)(v);
+	else
+		res = 1;
+	if (res > 0)
+		res = 1;
+	return res;
+}
+
 
 /*
 NoObject is usable as a non-NULL undefined value, used by the macro None.

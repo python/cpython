@@ -58,7 +58,6 @@ static int prtrace PROTO((object *, char *));
 static void call_exc_trace PROTO((object **, object**, frameobject *));
 static int call_trace
 	PROTO((object **, object **, frameobject *, char *, object *));
-static int testbool PROTO((object *));
 static object *add PROTO((object *, object *));
 static object *sub PROTO((object *, object *));
 static object *mul PROTO((object *, object *));
@@ -1611,29 +1610,6 @@ flushline()
 		writestring("\n", f);
 }
 
-
-/* Test a value used as condition, e.g., in a for or if statement.
-   Return -1 if an error occurred */
-
-static int
-testbool(v)
-	object *v;
-{
-	int res;
-	if (v == None)
-		res = 0;
-	else if (v->ob_type->tp_as_number != NULL)
-		res = (*v->ob_type->tp_as_number->nb_nonzero)(v);
-	else if (v->ob_type->tp_as_mapping != NULL)
-		res = (*v->ob_type->tp_as_mapping->mp_length)(v);
-	else if (v->ob_type->tp_as_sequence != NULL)
-		res = (*v->ob_type->tp_as_sequence->sq_length)(v);
-	else
-		res = 1;
-	if (res > 0)
-		res = 1;
-	return res;
-}
 
 static object *
 or(v, w)

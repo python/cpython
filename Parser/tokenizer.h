@@ -31,12 +31,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Tokenizer state */
 struct tok_state {
 	/* Input state; buf <= cur <= inp <= end */
-	/* NB an entire token must fit in the buffer */
-	char *buf;	/* Input buffer */
+	/* NB an entire line is held in the buffer */
+	char *buf;	/* Input buffer, or NULL; malloc'ed if fp != NULL */
 	char *cur;	/* Next character in buffer */
 	char *inp;	/* End of data in buffer */
-	char *end;	/* End of input buffer */
-	int done;	/* 0 normally, 1 at EOF, -1 after error */
+	char *end;	/* End of input buffer if buf != NULL */
+	int done;	/* E_OK normally, E_EOF at EOF, otherwise error code */
+	/* NB If done != E_OK, cur must be == inp!!! */
 	FILE *fp;	/* Rest of input; NULL if tokenizing a string */
 	int tabsize;	/* Tab spacing */
 	int indent;	/* Current indentation index */
