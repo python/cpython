@@ -321,13 +321,14 @@ pymalloc strives at all levels (arena, pool, and block) never to touch a piece
 of memory until it's actually needed.
 
 So long as a pool is in the used state, we're certain there *is* a block
-available for allocating.  If pool->freeblock is NULL then, that means we
-simply haven't yet gotten to one of the higher-address blocks.  The offset
-from the pool_header to the start of "the next" virgin block is stored in
-the pool_header nextoffset member, and the largest value of nextoffset that
-makes sense is stored in the maxnextoffset member when a pool is initialized.
-All the blocks in a pool have been passed out at least once when and only
-when nextoffset > maxnextoffset.
+available for allocating, and pool->freeblock is not NULL.  If pool->freeblock
+points to the end of the free list before we've carved the entire pool into
+blocks, that means we simply haven't yet gotten to one of the higher-address
+blocks.  The offset from the pool_header to the start of "the next" virgin
+block is stored in the pool_header nextoffset member, and the largest value
+of nextoffset that makes sense is stored in the maxnextoffset member when a
+pool is initialized.  All the blocks in a pool have been passed out at least
+once when and only when nextoffset > maxnextoffset.
 
 
 Major obscurity:  While the usedpools vector is declared to have poolp
@@ -467,8 +468,7 @@ new_arena(void)
 		maxarenas = 16;
 	}
 	else if (narenas == maxarenas) {
-		/* Grow arenas.  Don't use realloc:  if this fails, we
-		 * don't want to lose the base addresses we already have.
+		/* Grow arenas.
 		 *
 		 * Exceedingly subtle:  Someone may be calling the pymalloc
 		 * free via PyMem_{DEL, Del, FREE, Free} without holding the
@@ -590,6 +590,7 @@ _PyMalloc_Malloc(size_t nbytes)
 			 */
 			++pool->ref.count;
 			bp = pool->freeblock;
+			assert(bp != NULL);
 			if ((pool->freeblock = *(block **)bp) != NULL) {
 				UNLOCK();
 				return (void *)bp;
@@ -1057,12 +1058,15 @@ _PyMalloc_DebugRealloc(void *p, size_t nbytes)
 		return p;
 	}
 
+	assert(nbytes != 0);
 	/* More memory is needed:  get it, copy over the first original_nbytes
 	   of the original data, and free the original memory. */
 	fresh = _PyMalloc_DebugMalloc(nbytes);
-	if (fresh != NULL && original_nbytes > 0)
-		memcpy(fresh, p, original_nbytes);
-	_PyMalloc_DebugFree(p);
+	if (fresh != NULL) {
+		if (original_nbytes > 0)
+			memcpy(fresh, p, original_nbytes);
+		_PyMalloc_DebugFree(p);
+	}
 	return fresh;
 }
 
