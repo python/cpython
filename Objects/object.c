@@ -703,17 +703,31 @@ PyObject_SetAttrString(PyObject *v, char *name, PyObject *w)
 	}
 }
 
+/* Internal API needed by PyObject_GetAttr(): */
+extern 
+PyObject *_PyUnicode_AsDefaultEncodedString(PyObject *unicode,
+				  const char *errors);
+
 PyObject *
 PyObject_GetAttr(PyObject *v, PyObject *name)
 {
-	if (v->ob_type->tp_getattro != NULL)
-		return (*v->ob_type->tp_getattro)(v, name);
+	/* The Unicode to string conversion is done here because the
+	   existing tp_getattro slots expect a string object as name
+	   and we wouldn't want to break those. */
+	if (PyUnicode_Check(name)) {
+		name = _PyUnicode_AsDefaultEncodedString(name, NULL);
+		if (name == NULL)
+			return NULL;
+	}
 
 	if (!PyString_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
 				"attribute name must be string");
 		return NULL;
 	}
+	if (v->ob_type->tp_getattro != NULL)
+		return (*v->ob_type->tp_getattro)(v, name);
+	else
 	return PyObject_GetAttrString(v, PyString_AS_STRING(name));
 }
 
@@ -733,20 +747,32 @@ int
 PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 {
 	int err;
-	Py_INCREF(name);
-	if (PyString_Check(name))
-		PyString_InternInPlace(&name);
-	if (v->ob_type->tp_setattro != NULL)
-		err = (*v->ob_type->tp_setattro)(v, name, value);
-	else if (PyString_Check(name)) {
-		err = PyObject_SetAttrString(
-			v, PyString_AS_STRING(name), value);
+
+	/* The Unicode to string conversion is done here because the
+	   existing tp_setattro slots expect a string object as name
+	   and we wouldn't want to break those. */
+	if (PyUnicode_Check(name)) {
+		name = PyUnicode_AsEncodedString(name, NULL, NULL);
+		if (name == NULL)
+			return -1;
 	}
-	else {
+	else
+		Py_INCREF(name);
+	
+	if (!PyString_Check(name)){
 		PyErr_SetString(PyExc_TypeError,
 				"attribute name must be string");
 		err = -1;
 	}
+	else {
+		PyString_InternInPlace(&name);
+		if (v->ob_type->tp_setattro != NULL)
+			err = (*v->ob_type->tp_setattro)(v, name, value);
+		else
+			err = PyObject_SetAttrString(v, 
+				        PyString_AS_STRING(name), value);
+	}
+	
 	Py_DECREF(name);
 	return err;
 }
