@@ -806,7 +806,7 @@ Set(['Jack', 'Jane', 'Janice', 'John', 'Marvin', 'Sam', 'Zack'])
 __test__ = {'libreftest' : libreftest}
 
 def test_main(verbose=None):
-    from test import test_sets
+    import test_sets, doctest
     test_support.run_unittest(
         TestSetOfSets,
         TestExceptionPropagation,
@@ -835,8 +835,8 @@ def test_main(verbose=None):
         TestCopyingTuple,
         TestCopyingNested,
         TestIdentities,
+        doctest.DocTestSuite(test_sets),
     )
-    test_support.run_doctest(test_sets, verbose)
 
 if __name__ == "__main__":
     test_main(verbose=True)
