@@ -428,27 +428,48 @@ PyClass_IsSubclass(PyObject *class, PyObject *base)
 /* Instance objects */
 
 PyObject *
-PyInstance_New(PyObject *class, PyObject *arg, PyObject *kw)
+PyInstance_NewRaw(PyObject *klass, PyObject *dict)
+{
+	PyInstanceObject *inst;
+
+	if (!PyClass_Check(klass)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	if (dict == NULL) {
+		dict = PyDict_New();
+		if (dict == NULL)
+			return NULL;
+	}
+	else {
+		if (!PyDict_Check(dict)) {
+			PyErr_BadInternalCall();
+			return NULL;
+		}
+		Py_INCREF(dict);
+	}
+	inst = PyObject_NEW(PyInstanceObject, &PyInstance_Type);
+	if (inst == NULL) {
+		Py_DECREF(dict);
+		return NULL;
+	}
+	Py_INCREF(klass);
+	inst->in_class = (PyClassObject *)klass;
+	inst->in_dict = dict;
+	PyObject_GC_Init(inst);
+	return (PyObject *)inst;
+}
+
+PyObject *
+PyInstance_New(PyObject *klass, PyObject *arg, PyObject *kw)
 {
 	register PyInstanceObject *inst;
 	PyObject *init;
 	static PyObject *initstr;
-	if (!PyClass_Check(class)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
-	inst = PyObject_NEW(PyInstanceObject, &PyInstance_Type);
+
+	inst = (PyInstanceObject *) PyInstance_NewRaw(klass, NULL);
 	if (inst == NULL)
 		return NULL;
-	inst->in_dict = PyDict_New();
-	if (inst->in_dict == NULL) {
-		inst = (PyInstanceObject *) PyObject_AS_GC(inst);
-		PyObject_DEL(inst);
-		return NULL;
-	}
-	Py_INCREF(class);
-	inst->in_class = (PyClassObject *)class;
-	PyObject_GC_Init(inst);
 	if (initstr == NULL)
 		initstr = PyString_InternFromString("__init__");
 	init = instance_getattr2(inst, initstr);
