@@ -78,6 +78,17 @@ builtin_chr(self, args)
 }
 
 static object *
+builtin_cmp(self, args)
+	object *self;
+	object *args;
+{
+	object *a, *b;
+	if (!getargs(args, "(OO)", &a, &b))
+		return NULL;
+	return newintobject((long)cmpobject(a, b));
+}
+
+static object *
 builtin_coerce(self, args)
 	object *self;
 	object *args;
@@ -608,6 +619,7 @@ static struct methodlist builtin_methods[] = {
 	{"abs",		builtin_abs},
 	{"apply",	builtin_apply},
 	{"chr",		builtin_chr},
+	{"cmp",		builtin_cmp},
 	{"coerce",	builtin_coerce},
 	{"dir",		builtin_dir},
 	{"divmod",	builtin_divmod},

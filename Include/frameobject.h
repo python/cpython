@@ -81,3 +81,7 @@ frameobject * newframeobject PROTO(
 
 void setup_block PROTO((frameobject *, int, int, int));
 block *pop_block PROTO((frameobject *));
+
+/* Extend the value stack */
+
+object **extend_stack PROTO((frameobject *, int, int));

@@ -24,7 +24,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Parser interface */
 
-#define MAXSTACK 100
+#define MAXSTACK 500
 
 typedef struct _stackentry {
 	int		 s_state;	/* State in current DFA */

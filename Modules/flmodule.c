@@ -2078,10 +2078,7 @@ forms_do_or_check_forms(dummy, args, func)
 		}
 		g = findgeneric(generic);
 		if (g == NULL) {
-			/* XXX What kind of weird object is this? */
-			/* XXX Maybe caused by a bug here */
-			fprintf(stderr, "weird object: class %d, label '%s'\n",
-				generic->objclass, generic->label);
+			/* Object not known to us (some dialogs cause this) */
 			continue; /* Ignore it */
 		}
 		if (g->ob_callback == NULL) {
@@ -2572,7 +2569,9 @@ static struct methodlist forms_methods[] = {
 	{"getmcolor",		forms_getmcolor},
 /* interaction */
 	{"do_forms",		forms_do_forms},
+	{"do_only_forms",	forms_do_only_forms},
 	{"check_forms",		forms_check_forms},
+	{"check_only_forms",	forms_check_only_forms},
 	{"set_event_call_back",	forms_set_event_call_back},
 /* goodies */
 	{"show_message",	forms_show_message},

@@ -204,6 +204,9 @@ eval_code(co, globals, locals, arg)
 #define BASIC_PUSH(v)	(*stack_pointer++ = (v))
 #define BASIC_POP()	(*--stack_pointer)
 
+#define CHECK_STACK(n)	(STACK_LEVEL() + (n) < f->f_nvalues || \
+			  (stack_pointer = extend_stack(f, STACK_LEVEL(), n)))
+
 #ifdef LLTRACE
 #define PUSH(v)		(BASIC_PUSH(v), lltrace && prtrace(TOP(), "push"))
 #define POP()		(lltrace && prtrace(TOP(), "pop"), BASIC_POP())
@@ -323,6 +326,11 @@ eval_code(co, globals, locals, arg)
 			}
 		}
 #endif
+
+		if (!CHECK_STACK(3)) {
+			x = NULL;
+			break;
+		}
 
 		/* Main switch on opcode */
 		
@@ -763,6 +771,10 @@ eval_code(co, globals, locals, arg)
 				x = gettupleslice(v, oparg, gettuplesize(v));
 				if (x != NULL) {
 					PUSH(x);
+					if (!CHECK_STACK(oparg)) {
+						x = NULL;
+						break;
+					}
 					for (; --oparg >= 0; ) {
 						w = gettupleitem(v, oparg);
 						INCREF(w);
@@ -858,6 +870,10 @@ eval_code(co, globals, locals, arg)
 				why = WHY_EXCEPTION;
 			}
 			else {
+				if (!CHECK_STACK(oparg)) {
+					x = NULL;
+					break;
+				}
 				for (; --oparg >= 0; ) {
 					w = gettupleitem(v, oparg);
 					INCREF(w);
@@ -879,6 +895,10 @@ eval_code(co, globals, locals, arg)
 				why = WHY_EXCEPTION;
 			}
 			else {
+				if (!CHECK_STACK(oparg)) {
+					x = NULL;
+					break;
+				}
 				for (; --oparg >= 0; ) {
 					w = getlistitem(v, oparg);
 					INCREF(w);

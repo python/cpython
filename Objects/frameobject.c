@@ -51,6 +51,29 @@ frame_getattr(f, name)
 	return getmember((char *)f, frame_memberlist, name);
 }
 
+/* Stack frames are allocated and deallocated at a considerable rate.
+   In an attempt to improve the speed of function calls, we maintain a
+   separate free list of stack frames (just like integers are
+   allocated in a special way -- see intobject.c).  When a stack frame
+   is on the free list, only the following members have a meaning:
+	ob_type		== &Frametype
+	f_back		next item on free list, or NULL
+	f_nvalues	size of f_valuestack
+	f_valuestack	array of (f_nvalues+1) object pointers, or NULL
+	f_nblocks	size of f_blockstack
+	f_blockstack	array of (f_nblocks+1) blocks, or NULL
+   Note that the value and block stacks are preserved -- this can save
+   another malloc() call or two (and two free() calls as well!).
+   Also note that, unlike for integers, each frame object is a
+   malloc'ed object in its own right -- it is only the actual calls to
+   malloc() that we are trying to save here, not the administration.
+   After all, while a typical program may make millions of calls, a
+   call depth of more than 20 or 30 is probably already exceptional
+   unless the program contains run-away recursion.  I hope.
+*/
+
+static frameobject *free_list = NULL;
+
 static void
 frame_dealloc(f)
 	frameobject *f;
@@ -59,9 +82,8 @@ frame_dealloc(f)
 	XDECREF(f->f_code);
 	XDECREF(f->f_globals);
 	XDECREF(f->f_locals);
-	XDEL(f->f_valuestack);
-	XDEL(f->f_blockstack);
-	DEL(f);
+	f->f_back = free_list;
+	free_list = f;
 }
 
 typeobject Frametype = {
@@ -99,7 +121,17 @@ newframeobject(back, code, globals, locals, nvalues, nblocks)
 		err_badcall();
 		return NULL;
 	}
-	f = NEWOBJ(frameobject, &Frametype);
+	if (free_list == NULL) {
+		f = NEWOBJ(frameobject, &Frametype);
+		f->f_nvalues = f->f_nblocks = 0;
+		f->f_valuestack = NULL;
+		f->f_blockstack = NULL;
+	}
+	else {
+		f = free_list;
+		free_list = free_list->f_back;
+		NEWREF(f);
+	}
 	if (f != NULL) {
 		if (back)
 			INCREF(back);
@@ -110,20 +142,43 @@ newframeobject(back, code, globals, locals, nvalues, nblocks)
 		f->f_globals = globals;
 		INCREF(locals);
 		f->f_locals = locals;
-		f->f_valuestack = NEW(object *, nvalues+1);
-		f->f_blockstack = NEW(block, nblocks+1);
-		f->f_nvalues = nvalues;
-		f->f_nblocks = nblocks;
+		if (nvalues > f->f_nvalues || f->f_valuestack == NULL) {
+			XDEL(f->f_valuestack);
+			f->f_valuestack = NEW(object *, nvalues+1);
+			f->f_nvalues = nvalues;
+		}
+		if (nblocks > f->f_nblocks || f->f_blockstack == NULL) {
+			XDEL(f->f_blockstack);
+			f->f_blockstack = NEW(block, nblocks+1);
+			f->f_nblocks = nblocks;
+		}
 		f->f_iblock = 0;
+		f->f_lasti = 0;
+		f->f_lineno = -1;
 		if (f->f_valuestack == NULL || f->f_blockstack == NULL) {
 			err_nomem();
 			DECREF(f);
 			f = NULL;
 		}
-		f->f_lasti = 0;
-		f->f_lineno = -1;
 	}
 	return f;
+}
+
+object **
+extend_stack(f, level, incr)
+	frameobject *f;
+	int level;
+	int incr;
+{
+	f->f_nvalues = level + incr + 10;
+	f->f_valuestack =
+		(object **) realloc((ANY *)f->f_valuestack,
+				    sizeof(object *) * (f->f_nvalues + 1));
+	if (f->f_valuestack == NULL) {
+		err_nomem();
+		return NULL;
+	}
+	return f->f_valuestack + level;
 }
 
 /* Block management */
