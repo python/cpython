@@ -81,6 +81,37 @@ extern DL_IMPORT(PyObject *) PyString_InternFromString Py_PROTO((const char *));
 #define PyString_AS_STRING(op) (((PyStringObject *)(op))->ob_sval)
 #define PyString_GET_SIZE(op)  (((PyStringObject *)(op))->ob_size)
 
+/* --- Generic Codecs ----------------------------------------------------- */
+
+/* Create a string object by decoding the encoded string s of the
+   given size. */
+
+extern DL_IMPORT(PyObject*) PyString_Decode(
+    const char *s,              /* encoded string */
+    int size,                   /* size of buffer */
+    const char *encoding,       /* encoding */
+    const char *errors          /* error handling */
+    );
+
+/* Encodes a char buffer of the given size and returns a 
+   Python string object. */
+
+extern DL_IMPORT(PyObject*) PyString_Encode(
+    const char *s,              /* string char buffer */
+    int size,                   /* number of chars to encode */
+    const char *encoding,       /* encoding */
+    const char *errors          /* error handling */
+    );
+
+/* Encodes a string object and returns the result as Python string
+   object. */
+
+extern DL_IMPORT(PyObject*) PyString_AsEncodedString(
+    PyObject *str,	 	/* string object */
+    const char *encoding,	/* encoding */
+    const char *errors		/* error handling */
+    );
+
 #ifdef __cplusplus
 }
 #endif
