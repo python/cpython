@@ -169,7 +169,7 @@ class MWerksCompiler (CCompiler) :
         if self.__macros:
             prefixfilename = os.path.join(os.getcwd(), os.path.join(build_temp, prefixname))
             fp = open(prefixfilename, 'w')
-            fp.write('#include "mwerks_plugin_config.h"\n')
+            fp.write('#include "mwerks_shcarbon_config.h"\n')
             for name, value in self.__macros:
                 if value is None:
                     fp.write('#define %s\n'%name)
