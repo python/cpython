@@ -351,11 +351,11 @@ instance_dealloc(inst)
 	/* much too complicated if TRACE_REFS defined */
 	extern long ref_total;
 	inst->ob_type = &Instancetype;
+	NEWREF(inst);
 	ref_total--;		/* compensate for increment in NEWREF */
 #ifdef COUNT_ALLOCS
 	inst->ob_type->tp_alloc--; /* ditto */
 #endif
-	NEWREF(inst);
 #else
 	INCREF(inst);
 #endif /* TRACE_REFS */
