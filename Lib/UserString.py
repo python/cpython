@@ -75,6 +75,8 @@ class UserString:
         return self.data.find(sub, start, end)
     def index(self, sub, start=0, end=sys.maxint): 
         return self.data.index(sub, start, end)
+    def isalpha(self): return self.data.isalpha()
+    def isalnum(self): return self.data.isalnum()
     def isdecimal(self): return self.data.isdecimal()
     def isdigit(self): return self.data.isdigit()
     def islower(self): return self.data.islower()
