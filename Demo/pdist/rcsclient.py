@@ -22,8 +22,8 @@ import client
 
 class RCSProxyClient(client.SecureClient):
 	
-    def __init__(self, address, verbose = client.VERBOSE):
-	client.SecureClient.__init__(self, address, verbose)
+	def __init__(self, address, verbose = client.VERBOSE):
+		client.SecureClient.__init__(self, address, verbose)
 
 
 def openrcsclient(opts = []):

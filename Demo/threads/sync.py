@@ -474,16 +474,16 @@ class mrsw:
         self.rwOK.release()
 
     def write_to_read(self):
-	self.rwOK.acquire()
-	if not self.writing:
-	    raise ValueError, \
-		  '.write_to_read() invoked without an active writer'
-	self.writing = 0
-	self.nw = self.nw - 1
-	self.nr = self.nr + 1
-	if not self.nw:
-	    self.readOK.broadcast()
-	self.rwOK.release()
+        self.rwOK.acquire()
+        if not self.writing:
+            raise ValueError, \
+                  '.write_to_read() invoked without an active writer'
+        self.writing = 0
+        self.nw = self.nw - 1
+        self.nr = self.nr + 1
+        if not self.nw:
+            self.readOK.broadcast()
+        self.rwOK.release()
 
 # The rest of the file is a test case, that runs a number of parallelized
 # quicksorts in parallel.  If it works, you'll get about 600 lines of

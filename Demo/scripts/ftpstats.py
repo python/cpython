@@ -53,44 +53,45 @@ def main():
 	bytype = {}
 	lineno = 0
 	try:
-	    while 1:
-		line = f.readline()
-		if not line: break
-		lineno = lineno + 1
-		if search and string.find(line, search) < 0:
-			continue
-		if prog.match(line) < 0:
-			print 'Bad line', lineno, ':', `line`
-			continue
-		items = prog.group(1, 2, 3, 4, 5, 6)
-		logtime, loguser, loghost, logfile, logbytes, logxxx2 = items
-##		print logtime
-##		print '-->', loguser
-##		print '--> -->', loghost
-##		print '--> --> -->', logfile
-##		print '--> --> --> -->', logbytes
-##		print '--> --> --> --> -->', logxxx2
-##		for i in logtime, loghost, logbytes, logxxx2:
-##			if '!' in i: print '???', i
-		add(bydate, logtime[-4:] + ' ' + logtime[:6], items)
-		add(bytime, logtime[7:9] + ':00-59', items)
-		direction, logfile = logfile[0], logfile[1:]
-		# The real path probably starts at the last //...
 		while 1:
-			i = string.find(logfile, '//')
-			if i < 0: break
-			logfile = logfile[i+1:]
-		add(byfile, logfile + ' ' + direction, items)
-		logdir = os.path.dirname(logfile)
+			line = f.readline()
+			if not line: break
+			lineno = lineno + 1
+			if search and string.find(line, search) < 0:
+				continue
+			if prog.match(line) < 0:
+				print 'Bad line', lineno, ':', `line`
+				continue
+			items = prog.group(1, 2, 3, 4, 5, 6)
+			(logtime, loguser, loghost, logfile, logbytes,
+			 logxxx2) = items
+## 			print logtime
+## 			print '-->', loguser
+## 			print '--> -->', loghost
+## 			print '--> --> -->', logfile
+## 			print '--> --> --> -->', logbytes
+## 			print '--> --> --> --> -->', logxxx2
+## 			for i in logtime, loghost, logbytes, logxxx2:
+## 				if '!' in i: print '???', i
+			add(bydate, logtime[-4:] + ' ' + logtime[:6], items)
+			add(bytime, logtime[7:9] + ':00-59', items)
+			direction, logfile = logfile[0], logfile[1:]
+			# The real path probably starts at the last //...
+			while 1:
+				i = string.find(logfile, '//')
+				if i < 0: break
+				logfile = logfile[i+1:]
+			add(byfile, logfile + ' ' + direction, items)
+			logdir = os.path.dirname(logfile)
 ##		logdir = os.path.normpath(logdir) + '/.'
-		while 1:
-			add(bydir, logdir + ' ' + direction, items)
-			dirhead = os.path.dirname(logdir)
-			if dirhead == logdir: break
-			logdir = dirhead
-		add(byhost, loghost, items)
-		add(byuser, loguser, items)
-		add(bytype, direction, items)
+			while 1:
+				add(bydir, logdir + ' ' + direction, items)
+				dirhead = os.path.dirname(logdir)
+				if dirhead == logdir: break
+				logdir = dirhead
+			add(byhost, loghost, items)
+			add(byuser, loguser, items)
+			add(bytype, direction, items)
 	except KeyboardInterrupt:
 		print 'Interrupted at line', lineno
 	show(bytype, 'by transfer direction', maxitems)

@@ -96,11 +96,11 @@ sublistsize = 4
 #######################################################################
 
 for dir in os.curdir, os.environ['HOME']:
-	rcfile = os.path.join(dir, '.newslistrc.py')
-	if os.path.exists(rcfile):
-		print rcfile
-		execfile(rcfile)
-		break
+    rcfile = os.path.join(dir, '.newslistrc.py')
+    if os.path.exists(rcfile):
+        print rcfile
+        execfile(rcfile)
+        break
 
 from nntplib import NNTP
 from stat import *
@@ -120,8 +120,8 @@ page = os.path.join(topdir,pagedir)
 def addtotree(tree, groups):
    print 'Updating tree...'
    for i in groups:
-	parts = string.splitfields(i,'.')
-	makeleaf(tree, parts)
+        parts = string.splitfields(i,'.')
+        makeleaf(tree, parts)
 
 # Makeleaf makes a leaf and the branch leading to it if necessary
 def makeleaf(tree,path):
@@ -135,7 +135,7 @@ def makeleaf(tree,path):
    if l > 1:
       makeleaf(tree[j],path[1:])
 
-# Then the bits for outputting trees as pages ----------------	
+# Then the bits for outputting trees as pages ----------------  
 
 # Createpage creates an HTML file named <root>.html containing links
 # to those groups beginning with <root>.
@@ -177,24 +177,24 @@ def printtree(f, tree, indent, p):
    if l > 1:
       kl.sort()
       if indent > 0:
-	 # Create a sub-list
-	 f.write('<LI>'+p[1:]+'\n<UL>')
+         # Create a sub-list
+         f.write('<LI>'+p[1:]+'\n<UL>')
       else:
-	 # Create a main list
-	 f.write('<UL>')
+         # Create a main list
+         f.write('<UL>')
       indent = indent + 1
    
    for i in kl:
       if i == '.':
-	 # Output a newsgroup
-	 f.write('<LI><A HREF="news:' + p[1:] + '">'+ p[1:] + '</A> ')
-	 if desc.has_key(p[1:]):
-	    f.write('     <I>'+desc[p[1:]]+'</I>\n')
-	 else:
-	    f.write('\n')
+         # Output a newsgroup
+         f.write('<LI><A HREF="news:' + p[1:] + '">'+ p[1:] + '</A> ')
+         if desc.has_key(p[1:]):
+            f.write('     <I>'+desc[p[1:]]+'</I>\n')
+         else:
+            f.write('\n')
       else:
-	 # Output a hierarchy
-	 printtree(f,tree[i], indent, p+'.'+i)
+         # Output a hierarchy
+         printtree(f,tree[i], indent, p+'.'+i)
 
    if l > 1:
       f.write('\n</UL>')
@@ -209,7 +209,7 @@ def readdesc(descfile):
    desc = {}
 
    if descfile == '':
-	return
+        return
 
    try:
       d = open(descfile, 'r')
@@ -221,12 +221,12 @@ def readdesc(descfile):
    while l != '':
       bits = string.split(l)
       try:
-	 grp = bits[0]
-	 dsc = string.join(bits[1:])
-	 if len(dsc)>1:
-	    desc[grp] = dsc
+         grp = bits[0]
+         dsc = string.join(bits[1:])
+         if len(dsc)>1:
+            desc[grp] = dsc
       except (IndexError):
-	 pass
+         pass
       l = d.readline()
 
 # Check that ouput directory exists, ------------------------------
@@ -237,14 +237,14 @@ def checkopdir(pagedir):
       print 'Directory '+pagedir+' does not exist.'
       print 'Shall I create it for you? (y/n)'
       if sys.stdin.readline()[0] == 'y':
-	 try:
-	    os.mkdir(pagedir,0777)
-	 except:
-	    print 'Sorry - failed!'
-	    sys.exit(1)
+         try:
+            os.mkdir(pagedir,0777)
+         except:
+            print 'Sorry - failed!'
+            sys.exit(1)
       else:
-	 print 'OK. Exiting.'
-	 sys.exit(1)
+         print 'OK. Exiting.'
+         sys.exit(1)
 
 # Read and write current local tree ----------------------------------
 
@@ -252,19 +252,19 @@ def readlocallist(treefile):
       print 'Reading current local group list...'
       tree = {}
       try:
-	 treetime = time.localtime(os.stat(treefile)[ST_MTIME])
+         treetime = time.localtime(os.stat(treefile)[ST_MTIME])
       except:
-	 print '\n*** Failed to open local group cache '+treefile
-	 print 'If this is the first time you have run newslist, then'
-	 print 'use the -a option to create it.'
-	 sys.exit(1)
+         print '\n*** Failed to open local group cache '+treefile
+         print 'If this is the first time you have run newslist, then'
+         print 'use the -a option to create it.'
+         sys.exit(1)
       treedate = '%02d%02d%02d' % (treetime[0] % 100 ,treetime[1], treetime[2])
       try:
-	 dump = open(treefile,'r')
-	 tree = marshal.load(dump)
-	 dump.close()
+         dump = open(treefile,'r')
+         tree = marshal.load(dump)
+         dump.close()
       except (IOError):
-	 print 'Cannot open local group list ' + treefile
+         print 'Cannot open local group list ' + treefile
       return (tree, treedate)
 
 def writelocallist(treefile, tree):
@@ -291,9 +291,9 @@ def getallgroups(server):
    for i in info:
       grpname = string.split(i[0])[0]
       if skipempty and string.atoi(i[1]) < string.atoi(i[2]):
-	 print grpname+' ',
+         print grpname+' ',
       else:
-	 groups.append(grpname)
+         groups.append(grpname)
    print '\n'
    if skipempty:
       print '(End of empty groups)'
@@ -326,9 +326,9 @@ def main():
    try:
       print 'Connecting to '+newshost+'...'
       if sys.version[0] == '0':
-	 s = NNTP.init(newshost)
+         s = NNTP.init(newshost)
       else:
-	 s = NNTP(newshost)
+         s = NNTP(newshost)
       connected = 1
    except (nntplib.error_temp, nntplib.error_perm), x:
       print 'Error connecting to host:', x
@@ -346,7 +346,7 @@ def main():
 
       (tree, treedate) = readlocallist(treefile)
       if connected:
-	 groups = getnewgroups(s, treedate)
+         groups = getnewgroups(s, treedate)
       
    if connected:
       addtotree(tree, groups)
