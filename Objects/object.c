@@ -33,7 +33,7 @@ extern int tuple_zero_allocs, fast_tuple_allocs;
 extern int quick_int_allocs, quick_neg_int_allocs;
 extern int null_strings, one_strings;
 void
-dump_counts()
+dump_counts(void)
 {
 	PyTypeObject *tp;
 
@@ -50,7 +50,7 @@ dump_counts()
 }
 
 PyObject *
-get_counts()
+get_counts(void)
 {
 	PyTypeObject *tp;
 	PyObject *result;
@@ -77,8 +77,7 @@ get_counts()
 }
 
 void
-inc_count(tp)
-	PyTypeObject *tp;
+inc_count(PyTypeObject *tp)
 {
 	if (tp->tp_alloc == 0) {
 		/* first time; insert in linked list */
@@ -94,9 +93,7 @@ inc_count(tp)
 #endif
 
 PyObject *
-PyObject_Init(op, tp)
-	PyObject *op;
-	PyTypeObject *tp;
+PyObject_Init(PyObject *op, PyTypeObject *tp)
 {
 	if (op == NULL) {
 		PyErr_SetString(PyExc_SystemError,
@@ -114,10 +111,7 @@ PyObject_Init(op, tp)
 }
 
 PyVarObject *
-PyObject_InitVar(op, tp, size)
-	PyVarObject *op;
-	PyTypeObject *tp;
-	int size;
+PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, int size)
 {
 	if (op == NULL) {
 		PyErr_SetString(PyExc_SystemError,
@@ -136,8 +130,7 @@ PyObject_InitVar(op, tp, size)
 }
 
 PyObject *
-_PyObject_New(tp)
-	PyTypeObject *tp;
+_PyObject_New(PyTypeObject *tp)
 {
 	PyObject *op;
 	op = (PyObject *) PyObject_MALLOC(_PyObject_SIZE(tp));
@@ -151,9 +144,7 @@ _PyObject_New(tp)
 }
 
 PyVarObject *
-_PyObject_NewVar(tp, size)
-	PyTypeObject *tp;
-	int size;
+_PyObject_NewVar(PyTypeObject *tp, int size)
 {
 	PyVarObject *op;
 	op = (PyVarObject *) PyObject_MALLOC(_PyObject_VAR_SIZE(tp, size));
@@ -167,8 +158,7 @@ _PyObject_NewVar(tp, size)
 }
 
 void
-_PyObject_Del(op)
-	PyObject *op;
+_PyObject_Del(PyObject *op)
 {
 #ifdef WITH_CYCLE_GC
 	if (op && PyType_IS_GC(op->ob_type)) {
@@ -185,10 +175,7 @@ void _PyGC_Remove(PyObject *op) { }
 #endif
 
 int
-PyObject_Print(op, fp, flags)
-	PyObject *op;
-	FILE *fp;
-	int flags;
+PyObject_Print(PyObject *op, FILE *fp, int flags)
 {
 	int ret = 0;
 	if (PyErr_CheckSignals())
@@ -241,8 +228,7 @@ PyObject_Print(op, fp, flags)
 }
 
 PyObject *
-PyObject_Repr(v)
-	PyObject *v;
+PyObject_Repr(PyObject *v)
 {
 	if (PyErr_CheckSignals())
 		return NULL;
@@ -286,8 +272,7 @@ PyObject_Repr(v)
 }
 
 PyObject *
-PyObject_Str(v)
-	PyObject *v;
+PyObject_Str(PyObject *v)
 {
 	PyObject *res;
 	
@@ -331,8 +316,7 @@ PyObject_Str(v)
 }
 
 static PyObject *
-do_cmp(v, w)
-	PyObject *v, *w;
+do_cmp(PyObject *v, PyObject *w)
 {
 	long c;
 	/* __rcmp__ actually won't be called unless __cmp__ isn't defined,
@@ -357,7 +341,7 @@ PyObject *_PyCompareState_Key;
 int _PyCompareState_nesting = 0;
 
 static PyObject*
-get_inprogress_dict()
+get_inprogress_dict(void)
 {
 	PyObject *tstate_dict, *inprogress;
 
@@ -383,8 +367,7 @@ get_inprogress_dict()
 }
 
 static PyObject *
-make_pair(v, w)
-	PyObject *v, *w;
+make_pair(PyObject *v, PyObject *w)
 {
 	PyObject *pair;
 
@@ -403,8 +386,7 @@ make_pair(v, w)
 }
 
 int
-PyObject_Compare(v, w)
-	PyObject *v, *w;
+PyObject_Compare(PyObject *v, PyObject *w)
 {
 	PyTypeObject *vtp, *wtp;
 	int result;
@@ -541,8 +523,7 @@ PyObject_Compare(v, w)
 */
 
 long
-_Py_HashDouble(v)
-    double v;
+_Py_HashDouble(double v)
 {
 	/* Use frexp to get at the bits in the double.
 	 * Since the VAX D double format has 56 mantissa bits, which is the
@@ -566,8 +547,7 @@ _Py_HashDouble(v)
 }
 
 long
-_Py_HashPointer(p)
-	void *p;
+_Py_HashPointer(void *p)
 {
 #if SIZEOF_LONG >= SIZEOF_VOID_P
 	return (long)p;
@@ -590,8 +570,7 @@ finally:
 
 
 long
-PyObject_Hash(v)
-	PyObject *v;
+PyObject_Hash(PyObject *v)
 {
 	PyTypeObject *tp = v->ob_type;
 	if (tp->tp_hash != NULL)
@@ -605,9 +584,7 @@ PyObject_Hash(v)
 }
 
 PyObject *
-PyObject_GetAttrString(v, name)
-	PyObject *v;
-	char *name;
+PyObject_GetAttrString(PyObject *v, char *name)
 {
 	if (v->ob_type->tp_getattro != NULL) {
 		PyObject *w, *res;
@@ -632,9 +609,7 @@ PyObject_GetAttrString(v, name)
 }
 
 int
-PyObject_HasAttrString(v, name)
-	PyObject *v;
-	char *name;
+PyObject_HasAttrString(PyObject *v, char *name)
 {
 	PyObject *res = PyObject_GetAttrString(v, name);
 	if (res != NULL) {
@@ -646,10 +621,7 @@ PyObject_HasAttrString(v, name)
 }
 
 int
-PyObject_SetAttrString(v, name, w)
-	PyObject *v;
-	char *name;
-	PyObject *w;
+PyObject_SetAttrString(PyObject *v, char *name, PyObject *w)
 {
 	if (v->ob_type->tp_setattro != NULL) {
 		PyObject *s;
@@ -677,9 +649,7 @@ PyObject_SetAttrString(v, name, w)
 }
 
 PyObject *
-PyObject_GetAttr(v, name)
-	PyObject *v;
-	PyObject *name;
+PyObject_GetAttr(PyObject *v, PyObject *name)
 {
 	if (v->ob_type->tp_getattro != NULL)
 		return (*v->ob_type->tp_getattro)(v, name);
@@ -693,9 +663,7 @@ PyObject_GetAttr(v, name)
 }
 
 int
-PyObject_HasAttr(v, name)
-	PyObject *v;
-	PyObject *name;
+PyObject_HasAttr(PyObject *v, PyObject *name)
 {
 	PyObject *res = PyObject_GetAttr(v, name);
 	if (res != NULL) {
@@ -707,10 +675,7 @@ PyObject_HasAttr(v, name)
 }
 
 int
-PyObject_SetAttr(v, name, value)
-	PyObject *v;
-	PyObject *name;
-	PyObject *value;
+PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 {
 	int err;
 	Py_INCREF(name);
@@ -735,8 +700,7 @@ PyObject_SetAttr(v, name, value)
    Return -1 if an error occurred */
 
 int
-PyObject_IsTrue(v)
-	PyObject *v;
+PyObject_IsTrue(PyObject *v)
 {
 	int res;
 	if (v == Py_None)
@@ -761,8 +725,7 @@ PyObject_IsTrue(v)
    Return -1 if an error occurred */
 
 int
-PyObject_Not(v)
-	PyObject *v;
+PyObject_Not(PyObject *v)
 {
 	int res;
 	res = PyObject_IsTrue(v);
@@ -778,8 +741,7 @@ PyObject_Not(v)
 */
 
 int
-PyNumber_CoerceEx(pv, pw)
-	PyObject **pv, **pw;
+PyNumber_CoerceEx(PyObject **pv, PyObject **pw)
 {
 	register PyObject *v = *pv;
 	register PyObject *w = *pw;
@@ -804,8 +766,7 @@ PyNumber_CoerceEx(pv, pw)
 }
 
 int
-PyNumber_Coerce(pv, pw)
-	PyObject **pv, **pw;
+PyNumber_Coerce(PyObject **pv, PyObject **pw)
 {
 	int err = PyNumber_CoerceEx(pv, pw);
 	if (err <= 0)
@@ -818,8 +779,7 @@ PyNumber_Coerce(pv, pw)
 /* Test whether an object can be called */
 
 int
-PyCallable_Check(x)
-	PyObject *x;
+PyCallable_Check(PyObject *x)
 {
 	if (x == NULL)
 		return 0;
@@ -852,8 +812,7 @@ so there is exactly one (which is indestructible, by the way).
 
 /* ARGSUSED */
 static PyObject *
-none_repr(op)
-	PyObject *op;
+none_repr(PyObject *op)
 {
 	return PyString_FromString("None");
 }
@@ -886,15 +845,14 @@ PyObject _Py_NoneStruct = {
 static PyObject refchain = {&refchain, &refchain};
 
 void
-_Py_ResetReferences()
+_Py_ResetReferences(void)
 {
 	refchain._ob_prev = refchain._ob_next = &refchain;
 	_Py_RefTotal = 0;
 }
 
 void
-_Py_NewReference(op)
-	PyObject *op;
+_Py_NewReference(PyObject *op)
 {
 	_Py_RefTotal++;
 	op->ob_refcnt = 1;
@@ -908,8 +866,7 @@ _Py_NewReference(op)
 }
 
 void
-_Py_ForgetReference(op)
-	register PyObject *op;
+_Py_ForgetReference(register PyObject *op)
 {
 #ifdef SLOW_UNREF_CHECK
         register PyObject *p;
@@ -936,8 +893,7 @@ _Py_ForgetReference(op)
 }
 
 void
-_Py_Dealloc(op)
-	PyObject *op;
+_Py_Dealloc(PyObject *op)
 {
 	destructor dealloc = op->ob_type->tp_dealloc;
 	_Py_ForgetReference(op);
@@ -949,8 +905,7 @@ _Py_Dealloc(op)
 }
 
 void
-_Py_PrintReferences(fp)
-	FILE *fp;
+_Py_PrintReferences(FILE *fp)
 {
 	PyObject *op;
 	fprintf(fp, "Remaining objects:\n");
@@ -963,9 +918,7 @@ _Py_PrintReferences(fp)
 }
 
 PyObject *
-_Py_GetObjects(self, args)
-	PyObject *self;
-	PyObject *args;
+_Py_GetObjects(PyObject *self, PyObject *args)
 {
 	int i, n;
 	PyObject *t = NULL;
@@ -1007,8 +960,7 @@ int (*_Py_abstract_hack)(PyObject *) = &PyObject_Length;
 /* Python's malloc wrappers (see mymalloc.h) */
 
 ANY *
-PyMem_Malloc(nbytes)
-	size_t nbytes;
+PyMem_Malloc(size_t nbytes)
 {
 #if _PyMem_EXTRA > 0
 	if (nbytes == 0)
@@ -1018,9 +970,7 @@ PyMem_Malloc(nbytes)
 }
 
 ANY *
-PyMem_Realloc(p, nbytes)
-	ANY *p;
-	size_t nbytes;
+PyMem_Realloc(ANY *p, size_t nbytes)
 {
 #if _PyMem_EXTRA > 0
 	if (nbytes == 0)
@@ -1030,8 +980,7 @@ PyMem_Realloc(p, nbytes)
 }
 
 void
-PyMem_Free(p)
-	ANY *p;
+PyMem_Free(ANY *p)
 {
 	PyMem_FREE(p);
 }
@@ -1040,23 +989,19 @@ PyMem_Free(p)
 /* Python's object malloc wrappers (see objimpl.h) */
 
 ANY *
-PyObject_Malloc(nbytes)
-	size_t nbytes;
+PyObject_Malloc(size_t nbytes)
 {
 	return PyObject_MALLOC(nbytes);
 }
 
 ANY *
-PyObject_Realloc(p, nbytes)
-	ANY *p;
-	size_t nbytes;
+PyObject_Realloc(ANY *p, size_t nbytes)
 {
 	return PyObject_REALLOC(p, nbytes);
 }
 
 void
-PyObject_Free(p)
-	ANY *p;
+PyObject_Free(ANY *p)
 {
 	PyObject_FREE(p);
 }
@@ -1077,8 +1022,7 @@ PyObject_Free(p)
 #define KEY "Py_Repr"
 
 int
-Py_ReprEnter(obj)
-	PyObject *obj;
+Py_ReprEnter(PyObject *obj)
 {
 	PyObject *dict;
 	PyObject *list;
@@ -1106,8 +1050,7 @@ Py_ReprEnter(obj)
 }
 
 void
-Py_ReprLeave(obj)
-	PyObject *obj;
+Py_ReprLeave(PyObject *obj)
 {
 	PyObject *dict;
 	PyObject *list;
@@ -1165,8 +1108,7 @@ int _PyTrash_delete_nesting = 0;
 PyObject * _PyTrash_delete_later = NULL;
 
 void
-_PyTrash_deposit_object(op)
-	PyObject *op;
+_PyTrash_deposit_object(PyObject *op)
 {
 	int typecode;
 
@@ -1187,7 +1129,7 @@ _PyTrash_deposit_object(op)
 }
 
 void
-_PyTrash_destroy_chain()
+_PyTrash_destroy_chain(void)
 {
 	while (_PyTrash_delete_later) {
 		PyObject *shredder = _PyTrash_delete_later;
@@ -1217,4 +1159,3 @@ _PyTrash_destroy_chain()
 		--_PyTrash_delete_nesting;
 	}
 }
-
