@@ -1098,7 +1098,7 @@ Py_CompileStringFlags(char *str, char *filename, int start,
 	n = PyParser_SimpleParseString(str, start);
 	if (n == NULL)
 		return NULL;
-	co = PyNode_Compile(n, filename);
+	co = PyNode_CompileFlags(n, filename, flags);
 	PyNode_Free(n);
 	return (PyObject *)co;
 }
