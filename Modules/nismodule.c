@@ -85,8 +85,10 @@ nis_foreach (int instatus, char *inkey, int inkeylen, char *inval,
 		int err;
 
 		if (indata->fix) {
-		    inkeylen--;
-		    invallen--;
+		    if (inkeylen > 0 && inkey[inkeylen-1] == '\0')
+			inkeylen--;
+		    if (invallen > 0 && inval[invallen-1] == '\0')
+			invallen--;
 		}
 		key = PyString_FromStringAndSize(inkey, inkeylen);
 		val = PyString_FromStringAndSize(inval, invallen);
