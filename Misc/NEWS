@@ -276,6 +276,8 @@ Extension modules
 Library
 -------
 
+- The ptcp154 codec was added for Kazakh character set support.
+
 - Support non-anonymous ftp URLs in urllib2.
 
 - The encodings package will now applies codec name aliases
