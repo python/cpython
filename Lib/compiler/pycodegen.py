@@ -45,7 +45,10 @@ class Module:
     def compile(self, display=0):
         tree = parse(self.source)
         root, filename = os.path.split(self.filename)
-        gen = ModuleCodeGenerator(filename)
+        if "nested_scopes" in future.find_futures(tree):
+            gen = NestedScopeCodeGenerator(filename)
+        else:
+            gen = ModuleCodeGenerator(filename)
         walk(tree, gen, 1)
         if display:
             import pprint
@@ -646,7 +649,7 @@ class CodeGenerator:
 
     def visitAugSlice(self, node, mode):
         if mode == "load":
-            self.visitlSice(node, 1)
+            self.visitSlice(node, 1)
         elif mode == "store":
             slice = 0
             if node.lower:
@@ -889,16 +892,17 @@ class ModuleCodeGenerator(CodeGenerator):
         self.graph = pyassem.PyFlowGraph("<module>", filename)
         self.__super_init(filename)
         self.symbols = None
-        self.future = None
 
     def visitModule(self, node):
-        self.future = future.find_futures(node)
         self.symbols = self.parseSymbols(node)
         self.__super_visitModule(node)
 
     def parseSymbols(self, node):
         # XXX not implemented
         return None
+
+class NestedScopeCodeGenerator(ModuleCodeGenerator):
+    pass
 
 class FunctionCodeGenerator(CodeGenerator):
     super_init = CodeGenerator.__init__
