@@ -318,6 +318,8 @@ Tkinter_Error(PyObject *v)
 
 /**** Utils ****/
 
+static int Tkinter_busywaitinterval = 20;
+
 #ifdef WITH_THREAD
 #ifndef MS_WINDOWS
 
@@ -2519,7 +2521,7 @@ Tkapp_MainLoop(PyObject *_self, PyObject *args)
 			tcl_tstate = NULL;
 			if(tcl_lock)PyThread_release_lock(tcl_lock);
 			if (result == 0)
-				Sleep(20);
+				Sleep(Tkinter_busywaitinterval);
 			Py_END_ALLOW_THREADS
 		}
 #else
@@ -2831,6 +2833,42 @@ Tkinter_Create(PyObject *self, PyObject *args)
 				      interactive, wantobjects);
 }
 
+static PyObject *
+Tkinter_setbusywaitinterval(PyObject *self, PyObject *args)
+{
+	int new_val;
+	if (!PyArg_ParseTuple(args, "i:setbusywaitinterval", &new_val))
+		return NULL;
+	if (new_val < 0) {
+		PyErr_SetString(PyExc_ValueError,
+				"busywaitinterval must be >= 0");
+		return NULL;
+	}
+	Tkinter_busywaitinterval = new_val;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char setbusywaitinterval_doc[] =
+"setbusywaitinterval(n) -> None\n\
+\n\
+Set the busy-wait interval in milliseconds between successive\n\
+calls to Tcl_DoOneEvent in a threaded Python interpreter.\n\
+It should be set to a divisor of the maximum time between\n\
+frames in an animation.";
+
+static PyObject *
+Tkinter_getbusywaitinterval(PyObject *self, PyObject *args)
+{
+        return PyInt_FromLong(Tkinter_busywaitinterval);
+}
+
+static char getbusywaitinterval_doc[] =
+"getbusywaitinterval() -> int\n\
+\n\
+Return the current busy-wait interval between successive\n\
+calls to Tcl_DoOneEvent in a threaded Python interpreter.";
+
 static PyMethodDef moduleMethods[] =
 {
 	{"_flatten",           Tkinter_Flatten, METH_VARARGS},
@@ -2843,6 +2881,10 @@ static PyMethodDef moduleMethods[] =
 	{"mainloop",           Tkapp_MainLoop, METH_VARARGS},
 	{"dooneevent",         Tkapp_DoOneEvent, METH_VARARGS},
 	{"quit",               Tkapp_Quit, METH_VARARGS},
+	{"setbusywaitinterval",Tkinter_setbusywaitinterval, METH_VARARGS,
+	                       setbusywaitinterval_doc},
+	{"getbusywaitinterval",(PyCFunction)Tkinter_getbusywaitinterval,
+	                       METH_NOARGS, getbusywaitinterval_doc},
 	{NULL,                 NULL}
 };
 
@@ -2895,7 +2937,7 @@ EventHook(void)
 		tcl_tstate = NULL;
 		if(tcl_lock)PyThread_release_lock(tcl_lock);
 		if (result == 0)
-			Sleep(20);
+			Sleep(Tkinter_busywaitinterval);
 		Py_END_ALLOW_THREADS
 #else
 		result = Tcl_DoOneEvent(0);
