@@ -5,9 +5,12 @@
  * Author: George V. Neville-Neil
  *
  * Update History: $Log$
- * Update History: Revision 2.1  1994/01/02 23:22:21  guido
- * Update History: Added George Neville-Neil's timing module
+ * Update History: Revision 2.2  1994/01/14 16:55:50  guido
+ * Update History: Make more robust against Minix and Mac
  * Update History:
+ * Revision 2.1  1994/01/02  23:22:21  guido
+ * Added George Neville-Neil's timing module
+ *
  * Revision 1.1  93/12/28  13:14:39  gnn
  * Initial revision
  * 
@@ -17,8 +20,10 @@
  */
 
 #ifndef lint
+#ifndef THINK_C
 static char rcsid [] = "$Header$" ;
-#endif
+#endif /* THINK_C */
+#endif /* lint */
 
 #include "allobjects.h"
 #include "import.h"
