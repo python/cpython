@@ -533,6 +533,7 @@ for func in functions:
 print '\t{NULL, NULL} /* Sentinel */'
 print '};'
 print
+print 'void'
 print 'initgl()'
 print '{'
 print '\tinitmodule("gl", gl_methods);'
