@@ -548,13 +548,14 @@ this execution terminate step (1).
 When step (1) finishes without raising an exception, step (2) can
 begin.
 
-The first form of \keyword{import} statement binds the module name in the
-local namespace to the module object, and then goes on to import the
-next identifier, if any.  If the module name is followed by \keyword{as},
-the name following \keyword{as} is used as the local name for the module. To
-avoid confusion, you cannot import sub-modules 'as' a different
-local name. So 'import module as m' is legal, but 'import module.submod as
-s' is not. The latter should be written as 'from module import submod as s',
+The first form of \keyword{import} statement binds the module name in
+the local namespace to the module object, and then goes on to import
+the next identifier, if any.  If the module name is followed by
+\keyword{as}, the name following \keyword{as} is used as the local
+name for the module. To avoid confusion, you cannot import modules
+with dotted names \keyword{as} a different local name. So \code{import
+module as m} is legal, but \code{import module.submod as s} is not.
+The latter should be written as \code{from module import submod as s};
 see below.
 
 The \keyword{from} form does not bind the module name: it goes through the
