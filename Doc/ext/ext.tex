@@ -736,6 +736,12 @@ buffer and adjust \var{*buffer} to reference the newly allocated
 storage. The caller is responsible for calling
 \cfunction{PyMem_Free()} to free the allocated buffer after usage.
 
+\item[\samp{et} (string, Unicode object or character buffer compatible
+object) {[const char *encoding, char **buffer]}]
+Same as \samp{es} except that string objects are passed through without
+recoding them. Instead, the implementation assumes that the string
+object uses the encoding passed in as parameter.
+
 \item[\samp{es\#} (string, Unicode object or character buffer compatible
 object) {[const char *encoding, char **buffer, int *buffer_length]}]
 This variant on \samp{s\#} is used for encoding Unicode and objects
@@ -766,6 +772,12 @@ overflow is signalled with an exception.
 
 In both cases, \var{*buffer_length} is set to the length of the
 encoded data without the trailing 0-byte.
+
+\item[\samp{et\#} (string, Unicode object or character buffer compatible
+object) {[const char *encoding, char **buffer]}]
+Same as \samp{es\#} except that string objects are passed through without
+recoding them. Instead, the implementation assumes that the string
+object uses the encoding passed in as parameter.
 
 \item[\samp{b} (integer) {[char]}]
 Convert a Python integer to a tiny int, stored in a C \ctype{char}.
