@@ -900,6 +900,24 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		}
 	}
 
+	/* Set tp_doc to a copy of dict['__doc__'], if the latter is there
+	   and is a string (tp_doc is a char* -- can't copy a general object
+	   into it).
+	   XXX What if it's a Unicode string?  Don't know -- this ignores it.
+	*/
+	{
+		PyObject *doc = PyDict_GetItemString(dict, "__doc__");
+		if (doc != NULL && PyString_Check(doc)) {
+			const size_t n = (size_t)PyString_GET_SIZE(doc);
+			type->tp_doc = PyObject_MALLOC(n+1);
+			if (type->tp_doc == NULL) {
+				Py_DECREF(type);
+				return NULL;
+			}
+			memcpy(type->tp_doc, PyString_AS_STRING(doc), n+1);
+		}
+	}
+
 	/* Special-case __new__: if it's a plain function,
 	   make it a static function */
 	tmp = PyDict_GetItemString(dict, "__new__");
@@ -1162,6 +1180,11 @@ type_clear(PyTypeObject *type)
 	CLEAR(type->tp_base);
 	CLEAR(et->slots);
 
+	if (type->tp_doc != NULL) {
+		PyObject_FREE(type->tp_doc);
+		type->tp_doc = NULL;
+	}
+
 #undef CLEAR
 
 	return 0;
@@ -1350,7 +1373,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
 		PyErr_Format(PyExc_TypeError,
 			     "__class__ assignment: "
 			     "'%s' object layout differs from '%s'",
-			     new->tp_name, 
+			     new->tp_name,
 			     old->tp_name);
 		return -1;
 	}

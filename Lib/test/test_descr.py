@@ -88,6 +88,38 @@ def testset3op(a, b, c, d, res, stmt="a[b:c]=d", meth="__setslice__"):
     bm(b, c, d)
     verify(dict['a'] == res)
 
+def class_docstrings():
+    class Classic:
+        "A classic docstring."
+    verify(Classic.__doc__ == "A classic docstring.")
+    verify(Classic.__dict__['__doc__'] == "A classic docstring.")
+
+    class Classic2:
+        pass
+    verify(Classic2.__doc__ is None)
+
+    class NewStatic:
+        "Another docstring."
+        __dynamic__ = 0
+    verify(NewStatic.__doc__ == "Another docstring.")
+    verify(NewStatic.__dict__['__doc__'] == "Another docstring.")
+
+    class NewStatic2:
+        __dynamic__ = 0
+        pass
+    verify(NewStatic2.__doc__ is None)
+
+    class NewDynamic:
+        "Another docstring."
+        __dynamic__ = 1
+    verify(NewDynamic.__doc__ == "Another docstring.")
+    verify(NewDynamic.__dict__['__doc__'] == "Another docstring.")
+
+    class NewDynamic2:
+        __dynamic__ = 1
+        pass
+    verify(NewDynamic2.__doc__ is None)
+
 def lists():
     if verbose: print "Testing list operations..."
     testbinop([1], [2], [1,2], "a+b", "__add__")
@@ -2168,7 +2200,7 @@ def binopoverride():
                 return I(pow(int(other), int(self), mod))
             else:
                 return I(pow(int(other), int(self), int(mod)))
-            
+
     vereq(`I(1) + I(2)`, "I(3)")
     vereq(`I(1) + 2`, "I(3)")
     vereq(`1 + I(2)`, "I(3)")
@@ -2182,6 +2214,7 @@ def binopoverride():
 
 
 def test_main():
+    class_docstrings()
     lists()
     dicts()
     dict_constructor()
