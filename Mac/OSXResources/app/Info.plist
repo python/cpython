@@ -9,7 +9,7 @@
 		<dict>
 			<key>CFBundleTypeExtensions</key>
 			<array>
-				<string>.py</string>
+				<string>py</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
 			<string>PythonSource.icns</string>
@@ -25,7 +25,7 @@
 		<dict>
 			<key>CFBundleTypeExtensions</key>
 			<array>
-				<string>.pyc</string>
+				<string>pyc</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
 			<string>PythonCompiled.icns</string>
@@ -34,6 +34,16 @@
 			<key>CFBundleTypeOSTypes</key>
 			<array>
 				<string>PYC</string>
+			</array>
+			<key>CFBundleTypeRole</key>
+			<string>Shell</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeOSTypes</key>
+			<array>
+				<string>****</string>
+				<string>fold</string>
+				<string>disk</string>
 			</array>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
