@@ -118,6 +118,14 @@ VarVarOutBuffer = VarVarHeapOutputBufferType('char', 'long', 'l') # (buf, len, &
 includestuff = """
 #include "macglue.h"
 #include "pymactoolbox.h"
+
+/* Macro to test whether a weak-loaded CFM function exists */
+#define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\\
+    	PyErr_SetString(PyExc_NotImplementedError, \\
+    	"Not available in this shared library/OS version"); \\
+    	return NULL; \\
+    }} while(0)
+
 """
 
 # Stuff added just before the module's init function
@@ -145,6 +153,16 @@ class OSErrMixIn:
 class OSErrFunctionGenerator(OSErrMixIn, FunctionGenerator): pass
 class OSErrMethodGenerator(OSErrMixIn, MethodGenerator): pass
 
+class WeakLinkMixIn:
+	"Mix-in to test the function actually exists (!= NULL) before calling"
+	
+	def precheck(self):
+		Output('PyMac_PRECHECK(%s);', self.name)
+
+class WeakLinkFunctionGenerator(WeakLinkMixIn, FunctionGenerator): pass
+class WeakLinkMethodGenerator(WeakLinkMixIn, MethodGenerator): pass
+class OSErrWeakLinkFunctionGenerator(OSErrMixIn, WeakLinkMixIn, FunctionGenerator): pass
+class OSErrWeakLinkMethodGenerator(OSErrMixIn, WeakLinkMixIn, MethodGenerator): pass
 
 class MacModule(Module):
 	"Subclass which gets the exception initializer from macglue.c"
