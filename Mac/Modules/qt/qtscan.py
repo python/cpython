@@ -11,7 +11,7 @@ SHORT = "qt"
 OBJECTS = ("Movie", "Track", "Media", "UserData", "TimeBase", "MovieController", "IdleManager")
 
 def main():
-	input = "Movies.h"
+	input = ("Movies.h", "ImageCompression.h")
 	output = SHORT + "gen.py"
 	defsoutput = TOOLBOXDIR + LONG + ".py"
 	scanner = MyScanner(input, output, defsoutput)
@@ -76,6 +76,8 @@ class MyScanner(Scanner):
 			'MovieMediaLoadChildMovieFromDataReference',
 			'Media3DGetViewObject',
 
+            # these are ImageCompression blacklists
+			"GraphicsExportGetInputPtr",
 			]
 
 	def makeblacklisttypes(self):
@@ -122,6 +124,38 @@ class MyScanner(Scanner):
 			"QTAtomContainer",
 			"SpriteWorld",
 			"Sprite",
+
+            # these are ImageCompression blacklists
+            "ICMDataUPP",
+            "ICMFlushUPP",
+            "ICMCompletionUPP",
+            "ICMProgressUPP",
+            "StdPixUPP",
+            "QDPixUPP",
+            "ICMAlignmentUPP",
+            "ICMCursorShieldedUPP",
+            "ICMMemoryDisposedUPP",
+            "ICMConvertDataFormatUPP",
+            "ModalFilterYDUPP",
+			"FileFilterUPP",
+
+            "CodecNameSpecListPtr",
+            "CodecInfo",
+             "ImageSequence",
+            "MatrixRecordPtr",
+            "ICMDataProcRecordPtr",
+            "OpenCPicParams",
+            "ICMProgressProcRecordPtr",
+            "ICMAlignmentProcRecordPtr",
+            "ICMPixelFormatInfoPtr",
+            "ImageSequenceDataSource",
+            "ConstStrFileNameParam",
+            "ImageTranscodeSequence",
+            "ImageFieldSequence",
+            "Fract",
+            "PixMapPtr",
+            "GWorldFlags",
+            "void_ptr",   # XXX Being lazy, this one is doable.
 			]
 
 	def makerepairinstructions(self):

@@ -10182,6 +10182,3912 @@ static PyObject *Qt_MusicMediaGetIndexedTunePlayer(PyObject *_self, PyObject *_a
 	return _res;
 }
 
+static PyObject *Qt_CodecManagerVersion(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	long version;
+#ifndef CodecManagerVersion
+	PyMac_PRECHECK(CodecManagerVersion);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = CodecManagerVersion(&version);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     version);
+	return _res;
+}
+
+static PyObject *Qt_GetMaxCompressionSize(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	PixMapHandle src;
+	Rect srcRect;
+	short colorDepth;
+	CodecQ quality;
+	CodecType cType;
+	CompressorComponent codec;
+	long size;
+#ifndef GetMaxCompressionSize
+	PyMac_PRECHECK(GetMaxCompressionSize);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&hlO&O&",
+	                      ResObj_Convert, &src,
+	                      PyMac_GetRect, &srcRect,
+	                      &colorDepth,
+	                      &quality,
+	                      PyMac_GetOSType, &cType,
+	                      CmpObj_Convert, &codec))
+		return NULL;
+	_err = GetMaxCompressionSize(src,
+	                             &srcRect,
+	                             colorDepth,
+	                             quality,
+	                             cType,
+	                             codec,
+	                             &size);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     size);
+	return _res;
+}
+
+static PyObject *Qt_GetCompressionTime(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	PixMapHandle src;
+	Rect srcRect;
+	short colorDepth;
+	CodecType cType;
+	CompressorComponent codec;
+	CodecQ spatialQuality;
+	CodecQ temporalQuality;
+	unsigned long compressTime;
+#ifndef GetCompressionTime
+	PyMac_PRECHECK(GetCompressionTime);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&hO&O&",
+	                      ResObj_Convert, &src,
+	                      PyMac_GetRect, &srcRect,
+	                      &colorDepth,
+	                      PyMac_GetOSType, &cType,
+	                      CmpObj_Convert, &codec))
+		return NULL;
+	_err = GetCompressionTime(src,
+	                          &srcRect,
+	                          colorDepth,
+	                          cType,
+	                          codec,
+	                          &spatialQuality,
+	                          &temporalQuality,
+	                          &compressTime);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("lll",
+	                     spatialQuality,
+	                     temporalQuality,
+	                     compressTime);
+	return _res;
+}
+
+static PyObject *Qt_CompressImage(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	PixMapHandle src;
+	Rect srcRect;
+	CodecQ quality;
+	CodecType cType;
+	ImageDescriptionHandle desc;
+	Ptr data;
+#ifndef CompressImage
+	PyMac_PRECHECK(CompressImage);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&lO&O&s",
+	                      ResObj_Convert, &src,
+	                      PyMac_GetRect, &srcRect,
+	                      &quality,
+	                      PyMac_GetOSType, &cType,
+	                      ResObj_Convert, &desc,
+	                      &data))
+		return NULL;
+	_err = CompressImage(src,
+	                     &srcRect,
+	                     quality,
+	                     cType,
+	                     desc,
+	                     data);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qt_DecompressImage(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	Ptr data;
+	ImageDescriptionHandle desc;
+	PixMapHandle dst;
+	Rect srcRect;
+	Rect dstRect;
+	short mode;
+	RgnHandle mask;
+#ifndef DecompressImage
+	PyMac_PRECHECK(DecompressImage);
+#endif
+	if (!PyArg_ParseTuple(_args, "sO&O&O&O&hO&",
+	                      &data,
+	                      ResObj_Convert, &desc,
+	                      ResObj_Convert, &dst,
+	                      PyMac_GetRect, &srcRect,
+	                      PyMac_GetRect, &dstRect,
+	                      &mode,
+	                      ResObj_Convert, &mask))
+		return NULL;
+	_err = DecompressImage(data,
+	                       desc,
+	                       dst,
+	                       &srcRect,
+	                       &dstRect,
+	                       mode,
+	                       mask);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qt_GetSimilarity(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	PixMapHandle src;
+	Rect srcRect;
+	ImageDescriptionHandle desc;
+	Ptr data;
+	Fixed similarity;
+#ifndef GetSimilarity
+	PyMac_PRECHECK(GetSimilarity);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&s",
+	                      ResObj_Convert, &src,
+	                      PyMac_GetRect, &srcRect,
+	                      ResObj_Convert, &desc,
+	                      &data))
+		return NULL;
+	_err = GetSimilarity(src,
+	                     &srcRect,
+	                     desc,
+	                     data,
+	                     &similarity);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildFixed, similarity);
+	return _res;
+}
+
+static PyObject *Qt_GetImageDescriptionCTable(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	ImageDescriptionHandle desc;
+	CTabHandle ctable;
+#ifndef GetImageDescriptionCTable
+	PyMac_PRECHECK(GetImageDescriptionCTable);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &desc))
+		return NULL;
+	_err = GetImageDescriptionCTable(desc,
+	                                 &ctable);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, ctable);
+	return _res;
+}
+
+static PyObject *Qt_SetImageDescriptionCTable(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	ImageDescriptionHandle desc;
+	CTabHandle ctable;
+#ifndef SetImageDescriptionCTable
+	PyMac_PRECHECK(SetImageDescriptionCTable);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      ResObj_Convert, &desc,
+	                      ResObj_Convert, &ctable))
+		return NULL;
+	_err = SetImageDescriptionCTable(desc,
+	                                 ctable);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qt_GetImageDescriptionExtension(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	ImageDescriptionHandle desc;
+	Handle extension;
+	long idType;
+	long index;
+#ifndef GetImageDescriptionExtension
+	PyMac_PRECHECK(GetImageDescriptionExtension);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      ResObj_Convert, &desc,
+	                      &idType,
+	                      &index))
+		return NULL;
+	_err = GetImageDescriptionExtension(desc,
+	                                    &extension,
+	                                    idType,
+	                                    index);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, extension);
+	return _res;
+}
+
+static PyObject *Qt_AddImageDescriptionExtension(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	ImageDescriptionHandle desc;
+	Handle extension;
+	long idType;
+#ifndef AddImageDescriptionExtension
+	PyMac_PRECHECK(AddImageDescriptionExtension);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&l",
+	                      ResObj_Convert, &desc,
+	                      ResObj_Convert, &extension,
+	                      &idType))
+		return NULL;
+	_err = AddImageDescriptionExtension(desc,
+	                                    extension,
+	                                    idType);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qt_RemoveImageDescriptionExtension(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	ImageDescriptionHandle desc;
+	long idType;
+	long index;
+#ifndef RemoveImageDescriptionExtension
+	PyMac_PRECHECK(RemoveImageDescriptionExtension);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      ResObj_Convert, &desc,
+	                      &idType,
+	                      &index))
+		return NULL;
+	_err = RemoveImageDescriptionExtension(desc,
+	                                       idType,
+	                                       index);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qt_CountImageDescriptionExtensionType(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	ImageDescriptionHandle desc;
+	long idType;
+	long count;
+#ifndef CountImageDescriptionExtensionType
+	PyMac_PRECHECK(CountImageDescriptionExtensionType);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      ResObj_Convert, &desc,
+	                      &idType))
+		return NULL;
+	_err = CountImageDescriptionExtensionType(desc,
+	                                          idType,
+	                                          &count);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     count);
+	return _res;
+}
+
+static PyObject *Qt_GetNextImageDescriptionExtensionType(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	ImageDescriptionHandle desc;
+	long idType;
+#ifndef GetNextImageDescriptionExtensionType
+	PyMac_PRECHECK(GetNextImageDescriptionExtensionType);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &desc))
+		return NULL;
+	_err = GetNextImageDescriptionExtensionType(desc,
+	                                            &idType);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     idType);
+	return _res;
+}
+
+static PyObject *Qt_FindCodec(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	CodecType cType;
+	CodecComponent specCodec;
+	CompressorComponent compressor;
+	DecompressorComponent decompressor;
+#ifndef FindCodec
+	PyMac_PRECHECK(FindCodec);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetOSType, &cType,
+	                      CmpObj_Convert, &specCodec))
+		return NULL;
+	_err = FindCodec(cType,
+	                 specCodec,
+	                 &compressor,
+	                 &decompressor);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&O&",
+	                     CmpObj_New, compressor,
+	                     CmpObj_New, decompressor);
+	return _res;
+}
+
+static PyObject *Qt_CompressPicture(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	PicHandle srcPicture;
+	PicHandle dstPicture;
+	CodecQ quality;
+	CodecType cType;
+#ifndef CompressPicture
+	PyMac_PRECHECK(CompressPicture);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&lO&",
+	                      ResObj_Convert, &srcPicture,
+	                      ResObj_Convert, &dstPicture,
+	                      &quality,
+	                      PyMac_GetOSType, &cType))
+		return NULL;
+	_err = CompressPicture(srcPicture,
+	                       dstPicture,
+	                       quality,
+	                       cType);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qt_CompressPictureFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	short srcRefNum;
+	short dstRefNum;
+	CodecQ quality;
+	CodecType cType;
+#ifndef CompressPictureFile
+	PyMac_PRECHECK(CompressPictureFile);
+#endif
+	if (!PyArg_ParseTuple(_args, "hhlO&",
+	                      &srcRefNum,
+	                      &dstRefNum,
+	                      &quality,
+	                      PyMac_GetOSType, &cType))
+		return NULL;
+	_err = CompressPictureFile(srcRefNum,
+	                           dstRefNum,
+	                           quality,
+	                           cType);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qt_ConvertImage(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	ImageDescriptionHandle srcDD;
+	Ptr srcData;
+	short colorDepth;
+	CTabHandle ctable;
+	CodecQ accuracy;
+	CodecQ quality;
+	CodecType cType;
+	CodecComponent codec;
+	ImageDescriptionHandle dstDD;
+	Ptr dstData;
+#ifndef ConvertImage
+	PyMac_PRECHECK(ConvertImage);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&shO&llO&O&O&s",
+	                      ResObj_Convert, &srcDD,
+	                      &srcData,
+	                      &colorDepth,
+	                      ResObj_Convert, &ctable,
+	                      &accuracy,
+	                      &quality,
+	                      PyMac_GetOSType, &cType,
+	                      CmpObj_Convert, &codec,
+	                      ResObj_Convert, &dstDD,
+	                      &dstData))
+		return NULL;
+	_err = ConvertImage(srcDD,
+	                    srcData,
+	                    colorDepth,
+	                    ctable,
+	                    accuracy,
+	                    quality,
+	                    cType,
+	                    codec,
+	                    dstDD,
+	                    dstData);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qt_AddFilePreview(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	short resRefNum;
+	OSType previewType;
+	Handle previewData;
+#ifndef AddFilePreview
+	PyMac_PRECHECK(AddFilePreview);
+#endif
+	if (!PyArg_ParseTuple(_args, "hO&O&",
+	                      &resRefNum,
+	                      PyMac_GetOSType, &previewType,
+	                      ResObj_Convert, &previewData))
+		return NULL;
+	_err = AddFilePreview(resRefNum,
+	                      previewType,
+	                      previewData);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qt_GetBestDeviceRect(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	GDHandle gdh;
+	Rect rp;
+#ifndef GetBestDeviceRect
+	PyMac_PRECHECK(GetBestDeviceRect);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = GetBestDeviceRect(&gdh,
+	                         &rp);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&O&",
+	                     OptResObj_New, gdh,
+	                     PyMac_BuildRect, &rp);
+	return _res;
+}
+
+static PyObject *Qt_GDHasScale(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	GDHandle gdh;
+	short depth;
+	Fixed scale;
+#ifndef GDHasScale
+	PyMac_PRECHECK(GDHasScale);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&h",
+	                      OptResObj_Convert, &gdh,
+	                      &depth))
+		return NULL;
+	_err = GDHasScale(gdh,
+	                  depth,
+	                  &scale);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildFixed, scale);
+	return _res;
+}
+
+static PyObject *Qt_GDGetScale(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	GDHandle gdh;
+	Fixed scale;
+	short flags;
+#ifndef GDGetScale
+	PyMac_PRECHECK(GDGetScale);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      OptResObj_Convert, &gdh))
+		return NULL;
+	_err = GDGetScale(gdh,
+	                  &scale,
+	                  &flags);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&h",
+	                     PyMac_BuildFixed, scale,
+	                     flags);
+	return _res;
+}
+
+static PyObject *Qt_GDSetScale(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	GDHandle gdh;
+	Fixed scale;
+	short flags;
+#ifndef GDSetScale
+	PyMac_PRECHECK(GDSetScale);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&h",
+	                      OptResObj_Convert, &gdh,
+	                      PyMac_GetFixed, &scale,
+	                      &flags))
+		return NULL;
+	_err = GDSetScale(gdh,
+	                  scale,
+	                  flags);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qt_GetGraphicsImporterForFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	FSSpec theFile;
+	ComponentInstance gi;
+#ifndef GetGraphicsImporterForFile
+	PyMac_PRECHECK(GetGraphicsImporterForFile);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetFSSpec, &theFile))
+		return NULL;
+	_err = GetGraphicsImporterForFile(&theFile,
+	                                  &gi);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CmpInstObj_New, gi);
+	return _res;
+}
+
+static PyObject *Qt_GetGraphicsImporterForDataRef(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	Handle dataRef;
+	OSType dataRefType;
+	ComponentInstance gi;
+#ifndef GetGraphicsImporterForDataRef
+	PyMac_PRECHECK(GetGraphicsImporterForDataRef);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      ResObj_Convert, &dataRef,
+	                      PyMac_GetOSType, &dataRefType))
+		return NULL;
+	_err = GetGraphicsImporterForDataRef(dataRef,
+	                                     dataRefType,
+	                                     &gi);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CmpInstObj_New, gi);
+	return _res;
+}
+
+static PyObject *Qt_GetGraphicsImporterForFileWithFlags(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	FSSpec theFile;
+	ComponentInstance gi;
+	long flags;
+#ifndef GetGraphicsImporterForFileWithFlags
+	PyMac_PRECHECK(GetGraphicsImporterForFileWithFlags);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      PyMac_GetFSSpec, &theFile,
+	                      &flags))
+		return NULL;
+	_err = GetGraphicsImporterForFileWithFlags(&theFile,
+	                                           &gi,
+	                                           flags);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CmpInstObj_New, gi);
+	return _res;
+}
+
+static PyObject *Qt_GetGraphicsImporterForDataRefWithFlags(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	Handle dataRef;
+	OSType dataRefType;
+	ComponentInstance gi;
+	long flags;
+#ifndef GetGraphicsImporterForDataRefWithFlags
+	PyMac_PRECHECK(GetGraphicsImporterForDataRefWithFlags);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&l",
+	                      ResObj_Convert, &dataRef,
+	                      PyMac_GetOSType, &dataRefType,
+	                      &flags))
+		return NULL;
+	_err = GetGraphicsImporterForDataRefWithFlags(dataRef,
+	                                              dataRefType,
+	                                              &gi,
+	                                              flags);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CmpInstObj_New, gi);
+	return _res;
+}
+
+static PyObject *Qt_MakeImageDescriptionForPixMap(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	PixMapHandle pixmap;
+	ImageDescriptionHandle idh;
+#ifndef MakeImageDescriptionForPixMap
+	PyMac_PRECHECK(MakeImageDescriptionForPixMap);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &pixmap))
+		return NULL;
+	_err = MakeImageDescriptionForPixMap(pixmap,
+	                                     &idh);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, idh);
+	return _res;
+}
+
+static PyObject *Qt_MakeImageDescriptionForEffect(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	OSType effectType;
+	ImageDescriptionHandle idh;
+#ifndef MakeImageDescriptionForEffect
+	PyMac_PRECHECK(MakeImageDescriptionForEffect);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetOSType, &effectType))
+		return NULL;
+	_err = MakeImageDescriptionForEffect(effectType,
+	                                     &idh);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, idh);
+	return _res;
+}
+
+static PyObject *Qt_QTGetPixelSize(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	short _rv;
+	OSType PixelFormat;
+#ifndef QTGetPixelSize
+	PyMac_PRECHECK(QTGetPixelSize);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetOSType, &PixelFormat))
+		return NULL;
+	_rv = QTGetPixelSize(PixelFormat);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_QTGetPixelFormatDepthForImageDescription(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	short _rv;
+	OSType PixelFormat;
+#ifndef QTGetPixelFormatDepthForImageDescription
+	PyMac_PRECHECK(QTGetPixelFormatDepthForImageDescription);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetOSType, &PixelFormat))
+		return NULL;
+	_rv = QTGetPixelFormatDepthForImageDescription(PixelFormat);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_QTGetPixMapHandleRowBytes(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	long _rv;
+	PixMapHandle pm;
+#ifndef QTGetPixMapHandleRowBytes
+	PyMac_PRECHECK(QTGetPixMapHandleRowBytes);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &pm))
+		return NULL;
+	_rv = QTGetPixMapHandleRowBytes(pm);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_QTSetPixMapHandleRowBytes(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	PixMapHandle pm;
+	long rowBytes;
+#ifndef QTSetPixMapHandleRowBytes
+	PyMac_PRECHECK(QTSetPixMapHandleRowBytes);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      ResObj_Convert, &pm,
+	                      &rowBytes))
+		return NULL;
+	_err = QTSetPixMapHandleRowBytes(pm,
+	                                 rowBytes);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qt_QTGetPixMapHandleGammaLevel(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Fixed _rv;
+	PixMapHandle pm;
+#ifndef QTGetPixMapHandleGammaLevel
+	PyMac_PRECHECK(QTGetPixMapHandleGammaLevel);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &pm))
+		return NULL;
+	_rv = QTGetPixMapHandleGammaLevel(pm);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildFixed, _rv);
+	return _res;
+}
+
+static PyObject *Qt_QTSetPixMapHandleGammaLevel(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	PixMapHandle pm;
+	Fixed gammaLevel;
+#ifndef QTSetPixMapHandleGammaLevel
+	PyMac_PRECHECK(QTSetPixMapHandleGammaLevel);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      ResObj_Convert, &pm,
+	                      PyMac_GetFixed, &gammaLevel))
+		return NULL;
+	_err = QTSetPixMapHandleGammaLevel(pm,
+	                                   gammaLevel);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qt_QTGetPixMapHandleRequestedGammaLevel(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Fixed _rv;
+	PixMapHandle pm;
+#ifndef QTGetPixMapHandleRequestedGammaLevel
+	PyMac_PRECHECK(QTGetPixMapHandleRequestedGammaLevel);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &pm))
+		return NULL;
+	_rv = QTGetPixMapHandleRequestedGammaLevel(pm);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildFixed, _rv);
+	return _res;
+}
+
+static PyObject *Qt_QTSetPixMapHandleRequestedGammaLevel(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	PixMapHandle pm;
+	Fixed requestedGammaLevel;
+#ifndef QTSetPixMapHandleRequestedGammaLevel
+	PyMac_PRECHECK(QTSetPixMapHandleRequestedGammaLevel);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      ResObj_Convert, &pm,
+	                      PyMac_GetFixed, &requestedGammaLevel))
+		return NULL;
+	_err = QTSetPixMapHandleRequestedGammaLevel(pm,
+	                                            requestedGammaLevel);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qt_CompAdd(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	wide src;
+	wide dst;
+#ifndef CompAdd
+	PyMac_PRECHECK(CompAdd);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	CompAdd(&src,
+	        &dst);
+	_res = Py_BuildValue("O&O&",
+	                     PyMac_Buildwide, src,
+	                     PyMac_Buildwide, dst);
+	return _res;
+}
+
+static PyObject *Qt_CompSub(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	wide src;
+	wide dst;
+#ifndef CompSub
+	PyMac_PRECHECK(CompSub);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	CompSub(&src,
+	        &dst);
+	_res = Py_BuildValue("O&O&",
+	                     PyMac_Buildwide, src,
+	                     PyMac_Buildwide, dst);
+	return _res;
+}
+
+static PyObject *Qt_CompNeg(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	wide dst;
+#ifndef CompNeg
+	PyMac_PRECHECK(CompNeg);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	CompNeg(&dst);
+	_res = Py_BuildValue("O&",
+	                     PyMac_Buildwide, dst);
+	return _res;
+}
+
+static PyObject *Qt_CompShift(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	wide src;
+	short shift;
+#ifndef CompShift
+	PyMac_PRECHECK(CompShift);
+#endif
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &shift))
+		return NULL;
+	CompShift(&src,
+	          shift);
+	_res = Py_BuildValue("O&",
+	                     PyMac_Buildwide, src);
+	return _res;
+}
+
+static PyObject *Qt_CompMul(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	long src1;
+	long src2;
+	wide dst;
+#ifndef CompMul
+	PyMac_PRECHECK(CompMul);
+#endif
+	if (!PyArg_ParseTuple(_args, "ll",
+	                      &src1,
+	                      &src2))
+		return NULL;
+	CompMul(src1,
+	        src2,
+	        &dst);
+	_res = Py_BuildValue("O&",
+	                     PyMac_Buildwide, dst);
+	return _res;
+}
+
+static PyObject *Qt_CompDiv(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	long _rv;
+	wide numerator;
+	long denominator;
+	long remainder;
+#ifndef CompDiv
+	PyMac_PRECHECK(CompDiv);
+#endif
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &denominator))
+		return NULL;
+	_rv = CompDiv(&numerator,
+	              denominator,
+	              &remainder);
+	_res = Py_BuildValue("lO&l",
+	                     _rv,
+	                     PyMac_Buildwide, numerator,
+	                     remainder);
+	return _res;
+}
+
+static PyObject *Qt_CompFixMul(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	wide compSrc;
+	Fixed fixSrc;
+	wide compDst;
+#ifndef CompFixMul
+	PyMac_PRECHECK(CompFixMul);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetFixed, &fixSrc))
+		return NULL;
+	CompFixMul(&compSrc,
+	           fixSrc,
+	           &compDst);
+	_res = Py_BuildValue("O&O&",
+	                     PyMac_Buildwide, compSrc,
+	                     PyMac_Buildwide, compDst);
+	return _res;
+}
+
+static PyObject *Qt_CompMulDiv(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	wide co;
+	long mul;
+	long divisor;
+#ifndef CompMulDiv
+	PyMac_PRECHECK(CompMulDiv);
+#endif
+	if (!PyArg_ParseTuple(_args, "ll",
+	                      &mul,
+	                      &divisor))
+		return NULL;
+	CompMulDiv(&co,
+	           mul,
+	           divisor);
+	_res = Py_BuildValue("O&",
+	                     PyMac_Buildwide, co);
+	return _res;
+}
+
+static PyObject *Qt_CompMulDivTrunc(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	wide co;
+	long mul;
+	long divisor;
+	long remainder;
+#ifndef CompMulDivTrunc
+	PyMac_PRECHECK(CompMulDivTrunc);
+#endif
+	if (!PyArg_ParseTuple(_args, "ll",
+	                      &mul,
+	                      &divisor))
+		return NULL;
+	CompMulDivTrunc(&co,
+	                mul,
+	                divisor,
+	                &remainder);
+	_res = Py_BuildValue("O&l",
+	                     PyMac_Buildwide, co,
+	                     remainder);
+	return _res;
+}
+
+static PyObject *Qt_CompCompare(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	long _rv;
+	wide a;
+	wide minusb;
+#ifndef CompCompare
+	PyMac_PRECHECK(CompCompare);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_Getwide, &a,
+	                      PyMac_Getwide, &minusb))
+		return NULL;
+	_rv = CompCompare(&a,
+	                  &minusb);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_CompSquareRoot(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	unsigned long _rv;
+	wide src;
+#ifndef CompSquareRoot
+	PyMac_PRECHECK(CompSquareRoot);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_Getwide, &src))
+		return NULL;
+	_rv = CompSquareRoot(&src);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_FixMulDiv(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Fixed _rv;
+	Fixed src;
+	Fixed mul;
+	Fixed divisor;
+#ifndef FixMulDiv
+	PyMac_PRECHECK(FixMulDiv);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      PyMac_GetFixed, &src,
+	                      PyMac_GetFixed, &mul,
+	                      PyMac_GetFixed, &divisor))
+		return NULL;
+	_rv = FixMulDiv(src,
+	                mul,
+	                divisor);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildFixed, _rv);
+	return _res;
+}
+
+static PyObject *Qt_UnsignedFixMulDiv(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Fixed _rv;
+	Fixed src;
+	Fixed mul;
+	Fixed divisor;
+#ifndef UnsignedFixMulDiv
+	PyMac_PRECHECK(UnsignedFixMulDiv);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      PyMac_GetFixed, &src,
+	                      PyMac_GetFixed, &mul,
+	                      PyMac_GetFixed, &divisor))
+		return NULL;
+	_rv = UnsignedFixMulDiv(src,
+	                        mul,
+	                        divisor);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildFixed, _rv);
+	return _res;
+}
+
+static PyObject *Qt_FixExp2(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Fixed _rv;
+	Fixed src;
+#ifndef FixExp2
+	PyMac_PRECHECK(FixExp2);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetFixed, &src))
+		return NULL;
+	_rv = FixExp2(src);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildFixed, _rv);
+	return _res;
+}
+
+static PyObject *Qt_FixLog2(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Fixed _rv;
+	Fixed src;
+#ifndef FixLog2
+	PyMac_PRECHECK(FixLog2);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetFixed, &src))
+		return NULL;
+	_rv = FixLog2(src);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildFixed, _rv);
+	return _res;
+}
+
+static PyObject *Qt_FixPow(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Fixed _rv;
+	Fixed base;
+	Fixed exp;
+#ifndef FixPow
+	PyMac_PRECHECK(FixPow);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetFixed, &base,
+	                      PyMac_GetFixed, &exp))
+		return NULL;
+	_rv = FixPow(base,
+	             exp);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildFixed, _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSetDataReference(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	Handle dataRef;
+	OSType dataReType;
+#ifndef GraphicsImportSetDataReference
+	PyMac_PRECHECK(GraphicsImportSetDataReference);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      CmpObj_Convert, &ci,
+	                      ResObj_Convert, &dataRef,
+	                      PyMac_GetOSType, &dataReType))
+		return NULL;
+	_rv = GraphicsImportSetDataReference(ci,
+	                                     dataRef,
+	                                     dataReType);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetDataReference(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	Handle dataRef;
+	OSType dataReType;
+#ifndef GraphicsImportGetDataReference
+	PyMac_PRECHECK(GraphicsImportGetDataReference);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetDataReference(ci,
+	                                     &dataRef,
+	                                     &dataReType);
+	_res = Py_BuildValue("lO&O&",
+	                     _rv,
+	                     ResObj_New, dataRef,
+	                     PyMac_BuildOSType, dataReType);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSetDataFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	FSSpec theFile;
+#ifndef GraphicsImportSetDataFile
+	PyMac_PRECHECK(GraphicsImportSetDataFile);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &ci,
+	                      PyMac_GetFSSpec, &theFile))
+		return NULL;
+	_rv = GraphicsImportSetDataFile(ci,
+	                                &theFile);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetDataFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	FSSpec theFile;
+#ifndef GraphicsImportGetDataFile
+	PyMac_PRECHECK(GraphicsImportGetDataFile);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &ci,
+	                      PyMac_GetFSSpec, &theFile))
+		return NULL;
+	_rv = GraphicsImportGetDataFile(ci,
+	                                &theFile);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSetDataHandle(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	Handle h;
+#ifndef GraphicsImportSetDataHandle
+	PyMac_PRECHECK(GraphicsImportSetDataHandle);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &ci,
+	                      ResObj_Convert, &h))
+		return NULL;
+	_rv = GraphicsImportSetDataHandle(ci,
+	                                  h);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetDataHandle(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	Handle h;
+#ifndef GraphicsImportGetDataHandle
+	PyMac_PRECHECK(GraphicsImportGetDataHandle);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetDataHandle(ci,
+	                                  &h);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, h);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetImageDescription(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	ImageDescriptionHandle desc;
+#ifndef GraphicsImportGetImageDescription
+	PyMac_PRECHECK(GraphicsImportGetImageDescription);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetImageDescription(ci,
+	                                        &desc);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, desc);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetDataOffsetAndSize(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	unsigned long offset;
+	unsigned long size;
+#ifndef GraphicsImportGetDataOffsetAndSize
+	PyMac_PRECHECK(GraphicsImportGetDataOffsetAndSize);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetDataOffsetAndSize(ci,
+	                                         &offset,
+	                                         &size);
+	_res = Py_BuildValue("lll",
+	                     _rv,
+	                     offset,
+	                     size);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportReadData(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	void * dataPtr;
+	unsigned long dataOffset;
+	unsigned long dataSize;
+#ifndef GraphicsImportReadData
+	PyMac_PRECHECK(GraphicsImportReadData);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&sll",
+	                      CmpObj_Convert, &ci,
+	                      &dataPtr,
+	                      &dataOffset,
+	                      &dataSize))
+		return NULL;
+	_rv = GraphicsImportReadData(ci,
+	                             dataPtr,
+	                             dataOffset,
+	                             dataSize);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSetClip(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	RgnHandle clipRgn;
+#ifndef GraphicsImportSetClip
+	PyMac_PRECHECK(GraphicsImportSetClip);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &ci,
+	                      ResObj_Convert, &clipRgn))
+		return NULL;
+	_rv = GraphicsImportSetClip(ci,
+	                            clipRgn);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetClip(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	RgnHandle clipRgn;
+#ifndef GraphicsImportGetClip
+	PyMac_PRECHECK(GraphicsImportGetClip);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetClip(ci,
+	                            &clipRgn);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, clipRgn);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSetSourceRect(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	Rect sourceRect;
+#ifndef GraphicsImportSetSourceRect
+	PyMac_PRECHECK(GraphicsImportSetSourceRect);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &ci,
+	                      PyMac_GetRect, &sourceRect))
+		return NULL;
+	_rv = GraphicsImportSetSourceRect(ci,
+	                                  &sourceRect);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetSourceRect(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	Rect sourceRect;
+#ifndef GraphicsImportGetSourceRect
+	PyMac_PRECHECK(GraphicsImportGetSourceRect);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetSourceRect(ci,
+	                                  &sourceRect);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     PyMac_BuildRect, &sourceRect);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetNaturalBounds(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	Rect naturalBounds;
+#ifndef GraphicsImportGetNaturalBounds
+	PyMac_PRECHECK(GraphicsImportGetNaturalBounds);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetNaturalBounds(ci,
+	                                     &naturalBounds);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     PyMac_BuildRect, &naturalBounds);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportDraw(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+#ifndef GraphicsImportDraw
+	PyMac_PRECHECK(GraphicsImportDraw);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportDraw(ci);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSetGWorld(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	CGrafPtr port;
+	GDHandle gd;
+#ifndef GraphicsImportSetGWorld
+	PyMac_PRECHECK(GraphicsImportSetGWorld);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      CmpObj_Convert, &ci,
+	                      GrafObj_Convert, &port,
+	                      OptResObj_Convert, &gd))
+		return NULL;
+	_rv = GraphicsImportSetGWorld(ci,
+	                              port,
+	                              gd);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetGWorld(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	CGrafPtr port;
+	GDHandle gd;
+#ifndef GraphicsImportGetGWorld
+	PyMac_PRECHECK(GraphicsImportGetGWorld);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetGWorld(ci,
+	                              &port,
+	                              &gd);
+	_res = Py_BuildValue("lO&O&",
+	                     _rv,
+	                     GrafObj_New, port,
+	                     OptResObj_New, gd);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSetBoundsRect(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	Rect bounds;
+#ifndef GraphicsImportSetBoundsRect
+	PyMac_PRECHECK(GraphicsImportSetBoundsRect);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &ci,
+	                      PyMac_GetRect, &bounds))
+		return NULL;
+	_rv = GraphicsImportSetBoundsRect(ci,
+	                                  &bounds);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetBoundsRect(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	Rect bounds;
+#ifndef GraphicsImportGetBoundsRect
+	PyMac_PRECHECK(GraphicsImportGetBoundsRect);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetBoundsRect(ci,
+	                                  &bounds);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     PyMac_BuildRect, &bounds);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSaveAsPicture(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	FSSpec fss;
+	ScriptCode scriptTag;
+#ifndef GraphicsImportSaveAsPicture
+	PyMac_PRECHECK(GraphicsImportSaveAsPicture);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&h",
+	                      CmpObj_Convert, &ci,
+	                      PyMac_GetFSSpec, &fss,
+	                      &scriptTag))
+		return NULL;
+	_rv = GraphicsImportSaveAsPicture(ci,
+	                                  &fss,
+	                                  scriptTag);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSetGraphicsMode(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	long graphicsMode;
+	RGBColor opColor;
+#ifndef GraphicsImportSetGraphicsMode
+	PyMac_PRECHECK(GraphicsImportSetGraphicsMode);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lO&",
+	                      CmpObj_Convert, &ci,
+	                      &graphicsMode,
+	                      QdRGB_Convert, &opColor))
+		return NULL;
+	_rv = GraphicsImportSetGraphicsMode(ci,
+	                                    graphicsMode,
+	                                    &opColor);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetGraphicsMode(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	long graphicsMode;
+	RGBColor opColor;
+#ifndef GraphicsImportGetGraphicsMode
+	PyMac_PRECHECK(GraphicsImportGetGraphicsMode);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetGraphicsMode(ci,
+	                                    &graphicsMode,
+	                                    &opColor);
+	_res = Py_BuildValue("llO&",
+	                     _rv,
+	                     graphicsMode,
+	                     QdRGB_New, &opColor);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSetQuality(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	CodecQ quality;
+#ifndef GraphicsImportSetQuality
+	PyMac_PRECHECK(GraphicsImportSetQuality);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpObj_Convert, &ci,
+	                      &quality))
+		return NULL;
+	_rv = GraphicsImportSetQuality(ci,
+	                               quality);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetQuality(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	CodecQ quality;
+#ifndef GraphicsImportGetQuality
+	PyMac_PRECHECK(GraphicsImportGetQuality);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetQuality(ci,
+	                               &quality);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     quality);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSaveAsQuickTimeImageFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	FSSpec fss;
+	ScriptCode scriptTag;
+#ifndef GraphicsImportSaveAsQuickTimeImageFile
+	PyMac_PRECHECK(GraphicsImportSaveAsQuickTimeImageFile);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&h",
+	                      CmpObj_Convert, &ci,
+	                      PyMac_GetFSSpec, &fss,
+	                      &scriptTag))
+		return NULL;
+	_rv = GraphicsImportSaveAsQuickTimeImageFile(ci,
+	                                             &fss,
+	                                             scriptTag);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSetDataReferenceOffsetAndLimit(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	unsigned long offset;
+	unsigned long limit;
+#ifndef GraphicsImportSetDataReferenceOffsetAndLimit
+	PyMac_PRECHECK(GraphicsImportSetDataReferenceOffsetAndLimit);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpObj_Convert, &ci,
+	                      &offset,
+	                      &limit))
+		return NULL;
+	_rv = GraphicsImportSetDataReferenceOffsetAndLimit(ci,
+	                                                   offset,
+	                                                   limit);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetDataReferenceOffsetAndLimit(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	unsigned long offset;
+	unsigned long limit;
+#ifndef GraphicsImportGetDataReferenceOffsetAndLimit
+	PyMac_PRECHECK(GraphicsImportGetDataReferenceOffsetAndLimit);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetDataReferenceOffsetAndLimit(ci,
+	                                                   &offset,
+	                                                   &limit);
+	_res = Py_BuildValue("lll",
+	                     _rv,
+	                     offset,
+	                     limit);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetAliasedDataReference(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	Handle dataRef;
+	OSType dataRefType;
+#ifndef GraphicsImportGetAliasedDataReference
+	PyMac_PRECHECK(GraphicsImportGetAliasedDataReference);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetAliasedDataReference(ci,
+	                                            &dataRef,
+	                                            &dataRefType);
+	_res = Py_BuildValue("lO&O&",
+	                     _rv,
+	                     ResObj_New, dataRef,
+	                     PyMac_BuildOSType, dataRefType);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportValidate(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	Boolean valid;
+#ifndef GraphicsImportValidate
+	PyMac_PRECHECK(GraphicsImportValidate);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportValidate(ci,
+	                             &valid);
+	_res = Py_BuildValue("lb",
+	                     _rv,
+	                     valid);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetMetaData(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	void * userData;
+#ifndef GraphicsImportGetMetaData
+	PyMac_PRECHECK(GraphicsImportGetMetaData);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&s",
+	                      CmpObj_Convert, &ci,
+	                      &userData))
+		return NULL;
+	_rv = GraphicsImportGetMetaData(ci,
+	                                userData);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetMIMETypeList(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	void * qtAtomContainerPtr;
+#ifndef GraphicsImportGetMIMETypeList
+	PyMac_PRECHECK(GraphicsImportGetMIMETypeList);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&s",
+	                      CmpObj_Convert, &ci,
+	                      &qtAtomContainerPtr))
+		return NULL;
+	_rv = GraphicsImportGetMIMETypeList(ci,
+	                                    qtAtomContainerPtr);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportDoesDrawAllPixels(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	short drawsAllPixels;
+#ifndef GraphicsImportDoesDrawAllPixels
+	PyMac_PRECHECK(GraphicsImportDoesDrawAllPixels);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportDoesDrawAllPixels(ci,
+	                                      &drawsAllPixels);
+	_res = Py_BuildValue("lh",
+	                     _rv,
+	                     drawsAllPixels);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetAsPicture(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	PicHandle picture;
+#ifndef GraphicsImportGetAsPicture
+	PyMac_PRECHECK(GraphicsImportGetAsPicture);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetAsPicture(ci,
+	                                 &picture);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, picture);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportExportImageFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	OSType fileType;
+	OSType fileCreator;
+	FSSpec fss;
+	ScriptCode scriptTag;
+#ifndef GraphicsImportExportImageFile
+	PyMac_PRECHECK(GraphicsImportExportImageFile);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&O&h",
+	                      CmpObj_Convert, &ci,
+	                      PyMac_GetOSType, &fileType,
+	                      PyMac_GetOSType, &fileCreator,
+	                      PyMac_GetFSSpec, &fss,
+	                      &scriptTag))
+		return NULL;
+	_rv = GraphicsImportExportImageFile(ci,
+	                                    fileType,
+	                                    fileCreator,
+	                                    &fss,
+	                                    scriptTag);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetExportImageTypeList(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	void * qtAtomContainerPtr;
+#ifndef GraphicsImportGetExportImageTypeList
+	PyMac_PRECHECK(GraphicsImportGetExportImageTypeList);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&s",
+	                      CmpObj_Convert, &ci,
+	                      &qtAtomContainerPtr))
+		return NULL;
+	_rv = GraphicsImportGetExportImageTypeList(ci,
+	                                           qtAtomContainerPtr);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetExportSettingsAsAtomContainer(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	void * qtAtomContainerPtr;
+#ifndef GraphicsImportGetExportSettingsAsAtomContainer
+	PyMac_PRECHECK(GraphicsImportGetExportSettingsAsAtomContainer);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&s",
+	                      CmpObj_Convert, &ci,
+	                      &qtAtomContainerPtr))
+		return NULL;
+	_rv = GraphicsImportGetExportSettingsAsAtomContainer(ci,
+	                                                     qtAtomContainerPtr);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSetExportSettingsFromAtomContainer(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	void * qtAtomContainer;
+#ifndef GraphicsImportSetExportSettingsFromAtomContainer
+	PyMac_PRECHECK(GraphicsImportSetExportSettingsFromAtomContainer);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&s",
+	                      CmpObj_Convert, &ci,
+	                      &qtAtomContainer))
+		return NULL;
+	_rv = GraphicsImportSetExportSettingsFromAtomContainer(ci,
+	                                                       qtAtomContainer);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetImageCount(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	unsigned long imageCount;
+#ifndef GraphicsImportGetImageCount
+	PyMac_PRECHECK(GraphicsImportGetImageCount);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetImageCount(ci,
+	                                  &imageCount);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     imageCount);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSetImageIndex(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	unsigned long imageIndex;
+#ifndef GraphicsImportSetImageIndex
+	PyMac_PRECHECK(GraphicsImportSetImageIndex);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpObj_Convert, &ci,
+	                      &imageIndex))
+		return NULL;
+	_rv = GraphicsImportSetImageIndex(ci,
+	                                  imageIndex);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetImageIndex(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	unsigned long imageIndex;
+#ifndef GraphicsImportGetImageIndex
+	PyMac_PRECHECK(GraphicsImportGetImageIndex);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetImageIndex(ci,
+	                                  &imageIndex);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     imageIndex);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetDataOffsetAndSize64(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	wide offset;
+	wide size;
+#ifndef GraphicsImportGetDataOffsetAndSize64
+	PyMac_PRECHECK(GraphicsImportGetDataOffsetAndSize64);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetDataOffsetAndSize64(ci,
+	                                           &offset,
+	                                           &size);
+	_res = Py_BuildValue("lO&O&",
+	                     _rv,
+	                     PyMac_Buildwide, offset,
+	                     PyMac_Buildwide, size);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportReadData64(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	void * dataPtr;
+	wide dataOffset;
+	unsigned long dataSize;
+#ifndef GraphicsImportReadData64
+	PyMac_PRECHECK(GraphicsImportReadData64);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&sO&l",
+	                      CmpObj_Convert, &ci,
+	                      &dataPtr,
+	                      PyMac_Getwide, &dataOffset,
+	                      &dataSize))
+		return NULL;
+	_rv = GraphicsImportReadData64(ci,
+	                               dataPtr,
+	                               &dataOffset,
+	                               dataSize);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSetDataReferenceOffsetAndLimit64(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	wide offset;
+	wide limit;
+#ifndef GraphicsImportSetDataReferenceOffsetAndLimit64
+	PyMac_PRECHECK(GraphicsImportSetDataReferenceOffsetAndLimit64);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      CmpObj_Convert, &ci,
+	                      PyMac_Getwide, &offset,
+	                      PyMac_Getwide, &limit))
+		return NULL;
+	_rv = GraphicsImportSetDataReferenceOffsetAndLimit64(ci,
+	                                                     &offset,
+	                                                     &limit);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetDataReferenceOffsetAndLimit64(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	wide offset;
+	wide limit;
+#ifndef GraphicsImportGetDataReferenceOffsetAndLimit64
+	PyMac_PRECHECK(GraphicsImportGetDataReferenceOffsetAndLimit64);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetDataReferenceOffsetAndLimit64(ci,
+	                                                     &offset,
+	                                                     &limit);
+	_res = Py_BuildValue("lO&O&",
+	                     _rv,
+	                     PyMac_Buildwide, offset,
+	                     PyMac_Buildwide, limit);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetDefaultClip(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	RgnHandle defaultRgn;
+#ifndef GraphicsImportGetDefaultClip
+	PyMac_PRECHECK(GraphicsImportGetDefaultClip);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetDefaultClip(ci,
+	                                   &defaultRgn);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, defaultRgn);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetDefaultGraphicsMode(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	long defaultGraphicsMode;
+	RGBColor defaultOpColor;
+#ifndef GraphicsImportGetDefaultGraphicsMode
+	PyMac_PRECHECK(GraphicsImportGetDefaultGraphicsMode);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetDefaultGraphicsMode(ci,
+	                                           &defaultGraphicsMode,
+	                                           &defaultOpColor);
+	_res = Py_BuildValue("llO&",
+	                     _rv,
+	                     defaultGraphicsMode,
+	                     QdRGB_New, &defaultOpColor);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetDefaultSourceRect(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	Rect defaultSourceRect;
+#ifndef GraphicsImportGetDefaultSourceRect
+	PyMac_PRECHECK(GraphicsImportGetDefaultSourceRect);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetDefaultSourceRect(ci,
+	                                         &defaultSourceRect);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     PyMac_BuildRect, &defaultSourceRect);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetColorSyncProfile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	Handle profile;
+#ifndef GraphicsImportGetColorSyncProfile
+	PyMac_PRECHECK(GraphicsImportGetColorSyncProfile);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetColorSyncProfile(ci,
+	                                        &profile);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, profile);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSetDestRect(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	Rect destRect;
+#ifndef GraphicsImportSetDestRect
+	PyMac_PRECHECK(GraphicsImportSetDestRect);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &ci,
+	                      PyMac_GetRect, &destRect))
+		return NULL;
+	_rv = GraphicsImportSetDestRect(ci,
+	                                &destRect);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetDestRect(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	Rect destRect;
+#ifndef GraphicsImportGetDestRect
+	PyMac_PRECHECK(GraphicsImportGetDestRect);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetDestRect(ci,
+	                                &destRect);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     PyMac_BuildRect, &destRect);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSetFlags(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	long flags;
+#ifndef GraphicsImportSetFlags
+	PyMac_PRECHECK(GraphicsImportSetFlags);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpObj_Convert, &ci,
+	                      &flags))
+		return NULL;
+	_rv = GraphicsImportSetFlags(ci,
+	                             flags);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetFlags(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	long flags;
+#ifndef GraphicsImportGetFlags
+	PyMac_PRECHECK(GraphicsImportGetFlags);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetFlags(ci,
+	                             &flags);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     flags);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportGetBaseDataOffsetAndSize64(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+	wide offset;
+	wide size;
+#ifndef GraphicsImportGetBaseDataOffsetAndSize64
+	PyMac_PRECHECK(GraphicsImportGetBaseDataOffsetAndSize64);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportGetBaseDataOffsetAndSize64(ci,
+	                                               &offset,
+	                                               &size);
+	_res = Py_BuildValue("lO&O&",
+	                     _rv,
+	                     PyMac_Buildwide, offset,
+	                     PyMac_Buildwide, size);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsImportSetImageIndexToThumbnail(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsImportComponent ci;
+#ifndef GraphicsImportSetImageIndexToThumbnail
+	PyMac_PRECHECK(GraphicsImportSetImageIndexToThumbnail);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsImportSetImageIndexToThumbnail(ci);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportDoExport(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	unsigned long actualSizeWritten;
+#ifndef GraphicsExportDoExport
+	PyMac_PRECHECK(GraphicsExportDoExport);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportDoExport(ci,
+	                             &actualSizeWritten);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     actualSizeWritten);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportCanTranscode(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Boolean canTranscode;
+#ifndef GraphicsExportCanTranscode
+	PyMac_PRECHECK(GraphicsExportCanTranscode);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportCanTranscode(ci,
+	                                 &canTranscode);
+	_res = Py_BuildValue("lb",
+	                     _rv,
+	                     canTranscode);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportDoTranscode(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+#ifndef GraphicsExportDoTranscode
+	PyMac_PRECHECK(GraphicsExportDoTranscode);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportDoTranscode(ci);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportCanUseCompressor(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Boolean canUseCompressor;
+	void * codecSettingsAtomContainerPtr;
+#ifndef GraphicsExportCanUseCompressor
+	PyMac_PRECHECK(GraphicsExportCanUseCompressor);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&s",
+	                      CmpObj_Convert, &ci,
+	                      &codecSettingsAtomContainerPtr))
+		return NULL;
+	_rv = GraphicsExportCanUseCompressor(ci,
+	                                     &canUseCompressor,
+	                                     codecSettingsAtomContainerPtr);
+	_res = Py_BuildValue("lb",
+	                     _rv,
+	                     canUseCompressor);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportDoUseCompressor(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	void * codecSettingsAtomContainer;
+	ImageDescriptionHandle outDesc;
+#ifndef GraphicsExportDoUseCompressor
+	PyMac_PRECHECK(GraphicsExportDoUseCompressor);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&s",
+	                      CmpObj_Convert, &ci,
+	                      &codecSettingsAtomContainer))
+		return NULL;
+	_rv = GraphicsExportDoUseCompressor(ci,
+	                                    codecSettingsAtomContainer,
+	                                    &outDesc);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, outDesc);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportDoStandaloneExport(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+#ifndef GraphicsExportDoStandaloneExport
+	PyMac_PRECHECK(GraphicsExportDoStandaloneExport);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportDoStandaloneExport(ci);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetDefaultFileTypeAndCreator(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	OSType fileType;
+	OSType fileCreator;
+#ifndef GraphicsExportGetDefaultFileTypeAndCreator
+	PyMac_PRECHECK(GraphicsExportGetDefaultFileTypeAndCreator);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetDefaultFileTypeAndCreator(ci,
+	                                                 &fileType,
+	                                                 &fileCreator);
+	_res = Py_BuildValue("lO&O&",
+	                     _rv,
+	                     PyMac_BuildOSType, fileType,
+	                     PyMac_BuildOSType, fileCreator);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetDefaultFileNameExtension(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	OSType fileNameExtension;
+#ifndef GraphicsExportGetDefaultFileNameExtension
+	PyMac_PRECHECK(GraphicsExportGetDefaultFileNameExtension);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetDefaultFileNameExtension(ci,
+	                                                &fileNameExtension);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     PyMac_BuildOSType, fileNameExtension);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetMIMETypeList(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	void * qtAtomContainerPtr;
+#ifndef GraphicsExportGetMIMETypeList
+	PyMac_PRECHECK(GraphicsExportGetMIMETypeList);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&s",
+	                      CmpObj_Convert, &ci,
+	                      &qtAtomContainerPtr))
+		return NULL;
+	_rv = GraphicsExportGetMIMETypeList(ci,
+	                                    qtAtomContainerPtr);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetSettingsFromAtomContainer(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	void * qtAtomContainer;
+#ifndef GraphicsExportSetSettingsFromAtomContainer
+	PyMac_PRECHECK(GraphicsExportSetSettingsFromAtomContainer);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&s",
+	                      CmpObj_Convert, &ci,
+	                      &qtAtomContainer))
+		return NULL;
+	_rv = GraphicsExportSetSettingsFromAtomContainer(ci,
+	                                                 qtAtomContainer);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetSettingsAsAtomContainer(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	void * qtAtomContainerPtr;
+#ifndef GraphicsExportGetSettingsAsAtomContainer
+	PyMac_PRECHECK(GraphicsExportGetSettingsAsAtomContainer);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&s",
+	                      CmpObj_Convert, &ci,
+	                      &qtAtomContainerPtr))
+		return NULL;
+	_rv = GraphicsExportGetSettingsAsAtomContainer(ci,
+	                                               qtAtomContainerPtr);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetSettingsAsText(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Handle theText;
+#ifndef GraphicsExportGetSettingsAsText
+	PyMac_PRECHECK(GraphicsExportGetSettingsAsText);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetSettingsAsText(ci,
+	                                      &theText);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, theText);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetDontRecompress(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Boolean dontRecompress;
+#ifndef GraphicsExportSetDontRecompress
+	PyMac_PRECHECK(GraphicsExportSetDontRecompress);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&b",
+	                      CmpObj_Convert, &ci,
+	                      &dontRecompress))
+		return NULL;
+	_rv = GraphicsExportSetDontRecompress(ci,
+	                                      dontRecompress);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetDontRecompress(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Boolean dontRecompress;
+#ifndef GraphicsExportGetDontRecompress
+	PyMac_PRECHECK(GraphicsExportGetDontRecompress);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetDontRecompress(ci,
+	                                      &dontRecompress);
+	_res = Py_BuildValue("lb",
+	                     _rv,
+	                     dontRecompress);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetInterlaceStyle(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	unsigned long interlaceStyle;
+#ifndef GraphicsExportSetInterlaceStyle
+	PyMac_PRECHECK(GraphicsExportSetInterlaceStyle);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpObj_Convert, &ci,
+	                      &interlaceStyle))
+		return NULL;
+	_rv = GraphicsExportSetInterlaceStyle(ci,
+	                                      interlaceStyle);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetInterlaceStyle(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	unsigned long interlaceStyle;
+#ifndef GraphicsExportGetInterlaceStyle
+	PyMac_PRECHECK(GraphicsExportGetInterlaceStyle);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetInterlaceStyle(ci,
+	                                      &interlaceStyle);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     interlaceStyle);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetMetaData(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	void * userData;
+#ifndef GraphicsExportSetMetaData
+	PyMac_PRECHECK(GraphicsExportSetMetaData);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&s",
+	                      CmpObj_Convert, &ci,
+	                      &userData))
+		return NULL;
+	_rv = GraphicsExportSetMetaData(ci,
+	                                userData);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetMetaData(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	void * userData;
+#ifndef GraphicsExportGetMetaData
+	PyMac_PRECHECK(GraphicsExportGetMetaData);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&s",
+	                      CmpObj_Convert, &ci,
+	                      &userData))
+		return NULL;
+	_rv = GraphicsExportGetMetaData(ci,
+	                                userData);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetTargetDataSize(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	unsigned long targetDataSize;
+#ifndef GraphicsExportSetTargetDataSize
+	PyMac_PRECHECK(GraphicsExportSetTargetDataSize);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpObj_Convert, &ci,
+	                      &targetDataSize))
+		return NULL;
+	_rv = GraphicsExportSetTargetDataSize(ci,
+	                                      targetDataSize);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetTargetDataSize(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	unsigned long targetDataSize;
+#ifndef GraphicsExportGetTargetDataSize
+	PyMac_PRECHECK(GraphicsExportGetTargetDataSize);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetTargetDataSize(ci,
+	                                      &targetDataSize);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     targetDataSize);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetCompressionMethod(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	long compressionMethod;
+#ifndef GraphicsExportSetCompressionMethod
+	PyMac_PRECHECK(GraphicsExportSetCompressionMethod);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpObj_Convert, &ci,
+	                      &compressionMethod))
+		return NULL;
+	_rv = GraphicsExportSetCompressionMethod(ci,
+	                                         compressionMethod);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetCompressionMethod(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	long compressionMethod;
+#ifndef GraphicsExportGetCompressionMethod
+	PyMac_PRECHECK(GraphicsExportGetCompressionMethod);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetCompressionMethod(ci,
+	                                         &compressionMethod);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     compressionMethod);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetCompressionQuality(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	CodecQ spatialQuality;
+#ifndef GraphicsExportSetCompressionQuality
+	PyMac_PRECHECK(GraphicsExportSetCompressionQuality);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpObj_Convert, &ci,
+	                      &spatialQuality))
+		return NULL;
+	_rv = GraphicsExportSetCompressionQuality(ci,
+	                                          spatialQuality);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetCompressionQuality(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	CodecQ spatialQuality;
+#ifndef GraphicsExportGetCompressionQuality
+	PyMac_PRECHECK(GraphicsExportGetCompressionQuality);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetCompressionQuality(ci,
+	                                          &spatialQuality);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     spatialQuality);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetResolution(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Fixed horizontalResolution;
+	Fixed verticalResolution;
+#ifndef GraphicsExportSetResolution
+	PyMac_PRECHECK(GraphicsExportSetResolution);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      CmpObj_Convert, &ci,
+	                      PyMac_GetFixed, &horizontalResolution,
+	                      PyMac_GetFixed, &verticalResolution))
+		return NULL;
+	_rv = GraphicsExportSetResolution(ci,
+	                                  horizontalResolution,
+	                                  verticalResolution);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetResolution(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Fixed horizontalResolution;
+	Fixed verticalResolution;
+#ifndef GraphicsExportGetResolution
+	PyMac_PRECHECK(GraphicsExportGetResolution);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetResolution(ci,
+	                                  &horizontalResolution,
+	                                  &verticalResolution);
+	_res = Py_BuildValue("lO&O&",
+	                     _rv,
+	                     PyMac_BuildFixed, horizontalResolution,
+	                     PyMac_BuildFixed, verticalResolution);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetDepth(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	long depth;
+#ifndef GraphicsExportSetDepth
+	PyMac_PRECHECK(GraphicsExportSetDepth);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpObj_Convert, &ci,
+	                      &depth))
+		return NULL;
+	_rv = GraphicsExportSetDepth(ci,
+	                             depth);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetDepth(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	long depth;
+#ifndef GraphicsExportGetDepth
+	PyMac_PRECHECK(GraphicsExportGetDepth);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetDepth(ci,
+	                             &depth);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     depth);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetColorSyncProfile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Handle colorSyncProfile;
+#ifndef GraphicsExportSetColorSyncProfile
+	PyMac_PRECHECK(GraphicsExportSetColorSyncProfile);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &ci,
+	                      ResObj_Convert, &colorSyncProfile))
+		return NULL;
+	_rv = GraphicsExportSetColorSyncProfile(ci,
+	                                        colorSyncProfile);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetColorSyncProfile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Handle colorSyncProfile;
+#ifndef GraphicsExportGetColorSyncProfile
+	PyMac_PRECHECK(GraphicsExportGetColorSyncProfile);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetColorSyncProfile(ci,
+	                                        &colorSyncProfile);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, colorSyncProfile);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetInputDataReference(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Handle dataRef;
+	OSType dataRefType;
+	ImageDescriptionHandle desc;
+#ifndef GraphicsExportSetInputDataReference
+	PyMac_PRECHECK(GraphicsExportSetInputDataReference);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&O&",
+	                      CmpObj_Convert, &ci,
+	                      ResObj_Convert, &dataRef,
+	                      PyMac_GetOSType, &dataRefType,
+	                      ResObj_Convert, &desc))
+		return NULL;
+	_rv = GraphicsExportSetInputDataReference(ci,
+	                                          dataRef,
+	                                          dataRefType,
+	                                          desc);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetInputDataReference(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Handle dataRef;
+	OSType dataRefType;
+#ifndef GraphicsExportGetInputDataReference
+	PyMac_PRECHECK(GraphicsExportGetInputDataReference);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetInputDataReference(ci,
+	                                          &dataRef,
+	                                          &dataRefType);
+	_res = Py_BuildValue("lO&O&",
+	                     _rv,
+	                     ResObj_New, dataRef,
+	                     PyMac_BuildOSType, dataRefType);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetInputFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	FSSpec theFile;
+	ImageDescriptionHandle desc;
+#ifndef GraphicsExportSetInputFile
+	PyMac_PRECHECK(GraphicsExportSetInputFile);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      CmpObj_Convert, &ci,
+	                      PyMac_GetFSSpec, &theFile,
+	                      ResObj_Convert, &desc))
+		return NULL;
+	_rv = GraphicsExportSetInputFile(ci,
+	                                 &theFile,
+	                                 desc);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetInputFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	FSSpec theFile;
+#ifndef GraphicsExportGetInputFile
+	PyMac_PRECHECK(GraphicsExportGetInputFile);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &ci,
+	                      PyMac_GetFSSpec, &theFile))
+		return NULL;
+	_rv = GraphicsExportGetInputFile(ci,
+	                                 &theFile);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetInputHandle(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Handle h;
+	ImageDescriptionHandle desc;
+#ifndef GraphicsExportSetInputHandle
+	PyMac_PRECHECK(GraphicsExportSetInputHandle);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      CmpObj_Convert, &ci,
+	                      ResObj_Convert, &h,
+	                      ResObj_Convert, &desc))
+		return NULL;
+	_rv = GraphicsExportSetInputHandle(ci,
+	                                   h,
+	                                   desc);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetInputHandle(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Handle h;
+#ifndef GraphicsExportGetInputHandle
+	PyMac_PRECHECK(GraphicsExportGetInputHandle);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetInputHandle(ci,
+	                                   &h);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, h);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetInputPtr(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Ptr p;
+	unsigned long size;
+	ImageDescriptionHandle desc;
+#ifndef GraphicsExportSetInputPtr
+	PyMac_PRECHECK(GraphicsExportSetInputPtr);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&slO&",
+	                      CmpObj_Convert, &ci,
+	                      &p,
+	                      &size,
+	                      ResObj_Convert, &desc))
+		return NULL;
+	_rv = GraphicsExportSetInputPtr(ci,
+	                                p,
+	                                size,
+	                                desc);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetInputGraphicsImporter(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	GraphicsImportComponent grip;
+#ifndef GraphicsExportSetInputGraphicsImporter
+	PyMac_PRECHECK(GraphicsExportSetInputGraphicsImporter);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &ci,
+	                      CmpObj_Convert, &grip))
+		return NULL;
+	_rv = GraphicsExportSetInputGraphicsImporter(ci,
+	                                             grip);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetInputGraphicsImporter(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	GraphicsImportComponent grip;
+#ifndef GraphicsExportGetInputGraphicsImporter
+	PyMac_PRECHECK(GraphicsExportGetInputGraphicsImporter);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetInputGraphicsImporter(ci,
+	                                             &grip);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     CmpObj_New, grip);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetInputPicture(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	PicHandle picture;
+#ifndef GraphicsExportSetInputPicture
+	PyMac_PRECHECK(GraphicsExportSetInputPicture);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &ci,
+	                      ResObj_Convert, &picture))
+		return NULL;
+	_rv = GraphicsExportSetInputPicture(ci,
+	                                    picture);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetInputPicture(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	PicHandle picture;
+#ifndef GraphicsExportGetInputPicture
+	PyMac_PRECHECK(GraphicsExportGetInputPicture);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetInputPicture(ci,
+	                                    &picture);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, picture);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetInputGWorld(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	GWorldPtr gworld;
+#ifndef GraphicsExportSetInputGWorld
+	PyMac_PRECHECK(GraphicsExportSetInputGWorld);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &ci,
+	                      GWorldObj_Convert, &gworld))
+		return NULL;
+	_rv = GraphicsExportSetInputGWorld(ci,
+	                                   gworld);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetInputGWorld(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	GWorldPtr gworld;
+#ifndef GraphicsExportGetInputGWorld
+	PyMac_PRECHECK(GraphicsExportGetInputGWorld);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetInputGWorld(ci,
+	                                   &gworld);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     GWorldObj_New, gworld);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetInputPixmap(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	PixMapHandle pixmap;
+#ifndef GraphicsExportSetInputPixmap
+	PyMac_PRECHECK(GraphicsExportSetInputPixmap);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &ci,
+	                      ResObj_Convert, &pixmap))
+		return NULL;
+	_rv = GraphicsExportSetInputPixmap(ci,
+	                                   pixmap);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetInputPixmap(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	PixMapHandle pixmap;
+#ifndef GraphicsExportGetInputPixmap
+	PyMac_PRECHECK(GraphicsExportGetInputPixmap);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetInputPixmap(ci,
+	                                   &pixmap);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, pixmap);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetInputOffsetAndLimit(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	unsigned long offset;
+	unsigned long limit;
+#ifndef GraphicsExportSetInputOffsetAndLimit
+	PyMac_PRECHECK(GraphicsExportSetInputOffsetAndLimit);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpObj_Convert, &ci,
+	                      &offset,
+	                      &limit))
+		return NULL;
+	_rv = GraphicsExportSetInputOffsetAndLimit(ci,
+	                                           offset,
+	                                           limit);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetInputOffsetAndLimit(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	unsigned long offset;
+	unsigned long limit;
+#ifndef GraphicsExportGetInputOffsetAndLimit
+	PyMac_PRECHECK(GraphicsExportGetInputOffsetAndLimit);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetInputOffsetAndLimit(ci,
+	                                           &offset,
+	                                           &limit);
+	_res = Py_BuildValue("lll",
+	                     _rv,
+	                     offset,
+	                     limit);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportMayExporterReadInputData(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Boolean mayReadInputData;
+#ifndef GraphicsExportMayExporterReadInputData
+	PyMac_PRECHECK(GraphicsExportMayExporterReadInputData);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportMayExporterReadInputData(ci,
+	                                             &mayReadInputData);
+	_res = Py_BuildValue("lb",
+	                     _rv,
+	                     mayReadInputData);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetInputDataSize(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	unsigned long size;
+#ifndef GraphicsExportGetInputDataSize
+	PyMac_PRECHECK(GraphicsExportGetInputDataSize);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetInputDataSize(ci,
+	                                     &size);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     size);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportReadInputData(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	void * dataPtr;
+	unsigned long dataOffset;
+	unsigned long dataSize;
+#ifndef GraphicsExportReadInputData
+	PyMac_PRECHECK(GraphicsExportReadInputData);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&sll",
+	                      CmpObj_Convert, &ci,
+	                      &dataPtr,
+	                      &dataOffset,
+	                      &dataSize))
+		return NULL;
+	_rv = GraphicsExportReadInputData(ci,
+	                                  dataPtr,
+	                                  dataOffset,
+	                                  dataSize);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetInputImageDescription(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	ImageDescriptionHandle desc;
+#ifndef GraphicsExportGetInputImageDescription
+	PyMac_PRECHECK(GraphicsExportGetInputImageDescription);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetInputImageDescription(ci,
+	                                             &desc);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, desc);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetInputImageDimensions(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Rect dimensions;
+#ifndef GraphicsExportGetInputImageDimensions
+	PyMac_PRECHECK(GraphicsExportGetInputImageDimensions);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetInputImageDimensions(ci,
+	                                            &dimensions);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     PyMac_BuildRect, &dimensions);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetInputImageDepth(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	long inputDepth;
+#ifndef GraphicsExportGetInputImageDepth
+	PyMac_PRECHECK(GraphicsExportGetInputImageDepth);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetInputImageDepth(ci,
+	                                       &inputDepth);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     inputDepth);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportDrawInputImage(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	CGrafPtr gw;
+	GDHandle gd;
+	Rect srcRect;
+	Rect dstRect;
+#ifndef GraphicsExportDrawInputImage
+	PyMac_PRECHECK(GraphicsExportDrawInputImage);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&O&O&",
+	                      CmpObj_Convert, &ci,
+	                      GrafObj_Convert, &gw,
+	                      OptResObj_Convert, &gd,
+	                      PyMac_GetRect, &srcRect,
+	                      PyMac_GetRect, &dstRect))
+		return NULL;
+	_rv = GraphicsExportDrawInputImage(ci,
+	                                   gw,
+	                                   gd,
+	                                   &srcRect,
+	                                   &dstRect);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetOutputDataReference(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Handle dataRef;
+	OSType dataRefType;
+#ifndef GraphicsExportSetOutputDataReference
+	PyMac_PRECHECK(GraphicsExportSetOutputDataReference);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      CmpObj_Convert, &ci,
+	                      ResObj_Convert, &dataRef,
+	                      PyMac_GetOSType, &dataRefType))
+		return NULL;
+	_rv = GraphicsExportSetOutputDataReference(ci,
+	                                           dataRef,
+	                                           dataRefType);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetOutputDataReference(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Handle dataRef;
+	OSType dataRefType;
+#ifndef GraphicsExportGetOutputDataReference
+	PyMac_PRECHECK(GraphicsExportGetOutputDataReference);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetOutputDataReference(ci,
+	                                           &dataRef,
+	                                           &dataRefType);
+	_res = Py_BuildValue("lO&O&",
+	                     _rv,
+	                     ResObj_New, dataRef,
+	                     PyMac_BuildOSType, dataRefType);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetOutputFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	FSSpec theFile;
+#ifndef GraphicsExportSetOutputFile
+	PyMac_PRECHECK(GraphicsExportSetOutputFile);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &ci,
+	                      PyMac_GetFSSpec, &theFile))
+		return NULL;
+	_rv = GraphicsExportSetOutputFile(ci,
+	                                  &theFile);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetOutputFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	FSSpec theFile;
+#ifndef GraphicsExportGetOutputFile
+	PyMac_PRECHECK(GraphicsExportGetOutputFile);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &ci,
+	                      PyMac_GetFSSpec, &theFile))
+		return NULL;
+	_rv = GraphicsExportGetOutputFile(ci,
+	                                  &theFile);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetOutputHandle(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Handle h;
+#ifndef GraphicsExportSetOutputHandle
+	PyMac_PRECHECK(GraphicsExportSetOutputHandle);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpObj_Convert, &ci,
+	                      ResObj_Convert, &h))
+		return NULL;
+	_rv = GraphicsExportSetOutputHandle(ci,
+	                                    h);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetOutputHandle(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Handle h;
+#ifndef GraphicsExportGetOutputHandle
+	PyMac_PRECHECK(GraphicsExportGetOutputHandle);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetOutputHandle(ci,
+	                                    &h);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, h);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetOutputOffsetAndMaxSize(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	unsigned long offset;
+	unsigned long maxSize;
+	Boolean truncateFile;
+#ifndef GraphicsExportSetOutputOffsetAndMaxSize
+	PyMac_PRECHECK(GraphicsExportSetOutputOffsetAndMaxSize);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&llb",
+	                      CmpObj_Convert, &ci,
+	                      &offset,
+	                      &maxSize,
+	                      &truncateFile))
+		return NULL;
+	_rv = GraphicsExportSetOutputOffsetAndMaxSize(ci,
+	                                              offset,
+	                                              maxSize,
+	                                              truncateFile);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetOutputOffsetAndMaxSize(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	unsigned long offset;
+	unsigned long maxSize;
+	Boolean truncateFile;
+#ifndef GraphicsExportGetOutputOffsetAndMaxSize
+	PyMac_PRECHECK(GraphicsExportGetOutputOffsetAndMaxSize);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetOutputOffsetAndMaxSize(ci,
+	                                              &offset,
+	                                              &maxSize,
+	                                              &truncateFile);
+	_res = Py_BuildValue("lllb",
+	                     _rv,
+	                     offset,
+	                     maxSize,
+	                     truncateFile);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetOutputFileTypeAndCreator(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	OSType fileType;
+	OSType fileCreator;
+#ifndef GraphicsExportSetOutputFileTypeAndCreator
+	PyMac_PRECHECK(GraphicsExportSetOutputFileTypeAndCreator);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      CmpObj_Convert, &ci,
+	                      PyMac_GetOSType, &fileType,
+	                      PyMac_GetOSType, &fileCreator))
+		return NULL;
+	_rv = GraphicsExportSetOutputFileTypeAndCreator(ci,
+	                                                fileType,
+	                                                fileCreator);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetOutputFileTypeAndCreator(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	OSType fileType;
+	OSType fileCreator;
+#ifndef GraphicsExportGetOutputFileTypeAndCreator
+	PyMac_PRECHECK(GraphicsExportGetOutputFileTypeAndCreator);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetOutputFileTypeAndCreator(ci,
+	                                                &fileType,
+	                                                &fileCreator);
+	_res = Py_BuildValue("lO&O&",
+	                     _rv,
+	                     PyMac_BuildOSType, fileType,
+	                     PyMac_BuildOSType, fileCreator);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetOutputMark(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	unsigned long mark;
+#ifndef GraphicsExportSetOutputMark
+	PyMac_PRECHECK(GraphicsExportSetOutputMark);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpObj_Convert, &ci,
+	                      &mark))
+		return NULL;
+	_rv = GraphicsExportSetOutputMark(ci,
+	                                  mark);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetOutputMark(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	unsigned long mark;
+#ifndef GraphicsExportGetOutputMark
+	PyMac_PRECHECK(GraphicsExportGetOutputMark);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetOutputMark(ci,
+	                                  &mark);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     mark);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportReadOutputData(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	void * dataPtr;
+	unsigned long dataOffset;
+	unsigned long dataSize;
+#ifndef GraphicsExportReadOutputData
+	PyMac_PRECHECK(GraphicsExportReadOutputData);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&sll",
+	                      CmpObj_Convert, &ci,
+	                      &dataPtr,
+	                      &dataOffset,
+	                      &dataSize))
+		return NULL;
+	_rv = GraphicsExportReadOutputData(ci,
+	                                   dataPtr,
+	                                   dataOffset,
+	                                   dataSize);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetThumbnailEnabled(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Boolean enableThumbnail;
+	long maxThumbnailWidth;
+	long maxThumbnailHeight;
+#ifndef GraphicsExportSetThumbnailEnabled
+	PyMac_PRECHECK(GraphicsExportSetThumbnailEnabled);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&bll",
+	                      CmpObj_Convert, &ci,
+	                      &enableThumbnail,
+	                      &maxThumbnailWidth,
+	                      &maxThumbnailHeight))
+		return NULL;
+	_rv = GraphicsExportSetThumbnailEnabled(ci,
+	                                        enableThumbnail,
+	                                        maxThumbnailWidth,
+	                                        maxThumbnailHeight);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetThumbnailEnabled(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Boolean thumbnailEnabled;
+	long maxThumbnailWidth;
+	long maxThumbnailHeight;
+#ifndef GraphicsExportGetThumbnailEnabled
+	PyMac_PRECHECK(GraphicsExportGetThumbnailEnabled);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetThumbnailEnabled(ci,
+	                                        &thumbnailEnabled,
+	                                        &maxThumbnailWidth,
+	                                        &maxThumbnailHeight);
+	_res = Py_BuildValue("lbll",
+	                     _rv,
+	                     thumbnailEnabled,
+	                     maxThumbnailWidth,
+	                     maxThumbnailHeight);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportSetExifEnabled(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Boolean enableExif;
+#ifndef GraphicsExportSetExifEnabled
+	PyMac_PRECHECK(GraphicsExportSetExifEnabled);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&b",
+	                      CmpObj_Convert, &ci,
+	                      &enableExif))
+		return NULL;
+	_rv = GraphicsExportSetExifEnabled(ci,
+	                                   enableExif);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_GraphicsExportGetExifEnabled(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	GraphicsExportComponent ci;
+	Boolean exifEnabled;
+#ifndef GraphicsExportGetExifEnabled
+	PyMac_PRECHECK(GraphicsExportGetExifEnabled);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &ci))
+		return NULL;
+	_rv = GraphicsExportGetExifEnabled(ci,
+	                                   &exifEnabled);
+	_res = Py_BuildValue("lb",
+	                     _rv,
+	                     exifEnabled);
+	return _res;
+}
+
+static PyObject *Qt_ImageTranscoderBeginSequence(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	ImageTranscoderComponent itc;
+	ImageDescriptionHandle srcDesc;
+	ImageDescriptionHandle dstDesc;
+	void * data;
+	long dataSize;
+#ifndef ImageTranscoderBeginSequence
+	PyMac_PRECHECK(ImageTranscoderBeginSequence);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&sl",
+	                      CmpObj_Convert, &itc,
+	                      ResObj_Convert, &srcDesc,
+	                      &data,
+	                      &dataSize))
+		return NULL;
+	_rv = ImageTranscoderBeginSequence(itc,
+	                                   srcDesc,
+	                                   &dstDesc,
+	                                   data,
+	                                   dataSize);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, dstDesc);
+	return _res;
+}
+
+static PyObject *Qt_ImageTranscoderDisposeData(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	ImageTranscoderComponent itc;
+	void * dstData;
+#ifndef ImageTranscoderDisposeData
+	PyMac_PRECHECK(ImageTranscoderDisposeData);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&s",
+	                      CmpObj_Convert, &itc,
+	                      &dstData))
+		return NULL;
+	_rv = ImageTranscoderDisposeData(itc,
+	                                 dstData);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_ImageTranscoderEndSequence(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	ImageTranscoderComponent itc;
+#ifndef ImageTranscoderEndSequence
+	PyMac_PRECHECK(ImageTranscoderEndSequence);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpObj_Convert, &itc))
+		return NULL;
+	_rv = ImageTranscoderEndSequence(itc);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
 static PyObject *Qt_AlignWindow(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -10483,6 +14389,366 @@ static PyMethodDef Qt_methods[] = {
 	 PyDoc_STR("(TimeRecord dst, TimeRecord src) -> (TimeRecord dst)")},
 	{"MusicMediaGetIndexedTunePlayer", (PyCFunction)Qt_MusicMediaGetIndexedTunePlayer, 1,
 	 PyDoc_STR("(ComponentInstance ti, long sampleDescIndex) -> (ComponentResult _rv, ComponentInstance tp)")},
+	{"CodecManagerVersion", (PyCFunction)Qt_CodecManagerVersion, 1,
+	 PyDoc_STR("() -> (long version)")},
+	{"GetMaxCompressionSize", (PyCFunction)Qt_GetMaxCompressionSize, 1,
+	 PyDoc_STR("(PixMapHandle src, Rect srcRect, short colorDepth, CodecQ quality, CodecType cType, CompressorComponent codec) -> (long size)")},
+	{"GetCompressionTime", (PyCFunction)Qt_GetCompressionTime, 1,
+	 PyDoc_STR("(PixMapHandle src, Rect srcRect, short colorDepth, CodecType cType, CompressorComponent codec) -> (CodecQ spatialQuality, CodecQ temporalQuality, unsigned long compressTime)")},
+	{"CompressImage", (PyCFunction)Qt_CompressImage, 1,
+	 PyDoc_STR("(PixMapHandle src, Rect srcRect, CodecQ quality, CodecType cType, ImageDescriptionHandle desc, Ptr data) -> None")},
+	{"DecompressImage", (PyCFunction)Qt_DecompressImage, 1,
+	 PyDoc_STR("(Ptr data, ImageDescriptionHandle desc, PixMapHandle dst, Rect srcRect, Rect dstRect, short mode, RgnHandle mask) -> None")},
+	{"GetSimilarity", (PyCFunction)Qt_GetSimilarity, 1,
+	 PyDoc_STR("(PixMapHandle src, Rect srcRect, ImageDescriptionHandle desc, Ptr data) -> (Fixed similarity)")},
+	{"GetImageDescriptionCTable", (PyCFunction)Qt_GetImageDescriptionCTable, 1,
+	 PyDoc_STR("(ImageDescriptionHandle desc) -> (CTabHandle ctable)")},
+	{"SetImageDescriptionCTable", (PyCFunction)Qt_SetImageDescriptionCTable, 1,
+	 PyDoc_STR("(ImageDescriptionHandle desc, CTabHandle ctable) -> None")},
+	{"GetImageDescriptionExtension", (PyCFunction)Qt_GetImageDescriptionExtension, 1,
+	 PyDoc_STR("(ImageDescriptionHandle desc, long idType, long index) -> (Handle extension)")},
+	{"AddImageDescriptionExtension", (PyCFunction)Qt_AddImageDescriptionExtension, 1,
+	 PyDoc_STR("(ImageDescriptionHandle desc, Handle extension, long idType) -> None")},
+	{"RemoveImageDescriptionExtension", (PyCFunction)Qt_RemoveImageDescriptionExtension, 1,
+	 PyDoc_STR("(ImageDescriptionHandle desc, long idType, long index) -> None")},
+	{"CountImageDescriptionExtensionType", (PyCFunction)Qt_CountImageDescriptionExtensionType, 1,
+	 PyDoc_STR("(ImageDescriptionHandle desc, long idType) -> (long count)")},
+	{"GetNextImageDescriptionExtensionType", (PyCFunction)Qt_GetNextImageDescriptionExtensionType, 1,
+	 PyDoc_STR("(ImageDescriptionHandle desc) -> (long idType)")},
+	{"FindCodec", (PyCFunction)Qt_FindCodec, 1,
+	 PyDoc_STR("(CodecType cType, CodecComponent specCodec) -> (CompressorComponent compressor, DecompressorComponent decompressor)")},
+	{"CompressPicture", (PyCFunction)Qt_CompressPicture, 1,
+	 PyDoc_STR("(PicHandle srcPicture, PicHandle dstPicture, CodecQ quality, CodecType cType) -> None")},
+	{"CompressPictureFile", (PyCFunction)Qt_CompressPictureFile, 1,
+	 PyDoc_STR("(short srcRefNum, short dstRefNum, CodecQ quality, CodecType cType) -> None")},
+	{"ConvertImage", (PyCFunction)Qt_ConvertImage, 1,
+	 PyDoc_STR("(ImageDescriptionHandle srcDD, Ptr srcData, short colorDepth, CTabHandle ctable, CodecQ accuracy, CodecQ quality, CodecType cType, CodecComponent codec, ImageDescriptionHandle dstDD, Ptr dstData) -> None")},
+	{"AddFilePreview", (PyCFunction)Qt_AddFilePreview, 1,
+	 PyDoc_STR("(short resRefNum, OSType previewType, Handle previewData) -> None")},
+	{"GetBestDeviceRect", (PyCFunction)Qt_GetBestDeviceRect, 1,
+	 PyDoc_STR("() -> (GDHandle gdh, Rect rp)")},
+	{"GDHasScale", (PyCFunction)Qt_GDHasScale, 1,
+	 PyDoc_STR("(GDHandle gdh, short depth) -> (Fixed scale)")},
+	{"GDGetScale", (PyCFunction)Qt_GDGetScale, 1,
+	 PyDoc_STR("(GDHandle gdh) -> (Fixed scale, short flags)")},
+	{"GDSetScale", (PyCFunction)Qt_GDSetScale, 1,
+	 PyDoc_STR("(GDHandle gdh, Fixed scale, short flags) -> None")},
+	{"GetGraphicsImporterForFile", (PyCFunction)Qt_GetGraphicsImporterForFile, 1,
+	 PyDoc_STR("(FSSpec theFile) -> (ComponentInstance gi)")},
+	{"GetGraphicsImporterForDataRef", (PyCFunction)Qt_GetGraphicsImporterForDataRef, 1,
+	 PyDoc_STR("(Handle dataRef, OSType dataRefType) -> (ComponentInstance gi)")},
+	{"GetGraphicsImporterForFileWithFlags", (PyCFunction)Qt_GetGraphicsImporterForFileWithFlags, 1,
+	 PyDoc_STR("(FSSpec theFile, long flags) -> (ComponentInstance gi)")},
+	{"GetGraphicsImporterForDataRefWithFlags", (PyCFunction)Qt_GetGraphicsImporterForDataRefWithFlags, 1,
+	 PyDoc_STR("(Handle dataRef, OSType dataRefType, long flags) -> (ComponentInstance gi)")},
+	{"MakeImageDescriptionForPixMap", (PyCFunction)Qt_MakeImageDescriptionForPixMap, 1,
+	 PyDoc_STR("(PixMapHandle pixmap) -> (ImageDescriptionHandle idh)")},
+	{"MakeImageDescriptionForEffect", (PyCFunction)Qt_MakeImageDescriptionForEffect, 1,
+	 PyDoc_STR("(OSType effectType) -> (ImageDescriptionHandle idh)")},
+	{"QTGetPixelSize", (PyCFunction)Qt_QTGetPixelSize, 1,
+	 PyDoc_STR("(OSType PixelFormat) -> (short _rv)")},
+	{"QTGetPixelFormatDepthForImageDescription", (PyCFunction)Qt_QTGetPixelFormatDepthForImageDescription, 1,
+	 PyDoc_STR("(OSType PixelFormat) -> (short _rv)")},
+	{"QTGetPixMapHandleRowBytes", (PyCFunction)Qt_QTGetPixMapHandleRowBytes, 1,
+	 PyDoc_STR("(PixMapHandle pm) -> (long _rv)")},
+	{"QTSetPixMapHandleRowBytes", (PyCFunction)Qt_QTSetPixMapHandleRowBytes, 1,
+	 PyDoc_STR("(PixMapHandle pm, long rowBytes) -> None")},
+	{"QTGetPixMapHandleGammaLevel", (PyCFunction)Qt_QTGetPixMapHandleGammaLevel, 1,
+	 PyDoc_STR("(PixMapHandle pm) -> (Fixed _rv)")},
+	{"QTSetPixMapHandleGammaLevel", (PyCFunction)Qt_QTSetPixMapHandleGammaLevel, 1,
+	 PyDoc_STR("(PixMapHandle pm, Fixed gammaLevel) -> None")},
+	{"QTGetPixMapHandleRequestedGammaLevel", (PyCFunction)Qt_QTGetPixMapHandleRequestedGammaLevel, 1,
+	 PyDoc_STR("(PixMapHandle pm) -> (Fixed _rv)")},
+	{"QTSetPixMapHandleRequestedGammaLevel", (PyCFunction)Qt_QTSetPixMapHandleRequestedGammaLevel, 1,
+	 PyDoc_STR("(PixMapHandle pm, Fixed requestedGammaLevel) -> None")},
+	{"CompAdd", (PyCFunction)Qt_CompAdd, 1,
+	 PyDoc_STR("() -> (wide src, wide dst)")},
+	{"CompSub", (PyCFunction)Qt_CompSub, 1,
+	 PyDoc_STR("() -> (wide src, wide dst)")},
+	{"CompNeg", (PyCFunction)Qt_CompNeg, 1,
+	 PyDoc_STR("() -> (wide dst)")},
+	{"CompShift", (PyCFunction)Qt_CompShift, 1,
+	 PyDoc_STR("(short shift) -> (wide src)")},
+	{"CompMul", (PyCFunction)Qt_CompMul, 1,
+	 PyDoc_STR("(long src1, long src2) -> (wide dst)")},
+	{"CompDiv", (PyCFunction)Qt_CompDiv, 1,
+	 PyDoc_STR("(long denominator) -> (long _rv, wide numerator, long remainder)")},
+	{"CompFixMul", (PyCFunction)Qt_CompFixMul, 1,
+	 PyDoc_STR("(Fixed fixSrc) -> (wide compSrc, wide compDst)")},
+	{"CompMulDiv", (PyCFunction)Qt_CompMulDiv, 1,
+	 PyDoc_STR("(long mul, long divisor) -> (wide co)")},
+	{"CompMulDivTrunc", (PyCFunction)Qt_CompMulDivTrunc, 1,
+	 PyDoc_STR("(long mul, long divisor) -> (wide co, long remainder)")},
+	{"CompCompare", (PyCFunction)Qt_CompCompare, 1,
+	 PyDoc_STR("(wide a, wide minusb) -> (long _rv)")},
+	{"CompSquareRoot", (PyCFunction)Qt_CompSquareRoot, 1,
+	 PyDoc_STR("(wide src) -> (unsigned long _rv)")},
+	{"FixMulDiv", (PyCFunction)Qt_FixMulDiv, 1,
+	 PyDoc_STR("(Fixed src, Fixed mul, Fixed divisor) -> (Fixed _rv)")},
+	{"UnsignedFixMulDiv", (PyCFunction)Qt_UnsignedFixMulDiv, 1,
+	 PyDoc_STR("(Fixed src, Fixed mul, Fixed divisor) -> (Fixed _rv)")},
+	{"FixExp2", (PyCFunction)Qt_FixExp2, 1,
+	 PyDoc_STR("(Fixed src) -> (Fixed _rv)")},
+	{"FixLog2", (PyCFunction)Qt_FixLog2, 1,
+	 PyDoc_STR("(Fixed src) -> (Fixed _rv)")},
+	{"FixPow", (PyCFunction)Qt_FixPow, 1,
+	 PyDoc_STR("(Fixed base, Fixed exp) -> (Fixed _rv)")},
+	{"GraphicsImportSetDataReference", (PyCFunction)Qt_GraphicsImportSetDataReference, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, Handle dataRef, OSType dataReType) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetDataReference", (PyCFunction)Qt_GraphicsImportGetDataReference, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, Handle dataRef, OSType dataReType)")},
+	{"GraphicsImportSetDataFile", (PyCFunction)Qt_GraphicsImportSetDataFile, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, FSSpec theFile) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetDataFile", (PyCFunction)Qt_GraphicsImportGetDataFile, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, FSSpec theFile) -> (ComponentResult _rv)")},
+	{"GraphicsImportSetDataHandle", (PyCFunction)Qt_GraphicsImportSetDataHandle, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, Handle h) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetDataHandle", (PyCFunction)Qt_GraphicsImportGetDataHandle, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, Handle h)")},
+	{"GraphicsImportGetImageDescription", (PyCFunction)Qt_GraphicsImportGetImageDescription, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, ImageDescriptionHandle desc)")},
+	{"GraphicsImportGetDataOffsetAndSize", (PyCFunction)Qt_GraphicsImportGetDataOffsetAndSize, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, unsigned long offset, unsigned long size)")},
+	{"GraphicsImportReadData", (PyCFunction)Qt_GraphicsImportReadData, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, void * dataPtr, unsigned long dataOffset, unsigned long dataSize) -> (ComponentResult _rv)")},
+	{"GraphicsImportSetClip", (PyCFunction)Qt_GraphicsImportSetClip, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, RgnHandle clipRgn) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetClip", (PyCFunction)Qt_GraphicsImportGetClip, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, RgnHandle clipRgn)")},
+	{"GraphicsImportSetSourceRect", (PyCFunction)Qt_GraphicsImportSetSourceRect, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, Rect sourceRect) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetSourceRect", (PyCFunction)Qt_GraphicsImportGetSourceRect, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, Rect sourceRect)")},
+	{"GraphicsImportGetNaturalBounds", (PyCFunction)Qt_GraphicsImportGetNaturalBounds, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, Rect naturalBounds)")},
+	{"GraphicsImportDraw", (PyCFunction)Qt_GraphicsImportDraw, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv)")},
+	{"GraphicsImportSetGWorld", (PyCFunction)Qt_GraphicsImportSetGWorld, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, CGrafPtr port, GDHandle gd) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetGWorld", (PyCFunction)Qt_GraphicsImportGetGWorld, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, CGrafPtr port, GDHandle gd)")},
+	{"GraphicsImportSetBoundsRect", (PyCFunction)Qt_GraphicsImportSetBoundsRect, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, Rect bounds) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetBoundsRect", (PyCFunction)Qt_GraphicsImportGetBoundsRect, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, Rect bounds)")},
+	{"GraphicsImportSaveAsPicture", (PyCFunction)Qt_GraphicsImportSaveAsPicture, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, FSSpec fss, ScriptCode scriptTag) -> (ComponentResult _rv)")},
+	{"GraphicsImportSetGraphicsMode", (PyCFunction)Qt_GraphicsImportSetGraphicsMode, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, long graphicsMode, RGBColor opColor) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetGraphicsMode", (PyCFunction)Qt_GraphicsImportGetGraphicsMode, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, long graphicsMode, RGBColor opColor)")},
+	{"GraphicsImportSetQuality", (PyCFunction)Qt_GraphicsImportSetQuality, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, CodecQ quality) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetQuality", (PyCFunction)Qt_GraphicsImportGetQuality, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, CodecQ quality)")},
+	{"GraphicsImportSaveAsQuickTimeImageFile", (PyCFunction)Qt_GraphicsImportSaveAsQuickTimeImageFile, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, FSSpec fss, ScriptCode scriptTag) -> (ComponentResult _rv)")},
+	{"GraphicsImportSetDataReferenceOffsetAndLimit", (PyCFunction)Qt_GraphicsImportSetDataReferenceOffsetAndLimit, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, unsigned long offset, unsigned long limit) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetDataReferenceOffsetAndLimit", (PyCFunction)Qt_GraphicsImportGetDataReferenceOffsetAndLimit, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, unsigned long offset, unsigned long limit)")},
+	{"GraphicsImportGetAliasedDataReference", (PyCFunction)Qt_GraphicsImportGetAliasedDataReference, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, Handle dataRef, OSType dataRefType)")},
+	{"GraphicsImportValidate", (PyCFunction)Qt_GraphicsImportValidate, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, Boolean valid)")},
+	{"GraphicsImportGetMetaData", (PyCFunction)Qt_GraphicsImportGetMetaData, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, void * userData) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetMIMETypeList", (PyCFunction)Qt_GraphicsImportGetMIMETypeList, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, void * qtAtomContainerPtr) -> (ComponentResult _rv)")},
+	{"GraphicsImportDoesDrawAllPixels", (PyCFunction)Qt_GraphicsImportDoesDrawAllPixels, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, short drawsAllPixels)")},
+	{"GraphicsImportGetAsPicture", (PyCFunction)Qt_GraphicsImportGetAsPicture, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, PicHandle picture)")},
+	{"GraphicsImportExportImageFile", (PyCFunction)Qt_GraphicsImportExportImageFile, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, OSType fileType, OSType fileCreator, FSSpec fss, ScriptCode scriptTag) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetExportImageTypeList", (PyCFunction)Qt_GraphicsImportGetExportImageTypeList, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, void * qtAtomContainerPtr) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetExportSettingsAsAtomContainer", (PyCFunction)Qt_GraphicsImportGetExportSettingsAsAtomContainer, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, void * qtAtomContainerPtr) -> (ComponentResult _rv)")},
+	{"GraphicsImportSetExportSettingsFromAtomContainer", (PyCFunction)Qt_GraphicsImportSetExportSettingsFromAtomContainer, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, void * qtAtomContainer) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetImageCount", (PyCFunction)Qt_GraphicsImportGetImageCount, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, unsigned long imageCount)")},
+	{"GraphicsImportSetImageIndex", (PyCFunction)Qt_GraphicsImportSetImageIndex, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, unsigned long imageIndex) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetImageIndex", (PyCFunction)Qt_GraphicsImportGetImageIndex, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, unsigned long imageIndex)")},
+	{"GraphicsImportGetDataOffsetAndSize64", (PyCFunction)Qt_GraphicsImportGetDataOffsetAndSize64, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, wide offset, wide size)")},
+	{"GraphicsImportReadData64", (PyCFunction)Qt_GraphicsImportReadData64, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, void * dataPtr, wide dataOffset, unsigned long dataSize) -> (ComponentResult _rv)")},
+	{"GraphicsImportSetDataReferenceOffsetAndLimit64", (PyCFunction)Qt_GraphicsImportSetDataReferenceOffsetAndLimit64, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, wide offset, wide limit) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetDataReferenceOffsetAndLimit64", (PyCFunction)Qt_GraphicsImportGetDataReferenceOffsetAndLimit64, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, wide offset, wide limit)")},
+	{"GraphicsImportGetDefaultClip", (PyCFunction)Qt_GraphicsImportGetDefaultClip, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, RgnHandle defaultRgn)")},
+	{"GraphicsImportGetDefaultGraphicsMode", (PyCFunction)Qt_GraphicsImportGetDefaultGraphicsMode, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, long defaultGraphicsMode, RGBColor defaultOpColor)")},
+	{"GraphicsImportGetDefaultSourceRect", (PyCFunction)Qt_GraphicsImportGetDefaultSourceRect, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, Rect defaultSourceRect)")},
+	{"GraphicsImportGetColorSyncProfile", (PyCFunction)Qt_GraphicsImportGetColorSyncProfile, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, Handle profile)")},
+	{"GraphicsImportSetDestRect", (PyCFunction)Qt_GraphicsImportSetDestRect, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, Rect destRect) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetDestRect", (PyCFunction)Qt_GraphicsImportGetDestRect, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, Rect destRect)")},
+	{"GraphicsImportSetFlags", (PyCFunction)Qt_GraphicsImportSetFlags, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci, long flags) -> (ComponentResult _rv)")},
+	{"GraphicsImportGetFlags", (PyCFunction)Qt_GraphicsImportGetFlags, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, long flags)")},
+	{"GraphicsImportGetBaseDataOffsetAndSize64", (PyCFunction)Qt_GraphicsImportGetBaseDataOffsetAndSize64, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv, wide offset, wide size)")},
+	{"GraphicsImportSetImageIndexToThumbnail", (PyCFunction)Qt_GraphicsImportSetImageIndexToThumbnail, 1,
+	 PyDoc_STR("(GraphicsImportComponent ci) -> (ComponentResult _rv)")},
+	{"GraphicsExportDoExport", (PyCFunction)Qt_GraphicsExportDoExport, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, unsigned long actualSizeWritten)")},
+	{"GraphicsExportCanTranscode", (PyCFunction)Qt_GraphicsExportCanTranscode, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, Boolean canTranscode)")},
+	{"GraphicsExportDoTranscode", (PyCFunction)Qt_GraphicsExportDoTranscode, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv)")},
+	{"GraphicsExportCanUseCompressor", (PyCFunction)Qt_GraphicsExportCanUseCompressor, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, void * codecSettingsAtomContainerPtr) -> (ComponentResult _rv, Boolean canUseCompressor)")},
+	{"GraphicsExportDoUseCompressor", (PyCFunction)Qt_GraphicsExportDoUseCompressor, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, void * codecSettingsAtomContainer) -> (ComponentResult _rv, ImageDescriptionHandle outDesc)")},
+	{"GraphicsExportDoStandaloneExport", (PyCFunction)Qt_GraphicsExportDoStandaloneExport, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetDefaultFileTypeAndCreator", (PyCFunction)Qt_GraphicsExportGetDefaultFileTypeAndCreator, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, OSType fileType, OSType fileCreator)")},
+	{"GraphicsExportGetDefaultFileNameExtension", (PyCFunction)Qt_GraphicsExportGetDefaultFileNameExtension, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, OSType fileNameExtension)")},
+	{"GraphicsExportGetMIMETypeList", (PyCFunction)Qt_GraphicsExportGetMIMETypeList, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, void * qtAtomContainerPtr) -> (ComponentResult _rv)")},
+	{"GraphicsExportSetSettingsFromAtomContainer", (PyCFunction)Qt_GraphicsExportSetSettingsFromAtomContainer, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, void * qtAtomContainer) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetSettingsAsAtomContainer", (PyCFunction)Qt_GraphicsExportGetSettingsAsAtomContainer, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, void * qtAtomContainerPtr) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetSettingsAsText", (PyCFunction)Qt_GraphicsExportGetSettingsAsText, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, Handle theText)")},
+	{"GraphicsExportSetDontRecompress", (PyCFunction)Qt_GraphicsExportSetDontRecompress, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, Boolean dontRecompress) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetDontRecompress", (PyCFunction)Qt_GraphicsExportGetDontRecompress, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, Boolean dontRecompress)")},
+	{"GraphicsExportSetInterlaceStyle", (PyCFunction)Qt_GraphicsExportSetInterlaceStyle, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, unsigned long interlaceStyle) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetInterlaceStyle", (PyCFunction)Qt_GraphicsExportGetInterlaceStyle, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, unsigned long interlaceStyle)")},
+	{"GraphicsExportSetMetaData", (PyCFunction)Qt_GraphicsExportSetMetaData, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, void * userData) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetMetaData", (PyCFunction)Qt_GraphicsExportGetMetaData, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, void * userData) -> (ComponentResult _rv)")},
+	{"GraphicsExportSetTargetDataSize", (PyCFunction)Qt_GraphicsExportSetTargetDataSize, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, unsigned long targetDataSize) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetTargetDataSize", (PyCFunction)Qt_GraphicsExportGetTargetDataSize, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, unsigned long targetDataSize)")},
+	{"GraphicsExportSetCompressionMethod", (PyCFunction)Qt_GraphicsExportSetCompressionMethod, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, long compressionMethod) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetCompressionMethod", (PyCFunction)Qt_GraphicsExportGetCompressionMethod, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, long compressionMethod)")},
+	{"GraphicsExportSetCompressionQuality", (PyCFunction)Qt_GraphicsExportSetCompressionQuality, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, CodecQ spatialQuality) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetCompressionQuality", (PyCFunction)Qt_GraphicsExportGetCompressionQuality, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, CodecQ spatialQuality)")},
+	{"GraphicsExportSetResolution", (PyCFunction)Qt_GraphicsExportSetResolution, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, Fixed horizontalResolution, Fixed verticalResolution) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetResolution", (PyCFunction)Qt_GraphicsExportGetResolution, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, Fixed horizontalResolution, Fixed verticalResolution)")},
+	{"GraphicsExportSetDepth", (PyCFunction)Qt_GraphicsExportSetDepth, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, long depth) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetDepth", (PyCFunction)Qt_GraphicsExportGetDepth, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, long depth)")},
+	{"GraphicsExportSetColorSyncProfile", (PyCFunction)Qt_GraphicsExportSetColorSyncProfile, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, Handle colorSyncProfile) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetColorSyncProfile", (PyCFunction)Qt_GraphicsExportGetColorSyncProfile, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, Handle colorSyncProfile)")},
+	{"GraphicsExportSetInputDataReference", (PyCFunction)Qt_GraphicsExportSetInputDataReference, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, Handle dataRef, OSType dataRefType, ImageDescriptionHandle desc) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetInputDataReference", (PyCFunction)Qt_GraphicsExportGetInputDataReference, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, Handle dataRef, OSType dataRefType)")},
+	{"GraphicsExportSetInputFile", (PyCFunction)Qt_GraphicsExportSetInputFile, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, FSSpec theFile, ImageDescriptionHandle desc) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetInputFile", (PyCFunction)Qt_GraphicsExportGetInputFile, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, FSSpec theFile) -> (ComponentResult _rv)")},
+	{"GraphicsExportSetInputHandle", (PyCFunction)Qt_GraphicsExportSetInputHandle, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, Handle h, ImageDescriptionHandle desc) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetInputHandle", (PyCFunction)Qt_GraphicsExportGetInputHandle, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, Handle h)")},
+	{"GraphicsExportSetInputPtr", (PyCFunction)Qt_GraphicsExportSetInputPtr, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, Ptr p, unsigned long size, ImageDescriptionHandle desc) -> (ComponentResult _rv)")},
+	{"GraphicsExportSetInputGraphicsImporter", (PyCFunction)Qt_GraphicsExportSetInputGraphicsImporter, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, GraphicsImportComponent grip) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetInputGraphicsImporter", (PyCFunction)Qt_GraphicsExportGetInputGraphicsImporter, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, GraphicsImportComponent grip)")},
+	{"GraphicsExportSetInputPicture", (PyCFunction)Qt_GraphicsExportSetInputPicture, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, PicHandle picture) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetInputPicture", (PyCFunction)Qt_GraphicsExportGetInputPicture, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, PicHandle picture)")},
+	{"GraphicsExportSetInputGWorld", (PyCFunction)Qt_GraphicsExportSetInputGWorld, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, GWorldPtr gworld) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetInputGWorld", (PyCFunction)Qt_GraphicsExportGetInputGWorld, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, GWorldPtr gworld)")},
+	{"GraphicsExportSetInputPixmap", (PyCFunction)Qt_GraphicsExportSetInputPixmap, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, PixMapHandle pixmap) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetInputPixmap", (PyCFunction)Qt_GraphicsExportGetInputPixmap, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, PixMapHandle pixmap)")},
+	{"GraphicsExportSetInputOffsetAndLimit", (PyCFunction)Qt_GraphicsExportSetInputOffsetAndLimit, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, unsigned long offset, unsigned long limit) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetInputOffsetAndLimit", (PyCFunction)Qt_GraphicsExportGetInputOffsetAndLimit, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, unsigned long offset, unsigned long limit)")},
+	{"GraphicsExportMayExporterReadInputData", (PyCFunction)Qt_GraphicsExportMayExporterReadInputData, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, Boolean mayReadInputData)")},
+	{"GraphicsExportGetInputDataSize", (PyCFunction)Qt_GraphicsExportGetInputDataSize, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, unsigned long size)")},
+	{"GraphicsExportReadInputData", (PyCFunction)Qt_GraphicsExportReadInputData, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, void * dataPtr, unsigned long dataOffset, unsigned long dataSize) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetInputImageDescription", (PyCFunction)Qt_GraphicsExportGetInputImageDescription, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, ImageDescriptionHandle desc)")},
+	{"GraphicsExportGetInputImageDimensions", (PyCFunction)Qt_GraphicsExportGetInputImageDimensions, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, Rect dimensions)")},
+	{"GraphicsExportGetInputImageDepth", (PyCFunction)Qt_GraphicsExportGetInputImageDepth, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, long inputDepth)")},
+	{"GraphicsExportDrawInputImage", (PyCFunction)Qt_GraphicsExportDrawInputImage, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, CGrafPtr gw, GDHandle gd, Rect srcRect, Rect dstRect) -> (ComponentResult _rv)")},
+	{"GraphicsExportSetOutputDataReference", (PyCFunction)Qt_GraphicsExportSetOutputDataReference, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, Handle dataRef, OSType dataRefType) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetOutputDataReference", (PyCFunction)Qt_GraphicsExportGetOutputDataReference, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, Handle dataRef, OSType dataRefType)")},
+	{"GraphicsExportSetOutputFile", (PyCFunction)Qt_GraphicsExportSetOutputFile, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, FSSpec theFile) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetOutputFile", (PyCFunction)Qt_GraphicsExportGetOutputFile, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, FSSpec theFile) -> (ComponentResult _rv)")},
+	{"GraphicsExportSetOutputHandle", (PyCFunction)Qt_GraphicsExportSetOutputHandle, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, Handle h) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetOutputHandle", (PyCFunction)Qt_GraphicsExportGetOutputHandle, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, Handle h)")},
+	{"GraphicsExportSetOutputOffsetAndMaxSize", (PyCFunction)Qt_GraphicsExportSetOutputOffsetAndMaxSize, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, unsigned long offset, unsigned long maxSize, Boolean truncateFile) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetOutputOffsetAndMaxSize", (PyCFunction)Qt_GraphicsExportGetOutputOffsetAndMaxSize, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, unsigned long offset, unsigned long maxSize, Boolean truncateFile)")},
+	{"GraphicsExportSetOutputFileTypeAndCreator", (PyCFunction)Qt_GraphicsExportSetOutputFileTypeAndCreator, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, OSType fileType, OSType fileCreator) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetOutputFileTypeAndCreator", (PyCFunction)Qt_GraphicsExportGetOutputFileTypeAndCreator, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, OSType fileType, OSType fileCreator)")},
+	{"GraphicsExportSetOutputMark", (PyCFunction)Qt_GraphicsExportSetOutputMark, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, unsigned long mark) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetOutputMark", (PyCFunction)Qt_GraphicsExportGetOutputMark, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, unsigned long mark)")},
+	{"GraphicsExportReadOutputData", (PyCFunction)Qt_GraphicsExportReadOutputData, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, void * dataPtr, unsigned long dataOffset, unsigned long dataSize) -> (ComponentResult _rv)")},
+	{"GraphicsExportSetThumbnailEnabled", (PyCFunction)Qt_GraphicsExportSetThumbnailEnabled, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, Boolean enableThumbnail, long maxThumbnailWidth, long maxThumbnailHeight) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetThumbnailEnabled", (PyCFunction)Qt_GraphicsExportGetThumbnailEnabled, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, Boolean thumbnailEnabled, long maxThumbnailWidth, long maxThumbnailHeight)")},
+	{"GraphicsExportSetExifEnabled", (PyCFunction)Qt_GraphicsExportSetExifEnabled, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci, Boolean enableExif) -> (ComponentResult _rv)")},
+	{"GraphicsExportGetExifEnabled", (PyCFunction)Qt_GraphicsExportGetExifEnabled, 1,
+	 PyDoc_STR("(GraphicsExportComponent ci) -> (ComponentResult _rv, Boolean exifEnabled)")},
+	{"ImageTranscoderBeginSequence", (PyCFunction)Qt_ImageTranscoderBeginSequence, 1,
+	 PyDoc_STR("(ImageTranscoderComponent itc, ImageDescriptionHandle srcDesc, void * data, long dataSize) -> (ComponentResult _rv, ImageDescriptionHandle dstDesc)")},
+	{"ImageTranscoderDisposeData", (PyCFunction)Qt_ImageTranscoderDisposeData, 1,
+	 PyDoc_STR("(ImageTranscoderComponent itc, void * dstData) -> (ComponentResult _rv)")},
+	{"ImageTranscoderEndSequence", (PyCFunction)Qt_ImageTranscoderEndSequence, 1,
+	 PyDoc_STR("(ImageTranscoderComponent itc) -> (ComponentResult _rv)")},
 	{"AlignWindow", (PyCFunction)Qt_AlignWindow, 1,
 	 PyDoc_STR("(WindowPtr wp, Boolean front) -> None")},
 	{"DragAlignedWindow", (PyCFunction)Qt_DragAlignedWindow, 1,
