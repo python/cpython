@@ -690,12 +690,11 @@ subtype_dealloc(PyObject *self)
 		}
 	}
 
-	/* Finalize GC if the base doesn't do GC and we do */
-	_PyObject_GC_TRACK(self);
-	if (!PyType_IS_GC(base))
-		_PyObject_GC_UNTRACK(self);
-
-	/* Call the base tp_dealloc() */
+	/* Call the base tp_dealloc(); first retrack self if
+	 * basedealloc knows about gc.
+	 */
+	if (PyType_IS_GC(base))
+		_PyObject_GC_TRACK(self);
 	assert(basedealloc);
 	basedealloc(self);
 
