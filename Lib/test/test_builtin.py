@@ -377,6 +377,11 @@ class BuiltinTest(unittest.TestCase):
                 return weirdstr(2*str.__getitem__(self, index))
         self.assertEqual(filter(lambda x: x>="33", weirdstr("1234")), "3344")
 
+        class shiftstr(str):
+            def __getitem__(self, index):
+                return chr(ord(str.__getitem__(self, index))+1)
+        self.assertEqual(filter(lambda x: x>="3", shiftstr("1234")), "345")
+
         if have_unicode:
             # test bltinmodule.c::filterunicode()
             self.assertEqual(filter(None, unicode("12")), unicode("12"))
@@ -394,6 +399,14 @@ class BuiltinTest(unittest.TestCase):
                     return weirdunicode(2*unicode.__getitem__(self, index))
             self.assertEqual(
                 filter(lambda x: x>=unicode("33"), weirdunicode("1234")), unicode("3344"))
+
+            class shiftunicode(unicode):
+                def __getitem__(self, index):
+                    return unichr(ord(unicode.__getitem__(self, index))+1)
+            self.assertEqual(
+                filter(lambda x: x>=unicode("3"), shiftunicode("1234")),
+                unicode("345")
+            )
 
     def test_float(self):
         self.assertEqual(float(3.14), 3.14)
