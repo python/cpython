@@ -1,121 +1,87 @@
 from Tkinter import *
-import Pmw
 import string
+import re
 
-class TypeinWidget(Pmw.MegaWidget):
-    def __init__(self, parent=None, **kw):
-	options = (('color', (128, 128, 128), self.__set_color),
-		   ('delegate', None, None),
-		   )
-	self.__update = 1
-	self.defineoptions(kw, options)
+class TypeinViewer
+    def __init__(self, switchboard, parent=None):
+        # non-gui ivars
+        self.__sb = switchboard
+        self.__hexp = 0
+        self.__update_white_typing = 0
+        # create the gui
+        self.__frame = Frame(parent)
+        self.__frame.pack()
+        # Red
+        self.__xl = Label(self.__frame, text='Red:')
+        self.__xl.grid(row=0, column=0, sticky=E)
+        self.__x = Entry(self.__frame, width=4)
+        self.__x.grid(row=0, column=1)
+        self.__x.bindtags(self.__x.bindtags() + ('Normalize', 'Update'))
+        self.__x.bind_class('Normalize', '<Key>', self.__normalize)
+        self.__x.bind_class('Update'   , '<Key>', self.__update)
+        self.__x.bind('Return', self.__update)
+        self.__x.bind('Tab', self.__update)
+        # Green
+        self.__yl = Label(self.__frame, text='Green:')
+        self.__yl.grid(row=1, column=0, sticky=E)
+        self.__y = Entry(self.__frame, width=4)
+        self.__y.grid(row=1, column=1)
+        self.__y.bindtags(self.__y.bindtags() + ('Normalize', 'Update'))
+        self.__y.bind('Return', self.__update)
+        self.__y.bind('Tab', self.__update)
+        # Blue
+        self.__zl = Label(self.__frame, text='Blue:')
+        self.__zl.grid(row=2, column=0, sticky=E)
+        self.__z = Entry(self.__frame, width=4)
+        self.__z.grid(row=2, column=1)
+        self.__z.bindtags(self.__z.bindtags() + ('Normalize', 'Update'))
+        self.__z.bind('Return', self.__update)
+        self.__z.bind('Tab', self.__update)
 
-	Pmw.MegaWidget.__init__(self, parent)
-	interiorarg = (self.interior(),)
+    def __normalize(self, event=None):
+        ew = event.widget
+        contents = ew.get()
+        if contents == '':
+            contents = '0'
+        # figure out what the contents value is in the current base
+        try:
+            if self.__hexp:
+                v = string.atoi(contents, 16)
+            else:
+                v = string.atoi(contents)
+        except ValueError:
+            v = None
+        # if value is not legal, delete the last character and ring the bell
+        if v is None or v < 0 or v > 255:
+            contents = contents[:-1]
+            ew.bell()
+        elif self.__hexp:
+            contents = hex(v)
+        else:
+            contents = int(v)
+        ew.delete(0, END)
+        ew.insert(0, contents)
 
-	# create the x, y, and z label
-	self.__x = self.createcomponent(
-	    'x', (), None,
-	    Pmw.EntryField, interiorarg,
-	    label_text='Red',
-	    label_width=5,
-	    label_anchor=E,
-	    labelpos=W,
-	    maxwidth=4,
-	    entry_width=4,
-	    validate=self.__validate,
-	    modifiedcommand=self.__modified,
-	    command=self.__force_modify)
-	self.__x.grid(row=0, column=0)
+    def __update(self, event=None):
+        redstr = self.__x.get()
+        greenstr = self.__y.get()
+        bluestr = self.__z.get()
+        if self.__hexp:
+            red = string.atoi(redstr, 16)
+            green = string.atoi(greenstr, 16)
+            blue = string.atoi(bluestr, 16)
+        else:
+            red, green, blue = map(string.atoi, (redstr, greenstr, bluestr))
+        self.__sb.update_views(red, green, blue)
 
-	self.__y = self.createcomponent(
-	    'y', (), None,
-	    Pmw.EntryField, interiorarg,
-	    label_text='Green',
-	    label_width=5,
-	    label_anchor=E,
-	    labelpos=W,
-	    maxwidth=4,
-	    entry_width=4,
-	    validate=self.__validate,
-	    modifiedcommand=self.__modified,
-	    command=self.__force_modify)
-	self.__y.grid(row=1, column=0)
-
-	self.__z = self.createcomponent(
-	    'z', (), None,
-	    Pmw.EntryField, interiorarg,
-	    label_text='Blue',
-	    label_width=5,
-	    label_anchor=E,
-	    labelpos=W,
-	    maxwidth=4,
-	    entry_width=4,
-	    validate=self.__validate,
-	    modifiedcommand=self.__modified,
-	    command=self.__force_modify)
-	self.__z.grid(row=2, column=0)
-
-	# Check keywords and initialize options
-	self.initialiseoptions(TypeinWidget)
-
-    #
-    # PUBLIC INTERFACE
-    #
-
-    def set_color(self, obj, rgbtuple):
-	# break infloop
-	red, green, blue = rgbtuple
-	self.__x.setentry(`red`)
-	self.__y.setentry(`green`)
-	self.__z.setentry(`blue`)
-	if obj == self:
-	    return
-
-    def set_update_on_typing(self, flag):
-	self.__update = flag
-
-    #
-    # PRIVATE INTERFACE
-    #
-	 
-    # called to validate the entry text
-    def __str_to_int(self, text):
-	try:
-	    if text[:2] == '0x':
-		return string.atoi(text[2:], 16)
-	    else:
-		return string.atoi(text)
-	except:
-	    return None
-
-    def __validate(self, text):
-	val = self.__str_to_int(text)
-	if (val is not None) and (val >= 0) and (val < 256):
-	    return 1
-	else:
-	    return -1
-
-    # called whenever a text entry is modified
-    def __modified(self, force=None):
-	# these are guaranteed to be valid, right?
-	vals = []
-	for field in (self.__x, self.__y, self.__z):
-	    vals.append(field.get())
-	rgbs = tuple(map(self.__str_to_int, vals))
-	valids = map(self.__validate, vals)
-	delegate = self['delegate']
-	if ((force or self.__update) and
-	    (None not in rgbs) and
-	    (-1 not in valids) and
-	    delegate):
-	    #
-	    delegate.set_color(self, rgbs)
-
-    def __force_modify(self):
-	self.__modified(force=1)
-
-    # called whenever the color option is changed
-    def __set_color(self):
-	rgbtuple = self['color']
-	self.set_color(self, rgbtuple)
+    def update_yourself(self, red, green, blue):
+        if self.__hexp:
+            redstr, greenstr, bluestr = map(hex, (red, green, blue))
+        else:
+            redstr, greenstr, bluestr = map(int, (red, green, blue))
+        self.__x.delete(0, END)
+        self.__y.delete(0, END)
+        self.__z.delete(0, END)
+        self.__x.insert(0, redstr)
+        self.__y.insert(0, greenstr)
+        self.__z.insert(0, bluestr)
