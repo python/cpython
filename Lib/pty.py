@@ -175,3 +175,5 @@ def spawn(argv, master_read=_read, stdin_read=_read):
     except (IOError, OSError):
         if restore:
             tty.tcsetattr(STDIN_FILENO, tty.TCSAFLUSH, mode)
+
+    os.close(master_fd)
