@@ -48,6 +48,13 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "/usr/people/4Dgifts/iristools/include/izoom.h"
 
+/* Bunch of missing extern decls; keep gcc -Wall happy... */
+extern void i_seterror();
+extern void iclose();
+extern void filterzoom();
+extern void putrow();
+extern void getrow();
+
 static object * ImgfileError; /* Exception we raise for various trouble */
 
 static int top_to_bottom;	/* True if we want top-to-bottom images */
