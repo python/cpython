@@ -215,4 +215,27 @@ def AudioDev():
 			import sunaudiodev
 			return Play_Audio_sun()
 		except ImportError:
-			raise error, 'no audio device'
+			try:
+				import Audio_mac
+				return Audio_mac.Play_Audio_mac()
+			except ImportError:
+				raise error, 'no audio device'
+
+def test(fn = 'f:just samples:just.aif'):
+	import aifc
+	af = aifc.open(fn, 'r')
+	print fn, af.getparams()
+	p = AudioDev()
+	p.setoutrate(af.getframerate())
+	p.setsampwidth(af.getsampwidth())
+	p.setnchannels(af.getnchannels())
+	BUFSIZ = af.getframerate()/af.getsampwidth()/af.getnchannels()
+	while 1:
+		data = af.readframes(BUFSIZ)
+		if not data: break
+		print len(data)
+		p.writeframes(data)
+	p.wait()
+
+if __name__ == '__main__':
+	test()
