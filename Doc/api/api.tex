@@ -602,7 +602,7 @@ described following the functions which accept them as parameters.
   (console or terminal input or \UNIX{} pseudo-terminal), return the
   value of \cfunction{PyRun_InteractiveLoop()}, otherwise return the
   result of \cfunction{PyRun_SimpleFile()}.  If \var{filename} is
-  \NULL{}, this function uses \code{'???'} as the filename.
+  \NULL{}, this function uses \code{"???"} as the filename.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyRun_SimpleString}{char *command}
@@ -620,9 +620,22 @@ described following the functions which accept them as parameters.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyRun_InteractiveOne}{FILE *fp, char *filename}
+  Read and execute a single statement from a file associated with an
+  interactive device.  If \var{filename} is \NULL, \code{"???"} is
+  used instead.  The user will be prompted using \code{sys.ps1} and
+  \code{sys.ps2}.  Returns \code{0} when the input was executed
+  successfully, \code{-1} if there was an exception, or an error code
+  from the \file{errcode.h} include file distributed as part of Python
+  in case of a parse error.  (Note that \file{errcode.h} is not
+  included by \file{Python.h}, so must be included specifically if
+  needed.)
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyRun_InteractiveLoop}{FILE *fp, char *filename}
+  Read and execute statements from a file associated with an
+  interactive device until \EOF{} is reached.  If \var{filename} is
+  \NULL, \code{"???"} is used instead.  The user will be prompted
+  using \code{sys.ps1} and \code{sys.ps2}.  Returns \code{0} at \EOF.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{struct _node*}{PyParser_SimpleParseString}{char *str,
@@ -983,14 +996,19 @@ completeness, here are all the variables:
   \lineiii{PyExc_SystemExit}{\exception{SystemExit}}{}
   \lineiii{PyExc_TypeError}{\exception{TypeError}}{}
   \lineiii{PyExc_ValueError}{\exception{ValueError}}{}
+  \lineiii{PyExc_WindowsError}{\exception{WindowsError}}{(2)}
   \lineiii{PyExc_ZeroDivisionError}{\exception{ZeroDivisionError}}{}
 \end{tableiii}
 
 \noindent
-Note:
+Notes:
 \begin{description}
 \item[(1)]
   This is a base class for other standard exceptions.
+
+\item[(2)]
+  Only defined on Windows; protect code that uses this by testing that
+  the preprocessor macro \code{MS_WINDOWS} is defined.
 \end{description}
 
 
