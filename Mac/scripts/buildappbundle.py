@@ -10,7 +10,7 @@ Usage:
   buildappbundle [options] executable
 Options:
   --output o    Output file; default executable with .app appended, short -o
-  --link        Symlink files instead of copying them, short -l
+  --link        Symlink the executable instead of copying it, short -l
   --plist file  Plist file (default: generate one), short -p
   --nib file    Main nib file or lproj folder for Cocoa program, short -n
   --resource r  Extra resource file to be copied to Resources, short -r
@@ -77,7 +77,7 @@ def main():
 
 	builder = AppBuilder(name=bundlename, executable=executable,
 		builddir=builddir, creator=creator, plist=plist, resources=resources,
-		symlink=symlink, verbosity=verbosity)
+		symlink_exec=symlink, verbosity=verbosity)
 
 	if nib is not None:
 		resources.append(nib)
