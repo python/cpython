@@ -68,6 +68,10 @@ extern "C" {
 #include "Python.h"
 #include <signal.h>
 
+#if defined(__FreeBSD__)
+#  include <ieeefp.h>
+#endif
+
 #ifndef WANT_SIGFPE_HANDLER
 /* Define locally if they are not defined in Python.  This gives only
  * the limited control to induce a core dump in case of an exception.
@@ -178,6 +182,12 @@ static void fpe_reset(Sigfunc *handler)
 #endif
     signal(SIGFPE, handler);
 
+/*-- FreeBSD ----------------------------------------------------------------*/
+#elif defined(__FreeBSD__)
+    fpresetsticky( fpgetsticky() );
+    fpsetmask( FP_X_INV | FP_X_DZ | FP_X_OFL );
+    signal( SIGFPE, handler );
+
 /*-- Linux ----------------------------------------------------------------*/
 #elif defined(linux)
 #ifdef __GLIBC__
@@ -212,7 +222,12 @@ static void fpe_reset(Sigfunc *handler)
 
 static PyObject *turnoff_sigfpe(PyObject *self,PyObject *args)
 {
+#ifdef __FreeBSD__
+    fpresetsticky( fpgetsticky() );
+    fpsetmask( 0 );
+#else
     fputs("Operation not implemented\n", stderr);
+#endif
     Py_INCREF (Py_None);
     return Py_None;
 }
