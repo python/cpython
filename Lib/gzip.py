@@ -19,6 +19,8 @@ def write32(output, value):
     output.write(struct.pack("<l", value))
 
 def write32u(output, value):
+    if value < 0:
+        value = value + 0x100000000L
     output.write(struct.pack("<L", value))
 
 def read32(input):
