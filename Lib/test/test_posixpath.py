@@ -29,9 +29,9 @@ tester('posixpath.isabs("/foo/bar")', 1)
 tester('posixpath.isabs("foo/bar")', 0)
 
 tester('posixpath.commonprefix(["/home/swenson/spam", "/home/swen/spam"])',
-       "/home")
-tester('posixpath.commonprefix(["/home/swen/spam", "/home/swen/eggs"])',
        "/home/swen")
+tester('posixpath.commonprefix(["/home/swen/spam", "/home/swen/eggs"])',
+       "/home/swen/")
 tester('posixpath.commonprefix(["/home/swen/spam", "/home/swen/spam"])',
        "/home/swen/spam")
 
