@@ -1,7 +1,5 @@
 """Guess which db package to use to open a db file."""
 
-import struct
-
 def whichdb(filename):
     """Guess which db package to use to open a db file.
 
@@ -14,6 +12,8 @@ def whichdb(filename):
     Importing the given module may still fail, and opening the
     database using that module may still fail.
     """
+
+    import struct
 
     # Check for dbm first -- this has a .pag and a .dir file
     try:
