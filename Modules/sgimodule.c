@@ -26,6 +26,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 #include "modsupport.h"
+#include "ceval.h"
 
 extern int sginap(long);
 
@@ -37,7 +38,9 @@ sgi_nap(self, args)
 	long ticks;
 	if (!getargs(args, "l", &ticks))
 		return NULL;
+	BGN_SAVE
 	sginap(ticks);
+	END_SAVE
 	INCREF(None);
 	return None;
 }
