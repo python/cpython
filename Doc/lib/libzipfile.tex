@@ -111,14 +111,14 @@ cat myzip.zip >> python.exe
   member \var{name}.
 \end{methoddesc}
 
-\begin{methoddesc}{namelist}{}
-  Return a list of archive members by name.
-\end{methoddesc}
-
 \begin{methoddesc}{infolist}{}
   Return a list containing a \class{ZipInfo} object for each member of
   the archive.  The objects are in the same order as their entries in
   the actual ZIP file on disk if an existing archive was opened.
+\end{methoddesc}
+
+\begin{methoddesc}{namelist}{}
+  Return a list of archive members by name.
 \end{methoddesc}
 
 \begin{methoddesc}{printdir}{}
