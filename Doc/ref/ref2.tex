@@ -353,24 +353,24 @@ are generally referred to as \emph{triple-quoted strings}).  The
 backslash (\code{\e}) character is used to escape characters that
 otherwise have a special meaning, such as newline, backslash itself,
 or the quote character.  String literals may optionally be prefixed
-with a letter `r' or `R'; such strings are called \dfn{raw
-strings}\index{raw string} and use different rules for interpreting
-backslash escape sequences.  A prefix of 'u' or 'U' makes the string
-a Unicode string.  Unicode strings use the Unicode character set as
-defined by the Unicode Consortium and ISO~10646.  Some additional
-escape sequences, described below, are available in Unicode strings.
-The two prefix characters may be combined; in this case, `u' must
-appear before `r'.
+with a letter \character{r} or \character{R}; such strings are called
+\dfn{raw strings}\index{raw string} and use different rules for
+interpreting backslash escape sequences.  A prefix of \character{u} or
+\character{U} makes the string a Unicode string.  Unicode strings use
+the Unicode character set as defined by the Unicode Consortium and
+ISO~10646.  Some additional escape sequences, described below, are
+available in Unicode strings.  The two prefix characters may be
+combined; in this case, \character{u} must appear before
+\character{r}.
 
-In triple-quoted strings,
-unescaped newlines and quotes are allowed (and are retained), except
-that three unescaped quotes in a row terminate the string.  (A
-``quote'' is the character used to open the string, i.e. either
-\code{'} or \code{"}.)
+In triple-quoted strings, unescaped newlines and quotes are allowed
+(and are retained), except that three unescaped quotes in a row
+terminate the string.  (A ``quote'' is the character used to open the
+string, i.e. either \code{'} or \code{"}.)
 
-Unless an `r' or `R' prefix is present, escape sequences in strings
-are interpreted according to rules similar
-to those used by Standard C.  The recognized escape sequences are:
+Unless an \character{r} or \character{R} prefix is present, escape
+sequences in strings are interpreted according to rules similar to
+those used by Standard C.  The recognized escape sequences are:
 \index{physical line}
 \index{escape sequence}
 \index{Standard C}
@@ -409,28 +409,29 @@ important to note that the escape sequences marked as ``(Unicode
 only)'' in the table above fall into the category of unrecognized
 escapes for non-Unicode string literals.
 
-When an `r' or `R' prefix is present, a character following a
-backslash is included in the string without change, and \emph{all
-backslashes are left in the string}.  For example, the string literal
-\code{r"\e n"} consists of two characters: a backslash and a lowercase
-`n'.  String quotes can be escaped with a backslash, but the backslash
-remains in the string; for example, \code{r"\e""} is a valid string
-literal consisting of two characters: a backslash and a double quote;
-\code{r"\e"} is not a valid string literal (even a raw string cannot
-end in an odd number of backslashes).  Specifically, \emph{a raw
-string cannot end in a single backslash} (since the backslash would
-escape the following quote character).  Note also that a single
-backslash followed by a newline is interpreted as those two characters
-as part of the string, \emph{not} as a line continuation.
+When an \character{r} or \character{R} prefix is present, a character
+following a backslash is included in the string without change, and
+\emph{all backslashes are left in the string}.  For example, the
+string literal \code{r"\e n"} consists of two characters: a backslash
+and a lowercase `n'.  String quotes can be escaped with a backslash,
+but the backslash remains in the string; for example, \code{r"\e""} is
+a valid string literal consisting of two characters: a backslash and a
+double quote; \code{r"\e"} is not a valid string literal (even a raw
+string cannot end in an odd number of backslashes).  Specifically,
+\emph{a raw string cannot end in a single backslash} (since the
+backslash would escape the following quote character).  Note also that
+a single backslash followed by a newline is interpreted as those two
+characters as part of the string, \emph{not} as a line continuation.
 
-When an `r' or `R' prefix is used in conjunction with a `u' or `U'
-prefix, then the \uXXXX escape sequence is processed while \emph{all other
-backslashes are left in the string}.  For example, the string literal
-\code{ur"\u0062\n"} consists of three Unicode characters:
+When an \character{r} or \character{R} prefix is used in conjunction
+with a \character{u} or \character{U} prefix, then the \code{\e uXXXX}
+escape sequence is processed while \emph{all other backslashes are
+left in the string}.  For example, the string literal
+\code{ur"\e u0062\e n"} consists of three Unicode characters:
 `LATIN SMALL LETTER B', `REVERSE SOLIDUS', and `LATIN SMALL LETTER N'.
 Backslashes can be escaped with a preceding backslash; however, both
-remain in the string.  As a result, \uXXXX escape sequences are
-only recognized when there are an odd number of backslashes.
+remain in the string.  As a result, \code{\e uXXXX} escape sequences
+are only recognized when there are an odd number of backslashes.
 
 \subsection{String literal concatenation\label{string-catenation}}
 
