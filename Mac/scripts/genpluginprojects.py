@@ -40,9 +40,9 @@ def genpluginproject(architecture, module,
 		# For the time being we generate two project files. Not as nice as
 		# a single multitarget project, but easier to implement for now.
 		genpluginproject("ppc", module, project, projectdir, sources, sourcedirs,
-				libraries, extradirs, extraexportsymbols)
+				libraries, extradirs, extraexportsymbols, outputdir)
 		genpluginproject("carbon", module, project, projectdir, sources, sourcedirs,
-				libraries, extradirs, extraexportsymbols)
+				libraries, extradirs, extraexportsymbols, outputdir)
 		return
 	templatename = "template-%s" % architecture
 	targetname = "%s.%s" % (module, architecture)
@@ -123,7 +123,7 @@ def	genallprojects(force=0):
 	genpluginproject("all", "Evt", outputdir="::Lib:Carbon")
 	genpluginproject("all", "Fm", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "Help", outputdir="::Lib:Carbon")
-	genpluginproject("ppc", "Icn", libraries=["IconServicesLib"])
+	genpluginproject("ppc", "Icn", libraries=["IconServicesLib"], outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "Icn", outputdir="::Lib:Carbon")
 	genpluginproject("all", "List", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "Menu", outputdir="::Lib:Carbon")
