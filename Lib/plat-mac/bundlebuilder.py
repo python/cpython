@@ -310,6 +310,9 @@ PYTHONFRAMEWORKGOODIES = [
     "Resources/version.plist",
 ]
 
+def isFramework():
+    return sys.exec_prefix.find("Python.framework") > 0
+
 
 LIB = os.path.join(sys.prefix, "lib", "python" + sys.version[:3])
 SITE_PACKAGES = os.path.join(LIB, "site-packages")
@@ -400,7 +403,7 @@ class AppBuilder(BundleBuilder):
             self.name += ".app"
 
         if self.executable is None:
-            if not self.standalone:
+            if not self.standalone and not isFramework():
                 self.symlink_exec = 1
             self.executable = sys.executable
 
@@ -409,7 +412,7 @@ class AppBuilder(BundleBuilder):
             if not hasattr(self.plist, "NSPrincipalClass"):
                 self.plist.NSPrincipalClass = "NSApplication"
 
-        if self.standalone and "Python.framework" in sys.exec_prefix:
+        if self.standalone and isFramework():
             self.addPythonFramework()
 
         BundleBuilder.setup(self)
@@ -619,16 +622,13 @@ class AppBuilder(BundleBuilder):
             if path and mod.__code__ is None:
                 # C extension
                 filename = os.path.basename(path)
-                dstpath = name.split(".")[:-1] + [filename]
-                if name != "zlib":
-                    # put all extension module in a separate folder
-                    # inside Contents/Resources/
-                    dstpath = pathjoin("ExtensionModules", *dstpath)
-                else:
-                    # zlib is neccesary for bootstrapping, so don't
-                    # hide it in "ExtensionModules"
-                    dstpath = pathjoin(*dstpath)
+                pathitems = name.split(".")[:-1] + [filename]
+                dstpath = pathjoin(*pathitems)
                 if USE_ZIPIMPORT:
+                    if name != "zlib":
+                        # neatly pack all extension modules in a subdirectory,
+                        # except zlib, since it's neccesary for bootstrapping.
+                        dstpath = pathjoin("ExtensionModules", dstpath)
                     # Python modules are stored in a Zip archive, but put
                     # extensions in Contents/Resources/. Add a tiny "loader"
                     # program in the Zip archive. Due to Thomas Heller.
