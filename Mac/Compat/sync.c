@@ -5,13 +5,13 @@
 
 #include "macdefs.h"
 
-int
+void
 sync(void)
 {
 	if (FlushVol((StringPtr)0, 0) == noErr)
-		return 0;
+		return;
 	else {
 		errno= ENODEV;
-		return -1;
+		return;
 	}
 }
