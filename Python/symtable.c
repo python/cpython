@@ -85,10 +85,11 @@ ste_repr(PySymtableEntryObject *ste)
 {
 	char buf[256];
 
-	sprintf(buf, "<symtable entry %.100s(%ld), line %d>",
-		PyString_AS_STRING(ste->ste_name),
-		PyInt_AS_LONG(ste->ste_id),
-		ste->ste_lineno);
+	PyOS_snprintf(buf, sizeof(buf),
+		      "<symtable entry %.100s(%ld), line %d>",
+		      PyString_AS_STRING(ste->ste_name),
+		      PyInt_AS_LONG(ste->ste_id),
+		      ste->ste_lineno);
 	return PyString_FromString(buf);
 }
 
