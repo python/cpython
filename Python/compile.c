@@ -435,6 +435,13 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 	unsigned int *blocks;
 	char *name;
 
+	/* Bypass optimization when the lineno table is too complex */
+	assert(PyString_Check(lineno_obj));
+	lineno = PyString_AS_STRING(lineno_obj);
+	tabsiz = PyString_GET_SIZE(lineno_obj);
+	if (memchr(lineno, 255, tabsiz) != NULL)
+		goto exitUnchanged;
+
 	if (!PyString_Check(code))
 		goto exitUnchanged;
 
@@ -614,15 +621,12 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 	}
 
 	/* Fixup linenotab */
-	/* XXX make sure this handles intervals > 256 */
-	assert(PyString_Check(lineno_obj));
-	lineno = PyString_AS_STRING(lineno_obj);
-	tabsiz = PyString_GET_SIZE(lineno_obj);
 	cum_orig_line = 0;
 	last_line = 0;
 	for (i=0 ; i < tabsiz ; i+=2) {
 		cum_orig_line += lineno[i];
 		new_line = addrmap[cum_orig_line];
+		assert (new_line - last_line < 255);
 		lineno[i] =((unsigned char)(new_line - last_line));
 		last_line = new_line;
 	}
