@@ -192,6 +192,7 @@ def main():
 	except Res.Error:
 		pass	# Assume we already have acces to our own resource
 	
+	MacOS.SchedParams(1, 0)
 	if len(sys.argv) <= 1:
 		edit_preferences()
 	else:
