@@ -11,7 +11,11 @@ int getrusage(int who, struct rusage *rusage);
 #endif
 
 #ifndef getpagesize
+#ifdef linux
+extern size_t getpagesize(void);
+#else
 int getpagesize(void);
+#endif
 #endif
 
 #define doubletime(TV) ((double)(TV).tv_sec + (TV).tv_usec * 0.000001)
