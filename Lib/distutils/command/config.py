@@ -148,10 +148,13 @@ class config (Command):
                libraries, library_dirs, lang):
         (src, obj) = self._compile(body, headers, include_dirs, lang)
         prog = os.path.splitext(os.path.basename(src))[0] 
-        self.temp_files.append(prog)    # XXX should be prog + exe_ext
         self.compiler.link_executable([obj], prog,
                                       libraries=libraries,
                                       library_dirs=library_dirs)
+
+        prog = prog + self.compiler.exe_extension
+        self.temp_files.append(prog)
+
         return (src, obj, prog)
 
     def _clean (self, *filenames):
