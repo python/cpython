@@ -181,7 +181,7 @@ class build_py (Command):
 
         # Either not in a package at all (__init__.py not expected), or
         # __init__.py doesn't exist -- so don't return the filename.
-        return
+        return None
 
     # check_package ()
 
