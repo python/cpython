@@ -187,7 +187,7 @@ class bdist_wininst (Command):
         lines.append("title=%s" % repr(title)[1:-1])
         import time
         import distutils
-        build_info = "Build %s with distutils-%s" % \
+        build_info = "Built %s with distutils-%s" % \
                      (time.ctime(time.time()), distutils.__version__)
         lines.append("build_info=%s" % build_info)
         return string.join(lines, "\n")
