@@ -380,7 +380,6 @@ def edit_applet(name):
 	if notfound:
 		message('Warning: initial %s taken from system-wide defaults'%notfound)
 	# Let the user play away
-	print 'DBG interaction'
 	result = interact(l, fss, (options, creator, type, delaycons), name)
 	
 	# See what we have to update, and how
