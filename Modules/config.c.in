@@ -20,8 +20,8 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 /* -- ADDMODULE MARKER 1 -- */
 
-extern void PyMarshal_Init();
-extern void initimp();
+extern void PyMarshal_Init(void);
+extern void initimp(void);
 
 struct _inittab _PyImport_Inittab[] = {
 

@@ -23,7 +23,7 @@
 # Copying config.c.in to config.c:
 # - insert an identifying comment at the start
 # - for each <module> mentioned in Setup before *noconfig*:
-#   + insert 'extern void init<module>();' before MARKER 1
+#   + insert 'extern void init<module>(void);' before MARKER 1
 #   + insert '{"<module>", initmodule},' before MARKER 2
 #
 # Copying Makefile.pre to Makefile:
@@ -234,7 +234,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	INITBITS=
 	for mod in $MODS
 	do
-		EXTDECLS="${EXTDECLS}extern void init$mod();$NL"
+		EXTDECLS="${EXTDECLS}extern void init$mod(void);$NL"
 		INITBITS="${INITBITS}	{\"$mod\", init$mod},$NL"
 	done
 
