@@ -1313,20 +1313,27 @@ class TestDateTime(TestDate):
         self.assertRaises(ValueError, base.replace, year=2001)
 
     def test_astimezone(self):
-        # Pretty boring!  The TZ test is more interesting here.
+        # Pretty boring!  The TZ test is more interesting here.  astimezone()
+        # simply can't be applied to a naive object.
         dt = self.theclass.now()
         f = FixedOffset(44, "")
-        for dtz in dt.astimezone(f), dt.astimezone(tz=f):
-            self.failUnless(isinstance(dtz, datetime))
-            self.assertEqual(dt.date(), dtz.date())
-            self.assertEqual(dt.time(), dtz.time())
-            self.failUnless(dtz.tzinfo is f)
-            self.assertEqual(dtz.utcoffset(), timedelta(minutes=44))
-
         self.assertRaises(TypeError, dt.astimezone) # not enough args
         self.assertRaises(TypeError, dt.astimezone, f, f) # too many args
         self.assertRaises(TypeError, dt.astimezone, dt) # arg wrong type
+        self.assertRaises(ValueError, dt.astimezone, f) # naive
+        self.assertRaises(ValueError, dt.astimezone, tz=f)  # naive
 
+        class Bogus(tzinfo):
+            def utcoffset(self, dt): return None
+            def dst(self, dt): return timedelta(0)
+        bog = Bogus()
+        self.assertRaises(ValueError, dt.astimezone, bog)   # naive
+
+        class AlsoBogus(tzinfo):
+            def utcoffset(self, dt): return timedelta(0)
+            def dst(self, dt): return None
+        alsobog = AlsoBogus()
+        self.assertRaises(ValueError, dt.astimezone, alsobog) # also naive
 
 class TestTime(unittest.TestCase):
 
@@ -2443,17 +2450,11 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
 
         dt = self.theclass.now(tzinfo=f44m)
         self.failUnless(dt.tzinfo is f44m)
-        # Replacing with degenerate tzinfo doesn't do any adjustment.
-        for x in dt.astimezone(fnone), dt.astimezone(tz=fnone):
-            self.failUnless(x.tzinfo is fnone)
-            self.assertEqual(x.date(), dt.date())
-            self.assertEqual(x.time(), dt.time())
-        # Ditt with None tz.
-        x = dt.astimezone(tz=None)
-        self.failUnless(x.tzinfo is None)
-        self.assertEqual(x.date(), dt.date())
-        self.assertEqual(x.time(), dt.time())
-        # Ditto replacing with same tzinfo.
+        # Replacing with degenerate tzinfo raises an exception.
+        self.assertRaises(ValueError, dt.astimezone, fnone)
+        # Ditto with None tz.
+        self.assertRaises(TypeError, dt.astimezone, None)
+        # Replacing with same tzinfo makes no change.
         x = dt.astimezone(dt.tzinfo)
         self.failUnless(x.tzinfo is f44m)
         self.assertEqual(x.date(), dt.date())
@@ -2603,7 +2604,7 @@ class USTimeZone(tzinfo):
 
         # Can't compare naive to aware objects, so strip the timezone from
         # dt first.
-        if start <= dt.astimezone(None) < end:
+        if start <= dt.replace(tzinfo=None) < end:
             return HOUR
         else:
             return ZERO
@@ -2630,8 +2631,6 @@ class TestTimezoneConversions(unittest.TestCase):
 
         # Conversion to our own timezone is always an identity.
         self.assertEqual(dt.astimezone(tz), dt)
-        # Conversion to None is always the same as stripping tzinfo.
-        self.assertEqual(dt.astimezone(None), dt.replace(tzinfo=None))
 
         asutc = dt.astimezone(utc)
         there_and_back = asutc.astimezone(tz)
@@ -2684,8 +2683,11 @@ class TestTimezoneConversions(unittest.TestCase):
 
         # Conversion to our own timezone is always an identity.
         self.assertEqual(dt.astimezone(tz), dt)
-        # Conversion to None is always the same as stripping tzinfo.
-        self.assertEqual(dt.astimezone(None), dt.replace(tzinfo=None))
+
+        # Converting to UTC and back is an identity too.
+        asutc = dt.astimezone(utc)
+        there_and_back = asutc.astimezone(tz)
+        self.assertEqual(dt, there_and_back)
 
     def convert_between_tz_and_utc(self, tz, utc):
         dston = self.dston.replace(tzinfo=tz)
@@ -2737,7 +2739,7 @@ class TestTimezoneConversions(unittest.TestCase):
         # 22:00 on day before daylight starts.
         fourback = self.dston - timedelta(hours=4)
         ninewest = FixedOffset(-9*60, "-0900", 0)
-        fourback = fourback.astimezone(ninewest)
+        fourback = fourback.replace(tzinfo=ninewest)
         # 22:00-0900 is 7:00 UTC == 2:00 EST == 3:00 DST.  Since it's "after
         # 2", we should get the 3 spelling.
         # If we plug 22:00 the day before into Eastern, it "looks like std
@@ -2746,17 +2748,17 @@ class TestTimezoneConversions(unittest.TestCase):
         # local clock jumps from 1 to 3).  The point here is to make sure we
         # get the 3 spelling.
         expected = self.dston.replace(hour=3)
-        got = fourback.astimezone(Eastern).astimezone(None)
+        got = fourback.astimezone(Eastern).replace(tzinfo=None)
         self.assertEqual(expected, got)
 
         # Similar, but map to 6:00 UTC == 1:00 EST == 2:00 DST.  In that
         # case we want the 1:00 spelling.
-        sixutc = self.dston.replace(hour=6).astimezone(utc_real)
+        sixutc = self.dston.replace(hour=6, tzinfo=utc_real)
         # Now 6:00 "looks like daylight", so the offset wrt Eastern is -4,
         # and adding -4-0 == -4 gives the 2:00 spelling.  We want the 1:00 EST
         # spelling.
         expected = self.dston.replace(hour=1)
-        got = sixutc.astimezone(Eastern).astimezone(None)
+        got = sixutc.astimezone(Eastern).replace(tzinfo=None)
         self.assertEqual(expected, got)
 
         # Now on the day DST ends, we want "repeat an hour" behavior.
@@ -2797,6 +2799,66 @@ class TestTimezoneConversions(unittest.TestCase):
         class notok(ok):
             def dst(self, dt): return None
         self.assertRaises(ValueError, now.astimezone, notok())
+
+    def test_fromutc(self):
+        self.assertRaises(TypeError, Eastern.fromutc)   # not enough args
+        now = datetime.utcnow().replace(tzinfo=utc_real)
+        self.assertRaises(ValueError, Eastern.fromutc, now) # wrong tzinfo
+        now = now.replace(tzinfo=Eastern)   # insert correct tzinfo
+        enow = Eastern.fromutc(now)         # doesn't blow up
+        self.assertEqual(enow.tzinfo, Eastern) # has right tzinfo member
+        self.assertRaises(TypeError, Eastern.fromutc, now, now) # too many args
+        self.assertRaises(TypeError, Eastern.fromutc, date.today()) # wrong type
+
+        # Always converts UTC to standard time.
+        class FauxUSTimeZone(USTimeZone):
+            def fromutc(self, dt):
+                return dt + self.stdoffset
+        FEastern  = FauxUSTimeZone(-5, "FEastern",  "FEST", "FEDT")
+
+        #  UTC  4:MM  5:MM  6:MM  7:MM  8:MM  9:MM
+        #  EST 23:MM  0:MM  1:MM  2:MM  3:MM  4:MM
+        #  EDT  0:MM  1:MM  2:MM  3:MM  4:MM  5:MM
+
+        # Check around DST start.
+        start = self.dston.replace(hour=4, tzinfo=Eastern)
+        fstart = start.replace(tzinfo=FEastern)
+        for wall in 23, 0, 1, 3, 4, 5:
+            expected = start.replace(hour=wall)
+            if wall == 23:
+                expected -= timedelta(days=1)
+            got = Eastern.fromutc(start)
+            self.assertEqual(expected, got)
+
+            expected = fstart + FEastern.stdoffset
+            got = FEastern.fromutc(fstart)
+            self.assertEqual(expected, got)
+
+            # Ensure astimezone() calls fromutc() too.
+            got = fstart.replace(tzinfo=utc_real).astimezone(FEastern)
+            self.assertEqual(expected, got)
+
+            start += HOUR
+            fstart += HOUR
+
+        # Check around DST end.
+        start = self.dstoff.replace(hour=4, tzinfo=Eastern)
+        fstart = start.replace(tzinfo=FEastern)
+        for wall in 0, 1, 1, 2, 3, 4:
+            expected = start.replace(hour=wall)
+            got = Eastern.fromutc(start)
+            self.assertEqual(expected, got)
+
+            expected = fstart + FEastern.stdoffset
+            got = FEastern.fromutc(fstart)
+            self.assertEqual(expected, got)
+
+            # Ensure astimezone() calls fromutc() too.
+            got = fstart.replace(tzinfo=utc_real).astimezone(FEastern)
+            self.assertEqual(expected, got)
+
+            start += HOUR
+            fstart += HOUR
 
 
 def test_suite():

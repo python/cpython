@@ -2725,22 +2725,104 @@ tzinfo_nogo(const char* methodname)
 
 /* Methods.  A subclass must implement these. */
 
-static PyObject*
+static PyObject *
 tzinfo_tzname(PyDateTime_TZInfo *self, PyObject *dt)
 {
 	return tzinfo_nogo("tzname");
 }
 
-static PyObject*
+static PyObject *
 tzinfo_utcoffset(PyDateTime_TZInfo *self, PyObject *dt)
 {
 	return tzinfo_nogo("utcoffset");
 }
 
-static PyObject*
+static PyObject *
 tzinfo_dst(PyDateTime_TZInfo *self, PyObject *dt)
 {
 	return tzinfo_nogo("dst");
+}
+
+static PyObject *
+tzinfo_fromutc(PyDateTime_TZInfo *self, PyDateTime_DateTime *dt)
+{
+	int y, m, d, hh, mm, ss, us;
+
+	PyObject *result;
+	int off, dst;
+	int none;
+	int delta;
+
+	if (! PyDateTime_Check(dt)) {
+		PyErr_SetString(PyExc_TypeError,
+				"fromutc: argument must be a datetime");
+		return NULL;
+	}
+	if (! HASTZINFO(dt) || dt->tzinfo != (PyObject *)self) {
+	    	PyErr_SetString(PyExc_ValueError, "fromutc: dt.tzinfo "
+	    			"is not self");
+	    	return NULL;
+	}
+
+	off = call_utcoffset(dt->tzinfo, (PyObject *)dt, &none);
+	if (off == -1 && PyErr_Occurred())
+		return NULL;
+	if (none) {
+		PyErr_SetString(PyExc_ValueError, "fromutc: non-None "
+				"utcoffset() result required");
+		return NULL;
+	}
+
+	dst = call_dst(dt->tzinfo, (PyObject *)dt, &none);
+	if (dst == -1 && PyErr_Occurred())
+		return NULL;
+	if (none) {
+		PyErr_SetString(PyExc_ValueError, "fromutc: non-None "
+				"dst() result required");
+		return NULL;
+	}
+
+	y = GET_YEAR(dt);
+	m = GET_MONTH(dt);
+	d = GET_DAY(dt);
+	hh = DATE_GET_HOUR(dt);
+	mm = DATE_GET_MINUTE(dt);
+	ss = DATE_GET_SECOND(dt);
+	us = DATE_GET_MICROSECOND(dt);
+
+	delta = off - dst;
+	mm += delta;
+	if ((mm < 0 || mm >= 60) &&
+	    normalize_datetime(&y, &m, &d, &hh, &mm, &ss, &us) < 0)
+		goto Fail;
+	result = new_datetime(y, m, d, hh, mm, ss, us, dt->tzinfo);
+	if (result == NULL)
+		return result;
+
+	dst = call_dst(dt->tzinfo, result, &none);
+	if (dst == -1 && PyErr_Occurred())
+		goto Fail;
+	if (none)
+		goto Inconsistent;
+	if (dst == 0)
+		return result;
+
+	mm += dst;
+	if ((mm < 0 || mm >= 60) &&
+	    normalize_datetime(&y, &m, &d, &hh, &mm, &ss, &us) < 0)
+		goto Fail;
+	Py_DECREF(result);
+	result = new_datetime(y, m, d, hh, mm, ss, us, dt->tzinfo);
+	return result;
+
+Inconsistent:
+	PyErr_SetString(PyExc_ValueError, "fromutc: tz.dst() gave"
+			"inconsistent results; cannot convert");
+
+	/* fall thru to failure */
+Fail:
+	Py_DECREF(result);
+	return NULL;
 }
 
 /*
@@ -2771,6 +2853,9 @@ static PyMethodDef tzinfo_methods[] = {
 
 	{"dst",		(PyCFunction)tzinfo_dst,		METH_O,
 	 PyDoc_STR("datetime -> DST offset in minutes east of UTC.")},
+
+	{"fromutc",	(PyCFunction)tzinfo_fromutc,		METH_O,
+	 PyDoc_STR("datetime in UTC -> datetime in local time.")},
 
 	{NULL, NULL}
 };
@@ -4036,109 +4121,59 @@ datetime_replace(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 static PyObject *
 datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 {
-	int y = GET_YEAR(self);
-	int m = GET_MONTH(self);
-	int d = GET_DAY(self);
-	int hh = DATE_GET_HOUR(self);
-	int mm = DATE_GET_MINUTE(self);
-	int ss = DATE_GET_SECOND(self);
-	int us = DATE_GET_MICROSECOND(self);
-
+	int y, m, d, hh, mm, ss, us;
 	PyObject *result;
-	PyObject *temp;
-	int selfoff, resoff, dst1;
-	int none;
-	int delta;
+	int offset, none;
 
 	PyObject *tzinfo;
 	static char *keywords[] = {"tz", NULL};
 
-	if (! PyArg_ParseTupleAndKeywords(args, kw, "O:astimezone", keywords,
-					  &tzinfo))
-		return NULL;
-	if (check_tzinfo_subclass(tzinfo) < 0)
+	if (! PyArg_ParseTupleAndKeywords(args, kw, "O!:astimezone", keywords,
+					  &PyDateTime_TZInfoType, &tzinfo))
 		return NULL;
 
-        /* Don't call utcoffset unless necessary. */
-	result = new_datetime(y, m, d, hh, mm, ss, us, tzinfo);
-	if (result == NULL ||
-	    tzinfo == Py_None ||
-	    ! HASTZINFO(self) ||
-	    self->tzinfo == Py_None ||
-	    self->tzinfo == tzinfo)
-		return result;
+        if (!HASTZINFO(self) || self->tzinfo == Py_None)
+        	goto NeedAware;
 
-        /* Get the offsets.  If either object turns out to be naive, again
-         * there's no conversion of date or time fields.
-         */
-	selfoff = call_utcoffset(self->tzinfo, (PyObject *)self, &none);
-	if (selfoff == -1 && PyErr_Occurred())
-		goto Fail;
-	if (none)
-		return result;
-
-	resoff = call_utcoffset(tzinfo, result, &none);
-	if (resoff == -1 && PyErr_Occurred())
-		goto Fail;
-	if (none)
-		return result;
-
-	/* See the long comment block at the end of this file for an
-	 * explanation of this algorithm.  That it always works requires a
-	 * pretty intricate proof.  There are many equivalent ways to code
-	 * up the proof as an algorithm.  This way favors calling dst() over
-	 * calling utcoffset(), because "the usual" utcoffset() calls dst()
-	 * itself, and calling the latter instead saves a Python-level
-	 * function call.  This way of coding it also follows the proof
-	 * closely, w/ x=self, y=result, z=result, and z'=temp.
-	 */
-	dst1 = call_dst(tzinfo, result, &none);
-	if (dst1 == -1 && PyErr_Occurred())
-		goto Fail;
-	if (none) {
-		PyErr_SetString(PyExc_ValueError, "astimezone(): utcoffset() "
-		"returned a duration but dst() returned None");
-		goto Fail;
+        /* Conversion to self's own time zone is a NOP. */
+	if (self->tzinfo == tzinfo) {
+		Py_INCREF(self);
+		return (PyObject *)self;
 	}
-	delta = resoff - dst1 - selfoff;
-	if (delta) {
-		mm += delta;
-		if ((mm < 0 || mm >= 60) &&
-		    normalize_datetime(&y, &m, &d, &hh, &mm, &ss, &us) < 0)
-			goto Fail;
-		temp = new_datetime(y, m, d, hh, mm, ss, us, tzinfo);
-		if (temp == NULL)
-			goto Fail;
-		Py_DECREF(result);
-		result = temp;
 
-		dst1 = call_dst(tzinfo, result, &none);
-		if (dst1 == -1 && PyErr_Occurred())
-			goto Fail;
-		if (none)
-			goto Inconsistent;
-	}
-	if (dst1 == 0)
-		return result;
+        /* Convert self to UTC. */
+        offset = call_utcoffset(self->tzinfo, (PyObject *)self, &none);
+        if (offset == -1 && PyErr_Occurred())
+        	return NULL;
+        if (none)
+        	goto NeedAware;
 
-	mm += dst1;
+	y = GET_YEAR(self);
+	m = GET_MONTH(self);
+	d = GET_DAY(self);
+	hh = DATE_GET_HOUR(self);
+	mm = DATE_GET_MINUTE(self);
+	ss = DATE_GET_SECOND(self);
+	us = DATE_GET_MICROSECOND(self);
+
+	mm -= offset;
 	if ((mm < 0 || mm >= 60) &&
 	    normalize_datetime(&y, &m, &d, &hh, &mm, &ss, &us) < 0)
-		goto Fail;
-	temp = new_datetime(y, m, d, hh, mm, ss, us, tzinfo);
-	if (temp == NULL)
-		goto Fail;
-	Py_DECREF(result);
-	result = temp;
+		return NULL;
+
+	/* Attach new tzinfo and let fromutc() do the rest. */
+	result = new_datetime(y, m, d, hh, mm, ss, us, tzinfo);
+	if (result != NULL) {
+		PyObject *temp = result;
+
+		result = PyObject_CallMethod(tzinfo, "fromutc", "O", temp);
+		Py_DECREF(temp);
+	}
 	return result;
 
-Inconsistent:
-	PyErr_SetString(PyExc_ValueError, "astimezone(): tz.dst() gave"
-			"inconsistent results; cannot convert");
-
-	/* fall thru to failure */
-Fail:
-	Py_DECREF(result);
+NeedAware:
+	PyErr_SetString(PyExc_ValueError, "astimezone() cannot be applied to "
+					  "a naive datetime");
 	return NULL;
 }
 
