@@ -41,6 +41,10 @@ Library
   performance boost at the cost of not being thread-safe from locale
   changes while executing time.strptime() .
 
+- Bug #783952: time.strptime() now properly handles issue of
+  time.tzname[0] == time.tzname[1] while time.daylight is set to be
+  true.
+
 IDLE
 ----
 
