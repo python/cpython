@@ -88,9 +88,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #define ISEOF(x)		((x) == ENDMARKER)
 
 
-extern char *_PyParser_TokenNames[]; /* Token names */
-extern int PyToken_OneChar Py_PROTO((int));
-extern int PyToken_TwoChars Py_PROTO((int, int));
+extern DL_IMPORT(char *) _PyParser_TokenNames[]; /* Token names */
+extern DL_IMPORT(int) PyToken_OneChar Py_PROTO((int));
+extern DL_IMPORT(int) PyToken_TwoChars Py_PROTO((int, int));
 
 #ifdef __cplusplus
 }

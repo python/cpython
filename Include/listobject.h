@@ -60,17 +60,17 @@ extern DL_IMPORT(PyTypeObject) PyList_Type;
 
 #define PyList_Check(op) ((op)->ob_type == &PyList_Type)
 
-extern PyObject *PyList_New Py_PROTO((int size));
-extern int PyList_Size Py_PROTO((PyObject *));
-extern PyObject *PyList_GetItem Py_PROTO((PyObject *, int));
-extern int PyList_SetItem Py_PROTO((PyObject *, int, PyObject *));
-extern int PyList_Insert Py_PROTO((PyObject *, int, PyObject *));
-extern int PyList_Append Py_PROTO((PyObject *, PyObject *));
-extern PyObject *PyList_GetSlice Py_PROTO((PyObject *, int, int));
-extern int PyList_SetSlice Py_PROTO((PyObject *, int, int, PyObject *));
-extern int PyList_Sort Py_PROTO((PyObject *));
-extern int PyList_Reverse Py_PROTO((PyObject *));
-extern PyObject *PyList_AsTuple Py_PROTO((PyObject *));
+extern DL_IMPORT(PyObject *) PyList_New Py_PROTO((int size));
+extern DL_IMPORT(int) PyList_Size Py_PROTO((PyObject *));
+extern DL_IMPORT(PyObject *) PyList_GetItem Py_PROTO((PyObject *, int));
+extern DL_IMPORT(int) PyList_SetItem Py_PROTO((PyObject *, int, PyObject *));
+extern DL_IMPORT(int) PyList_Insert Py_PROTO((PyObject *, int, PyObject *));
+extern DL_IMPORT(int) PyList_Append Py_PROTO((PyObject *, PyObject *));
+extern DL_IMPORT(PyObject *) PyList_GetSlice Py_PROTO((PyObject *, int, int));
+extern DL_IMPORT(int) PyList_SetSlice Py_PROTO((PyObject *, int, int, PyObject *));
+extern DL_IMPORT(int) PyList_Sort Py_PROTO((PyObject *));
+extern DL_IMPORT(int) PyList_Reverse Py_PROTO((PyObject *));
+extern DL_IMPORT(PyObject *) PyList_AsTuple Py_PROTO((PyObject *));
 
 /* Macro, trading safety for speed */
 #define PyList_GET_ITEM(op, i) (((PyListObject *)(op))->ob_item[i])

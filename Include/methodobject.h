@@ -45,9 +45,9 @@ typedef PyObject *(*PyCFunction) Py_FPROTO((PyObject *, PyObject *));
 typedef PyObject *(*PyCFunctionWithKeywords)
 	Py_FPROTO((PyObject *, PyObject *, PyObject *));
 
-extern PyCFunction PyCFunction_GetFunction Py_PROTO((PyObject *));
-extern PyObject *PyCFunction_GetSelf Py_PROTO((PyObject *));
-extern int PyCFunction_GetFlags Py_PROTO((PyObject *));
+extern DL_IMPORT(PyCFunction) PyCFunction_GetFunction Py_PROTO((PyObject *));
+extern DL_IMPORT(PyObject *) PyCFunction_GetSelf Py_PROTO((PyObject *));
+extern DL_IMPORT(int) PyCFunction_GetFlags Py_PROTO((PyObject *));
 
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
@@ -66,10 +66,10 @@ struct PyMethodDef {
 };
 typedef struct PyMethodDef PyMethodDef;
 
-extern PyObject *Py_FindMethod
+extern DL_IMPORT(PyObject *) Py_FindMethod
 	Py_PROTO((PyMethodDef[], PyObject *, char *));
 
-extern PyObject *PyCFunction_New
+extern DL_IMPORT(PyObject *) PyCFunction_New
 	Py_PROTO((PyMethodDef *, PyObject *));
 
 /* Flag passed to newmethodobject */
@@ -81,7 +81,7 @@ typedef struct PyMethodChain {
 	struct PyMethodChain *link;	/* NULL or base type */
 } PyMethodChain;
 
-extern PyObject *Py_FindMethodInChain
+extern DL_IMPORT(PyObject *) Py_FindMethodInChain
 	Py_PROTO((PyMethodChain *, PyObject *, char *));
 
 typedef struct {

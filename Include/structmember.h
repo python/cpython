@@ -92,8 +92,8 @@ struct memberlist {
 #define READONLY	1
 #define RO		READONLY		/* Shorthand */
 
-PyObject *PyMember_Get Py_PROTO((char *, struct memberlist *, char *));
-int PyMember_Set Py_PROTO((char *, struct memberlist *, char *, PyObject *));
+DL_IMPORT(PyObject *) PyMember_Get Py_PROTO((char *, struct memberlist *, char *));
+DL_IMPORT(int) PyMember_Set Py_PROTO((char *, struct memberlist *, char *, PyObject *));
 
 #ifdef __cplusplus
 }

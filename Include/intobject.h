@@ -61,9 +61,9 @@ extern DL_IMPORT(PyTypeObject) PyInt_Type;
 
 #define PyInt_Check(op) ((op)->ob_type == &PyInt_Type)
 
-extern PyObject *PyInt_FromLong Py_PROTO((long));
-extern long PyInt_AsLong Py_PROTO((PyObject *));
-extern long PyInt_GetMax Py_PROTO((void));
+extern DL_IMPORT(PyObject *) PyInt_FromLong Py_PROTO((long));
+extern DL_IMPORT(long) PyInt_AsLong Py_PROTO((PyObject *));
+extern DL_IMPORT(long) PyInt_GetMax Py_PROTO((void));
 
 
 /*

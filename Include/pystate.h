@@ -89,17 +89,17 @@ typedef struct _ts {
 } PyThreadState;
 
 
-PyInterpreterState *PyInterpreterState_New Py_PROTO((void));
-void PyInterpreterState_Clear Py_PROTO((PyInterpreterState *));
-void PyInterpreterState_Delete Py_PROTO((PyInterpreterState *));
+DL_IMPORT(PyInterpreterState *) PyInterpreterState_New Py_PROTO((void));
+DL_IMPORT(void) PyInterpreterState_Clear Py_PROTO((PyInterpreterState *));
+DL_IMPORT(void) PyInterpreterState_Delete Py_PROTO((PyInterpreterState *));
 
-PyThreadState *PyThreadState_New Py_PROTO((PyInterpreterState *));
-void PyThreadState_Clear Py_PROTO((PyThreadState *));
-void PyThreadState_Delete Py_PROTO((PyThreadState *));
+DL_IMPORT(PyThreadState *) PyThreadState_New Py_PROTO((PyInterpreterState *));
+DL_IMPORT(void) PyThreadState_Clear Py_PROTO((PyThreadState *));
+DL_IMPORT(void) PyThreadState_Delete Py_PROTO((PyThreadState *));
 
-PyThreadState *PyThreadState_Get Py_PROTO((void));
-PyThreadState *PyThreadState_Swap Py_PROTO((PyThreadState *));
-PyObject *PyThreadState_GetDict Py_PROTO((void));
+DL_IMPORT(PyThreadState *) PyThreadState_Get Py_PROTO((void));
+DL_IMPORT(PyThreadState *) PyThreadState_Swap Py_PROTO((PyThreadState *));
+DL_IMPORT(PyObject *) PyThreadState_GetDict Py_PROTO((void));
 
 #ifdef __cplusplus
 }

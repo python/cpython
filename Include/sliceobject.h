@@ -28,9 +28,9 @@ extern DL_IMPORT(PyTypeObject) PySlice_Type;
 
 #define PySlice_Check(op) ((op)->ob_type == &PySlice_Type)
 
-PyObject *PySlice_New Py_PROTO((
+DL_IMPORT(PyObject *) PySlice_New Py_PROTO((
 	PyObject* start, PyObject* stop, PyObject* step));
-int PySlice_GetIndices Py_PROTO((
+DL_IMPORT(int) PySlice_GetIndices Py_PROTO((
 	PySliceObject *r, int length, int *start, int *stop, int *step));
 
 #ifdef __cplusplus

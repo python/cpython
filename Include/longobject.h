@@ -43,26 +43,26 @@ extern DL_IMPORT(PyTypeObject) PyLong_Type;
 
 #define PyLong_Check(op) ((op)->ob_type == &PyLong_Type)
 
-extern PyObject *PyLong_FromLong Py_PROTO((long));
-extern PyObject *PyLong_FromUnsignedLong Py_PROTO((unsigned long));
-extern PyObject *PyLong_FromDouble Py_PROTO((double));
-extern long PyLong_AsLong Py_PROTO((PyObject *));
-extern unsigned long PyLong_AsUnsignedLong Py_PROTO((PyObject *));
-extern double PyLong_AsDouble Py_PROTO((PyObject *));
-extern PyObject *PyLong_FromVoidPtr Py_PROTO((void *));
-extern void *PyLong_AsVoidPtr Py_PROTO((PyObject *));
+extern DL_IMPORT(PyObject *) PyLong_FromLong Py_PROTO((long));
+extern DL_IMPORT(PyObject *) PyLong_FromUnsignedLong Py_PROTO((unsigned long));
+extern DL_IMPORT(PyObject *) PyLong_FromDouble Py_PROTO((double));
+extern DL_IMPORT(long) PyLong_AsLong Py_PROTO((PyObject *));
+extern DL_IMPORT(unsigned long) PyLong_AsUnsignedLong Py_PROTO((PyObject *));
+extern DL_IMPORT(double) PyLong_AsDouble Py_PROTO((PyObject *));
+extern DL_IMPORT(PyObject *) PyLong_FromVoidPtr Py_PROTO((void *));
+extern DL_IMPORT(void *) PyLong_AsVoidPtr Py_PROTO((PyObject *));
 
 #ifdef HAVE_LONG_LONG
 #ifndef LONG_LONG
 #define LONG_LONG long long
 #endif
-extern PyObject *PyLong_FromLongLong Py_PROTO((LONG_LONG));
-extern PyObject *PyLong_FromUnsignedLongLong Py_PROTO((unsigned LONG_LONG));
-extern LONG_LONG PyLong_AsLongLong Py_PROTO((PyObject *));
-extern unsigned LONG_LONG PyLong_AsUnsignedLongLong Py_PROTO((PyObject *));
+extern DL_IMPORT(PyObject *) PyLong_FromLongLong Py_PROTO((LONG_LONG));
+extern DL_IMPORT(PyObject *) PyLong_FromUnsignedLongLong Py_PROTO((unsigned LONG_LONG));
+extern DL_IMPORT(LONG_LONG) PyLong_AsLongLong Py_PROTO((PyObject *));
+extern DL_IMPORT(unsigned LONG_LONG) PyLong_AsUnsignedLongLong Py_PROTO((PyObject *));
 #endif /* HAVE_LONG_LONG */
 
-PyObject *PyLong_FromString Py_PROTO((char *, char **, int));
+DL_IMPORT(PyObject *) PyLong_FromString Py_PROTO((char *, char **, int));
 
 #ifdef __cplusplus
 }

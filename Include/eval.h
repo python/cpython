@@ -37,7 +37,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Interface to execute compiled code */
 
-PyObject *PyEval_EvalCode Py_PROTO((PyCodeObject *, PyObject *, PyObject *));
+DL_IMPORT(PyObject *) PyEval_EvalCode Py_PROTO((PyCodeObject *, PyObject *, PyObject *));
 
 #ifdef __cplusplus
 }

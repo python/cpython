@@ -41,6 +41,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #ifndef DL_IMPORT	/* declarations for DLL import/export */
 #define DL_IMPORT(RTYPE) RTYPE
 #endif
+#ifndef DL_EXPORT	/* declarations for DLL import/export */
+#define DL_EXPORT(RTYPE) RTYPE
+#endif
 
 #ifdef SYMANTEC__CFM68K__
 #define UsingSharedLibs

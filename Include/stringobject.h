@@ -81,18 +81,18 @@ extern DL_IMPORT(PyTypeObject) PyString_Type;
 
 #define PyString_Check(op) ((op)->ob_type == &PyString_Type)
 
-extern PyObject *PyString_FromStringAndSize Py_PROTO((const char *, int));
-extern PyObject *PyString_FromString Py_PROTO((const char *));
-extern int PyString_Size Py_PROTO((PyObject *));
-extern char *PyString_AsString Py_PROTO((PyObject *));
-extern void PyString_Concat Py_PROTO((PyObject **, PyObject *));
-extern void PyString_ConcatAndDel Py_PROTO((PyObject **, PyObject *));
-extern int _PyString_Resize Py_PROTO((PyObject **, int));
-extern PyObject *PyString_Format Py_PROTO((PyObject *, PyObject *));
+extern DL_IMPORT(PyObject *) PyString_FromStringAndSize Py_PROTO((const char *, int));
+extern DL_IMPORT(PyObject *) PyString_FromString Py_PROTO((const char *));
+extern DL_IMPORT(int) PyString_Size Py_PROTO((PyObject *));
+extern DL_IMPORT(char *) PyString_AsString Py_PROTO((PyObject *));
+extern DL_IMPORT(void) PyString_Concat Py_PROTO((PyObject **, PyObject *));
+extern DL_IMPORT(void) PyString_ConcatAndDel Py_PROTO((PyObject **, PyObject *));
+extern DL_IMPORT(int) _PyString_Resize Py_PROTO((PyObject **, int));
+extern DL_IMPORT(PyObject *) PyString_Format Py_PROTO((PyObject *, PyObject *));
 
 #ifdef INTERN_STRINGS
-extern void PyString_InternInPlace Py_PROTO((PyObject **));
-extern PyObject *PyString_InternFromString Py_PROTO((const char *));
+extern DL_IMPORT(void) PyString_InternInPlace Py_PROTO((PyObject **));
+extern DL_IMPORT(PyObject *) PyString_InternFromString Py_PROTO((const char *));
 #else
 #define PyString_InternInPlace(p)
 #define PyString_InternFromString(cp) PyString_FromString(cp)

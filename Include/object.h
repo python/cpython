@@ -267,26 +267,26 @@ extern DL_IMPORT(PyTypeObject) PyType_Type; /* The type of type objects */
 #define PyType_Check(op) ((op)->ob_type == &PyType_Type)
 
 /* Generic operations on objects */
-extern int PyObject_Print Py_PROTO((PyObject *, FILE *, int));
-extern PyObject * PyObject_Repr Py_PROTO((PyObject *));
-extern PyObject * PyObject_Str Py_PROTO((PyObject *));
-extern int PyObject_Compare Py_PROTO((PyObject *, PyObject *));
-extern PyObject *PyObject_GetAttrString Py_PROTO((PyObject *, char *));
-extern int PyObject_SetAttrString Py_PROTO((PyObject *, char *, PyObject *));
-extern int PyObject_HasAttrString Py_PROTO((PyObject *, char *));
-extern PyObject *PyObject_GetAttr Py_PROTO((PyObject *, PyObject *));
-extern int PyObject_SetAttr Py_PROTO((PyObject *, PyObject *, PyObject *));
-extern int PyObject_HasAttr Py_PROTO((PyObject *, PyObject *));
-extern long PyObject_Hash Py_PROTO((PyObject *));
-extern int PyObject_IsTrue Py_PROTO((PyObject *));
-extern int PyObject_Not Py_PROTO((PyObject *));
-extern int PyCallable_Check Py_PROTO((PyObject *));
-extern int PyNumber_Coerce Py_PROTO((PyObject **, PyObject **));
-extern int PyNumber_CoerceEx Py_PROTO((PyObject **, PyObject **));
+extern DL_IMPORT(int) PyObject_Print Py_PROTO((PyObject *, FILE *, int));
+extern DL_IMPORT(PyObject *) PyObject_Repr Py_PROTO((PyObject *));
+extern DL_IMPORT(PyObject *) PyObject_Str Py_PROTO((PyObject *));
+extern DL_IMPORT(int) PyObject_Compare Py_PROTO((PyObject *, PyObject *));
+extern DL_IMPORT(PyObject *) PyObject_GetAttrString Py_PROTO((PyObject *, char *));
+extern DL_IMPORT(int) PyObject_SetAttrString Py_PROTO((PyObject *, char *, PyObject *));
+extern DL_IMPORT(int) PyObject_HasAttrString Py_PROTO((PyObject *, char *));
+extern DL_IMPORT(PyObject *) PyObject_GetAttr Py_PROTO((PyObject *, PyObject *));
+extern DL_IMPORT(int) PyObject_SetAttr Py_PROTO((PyObject *, PyObject *, PyObject *));
+extern DL_IMPORT(int) PyObject_HasAttr Py_PROTO((PyObject *, PyObject *));
+extern DL_IMPORT(long) PyObject_Hash Py_PROTO((PyObject *));
+extern DL_IMPORT(int) PyObject_IsTrue Py_PROTO((PyObject *));
+extern DL_IMPORT(int) PyObject_Not Py_PROTO((PyObject *));
+extern DL_IMPORT(int) PyCallable_Check Py_PROTO((PyObject *));
+extern DL_IMPORT(int) PyNumber_Coerce Py_PROTO((PyObject **, PyObject **));
+extern DL_IMPORT(int) PyNumber_CoerceEx Py_PROTO((PyObject **, PyObject **));
 
 /* Helpers for printing recursive container types */
-extern int Py_ReprEnter Py_PROTO((PyObject *));
-extern void Py_ReprLeave Py_PROTO((PyObject *));
+extern DL_IMPORT(int) Py_ReprEnter Py_PROTO((PyObject *));
+extern DL_IMPORT(void) Py_ReprLeave Py_PROTO((PyObject *));
 
 /* Flag bits for printing: */
 #define Py_PRINT_RAW	1	/* No string quotes etc. */
@@ -358,10 +358,10 @@ environment the global variable trick is not safe.)
 #endif
 
 #ifdef Py_TRACE_REFS
-extern void _Py_Dealloc Py_PROTO((PyObject *));
-extern void _Py_NewReference Py_PROTO((PyObject *));
-extern void _Py_ForgetReference Py_PROTO((PyObject *));
-extern void _Py_PrintReferences Py_PROTO((FILE *));
+extern DL_IMPORT(void) _Py_Dealloc Py_PROTO((PyObject *));
+extern DL_IMPORT(void) _Py_NewReference Py_PROTO((PyObject *));
+extern DL_IMPORT(void) _Py_ForgetReference Py_PROTO((PyObject *));
+extern DL_IMPORT(void) _Py_PrintReferences Py_PROTO((FILE *));
 #endif
 
 #ifndef Py_TRACE_REFS
@@ -375,12 +375,12 @@ extern void _Py_PrintReferences Py_PROTO((FILE *));
 #endif /* !Py_TRACE_REFS */
 
 #ifdef COUNT_ALLOCS
-extern void inc_count Py_PROTO((PyTypeObject *));
+extern DL_IMPORT(void) inc_count Py_PROTO((PyTypeObject *));
 #endif
 
 #ifdef Py_REF_DEBUG
 
-extern long _Py_RefTotal;
+extern DL_IMPORT(long) _Py_RefTotal;
 
 #ifndef Py_TRACE_REFS
 #ifdef COUNT_ALLOCS

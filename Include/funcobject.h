@@ -50,11 +50,11 @@ extern DL_IMPORT(PyTypeObject) PyFunction_Type;
 
 #define PyFunction_Check(op) ((op)->ob_type == &PyFunction_Type)
 
-extern PyObject *PyFunction_New Py_PROTO((PyObject *, PyObject *));
-extern PyObject *PyFunction_GetCode Py_PROTO((PyObject *));
-extern PyObject *PyFunction_GetGlobals Py_PROTO((PyObject *));
-extern PyObject *PyFunction_GetDefaults Py_PROTO((PyObject *));
-extern int PyFunction_SetDefaults Py_PROTO((PyObject *, PyObject *));
+extern DL_IMPORT(PyObject *) PyFunction_New Py_PROTO((PyObject *, PyObject *));
+extern DL_IMPORT(PyObject *) PyFunction_GetCode Py_PROTO((PyObject *));
+extern DL_IMPORT(PyObject *) PyFunction_GetGlobals Py_PROTO((PyObject *));
+extern DL_IMPORT(PyObject *) PyFunction_GetDefaults Py_PROTO((PyObject *));
+extern DL_IMPORT(int) PyFunction_SetDefaults Py_PROTO((PyObject *, PyObject *));
 
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */

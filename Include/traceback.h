@@ -39,13 +39,13 @@ PERFORMANCE OF THIS SOFTWARE.
 
 struct _frame;
 
-int PyTraceBack_Here Py_PROTO((struct _frame *));
-PyObject *PyTraceBack_Fetch Py_PROTO((void));
-int PyTraceBack_Store Py_PROTO((PyObject *));
-int PyTraceBack_Print Py_PROTO((PyObject *, PyObject *));
+DL_IMPORT(int) PyTraceBack_Here Py_PROTO((struct _frame *));
+DL_IMPORT(PyObject *) PyTraceBack_Fetch Py_PROTO((void));
+DL_IMPORT(int) PyTraceBack_Store Py_PROTO((PyObject *));
+DL_IMPORT(int) PyTraceBack_Print Py_PROTO((PyObject *, PyObject *));
 
 /* Reveale traceback type so we can typecheck traceback objects */
-extern PyTypeObject PyTraceBack_Type;
+extern DL_IMPORT(PyTypeObject) PyTraceBack_Type;
 #define PyTraceBack_Check(v) ((v)->ob_type == &PyTraceBack_Type)
 
 #ifdef __cplusplus

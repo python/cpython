@@ -43,4 +43,4 @@ extern DL_IMPORT(PyTypeObject) PyRange_Type;
 
 #define PyRange_Check(op) ((op)->ob_type == &PyRange_Type)
 
-extern PyObject *PyRange_New Py_PROTO((long, long, long, int));
+extern DL_IMPORT(PyObject *) PyRange_New Py_PROTO((long, long, long, int));
