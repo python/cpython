@@ -201,13 +201,14 @@ class Transformer:
 
     def decorator(self, nodelist):
         # '@' dotted_name [ '(' [arglist] ')' ]
-        assert len(nodelist) in (2, 4, 5)
+        assert len(nodelist) in (3, 5, 6)
         assert nodelist[0][0] == token.AT
+        assert nodelist[-1][0] == token.NEWLINE
 
         assert nodelist[1][0] == symbol.dotted_name
         funcname = self.decorator_name(nodelist[1][1:])
 
-        if len(nodelist) > 2:
+        if len(nodelist) > 3:
             assert nodelist[2][0] == token.LPAR
             expr = self.com_call_function(funcname, nodelist[3])
         else:
@@ -217,16 +218,10 @@ class Transformer:
 
     def decorators(self, nodelist):
         # decorators: decorator ([NEWLINE] decorator)* NEWLINE
-        listlen = len(nodelist)
-        i = 0
         items = []
-        while i < listlen:
-            assert nodelist[i][0] == symbol.decorator
-            items.append(self.decorator(nodelist[i][1:]))
-            i += 1
-
-            if i < listlen and nodelist[i][0] == token.NEWLINE:
-                i += 1
+        for dec_nodelist in nodelist:
+            assert dec_nodelist[0] == symbol.decorator
+            items.append(self.decorator(dec_nodelist[1:]))
         return Decorators(items)
 
     def funcdef(self, nodelist):
