@@ -8,7 +8,7 @@ import sys
 import linecache
 import cmd
 import bdb
-import repr
+from repr import repr as _saferepr
 import os
 import re
 
@@ -124,7 +124,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if type(exc_type) == type(''):
             exc_type_name = exc_type
         else: exc_type_name = exc_type.__name__
-        print exc_type_name + ':', repr.repr(exc_value)
+        print exc_type_name + ':', _saferepr(exc_value)
         self.interaction(frame, exc_traceback)
 
     # General interaction function
