@@ -633,12 +633,16 @@ PyCursesWindow_GetCh(self,arg)
 
   switch (ARG_COUNT(arg)) {
   case 0:
+    Py_BEGIN_ALLOW_THREADS
     rtn = wgetch(self->win);
+    Py_END_ALLOW_THREADS
     break;
   case 2:
     if (!PyArg_Parse(arg,"(ii);y,x",&y,&x))
       return NULL;
+    Py_BEGIN_ALLOW_THREADS
     rtn = mvwgetch(self->win,y,x);
+    Py_END_ALLOW_THREADS
     break;
   default:
     PyErr_SetString(PyExc_TypeError, "getch requires 0 or 2 arguments");
@@ -657,12 +661,16 @@ PyCursesWindow_GetKey(self,arg)
 
   switch (ARG_COUNT(arg)) {
   case 0:
+    Py_BEGIN_ALLOW_THREADS
     rtn = wgetch(self->win);
+    Py_END_ALLOW_THREADS
     break;
   case 2:
     if (!PyArg_Parse(arg,"(ii);y,x",&y,&x))
       return NULL;
+    Py_BEGIN_ALLOW_THREADS
     rtn = mvwgetch(self->win,y,x);
+    Py_END_ALLOW_THREADS
     break;
   default:
     PyErr_SetString(PyExc_TypeError, "getkey requires 0 or 2 arguments");
@@ -685,27 +693,37 @@ PyCursesWindow_GetStr(self,arg)
 
   switch (ARG_COUNT(arg)) {
   case 0:
+    Py_BEGIN_ALLOW_THREADS
     rtn2 = wgetstr(self->win,rtn);
+    Py_END_ALLOW_THREADS
     break;
   case 1:
     if (!PyArg_Parse(arg,"i;n", &n))
       return NULL;
+    Py_BEGIN_ALLOW_THREADS
     rtn2 = wgetnstr(self->win,rtn,n);
+    Py_END_ALLOW_THREADS
     break;
   case 2:
     if (!PyArg_Parse(arg,"(ii);y,x",&y,&x))
       return NULL;
+    Py_BEGIN_ALLOW_THREADS
     rtn2 = mvwgetstr(self->win,y,x,rtn);
+    Py_END_ALLOW_THREADS
     break;
   case 3:
     if (!PyArg_Parse(arg,"(iii);y,x,n", &y, &x, &n))
       return NULL;
 #if defined(__sgi__) || defined(__sun__)
  /* Untested */
+    Py_BEGIN_ALLOW_THREADS
     rtn2 = wmove(self->win,y,x)==ERR ? ERR :
       wgetnstr(self->win, rtn, n);
+    Py_END_ALLOW_THREADS
 #else
+    Py_BEGIN_ALLOW_THREADS
     rtn2 = mvwgetnstr(self->win, y, x, rtn, n);
+    Py_END_ALLOW_THREADS
 #endif
     break;
   default:
@@ -996,6 +1014,7 @@ PyCursesWindow_NoOutRefresh(self,arg)
      PyObject * arg;
 {
   int pminrow,pmincol,sminrow,smincol,smaxrow,smaxcol;
+  int rtn;
 
   if (self->win->_flags & _ISPAD) {
     switch(ARG_COUNT(arg)) {
@@ -1006,20 +1025,26 @@ PyCursesWindow_NoOutRefresh(self,arg)
 		       &pminrow, &pmincol, &sminrow, 
 		       &smincol, &smaxrow, &smaxcol))
 	return NULL;
-      return PyCursesCheckERR(pnoutrefresh(self->win,
-				       pminrow, pmincol, sminrow, 
-				       smincol, smaxrow, smaxcol),
-			      "pnoutrefresh");
+      Py_BEGIN_ALLOW_THREADS
+      rtn = pnoutrefresh(self->win,
+			 pminrow, pmincol, sminrow, 
+			 smincol, smaxrow, smaxcol),
+      Py_END_ALLOW_THREADS
+      return PyCursesCheckERR(rtn, "pnoutrefresh");
     default:
       PyErr_SetString(PyCursesError, 
-		      "noutrefresh was called for a pad;" \
+		      "noutrefresh() called for a pad " 
 		      "requires 6 arguments");
       return NULL;
     }
   } else {
     if (!PyArg_NoArgs(arg))
       return NULL;    
-    return PyCursesCheckERR(wnoutrefresh(self->win), "wnoutrefresh");
+
+    Py_BEGIN_ALLOW_THREADS
+    rtn = wnoutrefresh(self->win);
+    Py_END_ALLOW_THREADS
+    return PyCursesCheckERR(rtn, "wnoutrefresh");
   }
 }
 
@@ -1057,6 +1082,7 @@ PyCursesWindow_Refresh(self,arg)
      PyObject * arg;
 {
   int pminrow,pmincol,sminrow,smincol,smaxrow,smaxcol;
+  int rtn;
   
   if (self->win->_flags & _ISPAD) {
     switch(ARG_COUNT(arg)) {
@@ -1067,19 +1093,26 @@ PyCursesWindow_Refresh(self,arg)
 		       &pminrow, &pmincol, &sminrow, 
 		       &smincol, &smaxrow, &smaxcol))
 	return NULL;
-      return PyCursesCheckERR(prefresh(self->win,
-				       pminrow, pmincol, sminrow, 
-				       smincol, smaxrow, smaxcol),
-			      "prefresh");
+
+      Py_BEGIN_ALLOW_THREADS
+      rtn = prefresh(self->win,
+		     pminrow, pmincol, sminrow, 
+		     smincol, smaxrow, smaxcol),
+	
+      Py_END_ALLOW_THREADS
+      return PyCursesCheckERR(rtn, "prefresh");
     default:
       PyErr_SetString(PyCursesError, 
-		      "refresh was called for a pad; requires 6 arguments");
+		      "refresh() for a pad requires 6 arguments");
       return NULL;
     }
   } else {
     if (!PyArg_NoArgs(arg))
       return NULL;    
-    return PyCursesCheckERR(wrefresh(self->win), "wrefresh");
+    Py_BEGIN_ALLOW_THREADS
+    rtn = wrefresh(self->win);
+    Py_END_ALLOW_THREADS
+    return PyCursesCheckERR(rtn);    
   }
 }
 
