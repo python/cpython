@@ -162,10 +162,10 @@ PyInt_AsLong(register PyObject *op)
 		if (PyLong_Check(io)) {
 			/* got a long? => retry int conversion */
 			val = PyLong_AsLong((PyObject *)io);
-			if (PyErr_Occurred()) {
-				Py_DECREF(io);
+			Py_DECREF(io);
+			if ((val == -1) && PyErr_Occurred())
 				return -1;
-			}
+			return val;
 		}
 		else
 		{
