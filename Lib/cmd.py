@@ -90,15 +90,15 @@ class Cmd:
 
     def onecmd(self, line):
         line = string.strip(line)
-        if line == '?':
-            line = 'help'
-        elif line == '!':
+        if not line:
+            return self.emptyline()
+        elif line[0] == '?':
+            line = 'help ' + line[1:]
+        elif line[0] == '!':
             if hasattr(self, 'do_shell'):
-                line = 'shell'
+                line = 'shell ' + line[1:]
             else:
                 return self.default(line)
-        elif not line:
-            return self.emptyline()
         self.lastcmd = line
         i, n = 0, len(line)
         while i < n and line[i] in self.identchars: i = i+1
