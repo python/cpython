@@ -162,7 +162,7 @@ class Misc:
 	def tk_bisque(self):
 		self.tk.call('tk_bisque')
 	def tk_setPalette(self, *args, **kw):
-		apply(self.tk.call, ('tk_setPalette',)
+		self.tk.call(('tk_setPalette',)
 		      + _flatten(args) + _flatten(kw.items()))
 	def tk_menuBar(self, *args):
 		pass # obsolete since Tk 4.0
@@ -234,16 +234,14 @@ class Misc:
 	def after_cancel(self, id):
 		self.tk.call('after', 'cancel', id)
 	def bell(self, displayof=0):
-		apply(self.tk.call, ('bell',) + self._displayof(displayof))
+		self.tk.call(('bell',) + self._displayof(displayof))
 	# Clipboard handling:
 	def clipboard_clear(self, **kw):
 		if not kw.has_key('displayof'): kw['displayof'] = self._w
-		apply(self.tk.call,
-		      ('clipboard', 'clear') + self._options(kw))
+		self.tk.call(('clipboard', 'clear') + self._options(kw))
 	def clipboard_append(self, string, **kw):
 		if not kw.has_key('displayof'): kw['displayof'] = self._w
-		apply(self.tk.call,
-		      ('clipboard', 'append') + self._options(kw)
+		self.tk.call(('clipboard', 'append') + self._options(kw)
 		      + ('--', string))
 	# XXX grab current w/o window argument
 	def grab_current(self):
@@ -272,29 +270,26 @@ class Misc:
 		self.tk.call('option', 'readfile', fileName, priority)
 	def selection_clear(self, **kw):
 		if not kw.has_key('displayof'): kw['displayof'] = self._w
-		apply(self.tk.call, ('selection', 'clear') + self._options(kw))
+		self.tk.call(('selection', 'clear') + self._options(kw))
 	def selection_get(self, **kw):
 		if not kw.has_key('displayof'): kw['displayof'] = self._w
-		return apply(self.tk.call,
-			     ('selection', 'get') + self._options(kw))
+		return self.tk.call(('selection', 'get') + self._options(kw))
 	def selection_handle(self, command, **kw):
 		name = self._register(command)
-		apply(self.tk.call,
-		      ('selection', 'handle') + self._options(kw)
+		self.tk.call(('selection', 'handle') + self._options(kw)
 		      + (self._w, name))
 	def selection_own(self, **kw):
 		"Become owner of X selection."
-		apply(self.tk.call,
-		      ('selection', 'own') + self._options(kw) + (self._w,))
+		self.tk.call(('selection', 'own') +
+			     self._options(kw) + (self._w,))
 	def selection_own_get(self, **kw):
 		"Find owner of X selection."
 		if not kw.has_key('displayof'): kw['displayof'] = self._w
-		name = apply(self.tk.call,
-			     ('selection', 'own') + self._options(kw))
+		name = self.tk.call(('selection', 'own') + self._options(kw))
 		if not name: return None
 		return self._nametowidget(name)
 	def send(self, interp, cmd, *args):
-		return apply(self.tk.call, ('send', interp, cmd) + args)
+		return self.tk.call(('send', interp, cmd) + args)
 	def lower(self, belowThis=None):
 		self.tk.call('lower', self._w, belowThis)
 	def tkraise(self, aboveThis=None):
@@ -304,11 +299,11 @@ class Misc:
 		return self.tk.call('tk', 'colormodel', self._w, value)
 	def winfo_atom(self, name, displayof=0):
 		args = ('winfo', 'atom') + self._displayof(displayof) + (name,)
-		return self.tk.getint(apply(self.tk.call, args))
+		return self.tk.getint(self.tk.call(args))
 	def winfo_atomname(self, id, displayof=0):
 		args = ('winfo', 'atomname') \
 		       + self._displayof(displayof) + (id,)
-		return apply(self.tk.call, args)
+		return self.tk.call(args)
 	def winfo_cells(self):
 		return self.tk.getint(
 			self.tk.call('winfo', 'cells', self._w))
@@ -324,7 +319,7 @@ class Misc:
 	def winfo_containing(self, rootX, rootY, displayof=0):
 		args = ('winfo', 'containing') \
 		       + self._displayof(displayof) + (rootX, rootY)
-		name = apply(self.tk.call, args)
+		name = self.tk.call(args)
 		if not name: return None
 		return self._nametowidget(name)
 	def winfo_depth(self):
@@ -345,7 +340,7 @@ class Misc:
 			self.tk.call('winfo', 'id', self._w))
 	def winfo_interps(self, displayof=0):
 		args = ('winfo', 'interps') + self._displayof(displayof)
-		return self.tk.splitlist(apply(self.tk.call, args))
+		return self.tk.splitlist(self.tk.call(args))
 	def winfo_ismapped(self):
 		return self.tk.getint(
 			self.tk.call('winfo', 'ismapped', self._w))
@@ -358,7 +353,7 @@ class Misc:
 	def winfo_pathname(self, id, displayof=0):
 		args = ('winfo', 'pathname') \
 		       + self._displayof(displayof) + (id,)
-		return apply(self.tk.call, args)
+		return self.tk.call(args)
 	def winfo_pixels(self, number):
 		return self.tk.getint(
 			self.tk.call('winfo', 'pixels', self._w, number))
@@ -467,12 +462,12 @@ class Misc:
 			       % (add and '+' or '',
 				  funcid,
 				  _string.join(self._subst_format))
-			apply(self.tk.call, what + (sequence, cmd))
+			self.tk.call(what + (sequence, cmd))
 			return funcid
 		elif func == '':
-			apply(self.tk.call, what + (sequence, func))
+			self.tk.call(what + (sequence, func))
 		else:
-			return apply(self.tk.call, what + (sequence,))
+			return self.tk.call(what + (sequence,))
 	def bind(self, sequence=None, func=None, add=None):
 		return self._bind(('bind', self._w), sequence, func, add)
 	def unbind(self, sequence, funcid=None):
@@ -618,7 +613,7 @@ class Misc:
 			x = self.tk.split(self.tk.call(
 				self._w, 'configure', '-'+cnf))
 			return (x[0][1:],) + x[1:]
-		apply(self.tk.call, (self._w, 'configure')
+		self.tk.call((self._w, 'configure')
 		      + self._options(cnf))
 	config = configure
 	def cget(self, key):
@@ -682,7 +677,7 @@ class Misc:
 					value = self.tk.getint(value)
 				dict[key] = value
 			return dict
-		res = apply(self.tk.call, 
+		res = self.tk.call(
 			      ('grid', command, self._w, index) 
 			      + options)
 		if len(options) == 1:
@@ -713,26 +708,25 @@ class Misc:
 		if column:
 			args = args + ('-column', column)
 		return map(self._nametowidget,
-			   self.tk.splitlist(
-				   apply(self.tk.call,
-					 ('grid', 'slaves', self._w) + args)))
+			   self.tk.splitlist(self.tk.call(
+				   ('grid', 'slaves', self._w) + args)))
 
 	# Support for the "event" command, new in Tk 4.2.
 	# By Case Roole.
 
 	def event_add(self, virtual, *sequences):
 		args = ('event', 'add', virtual) + sequences
-		apply(self.tk.call, args)
+		self.tk.call(args)
 
 	def event_delete(self, virtual, *sequences):
 		args = ('event', 'delete', virtual) + sequences
-		apply(self.tk.call, args)
+		self.tk.call(args)
 
 	def event_generate(self, sequence, **kw):
 		args = ('event', 'generate', self._w, sequence)
 		for k, v in kw.items():
 			args = args + ('-%s' % k, str(v))
-		apply(self.tk.call, args)
+		self.tk.call(args)
 
 	def event_info(self, virtual=None):
 		return self.tk.splitlist(
@@ -774,7 +768,7 @@ class Wm:
 		return self.tk.call('wm', 'client', self._w, name)
 	def colormapwindows(self, *wlist):
 		args = ('wm', 'colormapwindows', self._w) + _flatten(wlist)
-		return map(self._nametowidget, apply(self.tk.call, args))
+		return map(self._nametowidget, self.tk.call(args))
 	def command(self, value=None):
 		return self.tk.call('wm', 'command', self._w, value)
 	def deiconify(self):
@@ -925,7 +919,7 @@ class Tk(Misc, Wm):
 
 class Pack:
 	def pack_configure(self, cnf={}, **kw):
-		apply(self.tk.call, 
+		self.tk.call(
 		      ('pack', 'configure', self._w) 
 		      + self._options(cnf, kw))
 	pack = configure = config = pack_configure
@@ -953,7 +947,7 @@ class Place:
 			if kw.has_key(k):
 				kw[k[:-1]] = kw[k]
 				del kw[k]
-		apply(self.tk.call, 
+		self.tk.call(
 		      ('place', 'configure', self._w) 
 		      + self._options(cnf, kw))
 	place = configure = config = place_configure
@@ -977,7 +971,7 @@ class Place:
 class Grid:
 	# Thanks to Masazumi Yoshikawa (yosikawa@isi.edu)
 	def grid_configure(self, cnf={}, **kw):
-		apply(self.tk.call, 
+		self.tk.call(
 		      ('grid', 'configure', self._w) 
 		      + self._options(cnf, kw))
 	grid = configure = config = grid_configure
@@ -1045,8 +1039,8 @@ class BaseWidget(Misc):
 			if type(k) is ClassType:
 				classes.append((k, cnf[k]))
 				del cnf[k]
-		apply(self.tk.call,
-		      (widgetName, self._w) + extra + self._options(cnf))
+		self.tk.call(
+			(widgetName, self._w) + extra + self._options(cnf))
 		for k, v in classes:
 			k.configure(self, v)
 	def destroy(self):
@@ -1056,7 +1050,7 @@ class BaseWidget(Misc):
 		self.tk.call('destroy', self._w)
 		Misc.destroy(self)
 	def _do(self, name, args=()):
-		return apply(self.tk.call, (self._w, name) + args)
+		return self.tk.call((self._w, name) + args)
 
 class Widget(BaseWidget, Pack, Place, Grid):
 	pass
@@ -1263,11 +1257,11 @@ class Canvas(Widget):
 	def xview(self, *args):
 		if not args:
 			return self._getdoubles(self.tk.call(self._w, 'xview'))
-		apply(self.tk.call, (self._w, 'xview')+args)
+		self.tk.call((self._w, 'xview')+args)
 	def yview(self, *args):
 		if not args:
 			return self._getdoubles(self.tk.call(self._w, 'yview'))
-		apply(self.tk.call, (self._w, 'yview')+args)
+		self.tk.call((self._w, 'yview')+args)
 
 class Checkbutton(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
@@ -1363,8 +1357,7 @@ class Listbox(Widget):
 		else:
 			return self.tk.call(self._w, 'get', first)
 	def insert(self, index, *elements):
-		apply(self.tk.call,
-		      (self._w, 'insert', index) + elements)
+		self.tk.call((self._w, 'insert', index) + elements)
 	def nearest(self, y):
 		return self.tk.getint(self.tk.call(
 			self._w, 'nearest', y))
@@ -1397,11 +1390,11 @@ class Listbox(Widget):
 	def xview(self, *what):
 		if not what:
 			return self._getdoubles(self.tk.call(self._w, 'xview'))
-		apply(self.tk.call, (self._w, 'xview')+what)
+		self.tk.call((self._w, 'xview')+what)
 	def yview(self, *what):
 		if not what:
 			return self._getdoubles(self.tk.call(self._w, 'yview'))
-		apply(self.tk.call, (self._w, 'yview')+what)
+		self.tk.call((self._w, 'yview')+what)
 
 class Menu(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
@@ -1433,7 +1426,7 @@ class Menu(Widget):
 	def activate(self, index):
 		self.tk.call(self._w, 'activate', index)
 	def add(self, itemType, cnf={}, **kw):
-		apply(self.tk.call, (self._w, 'add', itemType) 
+		self.tk.call((self._w, 'add', itemType) 
 		      + self._options(cnf, kw))
 	def add_cascade(self, cnf={}, **kw):
 		self.add('cascade', cnf or kw)
@@ -1446,7 +1439,7 @@ class Menu(Widget):
 	def add_separator(self, cnf={}, **kw):
 		self.add('separator', cnf or kw)
 	def insert(self, index, itemType, cnf={}, **kw):
-		apply(self.tk.call, (self._w, 'insert', index, itemType) 
+		self.tk.call((self._w, 'insert', index, itemType) 
 		      + self._options(cnf, kw))
 	def insert_cascade(self, index, cnf={}, **kw):
 		self.insert(index, 'cascade', cnf or kw)
@@ -1465,15 +1458,15 @@ class Menu(Widget):
 	def entryconfigure(self, index, cnf=None, **kw):
 		if cnf is None and not kw:
 			cnf = {}
-			for x in self.tk.split(apply(self.tk.call,
-			    (self._w, 'entryconfigure', index))):
+			for x in self.tk.split(self.tk.call(
+				(self._w, 'entryconfigure', index))):
 				cnf[x[0][1:]] = (x[0][1:],) + x[1:]
 			return cnf
 		if type(cnf) == StringType and not kw:
-			x = self.tk.split(apply(self.tk.call,
-			    (self._w, 'entryconfigure', index, '-'+cnf)))
+			x = self.tk.split(self.tk.call(
+				(self._w, 'entryconfigure', index, '-'+cnf)))
 			return (x[0][1:],) + x[1:]
-		apply(self.tk.call, (self._w, 'entryconfigure', index)
+		self.tk.call((self._w, 'entryconfigure', index)
 		      + self._options(cnf, kw))
 	entryconfig = entryconfigure
 	def index(self, index):
@@ -1540,7 +1533,7 @@ class Scrollbar(Widget):
 	def get(self):
 		return self._getdoubles(self.tk.call(self._w, 'get'))
 	def set(self, *args):
-		apply(self.tk.call, (self._w, 'set')+args)
+		self.tk.call((self._w, 'set')+args)
 
 class Text(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
@@ -1570,17 +1563,17 @@ class Text(Widget):
 	def index(self, index):
 		return self.tk.call(self._w, 'index', index)
 	def insert(self, index, chars, *args):
-		apply(self.tk.call, (self._w, 'insert', index, chars)+args)
+		self.tk.call((self._w, 'insert', index, chars)+args)
 	def mark_gravity(self, markName, direction=None):
-		return apply(self.tk.call,
-			     (self._w, 'mark', 'gravity', markName, direction))
+		return self.tk.call(
+			(self._w, 'mark', 'gravity', markName, direction))
 	def mark_names(self):
 		return self.tk.splitlist(self.tk.call(
 			self._w, 'mark', 'names'))
 	def mark_set(self, markName, index):
 		self.tk.call(self._w, 'mark', 'set', markName, index)
 	def mark_unset(self, *markNames):
-		apply(self.tk.call, (self._w, 'mark', 'unset') + markNames)
+		self.tk.call((self._w, 'mark', 'unset') + markNames)
 	def scan_mark(self, x, y):
 		self.tk.call(self._w, 'scan', 'mark', x, y)
 	def scan_dragto(self, x, y):
@@ -1599,7 +1592,7 @@ class Text(Widget):
 		args.append(pattern)
 		args.append(index)
 		if stopindex: args.append(stopindex)
-		return apply(self.tk.call, tuple(args))
+		return self.tk.call(tuple(args))
 	def see(self, index):
 		self.tk.call(self._w, 'see', index)
 	def tag_add(self, tagName, index1, index2=None):
@@ -1623,12 +1616,12 @@ class Text(Widget):
 			x = self.tk.split(self.tk.call(
 				self._w, 'tag', 'configure', tagName, '-'+cnf))
 			return (x[0][1:],) + x[1:]
-		apply(self.tk.call, 
+		self.tk.call(
 		      (self._w, 'tag', 'configure', tagName)
 		      + self._options(cnf, kw))
 	tag_config = tag_configure
 	def tag_delete(self, *tagNames):
-		apply(self.tk.call, (self._w, 'tag', 'delete') + tagNames)
+		self.tk.call((self._w, 'tag', 'delete') + tagNames)
 	def tag_lower(self, tagName, belowThis=None):
 		self.tk.call(self._w, 'tag', 'lower', tagName, belowThis)
 	def tag_names(self, index=None):
@@ -1661,12 +1654,12 @@ class Text(Widget):
 				self._w, 'window', 'configure',
 				index, '-'+cnf))
 			return (x[0][1:],) + x[1:]
-		apply(self.tk.call, 
+		self.tk.call(
 		      (self._w, 'window', 'configure', index)
 		      + self._options(cnf, kw))
 	window_config = window_configure
 	def window_create(self, index, cnf={}, **kw):
-		apply(self.tk.call, 
+		self.tk.call(
 		      (self._w, 'window', 'create', index)
 		      + self._options(cnf, kw))
 	def window_names(self):
@@ -1675,13 +1668,13 @@ class Text(Widget):
 	def xview(self, *what):
 		if not what:
 			return self._getdoubles(self.tk.call(self._w, 'xview'))
-		apply(self.tk.call, (self._w, 'xview')+what)
+		self.tk.call((self._w, 'xview')+what)
 	def yview(self, *what):
 		if not what:
 			return self._getdoubles(self.tk.call(self._w, 'yview'))
-		apply(self.tk.call, (self._w, 'yview')+what)
+		self.tk.call((self._w, 'yview')+what)
 	def yview_pickplace(self, *what):
-		apply(self.tk.call, (self._w, 'yview', '-pickplace')+what)
+		self.tk.call((self._w, 'yview', '-pickplace')+what)
 
 class _setit:
 	def __init__(self, var, value):
@@ -1733,8 +1726,7 @@ class Image:
 			if callable(v):
 				v = self._register(v)
 			options = options + ('-'+k, v)
-		apply(self.tk.call,
-		      ('image', 'create', imgtype, name,) + options)
+		self.tk.call(('image', 'create', imgtype, name,) + options)
 		self.name = name
 	def __str__(self): return self.name
 	def __del__(self):
@@ -1752,7 +1744,7 @@ class Image:
 				if callable(v):
 					v = self._register(v)
 				res = res + ('-'+k, v)
-		apply(self.tk.call, (self.name, 'config') + res)
+		self.tk.call((self.name, 'config') + res)
 	config = configure
 	def height(self):
 		return self.tk.getint(
@@ -1796,7 +1788,7 @@ class PhotoImage(Image):
 			if to[0] == '-to':
 				to = to[1:]
 			args = args + ('-to',) + tuple(to)
-		apply(self.tk.call, args)
+		self.tk.call(args)
 	# XXX read
 	def write(self, filename, format=None, from_coords=None):
 		args = (self.name, 'write', filename)
@@ -1804,7 +1796,7 @@ class PhotoImage(Image):
 			args = args + ('-format', format)
 		if from_coords:
 			args = args + ('-from',) + tuple(from_coords)
-		apply(self.tk.call, args)
+		self.tk.call(args)
 
 class BitmapImage(Image):
 	def __init__(self, name=None, cnf={}, master=None, **kw):
