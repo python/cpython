@@ -447,7 +447,7 @@ clean:		localclean
 		done
 
 localclobber:	localclean
-		-rm -f tags TAGS python $(LIBRARY)
+		-rm -f tags TAGS python $(LIBRARY) *.o
 		-rm -f config.log config.cache config.h
 
 clobber:	localclobber
@@ -465,6 +465,7 @@ distclean:	clobber
 		-$(MAKE) -f $(srcdir)/Makefile.in \
 			SUBDIRS="$(SUBDIRSTOO)" clobber
 		-rm -f config.status config.log config.cache config.h Makefile
+		-rm -f buildno
 		-rm -f Modules/Makefile
 		-for i in $(SUBDIRS) $(SUBDIRSTOO); do \
 			 for f in $$i/*.in; do \
