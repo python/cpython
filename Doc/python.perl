@@ -317,28 +317,28 @@ sub init_myformat{
     $any_next_pair_pr_rx_5 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\5$CP";
     $any_next_pair_pr_rx_7 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\7$CP";
     $any_next_pair_pr_rx_9 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\9$CP";
-    if (defined &process_commands_wrap_deferred) {
-	&process_commands_wrap_deferred(<<THESE_COMMANDS);
-indexii # {} # {}
-indexiii # {} # {} # {}
-indexiv # {} # {} # {} # {}
-exindex # {}
-obindex # {}
-opindex # {}
-stindex # {}
-ttindex # {}
-bifuncindex # {}
-modindex # {}
-bimodindex # {}
-exmodindex # {}
-stmodindex # {}
-refmodindex # {}
-refbimodindex # {}
-refexmodindex # {}
-refstmodindex # {}
-rfc # {}
-THESE_COMMANDS
-    }
+#     if (defined &process_commands_wrap_deferred) {
+# 	&process_commands_wrap_deferred(<<THESE_COMMANDS);
+# indexii # {} # {}
+# indexiii # {} # {} # {}
+# indexiv # {} # {} # {} # {}
+# exindex # {}
+# obindex # {}
+# opindex # {}
+# stindex # {}
+# ttindex # {}
+# bifuncindex # {}
+# modindex # {}
+# bimodindex # {}
+# exmodindex # {}
+# stmodindex # {}
+# refmodindex # {}
+# refbimodindex # {}
+# refexmodindex # {}
+# refstmodindex # {}
+# rfc # {}
+# THESE_COMMANDS
+#     }
 }
 
 &init_myformat;
@@ -697,13 +697,13 @@ sub do_cmd_file{
     # understand "<font face=...>" markup will use courier (or whatever
     # the font is for <tt>).
     local($_) = @_;
-    s/$any_next_pair_pr_rx/`<tt><font face=sans-serif>\2<\/font><\/tt>'/;
+    s/$any_next_pair_pr_rx/\"<tt>\2<\/tt>\"/;
     $_;
 }
 
 sub do_cmd_samp{
     local($_) = @_;
-    s/$any_next_pair_pr_rx/`<tt>\2<\/tt>'/;
+    s/$any_next_pair_pr_rx/\"<tt>\2<\/tt>\"/;
     $_;
 }
 
