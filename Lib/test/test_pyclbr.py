@@ -140,8 +140,8 @@ class PyclbrTest(TestCase):
         cm('cgi', ignore=('log',))      # set with = in module
         cm('mhlib')
         cm('urllib', ignore=('getproxies_registry',
-                             'open_https')) # not on all platforms
-        cm('pickle', ignore=('g',))     # from types import *
+                             'open_https',
+                             'getproxies_internetconfig',)) # not on all platforms
         cm('aifc', ignore=('openfp',))  # set with = in module
         cm('Cookie')
         cm('sre_parse', ignore=('dump',)) # from sre_constants import *
