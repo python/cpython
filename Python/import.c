@@ -228,7 +228,6 @@ get_module(m, name, m_ret)
 		pyc_mtime = rd_long(fpc);
 		if (mtime != -1 && mtime > pyc_mtime) {
 			fclose(fpc);
-			fp = fopen(namebuf, "rb");
 			goto read_py;
 		}
 		if (magic == MAGIC) {
@@ -247,40 +246,46 @@ get_module(m, name, m_ret)
 				fprintf(stderr,
 			"import %s # precompiled from \"%s\"\n",
 					name, namebuf);
-			else
+			else {
 				fprintf(stderr,
 				"# invalid precompiled file \"%s\"\n",
 					namebuf);
-		}
-	}
-	else if ((fp = find_module(name, PY_SUFFIX, "r",
-				   namebuf, &mtime)) != NULL) {
-read_py:
-		namelen = strlen(namebuf);
-		if (co == NULL) {
-			if (verbose)
-				fprintf(stderr,
-					"import %s # from \"%s\"\n",
-					name, namebuf);
-			err = parse_file(fp, namebuf, file_input, &n);
-		} else
-			err = E_DONE;
-		fclose(fp);
-		if (err != E_DONE) {
-			err_input(err);
-			return NULL;
+				goto read_py;
+			}
 		}
 	}
 	else {
-		if (m == NULL) {
-			sprintf(namebuf, "no module named %.200s", name);
-			err_setstr(ImportError, namebuf);
+read_py:
+		if ((fp = find_module(name, PY_SUFFIX, "r",
+				      namebuf, &mtime)) != NULL) {
+			namelen = strlen(namebuf);
+			if (co == NULL) {
+				if (verbose)
+					fprintf(stderr,
+						"import %s # from \"%s\"\n",
+						name, namebuf);
+				err = parse_file(fp, namebuf, file_input, &n);
+			} else
+				err = E_DONE;
+			fclose(fp);
+			if (err != E_DONE) {
+				err_input(err);
+				return NULL;
+			}
 		}
 		else {
-			sprintf(namebuf, "no source for module %.200s", name);
-			err_setstr(ImportError, namebuf);
+			if (m == NULL) {
+				sprintf(namebuf, "no module named %.200s",
+					name);
+				err_setstr(ImportError, namebuf);
+			}
+			else {
+				sprintf(namebuf, "no source for module %.200s",
+					name);
+				err_setstr(ImportError, namebuf);
+			}
+			return NULL;
 		}
-		return NULL;
 	}
 	if (m == NULL) {
 		m = add_module(name);
