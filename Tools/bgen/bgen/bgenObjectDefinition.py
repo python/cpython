@@ -9,9 +9,8 @@ class ObjectDefinition(GeneratorGroup):
 		self.name = name
 		self.itselftype = itselftype
 		self.objecttype = name + 'Object'
-		self.typename = self.prefix + '_' + \
-				string.upper(name[:1]) + \
-		                string.lower(name[1:]) + '_Type'
+		self.typename = name + '_Type'
+		self.argref = ""	# set to "*" if arg to <type>_New should be pointer
 
 	def add(self, g):
 		g.setselftype(self.objecttype, self.itselftype)
@@ -29,68 +28,100 @@ class ObjectDefinition(GeneratorGroup):
 		Output("staticforward PyTypeObject %s;", self.typename)
 		Output()
 
-		Output("#define is_%sobject(x) ((x)->ob_type == %s)",
-		       self.name, self.typename)
+		Output("#define %s_Check(x) ((x)->ob_type == &%s)",
+		       self.prefix, self.typename)
 		Output()
 
 		Output("typedef struct {")
 		IndentLevel()
-		Output("OB_HEAD")
+		Output("PyObject_HEAD")
 		Output("%s ob_itself;", self.itselftype)
 		DedentLevel()
 		Output("} %s;", self.objecttype)
 		Output()
 
-		Output("static %s *new%s(itself)", self.objecttype, self.objecttype)
-		IndentLevel()
-		Output("%s itself;", self.itselftype)
-		DedentLevel()
-		OutLbrace()
-		Output("%s *it;", self.objecttype)
-		Output("it = PyObject_NEW(%s, &%s);", self.objecttype, self.typename)
-		Output("if (it == NULL) return NULL;")
-		Output("it->ob_itself = itself;")
-		Output("return it;")
-		OutRbrace()
-		Output()
+		self.outputNew()
+		
+		self.outputConvert()
 
-		Output("static void %s_dealloc(self)", self.prefix)
-		IndentLevel()
-		Output("%s *self;", self.objecttype)
-		DedentLevel()
-		OutLbrace()
-##		Output("if (self->ob_itself != NULL)")
-##		OutLbrace()
-##		self.outputFreeIt("self->ob_itself")
-##		OutRbrace()
-		Output("DEL(self);")
-		OutRbrace()
-		Output()
-
-##		Output("static int %s_converter(p_itself, p_it)", self.prefix)
-##		IndentLevel()
-##		Output("%s *p_itself;", self.itselftype)
-##		Output("%s **p_it;", self.objecttype)
-##		DedentLevel()
-##		OutLbrace()
-##		Output("if (**p_it == NULL)")
-##		OutLbrace()
-##		Output("*p_it = new%s(*p_itself);", self.objecttype)
-##		OutRbrace()
-##		Output("else")
-##		OutLbrace()
-##		Output("*p_itself = (*p_it)->ob_itself;")
-##		OutRbrace()
-##		Output("return 1;")
-##		OutRbrace()
-##		Output()
+		self.outputDealloc()
 
 		GeneratorGroup.generate(self)
 
 		self.outputGetattr()
 
 		self.outputSetattr()
+		
+		self.outputTypeObject()
 
+		OutHeader2("End object type " + self.name)
+
+	def outputNew(self):
+		Output("static %s *%s_New(itself)", self.objecttype, self.prefix)
+		IndentLevel()
+		Output("const %s %sitself;", self.itselftype, self.argref)
+		DedentLevel()
+		OutLbrace()
+		Output("%s *it;", self.objecttype)
+		Output("it = PyObject_NEW(%s, &%s);", self.objecttype, self.typename)
+		Output("if (it == NULL) return NULL;")
+		Output("it->ob_itself = %sitself;", self.argref)
+		Output("return it;")
+		OutRbrace()
+		Output()
+
+	def outputConvert(self):
+		Output("""\
+static int %(prefix)s_Convert(v, p_itself)
+	PyObject *v;
+	%(itselftype)s *p_itself;
+{
+	if (v == NULL || !%(prefix)s_Check(v)) {
+		PyErr_SetString(PyExc_TypeError, "%(name)s required");
+		return 0;
+	}
+	*p_itself = ((%(objecttype)s *)v)->ob_itself;
+	return 1;
+}
+""" % self.__dict__)
+
+	def outputDealloc(self):
+		Output("static void %s_dealloc(self)", self.prefix)
+		IndentLevel()
+		Output("%s *self;", self.objecttype)
+		DedentLevel()
+		OutLbrace()
+		self.outputFreeIt("self->ob_itself")
+		Output("PyMem_DEL(self);")
+		OutRbrace()
+		Output()
+
+	def outputFreeIt(self, name):
+		Output("/* Cleanup of %s goes here */", name)
+
+	def outputGetattr(self):
+		Output("static PyObject *%s_getattr(self, name)", self.prefix)
+		IndentLevel()
+		Output("%s *self;", self.objecttype)
+		Output("char *name;")
+		DedentLevel()
+		OutLbrace()
+		self.outputGetattrBody()
+		OutRbrace()
+		Output()
+
+	def outputGetattrBody(self):
+		self.outputGetattrHook()
+		Output("return Py_FindMethod(%s_methods, (PyObject *)self, name);", self.prefix)
+
+	def outputGetattrHook(self):
+		pass
+
+	def outputSetattr(self):
+		Output("#define %s_setattr NULL", self.prefix)
+		Output()
+
+	def outputTypeObject(self):
 		Output("static PyTypeObject %s = {", self.typename)
 		IndentLevel()
 		Output("PyObject_HEAD_INIT(&PyType_Type)")
@@ -105,26 +136,3 @@ class ObjectDefinition(GeneratorGroup):
 		Output("(setattrfunc) %s_setattr, /*tp_setattr*/", self.prefix)
 		DedentLevel()
 		Output("};")
-
-		OutHeader2("End object type " + self.name)
-
-	def outputFreeIt(self, name):
-		Output("DEL(%s); /* XXX */", name)
-
-	def outputGetattr(self):
-		Output("static PyObject *%s_getattr(self, name)", self.prefix)
-		IndentLevel()
-		Output("%s *self;", self.objecttype)
-		Output("char *name;")
-		DedentLevel()
-		OutLbrace()
-		self.outputGetattrBody()
-		OutRbrace()
-		Output()
-
-	def outputGetattrBody(self):
-		Output("return findmethod(self, %s_methods, name);", self.prefix)
-
-	def outputSetattr(self):
-		Output("#define %s_setattr NULL", self.prefix)
-		Output()

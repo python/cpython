@@ -14,7 +14,7 @@ class GeneratorGroup:
 		for g in self.generators:
 			g.generate()
 		Output()
-		Output("static struct methodlist %s_methods[] = {", self.prefix)
+		Output("static PyMethodDef %s_methods[] = {", self.prefix)
 		IndentLevel()
 		for g in self.generators:
 			g.reference()
