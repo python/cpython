@@ -32,4 +32,7 @@ class install_scripts(install_misc):
                     self.announce("changing mode of %s to %o" % (file, mode))
                     os.chmod(file, mode)
 
+    def get_inputs (self):
+        return self.distribution.scripts or []
+
 # class install_scripts

@@ -18,3 +18,6 @@ class install_data (install_misc):
 
     def run (self):
         self._copy_files(self.distribution.data)
+
+    def get_inputs (self):
+        return self.distribution.data or []
