@@ -88,6 +88,23 @@ Weibull distribution.  \var{alpha} is the scale parameter and
 \var{beta} is the shape parameter.
 \end{funcdesc}
 
+
+This function does not represent a specific distribution, but
+implements a standard useful algorithm:
+
+\begin{funcdesc}{shuffle}{x\optional{, random}}
+Shuffle the sequence \var{x} in place.
+The optional argument \var{random} is a 0-argument function returning
+a random float in [0.0, 1.0); by default, this is the function
+\function{random()}.
+
+Note that for even rather small \code{len(\var{x})}, the total number
+of permutations of \var{x} is larger than the period of most random
+number generators; this implies that most permutations of a long
+sequence can never be generated.
+\end{funcdesc}
+
+
 \begin{seealso}
   \seemodule{whrandom}{The standard Python random number generator.}
 \end{seealso}
