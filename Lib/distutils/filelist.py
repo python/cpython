@@ -35,24 +35,25 @@ class FileList:
     """
 
     def __init__(self, 
-                 files=[], 
-                 dir=os.curdir, 
-                 allfiles=None, 
                  warn=None, 
                  debug_print=None):
-        # use standard warning and debug functions, if no other given
-        if warn is None: warn = self.__warn 
-        if debug_print is None: debug_print = self.__debug_print
-        self.warn = warn
-        self.debug_print = debug_print
-        self.files = files
-        self.dir = dir
+        # use standard warning and debug functions if no other given
+        self.warn = warn or self.__warn
+        self.debug_print = debug_print or self.__debug_print
 
-        # if None, 'allfiles' will be filled when used for first time
-        self.allfiles = allfiles 
+        self.allfiles = None
+        self.files = []
 
 
-    # standard warning and debug functions, if no other given
+    def set_allfiles (self, allfiles):
+        self.allfiles = allfiles
+
+    def findall (self, dir=os.curdir):
+        self.allfiles = findall(dir)
+
+
+    # -- Fallback warning/debug functions ------------------------------
+    
     def __warn (self, msg):
         sys.stderr.write ("warning: %s\n" % msg)
         
@@ -64,6 +65,34 @@ class FileList:
         if DEBUG:
             print msg
 
+
+    # -- List-like methods ---------------------------------------------
+
+    def append (self, item):
+        self.files.append(item)
+
+    def extend (self, items):
+        self.files.extend(items)
+
+    def sort (self):
+        # Not a strict lexical sort!
+        sortable_files = map(os.path.split, self.files)
+        sortable_files.sort()
+        self.files = []
+        for sort_tuple in sortable_files:
+            self.files.append(apply(os.path.join, sort_tuple))
+
+
+    # -- Other miscellaneous utility methods ---------------------------
+
+    def remove_duplicates (self):
+        # Assumes list has been sorted!
+        for i in range (len(self.files)-1, 0, -1):
+            if self.files[i] == self.files[i-1]:
+                del self.files[i]
+
+
+    # -- "File template" methods ---------------------------------------
     
     def _parse_template_line (self, line):
         words = string.split (line)
@@ -180,6 +209,8 @@ class FileList:
     # process_template_line ()
 
 
+    # -- Filtering/selection methods -----------------------------------
+
     def include_pattern (self, pattern,
                         anchor=1, prefix=None, is_regex=0):
 
@@ -213,7 +244,8 @@ class FileList:
                          pattern_re.pattern)
 
         # delayed loading of allfiles list
-        if self.allfiles is None: self.allfiles = findall (self.dir)
+        if self.allfiles is None:
+            self.findall()
 
         for name in self.allfiles:
             if pattern_re.search (name):
