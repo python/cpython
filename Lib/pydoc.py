@@ -312,11 +312,11 @@ class HTMLRepr(Repr):
         return Repr.repr(self, object)
 
     def repr1(self, x, level):
-        methodname = 'repr_' + join(split(type(x).__name__), '_')
-        if hasattr(self, methodname):
-            return getattr(self, methodname)(x, level)
-        else:
-            return self.escape(cram(stripid(repr(x)), self.maxother))
+        if hasattr(type(x), '__name__'):
+            methodname = 'repr_' + join(split(type(x).__name__), '_')
+            if hasattr(self, methodname):
+                return getattr(self, methodname)(x, level)
+        return self.escape(cram(stripid(repr(x)), self.maxother))
 
     def repr_string(self, x, level):
         test = cram(x, self.maxstring)
@@ -874,11 +874,11 @@ class TextRepr(Repr):
         self.maxstring = self.maxother = 100
 
     def repr1(self, x, level):
-        methodname = 'repr_' + join(split(type(x).__name__), '_')
-        if hasattr(self, methodname):
-            return getattr(self, methodname)(x, level)
-        else:
-            return cram(stripid(repr(x)), self.maxother)
+        if hasattr(type(x), '__name__'):
+            methodname = 'repr_' + join(split(type(x).__name__), '_')
+            if hasattr(self, methodname):
+                return getattr(self, methodname)(x, level)
+        return cram(stripid(repr(x)), self.maxother)
 
     def repr_string(self, x, level):
         test = cram(x, self.maxstring)
