@@ -452,6 +452,8 @@ New platforms
 
 - AtheOS is now supported.
 
+- the EMX runtime environment on OS/2 is now supported.
+
 - GNU/Hurd is now supported.
 
 Tests
