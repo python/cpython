@@ -4,8 +4,8 @@
 
 /* For a description, see the comments at end of this file */
 
+#include "Python.h"
 #include "pgenheaders.h"
-#include "assert.h"
 #include "token.h"
 #include "node.h"
 #include "grammar.h"

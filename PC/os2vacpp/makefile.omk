@@ -611,7 +611,7 @@ md5module.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
 	 pythonrun.h rangeobject.h sliceobject.h stringobject.h sysmodule.h \
 	 traceback.h tupleobject.h
 
-mpzmodule.obj: abstract.h assert.h ceval.h classobject.h cobject.h \
+mpzmodule.obj: abstract.h ceval.h classobject.h cobject.h \
 	 complexobject.h pyconfig.h dictobject.h fileobject.h floatobject.h \
 	 funcobject.h import.h intobject.h intrcheck.h listobject.h \
 	 longintrepr.h longobject.h methodobject.h modsupport.h \
@@ -716,7 +716,7 @@ regexmodule.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
 	 pythonrun.h rangeobject.h regexpr.h sliceobject.h stringobject.h \
 	 sysmodule.h traceback.h tupleobject.h
 
-regexpr.obj: abstract.h assert.h ceval.h classobject.h cobject.h \
+regexpr.obj: abstract.h ceval.h classobject.h cobject.h \
 	 complexobject.h pyconfig.h dictobject.h fileobject.h floatobject.h \
 	 funcobject.h import.h intobject.h intrcheck.h listobject.h \
 	 longobject.h methodobject.h modsupport.h moduleobject.h mymalloc.h \
@@ -987,7 +987,7 @@ listobject.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
 	 pythonrun.h rangeobject.h sliceobject.h stringobject.h sysmodule.h \
 	 traceback.h tupleobject.h
 
-longobject.obj: abstract.h assert.h ceval.h classobject.h cobject.h \
+longobject.obj: abstract.h ceval.h classobject.h cobject.h \
 	 complexobject.h pyconfig.h dictobject.h fileobject.h floatobject.h \
 	 funcobject.h import.h intobject.h intrcheck.h listobject.h \
 	 longintrepr.h longobject.h methodobject.h modsupport.h \
@@ -1076,10 +1076,10 @@ bitset.obj: bitset.h pyconfig.h mymalloc.h myproto.h pgenheaders.h pydebug.h
 firstsets.obj: bitset.h pyconfig.h grammar.h mymalloc.h myproto.h \
 	 pgenheaders.h pydebug.h token.h
 
-grammar.obj: assert.h bitset.h pyconfig.h grammar.h mymalloc.h myproto.h \
+grammar.obj: bitset.h pyconfig.h grammar.h mymalloc.h myproto.h \
 	 pgenheaders.h pydebug.h token.h
 
-grammar1.obj: assert.h bitset.h pyconfig.h grammar.h mymalloc.h myproto.h \
+grammar1.obj: bitset.h pyconfig.h grammar.h mymalloc.h myproto.h \
 	 pgenheaders.h pydebug.h token.h
 
 intrcheck.obj: pyconfig.h intrcheck.h mymalloc.h myproto.h
@@ -1094,14 +1094,14 @@ myreadline.obj: pyconfig.h intrcheck.h mymalloc.h myproto.h
 
 node.obj: pyconfig.h mymalloc.h myproto.h node.h pgenheaders.h pydebug.h
 
-parser.obj: assert.h bitset.h pyconfig.h errcode.h grammar.h mymalloc.h \
+parser.obj: bitset.h pyconfig.h errcode.h grammar.h mymalloc.h \
 	 myproto.h node.h parser.h pgenheaders.h pydebug.h token.h
 
 parsetok.obj: bitset.h pyconfig.h errcode.h grammar.h mymalloc.h myproto.h \
 	 node.h parser.h parsetok.h pgenheaders.h pydebug.h token.h \
 	 tokenizer.h
 
-pgen.obj: assert.h bitset.h pyconfig.h grammar.h metagrammar.h mymalloc.h \
+pgen.obj: bitset.h pyconfig.h grammar.h metagrammar.h mymalloc.h \
 	 myproto.h node.h pgen.h pgenheaders.h pydebug.h token.h
 
 pgenmain.obj: bitset.h pyconfig.h grammar.h mymalloc.h myproto.h node.h \

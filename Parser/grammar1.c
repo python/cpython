@@ -1,8 +1,8 @@
 
 /* Grammar subroutines needed by parser */
 
+#include "Python.h"
 #include "pgenheaders.h"
-#include "assert.h"
 #include "grammar.h"
 #include "token.h"
 

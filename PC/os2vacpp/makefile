@@ -792,7 +792,7 @@ md5module.obj: $(PY_INCLUDE)\abstract.h $(PY_INCLUDE)\ceval.h $(PY_INCLUDE)\clas
 	 $(PY_INCLUDE)\sliceobject.h $(PY_INCLUDE)\stringobject.h \
 	 $(PY_INCLUDE)\sysmodule.h $(PY_INCLUDE)\traceback.h $(PY_INCLUDE)\tupleobject.h
 
-mpzmodule.obj: $(PY_INCLUDE)\abstract.h $(PY_PARSER)\assert.h $(PY_INCLUDE)\ceval.h \
+mpzmodule.obj: $(PY_INCLUDE)\abstract.h $(PY_INCLUDE)\ceval.h \
 	 $(PY_INCLUDE)\classobject.h $(PY_INCLUDE)\cobject.h $(PY_INCLUDE)\complexobject.h \
 	 pyconfig.h $(PY_INCLUDE)\dictobject.h $(PY_INCLUDE)\fileobject.h \
 	 $(PY_INCLUDE)\floatobject.h $(PY_INCLUDE)\funcobject.h $(PY_INCLUDE)\import.h \
@@ -972,7 +972,7 @@ regexmodule.obj: $(PY_INCLUDE)\abstract.h $(PY_INCLUDE)\ceval.h \
 	 $(PY_INCLUDE)\stringobject.h $(PY_INCLUDE)\sysmodule.h $(PY_INCLUDE)\traceback.h \
 	 $(PY_INCLUDE)\tupleobject.h
 
-regexpr.obj: $(PY_INCLUDE)\abstract.h $(PY_PARSER)\assert.h $(PY_INCLUDE)\ceval.h \
+regexpr.obj: $(PY_INCLUDE)\abstract.h $(PY_INCLUDE)\ceval.h \
 	 $(PY_INCLUDE)\classobject.h $(PY_INCLUDE)\cobject.h $(PY_INCLUDE)\complexobject.h \
 	 pyconfig.h $(PY_INCLUDE)\dictobject.h $(PY_INCLUDE)\fileobject.h \
 	 $(PY_INCLUDE)\floatobject.h $(PY_INCLUDE)\funcobject.h $(PY_INCLUDE)\import.h \
@@ -1415,7 +1415,7 @@ listobject.obj: $(PY_INCLUDE)\abstract.h $(PY_INCLUDE)\ceval.h $(PY_INCLUDE)\cla
 	 $(PY_INCLUDE)\sliceobject.h $(PY_INCLUDE)\stringobject.h \
 	 $(PY_INCLUDE)\sysmodule.h $(PY_INCLUDE)\traceback.h $(PY_INCLUDE)\tupleobject.h
 
-longobject.obj: $(PY_INCLUDE)\abstract.h $(PY_PARSER)\assert.h $(PY_INCLUDE)\ceval.h \
+longobject.obj: $(PY_INCLUDE)\abstract.h $(PY_INCLUDE)\ceval.h \
 	 $(PY_INCLUDE)\classobject.h $(PY_INCLUDE)\cobject.h $(PY_INCLUDE)\complexobject.h \
 	 pyconfig.h $(PY_INCLUDE)\dictobject.h $(PY_INCLUDE)\fileobject.h \
 	 $(PY_INCLUDE)\floatobject.h $(PY_INCLUDE)\funcobject.h $(PY_INCLUDE)\import.h \
@@ -1565,11 +1565,11 @@ firstsets.obj: $(PY_INCLUDE)\bitset.h pyconfig.h $(PY_INCLUDE)\grammar.h \
 	 $(PY_INCLUDE)\mymalloc.h $(PY_INCLUDE)\myproto.h $(PY_INCLUDE)\pgenheaders.h \
 	 $(PY_INCLUDE)\pydebug.h $(PY_INCLUDE)\token.h
 
-grammar.obj: $(PY_PARSER)\assert.h $(PY_INCLUDE)\bitset.h pyconfig.h \
+grammar.obj: $(PY_INCLUDE)\bitset.h pyconfig.h \
 	 $(PY_INCLUDE)\grammar.h $(PY_INCLUDE)\mymalloc.h $(PY_INCLUDE)\myproto.h \
 	 $(PY_INCLUDE)\pgenheaders.h $(PY_INCLUDE)\pydebug.h $(PY_INCLUDE)\token.h
 
-grammar1.obj: $(PY_PARSER)\assert.h $(PY_INCLUDE)\bitset.h pyconfig.h \
+grammar1.obj: $(PY_INCLUDE)\bitset.h pyconfig.h \
 	 $(PY_INCLUDE)\grammar.h $(PY_INCLUDE)\mymalloc.h $(PY_INCLUDE)\myproto.h \
 	 $(PY_INCLUDE)\pgenheaders.h $(PY_INCLUDE)\pydebug.h $(PY_INCLUDE)\token.h
 
@@ -1590,7 +1590,7 @@ myreadline.obj: pyconfig.h $(PY_INCLUDE)\intrcheck.h $(PY_INCLUDE)\mymalloc.h \
 node.obj: pyconfig.h $(PY_INCLUDE)\mymalloc.h $(PY_INCLUDE)\myproto.h $(PY_INCLUDE)\node.h \
 	 $(PY_INCLUDE)\pgenheaders.h $(PY_INCLUDE)\pydebug.h
 
-parser.obj: $(PY_PARSER)\assert.h $(PY_INCLUDE)\bitset.h pyconfig.h $(PY_INCLUDE)\errcode.h \
+parser.obj: $(PY_INCLUDE)\bitset.h pyconfig.h $(PY_INCLUDE)\errcode.h \
 	 $(PY_INCLUDE)\grammar.h $(PY_INCLUDE)\mymalloc.h $(PY_INCLUDE)\myproto.h \
 	 $(PY_INCLUDE)\node.h $(PY_PARSER)\parser.h $(PY_INCLUDE)\pgenheaders.h \
 	 $(PY_INCLUDE)\pydebug.h $(PY_INCLUDE)\token.h
@@ -1601,7 +1601,7 @@ parsetok.obj: $(PY_INCLUDE)\bitset.h pyconfig.h $(PY_INCLUDE)\errcode.h \
 	 $(PY_INCLUDE)\pgenheaders.h $(PY_INCLUDE)\pydebug.h $(PY_INCLUDE)\token.h \
 	 $(PY_PARSER)\tokenizer.h
 
-pgen.obj: $(PY_PARSER)\assert.h $(PY_INCLUDE)\bitset.h pyconfig.h $(PY_INCLUDE)\grammar.h \
+pgen.obj: $(PY_INCLUDE)\bitset.h pyconfig.h $(PY_INCLUDE)\grammar.h \
 	 $(PY_INCLUDE)\metagrammar.h $(PY_INCLUDE)\mymalloc.h $(PY_INCLUDE)\myproto.h \
 	 $(PY_INCLUDE)\node.h $(PY_PARSER)\pgen.h $(PY_INCLUDE)\pgenheaders.h \
 	 $(PY_INCLUDE)\pydebug.h $(PY_INCLUDE)\token.h
