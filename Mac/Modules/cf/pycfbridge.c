@@ -4,6 +4,7 @@
 
 #ifdef WITHOUT_FRAMEWORKS
 #include <CFBase.h>
+#include <CFNumber.h>
 #include <CFArray.h>
 #include <CFData.h>
 #include <CFDictionary.h>
@@ -66,25 +67,30 @@ err:
 PyObject *
 PyCF_CF2Python_mapping(CFTypeRef src) {
 	int size = CFDictionaryGetCount(src);
-	PyObject *rv;
-	CFTypeRef *allkeys, *allvalues;
+	PyObject *rv = NULL;
+	CFTypeRef *allkeys = NULL, *allvalues = NULL;
 	CFTypeRef key_cf, value_cf;
 	PyObject *key_py = NULL, *value_py = NULL;
 	int i;
 	
 	allkeys = malloc(size*sizeof(CFTypeRef *));
-	if (allkeys == NULL) return PyErr_NoMemory();
+	if (allkeys == NULL) {
+		PyErr_NoMemory();
+		goto err;
+	}
 	allvalues = malloc(size*sizeof(CFTypeRef *));
-	if (allvalues == NULL) return PyErr_NoMemory();
-	if ( (rv=PyDict_New()) == NULL )
-		return NULL;
+	if (allvalues == NULL) {
+		PyErr_NoMemory();
+		goto err;
+	}
+	if ( (rv=PyDict_New()) == NULL ) goto err;
 	CFDictionaryGetKeysAndValues(src, allkeys, allvalues);
 	for(i=0; i<size; i++) {
 		key_cf = allkeys[i];
 		value_cf = allvalues[i];
 		key_py = PyCF_CF2Python(key_cf);
 		if (key_py == NULL ) goto err;
-		value_py = PyCF_CF2Python(value_py);
+		value_py = PyCF_CF2Python(value_cf);
 		if (value_py == NULL ) goto err;
 		if (PyDict_SetItem(rv, key_py, value_py) < 0) goto err;
 		key_py = NULL;
@@ -94,7 +100,7 @@ PyCF_CF2Python_mapping(CFTypeRef src) {
 err:
 	Py_XDECREF(key_py);
 	Py_XDECREF(value_py);
-	Py_DECREF(rv);
+	Py_XDECREF(rv);
 	free(allkeys);
 	free(allvalues);
 	return NULL;
@@ -107,6 +113,21 @@ PyCF_CF2Python_simple(CFTypeRef src) {
 	typeid = CFGetTypeID(src);
 	if (typeid == CFStringGetTypeID())
 		return PyCF_CF2Python_string((CFStringRef)src);
+	if (typeid == CFBooleanGetTypeID())
+		return PyBool_FromLong((long)CFBooleanGetValue(src));
+	if (typeid == CFNumberGetTypeID()) {
+		if (CFNumberIsFloatType(src)) {
+			double d;
+			CFNumberGetValue(src, kCFNumberDoubleType, &d);
+			return PyFloat_FromDouble(d);
+		} else {
+			long l;
+			if (!CFNumberGetValue(src, kCFNumberLongType, &l))
+				/* XXXX Out of range! */;
+			return PyInt_FromLong(l);
+		}
+	}
+	/* XXXX Should return as CFTypeRef, really... */
 	PyMac_Error(resNotFound);
 	return NULL;
 }
@@ -123,7 +144,7 @@ PyCF_CF2Python_string(CFStringRef src) {
 	range.length = size;
 	if( data == NULL ) return PyErr_NoMemory();
 	CFStringGetCharacters(src, range, data);
-	rv = (PyObject *)PyUnicode_FromUnicode(data, size);
+	rv = (PyObject *)PyUnicode_FromUnicode(data, size-1);
 	free(data);
 	return rv;
 }
@@ -197,11 +218,9 @@ PyCF_Python2CF_mapping(PyObject *src, CFDictionaryRef *dst) {
 	for( i=0; i<size; i++) {
 		item_py = PySequence_GetItem(aslist, i);
 		if (item_py == NULL) goto err;
-		if (!PyArg_ParseTuple(item_py, "OO", key_py, value_py)) goto err;
+		if (!PyArg_ParseTuple(item_py, "OO", &key_py, &value_py)) goto err;
 		if ( !PyCF_Python2CF(key_py, &key_cf) ) goto err;
-		Py_DECREF(key_py);
 		if ( !PyCF_Python2CF(value_py, &value_cf) ) goto err;
-		Py_DECREF(value_py);
 		CFDictionaryAddValue(rv, key_cf, value_cf);
 		CFRelease(key_cf);
 		key_cf = NULL;
@@ -212,8 +231,6 @@ PyCF_Python2CF_mapping(PyObject *src, CFDictionaryRef *dst) {
 	return 1;
 err:
 	Py_XDECREF(item_py);
-	Py_XDECREF(key_py);
-	Py_XDECREF(value_py);
 	Py_XDECREF(aslist);
 	if (rv) CFRelease(rv);
 	if (key_cf) CFRelease(key_cf);
@@ -230,6 +247,24 @@ PyCF_Python2CF_simple(PyObject *src, CFTypeRef *dst) {
 	}
 	if (PyString_Check(src) || PyUnicode_Check(src)) 
 		return PyCF_Python2CF_string(src, (CFStringRef *)dst);
+	if (PyBool_Check(src)) {
+		if (src == Py_True)
+			*dst = kCFBooleanTrue;
+		else
+			*dst = kCFBooleanFalse;
+		return 1;
+	}
+	if (PyInt_Check(src)) {
+		long v = PyInt_AsLong(src);
+		*dst = CFNumberCreate(NULL, kCFNumberLongType, &v);
+		return 1;
+	}
+	if (PyFloat_Check(src)) {
+		double d = PyFloat_AsDouble(src);
+		*dst = CFNumberCreate(NULL, kCFNumberDoubleType, &d);
+		return 1;
+	}
+			
 	PyErr_Format(PyExc_TypeError,
 		  "Cannot convert %.500s objects to CF",
 				     src->ob_type->tp_name);
