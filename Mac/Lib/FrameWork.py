@@ -55,9 +55,28 @@ partname[6] = 'inGoAway'
 partname[7] = 'inZoomIn'
 partname[8] = 'inZoomOut'
 
-# A rectangle that's bigger than the screen,
-# but not so big that adding the screen size to it will cause 16-bit overflow
-everywhere = (-16000, -16000, 16000, 16000)
+#
+# The useable portion of the screen
+#
+screenbounds = qd.screenBits.bounds
+screenbounds = screenbounds[0]+4, screenbounds[1]+4, \
+	screenbounds[2]-4, screenbounds[3]-4
+	
+next_window_x = 40
+next_window_y = 40
+
+def windowbounds(width, height):
+	"Return sensible window bounds"
+	global next_window_x, next_window_y
+	r, b = next_window_x+width, next_window_y+height
+	if r > screenbounds[2]:
+		next_window_x = 40
+	if b > screenbounds[3]:
+		next_window_y = 40
+	l, t = next_window_x, next_window_y
+	r, b = next_window_x+width, next_window_y+height
+	next_window_x, next_window_y = next_window_x+20, next_window_y+20
+	return l, t, r, b
 
 
 class Application:
@@ -122,9 +141,9 @@ class Application:
 		if ok:
 			self.dispatch(event)
 		else:
-			self.idle()
+			self.idle(event)
 			
-	def idle(self):
+	def idle(self, event):
 		pass
 	
 	def getevent(self, mask = everyEvent, wait = 0):
@@ -452,6 +471,9 @@ class MenuItem:
 			self.menu.menu.EnableItem(self.item)
 		else:
 			self.menu.menu.DisableItem(self.item)
+			
+	def settext(self, text):
+		self.menu.menu.SetMenuItemText(self.item, text)
 		
 
 class RadioItem(MenuItem):
@@ -519,7 +541,7 @@ class Window:
 		where = event[3]
 		window.DragWindow(where, self.draglimit)
 	
-	draglimit = everywhere
+	draglimit = screenbounds
 	
 	def do_inGoAway(self, partcode, window, event):
 		where = event[3]
@@ -547,7 +569,7 @@ class Window:
 			width = result & 0xffff		# Lo word
 			self.do_resize(width, height, window)
 	
-	growlimit = everywhere
+	growlimit = screenbounds
 	
 	def do_resize(self, width, height, window):
 		window.SizeWindow(width, height, 0)
@@ -555,7 +577,7 @@ class Window:
 	
 	def do_postresize(self, width, height, window):
 		SetPort(window)
-		InvalRect(everywhere)
+		InvalRect(window.GetWindowPort().portRect)
 	
 	def do_inContent(self, partcode, window, event):
 		#
@@ -582,7 +604,7 @@ class Window:
 		window.EndUpdate()
 	
 	def do_update(self, window, event):
-		EraseRect(everywhere)
+		EraseRgn(window.GetWindowPort().visRgn)
 		
 	def do_activate(self, activate, event):
 		if DEBUG: print 'Activate %d for %s'%(activate, self.wid)
@@ -591,6 +613,7 @@ class ControlsWindow(Window):
 
 	def do_rawupdate(self, window, event):
 		if DEBUG: print "raw update for", window
+		SetPort(window)
 		window.BeginUpdate()
 		self.do_update(window, event)
 		DrawControls(window)
@@ -601,6 +624,9 @@ class ControlsWindow(Window):
 		if DEBUG: print "control hit in", window, "on", control, "; pcode =", pcode
 
 	def do_inContent(self, partcode, window, event):
+		if FrontWindow() <> window:
+			window.SelectWindow()
+			return
 		(what, message, when, where, modifiers) = event
 		SetPort(window)  # XXXX Needed?
 		local = GlobalToLocal(where)
