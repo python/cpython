@@ -59,7 +59,7 @@ SO=		@SO@
 LDSHARED=	@LDSHARED@
 CCSHARED=	@CCSHARED@
 LINKFORSHARED=	@LINKFORSHARED@
-DESTSHARED=	$(BINLIBDEST)/sharedmodules
+DESTSHARED=	$(BINLIBDEST)/lib-dynload
 
 # Portable install script (configure doesn't always guess right)
 INSTALL=	@srcdir@/../install-sh -c

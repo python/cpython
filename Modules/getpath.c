@@ -84,7 +84,7 @@ PERFORMANCE OF THIS SOFTWARE.
  *
  * For the remaining steps, the prefix landmark will always be
  * lib/python$VERSION/string.py and the exec_prefix will always be
- * lib/python$VERSION/sharedmodules, where $VERSION is Python's version
+ * lib/python$VERSION/lib-dynload, where $VERSION is Python's version
  * number as supplied by the Makefile.  Note that this means that no more
  * build directory checking is performed; if the first step did not find
  * the landmarks, the assumption is that python is running from an
@@ -143,7 +143,7 @@ PERFORMANCE OF THIS SOFTWARE.
 /* I know this isn't K&R C, but the Makefile specifies it anyway */
 #define PYTHONPATH PREFIX "/lib/python" VERSION ":" \
 	           PREFIX "/lib/python" VERSION "/test" ":" \
-	      EXEC_PREFIX "/lib/python" VERSION "/sharedmodules"
+	      EXEC_PREFIX "/lib/python" VERSION "/lib-dynload"
 #endif
 
 #ifndef LANDMARK
@@ -291,7 +291,7 @@ search_for_exec_prefix(argv0_path, home)
 		else
 			strcpy(exec_prefix, home);
 		joinpath(exec_prefix, lib_python);
-		joinpath(exec_prefix, "sharedmodules");
+		joinpath(exec_prefix, "lib-dynload");
 		if (exists(exec_prefix))
 			return 1;
 	}
@@ -301,7 +301,7 @@ search_for_exec_prefix(argv0_path, home)
 	do {
 		n = strlen(exec_prefix);
 		joinpath(exec_prefix, lib_python);
-		joinpath(exec_prefix, "sharedmodules");
+		joinpath(exec_prefix, "lib-dynload");
 		if (exists(exec_prefix))
 			return 1;
 		exec_prefix[n] = '\0';
@@ -311,7 +311,7 @@ search_for_exec_prefix(argv0_path, home)
 	/* Look at configure's EXEC_PREFIX */
 	strcpy(exec_prefix, EXEC_PREFIX);
 	joinpath(exec_prefix, lib_python);
-	joinpath(exec_prefix, "sharedmodules");
+	joinpath(exec_prefix, "lib-dynload");
 	if (exists(exec_prefix))
 		return 1;
 
@@ -410,7 +410,7 @@ calculate_path()
 		fprintf(stderr,
 		"Could not find platform dependent libraries <exec_prefix>\n");
 		strcpy(exec_prefix, EXEC_PREFIX);
-		joinpath(exec_prefix, "lib/sharedmodules");
+		joinpath(exec_prefix, "lib/lib-dynload");
 	}
 	/* If we found EXEC_PREFIX do *not* reduce it!  (Yet.) */
 
