@@ -19,6 +19,7 @@
  */
 
 #include "Python.h"
+#include "osdefs.h"
 
 /* Caution:  MS Visual C++ 6 errors if a single string literal exceeds
  * 2Kb.  So the module docstring has been broken roughly in half, using
@@ -729,6 +730,26 @@ SyntaxError__init__(PyObject *self, PyObject *args)
 }
 
 
+/* This is called "my_basename" instead of just "basename" to avoid name
+   conflicts with glibc; basename is already prototyped if _GNU_SOURCE is
+   defined, and Python does define that. */
+static char *
+my_basename(char *name)
+{
+	char *cp = name;
+	char *result = name;
+
+	if (name == NULL)
+		return "???";
+	while (*cp != '\0') {
+		if (*cp == SEP)
+			result = cp + 1;
+		++cp;
+	}
+	return result;
+}
+
+
 static PyObject *
 SyntaxError__str__(PyObject *self, PyObject *args)
 {
@@ -772,12 +793,12 @@ SyntaxError__str__(PyObject *self, PyObject *args)
 		if (have_filename && have_lineno)
 		    sprintf(buffer, "%s (%s, line %d)",
 			    PyString_AS_STRING(str),
-			    PyString_AS_STRING(filename),
+			    my_basename(PyString_AS_STRING(filename)),
 			    PyInt_AsLong(lineno));
 		else if (have_filename)
 		    sprintf(buffer, "%s (%s)",
 			    PyString_AS_STRING(str),
-			    PyString_AS_STRING(filename));
+			    my_basename(PyString_AS_STRING(filename)));
 		else if (have_lineno)
 		    sprintf(buffer, "%s (line %d)",
 			    PyString_AS_STRING(str),
