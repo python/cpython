@@ -12,8 +12,14 @@ What's New in Python 2.4.1?
 Core and builtins
 -----------------
 
+- Bug #1085744:  Add missing overflow check to PySequence_Tuple().
+  Make resize schedule linear (amortized).
+
+
 Library
 -------
+
+- Bug #1086555:  Fix leak in syslog module.
 
 - atexit.register no longer references the sys module before importing it.
   (Bug #1083202).
@@ -36,11 +42,6 @@ What's New in Python 2.4 final?
 
 Core and builtins
 -----------------
-
-- Bug #1086555:  Fix leak in syslog module.
-
-- Bug #1085744:  Add missing overflow check to PySequence_Tuple().
-  Make resize schedule linear (amortized).
 
 - Bug 875692: Improve signal handling, especially when using threads, by
   forcing an early re-execution of PyEval_EvalFrame() "periodic" code when
