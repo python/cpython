@@ -5,9 +5,28 @@
 \sectionauthor{Moshe Zadka}{mzadka@geocities.com}
 \modulesynopsis{Provide an interface to the Sun AU sound format.}
 
-The \module{sunau} module provides a convenient interface to the Sun AU sound
-format. Note that this module is interface-compatible with the modules
-\refmodule{aifc} and \refmodule{wave}.
+The \module{sunau} module provides a convenient interface to the Sun
+AU sound format.  Note that this module is interface-compatible with
+the modules \refmodule{aifc} and \refmodule{wave}.
+
+An audio file consists of a header followed by the data.  The fields
+of the header are:
+
+\begin{tableii}{l|l}{textrm}{Field}{Contents}
+  \lineii{magic word}{The four bytes \samp{.snd}.}
+  \lineii{header size}{Size of the header, including info, in bytes.}
+  \lineii{data size}{Physical size of the data, in bytes.}
+  \lineii{encoding}{Indicates how the audio samples are encoded.}
+  \lineii{sample rate}{The sampling rate.}
+  \lineii{\# of channels}{The number of channels in the samples.}
+  \lineii{info}{\ASCII{} string giving a description of the audio
+                file (padded with null bytes).}
+\end{tableii}
+
+Apart from the info field, all header fields are 4 bytes in size.
+They are all 32-bit unsigned integers encoded in big-endian byte
+order.
+
 
 The \module{sunau} module defines the following functions:
 
@@ -36,10 +55,31 @@ An error raised when something is impossible because of Sun AU specs or
 implementation deficiency.
 \end{excdesc}
 
-The \module{sunau} module defines the following data item:
+The \module{sunau} module defines the following data items:
 
 \begin{datadesc}{AUDIO_FILE_MAGIC}
-An integer every valid Sun AU file begins with a big-endian encoding of.
+An integer every valid Sun AU file begins with, stored in big-endian
+form.  This is the string \samp{.snd} interpreted as an integer.
+\end{datadesc}
+
+\begin{datadesc}{AUDIO_FILE_ENCODING_MULAW_8}
+\dataline{AUDIO_FILE_ENCODING_LINEAR_8}
+\dataline{AUDIO_FILE_ENCODING_LINEAR_16}
+\dataline{AUDIO_FILE_ENCODING_LINEAR_24}
+\dataline{AUDIO_FILE_ENCODING_LINEAR_32}
+\dataline{AUDIO_FILE_ENCODING_ALAW_8}
+Values of the encoding field from the AU header which are supported by
+this module.
+\end{datadesc}
+
+\begin{datadesc}{AUDIO_FILE_ENCODING_FLOAT}
+\dataline{AUDIO_FILE_ENCODING_DOUBLE}
+\dataline{AUDIO_FILE_ENCODING_ADPCM_G721}
+\dataline{AUDIO_FILE_ENCODING_ADPCM_G722}
+\dataline{AUDIO_FILE_ENCODING_ADPCM_G723_3}
+\dataline{AUDIO_FILE_ENCODING_ADPCM_G723_5}
+Additional known values of the encoding field from the AU header, but
+which are not supported by this module.
 \end{datadesc}
 
 
@@ -98,11 +138,13 @@ The following two methods define a term ``position'' which is compatible
 between them, and is otherwise implementation dependent.
 
 \begin{methoddesc}[AU_read]{setpos}{pos}
-Set the file pointer to the specified position.
+Set the file pointer to the specified position.  Only values returned
+from \method{tell()} should be used for \var{pos}.
 \end{methoddesc}
 
 \begin{methoddesc}[AU_read]{tell}{}
-Return current file pointer position.
+Return current file pointer position.  Note that the returned value
+has nothing to do with the actual position in the file.
 \end{methoddesc}
 
 The following two functions are defined for compatibility with the 
