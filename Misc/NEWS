@@ -1,3 +1,14 @@
+What's New in Python 2.1 beta 2?
+================================
+
+Core language, builtins, and interpreter
+
+Standard library
+
+- A new module Tix was added, which wraps the Tix extension library for Tk.
+  With that module, it is not necessary to statically link Tix with _tkinter,
+  since Tix will be loaded with Tcl's "package require" command.
+
 What's New in Python 2.1 beta 1?
 ================================
 
