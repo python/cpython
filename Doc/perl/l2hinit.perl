@@ -170,7 +170,7 @@ sub use_icon($$$) {
             my $r = get_my_icon($1);
             $s =~ s/\<tex2html_[a-z_]+_visible_mark\>/$r/;
         }
-        $s =~ s/<[aA] /<a rel="$rel" title="$title" \n  /;
+        $s =~ s/<[aA] /<a rel="$rel" title="$title"\n  /;
         $s =~ s/ HREF=/ href=/;
         return $s;
     }
@@ -432,7 +432,7 @@ sub do_cmd_tableofcontents {
     my($closures, $reopens) = preserve_open_tags();
     anchor_label('contents', $CURRENT_FILE, $_);        # this is added
     $MY_CONTENTS_PAGE = "$CURRENT_FILE";
-    join('', "<br />\n\\tableofchildlinks[off]", $closures
+    join('', "\\tableofchildlinks[off]", $closures
          , make_section_heading($toc_title, 'h2'), $toc_mark
          , $reopens, $_);
 }
@@ -725,23 +725,16 @@ sub make_head_and_body($$) {
         $charset = $CHARSET;
         $charset =~ s/_/\-/go;
     }
-    # Remove section number from the title for use in the
-    # <meta name='description' ...> element in the document head.
-    my $metatitle = "$title";
-    $metatitle =~ s/^\d+(\.\d+)*\s*//;
-    $metatitle = meta_information($metatitle);
-    $metatitle =~ s/ NAME=/ name=/g;
-    $metatitle =~ s/ CONTENT=/ content=/g;
-
     join('',
          $MY_PARTIAL_HEADER,
-         $metatitle,
          "<title>", $title, "</title>\n</head>\n<body$body>");
 }
 
 sub replace_morelinks {
     $more_links =~ s/ REL=/ rel=/g;
     $more_links =~ s/ HREF=/ href=/g;
+    $more_links =~ s/<LINK /<link /g;
+    $more_links =~ s/">/" \/>/g;
     $_ =~ s/$more_links_mark/$more_links/e;
 }
 
