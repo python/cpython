@@ -5,7 +5,7 @@ import MacOS
 import traceback
 
 from addpack import addpack
-addpack('Demo')
+addpack('Tools')
 addpack('bgen')
 addpack('ae')
 #addpack('ctl')
@@ -377,7 +377,7 @@ class Menu:
 		self.menu.AppendMenu('x')		# add a dummy string
 		self.items.append(label, shortcut, callback, kind)
 		item = len(self.items)
-		self.menu.SetItem(item, label)		# set the actual text
+		self.menu.SetMenuItemText(item, label)		# set the actual text
 		if shortcut:
 			self.menu.SetItemCmd(item, ord(shortcut))
 		return item
@@ -429,7 +429,7 @@ class AppleMenu(Menu):
 		Menu.__init__(self, bar, "\024")
 		self.additem(abouttext, None, aboutcallback)
 		self.addseparator()
-		self.menu.AddResMenu('DRVR')
+		self.menu.AppendResMenu('DRVR')
 	
 	def dispatch(self, id, item, window, event):
 		if item == 1:
