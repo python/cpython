@@ -423,6 +423,14 @@ escape the following quote character).  Note also that a single
 backslash followed by a newline is interpreted as those two characters
 as part of the string, \emph{not} as a line continuation.
 
+When an `r' or `R' prefix is used in conjunction with a `u' or `U'
+prefix, then the \uXXXX escape sequence is processed while \emph{all other
+backslashes are left in the string}.  For example, the string literal
+\code{ur"\u0062\n"} consists of three Unicode characters:
+`LATIN SMALL LETTER B', `REVERSE SOLIDUS', and `LATIN SMALL LETTER N'.
+Backslashes can be escaped with a preceding backslash; however, both
+remain in the string.  As a result, \uXXXX escape sequences are
+only recognized when there are an odd number of backslashes.
 
 \subsection{String literal concatenation\label{string-catenation}}
 
