@@ -908,11 +908,20 @@
     \end{fulllineitems}
   }
 }
+% \seerfc{number}{title}{why it's interesting}
+\newcommand{\py@seerfc}[3]{%
+  \par%
+  \begin{fulllineitems}
+    \item[\rfc{#1}, ``\emph{#2}'']
+    #3
+  \end{fulllineitems}
+}
 \newenvironment{seealso}[0]{
   \par
   \strong{See Also:}\par
   \def\seetext##1{\par{##1}}
   \let\seemodule=\py@seemodule
+  \let\seerfc=\py@seerfc
 }{\par}
 
 
