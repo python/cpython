@@ -11,6 +11,7 @@ import sys
 import os
 import macfs
 import MacOS
+import gestalt
 
 SPLASH_COPYCORE=512
 SPLASH_COPYCARBON=513
@@ -37,8 +38,11 @@ APPLET_LIST=[
 def getextensiondirfile(fname):
 	import macfs
 	import MACFS
-	vrefnum, dirid = macfs.FindFolder(MACFS.kOnSystemDisk, MACFS.kExtensionFolderType, 0)
-	fss = macfs.FSSpec((vrefnum, dirid, fname))
+	try:
+		vrefnum, dirid = macfs.FindFolder(MACFS.kOnSystemDisk, MACFS.kExtensionFolderType, 0)
+		fss = macfs.FSSpec((vrefnum, dirid, fname))
+	except macfs.error:
+		return None
 	return fss.as_pathname()
 	
 def mkcorealias(src, altsrc):
@@ -46,6 +50,8 @@ def mkcorealias(src, altsrc):
 	import macostools
 	version = string.split(sys.version)[0]
 	dst = getextensiondirfile(src+ ' ' + version)
+	if not dst:
+		return 0
 	if not os.path.exists(os.path.join(sys.exec_prefix, src)):
 		if not os.path.exists(os.path.join(sys.exec_prefix, altsrc)):
 			return 0
@@ -108,6 +114,7 @@ def main():
 	n = n + mkcorealias('PythonCore', 'PythonCore')
 	n = n + mkcorealias('PythonCoreCarbon', 'PythonCoreCarbon')
 	if n == 0:
+		import Dlg
 		Dlg.CautionAlert(ALERT_NOCORE, None)
 		return
 	if sys.argv[0][-7:] == 'Classic':
