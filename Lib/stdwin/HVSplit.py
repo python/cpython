@@ -1,6 +1,10 @@
 # HVSplit contains generic code for HSplit and VSplit.
 # HSplit and VSplit are specializations to either dimension.
 
+# XXX This does not yet stretch/shrink children if there is too much
+# XXX or too little space in the split dimension.
+# XXX (NB There is no interface to ask children for stretch preferences.)
+
 from Split import Split
 
 class HVSplit() = Split():
