@@ -271,18 +271,19 @@ PyFloat_AsStringEx(char *buf, PyFloatObject *v, int precision)
 		return obj;
 
 static int
-convert_to_double(PyObject **v,
-		  double *dbl)
+convert_to_double(PyObject **v, double *dbl)
 {
 	register PyObject *obj = *v;
-	
+
 	if (PyInt_Check(obj)) {
 		*dbl = (double)PyInt_AS_LONG(obj);
 	}
 	else if (PyLong_Check(obj)) {
-		PyFPE_START_PROTECT("convert_to_double", {*v=NULL;return -1;})
 		*dbl = PyLong_AsDouble(obj);
-		PyFPE_END_PROTECT(*dbl)
+		if (*dbl == -1.0 && PyErr_Occurred()) {
+			*v = NULL;
+			return -1;
+		}
 	}
 	else {
 		Py_INCREF(Py_NotImplemented);
