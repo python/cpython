@@ -1612,6 +1612,16 @@ class Image:
 		self.tk.call(self.name, 'configure', '-'+key, value)
 	def __getitem__(self, key):
 		return self.tk.call(self.name, 'configure', '-'+key)
+	def config(self, **kw):
+		res = ()
+		for k, v in _cnfmerge(kw).items():
+			if v is not None:
+				if k[-1] == '_': k = k[:-1]
+				if callable(v):
+					v = self._register(v)
+				res = res + ('-'+k, v)
+		apply(self.tk.call, (self.name, 'config') + res)
+	configure = config
 	def height(self):
 		return self.tk.getint(
 			self.tk.call('image', 'height', self.name))
