@@ -79,19 +79,27 @@ class SGMLParser:
         self.literal = 0
 
     def setnomoretags(self):
-        """Enter literal mode (CDATA) till EOF.  Intended for derived
-        classes only."""
+        """Enter literal mode (CDATA) till EOF.
+
+        Intended for derived classes only.
+        """
         self.nomoretags = self.literal = 1
 
     def setliteral(self, *args):
-        """Enter literal mode (CDATA).  Intended for derived classes only."""
+        """Enter literal mode (CDATA).
+
+        Intended for derived classes only.
+        """
         self.literal = 1
 
     def feed(self, data):
-        """Feed some data to the parser.  Call this as often as you
-        want, with as little or as much text as you want (may include
-        '\n').  (This just saves the text, all the processing is done
-        by goahead().)"""
+        """Feed some data to the parser.
+
+        Call this as often as you want, with as little or as much text
+        as you want (may include '\n').  (This just saves the text,
+        all the processing is done by goahead().)
+        """
+
         self.rawdata = self.rawdata + data
         self.goahead(0)
 
