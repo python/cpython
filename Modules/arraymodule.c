@@ -1065,7 +1065,7 @@ array_tolist(self, args)
 }
 
 static char tolist_doc [] =
-"tolist() -> list
+"tolist() -> list\n\
 \n\
 Convert array to an ordinary list with the same items.";
 
