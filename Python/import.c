@@ -706,6 +706,7 @@ load_source_module(name, pathname, fp)
 		if (Py_VerboseFlag)
 			fprintf(stderr, "import %s # precompiled from %s\n",
 				name, cpathname);
+		pathname = cpathname;
 	}
 	else {
 		co = parse_source_module(pathname, fp);
@@ -716,7 +717,7 @@ load_source_module(name, pathname, fp)
 				name, pathname);
 		write_compiled_module(co, cpathname, mtime);
 	}
-	m = PyImport_ExecCodeModuleEx(name, (PyObject *)co, cpathname);
+	m = PyImport_ExecCodeModuleEx(name, (PyObject *)co, pathname);
 	Py_DECREF(co);
 
 	return m;
