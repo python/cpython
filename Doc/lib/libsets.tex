@@ -203,23 +203,23 @@ before being added as a set element.
 
 The mechanism is to always add a hashable element, or if it is not
 hashable, the element is checked to see if it has an
-\method{_as_immutable()} method which returns an immutable equivalent.
+\method{__as_immutable__()} method which returns an immutable equivalent.
 
-Since \class{Set} objects have a \method{_as_immutable()} method
+Since \class{Set} objects have a \method{__as_immutable__()} method
 returning an instance of \class{ImmutableSet}, it is possible to
 construct sets of sets.
 
 A similar mechanism is needed by the \method{__contains__()} and
 \method{remove()} methods which need to hash an element to check
 for membership in a set.  Those methods check an element for hashability
-and, if not, check for a \method{_as_temporarily_immutable()} method
+and, if not, check for a \method{__as_temporarily_immutable__()} method
 which returns the element wrapped by a class that provides temporary
 methods for \method{__hash__()}, \method{__eq__()}, and \method{__ne__()}.
 
 The alternate mechanism spares the need to build a separate copy of
 the original mutable object.
 
-\class{Set} objects implement the \method{_as_temporarily_immutable()}
+\class{Set} objects implement the \method{__as_temporarily_immutable__()}
 method which returns the \class{Set} object wrapped by a new class
 \class{_TemporarilyImmutableSet}.
 

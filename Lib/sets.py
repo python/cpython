@@ -248,7 +248,7 @@ class BaseSet(object):
         try:
             return element in self._data
         except TypeError:
-            transform = getattr(element, "_as_temporarily_immutable", None)
+            transform = getattr(element, "__as_temporarily_immutable__", None)
             if transform is None:
                 raise # re-raise the TypeError exception we caught
             return transform() in self._data
@@ -325,7 +325,7 @@ class BaseSet(object):
                         data[element] = value
                     return
                 except TypeError:
-                    transform = getattr(element, "_as_immutable", None)
+                    transform = getattr(element, "__as_immutable__", None)
                     if transform is None:
                         raise # re-raise the TypeError exception we caught
                     data[transform()] = value
@@ -335,7 +335,7 @@ class BaseSet(object):
                 try:
                     data[element] = value
                 except TypeError:
-                    transform = getattr(element, "_as_immutable", None)
+                    transform = getattr(element, "__as_immutable__", None)
                     if transform is None:
                         raise # re-raise the TypeError exception we caught
                     data[transform()] = value
@@ -464,7 +464,7 @@ class Set(BaseSet):
         try:
             self._data[element] = True
         except TypeError:
-            transform = getattr(element, "_as_immutable", None)
+            transform = getattr(element, "__as_immutable__", None)
             if transform is None:
                 raise # re-raise the TypeError exception we caught
             self._data[transform()] = True
@@ -477,7 +477,7 @@ class Set(BaseSet):
         try:
             del self._data[element]
         except TypeError:
-            transform = getattr(element, "_as_temporarily_immutable", None)
+            transform = getattr(element, "__as_temporarily_immutable__", None)
             if transform is None:
                 raise # re-raise the TypeError exception we caught
             del self._data[transform()]
@@ -496,11 +496,11 @@ class Set(BaseSet):
         """Remove and return an arbitrary set element."""
         return self._data.popitem()[0]
 
-    def _as_immutable(self):
+    def __as_immutable__(self):
         # Return a copy of self as an immutable set
         return ImmutableSet(self)
 
-    def _as_temporarily_immutable(self):
+    def __as_temporarily_immutable__(self):
         # Return self wrapped in a temporarily immutable set
         return _TemporarilyImmutableSet(self)
 
