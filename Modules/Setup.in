@@ -416,10 +416,16 @@ cPickle cPickle.c
 # http://www.jclark.com/xml/expat.html, the current production release is
 # always ftp://ftp.jclark.com/pub/xml/expat.zip.
 #
-# (Note: the expat build process doesn't yet build a libexpat.a; you can
-# do this manually while we try convince the author to add it.)
+# EXPAT_DIR, below, should point to the expat/ directory created by
+# unpacking the Expat source distribution.
 #
-#EXPAT_DIR=/usr/local/src/expat/
+# Note: the expat build process doesn't yet build a libexpat.a; you can
+# do this manually while we try convince the author to add it.  To do so,
+# cd to EXPAT_DIR, run "make" if you have not done so, then run:
+#
+#    ar cr xmltok/*.o xmlparse/*.o
+#
+#EXPAT_DIR=/usr/local/src/expat
 #pyexpat pyexpat.c -I$(EXPAT_DIR)/xmlparse -L$(EXPAT_DIR) -lexpat
 
 
