@@ -380,9 +380,7 @@ class Set(BaseSet):
     def __iand__(self, other):
         """Update a set with the intersection of itself and another."""
         self._binary_sanity_check(other)
-        for elt in self._data.keys():
-            if elt not in other:
-                del self._data[elt]
+        self._data = (self & other)._data
         return self
 
     def intersection_update(self, other):
