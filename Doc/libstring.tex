@@ -130,6 +130,12 @@ Like \code{rfind} but raise \code{index_error} when the substring is
 not found.
 \end{funcdesc}
 
+\begin{funcdesc}{count}{s\, sub\, i}
+Return the number of (non-overlapping) occurrences of substring
+\var{sub} in string \var{s} with index at least \var{i}.
+If \var{i} is omitted, it defaults to \code{0}.
+\end{funcdesc}
+
 \begin{funcdesc}{lower}{s}
 Convert letters to lower case.
 \end{funcdesc}
