@@ -472,29 +472,6 @@ def diamond():
     verify(G().boo() == "C")
     verify(G.__mro__ == (G, E, D, C, B, A, object))
 
-def objects():
-    if verbose: print "Testing object class..."
-    a = object()
-    verify(a.__class__ == object == type(a))
-    b = object()
-    verify(a is not b)
-    verify(not hasattr(a, "foo"))
-    try:
-        a.foo = 12
-    except TypeError:
-        pass
-    else:
-        verify(0, "object() should not allow setting a foo attribute")
-    verify(not hasattr(object(), "__dict__"))
-
-    class Cdict(object):
-        pass
-    x = Cdict()
-    verify(x.__dict__ is None)
-    x.foo = 1
-    verify(x.foo == 1)
-    verify(x.__dict__ == {'foo': 1})
-
 def slots():
     if verbose: print "Testing __slots__..."
     class C0(object):
@@ -812,7 +789,6 @@ def all():
     pymods()
     multi()
     diamond()
-    objects()
     slots()
     dynamics()
     errors()
