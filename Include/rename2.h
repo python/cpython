@@ -152,7 +152,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define is_floatobject PyFloat_Check
 #define is_intobject PyInt_Check
 #define is_longobject PyLong_Check
-#define is_noobject PyNothing_Check
 #define is_stringobject PyString_Check
 #define is_typeobject PyType_Check
 #define is_listobject PyList_Check
