@@ -1,13 +1,13 @@
 """Thread-local objects
 
 (Note that this module provides a Python version of thread
- threading.local class.  Deoending on the version of Python you're
+ threading.local class.  Depending on the version of Python you're
  using, there may be a faster one available.  You should always import
  the local class from threading.)
 
 Thread-local objects support the management of thread-local data.
 If you have data that you want to be local to a thread, simply create
-a thread-local object and use it's attributes:
+a thread-local object and use its attributes:
 
   >>> mydata = local()
   >>> mydata.number = 42
@@ -100,7 +100,7 @@ As before, we can access the data in a separate thread:
   >>> log
   [[('color', 'red'), ('initialized', True)], 11]
 
-without effecting this threads data:
+without affecting this thread's data:
 
   >>> mydata.number
   2
@@ -229,7 +229,7 @@ class local(_localbase):
                     try:
                         del __dict__[key]
                     except KeyError: 
-                        pass # didn't have nything in this thread
+                        pass # didn't have anything in this thread
 
         return __del__
     __del__ = __del__()
