@@ -404,6 +404,9 @@
 /* Define if you have the getpeername function.  */
 #undef HAVE_GETPEERNAME
 
+/* Define if you have the getpgid function.  */
+#undef HAVE_GETPGID
+
 /* Define if you have the getpgrp function.  */
 #undef HAVE_GETPGRP
 
