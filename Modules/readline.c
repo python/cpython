@@ -376,7 +376,7 @@ static char *
 call_readline(prompt)
 	char *prompt;
 {
-	int n;
+	size_t n;
 	char *p, *q;
 	RETSIGTYPE (*old_inthandler)();
 	old_inthandler = signal(SIGINT, onintr);
