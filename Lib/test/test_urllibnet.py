@@ -103,7 +103,14 @@ class urlopenNetworkTests(unittest.TestCase):
         # Make sure proper exception is raised when connecting to a bogus
         # address.
         self.assertRaises(IOError,
-                          urllib.urlopen, "http://www.sadflkjsasadf.com/")
+                          # SF patch 809915:  In Sep 2003, VeriSign started
+                          # highjacking invalid .com and .net addresses to
+                          # boost traffic to their own site.  This test
+                          # started failing then.  One hopes the .invalid
+                          # domain will be spared to serve its defined
+                          # purpose.
+                          # urllib.urlopen, "http://www.sadflkjsasadf.com/")
+                          urllib.urlopen, "http://www.python.invalid/")
 
 class urlretrieveNetworkTests(unittest.TestCase):
     """Tests urllib.urlretrieve using the network."""
