@@ -1738,14 +1738,20 @@ the package data if the author of the package wishes to. The distutils
 command \command{upload} pushes the distribution files to PyPI.
 
 The command is invokes immediately after building one or more distribution
-files, e.g. as
+files.  For example, the command
 
 \begin{verbatim}
 python setup.py sdist bdist_wininst upload
 \end{verbatim}
 
+will cause the source distribution and the Windows installer to be
+uploaded to PyPI.  Note that these will be uploaded even if they are
+built using an earlier invocation of \file{setup.py}, but that only
+distributions named on the command line for the invocation including
+the \command{upload} command are uploaded.
+
 The \command{upload} command uses the username and password stored in
-in the file \file{$HOME/.pypirc}, see \ref{pypirc}.
+in the file \file{\$HOME/.pypirc}, see section~\ref{pypirc}.
 
 \chapter{Examples}
 \label{examples}
@@ -2087,9 +2093,12 @@ or \class{buildcmds.bdist_openpkg.bdist_openpkg}.
 
 \section{Adding new distribution types}
 
-Commands that create distributions (i.e. files in the dist directory)
-need to add (command, filename) pairs to \var{self.distribution.dist_files}
-so that \command{upload} can upload it to PyPI.
+Commands that create distributions (files in the \file{dist/}
+directory) need to add \code{(\var{command}, \var{filename})} pairs to
+\code{self.distribution.dist_files} so that \command{upload} can
+upload it to PyPI.  The \var{filename} in the pair contains no path
+information, only the name of the file itself.  In dry-run mode, pairs
+should still be added to represent what would have been created.
 
 \chapter{Command Reference}
 \label{reference}
