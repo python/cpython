@@ -18,37 +18,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "_csv"=.\_csv.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name pythoncore
-    End Project Dependency
-}}}
-
-###############################################################################
-
 Project: "_socket"=.\_socket.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name pythoncore
-    End Project Dependency
-}}}
-
-###############################################################################
-
-Project: "_sre"=.\_sre.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -75,28 +45,10 @@ Package=<4>
     Project_Dep_Name pythoncore
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name _sre
-    End Project Dependency
-    Begin Project Dependency
     Project_Dep_Name python
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name w9xpopen
-    End Project Dependency
-}}}
-
-###############################################################################
-
-Project: "_symtable"=.\_symtable.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name pythoncore
     End Project Dependency
 }}}
 
@@ -144,21 +96,6 @@ Package=<4>
 
 ###############################################################################
 
-Project: "datetime"=.\datetime.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name pythoncore
-    End Project Dependency
-}}}
-
-###############################################################################
-
 Project: "make_versioninfo"=.\make_versioninfo.dsp - Package Owner=<4>
 
 Package=<5>
@@ -167,36 +104,6 @@ Package=<5>
 
 Package=<4>
 {{{
-}}}
-
-###############################################################################
-
-Project: "mmap"=.\mmap.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name pythoncore
-    End Project Dependency
-}}}
-
-###############################################################################
-
-Project: "parser"=.\parser.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name pythoncore
-    End Project Dependency
 }}}
 
 ###############################################################################
@@ -299,21 +206,6 @@ Package=<5>
 
 Package=<4>
 {{{
-}}}
-
-###############################################################################
-
-Project: "winreg"=.\winreg.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name pythoncore
-    End Project Dependency
 }}}
 
 ###############################################################################

@@ -97,6 +97,10 @@ SOURCE=..\..\Modules\_codecsmodule.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\_csv.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\_hotshot.c
 # End Source File
 # Begin Source File
@@ -109,7 +113,15 @@ SOURCE=..\..\Modules\_randommodule.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\_sre.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\_weakref.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\_winreg.c
 # End Source File
 # Begin Source File
 
@@ -190,6 +202,10 @@ SOURCE=..\..\Modules\cPickle.c
 # Begin Source File
 
 SOURCE=..\..\Modules\cStringIO.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\datetimemodule.c
 # End Source File
 # Begin Source File
 
@@ -371,6 +387,10 @@ SOURCE=..\..\Objects\methodobject.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\mmapmodule.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Python\modsupport.c
 # End Source File
 # Begin Source File
@@ -412,6 +432,10 @@ SOURCE=..\..\Modules\operator.c
 # Begin Source File
 
 SOURCE=..\..\Parser\parser.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\parsermodule.c
 # End Source File
 # Begin Source File
 
@@ -504,6 +528,10 @@ SOURCE=..\..\Objects\structseq.c
 # Begin Source File
 
 SOURCE=..\..\Python\symtable.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\symtablemodule.c
 # End Source File
 # Begin Source File
 
