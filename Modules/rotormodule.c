@@ -58,8 +58,12 @@ NOTE: you MUST use the SAME key in rotor.newrotor()
 #include "Python.h"
 #include "mymath.h"
 
+#ifndef TRUE
 #define TRUE	1
+#endif
+#ifndef FALSE
 #define FALSE	0
+#endif
 
 typedef struct {
 	PyObject_HEAD
