@@ -1,5 +1,7 @@
-import sys
 from compiler import ast
+
+# XXX should probably rename ASTVisitor to ASTWalker
+# XXX can it be made even more generic?
 
 class ASTVisitor:
     """Performs a depth-first walk of the AST
@@ -44,7 +46,7 @@ class ASTVisitor:
     def default(self, node, *args):
         for child in node.getChildren():
             if isinstance(child, ast.Node):
-                apply(self._preorder, (child,) + args)
+                self.dispatch(child, *args)
 
     def dispatch(self, node, *args):
         self.node = node
@@ -54,22 +56,20 @@ class ASTVisitor:
             className = klass.__name__
             meth = getattr(self.visitor, 'visit' + className, self.default)
             self._cache[klass] = meth
-        if self.VERBOSE > 0:
-            className = klass.__name__
-            if self.VERBOSE == 1:
-                if meth == 0:
-                    print "dispatch", className
-            else:
-                print "dispatch", className, (meth and meth.__name__ or '')
+##        if self.VERBOSE > 0:
+##            className = klass.__name__
+##            if self.VERBOSE == 1:
+##                if meth == 0:
+##                    print "dispatch", className
+##            else:
+##                print "dispatch", className, (meth and meth.__name__ or '')
         return meth(node, *args)
 
     def preorder(self, tree, visitor, *args):
         """Do preorder walk of tree using visitor"""
         self.visitor = visitor
-        visitor.visit = self._preorder
-        self._preorder(tree, *args) # XXX *args make sense?
-
-    _preorder = dispatch
+        visitor.visit = self.dispatch
+        self.dispatch(tree, *args) # XXX *args make sense?
 
 class ExampleASTVisitor(ASTVisitor):
     """Prints examples of the nodes that aren't visited
@@ -90,7 +90,7 @@ class ExampleASTVisitor(ASTVisitor):
         if self.VERBOSE > 1:
             print "dispatch", className, (meth and meth.__name__ or '')
         if meth:
-            return apply(meth, (node,) + args)
+            meth(node, *args)
         elif self.VERBOSE > 0:
             klass = node.__class__
             if not self.examples.has_key(klass):
@@ -102,15 +102,18 @@ class ExampleASTVisitor(ASTVisitor):
                     if attr[0] != '_':
                         print "\t", "%-12.12s" % attr, getattr(node, attr)
                 print
-            return apply(self.default, (node,) + args)
+            return self.default(node, *args)
+
+# XXX this is an API change
 
 _walker = ASTVisitor
-def walk(tree, visitor, verbose=None):
-    w = _walker()
+def walk(tree, visitor, walker=None, verbose=None):
+    if walker is None:
+        walker = _walker()
     if verbose is not None:
-        w.VERBOSE = verbose
-    w.preorder(tree, visitor)
-    return w.visitor
+        walker.VERBOSE = verbose
+    walker.preorder(tree, visitor)
+    return walker.visitor
 
 def dumpNode(node):
     print node.__class__
