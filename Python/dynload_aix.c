@@ -221,7 +221,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *name, const char *funcname,
 	if (!staticmodlistptr)
 		if (aix_getoldmodules(&staticmodlistptr) == -1)
 			return NULL;
-	p = (dl_funcptr) aix_load(pathname, L_NOAUTODEFER, 0);
+	p = (dl_funcptr) aix_load((char *)pathname, L_NOAUTODEFER, 0);
 	if (p == NULL) {
 		aix_loaderror(pathname);
 		return NULL;
