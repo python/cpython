@@ -5,28 +5,21 @@
 
 \begin{description}
 
-\index{...}
-\item[\code{.\code{.}.}]
-The typical Python prompt of the interactive shell when entering code
-for an indented code block.
 
 \index{>>>}
 \item[\code{>\code{>}>}]
 The typical Python prompt of the interactive shell.  Often seen for
 code examples that can be tried right away in the interpreter.
 
-\index{__slots__}
-\item[__slots__]
-A declaration inside a \emph{new-style class} that saves memory by
-pre-declaring space for instance attributes and eliminating instance
-dictionaries.  Though popular, the technique is somewhat tricky to get
-right and is best reserved for rare cases where there are large
-numbers of instances in a memory critical application.
+\index{...}
+\item[\code{.\code{.}.}]
+The typical Python prompt of the interactive shell when entering code
+for an indented code block.
 
 \index{BDFL}
 \item[BDFL]
 Benevolent Dictator For Life, a.k.a. \ulink{Guido van
-Rossum}{http://www.python.org/~guido/}, Python's creator.
+Rossum}{http://www.python.org/\textasciitilde{}guido/}, Python's creator.
 
 \index{byte code}
 \item[byte code]
@@ -34,8 +27,8 @@ The internal representation of a Python program in the interpreter.
 The byte code is also cached in the \code{.pyc} and \code{.pyo}
 files so that executing the same file is faster the second time
 (compilation from source to byte code can be saved).  This
-\emph{intermediate language} is said to run on a \emph{virtual
-machine} that calls the subroutines corresponding to each bytecode.
+``intermediate language'' is said to run on a ``virtual
+machine'' that calls the subroutines corresponding to each bytecode.
 
 \index{classic class}
 \item[classic class]
@@ -47,8 +40,8 @@ Any class which does not inherit from \class{object}.  See
 Converting data from one type to another.  For example,
 {}\code{int(3.15)} coerces the floating point number to the integer,
 {}\code{3}.  Most mathematical operations have rules for coercing
-their arguments to a common type.  For instance, adding \code{3 +
-4.5}, causes the integer \code{3} to be coerced to be a float
+their arguments to a common type.  For instance, adding \code{3+4.5},
+causes the integer \code{3} to be coerced to be a float
 {}\code{3.0} before adding to \code{4.5} resulting in the float
 {}\code{7.5}.
 
@@ -85,15 +78,15 @@ fast style is characterized by the presence of many \keyword{try} and
 \item[__future__]
 A pseudo module which programmers can use to enable new language
 features which are not compatible with the current interpreter.  For
-example, the expression \code{11 / 4} currently evaluates to \code{2}.
-If the module in which it is executed had enabled emph{true division}
+example, the expression \code{11/4} currently evaluates to \code{2}.
+If the module in which it is executed had enabled \emph{true division}
 by executing:
 
 \begin{verbatim}
 from __future__ import division
 \end{verbatim}
 
-the expression \code{11 / 4} would evaluate to \code{2.75}.  By
+the expression \code{11/4} would evaluate to \code{2.75}.  By
 actually importing the \refmodule[future]{__future__} module and
 evaluating its variables, you can see when a new feature was first
 added to the language and when it will become the default:
@@ -127,7 +120,7 @@ processes can access the same memory at the same time.  Locking the
 entire interpreter makes it easier for the interpreter to be
 multi-threaded, at the expense of some parallelism on multi-processor
 machines.  Efforts have been made in the past to create a
-"free-threaded" interpreter (one which locks shared data at a much
+``free-threaded'' interpreter (one which locks shared data at a much
 finer granularity), but performance suffered in the common
 single-processor case.
 
@@ -150,7 +143,7 @@ example as a key in a dictionary.
 \index{integer division}
 \item[integer division]
 Mathematical division discarding any remainder.  For example, the
-expression \code{11 / 4} currently evaluates to \code{2} in contrast
+expression \code{11/4} currently evaluates to \code{2} in contrast
 to the \code{2.75} returned by float division.  Also called
 {}\emph{floor division}.  When dividing two integers the outcome will
 always be another integer (having the floor function applied to it).
@@ -180,7 +173,7 @@ a shorter development/debug cycle than compiled ones.  See also
 \index{iterable}
 \item[iterable]
 A container object capable of returning its members one at a time.
-Examples of iterables include all sequence types (such as\class{list},
+Examples of iterables include all sequence types (such as \class{list},
 {}\class{str}, and \class{tuple}) and some non-sequence types like
 {}\class{dict} and \class{file} and objects of any classes you define
 with an \method{__iter__()} or \method{__getitem__()} method.  Iterables
@@ -190,7 +183,7 @@ iterable object is passed as an argument to the builtin function
 {}\function{iter()}, it returns an iterator for the object.  This
 iterator is good for one pass over the set of values.  When using
 iterables, it is usually not necessary to call \function{iter()} or
-deal with iterator objects yourself---the \code{for} statement does
+deal with iterator objects yourself.  The \code{for} statement does
 that automatically for you, creating a temporary unnamed variable to
 hold the iterator for the duration of the loop.  See also
 {}\emph{iterator}, \emph{sequence}, and \emph{generator}.
@@ -281,13 +274,21 @@ global namespace.
 Any class that inherits from \class{object}.  This includes all
 built-in types like \class{list} and \class{dict}.  Only new-style
 classes can use Python's newer, versatile features like
-{}\var{__slots__}, descriptors, properties,
+{}\method{__slots__}, descriptors, properties,
 \method{__getattribute__()}, class methods, and static methods.
 
 \index{Python3000}
 \item[Python3000]
 A mythical python release, allowed not to be backward compatible, with
 telepathic interface.
+
+\index{__slots__}
+\item[__slots__]
+A declaration inside a \emph{new-style class} that saves memory by
+pre-declaring space for instance attributes and eliminating instance
+dictionaries.  Though popular, the technique is somewhat tricky to get
+right and is best reserved for rare cases where there are large
+numbers of instances in a memory critical application.
 
 \index{sequence}
 \item[sequence]
@@ -304,6 +305,6 @@ rather than integers.
 \item[Zen of Python]
 Listing of Python design principles and philosophies that are helpful
 in understanding and using the language.  The listing can be found by
-typing \code{import this} at the interactive prompt.
+typing ``\code{import this}'' at the interactive prompt.
 
 \end{description}
