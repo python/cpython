@@ -1,4 +1,5 @@
 """\
+
 Tools for scanning header files in search of function prototypes.
 
 Often, the function prototypes in header files contain enough information
@@ -353,6 +354,9 @@ class Scanner:
 		if self.blacklisted(type, name):
 			self.error("*** %s %s blacklisted", type, name)
 			return
+		returnlist = [(type, name, 'ReturnMode')]
+		returnlist = self.repairarglist(name, returnlist)
+		[(type, name, returnmode)] = returnlist
 		arglist = self.extractarglist(args)
 		arglist = self.repairarglist(name, arglist)
 		if self.unmanageable(type, name, arglist):
@@ -481,3 +485,4 @@ def test():
 
 if __name__ == '__main__':
 	test()
+
