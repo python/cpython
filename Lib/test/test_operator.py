@@ -1,79 +1,213 @@
 import operator
-import sys
+import unittest
 
-def test(name, input, output, *args):
-    print 'testing:', name
-    f = getattr(operator, name)
-    params = (input,) + args
-    try:
-        val = apply(f, params)
-    except:
-        val = sys.exc_type
-    if val != output:
-        print '%s%s = %s: %s expected' % (f.__name__, params, `val`, `output`)
-
-test('abs', -1, 1)
-test('add', 3, 7, 4)
-test('and_', 0xf, 0xa, 0xa)
-test('concat', 'py', 'python', 'thon')
-
-test('countOf', [1, 2, 1, 3, 1, 4], 1, 3)
-
-a = [4, 3, 2, 1]
-test('delitem', a, None, 1)
-if a != [4, 2, 1]:
-    print 'delitem() failed'
-
-a = range(10)
-test('delslice', a, None, 2, 8)
-if a != [0, 1, 8, 9]:
-    print 'delslice() failed'
-
-a = range(10)
-test('div', 5, 2, 2)
-test('floordiv', 5, 2, 2)
-test('truediv', 5, 2.5, 2)
-test('getitem', a, 2, 2)
-test('getslice', a, [4, 5], 4, 6)
-test('indexOf', [4, 3, 2, 1], 1, 3)
-test('inv', 4, -5)
-test('isCallable', 4, 0)
-test('isCallable', operator.isCallable, 1)
-test('isMappingType', operator.isMappingType, 0)
-test('isMappingType', operator.__dict__, 1)
-test('isNumberType', 8.3, 1)
-test('isNumberType', dir(), 0)
-test('isSequenceType', dir(), 1)
-test('isSequenceType', 'yeahbuddy', 1)
-test('isSequenceType', 3, 0)
-test('lshift', 5, 10, 1)
-test('mod', 5, 1, 2)
-test('mul', 5, 10, 2)
-test('neg', 5, -5)
-test('or_', 0xa, 0xf, 0x5)
-test('pos', -5, -5)
-
-a = range(3)
-test('repeat', a, a+a, 2)
-test('rshift', 5, 2, 1)
-
-test('sequenceIncludes', range(4), 1, 2)
-test('sequenceIncludes', range(4), 0, 5)
-
-test('setitem', a, None, 0, 2)
-if a != [2, 1, 2]:
-    print 'setitem() failed'
-
-a = range(4)
-test('setslice', a, None, 1, 3, [2, 1])
-if a != [0, 2, 1, 3]:
-    print 'setslice() failed:', a
-
-test('sub', 5, 2, 3)
-test('truth', 5, 1)
-test('truth', [], 0)
-test('xor', 0xb, 0x7, 0xc)
+import test_support
 
 
-# some negative tests
-test('indexOf', [4, 3, 2, 1], ValueError, 9)
+class OperatorTestCase(unittest.TestCase):
+    def test_lt(self):
+        self.failIf(operator.lt(1, 0))
+        self.failIf(operator.lt(1, 0.0))
+        self.failIf(operator.lt(1, 1))
+        self.failIf(operator.lt(1, 1.0))
+        self.failUnless(operator.lt(1, 2))
+        self.failUnless(operator.lt(1, 2.0))
+
+    def test_le(self):
+        self.failIf(operator.le(1, 0))
+        self.failIf(operator.le(1, 0.0))
+        self.failUnless(operator.le(1, 1))
+        self.failUnless(operator.le(1, 1.0))
+        self.failUnless(operator.le(1, 2))
+        self.failUnless(operator.le(1, 2.0))
+
+    def test_eq(self):
+        self.failIf(operator.eq(1, 0))
+        self.failIf(operator.eq(1, 0.0))
+        self.failUnless(operator.eq(1, 1))
+        self.failUnless(operator.eq(1, 1.0))
+        self.failIf(operator.eq(1, 2))
+        self.failIf(operator.eq(1, 2.0))
+
+    def test_ne(self):
+        self.failUnless(operator.ne(1, 0))
+        self.failUnless(operator.ne(1, 0.0))
+        self.failIf(operator.ne(1, 1))
+        self.failIf(operator.ne(1, 1.0))
+        self.failUnless(operator.ne(1, 2))
+        self.failUnless(operator.ne(1, 2.0))
+
+    def test_ge(self):
+        self.failUnless(operator.ge(1, 0))
+        self.failUnless(operator.ge(1, 0.0))
+        self.failUnless(operator.ge(1, 1))
+        self.failUnless(operator.ge(1, 1.0))
+        self.failIf(operator.ge(1, 2))
+        self.failIf(operator.ge(1, 2.0))
+
+    def test_gt(self):
+        self.failUnless(operator.gt(1, 0))
+        self.failUnless(operator.gt(1, 0.0))
+        self.failIf(operator.gt(1, 1))
+        self.failIf(operator.gt(1, 1.0))
+        self.failIf(operator.gt(1, 2))
+        self.failIf(operator.gt(1, 2.0))
+
+    def test_abs(self):
+        self.failUnless(operator.abs(-1) == 1)
+        self.failUnless(operator.abs(1) == 1)
+
+    def test_add(self):
+        self.failUnless(operator.add(3, 4) == 7)
+
+    def test_bitwise_and(self):
+        self.failUnless(operator.and_(0xf, 0xa) == 0xa)
+
+    def test_concat(self):
+        self.failUnless(operator.concat('py', 'thon') == 'python')
+        self.failUnless(operator.concat([1, 2], [3, 4]) == [1, 2, 3, 4])
+
+    def test_countOf(self):
+        self.failUnless(operator.countOf([1, 2, 1, 3, 1, 4], 3) == 1)
+        self.failUnless(operator.countOf([1, 2, 1, 3, 1, 4], 5) == 0)
+
+    def test_delitem(self):
+        a = [4, 3, 2, 1]
+        self.failUnless(operator.delitem(a, 1) is None)
+        self.assert_(a == [4, 2, 1])
+
+    def test_delslice(self):
+        a = range(10)
+        self.failUnless(operator.delslice(a, 2, 8) is None)
+        self.assert_(a == [0, 1, 8, 9])
+
+    def test_div(self):
+        self.failUnless(operator.div(5, 2) == 2)
+
+    def test_floordiv(self):
+        self.failUnless(operator.floordiv(5, 2) == 2)
+
+    def test_truediv(self):
+        self.failUnless(operator.truediv(5, 2) == 2.5)
+
+    def test_getitem(self):
+        a = range(10)
+        self.failUnless(operator.getitem(a, 2) == 2)
+
+    def test_getslice(self):
+        a = range(10)
+        self.failUnless(operator.getslice(a, 4, 6) == [4, 5])
+
+    def test_indexOf(self):
+        self.failUnless(operator.indexOf([4, 3, 2, 1], 3) == 1)
+        self.assertRaises(ValueError, operator.indexOf, [4, 3, 2, 1], 0)
+
+    def test_invert(self):
+        self.failUnless(operator.inv(4) == -5)
+
+    def test_isCallable(self):
+        class C:
+            pass
+        def check(self, o, v):
+            self.assert_(operator.isCallable(o) == callable(o) == v)
+        check(self, 4, 0)
+        check(self, operator.isCallable, 1)
+        check(self, C, 1)
+        check(self, C(), 0)
+
+    def test_isMappingType(self):
+        self.failIf(operator.isMappingType(1))
+        self.failIf(operator.isMappingType(operator.isMappingType))
+        self.failUnless(operator.isMappingType(operator.__dict__))
+        self.failUnless(operator.isMappingType({}))
+
+    def test_isNumberType(self):
+        self.failUnless(operator.isNumberType(8))
+        self.failUnless(operator.isNumberType(8j))
+        self.failUnless(operator.isNumberType(8L))
+        self.failUnless(operator.isNumberType(8.3))
+        self.failIf(operator.isNumberType(dir()))
+
+    def test_isSequenceType(self):
+        self.failUnless(operator.isSequenceType(dir()))
+        self.failUnless(operator.isSequenceType(()))
+        self.failUnless(operator.isSequenceType(xrange(10)))
+        self.failUnless(operator.isSequenceType('yeahbuddy'))
+        self.failIf(operator.isSequenceType(3))
+
+    def test_lshift(self):
+        self.failUnless(operator.lshift(5, 1) == 10)
+        self.failUnless(operator.lshift(5, 0) == 5)
+        self.assertRaises(ValueError, operator.lshift, 2, -1)
+
+    def test_mod(self):
+        self.failUnless(operator.mod(5, 2) == 1)
+
+    def test_mul(self):
+        self.failUnless(operator.mul(5, 2) == 10)
+
+    def test_neg(self):
+        self.failUnless(operator.neg(5) == -5)
+        self.failUnless(operator.neg(-5) == 5)
+        self.failUnless(operator.neg(0) == 0)
+        self.failUnless(operator.neg(-0) == 0)
+
+    def test_bitwise_or(self):
+        self.failUnless(operator.or_(0xa, 0x5) == 0xf)
+
+    def test_pos(self):
+        self.failUnless(operator.pos(5) == 5)
+        self.failUnless(operator.pos(-5) == -5)
+        self.failUnless(operator.pos(0) == 0)
+        self.failUnless(operator.pos(-0) == 0)
+
+    def test_repeat(self):
+        a = range(3)
+        self.failUnless(operator.repeat(a, 2) == a+a)
+        self.failUnless(operator.repeat(a, 1) == a)
+        self.failUnless(operator.repeat(a, 0) == [])
+        a = (1, 2, 3)
+        self.failUnless(operator.repeat(a, 2) == a+a)
+        self.failUnless(operator.repeat(a, 1) == a)
+        self.failUnless(operator.repeat(a, 0) == ())
+        a = '123'
+        self.failUnless(operator.repeat(a, 2) == a+a)
+        self.failUnless(operator.repeat(a, 1) == a)
+        self.failUnless(operator.repeat(a, 0) == '')
+
+    def test_rshift(self):
+        self.failUnless(operator.rshift(5, 1) == 2)
+        self.failUnless(operator.rshift(5, 0) == 5)
+        self.assertRaises(ValueError, operator.rshift, 2, -1)
+
+    def test_contains(self):
+        self.failUnless(operator.contains(range(4), 2))
+        self.failIf(operator.contains(range(4), 5))
+        self.failUnless(operator.sequenceIncludes(range(4), 2))
+        self.failIf(operator.sequenceIncludes(range(4), 5))
+
+    def test_setitem(self):
+        a = range(3)
+        self.failUnless(operator.setitem(a, 0, 2) is None)
+        self.assert_(a == [2, 1, 2])
+        self.assertRaises(IndexError, operator.setitem, a, 4, 2)
+
+    def test_setslice(self):
+        a = range(4)
+        self.failUnless(operator.setslice(a, 1, 3, [2, 1]) is None)
+        self.assert_(a == [0, 2, 1, 3])
+
+    def test_sub(self):
+        self.failUnless(operator.sub(5, 2) == 3)
+
+    def test_truth(self):
+        self.failUnless(operator.truth(5))
+        self.failUnless(operator.truth([0]))
+        self.failIf(operator.truth(0))
+        self.failIf(operator.truth([]))
+
+    def test_bitwise_xor(self):
+        self.failUnless(operator.xor(0xb, 0xc) == 0x7)
+
+
+test_support.run_unittest(OperatorTestCase)
