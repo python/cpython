@@ -561,6 +561,7 @@ r_object(p)
 			Py_XDECREF(varnames);
 			Py_XDECREF(filename);
 			Py_XDECREF(name);
+			Py_XDECREF(lnotab);
 
 		}
 		return v;
