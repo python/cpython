@@ -46,18 +46,22 @@ void PyMac_FixGUSIcd Py_PROTO((void));	/* Workaround for GUSI chdir() call */
 char *PyMac_StrError(int);			/* strerror with mac errors */
 
 extern int PyMac_DoYieldEnabled;		/* Don't do eventloop when false */
+#ifdef USE_GUSI
+extern int PyMac_ConsoleIsDead;			/* True when exiting */
+extern void PyMac_SetGUSISpin(void);	/* Install our private GUSI spin routine */
+#endif
 
 extern PyObject *PyMac_OSErrException;		/* Exception for OSErr */
 PyObject *PyMac_GetOSErrException(void);	/* Initialize & return it */
 
+#ifdef USE_MACTCP
 int PyMac_Idle Py_PROTO((void));		/* Idle routine */
+#endif
 void PyMac_Yield Py_PROTO((void));		/* optional idle routine for mainloop */
 void PyMac_SetYield Py_PROTO((long, long, long, long)); /* Set timeouts */
 PyObject *PyErr_Mac(PyObject *, int);		/* Exception with a mac error */
 PyObject *PyMac_Error(OSErr);			/* Uses PyMac_GetOSErrException */
 void PyMac_HandleEvent Py_PROTO((EventRecord *)); /* Handle one event, if possible */
-
-int PyMac_Idle(void);				/* Idle routine */
 
 int PyMac_FindResourceModule(char *, char *); /* Test for 'PYC ' resource in a file */
 PyObject * PyMac_LoadResourceModule(char *, char *); /* Load 'PYC ' resource from file */

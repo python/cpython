@@ -65,6 +65,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef USE_GUSI
 #include <TFileSpec.h> /* For Path2FSSpec */
 #include <LowMem.h> /* For SetSFCurDir, etc */
+#include <GUSI.h>
 #endif
 
 #ifndef HAVE_UNIVERSAL_HEADERS
@@ -110,6 +111,8 @@ extern FSSpec *mfs_GetFSSpecFSSpec();
 static int interrupted;			/* Set to true when cmd-. seen */
 static RETSIGTYPE intcatcher Py_PROTO((int));
 
+static void PyMac_DoYield Py_PROTO((int));
+
 /*
 ** We attempt to be a good citizen by giving up the CPU periodically.
 ** When in the foreground we do this less often and for shorter periods
@@ -133,6 +136,11 @@ static int in_foreground;
 ** when < 0, don't do any event scanning 
 */
 int PyMac_DoYieldEnabled = 1;
+
+/*
+** Workaround for sioux/gusi combo: set when we are exiting
+*/
+int PyMac_ConsoleIsDead;
 
 /*
 ** Some stuff for our GetDirectory and PromptGetFile routines
@@ -170,6 +178,40 @@ PyMac_FixGUSIcd()
 #ifdef __CFM68K__
 void SpinCursor(short x) { /* Dummy */ }
 #endif /* __CFM68K */
+
+/*
+** Replacement GUSI Spin function
+*/
+static int
+PyMac_GUSISpin(spin_msg msg, long arg)
+{
+	static Boolean			inForeground	=	true;
+	WindowPtr				win;
+	EventRecord				ev;
+	int						maysleep;
+
+	if (PyMac_ConsoleIsDead) return 0;
+#if 0
+	if (inForeground)
+		SpinCursor(msg == SP_AUTO_SPIN ? short(arg) : 1);
+#endif
+
+	if (interrupted) return -1;
+
+	if ( msg == SP_AUTO_SPIN || ((msg==SP_SLEEP||msg==SP_SELECT) && arg <= yield_fg))
+		maysleep = 0;
+	else
+		maysleep = 0;
+
+	PyMac_DoYield(maysleep);
+
+	return 0;
+}
+
+void
+PyMac_SetGUSISpin() {
+	GUSISetHook(GUSI_SpinHook, (GUSIHook)PyMac_GUSISpin);
+}
 
 #endif
 
@@ -403,7 +445,7 @@ PyMac_HandleEvent(evp)
 ** Yield the CPU to other tasks.
 */
 static void
-PyMac_DoYield()
+PyMac_DoYield(int maysleep)
 {
 	EventRecord ev;
 	long yield;
@@ -415,19 +457,25 @@ PyMac_DoYield()
 							NGetTrapAddress(_Unimplemented, ToolTrap));
 	}
 
-	if ( PyMac_DoYieldEnabled >= 0) {
+	lastyield = TickCount();
 #ifndef THINK_C
-		/* Under think this has been done before in intrcheck() or intrpeek() */
+	/* Under think this has been done before in intrcheck() or intrpeek() */
+	if (PyMac_DoYieldEnabled >= 0)
 		scan_event_queue(0);
 #endif
+	if (PyMac_DoYieldEnabled == 0)
 		return;
-	}
 		
 	in_foreground = PyMac_InForeground();
-	if ( in_foreground )
-		yield = yield_fg;
-	else
-		yield = yield_bg;
+	if ( maysleep ) {
+		if ( in_foreground )
+			yield = yield_fg;
+		else
+			yield = yield_bg;
+	} else {
+		yield = 0;
+	}
+		
 	while ( 1 ) {
 		if ( no_waitnextevent ) {
 			SystemTask();
@@ -440,7 +488,6 @@ PyMac_DoYield()
 			break;
 		PyMac_HandleEvent(&ev);
 	}
-	lastyield = TickCount();
 }
 
 /*
@@ -455,9 +502,10 @@ PyMac_Yield() {
 	else
 		iv = interval_bg;
 	if ( TickCount() > lastyield + iv )
-		PyMac_DoYield();
+		PyMac_DoYield(1);
 }
 
+#ifdef USE_MACTCP
 /*
 ** Idle routine for busy-wait loops.
 ** Gives up CPU, handles events and returns true if an interrupt is pending
@@ -466,9 +514,11 @@ PyMac_Yield() {
 int
 PyMac_Idle()
 {
-	PyMac_DoYield();
+	PyMac_DoYield(1);
 	return intrpeek();
 }
+#endif
+
 /*
 ** Returns true if the argument has a resource fork, and it contains
 ** a 'PYC ' resource of the correct name
