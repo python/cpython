@@ -30,6 +30,7 @@ More standard extensions 1D100000 - 1e000000
  - select                    1D110000 - 1D120000
  - unicodedata               1D120000 - 1D160000
  - winsound                  1D160000 - 1D170000
+ - bZ2                       1D170000 - 1D180000
 
 Other extension modules
  - win32api                  1e200000 - 1e220000
