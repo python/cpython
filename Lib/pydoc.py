@@ -1303,7 +1303,7 @@ def describe(thing):
 
 def locate(path, forceload=0):
     """Locate an object by name or dotted path, importing as necessary."""
-    parts = split(path, '.')
+    parts = [part for part in split(path, '.') if part]
     module, n = None, 0
     while n < len(parts):
         nextmodule = safeimport(join(parts[:n+1], '.'), forceload)
