@@ -44,8 +44,8 @@ The latest known change to this information was:
 
     Friday, 5 April 2002, 12.00 CET 2002
 
-This script also knows about non-geographic top-level domains.
-
+This script also knows about non-geographic top-level domains, and the
+additional ccTLDs reserved by IANA.
 
 Usage: %(PROGRAM)s [-d] [-p file] [-o] [-h] addr [addr ...]
 
@@ -272,9 +272,15 @@ nameorgs = {
     "net": "networking",
     "org": "non-commercial",
     "pro": "professionals",
-    # This isn't in the same class as those above, but is included here
-    # because `uk' is the common practice country code for the United Kingdom.
-    # AFAICT, the official `gb' code is routinely ignored!
+    # These additional ccTLDs are included here even though they are not part
+    # of ISO 3166.  IANA has 5 reserved ccTLDs as described here:
+    #
+    # http://www.iso.org/iso/en/prods-services/iso3166ma/04background-on-iso-3166/iso3166-1-and-ccTLDs.html
+    #
+    # but I can't find an official list anywhere.
+    #
+    # Note that `uk' is the common practice country code for the United
+    # Kingdom.  AFAICT, the official `gb' code is routinely ignored!
     #
     # <D.M.Pick@qmw.ac.uk> tells me that `uk' was long in use before ISO3166
     # was adopted for top-level DNS zone names (although in the reverse order
@@ -283,6 +289,12 @@ nameorgs = {
     # Book' protocols over X.25 to Internet protocols over IP.
     #
     # See <url:ftp://ftp.ripe.net/ripe/docs/ripe-159.txt>
+    #
+    # Also, `su', while obsolete is still in limited use.
+    "ac": "Ascension Island",
+    "gg": "Guernsey",
+    "im": "Isle of Man",
+    "je": "Jersey",
     "uk": "United Kingdom (common practice)",
     "su": "Soviet Union (still in limited use)",
     }
