@@ -522,6 +522,8 @@ complex_coerce(PyObject **pv, PyObject **pw)
 	}
 	else if (PyLong_Check(*pw)) {
 		cval.real = PyLong_AsDouble(*pw);
+		if (cval.real == -1.0 && PyErr_Occurred())
+			return -1;
 		*pw = PyComplex_FromCComplex(cval);
 		Py_INCREF(*pv);
 		return 0;

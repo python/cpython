@@ -531,27 +531,28 @@ _PyLong_AsScaledDouble(PyObject *vv, int *exponent)
 double
 PyLong_AsDouble(PyObject *vv)
 {
-	register PyLongObject *v;
+	int e;
 	double x;
-	double multiplier = (double) (1L << SHIFT);
-	int i, sign;
-	
+
 	if (vv == NULL || !PyLong_Check(vv)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
-	v = (PyLongObject *)vv;
-	i = v->ob_size;
-	sign = 1;
-	x = 0.0;
-	if (i < 0) {
-		sign = -1;
-		i = -(i);
-	}
-	while (--i >= 0) {
-		x = x*multiplier + (double)v->ob_digit[i];
-	}
-	return x * sign;
+	x = _PyLong_AsScaledDouble(vv, &e);
+	if (x == -1.0 && PyErr_Occurred())
+		return -1.0;
+	if (e > INT_MAX / SHIFT)
+		goto overflow;
+	errno = 0;
+	x = ldexp(x, e * SHIFT);
+	if (errno == ERANGE)
+		goto overflow;
+	return x;
+
+overflow:
+	PyErr_SetString(PyExc_OverflowError,
+		"long int too large to convert to float");
+	return -1.0;
 }
 
 /* Create a new long (or int) object from a C pointer */
@@ -2098,9 +2099,9 @@ static PyObject *
 long_float(PyObject *v)
 {
 	double result;
-	PyFPE_START_PROTECT("long_float", return 0)
 	result = PyLong_AsDouble(v);
-	PyFPE_END_PROTECT(result)
+	if (result == -1.0 && PyErr_Occurred())
+		return NULL;
 	return PyFloat_FromDouble(result);
 }
 

@@ -328,6 +328,42 @@ def test_auto_overflow():
                                 raise TestFailed("pow%r should have raised "
                                 "TypeError" % ((longx, longy, long(z))))
 
+# ---------------------------------------- tests of long->float overflow
+
+def test_float_overflow():
+    import math
+
+    if verbose:
+        print "long->float overflow"
+
+    for x in -2.0, -1.0, 0.0, 1.0, 2.0:
+        verify(float(long(x)) == x)
+
+    huge = 1L << 30000
+    mhuge = -huge
+    namespace = {'huge': huge, 'mhuge': mhuge, 'math': math}
+    for test in ["float(huge)", "float(mhuge)",
+                 "complex(huge)", "complex(mhuge)",
+                 "complex(huge, 1)", "complex(mhuge, 1)",
+                 "complex(1, huge)", "complex(1, mhuge)",
+                 "1. + huge", "huge + 1.", "1. + mhuge", "mhuge + 1.",
+                 "1. - huge", "huge - 1.", "1. - mhuge", "mhuge - 1.",
+                 "1. * huge", "huge * 1.", "1. * mhuge", "mhuge * 1.",
+                 "1. // huge", "huge // 1.", "1. // mhuge", "mhuge // 1.",
+                 "1. / huge", "huge / 1.", "1. / mhuge", "mhuge / 1.",
+                 "1. ** huge", "huge ** 1.", "1. ** mhuge", "mhuge ** 1.",
+                 "math.sin(huge)", "math.sin(mhuge)",
+                 "math.log(huge)", "math.log(mhuge)", # should do better
+                 "math.sqrt(huge)", "math.sqrt(mhuge)", # should do better
+                 "math.log10(huge)", "math.log10(mhuge)", # should do better
+                 "math.floor(huge)", "math.floor(mhuge)"]:
+                 
+        try:
+            eval(test, namespace)
+        except OverflowError:
+            pass
+        else:
+            raise TestFailed("expected OverflowError from %s" % test)
 # ---------------------------------------------------------------- do it
 
 test_division()
@@ -335,3 +371,4 @@ test_bitop_identities()
 test_format()
 test_misc()
 test_auto_overflow()
+test_float_overflow()

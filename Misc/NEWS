@@ -3,6 +3,9 @@ What's New in Python 2.2a3?
 
 Core
 
+- Conversion of long to float now raises OverflowError if the long is too
+  big to represent as a C double.
+
 - The 3-argument builtin pow() no longer allows a third non-None argument
   if either of the first two arguments is a float, or if both are of
   integer types and the second argument is negative (in which latter case
@@ -94,6 +97,15 @@ Tools
 Build
 
 API
+
+- Note that PyLong_AsDouble can fail!  This has always been true, but no
+  callers checked for it.  It's more likely to fail now, because overflow
+  errors are properly detected now.  The proper way to check:
+
+  double x = PyLong_AsDouble(some_long_object);
+  if (x == -1.0 && PyErr_Occurred()) {
+          /* The conversion failed. */
+  }
 
 - The GC API has been changed.  Extensions that use the old API will still
   compile but will not participate in GC.  To upgrade an extension
