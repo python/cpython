@@ -21,7 +21,7 @@ def gettempdir():
         pwd = os.getcwd()
     except (AttributeError, os.error):
         pwd = os.curdir
-    attempdirs = ['/var/tmp', '/usr/tmp', '/tmp', pwd]
+    attempdirs = ['/tmp', '/var/tmp', '/usr/tmp', pwd]
     if os.name == 'nt':
         attempdirs.insert(0, 'C:\\TEMP')
         attempdirs.insert(0, '\\TEMP')
