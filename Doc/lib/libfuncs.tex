@@ -439,6 +439,11 @@ class C:
   is always a list.  If \var{function} is \code{None}, the identity
   function is assumed, that is, all elements of \var{list} that are false
   (zero or empty) are removed.
+
+  Note that \code{filter(function, list)} equals
+  \code{[item for item in list if function(item)]} if function is not
+  \code{None} and \code{[item for item in list if item]} if function is
+  None.
 \end{funcdesc}
 
 \begin{funcdesc}{float}{x}
@@ -537,9 +542,8 @@ class C:
 \begin{funcdesc}{int}{x\optional{, radix}}
   Convert a string or number to a plain integer.  If the argument is a
   string, it must contain a possibly signed decimal number
-  representable as a Python integer, possibly embedded in whitespace;
-  this behaves identical to \code{string.atoi(\var{x}\optional{,
-  \var{radix}})}.  The \var{radix} parameter gives the base for the
+  representable as a Python integer, possibly embedded in whitespace.
+  The \var{radix} parameter gives the base for the
   conversion and may be any integer in the range [2, 36], or zero.  If
   \var{radix} is zero, the proper radix is guessed based on the
   contents of string; the interpretation is the same as for integer
@@ -904,6 +908,7 @@ class C:
   The \var{sequence}'s items are normally numbers, and are not allowed
   to be strings.  The fast, correct way to concatenate sequence of
   strings is by calling \code{''.join(\var{sequence})}.
+  Note that \code{sum(range(n), m)} equals \code{reduce(operator.add, range(n), m)}
   \versionadded{2.3}
 \end{funcdesc}
 
