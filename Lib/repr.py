@@ -15,6 +15,7 @@ class Repr:
         self.maxdict = 4
         self.maxset = 6
         self.maxfrozenset = 6
+        self.maxdeque = 6
         self.maxstring = 30
         self.maxlong = 40
         self.maxother = 20
@@ -37,7 +38,7 @@ class Repr:
                 s = s[:i] + '...' + s[len(s)-j:]
             return s
 
-    def _repr_iterable(self, x, level, left, right, maxiter, final=''):
+    def _repr_iterable(self, x, level, left, right, maxiter, trail=''):
         n = len(x)
         if level <= 0 and n:
             s = '...'
@@ -47,7 +48,7 @@ class Repr:
             pieces = [repr1(elem, newlevel) for elem in islice(x, maxiter)]
             if n > maxiter:  pieces.append('...')
             s = ', '.join(pieces)
-            if n == 1 and final:  s += final
+            if n == 1 and trail:  right = trail + right
         return '%s%s%s' % (left, s, right)
 
     def repr_tuple(self, x, level):
@@ -66,6 +67,9 @@ class Repr:
     def repr_frozenset(self, x, level):
         return self._repr_iterable(x, level, 'frozenset([', '])',
                                    self.maxfrozenset)
+
+    def repr_deque(self, x, level):
+        return self._repr_iterable(x, level, 'deque([', '])', self.maxdeque)
 
     def repr_dict(self, x, level):
         n = len(x)
