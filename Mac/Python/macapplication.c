@@ -31,11 +31,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #pragma lib_export on
 #endif
 
-extern void PyMac_InitApplet();
+extern void PyMac_InitApplication(void);
 #ifdef USE_MAC_APPLET_SUPPORT
-extern void PyMac_InitApplication();
+extern void PyMac_InitApplet(void);
 #endif /* USE_MAC_APPLET_SUPPORT */
 
+/* From the MSL runtime: */
+extern void __initialize(void);
 
 /*
 ** Alternative initialization entry point for some very special cases.

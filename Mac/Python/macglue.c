@@ -63,7 +63,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <TextUtils.h>
 #ifdef __MWERKS__
 #include <SIOUX.h>
+extern void SIOUXSetupMenus(void);
+extern void SIOUXDoAboutBox(void);
 #endif
+#ifdef USE_GUSI
+/* Functions we redefine because they're in obscure libraries */
+extern void SpinCursor(short x);
+extern void RotateCursor(short x);
+extern pascal void PLstrcpy(unsigned char *, unsigned char *);
+extern pascal int PLstrcmp(unsigned char *, unsigned char *);
+extern pascal unsigned char *PLstrrchr(unsigned char *, unsigned char);
+
+#endif
+
 #ifdef USE_GUSI1
 #include <TFileSpec.h> /* For Path2FSSpec */
 #include <GUSI.h>
@@ -103,7 +115,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define fnfErr -43
 
 /* Declared in macfsmodule.c: */
-extern FSSpec *mfs_GetFSSpecFSSpec();
+extern FSSpec *mfs_GetFSSpecFSSpec(PyObject *);
 extern PyObject *newmfssobject(FSSpec *);
 
 /* Interrupt code variables: */
@@ -246,15 +258,13 @@ PyMac_StopGUSISpin() {
 ** StdCLib. Moreover, that implementation is broken under cfm68k...
 */
 pascal void
-PLstrcpy(to, fr)
-	unsigned char *to, *fr;
+PLstrcpy(unsigned char *to, unsigned char *fr)
 {
 	memcpy(to, fr, fr[0]+1);
 }
 
 pascal int
-PLstrcmp(s1, s2)
-	unsigned char *s1, *s2;
+PLstrcmp(unsigned char *s1, unsigned char *s2)
 {
 	int res;
 	int l = s1[0] < s2[0] ? s1[0] : s2[0];
@@ -272,9 +282,7 @@ PLstrcmp(s1, s2)
 }
 
 pascal unsigned char *
-PLstrrchr(str, chr)
-	unsigned char *str;
-	unsigned char chr;
+PLstrrchr(unsigned char *str, unsigned char chr)
 {
 	unsigned char *ptr = 0;
 	unsigned char *p;
@@ -457,8 +465,8 @@ PyOS_InterruptOccurred()
 	return interrupted;
 }
 /* Check whether we are in the foreground */
-int
-PyMac_InForeground()
+static int
+PyMac_InForeground(void)
 {
 	static ProcessSerialNumber ours;
 	static inited;

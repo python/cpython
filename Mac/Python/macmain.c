@@ -44,6 +44,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef __MWERKS__
 #include <SIOUX.h>
 #define USE_SIOUX
+extern int ccommand(char ***);
 #if __profile__ == 1
 #include <profiler.h>
 #endif
@@ -549,9 +550,7 @@ Py_GetProgramFullPath()
    This is rare, but it is needed by the secureware extension. */
 
 void
-Py_GetArgcArgv(argc,argv)
-	int *argc;
-	char ***argv;
+Py_GetArgcArgv(int *argc,char ***argv)
 {
 	*argc = orig_argc;
 	*argv = orig_argv;

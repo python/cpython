@@ -34,6 +34,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "getapplbycreator.h"
 
+/* Should this be in macglue.h? */
+extern FSSpec *mfs_GetFSSpecFSSpec(PyObject *);
+
 static PyObject *ErrorObject;
 
 /* ----------------------------------------------------- */
@@ -174,9 +177,8 @@ mfsa_getattr(self, name)
 	return Py_FindMethod(mfsa_methods, (PyObject *)self, name);
 }
 
-mfsaobject *
-newmfsaobject(alias)
-	AliasHandle alias;
+static mfsaobject *
+newmfsaobject(AliasHandle alias)
 {
 	mfsaobject *self;
 
@@ -334,8 +336,7 @@ static PyTypeObject Mfsitype = {
 ** object is a python fsspec object, else NULL
 */
 FSSpec *
-mfs_GetFSSpecFSSpec(self)
-	PyObject *self;
+mfs_GetFSSpecFSSpec(PyObject *self)
 {
 	if ( is_mfssobject(self) )
 		return &((mfssobject *)self)->fsspec;

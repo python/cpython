@@ -29,8 +29,10 @@ PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-char *
-Py_GetPlatform()
+#include "Python.h"
+
+const char *
+Py_GetPlatform(void)
 {
 	return "mac";
 }
