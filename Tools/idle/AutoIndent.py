@@ -101,6 +101,10 @@ class AutoIndent:
     indentwidth = 4
     tabwidth = TK_TABWIDTH_DEFAULT
 
+    # If context_use_ps1 is true, parsing searches back for a ps1 line;
+    # else searches back for closest preceding def or class.
+    context_use_ps1 = 0
+
     # When searching backwards for the closest preceding def or class,
     # first start num_context_lines[0] lines back, then
     # num_context_lines[1] lines back if that didn't work, and so on.
@@ -108,11 +112,10 @@ class AutoIndent:
     # conceivable file).
     # Making the initial values larger slows things down more often.
     # OTOH, if you happen to find a line that looks like a def or class
-    # in a multiline string, and the start of the string isn't in the
-    # chunk, the parsing is utterly hosed.  Can't think of a way to
-    # stop that without always reparsing from the start of the file.
-    # doctest.py is a killer example of this (IDLE is useless for
-    # editing that!).
+    # in a multiline string, the parsing is utterly hosed.  Can't think
+    # of a way to stop that without always reparsing from the start
+    # of the file.  doctest.py is a killer example of this (IDLE is
+    # useless for editing that!).
     num_context_lines = 50, 500, 5000000
 
     def __init__(self, editwin):
@@ -126,6 +129,8 @@ class AutoIndent:
                 self.indentwidth = value
             elif key == 'tabwidth':
                 self.tabwidth = value
+            elif key == 'context_use_ps1':
+                self.context_use_ps1 = value
             else:
                 raise KeyError, "bad option name: %s" % `key`
 
@@ -240,13 +245,17 @@ class AutoIndent:
                 text.insert("insert linestart", '\n')
                 return "break"
             indent = line[:i]
-            # strip trailing whitespace
+            # strip whitespace before insert point
             i = 0
             while line and line[-1] in " \t":
                 line = line[:-1]
                 i = i+1
             if i:
                 text.delete("insert - %d chars" % i, "insert")
+            # strip whitespace after insert point
+            while text.get("insert") in " \t":
+                text.delete("insert")
+            # start new line
             text.insert("insert", '\n')
             # adjust indentation for continuations and block open/close
             lno = index2line(text.index('insert'))
@@ -255,7 +264,7 @@ class AutoIndent:
                 startat = max(lno - context, 1)
                 rawtext = text.get(`startat` + ".0", "insert")
                 y.set_str(rawtext)
-                bod = y.find_last_def_or_class()
+                bod = y.find_last_def_or_class(self.context_use_ps1)
                 if bod is not None or startat == 1:
                     break
             y.set_lo(bod or 0)
