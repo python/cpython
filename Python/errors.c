@@ -119,7 +119,7 @@ err_clear()
 int
 err_badarg()
 {
-	err_setstr(TypeError, "illegal argument type for built-in function");
+	err_setstr(TypeError, "illegal argument type for built-in operation");
 	return 0;
 }
 
