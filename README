@@ -25,10 +25,12 @@ done so.)
 
 	make
 
-This will recursively run Make in each of the Parser, Objects and
-Python subdirectories.  In Parser it builds an executable "pgen" and a
-library libParser.a.  In Objects it builds a library libObjects.a.  In
-Python it builds a library libPython.a and an executable "python".
+This will recursively run Make in each of the Parser, Grammar, Objects
+and Python subdirectories.  In Parser it builds an executable "pgen"
+and a library libParser.a.  In Grammar it runs Parser/pgen to generate
+graminit.[ch] which are copied to Includes and Python, respectively.
+In Objects it builds a library libObjects.a.  In Python it builds a
+library libPython.a and an executable "python".
 
 (3) Test the resulting executable:
 
