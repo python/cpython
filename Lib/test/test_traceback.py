@@ -52,15 +52,6 @@ class TracebackCases(unittest.TestCase):
 def test():
     raise ValueError"""
 
-            # if this test runs fast, test_bug737473.py will have same mtime
-            # even if it's rewrited and it'll not reloaded.  so adjust mtime
-            # of original to past.
-            if hasattr(os, 'utime'):
-                past = time.time() - 3
-                os.utime(testfile, (past, past))
-            else:
-                time.sleep(3)
-
             if 'test_bug737473' in sys.modules:
                 del sys.modules['test_bug737473']
             import test_bug737473
@@ -70,6 +61,11 @@ def test():
             except ValueError:
                 # this loads source code to linecache
                 traceback.extract_tb(sys.exc_traceback)
+
+            # If this test runs fast, test_bug737473.py will stay in a mtime
+            # even if it's rewrited and it'll not reloaded in result.  So wait
+            # until new timestamp comes.
+            time.sleep(2)
 
             print >> open(testfile, 'w'), """\
 def test():
