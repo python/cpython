@@ -980,19 +980,12 @@ file_writelines(PyFileObject *f, PyObject *args)
 				line = PySequence_GetItem(args, index+j);
 				if (line == NULL) {
 					if (PyErr_ExceptionMatches(
-						PyExc_IndexError))
-					{
+						PyExc_IndexError)) {
 						PyErr_Clear();
 						break;
 					}
 					/* Some other error occurred.
 					   XXX We may lose some output. */
-					goto error;
-				}
-				if (!PyString_Check(line)) {
-					Py_DECREF(line);
-					PyErr_SetString(PyExc_TypeError,
-				 "writelines() requires sequences of strings");
 					goto error;
 				}
 				PyList_SetItem(list, j, line);
@@ -1001,11 +994,43 @@ file_writelines(PyFileObject *f, PyObject *args)
 		if (j == 0)
 			break;
 
+		/* Check that all entries are indeed strings. If not,
+		   apply the same rules as for file.write() and
+		   convert the results to strings. This is slow, but
+		   seems to be the only way since all conversion APIs
+		   could potentially execute Python code. */
+		for (i = 0; i < j; i++) {
+			PyObject *v = PyList_GET_ITEM(list, i);
+			if (!PyString_Check(v)) {
+			    	const char *buffer;
+			    	int len;
+				if (((f->f_binary && 
+				      PyObject_AsReadBuffer(v,
+					      (const void**)&buffer,
+							    &len)) ||
+				     PyObject_AsCharBuffer(v,
+							   &buffer,
+							   &len))) {
+					PyErr_SetString(PyExc_TypeError,
+				"writelines() requires sequences of strings");
+					goto error;
+				}
+				line = PyString_FromStringAndSize(buffer,
+								  len);
+				if (line == NULL)
+					goto error;
+				Py_DECREF(v);
+				PyList_SET_ITEM(list, i, v);
+			}
+		}
+
+		/* Since we are releasing the global lock, the
+		   following code may *not* execute Python code. */
 		Py_BEGIN_ALLOW_THREADS
 		f->f_softspace = 0;
 		errno = 0;
 		for (i = 0; i < j; i++) {
-			line = PyList_GET_ITEM(list, i);
+		    	line = PyList_GET_ITEM(list, i);
 			len = PyString_GET_SIZE(line);
 			nwritten = fwrite(PyString_AS_STRING(line),
 					  1, len, f->f_fp);
