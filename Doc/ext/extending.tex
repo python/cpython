@@ -1291,11 +1291,11 @@ transferred with the reference or not.
 Most functions that return a reference to an object pass on ownership
 with the reference.  In particular, all functions whose function it is
 to create a new object, such as \cfunction{PyInt_FromLong()} and
-\cfunction{Py_BuildValue()}, pass ownership to the receiver.  Even if in
-fact, in some cases, you don't receive a reference to a brand new
-object, you still receive ownership of the reference.  For instance,
-\cfunction{PyInt_FromLong()} maintains a cache of popular values and can
-return a reference to a cached item.
+\cfunction{Py_BuildValue()}, pass ownership to the receiver.  Even if
+the object is not actually new, you still receive ownership of a new
+reference to that object.  For instance, \cfunction{PyInt_FromLong()}
+maintains a cache of popular values and can return a reference to a
+cached item.
 
 Many functions that extract objects from other objects also transfer
 ownership with the reference, for instance
