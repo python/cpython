@@ -25,6 +25,8 @@ Library
 - Bug #1045381: time.strptime() can now infer the date using %U or %W (week of
   the year) when the day of the week and year are also specified.
 
+- Bug #1048816: fix bug in Ctrl-K at start of line in curses.textpad.Textbox
+
 Build
 -----
 
