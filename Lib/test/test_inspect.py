@@ -169,11 +169,14 @@ git.abuse(7, 8, 9)
 istest(inspect.istraceback, 'git.ex[2]')
 istest(inspect.isframe, 'mod.fr')
 
-test(len(git.tr) == 2, 'trace() length')
-test(git.tr[0][1:] == (TESTFN, 9, 'spam', ['    eggs(b + d, c + f)\n'], 0),
-     'trace() row 1')
-test(git.tr[1][1:] == (TESTFN, 18, 'eggs', ['    q = y / 0\n'], 0),
+test(len(git.tr) == 3, 'trace() length')
+test(git.tr[0][1:] == (TESTFN, 46, 'argue',
+                       ['            self.tr = inspect.trace()\n'], 0),
      'trace() row 2')
+test(git.tr[1][1:] == (TESTFN, 9, 'spam', ['    eggs(b + d, c + f)\n'], 0),
+     'trace() row 2')
+test(git.tr[2][1:] == (TESTFN, 18, 'eggs', ['    q = y / 0\n'], 0),
+     'trace() row 3')
 
 test(len(mod.st) >= 5, 'stack() length')
 test(mod.st[0][1:] ==
@@ -188,7 +191,6 @@ test(mod.st[2][1:] ==
 test(mod.st[3][1:] ==
      (TESTFN, 39, 'abuse', ['        self.argue(a, b, c)\n'], 0),
      'stack() row 4')
-# row 4 is in test_inspect.py
 
 args, varargs, varkw, locals = inspect.getargvalues(mod.fr)
 test(args == ['x', 'y'], 'mod.fr args')
