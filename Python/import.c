@@ -958,14 +958,11 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 		/* Check for package import (buf holds a directory name,
 		   and there's an __init__ module in that directory */
 #ifdef HAVE_STAT
-		if (stat(buf, &statbuf) == 0 &&
-		    S_ISDIR(statbuf.st_mode) &&
-		    find_init_module(buf)) {
-			if (case_ok(buf, len, namelen, name))
-				return &fd_package;
-			else
-				return NULL;
-		}
+		if (stat(buf, &statbuf) == 0 &&       /* it exists */
+		    S_ISDIR(statbuf.st_mode) &&       /* it's a directory */
+		    find_init_module(buf) &&          /* it has __init__.py */
+		    case_ok(buf, len, namelen, name)) /* and case matches */
+			return &fd_package;
 #else
 		/* XXX How are you going to test for directories? */
 #ifdef RISCOS
