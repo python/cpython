@@ -34,9 +34,9 @@ class build_py (Command):
         self.force = None
 
     def finalize_options (self):
-        self.set_undefined_options ('build',
-                                    ('build_lib', 'build_lib'),
-                                    ('force', 'force'))
+        self.set_undefined_options('build',
+                                   ('build_lib', 'build_lib'),
+                                   ('force', 'force'))
 
         # Get the distribution options that are aliases for build_py
         # options -- list of packages and list of modules.
@@ -83,9 +83,9 @@ class build_py (Command):
 
         # Now we're down to two cases: 'py_modules' only and 'packages' only.
         if self.py_modules:
-            self.build_modules ()
+            self.build_modules()
         else:
-            self.build_packages ()
+            self.build_packages()
 
     # run ()
         
@@ -95,24 +95,24 @@ class build_py (Command):
            distribution, where package 'package' should be found
            (at least according to the 'package_dir' option, if any)."""
 
-        path = string.split (package, '.')
+        path = string.split(package, '.')
 
         if not self.package_dir:
             if path:
-                return apply (os.path.join, path)
+                return apply(os.path.join, path)
             else:
                 return ''
         else:
             tail = []
             while path:
                 try:
-                    pdir = self.package_dir[string.join (path, '.')]
+                    pdir = self.package_dir[string.join(path, '.')]
                 except KeyError:
-                    tail.insert (0, path[-1])
+                    tail.insert(0, path[-1])
                     del path[-1]
                 else:
-                    tail.insert (0, pdir)
-                    return apply (os.path.join, tail)
+                    tail.insert(0, pdir)
+                    return apply(os.path.join, tail)
             else:
                 # Oops, got all the way through 'path' without finding a
                 # match in package_dir.  If package_dir defines a directory
@@ -126,7 +126,7 @@ class build_py (Command):
                     tail.insert(0, pdir)
 
                 if tail:
-                    return apply (os.path.join, tail)
+                    return apply(os.path.join, tail)
                 else:
                     return ''
 
@@ -140,22 +140,22 @@ class build_py (Command):
         # my "empty string means current dir" convention, so we have to
         # circumvent them.
         if package_dir != "":
-            if not os.path.exists (package_dir):
+            if not os.path.exists(package_dir):
                 raise DistutilsFileError, \
                       "package directory '%s' does not exist" % package_dir
-            if not os.path.isdir (package_dir):
+            if not os.path.isdir(package_dir):
                 raise DistutilsFileError, \
                       ("supposed package directory '%s' exists, " +
                        "but is not a directory") % package_dir
 
         # Require __init__.py for all but the "root package"
         if package:
-            init_py = os.path.join (package_dir, "__init__.py")
-            if os.path.isfile (init_py):
+            init_py = os.path.join(package_dir, "__init__.py")
+            if os.path.isfile(init_py):
                 return init_py
             else:
-                self.warn (("package init file '%s' not found " +
-                            "(or not a regular file)") % init_py)
+                self.warn(("package init file '%s' not found " +
+                           "(or not a regular file)") % init_py)
 
         # Either not in a package at all (__init__.py not expected), or
         # __init__.py doesn't exist -- so don't return the filename.
@@ -165,9 +165,9 @@ class build_py (Command):
 
 
     def check_module (self, module, module_file):
-        if not os.path.isfile (module_file):
-            self.warn ("file %s (for module %s) not found" % 
-                       (module_file, module))
+        if not os.path.isfile(module_file):
+            self.warn("file %s (for module %s) not found" % 
+                      (module_file, module))
             return 0
         else:
             return 1
@@ -176,16 +176,16 @@ class build_py (Command):
 
 
     def find_package_modules (self, package, package_dir):
-        self.check_package (package, package_dir)
-        module_files = glob (os.path.join (package_dir, "*.py"))
+        self.check_package(package, package_dir)
+        module_files = glob(os.path.join(package_dir, "*.py"))
         modules = []
         setup_script = os.path.abspath(self.distribution.script_name)
 
         for f in module_files:
-            abs_f = os.path.abspath (f)
+            abs_f = os.path.abspath(f)
             if abs_f != setup_script:
-                module = os.path.splitext (os.path.basename (f))[0]
-                modules.append ((package, module, f))
+                module = os.path.splitext(os.path.basename(f))[0]
+                modules.append((package, module, f))
             else:
                 self.debug_print("excluding %s" % setup_script)
         return modules
@@ -218,18 +218,18 @@ class build_py (Command):
         #   - don't check for __init__.py in directory for empty package
 
         for module in self.py_modules:
-            path = string.split (module, '.')
+            path = string.split(module, '.')
             package = string.join(path[0:-1], '.')
             module_base = path[-1]
 
             try:
                 (package_dir, checked) = packages[package]
             except KeyError:
-                package_dir = self.get_package_dir (package)
+                package_dir = self.get_package_dir(package)
                 checked = 0
 
             if not checked:
-                init_py = self.check_package (package, package_dir)
+                init_py = self.check_package(package, package_dir)
                 packages[package] = (package_dir, 1)
                 if init_py:
                     modules.append((package, "__init__", init_py))
@@ -237,11 +237,11 @@ class build_py (Command):
             # XXX perhaps we should also check for just .pyc files
             # (so greedy closed-source bastards can distribute Python
             # modules too)
-            module_file = os.path.join (package_dir, module_base + ".py")
-            if not self.check_module (module, module_file):
+            module_file = os.path.join(package_dir, module_base + ".py")
+            if not self.check_module(module, module_file):
                 continue
 
-            modules.append ((package, module_base, module_file))
+            modules.append((package, module_base, module_file))
 
         return modules
 
@@ -256,13 +256,13 @@ class build_py (Command):
         'find_package_modules()' do."""
 
         if self.py_modules:
-            modules = self.find_modules ()
+            modules = self.find_modules()
         else:
             modules = []
             for package in self.packages:
-                package_dir = self.get_package_dir (package)
-                m = self.find_package_modules (package, package_dir)
-                modules.extend (m)
+                package_dir = self.get_package_dir(package)
+                m = self.find_package_modules(package, package_dir)
+                modules.extend(m)
 
         return modules
 
@@ -271,43 +271,43 @@ class build_py (Command):
 
     def get_source_files (self):
 
-        modules = self.find_all_modules ()
+        modules = self.find_all_modules()
         filenames = []
         for module in modules:
-            filenames.append (module[-1])
+            filenames.append(module[-1])
 
         return filenames
 
 
     def get_module_outfile (self, build_dir, package, module):
         outfile_path = [build_dir] + list(package) + [module + ".py"]
-        return apply (os.path.join, outfile_path)
+        return apply(os.path.join, outfile_path)
 
 
     def get_outputs (self):
-        modules = self.find_all_modules ()
+        modules = self.find_all_modules()
         outputs = []
         for (package, module, module_file) in modules:
-            package = string.split (package, '.')
-            outputs.append (self.get_module_outfile (self.build_lib,
-                                                     package, module))
+            package = string.split(package, '.')
+            outputs.append(self.get_module_outfile(self.build_lib,
+                                                   package, module))
         return outputs
 
 
     def build_module (self, module, module_file, package):
-        if type (package) is StringType:
-            package = string.split (package, '.')
-        elif type (package) not in (ListType, TupleType):
+        if type(package) is StringType:
+            package = string.split(package, '.')
+        elif type(package) not in (ListType, TupleType):
             raise TypeError, \
                   "'package' must be a string (dot-separated), list, or tuple"
 
         # Now put the module source file into the "build" area -- this is
         # easy, we just copy it somewhere under self.build_lib (the build
         # directory for Python source).
-        outfile = self.get_module_outfile (self.build_lib, package, module)
-        dir = os.path.dirname (outfile)
-        self.mkpath (dir)
-        return self.copy_file (module_file, outfile, preserve_mode=0)
+        outfile = self.get_module_outfile(self.build_lib, package, module)
+        dir = os.path.dirname(outfile)
+        self.mkpath(dir)
+        return self.copy_file(module_file, outfile, preserve_mode=0)
 
 
     def build_modules (self):
@@ -319,7 +319,7 @@ class build_py (Command):
             # self.build_lib (the build directory for Python source).
             # (Actually, it gets copied to the directory for this package
             # under self.build_lib.)
-            self.build_module (module, module_file, package)
+            self.build_module(module, module_file, package)
 
     # build_modules ()
 
@@ -337,14 +337,14 @@ class build_py (Command):
             # already know its package!), and 'module_file' is the path to
             # the .py file, relative to the current directory
             # (ie. including 'package_dir').
-            package_dir = self.get_package_dir (package)
-            modules = self.find_package_modules (package, package_dir)
+            package_dir = self.get_package_dir(package)
+            modules = self.find_package_modules(package, package_dir)
 
             # Now loop over the modules we found, "building" each one (just
             # copy it to self.build_lib).
             for (package_, module, module_file) in modules:
                 assert package == package_
-                self.build_module (module, module_file, package)
+                self.build_module(module, module_file, package)
 
     # build_packages ()
                        

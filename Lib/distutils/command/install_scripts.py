@@ -33,11 +33,11 @@ class install_scripts (Command):
 
     def finalize_options (self):
         self.set_undefined_options('build', ('build_scripts', 'build_dir'))
-        self.set_undefined_options ('install',
-                                    ('install_scripts', 'install_dir'),
-                                    ('force', 'force'),
-                                    ('skip_build', 'skip_build'),
-                                   )
+        self.set_undefined_options('install',
+                                   ('install_scripts', 'install_dir'),
+                                   ('force', 'force'),
+                                   ('skip_build', 'skip_build'),
+                                  )
 
     def run (self):
         if not self.skip_build:

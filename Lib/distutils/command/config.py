@@ -87,10 +87,10 @@ class config (Command):
         # import.
         from distutils.ccompiler import CCompiler, new_compiler
         if not isinstance(self.compiler, CCompiler):
-            self.compiler = new_compiler (compiler=self.compiler,
-                                          verbose=self.noisy,
-                                          dry_run=self.dry_run,
-                                          force=1)
+            self.compiler = new_compiler(compiler=self.compiler,
+                                         verbose=self.noisy,
+                                         dry_run=self.dry_run,
+                                         force=1)
             if self.include_dirs:
                 self.compiler.set_include_dirs(self.include_dirs)
             if self.libraries:
