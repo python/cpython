@@ -338,7 +338,11 @@ trace_frame_exc(PyThreadState *tstate, PyFrameObject *f)
 	value = Py_None;
 	Py_INCREF(value);
     }
+#if PY_VERSION_HEX < 0x02040000
+    arg = Py_BuildValue("(OOO)", type, value, traceback);
+#else
     arg = PyTuple_Pack(3, type, value, traceback);
+#endif
     if (arg == NULL) {
 	PyErr_Restore(type, value, traceback);
 	return 0;
@@ -936,7 +940,12 @@ readinst(char *buf, int buf_size, PyObject *meth)
 
     PyTuple_SET_ITEM(arg, 0, bytes);
 
-    if ((str = PyObject_Call(meth, arg, NULL)) == NULL)
+#if PY_VERSION_HEX < 0x02020000
+    str = PyObject_CallObject(meth, arg);
+#else
+    str = PyObject_Call(meth, arg, NULL);
+#endif
+    if (str == NULL)
         goto finally;
 
     /* XXX what to do if it returns a Unicode string? */
