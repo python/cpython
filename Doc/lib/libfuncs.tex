@@ -836,13 +836,24 @@ def my_import(name):
   Return the type of an \var{object}.  The return value is a
   type\obindex{type} object.  The standard module
   \module{types}\refstmodindex{types} defines names for all built-in
-  types.
+  types that don't already have built-in names.
   For instance:
 
 \begin{verbatim}
 >>> import types
->>> if type(x) == types.StringType: print "It's a string"
+>>> x = 'abc'
+>>> if type(x) is str: print "It's a string"
+...
+It's a string
+>>> def f(): pass
+...
+>>> if type(f) is types.FunctionType: print "It's a function"
+...
+It's a function
 \end{verbatim}
+
+  The \function{isinstance()} built-in function is recommended for
+  testing the type of an object.
 \end{funcdesc}
 
 \begin{funcdesc}{unichr}{i}
