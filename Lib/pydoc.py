@@ -1458,7 +1458,8 @@ class ModuleScanner(Scanner):
     """An interruptible scanner that searches module synopses."""
     def __init__(self):
         roots = map(lambda dir: (dir, ''), pathdirs())
-        Scanner.__init__(self, roots, self.submodules, self.ispackage)
+        Scanner.__init__(self, roots, self.submodules, self.isnewpackage)
+        self.inodes = map(lambda (dir, pkg): os.stat(dir)[1], roots)
 
     def submodules(self, (dir, package)):
         children = []
@@ -1471,8 +1472,11 @@ class ModuleScanner(Scanner):
         children.sort() # so that spam.py comes before spam.pyc or spam.pyo
         return children
 
-    def ispackage(self, (dir, package)):
-        return ispackage(dir)
+    def isnewpackage(self, (dir, package)):
+        inode = os.stat(dir)[1] # detect circular symbolic links
+        if not (os.path.islink(dir) and inode in self.inodes):
+            self.inodes.append(inode)
+            return ispackage(dir)
 
     def run(self, callback, key=None, completer=None):
         if key: key = lower(key)
