@@ -52,14 +52,6 @@ extern void bzero(void *, int);
 #endif
 #endif
 
-#ifdef RISCOS
-#define NO_DUP
-#undef off_t
-#undef uid_t
-#undef gid_t
-#undef errno
-#include "socklib.h"
-#endif /* RISCOS */
 
 static PyObject *SelectError;
 

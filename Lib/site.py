@@ -59,11 +59,6 @@ ImportError exception, it is silently ignored.
 
 import sys, os
 
-if os.sep==".":
-    endsep = "/"
-else:
-    endsep = "."
-
 
 def makepath(*paths):
     dir = os.path.abspath(os.path.join(*paths))
@@ -129,7 +124,7 @@ def addsitedir(sitedir):
         return
     names.sort()
     for name in names:
-        if name[-4:] == endsep + "pth":
+        if name[-4:] == os.extsep + "pth":
             addpackage(sitedir, name)
     if reset:
         _dirs_in_sys_path = None

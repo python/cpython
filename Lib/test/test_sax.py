@@ -13,6 +13,7 @@ from xml.sax.expatreader import create_parser
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from cStringIO import StringIO
 from test_support import verify, verbose, TestFailed, findfile
+import os
 
 # ===== Utilities
 
@@ -228,7 +229,7 @@ def test_expat_file():
     xmlgen = XMLGenerator(result)
 
     parser.setContentHandler(xmlgen)
-    parser.parse(open(findfile("test.xml")))
+    parser.parse(open(findfile("test"+os.extsep+"xml")))
 
     return result.getvalue() == xml_test_out
 
@@ -349,7 +350,7 @@ def test_expat_nsattrs_wattr():
 
 # ===== InputSource support
 
-xml_test_out = open(findfile("test.xml.out")).read()
+xml_test_out = open(findfile("test"+os.extsep+"xml"+os.extsep+"out")).read()
 
 def test_expat_inpsource_filename():
     parser = create_parser()
@@ -357,7 +358,7 @@ def test_expat_inpsource_filename():
     xmlgen = XMLGenerator(result)
 
     parser.setContentHandler(xmlgen)
-    parser.parse(findfile("test.xml"))
+    parser.parse(findfile("test"+os.extsep+"xml"))
 
     return result.getvalue() == xml_test_out
 
@@ -367,7 +368,7 @@ def test_expat_inpsource_sysid():
     xmlgen = XMLGenerator(result)
 
     parser.setContentHandler(xmlgen)
-    parser.parse(InputSource(findfile("test.xml")))
+    parser.parse(InputSource(findfile("test"+os.extsep+"xml")))
 
     return result.getvalue() == xml_test_out
 
@@ -378,7 +379,7 @@ def test_expat_inpsource_stream():
 
     parser.setContentHandler(xmlgen)
     inpsrc = InputSource()
-    inpsrc.setByteStream(open(findfile("test.xml")))
+    inpsrc.setByteStream(open(findfile("test"+os.extsep+"xml")))
     parser.parse(inpsrc)
 
     return result.getvalue() == xml_test_out
@@ -625,9 +626,9 @@ def make_test_output():
     xmlgen = XMLGenerator(result)
 
     parser.setContentHandler(xmlgen)
-    parser.parse(findfile("test.xml"))
+    parser.parse(findfile("test"+os.extsep+"xml"))
 
-    outf = open(findfile("test.xml.out"), "w")
+    outf = open(findfile("test"+os.extsep+"xml"+os.extsep+"out"), "w")
     outf.write(result.getvalue())
     outf.close()
 

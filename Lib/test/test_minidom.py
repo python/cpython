@@ -4,7 +4,7 @@ from xml.dom.minidom import parse, Node, Document, parseString
 from xml.dom import HierarchyRequestErr
 import xml.parsers.expat
 
-import os.path
+import os
 import sys
 import traceback
 from test_support import verbose
@@ -13,7 +13,7 @@ if __name__ == "__main__":
     base = sys.argv[0]
 else:
     base = __file__
-tstfile = os.path.join(os.path.dirname(base), "test.xml")
+tstfile = os.path.join(os.path.dirname(base), "test"+os.extsep+"xml")
 del base
 
 def confirm(test, testname = "Test"):

@@ -2,19 +2,19 @@ import zlib # implied prerequisite
 import zipfile, os, StringIO, tempfile
 from test_support import TestFailed
 
-srcname = "junk9630.tmp"
-zipname = "junk9708.tmp"
+srcname = "junk9630"+os.extsep+"tmp"
+zipname = "junk9708"+os.extsep+"tmp"
 
 
 def zipTest(f, compression, srccontents):
     zip = zipfile.ZipFile(f, "w", compression)   # Create the ZIP archive
-    zip.write(srcname, "another.name")
+    zip.write(srcname, "another"+os.extsep+"name")
     zip.write(srcname, srcname)
     zip.close()
 
     zip = zipfile.ZipFile(f, "r", compression)   # Read the ZIP archive
     readData2 = zip.read(srcname)
-    readData1 = zip.read("another.name")
+    readData1 = zip.read("another"+os.extsep+"name")
     zip.close()
 
     if readData1 != srccontents or readData2 != srccontents:

@@ -173,9 +173,9 @@ class LongReprTest(unittest.TestCase):
         self.subpkgname = os.path.join(longname, longname)
         # Make the package and subpackage
         os.mkdir(self.pkgname)
-        touch(os.path.join(self.pkgname, '__init__.py'))
+        touch(os.path.join(self.pkgname, '__init__'+os.extsep+'py'))
         os.mkdir(self.subpkgname)
-        touch(os.path.join(self.subpkgname, '__init__.py'))
+        touch(os.path.join(self.subpkgname, '__init__'+os.extsep+'py'))
         # Remember where we are
         self.here = os.getcwd()
         sys.path.insert(0, self.here)
@@ -195,14 +195,14 @@ class LongReprTest(unittest.TestCase):
 
     def test_module(self):
         eq = self.assertEquals
-        touch(os.path.join(self.subpkgname, self.pkgname + '.py'))
+        touch(os.path.join(self.subpkgname, self.pkgname + os.extsep + 'py'))
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import areallylongpackageandmodulenametotestreprtruncation
         eq(repr(areallylongpackageandmodulenametotestreprtruncation),
            "<module 'areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation' from '%s'>" % areallylongpackageandmodulenametotestreprtruncation.__file__)
 
     def test_type(self):
         eq = self.assertEquals
-        touch(os.path.join(self.subpkgname, 'foo.py'), '''\
+        touch(os.path.join(self.subpkgname, 'foo'+os.extsep+'py'), '''\
 class foo(object):
     pass
 ''')
@@ -216,7 +216,7 @@ class foo(object):
         pass
 
     def test_class(self):
-        touch(os.path.join(self.subpkgname, 'bar.py'), '''\
+        touch(os.path.join(self.subpkgname, 'bar'+os.extsep+'py'), '''\
 class bar:
     pass
 ''')
@@ -225,7 +225,7 @@ class bar:
             "<class areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation.bar.bar at 0x"))
 
     def test_instance(self):
-        touch(os.path.join(self.subpkgname, 'baz.py'), '''\
+        touch(os.path.join(self.subpkgname, 'baz'+os.extsep+'py'), '''\
 class baz:
     pass
 ''')
@@ -236,7 +236,7 @@ class baz:
 
     def test_method(self):
         eq = self.assertEquals
-        touch(os.path.join(self.subpkgname, 'qux.py'), '''\
+        touch(os.path.join(self.subpkgname, 'qux'+os.extsep+'py'), '''\
 class aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:
     def amethod(self): pass
 ''')

@@ -34,6 +34,10 @@ def gettempdir():
             attempdirs.insert(0, dirname)
         except macfs.error:
             pass
+    elif os.name == 'riscos':
+        scrapdir = os.getenv('Wimp$ScrapDir')
+        if scrapdir:
+            attempdirs.insert(0, scrapdir)
     for envname in 'TMPDIR', 'TEMP', 'TMP':
         if os.environ.has_key(envname):
             attempdirs.insert(0, os.environ[envname])
@@ -87,7 +91,7 @@ if os.name == "posix":
 # string.
 elif os.name == "nt":
     template = '~' + `os.getpid()` + '-'
-elif os.name == 'mac':
+elif os.name in ('mac', 'riscos'):
     template = 'Python-Tmp-'
 else:
     template = 'tmp' # XXX might choose a better one
