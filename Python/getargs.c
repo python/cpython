@@ -224,26 +224,27 @@ seterror(int iarg, char *msg, int *levels, char *fname, char *message)
 	if (PyErr_Occurred())
 		return;
 	else if (message == NULL) {
-		/* XXX snprintf */
 		if (fname != NULL) {
-			sprintf(p, "%.200s() ", fname);
+			PyOS_snprintf(p, sizeof(buf), "%.200s() ", fname);
 			p += strlen(p);
 		}
 		if (iarg != 0) {
-			sprintf(p, "argument %d", iarg);
+			PyOS_snprintf(p, sizeof(buf) - (buf - p),
+				      "argument %d", iarg);
 			i = 0;
 			p += strlen(p);
 			while (levels[i] > 0 && (int)(p-buf) < 220) {
-				sprintf(p, ", item %d", levels[i]-1);
+				PyOS_snprintf(p, sizeof(buf) - (buf - p),
+					      ", item %d", levels[i]-1);
 				p += strlen(p);
 				i++;
 			}
 		}
 		else {
-			sprintf(p, "argument");
+			PyOS_snprintf(p, sizeof(buf) - (buf - p), "argument");
 			p += strlen(p);
 		}
-		sprintf(p, " %.256s", msg);
+		PyOS_snprintf(p, sizeof(buf) - (buf - p), " %.256s", msg);
 		message = buf;
 	}
 	PyErr_SetString(PyExc_TypeError, message);
