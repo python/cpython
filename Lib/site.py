@@ -14,7 +14,7 @@ This will append site-specific paths to to the module search path.  On
 Unix, it starts with sys.prefix and sys.exec_prefix (if different) and
 appends lib/python<version>/site-packages as well as lib/site-python.
 On other platforms (mainly Mac and Windows), it uses just sys.prefix
-\(and sys.exec_prefix, if different, but this is unlikely).  The
+(and sys.exec_prefix, if different, but this is unlikely).  The
 resulting directories, if they exist, are appended to sys.path, and
 also inspected for path configuration files.
 
