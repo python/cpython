@@ -206,6 +206,15 @@ class UserListTest(unittest.TestCase):
         self.assertEqual(u.index(1), 1)
         self.assertRaises(ValueError, u.index, 2)
 
+        u = UserList([-2,-1,0,0,1,2])
+        self.assertEqual(u.count(0), 2)
+        self.assertEqual(u.index(0), 2)
+        self.assertEqual(u.index(0,2), 2)
+        self.assertEqual(u.index(-2,-10), 0)
+        self.assertEqual(u.index(0,3), 3)
+        self.assertEqual(u.index(0,3,4), 3)
+        self.assertRaises(ValueError, u.index, 2,0,-10)
+
     def test_reverse(self):
         u = UserList((0, 1))
         u2 = u[:]

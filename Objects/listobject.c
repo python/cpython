@@ -1827,11 +1827,16 @@ PyList_AsTuple(PyObject *v)
 }
 
 static PyObject *
-listindex(PyListObject *self, PyObject *v)
+listindex(PyListObject *self, PyObject *args)
 {
-	int i;
+	int i, start=0, stop=self->ob_size;
+	PyObject *v;
 
-	for (i = 0; i < self->ob_size; i++) {
+	if (!PyArg_ParseTuple(args, "O|ii:index", &v, &start, &stop))
+		return NULL;
+	start = max(0, start);
+	stop = max(0, min(self->ob_size, stop));
+	for (i = start; i < stop; i++) {
 		int cmp = PyObject_RichCompareBool(self->ob_item[i], v, Py_EQ);
 		if (cmp > 0)
 			return PyInt_FromLong((long)i);
@@ -2088,7 +2093,7 @@ PyDoc_STRVAR(pop_doc,
 PyDoc_STRVAR(remove_doc,
 "L.remove(value) -- remove first occurrence of value");
 PyDoc_STRVAR(index_doc,
-"L.index(value) -> integer -- return index of first occurrence of value");
+"L.index(value, [start, [stop]]) -> integer -- return first index of value");
 PyDoc_STRVAR(count_doc,
 "L.count(value) -> integer -- return number of occurrences of value");
 PyDoc_STRVAR(reverse_doc,
@@ -2102,7 +2107,7 @@ static PyMethodDef list_methods[] = {
 	{"extend",      (PyCFunction)listextend,  METH_O, extend_doc},
 	{"pop",		(PyCFunction)listpop, 	  METH_VARARGS, pop_doc},
 	{"remove",	(PyCFunction)listremove,  METH_O, remove_doc},
-	{"index",	(PyCFunction)listindex,   METH_O, index_doc},
+	{"index",	(PyCFunction)listindex,   METH_VARARGS, index_doc},
 	{"count",	(PyCFunction)listcount,   METH_O, count_doc},
 	{"reverse",	(PyCFunction)listreverse, METH_NOARGS, reverse_doc},
 	{"sort",	(PyCFunction)listsort, 	  METH_VARARGS, sort_doc},

@@ -75,7 +75,7 @@ class UserList:
     def pop(self, i=-1): return self.data.pop(i)
     def remove(self, item): self.data.remove(item)
     def count(self, item): return self.data.count(item)
-    def index(self, item): return self.data.index(item)
+    def index(self, item, *args): return self.data.index(item, *args)
     def reverse(self): self.data.reverse()
     def sort(self, *args): self.data.sort(*args)
     def extend(self, other):
