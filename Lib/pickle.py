@@ -56,10 +56,12 @@ There are some restrictions on the pickling of class instances.
 
 First of all, the class must be defined at the top level in a module.
 
-Next, it must normally be possible to create class instances by calling
-the class without arguments.  If this is undesirable, the class can
-define a method __getinitargs__ (XXX not a pretty name!), which should
-return a *tuple* containing the arguments to be passed to the class
+Next, it must normally be possible to create class instances by
+calling the class without arguments.  Usually, this is best
+accomplished by providing default values for all arguments to its
+__init__ method (if it has one).  If this is undesirable, the
+class can define a method __getinitargs__, which should return a
+*tuple* containing the arguments to be passed to the class
 constructor.
 
 Classes can influence how their instances are pickled -- if the class defines
