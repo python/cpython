@@ -25,17 +25,17 @@ class URLTimeoutTest(unittest.TestCase):
 
 class urlopenNetworkTests(unittest.TestCase):
     """Tests urllib.urlopen using the network.
-    
+
     These tests are not exhaustive.  Assuming that testing using files does a
     good job overall of some of the basic interface features.  There are no
     tests exercising the optional 'data' and 'proxies' arguments.  No tests
     for transparent redirection have been written.
-    
+
     setUp is not used for always constructing a connection to
     http://www.python.org/ since there a few tests that don't use that address
     and making a connection is expensive enough to warrant minimizing unneeded
     connections.
-    
+
     """
 
     def test_basic(self):
@@ -84,16 +84,20 @@ class urlopenNetworkTests(unittest.TestCase):
         self.assertEqual(gotten_url, URL)
 
     def test_fileno(self):
+        if (sys.platform in ('win32',) or 
+                not hasattr(os, 'fdopen')):
+            # On Windows, socket handles are not file descriptors; this
+            # test can't pass on Windows.
+            return
         # Make sure fd returned by fileno is valid.
-        if hasattr(os, 'fdopen'):
-            open_url = urllib.urlopen("http://www.python.org/")
-            fd = open_url.fileno()
-            FILE = os.fdopen(fd)
-            try:
-                self.assert_(FILE.read(), "reading from file created using fd "
-                                          "returned by fileno failed")
-            finally:
-                FILE.close()
+        open_url = urllib.urlopen("http://www.python.org/")
+        fd = open_url.fileno()
+        FILE = os.fdopen(fd)
+        try:
+            self.assert_(FILE.read(), "reading from file created using fd "
+                                      "returned by fileno failed")
+        finally:
+            FILE.close()
 
     def test_bad_address(self):
         # Make sure proper exception is raised when connecting to a bogus
@@ -136,7 +140,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
         os.unlink(file_location)
         self.assert_(isinstance(header, mimetools.Message),
                      "header is not an instance of mimetools.Message")
-                     
+
 
 
 def test_main():
