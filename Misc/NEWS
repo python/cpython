@@ -12,6 +12,9 @@ What's New in Python 2.3.1?
 Core and builtins
 -----------------
 
+- Fixed a leak in class objects defining a comparison but not a hash
+  function.
+
 - Bug #789402, fixed memory leak when opening a file object.
 
 - Fixed a leak when new code objects are instantiated.

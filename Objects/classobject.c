@@ -953,6 +953,7 @@ instance_hash(PyInstanceObject *inst)
 				return _Py_HashPointer(inst);
 			}
 		}
+		Py_XDECREF(func);
 		PyErr_SetString(PyExc_TypeError, "unhashable instance");
 		return -1;
 	}
