@@ -38,8 +38,9 @@ def _formatparam(param, value=None, quote=1):
         # are (charset, language, value).  charset is a string, not a Charset
         # instance.
         if isinstance(value, TupleType):
-            # Convert to ascii, ignore language
-            value = unicode(value[2], value[0]).encode("ascii")
+            # Encode as per RFC 2231
+            param += '*'
+            value = Utils.encode_rfc2231(value[2], value[0], value[1])
         # BAW: Please check this.  I think that if quote is set it should
         # force quoting even if not necessary.
         if quote or tspecials.search(value):
@@ -543,7 +544,8 @@ class Message:
                     return v
         return failobj
 
-    def set_param(self, param, value, header='Content-Type', requote=1):
+    def set_param(self, param, value, header='Content-Type', requote=1,
+                  charset=None, language=''):
         """Set a parameter in the Content-Type: header.
 
         If the parameter already exists in the header, its value will be
@@ -556,7 +558,13 @@ class Message:
         An alternate header can specified in the header argument, and
         all parameters will be quoted as appropriate unless requote is
         set to a false value.
+
+        If charset is specified the parameter will be encoded according to RFC
+        2231.  In this case language is optional.
         """
+        if not isinstance(value, TupleType) and charset:
+            value = (charset, language, value)
+
         if not self.has_key(header) and header.lower() == 'content-type':
             ctype = 'text/plain'
         else:
