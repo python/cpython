@@ -513,6 +513,158 @@ imageop_grey42grey(self, args)
     return rv;
 }
 
+static object *
+imageop_rgb2rgb8(self, args)
+    object *self;
+    object *args;
+{
+    int x, y, len, nlen;
+    unsigned long *cp;
+    unsigned char *ncp;
+    object *rv;
+    int i, r, g, b;
+    unsigned long value, nvalue;
+    
+    if ( !getargs(args, "(s#ii)", &cp, &len, &x, &y) )
+      return 0;
+
+    nlen = x*y;
+    if ( nlen*4 != len ) {
+	err_setstr(ImageopError, "String has incorrect length");
+	return 0;
+    }
+    
+    rv = newsizedstringobject(NULL, nlen);
+    if ( rv == 0 )
+      return 0;
+    ncp = (unsigned char *)getstringvalue(rv);
+
+    for ( i=0; i < nlen; i++ ) {
+	/* Bits in source: aaaaaaaa BBbbbbbb GGGggggg RRRrrrrr */
+	value = *cp++;
+	r = (value >>  5) & 7;
+	g = (value >> 13) & 7;
+	b = (value >> 22) & 3;
+	nvalue = (r<<5) | (b<<3) | g;
+	*ncp++ = nvalue;
+    }
+    return rv;
+}
+
+static object *
+imageop_rgb82rgb(self, args)
+    object *self;
+    object *args;
+{
+    int x, y, len, nlen;
+    unsigned char *cp;
+    unsigned long *ncp;
+    object *rv;
+    int i, r, g, b;
+    unsigned long value, nvalue;
+    
+    if ( !getargs(args, "(s#ii)", &cp, &len, &x, &y) )
+      return 0;
+
+    nlen = x*y;
+    if ( nlen != len ) {
+	err_setstr(ImageopError, "String has incorrect length");
+	return 0;
+    }
+    
+    rv = newsizedstringobject(NULL, nlen*4);
+    if ( rv == 0 )
+      return 0;
+    ncp = (unsigned long *)getstringvalue(rv);
+
+    for ( i=0; i < nlen; i++ ) {
+	/* Bits in source: RRRBBGGG
+	** Red and Green are multiplied by 36.5, Blue by 85
+	*/
+	value = *cp++;
+	r = (value >> 5) & 7;
+	g = (value     ) & 7;
+	b = (value >> 3) & 3;
+	r = (r<<5) | (r<<3) | (r>>1);
+	g = (g<<5) | (g<<3) | (g>>1);
+	b = (b<<6) | (b<<4) | (b<<2) | b;
+	nvalue = r | (g<<8) | (b<<16);
+	*ncp++ = nvalue;
+    }
+    return rv;
+}
+
+static object *
+imageop_rgb2grey(self, args)
+    object *self;
+    object *args;
+{
+    int x, y, len, nlen;
+    unsigned long *cp;
+    unsigned char *ncp;
+    object *rv;
+    int i, r, g, b;
+    unsigned long value, nvalue;
+    
+    if ( !getargs(args, "(s#ii)", &cp, &len, &x, &y) )
+      return 0;
+
+    nlen = x*y;
+    if ( nlen*4 != len ) {
+	err_setstr(ImageopError, "String has incorrect length");
+	return 0;
+    }
+    
+    rv = newsizedstringobject(NULL, nlen);
+    if ( rv == 0 )
+      return 0;
+    ncp = (unsigned char *)getstringvalue(rv);
+
+    for ( i=0; i < nlen; i++ ) {
+	value = *cp++;
+	r = (value      ) & 0xff;
+	g = (value >>  8) & 0xff;
+	b = (value >> 16) & 0xff;
+	nvalue = (int)(0.30*r + 0.59*g + 0.11*b);
+	if ( nvalue > 255 ) nvalue = 255;
+	*ncp++ = nvalue;
+    }
+    return rv;
+}
+
+static object *
+imageop_grey2rgb(self, args)
+    object *self;
+    object *args;
+{
+    int x, y, len, nlen;
+    unsigned char *cp;
+    unsigned long *ncp;
+    object *rv;
+    int i;
+    unsigned long value;
+    
+    if ( !getargs(args, "(s#ii)", &cp, &len, &x, &y) )
+      return 0;
+
+    nlen = x*y;
+    if ( nlen != len ) {
+	err_setstr(ImageopError, "String has incorrect length");
+	return 0;
+    }
+    
+    rv = newsizedstringobject(NULL, nlen*4);
+    if ( rv == 0 )
+      return 0;
+    ncp = (unsigned long *)getstringvalue(rv);
+
+    for ( i=0; i < nlen; i++ ) {
+	value = *cp++;
+	*ncp++ = value | (value << 8 ) | (value << 16);
+    }
+    return rv;
+}
+
 /*
 static object *
 imageop_mul(self, args)
@@ -560,6 +712,10 @@ static struct methodlist imageop_methods[] = {
     { "grey22grey",	imageop_grey22grey },
     { "grey42grey",	imageop_grey42grey },
     { "tovideo",	imageop_tovideo },
+    { "rgb2rgb8",	imageop_rgb2rgb8 },
+    { "rgb82rgb",	imageop_rgb82rgb },
+    { "rgb2grey",	imageop_rgb2grey },
+    { "grey2rgb",	imageop_grey2rgb },
     { 0,          0 }
 };
 
