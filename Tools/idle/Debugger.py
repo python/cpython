@@ -289,4 +289,4 @@ class Debugger(bdb.Bdb):
 	list = self.breaks[filename]
 	if not lineno in list:
 		list.append(lineno)
-	bp = Breakpoint(filename, lineno, temporary, cond)
+	bp = bdb.Breakpoint(filename, lineno, temporary, cond)
