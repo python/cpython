@@ -90,23 +90,32 @@ err_ovf(msg)
 */
 
 #define BLOCK_SIZE	1000	/* 1K less typical malloc overhead */
-#define N_INTOBJECTS	((BLOCK_SIZE - sizeof(PyIntObject *)) / \
-			 sizeof(PyIntObject))
+#define BHEAD_SIZE	8	/* Enough for a 64-bit pointer */
+#define N_INTOBJECTS	((BLOCK_SIZE - BHEAD_SIZE) / sizeof(PyIntObject))
 
 #define PyMem_MALLOC	malloc
 #define PyMem_FREE	free
-static PyIntObject *block_list = NULL;
+
+struct _intblock {
+	struct _intblock *next;
+	PyIntObject objects[N_INTOBJECTS];
+};
+
+typedef struct _intblock PyIntBlock;
+
+static PyIntBlock *block_list = NULL;
+static PyIntObject *free_list = NULL;
 
 static PyIntObject *
 fill_free_list()
 {
 	PyIntObject *p, *q;
-	p = (PyIntObject *)PyMem_MALLOC(BLOCK_SIZE);
+	p = (PyIntObject *)PyMem_MALLOC(sizeof(PyIntBlock));
 	if (p == NULL)
 		return (PyIntObject *)PyErr_NoMemory();
-	*(PyIntObject **)p = block_list;
-	block_list = p;
-	p = (PyIntObject *)((char *)p + sizeof(PyIntObject *));
+	((PyIntBlock *)p)->next = block_list;
+	block_list = (PyIntBlock *)p;
+	p = &((PyIntBlock *)p)->objects[0];
 	q = p + N_INTOBJECTS;
 	while (--q > p)
 		q->ob_type = (struct _typeobject *)(q-1);
@@ -114,7 +123,6 @@ fill_free_list()
 	return p + N_INTOBJECTS - 1;
 }
 
-static PyIntObject *free_list = NULL;
 #ifndef NSMALLPOSINTS
 #define NSMALLPOSINTS		100
 #endif
@@ -802,7 +810,8 @@ PyTypeObject PyInt_Type = {
 void
 PyInt_Fini()
 {
-	PyIntObject *p, *list;
+	PyIntObject *p;
+	PyIntBlock *list, *next;
 	int i;
 	int bc, bf;	/* block count, number of freed blocks */
 	int irem, isum;	/* remaining unfreed ints per block, total */
@@ -823,36 +832,48 @@ PyInt_Fini()
 	list = block_list;
 	block_list = NULL;
 	while (list != NULL) {
-		p = list;
-		p = (PyIntObject *)((char *)p + sizeof(PyIntObject *));
+		p = &list->objects[0];
 		bc++;
 		irem = 0;
 		for (i = 0; i < N_INTOBJECTS; i++, p++) {
 			if (PyInt_Check(p) && p->ob_refcnt != 0)
 				irem++;
 		}
-		p = list;
-		list = *(PyIntObject **)p;
+		next = list->next;
 		if (irem) {
-			*(PyIntObject **)p = block_list;
-			block_list = p;
+			list->next = block_list;
+			block_list = list;
 		}
 		else {
-			PyMem_FREE(p);
+			PyMem_FREE(list);
 			bf++;
 		}
 		isum += irem;
+		list = next;
 	}
-	if (Py_VerboseFlag) {
-		fprintf(stderr, "# cleanup ints");
-		if (!isum) {
-			fprintf(stderr, "\n");
-		}
-		else {
-			fprintf(stderr,
-				": %d unfreed int%s in %d out of %d block%s\n",
-				isum, isum == 1 ? "" : "s",
-				bc - bf, bc, bc == 1 ? "" : "s");
+	if (!Py_VerboseFlag)
+		return;
+	fprintf(stderr, "# cleanup ints");
+	if (!isum) {
+		fprintf(stderr, "\n");
+	}
+	else {
+		fprintf(stderr,
+			": %d unfreed int%s in %d out of %d block%s\n",
+			isum, isum == 1 ? "" : "s",
+			bc - bf, bc, bc == 1 ? "" : "s");
+	}
+	if (Py_VerboseFlag > 1) {
+		list = block_list;
+		while (list != NULL) {
+			p = &list->objects[0];
+			for (i = 0; i < N_INTOBJECTS; i++, p++) {
+				if (PyInt_Check(p) && p->ob_refcnt != 0)
+					fprintf(stderr,
+				"#   <int object at %lx, refcnt=%d, val=%ld>\n",
+						p, p->ob_refcnt, p->ob_ival);
+			}
+			list = list->next;
 		}
 	}
 }
