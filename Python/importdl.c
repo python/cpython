@@ -205,14 +205,6 @@ static void beos_init_dyn( void );
 static void beos_cleanup_dyn( void );
 static void beos_nuke_dyn( PyObject *item );
 static void beos_add_dyn( char *pathname, image_id id );
-
-/* External interface for finding image IDs; useful if you need to
- * do your own symbol lookup in dynamically loaded modules. [Donn Cave]
- *
- * Hmm, could we hack up the Sun dlmodule instead for this sort of thing?
- * That might be more generally useful. [chrish]
- */
-image_id PyImport_BeImageID( char *name );
 #endif
 
 #ifdef DYNAMIC_LINK
@@ -985,6 +977,10 @@ aix_loaderror(pathname)
  * Python without thread support; the 1.5 version required it, which wasn't
  * very friendly.  Note that I haven't tested it without threading... why
  * would you want to avoid threads on BeOS? [chrish]
+ *
+ * As of 1.5.2, the PyImport_BeImageID() function has been removed; Donn
+ * tells me it's not necessary anymore because of PyCObject_Import().
+ * [chrish]
  */
 
 /*
@@ -1092,34 +1088,4 @@ static void beos_add_dyn( char *name, image_id id )
 #endif
 }
 
-/* Given a module name, return the image_id (if it's a dynamically loaded
- * module). [Donn Cave]
- */
-image_id PyImport_BeImageID( char *name )
-{
-	int retval;
-	PyObject *py_id;
-	long id;
-	
-	if( !beos_dyn_images ) {
-		return B_ERROR;
-	}
-
-#ifdef WITH_THREAD	
-	retval = PyThread_acquire_lock( beos_dyn_lock, 1 );
-#endif
-	
-	py_id = PyDict_GetItemString( beos_dyn_images, name );
-	if( py_id ) {
-		id = PyInt_AsLong( py_id );
-	} else {
-		id = B_ERROR;
-	}
-
-#ifdef WITH_THREAD	
-	PyThread_release_lock( beos_dyn_lock );
-#endif
-	
-	return (image_id)id;
-}
 #endif /* __BEOS__ */
