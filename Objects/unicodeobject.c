@@ -633,13 +633,6 @@ int utf8_decoding_error(const char **source,
     }
 }
 
-#define UTF8_ERROR(details) \
-  do {                                                      \
-      if (utf8_decoding_error(&s, &p, errors, (details)))   \
-          goto onError;                                     \
-      goto nextchar;                                        \
-  } while (0)
-
 PyObject *PyUnicode_DecodeUTF8(const char *s,
 			       int size,
 			       const char *errors)
@@ -648,6 +641,7 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
     const char *e;
     PyUnicodeObject *unicode;
     Py_UNICODE *p;
+    const char *errmsg = "";
 
     /* Note: size will always be longer than the resulting Unicode
        character count */
@@ -672,36 +666,48 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
 
         n = utf8_code_length[ch];
 
-        if (s + n > e)
-            UTF8_ERROR("unexpected end of data");
+        if (s + n > e) {
+	    errmsg = "unexpected end of data";
+	    goto utf8Error;
+	}
 
         switch (n) {
 
         case 0:
-            UTF8_ERROR("unexpected code byte");
+            errmsg = "unexpected code byte";
+	    goto utf8Error;
             break;
 
         case 1:
-            UTF8_ERROR("internal error");
+            errmsg = "internal error";
+	    goto utf8Error;
             break;
 
         case 2:
-            if ((s[1] & 0xc0) != 0x80) 
-                UTF8_ERROR("invalid data");
+            if ((s[1] & 0xc0) != 0x80) {
+                errmsg = "invalid data";
+		goto utf8Error;
+	    }
             ch = ((s[0] & 0x1f) << 6) + (s[1] & 0x3f);
-            if (ch < 0x80)
-                UTF8_ERROR("illegal encoding");
+            if (ch < 0x80) {
+                errmsg = "illegal encoding";
+		goto utf8Error;
+	    }
 	    else
-				*p++ = (Py_UNICODE)ch;
+		*p++ = (Py_UNICODE)ch;
             break;
 
         case 3:
             if ((s[1] & 0xc0) != 0x80 || 
-                (s[2] & 0xc0) != 0x80) 
-                UTF8_ERROR("invalid data");
+                (s[2] & 0xc0) != 0x80) {
+                errmsg = "invalid data";
+		goto utf8Error;
+	    }
             ch = ((s[0] & 0x0f) << 12) + ((s[1] & 0x3f) << 6) + (s[2] & 0x3f);
-            if (ch < 0x800 || (ch >= 0xd800 && ch < 0xe000))
-                UTF8_ERROR("illegal encoding");
+            if (ch < 0x800 || (ch >= 0xd800 && ch < 0xe000)) {
+                errmsg = "illegal encoding";
+		goto utf8Error;
+	    }
 	    else
 				*p++ = (Py_UNICODE)ch;
             break;
@@ -709,14 +715,20 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
         case 4:
             if ((s[1] & 0xc0) != 0x80 ||
                 (s[2] & 0xc0) != 0x80 ||
-                (s[3] & 0xc0) != 0x80)
-                UTF8_ERROR("invalid data");
+                (s[3] & 0xc0) != 0x80) {
+                errmsg = "invalid data";
+		goto utf8Error;
+	    }
             ch = ((s[0] & 0x7) << 18) + ((s[1] & 0x3f) << 12) +
                  ((s[2] & 0x3f) << 6) + (s[3] & 0x3f);
             /* validate and convert to UTF-16 */
-            if ((ch < 0x10000) ||                  /* minimum value allowed for 4 byte encoding */
-                (ch > 0x10ffff))                   /* maximum value allowed for UTF-16 */
-                UTF8_ERROR("illegal encoding");
+            if ((ch < 0x10000) ||   /* minimum value allowed for 4
+                                       byte encoding */
+                (ch > 0x10ffff)) {  /* maximum value allowed for
+                                       UTF-16 */
+                errmsg = "illegal encoding";
+		goto utf8Error;
+	    }
             /*  compute and append the two surrogates: */
             
             /*  translate from 10000..10FFFF to 0..FFFF */
@@ -731,12 +743,16 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
 
         default:
             /* Other sizes are only needed for UCS-4 */
-            UTF8_ERROR("unsupported Unicode code range");
+            errmsg = "unsupported Unicode code range";
+	    goto utf8Error;
+	    break;
         }
         s += n;
-
-      nextchar:
-        ;
+	continue;
+	
+    utf8Error:
+      if (utf8_decoding_error(&s, &p, errors, errmsg))
+          goto onError;
     }
 
     /* Adjust length */
@@ -750,9 +766,8 @@ onError:
     return NULL;
 }
 
-#undef UTF8_ERROR
-
-/* NOT USED */
+/* Not used anymore, now that the encoder supports UTF-16
+   surrogates. */
 #if 0
 static
 int utf8_encoding_error(const Py_UNICODE **source,
@@ -783,7 +798,7 @@ int utf8_encoding_error(const Py_UNICODE **source,
 	return -1;
     }
 }
-#endif /* NOT USED */
+#endif
 
 PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 			       int size,
@@ -827,7 +842,7 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 			       surrogates */
 			    cbAllocated += 4*10;
                             if (_PyString_Resize(&v, cbAllocated))
-		goto onError;
+				goto onError;
                         }
 
                         /* combine the two values */
@@ -938,12 +953,6 @@ int utf16_decoding_error(const Py_UNICODE **source,
     }
 }
 
-#define UTF16_ERROR(details)  do {                       \
-    if (utf16_decoding_error(&q, &p, errors, details))   \
-        goto onError;                                    \
-    continue;                                            \
-} while(0)
-
 PyObject *PyUnicode_DecodeUTF16(const char *s,
 				int size,
 				const char *errors,
@@ -953,6 +962,7 @@ PyObject *PyUnicode_DecodeUTF16(const char *s,
     Py_UNICODE *p;
     const Py_UNICODE *q, *e;
     int bo = 0;
+    const char *errmsg = "";
 
     /* size should be an even number */
     if (size % sizeof(Py_UNICODE) != 0) {
@@ -1012,20 +1022,29 @@ PyObject *PyUnicode_DecodeUTF16(const char *s,
 	}
 
 	/* UTF-16 code pair: */
-	if (q >= e)
-	    UTF16_ERROR("unexpected end of data");
+	if (q >= e) {
+	    errmsg = "unexpected end of data";
+	    goto utf16Error;
+	}
 	if (0xDC00 <= *q && *q <= 0xDFFF) {
 	    q++;
-	    if (0xD800 <= *q && *q <= 0xDBFF)
+	    if (0xD800 <= *q && *q <= 0xDBFF) {
 		/* This is valid data (a UTF-16 surrogate pair), but
 		   we are not able to store this information since our
 		   Py_UNICODE type only has 16 bits... this might
 		   change someday, even though it's unlikely. */
-		UTF16_ERROR("code pairs are not supported");
+		errmsg = "code pairs are not supported";
+		goto utf16Error;
+	    }
 	    else
 		continue;
 	}
-	UTF16_ERROR("illegal encoding");
+	errmsg = "illegal encoding";
+	/* Fall through to report the error */
+
+    utf16Error:
+	if (utf16_decoding_error(&q, &p, errors, errmsg))
+	    goto onError;
     }
 
     if (byteorder)
