@@ -282,7 +282,8 @@ metadata, and the specification of pure Python modules by package,
 rather than by module.  This is important since the Distutils consist of
 a couple of dozen modules split into (so far) two packages; an explicit
 list of every module would be tedious to generate and difficult to
-maintain.
+maintain.  For more information on the additional meta-data, see
+section~\ref{meta-data}.
 
 Note that any pathnames (files or directories) supplied in the setup
 script should be written using the \UNIX{} convention, i.e.
@@ -679,6 +680,74 @@ of files without specifying a target directory, but this is not recommended,
 and the \command{install} command will print a warning in this case.
 To install data files directly in the target directory, an empty
 string should be given as the directory.
+
+\subsection{Additional meta-data}
+\label{meta-data}
+
+The setup script may include additional meta-data beyond the name and
+version. This information includes:
+
+\begin{tableiii}{l|l|c}{code}%
+  {Meta-Data}{Description}{Notes}
+  \lineiii{name}{the name of the package}{(1)}
+  \lineiii{version}{the version of this release}{(1)}
+  \lineiii{author}{package author's name}{(2)}
+  \lineiii{author_email}{email address of the package author}{(2)}
+  \lineiii{maintainer}{package maintainer's name}{(2)}
+  \lineiii{maintainer_email}{email address of the package maintainer}{(2)}
+  \lineiii{home_page}{a URL}{(1)}
+  \lineiii{license}{the terms the package is released under}{}
+  \lineiii{description}{a short, summary description of the package}{}
+  \lineiii{long_description}{a longer description of the package}{}
+  \lineiii{keywords}{some keywords appropriate to the package}{}
+  \lineiii{platform}{a list of the target platforms}{}
+  \lineiii{classifiers}{a list of Trove classifiers}{(2)}
+\end{tableiii}
+
+\noindent Notes:
+\begin{description}
+\item[(1)] these fields are required
+\item[(2)] either the author or the maintainer must be nominated
+\item[(3)] should not be used if your package is to be compatible with
+  Python versions prior to 2.2.3 or 2.3. The list is available from the
+  PyPI website.
+\end{description}
+
+\option{classifiers} are specified in a python list:
+
+\begin{verbatim}
+setup(...
+        classifiers = [
+            'Development Status :: 4 - Beta',
+            'Environment :: Console',
+            'Environment :: Web Environment',
+            'Intended Audience :: End Users/Desktop',
+            'Intended Audience :: Developers',
+            'Intended Audience :: System Administrators',
+            'License :: OSI Approved :: Python Software Foundation License',
+            'Operating System :: MacOS :: MacOS X',
+            'Operating System :: Microsoft :: Windows',
+            'Operating System :: POSIX',
+            'Programming Language :: Python',
+            'Topic :: Communications :: Email',
+            'Topic :: Office/Business',
+            'Topic :: Software Development :: Bug Tracking',
+        ],
+      ...
+)
+\end{verbatim}
+
+If you wish to include classifiers in your \file{setup.py} file and also
+wish to remain backwards-compatible with Python releases prior to 2.2.3,
+then you can include the following code fragment in your \file{setup.py}
+before the \code{setup()} call.
+
+\begin{verbatim}
+# patch distutils if it can't cope with the "classifiers" keyword
+if sys.version < '2.2.3':
+    from distutils.dist import DistributionMetadata
+    DistributionMetadata.classifiers = None
+\end{verbatim}
 
 
 \section{Writing the Setup Configuration File}
@@ -1394,10 +1463,62 @@ and \var{iconindex} is the index of the icon in the file
 \var{iconpath}.  Again, for details consult the Microsoft
 documentation for the \code{IShellLink} interface.
 
+\section{Registering with the Package Index}
+\label{package-index}
+
+The Python Package Index (PyPI) holds meta-data describing distributions
+packaged with distutils. The distutils command \command{register} is
+used to submit your distribution's meta-data to the index. It is invoked
+as follows:
+
+\begin{verbatim}
+python setup.py register
+\end{verbatim}
+
+Distutils will respond with the following prompt:
+
+\begin{verbatim}
+running register
+We need to know who you are, so please choose either:
+ 1. use your existing login,
+ 2. register as a new user,
+ 3. have the server generate a new password for you (and email it to you), or
+ 4. quit
+Your selection [default 1]:
+\end{verbatim}
+
+\noindent Note: if your username and password are saved locally, you will
+not see this menu.
+
+If you have not registered with PyPI, then you will need to do so now. You
+should choose option 2, and enter your details as required. Soon after
+submitting your details, you will receive an email which will be used to
+confirm your registration.
+
+Once you are registered, you may choose option 1 from the menu. You will
+be prompted for your PyPI username and password, and \command{register}
+will then submit your meta-data to the index.
+
+You may submit any number of versions of your distribution to the index. If
+you alter the meta-data for a particular version, you may submit it again
+and the index will be updated.
+
+PyPI holds a record for each (name, version) combination submitted. The
+first user to submit information for a given name is designated the Owner
+of that name. They may submit changes through the \command{register}
+command or through the web interface. They may also designate other users
+as Owners or Maintainers. Maintainers may edit the package information, but
+not designate other Owners or Maintainers.
+
+By default PyPI will list all versions of a given package. To hide certain
+versions, the Hidden property should be set to yes. This must be edited
+through the web interface.
+
+
+
 \section{Examples}
 \label{examples}
-
-
+  
 \subsection{Pure Python distribution (by module)}
 \label{pure-mod}
 
