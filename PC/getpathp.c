@@ -37,6 +37,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef MS_WIN32
 #include <windows.h>
+extern BOOL PyWin_IsWin32s();
 #endif
 
 #include <sys/types.h>
@@ -70,12 +71,13 @@ PERFORMANCE OF THIS SOFTWARE.
  */
 
 #ifndef LANDMARK
-#define LANDMARK "Modules\\Setup.in"
+#define LANDMARK "lib\\string.py"
 #endif
 
 static char prefix[MAXPATHLEN+1];
 static char progpath[MAXPATHLEN+1];
 static char *module_search_path = NULL;
+
 
 static int
 is_sep(ch)	/* determine if "ch" is a separator character */
@@ -87,6 +89,7 @@ is_sep(ch)	/* determine if "ch" is a separator character */
 	return ch == SEP;
 #endif
 }
+
 
 static void
 reduce(dir)
@@ -141,24 +144,120 @@ search_for_prefix(argv0_path, landmark)
 	do {
 		n = strlen(prefix);
 		join(prefix, landmark);
-		if (exists(prefix))
+		if (exists(prefix)) {
+			prefix[n] = '\0';
 			return 1;
+		}
 		prefix[n] = '\0';
 		reduce(prefix);
 	} while (prefix[0]);
 	return 0;
 }
 
+#ifdef MS_WIN32
+
+/* Load a PYTHONPATH value from the registry.
+   Load from either HKEY_LOCAL_MACHINE or HKEY_CURRENT_USER.
+
+   Returns NULL, or a pointer that should be freed.
+*/
+
+static char *
+getpythonregpath(HKEY keyBase, BOOL bWin32s)
+{
+	HKEY newKey = 0;
+	DWORD nameSize = 0;
+	DWORD dataSize = 0;
+	DWORD numEntries = 0;
+	LONG rc;
+	char *retval = NULL;
+	char *dataBuf;
+	rc=RegOpenKey(keyBase,
+		      "Software\\Python\\PythonCore\\"
+		      MS_DLL_ID "\\PythonPath", 
+		      &newKey);
+	if (rc==ERROR_SUCCESS) {
+		RegQueryInfoKey(newKey, NULL, NULL, NULL, NULL, NULL, NULL, 
+		                &numEntries, &nameSize, &dataSize, NULL, NULL);
+	}
+	if (bWin32s && numEntries==0 && dataSize==0) {
+		/* must hardcode for Win32s */
+		numEntries = 1;
+		dataSize = 511;
+	}
+	if (numEntries) {
+		/* Loop over all subkeys. */
+		/* Win32s doesnt know how many subkeys, so we do
+		   it twice */
+		char keyBuf[MAX_PATH+1];
+		int index = 0;
+		int off = 0;
+		for(index=0;;index++) {
+			long reqdSize = 0;
+			DWORD rc = RegEnumKey(newKey,
+					      index, keyBuf, MAX_PATH+1);
+			if (rc) break;
+			rc = RegQueryValue(newKey, keyBuf, NULL, &reqdSize);
+			if (rc) break;
+			if (bWin32s && reqdSize==0) reqdSize = 512;
+			dataSize += reqdSize + 1; /* 1 for the ";" */
+		}
+		dataBuf = malloc(dataSize+1);
+		if (dataBuf==NULL)
+			return NULL; /* pretty serious?  Raise error? */
+		/* Now loop over, grabbing the paths.
+		   Subkeys before main library */
+		for(index=0;;index++) {
+			int adjust;
+			long reqdSize = dataSize;
+			DWORD rc = RegEnumKey(newKey,
+					      index, keyBuf,MAX_PATH+1);
+			if (rc) break;
+			rc = RegQueryValue(newKey,
+					   keyBuf, dataBuf+off, &reqdSize);
+			if (rc) break;
+			if (reqdSize>1) {
+				/* If Nothing, or only '\0' copied. */
+				adjust = strlen(dataBuf+off);
+				dataSize -= adjust;
+				off += adjust;
+				dataBuf[off++] = ';';
+				dataBuf[off] = '\0';
+				dataSize--;
+			}
+		}
+		/* Additionally, win32s doesnt work as expected, so
+		   the specific strlen() is required for 3.1. */
+		rc = RegQueryValue(newKey, "", dataBuf+off, &dataSize);
+		if (rc==ERROR_SUCCESS) {
+			if (strlen(dataBuf)==0)
+				free(dataBuf);
+			else
+				retval = dataBuf; /* caller will free */
+		}
+		else
+			free(dataBuf);
+	}
+
+	if (newKey)
+		RegCloseKey(newKey);
+	return retval;
+}
+#endif /* MS_WIN32 */
+
 static void
 get_progpath()
 {
-#ifdef MS_WIN32
-	if (!GetModuleFileName(NULL, progpath, MAXPATHLEN))
-		progpath[0] = '\0';	/* failure */
-#else
 	extern char *Py_GetProgramName();
 	char *path = getenv("PATH");
 	char *prog = Py_GetProgramName();
+
+#ifdef MS_WIN32
+	if (GetModuleFileName(NULL, progpath, MAXPATHLEN))
+		return;
+#endif
+	if (prog == NULL || *prog == '\0')
+		prog = "python";
 
 	/* If there is no slash in the argv0 path, then we have to
 	 * assume python is on the user's $PATH, since there's no
@@ -196,76 +295,142 @@ get_progpath()
 	}
 	else
 		progpath[0] = '\0';
-#endif
 }
 
 static void
 calculate_path()
 {
-	char ch, *pt, *pt2;
 	char argv0_path[MAXPATHLEN+1];
 	char *buf;
 	int bufsz;
+	char *pythonhome = getenv("PYTHONHOME");
+	char *envpath = getenv("PYTHONPATH");
+#ifdef MS_WIN32
+	char *machinepath, *userpath;
+
+	/* Are we running under Windows 3.1(1) Win32s? */
+	if (PyWin_IsWin32s()) {
+		/* Only CLASSES_ROOT is supported */
+		machinepath = getpythonregpath(HKEY_CLASSES_ROOT, TRUE); 
+		userpath = NULL;
+	} else {
+		machinepath = getpythonregpath(HKEY_LOCAL_MACHINE, FALSE);
+		userpath = getpythonregpath(HKEY_CURRENT_USER, FALSE);
+	}
+#endif
 
 	get_progpath();
 	strcpy(argv0_path, progpath);
 	reduce(argv0_path);
+	if (pythonhome == NULL || *pythonhome == '\0') {
+		if (search_for_prefix(argv0_path, LANDMARK))
+			pythonhome = prefix;
+		else
+			pythonhome = NULL;
+	}
+	else
+		strcpy(prefix, pythonhome);
 
-	if (search_for_prefix(argv0_path, LANDMARK)) {
-		reduce(prefix);
-		reduce(prefix);
-		join(prefix, "lib");
-	}
-	else if ((module_search_path = getenv("PYTHONPATH")) != 0) {
-		return;	/* if PYTHONPATH environment variable exists, we are done */
-	}
-	else {	/* Try the executable_directory/lib */
-		strcpy(prefix, progpath);
-		reduce(prefix);
-		join(prefix, "lib");
-		join(prefix, "string.py");	/* Look for lib/string.py */
-		if (exists(prefix)) {
-			reduce(prefix);
+	if (envpath && *envpath == '\0')
+		envpath = NULL;
+
+	/* We need to construct a path from the following parts:
+	   (1) the PYTHONPATH environment variable, if set;
+	   (2) for Win32, the machinepath and userpath, if set;
+	   (3) the PYTHONPATH config macro, with the leading "."
+	       of each component replaced with pythonhome, if set;
+	   (4) the directory containing the executable (argv0_path).
+	   The length calculation calculates #3 first.
+	*/
+
+	/* Calculate size of return buffer */
+	if (pythonhome != NULL) {
+		char *p;
+		bufsz = 1;	
+		for (p = PYTHONPATH; *p; p++) {
+			if (*p == DELIM)
+				bufsz++; /* number of DELIM plus one */
 		}
-		else {	/* No module search path!!! */
-			module_search_path = PYTHONPATH;
-			return;
-		}
+		bufsz *= strlen(pythonhome);
 	}
-	
-
-	/* If we get here, we need to return a path equal to the compiled
-	   PYTHONPATH with ".\lib" replaced by our "prefix" directory */
-
-	bufsz = 1;	/* Calculate size of return buffer.  */
-	for (pt = PYTHONPATH; *pt; pt++)
-		if (*pt == DELIM)
-			bufsz++;	/* number of DELIM plus one */
-	bufsz *= strlen(PYTHONPATH) + strlen(prefix);  /* high estimate */
+	else
+		bufsz = 0;
+	bufsz += strlen(PYTHONPATH);
+	if (envpath != NULL)
+		bufsz += strlen(envpath) + 1;
 	bufsz += strlen(argv0_path) + 1;
+#ifdef MS_WIN32
+	if (machinepath)
+		bufsz += strlen(machinepath) + 1;
+	if (userpath)
+		bufsz += strlen(userpath) + 1;
+#endif
 
 	module_search_path = buf = malloc(bufsz);
-
 	if (buf == NULL) {
 		/* We can't exit, so print a warning and limp along */
-		fprintf(stderr, "Not enough memory for dynamic PYTHONPATH.\n");
-		fprintf(stderr, "Using default static PYTHONPATH.\n");
-		module_search_path = PYTHONPATH;
+		fprintf(stderr, "Can't malloc dynamic PYTHONPATH.\n");
+		if (envpath) {
+			fprintf(stderr, "Using default static $PYTHONPATH.\n");
+			module_search_path = envpath;
+		}
+		else {
+			fprintf(stderr, "Using environment $PYTHONPATH.\n");
+			module_search_path = PYTHONPATH;
+		}
 		return;
 	}
-	for (pt = PYTHONPATH; *pt; pt++) {
-		if (!strncmp(pt, ".\\lib", 5) &&
-			((ch = *(pt + 5)) == '\\' || ch == DELIM || !ch)) {
-			pt += 4;
-			for (pt2 = prefix; *pt2; pt2++)
-				*buf++ = *pt2;
-		}
-		else
-			*buf++ = *pt;
+
+	if (envpath) {
+		strcpy(buf, envpath);
+		buf = strchr(buf, '\0');
+		*buf++ = DELIM;
 	}
-	*buf++ = DELIM;
-	strcpy(buf, argv0_path);
-	buf += strlen(buf);
+#ifdef MS_WIN32
+	if (machinepath) {
+		strcpy(buf, machinepath);
+		buf = strchr(buf, '\0');
+		*buf++ = DELIM;
+	}
+	if (userpath) {
+		strcpy(buf, userpath);
+		buf = strchr(buf, '\0');
+		*buf++ = DELIM;
+	}
+#endif
+	if (pythonhome == NULL) {
+		strcpy(buf, PYTHONPATH);
+		buf = strchr(buf, '\0');
+	}
+	else {
+		char *p = PYTHONPATH;
+		char *q;
+		int n;
+		for (;;) {
+			q = strchr(p, DELIM);
+			if (q == NULL)
+				n = strlen(p);
+			else
+				n = q-p;
+			if (p[0] == '.' && is_sep(p[1])) {
+				strcpy(buf, pythonhome);
+				buf = strchr(buf, '\0');
+				p++;
+				n--;
+			}
+			strncpy(buf, p, n);
+			buf += n;
+			if (q == NULL)
+				break;
+			*buf++ = DELIM;
+			p = q+1;
+		}
+	}
+	if (argv0_path) {
+		*buf++ = DELIM;
+		strcpy(buf, argv0_path);
+		buf = strchr(buf, '\0');
+	}
 	*buf = '\0';
 }
 
@@ -283,17 +448,19 @@ Py_GetPath()
 char *
 Py_GetPrefix()
 {
-	return "";
+	if (!module_search_path)
+		calculate_path();
+	return prefix;
 }
 
 char *
 Py_GetExecPrefix()
 {
-	return "";
+	return Py_GetPrefix();
 }
 
 char *
-Py_GetProgramFullPath()	/* Full path to Python executable */
+Py_GetProgramFullPath()
 {
 	if (!module_search_path)
 		calculate_path();
