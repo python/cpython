@@ -144,19 +144,17 @@ class ProgressBar:
 		Qd.BackColor(QuickDraw.whiteColor)
 		
 		# Test for cancel button
-		if ModalDialog(self._filterfunc) == 1:
+		if ModalDialog(_ProgressBar_filterfunc) == 1:
 			raise KeyboardInterrupt
 			
-	def _filterfunc(self, d, e, *more):
-		return 2 # XXXX For now, this disables the cancel button
-				
 	def set(self, value):
 		if value < 0: value = 0
 		if value > self.maxval: value = self.maxval
 		self._update(value)
 		
-
-
+def _ProgressBar_filterfunc(*args):
+	return 2 # Disabled, for now.
+	
 def test():
 	Message("Testing EasyDialogs.")
 	ok = AskYesNoCancel("Do you want to proceed?")
