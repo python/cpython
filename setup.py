@@ -325,17 +325,22 @@ class PyBuildExt(build_ext):
         # (See http://electricrain.com/greg/python/bsddb3/ for an interface to
         # BSD DB 3.x.)
 
-        db_incs = find_file('db_185.h', inc_dirs, [])
-        if (db_incs is not None and
-            self.compiler.find_library_file(lib_dirs, 'db') ):
+        dblib = []
+        if self.compiler.find_library_file(lib_dirs, 'db'):
+            dblib = ['db']
+        
+        db185_incs = find_file('db_185.h', inc_dirs,
+                               ['/usr/include/db3', '/usr/include/db2'])
+        db_inc = find_file('db.h', inc_dirs, ['/usr/include/db1'])
+        if db185_incs is not None:
             exts.append( Extension('bsddb', ['bsddbmodule.c'],
-                                   include_dirs = db_incs,
-                                   libraries = ['db'] ) )
-        else:
-            db_incs = find_file('db.h', inc_dirs, [])
-            if db_incs is not None:
-                exts.append( Extension('bsddb', ['bsddbmodule.c'],
-                                       include_dirs = db_incs) )
+                                   include_dirs = db185_incs,
+                                   define_macros=[('HAVE_DB_185_H',1)],
+                                   libraries = dblib ) )
+        elif db_inc is not None:
+            exts.append( Extension('bsddb', ['bsddbmodule.c'],
+                                   include_dirs = db_inc,
+                                   libraries = dblib) )
 
         # The mpz module interfaces to the GNU Multiple Precision library.
         # You need to ftp the GNU MP library.
