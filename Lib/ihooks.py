@@ -319,6 +319,7 @@ class ModuleImporter(_Verbose):
 	return self.loader.load_module(name, stuff)
 
     def reload(self, module, path = None):
+	name = module.__name__
 	stuff = self.loader.find_module(name, path)
 	if not stuff:
 	    raise ImportError, "Module %s not found for reload" % name
