@@ -7,7 +7,7 @@ distributions)."""
 
 __revision__ = "$Id$"
 
-import os, string, re
+import os, string
 from types import *
 from distutils.core import Command, DEBUG
 from distutils.util import get_platform, write_file
@@ -201,48 +201,6 @@ class bdist_rpm (Command):
         self.ensure_string_list('obsoletes')
 
     # finalize_package_data ()
-
-
-    # XXX these look awfully handy: should probably move them
-    # up to Command and use more widely.
-    def _ensure_stringlike (self, option, what, default=None):
-        val = getattr(self, option)
-        if val is None:
-            setattr(self, option, default)
-            return default
-        elif type(val) is not StringType:
-            raise DistutilsOptionError, \
-                  "'%s' must be a %s (got `%s`)" % (option, what, val)
-        return val
-
-    def ensure_string (self, option, default=None):
-        self._ensure_stringlike(option, "string", default)
-
-    def ensure_string_list (self, option):
-        val = getattr(self, option)
-        if val is None:
-            return
-        elif type(val) is StringType:
-            setattr(self, option, re.split(r',\s*|\s+', val))
-        else:
-            if type(val) is ListType:
-                types = map(type, val)
-                ok = (types == [StringType] * len(val))
-            else:
-                ok = 0
-
-            if not ok:
-                raise DistutilsOptionError, \
-                      "'%s' must be a list of strings (got %s)" % \
-                      (option, `val`)
-        
-    def ensure_filename (self, option, default=None):
-        val = self._ensure_stringlike(option, "filename", None)
-        if val is not None and not os.path.exists(val):
-            raise DistutilsOptionError, \
-                  "error in '%s' option: file '%s' does not exist" % \
-                  (option, val)
-
 
 
     def run (self):
