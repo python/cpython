@@ -1,16 +1,16 @@
 
+/* Parse tree node implementation */
+
+#include "pgenheaders.h"
+#include "node.h"
+#include "errcode.h"
+
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
 #ifndef INT_MAX
 #define INT_MAX 2147483647
 #endif
-
-/* Parse tree node implementation */
-
-#include "pgenheaders.h"
-#include "node.h"
-#include "errcode.h"
 
 node *
 PyNode_New(int type)
