@@ -87,6 +87,8 @@ static PyObject *tracker;
 static ControlActionUPP mytracker_upp;
 static ControlUserPaneDrawUPP mydrawproc_upp;
 static ControlUserPaneIdleUPP myidleproc_upp;
+static ControlUserPaneHitTestUPP myhittestproc_upp;
+static ControlUserPaneTrackingUPP mytrackingproc_upp;
 
 extern int settrackfunc(PyObject *); 	/* forward */
 extern void clrtrackfunc(void);	/* forward */
@@ -175,6 +177,10 @@ setcallback(self, which, callback, uppp)
 		*uppp = mydrawproc_upp;
 	else if ( which == kControlUserPaneIdleProcTag )
 		*uppp = myidleproc_upp;
+	else if ( which == kControlUserPaneHitTestProcTag )
+		*uppp = myhittestproc_upp;
+	else if ( which == kControlUserPaneTrackingProcTag )
+		*uppp = mytrackingproc_upp;
 	else
 		return -1;
 	/* Only now do we test for clearing of the callback: */
@@ -203,12 +209,12 @@ callcallback(self, which, arglist)
 	sprintf(keybuf, "%x", which);
 	if ( self->ob_callbackdict == NULL ||
 			(func = PyDict_GetItemString(self->ob_callbackdict, keybuf)) == NULL ) {
-		PySys_WriteStderr("Control callback without callback object\\n");
+		PySys_WriteStderr("Control callback %x without callback object\\n", which);
 		return NULL;
 	}
 	rv = PyEval_CallObject(func, arglist);
 	if ( rv == NULL )
-		PySys_WriteStderr("Exception in control callback handler\\n");
+		PySys_WriteStderr("Exception in control callback %x handler\\n", which);
 	return rv;
 }
 
@@ -238,12 +244,50 @@ myidleproc(ControlHandle control)
 	Py_XDECREF(rv);
 }
 
+static pascal ControlPartCode
+myhittestproc(ControlHandle control, Point where)
+{
+	ControlObject *ctl_obj;
+	PyObject *arglist, *rv;
+	short c_rv = -1;
+
+	ctl_obj = (ControlObject *)CtlObj_WhichControl(control);
+	arglist = Py_BuildValue("OO&", ctl_obj, PyMac_BuildPoint, &where);
+	rv = callcallback(ctl_obj, kControlUserPaneHitTestProcTag, arglist);
+	Py_XDECREF(arglist);
+	/* Ignore errors, nothing we can do about them */
+	if ( rv )
+		PyArg_Parse(rv, "h", &c_rv);
+	Py_XDECREF(rv);
+	return (ControlPartCode)c_rv;
+}
+
+static pascal ControlPartCode
+mytrackingproc(ControlHandle control, Point startPt, ControlActionUPP actionProc)
+{
+	ControlObject *ctl_obj;
+	PyObject *arglist, *rv;
+	short c_rv = -1;
+
+	ctl_obj = (ControlObject *)CtlObj_WhichControl(control);
+	/* We cannot pass the actionProc without lots of work */
+	arglist = Py_BuildValue("OO&", ctl_obj, PyMac_BuildPoint, &startPt);
+	rv = callcallback(ctl_obj, kControlUserPaneTrackingProcTag, arglist);
+	Py_XDECREF(arglist);
+	if ( rv )
+		PyArg_Parse(rv, "h", &c_rv);
+	Py_XDECREF(rv);
+	return (ControlPartCode)c_rv;
+}
+
 """
 
 initstuff = initstuff + """
 mytracker_upp = NewControlActionProc(mytracker);
 mydrawproc_upp = NewControlUserPaneDrawProc(mydrawproc);
 myidleproc_upp = NewControlUserPaneDrawProc(myidleproc);
+myhittestproc_upp = NewControlUserPaneHitTestProc(myhittestproc);
+mytrackingproc_upp = NewControlUserPaneTrackingProc(mytrackingproc);
 """
 
 class MyObjectDefinition(ObjectIdentityMixin, GlobalObjectDefinition):
