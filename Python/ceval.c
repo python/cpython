@@ -585,14 +585,6 @@ eval_frame(PyFrameObject *f)
 	}
 
 	tstate->frame = f;
-	co = f->f_code;
-	fastlocals = f->f_localsplus;
-	freevars = f->f_localsplus + f->f_nlocals;
-	_PyCode_GETCODEPTR(co, &first_instr);
-	next_instr = first_instr + f->f_lasti;
-	stack_pointer = f->f_stacktop;
-	assert(stack_pointer != NULL);
-	f->f_stacktop = NULL;	/* remains NULL unless yield suspends frame */
 
 	if (tstate->use_tracing) {
 		if (tstate->c_tracefunc != NULL) {
@@ -630,6 +622,15 @@ eval_frame(PyFrameObject *f)
 			}
 		}
 	}
+
+	co = f->f_code;
+	fastlocals = f->f_localsplus;
+	freevars = f->f_localsplus + f->f_nlocals;
+	_PyCode_GETCODEPTR(co, &first_instr);
+	next_instr = first_instr + f->f_lasti;
+	stack_pointer = f->f_stacktop;
+	assert(stack_pointer != NULL);
+	f->f_stacktop = NULL;	/* remains NULL unless yield suspends frame */
 
 #ifdef LLTRACE
 	lltrace = PyDict_GetItemString(f->f_globals,"__lltrace__") != NULL;
@@ -1972,6 +1973,7 @@ eval_frame(PyFrameObject *f)
 				continue;
 			/* Trace each line of code reached */
 			f->f_lasti = INSTR_OFFSET();
+			f->f_stacktop = stack_pointer;
 			/* Inline call_trace() for performance: */
 			tstate->tracing++;
 			tstate->use_tracing = 0;
@@ -1980,6 +1982,11 @@ eval_frame(PyFrameObject *f)
 			tstate->use_tracing = (tstate->c_tracefunc
 					       || tstate->c_profilefunc);
 			tstate->tracing--;
+			/* Reload possibly changed frame fields */
+			JUMPTO(f->f_lasti);
+			stack_pointer = f->f_stacktop;
+			assert(stack_pointer != NULL);
+			f->f_stacktop = NULL;
 			break;
 
 		case CALL_FUNCTION:
