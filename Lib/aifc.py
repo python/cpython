@@ -920,13 +920,18 @@ class Aifc_write:
 			_write_long(self._file, pos)
 			_write_string(self._file, name)
 
-def open(f, mode):
-	if mode == 'r':
+def open(f, mode=None):
+	if mode is None:
+		if hasattr(f, 'mode'):
+			mode = f.mode
+		else:
+			mode = 'rb'
+	if mode in ('r', 'rb'):
 		return Aifc_read(f)
-	elif mode == 'w':
+	elif mode in ('w', 'wb'):
 		return Aifc_write(f)
 	else:
-		raise Error, "mode must be 'r' or 'w'"
+		raise Error, "mode must be 'r', 'rb', 'w', or 'wb'"
 
 openfp = open # B/W compatibility
 
