@@ -740,8 +740,12 @@ PyObject *
 PyNumber_InPlaceMultiply(PyObject *v, PyObject *w)
 {
 	PyObject * (*g)(PyObject *, int) = NULL;
-	if (HASINPLACE(v) && v->ob_type->tp_as_sequence &&
-		(g = v->ob_type->tp_as_sequence->sq_inplace_repeat)) {
+	if (HASINPLACE(v) &&
+	    v->ob_type->tp_as_sequence &&
+	    (g = v->ob_type->tp_as_sequence->sq_inplace_repeat) &&
+	    !(v->ob_type->tp_as_number &&
+	      v->ob_type->tp_as_number->nb_inplace_multiply))
+	{
 		long n;
 		if (PyInt_Check(w)) {
 			n  = PyInt_AsLong(w);
