@@ -44,7 +44,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <signal.h>
 #endif
 
-#ifdef NT
+#ifdef MS_WIN32
 #undef BYTE
 #undef arglist
 #include "windows.h"
@@ -562,7 +562,7 @@ fatal(msg)
 #ifdef macintosh
 	for (;;);
 #endif
-#ifdef NT
+#ifdef MS_WIN32
 	OutputDebugString("Fatal Python error:");
 	OutputDebugString(msg);
 	OutputDebugString("\n");

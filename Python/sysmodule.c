@@ -49,7 +49,7 @@ int sys_checkinterval = 10;
 
 static object *sysdict;
 
-#ifdef NT
+#ifdef MS_COREDLL
 extern void *PyWin_DLLhModule;
 #endif
 
