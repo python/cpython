@@ -45,10 +45,10 @@ sub do_env_macrodesc{
     my $params = ltx_process_params(ltx_next_argument());
     return "\n<dl class='macrodesc'>"
          . "\n<dt><b><tt class='macro'>&#92;$macro</tt></b>"
-         . "\n    $params"
+         . "\n    $params</dt>"
 	 . "\n<dd>"
 	 . $_
-	 . "</dl>";
+	 . '</dd></dl>';
 }
 
 sub do_env_envdesc{
@@ -58,10 +58,10 @@ sub do_env_envdesc{
     return "\n<dl class='envdesc'>"
          . "\n<dt><tt>&#92;begin{<b class='environment'>$env</b>}</tt>"
          . "\n    $params"
-         . "\n<br /><tt>&#92;end{<b class='environment'>$env</b>}</tt>"
+         . "\n<br /><tt>&#92;end{<b class='environment'>$env</b>}</tt></dt>"
 	 . "\n<dd>"
 	 . $_
-	 . "</dl>";
+	 . '</dd></dl>';
 }
 
 1;				# Must end with this, because Perl is bogus.
