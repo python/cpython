@@ -40,7 +40,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #undef S_IFREG
 #undef S_ISDIR
 #undef S_ISREG
-#endif
+#endif /* THINK_C */
 
 #include "macstat.h"
 #ifdef USE_GUSI
@@ -52,17 +52,27 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #undef S_IWRITE
 #undef S_IEXEC
 
+#ifdef USE_GUSI1
 #include <GUSI.h>
+#endif /* USE_GUSI1 */
 #include <sys/types.h>
-#include <stat.h>
-#else
+#include <sys/stat.h>
+#else /* USE_GUSI */
 #define stat macstat
-#endif
+#endif /* USE_GUSI */
 
-#ifdef __MWERKS__
+#ifdef USE_GUSI2
+#define sync bad_sync
+#include <unistd.h>
+#include <fcntl.h>
+#undef sync
+int sync(void);
+#else
+#ifdef x__MWERKS__
 #include <unix.h>
 #else
 #include <fcntl.h>
+#endif
 #endif
 
 /* Optional routines, for some compiler/runtime combinations */
@@ -183,7 +193,7 @@ mac_chdir(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-#ifdef USE_GUSI
+#ifdef USE_GUSI1
 	PyObject *rv;
 	
 	/* Change MacOS's idea of wd too */
@@ -207,7 +217,7 @@ mac_close(self, args)
 	Py_BEGIN_ALLOW_THREADS
 	res = close(fd);
 	Py_END_ALLOW_THREADS
-#ifndef USE_GUSI
+#ifndef USE_GUSI1
 	/* GUSI gives surious errors here? */
 	if (res < 0)
 		return mac_error();
@@ -368,7 +378,7 @@ mac_mkdir(self, args)
 	if (!PyArg_ParseTuple(args, "s|i", &path, &mode))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-#ifdef USE_GUSI
+#ifdef USE_GUSI1
 	res = mkdir(path);
 #else
 	res = mkdir(path, mode);
