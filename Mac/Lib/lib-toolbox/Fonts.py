@@ -1,4 +1,4 @@
-# Generated from "Sap:Programma's:Metrowerks CodeWarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Fonts.h"
+# Generated from 'Fonts.h'
 
 def FOUR_CHAR_CODE(x): return x
 kNilOptions = 0

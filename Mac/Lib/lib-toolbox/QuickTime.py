@@ -1,4 +1,4 @@
-# Generated from 'Macintosh HD:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Movies.h'
+# Generated from 'Movies.h'
 
 def FOUR_CHAR_CODE(x): return x
 MovieFileType = FOUR_CHAR_CODE('MooV')

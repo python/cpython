@@ -1,4 +1,4 @@
-# Generated from "Sap:Programma's:Metrowerks CodeWarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:QuickDraw.h"
+# Generated from 'QuickDraw.h'
 
 
 def FOUR_CHAR_CODE(x): return x
@@ -173,7 +173,7 @@ kCursorComponentErase = 0x0007
 kCursorComponentMove = 0x0008
 kCursorComponentAnimate = 0x0009
 kCursorComponentLastReserved = 0x0050
-# Generated from "Sap:Programma's:Metrowerks CodeWarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:QuickDrawText.h"
+# Generated from 'QuickDrawText.h'
 
 
 def FOUR_CHAR_CODE(x): return x

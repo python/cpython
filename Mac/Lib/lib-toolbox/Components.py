@@ -1,4 +1,4 @@
-# Generated from 'Macintosh HD:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Components.h'
+# Generated from 'Components.h'
 
 def FOUR_CHAR_CODE(x): return x
 kAppleManufacturer = FOUR_CHAR_CODE('appl')

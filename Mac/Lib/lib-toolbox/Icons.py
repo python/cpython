@@ -1,4 +1,4 @@
-# Generated from "Sap:Programma's:Metrowerks CodeWarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Icons.h"
+# Generated from 'Icons.h'
 
 def FOUR_CHAR_CODE(x): return x
 kGenericDocumentIconResource = -4000
