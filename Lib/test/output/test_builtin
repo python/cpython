@@ -23,6 +23,8 @@ hash
 hex
 id
 int
+isinstance
+issubclass
 len
 long
 map
