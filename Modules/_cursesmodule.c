@@ -103,12 +103,10 @@ char *PyCursesVersion = "2.2";
 #include "Python.h"
 
 #ifdef __osf__
-#define _XOPEN_SOURCE_EXTENDED  /* Define macro for OSF/1 */
 #define STRICT_SYSV_CURSES      /* Don't use ncurses extensions */
 #endif
 
 #ifdef __hpux
-#define _XOPEN_SOURCE_EXTENDED
 #define STRICT_SYSV_CURSES
 #endif
 
