@@ -188,13 +188,16 @@ tb_printinternal(tb, fp)
 	while (tb != NULL) {
 		if (intrcheck())
 			break;
-		fprintf(fp, "  File \"");
-		if (printobject(tb->tb_frame->f_code->co_filename,
-				fp, PRINT_RAW) != 0) {
-			err_clear();
-			break;
-		}
-		fprintf(fp, "\", line %d\n", tb->tb_lineno);
+		fprintf(fp, "  File \"%s\"",
+			getstringvalue(tb->tb_frame->f_code->co_filename));
+#ifdef applec /* MPW */
+		/* This is needed by MPW's File and Line commands */
+		fprintf(fp, "; ");
+#else
+		/* This is needed by Emacs' compile command */
+		fprintf(fp, ", ");
+#endif
+		fprintf(fp, "line %d\n", tb->tb_lineno);
 		tb_displayline(fp,
 		     getstringvalue(tb->tb_frame->f_code->co_filename),
 							tb->tb_lineno);
