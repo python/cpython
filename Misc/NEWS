@@ -5,6 +5,9 @@ What's New in Python 2.2.4?
 
 - SF #753592: webchecker/wsgui now handles user supplied directories.
 
+- SF bug 763023: fix uncaught ZeroDivisionError in difflib ratio methods
+  when there are no lines.
+
 What's New in Python 2.2.3 (final) ?
 Release date: 30-May-2003
 ====================================

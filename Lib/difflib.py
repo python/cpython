@@ -24,6 +24,11 @@ Class Differ:
 __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
            'Differ', 'IS_CHARACTER_JUNK', 'IS_LINE_JUNK']
 
+def _calculate_ratio(matches, length):
+    if length:
+        return 2.0 * matches / length
+    return 1.0
+
 class SequenceMatcher:
 
     """
@@ -525,7 +530,7 @@ class SequenceMatcher:
 
         matches = reduce(lambda sum, triple: sum + triple[-1],
                          self.get_matching_blocks(), 0)
-        return 2.0 * matches / (len(self.a) + len(self.b))
+        return _calculate_ratio(matches, len(self.a) + len(self.b))
 
     def quick_ratio(self):
         """Return an upper bound on ratio() relatively quickly.
@@ -554,7 +559,7 @@ class SequenceMatcher:
             avail[elt] = numb - 1
             if numb > 0:
                 matches = matches + 1
-        return 2.0 * matches / (len(self.a) + len(self.b))
+        return _calculate_ratio(matches, len(self.a) + len(self.b))
 
     def real_quick_ratio(self):
         """Return an upper bound on ratio() very quickly.
@@ -566,7 +571,7 @@ class SequenceMatcher:
         la, lb = len(self.a), len(self.b)
         # can't have more matches than the number of elements in the
         # shorter sequence
-        return 2.0 * min(la, lb) / (la + lb)
+        return _calculate_ratio(min(la, lb), la + lb)
 
 def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     """Use SequenceMatcher to return list of the best "good enough" matches.
