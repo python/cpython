@@ -326,18 +326,26 @@ deque_item(dequeobject *deque, int i)
 		return NULL;
 	}
 
-	i += deque->leftindex;
-	n = i / BLOCKLEN;
-	i %= BLOCKLEN;
-	if (i < (deque->len >> 1)) {
+	if (i == 0) {
+		i = deque->leftindex;
 		b = deque->leftblock;
-		while (n--)
-			b = b->rightlink;
-	} else {
-		n = (deque->leftindex + deque->len - 1) / BLOCKLEN - n;
+	} else if (i == deque->len - 1) {
+		i = deque->rightindex;
 		b = deque->rightblock;
-		while (n--)
-			b = b->leftlink;
+	} else {
+		i += deque->leftindex;
+		n = i / BLOCKLEN;
+		i %= BLOCKLEN;
+		if (i < (deque->len >> 1)) {
+			b = deque->leftblock;
+			while (n--)
+				b = b->rightlink;
+		} else {
+			n = (deque->leftindex + deque->len - 1) / BLOCKLEN - n;
+			b = deque->rightblock;
+			while (n--)
+				b = b->leftlink;
+		}
 	}
 	item = b->data[i];
 	Py_INCREF(item);
