@@ -6,8 +6,8 @@
 ;;         1992-1994 Tim Peters <tim@ksr.com>
 ;; Maintainer:    bwarsaw@cnri.reston.va.us
 ;; Created:       Feb 1992
-;; Version:       2.18
-;; Last Modified: 1995/03/15 18:23:16
+;; Version:       2.19
+;; Last Modified: 1995/03/20 18:32:14
 ;; Keywords: python editing language major-mode
 
 ;; This software is provided as-is, without express or implied
@@ -69,7 +69,7 @@
 ;; LCD Archive Entry:
 ;; python-mode|Barry A. Warsaw|bwarsaw@cnri.reston.va.us
 ;; |Major mode for editing Python programs
-;; |1995/03/15 18:23:16|2.18|
+;; |1995/03/20 18:32:14|2.19|
 
 ;;; Code:
 
@@ -431,7 +431,7 @@ argument is provided, that many colons are inserted non-electrically."
 	  (indent (py-compute-indentation)))
       (if (and (not arg)
 	       (py-outdent-p)
-	       (= indent (progn
+	       (= indent (save-excursion
 			   (forward-line -1)
 			   (py-compute-indentation)))
 	       )
@@ -1910,7 +1910,7 @@ local bindings to py-newline-and-indent."))
        (setq zmacs-region-stays t)))
 
 
-(defconst py-version "2.18"
+(defconst py-version "2.19"
   "`python-mode' version number.")
 (defconst py-help-address "bwarsaw@cnri.reston.va.us"
   "Address accepting submission of bug reports.")
