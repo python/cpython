@@ -5,15 +5,15 @@
 VERSION=2.3
 builddir = ../..
 srcdir = ../..
-dstroot=/.
-prefix=$(dstroot)/Library/Frameworks/Python.framework/Versions/$(VERSION)
+prefix=/Library/Frameworks/Python.framework/Versions/$(VERSION)
 LIBDEST=$(prefix)/lib/python$(VERSION)
 BUILDPYTHON=$(builddir)/python.exe
+DESTDIR=
 
 # These are normally glimpsed from the previous set
-bindir=$(dstroot)/usr/local/bin
+bindir=/usr/local/bin
 PYTHONAPPSPATH=/Applications/MacPython-$(VERSION)
-PYTHONAPPSDIR=$(dstroot)$(PYTHONAPPSPATH)
+PYTHONAPPSDIR=$(PYTHONAPPSPATH)
 APPINSTALLDIR=$(prefix)/Resources/Python.app
 
 # Variables for installing the "normal" unix binaries
@@ -59,22 +59,22 @@ installapps: install_PythonLauncher install_Python install_BuildApplet install_I
 install_PythonLauncher:
 	cd $(srcdir)/Mac/OSX/PythonLauncher/PythonLauncher.pbproj ; \
 	pbxbuild -target PythonLauncher -buildstyle Deployment \
-		DSTROOT=$(dstroot) INSTALL_PATH=$(PYTHONAPPSPATH) install
+		DSTROOT=$(DESTDIR) INSTALL_PATH=$(PYTHONAPPSPATH) install
 	
 install_Python:
 	@if test ! -f $(DOCINDEX); then \
 		echo WARNING: you should run Apple Help Indexing Tool on $(DOCDIR); \
 	fi
 	@for i in $(PYTHONAPPSDIR) $(APPINSTALLDIR) $(APPINSTALLDIR)/Contents; do \
-		if test ! -d $$i; then \
-			echo "Creating directory $$i"; \
-			$(INSTALL) -d -m $(DIRMODE) $$i; \
+		if test ! -d $(DESTDIR)$$i; then \
+			echo "Creating directory $(DESTDIR)$$i"; \
+			$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$$i; \
 		fi;\
 	done
 	@for i in $(APPSUBDIRS); do \
-		if test ! -d $(APPINSTALLDIR)/Contents/$$i; then \
-			echo "Creating directory $(APPINSTALLDIR)/Contents/$$i"; \
-			$(INSTALL) -d -m $(DIRMODE) $(APPINSTALLDIR)/Contents/$$i; \
+		if test ! -d $(DESTDIR)$(APPINSTALLDIR)/Contents/$$i; then \
+			echo "Creating directory $(DESTDIR)$(APPINSTALLDIR)/Contents/$$i"; \
+			$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(APPINSTALLDIR)/Contents/$$i; \
 		else	true; \
 		fi; \
 	done
@@ -82,7 +82,7 @@ install_Python:
 	do \
 		a=$(APPTEMPLATE)/$$d; \
 		if test ! -d $$a; then continue; else true; fi; \
-		b=$(APPINSTALLDIR)/Contents/$$d; \
+		b=$(DESTDIR)$(APPINSTALLDIR)/Contents/$$d; \
 		for i in $$a/*; \
 		do \
 			case $$i in \
@@ -106,59 +106,66 @@ install_Python:
 			esac; \
 		done; \
 	done
-	$(INSTALL_PROGRAM) $(STRIPFLAG) $(BUILDPYTHON) $(APPINSTALLDIR)/Contents/MacOS/python	
+	$(INSTALL_PROGRAM) $(STRIPFLAG) $(BUILDPYTHON) $(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/python	
 	
-install_IDE: $(INSTALLED_PYTHONW)
-	@if ! $(INSTALLED_PYTHONW) -c "import waste"; then  \
+install_IDE:
+	@if ! $(BUILDPYTHON) -c "import waste"; then  \
 		echo PythonIDE needs the \"waste\" extension module; \
 		echo See Mac/OSX/README for details; \
 	else \
-		echo $(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
-			--output $(PYTHONAPPSDIR)/PythonIDE.app --noargv \
+		echo $(BUILDPYTHON) $(srcdir)/Mac/scripts/BuildApplet.py \
+			--python $(INSTALLED_PYTHONW) \
+			--output $(DESTDIR)$(PYTHONAPPSDIR)/PythonIDE.app --noargv \
 			$(srcdir)/Mac/Tools/IDE/PythonIDE.py ; \
-		$(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
-			--output $(PYTHONAPPSDIR)/PythonIDE.app --noargv \
+		$(BUILDPYTHON) $(srcdir)/Mac/scripts/BuildApplet.py \
+			--python $(INSTALLED_PYTHONW) \
+			--output $(DESTDIR)$(PYTHONAPPSDIR)/PythonIDE.app --noargv \
 			$(srcdir)/Mac/Tools/IDE/PythonIDE.py; \
 	fi
 
-install_PackageManager: $(INSTALLED_PYTHONW)
-	@if ! $(INSTALLED_PYTHONW) -c "import waste"; then  \
+install_PackageManager:
+	@if ! $(BUILDPYTHON) -c "import waste"; then  \
 		echo PackageManager needs the \"waste\" extension module; \
 		echo See Mac/OSX/README for details; \
 	else \
-		echo $(INSTALLED_PYTHONW) $(bundlebuilder) \
-			--builddir $(PYTHONAPPSDIR)/ \
+		echo $(BUILDPYTHON) $(bundlebuilder) \
+			--builddir $(DESTDIR)$(PYTHONAPPSDIR)/ \
+			--python $(INSTALLED_PYTHONW) \
 			--resource $(srcdir)/Mac/Tools/IDE/PythonIDE.rsrc \
 			--mainprogram $(srcdir)/Mac/Tools/IDE/PackageManager.py \
 			--iconfile $(srcdir)/Mac/Tools/IDE/PackageManager.icns \
 			--creator Pimp build; \
-		$(INSTALLED_PYTHONW) $(bundlebuilder) \
-			--builddir $(PYTHONAPPSDIR)/ \
+		$(BUILDPYTHON) $(bundlebuilder) \
+			--builddir $(DESTDIR)$(PYTHONAPPSDIR)/ \
+			--python $(INSTALLED_PYTHONW) \
 			--resource $(srcdir)/Mac/Tools/IDE/PythonIDE.rsrc \
 			--mainprogram $(srcdir)/Mac/Tools/IDE/PackageManager.py \
 			--iconfile $(srcdir)/Mac/Tools/IDE/PackageManager.icns \
 			--creator Pimp build; \
 	fi
 
-install_IDLE: $(INSTALLED_PYTHONW)
-	@if ! $(INSTALLED_PYTHONW) -c "import _tkinter"; then \
+install_IDLE:
+	@if ! $(BUILDPYTHON) -c "import _tkinter"; then \
 		echo IDLE needs the \"Tkinter\" extension module; \
 		echo See Mac/OSX/README for details; \
 	else \
-		echo $(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
-			--output $(PYTHONAPPSDIR)/IDLE.app \
+		echo $(BUILDPYTHON) $(srcdir)/Mac/scripts/BuildApplet.py \
+			--python $(INSTALLED_PYTHONW) \
+			--output $(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app \
 			--extra $(srcdir)/Tools/idle \
 			$(srcdir)/Tools/idle/idle ; \
-		$(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
-			--output $(PYTHONAPPSDIR)/IDLE.app \
+		$(BUILDPYTHON) $(srcdir)/Mac/scripts/BuildApplet.py \
+			--python $(INSTALLED_PYTHONW) \
+			--output $(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app \
 			--extra $(srcdir)/Tools/idle:Contents/Resources/idlelib \
 			$(srcdir)/Tools/idle/idle ; \
 	fi
 
 		
-install_BuildApplet: $(INSTALLED_PYTHONW)
-	$(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
-		--output $(PYTHONAPPSDIR)/BuildApplet.app \
+install_BuildApplet:
+	$(BUILDPYTHON) $(srcdir)/Mac/scripts/BuildApplet.py \
+		--python $(INSTALLED_PYTHONW) \
+		--output $(DESTDIR)$(PYTHONAPPSDIR)/BuildApplet.app \
 		$(srcdir)/Mac/scripts/BuildApplet.py
 		
 MACLIBDEST=$(LIBDEST)/plat-mac
@@ -168,9 +175,9 @@ MACTOOLSSUBDIRS=IDE
 installmacsubtree:
 	@for i in $(MACTOOLSDEST); \
 	do \
-		if test ! -d $$i; then \
-			echo "Creating directory $$i"; \
-			$(INSTALL) -d -m $(DIRMODE) $$i; \
+		if test ! -d $(DESTDIR)$$i; then \
+			echo "Creating directory $(DESTDIR)$$i"; \
+			$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$$i; \
 		else	true; \
 		fi; \
 	done
@@ -178,7 +185,7 @@ installmacsubtree:
 	do \
 		a=$(MACTOOLSSRC)/$$d; \
 		if test ! -d $$a; then continue; else true; fi; \
-		b=$(MACTOOLSDEST)/$$d; \
+		b=$(DESTDIR)$(MACTOOLSDEST)/$$d; \
 		if test ! -d $$b; then \
 			echo "Creating directory $$b"; \
 			$(INSTALL) -d -m $(DIRMODE) $$b; \
@@ -189,7 +196,7 @@ installmacsubtree:
 	do \
 		a=$(MACTOOLSSRC)/$$d; \
 		if test ! -d $$a; then continue; else true; fi; \
-		b=$(MACTOOLSDEST)/$$d; \
+		b=$(DESTDIR)$(MACTOOLSDEST)/$$d; \
 		for i in $$a/*; \
 		do \
 			case $$i in \
@@ -215,9 +222,9 @@ installmacsubtree:
 	done
 	
 
-	$(BUILDPYTHON) $(CACHERSRC) -v $(MACLIBDEST) $(MACTOOLSDEST)
-	$(BUILDPYTHON) -Wi -tt $(compileall) -x badsyntax $(MACTOOLSDEST)
-	$(BUILDPYTHON) -O -Wi -tt $(compileall) -x badsyntax $(MACTOOLSDEST)
+	$(BUILDPYTHON) $(CACHERSRC) -v $(DESTDIR)$(MACLIBDEST) $(DESTDIR)$(MACTOOLSDEST)
+	$(BUILDPYTHON) -Wi -tt $(compileall) -x badsyntax $(DESTDIR)$(MACTOOLSDEST)
+	$(BUILDPYTHON) -O -Wi -tt $(compileall) -x badsyntax $(DESTDIR)$(MACTOOLSDEST)
 
 #
 # We use the full name here in stead of $(INSTALLED_PYTHONW), because
@@ -228,11 +235,11 @@ $(APPINSTALLDIR)/Contents/MacOS/python: install_Python
 # $(INSTALLED_PYTHON) has to be done by the main Makefile, we cannot do that here.
 # At least this rule will give an error if it doesn't exist.
 
-installunixtools: $(INSTALLED_PYTHON) $(INSTALLED_PYTHONW)
-	$(INSTALL) -d $(bindir)
-	$(INSTALL_SYMLINK) $(INSTALLED_PYTHON) $(bindir)/python$(VERSION)
-	$(INSTALL_SYMLINK) python$(VERSION) $(bindir)/python
+installunixtools:
+	$(INSTALL) -d $(DESTDIR)$(bindir)
+	$(INSTALL_SYMLINK) $(INSTALLED_PYTHON) $(DESTDIR)$(bindir)/python$(VERSION)
+	$(INSTALL_SYMLINK) python$(VERSION) $(DESTDIR)$(bindir)/python
 	echo "#!/bin/sh" > pythonw.sh
 	echo "exec \"$(INSTALLED_PYTHONW)\" \"\$$@\"" >> pythonw.sh
-	$(INSTALL) pythonw.sh $(bindir)/pythonw$(VERSION)
-	$(INSTALL_SYMLINK) pythonw$(VERSION) $(bindir)/pythonw
+	$(INSTALL) pythonw.sh $(DESTDIR)$(bindir)/pythonw$(VERSION)
+	$(INSTALL_SYMLINK) pythonw$(VERSION) $(DESTDIR)$(bindir)/pythonw
