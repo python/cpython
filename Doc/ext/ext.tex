@@ -23,7 +23,7 @@
 
 \noindent
 Python is an interpreted, object-oriented programming language.  This
-document describes how to write modules in \C{} or \Cpp{} to extend the
+document describes how to write modules in C or \Cpp{} to extend the
 Python interpreter with new modules.  Those modules can define new
 functions but also new object types and their methods.  The document
 also describes how to embed the Python interpreter in another
@@ -39,8 +39,8 @@ Reference Manual} gives a more formal definition of the language.  The
 functions and modules (both built-in and written in Python) that give
 the language its wide application range.
 
-For a detailed description of the whole Python/\C{} API, see the separate
-\emph{Python/\C{} API Reference Manual}.  \strong{Note:} While that
+For a detailed description of the whole Python/C API, see the separate
+\emph{Python/C API Reference Manual}.  \strong{Note:} While that
 manual is still in a state of flux, it is safe to say that it is much
 more up to date than the manual you're reading currently (which has
 been in need for an upgrade for some time now).
@@ -51,21 +51,21 @@ been in need for an upgrade for some time now).
 \tableofcontents
 
 
-\chapter{Extending Python with \C{} or \Cpp{} code}
+\chapter{Extending Python with C or \Cpp{} code}
 
 
 %\section{Introduction}
 \label{intro}
 
 It is quite easy to add new built-in modules to Python, if you know
-how to program in \C{}.  Such \dfn{extension modules} can do two things
+how to program in C.  Such \dfn{extension modules} can do two things
 that can't be done directly in Python: they can implement new built-in
-object types, and they can call \C{} library functions and system calls.
+object types, and they can call C library functions and system calls.
 
 To support extensions, the Python API (Application Programmers
 Interface) defines a set of functions, macros and variables that
 provide access to most aspects of the Python run-time system.  The
-Python API is incorporated in a \C{} source file by including the header
+Python API is incorporated in a C source file by including the header
 \code{"Python.h"}.
 
 The compilation of an extension module depends on its intended use as
@@ -77,7 +77,7 @@ well as on your system setup; details are given in a later section.
 
 Let's create an extension module called \samp{spam} (the favorite food
 of Monty Python fans...) and let's say we want to create a Python
-interface to the \C{} library function \cfunction{system()}.\footnote{An
+interface to the C library function \cfunction{system()}.\footnote{An
 interface for this function already exists in the standard module
 \module{os} --- it was chosen as a simple and straightfoward example.}
 This function takes a null-terminated character string as argument and
@@ -90,7 +90,7 @@ as follows:
 \end{verbatim}
 
 Begin by creating a file \file{spammodule.c}.  (In general, if a
-module is called \samp{spam}, the \C{} file containing its implementation
+module is called \samp{spam}, the C file containing its implementation
 is called \file{spammodule.c}; if the module name is very long, like
 \samp{spammify}, the module name can be just \file{spammify.c}.)
 
@@ -112,7 +112,7 @@ interpreter, \code{"Python.h"} includes a few standard header files:
 system, it declares the functions \cfunction{malloc()},
 \cfunction{free()} and \cfunction{realloc()} directly.
 
-The next thing we add to our module file is the \C{} function that will
+The next thing we add to our module file is the C function that will
 be called when the Python expression \samp{spam.system(\var{string})}
 is evaluated (we'll see shortly how it ends up being called):
 
@@ -134,23 +134,23 @@ spam_system(self, args)
 
 There is a straightforward translation from the argument list in
 Python (e.g.\ the single expression \code{"ls -l"}) to the arguments
-passed to the \C{} function.  The \C{} function always has two arguments,
+passed to the C function.  The C function always has two arguments,
 conventionally named \var{self} and \var{args}.
 
-The \var{self} argument is only used when the \C{} function implements a
+The \var{self} argument is only used when the C function implements a
 built-in method.  This will be discussed later. In the example,
 \var{self} will always be a \NULL{} pointer, since we are defining
 a function, not a method.  (This is done so that the interpreter
-doesn't have to understand two different types of \C{} functions.)
+doesn't have to understand two different types of C functions.)
 
 The \var{args} argument will be a pointer to a Python tuple object
 containing the arguments.  Each item of the tuple corresponds to an
 argument in the call's argument list.  The arguments are Python
-objects --- in order to do anything with them in our \C{} function we have
-to convert them to \C{} values.  The function \cfunction{PyArg_ParseTuple()}
-in the Python API checks the argument types and converts them to \C{}
+objects --- in order to do anything with them in our C function we have
+to convert them to C values.  The function \cfunction{PyArg_ParseTuple()}
+in the Python API checks the argument types and converts them to C
 values.  It uses a template string to determine the required types of
-the arguments as well as the types of the \C{} variables into which to
+the arguments as well as the types of the C variables into which to
 store the converted values.  More about this later.
 
 \cfunction{PyArg_ParseTuple()} returns true (nonzero) if all arguments have
@@ -172,7 +172,7 @@ variable is \NULL{} no exception has occurred.  A second global
 variable stores the ``associated value'' of the exception (the second
 argument to \keyword{raise}).  A third variable contains the stack
 traceback in case the error originated in Python code.  These three
-variables are the \C{} equivalents of the Python variables
+variables are the C equivalents of the Python variables
 \code{sys.exc_type}, \code{sys.exc_value} and \code{sys.exc_traceback} (see
 the section on module \module{sys} in the \emph{Python Library
 Reference}).  It is important to know about them to understand how
@@ -182,9 +182,9 @@ The Python API defines a number of functions to set various types of
 exceptions.
 
 The most common one is \cfunction{PyErr_SetString()}.  Its arguments
-are an exception object and a \C{} string.  The exception object is
+are an exception object and a C string.  The exception object is
 usually a predefined object like \cdata{PyExc_ZeroDivisionError}.  The
-\C{} string indicates the cause of the error and is converted to a
+C string indicates the cause of the error and is converted to a
 Python string object and stored as the ``associated value'' of the
 exception.
 
@@ -221,7 +221,7 @@ to be lost: most operations can fail for a variety of reasons.)
 
 To ignore an exception set by a function call that failed, the exception
 condition must be cleared explicitly by calling \cfunction{PyErr_Clear()}. 
-The only time \C{} code should call \cfunction{PyErr_Clear()} is if it doesn't
+The only time C code should call \cfunction{PyErr_Clear()} is if it doesn't
 want to pass the error on to the interpreter but wants to handle it
 completely by itself (e.g. by trying something else or pretending
 nothing happened).
@@ -243,7 +243,7 @@ Finally, be careful to clean up garbage (by making
 you have already created) when you return an error indicator!
 
 The choice of which exception to raise is entirely yours.  There are
-predeclared \C{} objects corresponding to all built-in Python exceptions,
+predeclared C objects corresponding to all built-in Python exceptions,
 e.g. \cdata{PyExc_ZeroDivisionError} which you can use directly.  Of
 course, you should choose exceptions wisely --- don't use
 \cdata{PyExc_TypeError} to mean that a file couldn't be opened (that
@@ -304,7 +304,7 @@ object pointers) if an error is detected in the argument list, relying
 on the exception set by \cfunction{PyArg_ParseTuple()}.  Otherwise the
 string value of the argument has been copied to the local variable
 \cdata{command}.  This is a pointer assignment and you are not supposed
-to modify the string to which it points (so in Standard \C{}, the variable
+to modify the string to which it points (so in Standard C, the variable
 \cdata{command} should properly be declared as \samp{const char
 *command}).
 
@@ -320,7 +320,7 @@ Our \function{spam.system()} function must return the value of
 \cdata{sts} as a Python object.  This is done using the function
 \cfunction{Py_BuildValue()}, which is something like the inverse of
 \cfunction{PyArg_ParseTuple()}: it takes a format string and an
-arbitrary number of \C{} values, and returns a new Python object.
+arbitrary number of C values, and returns a new Python object.
 More info on \cfunction{Py_BuildValue()} is given later.
 
 \begin{verbatim}
@@ -330,7 +330,7 @@ More info on \cfunction{Py_BuildValue()} is given later.
 In this case, it will return an integer object.  (Yes, even integers
 are objects on the heap in Python!)
 
-If you have a \C{} function that returns no useful argument (a function
+If you have a C function that returns no useful argument (a function
 returning \ctype{void}), the corresponding Python function must return
 \code{None}.   You need this idiom to do so:
 
@@ -339,7 +339,7 @@ returning \ctype{void}), the corresponding Python function must return
     return Py_None;
 \end{verbatim}
 
-\cdata{Py_None} is the \C{} name for the special Python object
+\cdata{Py_None} is the C name for the special Python object
 \code{None}.  It is a genuine Python object rather than a \NULL{}
 pointer, which means ``error'' in most contexts, as we have seen.
 
@@ -361,7 +361,7 @@ static PyMethodDef SpamMethods[] = {
 \end{verbatim}
 
 Note the third entry (\samp{METH_VARARGS}).  This is a flag telling
-the interpreter the calling convention to be used for the \C{}
+the interpreter the calling convention to be used for the C
 function.  It should normally always be \samp{METH_VARARGS} or
 \samp{METH_VARARGS | METH_KEYWORDS}; a value of \code{0} means that an
 obsolete variant of \cfunction{PyArg_ParseTuple()} is used.
@@ -372,7 +372,7 @@ parsing via \cfunction{PyArg_ParseTuple()}; more information on this
 function is provided below.
 
 The \constant{METH_KEYWORDS} bit may be set in the third field if keyword
-arguments should be passed to the function.  In this case, the \C{}
+arguments should be passed to the function.  In this case, the C
 function should accept a third \samp{PyObject *} parameter which will
 be a dictionary of keywords.  Use \cfunction{PyArg_ParseTupleAndKeywords()}
 to parse the arguemts to such a function.
@@ -435,16 +435,16 @@ be listed on the line in the configuration file as well, for instance:
 spam spammodule.o -lX11
 \end{verbatim}
 
-\section{Calling Python Functions from \C{}
+\section{Calling Python Functions from C
          \label{callingPython}}
 
-So far we have concentrated on making \C{} functions callable from
-Python.  The reverse is also useful: calling Python functions from \C{}.
+So far we have concentrated on making C functions callable from
+Python.  The reverse is also useful: calling Python functions from C.
 This is especially the case for libraries that support so-called
-``callback'' functions.  If a \C{} interface makes use of callbacks, the
+``callback'' functions.  If a C interface makes use of callbacks, the
 equivalent Python often needs to provide a callback mechanism to the
 Python programmer; the implementation will require calling the Python
-callback functions from a \C{} callback.  Other uses are also imaginable.
+callback functions from a C callback.  Other uses are also imaginable.
 
 Fortunately, the Python interpreter is easily called recursively, and
 there is a standard interface to call a Python function.  (I won't
@@ -500,7 +500,7 @@ the presence of \NULL{} pointers (but note that \var{temp} will not be
 \NULL{} in this context).  More info on them in Section
 \ref{refcounts}, ``Reference Counts.''
 
-Later, when it is time to call the function, you call the \C{} function
+Later, when it is time to call the function, you call the C function
 \cfunction{PyEval_CallObject()}.  This function has two arguments, both
 pointers to arbitrary Python objects: the Python function, and the
 argument list.  The argument list must always be a tuple object, whose
@@ -537,7 +537,7 @@ even (especially!) if you are not interested in its value.
 
 Before you do this, however, it is important to check that the return
 value isn't \NULL{}.  If it is, the Python function terminated by
-raising an exception.  If the \C{} code that called
+raising an exception.  If the C code that called
 \cfunction{PyEval_CallObject()} is called from Python, it should now
 return an error indication to its Python caller, so the interpreter
 can print a stack trace, or the calling Python code can handle the
@@ -590,7 +590,7 @@ int PyArg_ParseTuple(PyObject *arg, char *format, ...);
 \end{verbatim}
 
 The \var{arg} argument must be a tuple object containing an argument
-list passed from Python to a \C{} function.  The \var{format} argument
+list passed from Python to a C function.  The \var{format} argument
 must be a format string, whose syntax is explained below.  The
 remaining arguments must be addresses of variables whose type is
 determined by the format string.  For the conversion to succeed, the
@@ -599,7 +599,7 @@ exhausted.
 
 Note that while \cfunction{PyArg_ParseTuple()} checks that the Python
 arguments have the required types, it cannot check the validity of the
-addresses of \C{} variables passed to the call: if you make mistakes
+addresses of C variables passed to the call: if you make mistakes
 there, your code will probably crash or at least overwrite random bits
 in memory.  So be careful!
 
@@ -610,75 +610,75 @@ format unit that is not a parenthesized sequence normally corresponds
 to a single address argument to \cfunction{PyArg_ParseTuple()}.  In the
 following description, the quoted form is the format unit; the entry
 in (round) parentheses is the Python object type that matches the
-format unit; and the entry in [square] brackets is the type of the \C{}
+format unit; and the entry in [square] brackets is the type of the C
 variable(s) whose address should be passed.  (Use the \samp{\&}
 operator to pass a variable's address.)
 
 \begin{description}
 
 \item[\samp{s} (string) {[char *]}]
-Convert a Python string to a \C{} pointer to a character string.  You
+Convert a Python string to a C pointer to a character string.  You
 must not provide storage for the string itself; a pointer to an
 existing string is stored into the character pointer variable whose
-address you pass.  The \C{} string is null-terminated.  The Python string
+address you pass.  The C string is null-terminated.  The Python string
 must not contain embedded null bytes; if it does, a \exception{TypeError}
 exception is raised.
 
 \item[\samp{s\#} (string) {[char *, int]}]
-This variant on \samp{s} stores into two \C{} variables, the first one
+This variant on \samp{s} stores into two C variables, the first one
 a pointer to a character string, the second one its length.  In this
 case the Python string may contain embedded null bytes.
 
 \item[\samp{z} (string or \code{None}) {[char *]}]
 Like \samp{s}, but the Python object may also be \code{None}, in which
-case the \C{} pointer is set to \NULL{}.
+case the C pointer is set to \NULL{}.
 
 \item[\samp{z\#} (string or \code{None}) {[char *, int]}]
 This is to \samp{s\#} as \samp{z} is to \samp{s}.
 
 \item[\samp{b} (integer) {[char]}]
-Convert a Python integer to a tiny int, stored in a \C{} \ctype{char}.
+Convert a Python integer to a tiny int, stored in a C \ctype{char}.
 
 \item[\samp{h} (integer) {[short int]}]
-Convert a Python integer to a \C{} \ctype{short int}.
+Convert a Python integer to a C \ctype{short int}.
 
 \item[\samp{i} (integer) {[int]}]
-Convert a Python integer to a plain \C{} \ctype{int}.
+Convert a Python integer to a plain C \ctype{int}.
 
 \item[\samp{l} (integer) {[long int]}]
-Convert a Python integer to a \C{} \ctype{long int}.
+Convert a Python integer to a C \ctype{long int}.
 
 \item[\samp{c} (string of length 1) {[char]}]
 Convert a Python character, represented as a string of length 1, to a
-\C{} \ctype{char}.
+C \ctype{char}.
 
 \item[\samp{f} (float) {[float]}]
-Convert a Python floating point number to a \C{} \ctype{float}.
+Convert a Python floating point number to a C \ctype{float}.
 
 \item[\samp{d} (float) {[double]}]
-Convert a Python floating point number to a \C{} \ctype{double}.
+Convert a Python floating point number to a C \ctype{double}.
 
 \item[\samp{D} (complex) {[Py_complex]}]
-Convert a Python complex number to a \C{} \ctype{Py_complex} structure.
+Convert a Python complex number to a C \ctype{Py_complex} structure.
 
 \item[\samp{O} (object) {[PyObject *]}]
-Store a Python object (without any conversion) in a \C{} object pointer.
-The \C{} program thus receives the actual object that was passed.  The
+Store a Python object (without any conversion) in a C object pointer.
+The C program thus receives the actual object that was passed.  The
 object's reference count is not increased.  The pointer stored is not
 \NULL{}.
 
 \item[\samp{O!} (object) {[\var{typeobject}, PyObject *]}]
-Store a Python object in a \C{} object pointer.  This is similar to
-\samp{O}, but takes two \C{} arguments: the first is the address of a
-Python type object, the second is the address of the \C{} variable (of
+Store a Python object in a C object pointer.  This is similar to
+\samp{O}, but takes two C arguments: the first is the address of a
+Python type object, the second is the address of the C variable (of
 type \ctype{PyObject *}) into which the object pointer is stored.
 If the Python object does not have the required type, a
 \exception{TypeError} exception is raised.
 
 \item[\samp{O\&} (object) {[\var{converter}, \var{anything}]}]
-Convert a Python object to a \C{} variable through a \var{converter}
+Convert a Python object to a C variable through a \var{converter}
 function.  This takes two arguments: the first is a function, the
-second is the address of a \C{} variable (of arbitrary type), converted
+second is the address of a C variable (of arbitrary type), converted
 to \ctype{void *}.  The \var{converter} function in turn is called as
 follows:
 
@@ -694,11 +694,11 @@ should raise an exception.
 \item[\samp{S} (string) {[PyStringObject *]}]
 Like \samp{O} but requires that the Python object is a string object.
 Raises a \exception{TypeError} exception if the object is not a string
-object.  The \C{} variable may also be declared as \ctype{PyObject *}.
+object.  The C variable may also be declared as \ctype{PyObject *}.
 
 \item[\samp{(\var{items})} (tuple) {[\var{matching-items}]}]
 The object must be a Python tuple whose length is the number of format
-units in \var{items}.  The \C{} arguments must correspond to the
+units in \var{items}.  The C arguments must correspond to the
 individual format units in \var{items}.  Format units for tuples may
 be nested.
 
@@ -708,7 +708,7 @@ It is possible to pass Python long integers where integers are
 requested; however no proper range checking is done --- the most
 significant bits are silently truncated when the receiving field is
 too small to receive the value (actually, the semantics are inherited
-from downcasts in \C{} --- your milage may vary).
+from downcasts in C --- your milage may vary).
 
 A few other characters have a meaning in a format string.  These may
 not occur inside nested parentheses.  They are:
@@ -717,10 +717,10 @@ not occur inside nested parentheses.  They are:
 
 \item[\samp{|}]
 Indicates that the remaining arguments in the Python argument list are
-optional.  The \C{} variables corresponding to optional arguments should
+optional.  The C variables corresponding to optional arguments should
 be initialized to their default value --- when an optional argument is
 not specified, \cfunction{PyArg_ParseTuple()} does not touch the contents
-of the corresponding \C{} variable(s).
+of the corresponding C variable(s).
 
 \item[\samp{:}]
 The list of format units ends here; the string after the colon is used
@@ -869,7 +869,7 @@ PyObject *Py_BuildValue(char *format, ...);
 It recognizes a set of format units similar to the ones recognized by
 \cfunction{PyArg_ParseTuple()}, but the arguments (which are input to the
 function, not output) must not be pointers, just values.  It returns a
-new Python object, suitable for returning from a \C{} function called
+new Python object, suitable for returning from a C function called
 from Python.
 
 One difference with \cfunction{PyArg_ParseTuple()}: while the latter
@@ -885,7 +885,7 @@ parenthesize the format string.
 In the following description, the quoted form is the format unit; the
 entry in (round) parentheses is the Python object type that the format
 unit will return; and the entry in [square] brackets is the type of
-the \C{} value(s) to be passed.
+the C value(s) to be passed.
 
 The characters space, tab, colon and comma are ignored in format
 strings (but not within format units such as \samp{s\#}).  This can be
@@ -894,11 +894,11 @@ used to make long format strings a tad more readable.
 \begin{description}
 
 \item[\samp{s} (string) {[char *]}]
-Convert a null-terminated \C{} string to a Python object.  If the \C{}
+Convert a null-terminated C string to a Python object.  If the C
 string pointer is \NULL{}, \code{None} is returned.
 
 \item[\samp{s\#} (string) {[char *, int]}]
-Convert a \C{} string and its length to a Python object.  If the \C{} string
+Convert a C string and its length to a Python object.  If the C string
 pointer is \NULL{}, the length is ignored and \code{None} is
 returned.
 
@@ -909,7 +909,7 @@ Same as \samp{s}.
 Same as \samp{s\#}.
 
 \item[\samp{i} (integer) {[int]}]
-Convert a plain \C{} \ctype{int} to a Python integer object.
+Convert a plain C \ctype{int} to a Python integer object.
 
 \item[\samp{b} (integer) {[char]}]
 Same as \samp{i}.
@@ -918,14 +918,14 @@ Same as \samp{i}.
 Same as \samp{i}.
 
 \item[\samp{l} (integer) {[long int]}]
-Convert a \C{} \ctype{long int} to a Python integer object.
+Convert a C \ctype{long int} to a Python integer object.
 
 \item[\samp{c} (string of length 1) {[char]}]
-Convert a \C{} \ctype{int} representing a character to a Python string of
+Convert a C \ctype{int} representing a character to a Python string of
 length 1.
 
 \item[\samp{d} (float) {[double]}]
-Convert a \C{} \ctype{double} to a Python floating point number.
+Convert a C \ctype{double} to a Python floating point number.
 
 \item[\samp{f} (float) {[float]}]
 Same as \samp{d}.
@@ -954,16 +954,16 @@ compatible with \ctype{void *}) as its argument and should return a
 ``new'' Python object, or \NULL{} if an error occurred.
 
 \item[\samp{(\var{items})} (tuple) {[\var{matching-items}]}]
-Convert a sequence of \C{} values to a Python tuple with the same number
+Convert a sequence of C values to a Python tuple with the same number
 of items.
 
 \item[\samp{[\var{items}]} (list) {[\var{matching-items}]}]
-Convert a sequence of \C{} values to a Python list with the same number
+Convert a sequence of C values to a Python list with the same number
 of items.
 
 \item[\samp{\{\var{items}\}} (dictionary) {[\var{matching-items}]}]
-Convert a sequence of \C{} values to a Python dictionary.  Each pair of
-consecutive \C{} values adds one item to the dictionary, serving as key
+Convert a sequence of C values to a Python dictionary.  Each pair of
+consecutive C values adds one item to the dictionary, serving as key
 and value, respectively.
 
 \end{description}
@@ -996,8 +996,8 @@ Examples (to the left the call, to the right the resulting Python value):
 
 %\subsection{Introduction}
 
-In languages like \C{} or \Cpp{}, the programmer is responsible for
-dynamic allocation and deallocation of memory on the heap.  In \C{},
+In languages like C or \Cpp{}, the programmer is responsible for
+dynamic allocation and deallocation of memory on the heap.  In C,
 this is done using the functions \cfunction{malloc()} and
 \cfunction{free()}.  In \Cpp{}, the operators \keyword{new} and
 \keyword{delete} are used with essentially the same meaning; they are
@@ -1048,12 +1048,12 @@ collection strategy, hence my use of ``automatic'' to distinguish the
 two.)  The big advantage of automatic garbage collection is that the
 user doesn't need to call \cfunction{free()} explicitly.  (Another claimed
 advantage is an improvement in speed or memory usage --- this is no
-hard fact however.)  The disadvantage is that for \C{}, there is no
+hard fact however.)  The disadvantage is that for C, there is no
 truly portable automatic garbage collector, while reference counting
 can be implemented portably (as long as the functions \cfunction{malloc()}
-and \cfunction{free()} are available --- which the \C{} Standard guarantees).
+and \cfunction{free()} are available --- which the C Standard guarantees).
 Maybe some day a sufficiently portable automatic garbage collector
-will be available for \C{}.  Until then, we'll have to live with
+will be available for C.  Until then, we'll have to live with
 reference counts.
 
 \subsection{Reference Counting in Python
@@ -1143,14 +1143,14 @@ functions take over ownership of the item passed to them --- even if
 they fail!  (Note that \cfunction{PyDict_SetItem()} and friends don't
 take over ownership --- they are ``normal.'')
 
-When a \C{} function is called from Python, it borrows references to its
+When a C function is called from Python, it borrows references to its
 arguments from the caller.  The caller owns a reference to the object,
 so the borrowed reference's lifetime is guaranteed until the function
 returns.  Only when such a borrowed reference must be stored or passed
 on, it must be turned into an owned reference by calling
 \cfunction{Py_INCREF()}.
 
-The object reference returned from a \C{} function that is called from
+The object reference returned from a C function that is called from
 Python must be an owned reference --- ownership is tranferred from the
 function to its caller.
 
@@ -1212,7 +1212,7 @@ no_bug(PyObject *list) {
 \end{verbatim}
 
 This is a true story.  An older version of Python contained variants
-of this bug and someone spent a considerable amount of time in a \C{}
+of this bug and someone spent a considerable amount of time in a C
 debugger to figure out why his \method{__del__()} methods would fail...
 
 The second case of problems with a borrowed reference is a variant
@@ -1263,8 +1263,8 @@ an object against various different expected types, and this would
 generate redundant tests.  There are no variants with \NULL{}
 checking.
 
-The \C{} function calling mechanism guarantees that the argument list
-passed to \C{} functions (\code{args} in the examples) is never
+The C function calling mechanism guarantees that the argument list
+passed to C functions (\code{args} in the examples) is never
 \NULL{} --- in fact it guarantees that it is always a tuple.%
 \footnote{These guarantees don't hold when you use the ``old'' style
 calling convention --- this is still found in much existing code.}
@@ -1278,7 +1278,7 @@ the Python user.
 
 It is possible to write extension modules in \Cpp{}.  Some restrictions
 apply.  If the main program (the Python interpreter) is compiled and
-linked by the \C{} compiler, global or static objects with constructors
+linked by the C compiler, global or static objects with constructors
 cannot be used.  This is not a problem if the main program is linked
 by the \Cpp{} compiler.  Functions that will be called by the
 Python interpreter (in particular, module initalization functions)
@@ -1289,8 +1289,229 @@ It is unnecessary to enclose the Python header files in
 symbol).
 
 
+\section{Providing a C API for an Extension Module
+         \label{using-cobjects}}
+\sectionauthor{Konrad Hinsen}{hinsen@cnrs-orleans.fr}
 
-\chapter{Building \C{} and  \Cpp{} Extensions on \UNIX{}}
+Many extension modules just provide new functions and types to be
+used from Python, but sometimes the code in an extension module can
+be useful for other extension modules. For example, an extension
+module could implement a type ``collection'' which works like lists
+without order. Just like the standard Python list type has a C API
+which permits extension modules to create and manipulate lists, this
+new collection type should have a set of C functions for direct
+manipulation from other extension modules.
+
+At first sight this seems easy: just write the functions (without
+declaring them \keyword{static}, of course), provide an appropriate
+header file, and document the C API. And in fact this would work if
+all extension modules were always linked statically with the Python
+interpreter. When modules are used as shared libraries, however, the
+symbols defined in one module may not be visible to another module.
+The details of visibility depend on the operating system; some systems
+use one global namespace for the Python interpreter and all extension
+modules (e.g. Windows), whereas others require an explicit list of
+imported symbols at module link time (e.g. AIX), or offer a choice of
+different strategies (most Unices). And even if symbols are globally
+visible, the module whose functions one wishes to call might not have
+been loaded yet!
+
+Portability therefore requires not to make any assumptions about
+symbol visibility. This means that all symbols in extension modules
+should be declared \keyword{static}, except for the module's
+initialization function, in order to avoid name clashes with other
+extension modules (as discussed in section~\ref{methodTable}). And it
+means that symbols that \emph{should} be accessible from other
+extension modules must be exported in a different way.
+
+Python provides a special mechanism to pass C-level information (i.e.
+pointers) from one extension module to another one: CObjects.
+A CObject is a Python data type which stores a pointer (\ctype{void
+*}).  CObjects can only be created and accessed via their C API, but
+they can be passed around like any other Python object. In particular, 
+they can be assigned to a name in an extension module's namespace.
+Other extension modules can then import this module, retrieve the
+value of this name, and then retrieve the pointer from the CObject.
+
+There are many ways in which CObjects can be used to export the C API
+of an extension module. Each name could get its own CObject, or all C
+API pointers could be stored in an array whose address is published in
+a CObject. And the various tasks of storing and retrieving the pointers
+can be distributed in different ways between the module providing the
+code and the client modules.
+
+The following example demonstrates an approach that puts most of the
+burden on the writer of the exporting module, which is appropriate
+for commonly used library modules. It stores all C API pointers
+(just one in the example!) in an array of \ctype{void} pointers which
+becomes the value of a CObject. The header file corresponding to
+the module provides a macro that takes care of importing the module
+and retrieving its C API pointers; client modules only have to call
+this macro before accessing the C API.
+
+The exporting module is a modification of the \module{spam} module from
+section~\ref{simpleExample}. The function \function{spam.system()}
+does not call the C library function \cfunction{system()} directly,
+but a function \cfunction{PySpam_System()}, which would of course do
+something more complicated in reality (such as adding ``spam'' to
+every command). This function \cfunction{PySpam_System()} is also
+exported to other extension modules.
+
+The function \cfunction{PySpam_System()} is a plain C function,
+declared \keyword{static} like everything else:
+
+\begin{verbatim}
+static int
+PySpam_System(command)
+    char *command;
+{
+    return system(command);
+}
+\end{verbatim}
+
+The function \cfunction{spam_system()} is modified in a trivial way:
+
+\begin{verbatim}
+static PyObject *
+spam_system(self, args)
+    PyObject *self;
+    PyObject *args;
+{
+    char *command;
+    int sts;
+
+    if (!PyArg_ParseTuple(args, "s", &command))
+        return NULL;
+    sts = PySpam_System(command);
+    return Py_BuildValue("i", sts);
+}
+\end{verbatim}
+
+In the beginning of the module, right after the line
+\begin{verbatim}
+#include "Python.h"
+\end{verbatim}
+two more lines must be added:
+\begin{verbatim}
+#define SPAM_MODULE
+#include "spammodule.h"
+\end{verbatim}
+
+The \code{\#define} is used to tell the header file that it is being
+included in the exporting module, not a client module. Finally,
+the module's initialization function must take care of initializing
+the C API pointer array:
+\begin{verbatim}
+void
+initspam()
+{
+    PyObject *m, *d;
+    static void *PySpam_API[PySpam_API_pointers];
+    PyObject *c_api_object;
+    m = Py_InitModule("spam", SpamMethods);
+
+    /* Initialize the C API pointer array */
+    PySpam_API[PySpam_System_NUM] = (void *)PySpam_System;
+
+    /* Create a CObject containing the API pointer array's address */
+    c_api_object = PyCObject_FromVoidPtr((void *)PySpam_API, NULL);
+
+    /* Create a name for this object in the module's namespace */
+    d = PyModule_GetDict(m);
+    PyDict_SetItemString(d, "_C_API", c_api_object);
+}
+\end{verbatim}
+
+Note that \code{PySpam_API} is declared \code{static}; otherwise
+the pointer array would disappear when \code{initspam} terminates!
+
+The bulk of the work is in the header file \file{spammodule.h},
+which looks like this:
+
+\begin{verbatim}
+#ifndef Py_SPAMMODULE_H
+#define Py_SPAMMODULE_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Header file for spammodule */
+
+/* C API functions */
+#define PySpam_System_NUM 0
+#define PySpam_System_RETURN int
+#define PySpam_System_PROTO Py_PROTO((char *command))
+
+/* Total number of C API pointers */
+#define PySpam_API_pointers 1
+
+
+#ifdef SPAM_MODULE
+/* This section is used when compiling spammodule.c */
+
+static PySpam_System_RETURN PySpam_System PySpam_System_PROTO;
+
+#else
+/* This section is used in modules that use spammodule's API */
+
+static void **PySpam_API;
+
+#define PySpam_System \
+ (*(PySpam_System_RETURN (*)PySpam_System_PROTO) PySpam_API[PySpam_System_NUM])
+
+#define import_spam() \
+{ \
+  PyObject *module = PyImport_ImportModule("spam"); \
+  if (module != NULL) { \
+    PyObject *module_dict = PyModule_GetDict(module); \
+    PyObject *c_api_object = PyDict_GetItemString(module_dict, "_C_API"); \
+    if (PyCObject_Check(c_api_object)) { \
+      PySpam_API = (void **)PyCObject_AsVoidPtr(c_api_object); \
+    } \
+  } \
+}
+
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* !defined(Py_SPAMMODULE_H */
+\end{verbatim}
+
+All that a client module must do in order to have access to the
+function \cfunction{PySpam_System()} is to call the function (or
+rather macro) \cfunction{import_spam()} in its initialization
+function:
+
+\begin{verbatim}
+void
+initclient()
+{
+    PyObject *m;
+
+    Py_InitModule("client", ClientMethods);
+    import_spam();
+}
+\end{verbatim}
+
+The main disadvantage of this approach is that the file
+\file{spammodule.h} is rather complicated. However, the
+basic structure is the same for each function that is
+exported, so it has to be learned only once.
+
+Finally it should be mentioned that CObjects offer additional
+functionality, which is especially useful for memory allocation and
+deallocation of the pointer stored in a CObject. The details
+are described in the \emph{Python/C API Reference Manual} in the
+section ``CObjects'' and in the implementation of CObjects (files
+\file{Include/cobject.h} and \file{Objects/cobject.c} in the
+Python source code distribution).
+
+
+\chapter{Building C and \Cpp{} Extensions on \UNIX{}
+         \label{building-extensions}}
 
 \sectionauthor{Fim Fulton}{jim@Digicool.com}
 
@@ -1502,7 +1723,7 @@ itself using \Cpp{}.
          \label{dynload}}
 
 On most modern systems it is possible to configure Python to support
-dynamic loading of extension modules implemented in \C{}.  When shared
+dynamic loading of extension modules implemented in C.  When shared
 libraries are used dynamic loading is configured automatically;
 otherwise you have to select it as a build option (see below).  Once
 configured, dynamic loading is trivial to use: when a Python program
@@ -1516,7 +1737,7 @@ module.
 
 The advantages of dynamic loading are twofold: the ``core'' Python
 binary gets smaller, and users can extend Python with their own
-modules implemented in \C{} without having to build and maintain their
+modules implemented in C without having to build and maintain their
 own copy of the Python interpreter.  There are also disadvantages:
 dynamic loading isn't available on all systems (this just means that
 on some systems you have to use static loading), and dynamically
@@ -1611,7 +1832,7 @@ described earlier).
 
 Note that in all cases you will have to create your own Makefile that
 compiles your module file(s).  This Makefile will have to pass two
-\samp{-I} arguments to the \C{} compiler which will make it find the
+\samp{-I} arguments to the C compiler which will make it find the
 Python header files.  If the Make variable \makevar{PYTHONTOP} points to
 the toplevel Python directory, your \makevar{CFLAGS} Make variable should
 contain the options \samp{-I\$(PYTHONTOP) -I\$(PYTHONTOP)/Include}.
@@ -1658,7 +1879,7 @@ along the Python module search path.
             \label{irixLinking}}
 
 \strong{IMPORTANT:} You must compile your extension module with the
-additional \C{} flag \samp{-G0} (or \samp{-G 0}).  This instructs the
+additional C flag \samp{-G0} (or \samp{-G 0}).  This instructs the
 assembler to generate position-independent code.
 
 You don't need to link the resulting \file{spammodule.o} file; just
