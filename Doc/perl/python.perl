@@ -14,18 +14,18 @@ sub next_argument_id{
     $param = missing_braces()
         unless ((s/$next_pair_pr_rx/$br_id=$1;$param=$2;''/eo)
 		||(s/$next_pair_rx/$br_id=$1;$param=$2;''/eo));
-    ($param, $br_id);
+    return ($param, $br_id);
 }
 
 sub next_argument{
     my ($param,$br_id) = next_argument_id();
-    $param;
+    return $param;
 }
 
 sub next_optional_argument{
     my($param,$rx) = ('', "^\\s*(\\[([^]]*)\\])?");
     s/$rx/$param=$2;''/eo;
-    $param;
+    return $param;
 }
 
 sub swallow_newline{
@@ -52,7 +52,7 @@ sub ArabictoRoman {
 	$b /= 10;
 	$i++;
     }
-    $D2[$c[2]] . $D1[$c[1]] . $D0[$c[0]];
+    return $D2[$c[2]] . $D1[$c[1]] . $D0[$c[0]];
 }
 
 
@@ -80,7 +80,7 @@ sub do_cmd_let{
 	    write_warnings("Could not interpret \\let construct...");
 	}
     }
-    $_;
+    return $_;
 }
 
 
@@ -104,13 +104,13 @@ sub do_cmd_version{ $PYTHON_VERSION . @_[0]; }
 sub do_cmd_release{
     local($_) = @_;
     $PYTHON_VERSION = next_argument();
-    $_;
+    return $_;
 }
 
 sub do_cmd_authoraddress{
     local($_) = @_;
     $DEVELOPER_ADDRESS = next_argument();
-    $_;
+    return $_;
 }
 
 #sub do_cmd_developer{ do_cmd_author(@_[0]); }
@@ -120,22 +120,28 @@ sub do_cmd_authoraddress{
 sub do_cmd_hackscore{
     local($_) = @_;
     next_argument();
-    '_' . $_;
+    return '_' . $_;
 }
 
 sub use_wrappers{
     local($_,$before,$after) = @_;
     my $stuff = next_argument();
-    $before . $stuff . $after . $_;
+    return $before . $stuff . $after . $_;
 }
 
-sub use_current{ use_wrappers(@_[0], '', ''); }
-sub use_sans_serif{ use_wrappers(@_[0], '<font face=sans-serif>', '</font>'); }
-sub use_italics{ use_wrappers(@_[0], '<i>', '</i>'); }
+sub use_current{
+    return use_wrappers(@_[0], '', '');
+}
+sub use_sans_serif{
+    return use_wrappers(@_[0], '<font face=sans-serif>', '</font>');
+}
+sub use_italics{
+    return use_wrappers(@_[0], '<i>', '</i>');
+}
 
 sub do_cmd_optional{
-    use_wrappers(@_[0], "</var><big>\[</big><var>",
-		 "</var><big>\]</big><var>");
+    return use_wrappers(@_[0], "</var><big>\[</big><var>",
+			"</var><big>\]</big><var>");
 }
 
 # Logical formatting (some based on texinfo), needs to be converted to
@@ -143,39 +149,39 @@ sub do_cmd_optional{
 # output files for users that read them over the network rather than
 # from local repositories.
 
-sub do_cmd_pytype{ use_current(@_); }
-sub do_cmd_makevar{ use_current(@_); }
-sub do_cmd_code{ use_wrappers(@_[0], '<tt>', '</tt>'); }
-sub do_cmd_module{ do_cmd_code(@_); }
-sub do_cmd_keyword{ do_cmd_code(@_); }
-sub do_cmd_exception{ do_cmd_code(@_); }
-sub do_cmd_class{ do_cmd_code(@_); }
-sub do_cmd_function{ do_cmd_code(@_); }
-sub do_cmd_constant{ do_cmd_code(@_); }
-sub do_cmd_member{ do_cmd_code(@_); }
-sub do_cmd_method{ do_cmd_code(@_); }
-sub do_cmd_cfunction{ do_cmd_code(@_); }
-sub do_cmd_cdata{ do_cmd_code(@_); }
-sub do_cmd_ctype{ do_cmd_code(@_); }
-sub do_cmd_regexp{ do_cmd_code(@_); }
-sub do_cmd_character{ do_cmd_samp(@_); }
-sub do_cmd_program{ do_cmd_strong(@_); }
-sub do_cmd_email{ use_sans_serif(@_); }
-sub do_cmd_mimetype{ use_sans_serif(@_); }
-sub do_cmd_var{ use_italics(@_); }
-sub do_cmd_dfn{ use_italics(@_); }	# make an index entry?
-sub do_cmd_emph{ use_italics(@_); }
-sub do_cmd_file{ use_wrappers(@_[0], '"<tt>', '</tt>"'); }
-sub do_cmd_samp{ use_wrappers(@_[0], '"<tt>', '</tt>"'); }
-sub do_cmd_kbd{ use_wrappers(@_[0], '<kbd>', '</kbd>'); }
-sub do_cmd_strong{ use_wrappers(@_[0], '<b>', '</b>'); }
+sub do_cmd_pytype{ return use_current(@_); }
+sub do_cmd_makevar{ return use_current(@_); }
+sub do_cmd_code{ return use_wrappers(@_[0], '<tt>', '</tt>'); }
+sub do_cmd_module{ return do_cmd_code(@_); }
+sub do_cmd_keyword{ return do_cmd_code(@_); }
+sub do_cmd_exception{ return do_cmd_code(@_); }
+sub do_cmd_class{ return do_cmd_code(@_); }
+sub do_cmd_function{ return do_cmd_code(@_); }
+sub do_cmd_constant{ return do_cmd_code(@_); }
+sub do_cmd_member{ return do_cmd_code(@_); }
+sub do_cmd_method{ return do_cmd_code(@_); }
+sub do_cmd_cfunction{ return do_cmd_code(@_); }
+sub do_cmd_cdata{ return do_cmd_code(@_); }
+sub do_cmd_ctype{ return do_cmd_code(@_); }
+sub do_cmd_regexp{ return do_cmd_code(@_); }
+sub do_cmd_character{ return do_cmd_samp(@_); }
+sub do_cmd_program{ return do_cmd_strong(@_); }
+sub do_cmd_email{ return use_sans_serif(@_); }
+sub do_cmd_mimetype{ return use_sans_serif(@_); }
+sub do_cmd_var{ return use_italics(@_); }
+sub do_cmd_dfn{ return use_italics(@_); }	# make an index entry?
+sub do_cmd_emph{ return use_italics(@_); }
+sub do_cmd_file{ return use_wrappers(@_[0], '"<tt>', '</tt>"'); }
+sub do_cmd_samp{ return use_wrappers(@_[0], '"<tt>', '</tt>"'); }
+sub do_cmd_kbd{ return use_wrappers(@_[0], '<kbd>', '</kbd>'); }
+sub do_cmd_strong{ return use_wrappers(@_[0], '<b>', '</b>'); }
 
 sub do_cmd_newsgroup{
     local($_) = @_;
     my $newsgroup = next_argument();
     my $stuff = "<a href=\"news:$newsgroup\"><font face=sans-serif>"
       . "$newsgroup</font></a>";
-    $stuff . $_;
+    return $stuff . $_;
 }
 
 sub do_cmd_envvar{
@@ -187,7 +193,7 @@ sub do_cmd_envvar{
     add_index_entry("environment variables!$envvar@<tt>\$$envvar</tt>",
 		    $ahref);
     add_index_entry("$envvar@\$$envvar", $ahref);
-    "$aname\$$envvar</a>" . $_;
+    return "$aname\$$envvar</a>" . $_;
 }
 
 
@@ -196,7 +202,7 @@ sub do_cmd_url{
     local($_) = @_;
     my $url = next_argument();
     $url =~ s/~/&#126;/g;
-    "<a href=\"$url\"><font face=sans-serif>$url</font></a>" . $_;
+    return "<a href=\"$url\"><font face=sans-serif>$url</font></a>" . $_;
 }
 
 sub do_cmd_manpage{
@@ -204,7 +210,7 @@ sub do_cmd_manpage{
     local($_) = @_;
     my $page = next_argument();
     my $section = next_argument();
-    "<i>$page</i>($section)" . $_;
+    return "<i>$page</i>($section)" . $_;
 }
 
 sub do_cmd_rfc{
@@ -214,7 +220,7 @@ sub do_cmd_rfc{
     # Save the reference
     my $nstr = gen_index_id("RFC!RFC $rfcnumber", '');
     $index{$nstr} .= make_half_href("$CURRENT_FILE#$br_id");
-    "<a name=$br_id>RFC $rfcnumber</a>" .$_;
+    return "<a name=$br_id>RFC $rfcnumber</a>" .$_;
 }
 
 sub do_cmd_deprecated{
@@ -222,21 +228,21 @@ sub do_cmd_deprecated{
     local($_) = @_;
     my $release = next_argument();
     my $reason = next_argument();
-    "<b>Deprecated since release $release.</b>\n$reason<p>" . $_;
+    return "<b>Deprecated since release $release.</b>\n$reason<p>" . $_;
 }
 
 sub do_cmd_versionadded{
     # one parameter:  \versionadded{version}
     local($_) = @_;
     my $release = next_argument();
-    "<b>New in version $release.</b><p>" . $_;
+    return "<b>New in version $release.</b><p>" . $_;
 }
 
 sub do_cmd_versionchanged{
     # one parameter:  \versionchanged{version}
     local($_) = @_;
     my $release = next_argument();
-    "<b>Changed in version $release.</b><p>" . $_;
+    return "<b>Changed in version $release.</b><p>" . $_;
 }
 
 # file and samp are at the end of this file since they screw up fontlock.
@@ -247,13 +253,13 @@ $INDEX_SUBITEM = "";
 
 sub get_indexsubitem{
     #$INDEX_SUBITEM ? " $INDEX_SUBITEM" : '';
-    '';
+    return '';
 }
 
 sub do_cmd_setindexsubitem{
     local($_) = @_;
     $INDEX_SUBITEM = next_argument();
-    $_;
+    return $_;
 }
 
 sub do_cmd_withsubitem{
@@ -264,13 +270,13 @@ sub do_cmd_withsubitem{
     local($_) = @_;
     next_argument();
     my $stuff = next_argument();
-    $stuff . $_;
+    return $stuff . $_;
 }
 
 # This is the prologue macro which is required to start writing the
 # mod\jobname.idx file; we can just ignore it.
 #
-sub do_cmd_makemodindex{ @_[0]; }
+sub do_cmd_makemodindex{ return @_[0]; }
 
 # We're in the document subdirectory when this happens!
 #
@@ -286,24 +292,24 @@ $IDXFILE_FIELD_SEP = "\1";
 
 
 sub gen_target_name{
-    "l2h-" . @_[0];
+    return "l2h-" . @_[0];
 }
 
 sub gen_target{
-    '<a name="' . @_[0] . '">';
+    return '<a name="' . @_[0] . '">';
 }
 
 sub gen_link{
     my($node,$target) = @_;
     print INTLABELS "\$internal_labels{\"$target\"} = \"$URL/$node\";\n";
-    "<a href=\"$node#$target\">";
+    return "<a href=\"$node#$target\">";
 }
 
 sub make_index_entry{
     my($br_id,$str) = @_;
     my($name,$aname,$ahref) = link_info($br_id);
     add_index_entry($str, $ahref);
-    "$aname$anchor_invisible_mark</a>";
+    return "$aname$anchor_invisible_mark</a>";
 }
 
 sub add_index_entry{
@@ -328,7 +334,7 @@ sub do_cmd_index{
     #
     my($name,$aname,$ahref) = link_info($br_id);
     add_index_entry("$str", $ahref);
-    "$aname$anchor_invisible_mark</a>" . $_;
+    return "$aname$anchor_invisible_mark</a>" . $_;
 }
 
 sub do_cmd_kwindex{
@@ -338,7 +344,7 @@ sub do_cmd_kwindex{
     my($name,$aname,$ahref) = link_info($br_id);
     add_index_entry("<tt>$str</tt>!keyword", $ahref);
     add_index_entry("keyword!<tt>$str</tt>", $ahref);
-    "$aname$anchor_invisible_mark</a>" . $_;
+    return "$aname$anchor_invisible_mark</a>" . $_;
 }
 
 sub do_cmd_indexii{
@@ -349,7 +355,7 @@ sub do_cmd_indexii{
     my($name,$aname,$ahref) = link_info($br_id);
     add_index_entry("$str1!$str2", $ahref);
     add_index_entry("$str2!$str1", $ahref);
-    "$aname$anchor_invisible_mark</a>" . $_;
+    return "$aname$anchor_invisible_mark</a>" . $_;
 }
 
 sub do_cmd_indexiii{
@@ -362,7 +368,7 @@ sub do_cmd_indexiii{
     add_index_entry("$str1!$str2 $str3", $ahref);
     add_index_entry("$str2!$str3, $str1", $ahref);
     add_index_entry("$str3!$str1 $str2", $ahref);
-    "$aname$anchor_invisible_mark</a>" . $_;
+    return "$aname$anchor_invisible_mark</a>" . $_;
 }
 
 sub do_cmd_indexiv{
@@ -377,14 +383,14 @@ sub do_cmd_indexiv{
     add_index_entry("$str2!$str3 $str4, $str1", $ahref);
     add_index_entry("$str3!$str4, $str1 $str2", $ahref);
     add_index_entry("$str4!$$str1 $str2 $str3", $ahref);
-    "$aname$anchor_invisible_mark</a>" . $_;
+    return "$aname$anchor_invisible_mark</a>" . $_;
 }
 
 sub do_cmd_ttindex{
     local($_) = @_;
     my($str,$br_id) = next_argument_id();
     swallow_newline();
-    make_index_entry($br_id, $str . get_indexsubitem()) . $_;
+    return make_index_entry($br_id, $str . get_indexsubitem()) . $_;
 }
 
 sub my_typed_index_helper{
@@ -395,19 +401,19 @@ sub my_typed_index_helper{
     my($name,$aname,$ahref) = link_info($br_id1);
     add_index_entry("$str $word", $ahref);
     add_index_entry("$word!$str", $ahref);
-    "$aname$anchor_invisible_mark</a>" . $_;
+    return "$aname$anchor_invisible_mark</a>" . $_;
 }
 
-sub do_cmd_stindex{ my_typed_index_helper('statement', @_); }
-sub do_cmd_opindex{ my_typed_index_helper('operator', @_); }
-sub do_cmd_exindex{ my_typed_index_helper('exception', @_); }
-sub do_cmd_obindex{ my_typed_index_helper('object', @_); }
+sub do_cmd_stindex{ return my_typed_index_helper('statement', @_); }
+sub do_cmd_opindex{ return my_typed_index_helper('operator', @_); }
+sub do_cmd_exindex{ return my_typed_index_helper('exception', @_); }
+sub do_cmd_obindex{ return my_typed_index_helper('object', @_); }
 
 sub my_parword_index_helper{
     local($word,$_) = @_;
     my($str,$br_id) = next_argument_id();
     swallow_newline();
-    make_index_entry($br_id, "$str ($word)") . $_;
+    return make_index_entry($br_id, "$str ($word)") . $_;
 }
 
 
@@ -424,7 +430,7 @@ sub make_mod_index_entry{
 	my($nstr,$garbage) = split / /, $str, 2;
 	$Modules{$nstr} .= $ahref;
     }
-    "$aname$anchor_invisible_mark</a>";
+    return "$aname$anchor_invisible_mark</a>";
 }
 
 $THIS_MODULE = '';
@@ -435,15 +441,15 @@ sub define_module{
     my $section_tag = join('', @curr_sec_id);
     $word = "$word " if $word;
     $THIS_MODULE = "$name";
-    make_mod_index_entry("SECTION$section_tag",
-			 "<tt>$name</tt> (${word}module)", 'DEF');
+    return make_mod_index_entry("SECTION$section_tag",
+				"<tt>$name</tt> (${word}module)", 'DEF');
 }
 
 sub my_module_index_helper{
     local($word, $_) = @_;
     my $name = next_argument();
     swallow_newline();
-    define_module($word, $name) . $_;
+    return define_module($word, $name) . $_;
 }
 
 sub ref_module_index_helper{
@@ -451,7 +457,8 @@ sub ref_module_index_helper{
     my($str,$br_id) = next_argument();
     swallow_newline();
     $word = "$word " if $word;
-    make_mod_index_entry($br_id, "<tt>$str</tt> (${word}module)", 'REF') . $_;
+    return make_mod_index_entry($br_id,
+				"<tt>$str</tt> (${word}module)", 'REF') . $_;
 }
 
 sub do_cmd_bifuncindex{
@@ -459,21 +466,21 @@ sub do_cmd_bifuncindex{
     my($str,$br_id) = next_argument();
     swallow_newline();
     my $fname = "<tt>$str()</tt>";
-    make_index_entry($br_id, "$fname (built-in function)") . $_;
+    return make_index_entry($br_id, "$fname (built-in function)") . $_;
 }
 
-sub do_cmd_modindex{ my_module_index_helper('', @_); }
-sub do_cmd_bimodindex{ my_module_index_helper('built-in', @_); }
-sub do_cmd_exmodindex{ my_module_index_helper('extension', @_); }
-sub do_cmd_stmodindex{ my_module_index_helper('standard', @_); }
+sub do_cmd_modindex{ return my_module_index_helper('', @_); }
+sub do_cmd_bimodindex{ return my_module_index_helper('built-in', @_); }
+sub do_cmd_exmodindex{ return my_module_index_helper('extension', @_); }
+sub do_cmd_stmodindex{ return my_module_index_helper('standard', @_); }
 
 # these should be adjusted a bit....
-sub do_cmd_refmodindex{ ref_module_index_helper('', @_); }
-sub do_cmd_refbimodindex{ ref_module_index_helper('built-in', @_); }
-sub do_cmd_refexmodindex{ ref_module_index_helper('extension', @_); }
-sub do_cmd_refstmodindex{ ref_module_index_helper('standard', @_); }
+sub do_cmd_refmodindex{ return ref_module_index_helper('', @_); }
+sub do_cmd_refbimodindex{ return ref_module_index_helper('built-in', @_); }
+sub do_cmd_refexmodindex{ return ref_module_index_helper('extension', @_); }
+sub do_cmd_refstmodindex{ return ref_module_index_helper('standard', @_); }
 
-sub do_cmd_nodename{ do_cmd_label(@_); }
+sub do_cmd_nodename{ return do_cmd_label(@_); }
 
 sub init_myformat{
 #    $anchor_invisible_mark = '';
@@ -489,7 +496,7 @@ sub make_str_index_entry{
     my($br_id,$str) = @_;
     my($name,$aname,$ahref) = link_info($br_id);
     add_index_entry($str, $ahref);
-    "$aname$str</a>";
+    return "$aname$str</a>";
 }
 
 sub do_env_cfuncdesc{
@@ -501,10 +508,10 @@ sub do_env_cfuncdesc{
 			"<tt>$function_name()</tt>" . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;		# ????
-    "<dl><dt>$return_type <b>$idx</b>"
-      . "(<var>$arg_list</var>)\n<dd>"
-      . $_
-      . '</dl>';
+    return "<dl><dt>$return_type <b>$idx</b>"
+           . "(<var>$arg_list</var>)\n<dd>"
+           . $_
+           . '</dl>';
 }
 
 sub do_env_ctypedesc{
@@ -513,9 +520,9 @@ sub do_env_ctypedesc{
     my $idx = make_str_index_entry($br_id,
 				   "<tt>$type_name</tt>" . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
-    "<dl><dt><b>$idx</b>\n<dd>"
-      . $_
-      . '</dl>'
+    return "<dl><dt><b>$idx</b>\n<dd>"
+           . $_
+           . '</dl>'
 }
 
 sub do_env_cvardesc{
@@ -525,10 +532,10 @@ sub do_env_cvardesc{
     my $idx = make_str_index_entry($br_id,
 				   "<tt>$var_name</tt>" . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
-    "<dl><dt>$var_type <b>$idx</b>\n"
-      . '<dd>'
-      . $_
-      . '</dl>';
+    return "<dl><dt>$var_type <b>$idx</b>\n"
+           . '<dd>'
+           . $_
+           . '</dl>';
 }
 
 sub do_env_funcdesc{
@@ -539,15 +546,16 @@ sub do_env_funcdesc{
 				   . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
-    "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
+    return "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
 }
 
 sub do_env_funcdescni{
     local($_) = @_;
     my $function_name = next_argument();
     my $arg_list = next_argument();
-    "<dl><dt><b><tt>$function_name</tt></b> (<var>$arg_list</var>)\n<dd>"
-      . $_ . '</dl>';
+    return "<dl><dt><b><tt>$function_name</tt></b> (<var>$arg_list</var>)\n"
+           . "<dd>"
+           . $_ . '</dl>';
 }
 
 sub do_cmd_funcline{
@@ -557,7 +565,7 @@ sub do_cmd_funcline{
     my $idx = make_str_index_entry($br_id, "<tt>$function_name()</tt>"
 				   . get_indexsubitem());
     $idx =~ s/\(\)//;
-    "<dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_;
+    return "<dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_;
 }
 
 # Change this flag to index the opcode entries.  I don't think it's very
@@ -583,7 +591,7 @@ sub do_env_opcodedesc{
     if ($arg_list) {
 	$stuff .= "&nbsp;&nbsp;&nbsp;&nbsp;<var>$arg_list</var>";
     }
-    $stuff . "\n<dd>" . $_ . '</dl>';
+    return $stuff . "\n<dd>" . $_ . '</dl>';
 }
 
 sub do_env_datadesc{
@@ -592,9 +600,9 @@ sub do_env_datadesc{
     my $idx = make_str_index_entry($br_id,
 				   "<tt>$dataname</tt>" . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
-    "<dl><dt><b>$idx</b>\n<dd>"
-      . $_
-      . '</dl>';
+    return "<dl><dt><b>$idx</b>\n<dd>"
+           . $_
+	   . '</dl>';
 }
 
 sub do_env_datadescni{
@@ -603,7 +611,7 @@ sub do_env_datadescni{
     if (! $STRING_INDEX_TT) {
 	$idx = "<tt>$idx</tt>";
     }
-    "<dl><dt><b>$idx</b>\n<dd>" . $_ . '</dl>';
+    return "<dl><dt><b>$idx</b>\n<dd>" . $_ . '</dl>';
 }
 
 sub do_cmd_dataline{
@@ -612,17 +620,17 @@ sub do_cmd_dataline{
     my $idx = make_str_index_entry($br_id, "<tt>$data_name</tt>"
 				   . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
-    "<dt><b>$idx</b><dd>" . $_;
+    return "<dt><b>$idx</b><dd>" . $_;
 }
 
 sub do_env_excdesc{
     local($_) = @_;
     my($excname,$br_id) = next_argument_id();
     my $idx = make_str_index_entry($br_id, "<tt>$excname</tt>");
-    "<dl><dt><b>$idx</b>\n<dd>" . $_ . '</dl>'
+    return "<dl><dt><b>$idx</b>\n<dd>" . $_ . '</dl>'
 }
 
-sub do_env_fulllineitems{ do_env_itemize(@_); }
+sub do_env_fulllineitems{ return do_env_itemize(@_); }
 
 
 sub do_env_classdesc{
@@ -632,7 +640,7 @@ sub do_env_classdesc{
     $idx = make_str_index_entry($br_id,
 			"<tt>$THIS_CLASS</tt> (class in $THIS_MODULE)" );
     $idx =~ s/ \(.*\)//;
-    "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
+    return "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
 }
 
 
@@ -650,7 +658,7 @@ sub do_env_methoddesc{
     my $idx = make_str_index_entry($br_id, "<tt>$method_name()</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
-    "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
+    return "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
 }
 
 
@@ -659,7 +667,9 @@ sub do_env_methoddescni{
     next_optional_argument();
     my $method = next_argument();
     my $arg_list = next_argument();
-    "<dl><dt><b>$method</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
+    return "<dl><dt><b>$method</b> (<var>$arg_list</var>)\n<dd>"
+           . $_
+	   . '</dl>';
 }
 
 
@@ -675,7 +685,7 @@ sub do_env_memberdesc{
     my $idx = make_str_index_entry($br_id, "<tt>$member</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
-    "<dl><dt><b>$idx</b>\n<dd>" . $_ . '</dl>';
+    return "<dl><dt><b>$idx</b>\n<dd>" . $_ . '</dl>';
 }
 
 
@@ -691,14 +701,14 @@ sub do_cmd_memberline{
     my $idx = make_str_index_entry($br_id, "<tt>$member</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
-    "<dt><b>$idx</b><dd>" . $_;
+    return "<dt><b>$idx</b><dd>" . $_;
 }
 
 sub do_env_memberdescni{
     local($_) = @_;
     next_optional_argument();
     my $member = next_argument();
-    "<dl><dt><b>$member</b>\n<dd>" . $_ . '</dl>';
+    return "<dl><dt><b>$member</b>\n<dd>" . $_ . '</dl>';
 }
 
 
@@ -706,7 +716,7 @@ sub do_cmd_memberlineni{
     local($_) = @_;
     next_optional_argument();
     my $member = next_argument();
-    "<dt><b>$member</b><dd>" . $_;
+    return "<dt><b>$member</b><dd>" . $_;
 }
 
 @col_aligns = ("<td>", "<td>", "<td>", "<td>");
@@ -728,7 +738,7 @@ sub setup_column_alignments{
 	    : ($a3 eq 'r' ? '<th align=right>' : '<th>'));
     $th4 = (($a4 eq 'l') ? '<th align=left>'
 	    : ($a4 eq 'r' ? '<th align=right>' : '<th>'));
-    ($th1, $th2, $th3, $th4);
+    return ($th1, $th2, $th3, $th4);
 }
 
 sub do_env_tableii{
@@ -740,11 +750,11 @@ sub do_env_tableii{
     $font = ''
         if ($font eq 'textrm');
     $globals{'lineifont'} = $font;
-    '<table border align=center>'
-      . "\n  <tr>$th1<b>$h1</b></th>"
-      . "\n      $th2<b>$h2</b></th>"
-      . $_
-      . "\n</table>";
+    return '<table border align=center>'
+           . "\n  <tr>$th1<b>$h1</b></th>"
+	   . "\n      $th2<b>$h2</b></th>"
+	   . $_
+	   . "\n</table>";
 }
 
 sub do_cmd_lineii{
@@ -757,9 +767,9 @@ sub do_cmd_lineii{
 	$efont = "</$font>";
     }
     my($c1align,$c2align) = @col_aligns[0,1];
-    "<tr>$c1align$sfont$c1$efont</td>\n"
-      . "      $c2align$c2</td>"
-      . $_;
+    return "<tr>$c1align$sfont$c1$efont</td>\n"
+           . "      $c2align$c2</td>"
+	   . $_;
 }
 
 sub do_env_tableiii{
@@ -772,12 +782,12 @@ sub do_env_tableiii{
     $font = ''
         if ($font eq 'textrm');
     $globals{'lineifont'} = $font;
-    '<table border align=center>'
-      . "\n  <tr>$th1<b>$h1</b></th>"
-      . "\n      $th2<b>$h2</b></th>"
-      . "\n      $th3<b>$h3</b></th>"
-      . $_
-      . "\n</table>";
+    return '<table border align=center>'
+           . "\n  <tr>$th1<b>$h1</b></th>"
+	   . "\n      $th2<b>$h2</b></th>"
+	   . "\n      $th3<b>$h3</b></th>"
+	   . $_
+	   . "\n</table>";
 }
 
 sub do_cmd_lineiii{
@@ -791,10 +801,10 @@ sub do_cmd_lineiii{
 	$efont = "</$font>";
     }
     my($c1align,$c2align,$c3align) = @col_aligns[0,1,2];
-    "<tr>$c1align$sfont$c1$efont</td>\n"
-      . "      $c2align$c2</td>\n"
-      . "      $c3align$c3</td>"
-      . $_;
+    return "<tr>$c1align$sfont$c1$efont</td>\n"
+           . "      $c2align$c2</td>\n"
+	   . "      $c3align$c3</td>"
+	   . $_;
 }
 
 sub do_env_tableiv{
@@ -808,13 +818,13 @@ sub do_env_tableiv{
     $font = ''
         if ($font eq 'textrm');
     $globals{'lineifont'} = $font;
-    '<table border align=center>'
-      . "\n  <tr>$th1<b>$h1</b></th>"
-      . "\n      $th2<b>$h2</b></th>"
-      . "\n      $th3<b>$h3</b></th>"
-      . "\n      $th4<b>$h4</b></th>"
-      . $_
-      . "\n</table>";
+    return '<table border align=center>'
+           . "\n  <tr>$th1<b>$h1</b></th>"
+	   . "\n      $th2<b>$h2</b></th>"
+	   . "\n      $th3<b>$h3</b></th>"
+	   . "\n      $th4<b>$h4</b></th>"
+	   . $_
+	   . "\n</table>";
 }
 
 sub do_cmd_lineiv{
@@ -829,11 +839,11 @@ sub do_cmd_lineiv{
 	$efont = "</$font>";
     }
     my($c1align,$c2align,$c3align,$c4align) = @col_aligns;
-    "<tr>$c1align$sfont$c1$efont</td>\n"
-      . "      $c2align$c2</td>\n"
-      . "      $c3align$c3</td>\n"
-      . "      $c4align$c4</td>"
-      . $_;
+    return "<tr>$c1align$sfont$c1$efont</td>\n"
+           . "      $c2align$c2</td>\n"
+	   . "      $c3align$c3</td>\n"
+	   . "      $c4align$c4</td>"
+	   . $_;
 }
 
 sub do_cmd_maketitle {
@@ -871,7 +881,7 @@ sub do_cmd_maketitle {
     if ($t_email) {
 	$the_title .= "\n<p>$t_email</p>";
     }# else { $the_title .= "</p>" }
-    $the_title . $_ ;
+    return $the_title . $_ ;
 }
 
 
@@ -904,6 +914,20 @@ sub get_synopsis_table($){
     return $st;
 }
 
+sub do_cmd_moduleauthor{
+    local($_) = @_;
+    next_argument();
+    next_argument();
+    return $_;
+}
+
+sub do_cmd_sectionauthor{
+    local($_) = @_;
+    next_argument();
+    next_argument();
+    return $_;
+}
+
 sub do_cmd_declaremodule{
     local($_) = @_;
     my $key = next_optional_argument();
@@ -915,7 +939,7 @@ sub do_cmd_declaremodule{
     $type = 'built-in' if $type eq 'builtin';
     $st->declare($name, $key, $type);
     define_module($type, $name);
-    anchor_label("module-$key",$CURRENT_FILE,$_)
+    return anchor_label("module-$key",$CURRENT_FILE,$_)
 }
 
 sub do_cmd_modulesynopsis{
@@ -923,13 +947,13 @@ sub do_cmd_modulesynopsis{
     my $st = get_synopsis_table(get_chapter_id());
     $st->set_synopsis($THIS_MODULE, next_argument());
     swallow_newline();
-    $_;
+    return $_;
 }
 
 sub do_cmd_localmoduletable{
     local($_) = @_;
     my $chap = get_chapter_id();
-    "<tex2htmllocalmoduletable><$chap>\\tableofchildlinks[off]" . $_;
+    return "<tex2htmllocalmoduletable><$chap>\\tableofchildlinks[off]" . $_;
 }
 
 sub process_all_localmoduletables{
@@ -948,7 +972,7 @@ sub process_all_localmoduletables{
 #
 
 sub do_env_seealso{
-    "<p><b>See Also:</b></p>\n" . @_[0];
+    return "<p><b>See Also:</b></p>\n" . @_[0];
 }
 
 sub do_cmd_seemodule{
@@ -960,13 +984,13 @@ sub do_cmd_seemodule{
     my $text = next_argument();
     $key = $module
         unless $key;
-    "<p>Module <tt><b><a href=\"module-$key.html\">$module</a></b></tt>"
-      . "&nbsp;&nbsp;&nbsp;($text)</p>"
-      . $_;
+    return "<p>Module <tt><b><a href=\"module-$key.html\">$module</a></b></tt>"
+           . "&nbsp;&nbsp;&nbsp;($text)</p>"
+	   . $_;
 }
 
 sub do_cmd_seetext{
-    '<p>' . @_[0];
+    return '<p>' . @_[0];
 }
 
 
@@ -977,7 +1001,7 @@ sub do_cmd_seetext{
 sub do_env_definitions{
     local($_) = @_;
     swallow_newline();
-    "<dl>$_</dl>\n";
+    return "<dl>$_</dl>\n";
 }
 
 sub do_cmd_term{
@@ -986,7 +1010,7 @@ sub do_cmd_term{
     my($name,$aname,$ahref) = link_info($id);
     swallow_newline();
     # could easily add an index entry here...
-    "<dt><b>$aname" . $term . "</a></b>\n<dd>" . $_;
+    return "<dt><b>$aname" . $term . "</a></b>\n<dd>" . $_;
 }
 
 
