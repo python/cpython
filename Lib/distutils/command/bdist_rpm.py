@@ -42,7 +42,7 @@ class bdist_rpm (Command):
         ('release', None,
          "RPM release number"),
         ('serial', None,
-         "???"),
+         "RPM serial number"),
         ('vendor', None,
          "RPM \"vendor\" (eg. \"Joe Blow <joe@example.com>\") "
          "[default: maintainer or author from setup script]"),
@@ -52,18 +52,17 @@ class bdist_rpm (Command):
         ('doc-files', None,
          "list of documentation files (space or comma-separated)"),
         ('changelog', None,
-         "RPM changelog"),
+         "path to RPM changelog"),
         ('icon', None,
          "name of icon file"),
-
-        ('prep-cmd', None,
-         "?? pre-build command(s) ??"),
-        ('build-cmd', None,
-         "?? build command(s) ??"),
-        ('install-cmd', None,
-         "?? installation command(s) ??"),
-        ('clean-cmd', None,
-         "?? clean command(s) ??"),
+        ('prep-script', None,
+         "pre-build script  (Bourne shell code)"),
+        ('build-script', None,
+         "build script (Bourne shell code)"),
+        ('install-script', None,
+         "installation script (Bourne shell code)"),
+        ('clean-script', None,
+         "clean script (Bourne shell code)"),
         ('pre-install', None,
          "pre-install script (Bourne shell code)"),
         ('post-install', None,
@@ -72,17 +71,16 @@ class bdist_rpm (Command):
          "pre-uninstall script (Bourne shell code)"),
         ('post-uninstall', None,
          "post-uninstall script (Bourne shell code)"),
-
         ('provides', None,
-         "???"),
+         "capabilities provided by this package"),
         ('requires', None,
-         "???"),
+         "capabilities required by this package"),
         ('conflicts', None,
-         "???"),
+         "capabilities which conflict with this package"),
         ('build-requires', None,
-         "???"),
+         "capabilities required to build this package"),
         ('obsoletes', None,
-         "???"),
+         "capabilities made obsolete by this package"),
 
         # Actions to take when building RPM
         ('clean', None,
@@ -93,10 +91,15 @@ class bdist_rpm (Command):
          "compile with RPM_OPT_FLAGS when building from source RPM"),
         ('no-rpm-opt-flags', None,
          "do not pass any RPM CFLAGS to compiler"),
+        ('rpm3-mode', None,
+         "RPM 3 compatibility mode (default)"),
+        ('rpm2-mode', None,
+         "RPM 2 compatibility mode"),
        ]
 
     negative_opt = {'no-clean': 'clean',
-                    'no-rpm-opt-flags': 'use-rpm-opt-flags'}
+                    'no-rpm-opt-flags': 'use-rpm-opt-flags',
+                    'rpm2-mode': 'rpm3-mode'}
 
                     
     def initialize_options (self):
@@ -116,10 +119,10 @@ class bdist_rpm (Command):
         self.changelog = None
         self.icon = None
 
-        self.prep_cmd = None
-        self.build_cmd = None
-        self.install_cmd = None
-        self.clean_cmd = None
+        self.prep_script = None
+        self.build_script = None
+        self.install_script = None
+        self.clean_script = None
         self.pre_install = None
         self.post_install = None
         self.pre_uninstall = None
@@ -133,6 +136,7 @@ class bdist_rpm (Command):
 
         self.clean = 1
         self.use_rpm_opt_flags = 1
+        self.rpm3_mode = 1
 
     # initialize_options()
 
@@ -160,31 +164,28 @@ class bdist_rpm (Command):
         self.ensure_string('vendor',
                            "%s <%s>" % (self.distribution.get_contact(),
                                         self.distribution.get_contact_email()))
-        self.ensure_string('packager', self.vendor) # or nothing?
+        self.ensure_string('packager') 
         self.ensure_string_list('doc_files')
         if type(self.doc_files) is ListType:
             for readme in ('README', 'README.txt'):
                 if os.path.exists(readme) and readme not in self.doc_files:
                     self.doc.append(readme)
 
-        self.ensure_string('release', "1")   # should it be an int?
+        self.ensure_string('release', "1")
         self.ensure_string('serial')   # should it be an int?
 
-        self.ensure_string('icon')
         self.ensure_string('distribution_name')
 
-        self.ensure_string('prep_cmd', "%setup") # string or filename?
+        self.ensure_string('changelog')
+          # Format changelog correctly
+        self.changelog = self._format_changelog(self.changelog)
 
-        if self.use_rpm_opt_flags:
-            def_build = 'env CFLAGS="$RPM_OPT_FLAGS" python setup.py build'
-        else:
-            def_build = 'python setup.py build'
-        self.ensure_string('build_cmd', def_build)
-        self.ensure_string('install_cmd',
-                           "python setup.py install --root=$RPM_BUILD_ROOT "
-                           "--record=INSTALLED_FILES")
-        self.ensure_string('clean_cmd',
-                           "rm -rf $RPM_BUILD_ROOT")
+        self.ensure_filename('icon')
+        
+        self.ensure_filename('prep_script')
+        self.ensure_filename('build_script')
+        self.ensure_filename('install_script')
+        self.ensure_filename('clean_script')
         self.ensure_filename('pre_install')
         self.ensure_filename('post_install')
         self.ensure_filename('pre_uninstall')
@@ -217,7 +218,11 @@ class bdist_rpm (Command):
             spec_dir = "dist"
             self.mkpath(spec_dir)       # XXX should be configurable
         else:
-            rpm_base = os.path.join(self.bdist_base, "rpm")
+            if self.rpm3_mode:
+                rpm_base = os.path.join(self.bdist_base, "rpm")
+            else:
+                # complete path must be specified in RPM 2 mode
+                rpm_base = self.bdist_base
             rpm_dir = {}
             for d in ('SOURCES', 'SPECS', 'BUILD', 'RPMS', 'SRPMS'):
                 rpm_dir[d] = os.path.join(rpm_base, d)
@@ -266,8 +271,9 @@ class bdist_rpm (Command):
             rpm_args.append('-bb')
         else:
             rpm_args.append('-ba')
-        rpm_args.extend(['--define',
-                         '_topdir %s/%s' % (os.getcwd(), rpm_base),])
+        if self.rpm3_mode:
+            rpm_args.extend(['--define',
+                             '_topdir %s/%s' % (os.getcwd(), rpm_base),])
         if self.clean:
             rpm_args.append('--clean')
         rpm_args.append(spec_path)
@@ -363,27 +369,45 @@ class bdist_rpm (Command):
         #        ])
 
         # rpm scripts
-        for (rpm_opt, attr) in (('prep', 'prep_cmd'),
-                                ('build', 'build_cmd'),
-                                ('install', 'install_cmd'),
-                                ('clean', 'clean_cmd'),
-                                ('pre', 'pre_install'),
-                                ('post', 'post_install'),
-                                ('preun', 'pre_uninstall'),
-                                ('postun', 'post_uninstall')):
-            # XXX oops, this doesn't distinguish between "raw code"
-            # options and "script filename" options -- well, we probably
-            # should settle on one or the other, and not make the
-            # distinction!
+        # figure out default build script
+        if self.use_rpm_opt_flags:
+            def_build = 'env CFLAGS="$RPM_OPT_FLAGS" python setup.py build'
+        else:
+            def_build = 'python setup.py build'
+        # insert contents of files
+
+        # XXX this is kind of misleading: user-supplied options are files
+        # that we open and interpolate into the spec file, but the defaults
+        # are just text that we drop in as-is.  Hmmm.
+
+        script_options = [
+            ('prep', 'prep_script', "%setup"),
+            ('build', 'build_script', def_build),
+            ('install', 'install_script',
+             "python setup.py install "
+             "--root=$RPM_BUILD_ROOT "
+             "--record=INSTALLED_FILES"),
+            ('clean', 'clean_script', "rm -rf $RPM_BUILD_ROOT"),
+            ('pre', 'pre_install', None),
+            ('post', 'post_install', None),
+            ('preun', 'pre_uninstall', None),
+            ('postun', 'post_uninstall', None))
+        ]
+
+        for (rpm_opt, attr, default) in script_options:
+            # Insert contents of file refered to, if no file is refered to
+            # use 'default' as contents of script
             val = getattr(self, attr)
-            if val:
+            if val or default:
                 spec_file.extend([
                     '',
-                    '%' + rpm_opt,
-                    val
-                    ])
+                    '%' + rpm_opt,])
+                if val:
+                    spec_file.extend(string.split(open(val, 'r').read(), '\n'))
+                else:
+                    spec_file.append(default)
 
-        
+
         # files section
         spec_file.extend([
             '',
@@ -397,12 +421,32 @@ class bdist_rpm (Command):
         if self.changelog:
             spec_file.extend([
                 '',
-                '%changelog',
-                self.changelog
-                ])
+                '%changelog',])
+            spec_file.extend(self.changelog)
 
         return spec_file
 
     # _make_spec_file ()
+
+    def _format_changelog(self, changelog):
+        """Format the changelog correctly and convert it to a list of strings
+        """
+        new_changelog = []
+        for line in string.split(string.strip(changelog), '\n'):
+            line = string.strip(line)
+            if line[0] == '*':
+                new_changelog.extend(['', line])
+            elif line[0] == '-':
+                new_changelog.append(line)
+            else:
+                new_changelog.append('  ' + line)
+                
+        # strip trailing newline inserted by first changelog entry
+        if not new_changelog[0]:
+            del new_changelog[0]
+        
+        return new_changelog
+
+    # _format_changelog()
 
 # class bdist_rpm
