@@ -44,10 +44,11 @@ def client(hostname):
 	print 'client starting'
 	cmd = 'rsh ' + hostname + ' "cd ' + AUDIODIR
 	cmd = cmd + '; DISPLAY=:0; export DISPLAY'
-	cmd = cmd + '; exec ' + PYTHON + ' intercom.py -r '
+	cmd = cmd + '; ' + PYTHON + ' intercom.py -r '
 	for flag in debug: cmd = cmd + flag + ' '
 	cmd = cmd + gethostname()
 	cmd = cmd + '"'
+	if debug: print cmd
 	pipe = posix.popen(cmd, 'r')
 	ack = 0
 	nak = 0
