@@ -167,7 +167,7 @@ pack_float(x, p, incr)
 		f = ldexp(f, 126 + e);
 		e = 0;
 	}
-	else {
+	else if (!(e == 0 && f == 0.0)) {
 		e += 127;
 		f -= 1.0; /* Get rid of leading 1 */
 	}
@@ -239,7 +239,7 @@ pack_double(x, p, incr)
 		f = ldexp(f, 1022 + e);
 		e = 0;
 	}
-	else {
+	else if (!(e == 0 && f == 0.0)) {
 		e += 1023;
 		f -= 1.0; /* Get rid of leading 1 */
 	}
