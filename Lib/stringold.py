@@ -79,6 +79,20 @@ def splitfields(s, sep):
 	res.append(s[i:])
 	return res
 
+# Join words with spaces between them
+def join(words):
+	res = ''
+	for w in words:
+		res = res + (' ' + w)
+	return res[1:]
+
+# Join fields with separator
+def joinfields(words, sep):
+	res = ''
+	for w in words:
+		res = res + (sep + w)
+	return res[len(sep):]
+
 # Find substring
 index_error = 'substring not found in string.index'
 def index(s, sub):
@@ -99,21 +113,25 @@ def atoi(str):
 
 # Left-justify a string
 def ljust(s, width):
-	n = len(s)
-	if n >= width: return s
-	return s + ' '*(width-n)
+	n = width - len(s)
+	if n <= 0: return s
+	return s + ' '*n
 
 # Right-justify a string
 def rjust(s, width):
-	n = len(s)
-	if n >= width: return s
-	return ' '*(width-n) + s
+	n = width - len(s)
+	if n <= 0: return s
+	return ' '*n + s
 
 # Center a string
 def center(s, width):
-	n = len(s)
-	if n >= width: return s
-	return ' '*((width-n)/2) +  s + ' '*(width -(width-n)/2)
+	n = width - len(s)
+	if n <= 0: return s
+	half = n/2
+	if n%2 and width%2:
+		# This ensures that center(center(s, i), j) = center(s, j)
+		half = half+1
+	return ' '*half +  s + ' '*(n-half)
 
 # Zero-fill a number, e.g., (12, 3) --> '012' and (-3, 3) --> '-03'
 # Decadent feature: the argument may be a string or a number
