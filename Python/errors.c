@@ -109,3 +109,34 @@ err_clear()
 		last_exc_val = NULL;
 	}
 }
+
+/* Convenience functions to set a type error exception and return 0 */
+
+int
+err_badarg()
+{
+	err_setstr(TypeError, "illegal argument type for built-in function");
+	return 0;
+}
+
+object *
+err_nomem()
+{
+	err_setstr(MemoryError, "in built-in function");
+	return NULL;
+}
+
+object *
+err_errno(exc)
+	object *exc;
+{
+	object *v = newtupleobject(2);
+	if (v != NULL) {
+		settupleitem(v, 0, newintobject((long)errno));
+		settupleitem(v, 1, newstringobject(strerror(errno)));
+	}
+	err_setval(exc, v);
+	if (v != NULL)
+		DECREF(v);
+	return NULL;
+}
