@@ -1757,6 +1757,72 @@ static PyMethodDef posix_methods[] = {
 };
 
 
+static int
+ins(d, symbol, value)
+        PyObject* d;
+        char* symbol;
+        long value;
+{
+        PyObject* v = PyInt_FromLong(value);
+        if (!v || PyDict_SetItemString(d, symbol, v) < 0)
+                return -1;                   /* triggers fatal error */
+
+        Py_DECREF(v);
+        return 0;
+}
+
+static int
+all_ins(d)
+        PyObject* d;
+{
+#ifdef WNOHANG
+        if (ins(d, "WNOHANG", (long)WNOHANG)) return -1;
+#endif        
+#ifdef O_RDONLY
+        if (ins(d, "O_RDONLY", (long)O_RDONLY)) return -1;
+#endif
+#ifdef O_WRONLY
+        if (ins(d, "O_WRONLY", (long)O_WRONLY)) return -1;
+#endif
+#ifdef O_RDWR
+        if (ins(d, "O_RDWR", (long)O_RDWR)) return -1;
+#endif
+#ifdef O_NDELAY
+        if (ins(d, "O_NDELAY", (long)O_NDELAY)) return -1;
+#endif
+#ifdef O_NONBLOCK
+        if (ins(d, "O_NONBLOCK", (long)O_NONBLOCK)) return -1;
+#endif
+#ifdef O_APPEND
+        if (ins(d, "O_APPEND", (long)O_APPEND)) return -1;
+#endif
+#ifdef O_DSYNC
+        if (ins(d, "O_DSYNC", (long)O_DSYNC)) return -1;
+#endif
+#ifdef O_RSYNC
+        if (ins(d, "O_RSYNC", (long)O_RSYNC)) return -1;
+#endif
+#ifdef O_SYNC
+        if (ins(d, "O_SYNC", (long)O_SYNC)) return -1;
+#endif
+#ifdef O_NOCTTY
+        if (ins(d, "O_NOCTTY", (long)O_NOCTTY)) return -1;
+#endif
+#ifdef O_CREAT
+        if (ins(d, "O_CREAT", (long)O_CREAT)) return -1;
+#endif
+#ifdef O_EXCL
+        if (ins(d, "O_EXCL", (long)O_EXCL)) return -1;
+#endif
+#ifdef O_TRUNC
+        if (ins(d, "O_TRUNC", (long)O_TRUNC)) return -1;
+#endif
+        return 0;
+}
+
+
+
+
 #if defined(_MSC_VER) || defined(__WATCOMC__)
 void
 initnt()
@@ -1769,14 +1835,21 @@ initnt()
 	/* Initialize nt.environ dictionary */
 	v = convertenviron();
 	if (v == NULL || PyDict_SetItemString(d, "environ", v) != 0)
-		Py_FatalError("can't define nt.environ");
+		goto finally;
 	Py_DECREF(v);
 	
+        if (all_ins(d))
+                goto finally;
+
 	/* Initialize nt.error exception */
 	PosixError = PyString_FromString("nt.error");
-	if (PosixError == NULL ||
-	    PyDict_SetItemString(d, "error", PosixError) != 0)
-		Py_FatalError("can't define nt.error");
+	PyDict_SetItemString(d, "error", PosixError);
+
+        if (!PyErr_Occurred())
+                return;
+
+  finally:
+        Py_FatalError("can't initialize NT posixmodule");
 }
 #else /* not a PC port */
 void
@@ -1790,21 +1863,20 @@ initposix()
 	/* Initialize posix.environ dictionary */
 	v = convertenviron();
 	if (v == NULL || PyDict_SetItemString(d, "environ", v) != 0)
-		Py_FatalError("can't define posix.environ");
+                goto finally;
 	Py_DECREF(v);
 	
-#ifdef WNOHANG
-	/* Export WNOHANG symbol */
-	v = PyInt_FromLong((long)WNOHANG);
-	if (v == NULL || PyDict_SetItemString(d, "WNOHANG", v) != 0)
-		Py_FatalError("can't define posix.WNOHANG");
-	Py_DECREF(v);
-#endif
-	
+        if (all_ins(d))
+                goto finally;
+
 	/* Initialize posix.error exception */
 	PosixError = PyString_FromString("posix.error");
-	if (PosixError == NULL ||
-	    PyDict_SetItemString(d, "error", PosixError) != 0)
-		Py_FatalError("can't define posix.error");
+	PyDict_SetItemString(d, "error", PosixError);
+
+        if (!PyErr_Occurred())
+                return;
+
+  finally:
+        Py_FatalError("can't initialize posix module");
 }
 #endif /* !_MSC_VER */
