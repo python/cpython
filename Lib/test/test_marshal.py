@@ -180,6 +180,11 @@ class BugsTestCase(unittest.TestCase):
         self.assertRaises(Exception, marshal.loads, 'f')
         self.assertRaises(Exception, marshal.loads, marshal.dumps(5L)[:-1])
 
+    def test_version_argument(self):
+        # Python 2.4.0 crashes for any call to marshal.dumps(x, y)
+        self.assertEquals(marshal.loads(marshal.dumps(5, 0)), 5)
+        self.assertEquals(marshal.loads(marshal.dumps(5, 1)), 5)
+
 def test_main():
     test_support.run_unittest(IntTestCase,
                               FloatTestCase,
