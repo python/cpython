@@ -3979,159 +3979,129 @@ PyObject *
 PyUnicode_Join(PyObject *separator, PyObject *seq)
 {
     PyObject *internal_separator = NULL;
-    Py_UNICODE *sep;
+    const Py_UNICODE *sep;
     size_t seplen;
-    PyUnicodeObject *res = NULL;
-    size_t sz;      /* # allocated bytes for string in res */
-    size_t reslen;  /* # used bytes */
-    Py_UNICODE *p;  /* pointer to free byte in res's string area */
-    PyObject *it;   /* iterator */
+    PyUnicodeObject *res = NULL; /* the result */
+    size_t res_alloc = 100;  /* # allocated bytes for string in res */
+    size_t res_used;         /* # used bytes */
+    Py_UNICODE *res_p;       /* pointer to free byte in res's string area */
+    PyObject *fseq;          /* PySequence_Fast(seq) */
+    int seqlen;              /* len(fseq) -- number of items in sequence */
+    const Py_UNICODE blank = ' ';
     PyObject *item;
     int i;
-    PyObject *temp;
 
-    it = PyObject_GetIter(seq);
-    if (it == NULL)
-        return NULL;
-
-    item = PyIter_Next(it);
-    if (item == NULL) {
-        if (PyErr_Occurred())
-            goto onError;
-        /* empty sequence; return u"" */
-        res = _PyUnicode_New(0);
-        goto Done;
+    fseq = PySequence_Fast(seq, "");
+    if (fseq == NULL) {
+	if (PyErr_ExceptionMatches(PyExc_TypeError))
+	    PyErr_Format(PyExc_TypeError,
+			 "sequence expected, %.80s found",
+			 seq->ob_type->tp_name);
+    	return NULL;
     }
 
-    /* If this is the only item, maybe we can get out cheap. */
-    res = (PyUnicodeObject *)item;
-    item = PyIter_Next(it);
-    if (item == NULL) {
-        if (PyErr_Occurred())
-            goto onError;
-        /* There's only one item in the sequence. */
-        if (PyUnicode_CheckExact(res)) /* whatever.join([u]) -> u */
-            goto Done;
+    seqlen = PySequence_Fast_GET_SIZE(fseq);
+    /* If empty sequence, return u"". */
+    if (seqlen == 0) {
+    	res = _PyUnicode_New(0);  /* empty sequence; return u"" */
+    	goto Done;
+    }
+    /* If singleton sequence with an exact Unicode, return that. */
+    if (seqlen == 1) {
+	item = PySequence_Fast_GET_ITEM(fseq, 0);
+	if (PyUnicode_CheckExact(item)) {
+	    Py_INCREF(item);
+	    res = (PyUnicodeObject *)item;
+	    goto Done;
+	}
     }
 
-    /* There are at least two to join (item != NULL), or there's only
-     * one but it's not an exact Unicode (item == NULL).  res needs
-     * conversion to Unicode in either case.
-     * Caution:  we may need to ensure a copy is made, and that's trickier
-     * than it sounds because, e.g., PyUnicode_FromObject() may return
-     * a shared object (which must not be mutated).
-     */
-    if (! PyUnicode_Check(res) && ! PyString_Check(res)) {
-        PyErr_Format(PyExc_TypeError,
-                "sequence item 0: expected string or Unicode,"
-    	        " %.80s found",
-    	       res->ob_type->tp_name);
-    	Py_XDECREF(item);
+    /* At least two items to join, or one that isn't exact Unicode. */
+    if (seqlen > 1) {
+        /* Set up sep and seplen -- they're needed. */
+    	if (separator == NULL) {
+	    sep = &blank;
+	    seplen = 1;
+        }
+    	else {
+	    internal_separator = PyUnicode_FromObject(separator);
+	    if (internal_separator == NULL)
+	        goto onError;
+	    sep = PyUnicode_AS_UNICODE(internal_separator);
+	    seplen = PyUnicode_GET_SIZE(internal_separator);
+        }
+    }
+
+    /* Get space. */
+    res = _PyUnicode_New((int)res_alloc);
+    if (res == NULL)
         goto onError;
-    }
-    temp = PyUnicode_FromObject((PyObject *)res);
-    if (temp == NULL) {
-        Py_XDECREF(item);
-        goto onError;
-    }
-    Py_DECREF(res);
-    if (item == NULL) {
-    	/* res was the only item */
-        res = (PyUnicodeObject *)temp;
-        goto Done;
-    }
-    /* There are at least two items.  As above, temp may be a shared object,
-     * so we need to copy it.
-     */
-    reslen = PyUnicode_GET_SIZE(temp);
-    sz = reslen + 100;  /* breathing room */
-    if (sz < reslen || sz > INT_MAX) /* overflow -- no breathing room */
-    	sz = reslen;
-    res = _PyUnicode_New((int)sz);
-    if (res == NULL) {
-        Py_DECREF(item);
-        goto onError;
-    }
-    p = PyUnicode_AS_UNICODE(res);
-    Py_UNICODE_COPY(p, PyUnicode_AS_UNICODE(temp), (int)reslen);
-    p += reslen;
-    Py_DECREF(temp);
+    res_p = PyUnicode_AS_UNICODE(res);
+    res_used = 0;
 
-    if (separator == NULL) {
-	Py_UNICODE blank = ' ';
-	sep = &blank;
-	seplen = 1;
-    }
-    else {
-	internal_separator = PyUnicode_FromObject(separator);
-	if (internal_separator == NULL) {
-	    Py_DECREF(item);
+    for (i = 0; i < seqlen; ++i) {
+	size_t itemlen;
+	size_t new_res_used;
+
+	item = PySequence_Fast_GET_ITEM(fseq, i);
+	/* Convert item to Unicode. */
+	if (! PyUnicode_Check(item) && ! PyString_Check(item)) {
+	    PyErr_Format(PyExc_TypeError,
+			 "sequence item %i: expected string or Unicode,"
+			 " %.80s found",
+			 i, item->ob_type->tp_name);
 	    goto onError;
 	}
-	sep = PyUnicode_AS_UNICODE(internal_separator);
-	seplen = PyUnicode_GET_SIZE(internal_separator);
-    }
+	item = PyUnicode_FromObject(item);
+	if (item == NULL)
+	    goto onError;
+	/* We own a reference to item from here on. */
 
-    i = 1;
-    do {
-	size_t itemlen;
-	size_t newreslen;
-
-	/* Catenate the separator, then item. */
-	/* First convert item to Unicode. */
-	if (!PyUnicode_Check(item)) {
-	    PyObject *v;
-	    if (!PyString_Check(item)) {
-		PyErr_Format(PyExc_TypeError,
-			     "sequence item %i: expected string or Unicode,"
-			     " %.80s found",
-			     i, item->ob_type->tp_name);
-		Py_DECREF(item);
-		goto onError;
-	    }
-	    v = PyUnicode_FromObject(item);
-	    Py_DECREF(item);
-	    item = v;
-	    if (item == NULL)
-		goto onError;
-	}
         /* Make sure we have enough space for the separator and the item. */
 	itemlen = PyUnicode_GET_SIZE(item);
-	newreslen = reslen + seplen + itemlen;
-	if (newreslen < reslen ||  newreslen > INT_MAX)
+	new_res_used = res_used + itemlen;
+	if (new_res_used < res_used ||  new_res_used > INT_MAX)
 	    goto Overflow;
-	if (newreslen > sz) {
+	if (i < seqlen - 1) {
+	    new_res_used += seplen;
+	    if (new_res_used < res_used ||  new_res_used > INT_MAX)
+		goto Overflow;
+	}
+	if (new_res_used > res_alloc) {
+	    /* double allocated size until it's big enough */
 	    do {
-	        size_t oldsize = sz;
-	        sz += sz;
-	        if (sz < oldsize || sz > INT_MAX)
+	        size_t oldsize = res_alloc;
+	        res_alloc += res_alloc;
+	        if (res_alloc < oldsize || res_alloc > INT_MAX)
 	            goto Overflow;
-	    } while (newreslen > sz);
-	    if (_PyUnicode_Resize(&res, (int)sz) < 0) {
+	    } while (new_res_used > res_alloc);
+	    if (_PyUnicode_Resize(&res, (int)res_alloc) < 0) {
 		Py_DECREF(item);
 		goto onError;
 	    }
-            p = PyUnicode_AS_UNICODE(res) + reslen;
+            res_p = PyUnicode_AS_UNICODE(res) + res_used;
 	}
-	Py_UNICODE_COPY(p, sep, (int)seplen);
-	p += seplen;
-	Py_UNICODE_COPY(p, PyUnicode_AS_UNICODE(item), (int)itemlen);
-	p += itemlen;
+
+	/* Copy item, and maybe the separator. */
+	Py_UNICODE_COPY(res_p, PyUnicode_AS_UNICODE(item), (int)itemlen);
+	res_p += itemlen;
+	if (i < seqlen - 1) {
+	    Py_UNICODE_COPY(res_p, sep, (int)seplen);
+	    res_p += seplen;
+	}
 	Py_DECREF(item);
-	reslen = newreslen;
+	res_used = new_res_used;
+    }
 
-        ++i;
-	item = PyIter_Next(it);
-    } while (item != NULL);
-    if (PyErr_Occurred())
-	goto onError;
-
-    if (_PyUnicode_Resize(&res, (int)reslen) < 0)
+    /* Shrink res to match the used area; this probably can't fail,
+     * but it's cheap to check.
+     */
+    if (_PyUnicode_Resize(&res, (int)res_used) < 0)
 	goto onError;
 
  Done:
     Py_XDECREF(internal_separator);
-    Py_DECREF(it);
+    Py_DECREF(fseq);
     return (PyObject *)res;
 
  Overflow:
@@ -4142,7 +4112,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
 
  onError:
     Py_XDECREF(internal_separator);
-    Py_DECREF(it);
+    Py_DECREF(fseq);
     Py_XDECREF(res);
     return NULL;
 }
