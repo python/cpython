@@ -9,6 +9,11 @@ What's New in Python 2.3.5?
 
 *Release date: xx-xxx-2004*
 
+Core and builtins
+-----------------
+
+- Bug #845802: Python crashed when __init__.py is a directory.
+
 Extension modules
 -----------------
 
