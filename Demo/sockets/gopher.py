@@ -200,7 +200,7 @@ def browse_textfile(selector, host, port):
 	x = None
 	try:
 		p = os.popen('${PAGER-more}', 'w')
-		x = SaveLines().init(p)
+		x = SaveLines(p)
 		get_alt_textfile(selector, host, port, x.writeln)
 	except IOError, msg:
 		print 'IOError:', msg
@@ -209,7 +209,7 @@ def browse_textfile(selector, host, port):
 	f = open_savefile()
 	if not f:
 		return
-	x = SaveLines().init(f)
+	x = SaveLines(f)
 	try:
 		get_alt_textfile(selector, host, port, x.writeln)
 		print 'Done.'
@@ -252,7 +252,7 @@ def browse_binary(selector, host, port):
 	f = open_savefile()
 	if not f:
 		return
-	x = SaveWithProgress().init(f)
+	x = SaveWithProgress(f)
 	get_alt_binary(selector, host, port, x.write, 8*1024)
 	x.close()
 
@@ -268,9 +268,8 @@ typebrowser = {'0': browse_textfile, '1': browse_menu, \
 
 # Class used to save lines, appending a newline to each line
 class SaveLines:
-	def init(self, f):
+	def __init__(self, f):
 		self.f = f
-		return self
 	def writeln(self, line):
 		self.f.write(line + '\n')
 	def close(self):
@@ -280,9 +279,8 @@ class SaveLines:
 
 # Class used to save data while showing progress
 class SaveWithProgress:
-	def init(self, f):
+	def __init__(self, f):
 		self.f = f
-		return self
 	def write(self, data):
 		sys.stdout.write('#')
 		sys.stdout.flush()

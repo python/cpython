@@ -375,7 +375,7 @@ def do_exec(win):
 	save_stdout = sys.stdout
 	save_stderr = sys.stderr
 	try:
-		sys.stdin = sys.stdout = sys.stderr = IOWindow().init(win)
+		sys.stdin = sys.stdout = sys.stderr = IOWindow(win)
 		win.busy = 1
 		try:
 			exec(command, win.globals)
@@ -404,9 +404,8 @@ def do_exec(win):
 #
 class IOWindow:
 	#
-	def init(self, win):
+	def __init__(self, win):
 		self.win = win
-		return self
 	#
 	def readline(self, *unused_args):
 		n = len(inputwindows)

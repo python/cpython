@@ -45,7 +45,7 @@ SFPLAY = '/usr/sbin/sfplay'		# Sound playing program
 
 # Global variables
 
-class struct(): pass		# Class to define featureless structures
+class struct: pass		# Class to define featureless structures
 
 G = struct()			# oHlds writable global variables
 
