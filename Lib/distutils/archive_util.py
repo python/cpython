@@ -10,7 +10,7 @@ __revision__ = "$Id$"
 import os
 from distutils.errors import DistutilsExecError
 from distutils.spawn import spawn
-
+from distutils.dir_util import mkpath
 
 def make_tarball (base_name, base_dir, compress="gzip",
                   verbose=0, dry_run=0):
@@ -42,6 +42,7 @@ def make_tarball (base_name, base_dir, compress="gzip",
               "bad value for 'compress': must be None, 'gzip', or 'compress'"
 
     archive_name = base_name + ".tar"
+    mkpath(os.path.dirname(archive_name), verbose=verbose, dry_run=dry_run)
     cmd = ["tar", "-cf", archive_name, base_dir]
     spawn (cmd, verbose=verbose, dry_run=dry_run)
 
@@ -68,6 +69,7 @@ def make_zipfile (base_name, base_dir, verbose=0, dry_run=0):
     # no changes needed!
 
     zip_filename = base_name + ".zip"
+    mkpath(os.path.dirname(zip_filename), verbose=verbose, dry_run=dry_run)
     try:
         spawn (["zip", "-rq", zip_filename, base_dir],
                verbose=verbose, dry_run=dry_run)
@@ -114,7 +116,7 @@ ARCHIVE_FORMATS = {
     'bztar': (make_tarball, [('compress', 'bzip2')], "bzip2'ed tar-file"),
     'ztar':  (make_tarball, [('compress', 'compress')], "compressed tar file"),
     'tar':   (make_tarball, [('compress', None)], "uncompressed tar file"),
-    'zip':   (make_zipfile, [],"zip-file")
+    'zip':   (make_zipfile, [],"ZIP file")
     }
 
 def check_archive_formats (formats):
