@@ -251,7 +251,51 @@ PyFrame_BlockPop(PyFrameObject *f)
 
 /* Convert between "fast" version of locals and dictionary version */
 
-/* XXX should also copy free variables and cell variables */
+void
+map_to_dict(PyObject *map, int nmap, PyObject *dict, PyObject **values,
+	    int deref)
+{
+	int j;
+	for (j = nmap; --j >= 0; ) {
+		PyObject *key = PyTuple_GetItem(map, j);
+		PyObject *value = values[j];
+		if (deref)
+			value = PyCell_GET(value);
+		if (value == NULL) {
+			PyErr_Clear();
+			if (PyDict_DelItem(dict, key) != 0)
+				PyErr_Clear();
+		}
+		else {
+			if (PyDict_SetItem(dict, key, value) != 0)
+				PyErr_Clear();
+		}
+	}
+}
+
+void
+dict_to_map(PyObject *map, int nmap, PyObject *dict, PyObject **values,
+	    int deref, int clear)
+{
+	int j;
+	for (j = nmap; --j >= 0; ) {
+		PyObject *key = PyTuple_GetItem(map, j);
+		PyObject *value = PyDict_GetItem(dict, key);
+		Py_XINCREF(value);
+		if (deref) {
+			if (value) {
+				if (PyCell_Set(values[j], value) < 0)
+					PyErr_Clear();
+			} else if (clear) {
+				Py_XDECREF(values[j]);
+				values[j] = value;
+			}
+		} else if (value != NULL || clear) {
+			Py_XDECREF(values[j]);
+			values[j] = value;
+		}
+	}
+}
 
 void
 PyFrame_FastToLocals(PyFrameObject *f)
@@ -281,18 +325,19 @@ PyFrame_FastToLocals(PyFrameObject *f)
 	j = PyTuple_Size(map);
 	if (j > f->f_nlocals)
 		j = f->f_nlocals;
-	for (; --j >= 0; ) {
-		PyObject *key = PyTuple_GetItem(map, j);
-		PyObject *value = fast[j];
-		if (value == NULL) {
-			PyErr_Clear();
-			if (PyDict_DelItem(locals, key) != 0)
-				PyErr_Clear();
+	map_to_dict(map, j, locals, fast, 0);
+	if (f->f_ncells || f->f_nfreevars) {
+		if (!(PyTuple_Check(f->f_code->co_cellvars)
+		      && PyTuple_Check(f->f_code->co_freevars))) {
+			Py_DECREF(locals);
+			return;
 		}
-		else {
-			if (PyDict_SetItem(locals, key, value) != 0)
-				PyErr_Clear();
-		}
+		map_to_dict(f->f_code->co_cellvars, 
+			    PyTuple_GET_SIZE(f->f_code->co_cellvars),
+			    locals, fast + f->f_nlocals, 1);
+		map_to_dict(f->f_code->co_freevars, 
+			    PyTuple_GET_SIZE(f->f_code->co_freevars),
+			    locals, fast + f->f_nlocals + f->f_ncells, 1);
 	}
 	PyErr_Restore(error_type, error_value, error_traceback);
 }
@@ -318,14 +363,17 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 	j = PyTuple_Size(map);
 	if (j > f->f_nlocals)
 		j = f->f_nlocals;
-	for (; --j >= 0; ) {
-		PyObject *key = PyTuple_GetItem(map, j);
-		PyObject *value = PyDict_GetItem(locals, key);
-		Py_XINCREF(value);
-		if (value != NULL || clear) {
-			Py_XDECREF(fast[j]);
-			fast[j] = value;
-		}
+	dict_to_map(f->f_code->co_varnames, j, locals, fast, 0, clear);
+	if (f->f_ncells || f->f_nfreevars) {
+		if (!(PyTuple_Check(f->f_code->co_cellvars)
+		      && PyTuple_Check(f->f_code->co_freevars)))
+			return;
+		dict_to_map(f->f_code->co_cellvars, 
+			    PyTuple_GET_SIZE(f->f_code->co_cellvars),
+			    locals, fast, 1, clear);
+		dict_to_map(f->f_code->co_freevars, 
+			    PyTuple_GET_SIZE(f->f_code->co_freevars),
+			    locals, fast, 1, clear);
 	}
 	PyErr_Restore(error_type, error_value, error_traceback);
 }
