@@ -1,17 +1,18 @@
 # Module 'StripChart'
 
-
 import rect
-from Buttons import *
-from Resize import *
+from Buttons import LabelAppearance, NoReactivity
 
+# A StripChart doesn't really look like a label but it needs a base class.
+# LabelAppearance allows it to be disabled and hilited.
 
-class StripChart() = LabelAppearance(), NoReactivity(), NoResize():
+class StripChart() = LabelAppearance(), NoReactivity():
 	#
-	def define(self, (win, bounds, scale)):
-		self.init_appearance(win, bounds)
+	def define(self, (parent, scale)):
+		self.parent = parent
+		parent.addchild(self)
+		self.init_appearance()
 		self.init_reactivity()
-		self.init_resize()
 		self.ydata = []
 		self.scale = scale
 		self.resetbounds()
@@ -37,18 +38,18 @@ class StripChart() = LabelAppearance(), NoReactivity(), NoResize():
 		excess = len(self.ydata) - self.width
 		if excess > 0:
 			del self.ydata[:excess]
-			if not self.limbo:
-				self.win.scroll(self.bounds, (-excess, 0))
-		if not self.limbo:
+			if self.bounds <> rect.empty:
+				self.parent.scroll(self.bounds, (-excess, 0))
+		if self.bounds <> rect.empty:
 			(left, top), (right, bottom) = self.bounds
 			i = len(self.ydata)
 			area = (left+i-1, top), (left+i, bottom)
-			self.draw(self.win.begindrawing(), area)
+			self.draw(self.parent.begindrawing(), area)
 	#
 	def draw(self, (d, area)):
-		self.limbo = 0
 		area = rect.intersect(area, self.bounds)
 		if area = rect.empty:
+			print 'mt'
 			return
 		d.cliprect(area)
 		d.erase(self.bounds)
