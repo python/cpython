@@ -22,6 +22,7 @@ import sys
 import __builtin__
 import os
 import ihooks
+import imp
 
 __all__ = ["RExec"]
 
@@ -83,6 +84,9 @@ class RHooks(ihooks.Hooks):
         # Called by RExec instance to complete initialization
         self.rexec = rexec
 
+    def get_suffixes(self):
+        return self.rexec.get_suffixes()
+
     def is_builtin(self, name):
         return self.rexec.is_builtin(name)
 
@@ -134,6 +138,8 @@ class RExec(ihooks._Verbose):
 
     nok_builtin_names = ('open', 'reload', '__import__')
 
+    ok_file_types = (imp.C_EXTENSION, imp.PY_SOURCE)
+
     def __init__(self, hooks = None, verbose = 0):
         ihooks._Verbose.__init__(self, verbose)
         # XXX There's a circular reference here:
@@ -169,7 +175,6 @@ class RExec(ihooks._Verbose):
         if sys.modules.has_key(name):
             src = sys.modules[name]
         else:
-            import imp
             src = imp.load_dynamic(name, filename, file)
         dst = self.copy_except(src, [])
         return dst
@@ -179,6 +184,11 @@ class RExec(ihooks._Verbose):
         self.make_osname()
 
     # Helpers for RHooks
+
+    def get_suffixes(self):
+        return [item   # (suff, mode, type)
+                for item in imp.get_suffixes()
+                if item[2] in self.ok_file_types]
 
     def is_builtin(self, mname):
         return mname in self.ok_builtin_modules
