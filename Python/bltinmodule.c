@@ -318,7 +318,7 @@ builtin_complex(self, args)
 	else if (is_complexobject(i))
 		ci = ((complexobject*)i)->cval;
 	else {
-		tmp = (*nbr->nb_float)(r);
+		tmp = (*nbr->nb_float)(i);
 		if (tmp == NULL)
 			return NULL;
 		ci.real = getfloatvalue(tmp);
