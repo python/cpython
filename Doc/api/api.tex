@@ -938,16 +938,15 @@ It may be called without holding the interpreter lock.
 This utility function creates and returns a new exception object.  The
 \var{name} argument must be the name of the new exception, a C string
 of the form \code{module.class}.  The \var{base} and
-\var{dict} arguments are normally \NULL{}.  Normally, this creates a
+\var{dict} arguments are normally \NULL{}.  This creates a
 class object derived from the root for all exceptions, the built-in
 name \exception{Exception} (accessible in C as
-\cdata{PyExc_Exception}).  In this case the \member{__module__}
-attribute of the new class is set to the first part (up to the last
-dot) of the \var{name} argument, and the class name is set to the last
-part (after the last dot).  The
-\var{base} argument can be used to specify an alternate base class.
-The \var{dict} argument can be used to specify a dictionary of class
-variables and methods.
+\cdata{PyExc_Exception}).  The \member{__module__} attribute of the
+new class is set to the first part (up to the last dot) of the
+\var{name} argument, and the class name is set to the last part (after
+the last dot).  The \var{base} argument can be used to specify an
+alternate base class.  The \var{dict} argument can be used to specify
+a dictionary of class variables and methods.
 \end{cfuncdesc}
 
 
@@ -991,21 +990,17 @@ completeness, here are all the variables:
 Note:
 \begin{description}
 \item[(1)]
-  This is a base class for other standard exceptions.  If the
-  \code{-X} interpreter option is used, these will be tuples
-  containing the string exceptions which would have otherwise been
-  subclasses.
+  This is a base class for other standard exceptions.
 \end{description}
 
 
 \section{Deprecation of String Exceptions}
 
-The \code{-X} command-line option will be removed in Python 1.6.  All
-exceptions built into Python or provided in the standard library will
+All exceptions built into Python or provided in the standard library
+are derived from \exception{Exception}.
 \withsubitem{(built-in exception)}{\ttindex{Exception}}
-be classes derived from \exception{Exception}.
 
-String exceptions will still be supported in the interpreter to allow
+String exceptions are still supported in the interpreter to allow
 existing code to run unmodified, but this will also change in a future 
 release.
 
