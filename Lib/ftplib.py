@@ -358,6 +358,16 @@ class FTP:
 			raise error_reply, resp
 		self.voidcmd('RNTO ' + toname)
 
+        # Delete a file
+        def delete(self, filename):
+                resp = self.sendcmd('DELE ' + filename)
+                if resp[:3] == '250':
+                        return
+                elif resp[:1] == '5':
+                        raise error_perm, resp
+                else:
+                        raise error_reply, resp
+
 	# Change to a directory
 	def cwd(self, dirname):
 		if dirname == '..':
