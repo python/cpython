@@ -1167,7 +1167,7 @@ fi],
 
 # -I${DLINCLDIR} is added to the compile rule for importdl.o
 AC_SUBST(DLINCLDIR)
-DLINCLDIR=/
+DLINCLDIR=.
 
 AC_MSG_CHECKING(for --with-sgi-dl)
 AC_ARG_WITH(sgi-dl,
