@@ -27,9 +27,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 /* fcntl(fd, opt, [arg]) */
 
 static PyObject *
-fcntl_fcntl(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
+fcntl_fcntl(PyObject *self, PyObject *args)
 {
 	int fd;
 	int code;
@@ -87,9 +85,7 @@ is optional, and defaults to 0; it may be an int or a string.";
 /* ioctl(fd, opt, [arg]) */
 
 static PyObject *
-fcntl_ioctl(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
+fcntl_ioctl(PyObject *self, PyObject *args)
 {
 	int fd;
 	int code;
@@ -146,9 +142,7 @@ is optional, and defaults to 0; it may be an int or a string.";
 /* flock(fd, operation) */
 
 static PyObject *
-fcntl_flock(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
+fcntl_flock(PyObject *self, PyObject *args)
 {
 	int fd;
 	int code;
@@ -206,9 +200,7 @@ emulated using fcntl().)";
 
 /* lockf(fd, operation) */
 static PyObject *
-fcntl_lockf(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
+fcntl_lockf(PyObject *self, PyObject *args)
 {
 	int fd, code, ret, whence = 0;
 	PyObject *lenobj = NULL, *startobj = NULL;
@@ -299,10 +291,7 @@ a file or socket object.";
 /* Module initialisation */
 
 static int
-ins(d, symbol, value)
-        PyObject* d;
-        char* symbol;
-        long value;
+ins(PyObject* d, char* symbol, long value)
 {
         PyObject* v = PyInt_FromLong(value);
         if (!v || PyDict_SetItemString(d, symbol, v) < 0)
@@ -313,8 +302,7 @@ ins(d, symbol, value)
 }
 
 static int
-all_ins(d)
-        PyObject* d;
+all_ins(PyObject* d)
 {
         if (ins(d, "LOCK_SH", (long)LOCK_SH)) return -1;
         if (ins(d, "LOCK_EX", (long)LOCK_EX)) return -1;
