@@ -145,9 +145,9 @@ for which symbolic constants are available in the locale module.
 
 \begin{funcdesc}{getlocale}{\optional{category}}
   Returns the current setting for the given locale category as
-  tuple (language code, encoding).  \var{category} may be one of the
-  \constant{LC_*} values except \constant{LC_ALL}.  It defaults to
-  \constant{LC_CTYPE}.
+  sequence containing \var{language code}, \var{encoding}.
+  \var{category} may be one of the \constant{LC_*} values except
+  \constant{LC_ALL}.  It defaults to \constant{LC_CTYPE}.
 
   Except for the code \code{'C'}, the language code corresponds to
   \rfc{1766}.  \var{language code} and \var{encoding} may be
