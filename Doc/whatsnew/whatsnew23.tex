@@ -845,6 +845,11 @@ Changes to Python's build process, and to the C API, include:
 when running Python's \file{configure} script.  (Contributed by Ondrej
 Palkovsky.)
 
+\item The public Python C API will generally be declared using PyAPI_FUNC
+and PyAPI_DATA macros, while Python extension module init functions
+will be declared with PyMODINIT_FUNC.  DL_EXPORT/DL_IMPORT macros
+are deprecated.
+
 \item The interpreter can be compiled without any docstrings for 
 the built-in functions and modules by supplying
 \longprogramopt{without-doc-strings} to the \file{configure} script.
