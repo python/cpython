@@ -5,8 +5,12 @@
 
 
 
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -121,7 +125,6 @@ static PyObject *DragObj_AddDragItemFlavor(DragObjObject *_self, PyObject *_args
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
- dataPtr__error__: ;
 	return _res;
 }
 
@@ -150,7 +153,6 @@ static PyObject *DragObj_SetDragItemFlavorData(DragObjObject *_self, PyObject *_
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
- dataPtr__error__: ;
 	return _res;
 }
 
@@ -801,7 +803,8 @@ static PyObject *Drag_InstallTrackingHandler(PyObject *_self, PyObject *_args)
 	    _err = InstallTrackingHandler(dragglue_TrackingHandlerUPP, theWindow, (void *)callback);
 		if (_err != noErr) return PyMac_Error(_err);
 		Py_INCREF(Py_None);
-		return Py_None;
+		_res = Py_None;
+		return _res;
 
 }
 
@@ -819,7 +822,8 @@ static PyObject *Drag_InstallReceiveHandler(PyObject *_self, PyObject *_args)
 	    _err = InstallReceiveHandler(dragglue_ReceiveHandlerUPP, theWindow, (void *)callback);
 		if (_err != noErr) return PyMac_Error(_err);
 		Py_INCREF(Py_None);
-		return Py_None;
+		_res = Py_None;
+		return _res;
 
 }
 
@@ -835,7 +839,8 @@ static PyObject *Drag_RemoveTrackingHandler(PyObject *_self, PyObject *_args)
 	    _err = RemoveTrackingHandler(dragglue_TrackingHandlerUPP, theWindow);
 		if (_err != noErr) return PyMac_Error(_err);
 		Py_INCREF(Py_None);
-		return Py_None;
+		_res = Py_None;
+		return _res;
 
 }
 
@@ -851,7 +856,8 @@ static PyObject *Drag_RemoveReceiveHandler(PyObject *_self, PyObject *_args)
 	    _err = RemoveReceiveHandler(dragglue_ReceiveHandlerUPP, theWindow);
 		if (_err != noErr) return PyMac_Error(_err);
 		Py_INCREF(Py_None);
-		return Py_None;
+		_res = Py_None;
+		return _res;
 
 }
 

@@ -5,8 +5,12 @@
 
 
 
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -113,7 +117,6 @@ static PyObject *TEObj_TESetText(TEObject *_self, PyObject *_args)
 	          _self->ob_itself);
 	Py_INCREF(Py_None);
 	_res = Py_None;
- text__error__: ;
 	return _res;
 }
 
@@ -251,7 +254,6 @@ static PyObject *TEObj_TEInsert(TEObject *_self, PyObject *_args)
 	         _self->ob_itself);
 	Py_INCREF(Py_None);
 	_res = Py_None;
- text__error__: ;
 	return _res;
 }
 
@@ -531,7 +533,6 @@ static PyObject *TEObj_TEStyleInsert(TEObject *_self, PyObject *_args)
 	              _self->ob_itself);
 	Py_INCREF(Py_None);
 	_res = Py_None;
- text__error__: ;
 	return _res;
 }
 
@@ -873,7 +874,6 @@ static PyObject *TE_TETextBox(PyObject *_self, PyObject *_args)
 	          just);
 	Py_INCREF(Py_None);
 	_res = Py_None;
- text__error__: ;
 	return _res;
 }
 

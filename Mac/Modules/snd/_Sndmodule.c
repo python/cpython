@@ -5,8 +5,12 @@
 
 
 
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -23,13 +27,14 @@
 #include <Carbon/Carbon.h>
 #endif
 
-
+#if !TARGET_API_MAC_CARBON
 /* Create a SndCommand object (an (int, int, int) tuple) */
 static PyObject *
 SndCmd_New(SndCommand *pc)
 {
 	return Py_BuildValue("hhl", pc->cmd, pc->param1, pc->param2);
 }
+#endif
 
 /* Convert a SndCommand argument */
 static int
@@ -79,16 +84,6 @@ static PyObject *SndCh_New(SndChannelPtr itself)
 	it->ob_callback = NULL;
 	it->ob_A5 = SetCurrentA5();
 	return (PyObject *)it;
-}
-static int SndCh_Convert(PyObject *v, SndChannelPtr *p_itself)
-{
-	if (!SndCh_Check(v))
-	{
-		PyErr_SetString(PyExc_TypeError, "SndChannel required");
-		return 0;
-	}
-	*p_itself = ((SndChannelObject *)v)->ob_itself;
-	return 1;
 }
 
 static void SndCh_dealloc(SndChannelObject *self)
@@ -233,7 +228,6 @@ static PyObject *SndCh_SndChannelStatus(SndChannelObject *_self, PyObject *_args
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("s#",
 	                     (char *)&theStatus__out__, (int)sizeof(SCStatus));
- theStatus__error__: ;
 	return _res;
 }
 
@@ -372,7 +366,7 @@ static PyObject *SPBObj_New(void)
 	it->ob_spb.userLong = (long)it;
 	return (PyObject *)it;
 }
-static SPBObj_Convert(PyObject *v, SPBPtr *p_itself)
+static int SPBObj_Convert(PyObject *v, SPBPtr *p_itself)
 {
 	if (!SPBObj_Check(v))
 	{
@@ -474,7 +468,7 @@ staticforward PyTypeObject SPB_Type = {
 static PyObject *Snd_SPB(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	return SPBObj_New();
+	_res = SPBObj_New(); return _res;
 }
 
 static PyObject *Snd_SysBeep(PyObject *_self, PyObject *_args)
@@ -572,7 +566,6 @@ static PyObject *Snd_SndManagerStatus(PyObject *_self, PyObject *_args)
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("s#",
 	                     (char *)&theStatus__out__, (int)sizeof(SMStatus));
- theStatus__error__: ;
 	return _res;
 }
 
@@ -896,7 +889,6 @@ static PyObject *Snd_GetCompressionInfo(PyObject *_self, PyObject *_args)
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("s#",
 	                     (char *)&cp__out__, (int)sizeof(CompressionInfo));
- cp__error__: ;
 	return _res;
 }
 

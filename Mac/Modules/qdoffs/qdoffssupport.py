@@ -105,7 +105,8 @@ char *cp;
 if ( !PyArg_ParseTuple(_args, "O&ii", ResObj_Convert, &pm, &from, &length) )
 	return NULL;
 cp = GetPixBaseAddr(pm)+from;
-return PyString_FromStringAndSize(cp, length);
+_res = PyString_FromStringAndSize(cp, length);
+return _res;
 """
 f = ManualGenerator("GetPixMapBytes", pixmapgetbytes_body)
 f.docstring = lambda: """(pixmap, int start, int size) -> string. Return bytes from the pixmap"""
@@ -122,7 +123,8 @@ if ( !PyArg_ParseTuple(_args, "O&is#", ResObj_Convert, &pm, &from, &icp, &length
 cp = GetPixBaseAddr(pm)+from;
 memcpy(cp, icp, length);
 Py_INCREF(Py_None);
-return Py_None;
+_res = Py_None;
+return _res;
 """
 f = ManualGenerator("PutPixMapBytes", pixmapputbytes_body)
 f.docstring = lambda: """(pixmap, int start, string data). Store bytes into the pixmap"""

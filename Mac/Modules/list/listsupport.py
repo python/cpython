@@ -176,7 +176,8 @@ if (!PyArg_ParseTuple(_args, "O&", ResObj_Convert, &h))
 	return NULL;
 l = (ListObject *)ListObj_New(as_List(h));
 l->ob_must_be_disposed = 0;
-return Py_BuildValue("O", l);
+_res = Py_BuildValue("O", l);
+return _res;
 """
 f = ManualGenerator("as_List", as_List_body)
 f.docstring = lambda: "(Resource)->List.\nReturns List object (which is not auto-freed!)"

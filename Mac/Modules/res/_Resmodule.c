@@ -5,8 +5,12 @@
 
 
 
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -394,7 +398,8 @@ static PyObject *ResObj_as_Control(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
-	return CtlObj_New((ControlHandle)_self->ob_itself);
+	_res = CtlObj_New((ControlHandle)_self->ob_itself);
+	return _res;
 
 }
 
@@ -402,7 +407,8 @@ static PyObject *ResObj_as_Menu(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
-	return MenuObj_New((MenuHandle)_self->ob_itself);
+	_res = MenuObj_New((MenuHandle)_self->ob_itself);
+	return _res;
 
 }
 
@@ -1533,7 +1539,7 @@ PyObject *OptResObj_New(Handle itself)
 	return ResObj_New(itself);
 }
 
-OptResObj_Convert(PyObject *v, Handle *p_itself)
+int OptResObj_Convert(PyObject *v, Handle *p_itself)
 {
 	PyObject *tmp;
 	

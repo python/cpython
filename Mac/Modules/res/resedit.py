@@ -58,7 +58,8 @@ functions.append(f)
 # Convert resources to other things.
 
 as_xxx_body = """
-return %sObj_New((%sHandle)_self->ob_itself);
+_res = %sObj_New((%sHandle)_self->ob_itself);
+return _res;
 """
 
 def genresconverter(longname, shortname):

@@ -5,8 +5,12 @@
 
 
 
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -1676,7 +1680,8 @@ static PyObject *CtlObj_GetControlData_Handle(ControlObject *_self, PyObject *_a
 	if (_err != noErr) {
 		return PyMac_Error(_err);
 	}
-	return Py_BuildValue("O&", OptResObj_New, hdl);
+	_res = Py_BuildValue("O&", OptResObj_New, hdl);
+	return _res;
 
 }
 
@@ -2526,6 +2531,7 @@ settrackfunc(PyObject *obj)
 	}
 	tracker = obj;
 	Py_INCREF(tracker);
+	return 1;
 }
 
 static void
@@ -2575,7 +2581,7 @@ setcallback(PyObject *myself, OSType which, PyObject *callback, UniversalProcPtr
 		if ( (self->ob_callbackdict = PyDict_New()) == NULL )
 			return -1;
 	/* And store the Python callback */
-	sprintf(keybuf, "%x", which);
+	sprintf(keybuf, "%x", (unsigned)which);
 	if (PyDict_SetItemString(self->ob_callbackdict, keybuf, callback) < 0)
 		return -1;
 	return 0;
@@ -2587,7 +2593,7 @@ callcallback(ControlObject *self, OSType which, PyObject *arglist)
 	char keybuf[9];
 	PyObject *func, *rv;
 	
-	sprintf(keybuf, "%x", which);
+	sprintf(keybuf, "%x", (unsigned)which);
 	if ( self->ob_callbackdict == NULL ||
 			(func = PyDict_GetItemString(self->ob_callbackdict, keybuf)) == NULL ) {
 		PySys_WriteStderr("Control callback %x without callback object\n", which);
