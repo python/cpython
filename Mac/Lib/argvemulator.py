@@ -17,8 +17,11 @@ class ArgvCollector:
 	def __init__(self):
 		self.quitting = 0
 		self.ae_handlers = {}
+		# Remove the funny -psn_xxx_xxx argument
+		if sys.argv[0][:4] == '-psn':
+			del sys.argv[0]
 		self.installaehandler('aevt', 'oapp', self.open_app)
-		self.installaehandler('aevt', 'open', self.open_file)
+		self.installaehandler('aevt', 'odoc', self.open_file)
 	
 	def installaehandler(self, classe, type, callback):
 		AE.AEInstallEventHandler(classe, type, self.callback_wrapper)
