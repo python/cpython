@@ -270,6 +270,23 @@ as gud-mode does for debugging C programs with gdb."
   :type 'string
   :group 'python)
 
+(defcustom py-import-check-point-max
+  20000
+  "Maximum number of characters to search for a Java-ish import statement.
+When `python-mode' tries to calculate the shell to use (either a
+CPython or a JPython shell), it looks at the so-called `shebang' line
+-- i.e. #! line.  If that's not available, it looks at some of the
+file heading imports to see if they look Java-like."
+  :type 'integer
+  :group 'python
+  )
+
+(defcustom py-jpython-packages
+  '("java" "javax" "org" "com")
+  "Imported packages that imply `jpython-mode'."
+  :type '(repeat string)
+  :group 'python)
+  
 ;; Not customizable
 (defvar py-master-file nil
   "If non-nil, execute the named file instead of the buffer's file.
@@ -298,6 +315,12 @@ buffer is prepended to come up with a file name.")
   :group 'python
   :tag "Pychecker Command Args")
 
+(defvar py-shell-alist
+  '(("jpython" . 'jpython)
+    ("jython" . 'jpython)
+    ("python" . 'cpython))
+  "*Alist of interpreters and python shells. Used by `py-choose-shell'
+to select the appropriate python interpreter mode for a file.")
 
 
 ;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -468,6 +491,10 @@ Currently-active file is at the head of the list.")
 
 (defvar python-mode-hook nil
   "*Hook called by `python-mode'.")
+
+(defvar jpython-mode-hook nil
+  "*Hook called by `jpython-mode'. `jpython-mode' also calls
+`python-mode-hook'.")
 
 (defvar py-shell-hook nil
   "*Hook called by `py-shell'.")
@@ -948,6 +975,64 @@ of the first definition found."
 				    (point-max) 'move))))
     (nreverse index-alist)))
 
+
+
+(defun py-choose-shell-by-shebang ()
+  "Choose CPython or JPython mode by looking at #! on the first line.
+Returns the appropriate mode function.
+Used by `py-choose-shell', and similar to but distinct from
+`set-auto-mode', though it uses `auto-mode-interpreter-regexp' (if available)."
+  ;; look for an interpreter specified in the first line
+  ;; similar to set-auto-mode (files.el)
+  (let* ((re (if (boundp 'auto-mode-interpreter-regexp)
+		 auto-mode-interpreter-regexp
+	       ;; stolen from Emacs 21.2
+	       "#![ \t]?\\([^ \t\n]*/bin/env[ \t]\\)?\\([^ \t\n]+\\)"))
+	 (interpreter (save-excursion
+			(goto-char (point-min))
+			(if (looking-at re)
+			    (match-string 2)
+			  "")))
+	 elt)
+    ;; Map interpreter name to a mode.
+    (setq elt (assoc (file-name-nondirectory interpreter)
+		     py-shell-alist))
+    (and elt (caddr elt))))
+
+
+
+(defun py-choose-shell-by-import ()
+  "Choose CPython or JPython mode based imports.
+If a file imports any packages in `py-jpython-packages', within
+`py-import-check-point-max' characters from the start of the file,
+return `jpython', otherwise return nil."
+  (let (mode)
+    (save-excursion
+      (goto-char (point-min))
+      (while (and (not mode)
+		  (search-forward-regexp
+		   "^\\(\\(from\\)\\|\\(import\\)\\) \\([^ \t\n.]+\\)"
+		   py-import-check-point-max t))
+	(setq mode (and (member (match-string 4) py-jpython-packages)
+			'jpython
+			))))
+    mode))
+
+
+(defun py-choose-shell ()
+  "Choose CPython or JPython mode. Returns the appropriate mode function.
+This does the following:
+ - look for an interpreter with `py-choose-shell-by-shebang'
+ - examine imports using `py-choose-shell-by-import'
+ - default to the variable `py-default-interpreter'"
+  (interactive)
+  (or (py-choose-shell-by-shebang)
+      (py-choose-shell-by-import)
+      py-default-interpreter
+;      'cpython ;; don't use to py-default-interpreter, because default
+;               ;; is only way to choose CPython
+      ))
+
 
 ;;;###autoload
 (defun python-mode ()
@@ -1038,8 +1123,39 @@ py-beep-if-tab-change\t\tring the bell if `tab-width' is changed"
       ))
   ;; Set the default shell if not already set
   (when (null py-which-shell)
-    (py-toggle-shells py-default-interpreter))
-  )
+    (py-toggle-shells (py-choose-shell))))
+
+
+(defun jpython-mode ()
+  "Major mode for editing JPython/Jython files.
+This is a simple wrapper around `python-mode'.
+It runs `jpython-mode-hook' then calls `python-mode.'
+It is added to `interpreter-mode-alist' and `py-choose-shell'.
+"
+  (interactive)
+  (python-mode)
+  (py-toggle-shells 'jpython)
+  (when jpython-mode-hook
+      (run-hooks 'jpython-mode-hook)))
+
+
+;; It's handy to add recognition of Python files to the
+;; interpreter-mode-alist and to auto-mode-alist.  With the former, we
+;; can specify different `derived-modes' based on the #! line, but
+;; with the latter, we can't.  So we just won't add them if they're
+;; already added.
+(let ((modes '(("jpython" . jpython-mode)
+	       ("jython" . jpython-mode)
+	       ("python" . python-mode))))
+  (while modes
+    (when (not (assoc (car modes) interpreter-mode-alist))
+      (push modes interpreter-mode-alist))
+    (setq modes (cdr modes))))
+
+(when (not (or (rassq 'python-mode auto-mode-alist)
+	       (rassq 'jpython-mode auto-mode-alist)))
+  (push '("\\.py$" . python-mode) auto-mode-alist))
+
 
 
 ;; electric characters
@@ -1412,11 +1528,9 @@ is inserted at the end.  See also the command `py-clear-queue'."
 	(insert-buffer-substring cur start end)
 	;; Set the shell either to the #! line command, or to the
 	;; py-which-shell buffer local variable.
-	(goto-char (point-min))
-	(if (looking-at "^#!\\s *\\(.*\\)$")
-	    (setq shell (match-string 1))
-	  ;; No useable #! line
-	  (setq shell py-which-shell))))
+	(setq shell (or (py-choose-shell-by-shebang)
+			(py-choose-shell-by-import)
+			py-which-shell))))
     (cond
      ;; always run the code in its own asynchronous subprocess
      (async
