@@ -254,20 +254,36 @@ DLLLIBRARY=''
 LDLIBRARYDIR=''
 
 # LINKCC is the command that links the python executable -- default is $(CC).
+# If CXX is set, and if it is needed to link a main function that was
+# compiled with CXX, LINKCC is CXX instead. Always using CXX is undesirable:
+# python might then depend on the C++ runtime
 # This is altered for AIX in order to build the export list before 
 # linking.
 AC_SUBST(LINKCC)
 AC_MSG_CHECKING(LINKCC)
 if test -z "$LINKCC"
 then
+        if test -z "$CXX"; then
+              LINKCC="\$(PURIFY) \$(CC)"
+        else
+              echo 'int main(){return 0;}' > conftest.$ac_ext
+              $CXX -c conftest.$ac_ext 2>&5
+              if $CC -o conftest$ac_exeext conftest.$ac_objext 2>&5 \
+                 && test -s conftest$ac_exeext && ./conftest$ac_exeext
+              then
+                 LINKCC="\$(PURIFY) \$(CC)"
+              else
+                 LINKCC="\$(PURIFY) \$(CXX)"
+              fi
+              rm -fr conftest*
+        fi
 	case $ac_sys_system in
 	AIX*)
-	   LINKCC="\$(srcdir)/Modules/makexp_aix Modules/python.exp \"\" \$(LIBRARY); \$(PURIFY) \$(CC)";;
+	   LINKCC="\$(srcdir)/Modules/makexp_aix Modules/python.exp \"\" \$(LIBRARY); $(LINKCC)";;
 	dgux*)
-	   LINKCC="LD_RUN_PATH=$libdir \$(PURIFY) \$(CC)";;
+	   LINKCC="LD_RUN_PATH=$libdir $(LINKCC)";;
 	Monterey64*)
-	   LINKCC="\$(PURIFY) \$(CC) -L/usr/lib/ia64l64";;
-	*) LINKCC="\$(PURIFY) \$(CC)";;
+	   LINKCC="$(LINKCC) -L/usr/lib/ia64l64";;
 	esac
 fi
 AC_MSG_RESULT($LINKCC)
