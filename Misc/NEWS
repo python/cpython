@@ -17,6 +17,10 @@ Core and builtins
 Extension Modules
 -----------------
 
+- itertools.islice() now accepts None for the start and step arguments.
+  This allows islice() to work more readily with slices:
+      islice(s.start, s.stop, s.step)
+
 
 Library
 -------

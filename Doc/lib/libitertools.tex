@@ -261,6 +261,11 @@ by functions or loops that truncate the stream.
              yield element
              next += step             
   \end{verbatim}
+
+  If \var{start} is \code{None}, then iteration starts at zero.
+  If \var{step} is \code{None}, then the step defaults to one.
+  \versionchanged[accept \code{None} values for default \var{start} and
+                  \var{step}]{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{izip}{*iterables}

@@ -1044,14 +1044,14 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *seq;
 	long start=0, stop=-1, step=1;
-	PyObject *it, *a1=NULL, *a2=NULL;
+	PyObject *it, *a1=NULL, *a2=NULL, *a3=NULL;
 	int numargs;
 	isliceobject *lz;
 
-	numargs = PyTuple_Size(args);
-	if (!PyArg_ParseTuple(args, "OO|Ol:islice", &seq, &a1, &a2, &step))
+	if (!PyArg_UnpackTuple(args, "islice", 2, 4, &seq, &a1, &a2, &a3))
 		return NULL;
 
+	numargs = PyTuple_Size(args);
 	if (numargs == 2) {
 		if (a1 != Py_None) {
 			stop = PyInt_AsLong(a1);
@@ -1059,39 +1059,41 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 				if (PyErr_Occurred())
 					PyErr_Clear();
 				PyErr_SetString(PyExc_ValueError,
-				   "Stop argument must be a non-negative integer or None.");
+				   "Stop argument for islice() must be a non-negative integer or None.");
 				return NULL;
 			}
 		}
 	} else {
-		start = PyInt_AsLong(a1);
-		if (start == -1 && PyErr_Occurred()) {
+		if (a1 != Py_None)
+			start = PyInt_AsLong(a1);
+		if (start == -1 && PyErr_Occurred())
 			PyErr_Clear();
-			PyErr_SetString(PyExc_ValueError,
-			   "Start argument must be a non-negative integer.");
-			return NULL;
-		}
 		if (a2 != Py_None) {
 			stop = PyInt_AsLong(a2);
 			if (stop == -1) {
 				if (PyErr_Occurred())
 					PyErr_Clear();
 				PyErr_SetString(PyExc_ValueError,
-				   "Stop argument must be a non-negative integer or None.");
+				   "Stop argument for islice() must be a non-negative integer or None.");
 				return NULL;
 			}
 		}
 	}
-
 	if (start<0 || stop<-1) {
 		PyErr_SetString(PyExc_ValueError,
-		   "Indices for islice() must be non-negative integers.");
+		   "Indices for islice() must be non-negative integers or None.");
 		return NULL;
 	}
 
+	if (a3 != NULL) {
+		if (a3 != Py_None)
+			step = PyInt_AsLong(a3);
+		if (step == -1 && PyErr_Occurred())
+			PyErr_Clear();
+	}
 	if (step<1) {
 		PyErr_SetString(PyExc_ValueError,
-		   "Step must be one or larger for islice().");
+		   "Step for islice() must be a positive integer or None.");
 		return NULL;
 	}
 

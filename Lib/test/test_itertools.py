@@ -260,6 +260,8 @@ class TestBasicOps(unittest.TestCase):
 
         # Test stop=None
         self.assertEqual(list(islice(xrange(10), None)), range(10))
+        self.assertEqual(list(islice(xrange(10), None, None)), range(10))
+        self.assertEqual(list(islice(xrange(10), None, None, None)), range(10))
         self.assertEqual(list(islice(xrange(10), 2, None)), range(2, 10))
         self.assertEqual(list(islice(xrange(10), 1, None, 2)), range(1, 10, 2))
 
