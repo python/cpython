@@ -105,9 +105,6 @@ __all__ = [ "match", "search", "sub", "subn", "split", "findall",
 
 __version__ = "2.2.1"
 
-# this module works under 1.5.2 and later.  don't use string methods
-import string
-
 # flags
 I = IGNORECASE = sre_compile.SRE_FLAG_IGNORECASE # ignore case
 L = LOCALE = sre_compile.SRE_FLAG_LOCALE # assume current 8-bit locale
@@ -201,7 +198,7 @@ def escape(pattern):
                 s[i] = "\\000"
             else:
                 s[i] = "\\" + c
-    return _join(s, pattern)
+    return pattern[:0].join(s)
 
 # --------------------------------------------------------------------
 # internals
@@ -212,10 +209,6 @@ _cache_repl = {}
 _pattern_type = type(sre_compile.compile("", 0))
 
 _MAXCACHE = 100
-
-def _join(seq, sep):
-    # internal: join into string having the same type as sep
-    return string.join(seq, sep[:0])
 
 def _compile(*key):
     # internal: compile pattern

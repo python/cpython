@@ -57,6 +57,8 @@ Extension modules
 Library
 -------
 
+- PEP 292 classes Template and SafeTemplate are added to the string module.
+
 - tarfile now generates GNU tar files by default.
 
 - HTTPResponse has now a getheaders method.
