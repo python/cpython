@@ -149,13 +149,9 @@ class Application:
 	
 	schedparams = (0, 0)	# By default disable Python's event handling
 	
-	keepconsole = 0			# By default don't keep console window open
-	
 	def mainloop(self, mask = everyEvent, wait = 0):
 		self.quitting = 0
 		saveparams = apply(MacOS.SchedParams, self.schedparams)
-		if self.keepconsole != None:
-			MacOS.KeepConsole(self.keepconsole)
 		try:
 			while not self.quitting:
 				try:
@@ -291,6 +287,7 @@ class Application:
 			HiliteMenu(0)
 	
 	def do_menu(self, id, item, window, event):
+		MacOS.OutputSeen()
 		self.menubar.dispatch(id, item, window, event)
 	
 	
