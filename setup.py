@@ -723,8 +723,9 @@ class PyBuildExt(build_ext):
             # Linux-specific modules
             exts.append( Extension('linuxaudiodev', ['linuxaudiodev.c']) )
 
-            # XXX should also build this on FreeBSD!
-            exts.append( Extension('ossaudiodev', ['ossaudiodev.c']) )
+            # ossaudiodev currently doesn't work, so don't build.
+##             # XXX should also build this on FreeBSD!
+##             exts.append( Extension('ossaudiodev', ['ossaudiodev.c']) )
 
         if platform == 'sunos5':
             # SunOS specific modules
