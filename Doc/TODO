@@ -2,18 +2,24 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 ===============================
 
 
-* Document native package semantics.  (Where?  Guido?)
+* Update the pickle documentation to describe all of the current
+  behavior; only a subset is described.  __reduce__, etc.
 
-* Update the pickle documentation to describe all of the current behavior;
-  only a subset is described.  __reduce__, etc.
+* Review libposixpath.tex for completeness, & system-specific
+  behaviors.  (Why did this one get mentioned, specifically?)
 
-* Review libposixpath.tex for completeness, & system-specific behaviors.
-  (Why did this one get mentioned, specifically?)
-
-* In the indexes, some subitem entries are separated from the item entries
-  by column- or page-breaks.  Reported by Lorenzo M. Catucci
+* In the indexes, some subitem entries are separated from the item
+  entries by column- or page-breaks.  Reported by Lorenzo M. Catucci
   <lorenzo@argon.roma2.infn.it>.  This one will be hard.
 
 * Fix problem with howto documents getting the last module synopsis
   twice (in \localmoduletable) so we can get rid of the ugly 'uniq'
   hack in tools/mkhowto.sh.
+
+* Finish new Emacs info generation; waiting for update from Michael
+  Ernst.
+
+* Update the "os" module docs with descriptions of all interfaces and
+  a compatibility matrix.
+
+* Figure out HTMLHelp generation for the Windows world.
