@@ -250,7 +250,7 @@ PyTypeObject PyInstance_Type = {
 \end{verbatim}
 
 The type constructor is responsible for initializing the weak reference
-list to \NULL:
+list to \NULL{}:
 
 \begin{verbatim}
 static PyObject * 
@@ -266,7 +266,7 @@ instance_new() {
 The only further addition is that the destructor needs to call the
 weak reference manager to clear any weak references.  This should be
 done before any other parts of the destruction have occurred, but is
-only required if the weak reference list is non-\NULL:
+only required if the weak reference list is non-\NULL{}:
 
 \begin{verbatim}
 static void
