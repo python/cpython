@@ -3,7 +3,7 @@
 # Conversions to/from base64 transport encoding as per RFC-MIME (Dec 1991
 # version).
 
-# Parameters set by RFX-1421.
+# Parameters set by RFC-1421.
 #
 # Modified 04-Oct-95 by Jack to use binascii module
 
