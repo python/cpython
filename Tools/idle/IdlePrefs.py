@@ -13,7 +13,7 @@ class ColorPrefs:
     CHit        = "#ffffff", "#000000"
     CStdIn      = None, None            # None, "yellow"
     CStdOut     = "blue", None
-    CStdErr     = "#007700", None
+    CStdErr     = "red", None
     CConsole    = "#770000", None
     CError      = None, "#ff7777"
     CCursor     = None, "black"
