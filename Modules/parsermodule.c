@@ -2193,6 +2193,9 @@ validate_atom(node *tree)
 }
 
 
+/*  listmaker:
+ *    test ( list_for | (',' test)* [','] )
+ */
 static int
 validate_listmaker(node *tree)
 {
@@ -2207,19 +2210,22 @@ validate_listmaker(node *tree)
     /*
      *  list_iter | (',' test)* [',']
      */
-    if (nch == 2 && TYPE(CHILD(tree, 1)) == list_iter)
-        ok = validate_list_iter(CHILD(tree, 1));
+    if (nch == 2 && TYPE(CHILD(tree, 1)) == list_for)
+        ok = validate_list_for(CHILD(tree, 1));
     else {
         /*  (',' test)* [',']  */
         int i = 1;
         while (ok && nch - i >= 2) {
             ok = (validate_comma(CHILD(tree, i))
                   && validate_test(CHILD(tree, i+1)));
-            if (ok)
-                i += 2;
+            i += 2;
         }
-        if (ok && nch-i)
-            ok = validate_comma(CHILD(tree, nch-1));
+        if (ok && i == nch-1)
+            ok = validate_comma(CHILD(tree, i));
+        else if (i != nch) {
+            ok = 0;
+            err_string("illegal trailing nodes for listmaker");
+        }
     }
     return ok;
 }
