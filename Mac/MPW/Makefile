@@ -10,9 +10,12 @@
 
 Top = :::
 CC = SC
-CFlags = -woff -e -model cfmseg -b ¶
-	-i "{Top}"Mac: -i "{Top}"Include: -i "{CIncludes}" ¶
+CFlagsNoInclude = -woff -e -model cfmseg -b ¶
 	-d HAVE_CONFIG_H=1 -d MPW=1
+PythonIncludes = -i "{Top}"Mac: -i "{Top}"Include:
+MacIncludes = -i "{CIncludes}"
+CFlagsMac = {CFlagsNoInclude} {MacIncludes} {PythonIncludes}
+CFlags = {CFlagsNoInclude} {PythonIncludes} {MacIncludes}
 Objs = :Objs:
 ExtensionsFolder = {SystemFolder}Extensions:
 
@@ -24,6 +27,8 @@ ALL = ¶
 	"{Objs}"acceler.c.o ¶
 	"{Objs}"accessobject.c.o ¶
 	"{Objs}"arraymodule.c.o ¶
+	"{Objs}"atof.c.o ¶
+	"{Objs}"strtod.c.o ¶
 	"{Objs}"audioop.c.o ¶
 	"{Objs}"bltinmodule.c.o ¶
 	"{Objs}"ceval.c.o ¶
@@ -51,6 +56,7 @@ ALL = ¶
 	"{Objs}"listobject.c.o ¶
 	"{Objs}"longobject.c.o ¶
 	"{Objs}"macfsmodule.c.o ¶
+	"{Objs}"macgetargv.c.o ¶
 	"{Objs}"macgetmtime.c.o ¶
 	"{Objs}"macglue.c.o ¶
 	"{Objs}"macguesstabsize.c.o ¶
@@ -152,6 +158,7 @@ PythonApplet Ä PythonLib.slb "{Objs}"macapplet.c.o
 		-o PythonApplet ¶
 		-xm e ¶
 		-model cfmseg ¶
+		-c PYTa ¶
 		"{Objs}"macapplet.c.o ¶
 		"{CLibraries}"NuStdCLib.slb ¶
 		"{Libraries}"NuInterfaceLib.slb ¶
@@ -359,6 +366,9 @@ xxmodule.slb Ä PythonLib.slb "{Objs}"xxmodule.c.o
 "{Objs}"macglue.c.o Ä "{Top}"Mac:macglue.c
 	{CC} "{Top}"Mac:macglue.c -o "{Objs}"macglue.c.o -s macglue.c {CFlags}
 
+"{Objs}"macgetargv.c.o Ä "{Top}"Mac:macgetargv.c
+	{CC} "{Top}"Mac:macgetargv.c -o "{Objs}"macgetargv.c.o -s macgetargv.c {CFlagsMac}
+
 "{Objs}"modsupport.c.o Ä "{Top}"Python:modsupport.c
 	{CC} "{Top}"Python:modsupport.c -o "{Objs}"modsupport.c.o -s modsupport.c {CFlags}
 
@@ -422,32 +432,32 @@ xxmodule.slb Ä PythonLib.slb "{Objs}"xxmodule.c.o
 "{Objs}"pythonrun.c.o Ä "{Top}"Python:pythonrun.c
 	{CC} "{Top}"Python:pythonrun.c -o "{Objs}"pythonrun.c.o -s pythonrun.c {CFlags}
 
-"{Objs}"AEmodule.c.o Ä "{Top}"bgen:ae:AEmodule.c
-	{CC} "{Top}"bgen:ae:AEmodule.c -o "{Objs}"AEmodule.c.o -s AEmodule.c {CFlags}
+"{Objs}"AEmodule.c.o Ä "{Top}"Demo:bgen:ae:AEmodule.c
+	{CC} "{Top}"Demo:bgen:ae:AEmodule.c -o "{Objs}"AEmodule.c.o -s AEmodule.c {CFlags}
 
-"{Objs}"Ctlmodule.c.o Ä "{Top}"bgen:ctl:Ctlmodule.c
-	{CC} "{Top}"bgen:ctl:Ctlmodule.c -o "{Objs}"Ctlmodule.c.o -s Ctlmodule.c {CFlags}
+"{Objs}"Ctlmodule.c.o Ä "{Top}"Demo:bgen:ctl:Ctlmodule.c
+	{CC} "{Top}"Demo:bgen:ctl:Ctlmodule.c -o "{Objs}"Ctlmodule.c.o -s Ctlmodule.c {CFlags}
 
-"{Objs}"Dlgmodule.c.o Ä "{Top}"bgen:dlg:Dlgmodule.c
-	{CC} "{Top}"bgen:dlg:Dlgmodule.c -o "{Objs}"Dlgmodule.c.o -s Dlgmodule.c {CFlags}
+"{Objs}"Dlgmodule.c.o Ä "{Top}"Demo:bgen:dlg:Dlgmodule.c
+	{CC} "{Top}"Demo:bgen:dlg:Dlgmodule.c -o "{Objs}"Dlgmodule.c.o -s Dlgmodule.c {CFlags}
 
-"{Objs}"Evtmodule.c.o Ä "{Top}"bgen:evt:Evtmodule.c
-	{CC} "{Top}"bgen:evt:Evtmodule.c -o "{Objs}"Evtmodule.c.o -s Evtmodule.c {CFlags}
+"{Objs}"Evtmodule.c.o Ä "{Top}"Demo:bgen:evt:Evtmodule.c
+	{CC} "{Top}"Demo:bgen:evt:Evtmodule.c -o "{Objs}"Evtmodule.c.o -s Evtmodule.c {CFlags}
 
-"{Objs}"Menumodule.c.o Ä "{Top}"bgen:menu:Menumodule.c
-	{CC} "{Top}"bgen:menu:Menumodule.c -o "{Objs}"Menumodule.c.o -s Menumodule.c {CFlags}
+"{Objs}"Menumodule.c.o Ä "{Top}"Demo:bgen:menu:Menumodule.c
+	{CC} "{Top}"Demo:bgen:menu:Menumodule.c -o "{Objs}"Menumodule.c.o -s Menumodule.c {CFlags}
 
-"{Objs}"Qdmodule.c.o Ä "{Top}"bgen:qd:Qdmodule.c
-	{CC} "{Top}"bgen:qd:Qdmodule.c -o "{Objs}"Qdmodule.c.o -s Qdmodule.c {CFlags}
+"{Objs}"Qdmodule.c.o Ä "{Top}"Demo:bgen:qd:Qdmodule.c
+	{CC} "{Top}"Demo:bgen:qd:Qdmodule.c -o "{Objs}"Qdmodule.c.o -s Qdmodule.c {CFlags}
 
-"{Objs}"Resmodule.c.o Ä "{Top}"bgen:res:Resmodule.c
-	{CC} "{Top}"bgen:res:Resmodule.c -o "{Objs}"Resmodule.c.o -s Resmodule.c {CFlags}
+"{Objs}"Resmodule.c.o Ä "{Top}"Demo:bgen:res:Resmodule.c
+	{CC} "{Top}"Demo:bgen:res:Resmodule.c -o "{Objs}"Resmodule.c.o -s Resmodule.c {CFlags}
 
-"{Objs}"Sndmodule.c.o Ä "{Top}"bgen:snd:Sndmodule.c
-	{CC} "{Top}"bgen:snd:Sndmodule.c -o "{Objs}"Sndmodule.c.o -s Sndmodule.c {CFlags}
+"{Objs}"Sndmodule.c.o Ä "{Top}"Demo:bgen:snd:Sndmodule.c
+	{CC} "{Top}"Demo:bgen:snd:Sndmodule.c -o "{Objs}"Sndmodule.c.o -s Sndmodule.c {CFlags}
 
-"{Objs}"Winmodule.c.o Ä "{Top}"bgen:win:Winmodule.c
-	{CC} "{Top}"bgen:win:Winmodule.c -o "{Objs}"Winmodule.c.o -s Winmodule.c {CFlags}
+"{Objs}"Winmodule.c.o Ä "{Top}"Demo:bgen:win:Winmodule.c
+	{CC} "{Top}"Demo:bgen:win:Winmodule.c -o "{Objs}"Winmodule.c.o -s Winmodule.c {CFlags}
 
 "{Objs}"md5c.c.o Ä "{Top}"Modules:md5c.c
 	{CC} "{Top}"Modules:md5c.c -o "{Objs}"md5c.c.o -s md5c.c {CFlags}
@@ -487,3 +497,9 @@ xxmodule.slb Ä PythonLib.slb "{Objs}"xxmodule.c.o
 
 "{Objs}"xxmodule.c.o Ä "{Top}"Modules:xxmodule.c
 	{CC} "{Top}"Modules:xxmodule.c -o "{Objs}"xxmodule.c.o -s xxmodule.c {CFlags}
+
+"{Objs}"atof.c.o Ä "{Top}"Python:atof.c
+	{CC} "{Top}"Python:atof.c -o "{Objs}"atof.c.o -s atof.c {CFlags}
+
+"{Objs}"strtod.c.o Ä "{Top}"Python:strtod.c
+	{CC} "{Top}"Python:strtod.c -o "{Objs}"strtod.c.o -s strtod.c {CFlags}
