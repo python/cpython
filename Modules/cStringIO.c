@@ -79,7 +79,7 @@ static char cStringIO_module_documentation[] =
 "  an_input_stream=StringIO(a_string)\n"
 "  spam=an_input_stream.readline()\n"
 "  spam=an_input_stream.read(5)\n"
-"  an_input_stream.reset()           # OK, start over, note no seek yet\n"
+"  an_input_stream.reset()           # OK, start over\n"
 "  spam=an_input_stream.read()       # and read it all\n"
 "  \n"
 "If someone else wants to provide a more complete implementation,\n"
