@@ -18,19 +18,17 @@ The \module{tty} module defines the following functions:
 
 \begin{funcdesc}{setraw}{fd\optional{, when}}
 Change the mode of the file descriptor \var{fd} to raw. If \var{when}
-is omitted, it defaults to \constant{TERMIOS.TCAFLUSH}, and is passed
+is omitted, it defaults to \constant{termios.TCSAFLUSH}, and is passed
 to \function{termios.tcsetattr()}.
 \end{funcdesc}
 
 \begin{funcdesc}{setcbreak}{fd\optional{, when}}
 Change the mode of file descriptor \var{fd} to cbreak. If \var{when}
-is omitted, it defaults to \constant{TERMIOS.TCAFLUSH}, and is passed
+is omitted, it defaults to \constant{termios.TCSAFLUSH}, and is passed
 to \function{termios.tcsetattr()}.
 \end{funcdesc}
 
 
 \begin{seealso}
   \seemodule{termios}{Low-level terminal control interface.}
-  \seemodule[TERMIOSuppercase]{TERMIOS}{Constants useful for terminal
-                                        control operations.}
 \end{seealso}
