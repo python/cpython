@@ -196,7 +196,6 @@ class FlowGraph:
             chains.remove(c)
             chains.insert(goes_before, c)
 
-
         del blocks[:]
         for c in chains:
             for b in c:
@@ -374,6 +373,7 @@ class PyFlowGraph(FlowGraph):
     def getCode(self):
         """Get a Python code object"""
         if self.stage == RAW:
+            self.computeStackDepth()
             self.flattenGraph()
         if self.stage == FLAT:
             self.convertArgs()
@@ -400,6 +400,36 @@ class PyFlowGraph(FlowGraph):
                 pc = pc + 3
         if io:
             sys.stdout = save
+
+    def computeStackDepth(self):
+        """Compute the max stack depth.
+
+        Approach is to compute the stack effect of each basic block.
+        Then find the path through the code with the largest total
+        effect.
+        """
+        depth = {}
+        exit = None
+        for b in self.getBlocks():
+            depth[b] = findDepth(b.getInstructions())
+
+        seen = {}
+
+        def max_depth(b, d):
+            if seen.has_key(b):
+                return d
+            seen[b] = 1
+            d = d + depth[b]
+            children = b.get_children()
+            if children:
+                return max([max_depth(c, d) for c in children])
+            else:
+                if not b.label == "exit":
+                    return max_depth(self.exit, d)
+                else:
+                    return d
+
+        self.stacksize = max_depth(self.entry, 0)
 
     def flattenGraph(self):
         """Arrange the blocks in order and resolve jumps"""
@@ -432,7 +462,6 @@ class PyFlowGraph(FlowGraph):
                 insts[i] = opname, offset
             elif self.hasjabs.has_elt(opname):
                 insts[i] = opname, begin[inst[1]]
-        self.stacksize = findDepth(self.insts)
         self.stage = FLAT
 
     hasjrel = misc.Set()
@@ -693,21 +722,17 @@ class StackDepthTracker:
     # XXX 1. need to keep track of stack depth on jumps
     # XXX 2. at least partly as a result, this code is broken
 
-    def findDepth(self, insts):
+    def findDepth(self, insts, debug=0):
         depth = 0
         maxDepth = 0
         for i in insts:
             opname = i[0]
-            delta = self.effect.get(opname, 0)
-            if delta > 1:
-                depth = depth + delta
-            elif delta < 0:
-                if depth > maxDepth:
-                    maxDepth = depth
+            if debug:
+                print i,
+            delta = self.effect.get(opname, None)
+            if delta is not None:
                 depth = depth + delta
             else:
-                if depth > maxDepth:
-                    maxDepth = depth
                 # now check patterns
                 for pat, pat_delta in self.patterns:
                     if opname[:len(pat)] == pat:
@@ -715,12 +740,14 @@ class StackDepthTracker:
                         depth = depth + delta
                         break
                 # if we still haven't found a match
-                if delta == 0:
+                if delta is None:
                     meth = getattr(self, opname, None)
                     if meth is not None:
                         depth = depth + meth(i[1])
-            if depth < 0:
-                depth = 0
+            if depth > maxDepth:
+                maxDepth = depth
+            if debug:
+                print depth, maxDepth
         return maxDepth
 
     effect = {
@@ -754,6 +781,7 @@ class StackDepthTracker:
         'IMPORT_STAR': -1,
         'IMPORT_NAME': 0,
         'IMPORT_FROM': 1,
+        'LOAD_ATTR': 0, # unlike other loads
         # close enough...
         'SETUP_EXCEPT': 3,
         'SETUP_FINALLY': 3,
@@ -773,19 +801,24 @@ class StackDepthTracker:
         return -count+1
     def CALL_FUNCTION(self, argc):
         hi, lo = divmod(argc, 256)
-        return lo + hi * 2
+        return -(lo + hi * 2)
     def CALL_FUNCTION_VAR(self, argc):
-        return self.CALL_FUNCTION(argc)+1
+        return self.CALL_FUNCTION(argc)-1
     def CALL_FUNCTION_KW(self, argc):
-        return self.CALL_FUNCTION(argc)+1
+        return self.CALL_FUNCTION(argc)-1
     def CALL_FUNCTION_VAR_KW(self, argc):
-        return self.CALL_FUNCTION(argc)+2
+        return self.CALL_FUNCTION(argc)-2
     def MAKE_FUNCTION(self, argc):
+        return -argc
+    def MAKE_CLOSURE(self, argc):
+        # XXX need to account for free variables too!
         return -argc
     def BUILD_SLICE(self, argc):
         if argc == 2:
             return -1
         elif argc == 3:
             return -2
+    def DUP_TOPX(self, argc):
+        return argc
     
 findDepth = StackDepthTracker().findDepth
