@@ -993,7 +993,7 @@ parse_dostime(int dostime, int dosdate)
 	stm.tm_mday  =   dosdate        & 0x1f;
 	stm.tm_mon   = ((dosdate >> 5)  & 0x0f) - 1;
 	stm.tm_year  = ((dosdate >> 9)  & 0x7f) + 80;
-	stm.tm_isdst =   0; /* wday/yday is ignored */
+	stm.tm_isdst =   -1; /* wday/yday is ignored */
 
 	return mktime(&stm);
 }
