@@ -1,47 +1,51 @@
 \section{Standard Module \sectcode{getopt}}
 \label{module-getopt}
-
 \stmodindex{getopt}
+
 This module helps scripts to parse the command line arguments in
 \code{sys.argv}.
-It supports the same conventions as the \UNIX{}
-\code{getopt()}
+It supports the same conventions as the \UNIX{} \cfunction{getopt()}
 function (including the special meanings of arguments of the form
 `\code{-}' and `\code{-}\code{-}').
 % That's to fool latex2html into leaving the two hyphens alone!
 Long options similar to those supported by
 GNU software may be used as well via an optional third argument.
-It defines the function
-\code{getopt.getopt(args, options [, long_options])}
-and the exception
-\code{getopt.error}.
+This module provides a single function and an exception:
 
-The first argument to
-\code{getopt()}
-is the argument list passed to the script with its first element
-chopped off (i.e.,
-\code{sys.argv[1:]}).
-The second argument is the string of option letters that the
-script wants to recognize, with options that require an argument
-followed by a colon (i.e., the same format that \UNIX{}
-\code{getopt()}
-uses).
-The third option, if specified, is a list of strings with the names of
-the long options which should be supported.  The leading \code{'-}\code{-'}
-characters should not be included in the option name.  Options which
-require an argument should be followed by an equal sign (\code{'='}).
+\begin{funcdesc}{getopt}{args, options\optional{, long_options}}
+Parses command line options and parameter list.  \var{args} is the
+argument list to be parsed, without the leading reference to the
+running program. Typically, this means \samp{sys.argv[1:]}.
+\var{options} is the string of option letters that the script wants to
+recognize, with options that require an argument followed by a colon
+(i.e., the same format that \UNIX{} \cfunction{getopt()} uses).  If
+specified, \var{long_options} is a list of strings with the names of
+the long options which should be supported.  The leading
+\code{'-}\code{-'} characters should not be included in the option
+name.  Options which require an argument should be followed by an
+equal sign (\code{'='}).
+
 The return value consists of two elements: the first is a list of
-option-and-value pairs; the second is the list of program arguments
-left after the option list was stripped (this is a trailing slice of the
-first argument).
-Each option-and-value pair returned has the option as its first element,
-prefixed with a hyphen (e.g.,
-\code{'-x'}),
-and the option argument as its second element, or an empty string if the
-option has no argument.
+\code{(\var{option}, \var{value})} pairs; the second is the list of
+program arguments left after the option list was stripped (this is a
+trailing slice of the first argument).
+Each option-and-value pair returned has the option as its first
+element, prefixed with a hyphen (e.g., \code{'-x'}), and the option
+argument as its second element, or an empty string if the option has
+no argument.
 The options occur in the list in the same order in which they were
 found, thus allowing multiple occurrences.  Long and short options may
 be mixed.
+\end{funcdesc}
+
+\begin{excdesc}{error}
+This is raised when an unrecognized option is found in the argument
+list or when an option requiring an argument is given none.
+The argument to the exception is a string indicating the cause of the
+error.  For long options, an argument given to an option which does
+not require one will also cause this exception to be raised.
+\end{excdesc}
+
 
 An example using only \UNIX{} style options:
 
@@ -57,7 +61,7 @@ An example using only \UNIX{} style options:
 ['a1', 'a2']
 >>> 
 \end{verbatim}
-%
+
 Using long option names is equally easy:
 
 \begin{verbatim}
@@ -68,16 +72,9 @@ Using long option names is equally easy:
 >>> optlist, args = getopt.getopt(args, 'x', [
 ...     'condition=', 'output-file=', 'testing'])
 >>> optlist
-[('--condition', 'foo'), ('--testing', ''), ('--output-file', 'abc.def'), ('-x', '')]
+[('--condition', 'foo'), ('--testing', ''), ('--output-file', 'abc.def'), ('-x',
+ '')]
 >>> args
 ['a1', 'a2']
 >>> 
 \end{verbatim}
-%
-The exception
-\code{getopt.error}
-is raised when an unrecognized option is found in the argument list or
-when an option requiring an argument is given none.
-The argument to the exception is a string indicating the cause of the
-error.  For long options, an argument given to an option which does
-not require one will also cause this exception to be raised.
