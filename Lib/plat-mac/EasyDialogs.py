@@ -576,7 +576,7 @@ def _process_Nav_args(dftflags, **args):
 			defaultLocation = Carbon.File.FSRef(defaultLocation)
 			args['defaultLocation'] = aepack.pack(defaultLocation)
 	if args.has_key('typeList') and not isinstance(args['typeList'], Carbon.Res.ResourceType):
-		typeList = args['typeList'].copy()
+		typeList = args['typeList'][:]
 		# Workaround for OSX typeless files:
 		if 'TEXT' in typeList and not '\0\0\0\0' in typeList:
 			typeList = typeList + ('\0\0\0\0',)
