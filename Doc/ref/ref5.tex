@@ -157,7 +157,7 @@ square brackets:
              {"[" [\token{listmaker}] "]"}
   \production{listmaker}
              {\token{expression} ( \token{list_for}
-              | ( "," \token{expression})* [","] )}
+              | ( "," \token{expression} )* [","] )}
   \production{list_iter}
              {\token{list_for} | \token{list_if}}
   \production{list_for}
