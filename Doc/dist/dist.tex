@@ -687,38 +687,74 @@ string should be given as the directory.
 The setup script may include additional meta-data beyond the name and
 version. This information includes:
 
-\begin{tableiii}{l|l|c}{code}%
-  {Meta-Data}{Description}{Notes}
-  \lineiii{name}{the name of the package}{(1)}
-  \lineiii{version}{the version of this release}{(1)}
-  \lineiii{author}{package author's name}{(2)}
-  \lineiii{author_email}{email address of the package author}{(2)}
-  \lineiii{maintainer}{package maintainer's name}{(2)}
-  \lineiii{maintainer_email}{email address of the package maintainer}{(2)}
-  \lineiii{url}{URL of the package's home page}{(1)}
-  \lineiii{license}{the terms the package is released under}{}
-  \lineiii{description}{a short, summary description of the package}{}
-  \lineiii{long_description}{a longer description of the package}{}
-  \lineiii{keywords}{some keywords appropriate to the package}{}
-  \lineiii{platforms}{a list of the target platforms}{}
-  \lineiii{classifiers}{a list of Trove classifiers}{(3),(4)}
-  \lineiii{download_url}{a single URL containing the download location 
-           for this version of the package}{(3)}
-\end{tableiii}
+\begin{tableiv}{l|l|l|c}{code}%
+  {Meta-Data}{Description}{Value}{Notes}
+  \lineiv{name}{name of the package}
+         {short string}{(1)}
+  \lineiv{version}{version of this release}
+         {short string}{(1)(2)}
+  \lineiv{author}{package author's name}
+         {short string}{(3)}
+  \lineiv{author_email}{email address of the package author}
+         {email address}{(3)}
+  \lineiv{maintainer}{package maintainer's name}
+         {short string}{(3)}
+  \lineiv{maintainer_email}{email address of the package maintainer}
+         {email address}{(3)}
+  \lineiv{url}{home page for the package}
+         {URL}{(1)}
+  \lineiv{description}{short, summary description of the package}
+         {short string}{}
+  \lineiv{long_description}{longer description of the package}
+         {long string}{}
+  \lineiv{download_url}{location where the package may be downloaded}
+         {URL}{(4)}
+  \lineiv{classifiers}{a list of Trove classifiers}
+         {list of strings}{(4)}
+\end{tableiv}
 
 \noindent Notes:
 \begin{description}
-\item[(1)] these fields are required
-\item[(2)] either the author or the maintainer must be nominated
-\item[(3)] should not be used if your package is to be compatible with
-  Python versions prior to 2.2.3 or 2.3.  
-\item[(4)] The list of classifiers is available from the
-  PyPI website (\url{http://www.python.org/pypi}).
-  \option{classifiers} are specified as a list of strings:
+\item[(1)] These fields are required.
+\item[(2)] It is recommended that versions take the form
+  \emph{major.minor\optional{.patch\optional{.sub}}}.
+\item[(3)] Either the author or the maintainer must be identified.
+\item[(4)] These fields should not be used if your package is to be
+  compatible with Python versions prior to 2.2.3 or 2.3.  The list is
+  available from the \ulink{PyPI website}{http://www.python.org/pypi}.
+
+\item["short string"] A single line of text, not more than 200 characters.
+\item["long string"] Multiple lines of plain text in ReStructuredText
+  format (see \url{http://docutils.sf.net/}).
+\item["list of strings"] See below.
+\end{description}
+
+None of the string values may be Unicode.
+
+Encoding the version information is an art in itself. Python packages
+generally adhere to the version format
+\emph{major.minor\optional{.patch}\optional{sub}}. The major number is
+0 for
+initial, experimental releases of software. It is incremented for
+releases that represent major milestones in a package. The minor
+number is incremented when important new features are added to the
+package. The patch number increments when bug-fix releases are
+made. Additional trailing version information is sometimes used to
+indicate sub-releases.  These are "a1,a2,...,aN" (for alpha releases,
+where functionality and API may change), "b1,b2,...,bN" (for beta
+releases, which only fix bugs) and "pr1,pr2,...,prN" (for final
+pre-release release testing). Some examples:
+
+\begin{description}
+\item[0.1.0] the first, experimental release of a package
+\item[1.0.1a2] the second alpha release of the first patch version of 1.0
+\end{description}
+
+\option{classifiers} are specified in a python list:
 
 \begin{verbatim}
 setup(...
-      classifiers=[
+      classifiers = [
           'Development Status :: 4 - Beta',
           'Environment :: Console',
           'Environment :: Web Environment',
@@ -734,18 +770,17 @@ setup(...
           'Topic :: Office/Business',
           'Topic :: Software Development :: Bug Tracking',
           ],
-      ...
       )
 \end{verbatim}
-\end{description}
 
-If you wish to include classifiers or a download URL in your
-\file{setup.py} file and also wish to remain backwards-compatible with
-Python releases prior to 2.2.3, then you can include the following
-code fragment in your \file{setup.py} before the \code{setup()} call:
+If you wish to include classifiers in your \file{setup.py} file and also
+wish to remain backwards-compatible with Python releases prior to 2.2.3,
+then you can include the following code fragment in your \file{setup.py}
+before the \code{setup()} call.
 
 \begin{verbatim}
-# patch distutils if it can't cope with the "classifiers" keyword
+# patch distutils if it can't cope with the "classifiers" or
+# "download_url" keywords
 if sys.version < '2.2.3':
     from distutils.dist import DistributionMetadata
     DistributionMetadata.classifiers = None
