@@ -398,6 +398,16 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
 			pycname = '__rawmain__.pyc'
 		else:
 			pycname = '__main__.pyc'
+			# And we also create __rawmain__.pyc
+			outputfilename = os.path.join(destname, 'Contents', 'Resources', '__rawmain__.pyc')
+			if progress:
+				progress.label('Creating __rawmain__.pyc')
+				progress.inc(0)
+			rawsourcefile = os.path.join(sys.prefix, 'Mac', 'Lib', 'appletrawmain.py')
+			rawsource = open(rawsourcefile, 'rU').read()
+			rawcode = compile(rawsource, rawsourcefile, 'exec')
+			writepycfile(rawcode, outputfilename)
+			
 		outputfilename = os.path.join(destname, 'Contents', 'Resources', pycname)
 		if progress:
 			progress.label('Creating '+pycname)
