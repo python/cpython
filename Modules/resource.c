@@ -22,10 +22,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
    but we can't declare the prototype, to avoid errors
    when the header files declare it different.
    Worse, on some Linuxes, getpagesize() returns a size_t... */
-#ifndef linux
-int getrusage();
-int getpagesize();
-#endif
 
 #define doubletime(TV) ((double)(TV).tv_sec + (TV).tv_usec * 0.000001)
 

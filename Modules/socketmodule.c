@@ -110,10 +110,6 @@ Socket methods:
 #include <unistd.h>
 #endif
 
-#if !defined(MS_WINDOWS) && !defined(PYOS_OS2) && !defined(__BEOS__)
-extern int gethostname(char *, size_t); /* For Solaris, at least */
-#endif
-
 #if defined(PYCC_VACPP)
 #include <types.h>
 #include <io.h>
@@ -127,11 +123,6 @@ extern int gethostname(char *, size_t); /* For Solaris, at least */
 #define  INCL_DOSERRORS
 #define  INCL_NOPMAPI
 #include <os2.h>
-#endif
-
-#if defined(__BEOS__)
-/* It's in the libs, but not the headers... - [cjh] */
-int shutdown( int, int );
 #endif
 
 #include <sys/types.h>
@@ -2407,9 +2398,9 @@ shutdown() -- shut down traffic in one or both directions\n\
 
 DL_EXPORT(void)
 #if defined(MS_WINDOWS) || defined(PYOS_OS2) || defined(__BEOS__)
-init_socket()
+init_socket(void)
 #else
-initsocket()
+initsocket(void)
 #endif
 {
 	PyObject *m, *d;

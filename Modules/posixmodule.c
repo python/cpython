@@ -128,14 +128,7 @@ corresponding Unix manual entries for more information on calls.";
 #define UNION_WAIT /* This should really be checked for by autoconf */
 #endif
 
-#ifdef HAVE_UNISTD_H
-/* XXX These are for SunOS4.1.3 but shouldn't hurt elsewhere */
-extern int rename(const char *, const char *);
-extern int pclose(FILE *);
-extern int lstat(const char *, struct stat *);
-extern int symlink(const char *, const char *);
-extern int fsync(int fd);
-#else /* !HAVE_UNISTD_H */
+#ifndef HAVE_UNISTD_H
 #if defined(PYCC_VACPP)
 extern int mkdir(char *);
 #else
@@ -720,8 +713,6 @@ static char posix_fdatasync__doc__[] =
 "fdatasync(fildes) -> None\n\
 force write of file with filedescriptor to disk.\n\
  does not force update of metadata.";
-
-extern int fdatasync(int); /* Prototype just in case */
 
 static PyObject *
 posix_fdatasync(PyObject *self, PyObject *args)
@@ -1680,12 +1671,6 @@ posix_fork(PyObject *self, PyObject *args)
 #else
 #ifdef HAVE_LIBUTIL_H
 #include <libutil.h>
-#else
-/* BSDI does not supply a prototype for the 'openpty' and 'forkpty'
-   functions, even though they are included in libutil. */
-#include <termios.h>
-extern int openpty(int *, int *, char *, struct termios *, struct winsize *);
-extern int forkpty(int *, char *, struct termios *, struct winsize *);
 #endif /* HAVE_LIBUTIL_H */
 #endif /* HAVE_PTY_H */
 #endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) */
@@ -1701,8 +1686,6 @@ posix_openpty(PyObject *self, PyObject *args)
 	int master_fd, slave_fd;
 #ifndef HAVE_OPENPTY
 	char * slave_name;
-	/* SGI apparently needs this forward declaration */
-	extern char * _getpty(int *, int, mode_t, int);
 #endif
 
 	if (!PyArg_ParseTuple(args, ":openpty"))
@@ -1719,7 +1702,7 @@ posix_openpty(PyObject *self, PyObject *args)
 	slave_fd = open(slave_name, O_RDWR);
 	if (slave_fd < 0)
 		return posix_error();
-#endif /* defined(HAVE_OPENPTY) */
+#endif /* HAVE_OPENPTY */
 
 	return Py_BuildValue("(ii)", master_fd, slave_fd);
 
@@ -3286,7 +3269,6 @@ Return an open file object connected to a file descriptor.";
 static PyObject *
 posix_fdopen(PyObject *self, PyObject *args)
 {
-	extern int fclose(FILE *);
 	int fd;
 	char *mode = "r";
 	int bufsize = -1;
