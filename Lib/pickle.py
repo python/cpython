@@ -158,6 +158,9 @@ del x
 
 _quotes = ["'", '"']
 
+
+# Pickling machinery
+
 class Pickler:
 
     def __init__(self, file, proto=1):
@@ -178,11 +181,11 @@ class Pickler:
         object, or any other custom object that meets this interface.
 
         """
-        if not 0 <= proto <= 2:
+        if proto not in (0, 1, 2):
             raise ValueError, "pickle protocol must be 0, 1 or 2"
         self.write = file.write
         self.memo = {}
-        self.proto = proto
+        self.proto = int(proto)
         self.bin = proto >= 1
 
     def clear_memo(self):
@@ -639,6 +642,7 @@ class Pickler:
     dispatch[BuiltinFunctionType] = save_global
     dispatch[TypeType] = save_global
 
+# Pickling helpers
 
 def _keep_alive(x, memo):
     """Keeps a reference to the object x in the memo.
@@ -682,6 +686,8 @@ def whichmodule(func, funcname):
     classmap[func] = name
     return name
 
+
+# Unpickling machinery
 
 class Unpickler:
 
