@@ -461,7 +461,10 @@ Foo_Type.ob_type = &PyType_Type;
   header size (this is new in Python 2.2; in 2.1 and 2.0, the GC
   header size was included in \member{tp_basicsize}).
 
-  These fields are inherited by subtypes.
+  These fields are inherited separately by subtypes.  If the base type
+  has a non-zero \member{tp_itemsize}, it is generally not safe to set
+  \member{tp_itemsize} to a different non-zero value in a subtype
+  (though this depends on the implementation of the base type).
 \end{cmemberdesc}
 
 \begin{cmemberdesc}{PyTypeObject}{destructor}{tp_dealloc}
@@ -497,7 +500,9 @@ Foo_Type.ob_type = &PyType_Type;
   \emph{real} file; when it is printed to a pseudo-file (like a
   \class{StringIO} instance), the instance's \member{tp_repr} or
   \member{tp_str} function is called to convert it to a string.  These
-  are also called when the type's \member{tp_print} field is \NULL.
+  are also called when the type's \member{tp_print} field is \NULL.  A
+  type should never implement \member{tp_print} in a way that produces
+  different output than \member{tp_repr} or \member{tp_str} would.
 
   The print function is called with the same signature as
   \cfunction{PyObject_Print()}: \code{tp_print(PyObject *self, FILE
@@ -565,6 +570,358 @@ Foo_Type.ob_type = &PyType_Type;
   \member{tp_richcompare}, and \member{tp_hash} are all \NULL.
 \end{cmemberdesc}
 
+\begin{cmemberdesc}{PyTypeObject}{reprfunc}{tp_repr}
+  An optional pointer to a function that implements the built-in
+  function \function{repr()}.\bifuncindex{repr}
+
+  The signature is the same as for \cfunction{PyObject_Repr()}; it
+  must return a string or a Unicode object.  Ideally, this function
+  should return a string that, when passed to \function{eval()}, given
+  a suitable environment, returns an object with the same value.  If
+  this is not feasible, it should return a string starting with
+  \character{\textless} and ending with \character{\textgreater} from
+  which both the type and the value of the object can be deduced.
+
+  When this field is not set, a string of the form \samp{<\%s object
+  at \%p>} is returned, where \code{\%s} is replaced by the type name,
+  and \code{\%p} by the object's memory address.
+
+  This field is inherited by subtypes.
+\end{cmemberdesc}
+
+PyNumberMethods *tp_as_number;
+
+    XXX
+
+PySequenceMethods *tp_as_sequence;
+
+    XXX
+
+PyMappingMethods *tp_as_mapping;
+
+    XXX
+
+\begin{cmemberdesc}{PyTypeObject}{hashfunc}{tp_hash}
+  An optional pointer to a function that implements the built-in
+  function \function{hash()}.\bifuncindex{hash}
+
+  The signature is the same as for \cfunction{PyObject_Hash()}; it
+  must return a C long.  The value \code{-1} should not be returned as
+  a normal return value; when an error occurs during the computation
+  of the hash value, the function should set an exception and return
+  \code{-1}.
+
+  When this field is not set, two possibilities exist: if the
+  \member{tp_compare} and \member{tp_richcompare} fields are both
+  \NULL, a default hash value based on the object's address is
+  returned; otherwise, a \exception{TypeError} is raised.
+
+  This field is inherited by subtypes together with
+  \member{tp_richcompare} and \member{tp_compare}: a subtypes inherits
+  all three of \member{tp_compare}, \member{tp_richcompare}, and
+  \member{tp_hash}, when the subtype's \member{tp_compare},
+  \member{tp_richcompare} and \member{tp_hash} are all \NULL.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{ternaryfunc}{tp_call}
+  An optional pointer to a function that implements calling the
+  object.  This should be \NULL{} if the object is not callable.  The
+  signature is the same as for \cfunction{PyObject_Call()}.
+
+  This field is inherited by subtypes.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{reprfunc}{tp_str}
+  An optional pointer to a function that implements the built-in
+  operation \function{str()}.  (Note that \class{str} is a type now,
+  and \function{str()} calls the constructor for that type.  This
+  constructor calls \cfunction{PyObject_Str()} to do the actual work,
+  and \cfunction{PyObject_Str()} will call this handler.)
+
+  The signature is the same as for \cfunction{PyObject_Str()}; it must
+  return a string or a Unicode object.  This function should return a
+  ``friendly'' string representation of the object, as this is the
+  representation that will be used by the print statement.
+
+  When this field is not set, \cfunction{PyObject_Repr()} is called to
+  return a string representation.
+
+  This field is inherited by subtypes.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{getattrofunc}{tp_getattro}
+  An optional pointer to the get-attribute function.
+
+  The signature is the same as for \cfunction{PyObject_GetAttr()}.  It
+  is usually convenient to set this field to
+  \cfunction{PyObject_GenericGetAttr()}, which implements the normal
+  way of looking for object attributes.
+
+  This field is inherited by subtypes together with
+  \member{tp_getattr}: a subtype inherits both \member{tp_getattr} and
+  \member{tp_getattro} from its base type when the subtype's
+  \member{tp_getattr} and \member{tp_getattro} are both \NULL.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{setattrofunc}{tp_setattro}
+  An optional pointer to the set-attribute function.
+
+  The signature is the same as for \cfunction{PyObject_SetAttr()}.  It
+  is usually convenient to set this field to
+  \cfunction{PyObject_GenericSetAttr()}, which implements the normal
+  way of setting object attributes.
+
+  This field is inherited by subtypes together with
+  \member{tp_setattr}: a subtype inherits both \member{tp_setattr} and
+  \member{tp_setattro} from its base type when the subtype's
+  \member{tp_setattr} and \member{tp_setattro} are both \NULL.
+\end{cmemberdesc}
+
+PyBufferProcs *tp_as_buffer;
+
+    XXX
+
+\begin{cmemberdesc}{PyTypeObject}{long}{tp_flags}
+  This field is a bit mask of various flags.  Some flags indicate
+  variant semantics for certain situations; others are used to
+  indicate that certain fields in the type object (or in the extension
+  structures referenced via \member{tp_as_number},
+  \member{tp_as_sequence}, \member{tp_as_mapping}, and
+  \member{tp_as_buffer}) that were historically not always present are
+  valid; if such a flag bit is clear, the type fields it guards must
+  not be accessed and must be considered to have a zero or \NULL{}
+  value instead.
+
+  Inheritance of this field is complicated.  Most flag bits are
+  inherited individually, i.e. if the base type has a flag bit set,
+  the subtype inherits this flag bit.  The flag bits that pertain to
+  extension structures are strictly inherited if the extension
+  structure is inherited, i.e. the base type's value of the flag bit
+  is copied into the subtype together with a pointer to the extension
+  structure.  The \constant{Py_TPFLAGS_HAVE_GC} flag bit is inherited
+  together with the \member{tp_traverse} and \member{tp_clear} fields,
+  i.e. if the \constant{Py_TPFLAGS_HAVE_GC} flag bit is clear in the
+  subtype and the \member{tp_traverse} and \member{tp_clear} fields in
+  the subtype exist (as indicated by the
+  \constant{Py_TPFLAGS_HAVE_RICHCOMPARE} flag bit) and have \NULL{}
+  values.
+
+  The following bit masks are currently defined; these can be or-ed
+  together using the \code{|} operator to form the value of the
+  \member{tp_flags} field.  The macro \cfunction{PyType_HasFeature()}
+  takes a type and a flags value, \var{tp} and \var{f}, and checks
+  whether \code{\var{tp}->tp_flags \& \var{f}} is nonzero.
+
+  \begin{datadesc}{Py_TPFLAGS_HAVE_GETCHARBUFFER}
+    If this bit is set, the \ctype{PyBufferProcs} struct referenced by
+    \member{tp_as_buffer} has the \member{bf_getcharbuffer} field.
+  \end{datadesc}
+
+  \begin{datadesc}{Py_TPFLAGS_HAVE_SEQUENCE_IN}
+    If this bit is set, the \ctype{PySequenceMethods} struct
+    referenced by \member{tp_as_sequence} has the \member{sq_contains}
+    field.
+  \end{datadesc}
+
+  \begin{datadesc}{Py_TPFLAGS_GC}
+    This bit is obsolete.  The bit it used to name is no longer in
+    use.  The symbol is now defined as zero.
+  \end{datadesc}
+
+  \begin{datadesc}{Py_TPFLAGS_HAVE_INPLACEOPS}
+    If this bit is set, the \ctype{PySequenceMethods} struct
+    referenced by \member{tp_as_sequence} and the
+    \ctype{PyNumberMethods} structure referenced by
+    \member{tp_as_number} contain the fields for in-place operators.
+    In particular, this means that the \ctype{PyNumberMethods}
+    structure has the fields \member{nb_inplace_add},
+    \member{nb_inplace_subtract}, \member{nb_inplace_multiply},
+    \member{nb_inplace_divide}, \member{nb_inplace_remainder},
+    \member{nb_inplace_power}, \member{nb_inplace_lshift},
+    \member{nb_inplace_rshift}, \member{nb_inplace_and},
+    \member{nb_inplace_xor}, and \member{nb_inplace_or}; and the
+    \ctype{PySequenceMethods} struct has the fields
+    \member{sq_inplace_concat} and \member{sq_inplace_repeat}.
+  \end{datadesc}
+
+  \begin{datadesc}{Py_TPFLAGS_CHECKTYPES}
+    If this bit is set, the binary and ternary operations in the
+    \ctype{PyNumberMethods} structure referenced by
+    \member{tp_as_number} accept arguments of arbitrary object types,
+    and do their own type conversions if needed.  If this bit is
+    clear, those operations require that all arguments have the
+    current type as their type, and the caller is supposed to perform
+    a coercion operation first.  This applies to \member{nb_add},
+    \member{nb_subtract}, \member{nb_multiply}, \member{nb_divide},
+    \member{nb_remainder}, \member{nb_divmod}, \member{nb_power},
+    \member{nb_lshift}, \member{nb_rshift}, \member{nb_and},
+    \member{nb_xor}, and \member{nb_or}.
+  \end{datadesc}
+
+  \begin{datadesc}{Py_TPFLAGS_HAVE_RICHCOMPARE}
+    If this bit is set, the type object has the
+    \member{tp_richcompare} field, as well as the \member{tp_traverse}
+    and the \member{tp_clear} fields.
+  \end{datadesc}
+
+  \begin{datadesc}{Py_TPFLAGS_HAVE_WEAKREFS}
+    If this bit is set, the \member{tp_weaklistoffset} field is
+    defined.  Instances of a type are weakly referenceable if the
+    type's \member{tp_weaklistoffset} field has a value greater than
+    zero.
+  \end{datadesc}
+
+  \begin{datadesc}{Py_TPFLAGS_HAVE_ITER}
+    If this bit is set, the type object has the \member{tp_iter} and
+    \member{tp_iternext} fields.
+  \end{datadesc}
+
+  \begin{datadesc}{Py_TPFLAGS_HAVE_CLASS}
+    If this bit is set, the type object has several new fields defined
+    starting in Python 2.2: \member{tp_methods}, \member{tp_members},
+    \member{tp_getset}, \member{tp_base}, \member{tp_dict},
+    \member{tp_descr_get}, \member{tp_descr_set},
+    \member{tp_dictoffset}, \member{tp_init}, \member{tp_alloc},
+    \member{tp_new}, \member{tp_free}, \member{tp_is_gc},
+    \member{tp_bases}, \member{tp_mro}, \member{tp_cache},
+    \member{tp_subclasses}, and \member{tp_weaklist}.
+  \end{datadesc}
+
+  \begin{datadesc}{Py_TPFLAGS_HEAPTYPE}
+    This bit is set when the type object itself is allocated on the
+    heap.  In this case, the \member{ob_type} field of its instances
+    is considered a reference to the type, and the type object is
+    INCREF'ed when a new instance is created, and DECREF'ed when an
+    instance is destroyed (this does not apply to instances of
+    subtypes; only the type referenced by the instance's ob_type gets
+    INCREF'ed or DECREF'ed).
+  \end{datadesc}
+
+  \begin{datadesc}{Py_TPFLAGS_BASETYPE}
+    This bit is set when the type can be used as the base type of
+    another type.  If this bit is clear, the type cannot be subtyped
+    (similar to a "final" class in Java).
+  \end{datadesc}
+
+  \begin{datadesc}{Py_TPFLAGS_READY}
+    This bit is set when the type object has been fully initialized by
+    \cfunction{PyType_Ready()}.
+  \end{datadesc}
+
+  \begin{datadesc}{Py_TPFLAGS_READYING}
+    This bit is set while \cfunction{PyType_Ready()} is in the process
+    of initializing the type object.
+  \end{datadesc}
+
+  \begin{datadesc}{Py_TPFLAGS_HAVE_GC}
+    This bit is set when the object supports garbage collection.  If
+    this bit is set, instances must be created using
+    \cfunction{PyObject_GC_New()} and destroyed using
+    \cfunction{PyObject_GC_Del()}.  More information in section XXX
+    about garbage collection.  This bit also implies that the
+    GC-related fields \member{tp_traverse} and \member{tp_clear} are
+    present in the type object; but those fields also exist when
+    \constant{Py_TPFLAGS_HAVE_GC} is clear but
+    \constant{Py_TPFLAGS_HAVE_RICHCOMPARE} is set).
+  \end{datadesc}
+
+  \begin{datadesc}{Py_TPFLAGS_DEFAULT}
+    This is a bitmask of all the bits that pertain to the existence of
+    certain fields in the type object and its extension structures.
+    Currently, it includes the following bits:
+    \constant{Py_TPFLAGS_HAVE_GETCHARBUFFER},
+    \constant{Py_TPFLAGS_HAVE_SEQUENCE_IN},
+    \constant{Py_TPFLAGS_HAVE_INPLACEOPS},
+    \constant{Py_TPFLAGS_HAVE_RICHCOMPARE},
+    \constant{Py_TPFLAGS_HAVE_WEAKREFS},
+    \constant{Py_TPFLAGS_HAVE_ITER}, and
+    \constant{Py_TPFLAGS_HAVE_CLASS}.
+  \end{datadesc}
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{char*}{tp_doc}
+  An optional pointer to a NUL-terminated C string giving the
+  docstring for this type object.
+
+  This field is \emph{not} inherited by subtypes.
+\end{cmemberdesc}
+
+The following three fields only exist if the
+\constant{Py_TPFLAGS_HAVE_RICHCOMPARE} flag bit is set.
+
+\begin{cmemberdesc}{PyTypeObject}{traverseproc}{tp_traverse}
+  An optional pointer to a traversal function for the garbage
+  collector.  This is only used if the \constant{Py_TPFLAGS_HAVE_GC}
+  flag bit is set.  More information in section XXX about garbage
+  collection.
+
+  This field is inherited by subtypes together with \member{tp_clear}
+  and the \constant{Py_TPFLAGS_HAVE_GC} flag bit: the flag bit,
+  \member{tp_traverse}, and \member{tp_clear} are all inherited from
+  the base type if they are all zero in the subtype \emph{and} the
+  subtype has the \constant{Py_TPFLAGS_HAVE_RICHCOMPARE} flag bit set.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{inquiry}{tp_clear}
+  An optional pointer to a clear function for the garbage collector.
+  This is only used if the \constant{Py_TPFLAGS_HAVE_GC} flag bit is
+  set.  More information in section XXX about garbage collection.
+
+  This field is inherited by subtypes together with \member{tp_clear}
+  and the \constant{Py_TPFLAGS_HAVE_GC} flag bit: the flag bit,
+  \member{tp_traverse}, and \member{tp_clear} are all inherited from
+  the base type if they are all zero in the subtype \emph{and} the
+  subtype has the \constant{Py_TPFLAGS_HAVE_RICHCOMPARE} flag bit set.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{richcmpfunc}{tp_richcompare}
+  An optional pointer to the rich comparison function.
+
+  The signature is the same as for \cfunction{PyObject_RichCompare()}.
+  The function should return \code{1} if the requested comparison
+  returns true, \code{0} if it returns false.  It should return
+  \code{-1} and set an exception condition when an error occurred
+  during the comparison.
+
+  This field is inherited by subtypes together with
+  \member{tp_compare} and \member{tp_hash}: a subtype inherits all
+  three of \member{tp_compare}, \member{tp_richcompare}, and
+  \member{tp_hash}, when the subtype's \member{tp_compare},
+  \member{tp_richcompare}, and \member{tp_hash} are all \NULL.
+
+  The following constants are defined to be used as the third argument
+  for \member{tp_richcompare} and for \cfunction{PyObject_RichCompare()}:
+
+  \begin{tableii}{l|c}{constant}{Constant}{Comparison}
+    \lineii{Py_LT}{\code{<}}
+    \lineii{Py_LE}{\code{<=}}
+    \lineii{Py_EQ}{\code{==}}
+    \lineii{Py_NE}{\code{!=}}
+    \lineii{Py_GT}{\code{>}}
+    \lineii{Py_GE}{\code{>=}}
+  \end{tableii}
+\end{cmemberdesc}
+
+The next field only exists if the \constant{Py_TPFLAGS_HAVE_WEAKREFS}
+flag bit is set.  (XXX ???)
+
+long tp_weaklistoffset;
+
+    XXX
+
+
+The remaining fields only exist if the
+\constant{Py_TPFLAGS_HAVE_CLASS} flag bit is set.
+
+/* Added in release 2.2 */
+/* Iterators */
+getiterfunc tp_iter;
+
+    XXX
+
+iternextfunc tp_iternext;
+
+    XXX
 
 
 \section{Mapping Object Structures \label{mapping-structs}}
