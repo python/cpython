@@ -39,7 +39,7 @@ extern void bzero(void *, int);
 #endif
 
 #ifdef MS_WINDOWS
-#include <windows.h>
+#include <winsock.h>
 #else
 #ifdef __BEOS__
 #include <net/socket.h>
