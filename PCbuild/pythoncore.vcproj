@@ -993,6 +993,9 @@
 			</FileConfiguration>
 		</File>
 		<File
+			RelativePath="..\Objects\genobject.c">
+		</File>
+		<File
 			RelativePath="..\Python\getargs.c">
 			<FileConfiguration
 				Name="Release|Win32">
