@@ -6,6 +6,7 @@
                 functions.}
 \moduleauthor{Lars Marius Garshol}{larsga@garshol.priv.no}
 \sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+\sectionauthor{Martin v. L\"owis}{loewis@informatik.hu-berlin.de}
 
 \versionadded{2.0}
 
@@ -41,8 +42,29 @@ The convenience functions are:
   received as a parameter.
 \end{funcdesc}
 
+A typical SAX application uses three kinds of objects: readers,
+handlers and input sources. ``Reader'' in this context is another term
+for parser, ie. some piece of code that reads the bytes or characters
+from the input source, and produces a sequence of events. The events
+then get distributed to the handler objects, ie. the reader invokes a
+method on the handler. A SAX application must therefore obtain a
+handler object, create or open the input sources, create the handlers,
+and connect these objects all together. As the final step, parsing is
+invoked. During parsing
 
-The SAX exceptions are also provided here:
+For these objects, only the interfaces are relevant; they are normally
+not instantiated by the application itself. Since Python does not have
+an explicit notion of interface, they are formally introduced as
+classes. The \class{InputSource}, \class{Locator},
+\class{AttributesImpl}, and \class{XMLReader} interfaces are defined
+in the module \refmodule{xml.sax.xmlreader}. The handler interfaces
+are defined in \refmodule{xml.sax.handler}. For convenience,
+\class{InputSource} (which is often instantiated directly) and the
+handler classes are also available from \module{xml.sax}.  These
+classes are described below.
+
+In addition to these classes, \module{xml.sax} provides the following
+exception classes.
 
 \begin{excclassdesc}{SAXException}{msg\optional{, exception}}
   Encapsulate an XML error or warning.  This class can contain basic
@@ -94,7 +116,7 @@ The SAX exceptions are also provided here:
 \end{seealso}
 
 
-\subsection{SAXException Objects \label{saxexception-objects}}
+\subsection{SAXException Objects \label{sax-exception-objects}}
 
 The \class{SAXException} exception class supports the following
 methods:

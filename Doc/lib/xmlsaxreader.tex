@@ -1,0 +1,337 @@
+\section{\module{xml.sax.xmlreader} ---
+         Interface for XML parsers}
+
+\declaremodule{standard}{xml.sax.xmlreader}
+\modulesynopsis{Interface which SAX-compliant XML parsers must implement.}
+\sectionauthor{Martin v. L\"owis}{loewis@informatik.hu-berlin.de}
+\moduleauthor{Lars Marius Garshol}{larsga@garshol.priv.no}
+
+\versionadded{2.0}
+
+
+SAX parsers implement the \class{XMLReader} interface. They are
+implemented in a Python module, which must provide a function
+\function{create_parser()}. This function is invoked by 
+\function{xml.sax.make_parser()} with no arguments to create a new 
+parser object.
+
+\begin{classdesc}{XMLReader}{}
+  Base class which can be inherited by SAX parsers.
+\end{classdesc}
+
+\begin{classdesc}{IncrementalParser}{}
+  In some cases, it is desirable not to parse an input source at once,
+  but to feed chunks of the document as they get available. Note that
+  the reader will normally not read the entire file, but read it in
+  chunks as well; still \method{parse()} won't return until the entire
+  document is processed. So these interfaces should be used if the
+  blocking behaviour of \method{parse()} is not desirable.
+
+  When the parser is instantiated it is ready to begin accepting data
+  from the feed method immediately. After parsing has been finished
+  with a call to close the reset method must be called to make the
+  parser ready to accept new data, either from feed or using the parse
+  method.
+
+  Note that these methods must \emph{not} be called during parsing,
+  that is, after parse has been called and before it returns.
+
+  By default, the class also implements the parse method of the
+  XMLReader interface using the feed, close and reset methods of the
+  IncrementalParser interface as a convenience to SAX 2.0 driver
+  writers.
+\end{classdesc}
+
+\begin{classdesc}{Locator}{}
+  Interface for associating a SAX event with a document location. A
+  locator object will return valid results only during calls to
+  DocumentHandler methods; at any other time, the results are
+  unpredictable. If information is not available, methods may return
+  \code{None}.
+\end{classdesc}
+
+\begin{classdesc}{InputSource}{\optional{systemId}}
+  Encapsulation of the information needed by the \class{XMLReader} to
+  read entities.
+
+  This class may include information about the public identifier,
+  system identifier, byte stream (possibly with character encoding
+  information) and/or the character stream of an entity.
+
+  Applications will create objects of this class for use in the
+  \method{XMLReader.parse()} method and for returning from
+  EntityResolver.resolveEntity.
+
+  An \class{InputSource} belongs to the application, the
+  \class{XMLReader} is not allowed to modify \class{InputSource} objects
+  passed to it from the application, although it may make copies and
+  modify those.
+\end{classdesc}
+
+\begin{classdesc}{AttributesImpl}{attrs}
+  This is a dictionary-like object which represents the element
+  attributes in a \method{startElement()} call. In addition to the
+  most useful dictionary operations, it supports a number of other
+  methods as described below. Objects of this class should be
+  instantiated by readers; \var{attrs} must be a dictionary-like
+  object.
+\end{classdesc}
+
+\begin{classdesc}{AttributesNSImpl}{attrs, qnames}
+  Namespace-aware variant of attributes, which will be passed to
+  \method{startElementNS()}. It is derived from \class{AttributesImpl},
+  but understands attribute names as two-tuples of \var{namespaceURI}
+  and \var{localname}. In addition, it provides a number of methods
+  expecting qualified names as they appear in the original document.
+\end{classdesc}
+
+
+\subsection{XMLReader Objects \label{xmlreader-objects}}
+
+The \class{XMLReader} interface supports the following methods:
+
+\begin{methoddesc}[XMLReader]{parse}{source}
+  Process an input source, producing SAX events. The \var{source}
+  object can be a system identifier (i.e. a string identifying the
+  input source -- typically a file name or an URL), a file-like
+  object, or an \class{InputSource} object. When \method{parse()}
+  returns, the input is completely processed, and the parser object
+  can be discarded or reset. As a limitation, the current implementation
+  only accepts byte streams; processing of character streams is for
+  further study.
+\end{methoddesc}
+
+\begin{methoddesc}[XMLReader]{getContentHandler}{}
+  Return the current \class{ContentHandler}.
+\end{methoddesc}
+
+\begin{methoddesc}[XMLReader]{setContentHandler}{handler}
+  Set the current \class{ContentHandler}.  If no
+  \class{ContentHandler} is set, content events will be discarded.
+\end{methoddesc}
+
+\begin{methoddesc}[XMLReader]{getDTDHandler}{}
+  Return the current \class{DTDHandler}.
+\end{methoddesc}
+
+\begin{methoddesc}[XMLReader]{setDTDHandler}{handler}
+  Set the current \class{DTDHandler}.  If no \class{DTDHandler} is
+  set, DTD events will be discarded.
+\end{methoddesc}
+
+\begin{methoddesc}[XMLReader]{getEntityResolver}{}
+  Return the current \class{EntityResolver}.
+\end{methoddesc}
+
+\begin{methoddesc}[XMLReader]{setEntityResolver}{handler}
+  Set the current \class{EntityResolver}.  If no
+  \class{EntityResolver} is set, attempts to resolve an external
+  entity will result in opening the system identifier for the entity,
+  and fail if it is not available. 
+\end{methoddesc}
+
+\begin{methoddesc}[XMLReader]{getErrorHandler}{}
+  Return the current \class{ErrorHandler}.
+\end{methoddesc}
+
+\begin{methoddesc}[XMLReader]{setErrorHandler}{handler}
+  Set the current error handler.  If no \class{ErrorHandler} is set,
+  errors will be raised as exceptions, and warnings will be printed.
+\end{methoddesc}
+
+\begin{methoddesc}[XMLReader]{setLocale}{locale}
+  Allow an application to set the locale for errors and warnings. 
+   
+  SAX parsers are not required to provide localization for errors and
+  warnings; if they cannot support the requested locale, however, they
+  must throw a SAX exception.  Applications may request a locale change
+  in the middle of a parse.
+\end{methoddesc}
+
+\begin{methoddesc}[XMLReader]{getFeature}{featurename}
+  Return the current setting for feature \var{featurename}.  If the
+  feature is not recognized, \exception{SAXNotRecognizedException} is
+  raised. The well-known featurenames are listed in the module
+  \module{xml.sax.handler}.
+\end{methoddesc}
+
+\begin{methoddesc}[XMLReader]{setFeature}{featurename, value}
+  Set the \var{featurename} to \var{value}. If the feature is not
+  recognized, \exception{SAXNotRecognizedException} is raised. If the
+  feature or its setting is not supported by the parser,
+  \var{SAXNotSupportedException} is raised.
+\end{methoddesc}
+
+\begin{methoddesc}[XMLReader]{getProperty}{propertyname}
+  Return the current setting for property \var{propertyname}. If the
+  property is not recognized, a \exception{SAXNotRecognizedException}
+  is raised. The well-known propertynames are listed in the module
+  \module{xml.sax.handler}.
+\end{methoddesc}
+
+\begin{methoddesc}[XMLReader]{setProperty}{propertyname, value}
+  Set the \var{propertyname} to \var{value}. If the property is not
+  recognized, \exception{SAXNotRecognizedException} is raised. If the
+  property or its setting is not supported by the parser,
+  \var{SAXNotSupportedException} is raised.
+\end{methoddesc}
+
+
+\subsection{IncrementalParser Objects
+            \label{incremental-parser-objects}}
+
+Instances of \class{IncrementalParser} offer the following additional
+methods:
+
+\begin{methoddesc}[IncrementalParser]{feed}{data}
+  Process a chunk of \var{data}.
+\end{methoddesc}
+
+\begin{methoddesc}[IncrementalParser]{close}{}
+  Assume the end of the document. That will check well-formedness
+  conditions that can be checked only at the end, invoke handlers, and
+  may clean up resources allocated during parsing.
+\end{methoddesc}
+
+\begin{methoddesc}[IncrementalParser]{reset}{}
+  This method is called after close has been called to reset the
+  parser so that it is ready to parse new documents. The results of
+  calling parse or feed after close without calling reset are
+  undefined."""
+\end{methoddesc}
+
+
+\subsection{Locator Objects \label{locator-objects}}
+
+Instances of \class{Locator} provide these methods:
+
+\begin{methoddesc}[Locator]{getColumnNumber}{}
+  Return the column number where the current event ends.
+\end{methoddesc}
+
+\begin{methoddesc}[Locator]{getLineNumber}{}
+  Return the line number where the current event ends.
+\end{methoddesc}
+
+\begin{methoddesc}[Locator]{getPublicId}{}
+  Return the public identifier for the current event.
+\end{methoddesc}
+
+\begin{methoddesc}[Locator]{getSystemId}{}
+  Return the system identifier for the current event.
+\end{methoddesc}
+
+
+\subsection{InputSource Objects \label{input-source-objects}}
+
+\begin{methoddesc}[InputSource]{setPublicId}{id}
+  Sets the public identifier of this \class{InputSource}.
+\end{methoddesc}
+
+\begin{methoddesc}[InputSource]{getPublicId}{}
+  Returns the public identifier of this \class{InputSource}.
+\end{methoddesc}
+
+\begin{methoddesc}[InputSource]{setSystemId}{id}
+  Sets the system identifier of this \class{InputSource}.
+\end{methoddesc}
+
+\begin{methoddesc}[InputSource]{getSystemId}{}
+  Returns the system identifier of this \class{InputSource}.
+\end{methoddesc}
+
+\begin{methoddesc}[InputSource]{setEncoding}{encoding}
+  Sets the character encoding of this \class{InputSource}.
+
+  The encoding must be a string acceptable for an XML encoding
+  declaration (see section 4.3.3 of the XML recommendation).
+ 
+  The encoding attribute of the \class{InputSource} is ignored if the
+  \class{InputSource} also contains a character stream.
+\end{methoddesc}
+
+\begin{methoddesc}[InputSource]{getEncoding}{}
+  Get the character encoding of this InputSource.
+\end{methoddesc}
+
+\begin{methoddesc}[InputSource]{setByteStream}{bytefile}
+  Set the byte stream (a Python file-like object which does not
+  perform byte-to-character conversion) for this input source.
+  
+  The SAX parser will ignore this if there is also a character stream
+  specified, but it will use a byte stream in preference to opening a
+  URI connection itself.
+  
+  If the application knows the character encoding of the byte stream,
+  it should set it with the setEncoding method.
+\end{methoddesc}
+
+\begin{methoddesc}[InputSource]{getByteStream}{}
+  Get the byte stream for this input source.
+        
+  The getEncoding method will return the character encoding for this
+  byte stream, or None if unknown.
+\end{methoddesc}
+
+\begin{methoddesc}[InputSource]{setCharacterStream}{charfile}
+  Set the character stream for this input source. (The stream must be
+  a Python 1.6 Unicode-wrapped file-like that performs conversion to
+  Unicode strings.)
+  
+  If there is a character stream specified, the SAX parser will ignore
+  any byte stream and will not attempt to open a URI connection to the
+  system identifier.
+\end{methoddesc}
+
+\begin{methoddesc}[InputSource]{getCharacterStream}{}
+  Get the character stream for this input source.
+\end{methoddesc}
+
+
+\subsection{AttributesImpl Objects \label{attributes-impl-objects}}
+
+\class{AttributesImpl} objects implement a portion of the mapping
+protocol, and the methods \method{copy()}, \method{get()},
+\method{has_key()}, \method{items()}, \method{keys()}, and
+\method{values()}.  The following methods are also provided:
+
+\begin{methoddesc}[AttributesImpl]{getLength}{}
+  Return the number of attributes.
+\end{methoddesc}
+
+\begin{methoddesc}[AttributesImpl]{getNames}{}
+  Return the names of the attributes.
+\end{methoddesc}
+
+\begin{methoddesc}[AttributesImpl]{getType}{name}
+  Returns the type of the attribute \var{name}, which is normally
+  \code{'CDATA'}.
+\end{methoddesc}
+
+\begin{methoddesc}[AttributesImpl]{getValue}{name}
+  Return the value of attribute \var{name}.
+\end{methoddesc}
+
+% getValueByQName, getNameByQName, getQNameByName, getQNames available
+% here already, but documented only for derived class.
+
+
+\subsection{AttributesNSImpl Objects \label{attributes-ns-impl-objects}}
+
+\begin{methoddesc}[AttributesNSImpl]{getValueByQName}{name}
+  Return the value for a qualified name.
+\end{methoddesc}
+
+\begin{methoddesc}[AttributesNSImpl]{getNameByQName}{name}
+  Return the \code{(\var{namespace}, \var{localname})} pair for a
+  qualified \var{name}.
+\end{methoddesc}
+
+\begin{methoddesc}[AttributesNSImpl]{getQNameByName}{name}
+  Return the qualified name for a \code{(\var{namespace},
+  \var{localname})} pair.
+\end{methoddesc}
+
+\begin{methoddesc}[AttributesNSImpl]{getQNames}{}
+  Return the qualified names of all attributes.
+\end{methoddesc}
