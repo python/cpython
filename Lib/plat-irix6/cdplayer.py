@@ -53,7 +53,7 @@ class Cdplayer:
 				if not match:
 					print 'syntax error in ~/' + cdplayerrc
 					continue
-				name, valye = match.group(1, 2)
+				name, value = match.group(1, 2)
 				if name == 'title':
 					self.title = value
 				elif name == 'artist':
