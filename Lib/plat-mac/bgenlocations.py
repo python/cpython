@@ -26,7 +26,7 @@ else:
 # end of lines, so don't worry about that.
 #
 if sys.platform == 'mac':
-	_MWERKSDIR="Macintosh HD:Applications (Mac OS 9):Metrowerks CodeWarrior 7.0:Metrowerks CodeWarrior"
+	_MWERKSDIR="Moes:Applications (Mac OS 9):Metrowerks CodeWarrior 7.0:Metrowerks CodeWarrior"
 else:
 	_MWERKSDIR="/Volumes/Moes/Applications (Mac OS 9)/Metrowerks CodeWarrior 7.0/Metrowerks CodeWarrior/"
 INCLUDEDIR=os.path.join(_MWERKSDIR, "MacOS Support", "Universal", "Interfaces", "CIncludes")
@@ -37,9 +37,9 @@ INCLUDEDIR=os.path.join(_MWERKSDIR, "MacOS Support", "Universal", "Interfaces", 
 # your source directory, not your installed directory.
 #
 if sys.platform == 'mac':
-	TOOLBOXDIR=os.path.join(sys.prefix, "Mac", "Lib", "Carbon")
+	TOOLBOXDIR=os.path.join(sys.prefix, "Lib", "plat-mac", "Carbon")
 else:
-	TOOLBOXDIR="/Users/jack/src/python/Mac/Lib/Carbon"
+	TOOLBOXDIR="/Users/jack/src/python/Lib/plat-mac/Carbon"
 
 # Creator for C files:
 CREATOR="CWIE"
