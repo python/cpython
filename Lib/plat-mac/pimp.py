@@ -22,6 +22,9 @@ import plistlib
 import distutils.util
 import distutils.sysconfig
 import md5
+import tarfile
+import tempfile
+import shutil
 
 __all__ = ["PimpPreferences", "PimpDatabase", "PimpPackage", "main"]
 
@@ -42,13 +45,101 @@ DEFAULT_BUILDDIR='/tmp'
 DEFAULT_INSTALLDIR=distutils.sysconfig.get_python_lib()
 DEFAULT_PIMPDATABASE="http://www.cwi.nl/~jack/pimp/pimp-%s.plist" % distutils.util.get_platform()
 
+def _cmd(output, dir, *cmditems):
+    """Internal routine to run a shell command in a given directory."""
+    
+    cmd = ("cd \"%s\"; " % dir) + " ".join(cmditems)
+    if output:
+        output.write("+ %s\n" % cmd)
+    if NO_EXECUTE:
+        return 0
+    child = popen2.Popen4(cmd)
+    child.tochild.close()
+    while 1:
+        line = child.fromchild.readline()
+        if not line:
+            break
+        if output:
+            output.write(line)
+    return child.wait()
+
+class PimpUnpacker:
+    """Abstract base class - Unpacker for archives"""
+    
+    _can_rename = False
+    
+    def __init__(self, argument,
+            dir="",
+            renames=[]):
+        self.argument = argument
+        if renames and not self._can_rename:
+            raise RuntimeError, "This unpacker cannot rename files"
+        self._dir = dir
+        self._renames = renames
+                
+    def unpack(self, archive, output=None):
+        return None
+        
+class PimpCommandUnpacker(PimpUnpacker):
+    """Unpack archives by calling a Unix utility"""
+    
+    _can_rename = False
+    
+    def unpack(self, archive, output=None):
+        cmd = self.argument % archive
+        if _cmd(output, self._dir, cmd):
+            return "unpack command failed"
+            
+class PimpTarUnpacker(PimpUnpacker):
+    """Unpack tarfiles using the builtin tarfile module"""
+    
+    _can_rename = True
+    
+    def unpack(self, archive, output=None):
+        tf = tarfile.open(archive, "r")
+        members = tf.getmembers()
+        skip = []
+        if self._renames:
+            for member in members:
+                for oldprefix, newprefix in self._renames:
+                    if oldprefix[:len(self._dir)] == self._dir:
+                        oldprefix2 = oldprefix[len(self._dir):]
+                    else:
+                        oldprefix2 = None
+                    if member.name[:len(oldprefix)] == oldprefix:
+                        if newprefix is None:
+                            skip.append(member)
+                            #print 'SKIP', member.name
+                        else:
+                            member.name = newprefix + member.name[len(oldprefix):]
+                            print '    ', member.name
+                        break
+                    elif oldprefix2 and member.name[:len(oldprefix2)] == oldprefix2:
+                        if newprefix is None:
+                            skip.append(member)
+                            #print 'SKIP', member.name
+                        else:
+                            member.name = newprefix + member.name[len(oldprefix2):]
+                            #print '    ', member.name
+                        break
+                else:
+                    skip.append(member)
+                    #print '????', member.name
+        for member in members:
+            if member in skip:
+                continue
+            tf.extract(member, self._dir)
+        if skip:
+            names = [member.name for member in skip if member.name[-1] != '/']
+            return "Not all files were unpacked: %s" % " ".join(names)
+        
 ARCHIVE_FORMATS = [
-    (".tar.Z", "zcat \"%s\" | tar -xf -"),
-    (".taz", "zcat \"%s\" | tar -xf -"),
-    (".tar.gz", "zcat \"%s\" | tar -xf -"),
-    (".tgz", "zcat \"%s\" | tar -xf -"),
-    (".tar.bz", "bzcat \"%s\" | tar -xf -"),
-    (".zip", "unzip \"%s\""),
+    (".tar.Z", PimpTarUnpacker, None),
+    (".taz", PimpTarUnpacker, None),
+    (".tar.gz", PimpTarUnpacker, None),
+    (".tgz", PimpTarUnpacker, None),
+    (".tar.bz", PimpTarUnpacker, None),
+    (".zip", PimpCommandUnpacker, "unzip \"%s\""),
 ]
 
 class PimpPreferences:
@@ -67,10 +158,18 @@ class PimpPreferences:
             downloadDir = DEFAULT_DOWNLOADDIR
         if not buildDir:
             buildDir = DEFAULT_BUILDDIR
-        if not installDir:
-            installDir = DEFAULT_INSTALLDIR
         if not pimpDatabase:
             pimpDatabase = DEFAULT_PIMPDATABASE
+        if installDir:
+            # Installing to non-standard location.
+            self.installLocations = [
+                ('--install-lib', installDir),
+                ('--install-headers', None),
+                ('--install-scripts', None),
+                ('--install-data', None)]
+        else:
+            installDir = DEFAULT_INSTALLDIR
+            self.installLocations = []
         self.flavorOrder = flavorOrder
         self.downloadDir = downloadDir
         self.buildDir = buildDir
@@ -106,7 +205,7 @@ class PimpPreferences:
                     break
             else:
                 rv += "Warning: Install directory \"%s\" is not on sys.path\n" % self.installDir
-        return rv           
+        return rv
         
     def compareFlavors(self, left, right):
         """Compare two flavor strings. This is part of your preferences
@@ -388,23 +487,6 @@ class PimpPackage:
             rv.append((pkg, descr))
         return rv
             
-    def _cmd(self, output, dir, *cmditems):
-        """Internal routine to run a shell command in a given directory."""
-        
-        cmd = ("cd \"%s\"; " % dir) + " ".join(cmditems)
-        if output:
-            output.write("+ %s\n" % cmd)
-        if NO_EXECUTE:
-            return 0
-        child = popen2.Popen4(cmd)
-        child.tochild.close()
-        while 1:
-            line = child.fromchild.readline()
-            if not line:
-                break
-            if output:
-                output.write(line)
-        return child.wait()
         
     def downloadPackageOnly(self, output=None):
         """Download a single package, if needed.
@@ -425,7 +507,7 @@ class PimpPackage:
         if not self._archiveOK():
             if scheme == 'manual':
                 return "Please download package manually and save as %s" % self.archiveFilename
-            if self._cmd(output, self._db.preferences.downloadDir,
+            if _cmd(output, self._db.preferences.downloadDir,
                     "curl",
                     "--output", self.archiveFilename,
                     self._dict['Download-URL']):
@@ -451,15 +533,16 @@ class PimpPackage:
         """Unpack a downloaded package archive."""
         
         filename = os.path.split(self.archiveFilename)[1]
-        for ext, cmd in ARCHIVE_FORMATS:
+        for ext, unpackerClass, arg in ARCHIVE_FORMATS:
             if filename[-len(ext):] == ext:
                 break
         else:
             return "unknown extension for archive file: %s" % filename
         self.basename = filename[:-len(ext)]
-        cmd = cmd % self.archiveFilename
-        if self._cmd(output, self._db.preferences.buildDir, cmd):
-            return "unpack command failed"
+        unpacker = unpackerClass(arg, dir=self._db.preferences.buildDir)
+        rv = unpacker.unpack(self.archiveFilename, output=output)
+        if rv:
+            return rv
             
     def installPackageOnly(self, output=None):
         """Default install method, to be overridden by subclasses"""
@@ -527,37 +610,48 @@ class PimpPackage_binary(PimpPackage):
         
         If output is given it should be a file-like object and it
         will receive a log of what happened."""
-        print 'PimpPackage_binary installPackageOnly'
                     
-        msgs = []
-        if self._dict.has_key('Pre-install-command'):
-            msg.append("%s: Pre-install-command ignored" % self.fullname())
         if self._dict.has_key('Install-command'):
-            msgs.append("%s: Install-command ignored" % self.fullname())
-        if self._dict.has_key('Post-install-command'):
-            msgs.append("%s: Post-install-command ignored" % self.fullname())
+            return "%s: Binary package cannot have Install-command" % self.fullname()
+                    
+        if self._dict.has_key('Pre-install-command'):
+            if _cmd(output, self._buildDirname, self._dict['Pre-install-command']):
+                return "pre-install %s: running \"%s\" failed" % \
+                    (self.fullname(), self._dict['Pre-install-command'])
                     
         self.beforeInstall()
 
         # Install by unpacking
         filename = os.path.split(self.archiveFilename)[1]
-        for ext, cmd in ARCHIVE_FORMATS:
+        for ext, unpackerClass, arg in ARCHIVE_FORMATS:
             if filename[-len(ext):] == ext:
                 break
         else:
-            return "unknown extension for archive file: %s" % filename
+            return "%s: unknown extension for archive file: %s" % (self.fullname(), filename)
+        self.basename = filename[:-len(ext)]
         
-        # Extract the files in the root folder.
-        cmd = cmd % self.archiveFilename
-        if self._cmd(output, "/", cmd):
-            return "unpack command failed"
+        install_renames = []
+        for k, newloc in self._db.preferences.installLocations:
+            if not newloc:
+                continue
+            if k == "--install-lib":
+                oldloc = DEFAULT_INSTALLDIR
+            else:
+                return "%s: Don't know installLocation %s" % (self.fullname(), k)
+            install_renames.append((oldloc, newloc))
+                
+        unpacker = unpackerClass(arg, dir="/", renames=install_renames)
+        rv = unpacker.unpack(self.archiveFilename, output=output)
+        if rv:
+            return rv
         
         self.afterInstall()
         
         if self._dict.has_key('Post-install-command'):
-            if self._cmd(output, self._buildDirname, self._dict['Post-install-command']):
-                return "post-install %s: running \"%s\" failed" % \
+            if _cmd(output, self._buildDirname, self._dict['Post-install-command']):
+                return "%s: post-install: running \"%s\" failed" % \
                     (self.fullname(), self._dict['Post-install-command'])
+
         return None
         
     
@@ -579,22 +673,44 @@ class PimpPackage_source(PimpPackage):
         will receive a log of what happened."""
                     
         if self._dict.has_key('Pre-install-command'):
-            if self._cmd(output, self._buildDirname, self._dict['Pre-install-command']):
+            if _cmd(output, self._buildDirname, self._dict['Pre-install-command']):
                 return "pre-install %s: running \"%s\" failed" % \
                     (self.fullname(), self._dict['Pre-install-command'])
                     
         self.beforeInstall()
         installcmd = self._dict.get('Install-command')
+        if installcmd and self._install_renames:
+            return "Package has install-command and can only be installed to standard location"
+        # This is the "bit-bucket" for installations: everything we don't
+        # want. After installation we check that it is actually empty
+        unwanted_install_dir = None
         if not installcmd:
-            installcmd = '"%s" setup.py install' % sys.executable
-        if self._cmd(output, self._buildDirname, installcmd):
+            extra_args = ""
+            for k, v in self._db.preferences.installLocations:
+                if not v:
+                    # We don't want these files installed. Send them
+                    # to the bit-bucket.
+                    if not unwanted_install_dir:
+                        unwanted_install_dir = tempfile.mkdtemp()
+                    v = unwanted_install_dir
+                extra_args = extra_args + " %s \"%s\"" % (k, v)
+            installcmd = '"%s" setup.py install %s' % (sys.executable, extra_args)
+        if _cmd(output, self._buildDirname, installcmd):
             return "install %s: running \"%s\" failed" % \
                 (self.fullname(), installcmd)
+        if unwanted_install_dir and os.path.exists(unwanted_install_dir):
+            unwanted_files = os.listdir(unwanted_install_dir)
+            if unwanted_files:
+                rv = "Warning: some files were not installed: %s" % " ".join(unwanted_files)
+            else:
+                rv = None
+            shutil.rmtree(unwanted_install_dir)
+            return rv
         
         self.afterInstall()
         
         if self._dict.has_key('Post-install-command'):
-            if self._cmd(output, self._buildDirname, self._dict['Post-install-command']):
+            if _cmd(output, self._buildDirname, self._dict['Post-install-command']):
                 return "post-install %s: running \"%s\" failed" % \
                     (self.fullname(), self._dict['Post-install-command'])
         return None
@@ -672,11 +788,13 @@ class PimpInstaller:
         
         
     
-def _run(mode, verbose, force, args):
+def _run(mode, verbose, force, args, prefargs):
     """Engine for the main program"""
     
-    prefs = PimpPreferences()
-    prefs.check()
+    prefs = PimpPreferences(**prefargs)
+    rv = prefs.check()
+    if rv:
+        sys.stdout.write(rv)
     db = PimpDatabase(prefs)
     db.appendURL(prefs.pimpDatabase)
     
@@ -697,7 +815,10 @@ def _run(mode, verbose, force, args):
             print "%-20.20s\t%s" % (pkgname, description)
             if verbose:
                 print "\tHome page:\t", pkg.homepage()
-                print "\tDownload URL:\t", pkg.downloadURL()
+                try:
+                    print "\tDownload URL:\t", pkg.downloadURL()
+                except KeyError:
+                    pass
     elif mode =='status':
         if not args:
             args = db.listnames()
@@ -751,17 +872,18 @@ def main():
     
     import getopt
     def _help():
-        print "Usage: pimp [-v] -s [package ...]  List installed status"
-        print "       pimp [-v] -l [package ...]  Show package information"
-        print "       pimp [-vf] -i package ...   Install packages"
-        print "       pimp -d                     Dump database to stdout"
+        print "Usage: pimp [options] -s [package ...]  List installed status"
+        print "       pimp [options] -l [package ...]  Show package information"
+        print "       pimp [options] -i package ...    Install packages"
+        print "       pimp -d                          Dump database to stdout"
         print "Options:"
-        print "       -v  Verbose"
-        print "       -f  Force installation"
+        print "       -v     Verbose"
+        print "       -f     Force installation"
+        print "       -D dir Set destination directory (default: site-packages)"
         sys.exit(1)
         
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "slifvd")
+        opts, args = getopt.getopt(sys.argv[1:], "slifvdD:")
     except getopt.Error:
         _help()
     if not opts and not args:
@@ -769,6 +891,7 @@ def main():
     mode = None
     force = 0
     verbose = 0
+    prefargs = {}
     for o, a in opts:
         if o == '-s':
             if mode:
@@ -788,9 +911,11 @@ def main():
             force = 1
         if o == '-v':
             verbose = 1
+        if o == '-D':
+            prefargs['installDir'] = a
     if not mode:
         _help()
-    _run(mode, verbose, force, args)
+    _run(mode, verbose, force, args, prefargs)
                 
 if __name__ == '__main__':
     main()
