@@ -297,8 +297,8 @@ SGI:	SGI's standard "make" utility (/bin/make or /usr/bin/make)
 
 	A bug in the MIPSpro 7.1 compiler's optimizer seems to break
 	Modules/pypcre.c.  The short term solution is to compile it
-	without optimization.  The bug appears to be fixed in version
-	7.2.1 of the compiler.
+	without optimization.  The bug is fixed in version 7.2.1 of
+	the compiler.
 
 OS/2:   If you are running Warp3 or Warp4 and have IBM's VisualAge C/C++
         compiler installed, just change into the pc\os2vacpp directory
