@@ -320,25 +320,25 @@ PyTypeObject PyFunction_Type = {
 	"function",
 	sizeof(PyFunctionObject) + PyGC_HEAD_SIZE,
 	0,
-	(destructor)func_dealloc, /*tp_dealloc*/
-	0,		/*tp_print*/
-	0, /*tp_getattr*/
-	0, /*tp_setattr*/
-	0, /*tp_compare*/
-	(reprfunc)func_repr, /*tp_repr*/
-	0,		/*tp_as_number*/
-	0,		/*tp_as_sequence*/
-	0,		/*tp_as_mapping*/
-	0,		/*tp_hash*/
-	0,		/*tp_call*/
-	0,		/*tp_str*/
-	(getattrofunc)func_getattro,	     /*tp_getattro*/
-	(setattrofunc)func_setattro,	     /*tp_setattro*/
-	0,		/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC | Py_TPFLAGS_HAVE_WEAKREFS,
-	0,		/* tp_doc */
-	(traverseproc)func_traverse,	/* tp_traverse */
-	0,		/* tp_clear */
-	0,		/* tp_richcompare */
+	(destructor)func_dealloc,            /* tp_dealloc */
+	0,                                   /* tp_print */
+	0,                                   /* tp_getattr */
+	0,                                   /* tp_setattr */
+	0,                                   /* tp_compare */
+	(reprfunc)func_repr,                 /* tp_repr */
+	0,                                   /* tp_as_number */
+	0,                                   /* tp_as_sequence */
+	0,                                   /* tp_as_mapping */
+	0,                                   /* tp_hash */
+	0,                                   /* tp_call */
+	0,                                   /* tp_str */
+	(getattrofunc)func_getattro,	     /* tp_getattro */
+	(setattrofunc)func_setattro,         /* tp_setattro */
+	0,                                   /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,  /* tp_flags */
+	0,                                   /* tp_doc */
+	(traverseproc)func_traverse,	     /* tp_traverse */
+	0,                                   /* tp_clear */
+	0,                                   /* tp_richcompare */
 	offsetof(PyFunctionObject, func_weakreflist), /* tp_weaklistoffset */
 };

@@ -2103,7 +2103,7 @@ PyTypeObject PyMethod_Type = {
 	(getattrofunc)instancemethod_getattro,	/* tp_getattro */
 	(setattrofunc)instancemethod_setattro,	/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC | Py_TPFLAGS_HAVE_WEAKREFS,
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,     /* tp_flags */
 	0,					/* tp_doc */
 	(traverseproc)instancemethod_traverse,	/* tp_traverse */
 	0,					/* tp_clear */
