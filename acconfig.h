@@ -9,6 +9,9 @@
    (as it does on SCI ODT 3.0) */
 #undef BAD_STATIC_FORWARD
 
+/* Define this if you have BeOS threads */
+#undef BEOS_THREADS
+
 /* Define if you have the Mach cthreads package */
 #undef C_THREADS
 
@@ -24,6 +27,9 @@
 
 /* Define this if your time.h defines altzone */
 #undef HAVE_ALTZONE
+
+/* Define this if you have the type long long */
+#undef HAVE_LONG_LONG
 
 /* Define this if you have a K&R style C preprocessor */
 #undef HAVE_OLD_CPP
@@ -49,6 +55,9 @@
 
 /* Define to empty if the keyword does not work.  */
 #undef signed
+
+/* sizeof(void *) */
+#undef SIZEOF_VOID_P
 
 /* Define for SOLARIS 2.x */
 #undef SOLARIS
