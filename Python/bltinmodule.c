@@ -1477,8 +1477,6 @@ generates the numbers in the range on demand.  This is slightly slower\n\
 than range() but more memory efficient.";
 
 
-extern char *PyOS_Readline Py_PROTO((char *));
-
 static PyObject *
 builtin_raw_input(self, args)
 	PyObject *self;
@@ -1508,9 +1506,7 @@ builtin_raw_input(self, args)
 			po = NULL;
 			prompt = "";
 		}
-		Py_BEGIN_ALLOW_THREADS
 		s = PyOS_Readline(prompt);
-		Py_END_ALLOW_THREADS
 		Py_XDECREF(po);
 		if (s == NULL) {
 			PyErr_SetNone(PyExc_KeyboardInterrupt);
