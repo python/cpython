@@ -49,7 +49,10 @@ fcntl_fcntl(self, args)
 			return NULL;
 		}
 		memcpy(buf, str, len);
-		if (fcntl(fd, code, buf) < 0) {
+		BGN_SAVE
+		ret = fcntl(fd, code, buf);
+		END_SAVE
+		if (ret < 0) {
 			err_errno(IOError);
 			return NULL;
 		}
@@ -64,7 +67,9 @@ fcntl_fcntl(self, args)
 		if (!getargs(args, "(iii)", &fd, &code, &arg))
 			return NULL;
 	}
+	BGN_SAVE
 	ret = fcntl(fd, code, arg);
+	END_SAVE
 	if (ret < 0) {
 		err_errno(IOError);
 		return NULL;
@@ -94,7 +99,10 @@ fcntl_ioctl(self, args)
 			return NULL;
 		}
 		memcpy(buf, str, len);
-		if (ioctl(fd, code, buf) < 0) {
+		BGN_SAVE
+		ret = ioctl(fd, code, buf);
+		END_SAVE
+		if (ret < 0) {
 			err_errno(IOError);
 			return NULL;
 		}
@@ -109,7 +117,9 @@ fcntl_ioctl(self, args)
 		if (!getargs(args, "(iii)", &fd, &code, &arg))
 			return NULL;
 	}
+	BGN_SAVE
 	ret = ioctl(fd, code, arg);
+	END_SAVE
 	if (ret < 0) {
 		err_errno(IOError);
 		return NULL;
