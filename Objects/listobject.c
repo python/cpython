@@ -580,8 +580,12 @@ docompare(x, y, compare)
 	PyObject *args, *res;
 	int i;
 
-	if (compare == NULL)
-		return PyObject_Compare(x, y);
+	if (compare == NULL) {
+		i = PyObject_Compare(x, y);
+		if (i && PyErr_Occurred())
+			i = CMPERROR;
+		return i;
+	}
 
 	args = Py_BuildValue("(OO)", x, y);
 	if (args == NULL)
@@ -955,6 +959,8 @@ listindex(self, args)
 	for (i = 0; i < self->ob_size; i++) {
 		if (PyObject_Compare(self->ob_item[i], args) == 0)
 			return PyInt_FromLong((long)i);
+		if (PyErr_Occurred())
+			return NULL;
 	}
 	PyErr_SetString(PyExc_ValueError, "list.index(x): x not in list");
 	return NULL;
@@ -975,6 +981,8 @@ listcount(self, args)
 	for (i = 0; i < self->ob_size; i++) {
 		if (PyObject_Compare(self->ob_item[i], args) == 0)
 			count++;
+		if (PyErr_Occurred())
+			return NULL;
 	}
 	return PyInt_FromLong((long)count);
 }
@@ -998,7 +1006,8 @@ listremove(self, args)
 			Py_INCREF(Py_None);
 			return Py_None;
 		}
-			
+		if (PyErr_Occurred())
+			return NULL;
 	}
 	PyErr_SetString(PyExc_ValueError, "list.remove(x): x not in list");
 	return NULL;

@@ -349,7 +349,6 @@ instance_dealloc(inst)
 			PyObject *f, *t, *v, *tb;
  			PyErr_Fetch(&t, &v, &tb);
 			f = PySys_GetObject("stderr");
-			PyErr_Clear();
 			if (f != NULL) {
 				PyFile_WriteString("Exception ", f);
 				if (t) {
@@ -565,9 +564,13 @@ instance_compare(inst, other)
 	PyObject *result;
 	long outcome;
 	result = instance_compare1(inst, other);
-	if (result == NULL || !PyInt_Check(result)) {
-		PyErr_Clear();
-		return (inst < other) ? -1 : 1;
+	if (result == NULL)
+		return -1;
+	if (!PyInt_Check(result)) {
+		Py_DECREF(result);
+		PyErr_SetString(PyExc_TypeError,
+				"comparison did not return an int");
+		return -1;
 	}
 	outcome = PyInt_AsLong(result);
 	Py_DECREF(result);
@@ -899,6 +902,11 @@ PyInstance_DoBinOp(v, w, opname, ropname, thisfunc)
 		return result;
 	if (halfbinop(w, v, ropname, &result, thisfunc, 1) <= 0)
 		return result;
+	/* Sigh -- special case for comnparisons */
+	if (strcmp(opname, "__cmp__") == 0) {
+		long c = (v < w) ? -1 : (v > w) ? 1 : 0;
+		return PyInt_FromLong(c);
+	}
 	sprintf(buf, "%s nor %s defined for these operands", opname, ropname);
 	PyErr_SetString(PyExc_TypeError, buf);
 	return NULL;
