@@ -137,13 +137,14 @@ PyFile_FromString(name, mode)
 	}
 	if (f->f_fp == NULL) {
 #ifdef NO_FOPEN_ERRNO
+		/* Metroworks only, not testable, so unchanged */
 		if ( errno == 0 ) {
 			PyErr_SetString(PyExc_IOError, "Cannot open file");
 			Py_DECREF(f);
 			return NULL;
 		}
 #endif
-		PyErr_SetFromErrno(PyExc_IOError);
+		PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
 		Py_DECREF(f);
 		return NULL;
 	}
