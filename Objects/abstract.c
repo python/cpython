@@ -1055,6 +1055,12 @@ PySequence_List(v)
 {
 	PySequenceMethods *m;
 
+	if (v == NULL)
+		return null_error();
+
+	if (PyList_Check(v))
+		return PyList_GetSlice(v, 0, PyList_GET_SIZE(v));
+
 	m = v->ob_type->tp_as_sequence;
 	if (m && m->sq_item) {
 		int i;
