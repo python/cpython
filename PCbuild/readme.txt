@@ -93,9 +93,8 @@ _tkinter
         nmake -f makefile.vc test
 
         On WinXP Pro, wholly up to date as of 30-Aug-2004:
-        all.tcl:        Total   10572   Passed  9869    Skipped 703     Failed  0
+        all.tcl:        Total   10678   Passed  9969    Skipped 709     Failed  0
         Sourced 129 Test Files.
-        Files with failing tests: ioCmd.test
 
     Build Tk
     --------
@@ -112,10 +111,9 @@ _tkinter
         nmake -f makefile.vc TCLDIR=..\..\tcl8.4.7 test
 
         On WinXP Pro, wholly up to date as of 30-Aug-2004:
-        all.tcl:        Total   8421    Passed  6826    Skipped 1581    Failed  14
+        all.tcl:        Total   8420    Passed  6826    Skipped 1581    Failed  13
         Sourced 91 Test Files.
-        Files with failing tests: frame.test scrollbar.test textWind.test winDialog.test
-        winWm.test winfo.test
+        Files with failing tests: canvImg.test scrollbar.test textWind.test winWm.test
 
 zlib
     Python wrapper for the zlib compression library.  Get the source code
@@ -282,13 +280,13 @@ _ssl
 Building for Itanium
 --------------------
 
-The project files support a ReleaseItanium configuration which creates 
+The project files support a ReleaseItanium configuration which creates
 Win64/Itanium binaries. For this to work, you need to install the Platform
 SDK, in particular the 64-bit support. This includes an Itanium compiler
 (future releases of the SDK likely include an AMD64 compiler as well).
 In addition, you need the Visual Studio plugin for external C compilers,
 from http://sf.net/projects/vsextcomp. The plugin will wrap cl.exe, to
-locate the proper target compiler, and convert compiler options 
+locate the proper target compiler, and convert compiler options
 accordingly.
 
 The Itanium build has seen little testing. The SDK compiler reports a lot
