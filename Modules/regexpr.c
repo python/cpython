@@ -35,7 +35,7 @@ from GNU regexp.
 #include <stdlib.h>
 #include <string.h>
 #else
-#ifdef __STDC__
+#if defined(__STDC__) || defined(_MSC_VER)
 /* Don't mess around, use the standard headers */
 #include <stdlib.h>
 #include <string.h>
@@ -912,7 +912,7 @@ regexp_t bufp;
 }
 
 #define INITIAL_FAILURES  128  /* initial # failure points to allocate */
-#define MAX_FAILURES     4100  /* max # of failure points before failing */
+#define MAX_FAILURES     4100L /* max # of failure points before failing */
 
 int re_match_2(bufp, string1, size1, string2, size2, pos, regs, mstop)
 regexp_t bufp;
