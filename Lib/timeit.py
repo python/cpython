@@ -7,7 +7,7 @@ the Python Cookbook, published by O'Reilly.
 Library usage: see the Timer class.
 
 Command line usage:
-    python timeit.py [-n N] [-r N] [-s S] [-t] [-c] [statement]
+    python timeit.py [-n N] [-r N] [-s S] [-t] [-c] [-h] [statement]
 
 Options:
   -n/--number N: how many times to execute 'statement' (default: see below)
@@ -15,6 +15,7 @@ Options:
   -s/--setup S: statements executed once before 'statement' (default 'pass')
   -t/--time: use time.time() (default on Unix)
   -c/--clock: use time.clock() (default on Windows)
+  -h/--help: print this usage message and exit
   statement: statement to be timed (default 'pass')
 
 A multi-line statement may be given by specifying each line as a
@@ -33,11 +34,22 @@ other processes running on the same computer may interfere with the
 timing.  The best thing to do when accurate timing is necessary is to
 repeat the timing a few times and use the best time; the -r option is
 good for this.  On Unix, you can use clock() to measure CPU time.
+
+Note: there is a certain baseline overhead associated with executing a
+pass statement.  The code here doesn't try to hide it, but you should
+be aware of it (especially when comparing different versions of
+Python).  The baseline overhead is measured by invoking the program
+without arguments.
 """
 
 # To use this module with older versions of Python, the dependency on
 # the itertools module is easily removed; in the template, instead of
-# itertools.repeat(None, count), use [None]*count.  It's barely slower.
+# itertools.repeat(None, number), use [None]*number.  It's barely
+# slower.  Note: the baseline overhead, measured by the default
+# invocation, differs for older Python versions!  Also, to fairly
+# compare older Python versions to Python 2.3, you may want to use
+# python -O for the older versions to avoid timing SET_LINENO
+# instructions.
 
 import sys
 import math
@@ -141,11 +153,12 @@ def main(args=None):
         args = sys.argv[1:]
     import getopt
     try:
-        opts, args = getopt.getopt(args, "n:s:r:tc",
+        opts, args = getopt.getopt(args, "n:s:r:tch",
                                    ["number=", "setup=", "repeat=",
-                                    "time", "clock"])
+                                    "time", "clock", "help"])
     except getopt.error, err:
         print err
+        print "use -h/--help for command line help"
         return 2
     timer = default_timer
     stmt = "\n".join(args) or "pass"
@@ -161,10 +174,13 @@ def main(args=None):
             repeat = int(a)
             if repeat <= 0:
                 repeat = 1
-        if o in ("-t", "time"):
+        if o in ("-t", "--time"):
             timer = time.time
-        if o in ("-c", "clock"):
+        if o in ("-c", "--clock"):
             timer = time.clock
+        if o in ("-h", "--help"):
+            print __doc__,
+            return 0
     t = Timer(stmt, setup, timer)
     if number == 0:
         # determine number so that 0.2 <= total time < 2.0
