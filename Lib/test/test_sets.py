@@ -235,7 +235,7 @@ class TestBinaryOps(unittest.TestCase):
         self.assertRaises(TypeError, cmp, a, b)
 
         # You can view this as a buglet:  cmp(a, a) does not raise TypeError,
-        # because __eq__ is tried before __cmp__, and a.__eq__(a) returns,
+        # because __eq__ is tried before __cmp__, and a.__eq__(a) returns True,
         # which Python thinks is good enough to synthesize a cmp() result
         # without calling __cmp__.
         self.assertEqual(cmp(a, a), 0)
@@ -492,12 +492,16 @@ class TestOnlySetsInBinaryOps(unittest.TestCase):
         self.assertEqual(self.other != self.set, True)
         self.assertEqual(self.set != self.other, True)
 
-    def test_ge_gt_lt_le(self):
-        # Unlike the others, this is testing that == and != *are* allowed.
+    def test_ge_gt_le_lt(self):
         self.assertRaises(TypeError, lambda: self.set < self.other)
         self.assertRaises(TypeError, lambda: self.set <= self.other)
         self.assertRaises(TypeError, lambda: self.set > self.other)
         self.assertRaises(TypeError, lambda: self.set >= self.other)
+
+        self.assertRaises(TypeError, lambda: self.other < self.set)
+        self.assertRaises(TypeError, lambda: self.other <= self.set)
+        self.assertRaises(TypeError, lambda: self.other > self.set)
+        self.assertRaises(TypeError, lambda: self.other >= self.set)
 
     def test_union_update(self):
         try:
