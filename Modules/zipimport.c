@@ -602,20 +602,6 @@ static PyTypeObject ZipImporter_Type = {
 
 /* implementation */
 
-/* Given a buffer, return the short that is represented by the first
-   2 bytes, encoded as little endian. This partially reimplements
-   marshal.c:r_short(). */
-static int
-get_short(unsigned char *buf)
-{
-	short x;
-	x = buf[0];
-	x |= buf[1] << 8;
-	/* Sign-extension, in case short greater than 16 bits */
-	x |= -(x & 0x8000);
-	return x;
-}
-
 /* Given a buffer, return the long that is represented by the first
    4 bytes, encoded as little endian. This partially reimplements
    marshal.c:r_long() */
