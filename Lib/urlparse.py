@@ -236,7 +236,6 @@ test_input = """
       http:g?y        = <URL:http://a/b/c/g?y>
       http:g?y/./x    = <URL:http://a/b/c/g?y/./x>
 """
-# XXX The result for //g is actually http://g/; is this a problem?
 
 def test():
     import sys
