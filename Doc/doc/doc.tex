@@ -534,6 +534,13 @@ distribution, to create or maintain whole documents or sections.
       \var{option}.
     \end{macrodesc}
 
+    \begin{macrodesc}{pep}{\p{number}}
+      A reference to a Python Enhancement Proposal.  This generates
+      appropriate index entries.  The text \samp{PEP \var{number}} is
+      generated; in the HTML output, this text is a hyperlink to an
+      online copy of the specified PEP.
+    \end{macrodesc}
+
     \begin{macrodesc}{refmodule}{\op{key}\p{name}}
       Like \macro{module}, but create a hyperlink to the documentation 
       for the named module.  Note that the corresponding
@@ -811,13 +818,21 @@ distribution, to create or maintain whole documents or sections.
       document (the corresponding \macro{declaremodule} is required).
     \end{macrodesc}
 
-    \begin{macrodesc}{seerfc}{\p{number}\p{title}\p{why}}
-      Refer to an IETF Request for Comments (RFC).  \var{number}
-      should be the official number assigned by the RFC Editor,
-      \var{title} should be the human-readable title of the RFC as
+    \begin{macrodesc}{seepep}{\p{number}\p{title}\p{why}}
+      Refer to an Python Enhancement Proposal (PEP).  \var{number}
+      should be the official number assigned by the PEP Editor,
+      \var{title} should be the human-readable title of the PEP as
       found in the official copy of the document, and \var{why} should
-      explain what's interesting about the RFC.  This should be used
-      to refer the reader to RFCs which specify protocols or data
+      explain what's interesting about the PEP.  This should be used
+      to refer the reader to PEPs which specify interfaces or language
+      features relevant to the material in the annotated section of the
+      documentation.
+    \end{macrodesc}
+
+    \begin{macrodesc}{seerfc}{\p{number}\p{title}\p{why}}
+      Refer to an IETF Request for Comments (RFC).  Otherwise very
+      similar to \macro{seepep}.  This should be used
+      to refer the reader to PEPs which specify protocols or data
       formats relevant to the material in the annotated section of the
       documentation.
     \end{macrodesc}
