@@ -99,8 +99,7 @@ class VideoBagOfTricks:
 		y1 = y2 - int(self.form.h) + 1
 		# Position and show form window
 		gl.prefposition(x1, x2, y1, y2)
-		self.form.show_form(FL.PLACE_FREE, FL.TRUE, \
-				    'Video Bag Of Tricks')
+		self.form.show_form(FL.PLACE_FREE, FL.TRUE, 'Vb Control')
 
 	def setdefaults(self):
 		self.vcr = None
@@ -164,6 +163,8 @@ class VideoBagOfTricks:
 			print 'Unknown video standard:', param[1]
 			sys.exit(1)
 		self.maxx, self.maxy = x, y
+		self.curx = 256
+		self.cury = 256*3/4
 
 	def makewindow(self):
 		x, y = self.maxx, self.maxy
@@ -171,15 +172,18 @@ class VideoBagOfTricks:
 		gl.maxsize(x, y)
 		gl.keepaspect(x, y)
 		gl.stepunit(8, 6)
-		width = 256 # XXX
-		if width:
-			height = width*3/4
+		width = self.curx
+		height = self.cury
+		if width and height:
+			# Place the window at (150, 150) from top left
+			# (the video board likes this location...)
 			x1 = 150
-			x2 = x1 + width-1
-			y2 = 768-150
+			x2 = x1+width-1
+			SCRHEIGHT = 768
+			y2 = SCRHEIGHT-1-150
 			y1 = y2-height+1
 			gl.prefposition(x1, x2, y1, y2)
-		self.window = gl.winopen('Vb: initializing')
+		self.window = gl.winopen('Vb video')
 		self.settitle()
 		if width:
 			gl.maxsize(x, y)
@@ -194,23 +198,27 @@ class VideoBagOfTricks:
 		if not self.window:
 			return
 		gl.winset(self.window)
-		x, y = self.maxx, self.maxy
-		gl.keepaspect(x, y)
-		gl.stepunit(8, 6)
-		if not self.use_24:
-			gl.maxsize(x, y)
-			gl.winconstraints()
-			return
+		if self.use_24:
+			x, y = self.maxx, self.maxy
+		else:
+			x, y = self.curx, self.cury
 		left, bottom = gl.getorigin()
 		width, height = gl.getsize()
 		bottom = bottom+height-y
 		gl.prefposition(left, left+x-1, bottom, bottom+y-1)
 		gl.winconstraints()
+		if not self.use_24:
+			gl.keepaspect(x, y)
+			gl.stepunit(8, 6)
+			gl.maxsize(self.maxx, self.maxy)
+			gl.winconstraints()
 		self.bindvideo()
 
 	def bindvideo(self):
 		if not self.video: return
 		x, y = gl.getsize()
+		if not self.use_24:
+			self.curx, self.cury = x, y
 		self.video.SetSize(x, y)
 		drop = self.b_drop.get_button()
 		if drop:
@@ -607,7 +615,7 @@ class VideoBagOfTricks:
 	def settitle(self):
 		gl.winset(self.window)
 		x, y = gl.getsize()
-		title = 'Vb:' + self.vfile + ' (%dx%d)' % (x, y)
+		title = 'Vb ' + self.vfile + ' (%dx%d)' % (x, y)
 		gl.wintitle(title)
 
 	def get_vformat(self):
@@ -622,7 +630,6 @@ class VideoBagOfTricks:
 			self.g_burst.hide_object()
 			self.g_single.hide_object()
 			self.form.unfreeze_form()
-			return
 		else:
 			self.g_video.show_object()
 			if self.vmode == VM_CONT:
@@ -636,8 +643,7 @@ class VideoBagOfTricks:
 		self.mono = (format == 'mono')
 		self.grey = (format[:4] == 'grey')
 		self.use_24 = (format in ('rgb', 'jpeg'))
-		# Does not work.... if self.use_24:
-		if 0:
+		if self.use_24 and 0: ### quarter/sixteenth decoding not impl.
 			self.g_rgb24.show_object()
 		else:
 			self.g_rgb24.hide_object()
