@@ -68,11 +68,8 @@
   \code{None} is equivalent to passing \code{lambda x: 0}, i.e.\ no
   elements are ignored.  For example, pass
 
-% BUG: the HTML generated for this is
-% BUG:     lambda x: x in " \\t"
-% BUG: i.e. it displays two backslashes.
 \begin{verbatim}
-lambda x: x in " \\t"
+lambda x: x in " \t"
 \end{verbatim}
 
   if you're comparing lines as sequences of characters, and don't want
