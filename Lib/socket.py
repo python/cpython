@@ -232,7 +232,11 @@ class _fileobject(object):
             self._sock = None
 
     def __del__(self):
-        self.close()
+        try:
+            self.close()
+        except:
+            # close() may fail if __init__ didn't complete
+            pass
 
     def flush(self):
         if self._wbuf:
