@@ -682,10 +682,12 @@ class CCompiler:
         """
         raise NotImplementedError
 
-    def find_library_file (self, dirs, lib):
+    def find_library_file (self, dirs, lib, debug=0):
         """Search the specified list of directories for a static or shared
-        library file 'lib' and return the full path to that file. Return
-        None if it wasn't found in any of the specified directories.
+        library file 'lib' and return the full path to that file.  If
+        'debug' true, look for a debugging version (if that makes sense on
+        the current platform).  Return None if 'lib' wasn't found in any of
+        the specified directories.
         """
         raise NotImplementedError
 

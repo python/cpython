@@ -317,7 +317,7 @@ class UnixCCompiler (CCompiler):
         return "-l" + lib
 
 
-    def find_library_file (self, dirs, lib):
+    def find_library_file (self, dirs, lib, debug=0):
 
         for dir in dirs:
             shared = os.path.join (
