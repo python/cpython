@@ -201,7 +201,10 @@ function interfaces of the stateless encoder and decoder:
 
 \begin{methoddesc}{encode}{input\optional{, errors}}
   Encodes the object \var{input} and returns a tuple (output object,
-  length consumed).
+  length consumed).  While codecs are not restricted to use with Unicode, in
+  a Unicode context, encoding converts a Unicode object to a plain string
+  using a particular character set encoding (e.g., \code{cp1252} or
+  \code{iso-8859-1}).
 
   \var{errors} defines the error handling to apply. It defaults to
   \code{'strict'} handling.
@@ -216,7 +219,8 @@ function interfaces of the stateless encoder and decoder:
 
 \begin{methoddesc}{decode}{input\optional{, errors}}
   Decodes the object \var{input} and returns a tuple (output object,
-  length consumed).
+  length consumed).  In a Unicode context, decoding converts a plain string
+  encoded using a particular character set encoding to a Unicode object.
 
   \var{input} must be an object which provides the \code{bf_getreadbuf}
   buffer slot.  Python strings, buffer objects and memory mapped files
