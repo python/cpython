@@ -25,7 +25,7 @@ SPACE8 = ' ' * 8
 fcre = re.compile(r'^From ', re.MULTILINE)
 
 
-
+
 class Generator:
     """Generates output from a Message object tree.
 
@@ -278,7 +278,7 @@ class Generator:
         self._fp.write(s.getvalue())
 
 
-
+
 class DecodedGenerator(Generator):
     """Generator a text representation of a message.
 
@@ -334,7 +334,7 @@ class DecodedGenerator(Generator):
                     }
 
 
-
+
 # Helper
 def _make_boundary(self, text=None):
     # Craft a random boundary.  If text is given, ensure that the chosen

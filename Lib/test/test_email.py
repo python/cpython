@@ -28,14 +28,14 @@ NL = '\n'
 EMPTYSTRING = ''
 
 
-
+
 def openfile(filename):
     path = os.path.join(os.path.dirname(test.regrtest.__file__),
                         'data', filename)
     return open(path)
 
 
-
+
 # Base test class
 class TestEmailBase(unittest.TestCase):
     def _msgobj(self, filename):
@@ -47,12 +47,12 @@ class TestEmailBase(unittest.TestCase):
         return msg
 
 
-
+
 # Test various aspects of the Message class's API
 class TestMessageAPI(TestEmailBase):
     def test_get_charsets(self):
         eq = self.assertEqual
-        
+
         msg = self._msgobj('msg_08.txt')
         charsets = msg.get_charsets()
         eq(charsets, [None, 'us-ascii', 'iso-8859-1', 'iso-8859-2', 'koi8-r'])
@@ -175,7 +175,7 @@ class TestMessageAPI(TestEmailBase):
         msg = email.message_from_string(
         "Content-Disposition: blarg; filename\n")
         self.assertEqual(msg.get_filename(), '')
-        
+
     def test_missing_boundary(self):
         msg = email.message_from_string("From: foo\n")
         self.assertEqual(msg.get_boundary(), None)
@@ -217,7 +217,7 @@ class TestMessageAPI(TestEmailBase):
         self.failIf(msg.has_key('headeri'))
 
 
-
+
 # Test the email.Encoders module
 class TestEncoders(unittest.TestCase):
     def test_encode_noop(self):
@@ -254,7 +254,7 @@ class TestEncoders(unittest.TestCase):
         eq(msg['content-transfer-encoding'], 'quoted-printable')
 
 
-
+
 class TestLongHeaders(unittest.TestCase):
     def test_header_splitter(self):
         msg = MIMEText('')
@@ -271,12 +271,12 @@ Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 X-Foobar-Spoink-Defrobnit: wasnipoop; giraffes="very-long-necked-animals";
-	spooge="yummy"; hippos="gargantuan"; marshmallows="gooey"
+        spooge="yummy"; hippos="gargantuan"; marshmallows="gooey"
 
 ''')
 
 
-
+
 class TestFromMangling(unittest.TestCase):
     def setUp(self):
         self.msg = Message()
@@ -309,7 +309,7 @@ Blah blah blah
 """)
 
 
-
+
 # Test the basic MIMEImage class
 class TestMIMEImage(unittest.TestCase):
     def setUp(self):
@@ -362,7 +362,7 @@ class TestMIMEImage(unittest.TestCase):
                                   header='foobar') is missing)
 
 
-
+
 # Test the basic MIMEText class
 class TestMIMEText(unittest.TestCase):
     def setUp(self):
@@ -383,7 +383,7 @@ class TestMIMEText(unittest.TestCase):
         self.failUnless(not self._msg.is_multipart())
 
 
-
+
 class TestMultipartMixed(unittest.TestCase):
     def setUp(self):
         fp = openfile('PyBanner048.gif')
@@ -406,7 +406,7 @@ This is the dingus fish.
         container['From'] = 'Barry <barry@digicool.com>'
         container['To'] = 'Dingus Lovers <cravindogs@cravindogs.com>'
         container['Subject'] = 'Here is your dingus fish'
-        
+
         now = 987809702.54848599
         timetuple = time.localtime(now)
         if timetuple[-1] == 0:
@@ -445,7 +445,7 @@ This is the dingus fish.
         unless(not m1.is_multipart())
 
 
-
+
 class TestNonConformant(TestEmailBase):
     def test_parse_missing_minor_type(self):
         eq = self.assertEqual
@@ -466,7 +466,7 @@ class TestNonConformant(TestEmailBase):
         self.assertRaises(Errors.BoundaryError, p.parsestr, data)
 
 
-
+
 class TestRFC2047(unittest.TestCase):
     def test_iso_8859_1(self):
         eq = self.assertEqual
@@ -497,7 +497,7 @@ class TestRFC2047(unittest.TestCase):
            '=?iso-8859-2?b?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=')
 
 
-
+
 class TestMIMEMessage(TestEmailBase):
     def setUp(self):
         fp = openfile('msg_11.txt')
@@ -603,7 +603,7 @@ Your message cannot be delivered to the following recipients:
            '<002001c144a6$8752e060$56104586@oxy.edu>')
 
 
-
+
 class TestIdempotent(unittest.TestCase):
     def _msgobj(self, filename):
         fp = openfile(filename)
@@ -652,7 +652,7 @@ class TestIdempotent(unittest.TestCase):
     def test_mixed_with_image(self):
         msg, text = self._msgobj('msg_06.txt')
         self._idempotent(msg, text)
-    
+
     def test_multipart_report(self):
         msg, text = self._msgobj('msg_05.txt')
         self._idempotent(msg, text)
@@ -660,7 +660,7 @@ class TestIdempotent(unittest.TestCase):
     def test_dsn(self):
         msg, text = self._msgobj('msg_16.txt')
         self._idempotent(msg, text)
-        
+
     def test_content_type(self):
         eq = self.assertEquals
         # Get a message object and reset the seek pointer for other tests
@@ -701,9 +701,9 @@ class TestIdempotent(unittest.TestCase):
         eq(msg1.get_type(), 'text/plain')
         self.failUnless(isinstance(msg1.get_payload(), StringType))
         eq(msg1.get_payload(), '\n')
-        
 
-
+
+
 class TestMiscellaneous(unittest.TestCase):
     def test_message_from_string(self):
         fp = openfile('msg_01.txt')
@@ -744,7 +744,7 @@ class TestMiscellaneous(unittest.TestCase):
         # Create a subclass
         class MyMessage(Message):
             pass
-        
+
         msg = email.message_from_string(text, MyMessage)
         unless(isinstance(msg, MyMessage))
         # Try something more complicated
@@ -763,7 +763,7 @@ class TestMiscellaneous(unittest.TestCase):
         # Create a subclass
         class MyMessage(Message):
             pass
-        
+
         fp = openfile('msg_01.txt')
         try:
             msg = email.message_from_file(fp, MyMessage)
@@ -780,7 +780,7 @@ class TestMiscellaneous(unittest.TestCase):
             unless(isinstance(subpart, MyMessage))
 
 
-
+
 class TestIterators(TestEmailBase):
     def test_body_line_iterator(self):
         eq = self.assertEqual
@@ -801,15 +801,15 @@ class TestIterators(TestEmailBase):
         eq(len(lines), 43)
         eq(EMPTYSTRING.join(lines), """\
 Send Ppp mailing list submissions to
-	ppp@zzz.org
+        ppp@zzz.org
 
 To subscribe or unsubscribe via the World Wide Web, visit
-	http://www.zzz.org/mailman/listinfo/ppp
+        http://www.zzz.org/mailman/listinfo/ppp
 or, via email, send a message with subject or body 'help' to
-	ppp-request@zzz.org
+        ppp-request@zzz.org
 
 You can reach the person managing the list at
-	ppp-admin@zzz.org
+        ppp-admin@zzz.org
 
 When replying, please edit your Subject line so it is more specific
 than "Re: Contents of Ppp digest..."
@@ -863,7 +863,7 @@ to reflect upon our own
 """)
 
 
-
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestMessageAPI))
@@ -882,7 +882,7 @@ def suite():
     return suite
 
 
-
+
 if __name__ == '__main__':
     unittest.main(defaultTest='suite')
 else:

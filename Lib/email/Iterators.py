@@ -9,7 +9,7 @@ from cStringIO import StringIO
 from types import StringType
 
 
-
+
 def body_line_iterator(msg):
     """Iterate over the parts, returning string payloads line-by-line."""
     for subpart in msg.walk():
@@ -19,7 +19,7 @@ def body_line_iterator(msg):
                 yield line
 
 
-
+
 def typed_subpart_iterator(msg, maintype='text', subtype=None):
     """Iterate over the subparts with a given MIME type.
 

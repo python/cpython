@@ -12,10 +12,10 @@ HEX = '0123456789ABCDEF'
 EMPTYSTRING = ''
 
 try:
-  from binascii import a2b_qp, b2a_qp
+    from binascii import a2b_qp, b2a_qp
 except:
-  a2b_qp = None
-  b2a_qp = None
+    a2b_qp = None
+    b2a_qp = None
 
 
 def needsquoting(c, quotetabs, header):
@@ -28,7 +28,7 @@ def needsquoting(c, quotetabs, header):
     if c in ' \t':
         return quotetabs
     # if header, we have to escape _ because _ is used to escape space
-    if c == '_': 
+    if c == '_':
         return header
     return c == ESCAPE or not (' ' <= c <= '~')
 
@@ -55,7 +55,7 @@ def encode(input, output, quotetabs, header = 0):
         odata = b2a_qp(data, quotetabs = quotetabs, header = header)
         output.write(odata)
         return
-      
+
     def write(s, output=output, lineEnd='\n'):
         # RFC 1521 requires that the line ending in a space or tab must have
         # that trailing character encoded.

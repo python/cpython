@@ -8,7 +8,7 @@ import MIMEBase
 from Encoders import encode_7or8bit
 
 
-
+
 class MIMEText(MIMEBase.MIMEBase):
     """Class for generating text/* type MIME documents."""
 
