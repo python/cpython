@@ -32,7 +32,7 @@ License Version 2.
 Core and builtins
 -----------------
 
-...
+- Bug #1054139 _PyString_Resize() now invalidates its cached hash value.
 
 Extension Modules
 -----------------

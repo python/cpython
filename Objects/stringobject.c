@@ -3530,6 +3530,7 @@ _PyString_Resize(PyObject **pv, int newsize)
 	sv = (PyStringObject *) *pv;
 	sv->ob_size = newsize;
 	sv->ob_sval[newsize] = '\0';
+	sv->ob_shash = -1;	/* invalidate cached hash value */
 	return 0;
 }
 
