@@ -245,6 +245,9 @@ class ModuleFinder:
         if self.badmodules.has_key(fqname):
             self.msgout(3, "import_module -> None")
             return None
+        if parent and parent.__path__ is None:
+            self.msgout(3, "import_module -> None")
+            return None
         try:
             fp, pathname, stuff = self.find_module(partname,
                                                    parent and parent.__path__, parent)
@@ -392,6 +395,7 @@ class ModuleFinder:
 
     def find_module(self, name, path, parent=None):
         if parent is not None:
+            # assert path is not None
             fullname = parent.__name__+'.'+name
         else:
             fullname = name
