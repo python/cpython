@@ -357,7 +357,7 @@ class ModuleFinder:
 
     def find_module(self, name, path):
         if path:
-            fullname = '.'.join(path)+'.'+name
+            fullname = string.join(path, '.')+'.'+name
         else:
             fullname = name
         if fullname in self.excludes:
