@@ -525,6 +525,9 @@ class FieldStorage:
         return "FieldStorage(%s, %s, %s)" % (
                 `self.name`, `self.filename`, `self.value`)
 
+    def __iter__(self):
+        return iter(self.keys())
+
     def __getattr__(self, name):
         if name != 'value':
             raise AttributeError, name
