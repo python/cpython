@@ -40,6 +40,10 @@ for name in _osindex.keys():
 			exec 'from %s import _exit' % name
 		except ImportError:
 			pass
+		try:
+			environ
+		except:
+			environ = {} # Make sure os.environ exists, at least
 		break
 else:
 	del name
