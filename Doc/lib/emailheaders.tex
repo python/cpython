@@ -109,10 +109,13 @@ Optional \var{errors} is passed through to any \function{unicode()} or
 \function{ustr.encode()} call, and defaults to ``strict''.
 \end{methoddesc}
 
-\begin{methoddesc}[Header]{encode}{}
+\begin{methoddesc}[Header]{encode}{\optional{splitchars}}
 Encode a message header into an RFC-compliant format, possibly
 wrapping long lines and encapsulating non-\ASCII{} parts in base64 or
-quoted-printable encodings.
+quoted-printable encodings.  Optional \var{splitchars} is a string
+containing characters to split long ASCII lines on, in rough support
+of \rfc{2822}'s \emph{highest level syntactic breaks}.  This doesn't
+affect \rfc{2047} encoded lines.
 \end{methoddesc}
 
 The \class{Header} class also provides a number of methods to support
