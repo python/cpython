@@ -1214,3 +1214,37 @@ PyOS_CheckStack(void)
 /* Alternate implementations can be added here... */
 
 #endif /* USE_STACKCHECK */
+
+
+/* Wrappers around sigaction() or signal(). */
+
+PyOS_sighandler_t
+PyOS_getsig(int sig)
+{
+#ifdef HAVE_SIGACTION
+	struct sigaction context;
+	sigaction(sig, NULL, &context);
+	return context.sa_handler;
+#else
+	PyOS_sighandler_t handler;
+	handler = signal(sig, SIG_IGN);
+	signal(sig, handler);
+	return handler;
+#endif
+}
+
+PyOS_sighandler_t
+PyOS_setsig(int sig, PyOS_sighandler_t handler)
+{
+#ifdef HAVE_SIGACTION
+	struct sigaction context;
+	PyOS_sighandler_t oldhandler;
+	sigaction(sig, NULL, &context);
+	oldhandler = context.sa_handler;
+	context.sa_handler = handler;
+	sigaction(sig, &context, NULL);
+	return oldhandler;
+#else
+	return signal(sig, handler);
+#endif
+}
