@@ -472,7 +472,8 @@ Currently-active file is at the head of the list.")
 
 ;; pdbtrack contants
 (defconst py-pdbtrack-stack-entry-regexp
-  "> \\([^(]+\\)(\\([0-9]+\\))[?a-zA-Z0-9_]+()"
+;  "^> \\([^(]+\\)(\\([0-9]+\\))\\([?a-zA-Z0-9_]+\\)()"
+  "^> \\(.*\\)(\\([0-9]+\\))\\([?a-zA-Z0-9_]+\\)()"
   "Regular expression pdbtrack uses to find a stack trace entry.")
 
 (defconst py-pdbtrack-input-prompt "\n[(<]?pdb[>)]? "
@@ -1276,49 +1277,124 @@ Activity is disabled if the buffer-local variable
 `py-pdbtrack-do-tracking-p' is nil.
 
 We depend on the pdb input prompt matching `py-pdbtrack-input-prompt'
-at the beginning of the line."
+at the beginning of the line.
+
+If the traceback target file path is invalid, we look for the most
+recently visited python-mode buffer which either has the name of the
+current function \(or class) or which defines the function \(or
+class).  This is to provide for remote scripts, eg, Zope's 'Script
+(Python)' - put a _copy_ of the script in a python-mode buffer named
+for the script and pdbtrack will find it.)"
   ;; Instead of trying to piece things together from partial text
   ;; (which can be almost useless depending on Emacs version), we
   ;; monitor to the point where we have the next pdb prompt, and then
   ;; check all text from comint-last-input-end to process-mark.
   ;;
-  ;; KLM: It might be nice to provide an optional override, so this
-  ;; routine could be fed debugger output strings as the text
-  ;; argument, for deliberate application elsewhere.
-  ;;
-  ;; KLM: We're very conservative about clearing the overlay arrow, to
-  ;; minimize residue.  This means, for instance, that executing other
-  ;; pdb commands wipes out the highlight.
+  ;; Also, we're very conservative about clearing the overlay arrow,
+  ;; to minimize residue.  This means, for instance, that executing
+  ;; other pdb commands wipe out the highlight.  You can always do a
+  ;; 'where' (aka 'w') command to reveal the overlay arrow.
   (let* ((origbuf (current-buffer))
 	 (currproc (get-buffer-process origbuf)))
+
     (if (not (and currproc py-pdbtrack-do-tracking-p))
         (py-pdbtrack-overlay-arrow nil)
-      (let* (;(origdir default-directory)
-             (procmark (process-mark currproc))
+
+      (let* ((procmark (process-mark currproc))
              (block (buffer-substring (max comint-last-input-end
                                            (- procmark
                                               py-pdbtrack-track-range))
                                       procmark))
-             fname lineno)
+             target target_fname target_lineno)
+
         (if (not (string-match (concat py-pdbtrack-input-prompt "$") block))
             (py-pdbtrack-overlay-arrow nil)
-          (if (not (string-match
-                    (concat ".*" py-pdbtrack-stack-entry-regexp ".*")
-                    block))
-              (py-pdbtrack-overlay-arrow nil)
-            (setq fname (match-string 1 block)
-                  lineno (match-string 2 block))
-            (if (file-exists-p fname)
-                (progn
-                  (find-file-other-window fname)
-                  (goto-line (string-to-int lineno))
-                  (message "pdbtrack: line %s, file %s" lineno fname)
-                  (py-pdbtrack-overlay-arrow t)
-                  (pop-to-buffer origbuf t) )
-              (if (= (elt fname 0) ?\<)
-                  (message "pdbtrack: (Non-file source: '%s')" fname)
-                (message "pdbtrack: File not found: %s" fname))
-              )))))))
+
+          (setq target (py-pdbtrack-get-source-buffer block))
+
+          (if (stringp target)
+              (message "pdbtrack: %s" target)
+
+            (setq target_lineno (car target))
+            (setq target_buffer (cadr target))
+            (setq target_fname (buffer-file-name target_buffer))
+            (switch-to-buffer-other-window target_buffer)
+            (goto-line target_lineno)
+            (message "pdbtrack: line %s, file %s" target_lineno target_fname)
+            (py-pdbtrack-overlay-arrow t)
+            (pop-to-buffer origbuf t)
+
+            )))))
+  )
+
+(defun py-pdbtrack-get-source-buffer (block)
+  "Return line number and buffer of code indicated by block's traceback text.
+
+We look first to visit the file indicated in the trace.
+
+Failing that, we look for the most recently visited python-mode buffer
+with the same name or having 
+having the named function.
+
+If we're unable find the source code we return a string describing the
+problem as best as we can determine."
+
+  (if (not (string-match py-pdbtrack-stack-entry-regexp block))
+
+      "Traceback cue not found"
+
+    (let* ((filename (match-string 1 block))
+           (lineno (string-to-int (match-string 2 block)))
+           (funcname (match-string 3 block))
+           funcbuffer)
+
+      (cond ((file-exists-p filename)
+             (list lineno (find-file-noselect filename)))
+
+            ((setq funcbuffer (py-pdbtrack-grub-for-buffer funcname lineno))
+             (if (string-match "/Script (Python)$" filename)
+                 ;; Add in number of lines for leading '##' comments:
+                 (setq lineno
+                       (+ lineno
+                          (save-excursion
+                            (set-buffer funcbuffer)
+                            (count-lines
+                             (point-min)
+                             (string-match "^\\([^#]\\|#[^#]\\|#$\\)"
+                                           (buffer-substring (point-min)
+                                                             (point-max)
+                                                             funcbuffer)))))))
+             (list lineno funcbuffer))
+
+            ((= (elt filename 0) ?\<)
+             (format "(Non-file source: '%s')" filename))
+
+            (t (format "Function/file not found: %s(), %s" funcname filename)))
+      )
+    )
+  )
+
+(defun py-pdbtrack-grub-for-buffer (funcname lineno)
+  "Find most recent buffer itself named or having function funcname.
+
+Must have a least int(lineno) lines in it."
+  (let ((buffers (buffer-list))
+        ;(buffers (list (get-buffer "workflow_do_action.py")))
+        curbuf
+        got)
+    (while (and buffers (not got))
+      (setq buf (car buffers)
+            buffers (cdr buffers))
+      (if (or (save-excursion (set-buffer buf)
+                              (string= major-mode "python-mode"))
+              (and (string-match funcname (buffer-name buf))
+                   (string-match (concat "^\\s-*\\(def\\|class\\)\\s-+"
+                                         funcname "\\s-*(")
+                                 (buffer-substring (point-min buf)
+                                                   (point-max buf)
+                                                   buf))))
+          (setq got buf)))
+    got))
 
 (defun py-postprocess-output-buffer (buf)
   "Highlight exceptions found in BUF.
