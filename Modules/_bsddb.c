@@ -3277,6 +3277,21 @@ DBEnv_set_timeout(DBEnvObject* self, PyObject* args, PyObject* kwargs)
 #endif /* DBVER >= 40 */
 
 static PyObject*
+DBEnv_set_shm_key(DBEnvObject* self, PyObject* args)
+{
+    int err;
+    long shm_key = 0;
+
+    if (!PyArg_ParseTuple(args, "l:set_shm_key", &shm_key))
+        return NULL;
+    CHECK_ENV_NOT_CLOSED(self);
+
+    err = self->db_env->set_shm_key(self->db_env, shm_key);
+    RETURN_IF_ERR();
+    RETURN_NONE();
+}
+
+static PyObject*
 DBEnv_set_cachesize(DBEnvObject* self, PyObject* args)
 {
     int err, gbytes=0, bytes=0, ncache=0;
@@ -4076,6 +4091,7 @@ static PyMethodDef DBEnv_methods[] = {
 #if (DBVER >= 40)
     {"set_timeout",     (PyCFunction)DBEnv_set_timeout,      METH_VARARGS|METH_KEYWORDS},
 #endif
+    {"set_shm_key",     (PyCFunction)DBEnv_set_shm_key,      METH_VARARGS},
     {"set_cachesize",   (PyCFunction)DBEnv_set_cachesize,    METH_VARARGS},
     {"set_data_dir",    (PyCFunction)DBEnv_set_data_dir,     METH_VARARGS},
 #if (DBVER >= 32)
