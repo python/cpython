@@ -484,6 +484,15 @@ typedef unsigned long uintptr_t;
 /* Define if you want to use the GNU readline library */
 /* #define WITH_READLINE 1 */
 
+/* Define if you want to have a Unicode type. */
+#define Py_USING_UNICODE
+
+/* Define as the integral type used for Unicode representation. */
+#define PY_UNICODE_TYPE unsigned short
+
+/* Define as the size of the unicode type. */
+#define Py_UNICODE_SIZE SIZEOF_SHORT
+
 /* Define if you want cycle garbage collection */
 #define WITH_CYCLE_GC 1
 
