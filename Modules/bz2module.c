@@ -1701,7 +1701,7 @@ BZ2Decomp_decompress(BZ2DecompObject *self, PyObject *args)
 	int datasize;
 	int bufsize = SMALLCHUNK;
 	long totalout;
-	PyObject *ret;
+	PyObject *ret = NULL;
 	bz_stream *bzs = &self->bzs;
 	int bzerror;
 
