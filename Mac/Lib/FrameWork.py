@@ -23,6 +23,7 @@ from QuickDraw import *
 #from Sound import *
 from Win import *
 from Windows import *
+import types
 
 import EasyDialogs
 
@@ -95,6 +96,7 @@ class Application:
 	
 	def __init__(self, nomenubar=0):
 		self.quitting = 0
+		self.needmenubarredraw = 0
 		self._windows = {}
 		if nomenubar:
 			self.menubar = None
@@ -102,7 +104,7 @@ class Application:
 			self.makemenubar()
 	
 	def makemenubar(self):
-		self.menubar = MenuBar()
+		self.menubar = MenuBar(self)
 		AppleMenu(self.menubar, self.getabouttext(), self.do_about)
 		self.makeusermenus()
 
@@ -165,6 +167,9 @@ class Application:
 		pass
 	
 	def getevent(self, mask = everyEvent, wait = 0):
+		if self.needmenubarredraw:
+			DrawMenuBar()
+			self.needmenubarredraw = 0
 		ok, event = WaitNextEvent(mask, wait)
 		return ok, event
 			
@@ -391,21 +396,30 @@ class MenuBar:
 	nextid = 1	# Necessarily a class variable
 	
 	def getnextid(self):
-		id = self.nextid
-		self.nextid = id+1
+		id = MenuBar.nextid
+		MenuBar.nextid = id+1
 		return id
 	
-	def __init__(self):
+	def __init__(self, parent=None):
+		self.parent = parent
 		ClearMenuBar()
 		self.bar = GetMenuBar()
 		self.menus = {}
+	
+	# XXX necessary?
+	def close(self):
+		self.parent = None
+		self.bar = None
 	
 	def addmenu(self, title, after = 0):
 		id = self.getnextid()
 		if DEBUG: print 'Newmenu', title, id # XXXX
 		m = NewMenu(id, title)
 		m.InsertMenu(after)
-		DrawMenuBar()	# XXX appears slow! better do this when we're done. jvr
+		if self.parent:
+			self.parent.needmenubarredraw = 1
+		else:
+			DrawMenuBar()
 		return id, m
 		
 	def delmenu(self, id):
@@ -414,11 +428,40 @@ class MenuBar:
 	
 	def addpopup(self, title = ''):
 		return self.addmenu(title, -1)
+
+# Useless:	
+#	def install(self):
+#		if not self.bar: return
+#		SetMenuBar(self.bar)
+#		if self.parent:
+#			self.parent.needmenubarredraw = 1
+#		else:
+#			DrawMenuBar()
 	
-	def install(self):
-		self.bar.SetMenuBar()
-		DrawMenuBar()
-	
+	def fixmenudimstate(self):
+		for m in self.menus.keys():
+			menu = self.menus[m]
+			if menu.__class__ == FrameWork.AppleMenu:
+				continue
+			for i in range(len(menu.items)):
+				label, shortcut, callback, kind = menu.items[i]
+				if type(callback) == types.StringType:
+					wid = Win.FrontWindow()
+					if wid and self.parent._windows.has_key(wid):
+						window = self.parent._windows[wid]
+						if hasattr(window, "domenu_" + callback):
+							menu.menu.EnableItem(i + 1)
+						elif hasattr(self.parent, "domenu_" + callback):
+							menu.menu.EnableItem(i + 1)
+						else:
+							menu.menu.DisableItem(i + 1)
+					elif hasattr(self.parent, "domenu_" + callback):
+						menu.menu.EnableItem(i + 1)
+					else:
+						menu.menu.DisableItem(i + 1)
+				elif callback:
+					pass
+					
 	def dispatch(self, id, item, window, event):
 		if self.menus.has_key(id):
 			self.menus[id].dispatch(id, item, window, event)
@@ -472,9 +515,30 @@ class Menu:
 		return sub
 	
 	def dispatch(self, id, item, window, event):
-		title, shortcut, callback, type = self.items[item-1]
+		title, shortcut, callback, mtype = self.items[item-1]
 		if callback:
-			callback(id, item, window, event)
+			if not self.bar.parent or type(callback) <> types.StringType:
+				menuhandler = callback
+			else: 
+				# callback is string
+				wid = Win.FrontWindow()
+				if wid and self.bar.parent._windows.has_key(wid):
+					window = self.bar.parent._windows[wid]
+					if hasattr(window, "domenu_" + callback):
+						menuhandler = getattr(window, "domenu_" + callback)
+					elif hasattr(self.bar.parent, "domenu_" + callback):
+						menuhandler = getattr(self.bar.parent, "domenu_" + callback)
+					else:
+						# nothing we can do. we shouldn't have come this far
+						# since the menu item should have been disabled...
+						return
+				elif hasattr(self.bar.parent, "domenu_" + callback):
+					menuhandler = getattr(self.bar.parent, "domenu_" + callback)
+				else:
+					# nothing we can do. we shouldn't have come this far
+					# since the menu item should have been disabled...
+					return
+			menuhandler(id, item, window, event)
 
 	def enable(self, onoff):
 		if onoff:
