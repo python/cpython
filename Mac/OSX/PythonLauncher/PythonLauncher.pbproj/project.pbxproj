@@ -132,6 +132,7 @@
 				4A9504D0FFE6A4CB11CA0CBA,
 				4A9504D1FFE6A4CB11CA0CBA,
 			);
+			hasScannedForEncodings = 1;
 			isa = PBXProject;
 			mainGroup = 2A37F4AAFDCFA73011CA2CEA;
 			projectDirPath = "";
@@ -169,11 +170,13 @@
 			refType = 4;
 		};
 		2A37F4ACFDCFA73011CA2CEA = {
+			fileEncoding = 30;
 			isa = PBXFileReference;
 			path = MyDocument.m;
 			refType = 4;
 		};
 		2A37F4AEFDCFA73011CA2CEA = {
+			fileEncoding = 30;
 			isa = PBXFileReference;
 			path = MyDocument.h;
 			refType = 4;
@@ -190,6 +193,7 @@
 			refType = 4;
 		};
 		2A37F4B0FDCFA73011CA2CEA = {
+			fileEncoding = 30;
 			isa = PBXFileReference;
 			path = main.m;
 			refType = 4;
@@ -400,7 +404,6 @@
 </dict>
 </plist>
 ";
-			shouldUseHeadermap = 1;
 		};
 		2A37F4C7FDCFA73011CA2CEA = {
 			buildActionMask = 2147483647;
@@ -515,11 +518,13 @@
 //F53
 //F54
 		F52A90CD02EB5C6A01000102 = {
+			fileEncoding = 30;
 			isa = PBXFileReference;
 			path = FileSettings.m;
 			refType = 4;
 		};
 		F52A90CE02EB5C6A01000102 = {
+			fileEncoding = 30;
 			isa = PBXFileReference;
 			path = FileSettings.h;
 			refType = 4;
@@ -581,6 +586,7 @@
 			};
 		};
 		F5A42167038BDD8E0110C447 = {
+			fileEncoding = 30;
 			isa = PBXFileReference;
 			path = factorySettings.plist;
 			refType = 4;
@@ -603,11 +609,13 @@
 			};
 		};
 		F5A4C14002F2055C01000102 = {
+			fileEncoding = 30;
 			isa = PBXFileReference;
 			path = PreferencesWindowController.h;
 			refType = 4;
 		};
 		F5A4C14102F2055C01000102 = {
+			fileEncoding = 30;
 			isa = PBXFileReference;
 			path = PreferencesWindowController.m;
 			refType = 4;
@@ -625,11 +633,13 @@
 			};
 		};
 		F5A4C14402F2070D01000102 = {
+			fileEncoding = 30;
 			isa = PBXFileReference;
 			path = MyAppDelegate.m;
 			refType = 4;
 		};
 		F5A4C14502F2070D01000102 = {
+			fileEncoding = 30;
 			isa = PBXFileReference;
 			path = MyAppDelegate.h;
 			refType = 4;
@@ -647,6 +657,7 @@
 			};
 		};
 		F5AA9C6A02F8042D0110C447 = {
+			fileEncoding = 30;
 			isa = PBXFileReference;
 			path = doscript.h;
 			refType = 4;
@@ -670,6 +681,7 @@
 			};
 		};
 		F5AAA21D02F8115D0110C447 = {
+			fileEncoding = 30;
 			isa = PBXFileReference;
 			path = doscript.m;
 			refType = 4;

@@ -23,6 +23,7 @@
 @interface FileSettings : NSObject <FileSettingsSource>
 {
     NSString *interpreter;	// The pathname of the interpreter to use
+    NSArray *interpreters;	// List of known interpreters
     BOOL debug;			// -d option: debug parser
     BOOL verbose;		// -v option: verbose import
     BOOL inspect;		// -i option: interactive mode after script
@@ -54,5 +55,6 @@
 //- (void)applyUserDefaults: (NSString *)filetype;
 - (void)applyValuesFromDict: (NSDictionary *)dict;
 - (void)reset;
+- (NSArray *) interpreters;
 
 @end

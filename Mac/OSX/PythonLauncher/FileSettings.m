@@ -104,7 +104,6 @@
     int i;
     NSString *filename;
     NSDictionary *dict;
-    NSArray *interpreters;
     static NSDictionary *factorySettings;
     
     self = [super init];
@@ -163,6 +162,7 @@
     fsdefaults = [FileSettings getFactorySettingsForFileType: filetype];
     self = [self initWithFileSettings: fsdefaults];
     if (!self) return self;
+    interpreters = [fsdefaults->interpreters retain];
     [self applyUserDefaults: filetype];
     prefskey = [filetype retain];
     return self;
@@ -247,8 +247,10 @@
         tabs?" -t":"",
         others,
         script,
-        with_terminal? "&& exit" : " &"];
+        with_terminal? "&& echo Exit status: $? && exit 1" : " &"];
 }
+
+- (NSArray *) interpreters { return interpreters;};
 
 // FileSettingsSource protocol 
 - (NSString *) interpreter { return interpreter;};
