@@ -52,11 +52,17 @@ e.g. \code{'..'} for POSIX or \code{'::'} for the Mac.
 \end{datadesc}
 
 \begin{datadesc}{sep}
-The character used by the OS to separate pathname components, e.g.\
-\code{'/'} for POSIX or \code{':'} for the Mac.  Note that knowing this
+The character used by the OS to separate pathname components,
+e.g. \code{'/'} for POSIX or \code{':'} for the Mac.  Note that knowing this
 is not sufficient to be able to parse or concatenate pathnames---better
 use \code{os.path.split()} and \code{os.path.join()}---but it is
 occasionally useful.
+\end{datadesc}
+
+\begin{datadesc}{altsep}
+An alternative character used by the OS to separate pathname components,
+or \code{None} if only one separator character exists.  This is set to
+\code{'/'} on DOS/Windows systems where \code{sep} is a backslash.
 \end{datadesc}
 
 \begin{datadesc}{pathsep}
