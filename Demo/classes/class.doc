@@ -1,0 +1,110 @@
+New features of classes
+=======================
+
+A class can implement certain operations that are invoked by special
+syntax (such as subscription or arithmetic operations) by defining
+methods with special names.
+
+
+Special methods for any type
+----------------------------
+
+__repr__(self) --> string
+
+Used by the print statement and conversions (reverse quotes) to
+compute the string representation of an object.
+
+__cmp__(self, other) --> int
+
+Used by all comparison operations.  Should return -1 if self<other, 0
+if self==other, +1 if self>other.  Due to limitations in the
+interpreter, exceptions raised by comparisons are ignored, and the
+objects will be considered equal in this case.
+
+
+Special methods for sequence and mapping types
+----------------------------------------------
+
+__len__(self) --> int
+
+Used by the built-in function len().  Should return the length of the
+object, which should be >= 0.  Also, an object whose __len__() method
+returns 0 
+
+__getitem__(self, key) --> value
+
+Used to implement value = self[key].  Note that the special
+interpretation of negative keys (if the class wishes to emulate a
+sequence type) is up to the __getitem__ method.
+
+__setitem__(self, key, value)
+
+Used to implement self[key] = value.  Same note as for __getitem__.
+
+__delitem__(self, key)
+
+Used to implement del self[key].  Same note as for __getitem__.
+
+
+Special methods for sequence types
+----------------------------------
+
+__getslice__(self, i, j) --> sequence
+
+Used to implement self[i:j].  Note that missing i or j are replaced by
+0 or len(self), respectively, and len(self) has been added to negative
+i or j.
+
+__setslice__(self, i, j, sequence)
+
+Used to implement self[i:j] = value.  Same note as for __getslice__.
+
+__delslice__(self, i, j)
+
+Used to implement del self[i:j].  Same note as for __getslice__.
+
+
+Special methods for numeric types
+---------------------------------
+
+__add__, __sub__, __mul__, __div__, __mod__, __divmod__, __pow__,
+__lshift__, __rshift__, __and__, __xor__, __or__
+
+Used to implement the binary arithmetic operations (divmod and pow are
+called by built-in functions).  All have the call pattern
+func(self, other) --> number.
+
+__neg__, __pos__, __abs__, __invert__
+
+Used to implement the unary arithmetic operations (-, +, abs and ~).
+All have the call pattern func(self) --> number.
+
+__nonzero__(self) --> int
+
+Used to implement boolean testing.  An alternative name for this
+method is __len__.
+
+__coerce__(self, other) --> (self1, other1) or None
+
+Used to implement "mixed-mode" numeric arithmetic.  Either return a
+tuple containing self and other converted to some common type, or None
+if no way of conversion is known.  When the common type would be the
+type of other, it is sufficient to return None, since the interpreter
+will also ask the other object to attempt a coercion (but sometimes,
+if the implementation of the other type cannot be changed, it is
+useful to do the conversion to the other type here).
+
+__int__(self) --> int
+__long__(self) --> long
+__float__(self) --> float
+
+Used to implement the built-in functions int(), long() and float().
+
+
+Notes
+-----
+
+Except for __repr__ and __cmp__, when no appropriate method is
+defined, attempts to execute the operation raise an exception.  For
+__repr__ and __cmp__, the traditional interpretations are used
+in this case.
