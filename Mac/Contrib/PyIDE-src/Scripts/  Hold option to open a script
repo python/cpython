@@ -1,4 +1,0 @@
-"Hold the option key to open a script instead of running it."
-
-import W
-W.Message(__doc__)
