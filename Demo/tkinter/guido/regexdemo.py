@@ -22,7 +22,7 @@ class RegexDemo:
 		self.master = master
 		self.topframe = Frame(self.master)
 		self.topframe.pack(fill=X)
-		self.promptdisplay = Label(self.topframe, text="Enter a string:")
+		self.promptdisplay = Label(self.topframe, text="Enter a regex:")
 		self.promptdisplay.pack(side=LEFT)
 		self.statusdisplay = Label(self.topframe, text="", anchor=W)
 		self.statusdisplay.pack(side=LEFT, fill=X)
