@@ -57,7 +57,7 @@ Copyright (C) 1994 Steen Lumholt.
 #include <Menus.h>
 #endif
 
-#if !defined(MS_WINDOWS)
+#if !(defined(MS_WINDOWS) || defined(__CYGWIN__))
 #define HAVE_CREATEFILEHANDLER
 #endif
 
