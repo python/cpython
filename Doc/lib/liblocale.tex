@@ -1,4 +1,4 @@
-\section{Standard module \sectcode{locale}}
+\section{Standard Module \sectcode{locale}}
 \stmodindex{locale}
 
 \label{module-locale}
@@ -10,8 +10,9 @@ requiring the programmer to know all the specifics of each country
 where the software is executed.
 
 The \code{locale} module is implemented on top of the \code{_locale}
-module, which in turn uses an ANSI C locale implementation if
-available. 
+module, which in turn uses an ANSI \C{} locale implementation if
+available.
+\refbimodindex{_locale}
 
 The \code{locale} module defines the following functions:
 
@@ -28,7 +29,7 @@ raised. If successful, the new locale setting is returned.
 If no \var{value} is specified, the current setting for the
 \var{category} is returned.
 
-\code{setlocale} is not thread safe on most systems. Applications
+\code{setlocale()} is not thread safe on most systems. Applications
 typically start with a call of
 \bcode\begin{verbatim}
 import locale
@@ -50,7 +51,7 @@ category.
 \item \code{grouping} is a sequence of numbers specifying at which
 relative positions the \code{thousands_sep} is expected. If the
 sequence is terminated with \code{locale.CHAR_MAX}, no further
-grouping is performed. If the sequence terminates with a 0, the last
+grouping is performed. If the sequence terminates with a \code{0}, the last
 group size is repeatedly used.
 \item \code{thousands_sep} is the character used between groups.
 \item \code{int_curr_symbol} specifies the international currency
@@ -89,74 +90,76 @@ are given below.
 \end{funcdesc}
 
 \begin{funcdesc}{strcoll}{string1,string2}
-Compares two strings according to the current LC_COLLATE setting. As
-any other compare function, returns a negative, or a positive value,
-or 0, depending on whether \var{string1} collates before or after
-\var{string2} or is equal to it.
+Compares two strings according to the current \code{LC_COLLATE}
+setting. As any other compare function, returns a negative, or a
+positive value, or \code{0}, depending on whether \var{string1}
+collates before or after \var{string2} or is equal to it.
 \end{funcdesc}
 
 \begin{funcdesc}{strxfrm}{string}
 Transforms a string to one that can be used for the builtin function
-\code{cmp}, and still returns locale-aware results. This function can be
+\code{cmp()}, and still returns locale-aware results. This function can be
 used when the same string is compared repeatedly, e.g. when collating
 a sequence of strings.
 \end{funcdesc}
 
 \begin{funcdesc}{format}{format,val\optional{grouping=0}}
-Formats a number \var{val} according to the current LC_NUMERIC
-setting. The format follows the conventions of the \% operator. For
+Formats a number \var{val} according to the current \code{LC_NUMERIC}
+setting. The format follows the conventions of the \code{\%} operator. For
 floating point values, the decimal point is modified if
 appropriate. If \var{grouping} is true, also takes the grouping into
 account.
 \end{funcdesc}
 
 \begin{funcdesc}{str}{float}
-Formats a floating point number using the same format as
-\code{string.str}, but takes the decimal point into account.
+Formats a floating point number using the same format as the built-in
+function \code{str(\var{float})}, but takes the decimal point into
+account.
 \end{funcdesc}
 
 \begin{funcdesc}{atof}{string}
-Converts a string to a floating point number, following the LC_NUMERIC
+Converts a string to a floating point number, following the \code{LC_NUMERIC}
 settings.
 \end{funcdesc}
 
 \begin{funcdesc}{atoi}{string}
-Converts a string to an integer, following the LC_NUMERIC conventions.
+Converts a string to an integer, following the \code{LC_NUMERIC} conventions.
 \end{funcdesc}
 
 \begin{datadesc}{LC_CTYPE}
+\refstmodindex{string}
 Locale category for the character type functions. Depending on the
 settings of this category, the functions of module \code{string}
 dealing with case change their behaviour.
 \end{datadesc}
 
 \begin{datadesc}{LC_COLLATE}
-Locale category for sorting strings. The functions \code{strcoll} and
-\code{strxfrm} of the locale module are affected.
+Locale category for sorting strings. The functions \code{strcoll()} and
+\code{strxfrm()} of the \code{locale} module are affected.
 \end{datadesc}
 
 \begin{datadesc}{LC_TIME}
 Locale category for the formatting of time. The function
-\code{time.strftime} follows these conventions.
+\code{time.strftime()} follows these conventions.
 \end{datadesc}
 
 \begin{datadesc}{LC_MONETARY}
 Locale category for formatting of monetary values. The available
-options are available from the \code{localeconv} function.
+options are available from the \code{localeconv()} function.
 \end{datadesc}
 
 \begin{datadesc}{LC_MESSAGES}
 Locale category for message display. Python currently does not support
 application specific locale-aware messages. Messages displayed by the
-operating system, like those returned by \code{posix.strerror} might
+operating system, like those returned by \code{posix.strerror()} might
 be affected by this category.
 \end{datadesc}
 
 \begin{datadesc}{LC_NUMERIC}
 Locale category for formatting numbers. The functions
-\code{format}, \code{atoi}, \code{atof} and \code{str} of the locale module
-are affected by that category. All other numeric formatting operations
-are not affected.
+\code{format()}, \code{atoi()}, \code{atof()} and \code{str()} of the
+\code{locale} module are affected by that category. All other numeric
+formatting operations are not affected.
 \end{datadesc}
 
 \begin{datadesc}{LC_ALL}
@@ -170,11 +173,11 @@ used to restore the settings.
 
 \begin{datadesc}{CHAR_MAX}
 This is a symbolic constant used for different values returned by
-\code{localeconv}.
+\code{localeconv()}.
 \end{datadesc}
 
 \begin{excdesc}{Error}
-Exception raised when \code{setlocale} fails.
+Exception raised when \code{setlocale()} fails.
 \end{excdesc}
 
 Example:
