@@ -323,10 +323,10 @@ end
 item: Wizard Block
   Direction Variable=DIRECTION
   Display Variable=DISPLAY
-  Bitmap Pathname=%_WISE_%\Dialogs\Template\Wizard.bmp
+  Bitmap Pathname=.\installer.bmp
   X Position=9
   Y Position=10
-  Filler Color=8421440
+  Filler Color=11173759
   Dialog=Select Destination Directory
   Dialog=Backup Replaced Files
   Dialog=Select Components
@@ -2735,10 +2735,10 @@ end
 item: Wizard Block
   Direction Variable=DIRECTION
   Display Variable=DISPLAY
-  Bitmap Pathname=%_WISE_%\DIALOGS\TEMPLATE\WIZARD.BMP
+  Bitmap Pathname=.\installer.bmp
   X Position=9
   Y Position=10
-  Filler Color=8421440
+  Filler Color=11173759
   Flags=00000011
 end
 item: Custom Dialog Set
