@@ -173,8 +173,8 @@ class PyBuildExt(build_ext):
         # unfortunately, distutils doesn't let us provide separate C and C++
         # compilers
         if compiler is not None:
-            (ccshared,opt) = sysconfig.get_config_vars('CCSHARED','OPT')
-            args['compiler_so'] = compiler + ' ' + opt + ' ' + ccshared
+            (ccshared,opt,base) = sysconfig.get_config_vars('CCSHARED','OPT','BASECFLAGS')
+            args['compiler_so'] = compiler + ' ' + opt + ' ' + ccshared + ' ' + base
         if linker_so is not None:
             args['linker_so'] = linker_so
         self.compiler.set_executables(**args)
@@ -251,6 +251,12 @@ class PyBuildExt(build_ext):
         # Ensure that /usr/local is always used
         add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
         add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
+
+        # fink installs lots of goodies in /sw/... - make sure we
+        # check there
+        if sys.platform == "darwin":
+            add_dir_to_list(self.compiler.library_dirs, '/sw/lib')
+            add_dir_to_list(self.compiler.include_dirs, '/sw/include')
 
         if os.path.normpath(sys.prefix) != '/usr':
             add_dir_to_list(self.compiler.library_dirs,

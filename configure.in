@@ -168,6 +168,15 @@ fi
 AC_MSG_RESULT($EXTRAPLATDIR)
 
 # checks for alternative programs
+
+# compiler flags are generated in two sets, BASECFLAGS and OPT.  OPT is just
+# for debug/optimization stuff.  BASECFLAGS is for flags that are required
+# just to get things to compile and link.  Users are free to override OPT
+# when running configure or make.  The build should not break if they do.
+# BASECFLAGS should generally not be messed with, however.
+
+# XXX shouldn't some/most/all of this code be merged with the stuff later
+# on that fiddles with OPT and BASECFLAGS?
 AC_MSG_CHECKING(for --without-gcc)
 AC_ARG_WITH(gcc,
             AC_HELP_STRING(--without-gcc,never use gcc),
@@ -188,13 +197,14 @@ AC_ARG_WITH(gcc,
 		ppc)
 			CC=mwcc
 			without_gcc=yes
-			OPT="-O -export pragma"
+			BASECFLAGS="$BASECFLAGS -export pragma"
+			OPT="$OPT -O"
 			LDFLAGS="$LDFLAGS -nodup"
 			;;
 		x86)
 			CC=gcc
 			without_gcc=no
-			OPT=-O
+			OPT="$OPT -O"
 			;;
 		*)
 			AC_MSG_ERROR([Unknown BeOS platform "$BE_HOST_CPU"])
@@ -484,7 +494,7 @@ if test $enable_shared = "yes"; then
   case $MACHDEP in
   dguxR4)
         LDLIBRARY='libpython$(VERSION).so'
-        OPT="$OPT -pic"
+        BASECFLAGS="$BASECFLAGS -pic"
         ;;
   esac
 fi
@@ -531,13 +541,27 @@ else AC_MSG_RESULT(no); Py_DEBUG='false'
 fi],
 [AC_MSG_RESULT(no)])
 
+# XXX Shouldn't the code above that fiddles with BASECFLAGS and OPT be
+# merged with this chunk of code?
+
 # Optimizer/debugger flags
+# ------------------------
+# (The following bit of code is complicated enough - please keep things
+# indented properly.  Just pretend you're editing Python code. ;-)
+
+# There are two parallel sets of case statements below, one that checks to
+# see if OPT was set and one that does BASECFLAGS setting based upon
+# compiler and platform.  BASECFLAGS tweaks need to be made even if the
+# user set OPT.
+
+# tweak OPT based on compiler and platform, only if the user didn't set
+# it on the command line
 AC_SUBST(OPT)
 if test -z "$OPT"
 then
-	case $GCC in
-	yes)
-		case $ac_cv_prog_cc_g in
+    case $GCC in
+    yes)
+	case $ac_cv_prog_cc_g in
 	yes)
 	    if test "$Py_DEBUG" = 'true' ; then
 		# Optimization messes up debuggers, so turn it off for
@@ -545,30 +569,59 @@ then
 		OPT="-g -Wall -Wstrict-prototypes"
 	    else
 		OPT="-g -O3 -Wall -Wstrict-prototypes"
-	    fi;;
+	    fi
+	    ;;
 	*)
-	    OPT="-O3 -Wall -Wstrict-prototypes";;
+	    OPT="-O3 -Wall -Wstrict-prototypes"
+	    ;;
 	esac
 	case $ac_sys_system in
-	    SCO_SV*) OPT="$OPT -m486 -DSCO5";;
-	esac
+	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
+	    ;;
+        esac
 	;;
+
     *)
-	case $ac_sys_system in
-	OpenUNIX*|UnixWare*)
-	    OPT="-O -K pentium,host,inline,loop_unroll,alloca ";;
-	SCO_SV*)
-	    CFLAGS="$CFLAGS -belf"
-	    OPT="-belf -O -Ki486 -DSCO5";;
-	*)
-	    OPT="-O";;
-	esac
+	OPT="-O"
+	;;
     esac
+
+    # The current (beta) Monterey compiler dies with optimizations
+    # XXX what is Monterey? Does it still die w/ -O? Can we get rid of this?
     case $ac_sys_system in
-    Darwin*)
-    	OPT="$OPT -Wno-long-double -no-cpp-precomp";;
+	Monterey*)
+	    OPT=""
+	    ;;
     esac
+
 fi
+
+AC_SUBST(BASECFLAGS)
+# tweak BASECFLAGS based on compiler and platform
+case $GCC in
+yes)
+    case $ac_sys_system in
+	SCO_SV*)
+	    BASECFLAGS="$BASECFLAGS -m486 -DSCO5"
+	    ;;
+	# is there any other compiler on Darwin besides gcc?
+	Darwin*)
+	    BASECFLAGS="$BASECFLAGS -Wno-long-double -no-cpp-precomp"
+	    ;;
+    esac
+    ;;
+
+*)
+    case $ac_sys_system in
+    OpenUNIX*|UnixWare*)
+	BASECFLAGS="$BASECFLAGS -K pentium,host,inline,loop_unroll,alloca "
+	;;
+    SCO_SV*)
+	BASECFLAGS="$BASECFLAGS -belf -Ki486 -DSCO5"
+	;;
+    esac
+    ;;
+esac
 
 if test "$Py_DEBUG" = 'true'; then
   :
@@ -576,14 +629,9 @@ else
   OPT="-DNDEBUG $OPT"
 fi
 
-# The current (beta) Monterey compiler dies with optimizations
-case $ac_sys_system in
-Monterey*) OPT="";;
-esac
-
 if test "$ac_arch_flags"
 then
-	OPT="$OPT $ac_arch_flags"
+	BASECFLAGS="$BASECFLAGS $ac_arch_flags"
 fi
 
 AC_MSG_CHECKING(whether $CC accepts -OPT:Olimit=0)
@@ -598,8 +646,14 @@ CC="$ac_save_cc"])
 AC_MSG_RESULT($ac_cv_opt_olimit_ok)
 if test $ac_cv_opt_olimit_ok = yes; then
     case $ac_sys_system in
-      Darwin*) OPT="$OPT" ;;
-      *) OPT="$OPT -OPT:Olimit=0";;
+	# XXX is this branch needed? On MacOSX 10.2.2 the result of the
+	# olimit_ok test is "no".  Is it "yes" in some other Darwin-esque
+	# environment?
+        Darwin*)
+	    ;;
+        *)
+	    BASECFLAGS="$BASECFLAGS -OPT:Olimit=0"
+	    ;;
     esac
 else
   AC_MSG_CHECKING(whether $CC accepts -Olimit 1500)
@@ -613,7 +667,7 @@ else
   CC="$ac_save_cc"])
   AC_MSG_RESULT($ac_cv_olimit_ok)
   if test $ac_cv_olimit_ok = yes; then
-    OPT="$OPT -Olimit 1500"
+    BASECFLAGS="$BASECFLAGS -Olimit 1500"
   fi
 fi
 
@@ -939,7 +993,7 @@ esac
 AC_MSG_CHECKING(for --enable-framework)
 if test "$enable_framework"
 then
-	OPT="$OPT -fno-common -dynamic"
+	BASECFLAGS="$BASECFLAGS -fno-common -dynamic"
 	# -F. is needed to allow linking to the framework while 
 	# in the build location.
 	LDFLAGS="$LDFLAGS -Wl,-F."
@@ -1545,7 +1599,7 @@ yes
 				ipv6type=$i
 				ipv6lib=inet6
 				ipv6libdir=/usr/inet6/lib
-				OPT="-I/usr/inet6/include $OPT"
+				BASECFLAGS="-I/usr/inet6/include $BASECFLAGS"
 			fi
 			;;
 		solaris)
@@ -1575,7 +1629,7 @@ yes
 				[ipv6type=$i;
 				ipv6lib=v6;
 				ipv6libdir=/usr/local/v6/lib;
-				OPT="-I/usr/local/v6/include $OPT"])
+				BASECFLAGS="-I/usr/local/v6/include $BASECFLAGS"])
 			;;
 		zeta)
 			AC_EGREP_CPP(yes, [
