@@ -555,11 +555,11 @@ regex_set_syntax(self, args)
 }
 
 static struct methodlist regex_global_methods[] = {
-	{"compile",	regex_compile},
-	{"symcomp",	regex_symcomp},
-	{"match",	regex_match},
-	{"search",	regex_search},
-	{"set_syntax",	regex_set_syntax},
+	{"compile",	regex_compile, 0},
+	{"symcomp",	regex_symcomp, 0},
+	{"match",	regex_match, 0},
+	{"search",	regex_search, 0},
+	{"set_syntax",	regex_set_syntax, 0},
 	{NULL,		NULL}		/* sentinel */
 };
 
