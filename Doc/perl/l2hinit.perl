@@ -88,12 +88,24 @@ sub custom_driver_hook {
     # seems to be sufficiently general that it should be fine for HOWTO
     # processing.
     #
+    # XXX This still isn't quite right; we should actually be inserting
+    # $mytexinputs just before any empty entry in TEXINPUTS is one
+    # exists instead of just concatenating the pieces like we do here.
+    #
     my $file = $_[0];
     my($jobname, $dir, $ext) = fileparse($file, '\..*');
     $dir = L2hos->Make_directory_absolute($dir);
     $dir =~ s/$dd$//;
     $TEXINPUTS = "$dir$envkey$mytexinputs";
-    print "\nAdding $dir to \$TEXINPUTS\n";
+    # Push everything into $TEXINPUTS since LaTeX2HTML doesn't pick
+    # this up on it's own; we clear $ENV{'TEXINPUTS'} so the value set
+    # for this by the main LaTeX2HTML script doesn't contain duplicate
+    # directories.
+    if ($ENV{'TEXINPUTS'}) {
+        $TEXINPUTS .= "$envkey$ENV{'TEXINPUTS'}";
+        $ENV{'TEXINPUTS'} = undef;
+    }
+    print "\nSetting \$TEXINPUTS to $TEXINPUTS\n";
 }
 
 
