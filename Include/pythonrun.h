@@ -87,16 +87,13 @@ DL_IMPORT(const char *) Py_GetCompiler Py_PROTO((void));
 DL_IMPORT(const char *) Py_GetBuildInfo Py_PROTO((void));
 
 /* Internal -- various one-time initializations */
-
-DL_IMPORT(PyObject *) _PyBuiltin_Init_1 Py_PROTO((void));
-DL_IMPORT(void) _PyBuiltin_Init_2 Py_PROTO((PyObject *));
+DL_IMPORT(PyObject *) _PyBuiltin_Init Py_PROTO((void));
 DL_IMPORT(PyObject *) _PySys_Init Py_PROTO((void));
 DL_IMPORT(void) _PyImport_Init Py_PROTO((void));
+DL_IMPORT(void) init_exceptions Py_PROTO((void));
 
 /* Various internal finalizers */
-DL_IMPORT(void) _PyImport_Fini Py_PROTO((void));
-DL_IMPORT(void) _PyBuiltin_Fini_1 Py_PROTO((void));
-DL_IMPORT(void) _PyBuiltin_Fini_2 Py_PROTO((void));
+DL_IMPORT(void) fini_exceptions Py_PROTO((void));
 DL_IMPORT(void) PyMethod_Fini Py_PROTO((void));
 DL_IMPORT(void) PyFrame_Fini Py_PROTO((void));
 DL_IMPORT(void) PyCFunction_Fini Py_PROTO((void));
