@@ -123,7 +123,7 @@ class StripWidget(Pmw.MegaWidget):
 
 	canvas.pack()
 	canvas.bind('<ButtonRelease-1>', self.__select_chip)
-	canvas.bind('<B1-Motion>', self.__select_chip)
+	canvas.bind('<B1-Motion>', self.__drag_select_chip)
 
 	# Load a proc into the Tcl interpreter.  This is used in the
 	# set_color() method to speed up setting the chip colors.
@@ -162,6 +162,7 @@ class StripWidget(Pmw.MegaWidget):
 	assert self.__axis in (0, 1, 2)
 	self.initialiseoptions(StripWidget)
 	self.__delegate = self['delegate']
+	self.__update_while_dragging = 1
 
     def __set_color(self):
 	rgbtuple = self['color']
@@ -182,17 +183,11 @@ class StripWidget(Pmw.MegaWidget):
 	    if chip and (1 <= chip[0] <= self.__numchips):
 		color = self.__chips[chip[0]-1]
 		rgbtuple = ColorDB.rrggbb_to_triplet(color)
-
 		self.__delegate.set_color(self, rgbtuple)
-## 		import profile
-## 		import pstats
-## 		import tempfile
-## 		statfile = tempfile.mktemp()
-## 		p = profile.Profile()
-## 		p.runcall(self.__delegate.set_color, self, rgbtuple)
-## 		p.dump_stats(statfile)
-## 		s = pstats.Stats(statfile)
-## 		s.strip_dirs().sort_stats('time').print_stats(10)
+
+    def __drag_select_chip(self, event=None):
+	if self.__update_while_dragging:
+	    self.__select_chip(event)
 
     def __set_delegate(self):
 	self.__delegate = self['delegate']
@@ -244,3 +239,6 @@ class StripWidget(Pmw.MegaWidget):
 	else:
 	    outline = 'black'
 	self.__canvas.itemconfigure(chip, outline=outline)
+
+    def set_update_while_dragging(self, flag):
+	self.__update_while_dragging = flag
