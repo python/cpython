@@ -141,10 +141,8 @@ for prefix in prefixes:
                                      "python" + sys.version[:3],
                                      "site-packages"),
                         os.path.join(prefix, "lib", "site-python")]
-        elif os.sep == ':':
-            sitedirs = [os.path.join(prefix, "lib", "site-packages")]
         else:
-            sitedirs = [prefix]
+            sitedirs = [prefix, os.path.join(prefix, "lib", "site-packages")]
         for sitedir in sitedirs:
             if os.path.isdir(sitedir):
                 addsitedir(sitedir)
