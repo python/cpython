@@ -4,10 +4,10 @@
 \bimodindex{re}
 
 % XXX Remove before 1.5final release.
-{\large\bf This documentation is preliminary and incomplete.  If you
-find a bug or documentation error, or just find something unclear,
-please send a message to
-\code{string-sig@python.org}, and we'll fix it.}
+%{\large\bf This documentation is preliminary and incomplete.  If you
+%find a bug or documentation error, or just find something unclear,
+%please send a message to
+%\code{string-sig@python.org}, and we'll fix it.}
 
 This module provides regular expression matching operations similar to
 those found in Perl.  It's 8-bit clean: both patterns and strings may
@@ -246,13 +246,13 @@ Python's string literals.
 equivalent to the set \code{[0-9]}.
 %
 \item[\code{\e D}]Matches any non-digit character; this is
-equivalent to the set \code{[{\^}0-9]}.
+equivalent to the set \code{[\^0-9]}.
 %
 \item[\code{\e s}]Matches any whitespace character; this is
 equivalent to the set \code{[ \e t\e n\e r\e f\e v]}.
 %
 \item[\code{\e S}]Matches any non-whitespace character; this is
-equivalent to the set \code{[{\^} \e t\e n\e r\e f\e v]}.
+equivalent to the set \code{[\^ \e t\e n\e r\e f\e v]}.
 %
 \item[\code{\e w}]When the LOCALE flag is not specified, matches any alphanumeric character; this is
 equivalent to the set \code{[a-zA-Z0-9_]}.  With LOCALE, it will match
@@ -261,7 +261,7 @@ for the current locale.
 %
 \item[\code{\e W}]When the LOCALE flag is not specified, matches any
 non-alphanumeric character; this is equivalent to the set
-\code{[{\^}a-zA-Z0-9_]}.   With LOCALE, it will match any character
+\code{[\^a-zA-Z0-9_]}.   With LOCALE, it will match any character
 not in the set \code{[0-9_]}, and not defined as a letter
 for the current locale.
 
@@ -273,6 +273,7 @@ for the current locale.
 \end{itemize}
 
 \subsection{Module Contents}
+\nodename{Contents of Module re}
 
 The module defines the following functions and constants, and an exception:
 
@@ -287,22 +288,24 @@ The module defines the following functions and constants, and an exception:
   \var{flags} value.  Values can be any of the following variables,
   combined using bitwise OR (the \code{|} operator).
 
-\begin{itemize}
+\begin{description}
 
-\item {I or IGNORECASE or \code{(?i)}}
+%  The use of \quad in the item labels is ugly but adds enough space
+%  to the label that it doesn't get visually run-in with the text.
 
-{Perform case-insensitive matching; expressions like \code{[A-Z]} will match
+\item[I or IGNORECASE or \code{(?i)}\quad]
+
+Perform case-insensitive matching; expressions like \code{[A-Z]} will match
 lowercase letters, too.  This is not affected by the current locale.
-}
-\item {L or LOCALE or \code{(?L)}}
 
-{Make \code{\e w}, \code{\e W}, \code{\e b},
+\item[L or LOCALE or \code{(?L)}\quad]
+
+Make \code{\e w}, \code{\e W}, \code{\e b},
 \code{\e B}, dependent on the current locale. 
-}
 
-\item {M or MULTILINE or \code{(?m)}}
+\item[M or MULTILINE or \code{(?m)}\quad]
 
-{When specified, the pattern character \code{\^} matches at the
+When specified, the pattern character \code{\^} matches at the
   beginning of the string and at the beginning of each line
   (immediately following each newline); and the pattern character
 \code{\$} matches at the end of the string and at the end of each line
@@ -310,25 +313,24 @@ lowercase letters, too.  This is not affected by the current locale.
 By default, \code{\^} matches only at the beginning of the string, and
 \code{\$} only at the end of the string and immediately before the
 newline (if any) at the end of the string. 
-}
 
-\item {S or DOTALL or \code{(?s)}}
+\item[S or DOTALL or \code{(?s)}\quad]
 
-{Make the \code{.} special character any character at all, including a
+Make the \code{.} special character any character at all, including a
 newline; without this flag, \code{.} will match anything \emph{except}
-a newline.} 
+a newline.
 
-\item {X or VERBOSE or \code{(?x)}}
+\item[X or VERBOSE or \code{(?x)}\quad]
 
-{Ignore whitespace within the pattern
+Ignore whitespace within the pattern
 except when in a character class or preceded by an unescaped
 backslash, and, when a line contains a \code{\#} neither in a character
 class or preceded by an unescaped backslash, all characters from the
-leftmost such \code{\#} through the end of the line are ignored.  }
+leftmost such \code{\#} through the end of the line are ignored.
 
-\end{itemize}
+\end{description}
 
-  The sequence
+The sequence
 %
 \bcode\begin{verbatim}
 prog = re.compile(pat)
