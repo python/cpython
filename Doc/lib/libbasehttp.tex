@@ -12,14 +12,14 @@
 \index{httpd}
 
 This module defines two classes for implementing HTTP servers
-(web servers). Usually, this module isn't used directly, but is used
-as a basis for building functioning web servers. See the
+(Web servers). Usually, this module isn't used directly, but is used
+as a basis for building functioning Web servers. See the
 \module{SimpleHTTPServer}\refstmodindex{SimpleHTTPServer} and
 \refmodule{CGIHTTPServer}\refstmodindex{CGIHTTPServer} modules.
 
 The first class, \class{HTTPServer}, is a
-\class{SocketServer.TCPServer} subclass. It creates and listens at the
-web socket, dispatching the requests to a handler. Code to create and
+\class{SocketServer.TCPServer} subclass.  It creates and listens at the
+HTTP socket, dispatching the requests to a handler.  Code to create and
 run the server looks like this:
 
 \begin{verbatim}

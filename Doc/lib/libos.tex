@@ -1,31 +1,31 @@
 \section{\module{os} ---
-         Miscellaneous OS interfaces}
+         Miscellaneous operating system interfaces}
 
 \declaremodule{standard}{os}
-\modulesynopsis{Miscellaneous OS interfaces.}
+\modulesynopsis{Miscellaneous operating system interfaces.}
 
 
 This module provides a more portable way of using operating system
-(OS) dependent functionality than importing an OS dependent built-in
-module like \refmodule{posix} or \module{nt}.
+dependent functionality than importing a operating system dependent
+built-in module like \refmodule{posix} or \module{nt}.
 
-This module searches for an OS dependent built-in module like
+This module searches for an operating system dependent built-in module like
 \module{mac} or \refmodule{posix} and exports the same functions and data
-as found there.  The design of all Python's built-in OS dependent
+as found there.  The design of all Python's built-in operating system dependent
 modules is such that as long as the same functionality is available,
 it uses the same interface; for example, the function
 \code{os.stat(\var{path})} returns stat information about \var{path} in
 the same format (which happens to have originated with the
 \POSIX{} interface).
 
-Extensions peculiar to a particular OS are also available through the
-\module{os} module, but using them is of course a threat to
-portability!
+Extensions peculiar to a particular operating system are also
+available through the \module{os} module, but using them is of course a
+threat to portability!
 
 Note that after the first time \module{os} is imported, there is
 \emph{no} performance penalty in using functions from \module{os}
-instead of directly from the OS dependent built-in module, so there
-should be \emph{no} reason not to use \module{os}!
+instead of directly from the operating system dependent built-in module,
+so there should be \emph{no} reason not to use \module{os}!
 
 
 % Frank Stajano <fstajano@uk.research.att.com> complained that it
@@ -65,13 +65,13 @@ When exceptions are strings, the string for the exception is
 \end{excdesc}
 
 \begin{datadesc}{name}
-The name of the OS dependent module imported.  The following names
-have currently been registered: \code{'posix'}, \code{'nt'},
+The name of the operating system dependent module imported.  The
+following names have currently been registered: \code{'posix'}, \code{'nt'},
 \code{'dos'}, \code{'mac'}, \code{'os2'}, \code{'ce'}, \code{'java'}.
 \end{datadesc}
 
 \begin{datadesc}{path}
-The corresponding OS dependent standard module for pathname
+The corresponding operating system dependent standard module for pathname
 operations, such as \module{posixpath} or \module{macpath}.  Thus,
 given the proper imports, \code{os.path.split(\var{file})} is
 equivalent to but more portable than
@@ -636,7 +636,7 @@ is \code{0777} (octal).
 Return system configuration information relevant to a named file.
 \var{name} specifies the configuration value to retrieve; it may be a
 string which is the name of a defined system value; these names are
-specified in a number of standards (\POSIX.1, Unix95, Unix98, and
+specified in a number of standards (\POSIX.1, \UNIX 95, \UNIX 98, and
 others).  Some platforms define additional names as well.  The names
 known to the host operating system are given in the
 \code{pathconf_names} dictionary.  For configuration variables not
@@ -737,9 +737,9 @@ order
 \code{st_mtime},
 \code{st_ctime}.
 More items may be added at the end by some implementations.  Note that
-on the Macintosh, the time values are floating point values, like all
-time values on the Macintosh.
-(On MS Windows, some items are filled with dummy values.)
+on the Mac OS, the time values are floating point values, like all
+time values on the Mac OS.
+(On Windows, some items are filled with dummy values.)
 Availability: Macintosh, \UNIX{}, Windows.
 
 Note: The standard module \refmodule{stat}\refstmodindex{stat} defines
@@ -983,8 +983,9 @@ Availability: Windows.
 \begin{funcdesc}{startfile}{path}
 Start a file with its associated application.  This acts like
 double-clicking the file in Windows Explorer, or giving the file name
-as an argument to the DOS \program{start} command: the file is opened
-with whatever application (if any) its extension is associated.
+as an argument to the \program{start} command from the interactive
+command shell: the file is opened with whatever application (if any)
+its extension is associated.
 
 \function{startfile()} returns as soon as the associated application
 is launched.  There is no option to wait for the application to close,
@@ -1012,8 +1013,8 @@ Availability: \UNIX{}, Windows.
 \end{funcdesc}
 
 \begin{funcdesc}{times}{}
-Return a 5-tuple of floating point numbers indicating accumulated (CPU
-or other)
+Return a 5-tuple of floating point numbers indicating accumulated
+(processor or other)
 times, in seconds.  The items are: user time, system time, children's
 user time, children's system time, and elapsed real time since a fixed
 point in the past, in that order.  See the \UNIX{} manual page
@@ -1100,7 +1101,7 @@ Availability: \UNIX{}.
 Return string-valued system configuration values.
 \var{name} specifies the configuration value to retrieve; it may be a
 string which is the name of a defined system value; these names are
-specified in a number of standards (\POSIX, Unix95, Unix98, and
+specified in a number of standards (\POSIX, \UNIX 95, \UNIX 98, and
 others).  Some platforms define additional names as well.  The names
 known to the host operating system are given in the
 \code{confstr_names} dictionary.  For configuration variables not
@@ -1151,17 +1152,19 @@ Higher-level operations on pathnames are defined in the
 
 
 \begin{datadesc}{curdir}
-The constant string used by the OS to refer to the current directory.
+The constant string used by the operating system to refer to the current
+directory.
 For example: \code{'.'} for \POSIX{} or \code{':'} for the Macintosh.
 \end{datadesc}
 
 \begin{datadesc}{pardir}
-The constant string used by the OS to refer to the parent directory.
+The constant string used by the operating system to refer to the parent
+directory.
 For example: \code{'..'} for \POSIX{} or \code{'::'} for the Macintosh.
 \end{datadesc}
 
 \begin{datadesc}{sep}
-The character used by the OS to separate pathname components,
+The character used by the operating system to separate pathname components,
 for example, \character{/} for \POSIX{} or \character{:} for the
 Macintosh.  Note that knowing this is not sufficient to be able to
 parse or concatenate pathnames --- use \function{os.path.split()} and
@@ -1169,15 +1172,16 @@ parse or concatenate pathnames --- use \function{os.path.split()} and
 \end{datadesc}
 
 \begin{datadesc}{altsep}
-An alternative character used by the OS to separate pathname components,
-or \code{None} if only one separator character exists.  This is set to
-\character{/} on DOS and Windows systems where \code{sep} is a backslash.
+An alternative character used by the operating system to separate pathname
+components, or \code{None} if only one separator character exists.  This is
+set to \character{/} on DOS and Windows systems where \code{sep} is a
+backslash.
 \end{datadesc}
 
 \begin{datadesc}{pathsep}
-The character conventionally used by the OS to separate search patch
-components (as in \envvar{PATH}), such as \character{:} for \POSIX{} or
-\character{;} for DOS and Windows.
+The character conventionally used by the operating system to separate
+search patch components (as in \envvar{PATH}), such as \character{:} for
+\POSIX{} or \character{;} for DOS and Windows.
 \end{datadesc}
 
 \begin{datadesc}{defpath}
@@ -1188,6 +1192,6 @@ doesn't have a \code{'PATH'} key.
 \begin{datadesc}{linesep}
 The string used to separate (or, rather, terminate) lines on the
 current platform.  This may be a single character, such as \code{'\e
-n'} for \POSIX{} or \code{'\e r'} for MacOS, or multiple characters,
-for example, \code{'\e r\e n'} for MS-DOS and MS Windows.
+n'} for \POSIX{} or \code{'\e r'} for the Mac OS, or multiple characters,
+for example, \code{'\e r\e n'} for DOS and Windows.
 \end{datadesc}
