@@ -459,11 +459,54 @@ drawing_setfont(self, args)
 	drawingobject *self;
 	object *args;
 {
-	TEXTATTR saveattr, winattr;
-	object *str;
-	if (!getstrarg(args, &str))
+	object *font, *style;
+	int size;
+	if (args == NULL) {
+		err_badarg();
 		return NULL;
-	wsetfont(getstringvalue(str));
+	}
+	if (is_stringobject(args)) {
+		font = args;
+		style = NULL;
+		size = 0;
+	}
+	else if (is_tupleobject(args)) {
+		int n = gettuplesize(args);
+		if (n == 2) {
+			if (!getstrintarg(args, &font, &size))
+				return NULL;
+			style = NULL;
+		}
+		else if (!getstrstrintarg(args, &font, &style, &size))
+			return NULL;
+	}
+	else {
+		err_badarg();
+		return NULL;
+	}
+	if (getstringsize(font) != 0)
+		wsetfont(getstringvalue(font));
+	if (style != NULL) {
+		switch (*getstringvalue(style)) {
+		case 'b':
+			wsetbold();
+			break;
+		case 'i':
+			wsetitalic();
+			break;
+		case 'o':
+			wsetbolditalic();
+			break;
+		case 'u':
+			wsetunderline();
+			break;
+		default:
+			wsetplain();
+			break;
+		}
+	}
+	if (size != 0)
+		wsetsize(size);
 	INCREF(None);
 	return None;
 }
