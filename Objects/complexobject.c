@@ -377,7 +377,7 @@ complex_classic_div(PyComplexObject *v, PyComplexObject *w)
 {
 	Py_complex quot;
 
-	if (Py_DivisionWarningFlag &&
+	if (Py_DivisionWarningFlag >= 2 &&
 	    PyErr_Warn(PyExc_DeprecationWarning,
 		       "classic complex division") < 0)
 		return NULL;

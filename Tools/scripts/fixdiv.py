@@ -2,7 +2,7 @@
 
 """fixdiv - tool to fix division operators.
 
-To use this tool, first run `python -Qwarn yourscript.py 2>warnings'.
+To use this tool, first run `python -Qwarnall yourscript.py 2>warnings'.
 This runs the script `yourscript.py' while writing warning messages
 about all uses of the classic division operator to the file
 `warnings'.  The warnings look like this:
