@@ -620,7 +620,6 @@ def getinnerframes(tb, context=1):
 
     Each record contains a frame object, filename, line number, function
     name, a list of lines of context, and index within the context."""
-    tb = tb.tb_next
     framelist = []
     while tb:
         framelist.append((tb.tb_frame,) + getframeinfo(tb, context))
