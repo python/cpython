@@ -131,7 +131,7 @@ c_pow(Py_complex a, Py_complex b)
 	}
 	else if (a.real == 0. && a.imag == 0.) {
 		if (b.imag != 0. || b.real < 0.)
-			errno = ERANGE;
+			errno = EDOM;
 		r.real = 0.;
 		r.imag = 0.;
 	}
@@ -456,9 +456,15 @@ complex_pow(PyComplexObject *v, PyObject *w, PyComplexObject *z)
 		p = c_pow(v->cval,exponent);
 
 	PyFPE_END_PROTECT(p)
-	if (errno == ERANGE) {
-		PyErr_SetString(PyExc_ValueError,
+	Py_ADJUST_ERANGE2(p.real, p.imag);
+	if (errno == EDOM) {
+		PyErr_SetString(PyExc_ZeroDivisionError,
 				"0.0 to a negative or complex power");
+		return NULL;
+	}
+	else if (errno == ERANGE) {
+		PyErr_SetString(PyExc_OverflowError,
+				"complex exponentiaion");
 		return NULL;
 	}
 	return PyComplex_FromCComplex(p);
