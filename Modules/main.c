@@ -26,10 +26,18 @@
 static char **orig_argv;
 static int  orig_argc;
 
-/* For my_readline when running under RISCOS */
-#ifdef RISCOS
+/* command line options */
+#define BASE_OPTS "c:diOStuUvxXhVW:"
+
+#ifndef RISCOS
+#define PROGRAM_OPTS BASE_OPTS
+#else /*RISCOS*/
+/* extra option saying that we are running under a special task window
+   frontend; especially my_readline will behave different */
+#define PROGRAM_OPTS BASE_OPTS "w"
+/* corresponding flag */
 extern int Py_RISCOSWimpFlag;
-#endif
+#endif /*RISCOS*/
 
 /* Short usage message (with %s for argv0) */
 static char *usage_line =
@@ -115,11 +123,7 @@ Py_Main(int argc, char **argv)
 
 	PySys_ResetWarnOptions();
 
-#ifdef RISCOS
-	while ((c = getopt(argc, argv, "c:diOStuUvwxXhV")) != EOF) {
-#else
-	while ((c = _PyOS_GetOpt(argc, argv, "c:diOStuUvxXhVW:")) != EOF) {
-#endif
+	while ((c = _PyOS_GetOpt(argc, argv, PROGRAM_OPTS)) != EOF) {
 		if (c == 'c') {
 			/* -c is the last option; following arguments
 			   that look like options are left for the
