@@ -1,3 +1,6 @@
+# CallTips.py - An IDLE extension that provides "Call Tips" - ie, a floating window that
+# displays parameter information as you open parens.
+
 import string
 import sys
 import types
@@ -28,7 +31,9 @@ class CallTips:
             self._make_calltip_window = self.text.make_calltip_window
         else:
             self._make_calltip_window = self._make_tk_calltip_window
-        
+
+    # Makes a Tk based calltip window.  Used by IDLE, but not Pythonwin.
+    # See __init__ above for how this is used.
     def _make_tk_calltip_window(self):
         import CallTipWindow
         return CallTipWindow.CallTip(self.text)
@@ -54,10 +59,6 @@ class CallTips:
         return "" #so the event is handled normally.
 
     def check_calltip_cancel_event(self, event):
-        # This doesnt quite work correctly as it is processed
-        # _before_ the key is handled.  Thus, when the "Up" key
-        # is pressed, this test happens before the cursor is moved.
-        # This will do for now.
         if self.calltip:
             # If we have moved before the start of the calltip,
             # or off the calltip line, then cancel the tip.
@@ -73,8 +74,8 @@ class CallTips:
 
     def get_object_at_cursor(self,
                              wordchars="._" + string.uppercase + string.lowercase + string.digits):
-        # XXX - This need to be moved to a better place
-        # as the "." attribute lookup code can also use it.
+        # XXX - This needs to be moved to a better place
+        # so the "." attribute lookup code can also use it.
         text = self.text
         chars = text.get("insert linestart", "insert")
         i = len(chars)
@@ -109,14 +110,14 @@ def get_arg_text(ob):
                 defaults = ob.func_defaults or []
                 defaults = list(map(lambda name: "=%s" % name, defaults))
                 defaults = [""] * (len(realArgs)-len(defaults)) + defaults
-                argText = string.join( map(lambda arg, dflt: arg+dflt, realArgs, defaults), ", ")
+                items = map(lambda arg, dflt: arg+dflt, realArgs, defaults)
                 if len(realArgs)+argOffset < (len(ob.func_code.co_varnames) - len(ob.func_code.co_names) ):
-                    if argText: argText = argText + ", "
-                    argText = argText + "..."
+                    items.append("...")
+                argText = string.join(items , ", ")
                 argText = "(%s)" % argText
             except:
                 pass
-        # Can't build an argument list - see if we can use a docstring.
+        # See if we can use the docstring
         if hasattr(ob, "__doc__") and ob.__doc__:
             pos = string.find(ob.__doc__, "\n")
             if pos<0 or pos>70: pos=70
