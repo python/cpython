@@ -430,7 +430,7 @@ static PyObject *
 newdatatype_repr(newdatatypeobject * obj)
 {
     return PyString_FromFormat("Repr-ified_newdatatype{{size:\%d}}",
-            obj->obj_UnderlyingDatatypePtr->size);
+                               obj->obj_UnderlyingDatatypePtr->size);
 }
 \end{verbatim}
 
@@ -453,8 +453,7 @@ static PyObject *
 newdatatype_str(newdatatypeobject * obj)
 {
     return PyString_FromFormat("Stringified_newdatatype{{size:\%d}}",
-        obj->obj_UnderlyingDatatypePtr->size
-        );
+                               obj->obj_UnderlyingDatatypePtr->size);
 }
 \end{verbatim}
 
@@ -494,12 +493,175 @@ newdatatype_print(newdatatypeobject *obj, FILE *fp, int flags)
 
 \subsection{Attribute Management Functions}
 
+For every object which can support attributes, the corresponding type
+must provide the functions that control how the attributes are
+resolved.  There needs to be a function which can retrieve attributes
+(if any are defined), and another to set attributes (if setting
+attributes is allowed).  Removing an attribute is a special case, for
+which the new value passed to the handler is \NULL.
+
+Python supports two pairs of attribute handlers; a type that supports
+attributes only needs to implement the functions for one pair.  The
+difference is that one pair takes the name of the attribute as a
+\ctype{char*}, while the other accepts a \ctype{PyObject*}.  Each type
+can use whichever pair makes more sense for the implementation's
+convenience.
+
 \begin{verbatim}
-    getattrfunc tp_getattr;
-    setattrfunc tp_setattr;
+    getattrfunc  tp_getattr;        /* char * version */
+    setattrfunc  tp_setattr;
+    /* ... */
+    getattrofunc tp_getattrofunc;   /* PyObject * version */
+    setattrofunc tp_setattrofunc;
 \end{verbatim}
 
-The \member{tp_getattr} handle is called when the object requires an
+If accessing attributes of an object is always a simple operation
+(this will be explained shortly), there are generic implementations
+which can be used to provide the \ctype{PyObject*} version of the
+attribute management functions.  The actual need for type-specific
+attribute handlers almost completely disappeared starting with Python
+2.2, though there are many examples which have not been updated to use
+some of the new generic mechanism that is available.
+
+
+\subsubsection{Generic Attribute Management}
+
+\versionadded{2.2}
+
+Most extension types only use \emph{simple} attributes.  So, what
+makes the attributes simple?  There are only a couple of conditions
+that must be met:
+
+\begin{enumerate}
+  \item   The name of the attributes must be known when
+          \cfunction{PyType_Ready()} is called.
+
+  \item   No special processing is need to record that an attribute
+          was looked up or set, nor do actions need to be taken based
+          on the value.
+\end{enumerate}
+
+Note that this list does not place any restrictions on the values of
+the attributes, when the values are computed, or how relevant data is
+stored.
+
+When \cfunction{PyType_Ready()} is called, it uses three tables
+referenced by the type object to create \emph{descriptors} which are
+placed in the dictionary of the type object.  Each descriptor controls
+access to one attribute of the instance object.  Each of the tables is
+optional; if all three are \NULL, instances of the type will only have
+attributes that are inherited from their base type, and should leave
+the \member{tp_getattro} and \member{tp_setattro} fields \NULL{} as
+well, allowing the base type to handle attributes.
+
+The tables are declared as three fields of the type object:
+
+\begin{verbatim}
+    struct PyMethodDef *tp_methods;
+    struct PyMemberDef *tp_members;
+    struct PyGetSetDef *tp_getset;
+\end{verbatim}
+
+If \member{tp_methods} is not \NULL, it must refer to an array of
+\ctype{PyMethodDef} structures.  Each entry in the table is an
+instance of this structure:
+
+\begin{verbatim}
+typedef struct PyMethodDef {
+    char        *ml_name;       /* method name */
+    PyCFunction  ml_meth;       /* implementation function */
+    int	         ml_flags;      /* flags */
+    char        *ml_doc;        /* docstring */
+} PyMethodDef;
+\end{verbatim}
+
+One entry should be defined for each method provided by the type; no
+entries are needed for methods inherited from a base type.  One
+additional entry is needed at the end; it is a sentinel that marks the
+end of the array.  The \member{ml_name} field of the sentinel must be
+\NULL.
+
+XXX Need to refer to some unified discussion of the structure fields,
+shared with the next section.
+
+The second table is used to define attributes which map directly to
+data stored in the instance.  A variety of primitive C types are
+supported, and access may be read-only or read-write.  The structures
+in the table are defined as:
+
+\begin{verbatim}
+typedef struct PyMemberDef {
+    char *name;
+    int   type;
+    int   offset;
+    int   flags;
+    char *doc;
+} PyMemberDef;
+\end{verbatim}
+
+For each entry in the table, a descriptor will be constructed and
+added to the type which will be able to extract a value from the
+instance structure.  The \member{type} field should contain one of the
+type codes defined in the \file{structmember.h} header; the value will
+be used to determine how to convert Python values to and from C
+values.  The \member{flags} field is used to store flags which control
+how the attribute can be accessed.
+
+XXX Need to move some of this to a shared section!
+
+The following flag constants are defined in \file{structmember.h};
+they may be combined using bitwise-OR.
+
+\begin{tableii}{l|l}{constant}{Constant}{Meaning}
+  \lineii{READONLY \ttindex{READONLY}}
+         {Never writable.}
+  \lineii{RO \ttindex{RO}}
+         {Shorthand for \constant{READONLY}.}
+  \lineii{READ_RESTRICTED \ttindex{READ_RESTRICTED}}
+         {Not readable in restricted mode.}
+  \lineii{WRITE_RESTRICTED \ttindex{WRITE_RESTRICTED}}
+         {Not writable in restricted mode.}
+  \lineii{RESTRICTED \ttindex{RESTRICTED}}
+         {Not readable or writable in restricted mode.}
+\end{tableii}
+
+An interesting advantage of using the \member{tp_members} table to
+build descriptors that are used at runtime is that any attribute
+defined this way can have an associated docstring simply by providing
+the text in the table.  An application can use the introspection API
+to retrieve the descriptor from the class object, and get the
+docstring using its \member{__doc__} attribute.
+
+As with the \member{tp_methods} table, a sentinel entry with a
+\member{name} value of \NULL{} is required.  
+
+
+% XXX Descriptors need to be explained in more detail somewhere, but
+% not here.
+%
+% Descriptor objects have two handler functions which correspond to
+% the \member{tp_getattro} and \member{tp_setattro} handlers.  The
+% \method{__get__()} handler is a function which is passed the
+% descriptor, instance, and type objects, and returns the value of the
+% attribute, or it returns \NULL{} and sets an exception.  The
+% \method{__set__()} handler is passed the descriptor, instance, type,
+% and new value;
+
+
+\subsubsection{Type-specific Attribute Management}
+
+For simplicity, only the \ctype{char*} version will be demonstrated
+here; the type of the name parameter is the only difference between
+the \ctype{char*} and \ctype{PyObject*} flavors of the interface.
+This example effectively does the same thing as the generic example
+above, but does not use the generic support added in Python 2.2.  The
+value in showing this is two-fold: it demonstrates how basic attribute
+management can be done in a way that is portable to older versions of
+Python, and explains how the handler functions are called, so that if
+you do need to extend their functionality, you'll understand what
+needs to be done.
+
+The \member{tp_getattr} handler is called when the object requires an
 attribute look-up.  It is called in the same situations where the
 \method{__getattr__()} method of a class would be called.
 
@@ -507,7 +669,9 @@ A likely way to handle this is (1) to implement a set of functions
 (such as \cfunction{newdatatype_getSize()} and
 \cfunction{newdatatype_setSize()} in the example below), (2) provide a
 method table listing these functions, and (3) provide a getattr
-function that returns the result of a lookup in that table.
+function that returns the result of a lookup in that table.  The
+method table uses the same structure as the \member{tp_methods} field
+of the type object.
 
 Here is an example:
 
