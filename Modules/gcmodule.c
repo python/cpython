@@ -618,9 +618,10 @@ collect(int generation)
 			debug_cycle("collectable", FROM_GC(gc));
 		}
 	}
-	/* Call tp_clear on objects in the collectable set.  This will cause
-	 * the reference cycles to be broken. It may also cause some objects
-	 * in finalizers and/or reachable_from_finalizers to be freed */
+	/* Call tp_clear on objects in the unreachable set.  This will cause
+	 * the reference cycles to be broken.  It may also cause some objects
+	 * in finalizers to be freed.
+	 */
 	delete_garbage(&unreachable, old);
 
 	/* Collect statistics on uncollectable objects found and print
@@ -651,7 +652,7 @@ collect(int generation)
 
 	if (PyErr_Occurred()) {
 		if (gc_str == NULL)
-		    gc_str = PyString_FromString("garbage collection");
+			gc_str = PyString_FromString("garbage collection");
 		PyErr_WriteUnraisable(gc_str);
 		Py_FatalError("unexpected exception during garbage collection");
 	}
