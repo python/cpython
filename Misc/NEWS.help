@@ -34,8 +34,8 @@ The changes required fell into the following categories:
 * In a few places asterisks needed to be escaped which would otherwise have
   been interpreted as beginning blocks of italic or bold text, e.g.:
 
-    - The type of tp_free has been changed from "void (*)(PyObject \*)"
-      to "void (*)(void \*)".
+    - The type of tp_free has been changed from "``void (*)(PyObject *)``"
+      to "``void (*)(void *)``".
 
   Note that only the asterisks preceded by whitespace needed to be escaped.
 
@@ -52,7 +52,7 @@ The changes required fell into the following categories:
     - Note that PyLong_AsDouble can fail!  This has always been true,
       but no callers checked for it.  It's more likely to fail now,
       because overflow errors are properly detected now.  The proper way
-      to check: ::
+      to check::
 
           double x = PyLong_AsDouble(some_long_object);
           if (x == -1.0 && PyErr_Occurred()) {
