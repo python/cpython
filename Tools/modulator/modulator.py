@@ -17,7 +17,7 @@
 #
 
 import sys, os
-sys.path.append(os.path.join(os.environ['HOME'], 'src/python/Demo/modulator'))
+sys.path.append(os.path.join(os.environ['HOME'], 'src/python/Tools/modulator'))
 
 from Tkinter import *
 from Tkextra import *
