@@ -162,13 +162,13 @@ hassignal:
 
 Setup:		$(srcdir)/Setup.in
 		@if [ -f Setup ] ; then \
-			echo; \
-			echo "-------------------------------------------"; \
-			echo "$(srcdir)/Setup.in is newer than Setup;"; \
-			echo "check to make sure you have all the updates"; \
-			echo "you need in your Setup file."; \
-			echo "-------------------------------------------"; \
-			echo; \
+		    echo; \
+		    echo "----------------------------------------------"; \
+		    echo "Modules/Setup.in is newer than Moodules/Setup;"; \
+		    echo "check to make sure you have all the updates"; \
+		    echo "you need in your Setup file."; \
+		    echo "----------------------------------------------"; \
+		    echo; \
 		else (set -x; cp $(srcdir)/Setup.in Setup); fi
 
 
