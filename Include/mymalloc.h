@@ -1,9 +1,5 @@
 #ifndef Py_MYMALLOC_H
 #define Py_MYMALLOC_H
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /***********************************************************
 Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
 The Netherlands.
@@ -52,7 +48,15 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-#else /* !HAVE_STDLIB */
+#endif
+
+#ifdef __cplusplus
+// Move this down here since some C++ #include's don't like to be included
+// inside an extern "C"
+extern "C" {
+#endif
+
+#ifndef HAVE_STDLIB_H
 extern ANY *malloc PROTO((size_t));
 extern ANY *calloc PROTO((size_t, size_t));
 extern ANY *realloc PROTO((ANY *, size_t));

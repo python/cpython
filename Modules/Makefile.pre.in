@@ -6,6 +6,7 @@
 # brought up to date by running "make Makefile".  (The makesetup also
 # creates config.c from config.c.in in the source directory.)
 
+LINKCC = $(CC)
 # === Variables set by makesetup ===
 
 MODOBJS=	_MODOBJS_
@@ -79,12 +80,12 @@ $(LIB):		$(OBJS) Makefile
 		$(RANLIB) $(LIB)
 
 ../python:	config.o $(MYLIBS) Makefile
-		$(CC) $(OPT) config.o $(LINKFORSHARED) \
+		$(LINKCC) $(OPT) config.o $(LINKFORSHARED) \
 		      $(MYLIBS) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python
 		mv python ../python
 
 config.o:	config.c Makefile $(MYLIBS)
-		$(CC) $(CFLAGS) -DPYTHONPATH=\"$(PYTHONPATH)\" -c config.c
+		$(LINKCC) $(CFLAGS) -DPYTHONPATH=\"$(PYTHONPATH)\" -c config.c
 
 clean:
 		-rm -f *.o python core *~ [@,#]* *.old *.orig *.rej

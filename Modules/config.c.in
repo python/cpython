@@ -41,6 +41,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "osdefs.h"
 #include "intrcheck.h"
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 #ifndef NO_MAIN
 
@@ -59,9 +62,14 @@ static char *argv0;
 static char **orig_argv;
 static int  orig_argc;
 
+#if defined(__cplusplus)
+int realmain(int, char**);
+main(int argc, char **argv)
+#else
 main(argc, argv)
 	int argc;
 	char **argv;
+#endif
 {
 	orig_argc = argc;
 	orig_argv = argv;
@@ -76,9 +84,13 @@ getprogramname()
 }
 
 void
+#if defined(__cplusplus)
+getargcargv(int *argc, char ***argv)
+#else
 getargcargv(argc,argv)
 	int *argc;
 	char ***argv;
+#endif
 {
 	*argc = orig_argc;
 	*argv = orig_argv;
@@ -144,11 +156,16 @@ getcopyright()
 #define PYTHONPATH ".:/usr/local/lib/python"
 #endif /* !PYTHONPATH */
 
+#ifndef __cplusplus
 extern char *getenv();
+#endif
 
 char *
 getpythonpath()
 {
+#ifdef __cplusplus
+	void fatal(char *);
+#endif
 	char *path = getenv("PYTHONPATH");
 	char *defpath = PYTHONPATH;
 	static char *buf = NULL;
@@ -214,4 +231,8 @@ struct frozen {
 } frozen_modules[] = {
 	{0, 0, 0}
 };
+#endif
+
+#if defined(__cplusplus)
+}
 #endif
