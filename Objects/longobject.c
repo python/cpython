@@ -145,6 +145,11 @@ PyLong_FromDouble(dval)
 	double frac;
 	int i, ndig, expo, neg;
 	neg = 0;
+	if (dval && dval * 0.5 == dval) {
+		PyErr_SetString(PyExc_OverflowError,
+			"cannot convert float infinity to long");
+		return NULL;
+	}
 	if (dval < 0.0) {
 		neg = 1;
 		dval = -dval;
