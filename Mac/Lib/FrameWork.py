@@ -27,6 +27,7 @@ from Windows import *
 import EasyDialogs
 
 kHighLevelEvent = 23	# Don't know what header file this should come from
+SCROLLBARWIDTH = 16		# Again, not a clue...
 
 
 # Map event 'what' field to strings
@@ -358,14 +359,14 @@ class MenuBar:
 	
 	def addmenu(self, title, after = 0):
 		id = self.getnextid()
-		print 'Newmenu', title, id # XXXX
+		if DEBUG: print 'Newmenu', title, id # XXXX
 		m = NewMenu(id, title)
 		m.InsertMenu(after)
 		DrawMenuBar()
 		return id, m
 		
 	def delmenu(self, id):
-		print 'Delmenu', id # XXXX
+		if DEBUG: print 'Delmenu', id # XXXX
 		DeleteMenu(id)
 	
 	def addpopup(self, title = ''):
@@ -611,6 +612,89 @@ class ControlsWindow(Window):
 		else:
 			if DEBUG: print "FindControl(%s, %s) -> (%s, %s)" % \
 				(local, window, ctltype, control)
+			self.do_contentclick(local, modifiers, event)
+			
+class ScrolledWindow(ControlsWindow):
+	def __init__(self, parent):
+		self.barx = self.bary = None
+		ControlsWindow.__init__(self, parent)
+
+	def scrollbars(self, wantx=1, wanty=1):
+		SetPort(self.wid)
+		self.barx = self.bary = None
+		x0, y0, x1, y1 = self.wid.GetWindowPort().portRect
+		vx, vy = self.getscrollbarvalues()
+		if wantx:
+			rect = x0-1, y1-(SCROLLBARWIDTH-1), x1-(SCROLLBARWIDTH-2), y1+1
+			self.barx = NewControl(self.wid, rect, "", 1, vx, 0, 32767, 16, 0)
+		if wanty:
+			rect = x1-(SCROLLBARWIDTH-1), y0-1, x1+1, y1-(SCROLLBARWIDTH-2)
+			self.bary = NewControl(self.wid, rect, "", 1, vy, 0, 32767, 16, 0)
+			
+	def do_postclose(self):
+		self.barx = self.bary = None
+		ControlsWindow.do_postclose(self)
+		
+	def do_activate(self, onoff, event):
+		if onoff:
+			onoff = 0
+		else:
+			onoff = 255
+		if self.barx:
+			self.barx.HiliteControl(onoff)
+		if self.bary:
+			self.bary.HiliteControl(onoff)
+			
+	def do_postresize(self, width, height, window):
+		l, t, r, b = self.wid.GetWindowPort().portRect
+		if self.barx:
+			self.barx.MoveControl(l-1, b-(SCROLLBARWIDTH-1))
+			self.barx.SizeControl((r-l)-(SCROLLBARWIDTH-2), SCROLLBARWIDTH)
+		if self.bary:
+			self.bary.MoveControl(r-(SCROLLBARWIDTH-1), t-1)
+			self.bary.SizeControl(SCROLLBARWIDTH, (b-t)-(SCROLLBARWIDTH-2))
+		InvalRect((l, t, r, b))
+
+	def do_controlhit(self, window, control, pcode, event):
+		if control == self.barx:
+			bar = self.barx
+			which = 'x'
+		elif control == self.bary:
+			bar = self.bary
+			which = 'y'
+		else:
+			return 0
+		value = None
+		if pcode == inUpButton:
+			what = '-'
+		elif pcode == inDownButton:
+			what = '+'
+		elif pcode == inPageUp:
+			what = '--'
+		elif pcode == inPageDown:
+			what = '++'
+		else:
+			what = 'set'
+			value = bar.GetControlValue()
+		self.scrollbar_callback(which, what, value)
+		self.updatescrollbars()
+		return 1
+		
+	def updatescrollbars(self):
+		SetPort(self.wid)
+		vx, vy = self.getscrollbarvalues()
+		if self.barx:
+			self.barx.SetControlValue(vx)
+		if self.bary:
+			self.bary.SetControlValue(vy)
+			
+	# To be overridden:
+	
+	def getscrollbarvalues(self):
+		return 0, 0
+		
+	def scrollbar_callback(self, which, what, value):
+		print 'scroll', which, what, value
 	
 class DialogWindow(Window):
 	"""A modeless dialog window"""
