@@ -1132,6 +1132,19 @@ not(v)
 	return w;
 }
 
+/* External interface to call any callable object. The arg may be NULL. */
+
+object *
+call_object(func, arg)
+	object *func;
+	object *arg;
+{
+	if (is_instancemethodobject(func) || is_funcobject(func))
+		return call_function(func, arg);
+	else
+		return call_builtin(func, arg);
+}
+
 static object *
 call_builtin(func, arg)
 	object *func;
