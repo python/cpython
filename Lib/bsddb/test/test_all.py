@@ -66,7 +66,7 @@ def suite():
     alltests = unittest.TestSuite()
     for name in test_modules:
         module = __import__(name)
-        alltests.addTest(module.suite())
+        alltests.addTest(module.test_suite())
     return alltests
 
 
