@@ -25835,18 +25835,18 @@ static PyObject *Qt_TuneSetHeader(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	TunePlayer tp;
-	unsigned long header;
+	unsigned long * header;
 #ifndef TuneSetHeader
 	PyMac_PRECHECK(TuneSetHeader);
 #endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &tp))
+	if (!PyArg_ParseTuple(_args, "O&s",
+	                      CmpInstObj_Convert, &tp,
+	                      &header))
 		return NULL;
 	_rv = TuneSetHeader(tp,
-	                    &header);
-	_res = Py_BuildValue("ll",
-	                     _rv,
-	                     header);
+	                    header);
+	_res = Py_BuildValue("l",
+	                     _rv);
 	return _res;
 }
 
@@ -26149,21 +26149,21 @@ static PyObject *Qt_TuneSetHeaderWithSize(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	TunePlayer tp;
-	unsigned long header;
+	unsigned long * header;
 	unsigned long size;
 #ifndef TuneSetHeaderWithSize
 	PyMac_PRECHECK(TuneSetHeaderWithSize);
 #endif
-	if (!PyArg_ParseTuple(_args, "O&l",
+	if (!PyArg_ParseTuple(_args, "O&sl",
 	                      CmpInstObj_Convert, &tp,
+	                      &header,
 	                      &size))
 		return NULL;
 	_rv = TuneSetHeaderWithSize(tp,
-	                            &header,
+	                            header,
 	                            size);
-	_res = Py_BuildValue("ll",
-	                     _rv,
-	                     header);
+	_res = Py_BuildValue("l",
+	                     _rv);
 	return _res;
 }
 
@@ -27937,7 +27937,7 @@ static PyMethodDef Qt_methods[] = {
 	{"NATask", (PyCFunction)Qt_NATask, 1,
 	 PyDoc_STR("(NoteAllocator na) -> (ComponentResult _rv)")},
 	{"TuneSetHeader", (PyCFunction)Qt_TuneSetHeader, 1,
-	 PyDoc_STR("(TunePlayer tp) -> (ComponentResult _rv, unsigned long header)")},
+	 PyDoc_STR("(TunePlayer tp, unsigned long * header) -> (ComponentResult _rv)")},
 	{"TuneGetTimeBase", (PyCFunction)Qt_TuneGetTimeBase, 1,
 	 PyDoc_STR("(TunePlayer tp) -> (ComponentResult _rv, TimeBase tb)")},
 	{"TuneSetTimeScale", (PyCFunction)Qt_TuneSetTimeScale, 1,
@@ -27969,7 +27969,7 @@ static PyMethodDef Qt_methods[] = {
 	{"TuneSetSoundLocalization", (PyCFunction)Qt_TuneSetSoundLocalization, 1,
 	 PyDoc_STR("(TunePlayer tp, Handle data) -> (ComponentResult _rv)")},
 	{"TuneSetHeaderWithSize", (PyCFunction)Qt_TuneSetHeaderWithSize, 1,
-	 PyDoc_STR("(TunePlayer tp, unsigned long size) -> (ComponentResult _rv, unsigned long header)")},
+	 PyDoc_STR("(TunePlayer tp, unsigned long * header, unsigned long size) -> (ComponentResult _rv)")},
 	{"TuneSetPartMix", (PyCFunction)Qt_TuneSetPartMix, 1,
 	 PyDoc_STR("(TunePlayer tp, unsigned long partNumber, long volume, long balance, long mixFlags) -> (ComponentResult _rv)")},
 	{"TuneGetPartMix", (PyCFunction)Qt_TuneGetPartMix, 1,

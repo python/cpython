@@ -306,6 +306,9 @@ class MyScanner(Scanner):
 			# It seems MusicMIDIPacket if never flagged with const but always used
 			# for sending only. If that ever changes this needs to be fixed.
 			([('MusicMIDIPacket', '*', 'OutMode')], [('MusicMIDIPacket_ptr', '*', 'InMode')]),
+			
+			# QTMusic const-less input parameters
+			([('unsigned_long', 'header', 'OutMode')], [('UnsignedLongPtr', 'header', 'InMode')]),
 			]
 			
 if __name__ == "__main__":
