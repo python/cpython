@@ -129,9 +129,25 @@ else
   AR=		ar
 endif
 
+
+# === Build time resource settings ===
+
 # EMX's default number of file handles is 40, which is sometimes insufficient
 # (the tempfile regression test tries to create 100 temporary files)
 NFILES=250
+
+# The default stack size for child threads is 64k bytes, which is
+# insufficient for some applications which do a lot of work in threads
+# (such as Zope, especially in conjunction with Plone).
+# Note that this setting is distinct from the stack size for the main
+# thread, which is set via the %.def rule below.
+# EMX documents that the thread stack size should be at least 32768 bytes;
+# for Zope/Plone at least 128k bytes is recommended.
+# Uncomment & adjust the next line to override the default stack size:
+#CFLAGS+=	-DTHREAD_STACK_SIZE=0x20000
+
+
+# === The environment ===
 
 # Source file paths
 SRCPATH=.;../../Python;../../Parser;../../Objects;../../Include;../../Modules
@@ -215,7 +231,7 @@ $(OUT)%$O: %.c
 	@echo Creating .DEF file: $@
 	@echo NAME $(notdir $*) $(EXETYPE.$(notdir $*).exe) >$@
 	@echo DESCRIPTION $(DQUOTE)$(DESCRIPTION.$(notdir $*).exe)$(DQUOTE) >>$@
-	@echo STACKSIZE 1572864 >>$@
+	@echo STACKSIZE 2097152 >>$@
 
 # Output file names
 PYTHON_VER=	2.4
