@@ -57,7 +57,7 @@ what's tested is actually `z in y'.
 
 
 __all__ = ['BaseSet', 'Set', 'ImmutableSet']
-
+from itertools import ifilter
 
 class BaseSet(object):
     """Common base class for mutable and immutable sets."""
@@ -182,7 +182,7 @@ class BaseSet(object):
             little, big = self, other
         else:
             little, big = other, self
-        common = filter(big._data.has_key, little._data)
+        common = ifilter(big._data.has_key, little)
         return self.__class__(common)
 
     def intersection(self, other):
@@ -204,12 +204,10 @@ class BaseSet(object):
         value = True
         selfdata = self._data
         otherdata = other._data
-        for elt in selfdata:
-            if elt not in otherdata:
-                data[elt] = value
-        for elt in otherdata:
-            if elt not in selfdata:
-                data[elt] = value
+        for elt in ifilter(otherdata.has_key, selfdata, True):
+            data[elt] = value
+        for elt in ifilter(selfdata.has_key, otherdata, True):
+            data[elt] = value
         return result
 
     def symmetric_difference(self, other):
@@ -228,11 +226,9 @@ class BaseSet(object):
             return NotImplemented
         result = self.__class__()
         data = result._data
-        otherdata = other._data
         value = True
-        for elt in self:
-            if elt not in otherdata:
-                data[elt] = value
+        for elt in ifilter(other._data.has_key, self, True):
+            data[elt] = value
         return result
 
     def difference(self, other):
@@ -264,10 +260,8 @@ class BaseSet(object):
         self._binary_sanity_check(other)
         if len(self) > len(other):  # Fast check for obvious cases
             return False
-        otherdata = other._data
-        for elt in self:
-            if elt not in otherdata:
-                return False
+        for elt in ifilter(other._data.has_key, self, True):
+            return False
         return True
 
     def issuperset(self, other):
@@ -275,9 +269,7 @@ class BaseSet(object):
         self._binary_sanity_check(other)
         if len(self) < len(other):  # Fast check for obvious cases
             return False
-        selfdata = self._data
-        for elt in other:
-            if elt not in selfdata:
+        for elt in ifilter(self._data.has_key, other, True):
                 return False
         return True
 
