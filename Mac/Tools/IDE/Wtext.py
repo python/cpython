@@ -603,9 +603,9 @@ class TextEditor(EditText):
 				self.drawselframe(1)
 
 
-import regex
-commentPat = regex.compile("[ \t]*\(#\)")
-indentPat = regex.compile("\t*")
+import re
+commentPat = re.compile("[ \t]*\(#\)")
+indentPat = re.compile("\t*")
 
 class PyEditor(TextEditor):
 	
@@ -659,9 +659,9 @@ class PyEditor(TextEditor):
 		snippet = self.getselectedtext()
 		lines = string.split(snippet, '\r')
 		for i in range(len(lines)):
-			res = commentPat.match(lines[i]) >= 0
-			if res > 0:
-				pos = commentPat.regs[1][0]
+			m = commentPat.match(lines[i])
+			if m:
+				pos = m.start(1)
 				lines[i] = lines[i][:pos] + lines[i][pos+1:]
 		snippet = string.join(lines, '\r')
 		self.insert(snippet)
@@ -676,8 +676,9 @@ class PyEditor(TextEditor):
 		indent = 3000 # arbitrary large number...
 		for line in lines:
 			if string.strip(line):
-				if indentPat.match(line):
-					indent = min(indent, indentPat.regs[0][1])
+				m = indentPat.match(line)
+				if m:
+					indent = min(indent, m.regs[0][1])
 				else:
 					indent = 0
 					break

@@ -15,7 +15,7 @@ import imp
 import sys
 import string
 import marshal
-import regex
+import re
 
 try:
 	import Wthreading
@@ -25,7 +25,8 @@ else:
 	haveThreading = Wthreading.haveThreading
 
 _scriptuntitledcounter = 1
-_wordchars = string.letters + string.digits + "_"
+# _wordchars = string.letters + string.digits + "_"
+_wordchars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_'
 
 
 runButtonLabels = ["Run all", "Stop!"]
@@ -553,7 +554,6 @@ class Editor(W.Window):
 		if indent == 1:
 			classname = ''
 			alllines = string.split(alltext, '\r')
-			identifieRE_match = _identifieRE.match
 			for i in range(selfirstline - 1, -1, -1):
 				line = alllines[i]
 				if line[:6] == 'class ':
@@ -673,7 +673,6 @@ class Editor(W.Window):
 	
 	def getclasslist(self):
 		from string import find, strip
-		import re
 		methodRE = re.compile(r"\r[ \t]+def ")
 		findMethod = methodRE.search
 		editor = self.editgroup.editor
@@ -715,7 +714,6 @@ class Editor(W.Window):
 		offsetToLine = editor.ted.WEOffsetToLine
 		getLineRange = editor.ted.WEGetLineRange
 		append = classlist.append
-		identifieRE_match = _identifieRE.match
 		for pos, tag in list:
 			lineno = offsetToLine(pos)
 			lineStart, lineEnd = getLineRange(lineno)
@@ -794,14 +792,13 @@ def _makewholewordpattern(word):
 	# first, escape special regex chars
 	for esc in "\\[].*^+$?":
 		word = _escape(word, esc)
-	import regex
 	notwordcharspat = '[^' + _wordchars + ']'
-	pattern = '\(' + word + '\)'
+	pattern = '(' + word + ')'
 	if word[0] in _wordchars:
 		pattern = notwordcharspat + pattern
 	if word[-1] in _wordchars:
 		pattern = pattern + notwordcharspat
-	return regex.compile(pattern)
+	return re.compile(pattern)
 
 class SearchEngine:
 	
@@ -935,9 +932,9 @@ class SearchEngine:
 		while 1:
 			if self.parms["wholeword"]:
 				wholewordRE = _makewholewordpattern(find)
-				wholewordRE.search(text, pos)
-				if wholewordRE.regs:
-					pos = wholewordRE.regs[1][0]
+				match = wholewordRE.search(text, pos)
+				if match:
+					pos = match.start(1)
 				else:
 					pos = -1
 			else:
@@ -997,9 +994,9 @@ class SearchEngine:
 		selstart, selend = min(selstart, selend), max(selstart, selend)
 		if self.parms["wholeword"]:
 			wholewordRE = _makewholewordpattern(find)
-			wholewordRE.search(text, selend)
-			if wholewordRE.regs:
-				pos = wholewordRE.regs[1][0]
+			match = wholewordRE.search(text, selend)
+			if match:
+				pos = match.start(1)
 			else:
 				pos = -1
 		else:
@@ -1009,9 +1006,9 @@ class SearchEngine:
 			return 1
 		elif self.parms["wrap"]:
 			if self.parms["wholeword"]:
-				wholewordRE.search(text, 0)
-				if wholewordRE.regs:
-					pos = wholewordRE.regs[1][0]
+				match = wholewordRE.search(text, 0)
+				if match:
+					pos = match.start(1)
 				else:
 					pos = -1
 			else:
@@ -1169,12 +1166,19 @@ def execstring(pytext, globals, locals, filename="<string>", debugging=0,
 		PyDebugger.stop()
 
 
-_identifieRE = regex.compile("[A-Za-z_][A-Za-z_0-9]*")
+_identifieRE = re.compile("[A-Za-z_][A-Za-z_0-9]*")
+
+def identifieRE_match(str):
+	match = _identifieRE.match(str)
+	if not match:
+		return -1
+	return match.end()
 
 def _filename_as_modname(fname):
 	if fname[-3:] == '.py':
 		modname = fname[:-3]
-		if _identifieRE.match(modname) == len(modname):
+		match = _identifieRE.match(modname)
+		if match and match.start() == 0 and match.end() == len(modname):
 			return string.join(string.split(modname, '.'), '_')
 
 def findeditor(topwindow, fromtop = 0):

@@ -27,7 +27,7 @@ sublist is not used, hence always None.
 
 __version__ = "0.3.3"
 
-import string, regex
+import string, re
 
 # First a little helper, since I don't like to repeat things. (Tismer speaking)
 import string
@@ -87,10 +87,10 @@ for keyword in keywordsList:
 keyPat = keyPat[:-2] + "\)" + nonKeyPat
 
 matchPat = commentPat + "\|" + keyPat + "\|" + tripleQuotePat + "\|" + quotePat
-matchRE = regex.compile(matchPat)
+matchRE = re.compile(matchPat)
 
 idKeyPat = "[ \t]*[A-Za-z_][A-Za-z_0-9.]*"	# Ident w. leading whitespace.
-idRE = regex.compile(idKeyPat)
+idRE = re.compile(idKeyPat)
 
 
 def fontify(pytext, searchfrom = 0, searchto = None):
@@ -98,9 +98,7 @@ def fontify(pytext, searchfrom = 0, searchto = None):
 		searchto = len(pytext)
 	# Cache a few attributes for quicker reference.
 	search = matchRE.search
-	group = matchRE.group
 	idSearch = idRE.search
-	idGroup = idRE.group
 	
 	tags = []
 	tags_append = tags.append
@@ -112,10 +110,10 @@ def fontify(pytext, searchfrom = 0, searchto = None):
 	start = 0
 	end = searchfrom
 	while 1:
-		start = search(pytext, end)
-		if start < 0 or start >= searchto:
+		m = search(pytext, end)
+		if not m or m.start() >= searchto:
 			break	# EXIT LOOP
-		match = group(0)
+		match = m.group(0)
 		end = start + len(match)
 		c = match[0]
 		if c not in "#'\"":
@@ -133,9 +131,9 @@ def fontify(pytext, searchfrom = 0, searchto = None):
 			# If this was a defining keyword, look ahead to the
 			# following identifier.
 			if match in ["def", "class"]:
-				start = idSearch(pytext, end)
-				if start == end:
-					match = idGroup(0)
+				m = idSearch(pytext, end)
+				if m and m.start() == end:
+					match = m.group(0)
 					end = start + len(match)
 					tags_append((identifierTag, start, end, None))
 		elif c == "#":
