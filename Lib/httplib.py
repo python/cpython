@@ -69,7 +69,7 @@ Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 import errno
 import mimetools
 import socket
-from urlparse import urlsplit
+from urlparse import urlparse
 
 try:
     from cStringIO import StringIO
@@ -610,7 +610,7 @@ class HTTPConnection:
 
                 netloc = ''
                 if url.startswith('http'):
-                    nil, netloc, nil, nil, nil = urlsplit(url)
+                    nil, netloc, nil, nil, nil, nil = urlparse(url)
 
                 if netloc:
                     self.putheader('Host', netloc)
