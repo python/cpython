@@ -1099,8 +1099,8 @@ class FTPHandler(BaseHandler):
         if port is None:
             port = ftplib.FTP_PORT
         path, attrs = splitattr(req.get_selector())
-        path = unquote(path)
         dirs = path.split('/')
+        dirs = map(unquote, dirs)
         dirs, file = dirs[:-1], dirs[-1]
         if dirs and not dirs[0]:
             dirs = dirs[1:]
