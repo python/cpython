@@ -2331,7 +2331,9 @@ static PyObject *SSL_SSLwrite(SSLObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s#:write", &data, &len))
 		return NULL;
 
+	Py_BEGIN_ALLOW_THREADS
 	len = SSL_write(self->ssl, data, len);
+	Py_END_ALLOW_THREADS
 	return PyInt_FromLong((long)len);
 }
 
@@ -2347,7 +2349,9 @@ static PyObject *SSL_SSLread(SSLObject *self, PyObject *args)
 	if (!(buf = PyString_FromStringAndSize((char *) 0, len)))
 		return NULL;	/* Error object should already be set */
 
+	Py_BEGIN_ALLOW_THREADS
 	count = SSL_read(self->ssl, PyString_AsString(buf), len);
+	Py_END_ALLOW_THREADS
 	res = SSL_get_error(self->ssl, count);
 
 	switch (res) {
