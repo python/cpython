@@ -141,7 +141,7 @@ def copy_file (src, dst,
         import macostools
         try:
             macostools.copy (src, dst, 0, preserve_times)
-        except OSError, exc:
+        except os.error, exc:
             raise DistutilsFileError, \
                   "could not copy '%s' to '%s': %s" % (src, dst, exc[-1])
     
