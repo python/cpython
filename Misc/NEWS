@@ -12,7 +12,7 @@ What's New in Python 2.3 alpha 1?
 Type/class unification and new-style classes
 --------------------------------------------
 
-- Assignment to __class__ is disallowed if either the old and the new
+- Assignment to __class__ is disallowed if either the old or the new
   class is a statically allocated type object (such as defined by an
   extension module).  This prevents anomalies like 2.__class__ = bool.
 
@@ -382,7 +382,7 @@ Library
 -------
 
 - A new module, optparse, provides a fancy alternative to getopt for
-  command line parsing.  It is slightly modified version of Greg
+  command line parsing.  It is a slightly modified version of Greg
   Ward's Optik package.
 
 - UserDict.py now defines a DictMixin class which defines all dictionary
@@ -392,7 +392,7 @@ Library
 
 - shelve.py now subclasses from UserDict.DictMixin.  Now shelve supports
   all dictionary methods.  This eases the transition to persistent
-  storage for scripts originally written with dictionaries in mind.								
+  storage for scripts originally written with dictionaries in mind.
 
 - A new package, logging, implements the logging API defined by PEP
   282.  The code is written by Vinay Sajip.
