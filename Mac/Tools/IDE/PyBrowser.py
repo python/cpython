@@ -504,7 +504,6 @@ class Browser:
 SIMPLE_TYPES = (
 	type(None),
 	int,
-	bool,
 	long,
 	float,
 	complex,
@@ -555,10 +554,8 @@ def unpack_object(object, indent = 0):
 		return unpack_other(object, indent)
 
 def unpack_sequence(seq, indent = 0):
-	items = map(None, range(len(seq)), seq)
-	items = map(lambda (k, v), type = type, simp = SIMPLE_TYPES, indent = indent: 
-				(k, v, not type(v) in simp, indent), items)
-	return items
+	return [(i, v, not isinstance(v, SIMPLE_TYPES), indent)
+	         for i, v in enumerate(seq)]
 
 def unpack_dict(dict, indent = 0):
 	items = dict.items()
