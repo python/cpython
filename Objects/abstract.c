@@ -1032,7 +1032,7 @@ PyObject_CallMethod(va_alist) va_dcl
       return 0;
     }
 
-  if(format)
+  if(format && *format)
     args = Py_VaBuildValue(format, va);
   else
     args = PyTuple_New(0);
