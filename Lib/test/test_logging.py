@@ -342,15 +342,16 @@ MSG = "-- logging %d at INFO, messages should be seen every 10 events --"
 def test2():
     logger = logging.getLogger("")
     sh = logger.handlers[0]
+    sh.close()
     logger.removeHandler(sh)
-    mh = logging.handlers.MemoryHandler(10,logging.WARN, sh)
+    mh = logging.handlers.MemoryHandler(10,logging.WARNING, sh)
     logger.setLevel(logging.DEBUG)
     logger.addHandler(mh)
     message("-- logging at DEBUG, nothing should be seen yet --")
     logger.debug("Debug message")
     message("-- logging at INFO, nothing should be seen yet --")
     logger.info("Info message")
-    message("-- logging at WARN, 3 messages should be seen --")
+    message("-- logging at WARNING, 3 messages should be seen --")
     logger.warn("Warn message")
     for i in xrange(102):
         message(MSG % i)
@@ -436,6 +437,7 @@ def test_main():
 
         rootLogger.addHandler(hdlr)
         test0()
+        hdlr.close()
         rootLogger.removeHandler(hdlr)
 
         banner("log_test0", "end")

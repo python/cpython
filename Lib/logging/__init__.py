@@ -36,16 +36,24 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "alpha"
-__version__ = "0.4.7"
-__date__    = "27 August 2002"
+__version__ = "0.4.8"
+__date__    = "16 February 2003"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
 #---------------------------------------------------------------------------
 
 #
+# _verinfo is used for when behaviour needs to be adjusted to the version
+# of Python
+#
+
+_verinfo = getattr(sys, "version_info", None)
+
+#
 #_srcfile is used when walking the stack to check when we've got the first
 # caller stack frame.
+#
 if string.lower(__file__[-4:]) in ['.pyc', '.pyo']:
     _srcfile = __file__[:-4] + '.py'
 else:
@@ -70,7 +78,6 @@ _startTime = time.time()
 #
 raiseExceptions = 1
 
-
 #---------------------------------------------------------------------------
 #   Level related stuff
 #---------------------------------------------------------------------------
@@ -84,7 +91,8 @@ raiseExceptions = 1
 CRITICAL = 50
 FATAL = CRITICAL
 ERROR = 40
-WARN = 30
+WARNING = 30
+WARN = WARNING
 INFO = 20
 DEBUG = 10
 NOTSET = 0
@@ -92,13 +100,14 @@ NOTSET = 0
 _levelNames = {
     CRITICAL : 'CRITICAL',
     ERROR : 'ERROR',
-    WARN : 'WARN',
+    WARNING : 'WARNING',
     INFO : 'INFO',
     DEBUG : 'DEBUG',
     NOTSET : 'NOTSET',
     'CRITICAL' : CRITICAL,
     'ERROR' : ERROR,
-    'WARN' : WARN,
+    'WARN' : WARNING,
+    'WARNING' : WARNING,
     'INFO' : INFO,
     'DEBUG' : DEBUG,
     'NOTSET' : NOTSET,
@@ -108,7 +117,7 @@ def getLevelName(level):
     """
     Return the textual representation of logging level 'level'.
 
-    If the level is one of the predefined levels (CRITICAL, ERROR, WARN,
+    If the level is one of the predefined levels (CRITICAL, ERROR, WARNING,
     INFO, DEBUG) then you get the corresponding string. If you have
     associated levels with names using addLevelName then the name you have
     associated with 'level' is returned. Otherwise, the string
@@ -204,6 +213,7 @@ class LogRecord:
             self.thread = thread.get_ident()
         else:
             self.thread = None
+        self.process = os.getpid()
 
     def __str__(self):
         return '<LogRecord: %s, %s, %s, %s, "%s">'%(self.name, self.levelno,
@@ -216,7 +226,13 @@ class LogRecord:
         Return the message for this LogRecord after merging any user-supplied
         arguments with the message.
         """
-        msg = str(self.msg)
+        if not hasattr(types, "UnicodeType"): #if no unicode support...
+            msg = str(self.msg)
+        else:
+            try:
+                msg = str(self.msg)
+            except UnicodeError:
+                msg = self.msg      #Defer encoding till later
         if self.args:
             msg = msg % self.args
         return msg
@@ -243,9 +259,9 @@ class Formatter:
 
     %(name)s            Name of the logger (logging channel)
     %(levelno)s         Numeric logging level for the message (DEBUG, INFO,
-                        WARN, ERROR, CRITICAL)
+                        WARNING, ERROR, CRITICAL)
     %(levelname)s       Text logging level for the message ("DEBUG", "INFO",
-                        "WARN", "ERROR", "CRITICAL")
+                        "WARNING", "ERROR", "CRITICAL")
     %(pathname)s        Full pathname of the source file where the logging
                         call was issued (if available)
     %(filename)s        Filename portion of pathname
@@ -260,6 +276,7 @@ class Formatter:
                         relative to the time the logging module was loaded
                         (typically at application startup time)
     %(thread)d          Thread ID (if available)
+    %(process)d         Process ID (if available)
     %(message)s         The result of record.getMessage(), computed just as
                         the record is emitted
     """
@@ -558,14 +575,17 @@ class Handler(Filterer):
 
         Emission depends on filters which may have been added to the handler.
         Wrap the actual emission of the record with acquisition/release of
-        the I/O thread lock.
+        the I/O thread lock. Returns whether the filter passed the record for
+        emission.
         """
-        if self.filter(record):
+        rv = self.filter(record)
+        if rv:
             self.acquire()
             try:
                 self.emit(record)
             finally:
                 self.release()
+        return rv
 
     def setFormatter(self, fmt):
         """
@@ -591,17 +611,17 @@ class Handler(Filterer):
         """
         pass
 
-    def handleError(self):
+    def handleError(self, record):
         """
         Handle errors which occur during an emit() call.
 
         This method should be called from handlers when an exception is
-        encountered during an emit() call. By default it does nothing,
-        because by default raiseExceptions is false, which means that
+        encountered during an emit() call. If raiseExceptions is false,
         exceptions get silently ignored. This is what is mostly wanted
         for a logging system - most users will not care about errors in
         the logging system, they are more interested in application errors.
         You could, however, replace this with a custom handler if you wish.
+        The record which was being processed is passed in to this method.
         """
         if raiseExceptions:
             import traceback
@@ -645,10 +665,16 @@ class StreamHandler(Handler):
         """
         try:
             msg = self.format(record)
-            self.stream.write("%s\n" % msg)
+            if not hasattr(types, "UnicodeType"): #if no unicode support...
+                self.stream.write("%s\n" % msg)
+            else:
+                try:
+                    self.stream.write("%s\n" % msg)
+                except UnicodeError:
+                    self.stream.write("%s\n" % msg.encode("UTF-8"))
             self.flush()
         except:
-            self.handleError()
+            self.handleError(record)
 
 class FileHandler(StreamHandler):
     """
@@ -861,19 +887,21 @@ class Logger(Filterer):
         if INFO >= self.getEffectiveLevel():
             apply(self._log, (INFO, msg, args), kwargs)
 
-    def warn(self, msg, *args, **kwargs):
+    def warning(self, msg, *args, **kwargs):
         """
-        Log 'msg % args' with severity 'WARN'.
+        Log 'msg % args' with severity 'WARNING'.
 
         To pass exception information, use the keyword argument exc_info with
         a true value, e.g.
 
-        logger.warn("Houston, we have a %s", "bit of a problem", exc_info=1)
+        logger.warning("Houston, we have a %s", "bit of a problem", exc_info=1)
         """
-        if self.manager.disable >= WARN:
+        if self.manager.disable >= WARNING:
             return
-        if self.isEnabledFor(WARN):
-            apply(self._log, (WARN, msg, args), kwargs)
+        if self.isEnabledFor(WARNING):
+            apply(self._log, (WARNING, msg, args), kwargs)
+
+    warn = warning
 
     def error(self, msg, *args, **kwargs):
         """
@@ -982,7 +1010,7 @@ class Logger(Filterer):
         Remove the specified handler from this logger.
         """
         if hdlr in self.handlers:
-            hdlr.close()
+            #hdlr.close()
             self.handlers.remove(hdlr)
 
     def callHandlers(self, record):
@@ -1047,7 +1075,7 @@ class RootLogger(Logger):
 
 _loggerClass = Logger
 
-root = RootLogger(WARN)
+root = RootLogger(WARNING)
 Logger.root = root
 Logger.manager = Manager(Logger.root)
 
@@ -1119,13 +1147,15 @@ def exception(msg, *args):
     """
     apply(error, (msg,)+args, {'exc_info': 1})
 
-def warn(msg, *args, **kwargs):
+def warning(msg, *args, **kwargs):
     """
-    Log a message with severity 'WARN' on the root logger.
+    Log a message with severity 'WARNING' on the root logger.
     """
     if len(root.handlers) == 0:
         basicConfig()
-    apply(root.warn, (msg,)+args, kwargs)
+    apply(root.warning, (msg,)+args, kwargs)
+
+warn = warning
 
 def info(msg, *args, **kwargs):
     """
