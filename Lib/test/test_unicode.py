@@ -453,6 +453,14 @@ except KeyError:
 else:
     verify(value == u'abc, def')
 
+for ordinal in (-100, 0x20000):
+    try:
+        u"%c" % ordinal
+    except ValueError:
+        pass
+    else:
+        print '*** formatting u"%%c" % %i should give a ValueError' % ordinal
+
 # formatting jobs delegated from the string implementation:
 verify('...%(foo)s...' % {'foo':u"abc"} == u'...abc...')
 verify('...%(foo)s...' % {'foo':"abc"} == '...abc...')

@@ -260,44 +260,11 @@ static PyObject *
 builtin_unichr(PyObject *self, PyObject *args)
 {
 	long x;
-	Py_UNICODE s[2];
 
 	if (!PyArg_ParseTuple(args, "l:unichr", &x))
 		return NULL;
 
-#ifdef Py_UNICODE_WIDE
-	if (x < 0 || x > 0x10ffff) {
-		PyErr_SetString(PyExc_ValueError,
-				"unichr() arg not in range(0x110000) "
-				"(wide Python build)");
-		return NULL;
-	}
-#else
-	if (x < 0 || x > 0xffff) {
-		PyErr_SetString(PyExc_ValueError,
-				"unichr() arg not in range(0x10000) "
-				"(narrow Python build)");
-		return NULL;
-	}
-#endif
-
-	if (x <= 0xffff) {
-		/* UCS-2 character */
-		s[0] = (Py_UNICODE) x;
-		return PyUnicode_FromUnicode(s, 1);
-	}
-	else {
-#ifndef Py_UNICODE_WIDE
-		/* UCS-4 character.  store as two surrogate characters */
-		x -= 0x10000L;
-		s[0] = 0xD800 + (Py_UNICODE) (x >> 10);
-		s[1] = 0xDC00 + (Py_UNICODE) (x & 0x03FF);
-		return PyUnicode_FromUnicode(s, 2);
-#else
-		s[0] = (Py_UNICODE)x;
-		return PyUnicode_FromUnicode(s, 1);
-#endif
-	}
+	return PyUnicode_FromOrdinal(x);
 }
 
 PyDoc_STRVAR(unichr_doc,
