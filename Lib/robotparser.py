@@ -59,25 +59,25 @@ class RobotFileParser:
         elif status>=400:
             self.allow_all = 1
         else:
-	    # status < 400
+            # status < 400
             self.parse(connection.getfile().readlines())
 
     def parse(self, lines):
         """parse the input lines from a robot.txt file.
-	   We allow that a user-agent: line is not preceded by
-	   one or more blank lines."""
+           We allow that a user-agent: line is not preceded by
+           one or more blank lines."""
         state = 0
         linenumber = 0
         entry = Entry()
-        
+
         for line in lines:
             line = string.strip(line)
             linenumber = linenumber + 1
             if not line:
                 if state==1:
                     _debug("line %d: warning: you should insert"
-		           " allow: or disallow: directives below any"
-			   " user-agent: line" % linenumber)
+                           " allow: or disallow: directives below any"
+                           " user-agent: line" % linenumber)
                     entry = Entry()
                     state = 0
                 elif state==2:
@@ -98,7 +98,7 @@ class RobotFileParser:
                 if line[0] == "user-agent":
                     if state==2:
                         _debug("line %d: warning: you should insert a blank"
-			       " line before any user-agent"
+                               " line before any user-agent"
                                " directive" % linenumber)
                         self.entries.append(entry)
                         entry = Entry()
@@ -107,14 +107,14 @@ class RobotFileParser:
                 elif line[0] == "disallow":
                     if state==0:
                         _debug("line %d: error: you must insert a user-agent:"
-			       " directive before this line" % linenumber)
+                               " directive before this line" % linenumber)
                     else:
                         entry.rulelines.append(RuleLine(line[1], 0))
                         state = 2
                 elif line[0] == "allow":
                     if state==0:
                         _debug("line %d: error: you must insert a user-agent:"
-			       " directive before this line" % linenumber)
+                               " directive before this line" % linenumber)
                     else:
                         entry.rulelines.append(RuleLine(line[1], 1))
                 else:
@@ -212,7 +212,7 @@ def _test():
     print rp.can_fetch('*', 'http://www.musi-cal.com/')
     print rp.can_fetch('Musi-Cal-Robot/1.0',
                        'http://www.musi-cal.com/cgi-bin/event-search'
-		       '?city=San+Francisco')
+                       '?city=San+Francisco')
 
 if __name__ == '__main__':
     _test()
