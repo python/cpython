@@ -75,11 +75,12 @@ Test running gen when defining function is out of scope
     [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1)]
 
 Verify that parenthesis are required in a statement
->>> def f(n):
-...     return i*i for i in xrange(n)
-Traceback (most recent call last):
-   ...
-SyntaxError: invalid syntax
+
+    >>> def f(n):
+    ...     return i*i for i in xrange(n)
+    Traceback (most recent call last):
+       ...
+    SyntaxError: invalid syntax
 
 Verify early binding for the outermost for-expression
 
