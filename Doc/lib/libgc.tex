@@ -83,6 +83,13 @@ Return the list of objects that directly refer to any of objs. This
 function will only locate those containers which support garbage
 collection; extension types which do refer to other objects but do not
 support garbage collection will not be found.
+
+Note that objects which have already been dereferenced, but which live
+in cycles and have not yet been collected by the garbage collector can
+be listed among the resulting referrers.  To get only currently live
+objects, call \function{collect()} before calling
+\function{get_referrers()}.
+
 \versionadded{2.2}
 \end{funcdesc}
 
