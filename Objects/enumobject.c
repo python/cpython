@@ -31,16 +31,12 @@ enum_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		Py_DECREF(en);
 		return NULL;
 	}
-	en->en_result = PyTuple_New(2);
+	en->en_result = PyTuple_Pack(2, Py_None, Py_None);
 	if (en->en_result == NULL) {
 		Py_DECREF(en->en_sit);
 		Py_DECREF(en);
 		return NULL;
 	}
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(en->en_result, 0, Py_None);
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(en->en_result, 1, Py_None);
 	return (PyObject *)en;
 }
 
