@@ -1,4 +1,6 @@
 from test_support import verbose
+import warnings
+warnings.filterwarnings("ignore", "", DeprecationWarning, __name__)
 import strop, sys
 
 def test(name, input, output, *args):
