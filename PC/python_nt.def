@@ -103,6 +103,7 @@ EXPORTS
 	PyErr_Format
 	PyErr_GivenExceptionMatches
 	PyErr_NewException
+	PyErr_NormalizeException
 	PyErr_NoMemory
 	PyErr_Occurred
 	PyErr_Print
