@@ -37,9 +37,10 @@ int myvsnprintf(char *str, size_t size, const char  *format, va_list va)
 	return len;
     }
     len++;
-    if (len > size + 512)
+    assert(len >= 0);
+    if ((size_t)len > size + 512)
 	Py_FatalError("Buffer overflow in PyOS_snprintf/PyOS_vsnprintf");
-    if (len > size) {
+    if ((size_t)len > size) {
 	PyMem_Free(buffer);
 	return len - 1;
     }
