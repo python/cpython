@@ -45,7 +45,6 @@ repr
 round
 setattr
 str
-unistr
 tuple
 type
 vars
