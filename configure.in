@@ -2247,7 +2247,7 @@ AC_TRY_COMPILE([#include <sys/stat.h>], [
 struct stat st;
 st.st_mtim.tv_nsec = 1;
 ],
-ac_cv_stat_tv_nsec = yes,
+ac_cv_stat_tv_nsec=yes,
 ac_cv_stat_tv_nsec=no,
 ac_cv_stat_tv_nsec=no))
 AC_MSG_RESULT($ac_cv_stat_tv_nsec)
