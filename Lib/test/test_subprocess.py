@@ -216,7 +216,8 @@ class ProcessTestCase(unittest.TestCase):
                           'sys.stdout.write(os.getcwd())'],
                          stdout=subprocess.PIPE,
                          cwd=tmpdir)
-        self.assertEqual(p.stdout.read(), tmpdir)
+        normcase = os.path.normcase
+        self.assertEqual(normcase(p.stdout.read()), normcase(tmpdir))
 
     def test_env(self):
         newenv = os.environ.copy()
