@@ -599,12 +599,15 @@ eval_frame(PyFrameObject *f)
 	fastlocals = f->f_localsplus;
 	freevars = f->f_localsplus + f->f_nlocals;
 	_PyCode_GETCODEPTR(co, &first_instr);
-	if (f->f_lasti < 0) {
-		next_instr = first_instr;
-	}
-	else {
-		next_instr = first_instr + f->f_lasti;
-	}
+	/* An explanation is in order for the next line.
+
+	   f->f_lasti now refers to the index of the last instruction
+	   executed.  You might think this was obvious from the name, but
+	   this wasn't always true before 2.3!  PyFrame_New now sets
+	   f->f_lasti to -1 (i.e. the index *before* the first instruction
+	   and YIELD_VALUE doesn't fiddle with f_lasti any more.  So this
+	   does work.  Promise. */
+	next_instr = first_instr + f->f_lasti + 1;
 	stack_pointer = f->f_stacktop;
 	assert(stack_pointer != NULL);
 	f->f_stacktop = NULL;	/* remains NULL unless yield suspends frame */
@@ -1521,9 +1524,6 @@ eval_frame(PyFrameObject *f)
 		case YIELD_VALUE:
 			retval = POP();
 			f->f_stacktop = stack_pointer;
-			/* abuse the lasti field: here it points to 
-			   the *next* instruction */
-			f->f_lasti = INSTR_OFFSET();
 			why = WHY_YIELD;
 			break;
 
