@@ -214,5 +214,5 @@ def test_exc(formatstr, args, exception, excmsg):
 test_exc('abc %a', 1, ValueError,
          "unsupported format character 'a' (0x61) at index 5")
 if have_unicode:
-    test_exc(unicode('abc %\u3000'), 1, ValueError,
+    test_exc(unicode('abc %\u3000','raw-unicode-escape'), 1, ValueError,
              "unsupported format character '?' (0x3000) at index 5")
