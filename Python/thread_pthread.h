@@ -174,7 +174,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 
 /* XXX This implementation is considered (to quote Tim Peters) "inherently
    hosed" because:
-     - It does not guanrantee the promise that a non-zero integer is returned.
+     - It does not guarantee the promise that a non-zero integer is returned.
      - The cast to long is inherently unsafe.
      - It is not clear that the 'volatile' (for AIX?) and ugly casting in the
        latter return statement (for Alpha OSF/1) are any longer necessary.
