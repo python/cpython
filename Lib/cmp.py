@@ -34,7 +34,7 @@ def cmp(f1, f2): # Compare two files, use the cache if possible.
 			# cached signatures match
 			return outcome
 		# stale cached signature(s)
-	except RuntimeError:
+	except KeyError:
 		# cache miss
 		pass
 	# really compare
