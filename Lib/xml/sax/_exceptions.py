@@ -21,6 +21,7 @@ class SAXException(Exception):
         is optional."""
         self._msg = msg
         self._exception = exception
+        Exception.__init__(self, msg)
 
     def getMessage(self):
         "Return a message for this exception."
