@@ -83,6 +83,7 @@ cell_traverse(PyCellObject *op, visitproc visit, void *arg)
 static int
 cell_clear(PyCellObject *op)
 {
+	Py_XDECREF(op->ob_ref);
 	op->ob_ref = NULL;
 	return 0;
 }

@@ -65,13 +65,14 @@ static PyFrameObject *free_list = NULL;
 static void
 frame_dealloc(PyFrameObject *f)
 {
-	int i;
+	int i, slots;
 	PyObject **fastlocals;
 
 	Py_TRASHCAN_SAFE_BEGIN(f)
 	/* Kill all local variables */
+	slots = f->f_nlocals + f->f_ncells + f->f_nfreevars;
 	fastlocals = f->f_localsplus;
-	for (i = f->f_nlocals; --i >= 0; ++fastlocals) {
+	for (i = slots; --i >= 0; ++fastlocals) {
 		Py_XDECREF(*fastlocals);
 	}
 
@@ -108,7 +109,7 @@ PyTypeObject PyFrame_Type = {
 
 PyFrameObject *
 PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals, 
-	    PyObject *locals, PyObject *closure)
+	    PyObject *locals)
 {
 	PyFrameObject *back = tstate->frame;
 	static PyObject *builtin_object;

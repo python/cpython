@@ -46,8 +46,7 @@ extern DL_IMPORT(PyTypeObject) PyFrame_Type;
 #define PyFrame_Check(op) ((op)->ob_type == &PyFrame_Type)
 
 DL_IMPORT(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
-                                       PyObject *, PyObject *,
-				       PyObject *);
+                                       PyObject *, PyObject *);
 
 
 /* The rest of the interface is specific for frame objects */

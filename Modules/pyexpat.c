@@ -356,9 +356,6 @@ call_with_frame(PyCodeObject *c, PyObject* func, PyObject* args)
                     c,				/*code*/
                     tstate->frame->f_globals,	/*globals*/
                     NULL			/*locals*/
-#if PYTHON_API_VERSION >= 1010
-                    ,NULL			/*closure*/
-#endif
                     );
     if (f == NULL)
         return NULL;
