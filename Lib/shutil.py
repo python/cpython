@@ -8,6 +8,7 @@ import os
 import sys
 import stat
 import exceptions
+from os.path import abspath
 
 __all__ = ["copyfileobj","copyfile","copymode","copystat","copy","copy2",
            "copytree","move","rmtree","Error"]
@@ -164,8 +165,13 @@ def move(src, dst):
         os.rename(src, dst)
     except OSError:
         if os.path.isdir(src):
+            if destinsrc(src, dst):
+                raise Error, "Cannot move a directory '%s' into itself '%s'." % (src, dst)
             copytree(src, dst, symlinks=True)
             rmtree(src)
         else:
             copy2(src,dst)
             os.unlink(src)
+
+def destinsrc(src, dst):
+    return abspath(dst).startswith(abspath(src))
