@@ -7,7 +7,7 @@
 node *
 PyNode_New(int type)
 {
-	node *n = PyMem_NEW(node, 1);
+	node *n = (node *) PyObject_MALLOC(1 * sizeof(node));
 	if (n == NULL)
 		return NULL;
 	n->n_type = type;
@@ -92,7 +92,8 @@ PyNode_AddChild(register node *n1, int type, char *str, int lineno)
 		return E_OVERFLOW;
 	if (current_capacity < required_capacity) {
 		n = n1->n_child;
-		PyMem_RESIZE(n, node, required_capacity);
+		n = (node *) PyObject_REALLOC(n,
+					      required_capacity * sizeof(node));
 		if (n == NULL)
 			return E_NOMEM;
 		n1->n_child = n;
@@ -116,7 +117,7 @@ PyNode_Free(node *n)
 {
 	if (n != NULL) {
 		freechildren(n);
-		PyMem_DEL(n);
+		PyObject_FREE(n);
 	}
 }
 
@@ -127,7 +128,7 @@ freechildren(node *n)
 	for (i = NCH(n); --i >= 0; )
 		freechildren(CHILD(n, i));
 	if (n->n_child != NULL)
-		PyMem_DEL(n->n_child);
+		PyObject_FREE(n->n_child);
 	if (STR(n) != NULL)
-		PyMem_DEL(STR(n));
+		PyObject_FREE(STR(n));
 }

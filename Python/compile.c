@@ -719,7 +719,7 @@ com_free(struct compiling *c)
 	Py_XDECREF(c->c_cellvars);
 	Py_XDECREF(c->c_lnotab);
 	if (c->c_future)
-		PyMem_Free((void *)c->c_future);
+		PyObject_FREE((void *)c->c_future);
 }
 
 static void
@@ -2020,7 +2020,7 @@ com_factor(struct compiling *c, node *n)
 			return;
 		}
 		if (childtype == MINUS) {
-			char *s = PyMem_Malloc(strlen(STR(pnum)) + 2);
+			char *s = PyObject_MALLOC(strlen(STR(pnum)) + 2);
 			if (s == NULL) {
 				com_error(c, PyExc_MemoryError, "");
 				com_addbyte(c, 255);
@@ -2028,7 +2028,7 @@ com_factor(struct compiling *c, node *n)
 			}
 			s[0] = '-';
 			strcpy(s + 1, STR(pnum));
-			PyMem_Free(STR(pnum));
+			PyObject_FREE(STR(pnum));
 			STR(pnum) = s;
 		}
 		com_atom(c, patom);
@@ -4116,7 +4116,7 @@ PyNode_CompileSymtable(node *n, char *filename)
 
 	st = symtable_init();
 	if (st == NULL) {
-		PyMem_Free((void *)ff);
+		PyObject_FREE((void *)ff);
 		return NULL;
 	}
 	st->st_future = ff;
@@ -4129,7 +4129,7 @@ PyNode_CompileSymtable(node *n, char *filename)
 	
 	return st;
  fail:
-	PyMem_Free((void *)ff);
+	PyObject_FREE((void *)ff);
 	st->st_future = NULL;
 	PySymtable_Free(st);
 	return NULL;
@@ -4722,7 +4722,7 @@ symtable_init()
 {
 	struct symtable *st;
 
-	st = (struct symtable *)PyMem_Malloc(sizeof(struct symtable));
+	st = (struct symtable *)PyObject_MALLOC(sizeof(struct symtable));
 	if (st == NULL)
 		return NULL;
 	st->st_pass = 1;
@@ -4749,7 +4749,7 @@ PySymtable_Free(struct symtable *st)
 	Py_XDECREF(st->st_symbols);
 	Py_XDECREF(st->st_stack);
 	Py_XDECREF(st->st_cur);
-	PyMem_Free((void *)st);
+	PyObject_FREE((void *)st);
 }
 
 /* When the compiler exits a scope, it must should update the scope's
